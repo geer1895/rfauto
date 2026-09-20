@@ -1,0 +1,54 @@
+# EM 求解器配置（em_solver_base.load_solvers_config 读取）
+# 模块化求解器架构：每个条目对应一个 EMSolverConfig；
+# exe_path 支持环境变量展开（${VAR}），未安装的求解器保留条目但 doctor/adapter 会报不可用。
+
+solvers:
+  openems:
+    solver_type: openems
+    # 可移植化：路径走 RFAUTO_OPENEMS_BIN（每台机器自设 openEMS 安装 bin
+    # 目录，见 docs/migration_guide.md）
+    exe_path: "${RFAUTO_OPENEMS_BIN}\\openEMS.exe"
+    working_dir: "runs/openems"
+    freq_range_ghz: [1.0, 5.0]
+    # 官方方法学语义：mesh_resolution_mm = 网格 base 覆盖（mm）；
+    # 0 = 自动 λ_sub/50（官方 MSL_NotchFilter 基线，近走线区自动 /4）。
+    # 0.5 ≈ λ_sub/100 已收敛校准档（收敛实证：base 减半谷位漂 -2.5%）。
+    mesh_resolution_mm: 0.5
+    boundary_condition: "PML_8"
+    extra_params:
+      # openEMS 子进程走 Python 绑定脚本（openEMS 不直接产 Touchstone，输出 CSV）
+      python_exe: ""   # 留空 = 用当前解释器；绑定编译到其他 Python 时在此指定
+      # solve_timeout_s: 36000   # 高 Q 结构跑满衰减时可放开（默认 max_iterations*10）
+  comsol:
+    # COMSOL RF Module（第三方仲裁通道，稀缺 license 不做日常主力）。
+    # 纪律（docs/comsol_references.md / #215）：mph.start 显式钉 version="6.3"
+    # （6.4 license 已过期）；每次求解占一个 RF license 席位，进程内串行；
+    # 一 Python 进程一 Client（JPype 单 JVM）。
+    solver_type: comsol
+    working_dir: "runs/comsol"
+    freq_range_ghz: [1.0, 5.0]
+    mesh_resolution_mm: 0.5
+    extra_params:
+      comsol_version: "6.3"
+      cores: 2
+      # comsol_root: 默认指向本机 COMSOL 安装位（随版本/机器而异），
+      # 可用 RFAUTO_COMSOL_ROOT 覆盖（非默认安装位时在此显式给路径）。
+      # save_mph: true   # 保留 .mph 模型文件（调试用）
+  elmer:
+    # Elmer 开源多物理（GPL 免 license）：开源热兜底 + 对 COMSOL
+    # ht/Icepak 的交叉验证器；当前只做 heat_slab_1d（1-D 均匀热源平板）。
+    # 开源 FEM 高频 EM 通道已择一 NGSolve，Elmer VectorHelmholtz 不实现
+    # （择一结论与理由见 elmer_adapter.py 模块 docstring）。
+    solver_type: elmer
+    working_dir: "runs/elmer"
+    # exe_path 不写：resolve_elmer_bin 按 RFAUTO_ELMER_BIN > ELMER_HOME >
+    # 默认安装根 > PATH 链定位 ElmerSolver.exe（ElmerGrid.exe 同 bin）。
+    extra_params:
+      # 子进程超时（秒）默认：ElmerGrid 网格转换 120 / ElmerSolver 求解 600
+      # grid_timeout_s: 120
+      # solve_timeout_s: 600
+      # #233 三坑（build_slab_sif / build_gmsh_quad_strip 已内建并有回归）：
+      # 体热源必须 Volumetric Heat Source；Solver 编号必须连续；
+      # 网格走 Gmsh v2.2 → ElmerGrid 14 2。
+
+

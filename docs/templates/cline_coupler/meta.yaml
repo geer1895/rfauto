@@ -1,0 +1,23 @@
+f0_ghz: 2.5
+n_ports: 4
+extraction: 全 S 矩阵 4×4 @ .s4p（excite_port 轮转 4 run，#208 进程隔离；同 ratrace footer 9 列单激励 CSV）。裁判=偶/奇模频响 coupled_line_coupler_sparams（Pozar §7.6 闭式）：f0 处 |S31|=C、S21=−j√(1−C²)、S11=S41=0（同步极限）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- gap_mm
+- coupled_len_mm
+- w_feed_mm
+template: cline_coupler
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 0.9243
+  gap_mm: 0.082
+  coupled_len_mm: 18.1469
+  w_feed_mm: 1.1117
+topology: 耦合线定向耦合器（后向波，C4 族）：两条 λ/4 平行耦合线（KJ (w,s) 反解）+ 四条 50Ω 馈线外推+横向搭接段（同心直连短路）；1=输入/2=直通（线 A 远端）/3=耦合（线 B 近端，与输入同侧）/4=隔离
+param_semantics: w_mm=耦合段单线宽，gap_mm=耦合缝（边到边），coupled_len_mm=耦合段物理长（λ/4 @平均 εeff），w_feed_mm=50Ω 馈线宽——fake/openEMS 两通道同名同语义。10dB 设计点：C=0.31623 → (Z0e,Z0o)=(69.371,36.038)Ω → KJ 反解 (w,s)=(0.9243,0.0820)mm，εeff_e/o=2.9922/2.4663
+smoke_note: 真机未跑：非同步残差预期 S41≈−23dB/S11≈−33dB（定向性 ≈13dB，微带耦合线固有，openems_templates §C4 段首口径 1），冒烟按此判读；理想同步极限 |S31|=−10.000dB

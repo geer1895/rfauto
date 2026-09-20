@@ -1,0 +1,26 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（交指带通：带内回波纹波 + 带外抑制；裁判=并联谐振 J 倒置器链 c3_circuit_sparams，同步 TEM 极限对照 C13 coupling_matrix_response 互证，实测 max|ΔS21|=0.0104dB）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- order
+- w_mm
+- res_len_mm
+- gaps_mm
+- feed_len_mm
+template: interdigital
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  order: 3
+  w_mm: 1.1117
+  res_len_mm: 16.4785
+  gaps_mm: [0.2263, 1.3567, 1.3567, 0.2263]
+  feed_len_mm: 51.7608
+topology: 交指带通（§C3 滤波器族 II，Cohn 交指口径）：N 根 λ/4 均匀谐振棒平行排列，接地端交替（奇棒底端过孔/偶棒顶端过孔，r=0.15mm），相邻棒全长缝耦合；双 50Ω 馈线缝耦合自 y=−BOARD 板边引入（gysel 同边先例，单轴 PML）
+param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法，_c3_layout 显式报错）；w_mm=棒/馈线宽（50Ω，skrf HJ 综合 live 值 1.1117）；res_len_mm=棒物理长（λ/4(εeff=2.8578)=17.7338 − 过孔缩短 1.0467 − 开路端 Δl=0.2086，电路裁判以等效长度回代；登记⑨ 过孔补偿口径 tanθ_c=Z_r/(ω0L_via)，L_via=0.29596nH Goldfarb-Pucel，缺省渲染几何在过孔存在下谐振回 f0）；gaps_mm[j]=第 j 缝边到边（j=0 馈-棒1 … j=N 棒N-馈；fake/openEMS 两通道同索引同语义，#154）；feed_len_mm=板边到棒阵列底端的馈线段长（阵列 y 居中 ⇒ 两馈等长）
+design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；MYJ 斜率 b=π/(4Z_r)=0.015708 S（λ/4 短路棒）→ J=[4.290e-3, 8.09e-4, 8.09e-4, 4.290e-3] S → Cohn 精确 x=[0.22603, 0.04053, 0.04053, 0.22603] → KJ 1984 一维反解缝；登记⑨ 过孔补偿（设计链 l_via_h=None）：tanθ_c=Z_r/(ω0L)=10.755 → θ_c=1.47808 rad，棒电长缩短 1.0467mm，Y(f0) 过孔端接自证 |Y|=5.8e-18 S，斜率 b 经由孔二阶（数值 −0.034%）；邻耦合近似（非邻耦合/棒端寄生由 EM 冒烟实测）
+smoke_note: 真机 openEMS 冒烟后置（循 coupled_bpf NrTS PARTIAL 先例；真机冒烟并入后续批量计划），本项全程离线验收

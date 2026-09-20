@@ -1,0 +1,64 @@
+# rfauto EDA 版本兼容矩阵
+# level 语义：
+#   verified    - 真机全链回归通过（有归档回归记录背书）
+#   best_effort - 依赖库声明支持、未真机验证；能用但不背书
+#   unsupported - 已知不工作，doctor 应警告
+# channel（仅 ads）：按优先级列出的可用通道（m=官方MCP, a=Python API, b=网表, c=人工）
+
+aedt:
+  default_level: best_effort
+  versions:
+    "2023.1":
+      level: verified
+      notes: "真机 2023R1 全链回归（wilkinson/branchline/patch/远场）"
+    "2025.1":
+      level: best_effort
+      notes: "历史代码曾按此版本推导，未真机验证"
+    "2026.1":
+      level: verified
+      notes: "HFSS 2026 R1 真机验证通过"
+
+ads:
+  default_level: best_effort
+  versions:
+    "2027":
+      level: verified
+      channel: [b, c]
+      notes: "B档 hpeesofsim 真机回归通过；官方 MCP（bin/ads-mcp.exe）真机冒烟通过
+        （headless 会话 + execute_python），但电路仿真语义未获官方保证，生产默认
+        仍 B 档——M 档经 select_ads_channel(prefer='m') 显式启用"
+    "2026":
+      level: best_effort
+      channel: [b, c]
+      notes: "B档 hpeesofsim 理论可用，未真机验证"
+
+# ── 板级/开源求解器 ──────────────────────
+
+palace:
+  versions:
+    - version: "skeleton"
+      status: "best_effort"
+      notes: "Skeleton adapter (awaiting Windows build spike). Apache-2.0 license."
+
+meep:
+  versions:
+    - version: "CI-only"
+      status: "best_effort"
+      notes: "CI-only (conda-on-Linux). Windows requires WSL2."
+
+kicad:
+  default_level: best_effort
+  versions:
+    "10.0":
+      level: verified
+      notes: "KiCad 10.0.6 真机验证通过（P-Cell spike + DRC gate，子进程 Python 3.11 调用）"
+    "9.0":
+      level: best_effort
+      notes: "pcbnew API 9/10 有差异（如 PCB_VIA SetPosition），未真机验证"
+
+openems:
+  default_level: best_effort
+  versions:
+    "master":
+      level: verified
+      notes: "源码编译验证（v0.37.0-rc1 系；安装根经 RFAUTO_OPENEMS_BIN/构建脚本指定）；\n        Python 绑定编译进项目 venv（CSXCAD 0.7.0rc1 + openEMS 0.37.0rc1，VS2019 +\n        Cython 3.3，/std:c++17）；wilkinson 模板真跑冒烟通过（build_geometry →\n        solve → sparams.csv 解析）"

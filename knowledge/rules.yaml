@@ -1,0 +1,113 @@
+# 知识库
+# 初值估计公式 / 诊断启发式规则
+# 当前为占位，后续由 events 数据逐步反哺
+
+rules:
+  - id: R001
+    category: initial_value
+    description: "Wilkinson PD lambda/4 臂长初值估算"
+    formula: "arm_len_mm = c / (4 * f0_ghz * 1e9 * sqrt(eff_epsilon_r))"
+    example: "f0=2.4GHz, eeff~2.33 -> arm~20.5mm"
+    applicable_models:
+      - wilkinson_power_divider
+
+  - id: R002
+    category: diagnosis
+    description: "S11 谐振频率偏高"
+    hint: "检查馈电位置是否过短、变量值是否被意外缩小"
+    applicable_models:
+      - all
+
+  - id: R003
+    category: diagnosis
+    description: "S21 插损异常大"
+    hint: "检查端口设置、材料损耗、网格是否足够密"
+    applicable_models:
+      - all
+
+  - id: R004
+    category: diagnosis
+    description: "无源性校验失败"
+    hint: "检查求解是否真正收敛、端口 deembed 设置"
+    applicable_models:
+      - all
+
+  # --- G0 gate findings ---
+  - id: R005
+    category: linewidth
+    description: "rogers4350b_h0.508 微带线宽定案值"
+    values:
+      z0_50ohm_mm: 1.11
+      z0_35ohm_mm: 1.87
+    source: "G0 gate: skrf MLine (HJ) + Pozar + Schneider, max dev 0.45%"
+    verified_by: "scripts/g0_linewidth_verification.py"
+    applicable_models:
+      - branchline_coupler
+      - wilkinson_power_divider
+
+  - id: R006
+    category: diagnosis
+    description: "Branchline -6dB plateau 根因分析"
+    root_cause: |
+      旧配方 series_w_mm=2.20mm 对应实际阻抗 ~31ohm (非标称35.35ohm)。
+      35.35ohm 的正确线宽为 1.87mm。阻抗失配导致耦合度偏差，
+      纯几何调参 (arm_len) 无法突破 -6dB plateau。
+    fix: |
+      1. 将 series_w_mm 改为 1.87mm (G0 定案值)
+      2. 将 series_w_mm 和 shunt_w_mm 加入 optimization.params 做二维调参
+      3. 排查端口 renormalization (50ohm 参考阻抗 vs 实际端口阻抗)
+    applicable_models:
+      - branchline_coupler
+
+  - id: R007
+    category: initial_value
+    description: "Branchline 耦合器线宽初值"
+    formula: |
+      series_w_mm: G0 定案 1.87mm (35.35ohm)
+      shunt_w_mm:  G0 定案 1.11mm (50ohm)
+    note: "旧值 2.20mm 实测 ~31ohm (偏 -12%)，是 -6dB plateau 的主因"
+    applicable_models:
+      - branchline_coupler
+
+  # --- 预筛通道调查（v1 收官）---
+  - id: R008
+    category: architecture
+    description: "预筛通道定案：校准代理（NN），fake/公式通道不承担预筛"
+    conclusion: |
+      fake 解析模型与一切公式通道（含 Pozar 偶/奇模电路分析）的跨保真
+      排序一致性 ρ 均 <0.7（四级实验：0.377/0.608/0.183/-0.278），
+      根因=排序分歧由公式看不见的物理主导（结效应/臂间耦合/馈线真实
+      阻抗）。预筛职责=校准代理（LOOCV ρ=0.845）；fake 降级为
+      冒烟/CI/UI 通道。权威公式的正确位置：综合层、代理物理特征、
+      锚反推——不承担响应预测。
+    evidence: |
+      预筛通道调查（五级实验 E1-E4/G-asset/
+      E-gate/E5/E6 全数据 + 可复跑脚本 + 重开条件，结论已内化为本条规则）
+    reopen_conditions:
+      - "HFSS 仲裁裁决 openEMS 谷位残差为 openEMS 侧问题"
+      - "代理 vs HFSS 配对 ρ<0.8（预筛价值主张失效）"
+    applicable_models:
+      - all
+
+  # --- patch 校准战役前置教训（未开跑即修三处）---
+  - id: R009
+    category: campaign
+    description: "patch 校准战役前置检查清单（辐射器件专属）"
+    conclusion: |
+      patch 战役开跑前揪出并修复三处阻断，后续辐射器件战役照此清单：
+      1) 网格档位：辐射器件（λ0/4 空气盒）在 0.45mm base 下单点超默认
+         solve 上限（10000s，实测被杀）——战役用 auto（λ_sub/50）或
+         显式 solve_timeout_s=36000（sampler 已放宽）；guided 结构才用
+         0.45/0.5 收敛档。
+      2) 配方参数逐一核对模板消费：feed_offset_mm 被 openEMS patch 模板
+         静默忽略（优化 16 点会产生相同响应、代理拟合全废）——新战役前
+         跑 adapter_kit.check_param_semantics 或对 TEMPLATE_META params
+         核对（本例已改 optimization.params=patch_len+patch_w 并披露）。
+      3) 模板未真跑过=先冒烟后战役（branchline 三结构错误同款教训）；
+         patch 冒烟脚本 runs/audit_freq_scale/smoke_patch.py（auto 网格
+         +36000s 已配好），判据：谷位 2.2-2.6GHz 且深度 ≤-10dB。
+    evidence: |
+      patch 冒烟超时实测记录；TEMPLATE_META patch 条目；
+      recipes/patch_antenna_v1.yaml（feed_offset 披露注释）
+    applicable_models:
+      - patch_antenna

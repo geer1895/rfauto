@@ -1,0 +1,103 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ===== Virtual Environment =====
+.venv/
+venv/
+env/
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== 运行产物（整体不入 git，SQLite 是唯一运行索引）=====
+runs/
+
+# ===== 场文件（AEDT/ADS 生成）=====
+*.aedt
+*.aedt.bak
+*.s1p
+*.s2p
+*.s3p
+*.s4p
+*.sNp
+*.dat
+*.sp
+
+# ===== 日志 =====
+logs/
+
+# ===== 缓存 =====
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ===== 环境配置（本机路径不入库）=====
+configs/settings.local.yaml
+configs/chat_settings.yaml
+
+# ===== OS =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== 私有配方 =====
+recipes/private_*.yaml
+
+# ===== 外部参考源码（不入 git）=====
+pyaedt-main/
+microstrip/
+batch.log
+# ===== Spike B ADS sample workspace (extracted, not tracked) =====
+scripts/spike_b_ads/sample_wrk/
+
+# ===== ADS spike 运行产物（不入库，仅脚本与报告入库）=====
+scripts/spike_b_ads/sample_wrk27/
+scripts/spike_b_ads/sim_out_2027/
+de_sim.cfg
+hpeesofsim.cfg
+
+# ===== rfauto result cache (P2) =====
+.rfauto_cache/
+# ===== P3 ADS spike 运行产物（仅脚本与报告入 git，数据集/网表产物不入库）=====
+scripts/spike_b_ads/p3_d*_out/*
+!scripts/spike_b_ads/p3_d*_out/*.txt
+!scripts/spike_b_ads/p3_d*_out/*.json
+# ===== 通用日志与工具缓存 =====
+*.log
+.import_linter_cache/
+
+parts/test_minimal.kicad_pcb
+parts/test_minimal.kicad_prl
+parts/test_minimal.kicad_pro
+
+
+hfss_projects/
+
+# ===== 单工作区方案 B（docs/migration_guide.md）：vendor 运行时与缓存不入库 =====
+# openEMS 二进制为 GPL，且体积大——仓库（拟开源）永不跟踪
+vendor/
+.cache/
+# 工具链（uv 本体+基解释器，2026-09-07 换机起进工作区，体积大不入库）
+tools/
+
+# ===== C15 厂商被动元件模型（条款纪律：模型文件不入 git，只跟踪 catalog 索引）=====
+# 目录级兜底覆盖 *.lib/*.cir/*.mod/ADS zip 等扩展名规则未覆盖的 SPICE 模型
+knowledge/vendor_passives/*
+!knowledge/vendor_passives/catalog.yaml
+
+# 校准套件合成冒烟夹具（.sNp 全局排除的例外）
+!knowledge/calkits/*.s1p
+!knowledge/calkits/*.s2p

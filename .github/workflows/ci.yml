@@ -1,0 +1,64 @@
+# rfauto CI
+#
+# 三级测试标签语义：
+#   unit             —— tests/unit，无 EDA 依赖即可跑（fake 通道覆盖全部核心逻辑）
+#   integration-fake —— fake 档集成（本仓当前归并在 tests/unit 内，同 job 覆盖）
+#   real_edt         —— 真机 AEDT/ADS 路径，pytest marker `real_edt` 标记；
+#                       CI 上永远以 `-m "not real_edt"` 排除，只验证可收集不执行
+#
+# Linux runner 是唯一允许的非 Windows 环境（用户环境约束：本机不做 Linux 适配）。
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  quality:
+    name: lint + contracts + numbers + encoding + sensitive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install "ruff>=0.1.0" "import-linter>=2.0.0" pyyaml
+          # check_numbers 会 import rfauto.cli 实测命令数——src 布局需要可安装态
+          pip install -e . --no-deps
+      - name: ruff (src/ tests/ scripts/)
+        run: ruff check src/ tests/ scripts/
+      - name: import-linter contracts
+        run: lint-imports --config .importlinter
+      - name: number self-check (README vs code)
+        run: python scripts/check_numbers.py
+      - name: UTF-8 no-BOM encoding check
+        run: python scripts/check_encoding.py
+      - name: sensitive content scan
+        run: python scripts/scan_sensitive.py
+
+  test:
+    name: pytest (unit + integration-fake, no EDA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package with test-relevant extras
+        run: |
+          python -m pip install --upgrade pip
+          # dev 组含离线套件全部可选内核（smt/pyarrow/duckdb/gdstk/scikit-learn…），
+          # 缺位时相应测试组 fail 而非 skip
+          pip install -e ".[hfss,mcp,multiobj,dev]"
+      - name: Run unit + integration-fake tests (real_edt deselected)
+        run: |
+          python -m pytest tests/unit -q -m "not real_edt"
+      - name: Verify real_edt tests are collectable and always deselected in CI
+        run: |
+          python -m pytest tests/unit -m "real_edt" --co -q | tail -1
+          echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."

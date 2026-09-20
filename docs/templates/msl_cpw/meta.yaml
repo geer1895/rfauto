@@ -1,0 +1,33 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1 / CPWPort 2（MSL↔CPWG 过渡：双端口 β 金标准（port1→HJ、port2→CPWG 共形映射）+ skrf 两段理想 TL 级联裁判）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_msl_mm
+- w_cpw_mm
+- gap_cpw_mm
+- line_len_mm
+- trans_len_mm
+- r_via_mm
+- via_spacing_mm
+- via_offset_mm
+template: msl_cpw
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  # 2026-09-16 正式注册（wp25-sma-launcher-rootcause）：名义 = synthesize_msl_cpw_model(50, 2.5) 4 位舍入
+  # （w_msl HJ inverse_width 1.113400；w_cpw _cpwg_ri brentq 反解 0.848999 @gap0.2）；
+  # 真机 PASS 留档 pt1_msl_cpw3（|S11|@2.5G −20.0dB、β +0.37%/−1.04%）——几何冻结
+  w_msl_mm: 1.1134
+  w_cpw_mm: 0.849
+  gap_cpw_mm: 0.2
+  line_len_mm: 40.0
+  trans_len_mm: 10.0
+  r_via_mm: 0.15
+  via_spacing_mm: 2.0
+  via_offset_mm: 0.5
+topology: 微带↔接地共面波导过渡：微带直段 → 4 段等分阶梯渐变（线宽线性内插）→ CPW 中心带 + 两侧地（延至板边）+ 双列接地过孔栅栏（地缝合底板 PEC，抑制平行板模）；过渡区居中
+param_semantics: w_msl_mm=50Ω 微带宽（HJ 反解），w_cpw_mm=50Ω CPWG 中心带宽（_cpwg_ri brentq 反解 @gap），gap_cpw_mm=CPW 缝宽，line_len_mm=总长（MSL/CPW 直段各半），trans_len_mm=渐变区长，r_via_mm/via_spacing_mm/via_offset_mm=接地过孔半径/列间距/地内缘→过孔中心

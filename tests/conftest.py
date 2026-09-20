@@ -1,0 +1,148 @@
+"""Pytest 全局 fixtures。"""
+
+import importlib.util
+import os
+import sys
+from pathlib import Path
+
+import pytest
+
+# ── CSXCAD/openEMS 绑定缺失环境的文件级跳过 ──────────────────────────────────
+# CSXCAD/openEMS Python 绑定无 PyPI wheel，需从 openEMS 源码编译进 venv
+# （见 docs/openems_build_guide.md）。下列测试文件验证 CSXCAD 级几何结构/
+# 网格/渲染产物，缺绑定时无法运行——整文件 skip，纯 Python 逻辑测试不受
+# 影响；绑定就位时全部照常运行。
+_CSXCAD_TEST_MODULES = frozenset({
+    # 依据公开仓独立环境全量门的 ModuleNotFoundError: CSXCAD 失败集圈定
+    "test_antenna2_templates.py",
+    "test_array_templates.py",
+    "test_coupled_bpf_template.py",
+    "test_hairpin_alt_template.py",
+    "test_hairpin_template.py",
+    "test_interdigital_template.py",
+    "test_msl_cpw_template.py",
+    "test_openems_real_bundle_offline.py",
+    "test_openems_slotline_port.py",
+    "test_openems_templates_bridge.py",
+    "test_pcell_dsl.py",
+    "test_sir_bpf_template.py",
+    "test_sma_launcher_template.py",
+    "test_solid_import.py",
+    "test_slotline_template.py",
+    "test_template_geometry_audit.py",
+})
+
+
+# 随仓 ngspice（tools/ngspice，未随 git 分发）缺失环境的文件级跳过；
+# 可用 RFAUTO_NGSPICE_BIN 指向本机 ngspice 后照常运行。
+_NGSPICE_TEST_MODULES = frozenset({
+    "test_macromodel.py",
+    "test_macromodel_xval.py",
+    "test_spice_netlist.py",
+})
+
+
+def _ngspice_available() -> bool:
+    import os
+    import shutil
+
+    if shutil.which("ngspice"):
+        return True
+    if os.environ.get("RFAUTO_NGSPICE_BIN"):
+        return True
+    return (_REPO_ROOT / "tools" / "ngspice" / "Spice64" / "bin").is_dir()
+
+
+def pytest_collection_modifyitems(config, items):
+    by_name_csxcad = importlib.util.find_spec("CSXCAD") is not None
+    by_name_ngspice = _ngspice_available()
+    if by_name_csxcad and by_name_ngspice:
+        return
+    skip_csxcad = pytest.mark.skip(
+        reason="CSXCAD/openEMS bindings not installed "
+               "(build from source — see docs/openems_build_guide.md)")
+    skip_ngspice = pytest.mark.skip(
+        reason="ngspice executable not found "
+               "(set RFAUTO_NGSPICE_BIN or install ngspice)")
+    for item in items:
+        name = Path(str(item.fspath)).name
+        if not by_name_csxcad and name in _CSXCAD_TEST_MODULES:
+            item.add_marker(skip_csxcad)
+        if not by_name_ngspice and name in _NGSPICE_TEST_MODULES:
+            item.add_marker(skip_ngspice)
+
+# 确保 src 在 path 中（editable install 时通常不需要，但安全起见）
+src_dir = Path(__file__).parent.parent / "src"
+if src_dir.exists() and str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
+_REPO_ROOT = Path(__file__).parent.parent
+
+
+@pytest.fixture(autouse=True)
+def _guard_cwd():
+    """全局 chdir 守卫（阶段 0.3）。
+
+    测试或被测代码把 cwd 改走且未还原时（#144 类污染的根因之一；
+    openEMS 绑定库也会改写解释器 cwd），自动还原到测试进入前的目录，
+    防止后续测试在错误的工作目录里落产物。
+    """
+    before = os.getcwd()
+    yield
+    if os.getcwd() != before:
+        os.chdir(before)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _runs_pollution_watch():
+    """工作区 runs/ 污染监视（阶段 0.3）。
+
+    unit 套件不应在工作区 runs/ 留任何新目录（真机档 real_edt 永远排除
+    在外）。会话结束时对比前后清单，发现残留如实打印——先透明化，再
+    定位到具体测试后收紧为 fail。
+    """
+    runs = _REPO_ROOT / "runs"
+    before = {p.name for p in runs.iterdir()} if runs.exists() else set()
+    yield
+    after = {p.name for p in runs.iterdir()} if runs.exists() else set()
+    stray = sorted(after - before)
+    if stray:
+        import warnings
+
+        warnings.warn(
+            f"unit 套件在工作区 runs/ 留下 {len(stray)} 个新目录: {stray}",
+            stacklevel=1)
+
+
+@pytest.fixture
+def fake_adapter():
+    """提供 FakeAdapter 实例（2 端口，向后兼容）。"""
+    from rfauto.adapters.fake_adapter import FakeAdapter
+    adapter = FakeAdapter()
+    yield adapter
+    adapter.close()
+
+
+@pytest.fixture
+def fake_adapter_3port():
+    """提供 3 端口 FakeAdapter 实例（P2 调优循环用，iso_s23 可用）。"""
+    from rfauto.adapters.fake_adapter import FakeAdapter
+    adapter = FakeAdapter(n_ports=3)
+    yield adapter
+    adapter.close()
+
+
+@pytest.fixture
+def wilkinson_recipe():
+    """提供解析后的 Wilkinson 配方数据。"""
+    import yaml
+    recipe_path = Path(__file__).parent.parent / "recipes" / "wilkinson_pd_v1.yaml"
+    with open(recipe_path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+@pytest.fixture
+def tmp_run_dir(tmp_path):
+    """提供临时 run 目录。"""
+    from rfauto.infra.run_store import create_run_dir
+    return create_run_dir(tmp_path, "test_run_00000000_00000000")

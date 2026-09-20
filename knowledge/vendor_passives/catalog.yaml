@@ -1,0 +1,29 @@
+# 厂商被动元件库索引（C15）：S 参数/SPICE 模型按 part_id 引用，不硬编码路径。
+#
+# 条款纪律：模型文件按厂商条款经 scripts/vendor_passive_download.py 下载到
+# 本目录，**永不入 git**（.gitignore 目录级兜底）；catalog 只留索引+sha256+来源。
+# 官方出处：Murata SimSurfing https://www.murata.com/en-us/tool/simsurfing
+#           Coilcraft SPICE https://www.coilcraft.com/en-us/models/spice/
+# 加载入口：core.vendor_passives.load_part（严格：缺文件 KeyError/哈希不符
+# ValueError）；core.vendor_passives.validate_catalog（宽松盘点，缺文件
+# skip-not-fail 只标状态）。
+# synthetic 条目：模型文件由 core 生成器确定性再现（synthesize_seed_model_file），
+# sha256 留空不钉死（生成即校验，见测试）；真实厂商条目 sha256 必填。
+# 字段：vendor/mpn/type(inductor|capacitor)/nominal_value(H|F)/srf_ghz/esr_ohm/
+#       model_file(与本文件同目录)/sha256/source_url/license_note/
+#       synthetic/downloaded_at。
+vendor_passives:
+  synth_l10n_cp0p25_demo:
+    vendor: synthetic
+    mpn: SYNTH-IND-10NH-0P25PF
+    type: inductor
+    nominal_value: 1.0e-08
+    srf_ghz: 3.1830988618379066
+    esr_ohm: 0.5
+    model_file: synth_l10n_cp0p25_demo.s2p
+    sha256: null
+    source_url: ''
+    license_note: 合成种子件（core.vendor_passives 生成器确定性再现，无厂商条款约束）；真实厂商模型（Murata SimSurfing/Coilcraft）须经下载器按条款获取，文件不入
+      git
+    synthetic: true
+    downloaded_at: null

@@ -1,0 +1,25 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ LumpedPort 1（PIFA 居中短路板 λ/4：谷位/谷深；L 路径式定版标称 17.0785 ≈ 真机 override 17.08 → −8.79dB@2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ，见 smoke_note）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- pifa_l_mm
+- pifa_w_mm
+- pifa_ws_mm
+- pin_back_mm
+- pin_y_mm
+template: pifa
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ pifa_l_mm: 17.0785
+ pifa_w_mm: 8.0
+ pifa_ws_mm: 2.0
+ pin_back_mm: 2.0
+ pin_y_mm: 2.0
+topology: PIFA（C1）：贴片 z=h（L×W）+ +x 边短路板（宽 Ws，z 0→h 触地）+ 馈针（距短路板 pin_back，y 偏 pin_y，针顶触贴片、针底触地）；LumpedPort 沿针 z 向；基板 + z-min PEC 无限大地
+param_semantics: pifa_l_mm=贴片长 L（L 路径式定版 L=λ0/(4√εeff(W))，HJ @W；居中短路板电流不绕行，文献通式 L+W−Ws 的 +W−Ws 项不适用，真机两轮实证），pifa_w_mm=贴片宽 W，pifa_ws_mm=短路板宽 Ws（≤W，几何输入不进谐振式），pin_back_mm=馈针距短路板（定匹配），pin_y_mm=馈针 y 偏置（<W）
+smoke_note: 真机冒烟（2026-09-14，旧通式标称 L=11.0785）FAIL：|S11|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，override 复跑）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）

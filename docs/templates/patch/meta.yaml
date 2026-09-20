@@ -1,0 +1,19 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ MSLPort 1（单端口回退）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- patch_len_mm
+- patch_w_mm
+- feed_offset_mm
+topology: 矩形贴片（patch_len = 谐振 λ/2 轴，沿馈电方向 y）+ 边缘微带馈电
+template: patch
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  patch_len_mm: 34.9
+  patch_w_mm: 50.0
+  feed_offset_mm: 10.0

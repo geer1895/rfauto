@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>rfauto 射频调优工作台</title>
+<style>
+  :root {
+    --bg:#0e1116; --bg2:#12161e; --panel:#171c26; --panel2:#1d2432;
+    --fg:#dce3ee; --muted:#8391a7; --accent:#4fc3f7; --accent2:#22d3a5;
+    --ok:#5ac26f; --warn:#ffb74d; --err:#ef5350; --border:#232b3a;
+    --input-bg:#0d1118; --plot-bg:#0d1118; --shadow:0 6px 20px rgba(0,0,0,.35);
+  }
+  body.light {
+    --bg:#f3f5f9; --bg2:#ffffff; --panel:#ffffff; --panel2:#eaeef5;
+    --fg:#1b2330; --muted:#64708a; --border:#d9e0ea;
+    --input-bg:#ffffff; --plot-bg:#ffffff; --shadow:0 6px 18px rgba(30,40,70,.10);
+    --ok:#2e7d32; --err:#c62828; --warn:#b26a00; --accent:#0277bd;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.55 "Segoe UI","Microsoft YaHei",system-ui,sans-serif; display:flex; min-height:100vh; }
+
+  /* ── 侧边栏（分组导航）── */
+  aside { width:212px; flex:none; background:var(--bg2); border-right:1px solid var(--border);
+          display:flex; flex-direction:column; padding:16px 10px 10px; }
+  aside .logo { font-size:18px; font-weight:700; padding:2px 12px 14px; letter-spacing:.4px;
+                background:linear-gradient(90deg,var(--accent),var(--accent2));
+                -webkit-background-clip:text; background-clip:text; color:transparent; }
+  aside .logo small { display:block; font-size:10px; color:var(--muted); font-weight:normal;
+                      letter-spacing:1.5px; -webkit-text-fill-color:var(--muted); }
+  aside nav .group { color:var(--muted); font-size:10.5px; text-transform:uppercase;
+                     letter-spacing:1.5px; padding:12px 12px 4px; }
+  aside nav button { display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:none; color:var(--muted); border:none; padding:8px 12px; cursor:pointer;
+    border-radius:8px; font-size:13.5px; transition:background .15s,color .15s;
+    border-left:3px solid transparent; }
+  aside nav button:hover { background:var(--panel2); color:var(--fg); }
+  aside nav button.active { background:var(--panel2); color:var(--accent);
+    border-left-color:var(--accent); font-weight:600; }
+  aside nav button .ico { width:18px; text-align:center; }
+  aside .foot { margin-top:auto; padding:10px 12px; font-size:11px; color:var(--muted); }
+
+  /* ── 主区 ── */
+  main { flex:1; padding:18px 26px; max-width:1560px; }
+  .pagehead { display:flex; align-items:baseline; gap:14px; margin-bottom:14px; }
+  h2.page { margin:0; font-size:19px; }
+  h2.page small { color:var(--muted); font-size:12px; margin-left:10px; font-weight:normal; }
+  .pagehead .spacer { flex:1; }
+
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px;
+           padding:16px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .panel b.title { display:block; margin-bottom:10px; font-size:13px; color:var(--accent);
+                   letter-spacing:.5px; }
+  .panel .wclose { float:right; background:none; border:none; color:var(--muted);
+                   cursor:pointer; font-size:15px; padding:0 4px; }
+  .panel .wclose:hover { color:var(--err); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  #widget-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:16px; }
+  #widget-grid .widget { grid-column:span 4; }
+  #widget-grid .widget.w6 { grid-column:span 6; }
+  #widget-grid .widget.w12 { grid-column:span 12; }
+  @media (max-width:1150px){ .grid2,.grid3 { grid-template-columns:1fr; }
+    #widget-grid .widget, #widget-grid .widget.w6 { grid-column:span 12; } }
+
+  /* KPI 卡片 */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; margin-bottom:16px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px;
+          padding:14px 16px; box-shadow:var(--shadow); }
+  .card .k { color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
+  .card .v { font-size:23px; font-weight:650; margin-top:4px; }
+  .card .v.ok { color:var(--ok); } .card .v.warn { color:var(--warn); } .card .v.err { color:var(--err); }
+
+  table { border-collapse:collapse; width:100%; }
+  th,td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:normal; font-size:11.5px; text-transform:uppercase;
+       letter-spacing:.6px; }
+  tbody tr { transition:background .12s; }
+  tbody tr:hover { background:var(--panel2); }
+  tr.clickable { cursor:pointer; }
+  .badge { display:inline-block; padding:1px 9px; border-radius:10px; font-size:11.5px; }
+  .badge.ok { background:rgba(90,194,111,.14); color:var(--ok); }
+  .badge.err { background:rgba(239,83,80,.14); color:var(--err); }
+  .badge.warn { background:rgba(255,183,77,.14); color:var(--warn); }
+  .badge.muted { background:var(--panel2); color:var(--muted); }
+
+  input,select,textarea { background:var(--input-bg); color:var(--fg); border:1px solid var(--border);
+    padding:6px 10px; border-radius:7px; font:inherit; }
+  input:focus,select:focus,textarea:focus { outline:1.5px solid var(--accent); }
+  button.act { background:linear-gradient(90deg,var(--accent),#3aa5d8); color:#04121c; border:none;
+    padding:7px 18px; border-radius:8px; cursor:pointer; font-weight:650; }
+  body.light button.act { color:#ffffff; }
+  button.act:hover { filter:brightness(1.12); }
+  button.act:disabled { opacity:.45; cursor:not-allowed; }
+  button.minor { background:var(--panel2); color:var(--fg); border:1px solid var(--border);
+    padding:5px 13px; border-radius:7px; cursor:pointer; }
+  button.minor:hover { border-color:var(--accent); color:var(--accent); }
+  button.danger { background:transparent; color:var(--err); border:1px solid var(--err);
+    padding:5px 13px; border-radius:7px; cursor:pointer; }
+  pre { background:var(--input-bg); padding:10px; overflow:auto; max-height:340px;
+        border-radius:8px; font-size:12px; }
+  canvas.plot { background:var(--plot-bg); width:100%; height:260px; border-radius:8px; }
+  .muted { color:var(--muted); }
+  .msg { padding:9px 14px; border-radius:8px; margin-bottom:12px; display:none;
+         position:sticky; top:8px; z-index:5; }
+  .msg.ok { background:rgba(90,194,111,.14); color:var(--ok); display:block; border:1px solid rgba(90,194,111,.4); }
+  .msg.err { background:rgba(239,83,80,.14); color:var(--err); display:block; border:1px solid rgba(239,83,80,.4); }
+  #model3d { width:100%; height:420px; }
+
+  #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,.86); z-index:99;
+              align-items:center; justify-content:center; flex-direction:column; cursor:zoom-out; }
+  #lightbox.show { display:flex; }
+  #lightbox canvas, #lightbox img { max-width:94vw; max-height:88vh; background:var(--input-bg); border-radius:8px; }
+  #lightbox .cap { margin-top:8px; }
+
+  #chat-log { height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .bubble { max-width:82%; padding:8px 12px; border-radius:10px; white-space:pre-wrap; }
+  .bubble.user { align-self:flex-end; background:#16324a; color:#dce3ee; }
+  body.light .bubble.user { background:#d6ecfa; color:#1b2330; }
+  .bubble.bot { align-self:flex-start; background:var(--panel2); }
+
+  .legend span { margin-right:14px; }
+  .legend3d { margin-top:6px; font-size:12px; }
+  .legend3d .chip { display:inline-block; width:12px; height:12px; border-radius:2px;
+                    margin:0 4px -2px 12px; border:1px solid #555; }
+  .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .spin { display:inline-block; width:14px; height:14px; border:2px solid var(--accent);
+          border-top-color:transparent; border-radius:50%; animation:sp 1s linear infinite; vertical-align:-2px; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  details.help { background:var(--panel2); border:1px dashed var(--border); border-radius:10px;
+                 padding:8px 12px; margin-bottom:14px; font-size:12.5px; color:var(--muted); }
+  details.help summary { cursor:pointer; color:var(--accent); }
+  details.help li { margin:3px 0; }
+  .chipbtn { border:1px solid var(--border); background:var(--panel2); color:var(--muted);
+             padding:4px 12px; border-radius:14px; cursor:pointer; font-size:12px; }
+  .chipbtn:hover { color:var(--accent); border-color:var(--accent); }
+  /* 指南页 */
+  .guide-flow { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:10px 0; }
+  .guide-step { background:var(--panel2); border-radius:10px; padding:12px; }
+  .guide-step .n { color:var(--accent); font-weight:700; font-size:18px; }
+  .guide-step b { display:block; margin:4px 0; }
+  .guide-step div { font-size:12px; color:var(--muted); }
+  .glossary td:first-child { font-weight:600; color:var(--accent); white-space:nowrap; }
+</style>
+</head>
+<body>
+<aside>
+  <div class="logo">rfauto<small>HFSS · ADS 调优工作台</small></div>
+  <nav id="nav">
+    <div class="group">工作区</div>
+    <button data-v="dashboard" class="active"><span class="ico">◈</span>总览</button>
+    <button data-v="import"><span class="ico">⇩</span>工程导入</button>
+    <button data-v="recipe"><span class="ico">✎</span>配方编辑</button>
+    <button data-v="tune"><span class="ico">⚙</span>优化调参</button>
+    <button data-v="optstack"><span class="ico">◍</span>优化洞察</button>
+    <button data-v="loopboard"><span class="ico">▤</span>执行看板</button>
+    <div class="group">分析</div>
+    <button data-v="runs"><span class="ico">☰</span>Run 历史</button>
+    <button data-v="detail" style="display:none"><span class="ico">◉</span>Run 详情</button>
+    <button data-v="sparams"><span class="ico">∿</span>S 参数分析</button>
+    <button data-v="farfield"><span class="ico">✧</span>远场方向图</button>
+    <button data-v="field"><span class="ico">▦</span>场可视化 3D</button>
+    <button data-v="calibration"><span class="ico">⌖</span>校准工作台</button>
+    <button data-v="playground"><span class="ico">◐</span>代理 Playground</button>
+    <button data-v="timeline"><span class="ico">⌛</span>成本时间线</button>
+    <button data-v="reports"><span class="ico">▣</span>报告中心</button>
+    <button data-v="tools"><span class="ico">∑</span>微波工具箱</button>
+    <button data-v="agent"><span class="ico">✦</span>Agent 助手</button>
+    <div class="group">帮助与系统</div>
+    <button data-v="guide"><span class="ico">📖</span>使用指南</button>
+    <button data-v="solvers"><span class="ico">⛁</span>求解器</button>
+  </nav>
+  <div class="foot">
+    <button class="minor" id="theme-toggle" style="width:100%;margin-bottom:8px">☀ 浅色模式</button>
+    HFSS 2023.1 verified<br>127.0.0.1:8642 · 本机服务
+  </div>
+</aside>
+<main>
+  <div id="msg" class="msg"></div>
+  <div id="lightbox"><div class="cap" id="lightbox-cap"></div></div>
+
+  <section id="view-dashboard"></section>
+  <section id="view-import" style="display:none"></section>
+  <section id="view-recipe" style="display:none"></section>
+  <section id="view-tune" style="display:none"></section>
+  <section id="view-optstack" style="display:none"></section>
+  <section id="view-loopboard" style="display:none"></section>
+  <section id="view-runs" style="display:none"></section>
+  <section id="view-detail" style="display:none"></section>
+  <section id="view-calibration" style="display:none"></section>
+  <section id="view-playground" style="display:none"></section>
+  <section id="view-sparams" style="display:none"></section>
+  <section id="view-farfield" style="display:none"></section>
+  <section id="view-field" style="display:none"></section>
+  <section id="view-timeline" style="display:none"></section>
+  <section id="view-reports" style="display:none"></section>
+  <section id="view-tools" style="display:none"></section>
+  <section id="view-agent" style="display:none"></section>
+  <section id="view-guide" style="display:none"></section>
+  <section id="view-solvers" style="display:none"></section>
+</main>
+<script src="/static/vendor/echarts.min.js"></script>
+<script src="/static/vendor/marked.min.js"></script>
+<style>
+  /* 对话气泡内的 markdown 样式 */
+  .bubble.md p { margin: 4px 0; }
+  .bubble.md h1, .bubble.md h2, .bubble.md h3 { font-size: 13.5px; margin: 8px 0 4px; color: var(--accent); }
+  .bubble.md ul, .bubble.md ol { margin: 4px 0; padding-left: 18px; }
+  .bubble.md code { background: rgba(127,140,160,.18); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .bubble.md pre { background: var(--input-bg); padding: 8px; border-radius: 6px; max-height: 260px; }
+  .bubble.md table { border-collapse: collapse; margin: 6px 0; }
+  .bubble.md th, .bubble.md td { border: 1px solid var(--border); padding: 3px 8px; font-size: 12px; }
+</style>
+<script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

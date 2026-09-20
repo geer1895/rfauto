@@ -1,0 +1,33 @@
+f0_ghz: 2.5
+n_ports: 4
+extraction: 全 S 矩阵 4×4 @ ratrace.s4p（官方激励轮转 4 run：SetEnabled 逐端口激励+匹配终端探针；skrf Touchstone 主路，CSV 降兼容）。裁判=理想 180° 混合环 S 矩阵闭式（#208 Y 矩阵推导）：Σ 均分 -3dB 同相、Δ 隔离、out1↔out2 互隔离；规范角位 Σ=0°/out1=60°/Δ=120°/out2=180°
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_ring_mm
+- w_feed_mm
+template: ratrace
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_ring_mm: 0.604
+  w_feed_mm: 1.1134
+  r_ring_mm: 17.344
+# ── openEMS 直角坐标渲染层引擎常数（ratrace-k 定版 2026-09-16；注释性元数据，
+#    仅 adapter 渲染层消费——物理 r_ring_mm / synthesis / HFSS 通道不变，#219③）──
+engine_constants:
+  ring_mesh_k:
+    what: "渲染半径 R_render = r_ring_mm / k(BASE)；k 补偿直角网格阶梯环慢波伪象（HFSS 仲裁 2.465GHz 背书 verdict.k_attribution=MESH_ARTIFACT）"
+    formula: "k(BASE) = 1 + (k02−1)·((k04−1)/(k02−1))^t，t=(BASE−0.2)/0.2；即 (k−1) ∝ BASE^α 幂律，α=log2((k04−1)/(k02−1))≈0.915"
+    anchors:
+      k_0p2mm: 1.0877
+      k_0p4mm: 1.1654
+    valid_domain_mm: [0.2, 0.4]
+    out_of_domain: "夹到最近锚并在渲染脚本写'未定标档 clamp'注释行（默认自动档 BASE=λ_sub/50=1.1405mm → k(0.4)=1.1654），禁止外推"
+    source: "src/rfauto/adapters/openems_templates.py ratrace_ring_mesh_k / ratrace_ring_mesh_k_clamped"
+    calibration: "2026-09-12 两点一阶标度 k_needed=k_cur×F0/f_center_avg（收敛核验存档）；2026-09-16 真机回验两锚闭合：0.4mm balance 中心 2.5013GHz（k_eff 1.1631，锚差 −0.2%）、0.2mm 2.525GHz（k_eff 1.0915，锚差 +0.35%），门全过（rf_template_references.md §9.1）"
+    archived_pt8_k: "1.0975（0.4mm 档历史定标 _RATRACE_RING_MESH_K，仅存证不再消费）"
+  preferred_root_fix: "柱坐标渲染 render_ratrace_cylindrical：无阶梯化 k=1（#219/#232，0.4mm 2.470GHz / 0.2mm 2.4875GHz 对 HFSS 2.465GHz）"
+  cap_row_criterion: "保留原判据（|行中心|>R_OUT 跳行，仲裁决议）；k(0.4) 下 0.4mm 档候选判据为无操作（顶行上缘 15.2921>R_OUT 15.1842，覆盖 100%），默认自动档每侧 1 行 cap sliver 0.0651mm=0.057·BASE（覆盖 98.84%）"

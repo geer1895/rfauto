@@ -1,0 +1,28 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（梳状带通：带内回波纹波 + 带外抑制；裁判=并联谐振 J 倒置器链 c3_circuit_sparams，同步 TEM 极限对照 C13 coupling_matrix_response 互证，实测 max|ΔS21|=0.00045dB）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- order
+- w_mm
+- res_len_mm
+- gaps_mm
+- feed_len_mm
+- c_load_pf
+template: combline
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  order: 3
+  w_mm: 1.1117
+  res_len_mm: 7.8202
+  gaps_mm: [0.1393, 0.9291, 0.9291, 0.1393]
+  feed_len_mm: 56.0899
+  c_load_pf: 1.2732
+topology: 梳状带通（§C3 滤波器族 II，MYJ Ch.10 口径）：N 根缩短棒平行排列，接地端同端（底端全部过孔 r=0.15mm），顶端各接 LumpedElement 装载电容（CSXCAD caps=True，C=c_load_pf；谐振条件 cot θr=ω0·C·Z_r 定缩短长度）；双 50Ω 馈线缝耦合自 y=−BOARD 板边引入（单轴 PML）
+param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_mm=棒/馈线宽（50Ω，skrf HJ 综合 live 值）；res_len_mm=缩短棒物理长（θr=π/4 理想短路口径 8.8669mm − 登记⑨ 过孔缩短 1.0467mm = 7.8202mm，与 c_load_pf 经谐振条件联动、可独立失调）；gaps_mm[j]=第 j 缝边到边（同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长；c_load_pf=顶端装载电容（LumpedElement C 值进电路裁判与渲染脚本，不改变导体几何——审计以 LUMPED_VALUE_PARAMS 豁免几何驱动判据，渲染字面量由 test_combline_template 钉住）
+design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；θr=π/4 → C=1/(ω0 Z_r)=1.2732pF；MYJ 斜率 b=½(ω0C+csc²θr·θr/Z_r)=0.025708 S（装载抬升 1.64× vs 裸棒）→ 缝更紧 [0.1393, 0.9291, 0.9291, 0.1393]；登记⑨ 过孔补偿（设计链 l_via_h=None，C 不变棒长重解）：t=(1−Ax)/(A+x)（A=ω0CZ_r=1、x=ω0L/Z_r=0.093）→ θ_c=0.69269 rad、棒长缩短 1.0467mm，Y(f0) 过孔端接自证 |Y|=1.0e-17 S
+smoke_note: 真机 openEMS 冒烟后置（LumpedElement 电容真机行为待冒烟实证；循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收

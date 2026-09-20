@@ -1,0 +1,18 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（单阶跃两段线：锚=skrf 级联 HJ 闭式裁判）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w1_mm
+- w2_mm
+- line_len_mm
+template: wstep
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w1_mm: 1.1134
+  w2_mm: 1.897
+  line_len_mm: 40.0

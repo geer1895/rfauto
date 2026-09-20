@@ -1,0 +1,21 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ LumpedPort 1（一周长方环，自由空间口径：判据=Zin 电抗过零 f0±12% + 过零处 R≥20Ω，S11 −5dB 次级；旧贴地口径真机 R=0.56Ω 镜像抵消 FAIL，v2 见 smoke_note）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- loop_side_mm
+- loop_w_mm
+- loop_gap_mm
+template: loop
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ loop_side_mm: 31.2284
+ loop_w_mm: 1.0
+ loop_gap_mm: 1.0
+topology: 环形（C1，2026-09-16 自由空间改造）：z=0 方环（中心线边 a、带宽 w，顶/左/右全跨含角）+ 底边中央断口 g（馈口位）LumpedPort 跨断口（E 沿 x，dipole 中央馈口同型）；无基板无地：底 MUR + 域 z 向下延 λ0/4（dipole 同款）
+param_semantics: loop_side_mm=方环中心线边 a（一周长 C=4a≈λ0，自由空间 a=λ0/4，εeff→1），loop_w_mm=环带宽，loop_gap_mm=底边断口宽（<a，激励向 x 跨度）
+smoke_note: 真机 v1（2026-09-14，旧贴地口径 λg/4=18.5515、z=h 贴 PEC 地）FAIL：S11 −0.19dB；Zin 电抗过零 2.3825GHz（−0.7%，谐振长度口径正确）但 R=0.56Ω。归因（像理论，v2 实证）：水平环贴 PEC 地 0.508mm（0.004λ0），镜像反向电流抵消辐射 → R_rad→0。改造（2026-09-16）：自由空间口径（无板无地、底 MUR、域下延 λ0/4、环面 z=0、a=λ0/4=31.2284），判据改电抗过零 f0±12% + 过零处 R≥20Ω（S11 −5dB 次级；一周长环馈阻抗文献 ≈100-200Ω 对 50Ω 固有失配，谷深非谐振判据）。v2 真机（2026-09-16，solve 352s）PASS：Zin 电抗过零 2.6774GHz（+11.6%，端效应窗内）R=112.02Ω（v1 0.56Ω → 112Ω，镜像抵消归因实证；落在文献 100-200Ω 带内），S11 −8.67dB@2.64GHz（次级 −5dB 门过）；判读窗 2.0-2.8GHz 321/321 点全保留（Σ|S|² 全带 ≤0.94，无带边伪象）；谐振位 +11.6% 为细带/断口馈电端效应，设计式不预补偿（#190）

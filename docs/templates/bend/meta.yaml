@@ -1,0 +1,16 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（直角弯折：锚=|S11|<-15dB 绝对门+β 金标准；裁判=理想级联）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- arm_len_mm
+template: bend
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 1.1134
+  arm_len_mm: 20.0

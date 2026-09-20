@@ -1,0 +1,49 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（交替取向发夹线 BPF：带内回波纹波 + 带外抑制；裁判=C13 耦合矩阵闭式 coupling_matrix_response，gap→k 纯 KJ）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- order
+- w_mm
+- arm_len_mm
+- arm_gap_mm
+- gap_mm
+- tap_frac
+template: hairpin_alt
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  order: 3
+  # 2026-09-18 名义（铁律 #1c/#252 全部综合精算）：hairpin_design_from_order(3, 2.5, 0.05, 20.0)
+  # 纯 KJ 链（kgap_corrected=False：同向 c(gap) 表是同向相消效应的标定，对交替取向不适用）
+  # 按 hairpin 同规则舍入（w/arm_len/gap 4 位、τ 6 位），test_hairpin_alt_template 按链复算钉住
+  w_mm: 1.1117
+  # 闭式 λg/2=35.4676（HJ εeff=2.8578 @w）× c_f0=1.0370（逐腔 U 弯+开路端等效缩短的同向 B2 先验，
+  # 与相邻取向无关；hairpin_alt 真机复标后可改）
+  arm_len_mm: 36.7799
+  arm_gap_mm: 3.0
+  # C13 N=3/RL20/FBW5% → k=0.051514 → KJ 反解 1.132829（不乘 c(gap)；同向下该缝实测 k_EM 仅 0.0133）
+  gap_mm: 1.1328
+  # Q_e=17.0689 → 抽头闭式 × B1 c(τ)=1.37437−0.75218·τ 重解 τ*=0.398159（抽头结构逐腔相同）
+  tap_frac: 0.398159
+topology: 交替取向发夹线带通（同向本体根修变体）：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，奇数序谐振器上下翻转（弯带/开路端 y 逐腔轮替），相邻臂开路端交替 → 电/磁耦合同号叠加；相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 各自开路端计，末腔翻转时输出抽头自 y1 向下）。可选布局选项 orientation=alternating|same（缺省 alternating；same=同网格同向对照，不进 params）
+# ── 精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────
+# 同向 hairpin 因 k_EM 上限 0.0155≪0.0515 无自洽设计点而锁 False（0cv/0dk）；本变体在
+# 真机 k(gap) 图谱判读门过门前同样 False——不凑绿（#122）。
+campaign_capable: false
+campaign_capable_reasons:
+- 真机 k(gap) 图谱未复跑：交替取向 k_EM(gap) 单调性与比值门（c=k_EM/k_KJ∈[0.6,1.2]）均未实测（预声明门见 scripts/hairpin_q_extract.HAIRPIN_ALT_KGAP_GATE）
+- c_f0=1.0370 / c(τ) 沿用同向标定先验，hairpin_alt 未独立复标
+# 解锁判据（离线两条可由单测钉住；真机两条由 hairpin_q_extract --kgap-analyze --gate alt 判读）
+campaign_unlock_criteria:
+  offline:
+  - 设计点自洽：综合（hairpin_design_from_order 纯 KJ）→ 渲染（_hairpin_layout orientation=alternating）→ 闭式回代（arm_len/c_f0→f0=2.5、gap→k=0.0515、τ→Q_e=17.07）逐位往返（test_hairpin_alt_template）
+  - 离线几何审计（#212）：N 个 DC 隔离谐振器、相邻臂开路端交替、缝内网格线 ≥1、端口贴板边
+  real_machine:
+  - k(gap) 单调：k_EM 随 gap 严格递减（≥3 点；同向拓扑真机非单调=相消签名）
+  - 比值门：c=k_EM/k_KJ 每点 ∈ [0.6, 1.2]（下限=同向真机比值上限 ≈0.30 的 2×；上限=KJ 对 NGSolve 独立源 1.003-1.049 加 3D 余量）
+  - 设计 k=0.0515 落在实测 k_EM 覆盖区间内（可达性，名义定版前提）
+  unlock_rule: offline 两条 + real_machine 三条全过 → campaign_capable=true（并同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake 派发口径）；任一不过维持 false 并列原因

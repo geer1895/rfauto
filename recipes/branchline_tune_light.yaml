@@ -1,0 +1,29 @@
+# Branchline 调谐闭环配方（G0 定案后 + 二维调参版）
+# G0 gate: 35.35ohm -> 1.87mm, 50ohm -> 1.11mm (三源验证 max dev 0.45%)
+# 旧值 2.20mm 实测 ~31ohm 是 -6dB plateau 的主因
+# 目标：S11 带内最大 <= -15 dB
+model: branchline_coupler
+recipe_version: 1
+schema_version: 1
+notes: "2.4GHz branchline coupler: G0 verified linewidths + 2D tune (series_w + shunt_w)"
+params:
+  f0_ghz:      {value: 2.4,  unit: GHz}
+  z0_ohm:      {value: 50,   unit: ohm}
+  substrate:   rogers4350b_h0.508
+  arm_len_mm:  {value: 20.5}
+  series_w_mm: {value: 1.87}   # G0 verified: 35.35ohm (was 2.20 -> ~31ohm)
+  shunt_w_mm:  {value: 1.11}   # G0 verified: 50ohm (was 1.10)
+setup:
+  solver: DrivenModal
+  freq_range_ghz: [2.3, 2.5]
+  points: 11
+  convergence_delta: 0.1
+  radiation_box: open
+objectives:
+  - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+optimization:
+  params:
+    arm_len_mm:  {low: 17.0, high: 21.0}
+    series_w_mm: {low: 1.5,  high: 2.5}   # 2D: widen around G0 verified value
+    shunt_w_mm:  {low: 0.8,  high: 1.5}   # 2D: widen around G0 verified value
+limits: {max_trials: 15, max_wall_hours: 2}

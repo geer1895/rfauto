@@ -1,0 +1,4 @@
+.layer_dielectric=1.51
+.dielectric_constant=4.50
+.loss_tangent=0.02
+.material=fr4

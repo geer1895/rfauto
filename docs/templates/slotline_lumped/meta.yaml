@@ -1,0 +1,24 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: LumpedPort 跨槽 R=线阻抗档（CalcPort 参考同值）：带载比值 S11/S21 #250 口径，assemble_route_b_sparams 归一到 50Ω 对拍；β 主口径=双行波拟合 two_wave_beta_fit（线性斜率法驻波下偏 +10.7% 只作诊断列）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- line_len_mm
+- h_mm
+template: slotline_lumped
+substrate:
+  er: 3.66
+  h_mm: 1.524
+nominal_params:
+  w_mm: 1.0
+  line_len_mm: 93.4624
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+topology: 均匀槽线段（路线 B，官方 AddLumpedPort 范式）：金属/基板/槽贯通全域直入 PML（匹配端接），两端 LumpedPort 跨槽桥接（盒三向边全部入网，#198/#174）；槽跨压探针 9 站 [−L/4,+L/4]
+param_semantics: w_mm=槽宽，line_len_mm=两端口间距，h_mm=基板厚（模板参数，理由同 slotline）；r_port_ohm 缺省=闭式 Z0（可注入 HFSS Zpv 档）
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；端口盒/槽缘/基板界面精确入网、#152 守卫
+smoke_note: 真机 β_B 68.40 vs HFSS-wide +2.44%（门 3% PASS）。原始 |S11|/|S21| 为"PML 匹配线上并联抽头"拓扑解析必然（βL=2π 时 S11=−1/2/S21=+1/2）：β 生产口径可用，S 参数 D 级需 tap_network_sparams 换算（#250）

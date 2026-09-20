@@ -1,0 +1,33 @@
+# Wilkinson Power Divider - 配方模板（附录 A）
+model: wilkinson_power_divider
+recipe_version: 1
+schema_version: 1
+notes: "2.4GHz 等分 Wilkinson，Rogers 4350B 0.508mm"
+params:
+  f0_ghz:      {value: 2.4,  unit: GHz}
+  z0_ohm:      {value: 50,   unit: ohm}
+  substrate:   rogers4350b_h0.508
+  division:    "1:1"
+  arm_len_mm:  {value: 20.5}
+  series_w_mm: {value: 0.33}
+  shunt_w_mm:  {value: 1.10}
+setup:
+  solver: DrivenModal
+  freq_range_ghz: [1.5, 3.5]
+  points: 401
+  convergence_delta: 0.02
+  radiation_box: open
+ops: []
+objectives:
+  - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  - {metric: s21_db, band: [2.3, 2.5], op: mean_within, value: [-3.6, -3.1]}
+  - {metric: iso_s23_db, band: [2.3, 2.5], op: min_above, value: 20}
+optimization:
+  # P2 调优参数范围（Optuna TPE 搜索空间）
+  params:
+    arm_len_mm:  {low: 18.0, high: 23.0}
+    series_w_mm: {low: 0.25, high: 0.45}
+    shunt_w_mm:  {low: 0.90, high: 1.30}
+limits: {max_trials: 60, max_wall_hours: 12}
+export:
+  touchstone: {renorm_ohm: 50, deembed: false}

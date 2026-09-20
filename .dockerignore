@@ -1,0 +1,32 @@
+# Docker 构建上下文排除清单（G7，2026-09-18）
+# 原则：上下文只保留 pip install . 所需最小集（pyproject.toml + README.md + src/）；
+# 运行数据、本地环境、参考区、内部文档一律不入上下文（体积 + 敏感面双保险，
+# 与 pyproject sdist exclude 同源口径）。
+
+# 版本控制与缓存
+.git
+.gitignore
+.gitattributes
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+
+# 工作区大目录 / 本地环境（绝不进构建上下文）
+runs/
+.venv/
+knowledge/
+uv.lock
+
+# 参考区 / 内部文档（发布卫生同源口径）
+ads_reference/
+pyaedt_reference/
+skills/
+recipes/
+
+# 构建产物
+build/
+dist/

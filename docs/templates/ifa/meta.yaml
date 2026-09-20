@@ -1,0 +1,21 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ LumpedPort 1（IFA λ/4 窄臂：谷位/谷深；真机 −8.48dB@2.44GHz（+1.7%）PASS，并联型谐振 R_peak≈103Ω 限谷深）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- ifa_arm_mm
+- ifa_w_mm
+- feed_off_mm
+template: ifa
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ ifa_arm_mm: 18.5515
+ ifa_w_mm: 1.0
+ feed_off_mm: 2.0
+topology: IFA（C1，PIFA 窄臂退化）：短路板 x∈[−1,0]（z 0→h）+ 臂 z=h 自短路板 −x 向伸出 λ/4 + 馈针=LumpedPort x=−feed_off（顶触臂、底触地，不另画金属针盒）；基板 + z-min PEC 地
+param_semantics: ifa_arm_mm=臂长（短路板起算 ≈λ0/(4√εeff)，HJ @臂宽），ifa_w_mm=臂宽，feed_off_mm=馈针-短路板间距（>1.5mm，定输入阻抗：2mm ⇒ R_peak≈100Ω，再近压向 50Ω）
+smoke_note: 真机冒烟（2026-09-14，去针盒 v2）PASS：S11 −8.48dB @2.44GHz（+1.7%），Zin@谷=103−24jΩ（并联型谐振，馈针 2mm 过耦合限谷深）；与有针盒 v1 变体 −8.52dB@2.44 逐点一致 ⇒ 针盒无影响、谐振为真。带外 R≈0（1.9GHz −0.11+4.3j、2.9GHz 0.19+3.3j）是无耗短路桩馈结构的正常反应，首判"端口短路→PARTIAL"已证伪

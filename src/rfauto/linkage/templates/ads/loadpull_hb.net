@@ -1,0 +1,6 @@
+Options ResourceUsage=yes UseNutmegFormat=no EnableOptim=no
+HB:HB1 Freq[1]={{F0}} {{FREQ_UNIT}} Order[1]={{ORDER}} StatusLevel=2
+Port:SRC  N_IN 0 Num=1 Z={{Z0}} Ohm P[1]=dbmtow({{POWER_DBM}}) Freq[1]={{F0}} {{FREQ_UNIT}}
+{{SNP_LINE}}
+Port:P2  N_OUT 0 Num=2 Z={{Z_RE}}+j*({{Z_IM}})
+aele Pout_W=0.5*real(N_OUT[1]*conj(N_OUT[1]/({{Z_RE}}+j*({{Z_IM}})))); Pout_dBm=10*log10(Pout_W)+30; Gain_dB=Pout_dBm-({{POWER_DBM}});

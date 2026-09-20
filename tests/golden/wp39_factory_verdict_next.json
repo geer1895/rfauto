@@ -1,0 +1,353 @@
+{
+ "kind": "wp39_factory_verdict_next",
+ "captured_at": "2026-09-16",
+ "provenance": {
+  "queue_item": "wp39-factory-verdict-next（WP3.9 MVP 基准换代 followUps：mline 工厂地貌根治+ratrace 换判据真机重跑）",
+  "live_result": "runs/wp39_factory_verdict_next/summary.json",
+  "attribution": "runs/wp39_factory_verdict_next/attribution_mline_s11_pseudofloor.md",
+  "commands": [
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier probe_eps -outdir runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier factory_eps -outdir runs/wp39_factory_verdict_next -budget 25 -seed 42",
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem mline_eps -engine pattern_search -outdir runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier replay_eps -outdir runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine pattern_search -outdir runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine sbo -outdir runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier summary_next -outdir runs/wp39_factory_verdict_next"
+  ],
+  "engines": {
+   "openems": "vendor/openEMS/install/bin/openEMS.exe（mline 模板 β→εeff，mesh 1.2mm，cache=False）",
+   "hfss": "AEDT 2025.1 / PyAEDT 1.4.0（mline_eps: Discrete 41 点 2.4–2.6GHz；ratrace_null: Interpolating 81 点 2.3–2.7GHz）"
+  },
+  "kernel": "src/rfauto/service/wp39_benchmark.py::judge_problem_pair（唯一裁判）+ eps_eff_from_beta / eps_eff_from_s21_phase / mline_landscape_health_gate / deep_null_neighborhood_db",
+  "machine": "整机独占串行（openEMS→HFSS），2026-09-16 11:14–13:55",
+  "notes": [
+   "mline_eps 基线臂第一轮 x0=名义点（=标定点）退化为 metric≡0（cost 不可判），归档为 mline_eps__pattern_search_x0nominal_degenerate.json；正式基线 x0=域中心 1.25mm",
+   "相对 -outdir 会让 Hfss() 构造期 Project.Rename 挂起（3/3 实证），HfssEvaluator 已改绝对路径",
+   "runs/ 不入库，本快照为可提交证据面；result 为 live_result 逐字节内容回录"
+  ]
+ },
+ "result": {
+  "schema": "wp39_followup_verdict_next_summary_v1",
+  "generated_at": "2026-09-16 13:55:53",
+  "outdir": "<repo>/runs/wp39_factory_verdict_next",
+  "criteria": {
+   "budget": 25,
+   "wallclock_max_ratio": 0.5,
+   "cost_max_degradation_pct": 5.0,
+   "judge": "service/wp39_benchmark.judge_problem_pair"
+  },
+  "problems": {
+   "mline_eps_factory": {
+    "problem": "mline_eps",
+    "budget_ok": true,
+    "wallclock_ok": false,
+    "cost_ok": false,
+    "wallclock_ratio": 0.8434,
+    "degradation_pct": 12.9067,
+    "abs_delta_db": 0.0012,
+    "metric_candidate": 0.01042766419015484,
+    "metric_baseline": 0.009235649119050393,
+    "n_evals_candidate": 11,
+    "n_evals_baseline": 15,
+    "verdict": "FAIL",
+    "reasons": [
+     "wall-clock 超门：ratio=0.843 > 0.5（candidate 1229.49s vs baseline 1457.74s）",
+     "cost 劣化超门：+12.91% > 5.0%（Δ=+0.001192，指标原单位）"
+    ]
+   },
+   "ratrace_null": {
+    "problem": "ratrace_null",
+    "budget_ok": true,
+    "wallclock_ok": false,
+    "cost_ok": true,
+    "wallclock_ratio": 1.3471,
+    "degradation_pct": 1.8455,
+    "abs_delta_db": 0.8945,
+    "metric_candidate": -47.57465095060165,
+    "metric_baseline": -48.46913443889048,
+    "n_evals_candidate": 13,
+    "n_evals_baseline": 17,
+    "verdict": "FAIL",
+    "reasons": [
+     "wall-clock 超门：ratio=1.347 > 0.5（candidate 1099.69s vs baseline 816.33s）"
+    ]
+   }
+  },
+  "summary": {
+   "n_problems": 2,
+   "n_pass": 0,
+   "per_problem": {
+    "mline_eps_factory": "FAIL",
+    "ratrace_null": "FAIL"
+   },
+   "overall": "FAIL"
+  },
+  "details": {
+   "mline_eps_factory": {
+    "replay": {
+     "params": {
+      "w_mm": 1.14828223463683
+     },
+     "metrics": {
+      "eps_eff_abs_err": 0.01042766419015484,
+      "eps_eff": 2.9302427005603313
+     },
+     "n_evals": 1,
+     "eps_eff_target_hfss": 2.9198150363701765,
+     "eps_target_source": "baseline_calibration（与基线臂同一 HFSS target）",
+     "wall_s": {
+      "eval_s": 124.09,
+      "launch_s": 11.02,
+      "build_s": 0.84
+     }
+    },
+    "merged_candidate": {
+     "problem": "mline_eps",
+     "best": {
+      "params": {
+       "w_mm": 1.14828223463683
+      },
+      "metric": 0.01042766419015484,
+      "cost": null
+     },
+     "n_evals": 11,
+     "wall_s": {
+      "optimization_s": 1229.49
+     },
+     "factory_extra": {
+      "cost_source": "hfss_replay",
+      "factory_metric": 0.009506933224314285,
+      "replay_metric": 0.01042766419015484,
+      "replay_n_evals": 1,
+      "replay_wall_s": {
+       "eval_s": 124.09,
+       "launch_s": 11.02,
+       "build_s": 0.84
+      },
+      "cross_engine_note": "①档口径（方案 §10.0）：openEMS 数据工厂寻优 + HFSS 回代仲裁 cost；回代评估独立于工厂预算"
+     }
+    },
+    "replay_tier_verdict": "FAIL"
+   },
+   "ratrace_null": {
+    "baseline": {
+     "best": {
+      "params": {
+       "r_mm": 17.969
+      },
+      "metric": -48.46913443889048,
+      "cost": 999951.5308655611
+     },
+     "n_evals": 17,
+     "wall_s": {
+      "optimization_s": 816.33,
+      "launch_s": 10.99,
+      "build_s": 1.23,
+      "total_s": 828.55
+     },
+     "stop_reason": "min_step"
+    },
+    "candidate": {
+     "best": {
+      "params": {
+       "r_mm": 17.02845057324078
+      },
+      "metric": -47.57465095060165,
+      "cost": 999952.4253490494
+     },
+     "n_evals": 13,
+     "wall_s": {
+      "optimization_s": 1099.69,
+      "launch_s": 11.0,
+      "build_s": 1.06,
+      "total_s": 1111.75
+     },
+     "stop_reason": "stagnation"
+    },
+    "sweep": {
+     "type": "adaptive_plus_linear_count_sweep",
+     "freq_ghz": 2.5,
+     "MaxDeltaS": 0.02,
+     "MaximumPasses": 12,
+     "sweep": {
+      "band_ghz": [
+       2.3,
+       2.7
+      ],
+      "points": 81,
+      "type": "Interpolating",
+      "name": "Sweep"
+     }
+    }
+   }
+  },
+  "decision_inputs": {
+   "native_vs_scripted_mline": {
+    "verdict": {
+     "problem": "mline",
+     "budget_ok": true,
+     "wallclock_ok": false,
+     "cost_ok": true,
+     "wallclock_ratio": 0.9548,
+     "degradation_pct": -29.9549,
+     "abs_delta_db": -11.3969,
+     "metric_candidate": -49.44379620138975,
+     "metric_baseline": -38.04689584652643,
+     "n_evals_candidate": 9,
+     "n_evals_baseline": 9,
+     "verdict": "FAIL",
+     "reasons": [
+      "wall-clock 超门：ratio=0.955 > 0.5（candidate 283.45s vs baseline 296.88s）"
+     ]
+    },
+    "native_view": {
+     "problem": "mline",
+     "engine": "native_optimetrics",
+     "best": {
+      "params": {
+       "w_mm": 1.16865
+      },
+      "metric": -49.44379620138975,
+      "cost": null
+     },
+     "n_evals": 9,
+     "n_evals_extracted": 9,
+     "n_evals_source": "opti_profile",
+     "wall_s": {
+      "optimization_s": 283.45
+     },
+     "optimizer_readback": "Pattern Search"
+    },
+    "scripted_baseline": {
+     "best": {
+      "params": {
+       "w_mm": 1.113
+      },
+      "metric": -38.04689584652643,
+      "cost": 999961.9531041535
+     },
+     "n_evals": 9,
+     "wall_s": {
+      "optimization_s": 296.88,
+      "launch_s": 10.79,
+      "build_s": 0.82,
+      "total_s": 308.49
+     }
+    },
+    "note": "口径决策输入：原生 Optimetrics（同单频 setup、|S11|@2.5 指标）对 scripted Pattern Search 基线的 judge；仅作决策输入"
+   },
+   "optislang_mop": {
+    "status": "NOT_RUN",
+    "available": false,
+    "note": "② 超额线：本机无 optiSLang/license（optislang_probe），如实 NOT_RUN 不占冒名数字"
+   }
+  },
+  "probe_eps": {
+   "verdict": "PASS",
+   "chosen": {
+    "mesh_mm": 1.2,
+    "eps_eff_target": 2.918116,
+    "median_wall_s": 108.98,
+    "rationale": "过 εeff 地貌健康门（副锚 ≤3% ∧ 单调）中单点墙钟最短；target=该网格名义点 εeff（④ 纪律）"
+   },
+   "eps_hj_nominal": 2.852642,
+   "configs": [
+    {
+     "mesh_mm": 1.2,
+     "ok": true,
+     "gate": "PASS",
+     "nominal_delta_hj_pct": 2.2952076316572922,
+     "eps_eff": [
+      2.847363,
+      2.918116,
+      2.95923
+     ],
+     "median_wall_s": 108.98
+    },
+    {
+     "mesh_mm": 2.0,
+     "ok": true,
+     "gate": "FAIL",
+     "nominal_delta_hj_pct": -49.20210709056898,
+     "eps_eff": [
+      0.282011,
+      1.449082,
+      0.356971
+     ],
+     "median_wall_s": 111.1
+    },
+    {
+     "mesh_mm": 3.0,
+     "ok": true,
+     "gate": "FAIL",
+     "nominal_delta_hj_pct": -96.16601024130831,
+     "eps_eff": [
+      0.885363,
+      0.10937,
+      0.060649
+     ],
+     "median_wall_s": 54.34
+    }
+   ]
+  },
+  "factory_eps": {
+   "best": {
+    "params": {
+     "w_mm": 1.14828223463683
+    },
+    "metrics": {
+     "eps_eff": 2.927622933224314,
+     "s11_f0_db": -23.043679410177592,
+     "eps_eff_abs_err": 0.009506933224314285
+    },
+    "cost": 1000000.0095069333
+   },
+   "n_evals": 11,
+   "n_failures": 0,
+   "stop_reason": "stagnation",
+   "wall_s": {
+    "optimization_s": 1229.49
+   },
+   "eps_eff_target": 2.918116,
+   "cache_disabled": true,
+   "cached_any": false,
+   "invalidated": null
+  },
+  "mline_eps_baseline": {
+   "best": {
+    "params": {
+     "w_mm": 0.96875
+    },
+    "metric": 0.009235649119050393,
+    "cost": 1000000.0092356491
+   },
+   "n_evals": 15,
+   "wall_s": {
+    "optimization_s": 1457.74,
+    "launch_s": 12.6,
+    "build_s": 0.93,
+    "total_s": 1471.27
+   },
+   "stop_reason": "min_step",
+   "calibration": {
+    "params": {
+     "w_mm": 1.113
+    },
+    "eps_eff_target": 2.9198150363701765,
+    "wall_s": 125.07,
+    "n_freq": 41,
+    "freq_range_ghz": [
+     2.4,
+     2.6
+    ],
+    "note": "④ 纪律：本引擎名义点标定 εeff 目标（S21 相位斜率抽取，线长=波端口面间距）；标定评估独立记账，不计入预算"
+   },
+   "stage": "done"
+  },
+  "attribution": {
+   "path": "<repo>/runs/wp39_factory_verdict_next/attribution_mline_s11_pseudofloor.md",
+   "conclusion": "mline |S11| 地貌=MSLPort 端口级伪底（加密网格不消），β→εeff 地貌物理且随 w 单调——工厂换引擎一致指标 |εeff−target|"
+  },
+  "note": "overall 只计本战役两判定项；native_vs_scripted 与 optiSLang 为决策输入（由使用方裁决，不进 overall）"
+ }
+}

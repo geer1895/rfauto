@@ -1,0 +1,27 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（平行耦合 BPF：带内回波纹波 + 带外抑制；裁判=电路级联 coupled_bpf_circuit_sparams，同步 TEM 极限对照 C13 coupling_matrix_response 互证）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- order
+- w_feed_mm
+- widths_mm
+- gaps_mm
+- res_len_mm
+- feed_len_mm
+template: coupled_bpf
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  order: 3
+  w_feed_mm: 1.1117
+  widths_mm: [0.8952, 1.0956, 1.0956, 0.8952]
+  gaps_mm: [0.1286, 0.7794, 0.7794, 0.1286]
+  res_len_mm: 35.5107
+  feed_len_mm: 24.4893
+topology: 平行耦合（边缘耦合）带通（Pozar §8.6.2）：N 个 λg/2 半波谐振器沿 y 阶梯排列（相邻平行、y 向错位 λg/4），N+1 个耦合段（馈-腔、腔-腔×(N−1)、腔-馈，段长逐端 Δl 修正）；输入/输出 50Ω 馈线在 y=∓BOARD 板边（单轴 PML）
+param_semantics: order=谐振器阶数 N（决定 widths_mm/gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=50Ω 馈线宽（skrf HJ 精算 live 值，仅进几何）；widths_mm[j]/gaps_mm[j]=第 j 个耦合段线宽/边到边缝（j=0 输入馈-腔 … j=N 腔-输出馈，fake/openEMS 两通道同索引同语义，#154）；res_len_mm=谐振器 1 物理长（λg/2 − Δl(w0) − Δl(w1)），其余谐振器按各自端宽逐端 Δl 修正（段长逐段由 _coupled_bpf_section_lengths_mm 同源派生，res2 修量 −6.465µm/−182ppm）；feed_len_mm=输入 50Ω 馈线长（阵列 y 居中 ⇒ 两馈等长）
+smoke_note: 真机冒烟（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读，如实 PARTIAL

@@ -1,0 +1,379 @@
+{
+ "kind": "engine_benchmark_expand_20260915",
+ "captured_at": "2026-09-15",
+ "provenance": {
+  "harness": "scripts/engine_benchmark_expand.py",
+  "kernel": "src/rfauto/core/anchor_benchmark.py",
+  "gate_version": "20260918a",
+  "commands": [
+   ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest all",
+   ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --msl-cpw",
+   ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --msl-cpw-ingest"
+  ],
+  "live_results": [
+   "runs/benchmark/ratrace_engine_benchmark.json",
+   "runs/benchmark/atten_pi_engine_benchmark.json",
+   "runs/benchmark/atten_t_engine_benchmark.json",
+   "runs/benchmark/via_engine_benchmark.json",
+   "runs/benchmark/msl_cpw_engine_benchmark.json"
+  ],
+  "msl_cpw_log": "runs/benchmark/msl_cpw_m0.4/run_20260915.log",
+  "msl_cpw_working_dir": "runs/benchmark/msl_cpw_m0.4",
+  "openems_exe": "vendor/openEMS/install/bin/openEMS.exe",
+  "mline_golden_untouched": "tests/golden/mline_benchmark_rescan_20260913.json",
+  "note": "G8 引擎基准扩容 2026-09-15 证据入库快照（runs/ 不入库，验收门要求可提交面覆盖证据）；anchors 为五份 live_results 逐字节内容回录：四离线锚=runs/*_smoke 归档只读入账（ratrace pt9 / atten_pi pt2 / atten_t pt1 / via pt3），msl_cpw=openEMS 真机补跑（mesh 0.4mm，cache=False，wall 1325s，与 2026-09-13 旧缓存解 max|ΔS|=0.0 逐位一致）；新时点只新增不覆写 mline golden",
+  "recalibration_20260915b": {
+   "scope": "仅 msl_cpw 传输门：增补无源上界 |S21| 带内 max ≤ CPW_S21_MAX_LIN=1.02（折入 thru_ok，另回传 passive_ok）；四离线锚判据未动、判定不变",
+   "trigger": "首轮 msl_cpw 真跑 s21_lin_mean 1.0296>1 非物理却 PASS——旧门 s21v>=0.90 纯下侧无上界",
+   "evidence": [
+    "runs/benchmark/msl_cpw_m0.4/sparams.csv 离线复算：|S21| 带内 max 1.2902@2.25GHz、195/401 点 >1、|S21|²+|S11|² 带内 max 1.682",
+    "runs/benchmark/msl_cpw_renorm/renorm_report.json 零仿真重归一：归档两端口均显式 ref_impedance=50，自标定 Z_ref（MSL 47.72+j0.03Ω / CPW 42.96+j0.11Ω@2.5GHz）首次落盘 port_zref.csv；功率波归一 mean 1.0296→1.0242、带内 max 1.290→1.283（<1% 变化）——参考阻抗归一不能解释也不能消除 |S21|>1"
+   ],
+   "msl_cpw_verdict_change": "PASS（20260915 纯下侧门）→ FAIL（20260915b 无源上界超门），归档 runs/benchmark/msl_cpw_engine_benchmark.json 保持原样（归档），本快照如实改判（#122 不凑绿）",
+   "harness_followup": "已闭环（2026-09-18）：ingest_msl_cpw 现同批补传 s21_lin_band_max=float(np.max(np.abs(s21)))，criteria 补 s21_lin_band_max_le=CPW_S21_MAX_LIN、gate_flags 补 passive_ok（与 via 20260918a 同款口径，无悬空 followUp）；离线复判（OUT_DIR 重定向零覆写归档）实测带内 max 1.2902 超 1.02 → 判定 FAIL 不变，与本快照 msl_cpw 条目逐值一致，归档 runs/benchmark/msl_cpw_engine_benchmark.json 仍按约保持旧门原样（归档不改）"
+  },
+  "recalibration_20260918a": {
+   "scope": "仅 via 传输门：增补无源上界 |S21| 带内 max ≤ VIA_S21_MAX_LIN=1.02（折入 thru_ok，另回传 passive_ok；与 msl_cpw 20260915b 同构）；其余四锚判据未动、判定不变",
+   "trigger": "via 门仍是纯 mean≥0.90 单侧（20260915b 同类缺陷未延伸到 via），|S21|>1 非物理值在 via 门仍会 PASS",
+   "evidence": [
+    "runs/via_smoke/pt3/sparams.csv 离线复算：|S21| 带内 max 0.9503@2.25GHz、401 点全部 ≤1.02、n_over_1=0——归档不存在非物理放行实例，收紧为预防性"
+   ],
+   "via_verdict_change": "PASS（20260915b 纯下侧门）→ PASS（20260918a 双侧门）零翻转：归档带内 max 0.9503 在新门下同样过门，无历史误判需要翻案（与 msl_cpw 改判情形不同，如实区分）",
+   "harness_followup": "已同批补传：ingest_via 现传 s21_lin_band_max（metrics/gate_flags/criteria 同步），无 20260915b 式悬空 followUp"
+  }
+ },
+ "anchors": {
+  "ratrace": {
+   "kind": "engine_benchmark_expand",
+   "anchor": "ratrace",
+   "gate_version": "20260918a",
+   "captured_at": "2026-09-15",
+   "source": {
+    "kind": "smoke_archive_offline_ingest",
+    "archive_dir": "runs/ratrace_smoke/pt9",
+    "files": [
+     "ratrace.s4p",
+     "p1/port_beta.csv"
+    ],
+    "mesh_mm": 0.4,
+    "freq_range_ghz": [
+     2.25,
+     2.75
+    ],
+    "stackup": "rogers4350b_h0.508",
+    "w_feed_mm": 1.1134,
+    "judge_freq_ghz": 2.5,
+    "archive_solve_s": 2989
+   },
+   "refs": {
+    "eps_hj_closed_form": 2.85273
+   },
+   "metrics": {
+    "delta_eps_pct": 0.894,
+    "eps_eff_feed": 2.8782,
+    "s21_db": -3.11,
+    "s41_db": -3.27,
+    "s31_db": -24.32,
+    "s24_db": -23.81,
+    "s11_db": -26.57,
+    "recip_max_lin": 0.0017,
+    "balance_db": 0.16
+   },
+   "verdict": "PASS",
+   "gate_flags": {
+    "beta_ok": true,
+    "split_ok": true,
+    "balance_ok": true,
+    "iso_delta_ok": true,
+    "iso_out_ok": true,
+    "match_ok": true,
+    "recip_ok": true
+   },
+   "reason": "",
+   "criteria": {
+    "delta_eps_pct_abs_le": 2.0,
+    "split_target_db": -3.0,
+    "split_tol_db": 1.0,
+    "balance_db_le": 0.5,
+    "s31_db_le": -20.0,
+    "s24_db_le": -15.0,
+    "s11_db_le": -10.0,
+    "recip_lin_le": 0.02
+   },
+   "provenance": {
+    "kernel": "src/rfauto/core/anchor_benchmark.py::ratrace_benchmark_verdict",
+    "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest ratrace",
+    "old_gate_verdict": {
+     "verdict": "PASS",
+     "source": "archive_log",
+     "path": "runs/ratrace_smoke/pt9/smoke_pt9.log",
+     "note": "RATRACE_PROBE_PASS（七门与现门同口径；pt9 为 #208 进程隔离定版主产物，pt1-pt8 为判废/调试链）"
+    },
+    "gate_calibration": "现门=smoke_ratrace_anchor.py:91-95 七门原样收编，无重标定",
+    "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
+   }
+  },
+  "atten_pi": {
+   "kind": "engine_benchmark_expand",
+   "anchor": "atten_pi",
+   "gate_version": "20260918a",
+   "captured_at": "2026-09-15",
+   "source": {
+    "kind": "smoke_archive_offline_ingest",
+    "archive_dir": "runs/atten_pi_smoke/pt2",
+    "files": [
+     "sparams.csv",
+     "port_beta.csv"
+    ],
+    "mesh_mm": 0.4,
+    "freq_range_ghz": [
+     2.25,
+     2.75
+    ],
+    "stackup": "rogers4350b_h0.508",
+    "w_feed_mm": 1.1134,
+    "atten_target_db": -10.0,
+    "judge_freq_ghz": 2.5
+   },
+   "refs": {
+    "eps_hj_closed_form": 2.85273
+   },
+   "metrics": {
+    "delta_eps_pct": 0.961,
+    "eps_eff_feed": 2.8801,
+    "s21_db_band_mean": -9.66,
+    "s21_db_at_2p5ghz": -9.66,
+    "s11_db_band_max": -12.77
+   },
+   "verdict": "PASS",
+   "gate_flags": {
+    "beta_ok": true,
+    "atten_ok": true,
+    "match_ok": true
+   },
+   "reason": "",
+   "criteria": {
+    "delta_eps_pct_abs_le": 2.0,
+    "atten_target_db": -10.0,
+    "atten_tol_db": 0.5,
+    "s11_band_max_db_lt": -12.0
+   },
+   "provenance": {
+    "kernel": "src/rfauto/core/anchor_benchmark.py::atten_benchmark_verdict",
+    "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest atten_pi",
+    "old_gate_verdict": {
+     "verdict": "FAIL→现门 PASS",
+     "source": "log_transcript",
+     "path": "（历史会话日志转录，2026-09-09 匹配门校准记录）",
+     "note": "冒烟控制台 FAIL 系旧 −20 匹配门（实测带内 −13.4dB 未过）；现门 −12dB 商用 lumped 地板下现判定 PASS。pt3 为缓存复用致 port_beta.csv 缺失坏点，弃用（本 harness 取 pt2）"
+    },
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地（2026-09-09 匹配门校准记录）；|S21| 带内 mean 平坦均值语义 #195",
+    "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
+   }
+  },
+  "atten_t": {
+   "kind": "engine_benchmark_expand",
+   "anchor": "atten_t",
+   "gate_version": "20260918a",
+   "captured_at": "2026-09-15",
+   "source": {
+    "kind": "smoke_archive_offline_ingest",
+    "archive_dir": "runs/atten_t_smoke/pt1",
+    "files": [
+     "sparams.csv",
+     "port_beta.csv"
+    ],
+    "mesh_mm": 0.4,
+    "freq_range_ghz": [
+     2.25,
+     2.75
+    ],
+    "stackup": "rogers4350b_h0.508",
+    "w_feed_mm": 1.1134,
+    "atten_target_db": -10.0,
+    "judge_freq_ghz": 2.5
+   },
+   "refs": {
+    "eps_hj_closed_form": 2.85273
+   },
+   "metrics": {
+    "delta_eps_pct": 0.956,
+    "eps_eff_feed": 2.88,
+    "s21_db_band_mean": -9.64,
+    "s21_db_at_2p5ghz": -9.64,
+    "s11_db_band_max": -15.34
+   },
+   "verdict": "PASS",
+   "gate_flags": {
+    "beta_ok": true,
+    "atten_ok": true,
+    "match_ok": true
+   },
+   "reason": "",
+   "criteria": {
+    "delta_eps_pct_abs_le": 2.0,
+    "atten_target_db": -10.0,
+    "atten_tol_db": 0.5,
+    "s11_band_max_db_lt": -12.0
+   },
+   "provenance": {
+    "kernel": "src/rfauto/core/anchor_benchmark.py::atten_benchmark_verdict",
+    "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest atten_t",
+    "old_gate_verdict": {
+     "verdict": "PASS",
+     "source": "archive_console",
+     "path": "（冒烟控制台输出，归档无日志文件；数值经本 harness 离线复算 sparams.csv/port_beta.csv 逐值复核一致）",
+     "note": "β +0.96%/dev 0.36dB/|S11|max −15.3dB（勘察阶段转录）"
+    },
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地（2026-09-09 匹配门校准记录）；|S21| 带内 mean 平坦均值语义 #195",
+    "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
+   }
+  },
+  "via": {
+   "kind": "engine_benchmark_expand",
+   "anchor": "via",
+   "gate_version": "20260918a",
+   "captured_at": "2026-09-15",
+   "source": {
+    "kind": "smoke_archive_offline_ingest",
+    "archive_dir": "runs/via_smoke/pt3",
+    "files": [
+     "sparams.csv",
+     "port_beta.csv"
+    ],
+    "mesh_mm": 0.4,
+    "freq_range_ghz": [
+     2.25,
+     2.75
+    ],
+    "stackup": "rogers4350b_h0.508",
+    "w_feed_mm": 1.1134,
+    "judge_freq_ghz": 2.5
+   },
+   "refs": {
+    "eps_hj_closed_form": 2.85273
+   },
+   "metrics": {
+    "delta_eps1_pct": 0.793,
+    "eps_eff1": 2.8754,
+    "delta_eps2_pct": 10.935,
+    "eps_eff2": 3.1647,
+    "s11_db_band_max": -26.01,
+    "s21_lin_mean": 0.944,
+    "s21_lin_band_max": 0.9503,
+    "recip_db": 0.0,
+    "recip_source": "archive_log"
+   },
+   "verdict": "PASS",
+   "gate_flags": {
+    "beta1_ok": true,
+    "match_ok": true,
+    "thru_ok": true,
+    "recip_ok": true,
+    "passive_ok": true
+   },
+   "beta2_modal_difference_pct": 10.935,
+   "reason": "",
+   "criteria": {
+    "beta1_delta_eps_pct_abs_le": 2.0,
+    "s11_band_max_db_lt": -10.0,
+    "s21_lin_mean_ge": 0.9,
+    "s21_lin_band_max_le": 1.02,
+    "recip_db_le": 0.5
+   },
+   "provenance": {
+    "kernel": "src/rfauto/core/anchor_benchmark.py::via_benchmark_verdict",
+    "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest via",
+    "old_gate_verdict": {
+     "verdict": "FAIL→现门 PASS",
+     "source": "log_transcript",
+     "path": "（历史会话日志转录，2026-09-09 #203 pt3）",
+     "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；1.0491 分解段定征 β2=real_modal_difference（倒置馈 CalcPort 提取污染），现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py:82 同口径）→ 现判定 PASS"
+    },
+    "recip_provenance": "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引自历史归档日志转录，source=archive_log",
+    "gate_calibration": "β1 单判（β2=real_modal_difference 不设门），2026-09-09（四）#203 pt3 定征；20260918a 增补无源上界 |S21| 带内 max ≤1.02（审查增补，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1 能量守恒硬约束；归档 401 点带内 max 0.9503 全部 ≤1.02，判定零翻转）",
+    "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
+   }
+  },
+  "msl_cpw": {
+   "kind": "engine_benchmark_expand",
+   "anchor": "msl_cpw",
+   "gate_version": "20260918a",
+   "captured_at": "2026-09-15",
+   "source": {
+    "kind": "openems_real_run",
+    "working_dir": "runs/benchmark/msl_cpw_m0.4",
+    "mesh_mm": 0.4,
+    "freq_range_ghz": [
+     2.25,
+     2.75
+    ],
+    "stackup": "rogers4350b_h0.508",
+    "solve_timeout_s": 36000,
+    "cache": false,
+    "files": [
+     "sparams.csv",
+     "port_beta.csv"
+    ],
+    "template": "msl_cpw（additive 未注册，经 build_geometry 直接渲染；注册四件套归 wp25，本 harness 严禁注册）"
+   },
+   "params": {
+    "w_msl_mm": 1.1134,
+    "w_cpw_mm": 0.849,
+    "gap_cpw_mm": 0.2,
+    "line_len_mm": 40.0,
+    "trans_len_mm": 10.0
+   },
+   "refs": {
+    "er_eff1_hj_closed_form": 2.85273,
+    "er_eff2_cpwg_closed_form": 2.56729
+   },
+   "metrics": {
+    "delta_eps1_pct": 0.373,
+    "eps_eff1": 2.8634,
+    "delta_eps2_pct": -1.04,
+    "eps_eff2": 2.5406,
+    "s11_db_band_max": -15.29,
+    "s21_lin_mean": 1.0296,
+    "wall_s": 1325,
+    "s21_lin_band_max": 1.2902
+   },
+   "repro_vs_prior_cache": {
+    "prior_cache_entry": "runs/openems_cache/bdcff589e6c498e2e65c387c5ec40917b6da1a53c2324dff0849347656204ae5.npz",
+    "prior_cache_mtime": "2026-09-13 20:58",
+    "max_abs_delta_s_vs_prior": 0.0
+   },
+   "verdict": "FAIL",
+   "gate_flags": {
+    "beta1_ok": true,
+    "beta2_ok": true,
+    "match_ok": true,
+    "thru_ok": false,
+    "passive_ok": false
+   },
+   "s21_vs_ideal_lin_dev": 0.0296,
+   "reason": "无源上界超门：|S21| 带内 max=1.2902 超 1.02（无源二端口逐频 |S21|≤1 能量守恒；超出=端口提取伪象，先审计口径再校准）",
+   "criteria": {
+    "eps1_delta_pct_abs_le": 2.0,
+    "eps2_delta_pct_abs_le": 2.0,
+    "s11_band_max_db_lt": -10.0,
+    "s21_lin_mean_ge": 0.9,
+    "s21_lin_band_max_le": 1.02
+   },
+   "provenance": {
+    "kernel": "src/rfauto/core/anchor_benchmark.py::msl_cpw_benchmark_verdict",
+    "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --msl-cpw（求解+判读）/ --msl-cpw-ingest（只读复判）",
+    "ref_sources": "er_eff1=core/synthesis.forward_z0（HJ）；er_eff2=core/calculators._cpwg_ri（共形映射）——运行时闭式计算不硬编码（铁律 7）；名义参数=synthesize_msl_cpw_model()",
+    "gate_calibration": "core/synthesis.py:881 docstring 口径：双端口 β 金标准 + |S11| −10dB 保守文献地板（#195 worst-case）+ |S21| 线性 mean ≥0.90 健康；对 fake 理想级联偏差只作信息量不设门；20260915b 增补无源上界 |S21| 带内 max ≤1.02（无源二端口逐频 |S21|≤1 能量守恒硬约束，超出=端口提取伪象；带内 max 而非 mean 防稀释；2% 只覆盖数值噪声，~3% 伪波伪象（历史实测案例）刻意不吸收）",
+    "note": "runs/ 此前无任何 msl_cpw 归档——本锚为 G8 唯一真机补跑（2026-09-15 实测 ls runs/ | grep -i msl 为空）",
+    "old_gate_verdict": {
+     "verdict": "PASS",
+     "gate_version": "20260915",
+     "source": "archive_json",
+     "path": "runs/benchmark/msl_cpw_engine_benchmark.json",
+     "note": "旧门四门全 True（thru 仅 mean>=0.90）；现门带内 max 1.2902 超无源上界 → FAIL；|S21|>1 根因未定（假设级：NrTS 定步截断 DFT 泄漏 / 端口面非模式场拾取），见 runs/benchmark/msl_cpw_renorm/renorm_report.json conclusion"
+    }
+   }
+  }
+ }
+}

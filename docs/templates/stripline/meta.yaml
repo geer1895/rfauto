@@ -1,0 +1,16 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ StripLinePort 1-2（对称带状线：TEM，εeff=εr）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- line_len_mm
+template: stripline
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 0.5554
+  line_len_mm: 40.0

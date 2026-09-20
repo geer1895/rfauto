@@ -1,0 +1,42 @@
+UNITS=MM
+
+#
+#Feature attribute names
+#
+@0 .comp_mount_type
+
+#
+#Feature attribute text strings
+#
+# CMP 0
+CMP 0 203.18 -117.21 0 N POLY _POLY ;0=2
+PRP Datasheet ''
+PRP Description ''
+PRP Value 'VAL**'
+TOP 0 338.93 -117.52 0.0 N 0 0 1
+TOP 1 67.43 -117.52 0.0 N 0 1 2
+#
+# CMP 1
+CMP 1 203.19 -121.54 0 N POLY_1 _POLY ;0=2
+PRP Datasheet ''
+PRP Description ''
+PRP Value 'VAL**'
+TOP 0 338.94 -121.24 0.0 N 0 2 1
+TOP 1 67.44 -121.24 0.0 N 0 3 2
+#
+# CMP 2
+CMP 2 203.20 -119.38 0 N POLY_2 _POLY ;0=2
+PRP Datasheet ''
+PRP Description ''
+PRP Value 'VAL**'
+TOP 0 338.95 -119.38 0.0 N 0 4 1
+TOP 1 67.45 -119.38 0.0 N 0 5 2
+#
+# CMP 3
+CMP 2 203.20 -144.78 0 N POLY_3 _POLY ;0=2
+PRP Datasheet ''
+PRP Description ''
+PRP Value 'VAL**'
+TOP 0 338.95 -144.78 0.0 N 0 6 1
+TOP 1 67.45 -144.78 0.0 N 0 7 2
+#

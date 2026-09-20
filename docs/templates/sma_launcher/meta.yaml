@@ -1,0 +1,39 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ LumpedPort 1（同轴截面集总桥）/ MSLPort 2（SMA edge-launch：port2 β→HJ 金标准 + |S11| 文献曲线门 -10dB 保守地板）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_msl_mm
+- r_i_mm
+- r_o_mm
+- shell_t_mm
+- er_fill
+- shell_len_mm
+- pin_lay_mm
+- line_len_mm
+- port_len_mm
+- tan_d_fill
+template: sma_launcher
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  # 2026-09-16 正式注册 + 真机 FAIL 根治（wp25-sma-launcher-rootcause）：名义 =
+  # synthesize_sma_launcher_model(50, 2.5) 4 位舍入（r_o = r_i·exp(Z0·√εr/60) 同轴 TEM 闭式 2.124389；
+  # r_os = r_o + shell_t 派生不进 params）；edge-launch 夹具口径：针水平搭焊微带、壳体在板边切口外、
+  # 地链壳—夹具块—PEC 底板实触；port1 面距 y-min 边界 12 cells（越过 PML_8）
+  w_msl_mm: 1.1134
+  r_i_mm: 0.635
+  r_o_mm: 2.1244
+  shell_t_mm: 0.25
+  er_fill: 2.1
+  shell_len_mm: 5.0
+  pin_lay_mm: 2.0
+  line_len_mm: 40.0
+  port_len_mm: 0.2
+  # ③ 变体：PTFE tanδ → AddMaterial kappa（同基板 TAND 口径）；名义无耗 0.0，有耗变体 recipe 覆盖
+  tan_d_fill: 0.0
+topology: SMA 边缘弹射（end-launch 夹具口径）：PTFE 填充 50Ω 同轴段（针/壳圆柱自画）在板边切口之外，针水平穿出搭焊在微带上（针底切线=基板顶），壳底切 z=0 PEC 夹具底板、壳端与 PCB 下方夹具金属块前脸实触（地链）；port1=同轴截面集总桥（针顶→壳内壁顶），port2=板边 MSLPort
+param_semantics: w_msl_mm=50Ω 微带宽（HJ），r_i_mm=针半径，r_o_mm=PTFE 外径/壳内径（50Ω 闭式），shell_t_mm=外导体壁厚（r_os=r_o+t 派生），er_fill=PTFE εr（材料参数，不驱动导体几何），shell_len_mm=同轴段长（port1 面→板边），pin_lay_mm=针搭焊外伸长，line_len_mm=微带体带长，port_len_mm=集总桥 y 向厚，tan_d_fill=PTFE tanδ（材料参数→kappa，名义 0 无耗）

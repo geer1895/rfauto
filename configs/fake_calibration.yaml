@@ -1,0 +1,22 @@
+# fake 联合校准锚
+# v0 语义更新：
+#   S11 谷深度与谐振位置全部由设计变量物理计算（线宽失配/馈电匹配/λ 反推，
+#   见 fake_adapter._wilkinson_s11_min 与 solve() 各分支），无常数锚可调；
+#   常数锚只保留 eps_eff（谐振频率反演）。
+#   旧 s11_floor_db / s11_edge_scale 语义已废除。
+# 校准源变更说明：旧值（wilkinson eps_eff=2.753 / edge_scale=0.0259 等）
+#   锚定 openEMS 名义点，实测把参数响应压扁（P0 真机 FAIL，rank_flip 5/6）。
+# wilkinson 锚决策（p0 A/B 实证后定论：不启用）：
+#   语义统一后的 openEMS 真采样 L9 带内对齐给出 eps_eff=1.4
+#   （带内指标偏差 ~1dB 级，此前 14dB）。p0 跨保真配对实验（同种子同 10 参数点）：
+#   无锚 ρ=-0.164，锚 1.4 ρ=-0.200
+#   （openEMS 侧复用缓存，fake 侧换映射——纯配对对比）——锚不改善排序。
+#   根因：openEMS 对该几何族的 λ/4 点系统性低于闭式解（网格收敛证据），
+#   2.3-2.5GHz 带内行为是"谷在带下方的肩部"，
+#   fake 谐振形状族无法复现其带内排序。在 openEMS 侧模型可信度（网格
+#   收敛/频率尺度）解决前，跨保真桥接交给校准层 surrogate（0.3mm 重采样）。
+models:
+  branchline:
+    eps_eff: 3.28           # branchline 真机 HFSS 校准值
+  patch:
+    eps_eff: 3.27           # 由 f_res=2.375GHz 反演

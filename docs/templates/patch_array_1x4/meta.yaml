@@ -1,0 +1,30 @@
+f0_ghz: 5.8
+n_ports: 1
+extraction: S11 @ LumpedPort 1（底探针馈 corporate 1×4 贴片阵：谷位/谷深；方向图走 far_field=True nf2ff，离线裁判=积定理闭式：主瓣 0°、HPBW 对照 broadside_hpbw_deg(4,d/λ0)、无栅瓣；未真机冒烟）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- elem_len_mm
+- elem_w_mm
+- elem_feed_mm
+- spacing_mm
+- feed_w_mm
+- q_w_mm
+- q_len_mm
+template: patch_array_1x4
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ elem_len_mm: 12.9058
+ elem_w_mm: 16.9311
+ elem_feed_mm: 3.8717
+ spacing_mm: 25.0172
+ feed_w_mm: 1.112
+ q_w_mm: 0.6025
+ q_len_mm: 7.8217
+topology: 1×4 直线贴片阵（C2）：4 元沿 x 等距 spacing、行中心 y=20mm，单元 L 沿 y/W 沿 x、插入馈缺口开在 −y 边（3 盒贴片）；corporate 树=主干 50Ω（底探针→J0）+ J0→J1± λ/4 70.7Ω + J1± 50Ω 透明连线（y0 横走/各元 x 竖走）+ 每元最后一段 λ/4 70.7Ω 入缺口；基板 + z-min PEC 地
+param_semantics: elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 传输线模型 c/(2f0√εeff)−2ΔL，fake 谐振为其精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))，决定 εeff/ΔL 与 H 面波束），spacing_mm=单元中心距 d（0.484λ0=25.0172mm，略缩 λ0/2 以满足审计扰动域 3d+W≤120mm；栅瓣判据 d<λ0），feed_w_mm=50Ω 线宽（主干/透明连线/缺口内馈段；HJ 1.112mm），q_w_mm=70.7Ω λ/4 变换段宽（HJ 0.6025mm），q_len_mm=变换段长 λ/4=c/(4f0√εeff(q_w))=7.8217mm（J0→J1± 与各元入缺口最后一段共用），elem_feed_mm=插入馈深度 y0（缺口深=馈线终点=馈点；Rin(y0)=Rin(0)cos²(πy0/L)，0.3L≈100Ω 口径）
+mesh_note: 辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/树/探针）精确入网（#198）
+smoke_note: 未真机冒烟（2026-09-15 注册，离线审计/闭式裁判已过）。openEMS 轨后续冒烟：scripts/smoke_array_anchor.py <template>，判据=S11 谷位 f0±12% 窗（谷深 ≤−6dB）+ far_field nf2ff 主瓣天顶/HPBW·Dmax 对照 core/array_synthesis 闭式 ≤20-30% + η=Prad/P_acc 合理；预算 NrTS=100000 分钟~小时级，逐模板串行单飞

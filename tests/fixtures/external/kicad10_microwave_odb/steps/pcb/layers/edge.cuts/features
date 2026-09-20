@@ -1,0 +1,25 @@
+UNITS=MM
+#
+#Num Features
+#
+F 4
+
+#
+#Feature symbol names
+#
+$0 r304.80
+
+#
+#Feature attribute names
+#
+
+#
+#Feature attribute text strings
+#
+#
+#Layer features
+#
+L 351.79 -201.93 59.69 -201.93 0 P 0 
+L 59.69 -81.28 351.79 -81.28 0 P 0 
+L 351.79 -81.28 351.79 -201.93 0 P 0 
+L 59.69 -201.93 59.69 -81.28 0 P 0 

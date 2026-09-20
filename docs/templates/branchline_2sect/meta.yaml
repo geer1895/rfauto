@@ -1,0 +1,27 @@
+f0_ghz: 2.5
+n_ports: 4
+extraction: 全 S 矩阵 4×4 @ .s4p（excite_port 轮转 4 run，#208）。裁判=偶/奇模二分频响 branchline_2sect_sparams（Pozar §7.5 推广 + Levy & Lind 1968）：f0 处 |S21|=|S31|=−3.01dB、S11=S41=0；两节 ≥ 单节带宽（±1dB 均分 35.0% vs 25.8%）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_main_mm
+- w_out_mm
+- w_mid_mm
+- sect_len_mm
+- branch_len_mm
+- w_feed_mm
+template: branchline_2sect
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_main_mm: 1.1117
+  w_out_mm: 0.162
+  w_mid_mm: 0.6024
+  w_feed_mm: 1.1117
+  sect_len_mm: 17.7338
+  branch_len_mm: 18.4304
+topology: 两节分支线 3dB 正交耦合器（C4 族，Pozar 经典点）：主线 Z_a=Z0 两节 + 外支臂 (1+√2)Z0 + 中支臂 √2·Z_a²/Z0（单参数族，main_z_ratio 可调）；四角 50Ω 馈线沿 x 引出，P1 左上输入/P2 右上直通/P3 右下耦合/P4 左下隔离
+param_semantics: w_main_mm/w_out_mm/w_mid_mm=主线/外支臂/中支臂线宽（HJ 精算：50/120.71/70.71Ω），sect_len_mm=主线节长（λ/4 @εeff(Z_a)=2.8579），branch_len_mm=支臂跨度（外/中支臂 λ/4 18.7144/18.1465 的均值——两支臂 εeff 不同致 ≈±1.5% 固有二阶偏差，f0 处闭式残差 S11≈−38dB，openems_templates §C4 段首口径 2），w_feed_mm=50Ω 馈线宽
+smoke_note: 真机未跑：预期引擎偏差项=T 结不连续性+拐角（理想闭式不含），冒烟对照 branchline 单节同门

@@ -1,0 +1,25 @@
+f0_ghz: 2.5
+n_ports: 3
+extraction: excite_port∈{1,2,3} 轮转（#208 进程隔离单激励）：P1 MSLPort 线基、P2/P3 LumpedPort 跨槽（抽头基线 RX/SRC 因子修正口径）；S23（隔离）需第二激励；巴伦判据门=BALUN_GATES（不平衡 ≤1dB、RL ≤−10、隔离 ≤−15、|S21| ≥−3.5）+ 相位极性约定如实报告
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_slot_mm
+- x_port_mm
+- h_mm
+template: marchand_balun
+substrate:
+  er: 3.66
+  h_mm: 1.524
+nominal_params:
+  w_slot_mm: 1.0
+  x_port_mm: 40.0
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+  f0_ghz: 2.5
+topology: Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：设计级结论=单支节串接已被两引擎互证证伪（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制）——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦
+param_semantics: w_slot_mm=槽宽，x_port_mm=P2/P3 距跨越区中心，h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；槽内缘/中条/封口桥共边网格线已钉（PEC 共棱连通）
+smoke_note: 真机四门 FAIL 两引擎一致：不平衡 2.76/2.64dB、RL −7.4/−5.6、|S21| −4.05/−3.93、隔离 −0.55/−5.42、相位 −97°/−31°；幅度三量两引擎差 ≤0.2dB 互证=设计级结论成立。复跑冒烟只作回归对照，验收看两节新设计（待后续立项）

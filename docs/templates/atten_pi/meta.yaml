@@ -1,0 +1,18 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（π 型电阻衰减器：|S21|≈-A dB 平坦，锚=ABCD 电阻网络闭式裁判+E4 attenuator_pi 同源）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- atten_db
+- w_mm
+- shunt_off_mm
+template: atten_pi
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  atten_db: 10.0
+  w_mm: 1.1134
+  shunt_off_mm: 6.0

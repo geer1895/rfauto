@@ -1,0 +1,27 @@
+# Branchline Coupler - 配方模板（P5 第二实例，C4 补齐 fake 链路）
+model: branchline_coupler
+recipe_version: 1
+schema_version: 1
+notes: "2.4GHz 3dB 分支线耦合器，Rogers 4350B 0.508mm，4 端口"
+params:
+  f0_ghz:      {value: 2.4,  unit: GHz}
+  z0_ohm:      {value: 50,   unit: ohm}
+  substrate:   rogers4350b_h0.508
+  arm_len_mm:  {value: 20.5}
+  series_w_mm: {value: 1.87}   # 35.35Ω 横臂（串联臂）——G0 三源定案 1.87（2026-09 修正
+                               # 2.20 旧值实测 31Ω）；2026-09-05 语义对齐：series=横臂
+  shunt_w_mm:  {value: 1.10}   # 50Ω 竖臂（并联臂）+ 四角馈线
+setup:
+  solver: DrivenModal
+  freq_range_ghz: [1.5, 3.5]
+  points: 201
+  convergence_delta: 0.02
+objectives:
+  - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  - {metric: s21_db, band: [2.3, 2.5], op: mean_within, value: [-4.0, -2.5]}
+optimization:
+  params:
+    arm_len_mm:  {low: 18.0, high: 23.0}
+    series_w_mm: {low: 1.70, high: 2.05}
+    shunt_w_mm:  {low: 0.95, high: 1.25}
+limits: {max_trials: 30, max_wall_hours: 6}

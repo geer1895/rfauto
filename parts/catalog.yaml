@@ -1,0 +1,70 @@
+# 器件模型库 catalog（器件级 S 参数与有源指标索引）
+# 每只器件：sNp 文件、z0、端口序、类型、有源指标、来源、适用频段
+#
+# 物理事实（审查强共识）：无源 sNp 级联推不出有源 NF/P1dB/IP3——
+# 这些来自 catalog 的 datasheet 值，skrf 只做增益/S 参数级联。
+
+devices:
+  # ─── 无源器件 ──────────────────────────────────────────────────────────────
+  wilkinson_2way_2ghz:
+    type: passive
+    description: "2GHz 等分 Wilkinson 功分器"
+    s_params: "parts/wilkinson_2way_2ghz.s2p"
+    z0: 50.0
+    ports: [input, output1, output2]
+    freq_range_ghz: [1.0, 3.0]
+    source: vendor
+    source_url: ""
+    notes: "典型 S11<-20dB, S21≈-3.01dB, 隔离>20dB"
+
+  lowpass_filter_2ghz:
+    type: passive
+    description: "2GHz 低通滤波器 (5阶切比雪夫)"
+    s_params: "parts/lowpass_filter_2ghz.s2p"
+    z0: 50.0
+    ports: [input, output]
+    freq_range_ghz: [0.5, 4.0]
+    source: vendor
+    notes: "通带插损<0.5dB, 阻带>40dB@3GHz"
+
+  # ─── 有源器件 ──────────────────────────────────────────────────────────────
+  lna_2ghz:
+    type: active
+    description: "2GHz 低噪声放大器"
+    s_params: "parts/lna_2ghz.s2p"
+    z0: 50.0
+    ports: [input, output]
+    freq_range_ghz: [1.8, 2.5]
+    gain_db: 20.0
+    nf_db: 0.8
+    p1db_dbm: 15.0
+    oip3_dbm: 30.0
+    source: datasheet
+    notes: "NF 和 P1dB 必须来自 datasheet，sNp 级联推不出这些指标"
+
+  pa_2ghz:
+    type: active
+    description: "2GHz 功率放大器"
+    s_params: "parts/pa_2ghz.s2p"
+    z0: 50.0
+    ports: [input, output]
+    freq_range_ghz: [1.8, 2.5]
+    gain_db: 25.0
+    nf_db: 5.0
+    p1db_dbm: 30.0
+    oip3_dbm: 45.0
+    source: datasheet
+    notes: "高功率 PA，P1dB 和 OIP3 必须来自 datasheet"
+
+  # ─── 混频器 ────────────────────────────────────────────────────────────────
+  mixer_2ghz:
+    type: mixer
+    description: "2GHz 混频器 (上/下变频)"
+    s_params: "parts/mixer_2ghz.s2p"
+    z0: 50.0
+    ports: [rf, lo, if_out]
+    freq_range_ghz: [1.5, 3.0]
+    conversion_loss_db: 7.0
+    nf_db: 7.0
+    source: datasheet
+    notes: "混频器的 NF≈转换损耗（无源混频器）"

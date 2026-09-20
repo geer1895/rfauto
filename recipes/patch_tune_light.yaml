@@ -1,0 +1,27 @@
+# Patch 天线调谐闭环配方（G0 定案后 + 二维调参版）
+# 目标：S11 带内最大 <= -10 dB
+model: patch_antenna
+recipe_version: 1
+schema_version: 1
+notes: "2.4GHz patch antenna: expanded tuning (patch_len + feed_offset + patch_w)"
+params:
+  f0_ghz:         {value: 2.4,  unit: GHz}
+  z0_ohm:         {value: 50,   unit: ohm}
+  substrate:      rogers4350b_h0.508
+  patch_len_mm:   {value: 40.0}
+  patch_w_mm:     {value: 50.0}
+  feed_offset_mm: {value: 10.0}
+setup:
+  solver: DrivenModal
+  freq_range_ghz: [2.3, 2.5]
+  points: 11
+  convergence_delta: 0.1
+  radiation_box: open
+objectives:
+  - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -10}
+optimization:
+  params:
+    patch_len_mm:   {low: 35.0, high: 45.0}
+    feed_offset_mm: {low: 3.0,  high: 20.0}
+    patch_w_mm:     {low: 40.0, high: 60.0}
+limits: {max_trials: 15, max_wall_hours: 2}

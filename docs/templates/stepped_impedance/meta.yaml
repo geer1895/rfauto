@@ -1,0 +1,20 @@
+f0_ghz: 2.4
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（带通形状）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: 5
+params:
+- z1_width_mm
+- z2_width_mm
+- seg_len_mm
+- n_segments
+template: stepped_impedance
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  z1_width_mm: 0.3
+  z2_width_mm: 3.0
+  seg_len_mm: 5.0
+  n_segments: 5

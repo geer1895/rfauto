@@ -1,0 +1,17 @@
+[importlinter]
+root_package = rfauto
+
+[importlinter:contract]
+name = Layered architecture; core is a stable dependency-free leaf
+type = layers
+layers =
+    rfauto.cli
+    rfauto.mcp_server
+    rfauto.service
+    rfauto.linkage
+    rfauto.optimization
+    rfauto.models
+    rfauto.adapters
+    rfauto.pipeline
+    rfauto.infra
+    rfauto.core

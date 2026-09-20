@@ -1,0 +1,8 @@
+Options ResourceUsage=yes UseNutmegFormat=no EnableOptim=no
+S_Param:SP1 CalcS=yes CalcNoise=yes CalcY=no CalcZ=no StatusLevel=2 SweepVar="freq" SweepPlan="SP1_stim" OutputPlan="SP1_Output"
+SweepPlan: SP1_stim Start={{FSTART}} {{FREQ_UNIT}} Stop={{FSTOP}} {{FREQ_UNIT}} Lin={{NPOINTS}}
+OutputPlan:SP1_Output Type="Output" EquationNestLevel=2 SavedEquationNestLevel=2
+Port:P1  N_IN 0 Num=1 Z={{Z0}} Ohm Noise=yes
+Port:P2  N_OUT 0 Num=2 Z={{Z0}} Ohm Noise=yes
+{{SNP_MATCH}}
+{{SNP_DEVICE}}

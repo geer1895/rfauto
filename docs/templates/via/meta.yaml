@@ -1,0 +1,18 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（双层板过孔过渡：β 金标准+|S11|<-10dB 绝对门）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- antipad_mm
+- r_via_mm
+template: via
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 1.1134
+  antipad_mm: 0.8
+  r_via_mm: 0.15

@@ -1,0 +1,21 @@
+# 校准件知识库（方向 3：TRL/SOLT 标准件 S 参数按 ID 引用，不硬编码路径）
+#
+# 结构：calkits.<id> → {description, method, standards: {类型: 文件名}}，
+# 文件与本目录相对。加载入口 measurement.calibration.load_calkit()。
+#
+# 当前 kit 的标准件为**合成参考件**（skrf 生成的理想 Through/Match/Short），
+# 待首次 VNA 实测后用实测校准件 S 参数替换。
+calkits:
+  wl_2g5_response:
+    description: wilkinson 2.0-3.0GHz 响应式（Through 归一化）冒烟 kit（合成标准件）
+    method: response
+    standards:
+      thru: wl_2g5_thru.s2p
+  wl_2g5_solt_smoke:
+    description: wilkinson 2.0-3.0GHz SOLT 冒烟 kit（合成理想标准件）
+    method: solt
+    standards:
+      thru: wl_2g5_thru.s2p
+      load: wl_2g5_load.s1p
+      short: wl_2g5_short.s1p
+      open: wl_2g5_open.s1p

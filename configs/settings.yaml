@@ -1,0 +1,53 @@
+# RFAuto 全局配置（§6 / §1.3）
+# 
+# 加载优先级：环境变量(RFAUTO_*) > 本文件 > 代码默认值
+# 本文件提交到 git，不含机器绝对路径（用环境变量覆盖）
+# 本机路径写入 settings.local.yaml（gitignore）
+
+# ── Ansys AEDT ──
+aedt:
+  # 路径：优先用环境变量 RFAUTO_AEDT_PATH
+  path: ""
+  # gRPC 端口
+  grpc_port: 50051
+  # 已测试版本组合（doctor 会核对；实测 2023R1 + 2025R1）
+  tested_versions:
+    - "2023R1"
+    - "2025R1"
+
+# ── Keysight ADS ──
+ads:
+  # 路径：优先用环境变量 RFAUTO_HPEESOF_DIR
+  hpeesof_dir: ""
+  tested_versions:
+    - "2024"
+
+# ── 通用 ──
+defaults:
+  unit: mm
+  timeout_solve_s: 3600
+  max_concurrent_solves: 1
+
+# ── 缓存 ──
+cache:
+  # off | on（环境变量 RFAUTO_CACHE 可覆盖）
+  mode: on
+
+# ── 计算器 ──
+calculators:
+  # 实验态计算器开关：符号回归归纳公式等
+  # experimental=True 的键默认拒绝运行；true 放行（也可逐次调用显式
+  # allow_experimental=true）。环境变量 RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL
+  # 可覆盖（1/true/yes/on）。清单（list_calculators）始终列出并打 experimental 标签。
+  allow_experimental: false
+
+# ── 工作区 ──
+workspace:
+  # 优先用环境变量 RFAUTO_WORKSPACE
+  dir: ""
+  runs_dir: runs
+# ── 注册表数据库 ──
+db:
+  # 注册表 SQLite 路径：空 = runs/registry.sqlite（缺省，行为不变）。
+  # 环境变量 RFAUTO_REGISTRY_DB 优先级高于本键（env > YAML > 默认，同全局三层口径）。
+  path: ""

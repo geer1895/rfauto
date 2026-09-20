@@ -1,0 +1,18 @@
+f0_ghz: 2.4
+n_ports: 4
+extraction: S11/S21/S31/S41 @ MSLPort 1-4（单激励 9 列 CSV；整 4×4 由 excite_port=1..4 进程隔离轮转装配 → .s4p，#208；2026-09-16 前 port4 为 PML 端接不提取）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- arm_len_mm
+- series_w_mm
+- shunt_w_mm
+template: branchline
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  arm_len_mm: 20.5
+  series_w_mm: 1.87
+  shunt_w_mm: 1.11

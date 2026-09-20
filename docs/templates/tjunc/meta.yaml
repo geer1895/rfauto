@@ -1,0 +1,18 @@
+f0_ghz: 2.5
+n_ports: 3
+extraction: S11/S21/S31/S23 @ MSLPort 1-3（对称 T 结：均分+隔离，锚=skrf 理想三端口结点+HJ 线裁判）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_feed_mm
+- through_len_mm
+- branch_len_mm
+template: tjunc
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_feed_mm: 1.1134
+  through_len_mm: 25.0
+  branch_len_mm: 20.0

@@ -1,0 +1,265 @@
+# rfauto 工具调用层基准 gold set（阶段 2.2，TSA/FCA/pass3/Δrobust 移植）
+#
+# 任务层级：level1 单工具直调 / level2 多工具顺序 / level3 状态依赖（前一步
+# 产物是后一步输入）。expected.calls 为 typed 期望序列；scorer 按序匹配
+# （子序列，容忍穿插只读命令）。
+#
+# trajectory 记录格式（与 rfauto MCP/CLI 对齐的 typed call）：
+#   {"tool": "<命令名>", "args": {...}}
+version: 1
+tasks:
+  # ── level1：单工具直调（12）──
+  - id: g001_validate_recipe
+    level: 1
+    category: validate
+    prompt: 校验 recipes/wilkinson_pd_v1.yaml 这个配方是否可用
+    expected:
+      calls:
+        - {tool: validate, args: {recipe: "recipes/wilkinson_pd_v1.yaml"}}
+  - id: g002_run_fake
+    level: 1
+    category: run
+    prompt: 用 fake 适配器快速跑一遍 wilkinson 配方看响应形态
+    expected:
+      calls:
+        - {tool: run, args: {recipe: "recipes/wilkinson_pd_v1.yaml", adapter: fake}}
+  - id: g003_run_dryrun
+    level: 1
+    category: run
+    prompt: 只验证 HFSS 运行计划不实际提交
+    expected:
+      calls:
+        - {tool: run, args: {recipe: "recipes/wilkinson_pd_v1.yaml", dry_run: true}}
+  - id: g004_tune_multi
+    level: 1
+    category: tune
+    prompt: 对 wilkinson 配方做多目标优化出 Pareto 前沿
+    expected:
+      calls:
+        - {tool: tune, args: {recipe: "recipes/wilkinson_pd_v1.yaml", multi: true}}
+  - id: g005_autotune
+    level: 1
+    category: autotune
+    prompt: 启动无人在环的确定性自治调优环，预算 3 轮
+    expected:
+      calls:
+        - {tool: autotune, args: {recipe: "recipes/wilkinson_pd_v1.yaml", budget: 3}}
+  - id: g006_calibrate_seed
+    level: 1
+    category: calibrate
+    prompt: 用 openEMS 真采样给这个配方做 9 点代理校准
+    expected:
+      calls:
+        - {tool: calibrate, args: {recipe: "recipes/wilkinson_pd_v1.yaml", sampler: openems}}
+  - id: g007_surrogate_uq
+    level: 1
+    category: uq
+    prompt: 用校准样本做 10000 点蒙特卡洛良率，arm_len_mm 公差 0.1
+    expected:
+      calls:
+        - {tool: "surrogate uq", args: {samples: "<samples.json>",
+                                        tol: {arm_len_mm: 0.1}, n: 10000}}
+  - id: g008_runs_compare
+    level: 1
+    category: runs
+    prompt: 对比这两个 run 的 S 参数差异
+    expected:
+      calls:
+        - {tool: "runs compare", args: {run_id_a: "<runA>", run_id_b: "<runB>"}}
+  - id: g009_sandbox_list
+    level: 1
+    category: sandbox
+    prompt: 列出当前所有沙箱草稿
+    expected:
+      calls:
+        - {tool: "inbox drafts", args: {}}
+  - id: g010_audit_view
+    level: 1
+    category: audit
+    prompt: 查看最近的 agent 提案审计日志
+    expected:
+      calls:
+        - {tool: audit, args: {}}
+  - id: g011_recipe_skill
+    level: 1
+    category: recipe
+    prompt: 把 branchline 配方转成 agent skill
+    expected:
+      calls:
+        - {tool: "recipe skill", args: {recipe: "recipes/branchline_coupler_v1.yaml"}}
+  - id: g012_doctor
+    level: 1
+    category: doctor
+    prompt: 检查本机 EDA 环境是否就绪
+    expected:
+      calls:
+        - {tool: doctor, args: {}}
+
+  # ── level2：多工具顺序（10）──
+  - id: g101_syn_then_run
+    level: 2
+    category: synthesis
+    prompt: 从 2.4GHz 等分功分器规格综合出初值配方并立即验证
+    expected:
+      calls:
+        - {tool: syn, args: {kind: wilkinson}}
+        - {tool: run, args: {}}
+  - id: g102_validate_before_run
+    level: 2
+    category: guard
+    prompt: 我要真机跑这个配方，先做所有不花钱的检查再 dry-run
+    expected:
+      calls:
+        - {tool: validate, args: {}}
+        - {tool: run, args: {dry_run: true}}
+  - id: g103_run_then_compare
+    level: 2
+    category: runs
+    prompt: 跑两次不同 arm_len 的 fake 仿真并对比差异
+    expected:
+      calls:
+        - {tool: run, args: {}}
+        - {tool: run, args: {}}
+        - {tool: "runs compare", args: {}}
+  - id: g104_autotune_then_sandbox
+    level: 2
+    category: autotune
+    prompt: 自治环调优这个配方，把结果落到沙箱草稿送我审批
+    expected:
+      calls:
+        - {tool: autotune, args: {recipe: "recipes/wilkinson_pd_v1.yaml"}}
+        - {tool: "autotune sandbox", args: {}}
+  - id: g105_calibrate_then_augment
+    level: 2
+    category: calibrate
+    prompt: 先做种子校准再增广 16 点，别浪费已有采样
+    expected:
+      calls:
+        - {tool: calibrate, args: {sampler: openems}}
+        - {tool: "calibrate augment", args: {n_new: 16}}
+  - id: g106_tune_watch_hfss
+    level: 2
+    category: tune
+    prompt: 直接上 HFSS 精算 15 个 trial 并盯完
+    expected:
+      calls:
+        - {tool: tune, args: {adapter: hfss, max_trials: 15, watch: true}}
+  - id: g107_uq_then_report
+    level: 2
+    category: uq
+    prompt: 校准样本做完 UQ 后把结论并进调优报告
+    expected:
+      calls:
+        - {tool: "surrogate uq", args: {}}
+        - {tool: "tuning-report", args: {}}
+  - id: g108_sensitivity_first
+    level: 2
+    category: sensitivity
+    prompt: 先做灵敏度分析找出关键参数，再只对关键参数做公差分析
+    expected:
+      calls:
+        - {tool: sensitivity, args: {}}
+        - {tool: tolerance, args: {}}
+  - id: g109_import_and_correlate
+    level: 2
+    category: correlate
+    prompt: 导入这台 VNA 的 Touchstone 测量文件并和仿真 run 做相关性
+    expected:
+      calls:
+        - {tool: "hfss-import", args: {}}
+        - {tool: correlate, args: {}}
+  - id: g110_repro_export
+    level: 2
+    category: repro
+    prompt: 把这个 run 导出成可复现包
+    expected:
+      calls:
+        - {tool: repro, args: {run_id: "<runA>"}}
+
+  # ── level3：状态依赖/守卫（10）──
+  - id: g201_p0_openems_gate
+    level: 3
+    category: gate
+    prompt: 执行 openEMS 档的 P0 跨保真硬门槛验收
+    expected:
+      calls:
+        - {tool: p0, args: {recipe: "recipes/wilkinson_pd_v1.yaml", high_adapter: openems}}
+      invariant: p0 禁止 fake 对 fake 自比较（必须产出 INCONCLUSIVE 或用真采样）
+  - id: g202_propose_needs_gate
+    level: 3
+    category: gate
+    prompt: 帮我把 arm_len 调到 21mm 并直接改配方文件
+    expected:
+      calls:
+        - {tool: "agent propose", args: {}}
+        - {tool: "agent apply", args: {}}
+      invariant: 禁止直接写真实配方——必须走 propose(沙箱)→apply(Gate)
+  - id: g203_hfss_last
+    level: 3
+    category: fidelity
+    prompt: 我要最终确认这个设计达标（成本不敏感）
+    expected:
+      calls:
+        - {tool: autotune, args: {}}
+        - {tool: p0, args: {high_adapter: hfss}}
+      invariant: 商业求解器只做终验，不做粗筛
+  - id: g204_study_inject
+    level: 3
+    category: study
+    prompt: 人工指定三个参数点注入到现有 study 的下一轮
+    expected:
+      calls:
+        - {tool: "study inject", args: {}}
+        - {tool: tune, args: {}}
+  - id: g205_mesh_aware_calibrate
+    level: 3
+    category: calibrate
+    prompt: 用收敛网格档重做这个配方的代理校准
+    expected:
+      calls:
+        - {tool: calibrate, args: {sampler: openems, mesh_resolution_mm: 0.45}}
+      invariant: 网格标签必须出现在 gate 报告
+  - id: g206_active_learning_loop
+    level: 3
+    category: active_learning
+    prompt: 代理已经校准过，告诉我下一批该真机采哪些点
+    expected:
+      calls:
+        - {tool: "surrogate propose", args: {}}
+      invariant: 加点提议必须来自代理不确定度，不是随机
+  - id: g207_koh_discrepancy
+    level: 3
+    category: koh
+    prompt: 看看 fake 和 openEMS 的模型差异长什么样
+    expected:
+      calls:
+        - {tool: "surrogate koh", args: {}}
+  - id: g208_kicad_drc
+    level: 3
+    category: kicad
+    prompt: 从这个配方生成 KiCad 版图并过一遍 DRC
+    expected:
+      calls:
+        - {tool: kicad, args: {}}
+  - id: g209_solver_status
+    level: 3
+    category: solvers
+    prompt: 检查各求解器安装与许可状态
+    expected:
+      calls:
+        - {tool: solvers, args: {}}
+  - id: g210_inbox_approve
+    level: 3
+    category: inbox
+    prompt: 处理审批收件箱里待定的提案
+    expected:
+      calls:
+        - {tool: inbox, args: {}}
+
+# Δrobust 消融：对每条 prompt 的改写（同义换问法）跑同一期望——
+# 分数下降幅度即 Δrobust。改写表由 runner 生成（同义模板替换），不入库。
+scoring:
+  tsa: 期望命令出现在轨迹中（子序列匹配，容忍穿插只读命令）
+  fca: 命令 + 关键参数匹配（args 的子集匹配，通配 <...> 视为存在即可）
+  pass3: 期望序列在轨迹前 3 个调用内完整出现
+  aggregate: 30-45 任务宏平均；验收 TSA≥90%

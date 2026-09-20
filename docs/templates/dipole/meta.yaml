@@ -1,0 +1,18 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ LumpedPort 1（#194 官方口径重写：底探针馈电，无 MSL 端口）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- dipole_len_mm
+- dipole_w_mm
+- gap_mm
+template: dipole
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  dipole_len_mm: 58.0
+  dipole_w_mm: 2.0
+  gap_mm: 2.0

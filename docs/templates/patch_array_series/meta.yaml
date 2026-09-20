@@ -1,0 +1,26 @@
+f0_ghz: 5.8
+n_ports: 1
+extraction: S11 @ MSLPort 1（1×3 共线串馈贴片阵，端接=链末开路辐射边：谷位/谷深；方向图走 far_field=True nf2ff，离线裁判=积定理闭式（同相侧射）；未真机冒烟）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- elem_len_mm
+- elem_w_mm
+- feed_w_mm
+- link_len_mm
+- feed_margin_mm
+template: patch_array_series
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ elem_len_mm: 12.9058
+ elem_w_mm: 16.9311
+ feed_w_mm: 1.112
+ link_len_mm: 15.2876
+ feed_margin_mm: 8.0
+topology: 1×3 串馈贴片阵（C2）：3 元共线沿 y（x=0 居中，L 沿 y/W 沿 x），相邻元以 λg/2 50Ω 互联接辐射边中心；MSLPort 自 y=−BOARD 入、自画馈段至链首元 −y 边（feed_margin）；链末开路。相位账：λg/2 段 180°+λ/2 贴片两边场反相 180° ⇒ 同相侧射；单轴 PML（y）；基板 + z-min PEC 地
+param_semantics: elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 传输线模型 c/(2f0√εeff)−2ΔL，fake 谐振为其精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))，决定 εeff/ΔL 与 H 面波束），feed_w_mm=50Ω 馈线/互联宽（HJ 1.112mm），link_len_mm=互联长 λg/2=c/(2f0√εeff(feed_w))=15.2876mm（HJ），feed_margin_mm=板边到链首元的馈段长（MSLPort 自画，MeasPlaneShift=margin/3）
+mesh_note: 辐射器件：上方/侧向空气隙 λ0/4；贴片/互联/馈段盒缘精确入网（#198）
+smoke_note: 未真机冒烟（2026-09-15 注册，离线审计/闭式裁判已过）。openEMS 轨后续冒烟：scripts/smoke_array_anchor.py <template>，判据=S11 谷位 f0±12% 窗（谷深 ≤−6dB）+ far_field nf2ff 主瓣天顶/HPBW·Dmax 对照 core/array_synthesis 闭式 ≤20-30% + η=Prad/P_acc 合理；预算 NrTS=100000 分钟~小时级，逐模板串行单飞

@@ -1,0 +1,46 @@
+# Patch Antenna - 配方模板（P5 第三实例，C4 补齐 fake 链路）
+model: patch_antenna
+recipe_version: 1
+schema_version: 1
+notes: "2.4GHz 矩形贴片天线（底馈探针，官方口径），Rogers 4350B 0.508mm"
+params:
+  f0_ghz:         {value: 2.4,  unit: GHz}
+  z0_ohm:         {value: 50,   unit: ohm}
+  substrate:      rogers4350b_h0.508
+  patch_len_mm:   {value: 40.0}
+  patch_w_mm:     {value: 50.0}
+  feed_offset_mm: {value: 7.8}   # 底馈探针沿谐振轴距中心偏置（mm）。
+                                 # 2026-09-05 patch 模板按官方口径重构后三通道
+                                 # 统一消费本参数（openEMS LumpedPort x=-off、
+                                 # HFSS probe (off,0)、fake feed_offset→匹配）；
+                                 # 7.8 = HFSS 真机调参最优（patch_len 40.55 档），
+                                 # 对 40mm 档 R_in≈cos²(π·12.2/40)·R_edge≈50Ω 口径。
+                                 # 旧值 0.0（中心）是谐振模场节点，不耦合。
+setup:
+  solver: DrivenModal
+  freq_range_ghz: [1.5, 3.5]
+  points: 201
+  convergence_delta: 0.02
+objectives:
+  # 带窗 [1.8,2.1]：0.1⑤ HFSS 仲裁 PASS_A（2026-09-08）裁决 openEMS
+  # 谷位可信（HFSS 2.28 vs openEMS 2.20 @wilkinson 锚，残差 +3.64%），
+  # 引擎经验常数 f_dip·L≈76.8 GHz·mm 可作为 band×bounds 设计依据
+  # （#190 重设计，见 optimization.params 注释）。f0_ghz 保持 2.4
+  # （设计意图口径，HFSS 仲裁对象，不随 openEMS 残差漂移）。
+  # metric=s11_db_min（#195 谷深语义）：带内 min|S11| dB ≤ -10 即谷深
+  # 至少 10dB——裸 s11_db 在 MAX_BELOW 下恒取带内 max（≈0dB 常数陷阱，
+  # v1/v2 两轮 47 点 cost 零区分度），谷深语义必须走显式统计量指标名。
+  - {metric: s11_db_min, band: [1.8, 2.1], op: max_below, value: -10}
+optimization:
+  params:
+    # 2026-09-08 band×bounds 联合重设计（#190，FAIL 根因修正）：
+    # 首版 [35,45]×[40,60] 下 23/23 点带内 |S11|≈0dB（谐振谷不在
+    # 判读带内，cost 零区分度）。依据 23 点全带取证的经验常数
+    # f_dip·L ≈ 76.8 GHz·mm（W∈[40,45.6] 内极稳定；引擎谷位已获
+    # HFSS 同几何仲裁 ±3.64% 背书，0.1⑤ PASS_A）：
+    # - L∈[37.5,42.5] → 谷位 ∈[1.807,2.048] 全落判读带 [1.8,2.1]，
+    #   每个采样点都有真谷，cost 恢复排序区分度；
+    # - W≤45 避开 W>46 宽贴片异常簇（高阶模式谷淹没主模，#190）。
+    patch_len_mm:   {low: 37.5, high: 42.5}
+    patch_w_mm:     {low: 40.0, high: 45.0}
+limits: {max_trials: 30, max_wall_hours: 6}

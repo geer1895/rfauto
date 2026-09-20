@@ -1,0 +1,18 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ LumpedPort 1-2（共面带差分直馈，R=闭式 Z0：带内 |S11| 深谷=Z0 锚；εeff 锚=S21 解缠相位斜率——LumpedPort 无 β 属性，β 金标准如实降级）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- gap_mm
+- line_len_mm
+template: cps
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 2.95
+  gap_mm: 0.5
+  line_len_mm: 40.0

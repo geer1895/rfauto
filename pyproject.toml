@@ -1,0 +1,194 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rfauto"
+version = "0.10.0"
+description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
+readme = "README.md"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "rfauto developers" }]
+keywords = [
+    "RF", "microwave", "S-parameters", "HFSS", "ADS", "openEMS",
+    "simulation", "optimization", "calibration", "MCP", "agent",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+# project.urls 待公开仓库 URL 就绪后由维护者补填（不编造 URL）
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # 核心框架依赖（P0 即需）
+    "pydantic>=2.5.0",
+    "omegaconf>=2.3.0",
+    "loguru>=0.7.0",
+    "rich>=13.7.0",
+    "typer>=0.9.0",
+    # <2.5 上界：与 uv.lock 基线（2.4.x）对齐——2.5 起数值路径变化会漂移
+    # 少数优化器轨迹敏感测试（trust_region/topology 等），公开仓独立门实测
+    "numpy>=1.24.0,<2.5",
+    "scipy>=1.11.0",
+    "scikit-rf>=2.0,<3",
+    "matplotlib>=3.8.0",
+    "pandas>=2.1.0",
+    "optuna>=3.5.0",
+]
+
+[project.optional-dependencies]
+# EDA SDK —— P1/P3 起按需安装，仅在 adapters/ 内 import（军规 8）
+hfss = ["pyaedt>=1.4.0,<2"]  # 开发基线 1.4.0：API 参数名与旧版差异大，禁止降级
+# pymoo 多目标优化 —— P2 起按需；cmaes 为 optuna CmaEsSampler 的后端（缺口 5）
+multiobj = ["pymoo>=0.6.0", "cmaes>=0.13.0"]
+# MCP Server —— P4 起按需
+mcp = ["fastmcp>=3.0.0"]
+# UI（人工核验台 rfauto ui）—— starlette 路由 + uvicorn 服务
+#（#178 教训：旧 venv 手动装过、声明缺失，换机即断——WP0.1 收编）
+ui = ["starlette>=0.35", "uvicorn>=0.27"]
+# openEMS Python 绑定运行时依赖 —— 绑定本体（C 扩展）无 PyPI wheel，需从
+# openEMS 源码自行编译进 venv（参考 scripts/build_python_bindings.cmd），
+# 此处只声明绑定 import 时的依赖（numpy/matplotlib 已在核心依赖里）
+openems = ["h5py>=3.0"]
+# SMT 2.x（ONERA）—— smt_kriging 代理（阶段 1.2/6.2 co-kriging 基座）；
+# 可选依赖：未安装时注册表可见但 fit/predict 显式报错
+smt = ["smt>=2.9"]
+# torch（CPU 版）—— fno_lite 曲线算子原型（阶段 6.3）；GPU 化待硬件
+torch = ["torch>=2.0"]
+# VNA 硬件通道（方向 3）—— pyvisa 底座；无硬件环境不需要安装
+vna = ["pyvisa>=1.13"]
+# 数据集注册表 v2 —— Parquet 物化（pyarrow）+ DuckDB 直查；
+# 可选依赖：未安装时 materialize/query 显式报错（dataset_service 同 smt 模式）
+dataset = ["duckdb>=1.0", "pyarrow>=14.0"]
+# COMSOL Multiphysics（RF Module）桥 —— MPh（JPype）连 comsolmphserver 6.3（WP4.4c）；
+# 仅在 adapters/comsol_adapter.py 求解路径内惰性 import；无 COMSOL 环境不需要安装
+comsol = ["MPh>=1.4"]
+# NGSolve（开源 FEM）—— A9 零 license 频域通道（待确证项实测通过）：
+# Windows cp312 wheel 直装；HCurl 时谐 Maxwell 已实测可建/可解
+# （scripts/ngsolve_probe.py，PEC 单位立方腔基模 vs 闭式 pi*sqrt(2) rel_err 0.3%）；
+# 端口激励/S 参数无现成 API，需手工 mode matching 后处理。
+ngsolve = ["ngsolve>=6.2"]
+# JAX 原生可微 FDTD（A7，FDTDX/rfx 路线）—— CPU wheel 直装（含 jaxlib ~68MB）；
+# GPU 为用户侧跳过项，本项只确证 CPU 小规模可微性
+# （scripts/jax_probe.py：1D Yee FDTD jax.grad vs 中心差分 rel_err 1.7e-8，jax/jaxlib 0.11.1）。
+jax = ["jax>=0.11.1"]
+# FDTDX 真引擎（§10.24 A7"真引擎/GPU 待续"的 CPU 接入，adapters/fdtd_diff.py）——
+# 传递依赖 jax>=0.4.36；注意 tidy3d 间接钉 numpy<2.5、fastmcp<4（安装时会让
+# venv 内 numpy/fastmcp 降级，pip check 无冲突即可用）
+diff-fdtd = ["fdtdx>=0.6.2"]
+# pydantic-ai（slim+openai extra）—— WP3.1 runtime: pydantic_ai 可选依赖组：
+# 未安装时 create("pydantic_ai") 照常注册（懒加载），submit 报 PydanticAINotInstalled；
+# 安装：pip install rfauto[pai]。版本口径见 service/pydantic_ai_runtime.py 源码核对注记
+pai = ["pydantic-ai-slim[openai]>=1.0,<3"]
+# G9 场可视化 3D（§10.7）—— PyVista（VTK）等值面/切片 web 化；仅在
+# infra/visualization.py::field_isosurface 内惰性 import，未安装时 numpy/
+# matplotlib 等值线降级（engine 标签如实回写，#105 best-effort 不阻塞主路径）。
+# vtk wheel 约 100MB+，按需安装：pip install rfauto[viz3d]
+viz3d = ["pyvista>=0.43", "vtk>=9.2"]
+# 开发依赖
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "import-linter>=2.0.0",  # P2: 架构分层契约验证（.importlinter）
+    "packaging>=23.0",  # scripts/check_env_deps.py 依赖体检用（WP0.1）
+    "hypothesis>=6.0",  # G15 物理不变量属性/元变测试（§10.19 D15/G15）
+    "scikit-learn>=1.3",  # tests：surrogate_analysis 离线分析 GP（src 侧惰性导入带降级，tests 直依赖）
+    "pyyaml>=6.0",  # tests：任务集 gold yaml 读写
+    # 离线单测套件消费的可选内核：缺位时相应测试组 fail 而非 skip（公开仓
+    # 独立环境实测），dev 一并声明保证 `pip install -e ".[dev]"` 后全套可跑
+    "smt>=2.9",  # surrogate kriging（surrogate 同名 extra 的内核）
+    "duckdb>=1.0",  # 数据集注册表直查
+    "pyarrow>=14.0",  # 数据集 Parquet 物化
+    "gdstk>=1.0",  # GDSII 版图通道（layout_interchange 惰性导入）
+    "pypdf>=4.0",  # PDF 报告导出测试读回校验（export_report_pdf）
+]
+
+[project.scripts]
+rfauto = "rfauto.cli.main:app"
+rfauto-mcp = "rfauto.mcp_server:main"  # MCP 发布包 console script（stdio 传输）
+
+# P2-D3：插件 entry-point 发现（registry._discover_entry_points 读取此组）
+[project.entry-points."rfauto.models"]
+wilkinson-power-divider = "rfauto.models.wilkinson_power_divider.plugin:WilkinsonPDPlugin"
+branchline-coupler = "rfauto.models.branchline_coupler.plugin:BranchlineCouplerPlugin"
+patch-antenna = "rfauto.models.patch_antenna.plugin:PatchAntennaPlugin"
+mline = "rfauto.models.mline.plugin:MlinePlugin"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rfauto"]
+
+# sdist 发布卫生：hatchling 默认打包全部非 gitignore 文件，会混入本地工作
+# 产物（ads_reference/ 含 ADS 文档快照——README 承诺不分发 Keysight 受保护
+# 内容、pyaedt_reference/、skills/、运行数据与内部工作文档）。
+# 只排除、不白名单。
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.hypothesis",
+    "/.zcode",
+    "/ads_reference",
+    "/pyaedt_reference",
+    "/skills",
+    "/runs",
+    "/_*.py",
+    "/uv.lock",
+    "/.pre-commit-config.yaml",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    "E501",
+    # RUF001/002/003：中文注释/文档/字符串中的全角标点（，：；）是刻意排版，
+    # 不是"ambiguous character"事故——中文代码库应整体豁免这三条
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    # B027：SimulatorAdapter 可选方法层（capabilities 模式）故意提供
+    # 非抽象的空默认实现，调用前查 capabilities() 是既定契约（ADR-0010）
+    "B027",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rfauto"]
+
+[tool.ruff.lint.per-file-ignores]
+# 测试文件先做 sys.path 注入再 import rfauto（无 editable 安装环境下兜底），
+# E402 是该模式的固有形态
+"tests/*" = ["E402"]
+# 历史探索/spike 脚本（ADS 官方 API 探路、openEMS 冒烟）是当时的调查证据，
+# 保持原样不作现代化整改——仅豁免风格类规则
+"scripts/spike_b_ads/*" = ["E402", "SIM115", "E741", "UP031", "F401", "RUF015"]
+"scripts/spike_a_microstrip.py" = ["E402"]
+"scripts/smoke_openems_adapter.py" = ["E402"]
+# run_wilkinson_openems.py 顶层持有的绑定会话文件对象是脚本生命周期设计
+"scripts/run_wilkinson_openems.py" = ["SIM115"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "real_edt: 需要真实 AEDT/ADS 环境（deselect with -m not real_edt）",
+]

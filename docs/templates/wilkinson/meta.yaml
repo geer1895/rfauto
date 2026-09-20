@@ -1,0 +1,19 @@
+f0_ghz: 2.5
+n_ports: 3
+extraction: S11/S21/S31/S23 @ MSLPort 1-3（S23 双激励第二 run，#211 footer 修复后第二激励前禁用全部非 e3_ 前缀 Excitation）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- series_w_mm
+- shunt_w_mm
+- arm_len_mm
+topology: T型分叉 + 双 λ/4 臂（x 向并列）+ 100Ω 隔离电阻（LumpedElement）
+template: wilkinson
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  series_w_mm: 0.604
+  shunt_w_mm: 1.113
+  arm_len_mm: 18.1

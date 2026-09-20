@@ -1,0 +1,80 @@
+{
+ "kind": "engine_benchmark_mline_rescan",
+ "captured_at": "2026-09-13",
+ "provenance": {
+  "harness": "scripts/engine_benchmark_mline.py",
+  "command": ".venv/Scripts/python.exe scripts/engine_benchmark_mline.py",
+  "log": "runs/benchmark/rescan_20260913.log",
+  "live_result": "runs/benchmark/mline_mesh_convergence.json",
+  "pre_rescan_backup": "runs/benchmark/mline_mesh_convergence_pre_rescan_20260913.json",
+  "kernel": "src/rfauto/core/anchor_verdict.py::mline_benchmark_verdict",
+  "openems_exe": "vendor/openEMS/install/bin/openEMS.exe",
+  "note": "2026-09-13 复扫真跑证据入库快照（runs/ 不入库，验收门要求可提交面覆盖证据）；result 为 live_result 逐字节内容回录；日志尾 ENGINE_BENCHMARK_MLINE_PASS"
+ },
+ "result": {
+  "anchor": "mline",
+  "w_mm": 1.113,
+  "line_len_mm": 40.0,
+  "eps_hj_closed_form": 2.85264,
+  "eps_gold_standard": 2.886,
+  "judge_freq_ghz": 2.5,
+  "entries": [
+   {
+    "mesh_mm": 0.0,
+    "ok": true,
+    "wall_s": 46,
+    "s11_max_db": -23.93,
+    "eps_eff": 2.91836,
+    "delta_vs_hj_pct": 2.304,
+    "delta_vs_gold_pct": 1.121
+   },
+   {
+    "mesh_mm": 0.6,
+    "ok": true,
+    "wall_s": 128,
+    "s11_max_db": -28.41,
+    "eps_eff": 2.88841,
+    "delta_vs_hj_pct": 1.254,
+    "delta_vs_gold_pct": 0.084
+   },
+   {
+    "mesh_mm": 0.4,
+    "ok": true,
+    "wall_s": 499,
+    "s11_max_db": -30.54,
+    "eps_eff": 2.88281,
+    "delta_vs_hj_pct": 1.058,
+    "delta_vs_gold_pct": -0.11
+   },
+   {
+    "mesh_mm": 0.25,
+    "ok": true,
+    "wall_s": 2417,
+    "s11_max_db": -32.23,
+    "eps_eff": 2.8813,
+    "delta_vs_hj_pct": 1.005,
+    "delta_vs_gold_pct": -0.163
+   }
+  ],
+  "convergence_finest2_pct": 0.0524,
+  "delta_vs_gold_pct": -0.163,
+  "delta_vs_hj_pct": 1.005,
+  "verdict": "PASS",
+  "criteria": {
+   "convergence_pct_lt": 1.0,
+   "delta_vs_gold_pct_abs_le": 2.0,
+   "delta_vs_hj_pct_abs_le": 3.0,
+   "s11_max_db_lt": -10
+  }
+ },
+ "pre_rescan_189": {
+  "note": "#189 预扫（旧 HJ 单门 JSON，备份于 pre_rescan_backup）逐档 εeff——升级/换机复现锚对照：最细档五位小数逐位一致，其余档差 ≤3e-5",
+  "eps_eff_by_mesh": [
+   [0.0, 2.91834],
+   [0.6, 2.88839],
+   [0.4, 2.88284],
+   [0.25, 2.8813]
+  ],
+  "finest_eps_eff": 2.8813
+ }
+}

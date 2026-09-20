@@ -1,0 +1,21 @@
+f0_ghz: 2.4
+n_ports: 1
+extraction: S11 @ LumpedPort 1（PEC 地面 λ0/4 竖直细带单极子：谷位/谷深；真机 −17.39dB@2.135GHz，端效应 −11%）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- mon_len_mm
+- mon_w_mm
+- feed_gap_mm
+template: monopole
+substrate:
+ er: 3.66
+ h_mm: 0.508
+nominal_params:
+ mon_len_mm: 31.2284
+ mon_w_mm: 1.0
+ feed_gap_mm: 2.0
+topology: 单极子（C1 天线族 II）：竖直零厚细带（x 向宽 mon_w，y=0 面）自馈口顶 z=feed_gap 起立 λ0/4；馈口=地面 z=0 → 细带底缘 LumpedPort（patch 底馈探针同型）；无介质板（像理论口径）
+param_semantics: mon_len_mm=细带长（一阶谐振 λ0/4=c/(4f0)，像理论），mon_w_mm=细带宽，feed_gap_mm=馈口高（地面到细带底缘，LumpedPort 激励向 z 跨度）
+smoke_note: 真机冒烟（2026-09-14）PASS：S11 −17.39dB @2.135GHz（设计 2.4，−11.0% 端效应）；Zin 电抗过零 2.110GHz R=37.3Ω（Balanis 36.5Ω 口径吻合）
