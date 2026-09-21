@@ -533,5 +533,8 @@ class TestRunsMountGating:
                                env={"COLUMNS": "200"})
         if result.exit_code != 0:
             pytest.fail(f"ui --help 失败: {result.output}")
-        assert "--expose-runs" in result.output
-        assert "--no-expose-runs" in result.output
+        import re as _re
+        plain = _re.sub(r"\[[0-9;]*m", "", result.output)
+        flat = _re.sub(r"\s+", "", plain)
+        assert "--expose-runs" in flat
+        assert "--no-expose-runs" in flat

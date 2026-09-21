@@ -30,13 +30,13 @@ MIN_TESTS = 7400
 # README.md（英文）与 README.zh-CN.md（中文）共用同一组 badge/数字版式。
 DOC_PATTERNS: dict[str, list[tuple[str, str]]] = {
     "README.md": [
-        (r"badge/tests-(\d+)\+?-", "tests_min"),
+        (r"badge/tests-(\d+)", "tests_min"),
         (r"(\d+) MCP tools", "mcp"),
         (r"(\d+) CLI commands", "cli"),
         (r"(\d+) parameterized device templates", "templates"),
     ],
     "README.zh-CN.md": [
-        (r"badge/tests-(\d+)\+?-", "tests_min"),
+        (r"badge/tests-(\d+)", "tests_min"),
         (r"(\d+) 个 MCP 工具", "mcp"),
         (r"(\d+) 条 CLI 命令", "cli"),
         (r"(\d+) 个参数化器件模板", "templates"),
@@ -103,7 +103,7 @@ def count_templates() -> int:
 def mcp_entry_missing_message(exe: Path = MCP_ENTRY_EXE) -> str | None:
     """安装态断言：仅当本地 .venv 存在时检查 console script exe；
     CI 临时环境没有仓库根 .venv，返回 None 跳过。"""
-    if not (REPO_ROOT / ".venv").is_dir():
+    if exe == MCP_ENTRY_EXE and not (REPO_ROOT / ".venv").is_dir():
         return None
     if exe.exists():
         return None
