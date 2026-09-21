@@ -455,8 +455,12 @@ def _kk_ratio(k: float) -> float:
 
 
 def _cps_ri(w_mm: float, gap_mm: float, h_mm: float,
-            epsilon_r: float) -> tuple[float, float]:
+            epsilon_r: float, corner2d: bool = False) -> tuple[float, float]:
     """CPS（coplanar strips，双带无地）准静态共形映射闭式 + FD 定标：(εeff, Z0)。
+
+    corner2d=True 时叠加角落二维修正（h_eff = γ(εr)·E2(a/h,b/h,εr)·h，见
+    cps_corner2d_gamma_factor；a/h<1 与缺省路径逐位一致，缺省 False 保守
+    维持定标域内已验证口径）。
 
     几何：两条等宽带 w 并行，中央缝 gap；a=gap/2（内缘半距）、b=gap/2+w
     （外缘半距）、基板厚 h、基板下方为空气（无地）。
@@ -488,6 +492,11 @@ def _cps_ri(w_mm: float, gap_mm: float, h_mm: float,
         → −2.8%；a/h=3、b/h=6、εr=12.9 → −5.7%（FD 单档裁判，test_cps_template
         钉住该边界）；比此前 refs 注记的"−2~−4%"更负且随 εr 加重。repo CPS
         模板名义 a/h=0.49、b/h=6.3 在定标域内（INFO 门 ≤1.2%）。
+        **角落二维修正（2026-09-21 C5 followUp，corner2d=True opt-in）**：a/h≥1
+        角落区按 160 点在档 FD 拟合 log E2 全二次面（γ 空间，10 系数，
+        LOOCO max 2.13%；修正后角落残差 max 0.40% vs 修正前 −5.77%），
+        定标域/系数/复现入口见 cps_corner2d_gamma_factor；缺省 False，
+        缺省路径与上面钉住的边界证据表逐位一致。
     极限自洽（有单测，定标不改变）：h→0 εeff→1；h→∞ εeff→(1+εr)/2（Wen
     半空间口径，γ 不影响）；gap→0 Z0→0、gap→∞ Z0→∞；Z0 随 w 单调递减；
     εeff∈(1, εr)。Z0 = 1/(c·√(C·C_air))（L=1/(c²C_air) 准静态恒等式）。
@@ -498,6 +507,8 @@ def _cps_ri(w_mm: float, gap_mm: float, h_mm: float,
     b = gap_mm / 2.0 + w_mm
     k1 = a / b
     h_eff = h_mm * cps_effective_thickness_factor(epsilon_r)
+    if corner2d:
+        h_eff *= cps_corner2d_gamma_factor(a / h_mm, b / h_mm, epsilon_r)
     k3 = (math.tanh(math.pi * a / (2.0 * h_eff))
           / math.tanh(math.pi * b / (2.0 * h_eff)))
     r1 = _kk_ratio(k1)
@@ -525,6 +536,70 @@ def cps_effective_thickness_factor(epsilon_r: float) -> float:
     if epsilon_r < 1.0:
         raise ValueError("εr≥1")
     return 1.0 + CPS_H_EFF_GAMMA_C * float(epsilon_r) ** (-CPS_H_EFF_GAMMA_P)
+
+
+#: CPS 角落二维修正常数（2026-09-21 C5 followUp，#333 方法论；定标数据=
+#: runs/w2f_rescale_batch/cps_bh_scan.json 160 点 a/h×b/h×εr FD 单档裁判，
+#: 复现：scripts/fd_laplace_tline_referee.py --refit-cps-corner2d，侦察与
+#: 形状族对比脚本 runs/cps_corner2d_fit/explore_fit.py）。模型（γ 空间，
+#: 进 tanh 映射，εr=1 / h→0 / h→∞ 三支极限由框架自动保持）：
+#:   log E2 = Σ c·φ，x = a/h − 1，
+#:   φ = (1, x, ln(b/h), ln(εr), x², ln²(b/h), ln²(εr),
+#:        x·ln(b/h), x·ln(εr), ln(b/h)·ln(εr))
+#: 角落区 = a/h ≥ 1（γ(εr) 定标域边界；a/h<1 时 E2 ≡ 1 逐位不动）。
+#: 结构对比（leave-one-cell-out，20 格）：线性 4 系数 LOOCO max 6.07% →
+#: 加对角二次 7 系数 4.06% → 全二次 10 系数 2.13%；全量拟合后角落残差
+#: max 0.40%/rms 0.17%（修正前 −2.8~−5.77%）。定标域：
+#:   1.0 ≤ a/h ≤ 3.0、a/h < b/h ≤ 6.0、1.5 ≤ εr ≤ 12.9（FD 扫描网格内；
+#:   域外显式拒绝不外推——(a/h=3, b/h≈a/h) 邻域与 b/h>6 外推方向无数据约束）
+CPS_CORNER2D_COEFFS = (
+    0.07944011580288148,
+    0.15367879549434305,
+    0.04932249237139794,
+    -0.023693621533094955,
+    0.003343053804404557,
+    -0.04214467442272382,
+    0.0005920149590515455,
+    -0.025771928077387082,
+    -0.022407272476807582,
+    0.004118895177757769,
+)
+CPS_CORNER2D_AH_MIN = 1.0
+CPS_CORNER2D_AH_MAX = 3.0
+CPS_CORNER2D_BH_MAX = 6.0
+CPS_CORNER2D_ER_MIN = 1.5
+CPS_CORNER2D_ER_MAX = 12.9
+
+
+def cps_corner2d_gamma_factor(a_over_h: float, b_over_h: float,
+                              epsilon_r: float) -> float:
+    """CPS 角落二维修正因子 E2(a/h, b/h, εr)（乘在 γ(εr) 上，opt-in）。
+
+    a/h < 1（γ(εr) 单参数定标域内）恒返回 1.0（逐位不动）；εr = 1 亦恒 1.0
+    （均匀空气超额项为零，γ 与本修正对 εeff 均无作用）；a/h ≥ 1 时按
+    CPS_CORNER2D_COEFFS 的 log 二次面求值，超出 FD 定标网格显式 ValueError
+    （不外推，#122 如实）。消费：_cps_ri(corner2d=True)；
+    复现：scripts/fd_laplace_tline_referee.py --refit-cps-corner2d。"""
+    if a_over_h < CPS_CORNER2D_AH_MIN or epsilon_r <= 1.0:
+        return 1.0
+    if (a_over_h > CPS_CORNER2D_AH_MAX or b_over_h > CPS_CORNER2D_BH_MAX
+            or b_over_h <= a_over_h
+            or epsilon_r < CPS_CORNER2D_ER_MIN or epsilon_r > CPS_CORNER2D_ER_MAX):
+        raise ValueError(
+            f"CPS 角落二维修正定标域：1.0≤a/h≤{CPS_CORNER2D_AH_MAX}、"
+            f"a/h<b/h≤{CPS_CORNER2D_BH_MAX}、"
+            f"{CPS_CORNER2D_ER_MIN}≤εr≤{CPS_CORNER2D_ER_MAX}"
+            f"（got a/h={a_over_h}, b/h={b_over_h}, εr={epsilon_r}；"
+            "域外无 FD 数据约束，不外推）")
+    x = a_over_h - CPS_CORNER2D_AH_MIN
+    lv, lw = math.log(b_over_h), math.log(epsilon_r)
+    e = (CPS_CORNER2D_COEFFS[0]
+         + CPS_CORNER2D_COEFFS[1] * x + CPS_CORNER2D_COEFFS[2] * lv
+         + CPS_CORNER2D_COEFFS[3] * lw + CPS_CORNER2D_COEFFS[4] * x * x
+         + CPS_CORNER2D_COEFFS[5] * lv * lv + CPS_CORNER2D_COEFFS[6] * lw * lw
+         + CPS_CORNER2D_COEFFS[7] * x * lv + CPS_CORNER2D_COEFFS[8] * x * lw
+         + CPS_CORNER2D_COEFFS[9] * lv * lw)
+    return math.exp(e)
 
 
 @register_calculator(

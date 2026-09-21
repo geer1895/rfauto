@@ -4,6 +4,38 @@ All notable changes to rfauto will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `gbdt` surrogate model (opt-in `rfauto[gbdt]` extra) and a GP posterior-sigma
+  saturation early-stop channel for surrogate optimization loops (opt-in).
+- Two-dimensional dataset collection drivers for the openEMS data factory
+  (`factory_a2d_collect`, `factory_g2_collect`) with dual-criterion surrogate
+  judges (S21-dB / epsilon-eff / linear-domain reflection).
+- HFSS anchor arbitration tooling for multi-fidelity validation
+  (`factory_mf_hfss_anchors`, `factory_m2_mfk_rejudge`) and slotline/coupler
+  arbitration scripts.
+- Circuit-level redesign synthesis driver for the coupled-resonator filter
+  family (`c3_redesign_synthesis`) and a two-stage full-convergence campaign
+  runner (`c3_fullcurve_runner`).
+- CPS quasi-static closed-form corner correction (`cps_corner2d_gamma_factor`,
+  opt-in) and port line-length guards.
+
+### Changed
+- CPW-family production templates now default to 8 substrate z-layers
+  (`_sub_cells`), closing the grid-underresolution residual on the msl_cpw
+  anchor (was -2.15%, now +0.75%/-0.97% within the +/-2% gate).
+- `pyproject.toml` migrated to PEP 639 SPDX license expression.
+- Open-circuit stub length in slotline transitions now applies the standard
+  minus-delta-l end-effect convention.
+
+### Fixed
+- Resumed multi-fidelity optimizations reuse completed trials instead of
+  re-evaluating (stable study naming derived from recipe content + seed).
+- Tuning objective evaluations consult the result cache (tri-state switch,
+  fail-open on cache errors).
+- Merged default run-index path handling onto `default_registry_db_path()`.
+- pyaedt 1.x compatibility for HFSS anchor scripts (per-object bounding-box
+  API).
+
 ### Changed
 - License changed from MIT to **GPL-3.0-only** for the whole repository.
 - Public repository curation: internal working documents, the agent

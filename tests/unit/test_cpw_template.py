@@ -64,6 +64,43 @@ def test_render_script_cpw_structure():
     assert text.count("cpw.AddBox") == 3
 
 
+def test_g3_sub_cells_default_family_policy():
+    """G3 2026-09-22 缺省变更钉（#325 语义：钉"现行缺省"）。
+
+    cpw 与 zconv 定案实验（runs/msl_cpw_zconv，GRID_UNDERRES+SATURATED_
+    RESIDUAL，网格份额 78%）实测的 msl_cpw CPW 段同构：同名义线
+    （w=0.849/gap=0.2 的 50Ω CPWG）、同叠层（rogers4350b h=0.508 底 PEC）、
+    同一闭式参考 εeff≈2.56729、同一 z 块消费路径（微带族 else 分支
+    _sub_pts）——族内生产缺省 _sub_cells=8（#313 z 向地板项）。逐字节
+    不变面同钉：显式 _sub_cells=4 回旧口径且与新缺省全文 diff 恰 1 行。
+    """
+    import re
+
+    from rfauto.adapters.openems_templates import render_script
+
+    def z_sub_pts(text: str) -> int:
+        m = re.search(
+            r'mesh\.AddLine\("z", np\.linspace\(0, H_SUB, (\d+)\)\)', text)
+        assert m, "基板 z linspace 行未找到"
+        return int(m.group(1))
+
+    nominal = {"w_mm": 0.849, "gap_mm": 0.2, "line_len_mm": 40.0}
+    default_text = render_script("cpw", dict(nominal), (2.25, 2.75))
+    assert z_sub_pts(default_text) == 9  # 8 格（G3 新缺省）
+    old_text = render_script("cpw", {**nominal, "_sub_cells": 4},
+                             (2.25, 2.75))
+    assert z_sub_pts(old_text) == 5  # 官方 substrate_cells=4 旧口径
+    assert render_script("cpw", {**nominal, "_sub_cells": 8},
+                         (2.25, 2.75)) == default_text
+    old_lines = old_text.splitlines()
+    new_lines = default_text.splitlines()
+    assert len(old_lines) == len(new_lines)
+    changed = [i for i, (a, b) in enumerate(
+        zip(old_lines, new_lines, strict=True)) if a != b]
+    assert len(changed) == 1, f"缺省变更应恰动 z 一行，实动 {len(changed)} 行"
+    assert "linspace(0, H_SUB, 9)" in new_lines[changed[0]]
+
+
 def test_fake_cpw_dispatch_matches_cpwg_closed_form():
     from rfauto.adapters.fake_adapter import FakeAdapter
     from rfauto.core.calculators import _cpwg_ri

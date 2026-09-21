@@ -311,6 +311,22 @@ class TestService:
         result = surrogate_optimize("no_such_recipe.yaml")
         assert not result["ok"]
 
+    def test_service_uncertainty_passthrough(self, tmp_path):
+        """B5 透传：uncertainty_tol 非 None 时环内 σ 记录键出现在 rounds
+        （服务层同名参数直达内核；CLI/MCP 不暴露，仅可编程入口）。"""
+        from rfauto.service.surrogate_optimize_service import (
+            surrogate_optimize,
+        )
+
+        recipe = _sbo_recipe(tmp_path)
+        result = surrogate_optimize(
+            recipe, adapter_name="fake",
+            n_init=6, top_k=2, max_real=10, virtual_trials=150, seed=42,
+            uncertainty_tol=0.0, uncertainty_pool=64)
+        assert result["ok"], result.get("errors")
+        assert any("sigma_cost_max" in r for r in result["rounds"])
+        assert result["stop_reason"] != "uncertainty_saturated"
+
 
 class TestCli:
     def test_tune_sbo_command(self, tmp_path):

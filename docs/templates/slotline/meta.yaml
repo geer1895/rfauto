@@ -20,5 +20,44 @@ nominal_params:
   tan_d: 0.0037
 topology: 均匀槽线段（路线 A，单面金属开缝、无地开放结构）：槽 |y|≤w/2 贯通至两端边界，两端 WaveguidePort（E/H 模式文件），激励面内移 16·BASE 出 PML_8；基板 z∈[0,h]，上下/侧向 MUR、端口轴 PML_8；槽跨压探针 9 站
 param_semantics: w_mm=槽宽，line_len_mm=两测量面间距（设计 ≈1λ' 槽波长，闭式精算），h_mm=基板厚（模板参数：JS 闭式域 d/λ0≥0.006，缺省叠层 0.508@2.5GHz 落域外，设计点 RO4350B 60mil=1.524）
-mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫；槽缘细化步长 min(NEAR, w/8)、地板 10µm（#349，0df④——自动档恰为 w/8 且引擎 dt 相应减半，真跑前按 et 实测 dt 重排 NrTS，#283）
 smoke_note: 真机 PASS：β 闭式 67.227/NGSolve 67.149/openEMS 67.937 rad/m 互差 ≤1.2%、|S11|@f0 −39.1dB、|S21| −0.32dB 三门。运行前置：模式文件必须先经 adapters/ngsolve_modes.solve_slotline_mode + openems_slotline_port.write_slotline_mode_files 生成，params 传 e_mode_file/h_mode_file 绝对路径（缺省名仅占位，真跑会缺文件报错）；kc/z_mode 缺省由闭式反解，正式口径取 NGSolve 解
+# ── HFSS 仲裁回填（2026-09-17 真机路线 B 收口；
+#    docs-only 注释性元数据，仅记录对拍口径——物理参数/裁判面不因此改动，
+#    ratrace engine_constants 同款先例；判据预声明于 scripts/hfss_slotline_arbitration.py
+#    --plan，真机判读未改门，#122）──
+hfss_arbitration:
+  pre_declared_gates:
+    beta_le_5pct: "|β_HFSS−β_闭式|/β_闭式@f0 ≤5%（闭式自身拟合带内 ~2%）"
+    beta_s21_le_5pct: "|β_S21相位路−β_闭式|/β_闭式@f0 ≤5%"
+    s21_vs_gamma_consistency_le_1pct: "HFSS 两路 β 自洽 ≤1%（如实记录，FAIL 不凑绿）"
+    three_route_vs_hfss_le_2pct5: "路线 A/B openEMS β 对 HFSS 互差 ≤±2.5%→AGREE（槽线族解锁判据）"
+    amplitude_le_0p5db_same_direction: "#350 跨引擎幅度对拍：|S21|@f0 差 ≤0.5dB 且偏移方向一致才 AGREE（路线 A 匹配线口径可比；路线 B 原始 S=并联抽头拓扑 #256 不比幅只比 β）"
+    z0_no_hard_gate: "Zpv/Zpi/Zvi 三定义 vs 闭式 Z0 全记录不硬判（Z0 取 Modal Solution Data Zo(P1,CharImp=Zpv)，touchstone 两列恒 Zpi 禁用作 Z0，#254④）"
+  design_point:
+    w_mm: 1.0
+    h_mm: 1.524
+    er: 3.66
+    f0_ghz: 2.5
+    line_len_mm: 93.4624
+    port_variants_mm: "mid y±40/z∓20、wide y±60/z∓30（=路线 A 截面，基准档）、xl y±90/z∓45；narrow5w 微带惯例框=fin-line 截止倏逝模（cutoff≈9.95GHz）留证 #254③"
+  beta_three_way:
+    closed_form_rad_m: 67.2269
+    hfss_wide_rad_m: 66.7666
+    hfss_vs_cf_pct: -0.68
+    hfss_port_convergence_pct: "mid −2.38→wide −0.68→xl −0.17（框截断单调收敛）"
+    route_a_rad_m: 67.9366
+    route_a_vs_hfss_pct: 1.75
+    route_b_rad_m: 68.401
+    route_b_vs_hfss_pct: 2.45
+    ngsolve_rad_m: 67.1486
+  amplitude:
+    route_a_s21_db_line_basis: -0.32
+    hfss_s21_db_50ohm: -0.55
+    delta_db: 0.23
+    gate: "0.23 ≤0.5dB PASS（同为匹配线轻微插损量级，方向一致无符号冲突）"
+  consistency_gate_fail_record:
+    s21_vs_gamma_pct: 1.69
+    verdict_record: "两路自洽门 FAIL（+1.69%>1%）如实记录：S21 相位路含端接失配残差，主口径取 Gamma 路（预声明门错/红不事后改门 #122）"
+  verdict: AGREE
+  evidence: runs/slotline_arbitration/{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段

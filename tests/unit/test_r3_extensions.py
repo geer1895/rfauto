@@ -96,6 +96,87 @@ class TestSolverManagement:
         assert not result["ok"]
 
 
+class TestSpiceToolStatus:
+    """ngspice/Xyce 电路级通道探测（0ca followUp④：solvers.yaml 管理页记录
+    + service 层读取支持）。两态 mock 钉死；单项失败不阻塞另一项（#105）。"""
+
+    _SPICE_YAML = (
+        "solvers:\n"
+        "  openems:\n"
+        "    solver_type: openems\n"
+        "  ngspice:\n"
+        "    solver_type: ngspice\n"
+        "  xyce:\n"
+        "    solver_type: xyce\n"
+    )
+
+    def test_configured_two_states_independent(self, tmp_path, monkeypatch):
+        """ngspice 可用、xyce 不可用：逐项如实上报，互不阻塞，ok 恒 True。"""
+        cfg = tmp_path / "solvers.yaml"
+        cfg.write_text(self._SPICE_YAML, encoding="utf-8")
+        ng_dir = tmp_path / "ngbin"
+        ng_dir.mkdir()
+        (ng_dir / "ngspice_con.exe").write_text("")
+        monkeypatch.setenv("RFAUTO_NGSPICE_BIN", str(ng_dir))
+        monkeypatch.setenv("RFAUTO_XYCE_BIN", str(tmp_path / "no_xyce"))
+        monkeypatch.setattr("rfauto.adapters.spice_netlist.shutil.which",
+                            lambda name: None)
+        from rfauto.service.r3_services import spice_tool_status
+        result = spice_tool_status(cfg)
+        assert result["ok"] is True
+        ng = result["tools"]["ngspice"]
+        xy = result["tools"]["xyce"]
+        assert ng["configured"] and ng["available"] is True
+        assert ng["exe"] == str(ng_dir / "ngspice_con.exe")
+        assert ng["error"] is None
+        assert xy["configured"] and xy["available"] is False
+        assert xy["exe"] is None
+        # xyce_available 内部 best-effort 吞 FileNotFoundError（#105）——
+        # 不可用是"探测已跑、未找到"而非异常，error 保持 None
+        assert xy["error"] is None
+
+    def test_unconfigured_sections_reported_honestly(self, tmp_path, monkeypatch):
+        """solvers.yaml 无 spice 节：configured=False 且不可用（不冒充）。"""
+        cfg = tmp_path / "solvers.yaml"
+        cfg.write_text("solvers:\n  openems:\n    solver_type: openems\n",
+                       encoding="utf-8")
+        monkeypatch.delenv("RFAUTO_NGSPICE_BIN", raising=False)
+        monkeypatch.delenv("RFAUTO_XYCE_BIN", raising=False)
+        monkeypatch.setattr("rfauto.adapters.spice_netlist.shutil.which",
+                            lambda name: None)
+        monkeypatch.setattr(
+            "rfauto.adapters.spice_netlist._WORKSPACE_NGSPICE", tmp_path / "nope")
+        from rfauto.service.r3_services import spice_tool_status
+        result = spice_tool_status(cfg)
+        assert result["ok"] is True
+        for name in ("ngspice", "xyce"):
+            assert result["tools"][name]["configured"] is False
+            assert result["tools"][name]["available"] is False
+
+    def test_repo_config_spice_sections_loadable(self):
+        """仓内 configs/solvers.yaml 的 ngspice/xyce 节真实存在且可加载
+        （管理页记录：自定义字符串 solver_type，非 EM 枚举成员）。"""
+        from pathlib import Path
+
+        from rfauto.adapters.em_solver_base import load_solvers_config
+        repo_yaml = Path(__file__).resolve().parents[2] / "configs" / "solvers.yaml"
+        cfg = load_solvers_config(repo_yaml)
+        assert "ngspice" in cfg and "xyce" in cfg
+        assert cfg["ngspice"].solver_type == "ngspice"
+        assert cfg["xyce"].solver_type == "xyce"
+        from rfauto.service.r3_services import spice_tool_status
+        result = spice_tool_status(repo_yaml)
+        assert result["ok"] is True
+        assert result["tools"]["ngspice"]["configured"] is True
+        assert result["tools"]["xyce"]["configured"] is True
+        # 可用性与机器环境相关：可用则必须给出 exe，不可用则如实 False
+        for tool in result["tools"].values():
+            if tool["available"]:
+                assert tool["exe"]
+            else:
+                assert tool["exe"] is None
+
+
 class TestApprovalInbox:
     def test_empty_inbox(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)

@@ -313,7 +313,7 @@ def run_sweep(
         "method": method,
         "metrics": all_results[0]["metrics"] if all_results else {},
     })
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id,
         "model": model_name,
         "adapter": adapter_name,

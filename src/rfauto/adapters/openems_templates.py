@@ -40,6 +40,22 @@ class TemplateResult:
 # Q 虚高且不符合真实板材；损耗对谐振频率影响 ~0.1% 量级，E4 已验证无碍）
 _DEFAULT_SUB = {"er": 3.66, "h_mm": 0.508, "tan_d": 0.0037}
 
+# 基板 z 向格数缺省（render_script `_sub_cells` 旋钮的缺省档，G3 2026-09-22）：
+# 非族模板维持官方 substrate_cells=4（旧口径逐字节不变）；CPW/槽下场族生产
+# 缺省抬到 8——依据 msl_cpw zconv 定案实验（runs/msl_cpw_zconv，2026-09-20
+# 预声明判据先写后跑）：β2 偏差 dev −2.151→−0.971→−0.474pp（sub4→8→16），
+# verdict=GRID_UNDERRES(份额归网格, 78%)+SATURATED_RESIDUAL，sub8 即回
+# msl_cpw_benchmark_verdict ±2% 锚门内（kernel PASS 五门全过）——z 向基板
+# 分层（127µm 格 vs CPW 槽下场竖直尺度 h/π≈0.162mm）是该族 ZL/εeff 的
+# 分辨限制项（#313 z 向地板项）。显式传 _sub_cells 仍最高优先。
+_SUB_CELLS_DEFAULT = 4
+#: 族内模板（同构证据口径）：
+#: - msl_cpw：zconv 直接证据（上述定案实验即在本模板实测）。
+#: - cpw：与 zconv 实测 CPW 段同构——同名义线（w=0.849/gap=0.2，50Ω CPWG
+#:   _cpwg_ri 口径）、同叠层（rogers4350b h=0.508 底 PEC）、同一闭式参考
+#:   （εeff≈2.56729）、同一 z 块消费路径（微带族 else 分支 _sub_pts）。
+_SUB_CELLS_8_TEMPLATES: frozenset[str] = frozenset({"msl_cpw", "cpw"})
+
 # 模板元数据公约（方向 2 验收：每模板 meta——仿真时长/网格数/S 参数提取点/端口）
 TEMPLATE_META: dict[str, dict[str, Any]] = {
   "wilkinson": {
@@ -1449,13 +1465,21 @@ def render_script(
   # 合规网格/步数旋钮（真机复跑消费；缺省=旧口径逐字节不变）：
   #  _near_ratio → NEAR = base/_near_ratio（缺省 4=官方 base/4；SSL 复跑 10
   #         使 NEAR=0.114mm ≤ w/6=0.1218mm）
-  #  _sub_cells → 基板 z 向格数（缺省 4=当前口径；复跑 8=合规档建议
-  #         "基板 ≥8 格"，#313 z 向地板项；微带/lange 等 z 块同消费，
-  #         SSL/CPS 各自点数换算见 _sub_half_pts/_cps_sub_pts）
+  #  _sub_cells → 基板 z 向格数（G3 2026-09-22 缺省分档：CPW/槽下场族
+  #         msl_cpw/cpw 缺省 8——zconv 定案 GRID_UNDERRES+SATURATED_
+  #         RESIDUAL（runs/msl_cpw_zconv，网格份额 78%，sub8 回 ±2%
+  #         锚门内；_SUB_CELLS_8_TEMPLATES 见模块头）；其余模板缺省
+  #         4=官方 substrate_cells=4 旧口径逐字节不变；#313 z 向
+  #         地板项；微带/lange 等 z 块同消费，SSL/CPS 各自点数换算
+  #         见 _sub_half_pts/_cps_sub_pts。显式传参仍最高优先）
   #  _nrts    → FDTD 步数上限（缺省 100000 官方口径；细网格 dt 减半后
   #         抬到 150000 防 NrTS 触顶误判未收敛，#266/#268）
   _knob_near_ratio = float(params.get("_near_ratio", 4) or 4)
-  _knob_sub_cells = int(params.get("_sub_cells", 4) or 4)
+  _knob_sub_cells_default = (
+    8 if template in _SUB_CELLS_8_TEMPLATES else _SUB_CELLS_DEFAULT)
+  _knob_sub_cells = int(
+    params.get("_sub_cells", _knob_sub_cells_default)
+    or _knob_sub_cells_default)
   _nrts = int(params.get("_nrts", 100000) or 100000)
   #  _end_criteria → 显式 EndCriteria（如 1e-8=−80dB；cps_xrefine addendum：
   #         缺省 −60dB 能量判据在长脉冲激励末 ~95% 处提前自停，

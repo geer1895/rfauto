@@ -360,7 +360,7 @@ def autotune_loop(
         "algorithm": "autotune_loop",
         "metrics": {"verdict": verdict, "rounds": len(history),
                     "best_cost": best["cost"] if best else None}})
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id, "model": str(recipe.get("model", "")),
         "adapter": "autotune:openems", "status": "done",
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -934,7 +934,7 @@ def self_verify_loop(
         "metrics": {"verdict": verdict, "rounds": len(history),
                     "best_cost": best["cost"] if best else None,
                     "board_id": result["board_id"]}})
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id, "model": str(recipe.get("model", "")),
         "adapter": "autotune:self_verify", "status": "done",
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),

@@ -210,18 +210,25 @@ def build_objective(
         # 同几何异 study 命中同一条目（cross_study=True）。热循环里不传
         # components 给 lookup（why_miss 需扫全部条目 manifest，逐 trial 做
         # 是 O(N) 观测开销），why_miss 走 run_once / dry_run 单次路径。
+        # 键计算/查询层异常降级真算（C18，#105：缓存不做主路径故障点）——
+        # cache_hit_error 记入 trial user_attrs 供审计，真算路径零感知。
         cache_key = None
         cache_components: dict[str, str] | None = None
         cache_study = ""
         cache_seed = ""
+        found: dict[str, Any] | None = None
         if result_cache is not None and cache_scope:
             cache_study = str(cache_scope.get("study", "") or "")
             cache_seed = str(cache_scope.get("seed", "") or "")
             cache_components = dict(cache_scope.get("components") or {})
-            cache_components["params_canonical_json"] = param_system.to_canonical_json()
-            cache_key = result_cache.compute_content_key(**cache_components)
-            found = result_cache.lookup(cache_key, study=cache_study, seed=cache_seed)
-            cached_dir = found["path"]
+            try:
+                cache_components["params_canonical_json"] = param_system.to_canonical_json()
+                cache_key = result_cache.compute_content_key(**cache_components)
+                found = result_cache.lookup(cache_key, study=cache_study, seed=cache_seed)
+            except Exception as exc:  # 缓存层故障 → 直接真算，不 raise（#105）
+                trial.set_user_attr("cache_hit_error", str(exc))
+                found = None
+            cached_dir = (found or {}).get("path")
             if cached_dir is not None:
                 try:
                     import skrf
@@ -607,7 +614,7 @@ def run_multi_optimization(
         "algorithm": "nsga2",
         "n_pareto": result["n_pareto"],
     })
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id,
         "model": model_name,
         "adapter": adapter_name,
@@ -721,7 +728,7 @@ def run_tolerance_analysis(
         "analysis": "tolerance",
         "metrics": {"yield_rate": result["yield_rate"]},
     })
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id,
         "model": recipe_data.get("model", ""),
         "adapter": adapter_name,
@@ -771,12 +778,19 @@ def run_optimization(
     sampler: str = "tpe",
     warm_start: list[dict[str, Any]] | None = None,
     seed: int = SAMPLER_SEED,
+    cache: bool | None = None,
 ) -> dict[str, Any]:
     """运行 Optuna 优化外环（sampler: "tpe" | "cmaes"，计划内缺口 5）。
 
     seed（参数化）：采样器随机种子，缺省沿用模块常量 SAMPLER_SEED=42
     （行为不变）；显式给不同 seed 即换搜索轨迹（配对实验/新轨迹 #158，
     同 seed+同 study 复用缓存秒回属合法配对）。seed 同时写入缓存 provenance。
+
+    cache（C18 三态开关，plan §2.3 双关语义）：``None``（缺省，行为不变）由
+    ``RFAUTO_CACHE`` 环境变量裁决（off/readonly/readwrite）；``False`` 硬旁路
+    ——env=readwrite 也不查不写（显式关，对拍验收用）；``True`` 仍由 env
+    裁决（env=off 时维持旁路——环境关是最高优先级）。生效与否回显
+    ``result["cache_enabled"]``。
 
     E10 约束优化：配方 optimization.constraints（元素结构同 objectives）时走
     Optuna 软约束语义（trial user_attrs 存违约量，≤0=可行；TPE
@@ -899,28 +913,29 @@ def run_optimization(
     # objectives 不进键——Touchstone 与目标无关，异目标 study 合法复用。
     result_cache = None
     cache_scope = None
-    try:
-        from rfauto.infra.result_cache import ResultCache
+    if cache is not False:  # 显式 cache=False=双关硬旁路（env 也打不开）
+        try:
+            from rfauto.infra.result_cache import ResultCache
 
-        _rc = ResultCache()
-        if _rc.enabled:
-            result_cache = _rc
-            cache_scope = {
-                "study": str(study_name or ""),
-                "seed": str(seed),
-                "components": _rc.components_for_run(
-                    model_name=model_name,
-                    recipe_data=recipe_data,
-                    params_canonical_json="",  # 逐 trial 由 param_system 全参填充
-                    plugin_version=f"schema{getattr(_plugin_cls, 'schema_version', '')}",
-                    plugin_schema_version=getattr(_plugin_cls, "schema_version", ""),
-                    adapter_version=adapter_name,
-                    aedt_version=aedt_version,
-                ),
-            }
-    except Exception:  # 缓存不可用不影响优化主路径（#105）
-        result_cache = None
-        cache_scope = None
+            _rc = ResultCache()
+            if _rc.enabled:
+                result_cache = _rc
+                cache_scope = {
+                    "study": str(study_name or ""),
+                    "seed": str(seed),
+                    "components": _rc.components_for_run(
+                        model_name=model_name,
+                        recipe_data=recipe_data,
+                        params_canonical_json="",  # 逐 trial 由 param_system 全参填充
+                        plugin_version=f"schema{getattr(_plugin_cls, 'schema_version', '')}",
+                        plugin_schema_version=getattr(_plugin_cls, "schema_version", ""),
+                        adapter_version=adapter_name,
+                        aedt_version=aedt_version,
+                    ),
+                }
+        except Exception:  # 缓存不可用不影响优化主路径（#105）
+            result_cache = None
+            cache_scope = None
 
     objective_fn = build_objective(
         adapter, param_system, param_ranges, objectives,
@@ -979,6 +994,7 @@ def run_optimization(
         "study_name": study_name,
         "sampler": sampler,
         "storage": storage,
+        "cache_enabled": result_cache is not None,
         "elapsed_s": round(elapsed, 1),
         "max_trials": max_trials,
         "trials_total": len(all_trials),
@@ -1041,7 +1057,7 @@ def run_optimization(
         "study_name": study_name,
         "metrics": meta_metrics,
     })
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id,
         "model": model_name,
         "adapter": adapter_name,

@@ -331,6 +331,16 @@ class TestCalculatorsExperimentalPassthrough:
             json={"params": _EXP_PARAMS, "allow_experimental": False})
         assert response.status_code == 400
 
+    def test_run_env_switch_passes_when_body_field_absent(self, client, monkeypatch):
+        """缺省（body 缺 allow_experimental 字段）读 env：env=1 放行——壳层
+        不得把缺省当显式 False（#277 三态）。"""
+        monkeypatch.setenv("RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL", "1")
+        response = client.post(
+            f"/api/v1/calculators/{_EXPERIMENTAL_KEY}/run",
+            json={"params": _EXP_PARAMS})
+        assert response.status_code == 200
+        assert response.json()["data"]["experimental"] is True
+
     def test_allow_experimental_non_bool_is_400(self, client):
         response = client.post(
             f"/api/v1/calculators/{_EXPERIMENTAL_KEY}/run",

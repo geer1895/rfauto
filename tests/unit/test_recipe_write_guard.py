@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 import yaml
@@ -520,3 +521,109 @@ class TestNumpyScalarSanitizer:
         assert data["model"] == "branchline_coupler"
         arm = data["params"]["arm_len_mm"]["value"]
         assert type(arm) is float and arm == pytest.approx(18.57, abs=0.01)
+
+
+# ─── 9. UI 配方目录级写面钉（TODO C22 followUp：UI 配方目录守卫）──────────────
+
+class TestDirectoryLevelWriteSurface:
+    """C22 followUp：UI 面对配方的"目录级"操作（新建子目录/目录间移动/批量写）
+    也必须走守卫（#317-#319 同源）。
+
+    grep+AST 实证（2026-09-21）：UI 面（ui/server.py + service/ui_service.py +
+    service/r3_services.py）**不存在** copytree/move/rmtree/rename/rmdir 类
+    目录原语，也无不走守卫出口的 recipes/ 写点——UI 配方写面只有
+    recipe_save（守卫 redirect + 同目录临时文件原子替换）与 recipe_create
+    （explicit 向导入口 + 拒覆盖既有原件），其余 mkdir 均为 configs//runs/
+    已知目标。本类钉两件事，防未来回归：
+
+    ① 行为钉：UI 函数级目录行为——子目录配方的 redirect 镜像目录结构进
+       工作副本、向导新建含子目录路径的配方走 explicit 边界；
+    ② 静态盘点钉：UI 三模块的目录级写原语按（模块, 函数）白名单盘点，
+       新增未接守卫的目录级写点即亮红（TestWriteBackInventory 目录级版）。"""
+
+    SRC = REPO_ROOT / "src" / "rfauto"
+    UI_SURFACE_MODULES = (
+        SRC / "ui" / "server.py",
+        SRC / "service" / "ui_service.py",
+        SRC / "service" / "r3_services.py",
+    )
+    DIRECTORY_PRIMITIVES: ClassVar[set[str]] = {
+        "mkdir", "makedirs", "copytree", "copy2", "copyfile", "move",
+        "rmtree", "rename", "rmdir", "removedirs"}
+    #: 现状盘点（模块文件名, 函数名）→ 允许的目录级写原语（写明理由）
+    ALLOWED_SITES: ClassVar[dict[tuple[str, str], set[str]]] = {
+        # 守卫决策后目标（工作副本/非受保护路径）建父目录；临时文件与目标
+        # 同目录是原子替换前提（#319）
+        ("ui_service.py", "recipe_save"): {"mkdir"},
+        # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare/）
+        ("ui_service.py", "sparams_compare_png"): {"mkdir"},
+        # configs/ 三个配置保存器的父目录创建（非 recipes/ 面）
+        ("r3_services.py", "add_solver_to_config"): {"mkdir"},
+        ("r3_services.py", "_apply_resource_capacity"): {"mkdir"},
+        ("r3_services.py", "save_chat_settings"): {"mkdir"},
+    }
+
+    def test_ui_surface_directory_primitives_match_inventory(self):
+        import ast
+
+        found: set[tuple[str, str]] = set()
+        for mod in self.UI_SURFACE_MODULES:
+            tree = ast.parse(mod.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                for sub in ast.walk(node):
+                    if not isinstance(sub, ast.Call):
+                        continue
+                    if isinstance(sub.func, ast.Attribute):
+                        name = sub.func.attr
+                    elif isinstance(sub.func, ast.Name):
+                        name = sub.func.id
+                    else:
+                        continue
+                    if name in self.DIRECTORY_PRIMITIVES:
+                        found.add((mod.name, node.name))
+        assert found == {site for site, prims in self.ALLOWED_SITES.items()
+                         if prims}, (
+            f"UI 面目录级写原语盘点漂移（新增写点须接 recipe_guard 或更新"
+            f"本白名单并写明理由）: 实际={sorted(found)}")
+
+    def test_recipe_save_subdirectory_recipe_redirects_with_structure(
+            self, recipes_dir, tmp_path):
+        """子目录配方保存：守卫 redirect 把目录结构镜像进工作副本，原件字节不动
+        （此前只有 guard.workcopy_path 函数级钉，UI 函数级目录行为此为首批）。"""
+        from rfauto.service.ui_service import recipe_save
+
+        nested = recipes_dir / "sub" / "family"
+        nested.mkdir(parents=True)
+        p = nested / "nested_recipe.yaml"
+        p.write_text(yaml.safe_dump({
+            "model": "wilkinson_power_divider",
+            "params": {"arm_len_mm": {"value": 20.5}},
+        }), encoding="utf-8")
+        before = _sha256(p)
+        r = recipe_save(p, {"params": {"arm_len_mm": 21.0}})
+        assert r["ok"], r.get("errors")
+        assert r["workcopy"] is True
+        wc = tmp_path / "runs" / "recipe_workcopy" / "sub" / "family" / \
+            "nested_recipe.yaml"
+        assert wc.exists()
+        assert yaml.safe_load(
+            wc.read_text(encoding="utf-8"))["params"]["arm_len_mm"]["value"] == 21.0
+        assert _sha256(p) == before
+        # recipes/ 内不残留临时文件、不新增目录
+        assert sorted(q.name for q in nested.iterdir()) == ["nested_recipe.yaml"]
+
+    def test_recipe_create_new_subdirectory_under_recipes_explicit_boundary(
+            self, recipes_dir):
+        """向导新建含新子目录的路径：explicit 用户键入入口按本意原地创建
+        （守卫边界如实），落盘走 write_recipe_yaml 守卫出口。"""
+        from rfauto.service.ui_service import recipe_create
+
+        r = recipe_create(recipes_dir / "newfam" / "wizard.yaml",
+                          {"model": "wilkinson_power_divider", "params": {}})
+        assert r["ok"], r.get("errors")
+        p = recipes_dir / "newfam" / "wizard.yaml"
+        assert p.exists()
+        assert yaml.safe_load(
+            p.read_text(encoding="utf-8"))["model"] == "wilkinson_power_divider"

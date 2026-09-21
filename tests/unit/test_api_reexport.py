@@ -80,12 +80,12 @@ class TestApiReexportCompleteness:
             "structured_sweep", "run_multifidelity_tune", "run_sensitivity",
             "agent_quality_summary", "generate_enhanced_report",
             "hfss_import_recipe",
-            # r3_services（11：10 函数 + AgentChat 类）
+            # r3_services（12：11 函数 + AgentChat 类）
             "list_solver_visualizations", "list_registered_solvers",
             "add_solver_to_config", "remove_solver_from_config",
             "list_pending_approvals", "approve_proposal",
             "get_chat_settings", "save_chat_settings",
-            "fs_list", "list_recipes", "AgentChat",
+            "fs_list", "list_recipes", "spice_tool_status", "AgentChat",
             # dataset_service（2）
             "materialize_dataset", "query_dataset",
             # dataset_insights（8：WP2.4 六接口 + E1 收口公开集注册/双集装载）

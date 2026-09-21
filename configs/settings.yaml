@@ -51,3 +51,12 @@ db:
   # 注册表 SQLite 路径：空 = runs/registry.sqlite（缺省，行为不变）。
   # 环境变量 RFAUTO_REGISTRY_DB 优先级高于本键（env > YAML > 默认，同全局三层口径）。
   path: ""
+  # job 注册表持久化（R2-D03 ③半）：true 时 JobRegistry 的 create/finish/fail/
+  # cancel 同步写 jobs 表（跨进程重启后 poll 仍可查）；false 维持纯内存 +
+  # meta.json（缺省，行为不变）。环境变量 RFAUTO_JOB_REGISTRY_DB 优先级更高
+  # （可给 1/true/on，或直接给库文件路径；坏布尔安全侧按关处理）。
+  job_registry_persist: false
+  # 数据集物化回写注册表（R2-D03 ⑤）：true 时 materialize/import-workdir 与
+  # visibility 切换把数据集行同步写进 datasets 表；false 不写库（缺省，零
+  # 行为变化）。CLI --registry-sync/--no-registry-sync 显式实参优先于本键。
+  dataset_registry_sync: false

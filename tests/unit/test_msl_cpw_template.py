@@ -256,6 +256,48 @@ def test_near_points_exact_edges():
         assert min(abs(v - edge) for v in ny) < 1e-12
 
 
+def _z_substrate_points(text: str) -> int:
+    """渲染脚本里基板 z linspace 的点数（np.linspace(0, H_SUB, N)）。"""
+    import re
+
+    m = re.search(r'mesh\.AddLine\("z", np\.linspace\(0, H_SUB, (\d+)\)\)',
+                  text)
+    assert m, "基板 z linspace 行未找到"
+    return int(m.group(1))
+
+
+def test_g3_sub_cells_default_family_policy():
+    """G3 2026-09-22 缺省变更钉（#325 语义：钉"现行缺省"，不改写历史归档）。
+
+    依据 zconv 定案实验（runs/msl_cpw_zconv，2026-09-20 预声明判据）：
+    dev −2.151→−0.971→−0.474pp（sub4→8→16），GRID_UNDERRES（网格份额
+    78%）+SATURATED_RESIDUAL，sub8 即回 msl_cpw_benchmark_verdict ±2%
+    锚门内——CPW/槽下场族生产缺省 _sub_cells=8（#313 z 向地板项）。
+    同时钉逐字节不变面：显式 _sub_cells=4 回旧口径、且与新缺省全文 diff
+    恰 1 行（z linspace 5→9 点）；显式 8 与新缺省逐字节相同；非族模板
+    （mline）缺省仍 4 格 5 点。
+    """
+    default_text = ot.render_script("msl_cpw", dict(NOMINAL), BAND,
+                                    mesh_resolution_mm=MESH_MM)
+    assert _z_substrate_points(default_text) == 9  # 8 格（G3 新缺省）
+    old_text = ot.render_script("msl_cpw", {**NOMINAL, "_sub_cells": 4},
+                                BAND, mesh_resolution_mm=MESH_MM)
+    assert _z_substrate_points(old_text) == 5  # 官方 substrate_cells=4 旧口径
+    assert ot.render_script("msl_cpw", {**NOMINAL, "_sub_cells": 8}, BAND,
+                            mesh_resolution_mm=MESH_MM) == default_text
+    old_lines = old_text.splitlines()
+    new_lines = default_text.splitlines()
+    assert len(old_lines) == len(new_lines)
+    changed = [i for i, (a, b) in enumerate(
+        zip(old_lines, new_lines, strict=True)) if a != b]
+    assert len(changed) == 1, f"缺省变更应恰动 z 一行，实动 {len(changed)} 行"
+    assert "linspace(0, H_SUB, 9)" in new_lines[changed[0]]
+    # 非族模板缺省逐字节不变（官方 4 格口径）
+    mline_text = ot.render_script("mline", dict(ot.TEMPLATE_NOMINAL["mline"]),
+                                  BAND, mesh_resolution_mm=MESH_MM)
+    assert _z_substrate_points(mline_text) == 5
+
+
 # ─── #212 离线几何审计（CSXCAD 实测）────────────────────────────────────────
 
 def test_primitives_nonzero_and_entered_in_mesh():

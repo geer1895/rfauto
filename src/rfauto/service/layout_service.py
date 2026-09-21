@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import logging
+import warnings
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -170,6 +172,43 @@ def import_export_path(layout: Layout, path: str, fmt: str) -> Path:
     return export_layout(layout, Path(path), fmt)
 
 
+def laymap_conflicts(mapping: Mapping[Any, Any]) -> list[str]:
+    """laymap 冲突盘点（告警级校验内核，P2⑳ 批登记 followUp）——不 raise、只描述。
+
+    两族静默冲突（键/值均按 ``str(int(key))`` 归一口径检重）：
+
+    - 键归一冲突：两个原始键归一后同键（如 ``"01"`` 与 ``1``），构造结果
+      dict 时后者静默覆盖前者，被覆盖方无从察觉；
+    - 值冲突（登记主项）：多个 GDS 层号映射到同一目标层名——adapters 层
+      ``_apply_laymap`` 按名改层，两个不同 GDS 层会静默合并为同一 KiCad
+      层（几何归属改变），可能是有意合层也可能是笔误，故只告警不阻塞。
+
+    返回人可读、可定位的冲突描述列表；无冲突返回空列表。非层号键跳过
+    （由 :func:`load_laymap` 的 ValueError 负责，此处不重复报错）。
+    """
+    by_norm_key: dict[str, list[Any]] = {}
+    by_value: dict[str, list[str]] = {}
+    for key, value in mapping.items():
+        try:
+            norm = str(int(key))
+        except (TypeError, ValueError):
+            continue
+        by_norm_key.setdefault(norm, []).append(key)
+        by_value.setdefault(str(value), []).append(norm)
+    conflicts: list[str] = []
+    for norm, raw_keys in by_norm_key.items():
+        if len(raw_keys) > 1:
+            conflicts.append(
+                f"键归一冲突: {[str(k) for k in raw_keys]} 均归一为 {norm!r}"
+                "（构造结果时后者静默覆盖前者）")
+    for value, keys in sorted(by_value.items()):
+        if len(keys) > 1:
+            conflicts.append(
+                f"值冲突: 层号 {keys} 均映射到 {value!r}"
+                "（多个 GDS 层将合并为同一目标层）")
+    return conflicts
+
+
 def load_laymap(path: str | Path) -> dict[str, str]:
     """读外部 laymap 层名映射文件：{GDS 层号串: 模板层名}。
 
@@ -177,6 +216,10 @@ def load_laymap(path: str | Path) -> dict[str, str]:
     循 service/api.py validate_recipe 惯例）。键统一 ``str(int(key))`` 归一
     （YAML 整型键坑：YAML 里 ``1:`` 会解析成 int 键）；未知后缀 ValueError、
     缺文件 FileNotFoundError、顶层非映射或键非层号 ValueError。
+
+    值冲突告警级校验（P2⑳ 批登记 followUp，TODO C24）：键归一冲突/多键
+    同目标值不 raise、不改变返回语义（键冲突保持"后者覆盖"），只
+    ``warnings.warn`` 给出可定位清单——合层可能是用户本意，判读留给人。
     """
     typed_path = Path(path)
     if not typed_path.exists():
@@ -199,6 +242,12 @@ def load_laymap(path: str | Path) -> dict[str, str]:
         except (TypeError, ValueError) as exc:
             raise ValueError(f"laymap 键必须是 GDS 层号（整数）: {key!r}（{typed_path}）") from exc
         result[layer_key] = str(value)
+    conflicts = laymap_conflicts(raw)
+    if conflicts:
+        warnings.warn(
+            f"laymap 冲突（告警级，不阻塞导入）: {typed_path}；" + "；".join(conflicts),
+            stacklevel=2,
+        )
     return result
 
 

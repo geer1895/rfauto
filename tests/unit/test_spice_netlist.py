@@ -185,6 +185,35 @@ class TestExeResolution:
         with pytest.raises(FileNotFoundError, match="RFAUTO_XYCE_BIN"):
             sn.resolve_xyce_exe()
 
+    def test_xyce_probe_available_when_env_bin_has_exe(self, tmp_path, monkeypatch):
+        """探测钩子可用态（mock）：RFAUTO_XYCE_BIN 指向含 Xyce.exe 的目录。"""
+        (tmp_path / "bin").mkdir()
+        fake = tmp_path / "bin" / "Xyce.exe"
+        fake.write_text("")
+        monkeypatch.setenv("RFAUTO_XYCE_BIN", str(tmp_path / "bin"))
+        assert sn.resolve_xyce_exe() == fake
+        assert sn.xyce_available() is True
+
+    def test_xyce_probe_available_via_path_lookup(self, tmp_path, monkeypatch):
+        """探测钩子可用态（mock）：无 env 时回落 PATH 探测（shutil.which）。"""
+        monkeypatch.delenv("RFAUTO_XYCE_BIN", raising=False)
+        fake = tmp_path / "Xyce.exe"
+        fake.write_text("")
+        monkeypatch.setattr(sn.shutil, "which",
+                            lambda name: str(fake) if name == "Xyce.exe" else None)
+        assert sn.resolve_xyce_exe() == fake
+        assert sn.xyce_available() is True
+
+    def test_xyce_probe_env_dir_without_exe_falls_to_path(self, tmp_path, monkeypatch):
+        """RFAUTO_XYCE_BIN 指向目录但无候选 exe → 继续回落 PATH，不误报可用。"""
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        monkeypatch.setenv("RFAUTO_XYCE_BIN", str(empty_dir))
+        monkeypatch.setattr(sn.shutil, "which", lambda name: None)
+        assert sn.xyce_available() is False
+        with pytest.raises(FileNotFoundError):
+            sn.resolve_xyce_exe()
+
 
 class TestTransientPlan:
     def test_meas_window_is_integer_periods(self):

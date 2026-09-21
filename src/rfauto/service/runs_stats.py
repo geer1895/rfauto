@@ -1,6 +1,7 @@
 """runs_stats：runs 数据库化查询/统计层（阶段 5.5，SQLite 起步）。
 
-在既有 runs/index.db（record_run 逐 run upsert）之上提供只读聚合：
+在注册表数据库（缺省 runs/registry.sqlite，record_run 逐 run upsert；env
+RFAUTO_REGISTRY_DB / settings db.path 可覆盖）之上提供只读聚合：
 - 按 model/adapter/status 分组计数；
 - 时间窗查询；
 - schema_version 表 + PRAGMA user_version——换 Postgres 时此层是
@@ -18,9 +19,15 @@ SCHEMA_VERSION = 1
 
 
 def _connect(db_path: str | Path | None = None) -> sqlite3.Connection:
-    p = Path(db_path) if db_path else Path("runs") / "index.db"
+    if db_path is None:
+        from rfauto.infra.db import default_registry_db_path
+
+        p = default_registry_db_path()
+    else:
+        p = Path(db_path)  # #140：PathLike 入参第一行先 Path() 收敛
     if not p.exists():
-        raise FileNotFoundError(f"runs 索引库不存在: {p}（先跑一次 run/tune）")
+        raise FileNotFoundError(f"runs 索引库不存在: {p}（先跑一次 run/tune，"
+                                "或用 rfauto db reindex-runs 回填）")
     conn = sqlite3.connect(str(p))
     conn.row_factory = sqlite3.Row
     conn.execute("CREATE TABLE IF NOT EXISTS schema_version ("

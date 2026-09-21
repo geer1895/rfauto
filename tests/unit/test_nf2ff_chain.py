@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -249,47 +250,49 @@ class TestServiceAndView:
 
 # ─── PEC 地镜像修正贯通服务层（W2⑥a：patch η=1.24>1 根因）────────────────
 
+def _write_patch_run(run_dir: Path) -> None:
+    """合成一套 patch 远场产物（接地镜像件：U=cos²θ 镜像对称、raw η=1.243）。"""
+    run_dir.mkdir(parents=True, exist_ok=True)
+    theta = np.arange(-180.0, 181.0, 1.0)
+    rows = [{"phi_deg": phi, "theta_deg": float(th),
+             "re_e_theta": abs(np.cos(np.deg2rad(th))), "im_e_theta": 0.0,
+             "re_e_phi": 0.0, "im_e_phi": 0.0,
+             "e_norm": abs(np.cos(np.deg2rad(th))),
+             "p_rad": np.cos(np.deg2rad(th)) ** 2}
+            for phi in (0.0, 90.0) for th in theta]
+    from rfauto.core.farfield import write_farfield_cut_csv
+
+    write_farfield_cut_csv(run_dir / "farfield_cut.csv", rows)
+    # 3D 图：U=cos²θ 镜像对称 → D_upper=6（7.78 dBi）、D_full=3（4.77 dBi）
+    lines = ["theta_deg,phi_deg,e_norm_db"]
+    for t in np.arange(0.0, 181.0, 5.0):
+        for p in np.arange(0.0, 360.0, 5.0):
+            e = abs(np.cos(np.deg2rad(t)))
+            lines.append(f"{t},{p},{20 * np.log10(max(e, 1e-300))}")
+    (run_dir / "farfield3d.csv").write_text("\n".join(lines) + "\n",
+                                            encoding="utf-8")
+    meta = {
+        "ok": True, "template": "patch", "f_res_ghz": 2.212,
+        "prad_w": 1.4047655921302781e-25, "p_acc_w": 1.1301579524440128e-25,
+        "dmax_linear": 1.7837598913888713, "dmax_dbi": 2.5133639439947677,
+        "efficiency": 1.242981646142838, "gain_max_dbi": 3.4580111029957967,
+        "power_budget_closure": 0.2429816461428379,
+        "nf2ff_box_start_m": [-0.0823, -0.0823, 0.0],
+        "nf2ff_box_stop_m": [0.0823, 0.0823, 0.0228], "radius_m": 1.0,
+    }
+    (run_dir / "farfield_meta.json").write_text(
+        json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+
 class TestPecMirrorServiceView:
     """接地模板（盒底 z=0）→ 指标按镜像因子 2 修正；原值留 raw；3D 图给
     上半球图形自归一方向性交叉值。"""
-
-    def _write_patch_run(self, run_dir: Path) -> None:
-        run_dir.mkdir(parents=True, exist_ok=True)
-        theta = np.arange(-180.0, 181.0, 1.0)
-        rows = [{"phi_deg": phi, "theta_deg": float(th),
-                 "re_e_theta": abs(np.cos(np.deg2rad(th))), "im_e_theta": 0.0,
-                 "re_e_phi": 0.0, "im_e_phi": 0.0,
-                 "e_norm": abs(np.cos(np.deg2rad(th))),
-                 "p_rad": np.cos(np.deg2rad(th)) ** 2}
-                for phi in (0.0, 90.0) for th in theta]
-        from rfauto.core.farfield import write_farfield_cut_csv
-
-        write_farfield_cut_csv(run_dir / "farfield_cut.csv", rows)
-        # 3D 图：U=cos²θ 镜像对称 → D_upper=6（7.78 dBi）、D_full=3（4.77 dBi）
-        lines = ["theta_deg,phi_deg,e_norm_db"]
-        for t in np.arange(0.0, 181.0, 5.0):
-            for p in np.arange(0.0, 360.0, 5.0):
-                e = abs(np.cos(np.deg2rad(t)))
-                lines.append(f"{t},{p},{20 * np.log10(max(e, 1e-300))}")
-        (run_dir / "farfield3d.csv").write_text("\n".join(lines) + "\n",
-                                                encoding="utf-8")
-        meta = {
-            "ok": True, "template": "patch", "f_res_ghz": 2.212,
-            "prad_w": 1.4047655921302781e-25, "p_acc_w": 1.1301579524440128e-25,
-            "dmax_linear": 1.7837598913888713, "dmax_dbi": 2.5133639439947677,
-            "efficiency": 1.242981646142838, "gain_max_dbi": 3.4580111029957967,
-            "power_budget_closure": 0.2429816461428379,
-            "nf2ff_box_start_m": [-0.0823, -0.0823, 0.0],
-            "nf2ff_box_stop_m": [0.0823, 0.0823, 0.0228], "radius_m": 1.0,
-        }
-        (run_dir / "farfield_meta.json").write_text(
-            json.dumps(meta, ensure_ascii=False), encoding="utf-8")
 
     def test_metrics_corrected_and_raw_kept(self, tmp_path, monkeypatch):
         from rfauto.service import nf2ff_service
 
         monkeypatch.chdir(tmp_path)
-        self._write_patch_run(tmp_path / "runs" / "patch_mirror_demo")
+        _write_patch_run(tmp_path / "runs" / "patch_mirror_demo")
         monkeypatch.setattr(nf2ff_service, "RUNS_DIR", tmp_path / "runs")
         v = nf2ff_service.farfield_view("patch_mirror_demo")
         assert v["ok"] is True
@@ -317,6 +320,65 @@ class TestPecMirrorServiceView:
         assert m["pec_mirror_factor"] == 1.0
         assert "raw" not in m
         assert m["dmax_dbi"] == pytest.approx(2.096, abs=1e-3)
+
+
+# ─── 极坐标页 η 门复用（TODO C21 followUp：farfield_view 复用 patch_eta_gate）─
+
+class TestFarfieldViewEtaGate:
+    """farfield_view（极坐标页数据源）复用 ui_service.patch_eta_gate（wf:w1c
+    登记的 followUp）：patch 族按修正后 η 判读（raw 1.243 非物理值不进门）、
+    非 patch 模板如实 None（#274 作用域分派——全包盒 dipole η≈0.99 不误判
+    FAIL）；判读函数与 field_view 的 farfield_metrics["eta_gate"] 同一实现。
+    前端极坐标页渲染 η 门（pages.js pageFarfield，与场页同口径）。"""
+
+    def test_patch_run_gate_passes_on_corrected_eta(self, tmp_path, monkeypatch):
+        from rfauto.service import nf2ff_service
+
+        monkeypatch.chdir(tmp_path)
+        _write_patch_run(tmp_path / "runs" / "eta_gate_patch")
+        monkeypatch.setattr(nf2ff_service, "RUNS_DIR", tmp_path / "runs")
+        v = nf2ff_service.farfield_view("eta_gate_patch")
+        assert v["ok"] is True
+        gate = v["metrics"]["eta_gate"]
+        assert gate["gate"] == [0.55, 0.79]
+        assert gate["value"] == pytest.approx(0.6215, abs=1e-3)  # 修正后 η（非 raw 1.243）
+        assert gate["ok"] is True
+        json.dumps(v)  # 服务层 JSON 进出契约：门结构可序列化
+
+    def test_patch_run_gate_fails_below_band(self, tmp_path, monkeypatch):
+        from rfauto.service import nf2ff_service
+
+        monkeypatch.chdir(tmp_path)
+        run_dir = tmp_path / "runs" / "eta_gate_low"
+        _write_patch_run(run_dir)
+        meta = json.loads(
+            (run_dir / "farfield_meta.json").read_text(encoding="utf-8"))
+        # 修正后 η = (prad/k)/p_acc（correct_pec_mirror 数值链）——改 prad_w
+        # 使修正后 η=0.45 < 下沿 0.55（efficiency 字段仅展示口径，同步改）。
+        meta["prad_w"] = 0.9 * meta["p_acc_w"]
+        meta["efficiency"] = 0.9
+        (run_dir / "farfield_meta.json").write_text(
+            json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+        monkeypatch.setattr(nf2ff_service, "RUNS_DIR", tmp_path / "runs")
+        gate = nf2ff_service.farfield_view("eta_gate_low")["metrics"]["eta_gate"]
+        assert gate["ok"] is False
+        assert "低于下沿" in gate["reason"]
+
+    def test_non_patch_template_gate_is_none(self, _ff_run):
+        from rfauto.service.nf2ff_service import farfield_view
+
+        m = farfield_view(_ff_run)["metrics"]
+        # dipole η≈0.944 落在窗内也不判——门只适用 patch 族（#274 作用域分派）
+        assert 0.0 < m["efficiency"] < 1.0
+        assert m["eta_gate"] is None
+
+    def test_frontend_farfield_page_renders_eta_gate(self):
+        pages = (SRC / "rfauto" / "ui" / "static" / "pages.js").read_text(
+            encoding="utf-8")
+        m = re.search(r"async function pageFarfield.*?(?=\n(?:/\*|async function ))",
+                      pages, re.S)
+        assert m is not None
+        assert "m.eta_gate" in m.group(0)
 
 
 class TestUiRoutes:

@@ -471,6 +471,15 @@ class TestCalculatorExperimentalPassthrough:
         assert data["ok"] is False
         assert data["experimental"] is True
 
+    def test_run_env_switch_passes_when_arg_absent(self, mcp_server, monkeypatch):
+        """缺省（无 allow_experimental 实参）读 env：env=1 放行——壳层不得
+        把缺省当显式 False（#277 三态）。"""
+        monkeypatch.setenv("RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL", "1")
+        data = _call(mcp_server, "run_calculator",
+                     {"name": _EXPERIMENTAL_KEY, "params": {"l_mm": 40.0, "w_mm": 50.0}})
+        assert data["ok"] is True
+        assert data["experimental"] is True
+
     def test_regular_calculator_tagged_not_experimental(self, mcp_server):
         data = _call(mcp_server, "run_calculator", {
             "name": "patch_length",

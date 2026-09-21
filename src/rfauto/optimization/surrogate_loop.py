@@ -199,6 +199,9 @@ def run_surrogate_loop(
   fine_top_k: int = 1,
   fine_budget: int | None = None,
   min_high_samples: int = 3,
+  uncertainty_tol: float | None = None,
+  uncertainty_rounds: int = 1,
+  uncertainty_pool: int = 128,
 ) -> dict[str, Any]:
   """代理寻优主环：返回 JSON 契约（服务层直接透传）。
 
@@ -242,9 +245,21 @@ def run_surrogate_loop(
   - 返回体补 n_low_used / n_high_used / fine_budget / fidelity /
    fidelity_delta（复用 mf_backend.compute_fidelity_delta，rank_flip_count
    为核心保真差诊断，#195 谷深语义指标同源）。
+
+  B5 不确定度终止判据（opt-in；uncertainty_tol 缺省 None 时整段新代码
+  路径零触发，结果字典逐字节不变）：每轮 fit 后真跑批前，在固定种子
+  LHS 探针池（uncertainty_pool 点，seed=seed+999*rnd）上用
+  optimization.uncertainty.gp_cost_sigma（与 active_learning 的 gp 来源
+  同源闭式后验）测已评样本 cost 面的逐点 σ，取池内最大值记入
+  round_entry["sigma_cost_max"]（恒记录；计算失败记 None——观测性
+  best-effort #105，绝不炸环）。σ_max ≤ uncertainty_tol 连续
+  uncertainty_rounds 轮 → stop_reason="uncertainty_saturated"，与既有
+  budget/stagnation 并列（谁先触发谁停），早停省下的真跑批即预算收益；
+  σ 只作停止判据不影响采样。
   """
   from rfauto.optimization.sample_design import lhs_points
   from rfauto.optimization.surrogate import surrogate_registry
+  from rfauto.optimization.uncertainty import gp_cost_sigma
 
   mf_mode = evaluate_low_fn is not None
   fine_top_k = max(1, int(fine_top_k))
@@ -355,6 +370,7 @@ def run_surrogate_loop(
 
   # ── ② 迭代：代理拟合 → 虚拟寻优 → top-K → 批量真跑 → refit ──────────
   stagnation = 0
+  uncertainty_streak = 0  # B5：σ_max ≤ tol 的连续轮计数
   stop_reason = ""
   rnd = 0
   while attempts < max_real:
@@ -390,6 +406,40 @@ def run_surrogate_loop(
     if not model.fitted:
       stop_reason = "surrogate_fit_failed"
       break
+
+    # B5 不确定度终止判据（opt-in）：fit 后真跑批前在固定 LHS 探针池
+    # 上测已评样本 cost 面的 GP 后验 σ_max。σ 只作停止判据不影响采样；
+    # 计算失败记 None 并复位连击（观测性 best-effort #105，不炸环）。
+    sigma_rnd: float | None = None
+    if uncertainty_tol is not None:
+      try:
+        pool = lhs_points(bounds, max(2, int(uncertainty_pool)),
+                          seed=seed + 999 * rnd)["points"]
+        pool_sigmas = gp_cost_sigma(
+            [{"params": dict(s["params"]), "cost": float(s["cost"])}
+             for s in samples],
+            bounds, pool)
+        if len(pool_sigmas):
+          sigma_rnd = float(max(pool_sigmas))
+      except Exception:
+        sigma_rnd = None
+      if sigma_rnd is not None and sigma_rnd <= uncertainty_tol:
+        uncertainty_streak += 1
+        if uncertainty_streak >= max(1, int(uncertainty_rounds)):
+          best_cost = best["cost"] if best else None
+          history.append({
+              "round": rnd, "n_evaluated": 0, "n_explore": 0,
+              "min_dist_relaxed": False,
+              "best_cost_before": best_cost,
+              "best_cost_after": best_cost,
+              "improvement": 0.0 if best_cost is not None else None,
+              "best_params": best["params"] if best else None,
+              "sigma_cost_max": sigma_rnd,
+          })
+          stop_reason = "uncertainty_saturated"
+          break
+      else:
+        uncertainty_streak = 0
 
     candidates = _virtual_search(model, objectives, bounds,
                    virtual_trials, seed + rnd,
@@ -454,6 +504,9 @@ def run_surrogate_loop(
       "improvement": improved,
       "best_params": best["params"] if best else None,
     }
+    if uncertainty_tol is not None:
+      # B5：σ_max 恒记录（含失败记 None）——观测性不许成为故障点（#105）
+      round_entry["sigma_cost_max"] = sigma_rnd
     if mf_mode:
       round_entry["n_fine"] = n_fine_round
       round_entry["n_high_total"] = len(high_samples)

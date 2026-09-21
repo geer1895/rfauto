@@ -467,7 +467,10 @@ class TestDeterminism:
         assert first["issues"], "红场景必须产出 issue（否则本测试空转）"
 
         # 清 runs 索引历史：否则第二轮会命中第一轮基线，报告含历史 run_id。
-        index = Path("runs") / "index.db"
+        # B④ 默认路径合流后 record_run/query_runs 同走 default_registry_db_path。
+        from rfauto.infra.db import default_registry_db_path
+
+        index = default_registry_db_path()
         index.unlink(missing_ok=True)
 
         second = run_once()

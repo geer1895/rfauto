@@ -29,7 +29,12 @@ _DEFAULT_SETTINGS: dict[str, Any] = {
     # 嵌套节：注册表数据库路径。YAML 侧 db.path；
     # env 侧 RFAUTO_REGISTRY_DB 由 infra/db.default_registry_db_path 直接读
     # （优先级高于本节，同三层口径：env > YAML > 默认 runs/registry.sqlite）。
-    "db": {"path": ""},
+    # db.job_registry_persist（R2-D-03 ③半）：job 注册表持久化开关，
+    # YAML 侧键；env 侧 RFAUTO_JOB_REGISTRY_DB 同时入 _ENV_MAP（坏布尔
+    # 安全侧关闭；路径值语义由 service/job_registry 的 env 分支消费）。
+    # db.dataset_registry_sync（R2-D-03 ⑤）：数据集物化回写注册表开关。
+    "db": {"path": "", "job_registry_persist": False,
+           "dataset_registry_sync": False},
 }
 
 _ENV_PREFIX = "RFAUTO_"
@@ -44,6 +49,9 @@ _ENV_MAP = {
     "cache_mode": "RFAUTO_CACHE",
     # 嵌套节用点路径作键；取值时展开进 merged 的对应子 dict
     "calculators.allow_experimental": "RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL",
+    # job 注册表持久化开关（env 显式优先于 YAML；坏布尔/路径值解析为 None
+    # → 保持默认关，路径值语义由 service/job_registry 的 env 分支消费）
+    "db.job_registry_persist": "RFAUTO_JOB_REGISTRY_DB",
 }
 
 _TRUTHY_ENV = frozenset({"1", "true", "yes", "on"})
@@ -84,6 +92,21 @@ class DbSettings(BaseModel):
             "Registry SQLite path; empty = runs/registry.sqlite. "
             "Env RFAUTO_REGISTRY_DB takes precedence (read by "
             "infra.db.default_registry_db_path)."
+        ),
+    )
+    job_registry_persist: bool = Field(
+        False,
+        description=(
+            "Persist the in-process job registry to the registry DB "
+            "(jobs table). Env RFAUTO_JOB_REGISTRY_DB takes precedence "
+            "(also accepts a direct DB path; bad booleans resolve off)."
+        ),
+    )
+    dataset_registry_sync: bool = Field(
+        False,
+        description=(
+            "Write materialized datasets back into the registry DB "
+            "(datasets table). Default off — zero behaviour change."
         ),
     )
 

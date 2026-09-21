@@ -1,9 +1,9 @@
-"""CPS 共面带锚冒烟（C9 传输线族 II）+ 预声明判读门。
+"""CPS 共面带锚冒烟（C9 传输线族 II）+ 预声明判读门（w2f-c9-refs 改写，2026-09-18）。
 
 真机：标称几何 w=2.95mm gap=0.5 L=40mm 保持（真机配对 #158：pt1 与复跑同几何；
 docs meta 同源）。口径修订（refs §11.1）：`_cps_ri` 经 FD 定标（有效厚度
 γ(εr)=1+0.9014·εr^−0.6361）后该几何 Z0=116.17Ω/εeff=1.6765（旧裸映射 120Ω/1.5712
-撤）；真值锚=core/quasistatic_fd.py 裁判现算（标称 εeff_FD≈1.667，历史临时 FD
+撤）；真值锚=core/quasistatic_fd.py 裁判现算（标称 εeff_FD≈1.667，收尾批临时 FD
 ≈1.68 同口径）。LumpedPort R=闭式 Z0（render 期同源 _cps_ri），CalcPort 同参考。
 
 判据（预声明，#122 不因结果改门）：
@@ -11,7 +11,7 @@ docs meta 同源）。口径修订（refs §11.1）：`_cps_ri` 经 FD 定标（
   G2 εeff(S21 解缠相位斜率, L=line_len) vs εeff_FD：≤3% PASS / ≤7% PARTIAL / 其余
      FAIL——LumpedPort 无 β 属性（sma_launcher 同坑），相位法含端口元落格 ±1 BASE
      的线长口径不确定度（±1.14mm/40mm → εeff ±5.7%，pt1 postmortem），PARTIAL 档
-     即此口径地板；**后续定标批 ②**：模板渲染段落盘 port_beta.csv（端口元
+     即此口径地板；**w2f 后续定标批 ②**：模板渲染段落盘 port_beta.csv（端口元
      y 坐标/实测差分线长 plane_dist_m，同 SSL beta 块先例），本判读器优先用实测
      线长替代标称 L（line_len_source=port_beta_csv），地板压到 ~±1%；无该文件时
      回退标称 L（line_len_source=nominal，旧 pt 兼容）。
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -45,6 +46,22 @@ GATES = {
     "eps_partial_pct": 7.0,     # G2 PARTIAL 上限（端口元落格线长口径地板 ±5.7%）
     "closed_vs_fd_info_pct": 1.2,
 }
+#: plane_dist_m 合法性守卫（C4 followUp 2026-09-21）：实测差分线长相对标称 L
+#: 的物理偏差上界=端口元落格 ±1 格（粗网格 ±1.14mm/40mm≈±2.85%，εeff 口径
+#: ±5.7%）；超界（或非有限/非正）视为坏数据——**多报不放过**（#316）：拒用该
+#: 值、回退标称 L 并显式记 line_len_source=nominal_invalid_plane_dist，
+#: 不静默消费（否则坏线长可直接翻转 G2 判向）。
+PLANE_DIST_MAX_REL_DEV = 0.05
+#: 标称线长口径的 εeff 地板（±1 格 → εeff ±2·BASE/L；缺省档 BASE=1.14/L=40）
+NOMINAL_LEN_FLOOR_PCT = 5.7
+
+
+def plane_dist_usable(plane_m: float, nominal_m: float,
+                      max_rel_dev: float = PLANE_DIST_MAX_REL_DEV) -> bool:
+    """纯函数守卫：port_beta.csv 实测线长是否可用（有限/正/对标称偏差 ≤5%）。"""
+    if not (math.isfinite(plane_m) and plane_m > 0.0 and nominal_m > 0.0):
+        return False
+    return abs(plane_m / nominal_m - 1.0) <= max_rel_dev
 
 
 def eps_from_s21_slope(f_hz: np.ndarray, s21: np.ndarray, length_m: float) -> float:
@@ -69,10 +86,16 @@ def fd_anchor(w_mm: float, gap_mm: float, h_mm: float, eps_r: float) -> dict:
 def judge_cps(f_hz: np.ndarray, s11: np.ndarray, s21: np.ndarray,
               line_len_m: float, anchor: dict,
               base_cell_m: float | None = None,
-              line_len_source: str = "nominal") -> dict:
+              line_len_source: str = "nominal",
+              line_len_floor_pct: float | None = None) -> dict:
     """纯函数判读（预声明门 GATES；锚=FD 裁判 anchor）。base_cell_m 给定时附
     端口元落格 ±1 格的 εeff 敏感度（口径地板说明，不进门）。line_len_source=
-    "port_beta_csv" 时 line_len_m 为模板落盘的实测差分线长（定标批 ②）。"""
+    "port_beta_csv" 时 line_len_m 为模板落盘的实测差分线长（w2f 定标批 ②）；
+    "nominal_invalid_plane_dist"=实测线长未过守卫被拒（C4 followUp），回退
+    标称口径。line_len_floor_pct 给定时（main 按 ±1 格折算）在 G2 块附
+    line_len_floor_pct 信息项（该线长源下 εeff 判读的口径地板，门值不动
+    #122）——nominal 源时地板 ±5.7% 意味着 ≤3% PASS 判据本身落在此噪声内，
+    判读须连读 floor 项。"""
     sel = (f_hz >= BAND_HZ[0]) & (f_hz <= BAND_HZ[1])
     s11_max_db = float(20 * np.log10(np.abs(s11[sel]).max() + 1e-12))
     eps_engine = eps_from_s21_slope(f_hz, s21, line_len_m)
@@ -92,10 +115,15 @@ def judge_cps(f_hz: np.ndarray, s11: np.ndarray, s21: np.ndarray,
                               "value_pct": round(info, 2),
                               "pass": info <= GATES["closed_vs_fd_info_pct"]},
     }
+    if line_len_floor_pct is not None:
+        checks["G2_eps_vs_fd"]["line_len_floor_pct"] = round(
+            line_len_floor_pct, 2)
     numbers = {"eps_engine_s21_slope": round(eps_engine, 4),
                "eps_fd": round(eps_fd, 4), "eps_closed": round(anchor["eps_eff_closed"], 4),
                "s11_max_db": round(s11_max_db, 2), "line_len_m": round(line_len_m, 6),
                "line_len_source": line_len_source}
+    if line_len_floor_pct is not None:
+        numbers["line_len_floor_pct"] = round(line_len_floor_pct, 2)
     if base_cell_m:
         lo = eps_from_s21_slope(f_hz, s21, line_len_m + base_cell_m)
         hi = eps_from_s21_slope(f_hz, s21, line_len_m - base_cell_m)
@@ -107,8 +135,9 @@ def judge_cps(f_hz: np.ndarray, s11: np.ndarray, s21: np.ndarray,
     else:
         verdict = "FAIL"
     notes = ["εeff 口径=S21 解缠相位斜率（LumpedPort 无 β）。线长源="
-             f"{line_len_source}（port_beta_csv=模板落盘实测差分线长，定标"
-             "批 ②；nominal=标称 L，含端口元落格 ±1 BASE → εeff ±5.7% 口径地板）；"
+             f"{line_len_source}（port_beta_csv=模板落盘实测差分线长，w2f 定标"
+             "批 ②；nominal=标称 L，含端口元落格 ±1 BASE → εeff ±5.7% 口径地板；"
+             "nominal_invalid_plane_dist=实测线长未过守卫拒用回退标称，C4）；"
              "真值锚=FD 裁判现算。",
              "定标闭式与 FD 的差为信息项（≤1.2% 预期）；引擎偏差归引擎侧候选"
              "（MUR/基板格数/端口线长）由复跑分离。"]
@@ -133,7 +162,7 @@ def main(argv: list[str] | None = None) -> dict:
     parser.add_argument("--work-root", default="runs/cps_smoke",
                         help="证据链根目录（#198 工作目录参数化；pt 子目录）")
     parser.add_argument("--sub-cells", type=int, default=0,
-                        help="基板 z 格数旋钮（0=缺省 4；复跑 8）")
+                        help="基板 z 格数旋钮（0=缺省 4；复跑 8，w2f blocked 候选 c）")
     parser.add_argument("--nrts", type=int, default=0,
                         help="FDTD NrTS 上限（0=缺省 100000；细网格 150000）")
     parser.add_argument("--base-cell-mm", type=float, default=0.0,
@@ -180,13 +209,23 @@ def main(argv: list[str] | None = None) -> dict:
     base_cell = (args.base_cell_mm * 1e-3 if args.base_cell_mm > 0
                  else (args.mesh_mm * 1e-3 if args.mesh_mm > 0 else None))
     line_len_m, len_source = ll * 1e-3, "nominal"
-    plane = _read_port_plane_dist(work)          # 定标批 ②：实测差分线长
-    if plane is not None:
+    plane, plane_status = _read_port_plane_dist(work, ll * 1e-3)
+    if plane_status == "ok":                     # w2f 定标批 ②：实测差分线长
         line_len_m, len_source = plane, "port_beta_csv"
         print(f"line_len: 实测(plane_dist_m)={plane:.6f} m vs 标称 {ll * 1e-3:.6f} m"
               f"（Δ {(plane / (ll * 1e-3) - 1) * 100:+.2f}%）")
+    elif plane_status == "invalid":              # C4 守卫：坏数据拒用回退标称
+        len_source = "nominal_invalid_plane_dist"
+        print(f"line_len: plane_dist_m 未过守卫（非有限/非正/对标称偏差>"
+              f"{PLANE_DIST_MAX_REL_DEV:.0%}）→ 拒用，回退标称 L 口径")
+    # 口径地板（信息项，门值不动）：±1 落格 → εeff ±2·格/L；无格长信息且
+    # 标称口径时用预声明缺省档 5.7%（BASE=1.14mm/L=40mm，pt1 实测档）
+    floor_pct = (200.0 * base_cell / line_len_m if base_cell
+                 else (NOMINAL_LEN_FLOOR_PCT if len_source != "port_beta_csv"
+                       else None))
     verdict = judge_cps(f_hz, s11, s21, line_len_m, anchor, base_cell_m=base_cell,
-                        line_len_source=len_source)
+                        line_len_source=len_source,
+                        line_len_floor_pct=floor_pct)
     out = work / "_verdict.json"
     out.write_text(json.dumps(verdict, ensure_ascii=False, indent=1),
                    encoding="utf-8")
@@ -196,20 +235,29 @@ def main(argv: list[str] | None = None) -> dict:
     return verdict
 
 
-def _read_port_plane_dist(work: Path) -> float | None:
-    """读 port_beta.csv 的 plane_dist_m（定标批 ② 新契约）；缺文件/缺列
-    → None（旧 pt 回退标称线长，如实记 line_len_source=nominal）。"""
+def _read_port_plane_dist(work: Path,
+                          nominal_m: float) -> tuple[float | None, str]:
+    """读 port_beta.csv 的 plane_dist_m（w2f 定标批 ② 新契约）+ 合法性守卫
+    （C4 followUp，plane_dist_usable）。返回 (值, 状态)：
+      ("missing"→缺文件/缺列, "invalid"→在但未过守卫, "ok"→可用)；前两态由
+    main 回退标称线长并如实记 line_len_source。"""
     import csv as _csv
 
     path = work / "port_beta.csv"
     if not path.exists():
-        return None
+        return None, "missing"
     with open(path, encoding="utf-8") as fh:
         rows = list(_csv.reader(fh))
-    if not rows or "plane_dist_m" not in rows[0]:
-        return None
+    if not rows or "plane_dist_m" not in rows[0] or len(rows) < 2:
+        return None, "missing"
     col = rows[0].index("plane_dist_m")
-    return float(rows[1][col])
+    try:
+        plane = float(rows[1][col])
+    except ValueError:
+        return None, "invalid"
+    if not plane_dist_usable(plane, nominal_m):
+        return None, "invalid"
+    return plane, "ok"
 
 
 if __name__ == "__main__":

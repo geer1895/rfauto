@@ -29,6 +29,7 @@ from rfauto.optimization.surrogate.prescreener import (
     ResponseSurfaceModel,
     SurrogatePrescreener,
 )
+from rfauto.optimization.surrogate.sk_gbdt import GBDTSurrogate
 from rfauto.optimization.surrogate.smt_kriging import SMTKrigingSurrogate
 from rfauto.optimization.surrogate.smt_mfk import SMTMultiFidelitySurrogate
 
@@ -37,6 +38,7 @@ __all__ = [
     "DeepONetSurrogate",
     "FNOLiteSurrogate",
     "FNOSurrogate",
+    "GBDTSurrogate",
     "MapesAnalyticSurrogate",
     "NNSurrogate",
     "PODROMSurrogate",

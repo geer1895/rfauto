@@ -52,3 +52,23 @@ solvers:
       # 网格走 Gmsh v2.2 → ElmerGrid 14 2。
 
 
+  ngspice:
+    # 电路级 SPICE 参考通道（0ca A3：HB 结果对拍真 ngspice-47 瞬态/.AC xval；
+    # 版本锚 ngspice-47，runs/a3_field_circuit_nonlinear 真机标定）。
+    # 6h 管理页探测记录（0ca followUp④）：非 EM 求解器——无
+    # EMSolverAdapter、不进 EMSolverRegistry；EM 专属字段
+    # （freq_range_ghz/mesh_resolution_mm/boundary_condition）保持
+    # load_solvers_config 缺省值，读取方对 ngspice/xyce 应忽略它们。
+    # exe 解析链在 adapters/spice_netlist.resolve_ngspice_exe：
+    # RFAUTO_NGSPICE_BIN > 工作区 tools/ngspice/Spice64/bin > PATH；
+    # 此处不写 exe_path（当前渲染链不消费此键——elmer exe 同款口径），
+    # 子进程批处理口径：ngspice_con -b（无 GUI）。
+    solver_type: ngspice
+  xyce:
+    # Xyce 诚实探测钩子（#215：本机无 Xyce 二进制，渲染器不凭想象写
+    # API——装二进制后按 Xyce Reference Guide 补 Ylin/.HB 渲染器并与
+    # 本仓 HB 内核交叉验证，0ca followUp①）。
+    # 探测链：adapters/spice_netlist.resolve_xyce_exe／xyce_available：
+    # RFAUTO_XYCE_BIN > PATH；无安装时探测如实报不可用，
+    # 不阻塞其他求解器（service 层 spice_tool_status 逐项 best-effort）。
+    solver_type: xyce

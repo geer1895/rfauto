@@ -25,20 +25,52 @@ from typing import Any
 #: 开启 job 持久化的环境开关：
 #: ``RFAUTO_JOB_REGISTRY_DB=1``（默认路径 runs/registry.sqlite）、
 #: ``=true``/``=on`` 同义，或直接给数据库文件路径；未设/``0``/``false``/``off``
-#: 时维持既有纯内存 + meta.json 语义（既有行为与测试不变）。
+#: 时回落 settings ``db.job_registry_persist``（默认 False，行为不变）。
 ENV_JOB_REGISTRY_DB = "RFAUTO_JOB_REGISTRY_DB"
 
 _FALSY_SWITCH = ("0", "false", "off")
 _TRUTHY_SWITCH = ("1", "true", "on")
 
 
-def _env_persist_backend() -> Any:
-    """按环境开关构造 RegistryDB 持久化后端；未开启或失败返回 None。
+def _open_default_registry() -> Any:
+    """按缺省路径（infra.db.default_registry_db_path）构造 RegistryDB。
+
+    best-effort：构造/迁移失败返回 None（回落纯内存，#105）。
+    """
+    try:
+        from rfauto.infra.db import RegistryDB  # 惰性导入：默认路径零依赖开销
+
+        db = RegistryDB()
+        db.migrate()
+        return db
+    except Exception:
+        return None
+
+
+def _env_persist_backend(enabled: bool | None = None) -> Any:
+    """构造 RegistryDB 持久化后端；关闭或不可用返回 None。
+
+    解析链（R2-D-03 ③半）：显式参数 ``enabled`` > 环境变量
+    ``RFAUTO_JOB_REGISTRY_DB``（现行为不变：truthy/falsy/路径值三态，
+    路径值直接作库文件）> settings ``db.job_registry_persist`` > 默认关。
+    默认（不设 env、YAML false）与纯内存旧行为逐字节一致。
 
     best-effort（#105）：持久化后端不可用绝不阻塞 job 主路径——回落纯内存。
     """
+    if enabled is not None:
+        return _open_default_registry() if enabled else None
     raw = os.environ.get(ENV_JOB_REGISTRY_DB, "").strip()
-    if not raw or raw.lower() in _FALSY_SWITCH:
+    if not raw:
+        # env 未设：回落 settings 键（YAML 显式 true 可开启；默认 False 不变）
+        try:
+            from rfauto.infra.config import load_settings
+
+            if not load_settings().db.job_registry_persist:
+                return None
+        except Exception:
+            return None
+        return _open_default_registry()
+    if raw.lower() in _FALSY_SWITCH:
         return None
     try:
         from rfauto.infra.db import RegistryDB  # 惰性导入：默认路径零依赖开销

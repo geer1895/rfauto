@@ -20,10 +20,10 @@ RUNS_DIR = Path("runs")
 
 
 def list_runs(limit: int = 50) -> dict[str, Any]:
-  """run 列表（UI 首页）。"""
+  """run 列表（UI 首页；缺省注册表路径，同 run_store 缺省解析链）。"""
   from rfauto.infra.run_store import list_runs as _list_runs
 
-  runs = _list_runs(RUNS_DIR / "index.db", limit=limit)
+  runs = _list_runs(limit=limit)
   return {"ok": True, "runs": runs}
 
 
@@ -124,13 +124,34 @@ def _model3d_from_snapshot(run_dir: Path) -> dict[str, Any] | None:
     return None
 
 
+def _workcopy_rel(path: Path) -> str | None:
+  """工作副本判定（C22）：路径在 runs/recipe_workcopy/ 下则返回其相对
+  recipes 根的 posix 相对路径，否则 None（#140：Path 收敛 + 双形态尝试）。"""
+  from rfauto.infra.recipe_guard import WORKCOPY_SUBDIR
+
+  root = Path(*WORKCOPY_SUBDIR)
+  for probe, probe_root in ((path, root),
+                            (path.resolve(),
+                             (Path.cwd() / root).resolve())):
+    try:
+      return probe.relative_to(probe_root).as_posix()
+    except ValueError:
+      continue
+  return None
+
+
 def recipe_view(recipe_path: str | Path) -> dict[str, Any]:
   """配方的表单化视图（人不需要写 YAML）。
 
   params 展开 {name: {value, unit, bounds}}，optimization/setup/objectives
-  原样结构化返回。
+  原样结构化返回。C22：工作副本（runs/recipe_workcopy/ 下）视图带
+  ``is_workcopy=True`` + ``source_recipe``（对应原件路径）+
+  ``review_hint``（人工审阅入库提示，指向既有审批链）；原件视图
+  ``is_workcopy=False`` 且不带后两键。
   """
   import yaml
+
+  from rfauto.service.r3_services import WORKCOPY_REVIEW_HINT
 
   path = Path(recipe_path)
   if not path.exists():
@@ -151,11 +172,12 @@ def recipe_view(recipe_path: str | Path) -> dict[str, Any]:
       params.append({"name": name, "value": spec, "unit": "", "bounds": None})
 
   opt = data.get("optimization") or {}
-  return {
+  out: dict[str, Any] = {
     "ok": True,
     "recipe_path": str(path).replace("\\", "/"),
     "model": data.get("model", ""),
     "template_hint": _template_hint(data),
+    "is_workcopy": False,
     "params": params,
     "setup": data.get("setup") or {},
     "objectives": data.get("objectives") or [],
@@ -168,6 +190,12 @@ def recipe_view(recipe_path: str | Path) -> dict[str, Any]:
       },
     },
   }
+  workcopy_rel = _workcopy_rel(path)
+  if workcopy_rel is not None:
+    out["is_workcopy"] = True
+    out["source_recipe"] = "recipes/" + workcopy_rel
+    out["review_hint"] = WORKCOPY_REVIEW_HINT
+  return out
 
 
 def recipe_save(

@@ -2002,3 +2002,185 @@ class TestWorkdirShells:
         assert bad.exit_code == 1 and "导入失败" in bad.output
         bad2 = runner.invoke(app, ["datasets", "discover-workdir", "--runs-root", "nope"])
         assert bad2.exit_code == 1 and "发现失败" in bad2.output
+
+
+class TestRegistrySync:
+    """R2-D-03 ⑤：数据集物化回写注册表（默认关零行为变化，best-effort #105）。
+
+    autouse chdir + 清双 env（#144，同 test_registry_db 模板）；开关解析链
+    =显式实参 > settings db.dataset_registry_sync > False。
+    """
+
+    @pytest.fixture(autouse=True)
+    def _isolated_env(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
+        monkeypatch.delenv("RFAUTO_JOB_REGISTRY_DB", raising=False)
+        yield
+
+    @staticmethod
+    def _seed_one_run(tmp_path: Path) -> None:
+        _write_json(tmp_path / "runs" / "r1" / "meta.json",
+                    _meta("r1", model="mline"))
+        _write_json(tmp_path / "runs" / "r1" / "trials" / "trial_0.json", {
+            "trial_number": 0, "params": {"w_mm": 1.0},
+            "metrics": {"s11_db_max_in_band": -10.0}, "cost": 0.05})
+
+    # -- materialize_dataset ------------------------------------------------
+
+    def test_materialize_default_off_no_db_file(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        from rfauto.service.dataset_service import materialize_dataset
+
+        r = materialize_dataset(None, name="sync_off")
+        assert r["ok"] is True
+        assert r["registry_sync"] is False
+        assert not (tmp_path / "runs" / "registry.sqlite").exists()
+
+    def test_materialize_explicit_on_row_queryable(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        from rfauto.service import db_service
+        from rfauto.service.dataset_service import materialize_dataset
+
+        r = materialize_dataset(None, name="sync_on", registry_sync=True)
+        assert r["ok"] is True and r["registry_sync"] is True
+        out = db_service.db_query(
+            "SELECT name, n_rows, visibility, format FROM datasets ORDER BY name")
+        assert out["ok"] is True
+        assert out["rows"] == [["sync_on", 1, "private", "parquet"]]
+
+    def test_materialize_settings_yaml_enables_without_explicit(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  dataset_registry_sync: true\n", encoding="utf-8")
+        from rfauto.service.dataset_service import materialize_dataset
+
+        r = materialize_dataset(None, name="sync_yaml")
+        assert r["ok"] is True and r["registry_sync"] is True
+
+    def test_materialize_upsert_failure_does_not_block(self, tmp_path, monkeypatch):
+        self._seed_one_run(tmp_path)
+        from rfauto.infra import db as db_mod
+        from rfauto.service.dataset_service import materialize_dataset
+
+        def _boom(self, **kw):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(db_mod.RegistryDB, "upsert_dataset", _boom)
+        r = materialize_dataset(None, name="sync_fail", registry_sync=True)
+        assert r["ok"] is True
+        assert r["registry_sync"] is False
+        assert any("注册表回写失败" in w for w in r.get("warnings", []))
+        # 物化产物不受影响
+        assert (tmp_path / "runs" / "datasets" / "sync_fail"
+                / "points.parquet").exists()
+
+    def test_visibility_flip_syncs_registry_and_manifest(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        # visibility 回写无显式实参入口，开关走 settings 键
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  dataset_registry_sync: true\n", encoding="utf-8")
+        from rfauto.infra.db import RegistryDB
+        from rfauto.service.dataset_insights import set_dataset_visibility
+        from rfauto.service.dataset_service import materialize_dataset
+
+        assert materialize_dataset(None, name="sync_vis", registry_sync=True)["ok"]
+        r = set_dataset_visibility("sync_vis", "public")
+        assert r["ok"] is True and r["registry_sync"] is True
+        db = RegistryDB()
+        try:
+            assert db.get_dataset("sync_vis")["visibility"] == "public"
+        finally:
+            db.close()
+        manifest = yaml.safe_load(
+            (tmp_path / "runs" / "datasets" / "sync_vis" / "dataset_manifest.yaml")
+            .read_text(encoding="utf-8"))
+        assert manifest["visibility"] == "public"
+
+    def test_visibility_default_off_no_db_file(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        from rfauto.service.dataset_insights import set_dataset_visibility
+        from rfauto.service.dataset_service import materialize_dataset
+
+        assert materialize_dataset(None, name="vis_off")["ok"]
+        r = set_dataset_visibility("vis_off", "public")
+        assert r["ok"] is True and r["registry_sync"] is False
+        assert not (tmp_path / "runs" / "registry.sqlite").exists()
+
+    # -- import_workdir_runs（同型四例） ------------------------------------
+
+    def test_import_default_off_no_db_file(self, workdir_env, tmp_path):
+        from rfauto.service.dataset_service import import_workdir_runs
+
+        r = import_workdir_runs(name="wd_off", health_gate=False)
+        assert r["ok"] is True
+        assert r["registry_sync"] is False
+        assert not (tmp_path / "runs" / "registry.sqlite").exists()
+
+    def test_import_explicit_on_row_queryable(self, workdir_env):
+        from rfauto.service import db_service
+        from rfauto.service.dataset_service import import_workdir_runs
+
+        r = import_workdir_runs(name="wd_on", health_gate=False, registry_sync=True)
+        assert r["ok"] is True and r["registry_sync"] is True
+        out = db_service.db_query("SELECT name, visibility FROM datasets")
+        assert out["ok"] is True
+        assert out["rows"] == [["wd_on", "private"]]
+
+    def test_import_settings_yaml_enables_without_explicit(self, workdir_env, tmp_path):
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  dataset_registry_sync: true\n", encoding="utf-8")
+        from rfauto.service.dataset_service import import_workdir_runs
+
+        r = import_workdir_runs(name="wd_yaml", health_gate=False)
+        assert r["ok"] is True and r["registry_sync"] is True
+
+    def test_import_upsert_failure_does_not_block(self, workdir_env, monkeypatch):
+        from rfauto.infra import db as db_mod
+        from rfauto.service.dataset_service import import_workdir_runs
+
+        def _boom(self, **kw):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(db_mod.RegistryDB, "upsert_dataset", _boom)
+        r = import_workdir_runs(name="wd_fail", health_gate=False, registry_sync=True)
+        assert r["ok"] is True
+        assert r["registry_sync"] is False
+        assert any("注册表回写失败" in w for w in r.get("warnings", []))
+
+    # -- CLI 三态（#277：bool|None 选项，缺省不得被当显式 False 压掉配置） --
+
+    def test_cli_registry_sync_three_states(self, tmp_path):
+        self._seed_one_run(tmp_path)
+        from typer.testing import CliRunner
+
+        from rfauto.cli.main import app
+        from rfauto.service import db_service
+
+        runner = CliRunner()
+        # 显式 --registry-sync：默认关配置下也入库
+        r1 = runner.invoke(app, ["datasets", "materialize",
+                                 "--name", "cli_sync_on", "--registry-sync"])
+        assert r1.exit_code == 0, r1.output
+        out = db_service.db_query("SELECT name, visibility FROM datasets")
+        assert out["rows"] == [["cli_sync_on", "private"]]
+
+        # 配置开 + 显式 --no-registry-sync：压过配置不入库
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  dataset_registry_sync: true\n", encoding="utf-8")
+        r2 = runner.invoke(app, ["datasets", "materialize",
+                                 "--name", "cli_sync_off", "--no-registry-sync"])
+        assert r2.exit_code == 0, r2.output
+        out2 = db_service.db_query("SELECT name FROM datasets ORDER BY name")
+        assert [row[0] for row in out2["rows"]] == ["cli_sync_on"]
+
+        # 缺省（无 flag）读配置 true → 入库（三态关键档）
+        r3 = runner.invoke(app, ["datasets", "materialize",
+                                 "--name", "cli_sync_yaml"])
+        assert r3.exit_code == 0, r3.output
+        out3 = db_service.db_query("SELECT name FROM datasets ORDER BY name")
+        assert [row[0] for row in out3["rows"]] == ["cli_sync_on", "cli_sync_yaml"]

@@ -230,11 +230,24 @@ def farfield_view(run_id: str) -> dict[str, Any]:
     except Exception:
       grid3d = None # 交叉校验 best-effort（#105）
 
+  metrics = _read_metrics(meta, sar, grid3d)
+  # η 门判读（TODO C21 followUp）：极坐标页复用 ui_service 同一
+  # patch_eta_gate（与 field_view 的 farfield_metrics["eta_gate"] 同判读
+  # 函数同口径）。η 消费修正后值（_read_metrics 已按镜像因子修正，raw
+  # 1.243 这类非物理原值不进门）；patch 族作用域分派（#274）——非 patch
+  # 模板（全包盒 dipole η≈0.99）如实 None 不判，不虚构 FAIL。
+  if meta.get("template") == "patch":
+    from rfauto.service.ui_service import patch_eta_gate
+
+    metrics["eta_gate"] = patch_eta_gate(metrics)
+  else:
+    metrics["eta_gate"] = None
+
   return {
     "ok": True,
     "run_id": run_id,
     "template": meta.get("template"),
-    "metrics": _read_metrics(meta, sar, grid3d),
+    "metrics": metrics,
     "meta": meta,
     "cuts": cuts,
     "pattern3d": pattern3d,

@@ -407,7 +407,7 @@ async function pageRecipe() {
   const v = T.$("view-recipe");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li><b>配方目录</b>：recipes/ 下全部配方，点选加载。每个配方 = 一次仿真的完整定义（模型+参数+目标+优化设置）。</li>
+      <li><b>配方目录</b>：recipes/ 下全部配方，点选加载。每个配方 = 一次仿真的完整定义（模型+参数+目标+优化设置）。工作副本（runs/recipe_workcopy/）单独分组显示并标注「工作副本」——保存对原件的改动会重定向到工作副本（原件受保护），人工审阅后经审批链（rfauto inbox）入库。</li>
       <li><b>参数表</b>：改值即时刷新 3D 预览；「优化范围」是调参时允许搜索的区间。</li>
       <li><b>保存并运行</b>：单次仿真——fake 秒级演示 / openEMS 真跑 / HFSS 真机。</li>
       <li>各字段含义见页面底部「配方要素说明」。</li>`) +
@@ -447,10 +447,21 @@ async function pageRecipe() {
   async function loadCatalog() {
     const d = await T.api("/api/recipes");
     const el = T.$("recipe-cat");
-    el.innerHTML = (d.recipes || []).map((r) =>
+    const orig = d.recipes || [], work = d.workcopies || [];
+    const row = (r, isWorkcopy) =>
       `<div class="clickable" style="padding:5px 8px;border-radius:6px" data-p="${r.path}">
-        <b>${r.path.split("/").pop()}</b> <span class="muted">${r.model}</span><br>
-        <span class="muted" style="font-size:11.5px">${r.n_params ?? "?"} 参数 · ${r.n_objectives ?? "?"} 目标 · 频段 ${JSON.stringify(r.freq_range)}</span></div>`).join("");
+        <b>${r.path.split("/").pop()}</b> ${isWorkcopy ? T.badge("工作副本", "warn") + " " : ""}<span class="muted">${r.model}</span><br>
+        <span class="muted" style="font-size:11.5px">${r.n_params ?? "?"} 参数 · ${r.n_objectives ?? "?"} 目标 · 频段 ${JSON.stringify(r.freq_range)}</span></div>`;
+    // C22 分组：recipes/ 原件在上；工作副本（runs/recipe_workcopy/）单独分组，
+    // 标注「工作副本」并给人工审阅入库提示（rfauto inbox 审批链，前端只渲染）。
+    el.innerHTML =
+      `<div style="margin-bottom:4px"><b>原件（recipes/）</b> <span class="muted" style="font-size:11.5px">${orig.length} 个</span></div>` +
+      orig.map((r) => row(r, false)).join("") +
+      (work.length ?
+        `<div style="margin:10px 0 4px"><b>工作副本（runs/recipe_workcopy/）</b> <span class="muted" style="font-size:11.5px">${work.length} 个</span></div>` +
+        `<div class="muted" style="font-size:11.5px;margin:0 0 4px">人工审阅后入库：与原件 diff 确认改动 → 经审批链（<b>rfauto inbox</b> 审批收件箱，propose→approve→apply 三层 Gate）或显式写回原件后 git commit 留痕。</div>` +
+        work.map((r) => row(r, true)).join("")
+        : "");
     el.querySelectorAll("[data-p]").forEach((row) => {
       row.onclick = () => { T.$("recipe-path").value = row.dataset.p; loadRecipe(); };
       row.onmouseenter = () => { row.style.background = "var(--panel2)"; };
@@ -464,7 +475,10 @@ async function pageRecipe() {
     const val = await T.api("/api/recipe?path=" + encodeURIComponent(T.$("recipe-path").value.trim()));
     if (!val.ok) return T.msg(val.errors.join("; "), false);
     currentRecipe = val;
-    T.$("recipe-model").textContent = `${val.model}（模板: ${val.template_hint || "无"}）`;
+    // C22：工作副本视图标注（service 端 is_workcopy/review_hint，前端只渲染）
+    T.$("recipe-model").textContent =
+      `${val.model}（模板: ${val.template_hint || "无"}）` + (val.is_workcopy ? " · 工作副本" : "");
+    T.$("recipe-model").title = val.is_workcopy ? (val.review_hint || "") : "";
     const tb = T.$("params-table").tBodies[0];
     tb.innerHTML = "";
     for (const p of val.params) {
@@ -1828,7 +1842,10 @@ async function pageFarfield() {
       `峰值增益 <b>${fmt(m.gain_max_dbi, " dBi")}</b>`,
       `辐射效率 <b>${fmt(m.efficiency !== null && m.efficiency !== undefined ? m.efficiency * 100 : null, "%", 1)}</b>`,
       `功率闭合 <b>${fmt(m.power_budget_closure === null || m.power_budget_closure === undefined ? null : m.power_budget_closure * 100, "%", 2)}</b>`,
-    ].concat((m.sar && m.sar.ok !== false) ? [
+    ].concat(m.eta_gate ? [
+      // patch 族 η 门（服务层 farfield_view 复用 patch_eta_gate 判读，此处只渲染，与场页同口径）
+      `η 门 <b style='color:var(${m.eta_gate.ok === null ? "--muted" : m.eta_gate.ok ? "--ok" : "--err"})'>${m.eta_gate.ok === null ? "N/A" : m.eta_gate.ok ? "PASS" : "FAIL"}</b> [${m.eta_gate.gate.join(", ")}]`,
+    ] : []).concat((m.sar && m.sar.ok !== false) ? [
       `SAR(1g) <b>${fmt(m.sar.sar_max_w_per_kg_per_1w_acc, " W/kg/W", 3)}</b> @1W接受`,
       `吸收占比 <b>${fmt(m.sar.absorbed_fraction === null || m.sar.absorbed_fraction === undefined ? null : m.sar.absorbed_fraction * 100, "%", 1)}</b>`,
     ] : []).map((s) => `<span>${s}</span>`).join("");

@@ -62,8 +62,16 @@ def surrogate_optimize(
     surrogate_kind: str = "poly_ridge",
     seed: int = 42,
     adapter_kwargs: dict[str, Any] | None = None,
+    uncertainty_tol: float | None = None,
+    uncertainty_rounds: int = 1,
+    uncertainty_pool: int = 128,
 ) -> dict[str, Any]:
-    """代理寻优环服务入口：`rfauto tune --sampler sbo` 的后端。"""
+    """代理寻优环服务入口：`rfauto tune --sampler sbo` 的后端。
+
+    B5 不确定度终止判据透传（uncertainty_tol/rounds/pool 同名同义，见
+    surrogate_loop.run_surrogate_loop）：仅服务层可编程入口暴露，
+    CLI/MCP 不暴露；tol=None（缺省）时行为逐字节不变。
+    """
     import yaml
 
     from rfauto.core.objectives import Objective
@@ -131,7 +139,10 @@ def surrogate_optimize(
             n_init=n_init, top_k=top_k, virtual_trials=virtual_trials,
             max_real=max_real, min_dist=min_dist, tol_abs=tol_abs,
             tol_rounds=tol_rounds, surrogate_kind=surrogate_kind, seed=seed,
-            constraints=constraints or None)
+            constraints=constraints or None,
+            uncertainty_tol=uncertainty_tol,
+            uncertainty_rounds=uncertainty_rounds,
+            uncertainty_pool=uncertainty_pool)
     finally:
         adapter.close()
     elapsed = time.time() - t0
@@ -170,7 +181,7 @@ def surrogate_optimize(
         "algorithm": "surrogate_loop",
         "metrics": meta_metrics,
     })
-    record_run(Path("runs") / "index.db", {
+    record_run(record={
         "run_id": run_id,
         "model": recipe_data.get("model", ""),
         "adapter": adapter_name,

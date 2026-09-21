@@ -26,7 +26,7 @@ if src_dir.exists() and str(src_dir) not in sys.path:
 
 @pytest.fixture(autouse=True)
 def _isolated_cwd(tmp_path, monkeypatch):
-    """服务会写 runs/（meta.json/index.db）——统一 chdir 隔离（#144）。"""
+    """服务会写 runs/（meta.json/registry.sqlite 缺省注册表）——chdir 隔离（#144）。"""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("RFAUTO_CACHE", "off")
     yield

@@ -53,6 +53,7 @@ OPTIONAL_MODULE_TO_EXTRA = {
     "cmaes": "multiobj",
     "pyvista": "viz3d",
     "vtk": "viz3d",
+    "sklearn": "gbdt",
 }
 
 

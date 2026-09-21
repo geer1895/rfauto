@@ -166,6 +166,50 @@ def remove_solver_from_config(name: str) -> dict[str, Any]:
     return {"ok": True, "name": name, "removed": removed}
 
 
+def spice_tool_status(path: str | Path | None = None) -> dict[str, Any]:
+    """ngspice/Xyce 电路级参考通道探测（6h 管理页数据源，0ca followUp④）。
+
+    读 configs/solvers.yaml 的 ``ngspice``/``xyce`` 节（管理页探测记录，
+    非 EM 求解器——无 EMSolverAdapter，不进 EMSolverRegistry）并逐项调用
+    adapters.spice_netlist 的探测钩子（resolve_*/available）。两项独立
+    best-effort（观测性 #105）：单工具探测失败只入该工具的 error 字段，
+    不阻塞另一项，也不影响 EM 求解器管理面。
+    """
+    from rfauto.adapters import spice_netlist as sn
+    from rfauto.adapters.em_solver_base import load_solvers_config
+
+    configs = load_solvers_config(path)
+    tools: dict[str, Any] = {}
+    probes = {
+        "ngspice": (sn.resolve_ngspice_exe, sn.ngspice_available,
+                    "RFAUTO_NGSPICE_BIN > tools/ngspice/Spice64/bin > PATH"),
+        "xyce": (sn.resolve_xyce_exe, sn.xyce_available,
+                 "RFAUTO_XYCE_BIN > PATH"),
+    }
+    for name, (resolve_fn, available_fn, chain) in probes.items():
+        entry = configs.get(name)
+        tool: dict[str, Any] = {
+            "configured": entry is not None,
+            "available": False,
+            "exe": None,
+            "resolve_chain": chain,
+            "error": None,
+        }
+        try:
+            tool["available"] = bool(available_fn())
+            if tool["available"]:
+                tool["exe"] = str(resolve_fn())
+        except Exception as exc:  # 探测只报告不抛（#105）
+            tool["error"] = str(exc)
+        tools[name] = tool
+    return {
+        "ok": True,
+        "tools": tools,
+        "note": "电路级 SPICE 通道（探测记录）；EM 求解器管理面见 "
+                "list_registered_solvers（EMSolverRegistry）",
+    }
+
+
 # ─── 6i: Approval Inbox ───────────────────────────────────────────────────────
 
 def _audit_path() -> Path:
@@ -1013,7 +1057,7 @@ class AgentChat:
 
         if msg_lower.startswith("list runs") or msg_lower == "runs":
             from rfauto.infra.run_store import list_runs
-            runs = list_runs(Path("runs") / "index.db")
+            runs = list_runs()
             return {"text": f"Found {len(runs)} runs", "action": "list_runs", "result": {"runs": runs}}
 
         if msg_lower.startswith("validate "):
@@ -1142,7 +1186,7 @@ def _execute_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
         return list_registered_solvers()
     if name == "list_runs":
         from rfauto.infra.run_store import list_runs
-        return {"runs": list_runs(Path("runs") / "index.db")}
+        return {"runs": list_runs()}
     if name == "run_detail":
         from rfauto.service.api import get_metrics
         return get_metrics(args["run_id"])
@@ -1217,24 +1261,68 @@ RECIPE_HELP = {
     "fidelity": "多保真开关：fake 粗筛 → HFSS/openEMS 精算（P0 gate 校验排序一致性）",
 }
 
+#: 工作副本"人工审阅入库"提示（C22，TODO:417 followUp）。指向既有 promote/
+#: 审批面（rfauto inbox 审批收件箱，propose→approve→apply 三层 Gate），
+#: 不新增后端命令——工作副本按守卫设计不自动回写 recipes/ 原件。
+WORKCOPY_REVIEW_HINT = (
+    "本条是 runs/recipe_workcopy/ 工作副本，recipes/ 原件未被改动。"
+    "人工审阅：先与原件 diff 对比确认改动；入库：经既有审批链"
+    "（rfauto inbox 审批收件箱，propose→approve→apply 三层 Gate）"
+    "或人工确认后显式写回原件并 git commit 留痕。"
+)
 
-def list_recipes() -> dict[str, Any]:
-    """扫描 recipes/ 下全部配方，返回路径与元信息（供配方目录页）。"""
+
+def _workcopy_root() -> Path:
+    """工作副本根（与 infra.recipe_guard.WORKCOPY_SUBDIR 同源单源）。"""
+    from rfauto.infra.recipe_guard import WORKCOPY_SUBDIR
+
+    return Path(*WORKCOPY_SUBDIR)
+
+
+def _scan_recipe_dir(root: Path, kind: str) -> list[dict[str, Any]]:
+    """扫描一个配方目录 -> 条目列表（kind: original|workcopy，#105 单文件不阻塞）。"""
     import yaml
 
-    root = Path("recipes")
-    out = []
-    if root.exists():
-        for p in sorted(root.rglob("*.yaml")):
-            try:
-                data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-                out.append({
-                    "path": str(p).replace("\\", "/"),
-                    "model": data.get("model", "?"),
-                    "n_params": len(data.get("params", {})),
-                    "n_objectives": len(data.get("objectives", [])),
-                    "freq_range": (data.get("setup", {}) or {}).get("freq_range_ghz", []),
-                })
-            except Exception as exc:  # 单文件解析失败不阻塞目录（#105）
-                out.append({"path": str(p).replace("\\", "/"), "model": f"<解析失败: {exc}>"})
-    return {"ok": True, "recipes": out, "help": RECIPE_HELP}
+    out: list[dict[str, Any]] = []
+    if not root.exists():
+        return out
+    for p in sorted(root.rglob("*.yaml")):
+        entry: dict[str, Any]
+        try:
+            data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            entry = {
+                "path": str(p).replace("\\", "/"),
+                "kind": kind,
+                "model": data.get("model", "?"),
+                "n_params": len(data.get("params", {})),
+                "n_objectives": len(data.get("objectives", [])),
+                "freq_range": (data.get("setup", {}) or {}).get("freq_range_ghz", []),
+            }
+        except Exception as exc:  # 单文件解析失败不阻塞目录（#105）
+            entry = {"path": str(p).replace("\\", "/"), "kind": kind,
+                     "model": f"<解析失败: {exc}>"}
+        if kind == "workcopy":
+            entry["source_recipe"] = "recipes/" + p.relative_to(root).as_posix()
+            entry["review_hint"] = WORKCOPY_REVIEW_HINT
+        out.append(entry)
+    return out
+
+
+def list_recipes() -> dict[str, Any]:
+    """扫描 recipes/ 原件与 runs/recipe_workcopy/ 工作副本，分组返回（C22）。
+
+    分组字段（JSON 进出，前端只渲染）：``recipes`` 键保持只含 recipes/
+    原件（既有消费者零改动——LLM 配方菜单与模糊解析都消费它），工作副本
+    单列 ``workcopies``（每条附 ``source_recipe`` 反查原件路径与
+    ``review_hint`` 人工审阅入库提示），``groups`` 给分组计数；两列表的
+    每条都带 ``kind``（original/workcopy）。
+    """
+    originals = _scan_recipe_dir(Path("recipes"), "original")
+    workcopies = _scan_recipe_dir(_workcopy_root(), "workcopy")
+    return {
+        "ok": True,
+        "recipes": originals,
+        "workcopies": workcopies,
+        "groups": {"originals": len(originals), "workcopies": len(workcopies)},
+        "help": RECIPE_HELP,
+    }

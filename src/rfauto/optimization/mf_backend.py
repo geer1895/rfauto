@@ -9,6 +9,7 @@ fidelity_delta.json tracks rank_flip_count as core diagnostic.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -208,8 +209,55 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
             "seed": seed, "solver_versions": solver_versions or {}}
 
 
+def mf_study_names(recipe_path, *, adapter_low, adapter_high, n_phase2, seed):
+    """稳定派生 mf 两阶段 study 名（#148 断点续跑：study 名去 run_id 化）。
+
+    名字 = ``mf_p1_`` / ``mf_p2_`` + SHA-256(配方内容 + 适配器组合 + k(n_phase2)
+    + seed) 前 10 位——**同配方同 adapter 同 seed 跨进程同名**：进程被杀后重跑
+    挂回同一 study，已 COMPLETE 的 trial 不再重算（#148 教训：study 名含 run_id
+    → 新进程起新 study → 5×HFSS 精算全部重来）。seed 会影响 TPE 轨迹（显式
+    透传给 run_optimization），故纳入哈希输入——不同 seed 天然不同 study，
+    名字本身即体现 seed 身份；完整哈希输入经返回 spec 记入 study user_attrs
+    与 result["study_spec"]（"描述里体现"）。
+
+    新旧语义边界（旧名 study 不迁移，历史资产零改写，新命名向前生效）：
+    - 旧（2026-09-05 阶段 0.4）：仅 ``resume=True`` 时哈希命名（8 位、无 seed），
+      否则 ``mf_p{1,2}_{run_id[:8]}``（每次调用隔离，续跑必然重算）；
+    - 新：命名恒稳定派生（10 位、含 seed），与旧哈希输入不同故同名巧撞概率
+      可忽略，旧 study 自然废弃而非被复用。
+    """
+    path = Path(recipe_path)
+    content = path.read_bytes() if path.exists() else b""
+    spec = {
+        "recipe_sha256": hashlib.sha256(content).hexdigest(),
+        "recipe_path": str(path),
+        "adapters": f"{adapter_low}+{adapter_high}",
+        "n_phase2": int(n_phase2),
+        "seed": int(seed),
+        "naming": "content-hash-v2 (mf resume, #148)",
+    }
+    h1 = hashlib.sha256(
+        content + f"{adapter_low}|seed={seed}".encode()).hexdigest()[:10]
+    h2 = hashlib.sha256(
+        content + f"{adapter_low}+{adapter_high}+k{n_phase2}|seed={seed}".encode()
+    ).hexdigest()[:10]
+    return {"phase1": f"mf_p1_{h1}", "phase2": f"mf_p2_{h2}", "spec": spec}
+
+
 def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
                       n_phase1=40, n_phase2=5, seed=42, resume=False):
+    """两阶段多保真优化（Phase1 粗筛 → HV 选点 → Phase2 精算）。
+
+    断点续跑（C18，#148）：study 名稳定派生（:func:`mf_study_names`），Phase1
+    按"累计目标"补差（已有 p1_done 个 COMPLETE 只跑 ``n_phase1 - p1_done`` 个
+    新 trial），Phase2 消费 enqueue 前回查同名 study 已 COMPLETE trial（params
+    指纹比对），已评估点跳过不再真算、复用 trial 值——跳过/复用计数见
+    ``p2_skipped_reused`` / ``p2_reused``（同值，兼容保留）、新算数
+    ``p2_recalculated``、入队数 ``p2_enqueued``。
+
+    ``resume`` 参数保留兼容（阶段 0.4 语义），新命名下续跑恒开——传 True/False
+    行为一致，仅 ``result["resume"]`` 回显。
+    """
     import optuna
     import yaml
 
@@ -227,38 +275,35 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
     snapshot_recipe(run_dir, recipe_data)
     t0 = time.time()
 
-    # study 名：resume 模式下去 run_id 化（配方内容+适配器组合哈希）——
-    # 同配方重跑挂同一个 study，已 COMPLETE 的 trial 不再重算（#148 教训：
-    # 进程被杀 = 5×HFSS 精算全部重来）。非 resume 保持 run_id 名（隔离）。
-    if resume:
-        content = path.read_bytes()
-        h1 = hashlib.sha256(content + adapter_low.encode()).hexdigest()[:8]
-        h2 = hashlib.sha256(
-            content + f"{adapter_low}+{adapter_high}+k{n_phase2}".encode()
-        ).hexdigest()[:8]
-        p1_study_name = f"mf_p1_{h1}"
-        p2_study_name = f"mf_p2_{h2}"
-        storage = get_storage_path()
-        try:
-            _pre = optuna.load_study(study_name=p1_study_name, storage=storage)
-            p1_done = len([t for t in _pre.get_trials(deepcopy=False)
-                           if t.state == optuna.trial.TrialState.COMPLETE])
-        except (KeyError, ValueError):
-            p1_done = 0
-        eff_n1 = max(0, n_phase1 - p1_done)
-    else:
-        p1_study_name = f"mf_p1_{run_id[:8]}"
-        p2_study_name = f"mf_p2_{run_id[:8]}"
-        eff_n1 = n_phase1
+    # study 名去 run_id 化（#148）：无条件稳定派生（配方内容+适配器组合+
+    # k(n_phase2)+seed 哈希）——同配方同 seed 跨进程同名，进程被杀后重跑挂回
+    # 同一 study，已 COMPLETE 的 trial 不再重算。
+    names = mf_study_names(path, adapter_low=adapter_low, adapter_high=adapter_high,
+                           n_phase2=n_phase2, seed=seed)
+    p1_study_name = names["phase1"]
+    p2_study_name = names["phase2"]
+    study_spec = names["spec"]
+    storage = get_storage_path()
+    try:
+        _pre = optuna.load_study(study_name=p1_study_name, storage=storage)
+        p1_done = len([t for t in _pre.get_trials(deepcopy=False)
+                       if t.state == optuna.trial.TrialState.COMPLETE])
+    except (KeyError, ValueError):
+        p1_done = 0
+    # Phase1 top-up：n_phase1 语义=累计目标——已有 p1_done 个 COMPLETE 时只补
+    # 差额（断点续跑不重算粗筛）；首跑 p1_done=0，行为与旧实现一致。
+    eff_n1 = max(0, n_phase1 - p1_done)
 
-    logger.info("Phase 1: %d trials (resume=%s), adapter=%s",
-                eff_n1, resume, adapter_low)
+    logger.info("Phase 1: %d new trials (existing %d complete, stable study=%s), adapter=%s",
+                eff_n1, p1_done, p1_study_name, adapter_low)
     phase1 = run_optimization(str(path), adapter_name=adapter_low, max_trials=eff_n1,
-                              study_name=p1_study_name, sampler="tpe")
+                              study_name=p1_study_name, sampler="tpe", seed=seed)
     if not phase1.get("ok"):
         return {"ok": False, "errors": ["Phase 1 failed", *phase1.get("errors", [])]}
 
     study = optuna.load_study(study_name=phase1["study_name"], storage=phase1["storage"])
+    with contextlib.suppress(Exception):  # study 身份审计（哈希输入落档，best-effort #105）
+        study.set_user_attr("mf_resume_spec", study_spec)
     all_trials = [{"params": dict(t.params), "cost": t.value, "metrics": t.user_attrs.get("metrics", {})}
                   for t in study.get_trials(deepcopy=False) if t.state == optuna.trial.TrialState.COMPLETE]
     try:
@@ -289,9 +334,14 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
     # run_optimization(max_trials=1) 不带候选参数，跑的是 TPE 新建议点，
     # 结果却挂候选名，fidelity_delta 配对失真）。enqueue 的固定参数由
     # study.optimize 消费，Phase 2 精算的就是 Phase 1 选出的那批点。
-    # resume：候选参数已有 COMPLETE trial 的直接复用，不再 enqueue 重算。
+    # enqueue 前回查（C18，#148）：候选参数已有 COMPLETE trial 的直接复用
+    # （params 指纹=排序 JSON），不再 enqueue 重算——无条件生效，不依赖
+    # resume 旗标。optuna 4.9 无 waiting_trials()，此处只查 COMPLETE
+    # （get_trials 按状态过滤，#123 口径），WAITING/RUNNING 不视为已评估。
     p2_study = optuna.create_study(study_name=p2_study_name, storage=phase1["storage"],
                                    direction="minimize", load_if_exists=True)
+    with contextlib.suppress(Exception):
+        p2_study.set_user_attr("mf_resume_spec", study_spec)
     p2_done = {json.dumps(dict(t.params), sort_keys=True): t
                for t in p2_study.get_trials(deepcopy=False)
                if t.state == optuna.trial.TrialState.COMPLETE}
@@ -300,7 +350,7 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
     for cand in top_k:
         key = json.dumps(dict(cand.get("params", {})), sort_keys=True)
         t = p2_done.get(key)
-        if resume and t is not None:
+        if t is not None:
             reused.append({"params": cand.get("params", {}), "cost": t.value,
                            "metrics": t.user_attrs.get("metrics", {})})
         else:
@@ -308,13 +358,13 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
     for cand in pending:
         p2_study.enqueue_trial(dict(cand.get("params", {})))
 
-    logger.info("Phase 2: %d candidates (enqueued) + %d reused, adapter=%s",
+    logger.info("Phase 2: %d enqueued + %d skipped/reused (already COMPLETE), adapter=%s",
                 len(pending), len(reused), adapter_high)
     p2 = {"ok": True}
     p2_new: list[dict[str, Any]] = []
     if pending:
         p2 = run_optimization(str(path), adapter_name=adapter_high, max_trials=len(pending),
-                              study_name=p2_study_name, sampler="tpe")
+                              study_name=p2_study_name, sampler="tpe", seed=seed)
         if p2.get("ok"):
             p2_study = optuna.load_study(study_name=p2_study_name, storage=phase1["storage"])
             p2_by_params = {json.dumps(dict(t.params), sort_keys=True): t
@@ -341,13 +391,16 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
               "phase2_results": p2_results, "fidelity_delta": delta, "hfss_count": len(p2_results),
               "hfss_count_pass": len(p2_results) <= max(15, n_phase1 * 0.3), "elapsed_s": round(elapsed, 1),
               "resume": bool(resume), "p2_reused": len(reused), "p2_recalculated": len(p2_new),
+              "p2_skipped_reused": len(reused), "p2_enqueued": len(pending),
+              "p1_existing_complete": p1_done, "p1_new_trials": eff_n1,
               "study_names": {"phase1": p1_study_name, "phase2": p2_study_name},
+              "study_spec": study_spec,
               "phase2_selection": phase2_selection}
     if warnings_note is not None:
         result["warnings"] = [warnings_note]
     write_meta(run_dir, {"run_id": run_id, "model": recipe_data.get("model", ""), "status": "done",
                          "adapter": f"mf:{adapter_low}+{adapter_high}", "algorithm": "multifidelity", "metrics": delta})
-    record_run(Path("runs") / "index.db", {"run_id": run_id, "model": recipe_data.get("model", ""),
+    record_run(record={"run_id": run_id, "model": recipe_data.get("model", ""),
                "adapter": f"mf:{adapter_low}+{adapter_high}", "status": "done",
                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "metrics": {"hfss_count": len(p2_results)}})
     return result

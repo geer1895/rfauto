@@ -376,7 +376,7 @@ def run_multifidelity_sbo_tune(recipe_path, *, adapter_low="fake", adapter_high=
     "algorithm": "multifidelity_surrogate_loop",
     "metrics": meta_metrics,
   })
-  record_run(Path("runs") / "index.db", {
+  record_run(record={
     "run_id": run_id,
     "model": recipe_data.get("model", ""),
     "adapter": f"mf_sbo:{adapter_low}+{adapter_high}",

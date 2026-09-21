@@ -341,7 +341,7 @@ def run_once(
       }
       meta_path = write_meta(run_dir, meta)
       from rfauto.infra.run_store import record_run
-      record_run(Path("runs") / "index.db", meta)
+      record_run(record=meta)
       # WP3.6 收尾钩子（best-effort，#105）：失败 run 的日志面最有诊断价值，
       # 蒸馏成 log_digest.json 供自愈环/MCP 消费；异常只记 warning 不阻断
       try:
@@ -471,7 +471,7 @@ def run_once(
     "metrics": metrics,
   })
   meta = json.loads(meta_path.read_text(encoding="utf-8"))
-  record_run(Path("runs") / "index.db", meta)
+  record_run(record=meta)
 
   # WP3.6 收尾钩子（best-effort，#105）：run 落盘后把日志面蒸馏成
   # runs/<id>/log_digest.json 供自愈环/MCP/UI 消费；异常只记 warning 不阻断
@@ -1526,6 +1526,7 @@ from rfauto.service.r3_services import list_registered_solvers as list_registere
 from rfauto.service.r3_services import list_solver_visualizations as list_solver_visualizations  # noqa: E402
 from rfauto.service.r3_services import remove_solver_from_config as remove_solver_from_config  # noqa: E402
 from rfauto.service.r3_services import save_chat_settings as save_chat_settings  # noqa: E402
+from rfauto.service.r3_services import spice_tool_status as spice_tool_status  # noqa: E402
 from rfauto.service.v3_services import agent_quality_summary as agent_quality_summary  # noqa: E402
 from rfauto.service.v3_services import compare_runs_provenance as compare_runs_provenance  # noqa: E402
 from rfauto.service.v3_services import generate_enhanced_report as generate_enhanced_report  # noqa: E402

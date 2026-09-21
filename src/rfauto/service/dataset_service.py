@@ -659,6 +659,60 @@ def _read_points_table(
 
 
 # ---------------------------------------------------------------------------
+# 注册表回写（R2-D-03 ⑤：默认关，零行为变化；best-effort #105）
+# ---------------------------------------------------------------------------
+
+def _resolve_registry_sync(explicit: bool | None) -> bool:
+  """registry_sync 解析链：显式实参 > settings ``db.dataset_registry_sync``
+  > False。settings 读取失败安全侧按关处理（不阻塞物化主路径）。"""
+  if explicit is not None:
+    return bool(explicit)
+  try:
+    from rfauto.infra.config import load_settings
+
+    return bool(load_settings().db.dataset_registry_sync)
+  except Exception:
+    return False
+
+
+def _register_dataset_row(
+  name: str,
+  manifest_path: str | Path,
+  fmt: str,
+  n_rows: int | None,
+  *,
+  visibility: str = "private",
+) -> bool:
+  """把数据集行 upsert 进注册表 datasets 表（best-effort，#105）。
+
+  懒 import RegistryDB、用完即 close（不占连接）；任何失败（依赖缺失/
+  写库异常）只 warning 并返回 False，绝不阻塞物化主路径——注册表是
+  观测索引，manifest 文件才是事实源。
+  """
+  import logging
+
+  try:
+    from rfauto.infra.db import RegistryDB
+
+    db = RegistryDB()
+    try:
+      db.upsert_dataset(
+        name=str(name),
+        manifest_path=str(manifest_path),
+        format=str(fmt or ""),
+        visibility=str(visibility or "private"),
+        n_rows=None if n_rows is None else int(n_rows),
+      )
+    finally:
+      db.close()
+    return True
+  except Exception as exc:
+    logging.getLogger(__name__).warning(
+      "dataset registry sync failed for %s: %s", name, exc)
+    return False
+
+
+# ---------------------------------------------------------------------------
 # 物化
 # ---------------------------------------------------------------------------
 
@@ -669,6 +723,7 @@ def materialize_dataset(
   out_dir: str | Path = DEFAULT_OUT_DIR,
   health_gate: bool = True,
   fmt: str = DEFAULT_FORMAT,
+  registry_sync: bool | None = None,
 ) -> dict[str, Any]:
   """把指定 run（None=runs/ 下全部有 meta.json 的 run）的点级数据物化为
   数据集（行式 schema 见 DATASET_SCHEMA）。
@@ -681,6 +736,12 @@ def materialize_dataset(
   （health_check_run），unhealthy 不入注册表（suspect-by-absence 放行
   但 verdict 留档，#209）——数据工厂的
   质量门卫；被拦 run 计入 unhealthy_runs 并写 manifest。
+
+  registry_sync（R2-D-03 ⑤，默认关）：manifest 落盘后把数据集行
+  upsert 进注册表 datasets 表。解析链=显式实参 > settings
+  ``db.dataset_registry_sync`` > False；关闭/写库失败都不影响物化
+  结果（best-effort，#105）。结果信封 ``registry_sync`` 如实透出
+  是否已登记。
 
   返回 JSON 安全 dict：ok/name/dataset_dir/parquet（parquet 格式）或
   hdf5（hdf5 格式）/points_file/manifest/n_points/n_rows/n_dup/
@@ -903,6 +964,17 @@ def materialize_dataset(
   manifest_path.write_text(
     yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
     encoding="utf-8")
+
+  # 注册表回写（R2-D-03 ⑤，默认关零行为变化；best-effort 不阻塞物化）
+  result["registry_sync"] = False
+  if _resolve_registry_sync(registry_sync):
+    synced = _register_dataset_row(
+      name, manifest_path, fmt, len(rows), visibility="private")
+    result["registry_sync"] = synced
+    if not synced:
+      result["warnings"] = [*result.get("warnings", []),
+                            "注册表回写失败（datasets 表未登记；"
+                            "manifest 文件是事实源，物化不受影响）"]
 
   result.update({
     "ok": True,
@@ -1560,6 +1632,7 @@ def import_workdir_runs(
   models: list[str] | None = None,
   health_gate: bool = True,
   fmt: str = DEFAULT_FORMAT,
+  registry_sync: bool | None = None,
 ) -> dict[str, Any]:
   """把工作目录形态真机产物导入 E1 注册表数据集（行式 schema 同 DATASET_SCHEMA，
   物化布局同 materialize_dataset：``<out_dir>/<name>/points.parquet`` +
@@ -1568,6 +1641,10 @@ def import_workdir_runs(
   run_ids：工作目录名清单（None=所选器件族下全部候选）；models：器件族
   过滤（None=WORKDIR_FAMILIES 五族，未分类目录不导入，需显式扩展
   WORKDIR_FAMILIES 单源）；health_gate：G11 目录级健康门（默认开）。
+
+  registry_sync（R2-D-03 ⑤，默认关）：manifest 落盘后把数据集行
+  upsert 进注册表 datasets 表，解析链与 materialize_dataset 同
+  （显式实参 > settings db.dataset_registry_sync > False，best-effort）。
 
   返回 JSON 安全 dict：ok/name/dataset_dir/format/points_file/manifest/
   n_candidates/n_curves/n_points/n_rows/n_dup/n_nonfinite_skipped/
@@ -1815,6 +1892,13 @@ def import_workdir_runs(
     yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
     encoding="utf-8")
 
+  # 注册表回写（R2-D-03 ⑤，默认关零行为变化；best-effort 不阻塞物化）
+  sync_enabled = _resolve_registry_sync(registry_sync)
+  registry_synced = False
+  if sync_enabled:
+    registry_synced = _register_dataset_row(
+      name, manifest_path, fmt, len(rows), visibility="private")
+
   result: dict[str, Any] = {
     "ok": True,
     "name": name,
@@ -1834,8 +1918,13 @@ def import_workdir_runs(
     "columns": columns,
     "visibility": "private",
     "ground_truth": gt_block,
+    "registry_sync": registry_synced,
   }
+  if sync_enabled and not registry_synced:
+    result["warnings"] = [*result.get("warnings", []),
+                          "注册表回写失败（datasets 表未登记；"
+                          "manifest 文件是事实源，导入不受影响）"]
   if collect_errors:
-    result["warnings"] = collect_errors
+    result["warnings"] = [*result.get("warnings", []), *collect_errors]
   result["parquet" if fmt == "parquet" else "hdf5"] = str(points_path)
   return result

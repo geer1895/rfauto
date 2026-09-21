@@ -11,7 +11,11 @@
   --refit-ssl-q        6u×6s×8εr FD 全局 LSQ 复现 softmin 修正族常数
                        （calculators.SSL_Q_G1/SSL_Q_G2/SSL_D/SSL_P；约 1~2 min）
   --cps-corner         CPS b/h 维角落扫描（a/h×b/h×εr）：适用域边界证据
-                       （定标域外闭式低估表）
+                       （§11.1 定标域外闭式低估表；w2f 后续定标批 ③）
+  --refit-cps-corner2d CPS 角落二维修正复现：角落区（a/h≥1）γ_opt 残差面上
+                       拟合 log E2 多项式并对比注册常数（calculators.
+                       CPS_CORNER2D_COEFFS，C5 followUp 2026-09-21）+ 修正后
+                       全表残差（走 _cps_ri(corner2d=True) 生产路径；约 2~3 min）
   --json PATH          结果落盘
 数值纪律：只在确定性内核（本脚本不产生新常数，仅复现/打印）。
 """
@@ -29,6 +33,7 @@ import numpy as np
 sys.path.insert(0, "src")
 
 from rfauto.core.calculators import (
+    CPS_CORNER2D_COEFFS,
     CPS_H_EFF_GAMMA_C,
     CPS_H_EFF_GAMMA_P,
     SSL_D,
@@ -278,6 +283,102 @@ def cps_corner() -> list[dict]:
     return rows
 
 
+# ─── C5：CPS 角落二维修正（2026-09-21 followUp，#333 方法论）──────────────────
+#
+# 结构（数据出发：runs/w2f_rescale_batch/cps_bh_scan.json 160 点形状族对比，
+# explore 脚本 runs/cps_corner2d_fit/explore_fit.py）：
+#   修正走 γ 空间（h_eff = γ(εr)·E2·h，进 tanh 映射）——εr=1 / h→0 / h→∞ 三支
+#   极限由框架自动保持；εeff 直接乘性则 εr=1 需额外约束（已对比否决）。
+#   角落区= a/h ≥ 1（γ 定标域边界；ah=1 行残差已达 −2.07% > 1.2% INFO 门，
+#   ah≤0.5 行 ≤0.86% 在门内）→ hinge：a/h<1 时 E2 ≡ 1（域内逐位不动）。
+#   log E2 = c0 + c1·x + c2·ln(b/h) + c3·ln(εr) + c4·x² + c5·ln²(b/h)
+#           + c6·ln²(εr) + c7·x·ln(b/h) + c8·x·ln(εr) + c9·ln(b/h)·ln(εr)
+#   x = a/h − 1。全二次（F3, 10 系数）对比阶梯：F1 LOOCO max 6.07%/F2 4.06%/
+#   F3 2.13%（leave-one-cell-out，20 格）；全量拟合后角落残差 max 0.40%
+#   （修正前 −5.77%）。
+CPS_CORNER2D_TERMS = ("1", "x", "lv", "lw", "x2", "lv2", "lw2",
+                      "xlv", "xlw", "vlw")
+
+
+def _corner2d_feature_row(a_h: float, b_h: float, er: float) -> list[float]:
+    x = a_h - 1.0
+    lv, lw = math.log(b_h), math.log(er)
+    table = {"1": 1.0, "x": x, "lv": lv, "lw": lw,
+             "x2": x * x, "lv2": lv * lv, "lw2": lw * lw,
+             "xlv": x * lv, "xlw": x * lw, "vlw": lv * lw}
+    return [table[t] for t in CPS_CORNER2D_TERMS]
+
+
+def fit_corner2d(rows: list[dict]) -> dict:
+    """纯函数：角落区（a/h≥1）逐点 γ_opt 残差面 → log E2 多项式系数。
+
+    rows=[{a_h, b_h, er, fd}]（FD 裁判值，d0=min(H/20,a/4) 档）；逐点 γ_opt 由
+    brentq 对 closed_with_gamma 精确回解（替代在档 4 位舍入 γ_lsq），系数用
+    numpy lstsq（确定性）。返回 coeffs/拟合统计/逐格修正后残差表（修正走
+    _cps_ri(corner2d=True) 生产路径）。"""
+    from scipy.optimize import brentq
+
+    from rfauto.core.calculators import cps_effective_thickness_factor
+
+    corner = [r for r in rows if r["a_h"] >= 1.0]
+    a_mat = np.array([_corner2d_feature_row(r["a_h"], r["b_h"], r["er"])
+                      for r in corner])
+    y = []
+    for r in corner:
+        w, gap = r["b_h"] * H - r["a_h"] * H, 2 * r["a_h"] * H
+        er, target = r["er"], r["fd"]
+        g_opt = brentq(
+            lambda gm, w=w, gap=gap, er=er, t=target:
+                cps_closed_gamma(w, gap, H, er, gm) - t,
+            1.0, 8.0, xtol=1e-10)
+        y.append(math.log(g_opt / cps_effective_thickness_factor(er)))
+    coeffs, *_ = np.linalg.lstsq(a_mat, np.array(y), rcond=None)
+    # 全量拟合后的角落残差（生产路径端到端）
+    per_cell: dict[tuple[float, float], list[dict]] = {}
+    for r in corner:
+        w, gap = r["b_h"] * H - r["a_h"] * H, 2 * r["a_h"] * H
+        cl = _cps_ri(w, gap, H, r["er"], corner2d=True)[0]
+        per_cell.setdefault((r["a_h"], r["b_h"]), []).append(
+            {"er": r["er"], "fd": round(r["fd"], 5),
+             "corrected_pct": round((cl / r["fd"] - 1) * 100, 3)})
+    corrected = [abs(v["corrected_pct"]) for cell in per_cell.values()
+                 for v in cell]
+    return {"coeffs": [float(v) for v in coeffs],
+            "terms": list(CPS_CORNER2D_TERMS),
+            "n_corner_points": len(corner),
+            "corrected_max_abs_pct": round(float(max(corrected)), 3),
+            "corrected_rms_pct": round(
+                float(math.sqrt(sum(v * v for v in corrected)
+                                / len(corrected))), 3),
+            "per_cell": {f"{k[0]}/{k[1]}": v for k, v in sorted(per_cell.items())}}
+
+
+def refit_cps_corner2d() -> dict:
+    """复现 CPS_CORNER2D_COEFFS：重跑 160 点 FD 扫描 → fit_corner2d → 对比注册。"""
+    rows = []
+    for ah in CPS_CORNER_AH:
+        for bh in CPS_CORNER_BH:
+            if bh <= ah * 1.05:
+                continue
+            a, b = ah * H, bh * H
+            w, gap = b - a, 2 * a
+            for er in FIT_ERS:
+                fd = cps_quasistatic(w, gap, H, er,
+                                     d0_mm=min(H / 20, a / 4)).eps_eff
+                rows.append({"a_h": ah, "b_h": bh, "er": er, "fd": fd})
+    fit = fit_corner2d(rows)
+    fit["registered_coeffs"] = list(CPS_CORNER2D_COEFFS)
+    fit["coeff_max_abs_dev"] = max(
+        abs(f - r) for f, r in zip(fit["coeffs"], CPS_CORNER2D_COEFFS,
+                                   strict=True))
+    print(f"fitted coeffs = {fit['coeffs']}")
+    print(f"registered    = {list(CPS_CORNER2D_COEFFS)}")
+    print(f"max |dev| = {fit['coeff_max_abs_dev']:.2e}, "
+          f"corrected corner residual max {fit['corrected_max_abs_pct']}% / "
+          f"rms {fit['corrected_rms_pct']}%")
+    return fit
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--nominal", action="store_true")
@@ -287,11 +388,13 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--ssl-family", action="store_true")
     parser.add_argument("--refit-ssl-q", action="store_true")
     parser.add_argument("--cps-corner", action="store_true")
+    parser.add_argument("--refit-cps-corner2d", action="store_true")
     parser.add_argument("--json", type=str, default="")
     args = parser.parse_args(argv)
     out: dict = {}
     any_mode = (args.cps_family, args.refit_cps_gamma, args.ssl_series,
-                args.ssl_family, args.refit_ssl_q, args.cps_corner)
+                args.ssl_family, args.refit_ssl_q, args.cps_corner,
+                args.refit_cps_corner2d)
     if args.nominal or not any(any_mode):
         out["nominal"] = nominal()
     if args.cps_family:
@@ -306,6 +409,8 @@ def main(argv: list[str] | None = None) -> None:
         out["refit_ssl_q"] = refit_ssl_q()
     if args.cps_corner:
         out["cps_corner"] = cps_corner()
+    if args.refit_cps_corner2d:
+        out["refit_cps_corner2d"] = refit_cps_corner2d()
     if args.json:
         Path(args.json).write_text(json.dumps(out, ensure_ascii=False, indent=1),
                                    encoding="utf-8")

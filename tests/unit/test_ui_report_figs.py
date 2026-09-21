@@ -185,8 +185,8 @@ class TestParetoRuns:
         (runs / RUN_D / "results").mkdir(parents=True)
         (runs / RUN_D / "meta.json").write_text(
             json.dumps({"model": "patch", "adapter": "openems"}), encoding="utf-8")
-        # 非目录文件不得混入
-        (runs / "index.db").write_bytes(b"")
+        # 非目录文件不得混入（B④ 合流后缺省库为 runs/registry.sqlite）
+        (runs / "registry.sqlite").write_bytes(b"")
 
     def test_tiers_and_order(self, tmp_path):
         self._seed(tmp_path)

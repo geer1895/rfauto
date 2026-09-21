@@ -202,3 +202,77 @@ def test_cps_pt1_archive_replay(cps_anchor):
     assert v["numbers"]["eps_engine_s21_slope"] == pytest.approx(1.8909, abs=2e-3)
     assert v["gates"]["G1_s11_max_db"]["pass"]
     assert v["verdict"] == "FAIL"
+
+
+# ─── C4：plane_dist_m 守卫与口径地板注记（2026-09-21 followUp）───────────────
+
+def test_cps_plane_dist_usable_truth_table():
+    ok, dev = 40e-3, 1.14e-3
+    assert jc.plane_dist_usable(ok + dev, ok)            # +2.85%（±1 格内）
+    assert jc.plane_dist_usable(ok - dev, ok)
+    assert not jc.plane_dist_usable(float("nan"), ok)
+    assert not jc.plane_dist_usable(0.0, ok)
+    assert not jc.plane_dist_usable(-ok, ok)
+    assert not jc.plane_dist_usable(ok * 1.06, ok)       # +6% > 5% 上界
+    assert not jc.plane_dist_usable(ok * 0.9, ok)
+
+
+def _write_port_beta(tmp_path: Path, plane_value: str) -> Path:
+    path = tmp_path / "port_beta.csv"
+    path.write_text(
+        "freq_hz,beta_rad_per_m,port_y1_m,port_y2_m,plane_dist_m\n"
+        f"2.4e9,60.0,0.001,0.05,{plane_value}\n", encoding="utf-8")
+    return path
+
+
+def test_cps_read_port_plane_dist_guard(tmp_path):
+    L = 40e-3
+    # 缺文件 / 缺列 / 仅表头 → missing
+    assert jc._read_port_plane_dist(tmp_path, L) == (None, "missing")
+    (tmp_path / "port_beta.csv").write_text("freq_hz,beta\n2.4e9,60\n",
+                                            encoding="utf-8")
+    assert jc._read_port_plane_dist(tmp_path, L) == (None, "missing")
+    # 合法（+1 格落格偏差）→ ok
+    _write_port_beta(tmp_path, repr(L + 1.14e-3))
+    val, st = jc._read_port_plane_dist(tmp_path, L)
+    assert st == "ok" and val == pytest.approx(L + 1.14e-3)
+    # 坏数据（偏差 +20% / 非有限 / 非数字）→ invalid，多报不放过（#316）
+    _write_port_beta(tmp_path, repr(L * 1.2))
+    assert jc._read_port_plane_dist(tmp_path, L)[1] == "invalid"
+    _write_port_beta(tmp_path, "nan")
+    assert jc._read_port_plane_dist(tmp_path, L) == (None, "invalid")
+    _write_port_beta(tmp_path, "abc")
+    assert jc._read_port_plane_dist(tmp_path, L) == (None, "invalid")
+
+
+def test_cps_judge_floor_annotation_and_gates_unchanged(cps_anchor):
+    """floor 注记只增信息不改门（#122）：G2 判定与不传 floor 逐键一致。"""
+    eps = cps_anchor["eps_eff"]
+    L = 40e-3
+    s11, s21, _ = _line(eps, cps_anchor["z0_closed_ohm"], L,
+                        z_ref=cps_anchor["z0_closed_ohm"])
+    v0 = jc.judge_cps(F, s11, s21, L, cps_anchor, base_cell_m=1.14e-3)
+    v1 = jc.judge_cps(F, s11, s21, L, cps_anchor, base_cell_m=1.14e-3,
+                      line_len_floor_pct=200 * 1.14e-3 / L)
+    assert "line_len_floor_pct" not in v0["gates"]["G2_eps_vs_fd"]
+    assert v1["gates"]["G2_eps_vs_fd"]["line_len_floor_pct"] == pytest.approx(5.7, abs=0.01)
+    assert v1["numbers"]["line_len_floor_pct"] == pytest.approx(5.7, abs=0.01)
+    for k in ("value_pct", "pass", "partial"):
+        assert v1["gates"]["G2_eps_vs_fd"][k] == v0["gates"]["G2_eps_vs_fd"][k]
+    assert v1["verdict"] == v0["verdict"] == "PASS"
+
+
+def test_cps_judge_invalid_plane_source_passthrough(cps_anchor):
+    """拒用回退源 line_len_source=nominal_invalid_plane_dist 原样进 numbers
+    （verdict 与标称口径完全一致——守卫只换来源标记不改数值路径）。"""
+    eps = cps_anchor["eps_eff"]
+    L = 40e-3
+    s11, s21, _ = _line(eps * 1.134, cps_anchor["z0_closed_ohm"], L,
+                        z_ref=cps_anchor["z0_closed_ohm"])
+    v_inv = jc.judge_cps(F, s11, s21, L, cps_anchor,
+                         line_len_source="nominal_invalid_plane_dist")
+    v_nom = jc.judge_cps(F, s11, s21, L, cps_anchor, line_len_source="nominal")
+    assert v_inv["numbers"]["line_len_source"] == "nominal_invalid_plane_dist"
+    assert v_inv["verdict"] == v_nom["verdict"] == "FAIL"
+    assert v_inv["gates"]["G2_eps_vs_fd"]["value_pct"] == \
+        v_nom["gates"]["G2_eps_vs_fd"]["value_pct"]

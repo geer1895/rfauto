@@ -2157,15 +2157,13 @@ def marchand_two_section_synthesis(
 
 
 # ─── MCP resources（E4c 版本化只读资源，v2 尾巴） ────────────────────────────
-# 资源只读、无副作用；内容与 CLI/服务层同源（runs/index.db + YAML 知识库文件）。
+# 资源只读、无副作用；内容与 CLI/服务层同源（注册表 runs 表 + YAML 知识库文件）。
 
 @mcp.resource("rfauto://runs/index")
 def runs_index_resource() -> dict[str, Any]:
-    """runs 索引（runs/index.db 最近 20 条，同 run_store.list_runs）。"""
-    from pathlib import Path
-
+    """runs 索引（缺省注册表最近 20 条，同 run_store.list_runs）。"""
     from rfauto.infra.run_store import list_runs
-    return {"runs": list_runs(Path("runs") / "index.db", limit=20)}
+    return {"runs": list_runs(limit=20)}
 
 
 @mcp.resource("rfauto://knowledge/materials")

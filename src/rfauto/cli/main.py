@@ -639,9 +639,10 @@ def jobs_status(
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         from rfauto.infra.run_store import list_runs
-        rows = list_runs(Path("runs") / "index.db")
+        rows = list_runs()
         if not rows:
-            console.print("[yellow]暂无 run 记录（索引数据库 runs/index.db 不存在或为空）。[/yellow]")
+            console.print("[yellow]暂无 run 记录（注册表 runs/registry.sqlite 不存在或为空，"
+                          "可用 rfauto db reindex-runs 回填）。[/yellow]")
             return
         table = Table(title="最近 runs")
         table.add_column("run_id", style="cyan")
@@ -1283,12 +1284,16 @@ def datasets_materialize(
     name: str = typer.Option(..., "--name", "-n", help="数据集名（目录名，字母数字-_）"),
     runs: str = typer.Option(None, "--runs", help="逗号分隔 run_id（缺省=全部有 meta 的 run）"),
     out_dir: Path = typer.Option(Path("runs/datasets"), "--out-dir", help="数据集输出根目录"),  # noqa: B008
+    registry_sync: bool | None = typer.Option(
+        None, "--registry-sync/--no-registry-sync",
+        help="登记进注册表 datasets 表：缺省读配置 db.dataset_registry_sync"),
 ) -> None:
     """把 runs/ 点级数据物化为 Parquet 数据集（指纹去重 + manifest 落盘）。"""
     from rfauto.service.dataset_service import materialize_dataset
 
     run_ids = [r.strip() for r in runs.split(",") if r.strip()] if runs else None
-    result = materialize_dataset(run_ids, name=name, out_dir=out_dir)
+    result = materialize_dataset(run_ids, name=name, out_dir=out_dir,
+                                 registry_sync=registry_sync)
     if not result.get("ok"):
         console.print("[red]✗ 物化失败[/red]")
         for err in result.get("errors", []):
@@ -1381,6 +1386,9 @@ def datasets_import_workdir(
     models: str = typer.Option(None, "--models", help="逗号分隔器件族过滤（缺省五族）"),
     no_health_gate: bool = typer.Option(False, "--no-health-gate", help="跳过 G11 目录级健康门"),
     fmt: str = typer.Option("parquet", "--fmt", help="物化格式（parquet/hdf5）"),
+    registry_sync: bool | None = typer.Option(
+        None, "--registry-sync/--no-registry-sync",
+        help="登记进注册表 datasets 表：缺省读配置 db.dataset_registry_sync"),
 ) -> None:
     """工作目录形态真机产物导入数据集注册表（无 meta.json 的漏数口）。"""
     from rfauto.service.dataset_service import import_workdir_runs
@@ -1388,7 +1396,8 @@ def datasets_import_workdir(
     run_ids = [r.strip() for r in runs.split(",") if r.strip()] if runs else None
     result = import_workdir_runs(
         run_ids, name=name, runs_root=runs_root, out_dir=out_dir,
-        models=_datasets_families(models), health_gate=not no_health_gate, fmt=fmt)
+        models=_datasets_families(models), health_gate=not no_health_gate, fmt=fmt,
+        registry_sync=registry_sync)
     if not result.get("ok"):
         console.print("[red]✗ 工作目录导入失败[/red]")
         for err in result.get("errors", []):

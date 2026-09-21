@@ -7,7 +7,12 @@ name = "rfauto"
 version = "0.10.0"
 description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
 readme = "README.md"
-license = { text = "GPL-3.0-only" }
+# PEP 639（0dd⑥）：license 用 SPDX 表达式 + license-files 列表；
+# 废弃的 license classifier 已删（PEP 639 禁 classifier+SPDX 并存）。
+# SPDX 值跟随 LICENSE 文件文本（本仓 LICENSE=GPL-3.0 文本，全仓声明
+# GPL-3.0-only，与 README/CITATION.cff 同口径）。
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 authors = [{ name = "rfauto developers" }]
 keywords = [
     "RF", "microwave", "S-parameters", "HFSS", "ADS", "openEMS",
@@ -17,7 +22,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Telecommunications Industry",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -61,6 +65,11 @@ openems = ["h5py>=3.0"]
 # SMT 2.x（ONERA）—— smt_kriging 代理（阶段 1.2/6.2 co-kriging 基座）；
 # 可选依赖：未安装时注册表可见但 fit/predict 显式报错
 smt = ["smt>=2.9"]
+# scikit-learn GBDT 代理（B3/#253③）—— sk_gbdt（GradientBoostingRegressor）；
+# 同时收编 src 已在用但此前零声明的 sklearn import（surrogate_analysis 的
+# GP 离线分析、prescreener 的 GP 预筛）。可选依赖：未安装时注册表可见
+# 但 fit/predict 显式报错
+gbdt = ["scikit-learn>=1.3,<3"]
 # torch（CPU 版）—— fno_lite 曲线算子原型（阶段 6.3）；GPU 化待硬件
 torch = ["torch>=2.0"]
 # VNA 硬件通道（方向 3）—— pyvisa 底座；无硬件环境不需要安装

@@ -44,6 +44,8 @@ from rfauto.service.dataset_service import (
     PARQUET_NAME,
     _dataset_format,
     _read_points_table,
+    _register_dataset_row,
+    _resolve_registry_sync,
     _validate_dataset_name,
     is_ground_truth_adapter,
 )
@@ -366,7 +368,12 @@ def set_dataset_visibility(
     out_dir: str | Path = DEFAULT_OUT_DIR,
 ) -> dict[str, Any]:
     """公开/私有双集切换（WP2.4/E1 待做列③）：manifest ``visibility``
-    只允许 public/private；public 是 export_hf_dataset 的放行前提。"""
+    只允许 public/private；public 是 export_hf_dataset 的放行前提。
+
+    R2-D-03 ⑤：manifest 保存后按 settings ``db.dataset_registry_sync``
+    （默认关）best-effort 回写注册表 datasets 行的 visibility 字段；
+    结果信封 ``registry_sync`` 如实透出是否已登记。
+    """
     if visibility not in VISIBILITIES:
         return {"ok": False, "errors": [
             f"visibility 只允许 {'/'.join(VISIBILITIES)}，收到 {visibility!r}"]}
@@ -376,11 +383,22 @@ def set_dataset_visibility(
         return {"ok": False, "errors": [str(exc)]}
     manifest["visibility"] = visibility
     _save_manifest(dataset_dir, manifest)
+    # 注册表回写（默认关零行为变化；写失败不回滚 manifest——文件是事实源）
+    registry_synced = False
+    if _resolve_registry_sync(None):
+        registry_synced = _register_dataset_row(
+            str(manifest.get("name") or name),
+            dataset_dir / MANIFEST_NAME,
+            str(manifest.get("format") or ""),
+            manifest.get("n_rows"),
+            visibility=visibility,
+        )
     return {
         "ok": True,
         "name": str(manifest.get("name") or name),
         "visibility": visibility,
         "manifest": str(dataset_dir / MANIFEST_NAME),
+        "registry_sync": registry_synced,
     }
 
 

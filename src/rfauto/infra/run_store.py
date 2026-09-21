@@ -18,7 +18,7 @@ from typing import Any
 
 from omegaconf import OmegaConf
 
-from rfauto.infra.db import RegistryDB
+from rfauto.infra.db import RegistryDB, default_registry_db_path
 
 # ---------------------------------------------------------------------------
 # Run directory helpers
@@ -208,13 +208,21 @@ def write_meta(
 # list_runs 的对外签名、返回形状与容错语义（失败静默 False/[]）不变。
 # ---------------------------------------------------------------------------
 
-def record_run(db_path: str | Path, record: dict[str, Any]) -> bool:
+def record_run(db_path: str | Path | None = None,
+               record: dict[str, Any] | None = None) -> bool:
     """Upsert a run record into the SQLite runs index.
 
-    record 至少包含 run_id；model/adapter/status/git_sha/timestamp 可选。
-    键名以 ``_`` 开头的字段（如内部路径）不入库。返回 True 表示成功。
+    db_path 缺省（None）走 ``default_registry_db_path()``（env
+    RFAUTO_REGISTRY_DB > settings db.path > runs/registry.sqlite，B④ 默认
+    路径合流）；显式传路径语义不变。record 至少包含 run_id；
+    model/adapter/status/git_sha/timestamp 可选。键名以 ``_`` 开头的字段
+    （如内部路径）不入库。返回 True 表示成功。
     """
-    db = RegistryDB(path=db_path)
+    if record is None:
+        raise TypeError("record_run() 缺少必填参数 record（run 记录 dict）")
+    # #140：PathLike 入参第一行先 Path() 收敛；None → 缺省路径解析链
+    target = Path(db_path) if db_path is not None else default_registry_db_path()
+    db = RegistryDB(path=target)
     try:
         return db.upsert_run(record)
     except Exception:
@@ -224,12 +232,18 @@ def record_run(db_path: str | Path, record: dict[str, Any]) -> bool:
         db.close()
 
 
-def list_runs(db_path: str | Path, limit: int = 20) -> list[dict[str, Any]]:
-    """List recent runs from the SQLite index, newest first."""
-    db_path = Path(db_path)
-    if not db_path.exists():
+def list_runs(db_path: str | Path | None = None,
+              limit: int = 20) -> list[dict[str, Any]]:
+    """List recent runs from the SQLite index, newest first.
+
+    db_path 缺省（None）走 ``default_registry_db_path()``（与 record_run
+    同一解析链，写读两侧天然同库）；显式传路径语义不变。
+    """
+    # #140：PathLike 入参第一行先 Path() 收敛；None → 缺省路径解析链
+    target = Path(db_path) if db_path is not None else default_registry_db_path()
+    if not target.exists():
         return []
-    db = RegistryDB(path=db_path)
+    db = RegistryDB(path=target)
     try:
         return db.list_runs(limit=limit)
     except Exception:

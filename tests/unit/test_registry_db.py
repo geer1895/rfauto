@@ -152,6 +152,43 @@ class TestRunsTable:
 
 
 # ---------------------------------------------------------------------------
+# B④ 默认路径合流：record_run/list_runs 缺省走 default_registry_db_path()
+# ---------------------------------------------------------------------------
+
+class TestDefaultPathConvergence:
+    """缺省（不传路径）写读两侧同库：env RFAUTO_REGISTRY_DB > settings
+    db.path > runs/registry.sqlite；显式传路径语义向后兼容（零改动面）。"""
+
+    def test_default_path_lands_runs_registry_sqlite(self, tmp_path):
+        # autouse fixture 已 chdir tmp_path 且清空 RFAUTO_REGISTRY_DB
+        target = Path("runs") / DEFAULT_REGISTRY_DB_FILENAME
+        assert default_registry_db_path() == target
+        assert record_run(record={"run_id": "r1", "adapter": "fake",
+                                  "status": "done"})
+        assert target.exists()
+        rows = list_runs()
+        assert [r["run_id"] for r in rows] == ["r1"]  # 读侧同链同库
+
+    def test_env_override_flows_through_record_run(self, tmp_path, monkeypatch):
+        target = tmp_path / "custom" / "env.sqlite"
+        monkeypatch.setenv(ENV_REGISTRY_DB, str(target))
+        assert record_run(record={"run_id": "r_env"})
+        assert target.exists()
+        assert list_runs()[0]["run_id"] == "r_env"
+        # env 生效时缺省路径不落文件
+        assert not (Path("runs") / DEFAULT_REGISTRY_DB_FILENAME).exists()
+
+    def test_explicit_path_beats_default_and_env(self, tmp_path, monkeypatch):
+        """显式传路径语义不变（向后兼容），且优先于 env/缺省解析链。"""
+        explicit = tmp_path / "legacy" / "index.db"
+        monkeypatch.setenv(ENV_REGISTRY_DB, str(tmp_path / "env.sqlite"))
+        assert record_run(explicit, {"run_id": "r_exp"})
+        assert explicit.exists()
+        assert list_runs(explicit)[0]["run_id"] == "r_exp"
+        assert not (tmp_path / "env.sqlite").exists()
+
+
+# ---------------------------------------------------------------------------
 # jobs / approvals / datasets / owners CRUD
 # ---------------------------------------------------------------------------
 
@@ -282,6 +319,43 @@ class TestJobRegistryPersistence:
         monkeypatch.setenv(ENV_JOB_REGISTRY_DB, "false")
         reset_job_registry()
         assert get_job_registry()._persist is None
+
+    def test_settings_key_enables_persist_when_env_unset(self, tmp_path):
+        """R2-D-03 ③半：env 未设时回落 settings db.job_registry_persist
+        （缺省库 runs/registry.sqlite；默认 False 行为不变）。"""
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  job_registry_persist: true\n", encoding="utf-8")
+        reset_job_registry()
+        reg = get_job_registry()
+        assert reg._persist is not None
+        reg.create("job_yaml")
+        reg.finish("job_yaml", run_id="r1")
+        db = RegistryDB()  # 缺省路径同库可查
+        try:
+            assert db.get_job("job_yaml")["state"] == "done"
+        finally:
+            db.close()
+        reset_job_registry()
+
+    def test_explicit_falsy_env_beats_settings_true(self, tmp_path, monkeypatch):
+        """env 显式 falsy 优先于 YAML true（env > YAML 三层口径）。"""
+        (tmp_path / "configs").mkdir()
+        (tmp_path / "configs" / "settings.yaml").write_text(
+            "db:\n  job_registry_persist: true\n", encoding="utf-8")
+        monkeypatch.setenv(ENV_JOB_REGISTRY_DB, "0")
+        reset_job_registry()
+        assert get_job_registry()._persist is None
+        reset_job_registry()
+
+    def test_explicit_enabled_argument_opens_default_backend(self):
+        """解析链首环：显式 enabled=True 直接按缺省路径开后端。"""
+        from rfauto.service.job_registry import _env_persist_backend
+
+        backend = _env_persist_backend(True)
+        assert backend is not None
+        backend.close()
+        assert _env_persist_backend(False) is None
 
     def test_persistence_failure_never_blocks_memory(self):
         """#105：持久化后端抛异常时，内存主路径行为不变。"""
