@@ -26,7 +26,6 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-# project.urls 待公开仓库 URL 就绪后由维护者补填（不编造 URL）
 requires-python = ">=3.10,<3.13"
 dependencies = [
     # 核心框架依赖（P0 即需）
@@ -145,6 +144,11 @@ exclude = [
     "/uv.lock",
     "/.pre-commit-config.yaml",
 ]
+
+[project.urls]
+Homepage = "https://github.com/geer1895/rfauto"
+Repository = "https://github.com/geer1895/rfauto"
+Issues = "https://github.com/geer1895/rfauto/issues"
 
 [tool.ruff]
 target-version = "py310"

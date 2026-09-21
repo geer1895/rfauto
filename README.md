@@ -84,7 +84,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 No commercial tools needed — the built-in fake solver covers the whole core.
 
 ```bash
-git clone <repo-url> && cd rfauto
+git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # or: uv sync --extra dev
 
 # run the test suite (~7400 tests, no EDA required)

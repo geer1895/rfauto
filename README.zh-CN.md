@@ -72,7 +72,7 @@ AI 想改任何东西都要走沙箱加三道门。
 不需要任何商业工具——内置 fake 求解器覆盖全部核心功能。
 
 ```bash
-git clone <repo-url> && cd rfauto
+git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # 或者：uv sync --extra dev
 
 # 跑测试套件（约 7400 条，不需要任何 EDA 软件）

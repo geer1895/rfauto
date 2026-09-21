@@ -1,10 +1,11 @@
 # rfauto citation information (Citation File Format 1.2.0)
 # version 字段与 pyproject [project] version 保持同步（改版本时两处一起改）。
-# repository-code 待公开仓库 URL 就绪后由维护者补填（不编造 URL）。
+# repository-code 与 pyproject project.urls 保持一致（改址时两处一起改）。
 cff-version: 1.2.0
 message: "If you use rfauto in your research, please cite it as below."
 title: "rfauto: automated RF/microwave simulation and tuning across HFSS, ADS and openEMS"
 type: software
+repository-code: "https://github.com/geer1895/rfauto"
 authors:
   - name: rfauto developers
 version: 0.10.0
