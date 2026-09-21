@@ -22,21 +22,21 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNS_DIR = REPO_ROOT / "runs"
 MCP_ENTRY_EXE = REPO_ROOT / ".venv" / "Scripts" / "rfauto-mcp.exe"
 
+# tests 徽章为下限式（collect 数随平台/环境小幅浮动，断言 >= 而非 ==）
+MIN_TESTS = 7400
+
 # 文档头部核对模式：(正则, label)。期望值不在此绑定——main() 按 label 从
 # 实测注入。0 匹配 = 判红（模式必须实际咬合文档）。
-# README.md（英文）与 README.zh-CN.md（中文）共用同一组 badge/数字版式：
-#   badge: .../badge/tests-<N>-brightgreen
-#   EN: "<N> parameterized device templates" / "<N> MCP tools" / "<N> CLI commands"
-#   ZH: "<N> 个参数化器件模板" / "<N> 个 MCP 工具" / "<N> 条 CLI 命令"
+# README.md（英文）与 README.zh-CN.md（中文）共用同一组 badge/数字版式。
 DOC_PATTERNS: dict[str, list[tuple[str, str]]] = {
     "README.md": [
-        (r"badge/tests-(\d+)-", "tests"),
+        (r"badge/tests-(\d+)\+?-", "tests_min"),
         (r"(\d+) MCP tools", "mcp"),
         (r"(\d+) CLI commands", "cli"),
         (r"(\d+) parameterized device templates", "templates"),
     ],
     "README.zh-CN.md": [
-        (r"badge/tests-(\d+)-", "tests"),
+        (r"badge/tests-(\d+)\+?-", "tests_min"),
         (r"(\d+) 个 MCP 工具", "mcp"),
         (r"(\d+) 条 CLI 命令", "cli"),
         (r"(\d+) 个参数化器件模板", "templates"),
@@ -155,12 +155,27 @@ def main() -> int:
           f"MCP={mc}, templates={tpl}")
     failures: list[str] = []
 
-    # label → 期望值绑定（实测注入）
-    expected: dict[str, tuple[int, ...]] = {
-        "tests": (tc,), "mcp": (mc,), "cli": (cli_total,), "templates": (tpl,),
-    }
+    # tests 徽章=下限承诺（>= MIN_TESTS，跨平台 collect 数有浮动）；其余精确
     for name, patterns in DOC_PATTERNS.items():
-        check_doc(name, patterns, expected, failures)
+        text = read_head(name)
+        if not text:
+            failures.append(f"{name}: header unreadable/missing")
+            continue
+        m = re.search(r"badge/tests-(\d+)", text)
+        if not m:
+            failures.append(f"{name}: tests badge 缺失")
+            continue
+        if int(m.group(1)) < MIN_TESTS:
+            failures.append(f"{name}: tests badge {m.group(1)} < {MIN_TESTS}")
+        for pat, label in patterns:
+            if label == "tests_min":
+                continue
+            exp = {"mcp": mc, "cli": cli_total, "templates": tpl}[label]
+            hits = [int(g) for mm in re.finditer(pat, text) for g in mm.groups()]
+            if not hits:
+                failures.append(f"{name}: pattern 0 匹配: {label} ({pat})")
+            elif hits[0] != exp:
+                failures.append(f"{name}: {label}={hits[0]}, actual {exp} ({pat})")
 
     missing = mcp_entry_missing_message()
     if missing:

@@ -1,6 +1,6 @@
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-7625-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-7400%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -19,7 +19,7 @@ whole pipeline through MCP, under one hard rule:
 It drives **13 EM/EDA engines** behind one interface, ships
 **43 parameterized device templates** with built-in physics checks, and
 exposes **111 CLI commands** and **80 MCP tools** (+3 resources) — kept
-honest by **7625 unit tests** that run without any commercial license.
+honest by **7400+ unit tests** that run without any commercial license.
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
 [Trust layer](#the-trust-layer) · [Quick start](#quick-start) ·
