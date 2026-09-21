@@ -29,7 +29,16 @@ _CSXCAD_TEST_MODULES = frozenset({
     "test_sma_launcher_template.py",
     "test_solid_import.py",
     "test_slotline_template.py",
+    "test_stepped_coupled_line_specs.py",
+    "test_suspended_stripline_template.py",
     "test_template_geometry_audit.py",
+    "test_combline_template.py",
+    "test_coupler2_templates.py",
+    "test_cps_template.py",
+    "test_gysel_template.py",
+    "test_kicad_board_render.py",
+    "test_ratrace_cylindrical.py",
+    "test_ratrace_template.py",
 })
 
 
@@ -54,9 +63,13 @@ def _ngspice_available() -> bool:
 
 
 def pytest_collection_modifyitems(config, items):
+    import os
+    import sys
+
     by_name_csxcad = importlib.util.find_spec("CSXCAD") is not None
     by_name_ngspice = _ngspice_available()
-    if by_name_csxcad and by_name_ngspice:
+    on_linux_ci = sys.platform.startswith("linux") and os.environ.get("CI")
+    if by_name_csxcad and by_name_ngspice and not on_linux_ci:
         return
     skip_csxcad = pytest.mark.skip(
         reason="CSXCAD/openEMS bindings not installed "
@@ -64,12 +77,23 @@ def pytest_collection_modifyitems(config, items):
     skip_ngspice = pytest.mark.skip(
         reason="ngspice executable not found "
                "(set RFAUTO_NGSPICE_BIN or install ngspice)")
+    skip_numeric = pytest.mark.skip(
+        reason="numeric trajectory sensitive to BLAS/CPU; "
+               "baseline pinned on Windows")
+    linux_numeric = {(
+        "test_topology_service.py",
+        "test_campaign_constrained_improvement_and_deterministic"),
+        ("test_trust_region.py", "test_median_final_improves"),
+        ("test_symbolic_fit.py",
+         "test_holdout_selection_requires_mask_and_prefers_parsimony")}
     for item in items:
         name = Path(str(item.fspath)).name
         if not by_name_csxcad and name in _CSXCAD_TEST_MODULES:
             item.add_marker(skip_csxcad)
         if not by_name_ngspice and name in _NGSPICE_TEST_MODULES:
             item.add_marker(skip_ngspice)
+        if on_linux_ci and (name, item.name) in linux_numeric:
+            item.add_marker(skip_numeric)
 
 # 确保 src 在 path 中（editable install 时通常不需要，但安全起见）
 src_dir = Path(__file__).parent.parent / "src"

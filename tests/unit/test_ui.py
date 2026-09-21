@@ -528,7 +528,9 @@ class TestRunsMountGating:
         from rfauto.cli.main import app as cli_app
 
         runner = CliRunner()
-        result = runner.invoke(cli_app, ["ui", "--help"])
+        # 固定宽度：Linux CI 无 tty 时 rich 按 80 列换行会把选项名拆断
+        result = runner.invoke(cli_app, ["ui", "--help"],
+                               env={"COLUMNS": "200"})
         if result.exit_code != 0:
             pytest.fail(f"ui --help 失败: {result.output}")
         assert "--expose-runs" in result.output

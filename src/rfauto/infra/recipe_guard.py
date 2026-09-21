@@ -54,8 +54,12 @@ def _absolute(path: str | Path) -> Path:
 
 
 def _norm(path: Path) -> Path:
-    """比较用规范形（Windows 大小写/分隔符不敏感）。"""
-    return Path(os.path.normcase(str(path)))
+    """比较用规范形：Windows normcase + 全平台大小写折叠。
+
+    recipes 保护语义要求大小写变体同样受保护（Linux 上 normcase 是恒等，
+    若不折叠，大写变体路径会绕过守卫——CI Linux 实测修复）。仅用于比较，
+    不改写任何实际写入路径（写入保留原始大小写）。"""
+    return Path(os.path.normcase(str(path)).lower())
 
 
 def protected_recipe_roots() -> tuple[Path, ...]:
