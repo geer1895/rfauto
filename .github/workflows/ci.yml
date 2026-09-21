@@ -63,3 +63,14 @@ jobs:
         run: |
           python -m pytest tests/unit -m "real_edt" --co -q | tail -1
           echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
+
+  docker-build:
+    name: Dockerfile build smoke (C14b)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        run: docker build -t rfauto:ci .
+      - name: Smoke: container imports CLI
+        run: docker run --rm rfauto:ci python -c "import rfauto; print('ok')"
