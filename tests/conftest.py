@@ -37,6 +37,7 @@ _CSXCAD_TEST_MODULES = frozenset({
     "test_combline_template.py",
     "test_coupler2_templates.py",
     "test_cps_template.py",
+    "test_gysel_miter_ab.py",
     "test_gysel_template.py",
     "test_kicad_board_render.py",
     "test_ratrace_cylindrical.py",
