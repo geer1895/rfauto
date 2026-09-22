@@ -39,7 +39,6 @@ for _p in (REPO / "src", HERE, REPO / "runs" / "smoke_c3_refix"):
         sys.path.insert(0, str(_p))
 
 from judge_refix import band_center_3db  # noqa: E402  只读 import（#298 带心口径单一事实源）
-
 from rfauto.adapters.openems_templates import (  # noqa: E402
     TEMPLATE_NOMINAL,
     c3_circuit_sparams,
