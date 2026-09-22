@@ -162,21 +162,25 @@ class TestC7GyselJogMiter:
         assert _gysel_layout(dict(GYS_NOM))["miter"] == 0.0
 
     def test_miter_notch_geometry_inward(self):
-        """内移档（nominal）：转角外上角 c×c 缺口；带并集=原 jog 减两缺口。"""
+        """内移档（nominal）：转角外上角 c×c 缺口；带并集=原 jog 减两缺口。
+
+        2026-09-21 C7 A/B 审计重钉：渲染盒坐标=米（脚本主体同单位；初版
+        mm 字面量直排越域 1000×，exec 金属原语实测抓出）。
+        """
         from rfauto.adapters.openems_templates import _gysel_layout, render_script
 
-        c, wf, yj = 0.4, GYS_NOM["w_feed_mm"], 17.338
-        lay = _gysel_layout(dict(GYS_NOM, _jog_miter_mm=c))
-        assert lay["miter"] == c
-        text = render_script("gysel", dict(GYS_NOM, _jog_miter_mm=c), BAND)
+        c, wf, yj = 0.4e-3, GYS_NOM["w_feed_mm"] * 1e-3, 17.338e-3
+        lay = _gysel_layout(dict(GYS_NOM, _jog_miter_mm=0.4))
+        assert lay["miter"] == 0.4
+        text = render_script("gysel", dict(GYS_NOM, _jog_miter_mm=0.4), BAND)
         compile(text, "gen", "exec")
         assert text.count("gysel.AddBox") == 8          # 6 盒 + 每侧 jog 拆 +1
         boxes = self._jog_boxes(text)
         assert len(boxes) == 4                          # 两侧 jog 主段+缺口段
         lo_full = (min(GYS_NOM["arm_len_mm"], GYS_NOM["iso_len_mm"])
-                   - wf / 2)
+                   - GYS_NOM["w_feed_mm"] / 2) * 1e-3
         hi_full = (max(GYS_NOM["arm_len_mm"], GYS_NOM["iso_len_mm"])
-                   + wf / 2)
+                   + GYS_NOM["w_feed_mm"] / 2) * 1e-3
         # 缺口以下带（全高覆盖区）：x 并集=两侧 jog 全 span（线宽不变）
         band_lo = self._union_len([(b[0], b[2]) for b in boxes
                                    if b[1] <= yj - wf / 2 + 1e-9
@@ -189,7 +193,7 @@ class TestC7GyselJogMiter:
         assert band_top == pytest.approx(2.0 * (hi_full - lo_full - c),
                                          abs=1e-9)
         # 缺口贴齐竖直段外缘（内移档：与 XA+W_F/2 齐平端）
-        flush = GYS_NOM["arm_len_mm"] + wf / 2
+        flush = GYS_NOM["arm_len_mm"] * 1e-3 + wf / 2
         for x0, _y0, x1, _y1 in boxes:
             if abs(x1 - flush) < 1e-9:                  # 右侧缺口段
                 assert abs(x0 - (flush - c)) < 1e-9
@@ -199,11 +203,11 @@ class TestC7GyselJogMiter:
         """外移档（arm_len<iso_len）：缺口翻到与竖直段内缘齐平端。"""
         from rfauto.adapters.openems_templates import render_script
 
-        c, wf = 0.4, GYS_NOM["w_feed_mm"]
+        c = 0.4e-3
         text = render_script("gysel", dict(GYS_NOM, arm_len_mm=17.0,
-                                           _jog_miter_mm=c), BAND)
+                                           _jog_miter_mm=0.4), BAND)
         compile(text, "gen", "exec")
-        flush = 17.0 - wf / 2                           # 内缘齐平端
+        flush = (17.0 - GYS_NOM["w_feed_mm"] / 2) * 1e-3   # 内缘齐平端（米）
         boxes = [b for b in self._jog_boxes(text)
                  if abs(b[0] - flush) < 1e-9 or abs(b[1 + 2] - flush) < 1e-9]
         assert boxes                                    # 缺口段贴内缘端存在

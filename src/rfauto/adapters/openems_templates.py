@@ -3148,19 +3148,23 @@ def _gysel_jog_lines(lay: dict[str, float]) -> str:
       "       (max(-XA, -XB) + W_F / 2, YJ + W_F / 2, H_SUB), priority=10)\n"
       "gysel.AddBox((min(XA, XB) - W_F / 2, YJ - W_F / 2, H_SUB),\n"
       "       (max(XA, XB) + W_F / 2, YJ + W_F / 2, H_SUB), priority=10)\n")
-  wf, yj = float(lay["wf"]), float(lay["yj"])
-  xa, xb = float(lay["xa"]), float(lay["xb"])
+  # 坐标一律换算米（脚本主体 XA/YJ/W_F 同单位）——2026-09-21 C7 A/B 审计
+  # 修正：初版把 mm 字面量直排（盒落 ±17m 越域 1000×，exec 金属原语实测
+  # 抓出，#212 制度化面）；缺省分支走符号式变量不受影响。
+  wf, yj = float(lay["wf"]) * 1e-3, float(lay["yj"]) * 1e-3
+  xa, xb = float(lay["xa"]) * 1e-3, float(lay["xb"]) * 1e-3
+  c_m = c * 1e-3
   lines = [f"# 顶端 L-jog 横移段（mitered-jog 切角档 c={c!r}mm：转角外上角"
            "台阶缺口，C7 followUp 2026-09-21；缺口只削 jog 顶带，"
-           "竖直段/桥带不动）"]
+           "竖直段/桥带不动；坐标=米）"]
   for s in (1.0, -1.0):
     m1, m2 = sorted((s * min(xa, xb), s * max(xa, xb)))
     jlo, jhi = m1 - wf / 2, m2 + wf / 2   # 与缺省 min/max 盒完全同区间
     # 转角外上角 x：Δ 内移（xb<xa）时 jog 与竖直段外侧缘齐平（x=±(XA+W_F/2)），
     # 外移时与内侧缘齐平（x=±(XA−W_F/2)）；缺口自角点向 jog 远端延伸 c
     cx = s * (xa + wf / 2) if xb < xa else s * (xa - wf / 2)
-    nlo, nhi = (sorted((cx, cx - s * c)) if xb < xa
-                else sorted((cx, cx + s * c)))
+    nlo, nhi = (sorted((cx, cx - s * c_m)) if xb < xa
+                else sorted((cx, cx + s * c_m)))
     if abs(nlo - jlo) < 1e-12:      # 缺口在 jog 低端：主段=[nhi, jhi]
       mlo, mhi = nhi, jhi
     else:                           # 缺口在高端：主段=[jlo, nlo]
@@ -3169,7 +3173,7 @@ def _gysel_jog_lines(lay: dict[str, float]) -> str:
       f"gysel.AddBox(({mlo!r}, {yj - wf / 2!r}, H_SUB),\n"
       f"             ({mhi!r}, {yj + wf / 2!r}, H_SUB), priority=10)\n"
       f"gysel.AddBox(({nlo!r}, {yj - wf / 2!r}, H_SUB),\n"
-      f"             ({nhi!r}, {yj + wf / 2 - c!r}, H_SUB), priority=10)")
+      f"             ({nhi!r}, {yj + wf / 2 - c_m!r}, H_SUB), priority=10)")
   return "\n".join(lines) + "\n"
 
 
