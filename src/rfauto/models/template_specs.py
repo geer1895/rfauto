@@ -1288,7 +1288,7 @@ def _register_slotline_family() -> None:
             params=params,
             recipe_draft=_slotline_recipe_draft("msl_slot_transition", params,
                                                 f0_ghz, objectives),
-            notes=[f"短路臂 λg'/4={td.l_short_mm:.4f}mm、微带支节 λg_m/4+Δl="
+            notes=[f"短路臂 λg'/4={td.l_short_mm:.4f}mm、微带支节 λg_m/4−Δl="
                    f"{td.l_stub_mm:.4f}mm、50Ω 微带 w={td.w_msl_mm:.4f}mm"
                    "（Roberts/Knorr 闭式精算 core/slotline_transitions）",
                    "真机基线：HFSS IL 1.37dB 未达 1dB 门——结区优化 followUp"])

@@ -589,7 +589,7 @@ class TestSlotlineTransitionsCommands:
         trans = runner.invoke(app, ["transitions", "msl-slot", *args, "--json"])
         assert trans.exit_code == 0, trans.output
         design = json.loads(trans.output)["design"]
-        assert design["l_stub_mm"] == pytest.approx(18.3725, abs=1e-3)
+        assert design["l_stub_mm"] == pytest.approx(17.1253, abs=1e-3)  # C6 符号修正（λg/4−Δl）
         assert design["l_short_mm"] == pytest.approx(23.3656, abs=1e-3)
         balun = runner.invoke(app, ["transitions", "marchand-balun", *args, "--json"])
         assert balun.exit_code == 0, balun.output

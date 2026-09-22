@@ -742,7 +742,7 @@ class TestSlotlineTransitionTools:
         assert data["ok"] is True
         d = data["design"]
         assert d["w_msl_mm"] == pytest.approx(3.3439, abs=1e-3)
-        assert d["l_stub_mm"] == pytest.approx(18.3725, abs=1e-3)
+        assert d["l_stub_mm"] == pytest.approx(17.1253, abs=1e-3)  # C6 符号修正（λg/4−Δl）
         assert d["l_short_mm"] == pytest.approx(23.3656, abs=1e-3)
         assert set(data["gates"]) == {"band_max_s11_db_le", "excess_loss_db_f0_le"}
 

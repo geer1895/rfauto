@@ -59,13 +59,15 @@ class TestDesignNumbers:
         d = transition_design(2.5, 1.524, 3.66, 1.0)
         assert d.z_msl_ohm == pytest.approx(50.0, abs=0.5)
         assert d.w_msl_mm == pytest.approx(3.3439, abs=0.01)
-        # 支节 = λg_m/4 + Δl_open（Hammerstad）；λg_m = λ0/√εeff
+        # 支节 = λg_m/4 − Δl_open（Hammerstad 开路端修正：电长 λg/4，物理长=
+        # 电长−Δl，Pozar eq.4.23 口径；C6 符号修正 2026-09-21，旧 +Δl 系符号反）；
+        # λg_m = λ0/√εeff
         import math
 
         lam_m = 299792458.0 / (2.5e9) / math.sqrt(d.eps_eff_msl) * 1e3
         assert d.dl_open_mm == pytest.approx(
             microstrip_open_end_delta_l_mm(d.w_msl_mm, 1.524, d.eps_eff_msl))
-        assert d.l_stub_mm == pytest.approx(lam_m / 4 + d.dl_open_mm, abs=1e-9)
+        assert d.l_stub_mm == pytest.approx(lam_m / 4 - d.dl_open_mm, abs=1e-9)
 
     def test_open_end_delta_l_formula_and_domain(self):
         # 手算锚：w/h=2.195、εeff=2.853 → Δl/h = 0.412·3.153·2.459/(2.595·3.008)

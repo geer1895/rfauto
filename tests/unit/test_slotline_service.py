@@ -68,7 +68,7 @@ class TestTransitionDesigns:
         assert data["ok"] is True
         assert data["design"] == transition_design(2.5, 1.524, 3.66, 1.0).to_dict()
         assert data["gates"] == TRANSITION_GATES
-        assert data["design"]["l_stub_mm"] == pytest.approx(18.3725, abs=1e-3)
+        assert data["design"]["l_stub_mm"] == pytest.approx(17.1253, abs=1e-3)  # C6 符号修正
         assert data["design"]["l_short_mm"] == pytest.approx(23.3656, abs=1e-3)
         assert data["design"]["w_msl_mm"] == pytest.approx(3.3439, abs=1e-3)
         json.dumps(data)

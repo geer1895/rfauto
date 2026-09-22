@@ -7,7 +7,8 @@
 一、经典 MSL↔slotline 过渡（Roberts/Knorr 口径，本项 render_msl_slot_transition）
 --------------------------------------------------------------------------------
 拓扑（双层板：顶层微带、底层地板开槽，正交跨越）：
-- 微带馈线跨过槽线后继续延伸一段 **开路 λg_m/4 支节**（含开路端修正 Δl）：
+- 微带馈线跨过槽线后继续延伸一段 **开路 λg_m/4 支节**（含开路端修正 Δl：
+  物理长=λg_m/4−Δl，见"设计式"节符号惯例）：
   开路经 λ/4 变换 → 跨越点处**虚短路**（Z_in = −j·Z_stub·cot(βl)，βl=π/2 时为 0）；
 - 槽线自跨越点向另一侧延伸 **短路 λg_s/4 段**（文献经典实现=圆形金属短路盘，
   半径 ≈ λg'/4；本最小族用矩形金属桥接封口，二阶差异如实记录）：
@@ -30,10 +31,17 @@
 设计式（本模块实现）：
 - 微带 50Ω 线宽 w_m 与 εeff_m：skrf HJ 综合（core/synthesis.inverse_width /
   forward_z0，线宽一律综合精算不拍脑袋）。
-- 支节长 l_stub = λg_m/4 + Δl_open；Hammerstad 经典开路端修正
+- 支节长 l_stub = λg_m/4 − Δl_open；Hammerstad 经典开路端修正
   Δl = h·0.412·(εeff+0.3)·(w/h+0.264) / [(εeff−0.258)·(w/h+0.813)]
   （Hammerstad 1975 族闭式，CAD 工具通用口径；微带 w=3.344/h=1.524、
   εeff=2.853 @2.5GHz → Δl≈0.624mm，量级 0.4h，二阶但计入）。
+  **符号惯例（2026-09-21 C6 followUp 修正）**：
+  开路端边缘场使支节电长比物理长长 Δl（等效延长），故物理长=电长−Δl
+  （Pozar《Microwave Engineering》eq.4.23 开路端口径；本仓
+  adapters/openems_templates._open_end_delta_mm 消费者同口径：耦合段
+  物理长=λg/2−ΣΔl、物理棒长=电长−Δl）。旧实现取 +Δl（加长）系符号反：
+  支节电长多 2Δl，f0 处呈 +j·Z0·tan(2βΔl)≈+j5.54Ω 感性残差、自谐振
+  下移 −6.57%（2.336GHz），带内匹配峰偏离设计 f0。
 - 槽线短路段长 l_short = λg'/4（λg' 由 core/slotline 闭式；槽宽有效域同其
   0.006≤d/λ0≤0.06、窄槽段域检查，超域 ValueError 不外推）。
 - 文献典型性能（书级口径，非单篇引用）：单过渡插损 ≈0.5–1dB；背靠背对
@@ -50,7 +58,7 @@
 - 底层地板开**两条平行槽**（槽宽 s、中心距 d_c，中条带宽 d_c−s 取=微带宽 w_m：
   跨越区局地回流路径连续），槽 1 开口朝 +x（右端输出、左端在 −λg'/4 处封口
   短路），槽 2 镜像（左端输出、右端封口）；
-- 顶层微带自边缘（P1）沿 y 垂直穿过两槽，跨越槽 2 后延伸 λg_m/4+Δl 开路支节
+- 顶层微带自边缘（P1）沿 y 垂直穿过两槽，跨越槽 2 后延伸 λg_m/4−Δl 开路支节
   （与单过渡同机理：两跨越点各成一个 Roberts 型过渡，共享同一开路支节与两段
   λg'/4 短路臂——串接两节的最小 Marchand）；
 - 输出口径：P2/P3 = 各槽远端跨槽口（本栈 LumpedPort，R=槽线 Z0 端接），
@@ -82,7 +90,7 @@ marchand_line_calibration 标定）预畸变反解设计宽（耦合段 + w_feed
   一阶有效；
 - 设计点（与路线 A/B 同，三方可比）：f0=2.5GHz、RO4350B 60mil（h=1.524、
   εr=3.66、tanδ=0.0037）、槽宽 1.0mm → 闭式 Z0=110.92Ω/εeff=1.6462/
-  λ'=93.4624mm；微带 50Ω w=3.3439mm/εeff=2.8530 → l_stub=18.3725mm、
+  λ'=93.4624mm；微带 50Ω w=3.3439mm/εeff=2.8530 → l_stub=17.1253mm、
   l_short=23.3656mm、d_c=4.3439mm。
 
 判据（预声明，真机不凑绿 #122）
@@ -152,7 +160,9 @@ class TransitionDesign:
     w_msl_mm: float
     z_msl_ohm: float
     eps_eff_msl: float
-    l_stub_mm: float                  # 开路支节 λg_m/4 + Δl_open
+    l_stub_mm: float                  # 开路支节 λg_m/4 − Δl_open（电长 λg/4：
+                                      # 物理长=电长−Δl，开路端边缘场等效延长
+                                      # Δl；Pozar eq.4.23 口径，C6 符号修正）
     dl_open_mm: float
 
     def to_dict(self) -> dict:
@@ -192,7 +202,7 @@ def transition_design(f0_ghz: float, h_mm: float, er: float,
         lambda_slot_mm=cf.lambda_ratio * C0 / (f0_ghz * 1e9) * 1e3,
         l_short_mm=cf.lambda_ratio * C0 / (f0_ghz * 1e9) * 1e3 / 4.0,
         w_msl_mm=w_m, z_msl_ohm=z_m_chk, eps_eff_msl=eps_m,
-        l_stub_mm=lam_m / 4.0 + dl, dl_open_mm=dl)
+        l_stub_mm=lam_m / 4.0 - dl, dl_open_mm=dl)
 
 
 @dataclass(frozen=True)

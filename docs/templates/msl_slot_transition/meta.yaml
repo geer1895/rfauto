@@ -19,7 +19,7 @@ nominal_params:
   er: 3.66
   tan_d: 0.0037
   f0_ghz: 2.5
-topology: Roberts/Knorr 过渡（双层板）：底层地板开槽（槽开口向 −x 直入 PML，+x 封口=λg'/4 短路臂），顶层微带沿 y 跨槽后延伸 λg_m/4+Δl 开路支节（跨越点虚短路/虚开路机理，Knorr 1974/Schuppert 1988）；MSLPort 段内移 14·BASE（H4：段⊂PML_8 致非物理已根治）
+topology: Roberts/Knorr 过渡（双层板）：底层地板开槽（槽开口向 −x 直入 PML，+x 封口=λg'/4 短路臂），顶层微带沿 y 跨槽后延伸 λg_m/4−Δl 开路支节（C6 2026-09-22 符号修正：端效应惯例=物理长缩短，Pozar eq.4.23）（跨越点虚短路/虚开路机理，Knorr 1974/Schuppert 1988）；MSLPort 段内移 14·BASE（H4：段⊂PML_8 致非物理已根治）
 param_semantics: w_slot_mm=槽宽，x_port_mm=P2 端口距跨越点（输出臂长），h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；封口 SEAM 搭接（×NEAR 不关槽方向）、全部盒缘入网
 smoke_note: 真机：openEMS |S11|@f0 −19.9/带内 max −10.43dB（匹配门 PASS）、超额损耗 1.05dB 贴门；HFSS β=66.55 对闭式 −1.0%、带内 −9.55dB 贴门、IL 1.37dB FAIL——判 PASS 需结区优化（渐变槽/径向短路盘），复跑按 TRANSITION_GATES 预声明门判读

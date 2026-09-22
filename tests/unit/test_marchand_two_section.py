@@ -287,11 +287,15 @@ def test_metrics_gate_keys_and_band():
 
 # ─── ⑥ 逐引擎修正（engine="reference"|"openems"，2026-09-18 marchand_line_calibration 标定）──
 
-#: 改前基线 SHA256（a016740 树面、本项改码前由临时脚本捕获）：缺省 reference 输出逐字节钉
+#: 改前基线 SHA256（本项改码前捕获）：缺省 reference 输出逐字节钉。
+#: C6 开路支节符号修正（2026-09-21，l_stub λg/4+Δl→λg/4−Δl）后重算：slot_balanced
+#: 路径两例哈希随 transition.l_stub_mm（18.3725→17.1253）与 notes 数值回显合法变更
+#: （对拍 HEAD 实证全 dict 仅此两字段移动）；nominal/explicit_zc 不含 transition 档、
+#: 哈希不变。
 _REFERENCE_SHA256 = {
     "nominal": "f2f424575c678c0807bc576bfe703abcc721a5bc33f341aa96fc3f90ef85f073",
-    "unreal_50to100": "9ef6b8c98bceee8aff0756dfe25063722ee8eb0ca3d9c9f22be238d02f4e2f8e",
-    "slot_50to150": "847d11bcab665acf497143c6a1f32e04316fbb0a94c04616dd73e28c708b5b68",
+    "unreal_50to100": "fe3452d3d2185d263c65c90003f88c99e6190f19d7cf54145871d4e7051a07bf",
+    "slot_50to150": "cb47100120264c45c14e6600fb8781f179a4c01082110c7571bbfdf424dec2da",
     "explicit_zc_58p94": "eb2211a9ac388c0317925454a1649a5c9561b59d0a63a8378f86eda733c2cb59",
 }
 
