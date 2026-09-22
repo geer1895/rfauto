@@ -20,6 +20,7 @@ _CSXCAD_TEST_MODULES = frozenset({
     "test_hairpin_alt_template.py",
     "test_hairpin_template.py",
     "test_interdigital_template.py",
+    "test_marchand_via_ab.py",
     "test_msl_cpw_template.py",
     "test_openems_real_bundle_offline.py",
     "test_openems_slotline_port.py",
