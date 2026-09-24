@@ -84,3 +84,68 @@ jobs:
         run: docker build -t rfauto:ci .
       - name: Container import smoke
         run: docker run --rm rfauto:ci python -c "import rfauto; print('ok')"
+
+  # ---------------------------------------------------------------------
+  # supply-chain（X5 供应链卫生门，2026-09-24）
+  #
+  # 三件套：pip-audit 漏洞审计 + CycloneDX SBOM + uv.lock 带哈希 requirements
+  # 对外导出。工具一律钉版（浮动 latest=CI 红前科，2026-09-22 立规）：
+  #   pip-audit    2.10.1   requires-python >=3.10（兼容 3.12，PyPI 实测）
+  #   cyclonedx-bom 7.4.0   requires-python >=3.9,<4.0（兼容 3.12，PyPI 实测）
+  #   uv           0.12.17  与 uv.lock（format v1 revision 3）同管理版本
+  #
+  # 审计形态=发现已知漏洞即 job 红（exit 非零）。2026-09-24 本地 dry-run：
+  # base 锁集（50 pin）+ 工具集 0 已知漏洞（pip 升级到 26.x 后）；extras 面
+  # （pyaedt/fastmcp/pymoo/dev 链）以 CI 首跑为准——若误伤，处置=依赖升级
+  # 修复或显式 pip-audit --ignore-vuln 豁免清单（豁免须在 PR 描述与本注释
+  # 同步留痕），不降级为 continue-on-error。
+  #
+  # 已知现状注记（2026-09-24 本地实测）：uv.lock 相对 pyproject 存在代际
+  # 滞后（uv lock --check 不过，jax extra 使 py<3.12 分支不可解）。本 job
+  # 只做 --frozen 只读导出（不校验锁同步，不触碰 uv.lock），不受滞后影响；
+  # 刷新锁属仓主决策，不在此 job 范围。
+  # ---------------------------------------------------------------------
+  supply-chain:
+    name: supply chain (pip-audit + CycloneDX SBOM + hashed requirements)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned supply-chain tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pip-audit==2.10.1" "cyclonedx-bom==7.4.0" "uv==0.12.17"
+      - name: Install package with test-relevant extras
+        run: |
+          # 与 test job 同依赖面——审计与 SBOM 覆盖 CI 真实安装集
+          pip install -e ".[hfss,mcp,multiobj,dev]"
+      - name: Export hash-pinned requirements from uv.lock
+        run: |
+          # 只读导出已提交的 uv.lock（--frozen 禁止改写锁文件）。
+          # uv 0.12 导出默认带 --hash（去掉才用 --no-hashes），逐 pin 带
+          # sha256，可配合 pip install --require-hashes 消费。
+          # 行尾 grep 是守卫：导出零哈希（计数 0，grep 退出码 1）即本步红。
+          uv export --frozen --no-dev --no-emit-project --format requirements.txt -o requirements-lock.txt
+          grep -c -- "--hash=" requirements-lock.txt
+      - name: Generate CycloneDX SBOM (JSON)
+        run: |
+          # 对安装后真实环境出 SBOM（含传递依赖）；CycloneDX spec 1.6 默认；
+          # --output-reproducible 稳定 artifact（按规范省略随机 serialNumber）
+          cyclonedx-py environment --of json -o sbom.json --pyproject pyproject.toml --output-reproducible
+      - name: pip-audit fail on known vulnerabilities
+        run: |
+          # 环境模式审计（安装集即审计面，含供应链工具自身）；发现已知漏洞
+          # 即非零退出；机器可读报告落 pip-audit-report.json 供 artifact 留档
+          pip-audit --strict --progress-spinner off -f json -o pip-audit-report.json
+      - name: Upload supply-chain artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-artifacts
+          path: |
+            requirements-lock.txt
+            sbom.json
+            pip-audit-report.json
+          if-no-files-found: warn
