@@ -393,3 +393,42 @@ class TestE11CampaignScriptCompat:
         # 就位后 --adapter openems 无需战役层 _create_adapter 补丁
         assert "adapter_name" in inspect.signature(mod.run_campaign).parameters
         assert callable(mod.judge_campaign)
+
+
+# ─── A-02 resume 防覆盖：eval_index_offset 接续编号 + mesh 观测面 ────────────
+
+
+class TestAdapterResumeOffset:
+    def test_eval_offset_continues_numbering(self, tmp_path, stub_solver):
+        """既有 eval_0001..0002 归档 → offset=2 实例首个 solve 落 eval_0003，
+        既有归档不被新实例 _n 回卷覆盖（c10 GT 战役 resume 实证形态）。"""
+        from rfauto.adapters.openems_optimizer_adapter import OpenEMSOptAdapter
+
+        evals = tmp_path / "evals"
+        for i in (1, 2):
+            (evals / f"eval_{i:04d}").mkdir(parents=True)
+            (evals / f"eval_{i:04d}" / "keep.txt").write_text("x",
+                                                              encoding="utf-8")
+        adapter = OpenEMSOptAdapter((2.0, 3.0), template="mline",
+                                    work_root=evals, eval_index_offset=2)
+        # 未 solve 时 last_eval_dir=根目录（不把既有归档误报为"最近"）
+        assert adapter.last_eval_dir == evals
+        adapter.set_variables({"w_mm": "1.113mm"})
+        assert adapter.solve().success is True
+        work = Path(stub_solver.instances[0].config.working_dir)
+        assert work == evals / "eval_0003"
+        assert adapter.last_eval_dir == evals / "eval_0003"
+        assert (evals / "eval_0001" / "keep.txt").exists()   # 归档零改写
+        assert not (evals / "eval_0003" / "keep.txt").exists()
+
+    def test_default_offset_is_zero_and_mesh_property_roundtrip(self, tmp_path):
+        from rfauto.adapters.openems_optimizer_adapter import OpenEMSOptAdapter
+
+        adapter = OpenEMSOptAdapter((2.0, 3.0), template="mline",
+                                    work_root=tmp_path / "e")
+        assert adapter.last_eval_dir == tmp_path / "e"       # 缺省行为不变
+        assert adapter.mesh_resolution_mm == 0.0             # 自动档哨兵
+        explicit = OpenEMSOptAdapter((2.0, 3.0), template="mline",
+                                     work_root=tmp_path / "e2",
+                                     mesh_resolution_mm=0.4)
+        assert explicit.mesh_resolution_mm == pytest.approx(0.4)

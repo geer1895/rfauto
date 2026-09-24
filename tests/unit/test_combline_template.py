@@ -81,8 +81,8 @@ def test_design_matches_nominal_constants():
             else:
                 assert round(got, 4) == want, key
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    assert DESIGN_VIA["l_via_h"] == pytest.approx(
-        ot.c3_via_inductance_h(0.508), rel=1e-12)
+    # R1：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
         IDEAL_NOMINAL["res_len_mm"] - NOMINAL["res_len_mm"], abs=5e-4)
     assert NOMINAL["c_load_pf"] == IDEAL_NOMINAL["c_load_pf"]   # C 不变棒长重解
@@ -183,7 +183,11 @@ class TestViaCompensationDesign:
         assert d["theta_c_rad"] == pytest.approx(0.69269, abs=5e-6)
         assert d["via_delta_mm"] == pytest.approx(1.0467, abs=5e-4)
         assert d["c_load_pf"] == DESIGN["c_load_pf"]      # C 不变
-        assert d["res_len_mm"] == DESIGN_VIA["res_len_mm"]
+        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        d_cal = ot.combline_design_from_order(3, F0, FBW, RL_DB,
+                                              l_via_h=ot.C3_L_VIA_CAL_H)
+        assert d_cal["res_len_mm"] == DESIGN_VIA["res_len_mm"]
+        assert d["res_len_mm"] != DESIGN_VIA["res_len_mm"]
         assert d["gaps_mm"] == DESIGN["gaps_mm"] and d["b_s"] == DESIGN["b_s"]
 
     def test_compensated_geometry_resonates_at_f0_with_via(self):
@@ -197,11 +201,12 @@ class TestViaCompensationDesign:
         yv = np.array([abs(ot.c3_y_combline(f, ere, l_eff, z_r, c_f, lv))
                        for f in fs])
         assert float(fs[np.argmin(yv)]) == pytest.approx(F0, abs=1e-4)
-        # 同一补偿长度在理想短路裁判下谐振上移（>6%，与过孔下移同源反号）
+        # 同一补偿长度在理想短路裁判下谐振上移（0.125nH 补偿量 +3.24%，
+        # lcal_compute 实测；旧 G-P 0.296nH 口径为 >6%，与过孔下移同源反号）
         fs2 = np.linspace(F0, F0 * 1.25, 4001)
         yv2 = np.array([abs(ot.c3_y_combline(f, ere, l_eff, z_r, c_f, 0.0))
                         for f in fs2])
-        assert float(fs2[np.argmin(yv2)]) > 1.06 * F0
+        assert float(fs2[np.argmin(yv2)]) > 1.02 * F0
 
     def test_domain_guard_huge_inductance_raises(self):
         # 1µH：x=ω0L/Z_r≫tanθr=1（过孔电感超出装载电容补偿能力）→ 显式报错
@@ -332,6 +337,10 @@ def test_render_structure_and_lumped_cap_literal():
     assert text.count("AddCylinder(") == NOMINAL["order"]           # 同端接地过孔
     assert text.count("AddLumpedElement(") == NOMINAL["order"]      # 顶端装载电容
     assert text.count("caps=True, C=1.2732e-12)") == NOMINAL["order"]
+    # R3 帽语义钉（审计）：CSXCAD 方向 kwarg 参数名叫 ny，值=方向
+    # 索引（CheckNyDir 0/1/2=x/y/z）⇒ ny=2 即 z-directed shunt 对地（电压沿 z
+    # 跨基板隙、端帽板落在既有 PEC 面）——防"参数名误读为 y 方向"复发
+    assert text.count('ny=2, caps=True') == NOMINAL["order"]
     assert "port_beta.csv" in text
     assert '["MUR", "MUR", "PML_8", "PML_8", "PEC", "MUR"]' in text
     # c_load_pf 进元件值（LUMPED_VALUE_PARAMS 豁免的接线证据）

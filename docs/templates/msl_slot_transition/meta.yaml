@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: P1 MSLPort（微带线基：CalcPort 自算 Z_ref(f)/β(f)）激励，S11=uf_ref/uf_inc；P2 LumpedPort 跨槽 R=槽线 Z0（并联抽头拓扑 #250），S21 判据按 tap_receive_factor_db 修正、原始值并列如实；β_slot 双行波拟合对照闭式（信息门 ≤5%）
+extraction: P1 MSLPort（微带线基：CalcPort 自算 Z_ref(f)/β(f)）激励，S11=uf_ref/uf_inc；P2 LumpedPort 跨槽 R=槽线 Z0（并联抽头拓扑（#250）），S21 判据按 tap_receive_factor_db 修正、原始值并列如实；β_slot 双行波拟合对照闭式（信息门 ≤5%）
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null

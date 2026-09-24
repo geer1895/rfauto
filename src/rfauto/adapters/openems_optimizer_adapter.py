@@ -104,6 +104,10 @@ class OpenEMSOptAdapter:
             extra_params.solve_timeout_s 透传）。
         extra_params: 追加透传 EMSolverConfig.extra_params（显式项优先）。
         work_root: 评估产物根目录；None=runs/openems_opt_evals/arm_<时间戳>。
+        eval_index_offset: 评估序号起始偏移（A-02 resume 防覆盖）：挂到既有
+            eval_NNNN 归档上接续编号，从 max 既有序号起（0=全新根，缺省）。
+            缺省 0 时新会话 _n 回卷会把 work_root/eval_0001 起的既有归档
+            整目录覆盖（c10 GT 战役 resume 路径实证形态）。
         seed: 仅 provenance（优化器 sampler 种子经 adapter_kwargs 透传），
             不参与任何物理数值（数值只在确定性内核）。
     """
@@ -119,6 +123,7 @@ class OpenEMSOptAdapter:
         solve_timeout_s: float = 900.0,
         extra_params: dict[str, Any] | None = None,
         work_root: str | Path | None = None,
+        eval_index_offset: int = 0,
         seed: int | None = None,
     ) -> None:
         if not str(template or "").strip():
@@ -138,7 +143,8 @@ class OpenEMSOptAdapter:
         )
         self._vars: dict[str, float] = {}
         self._net: Any | None = None
-        self._n = 0
+        self._n = int(eval_index_offset)
+        self._solved = False   # 本实例是否已发起过 solve（last_eval_dir 语义锚）
 
     # ── 优化回路接口（build_objective / self_heal 消费面） ──────────────────
 
@@ -171,6 +177,21 @@ class OpenEMSOptAdapter:
         """评估产物根目录（观测用；目录在首次 solve 时创建）。"""
         return self._root
 
+    @property
+    def mesh_resolution_mm(self) -> float:
+        """网格 base 覆盖（mm）观测面；0.0=官方自动 λ_sub/50 档语义哨兵
+        （非实测值——meta 落痕侧须转 "auto" 注记，禁当数值消费）。"""
+        return self._mesh
+
+    @property
+    def last_eval_dir(self) -> Path:
+        """最近一次 solve 的评估产物目录（run 产物归集用；本实例未发起过
+        solve=根目录——含 eval_index_offset>0 的 resume 实例，防把既有
+        归档目录误报为"最近"）。"""
+        if not self._solved:
+            return self._root
+        return self._root / f"eval_{self._n:04d}"
+
     def solve(self, setup_name: str = "", timeout_s: float | None = None) -> Any:
         """逐评估真跑：重渲染 → 求解 → 装载 skrf.Network。
 
@@ -188,6 +209,7 @@ class OpenEMSOptAdapter:
         from rfauto.core.interfaces import SolveReport
 
         self._n += 1
+        self._solved = True
         params = dict(self._vars)
         timeout = float(timeout_s) if timeout_s else self._solve_timeout_s
         extra = dict(self._extra_params)

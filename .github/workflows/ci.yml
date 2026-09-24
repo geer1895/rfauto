@@ -27,8 +27,10 @@ jobs:
       - name: Install dev tools
         run: |
           python -m pip install --upgrade pip
-          # ruff 钉版：浮动 latest 会周期性新增规则打红 CI（0.16.4=本地门版本，I001 新排布检查）
-          pip install "ruff==0.16.4" "import-linter>=2.0.0" pyyaml
+          # 质量门工具钉版=本地门实测（2026-09-22 立规：浮动 latest 版本漂移
+          # 如 ruff 新增 I001 检查会 CI 红/本地绿；ruff 0.16.6 /
+          # import-linter 2.15 为本地 venv 实测版本）。
+          pip install "ruff==0.16.6" "import-linter==2.15" pyyaml
           # check_numbers 会 import rfauto.cli 实测命令数——src 布局需要可安装态，
           # 且必须带核心依赖（typer 等被 import，--no-deps 会 ModuleNotFoundError）
           pip install -e .
@@ -40,6 +42,13 @@ jobs:
         run: python scripts/check_numbers.py
       - name: UTF-8 no-BOM encoding check
         run: python scripts/check_encoding.py
+      - name: palace wrapper pinned-content check (graceful skip when assets absent)
+        run: |
+          if [ -f tools/palace-install/bin/palace.cmd ]; then
+            python scripts/palace_wsl_wrapper.py --check
+          else
+            echo "palace wrapper assets not installed (tools/ is not in git); skipping check"
+          fi
       - name: sensitive content scan
         run: python scripts/scan_sensitive.py
 

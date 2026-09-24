@@ -15,7 +15,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
+import subprocess
 import sys
+import types
 import typing
 from pathlib import Path
 
@@ -304,3 +307,84 @@ class TestAnchorPlan:
         base_ws = set(self.DATASET_WS)
         assert all(any(abs(w - b) <= 1e-12 for b in base_ws)
                    for w in held_ws)
+
+
+class TestKillDesktopsOrphanOnly:
+    """_kill_desktops 孤儿专用语义钉（round5 E-HIGH-1）。
+
+    旧实现 `Get-Process|Stop-Process -Force` 无条件代杀全部 ansysedt
+    （每点每 attempt 调用）——#245/#265 违规。新语义：先枚举（PID/PPID/
+    命令行），只杀**父进程已死**的孤儿；活桌面（父进程在）与枚举失败一律
+    fail-closed 抛错不代杀（对齐 hfss_interdigital_check.
+    _assert_existing_desktops_none 口径）。subprocess.run 全 mock，零真机。
+    """
+
+    @staticmethod
+    def _ps_result(rc: int, out: str, err: str = ""):
+        return types.SimpleNamespace(returncode=rc, stdout=out, stderr=err)
+
+    @staticmethod
+    def _enum_line(pid: int, ppid: int) -> str:
+        return f"{pid}|{ppid}|C:\\tools\\ansysedt.exe -grpcsrv -ng"
+
+    def _install_fake_run(self, monkeypatch, *, enum_lines: list[str],
+                          enum_rc: int, parent_alive: bool = False,
+                          kills: list[int] | None = None) -> dict:
+        state = {"enums": 0}
+        kills = kills if kills is not None else []
+
+        def fake_run(cmd, **_kw):
+            joined = " ".join(cmd)
+            if "Get-CimInstance" in joined:
+                state["enums"] += 1
+                lines = enum_lines if state["enums"] == 1 else []
+                return self._ps_result(
+                    enum_rc, "\n".join(lines),
+                    "" if enum_rc == 0 else "boom")
+            if "Get-Process -Id" in joined:
+                return self._ps_result(
+                    0, "alive" if parent_alive else "dead")
+            if "Stop-Process" in joined:
+                m = re.search(r"Stop-Process -Id (\d+)", joined)
+                assert m is not None, joined
+                kills.append(int(m.group(1)))
+                return self._ps_result(0, "")
+            raise AssertionError(f"未预期的 subprocess 调用: {joined[:120]}")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        return state
+
+    def test_live_desktop_not_killed_fail_closed(self, anchors_mod,
+                                                 monkeypatch):
+        kills: list[int] = []
+        self._install_fake_run(monkeypatch,
+                               enum_lines=[self._enum_line(111, 222)],
+                               enum_rc=0, parent_alive=True, kills=kills)
+        monkeypatch.setattr(anchors_mod.time, "sleep", lambda _s: None)
+        with pytest.raises(RuntimeError, match="活桌面"):
+            anchors_mod._kill_desktops(log=lambda _m: None)
+        assert kills == [], "活桌面（父进程在）绝不代杀（#245）"
+
+    def test_orphan_parent_dead_killed_then_verified(self, anchors_mod,
+                                                     monkeypatch):
+        kills: list[int] = []
+        self._install_fake_run(monkeypatch,
+                               enum_lines=[self._enum_line(111, 222)],
+                               enum_rc=0, parent_alive=False, kills=kills)
+        sleeps: list[float] = []
+        monkeypatch.setattr(anchors_mod.time, "sleep", sleeps.append)
+        logs: list[str] = []
+        anchors_mod._kill_desktops(log=logs.append)
+        assert kills == [111], "孤儿（父进程已死）点杀该 PID"
+        assert sleeps and sleeps[0] > 0, "杀后留退出窗再复核"
+        assert any("111" in m for m in logs)
+
+    def test_enum_failure_fail_closed_no_kill(self, anchors_mod,
+                                              monkeypatch):
+        kills: list[int] = []
+        self._install_fake_run(monkeypatch, enum_lines=[], enum_rc=1,
+                               kills=kills)
+        monkeypatch.setattr(anchors_mod.time, "sleep", lambda _s: None)
+        with pytest.raises(RuntimeError, match="枚举失败"):
+            anchors_mod._kill_desktops(log=lambda _m: None)
+        assert kills == [], "枚举失败 fail-closed，不盲杀（#245）"

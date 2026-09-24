@@ -23,10 +23,10 @@ nominal_params:
   w_low_mm: 1.8944
   w_high_mm: 0.6144
   l_low_mm: 6.5719
-  l_high_mm: 6.3399
+  l_high_mm: 6.7818
   gaps_mm: [0.2417, 1.5189, 1.5189, 0.2417]
-  feed_len_mm: 53.5441
+  feed_len_mm: 53.3232
 topology: λ/4 型接地 SIR 带通（§C3 滤波器族 II，MYJ SIR 章口径）：N 根阶梯阻抗棒平行排列（开路端低阻段 w_low + 接地端高阻段 w_high，步进比 Z_lo/Z_hi=35/70 给出紧凑化，谐振条件 tanθ1·tanθ2=Z_lo/Z_hi），同端接地顶端过孔 r=0.15mm，耦合区=低阻段（相邻棒低阻段对齐）；双 50Ω 馈线（板边段 w_feed + 耦合段 w_low 台阶）缝耦合自 y=−BOARD 板边引入（单轴 PML）
-param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径 7.1055mm − 登记⑨ 过孔缩短 0.7656mm = 6.3399mm）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长
-design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；对称分θ=arctan√(Z_lo/Z_hi)=0.61548 rad，总电长 1.23096 rad=78.4% λ/4；MYJ 斜率 b=0.017585 S（闭式 vs 数值中心差分 rel 3.2e-8，#118）；登记⑨ 过孔补偿（设计链 l_via_h=None）：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)（x=ω0L/Z_hi=0.0664）→ θ2c=0.54916 rad、高阻段缩短 0.7656mm，Y(f0) 过孔端接自证 |Y|=2.7e-18 S；|Y(ω)| 数值极小化定位谐振=2.5GHz 与闭式一致
+param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径 7.1055mm − 登记⑨ 校准过孔缩短 0.3237mm = 6.7818mm）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长
+design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；对称分θ=arctan√(Z_lo/Z_hi)=0.61548 rad，总电长 1.23096 rad=78.4% λ/4；MYJ 斜率 b=0.017585 S（闭式 vs 数值中心差分 rel 3.2e-8，#118）；登记⑨ 过孔补偿（设计链 l_via_h=None）：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)（x=ω0L/Z_hi=0.0280，L_via=0.125nH HFSS 仲裁校准值）→ θ2c=0.58744 rad、高阻段缩短 0.3237mm，Y(f0) 过孔端接自证 |Y|=1.09e-17 S；|Y(ω)| 数值极小化定位谐振=2.5GHz 与闭式一致
 smoke_note: 真机 openEMS 冒烟后置（循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收

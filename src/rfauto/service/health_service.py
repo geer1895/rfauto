@@ -145,12 +145,30 @@ def _parse_sparams_csv(csv_path: Path) -> tuple[np.ndarray, np.ndarray] | None:
   return freq_hz, s
 
 
+class _SparamsCsvCorrupt(Exception):
+  """sparams.csv 存在但全部解析失败（读入异常 / shape-reject）。
+
+  csv 是互易掩码载体：其损坏 = S 参数证据损坏，禁止静默回退 Touchstone
+  （零填充部分矩阵按全矩阵逐对查互易必假阳性，df3a 假阳性门可无痕重开，
+  round5 C-F1）；按 #316 多报方向让 S 参数因子走 None → 如实 UNKNOWN /
+  低证据，errors 留痕。
+  """
+
+
 def _load_sparams_csv(
   run_dir: Path, errors: list[str],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
   """在 run 目录任意层级找 sparams.csv（openEMS 模板 fdtd/ 子目录 rglob 覆盖）；
-  返回 (freq_hz, s_matrix, measured_mask)。"""
+  返回 (freq_hz, s_matrix, measured_mask)。
+
+  多个 csv 时第一个可解析的胜出，坏 csv 逐个记 errors（audit S2 不误伤）；
+  csv 存在但**全部**解析失败（异常 / shape-reject）→ 抛
+  _SparamsCsvCorrupt（调用方**不回退** Touchstone）；csv 不存在 → 返回
+  None（调用方回退 Touchstone，现行为不变）。
+  """
+  n_found = 0
   for path in sorted(run_dir.rglob("sparams.csv")):
+    n_found += 1
     try:
       parsed = _parse_sparams_csv_masked(path)
     except Exception as exc:
@@ -158,6 +176,13 @@ def _load_sparams_csv(
       continue
     if parsed is not None:
       return parsed
+    errors.append(f"sparams.csv 存在但解析失败（shape-reject：0 行或 "
+           f"<5 列）{path}")
+  if n_found:
+    raise _SparamsCsvCorrupt(
+      f"sparams.csv 存在但解析失败（shape-reject/异常，{n_found} 个"
+      "全不可用）——不回退 Touchstone（掩码载体损坏=S 参数证据损坏，"
+      "#316 多报方向：S 参数因子走 UNKNOWN/低证据）")
   return None
 
 
@@ -465,6 +490,13 @@ def health_check_run(run_id: str, *, runs_dir: str | Path | None = None) -> dict
   sparams.csv 是部分 S 矩阵：解析器同时给出已测掩码传给内核，互易性
   因子只校两向都独立已测的端口对，一对都没有 → UNKNOWN 不拦（修正
   "置零元素 vs 已测元素"假阳性）；Touchstone 全矩阵不带掩码，逐对全查。
+  S 参数载入优先级=可解析的 sparams.csv（掩码载体）**优先于**
+  Touchstone：单激励写入方落盘的 Touchstone 是零填充部分矩阵，按全
+  矩阵逐对查互易必假阳性（c10 GT 探针实证，max|S12−S21|=|S21| 指纹，
+  #314 同族）；仅 Touchstone 的 run（HFSS 类全矩阵）行为不变。csv
+  存在但全部解析失败（异常/shape-reject）→ **不回退** Touchstone
+  （掩码载体损坏=证据损坏，errors 留痕、S 参数因子走 UNKNOWN 低证据，
+  round5 C-F1）；csv 不存在才回退（现行为不变）。
 
   返回 JSON 友好 dict；best-effort：run 目录不存在/全空 → ok=False +
   errors 说明（不抛）；verdict 语义同内核，本层硬失败时 verdict=suspect
@@ -491,17 +523,20 @@ def health_check_run(run_id: str, *, runs_dir: str | Path | None = None) -> dict
   meta = _read_json(run_dir / "meta.json")
 
   # 逐类产物收集（每类独立 try/except，单类失败不传染）
-  # s_measured_mask：Touchstone 全矩阵 → None（逐对全查）；openEMS 单激励
-  # sparams.csv 部分矩阵 → 解析器给出的已测掩码（互易性只校已测对称对）
+  # S 参数载入优先级：sparams.csv（携带已测掩码）优先于 Touchstone——
+  # 单激励写入方的 Touchstone 是零填充部分矩阵，全对查互易必假阳性
+  # （c10 GT 探针实证）；仅 Touchstone（HFSS 类全矩阵）→ 掩码 None
+  # 逐对全查，行为不变。csv 存在但全部解析失败 → _SparamsCsvCorrupt
+  # 在此处被接住：不回退 Touchstone，S 参数因子走 None（round5 C-F1）。
   s_measured_mask: np.ndarray | None = None
   try:
-    loaded = _load_touchstone(run_dir, errors)
-    if loaded is not None:
-      freq_hz, s_matrix = loaded
+    loaded_csv = _load_sparams_csv(run_dir, errors)
+    if loaded_csv is not None:
+      freq_hz, s_matrix, s_measured_mask = loaded_csv
     else:
-      loaded_csv = _load_sparams_csv(run_dir, errors)
-      if loaded_csv is not None:
-        freq_hz, s_matrix, s_measured_mask = loaded_csv
+      loaded = _load_touchstone(run_dir, errors)
+      if loaded is not None:
+        freq_hz, s_matrix = loaded
       else:
         freq_hz, s_matrix = None, None
   except Exception as exc: # 防御：产物发现本身不应炸体检

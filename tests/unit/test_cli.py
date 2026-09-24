@@ -544,8 +544,9 @@ _SLOT_SUB = ["--h-mm", "1.524", "--eps-r", "3.66", "--freq-ghz", "2.5"]
 
 class TestSlotlineTransitionsCommands:
     """rfauto slotline（2）/ transitions（3）薄壳：零逻辑转发 slotline_service，
-    --json 直出信封；越域/不可达红字 exit 1（_emit 口径）。数值只出内核，
-    壳层不复算（锚见 core/slotline_transitions 设计点）。"""
+    --json 直出信封；越域红字 exit 1；synth 不可达=退 0+realizable=False（D5
+    语义，同文件 :578-588 钉）。数值只出
+    内核，壳层不复算）。"""
 
     def test_help_lists_commands(self):
         slot = runner.invoke(app, ["slotline", "--help"])
@@ -580,9 +581,13 @@ class TestSlotlineTransitionsCommands:
         result = runner.invoke(app, ["slotline", "synth", "--z0-ohm", "110.92", *_SLOT_SUB, "--json"])
         assert result.exit_code == 0, result.output
         assert json.loads(result.output)["result"]["w_mm"] == pytest.approx(1.0, abs=2e-3)
+        # D5 语义对齐（与 marchand-two-section 同形）：超可达区间→
+        # ok=True + realizable=False + reason（退 0），非 ok=False 退 1。
         bad = runner.invoke(app, ["slotline", "synth", "--z0-ohm", "500", *_SLOT_SUB])
-        assert bad.exit_code == 1
-        assert "槽线综合失败" in bad.output
+        assert bad.exit_code == 0
+        assert "不可达" in bad.output
+        assert "realizable=False" in bad.output
+        assert "超出窄槽段可达范围" in bad.output
 
     def test_msl_slot_and_marchand_balun_json(self):
         args = ["--f0-ghz", "2.5", "--h-mm", "1.524", "--er", "3.66", "--w-slot-mm", "1.0"]

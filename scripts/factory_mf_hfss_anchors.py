@@ -37,6 +37,9 @@ AR1 相关结构成立、"纯 OE 直接当预测"基线臂可做同 w 精确配�
   python scripts/factory_mf_hfss_anchors.py --audit            # 离线：锚点表+口径审计（无 HFSS）
   python scripts/factory_mf_hfss_anchors.py --collect          # HFSS 真跑（主代理排机）
   python scripts/factory_mf_hfss_anchors.py --collect --full   # 真跑并加可选锚
+  python scripts/factory_mf_hfss_anchors.py --collect --extra-w 1.5
+      # 补锚收尾：补充训练锚（名义 w；吸附最近数据集精确值，
+      # 剔除既有锚含 held-out 门点——判据 anchor15_criteria.md §1/§2）
 断点续跑：--collect 幂等；已有 anchor.json(status=done) 的点自动跳过。
 
 退出码：--audit 预检全过 0，否则 1；--collect 全部锚点 done=0，否则 1。
@@ -46,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import UTC, datetime
@@ -53,6 +57,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from rfauto.infra.desktop_guard import (
+    kill_orphan_ansysedt_desktops as _kill_desktops,
+)
+from rfauto.infra.desktop_guard import release_desktop_capped, run_with_watchdog
 
 REPO = Path(__file__).resolve().parents[1]
 for _p in (REPO / "src",):
@@ -79,6 +88,9 @@ EPS_PHYS_WINDOW = (1.5, 5.0)  # εr=3.66 微带族 εeff 物理窗（越界即�
 C0 = 299792458.0
 AEDT_VERSION_DEFAULT = "2025.1"  # hfss_mline_probe 全链实证版本
 POINT_ATTEMPTS = 3  # 逐点整轮重试（#191：gRPC 通道级不稳定，单调用重试无效）
+SOLVE_TIMEOUT_S = int(os.environ.get("RFAUTO_HFSS_SOLVE_TIMEOUT_S", "21600"))
+# 单 setup 求解看门狗（6h 防挂死上限，非预算门；hfss_interdigital_check
+# 同款口径：Setup 级实测可达 5h 级，80min 级看门狗必误杀；#145 env 口径）
 #: 官方波端口尺寸比例（Ansys Wave Port Size 口径，#192 PASS_A 同法）
 PORT_W_FACTOR = 5.0
 PORT_H_FACTOR = 4.0
@@ -91,6 +103,7 @@ __all__ = [
     "load_dataset_ws",
     "point_id_for_w",
     "resolve_anchor_ws",
+    "resolve_extra_anchor_ws",
     "select_heldout_ws",
 ]
 
@@ -168,13 +181,49 @@ def select_heldout_ws(dataset_ws: list[float],
     return out
 
 
+def resolve_extra_anchor_ws(dataset_ws: list[float],
+                            extra_ws: tuple[float, ...],
+                            excluded_ws: tuple[float, ...] = (),
+                            ) -> list[dict[str, float]]:
+    """补充锚（--extra-w）：吸附到数据集精确既有值（嵌套 DoE 前提）。
+
+    与 resolve_anchor_ws 的 SNAP_TOL 吸附不同：补充锚直接取**最近数据集
+    精确值**（KOH 修正模型 _exact_low_row 要求锚 w 与低保真行精确相等，
+    EXACT_W_TOL=1e-12——超出 SNAP_TOL 的名义值也必须落在数据集既有值上，
+    否则 fit 阶段拒绝）；excluded_ws（既有锚值，含 held-out 门点）从候选
+    剔除——门点不入训练（gate 独立性，anchor15_criteria.md §1）。
+    候选空 → ValueError。
+    """
+    ws_all = np.asarray(dataset_ws, dtype=float)
+    cands_all = ws_all
+    if excluded_ws:
+        exc = np.asarray(excluded_ws, dtype=float)
+        d_min = np.min(np.abs(ws_all[:, None] - exc[None, :]), axis=1)
+        cands_all = ws_all[d_min > 1e-9]
+    out: list[dict[str, float]] = []
+    for a in extra_ws:
+        a = float(a)
+        if cands_all.size == 0:
+            raise ValueError(f"补充锚 w={a}：剔除既有锚后数据集无候选")
+        near = float(cands_all[np.argmin(np.abs(cands_all - a))])
+        out.append({"nominal": a, "run": near,
+                    "snap_delta_mm": float(abs(near - a)), "snapped": True})
+    return out
+
+
 def build_anchor_plan(dataset_ws: list[float],
-                      full: bool = False) -> list[dict[str, Any]]:
-    """锚点计划（纯函数）：train 基础(+可选) + held-out，逐点 id/group。"""
+                      full: bool = False,
+                      extra_ws: tuple[float, ...] = (),
+                      ) -> list[dict[str, Any]]:
+    """锚点计划（纯函数）：train 基础(+可选+补充 --extra-w) + held-out。"""
     resolved = resolve_anchor_ws(dataset_ws)
     if full:
         resolved += resolve_anchor_ws(dataset_ws, OPTIONAL_ANCHORS)
     heldout = select_heldout_ws(dataset_ws)
+    if extra_ws:
+        resolved += resolve_extra_anchor_ws(
+            dataset_ws, tuple(extra_ws),
+            excluded_ws=tuple(r["run"] for r in resolved + heldout))
     used: dict[str, float] = {}
     plan: list[dict[str, Any]] = []
     for row in resolved + heldout:
@@ -207,16 +256,10 @@ def load_dataset_ws(dataset_dir: Path = DATASET_DIR) -> list[float]:
 
 # ─── HFSS 面（真跑；离线 --audit 不触） ──────────────────────────────────────
 
-
-def _kill_desktops() -> None:
-    import subprocess
-
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process | Where-Object { $_.ProcessName -match "
-                    "'ansysedt' } | Stop-Process -Force"],
-                   capture_output=True)
-    time.sleep(3)
-
+# 桌面治理单源：原 _list_ansysedt_processes/_process_alive/
+# _kill_desktops 三函数（原型）已上收 src/rfauto/infra/desktop_guard.py，
+# 语义不变（活桌面不杀 fail-closed/孤儿点杀/枚举失败不杀，#245/#265）；
+# 本模块顶部 alias `_kill_desktops` 供 run_collect 调用与既有测试兼容。
 
 def _eps_eff_from_phase_slope(slope_per_hz: float,
                               l_span_mm: float) -> float:
@@ -379,7 +422,13 @@ def _collect_point(pt: dict[str, Any], out_dir: Path,
             stop_frequency=BAND_GHZ[1], num_of_freq_points=SWEEP_POINTS,
             name="Sweep", sweep_type="Discrete", save_fields=False)
         t_solve = time.time()
-        h.analyze(setup="Setup")
+        # E-MED-5：solve 看门狗（超时 fail-closed 不再等待，线程留守；
+        # fn 异常原样透传不冒充超时——desktop_guard.run_with_watchdog）
+        run_with_watchdog(
+            lambda: h.analyze(setup="Setup"),
+            timeout_s=SOLVE_TIMEOUT_S,
+            what=f"{pt['point_id']} Setup solve",
+            log=print)
         solve_s = time.time() - t_solve
 
         adapter = HfssAdapter()
@@ -444,17 +493,21 @@ def _collect_point(pt: dict[str, Any], out_dir: Path,
         return anchor
     finally:
         if h is not None:
-            try:
-                h.release_desktop(close_projects=True, close_desktop=True)
-            except Exception as exc:  # #265：释放失败必须透出（孤儿风险）
-                print(f"[mfa][warn] release_desktop 失败（孤儿 ansysedt "
-                      f"风险，#265）：{exc}", flush=True)
+            # E-MED-5：release 带 150s 上限（hfss_interdigital_check 口径：
+            # 看门狗超时后 release 会对求解中的桌面阻塞到自然结束，实测
+            # 3.6h——超时不候，孤儿风险留 #265/#245 人工处置）
+            release_desktop_capped(
+                lambda: h.release_desktop(close_projects=True,
+                                          close_desktop=True),
+                log=print)
 
 
 def run_collect(full: bool, aedt_version: str,
+                extra_ws: tuple[float, ...] = (),
                 log=print) -> int:
     """批量采集（逐点 3 次整轮重试；done 点跳过——断点续跑幂等）。"""
-    plan = build_anchor_plan(load_dataset_ws(), full=full)
+    plan = build_anchor_plan(load_dataset_ws(), full=full,
+                             extra_ws=tuple(extra_ws))
     index_path = ROOT / "collect_index.json"
     index: dict[str, Any] = {}
     if index_path.exists():
@@ -475,7 +528,7 @@ def run_collect(full: bool, aedt_version: str,
         last_exc: Exception | None = None
         for attempt in range(1, POINT_ATTEMPTS + 1):
             try:
-                _kill_desktops()
+                _kill_desktops(log=log)
                 _collect_point(pt, out_dir, aedt_version)
                 index[pid] = {"status": "done", "w_mm": pt["w_mm"],
                               "group": pt["group"]}
@@ -501,11 +554,11 @@ def run_collect(full: bool, aedt_version: str,
     return 0 if n_fail == 0 else 1
 
 
-def run_audit(full: bool) -> int:
+def run_audit(full: bool, extra_ws: tuple[float, ...] = ()) -> int:
     """离线预检：锚点表 + 嵌套吸附 + εeff 口径审计说明（无 HFSS）。"""
     ws = load_dataset_ws()
     try:
-        plan = build_anchor_plan(ws, full=full)
+        plan = build_anchor_plan(ws, full=full, extra_ws=tuple(extra_ws))
     except ValueError as exc:
         print(f"[mfa][audit] 预检 FAIL: {exc}")
         return 1
@@ -545,11 +598,15 @@ def main(argv: list[str] | None = None) -> int:
                        help="HFSS 真跑（主代理排机；断点续跑幂等）")
     ap.add_argument("--full", action="store_true",
                     help="加入可选训练锚 {0.745, 1.182}")
+    ap.add_argument("--extra-w", type=float, nargs="+", default=(),
+                    help="补充训练锚（名义 w 列表；吸附最近数据集精确值，"
+                         "剔除既有锚含 held-out 门点；补锚收尾）")
     ap.add_argument("--aedt-version", type=str, default=AEDT_VERSION_DEFAULT)
     args = ap.parse_args(argv)
     if args.audit:
-        return run_audit(args.full)
-    return run_collect(args.full, args.aedt_version)
+        return run_audit(args.full, extra_ws=tuple(args.extra_w))
+    return run_collect(args.full, args.aedt_version,
+                       extra_ws=tuple(args.extra_w))
 
 
 if __name__ == "__main__":

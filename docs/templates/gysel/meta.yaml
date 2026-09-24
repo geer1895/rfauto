@@ -19,3 +19,4 @@ nominal_params:
   arm_len_mm: 18.162
   iso_len_mm: 17.75
 topology: Gysel 高隔离功分器（1975 六节 λ/4 环，P2⑪ L-jog 等长拓扑重设计 2026-09-16）：P1—70.7Ω λ/4 臂—P2/P3；P2/P3—50Ω λ/4 隔离线（竖直段 YJ=iso_len−jog + 顶端横移 jog=|arm_len−iso_len| 保电长度）—Δ1/Δ2（x=±iso_len，各接 50Ω LumpedElement 端接，隔离负载外置）；Δ1—50Ω λ/2 桥带（跨度 2·iso_len=λ/2 精确，中点开路）—Δ2。矩形旧版（Δ 在角部、桥带继承 2·arm_len，+2.32% 二阶偏差）为历史口径（#211）
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；三带缘+jog 顶边带缘+Δ 节点负载盒边精确入网（#198）；jog 横移 0.412mm ≈1 网格胞（0.4mm 档），Δ 缘与竖边带缘最小间距=jog≫1µm（#152 守卫）

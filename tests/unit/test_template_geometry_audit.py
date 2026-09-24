@@ -62,6 +62,9 @@ from tests.unit import _geometry_audit_helpers as gh
 # 2026-09-18：hairpin_alt 交替取向发夹线（根修：奇数序
 # 谐振器翻转使相邻臂开路端交替、电/磁耦合同号叠加；纯 KJ gap→k 口径）正式注册
 # （42→43；注册在 hairpin 之后、coupled_bpf 之前，槽线族仍居字典尾 #247）。
+# 2026-09-22 siw-family：SIW 族首族=直 SIW 传输线段（LumpedPort z 桥×2、矩形域
+# DOM_X/DOM_Y 字面注入、f0=10GHz 设计点）正式注册（43→44；注册在文末 SIW 段，
+# 尾部追加 #247）。
 EXPECTED_TEMPLATES = frozenset({
     "wilkinson", "patch", "branchline", "dipole", "stepped_impedance",
     "coupled_line", "mline", "cpw", "stripline", "wstep", "tjunc", "bend",
@@ -75,6 +78,7 @@ EXPECTED_TEMPLATES = frozenset({
     "cline_coupler", "branchline_2sect", "lange",
     "msl_cpw", "sma_launcher",
     "slotline", "slotline_lumped", "msl_slot_transition", "marchand_balun",
+    "siw",
 })
 
 # 渲染脚本实际创建的端口对象数与 meta n_ports 的差异（历史口径）：
@@ -90,7 +94,7 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 43, "覆盖基线漂移：注册基线为 43 个模板"
+    assert len(EXPECTED_TEMPLATES) == 44, "覆盖基线漂移：注册基线为 44 个模板"
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {

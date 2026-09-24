@@ -133,13 +133,18 @@ def _write_orphan_check(stage: str) -> list[dict]:
     return rows
 
 
-def _kill_desktops() -> None:
-    # 串行 1 纪律（本任务独占 HFSS 轨）；杀前清单已由 _write_orphan_check 留证
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process | Where-Object { $PSItem.ProcessName -match "
-                    "'ansysedt' } | Stop-Process -Force"],
-                   capture_output=True, timeout=60)
-    time.sleep(3)
+def _kill_desktops(*, strict: bool = True) -> None:
+    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+
+    attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
+    记失败；杀前清单仍由 _write_orphan_check 留证）；全场收尾扫尾传
+    strict=False（活桌面/枚举失败只记录不抛，不连坐已完成战役，#105）。
+    委托 src/rfauto/infra/desktop_guard.py；旧 Get-Process|Stop-Process
+    -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print, strict=strict)
 
 
 def _write_result(patch: dict) -> None:
@@ -796,7 +801,7 @@ def main() -> int:
                                "error": last_err})
                 _progress(f"hfss/{tag}{suffix}: FAILED all attempts {last_err}")
                 print(f"CPS_HFSS_ARB_FAIL_{tag}{suffix}", flush=True)
-        _kill_desktops()
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
         _write_orphan_check("post_solve" + suffix)
 
     # ── 分析阶段（只读产物；失败不重解）──

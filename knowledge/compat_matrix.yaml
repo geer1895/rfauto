@@ -36,9 +36,17 @@ ads:
 
 palace:
   versions:
-    - version: "skeleton"
-      status: "best_effort"
-      notes: "Skeleton adapter (awaiting Windows build spike). Apache-2.0 license."
+    - version: "v0.18.1 (WSL2)"
+      status: "verified"
+      notes: "WSL2 发行版 rfauto-ubuntu 内源码构建 v0.18.1（官方例 7 案 10/10 门
+        PASS，runs/palace_spike/wsl_validation.md）；Windows 侧 adapter 经
+        tools/palace-install/bin/palace.cmd wrapper 端到端真跑闭环（dr_matched
+        (21,2,2)+掩码+|S21|@4GHz=-0.9685dB，bridge_smoke.md）。wrapper 由
+        scripts/palace_wsl_wrapper.py 生成；exe 解析链 env RFAUTO_PALACE_EXE →
+        tools 目录 → PATH。无 Windows 预编译（官方零 release 资产）。Apache-2.0。
+        多激励 S 矩阵 verified（官方单 run 多激励，每端口 Excitation 置自身
+        Index）：双 LumpedPort 真跑全 (n,2,2) 已测掩码、互易 |S12-S21|max=0.0、
+        |S21|@4GHz=-0.9685dB 与单激励逐位一致（df5_multiexcite_criteria.md）。"
 
 meep:
   versions:

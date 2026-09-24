@@ -35,7 +35,6 @@ r4 证据链（真机归因收口）：
 
 import argparse
 import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -52,14 +51,14 @@ L_TOTAL = 2 * Y_HALF
 
 
 def _kill_desktops() -> None:
-    """杀残留 ansysedt（整轮重试口径，#191：不做单调用级重试）。"""
-    subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "Get-Process | Where-Object { $_.ProcessName -match "
-         "'ansysedt' } | Stop-Process -Force"],
-        capture_output=True,
-    )
-    time.sleep(3)
+    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+
+    委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
+    Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print)
 
 
 def _build_mline(h, solution_mode: str, port_origin_unit_fix: bool = False) -> None:

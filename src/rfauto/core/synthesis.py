@@ -1045,6 +1045,62 @@ def synthesize_msl_cpw_model(
         params=params, recipe_draft=recipe_draft, notes=notes)
 
 
+def synthesize_siw_model(
+    f0_ghz: float = 10.0,
+    d_mm: float = 0.6,
+    s_mm: float = 1.0,
+    line_len_mm: float | None = None,
+    er: float = 3.66,
+    h_mm: float = 0.508,
+) -> ModelSynthesisResult:
+    """直 SIW 线段综合（siw-family 首族，2026-09-22 立项）：f0 + 过孔 d/s →
+    fc10 目标=f0/1.5 → 两过孔列心距 w（Cassivi 2002 等效宽度反解；
+    runs/siw_family/criteria.md §1 双源/§2 设计点）。line_len 缺省=3λg@f0
+    （β 闭式）；过孔设计规则（s≤2d、d<λ_sub/5）违规显式报错（越界不外推，
+    #1c/#122）。h 只进损耗不进 fc10/β（Microwaves101 SIW 条目口径），
+    params 带出供渲染/meta 同源。"""
+    import math
+
+    from rfauto.core.calculators import (
+        siw_beta_rad_m,
+        siw_effective_width_mm,
+        siw_synthesis,
+    )
+
+    fc10_target = float(f0_ghz) / 1.5
+    syn = siw_synthesis(fc10_target, er, d_mm, s_mm)  # 设计规则违规 ValueError
+    w_mm = float(syn["w_mm"])
+    weff = siw_effective_width_mm(w_mm, d_mm, s_mm)
+    beta, fc_actual = siw_beta_rad_m(weff, er, f0_ghz)
+    lam_g_mm = 2.0 * math.pi / beta * 1e3
+    if line_len_mm is None:
+        line_len_mm = round(3.0 * lam_g_mm, 4)
+
+    params = {"w_mm": w_mm, "d_mm": d_mm, "s_mm": s_mm,
+              "line_len_mm": line_len_mm, "h_mm": h_mm}
+    recipe_draft = {
+        "model": "siw", "recipe_version": 1, "schema_version": 1,
+        "params": {k: {"value": v} for k, v in params.items()},
+        "setup": {"freq_range_ghz": [max(0.1, fc10_target * 1.08),
+                                     min(fc10_target * 2.0, f0_ghz * 1.3)],
+                  "points": 201},
+        "objectives": [{"metric": "s11_db",
+                        "band": [f0_ghz * 0.9, f0_ghz * 1.1],
+                        "op": "max_below", "value": -10.0}],
+    }
+    notes = [f"w={w_mm:.4f}mm（fc10 目标 {fc10_target:.4f}GHz → w_eff="
+             f"{weff:.4f}mm，回代 fc10={fc_actual:.4f}GHz）",
+             f"β@{f0_ghz}GHz={beta:.3f} rad/m、λg={lam_g_mm:.4f}mm → "
+             f"line_len=3λg={line_len_mm}mm",
+             "端口=LumpedPort z 桥×2（R=Z_PV=2b·Z_TE/w_eff 闭式）；β/εeff "
+             "锚走 S21 解缠相位斜率（LumpedPort 无 β 属性，cps 同契约）"]
+    return ModelSynthesisResult(
+        model="siw",
+        goal={"f0_ghz": f0_ghz, "fc10_ghz": fc10_target,
+              "d_mm": d_mm, "s_mm": s_mm},
+        params=params, recipe_draft=recipe_draft, notes=notes)
+
+
 def synthesize_sma_launcher_model(
     z0_ohm: float = 50.0,
     freq_ghz: float = 2.5,

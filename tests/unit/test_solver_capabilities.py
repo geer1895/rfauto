@@ -187,6 +187,12 @@ class TestDeclaredVsImplemented:
         assert callable(getattr(ComsolAdapter, "evaluate_volume_series", None))
 
     def test_palace_port_passthrough_backed_by_config(self, tmp_path):
+        """端口透传钉官方 v0.18.1 口径：端口在 Boundaries 分节（无顶层 Ports）。
+
+        官方出处：config-schema.json 顶层 required=五分节、Boundaries 下
+        WavePort/LumpedPort 数组（2026-09-22 实测取证，
+        runs/palace_spike/schema_fix_plan.md §0）。
+        """
         from rfauto.adapters.palace_solver import PalaceSolver
 
         dummy_exe = tmp_path / "palace-mock"
@@ -196,10 +202,22 @@ class TestDeclaredVsImplemented:
                              exe_path=str(dummy_exe), working_dir=str(workdir))
         solver = PalaceSolver(cfg)
         assert solver.connect()
-        ports = [{"Type": "WavePort", "Index": 1}, {"Type": "LumpedPort", "Index": 2}]
-        assert solver.build_geometry({"mesh_file": "board.msh", "ports": ports})
+        ports = {
+            "WavePort": [{"Index": 1, "Attributes": [2], "Mode": 1,
+                          "Excitation": 1}],
+            "LumpedPort": [{"Index": 2, "Attributes": [3], "R": 50.0,
+                            "Excitation": 2}],
+        }
+        materials = [{"Attributes": [1], "Permittivity": 2.08}]
+        assert solver.build_geometry({"mesh_file": "board.msh",
+                                      "materials": materials, "ports": ports})
         data = json.loads((workdir / "palace_config.json").read_text(encoding="utf-8"))
-        assert data["Ports"] == ports  # 端口段透传（声明 wave/lumped 的事实依据）
+        # 顶层 = 官方五分节，无顶层 Ports/Materials（2026-09-22 差距表 A1/A4/A5）
+        assert set(data.keys()) == {"Problem", "Model", "Domains", "Boundaries", "Solver"}
+        assert "Ports" not in data
+        assert data["Problem"]["Type"] == "Driven"
+        assert data["Boundaries"]["WavePort"] == ports["WavePort"]
+        assert data["Boundaries"]["LumpedPort"] == ports["LumpedPort"]
         caps = solver.capabilities()
         assert caps.supports_wave_port is True and caps.supports_lumped_port is True
 
@@ -294,17 +312,24 @@ class TestHonestDeclarations:
         assert caps.parallel_backends == ()
 
     def test_palace_touchstone_not_overclaimed(self):
-        """Palace 适配器仅解析 palace.csv，无 Touchstone 写出 → 能力位如实 False。
+        """Palace 适配器仅解析 port-S.csv（官方 Driven 结果文件），无 Touchstone
+        写出 → 能力位如实 False。
 
-        遗留说明：supported_output_formats()（6g 协议）仍列表 touchstone，本项
-        按实际实现声明为 False；两者差异在报告 honestNotes 中记录。
+        C-LOW ③：supported_output_formats() 的 6g 遗留 touchstone 声明
+        已按实际实现修正为 ["csv"]（消费者 r3_services output_formats 透出
+        面），声明 vs 产物两口径现已一致。
         """
+        from rfauto.adapters.em_solver_base import EMSolverConfig, EMSolverType
         from rfauto.adapters.palace_solver import PalaceSolver
 
         caps = solver_capabilities_for(EMSolverType.PALACE)
         assert caps.supports_touchstone_export is False
         assert not hasattr(PalaceSolver, "export_touchstone")
         assert not hasattr(PalaceSolver, "_export_touchstone")
+        # 输出格式声明面同步如实（palace 实际仅产 CSV）
+        solver = PalaceSolver(EMSolverConfig(solver_type=EMSolverType.PALACE))
+        assert "touchstone" not in solver.supported_output_formats()
+        assert "csv" in solver.supported_output_formats()
 
 
 class TestUnknownAdapterErrors:

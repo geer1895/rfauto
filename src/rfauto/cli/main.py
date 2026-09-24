@@ -3367,7 +3367,7 @@ def slotline_synth_cmd(
     freq_ghz: float = typer.Option(..., "--freq-ghz", help="频率 GHz"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
-    """槽线综合：目标 Z0 → 槽宽 w（窄槽段括号反解，越可达域拒绝）。
+    """槽线综合：目标 Z0 → 槽宽 w（窄槽段括号反解；不可达如实 realizable=False）。
 
     示例：rfauto slotline synth --z0-ohm 110 --h-mm 1.524 --eps-r 3.66 --freq-ghz 2.5
     """
@@ -3376,6 +3376,11 @@ def slotline_synth_cmd(
     result = slotline_synthesis(z0_ohm, h_mm, eps_r, freq_ghz)
     _emit(result, "槽线综合失败", json_output=json_output)
     if json_output:
+        return
+    if not result.get("realizable", True):
+        # 不可达=合法结果非错误（D5 与 marchand 两节语义统一；#122 不凑绿）
+        console.print(
+            f"[yellow]○ 不可达（realizable=False）[/yellow]  {result.get('reason')}")
         return
     r = result["result"]
     console.print(

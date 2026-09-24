@@ -280,6 +280,22 @@ class TestFidelityDelta:
         high = [{"params": {"x": 1}, "cost": 0.6}, {"params": {"x": 2}, "cost": 0.2}]
         result = compute_fidelity_delta(low, high)
         assert result["rank_flip_count"] == 1  # order reversed
+        # A-05 行为不变钉：现调用链（trial 全带 cost）零跳过、翻转计数逐位不变
+        assert result["rank_pairs_skipped_missing_cost"] == 0
+
+    def test_missing_cost_is_explicit_skip_not_zero(self):
+        """A-05（#117 邻形）：缺 cost 不再隐式按 0.0 参与排序比较——None 显式
+        分支跳过该配对并如实计数（0.0 是合法最优值，隐式缺省会把缺失 trial
+        伪装成完美点扭曲 rank_flip）。"""
+        from rfauto.optimization.mf_backend import compute_fidelity_delta
+        low = [{"params": {"x": 1}, "cost": 0.3},
+               {"params": {"x": 2}}]                       # 整键缺失
+        high = [{"params": {"x": 1}, "cost": 0.6},
+                {"params": {"x": 2}, "cost": None}]        # 显式 None
+        result = compute_fidelity_delta(low, high)
+        assert result["n_matched_pairs"] == 2
+        assert result["rank_flip_count"] == 0              # 只剩 1 对可比，无翻转
+        assert result["rank_pairs_skipped_missing_cost"] == 1
 
 
 class TestSynthesisWilkinson:

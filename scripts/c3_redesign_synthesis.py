@@ -23,8 +23,10 @@ criteria.md，先于本脚本运行落盘）：
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -45,9 +47,11 @@ from rfauto.adapters.openems_templates import (  # noqa: E402
     c3_via_inductance_h,
     combline_design_from_order,
     interdigital_design_from_order,
+    render_script,
     sir_bpf_design_from_order,
 )
 from rfauto.core.synthesis import Stackup  # noqa: E402
+from smoke_c3_filter_family import auto_mesh_mm  # noqa: E402  只读 import（渲染 mesh 口径同源）
 
 F0 = 2.5
 FBW = 0.05
@@ -134,6 +138,119 @@ def refix_run_params(template: str) -> dict | None:
     p = REPO / "runs" / "smoke_c3_refix" / template / "_smoke_result.json"
     try:
         return (json.loads(p.read_text(encoding="utf-8")) or {}).get("params")
+    except Exception:
+        return None
+
+
+# ── R2 出处纪律（防 no-op 复发/陈旧档误读，criteria.md §四）─────────
+
+def render_input_sha256(template: str, params: dict, mesh_mm: float | None = None
+                        ) -> str:
+    """渲染输入指纹：render_script(名义) 产物 sha256（自描述出处，写进
+    redesign_nominals.json——run 几何出处以渲染字面量为准，SC 主根因教训）。"""
+    mesh = float(mesh_mm) if mesh_mm is not None else auto_mesh_mm(template, params)
+    text = render_script(template, dict(params), (F_LO, F_HI),
+                         mesh_resolution_mm=mesh)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _geometry_section(text: str, template: str) -> str | None:
+    """渲染文本的几何段（`<tpl> = CSX.AddMetal(` 起至末个 SetPriority(10) 止；
+    频轴/mesh 无关——跨 run 字面量比对的稳定粒度）。
+
+    标记缺失（畸形/异模板归档）返回 None——调用方如实记 not-ok，不让
+    StopIteration 裸穿透炸整跑（E-M2，#105 观测面故障不阻塞主路径）。
+    """
+    lines = text.splitlines()
+    starts = [i for i, ln in enumerate(lines)
+              if f"{template} = CSX.AddMetal(" in ln]
+    ends = [i for i, ln in enumerate(lines) if "SetPriority(10)" in ln]
+    if not starts or not ends or max(ends) < starts[0]:
+        return None
+    return "\n".join(lines[starts[0]:max(ends) + 1]) + "\n"
+
+
+def crosscheck_run_literal(template: str, params: dict,
+                           simulation_py: str | Path) -> dict:
+    """归档 run 的 simulation.py 几何段 vs 现渲染（同名义）逐字节比对。
+
+    R2：SC 主根因 (a') 的复发守卫——归档 run 的几何出处以渲染字面量为裁决
+    （不认 metadata 自述）；不一致=该 run 渲染的不是本名义。缺失档案与
+    存在但畸形（几何段标记缺失）的档案均如实 ok=False（不臆造，#122；
+    畸形含归档路径与描述由调用方决策，E-M2）。
+    """
+    p = Path(simulation_py)
+    if not p.exists():
+        return {"ok": False, "checked": False,
+                "reasons": [f"归档 simulation.py 不存在：{p}"]}
+    mesh = auto_mesh_mm(template, params)
+    fresh = render_script(template, dict(params), (F_LO, F_HI),
+                          mesh_resolution_mm=mesh)
+    fresh_section = _geometry_section(fresh, template)
+    if fresh_section is None:  # 本仓渲染器产物缺标记=内部不变量破坏，fail-closed
+        raise RuntimeError(
+            f"现渲染文本缺几何段标记（renderer 内部错误，模板={template}）")
+    want = fresh_section.splitlines()
+    got_text = _geometry_section(
+        p.read_text(encoding="utf-8", errors="replace"), template)
+    if got_text is None:
+        return {"ok": False, "checked": False,
+                "reasons": [f"归档 simulation.py 畸形（几何段标记缺失：无 "
+                            f"'{template} = CSX.AddMetal(' 起始或无 "
+                            f"'SetPriority(10)' 终止）：{p}"]}
+
+    got = got_text.splitlines()
+    if want == got:
+        return {"ok": True, "checked": True, "n_lines": len(want),
+                "reasons": []}
+    diffs = [i for i, (a, b) in enumerate(zip(want, got, strict=False))
+             if a != b]
+    len_diff = abs(len(want) - len(got))
+    reasons = [f"几何段差异 {len(diffs)} 行（长度差 {len_diff}），前 3 条："]
+    for i in diffs[:3]:
+        reasons.append(f"  L{i} 期望: {want[i].strip()[:88] if i < len(want) else '<缺>'}")
+        reasons.append(f"  L{i} 归档: {got[i].strip()[:88] if i < len(got) else '<缺>'}")
+    return {"ok": False, "checked": True, "n_diff_lines": len(diffs),
+            "reasons": reasons}
+
+
+def registration_freshness(file_ts: float | None,
+                           nominal_commit_ts: float | None) -> bool | None:
+    """陈旧档守卫：归档 run 文件 mtime ≥ 名义注册 commit 时戳（SC 误读
+    _smoke_result 09-18 旧档实例）。任一时戳缺失 → None（不可判，不阻塞）。"""
+    if file_ts is None or nominal_commit_ts is None:
+        return None
+    return float(file_ts) >= float(nominal_commit_ts)
+
+
+def _refix_crosscheck(template: str, params: dict) -> dict:
+    """refix 归档 run 的出处三面（best-effort #105）：
+    params=历史 metadata 自述（只对照）；literal=渲染字面量裁决（R2 主判）；
+    freshness=归档文件 mtime vs 名义注册 commit（陈旧档守卫）。"""
+    out: dict = {"params": refix_run_params(template)}
+    sim = REPO / "runs" / "smoke_c3_refix" / template / "simulation.py"
+    out["literal_crosscheck"] = crosscheck_run_literal(template, params, sim)
+    try:
+        file_ts = sim.stat().st_mtime if sim.exists() else None
+    except Exception:
+        file_ts = None
+    out["registration_freshness"] = registration_freshness(file_ts,
+                                                            nominal_commit_ts())
+    out["note"] = ("几何出处以渲染字面量裁决（R2）；metadata 自述仅对照。"
+                   "freshness=None=时戳缺失不可判（不阻塞）")
+    return out
+
+
+def nominal_commit_ts() -> float | None:
+    """名义注册 commit 时戳（openems_templates.py 末次 commit，best-effort
+    观测性 #105；runs/ 内调用零 git 依赖由调用方 try 兜底）。"""
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--",
+             "src/rfauto/adapters/openems_templates.py"],
+            cwd=str(REPO), capture_output=True, text=True, timeout=30)
+        txt = (out.stdout or "").strip()
+        return float(txt) if out.returncode == 0 and txt else None
     except Exception:
         return None
 
@@ -228,7 +345,11 @@ def run_template(template: str, f: np.ndarray, h_mm: float) -> tuple[dict, dict]
                                  ("l_via_h", "theta_c_rad", "via_delta_mm")},
         "matches_registered_nominal": matches_registered,
         "nominal_4dp_checks": nom_checks,
-        "refix_run_geometry_crosscheck": refix_run_params(template),
+        # R2 出处纪律：渲染输入指纹 + 归档 refix run 字面量/陈旧档 crosscheck
+        # （best-effort #105：缺失不阻塞，防 no-op 复发与陈旧 metadata 误读）
+        "render_input_sha256": render_input_sha256(template, p_new),
+        "refix_run_geometry_crosscheck": dict(
+            _refix_crosscheck(template, p_new)),
         "notes_new": list(d_new["notes"]),
     }
     verdict_block = {

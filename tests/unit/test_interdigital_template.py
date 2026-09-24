@@ -88,8 +88,8 @@ def test_design_matches_nominal_constants():
                 assert round(got, 4) == want, key
     # 关=不增键（逐字节复现补偿前设计 dict 形状），开=增补过孔三键
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    assert DESIGN_VIA["l_via_h"] == pytest.approx(
-        ot.c3_via_inductance_h(0.508), rel=1e-12)
+    # 校准：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     # Δl_via = 补偿前后物理棒长差（开路端 Δl 两口径同减，相消）
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
         IDEAL_NOMINAL["res_len_mm"] - NOMINAL["res_len_mm"], abs=5e-4)
@@ -196,8 +196,12 @@ class TestViaCompensationDesign:
         assert d["via_delta_mm"] == pytest.approx(
             lg_quarter * (1.0 - 2.0 * theta_c / math.pi), rel=1e-12)
         assert d["via_delta_mm"] == pytest.approx(1.0467, abs=5e-4)
-        # 旋钮语义：自动值（None）与显式几何值逐位一致；缝/宽/斜率不受补偿影响
-        assert d["res_len_mm"] == DESIGN_VIA["res_len_mm"]
+        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        # （≠ G-P 显式值）；缝/宽/斜率不受补偿影响
+        d_cal = ot.interdigital_design_from_order(3, F0, FBW, RL_DB,
+                                                  l_via_h=ot.C3_L_VIA_CAL_H)
+        assert d_cal["res_len_mm"] == DESIGN_VIA["res_len_mm"]
+        assert d["res_len_mm"] != DESIGN_VIA["res_len_mm"]
         assert d["gaps_mm"] == DESIGN["gaps_mm"] and d["w_mm"] == DESIGN["w_mm"]
         assert d["b_s"] == DESIGN["b_s"]
 
@@ -343,17 +347,17 @@ class TestInterdigitalFakeDispatch:
             _c3_sparams(freqs, T, dict(NOMINAL, order=4), f0_ghz=F0)
 
     def test_fake_via_opt_in_switch(self, freqs):
-        """fake 开关（保守判定）：缺省（无 l_via_h 变量）=理想短路——再生
-        名义几何带心上移 ~+6.3%（旧黄金钉保持，逐位复现理想短路旧口径）；
-        l_via_h="auto" 开过孔裁判带心回 f0，数值 H 与 "auto" 逐位一致，
-        FakeAdapter 通道与裁判函数同源。"""
+        """登记⑨ fake 开关（保守判定）：缺省（无 l_via_h 变量）=理想短路——
+        再生名义几何带心上移 ~+2.6%（0.125nH 补偿量，旧黄金钉保持，逐位复现
+        理想短路旧口径）；l_via_h="auto" 开过孔裁判带心回
+        f0，数值 H 与 "auto" 逐位一致，FakeAdapter 通道与裁判函数同源。"""
         from rfauto.adapters.fake_adapter import FakeAdapter, _c3_sparams
 
         nom = dict(NOMINAL)
         s_def = _c3_sparams(freqs, T, nom, f0_ghz=F0)
         s_auto = _c3_sparams(freqs, T, nom, f0_ghz=F0, l_via_h=None)
         s_expl = _c3_sparams(freqs, T, nom, f0_ghz=F0,
-                             l_via_h=ot.c3_via_inductance_h(0.508))
+                             l_via_h=ot.C3_L_VIA_CAL_H)
         assert np.array_equal(s_auto, s_expl)
         assert not np.array_equal(s_auto, s_def)
 

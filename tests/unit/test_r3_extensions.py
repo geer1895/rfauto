@@ -392,7 +392,10 @@ class TestEMSolverVisualizations:
         viz = solver.visualizations()
         assert isinstance(viz, list)
         formats = solver.supported_output_formats()
-        assert "touchstone" in formats
+        # C-LOW ③：palace 实际仅产 CSV（port-S.csv），无 Touchstone 写出
+        # ——6g 遗留 touchstone 声明已按实现如实修正
+        assert "csv" in formats
+        assert "touchstone" not in formats
 
     def test_palace_registered_in_global_registry(self):
         # palace_solver 曾从未注册（死代码，solvers list 不可见）

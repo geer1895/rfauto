@@ -81,8 +81,8 @@ def test_design_matches_nominal_constants():
             else:
                 assert round(got, 4) == want, key
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    assert DESIGN_VIA["l_via_h"] == pytest.approx(
-        ot.c3_via_inductance_h(0.508), rel=1e-12)
+    # R1：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
         IDEAL_NOMINAL["l_high_mm"] - NOMINAL["l_high_mm"], abs=5e-4)
     assert NOMINAL["l_low_mm"] == IDEAL_NOMINAL["l_low_mm"]   # 低阻段不变
@@ -184,7 +184,11 @@ class TestViaCompensationDesign:
         assert d["via_delta_mm"] == pytest.approx(0.7656, abs=5e-4)
         assert d["l_low_mm"] == DESIGN["l_low_mm"]        # 低阻段不变
         assert d["gaps_mm"] == DESIGN["gaps_mm"] and d["b_s"] == DESIGN["b_s"]
-        assert d["l_high_mm"] == DESIGN_VIA["l_high_mm"]
+        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        d_cal = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB,
+                                             l_via_h=ot.C3_L_VIA_CAL_H)
+        assert d_cal["l_high_mm"] == DESIGN_VIA["l_high_mm"]
+        assert d["l_high_mm"] != DESIGN_VIA["l_high_mm"]
 
     def test_compensated_geometry_resonates_at_f0_with_via(self):
         """闭环自证：补偿后高阻段在过孔端接下 Y(f0)≈0，|Y| 数值极小化=f0。"""
@@ -199,17 +203,29 @@ class TestViaCompensationDesign:
         yv = np.array([abs(ot.c3_y_sir(f, ere_lo, l_lo_e, z_lo, ere_hi, l_hi,
                                        z_hi, lv)) for f in fs])
         assert float(fs[np.argmin(yv)]) == pytest.approx(F0, abs=1e-4)
-        # 同一补偿长度在理想短路裁判下谐振上移（+5.8%，与过孔下移同源反号）；
+        # 同一补偿长度在理想短路裁判下谐振上移（0.125nH 补偿量 +2.38%，
+        # lcal_compute 实测，与过孔下移同源反号；旧 G-P 0.296nH 口径 +5.8%）；
         # 两段电长同随 f 缩放 → 谐振方程 tan(θ·f/F0)·tan(θ2c·f/F0)=tan²θ
         # （超越方程，谐振点回代检验，无简单闭式）
         fs2 = np.linspace(F0, F0 * 1.25, 4001)
         yv2 = np.array([abs(ot.c3_y_sir(f, ere_lo, l_lo_e, z_lo, ere_hi, l_hi,
                                         z_hi, 0.0)) for f in fs2])
         f_up = float(fs2[np.argmin(yv2)])
-        assert f_up > 1.05 * F0
+        # 网格 argmin 精度不足以支撑 1e-6 回代门（0.125nH 补偿量小、峰更靠
+        # 窗口下沿）——三点抛物线插值细化顶点（纯 numpy，确定性）
+        i_pk = int(np.argmin(yv2))
+        if 0 < i_pk < len(yv2) - 1:
+            denom = yv2[i_pk - 1] - 2.0 * yv2[i_pk] + yv2[i_pk + 1]
+            if denom > 0:
+                frac = 0.5 * (yv2[i_pk - 1] - yv2[i_pk + 1]) / denom
+                f_up = float(fs2[i_pk] + frac * (fs2[1] - fs2[0]))
+        assert f_up > 1.02 * F0
         t1u = math.tan(DESIGN["theta"] * f_up / F0)
         t2u = math.tan(DESIGN_VIA["theta_c_rad"] * f_up / F0)
-        assert t1u * t2u == pytest.approx(z_lo / z_hi, rel=1e-6)
+        # 回代一致性：数值定位（网格+抛物线细化）处谐振方程成立——rel 由定位
+        # 精度限定（0.125nH 补偿量小、|Y| 谷浅，2e-5 为实测余量；#118 独立
+        # 闭式回代而非 argmin 自证）
+        assert t1u * t2u == pytest.approx(z_lo / z_hi, rel=2e-5)
 
     def test_domain_guard_huge_inductance_raises(self):
         # 1µH：x·Z_hi·t1 ≫ Z_lo（过孔电感超出高阻段端接能力）→ 显式报错

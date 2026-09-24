@@ -5,6 +5,46 @@ All notable changes to rfauto will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Palace adapter** (opt-in, WSL2): full driven-simulation channel with
+  official v0.18.1 five-section config schema, multi-excitation S-matrix
+  port-S.csv parsing with measured-entry masks, a generated Windows-side
+  WSL wrapper (`palace_wsl_wrapper`) and graceful CI steps when the solver
+  assets are absent.
+- **SIW family** (first of its kind): closed-form two-source analysis and
+  synthesis calculators (`siw_analysis`, `siw_synthesis`), a via-fence
+  renderer with fence/port guards, fake-channel dispatch, template metadata
+  and an anchor smoke driver (`siw_anchor_smoke`).
+- **Desktop-process governance**: single-source `infra/desktop_guard`
+  (enumerated fail-closed desktop handling, orphan kill, watchdog helper)
+  adopted by all HFSS/Icepak/Q3D scripts.
+- Health-gate loading priority: masked `sparams.csv` takes precedence over
+  Touchstone for single-excitation runs; corrupt CSV archives stay corrupt
+  instead of silently falling back.
+- openEMS optimizer adapter product contract: `last_eval_dir` /
+  `eval_index_offset` (resume-safe evaluation numbering) and the GT campaign
+  driver (`c10_gt_campaign`) with explicit cache-off semantics.
+- C3 spurious-mode discrimination (`c3_spurious_modes`) and render/crosscheck
+  provenance discipline (`render_input_sha256`, run-literal crosscheck,
+  registration freshness) for redesign campaigns.
+- Multi-fidelity low-fi correction driver (`factory_mfk_lowfi_fix`) and
+  held-out plotting for HFSS anchor sets.
+- Slotline synth `realizable` semantics surfaced through CLI/MCP/REST
+  (unreachable designs return exit 0 with `realizable=False` + reason).
+
+### Changed
+- C3 filter family re-registration: via inductance calibrated to the HFSS
+  arbitration value 0.125 nH (Goldfarb-Pucel closed form kept as literature
+  formula), nominal geometry regenerated so rendered designs resonate back
+  at f0; combline cap emission audited as the conventional z-shunt usage.
+- Fake-channel wilkinson anchor switched to multiplicative scaling semantics
+  (`eps_eff_scale = 3.54/2.725`), keeping the sorted-ranking conclusions of
+  the calibration investigation unchanged.
+- CI quality gates pin `ruff==0.16.6` / `import-linter==2.15` and add a
+  graceful palace wrapper content check; the CSXCAD skip list is frozen by a
+  dedicated regression test (29 modules).
+- Docs: 44 parameterized template families; README test-count floor raised.
+
+### Added
 - `gbdt` surrogate model (opt-in `rfauto[gbdt]` extra) and a GP posterior-sigma
   saturation early-stop channel for surrogate optimization loops (opt-in).
 - Two-dimensional dataset collection drivers for the openEMS data factory

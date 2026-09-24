@@ -2039,8 +2039,9 @@ def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
                        freq_ghz: float) -> dict[str, Any]:
     """槽线（slotline）综合：目标 Z0 → 槽宽 w（窄槽段括号 brentq 反解 + 闭式回代自洽）。
 
-    无副作用，可安全调用。目标越窄槽段可达范围或基板/频率越域 ok=False
-    显式拒绝（error 含可达范围与括号）。
+    无副作用，可安全调用。目标超窄槽段可达范围 = 合法结果 realizable=False
+    （ok=True + reason 含可达范围，与 marchand 两节语义统一）；基板/频率越域
+    等参数非法仍 ok=False 显式拒绝（error 含域信息）。
 
     Args:
         z0_ohm: 目标特性阻抗 Ω（功率-电压定义）
@@ -2049,8 +2050,9 @@ def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
         freq_ghz: 频率 GHz
 
     Returns:
-        dict: {ok, result: {w_mm, z0_actual_ohm, eps_eff, lambda_ratio, beta_rad_m,
-               lambda_g_mm, segment}} 或 {ok: False, error}
+        dict: {ok, realizable, result: {w_mm, z0_actual_ohm, eps_eff,
+               lambda_ratio, beta_rad_m, lambda_g_mm, segment}}；
+               不可达 = {ok: True, realizable: False, reason}；非法 = {ok: False, error}
     """
     from rfauto.service.slotline_service import slotline_synthesis as _synthesis
     return _synthesis(z0_ohm, h_mm, epsilon_r, freq_ghz)

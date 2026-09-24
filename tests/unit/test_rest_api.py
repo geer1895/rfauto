@@ -737,6 +737,17 @@ class TestSlotlineTransitionsEndpoints:
         assert body["ok"] is True
         assert body["data"]["result"]["w_mm"] > 0
 
+    def test_slotline_synth_unreachable_is_legal_result(self, client):
+        """D5 语义统一（与 marchand 两节对齐）：超可达区间 = 200 + ok=True +
+        realizable=False + reason 含可达范围（合法结果非错误）。"""
+        body = client.post("/api/v1/slotline/synth", json={
+            "z0_ohm": 500.0, "h_mm": 1.524, "epsilon_r": 3.66,
+            "freq_ghz": 2.5,
+        }).json()
+        assert body["ok"] is True
+        assert body["data"]["realizable"] is False
+        assert "可达范围" in body["data"]["reason"]
+
     def test_msl_slot_transition_ok(self, client):
         body = client.post(
             "/api/v1/transitions/msl-slot", json=self._MSL).json()

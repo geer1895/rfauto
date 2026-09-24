@@ -431,6 +431,9 @@ _TEMPLATE_PORT_AXES: dict[str, tuple[str, ...]] = {
   # C2 阵列族（正式注册，文末 C2 段）：1×4/2×2 底探针集总
   # 馈 → 侧界全 MUR（patch 口径）；串馈 MSLPort 在 y=−BOARD 板边 → 单轴 y PML
   "patch_array_1x4": (), "patch_array_2x2": (), "patch_array_series": ("y",),
+  # SIW 族首族（2026-09-22 siw-family 立项，文末 SIW 段）：两端 LumpedPort z 桥
+  # 在 y 域内（16·BASE 出 PML）→ 单轴 y PML；x 侧界 MUR 吸收藩篱泄漏
+  "siw": ("y",),
 }
 
 # 四端口"单激励列轮转"模板（#208 进程隔离：适配器层按 excite_port=1..4
@@ -469,6 +472,8 @@ _TEMPLATE_RADIATOR: dict[str, bool] = {
   "cline_coupler": False, "lange": False, "branchline_2sect": False,
   # C2 阵列族：贴片阵全部辐射器件（λ0/4 空气隙；nf2ff 接地分支）
   "patch_array_1x4": True, "patch_array_2x2": True, "patch_array_series": True,
+  # SIW 族首族：封闭双板波导（上板=域顶 PEC），非辐射器件
+  "siw": False,
 }
 
 
@@ -1118,7 +1123,44 @@ def geometry_spec(
     elements = [{"name": f"elem{_i}", "kind": "patch_element",
            "center_mm": [float(_cx), float(_cy)]}
           for _i, (_cx, _cy) in enumerate(lay["elements_mm"])]
-  else: # patch (default fallback)
+  elif template == "siw":
+    # SIW 族首族：矩形域（layout 单源，审计档 0.4mm base 口径）；过孔藩篱
+    # 预览按列条带绘制（每孔小盒 ×77×2 过密，UI 只需拓扑示意）
+    lay = siw_layout(params, (9.75, 10.25), 0.4e-3,
+            float(params.get("h_mm", h)) * 1e-3)
+    boxes = [
+      {"name": "substrate", "material": "substrate",
+      "start_mm": [-lay["dom_x"] * 1e3, -lay["dom_y"] * 1e3, 0.0],
+      "stop_mm": [lay["dom_x"] * 1e3, lay["dom_y"] * 1e3,
+            lay["h"] * 1e3]},
+      {"name": "plate_bottom", "material": "metal",
+      "start_mm": [-lay["dom_x"] * 1e3, -lay["dom_y"] * 1e3, 0.0],
+      "stop_mm": [lay["dom_x"] * 1e3, lay["dom_y"] * 1e3, 0.0]},
+      {"name": "plate_top", "material": "metal",
+      "start_mm": [-lay["dom_x"] * 1e3, -lay["dom_y"] * 1e3,
+             lay["h"] * 1e3],
+      "stop_mm": [lay["dom_x"] * 1e3, lay["dom_y"] * 1e3,
+            lay["h"] * 1e3]},
+      {"name": "via_fence_left", "material": "metal",
+      "start_mm": [(lay["w"] / 2 - lay["d"] / 2) * 1e3,
+             lay["via_y"][0] * 1e3, 0.0],
+      "stop_mm": [(lay["w"] / 2 + lay["d"] / 2) * 1e3,
+            lay["via_y"][-1] * 1e3, lay["h"] * 1e3]},
+      {"name": "via_fence_right", "material": "metal",
+      "start_mm": [-(lay["w"] / 2 + lay["d"] / 2) * 1e3,
+             lay["via_y"][0] * 1e3, 0.0],
+      "stop_mm": [-(lay["w"] / 2 - lay["d"] / 2) * 1e3,
+            lay["via_y"][-1] * 1e3, lay["h"] * 1e3]},
+    ]
+    ports = [
+      {"name": "Port1（LumpedPort z 桥，R=Z_PV 闭式）",
+      "pos_mm": [0.0, lay["y1"] * 1e3, lay["h"] * 1e3 / 2.0],
+      "dir": [0.0, 0.0, 1.0]},
+      {"name": "Port2（LumpedPort z 桥，R=Z_PV 闭式）",
+      "pos_mm": [0.0, lay["y2"] * 1e3, lay["h"] * 1e3 / 2.0],
+      "dir": [0.0, 0.0, 1.0]},
+    ]
+  else:  # patch (default fallback)
     pl = float(params.get("patch_len_mm", 34.9))
     pw = float(params.get("patch_w_mm", 50.0))
     off = float(params.get("feed_offset_mm", 5.5))
@@ -1226,6 +1268,24 @@ def _near_points(template: str, params: dict[str, Any],
     # 线两端=LumpedPort 面（零厚 y 面必须恰在网格线，#212 审计①）
     ny += [-length / 2, length / 2]
     ny += edges(-length / 2, length / 2, 1e-3)
+  elif template == "siw":
+    # 过孔藩篱三线对精确入网（#198：列心 ±w/2、孔缘 ±d/2；每孔 y 向
+    # k·s∓d/2、k·s）+ 端口盒三向边/中线（#283：盒边=结构线，中线恰在
+    # 网格线上探针才逐位落位）——全部由 layout 单源给出（#349 最小间距
+    # 守卫在 siw_layout 内对同一线集执行）
+    lay = params.get("_siw_layout")
+    if lay is None:
+      raise ValueError(
+        "siw _near_points: 缺 _siw_layout（必须经 render_script 渲染）")
+    d, w = lay["d"], lay["w"]
+    nx += [w / 2 - d / 2, w / 2, w / 2 + d / 2,
+       -(w / 2 - d / 2), -w / 2, -(w / 2 + d / 2)]
+    # 端口盒 x 边 ±RX 精确入网（#283：盒边=结构线，缺线即生成期断言红）
+    nx += [lay["rx"], -lay["rx"]]
+    ny += [lay["y1"] - lay["py"], lay["y1"], lay["y1"] + lay["py"],
+       lay["y2"] - lay["py"], lay["y2"], lay["y2"] + lay["py"]]
+    for _yk in lay["via_y"]:
+      ny += [_yk - d / 2, _yk, _yk + d / 2]
   elif template == "suspended_stripline":
     w = float(params.get("w_mm", 0.9058)) * 1e-3
     length = float(params.get("line_len_mm", 40.0)) * 1e-3
@@ -1553,6 +1613,8 @@ def render_script(
     "patch_array_1x4": _patch_array_1x4_lines,
     "patch_array_2x2": _patch_array_2x2_lines,
     "patch_array_series": _patch_array_series_lines,
+    # SIW 族首族（文末 SIW 段，几何/端口/域单源 siw_layout）
+    "siw": _siw_lines,
   }
   # cps：LumpedPort R=闭式 Z0（CPS 无地共形闭式 _cps_ri，按本次渲染的基板
   # er/h 精算，惰性导入；同时作 CalcPort 参考阻抗——R≠50 时若仍按 50Ω 归一，
@@ -1567,6 +1629,18 @@ def render_script(
              float(substrate["h_mm"]), float(substrate["er"]))[1]
     params["_cps_r_ohm"] = round(_cps_z0, 4)
     z_ref_txt = repr(params["_cps_r_ohm"])
+  elif template == "siw":
+    # R=Z_PV=2b·Z_TE/w_eff 闭式（文末 SIW 段 _siw_r_port_ohm）；正常路径
+    # 已由 siw_layout 注入 _siw_r_ohm，此处只兜底直调缺键
+    if "_siw_r_ohm" not in params:
+      params["_siw_r_ohm"] = round(_siw_r_port_ohm(
+        float(params.get("w_mm", 12.1317)),
+        float(params.get("d_mm", 0.6)),
+        float(params.get("s_mm", 1.0)),
+        float(substrate["er"]),
+        float(params.get("h_mm", substrate["h_mm"])),
+        (freq_range_ghz[0] + freq_range_ghz[1]) / 2), 4)
+    z_ref_txt = repr(params["_siw_r_ohm"])
   f0 = (freq_range_ghz[0] + freq_range_ghz[1]) / 2 * 1e9
   fc = max((freq_range_ghz[1] - freq_range_ghz[0]) / 2 * 1e9, 1e6)
   er = float(substrate["er"])
@@ -1584,6 +1658,15 @@ def render_script(
   params["_h_sub_mm"] = h_m * 1e3
   if template == "sma_launcher":
     params["_sma_layout"] = sma_launcher_layout(params, h_m, base_m)
+  if template == "siw":
+    # siw：几何/端口/域单源 siw_layout（文末 SIW 段；矩形域 DOM_X/DOM_Y
+    # 字面注入见 f-string _dom_x_txt/_dom_y_txt）。h_mm 模板参数优先于
+    # substrate（slotline_family_params 同款合并），z 网格/基板盒/body/
+    # 近场线全部同源消费
+    h_m = float(params.get("h_mm", h_m * 1e3)) * 1e-3
+    params["_h_sub_mm"] = h_m * 1e3
+    params["_siw_layout"] = siw_layout(params, freq_range_ghz, base_m, h_m)
+    params["_siw_r_ohm"] = round(params["_siw_layout"]["r_port"], 4)
   body = render_fns.get(template, _patch_lines)(params)
   near_m = base_m / _knob_near_ratio
   if template in C3_TEMPLATES:
@@ -1643,10 +1726,11 @@ def render_script(
   # PEC 底边界会短路槽）
   # cps（C9）：无地共面带，基板下方空气——底 MUR + 域向下延 AIR_TOP
   bottom_bc = ("MUR" if (is_free_space or template in ("via", "slot", "cps"))
-         else "PEC")
-  # stripline / suspended_stripline：对称双面敷铜，上地 = z-max PEC 边界
-  # （下地 = z-min PEC）
-  top_bc = "PEC" if template in ("stripline", "suspended_stripline") else "MUR"
+        else "PEC")
+  # stripline / suspended_stripline / siw：对称双面敷铜（siw=上下金属板），
+  # 上地 = z-max PEC 边界（下地 = z-min PEC）
+  top_bc = "PEC" if template in ("stripline", "suspended_stripline",
+                 "siw") else "MUR"
   # 单变量对照旋钮：_boundary 六元覆盖 [x0,x1,y0,y1,bot,top]
   # （缺省 None=模板映射逐字节不变；CPS MUR→PML_8 归因对照跑用）
   if params.get("_boundary"):
@@ -1770,7 +1854,7 @@ def render_script(
           "atten_pi", "atten_t", "ratrace", "gysel", "branchline",
           "hairpin", "hairpin_alt", "coupled_bpf", "msl_cpw", "sma_launcher",
           "cline_coupler", "branchline_2sect", "lange",
-          "interdigital", "combline", "sir_bpf", "cps"):
+          "interdigital", "combline", "sir_bpf", "cps", "siw"):
     if template == "wstep":
       # 双段两 β + 引擎自算线阻抗 ZL（W2⑤ 定案 (a)）：
       # ReadUIData 用三探针算 Z_ref=sqrt(Et·dEt/(Ht·dHt))（驻波因子精确
@@ -1877,6 +1961,29 @@ def render_script(
         '"plane_dist_m"])\n'
         "  for _i, _fi in enumerate(f):\n"
         "    _bw.writerow([_fi, _y1_node, _y2_node, _plane_dist])\n"
+      )
+    elif template == "siw":
+      # siw 锚：端口元 y 坐标/实测差分线长（cps 同契约；LumpedPort 无 β，
+      # criteria §3）——S21 解缠相位斜率 ÷ plane_dist = β 测量（OE 锚 G1
+      # 主判）；Y0/Y1=端口盒中心（测量面），落格坐标由终网格实测
+      beta_block = (
+        '# siw 锚：端口元 y 坐标/实测差分线长（LumpedPort 无 β，'
+        'cps 同契约）\n'
+        '_ys = np.asarray(mesh.GetLines("y"), dtype=float)\n'
+        'def _y_node(_yv):\n'
+        '    _j = int(np.clip(np.searchsorted(_ys, _yv) - 1, 0, '
+        '_ys.size - 2))\n'
+        '    return float(0.5 * (_ys[_j] + _ys[_j + 1]))\n'
+        '_y1_node = _y_node(Y0)\n'
+        '_y2_node = _y_node(Y1)\n'
+        '_plane_dist = _y2_node - _y1_node\n'
+        'with open(CSV_PATH.replace("sparams.csv", "port_beta.csv"),\n'
+        '          "w", newline="") as _bfh:\n'
+        "    _bw = csv.writer(_bfh)\n"
+        '    _bw.writerow(["freq_hz", "port_y1_m", "port_y2_m", '
+        '"plane_dist_m"])\n'
+        "    for _i, _fi in enumerate(f):\n"
+        "        _bw.writerow([_fi, _y1_node, _y2_node, _plane_dist])\n"
       )
     elif template == "suspended_stripline":
       # 悬置带线（判读口径审）：前两列 freq_hz,
@@ -2035,7 +2142,13 @@ def render_script(
     'mesh.AddLine("z", H_SUB + AIR_TOP)\n'
     'mesh.SmoothMeshLines("z", BASE)\n'
   ) if template == "lange" else (
-    'mesh.AddLine("z", np.linspace(0, H_SUB, ' + repr(_sub_pts) + '))  '
+    # siw：封闭双板波导（上下板=域 z 边界 PEC），无空气区——基板 z
+    # _sub_cells 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项，criteria §4.8）
+    'mesh.AddLine("z", np.linspace(0, H_SUB, ' + repr(_sub_pts) + '))   '
+    "# 基板 _sub_cells 层（缺省 4=官方 substrate_cells=4；#313 z 向地板项）\n"
+    'mesh.SmoothMeshLines("z", BASE)\n'
+  ) if template == "siw" else (
+    'mesh.AddLine("z", np.linspace(0, H_SUB, ' + repr(_sub_pts) + '))   '
     "# 基板 _sub_cells 层（缺省 4=官方 substrate_cells=4；#313 z 向地板项）\n"
     'mesh.AddLine("z", H_SUB + AIR_TOP)\n'
     'mesh.SmoothMeshLines("z", BASE)\n'
@@ -2072,6 +2185,13 @@ def render_script(
     + (repr(_sma_lay["z_g"]) if _sma_lay else "0") + "), (BOARD, BOARD, "
     + (repr(_sma_lay["z_top"]) if _sma_lay else "H_SUB") + "), priority=0)\n"
   ) if template == "sma_launcher" else (
+    # siw：矩形域基板（DOM_X/DOM_Y 由 siw_layout 注入，填满域到边界）
+    "# siw：基板填满矩形域（上下板=域 z 边界 PEC + 显式零厚板见 body）\n"
+    'sub = CSX.AddMaterial("substrate", epsilon=ER,\n'
+    "                      kappa=TAND * 2 * np.pi * F0 * "
+    "8.854187817e-12 * ER)\n"
+    "sub.AddBox((-DOM_X, -DOM_Y, 0), (DOM_X, DOM_Y, H_SUB), priority=0)\n"
+  ) if template == "siw" else (
     "# 基板延伸到侧边界（guided；官方口径：无板边衍射）；"
     "地面 = z-min PEC 边界\n"
     'sub = CSX.AddMaterial("substrate", epsilon=ER,\n'
@@ -2286,6 +2406,14 @@ def render_script(
         "  print(\"rfauto SAR 链失败（不阻塞 S 参数）:\", _sare)\n"
       )
 
+  # 域半宽文本：缺省=BOARD 共享字面量（逐字节不变）；siw 矩形域由 layout
+  # 字面注入（BOARD=60mm 对 SIW 自动档 ~20M cells 超预算，criteria §2）
+  _dom_x_txt = "BOARD + AIR_SIDE"
+  _dom_y_txt = "BOARD + AIR_SIDE"
+  if template == "siw":
+    _dom_x_txt = repr(params["_siw_layout"]["dom_x"])
+    _dom_y_txt = repr(params["_siw_layout"]["dom_y"])
+
   return f'''#!/usr/env/python3
 """openEMS script (rfauto {template} template auto-generated, official-method mesh)."""
 import csv
@@ -2335,9 +2463,9 @@ AIR_TOP = {air_top!r}   # 辐射器件 λ0/4，guided 5mm
 AIR_SIDE = {air_side!r}  # 辐射器件侧向空气隙，guided 0（基板顶到边界）
 
 mesh = CSX.GetGrid()
-BOARD = 60e-3  # 板边（端口面/基板边缘）= guided 模板域边界
-DOM_X = BOARD + AIR_SIDE
-DOM_Y = BOARD + AIR_SIDE
+BOARD = 60e-3   # 板边（端口面/基板边缘）= guided 模板域边界
+DOM_X = {_dom_x_txt}
+DOM_Y = {_dom_y_txt}
 
 def _axis(ax: str, near_pts, dom_lo, dom_hi) -> None:
   """官方网格配方：走线近场 NEAR 精细区 + 全轴 BASE 渐变（SmoothMesh）。"""
@@ -5666,7 +5794,7 @@ def _ant2_body(template: str, p: dict[str, Any]) -> str:
     out.append(f'{prop} = CSX.AddMetal("{prop}")')
   for (prop, name, x0, y0, z0, x1, y1, z1) in lay["boxes"]:
     out.append(f'{prop}.AddBox(({m(x0)}, {m(y0)}, {m(z0)}), '
-          f'({m(x1)}, {m(y1)}, {m(z1)}), priority=10) # {name}')
+          f'({m(x1)}, {m(y1)}, {m(z1)}), priority=10)  # {name}')
   for port in lay["ports"]:
     s, t = port["start_mm"], port["stop_mm"]
     nr = int(port["nr"])
@@ -5792,52 +5920,66 @@ def _slot_lines(p: dict[str, Any]) -> str:
 #  L_phys+Δl 等效长度回代——同源同口径，不再引入二阶失谐（对照
 #  coupled_bpf 的物理长直代口径，此处选择等效长度并在 notes 声明）。
 # 7) 端口铁律自查：馈线耦合段与棒间隙 s 全程 DC 隔离（PORT_GROUPS
-#  (1,)(2,) 缝耦合族判据，N+2 分量）；过孔柱/装载电容盒边全部精确入网
-#  （#198/#174）；棒接地端过孔半径 0.15mm（via 基元同款）。
-# 8) 接地过孔电感（裁判闭式补项）：短路端不是理想短路而是
-#  串联 jωL_via 接地。口径 = Goldfarb & Pucel, "Modeling via hole grounds in
-#  microstrip", IEEE Microwave and Guided Wave Letters, vol.1 no.6, pp.135-137,
-#  1991：L_via=(μ0/2π)·h·[ln(4h/d)+1]（h=过孔长=基板厚，d=过孔直径；工程式
-#  L[nH]=5.08e-3·h[mil]·[ln(4h/d)+1] 的 SI 形式，5.08e-3nH/mil≡μ0/2π）。
-#  λ/4 短路棒并联谐振条件由 tanθ=∞ 变为 tanθ=Z_r/(ωL_via)（谐振下移）；
-#  combline 装载条件 ωC=(1−x·t)/(Z_r(x+t))、SIR 高阻段 Z_B 按 L 端接变换
-#  （x=ωL/Z，t=tanθ）。三模板真机峰位 −4.7/−5.15/−4.6%
-#  与该项同量级——裁判 c3_circuit_sparams(l_via_h=None) 自动取几何值
-#  （h_mm × 2·_C3_R_VIA_MM），l_via_h=0.0（缺省）逐位复现理想短路旧口径。
+#    (1,)(2,) 缝耦合族判据，N+2 分量）；过孔柱/装载电容盒边全部精确入网
+#    （#198/#174）；棒接地端过孔半径 0.15mm（via 基元同款）。
+# 8) 接地过孔电感（裁判闭式补项；校准修订）：
+#    短路端不是理想短路而是串联 jωL_via 接地。原口径 = Goldfarb & Pucel,
+#    "Modeling via hole grounds in microstrip", IEEE Microwave and Guided Wave
+#    Letters, vol.1 no.6, pp.135-137, 1991：L_via=(μ0/2π)·h·[ln(4h/d)+1]
+#    （via_inductance_h，h=0.508/d=0.3 → 0.29596nH）。**校准**：
+#    HFSS interdigital 仲裁反解 0.12–0.13nH（audit2 证据）⇒ G-P 对"连续 PEC
+#    地面粗短过孔"高估 2.2–2.5×（次根因：补偿过缩短，峰 +4.1%）；
+#    auto（l_via_h=None）改取校准值 C3_L_VIA_CAL_H=0.125nH（HFSS 区间中点；
+#    HFSS 结果为对齐基准）；G-P 闭式保留为 via_inductance_h/c3_via_
+#    inductance_h 文献公式（离线判别消费者不变）；OE 反解 ≈0.20nH 与 HFSS 差
+#    异=跨引擎发现（OE 哨预期承载）。
+#    λ/4 短路棒并联谐振条件由 tanθ=∞ 变为 tanθ=Z_r/(ωL_via)（谐振下移）；
+#    combline 装载条件 ωC=(1−x·t)/(Z_r(x+t))、SIR 高阻段 Z_B 按 L 端接变换
+#    （x=ωL/Z，t=tanθ）。三模板真机峰位 −4.7/−5.15/−4.6%
+#    与该项同量级——裁判 c3_circuit_sparams(l_via_h=None) 自动取校准值，
+#    l_via_h=0.0（缺省）逐位复现理想短路旧口径。
 # 9) 耦合缝网格守卫（#266，c3_gap_mesh_guard）：NEAR=base/4 ≤ 最小耦合缝/3，
-#  违反即 render_script 抛 ValueError（缺省 mesh=0 → NEAR 0.285mm > 外缝
-#  0.139~0.242mm ⇒ 缝内零内部线、外 Q 建模粗、峰位 −5%，不许静默粗网格）。
+#    违反即 render_script 抛 ValueError（缺省 mesh=0 → NEAR 0.285mm > 外缝
+#    0.139~0.242mm ⇒ 缝内零内部线、外 Q 建模粗、峰位 −5%，不许静默粗网格）。
 # 10) 设计链过孔补偿（登记⑨，纯离线）：谐振棒长按谐振条件**精确解**
-#  缩短，使渲染几何在过孔存在下谐振回 f0——
-#  - interdigital（λ/4 短路棒）：tanθ_c=Z_r/(ω0 L)（口径 8 谐振条件反解），
-#   θ_c=arctan(Z_r/(ω0L))<π/2，物理长=θ_c·c/(ω0√εeff)−Δl_open，即电长按
-#   2θ_c/π 比例缩短；
-#  - combline（装载电容+过孔）：ω0C=(1−x t)/(Z_r(x+t))（口径 8）解出
-#   t=(1−A x)/(A+x)（A=ω0CZ_r=cotθr、x=ω0L/Z_r），θ_c=arctan(t)，C 不变、
-#   棒长重解；无正解判据 x≥tanθr（过孔电感超出装载能力）显式报错；
-#  - sir_bpf（高阻段过孔端接）：Z_B=jZ_hi(x+t2)/(1−x t2) 代入谐振
-#   Z_B=jZ_lo/t1 → t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，θ2c=arctan(t2)，低阻
-#   段/缝不变、高阻段重解；无正解判据 x Z_hi t1≥Z_lo（t2≤0）显式报错。
-#  三族均为**精确谐振条件解**（无 tanθ≈θ 近似），适用域 θ_c∈(0,π/2)
-#  （工程有效域 x=ω0L/Z≪1，名义 x≈0.093/0.066）；斜率 b/J/缝仍取理想短路
-#  口径——经由孔对 b 为二阶小量（λ/4 族恒等式 θ_c+x/(1+x²)≈π/2，名义点
-#  b 相对变化 <0.1%，三族同构）。设计链开关 l_via_h：0.0（缺省）=理想短路
-#  **逐字节复现补偿前口径**、None=按几何自动、显式 float=指定电感（H）；
-#  补偿生效时设计 dict 增补 l_via_h/theta_c_rad/via_delta_mm 三键。
-#  NOMINAL/meta.yaml/synthesizer（template_specs）=补偿口径再生（
-#  渲染几何谐振回 f0）；fake 同源通道缺省保持理想短路（旧黄金钉保持），
-#  过孔裁判经变量 l_via_h（"auto"/数值 H）显式开启。
+#    缩短，使渲染几何在过孔存在下谐振回 f0——
+#    - interdigital（λ/4 短路棒）：tanθ_c=Z_r/(ω0 L)（口径 8 谐振条件反解），
+#      θ_c=arctan(Z_r/(ω0L))<π/2，物理长=θ_c·c/(ω0√εeff)−Δl_open，即电长按
+#      2θ_c/π 比例缩短；
+#    - combline（装载电容+过孔）：ω0C=(1−x t)/(Z_r(x+t))（口径 8）解出
+#      t=(1−A x)/(A+x)（A=ω0CZ_r=cotθr、x=ω0L/Z_r），θ_c=arctan(t)，C 不变、
+#      棒长重解；无正解判据 x≥tanθr（过孔电感超出装载能力）显式报错；
+#    - sir_bpf（高阻段过孔端接）：Z_B=jZ_hi(x+t2)/(1−x t2) 代入谐振
+#      Z_B=jZ_lo/t1 → t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，θ2c=arctan(t2)，低阻
+#      段/缝不变、高阻段重解；无正解判据 x Z_hi t1≥Z_lo（t2≤0）显式报错。
+#    三族均为**精确谐振条件解**（无 tanθ≈θ 近似），适用域 θ_c∈(0,π/2)
+#    （工程有效域 x=ω0L/Z≪1，名义 x≈0.093/0.066）；斜率 b/J/缝仍取理想短路
+#    口径——经由孔对 b 为二阶小量（λ/4 族恒等式 θ_c+x/(1+x²)≈π/2，名义点
+#    b 相对变化 <0.1%，三族同构）。设计链开关 l_via_h：0.0（缺省）=理想短路
+#    **逐字节复现补偿前口径**、None=按几何自动、显式 float=指定电感（H）；
+#    补偿生效时设计 dict 增补 l_via_h/theta_c_rad/via_delta_mm 三键。
+#    NOMINAL/meta.yaml/synthesizer（template_specs）=校准补偿口径再生（新战役
+#    渲染几何谐振回 f0）；fake 同源通道缺省保持理想短路（旧黄金钉保持），
+#    过孔裁判经变量 l_via_h（"auto"/数值 H）显式开启。
 #
 # ── 真机后置（followUp）：openEMS 冒烟不在本项（循 coupled_bpf NrTS
 # PARTIAL 先例，留待后续真机批次）。
 
-_C3_C_MM_GHZ = 299.792458    # mm·GHz（真空光速，core/_HAIRPIN/_ANT2 同口径）
-_C3_Z0 = 50.0          # 棒/馈线单线设计阻抗（Ω，skrf HJ 精算线宽）
-_C3_R_VIA_MM = 0.15       # 接地过孔半径（via 基元同款，渲染常数）
-_C3_CAP_LEN_MM = 0.5       # 梳状装载电容 LumpedElement 盒 y 向长（棒顶端内侧）
-_C3_COHN_X_MAX = 0.65      # j(x)=x/(Z0(1+x²+x⁴)) 单调区上界（驻点 x≈0.6589）
-_C3_GAP_CELLS_MIN = 3.0     # 耦合缝内最少 NEAR 格数（守卫 NEAR ≤ 缝/3，#266）
-_MU0_H_PER_M = 4.0e-7 * math.pi # 真空磁导率（Goldfarb-Pucel 系数 μ0/2π=2e-7）
+_C3_C_MM_GHZ = 299.792458        # mm·GHz（真空光速，core/_HAIRPIN/_ANT2 同口径）
+_C3_Z0 = 50.0                    # 棒/馈线单线设计阻抗（Ω，skrf HJ 精算线宽）
+_C3_R_VIA_MM = 0.15              # 接地过孔半径（via 基元同款，渲染常数）
+_C3_CAP_LEN_MM = 0.5             # 梳状装载电容 LumpedElement 盒 y 向长（棒顶端内侧）
+_C3_COHN_X_MAX = 0.65            # j(x)=x/(Z0(1+x²+x⁴)) 单调区上界（驻点 x≈0.6589）
+_C3_GAP_CELLS_MIN = 3.0          # 耦合缝内最少 NEAR 格数（守卫 NEAR ≤ 缝/3，#266）
+_MU0_H_PER_M = 4.0e-7 * math.pi  # 真空磁导率（Goldfarb-Pucel 系数 μ0/2π=2e-7）
+# 过孔电感校准值（2026-09-22 校准）：l_via_h=None（auto）的解析结果。
+# 依据 HFSS interdigital 仲裁反解 0.12–0.13nH（audit2 证据：
+# θ(2.60)=1.5350、ωL=1.953Ω@2.60GHz）取区间中点
+# 0.125nH——"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
+# （c3_via_inductance_h，0.29596nH）对"连续 PEC 地面上粗短过孔"高估 2.2–2.5×
+# （次根因），降级为文献公式保留；OE 反解
+# ≈0.20nH 与 HFSS 的差异如实登记为跨引擎发现（OE 哨预期承载，不进定值）。
+C3_L_VIA_CAL_H = 0.125e-9
 C3_TEMPLATES: tuple[str, ...] = ("interdigital", "combline", "sir_bpf")
 
 
@@ -5859,9 +6001,10 @@ def c3_via_inductance_h(h_mm: float, r_via_mm: float = _C3_R_VIA_MM) -> float:
 
 
 def _c3_via_resolved_h(l_via_h: float | None, h_mm: float) -> float:
-  """设计链过孔电感三态解析（口径 10）：0.0=理想短路（缺省，逐字节复现补偿
-  前口径）、None=按几何自动取 c3_via_inductance_h(h_mm)、显式 float=指定（H）。"""
-  lv = c3_via_inductance_h(h_mm) if l_via_h is None else float(l_via_h)
+  """设计链过孔电感三态解析（口径 10 校准）：0.0=理想短路（缺省，逐字节
+  复现补偿前口径）、None=按校准值 C3_L_VIA_CAL_H（HFSS 仲裁 0.125nH；原
+  Goldfarb-Pucel 几何值高估，见常量注）、显式 float=指定（H）。"""
+  lv = C3_L_VIA_CAL_H if l_via_h is None else float(l_via_h)
   if lv < 0.0:
     raise ValueError(f"l_via_h 须 ≥0，得 {l_via_h}")
   return lv
@@ -6353,14 +6496,16 @@ def c3_circuit_sparams(template: str, freq_ghz: Any, params: dict[str, Any],
   对照 C13 互证锚），否则由几何参数 KJ 闭式回代（fake 同源通道，#154
   缝列表同索引同语义）。
 
-  l_via_h=接地过孔电感（H，§C3 口径 8，Goldfarb-Pucel 1991）：
+  l_via_h=接地过孔电感（H，§C3 口径 8，Goldfarb-Pucel 1991 闭式经 HFSS 仲裁
+  校准，R1）：
   0.0（缺省）=理想短路（逐位复现旧口径，fake 同源/设计闭合测试不变）；
-  None=按几何自动取 c3_via_inductance_h(h_mm)（真机裁判口径，冒烟判读用）；
+  None=按校准值 C3_L_VIA_CAL_H（HFSS 仲裁 0.125nH，真机裁判口径，冒烟判读用；
+  原 auto=Goldfarb-Pucel 几何值 0.29596nH 系高估已弃）；
   显式 float=指定电感（H）。
   """
   if template not in C3_TEMPLATES:
     raise ValueError(f"非 C3 模板: {template}")
-  lv = c3_via_inductance_h(h_mm) if l_via_h is None else float(l_via_h)
+  lv = C3_L_VIA_CAL_H if l_via_h is None else float(l_via_h)
   if lv < 0.0:
     raise ValueError(f"l_via_h 须 ≥0，得 {l_via_h}")
   if synchronous_tem:
@@ -6452,7 +6597,8 @@ def interdigital_design_from_order(
     y_via = c3_y_shorted_stub(float(f0_ghz), ere,
                  res_len + dl, z_r, lv)
     notes.append(
-      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（Goldfarb-Pucel，"
+      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（HFSS 仲裁校准值"
+      f" C3_L_VIA_CAL_H，原 Goldfarb-Pucel 0.29596nH 系高估；"
       f"h={h_mm}mm/d={2.0 * _C3_R_VIA_MM}mm）→ tanθ_c=Z_r/(ω0L)，"
       f"θ_c={via['theta_c_rad']:.5f} rad，棒电长缩短 "
       f"{via['via_delta_mm']:.4f}mm → res_len={res_len:.4f}mm；"
@@ -6557,8 +6703,9 @@ def combline_design_from_order(
   ]
   if via:
     notes.append(
-      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（Goldfarb-Pucel，"
-      f"h={h_mm}mm/d={2.0 * _C3_R_VIA_MM}mm）→ t=(1−Ax)/(A+x)"
+      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（HFSS 仲裁校准值"
+      f" C3_L_VIA_CAL_H，原 Goldfarb-Pucel 系高估；h={h_mm}mm/"
+      f"d={2.0 * _C3_R_VIA_MM}mm）→ t=(1−Ax)/(A+x)"
       f"（A=ω0CZ_r={big_a:.4f}），θ_c={via['theta_c_rad']:.5f} rad，棒长"
       f"缩短 {via['via_delta_mm']:.4f}mm → res_len={res_len:.4f}mm"
       f"（C={c_pf:.4f} pF 不变）；Y(f0) 过孔端接自证 |Y|={abs(y_res):.2e} S"
@@ -6682,8 +6829,9 @@ def sir_bpf_design_from_order(
   ]
   if via:
     notes.append(
-      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（Goldfarb-Pucel，"
-      f"h={h_mm}mm/d={2.0 * _C3_R_VIA_MM}mm）→ 高阻段端接 t2=(Z_lo−Z_hi t1 x)"
+      f"过孔补偿（口径 10）：l_via={lv * 1e9:.4f} nH（HFSS 仲裁校准值"
+      f" C3_L_VIA_CAL_H，原 Goldfarb-Pucel 系高估；h={h_mm}mm/"
+      f"d={2.0 * _C3_R_VIA_MM}mm）→ 高阻段端接 t2=(Z_lo−Z_hi t1 x)"
       f"/(Z_hi t1+Z_lo x)（x=ω0L/Z_hi={x_via:.4f}），θ2c="
       f"{via['theta_c_rad']:.5f} rad，高阻段缩短 {via['via_delta_mm']:.4f}mm"
       f" → l_high={l_hi:.4f}mm（低阻段/缝不变）；Y(f0) 过孔端接自证 "
@@ -6833,7 +6981,7 @@ def _c3_body(template: str, p: dict[str, Any]) -> str:
   for (x0, y0, x1, y1), name in zip(lay["boxes"], lay["box_names"],
                    strict=True):
     lines.append(f'{template}.AddBox(({x0!r}, {y0!r}, H_SUB), '
-           f'({x1!r}, {y1!r}, H_SUB), priority=10) # {name}')
+           f'({x1!r}, {y1!r}, H_SUB), priority=10)  # {name}')
   if lay["vias"]:
     lines.append(f'{template}_via = CSX.AddMetal("{template}_via")')
     for (xc, yc) in lay["vias"]:
@@ -6843,6 +6991,13 @@ def _c3_body(template: str, p: dict[str, Any]) -> str:
   if template == "combline":
     c_f = float(p.get("c_load_pf",
              TEMPLATE_NOMINAL["combline"]["c_load_pf"])) * 1e-12
+    # 装载帽=shunt 对地惯用法（审计判定等效）：CSXCAD
+    # 绑定的方向 kwarg 参数名就叫 ny（仅收 ny），**值**=方向索引
+    # （CheckNyDir：0/1/2=x/y/z）⇒ ny=2 即 z-directed——电压沿 z 跨基板
+    # 全隙（棒面 z=H_SUB→地 z=0），端帽 PEC 板落在 z=0/z=H_SUB 既有 PEC
+    # 面（无新增短路墙），EC_C 只改 z 边（棒 y 边金属不被切断）——与
+    # c_load_pf 的集总对地电容 KCL 语义一致。SC"ny=2 全高盒非 shunt 惯
+    # 用法"指控系把参数名误读为 y 方向。
     for k_i, (x0, y0, x1, y1) in enumerate(lay["caps"], start=1):
       lines.append(f'_c_load{k_i} = CSX.AddLumpedElement('
              f'"c_load{k_i}", ny=2, caps=True, C={c_f!r})')
@@ -6911,14 +7066,15 @@ INTERDIGITAL_META: dict[str, Any] = {
         "平行排列，接地端交替（奇棒底端过孔/偶棒顶端过孔），相邻棒全长"
         "缝耦合；双 50Ω 馈线缝耦合自 y=−BOARD 板边引入（单轴 PML）",
   "param_semantics": "order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 "
-            "order 而不改列表=非法），w_mm=棒/馈线宽（50Ω，skrf HJ "
-            "综合），res_len_mm=棒物理长（λ/4 − 过孔缩短 − 开路端 "
-            "Δl，登记⑨ 过孔补偿口径：tanθ_c=Z_r/(ω0L_via)、"
-            "L_via=0.29596nH Goldfarb-Pucel；缺省渲染几何在过孔存在"
-            "下谐振回 f0），gaps_mm"
-            "[j]=第 j 缝边到边（j=0 馈-棒1 … j=N 棒N-馈，"
-            "fake/openEMS 两通道同索引同语义 #154），feed_len_mm="
-            "板边到棒阵列底端的馈线段长（阵列 y 居中 ⇒ 两馈等长）",
+           "order 而不改列表=非法），w_mm=棒/馈线宽（50Ω，skrf HJ "
+           "综合），res_len_mm=棒物理长（λ/4 − 过孔缩短 − 开路端 "
+           "Δl，登记⑨ 校准口径：tanθ_c=Z_r/(ω0L_via)、"
+           "L_via=0.125nH HFSS 仲裁校准值（原 "
+           "Goldfarb-Pucel 0.29596nH 高估已弃）；缺省渲染几何在过孔"
+           "存在下谐振回 f0），gaps_mm"
+           "[j]=第 j 缝边到边（j=0 馈-棒1 … j=N 棒N-馈，"
+           "fake/openEMS 两通道同索引同语义 #154），feed_len_mm="
+           "板边到棒阵列底端的馈线段长（阵列 y 居中 ⇒ 两馈等长）",
   "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；"
          "棒/馈缘+过孔中心精确入网（#198 精确入网）",
 }
@@ -6927,16 +7083,18 @@ INTERDIGITAL_NOMINAL: dict[str, Any] = {
   "order": 3,
   # 50Ω 棒/馈线宽 = round(live inverse_width(50,2.5,rogers4350b),4)（铁律 1c）
   "w_mm": 1.1117,
-  # 过孔补偿口径（登记⑨，设计链 l_via_h=None 自动值 0.29596nH）：
-  # λ/4(εeff=2.8578)=17.7338 − 过孔缩短 1.0467（tanθ_c=Z_r/(ω0L)，θ_c=1.47808）
-  # − Δl(1.1117)=0.2086（开路端等效长度口径）= 16.4785
-  "res_len_mm": 16.4785,
+  # 过孔补偿口径（登记⑨ 校准 2026-09-22，设计链 l_via_h=None 自动值
+  # C3_L_VIA_CAL_H=0.125nH）：λ/4(εeff=2.8578)=17.7338 − 过孔缩短 0.4431
+  # （tanθ_c=Z_r/(ω0L)，θ_c=1.531547）− Δl(1.1117)=0.2086（开路端等效长度
+  # 口径）= 17.0820。旧 G-P auto 值 0.29596nH 高估致补偿过缩短
+  # （16.4785，全波峰 +4.1%，次根因）
+  "res_len_mm": 17.0820,
   # C13 N=3/RL20/δ5% → Q_e=17.0689、k=0.051514；b=π/(4·49.998)=0.015708 S →
   # J=[4.290e-3, 8.09e-4, 8.09e-4, 4.290e-3] S → KJ 一维反解缝（4 位舍入；
   # 过孔对 b 二阶 <0.1%，缝与理想短路口径相同）
   "gaps_mm": [0.2263, 1.3567, 1.3567, 0.2263],
   # 60 − res_len/2（棒阵列 y 居中 ⇒ 两馈等长）
-  "feed_len_mm": 51.7608,
+  "feed_len_mm": 51.4590,
 }
 
 COMBLINE_META: dict[str, Any] = {
@@ -6966,12 +7124,13 @@ COMBLINE_NOMINAL: dict[str, Any] = {
   "order": 3,
   "w_mm": 1.1117,
   # θr=π/4：cot θr=ω0CZ_r → C=1/(ω0·Z_r)=1.2732pF（Z_r=HJ 49.9998Ω）；
-  # res_len=θr·c/(ω0√εeff)=8.8669 − 过孔缩短 1.0467（t=(1−Ax)/(A+x)、
-  # A=ω0CZ_r=1，θ_c=0.69269 rad；登记⑨ 过孔补偿，C 不变棒长重解）= 7.8202
-  "res_len_mm": 7.8202,
+  # res_len=θr·c/(ω0√εeff)=8.8669 − 过孔缩短 0.4431（t=(1−Ax)/(A+x)、
+  # A=ω0CZ_r=1，θ_c=0.746148 rad；登记⑨ 校准 0.125nH 过孔补偿，
+  # C 不变棒长重解）= 8.4238
+  "res_len_mm": 8.4238,
   # b=½(ω0C+csc²θr·θr/Z_r)=0.025707 S（装载抬升 1.64×）→ 缝更紧
   "gaps_mm": [0.1393, 0.9291, 0.9291, 0.1393],
-  "feed_len_mm": 56.0899,
+  "feed_len_mm": 55.7881,
   "c_load_pf": 1.2732,
 }
 
@@ -7006,13 +7165,13 @@ SIR_BPF_NOMINAL: dict[str, Any] = {
   "w_low_mm": 1.8944,
   "w_high_mm": 0.6144,
   # 低阻段电长 6.7941 − Δl(w_low)=0.2222 → 物理 6.5719；高阻段电长 7.1055
-  # − 过孔缩短 0.7656（t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，θ2c=0.54916 rad；
-  # 登记⑨ 过孔补偿）= 6.3399（接地端无 Δl）
+  # − 过孔缩短 0.3237（t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，θ2c=0.587437 rad；
+  # 登记⑨ 校准 0.125nH 过孔补偿）= 6.7818（接地端无 Δl）
   "l_low_mm": 6.5719,
-  "l_high_mm": 6.3399,
+  "l_high_mm": 6.7818,
   "gaps_mm": [0.2417, 1.5189, 1.5189, 0.2417],
   # 60 − (l_low+l_high)/2（棒阵列 y 居中）
-  "feed_len_mm": 53.5441,
+  "feed_len_mm": 53.3232,
 }
 
 # ── 注册：三模板正式注册 ──
@@ -7515,7 +7674,7 @@ def _arr_body(template: str, p: dict[str, Any]) -> str:
     out.append(f'{prop} = CSX.AddMetal("{prop}")')
   for (prop, name, x0, y0, z0, x1, y1, z1) in lay["boxes"]:
     out.append(f'{prop}.AddBox(({m(x0)}, {m(y0)}, {m(z0)}), '
-          f'({m(x1)}, {m(y1)}, {m(z1)}), priority=10) # {name}')
+          f'({m(x1)}, {m(y1)}, {m(z1)}), priority=10)  # {name}')
   for port in lay["ports"]:
     s, t = port["start_mm"], port["stop_mm"]
     nr = int(port["nr"])
@@ -8143,7 +8302,7 @@ def _c4_body_lines(template: str, p: dict[str, Any]) -> str:
            f'{template} = CSX.AddMetal("{template}")']
   for (nm, x0, y0, z0, x1, y1, z1) in lay["boxes"]:
     out.append(f"{template}.AddBox(({x0!r}, {y0!r}, {z0!r}), "
-          f"({x1!r}, {y1!r}, {z1!r}), priority=10) # {nm}")
+          f"({x1!r}, {y1!r}, {z1!r}), priority=10)  # {nm}")
   for pt in lay["ports"]:
     sx, sy, _ = pt["start"]
     tx, ty, _ = pt["stop"]
@@ -8296,7 +8455,308 @@ TEMPLATE_NOMINAL["branchline_2sect"] = BRANCHLINE_2SECT_NOMINAL
 TEMPLATE_META["lange"] = LANGE_META
 TEMPLATE_NOMINAL["lange"] = LANGE_NOMINAL
 
-# ══ 槽线族正式注册 ══
+# ══ SIW 族首族：直 SIW 传输线段（2026-09-22 siw-family 立项）══════════════════
+# 权威口径：siw_family criteria.md（文献双源/闭式/激励方案利弊/预声明门）。
+# 结构：基板 z∈[0,h]（上下显式零厚金属板贴 z 边界 PEC——与边界等电势冗余，使
+# 桥-板-过孔连通图物理化）+ 两列金属化过孔 PEC 圆柱（x=±w/2，心距 s，贯通
+# 全域直入 PML——slotline_lumped"匹配端接"口径，端口背后无开路 stub/短路面）。
+# 端口：两端 LumpedPort z 桥（中线 x=0、跨全高；TE10 的 E_z 沿 z 在中线最大，
+# 带内高阶模全倏逝——criteria.md §3），R=闭式 Z_PV=2b·Z_TE/w_eff。
+# 域：x 半宽 = w/2 + w_eff/2（藩篱外倏逝尾 e^−π≈4% 处截断，侧界 MUR 吸收
+# 泄漏）；y 半宽 = line_len/2 + 16·BASE（端口出 PML_8，slotline_lumped
+# PORT_INSET_BASE=16 先例）——BOARD=60e-3 共享字面量对本模板不适用（自动档
+# 约 20M cells 超预算），DOM_X/DOM_Y 由 layout 字面注入（机制层 per-template
+# 分支，他模板渲染文本逐字节不变）。
+# β 判读：LumpedPort 无 beta 属性（cps 同坑）→ port_beta.csv 落端口元 y 坐标
+# + plane_dist_m（cps 契约复用）；WaveguidePort 解析 β=闭式自证不可作判据
+# （criteria.md §3 弃用理由 2，#118 不自证）。
+# 端口方案 v2（2026-09-23，v2_criteria.md）：opt-in
+# 旋钮 params["_port_mode"]="v2"=藩篱止于端口面+端面口径 LumpedPort（跨介质
+# 孔径 ±W/2、R=Z_PV 不变）——按原 G3 门重裁的 §R2 路线；缺省 v1 渲染逐字节
+# 不变（字节钉 test_siw_v1_default_render_byte_pin）。
+
+_SIW_PORT_INSET_BASE = 16.0   # 端口面→y 域边界净距（×BASE；PML_8≈8·BASE 的 2×）
+_SIW_MESH_FLOOR_M = 10e-6     # 显式近场线最小间距地板（#349，渲染期 ValueError）
+
+
+def _siw_r_port_ohm(w_mm: float, d_mm: float, s_mm: float, epsilon_r: float,
+          h_mm: float, f0_ghz: float) -> float:
+  """LumpedPort R = 等效 RWG TE10 功率-电压阻抗 Z_PV=2·b·Z_TE/w_eff（Ω）。
+
+  确定性闭式（#7）：V=中线全高电压=E0·b、P=E0²·a·b/(4·Z_TE) 消元 ⇒
+  Z_PV=2b·Z_TE/w_eff，Z_TE=ωμ0/β（criteria.md §2；与 OE 锚判读同源）。
+  """
+  from rfauto.core.calculators import siw_beta_rad_m, siw_effective_width_mm
+
+  weff_mm = siw_effective_width_mm(w_mm, d_mm, s_mm)
+  beta, _fc = siw_beta_rad_m(weff_mm, epsilon_r, f0_ghz)
+  if not (math.isfinite(beta) and beta > 0.0):
+    raise ValueError(
+      f"siw: 频带中心 {f0_ghz}GHz 低于 TE10 截止（fc10={_fc:.4f}GHz）"
+      "——SIW 线段必须工作在传播区")
+  z_te = 2.0 * math.pi * f0_ghz * 1e9 * 1.25663706212e-6 / beta
+  return 2.0 * float(h_mm) * 1e-3 * z_te / (weff_mm * 1e-3)
+
+
+def siw_layout(params: dict[str, Any], freq_range_ghz: tuple[float, float],
+       base_m: float, h_m: float) -> dict[str, Any]:
+  """直 SIW 线段几何/端口/域单一事实源（mm 入参 → 米字面量 + 守卫）。
+
+  所有名义派生量（w_eff/β/λg/R_port/过孔栅格/端口盒）在此一次计算，body/
+  近场线/机制分支（DOM_X/DOM_Y、substrate、z 网格）同源消费——#198/#212
+  单源纪律。设计规则违规/网格欠分辨显式 ValueError 拒渲染。
+  """
+  from rfauto.core.calculators import (
+    siw_beta_rad_m,
+    siw_check_design_rules,
+    siw_effective_width_mm,
+  )
+
+  w = float(params.get("w_mm", 12.1317)) * 1e-3
+  d = float(params.get("d_mm", 0.6)) * 1e-3
+  s = float(params.get("s_mm", 1.0)) * 1e-3
+  line_len = float(params.get("line_len_mm", 63.0724)) * 1e-3
+  er = float(params.get("er", _DEFAULT_SUB["er"]))
+  f0 = 0.5 * (float(freq_range_ghz[0]) + float(freq_range_ghz[1])) * 1e9
+  if not (math.isfinite(line_len) and line_len > 0.0):
+    raise ValueError(f"siw_layout: line_len_mm 必须为正有限，得到 {line_len!r}")
+  if not (math.isfinite(base_m) and base_m > 0.0):
+    raise ValueError(f"siw_layout: base 必须为正有限，得到 {base_m!r}")
+  if not (math.isfinite(h_m) and h_m > 0.0):
+    raise ValueError(f"siw_layout: h 必须为正有限，得到 {h_m!r}")
+  # 设计规则（双源出处 criteria.md §1）：违规拒渲染
+  siw_check_design_rules(w * 1e3, d * 1e3, s * 1e3, er, freq_ghz=f0 / 1e9)
+  weff = siw_effective_width_mm(w * 1e3, d * 1e3, s * 1e3) * 1e-3
+  if not weff > 0.0:
+    raise ValueError(f"siw_layout: 等效宽度非正 w_eff={weff!r}")
+  beta, fc10 = siw_beta_rad_m(weff * 1e3, er, f0 / 1e9)
+  if not (math.isfinite(beta) and beta > 0.0):
+    raise ValueError(
+      f"siw_layout: 频带中心 {f0 / 1e9:.4g}GHz 低于 TE10 截止 "
+      f"fc10={fc10:.4f}GHz（线段必须工作在传播区）")
+  near = base_m / 4.0
+  # 过孔可分辨守卫（criteria §4.2）：直径 ≥4·NEAR（2 格硬下限的 2× 余量）
+  if not d >= 4.0 * near:
+    raise ValueError(
+      f"siw_layout: 网格欠分辨——过孔直径 d={d * 1e3:.4g}mm < "
+      f"4·NEAR={4.0 * near * 1e3:.4g}mm（BASE={base_m * 1e3:.4g}mm；"
+      "收紧 mesh_resolution_mm）")
+  # 端口方案旋钮（runs/siw_family/v2_criteria.md §1/§2
+  # 批；criteria.md §R2 归因裁定后用户选 v2 路线）：
+  #   v1（缺省）=z 桥探针悬在贯通 PML 的连续 SIW 中间——端面三支路节点分光，
+  #     fixture 汇 ≥0.385，理想探针天花板 −3.10dB（§R2 构造性证明）；
+  #   v2=藩篱止于端口面+端面口径 LumpedPort（跨介质孔径 ±W/2）——端口即终端
+  #     负载而非中间抽头，消除"端口背后 3.5mm 延拓"与探针耗散两条结构性
+  #     吞噬路径；R=Z_PV 闭式不变（v2_criteria.md §2 选型论证）。
+  #   其他值显式拒绝（不静默回退）。
+  port_mode = str(params.get("_port_mode", "v1"))
+  if port_mode not in ("v1", "v2"):
+    raise ValueError(
+      f"siw_layout: _port_mode 只接受 'v1'/'v2'，得到 {port_mode!r}")
+  rx = near if port_mode == "v1" else w / 2.0
+  # 端口盒 x 半宽（#283 盒边=结构线：v1=NEAR 窄桥 2 格；v2=跨介质孔径 ±W/2，
+  # 复用过孔列心线零新增网格线）
+  py = near                       # 端口盒 y 半长
+  port_inset = _SIW_PORT_INSET_BASE * base_m
+  y1 = -line_len / 2.0
+  y2 = line_len / 2.0
+  dom_x = w / 2.0 + weff / 2.0    # 侧界 MUR：藩篱外倏逝尾 e^−π≈4% 截断
+  if port_mode == "v1":
+    # 过孔藩篱贯通全域直入 PML（端口背后=匹配端接，无短路面/开路 stub）；
+    # 心距取精确 s 的全域栅格：y_k = k·s，覆盖 |y| ≤ K·s ≥ line_len/2+
+    # port_inset；dom_y 吸收藩篱端孔外缘（结构线不得越出域界——SmoothMesh
+    # 会把网格撑到结构线处，域变量与实际网格必须一致，#212 审计④口径）
+    dom_y_min = line_len / 2.0 + port_inset
+    k_half = math.ceil(dom_y_min / s - 1e-9)
+    dom_y = max(dom_y_min, k_half * s + d / 2)
+  else:
+    # v2（v2_criteria.md §1）：藩篱止于端口面——过孔只在 |k·s|+d/2 ≤
+    # line_len/2 线段区（末孔缘不越端口面），端口面背后直接是基板平行板
+    # 区入 PML_8（无 SIW 延拓支路）；dom_y=端口面+16·BASE 精确值
+    # （无藩篱端孔要吸收，全部结构线 < dom_y，#212 审计④仍闭合）
+    dom_y = line_len / 2.0 + port_inset
+    k_half = math.floor((line_len / 2.0 - d / 2) / s + 1e-9)
+    if k_half < 1:
+      raise ValueError(
+        f"siw_layout: v2 藩篱止于端口面后无线段区过孔（line_len/2−d/2="
+        f"{(line_len / 2.0 - d / 2) * 1e3:.4g}mm < s={s * 1e3:.4g}mm）"
+        "——加大 line_len_mm")
+    if not k_half * s + d / 2 < line_len / 2.0:
+      raise ValueError(
+        f"siw_layout: v2 末孔缘 {k_half * s + d / 2!r} 越过端口面 "
+        f"{line_len / 2.0!r}（数值容差外）")
+  via_y = tuple(k * s for k in range(-k_half, k_half + 1))
+  # 显式近场线集最小间距地板（#349，渲染期确定性守卫）：x 集=过孔列三线对
+  # （±(w/2∓d/2)、±w/2）+ 端口盒边，y 集=每孔三线（k·s∓d/2、k·s）+
+  # 端口盒边——与 _near_points 注入集合同源（v2 端口盒边=±w/2 与列心线
+  # 是同一条结构线：set 去重后守卫，重合不是近撞；v1 无重合逐字节原路径）
+  x_lines = [0.0, w / 2 - d / 2, w / 2, w / 2 + d / 2,
+       rx, -rx]
+  y_lines = [y1 - py, y1, y1 + py, y2 - py, y2, y2 + py]
+  for _yk in via_y:
+    y_lines += [_yk - d / 2, _yk, _yk + d / 2]
+  for _name, _lines in (("x", x_lines), ("y", y_lines)):
+    _arr = sorted(_lines if port_mode == "v1" else set(_lines))
+    _gaps = [b - a for a, b in pairwise(_arr)]
+    _gmin = min(_gaps) if _gaps else float("inf")
+    if not _gmin > _SIW_MESH_FLOOR_M:
+      raise ValueError(
+        f"siw_layout: {_name} 向显式网格线最小间距 {_gmin * 1e6:.3f}µm "
+        f"≤ {_SIW_MESH_FLOOR_M * 1e6:.0f}µm 地板（#349 CFL 塌缩守卫；"
+        "过孔栅格/端口盒与结构线近撞，调整 d/s/line_len）")
+  r_port = _siw_r_port_ohm(w * 1e3, d * 1e3, s * 1e3, er, h_m * 1e3,
+              f0 / 1e9)
+  return {"w": w, "d": d, "s": s, "h": h_m, "er": er, "f0": f0,
+      "weff": weff, "beta": beta, "fc10": fc10, "near": near,
+      "port_mode": port_mode,
+      "rx": rx, "py": py, "port_inset": port_inset,
+      "y1": y1, "y2": y2, "dom_x": dom_x, "dom_y": dom_y,
+      "k_half": k_half, "via_y": via_y, "r_port": r_port}
+
+
+def _siw_lines(p: dict[str, Any]) -> str:
+  # 直 SIW 线段几何段（layout 单源字面注入，米）。必须经 render_script 渲染
+  # （_siw_layout 注入）——直调缺布局显式报错，不做静默兜底（#283 渲染期守卫
+  # 纪律：守卫条件与消费端同源）。
+  lay = p.get("_siw_layout")
+  if lay is None:
+    raise ValueError(
+      "siw 几何段缺 _siw_layout：必须经 render_script 渲染（布局单源注入）")
+  via_y = list(lay["via_y"])
+  v2 = lay.get("port_mode") == "v2"
+  # 模式条件注释（仅注释行随端口方案变；几何/端口/守卫代码同一条 f-string，
+  # v1 缺省路径渲染文本逐字节不变——字节钉 test_siw_v1_default_render_byte_pin）
+  s_pitch_note = (
+    "过孔心距（线段区精确栅格 y_k = k·S_PITCH，藩篱止于端口面 v2_criteria.md"
+    " §1）" if v2 else "过孔心距（全域精确栅格 y_k = k·S_PITCH）")
+  fence_note = (
+    "# 两列金属化过孔 PEC 圆柱（z∈[0,H_SUB] 贯通；藩篱止于端口面=v2 端面\n"
+    "# 口径，端口背后无 SIW 延拓支路——v2_criteria.md §1/§3）"
+    if v2 else
+    "# 两列金属化过孔 PEC 圆柱（z∈[0,H_SUB] 贯通；藩篱直入 PML=匹配端接，\n"
+    "# slotline_lumped 口径——端口背后无短路面/开路 stub）")
+  port_note = (
+    "# 两端 LumpedPort 端面口径（跨介质孔径 x∈[-W/2,+W/2]、跨全高 0..H_SUB，\n"
+    "# R=Z_PV 闭式同源）：端口即终端负载而非中间抽头（v2_criteria.md §2/§3）；\n"
+    "# 盒三向边全部入网（#198/#283），端口面出 PML_8（16·BASE−NEAR 净距，\n"
+    "# #253/H4）"
+    if v2 else
+    "# 两端 LumpedPort z 桥（中线 x=0、跨全高 0..H_SUB）：TE10 的 E_z 中线最大、\n"
+    "# 带内高阶模倏逝（criteria §3）；盒三向边全部入网（#198/#283），端口面出\n"
+    "# PML_8（16·BASE−NEAR 净距，#253/H4）")
+  rx_note = (
+    "端口盒 x 半宽（=W/2 跨介质孔径，盒边=列心线 v2_criteria.md §1）"
+    if v2 else "端口盒 x 半宽（=NEAR，盒宽 2 格 #283）")
+  return f'''# ── siw 直线段几何（layout 单源字面量，米；criteria.md §2/§4）──
+W = {lay["w"]!r}              # 两过孔列心距（Cassivi 等效宽度 w_eff 的物理宽度）
+D_VIA = {lay["d"]!r}          # 过孔直径
+S_PITCH = {lay["s"]!r}        # {s_pitch_note}
+R_PORT = {round(lay["r_port"], 4)!r}   # LumpedPort R = Z_PV=2b·Z_TE/w_eff（闭式；CalcPort 同参考）
+RX = {lay["rx"]!r}            # {rx_note}
+PY = {lay["py"]!r}            # 端口盒 y 半长（=NEAR）
+Y0 = {lay["y1"]!r}            # port1 测量面（端口盒中心，cps 命名契约）
+Y1 = {lay["y2"]!r}            # port2 测量面（端口盒中心）
+# 上下金属板：显式零厚盒贴 z 边界（与 z 边界 PEC 等电势冗余——桥-板-过孔
+# 连通图物理化，#212 审计③可判）
+siw_plates = CSX.AddMetal("siw_plates")
+siw_plates.AddBox((-DOM_X, -DOM_Y, 0.0), (DOM_X, DOM_Y, 0.0), priority=10)
+siw_plates.AddBox((-DOM_X, -DOM_Y, H_SUB), (DOM_X, DOM_Y, H_SUB), priority=10)
+{fence_note}
+siw_via = CSX.AddMetal("siw_via")
+_VIA_Y = {via_y!r}
+for _vy in _VIA_Y:
+  siw_via.AddCylinder([-W / 2, _vy, 0.0], [-W / 2, _vy, H_SUB],
+            radius=D_VIA / 2, priority=10)
+  siw_via.AddCylinder([W / 2, _vy, 0.0], [W / 2, _vy, H_SUB],
+            radius=D_VIA / 2, priority=10)
+{port_note}
+_port1 = FDTD.AddLumpedPort(1, R_PORT, np.array([-RX, Y0 - PY, 0.0]),
+              np.array([RX, Y0 + PY, H_SUB]), "z", 1.0,
+              priority=5)
+_port2 = FDTD.AddLumpedPort(2, R_PORT, np.array([-RX, Y1 - PY, 0.0]),
+              np.array([RX, Y1 + PY, H_SUB]), "z", 0.0,
+              priority=5)
+# 生成期网格守卫：#152 去重后全轴最小间距复测（CFL 塌缩哨兵）+ 端口盒/
+# 中线边落格断言（#283：盒边=结构线，中线恰在网格线上探针才逐位落位）
+for _ax in ("x", "y", "z"):
+  _dl = np.diff(np.asarray(mesh.GetLines(_ax), dtype=float))
+  if _dl.size and not bool(np.all(_dl > 1e-6)):
+    raise SystemExit("siw #" + "152" + ": "
+            + _ax + " 轴网格含 ≤1µm 近重合线（CFL 塌缩守卫）")
+def _siw_on_line(_ax, _v):
+  _ls = np.asarray(mesh.GetLines(_ax), dtype=float)
+  _j = int(np.searchsorted(_ls, _v))
+  return (_j < _ls.size and abs(float(_ls[_j]) - _v) <= 1e-9) or (
+    _j > 0 and abs(float(_ls[_j - 1]) - _v) <= 1e-9)
+for _ax, _v in (("x", 0.0), ("x", -RX), ("x", RX),
+        ("y", Y0 - PY), ("y", Y0), ("y", Y0 + PY),
+        ("y", Y1 - PY), ("y", Y1), ("y", Y1 + PY),
+        ("z", 0.0), ("z", H_SUB)):
+  if not _siw_on_line(_ax, _v):
+    raise SystemExit("siw #" + "283" + ": 端口盒/中线边 "
+            + _ax + "=" + repr(_v) + " 未落在网格线上")
+for _prim in siw_plates.GetAllPrimitives():
+  if _prim.GetPriority() < 10:
+    _prim.SetPriority(10)
+for _prim in siw_via.GetAllPrimitives():
+  if _prim.GetPriority() < 10:
+    _prim.SetPriority(10)
+'''
+
+
+# ── 元数据（TEMPLATE_META 公约；nominal 全闭式精算 #1c，出处 criteria.md §2）──
+SIW_META: dict[str, Any] = {
+  "f0_ghz": 10.0, "n_ports": 2,
+  "extraction": "LumpedPort z 桥×2（R=闭式 Z_PV=2b·Z_TE/w_eff，CalcPort 同参考）："
+         "原始 S=带载比值（#250 口径，slotline_lumped 同）；β/εeff 主判="
+         "S21 解缠相位斜率÷port_beta.csv 实测 plane_dist（cps 同契约，"
+         "LumpedPort 无 β 属性）；fc10 由带内 φ(f)=−β(f；fc)·L+φ0 单参数"
+         "拟合（OE 锚 G1，预声明 runs/siw_family/criteria.md §6）",
+  "max_time_ns": 45.0, "mesh_resolution_mm": 0.0, "n_segments": None,
+  "params": ["w_mm", "d_mm", "s_mm", "line_len_mm"],
+  "topology": "直 SIW 传输线段：基板 z∈[0,h] 上下显式零厚金属板（贴 z 边界 "
+        "PEC）+ 两列金属化过孔 PEC 圆柱（x=±w/2、心距 s、全域精确栅格、"
+        "藩篱直入 PML=匹配端接）；端口=两端 LumpedPort z 桥（中线、跨全"
+        "高、盒边入网、16·BASE 出 PML_8）；域 x 半宽=w/2+w_eff/2（侧界 "
+        "MUR 吸收泄漏）、y 半宽=line_len/2+16·BASE（PML_8）——矩形域，"
+        "BOARD=60e-3 不适用（机制层 DOM_X/DOM_Y 字面注入）",
+  "param_semantics": "w_mm=两过孔列心距（物理宽度，Cassivi 等效宽度 "
+           "w_eff=w−d²/(0.95s) 的输入）、d_mm=过孔直径、s_mm=过孔"
+           "心距（渲染按全域 k·s 精确栅格）、line_len_mm=两端口测量"
+           "面间距（名义 3λg@f0 闭式精算）；h/er/tan_d 走 substrate/"
+           "nominal（TE10 截止与 β 与 h 无关，Microwaves101 SIW 条目）",
+  "mesh_note": "mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；"
+        "全域 NEAR=base/4（SmoothMesh 全轴均匀化实测）；过孔直径 ≥4·"
+        "NEAR 守卫、孔间缝 ≥1 内部线（#311 类比）、显式近场线 10µm "
+        "地板（#349）、端口盒 ≥2 格且中线落格（#283，生成期断言）、"
+        "基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）",
+  "smoke_note": "离线审计先行（#212，test_siw_template）；真机锚已落判"
+         "（G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，"
+         "runs/siw_family/，驱动 scripts/siw_anchor_smoke.py）；"
+         "预声明门与预算见 runs/siw_family/criteria.md §6",
+}
+
+SIW_NOMINAL: dict[str, Any] = {
+  "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0, "line_len_mm": 63.0724,
+  "h_mm": 0.508, "er": 3.66, "tan_d": 0.0037,
+  # 全闭式精算（#1c，criteria.md §2）：fc10 目标=f0/1.5=6.6667GHz（f0=10GHz
+  # 预声明设计点）→ w_eff=c/(2·fc·√3.66)=11.7528 → w=w_eff+d²/(0.95·s)
+  # =12.1317（Cassivi 2002 反解）；line_len=round(3λg@10GHz,4)=63.0724
+  # （β=298.856 rad/m 闭式、λg=21.0241——链路与 synthesize_siw_model 逐位
+  # 同源：4 位舍入 w 起算）；R_port=Z_PV=2b·Z_TE/w_eff=22.8393Ω（渲染层
+  # 精算，非手数）；设计规则复核：s/d=1.667≤2 ✔、d=0.6<λ_sub/5=3.134 ✔
+}
+
+# （siw 注册在槽线族四件套之前：#247 尾部追加契约要求槽线族保持字典尾，
+#   见文末 SIW 段元数据定义与注册行——2026-09-22 siw-family）
+
+# ── 注册（2026-09-22 siw-family：SIW 族首族=直 SIW 传输线段；坑 #247 尾部
+#    追加契约=槽线族四件套保持字典尾，故本键先于槽线族注册行执行；同对象
+#    注册钉死单一事实源，同对象注册钉死单一事实源）──
+TEMPLATE_META["siw"] = SIW_META
+TEMPLATE_NOMINAL["siw"] = SIW_NOMINAL
+
+# ══ 槽线族正式注册（2026-09-18 w1b，排空六轮 followUps ④/0df②/0dl①；审计 #12/#17）══
 # 路线 A/B 均匀槽线段（真机三门 PASS）、MSL↔slot 过渡
 # 与 Marchand 双槽臂（真机判读）由附加模块升格正式注册——渲染入口
 # 仍在各自模块（本段零拷贝、只做分发与元数据，#116 防本地副本）：
@@ -8480,7 +8940,10 @@ SLOTLINE_META: dict[str, Any] = {
             "闭式精算），h_mm=基板厚（模板参数：JS 闭式域 d/λ0≥0.006，"
             "缺省叠层 0.508@2.5GHz 落域外，设计点 RO4350B 60mil=1.524）",
   "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；"
-         "近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫",
+        "近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫；"
+        "槽缘细化步长 min(NEAR, w/8)、地板 10µm（#349——"
+        "自动档恰为 w/8 且引擎 dt 相应减半，真跑前按 et 实测 dt 重排 "
+        "NrTS，#283）",
   "smoke_note": "真机 PASS：β 闭式 67.227/NGSolve 67.149/openEMS 67.937 "
          "rad/m 互差 ≤1.2%、|S11|@f0 −39.1dB、|S21| −0.32dB 三门。**运行前置**："
          "模式文件必须先经 adapters/ngsolve_modes.solve_slotline_mode + "

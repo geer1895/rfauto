@@ -97,7 +97,8 @@ INSET_PORT_TEMPLATES: frozenset[str] = frozenset({"msl_slot_transition",
 # 缺省叠层 0.508@2.5GHz 落域外——设计点 RO4350B 60mil h=1.524）。
 RECT_DOMAIN_TEMPLATES: frozenset[str] = frozenset({"slotline", "slotline_lumped",
                                                    "msl_slot_transition",
-                                                   "marchand_balun"})
+                                                   "marchand_balun",
+                                                   "siw"})
 
 # 无介质板模板：dipole=自由空间器件（官方 Helical/Dipole-SAR 口径）；
 # monopole/helix=PEC 地面悬空导体（像理论口径，§10.3 C1 天线族 II
@@ -139,6 +140,9 @@ MATERIAL_VALUE_PARAMS: dict[str, frozenset[str]] = {
     # meta.yaml nominal_params 键集一致由 test_template_meta_consistency 钉）。
     "slotline": frozenset({"er", "tan_d"}),
     "slotline_lumped": frozenset({"er", "tan_d"}),
+    # siw：er/tan_d 只进基板材料属性（TE10 截止与 β 与 h 无关——h_mm 是
+    # 几何驱动参数经端口盒/板 z 消费，不需豁免）；nominal-only 键与 slotline 同口径
+    "siw": frozenset({"er", "tan_d"}),
 }
 
 # 登记的**额外介质原语**（审计④"恰一块全板基板"之外的合法介质，按属性名）：
@@ -187,6 +191,10 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     "interdigital": {"res_len_mm": (0.9, 0.0), "feed_len_mm": (0.9, 0.0)},
     "combline": {"feed_len_mm": (0.9, 0.0)},
     "sir_bpf": {"feed_len_mm": (0.9, 0.0)},
+    # siw：s_mm ×1.37 会越泄漏上界 s≤2d（1.383>2×0.6，设计规则守卫拒渲染
+    # ——守卫是正确行为，runs/siw_family/criteria.md §1）；×1.1 保域
+    # （1.1≤1.2）且必变几何
+    "siw": {"s_mm": (1.1, 0.0)},
 }
 
 

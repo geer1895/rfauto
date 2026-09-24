@@ -59,7 +59,6 @@ import contextlib
 import json
 import os
 import shutil
-import subprocess
 import sys
 import threading
 import time
@@ -104,12 +103,17 @@ def _progress(msg: str) -> None:
         fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
 
 
-def _kill_desktops() -> None:
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process | Where-Object { $_.ProcessName -match "
-                    "'ansysedt' } | Stop-Process -Force"],
-                   capture_output=True)
-    time.sleep(3)
+def _kill_desktops(*, strict: bool = True) -> None:
+    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+
+    attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
+    记失败）；全场收尾扫尾传 strict=False（活桌面/枚举失败只记录不抛，
+    不连坐已完成战役，#105）。委托 src/rfauto/infra/desktop_guard.py；
+    旧 Get-Process|Stop-Process -Force 无条件代杀已废弃（#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print, strict=strict)
 
 
 def _write_result(patch: dict) -> None:
@@ -623,7 +627,7 @@ def main() -> int:
                 _write_result({"stage": f"failed_all_attempts_{tag}", "error": last_err})
                 _progress(f"stage2 hfss/{tag}: FAILED all attempts {last_err}")
                 print(f"SLOTLINE_HFSS_ARB_FAIL_{tag}", flush=True)
-        _kill_desktops()
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
 
     # ── 分析阶段（只读产物；失败不重解）──
     pm_all = _load_port_modes()

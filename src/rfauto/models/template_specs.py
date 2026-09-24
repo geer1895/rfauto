@@ -1047,8 +1047,9 @@ def _register_c3_filters() -> None:
             """C3 spec 综合入口：设计链 → 几何（确定性内核），包装为
             ModelSynthesisResult——只做组装，零数值。
 
-            l_via_h=None：名义几何链开过孔补偿（登记⑨，自动取 Goldfarb-Pucel
-            几何值），draft 配方渲染几何在过孔存在下谐振回 f0。
+            l_via_h=None：名义几何链开过孔补偿（登记⑨ 校准，自动取
+            HFSS 仲裁校准值 0.125nH，原 Goldfarb-Pucel 几何值
+            高估已弃），新战役 draft 配方渲染几何在过孔存在下谐振回 f0。
             """
             design = designers[template](order, f0_ghz, fbw, rl_db, l_via_h=None)
             params = _c3_params_from_design(template, design)
@@ -1182,6 +1183,33 @@ def _slotline_recipe_draft(model: str, params: dict[str, Any],
                   "points": 201},
         "objectives": objectives,
     }
+
+
+def _register_siw() -> None:
+    """SIW 族首族=直 SIW 传输线段（2026-09-22 siw-family 立项）。LumpedPort
+    z 桥×2（R=闭式 Z_PV）、矩形域、f0=10GHz 设计点（2.5GHz 下 SIW 物理上
+    装不下 60mm 板，criteria §2）。闭式=core/calculators siw_analysis/
+    siw_synthesis（Cassivi 2002 等效宽度 + RWG TE10 等效，双源出处
+    runs/siw_family/criteria.md §1）。#154 角色映射只收语义确定键：
+    w_mm=两过孔列心距（line_width_mm 词表口径）、line_len_mm=两端口面间距；
+    d_mm/s_mm 无词表条目按名直读同义（suspended_stripline b_mm 先例）。
+    hfss_plugin=None：SIW HFSS 仲裁属后续（锚真跑留主代理派发）。"""
+    from rfauto.adapters.fake_adapter import _siw_sparams
+    from rfauto.adapters.openems_templates import TEMPLATE_META, render_script
+    from rfauto.core.synthesis import synthesize_siw_model
+
+    register_template_spec(TemplateSpec(
+        name="siw",
+        meta=dict(TEMPLATE_META["siw"]),
+        synthesizer=synthesize_siw_model,
+        physics_roles={
+            "w_mm": "line_width_mm",
+            "line_len_mm": "line_length_mm",
+        },
+        render_script=partial(render_script, "siw"),
+        fake_model=_siw_sparams,
+        hfss_plugin=None,
+    ))
 
 
 def _register_slotline_family() -> None:
@@ -1384,6 +1412,7 @@ def bootstrap_template_specs() -> None:
     _register_branchline_2sect()
     _register_lange()
     _register_slotline_family()
+    _register_siw()
     _BOOTSTRAPPED = True
 
 

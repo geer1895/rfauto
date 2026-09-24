@@ -172,6 +172,14 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "w_mm": 1.0, "h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5},
         "slotline_synthesis": {
             "z0_ohm": 110.92, "h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5},
+        # ─── SIW（2026-09-22 siw-family 立项，#231 三表同步）───────────────────
+        # 名义设计点：w=12.1317/d=0.6/s=1.0@εr=3.66 → fc10=6.6667GHz、
+        # β@10GHz=298.856 rad/m（runs/siw_family/criteria.md §2 闭式精算）
+        "siw_analysis": {
+            "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0, "epsilon_r": 3.66,
+            "freq_ghz": 10.0},
+        "siw_synthesis": {
+            "fc10_ghz": 6.6667, "epsilon_r": 3.66, "d_mm": 0.6, "s_mm": 1.0},
         "quarter_wave_transformer": {
             "z_source_ohm": 50.0, "z_load_ohm": 100.0,
             "freq_ghz": 2.5, "eps_eff": 2.5},
@@ -315,6 +323,19 @@ DOMAIN_ERROR_CASES = [
         "z0_ohm": 30.0, "h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}),
     ("slotline_analysis", {
         "w_mm": 1.0, "h_mm": 1.524, "epsilon_r": 12.0, "freq_ghz": 2.5}),
+    # SIW（2026-09-22）：过孔藩篱设计规则违规显式报错（s≤2d 泄漏上界、孔不
+    # 重叠 s>d、直径上界 d<λ_sub/5——criteria.md §1 双源出处）
+    ("siw_analysis", {
+        "w_mm": 12.1, "d_mm": 0.6, "s_mm": 2.5, "epsilon_r": 3.66,
+        "freq_ghz": 10.0}),
+    ("siw_analysis", {
+        "w_mm": 12.1, "d_mm": 0.5, "s_mm": 0.4, "epsilon_r": 3.66,
+        "freq_ghz": 10.0}),
+    ("siw_analysis", {
+        "w_mm": 12.1, "d_mm": 5.0, "s_mm": 1.0, "epsilon_r": 3.66,
+        "freq_ghz": 60.0}),
+    ("siw_synthesis", {
+        "fc10_ghz": 6.6667, "epsilon_r": 3.66, "d_mm": 6.0, "s_mm": 1.0}),
     ("cpw_synthesis", {
         "z0_ohm": 1.0, "gap_mm": 0.2, "freq_ghz": 2.5,
         "epsilon_r": 3.66, "h_mm": 0.508}),

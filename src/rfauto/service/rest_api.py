@@ -932,7 +932,8 @@ _ROUTE_TABLE: list[dict[str, Any]] = [
     "request_schema": "SlotlineSynthesisRequest",
     "responses": {
       "200": _envelope_response("综合结果（w_mm 等）"),
-      "400": _envelope_response("目标不可达/参数越域"),
+      "400": _envelope_response(
+        "参数非法/越域（目标不可达=200+realizable=False 合法结果，D5）"),
     },
   },
   {

@@ -176,6 +176,14 @@ def _hv_objectives_from_recipe(recipe_data: dict[str, Any],
 
 
 def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solver_versions=None):
+    """低/高保真 trial 按 params 匹配 → S11 差与排序翻转计数（A-05 显式化）。
+
+    cost 语义（A-05，#117 邻形修正）：缺 cost 不再隐式按 0.0 参与排序比较
+    （0.0 合法且"最优"，隐式缺省会把缺失trial 伪装成完美点扭曲 rank_flip）——
+    None 显式分支：缺 cost 的匹配对跳过排序比较并计入
+    ``rank_pairs_skipped_missing_cost``（如实不凑数，#122）；其余键行为不变
+    （现调用链 trial 均带 cost，行为逐位不变）。
+    """
     low_map = {}
     for t in low_trials:
         low_map[json.dumps(t.get("params", {}), sort_keys=True)] = t
@@ -185,11 +193,16 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
         if k in low_map:
             matched.append((low_map[k], t))
     rank_flip = 0
+    rank_pairs_skipped = 0
     if len(matched) >= 2:
-        lc = [p[0].get("cost", 0.0) for p in matched]
-        hc = [p[1].get("cost", 0.0) for p in matched]
+        lc = [p[0].get("cost") for p in matched]
+        hc = [p[1].get("cost") for p in matched]
         for i in range(len(matched)):
             for j in range(i + 1, len(matched)):
+                if (lc[i] is None or hc[i] is None
+                        or lc[j] is None or hc[j] is None):
+                    rank_pairs_skipped += 1
+                    continue
                 if (lc[i] < lc[j]) != (hc[i] < hc[j]):
                     rank_flip += 1
     deltas = []
@@ -206,6 +219,7 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
             "abs_delta_db": deltas,
             "mean_abs_delta_db": float(np.mean(deltas)) if deltas else None,
             "rank_flip_count": rank_flip, "n_matched_pairs": len(matched),
+            "rank_pairs_skipped_missing_cost": rank_pairs_skipped,
             "seed": seed, "solver_versions": solver_versions or {}}
 
 

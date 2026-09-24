@@ -17,7 +17,8 @@ runs/smoke_c3_redesign/criteria_a.md，写死再跑；铁律 7 数值只出内�
     plan.json 预声明再执行**；EndCriteria 不传 = 引擎缺省 −60dB 不动；
     预算硬帽 = 1.5×wall_pred（超判 PARTIAL(超预算) 不删数据）；combline
     blocked 规则保留（4h 能量 >−10dB 杀树上报）。判读 G0-G4 =
-    scripts/judge_refix.py 口径 + G1 当轮 PRED_SHIFT
+    runs/smoke_c3_refix/judge_refix.py 口径（band_center_3db 脚本内逐位拷贝，
+    runs/ 证据树零 import 依赖）+ G1 当轮 PRED_SHIFT
     （当轮频轴 c3_circuit_sparams 重算；cpass_verdict.json 存档值交叉记录）。
 
 **关键物理预声明**：旧衰减率 0.28dB/ns 在旧（失配）设计上测得，重设计失配
@@ -60,7 +61,9 @@ for _p in (REPO / "src", HERE):
 import numpy as np  # noqa: E402
 
 from c3_resonance_q_extract import load_msl_probes  # noqa: E402  内核探针读入（剔残行守卫预检）
-from judge_refix import band_center_3db  # noqa: E402  只读 import（#298 带心口径单一事实源）
+
+# 伪模分类+物理模基重外推；无伪模返回 None=缺省路径零改动
+from c3_spurious_modes import split_physical_refit  # noqa: E402
 from rfauto.adapters.openems_templates import (  # noqa: E402
     C3_TEMPLATES,
     TEMPLATE_NOMINAL,
@@ -351,10 +354,21 @@ def _refix_dt_reference(template: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
-def _nominal_matches_redesign(template: str, nominal: dict[str, Any]) -> bool:
-    """TEMPLATE_NOMINAL 与 redesign_nominals.json new_nominal 的 4 位舍入一致性。"""
-    doc = json.loads(NOMINALS_PATH.read_text(encoding="utf-8"))
-    new_nom = doc["templates"][template]["new_nominal"]
+def _load_nominals_doc(nominals_path: Path | None = None) -> dict[str, Any]:
+    """重设计名义 doc 装载（出处纪律：缺省=smoke_c3_redesign 存档；
+    新批次经 nominals_path 指向当轮 redesign_nominals.json——防陈旧档误读）。"""
+    path = Path(nominals_path) if nominals_path is not None else NOMINALS_PATH
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _nominal_matches_redesign(template: str, nominal: dict[str, Any],
+                              doc: dict[str, Any] | None = None) -> bool:
+    """TEMPLATE_NOMINAL 与重设计名义 new_nominal 的 4 位舍入一致性。
+
+    doc 缺省装载 NOMINALS_PATH 存档；传入当轮 doc（_load_nominals_doc 产物）
+    时按当轮校验（R2：名义注册批次显式化，防跨批次陈旧比对）。
+    """
+    new_nom = (doc or _load_nominals_doc())["templates"][template]["new_nominal"]
     for key, want in new_nom.items():
         got = nominal.get(key)
         if isinstance(want, list):
@@ -370,13 +384,14 @@ def _nominal_matches_redesign(template: str, nominal: dict[str, Any]) -> bool:
     return True
 
 
-def plan_base_for(template: str) -> dict[str, Any]:
+def plan_base_for(template: str, nominals_path: Path | None = None) -> dict[str, Any]:
     """单模板基座（离线，秒级）：重设计名义 + exec 几何段实测网格 + dt CFL 估计。
 
     dt_est = 1/(c0·sqrt(Σ 1/h_min²))（h_min=逐轴相邻网格线最小间距）；#312 已知
     实测/估计比 0.93-1.07 漂（sir_bpf 0.825 实证）——只作参考，权威 dt =
     stage1 引擎日志。激励时长三模板实测同值（网格无关）→ 激励步数估计 =
     NrTS 物理下限估计。
+    nominals_path=R2 当轮名义 doc（缺省 smoke_c3_redesign 存档，行为不变）。
     """
     nominal = dict(TEMPLATE_NOMINAL[template])
     mesh_mm = auto_mesh_mm(template, nominal)
@@ -413,7 +428,12 @@ def plan_base_for(template: str) -> dict[str, Any]:
             "t_excite_ref_s": T_EXCITE_REF_S,
             "n_excitation_steps_est": n_exc_est,
             "nrts_floor_estimate": n_exc_est,
-            "nominal_matches_redesign": _nominal_matches_redesign(template, nominal),
+            "nominal_matches_redesign": _nominal_matches_redesign(
+                template, nominal,
+                _load_nominals_doc(nominals_path)
+                if nominals_path is not None else None),
+            "nominals_path": (str(nominals_path) if nominals_path is not None
+                              else str(NOMINALS_PATH)),
             "old_design_reference": OLD_DESIGN_REFERENCE.get(template),
             "old_design_reference_note": (
                 "旧（失配）设计实测对照列——衰减动力学随失配消除而变，禁作新设计 "
@@ -421,11 +441,13 @@ def plan_base_for(template: str) -> dict[str, Any]:
             "stage1": None, "stage2": None}
 
 
-def build_plan(root: Path | None = None, force: bool = False) -> tuple[dict[str, Any], bool]:
+def build_plan(root: Path | None = None, force: bool = False,
+               nominals_path: Path | None = None) -> tuple[dict[str, Any], bool]:
     """--plan：三模板基座落盘（一次写入；已存在且非 force → 幂等跳过）。
 
     名义一致性硬校验 fail-closed（TEMPLATE_NOMINAL ≠ 重设计名义即退出——禁混用
-    设计口径，criteria_a.md §五）。
+    设计口径，criteria_a.md §五）。nominals_path=R2 当轮名义 doc（缺省
+    smoke_c3_redesign 存档，行为不变）。
     """
     target = _plan_path(root)
     if target.exists() and not force:
@@ -433,7 +455,7 @@ def build_plan(root: Path | None = None, force: bool = False) -> tuple[dict[str,
         return json.loads(target.read_text(encoding="utf-8")), False
     templates: dict[str, Any] = {}
     for t in sorted(C3_TEMPLATES):
-        base = plan_base_for(t)
+        base = plan_base_for(t, nominals_path=nominals_path)
         if not base["nominal_matches_redesign"]:
             raise ValueError(f"[{t}] TEMPLATE_NOMINAL ≠ redesign_nominals.json "
                              "new_nominal（4 位舍入）——禁混用设计口径，fail-closed"
@@ -727,9 +749,13 @@ def _span_rerun_hint(summary: dict[str, Any]) -> dict[str, Any] | None:
 def stage1_partial_verdict(template: str, root: Path | None = None,
                            outcome: dict[str, Any] | None = None,
                            summary: dict[str, Any] | None = None,
+                           cap_s: float | None = None,
                            ) -> dict[str, Any]:
     """stage1 帽停/崩溃结局 → 部分产物判读 verdict（stage1/stage1_verdict.json，
     离线可重放；--judge-stage1 即本函数纯离线重放）。
+
+    cap_s=发射帽秒落痕（2①）：run_stage1 显式传入；离线重放缺省从 summary
+    取在档 stage1_cap_s，全无凭据如实 None（不臆造）。
 
     帽 = 防挂死非预算门（criteria_a §一）：引擎被 --timeout 杀死后的 port_ut/et
     流式部分产物照样判读——kernel ringdown 提取 + 置信三门 + S21∞@f0 门（门数值
@@ -749,6 +775,7 @@ def stage1_partial_verdict(template: str, root: Path | None = None,
         doc.update({"basis": "crash", "verdict": "FAIL", "fail_kind": "crash",
                     "data": None, "confidence": None, "sentinel": None,
                     "rates": None, "stage2_plan": None, "rerun_hint": None,
+                    "stage1_cap_s": (float(cap_s) if cap_s is not None else None),
                     "reasons": [f"引擎秒退（rc={cls['rc']}, "
                                 f"elapsed={cls['elapsed_s']}s < "
                                 f"{STAGE1_CAPSTOP_MIN_S:.0f}s 帽停下限）——crash "
@@ -799,6 +826,9 @@ def stage1_partial_verdict(template: str, root: Path | None = None,
     doc["confidence"] = conf
     doc["sentinel"] = sent
     doc["rates"] = rates
+    if summary.get("spurious") is not None:          # 伪模判别留痕
+        doc["spurious"] = {k: v for k, v in summary["spurious"].items()
+                           if k != "report_physical"}
     verdict_pass = not data_reasons and bool(sent.get("ok"))
     stage2_plan: dict[str, Any] | None = None
     if verdict_pass:
@@ -824,6 +854,10 @@ def stage1_partial_verdict(template: str, root: Path | None = None,
         reasons += [str(r) for r in sent.get("reasons", [])]
     doc["stage2_plan"] = stage2_plan
     doc["rerun_hint"] = (_span_rerun_hint(summary) if not verdict_pass else None)
+    if cap_s is not None:
+        doc["stage1_cap_s"] = float(cap_s)
+    else:
+        doc["stage1_cap_s"] = (summary or {}).get("stage1_cap_s")
     doc.update({"basis": ("capstop" if cls["kind"] == "capstop"
                           else "offline_replay"),
                 "verdict": "PASS" if verdict_pass else "FAIL",
@@ -873,12 +907,29 @@ def _launch_stage2_real(cmd: list[str], work: Path, template: str, timeout_s: fl
 
 # ─── stage1：前哨摘要（判读层，离线可重放）─────────────────────────────────────
 
+def _prior_stage1_cap(work: Path) -> float | None:
+    """在档 summary 的 stage1_cap_s（离线重放保留原 run 落痕；#105 缺失/损坏
+    如实 None，不臆造）。"""
+    p = work / "_stage1_summary.json"
+    if not p.exists():
+        return None
+    try:
+        v = json.loads(p.read_text(encoding="utf-8")).get("stage1_cap_s")
+        return float(v) if v is not None else None
+    except Exception:
+        return None
+
+
 def summarize_stage1(template: str, root: Path | None = None,
-                     probe_dir: Path | None = None) -> dict[str, Any]:
+                     probe_dir: Path | None = None,
+                     cap_s: float | None = None) -> dict[str, Any]:
     """stage1 产物 → 前哨摘要（engine.log + fdtd 探针；同输入幂等可重放）。
 
     probe_dir 显式给定时覆盖缺省解析（帽停 sanitized fdtd_partial/ 重放用，
     剔 kill 残行后 fdtd/ 原目录打不进内核的场景）。
+    cap_s=stage1 帽秒落痕（2①：缺省 5040 也显式落，防"生效值不落痕"）——
+    发射路径由 run_stage1 显式传入；离线重放无此信息时取在档 summary 的
+    stage1_cap_s 保留原 run 落痕，全无凭据时按缺省帽值 STAGE1_TIMEOUT_S 注记。
     """
     work = stage_dir(template, "stage1", root)
     log_path = work / "engine.log"
@@ -894,6 +945,7 @@ def summarize_stage1(template: str, root: Path | None = None,
     conf: dict[str, Any] | None = None
     s21_inf_f0_db: float | None = None
     alpha_min: float | None = None
+    split_doc: dict[str, Any] | None = None
     if t_exc is None or dt is None:
         reasons.append("engine.log 缺 excitation_s/dt_s（终止信息缺失，#122 不采信）")
     else:
@@ -904,6 +956,20 @@ def summarize_stage1(template: str, root: Path | None = None,
             freq = np.linspace(FREQ_RANGE_GHZ[0] * 1e9, FREQ_RANGE_GHZ[1] * 1e9, N_FREQ)
             qrep = q_extrap_report_from_probes(str(pdir), freq, float(t_exc),
                                                F0_GHZ * 1e9)
+            # 伪模判别：材料 Q 帽以上非器件模 → 物理模基重外推；
+            # 无伪模 split=None → 以下逐字节走原路径（缺省不变铁律）
+            if "keys" in qrep:
+                split_doc = split_physical_refit(str(pdir), freq, float(t_exc),
+                                                 F0_GHZ * 1e9,
+                                                 qrep.get("modes") or [])
+            if split_doc is not None:
+                if not split_doc["physical"]:
+                    reasons.append("全部模式材料 Q 帽判伪（物理模缺失）——伪模不进"
+                                   "收敛门/尾外推基，如实 FAIL")
+                elif not split_doc["refit_ok"]:
+                    reasons.append("物理模基重外推不可判读（保留全模报告，如实 FAIL）")
+                else:
+                    qrep = split_doc["report_physical"]
             if "keys" not in qrep:
                 reasons.append(f"q_extrap 报告不可判读：{qrep.get('error')}")
             else:
@@ -919,9 +985,16 @@ def summarize_stage1(template: str, root: Path | None = None,
     rate_engine = (engine_energy_tail_rate(log_text, float(dt), float(t_exc))
                    if t_exc is not None and dt is not None else None)
     sent = sentinel_gate(conf, s21_inf_f0_db)
+    if cap_s is not None:
+        cap_recorded: float | None = float(cap_s)
+    else:
+        prior_cap = _prior_stage1_cap(work)
+        cap_recorded = (prior_cap if prior_cap is not None
+                        else float(STAGE1_TIMEOUT_S))
     summary: dict[str, Any] = {
         "template": template, "stage": "stage1", "criteria": CRITERIA_A,
         "engine": eng, "q_extrap_error": qrep.get("error"),
+        "stage1_cap_s": cap_recorded,
         "q_extrap_modes": qrep.get("modes"),
         "q_extrap_keys": {k: {kk: vv for kk, vv in v.items()
                               if kk in ("freq_hz", "s_trunc_db", "s_inf_db", "dev_db",
@@ -937,6 +1010,8 @@ def summarize_stage1(template: str, root: Path | None = None,
         "reasons": reasons + list(sent["reasons"]),
         "generated_utc": utc_now(),
     }
+    if split_doc is not None:                        # 伪模在场才记录（缺省零新增键）
+        summary["spurious"] = split_doc
     (work / "_stage1_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=1, default=str),
         encoding="utf-8")
@@ -998,12 +1073,12 @@ def run_stage1(template: str, root: Path | None = None,
         outcome = launch(cmd, cap_s + STAGE1_RUNNER_MARGIN_S, cwd)
         print(f"[stage1:{template}] 引擎结束：{json.dumps(outcome, ensure_ascii=False)}",
               flush=True)
-        summary = summarize_stage1(template, root)
+        summary = summarize_stage1(template, root, cap_s=cap_s)
         if classify_stage1_outcome(outcome)["kind"] != "ok":
             # 帽停容忍（criteria_a §一 帽=防挂死非预算门）：帽停 → 部分产物判读
             # 产 stage1_verdict.json；秒退 → crash FAIL。门数值不动（§三）。
             summary["stage1_verdict"] = stage1_partial_verdict(
-                template, root, outcome=outcome, summary=summary)
+                template, root, outcome=outcome, summary=summary, cap_s=cap_s)
         plan = _plan_load(root)
         if (plan["templates"][template] or {}).get("stage1") is None:
             declare_block(template, "stage1", _stage1_payload(summary), root)
@@ -1121,6 +1196,35 @@ def _write_cap_result(template: str, work: Path, outcome: dict[str, Any],
 
 
 # ─── 判读（G0-G4，criteria_a.md §四；judge_refix 口径 + 当轮 PRED_SHIFT）────────
+
+def band_center_3db(f: np.ndarray, s_db: np.ndarray) -> dict:
+    """全局峰邻域连续 −3dB 带（含峰的最大连通段）→ 中心/边沿/带宽；另记包络口径。
+
+    （杂项批 2②：原 judge_refix.py:51 只读 import 改
+    本脚本内逐位拷贝——判读链脱 runs/ 证据树 import 依赖；判读数字须与归档
+    口径逐位一致，本函数体任一侧改动须双侧同步并跑通 test_c3_fullcurve_runner
+    的 G1 dev=0 端到端钉背书。）
+    """
+    i = int(np.argmax(s_db))
+    pk = float(s_db[i])
+    m = s_db >= pk - 3.0
+    lo = i
+    while lo > 0 and m[lo - 1]:
+        lo -= 1
+    hi = i
+    while hi < f.size - 1 and m[hi + 1]:
+        hi += 1
+    fc = 0.5 * (float(f[lo]) + float(f[hi]))
+    idx = np.where(m)[0]
+    env_lo, env_hi = float(f[idx[0]]), float(f[idx[-1]])
+    return {"peak_db": pk, "f_peak_argmax_ghz": float(f[i]),
+            "f_lo_ghz": float(f[lo]), "f_hi_ghz": float(f[hi]),
+            "f_center_3db_ghz": fc, "bw_3db_pct": (float(f[hi]) - float(f[lo])) / fc * 100.0,
+            "touches_sweep_edge": bool(lo == 0 or hi == f.size - 1),
+            "envelope_lo_ghz": env_lo, "envelope_hi_ghz": env_hi,
+            "envelope_center_ghz": 0.5 * (env_lo + env_hi),
+            "n_points_in_band": int(hi - lo + 1)}
+
 
 def _current_round_pred(template: str, f_ghz: np.ndarray,
                         h_mm: float) -> dict[str, Any]:
@@ -1344,10 +1448,14 @@ def main(argv: list[str] | None = None) -> int:
                          "重放盘上产物，不发射引擎）")
     ap.add_argument("--root", default=None,
                     help="产物根（缺省 runs/smoke_c3_fullcurve）")
+    ap.add_argument("--nominals", default=None,
+                    help="R2 当轮重设计名义 doc（redesign_nominals.json；缺省 "
+                         "runs/smoke_c3_redesign 存档，行为不变）")
     args = ap.parse_args(argv)
     root = Path(args.root) if args.root else None
+    nominals_path = Path(args.nominals) if args.nominals else None
     if args.plan:
-        build_plan(root, force=args.force_plan)
+        build_plan(root, force=args.force_plan, nominals_path=nominals_path)
         return 0
     if not args.template or not (args.stage or args.judge or args.judge_stage1):
         ap.error("须给 --template + (--stage stage1|stage2 | --judge | --judge-stage1)")

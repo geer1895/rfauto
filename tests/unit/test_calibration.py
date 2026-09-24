@@ -427,9 +427,13 @@ class TestFsvGradeGate:
             self, tmp_path, monkeypatch):
         """集成：n_validation=16（≥MIN_POINTS）→ FSV 门真实参与 verdict。
 
-        fake 校准实测（seed=42 确定性）：16 验证点 worst GDM=F 恰在门限
-        边界（pass=True），LOOCV ρ≈0.633 < 0.8 → verdict=FAIL 归因 ρ——
-        门通过不掩盖 base FAIL；gate.json/report 同步携带门结论。
+        fake 校准接线实测（seed=42 确定性）。2026-09-23 fake 位置锚 3.54
+        （乘法缩放 K=3.54/2.725）落配置后带内响应平滑化：实测
+        worst GDM=VG（门内）、LOOCV ρ≈0.883 ≥ 0.8 → verdict=PASS——门参与
+        判定与 gate.json/report 同步仍端到端覆盖。旧锚口径（GDM=F 边界、
+        ρ≈0.633、verdict=FAIL）的"门通过不掩盖 base FAIL"路径改由下方
+        两条注入式单测覆盖（不依赖 fake 响应数值，锚再变也不漂）。
+        runs/fake_anchor_354/criteria.md §4。
         """
         monkeypatch.chdir(tmp_path)
         from rfauto.service.calibration_service import calibrate_surrogate
@@ -439,13 +443,13 @@ class TestFsvGradeGate:
         assert result["ok"], result.get("errors")
         gate = result["fsv_gate"]
         assert gate["degraded"] is False
-        assert gate["grade"] == "F"          # 实测内核等级（seed 确定性）
-        assert gate["pass"] is True          # F==门限 F 边界通过
+        assert gate["grade"] == "VG"         # 实测内核等级（seed 确定性；旧锚 F）
+        assert gate["pass"] is True          # VG 在门限 F 内
         assert result["fsv_validation"]["ok"] is True
-        assert result["fsv_validation"]["worst_gdm_grade"] == "F"
-        # 门通过不掩盖 base FAIL：ρ=0.633 < 0.8 → verdict=FAIL
-        assert result["loocv"]["rho"] < 0.8
-        assert result["verdict"] == "FAIL"
+        assert result["fsv_validation"]["worst_gdm_grade"] == "VG"
+        # 绿 base（ρ≥0.8）+ 门通过 → PASS
+        assert result["loocv"]["rho"] >= 0.8
+        assert result["verdict"] == "PASS"
         calib = tmp_path / "runs" / result["run_id"] / "calibration"
         gate_json = json.loads(
             (calib / "gate.json").read_text(encoding="utf-8"))
@@ -453,6 +457,55 @@ class TestFsvGradeGate:
         report = (calib / "report.md").read_text(encoding="utf-8")
         assert "FSV 等级门" in report
         json.dumps(result)
+
+    def test_gate_pass_does_not_mask_base_fail(
+            self, tmp_path, monkeypatch):
+        """门通过不掩盖 base FAIL：注入 ρ=0.5（<0.8）→ verdict=FAIL（归因 ρ）。
+
+        注入点=源模块属性（calibrate_surrogate 内 `from
+        rfauto.optimization.surrogate import loocv_rho` 是调用点局部导入，
+        patch 源才能生效）。FAIL 路径与 fake 响应数值解耦（2026-09-23
+        位置锚落配置后由 16 点接线测试迁出，见上方 docstring）。
+        """
+        monkeypatch.chdir(tmp_path)
+        from rfauto.service.calibration_service import calibrate_surrogate
+
+        def _fake_loocv(samples, cost_fn, surrogate_factory):
+            return {"ok": True, "rho": 0.5, "n_folds": len(samples),
+                    "skipped": 0}
+
+        monkeypatch.setattr("rfauto.optimization.surrogate.loocv_rho",
+                            _fake_loocv)
+        result = calibrate_surrogate(_calib_recipe(tmp_path), sampler="fake",
+                                     n_levels=3, n_validation=16)
+        assert result["ok"], result.get("errors")
+        assert result["loocv"]["rho"] == 0.5
+        assert result["fsv_gate"]["pass"] is True   # 门通过（真值 VG 门内）
+        assert result["verdict"] == "FAIL"          # 不被门掩盖，归因 ρ
+
+    def test_gate_veto_drags_green_base_to_fail(
+            self, tmp_path, monkeypatch):
+        """门否决（pass=False）拖垮绿 base：ρ≥0.8 仍 verdict=FAIL（§10.20 ⑥）。"""
+        monkeypatch.chdir(tmp_path)
+        import rfauto.service.calibration_service as calib_mod
+        from rfauto.service.calibration_service import calibrate_surrogate
+
+        real_gate = calib_mod.fsv_grade_gate
+
+        def _veto(section, *args, **kwargs):
+            g = dict(real_gate(section, *args, **kwargs))
+            g["pass"] = False
+            g["grade"] = "VP"
+            g["reason"] = "注入否决（测试）"
+            return g
+
+        monkeypatch.setattr(calib_mod, "fsv_grade_gate", _veto)
+        result = calibrate_surrogate(_calib_recipe(tmp_path), sampler="fake",
+                                     n_levels=3, n_validation=16)
+        assert result["ok"], result.get("errors")
+        assert result["loocv"]["rho"] >= 0.8        # base 绿
+        assert result["fsv_gate"]["pass"] is False  # 门否决
+        assert result["verdict"] == "FAIL"
 
 
 # ─── patch v2 判读复算（真实归档曲线，§10.20 ⑥ 验收）──────────────────────

@@ -36,6 +36,10 @@ EXPECTED = {
     # 槽线（2026-09-18 注册，#231 三表同步）：Janaswamy–Schaubert 闭式
     # core/slotline（路线 A 裁判面），越域显式拒绝不外推
     "slotline_analysis", "slotline_synthesis",
+    # SIW（2026-09-22 siw-family 立项，#231 三表同步）：Cassivi 2002 等效宽度
+    # + RWG TE10 等效（双源出处 runs/siw_family/criteria.md §1；WR-90/RWG
+    # 极限回收钉在 test_siw_template）
+    "siw_analysis", "siw_synthesis",
     "quarter_wave_transformer", "attenuator_pi", "attenuator_t",
     # F8 首族变体锚（#19 提议→沙箱→三层 Gate 链，2026-09-16）：桥 T 型闭式
     "attenuator_bridged_t",

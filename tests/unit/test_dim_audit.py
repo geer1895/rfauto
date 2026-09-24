@@ -85,14 +85,16 @@ class TestRepoScanGate:
         assert audit.filter_violations(findings) == []
 
     def test_arbitration_var_expr_still_classified_as_literal_var(self):
-        # 豁免≠漏扫：仲裁脚本 :176 的 f"({center_x_expr}-2.5*w_in)" 必须
+        # 豁免≠漏扫：仲裁脚本的 f"({center_x_expr}-2.5*w_in)" 必须
         # 仍被分类器看见为 LITERAL_ARITH_VAR（再经人工确认豁免——变量
         # 带 mm 量纲，#218 语义四，r8 真机 PASS_A 背书）
+        # 行号钉 :175（桌面治理批：_kill_desktops 委托单源+移除未用
+        # import 后整体 -1，原钉 :176）
         findings = audit.scan_repo()
         arb = [f for f in findings
                if f["file"] == "scripts/hfss_same_geometry_arbitration.py"
                and f["category"] == "LITERAL_ARITH_VAR"]
-        assert len(arb) == 1 and arb[0]["line"] == 176
+        assert len(arb) == 1 and arb[0]["line"] == 175
 
     def test_variable_indirection_limitation_documented(self):
         # 已知边界：经局部变量中转的字符串（sweep_assert :96 x0 =

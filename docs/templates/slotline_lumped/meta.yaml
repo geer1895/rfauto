@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: LumpedPort 跨槽 R=线阻抗档（CalcPort 参考同值）：带载比值 S11/S21 #250 口径，assemble_route_b_sparams 归一到 50Ω 对拍；β 主口径=双行波拟合 two_wave_beta_fit（线性斜率法驻波下偏 +10.7% 只作诊断列）
+extraction: LumpedPort 跨槽 R=线阻抗档（CalcPort 参考同值）：带载比值 S11/S21（#250）口径，assemble_route_b_sparams 归一到 50Ω 对拍；β 主口径=双行波拟合 two_wave_beta_fit（线性斜率法驻波下偏 +10.7% 只作诊断列）
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null

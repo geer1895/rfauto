@@ -2,8 +2,10 @@
 
 口径：
 - 成功信封 ok=True，数值与 core 直调逐位相等（service 零复算）；
-- 越有效域/不可达/参数非法 → ok=False + error 字符串，绝不抛出；
+- 越有效域/参数非法 → ok=False + error 字符串，绝不抛出；
 - realizable=False 是合法结果（ok=True），不进 error（#122 不凑绿）；
+  slotline_synthesis 目标超可达区间同语义（D5 与 marchand 两节统一：
+  ok=True + realizable=False + reason 含可达范围）；
 - 全部信封 json.dumps 可序列化（MCP/CLI 直出）。
 锚：core/slotline_transitions 模块 docstring 设计点
 （w=1.0/h=1.524/εr=3.66@2.5GHz → Z0=110.92Ω/εeff=1.6462/λ'=93.462mm）。
@@ -51,13 +53,28 @@ class TestSlotlineAnalysisSynthesis:
     def test_synthesis_roundtrip_and_unreachable(self):
         data = svc.slotline_synthesis(110.92, **_SUB)
         assert data["ok"] is True
+        assert data["realizable"] is True          # D5：成功信封也带标志位
         assert data["result"]["w_mm"] == pytest.approx(1.0, abs=2e-3)
         assert data["result"]["z0_actual_ohm"] == pytest.approx(110.92, abs=0.01)
         bad = svc.slotline_synthesis(500.0, **_SUB)
-        assert bad["ok"] is False
-        assert "可达范围" in bad["error"]
+        # D5 语义统一（与 marchand 两节对齐）：超可达区间=合法结果非错误
+        assert bad["ok"] is True
+        assert bad["realizable"] is False
+        assert "可达范围" in bad["reason"]
+        assert "result" not in bad
+        json.dumps(bad)
         neg = svc.slotline_synthesis(-50.0, **_SUB)
-        assert neg["ok"] is False
+        assert neg["ok"] is False                  # 参数非法仍显式拒绝
+
+    def test_core_unreachable_marker_guard(self):
+        """内核拒绝分支标记守卫：service realizable 判别依赖 core 报错文案
+        含 _UNREACHABLE_MARKER——文案漂移即在此显式红（防静默退化 ok=False）。"""
+        from rfauto.core.calculators import slotline_synthesis as core_fn
+        from rfauto.service.slotline_service import _UNREACHABLE_MARKER
+
+        with pytest.raises(ValueError, match="超出窄槽段可达范围") as ei:
+            core_fn(500.0, **_SUB)
+        assert _UNREACHABLE_MARKER in str(ei.value)
 
 
 class TestTransitionDesigns:

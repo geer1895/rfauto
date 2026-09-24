@@ -730,11 +730,14 @@ class TestSlotlineTransitionTools:
     def test_slotline_synthesis_roundtrip(self, mcp_server):
         data = _call(mcp_server, "slotline_synthesis", {"z0_ohm": 110.92, **_SLOT_SUB})
         assert data["ok"] is True
+        assert data["realizable"] is True
         assert data["result"]["w_mm"] == pytest.approx(1.0, abs=2e-3)
         unreachable = _call(mcp_server, "slotline_synthesis",
                             {"z0_ohm": 500.0, **_SLOT_SUB})
-        assert unreachable["ok"] is False
-        assert "可达范围" in unreachable["error"]
+        # D5 语义统一：超可达区间=合法结果（ok=True + realizable=False + reason）
+        assert unreachable["ok"] is True
+        assert unreachable["realizable"] is False
+        assert "可达范围" in unreachable["reason"]
 
     def test_msl_slot_transition_design_anchor(self, mcp_server):
         data = _call(mcp_server, "msl_slot_transition_design",

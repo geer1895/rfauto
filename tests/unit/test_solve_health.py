@@ -435,6 +435,98 @@ class TestHealthCheckRun:
         assert statuses["timestep"] == "UNKNOWN"
         assert statuses["probe_scale"] == "UNKNOWN"
 
+    def test_masked_csv_wins_over_padded_touchstone(self, tmp_path):
+        """run 目录同时有掩码 sparams.csv 与零填充 Touchstone → csv 优先
+        （#314 同族收口：单激励写入方的 Touchstone 全对查互易必假阳性，
+        c10 GT 探针实证 max|S12−S21|=|S21| 指纹拦批）；互易走 UNKNOWN 不拦。"""
+        run_dir = tmp_path / "both_run"
+        (run_dir / "results").mkdir(parents=True)
+        _write_meta(run_dir)
+        _write_sparams_csv(run_dir, s21=0.9, rel=Path("results"))
+        s = np.zeros((5, 2, 2), dtype=complex)
+        s[:, 0, 0] = 0.1
+        s[:, 1, 0] = 0.9  # S12 未测置零——若 Touchstone 被采用必互易 FAIL
+        _network(s).write_touchstone(
+            str(run_dir / "results" / "params.s2p"))
+
+        result = health_check_run("both_run", runs_dir=tmp_path)
+        statuses = {f["factor"]: f["status"] for f in result["factors"]}
+        assert result["verdict"] == "healthy"
+        assert statuses["reciprocity"] == "UNKNOWN"
+
+    def test_corrupt_csv_no_touchstone_fallback(self, tmp_path):
+        """corrupt sparams.csv（shape-reject：0 行或 <5 列）+ 零填充
+        Touchstone → **不回退**（df3a 假阳性门不得无痕重开，round5 C-F1）：
+        verdict 非 healthy、无 #314 互易假阳性 FAIL、errors 含 shape-reject
+        痕迹。csv 是掩码载体，其损坏=证据损坏 → S 参数因子走 None。"""
+        run_dir = tmp_path / "corrupt_run"
+        (run_dir / "results").mkdir(parents=True)
+        (run_dir / "results" / "sparams.csv").write_text(
+            "freq_hz,re_S11,im_S11\n"  # 3 列 < 5 → shape-reject 静默 None
+            "2.0e9,0.1,0.0\n",
+            encoding="utf-8")
+        s = np.zeros((5, 2, 2), dtype=complex)
+        s[:, 0, 0] = 0.1
+        s[:, 1, 0] = 0.9  # S12 置零——若回退 Touchstone 必互易假阳性 FAIL
+        _network(s).write_touchstone(str(run_dir / "results" / "params.s2p"))
+
+        result = health_check_run("corrupt_run", runs_dir=tmp_path)
+        assert result["verdict"] != "healthy"
+        statuses = {f["factor"]: f["status"] for f in result["factors"]}
+        assert statuses.get("reciprocity") != "FAIL", (
+            "#314 假阳性不得经 Touchstone 回退门重入")
+        assert any("shape-reject" in e for e in result.get("errors", [])), (
+            "csv 存在但被拒必须留 errors 痕迹（audit S1：修复前 errors=None）")
+
+    def test_unparseable_csv_no_touchstone_fallback(self, tmp_path):
+        """csv 读入**异常**（非数值文本）同样不回退 Touchstone、留痕。"""
+        run_dir = tmp_path / "garbage_run"
+        (run_dir / "results").mkdir(parents=True)
+        (run_dir / "results" / "sparams.csv").write_text(
+            "freq_hz,re_S11,im_S11,re_S21,im_S21\n"
+            "not,numbers,at,all,here\n",
+            encoding="utf-8")
+        _network(_healthy_s()).write_touchstone(
+            str(run_dir / "results" / "params.s2p"))
+
+        result = health_check_run("garbage_run", runs_dir=tmp_path)
+        statuses = {f["factor"]: f["status"] for f in result["factors"]}
+        assert statuses.get("reciprocity") != "FAIL"
+        assert any("sparams.csv" in e and "解析失败" in e
+                   for e in result.get("errors", []))
+        assert not any("Touchstone 解析成功" in e
+                       for e in result.get("errors", []))
+
+    def test_corrupt_csv_plus_healthy_csv_still_healthy(self, tmp_path):
+        """audit S2：第一个 csv corrupt + 第二个 csv 健康 → healthy 不误伤
+        （坏 csv 记 errors 痕迹，健康 csv 照常供掩码）。"""
+        run_dir = tmp_path / "mixed_run"
+        (run_dir / "fdtd").mkdir(parents=True)
+        (run_dir / "fdtd" / "sparams.csv").write_text(
+            "freq_hz,re_S11,im_S11\n2.0e9,0.1,0.0\n", encoding="utf-8")
+        _write_sparams_csv(run_dir, s21=0.9, rel=Path("results"))
+
+        result = health_check_run("mixed_run", runs_dir=tmp_path)
+        assert result["verdict"] == "healthy"
+        assert any("shape-reject" in e for e in result.get("errors", []))
+
+    def test_touchstone_only_reciprocity_pass_unchanged(self, tmp_path):
+        """csv 不存在 + Touchstone（全矩阵）→ 现行为逐位：回退通道保持，
+        互易全对查 PASS（audit 2.2 弱钉补强）。"""
+        run_dir = tmp_path / "ts_only_run"
+        (run_dir / "results").mkdir(parents=True)
+        s = np.zeros((5, 2, 2), dtype=complex)
+        s[:, 0, 0] = 0.1
+        s[:, 1, 0] = s[:, 0, 1] = 0.9
+        s[:, 1, 1] = 0.1
+        _network(s).write_touchstone(str(run_dir / "results" / "params.s2p"))
+
+        result = health_check_run("ts_only_run", runs_dir=tmp_path)
+        statuses = {f["factor"]: f["status"] for f in result["factors"]}
+        assert statuses["reciprocity"] == "PASS"
+        assert result["verdict"] == "healthy"
+        assert "errors" not in result
+
     def test_run_log_timestep_collapse_detected(self, tmp_path):
         """run.log 双激励 timestep 塌缩（#152）→ FAIL。"""
         run_dir = tmp_path / "cfl_run"

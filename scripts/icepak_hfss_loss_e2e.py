@@ -44,9 +44,7 @@
 """
 import json
 import math
-import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -86,17 +84,16 @@ AIR_TOP_MM = 8.0                 # 空气盒 z 向净高
 
 
 def _kill_desktops() -> None:
-    """杀本脚本遗留的 ansysedt（仅整轮重试时调用，#157 先查后杀）。"""
-    probe = subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "(Get-Process ansysedt -ErrorAction SilentlyContinue).Count"],
-        capture_output=True, text=True)
-    count = (probe.stdout or "").strip()
-    print(f"[retry] 检测到 {count or 0} 个 ansysedt 进程，清理后重试", flush=True)
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process ansysedt -ErrorAction SilentlyContinue | "
-                    "Stop-Process -Force"], capture_output=True)
-    time.sleep(5)
+    """attempt 间清理（治理单源，#157 先查后杀）。
+
+    委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
+    活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉
+    重试架丢结果落盘——strict=False best-effort，#105）。
+    旧实现 Get-Process|Stop-Process -Force 无条件代杀已废弃（#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print, strict=False)
 
 
 def _clean_project_artifacts() -> None:

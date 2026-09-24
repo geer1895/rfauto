@@ -42,6 +42,7 @@ def _load_script(name: str):
 
 runner = _load_script("c3_fullcurve_runner")
 
+from rfauto.adapters import openems_templates as ot
 from rfauto.adapters.openems_templates import (
     TEMPLATE_NOMINAL,
     c3_circuit_sparams,
@@ -355,7 +356,7 @@ class TestPlanImmutability:
         root = tmp_path / "runs"
         _make_plan(root, ("combline", "interdigital", "sir_bpf"))
 
-        def fake_base(template: str) -> dict:
+        def fake_base(template: str, nominals_path=None) -> dict:
             return {"template": template, "nominal_matches_redesign": True,
                     "mesh_mm": 0.301, "mesh_max_mm": 0.3017,
                     "grid": {"n_x": 2, "n_y": 2, "n_z": 2, "n_cells": 8,
@@ -372,7 +373,7 @@ class TestPlanImmutability:
     def test_build_plan_failclosed_on_nominal_mismatch(self, tmp_path, monkeypatch):
         root = tmp_path / "runs"
 
-        def fake_base(template: str) -> dict:
+        def fake_base(template: str, nominals_path=None) -> dict:
             return {"template": template, "nominal_matches_redesign": False}
 
         monkeypatch.setattr(runner, "plan_base_for", fake_base)
@@ -380,20 +381,28 @@ class TestPlanImmutability:
             runner.build_plan(root, force=True)
 
     def test_registered_nominal_matches_redesign_doc(self):
-        """真面一致性钉：TEMPLATE_NOMINAL（重设计名义）与 redesign_nominals.json
-        new_nominal 4 位舍入一致（--plan fail-closed 校验的输入面）。"""
-        if not runner.NOMINALS_PATH.exists():
-            pytest.skip("runs/smoke_c3_redesign/redesign_nominals.json 归档不在"
-                        "（公开仓不带真机归档；由 scripts/c3_redesign_synthesis.py 生成）")
+        """真面一致性钉（当轮口径）：TEMPLATE_NOMINAL 与设计链
+        l_via_h=None（auto=校准值 0.125nH）再生名义 4 位舍入一致（经 doc 参数
+        注入，脱 runs/ 存档依赖）；--plan fail-closed 机制面用篡改 doc 钉
+        （改任一在册几何键 → 不一致）。"""
+        designers = {"interdigital": ot.interdigital_design_from_order,
+                     "combline": ot.combline_design_from_order,
+                     "sir_bpf": ot.sir_bpf_design_from_order}
+        keys = {"interdigital": ("order", "w_mm", "res_len_mm", "gaps_mm",
+                                 "feed_len_mm"),
+                "combline": ("order", "w_mm", "res_len_mm", "gaps_mm",
+                             "feed_len_mm", "c_load_pf"),
+                "sir_bpf": ("order", "w_feed_mm", "w_low_mm", "w_high_mm",
+                            "l_low_mm", "l_high_mm", "gaps_mm", "feed_len_mm")}
         for t in ("combline", "interdigital", "sir_bpf"):
+            design = designers[t](3, 2.5, 0.05, 20.0, l_via_h=None)
+            new_nominal = {k: design[k] for k in keys[t]}
+            doc = {"templates": {t: {"new_nominal": new_nominal}}}
             assert runner._nominal_matches_redesign(
-                t, dict(TEMPLATE_NOMINAL[t])) is True
-        # 改动任一在册几何键 → 不一致（fail-closed 触发面）
-        assert runner._nominal_matches_redesign(
-            "interdigital", dict(TEMPLATE_NOMINAL["interdigital"],
-                                 res_len_mm=1.0)) is False
-        assert runner._nominal_matches_redesign(
-            "sir_bpf", dict(TEMPLATE_NOMINAL["sir_bpf"], l_high_mm=1.0)) is False
+                t, dict(TEMPLATE_NOMINAL[t]), doc) is True
+            bad_key = "l_high_mm" if t == "sir_bpf" else "res_len_mm"
+            assert runner._nominal_matches_redesign(
+                t, dict(TEMPLATE_NOMINAL[t], **{bad_key: 1.0}), doc) is False
 
 
 class TestStageCmd:
@@ -603,6 +612,112 @@ class TestStage2EndToEnd:
         assert out["killed"] == "blocked"
         judged = json.loads((work / "_judge_a.json").read_text(encoding="utf-8"))
         assert judged["verdict"] == "FAIL_NOT_CONVERGED"
+
+
+# ─── 2① stage1 帽值落痕 / 2② band_center_3db 脚本内实现（杂项批）──────────
+
+class TestStage1CapTrace:
+    def test_default_cap_recorded_explicitly(self, tmp_path):
+        """缺省 5040 也显式落 summary（--stage1-cap-s 生效值不落痕修复）。"""
+        root = tmp_path / "runs"
+        _make_plan(root)
+        work = runner.stage_dir(T, "stage1", root)
+        t, probes = _synth_ports(T_EXC + 4.0 / ALPHA_MIN_S, MODES_MATCH)
+
+        def fake_launch(cmd, timeout_s, cwd):
+            assert "5040.0" in " ".join(cmd)
+            (work / "engine.log").write_text(
+                _engine_log(1.38713e-13, 82611, 163654, 5040.0), encoding="utf-8")
+            _write_probes(work, t, probes)
+            return {"rc": 0, "killed": None}
+
+        summary = runner.run_stage1(T, root, launch_fn=fake_launch,
+                                    guard=lambda: [])
+        assert summary["stage1_cap_s"] == pytest.approx(runner.STAGE1_TIMEOUT_S)
+        disk = json.loads((work / "_stage1_summary.json").read_text(
+            encoding="utf-8"))
+        assert disk["stage1_cap_s"] == pytest.approx(runner.STAGE1_TIMEOUT_S)
+
+    def test_custom_cap_recorded_in_summary_and_verdict(self, tmp_path):
+        root = tmp_path / "runs"
+        _make_plan(root)
+        work = runner.stage_dir(T, "stage1", root)
+        t, probes = _synth_ports(T_EXC + 4.0 / ALPHA_MIN_S, MODES_MATCH)
+
+        def fake_launch(cmd, timeout_s, cwd):
+            assert "6000.0" in " ".join(cmd)          # 发射命令吃到生效帽
+            (work / "engine.log").write_text(
+                _engine_log(1.38713e-13, 82611, 163654, 5040.0), encoding="utf-8")
+            _write_probes(work, t, probes)
+            return {"rc": 1, "killed": None, "elapsed_s": 6001.0,
+                    "stdout_tail": "", "stderr_tail": ""}   # 帽停形态
+
+        summary = runner.run_stage1(T, root, launch_fn=fake_launch,
+                                    guard=lambda: [], cap_s=6000.0)
+        assert summary["stage1_cap_s"] == pytest.approx(6000.0)
+        vdoc = summary["stage1_verdict"]
+        assert vdoc["stage1_cap_s"] == pytest.approx(6000.0)
+        disk = json.loads((work / "stage1_verdict.json").read_text(
+            encoding="utf-8"))
+        assert disk["stage1_cap_s"] == pytest.approx(6000.0)
+
+    def test_offline_replay_preserves_prior_cap(self, tmp_path):
+        """离线重放（--judge-stage1 形态）：summary 在档 cap 优先保留原 run 落痕。"""
+        root = tmp_path / "runs"
+        _make_plan(root)
+        work = runner.stage_dir(T, "stage1", root)
+        work.mkdir(parents=True, exist_ok=True)
+        t, probes = _synth_ports(T_EXC + 4.0 / ALPHA_MIN_S, MODES_MATCH)
+        (work / "engine.log").write_text(
+            _engine_log(1.38713e-13, 82611, 163654, 5040.0), encoding="utf-8")
+        _write_probes(work, t, probes)
+        (work / "_stage1_summary.json").write_text(
+            json.dumps({"stage1_cap_s": 7200.0}), encoding="utf-8")
+        summary = runner.summarize_stage1(T, root)
+        assert summary["stage1_cap_s"] == pytest.approx(7200.0)
+        # 全无凭据（无在档）→ 缺省帽值注记
+        (work / "_stage1_summary.json").unlink()
+        summary2 = runner.summarize_stage1(T, root)
+        assert summary2["stage1_cap_s"] == pytest.approx(runner.STAGE1_TIMEOUT_S)
+
+    def test_quick_exit_verdict_records_cap_when_given(self, tmp_path):
+        root = tmp_path / "runs"
+        _make_plan(root)
+        vdoc = runner.stage1_partial_verdict(
+            T, root, outcome={"rc": 1, "killed": None, "elapsed_s": 10.0},
+            cap_s=6000.0)
+        assert vdoc["fail_kind"] == "crash"
+        assert vdoc["stage1_cap_s"] == pytest.approx(6000.0)
+
+
+class TestBandCenter3db:
+    def test_flat_band_known_values(self):
+        f = np.linspace(2.25, 2.75, 501)
+        s_db = np.full_like(f, -40.0)
+        m = np.abs(f - 2.5) <= 0.05                  # 平顶 −3dB 带 0.1GHz
+        s_db[m] = -1.0
+        bc = runner.band_center_3db(f, s_db)
+        assert bc["f_center_3db_ghz"] == pytest.approx(2.5, abs=1e-12)
+        assert bc["f_lo_ghz"] == pytest.approx(2.45, abs=1e-9)
+        assert bc["f_hi_ghz"] == pytest.approx(2.55, abs=1e-9)
+        assert bc["touches_sweep_edge"] is False
+        assert bc["n_points_in_band"] == int(m.sum())
+        assert bc["peak_db"] == pytest.approx(-1.0)
+
+    def test_peak_at_sweep_edge_flagged(self):
+        f = np.linspace(2.25, 2.75, 101)
+        s_db = np.where(f >= 2.7, -1.0, -40.0)
+        bc = runner.band_center_3db(f, s_db)
+        assert bc["touches_sweep_edge"] is True
+
+    def test_no_runs_tree_import_dependency(self):
+        """2②：判读链脱 runs/ 证据树 import（脚本源静态钉；同输入数字逐位
+        不变由上方已知值钉 + G1 dev=0 端到端钉背书）。"""
+        src = (SCRIPTS / "c3_fullcurve_runner.py").read_text(encoding="utf-8")
+        assert "from judge_refix import" not in src
+        assert "import judge_refix" not in src
+        seg = src[src.index("for _p in"): src.index("import numpy")]
+        assert "runs" not in seg            # sys.path 注入块不再含 runs/ 路径
 
 
 # ─── stage1 帽停容忍（criteria_a §一：帽=防挂死非预算门；2026-09-22 增补）────────

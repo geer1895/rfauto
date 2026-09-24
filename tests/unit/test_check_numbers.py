@@ -50,6 +50,14 @@ def test_doc_header_patterns_actually_match(doc: str, pattern: str, label: str):
     )
 
 
+def test_readme_binding_labels_present():
+    """防回退钉（D1 同构）：README/README.zh-CN 的 badge/MCP/CLI/
+    templates 模式必须在 DOC_PATTERNS 绑定——绑定键漂移=门空转，移除即盲区。"""
+    for doc in ("README.md", "README.zh-CN.md"):
+        labels = {label for _, label in check_numbers.DOC_PATTERNS[doc]}
+        assert {"tests_min", "mcp", "cli", "templates"} <= labels
+
+
 def test_mcp_entry_missing_reports_gracefully(tmp_path: Path):
     # exe 缺失时返回明确缺失信息而非抛异常（不算崩溃）。
     msg = check_numbers.mcp_entry_missing_message(tmp_path / "nope" / "rfauto-mcp.exe")

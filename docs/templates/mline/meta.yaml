@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: S11/S21 @ MSLPort 1-2（均匀线：S21 相位斜率→εeff，β 金标准 #162；|S11| 显著非零=端口/网格判废信号）
+extraction: S11/S21 @ MSLPort 1-2（均匀线：S21 相位斜率→εeff，β 金标准（#162）；|S11| 显著非零=端口/网格判废信号）
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null

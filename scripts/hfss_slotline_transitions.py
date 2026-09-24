@@ -404,7 +404,7 @@ def main() -> int:
                 _write_result({"stage": f"failed_all_attempts_{kind}",
                                "error": last_err})
                 _progress(f"stage5 hfss/{kind}: FAILED all attempts {last_err}")
-        _kill_desktops()
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
 
     analyses: dict = {}
     for kind in wanted:

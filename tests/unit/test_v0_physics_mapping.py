@@ -38,6 +38,12 @@ def _dip_linear(adapter: FakeAdapter) -> tuple[float, float]:
     return float(mag[i]), float(freq[i])
 
 
+def _dip_db(adapter: FakeAdapter) -> float:
+    """谷底深度（dB，负值）。"""
+    mag, _ = _dip_linear(adapter)
+    return 20 * math.log10(mag + 1e-12)
+
+
 def _solved_adapter(model: str, variables: dict[str, float]) -> FakeAdapter:
     ad = FakeAdapter(model_type=model, n_ports=3, freq_ghz=(1.5, 3.5, 201))
     ad.connect({})
@@ -127,28 +133,46 @@ class TestWilkinsonPhysicsResponse:
         "arm_len_mm": 20.5, "series_w_mm": 0.33, "shunt_w_mm": 1.10}
     BAND = (2.3, 2.5)
 
-    def test_line_width_drives_band_s11(self):
-        """线宽失配驱动带内 S11：过细线（远离 70.7Ω）应显著恶化。
+    def test_line_width_drives_dip_depth(self):
+        """线宽失配驱动谐振深度：过细线（远离 70.7Ω）谷底应显著恶化。
 
         模型最优 series_w≈0.45-0.6mm（MLine 70.7Ω），HFSS 真机最优 0.423
         ——绝对位置有 ~20% 模型偏差（留给 v1 校准吸收），但"过细→恶化"
-        的方向与幅度（>1.5dB）是排序可信度的底线。旧版三者差异 <0.1dB。
+        的方向与幅度是排序可信度的底线。旧版三者差异 <0.1dB。
+
+        2026-09-23 fake 位置锚 3.54（乘法缩放 K=3.54/2.725）落
+        配置后，名义点谷位在带下方（~1.98GHz，对齐 openEMS 名义肩部口径
+        ——2026-09-04 决策注释记载的同一"谷在带下方肩部"现象），带内 S11
+        的失配对比被肩部阻尼（thin/opt 带内仅 ~0.4dB），失配响应的主载体
+        改在谷底深度通道断言（幅度门不变：实测对比 ~4dB）；带内保留方向
+        断言（肩部阻尼后排序仍须保序）。runs/fake_anchor_354/criteria.md。
         """
+        depth_thin = _dip_db(
+            _solved_adapter("wilkinson", {**self.NOMINAL, "series_w_mm": 0.25}))
+        depth_opt = _dip_db(
+            _solved_adapter("wilkinson", {**self.NOMINAL, "series_w_mm": 0.45}))
+        assert depth_thin > depth_opt + 1.5, (depth_opt, depth_thin)
         s11_thin = _band_s11_db(
             _solved_adapter("wilkinson", {**self.NOMINAL, "series_w_mm": 0.25}),
             self.BAND)
         s11_opt = _band_s11_db(
             _solved_adapter("wilkinson", {**self.NOMINAL, "series_w_mm": 0.45}),
             self.BAND)
-        assert s11_thin > s11_opt + 1.5, (s11_opt, s11_thin)
+        assert s11_thin > s11_opt, (s11_opt, s11_thin)
 
-    def test_shunt_width_drives_band_s11(self):
+    def test_shunt_width_drives_dip_depth(self):
+        """并臂线宽失配驱动谷底深度（带内被肩部阻尼，同
+        test_line_width_drives_dip_depth 口径；实测谷底对比 ~2.4dB）。"""
+        depth_nominal = _dip_db(_solved_adapter("wilkinson", self.NOMINAL))
+        depth_off = _dip_db(
+            _solved_adapter("wilkinson", {**self.NOMINAL, "shunt_w_mm": 0.85}))
+        assert depth_off > depth_nominal + 0.5, (depth_nominal, depth_off)
         s11_nominal = _band_s11_db(
             _solved_adapter("wilkinson", self.NOMINAL), self.BAND)
         s11_off = _band_s11_db(
             _solved_adapter("wilkinson", {**self.NOMINAL, "shunt_w_mm": 0.85}),
             self.BAND)
-        assert s11_off > s11_nominal + 0.5, (s11_nominal, s11_off)
+        assert s11_off > s11_nominal, (s11_nominal, s11_off)
 
     def test_arm_length_moves_resonance(self):
         """arm_len 变长 → λ/4 谐振频率下移（S11 谷点左移）。"""
@@ -159,7 +183,12 @@ class TestWilkinsonPhysicsResponse:
         assert f_long < f_short - 0.2, (f_short, f_long)
 
     def test_band_s11_in_physical_range(self):
-        """名义点带内 S11 落在真机量级附近（HFSS 实测名义点 -12.93dB）。"""
+        """名义点带内 S11 落在真机量级附近（HFSS 实测名义点 -12.93dB）。
+
+        2026-09-23 位置锚落配置后带内值在肩部（~-8dB，谷在带下方）——
+        窗口 (-25,-8) 的物理合理性上缘从此贴边，量级语义以谷位锚为准
+        （openEMS 名义口径 2.2GHz，非 HFSS 带内 -12.93dB）。
+        """
         s11 = _band_s11_db(
             _solved_adapter("wilkinson", self.NOMINAL), self.BAND)
         assert -25 < s11 < -8, s11

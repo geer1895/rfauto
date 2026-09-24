@@ -29,21 +29,38 @@ from rfauto.core.interfaces import (
 _CAL_CACHE: dict[str, Any] | None = None
 
 # 默认物理锚（无配置文件时使用；来源见各字段注释）
-# v0：wilkinson 不再有 eps_eff 锚——谐振频率由
-# synthesis.forward_z0 按线宽物理计算 εeff（旧锚 3.28 是 branchline 真机
-# 值，误用于 wilkinson 会把 f0 压低 10%，P0 FAIL 复盘时发现）。
+# v0（2026-09-03）：wilkinson 撤绝对 eps_eff 锚（旧锚 3.28 是 branchline 真机
+# 值，误用于 wilkinson 会把 f0 压低 10%，P0 FAIL 复盘时发现），谐振频率改由
+# synthesis.forward_z0 按线宽物理计算 εeff。
+# v1（2026-09-23 ）：wilkinson 落**位置锚（乘法缩放
+# 语义）**——eps_eff_scale=K=3.54/2.725 对 HJ 物理推导值做频率尺度修正
+# （3.54=openEMS 名义谷位 2.2GHz λ/4 反推，2.725=HJ 参考点 series 臂 εeff
+# @2.4GHz，实测 2.724642；缩放语义与实验推导口径同源，拒绝绝对覆盖）。
+# R008 结论不变：锚只保 fake 通道谷位保真（UI/冒烟），不承诺预筛排序改善。
+# 出处注记（只补注记不改值）：
+# - branchline 3.28 = 真机 HFSS 校准值（2026-08-31，configs/fake_calibration.yaml
+#   同值同源，代码缺省=配置锚的离线回退镜像）；
+# - patch 2.33 = 代码级回退锚，薄基板准静态近似 (εr+1)/2（rogers4350b εr=3.66
+#   → (3.66+1)/2=2.33；2026-08-31 引入时行内注 "εeff≈2.33 for
+#   rogers4350b"）——生产锚是 configs/fake_calibration.yaml patch eps_eff=3.27
+#   （2026-09-02 联合校准，由 f_res=2.375GHz 反演）。**两值异源
+#   不同语义**（名义推导回退 vs 反演校准），不统一，配置缺失/损坏
+#   时本缺省兜底（#105 best-effort）。
 _DEFAULT_CALIBRATION: dict[str, dict[str, float]] = {
-  "branchline": {"eps_eff": 3.28},
-  "patch": {"eps_eff": 2.33},
+  "branchline": {"eps_eff": 3.28},       # 真机 HFSS 校准值 2026-08-31（配置同源）
+  "patch": {"eps_eff": 2.33},            # (εr+1)/2 回退锚；生产锚=配置 3.27（反演）
+  "wilkinson": {"eps_eff_scale": 3.54 / 2.725},
 }
 
 
 def load_fake_calibration(path: str | Path | None = None) -> dict[str, dict[str, float]]:
   """读取 configs/fake_calibration.yaml（best-effort；缺失/损坏返回默认锚）。
 
-  配置来源与含义：eps_eff 为该模型 fake 谐振公式的有效介电常数锚；
-  s11_floor_db 为谐振深度下限（真实谐振器非零深）；s11_edge_scale 为
-  带边反射斜率。数值以 knowledge/reference/openems_nominal/ 的收敛
+  配置来源与含义：eps_eff 为该模型 fake 谐振公式的有效介电常数锚
+  （绝对覆盖语义）；eps_eff_scale 为乘法缩放位置锚（对 HJ 物理推导
+  εeff 乘频率尺度修正因子，wilkinson 2026-09-23 起用）；
+  s11_floor_db/s11_edge_scale 已废除（2026-09-23，零读取点）。
+  数值以 knowledge/reference/openems_nominal/ 的收敛
   openEMS 曲线为准（多模态审计确认模型正确后的联合校准）。
   """
   global _CAL_CACHE
@@ -102,9 +119,10 @@ class FaultInjection:
 # ─── 解析近似模型 ────────────────────────────────────────────────────────────
 # v0 物理映射（代理校准设计文档口径）：
 # - S11 形状统一为 Lorentzian 谐振谷：f0 处深度 = s11_min_lin（由设计变量的
-#  物理失配计算，见 solve()），向带边抬升到 s11_edge_scale。
-#  旧版"谐振点取峰/常数 floor+edge"物理倒置且对参数不敏感（P0 真机 FAIL
-#  实证：rank_flip 5/6），语义已废除。
+#   物理失配计算，见 solve()），向带边抬升到 s11_far_lin（旧常数键
+#   s11_edge_scale 已废除 2026-09-23，带边电平由谷形给出）。
+#   旧版"谐振点取峰/常数 floor+edge"物理倒置且对参数不敏感（P0 真机 FAIL
+#   实证：rank_flip 5/6），语义已废除。
 # - 参数响应来源：arm_len → f0（λ/4 反推）；series_w/shunt_w → 线宽失配；
 #  patch: patch_len → f_res，feed_offset/patch_w → 馈电匹配。
 
@@ -411,6 +429,48 @@ def _suspended_stripline_sparams(
   εeff 由调用方按 _suspended_stripline_ri 给出。"""
   return _mline_sparams(freq_ghz, eps_eff=eps_eff,
              line_len_mm=line_len_mm, tan_d=tan_d)
+
+
+def _siw_sparams(
+  freq_ghz: np.ndarray,
+  weff_mm: float,
+  line_len_mm: float | None = None,
+  tan_d: float = 0.0037,
+  epsilon_r: float = 3.66,
+) -> np.ndarray:
+  """直 SIW 线段解析（siw-family 首族，确定性闭式）——等效 RWG TE10
+  均匀线（criteria.md §1/§2）：S11≈0（理想匹配端接口径）、
+  S21=exp(−γL)，γ 由复数色散式给出：k=n·k0·√(1−j·tanδ)、
+  γ=j·sign·k·√(1−(kc/k)²)（f>fc10 传播取 α+jβ、f<fc10 倏逝取 +α），
+  kc=π/w_eff（Cassivi 2002 等效宽度，双源出处）。⚠ 引擎原始 S=带载比值（LumpedPort 桥，#250 口径），fake 是匹配
+  端接理想线——判读以 β/相位主口径对拍（slotline_lumped 同约定）。
+  line_len_mm=None 时取 TEMPLATE_NOMINAL["siw"]["line_len_mm"] 单源缺省。
+  """
+  if line_len_mm is None:
+    # 单源缺省（#252 纪律，round5 审查）：=63.0724（round(3λg@10GHz,4)）；
+    # 旧死缺省 63.0722 系笔误（运行链全显式传参，从未被消费）
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
+    line_len_mm = float(TEMPLATE_NOMINAL["siw"]["line_len_mm"])
+  f_hz = np.asarray(freq_ghz, dtype=float) * 1e9
+  c0 = 299792458.0
+  k0 = 2.0 * np.pi * f_hz / c0
+  kc = math.pi / (float(weff_mm) * 1e-3)
+  n = math.sqrt(float(epsilon_r))
+  k = k0 * n * np.sqrt(1.0 - 1j * float(tan_d))
+  ratio = kc / k
+  sq = np.sqrt(1.0 - ratio ** 2 + 0j)
+  gamma = 1j * k * sq
+  # 分支选择：Re(γ)=α ≥ 0（传播支 α=介质损耗>0 自然为正；截止支主根给
+  # 负 α，翻转符号——对 tanδ=0 极限也稳健）
+  gamma = np.where(gamma.real < 0.0, -gamma, gamma)
+  s21 = np.exp(-gamma * float(line_len_mm) * 1e-3)
+  out = np.zeros((len(f_hz), 2, 2), dtype=complex)
+  out[:, 0, 0] = 1e-4
+  out[:, 1, 1] = 1e-4
+  out[:, 0, 1] = s21
+  out[:, 1, 0] = s21
+  return out
 
 def _wstep_sparams(
   freq_ghz: np.ndarray,
@@ -953,9 +1013,9 @@ def _c3_sparams(
   钉住）。同一模板下 fake 与电路裁判只差参数舍入（同源，非拟合）。
 
   l_via_h=接地过孔电感（H，§C3 口径 8/10）：0.0（缺省）=理想短路——正式
-  契约，逐位复现旧名义（旧黄金钉保持，登记⑨ 保守判定）；None=按几何自动取
-  c3_via_inductance_h(h_mm)（真机裁判口径，配补偿后名义几何用）；显式
-  float=指定电感（H）。
+  契约，逐位复现旧名义（旧黄金钉保持，登记⑨ 保守判定）；None=auto=取校准
+  值 C3_L_VIA_CAL_H（0.125nH，HFSS 仲裁校准；原 G-P 几何闭式
+  c3_via_inductance_h 高估已弃）；显式 float=指定电感（H）。
 
   #154 纪律（三通道同索引同语义，与 _c3_layout 逐参数对齐）：
   - gaps_mm[j]=第 j 缝边到边（j=0 输入馈-棒1 … j=N 棒N-输出馈；长度 N+1
@@ -1613,7 +1673,8 @@ class FakeAdapter(SimulatorAdapter):
     # 根据模型类型计算 S 参数
     # 联合校准锚（A1）：configs/fake_calibration.yaml per-model 覆盖；
     # v0 起 wilkinson 的 s11 深度由线宽失配物理计算，常数锚只留
-    # eps_eff / edge_scale。
+    # eps_eff / eps_eff_scale（s11_floor_db/s11_edge_scale 已废除
+    # 2026-09-23）。
     cal = load_fake_calibration().get(self.model_type, {})
     if isinstance(self._variables.get("substrate"), str):
       self._substrate_name = self._variables["substrate"]
@@ -1627,8 +1688,14 @@ class FakeAdapter(SimulatorAdapter):
         "shunt_line_width_mm", self._variables, default=1.10)
       s11_min_lin, eps_eff_series = self._wilkinson_s11_min(
         series_w, shunt_w, self.f0_ghz, self._substrate_name)
+      # 位置锚（2026-09-23，乘法缩放语义）：eps_eff_scale 对 HJ
+      # 物理推导值乘 K=3.54/2.725 的频率尺度修正（openEMS 名义谷位
+      # 2.2GHz λ/4 反推；HJ 参考点 series 臂 εeff≈2.725@2.4GHz）——
+      # 谷位下移 ×√(2.725/3.54)=0.8774，对齐 openEMS 名义口径。
+      # 缺省 1.0=无锚旧行为逐位不变；绝对键 eps_eff 若存在仍优先。
+      eps_scale = float(cal.get("eps_eff_scale", 1.0))
       f0_ghz = self._compute_f0_from_variables(
-        eps_eff=cal.get("eps_eff", eps_eff_series))
+        eps_eff=cal.get("eps_eff", eps_eff_series * eps_scale))
       if self.n_ports == 3:
         s_data = _wilkinson_sparams_3port(
           freq.f / 1e9, z0=self.z0, f0_ghz=f0_ghz, rng=self._rng,
@@ -1780,6 +1847,30 @@ class FakeAdapter(SimulatorAdapter):
       s_data = _suspended_stripline_sparams(
         freq.f / 1e9, eps_eff=eps_eff, line_len_mm=line_len,
         tan_d=stackup.loss_tangent)
+    elif self.model_type == "siw":
+      # 直 SIW 线段（siw-family 首族）：w/d/s → w_eff（Cassivi 2002
+      # 等效宽度闭式）→ 等效 RWG TE10
+      # 色散 γ（复数支含 tanδ）；#154 同名参数逐参对语义：w_mm=两过孔
+      # 列心距、d_mm=过孔直径、s_mm=过孔心距、line_len_mm=两端口面间距
+      # ——与 openEMS _siw_lines 同口径
+      from rfauto.core.calculators import siw_effective_width_mm
+      from rfauto.core.physics_roles import resolve_role
+      from rfauto.core.synthesis import Stackup
+
+      w = resolve_role("line_width_mm", self._variables,
+              candidates=("w_mm",), default=12.1317)
+      # d/s 无角色词表条目（suspended_stripline 的 b_mm 同例）：按名直读
+      d = self._parse_variable("d_mm", default=0.6)
+      s_pitch = self._parse_variable("s_mm", default=1.0)
+      line_len = resolve_role("line_length_mm", self._variables,
+                  candidates=("line_len_mm",),
+                  default=63.0724)
+      stackup = Stackup.from_materials_yaml(
+        self._substrate_name or "rogers4350b_h0.508")
+      weff = siw_effective_width_mm(w, d, s_pitch)
+      s_data = _siw_sparams(
+        freq.f / 1e9, weff_mm=weff, line_len_mm=line_len,
+        tan_d=stackup.loss_tangent, epsilon_r=stackup.epsilon_r)
     elif self.model_type == "msl_cpw":
       # MSL↔CPWG 过渡（WP2.5 Tier 2，正式注册）：wstep 式两段
       # 等长理想 TL 级联——微带段 skrf HJ MLine（w_msl）、CPWG 段共形映射
@@ -2102,9 +2193,10 @@ class FakeAdapter(SimulatorAdapter):
             default=float(default)))
       stackup = Stackup.from_materials_yaml(
         self._substrate_name or "rogers4350b_h0.508")
-      # 过孔电感开关（登记⑨）：缺省 0.0=理想短路（旧名义逐位不变，旧黄金钉
-      # 保持）；变量 "l_via_h" 显式开启——"auto"=按几何取
-      # c3_via_inductance_h(h_mm)（真机裁判口径），数值=指定电感（H）。
+      # 过孔电感开关（登记⑨ 校准）：缺省 0.0=理想短路（旧名义
+      # 逐位不变，旧黄金钉保持）；变量 "l_via_h" 显式开启——"auto"=取
+      # C3_L_VIA_CAL_H（HFSS 仲裁校准值 0.125nH，真机裁判口径，原 G-P
+      # 几何值高估已弃），数值=指定电感（H）。
       # 补偿后的再生名义几何配 l_via_h="auto" 裁判时谐振回 f0。
       lv_raw = self._variables.get("l_via_h")
       l_via: float | None = 0.0

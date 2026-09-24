@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 import time
 from pathlib import Path
 
@@ -30,18 +29,16 @@ MAX_ATTEMPTS = 3
 
 
 def _kill_desktops() -> None:
-    """杀遗留 ansysedt（仅整轮重试时调用；#157 先查后杀，不 /T 连坐）。"""
-    probe = subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "(Get-Process ansysedt -ErrorAction SilentlyContinue).Count"],
-        capture_output=True, text=True)
-    count = (probe.stdout or "").strip()
-    print(f"[retry] 检测到 {count or 0} 个 ansysedt 进程，清理后重试",
-          flush=True)
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process ansysedt -ErrorAction SilentlyContinue | "
-                    "Stop-Process -Force"], capture_output=True)
-    time.sleep(5)
+    """attempt 间清理（治理单源，#157 先查后杀，不用 taskkill /T 连坐）。
+
+    委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
+    活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉
+    重试架丢结果落盘——strict=False best-effort，#105）。
+    旧实现 Get-Process|Stop-Process -Force 无条件代杀已废弃（#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print, strict=False)
 
 
 def _clean_project_artifacts() -> None:

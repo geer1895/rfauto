@@ -264,12 +264,14 @@ def make_setup(adapter, delta_s: float, max_passes: int) -> str:
 
 
 def _kill_desktops() -> None:
-    import subprocess
+    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process | Where-Object { $_.ProcessName -match "
-                    "'ansysedt' } | Stop-Process -Force"], capture_output=True)
-    time.sleep(3)
+    委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
+    Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print)
 
 
 def solve_ports() -> list[dict]:

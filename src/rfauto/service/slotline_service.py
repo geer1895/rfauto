@@ -21,6 +21,11 @@ from typing import Any
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError,
                 ArithmeticError)
 
+#: 目标超窄槽段可达范围的内核 ValueError 标记（core/calculators.py
+#: slotline_synthesis 括号扫描拒绝分支）——命中即 realizable=False 合法结果
+#: （D5 语义统一，与 marchand_two_section 对齐），不命中仍 ok=False。
+_UNREACHABLE_MARKER = "超出窄槽段可达范围"
+
 
 def slotline_analysis(w_mm: float, h_mm: float, epsilon_r: float,
                       freq_ghz: float) -> dict[str, Any]:
@@ -39,15 +44,23 @@ def slotline_analysis(w_mm: float, h_mm: float, epsilon_r: float,
 def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
                        freq_ghz: float) -> dict[str, Any]:
     """槽线综合：目标 Z0 → 槽宽 w（窄槽段括号 brentq 反解 + 回代自洽；
-    单一事实源 core/calculators.slotline_synthesis；越可达域 ok=False）。"""
+    单一事实源 core/calculators.slotline_synthesis）。
+
+    realizable=False（目标超窄槽段可达范围）是**合法结果**（D5 语义统一，
+    与 marchand_two_section 对齐）：ok=True + realizable=False + reason
+    （含内核实测可达范围与括号），不进 error；参数非法/越域（z0≤0、
+    d/λ0 越有效域、εr 段未实现）仍 ok=False 显式拒绝。
+    """
     from rfauto.core.calculators import slotline_synthesis as _core
 
     try:
         result = _core(float(z0_ohm), float(h_mm), float(epsilon_r),
                        float(freq_ghz))
     except _JSON_ERRORS as exc:
+        if _UNREACHABLE_MARKER in str(exc):
+            return {"ok": True, "realizable": False, "reason": str(exc)}
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "result": result}
+    return {"ok": True, "realizable": True, "result": result}
 
 
 def msl_slot_transition_design(f0_ghz: float, h_mm: float, er: float,

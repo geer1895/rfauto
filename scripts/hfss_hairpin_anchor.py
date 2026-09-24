@@ -154,13 +154,18 @@ def _write_orphan_check(stage: str) -> list[dict]:
     return rows
 
 
-def _kill_desktops() -> None:
-    # 串行 1 纪律（本任务独占 HFSS 轨）；杀前清单已由 _write_orphan_check 留证
-    subprocess.run(["powershell", "-NoProfile", "-Command",
-                    "Get-Process | Where-Object { $PSItem.ProcessName -match "
-                    "'ansysedt' } | Stop-Process -Force"],
-                   capture_output=True, timeout=60)
-    time.sleep(3)
+def _kill_desktops(*, strict: bool = True) -> None:
+    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+
+    attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
+    记失败；杀前清单仍由 _write_orphan_check 留证）；全场收尾扫尾传
+    strict=False（活桌面/枚举失败只记录不抛，不连坐已完成战役，#105）。
+    委托 src/rfauto/infra/desktop_guard.py；旧 Get-Process|Stop-Process
+    -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
+    """
+    from rfauto.infra.desktop_guard import kill_orphan_ansysedt_desktops
+
+    kill_orphan_ansysedt_desktops(log=print, strict=strict)
 
 
 def _write_result(patch: dict) -> None:
@@ -939,7 +944,7 @@ def main() -> int:
                     _progress(f"hfss/{kind}/{gap}: ok {res['solve_s']}s")
             _write_result({f"point_wall_s_{gap}": round(time.time() - t_pt, 1)})
             _progress(f"point {gap}: wall_s={round(time.time() - t_pt, 1)}")
-        _kill_desktops()
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
         _write_orphan_check("post_solve")
 
     verdict = analyze_all()

@@ -23,7 +23,7 @@ RUNS_DIR = REPO_ROOT / "runs"
 MCP_ENTRY_EXE = REPO_ROOT / ".venv" / "Scripts" / "rfauto-mcp.exe"
 
 # tests 徽章为下限式（collect 数随平台/环境小幅浮动，断言 >= 而非 ==）
-MIN_TESTS = 7400
+MIN_TESTS = 8100
 
 # 文档头部核对模式：(正则, label)。期望值不在此绑定——main() 按 label 从
 # 实测注入。0 匹配 = 判红（模式必须实际咬合文档）。

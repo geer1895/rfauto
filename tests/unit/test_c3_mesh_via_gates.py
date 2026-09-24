@@ -130,30 +130,37 @@ class TestViaInductanceKernel:
 
 class TestCircuitJudgeViaInductance:
     @pytest.mark.parametrize("template", ot.C3_TEMPLATES)
-    def test_default_is_ideal_short_and_auto_equals_geometry(self, template, freqs):
+    def test_default_is_ideal_short_and_auto_equals_calibrated(self, template, freqs):
+        """校准：auto（l_via_h=None）=C3_L_VIA_CAL_H（HFSS 仲裁
+        0.125nH），不再等于 Goldfarb-Pucel 几何值（0.29596nH 系高估已弃）；
+        缺省 0.0=理想短路不变。"""
         nom = dict(ot.TEMPLATE_NOMINAL[template])
         s_def = ot.c3_circuit_sparams(template, freqs, nom)
         s_zero = ot.c3_circuit_sparams(template, freqs, nom, l_via_h=0.0)
         assert np.array_equal(s_def, s_zero)
         s_auto = ot.c3_circuit_sparams(template, freqs, nom, l_via_h=None)
         s_expl = ot.c3_circuit_sparams(template, freqs, nom,
-                                       l_via_h=ot.c3_via_inductance_h(H_MM))
+                                       l_via_h=ot.C3_L_VIA_CAL_H)
         assert np.array_equal(s_auto, s_expl)
         assert not np.array_equal(s_auto, s_def)
+        # G-P 文献公式 ≠ auto（校准层替换缺省，公式保留为离线消费者）
+        assert not np.array_equal(
+            s_auto, ot.c3_circuit_sparams(template, freqs, nom,
+                                          l_via_h=ot.c3_via_inductance_h(H_MM)))
         with pytest.raises(ValueError):
             ot.c3_circuit_sparams(template, freqs, nom, l_via_h=-1e-10)
 
     @pytest.mark.parametrize("template,ideal_up_pct,auto_off_pct", [
-        ("interdigital", 6.275, 0.000), ("combline", 7.970, 0.070),
-        ("sir_bpf", 5.800, 0.035),
+        ("interdigital", 2.560, 0.000), ("combline", 3.240, 0.060),
+        ("sir_bpf", 2.380, 0.020),
     ])
     def test_compensated_nominal_resonates_at_f0(self, template, ideal_up_pct,
                                                  auto_off_pct, freqs):
-        """过孔补偿口径：NOMINAL 已按设计链 l_via_h=None 再生（棒长按谐
-        振条件精确解缩短）——过孔裁判（l_via_h=None）带心回 f0（|偏移|≤0.1%）；
-        理想短路裁判同几何则上移 5.8~8.0%（与补偿前 −5.58/−6.64/−5.06% 下移
-        同源反号，真机峰位 −4.6~−5.15% 即该量的 EM 实证）；
-        无耗/互易/回文对称由构造保持。"""
+        """登记⑨ 校准过孔补偿口径：NOMINAL 已按设计链 l_via_h=None
+        （=校准值 0.125nH）再生（棒长按谐振条件精确解缩短）
+        ——过孔裁判（l_via_h=None）带心回 f0（|偏移|≤0.1%）；理想短路裁判同
+        几何则上移 2.4~3.3%（0.125nH 补偿量，lcal_compute.py 实测；旧 G-P
+        0.296nH 口径为 5.8~8.0%）；无耗/互易/回文对称由构造保持。"""
         nom = dict(ot.TEMPLATE_NOMINAL[template])
         s0 = ot.c3_circuit_sparams(template, freqs, nom)
         s1 = ot.c3_circuit_sparams(template, freqs, nom, l_via_h=None)
@@ -162,7 +169,8 @@ class TestCircuitJudgeViaInductance:
         assert (bc_auto / 2.5 - 1.0) * 100.0 == pytest.approx(auto_off_pct, abs=0.05)
         assert (bc_ideal / 2.5 - 1.0) * 100.0 == pytest.approx(ideal_up_pct, abs=0.05)
         shift = (bc_auto / bc_ideal - 1.0) * 100.0
-        assert -8.0 < shift < -3.0
+        # 0.125nH 补偿量（实测 −2.47/−3.18/−2.36%）；旧 G-P 口径 −8~−3%
+        assert -8.0 < shift < -2.0
         p = np.abs(s1[:, 0, 0]) ** 2 + np.abs(s1[:, 1, 0]) ** 2
         assert float(np.max(np.abs(p - 1.0))) < 1e-9
         assert float(np.max(np.abs(s1[:, 0, 1] - s1[:, 1, 0]))) < 1e-9
