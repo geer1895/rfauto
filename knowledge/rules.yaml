@@ -8,6 +8,13 @@ rules:
     description: "Wilkinson PD lambda/4 臂长初值估算"
     formula: "arm_len_mm = c / (4 * f0_ghz * 1e9 * sqrt(eff_epsilon_r))"
     example: "f0=2.4GHz, eeff~2.33 -> arm~20.5mm"
+    # 活规则（DP-13 K1）：机器可验证子集登记 verify（保留 verified_by 作
+    # provenance；验证测试本体=tests/unit/test_rules_verify.py，收集器测试
+    # 防声明漂移）。R002-R004 启发式与 R008/R009 战役结论判"不可机器验证"
+    # 显式省略（不凑绿）。
+    verify:
+      test: "tests/unit/test_rules_verify.py::test_r001_arm_formula_matches_synthesis"
+      runner: "pytest"
     applicable_models:
       - wilkinson_power_divider
 
@@ -41,6 +48,9 @@ rules:
       z0_35ohm_mm: 1.87
     source: "G0 gate: skrf MLine (HJ) + Pozar + Schneider, max dev 0.45%"
     verified_by: "scripts/g0_linewidth_verification.py"
+    verify:
+      test: "tests/unit/test_rules_verify.py::test_r005_r007_linewidth_backsub_1ohm"
+      runner: "pytest"
     applicable_models:
       - branchline_coupler
       - wilkinson_power_divider
@@ -56,6 +66,9 @@ rules:
       1. 将 series_w_mm 改为 1.87mm (G0 定案值)
       2. 将 series_w_mm 和 shunt_w_mm 加入 optimization.params 做二维调参
       3. 排查端口 renormalization (50ohm 参考阻抗 vs 实际端口阻抗)
+    verify:
+      test: "tests/unit/test_rules_verify.py::test_r006_fix_values_consistent_with_g0"
+      runner: "pytest"
     applicable_models:
       - branchline_coupler
 
@@ -66,6 +79,9 @@ rules:
       series_w_mm: G0 定案 1.87mm (35.35ohm)
       shunt_w_mm:  G0 定案 1.11mm (50ohm)
     note: "旧值 2.20mm 实测 ~31ohm (偏 -12%)，是 -6dB plateau 的主因"
+    verify:
+      test: "tests/unit/test_rules_verify.py::test_r005_r007_linewidth_backsub_1ohm"
+      runner: "pytest"
     applicable_models:
       - branchline_coupler
 

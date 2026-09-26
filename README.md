@@ -1,6 +1,6 @@
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-8100%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-9700%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -16,10 +16,10 @@ whole pipeline through MCP, under one hard rule:
 > **Every physical number (frequency, loss, geometry) is produced by a
 > deterministic kernel or solver — never by the LLM.**
 
-It drives **13 EM/EDA engines** behind one interface, ships
-**44 parameterized device templates** with built-in physics checks, and
-exposes **111 CLI commands** and **80 MCP tools** (+3 resources) — kept
-honest by **8100+ unit tests** that run without any commercial license.
+It drives **16 EM/EDA engines** behind one interface, ships
+**53 parameterized device templates** with built-in physics checks, and
+exposes **147 CLI commands** and **106 MCP tools** (+3 resources) — kept
+honest by **9700+ unit tests** that run without any commercial license.
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
 [Trust layer](#the-trust-layer) · [Quick start](#quick-start) ·
@@ -48,11 +48,11 @@ and every reported number carries its provenance.
 ## What it does
 
 - **One interface, many engines** — HFSS, ADS, openEMS, COMSOL, Elmer,
-  NGSolve, Meep, Icepak, Q3D, Palace, KiCad, ngspice and FDTDX (JAX) behind a
-  common adapter layer. Commercial engines stay opt-in extras; everything
+  NGSolve, Meep, Icepak, Q3D, Palace, KiCad, ngspice, FDTDX (JAX), MMT
+  (analytic modal), QucsatorRF and VNA behind a common adapter layer. Commercial engines stay opt-in extras; everything
   core runs against a built-in fake solver, so you can try the whole framework
   with zero licenses.
-- **Device template factory** — 43 parameterized families (couplers, power
+- **Device template factory** — 53 parameterized families (couplers, power
   dividers, filters, antennas, transitions…). Each template synthesizes
   starting dimensions from closed-form physics, and registers acceptance
   checks so you can tell "real result" from "mesh artifact".
@@ -87,7 +87,7 @@ No commercial tools needed — the built-in fake solver covers the whole core.
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # or: uv sync --extra dev
 
-# run the test suite (~8100 tests, no EDA required)
+# run the test suite (~9700 tests, no EDA required)
 python -m pytest tests/unit -q
 
 # check which solvers/licenses are visible on your machine

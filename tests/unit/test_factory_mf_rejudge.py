@@ -309,6 +309,71 @@ class TestAnchorPlan:
                    for w in held_ws)
 
 
+class TestExtraAnchorWS:
+    """resolve_extra_anchor_ws（--extra-w 补充锚；round6 L-E5 单测+吸附去重）。
+
+    与 resolve_anchor_ws 的 SNAP_TOL 吸附不同：直接取最近数据集精确值、
+    excluded_ws 剔除既有锚；同批多个 --extra-w 不得吸附到同一数据集值
+    （吸附去重，round6 L-E5 后半）。
+    """
+
+    WS: typing.ClassVar[list[float]] = TestAnchorPlan.DATASET_WS
+
+    def test_extra_snaps_to_nearest_exact_value(self, anchors_mod):
+        res = anchors_mod.resolve_extra_anchor_ws(self.WS, (1.5,))
+        assert len(res) == 1
+        assert res[0]["run"] == pytest.approx(1.5119056297406015)
+        assert res[0]["snapped"] is True
+        assert res[0]["snap_delta_mm"] == pytest.approx(
+            abs(1.5119056297406015 - 1.5))
+        assert res[0]["nominal"] == 1.5
+
+    def test_extra_excludes_existing_anchor_runs(self, anchors_mod):
+        # excluded_ws=既有锚值（含 held-out 门点）从候选剔除：最近值被剔
+        # 后取次近（门点不入训练，anchor15_criteria.md §1）
+        used = 1.5119056297406015
+        res = anchors_mod.resolve_extra_anchor_ws(self.WS, (1.5,),
+                                                  excluded_ws=(used,))
+        assert res[0]["run"] == pytest.approx(1.5170390659527802)
+        assert abs(res[0]["run"] - used) > 1e-9
+
+    def test_dedup_two_extras_never_share_one_dataset_value(self, anchors_mod):
+        # 吸附去重（round6 L-E5）：两个名义都最近 1.5119…，第一个吸附后
+        # 该值出候选，第二个取次近——不得两锚落同一点
+        res = anchors_mod.resolve_extra_anchor_ws(self.WS, (1.4, 1.5))
+        runs = [r["run"] for r in res]
+        assert len(set(runs)) == 2
+        assert runs[0] == pytest.approx(1.5119056297406015)
+        assert runs[1] == pytest.approx(1.5170390659527802)
+
+    def test_dedup_duplicate_nominal_inputs(self, anchors_mod):
+        # 同名义重复传参（--extra-w 1.5 1.5）同样去重，不产生重复锚点
+        res = anchors_mod.resolve_extra_anchor_ws(self.WS, (1.5, 1.5))
+        runs = [r["run"] for r in res]
+        assert len(set(runs)) == 2
+
+    def test_candidates_exhausted_rejected(self, anchors_mod):
+        with pytest.raises(ValueError, match="无候选"):
+            anchors_mod.resolve_extra_anchor_ws([0.5], (0.6,),
+                                                excluded_ws=(0.5,))
+
+    def test_build_plan_with_extra_has_distinct_w(self, anchors_mod):
+        # 集成面：extra 经 build_anchor_plan 进 train 组且剔除既有锚含
+        # held-out 门点（名义 1.5 的 extra 落 1.5170 而非门点 1.5119）
+        plan = anchors_mod.build_anchor_plan(self.WS, extra_ws=(1.5, 1.4))
+        ws = [p["w_mm"] for p in plan]
+        assert len(ws) == len(set(ws))
+        extra = [p for p in plan if p["group"] == "train"
+                 and p["w_mm_nominal"] in (1.5, 1.4)]
+        assert [(p["w_mm_nominal"], pytest.approx(p["w_mm"]))
+                for p in extra] == [(1.5, pytest.approx(1.5170390659527802)),
+                                    (1.4, pytest.approx(1.6))]
+        # held-out 门点不被补充锚占用（gate 独立性）
+        gate = [p for p in plan if p["group"] == "heldout"]
+        assert any(p["w_mm"] == pytest.approx(1.5119056297406015)
+                   for p in gate)
+
+
 class TestKillDesktopsOrphanOnly:
     """_kill_desktops 孤儿专用语义钉（round5 E-HIGH-1）。
 

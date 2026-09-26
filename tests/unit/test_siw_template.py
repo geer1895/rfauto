@@ -261,6 +261,36 @@ def test_siw_mesh_guard_floors():
         siw_layout(dict(NOM), BAND, 5.0e-3, H * 1e-3)  # BASE=5mm 网格欠分辨
 
 
+def test_siw_explicit_line_floor_negative_path():
+    """#349 10µm 地板负路径（round6 B-LOW#3）：端口面恰落过孔心线。
+
+    line_len=60.0=30·s ⇒ y2=+30.0mm 与 k=30 过孔心线 0µm 重合——
+    显式近场线集撞线，渲染期 ValueError（round5 已实测可达，此处钉住）。
+    """
+    from rfauto.adapters.openems_templates import siw_layout
+
+    with pytest.raises(ValueError, match="地板"):
+        siw_layout(dict(NOM, line_len_mm=60.0), BAND, 0.4e-3, H * 1e-3)
+    # 名义 line_len=63.0724 无近撞：同网格档正常渲染（负路径只由参数触发）
+    siw_layout(dict(NOM), BAND, 0.4e-3, H * 1e-3)
+
+
+def test_siw_via_gap_mesh_guard_negative_path():
+    """孔间缝渲染守卫（#311 先例口径；round6 B-LOW#4）。
+
+    s−d=0.15mm（d=0.85、s=1.0，设计规则域内）≤ NEAR=0.175mm
+    （BASE=0.7mm）→ 拒渲染；同几何 0.4mm 档（NEAR=0.1mm < 缝）放行——
+    守卫只随网格分辨率触发，不收紧参数域。
+    """
+    from rfauto.adapters.openems_templates import siw_layout
+
+    bad = dict(NOM, d_mm=0.85)  # 缝 s−d=0.15mm
+    with pytest.raises(ValueError, match="孔间缝"):
+        siw_layout(bad, BAND, 0.7e-3, H * 1e-3)
+    lay = siw_layout(bad, BAND, 0.4e-3, H * 1e-3)
+    assert lay["k_half"] >= 1  # 0.4mm 审计档放行（NEAR=0.1 < 缝 0.15）
+
+
 def test_siw_layout_rule_guard_rejects_rule_violation():
     """s>2d 的几何在渲染层即拒（设计规则守卫复用 core 单源）。"""
     from rfauto.adapters.openems_templates import siw_layout
@@ -277,7 +307,7 @@ def test_siw_layout_rule_guard_rejects_rule_violation():
 
 #: v1 缺省渲染字节钉（审计档 NOM×BAND×0.4mm 全文 sha256；任何缺省路径漂移
 #: 即红——改 v1 缺省行为必须显式换钉并在 runs/siw_family/ 留 unified diff 证据）
-_V1_RENDER_SHA256 = "e95de918c203247b75ac8053a8715632607200015643299009d967f5072c1c6d"
+_V1_RENDER_SHA256 = "80d24e932c826b61906964aa0e5bad084a721ec905cbf656bc598adea030e2af"
 
 
 def test_siw_v1_default_render_byte_pin():

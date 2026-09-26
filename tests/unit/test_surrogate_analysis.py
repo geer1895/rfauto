@@ -112,3 +112,57 @@ class TestQualityMetrics:
         assert q_smooth["kind"] == "cross_validation_out_of_fold"
         assert q_noisy["rms_error"] > q_smooth["rms_error"]
 
+
+class TestMetricDomainMeta:
+    """DP-15 C1：fit meta 的 metric_domain / domain_selection 接线。
+
+    判据（runs/df6_dp15c1/criteria.md）：缺省路径行为零变化（只加键）；
+    auto_domain=True 才跑逐域 LOO-LML；显式统计量指标名豁免。
+    """
+
+    def test_default_path_unchanged(self):
+        trials = _make_trials(8)
+        result = analyze_run_surrogate("test_dom", trials)
+        assert result.metric_domain == "dB"
+        assert result.domain_selection is None
+        d = result.to_dict()
+        assert d["metric_domain"] == "dB"
+        assert d["domain_selection"] is None
+        # 既有键不受影响
+        for key in ("run_id", "n_samples", "best_params", "best_cost",
+                    "param_importance", "prediction_error", "quality"):
+            assert key in d
+
+    def test_auto_domain_runs_selection_on_cost(self):
+        trials = _make_trials(12)
+        result = analyze_run_surrogate("test_auto", trials, auto_domain=True)
+        sel = result.domain_selection
+        assert sel is not None
+        assert "dB" in sel["loo_loglik"]
+        assert "gamma_linear" in sel["loo_loglik"]
+        # 标量 cost（无频率轴/无相位）：diff 与 re_im 如实排除
+        assert "diff" in sel["excluded"] and "re_im" in sel["excluded"]
+        assert sel["selected"] in ("dB", "gamma_linear")
+        assert result.metric_domain == sel["selected"]
+
+    def test_explicit_statistic_metric_name_is_exempt(self):
+        trials = _make_trials(10)
+        result = analyze_run_surrogate(
+            "test_exempt", trials, metric_name="s11_db_min", auto_domain=True)
+        # 显式统计量指标名不被自动选择覆盖：域钉在声明来源域
+        assert result.metric_domain == "dB"
+        assert result.domain_selection is not None
+        assert result.domain_selection["loo_loglik"] is None
+        assert "豁免" in result.domain_selection["exempt"]
+        # to_dict 透传
+        d = result.to_dict()
+        assert d["metric_domain"] == "dB"
+        assert d["domain_selection"]["exempt"]
+
+    def test_auto_domain_selection_failure_is_best_effort(self):
+        # 目标全为常数 → var=0 的退化输入仍要出报告，不炸分析主路径（#105）
+        trials = [{"params": {"a": float(i)}, "cost": 1.0} for i in range(6)]
+        result = analyze_run_surrogate("test_deg", trials, auto_domain=True)
+        assert result.domain_selection is not None
+        assert result.metric_domain in ("dB", "gamma_linear")
+

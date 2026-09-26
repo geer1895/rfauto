@@ -45,6 +45,9 @@ DEFAULT_MESH_MM = 0.4
 # 其余模板仍走 0.4mm 收敛档（load_geometry 缺省 mesh_mm=None 时查表）。
 TEMPLATE_MESH_MM: dict[str, float] = {
     "interdigital": 0.30, "combline": 0.18, "sir_bpf": 0.32,
+    # §MMWAVE_SERIES_ARRAY（df7 C10d）：毫米波线宽分辨守卫档（NEAR=0.05 ≤
+    # feed_w/3=0.109，#266 族；0.4 缺省档 NEAR=0.1 越守卫即渲染期红）
+    "mmwave_series_array": 0.20,
 }
 # 各模板带宽（以 meta f0 为中心，±0.25GHz）——网格 BASE 由 mesh_resolution
 # 显式覆盖，故带宽只影响激励常量 F0/FC 与辐射器件空气隙。
@@ -79,6 +82,13 @@ PORT_GROUPS: dict[str, tuple[frozenset[int], ...]] = {
     # 共棱连通），与 P1 微带网络隔离
     "msl_slot_transition": (frozenset({1}), frozenset({2})),
     "marchand_balun": (frozenset({1}), frozenset({2, 3})),
+    # §DP-4 P3 EEP 阵列族（df6）：每元独立探针、元间 DC 隔离=EEP 定义性质
+    # （4 个独立导体分量）——与功分器族"全阵单分量"判据相反：{1}{2}{3}{4}
+    # 各自一组，组间合流即元间短路红
+    "patch_eep_2x2": (frozenset({1}), frozenset({2}), frozenset({3}),
+                      frozenset({4})),
+    "patch_eep_1x4": (frozenset({1}), frozenset({2}), frozenset({3}),
+                      frozenset({4})),
 }
 
 # 场激励端口模板（2026-09-18）：WaveguidePort 文件模式（路线 A）是截面场
@@ -92,13 +102,43 @@ FIELD_PORT_TEMPLATES: frozenset[str] = frozenset({"slotline"})
 INSET_PORT_TEMPLATES: frozenset[str] = frozenset({"msl_slot_transition",
                                                   "marchand_balun"})
 
-# 矩形域/模板参数基板模板（2026-09-18）：域 x/y 半宽不同（DOM_HI/Y_HALF/
+# 域边贴界 MSL 端口模板（SIW 锥形过渡族）：矩形域 DOM_Y 字面≠BOARD 的
+# 模板，MSLPort 面=域边界=PML 面（mline"端口面贴板边"口径的矩形域变体）。
+EDGE_PORT_TEMPLATES: frozenset[str] = frozenset({"msl_siw_taper"})
+
+# 全口径集总电阻片端口模板（DP-10 §MS_METASURFACE）：波导
+# 模拟器 TEM 馈——LumpedPort 全口径片（exc_dir=x，R=η0），浮于空气区，
+# 与屏/贴片金属 DC 隔离（容性馈）。审计③"馈电点在导体上"判据不适用，
+# 改查：片端口 LumpedElement 与金属原语无 bbox 接触（短路即红）+ 模板
+# 有独立金属网络（屏/贴片）。
+SHEET_PORT_TEMPLATES: frozenset[str] = frozenset({"ms_patch", "ms_cross",
+                                                  "ms_jcross"})
+
+# 无端口模板（DP-10）：软平面照明散射体（ms_array_NxN）——
+# openEMS 无 TF/SF 平面波，用 exc_type=0 软激励平面 + nf2ff 盒替代（官方
+# PPW 教程口径）。审计②无端口对象，改查软激励平面与 nf2ff 盒存在；
+# 审计③无端口连通性，改查金属分量数与 BC 地连续。
+PORTLESS_TEMPLATES: frozenset[str] = frozenset({"ms_array_NxN"})
+
+# 矩形域/模板参数基板模板：域 x/y 半宽不同（DOM_HI/Y_HALF/
 # DOM_X/DOM_Y），基板厚取 TEMPLATE_NOMINAL.h_mm（槽线闭式域要求 d/λ0≥0.006，
 # 缺省叠层 0.508@2.5GHz 落域外——设计点 RO4350B 60mil h=1.524）。
 RECT_DOMAIN_TEMPLATES: frozenset[str] = frozenset({"slotline", "slotline_lumped",
                                                    "msl_slot_transition",
                                                    "marchand_balun",
-                                                   "siw"})
+                                                   "siw", "msl_siw_taper",
+                                                   # §MS_METASURFACE（df6 DP-10）：
+                                                   # 单胞方形域/阵矩形域 +
+                                                   # 模板参数基板（nominal h_mm）
+                                                   "ms_patch", "ms_cross",
+                                                   "ms_jcross", "ms_array_NxN",
+                                                   # §COIL_NFC（df7 C10b）：线圈
+                                                   # 矩形域 + FR4 类模板参数基板
+                                                   "coil_nfc",
+                                                   # §MMWAVE_SERIES_ARRAY（df7
+                                                   # C10d）：方域 + RO3003 类
+                                                   # 模板参数基板（78GHz 毫米波板）
+                                                   "mmwave_series_array"})
 
 # 无介质板模板：dipole=自由空间器件（官方 Helical/Dipole-SAR 口径）；
 # monopole/helix=PEC 地面悬空导体（像理论口径，§10.3 C1 天线族 II
@@ -119,6 +159,10 @@ JOINT_DOMAIN_PARAMS: dict[str, frozenset[str]] = {
     "interdigital": frozenset({"order"}),
     "combline": frozenset({"order"}),
     "sir_bpf": frozenset({"order"}),
+    # §MS_METASURFACE（df6 DP-10）：n_x/n_y 决定 cell_map 行列数（同 order
+    # 联动语义），cell_map 逐胞参数表——单键扰动结构非法，几何驱动性由
+    # test_metasurface_templates（cell_map 变更→贴片逐胞变化+覆盖完备守卫）覆盖
+    "ms_array_NxN": frozenset({"n_x", "n_y", "cell_map"}),
 }
 
 # 进渲染脚本的**集总元件值**而非导体几何的参数：combline 的 c_load_pf 是
@@ -126,6 +170,10 @@ JOINT_DOMAIN_PARAMS: dict[str, frozenset[str]] = {
 # ——不是漂移；字面量接线由 test_combline_template 钉住（脚本含 C=<值>）。
 LUMPED_VALUE_PARAMS: dict[str, frozenset[str]] = {
     "combline": frozenset({"c_load_pf"}),
+    # §MMWAVE_SERIES_ARRAY（df7 C10d）：load_r_ohm 是链末端接集总电阻值
+    # （LumpedElement R 值，与渲染脚本 LOAD_R 字面量同源消费），导体盒签名
+    # 不随之变化——不是漂移；字面量接线由 test_mmwave_series_array_template 钉
+    "mmwave_series_array": frozenset({"load_r_ohm"}),
 }
 
 # 进渲染脚本的**材料参数**而非导体几何的参数（2026-09-16 sma_launcher 注册）：
@@ -143,6 +191,21 @@ MATERIAL_VALUE_PARAMS: dict[str, frozenset[str]] = {
     # siw：er/tan_d 只进基板材料属性（TE10 截止与 β 与 h 无关——h_mm 是
     # 几何驱动参数经端口盒/板 z 消费，不需豁免）；nominal-only 键与 slotline 同口径
     "siw": frozenset({"er", "tan_d"}),
+    # msl_siw_taper（df6 A2）：tan_d 只进基板材料 kappa 不改导体几何；er/h
+    # 进锥宽设计链（inverse_width/Z_PV 同参精算）驱动导体——不需豁免
+    "msl_siw_taper": frozenset({"tan_d"}),
+    # §MS_METASURFACE（df6 DP-10）：er/tan_d 只进基板材料属性（与 slotline/siw
+    # 同口径）；h_mm/几何键经 substrate 盒/屏 z 消费驱动导体，不需豁免
+    "ms_patch": frozenset({"er", "tan_d"}),
+    "ms_cross": frozenset({"er", "tan_d"}),
+    "ms_jcross": frozenset({"er", "tan_d"}),
+    "ms_array_NxN": frozenset({"er", "tan_d"}),
+    # §COIL_NFC（df7 C10b）：er/tan_d 只进基板材料属性（slotline/siw 同口径）；
+    # h_mm 是几何驱动参数经基板盒/金属面 z 消费，不需豁免
+    "coil_nfc": frozenset({"er", "tan_d"}),
+    # §MMWAVE_SERIES_ARRAY（df7 C10d）：er/tan_d 只进基板材料属性（同 coil_nfc
+    # 口径，RO3003 类毫米波板）；h_mm/几何键经基板盒/金属面 z 消费，不需豁免
+    "mmwave_series_array": frozenset({"er", "tan_d"}),
 }
 
 # 登记的**额外介质原语**（审计④"恰一块全板基板"之外的合法介质，按属性名）：
@@ -195,6 +258,13 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     # ——守卫是正确行为，runs/siw_family/criteria.md §1）；×1.1 保域
     # （1.1≤1.2）且必变几何
     "siw": {"s_mm": (1.1, 0.0)},
+    # msl_siw_taper（df6 A2）：s_mm 同 siw（设计规则 s≤2d 共用单源）；
+    # taper_len_mm ×1.37 把 dom_y 拉长（合法，无越界）；siw_len_mm 同合法
+    "msl_siw_taper": {"s_mm": (1.1, 0.0)},
+    # §MS_METASURFACE（df6 DP-10）：ms_cross arm_len ×1.37 使 2·arm 越胞
+    # （2×6.74>12，"臂须在胞内"守卫拒渲染——守卫是正确行为）；×1.1 保域
+    # （2×5.41<12）且必变几何。ms_jcross slot_len ×1.37=6.74<12 合法不需覆盖。
+    "ms_cross": {"arm_len_mm": (1.1, 0.013)},
 }
 
 
@@ -228,7 +298,7 @@ def band_for(template: str) -> tuple[float, float]:
 def extract_primitives(csx: Any) -> list[Prim]:
     """CSXCAD 属性表 → 原语包围盒列表（柱按半径外扩为等效盒）。
 
-    B6 stage-2 扩（2026-09-15 实测）：CSPrimPolygon(7)/CSPrimLinPoly(8)
+    B6 stage-2 扩：CSPrimPolygon(7)/CSPrimLinPoly(8)
     无 GetStart/GetStop（CSPrimPolygon 无此方法，AttributeError）——改走
     GetBoundBox()（基类方法，返回 (2,3) [lo, hi] 数组，已按
     norm_dir/elevation 展开为三维包围盒）。CSPrimCylindricalShell(6)

@@ -295,3 +295,139 @@ def analytics_attach(sqlite_path: str | Path | None = None,
         if con is not None:
             with contextlib.suppress(Exception):
                 con.close()
+
+
+# ---------------------------------------------------------------------------
+# fidelity_shadow 联赛表（DP-13 Z2，runs/league.duckdb 最小建表）
+# ---------------------------------------------------------------------------
+
+#: 联赛表名与幂等键（run_id+engine+params_hash 先删后插 → 重跑行数不变）
+LEAGUE_TABLE = "fidelity_shadow"
+LEAGUE_IDEMPOTENCY_KEY = ("run_id", "engine", "params_hash")
+
+#: 最小表结构（字段名即按 W1 提法对齐，specs §13.5）
+LEAGUE_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("engine", "VARCHAR"),
+    ("template_family", "VARCHAR"),
+    ("params_hash", "VARCHAR"),
+    ("delta_vs_hfss_db", "DOUBLE"),
+    ("wall_s", "DOUBLE"),
+    ("mesh_mm", "DOUBLE"),
+    ("run_id", "VARCHAR"),
+)
+
+
+def default_league_db_path() -> Path:
+    """runs/league.duckdb 缺省路径（runs/ 已整体 gitignore，运行时 DB 不进 git）。"""
+    return Path("runs") / "league.duckdb"
+
+
+def _league_row_values(row: dict[str, Any]) -> tuple:
+    values = []
+    for col, _typ in LEAGUE_COLUMNS:
+        v = row.get(col)
+        values.append(None if v is None else float(v)
+                      if _typ == "DOUBLE" else str(v))
+    return tuple(values)
+
+
+def record_fidelity_shadow(
+    rows: list[dict[str, Any]],
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """逐点 fidelity delta 写联赛表（幂等建表+幂等写；duckdb 缺失不 raise）。
+
+    - 建表幂等：CREATE TABLE IF NOT EXISTS（已存在零变更）；
+    - 写幂等：按 (run_id, engine, params_hash) 先删后插，同批重跑行数不变；
+    - duckdb 未安装 / 打开失败 → ok=False + reason（#105 best-effort）；
+    - 行缺幂等键（run_id/engine/params_hash 任一缺失）→ 整行拒收并如实计数。
+    """
+    path = Path(db_path) if db_path is not None else default_league_db_path()
+    base: dict[str, Any] = {"db_path": str(path), "table": LEAGUE_TABLE}
+    try:
+        import duckdb
+    except ImportError as exc:
+        return {"ok": False, "reason": f"duckdb 未安装: {exc}", **base}
+
+    valid: list[tuple] = []
+    rejected: list[int] = []
+    col_names = [c for c, _ in LEAGUE_COLUMNS]
+    key_idx = [col_names.index(k) for k in LEAGUE_IDEMPOTENCY_KEY]
+    for i, row in enumerate(rows):
+        if any(not str(row.get(k) or "").strip()
+               for k in LEAGUE_IDEMPOTENCY_KEY):
+            rejected.append(i)
+            continue
+        valid.append(_league_row_values(row))
+
+    con = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        con = duckdb.connect(str(path))
+        cols = ", ".join(f"{c} {t}" for c, t in LEAGUE_COLUMNS)
+        con.execute(f"CREATE TABLE IF NOT EXISTS {LEAGUE_TABLE} ({cols})")
+        for values in valid:
+            con.execute(
+                f"DELETE FROM {LEAGUE_TABLE} WHERE run_id=? AND engine=? "
+                "AND params_hash=?", [values[i] for i in key_idx])
+            placeholders = ", ".join("?" for _ in LEAGUE_COLUMNS)
+            con.execute(
+                f"INSERT INTO {LEAGUE_TABLE} "
+                f"({', '.join(c for c, _ in LEAGUE_COLUMNS)}) "
+                f"VALUES ({placeholders})", list(values))
+        n_total = int(con.execute(
+            f"SELECT COUNT(*) FROM {LEAGUE_TABLE}").fetchone()[0])
+        return {"ok": True, "n_rows_written": len(valid),
+                "n_rows_rejected": len(rejected),
+                "rejected_indexes": rejected,
+                "n_rows_total": n_total, **base}
+    except Exception as exc:
+        return {"ok": False, "reason": f"联赛表写入失败: {exc}", **base}
+    finally:
+        if con is not None:
+            with contextlib.suppress(Exception):
+                con.close()
+
+
+def query_fidelity_shadow(
+    db_path: str | Path | None = None,
+    *,
+    run_id: str | None = None,
+    engine: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """联赛表只读查询（SELECT；表不存在/duckdb 缺失 → ok=False 如实）。"""
+    path = Path(db_path) if db_path is not None else default_league_db_path()
+    base: dict[str, Any] = {"db_path": str(path), "table": LEAGUE_TABLE}
+    if not path.exists():
+        return {"ok": False, "reason": f"联赛库不存在: {path}", **base}
+    try:
+        import duckdb
+    except ImportError as exc:
+        return {"ok": False, "reason": f"duckdb 未安装: {exc}", **base}
+    con = None
+    try:
+        con = duckdb.connect(str(path), read_only=True)
+        where: list[str] = []
+        params: list[str] = []
+        if run_id is not None:
+            where.append("run_id = ?")
+            params.append(str(run_id))
+        if engine is not None:
+            where.append("engine = ?")
+            params.append(str(engine))
+        sql = f"SELECT {', '.join(c for c, _ in LEAGUE_COLUMNS)} FROM {LEAGUE_TABLE}"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY engine, params_hash LIMIT ?"
+        params.append(str(max(1, int(limit))))
+        rows_raw = con.execute(sql, params).fetchall()
+        cols = [c for c, _ in LEAGUE_COLUMNS]
+        rows = [dict(zip(cols, r, strict=True)) for r in rows_raw]
+        return {"ok": True, "rows": rows, "n_rows": len(rows), **base}
+    except Exception as exc:
+        return {"ok": False, "reason": f"联赛表查询失败: {exc}", **base}
+    finally:
+        if con is not None:
+            with contextlib.suppress(Exception):
+                con.close()

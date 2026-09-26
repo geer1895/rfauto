@@ -1,0 +1,50 @@
+f0_ghz: 10.0
+n_ports: 1
+template: ms_patch
+substrate:
+  er: 3.66
+  h_mm: 1.524
+  tan_d: 0.0037
+params:
+- px_mm
+- py_mm
+- period_mm
+- h_mm
+nominal_params:
+  px_mm: 8.5406
+  py_mm: 8.5406
+  period_mm: 14.9896
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ 全口径集总片端口 1（R=η0·a/b 方胞=η0，CalcPort 同参考；波导模拟器
+  PEC/PMC 对壁方波导≡无限阵@θ=0，E∥x 极化前提，y 极化需互换对壁 BC；
+  |S11|≈1 的 argΓ 逐 px 入反射相位 LUT；相位含片-胞距离常数项，扫 px 差分
+  或地面基准 run 校准）
+topology: >-
+  反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形域
+  x 对壁 PEC / y 对壁 PMC（TEM 平面波，官方 Parallel Plate Waveguide 教程
+  口径）；全口径集总电阻片（LumpedPort 全口径片，exc_dir=x）馈于贴片上方
+  λ0/4 空气区
+param_semantics: >-
+  px_mm=E 向（x）谐振边长（LUT 扫描变量），py_mm=非谐振宽（y），
+  period_mm=单胞周期（方形域边长），h_mm=基板厚；er/tan_d 走
+  substrate/nominal（材料属性不改导体）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘精确入网
+  +胞缘缝 3+ 中点入网（#311）；NEAR≤最小胞缘缝/3 渲染期守卫（#266）；
+  全轴最小网格间距 ≥10µm
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役
+  （粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；J1c 相位覆盖
+  ≥300° 与 J4 HFSS Floquet 锚属真机轨
+nominal_derivation: |-
+  全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1d）：
+  period=λ0/2=14.9896（0.5λ0 口径，λ0=c/f0=29.9792458mm）；px=py=方贴片谐振边长
+  λ0/(2√εeff(w)) 不动点（Hammerstad εeff，w=边长自洽迭代），
+  er=3.66/h=1.524 → px=8.5406；h=1.524（60mil 板材数据，X 波段反射阵
+  常用厚度→单贴片相位覆盖宽，J1c fallback=双谐振预登记）

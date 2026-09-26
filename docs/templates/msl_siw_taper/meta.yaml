@@ -1,0 +1,64 @@
+f0_ghz: 10.0
+n_ports: 2
+template: msl_siw_taper
+substrate:
+  er: 3.66
+  h_mm: 0.508
+  tan_d: 0.0037
+params:
+- w_mm
+- d_mm
+- s_mm
+- taper_len_mm
+- siw_len_mm
+nominal_params:
+  w_mm: 12.1317
+  d_mm: 0.6
+  s_mm: 1.0
+  taper_len_mm: 10.5121
+  siw_len_mm: 63.0724
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 45.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11/S21 @ MSLPort 1-2（线基：CalcPort ref=50 主口径；port_beta.csv 落双端口
+  β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m
+  ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判
+  =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟，
+  预声明 runs/df6_a2siwmsl/criteria.md §4）
+topology: >-
+  MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 → 线性锥（w50→
+  w_end=Z_PV 微带当宽的阻抗变换器+锥末-SIW 台阶不连续）→ SIW 直段（顶壁显式板
+  +两列过孔藩篱止于板缘=siw v2 口径+底壁板）；基板填满矩形域，z=0 PEC 底界，
+  顶界 MUR（MSL 区微带环境）；端口=双 MSLPort（面贴域界 PML_8、端口段=均匀
+  50Ω 线）
+param_semantics: >-
+  w_mm=两过孔列心距（=TEMPLATE_NOMINAL['siw'] 同名同义）、d_mm=过孔直径、
+  s_mm=过孔心距、taper_len_mm=锥形段长（缺省 λg/2@f0，criteria §1.1 一阶互证
+  收档）、siw_len_mm=SIW 直段长（顶板缘间距，缺省 3λg）；w50/w_end=
+  inverse_width 渲染期同参精算（非参数，#1c）；h/er/tan_d 走 substrate/nominal
+  （er/h 进锥宽设计链）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4；
+  过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线（#311）、显式近场线 10µm 地板（#349）、
+  锥缘/板缘/端口边落格断言（#283）、FeedShift/MeasPlaneShift 间距 ≥3.9·NEAR
+  （#347）；基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
+smoke_note: >-
+  离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动
+  scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空
+  +.oe_collect.lock 空，见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见
+  runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md
+  §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进
+  锥末宽度设计式（如实收档，v2 历史档不删）
+nominal_derivation: |-
+  全闭式精算（#1c，runs/df6_a2siwmsl/criteria.md §1/§1.1）：w/d/s=
+  TEMPLATE_NOMINAL["siw"] 同源沿用（fc10=6.6667GHz=f0/1.5 设计点，Cassivi
+  2002 反解）；λg=21.0241mm（β=298.856 rad/m 闭式）→ taper_len=round(λg/2,4)
+  =10.5121（缺省锥长；λg/4=5.256 只作旋钮变体——对称双锥确定性级联实测带内
+  |S11| max −7.8dB 达不到 15dB 预声明门，criteria §1.1 两轮勘误账如实收档）；
+  siw_len=round(3λg,4)=63.0724（与 siw line_len 同链同值）；w50=1.1198/
+  w_end=3.361（inverse_width @Z_PV=2b·Z_TE/w_eff=22.8393Ω，渲染期同参精算
+  非手数）；设计规则复核：s/d=1.667≤2 ✔、d=0.6<λ_sub/5=3.134 ✔

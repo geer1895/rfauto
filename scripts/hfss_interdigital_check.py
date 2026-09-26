@@ -179,7 +179,10 @@ def _build_and_solve() -> dict:
             last_exc = exc
             print(f"[ic] build attempt {attempt}/{BUILD_ATTEMPTS} FAIL: "
                   f"{exc}", flush=True)
-    raise last_exc  # type: raise[ValueError]
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError(  # 兜底（round6 A3-⑥）：循环体未执行时不 raise None
+        f"unreachable：BUILD_ATTEMPTS={BUILD_ATTEMPTS} 次尝试循环未执行")
 
 
 def _build_and_solve_once() -> dict:
@@ -193,12 +196,16 @@ def _build_and_solve_once() -> dict:
     specs = port_specs(lay)
     proj_dir = OUT / "project"
     proj_dir.mkdir(parents=True, exist_ok=True)
-    h = Hfss(project=str(proj_dir / "interdigital_check.aedt"),
-             design="interdigital_check", version=AEDT_VERSION,
-             non_graphical=True, new_desktop=True)
+    h: Hfss | None = None
     result: dict = {"started_utc": datetime.now(UTC).isoformat(),
                     "setups": []}
     try:
+        # Hfss() 构造入 try（round6 A3-⑥，#265/#308 族）：构造半途失败
+        # （gRPC 通道级故障）原路径无 finally 必留孤儿 ansysedt，且
+        # solve_record.json 不落盘丢首轮异常取证——入 try 后统一走释放
+        h = Hfss(project=str(proj_dir / "interdigital_check.aedt"),
+                 design="interdigital_check", version=AEDT_VERSION,
+                 non_graphical=True, new_desktop=True)
         h.modeler.model_units = "mm"
         h.materials.add_material("rfauto_m366_chk", properties={
             "permittivity": ER, "dielectric_loss_tangent": TAND})
@@ -409,6 +416,9 @@ def _build_and_solve_once() -> dict:
         rel_box: dict = {"done": False}
 
         def _rel() -> None:
+            if h is None:
+                rel_box["done"] = True  # Hfss() 构造失败：无客户端可释放
+                return
             try:
                 h.release_desktop(close_projects=True, close_desktop=True)
             except Exception as exc:  # #265：释放失败必须透出

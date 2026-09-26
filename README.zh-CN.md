@@ -1,6 +1,6 @@
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-8100%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-9700%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -14,9 +14,9 @@
 > **所有物理数字（频率、损耗、几何尺寸）都由确定性公式内核或求解器产生，
 > 永远不由大语言模型编造。**
 
-它把 **13 个电磁/EDA 引擎**接到同一个接口后面，内置 **44 个参数化器件模板**和
-配套的物理验收判据，提供 **111 条 CLI 命令**和 **80 个 MCP 工具**（+3 个
-resources），并靠 **8100+ 条单元测试**保持诚实——这些测试不需要任何商业许可
+它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **53 个参数化器件模板**和
+配套的物理验收判据，提供 **147 条 CLI 命令**和 **106 个 MCP 工具**（+3 个
+resources），并靠 **9700+ 条单元测试**保持诚实——这些测试不需要任何商业许可
 就能跑。
 
 **目录** · [为什么做](#为什么做这个) · [它能做什么](#它能做什么) ·
@@ -41,10 +41,11 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
 ## 它能做什么
 
 - **一个接口，多家引擎** —— HFSS、ADS、openEMS、COMSOL、Elmer、NGSolve、
-  Meep、Icepak、Q3D、Palace、KiCad、ngspice、FDTDX（JAX）接在同一个适配层后面。
+  Meep、Icepak、Q3D、Palace、KiCad、ngspice、FDTDX（JAX）、MMT（解析模基）、
+  QucsatorRF、VNA 接在同一个适配层后面。
   商业引擎按需安装（可选依赖），核心功能全部跑在内置 fake 求解器上——零许可
   就能体验完整框架。
-- **器件模板工厂** —— 43 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
+- **器件模板工厂** —— 53 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
   结构……）。每个模板先用闭式物理公式综合出初始尺寸，并注册该器件族的验收
   判据，让你分得清"真结果"和"网格假象"。
 - **优化闭环** —— TPE、CMA-ES、NSGA-II 多目标；还有代理模型路线：先用一批
@@ -75,7 +76,7 @@ AI 想改任何东西都要走沙箱加三道门。
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # 或者：uv sync --extra dev
 
-# 跑测试套件（约 8100 条，不需要任何 EDA 软件）
+# 跑测试套件（约 9700 条，不需要任何 EDA 软件）
 python -m pytest tests/unit -q
 
 # 探测本机可见的求解器与许可

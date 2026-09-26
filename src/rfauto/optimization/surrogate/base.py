@@ -59,6 +59,22 @@ class SurrogateModel(ABC):
     def uncertainty(self, params: dict[str, float]) -> dict[str, float] | None:
         """预测不确定性（如 ±σ）；默认无（返回 None）。"""
 
+    def predict_with_std(
+        self, params: dict[str, float],
+    ) -> dict[str, tuple[float, float | None]]:
+        """预测 + 不确定度合并面（DP-16 U3：mean±σ，variance 透出）。
+
+        返回 {metric: (mean, std|None)}；模型未实现 uncertainty（基类
+        默认 None，如 poly_ridge/gbdt）时 std=None——调用方对 None 如实
+        标注"无原生逐点不确定度"，不得伪造 0（#122 诚实纪律）。
+        """
+        mean = self.predict(params)
+        std = self.uncertainty(params)
+        if std is None:
+            return {k: (float(v), None) for k, v in mean.items()}
+        return {k: (float(v), (float(std[k]) if k in std else None))
+                for k, v in mean.items()}
+
     @property
     def fitted(self) -> bool:
         return self._fitted

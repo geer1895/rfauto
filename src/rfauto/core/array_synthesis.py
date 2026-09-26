@@ -42,6 +42,7 @@ Chebyshev 副瓣电平达标、方向图积定理；全波小阵对照属后续�
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from math import comb
 
@@ -70,6 +71,10 @@ __all__ = [
     "pattern_multiplication",
     "peak_sidelobe_level_db",
     "planar_array_factor",
+    "series_feed_array_factor",
+    "series_feed_beam_direction_cosine",
+    "series_feed_excitations",
+    "series_feed_progressive_phase",
     "steering_direction_cosine",
     "synthesize_chebyshev",
     "synthesize_taylor",
@@ -699,3 +704,144 @@ def synthesize_taylor(
         grating_lobe_free=len(lobes) == 0,
         grating_lobes=lobes,
     )
+
+
+# ─── 串馈行波阵相位递推（2026-09-26 df7 C10d 加法式扩展，既有 API 逐字节不动）──
+# 口径：串馈（series-fed）阵的馈线行波以渐进相位逐元递推——第 n 元激励相位
+# φₙ = −n·Δφ，Δφ = 元内反相 (π，λ/2 贴片两辐射边场反相的 C2 相位账，
+# openems_templates §10.3 C2 patch_array_series 段同源) + 馈线行波相位 βg·s
+# （s=相邻元馈电点间馈线长，βg=2π/λg 导波相位常数）。主波束方向余弦由
+# 相位匹配 k0·u0·d = Δφ (mod 2π) 给出（d=元中心距），主分支 m=round(Δφ/2π)
+# 保证 s=λg/2（Δφ=2π）时 u0=0 侧射——与 C2 谐振式串馈的相位账连续。
+# 本节保持本模块"纯 numpy、量纲无关、零求解器依赖"契约：βg/k0/长度同单位制
+# （rad/长度），微带 λg 的 skrf HJ 精算住在模板段（openems_templates），
+# 不进入本文件。
+
+def series_feed_progressive_phase(
+    link_len: float,
+    beta_g: float,
+    *,
+    element_flip: bool = True,
+) -> float:
+    """相邻元馈电点间行波渐进相位 Δφ = flip·π + βg·s（wrap 到 (−π, π]）。
+
+    link_len=s：馈线互联长；beta_g：导波相位常数（rad/同长度单位）；
+    element_flip：λ/2 贴片两辐射边场反相贡献的 π（C2 相位账；非贴片抽头
+    （如直接缝耦合）可关）。
+    """
+    s = float(link_len)
+    bg = float(beta_g)
+    if not (np.isfinite(s) and s >= 0.0):
+        raise ValueError(f"link_len 须为非负有限值，收到 {link_len!r}")
+    if not (np.isfinite(bg) and bg > 0.0):
+        raise ValueError(f"beta_g 须为正的有限值，收到 {beta_g!r}")
+    delta = (math.pi if element_flip else 0.0) + bg * s
+    wrapped = (delta + math.pi) % (2.0 * math.pi) - math.pi
+    return float(wrapped if abs(wrapped) > _TINY else 0.0)
+
+
+def series_feed_beam_direction_cosine(
+    element_pitch: float,
+    k0: float,
+    link_len: float,
+    beta_g: float,
+    *,
+    element_flip: bool = True,
+) -> float:
+    """串馈阵主波束方向余弦（设计主分支）：
+
+        u0 = (Δφ − 2π·m) / (k0·d)，d = 元中心距、m = round(Δφ/2π)。
+
+    m 取主分支使 s=λg/2 时 u0=0（C2 极限锚）。|u0|>1 时主波束落在可见区外
+    （栅瓣域/无可见主瓣），显式 ValueError——设计点无效不静默外推。
+    """
+    d = float(element_pitch)
+    wavenumber = float(k0)
+    if not (np.isfinite(d) and d > 0.0):
+        raise ValueError(f"element_pitch 须为正的有限值，收到 {element_pitch!r}")
+    if not (np.isfinite(wavenumber) and wavenumber > 0.0):
+        raise ValueError(f"k0 须为正的有限值，收到 {k0!r}")
+    s = float(link_len)
+    bg = float(beta_g)
+    if not (np.isfinite(s) and s >= 0.0 and np.isfinite(bg) and bg > 0.0):
+        raise ValueError("link_len 须非负有限且 beta_g 须正")
+    delta_raw = (math.pi if element_flip else 0.0) + bg * s
+    m = round(delta_raw / (2.0 * math.pi))
+    u0 = (delta_raw - 2.0 * math.pi * m) / (wavenumber * d)
+    if abs(u0) > 1.0 + 1e-9:
+        raise ValueError(
+            f"串馈设计点主波束落在可见区外：u0={u0:.6g}（Δφ={delta_raw:.6g} rad、"
+            f"m={m}、k0·d={wavenumber * d:.6g}）——调 s/d 或检查栅瓣")
+    return float(min(1.0, max(-1.0, u0)))
+
+
+def series_feed_excitations(
+    n_elements: int,
+    element_pitch: float,
+    k0: float,
+    link_len: float,
+    beta_g: float,
+    *,
+    attenuation_np_per_length: float = 0.0,
+    element_flip: bool = True,
+) -> np.ndarray:
+    """串馈行波阵逐元复激励权重 wₙ = exp(−α·n·d)·exp(−j·n·Δφ_raw)。
+
+    相位递推用**原始（非 wrap）**Δφ_raw = flip·π + βg·s（e^{+jωt} 参考下
+    行波延迟为负相移）；幅度为行波一阶衰减（可选）：α=attenuation_np_per_
+    length（Np/长度，幅度奈培），α=0 缺省=无损渐进。权重按几何顺序返回、
+    w[0]=1（首元参考）；波束指向与 α 无关（幅度锥化不改相位匹配，见
+    series_feed_beam_direction_cosine）。与 array_factor/planar_array_factor
+    的 weights 入参直接互喂（方向图积定理抽查用 patch_element_field）。
+    """
+    n = int(n_elements)
+    if n < 1:
+        raise ValueError(f"n_elements 至少为 1，收到 {n_elements!r}")
+    d = float(element_pitch)
+    wavenumber = float(k0)
+    s = float(link_len)
+    bg = float(beta_g)
+    alpha = float(attenuation_np_per_length)
+    if not (np.isfinite(d) and d > 0.0 and np.isfinite(wavenumber)
+            and wavenumber > 0.0):
+        raise ValueError("element_pitch/k0 须为正的有限值")
+    if not (np.isfinite(s) and s >= 0.0 and np.isfinite(bg) and bg > 0.0):
+        raise ValueError("link_len 须非负有限且 beta_g 须正")
+    if not (np.isfinite(alpha) and alpha >= 0.0):
+        raise ValueError(f"attenuation_np_per_length 须非负有限，收到 {alpha!r}")
+    idx = np.arange(n, dtype=float)
+    delta_raw = (math.pi if element_flip else 0.0) + bg * s
+    taper = np.exp(-alpha * d * idx)
+    return taper * np.exp(-1j * delta_raw * idx)
+
+
+def series_feed_array_factor(
+    direction_cosines,
+    weights,
+    element_pitch: float,
+    k0: float,
+) -> np.ndarray:
+    """串馈阵复权阵列因子 AF(u) = Σₙ wₙ·exp(j·k0·u·n·d)（**复数权重**口径）。
+
+    本模块既有 ``array_factor`` 的 weights 入参经 ``_validate_weights`` 收敛为
+    实幅度（复数输入静默丢弃虚部——行波渐进相位恰是虚部，不可经其消费）；
+    本函数为串馈复权专用求值（与 array_factor 的复指数核同式，仅不做实化），
+    u0=0 侧射基准。lossless 互检：等幅复权（α=0）等价于
+    ``array_factor(u, uniform_weights(N), spacing_lambda=d/λ0,
+    scan_direction_cosine=Δφ/(k0·d))``——两路径复数逐位一致（单测钉）。
+    """
+    w = np.asarray(weights, dtype=complex)
+    if w.ndim != 1 or w.size < 1:
+        raise ValueError(f"weights 须为一维非空数组，收到 shape={w.shape}")
+    if not np.all(np.isfinite(w)):
+        raise ValueError("weights 含非有限值（nan/inf）")
+    d = float(element_pitch)
+    wavenumber = float(k0)
+    if not (np.isfinite(d) and d > 0.0 and np.isfinite(wavenumber)
+            and wavenumber > 0.0):
+        raise ValueError("element_pitch/k0 须为正的有限值")
+    u = np.asarray(direction_cosines, dtype=float)
+    phase = np.exp(1j * np.expand_dims(
+        2.0 * np.pi * (wavenumber * d / (2.0 * np.pi)) * u, -1)
+        * np.arange(w.size))
+    return phase @ w

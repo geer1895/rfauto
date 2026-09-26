@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ cookiecutter.project_slug }}"
+version = "{{ cookiecutter.version }}"
+description = "rfauto 模板族插件：{{ cookiecutter.template_name }}"
+readme = "README.md"
+requires-python = ">= {{ cookiecutter.min_python }}"
+dependencies = ["rfauto"]
+
+[project.entry-points."rfauto.models"]
+{{ cookiecutter.template_name }} = "{{ cookiecutter.module_name }}.plugin:{{ cookiecutter.plugin_class }}"
+
+[tool.hatch.build.targets.wheel]
+packages = ["{{ cookiecutter.module_name }}"]

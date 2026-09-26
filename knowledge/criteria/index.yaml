@@ -1,0 +1,651 @@
+schema: rfauto-criteria-index-v1
+runs_root: runs
+n_files: 50
+n_gate_rows: 368
+entries:
+- path: c3_combline_cap7p8h_20260923/criteria.md
+  title: c3 combline 哨预算重裁——帽 28080s（≈7.8h）单骑判据预声明（2026-09-23，先于运行落盘）
+  status: migrate_to_v2
+  n_gates: 12
+  gates:
+  - {raw: stage1_verdict.json，2026-09-22：探针窗 4.59ns < 激励 11.46ns，激励未完成环振段, threshold: null}
+  - {raw: '- **PARTIAL 红线**：实测超预声明预算 1.5×（stage1 > 42,120s）→ 如实记', threshold: 42.0}
+  - {raw: ≈ **3.5h < 7.8h 帽** → 激励**能完成**，剩余 ~15.5ks ≈ 14.1ns 环振窗, threshold: 7.8}
+  - {raw: α ≥ 0.163/ns（≈ Q_L ≤ 48）才达 20dB。combline 端缝 0.1393mm < interdigital, threshold: 0.163}
+  - {raw: 起跑 4h 后能量 >−10dB → 杀树上报。4h 时点 ≈ 激励结束（3.5h）后 ~0.5h, threshold: null}
+  - {raw: ≈ 1.64ns 衰减窗，需 rate ≥ ~6.1dB/ns（α ≥ 0.35/ns，Q_L ≲ 22）才免于, threshold: 0.35}
+  - {raw: '| dev（外推 vs 截断偏差） | ≤ 0.5dB | 不可判（激励未完成） |', threshold: 0.5}
+  - {raw: '| span（最弱模包络衰减） | ≥ 20dB | 不可判 |', threshold: 20.0}
+  - {raw: '| S21∞@f0（带内量级） | ≥ −3dB | 不可判 |', threshold: null}
+  - {raw: 1. 激励完成（port_ut 末行 ≥ 11.46ns）+ 置信三面过 + S21∞@f0 ≥ −3dB →, threshold: 11.46}
+  - {raw: G1 当轮 PRED_SHIFT dev ≤1.5pt PASS ≤3pt PARTIAL / G2 峰 ≥−3dB 且设计带内, threshold: 1.5}
+  - {raw: RL ≤−10dB / G3 ZL 只记录 / G4 无源性 ≤1.02）；verdict 映射与预算硬帽, threshold: 1.02}
+- path: c3_interdigital_cap12k_20260923/criteria.md
+  title: c3 interdigital 哨预算重裁——帽 12ks 单骑判据预声明（2026-09-23，先于运行落盘）
+  status: migrate_to_v2
+  n_gates: 7
+  gates:
+  - {raw: '- **PARTIAL 红线**：实测超预声明预算 1.5×（stage1 > 18,000s；stage2 见下）', threshold: 18.0}
+  - {raw: '| dev（外推 vs 截断偏差） | ≤ 0.5dB | 0.627 | 0.552 |', threshold: 0.5}
+  - {raw: '| span（最弱模包络衰减） | ≥ 20dB | 9.70 | 18.75 |', threshold: 20.0}
+  - {raw: '| S21∞@f0（带内量级） | ≥ −3dB | −13.94 | −14.47 |', threshold: null}
+  - {raw: 收敛后仍 ≤ −3dB（sir_bpf 型"真实失配"信号）→ 如实落档 FAIL 不放行，并引用, threshold: null}
+  - {raw: G1 当轮 PRED_SHIFT dev ≤1.5pt PASS ≤3pt PARTIAL / G2 峰 ≥−3dB 且设计带内, threshold: 1.5}
+  - {raw: RL ≤−10dB / G3 ZL 只记录 / G4 无源性 ≤1.02）；verdict 映射与预算硬帽, threshold: 1.02}
+- path: c3_sirbpf_spurious/criteria.md
+  title: sir_bpf 零衰减伪模判别判据（criteria 先行，2026-09-22，纯离线零仿真）
+  status: migrate_to_v2
+  n_gates: 15
+  gates:
+  - {raw: '> 上批遗留拍板项④。对象 = runs/smoke_c3_fullcurve/sir_bpf/stage1 帽停产物', threshold: null}
+  - {raw: '> （步 192780 / t_end 24.489ns / E_cap −15.24dB / dt 1.27032e-13s / 激励', threshold: null}
+  - {raw: '> 11.4592ns / 环振段 ≈13.03ns）。既有判读（stage1_verdict.json，如实读不重解）', threshold: 11.4592}
+  - {raw: '> FAIL(gates)：三模 2.5464GHz(α=0.154/ns, span 14.75dB) / 2.6543GHz', threshold: null}
+  - {raw: '> (α=5.54e−5/ns, span 0.0053dB) / 2.7351GHz(α=5.06e−14/ns, span 4.8e−12dB)，', threshold: null}
+  - {raw: '> 置信三门红（dev 0.784dB、holdout 0.631、span≈0）+ S21∞@f0 −17.95dB < −3dB。', threshold: null}
+  - {raw: '- 设计带 = f0±fbw/2 = 2.5GHz×(1±0.025) = **[2.4375, 2.5625] GHz**（criteria_a 同源）。', threshold: 0.025}
+  - {raw: '**Q_unloaded ≤ Q_d = 1/tanδ ≈ 270（@2.5GHz 上界 320）**，被加载后 Q_L 更低。', threshold: null}
+  - {raw: '| C3 | 跨窗稳定性 | 环振拟合窗 ≥4 变体（延迟 1/2/3/4ns × 长度 60/80/100%）：物理真分量 α 相对散布 ≤50% 且 f0 漂移 ≤1MHz；α
+      散布 >10× 或 f0 漂移 >3×FFT 峰分辨（~10MHz）→ 拟合退化（A1 归因） | A1 vs 真实非衰减分量 |', threshold: 4.0}
+  - {raw: '| C4 | 幅值占比 | 拟合 (α,ω) 固定后线性幅值解：伪模候选 RMS 幅值 / 主模 RMS < 1% → 噪声级；≥1% → 数据含真实非衰减分量（A2 域模），记能量占比
+      | 数据真实性分级 |', threshold: 1.0}
+  - {raw: '| C5 | 盒模旁证 | 域 120×120mm 侧向盒模 f=(c/2√εeff)√((i/Lx)²+(j/Ly)²)，εeff∈[1.0,1.5] 扫描：|f_ij−f_m|≤2%
+      → 支持 A2；不吻合不下结论（估算粗糙） | 旁证不进门 |', threshold: 2.0}
+  - {raw: 扩展内核回收：物理模 α/ω 相对误差 **≤1%**；, threshold: 1.0}
+  - {raw: 零衰减模被判为伪模（Q_L > Q_MAT_CAP）且**不污染**物理模回收（≤1% 达标即证）。, threshold: 1.0}
+  - {raw: '- 反向：纯物理双模（无伪模）注入 → 分类器逐字节返回原模表、回收 α ≤1%。', threshold: 1.0}
+  - {raw: 「伪模剔除后 α 辨析」两类原因（本次 S21∞@f0 若仍 <−3dB 即前者，与伪模无关）。, threshold: null}
+- path: c4_debridge/criteria.md
+  title: c4-去桥对照 预声明判据（写死再跑，2026-09-19，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 8
+  gates:
+  - {raw: '全轴最小线距 x/y/z = 17.6/92.6/127.0µm ≥ 10µm（#349；z 最小格从 50µm[桥厚]', threshold: 10.0}
+  - {raw: '- |ΔS31| ≤ 0.15dB → **桥零响应**——耦合超量非桥寄生（假设链排除一支；与面内加密', threshold: 0.15}
+  - {raw: '- |ΔS31| ≥ 0.2dB → **桥对耦合度有实测贡献**（方向记录：向 −3.01dB 裁判=改善 /', threshold: 0.2}
+  - {raw: '- 截断核查（#262/#266）：port_ut_*B 末 5% 窗残差 ≤ −45dB 或未触 NrTS；4 轮', threshold: null}
+  - {raw: CFL 只松不紧；预期 63–66fs 区间）。同时窗 NrTS 上限：200000×dt ≥ 12.2ns ≫, threshold: 12.2}
+  - {raw: '- 回退预案（预声明）：实测同时窗 < 6.5ns → NrTS 抬至 400000 重渲染重跑（计入墙', threshold: 6.5}
+  - {raw: '- **桥零响应**（|ΔS31| ≤ 0.15dB）：假设链再排除一支；耦合超量归因余 z 向层化', threshold: 0.15}
+  - {raw: '- **桥有贡献**（|ΔS31| ≥ 0.2dB）：按 (A) 警示的混合归因如实记录，方向注明改善/', threshold: 0.2}
+- path: c4_z_substrate/criteria.md
+  title: c4-z-substrate 预声明判据（写死再跑，2026-09-18，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 10
+  gates:
+  - {raw: '`mesh.AddLine("z", np.linspace(0, H_SUB, 5→9))` 基板行；`render_diff_<t>_vs_base_archive.txt`',
+    threshold: null}
+  - {raw: '| cline_coupler | −5.4693 | −2.1877 | −2.9030 | \|b₈\| ≤ 1.4515% | 2.0321% |', threshold: 1.4515}
+  - {raw: '| lange | −6.5208 | −2.6083 | −1.8038 | \|b₈\| ≤ 0.9019% | 1.2627% |', threshold: 0.9019}
+  - {raw: '- **地板非 z 主导（面内/其他）**：|b₈| ≥ 0.7·|b₄|——z 加密对地板改变 < 30%。', threshold: 0.7}
+  - {raw: '- |ΔS31| ≤ 0.15dB → **z 零响应**（与面内加密零响应 −0.13/−0.02dB 同级）——耦合超量', threshold: 0.15}
+  - {raw: '- |ΔS31| ≥ 0.2dB → **z 层化对耦合度有实测贡献**（方向记录：向裁判=改善/远离=恶化）。', threshold: 0.2}
+  - {raw: '- 截断核查（#262/#266）：port_ut_*B 末 5% 窗残差 ≤ −45dB 或未触 NrTS；4 轮', threshold: null}
+  - {raw: lange 63.17 → ~61.3fs（−3%）。同时窗 NrTS 上限：cline 100000×dt ≥ 10ns、, threshold: 10.0}
+  - {raw: lange 200000×dt ≥ 12.2ns，均 ≫ 激励脉冲 5.73ns + refix 能量停机 5.95ns。, threshold: 12.2}
+  - {raw: '**回退预案（预声明）**：实测同时窗 < 6.5ns → 该模板 NrTS 抬至 200000/400000 重渲染', threshold: 6.5}
+- path: cps_hfss_arbitration/criteria.md
+  title: CPS εeff 之争 HFSS 全波仲裁 · 预声明判据（wf:hfss-cps-arbitration，2026-09-18 起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 18
+  gates:
+  - {raw: lateral-infinite 假设；wide 档 ±60mm 与 c9 引擎域 BOARD=60mm 同量级）；, threshold: 60.0}
+  - {raw: '- 三档：mid(横向±40/竖向 −20/+20)、**wide(±60/−30/+30)=基准档**、', threshold: 40.0}
+  - {raw: xl(±90/−45/+45)——#254 槽线族实证 ±60/∓30 量级起稳；, threshold: 90.0}
+  - {raw: 门 ≤1%）；驻波线性相位斜率法禁用（#255）；, threshold: 1.0}
+  - {raw: 且 |β_wide/β_xl−1| ≤ 1.0% → 采信 wide 档；不满足 → UNDECIDABLE（如实记，, threshold: 1.0}
+  - {raw: 80 ≤ Z0_Zpv ≤ 160、两口 Gamma 相对不对称 ≤1%——任一不满足 → UNDECIDABLE, threshold: 160.0}
+  - {raw: '- **判决门（±3%，任务书立规）**（对 wide 档 εeff_hfss@2.5GHz）：', threshold: 3.0}
+  - {raw: '- |εeff_hfss/1.66662−1| ≤ 3% → **REFEREE_WINS**（FD 裁判口径成立；引擎', threshold: 3.0}
+  - {raw: '- |εeff_hfss/1.90−1| ≤ 3% → **ENGINE_WINS**（FD 裁判在 a/h≈2.9 域外失效，', threshold: 3.0}
+  - {raw: 116.17032 / Z0_engine 108.5 三者 ±3% 归属并表；另记 Z0_Zpv·√εeff_hfss vs, threshold: 3.0}
+  - {raw: '- 每档 watchdog 7200s（RFAUTO_HFSS_SOLVE_TIMEOUT_S）；建模失败整轮重试 ≤2；', threshold: 2.0}
+  - {raw: '- 预算：墙钟 ≤60min（slotline 同规模实测 65–120s/档 + 桌面启动开销）；', threshold: 60.0}
+  - {raw: '- 残差子句 |β_wide/β_xl−1|=0.078% ≤1% 以 **13× 余量**通过；', threshold: 1.0}
+  - {raw: '- εeff 三档 1.6841/1.6806/1.6832 **全部**落在 FD ±3% 窗 [1.6166,1.7166] 内、', threshold: 3.0}
+  - {raw: '全部远离引擎 ±3% 窗 [1.843,1.957]（最近距离 −11.5%）。', threshold: 3.0}
+  - {raw: 独立种子 → β ±0.05% 抖动）是唯一自洽解释；, threshold: 0.05}
+  - {raw: '- 带整体落入某一方 ±3% 窗 **且** 带半宽 ≤0.25% → 按该方出判决', threshold: 0.25}
+  - {raw: '- 带横跨两窗或带半宽 >0.25% → UNDECIDABLE 维持（如实登记）；', threshold: 0.25}
+- path: cps_xrefine/criteria.md
+  title: CPS 引擎 x 向加密对照 · 预声明判据（wf:cps-xrefine，2026-09-19 起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 20
+  gates:
+  - {raw: '| x1 | 2 | 3（±gap/4、x=0） | 4 格 ×0.125mm | 缝内内部线 ≥2-3 条（任务书档 1） |', threshold: 2.0}
+  - {raw: '| x2 | 4 | 7（±gap/8、±gap/4、±3gap/8、x=0） | 8 格 ×0.0625mm | 可选档 2 落地 |', threshold: 3.0}
+  - {raw: 'Richardson，=仲裁 JSON fd_recompute 值）；±3% 窗 **[1.6166, 1.7166]**', threshold: 3.0}
+  - {raw: '对裁判 **+13.34%**；±1 格括弧 [1.8623, 1.9161] 仍 ≥+11.7%；', threshold: 1.0}
+  - {raw: w2f 定标批 ②）——口径地板由 ±1 格线长括弧量化为信息项（εeff ∝ L^−2，, threshold: 1.0}
+  - {raw: '|Δεeff|/εeff ≈ 2|ΔL|/L：±1 BASE 格 1.14mm → ±5.7%，pt2 实证同值）；', threshold: 1.0}
+  - {raw: R 基反演，仅旁证），**Z·√εeff vs z0_air 150.45902 ≤2% → 通道有效**, threshold: 2.0}
+  - {raw: '- **V2 匹配有效性（c9 G1 同款）**：带内 |S11|max < −15dB（R=定标闭式 Z0 匹配线）。', threshold: null}
+  - {raw: '- **V4 线长口径**：|plane_dist_m−0.04| ≤ 0.3mm（端口元 y 半格量级；pt1/pt2', threshold: 0.3}
+  - {raw: 实测精确落位 Δ=0）；判读用实测 plane_dist（w2f 定标批 ②）；±1 格（±0.5mm, threshold: 1.0}
+  - {raw: → εeff ±2.5%）括弧作信息项。, threshold: 2.5}
+  - {raw: （1/3/7，缝缘线不算）；全轴（x/y/z）最小线距 ≥10µm（#349，渲染脚本 1µm, threshold: 10.0}
+  - {raw: 附 εeff_∞ 走向（dev vs 1/N_cells 线性外推，信息项）与到 ±3% 窗距离。, threshold: 3.0}
+  - {raw: '- **r ≥ 0.7（改善 ≤30%）→ SEMANTIC_DOMINANT**：建模/端口语义主导——', threshold: 0.7}
+  - {raw: '- **x0 复现锚（软）**：|εeff(x0)/1.8889−1| ≤1%——超限=配置漂移信号，先查', threshold: 1.0}
+  - {raw: '- **单 run 帽 3600s**（solver solve_timeout_s）；**真机总墙钟 ≤45min**；', threshold: 45.0}
+  - {raw: '| x1 | 3（±0.125、0） | 4×0.125mm | 133×221×27 | x 0.125 / y 0.250 / z 0.0635mm | 0.184ps |',
+    threshold: 0.125}
+  - {raw: '| x2 | 7（±0.1875/±0.125/±0.0625/0） | 8×0.0625mm | 137×221×27 | x 0.0625 / y 0.250 / z 0.0635mm
+      | 0.146ps |', threshold: 0.1875}
+  - {raw: ≥62.5µm ≫10µm（#349）。, threshold: 62.5}
+  - {raw: 步数≈11.46ns/dt≈62k < NrTS 150k；墙钟 ≈pt2 104s×步数比 2.4×格数比 1.05, threshold: null}
+- path: cps_xrefine/x1_repro/criteria.md
+  title: cps_xrefine x1 档"吞线"根因调查——预声明（2026-09-20）
+  status: migrate_to_v2
+  n_gates: 11
+  gates:
+  - {raw: ±0.125mm 线；x2 dt ⟹ 引擎生效网格含 62.5µm 线。, threshold: 0.125}
+  - {raw: 3. x1 渲染脚本 _near_x 含 ±0.000125 两线（±0.125mm）；x2 的线集是 x1 的超集, threshold: 0.000125}
+  - {raw: （另加 ±0.0625/±0.1875）。两档唯一差异 = 加密线集，其余逐项同。, threshold: 0.0625}
+  - {raw: 5. 主代理已留证：_probe_x1/x1_csx.xml XLines Qty=133 含 ±0.000125（python 侧, threshold: 0.000125}
+  - {raw: '"管线全步走完后 python GetLines(''x'') 含 ±0.000125，且 FDTD 微跑', threshold: 0.000125}
+  - {raw: （NrTS≤100）引擎实测 dt = 2.03222e-13（=x0 基线，±0.5% 内）或引擎, threshold: 100.0}
+  - {raw: debugCSX.xml 网格 XLines 无 ±0.000125"。, threshold: 0.000125}
+  - {raw: 保留 ±0.000125），并演示：去掉 X 复发、加上 X 消除——以引擎面证据, threshold: 0.000125}
+  - {raw: AddLine 域 → Smooth BASE → 去重守卫），各 stage 检 ±0.000125 在位 + 线数。, threshold: 0.000125}
+  - {raw: debugCSX.xml XLines。预期复现 dt=2.03222e-13 且 debugCSX 无 ±0.000125。, threshold: 0.000125}
+  - {raw: c) Smooth 后再 AddLine ±0.000125（调用序对调）；, threshold: 0.000125}
+- path: data_factory_m1/criteria.md
+  title: 数据工厂 M1 数据面采集·预声明判据（写死再跑，2026-09-19，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 2
+  gates:
+  - {raw: eps_eff_band_average 相位斜率内核——#255 守卫如实：带内 max|S11| > −10dB, threshold: null}
+  - {raw: '| G2 单点墙钟 | 成功点 solve wall 中位数 | ≤ 50s（35.8s 实测 ×1.4 预算带） |', threshold: 50.0}
+- path: datafactory_g2_cpw_20260922/criteria.md
+  title: 数据工厂二期 B 批·cpw 平滑族采集 criteria（预声明 v1，2026-09-22，先写后跑）
+  status: migrate_to_v2
+  n_gates: 9
+  gates:
+  - {raw: '> S21-dB+εeff+线性域 |ΔΓ|，S11-dB 只列账。时机：G3 刚把 msl_cpw/cpw 生产', threshold: null}
+  - {raw: dev2=−0.9713pp（<1%，锚门内），本批全域点同享 sub8 缺省。, threshold: 1.0}
+  - {raw: '≤−14.2dB，保平滑族匹配口径与 #255 守卫余量）；与 mline 2D 批', threshold: null}
+  - {raw: '- gap 下界 0.15：缝分辨守卫——显式缝中线间距=gap/2≥0.075mm（与名义', threshold: 0.075}
+  - {raw: w+2g≤2.6mm ≪ 板（60mm），无几何危险。, threshold: 2.6}
+  - {raw: '- 点 id 含双参数段 `g2_w<µm 四位>_g<µm 四位>`（w-only 会撞名）；', threshold: null}
+  - {raw: '| G2 时长 | 真跑点 wall 中位 ≤180s 且单点 ≤1795s | 依据见 §2.1；缓存命中点不入统计 |', threshold: 180.0}
+  - {raw: '| G4 主口径 | 三项全 PASS | S21 held-out max\|ΔS21\| ≤0.5dB；εeff ≤1%；线性域 \|ΔΓ\| ≤0.04（#371 消费口径）
+      |', threshold: 0.5}
+  - {raw: '- eps_eff S21 斜率口径：本批 L=40 固定 + 全域 |S11|≤−14.2dB → #255 守卫', threshold: null}
+- path: datafactory_m2/criteria.md
+  title: datafactory M2 判据（预声明，先写后算）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: −12.8 dB，全部 < −10 dB）。, threshold: null}
+  - {raw: '> **held-out 带内 max|ΔS21| ≤0.5dB、max|ΔS11| ≤1dB、εeff ≤1%（比 G1 严一档', threshold: 0.5}
+  - {raw: '|ΔS21| ≤ 0.0002 dB、|ΔS11| ≤ 0.0028 dB（w=0.5 样本实测），0.01 GHz', threshold: 0.0002}
+  - {raw: index % 5 == (20260920 % 5)（=0）的 24 行为 held-out（≥20 ✓），其余, threshold: 20.0}
+  - {raw: 任一头失败率 >5%（LOO 折×头）则该项直接 FAIL（不静默丢点凑绿）。, threshold: 5.0}
+- path: datafactory_m2d_20260921/criteria.md
+  title: 数据工厂二期 A 批·mline 2D 扩展采集 criteria（预声明 v2，2026-09-21，先写后跑）
+  status: migrate_to_v2
+  n_gates: 3
+  gates:
+  - {raw: '| G2 时长 | 真跑点 wall 中位 ≤60s 且单点 ≤120s | 2D 域重推：M1 实测中位 34.11s@len40，LHS 中位≈40mm 档，60mm 端点约 50s（M3
+      单点预算 90s 先例），取中位 1.76×/单点 2.5×；缓存命中点不入统计 |', threshold: 60.0}
+  - {raw: '| G4 双口径复判 | 主口径三项全 PASS | S21 held-out max|ΔS21| ≤0.5dB；εeff ≤1%；线性域 |ΔΓ| ≤0.04（#371 消费口径）
+      |', threshold: 0.5}
+  - {raw: '- eps_eff 指标只在带内 max|S11|<−10dB 产出（#255 守卫）：大反射点缺失=正常语义，', threshold: null}
+- path: datafactory_m3/criteria.md
+  title: 数据工厂 M3 谷区定向加密采集·预声明判据（写死再跑，2026-09-20，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: max|S11| 变 4.45dB，谷宽 ~6µm ≤−50dB，库存中位间距 11.8µm）致 M2 S11 门, threshold: null}
+  - {raw: '| PG1 渲染审计门 | 谷芯端点 w=0.900/0.920 render_script 离线渲染 + exec 网格段零仿真（#212 只到网格段；mesh_resolution_mm=0
+      与求解同参，#368） | 渲染成功 + 无守卫抛错 + 金属原语存在且迹线 x 向宽=设计 w（±1e-6 mm）；全轴网格最小线距如实记录（采样间距≠网格线距，#152/#349 不适用于
+      w 向采样间距——网格自动档） |', threshold: 1.0}
+  - {raw: '| G2 单点墙钟 | 成功点 solve wall 中位数 | ≤ 90s（任务书 30×~90s 预算带；M1 实测中位 ~35s，此门放宽含开销） |', threshold: 90.0}
+  - {raw: '- 门 A（代理精度）：M1+M3 合并 150 点上 held-out S11 门 ≤1dB（M2 口径', threshold: 1.0}
+  - {raw: '- 门 B（寻优 cost）：M4 谷芯验证复跑 cost ≤ 库存最优 5%（wp39 judge 内核', threshold: null}
+- path: datafactory_m4/criteria.md
+  title: 数据工厂 M4·代理寻优（查库存）vs HFSS 基线墙钟账·预声明判据（写死再跑，2026-09-20，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 7
+  gates:
+  - {raw: '**ratio ≤ 0.2（即 T_factory ≤ 291.5s，5×）→ PASS**。plan §1.2 预期', threshold: 0.2}
+  - {raw: cost_stock_best)；**劣化 ≤ 5% → PASS**（5%×52.83≈2.64dB 带宽）。, threshold: 5.0}
+  - {raw: '- FAIL 条款：劣化 > 5% 或全部验证点真跑失败 → 如实 FAIL + 归因', threshold: 5.0}
+  - {raw: pred vs real ΔdB；库存自身 <2 采样栅格的尖谷结构属已知局限）。, threshold: 2.0}
+  - {raw: 等 60s 重探（≤3 次）仍存在 → 如实弃跑记失败（不杀不抢）。, threshold: 3.0}
+  - {raw: '- 带内 max|S11| ≤ −40dB 仅 3 点（0.8871/−40.29、0.9103/−52.83、', threshold: null}
+  - {raw: 0.9262/−44.93）；≤−45dB 仅 1 点——**尖谷宽 <2 采样栅格**，GP 定深, threshold: 2.0}
+- path: df5_c3_mapping/criteria.md
+  title: df5-SC c3 族三模板全波失配根因排查判据（纯离线零仿真，2026-09-22 落盘）
+  status: migrate_to_v2
+  n_gates: 2
+  gates:
+  - {raw: '- combline：模 2.7142GHz（若 L*<0 无解 ⇒ 纯过孔标定不可解释，指向 c_load_pf', threshold: 0.0}
+  - {raw: 弱耦同步调谐三腔）vs 设计 k=0.05151。判据：偏离 >20% ⇒ 耦合链（KJ 闭式 J 回代, threshold: 20.0}
+- path: df5_c3fix/criteria.md
+  title: df5-c3fix c3 修正链闭环判据（2026-09-22 落盘，先于全部改动）
+  status: migrate_to_v2
+  n_gates: 10
+  gates:
+  - {raw: '- C-pass 门：重设计名义电路 −3dB 带心 2.5GHz ±0.5% PASS / ±1% PARTIAL（预声明', threshold: 0.5}
+  - {raw: '- 带宽比 vs fbw=5% ±20%（预声明：电路裁判 ~7.6% ⇒ ratio ~1.52 **越界**——该', threshold: 20.0}
+  - {raw: '- 回收钉：该名义下过孔致带心下移实测 vs 闭式预测 ≤10%rel；', threshold: 10.0}
+  - {raw: '3. `registration_freshness(mtime_ts, nominal_commit_ts)`：归档 run 文件 mtime ≥', threshold: null}
+  - {raw: dev ≤0.5dB / holdout ≤0.05 / span ≥20dB / S21∞@f0 ≥−3dB。, threshold: 0.5}
+  - {raw: 0.22→2.4535 / 0.296→2.4177 GHz。OE 侧按 SC 反解 L≈0.20（±0.02）为中心预期, threshold: 0.02}
+  - {raw: ⇒ **模对几何中心预期 2.4535–2.5135GHz（中心 2.463±0.02）**，自旧实测, threshold: 0.02}
+  - {raw: （+0.000/+0.100/+0.000%）、回收钉 3×ok（dev 1.42/0.70/0.28%rel ≤10%）、, threshold: 10.0}
+  - {raw: 59.15ns ≥ 激励 11.46ns，E_cap −26.21dB @ 426408 步）。四门：dev 0.406≤0.5 ✓, threshold: 0.5}
+  - {raw: §五预声明规则落定，R4 另立。预算：15600s≈1.3×<1.5×（首射 3600s 被基础设施, threshold: 1.5}
+- path: df5_desktop_governance/criteria.md
+  title: df5-SA 代杀桌面治理批 · criteria（先行落档，2026-09-22）
+  status: legacy_only
+  n_gates: 0
+  gates: []
+- path: df5_mfk_lowfi_fix/criteria.md
+  title: df5-MFK 拍板②：OE 低保真面修正 + MFK 融合复判判据（criteria 先行）
+  status: migrate_to_v2
+  n_gates: 8
+  gates:
+  - {raw: '- G2 εeff 相对差 max = 1.6524% > 1% FAIL（同点）', threshold: 1.0}
+  - {raw: '- G3 S21-dB max = 0.0208 ≤ 0.5 PASS', threshold: 0.5}
+  - {raw: 达 +20~+43dB、w=1.113 达 −27dB（相邻锚 Δw=0.195 处 ±30dB 级摆动）；, threshold: 30.0}
+  - {raw: 而线性 |Γ| 空间同一残差 |δ|≤0.081 有界平滑。B2 的 MFK 以 dB 头训练，, threshold: 0.081}
+  - {raw: '- G1 线性域 |ΔΓ| max ≤ 0.04（|Γ|=10^(S11dB/20)，pred 与真值同线性域）', threshold: 0.04}
+  - {raw: '- G2 εeff 相对偏差 max ≤ 1%', threshold: 1.0}
+  - {raw: '- G3 S21-dB max ≤ 0.5dB', threshold: 0.5}
+  - {raw: gamma_lin ≤ 1e-3 且 eps_eff_rel ≤ 1e-3 且 s21_db ≤ 1e-3，且增值门, threshold: 1.0}
+- path: df6_dp13/criteria.md
+  title: DP-13 组合批（K1/R1/Y3/Z1/Z2，U1 延后）判据预声明（2026-09-24，先于全部改动落盘）
+  status: migrate_to_v2
+  n_gates: 6
+  gates:
+  - {raw: '（er_eff=forward_z0(1mm)）——f0∈{2.0,2.4,3.0,5.8} 逐点偏差 ≤0.02mm', threshold: 0.02}
+  - {raw: 规则自带例 eeff≈2.33→arm≈20.46mm 与 "20.5mm" 相符（±0.1mm）。, threshold: 0.1}
+  - {raw: '- R005/R007：定案值回代 forward_z0 ±1Ω 门——1.11mm→50.094Ω（|dev| 0.094）✓、', threshold: 1.0}
+  - {raw: 且 1.87/1.11 回代过 ±1Ω 门。, threshold: 1.0}
+  - {raw: 2. batch_size>1（仅 tpe）：TPESampler(constant_liar=True) 显式开启（约束, threshold: 1.0}
+  - {raw: 时兼 constraints_func）；cmaes+batch>1 显式报错不静默。, threshold: 1.0}
+- path: df6_dp15c1/criteria.md
+  title: DP-15 C1 变换域自动选择器——判据（预声明，先写后算）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: w=0.9156 真值 −64.2 dB），线性域 |ΔΓ| max 0.0159 ≤ 0.04 PASS；, threshold: 0.04}
+  - {raw: dB > gamma_linear > re_im > diff 取先（保向后兼容：现缺省 dB）。, threshold: null}
+  - {raw: 2. dB 钳制：|z| < 10^(−120/20) 时 forward 恒 = −120（无 −inf）。, threshold: 10.0}
+  - {raw: → 选 gamma_linear 且 ΔLML ≥ 5 nats（合成对照组）；dB 平滑, threshold: 5.0}
+  - {raw: LML(dB) ≥ 5 nats** → 与人工裁定（#370/#371 消费口径 = 线性域）, threshold: 5.0}
+- path: df6_dp5cascade/criteria.md
+  title: DP-5 系统级预算引擎 + spur search — 判据书（criteria.md）
+  status: legacy_only
+  n_gates: 0
+  gates: []
+- path: df6_dp6xdist/criteria.md
+  title: DP-6：pytest-xdist 并行日常门 — 预声明判据（2026-09-24）
+  status: legacy_only
+  n_gates: 0
+  gates: []
+- path: e11_warm_20260919/criteria.md
+  title: rm-oe-e11 预声明判据（起跑前写死，2026-09-19）
+  status: migrate_to_v2
+  n_gates: 4
+  gates:
+  - {raw: cost = 带内 max|S11| 超 −24dB 的 dB 违约量（越小越好，≥0）。, threshold: 0.0}
+  - {raw: '- 预算：≤3h 墙钟（先 1 跑实测外推；**probe 实测单跑 35.1s**，估 80~90 评估 ≈ 50~70min）。', threshold: 3.0}
+  - {raw: 1. **真跑次数缩减 ≥30%**：judge_campaign 3 种子平均缩减率 ≥30.0%, threshold: 30.0}
+  - {raw: '2. **cost 不劣化 >5%**：逐种子 `warm_final_best − cold_final_best ≤ max(0.05·|cold_final_best|, 0.25dB)`',
+    threshold: 5.0}
+- path: e11_warm_40db/criteria.md
+  title: wf:oe-e11-40db 预声明判据（起跑前写死，2026-09-19）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: （复测为 −24）；cost = 带内 max|S11| 超 −40dB 的 dB 违约量（≥0）。, threshold: 0.0}
+  - {raw: 带内 max|S11| ≤ −40dB（即 cost(−40)=0）→ **G0 PASS 放行战役**；, threshold: null}
+  - {raw: '> −40dB → 战役不跑，本项 FAIL 如实（target 不可测，登记关闭该路线）。', threshold: null}
+  - {raw: '| G1 缩减率 | scripts judge_campaign 平均 time-to-target 缩减 | ≥30% |', threshold: 30.0}
+  - {raw: '| G2 cost 不劣化 | 逐种子 warm_final_best − cold_final_best ≤ max(0.05\|cold\|, 0.25dB) | 3 种子全过
+      |', threshold: null}
+- path: e11_warm_retest_budget30/criteria.md
+  title: wf:oe-e11-retest 预声明判据（起跑前写死，2026-09-18/19）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: FAIL 如实：缩减 −300%，budget=10≤TPE n_startup_trials=10 双臂全程随机相位）。前作归档零改写。, threshold: null}
+  - {raw: cost = 带内 max|S11| 超 −24dB 的 dB 违约量（≥0，越小越好）。, threshold: 0.0}
+  - {raw: ≥30% 门在本次设计下结构性难以通过**（budget=30 改变的是"存在模型引导段"，不改, threshold: 30.0}
+  - {raw: 1. **真跑次数缩减 ≥30%**：judge_campaign（脚本原样）3 种子平均缩减率 ≥30.0%；, threshold: 30.0}
+  - {raw: 2. **cost 不劣化 >5%**：逐种子 warm_final_best − cold_final_best ≤, threshold: 5.0}
+- path: fake_anchor_354/criteria.md
+  title: criteria.md — fake 锚 3.54 落配置（上批遗留拍板项①，用户 2026-09-23 指示"完成"）
+  status: migrate_to_v2
+  n_gates: 1
+  gates:
+  - {raw: 肩部阻尼（0.37/0.45dB < 原 1.5/0.5dB 门）——2026-09-04 决策注释记载的, threshold: null}
+- path: gysel_miter_ab/criteria.md
+  title: criteria.md — C7 gysel mitered-jog 切角旋钮真机 A/B（起跑前预声明，2026-09-22T07:36:15.852399+00:00）
+  status: migrate_to_v2
+  n_gates: 6
+  gates:
+  - {raw: pt2=1702s；单轮硬超时 90min；两轮名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**。, threshold: 2.0}
+  - {raw: '- 主量=ΔS32@f0（on−off，dB，负=更深=改善）：≤−1dB → 改善；|Δ|<1dB → 持平；', threshold: 1.0}
+  - {raw: ≥+1dB → 恶化。带内平稳性副量=ΔS32 带内最差点 ≤−0.5dB。, threshold: null}
+  - {raw: ΔS11@f0 ≥+3dB；|Δ均分差| ≥0.5dB。|S11|>1.05 或 |S23|>1.05 任一频点 →, threshold: 0.5}
+  - {raw: '- 烟测硬门逐臂如实判定（β±2%、均分 ≤0.5dB、|S21|/|S31| −3±1dB、|S32| ≤', threshold: 0.5}
+  - {raw: −15dB、|S11| ≤−10dB）——非本 A/B 主判，判据=改善量本身。, threshold: null}
+- path: hairpin_hfss_anchor/criteria.md
+  title: hairpin_alt k(gap) 标尺 HFSS 全波仲裁 · 预声明判据（wf:hfss-hairpin-anchor，2026-09-19 起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 22
+  gates:
+  - {raw: f1/f2=距 2.45GHz 最近的两个模（sanity |f−2.45|≤0.5GHz）。, threshold: 0.5}
+  - {raw: 2. **链校验门（HFSS 提取链自证）**：|k_Z_HFSS/k_KJ−1| ≤10%（两点各判；, threshold: 10.0}
+  - {raw: NGSolve 先例 1.003–1.049 的 10% 余量）。>10% → HFSS 偶/奇提取链疑病 →, threshold: 10.0}
+  - {raw: 3. **主判门（任务书立规 ±15%）**：k_anchor(point)=k_split_eigen（主）；, threshold: 15.0}
+  - {raw: d=|k_anchor/k_EM−1|。两点均 ≤15% → **AGREE**（openEMS k_EM 标尺采信，, threshold: 15.0}
+  - {raw: c=gap 结构因子为真实物理非提取伪象）；任一点 >15% → 该点给修正系数, threshold: 15.0}
+  - {raw: κ=k_anchor/k_EM（建议 c_new=c_arch·κ）；两点均 >15% 且 κ 同号同量级 →, threshold: 15.0}
+  - {raw: 4. **自洽门（信息项，不单独翻案）**：g0500 |k_split_s21/k_split_eigen−1| ≤10%, threshold: 10.0}
+  - {raw: 绝对路径（#243）、单结构 watchdog 3600s、建模失败整轮重试 ≤2；, threshold: 2.0}
+  - {raw: 应 ≈50±10Ω）；, threshold: 10.0}
+  - {raw: +10.0%）、εeff 3.047/2.592（KJ 3.041/2.614，≤0.8%）→ k_Z=0.09665 vs, threshold: 0.8}
+  - {raw: （≤0.3%）→ k_Z=0.01506 vs 0.01931 = **−22.0%**；, threshold: 0.3}
+  - {raw: '- 两点均超预声明 10% 链校验门 → 按门应 UNDECIDABLE；但 εeff 逐点 ≤0.8%', threshold: 0.8}
+  - {raw: '- **链校验门口径修正（预声明修正，理由=弱耦 SNL）**：原门 |k_Z/k_KJ−1|≤10%', threshold: 10.0}
+  - {raw: ±0.5Ω 阻抗噪声 → k 不确定度 ±30% 量级，实测 +31.3% 即此伪象）；Marchand, threshold: 0.5}
+  - {raw: '**修正后门：max 阻抗偏差 ≤10%（阈值不变，量纲修正）**——两点 +1.68% 最大', threshold: 10.0}
+  - {raw: '- 原 §5.2 门文字（k_Z ≤10%）按此修正执行；判据其余门序不变。', threshold: 10.0}
+  - {raw: 主判门对照：g2200 |0.010560/0.011022−1|=−4.2% ≤15% ✓；g0500, threshold: 15.0}
+  - {raw: '|0.076258/0.093373−1|=−18.4% >15% ✗（κ=0.816）。', threshold: 15.0}
+  - {raw: 2.411/2.585→0.0697 vs HFSS 2.4185/2.576→0.0631，偏差 −9.5%（≤15%）；, threshold: 15.0}
+  - {raw: 5. 自洽信息项：g0500 馈电对 k_split_s21/k_split_eigen=−17%（>10% 信息门）——, threshold: 10.0}
+  - {raw: 60.5+87.6s、line2t 56.7+86.6s ≈ **20.0min ≤ 70min 预算 ✓**（单点 ~9.5min, threshold: 70.0}
+- path: hairpin_hfss_anchor/eigen_ext/criteria.md
+  title: hairpin_alt HFSS eigen 补锚中间两 gap 点 · 预声明判据（wf:hfss-hairpin-eigen2，2026-09-18 起跑前写死）
+  status: migrate_to_v2
+  n_gates: 2
+  gates:
+  - {raw: '- f1/f2 = 距 2.45GHz 最近两模（sanity：|f−2.45|≤0.5GHz、[2.2,2.8] 无带内第三模）；', threshold: 0.5}
+  - {raw: 6. **预算（任务书立规）**：单点 ≤600s、两点总墙钟 ≤1800s（含建模与桌面启动）；, threshold: 600.0}
+- path: hairpin_kgap_refix/criteria.md
+  title: hairpin_alt k(gap) 图谱真机复跑（rm-oe-hairpin）·预声明门与点集
+  status: migrate_to_v2
+  n_gates: 9
+  gates:
+  - {raw: k<0.03 走峰电平法（模型 3dB 宽 vs 实测差 ≤25%）；k≥0.03 走全线形拟合（rms ≤1dB）；, threshold: 0.03}
+  - {raw: '- 总预算 ≤4h（14400s）串行。首跑 g11328（设计点）实测单点墙钟 + fdtd 能量衰减', threshold: 4.0}
+  - {raw: 实测 ≤1800s/点 → 6 点（5 alt + A/B）≈ ≤3h，全做；若 >2400s/点 → 缩到 5 alt 点、, threshold: 1800.0}
+  - {raw: → 最坏 ~2.1dB/ns → −60dB 需 ~30ns → NrTS≥~296000。, threshold: null}
+  - {raw: 约 −40dB 量级，~39min/点，5 alt 点+A/B 总计 ≈3.3h，预算 ≤4h 内留 ~25min 余量）。, threshold: 4.0}
+  - {raw: '提取 k_EM，|Δk|/k ≤2% 则抽取对尾部截断稳健（门带 c∈[0.6,1.2] 宽 20%、单调性', threshold: 2.0}
+  - {raw: '- **逐点收敛验收（先于数据声明）**：跑后 port_ut 衰减 ≤−50dB 或 t_end<NrTS 上限', threshold: null}
+  - {raw: （EndCriteria 停机）为收敛；触上限且衰减 >−50dB → 该点单独加窗重跑一次（每点, threshold: null}
+  - {raw: '- 判据收敛性旁证：β 金标准 |β偏差| ≤3% 档案域、端口 max|S11| ≤1、NrTS 不触顶', threshold: 3.0}
+- path: hfss_interdigital_check/criteria.md
+  title: interdigital 全波分歧 HFSS 对拍复核——判读门预声明（2026-09-22，先于求解落盘）
+  status: migrate_to_v2
+  n_gates: 8
+  gates:
+  - {raw: 通过才许 solve：逐对象 bounding_box vs 期望 ±1e-6mm、端口片 face center, threshold: 1.0}
+  - {raw: ≤0.2dB 且末两级差 ≤0.1dB）**且合格级 ≥2** 方可采信判读解；未达标级的, threshold: 0.2}
+  - {raw: '- |S21_hfss − 0.000| ≤ 0.5dB → **AGREE_CIRCUIT**（f0 匹配真实存在，', threshold: 0.5}
+  - {raw: '- |S21_hfss − (−14.4657)| ≤ 0.5dB → **AGREE_SENTINEL**（深失配真实存在，', threshold: 0.5}
+  - {raw: '- S1a 谷位：判读解 |S11| 在 [2.45,2.55]（f0±2%）内的最小值位置，偏差', threshold: 2.0}
+  - {raw: '|f_valley−f0|/f0 ≤2% 记 PASS（circuit 侧旁证），否则如实记录。', threshold: 2.0}
+  - {raw: '- S1b 谷深：S11@2.5 ≤ −20dB（RL 纹波电平，深反射零点存在性）记 circuit', threshold: null}
+  - {raw: 旁证；≥ −6dB（与 S21 −14.47dB 经无源性相容的强失配态）记 sentinel 旁证；, threshold: null}
+- path: hfss_mapes_m_arb/criteria.md
+  title: criteria.md —— rm-hfss-mapes-g0m：HFSS 逐口 m 规范仲裁（预声明，先于任何真跑）
+  status: migrate_to_v2
+  n_gates: 1
+  gates:
+  - {raw: '>5e-3：**PASS 要求 HFSS 实测相位比内部估计好 ~10%+**；预期主结果是', threshold: 5.0}
+- path: mapes_etht_refine/criteria.md
+  title: criteria.md —— mapes et/ht 源参考精修列（纯离线零仿真）
+  status: migrate_to_v2
+  n_gates: 2
+  gates:
+  - {raw: '- improvement ≥ 15%（new ≤ 6.0158e-3）→ **EFFECTIVE**', threshold: 15.0}
+  - {raw: '- 0 < improvement < 15% → **MARGINAL**', threshold: 15.0}
+- path: mapes_zall_refix/criteria.md
+  title: criteria.md —— rm-oe-mapes：mapes Z_ALL 真机重提取预声明门（起跑前落盘，写死再跑）
+  status: migrate_to_v2
+  n_gates: 4
+  gates:
+  - {raw: '- **停机线（blocked 触发条件）**：前 5 个 fresh 轮实测均值 > **72s**（外推计划值 2×）', threshold: null}
+  - {raw: （>90% 名义窗）或尾段未衰减（>−40dB）→ 停跑改 `--nr-ts 60000` 并把生效值写 meta。, threshold: 90.0}
+  - {raw: '- A2 端接质量：冒烟轮 `gamma` 报告 non-excited `term_err_max` ≤ 0.05 全 matched', threshold: 0.05}
+  - {raw: （stage-4 口径）；激励口 ut 尾段 ≤ −40dB（已衰减，plateau 排除）。, threshold: null}
+- path: marchand_line_calibration/criteria.md
+  title: criteria.md — wf:oe-marchand-calib Marchand 匹配线引擎 Z0/β 标定跑（起跑前预声明，2026-09-18）
+  status: migrate_to_v2
+  n_gates: 12
+  gates:
+  - {raw: ≈1.01 λg@2.5GHz，相位 ≥5rad 满足拟合）；y∈±(w/2+3·BASE)（口/条带缘→PML, threshold: 5.0}
+  - {raw: '≥2·BASE 守卫，实际 3·BASE）；z∈[−3, H+15]mm，基板 6 层（marchand z 栈同款）。', threshold: 2.0}
+  - {raw: 缩放。本跑最小格 ≥0.13mm（y 条带半宽/渐变段）≫ arb 最小格 36.9µm（x 向），, threshold: 0.13}
+  - {raw: 预期 dt ≥1.0e-13 → 脉冲 ≤36k 步；EndCriteria −60dB 预期 ~15–50k 自然停。, threshold: 1.0}
+  - {raw: '- **NrTS=100000**（≥2× 脉冲步数，#328 余量足）；若触顶未 −60dB：一次续跑', threshold: 2.0}
+  - {raw: '- |S11| 带最大 ≤ −15dB（端口/网格判废信号，_mline_lines 验收口径同源）；', threshold: null}
+  - {raw: '- ZL1 vs ZL2 带中位差 ≤1% 且 β1 vs β2 带中位差 ≤1%（双端口互证）；', threshold: 1.0}
+  - {raw: ≤4min（估 0.5–0.7M 格 ×~20k 步 @~240MC/s，参照 arb 2.38M 格 496s 折算）；, threshold: 4.0}
+  - {raw: '4 点串行 16:55:33–17:05:13（求解 9m40s，加审计/后处理总墙钟 ~13min ≤ 预声明', threshold: null}
+  - {raw: '"ZL1 vs ZL2 / β1 vs β2 双端口差 >1%"（P1 14.8%、P2 17.7%、P3 ~18%、P4 ~19%）。', threshold: 1.0}
+  - {raw: 无源端口 Z_ref2，spread ≤0.6%）→ 引擎 Z0 主判据成立，双端口差是**激励端口, threshold: 0.6}
+  - {raw: 差 ≤1.2pp；激励端口 local β +19.7~+24.3% 为同一提取伪像。, threshold: 1.2}
+- path: marchand_sameport_arb/criteria.md
+  title: criteria.md — wf:oe-marchand-sameport 同端口建模仲裁跑（起跑前预声明，2026-09-18）
+  status: migrate_to_v2
+  n_gates: 11
+  gates:
+  - {raw: S11 谷 ≥3.0GHz（扫频边缘未定位，2.0–3.0 内单调下行至 −11.8dB）vs HFSS 锚, threshold: 3.0}
+  - {raw: 净距 ≥2·BASE 守卫；旧 8.744mm，+0.35mm）。基板/地随域走。, threshold: 2.0}
+  - {raw: 馈线缘/口盒线（XB±wb、XB±wb/2、Y_END_* 三线；馈线重叠缘 y=±1.8632 与, threshold: 1.8632}
+  - {raw: G0 收敛档 A/B/C（阈值同旧 criteria.md：A ≤−40dB、B ≤−30dB、斜率 ≤−1dB/ns、, threshold: null}
+  - {raw: '- **CONVERGED（端口主因，候选②证实）**：|f_null − 2.04|/2.04 ≤ 10%', threshold: 10.0}
+  - {raw: f_null > 2.75GHz（仍高于理想设计中心 2.5GHz、维持反向）或 3.6 边缘仍无谷；, threshold: 2.75}
+  - {raw: '- **MIXED（分解）**：2.244 < f_null ≤ 2.75GHz——显著下移但未达 ±10%，', threshold: 2.75}
+  - {raw: AGREE_TREND/AGREE_DIRECTION/DISAGREE 逻辑）、Zin@f0、线基 β 合理性门（±10%）。, threshold: 10.0}
+  - {raw: '- 离线渲染+审计 ≤5min；FDTD 求解 ≤20min（旧跑 41.5k 步 2.1M 格 389s，本跑', threshold: 5.0}
+  - {raw: y 域 +4%、脉冲更短（FC 0.8 vs 0.5），预期同量级）；总墙钟 ≤25min。, threshold: 25.0}
+  - {raw: 全轴最小线距 ≥10µm、过孔搭接链）+ 新守卫（新口盒三轴 start/mid/stop 三线, threshold: 10.0}
+- path: marchand_via_ab/criteria.md
+  title: criteria.md — C12 过孔 PEC 薄片单变量对照（起跑前预声明，2026-09-21T20:00:25.794850+00:00）
+  status: migrate_to_v2
+  n_gates: 7
+  gates:
+  - {raw: '- 扫频 2.0–4.2GHz、441 点（rod 烟测谷 ≥3.0 触边截断、sheet 预期更高——扩窗', threshold: 3.0}
+  - {raw: 预声明）；判读带=f0±10%=2.25–2.75GHz；门=MARCHAND2_GATES（core 单源，, threshold: 10.0}
+  - {raw: '- 次口径（交叉核对，非门）：线基分解+显式重归一 50Ω；β_dev>10% 记 beta_sane', threshold: 10.0}
+  - {raw: '- G0 档（#344）：judge 从 port_time.npz 独立重算（不信任 summary）；A ≤−40dB', threshold: null}
+  - {raw: 且斜率 ≤−1dB/ns；B ≤−30dB；C 其余。, threshold: null}
+  - {raw: 同向理论）；Δ<5% → **VIA_FALSIFIED**（过孔假设不成立，残差归 fringe/端口/, threshold: 5.0}
+  - {raw: 引擎侧）；|Δ−理论|≤10%·理论 → VIA_CONFIRMED；同向超差 → 如实列账（有效 L, threshold: 10.0}
+- path: msl_cpw_beta2_audit/criteria.md
+  title: msl_cpw β2 口径审计——预声明判据（先写后算，2026-09-19）
+  status: migrate_to_v2
+  n_gates: 15
+  gates:
+  - {raw: '间距 2mm、位于 x=±1.1245mm 的接地过孔双列（simulation.py:111-118），', threshold: 1.1245}
+  - {raw: 同一 dt=537·dt_fdtd 采样栅），按 ports.py 公式重算 β2 的 ±4% 中位：, threshold: 4.0}
+  - {raw: '- 若对 100k 真跑归档 port_beta.csv 的 β2 中位相对差 ≤0.3%（确定性', threshold: 0.3}
+  - {raw: '- β1 同法作阴性对照；β1 若不满足 ≤0.3% 则方法本身存疑，如实记录。', threshold: 0.3}
+  - {raw: '- 对归档 port_beta.csv 全带相对差 max ≤0.5% → 链路复核成立，', threshold: 0.5}
+  - {raw: '- |Γ_fit| ≥0.05 且 |β2_engine−β2_fit| ≥0.5%（±4% 窗中位，β 域）→', threshold: 0.05}
+  - {raw: 2.56729（差 ≤0.01%）。, threshold: 0.01}
+  - {raw: '- 参数等值线：∂εeff/∂p（p∈{w,g,h,er}，±10% 中心差分）→ 复现 −2.15%', threshold: 10.0}
+  - {raw: 偏移 ≤1% 量级）→ 「参数误差解释」排除。, threshold: 1.0}
+  - {raw: Dirichlet、|x|≤60mm），三变体：无过孔（对照闭式验证 FDM，须 ≤1%）、, threshold: 60.0}
+  - {raw: 离散圆柱过孔（r=0.15mm@2mm 间距，点估计）、连续侧壁 x=±1.1245mm, threshold: 1.1245}
+  - {raw: '- 色散平坦度：εeff2(f) 在 2.4–2.6GHz 极差 ≤0.3% → 拾取为准 TEM 单模', threshold: 0.3}
+  - {raw: （闭式适用域内）；>0.5% → 混模证据（计入 CALIBER/ENGINE 注记）。, threshold: 0.5}
+  - {raw: 且差 ≤0.7% → 采信；相位伪象曲率过大则弃用并如实记录。, threshold: 0.7}
+  - {raw: '- 主导份额 ≥50% → 单类判定；最大两类各 ≥35% → MIXED（给数字）；', threshold: 50.0}
+- path: msl_cpw_zconv/criteria.md
+  title: msl_cpw substrate_cells z 向网格收敛对照 · 预声明判据（先写后跑，2026-09-20）
+  status: migrate_to_v2
+  n_gates: 12
+  gates:
+  - {raw: '侧地 x∈[±(w/2+gap), ±60]mm，接地过孔双列 r=0.15mm@2mm @x=±1.1245mm）；', threshold: 60.0}
+  - {raw: '- **时窗覆盖门**：FDTD 实际窗（port_ut 末行时刻）≥ et 末行时刻−0.5ns，', threshold: null}
+  - {raw: '**或** et 在窗末时刻的幅值比 ≤1e-3（−60dB；基线先例：t_end=11.0375ns', threshold: 1.0}
+  - {raw: < et_end=11.4591ns 但窗外激励尾 ≤−64.3dB——双条件任一满足即过）。, threshold: null}
+  - {raw: 预声明复现 ≤0.01%）；两段闭式 Z0=50Ω（设计值）。, threshold: 0.01}
+  - {raw: E4c 先例：该通道对基线有 +1.99% 系统偏置（>0.7% 采信门弃用）——, threshold: 0.7}
+  - {raw: '- **E2 链复核（每档跑一遍，audit E2 门 ≤0.5%）**：自实现 DFT', threshold: 0.5}
+  - {raw: 全带 max rel diff ≤0.5%；探针站坐标逐档从 fdtd/port_* 文件头, threshold: 0.5}
+  - {raw: '- **V5 E2 链**：β2 重算 rel diff ≤0.5%（audit E2 门）。', threshold: 0.5}
+  - {raw: sub16=17，均匀格长实测）；全轴（x/y/z）最小线距 ≥10µm；x/y 线数, threshold: 10.0}
+  - {raw: 全部 ≥10µm（#349）；x/y 线集跨档逐字节不变（单变量）；z 附加线与既有线, threshold: 10.0}
+  - {raw: '- **单档 subprocess 帽 7200s**；**真机总墙钟 ≤75min**；超 1.5×（113min）', threshold: 75.0}
+- path: palace_spike/criteria.md
+  title: Palace Windows Spike 判据（criteria 先写后跑，2026-09-22）
+  status: migrate_to_v2
+  n_gates: 4
+  gates:
+  - {raw: '**幅度差 <1dB 且 谐振/截止频率偏差 <5%**（不是 2dB）。', threshold: 1.0}
+  - {raw: '- 扫频窗：覆盖 f_c ±20%，≥101 点。', threshold: 101.0}
+  - {raw: 1. 幅值门：|S11| 谷深/通带 |S21| 与闭式传输口径差 <1dB（TE10 传播带内, threshold: 1.0}
+  - {raw: vs c/(2a) 偏差 <5%；, threshold: 5.0}
+- path: ratrace_03mm_sample/criteria.md
+  title: criteria.md — rm-oe-ratrace-03（0.3mm 单激励时长补样真机点）
+  status: migrate_to_v2
+  n_gates: 7
+  gates:
+  - {raw: '- 预算声明：任务书 ≤1h 指人工预算；真机预计墙钟 2200–3500s 可能触顶，如超时如实', threshold: 1.0}
+  - {raw: 1. f_center_balance ∈ 2.5GHz ± 2%（对齐基准 HFSS 仲裁 2.465GHz 单列报 dev_vs_hfss）；, threshold: 2.0}
+  - {raw: 2. balance_min ≤ 0.5dB；, threshold: 0.5}
+  - {raw: 3. S11@bal ≤ −20dB；, threshold: null}
+  - {raw: 4. S31@bal ≤ −20dB；, threshold: null}
+  - {raw: 5. |S21@bal − (−3.2)| ≤ 0.5dB；|S41@bal − (−3.2)| ≤ 0.5dB；, threshold: 0.5}
+  - {raw: 6. 以上 1–6 全过 = 读数门 PASS（k_eff 记录不判门，>1% 提示回写锚属 k_finalize 职责不在本项）。, threshold: 1.0}
+- path: ratrace_clean7_20260923/criteria.md
+  title: criteria.md — c14a ratrace 0.2mm 长预算干净补样 R13 + clean7 重训（30% 门复判）
+  status: migrate_to_v2
+  n_gates: 3
+  gates:
+  - {raw: '- 读数门（rkf._gates，Σ 激励口径）：f_center_balance ∈ 2.5GHz±2%；', threshold: 2.0}
+  - {raw: bal<=0.5dB；S11@bal<=−20dB；S31@bal<=−20dB；|S21@bal+3.2|<=0.5dB；, threshold: null}
+  - {raw: '|S41@bal+3.2|<=0.5dB → 须 all_pass；', threshold: null}
+- path: ratrace_clean_sample_20260921/criteria.md
+  title: criteria.md — c14a ratrace 干净补样（OE 真机 2 条）
+  status: migrate_to_v2
+  n_gates: 6
+  gates:
+  - {raw: '- 0.3mm -> id=R11 label=r11_0p3mm；既有证据墙钟 [1781.6]s；预算 3600s（<=0.8 档可行）', threshold: null}
+  - {raw: '- 0.4mm -> id=R12 label=r12_0p4mm；既有证据墙钟 [756.8]s；预算 3600s（<=0.8 档可行）', threshold: null}
+  - {raw: '(2.25, 2.75) GHz, mesh_resolution_mm=<档>, excite_port=1)；', threshold: null}
+  - {raw: 'S31@bal −35.13dB / S21,S41@bal −3.17dB）：f_center_balance ∈ 2.5GHz±2%；', threshold: 2.0}
+  - {raw: bal<=0.5dB；S11@bal<=−20dB；S31@bal<=−20dB；|S21@bal+3.2|<=0.5dB；, threshold: null}
+  - {raw: '|S41@bal+3.2|<=0.5dB；', threshold: null}
+- path: ratrace_df5_stratified/criteria.md
+  title: criteria.md — df5-SD 拍板⑥ A→B 串联：0.2mm 辨簇补样（R14/R15）+ 机制分层拟合复判
+  status: migrate_to_v2
+  n_gates: 1
+  gates:
+  - {raw: '- 落簇带 = [0.9×7188.6, 1.1×7681.6] = **[6469.7, 8449.8]s**（R1/R13 簇两锚各 ±10%）；', threshold: 10.0}
+- path: siw_family/criteria.md
+  title: SIW 族立项·预声明判据（criteria 先写后跑，2026-09-22）
+  status: migrate_to_v2
+  n_gates: 12
+  gates:
+  - {raw: '| s（过孔心距） | **1.0 mm** | 同上；复核 s/d=1.667 ≤ 2 ✔、d=0.6 < λ_sub(f0)/5=3.134 ✔、< λg(f0)/5=4.205
+      ✔ |', threshold: 2.0}
+  - {raw: 派生（渲染层 siw_layout 单源，米）：端口面 y=±31.5mm；端口盒=中线 z 桥, threshold: 31.5}
+  - {raw: ~±1%）；② R=Z_PV 与电桥实际视入阻抗非严格相等 → 带内 |S11| 含残余失配, threshold: 1.0}
+  - {raw: 3. **#349**：全轴网格最小间距 ≥10µm（渲染守卫 ValueError 拒渲染；审计复测）。, threshold: 10.0}
+  - {raw: ⇒ fc10 = c/(2a) = 6.5571 GHz（Pozar 教科书值，|Δ|≤0.05% 钉死）。, threshold: 0.05}
+  - {raw: −60dB 需 Q·ln(1000)/ω≈16.5ns）≈19ns < 42ns ✔；, threshold: 42.0}
+  - {raw: variable projection）：|fc_fit/fc_closed − 1| ≤ 3% PASS / ≤ 5% PARTIAL /, threshold: 3.0}
+  - {raw: '- **G2（波导性滚降）**：|S21|@6.2GHz ≤ |S21|@f0 − 15dB（fc 以下倏逝：', threshold: null}
+  - {raw: '- **G3（物理量级地板，sma §14.5 同式）**：带内 max|S21| ≥ −3dB；', threshold: null}
+  - {raw: fc_fit=6.83724GHz、dev=+2.5587%≤3%、sign=+、rms=0.0553rad（贴纹波地板非撞界）, threshold: 3.0}
+  - {raw: '① 线路固有 α_d=k²tanδ/(2β)=0.518dB/单程@10GHz（占实测 5.8%；功率差额硬界 19.3%）；导体=0（全 PEC by construction）、泄漏
+      s/d=1.667≤2 文献可略；② 构造性证明：z 桥探针悬在贯通 PML 的连续 SIW 中间→每端三支路节点按 (1/9,4/9,4/9) 分功率，理想探针天花板 −2.50dB（解析
+      (2/3)·9/8 逐位复现）、含真实 α_d 后 −3.10dB<−3dB 门=**理想探针也过不了门**；③ V2 分布式替代模型反推需 5.74dB/单程 vs 闭式 0.52dB——无机制。',
+    threshold: 2.0}
+  - {raw: 汇项账@10GHz：反射 0.395（实测）｜介质 ≤0.092｜端面 fixture 汇 ≥0.385（探针电阻+端口背后 3.5mm 延拓入 PML）。附带发现：tanδ_eff
+      实测反推 0.003515 vs 名义 0.0037（健康互洽）；as-run R_PORT=Z_PV(9.5GHz) 逐位复算（带宽边取值，非失配源）。, threshold: 0.092}
+- path: smoke_c3_redesign/criteria.md
+  title: c3 电路级重设计闭环判据（路线 c，零仿真批，2026-09-21 落盘先于运行）
+  status: migrate_to_v2
+  n_gates: 5
+  gates:
+  - {raw: −3dB 带心（band_center_3db 口径）相对 2.5GHz 偏差：|dev| ≤0.5% PASS /, threshold: 0.5}
+  - {raw: ≤1% PARTIAL / 更宽 FAIL。, threshold: 1.0}
+  - {raw: 2. **带宽比对门**：实测 bw_3db_pct / 设计 fbw=5% 比值在 1±0.20 内 PASS；, threshold: 0.2}
+  - {raw: 回收偏差 = |实测下移 − 预测下移| / |预测下移| ≤ 10% PASS；**不复现 =, threshold: 10.0}
+  - {raw: 首轮三模板电路裁判带宽均为 ~7.6%（比值 1.52，越 1±0.20 门）。旧名义同轴同口径, threshold: 0.2}
+- path: smoke_c3_refix/criteria.md
+  title: rm-oe-c3 预声明判据（写死再跑，2026-09-18，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 7
+  gates:
+  - {raw: 新根目录 runs/smoke_c3_refix/<template>/，三模板串行（轨内单求解）。, threshold: null}
+  - {raw: ① 每条耦合缝（gaps_mm 列表 N+1 条，边到边）内**内部 x 网格线 ≥1（缝缘线不算）**；, threshold: 1.0}
+  - {raw: ④ 最小网格间距 >1µm（#152 守卫）。, threshold: 1.0}
+  - {raw: '| G1 | 峰位（−3dB 带心 #298，不用 argmax）相对设计 f0=2.5GHz 偏差 vs 过孔电感裁判预测下移 | 预测值写死 = **−5.58 / −6.64
+      / −5.06%**（interdigital/combline/sir_bpf，4001 点 −3dB 带心口径）；**\|实测−预测\| ≤1.5pt PASS
+      / ≤3pt PARTIAL / 否则 FAIL**；裁判值另在当轮频轴复算交叉核（c3_circuit_sparams l_via_h=Goldfarb-Pucel vs l_via_h=0）
+      | 峰位 = S21 全局峰邻域连续 −3dB 带的中心（含峰的最大连通段） |', threshold: 1.5}
+  - {raw: '| G2 | 通带最大插损 / 带内回损 | 通带峰（扫描窗内全局 max S21dB）**≥ −3dB**；带内回损（同一 −3dB 带内 max S11dB）**≤ −10dB**；设计带
+      [2.4375,2.5625] 内两值另记（对照旧轮） | 旧轮通带峰 −7.92/−17.84/−3.67dB、带内 RL −1.8/−0.5/−5.3dB |', threshold: null}
+  - {raw: '| G3 | 引擎 ZL 与 50Ω 偏差 | **只记录不进门**（#280：归一修伪反射不改耦合度）；由 fdtd/port_ut/port_it 事后按 CalcPort(ref_impedance=None)
+      口径取 Z_ref，取 f0±2% 中位 | c4 _peek_zl.py 先例 |', threshold: 2.0}
+  - {raw: '- runs/smoke_c3_refix/<template>/judge_refix.json（G0-G4 + 全部记录项）', threshold: null}
+- path: smoke_c4_final/criteria.md
+  title: rm-oe-c4 预声明判据（写死再跑，2026-09-18，起跑前落盘）
+  status: migrate_to_v2
+  n_gates: 6
+  gates:
+  - {raw: ±12% 出入，lange 0.4 档上限可能落在脉冲结束（5.73ns）之前（#262 族截脉冲）。沿, threshold: 12.0}
+  - {raw: '| (a) | 引擎 ZL 偏差收敛（4 端口跨轮中位 vs 50Ω） | 每端口 \|dev\| < 4% | −8.62% |', threshold: 4.0}
+  - {raw: '| (b) | S31@f0（归一后）向裁判靠拢 ≥ 预期改善量一半 | cline：S31 ≤ −8.65dB（−8.00→预期 −9.3，改善 1.3，半量 0.65；裁判 −10.05）；lange：S31
+      ≤ −2.33dB（−2.03→预期 −2.6，改善 0.6，半量 0.30；裁判 −3.01） | −8.00 / −2.03 |', threshold: null}
+  - {raw: '| (e) | lange f_c 与 fc_plateau_ghz / fc_at_band_edge 一并报告；G5 β 记录（\|Δ\|≤2% 记录项不翻转） | 报告项 |
+      +20%（带沿）/ β +1.04% |', threshold: 2.0}
+  - {raw: '| (f) | 截断核查（#262/#266）：port_ut_*B 末 5% 窗残差；NrTS 触顶且残差 > −45dB → 判未收敛 | ≤ −45dB | −48…−79dB
+      |', threshold: null}
+  - {raw: '| 预算 | 单模板壁钟 > 2.5h 仍未完成 → 记录 port_ut 末行时间轴，判 PARTIAL | 2.5h | 577s / 1071s |', threshold: 2.5}
+- path: smoke_c9_refix/criteria.md
+  title: C9 SSL/CPS 合规网格复跑 · 预声明判据与预算外推（rm-oe-c9，2026-09-18）
+  status: migrate_to_v2
+  n_gates: 14
+  gates:
+  - {raw: FC=250MHz 高斯脉冲），激励结束后残余能量衰减到 −60dB 消耗 <1% 步数——, threshold: 1.0}
+  - {raw: '**NEAR=base/10=0.114mm ≤ w/6=0.1218mm ✓**（新增 `_near_ratio=10` 旋钮）；', threshold: null}
+  - {raw: '- CPS：w=2.95 gap=0.5 L=40mm εr=3.66，NEAR 缺省 0.285mm ≤ w/6=0.49mm（本就合规，', threshold: null}
+  - {raw: 是否精确落 y=∓20mm（pt1 实测精确落格，near_y 已把 ±20mm 精确入网）。, threshold: 20.0}
+  - {raw: '- G0 β 口径自洽：|εeff(β)/εeff(S21 斜率)−1| ≤ 2.5%（超限=UNDECIDABLE 门失语）', threshold: 2.5}
+  - {raw: '- G1 带内 |S11|max < −10 dB', threshold: null}
+  - {raw: '- G2 |εeff(β)/εeff_FD−1| ≤ 3% PASS / ≤5% PARTIAL / 其余 FAIL', threshold: 3.0}
+  - {raw: '- G3 |ZL/Z_FD−1| ≤ 5%（ZL=port_beta.csv re_zl1_ohm 引擎自算线阻抗）', threshold: 5.0}
+  - {raw: '- G1 带内 |S11|max < −15 dB', threshold: null}
+  - {raw: '- G2 εeff(S21 解缠相位斜率, L=40mm) vs εeff_FD：≤3% PASS / ≤7% PARTIAL / 其余 FAIL', threshold: 3.0}
+  - {raw: '- INFO 定标闭式 vs FD ≤1.2%（不设门）', threshold: 1.2}
+  - {raw: y=∓20mm（上下行都核），L=40mm 精确；剩余口径不确定度由 judge 的 ±1 格括弧, threshold: 1.0}
+  - {raw: '- 实测墙钟 113 s（外推 §1 预估 ≤11 min 内）；58,266 步触发 −60dB（激励结束 11.459ns，', threshold: 11.0}
+  - {raw: 'judge ±1 格括弧 [1.8623, 1.9161] 仍 ≥+11.7% → 排除。', threshold: 1.0}
+- path: smoke_marchand_2sect/criteria.md
+  title: criteria.md — rm-oe-marchand 两节对称 Marchand openEMS 渲染冒烟（起跑前预声明，2026-09-18）
+  status: migrate_to_v2
+  n_gates: 14
+  gates:
+  - {raw: 扫频 2.0–3.0GHz（F0=2.5、FC=0.5）、201 点；**判读带=f0±10%=2.25–2.75GHz**。, threshold: 10.0}
+  - {raw: '| band_max_s11_db_le | ≤ −10.0 dB |', threshold: null}
+  - {raw: '| band_min_s21_db_ge | ≥ −3.5 dB |', threshold: null}
+  - {raw: '| band_min_s31_db_ge | ≥ −3.5 dB |', threshold: null}
+  - {raw: '| band_max_abs_imbalance_db_le | ≤ 1.0 dB |', threshold: 1.0}
+  - {raw: '- **A 档（采信）**：末段 ≤ −40dB 且衰减斜率 ≤ −1dB/ns；', threshold: null}
+  - {raw: '- **B 档（PARTIAL-良性）**：末段 ≤ −30dB 且斜率 ≤ −1dB/ns（单调衰减中被截，截断误差量级=末段电平），判读照常、verdict 带 PARTIAL
+      限定；', threshold: null}
+  - {raw: '- **C 档（被困模嫌疑）**：末段 > −30dB 或斜率 ≥ −0.5dB/ns → 续跑 NrTS=300000 一次；仍不达 → PARTIAL(截断)，门判读带限定如实。',
+    threshold: null}
+  - {raw: '- LumpedPort 盒三轴 ≥2 格且 start/mid/stop 三线齐备、与 #152 去重同口径严格 `>`（#283）；', threshold: 2.0}
+  - {raw: '- 全轴最小线距 ≥10µm（1e-6 去重后，#152 dt 塌缩守卫）；', threshold: 10.0}
+  - {raw: −3.5 门 ±0.15dB 邻域且判定方向相同）→ 两引擎互证"过孔电感+fringe 使插损贴近/越过, threshold: 0.15}
+  - {raw: '- **分歧（DISAGREE）**：任一门判定方向不同，或幅度量差 >0.5dB → 列网格/过孔建模差异', threshold: 0.5}
+  - {raw: '|Γ|>1 非物理（路线 A/B 模板 msl_port_len=10mm 时该距离 0.72mm=2.8 格故未暴露）。', threshold: 1.0}
+  - {raw: ③ 线基分解+重归一 50Ω 降为次口径交叉核对，带 β 合理性门（|β_engine/β_HJ−1|≤10%）。, threshold: 10.0}

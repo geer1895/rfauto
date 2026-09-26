@@ -1,6 +1,6 @@
-"""多模型契约测试。
+"""多模型契约测试（审查修复 C4）。
 
-钉住的原始问题：run_once 的 fake 模式硬编码 3 端口 wilkinson——
+审查发现的原始问题：run_once 的 fake 模式硬编码 3 端口 wilkinson——
 branchline（4 端口）/ patch（2 端口）的 fake 仿真产出的是错误模型的数据；
 branchline 解析模型 f0 硬编码 2.4，参数变化无响应；FakeAdapter 未播种随机。
 """
@@ -34,7 +34,8 @@ class TestContractForNPorts:
         from rfauto.models.registry import get
         assert get("wilkinson_power_divider").n_ports == 3
         assert get("branchline_coupler").n_ports == 4
-        assert get("patch_antenna").n_ports == 2
+        # 0da followUp②：单馈贴片物理 1 端口（与 TEMPLATE_META/docs meta 一致）
+        assert get("patch_antenna").n_ports == 1
 
 
 class TestRunOnceMultiModel:
@@ -56,11 +57,17 @@ class TestRunOnceMultiModel:
         # 4 端口网络的指标可计算
         assert result["metrics"], "metrics 不应为空"
 
-    def test_run_once_patch_s2p(self, tmp_path, monkeypatch):
+    def test_run_once_patch_s1p(self, tmp_path, monkeypatch):
+        """0da followUp② 回归钉：单馈 patch fake 链产出 1 端口 .s1p
+        （旧口径借 2 端口形状落 .s2p，与 HFSS 设计实际 1 端口相悖）。"""
         result, _ = self._run(monkeypatch, tmp_path, "patch_antenna_v1.yaml")
         run_dir = Path(result["run_dir"])
-        snp = list((run_dir / "results").glob("params.s2p"))
-        assert snp, f"应产出 params.s2p，实际: {list((run_dir / 'results').glob('*'))}"
+        snp = list((run_dir / "results").glob("params.s1p"))
+        assert snp, f"应产出 params.s1p，实际: {list((run_dir / 'results').glob('*'))}"
+        # 回读 skrf 1 端口网络可解析（扩展名=rank 推断依据，#248）
+        import skrf
+        net = skrf.Network(str(snp[0]))
+        assert net.s.shape[1:] == (1, 1)
 
     def test_run_once_wilkinson_still_s3p(self, tmp_path, monkeypatch):
         """回归保护：wilkinson 仍为 3 端口 .s3p（历史行为不变）。"""

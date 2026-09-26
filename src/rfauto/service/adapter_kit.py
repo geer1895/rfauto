@@ -47,6 +47,18 @@ KNOWN_ADAPTERS: dict[str, dict[str, str]] = {
         "class": "PalaceSolver",
         "contract": "emsolver",
     },
+    # DP-11：VNA 测量通道（测量=一台"真机求解器"，EMSolverAdapter 契约）
+    "vna": {
+        "module": "rfauto.adapters.vna_adapter",
+        "class": "VnaAdapter",
+        "contract": "emsolver",
+    },
+    # DP-1：自研 RWG/SIW 解析模基 MMT（GSM）通道（纯仓内零外部进程）
+    "mmt": {
+        "module": "rfauto.adapters.mmt_adapter",
+        "class": "MmtAdapter",
+        "contract": "emsolver",
+    },
     "ads": {
         "module": "rfauto.adapters.ads_python_api",
         "class": "AdsPythonApiAdapter",

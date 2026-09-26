@@ -1,4 +1,4 @@
-"""现有模板的 TemplateSpec 收拢（新模板 = 在此文件加一个条目）。
+"""现有模板的 TemplateSpec 收拢（WP2.0：新模板 = 在此文件加一个条目）。
 
 组件引用全部在条目函数内 import——保持插件 entry-point 发现的启动轻量
 （models 层允许 import adapters/core，见 .importlinter 分层）。
@@ -60,7 +60,7 @@ def _register_branchline() -> None:
 
 
 def _register_patch() -> None:
-    from rfauto.adapters.fake_adapter import _patch_sparams_2port
+    from rfauto.adapters.fake_adapter import _patch_sparams_1port
     from rfauto.adapters.openems_templates import TEMPLATE_META, render_script
     from rfauto.core.synthesis import synthesize_patch
 
@@ -74,7 +74,7 @@ def _register_patch() -> None:
             "feed_offset_mm": "feed_offset_mm",
         },
         render_script=partial(render_script, "patch"),
-        fake_model=_patch_sparams_2port,
+        fake_model=_patch_sparams_1port,
         hfss_plugin="patch_antenna",
     ))
 
@@ -216,7 +216,7 @@ def _register_msl_cpw() -> None:
         },
         render_script=partial(render_script, "msl_cpw"),
         fake_model=_msl_cpw_sparams,
-        hfss_plugin=None,  # 纯 openEMS 锚模板（Tier 2 过渡族）
+        hfss_plugin=None,  # 纯 openEMS 锚模板（WP2.5 Tier 2 过渡族）
     ))
 
 
@@ -237,7 +237,7 @@ def _register_sma_launcher() -> None:
         },
         render_script=partial(render_script, "sma_launcher"),
         fake_model=_sma_launcher_sparams,
-        hfss_plugin=None,  # 纯 openEMS 锚模板（Tier 2 过渡族）
+        hfss_plugin=None,  # 纯 openEMS 锚模板（WP2.5 Tier 2 过渡族）
     ))
 
 
@@ -394,7 +394,7 @@ def _register_gysel() -> None:
 
 
 def _register_hairpin() -> None:
-    # 综合入口已下沉 core：原本地闭包 → core/synthesis
+    # 综合入口已下沉 core（WP2.3 收口 ⑦，2026-09-16）：原本地闭包 → core/synthesis
     # synthesize_hairpin_model（C13→KJ/抽头闭式→几何，ModelSynthesisResult 合同不变，
     # 本处只做注册组装，零数值）
     from rfauto.adapters.fake_adapter import _hairpin_sparams
@@ -412,12 +412,12 @@ def _register_hairpin() -> None:
         },
         render_script=partial(render_script, "hairpin"),
         fake_model=_hairpin_sparams,
-        hfss_plugin=None,  # 纯 openEMS 锚模板（滤波器族首例）
+        hfss_plugin=None,  # 纯 openEMS 锚模板（WP2.3 滤波器族首例）
     ))
 
 
 def _register_hairpin_alt() -> None:
-    # 交替取向 hairpin（交替取向根修）：综合入口 = core 的
+    # 交替取向 hairpin（2026-09-18 w2g，TODO 0dk 根修）：综合入口 = core 的
     # synthesize_hairpin_model 纯 KJ 链（几何与 hairpin 同链同值，唯一变量=取向），
     # 本处只改模型标签/注记并保持 ModelSynthesisResult 合同（零数值，coupled_bpf
     # 本地组装同款）；fake 派发按 model_type="hairpin_alt" 走纯 KJ（不乘同向 c(gap)）。
@@ -522,11 +522,11 @@ def _register_coupled_bpf() -> None:
         },
         render_script=partial(render_script, "coupled_bpf"),
         fake_model=_coupled_bpf_sparams,
-        hfss_plugin=None,  # 纯 openEMS 锚模板（BPF 族锚）
+        hfss_plugin=None,  # 纯 openEMS 锚模板（WP2.3 BPF 族锚）
     ))
 
 
-# 天线族 II 各模板：闭式设计函数（openems_templates）+ 物理角色
+# 天线族 II 各模板：闭式设计函数（openems_templates §10.3 C1）+ 物理角色
 # （只映射语义确定的键；helix 谐振尺寸由 d/N/p 联合决定，无单键谐振长度角色）
 _ANTENNA2_ROLES: dict[str, dict[str, str]] = {
     "monopole": {"mon_len_mm": "resonator_length_mm",
@@ -605,7 +605,7 @@ def _register_antenna2() -> None:
                 "objectives": [
                     {"metric": metric,
                      "band": [f0_ghz * 0.98, f0_ghz * 1.02],
-                     "op": "min_below", "value": s11_target_db},
+                     "op": "max_below", "value": s11_target_db},
                 ],
             }
             return ModelSynthesisResult(
@@ -614,7 +614,7 @@ def _register_antenna2() -> None:
                 params=params,
                 recipe_draft=recipe_draft,
                 notes=[f"{template}: 谐振尺寸由 openems_templates 闭式设计函数"
-                       f"给出（理论核验口径，设计式不做端效应预补偿）"],
+                       f"给出（§10.3 C1 理论核验口径，设计式不做端效应预补偿）"],
             )
         synthesize_antenna2_model.__name__ = f"synthesize_{template}_model"
         return synthesize_antenna2_model
@@ -627,11 +627,11 @@ def _register_antenna2() -> None:
             physics_roles=dict(_ANTENNA2_ROLES[template]),
             render_script=partial(render_script, template),
             fake_model=partial(_antenna2_sparams, template=template),
-            hfss_plugin=None,  # 纯 openEMS 辐射族（天线族 II）
+            hfss_plugin=None,  # 纯 openEMS 辐射族（§10.3 C1 天线族 II）
         ))
 
 
-# ─── §C4 耦合器族 II：cline_coupler / branchline_2sect / lange（注册）──
+# ─── §C4 耦合器族 II：cline_coupler / branchline_2sect / lange（2026-09-16 注册）──
 # 综合入口 = openems_templates 设计链（Pozar 闭式 → KJ/HJ 线宽 → λ/4），本文件
 # 只做 4 位舍入组装（零数值）；三模板均纯 openEMS 锚模板（hfss_plugin=None）。
 
@@ -820,7 +820,8 @@ def _register_lange() -> None:
     ))
 
 
-# ─── 初始模板补注册：stepped_impedance / coupled_line ── 首批模板有渲染/元数据但无 TemplateSpec（
+# ─── 初始模板补注册：stepped_impedance / coupled_line（2026-09-16，antenna2
+# followups 六项之 D）── 首批模板（WP1.x）有渲染/元数据但无 TemplateSpec（
 # TEMPLATE_META 25 vs TEMPLATE_SPECS 23 差集）与 fake 派发（solve 直接
 # ValueError）。综合入口复用既有确定性内核（HJ 正向 / KJ 偶奇模），本文件
 # 只做 4 位舍入组装，零数值；hfss_plugin=None（纯 openEMS 锚模板）。
@@ -867,7 +868,7 @@ def _register_stepped_impedance() -> None:
             "objectives": [
                 {"metric": "s11_db",
                  "band": [float(f0_ghz) * 0.96, float(f0_ghz) * 1.04],
-                 "op": "min_below", "value": -10.0},
+                 "op": "max_below", "value": -10.0},
             ],
         }
         return ModelSynthesisResult(
@@ -984,7 +985,7 @@ def _register_coupled_line() -> None:
 _BOOTSTRAPPED = False
 
 
-# ─── §C3 滤波器族 II：interdigital / combline / sir_bpf（注册）─────
+# ─── §C3 滤波器族 II：interdigital / combline / sir_bpf（2026-09-15 注册）─────
 # 综合入口 = openems_templates 设计链（C13 原型 → MYJ 斜率 → J → Cohn 精确 x →
 # KJ 一维反解缝 → 谐振棒闭式长度）；本文件只做组装，零数值。
 _C3_ROLES: dict[str, dict[str, str]] = {
@@ -1047,8 +1048,8 @@ def _register_c3_filters() -> None:
             """C3 spec 综合入口：设计链 → 几何（确定性内核），包装为
             ModelSynthesisResult——只做组装，零数值。
 
-            l_via_h=None：名义几何链开过孔补偿（登记⑨ 校准，自动取
-            HFSS 仲裁校准值 0.125nH，原 Goldfarb-Pucel 几何值
+            l_via_h=None：名义几何链开过孔补偿（登记⑨+R1 校准 df5-c3fix，自动取
+            HFSS 仲裁校准值 C3_L_VIA_CAL_H=0.125nH，原 Goldfarb-Pucel 几何值
             高估已弃），新战役 draft 配方渲染几何在过孔存在下谐振回 f0。
             """
             design = designers[template](order, f0_ghz, fbw, rl_db, l_via_h=None)
@@ -1091,7 +1092,7 @@ def _register_c3_filters() -> None:
         ))
 
 
-# 阵列族：物理角色只映射语义确定的键（antenna2 同口径）——单元间距无
+# §10.3 C2 阵列族：物理角色只映射语义确定的键（antenna2 同口径）——单元间距无
 # 词表角色不映射；q_len（λ/4 变换段）/link_len（λg/2 互联）归 line_length_mm
 _ARRAY_TREE_ROLES: dict[str, str] = {
     "elem_len_mm": "resonator_length_mm",
@@ -1143,7 +1144,7 @@ def _register_patch_array() -> None:
                 "objectives": [
                     {"metric": "s11_db",
                      "band": [f0_ghz * 0.98, f0_ghz * 1.02],
-                     "op": "min_below", "value": s11_target_db},
+                     "op": "max_below", "value": s11_target_db},
                 ],
             }
             return ModelSynthesisResult(
@@ -1152,7 +1153,7 @@ def _register_patch_array() -> None:
                 params=params,
                 recipe_draft=recipe_draft,
                 notes=[f"{template}: 单元 L/W 由 Balanis Ch.14 传输线模型闭式给出，"
-                       f"线宽/λ/4/λg/2 由 skrf HJ 精算（理论核验口径，"
+                       f"线宽/λ/4/λg/2 由 skrf HJ 精算（§10.3 C2 理论核验口径，"
                        f"设计式不做端效应预补偿）"],
             )
         synthesize_patch_array_model.__name__ = f"synthesize_{template}_model"
@@ -1166,7 +1167,78 @@ def _register_patch_array() -> None:
             physics_roles=dict(_ARRAY_ROLES[template]),
             render_script=partial(render_script, template),
             fake_model=partial(_array_sparams, template=template),
-            hfss_plugin=None,  # 纯 openEMS 辐射族（阵列族）
+            hfss_plugin=None,  # 纯 openEMS 辐射族（§10.3 C2 阵列族）
+        ))
+
+
+def _register_eep_array() -> None:
+    """§DP-4 P3 EEP 阵列族（2026-09-24 df6）：patch_eep_2x2/patch_eep_1x4。
+
+    每元独立 LumpedPort 探针 1..4、无 corporate 馈树（互耦档 EEP 专用）；
+    综合入口复用 C2 阵列单元闭式设计链（openems_templates.eep_design_params：
+    Balanis Ch.14 单元 + skrf HJ 线宽 + 0.484λ0 间距，4 位舍入与 EEP_NOMINAL
+    再生口径一致）。#154 角色映射只收语义确定键（C2 同口径）：spacing 无词表
+    角色不映射。hfss_plugin=None（HFSS Floquet 锚走独立脚本，DP-4 §2d）。
+    """
+    from rfauto.adapters.fake_adapter import _eep_sparams
+    from rfauto.adapters.openems_templates import (
+        EEP_TEMPLATES,
+        TEMPLATE_META,
+        eep_design_params,
+        render_script,
+    )
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    _EEP_ROLES: dict[str, str] = {
+        "elem_len_mm": "resonator_length_mm",
+        "elem_w_mm": "patch_width_mm",
+        "elem_feed_mm": "feed_offset_mm",
+        "feed_w_mm": "line_width_mm",
+    }
+
+    def _make_synthesizer(template: str):
+        def synthesize_eep_array_model(
+            f0_ghz: float = 5.8, s11_target_db: float = -10.0, **_: Any,
+        ) -> ModelSynthesisResult:
+            """EEP 阵 spec 综合入口：单元 Balanis Ch.14 闭式 + 线宽 skrf HJ 精算
+            （openems_templates.eep_design_params 确定性内核），包装为
+            ModelSynthesisResult——只做组装，零数值。"""
+            params = eep_design_params(template, f0_ghz)
+            recipe_draft = {
+                "model": template,
+                "recipe_version": 1,
+                "schema_version": 1,
+                "params": {k: {"value": v} for k, v in params.items()},
+                "setup": {"solver": "openEMS",
+                          "freq_range_ghz": [f0_ghz - 0.25, f0_ghz + 0.25],
+                          "points": 401},
+                "objectives": [
+                    {"metric": "s11_db",
+                     "band": [f0_ghz * 0.98, f0_ghz * 1.02],
+                     "op": "max_below", "value": s11_target_db},
+                ],
+            }
+            return ModelSynthesisResult(
+                model=template,
+                goal={"f0_ghz": f0_ghz, "s11_target_db": s11_target_db},
+                params=params,
+                recipe_draft=recipe_draft,
+                notes=[f"{template}: 单元 L/W 由 Balanis Ch.14 传输线模型闭式给出，"
+                       "线宽由 skrf HJ 精算、间距 0.484λ0（§DP-4 P3 EEP 理论核验"
+                       "口径；互耦档真机判据 J4 见 runs/df6_dp4p3/criteria.md）"],
+            )
+        synthesize_eep_array_model.__name__ = f"synthesize_{template}_model"
+        return synthesize_eep_array_model
+
+    for template in EEP_TEMPLATES:
+        register_template_spec(TemplateSpec(
+            name=template,
+            meta=dict(TEMPLATE_META[template]),
+            synthesizer=_make_synthesizer(template),
+            physics_roles=dict(_EEP_ROLES),
+            render_script=partial(render_script, template),
+            fake_model=partial(_eep_sparams, template=template),
+            hfss_plugin=None,  # 纯 openEMS 辐射族（HFSS Floquet 锚另派）
         ))
 
 
@@ -1212,15 +1284,47 @@ def _register_siw() -> None:
     ))
 
 
+def _register_msl_siw_taper() -> None:
+    """SIW 族第二成员=MSL 锥形过渡+SIW 直段（2026-09-24 df6 A2 立项）。
+    Deslandes-Wu 两段论：锥=50Ω MSL→Z_PV 阻抗变换器+锥末-SIW 台阶；端口=
+    双 MSLPort 线基（CalcPort ref=50 主口径，line_z0=engine 反演旋钮留判读
+    侧）。#154 角色映射只收语义确定键：w_mm=两过孔列心距（line_width_mm
+    词表口径，siw 同例）、siw_len_mm=线段长（line_length_mm）；d_mm/s_mm/
+    taper_len_mm 无词表条目按名直读同义（suspended_stripline b_mm 先例）。
+    hfss_plugin=None：SIW↔MSL 过渡 HFSS 仲裁属后续（锚真跑留主代理派发）。
+    预声明门 runs/df6_a2siwmsl/criteria.md §4。"""
+    from functools import partial
+
+    from rfauto.adapters.fake_adapter import _msl_siw_taper_sparams
+    from rfauto.adapters.openems_templates import (
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.synthesis import synthesize_msl_siw_taper_model
+
+    register_template_spec(TemplateSpec(
+        name="msl_siw_taper",
+        meta=dict(TEMPLATE_META["msl_siw_taper"]),
+        synthesizer=synthesize_msl_siw_taper_model,
+        physics_roles={
+            "w_mm": "line_width_mm",
+            "siw_len_mm": "line_length_mm",
+        },
+        render_script=partial(render_script, "msl_siw_taper"),
+        fake_model=_msl_siw_taper_sparams,
+        hfss_plugin=None,
+    ))
+
+
 def _register_slotline_family() -> None:
-    """槽线族四模板：路线 A/B 均匀槽线
+    """槽线族四模板（2026-09-18 w1b，followUps ④/0df②/0dl①）：路线 A/B 均匀槽线
     段 + MSL↔slot 过渡 + Marchand 双槽臂。渲染/(fake/综合)数值零拷贝——渲染走
     openems_templates 文末 SLOTLINE_FAMILY 分发（整脚本渲染器），fake 走
-    fake_adapter 同名分支，综合只组装 core 闭式产物（数值只在确定性内核；线宽精算有出处）。#154 角色
+    fake_adapter 同名分支，综合只组装 core 闭式产物（铁律 7/1c）。#154 角色
     映射只收语义确定键：w_mm=线宽/w_slot_mm=槽缝（gap_width_mm 词表）、
     line_len_mm=线长；x_port_mm/h_mm 无词表条目，各通道按名直读同义（msl_cpw
     先例）。hfss_plugin=None：槽线族 HFSS 仲裁走 scripts/hfss_slotline_*.py
-    大截面波端口口径（refs 文献口径），非桌面插件。"""
+    大截面波端口口径（refs §8/铁律），非桌面插件。"""
     from functools import partial
 
     from rfauto.adapters.fake_adapter import (
@@ -1319,7 +1423,7 @@ def _register_slotline_family() -> None:
             notes=[f"短路臂 λg'/4={td.l_short_mm:.4f}mm、微带支节 λg_m/4−Δl="
                    f"{td.l_stub_mm:.4f}mm、50Ω 微带 w={td.w_msl_mm:.4f}mm"
                    "（Roberts/Knorr 闭式精算 core/slotline_transitions）",
-                   "真机基线：HFSS IL 1.37dB 未达 1dB 门——结区优化 followUp"])
+                   "真机基线（a8abe8d）：HFSS IL 1.37dB 未达 1dB 门——结区优化 followUp"])
 
     def _marchand_syn(f0_ghz: float = 2.5, w_slot_mm: float = 1.0,
                       h_mm: float = 1.524, er: float = 3.66,
@@ -1347,7 +1451,7 @@ def _register_slotline_family() -> None:
             recipe_draft=_slotline_recipe_draft("marchand_balun", params,
                                                 f0_ghz, objectives),
             notes=[
-                "**单支节最小族已被两引擎互证证伪**（两引擎四门 FAIL）——"
+                "**单支节最小族已被两引擎互证证伪**（四门 FAIL 如实）——"
                 "本 spec 的 fake/判据面为两节对称耦合段电路级模型（"
                 "synthesize_marchand_two_section），与模板双槽臂几何不同源（如实）",
                 f"真 Marchand 名义点：50Ω→280Ω 差分、C={m2.coupling_db:.2f}dB、"
@@ -1375,6 +1479,191 @@ def _register_slotline_family() -> None:
             fake_model=fake,
             hfss_plugin=None,  # 纯 openEMS 模板（HFSS 仲裁走 scripts 大截面波端口）
         ))
+
+def _register_coil_nfc() -> None:
+    """§COIL_NFC NFC/WPC 线圈族（2026-09-26 df7 C10b，文末注册块）：
+    单端口方螺旋线圈（13.56MHz NFC 频段，FR4 类基板、中跳线桥、外圈馈隙
+    LumpedPort）。综合入口 = f0/C_tune → L_target → core/nfc_coil
+    synthesize_coil 反解 d_out（确定性内核，4 位舍入与 COIL_NFC_NOMINAL
+    再生口径一致），本处只组装零数值（#154 角色映射只收语义确定键：
+    gap_mm=馈隙长/h_mm=板厚/er/tan_d 无词表条目按名直读同义）。
+    hfss_plugin=None；真机 13.56MHz FDTD 预算见 runs/df7_nfc/criteria.md
+    §e（本批零发射）。"""
+    from rfauto.adapters.fake_adapter import _coil_nfc_sparams
+    from rfauto.adapters.openems_templates import (
+        COIL_NFC_NOMINAL,
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.nfc_coil import (
+        resonant_frequency,
+        spiral_inductance,
+        synthesize_coil,
+    )
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_coil_nfc_model(
+        n_turns: int = 7, w_mm: float = 0.5, s_mm: float = 0.5,
+        gap_mm: float = 0.4, h_mm: float = 1.6, er: float = 4.4,
+        tan_d: float = 0.02, c_tune_pf: float = 47.0,
+        f0_mhz: float = 13.56, **_: Any,
+    ) -> ModelSynthesisResult:
+        """coil_nfc spec 综合入口：f0/C_tune → L_target=1/((2πf)²C) →
+        core synthesize_coil 二分反解 d_out（确定性内核），只组装零数值。"""
+        l_target = 1.0 / ((2.0 * math.pi * f0_mhz * 1e6) ** 2
+                          * (c_tune_pf * 1e-12))
+        design = synthesize_coil(l_target, "square", float(n_turns),
+                                 float(w_mm) * 1e-3, float(s_mm) * 1e-3)
+        params: dict[str, Any] = {
+            "n_turns": int(n_turns),
+            "d_out_mm": round(float(design["d_out_m"]) * 1e3, 4),
+            "w_mm": round(float(w_mm), 4),
+            "s_mm": round(float(s_mm), 4),
+            "gap_mm": round(float(gap_mm), 4),
+            "h_mm": round(float(h_mm), 4),
+            "er": round(float(er), 4),
+            "tan_d": round(float(tan_d), 4),
+        }
+        assert set(params) == set(COIL_NFC_NOMINAL)
+        from rfauto.core.nfc_coil import CoilGeometry
+
+        l_nom = spiral_inductance(
+            CoilGeometry("square", float(params["n_turns"]),
+                         float(params["d_out_mm"]) * 1e-3,
+                         float(params["w_mm"]) * 1e-3,
+                         float(params["s_mm"]) * 1e-3), "current_sheet")
+        f0_realized = resonant_frequency(l_nom, c_tune_pf * 1e-12)
+        f0_ghz = f0_mhz / 1e3
+        recipe_draft = {
+            "model": "coil_nfc",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [f0_ghz * 0.9, f0_ghz * 1.1],
+                      "points": 201},
+            "objectives": [
+                {"metric": "s11_db",
+                 "band": [f0_ghz * 0.97, f0_ghz * 1.03],
+                 "op": "max_below", "value": -10.0},
+            ],
+        }
+        return ModelSynthesisResult(
+            model="coil_nfc",
+            goal={"f0_mhz": float(f0_mhz), "c_tune_pf": float(c_tune_pf),
+                  "l_self_uh": round(l_nom * 1e6, 6),
+                  "f0_realized_mhz": round(f0_realized / 1e6, 6)},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"L_target={l_target * 1e6:.4f}µH（f0={f0_mhz}MHz、"
+                f"C_tune={c_tune_pf}pF 闭式）→ d_out={params['d_out_mm']}mm"
+                "（core/nfc_coil.synthesize_coil 二分反解，回代相对差 "
+                f"{design['rel_error']:.2e}）",
+                "fake=一阶串联 RLC（未标定如实声明）；渲染=阶梯方螺旋+中跳"
+                "线桥，跳线附加电感未建模（criteria §附如实注记）",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="coil_nfc",
+        meta=dict(TEMPLATE_META["coil_nfc"]),
+        synthesizer=synthesize_coil_nfc_model,
+        physics_roles={
+            "w_mm": "line_width_mm",
+            "s_mm": "gap_width_mm",
+        },
+        render_script=partial(render_script, "coil_nfc"),
+        fake_model=_coil_nfc_sparams,
+        hfss_plugin=None,
+    ))
+
+
+def _register_mmwave_series_array() -> None:
+    """§MMWAVE_SERIES_ARRAY 串馈毫米波阵（2026-09-26 df7 C10d，文末注册块）：
+    汽车雷达 76-81GHz 行波串馈贴片阵（f0=78GHz、N=4、链末匹配集总负载到地）。
+    综合入口 = f0/tilt_u0 → openems_templates.mmwave_series_design_params
+    闭式链（Balanis 单元 + skrf HJ 线宽/βg + 倾斜式反解互联长 s，4 位舍入与
+    MMWAVE_SERIES_NOMINAL 再生口径一致），本处只组装零数值（#154 角色映射
+    只收语义确定键：h_mm=板厚/er/tan_d/n_elem/feed_margin_mm/load_r_ohm
+    无词表条目按名直读同义）。hfss_plugin=None；真机预算预声明
+    runs/df7_c10d/criteria.md §d（本批零发射）。"""
+    from rfauto.adapters.fake_adapter import _mmwave_series_sparams
+    from rfauto.adapters.openems_templates import (
+        MMWAVE_SERIES_NOMINAL,
+        TEMPLATE_META,
+        _ant2_eps_eff,
+        mmwave_series_design_params,
+        render_script,
+    )
+    from rfauto.core.array_synthesis import series_feed_beam_direction_cosine
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_mmwave_series_array_model(
+        f0_ghz: float = 78.0, tilt_u0: float = 0.30, n_elem: int = 4,
+        er: float = 3.0, h_mm: float = 0.127, **_: Any,
+    ) -> ModelSynthesisResult:
+        """C10d spec 综合入口：mmwave_series_design_params 确定性内核
+        （#1c 全闭式），只组装零数值。"""
+        params = mmwave_series_design_params(
+            f0_ghz=f0_ghz, tilt_u0=tilt_u0, n_elem=n_elem, er=er, h_mm=h_mm)
+        assert set(params) == set(MMWAVE_SERIES_NOMINAL)
+        lam0 = 299.792458 / f0_ghz
+        k0 = 2.0 * math.pi / lam0
+        pitch = params["elem_len_mm"] + params["link_len_mm"]
+        beta_g = k0 * math.sqrt(_ant2_eps_eff(
+            params["feed_w_mm"], f0_ghz, params["er"], params["h_mm"]))
+        u0_real = series_feed_beam_direction_cosine(
+            pitch, k0, params["link_len_mm"], beta_g)
+        f0_ghz_val = f0_ghz
+        recipe_draft = {
+            "model": "mmwave_series_array",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [f0_ghz_val - 2.5, f0_ghz_val + 2.5],
+                      "points": 401},
+            "objectives": [
+                {"metric": "s11_db",
+                 "band": [f0_ghz_val - 0.75, f0_ghz_val + 0.75],
+                 "op": "max_below", "value": -10.0},
+            ],
+        }
+        return ModelSynthesisResult(
+            model="mmwave_series_array",
+            goal={"f0_ghz": float(f0_ghz), "tilt_u0": float(tilt_u0),
+                  "u0_realized": round(u0_real, 6),
+                  "beam_theta_deg": round(
+                      math.degrees(math.asin(max(-1.0, min(1.0, u0_real)))), 4),
+                  "pitch_over_lambda0": round(pitch / lam0, 6)},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"串馈行波阵：s={params['link_len_mm']}mm（倾斜设计式反解，"
+                f"u0={tilt_u0}）、d/λ0={pitch / lam0:.4f}（栅瓣判据 ≤"
+                f"{1.0 / (1.0 + tilt_u0):.4f}）；链末 50Ω 集总匹配到地",
+                "fake=单元谐振精确逆吸收谷一阶（未标定如实声明，行波互耦/"
+                "端接残余反射未建模）；渲染=整脚本渲染器（PML_8 端口轴+"
+                "LumpedElement shunt 端接），真机预算 criteria §d 零发射",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="mmwave_series_array",
+        meta=dict(TEMPLATE_META["mmwave_series_array"]),
+        synthesizer=synthesize_mmwave_series_array_model,
+        physics_roles={
+            "elem_len_mm": "resonator_length_mm",
+            "elem_w_mm": "patch_width_mm",
+            "feed_w_mm": "line_width_mm",
+            "link_len_mm": "line_length_mm",
+        },
+        render_script=partial(render_script, "mmwave_series_array"),
+        fake_model=_mmwave_series_sparams,
+        hfss_plugin=None,  # 纯 openEMS 辐射族（§18.3d C10d）
+    ))
+
 
 def bootstrap_template_specs() -> None:
     """把现有模板 spec 登记进全局注册表（幂等，入口处调用一次）。"""
@@ -1408,11 +1697,15 @@ def bootstrap_template_specs() -> None:
     _register_antenna2()
     _register_c3_filters()
     _register_patch_array()
+    _register_eep_array()
     _register_cline_coupler()
     _register_branchline_2sect()
     _register_lange()
     _register_slotline_family()
     _register_siw()
+    _register_msl_siw_taper()
+    _register_coil_nfc()
+    _register_mmwave_series_array()
     _BOOTSTRAPPED = True
 
 

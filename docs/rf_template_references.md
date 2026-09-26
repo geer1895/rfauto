@@ -647,3 +647,23 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
 - **新 50Ω 设计点 w=0.9058**（闭式 εeff 2.0011/Z0 50.0；FD 真值 2.0250/49.67Ω=+0.67%）；旧 w=0.731 口径（q 式 +26%、FD 2.092/56.1）撤为历史锚。TEMPLATE_NOMINAL/meta.yaml/fake 缺省/render 默认已全链级联；历史 pt 复放用 --w-mm 0.731。
 - **CPS γ 定标域边界更新（R2-B-08③ 跟进，240 点角落扫描）**：单参数 γ(εr) 修正在角落不可修（增强比=(a/h,b/h) 二维曲面+εr 混叠；固定 a/h 随 b/h 非单调）——定标域写死 a/h≲1 且 b/h≲3；域外低估实测 (a/h=2,b/h=6,εr=10.2)→**−2.8%**、(a/h=3,b/h=6,εr=12.9)→**−5.7%**（比本文件旧注记 −2~−4% 更重，以本块为准）；复现 `--cps-corner`。
 - **CPS 端口元落盘新契约**：render cps beta 块增 port_y1_m/port_y2_m/plane_dist_m（E 场节点=cell 中心，终网格实测；前两列 freq_hz/beta_rad_per_m 契约不变），判读器 G2 优先实测线长（地板 ±5.7%→~±1% 待真机仲裁）。
+
+### 15. c3 耦合/馈耦合标定锚
+
+- **k 模分裂精确式**：k=(f₂²−f₁²)/(f₂²+f₁²)（M. Makimoto, S. Yamashita,
+  Microwave Resonators and Filters for Wireless Communication（MYJ）耦合谐振
+  章口径；同 J.-S. Hong & M. J. Lancaster, Microstrip Filters for RF/Microwave
+  Applications, Wiley 2001, §5 耦合谐振器测量节）——对 f₁,₂=f₀/√(1∓k) 恒等，
+  窄带近似 k≈2|f₂−f₁|/(f₂+f₁) 只作旁证列。
+- **权威源头**：M. Dishal, "Design of dissipative band-pass filters
+  producing desired exact amplitude-frequency characteristics", Proc. IRE,
+  vol.37, no.9, pp.968-983, Sept. 1949（谐振器耦合网络测量口径）；
+  群时延法外部 Q：Hong & Lancaster 同书外部 Q 测量节（τmax 法）。
+- **C 常数裁决（本仓合成回收钉死，runs/df6_a1_r4/selftest_result.json；
+  独立互证一致）**：反射单载口径 S11 τmax=4·Qe/ω0 ⇒ Qe=ω0·τmax/**4**
+  （C=4；实测钉 3.9972）；"/2"口径被否决。对称双馈 S21 口径
+  τmax=2·Q_L/ω0（对称时 =Qe/ω0，C=1）。群时延四参数 Lorentzian+基线拟合
+  τ(f)=A/(1+((f−f0)/w)²)+D——带缘斜率法测线时延被谐振器电抗斜率污染
+  （实测 3.2×），禁用。
+- **k–gap 全波标定曲线**：行业标准实践=用 fixture 的 k(g) 曲线整体替代
+  KJ 闭式缝映射；曲线门=严格单调（hairpin 先例）。

@@ -1,0 +1,179 @@
+# 物理标定锚注册表（DP-3，docs/plan_deepdive_specs_20260924.md §DP-3）
+# 锚 = (模板族 × 引擎对 × 域) → (常量 | 曲线 | 公式)，描述引擎对系统偏差。
+# 运行时只读；写入只经人工 commit（Agent 写面隔离，仓内约定）。
+# 版本演进：锚修订不改历史——新证据登记 -vN+1，旧版 status: retired +
+# superseded_by 保留原文（golden 证据零改写，#325/#326）。
+# 单源计数：EXPECTED_ANCHORS/EXPECTED_ANCHOR_COUNT @ src/rfauto/core/anchors.py，
+# 本文件增删锚必须同步该单源（tests/unit/test_anchors_store_service.py 钉）。
+# status 枚举：active | stale | experimental | retired | awaiting_data
+# （awaiting_data 为 DP-3 P1 批预声明扩展：骨架锚如实登记，data 回填后翻 active，
+# 见 runs/df6_dp3anchors/criteria.md 〇节口径决定）。
+schema: anchors/v1
+anchors:
+  # ── c3 过孔寄生电感（df5f R1，HFSS 对齐基准中点）─────────────────────────
+  - anchor_id: c3.l_via_h.openems-hfss-v1
+    kind: constant
+    template_family: [combline, interdigital, sir_bpf]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: l_via_h
+      unit: H
+      semantics: "过孔寄生电感校准值（补偿电感），替代 Goldfarb-Pucel 闭式缺省"
+    value: 0.125e-9
+    uncertainty: {value: 0.02e-9, kind: arbitration_interval}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/df5_c3fix]
+      commit: caa79b5
+      devlog: "HFSS 反解 0.12-0.13nH 区间中点=对齐基准（对齐基准立规）；OE 反解 0.20nH 如实登记为跨引擎发现不作定值"
+      referee_script: scripts/c3_redesign_synthesis.py
+      replaces: "Goldfarb-Pucel c3_via_inductance_h 0.29596nH（对粗短过孔高估 2.2-2.5 倍，降级文献公式保留）"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: {at: "2026-09-24T00:00:00+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/adapters/openems_templates.py
+      - src/rfauto/adapters/fake_adapter.py
+
+  # ── patch 谐振谷位经验常数 f_dip·L（×2 分引擎，直接沿用他引擎常数=首轮目标落空根因）──
+  - anchor_id: patch.f_dip_l.openems-v1
+    kind: constant
+    template_family: [patch]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: f_dip_L
+      unit: "GHz·mm"
+      semantics: "openEMS patch 单点扫频谷位标定常数，问题定义按本引擎常数定标（L* = 常数/f_target）"
+    value: 76.8
+    uncertainty: {value: 0.05, kind: relative, note: "保守包络估计，待 23 点战役数据复验回填"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/wp39_mvp_followup]
+      commit: 3f1d18c
+      devlog: "#190 23 点战役定标值；scripts/wp39_followup_run.py OPENEMS_PATCH_CONSTANT_DOC"
+      referee_script: scripts/wp39_followup_run.py
+      replaces: "无（首登记；此前仅脚本常量+注释散落）"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: active
+    consumers:
+      - scripts/wp39_followup_run.py
+      - src/rfauto/service/wp39_benchmark.py
+
+  - anchor_id: patch.f_dip_l.hfss-v1
+    kind: constant
+    template_family: [patch]
+    engine_pair: {calibrated: hfss, referee: hfss}
+    quantity:
+      name: f_dip_L
+      unit: "GHz·mm"
+      semantics: "HFSS 归档 probe.s1p 离线复核的谷位标定常数（HFSS 为对齐基准口径）"
+    value: 99.8
+    uncertainty: {value: 0.05, kind: relative, note: "保守包络估计，待归档复判回填"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/wp39_probe_patch]
+      commit: 3f1d18c
+      devlog: "scripts/wp39_followup_run.py HFSS_PATCH_CONSTANT_REF；service/wp39_benchmark.py ④ 标定注释（HFSS 99.8 对 openEMS 76.8 漂移比值口径）"
+      referee_script: scripts/wp39_benchmark_run.py
+      replaces: "无（首登记）"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: active
+    consumers:
+      - scripts/wp39_benchmark_run.py
+      - src/rfauto/service/wp39_benchmark.py
+
+  # ── CPS 有效厚度因子 γ(εr)（引擎无关闭式锚，FD 裁判定标）─────────────────
+  - anchor_id: cps.gamma_er.fdref-v1
+    kind: formula
+    template_family: ["*"]
+    engine_pair: null
+    quantity:
+      name: cps_gamma_er
+      unit: dimensionless
+      semantics: "CPS 无地薄基板 tanh 映射有效厚度因子 h_eff = γ(εr)·h；εr→∞ γ→1、εr=1 超额项为零"
+    expr: "1 + 0.9014*er**-0.6361"
+    variables: [er]
+    uncertainty: {value: 0.006, kind: relative, note: "8 档定标表最大相对偏差 0.56%（runs/df6_dp18c9 gate_b_numeric）之上留一档余量"}
+    domain:
+      er: [1.5, 12.9]
+    provenance:
+      arbitration_runs: [runs/df6_dp14m1, runs/df6_dp18c9]
+      commit: cb7e900
+      devlog: "C9 FD Laplace 定标落库；M1 PySR 重发现（max rel 3.4e-4）与 C9 文献挖掘双通道复核，候选 JSON 随本批登记（runs/df6_dp3anchors）"
+      referee_script: scripts/fd_laplace_tline_referee.py
+      data_source: docs/rf_template_references.md
+      data_source_note: "§11.1 8 档定标值（--refit-cps-gamma 复现源）"
+      candidates:
+        - runs/df6_dp14m1/cps_gamma_pysr_candidate.json
+        - runs/df6_dp18c9/cps_gamma_litmine_candidate.json
+      replaces: "无（将 calculators CPS_H_EFF_GAMMA_C/P 现值收编为带 provenance 锚；值逐位同）"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/core/calculators.py
+
+  # ── SIW 等效宽度（Cassivi 2002 文献双源闭式）────────────────────────────
+  - anchor_id: siw.w_eff.lit-v1
+    kind: formula
+    template_family: [msl_siw_taper]
+    engine_pair: null
+    quantity:
+      name: siw_w_eff_mm
+      unit: mm
+      semantics: "SIW 等效宽度（同宽 w_eff 同填充介质矩形波导等效口径）；几何设计规则（s≤2d、d<λ_sub/5）由 siw_check_design_rules 守卫，不入参数盒"
+    expr: "w_mm - d_mm**2/(0.95*s_mm)"
+    variables: [w_mm, d_mm, s_mm]
+    uncertainty: {value: 0.02, kind: relative, note: "文献闭式无仓内定量误差数据，保守包络 2% 如实登记，待 SIW 锚判读回填（不臆造测量精度）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/siw_family]
+      commit: 30c281b
+      devlog: "SIW 族首族定标；双源出处 runs/siw_family/criteria.md §1（Cassivi 2002 MWCL 12(9):333-335 / Wu-Deslandes-Cassivi TELSIKS 2003，文本逐字交叉印证）"
+      data_source: docs/rf_template_references.md
+      data_source_note: "铁律 1c 权威口径集中面（SIW § 双源出处转引）"
+      replaces: "无（将 calculators siw_effective_width_mm 现式收编为带 provenance 锚；式逐位同）"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/core/calculators.py
+
+  # ── c3 臂耦合 k(g) 曲线（df6 A1 曲线判读后回填，骨架先登记）──────────────
+  - anchor_id: c3.k_of_g.openems-hfss-v1
+    kind: curve
+    template_family: [combline, interdigital, sir_bpf]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: k_of_g
+      unit: dimensionless
+      semantics: "c3 臂耦合系数 k 随间隙 g 的引擎对系统偏差曲线（≥5 点），供 synthesis c3 臂 k 设计与 N2 k_split_pair 消费"
+    axis: {param: g_mm, unit: mm}
+    points:
+      - {x: 0.970659, y: 0.07999999999999999}
+      - {x: 1.144118, y: 0.07616881627052416}
+      - {x: 1.356693, y: 0.06157899433913585}
+      - {x: 1.613188, y: 0.049117114545443014}
+      - {x: 2.029259, y: 0.03580856585892552}
+      - {x: 2.494992, y: 0.026347702113520548}
+    interp: {method: pchip, extrapolate: forbidden}
+    uncertainty: {value: 0.05, kind: relative, note: "偏置曲线逆映射非节点回收误差钉 0.047（runner 预声明）；末点 g=0.9707mm k_corr 逐位 0.08=钉栅格端节点值（节点回收按构造精确，边缘点取保守上界）；k_corr/k_kj 修正比带 1.17-1.32（中位 1.212）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/df6_a1_r4]
+      commit: f21f661
+      devlog: "df6 P1 骨架登记：points 留 A1 曲线判读产出后回填，届时翻 active 并补 uncertainty/arbitration_runs（本 criteria 预声明，不事后改）。df7 收尾笔回填：curve_verdict.json 6 点全 PASS+严格单调（k_monotone_decreasing_in_gap=true），y=k_corr（馈 tap 加载偏置逆映射修正后引擎 k）；馈耦合 J01 两点（qe_g0800 J01 比 0.730@0.8mm、qe_g02263 0.074@设计缝 0.2263mm——KJ 馈抽头闭式小缝端严重高估耦合，df5 发现定量化）同表存档 curve_verdict.json qe_rows"
+      replaces: "无"
+    registered_at: "2026-09-24T12:00:00+08:00"
+    last_verified: {at: "2026-09-25T15:29:17+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/core/synthesis.py

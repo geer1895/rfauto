@@ -92,9 +92,36 @@ PROBE_EPS_MESHES = [1.2, 2.0, 3.0]
 PROBE_W_LIST = [0.85, 1.113, 1.4]
 # ④ 标定参考常数（GHz·mm）：HFSS=归档 probe.s1p 离线复核值；
 # openEMS=#190 23 点战役定标值。
+# DP-3 第二批改道（锚消费接线）：单源=knowledge/anchors.yaml
+# （patch.f_dip_l.hfss-v1 / .openems-v1），消费点经 _resolve_patch_constant
+# 按引擎对选锚解析；下列字面值降级为解析失败时的回退值（锚值与字面值
+# 逐位相等——test_anchors_store_service a2 正则钉本字面行，零行为变化）。
 HFSS_PATCH_CONSTANT_REF = 99.8
 OPENEMS_PATCH_CONSTANT_DOC = 76.8
 RATRACE_NULL_SEARCH = (2.3, 2.7)
+
+
+def _resolve_patch_constant(anchor_id: str, fallback: float) -> float:
+    """按引擎对选锚解析 patch f_dip·L 标定常数（DP-3 第二批改道）。
+
+    锚单源=knowledge/anchors.yaml（patch.f_dip_l.openems-v1=76.8 /
+    patch.f_dip_l.hfss-v1=99.8）；解析失败（注册表缺/坏/stale/任何异常）
+    回退字面参考值——锚值与字面值逐位相等（test_anchor_wire_df7 钉），
+    零行为变化，#105 best-effort（锚系统故障不阻塞证据脚本）。"""
+    try:
+        from rfauto.infra.anchors_store import load_anchors
+
+        got = load_anchors().resolve_anchor(anchor_id)
+        value = got.get("value")
+        if (got.get("hit") and got.get("source") == "anchor"
+                and not got.get("stale")
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(float(value))):
+            return float(value)
+    except Exception:
+        pass
+    return float(fallback)
 
 SCHEMA = "wp39_followup"
 
@@ -798,6 +825,12 @@ def run_patch_calib_tier(outdir: Path,
             "dip_db": round(hf_meta["dip_db"], 2),
             "source": "归档真机数据离线复核"})
     hfss_const = hfss_entry.get("constant")
+    # DP-3 第二批改道：参考常数改经锚注册表按引擎对解析（失败回退字面值，
+    # 值逐位同——单源换锚后报告/漂移口径自动跟随注册表，无需改脚本）。
+    doc_const = _resolve_patch_constant(
+        "patch.f_dip_l.openems-v1", OPENEMS_PATCH_CONSTANT_DOC)
+    hfss_ref_const = _resolve_patch_constant(
+        "patch.f_dip_l.hfss-v1", HFSS_PATCH_CONSTANT_REF)
     payload = {
         "schema": f"{SCHEMA}_patch_calib_v1", "generated_at": _now(),
         "tier": "patch_calib",
@@ -813,16 +846,16 @@ def run_patch_calib_tier(outdir: Path,
                                       round(float(result.freq_ghz.max()), 3)]},
         "hfss": hfss_entry,
         "references": {
-            "openems_doc_constant": OPENEMS_PATCH_CONSTANT_DOC,
+            "openems_doc_constant": doc_const,
             "openems_doc_source": "#190 23 点战役定标",
-            "hfss_ref_constant": HFSS_PATCH_CONSTANT_REF},
+            "hfss_ref_constant": hfss_ref_const},
         "drift": {
             "hfss_over_openems": (
                 None if not hfss_const
                 else round(float(hfss_const) / const, 4)),
             "fresh_vs_doc_pct": round(
-                (const - OPENEMS_PATCH_CONSTANT_DOC)
-                / OPENEMS_PATCH_CONSTANT_DOC * 100, 2),
+                (const - doc_const)
+                / doc_const * 100, 2),
             "recenter_example": {
                 "target_ghz": 2.45,
                 "L_star_mm": round(
@@ -832,7 +865,7 @@ def run_patch_calib_tier(outdir: Path,
     out = outdir / "patch_calib.json"
     _write_json(out, payload)
     print(f"WP39_PATCH_CALIB_DONE const={const:.2f}GHz·mm "
-          f"(doc {OPENEMS_PATCH_CONSTANT_DOC}, hfss {HFSS_PATCH_CONSTANT_REF}) "
+          f"(doc {doc_const}, hfss {hfss_ref_const}) "
           f"drift={payload['drift']['recenter_example']['L_star_mm']}mm@2.45",
           flush=True)
     return out

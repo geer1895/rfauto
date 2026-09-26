@@ -102,7 +102,7 @@ class TestCampaignTools:
         assert "final_verify" in stage_names  # high_adapter 默认 hfss
         verify = next(s for s in data["stages"] if s["stage"] == "final_verify")
         assert verify["license_gated"] is True
-        assert data["campaign_schema"] == "rfauto-campaign-plan-v1"
+        assert data["campaign_schema"] == "rfauto-campaign-plan-v1.1"
 
     def test_plan_campaign_high_adapter_none(self, mcp_server, sample_recipe):
         data = _call(mcp_server, "plan_campaign",
@@ -128,7 +128,7 @@ class TestCampaignTools:
         # 目录形态与文件形态都可查询
         by_dir = _call(mcp_server, "get_campaign_status", {"plan_path": str(out_dir)})
         assert by_dir["ok"] is True
-        assert by_dir["plan"]["campaign_schema"] == "rfauto-campaign-plan-v1"
+        assert by_dir["plan"]["campaign_schema"] == "rfauto-campaign-plan-v1.1"
         by_file = _call(mcp_server, "get_campaign_status",
                         {"plan_path": str(out_dir / "campaign.plan.json")})
         assert by_file["ok"] is True

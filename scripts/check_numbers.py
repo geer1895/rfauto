@@ -18,12 +18,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNS_DIR = REPO_ROOT / "runs"
 MCP_ENTRY_EXE = REPO_ROOT / ".venv" / "Scripts" / "rfauto-mcp.exe"
 
 # tests 徽章为下限式（collect 数随平台/环境小幅浮动，断言 >= 而非 ==）
-MIN_TESTS = 8100
+MIN_TESTS = 9700
 
 # 文档头部核对模式：(正则, label)。期望值不在此绑定——main() 按 label 从
 # 实测注入。0 匹配 = 判红（模式必须实际咬合文档）。
@@ -100,6 +102,33 @@ def count_templates() -> int:
     return sum(1 for p in root.iterdir() if p.is_dir()) if root.is_dir() else 0
 
 
+def count_anchors() -> int:
+    """锚注册表条目实数（knowledge/anchors.yaml 顶层 anchors 列表 raw 长度）。
+
+    raw 口径（不进 AnchorSet 构造）：单锚 schema 坏被构造层丢进 load_errors
+    时不该在计数面静默蒸发——raw 计数与 core 单源不一致即判红，让坏锚现形
+    而不是被"合法丢弃"吞掉（#231 注册表消费者纪律）。"""
+    data = yaml.safe_load(
+        (REPO_ROOT / "knowledge" / "anchors.yaml").read_text(encoding="utf-8")
+    ) or {}
+    anchors = data.get("anchors") if isinstance(data, dict) else None
+    return len(anchors) if isinstance(anchors, list) else 0
+
+
+def check_anchors_vs_core() -> str | None:
+    """绑锚双向核对：yaml raw 条数 vs core EXPECTED_ANCHOR_COUNT 单源。
+
+    一致 → None；不一致 → 失败描述（main() 收进 failures 判红）。"""
+    from rfauto.core.anchors import EXPECTED_ANCHOR_COUNT
+
+    n_yaml = count_anchors()
+    if n_yaml != EXPECTED_ANCHOR_COUNT:
+        return (f"anchors: knowledge/anchors.yaml 条数 {n_yaml} != "
+                f"core/anchors.py EXPECTED_ANCHOR_COUNT "
+                f"{EXPECTED_ANCHOR_COUNT}（#231 单源同步，双向必核对）")
+    return None
+
+
 def mcp_entry_missing_message(exe: Path = MCP_ENTRY_EXE) -> str | None:
     """安装态断言：仅当本地 .venv 存在时检查 console script exe；
     CI 临时环境没有仓库根 .venv，返回 None 跳过。"""
@@ -151,9 +180,15 @@ def main() -> int:
     tc, tsrc = count_tests()
     mc = count_mcp()
     tpl = count_templates()
+    ac = count_anchors()
     print(f"Actual: tests={tc} (source: {tsrc}), CLI={cli_total}, "
-          f"MCP={mc}, templates={tpl}")
+          f"MCP={mc}, templates={tpl}, ANCHORS={ac}")
     failures: list[str] = []
+
+    # 锚注册表双向核对（yaml 数据面 vs core 单源，不一致判红）
+    anchors_mismatch = check_anchors_vs_core()
+    if anchors_mismatch:
+        failures.append(anchors_mismatch)
 
     # tests 徽章=下限承诺（>= MIN_TESTS，跨平台 collect 数有浮动）；其余精确
     for name, patterns in DOC_PATTERNS.items():

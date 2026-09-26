@@ -103,9 +103,16 @@ def test_nominal_key_set_matches_docs(template):
 
 
 def _num(v):
-    """标量 → float；列表（coupled_bpf widths_mm/gaps_mm）→ 逐项 float 元组。"""
+    """标量 → float；列表（coupled_bpf widths_mm/gaps_mm）→ 逐项 float 元组；
+    dict/嵌套列表（ms_array_NxN cell_map 逐胞参数表）→ 结构化归一元组
+    （键排序递归，数值叶 float、字符串叶原样）——既有标量/浮点列表行为
+    不变（严格超集）。"""
+    if isinstance(v, dict):
+        return tuple(sorted((k, _num(x)) for k, x in v.items()))
     if isinstance(v, (list, tuple)):
-        return tuple(float(x) for x in v)
+        return tuple(_num(x) for x in v)
+    if isinstance(v, str):
+        return v
     return float(v)
 
 
@@ -113,6 +120,8 @@ def _close(a, b) -> bool:
     if isinstance(a, tuple) or isinstance(b, tuple):
         return (isinstance(a, tuple) and isinstance(b, tuple) and len(a) == len(b)
                 and all(_close(x, y) for x, y in zip(a, b, strict=True)))
+    if isinstance(a, str) or isinstance(b, str):
+        return a == b
     return abs(a - b) <= 1e-9 * max(1.0, abs(a))
 
 

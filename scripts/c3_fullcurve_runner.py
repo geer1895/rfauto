@@ -29,12 +29,22 @@ runs/smoke_c3_redesign/criteria_a.md，写死再跑；铁律 7 数值只出内�
   python scripts/c3_fullcurve_runner.py --plan                 # 离线：渲染+exec 几何段落 plan 基座
   python scripts/c3_fullcurve_runner.py --template interdigital --stage stage1
   python scripts/c3_fullcurve_runner.py --template interdigital --stage stage2
+  python scripts/c3_fullcurve_runner.py --template interdigital --stage stage1 --dag
+                                           # 真跑段经 DAG 包装（DP-9 P3：断点续跑/
+                                           # 缓存旁路/#261 家族锁；缺省关=零变化）
   python scripts/c3_fullcurve_runner.py --template interdigital --judge
 退出码：0=完成/门过；1=门未达/判 FAIL/执行失败；2=参数错误。
 
 产物根 runs/smoke_c3_fullcurve/<template>/{stage1,stage2}/（#279 分档，不混
 runs/smoke_c3_refix 归档）。互斥 = runs/.oe_c3_fullcurve.lock（O_CREAT|O_EXCL +
 pid 陈锁核验，factory_m3_valley 先例）+ #261 命令行查（fail-closed）。
+
+--dag（DP-9 P3 首例，DF7 批）：stage 真跑段包成 rfauto-dag-v1 两节点链
+（<stage>_decl render + <stage> solve），经 pipeline.dag_runner.DagRunner 执行：
+期刊 dag.state.json 落 <root>/<template>/、产物清单 dag.artifact.json 落 stage
+目录（证据面只新增零改写）；#261 机器互斥另过 runs/.oe_collect.lock 家族锁
+（SolveMachineMutex 文件锁，无 #261 自锁问题）。缺省路径（无 --dag）行为
+逐字节不变；plan 预声明/帽停分类/判读等编排面两模式共用。
 """
 from __future__ import annotations
 
@@ -64,6 +74,7 @@ from c3_resonance_q_extract import load_msl_probes  # noqa: E402  内核探针�
 
 # 伪模分类+物理模基重外推；无伪模返回 None=缺省路径零改动
 from c3_spurious_modes import split_physical_refit  # noqa: E402
+from rfauto.adapters import openems_templates as _openems_templates  # noqa: E402
 from rfauto.adapters.openems_templates import (  # noqa: E402
     C3_TEMPLATES,
     TEMPLATE_NOMINAL,
@@ -1428,6 +1439,323 @@ def judge_fullcurve_stage1_as_full(template: str,
             "stage1_summary_verdict": summary.get("verdict")}
 
 
+# ─── DP-9 P3：stage 真跑段 DAG 包装（断点续跑/缓存旁路/#261 家族锁）─────────────
+#
+# 既有编排面（run_stage1/run_stage2 的完成标记/预声明块/帽停分类/判读）零改动；
+# 本节只把「发射 smoke 子进程并等待」的真跑段包成 rfauto-dag-v1 两节点链
+# （--dag 开关启用；缺省路径不进入本节，惰性 import 主面启动零变化）：
+#   <stage>_decl（kind=render）：声明/渲染面——离线 render_script 确定性字节
+#     落盘 simulation.py + dag_decl.json（cmd/预算/注册 ts 落痕，无时间戳——
+#     上游重跑产物字节级不变 ⇒ 下游零重算，判据②联动）。其键含 cmd +
+#     registration_commit_ts + params + mesh；
+#   <stage>（kind=solve）：真跑段——cmd=现值不变（命令串原样进 node["cmd"]），
+#     预算 {timeout_s, nrts, mesh_tier} 进 solve 键（不同 NrTS 时窗产物不互串
+#     #343/#262）。节点工作目录 = DagRunner(run_dir=<root>/<template>) 的
+#     <root>/<template>/<node_id> ——stage 节点工作目录即现状 stage_dir
+#     （证据面只新增 dag.artifact.json / dag.state.json / stageN_decl/，零改写）。
+# 已落接口缺口注记（P2 接口零改动消费，缺口如实报告）：
+#   ① P2 normalize_node 只保 inputs.files/params——handoff 字面
+#     inputs.registration_commit_ts 会被剥除 ⇒ 注册 ts 走 decl params 成分
+#     （params_canonical_json 进 render 键，语义等价：变即键变）；
+#   ② P2 solve 键成分（render_artifact_sha256/engine_version/budget_tier）不含
+#     cmd/注册 ts ⇒ 经 decl 节点 cmd 进 decl 键 + dag_decl.json 落痕 cmd/注册
+#     ts 字节 + 上游键传导 三通道补齐（命令变=键变，判据②实测钉）；
+#   ③ reg_ts 只随 commit 走（脏工作树编辑不失效）⇒ 补 render_source_sha256
+#     （openems_templates.py 文件字节）与 smoke_script_sha256（auto_mesh_mm 等
+#     渲染相关逻辑所在）双守卫。
+# cmd 内嵌 --root ⇒ 键天然 per-campaign（跨 root 必 miss）——同战役断点续跑/
+# 期刊丢失后 CAS 零拷贝恢复为本封装的缓存收益面，跨战役复用需复用 root。
+# #145 分类（executor 翻译层）：killed=runner_deadline = Abort 真打断 →
+#   NodeAbortedError 判废重试（escalated_budget ×1.5）；rc=0 而 wall 超截止 =
+#   竞态完成 → RaceCompleted 接受真结果；stage1 帽停（≥STAGE1_CAPSTOP_MIN_S）/
+#   stage2 blocked/smoke 帽停 = 有界正常结局 → ok 收档（判读在编排层）；wall_s
+#   一律 executor 实测（monotonic）。
+
+DAG_DECL_SCRIPT_NAME = "simulation.py"
+DAG_DECL_DOC_NAME = "dag_decl.json"
+DAG_DECL_SCHEMA = "c3-stage-decl-v1"
+DAG_SOLVE_OUTPUTS: tuple[str, ...] = ("simulation.py", "engine.log")
+
+
+def _dag_deps() -> tuple[Any, Any]:
+    """惰性装载 DP-9 P2 已落接口（缺省路径零 import、零行为变化）。"""
+    from rfauto.infra import dag_cache as _dc
+    from rfauto.pipeline import dag_runner as _dr
+
+    return _dr, _dc
+
+
+def openems_registration_ts() -> str:
+    """渲染源 openems_templates.py 末次 commit 时戳（handoff §二.1）。
+
+    best-effort（#105）：非 git 环境/未跟踪 → 空串（键退化仍确定）。"""
+    _dr, dc = _dag_deps()
+    return dc.registration_commit_ts(Path(_openems_templates.__file__))
+
+
+def engine_version_tag() -> str:
+    """openEMS 引擎版本指纹（handoff §四：load_solver_versions，空串兜底）。"""
+    try:
+        from rfauto.infra.run_store import load_solver_versions
+        return str((load_solver_versions() or {}).get("openems", "") or "")
+    except Exception:                                  # best-effort #105
+        return ""
+
+
+def stage_mesh_tier(template: str) -> str:
+    """现审计档（mesh_tier 键成分）：auto_mesh_mm 合规缺省的稳定字符串。"""
+    return str(auto_mesh_mm(template, dict(TEMPLATE_NOMINAL[template])))
+
+
+def build_stage_dag_plan(
+    template: str, stage: str, cmd: list[str], *,
+    budget: dict[str, Any] | None = None,
+    registration_commit_ts: str | None = None,
+) -> dict[str, Any]:
+    """stage 真跑段 → rfauto-dag-v1 两节点链（decl render + solve）。
+
+    cmd=现值不变：命令串原样（" ".join）进两节点 node["cmd"]（decl 键含 cmd，
+    solve 键经 decl 键传导+decl 产物 cmd 字段落痕双通道——命令变=键变）。
+    budget={"timeout_s","nrts","mesh_tier","mesh"} 进 solve 键（不同 NrTS 时窗
+    产物不互串，#343/#262）。"""
+    _dr, dc = _dag_deps()
+    reg = (registration_commit_ts if registration_commit_ts is not None
+           else openems_registration_ts())
+    decl_params = {
+        "template": template, "stage": stage,
+        "registration_commit_ts": reg,
+        "render_source_sha256": dc.file_sha256(
+            Path(_openems_templates.__file__)),
+        "smoke_script_sha256": dc.file_sha256(SMOKE_SCRIPT),
+        "freq_range_ghz": [float(v) for v in FREQ_RANGE_GHZ],
+    }
+    decl_id = f"{stage}_decl"
+    return {"nodes": [
+        {"node_id": decl_id, "kind": "render", "depends_on": [],
+         "inputs": {"files": [], "params": decl_params},
+         "outputs": [DAG_DECL_SCRIPT_NAME, DAG_DECL_DOC_NAME],
+         "cmd": " ".join(cmd), "budget": dict(budget or {}),
+         "retries": 0, "escalation": []},
+        {"node_id": stage, "kind": "solve", "depends_on": [decl_id],
+         "inputs": {"files": [DAG_DECL_SCRIPT_NAME], "params": {}},
+         "outputs": list(DAG_SOLVE_OUTPUTS),
+         "cmd": " ".join(cmd), "budget": dict(budget or {}), "retries": 1},
+    ]}
+
+
+def run_stage_via_dag(
+    template: str,
+    stage: str,
+    cmd: list[str],
+    *,
+    root: Path | None = None,
+    cap_s: float = STAGE1_TIMEOUT_S,
+    runner_timeout_s: float | None = None,
+    budget_s: float | None = None,
+    work: Path | None = None,
+    cwd: Path | None = None,
+    cache_dir: str | Path | None = None,
+    solve_lock_path: str | Path | None = None,
+    launch_stage1_fn: Callable[[list[str], float, Path], dict[str, Any]] | None = None,
+    launch_stage2_fn: Callable[..., dict[str, Any]] | None = None,
+    registration_commit_ts: str | None = None,
+    engine_version: str | None = None,
+    log: Callable[[str], None] | None = None,
+) -> dict[str, Any]:
+    """stage 真跑段经 DagRunner 两节点链执行（--dag 内核；低层发射器可注入）。
+
+    返回 = 低层发射 outcome（编排层原样消费）+ "dag" 观测键（verdict/n_hit/
+    n_recompute/statuses/state_path/node_budget）。真跑段未发射（互斥拒绝/
+    上游失败）时 killed="dag_no_launch"，判读层如实走 crash/无产物分支。"""
+    if stage not in ("stage1", "stage2"):
+        raise ValueError(f"stage 须为 stage1|stage2：{stage!r}")
+    dr, dc = _dag_deps()
+    NodeAbortedError = dr.NodeAbortedError
+    RaceCompleted = dr.RaceCompleted
+    root_p = Path(root) if root is not None else ROOT
+    work = Path(work) if work is not None else stage_dir(template, stage, root_p)
+    cwd_p = Path(cwd) if cwd is not None else (REPO if root is None else root_p)
+    reg = (registration_commit_ts if registration_commit_ts is not None
+           else openems_registration_ts())
+    ev = engine_version if engine_version is not None else engine_version_tag()
+    nrts: int | None = None
+    if stage == "stage2" and "--nrts" in cmd:
+        nrts = int(cmd[cmd.index("--nrts") + 1])
+    smoke_cap_s = (float(cmd[cmd.index("--timeout") + 1])
+                   if "--timeout" in cmd else 0.0)
+    if stage == "stage1":
+        node_budget: dict[str, Any] = {"timeout_s": float(cap_s), "nrts": None,
+                                       "mesh_tier": stage_mesh_tier(template),
+                                       "mesh": auto_mesh_mm(
+                                           template,
+                                           dict(TEMPLATE_NOMINAL[template]))}
+        if runner_timeout_s is None:
+            runner_timeout_s = float(cap_s) + STAGE1_RUNNER_MARGIN_S
+    else:
+        node_budget = {"timeout_s": float(budget_s or 0.0), "nrts": nrts,
+                       "mesh_tier": stage_mesh_tier(template),
+                       "mesh": auto_mesh_mm(template,
+                                            dict(TEMPLATE_NOMINAL[template]))}
+        if runner_timeout_s is None:
+            runner_timeout_s = (float(budget_s) + STAGE2_SMOKE_MARGIN_S
+                                + STAGE2_RUNNER_MARGIN_S if budget_s
+                                else 14.0 * 3600.0)
+    plan = build_stage_dag_plan(template, stage, cmd, budget=node_budget,
+                                registration_commit_ts=reg)
+    outcomes: list[dict[str, Any]] = []
+
+    def decl_executor(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+        """decl 节点：确定性渲染字节 + 声明落痕（无时间戳=字节级可复现）。"""
+        t0 = time.monotonic()
+        try:
+            wdir = Path(ctx["work_dir"])
+            wdir.mkdir(parents=True, exist_ok=True)
+            nominal = dict(TEMPLATE_NOMINAL[template])
+            mm = auto_mesh_mm(template, nominal)
+            text = render_script(template, nominal, FREQ_RANGE_GHZ,
+                                 mesh_resolution_mm=mm)
+            (wdir / DAG_DECL_SCRIPT_NAME).write_text(text, encoding="utf-8")
+            doc = {"schema": DAG_DECL_SCHEMA, "template": template,
+                   "stage": stage, "cmd": " ".join(cmd),
+                   "budget": dict(node_budget), "registration_commit_ts": reg,
+                   "mesh_mm": mm, "freq_range_ghz": list(FREQ_RANGE_GHZ),
+                   "render_sha256": dc.sha256_text(text)}
+            (wdir / DAG_DECL_DOC_NAME).write_text(
+                json.dumps(doc, ensure_ascii=False, indent=1, sort_keys=True),
+                encoding="utf-8")
+        except Exception as exc:                       # fail-closed 不静默
+            return {"ok": False, "outputs": [],
+                    "wall_s": time.monotonic() - t0,
+                    "message": f"decl 渲染失败: {exc!r}"}
+        return {"ok": True,
+                "outputs": [DAG_DECL_SCRIPT_NAME, DAG_DECL_DOC_NAME],
+                "wall_s": time.monotonic() - t0,
+                "message": "decl 渲染落盘（确定性字节）"}
+
+    def solve_executor(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
+        """solve 节点：真跑段发射（低层发射器=缺省 _launch_stage*_real）。
+
+        #145 翻译：runner_deadline→NodeAbortedError（判废重试 ×1.5）；
+        rc=0 且 wall 超截止→RaceCompleted（竞态接受真结果）；stage1 帽停/
+        stage2 blocked·smoke 帽停→ok 收档（判读在编排层）；其余 ok=False。"""
+        t0 = time.monotonic()
+        attempt = int(ctx.get("attempt", 0) or 0)
+        try:
+            if stage == "stage1":
+                fn = launch_stage1_fn or _launch_stage1_real
+                deadline = (float(runner_timeout_s) if attempt == 0 else
+                            float(ctx["budget"].get("timeout_s") or 0)
+                            + STAGE1_RUNNER_MARGIN_S)
+                raw = fn(cmd, deadline, cwd_p)
+            else:
+                fn = launch_stage2_fn or _launch_stage2_real
+                if attempt == 0:
+                    raw = fn(cmd, work=work, template=template,
+                             timeout_s=float(runner_timeout_s or 0),
+                             budget_s=float(budget_s or 0.0), cwd=cwd_p)
+                else:
+                    esc = float(ctx["budget"].get("timeout_s") or 0)
+                    raw = fn(cmd, work=work, template=template,
+                             timeout_s=esc + STAGE2_SMOKE_MARGIN_S
+                             + STAGE2_RUNNER_MARGIN_S,
+                             budget_s=esc, cwd=cwd_p)
+        except Exception as exc:     # 低层发射异常=真跑失败落痕（#105 不吞控制流）
+            raw = {"rc": None, "killed": "executor_error", "error": repr(exc),
+                   "elapsed_s": time.monotonic() - t0}
+        outcomes.append(raw)
+        wall = time.monotonic() - t0
+        killed = raw.get("killed")
+        if killed == "runner_deadline":
+            raise NodeAbortedError(
+                f"runner 侧挂死守卫 Abort 真打断（wall={wall:.0f}s）→判废重试")
+        if raw.get("rc") == 0 and not killed:
+            ok_res = {"ok": True, "outputs": list(DAG_SOLVE_OUTPUTS),
+                      "wall_s": wall, "message": "smoke 真跑 rc=0"}
+            deadline = float(ctx["budget"].get("timeout_s") or 0)
+            if deadline > 0 and wall > deadline:       # 截止后交付=竞态完成
+                raise RaceCompleted(ok_res)
+            return ok_res
+        if stage == "stage1" and classify_stage1_outcome(raw)["kind"] == "capstop":
+            return {"ok": True, "outputs": list(DAG_SOLVE_OUTPUTS),
+                    "wall_s": wall,
+                    "message": "帽停容忍（部分产物判读在编排层，criteria_a §一）"}
+        if killed == "blocked":
+            return {"ok": True, "outputs": list(DAG_SOLVE_OUTPUTS),
+                    "wall_s": wall,
+                    "message": (f"blocked 有界杀树（{raw.get('blocked_reason')}）；"
+                                "快照判读在编排层")}
+        if (stage == "stage2" and killed is None and raw.get("rc") not in (0, None)
+                and smoke_cap_s > 0 and wall >= 0.9 * smoke_cap_s):
+            return {"ok": True, "outputs": list(DAG_SOLVE_OUTPUTS),
+                    "wall_s": wall,
+                    "message": "stage2 smoke 帽停（--timeout 自杀退出）——无产物"
+                               "判读在编排层（judge 无产物分支）"}
+        return {"ok": False, "outputs": [], "wall_s": wall,
+                "message": (f"smoke 真跑失败 rc={raw.get('rc')} "
+                            f"killed={killed}（见 stage 目录证据）")}
+
+    log_fn = log or (lambda m: print(m, flush=True))
+    lock_default = dr.default_solve_lock_path()
+    result = dr.run_dag(plan, root_p / template,
+                        {"render": decl_executor, "solve": solve_executor},
+                        cache_dir=cache_dir, engine_version=ev,
+                        solve_lock_path=(solve_lock_path if solve_lock_path
+                                         is not None else lock_default),
+                        log=log_fn)
+    out = dict(outcomes[-1]) if outcomes else {
+        "rc": None, "killed": "dag_no_launch",
+        "reason": "solve 节点未发射（互斥拒绝/上游失败），见 dag.state.json notes"}
+    out["dag"] = {"verdict": result.get("verdict"),
+                  "n_hit": result.get("n_hit"),
+                  "n_recompute": result.get("n_recompute"),
+                  "statuses": result.get("statuses"),
+                  "state_path": result.get("state_path"),
+                  "solve_lock_path": str(solve_lock_path or lock_default),
+                  "node_budget": dict(node_budget), "nrts": nrts}
+    return out
+
+
+def dag_launch_stage1(
+    template: str, root: Path | None = None, *,
+    cap_s: float = STAGE1_TIMEOUT_S,
+    cache_dir: str | Path | None = None,
+    solve_lock_path: str | Path | None = None,
+    log: Callable[[str], None] | None = None,
+) -> Callable[[list[str], float, Path], dict[str, Any]]:
+    """run_stage1 兼容 launch_fn 工厂（--dag 开关的 stage1 面）。"""
+
+    def launch(cmd: list[str], timeout_s: float, cwd: Path) -> dict[str, Any]:
+        return run_stage_via_dag(template, "stage1", cmd, root=root, cap_s=cap_s,
+                                 runner_timeout_s=timeout_s, cwd=cwd,
+                                 cache_dir=cache_dir,
+                                 solve_lock_path=solve_lock_path, log=log)
+
+    return launch
+
+
+def dag_launch_stage2(
+    template: str, root: Path | None = None, *,
+    cache_dir: str | Path | None = None,
+    solve_lock_path: str | Path | None = None,
+    log: Callable[[str], None] | None = None,
+) -> Callable[..., dict[str, Any]]:
+    """run_stage2 兼容 launch_fn 工厂（--dag 开关的 stage2 面）。
+
+    NrTS/预算取发射 kwargs 与 cmd 原值（预声明块是唯一权威，本层不重算）。"""
+    tpl = template
+
+    def launch(cmd: list[str], work: Path | None = None,
+               template: str | None = None, timeout_s: float | None = None,
+               budget_s: float | None = None,
+               cwd: Path | None = None) -> dict[str, Any]:
+        return run_stage_via_dag(tpl, "stage2", cmd, root=root,
+                                 runner_timeout_s=timeout_s, budget_s=budget_s,
+                                 work=work, cwd=cwd, cache_dir=cache_dir,
+                                 solve_lock_path=solve_lock_path, log=log)
+
+    return launch
+
+
 # ─── CLI ───────────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
@@ -1451,6 +1779,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--nominals", default=None,
                     help="R2 当轮重设计名义 doc（redesign_nominals.json；缺省 "
                          "runs/smoke_c3_redesign 存档，行为不变）")
+    ap.add_argument("--dag", action="store_true",
+                    help="stage 真跑段经 DAG 包装（DP-9 P3：断点续跑/缓存旁路/"
+                         "#261 家族锁 runs/.oe_collect.lock）。缺省关=既有路径"
+                         "零变化")
+    ap.add_argument("--cache-dir", default=None,
+                    help="DAG CAS 索引目录（缺省 .rfauto_cache/dag，gitignored）")
     args = ap.parse_args(argv)
     root = Path(args.root) if args.root else None
     nominals_path = Path(args.nominals) if args.nominals else None
@@ -1469,7 +1803,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"STAGE1J_{args.template.upper()}_{doc.get('verdict')}", flush=True)
         return 0 if doc.get("verdict") == "PASS" else 1
     if args.stage == "stage1":
-        summary = run_stage1(args.template, root, cap_s=args.stage1_cap_s)
+        launch_fn = (dag_launch_stage1(args.template, root,
+                                       cap_s=args.stage1_cap_s,
+                                       cache_dir=args.cache_dir)
+                     if args.dag else None)
+        summary = run_stage1(args.template, root, launch_fn=launch_fn,
+                             cap_s=args.stage1_cap_s)
         vdoc = summary.get("stage1_verdict") or {}
         ok = (summary.get("verdict") == "SENTINEL_PASS"
               or vdoc.get("verdict") == "PASS")
@@ -1477,7 +1816,10 @@ def main(argv: list[str] | None = None) -> int:
               flush=True)
         return 0 if ok else 1
     if args.stage == "stage2":
-        out = run_stage2(args.template, root)
+        launch_fn = (dag_launch_stage2(args.template, root,
+                                       cache_dir=args.cache_dir)
+                     if args.dag else None)
+        out = run_stage2(args.template, root, launch_fn=launch_fn)
         print(f"STAGE2_{args.template.upper()}_{out.get('verdict')}", flush=True)
         return 0 if out.get("verdict") in ("PASS", "PARTIAL") else 1
     out = judge_fullcurve(args.template, root)

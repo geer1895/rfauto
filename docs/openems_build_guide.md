@@ -141,6 +141,13 @@ scripts\build_python_bindings.cmd
   `_rfauto_runner.py` 引导脚本自动注入；
 - 绑定走 openEMS.dll **进程内**求解，solvers.yaml 的 exe_path 只用于
   doctor/可用性探测；
+- **线程数旋钮 numThreads**：绑定消费点是 `FDTD.Run(..., numThreads=N)`
+  kwarg（openEMS.pyx `Run`，缺省 0=auto），非构造参数；本机构建是
+  boost::thread 无 OpenMP，`OMP_NUM_THREADS` 无效。实测（runs/df7_e5）：
+  钉 8 线程 146.8 MC/s 比 auto 快 20%+，且 FDTD 结果逐位=线程数敏感
+  （并行求和序）——逐位可复现场景钉 8。当前 `configs/solvers.yaml` 的
+  `num_threads` 为注释键（渲染层各模板 `FDTD.Run` 硬编码、extra_params
+  尚无 →Run kwargs 透传点，接线需模板面逐处开洞，另行立项）；
 - 模板已内置 `disable_dumps` / `SetEndCriteria(1e-4)` / `SetMaxTime(30ns)`。
   裸写脚本别用默认值：默认场时域 dump 是 GB 级文件、默认 -60dB 收敛判据
   在开路微带结构上是小时级时长；

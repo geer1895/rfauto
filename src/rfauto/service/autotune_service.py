@@ -243,12 +243,19 @@ def autotune_loop(
     rl_floor_db: float = -8.0,
     max_step_pct: float = 0.2,
     probes_per_round: int = 4,
+    replan_plan_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """自治调优环：budget 轮「求解→评判→界内修正→复验」，无人在环。
 
     sampler_fn 返回 {"metrics": {...}, "valley_ghz": float|None}；
     缺省用 openEMS 快验证通道（真机，串行纪律）。返回 JSON 契约，
     verdict=PASS|FAIL（FAIL 如实，附未决 issues 与逐轮历史）。
+
+    R3 opt-in（缺省关，零行为变化）：replan_plan_path 给出时，环结束即把
+    本批（fake 批=stage1）cost 历史走 replan_service 退化判定+决策表，
+    决策落 checkpoint 一等对象（判据/决策表预声明于 runs/df7_r3aqe/
+    criteria.md；#195/#207 常数陷阱拦在烧真机之前）。缺省 None 时结果
+    契约逐键不变。
     """
     import yaml
 
@@ -339,6 +346,24 @@ def autotune_loop(
         current = applied
 
     elapsed = time.time() - t0
+
+    # R3 opt-in（缺省关）：fake 批产出即查 cost 分布退化 → 决策 checkpoint
+    replan_plan: dict[str, Any] | None = None
+    if replan_plan_path is not None:
+        from rfauto.service.replan_service import (
+            assess_cost_degeneration,
+            replan_route,
+            save_replan_checkpoint,
+        )
+
+        points = [{"cost": h["cost"], "round": h["round"]}
+                  for h in history if "cost" in h]
+        assessment = assess_cost_degeneration(points)
+        decision = replan_route(assessment, {"stage": "fake_batch"})
+        saved = save_replan_checkpoint(replan_plan_path, decision)
+        replan_plan = {"assessment": assessment, "decision": decision,
+                       "checkpoint": saved}
+
     result: dict[str, Any] = {
         "ok": True,
         "run_id": run_id,
@@ -351,6 +376,8 @@ def autotune_loop(
         "history": history,
         "elapsed_s": round(elapsed, 1),
     }
+    if replan_plan is not None:
+        result["replan_plan"] = replan_plan
     (run_dir / "autotune.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=1, default=str),
         encoding="utf-8")

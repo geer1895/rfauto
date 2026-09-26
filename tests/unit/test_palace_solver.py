@@ -1,6 +1,6 @@
 """A3 PalaceSolver 官方 schema 对齐测试（v0.18.1 五分节配置 → mock 可执行 → CSV 解析）。
 
-官方口径出处（2026-09-22 实测取证，见 runs/palace_spike/schema_fix_plan.md）：
+官方口径出处（实测取证，见 runs/palace_spike/schema_fix_plan.md）：
 - 配置顶层五分节 + 各键名：官方 scripts/schema/config-schema.json（tag v0.18.1）；
 - CLI 位置参数（无 -config 旗标）：官方 docs/src/run.md；
 - 结果文件 <Problem.Output>/port-S.csv（dB/deg 列、频率列 GHz）：
@@ -288,6 +288,65 @@ class TestPalaceSolveMock:
         assert result.s_params[0, 1, 1] == 0j
         # message 报告已测条目清单（1-based）
         assert "(1, 1)" in result.message and "(2, 1)" in result.message
+
+    def test_get_measured_mask_cleared_on_failed_solve(self, tmp_path):
+        """失败清掩码（round6 A3-③，#316 方向=多报不放过）。
+
+        成功 solve 置掩码后，再跑一次失败 solve（非零退出 / 结果解析失败
+        两条路径）——get_measured_mask() 必须为 None，陈旧掩码不得跨
+        solve 存活去配零填占位的 S 矩阵（#314 掩码口径）。
+        """
+        from rfauto.adapters.palace_solver import PalaceSolver
+
+        workdir = tmp_path / "run"
+        workdir.mkdir()
+        exe = _make_palace_stub(workdir, [(2.0, -20.0, 0.0, -20.0, 90.0)])
+
+        from rfauto.adapters.em_solver_base import EMSolverConfig, EMSolverType
+
+        cfg = EMSolverConfig(solver_type=EMSolverType.PALACE,
+                             exe_path=str(exe), working_dir=str(workdir),
+                             freq_range_ghz=(2.0, 3.0))
+        solver = PalaceSolver(cfg)
+        assert solver.connect()
+        assert solver.build_geometry({"mesh_file": "board.msh",
+                                      "mesh_l0_m": 1.0e-3,
+                                      "materials": _official_materials(),
+                                      "ports": {"WavePort": [
+                                          {"Index": 1, "Attributes": [2]}],
+                                          "LumpedPort": [
+                                              {"Index": 2, "Attributes": [3]}]}})
+        result = solver.solve()
+        assert result.success, result.message
+        assert solver.get_measured_mask() == [(1, 1), (2, 1)]
+
+        # 路径 1：非零退出（rc=1）——solve 失败即清掩码
+        if sys.platform == "win32":
+            exe.write_text("@echo off\r\nexit /b 1\r\n", encoding="ascii")
+        else:
+            exe.write_text("#!/bin/sh\nexit 1\n", encoding="ascii")
+        result_bad = solver.solve()
+        assert not result_bad.success
+        assert solver.get_measured_mask() is None
+
+        # 路径 2：rc=0 但结果文件坏（表头无 S 列对 → 解析失败）——同样清
+        # （cmd 注意 #176：echo 内容不带括号/重定向歧义字符）
+        if sys.platform == "win32":
+            exe.write_text(
+                "@echo off\r\n"
+                "if not exist postpro mkdir postpro\r\n"
+                "echo idx,f> postpro\\port-S.csv\r\n",
+                encoding="ascii")
+        else:
+            exe.write_text(
+                "#!/bin/sh\n"
+                "mkdir -p postpro\n"
+                "printf 'idx,f\\n' > postpro/port-S.csv\n",
+                encoding="ascii")
+        result_parse = solver.solve()
+        assert not result_parse.success
+        assert "解析失败" in result_parse.message
+        assert solver.get_measured_mask() is None
 
     def test_cli_positional_config_contract(self, tmp_path):
         """stub 契约自证：无位置参数退出 2、含 -config 退出 3（官方 run.md 口径）。"""

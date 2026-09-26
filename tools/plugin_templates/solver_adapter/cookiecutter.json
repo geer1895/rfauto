@@ -1,0 +1,9 @@
+{
+  "project_slug": "rfauto-{{ cookiecutter.adapter_name }}-adapter",
+  "adapter_name": "my_solver",
+  "adapter_class": "MySolverAdapter",
+  "module_name": "rfauto_{{ cookiecutter.adapter_name }}",
+  "version": "0.1.0",
+  "author": "your-name",
+  "min_python": "3.11"
+}

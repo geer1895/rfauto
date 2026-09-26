@@ -14,12 +14,16 @@ import pytest
 # 影响；绑定就位时全部照常运行。
 _CSXCAD_TEST_MODULES = frozenset({
     "test_antenna2_templates.py", "test_array_templates.py",
-    "test_combline_template.py", "test_coupled_bpf_template.py",
+    "test_coil_nfc_template.py", "test_combline_template.py",
+    "test_coupled_bpf_template.py",
     "test_coupler2_templates.py", "test_cps_template.py",
+    "test_eep_templates.py",
     "test_gysel_miter_ab.py", "test_gysel_template.py",
     "test_hairpin_alt_template.py", "test_hairpin_template.py",
     "test_interdigital_template.py", "test_kicad_board_render.py",
-    "test_marchand_via_ab.py", "test_msl_cpw_template.py",
+    "test_marchand_via_ab.py", "test_metasurface_templates.py",
+    "test_mmwave_series_array_template.py", "test_msl_cpw_template.py",
+    "test_msl_siw_taper_template.py",
     "test_openems_real_bundle_offline.py", "test_openems_slotline_port.py",
     "test_openems_templates_bridge.py", "test_pcell_dsl.py",
     "test_proposal_chain.py", "test_ratrace_cylindrical.py",
@@ -50,6 +54,15 @@ def _ngspice_available() -> bool:
     if os.environ.get("RFAUTO_NGSPICE_BIN"):
         return True
     return (_REPO_ROOT / "tools" / "ngspice" / "Spice64" / "bin").is_dir()
+
+
+def pytest_configure(config):
+    # DP-6：known_flaky marker 注册（仅注册不使用——并行守卫冻结期间按
+    # flake 流程取证后，才允许对个别并行不安全测试打此 marker）。
+    config.addinivalue_line(
+        "markers",
+        "known_flaky: 已知偶发/并行不安全测试（须附取证理由，禁止掩盖失败）",
+    )
 
 
 def pytest_collection_modifyitems(config, items):

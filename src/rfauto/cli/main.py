@@ -1077,6 +1077,552 @@ def budget_run(
     raise typer.Exit(code=0)
 
 
+# ─── cascade (DP-5 系统级预算引擎 + 杂散搜索) ──────────────────────────────
+
+cascade_app = typer.Typer(help="系统级级联预算+混频杂散搜索（DP-5）")
+app.add_typer(cascade_app, name="cascade")
+
+
+def _load_stage_list(stages_file: str) -> list[dict]:
+    """读 stage 列表 JSON（文件或 '-'=stdin），失败显式退出。"""
+    try:
+        text = sys.stdin.read() if stages_file == "-" else Path(stages_file).read_text(
+            encoding="utf-8")
+        stages = json.loads(text)
+    except FileNotFoundError:
+        console.print(f"[red]✗ stage 文件不存在: {stages_file}[/red]")
+        raise typer.Exit(code=1) from None
+    except (json.JSONDecodeError, OSError) as e:
+        console.print(f"[red]✗ stage 文件读取失败: {e}[/red]")
+        raise typer.Exit(code=1) from None
+    if not isinstance(stages, list) or not stages:
+        console.print("[red]✗ stage 文件须为非空 JSON 数组（按信号流向排序）[/red]")
+        raise typer.Exit(code=1)
+    return stages
+
+
+@cascade_app.command("budget")
+def cascade_budget_cmd(
+    stages_file: str = typer.Argument(..., help="stage 列表 JSON 文件（'-'=stdin）"),
+    snr_min_db: float = typer.Option(10.0, "--snr-min", help="解调最小 SNR (dB)"),
+    rx_power_dbm: float = typer.Option(None, "--rx-power",
+                                       help="接收功率 (dBm)，给定时输出链路裕量"),
+    bw_hz: float = typer.Option(None, "--bw-hz",
+                                help="系统噪声带宽 (Hz)，缺省取末级 bw_hz"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """级联预算：增益/Friis NF/IIP3·OIP3 级联/P1dB(经验幂和)/噪声底/SFDR/灵敏度。
+
+    stage schema：{"type": "amp|mixer|filter|atten|cable", "gain_db": ..,
+    "nf_db": .., "iip3_dbm": .., "p1db_dbm": .., "bw_hz": ..,
+    "network_path": "..s2p"?, "il_freq_hz": ..?, "il_db": ..?}；
+    filter/atten 插损来源=network_path（skrf 实取 S21）或常数 il_db，显式二选一。
+
+    示例：rfauto cascade budget stages.json --rx-power -90 --bw-hz 1e6
+    """
+    from rfauto.service.cascade_service import cascade_budget_report
+
+    stages = _load_stage_list(stages_file)
+    result = cascade_budget_report(
+        stages, snr_min_db=snr_min_db, rx_power_dbm=rx_power_dbm,
+        bw_hz=bw_hz)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    table = Table(title=f"级联预算（{r['n_stages']} 级，DP-5）")
+    table.add_column("#", justify="right", style="cyan")
+    table.add_column("type")
+    table.add_column("增益(dB)", justify="right")
+    table.add_column("NF(dB)", justify="right")
+    table.add_column("累积增益(dB)", justify="right")
+    table.add_column("累积NF(dB)", justify="right")
+    table.add_column("插损来源")
+    for s in r["stages"]:
+        table.add_row(
+            str(s["index"] + 1), str(s["type"]),
+            f"{s['gain_db']:.2f}", f"{s['nf_db']:.2f}",
+            f"{s['cum_gain_db']:.2f}", f"{s['cum_nf_db']:.2f}",
+            str(s.get("il_source", "-")))
+    console.print(table)
+    console.print(f"总增益: [cyan]{r['gain_total_db']:.2f} dB[/cyan]   "
+                  f"总 NF: [cyan]{r['nf_total_db']:.2f} dB[/cyan]")
+    if r["iip3_total_dbm"] is not None:
+        console.print(f"IIP3: [cyan]{r['iip3_total_dbm']:.2f} dBm[/cyan]   "
+                      f"OIP3: [cyan]{r['oip3_total_dbm']:.2f} dBm[/cyan]   "
+                      f"SFDR: [cyan]{r['sfdr_db']:.2f} dB[/cyan]")
+    if r["p1db_out_dbm"] is not None:
+        console.print(f"P1dB(经验幂和): [cyan]{r['p1db_out_dbm']:.2f} dBm[/cyan] (输出参考)")
+    console.print(f"噪声底: [cyan]{r['noise_floor_dbm']:.2f} dBm[/cyan]   "
+                  f"灵敏度: [cyan]{r['sensitivity_dbm']:.2f} dBm[/cyan]   "
+                  f"(B={r['bw_hz']:.3g} Hz, T={r['t_kelvin']:.0f} K)")
+    if r["link_margin_db"] is not None:
+        console.print(f"链路裕量: [cyan]{r['link_margin_db']:.2f} dB[/cyan]")
+    raise typer.Exit(code=0)
+
+
+@cascade_app.command("spur")
+def cascade_spur_cmd(
+    f_rf_hz: float = typer.Option(..., "--rf", help="RF 中心频率 (Hz)"),
+    f_lo_hz: float = typer.Option(..., "--lo", help="本振频率 (Hz)"),
+    if_center_hz: float = typer.Option(None, "--if-center", help="IF 中心 (Hz)，缺省 |f_RF−f_LO|"),
+    if_bw_hz: float = typer.Option(0.0, "--if-bw", help="目标带宽 (Hz)"),
+    rf_bw_hz: float = typer.Option(0.0, "--rf-bw", help="RF 信号带宽 (Hz)"),
+    max_order: int = typer.Option(7, "--max-order", help="最大阶数 m+n"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """混频杂散落带搜索：f_spur=|m·f_RF±n·f_LO| 枚举 + 矩形卷积落带判定。
+
+    示例：rfauto cascade spur --rf 2.4e9 --lo 2.1e9 --if-bw 1e5
+    """
+    from rfauto.service.cascade_service import spur_search_report
+
+    result = spur_search_report(
+        f_rf_hz, f_lo_hz, if_center_hz=if_center_hz, if_bw_hz=if_bw_hz,
+        rf_bw_hz=rf_bw_hz, max_order=max_order)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    in_band = [s for s in r["spurs"] if s["in_band"]]
+    console.print(f"\n[bold]杂散产物表[/bold]（m+n≤{r['max_order']}，"
+                  f"共 {r['n_products']} 产物，落带 {r['n_spurs_in_band']}）")
+    table = Table(title=f"落带产物（IF 中心 {r['if_center_hz']:.6g} Hz）")
+    table.add_column("m", justify="right", style="cyan")
+    table.add_column("n", justify="right", style="cyan")
+    table.add_column("边带", justify="center")
+    table.add_column("阶", justify="right")
+    table.add_column("f_spur (Hz)", justify="right")
+    table.add_column("偏离 IF (Hz)", justify="right")
+    table.add_column("危险")
+    for s in in_band:
+        table.add_row(str(s["m"]), str(s["n"]), s["side"], str(s["order"]),
+                      f"{s['f_spur_hz']:.10g}", f"{s['offset_from_if_hz']:.6g}",
+                      str(s["hazard"]))
+    console.print(table)
+    if not in_band:
+        console.print("[green]无落带杂散产物[/green]")
+    raise typer.Exit(code=0)
+
+
+@cascade_app.command("plan")
+def cascade_plan_cmd(
+    f_rf_hz: float = typer.Option(..., "--rf", help="RF 中心频率 (Hz)"),
+    if_lo_hz: float = typer.Option(..., "--if-lo", help="IF 扫掠下限 (Hz)"),
+    if_hi_hz: float = typer.Option(..., "--if-hi", help="IF 扫掠上限 (Hz)"),
+    side: str = typer.Option("low", "--side", help="注入侧 low|high"),
+    n_points: int = typer.Option(201, "--points", help="网格点数"),
+    if_bw_hz: float = typer.Option(0.0, "--if-bw", help="目标带宽 (Hz)"),
+    max_order: int = typer.Option(7, "--max-order", help="最大阶数 m+n"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """IF 频率规划扫掠：候选 IF 逐点杂散判定 → spurious-free 窗口表。
+
+    示例：rfauto cascade plan --rf 2.4e9 --if-lo 1e8 --if-hi 1e9 --points 401
+    """
+    from rfauto.service.cascade_service import if_plan_report
+
+    result = if_plan_report(f_rf_hz, if_lo_hz=if_lo_hz, if_hi_hz=if_hi_hz,
+                            side=side, n_points=n_points, if_bw_hz=if_bw_hz,
+                            max_order=max_order)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    console.print(f"\n[bold]IF 规划扫掠[/bold]（{side} 侧注入，"
+                  f"{r['n_points']} 点，spur-free {r['n_points_free']} 点）")
+    table = Table(title="spurious-free 窗口（网格分辨率内）")
+    table.add_column("起 (Hz)", justify="right", style="cyan")
+    table.add_column("止 (Hz)", justify="right", style="cyan")
+    table.add_column("点数", justify="right")
+    for w in r["windows"]:
+        table.add_row(f"{w['start_hz']:.10g}", f"{w['end_hz']:.10g}",
+                      str(w["n_points"]))
+    console.print(table)
+    raise typer.Exit(code=0)
+
+
+# ─── array (DP-4 阵列两档 AF 引擎，薄壳转发 array_service) ────────────────────
+
+array_app = typer.Typer(help="阵列/相控阵两档方向图引擎（DP-4：快速档单元×AF；互耦档 P3 接口预留）")
+app.add_typer(array_app, name="array")
+
+
+def _load_array_request(request_file: str, label: str) -> dict:
+    """读请求 JSON 对象（文件或 '-'=stdin），失败显式退出（薄壳专用）。"""
+    try:
+        text = sys.stdin.read() if request_file == "-" else Path(
+            request_file).read_text(encoding="utf-8")
+        payload = json.loads(text)
+    except FileNotFoundError:
+        console.print(f"[red]✗ {label} 文件不存在: {request_file}[/red]")
+        raise typer.Exit(code=1) from None
+    except (json.JSONDecodeError, OSError) as e:
+        console.print(f"[red]✗ {label} 文件读取失败: {e}[/red]")
+        raise typer.Exit(code=1) from None
+    if not isinstance(payload, dict):
+        console.print(f"[red]✗ {label} 须为 JSON 对象（见 service/array_service "
+                      "模块 docstring 的请求 schema）[/red]")
+        raise typer.Exit(code=1)
+    return payload
+
+
+@array_app.command("synthesize")
+def array_synthesize_cmd(
+    n: int = typer.Option(4, "--n", help="单元数（ula）"),
+    law: str = typer.Option("uniform", "--law",
+                            help="uniform|chebyshev|taylor|binomial|custom"),
+    sll_db: float = typer.Option(-30.0, "--sll-db",
+                                 help="chebyshev/taylor 副瓣目标（负 dB）"),
+    spacing: float = typer.Option(0.5, "--spacing", help="单元间距 d/λ"),
+    scan_deg: float = typer.Option(90.0, "--scan-deg", help="扫描角（z 轴 90=侧射）"),
+    axis: str = typer.Option("z", "--axis", help="阵轴 z|x|y"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """闭式加权综合 + 快速档放行门（tier_gate：间距/扫描/栅瓣/耦合）。
+
+    示例：rfauto array synthesize --n 4 --law chebyshev --sll-db -30
+    """
+    from rfauto.service.array_service import synthesize_array_weights
+
+    result = synthesize_array_weights({
+        "layout": "ula", "n_elements": n, "amplitude_law": law,
+        "sidelobe_level_db": sll_db, "spacing_lambda": spacing,
+        "scan_deg": scan_deg, "axis": axis,
+    })
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    table = Table(title=f"阵列加权综合（{r['law']}，N={r['n_elements']}，DP-4）")
+    table.add_column("k", justify="right", style="cyan")
+    table.add_column("幅度 w")
+    for k, w in enumerate(r["weights"]):
+        table.add_row(str(k), f"{w:.6f}")
+    console.print(table)
+    g = r["gates"]
+    verdict = "[green]fast（放行）[/green]" if g["allowed"] else \
+        "[red]coupled（invalid_fast_tier）[/red]"
+    console.print(f"tier: {verdict}   口径: {r['aperture_lambda']:.2f}λ   "
+                  f"侧射 HPBW 渐近: {r['broadside_hpbw_deg']:.2f}°")
+    for reason in g["reasons"]:
+        console.print(f"[yellow]· {reason}[/yellow]")
+    raise typer.Exit(code=0)
+
+
+@array_app.command("pattern")
+def array_pattern_cmd(
+    request_file: str = typer.Argument(
+        ..., help="请求 JSON 文件（'-'=stdin；schema 见 service/array_service docstring）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """单扫描角阵列方向图（快速档=单元×AF 复域逐点乘 + Γ_act/Z_scan/盲点）。
+
+    请求示例：{"n_elements": 4, "spacing_lambda": 0.5, "element": "isotropic",
+    "amplitude_law": "chebyshev", "sidelobe_level_db": -30, "scan_deg": 90,
+    "s_matrix": "...复数 NxN 可选...", "slab": {"eps_r": 2.2,
+    "thickness_m": 1.575e-3}, "freq_hz": 1e10}
+    """
+    from rfauto.service.array_service import array_pattern
+
+    request = _load_array_request(request_file, "pattern 请求")
+    result = array_pattern(request)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    tier = (f"[red]{r['tier']}（invalid_fast_tier）[/red]"
+            if r["invalid_fast_tier"] else f"[green]{r['tier']}[/green]")
+    console.print(f"tier: {tier}   layout: {r['layout']}   N={r['n_elements']}   "
+                  f"scan={r['scan_deg']:.2f}°")
+    if r.get("sll_db") is not None:
+        console.print(f"SLL: [cyan]{r['sll_db']:.2f} dB[/cyan]   "
+                      f"HPBW: [cyan]{r['hpbw_deg']:.2f}°[/cyan]" if r.get("hpbw_deg") is not None else
+                      f"SLL: [cyan]{r['sll_db']:.2f} dB[/cyan]")
+    if r.get("dmax_fast_dbi") is not None:
+        console.print(f"Dmax_elem: {r['dmax_elem_dbi']:.2f} dBi   "
+                      f"Dmax_fast: {r['dmax_fast_dbi']:.2f} dBi   "
+                      f"Dmax_grid(数值): {r['dmax_grid_dbi']:.2f} dBi")
+    if r.get("gamma_act") is not None:
+        gmax = max(abs(complex(*g)) for g in r["gamma_act"])
+        console.print(f"max|Γ_act|: {gmax:.4f}")
+    if r.get("blind_spot") is not None:
+        bs = r["blind_spot"]
+        if bs.get("skipped"):
+            console.print(f"[yellow]盲点筛查跳过: {bs.get('reason')}[/yellow]")
+        else:
+            console.print(f"盲点: {'[red]YES[/red]' if bs['blind'][0] else '[green]no[/green]'}"
+                          f"（|k∥−β_sw|/k0 min={bs['min_dist_over_k0'][0]:.4f}，"
+                          f"最近阶 (m,n)=({bs['nearest_order_m'][0]},{bs['nearest_order_n'][0]})）")
+    for reason in r["gates"]["reasons"]:
+        console.print(f"[yellow]· {reason}[/yellow]")
+    if r.get("coupled_tier") is not None:
+        console.print(f"[yellow]互耦档: {r['coupled_tier']['message']}[/yellow]")
+    raise typer.Exit(code=0)
+
+
+@array_app.command("scan")
+def array_scan_cmd(
+    request_file: str = typer.Argument(
+        ..., help="请求 JSON 文件（'-'=stdin；scan_grid 可在文件内给 start/stop/step）"),
+    start: float = typer.Option(None, "--start", help="扫描起始角（覆盖文件 scan_grid）"),
+    stop: float = typer.Option(None, "--stop", help="扫描终止角"),
+    step: float = typer.Option(None, "--step", help="扫描步长"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """θ 扫描扫掠：逐点 tier 门 + Γ_act + 盲点旗（盲点筛查主口径）。
+
+    示例：rfauto array scan request.json --start 0 --stop 80 --step 1
+    """
+    from rfauto.service.array_service import array_scan_sweep
+
+    request = _load_array_request(request_file, "scan 请求")
+    overrides = {k: v for k, v in (("start", start), ("stop", stop),
+                                   ("step", step)) if v is not None}
+    if overrides:
+        merged = dict(request.get("scan_grid") or {})
+        merged.update(overrides)
+        request["scan_grid"] = merged
+    result = array_scan_sweep(request)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+
+    r = result["result"]
+    table = Table(title=f"阵列扫描扫掠（{r['n_angles']} 点，盲点 {r['n_blind']}，DP-4）")
+    table.add_column("扫描角", justify="right", style="cyan")
+    table.add_column("tier")
+    table.add_column("max|Γ_act|", justify="right")
+    table.add_column("|k∥−βsw|/k0", justify="right")
+    table.add_column("最近阶", justify="right")
+    table.add_column("盲点")
+    for row in r["rows"]:
+        blind = row.get("blind")
+        blind_txt = ("-" if blind is None else
+                     ("[red]YES[/red]" if blind else "no"))
+        table.add_row(
+            f"{row['scan_deg']:.1f}",
+            row["tier"] if not row["invalid_fast_tier"]
+            else f"[red]{row['tier']}[/red]",
+            (f"{row['gamma_act_max']:.3f}"
+             if row.get("gamma_act_max") is not None else "-"),
+            (f"{row['min_dist_over_k0']:.4f}"
+             if row.get("min_dist_over_k0") is not None else "-"),
+            (f"({row['nearest_order'][0]},{row['nearest_order'][1]})"
+             if row.get("nearest_order") else "-"),
+            blind_txt,
+        )
+    console.print(table)
+    raise typer.Exit(code=0)
+
+
+# ─── diagnose (DP-2 耦合矩阵诊断三件套，薄壳转发 diagnosis_service) ───────────
+
+diagnose_app = typer.Typer(help="耦合矩阵/Q 诊断三件套（DP-2，JSON 进出薄壳）")
+app.add_typer(diagnose_app, name="diagnose")
+
+
+def _load_json_value(path: str, what: str):
+    """读 JSON 文件（矩阵/参数表），失败显式退出。"""
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        console.print(f"[red]✗ {what} 文件不存在: {path}[/red]")
+        raise typer.Exit(code=1) from None
+    except (json.JSONDecodeError, OSError) as e:
+        console.print(f"[red]✗ {what} 文件读取失败: {e}[/red]")
+        raise typer.Exit(code=1) from None
+
+
+def _diagnose_emit(result: dict, json_output: bool, render) -> None:
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+    render(result["result"])
+    raise typer.Exit(code=0)
+
+
+@diagnose_app.command("q")
+def diagnose_q_cmd(
+    touchstone: str = typer.Argument(..., help="单腔反射 Touchstone（.s1p/.s2p）"),
+    f0: float = typer.Option(None, "--f0", help="谐振频率提示 (GHz)"),
+    qe: list[float] = typer.Option(None, "--qe", help="外部 Q（可多次给）"),  # noqa: B008
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """Q 双通道（VF 极点法 × Kajfez 圆拟合）互证 + skrf 第三方仲裁。
+
+    互证 |ΔQu|/Qu≤10% → AGREE，超阈 UNDECIDABLE（#122）；三方极差 ≤15% 如实报。
+
+    示例：rfauto diagnose q cavity.s1p --f0 2.5 --qe 250
+    """
+    from rfauto.service.diagnosis_service import run_diagnosis
+
+    request: dict = {"mode": "q", "touchstone_path": touchstone}
+    if f0 is not None:
+        request["f0_hint_ghz"] = f0
+    if qe:
+        request["q_e"] = list(qe)
+    _diagnose_emit(run_diagnosis(request), json_output, _render_diagnose_q)
+
+
+def _render_diagnose_q(r: dict) -> None:
+    vf, circ = r["vf"], r["circle"]
+    table = Table(title="Q 双通道（DP-2）")
+    table.add_column("通道")
+    table.add_column("Qu", justify="right")
+    table.add_column("QL", justify="right")
+    table.add_column("f0 (GHz)", justify="right")
+    table.add_row("vf 极点法", str(vf.get("q_unloaded")),
+                  str(vf.get("q_loaded")), str(vf.get("f0_ghz")))
+    table.add_row("Kajfez 圆拟合", str(circ.get("q_unloaded")),
+                  str(circ.get("q_loaded")), str(circ.get("f0_ghz")))
+    third = r.get("third_opinion")
+    if third and not third.get("unavailable"):
+        table.add_row("skrf.qfactor 仲裁", str(third.get("q_unloaded")),
+                      str(third.get("q_loaded")), str(third.get("f_ghz")))
+    console.print(table)
+    console.print(f"互证 verdict: [cyan]{r['verdict']}[/cyan]"
+                  f"（差 {r['cross_diff_pct']:.2%}，门 {r['cross_tol']:.0%}）")
+    if vf.get("loss_degraded"):
+        console.print("[yellow]! loss_degraded：|Re p|/|Im p| > 0.05，"
+                      "Q 不确定度放大[/yellow]")
+    if r.get("third_check"):
+        console.print(f"三方极差: {r['third_check']['range_pct']:.2%}"
+                      f"（≤15% 门: {r['third_check']['within_15pct']}）")
+
+
+@diagnose_app.command("cm")
+def diagnose_cm_cmd(
+    touchstone: str = typer.Argument(..., help="滤波器 2 端口 Touchstone（.s2p）"),
+    order: int = typer.Option(None, "--order", help="阶数（缺省=VF 自动判）"),
+    f0: float = typer.Option(None, "--f0", help="中心频率提示 (GHz)"),
+    fbw: float = typer.Option(None, "--fbw", help="相对带宽提示"),
+    topology: str = typer.Option("folded", "--topology", help="folded|arrow"),
+    target: str = typer.Option(None, "--target",
+                               help="目标耦合矩阵 JSON 文件（[re,im] 对嵌套列表）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """CM 反向提取（VF 结构面 + LM 固定拓扑精化）+ 可选目标逐元素偏差表。
+
+    示例：rfauto diagnose cm filter.s2p --f0 2.5 --fbw 0.1 --target m.json
+    """
+    from rfauto.service.diagnosis_service import run_diagnosis
+
+    request: dict = {"mode": "cm", "touchstone_path": touchstone,
+                     "topology": topology}
+    if order is not None:
+        request["order"] = order
+    if f0 is not None:
+        request["f0_ghz"] = f0
+    if fbw is not None:
+        request["fbw"] = fbw
+    if target is not None:
+        request["target_matrix"] = _load_json_value(target, "目标矩阵")
+    _diagnose_emit(run_diagnosis(request), json_output, _render_diagnose_cm)
+
+
+def _render_diagnose_cm(r: dict) -> None:
+    ext, ref = r["extract"], r["refine"]
+    console.print(f"[bold]CM 反提（DP-2）[/bold]：N={ext['order']} "
+                  f"n_fz={ext['n_fz']} f0={ext['f0_ghz']}GHz fbw={ext['fbw']}")
+    scan_txt = ", ".join(f"K={s['n_poles_cmplx']}:{s['rms']:.1e}"
+                         for s in ext["vf_scan"])
+    console.print(f"  VF 定阶扫: {scan_txt}")
+    console.print(f"  精化: ok={ref['ok']} rms={ref['fit_rms']:.2e} "
+                  f"max|ΔS|={ref['response_max_dev']:.2e} "
+                  f"支撑集={ref['support_size']}元 "
+                  f"同伦λ={ref['homotopy_lambda_final']}")
+    chk = r.get("target_check")
+    if chk:
+        mark = "[green]PASS[/green]" if chk["pass"] else "[red]FAIL[/red]"
+        console.print(f"  目标偏差: max={chk['max_rel_dev']:.2%} "
+                      f"（门 5%: {mark}）")
+        for d in chk["elements"]:
+            console.print(f"    m[{d['i']},{d['j']}]: {d['rel_dev']:.2%}")
+
+
+@diagnose_app.command("cat")
+def diagnose_cat_cmd(
+    touchstone: str = typer.Argument(..., help="透射 Touchstone（.s2p；单腔步）"),
+    f0: float = typer.Option(..., "--f0", help="目标中心频率 (GHz)"),
+    fbw: float = typer.Option(..., "--fbw", help="相对带宽"),
+    target: str = typer.Option(..., "--target",
+                               help="目标耦合矩阵 JSON 文件"),
+    params: str = typer.Option(None, "--params",
+                               help="当前可调参数 JSON {name: value}"),
+    bounds: str = typer.Option(None, "--bounds",
+                               help="参数界 JSON {name: [lo, hi]}"),
+    tol: float = typer.Option(0.1, "--tol", help="相对容差"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """Dishal 顺序调谐 critique（τ 峰数指纹 + issues + typed fixes）。
+
+    C 系数钉死：S21 透射泄漏 C=2 / S11 反射全通 C=4（合成回收裁决）。
+
+    示例：rfauto diagnose cat step1.s2p --f0 2.5 --fbw 0.1 --target m.json
+    """
+    from rfauto.service.diagnosis_service import run_diagnosis
+
+    request: dict = {"mode": "cat", "touchstone_path": touchstone,
+                     "f0_ghz": f0, "fbw": fbw,
+                     "target_matrix": _load_json_value(target, "目标矩阵"),
+                     "tol": tol}
+    if params is not None:
+        request["current_params"] = _load_json_value(params, "参数表")
+    if bounds is not None:
+        request["bounds"] = _load_json_value(bounds, "参数界")
+    _diagnose_emit(run_diagnosis(request), json_output, _render_diagnose_cat)
+
+
+def _render_diagnose_cat(r: dict) -> None:
+    console.print(f"[bold]Dishal critique[/bold]（{r['channel']} 口径，"
+                  f"C={r['c_coef']}）：τ 峰数={r['n_peaks']} → "
+                  f"verdict [cyan]{r['verdict']}[/cyan]")
+    if r.get("qe_measured") is not None:
+        console.print(f"  Qe: 实测 {r['qe_measured']:.4g} vs 目标 "
+                      f"{r['qe1_target']:.4g}"
+                      f"（偏 {r.get('qe_deviation') or 0:+.1%}）")
+    if r.get("k_measured") is not None:
+        console.print(f"  k12: 实测 {r['k_measured']:.4g} vs 目标 "
+                      f"{r['k12_target']:.4g}")
+    fp = r["fingerprint"]
+    if fp.get("peak_offset_pct") is not None:
+        console.print(f"  峰位偏: {fp['peak_offset_pct']:+.2f}%"
+                      "（失谐方向指纹）")
+    for iss in r["issues"]:
+        console.print(f"  [yellow]issue[/yellow] {iss['kind']}: "
+                      f"{iss.get('deviation')}")
+    for fx in r["fixes"]:
+        console.print(f"  [cyan]fix[/cyan] {fx['kind']} {fx['op']} "
+                      f"{fx['param'] or '(coord_probe)'} → {fx['value']}")
+
+
 # ─── correlate (E9c 相关性) ───────────────────────────────────────────────────
 
 @app.command()
@@ -1109,6 +1655,116 @@ def correlate(
 
     if not data.get("is_correlated"):
         raise typer.Exit(code=1)
+
+
+# ─── anchors (DP-3 物理标定锚注册表) ────────────────────────────────────────
+
+anchors_app = typer.Typer(help="物理标定锚注册表（DP-3，JSON 进出薄壳）")
+app.add_typer(anchors_app, name="anchors")
+
+
+def _anchors_emit(result: dict, json_output: bool, render) -> None:
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result, ensure_ascii=False))
+        raise typer.Exit(code=0)
+    render(result)
+
+
+@anchors_app.command("list")
+def anchors_list_cmd(
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """列出全部已登记锚（DP-3 注册表 knowledge/anchors.yaml）。
+
+    示例：rfauto anchors list
+    """
+    from rfauto.service.anchors_service import list_anchors
+
+    _anchors_emit(list_anchors(), json_output, _render_anchors_list)
+
+
+def _render_anchors_list(r: dict) -> None:
+    table = Table(title=f"锚注册表（DP-3，{r['count']} 条）")
+    table.add_column("anchor_id")
+    table.add_column("kind")
+    table.add_column("status")
+    table.add_column("v", justify="right")
+    table.add_column("value / expr / points")
+    for row in r["anchors"]:
+        summary = row.get("value")
+        if row.get("expr"):
+            summary = row["expr"]
+        elif row.get("kind") == "curve":
+            summary = f"points={len(row.get('points') or [])}"
+        table.add_row(row["anchor_id"], str(row.get("kind")),
+                      str(row.get("status")), str(row.get("version")),
+                      str(summary))
+    console.print(table)
+    for e in r.get("load_errors") or []:
+        console.print(f"[yellow]! load_error[/yellow] {e}")
+
+
+@anchors_app.command("inspect")
+def anchors_inspect_cmd(
+    anchor_id: str = typer.Argument(..., help="锚 id（如 c3.l_via_h.openems-hfss-v1）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """单锚全量记录（含 provenance/uncertainty/domain/consumers）。"""
+    from rfauto.service.anchors_service import inspect_anchor
+
+    _anchors_emit(inspect_anchor(anchor_id), json_output,
+                  _render_anchors_inspect)
+
+
+def _render_anchors_inspect(r: dict) -> None:
+    a = r["anchor"]
+    console.print(f"[bold]{a['anchor_id']}[/bold]（v{a.get('version')}，"
+                  f"{a.get('kind')}，{a.get('status')}）")
+    q = a.get("quantity") or {}
+    console.print(f"  量: {q.get('name')} [{q.get('unit')}]"
+                  f"——{q.get('semantics')}")
+    if a.get("value") is not None:
+        console.print(f"  value: {a['value']}")
+    if a.get("expr"):
+        console.print(f"  expr: {a['expr']}  variables: {a.get('variables')}")
+    if a.get("points") is not None:
+        console.print(f"  points: {len(a['points'])}  interp: {a.get('interp')}")
+    console.print(f"  uncertainty: {a.get('uncertainty')}")
+    console.print(f"  domain: {a.get('domain')}")
+    console.print(f"  engine_pair: {a.get('engine_pair')}"
+                  f"  fallback: {a.get('fallback')}")
+    prov = a.get("provenance") or {}
+    console.print(f"  provenance: runs={prov.get('arbitration_runs')}"
+                  f" commit={prov.get('commit')}")
+    console.print(f"  consumers: {a.get('consumers')}")
+
+
+@anchors_app.command("validate")
+def anchors_validate_cmd(
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """校验注册表：schema + provenance 可解析 + 单源计数核对（DP-3 判据 3）。"""
+    from rfauto.service.anchors_service import validate_registry
+
+    report = validate_registry()
+    if not report.get("ok"):
+        if json_output:
+            console.print_json(json.dumps(report, ensure_ascii=False))
+        else:
+            for iss in report.get("issues") or []:
+                console.print(f"[red]✗ {iss}[/red]")
+        raise typer.Exit(code=1)
+    _anchors_emit(report, json_output, _render_anchors_validate)
+
+
+def _render_anchors_validate(r: dict) -> None:
+    console.print(f"[bold]锚注册表校验（DP-3）[/bold]：{r['count']} 条"
+                  f"（单源期望 {r['expected_count']}，匹配="
+                  f"{r['expected_match']}），registry={r.get('registry_path')}")
+    console.print("[green]✓ schema + provenance 全过[/green]")
 
 
 # ─── surrogate (E3 代理模型离线分析) ─────────────────────────────────────────
@@ -2126,6 +2782,36 @@ def solvers_add(
     console.print(f"[green]✓ 求解器 '{name}' 已添加[/green]")
 
 
+@solvers_app.command("qucsator-mline")
+def solvers_qucsator_mline(
+    w_mm: str = typer.Option(None, "--w-mm", help="线宽 mm（缺省 1.113 openEMS 锚名义）"),
+    line_len_mm: str = typer.Option(None, "--l-mm", help="线长 mm（缺省 40）"),
+    freqs: str = typer.Option("2.25,2.5,2.75", "--freqs-ghz", help="逗号分隔频点 GHz"),
+    work_dir: str = typer.Option(None, "--work-dir", help="产物目录（缺省临时目录）"),
+    tol_rel: float = typer.Option(0.05, "--tol-rel", help="三方 β 互差容差"),
+) -> None:
+    """qucsatorRF mline 名义点三方 β 对照（qucsator/openEMS 金锚/HJ；DP-14 N7）。"""
+    from rfauto.service.qucsator_service import solve_mline_three_way
+
+    freqs_ghz = [float(x) for x in freqs.split(",") if x.strip()]
+    result = solve_mline_three_way(
+        w_mm=float(w_mm) if w_mm else None,
+        line_len_mm=float(line_len_mm) if line_len_mm else None,
+        freqs_ghz=freqs_ghz,
+        work_dir=work_dir,
+        tol_rel=tol_rel,
+    )
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('errors', ['失败'])}[/red]")
+        raise typer.Exit(code=1)
+    verdict = (result.get("threeway") or {}).get("verdict") or {}
+    color = "green" if verdict.get("passed") else "red"
+    console.print(f"[{color}]● qucsatorRF mline 三方对照[/] "
+                  f"max互差={verdict.get('max_pairwise_rel'):.4f} "
+                  f"culprit={verdict.get('culprit_pair')}（tol_rel={tol_rel}）")
+    console.print_json(json.dumps(result["threeway"], indent=2, ensure_ascii=False))
+
+
 # ─── simci（阶段 7.5：仿真 CI 夜间回归）─────────────────────────────────────
 
 @app.command("simci")
@@ -2352,6 +3038,76 @@ def sparams_compare_cmd(
             f"[red]✗ {'; '.join(result.get('errors') or ['未知错误'])}[/red]")
         raise typer.Exit(code=1)
     raise typer.Exit(code=0)
+
+
+# ─── vna (DP-11 VNA 测量闭环：En 相关性报告 + 离线回放，JSON 进出薄壳) ────────
+# [DP-11 P2 纯插入 hunk：位置=sparams-compare 之后、ui 命令之前；只新增行]
+
+vna_app = typer.Typer(help="VNA 测量闭环（DP-11：En 相关性报告 + 离线回放）")
+app.add_typer(vna_app, name="vna")
+
+
+@vna_app.command("en-report")
+def vna_en_report_cmd(
+    lab_s2p: str = typer.Argument(..., help="实测 Touchstone 文件"),
+    ref_s2p: str = typer.Argument(..., help="仿真参考 Touchstone 文件"),
+    traces: str = typer.Option("S11,S21", "--traces", "-t",
+                               help="迹线名（逗号分隔）"),
+    delta_t_c: float = typer.Option(None, "--delta-t-c", help="温差覆盖（°C）"),
+    anchor_u_db: float = typer.Option(None, "--anchor-u-db",
+                                      help="锚不确定度（U_sim 第一优先）"),
+    hfss_residual_db: float = typer.Option(None, "--hfss-residual-db",
+                                           help="HFSS 仲裁残差（U_sim 第二优先）"),
+    markdown: str | None = typer.Option(None, "--markdown", "-m",
+                                        help="Markdown 报告输出路径"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """En 计量学相关性报告（|En|≤1 满意；深谷自动切线性域，#370/#371）。"""
+    from rfauto.service.vna_service import vna_en_report
+
+    trace_list = tuple(t.strip() for t in traces.split(",") if t.strip())
+    result = vna_en_report(
+        lab_s2p, ref_s2p, traces=trace_list, delta_t_c=delta_t_c,
+        anchor_uncertainty_db=anchor_u_db,
+        hfss_residual_db=hfss_residual_db, markdown_path=markdown)
+    if json_output:
+        console.print_json(json.dumps(
+            {k: v for k, v in result.items() if k != "markdown"},
+            indent=2, ensure_ascii=False, default=str))
+        if not result.get("ok"):
+            raise typer.Exit(code=1)
+        return
+    if not result.get("ok"):
+        for err in result.get("errors") or ["En 报告失败"]:
+            console.print(f"[red]✗ {err}[/red]")
+        raise typer.Exit(code=1)
+    if markdown:
+        console.print(f"[green]✓ En 报告[/green] → [cyan]{markdown}[/cyan]")
+    else:
+        from rich.markdown import Markdown
+
+        console.print(Markdown(result.get("markdown", "")))
+
+
+@vna_app.command("replay")
+def vna_replay_offline_cmd(
+    measured_s2p: str = typer.Argument(..., help="历史测量 Touchstone 文件"),
+    sim_s2p: str | None = typer.Argument(None, help="仿真 Touchstone（缺省=自比对）"),
+    threshold_db: float = typer.Option(3.0, "--threshold-db",
+                                       help="相关性 dB 偏差阈值"),
+    session: str | None = typer.Option(None, "--session",
+                                       help="会话 JSONL 落盘路径"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """VNA 离线回放回归（mock 仪表 采集→校准→相关 全链，零硬件）。"""
+    from rfauto.service.vna_service import vna_replay
+
+    result = vna_replay(measured_s2p, sim_s2p, threshold_db=threshold_db,
+                        session_path=session)
+    console.print_json(json.dumps(result, indent=2, ensure_ascii=False,
+                                  default=str))
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
 
 
 # ─── ui (人工核验台) ─────────────────────────────────────────────────────────
@@ -2821,7 +3577,47 @@ def uq_temp_zone_cmd(
         n=n, seed=seed, kind=kind)), "温区良率失败")
 
 
-# ─── farfield（WP4.1 nf2ff 远场） ──────────────────────────────────────
+@uq_app.command("robustness")
+def uq_robustness_cmd(
+    source: str = typer.Argument(..., help="samples.json | 数据集名 | run id"),
+    spec: list[str] = typer.Option(..., "--spec", help="规范限 'metric,op,value[,weight]'（可多次）"),  # noqa: B008
+    profile: str | None = typer.Option(None, "--profile", help="公差剖面 YAML 路径或内联 JSON（优先于 --tol）"),
+    tol: list[str] | None = typer.Option(None, "--tol", help="公差 σ 参数名=值（可多次；无 profile 时生效）"),  # noqa: B008
+    n_mc: int = typer.Option(100000, "--n-mc", help="MC 抽样数"),
+    seed: int = typer.Option(42, "--seed", help="随机种子"),
+    kind: str = typer.Option("poly_ridge", "--kind", help="代理类型 poly_ridge|nn"),
+    form_engine: str = typer.Option("auto", "--form-engine", help="FORM 引擎 auto|internal|openturns|uqpy"),
+    persist: bool = typer.Option(False, "--persist", help="MC 抽样落盘 Parquet"),
+    store_name: str | None = typer.Option(None, "--store-name", help="落盘数据集名"),
+) -> None:
+    """稳健性报告：良率 MC（向量化）+FORM Pf+worst-case 角点+逐规范 Cpk（DP-15 C3）。"""
+    import json as _json
+
+    from rfauto.service.contracts import annotate_contract
+    from rfauto.service.robustness_service import robustness_report
+
+    specs = []
+    for raw in spec:
+        parts = [s.strip() for s in raw.split(",")]
+        if len(parts) < 3:
+            raise typer.BadParameter(f"--spec 须为 metric,op,value[,weight]: {raw}")
+        entry = {"metric": parts[0], "op": parts[1], "value": float(parts[2])}
+        if len(parts) >= 4:
+            entry["weight"] = float(parts[3])
+        specs.append(entry)
+    prof: str | dict | None = profile
+    if profile is not None:
+        try:
+            prof = _json.loads(profile)
+        except ValueError:
+            prof = profile  # YAML/路径原样交给 service
+    _emit(annotate_contract("robustness_report", robustness_report(
+        source, specs, profile=prof, tolerances=_kv_floats(tol, "--tol"),
+        n_mc=n_mc, seed=seed, kind=kind, form_engine=form_engine,
+        persist=persist, store_name=store_name)), "稳健性报告失败")
+
+
+# ─── farfield（WP4.1 nf2ff 远场；0bu③） ──────────────────────────────────────
 
 farfield_app = typer.Typer(help="远场方向图/增益/效率/SAR（WP4.1 nf2ff 产物视图）")
 app.add_typer(farfield_app, name="farfield")
@@ -3314,6 +4110,45 @@ def db_analytics_attach_cmd(
         console.print(f"  run {run.get('run_id')}  {run.get('model')}  "
                       f"{run.get('adapter')}  {run.get('status')}")
 
+@db_app.command("league-rebuild")
+def db_league_rebuild_cmd(
+    runs_dir: str | None = typer.Option(None, "--runs-dir", help="runs 根目录（缺省仓内 runs/）"),
+    db_path: str | None = typer.Option(None, "--db", help="league.duckdb 路径（缺省 runs/league.duckdb）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """引擎联赛表重建（DP-17 W1：verdict 形态白名单抽取，幂等）。"""
+    from rfauto.service.league_service import rebuild_league
+
+    _emit(rebuild_league(runs_dir=runs_dir, db_path=db_path),
+          "联赛表重建失败", json_output=json_output)
+
+
+@db_app.command("league-report")
+def db_league_report_cmd(
+    family: str | None = typer.Option(None, "--family", help="模板族过滤"),
+    quantity: str | None = typer.Option(None, "--quantity", help="量（带单位后缀）过滤"),
+    db_path: str | None = typer.Option(None, "--db", help="league.duckdb 路径"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """联赛报告：按（族，量）出 |delta| 中位×wall_s 中位 Pareto 前沿（JSON+md 双出）。"""
+    from rfauto.service.league_service import league_report
+
+    _emit(league_report(family=family, quantity=quantity, db_path=db_path),
+          "联赛报告失败", json_output=json_output)
+
+
+@app.command("explain-run")
+def explain_run_cmd(
+    run_dir: str = typer.Argument(..., help="run 目录（runs/<id>）"),
+    playbook: str | None = typer.Option(None, "--playbook", help="playbook.yaml 路径（缺省 knowledge/diagnostics/playbook.yaml）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """失败指纹解释（DP-17 W2：确定性指纹匹配→候选根因族+取证命令+坑号链，无 LLM）。"""
+    from rfauto.service.explain_run import explain_run
+
+    _emit(explain_run(run_dir, playbook=playbook),
+          "run 解释失败", json_output=json_output)
+
 
 # ─── slotline / transitions（槽线与过渡薄壳：闭式分析/综合 + 过渡/巴伦设计） ──
 # 五命令零逻辑转发 service/slotline_service（规则 4）；数值只出确定性内核
@@ -3502,6 +4337,487 @@ def transitions_marchand2_cmd(
         f"相位误差 {metrics['band_max_phase_error_deg']:.2f}°")
     for note in design.get("notes") or []:
         console.print(f"  [dim]{note}[/dim]")
+
+
+# ─── report（DP-13 U1 双输出报告链：typst PDF + plotly 自包含 HTML 同源双出） ──
+
+report_app = typer.Typer(help="双输出报告链（DP-13 U1：run → 同一报告模型双出 PDF+HTML）")
+app.add_typer(report_app, name="reports")  # U1 双输出报告（复数名避开既有顶层 `report` 旧 docs/html 导出命令——同名遮蔽事故修复 2026-09-25）
+
+
+@report_app.command("render")
+def report_render_cmd(
+    run_dir: str = typer.Argument(..., help="run 目录（meta/verdict/sparams 任一在场即可，缺如实降级）"),
+    out_dir: str = typer.Option("", "--out-dir", help="输出目录（缺省 run_dir/_report）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """渲染 run 报告：同一报告模型（rfauto-report/v1）双出 typst PDF + plotly 自包含 HTML。
+
+    四段式大纲：标识引用/方法配置/数据与判据（消费 knowledge/criteria/v2，
+    无适用判据如实 none-provided）/结论与异常；全部数字带 provenance。
+
+    示例：rfauto reports render runs/ratrace_03mm_sample --out-dir out/report
+    """
+    from rfauto.service.report_render import render_run_report
+
+    result = render_run_report(run_dir, out_dir=out_dir or None)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '报告渲染失败'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+        return
+    console.print(f"[green]✓[/green] PDF : {result['pdf_path']}")
+    console.print(f"[green]✓[/green] HTML: {result['html_path']}")
+    console.print(
+        f"  schema={result['schema']}  criteria={result['criteria_status']}  "
+        f"verdict={result.get('verdict')}  异常 {result.get('n_anomalies')} 条")
+
+
+# ─── mmt（DP-1：自研 RWG/SIW 解析模基 MMT（GSM）秒级求解）───────────────────
+
+mmt_app = typer.Typer(
+    help="RWG/SIW 模基 MMT 求解（DP-1：段表 mm + 频网 → 50Ω S 参数，秒级零外部进程）")
+app.add_typer(mmt_app, name="mmt")
+
+
+@mmt_app.command("solve")
+def mmt_solve(
+    sections: str = typer.Option("", "--sections", help="段表 JSON 内联串或 @文件路径（uniform/hstep/iris，mm 口径）"),
+    freqs: str = typer.Option("", "--freqs-ghz", help="逗号分隔频点 GHz（与段表内 freqs_ghz 二选一）"),
+    eps_r: float = typer.Option(1.0, "--eps-r", help="缺省相对介电常数（段内可覆盖）"),
+    tan_d: float = typer.Option(0.0, "--tan-d", help="缺省损耗正切"),
+    z0_ref: float = typer.Option(50.0, "--z0-ref", help="端口参考阻抗 Ω"),
+    n_modes_ref: int = typer.Option(15, "--n-modes-ref", help="最窄侧基准模式数"),
+    work_dir: str = typer.Option(None, "--work-dir", help="产物目录（缺省临时目录）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """MMT 段表求解（JSON 进出薄壳，零逻辑转发 mmt_service.solve_mmt）。
+
+    示例：rfauto mmt solve --sections '@chain.json' --freqs-ghz 8,10,12
+    """
+    import json as _json
+
+    from rfauto.service.mmt_service import solve_mmt, solve_mmt_from_file
+
+    try:
+        if sections.startswith("@"):
+            result = solve_mmt_from_file(sections[1:], work_dir=work_dir)
+        else:
+            payload = _json.loads(sections) if sections else {}
+            if freqs:
+                payload["freqs_ghz"] = [float(x) for x in freqs.split(",") if x.strip()]
+            payload.setdefault("eps_r", eps_r)
+            payload.setdefault("tan_d", tan_d)
+            payload.setdefault("z0_ref", z0_ref)
+            if n_modes_ref != 15:
+                payload.setdefault("mode_policy", {})["n_modes_ref"] = n_modes_ref
+            result = solve_mmt(payload, work_dir=work_dir)
+    except json.JSONDecodeError as exc:
+        console.print(f"[red]✗ sections JSON 解析失败: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('errors', ['失败'])}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+    color = "green" if result.get("converged") else "yellow"
+    console.print(f"[{color}]● MMT 求解[/] converged={result.get('converged')} "
+                  f"determined={result.get('n_determined')}/{result.get('n_determined', 0) + result.get('n_undetermined', 0)}")
+    console.print(f"  产物: {result.get('work_dir')}")
+
+
+@app.command("compose")
+def compose_cmd(
+    netlist_file: str = typer.Argument(..., help="netlist YAML 文件（rfauto-netlist-v1 三段式）"),
+    out_dir: str = typer.Option(..., "--out-dir", "-o", help="产物目录（simulation.py + compose_meta.json + netlist.yaml）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """模板几何组合（DP-8）：netlist YAML → 单一 simulation.py（布局合并路线）。
+
+    netlist 三段式：instances（模板+参数）/connections（pin 吸附摆位）/
+    exposed_ports（FDTD 端口重编 1..M）+ band/substrate/global_params。
+    首例模板：siw、msl_siw_taper（opt-in 注册）；守卫 P1-P5（位置共点/
+    方向对向/阻抗/参考面/截面）+ D1-D6（域合并/结缝导体/网格衔接/端口重编/
+    边界预算/一致性），失败显式 ValueError 报双 pin id+坐标+差值。
+
+    示例：rfauto compose netlist.yaml --out-dir runs/compose_out
+    """
+    from rfauto.service.compose_service import compose_write_from_yaml_file
+
+    result = compose_write_from_yaml_file(netlist_file, out_dir)
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '组合失败'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+    r = result["result"]
+    console.print(f"[green]✓ 组合产物已落盘[/green] {r['out_dir']}")
+    console.print(f"  simulation.py   {r['script_path']}")
+    console.print(f"  compose_meta    {r['meta_path']}（render sha256={r['render_sha256'][:12]}…）")
+    g = r.get("guards") or {}
+    console.print("  守卫: " + " ".join(
+        f"{k}={v}" for k, v in sorted(g.items())))
+
+
+@app.command("compose-templates")
+def compose_templates_cmd(
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """列出已注册组合契约模板与 pin schema（DP-8 opt-in 台账）。"""
+    from rfauto.service.compose_service import list_composable_templates
+
+    result = list_composable_templates()
+    if not result.get("ok"):
+        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        raise typer.Exit(code=1)
+    if json_output:
+        console.print_json(json.dumps(result["result"], ensure_ascii=False))
+        raise typer.Exit(code=0)
+    r = result["result"]
+    table = Table(title=f"组合契约模板（{r['n_templates']} 个，DP-8 opt-in）")
+    table.add_column("template", style="cyan")
+    table.add_column("pin")
+    table.add_column("port_type")
+    table.add_column("z_ref_ohm")
+    table.add_column("direction")
+    for t in r["templates"]:
+        pins = t.get("port_pins") or []
+        first = True
+        for p in pins:
+            table.add_row(
+                t["template"] if first else "",
+                str(p.get("pin_id")),
+                str(p.get("port_type")),
+                repr(p.get("z_ref_ohm")),
+                repr(p.get("direction")),
+            )
+            first = False
+        if not pins:
+            table.add_row(t["template"], "-", "-", "-", "-")
+    console.print(table)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 附：tests 门用示例 netlist 可由
+#   python -c "from rfauto.service.compose_service import load_golden_netlist as f; print(f('siw_chain')['result'])"
+# 取得（GOLDEN_NETLISTS 单一事实源）。
+
+
+# ─── nfmeas / nfc / sar（DP-18 C10 迷你件：近场变换/.ffs 视图、NFC 线圈闭式、SAR 后处理）──
+
+nfmeas_app = typer.Typer(help="近场测量变换与 .ffs 视图（DP-18 C10a）")
+app.add_typer(nfmeas_app, name="nfmeas")
+
+@nfmeas_app.command("ffs-info")
+def nfmeas_ffs_info_cmd(path: str = typer.Argument(..., help=".ffs ASCII 路径")) -> None:
+    """审计 .ffs 头（频率/三功率/网格规模），不落全量复矩阵。"""
+    import json as _json
+
+    from rfauto.service.nf_measurement_service import ffs_info
+    typer.echo(_json.dumps(ffs_info(path), ensure_ascii=False, indent=2))
+
+@nfmeas_app.command("nf2ff")
+def nfmeas_nf2ff_cmd(
+    grid_npz: str = typer.Argument(..., help="近场栅格 npz（x_m/y_m/freq_hz/ex/ey/z0_m）"),
+    window: str = typer.Option("kaiser", help="kaiser/hann/none"),
+    beta: float = typer.Option(3.0, help="Kaiser β"),
+) -> None:
+    """平面近场 2D 复场 → 远场方向图（dB 归一 JSON）。"""
+    import json as _json
+
+    import numpy as np
+
+    from rfauto.core.nf_transform import NearFieldGrid, planar_nf_to_farfield
+    d = np.load(grid_npz)
+    out = planar_nf_to_farfield(
+        NearFieldGrid(x_m=d["x_m"], y_m=d["y_m"], freq_hz=float(d["freq_hz"]),
+                      ex=d["ex"], ey=d["ey"], z0_m=float(d.get("z0_m", 0.0))),
+        window=window, kaiser_beta=beta)
+    typer.echo(_json.dumps({
+        "theta_deg": out["theta_deg"].tolist(), "phi_deg": out["phi_deg"].tolist(),
+        "pattern_db": [[None if v != v else round(float(v), 4) for v in row]
+                       for row in out["pattern_db"]],
+        "window": out["window"], "validity_max_deg": out["validity_max_deg"]},
+        ensure_ascii=False, indent=2))
+
+nfc_app = typer.Typer(help="NFC/WPC 平面螺旋线圈闭式（DP-18 C10b）")
+app.add_typer(nfc_app, name="nfc")
+
+@nfc_app.command("evaluate")
+def nfc_evaluate_cmd(shape: str, n_turns: float, d_out_mm: float,
+                     w_um: float, s_um: float) -> None:
+    """Mohan 三式电感评估（nH/μm 输入口径）。"""
+    import json as _json
+
+    from rfauto.service.nfc_coil_service import coil_evaluate
+    typer.echo(_json.dumps(coil_evaluate(shape, n_turns, d_out_mm * 1e-3,
+                                         w_um * 1e-6, s_um * 1e-6),
+                           ensure_ascii=False, indent=2))
+
+@nfc_app.command("synth")
+def nfc_synth_cmd(target_l_nh: float, shape: str, n_turns: float,
+                  w_um: float, s_um: float,
+                  expression: str = typer.Option("current_sheet")) -> None:
+    """目标电感 → 外径反解（二分 + 回代自洽）。"""
+    import json as _json
+
+    from rfauto.service.nfc_coil_service import coil_synthesize
+    typer.echo(_json.dumps(coil_synthesize(target_l_nh * 1e-9, shape, n_turns,
+                                           w_um * 1e-6, s_um * 1e-6,
+                                           expression=expression),
+                           ensure_ascii=False, indent=2))
+
+@nfc_app.command("q")
+def nfc_q_cmd(f_mhz: float, l1_nh: float, r1_ohm: float,
+              m_nh: float = typer.Option(0.0), l2_nh: float = typer.Option(0.0),
+              r2_ohm: float = typer.Option(0.0)) -> None:
+    """有载/无载 Q 报告面（互感 T 模型精确式）。"""
+    import json as _json
+
+    from rfauto.service.nfc_coil_service import coil_q
+    typer.echo(_json.dumps(coil_q(f_mhz * 1e6, l1_nh * 1e-9, r1_ohm,
+                                  m_nh * 1e-9, l2_nh * 1e-9, r2_ohm),
+                           ensure_ascii=False, indent=2))
+
+sar_app = typer.Typer(help="SAR 合规后处理（DP-18 C10c）")
+app.add_typer(sar_app, name="sar")
+
+@sar_app.command("report")
+def sar_report_cmd(
+    field_npz: str = typer.Argument(..., help="场网格 npz（e_re/e_im/rho[/sigma/voxel_m]）"),
+    mass_g: str = typer.Option("1,10", help="逗号分隔质量档（g）"),
+) -> None:
+    """1g/10g 立方平均 + 峰值定位 + 分布（62704-1 简化档，coverage 如实）。"""
+    import json as _json
+
+    from rfauto.service.sar_service import sar_load_field_npz
+    typer.echo(_json.dumps(sar_load_field_npz(field_npz),
+                           ensure_ascii=False, indent=2))
+
+
+# ─── si（df7 T2 SI 通道报告：无源性/因果性/TDR/COM 一键通道报告薄壳） ─────────
+# 零逻辑转发 service/si_channel_service（规则 4）；markdown 渲染在 service 层
+# （前端只渲染原则 #90）；路径参数一律 str 注解（#269 B008）。
+
+si_app = typer.Typer(help="SI 通道报告（df7 T2：无源性/因果性/TDR/COM，纯后处理）")
+app.add_typer(si_app, name="si")
+
+
+@si_app.command("report")
+def si_report_cmd(
+    source: str = typer.Argument(..., help="Touchstone 文件（.sNp）或 run 目录（sparams.csv/Touchstone 产物）"),
+    output_format: str = typer.Option("json", "--format", "-f", help="输出格式: json|markdown"),
+    passivity_tol: float = typer.Option(0.01, "--passivity-tol", help="无源性容差（max σmax ≤ 1+tol）"),
+    causality_threshold: float = typer.Option(0.02, "--causality-threshold", help="负时间能量占比阈值"),
+    pre_cursor_guard_ns: float = typer.Option(1.0, "--pre-cursor-guard-ns", help="因果性循环尾窗宽度 ns"),
+    tdr_window_ns: float = typer.Option(2.0, "--tdr-window-ns", help="TDR 统计窗 ns"),
+    fext: list[str] | None = typer.Option(None, "--fext", help="COM 远端串扰 4 端口文件（可重复）"),  # noqa: B008
+    nxt: list[str] | None = typer.Option(None, "--next", help="COM 近端串扰 4 端口文件（可重复）"),  # noqa: B008
+) -> None:
+    """SI 通道一键报告（JSON 进出薄壳；COM 段 4 端口文件可用，缺装如实降级）。"""
+    from rfauto.service.si_channel_service import render_si_channel_markdown, si_channel_report
+
+    fmt = (output_format or "json").strip().lower()
+    if fmt not in ("json", "markdown"):
+        console.print(f"[red]✗ --format 须为 json|markdown，实际 {output_format!r}[/red]")
+        raise typer.Exit(code=2)
+    result = si_channel_report(
+        source,
+        passivity_tol=passivity_tol,
+        causality_threshold=causality_threshold,
+        pre_cursor_guard_ns=pre_cursor_guard_ns,
+        tdr_window_ns=tdr_window_ns,
+        fext_paths=list(fext) if fext else None,
+        next_paths=list(nxt) if nxt else None,
+    )
+    if fmt == "markdown":
+        if not result.get("ok"):
+            console.print("[red]✗ SI 通道报告失败[/red]")
+            for err in result.get("errors") or []:
+                console.print(f"  [red]- {err}[/red]")
+            raise typer.Exit(code=1)
+        typer.echo(render_si_channel_markdown(result))
+        return
+    _emit(result, "SI 通道报告失败", json_output=True)
+
+
+# ─── lake（df7 F3 runs 湖索引+分层压实薄壳：index/query/pack/verify/restore） ──
+# 五命令零逻辑转发 service/lake_service（规则 4，JSON 进出走 service）；
+# 路径参数一律 str 注解（#269 B008）；缺省落点口径单源在 service
+# （索引库 runs/.lake_index.duckdb、偏移清单 <pack>.manifest.json），壳层不复制。
+
+lake_app = typer.Typer(
+    help="runs/ 湖索引与分层压实（df7 F3：DuckDB 索引 + tar.zst 内容寻址归档）")
+app.add_typer(lake_app, name="lake")
+
+
+@lake_app.command("index")
+def lake_index_cmd(
+    runs_dir: str = typer.Option("runs", "--runs-dir",
+                                 help="runs 根目录（扫一级战役+二级 run 点两层）"),
+    db: str | None = typer.Option(None, "--db",
+                                  help="索引库路径（缺省 runs/.lake_index.duckdb）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """扫 runs/ 重建 DuckDB 湖索引（幂等重建；缺失字段如实 NULL 不臆造）。"""
+    from rfauto.service.lake_service import build_runs_index
+
+    result = build_runs_index(runs_dir, db_path=db)
+    _emit(result, "湖索引重建失败", json_output=json_output)
+    if json_output:
+        return
+    console.print(f"[green]✓ rows={result['n_rows']}[/green]  "
+                  f"meta={result['n_meta_rows']}"
+                  f"  verdict={result['n_verdict_rows']}  db={result['db_path']}")
+    if result.get("note"):
+        console.print(f"  [dim]{result['note']}[/dim]")
+    for err in result.get("errors") or []:
+        console.print(f"  [yellow]- {err}[/yellow]")
+
+
+@lake_app.command("query")
+def lake_query_cmd(
+    template: str | None = typer.Option(None, "--template",
+                                        help="模板过滤（meta.model 等值）"),
+    adapter: str | None = typer.Option(None, "--adapter",
+                                       help="适配器过滤（meta.adapter 等值）"),
+    study: str | None = typer.Option(None, "--study",
+                                     help="study 过滤（meta.study_name 等值）"),
+    campaign: str | None = typer.Option(None, "--campaign",
+                                        help="战役目录名过滤"),
+    date_from: str | None = typer.Option(None, "--date-from",
+                                         help="起始日期 YYYY-MM-DD（created_date 闭区间）"),
+    date_to: str | None = typer.Option(None, "--date-to",
+                                       help="截止日期 YYYY-MM-DD（created_date 闭区间）"),
+    limit: int = typer.Option(200, "--limit", help="返回行数上限"),
+    db: str | None = typer.Option(None, "--db",
+                                  help="索引库路径（缺省 runs/.lake_index.duckdb）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """湖索引只读查询（等值过滤+日期段；JSON 进出走 service，值只进 ? 绑定）。"""
+    from rfauto.service.lake_service import query_runs_index
+
+    result = query_runs_index(
+        db, template=template, adapter=adapter, study=study,
+        campaign=campaign, date_from=date_from, date_to=date_to, limit=limit)
+    _emit(result, "湖索引查询失败", json_output=json_output)
+    if json_output:
+        return
+    names = ("path", "template", "adapter", "study", "created_date", "n_files")
+    console.print("  ".join(names))
+    for row in result.get("rows") or []:
+        console.print("  ".join(str(row.get(n)) for n in names))
+    console.print(f"[dim]{result['n_rows']} 行[/dim]")
+
+
+@lake_app.command("pack")
+def lake_pack_cmd(
+    campaign_dir: str = typer.Argument(..., help="战役目录（只读，原目录零改动）"),
+    out: str | None = typer.Option(None, "--out",
+                                   help="归档落点 tar.zst（缺省 <campaign_dir>.tar.zst）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """战役目录 → tar.zst + 偏移清单（确定性排序+归一化头，内容寻址锚）。"""
+    from rfauto.service.lake_service import pack_campaign
+
+    out_path = out if out is not None else str(Path(campaign_dir)) + ".tar.zst"
+    result = pack_campaign(campaign_dir, out_path)
+    _emit(result, "战役打包失败", json_output=json_output)
+    if json_output:
+        return
+    console.print(f"[green]✓ files={result['n_files']}[/green]  "
+                  f"total={result['total_bytes']}B  pack={result['pack_path']}")
+    console.print(f"  sha256={result['pack_sha256']}  "
+                  f"manifest={result['manifest_path']}")
+
+
+@lake_app.command("verify")
+def lake_verify_cmd(
+    pack: str = typer.Argument(..., help="归档 tar.zst"),
+    manifest: str = typer.Argument(..., help="偏移清单 JSON（<pack>.manifest.json）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """归档校验：整包 sha256 快校验 + 逐文件 sha256 重算（如实逐文件报告）。"""
+    from rfauto.service.lake_service import verify_campaign
+
+    result = verify_campaign(pack, manifest)
+    if json_output:
+        _emit(result, "归档校验未通过", json_output=True)
+        return
+    # 文本面：逐文件 ok 表摘要（失败也要看到逐文件定位），再走信封出口
+    console.print(f"pack_sha256_ok={result['pack_sha256_ok']}  "
+                  f"ok={result['n_ok']}  fail={result['n_fail']}")
+    for f in result.get("files") or []:
+        if f["ok"]:
+            console.print(f"  [green]ok[/green]  {f['path']}")
+        else:
+            console.print(f"  [red]FAIL[/red]  {f['path']}  {f.get('reason')}")
+    for err in result.get("errors") or []:
+        console.print(f"  [yellow]- {err}[/yellow]")
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
+
+
+@lake_app.command("restore")
+def lake_restore_cmd(
+    pack: str = typer.Argument(..., help="归档 tar.zst"),
+    manifest: str = typer.Argument(..., help="偏移清单 JSON"),
+    target: str = typer.Argument(..., help="恢复目标目录（必须不存在——绝不覆盖）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """恢复归档到新目录（目标已存在即拒；拒绝覆盖语义由 service 透传）。"""
+    from rfauto.service.lake_service import restore_campaign
+
+    result = restore_campaign(pack, manifest, target)
+    _emit(result, "归档恢复失败", json_output=json_output)
+    if json_output:
+        return
+    console.print(f"[green]✓ restored={result['n_verified']}/{result['n_files']}[/green]"
+                  f"  bytes={result['total_bytes']}  target={result['target_dir']}")
+
+
+# ─── constraints（df7+ R4：渲染前声明式几何约束一次求解薄壳） ─────────────────
+# 零逻辑转发 service/render_constraint_service（规则 4）；配置文件解析在
+# service 层（#90）；路径参数 str 注解（#269 B008）；z3 缺装降级在 core
+# 内完成（ok=False/status="unavailable" 如实进 verdict，不阻塞）。
+
+constraints_app = typer.Typer(
+    help="渲染前声明式几何约束检查（R4：z3 一次求解，UNSAT 冲突组+witness）")
+app.add_typer(constraints_app, name="constraints")
+
+
+@constraints_app.command("check")
+def constraints_check_cmd(
+    config_path: str = typer.Argument(
+        ..., help="约束配置文件（JSON/YAML；键见 service.evaluate_render_constraints）"),
+    pretty: bool = typer.Option(False, "--pretty",
+                                help="缩进美化输出（缺省单行紧凑 JSON）"),
+) -> None:
+    """渲染前一次求解：约束配置 → verdict+冲突规则（JSON 进出薄壳）。
+
+    示例：rfauto constraints check config.json --pretty
+    config 键（全部可选）：mesh_resolution_mm / near_ratio / gaps_mm /
+    min_gap_mm / gap_cells_min / min_line_spacing_mm / mesh_lines_mm /
+    param_bounds / max_conflict_groups。
+    """
+    import json as _json
+
+    from rfauto.service.render_constraint_service import (
+        evaluate_render_constraints_from_file,
+    )
+
+    try:
+        verdict = evaluate_render_constraints_from_file(config_path)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]✗ {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    # verdict.ok=False（UNSAT/z3 缺装）是检查本身的正常产出——退出码 0，
+    # 判定交给消费方读 JSON；程序性错误（文件/形状）才走非零退出。
+    typer.echo(_json.dumps(verdict, ensure_ascii=False,
+                           indent=2 if pretty else None))
 
 
 if __name__ == "__main__":

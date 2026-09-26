@@ -1,0 +1,97 @@
+# 华秋 HQPCB fab 能力剖面（DP-7 P3，2026-09-24）
+# ============================================================
+# 数据来源与核对方式：官方制程能力页 https://www.hqpcb.com/（"制程能力"
+# 表）。2026-09-24 会话内经搜索摘要命中官方页原文行核对（verified-web）：
+#   - 线宽公差 ±20%（图形转移行）
+#   - 内层最小线宽/间距：铜厚 0.5OZ ≥2.5/3.0 mil；铜厚 1OZ ≥3.0/3.0 mil
+#   - 表面处理：有铅/无铅喷锡、沉金、OSP、电镀镍金
+# registered-pending-review（官方摘要未直接给出，取公开资料一致口径，
+# 2026-09-24 调研登记待复核）：外层线宽档、阻抗公差 ±10%、板厚公差、
+# 最小孔径/环宽、阻焊桥、板材型号档。
+# mil 换算：1 mil = 0.0254 mm。
+# 消费者：src/rfauto/core/fab_check.py::load_profile；钉测试
+#   tests/unit/test_fab_check.py。
+# P2 注记（本批延后）：εr 容差单源=configs/materials.yaml；uq_service
+#   注入延后，接口预留 service/fab_service.py::fab_profile_yield。
+schema_version: 1
+
+profile:
+  name: huaqiu
+  profile_version: "2026.09.24-r1"
+  source_url: "https://www.hqpcb.com/"
+  retrieved_date: "2026-09-24"
+  verification: "官方制程能力页经搜索摘要命中原文行（verified-web）；外层档/板厚/孔径细则为调研登记待复核"
+
+# 线宽制造公差（官方页"图形转移 线宽公差 ±20%"，verified-web）。
+trace:
+  tolerance_pct: 20.0
+  source_url: "https://www.hqpcb.com/"
+  retrieved_date: "2026-09-24"
+  source_note: "verified-web：官方页图形转移行 线宽公差 ±20%"
+
+# 阻抗控制公差（registered-pending-review：公开资料一致口径 ±10%——
+# eet-china《PCB工艺制程能力介绍及解析》与 OSChina 华秋四层板实践
+# 2026-09-24 检索，官方页摘要未直接给出）。
+impedance:
+  tolerance_pct: 10.0
+  source_url: "https://www.eet-china.com/"
+  retrieved_date: "2026-09-24"
+  source_note: "registered-pending-review：2026-09-24 调研登记待复核（多源一致 ±10%，官方页未直接命中）"
+
+# 每铜厚档最小线宽/缝宽（mm）。官方页 verified 行为**内层**（0.5oz
+# ≥2.5/3.0mil、1oz ≥3.0/3.0mil）；外层档（1oz 3.5/3.5mil、2oz ≥5.5/5.5mil）
+# 为 registered-pending-review。operative=各口径取严（1oz 取外层 0.0889）。
+copper_rules:
+  "0.5":
+    min_trace_mm: 0.0635
+    min_gap_mm: 0.0762
+    source_note: "verified-web：官方页内层 0.5OZ ≥2.5/3.0 mil（0.0635/0.0762mm）；仅内层口径"
+  "1":
+    min_trace_mm: 0.0889
+    min_gap_mm: 0.0889
+    source_note: "verified-web 内层 1OZ ≥3.0/3.0 mil（0.0762mm）；registered-pending-review 外层 3.5/3.5 mil（0.0889mm）——operative 取严 0.0889"
+    detail:
+      inner_layer_verified: { min_trace_mm: 0.0762, min_gap_mm: 0.0762 }
+      outer_layer_registered: { min_trace_mm: 0.0889, min_gap_mm: 0.0889 }
+  "2":
+    min_trace_mm: 0.1397
+    min_gap_mm: 0.1397
+    source_note: "registered-pending-review：2026-09-24 调研登记 ≥5.5/5.5 mil（0.1397mm），官方页摘要未直接命中"
+  # 官方口径"最小线宽线距与铜厚成反比"（verified-web）；2oz 以上档位
+  # 官方表未在本次核对范围——不设规则（COPPER_UNSUPPORTED 走人工评审）。
+
+# 板厚/层压（registered-pending-review：行业惯例 ±10% 或 ±0.10mm 取大，
+# 官方页摘要未直接给出；范围按常规快板 0.4–3.2mm 登记）。
+board_thickness:
+  min_mm: 0.4
+  max_mm: 3.2
+  tolerance_pct_ge_1mm: 10.0
+  tolerance_abs_mm_lt_1mm: 0.1
+  source_url: "https://www.hqpcb.com/"
+  retrieved_date: "2026-09-24"
+  source_note: "registered-pending-review：2026-09-24 调研登记待复核（官方页未直接命中）"
+
+# 最小孔径与环宽（registered-pending-review：公开资料口径最小成品孔
+# ~0.15mm、过孔环宽 0.05mm 档；官方页摘要未直接给出）。
+min_drill_mm: 0.15
+min_via_pad_mm: 0.25
+min_via_annular_ring_mm: 0.05
+min_annular_ring_mm: 0.075
+drill_source_note: "registered-pending-review：2026-09-24 调研登记待复核（机械钻孔 0.15mm 量级、环宽 0.05–0.075mm 区间取严 0.075）"
+
+# 最小阻焊桥（registered-pending-review：常规 0.1mm 档，官方页未命中）。
+min_solder_mask_dam_mm: 0.10
+solder_mask_dam_note: "registered-pending-review：2026-09-24 调研登记待复核"
+
+# 表面处理档（verified-web：官方页"有铅/无铅喷锡、沉金、OSP、电镀镍金"）。
+surface_finishes: [hasl_lead, hasl_leadfree, enig, osp, electrolytic_ni_au]
+surface_finishes_note: "verified-web：官方页表面处理行原文（电镀镍金=electrolytic_ni_au）"
+
+# 支持板材清单：标准档仅 FR-4 verified（官方页 A 级 FR-4/TG 选档口径经
+# 检索摘要）。Rogers/PTFE 等高频板材华秋可按单询承接，但公开能力页未给
+# 标准档参数——**不在本剖面支持清单**（高频板材设计请选 jlcpcb 剖面或
+# 复核后补档；门按 MATERIAL_UNSUPPORTED 出清单+单询提示，非硬禁产）。
+supported_materials:
+  - token: fr4
+    source_note: "verified-web：官方页 FR-4 A 级/TG 选档（经检索摘要命中）；板材型号档细目待复核"
+materials_note: "registered-pending-review：Rogers/PTFE 单询承接未登记标准档（2026-09-24 调研登记待复核）"

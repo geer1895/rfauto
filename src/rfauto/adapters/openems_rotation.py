@@ -136,6 +136,16 @@ def _load_round_csv(csv_path: Path,
         return None
 
 
+def load_round_column(csv_path: str | Path,
+                      n_cols: int) -> tuple[Any, list[Any]] | None:
+    """读单轮 sparams.csv 的公开入口（DP-4 P3 服务层装配消费，#320 归属）。
+
+    语义与内部 `_load_round_csv` 逐位一致（频率 GHz + n_cols 个复数列）；
+    缺失/损坏返回 None 由调用方如实记录（不猜不补，#316 方向）。
+    """
+    return _load_round_csv(Path(csv_path), n_cols)
+
+
 # ─── 装配归一化（#250 链，引擎自算 ZL 线基 → 50Ω）────────────────────────────
 def _read_probe_file(path: Path) -> tuple[Any, Any, Any]:
     """读 openEMS 探针文件（`%` 头 + 时间/值两列）；返回 (t, v, start_xyz_m)。
@@ -308,6 +318,7 @@ def solve_smatrix_openems(
     resume: bool = True,
     line_z0: Any = None,
     z_ref_ohm: float = 50.0,
+    far_field: bool = False,
 ) -> dict[str, Any]:
     """进程隔离激励轮转：N 次单激励真跑 → 装配 N×N → .s{N}p。
 
@@ -319,6 +330,10 @@ def solve_smatrix_openems(
     `normalize_assembled_smatrix`（#250 链）后再写 .s{N}p，原始矩阵另存
     `<template>_raw.s{N}p`，返回值增 "assembly_norm"（ZL/偏差/σmax 前后）与
     "s_params_raw"；缓存键含 line_z0 描述，raw/归一两种结果互不串味。
+    far_field（DP-4 P3，默认 False=渲染逐字节不变）：透传给每轮
+    render_script 注入 nf2ff 盒与远场落盘（EEP 模板另产出
+    p{k}/farfield3d_cplx.csv，第 k 元有源方向图，#208 轮转=EEP 集）；
+    脚本内容含 ff 块 → 轮次身份哈希自然变化，断点缓存不串味。
     """
     import numpy as np
 
@@ -327,20 +342,33 @@ def solve_smatrix_openems(
     t0 = time.time()
     root = Path(work_root)
     root.mkdir(parents=True, exist_ok=True)
+    far_field = bool(far_field)
 
     scripts: list[str] = []
     for k in range(1, n_ports + 1):
+        # far_field 仅 True 时透传（缺省 False 不传参——旧渲染签名/测试 stub
+        # 双向兼容，缺省路径行为与合入前逐字节一致）。
+        kwargs_ff = {"far_field": True} if far_field else {}
         scripts.append(render_script(
             template, params, freq_range_ghz,
-            mesh_resolution_mm=mesh_resolution_mm, excite_port=k))
+            mesh_resolution_mm=mesh_resolution_mm, excite_port=k,
+            **kwargs_ff))
 
     cache_dir = root / ".smatrix_cache" if cache else None
     salt = "" if line_z0 is None else f"line_z0={line_z0!r};z_ref={z_ref_ohm!r}"
     key = _script_hash(scripts, exe_path, salt=salt)
     cached = _load_cache(cache_dir, key)
     if cached is not None:
-        return {**cached, "s4p_path": str(root / f"{template}.s{n_ports}p"),
-                "n_runs": n_ports, "elapsed_s": 0.0}
+        out = {**cached, "s4p_path": str(root / f"{template}.s{n_ports}p"),
+               "n_runs": n_ports, "elapsed_s": 0.0}
+        if far_field:
+            from rfauto.core.farfield import FARFIELD_3D_CPLX_NAME
+
+            out["far_field"] = True
+            out["eep_curves"] = {
+                k: str(root / f"p{k}" / FARFIELD_3D_CPLX_NAME)
+                for k in range(1, n_ports + 1)}
+        return out
 
     python_exe = sys.executable
     freq_ghz: Any = None
@@ -450,10 +478,23 @@ def solve_smatrix_openems(
         message += (f"；装配归一 line_z0={norm_info['mode']}（ZL {zs}Ω，"
                     f"σmax {norm_info['sigma_max_raw']:.4f}→"
                     f"{norm_info['sigma_max_norm']:.4f}）")
-    return {"ok": True, "freq_ghz": freq_ghz, "s_params": s_out,
-            "s_params_raw": s_params, "assembly_norm": norm_info,
-            "s4p_path": str(s4p), "n_runs": n_ports,
-            "n_reused": len(resumed), "resumed_rounds": resumed,
-            "message": message,
-            "errors": run_errors,
-            "elapsed_s": round(time.time() - t0, 1)}
+    result: dict[str, Any] = {"ok": True, "freq_ghz": freq_ghz,
+                              "s_params": s_out,
+                              "s_params_raw": s_params,
+                              "assembly_norm": norm_info,
+                              "s4p_path": str(s4p), "n_runs": n_ports,
+                              "n_reused": len(resumed),
+                              "resumed_rounds": resumed,
+                              "message": message,
+                              "errors": run_errors,
+                              "elapsed_s": round(time.time() - t0, 1)}
+    if far_field:
+        # DP-4 P3：EEP 曲线归属清单（#320 显式引用纪律；存在性如实，缺文件
+        # 不猜——服务层 collect_eep_manifest 按此登记 skipped）
+        from rfauto.core.farfield import FARFIELD_3D_CPLX_NAME
+
+        result["far_field"] = True
+        result["eep_curves"] = {
+            k: str(root / f"p{k}" / FARFIELD_3D_CPLX_NAME)
+            for k in range(1, n_ports + 1)}
+    return result

@@ -1,0 +1,52 @@
+schema: criteria/v2
+criteria_id: hfss_interdigital_check_m1
+title: interdigital 全波分歧 HFSS 对拍 M1 判向门（±0.5dB）——V&V v2 机器判据源
+status: active_v2
+runner_binding: followUp   # 本批只建库；runner 常量切换改从 v2 机器读=后续批（DP-12 §3 双落盘）
+
+# 双落盘语义：md=渲染产物（runs/hfss_interdigital_check/criteria.md §二，人读），
+# 本文件=机器判据源。历史档零改写：只消费 runs/hfss_interdigital_check/
+# verdict.json 证据字段（该案现行判定 UNDECIDED 维持中）。
+claim:
+  quantity: s21_db_at_f0
+  template: interdigital
+  f_ghz: 2.5
+evidence_fields:
+  - curves.<setup>.conv.final_delta_s     # Setup1 0.11338 / Setup2 0.02818
+  - curves.<setup>.conv.max_delta_s       # 该级目标 ΔS 0.02 / 0.01
+  - curves.<setup>.curve.s21_db_at_f0
+  - ladder_s21_at_f0_all[].eligible       # 全 False（资格重算一致）
+  - ladder_saturation.{pass,n_eligible}   # pass=false / n_eligible=0
+  - curves.<setup>.curve.passivity_max    # 0.958 / 0.959（物理约束内）
+  - references.{circuit,sentinel}_s21_db_at_f0, references.m1_gate_db
+u_val:
+  u_num:
+    source: ladder
+    rule: "u_num = Fs·max|ΔS21@f0 across 合格级|（Fs=1.25，core/vv_mapping.u_num_from_ladder）；合格级=final_delta_s≤该级目标 ΔS（#335① 勘误口径：触顶但达标者合格、触顶未达标者不合格）；饱和门=相邻级差≤0.2dB 且末两级≤0.1dB 且合格级≥2；无合格级/不饱和→None→validation_not_attempted（触顶未收敛解不进判读，lange S31 随 ΔS 移 0.8dB 教训）"
+  u_input:
+    source: none_declared
+    rule: "单点 f0=2.5GHz 栅格精确值：样本代表性分量未单列——unknown 不虚构（预声明）"
+  u_D:
+    source: none_declared
+    rule: "两冻结参考互斥 14.47dB ≫ 0.5dB 门宽：D 为离散参考选择（M1 判向）而非连续参考，u_D 连续分量不适用；判向误差界=gate_db 本身"
+decision_rule:
+  form: nearest_reference_gate
+  gate_db: 0.5
+  references:
+    circuit: 0.0       # 来源甲：电路裁判 C-pass，S21_circ@2.5GHz=0.0000dB（带心=最大值点）
+    sentinel: -14.4657 # 来源乙：OE 哨外推 s21_f0.s_inf_db（帽停，量本身正是被仲裁对象）
+  preflight:           # 先于 M1 的资格/健全性门（任一不过→不消费 M1）
+    eligibility: "final_delta_s <= max_delta_s（逐 setup；无合格级→UNDECIDED，不判向）"
+    saturation: "合格级相邻差≤0.2dB 且末两级≤0.1dB 且合格级≥2（不饱和→UNDECIDED）"
+    passivity_sanity: "passivity_max ≤ 1.02（数据健全性带，越界=数据坏全案 UNDECIDED；与 V&V 物理约束 |S|≤1 分开语义）"
+  overall: "|S21_hfss−ref|≤0.5 站该参考边（AGREE_*）；全不站→SPLIT；无合格解→UNDECIDED（不消耗 M1）"
+verdict_map:
+  AGREE_CIRCUIT: validated
+  AGREE_SENTINEL: validated
+  SPLIT: not_validated
+  UNDECIDED: validation_not_attempted
+provenance:
+  commit: 9ed833b
+  devlog: "df5 批语境（#335① 勘误节修订资格条款、audit2 键合审计）；M1 门预声明后落判；DP-12 批条目随批留档"
+  referee_run: runs/hfss_interdigital_check/verdict.json
+  gate_db_legacy: "runs/hfss_interdigital_check/criteria.md §二（M1 0.5dB 门 + 两冻结参考值 2026-09-22 写死）"

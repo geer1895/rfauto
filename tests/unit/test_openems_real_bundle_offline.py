@@ -258,7 +258,7 @@ def test_wstep_rewrite_for_port2_swaps_excite_and_reference(wstep_script):
     assert _PORT_EXCITE.findall(out) == [("1", "0"), ("2", "1")]
     assert out.count("_port1.uf_inc") == 0 and out.count("_port2.uf_inc") == n_ref
     # footer 内 _port3e 副本（缩进块）excite=1 保持不变
-    assert "excite=1, FeedShift=10 * NEAR,\n             MeasPlaneShift=float(_port3.measplane_shift)" in out
+    assert "excite=1, FeedShift=10 * NEAR,\n                          MeasPlaneShift=float(_port3.measplane_shift)" in out
     assert ws.rewrite_for_port2(out) == out                      # 幂等
     assert ws.swap_excitation(out, 1) == ws.swap_reference_port(wstep_script, 2)  # 只换激励
     compile(out, "sim_wstep_p2", "exec")

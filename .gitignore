@@ -91,7 +91,10 @@ hfss_projects/
 vendor/
 .cache/
 # 工具链（uv 本体+基解释器，2026-09-07 换机起进工作区，体积大不入库）
-tools/
+# DP-17 O1：插件模板（cookiecutter 骨架）是交付资产必须入库——目录内容
+# 逐项排除后显式回纳模板（同 knowledge/vendor_passives/catalog.yaml 先例）
+tools/*
+!tools/plugin_templates/
 
 # ===== C15 厂商被动元件模型（条款纪律：模型文件不入 git，只跟踪 catalog 索引）=====
 # 目录级兜底覆盖 *.lib/*.cir/*.mod/ADS zip 等扩展名规则未覆盖的 SPICE 模型

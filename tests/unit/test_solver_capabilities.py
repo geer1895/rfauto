@@ -122,10 +122,12 @@ class TestFullRegistrationCoverage:
     def test_capabilities_do_not_require_connection(self):
         # 2026-09-15：Elmer 热通道为 2-D 条带网格 → 维度断言放宽为合法域
         # {"2d", "3d"}（不虚报由 test_elmer_honest 钉 dimension=="2d"）。
+        # 2026-09-25：+"circuit"（DP-14 N7 qucsator 电路级通道如实声明，
+        # 合流门抓出该消费者漏同步——P1.11 test_solver_capabilities 补账）。
         for name, adapter in _instances().items():
             assert adapter._connected is False  # 未连接即应可查能力
             caps = adapter.capabilities()
-            assert caps.dimension in ("2d", "3d"), name
+            assert caps.dimension in ("2d", "3d", "circuit"), name
 
 
 class TestDeclaredVsImplemented:
@@ -309,6 +311,34 @@ class TestHonestDeclarations:
         assert caps.supported_templates == ("heat_slab_1d",)
         assert caps.requires_license is False   # GPL 开源
         assert caps.availability_gate == "exe_path"
+        assert caps.parallel_backends == ()
+
+    def test_mmt_honest(self):
+        """DP-1 P2（2026-09-24）：MMT 模匹配通道能力如实声明，逐位钉死。
+
+        纯仓内 numpy 零外部进程零 license（#261 免役/#246 免标）→ 无可用性
+        门；无辐射/无场导出/无 nf2ff/SAR（槽线/共面/辐射族仍走 FDTD/FEM）；
+        Touchstone 有实现（export_touchstone，skrf z0_ref 基）；supported_
+        templates=段表直连无模板机制。
+        """
+        caps = solver_capabilities_for(EMSolverType.MMT)
+        assert caps.solver_type == "mmt"
+        assert caps.supports_wave_port is False
+        assert caps.supports_lumped_port is False
+        assert caps.supports_field_export is False
+        assert caps.supports_convergence_report is False
+        assert caps.supports_touchstone_export is True
+        assert caps.supports_headless_solve is True
+        assert caps.supports_optimetrics is False
+        assert caps.supports_nf2ff is False
+        assert caps.supports_sar is False
+        assert caps.supports_lumped_elements is False
+        assert caps.dimension == "2d"
+        assert caps.material_models == ("pec", "lossless_dielectric",
+                                        "lossy_dielectric")
+        assert caps.supported_templates == ("chain",)
+        assert caps.requires_license is False
+        assert caps.availability_gate == ""  # 恒可用（无 exe/配置门）
         assert caps.parallel_backends == ()
 
     def test_palace_touchstone_not_overclaimed(self):

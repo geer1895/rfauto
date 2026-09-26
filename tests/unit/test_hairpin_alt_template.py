@@ -83,8 +83,12 @@ def test_registered_same_object_and_dispatch_keys():
     assert frozenset(ot.TEMPLATE_META) == frozenset(ot.TEMPLATE_NOMINAL)
     keys = list(ot.TEMPLATE_META)
     assert keys.index("hairpin_alt") == keys.index("hairpin") + 1    # 同族段内紧随 hairpin
-    assert keys[-4:] == ["slotline", "slotline_lumped", "msl_slot_transition",
-                         "marchand_balun"]                           # 槽线族仍居尾（#247）
+    # df7 C10d 起（coil_nfc 批次漏更新本钉、基线即红，随 C10d 一并修复）：
+    # 槽线族退居尾 10..6、ms 四件尾 6..2、coil_nfc 尾 2、mmwave_series_array 尾 1
+    assert keys[-10:-6] == ["slotline", "slotline_lumped", "msl_slot_transition",
+                            "marchand_balun"]                  # 槽线族位次（#247）
+    assert keys[-6:-2] == ["ms_patch", "ms_cross", "ms_jcross", "ms_array_NxN"]
+    assert keys[-1] == "mmwave_series_array"
     assert ot._TEMPLATE_PORT_AXES["hairpin_alt"] == ("x",)
     assert ot._TEMPLATE_RADIATOR["hairpin_alt"] is False
     meta = ot.template_meta("hairpin_alt")

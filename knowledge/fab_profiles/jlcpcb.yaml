@@ -1,0 +1,125 @@
+# JLCPCB fab 能力剖面（DP-7 P1，2026-09-24）
+# ============================================================
+# 数据来源与核对方式：本文件全部数值字段来自 JLCPCB 官方能力页
+#   https://jlcpcb.com/capabilities/pcb-capabilities
+# 2026-09-24 会话内 web_reader 全表文本实取（verified-web）。
+# 例外（registered-pending-review，调研登记待复核）：supported_materials
+#   中除 fr4/rogers4350b/rogers4003c 外的高频型号清单——官方能力页只
+#   声明 "RF PCB: 1 oz copper, 2-layer RF PCBs with Rogers and PTFE
+#   cores"，具体型号取 JLCPCB low-loss PCB 页与 2026-09-24 近程批调研
+#   登记，未逐项在能力页表格核对。
+# 核对状态标记约定（逐字段 source 注记）：
+#   verified-web              = 本会话实查官方能力页原文
+#   registered-pending-review = 调研登记待复核（不虚构 verified）
+# 消费者：src/rfauto/core/fab_check.py::load_profile（schema 见该模块
+#   docstring）；必填字段/枚举值域钉在 tests/unit/test_fab_check.py。
+# P2 注记（本批延后）：εr 容差单源=src 侧 configs/materials.yaml（每材料
+#   epsilon_r 字段），板厚/线宽公差单源=本文件；uq_service 注入延后，
+#   接口预留 service/fab_service.py::fab_profile_yield docstring。
+schema_version: 1
+
+profile:
+  name: jlcpcb
+  profile_version: "2026.09.24-r1"
+  source_url: "https://jlcpcb.com/capabilities/pcb-capabilities"
+  retrieved_date: "2026-09-24"
+  verification: "web_reader 全表实取官方能力页（verified-web）；Rogers 型号清单为调研登记待复核"
+
+# 线宽制造公差（能力页 Track width tolerance ±20%，verified-web）。
+# DFM 门线宽下限判据：名义 × (1 − tol/100) ≥ min_trace_mm（按铜厚档）。
+trace:
+  tolerance_pct: 20.0
+  source_url: "https://jlcpcb.com/capabilities/pcb-capabilities"
+  retrieved_date: "2026-09-24"
+  source_note: "verified-web：能力页 Track width tolerance = ±20%"
+
+# 阻抗控制公差（能力页 Impedance tolerance ±10%，verified-web）。
+impedance:
+  tolerance_pct: 10.0
+  source_url: "https://jlcpcb.com/capabilities/pcb-capabilities"
+  retrieved_date: "2026-09-24"
+  source_note: "verified-web：能力页 Impedance tolerance = ±10%"
+
+# 每铜厚档最小线宽/缝宽（mm）。operative 值=同铜厚各口径（2-layer vs
+# multilayer）取严（较大者）；detail 保留官方逐口径原值（verified-web）。
+copper_rules:
+  "1":
+    min_trace_mm: 0.10
+    min_gap_mm: 0.10
+    source_note: "verified-web：能力页 min trace/space 1oz——2-layer 0.10/0.10mm、multilayer 0.09/0.09mm；operative 取严 0.10"
+    detail:
+      two_layer: { min_trace_mm: 0.10, min_gap_mm: 0.10 }
+      multilayer: { min_trace_mm: 0.09, min_gap_mm: 0.09 }
+  "2":
+    min_trace_mm: 0.16
+    min_gap_mm: 0.16
+    source_note: "verified-web：2-layer 0.16/0.16mm、multilayer 0.15/0.15mm；operative 取严 0.16"
+    detail:
+      two_layer: { min_trace_mm: 0.16, min_gap_mm: 0.16 }
+      multilayer: { min_trace_mm: 0.15, min_gap_mm: 0.15 }
+  "2.5":
+    min_trace_mm: 0.20
+    min_gap_mm: 0.20
+    source_note: "verified-web：2-layer only 0.2/0.2mm"
+  "3.5":
+    min_trace_mm: 0.25
+    min_gap_mm: 0.25
+    source_note: "verified-web：2-layer only 0.25/0.25mm"
+  "4.5":
+    min_trace_mm: 0.30
+    min_gap_mm: 0.30
+    source_note: "verified-web：2-layer only 0.3/0.3mm"
+  # 官方铜厚档全表（verified-web）：2-layer 外层 1/2/2.5/3.5/4.5oz；
+  # multilayer 外层 1/2oz、内层 0.5/1/2oz。0.5oz 仅内层且能力页线宽表
+  # 未给 0.5oz 档——不设规则（该档走人工评审，门按 COPPER_UNSUPPORTED）。
+
+# 板厚/层压（能力页 Board thickness 0.4–4.5mm，verified-web）。
+board_thickness:
+  min_mm: 0.4
+  max_mm: 4.5
+  steps_mm: [0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0]
+  tolerance_pct_ge_1mm: 10.0
+  tolerance_abs_mm_lt_1mm: 0.1
+  source_url: "https://jlcpcb.com/capabilities/pcb-capabilities"
+  retrieved_date: "2026-09-24"
+  source_note: "verified-web：≥1.0mm 板厚公差 ±10%，<1.0mm ±0.1mm；常规步进 0.4/0.6/0.8/1.0/1.2/1.6/2.0"
+
+# 最小孔径与环宽（verified-web）。
+min_drill_mm: 0.15            # 最小成品孔（2+层 mechanical，via/component 通用下限）
+min_via_pad_mm: 0.25          # 最小过孔焊盘直径（→过孔环宽下限 (0.25−0.15)/2）
+min_via_annular_ring_mm: 0.05 # 由上两行推得（via 环宽）
+min_annular_ring_mm: 0.18     # PTH/元件孔环宽 operative（2L 绝对下限 0.18、ML 1oz 0.15，取严）
+min_annular_ring_detail:
+  two_layer_1oz_recommended_mm: 0.25
+  two_layer_1oz_absolute_mm: 0.18
+  two_layer_2oz_mm: 0.254
+  multilayer_1oz_recommended_mm: 0.20
+  multilayer_1oz_absolute_mm: 0.15
+  multilayer_2oz_mm: 0.254
+drill_source_note: "verified-web：能力页 Minimum via hole 0.15mm / via diameter 0.25mm（2+layers）；PTH annular ring 表逐档原值见 detail"
+
+# 最小阻焊桥（verified-web：1oz 绿/红/黄/蓝/紫 0.10mm；黑/白 0.13mm；
+# 2oz 任意色 0.20mm。operative 取严 0.10 常规档）。
+min_solder_mask_dam_mm: 0.10
+solder_mask_dam_note: "verified-web：1oz 标准色 0.10mm（黑/白 0.13mm、2oz 0.20mm——detail 取严不进 operative）"
+
+# 表面处理档（verified-web：HASL 有铅/无铅、ENIG、OSP（铜基板限定）；
+# 6+ 层与 RF 板仅 ENIG）。
+surface_finishes: [hasl_lead, hasl_leadfree, enig, osp]
+surface_finishes_note: "verified-web：OSP 仅铜基板；6+ 层与 RF 板仅 ENIG（门只查枚举成员，档位约束人工评审）"
+
+# 支持板材清单（规范化小写 token，fab_check 前缀/全等匹配）。
+supported_materials:
+  - token: fr4
+    source_note: "verified-web：FR-4（Nan Ya / KB / Shengyi 等级）；能力页 FR-4 Dk 4.5（2L）/prepreg 7628 4.4、3313 4.1、2116 4.16"
+  - token: rogers4350b
+    source_note: "verified-web（low-loss 页命名档）：RO4350B；能力页 RF 档声明 Rogers cores"
+  - token: rogers4003c
+    source_note: "verified-web（low-loss 页命名档）：RO4003C；能力页 RF 档声明 Rogers cores"
+  - token: rogers5880
+    source_note: "registered-pending-review：2026-09-24 调研登记（RT/duroid 5880 常供档），能力页仅声明 PTFE cores 未列型号"
+  - token: rogers3003
+    source_note: "registered-pending-review：2026-09-24 调研登记（RO3003 PTFE 陶瓷填充档），能力页未列型号"
+  - token: ptfe
+    source_note: "registered-pending-review：能力页声明 PTFE cores，具体牌号待复核"
+materials_note: "高透明度口径：fr4/rogers4350b/rogers4003c 实查有名档；其余型号 registered-pending-review（2026-09-24 调研登记待复核）"

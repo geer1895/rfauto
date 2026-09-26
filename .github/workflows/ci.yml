@@ -14,6 +14,10 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  schedule:
+    # 活规则周期重跑（K1）：每周一 03:00 UTC 复跑 rules.yaml verify
+    # 验证测试，防综合引擎（skrf/scipy）或依赖版本漂移使定案值失真。
+    - cron: "0 3 * * 1"
 
 jobs:
   quality:
@@ -73,6 +77,24 @@ jobs:
         run: |
           python -m pytest tests/unit -m "real_edt" --co -q | tail -1
           echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
+
+  rules-verify:
+    name: live rules periodic re-verify (K1, cron only)
+    runs-on: ubuntu-latest
+    # 只在 cron 触发时跑（push/PR 由 test job 覆盖同一批测试）
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package with test-relevant extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[hfss,mcp,multiobj,dev]"
+      - name: Re-run live rules verify tests (rules.yaml verify subset)
+        run: |
+          python -m pytest tests/unit/test_rules_verify.py -q -m "not real_edt"
 
   docker-build:
     name: Dockerfile build smoke (C14b)

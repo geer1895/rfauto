@@ -8,6 +8,12 @@ materials:
     loss_tangent: 0.0037
     thickness_mm: 0.508
     description: "Rogers 4350B, 0.508mm, 2.4GHz 典型"
+    # DP-7 P2 公差单源：εr 制造容差（半宽，εr 同单位）。消费方：
+    #   service/fab_service.py::load_material_epsilon_r_tolerance
+    #   （σ = tol/k_sigma，3σ 口径）。核对状态=verified-web（Rogers 官方
+    #   RO4000 系列页属性表逐字核对，沿用 knowledge/fab_profiles 约定，#122）。
+    epsilon_r_tol_abs: 0.05
+    epsilon_r_tol_source: "Rogers 官方 RO4000 系列 datasheet 属性表（rogerscorp.com/advanced-electronics-solutions/ro4000-series-laminates/ro4350b-laminates，verified-web）：process Dk 3.48±0.05 @10GHz/23°C（clamped stripline process specification）；Design Dk 3.66（Rogers 推荐阻抗设计名义，本条目 epsilon_r 取此值）无官方容差发布 → 制造容差半宽取 process spec ±0.05。原登记 process Dk 3.66±0.08 与官方不符且无出处，复核修正"
     # G0 gate verified linewidths (2026-09, three-source cross-check)
     linewidth:
       z0_50ohm_mm: 1.11
@@ -46,6 +52,10 @@ materials:
     epsilon_r: 3.38
     loss_tangent: 0.0027
     thickness_mm: 0.508
+    # DP-7 P2 公差单源：εr 制造容差（半宽，εr 同单位）。核对状态=verified-web
+    # （Rogers 官方 RO4000 系列页属性表逐字核对，值与登记一致）。
+    epsilon_r_tol_abs: 0.05
+    epsilon_r_tol_source: "Rogers 官方 RO4000 系列 datasheet 属性表（rogerscorp.com/advanced-electronics-solutions/ro4000-series-laminates/ro4003c-laminates，verified-web）：process Dk 3.38±0.05 @10GHz/23°C（clamped stripline process specification），与登记一致；Design Dk 3.55（本条目 epsilon_r 取 process Dk 口径）"
 
   fr4_h1.6:
     hfss_name: "FR4_epoxy"

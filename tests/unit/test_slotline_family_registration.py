@@ -68,7 +68,12 @@ class TestSlotlineFamilyRegistration:
                      "MSL_SLOT_TRANSITION_NOMINAL", "marchand_balun":
                      "MARCHAND_BALUN_NOMINAL"}[t])
         # 既有键未被重排（尾部追加契约，坑 #247）：新键恰在字典尾部
-        assert list(ot.TEMPLATE_META)[-4:] == list(SLOTLINE_FAMILY)
+        # 串馈毫米波阵批起：槽线族位次退居尾 10..6，ms 四件居尾 6..2，
+        # coil_nfc 尾 2、mmwave_series_array 尾 1（仍钉）
+        assert list(ot.TEMPLATE_META)[-10:-6] == list(SLOTLINE_FAMILY)
+        assert list(ot.TEMPLATE_META)[-6:-2] == ["ms_patch", "ms_cross",
+                                                 "ms_jcross", "ms_array_NxN"]
+        assert list(ot.TEMPLATE_META)[-1] == "mmwave_series_array"
         # 42→43：hairpin_alt 注册在 hairpin 之后（同族段内），槽线族仍居尾；
         # 计数只与单源比对（#247 禁轨内自钉），字面基线在审计文件单点钉
         assert len(ot.TEMPLATE_META) == len(ot.TEMPLATE_NOMINAL) == len(_ET)

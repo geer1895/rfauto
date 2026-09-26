@@ -357,6 +357,19 @@ async def api_playground_predict(request: Request) -> JSONResponse:
         playground_predict(body.get("run_id", ""), body.get("params") or {}))
 
 
+async def api_playground_explore(request: Request) -> JSONResponse:
+    """代理 Playground 探索器：参数扫描切片后验曲线（DP-16 U3，确定性内核）。
+
+    sweep={"axis": name, "n": N}（1D）或 {"axes": [a, b], "n": N}（2D 网格）；
+    mean±std 只在代理有原生逐点 σ（smt 族）时透出。
+    """
+    from rfauto.service.surrogate_playground import explore
+    body: dict[str, Any] = await request.json()
+    return JSONResponse(explore(
+        body.get("run_id", ""), body.get("params") or None,
+        body.get("sweep") or None))
+
+
 async def api_loop_boards(request: Request) -> JSONResponse:
     """执行看板清单（WP3.5 v1.2 增强：自治环步骤可视）。"""
     from rfauto.service import ui_service
@@ -540,6 +553,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         Route("/api/calculators/run", api_calculators_run, methods=["POST"]),
         Route("/api/playground/runs", api_playground_runs),
         Route("/api/playground/predict", api_playground_predict, methods=["POST"]),
+        Route("/api/playground/explore", api_playground_explore, methods=["POST"]),
         Route("/api/loop/boards", api_loop_boards),
         Route("/api/loop/board/{board_id}", api_loop_board),
         Route("/api/loop/control", api_loop_control, methods=["POST"]),

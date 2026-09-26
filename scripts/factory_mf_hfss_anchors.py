@@ -192,20 +192,24 @@ def resolve_extra_anchor_ws(dataset_ws: list[float],
     EXACT_W_TOL=1e-12——超出 SNAP_TOL 的名义值也必须落在数据集既有值上，
     否则 fit 阶段拒绝）；excluded_ws（既有锚值，含 held-out 门点）从候选
     剔除——门点不入训练（gate 独立性，anchor15_criteria.md §1）。
-    候选空 → ValueError。
+    同批吸附去重（round6 L-E5）：多个 --extra-w 吸附到同一数据集值不去重
+    会让两个补充锚落同一点（浪费一次真跑且 KOH 低保真行重复）——已吸附值
+    从候选剔除，后续补充锚取次近值。候选空 → ValueError。
     """
     ws_all = np.asarray(dataset_ws, dtype=float)
-    cands_all = ws_all
+    cands = ws_all
     if excluded_ws:
         exc = np.asarray(excluded_ws, dtype=float)
         d_min = np.min(np.abs(ws_all[:, None] - exc[None, :]), axis=1)
-        cands_all = ws_all[d_min > 1e-9]
+        cands = ws_all[d_min > 1e-9]
     out: list[dict[str, float]] = []
     for a in extra_ws:
         a = float(a)
-        if cands_all.size == 0:
-            raise ValueError(f"补充锚 w={a}：剔除既有锚后数据集无候选")
-        near = float(cands_all[np.argmin(np.abs(cands_all - a))])
+        if cands.size == 0:
+            raise ValueError(
+                f"补充锚 w={a}：剔除既有锚/同批已吸附值后数据集无候选")
+        near = float(cands[np.argmin(np.abs(cands - a))])
+        cands = cands[np.abs(cands - near) > 1e-9]  # 同批去重（吸附不撞值）
         out.append({"nominal": a, "run": near,
                     "snap_delta_mm": float(abs(near - a)), "snapped": True})
     return out

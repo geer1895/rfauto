@@ -1,0 +1,42 @@
+schema: criteria/v2
+criteria_id: df6_dp10_scan_j1c_coverage
+title: DP-10 波导模拟器扫描 J1c 相位覆盖门（≥300°）——V&V v2 机器判据源（df7 双落盘试点）
+status: active_v2
+runner_binding: launch_sweep_judge   # df7 试点接线（DP-12 §四 followUp 的落点）：runs/df6_dp10ms/launch_sweep.py --judge 消费本文件，与内置值逐位互证——缺文件/不一致一律 fail-closed 拒判；调试逃生开关 --judge-offline-v1（仅调试用）
+
+# 双落盘语义（runs/df6_dp12vv/criteria.md §四）：md=渲染产物（runs/df6_dp10ms/
+# criteria.md §1c 预声明冻结，零改写），本文件=机器判据源（附加不替代，转写
+# 与 md 逐值一致）。本文件只消费 --judge 现场产物（wg_sim/lut_*.json 的 gate
+# 块），不改写任何已归档判读（#325/#326）。
+claim:
+  quantity: s11_phase_coverage_deg   # J1c：f0 处 |arg Γ| 覆盖（max−min，解缠域，度）
+  template: ms_patch
+  f_ghz: 10.0
+evidence_fields:
+  - gate.phase_coverage_deg   # coverage_gate() 实测：f0 最近频点列 max−min
+  - gate.threshold_deg        # 内置门值 300.0（与 decision_rule.threshold 逐位互证）
+  - gate.verdict              # 现行 verdict 字符串 PASS/FAIL（原样保留，零改名）
+u_val:
+  u_num:
+    source: none_declared
+    rule: "J1c 为单点覆盖门（一次扫描产出一个覆盖数）：无 ΔS 阶梯可估 u_num——unknown 不虚构（runs/df6_dp12vv/criteria.md §二 预声明）；本门 overall 由 decision_rule 阈值门直接裁定，u_val 路径不产生 validated 与否的附加判定。"
+  u_input:
+    source: none_declared
+    rule: "覆盖数无样本代表性分量可单列——unknown 不虚构。"
+  u_D:
+    source: none_declared
+    rule: "门值 300° 为规格书 §5 文献口径冻结值（确定性来源，非连续参考 D）——u_D 不适用，判据误差界即门值本身。"
+decision_rule:
+  form: threshold_gate
+  threshold: 300.0
+  comparison: ">="
+  on_fail: "FAIL 如实落档不修门（#122）；fallback=双谐振方环+内贴片（预登记，另批）"
+  overall: "覆盖 ≥300°→PASS（→validated）；<300°→FAIL（→not_validated，如实）；现行 verdict 字符串原样保留（vv_* 附加字段不改名原则）"
+verdict_map:
+  PASS: validated
+  FAIL: not_validated
+provenance:
+  commit: bd48f86
+  devlog: "判据预声明 runs/df6_dp10ms/criteria.md §1c（2026-09-24 冻结）；v2 转写与 --judge 接线=df7 DP-12 双落盘试点批（账本条目待主代理补记，三禁不写账本）"
+  referee_run: runs/df6_dp10ms
+  gate_db_legacy: "runs/df6_dp10ms/criteria.md §1c（J1c 覆盖 ≥300°，2026-09-24 预声明冻结）；内置实现同值=core/metasurface_lut coverage_gate threshold_deg 300.0"

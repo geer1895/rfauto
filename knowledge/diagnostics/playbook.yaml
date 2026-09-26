@@ -1,0 +1,204 @@
+# 失败指纹库 v1（DP-17 W2，runs/df6_dp17/criteria.md §W2）
+#
+# 设计约束：
+# - 只收**症状可机器观测**的确定性指纹子集（service/explain_run.py 无 LLM
+#   匹配）；无检测器支撑的根因族一律不入库、留 RAG 兜底，不凑全；
+# - symptom_fingerprints 多指纹 = AND（同击才命中，控归纳过度泛化）；
+# - 多规则并击只出**候选根因族列表**（按命中指纹数降序），不下黑箱结论；
+# - 本文件与 knowledge/rules.yaml 零关联（规则库零改动）；
+# - 坑号 #NNN 为内部台账出处标记（保留口径），取证命令只读 runs/
+#   证据面，禁改写。
+schema: rfauto-diag-playbook-v1
+updated: 2026-09-24
+
+# 检测器词表（explain_run.py 实现侧一一对应；新增指纹须两侧同步）
+detector_vocab:
+  - sparam_passivity_violation        # G11 passivity=FAIL（max|S|>1.01）
+  - sparam_reciprocity_fail           # G11 reciprocity=FAIL（独立已测对）
+  - sparam_partial_matrix_zerofill    # sparams.csv 单激励部分矩阵（掩码不完整）
+  - fdtd_tail_not_decayed             # et 尾段(10%)能量/峰值 > 0.05
+  - health_timestep_collapse          # G11 timestep=FAIL
+  - health_cost_degenerate            # G11 cost_distribution=FAIL
+  - health_excitation_dead            # G11 excitation=FAIL
+  - health_probe_scale_warn           # G11 probe_scale=WARN
+  - health_power_balance_fail         # G11 power_balance=FAIL
+  - health_thermal_fail               # G11 thermal_plausibility=FAIL
+  - verdict_fail_recorded             # verdict 工件归一为 FAIL
+  - verdict_undecidable_recorded      # verdict 工件归一为 UNDECIDABLE
+  - arbitration_gate_fail             # arbitration*.json 工件 FAIL（跨引擎仲裁门）
+  - pyaedt_release_error              # *.err/*.log 命中 release_desktop/关闭 AEDT 失败
+  - hfss_selection_error              # *.err/*.log 命中 "Objects or Faces selected do not exist" 等
+  - unite_incomplete                  # *.json unite_result=False 且合并后对象数>1
+  - meta_status_failed                # meta.json status=failed
+
+rules:
+  - id: fdtd_truncation_artifact
+    symptom_fingerprints: [sparam_passivity_violation, fdtd_tail_not_decayed]
+    root_cause_family: fdtd_truncation_artifact
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "看 et 尾段时间轴/幅度：tail -n 5 <run>/fdtd/et"
+      - "查 NrTS/FC 旋钮生效值：<run>/meta.json 与 simulation.py 头部注释"
+      - "对照离线重判：port_ut_* 末行时间轴是否触顶"
+    pit_refs: ["#262", "#84", "#266"]
+    notes: "窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理"
+
+  - id: sparam_nonphysical_investigate
+    symptom_fingerprints: [sparam_passivity_violation]
+    root_cause_family: sparam_nonphysical_investigate
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "先查截断指纹（fdtd_tail_not_decayed 是否同击）再疑物理"
+      - "零宽激励盒/盒边进网格排查（激励体积是否为零）"
+    pit_refs: ["#262", "#174"]
+    notes: "无衰减证据时的保守候选：截断已排除才升级物理怀疑"
+
+  - id: single_excitation_mask_semantics
+    symptom_fingerprints: [sparam_partial_matrix_zerofill]
+    root_cause_family: single_excitation_mask_semantics
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "看 csv 列形态：head -n 2 <run>/sparams.csv 或 <run>/fdtd/sparams.csv"
+      - "互易判定必须走掩码载体（G11 reciprocity 只查独立已测对）"
+    pit_refs: ["#314", "#248"]
+    notes: "单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹"
+
+  - id: true_reciprocity_violation
+    symptom_fingerprints: [sparam_reciprocity_fail]
+    root_cause_family: true_reciprocity_violation
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "核对掩码：确认 FAIL 对是双向独立已测"
+      - "跨轮漂移诊断（装配矩阵类先查探针几何拾取）"
+    pit_refs: ["#314", "#257"]
+    notes: "独立已测对上的互易破坏才是真破坏"
+
+  - id: hfss_cad_unite_failure
+    symptom_fingerprints: [unite_incomplete]
+    root_cause_family: hfss_cad_unite_failure
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "盘点合并后对象：<run>/*arbitration*.json 的 helix_objects_after_unite 类字段"
+      - "薄片网络断链审计：共面薄片须面积重叠 unite 并校验 object_names"
+    pit_refs: ["#310", "#285"]
+    notes: "unite 返回 False/合并后对象数>1=金属网络不连通，馈电不导电"
+
+  - id: hfss_sheet_compression_undecidable
+    symptom_fingerprints: [verdict_undecidable_recorded]
+    root_cause_family: hfss_sheet_compression_undecidable
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "逐 attempt 读 verdict 工件：<run>/hfss_arbitration_attempt*.json"
+      - "同几何按真实三维尺寸重建+unite 对照（勿压薄板）"
+    pit_refs: ["#264", "#122"]
+    notes: "多轮网格/端口排查互差小且仍 UNDECIDABLE=建模路径可疑，非数据坏"
+
+  - id: pyaedt_session_leak
+    symptom_fingerprints: [pyaedt_release_error]
+    root_cause_family: pyaedt_session_leak
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "查父进程已死的孤儿 ansysedt（核对命令行 -grpcsrv 后按 PID 处置）"
+      - "脚本 finally 必 release_desktop"
+    pit_refs: ["#265", "#308"]
+    notes: "退出未 release 占 HFSS 轨；杀前先看命令行"
+
+  - id: pyaedt_geometry_selection_api
+    symptom_fingerprints: [hfss_selection_error]
+    root_cause_family: pyaedt_geometry_selection_api
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "核对对象名来源：unite 后引用 names[0]，勿臆造名"
+      - "面中心坐标按模型单位（mm）过滤并加非空守卫"
+    pit_refs: ["#285", "#308"]
+    notes: "gRPC 通道损坏后 finally release 可能静默失败，先修对象引用"
+
+  - id: excitation_zero_volume
+    symptom_fingerprints: [health_excitation_dead]
+    root_cause_family: excitation_zero_volume
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "查激励体积：零宽盒/盒边未进网格 → 激励体积为零"
+      - "馈点位置按谐振模场图验算（场节点馈电激励不起来）"
+    pit_refs: ["#174"]
+    notes: "全带 |S11|≈0dB 平推=死激励指纹"
+
+  - id: grid_near_coincident_lines
+    symptom_fingerprints: [health_timestep_collapse]
+    root_cause_family: grid_near_coincident_lines
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "全轴最小线距审计（渲染后 exec 网格段实测，秒级零仿真）"
+      - "缝中点精确入网而非全局加密"
+    pit_refs: ["#152", "#349"]
+    notes: "nm 级近重合线 → CFL 时间步塌缩多个量级，症状常在端口链下游"
+
+  - id: fake_cost_degenerate
+    symptom_fingerprints: [health_cost_degenerate]
+    root_cause_family: fake_cost_degenerate
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "小步长收敛数值 + 独立来源解析值对照（勿信自家推导）"
+      - "新器件族接校准前先离线小样本验证 cost 分布非退化"
+    pit_refs: ["#195", "#118"]
+    notes: "窄带谐振带内 max 是常数陷阱；谷深语义走显式指标名"
+
+  - id: probe_window_low_confidence
+    symptom_fingerprints: [health_probe_scale_warn]
+    root_cause_family: probe_window_low_confidence
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "中线落格守卫在终网格线集上核对（start/mid/stop 三线齐备）"
+      - "port_ut 头 start-coordinates 是落格免费证据"
+    pit_refs: ["#283", "#282"]
+    notes: "探针盒 <2 格/中线不落线 → 端口链偏差混入噪声"
+
+  - id: dissipation_power_mismatch
+    symptom_fingerprints: [health_power_balance_fail]
+    root_cause_family: dissipation_power_mismatch
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "核对表达式字面量单位（裸数字按米求值类坑）"
+      - "dump_type=29 体 dump 积分 vs S 参数耗散侧对账"
+    pit_refs: ["#218", "#244"]
+    notes: "功率守恒破坏先查建模量纲再查物理"
+
+  - id: thermal_model_implausible
+    symptom_fingerprints: [health_thermal_fail]
+    root_cause_family: thermal_model_implausible
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "核对热源项拼写与求解器消费面（Heat Source vs Volumetric Heat Source）"
+      - "Solver 编号连续性（缺号 LoadInputFile 报错）"
+    pit_refs: ["#233"]
+    notes: "恒温陷阱=热源项未被消费的典型症状"
+
+  - id: hfss_port_convention_gap
+    symptom_fingerprints: [arbitration_gate_fail]
+    root_cause_family: hfss_port_convention_gap
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "逐口对比两引擎参考面约定（积分线 vs 探针盒中心）与 τ 谱"
+      - "仲裁门先验收敛（ΔS 阶梯看单调饱和）再判读"
+    pit_refs: ["#285", "#307", "#282", "#335"]
+    notes: "两引擎对同一设计可方向相反地偏；单引擎归因不可外推"
+
+  - id: judgment_gate_fail
+    symptom_fingerprints: [verdict_fail_recorded]
+    root_cause_family: judgment_gate_fail
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "读 <run>/criteria.md 与 verdict 工件的预声明门分支"
+      - "核对 FAIL 归因是'数据坏'还是'模型类不覆盖'"
+    pit_refs: ["#122", "#345"]
+    notes: "通用裁决失败候选——更具体族同击时以其为主"
+
+  - id: run_execution_failed
+    symptom_fingerprints: [meta_status_failed]
+    root_cause_family: run_execution_failed
+    applicable_templates: ["*"]
+    forensic_commands:
+      - "读 run 驱动日志与 *.err（命令行/环境变量先核对）"
+      - "判定 run 真伪看 meta.json 的 adapter/study 字段"
+    pit_refs: ["#144", "#295"]
+    notes: "status=failed 的执行层失败；物理判读前先排除环境/路径问题"

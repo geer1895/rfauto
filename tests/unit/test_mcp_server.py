@@ -75,10 +75,11 @@ class TestMCPToolsRegistered:
         #   db_query/db_analytics_attach，注册表薄壳，2026-09-18）
         # +5（slotline_analysis/slotline_synthesis/
         #   msl_slot_transition_design/marchand_balun_design/
-        #   marchand_two_section_synthesis，槽线与过渡薄壳，2026-09-18）
-        # +2（discover_workdir_runs/import_workdir_runs，工作目录
-        #   形态真机产物导入器薄壳，2026-09-18）
-        assert len(tools) == 80
+        #   marchand_two_section_synthesis，槽线与过渡薄壳）
+        # 增量史：导入器+2 → cascade+3 → cm 诊断+3 → vna en+1 → mmt+1 →
+        # anchors+2 → si 通道报告+1 → lake+2（index/verify/restore 属本地
+        # 运维面不进 MCP 最小面）→ render_constraint_check+1 = 106
+        assert len(tools) == 106
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -105,7 +106,8 @@ class TestMCPToolsRegistered:
             "rf_propose_params", "rf_run_sampler", "rf_critique_point",
             "rf_spec_cost", "multi_agent_run",
             "autotune_self_verify",
-            "uq_yield_at", "uq_design_center", "uq_temperature_zone",
+            "uq_yield_at", "uq_design_center",
+        "robustness_report", "uq_temperature_zone",
             "farfield_runs", "farfield_view",
             "kicad_extract", "kicad_optimize_cpw",
             "electrothermal_chain", "parasitic_extract_rlc",
@@ -113,6 +115,18 @@ class TestMCPToolsRegistered:
             "dataset_coverage", "dataset_annotate_ground_truth",
             "dataset_set_visibility", "dataset_export_hf",
             "vna_offline_replay",
+            "vna_en_report",
+        "compose_netlist",
+        "list_composable_templates",
+        "explain_run",
+        "nfmeas_ffs_info",
+        "nfmeas_cut_view",
+        "nfc_coil_evaluate",
+        "nfc_coil_synthesize",
+        "nfc_coil_q",
+        "sar_analytic_plane_wave",
+        "cancel_job",
+        "wait_job",
             "report_narrative", "rationale_recall", "rationale_checklist",
             "rag_query", "rag_explain",
             # 接线层（内核能力接入生产路径）
@@ -126,6 +140,21 @@ class TestMCPToolsRegistered:
             "marchand_two_section_synthesis",
             # 工作目录形态真机产物导入器薄壳
             "discover_workdir_runs", "import_workdir_runs",
+            # DP-5 系统级预算引擎+杂散搜索薄壳（df6_dp5cascade）
+            "cascade_budget", "spur_search", "if_plan_sweep",
+            # df6_dp2diag DP-2 耦合矩阵诊断三件套薄壳（2026-09-24）
+            "cm_diagnose_q", "cm_extract_refine", "cm_cat_critique",
+            # DP-1 MMT 秒级段表求解薄壳（df6_dp1p2，2026-09-24）
+            "mmt_solve",
+            # DP-3 物理标定锚注册表薄壳（df6_dp3anchors，2026-09-24）
+            "anchors_list", "anchors_inspect",
+            # df7 T2 SI 通道报告薄壳（df7_t2，2026-09-25）
+            "si_channel_report",
+            # df7 F3 runs 湖薄壳（df7_f3lake，2026-09-25；index/verify/restore
+            # 本地运维面不进 MCP）
+            "lake_query_runs", "lake_pack_campaign",
+            # df7wire R4 渲染前声明式几何约束一次求解薄壳（2026-09-26）
+            "render_constraint_check",
         }
         assert names == expected
 
@@ -810,3 +839,114 @@ class TestMainEntry:
                     n.func.id for n in ast.walk(node)
                     if isinstance(n, ast.Call) and isinstance(n.func, ast.Name))
         assert guard_calls == ["main"]
+
+
+class TestLakeTools:
+    """lake_query_runs/lake_pack_campaign（df7 F3 薄壳）透传冒烟。
+
+    index/verify/restore 属本地运维面不进 MCP（最小面注记，mcp_server.py）；
+    查询面用例先经 service build_runs_index 备好索引库（测试自备前置），
+    工具本身只透传 service 信封。autouse chdir 隔离（#144，零触真实 runs/）。
+    """
+
+    @pytest.fixture(autouse=True)
+    def _require_extras(self):
+        pytest.importorskip("duckdb", reason="湖索引需要 dataset extra（duckdb）")
+        pytest.importorskip("zstandard", reason="冷层压实需要 zstandard（tar.zst）")
+
+    @staticmethod
+    def _call(mcp_server, tool_name: str, arguments: dict) -> dict:
+        import asyncio
+        result = asyncio.run(mcp_server.call_tool(tool_name, arguments))
+        return _extract_result(result)
+
+    def test_lake_pack_campaign_then_query_runs(self, mcp_server, tmp_path):
+        """pack 透传（pack+manifest 落盘）→ service 建索引 → query 透传过滤。"""
+        campaign = tmp_path / "runs" / "campaign_x"
+        (campaign / "pt1").mkdir(parents=True)
+        (campaign / "pt1" / "meta.json").write_text(json.dumps({
+            "run_id": "x", "model": "mline", "adapter": "fake",
+            "study_name": "s1", "status": "done",
+            "timestamp": "2026-09-01T00:00:00+00:00",
+        }), encoding="utf-8")
+        (campaign / "pt1" / "sparams.csv").write_text(
+            "freq_hz,s11_db\n2.0e9,-10.5\n", encoding="utf-8")
+        out = tmp_path / "packs" / "campaign_x.tar.zst"
+
+        packed = self._call(mcp_server, "lake_pack_campaign", {
+            "campaign_dir": str(campaign), "out_path": str(out)})
+        assert packed["ok"] is True, packed.get("errors")
+        assert packed["n_files"] == 2
+        assert packed["pack_sha256"]
+        assert Path(packed["pack_path"]).is_file()
+        assert Path(packed["manifest_path"]).is_file()
+
+        from rfauto.service.lake_service import build_runs_index
+        db = tmp_path / "lake.duckdb"
+        built = build_runs_index(tmp_path / "runs", db_path=db)
+        assert built["ok"], built.get("errors")
+
+        queried = self._call(mcp_server, "lake_query_runs", {
+            "db_path": str(db), "template": "mline"})
+        assert queried["ok"] is True, queried.get("errors")
+        assert queried["n_rows"] == 1
+        assert queried["rows"][0]["path"] == "campaign_x/pt1"
+        assert queried["rows"][0]["adapter"] == "fake"
+        # 信封单源字段（table/db_path）随透传带出
+        assert queried["table"] == "runs_lake_index"
+
+    def test_lake_query_runs_missing_db_honest(self, mcp_server, tmp_path):
+        """库不存在 → ok=False 信封（service 口径透传，不抛出）。"""
+        data = self._call(mcp_server, "lake_query_runs", {
+            "db_path": str(tmp_path / "nope.duckdb")})
+        assert data["ok"] is False
+        assert data["errors"] and "不存在" in data["errors"][0]
+
+    def test_lake_pack_campaign_missing_dir_honest(self, mcp_server, tmp_path):
+        data = self._call(mcp_server, "lake_pack_campaign", {
+            "campaign_dir": str(tmp_path / "nope"),
+            "out_path": str(tmp_path / "x.tar.zst")})
+        assert data["ok"] is False
+        assert data["errors"] and "不存在" in data["errors"][0]
+
+
+class TestRenderConstraintCheckTool:
+    """render_constraint_check（df7wire R4 薄壳）透传冒烟。
+
+    stub 调用钉零逻辑转发；真实 SAT 用例（z3 importorskip）钉端到端
+    verdict 面。autouse chdir 隔离（#144，零触真实 runs/）。
+    """
+
+    @staticmethod
+    def _call(mcp_server, arguments: dict) -> dict:
+        import asyncio
+        result = asyncio.run(mcp_server.call_tool("render_constraint_check",
+                                                  arguments))
+        return _extract_result(result)
+
+    def test_passthrough_stub(self, mcp_server, monkeypatch):
+        canned = {"ok": True, "status": "sat", "conflict_rule_ids": [],
+                  "witness": {"mesh_resolution_mm": 0.5, "near_mm": 0.125}}
+        monkeypatch.setattr(
+            "rfauto.service.render_constraint_service.evaluate_render_constraints",
+            lambda config: canned)
+        assert self._call(mcp_server, {"config": {"mesh_resolution_mm": 0.5}}) == canned
+
+    def test_bad_config_honest_envelope(self, mcp_server):
+        """config 形状非法（dict 内容违约）→ service ValueError 收进
+        ok=False 信封（不炸会话）；非 dict 入参在 fastmcp schema 校验层
+        即拒（transport 契约，不经本工具函数体）。"""
+        data = self._call(mcp_server, {"config": {"min_line_spacing_mm": -1.0}})
+        assert data["ok"] is False
+        assert data["error"] and "min_line_spacing_mm" in data["error"]
+
+    def test_real_sat_verdict_end_to_end(self, mcp_server):
+        """真实求解（z3 可用时）：可行域内钉值 → ok=True/status=sat+witness。"""
+        pytest.importorskip("z3", reason="R4 求解需要 z3-solver")
+        data = self._call(mcp_server, {"config": {
+            "mesh_resolution_mm": 0.5, "near_ratio": 4.0,
+            "min_gap_mm": 0.5}})
+        assert data["ok"] is True
+        assert data["status"] == "sat"
+        assert data["witness"], data
+        assert data["assembled"]["rules"]

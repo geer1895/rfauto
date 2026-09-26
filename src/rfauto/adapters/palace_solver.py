@@ -412,6 +412,11 @@ class PalaceSolver(EMSolverAdapter):
                                   message="build_geometry() 未生成求解配置")
         cmd = [str(self._exe_path), str(self._config_file.resolve())]
         workdir = self._config.working_dir or "."
+        # 失败清掩码（round6 A3-③，#316 方向=多报不放过）：新一次 solve
+        # 起跑即作废上一轮掩码——超时/启动失败/非零退出/结果缺失/解析失败
+        # 任一路径下 get_measured_mask() 都不得把上一轮的掩码当本轮的
+        # （陈旧掩码+零填 S 矩阵正是 #314 掩码口径要拦的组合）
+        self._last_measured_mask = None
         t0 = time.time()
         try:
             proc = subprocess.run(

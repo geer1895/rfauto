@@ -93,3 +93,16 @@ class SMTKrigingSurrogate(SurrogateModel):
             var = float(krg.predict_variances(x)[0, 0])
             out[key] = float(np.sqrt(max(var, 0.0)))
         return out
+
+    def predict_with_std(
+        self, params: dict[str, float],
+    ) -> dict[str, tuple[float, float | None]]:
+        """单遍 predict+σ（同点一次读 KRG，explore 扫描走此口，DP-16 U3）。"""
+        self._check_fitted()
+        x = np.atleast_2d(self._unit_row(params))
+        out: dict[str, tuple[float, float | None]] = {}
+        for key, krg in self.models.items():
+            mean = float(krg.predict_values(x)[0, 0])
+            var = float(krg.predict_variances(x)[0, 0])
+            out[key] = (mean, float(np.sqrt(max(var, 0.0))))
+        return out

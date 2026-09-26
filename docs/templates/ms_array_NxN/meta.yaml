@@ -1,0 +1,80 @@
+f0_ghz: 10.0
+n_ports: 0
+template: ms_array_NxN
+substrate:
+  er: 3.66
+  h_mm: 1.524
+  tan_d: 0.0037
+params:
+- n_x
+- n_y
+- period_mm
+- cell_map
+- h_mm
+nominal_params:
+  n_x: 3
+  n_y: 3
+  period_mm: 14.9896
+  cell_map:
+  - - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+    - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+    - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+  - - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+    - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+    - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+  - - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+    - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+    - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 60.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  无端口（软平面照明散射体）：产物=farfield_cut.csv/farfield3d.csv/
+  farfield_meta.json/array_meta.json；J2 峰值方向 vs 闭式 φ_mn 指向 ≤3°
+  （真机轨，runs/df6_dp10ms/criteria.md §3）；farfield=总出射场
+  （镜面反射+赋形波束，判读面在 J2 分解）
+topology: >-
+  有限 N×N 反射阵（ms_patch 单元平铺）：接地基板（z 底 PEC 边界，地连续
+  由边界构造性保证）+ cell_map 逐单元贴片表；上方 λ0/4 空气隙软激励平面
+  照明（exc_type=0 全口径，官方 PPW 教程口径，法向入射 E∥x 极化前提）；
+  侧向 MUR（有限口径，无 PEC/PMC 对壁——那是单胞无限阵技巧）
+param_semantics: >-
+  n_x/n_y=x/y 向胞数，period_mm=胞周期，cell_map=n_y 行 × n_x 列逐单元
+  参数表（每胞 px_mm/py_mm 必填、cell_id 可选仅 ms_patch），h_mm=基板厚；
+  n 与 cell_map 行列数逐维相等（覆盖完备守卫，违反渲染抛 ValueError）；
+  er/tan_d 走 substrate/nominal
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘
+  精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）；
+  全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算
+  （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见
+  runs/df6_dp10ms/handoff.md
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞
+  （#246/#261）；J2 真机轨另派
+nominal_derivation: |-
+  cell_map=三值 px 图样（6.0/7.5/9.0mm 对角轮换）证明逐单元驱动
+  （cell_map 变更→贴片几何逐胞变化，test_metasurface_templates 钉）；
+  period=λ0/2=14.9896 同 ms_patch 口径；h=1.524（60mil）；演示名义 3×3
+  为审计快档，非设计上限（n 与 cell_map 同构放大）

@@ -1,0 +1,52 @@
+f0_ghz: 0.01356
+n_ports: 1
+template: coil_nfc
+substrate:
+  er: 4.4
+  h_mm: 1.6
+  tan_d: 0.02
+params:
+- n_turns
+- d_out_mm
+- w_mm
+- s_mm
+- gap_mm
+- h_mm
+nominal_params:
+  n_turns: 7
+  d_out_mm: 38.2988
+  w_mm: 0.5
+  s_mm: 0.5
+  gap_mm: 0.4
+  h_mm: 1.6
+  er: 4.4
+  tan_d: 0.02
+max_time_ns: 60.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ LumpedPort 1（外圈馈隙桥接，R=50Ω CalcPort 同参考；f0 谷=串联谐振
+  1/(2π√(L_self·C_tune))，C_tune=外匹配电容不进几何，fake 同源 47pF 口径）
+topology: >-
+  NFC/WPC 平面线圈：FR4 类基板（无地平面）+ 阶梯方螺旋（外圈馈隙=端口位）+
+  中跳线桥（抬高 z 越过螺旋，lange air-bridge 同法）把内端引出到外端端口
+  对侧——单导体通路，端口跨馈隙；全域 MUR（无地，辐射口径；13.56MHz 电小，
+  近场主导）
+param_semantics: >-
+  n_turns=匝数（渲染取整），d_out_mm=外圈外缘宽（跨面宽口径），w_mm=线宽，
+  s_mm=匝间距，gap_mm=外圈馈隙长（端口 y 向跨距），h_mm=基板厚；er/tan_d 走
+  substrate/nominal（FR4 类）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 max(w,s,gap)/4（MQS 频段几何驱动
+  网格，禁 λ_sub/50 口径——13.56MHz 下 λ_sub/50≈250mm 装不下线圈）；螺旋缘/
+  馈隙缘/桥面/过孔棱精确入网（#198）；NEAR≤min(s,gap)/3 渲染期守卫（#266）；
+  全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、边全入网（#174/#283）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_coil_nfc_template）；真机发射面=13.56MHz
+  FDTD 预算审计（runs/df7_nfc/criteria.md §e：小时-天/点量级，建议几何等比
+  缩放阶梯研究后由主代理决定），本批零发射
+nominal_derivation: |-
+  全闭式精算（#1c/#252，core/nfc_coil 单源，criteria §1）：L_target=
+  1/((2π·13.56MHz)²·47pF)=2.9310µH → synthesize_coil(square, n=7, w=s=0.5mm)
+  二分反解 d_out=38.2988（回代相对差 1.4e-16）；47pF=标准 NP0 档外匹配电容
+  （不进几何，fake 同源）；h=1.6/er=4.4/tan_d=0.02 为 FR4 类板材典型值

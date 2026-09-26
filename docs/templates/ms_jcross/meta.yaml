@@ -1,0 +1,52 @@
+f0_ghz: 10.0
+n_ports: 2
+template: ms_jcross
+substrate:
+  er: 3.66
+  h_mm: 0.508
+  tan_d: 0.0037
+params:
+- slot_len_mm
+- slot_w_mm
+- stub_len_mm
+- period_mm
+- h_mm
+nominal_params:
+  slot_len_mm: 4.91
+  slot_w_mm: 0.491
+  stub_len_mm: 2.455
+  period_mm: 11.9917
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11/S21 @ 全口径集总片端口 1-2（R=η0，CalcPort 同参考；波导模拟器
+  ≡无限阵@θ=0，E∥x 极化前提；S21 峰=带通——JC 缝互联孔径谐振；
+  J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）
+topology: >-
+  FSS 带通 Jerusalem cross 缝单元：零厚金属屏（胞面减「主缝+4 端枝」互联
+  孔径的补集盒分解，ms_jcross_metal_boxes 单源）+ 主缝端 4 枝端加载；
+  单胞 PEC/PMC 对壁域（x 对壁 PEC / y 对壁 PMC，TEM 平面波）；屏两侧
+  λ0/4 空气区各置全口径电阻片（下片激励、上片接收）；z 底 MUR
+param_semantics: >-
+  slot_len_mm=主缝全长（x 向），slot_w_mm=缝宽（主缝与端枝同宽），
+  stub_len_mm=端枝长（±y 向，与主缝共边互联=单孔径），period_mm=单胞
+  周期，h_mm=基板厚；er/tan_d 走 substrate/nominal
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；缝缘精确入网
+  +屏缘缝 3+ 中点入网（#311）；NEAR≤最小屏缝/3 渲染期守卫（#266）；
+  孔洞补集盒逐面入网（#174 激励体积铁律）；全轴最小网格间距 ≥10µm
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；EC 自洽钉（shunt 并联
+  LC 峰=f0，shunt 串联 LC=f0 谷即拓扑反接）在 test_metasurface_lut；
+  真机带心修正（openEMS LUT 一轮）归 P3
+nominal_derivation: |-
+  全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1d；
+  Marcuvitz 网格 EC 初值口径）：λg=λ0/√εeff，εeff=(1+εr)/2=2.33
+  （Luukkonen eq.3）→λg=19.6408；主缝=λg/4=4.91、端枝=λg/8=2.455、
+  缝宽=λg/40=0.491（互联 JC 孔径电长度初值）；带心真机修正
+  （openEMS LUT 一轮，fss_jcross_parallel_lc 定带心）归 P3；
+  period=11.9917 同 ms_cross（0.4λ0 无光栅瓣口径）

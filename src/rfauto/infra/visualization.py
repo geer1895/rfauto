@@ -721,3 +721,262 @@ def smith_chart_data(
     if with_grid:
         out["grid"] = smith_grid()
     return out
+
+
+# ═══ DP-16 C5 可视化三层（L1 Smith / L2 出版静态图 / L3 场切片 PNG）═════════
+#
+# 分层纪律：
+# - L1 = skrf Network.plot_s_smith 薄包装（零新依赖）；Γ 数据从网络原值
+#   透传（无算术）→ 单测可与 skrf 直读逐位对拍；
+# - L2 = matplotlib+SciencePlots 惰性 import，缺依赖显式 RuntimeError 指明
+#   `pip install rfauto[report]`，不静默降级（规格书 §16.2；pyproject 本批
+#   不碰——extras 由 DP-15 批登记）；
+# - L3 = 规则网格走 read_field_dump/field_slices 同源数据 → PNG；非结构
+#   gmsh（.msh）走 meshio 读 → pv.from_meshio（VTK 族 pv.read 直读）；
+#   渲染 best-effort（#105）：ok/errors 结构化返回，不阻塞主路径。
+
+
+def plot_smith_png(
+    net: Any,
+    output_path: str | Path,
+    m: int = 1,
+    n: int = 1,
+    title: str = "",
+    dpi: int = 150,
+) -> dict[str, Any]:
+    """L1：skrf Network 的 Smith 圆图 PNG（plot_s_smith 薄包装，零新依赖）。
+
+    返回的 gamma_re/gamma_im 是 net.s[:, m-1, n-1] 原值透传（tolist 无算术），
+    供单测与 skrf 直读逐位对拍；PNG 只是把同一数据画在圆图上。
+    """
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg", force=False)
+    except Exception:  # pragma: no cover - 后端已设或不可设均不影响出图
+        pass
+    import skrf  # noqa: F401 - 类型面；plot_s_smith 由 Network 提供
+    from matplotlib.figure import Figure
+
+    if not hasattr(net, "plot_s_smith"):
+        raise TypeError(f"期望 skrf.Network，得到 {type(net)!r}")
+    s = np.asarray(net.s)
+    if not (1 <= m <= s.shape[1] and 1 <= n <= s.shape[2]):
+        raise IndexError(f"S{m}{n} 越界：网络端口数 {s.shape[1:]}")
+    gamma = s[:, m - 1, n - 1]
+    fig = Figure(figsize=(6, 6), dpi=dpi)
+    ax = fig.add_subplot(111)
+    net.plot_s_smith(ax=ax, m=m - 1, n=n - 1, draw_labels=True)  # skrf 0 基
+    if title:
+        ax.set_title(title)
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, format="png", bbox_inches="tight")
+    return {
+        "ok": True,
+        "path": str(out),
+        "n_points": int(gamma.size),
+        "gamma_re": gamma.real.tolist(),
+        "gamma_im": gamma.imag.tolist(),
+    }
+
+
+def plot_s_params_publication(
+    freq_ghz: np.ndarray,
+    series: dict[str, np.ndarray],
+    output_path: str | Path,
+    styles: tuple[str, ...] = ("science", "ieee"),
+    xlabel: str = "Frequency (GHz)",
+    ylabel: str = "Magnitude (dB)",
+    dpi: int = 300,
+) -> str:
+    """L2：SciencePlots 出版静态图（惰性 import，缺依赖显式报错）。
+
+    series: {图例名: dB 数组}；缺 scienceplots → RuntimeError 指明
+    `pip install rfauto[report]`（不静默降级，规格书 §16.2 风险条目）。
+    """
+    try:
+        import scienceplots  # noqa: F401 - 注册 plt.style 进 name-space
+    except ImportError as exc:
+        raise RuntimeError(
+            "出版静态图需要 SciencePlots（extras [report]）："
+            f"pip install rfauto[report]（原始错误: {exc}）") from exc
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg", force=False)
+    except Exception:  # pragma: no cover
+        pass
+    from matplotlib import pyplot as plt
+
+    f = np.asarray(freq_ghz, dtype=float)
+    with plt.style.context(list(styles), after_reset=True):
+        # SciencePlots science/ieee 风格链可能带 usetex——本仓无 LaTeX 依赖
+        # 约束下显式钳 False（mathtext 渲染，无需 latex 可执行文件）。
+        plt.rcParams["text.usetex"] = False
+        fig, ax = plt.subplots(figsize=(3.5, 2.6), dpi=dpi)
+        for name, values in series.items():
+            ax.plot(f, np.asarray(values, dtype=float), label=name)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.legend(frameon=False)
+        fig.tight_layout()
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, format="png", bbox_inches="tight")
+        plt.close(fig)
+    return str(out)
+
+
+def field_slices_png(
+    vol: FieldVolume,
+    output_dir: str | Path,
+    indices: dict[str, int] | None = None,
+    axes: tuple[str, ...] = _AXIS_NAMES,
+    db: bool = True,
+    dpi: int = 150,
+) -> list[str]:
+    """L3 规则网格：field_slices 同源数据 → 各轴切片 PNG（openEMS dump 面）。
+
+    数据与 field_slices/_raw_slice 同源同值（db 口径=相对峰值 dB、floor
+    FIELD_DB_FLOOR）；返回 PNG 路径列表（轴序）。
+    """
+    from matplotlib.figure import Figure
+
+    indices = dict(indices or {})
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    peak = vol.peak
+    paths: list[str] = []
+    for ax in axes:
+        idx, u_name, v_name, u_m, v_m, vals = _raw_slice(vol, ax, indices.get(ax))
+        data = field_db(vals, peak) if db else vals
+        fig = Figure(figsize=(7, 5), dpi=dpi)
+        axp = fig.add_subplot(111)
+        im = axp.imshow(
+            data, origin="lower", aspect="auto", interpolation="nearest",
+            extent=[float(u_m[0] * 1e3), float(u_m[-1] * 1e3),
+                    float(v_m[0] * 1e3), float(v_m[-1] * 1e3)],
+            cmap="inferno")
+        fig.colorbar(im, ax=axp,
+                     label="dB rel peak" if db else "|E| (linear)")
+        axp.set_xlabel(f"{u_name} (mm)")
+        axp.set_ylabel(f"{v_name} (mm)")
+        axp.set_title(
+            f"{ax}-slice @ {vol.axis(ax)[idx] * 1e3:.2f}mm"
+            f" ({vol.domain})")
+        p = out_dir / f"slice_{ax}_idx{idx}.png"
+        fig.savefig(p, format="png", bbox_inches="tight")
+        paths.append(str(p))
+    return paths
+
+
+def _require_pyvista():
+    try:
+        import pyvista
+    except ImportError as exc:
+        raise RuntimeError(
+            "PyVista 未安装（extras [viz3d]）：pip install rfauto[viz3d]"
+            f"（原始错误: {exc}）") from exc
+    return pyvista
+
+
+def read_unstructured_mesh(path: str | Path) -> Any:
+    """L3 非结构网格读取：VTK 族 pv.read 直读；gmsh .msh 走 meshio 兜底。
+
+    （pv.read 不认 .msh——meshio 读原始网格后 pv.from_meshio 转
+    UnstructuredGrid。）缺 pyvista/meshio → RuntimeError 指明
+    `pip install rfauto[viz3d]`，不静默降级。
+    """
+    pv = _require_pyvista()
+    p = Path(path)
+    if p.suffix.lower() == ".msh":
+        try:
+            import meshio
+        except ImportError as exc:
+            raise RuntimeError(
+                "gmsh .msh 读取需要 meshio（extras [viz3d]）："
+                f"pip install rfauto[viz3d]（原始错误: {exc}）") from exc
+        return pv.from_meshio(meshio.read(p))
+    return pv.read(str(p))
+
+
+_UNSTRUCTURED_NORMALS: dict[str, tuple[float, float, float]] = {
+    "x": (1.0, 0.0, 0.0), "y": (0.0, 1.0, 0.0), "z": (0.0, 0.0, 1.0),
+}
+
+
+def unstructured_slice(
+    grid: Any,
+    normal: str | tuple[float, float, float] = "z",
+    origin: tuple[float, float, float] | None = None,
+    scalar: str | None = None,
+) -> dict[str, Any]:
+    """非结构网格切片点值（确定性，供定量对拍；不渲染）。
+
+    返回 {n_points, bounds_mm, normal, scalar, points_mm[[x,y,z]],
+    values[]}——点坐标与标量值为 VTK 切片插值原值（float 透传）。
+    """
+    nrm = (_UNSTRUCTURED_NORMALS[normal] if isinstance(normal, str)
+           else tuple(float(v) for v in normal))
+    kwargs: dict[str, Any] = {"normal": nrm}
+    if origin is not None:
+        kwargs["origin"] = tuple(float(v) for v in origin)
+    sl = grid.slice(**kwargs)
+    pts = np.asarray(sl.points, dtype=float)
+    vals = (np.asarray(sl.point_data[scalar], dtype=float)
+            if scalar is not None and scalar in sl.point_data else None)
+    b = np.asarray(grid.bounds, dtype=float)
+    out: dict[str, Any] = {
+        "normal": list(nrm),
+        "n_points": int(pts.shape[0]),
+        "bounds_mm": [float(v) for v in b],
+        "points_mm": pts.tolist(),
+        "scalar": scalar,
+    }
+    if vals is not None:
+        out["values"] = vals.tolist()
+    return out
+
+
+def unstructured_slice_png(
+    path_or_grid: str | Path | Any,
+    output_path: str | Path,
+    normal: str | tuple[float, float, float] = "z",
+    origin: tuple[float, float, float] | None = None,
+    scalar: str | None = None,
+    do_slice: bool = True,
+) -> dict[str, Any]:
+    """L3 非结构网格切片 PNG（pyvista off_screen；best-effort #105）。
+
+    返回 {ok, path, n_points} 或 {ok: False, errors}——渲染故障结构化
+    返回不阻塞主路径；缺依赖在 read/import 处显式 RuntimeError。
+    """
+    out = Path(output_path)
+    try:
+        pv = _require_pyvista()
+        grid = (path_or_grid if hasattr(path_or_grid, "slice")
+                else read_unstructured_mesh(path_or_grid))
+        obj = grid
+        if do_slice:
+            nrm = (_UNSTRUCTURED_NORMALS[normal] if isinstance(normal, str)
+                   else tuple(float(v) for v in normal))
+            kwargs: dict[str, Any] = {"normal": nrm}
+            if origin is not None:
+                kwargs["origin"] = tuple(float(v) for v in origin)
+            obj = grid.slice(**kwargs)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        plotter = pv.Plotter(off_screen=True, window_size=(800, 600))
+        try:
+            plotter.add_mesh(obj, scalars=scalar,
+                             show_edges=False, smooth_shading=False)
+            plotter.screenshot(str(out))
+        finally:
+            plotter.close()
+        n_pts = int(np.asarray(obj.points).shape[0])
+        return {"ok": True, "path": str(out), "n_points": n_pts,
+                "sliced": bool(do_slice)}
+    except RuntimeError:
+        raise  # 依赖缺失：显式报错（不静默降级，规格书 §16.2）
+    except Exception as exc:  # 渲染/VTK 故障：结构化返回（#105）
+        return {"ok": False, "errors": [f"非结构切片渲染失败: {exc}"]}

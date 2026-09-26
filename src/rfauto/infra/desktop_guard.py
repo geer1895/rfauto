@@ -155,6 +155,33 @@ def kill_orphan_ansysedt_desktops(
         log(f"[desktop_guard][warn] {msg}")
 
 
+def kill_ansysedt_by_ppid(ppid: int, *, log: LogFn = print) -> list[int]:
+    """终止指定父进程（ppid）名下的 ansysedt 桌面（df6 HFSS 轨：脚本自身
+    发射的桌面在失败轮泄漏时自清——parent 是本 python，可安全点杀，不涉
+    他轨桌面；杀原语保持单源本文件）。
+
+    返回已终止的 pid 列表；无匹配返回空。枚举/终止失败抛错（fail-closed）。
+    """
+    procs = list_ansysedt_processes()
+    mine = [q for q in procs if q["ppid"] == ppid]
+    killed: list[int] = []
+    for q in mine:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f"Stop-Process -Id {q['pid']} -Force"],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(
+                f"ansysedt pid={q['pid']} 终止失败: "
+                f"{(r.stderr or '').strip()[:200]}")
+        killed.append(q["pid"])
+        log(f"[desktop_guard] 已终止本轨泄漏桌面 ansysedt pid={q['pid']} "
+            f"(ppid={ppid})")
+    if killed:
+        time.sleep(3)
+    return killed
+
+
 def run_with_watchdog(fn: Callable[[], None], *, timeout_s: float,
                       what: str, log: LogFn = print) -> None:
     """fn 在守护线程执行并限时；超时抛 RuntimeError（fail-closed）。

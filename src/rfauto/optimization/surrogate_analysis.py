@@ -19,6 +19,11 @@ from typing import Any
 
 import numpy as np
 
+from rfauto.core.metric_transform import (
+    is_explicit_statistic_name,
+    select_metric_domain,
+)
+
 #: 主拟合的 GP 随机重启次数（random_state 固定 → 确定性）
 GP_RESTARTS = 5
 #: 交叉验证折内拟合的随机重启次数（折数多，取小值控成本）
@@ -37,6 +42,11 @@ class SurrogateAnalysisResult:
     prediction_error: float
     #: 代理质量（见 surrogate_fit_quality；空 dict = 未计算）
     quality: dict[str, Any] = field(default_factory=dict)
+    #: DP-15 C1：回归目标表示域（缺省 "dB"=既有隐式口径，向后兼容）
+    metric_domain: str = "dB"
+    #: DP-15 C1：逐域 LOO-LML 选择表（auto_domain=False 或显式统计量
+    #: 指标名豁免时为 None——不选择，只报告）
+    domain_selection: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -48,6 +58,10 @@ class SurrogateAnalysisResult:
             "param_importance": {k: round(v, 4) for k, v in self.param_importance.items()},
             "prediction_error": round(self.prediction_error, 4),
             "quality": _rounded(self.quality),
+            "metric_domain": self.metric_domain,
+            "domain_selection": (
+                _rounded(self.domain_selection)
+                if self.domain_selection is not None else None),
         }
 
 
@@ -205,6 +219,9 @@ def analyze_run_surrogate(
     trials_data: list[dict[str, Any]],
     *,
     cv_folds: int | None = None,
+    metric_name: str | None = None,
+    values_domain: str = "dB",
+    auto_domain: bool = False,
 ) -> SurrogateAnalysisResult:
     """离线分析：从 trials 数据拟合 GP 代理模型。
 
@@ -213,9 +230,21 @@ def analyze_run_surrogate(
         trials_data: trial 数据列表 [{"params": {...}, "cost": float}, ...]
         cv_folds: 质量评估折数；None=自动（样本 ≥6 时 min(5, n)，
             否则退回训练残差口径）。≥2 且样本 ≥6 时给 out-of-fold 质量。
+        metric_name: 回归目标对应的指标名（DP-15 C1 豁免判据输入）；
+            以 _min/_max 结尾的显式统计量指标名（s11_db_min 等）豁免
+            自动选择——表示域固定为 values_domain，不被覆盖。
+        values_domain: cost/回归目标的声明表示域（'dB'/'gamma_linear'/
+            'magnitude'；缺省 "dB"=项目现口径）。调用方如实声明——
+            cost 是 violation 加权和时声明 'dB' 即表示"按现口径处理"。
+        auto_domain: DP-15 C1 变换域自动选择开关；缺省 False=行为与
+            既有路径一致（fit meta 只新增 metric_domain="dB" 键）。
+            True 且非豁免时对目标值跑逐域 LOO-LML（core/metric_transform），
+            选择结果写入 domain_selection 表（best-effort #105：选择
+            失败不炸分析主路径，错误如实入表）。
 
     Returns:
-        SurrogateAnalysisResult（quality 见 surrogate_fit_quality）
+        SurrogateAnalysisResult（quality 见 surrogate_fit_quality；
+        metric_domain / domain_selection 见 DP-15 C1）
     """
     if len(trials_data) < 3:
         raise ValueError(f"至少需要 3 个 trials，当前 {len(trials_data)}")
@@ -266,6 +295,35 @@ def analyze_run_surrogate(
             "detail": "sklearn 不可用，GP 未拟合——质量字段不可用（不填占位数值）",
         }
 
+    # DP-15 C1：变换域自动选择（best-effort，#105——观测/选择失败不炸
+    # 分析主路径）。显式统计量指标名豁免（交付 4）：s11_db_min 等
+    # _min/_max 后缀名的表示语义已由目标定义钉死，自动选择不得覆盖。
+    metric_domain = values_domain
+    domain_selection: dict[str, Any] | None = None
+    if auto_domain:
+        if is_explicit_statistic_name(metric_name):
+            domain_selection = {
+                "selected": values_domain,
+                "loo_loglik": None,
+                "excluded": {},
+                "delta_lml_vs_db": None,
+                "exempt": (
+                    f"显式统计量指标名 {metric_name} 豁免自动选择——"
+                    "表示域固定为声明来源域，不被覆盖"),
+            }
+        else:
+            try:
+                domain_selection = select_metric_domain(
+                    X, y, values_domain=values_domain)
+                metric_domain = str(domain_selection["selected"])
+            except Exception as exc:
+                domain_selection = {
+                    "selected": values_domain,
+                    "loo_loglik": None,
+                    "excluded": {},
+                    "error": f"域选择失败（best-effort #105）: {exc}",
+                }
+
     return SurrogateAnalysisResult(
         run_id=run_id,
         n_samples=len(trials_data),
@@ -275,4 +333,6 @@ def analyze_run_surrogate(
         param_importance=importance,
         prediction_error=prediction_error,
         quality=quality,
+        metric_domain=metric_domain,
+        domain_selection=domain_selection,
     )

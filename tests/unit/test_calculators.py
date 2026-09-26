@@ -55,6 +55,20 @@ EXPECTED = {
     "parallel_plate_breakdown_margin", "ecss_multipactor_fd",
     # B3 腔体微扰频移（Pozar §6.7 / Slater 一阶式）
     "cavity_perturbation_shift",
+    # DP-5 系统级预算引擎 + spur search（2026-09-24 df6_dp5cascade，#231 三表同步）
+    # payload=core/cascade.py；回收钉 runs/df6_dp5cascade/criteria.md
+    "cascade_budget", "spur_search", "if_plan_sweep",
+    # DP-2 耦合矩阵诊断三件套（2026-09-24 df6_dp2diag，#231 三表同步）：
+    # VF+LM 固定拓扑反演 + Q 双通道 + Dishal critique；判据预声明
+    # runs/df6_dp2diag/criteria.md；既有 Cauchy 反提键保留为独立裁判（#315）
+    "cm_extract_vf", "cm_refine_lm", "q_factor_vf", "q_factor_circle",
+    "cat_critique",
+    # DP-15 C2 Klopfenstein 渐变段（2026-09-24 df6_dp15c2，#231/#304 四表
+    # 同步）：skrf.taper.Klopfenstein 剖面 + 微带 MLine 同源宽度剖面；
+    # 判据预声明 runs/df6_dp15c2/criteria.md §3
+    "klopfenstein_taper",
+    "k_split_pair",
+    "qe_group_delay",
 }
 
 # 实验态计算器分表（2026-09-16 定案）——自动归纳（符号回归）公式

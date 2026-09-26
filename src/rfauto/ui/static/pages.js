@@ -1528,7 +1528,8 @@ async function pagePlayground() {
     v.innerHTML = help(`
       <li>选一个已校准 run（有 calibration 产物），拖动参数滑条实时看代理预测指标。</li>
       <li><b>诚实呈现</b>：预测来自校准样本拟合的代理模型，<b>非真值</b>——LOOCV ρ/样本量与最近样本真值对照一并列出，精算以 openEMS/HFSS 求解为准。</li>
-      <li>缺省值=参数界中点；越界滑条值会被裁剪到边界并在状态行提示。</li>`) +
+      <li>缺省值=参数界中点；越界滑条值会被裁剪到边界并在状态行提示。</li>
+      <li>下方探索器沿单轴做参数扫描切片，画后验 mean±std 曲线（仅 smt 族代理有原生逐点 σ，其余如实只画 mean）。</li>`) +
     `<h2 class='page'>代理 Playground</h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b><select id='pg-run' style='max-width:460px'></select>
@@ -1537,7 +1538,14 @@ async function pagePlayground() {
        <div id='pg-note' class='muted' style='margin-top:8px'></div>
      </div>
      <div class='panel' style='margin-top:14px'><b class='title'>代理预测 vs 最近样本真值</b>
-       <div id='pg-result' class='muted'>选择 run 后自动预测</div></div>`;
+       <div id='pg-result' class='muted'>选择 run 后自动预测</div></div>
+     <div class='panel' style='margin-top:14px'><b class='title'>参数扫描探索（explore：后验 mean±std）</b>
+       <div class='toolbar'>扫参轴 <select id='pg-ex-axis'></select>
+         点数 <select id='pg-ex-n'><option value='11'>11</option><option value='21'>21</option><option value='41' selected>41</option></select>
+         指标 <select id='pg-ex-metric'></select>
+         <span id='pg-ex-status' class='muted'></span></div>
+       <div id='pg-ex-chart'></div>
+       <div id='pg-ex-note' class='muted' style='margin-top:8px'></div></div>`;
   const d = await T.api("/api/playground/runs");
   const runs = d.runs || [];
   const sel = T.$("pg-run");
@@ -1552,6 +1560,58 @@ async function pagePlayground() {
       out[input.dataset.param] = +input.value;
     return out;
   };
+  /* ── 探索器（DP-16 U3）：单轴参数扫描切片 → 后验 mean±std 曲线 ── */
+  let exDebounce = null;
+  let exReady = false;
+  const scheduleExplore = () => {
+    clearTimeout(exDebounce);
+    exDebounce = setTimeout(runExplore, 250);
+  };
+  const ensureExploreControls = (bounds, metrics) => {
+    const ax = T.$("pg-ex-axis");
+    if (exReady && ax.dataset.run === sel.value) return;
+    ax.dataset.run = sel.value;
+    ax.innerHTML = Object.keys(bounds).map(
+      (k) => `<option value='${k}'>${k}</option>`).join("");
+    T.$("pg-ex-metric").innerHTML = metrics.map(
+      (k) => `<option value='${k}'>${k}</option>`).join("");
+    exReady = metrics.length > 0;
+  };
+  const runExplore = async () => {
+    if (!sel.value || !exReady) return;
+    const r = await T.api("/api/playground/explore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        run_id: sel.value,
+        params: currentParams(),
+        sweep: { axis: T.$("pg-ex-axis").value, n: +T.$("pg-ex-n").value },
+      }),
+    });
+    const st = T.$("pg-ex-status");
+    if (!r.ok) {
+      st.innerHTML = `<span style='color:#e57373'>✗ ${r.error}</span>`;
+      return;
+    }
+    const metrics = Object.keys(r.curves);
+    const key = metrics.includes(T.$("pg-ex-metric").value)
+      ? T.$("pg-ex-metric").value : metrics[0];
+    const cur = r.curves[key];
+    const axisName = r.sweep.axes[0];
+    const xs = r.sweep.axes_values[axisName].map((v) => +(+v).toFixed(4));
+    const series = [{ name: `${key} mean`, x: xs, y: cur.mean, color: "#4fc3f7" }];
+    if (cur.std)
+      series.push(
+        { name: "+1σ", x: xs, y: cur.mean.map((m, i) => m + cur.std[i]), color: "#ffb74d" },
+        { name: "−1σ", x: xs, y: cur.mean.map((m, i) => m - cur.std[i]), color: "#ffb74d" });
+    T.drawEChart(T.$("pg-ex-chart"), series,
+      { xlabel: axisName, ylabel: key, xvalue: true, height: "300px" });
+    st.textContent = `engine=${r.engine} · ${r.has_variance ? "mean±1σ" : "mean（无原生 σ）"}`
+      + ` · fixed=${JSON.stringify(r.sweep.fixed)}`;
+    T.$("pg-ex-note").textContent = `${r.variance_note}；${r.honest_note}`;
+  };
+  for (const id of ["pg-ex-axis", "pg-ex-n", "pg-ex-metric"])
+    T.$(id).onchange = runExplore;
   const predict = async (params) => {
     const r = await T.api("/api/playground/predict", {
       method: "POST",
@@ -1573,6 +1633,7 @@ async function pagePlayground() {
     T.$("pg-note").textContent = r.honest_note;
     if (lastRun !== sel.value) {
       lastRun = sel.value;
+      ensureExploreControls(r.bounds, Object.keys(r.predicted));
       T.$("pg-sliders").innerHTML = Object.entries(r.bounds).map(([name, b]) =>
         `<label class='muted' style='display:block;margin:10px 0 2px'>${name}
           <span id='pg-val-${key(name)}'></span>
@@ -1586,6 +1647,7 @@ async function pagePlayground() {
           T.$(vk).textContent = (+input.value).toFixed(3);
           clearTimeout(debounce);
           debounce = setTimeout(() => predict(currentParams()), 250);
+          scheduleExplore();
         };
       }
     }

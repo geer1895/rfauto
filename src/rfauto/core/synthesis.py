@@ -1101,6 +1101,72 @@ def synthesize_siw_model(
         params=params, recipe_draft=recipe_draft, notes=notes)
 
 
+def synthesize_msl_siw_taper_model(
+    f0_ghz: float = 10.0,
+    d_mm: float = 0.6,
+    s_mm: float = 1.0,
+    taper_len_mm: float | None = None,
+    siw_len_mm: float | None = None,
+    er: float = 3.66,
+    h_mm: float = 0.508,
+) -> ModelSynthesisResult:
+    """MSL 锥形过渡+SIW 直段综合（SIW 族第二成员，df6 A2 立项）：w 沿
+    siw_synthesis（fc10 目标=f0/1.5 反解 Cassivi 式）；锥长缺省=λg/2@f0
+    （runs/df6_a2siwmsl/criteria.md §1.1 对称双锥确定性级联实测：λg/4 在本
+    阻抗比 50/Z_PV=2.19 下带内 |S11| max −7.8dB 达不到 RL>15dB 预声明门，
+    如实收档，λg/4 只作旋钮变体）；siw_len 缺省=3λg（与 siw 族 line_len
+    同链）。w50/w_end（锥两端宽）不进 params：Z_PV 闭式链带心相关，渲染/
+    fake 通道按本次带心同参精算（#368 同参纪律，#1c 禁抄毫米数）。过孔设计
+    规则违规显式报错（越界不外推，#1c/#122）。"""
+    import math
+
+    from rfauto.core.calculators import (
+        siw_beta_rad_m,
+        siw_effective_width_mm,
+        siw_synthesis,
+    )
+
+    fc10_target = float(f0_ghz) / 1.5
+    syn = siw_synthesis(fc10_target, er, d_mm, s_mm)  # 设计规则违规 ValueError
+    w_mm = float(syn["w_mm"])
+    weff = siw_effective_width_mm(w_mm, d_mm, s_mm)
+    beta, fc_actual = siw_beta_rad_m(weff, er, f0_ghz)
+    lam_g_mm = 2.0 * math.pi / beta * 1e3
+    if taper_len_mm is None:
+        taper_len_mm = round(lam_g_mm / 2.0, 4)
+    if siw_len_mm is None:
+        siw_len_mm = round(3.0 * lam_g_mm, 4)
+
+    params = {"w_mm": w_mm, "d_mm": d_mm, "s_mm": s_mm,
+              "taper_len_mm": taper_len_mm, "siw_len_mm": siw_len_mm,
+              "h_mm": h_mm}
+    recipe_draft = {
+        "model": "msl_siw_taper", "recipe_version": 1, "schema_version": 1,
+        "params": {k: {"value": v} for k, v in params.items()},
+        "setup": {"freq_range_ghz": [max(0.1, fc10_target * 1.08),
+                                     min(fc10_target * 2.0, f0_ghz * 1.3)],
+                  "points": 201},
+        "objectives": [{"metric": "s11_db",
+                        "band": [f0_ghz * 0.9, f0_ghz * 1.1],
+                        "op": "max_below", "value": -15.0},
+                       {"metric": "s21_db",
+                        "band": [f0_ghz * 0.9, f0_ghz * 1.1],
+                        "op": "min_above", "value": -1.5}],
+    }
+    notes = [f"w={w_mm:.4f}mm（fc10 目标 {fc10_target:.4f}GHz → w_eff="
+             f"{weff:.4f}mm，回代 fc10={fc_actual:.4f}GHz）",
+             f"β@{f0_ghz}GHz={beta:.3f} rad/m、λg={lam_g_mm:.4f}mm → "
+             f"taper_len=λg/2={taper_len_mm}mm、siw_len=3λg={siw_len_mm}mm",
+             "锥=50Ω MSL→Z_PV 阻抗变换器（w50/w_end=inverse_width 通道内"
+             "精算）+锥末-SIW 台阶；端口=双 MSLPort 线基（ref=50 主口径）；"
+             "预声明门 runs/df6_a2siwmsl/criteria.md §4"]
+    return ModelSynthesisResult(
+        model="msl_siw_taper",
+        goal={"f0_ghz": f0_ghz, "fc10_ghz": fc10_target,
+              "d_mm": d_mm, "s_mm": s_mm},
+        params=params, recipe_draft=recipe_draft, notes=notes)
+
+
 def synthesize_sma_launcher_model(
     z0_ohm: float = 50.0,
     freq_ghz: float = 2.5,

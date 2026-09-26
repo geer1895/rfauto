@@ -425,3 +425,91 @@ def find_artifacts(run_dir: str | Path) -> dict[str, Path]:
         if hits:
             found[name] = hits[0]
     return found
+
+
+# ─── 3D 复数 dump（DP-4 P3 EEP 叠加用；旧 farfield_cut/farfield3d 零改动）─────
+#
+# 契约（DP-4 规格书 §2c/#315 兼容纪律）：farfield3d_cplx.csv 每行一个角点，
+# 列 theta_deg,phi_deg,re_e_theta,im_e_theta,re_e_phi,im_e_phi（复分量，全局
+# 原点参考——nf2ff 以原点为相位基准，EEPₙ 已含单元位置相位，免手工补偿）。
+# 本节只**新增**写/读函数与文件名常量；parse_farfield_cut_csv /
+# parse_farfield_3d_csv 等旧契约零改动（#315：改公共解析器前先 grep 全仓
+# 解包点——本批不改旧签名不改返回结构）。解析器向前兼容：多余列容忍并忽略，
+# 缺必需列显式报错并列出缺失列名。
+
+FARFIELD_3D_CPLX_NAME = "farfield3d_cplx.csv"
+"""3D 复数远场 dump 文件名（DP-4 P3 模板脚本与解析器共同遵守的契约）。"""
+
+_CPLX_3D_HEADER = ("theta_deg", "phi_deg", "re_e_theta", "im_e_theta",
+                   "re_e_phi", "im_e_phi")
+
+
+def write_farfield_3d_cplx_csv(
+    path: str | Path,
+    theta_deg: np.ndarray,
+    phi_deg: np.ndarray,
+    e_theta: np.ndarray,
+    e_phi: np.ndarray,
+) -> None:
+    """写 farfield3d_cplx.csv（模板脚本与测试共用同一契约）。
+
+    e_theta/e_phi 为 (n_theta, n_phi) 复数网格，θ/φ 轴升序（与解析端一致）。
+    """
+    th = np.asarray(theta_deg, dtype=float)
+    ph = np.asarray(phi_deg, dtype=float)
+    et = np.asarray(e_theta, dtype=complex)
+    ep = np.asarray(e_phi, dtype=complex)
+    if et.shape != (th.size, ph.size) or ep.shape != (th.size, ph.size):
+        raise ValueError(
+            f"复数网格形状须为 (n_theta={th.size}, n_phi={ph.size})，"
+            f"收到 e_theta={et.shape}, e_phi={ep.shape}")
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(_CPLX_3D_HEADER)
+        for i, tv in enumerate(th):
+            for j, pv in enumerate(ph):
+                w.writerow([tv, pv,
+                            et[i, j].real, et[i, j].imag,
+                            ep[i, j].real, ep[i, j].imag])
+
+
+def parse_farfield_3d_cplx_csv(
+    path: str | Path,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """解析 farfield3d_cplx.csv → (θ°, φ°, e_theta 复网格, e_phi 复网格)。
+
+    θ/φ 轴取升序去重值；网格形状 (n_theta, n_phi)，缺采样点填 NaN（复数
+    nan+nanj）；重复采样点后写者优先（与 parse_farfield_3d_csv 语义一致）。
+    向前兼容：表头多余列容忍并忽略；缺任一必需列 → ValueError 且列出缺失列。
+    """
+    with open(path, encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        fieldnames = reader.fieldnames or []
+        missing = [col for col in _CPLX_3D_HEADER if col not in fieldnames]
+        if missing:
+            raise ValueError(
+                f"{path}: 表头缺少必需列 {missing}（期望 {_CPLX_3D_HEADER}；"
+                "多余列会被忽略——向前兼容契约）")
+        th_l: list[float] = []
+        ph_l: list[float] = []
+        et_l: list[complex] = []
+        ep_l: list[complex] = []
+        for row in reader:
+            th_l.append(float(row["theta_deg"]))
+            ph_l.append(float(row["phi_deg"]))
+            et_l.append(complex(float(row["re_e_theta"]),
+                                float(row["im_e_theta"])))
+            ep_l.append(complex(float(row["re_e_phi"]),
+                                float(row["im_e_phi"])))
+    if not th_l:
+        raise ValueError(f"{path}: 无数据行")
+    th = np.unique(np.asarray(th_l, dtype=float))
+    ph = np.unique(np.asarray(ph_l, dtype=float))
+    et = np.full((th.size, ph.size), complex(np.nan, np.nan), dtype=complex)
+    ep = et.copy()
+    ti = np.searchsorted(th, np.asarray(th_l, dtype=float))
+    pi = np.searchsorted(ph, np.asarray(ph_l, dtype=float))
+    et[ti, pi] = np.asarray(et_l, dtype=complex)
+    ep[ti, pi] = np.asarray(ep_l, dtype=complex)
+    return th, ph, et, ep
+

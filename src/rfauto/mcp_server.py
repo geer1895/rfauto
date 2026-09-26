@@ -190,6 +190,61 @@ def poll_job(job_id: str) -> dict[str, Any]:
     from rfauto.service.api import poll_job as _poll_job
     return _poll_job(job_id)
 
+@mcp.tool
+def cancel_job(job_id: str) -> dict[str, Any]:
+    """协作取消长任务（DP-14 A1：透传 JobRegistry.cancel；硬杀求解进程不支持）。
+
+    取消语义：置 cancelled 标志，运行中的仿真在下一个协作检查点退出；
+    cancel 后 poll_job 终态=cancelled。
+
+    Args:
+        job_id: create_run_async 返回的任务 id
+
+    Returns:
+        dict: {ok, job_id, status, ...}
+    """
+    from rfauto.service.job_registry import get_job_registry
+    reg = get_job_registry()
+    out = reg.cancel(job_id)
+    if out is None:
+        return {"ok": False, "error": f"未知 job_id: {job_id}"}
+    return {"ok": True, **out}
+
+
+@mcp.tool
+def wait_job(job_id: str, timeout_s: float = 600.0,
+             poll_interval_s: float = 5.0) -> dict[str, Any]:
+    """阻塞等待长任务终态并流式回报进度（DP-14 A1：progressToken 语义）。
+
+    fastmcp 以 progress 通知回报 0..1 进度（客户端收通知即重置超时时钟，
+    2025-06 规范语义）；终态前每 poll_interval_s 轮询一次，超 timeout_s
+    返回 ok=False+最后已知状态（不抛异常）。无副作用（只读轮询）。
+
+    Args:
+        job_id: create_run_async 返回的任务 id
+        timeout_s: 最长等待秒数（缺省 600）
+        poll_interval_s: 轮询间隔秒数（缺省 5）
+
+    Returns:
+        dict: {ok, job_id, status, progress, ...}（终态或超时快照）
+    """
+    import time as _time
+
+    from rfauto.service.api import poll_job as _poll_job
+
+    deadline = _time.monotonic() + float(timeout_s)
+    last: dict[str, Any] = {}
+    while True:
+        last = _poll_job(job_id)
+        status = str(last.get("status", ""))
+        if status in ("completed", "failed", "cancelled"):
+            return {**last, "ok": True, "wait": "terminal"}
+        if _time.monotonic() >= deadline:
+            return {"ok": False, "job_id": job_id, "status": status or "unknown",
+                    "wait": "timeout", "error": f"wait_job 超时 {timeout_s}s"}
+        _time.sleep(float(poll_interval_s))
+
+
 
 # ─── 7. get_metrics ─────────────────────────────────────────────────────────
 
@@ -313,6 +368,217 @@ def budget_analysis(
         return {"ok": True, "data": result.to_dict()}
     except Exception as e:
         return {"ok": False, "errors": [str(e)]}
+
+
+# ─── 9b. cascade 预算/杂散/IF 规划 (DP-5) ─────────────────────────────────────
+
+@mcp.tool
+def cascade_budget(
+    stages: list[dict],
+    snr_min_db: float = 10.0,
+    rx_power_dbm: float | None = None,
+    bw_hz: float | None = None,
+) -> dict[str, Any]:
+    """系统级级联预算（DP-5）：增益/Friis NF/IIP3·OIP3 级联/P1dB/噪声底/SFDR/灵敏度。
+
+    Args:
+        stages: 级表（顺序=信号流向）。schema: {type: amp|mixer|filter|atten|cable,
+                gain_db, nf_db?, iip3_dbm?, p1db_dbm?, bw_hz?, network_path?/il_db?}；
+                filter/atten 插损来源=network_path（skrf 实取 S21，需配 il_freq_hz）
+                或常数 il_db，显式二选一；无源级 NF 缺省=插损（T0）
+        snr_min_db: 解调最小 SNR (dB)
+        rx_power_dbm: 接收功率 (dBm)，给定时输出链路裕量
+        bw_hz: 系统噪声带宽 (Hz)，缺省取末级 bw_hz
+
+    Returns:
+        dict: {ok, result: {gain_total_db, nf_total_db, iip3_total_dbm, sfdr_db, ...}}
+    """
+    from rfauto.service.cascade_service import cascade_budget_report
+    try:
+        report = cascade_budget_report(stages, snr_min_db=snr_min_db,
+                                       rx_power_dbm=rx_power_dbm, bw_hz=bw_hz)
+        return report
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def spur_search(
+    f_rf_hz: float,
+    f_lo_hz: float,
+    if_center_hz: float | None = None,
+    if_bw_hz: float = 0.0,
+    rf_bw_hz: float = 0.0,
+    max_order: int = 7,
+) -> dict[str, Any]:
+    """混频杂散落带搜索（DP-5）：f_spur=|m·f_RF±n·f_LO| 枚举+落带判定+危险等级。
+
+    Args:
+        f_rf_hz: RF 中心频率 (Hz)
+        f_lo_hz: 本振频率 (Hz)
+        if_center_hz: 目标 IF 中心 (Hz)，缺省 |f_RF−f_LO|
+        if_bw_hz: 目标带宽 (Hz)
+        rf_bw_hz: RF 信号带宽 (Hz)（谐波带宽线性缩放）
+        max_order: 最大阶数 m+n（缺省 7）
+
+    Returns:
+        dict: {ok, result: {n_products, n_spurs_in_band, spurs: [...]}}
+    """
+    from rfauto.service.cascade_service import spur_search_report
+    try:
+        return spur_search_report(f_rf_hz, f_lo_hz, if_center_hz=if_center_hz,
+                                  if_bw_hz=if_bw_hz, rf_bw_hz=rf_bw_hz,
+                                  max_order=max_order)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def if_plan_sweep(
+    f_rf_hz: float,
+    if_lo_hz: float,
+    if_hi_hz: float,
+    side: str = "low",
+    n_points: int = 201,
+    if_bw_hz: float = 0.0,
+    max_order: int = 7,
+) -> dict[str, Any]:
+    """IF 频率规划扫掠（DP-5）：候选 IF 逐点杂散判定 → spurious-free 窗口表。
+
+    Args:
+        f_rf_hz: RF 中心频率 (Hz)
+        if_lo_hz: IF 扫掠下限 (Hz)
+        if_hi_hz: IF 扫掠上限 (Hz)（low 侧须 < f_rf_hz）
+        side: 注入侧 "low"（f_LO=f_RF−IF）或 "high"（f_LO=f_RF+IF）
+        n_points: 网格点数
+        if_bw_hz: 目标带宽 (Hz)
+        max_order: 最大阶数 m+n（缺省 7）
+
+    Returns:
+        dict: {ok, result: {points: [...], windows: [{start_hz, end_hz, n_points}]}}
+    """
+    from rfauto.service.cascade_service import if_plan_report
+    try:
+        return if_plan_report(f_rf_hz, if_lo_hz=if_lo_hz, if_hi_hz=if_hi_hz,
+                              side=side, n_points=n_points, if_bw_hz=if_bw_hz,
+                              max_order=max_order)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ─── 9c. CM 诊断三件套 (DP-2) ─────────────────────────────────────────────────
+
+@mcp.tool
+def cm_diagnose_q(
+    network_path: str | None = None,
+    freq_ghz: list[float] | None = None,
+    s11: list | None = None,
+    f0_hint_ghz: float | None = None,
+    q_e: list[float] | None = None,
+) -> dict[str, Any]:
+    """单腔 Q 双通道诊断（DP-2）：VF 极点法 × Kajfez 圆拟合互证 + skrf 第三方仲裁。
+
+    互证 |ΔQu|/Qu≤10% → AGREE，超阈 UNDECIDABLE；三方极差 ≤15% 如实报。
+
+    Args:
+        network_path: Touchstone 路径（.s1p/.s2p；与 freq_ghz+s11 二选一）
+        freq_ghz: 频率轴 GHz（直接给数据时必填）
+        s11: 复 S11 [re,im] 对列表
+        f0_hint_ghz: 谐振频率提示 GHz
+        q_e: 外部 Q 列表（给定时输出 Q_unloaded）
+
+    Returns:
+        dict: {ok, result: {vf, circle, verdict, cross_diff_pct, third_opinion}}
+    """
+    from rfauto.service.diagnosis_service import diagnose_q
+    try:
+        return diagnose_q({"touchstone_path": network_path,
+                           "freq_ghz": freq_ghz, "s11": s11,
+                           "f0_hint_ghz": f0_hint_ghz, "q_e": q_e})
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def cm_extract_refine(
+    network_path: str | None = None,
+    freq_ghz: list[float] | None = None,
+    s11: list | None = None,
+    s21: list | None = None,
+    order: int | None = None,
+    f0_ghz: float | None = None,
+    fbw: float | None = None,
+    topology: str = "folded",
+    target_matrix: list | None = None,
+) -> dict[str, Any]:
+    """耦合矩阵反向提取（DP-2）：VF 定阶+结构 → LM 固定拓扑精化 → 可选目标
+    逐元素偏差表（门 5%）。
+
+    Args:
+        network_path: 2 端口 Touchstone 路径（与 freq_ghz+s11+s21 二选一）
+        freq_ghz: 频率轴 GHz
+        s11: 复 S11 [re,im] 对列表
+        s21: 复 S21 [re,im] 对列表
+        order: 阶数（缺省=VF 自动判）
+        f0_ghz: 中心频率提示 GHz
+        fbw: 相对带宽提示
+        topology: "folded"（缺省）| "arrow"
+        target_matrix: 目标 (N+2)×(N+2) 矩阵（[re,im] 对嵌套列表；给定时输出偏差表）
+
+    Returns:
+        dict: {ok, result: {extract, refine, target_check?}}
+    """
+    from rfauto.service.diagnosis_service import diagnose_cm
+    try:
+        return diagnose_cm({"touchstone_path": network_path,
+                            "freq_ghz": freq_ghz, "s11": s11, "s21": s21,
+                            "order": order, "f0_ghz": f0_ghz, "fbw": fbw,
+                            "topology": topology,
+                            "target_matrix": target_matrix})
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def cm_cat_critique(
+    freq_ghz: list[float],
+    s21: list | None = None,
+    s11: list | None = None,
+    f0_ghz: float = 0.0,
+    fbw: float = 0.0,
+    target_matrix: list | None = None,
+    current_params: dict | None = None,
+    bounds: dict | None = None,
+    tol: float = 0.1,
+) -> dict[str, Any]:
+    """Dishal 顺序调谐 critique（DP-2）：τ(f) 峰数指纹 + Qe/k 偏差 + typed fixes。
+
+    C 系数钉死：S21 透射泄漏 C=2、S11 反射全通 C=4（合成回收裁决）；
+    k 拆分精确式 k=(f₂²−f₁²)/(f₂²+f₁²)。
+
+    Args:
+        freq_ghz: 频率轴 GHz
+        s21: 复 S21 [re,im] 对列表（透射口径，与 s11 恰给其一）
+        s11: 复 S11 [re,im] 对列表（反射口径）
+        f0_ghz: 目标中心频率 GHz
+        fbw: 相对带宽
+        target_matrix: 目标 (N+2)×(N+2) 矩阵
+        current_params: 当前可调参数 {name: value}
+        bounds: 参数界 {name: [lo, hi]}
+        tol: 相对容差（缺省 0.1）
+
+    Returns:
+        dict: {ok, result: {n_peaks, qe_measured?, k_measured?, issues, fixes, verdict}}
+    """
+    from rfauto.service.diagnosis_service import diagnose_cat
+    try:
+        return diagnose_cat({"freq_ghz": freq_ghz, "s21": s21, "s11": s11,
+                             "f0_ghz": f0_ghz, "fbw": fbw,
+                             "target_matrix": target_matrix,
+                             "current_params": current_params,
+                             "bounds": bounds, "tol": tol})
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # ─── 10. correlate_measurement (E9c) ──────────────────────────────────────────
@@ -1324,6 +1590,45 @@ def uq_yield_at(
 
 
 @mcp.tool
+def robustness_report(
+    source: str,
+    specs: list[dict[str, Any]],
+    profile: dict[str, Any] | None = None,
+    tolerances: dict[str, float] | None = None,
+    n_mc: int = 100000,
+    seed: int = 42,
+    kind: str = "poly_ridge",
+    form_engine: str = "auto",
+    persist: bool = False,
+    store_name: str | None = None,
+) -> dict[str, Any]:
+    """稳健性报告：良率 MC（向量化）+FORM Pf+worst-case 角点+逐规范 Cpk。
+
+    只读消费数据集/run/samples.json（persist=True 时写 Parquet 数据集）。
+
+    Args:
+        source: samples.json 路径 | 数据集名 | run id
+        specs: 规范限列表 [{metric, op, value, weight?}]（op: max_below|min_above 等）
+        profile: 公差剖面 dict（load_tolerance_profile schema，优先于 tolerances）
+        tolerances: 公差 σ {参数名: σ}（无 profile 时生效）
+        n_mc: MC 抽样数
+        seed: 随机种子
+        kind: 代理类型 poly_ridge|nn
+        form_engine: FORM 引擎 auto|internal|openturns|uqpy
+        persist: MC 抽样落盘 Parquet
+        store_name: 落盘数据集名
+
+    Returns:
+        dict: {ok, yield_mc, form, worst_case, cpk, uncertainty_status, ...}
+    """
+    from rfauto.service.robustness_service import robustness_report
+    return robustness_report(source, specs, profile=profile, tolerances=tolerances,
+                             n_mc=n_mc, seed=seed, kind=kind,
+                             form_engine=form_engine, persist=persist,
+                             store_name=store_name)
+
+
+@mcp.tool
 def uq_design_center(
     samples_path: str,
     tolerances: dict[str, float],
@@ -1677,6 +1982,46 @@ def vna_offline_replay(
     from rfauto.service.api import vna_offline_replay as _replay
     return _replay(measured_s2p, sim_s2p, threshold_db=threshold_db,
                    session_path=session_path)
+
+
+# ─── 30b. DP-11 VNA 测量闭环：En 相关性报告（measurement/en_report 薄壳） ─────
+
+@mcp.tool
+def vna_en_report(
+    lab_s2p: str,
+    ref_s2p: str,
+    traces: list[str] | None = None,
+    delta_t_c: float | None = None,
+    anchor_uncertainty_db: float | None = None,
+    hfss_residual_db: float | None = None,
+    markdown_path: str | None = None,
+) -> dict[str, Any]:
+    """En 计量学相关性报告（DP-11）：|En|≤1 判满意，深谷自动切线性域。
+
+    U_meas=GUM 预算表（configs/uncertainty_budgets.yaml 默认模板），
+    U_sim=锚 uncertainty→HFSS 仲裁残差→兜底（source=fallback 如实标注）。
+    频轴对齐 argmin 最近邻+ulp 容差（#287/#294）。
+
+    Args:
+        lab_s2p: 实测 Touchstone
+        ref_s2p: 仿真参考 Touchstone
+        traces: 迹线名列表（缺省 ["S11","S21"]）
+        delta_t_c: 温差覆盖（°C；缺省用预算表 delta_t_c）
+        anchor_uncertainty_db: 锚不确定度（U_sim 第一优先）
+        hfss_residual_db: HFSS 仲裁残差（U_sim 第二优先）
+        markdown_path: Markdown 报告落盘路径（可选）
+
+    Returns:
+        dict: {ok, traces: {…}, summary, markdown}
+    """
+    from rfauto.service.vna_service import vna_en_report as _report
+    return _report(
+        lab_s2p, ref_s2p,
+        traces=tuple(traces) if traces else ("S11", "S21"),
+        delta_t_c=delta_t_c,
+        anchor_uncertainty_db=anchor_uncertainty_db,
+        hfss_residual_db=hfss_residual_db,
+        markdown_path=markdown_path)
 
 
 # ─── 31. F9 报告叙述位 / F11 经验记忆（0bj / 0z 薄壳） ────────────────────────
@@ -2184,6 +2529,371 @@ def compat_matrix_resource() -> dict[str, Any]:
 
     with open("knowledge/compat_matrix.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
+
+
+# ─── 32. DP-1 MMT 秒级段表求解（mmt_service 薄壳） ────────────────────────────
+
+@mcp.tool
+def mmt_solve(
+    sections: list[dict[str, Any]],
+    freqs_ghz: list[float] | None = None,
+    eps_r: float = 1.0,
+    tan_d: float = 0.0,
+    sigma_s_m: float | None = None,
+    mode_policy: dict[str, Any] | None = None,
+    z0_ref: float = 50.0,
+    freq_start_ghz: float | None = None,
+    freq_stop_ghz: float | None = None,
+    n_freq: int = 41,
+    work_dir: str | None = None,
+) -> dict[str, Any]:
+    """自研 RWG/SIW 模基 MMT（GSM）段表求解（DP-1：秒级零外部进程）。
+
+    段表三型（mm 口径）：uniform（a_mm/b_mm/length_mm）、hstep（a_left_mm/
+    b_left_mm/a_right_mm/b_right_mm，缺省几何居中）、iris（a_mm/b_mm/
+    aperture_mm/thickness_mm，零厚度=零长段三件级联）。SIW 膜片/阶梯的
+    w_eff 须由调用方经 siw_effective_width_mm 折算后传入。
+
+    无外部进程/license；undetermined 频点（近截止/过传）S=null 不外推；
+    膜片/阶梯绝对 S 值 UNDECIDABLE 待 HFSS 仲裁（随信封 absolute_s_note）。
+
+    Args:
+        sections: 段表列表（mm 口径三型，见上）
+        freqs_ghz: 显式频点网格 GHz（≥2 点严格递增；与 start/stop 二选一）
+        eps_r: 顶层缺省相对介电常数（段内可覆盖）
+        tan_d: 顶层缺省损耗正切
+        sigma_s_m: 顶层缺省导体电导率 S/m（None=PEC 壁）
+        mode_policy: 模式数策略（n_modes_ref/n_modes_max/n_doublings_max 等）
+        z0_ref: 端口参考阻抗 Ω（缺省 50）
+        freq_start_ghz: 均匀网格起点（freqs_ghz 缺省时用）
+        freq_stop_ghz: 均匀网格终点
+        n_freq: 均匀网格点数（缺省 41）
+        work_dir: 产物目录（缺省临时目录；写 sparams.csv/mmt.s2p/mmt_meta.json）
+
+    Returns:
+        dict: {ok, freqs_ghz, s11/s21/s12/s22, z_pv_ports, beta_te10_ports,
+        converged, warnings, undetermined_freqs_ghz, artifacts, ...}
+    """
+    from rfauto.service.mmt_service import solve_mmt
+
+    payload: dict[str, Any] = {
+        "sections": sections,
+        "eps_r": eps_r,
+        "tan_d": tan_d,
+        "z0_ref": z0_ref,
+        "n_freq": n_freq,
+    }
+    if freqs_ghz is not None:
+        payload["freqs_ghz"] = freqs_ghz
+    if sigma_s_m is not None:
+        payload["sigma_s_m"] = sigma_s_m
+    if mode_policy is not None:
+        payload["mode_policy"] = mode_policy
+    if freq_start_ghz is not None:
+        payload["freq_start_ghz"] = freq_start_ghz
+    if freq_stop_ghz is not None:
+        payload["freq_stop_ghz"] = freq_stop_ghz
+    return solve_mmt(payload, work_dir=work_dir)
+
+
+@mcp.tool
+def compose_netlist(netlist: dict, out_dir: str | None = None) -> dict[str, Any]:
+    """模板几何组合（DP-8）：netlist 三段式 → 单一 simulation.py（布局合并路线）。
+
+    Args:
+        netlist: rfauto-netlist-v1 三段式 netlist（schema 详见
+            service/compose_service.py 模块头；instances/connections/
+            exposed_ports 三段式）
+        out_dir: 产物目录（None=runs/compose_<ts>）
+
+    Returns:
+        dict: {ok, out_dir, simulation_py, compose_meta, netlist_yaml, ...}
+    """
+    from rfauto.service.compose_service import compose_from_netlist, compose_write
+    try:
+        if out_dir:
+            return compose_write(netlist, out_dir)
+        return compose_from_netlist(netlist)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool()
+def nfmeas_ffs_info(path: str) -> dict[str, Any]:
+    """审计 HFSS .ffs 远场文件头（频率/三功率/网格规模/轴序）。无副作用。"""
+    from rfauto.service.nf_measurement_service import ffs_info
+    return ffs_info(path)
+
+@mcp.tool()
+def nfmeas_cut_view(path: str, freq_index: int = 0, phi_deg: float | None = None,
+                    theta_deg: float | None = None) -> dict[str, Any]:
+    """.ffs 单频块切面视图（固定 phi 取 θ 扫描，或反之），幅度+归一 dB。"""
+    from rfauto.service.nf_measurement_service import ffs_cut_view
+    return ffs_cut_view(path, freq_index=freq_index, phi_deg=phi_deg,
+                        theta_deg=theta_deg)
+
+@mcp.tool()
+def nfc_coil_evaluate(shape: str, n_turns: float, d_out_mm: float,
+                      w_um: float, s_um: float) -> dict[str, Any]:
+    """Mohan 1999 三表达式平面螺旋电感评估（nH）。几何不可行显式报错。"""
+    from rfauto.service.nfc_coil_service import coil_evaluate
+    return coil_evaluate(shape, n_turns, d_out_mm * 1e-3, w_um * 1e-6, s_um * 1e-6)
+
+@mcp.tool()
+def nfc_coil_synthesize(target_l_nh: float, shape: str, n_turns: float,
+                        w_um: float, s_um: float,
+                        expression: str = "current_sheet") -> dict[str, Any]:
+    """目标电感 → 外径二分反解（回代自洽 ≤1e-10）。"""
+    from rfauto.service.nfc_coil_service import coil_synthesize
+    return coil_synthesize(target_l_nh * 1e-9, shape, n_turns, w_um * 1e-6,
+                           s_um * 1e-6, expression=expression)
+
+@mcp.tool()
+def nfc_coil_q(f_mhz: float, l1_nh: float, r1_ohm: float, m_nh: float = 0.0,
+               l2_nh: float = 0.0, r2_ohm: float = 0.0) -> dict[str, Any]:
+    """有载/无载 Q（互感 T 模型精确式）；R₁≤0 → Q 如实 None。"""
+    from rfauto.service.nfc_coil_service import coil_q
+    return coil_q(f_mhz * 1e6, l1_nh * 1e-9, r1_ohm, m_nh * 1e-9,
+                  l2_nh * 1e-9, r2_ohm)
+
+@mcp.tool()
+def sar_analytic_plane_wave(freq_mhz: float, e0_v_per_m: float,
+                            sigma_s_per_m: float, epsilon_r: float,
+                            rho_kg_m3: float,
+                            depth_mm: list[float]) -> dict[str, Any]:
+    """有耗半空间平面波 SAR 闭式对照（α 闭式+随深衰减，判据锚）。"""
+    from rfauto.service.sar_service import sar_analytic_plane_wave
+    return sar_analytic_plane_wave(freq_mhz * 1e6, e0_v_per_m, sigma_s_per_m,
+                                   epsilon_r, rho_kg_m3,
+                                   [d * 1e-3 for d in depth_mm])
+
+@mcp.tool
+def explain_run(run_dir: str, playbook_path: str | None = None) -> dict[str, Any]:
+    """失败指纹解释（DP-17 W2）：run 目录→确定性指纹匹配→候选根因族。
+
+    多证并击只出候选族（按命中数降序），不下黑箱结论；无 LLM。
+    无副作用（只读 run 产物与 playbook）。
+
+    Args:
+        run_dir: run 目录（runs/<id>）
+        playbook_path: playbook.yaml 路径（缺省 knowledge/diagnostics/playbook.yaml）
+
+    Returns:
+        dict: {ok, run_dir, matches:[{root_cause_family, evidence, pit_refs}], ...}
+    """
+    from rfauto.service.explain_run import explain_run
+    return explain_run(run_dir, playbook_path=playbook_path)
+
+
+@mcp.tool
+def list_composable_templates() -> dict[str, Any]:
+    """列出已注册组合契约模板与 pin schema（DP-8 opt-in 台账）。
+
+    Returns:
+        dict: {ok, result: {templates: [{template, port_pins,
+               schema_declared}], n_templates}}——port_pins 每 pin 含
+               pin_id/position（局部坐标米）/direction（外法向）/
+               z_ref_ohm（None=闭式同源注入）/ref_plane_offset_m/
+               port_type（lumped|msl|waveguide|field）/n_modes（预留）/
+               cross_section（截面指纹）
+    """
+    from rfauto.service.compose_service import list_composable_templates
+    try:
+        return list_composable_templates()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ─── 锚注册表 (DP-3) ──────────────────────────────────────────────────────────
+
+@mcp.tool
+def anchors_list() -> dict[str, Any]:
+    """列出物理标定锚注册表全部锚（DP-3，knowledge/anchors.yaml）。
+
+    无副作用，可安全调用。
+
+    Returns:
+        dict: {ok, registry, count, expected_count, load_errors,
+               anchors: [{anchor_id, kind, status, version, engine_pair,
+               quantity, value, uncertainty, domain, fallback}]}
+    """
+    from rfauto.service.anchors_service import list_anchors
+    try:
+        return list_anchors()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def anchors_inspect(anchor_id: str) -> dict[str, Any]:
+    """单锚全量记录（DP-3）：provenance/uncertainty/domain/consumers。
+
+    无副作用，可安全调用。
+
+    Args:
+        anchor_id: 锚 id（如 c3.l_via_h.openems-hfss-v1）
+
+    Returns:
+        dict: {ok, anchor: {全量字段 + version}}
+    """
+    from rfauto.service.anchors_service import inspect_anchor
+    try:
+        return inspect_anchor(anchor_id)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ─── 33. df7 T2 SI 通道报告（si_channel_service 薄壳） ────────────────────────
+
+@mcp.tool
+def si_channel_report(
+    source: str,
+    passivity_tol: float = 0.01,
+    causality_threshold: float = 0.02,
+    pre_cursor_guard_ns: float = 1.0,
+    tdr_window_ns: float = 2.0,
+    fext_paths: list[str] | None = None,
+    next_paths: list[str] | None = None,
+    markdown: bool = False,
+) -> dict[str, Any]:
+    """SI 通道一键报告（df7 T2：无源性/因果性/TDR/COM 四段，纯后处理）。
+
+    无源性=全频段 σmax(S)≤1+tol（numpy SVD）；因果性=IEEE P370 风格
+    （带限 IFFT 负时间能量占比 + 低频视在群延迟符号，自实现口径如实标注）；
+    TDR=S11 阶跃响应阻抗剖面（前 2ns 均值/全程 min/max/平坦度+降采样剖面）；
+    COM=IEEE 93A 冻结口径（PyChOpMarg，4 端口文件可用，2 端口如实
+    not_applicable，pychopmarg 缺装/失败 degraded 不阻塞，#105）。
+
+    Args:
+        source: Touchstone 文件路径（.sNp）或 run 目录（sparams.csv 掩码
+            口径优先，或 Touchstone 产物）
+        passivity_tol: 无源性容差（max σmax ≤ 1+tol）
+        causality_threshold: 负时间能量占比阈值
+        pre_cursor_guard_ns: 因果性循环尾窗宽度 ns
+        tdr_window_ns: TDR 统计窗 ns
+        fext_paths: COM 远端串扰 4 端口文件列表（可选）
+        next_paths: COM 近端串扰 4 端口文件列表（可选）
+        markdown: True 时附带 markdown 渲染文本
+
+    Returns:
+        dict: {ok, source, passivity, causality, tdr, com, provenance,
+        warnings, markdown?}
+    """
+    from rfauto.service.si_channel_service import si_channel_report
+    try:
+        return si_channel_report(
+            source,
+            passivity_tol=passivity_tol,
+            causality_threshold=causality_threshold,
+            pre_cursor_guard_ns=pre_cursor_guard_ns,
+            tdr_window_ns=tdr_window_ns,
+            fext_paths=fext_paths,
+            next_paths=next_paths,
+            markdown=markdown,
+        )
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ─── 34. df7 F3 runs 湖（lake_service 薄壳；MCP 面最小化注记） ────────────────
+# MCP 面只暴露只读查询（lake_query_runs）与本地归档产出（lake_pack_campaign）。
+# index/verify/restore 属本地运维面（index 写索引库、verify/restore 处理本地
+# 归档落盘/恢复），不进 MCP——最小面原则；本地运维走 CLI `rfauto lake ...`。
+
+@mcp.tool
+def lake_query_runs(
+    db_path: str | None = None,
+    template: str | None = None,
+    adapter: str | None = None,
+    study: str | None = None,
+    campaign: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    limit: int = 200,
+) -> dict[str, Any]:
+    """runs/ 湖索引只读查询（df7 F3）：等值过滤+日期段，参数化 ? 绑定。
+
+    查询前需先建索引库（CLI `rfauto lake index` 或 service build_runs_index，
+    属本地运维面不进 MCP）；库不存在/过滤值非法 → ok=False 如实不抛出。
+
+    Args:
+        db_path: 湖索引 DuckDB 路径（None=缺省 runs/.lake_index.duckdb）
+        template: 模板过滤（meta.model 等值；None/空串不过滤）
+        adapter: 适配器过滤（meta.adapter 等值；None/空串不过滤）
+        study: study 过滤（meta.study_name 等值；None/空串不过滤）
+        campaign: 战役目录名过滤（None/空串不过滤）
+        date_from: 起始日期 YYYY-MM-DD（created_date 闭区间；None 不过滤）
+        date_to: 截止日期 YYYY-MM-DD（created_date 闭区间；None 不过滤）
+        limit: 返回行数上限（最小 1）
+
+    Returns:
+        dict: {ok, rows: [dict], n_rows, db_path, table}
+    """
+    from rfauto.service.lake_service import query_runs_index
+    try:
+        return query_runs_index(
+            db_path, template=template, adapter=adapter, study=study,
+            campaign=campaign, date_from=date_from, date_to=date_to,
+            limit=limit)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool
+def lake_pack_campaign(campaign_dir: str, out_path: str) -> dict[str, Any]:
+    """战役目录打包为 tar.zst + 偏移清单（df7 F3 冷层压实，只读原目录）。
+
+    确定性排序+归一化 tar 头（同内容重打包 pack_sha256 逐位一致）；偏移
+    清单落 ``<out_path>.manifest.json``（每文件 path/offset/size/sha256 +
+    整包 pack_sha256 内容寻址锚）。校验（verify）与恢复（restore）属本地
+    运维面不进 MCP，走 CLI ``rfauto lake verify/restore``。
+
+    Args:
+        campaign_dir: 战役目录（只读，原目录零改动；不存在/无文件 ok=False）
+        out_path: 归档落点（.tar.zst）
+
+    Returns:
+        dict: {ok, pack_path, manifest_path, n_files, total_bytes,
+        pack_sha256, pack_size_bytes}
+    """
+    from rfauto.service.lake_service import pack_campaign
+    try:
+        return pack_campaign(campaign_dir, out_path)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ─── 35. df7+ R4 渲染前声明式几何约束（render_constraint_service 薄壳） ───────
+# z3 缺装降级在 core 内完成（status="unavailable" 进 verdict 不抛出）；
+# config 形状非法的 ValueError 在此收进 ok=False 信封（不炸会话）。
+
+@mcp.tool
+def render_constraint_check(config: dict[str, Any]) -> dict[str, Any]:
+    """渲染前声明式几何约束一次求解（R4：z3，UNSAT 全量冲突组+witness）。
+
+    对渲染脚本的既有 if 链守卫做声明式前置检查（#266 缝格/#152 最小间距/
+    #311 缝内线存在性/参数 bounds/NEAR=BASE/n 定义）；数值只在确定性内核
+    （规则 7）：全部数字出自 z3 求解（witness）或本 config 输入。
+
+    Args:
+        config: 约束配置对象（键全部可选，缺项即不组装对应规则）：
+            mesh_resolution_mm（float 钉值或 {low, high} 可取域）、
+            near_ratio（缺省 4）、gaps_mm（缝宽列表取最小）或 min_gap_mm、
+            gap_cells_min（缺省 3）、min_line_spacing_mm（缺省 1e-3）、
+            mesh_lines_mm（{轴: [线位 mm]}，逐轴最小间距）、
+            param_bounds（{变量: {low, high}}）、
+            max_conflict_groups（缺省 8）
+
+    Returns:
+        dict: {ok, status, conflict_rule_ids, conflict_groups, rules,
+        witness, near_mm, assembled, reason, solver}；z3 缺装时
+        ok=False/status="unavailable"；config 非法 → ok=False/error 信封
+    """
+    from rfauto.service.render_constraint_service import evaluate_render_constraints
+    try:
+        return evaluate_render_constraints(config)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 def get_mcp_server() -> FastMCP:

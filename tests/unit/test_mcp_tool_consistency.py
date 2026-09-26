@@ -61,7 +61,11 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 # （78→80：2026-09-18 工作目录产物导入器 +2——discover_workdir_runs/
 #   import_workdir_runs；工作目录形态真机产物（无 meta.json）导入器薄壳，零逻辑
 #   转发 dataset_service.discover_workdir_candidates/import_workdir_runs）
-_DECLARED_TOOL_COUNT = 80
+# 增量史（每键=零逻辑转发对应 service 薄壳）：cm 诊断三件套+3、
+# vna_en_report+1、mmt_solve+1、anchors 两键+2、si_channel_report+1、
+# lake 两键+2（index/verify/restore 属本地运维面不进 MCP 最小面）、
+# render_constraint_check+1
+_DECLARED_TOOL_COUNT = 106
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:

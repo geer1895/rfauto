@@ -1,0 +1,11 @@
+{
+  "project_slug": "rfauto-{{ cookiecutter.template_name }}-model",
+  "template_name": "my_model",
+  "plugin_class": "MyModelPlugin",
+  "params_class": "MyModelParams",
+  "module_name": "rfauto_{{ cookiecutter.template_name }}",
+  "n_ports": 2,
+  "version": "0.1.0",
+  "author": "your-name",
+  "min_python": "3.11"
+}

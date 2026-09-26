@@ -19,6 +19,14 @@ solvers:
       # openEMS 子进程走 Python 绑定脚本（openEMS 不直接产 Touchstone，输出 CSV）
       python_exe: ""   # 留空 = 用当前解释器；绑定编译到其他 Python 时在此指定
       # solve_timeout_s: 36000   # 高 Q 结构跑满衰减时可放开（默认 max_iterations*10）
+      # num_threads: 8   # 【注释键，2026-09-26 登记，尚未接线】FDTD 线程数旋钮
+      #   （绑定层消费点=openEMS.pyx 的 FDTD.Run(..., numThreads=N) kwarg，
+      #   非构造参数；本机构建 boost::thread 无 OpenMP，OMP_NUM_THREADS
+      #   无效——df7 经验④）。E5 实证（runs/df7_e5）：钉 8 线程 146.8 MC/s
+      #   比 auto 快 20%+，且结果逐位=线程数敏感（并行求和序）——逐位可
+      #   复现场景钉 8。当前渲染层各模板 FDTD.Run 为硬编码 render 串、
+      #   extra_params 无 →Run kwargs 透传点，接线需模板面逐处开洞
+      #   （另行立项）；本键先做存在性登记，防止后续批次重复调查。
   comsol:
     # COMSOL RF Module（第三方仲裁通道，稀缺 license 不做日常主力）。
     # 纪律（docs/comsol_references.md / #215）：mph.start 显式钉 version="6.3"

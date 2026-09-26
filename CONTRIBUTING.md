@@ -11,7 +11,7 @@ without any commercial license:
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"                    # or: uv sync --extra dev
-python -m pytest tests/unit -q             # ~7400 tests, all offline
+python -m pytest tests/unit -q             # ~9700 tests, all offline
 ruff check src/ tests/ scripts/            # must stay at 0 findings
 ```
 

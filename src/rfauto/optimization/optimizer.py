@@ -31,6 +31,132 @@ _C = 3.0e8  # 光速 m/s
 # provenance——#158：seed 不进缓存键，只记来源）
 SAMPLER_SEED = 42
 
+# Y3 批次 BO（DP-13）：批内归一化最小距离门（[0,1]^d 欧氏）。低于该门视为
+# 扎堆点（constant_liar 未拉开），弃批重 ask 一次，再犯如实降级串行。
+# 门值预声明 runs/df6_dp13/criteria.md §Y3。
+BATCH_MIN_DIST = 0.01
+
+
+# ─── Y3 批 ask/tell 内核 ─────────────────────────────────────────────────────
+
+def _batch_min_distance(
+    params_list: list[dict[str, float]],
+    names: list[str],
+    low: list[float],
+    high: list[float],
+) -> float:
+    """批内最小成对距离（归一化 [0,1]^d 欧氏）。单点批返回 inf。"""
+    import numpy as np
+
+    if len(params_list) < 2:
+        return float("inf")
+    span = np.asarray([
+        max(float(high[i]) - float(low[i]), 1e-12)
+        for i in range(len(names))])
+    pts = np.asarray([
+        [(float(p[n]) - float(low[i])) / span[i] for i, n in enumerate(names)]
+        for p in params_list])
+    diffs = pts[:, None, :] - pts[None, :, :]
+    dmat = np.sqrt((diffs ** 2).sum(-1))
+    iu = np.triu_indices(len(pts), k=1)
+    return float(dmat[iu].min())
+
+
+def _ask_batch(
+    study: optuna.Study,
+    param_ranges: dict[str, dict[str, Any]],
+    k: int,
+) -> list[tuple[optuna.Trial, dict[str, float]]]:
+    """ask k 点（ask+suggest 交错：先 ask 的 RUNNING 带参供 constant_liar 惩罚）。"""
+    batch: list[tuple[optuna.Trial, dict[str, float]]] = []
+    for _ in range(k):
+        trial = study.ask()
+        batch.append((trial, _suggest_params(trial, param_ranges)))
+    return batch
+
+
+def _discard_batch(
+    study: optuna.Study,
+    batch: list[tuple[optuna.Trial, dict[str, float]]],
+    reason: str,
+) -> None:
+    """弃批：未评估的 ask'd trial 如实记 FAIL（带原因 attr），不占预算。"""
+    for trial, _params in batch:
+        trial.set_user_attr("batch_discarded", reason)
+        study.tell(trial, state=optuna.trial.TrialState.FAIL)
+
+
+def _run_batched(
+    study: optuna.Study,
+    objective_fn: Callable[[optuna.Trial], float],
+    param_ranges: dict[str, dict[str, Any]],
+    *,
+    batch_size: int,
+    eff_max_trials: int,
+    eff_max_wall_s: float | None,
+    start_time: float,
+    min_dist: float = BATCH_MIN_DIST,
+) -> dict[str, Any]:
+    """批 ask/tell 优化循环（Y3）：ask k 点全 RUNNING → 串行逐个 tell。
+
+    - 批内归一化最小距离低于 min_dist：弃批重 ask 一次；再犯如实降级串行
+      （k=1 继续至预算完）；
+    - 弃批 trial 记 FAIL（batch_discarded attr）不计预算（未消耗求解）；
+    - 超时/预算与 study.optimize(timeout, n_trials) 同语义；
+    - 异常语义镜像 study.optimize：TrialPruned→PRUNED，其余异常→FAIL 后
+      原样上抛。
+    """
+    names = sorted(param_ranges.keys())
+    low = [float(param_ranges[n]["low"]) for n in names]
+    high = [float(param_ranges[n]["high"]) for n in names]
+
+    def timed_out() -> bool:
+        return eff_max_wall_s is not None and (
+            time.time() - start_time) >= eff_max_wall_s
+
+    notes: dict[str, Any] = {
+        "batch_size": int(batch_size), "gate": float(min_dist),
+        "n_batches": 0, "re_ask": 0, "degraded_serial": False,
+        "discarded_by_gate": 0, "min_batch_distance": None,
+    }
+    remaining = int(eff_max_trials)
+    while remaining > 0 and not timed_out():
+        k = min(1 if notes["degraded_serial"] else batch_size, remaining)
+        batch = _ask_batch(study, param_ranges, k)
+        notes["n_batches"] += 1
+        dist = _batch_min_distance(
+            [p for _, p in batch], names, low, high)
+        if k >= 2 and (notes["min_batch_distance"] is None
+                       or dist < notes["min_batch_distance"]):
+            notes["min_batch_distance"] = dist
+        if k >= 2 and dist < min_dist:
+            if notes["re_ask"] < 1:
+                # 首犯：弃批重 ask 一次
+                notes["re_ask"] += 1
+                notes["discarded_by_gate"] += k
+                _discard_batch(study, batch, "min_dist_violation_re_ask")
+                continue
+            # 再犯：如实降级串行
+            notes["degraded_serial"] = True
+            notes["discarded_by_gate"] += k
+            _discard_batch(study, batch, "min_dist_violation_degrade_serial")
+            continue
+        for trial, _params in batch:
+            if timed_out():
+                _discard_batch(study, [(trial, _params)], "wall_timeout")
+                continue
+            try:
+                value = objective_fn(trial)
+            except optuna.TrialPruned:
+                study.tell(trial, state=optuna.trial.TrialState.PRUNED)
+            except Exception:
+                study.tell(trial, state=optuna.trial.TrialState.FAIL)
+                raise
+            else:
+                study.tell(trial, value)
+            remaining -= 1
+    return notes
+
 
 # ─── 参数范围提取 ─────────────────────────────────────────────────────────────
 
@@ -779,6 +905,7 @@ def run_optimization(
     warm_start: list[dict[str, Any]] | None = None,
     seed: int = SAMPLER_SEED,
     cache: bool | None = None,
+    batch_size: int = 1,
 ) -> dict[str, Any]:
     """运行 Optuna 优化外环（sampler: "tpe" | "cmaes"，计划内缺口 5）。
 
@@ -802,6 +929,15 @@ def run_optimization(
     时，先过相似度门（warm_start.warm_start_points，负迁移防线）再 enqueue
     ——WAITING trial 在 optimize 中先被弹出执行=先验起点，结果带
     "warm_start_n"（实际注入数，门拒绝时为 0）。None=行为不变。
+
+    Y3 批次 BO（DP-13）：``batch_size`` 缺省 1=旧路径逐字节等价
+    （study.optimize 原样）；>1 走批 ask/tell（ask k 点全 RUNNING → 串行
+    逐个 tell），TPE 显式 ``constant_liar=True`` 惩罚 RUNNING 防扎堆
+    （Optuna 4.9 缺省 False，须显式开启）；批内归一化最小距离低于
+    BATCH_MIN_DIST 弃批重 ask 一次，再犯如实降级串行；cmaes 不支持批模式
+    显式报错不静默。批记账（n_batches/re_ask/degraded_serial/
+    min_batch_distance/discarded_by_gate）只进 batch_size>1 的
+    ``result["batch_mode"]``，缺省路径输出键集不变。
     """
     from rfauto.core.state import generate_run_id
     from rfauto.infra.run_store import create_run_dir, record_run, snapshot_recipe, write_meta
@@ -824,6 +960,12 @@ def run_optimization(
     objectives = [Objective(**o) for o in recipe_data.get("objectives", [])]
     if not objectives:
         return {"ok": False, "errors": ["缺少 objectives 段"]}
+
+    # Y3 批次 BO：batch_size 旋钮校验（缺省 1=旧路径；<1 显式报错不静默）
+    batch_size = int(batch_size)
+    if batch_size < 1:
+        return {"ok": False, "errors": [
+            f"batch_size 必须 ≥1，收到: {batch_size}"]}
 
     # ─── E10 约束段：optimization.constraints（元素结构同 objectives） ────
     # 缺省=无约束，全流程行为不变。约束走 Optuna 软约束通道（≤0=可行），
@@ -879,11 +1021,23 @@ def run_optimization(
     storage = get_storage_path()
 
     if sampler == "cmaes":
+        if batch_size > 1:
+            # Y3：CMA-ES 无 constant_liar 口径，批模式显式拒绝不静默降级
+            adapter.close()
+            return {"ok": False, "errors": [
+                "sampler='cmaes' 不支持 batch_size>1（无 constant_liar 口径）；"
+                "请改用 sampler='tpe' 或 batch_size=1。"]}
         # CMA-ES（缺口 5）：对连续低维参数空间通常优于 TPE；
         # 需要相对均匀的搜索空间，会对离散/log 参数回退随机采样（optuna 内建）
         opt_sampler = optuna.samplers.CmaEsSampler(seed=seed)
     elif sampler == "tpe":
-        if constraints:
+        if batch_size > 1:
+            # Y3 批模式：constant_liar 显式开启（Optuna 4.9 缺省 False），
+            # RUNNING trial 以失败"谎言"惩罚防批内扎堆；约束语义照常兼容。
+            opt_sampler = optuna.samplers.TPESampler(
+                seed=seed, constant_liar=True,
+                constraints_func=trial_constraint_values if constraints else None)
+        elif constraints:
             # E10 TPE 软约束：constraints_func 从 trial user_attrs 读违约量
             # （≤0=可行，optuna 官方语义 issue #4265；缺失视为可行 [0.0]，
             # 兼容旧 study 断点续跑）
@@ -963,10 +1117,18 @@ def run_optimization(
                 f"warm-start 被相似度门拒绝（{ws_gate.get('reason')}），按冷启动继续")
 
     start_time = time.time()
+    batch_notes: dict[str, Any] | None = None
     try:
         # quota_guard 强制：eff_max_trials / eff_max_wall_s 作为硬上限
         guard.check_trial(0)
-        study.optimize(objective_fn, n_trials=eff_max_trials, timeout=eff_max_wall_s)
+        if batch_size > 1:
+            # Y3 批 ask/tell 循环（缺省 1=study.optimize 原样，逐字节等价）
+            batch_notes = _run_batched(
+                study, objective_fn, param_ranges,
+                batch_size=batch_size, eff_max_trials=eff_max_trials,
+                eff_max_wall_s=eff_max_wall_s, start_time=start_time)
+        else:
+            study.optimize(objective_fn, n_trials=eff_max_trials, timeout=eff_max_wall_s)
     except QuotaExceededError:
         logger.warning("达到配额上限，提前结束优化")
     except KeyboardInterrupt:
@@ -1011,6 +1173,10 @@ def run_optimization(
     # 显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）
     if warm_start is not None:
         result["warm_start_n"] = warm_start_n
+
+    # Y3：批记账只进 batch_size>1（缺省路径输出键集不变）
+    if batch_size > 1 and batch_notes is not None:
+        result["batch_mode"] = batch_notes
 
     if constraints:
         # ─── E10 引擎侧可行域修复：best 语义收敛为"最优可行 trial" ─────

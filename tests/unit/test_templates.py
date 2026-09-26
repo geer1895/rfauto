@@ -207,11 +207,15 @@ class TestTemplateMeta:
     """方向 2 参数化公约：每模板 meta（仿真时长/网格/S 参数提取点/端口）。"""
 
     def test_meta_for_all_templates(self):
-        from rfauto.adapters.openems_templates import TEMPLATE_META, template_meta
+        from rfauto.adapters.openems_templates import PORTLESS_TEMPLATES, TEMPLATE_META, template_meta
         for t in TEMPLATE_META:
             meta = template_meta(t)
             assert meta["f0_ghz"] > 0
-            assert meta["n_ports"] >= 1
+            # n_ports≥1 惯例；唯一例外=无端口软平面照明散射体（DP-10 阵）
+            if meta["n_ports"] == 0:
+                assert t in PORTLESS_TEMPLATES,                     f"{t}: n_ports=0 仅允许 PORTLESS_TEMPLATES"
+            else:
+                assert meta["n_ports"] >= 1
             assert "extraction" in meta  # S 参数提取点
             assert meta["max_time_ns"] > 0  # 仿真时长
             assert meta["mesh_resolution_mm"] >= 0  # 网格 base 覆盖（0=自动 λ_sub/50）

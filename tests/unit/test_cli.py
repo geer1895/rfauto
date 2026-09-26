@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -156,14 +157,100 @@ class TestCommandRegistryCount:
         #   slotline_service）= 109
         # +2（2026-09-18：datasets discover-workdir/import-workdir，
         #   工作目录形态真机产物导入器薄壳零逻辑转发 dataset_service）= 111
+        # +3（df6_dp5cascade 2026-09-24：cascade budget/spur/plan，DP-5 系统级
+        #   预算引擎+杂散搜索薄壳零逻辑转发 cascade_service）= 118
+        # +3（df6_dp2diag 2026-09-24：diagnose q/cm/cat，DP-2 耦合矩阵诊断
+        #   三件套薄壳零逻辑转发 diagnosis_service）= 117
+        # +1（df6_dp15c3 2026-09-25：uq robustness，DP-15 C3 稳健性报告
+        #   薄壳零逻辑转发 robustness_service）= 118
+        # +3（df6_dp4af 2026-09-25：array synthesize/pattern/scan，DP-4 AF
+        #   引擎薄壳零逻辑转发 array_service）= 121
+        # +1（df6_dp13u1 2026-09-25：report render，DP-13 U1 双输出报告链
+        #   薄壳零逻辑转发 report_render_service）= 122
+        # +2（df6_dp11 2026-09-25：vna en-report/replay，DP-11 测量闭环）= 124
+        # +1（df6_dp14n7 2026-09-25：solvers qucsator-mline，N7 三方对照）= 125
+        # +2（df6_dp1p2 2026-09-25：mmt solve，DP-1 P2 MMT 服务薄壳）= 126
+        # +2（df6_dp8 2026-09-25：compose/compose-templates，DP-8 组合层薄壳）= 128
+        # +3（df6_dp17wire 2026-09-25：db league-rebuild/league-report + explain-run，DP-17 薄壳）= 131
+        # +6（df6_dp18c10 2026-09-25：nfmeas ffs-info/nf2ff + nfc evaluate/synth/q + sar report，C10 薄壳）= 137
+        # +3（df6_dp3anchors 2026-09-24：anchors list/inspect/validate，DP-3 锚注册表薄壳零逻辑转发 anchors_service）= 140
+        # +1（df7_t2 2026-09-25：si report，SI 通道报告薄壳零逻辑转发 si_channel_service）= 141
+        # +5（df7_f3lake 2026-09-25：lake index/query/pack/verify/restore，runs 湖索引
+        #   与分层压实薄壳零逻辑转发 lake_service）= 146
+        # +1（df7wire 2026-09-26：constraints check，R4 渲染前声明式几何约束
+        #   一次求解薄壳零逻辑转发 render_constraint_service）= 147
+        # 口径注记（2026-09-25 df6 合流对账；2026-09-25 df7 shadow 裁定更新）：
+        # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
+        # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
+        # 同名对已由 89852ba 改名 reports 闭合；df7 程序化裁定注册面=解析面
+        # =140 零 shadow（回归钉 test_zero_shadow_*，报告链批 "10 面"
+        # 系中间稿误计数，全 git 历史仅此一对同名冲突）。
         total = len(app.registered_commands)
         for info in app.registered_groups:
             total += len(info.typer_instance.registered_commands)
-        assert total == 111
+        assert total == 147
 
     def test_export_report_pdf_registered(self):
         names = {cmd.name for cmd in app.registered_commands}
         assert "export-report-pdf" in names
+
+    @staticmethod
+    def _typer_top_level_names(t) -> list[str]:
+        """typer 注册面顶层名（组名+命令名，同名各计；DefaultPlaceholder 落回
+        回调函数名/typer info.name——#354 typer 内嵌 vendored click 同源口径）。"""
+        from typer.models import DefaultPlaceholder
+
+        def real(n, fb):
+            if isinstance(n, DefaultPlaceholder):
+                return fb
+            return n if n else fb
+
+        names: list[str] = []
+        for c in t.registered_commands:
+            fb = c.callback.__name__.replace("_", "-") if c.callback else "?"
+            names.append(real(getattr(c, "name", None), fb))
+        for g in t.registered_groups:
+            n = real(getattr(g, "name", None), None)
+            if n is None and hasattr(g, "typer_instance"):
+                n = real(g.typer_instance.info.name, "?")
+            names.append(n)
+        return names
+
+    def test_zero_shadow_no_duplicate_registration_names(self):
+        """防再犯钉（df7 shadow 裁定，U1 report 事故 #97 族）：
+        每个 typer 实例（主 app + 全部嵌套子应用）的注册名零重复——
+        add_typer 组名与既有顶层命令/同层其他组名同名即静默遮蔽
+        （click dict 后注册覆盖先注册），此处在注册源头拦截。"""
+        seen: list[tuple[str, str]] = []
+
+        def check(t, label: str) -> None:
+            names = self._typer_top_level_names(t)
+            dup = sorted({n for n in names if names.count(n) > 1})
+            assert not dup, (
+                f"{label}: 注册名重复 {dup}（同名仅一个可达、其余被静默遮蔽；"
+                "败者须改不冲突的明确名，参照 U1 report→reports 先例）")
+            for n in names:
+                seen.append((label, n))
+            for g in t.registered_groups:
+                if hasattr(g, "typer_instance"):
+                    gn = getattr(g, "name", None) or g.typer_instance.info.name
+                    check(g.typer_instance, f"{label}/{gn}")
+
+        check(app, "app")
+
+    def test_zero_shadow_registration_face_equals_click_face(self):
+        """注册面顶层名集合 == click 解析面顶层名集合（零遮蔽的解析端钉）：
+        若有同名被 click dict 覆盖，解析面将比注册面少名，此断言当场红。"""
+        from typer.main import get_command
+
+        reg = self._typer_top_level_names(app)
+        assert len(reg) == len(set(reg)), "注册面本身有重名（见 zero_shadow 重复钉）"
+        cmd = get_command(app)
+        assert hasattr(cmd, "commands")
+        resolved = set(cmd.commands.keys())
+        assert resolved == set(reg), (
+            f"注册面与解析面不一致：仅注册面有 {sorted(set(reg) - resolved)}"
+            f"（被遮蔽）；仅解析面有 {sorted(resolved - set(reg))}（typer 静默改名）")
 
 
 def _fake_run_metrics(tmp_path: Path) -> str:
@@ -623,3 +710,235 @@ class TestSlotlineTransitionsCommands:
                                   "--band-lo-ghz", "3.0", "--band-hi-ghz", "2.0"])
         assert bad.exit_code == 1
         assert "Marchand 两节综合失败" in bad.output
+
+
+class TestLakeCommands:
+    """rfauto lake 五命令（df7 F3）：零逻辑转发 lake_service，tmp 目录全链冒烟。
+
+    造法对齐 test_lake_service.py（合成 runs/ 湖+迷你战役）；路径全部显式
+    指到 tmp_path（index/query 缺省 runs/ 相对 cwd，chdir 隔离兜底，#144）。
+    依赖 duckdb/zstandard（dataset extra），缺失时诚实 skip。
+    """
+
+    @pytest.fixture(autouse=True)
+    def _require_extras(self):
+        pytest.importorskip("duckdb", reason="湖索引需要 dataset extra（duckdb）")
+        pytest.importorskip("zstandard", reason="冷层压实需要 zstandard（tar.zst）")
+
+    @staticmethod
+    def _mini_lake(tmp_path: Path) -> dict[str, str]:
+        """合成 runs/ 湖：一个战役 campaign_x（pt1/pt2 两点，共 5 文件）。"""
+        runs = tmp_path / "runs"
+        base_meta = {"run_id": "x", "status": "done", "seed": 42}
+        pt1 = runs / "campaign_x" / "pt1"
+        pt1.mkdir(parents=True)
+        (pt1 / "meta.json").write_text(json.dumps({
+            **base_meta, "model": "mline", "adapter": "fake",
+            "study_name": "s1", "timestamp": "2026-09-01T00:00:00+00:00",
+        }), encoding="utf-8")
+        (pt1 / "results").mkdir()
+        (pt1 / "results" / "sparams.csv").write_text(
+            "freq_hz,s11_db\n2.0e9,-10.5\n", encoding="utf-8")
+        (pt1 / "results" / "blob.bin").write_bytes(bytes(range(256)) * 4)
+        pt2 = runs / "campaign_x" / "pt2"
+        pt2.mkdir()
+        (pt2 / "meta.json").write_text(json.dumps({
+            **base_meta, "model": "cpw", "adapter": "openems",
+            "study_name": "s2", "timestamp": "2026-09-02T00:00:00+00:00",
+        }), encoding="utf-8")
+        (pt2 / "criteria.md").write_text("# 预声明判据\n", encoding="utf-8")
+        return {
+            "runs": str(runs),
+            "db": str(tmp_path / "lake.duckdb"),
+            "campaign": str(runs / "campaign_x"),
+            "pack": str(tmp_path / "packs" / "campaign_x.tar.zst"),
+            "target": str(tmp_path / "restored" / "campaign_x"),
+        }
+
+    @staticmethod
+    def _tree_files(root: Path) -> dict[str, bytes]:
+        out: dict[str, bytes] = {}
+        for current, _dirs, filenames in os.walk(root):
+            for filename in filenames:
+                p = Path(current) / filename
+                out[p.relative_to(root).as_posix()] = p.read_bytes()
+        return out
+
+    def test_help_lists_five_commands(self):
+        result = runner.invoke(app, ["lake", "--help"])
+        assert result.exit_code == 0
+        for name in ("index", "query", "pack", "verify", "restore"):
+            assert name in result.output
+
+    def test_index_missing_runs_dir_honest_zero(self, tmp_path):
+        result = runner.invoke(app, [
+            "lake", "index", "--runs-dir", str(tmp_path / "nope"),
+            "--db", str(tmp_path / "lake.duckdb"), "--json"])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True and data["n_rows"] == 0
+        assert "note" in data
+
+    def test_full_chain_index_query_pack_verify_restore(self, tmp_path):
+        """迷你战役 → index → query → pack → verify → restore 全链（逐字节还原）。"""
+        env = self._mini_lake(tmp_path)
+
+        idx = runner.invoke(app, ["lake", "index", "--runs-dir", env["runs"],
+                                  "--db", env["db"], "--json"])
+        assert idx.exit_code == 0, idx.output
+        assert json.loads(idx.output)["n_rows"] == 3  # campaign_x + pt1 + pt2
+
+        query = runner.invoke(app, ["lake", "query", "--db", env["db"],
+                                    "--template", "mline", "--json"])
+        assert query.exit_code == 0, query.output
+        data = json.loads(query.output)
+        assert data["ok"] is True and data["n_rows"] == 1
+        assert data["rows"][0]["path"] == "campaign_x/pt1"
+        assert data["rows"][0]["template"] == "mline"
+
+        pack = runner.invoke(app, ["lake", "pack", env["campaign"],
+                                   "--out", env["pack"], "--json"])
+        assert pack.exit_code == 0, pack.output
+        pdata = json.loads(pack.output)
+        assert pdata["ok"] is True and pdata["n_files"] == 5
+        assert pdata["pack_sha256"]
+        assert Path(env["pack"]).is_file()
+        manifest = pdata["manifest_path"]
+        assert Path(manifest).is_file()
+
+        verify = runner.invoke(app, ["lake", "verify", env["pack"],
+                                     manifest, "--json"])
+        assert verify.exit_code == 0, verify.output
+        vdata = json.loads(verify.output)
+        assert vdata["ok"] is True and vdata["pack_sha256_ok"] is True
+        assert vdata["n_ok"] == 5 and vdata["n_fail"] == 0
+
+        restore = runner.invoke(app, ["lake", "restore", env["pack"],
+                                      manifest, env["target"], "--json"])
+        assert restore.exit_code == 0, restore.output
+        rdata = json.loads(restore.output)
+        assert rdata["ok"] is True
+        assert rdata["n_verified"] == rdata["n_files"] == 5
+        assert self._tree_files(Path(env["campaign"])) == \
+            self._tree_files(Path(env["target"]))
+
+    def test_restore_refuses_existing_target_passthrough(self, tmp_path):
+        """拒绝覆盖语义透传：目标已存在 → exit 1 + 拒绝理由（service 口径）。"""
+        env = self._mini_lake(tmp_path)
+        pack = runner.invoke(app, ["lake", "pack", env["campaign"],
+                                   "--out", env["pack"], "--json"])
+        assert pack.exit_code == 0, pack.output
+        manifest = json.loads(pack.output)["manifest_path"]
+
+        first = runner.invoke(app, ["lake", "restore", env["pack"],
+                                    manifest, env["target"], "--json"])
+        assert first.exit_code == 0, first.output
+        again = runner.invoke(app, ["lake", "restore", env["pack"],
+                                    manifest, env["target"], "--json"])
+        assert again.exit_code == 1
+        assert "拒绝恢复" in again.output
+
+    def test_verify_tampered_pack_exits_one(self, tmp_path):
+        env = self._mini_lake(tmp_path)
+        pack = runner.invoke(app, ["lake", "pack", env["campaign"],
+                                   "--out", env["pack"], "--json"])
+        manifest = json.loads(pack.output)["manifest_path"]
+        blob = bytearray(Path(env["pack"]).read_bytes())
+        blob[-1] ^= 0xFF
+        Path(env["pack"]).write_bytes(bytes(blob))
+        result = runner.invoke(app, ["lake", "verify", env["pack"], manifest])
+        assert result.exit_code == 1
+        assert "不符" in result.output
+
+    def test_query_missing_db_fails_with_envelope(self, tmp_path):
+        result = runner.invoke(app, ["lake", "query", "--db",
+                                     str(tmp_path / "nope.duckdb"), "--json"])
+        assert result.exit_code == 1
+        assert "不存在" in result.output
+
+    def test_query_text_output_lists_rows(self, tmp_path):
+        env = self._mini_lake(tmp_path)
+        idx = runner.invoke(app, ["lake", "index", "--runs-dir", env["runs"],
+                                  "--db", env["db"]])
+        assert idx.exit_code == 0, idx.output
+        assert "rows=3" in idx.output
+        query = runner.invoke(app, ["lake", "query", "--db", env["db"]])
+        assert query.exit_code == 0, query.output
+        assert "campaign_x/pt1" in query.output
+        assert "3 行" in query.output
+
+    def test_pack_missing_dir_exits_one(self, tmp_path):
+        result = runner.invoke(app, ["lake", "pack", str(tmp_path / "nope"),
+                                     "--out", str(tmp_path / "x.tar.zst"),
+                                     "--json"])
+        assert result.exit_code == 1
+        assert "不存在" in result.output
+
+
+class TestConstraintsCheckCommand:
+    """constraints check（df7wire R4 薄壳）：解析面 + stub 调用 + 错误路径。
+
+    零逻辑转发 render_constraint_service（配置解析在 service 层 #90）；
+    verdict.ok=False（UNSAT/z3 缺装）是检查正常产出 → 退出码 0；程序性
+    错误（文件缺失/形状非法）→ 非零退出。真实 SAT 用例 importorskip z3。
+    """
+
+    def test_help_lists_check(self):
+        result = runner.invoke(app, ["constraints", "--help"])
+        assert result.exit_code == 0, result.output
+        assert "check" in result.output
+
+    def test_stub_call_json_passthrough(self, tmp_path, monkeypatch):
+        """stub 服务函数：verdict 原样进 stdout JSON（紧凑缺省档）。"""
+        import json as _json
+
+        canned = {"ok": True, "status": "sat", "conflict_rule_ids": [],
+                  "witness": {"mesh_resolution_mm": 0.5, "near_mm": 0.125}}
+        monkeypatch.setattr(
+            "rfauto.service.render_constraint_service."
+            "evaluate_render_constraints_from_file",
+            lambda path: canned)
+        cfg = tmp_path / "c.json"
+        cfg.write_text("{}", encoding="utf-8")
+        result = runner.invoke(app, ["constraints", "check", str(cfg)])
+        assert result.exit_code == 0, result.output
+        assert _json.loads(result.output) == canned
+
+    def test_stub_call_pretty_indents(self, tmp_path, monkeypatch):
+        canned = {"ok": False, "status": "unsat", "conflict_rule_ids": ["a"]}
+        monkeypatch.setattr(
+            "rfauto.service.render_constraint_service."
+            "evaluate_render_constraints_from_file",
+            lambda path: canned)
+        cfg = tmp_path / "c.yaml"
+        cfg.write_text("gaps_mm: [0.1]\n", encoding="utf-8")
+        result = runner.invoke(app, ["constraints", "check", str(cfg),
+                                     "--pretty"])
+        assert result.exit_code == 0, result.output
+        import json as _json
+        assert _json.loads(result.output) == canned
+        assert "\n  " in result.output  # 缩进美化生效
+
+    def test_missing_file_exits_one(self, tmp_path):
+        result = runner.invoke(app, ["constraints", "check",
+                                     str(tmp_path / "nope.json")])
+        assert result.exit_code == 1
+        assert "不存在" in result.output
+
+    def test_real_sat_end_to_end(self, tmp_path):
+        """真实求解（z3 可用）：可行域内钉值 → sat + witness 近场派生值。"""
+        import json as _json
+
+        pytest.importorskip("z3", reason="R4 求解需要 z3-solver")
+        cfg = tmp_path / "c.json"
+        cfg.write_text(_json.dumps({
+            "mesh_resolution_mm": 0.5, "near_ratio": 4.0,
+            "min_gap_mm": 0.5}), encoding="utf-8")
+        result = runner.invoke(app, ["constraints", "check", str(cfg),
+                                     "--pretty"])
+        assert result.exit_code == 0, result.output
+        verdict = _json.loads(result.output)
+        assert verdict["ok"] is True
+        assert verdict["status"] == "sat"
+        assert verdict["witness"]
+        assert verdict["near_mm"] == pytest.approx(0.125)

@@ -1,0 +1,47 @@
+f0_ghz: 10.0
+n_ports: 2
+template: ms_cross
+substrate:
+  er: 3.66
+  h_mm: 0.508
+  tan_d: 0.0037
+params:
+- arm_len_mm
+- arm_w_mm
+- period_mm
+- h_mm
+nominal_params:
+  arm_len_mm: 4.91
+  arm_w_mm: 0.982
+  period_mm: 11.9917
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11/S21 @ 全口径集总片端口 1-2（R=η0，CalcPort 同参考；波导模拟器
+  ≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl
+  Δf≤0.3GHz 或 ≤5% 属真机轨，runs/df6_dp10ms/criteria.md §3）
+topology: >-
+  FSS 带阻十字偶极子单元：基板顶零厚正交双十字臂（x 臂=受激臂，y 臂=
+  正交极化对偶臂）；单胞 PEC/PMC 对壁域（x 对壁 PEC / y 对壁 PMC，TEM
+  平面波）；屏两侧 λ0/4 空气区各置全口径电阻片（下片激励、上片接收，
+  S21=透射）；z 底 MUR
+param_semantics: >-
+  arm_len_mm=臂长（中心→尖端，总跨=2·arm 半波谐振），arm_w_mm=臂宽，
+  period_mm=单胞周期，h_mm=基板厚；er/tan_d 走 substrate/nominal
+  （材料属性不改导体）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；臂缘精确入网
+  +邻臂尖缝 3+ 中点入网（#311）；NEAR≤邻臂尖缝/3 渲染期守卫（#266）；
+  全轴最小网格间距 ≥10µm
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证
+  （λ0/2√εeff 口径，test_metasurface_lut）
+nominal_derivation: |-
+  全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1d）：
+  period=0.4λ0=11.9917（<0.5λ0 无光栅瓣口径）；总跨=λ0/(2√εeff)、
+  臂长=总跨/2=λ0/(4√εeff)=4.91，εeff=(1+εr)/2=2.33（单侧基板加载，
+  Luukkonen 2008 eq.3 口径）；臂宽=总跨/10=0.982；h=0.508（20mil 板材）

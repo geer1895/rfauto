@@ -130,6 +130,9 @@ class PCBGenerationResult:
     n_traces: int = 0
     n_vias: int = 0
     n_pads: int = 0
+    # DP-7 P3：导出前 DFM 门报告（core.fab_check，best-effort #105——
+    # 不阻塞导出；检查未跑/内部失败时为 None 或 ran=False 留痕）。
+    dfm: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -139,6 +142,7 @@ class PCBGenerationResult:
             "n_traces": self.n_traces,
             "n_vias": self.n_vias,
             "n_pads": self.n_pads,
+            "dfm": self.dfm,
         }
 
 
@@ -162,10 +166,20 @@ def generate_pcb(
     output_path = Path(output_path)
     python_exe = kicad_python or KICAD_PYTHON
 
+    # DP-7 P3：导出前 DFM 门（best-effort，#105——绝不阻塞导出，失败留痕
+    # None/ran=False；剖面缺失或形状非法静默降级）。
+    dfm_report: dict[str, Any] | None = None
+    try:
+        from rfauto.core.fab_check import best_effort_dfm_for_design
+        dfm_report = best_effort_dfm_for_design(design.to_dict())
+    except Exception:
+        dfm_report = None
+
     if not Path(python_exe).exists():
         return PCBGenerationResult(
             success=False,
             message=f"KiCad Python 不存在: {python_exe}",
+            dfm=dfm_report,
         )
 
     # 创建临时 JSON 输入文件
@@ -190,6 +204,7 @@ def generate_pcb(
             return PCBGenerationResult(
                 success=False,
                 message=f"KiCad 执行失败: {result.stderr[:500]}",
+                dfm=dfm_report,
             )
 
         return PCBGenerationResult(
@@ -199,12 +214,15 @@ def generate_pcb(
             n_traces=len(design.traces),
             n_vias=len(design.vias),
             n_pads=len(design.pads),
+            dfm=dfm_report,
         )
 
     except subprocess.TimeoutExpired:
-        return PCBGenerationResult(success=False, message="生成超时")
+        return PCBGenerationResult(success=False, message="生成超时",
+                                   dfm=dfm_report)
     except Exception as e:
-        return PCBGenerationResult(success=False, message=str(e))
+        return PCBGenerationResult(success=False, message=str(e),
+                                   dfm=dfm_report)
     finally:
         # 清理临时文件
         Path(input_json).unlink(missing_ok=True)

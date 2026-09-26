@@ -1,0 +1,65 @@
+f0_ghz: 78.0
+n_ports: 1
+template: mmwave_series_array
+substrate:
+  er: 3.0
+  h_mm: 0.127
+  tan_d: 0.001
+params:
+- n_elem
+- elem_len_mm
+- elem_w_mm
+- link_len_mm
+- feed_w_mm
+- feed_margin_mm
+- h_mm
+nominal_params:
+  n_elem: 4
+  elem_len_mm: 0.9271
+  elem_w_mm: 1.3589
+  link_len_mm: 1.7482
+  feed_w_mm: 0.3259
+  feed_margin_mm: 3.0
+  load_r_ohm: 50.0
+  h_mm: 0.127
+  er: 3.0
+  tan_d: 0.001
+max_time_ns: 60.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ MSLPort 1（1×4 行波串馈贴片阵，链末 50Ω 集总匹配到地：谷位=单元谐振
+  设计式精确逆 patch_resonance_hj_ghz；方向图走 far_field=True nf2ff，离线
+  裁判=相位递推闭式主瓣指向 core/array_synthesis.series_feed_beam_direction_
+  cosine；未真机冒烟）
+topology: >-
+  1×N 串馈毫米波阵（§18.3d C10d）：N 元共线沿 y（x=0 居中，L 沿 y/W 沿 x），
+  相邻元以互联线接辐射边中心（互联长 s=自由设计参数，行波渐进相位 βg·s）；
+  MSLPort 自 y=−DOM 入、自画馈段至链首元（feed_margin）；链末 stub+匹配集总
+  负载到地（R=线 Z0 一阶）——行波阵口径，与 C2 patch_array_series（λg/2
+  谐振式、链末开路）分族；基板 + z-min PEC 地，y 轴 PML_8
+param_semantics: >-
+  n_elem=单元数（≥2），elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14
+  c/(2f0√εeff)−2ΔL，fake 谷位为其精确逆），elem_w_mm=单元宽 W
+  （c/(2f0)√(2/(εr+1))），link_len_mm=互联线长 s（行波渐进相位自由度：
+  u0=(π+βg·s−2π)/(k0·d)，d=L+s；s=λg/2 退化为 C2 同相侧射），feed_w_mm=50Ω
+  馈线/互联宽（HJ 0.3259mm @78GHz），feed_margin_mm=板边到链首元馈段长
+  （MSLPort 自画，MeasPlaneShift=margin/3），h_mm=基板厚（毫米波板 0.127）；
+  er/tan_d 走 substrate/nominal（RO3003 类）
+mesh_note: >-
+  辐射器件：上方空气隙 λ0/4+、侧向至域界（MUR）；贴片/互联/stub/负载盒缘
+  精确入网（#198）；渲染守卫：NEAR≤feed_w/3（#266 族，线宽分辨）、
+  |MeasPlaneShift−FeedShift|≥3.9·NEAR（#347）；全轴 1µm 近重合去重（#152）；
+  端口面贴 PML_8 域边（#154 前节）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面=
+  预算预声明 runs/df7_c10d/criteria.md §d（0.1mm 格 ~3.6e7 cells、
+  dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准），
+  本批零发射
+nominal_derivation: |-
+  全闭式精算（#1c/#252，导入期 mmwave_series_design_params 非手抄，criteria
+  §a）：单元 W=1.3589/L=0.9271（Balanis Ch.14，er=3.0/h=0.127）→ feed_w=
+  0.3259（skrf HJ 50Ω，先舍入再算 εeff=2.4285）→ βg=2.5476 rad/mm、λg=
+  2.4664mm → 互联长 s=1.7482（倾斜设计式 s=(u0·k0·L+π)/(βg−u0·k0)，u0=0.30
+  主分支 m=1，未舍入闭合往返 ≤1e-9）→ d/λ0=0.696（栅瓣判据 <0.769）；链末
+  load_r=50Ω=线 Z0（一阶未载入口径）；feed_margin=3.0（#347 守卫余量）

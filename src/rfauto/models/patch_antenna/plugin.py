@@ -31,9 +31,12 @@ class PatchAntennaPlugin(RFModelPlugin):
     name: ClassVar[str] = "patch_antenna"
     params_model: ClassVar[type[BaseModel]] = PatchAntennaParams
     schema_version: ClassVar[int] = 1
-    # 物理上 1 端口（coax feed）；fake 解析近似无贴片模型，借 2 端口 wilkinson
-    # 形状产出 s11/s21 曲线供调优回路干跑，真机走 HFSS 全链
-    n_ports: ClassVar[int] = 2
+    # 物理上 1 端口（coax feed）——与 openEMS 模板 TEMPLATE_META["patch"]
+    # n_ports=1、docs/templates/patch/meta.yaml n_ports: 1 三通道一致
+    # （收口修正：旧值 2 是 fake 曾借 2 端口形状产 s11/s21 的历史残留，
+    # 导致契约≠设计实际端口）。fake 解析近似同步产 1 端口 S11 曲线
+    # （_patch_sparams_1port）；patch 配方 objectives 全为 S11 语义。
+    n_ports: ClassVar[int] = 1
     fake_model_type: ClassVar[str] = "patch"
     hfss_var_map: ClassVar[dict[str, str]] = {
         "patch_len_mm": "patch_len",

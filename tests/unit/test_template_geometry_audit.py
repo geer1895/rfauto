@@ -61,10 +61,23 @@ from tests.unit import _geometry_audit_helpers as gh
 # SLOTLINE_FAMILY 段）。
 # 2026-09-18：hairpin_alt 交替取向发夹线（根修：奇数序
 # 谐振器翻转使相邻臂开路端交替、电/磁耦合同号叠加；纯 KJ gap→k 口径）正式注册
-# （42→43；注册在 hairpin 之后、coupled_bpf 之前，槽线族仍居字典尾 #247）。
+# （42→43；注册在 hairpin 之后、coupled_bpf 之前，槽线族仍居尾 #247）。
 # 2026-09-22 siw-family：SIW 族首族=直 SIW 传输线段（LumpedPort z 桥×2、矩形域
 # DOM_X/DOM_Y 字面注入、f0=10GHz 设计点）正式注册（43→44；注册在文末 SIW 段，
 # 尾部追加 #247）。
+# 2026-09-24 df6-a2siwmsl：SIW 族第二成员=MSL 锥形过渡+SIW 直段（双 MSLPort
+# 线基、Deslandes-Wu 两段论、矩形域 DOM_X/DOM_Y 字面注入、f0=10GHz 设计点）
+# 正式注册（44→45；注册在文末 MSL_SIW_TAPER 段，槽线族仍居尾 #247）。
+# 2026-09-24 df6-dp4p3：§DP-4 P3 EEP 阵列族两模板（patch_eep_2x2/patch_eep_1x4，
+# 每元独立 LumpedPort 探针 1..4、无馈树、元间 DC 隔离=EEP 定义性质）正式注册
+# （49→51；注册在文末 EEP 段，C2 阵列族同款闭式设计链复用）。
+# 2026-09-26 df7-c10b：§COIL_NFC NFC/WPC 线圈族首模板 coil_nfc（13.56MHz 单端口
+# 方螺旋、FR4 类基板、中跳线桥、外圈馈隙 LumpedPort）正式注册（51→52；注册在
+# 文末 COIL_NFC 段，槽线/EEP 同款整脚本渲染器早分发）。
+# 2026-09-26 df7-c10d：§MMWAVE_SERIES_ARRAY 串馈毫米波阵模板 mmwave_series_array
+# （78GHz 行波串馈 1×N、链末匹配集总负载到地、RO3003 类毫米波板、相位递推闭式
+# core/array_synthesis.series_feed_*）正式注册（52→53；注册在文末
+# MMWAVE_SERIES_ARRAY 段，coil_nfc 同款整脚本渲染器早分发）。
 EXPECTED_TEMPLATES = frozenset({
     "wilkinson", "patch", "branchline", "dipole", "stepped_impedance",
     "coupled_line", "mline", "cpw", "stripline", "wstep", "tjunc", "bend",
@@ -78,7 +91,17 @@ EXPECTED_TEMPLATES = frozenset({
     "cline_coupler", "branchline_2sect", "lange",
     "msl_cpw", "sma_launcher",
     "slotline", "slotline_lumped", "msl_slot_transition", "marchand_balun",
-    "siw",
+    "siw", "msl_siw_taper",
+    # §MS_METASURFACE 超表面/FSS 族（2026-09-24 df6 DP-10，文末注册块）
+    "ms_patch", "ms_cross", "ms_jcross", "ms_array_NxN",
+    # §DP-4 P3 EEP 阵列族（2026-09-24 df6，文末注册块）
+    "patch_eep_2x2", "patch_eep_1x4",
+    # §COIL_NFC NFC/WPC 线圈族（2026-09-26 df7 C10b，文末注册块；
+    # 单端口馈隙 LumpedPort，整脚本渲染器早分发）
+    "coil_nfc",
+    # §MMWAVE_SERIES_ARRAY 串馈毫米波阵（2026-09-26 df7 C10d，文末注册块；
+    # 单端口 MSLPort + 链末匹配集总负载，整脚本渲染器早分发）
+    "mmwave_series_array",
 })
 
 # 渲染脚本实际创建的端口对象数与 meta n_ports 的差异（历史口径）：
@@ -94,7 +117,7 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 44, "覆盖基线漂移：注册基线为 44 个模板"
+    assert len(EXPECTED_TEMPLATES) == 53, "覆盖基线漂移：台账记 53 个模板"
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {
@@ -162,6 +185,16 @@ def test_primitives_nonzero_and_entered_in_mesh(template):
 def test_ports_on_boundary_and_nonzero(template):
     scope, prims = gh.load_geometry(template)
     ports = gh.port_objects(scope)
+    if template in gh.PORTLESS_TEMPLATES:
+        # §MS_METASURFACE 阵（df6 DP-10）：无端口软平面照明散射体——改查
+        # 软激励平面 + nf2ff 盒存在（官方 PPW 教程口径，正面判据非豁免）
+        assert not ports, f"{template}: 无端口模板不应有端口对象"
+        exc_names = [k for k in scope
+                     if k.startswith("_exc") or k == "_excitation"]
+        assert exc_names, f"{template}: 无软激励平面（exc_type=0 照明缺失）"
+        assert "_FF" in scope, f"{template}: 无 nf2ff 盒（J2 判读面缺失）"
+        assert TEMPLATE_META[template]["n_ports"] == 0
+        return
     assert ports, f"{template}: 渲染脚本无端口对象"
     expected = RENDER_PORT_COUNT.get(template, TEMPLATE_META[template]["n_ports"])
     assert len(ports) == expected, f"{template}: 端口对象数 {len(ports)} != {expected}"
@@ -193,6 +226,12 @@ def test_ports_on_boundary_and_nonzero(template):
                     for p in host)
                 assert reach, \
                     f"{template} port{number}: 馈线未延伸到域边界（开路 stub 嫌疑 #174）"
+            elif template in gh.EDGE_PORT_TEMPLATES:
+                # 域边贴界 MSL 端口（msl_siw_taper：矩形域 DOM_Y 字面≠BOARD，
+                # 端口面=域边界=PML 面，mline 口径的矩形域变体，#174）
+                dom = dom_y if axis == 1 else dom_x
+                assert abs(abs(float(start[axis])) - dom) <= 1e-9, \
+                    f"{template} port{number}: 端口面未贴域边界（{start[axis]}）"
             else:
                 # 端口面贴板边 = PML 边界（馈线止于域中即开路 stub，#174）
                 assert abs(abs(start[axis]) - board) <= 1e-9, \
@@ -216,6 +255,32 @@ def test_signal_connectivity(template):
     scope, prims = gh.load_geometry(template)
     conductors, labels = gh.conductor_labels(prims)
     ports = gh.port_objects(scope)
+    if template in gh.PORTLESS_TEMPLATES:
+        # §MS_METASURFACE 阵（df6 DP-10）：无端口连通性——改查金属分量
+        # （逐胞贴片 DC 隔离分量；地连续=脚本 BC token，由
+        # test_metasurface_templates 正面断言）
+        metal_prims = [p for p in conductors if p.kind == "Metal"]
+        assert metal_prims, f"{template}: 无金属原语"
+        assert len(labels) >= 1
+        return
+    if template in gh.SHEET_PORT_TEMPLATES:
+        # §MS_METASURFACE 单元（df6 DP-10）：波导模拟器 TEM 片端口浮于空气区
+        # （容性馈）——判据改：①片端口 LumpedElement 与金属原语无 bbox 接触
+        # （DC 短路即红）；②模板有独立金属网络（屏/贴片）；
+        # ③端口片激励体积非零（exc 向 span>0）
+        metal_prims = [p for p in conductors if p.kind == "Metal"]
+        assert metal_prims, f"{template}: 无屏/贴片金属"
+        for number, port in ports.items():
+            lo = np.minimum(np.asarray(port.start, dtype=float),
+                            np.asarray(port.stop, dtype=float))
+            hi = np.maximum(np.asarray(port.start, dtype=float),
+                            np.asarray(port.stop, dtype=float))
+            for p in metal_prims:
+                overlap = np.minimum(hi, p.hi) - np.maximum(lo, p.lo)
+                assert not bool(np.all(overlap >= -1e-9)), \
+                    f"{template} port{number}: 片端口与金属 {p.prop} 接触" \
+                    "（DC 短路，容性馈口径被破坏）"
+        return
     if template in gh.FIELD_PORT_TEMPLATES:
         # 场激励端口（WaveguidePort 文件模式，路线 A）：馈电点在槽中空气隙，
         # "端口悬空"判据不适用——改查端口盒包围盒含 ≥1 金属原语（截面含导体）

@@ -1,0 +1,42 @@
+# DP-11 P2：GUM 不确定度预算表（默认模板）
+#
+# 消费面：measurement/en_report.gum_combined_uncertainty / load_budget。
+# u_c = sqrt(sum((c_i * u_i)^2))，U = k * u_c（GUM 常规 k=2）。
+# 温漂分量 unit 带 "/°C"（或 per_c: true）时有效 u = u × delta_t_c。
+#
+# 诚实边界（criteria.md §4）：本表是**模板缺省值**——数值为通用量级占位，
+# 首次真机测量前须按仪器手册/实测重复性替换（P3 交接项）；fallback 数值
+# 不冒充计量学口径。
+schema: uncertainty_budget/v1
+budgets:
+  default_vna:
+    description: VNA 幅度测量 GUM 预算默认模板（DP-11 §3；真机到手前为占位量级）
+    k: 2.0
+    delta_t_c: 5.0        # 与校准温度的典型温差（°C）；消费侧可覆盖
+    components:
+      - name: residual_directivity
+        u: 0.01           # dB（方向性残余的幅度贡献占位）
+        unit: dB
+        c: 1.0
+        note: 残余直接度——按仪器方向性指标与 DUT 匹配换算后替换
+      - name: connector_repeatability
+        u: 0.005          # dB（规格书 §3 钉值）
+        unit: dB
+        c: 1.0
+        note: 连接器重复性（重连 N 次实测标准差；P3 用重复性实验替换）
+      - name: temperature_drift
+        u: 0.02           # dB/°C（规格书 §3 钉值；有效 u = u × delta_t_c）
+        unit: dB/°C
+        c: 1.0
+        per_c: true
+        note: 温漂系数 × 与校准温度的温差
+      - name: if_noise
+        u: 0.004          # dB（IF 带宽与平均次数决定；占位）
+        unit: dB
+        c: 1.0
+        note: IF 噪声——按 IFBW/平均次数/源匹配换算后替换
+      - name: calkit_standard
+        u: 0.008          # dB（校准件标准定义不确定度；占位）
+        unit: dB
+        c: 1.0
+        note: calkit 分量——按校准件厂家 datasheet 替换
