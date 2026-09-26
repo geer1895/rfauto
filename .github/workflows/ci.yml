@@ -28,6 +28,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # pip 依赖缓存：key 按依赖声明文件哈希（pyproject.toml 是 pip
+          # install -e . 的实际解析来源；uv.lock 有代际滞后不作 key）。
+          # 缓存只加速下载，wheel 内容寻址，陈旧无害（缺的 pip 会现下）。
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
       - name: Install dev tools
         run: |
           python -m pip install --upgrade pip
@@ -64,6 +69,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # 同 quality：pyproject.toml 哈希作缓存 key
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
       - name: Install package with test-relevant extras
         run: |
           python -m pip install --upgrade pip
@@ -72,7 +80,16 @@ jobs:
           pip install -e ".[hfss,mcp,multiobj,dev]"
       - name: Run unit + integration-fake tests (real_edt deselected)
         run: |
-          python -m pytest tests/unit -q -m "not real_edt"
+          # xdist loadfile 并行：内部仓 gate_parallel.py 先例直接搬
+          # （8.55× 实测，2026-09-25 df6 批）；loadfile 按测试文件分组
+          # 分发，不破坏文件内顺序依赖。真跑/重型 job 本 CI 不存在
+          # （real_edt 恒被 deselect），故只有本纯单测 job 并行；
+          # rules-verify 单文件 cron job 保持串行。
+          # OPENBLAS_NUM_THREADS=1：xdist worker×BLAS 线程超订实测慢
+          # 85×（内部 #258），必须在 pytest/numpy import 前生效。
+          python -m pytest tests/unit -q -m "not real_edt" -n auto --dist=loadfile
+        env:
+          OPENBLAS_NUM_THREADS: "1"
       - name: Verify real_edt tests are collectable and always deselected in CI
         run: |
           python -m pytest tests/unit -m "real_edt" --co -q | tail -1
@@ -88,12 +105,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # 同 quality：pyproject.toml 哈希作缓存 key
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
       - name: Install package with test-relevant extras
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[hfss,mcp,multiobj,dev]"
       - name: Re-run live rules verify tests (rules.yaml verify subset)
         run: |
+          # 单测试文件串行：xdist 分发无收益（loadfile 下单文件=单 worker），
+          # 定案值复验保持确定性顺序。
           python -m pytest tests/unit/test_rules_verify.py -q -m "not real_edt"
 
   docker-build:
@@ -135,6 +157,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # 同 quality：缓存只加速依赖下载，不改变审计面（pip-audit 审的
+          # 是安装后环境，与 wheel 来自缓存还是现下无关）
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
       - name: Install pinned supply-chain tools
         run: |
           python -m pip install --upgrade pip
