@@ -424,19 +424,18 @@ def _pointer_norms(runs: Path, pointers) -> set[str]:
 
 class TestCliCompact:
     def test_help_true_run(self):
-        # COLUMNS=200 宽渲染：rich 截断点随平台漂移（Linux CI 假红
-        # 2026-10-07 首跑实证）——宽端旗标完整渲染，断言跨平台稳定
-        # typer rich_utils 在【导入期】读 TERMINAL_WIDTH 存 MAX_WIDTH
-        # 全局（invoke 期 env 太晚，2026-10-07 二跑实证 COLUMNS 单独
-        # 无效）——render 期逐次读模块全局，monkeypatch 确定生效。
-        import pytest
-        import typer.rich_utils
-        with pytest.MonkeyPatch.context() as _mp:
-            _mp.setattr(typer.rich_utils, "MAX_WIDTH", 200)
-            result = runner.invoke(app, ["lake", "compact", "--help"])
+        # --help 渲染冒烟 + 旗标注册存在性（渲染器解耦：rich 截断位随
+        # 版本/平台漂移——三代钉均被 CI rich 15 证伪，2026-10-07 三跑
+        # 实证，改查 click 参数注册树）
+        from typer.main import get_command
+
+        result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "--apply" in result.output
-        assert "dry-run" in result.output
+        assert "Usage" in result.output
+        lake_cmd = get_command(app).commands["lake"]
+        flat = str([list(p.opts) + [str(s) for s in p.secondary_opts]
+                    for p in lake_cmd.commands["compact"].params])
+        assert "--apply" in flat
 
     def test_dryrun_default_zero_write(self, mini_lake):
         before = _tree_hashes(mini_lake["runs"])

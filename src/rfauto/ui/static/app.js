@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { initPages, showPage, esc } from "./pages.js";
 // PR-3 PlotCard：option 构造单源在 plotcard.js（buildEChartOption 与
-// 迁移前 drawEChart 逐字节等价，golden 快照钉 runs/pr34），drawEChart
+// 迁移前 drawEChart 逐字节等价，golden 快照钉 runs/pr34/），drawEChart
 // 与 plotCard 共用；drawLineChart/Smith/3D 自研管线不动。
 import { buildEChartOption, plotCard } from "./plotcard.js";
 
@@ -44,7 +44,7 @@ export const badge = (text, cls) => `<span class="badge ${cls}">${esc(text)}</sp
 export const passBadge = (p) =>
   p === true ? badge("PASS", "ok") : p === false ? badge("FAIL", "err") : badge("N/A", "muted");
 
-/* PR-1 对比度：图表系列调色板按主题分档（核算见 runs/pr1_contrast）。
+/* PR-1 对比度：图表系列调色板按主题分档（核算见 runs/pr1_contrast/）。
    深色档对 --plot-bg #0d1118、浅色档对白底逐色 ≥3:1（WCAG 图形）。
    显式 s.color 仍优先——调色板只兜底缺省系列。 */
 const CHART_COLORS = {
@@ -292,3 +292,21 @@ initPages({
   lightboxImg, lightboxContent, $, THREE, plotCard: uiPlotCard,
 });
 showPage("dashboard");
+
+// 深链：#/runs 形式直达页面（刷新/分享保持当前页；未知值回落 dashboard）。
+// nav 按钮 onclick 同步写 hash，前进/后退可用。
+const _VALID_PAGES = new Set(
+    [...document.querySelectorAll("[data-v]")]
+        .map((b) => b.dataset.v));
+function _applyHash() {
+  const v = (location.hash || "").replace(/^#\/?/, "");
+  if (v && _VALID_PAGES.has(v)) showPage(v);
+}
+window.addEventListener("hashchange", _applyHash);
+_applyHash();
+document.querySelectorAll("[data-v]").forEach((b) => {
+  b.addEventListener("click", () => {
+    const v = b.dataset.v;
+    if (location.hash !== "#/" + v) history.replaceState(null, "", "#/" + v);
+  });
+});

@@ -617,30 +617,24 @@ class TestJudgeBenefit:
 
 class TestTuneCliFlag:
     def test_tune_help_renders_with_flag(self):
-        """--help 真跑不炸（#305）；rich 窄端截断旗标名——按 help 文本+
-        旗标前缀钉（截断形态 warm-start-regis…）。"""
+        """--help 真跑不炸（#305）+ 旗标注册存在性（渲染器解耦：rich 截断位
+        随版本/平台漂移——COLUMNS/TERMINAL_WIDTH/MAX_WIDTH 三代钉均被 CI
+        rich 15 证伪（2026-10-07 三跑实证），改查 click 参数注册树）。"""
+        from typer.main import get_command
         from typer.testing import CliRunner
 
         from rfauto.cli.domains.workflow import app
 
         runner = CliRunner()
-        # COLUMNS=200 宽渲染：rich 窄表截断点随平台 CJK 宽度计算漂移
-        # （Linux CI 截断位比 Windows 更早，截断前缀钉假红，2026-10-07
-        # 首跑实证）——强制宽端让旗标完整渲染，断言语义跨平台稳定
-        # typer rich_utils 在【导入期】读 TERMINAL_WIDTH 存 MAX_WIDTH
-        # 全局（invoke 期 env 太晚，2026-10-07 二跑实证 COLUMNS 单独
-        # 无效）——render 期逐次读模块全局，monkeypatch 确定生效。
-        import pytest
-        import typer.rich_utils
-        with pytest.MonkeyPatch.context() as _mp:
-            _mp.setattr(typer.rich_utils, "MAX_WIDTH", 200)
-            result = runner.invoke(app, ["tune", "--help"])
+        result = runner.invoke(app, ["tune", "--help"])
         assert result.exit_code == 0
-        flat = result.output.replace("\n", "").replace(" ", "")
-        # 宽端无截断：旗标全名+help 关键词钉（真跑不炸=#305 主判据）
-        assert "代理模型注册表" in flat and "warm-start" in flat
-        assert "--warm-start-regis" in flat
-        assert "--no-warm-start-r" in flat
+        # 渲染冒烟：Usage 行在
+        assert "Usage" in result.output
+        # 旗标注册存在性：click 参数树（渲染无关，跨平台确定）
+        tune_cmd = get_command(app).commands["tune"]
+        flat = str([list(p.opts) + [str(s) for s in p.secondary_opts]
+                    for p in tune_cmd.params])
+        assert "--warm-start-registry" in flat
 
     def test_non_single_path_explicit_flag_not_silent(self, tmp_path):
         """显式开关走非单目标路径：如实提示不静默（#122）；--json 下提示走

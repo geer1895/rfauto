@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="rfauto — RF/microwave design automation with LLM orchestration" width="100%">
+</p>
+
 # rfauto
 
 [![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
@@ -32,7 +36,9 @@ honest by **21900+ unit tests** that run without any commercial license.
 [The Web UI](#the-web-ui) · [Engines](#engines) · [Docs](#documentation) ·
 [Roadmap](#status--roadmap) · [Contributing](#contributing)
 
-![architecture](docs/assets/architecture.png)
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="rfauto architecture: interfaces → service → domain → adapters → deterministic core, with the AI agent loop and the iron rule" width="100%">
+</p>
 
 ## Why
 
@@ -174,7 +180,7 @@ rfauto ui          # http://127.0.0.1:8642 — local only
 | | |
 |---|---|
 | ![overview](docs/assets/ui_dashboard.png) | ![sparams](docs/assets/ui_sparams.png) |
-| ![runs](docs/assets/ui_runs.png) | ![tools](docs/assets/ui_tools.png) |
+| ![farfield](docs/assets/ui_farfield.png) | ![gallery](docs/assets/ui_gallery.png) |
 
 Every page is deep-linkable (`#runs`, `#sparams`, `#tools`, …), so you can
 bookmark the view you care about.

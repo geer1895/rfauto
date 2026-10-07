@@ -35,7 +35,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake          # fake 通道首
 
 | 维度 | 数量 |
 |---|---|
-| 全量门测试 | 21908 |
+| 全量门测试 | 21809 |
 | CLI 叶子命令 | 254 |
 | MCP 工具 | 149 |
 | 确定性计算器（含实验键） | 100（101） |

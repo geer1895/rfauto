@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="rfauto — RF/微波设计自动化 + LLM 编排" width="100%">
+</p>
+
 # rfauto
 
 [![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
