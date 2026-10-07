@@ -159,7 +159,7 @@ rfauto ui          # http://127.0.0.1:8642 — 仅本机
 | | |
 |---|---|
 | ![总览](docs/assets/ui_dashboard.png) | ![S 参数分析](docs/assets/ui_sparams.png) |
-| ![Run 历史](docs/assets/ui_runs.png) | ![微波工具箱](docs/assets/ui_tools.png) |
+| ![远场方向图](docs/assets/ui_farfield.png) | ![模板画廊](docs/assets/ui_gallery.png) |
 
 每个页面都支持深链接（`#runs`、`#sparams`、`#tools`…），可以收藏常用视图。
 
