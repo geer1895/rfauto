@@ -166,10 +166,10 @@ jobs:
   # 修复或显式 pip-audit --ignore-vuln 豁免清单（豁免须在 PR 描述与本注释
   # 同步留痕），不降级为 continue-on-error。
   #
-  # 已知现状注记（2026-09-24 本地实测）：uv.lock 相对 pyproject 存在代际
-  # 滞后（uv lock --check 不过，jax extra 使 py<3.12 分支不可解）。本 job
-  # 只做 --frozen 只读导出（不校验锁同步，不触碰 uv.lock），不受滞后影响；
-  # 刷新锁属仓主决策，不在此 job 范围。
+  # 锁面现状（2026-10-07 刷新）：uv.lock 已按当前 pyproject 全图重解
+  # （纸面 extra pypopy PyPI 404 移出 + jax/fdtdx 加 python_version 标记
+  # 解 3.10/3.11 分叉）——uv lock --check 幂等通过，--frozen 导出 688 哈希。
+  # 后续依赖变更后仓主重跑 uv lock 并同笔提交即可。
   # ---------------------------------------------------------------------
   supply-chain:
     name: supply chain (pip-audit + CycloneDX SBOM + hashed requirements)

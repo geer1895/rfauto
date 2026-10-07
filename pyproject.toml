@@ -102,11 +102,15 @@ ngsolve = ["ngsolve>=6.2"]
 # JAX 原生可微 FDTD（A7，FDTDX/rfx 路线）—— CPU wheel 直装（含 jaxlib ~68MB）；
 # GPU 为用户侧跳过项，本项只确证 CPU 小规模可微性
 # （scripts/jax_probe.py：1D Yee FDTD jax.grad vs 中心差分 rel_err 1.7e-8，jax/jaxlib 0.11.1）。
-jax = ["jax>=0.11.1"]
+# python_version 标记：jax>=0.11.1 仅支持 py≥3.12（universal 锁在
+# 3.10/3.11 分叉无解实证 2026-10-07）——3.10/3.11 用户装此 extra 为空集
+# （要 jax 可微 FDTD 请用 3.12），requires-python 全域可解。
+jax = ['jax>=0.11.1; python_version >= "3.12"']
 # FDTDX 真引擎（§10.24 A7"真引擎/GPU 待续"的 CPU 接入，adapters/fdtd_diff.py）——
 # 传递依赖 jax>=0.4.36；注意 tidy3d 间接钉 numpy<2.5、fastmcp<4（安装时会让
 # venv 内 numpy/fastmcp 降级，pip check 无冲突即可用）
-diff-fdtd = ["fdtdx>=0.6.2"]
+# python_version 标记：fdtdx 0.6.2 仅支持 py≥3.11（universal 锁分叉实证）。
+diff-fdtd = ['fdtdx>=0.6.2; python_version >= "3.11"']
 # pydantic-ai（slim+openai extra）—— WP3.1 runtime: pydantic_ai 可选依赖组：
 # 未安装时 create("pydantic_ai") 照常注册（懒加载），submit 报 PydanticAINotInstalled；
 # 安装：pip install rfauto[pai]。版本口径见 service/pydantic_ai_runtime.py 源码核对注记
@@ -152,10 +156,13 @@ gnn = ["torch-geometric>=2.3"]
 # shapely LVS 连通分量（layout_lvs_service 惰性 import，缺装=error 信封带
 # 安装提示）。gdstk=Boost 许可、shapely=BSD-3。安装：pip install rfauto[layout]
 layout = ["gdstk>=1.0", "shapely>=2.0"]
-# PyPO 物理光学 —— pypopy（GPL-3，大电尺寸反射面/准光 PO 预估）；GPL 许可
-# 边界=fail-closed opt-in 门（RFAUTO_ALLOW_PYPO / RFAUTO_ALLOW_GPL_TOOLS，
-# adapters/gpl/license_gate）+ 可选依赖双门。安装：pip install rfauto[pypo]
-pypo = ["pypopy>=0.1"]
+# PyPO 物理光学（GPL-3，大电尺寸反射面/准光 PO 预估）——**无 PyPI 发行版**
+# （pypopy 404 实测 2026-10-07，uv lock 全 extras 解析被此不可解 extra 卡死
+# 实证），故不入 extras 面；使用=从上游源码安装 pypopy 后适配器自检可用
+# （GPL 许可边界=fail-closed opt-in 门 RFAUTO_ALLOW_PYPO /
+# RFAUTO_ALLOW_GPL_TOOLS + adapters/gpl/license_gate；适配器缺席显式报缺）。
+# 规格原文 pypopy>=0.1 系纸面登记，按发行现状勘误（PSSFSS 0.3→0.1.0 同款
+# 先例：规格先于上游发行版时按实测约束登记）。
 # PSSFSS 严格快通道 —— pypssfss（MIT，Julia PSSFSS.jl RWG MoM 桥）FSS/超表面
 # 族单胞 Floquet 快档；仅 adapters/pssfss_adapter.py 惰性 import，缺装
 # is_available()=False 显式报缺。规格原文 pypssfss>=0.3 在 PyPI 无此版本
