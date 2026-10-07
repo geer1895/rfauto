@@ -94,7 +94,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 149 (+5 resources) | CLI commands 254 (leaves) | CALCULATOR_REGISTRY 100 (with experimental 101) | device templates 71 | anchors 60
+**Scale numbers**: MCP tools 149 (+5 resources) | CLI commands 254 (leaves) | CALCULATOR_REGISTRY 100 [with experimental 101] | device templates 71 | anchors 60
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start

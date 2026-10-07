@@ -84,12 +84,17 @@ def collect_counts(cn: Any) -> dict[str, int]:
 def render_strip(counts: dict[str, int]) -> str:
     """数字条单行正文（数字恒在标签词之后，避开 check_numbers 退役数字
     子串标记的碰撞面——见 check_numbers stale 扫描；标签英文=README.md
-    本脚本管区，2026-10-07 英文化勘误）。"""
+    本脚本管区，2026-10-07 英文化勘误）。
+
+    experimental 用【方括号】变体：与内联载体的圆括号
+    ``(with experimental N)`` 保持不相交（旧设计全角/半角之分同理）——
+    载体正则须恰命中 1 次，两处同形即 2 次命中 fail-closed。
+    """
     return (
         f"MCP tools {counts['mcp']} (+{counts['resources']} resources) | "
         f"CLI commands {counts['cli']} (leaves) | "
         f"CALCULATOR_REGISTRY {counts['calc']}"
-        f" (with experimental {counts['calc_all']}) | "
+        f" [with experimental {counts['calc_all']}] | "
         f"device templates {counts['templates']} | "
         f"anchors {counts['anchors']}"
     )

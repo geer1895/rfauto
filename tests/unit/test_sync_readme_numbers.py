@@ -66,10 +66,10 @@ def readme_text() -> str:
 def _drift(text: str, counts: dict[str, int]) -> str:
     """构造漂移副本：内联 MCP tools+resources 数字改错 + 数字条整块手改污染。"""
     d = re.sub(gen.CARRIER_MCP,
-               f"（{counts['mcp'] + 1} 个工具 + {counts['resources'] + 1} 个 resources）",
+               f"({counts['mcp'] + 1} MCP tools + {counts['resources'] + 1} resources)",
                text)
-    d = re.sub(r"CALCULATOR_REGISTRY \d+，含实验键 \d+",
-               "CALCULATOR_REGISTRY 1，含实验键 2", d)
+    d = re.sub(r"CALCULATOR_REGISTRY \d+ \(with experimental \d+\)",
+               "CALCULATOR_REGISTRY 1 (with experimental 2)", d)
     block_pat = re.compile(
         re.escape(gen.AUTO_START) + r".*?" + re.escape(gen.AUTO_END), re.S)
     return block_pat.sub(
@@ -131,11 +131,11 @@ def test_strip_block_is_generator_owned(counts: dict[str, int],
 
 def test_missing_carriers_fail_closed(counts: dict[str, int],
                                       readme_text: str) -> None:
-    broken = re.sub(gen.CARRIER_MCP, "（工具若干）", readme_text)
+    broken = re.sub(gen.CARRIER_MCP, "(tools only)", readme_text)
     with pytest.raises(ValueError, match="MCP 载体行"):
         gen.sync_text(broken, counts)
-    broken2 = re.sub(r"CALCULATOR_REGISTRY \d+，含实验键 \d+", "计算器若干",
-                     readme_text)
+    broken2 = re.sub(r"CALCULATOR_REGISTRY \d+ \(with experimental \d+\)",
+                     "calculators only", readme_text)
     with pytest.raises(ValueError, match="CALC 载体行"):
         gen.sync_text(broken2, counts)
 
