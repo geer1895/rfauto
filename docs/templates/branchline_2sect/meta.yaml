@@ -24,4 +24,4 @@ nominal_params:
   branch_len_mm: 18.4304
 topology: 两节分支线 3dB 正交耦合器（C4 族，Pozar 经典点）：主线 Z_a=Z0 两节 + 外支臂 (1+√2)Z0 + 中支臂 √2·Z_a²/Z0（单参数族，main_z_ratio 可调）；四角 50Ω 馈线沿 x 引出，P1 左上输入/P2 右上直通/P3 右下耦合/P4 左下隔离
 param_semantics: w_main_mm/w_out_mm/w_mid_mm=主线/外支臂/中支臂线宽（HJ 精算：50/120.71/70.71Ω），sect_len_mm=主线节长（λ/4 @εeff(Z_a)=2.8579），branch_len_mm=支臂跨度（外/中支臂 λ/4 18.7144/18.1465 的均值——两支臂 εeff 不同致 ≈±1.5% 固有二阶偏差，f0 处闭式残差 S11≈−38dB，openems_templates §C4 段首口径 2），w_feed_mm=50Ω 馈线宽
-smoke_note: 真机未跑：预期引擎偏差项=T 结不连续性+拐角（理想闭式不含），冒烟对照 branchline 单节同门
+smoke_note: 真机未跑（followUp）：预期引擎偏差项=T 结不连续性+拐角（理想闭式不含），冒烟对照 branchline 单节同门

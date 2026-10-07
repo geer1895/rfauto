@@ -17,7 +17,7 @@ substrate:
   h_mm: 0.508
 nominal_params:
   order: 3
-  # 2026-09-18 名义（铁律 #1c/#252 全部综合精算）：hairpin_design_from_order(3, 2.5, 0.05, 20.0)
+  # 2026-09-18 w2g 名义（铁律 #1c/#252 全部综合精算）：hairpin_design_from_order(3, 2.5, 0.05, 20.0)
   # 纯 KJ 链（kgap_corrected=False：同向 c(gap) 表是同向相消效应的标定，对交替取向不适用）
   # 按 hairpin 同规则舍入（w/arm_len/gap 4 位、τ 6 位），test_hairpin_alt_template 按链复算钉住
   w_mm: 1.1117
@@ -29,8 +29,8 @@ nominal_params:
   gap_mm: 1.1328
   # Q_e=17.0689 → 抽头闭式 × B1 c(τ)=1.37437−0.75218·τ 重解 τ*=0.398159（抽头结构逐腔相同）
   tap_frac: 0.398159
-topology: 交替取向发夹线带通（同向本体根修变体）：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，奇数序谐振器上下翻转（弯带/开路端 y 逐腔轮替），相邻臂开路端交替 → 电/磁耦合同号叠加；相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 各自开路端计，末腔翻转时输出抽头自 y1 向下）。可选布局选项 orientation=alternating|same（缺省 alternating；same=同网格同向对照，不进 params）
-# ── 精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────
+topology: 交替取向发夹线带通（TODO 0dk 根修变体）：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，奇数序谐振器上下翻转（弯带/开路端 y 逐腔轮替），相邻臂开路端交替 → 电/磁耦合同号叠加；相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 各自开路端计，末腔翻转时输出抽头自 y1 向下）。可选布局选项 orientation=alternating|same（缺省 alternating；same=同网格同向对照，不进 params）
+# ── 战役精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────
 # 同向 hairpin 因 k_EM 上限 0.0155≪0.0515 无自洽设计点而锁 False（0cv/0dk）；本变体在
 # 真机 k(gap) 图谱判读门过门前同样 False——不凑绿（#122）。
 campaign_capable: false

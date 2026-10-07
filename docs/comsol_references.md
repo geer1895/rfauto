@@ -1,4 +1,4 @@
-# COMSOL 引用与速查（2026-09-10 定稿）
+# COMSOL 引用与速查（WP4.4c，2026-09-10 定稿）
 
 > 本文件是 COMSOL 开发的权威口径速查（对应 docs/rf_template_references.md
 > 在 COMSOL 侧的对应物）。**纪律：COMSOL 相关开发先读本文件与官方文档，
@@ -9,17 +9,17 @@
 
 | 项 | 状态 |
 |---|---|
-| COMSOL 6.3.0.290 | ✅ **可用**；RF 模块运行时 license PASS（MPh 实测） |
+| COMSOL 6.3.0.290 | ✅ **可用**（E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe） |
 | COMSOL 6.4 | ❌ 禁用（license 单行 SERIAL 13-apr-2026 过期且无模块包） |
 | **版本钉扎** | **必须显式 `mph.start(version="6.3")`**——MPh 自动探测选"最新"=6.4=过期（#215） |
 | license 形态 | permanent uncounted，RF/RFBATCH/RFCSL/RFCOMPL 齐全；**每次求解占一个席位，串行使用** |
 | Python 桥 | MPh 1.4.0（venv 已装，[dataset] 同款 extras 模式） |
-| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（坑 #217 API 口径实证已回写本文 §2/§3/§5） |
+| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（廿七），坑 #217 API 口径实证已回写本文 §2/§3/§5） |
 
 ## 1. 权威文档来源（按查询优先序）
 
-1. **本地官方 PDF（6.3 精确对应版，随安装自带）**：
-   - `<COMSOL 安装根>\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
+1. **本地官方 PDF（6.3 精确对应版）**：
+   - `E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
    - 同目录 `COMSOL_ProgrammingReferenceManual.pdf`（model.* 全方法参考：geom/material/mesh/physics/study/sol/result/…）
    - RF 模块专属：`doc\pdf\RF_Module\`（端口/S 参数/频域求解器口径）
 2. **MPh 文档**（Python 桥 API）：https://mph.readthedocs.io/en/latest/
@@ -40,10 +40,11 @@ model.study("std1").create("freq", "Frequency");                 // 频域步类
 model.study("std1").feature("freq").set("plist", "2.4");  // 属性 set
 model.study("std1").feature("freq").setIndex("geometricNonlinearity", "off", 0);
 ```
-- **#217 实证更正（2026-09-11 首案例）**：RF 集总端口
+- **#217 实证更正（2026-09-11 首案例，（廿七）**：RF 集总端口
   建模必须用 `ElectromagneticWaves`（emw）——`ElectromagneticWavesFrequencyDomain`
   （ewfd，Wave Optics 风格）可创建但**无 LumpedPort 特征**；study 频域步
-  类型串是 `Frequency` 非 `FrequencyDomain`。早期探针脚本用的 ewfd 仅证明 license 可用，不作建模
+  类型串是 `Frequency` 非 `FrequencyDomain`。早期探针脚本
+  runs/comsol_probe/_probe_*.py 用的 ewfd 仅证明 license 可用，不作建模
   口径。**参考实现：src/rfauto/adapters/comsol_adapter.py**（真机验证过的
   完整链：几何→材料→emw+LumpedPort→Frequency study→S 参数读取）。
 - 属性访问三件套：`set()` / `setEntry()` / `setIndex()`；读取用
@@ -96,14 +97,14 @@ node.java                                # 逃逸口→裸 COMSOL Java 对象
 ## 5. RF 模块要点（S 参数仿真，详读 doc\pdf\RF_Module\）
 
 - 物理场接口：**`ElectromagneticWaves`（tag emw）**——首案例真机求解
-  通过（2026-09-11 真机验证）；`ElectromagneticWavesFrequencyDomain`
+  通过（2026-09-11，（廿七）；`ElectromagneticWavesFrequencyDomain`
   仅在早期探针中用于 license checkout 验证，无 LumpedPort，不用于建模
   （#217①）。
 - S 参数工作流：port 边界条件（LumpedPort，Uniform/Cable 型）+ study
   频域步 `Frequency`（plist 频点）+ 求解后 port 扫频 S 参量（官方 RF
   Module User's Guide 端口章）。首案例=平行板 TEM 2 端口（PEC 板+PMC
   侧壁）：匹配 Zref=50Ω 时 |S11| −98dB、|S21|=1.0000、反推 εeff=2.1000；
-  失配 Zref=75Ω 变体与闭式复数逐点误差 ≤5.8e-8（冒烟证据存档，
+  失配 Zref=75Ω 变体与闭式复数逐点误差 ≤5.8e-8（证据 runs/comsol_smoke/，
   不入 git）。
 - 频域求解器直接频点扫描（plist），与 openEMS 的时域→DFT 路线不同
   ——跨引擎对拍时频点网格要对齐。
@@ -112,10 +113,10 @@ node.java                                # 逃逸口→裸 COMSOL Java 对象
 
 集总端口 Uniform 的准静态场形与真实微带模失配（端口结电容）→ εeff 相位
 斜率系统性偏高：**集总旧口径 run11 实测 εeff=2.98972、Δ_HJ=+4.805%，如实
-FAIL**（mline 汇总存档；run5→7 网格/空气盒细化各仅回
+FAIL**（runs/comsol_tail/mline_summary.json；run5→7 网格/空气盒细化各仅回
 −0.4%，排除网格/域因素）。官方消除该口径差的路径是数值 TEM 边界模端口，
 参考实现 `comsol_adapter.py::_build_mline`（`mline_port_chain="tem"`），
-官方实录源全部在本地解包证据（官方例 model.xml/dmodel.xml 解包）：
+官方实录源全部在本机解包证据 `runs/comsol_tail/_doc_probe/`：
 
 | 环节 | 官方口径（出处） | 实录/实现 |
 |---|---|---|
@@ -132,12 +133,12 @@ FAIL**（mline 汇总存档；run5→7 网格/空气盒细化各仅回
 须配 IntegrationLineforVoltage（缺失 solve 报 Cmode_1 未定义）；⑤ 每端口一个
 bma 步（PortName 属性绑定）。
 
-**真机三档网格收敛 PASS**（mline_tem 网格收敛存档，
+**真机三档网格收敛 PASS**（runs/comsol_tail/mline_tem_mesh_convergence.json，
 tanδ=0.0037）：mesh_scale 1.0/0.7/0.55 → εeff 2.91724/2.91334/2.90516，最细
 两档收敛 0.28%，最细档 Δ_gold(2.886) +0.66%、Δ_HJ(2.85264) +1.84%、
 Δ_HFSS(2.920) −0.51%，|S11|max −41.0 dB。
 
-## 6. 与 rfauto 的集成纪律
+## 6. 与 rfauto 的集成纪律（WP4.4c）
 
 - 适配器 = EMSolverAdapter 基类 + EMSolverRegistry 注册（规则 3）；
   服务层 JSON 进出（规则 4）。
@@ -146,13 +147,14 @@ tanδ=0.0037）：mesh_scale 1.0/0.7/0.55 → εeff 2.91724/2.91334/2.90516，�
 - 真跑前 `mph.start(version="6.3")` 钉版本；正式探针脚本
   `scripts/comsol_probe.py`（#217 口径：6.3 钉扎 + `ElectromagneticWaves`
   + LumpedPort 可创建即 license PASS；`--dump-api` 落 emw/study 步全属性
-  供 API 核对，产物落存档）。早期探针脚本已清理，不再作为模板引用。
+  供 API 核对，产物 runs/comsol_tail/probe_api_dump.json）。早期
+  runs/comsol_probe/_probe_*.py 已清理，不再作为模板引用。
 - 第三方仲裁定位：COMSOL FEM vs openEMS FDTD vs HFSS FEM 三源对拍
   （稀缺资源，不做日常主力）。
 
-## 7. COMSOL 收口包实证（2026-09-15 真机）
+## 7. COMSOL 轨收口包实证（队列 #26，2026-09-15 真机）
 
-### 7a. AFS 自适应频扫真机验收（冻结判据）——PASS
+### 7a. AFS 自适应频扫真机验收（§10.20⑩ 冻结判据）——PASS
 
 `scripts/comsol_afs_realcase.py`：mline TEM 链（tanδ=0.0037，band
 2.3-2.7 GHz，mesh_scale=1.0，6.3 钉版）建模一次 → 41 点密集全扫参考
@@ -161,7 +163,7 @@ tanδ=0.0037）：mesh_scale 1.0/0.7/0.55 → εeff 2.91724/2.91334/2.90516，�
 `study("std1").run()` → EvalGlobal **唯一 tag** `gev_s21_r{seq}`+先
 remove 兜底——EvalGlobal 重复 create 同名会撞名）为回调。真机
 **13/41 次求解、缩减比 0.683（≥0.5 频点减半达成）、FSV GDM=Ex
-（0.0138 ≥ VG）、converged**（证据存档）。
+（0.0138 ≥ VG）、converged**，证据 runs/comsol_tail/afs_realcase/。
 离线审计先行抓出的两个判据边界（tests/unit/test_comsol_close_bundle.py
 钉住）：① **FSV 按 |S| dB 归一，纯无耗匹配线参考 dB≈0（合成实测跨带
 8e-8 dB）时 ADM/FDM 结构性退化 → VP（#195 同族常数陷阱，与 tol 无关）
@@ -176,7 +178,7 @@ PortSweepSettings（useSweep=1、ExportTouchstone=1）+ study 外层
 Parametric 步扫 PortName。真机步序实测 `["param","bma1","bma2","freq"]`
 （param 外层先建、bma 在 freq 前；probe-only 零席位验证，步序回读用
 `study("std1").feature().tags()`——study 本体无 tags()）。双档真跑
-PASS（mline_tem 参数化扫描存档）：scale 1.0 → εeff 2.9172
+PASS（runs/comsol_tail/mline_tem_parametric）：scale 1.0 → εeff 2.9172
 （Δ_gold +1.08%、Δ_HJ +2.26%、|S11|max −35.1 dB）、scale 0.7 → 2.9133
 （+0.95%/+2.13%/−37.3 dB）；收敛 0.13%<1%、无源 max|S|=0.9857、
 Touchstone 原生导出；εeff 与单激励 tem run 逐位一致（组合零口径漂移）。
@@ -203,8 +205,9 @@ img **错位一格**——1.1.07 前置文本挂着 Figure 3 caption 但内容�
 8.0/19.5/30.5/41.1/51.3/61.1 degC，P_absorbed=637.895 W vs 官方 631 W
 （dev 1.09%，±5% 门内）、能量锚 rel_dev 0.000%。形态对照 4/4 一致
 （单调上升、起始 ~8 degC、末值 ~61 degC 量级、近线性无饱和；官方图判
-读=多模态目检互证，zai-mcp 判读官方图 2 次超时如实记录）→ verdict 落
-figure3_check 存档（figure3_check.json）。
+读=本会话多模态目检 + zai-mcp 判读我方曲线，官方图 zai-mcp 2 次超时
+如实记录）→ verdict 落 runs/comsol_mw_oven/figure3_check/
+figure3_check.json。
 
 ### 7d. 姊妹模型 rotating_microwave_oven 评估——**另立项，不并入当前收口**
 
@@ -221,4 +224,4 @@ Figure 3 形态 PASS），相变+旋转是**物理效应增强项**而非验收�
 能力各需官方 dmodel 解包→离线门→真机三步（同 mline tem 链纪律），合计
 复杂度远超单项收口包量级；且求解器复杂度（旋转重贴网格 ×401 时刻）与
 license 席位时长预算需单独评估。官方结果叙述（平均温度渐近 380 K）属
-相变封顶物理，对当前无相变模型不构成参考量（已定论）。
+相变封顶物理，对当前无相变模型不构成参考量（§10.24 已定论）。

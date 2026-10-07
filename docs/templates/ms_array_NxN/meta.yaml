@@ -69,7 +69,7 @@ mesh_note: >-
   精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）；
   全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算
   （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见
-  runs/df6_dp10ms/handoff.md
+  战役任务书
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞
   （#246/#261）；J2 真机轨另派

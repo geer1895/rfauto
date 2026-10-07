@@ -31,4 +31,4 @@
 
 `src/rfauto` 下未列入公开面的模块（pipeline/infra 骨架、cli、ui、
 mcp_server 工具面语义等）为内部实现细节：跨版本可变；CLI/MCP 工具的
-JSON 输出契约以 `annotate_contract` 标注的 schema 为准并随变更记录留档。
+JSON 输出契约以 `annotate_contract` 标注的 schema 为准并在 记账。
