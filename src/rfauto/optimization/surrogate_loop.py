@@ -7,7 +7,7 @@
     refit → 收敛判据（连续 tol_rounds 轮最优改善 < tol_abs 或达真跑预算）。
 
 铁律落地：
-- 数值只在确定性内核（确定性内核铁律）：代理预测与 cost 计算全部出自
+- 数值只在确定性内核：代理预测与 cost 计算全部出自
   surrogate_registry + SpecEvaluator 确定性闭式，LLM 不入环；
 - 谷深语义（#195/#197）：目标评估走 SpecEvaluator.evaluate_objectives，
   metric_key_candidates 的 op 序映射保证 s11_db_min 类目标不退化成
@@ -202,11 +202,18 @@ def run_surrogate_loop(
     uncertainty_tol: float | None = None,
     uncertainty_rounds: int = 1,
     uncertainty_pool: int = 128,
+    registry_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """代理寻优主环：返回 JSON 契约（服务层直接透传）。
 
     evaluate_fn: params → metrics dict（与 SpecEvaluator.compute_metrics
     同构）；抛异常 = 该点真跑失败，记 failure 不入样本。
+
+    RB-ML-1 训练写点（缺省 None=行为不变）：registry_meta 给出
+    template_family/channel 且门开（meta.enabled 或
+    RFAUTO_SURROGATE_REGISTRY_WRITE）时，环尾把最后拟合的代理 best-effort
+    upsert 进代理模型资产注册表（optimization/model_registry.py），heldout
+    留出误差强制字段；结果带 ``registry_upsert``（缺省不加键）。
 
     surrogate_config 透传给注册表工厂（规则 3）；默认把 poly_ridge 的
     ridge_lambda 降到 0.01——环内 10 点 vs 6 特征本就良态，默认 0.1 的
@@ -340,6 +347,7 @@ def run_surrogate_loop(
 
     best: dict[str, Any] | None = None
     model: Any = None  # 最近一次拟合的环内代理（B-33 质量报告用）
+    round_config: dict[str, Any] | None = None  # 最近一轮拟合配置（RB-ML-1 写点用）
     t0 = time.time()
 
     # ── ① LHS 初始采样 + 批量真跑 ────────────────────────────────────────
@@ -545,6 +553,38 @@ def run_surrogate_loop(
     quality_report = _surrogate_quality_report(
         high_samples if mf_mode else samples, model, surrogate_kind, objectives)
 
+    # RB-ML-1 训练写点（spec §6.2-3）：registry_meta 给出且门开（meta.enabled
+    # 或 RFAUTO_SURROGATE_REGISTRY_WRITE）时，环尾把最后拟合的代理 upsert 进
+    # 代理模型资产注册表——heldout 留出误差为强制字段（无 heldout 不入册，
+    # 防不可评模型进 champion 位）。best-effort：注册失败只如实记
+    # registry_upsert.ok=False，绝不阻塞已完成的寻优结果（#105）。
+    # 缺省 registry_meta=None → 本段整体跳过（旧路径行为逐字节不变）。
+    registry_upsert_info: dict[str, Any] | None = None
+    if registry_meta is not None:
+        from rfauto.optimization.model_registry import (
+            registry_write_enabled,
+            upsert_from_surrogate_loop,
+        )
+
+        if registry_meta.get("enabled") or registry_write_enabled():
+            if model is not None and getattr(model, "fitted", False):
+                try:
+                    registry_upsert_info = upsert_from_surrogate_loop(
+                        model=model,
+                        samples=high_samples if mf_mode else samples,
+                        bounds=bounds,
+                        objectives=objectives,
+                        surrogate_kind=surrogate_kind,
+                        surrogate_config=round_config,
+                        meta=registry_meta)
+                except Exception as exc:  # 注册失败不阻塞战役（#105）
+                    registry_upsert_info = {
+                        "ok": False, "reason": "registry_upsert_failed",
+                        "detail": f"{exc}"}
+            else:
+                registry_upsert_info = {"ok": False,
+                                        "reason": "no_fitted_model"}
+
     result = {
         "ok": True,
         "algorithm": "surrogate_loop",
@@ -565,6 +605,9 @@ def run_surrogate_loop(
         "real_cost_trace": [s["cost"] for s in samples],
         "elapsed_s": round(time.time() - t0, 2),
     }
+    if registry_upsert_info is not None:
+        # RB-ML-1：仅写点门开时加键（缺省路径输出键集不变）
+        result["registry_upsert"] = registry_upsert_info
     if mf_mode:
         # E7 多保真返回体（单保真模式不加键，行为逐字节不变）
         result["fidelity"] = "multi"
@@ -633,7 +676,10 @@ def _surrogate_quality_report(
                 # DP-15 C1：回归目标表示域（环内缺省 dB=既有隐式口径）
                 "metric_domain": res.metric_domain,
                 "prediction_error": round(float(res.prediction_error), 6),
-                "param_importance": {k: round(float(v), 6)
+                # D1-1：param_importance 降级 None（不可辨识）原样透传，
+                # 不造 1/n 假排行
+                "param_importance": {k: (round(float(v), 6)
+                                         if v is not None else None)
                                      for k, v in res.param_importance.items()},
             }
         except Exception as exc:  # 观测性 best-effort（#105）

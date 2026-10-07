@@ -1,0 +1,23 @@
+{
+  "schema": "rfauto-criteria-replay-snapshot/1",
+  "criteria_stem": "df5_c3fix_sentinel",
+  "criteria_id": "df5_c3fix_sentinel_four_gates",
+  "decision_rule_form": "multi_gate_all_pass",
+  "evidence_path": null,
+  "artifact": {
+    "verdict": "FAIL",
+    "four_gates": {
+      "dev_db": {"obs": 0.406, "max": 0.5},
+      "holdout_rel": {"obs": 0.00502, "max": 0.05},
+      "span_db": {"obs": 12.443, "min": 20.0},
+      "s21_inf_f0_db": {"obs": -10.34, "min": -3.0}
+    },
+    "budget": {"declared": 12000, "actual": 15600}
+  },
+  "expect": {
+    "replay_verdict": "FAIL",
+    "replay_vv_status": "not_validated",
+    "direction": "same"
+  },
+  "note": "合成自足样本（不依赖 runs/ 在档，runs 清理后仍可重放）：观测值取自判据 yaml evidence_fields 注记与 runs/df5_c3fix/sentinel_verdict.json 归档观测（只读拷贝口径，零改写原件）；budget 15600s≈1.3x 不触发 budget_conditional（硬门 span/s21_inf 双 FAIL 优先）。"
+}

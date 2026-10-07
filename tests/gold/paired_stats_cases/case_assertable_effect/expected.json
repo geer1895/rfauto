@@ -1,0 +1,6 @@
+{
+  "expect_verdict": "assertable",
+  "mde": 1.0,
+  "n_pairs": 30,
+  "story": "注入真效应 1.0（sigma=0.5, n=30）——CI 不含 0 且配对 d 约 2.5 达 MDE=1.0；本例带 seed 列（形态钉：seed 列解析不参与配对语义）"
+}

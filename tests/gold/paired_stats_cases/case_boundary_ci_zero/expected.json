@@ -1,0 +1,6 @@
+{
+  "expect_verdict": "not_assertable",
+  "mde": null,
+  "n_pairs": 40,
+  "story": "边界钉：差恰为 +1/-1 交替——mean_diff=0.0、bootstrap CI 恰含 0 → not_assertable"
+}

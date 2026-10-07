@@ -1,6 +1,6 @@
 """robustness_service：DP-15 C3 稳健性报告（良率/FORM/worst-case/Cpk）。
 
-规格书 docs/plan_deepdive_specs_20260924.md §15.3 第二片，service 层
+规格书 规格深案 §15.3 第二片，service 层
 JSON 进出（分层铁律 #4；数值只在确定性内核 #7——FORM/搜索全部吃代理
 确定性求值，本模块无随机决策）：
 
@@ -8,10 +8,11 @@ JSON 进出（分层铁律 #4；数值只在确定性内核 #7——FORM/搜索�
   σ = tol/k_sigma，k_sigma 缺省 3.0，与 optimization/tolerance.py 的
   ``sigma = tol / 3`` 口径一致；``fab`` 挂载点本批只定义 schema+加载
   透传，DP-7 解析接口后续接入）。
-- ``form_pf``：FORM v1 自实现（HL-RF 迭代 + u 空间中心差分数值梯度），
-  失效面 g(x) = threshold − cost(x)（threshold 缺省 0 = 代理加权违约
-  cost ≥ 0 判失效）；openturns/uqpy 可选库存在则对照、缺失回退自实现
-  （惰性 import，``form_engine`` 显式标注引擎来源）。
+- ``form_pf``：FORM 服务面（XD-11 换基：HL-RF 迭代收敛 core.form_beta
+  单源内核 ``core/form_reliability.py``，本模块只保留多起点播种/选点与
+  JSON 信封；失效面 g(x) = threshold − cost(x)（threshold 缺省 0 = 代理
+  加权违约 cost ≥ 0 判失效）；openturns/uqpy 可选库存在则对照、缺失
+  回退内核自实现（惰性 import，``form_engine`` 显式标注引擎来源）。
 - ``surrogate_worst_case``：代理面上优化违约角点（复用 core/pce 的
   ``_pattern_search`` 内核——多起点=中心+2^d 角点，不重写搜索）。
 - ``robustness_report``：输入=数据集/run/samples.json + 规范限 + 公差
@@ -31,12 +32,16 @@ import math
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 #: 公差半宽 → σ 的换算口径：tol = k_sigma·σ（缺省 3σ = tol，即 #195/
 #: tolerance.py 同款"3σ=公差"惯例）。
 PROFILE_DEFAULT_K_SIGMA = 3.0
 #: profile.params[p].dist 允许值（v1 只有正态；均匀/三角等后续按需加）。
 PROFILE_ALLOWED_DISTS = ("normal",)
-#: HL-RF 缺省迭代参数（可在 form_pf 入参覆盖）。
+#: HL-RF 缺省迭代参数（可在 form_pf 入参覆盖；透传 core.form_beta 的
+#: max_iter/tol。fd_eps 换基后仅用于信封 ``gradient_norm`` 报告面的
+#: u 空间差分复算——求解梯度步长由内核固定相对步长 1e-6 单源承担）。
 FORM_DEFAULT_MAX_ITER = 50
 FORM_DEFAULT_TOL = 1e-6
 FORM_DEFAULT_FD_EPS = 1e-5
@@ -77,23 +82,25 @@ def load_tolerance_profile(
     if isinstance(profile, (str, Path)):
         path = Path(profile)
         if not path.is_file():
-            return {"ok": False, "errors": [f"profile 文件不存在: {path}"]}
+            return error_envelope([f"profile 文件不存在: {path}"])
         text = path.read_text(encoding="utf-8")
         try:
             import yaml
 
             data = yaml.safe_load(text)
         except Exception as exc:
-            return {"ok": False, "errors": [f"profile YAML 解析失败: {exc}"]}
+            return error_envelope([f"profile YAML 解析失败: {exc}"])
         if not isinstance(data, dict):
-            return {"ok": False, "errors": ["profile 文件顶层必须是映射"]}
+            return error_envelope(["profile 文件顶层必须是映射"])
         source = str(path)
     elif isinstance(profile, dict):
         data = profile
         source = "dict"
     else:
-        return {"ok": False, "errors": [
-            f"profile 必须是 dict 或文件路径，收到 {type(profile).__name__}"]}
+        return error_envelope(
+            [
+            f"profile 必须是 dict 或文件路径，收到 {type(profile).__name__}"],
+        )
 
     errors: list[str] = []
     raw_params = data.get("params")
@@ -151,7 +158,7 @@ def load_tolerance_profile(
                         **({"nominal": overrides[name]}
                            if name in overrides else {})}
     if errors:
-        return {"ok": False, "errors": errors, "source": source}
+        return error_envelope(errors, source=source)
     fab = data.get("fab")
     return {
         "ok": True,
@@ -218,9 +225,11 @@ def _form_cross_check_openturns(
             func, ot.RandomVector(dist)), ot.Less(), 0.0), dist.getMean())
         algo.run()
         res = algo.getResult()
-        return {"ok": True, "engine": "openturns",
-                "pf": float(res.getEventProbability()),
-                "beta": float(res.getGeneralisedReliabilityIndex())}
+        return ok_envelope(
+            engine="openturns",
+            pf=float(res.getEventProbability()),
+            beta=float(res.getGeneralisedReliabilityIndex()),
+        )
     except Exception as exc:  # API 漂移/运行失败：如实降级
         return {"ok": False, "engine": "openturns",
                 "error": f"openturns 对照失败（{type(exc).__name__}）"}
@@ -255,8 +264,7 @@ def _form_cross_check_uqpy(
             name="HL", n_add=1, joint_distribution=joint,
             limit_state=_g)
         form.run()
-        return {"ok": True, "engine": "uqpy", "pf": float(form.failure_probability),
-                "beta": float(form.beta)}
+        return ok_envelope(engine="uqpy", pf=float(form.failure_probability), beta=float(form.beta))
     except Exception as exc:  # API 漂移/运行失败：如实降级
         return {"ok": False, "engine": "uqpy",
                 "error": f"uqpy 对照失败（{type(exc).__name__}）"}
@@ -273,18 +281,24 @@ def form_pf(
     fd_eps: float = FORM_DEFAULT_FD_EPS,
     form_engine: str = "auto",
 ) -> dict[str, Any]:
-    """FORM v1：HL-RF 迭代 + u 空间中心差分数值梯度（JSON 契约）。
+    """FORM 服务面：HL-RF 收敛 core.form_beta 单源内核（JSON 契约）。
 
     失效面 g(x) = threshold − cost(x)（failure ⇔ g ≤ 0；threshold 缺省
     0 = 代理加权违约 cost ≥ 0 判失效，cost=SpecEvaluator 加权违约和或
     调用方自定义确定性函数）。独立正态 X_i ~ N(μ_i, σ_i²)，u 空间
-    x = μ + σ⊙u。HL-RF：u_{k+1} = ((∇gᵀu_k − g_k)/‖∇g‖²)·∇g_k。
+    x = μ + σ⊙u。HL-RF 迭代/梯度/收敛判据全部吃 core.form_beta
+    （XD-11 换基，rx2-s6 内核；本函数退役本地 hlrf 副本，#116 遮蔽
+    治理）。
 
     **多起点**：违约 hinge cost 在安全区梯度恒 0，原点单起点会停在
-    u=0（pf=0.5 无信息）——种子=原点+±2σ 轴点+角点（d≤6），取收敛
-    设计点中 ‖u‖ 最小者；全种子无梯度（搜索半径内无违约面）→
-    converged=False + note 如实（Pf 无信息量）。失效侧判定用 g(1.5u*)
-    符号（铰链面 g(0)=0 恰在界上，g(0) 判侧不成立）。
+    u=0（pf=0.5 无信息）——种子=原点+±2σ 轴点+角点（d≤6），逐种子以
+    u0=seed 调内核，取收敛设计点中 ‖u‖ 最小者；全种子无梯度（搜索半径
+    内无违约面）→ converged=False + note 如实（Pf 无信息量）。失效侧
+    判定用 g(1.5u*) 符号（铰链面 g(0)=0 恰在界上，g(0) 判侧不成立）。
+
+    **fd_eps 契约注记**（换基后）：求解梯度步长由内核固定相对步长
+    （1e-6）单源承担；本参数仅用于信封 ``gradient_norm`` 报告面的复算，
+    传非缺省值会附加 note 显式声明（不静默）。
 
     form_engine：``auto``（缺省，internal 主算 + 外部库存在时附
     cross_check）/ ``internal`` / ``openturns`` / ``uqpy``——指名外部库
@@ -293,93 +307,52 @@ def form_pf(
     （深谷强非线性面 Pf 是近似值，如实不凑 PASS）。
     """
     if not callable(cost_fn):
-        return {"ok": False, "errors": ["cost_fn 必须可调用"]}
+        return error_envelope(["cost_fn 必须可调用"])
     names = sorted(sigmas)
     if not names:
-        return {"ok": False, "errors": ["sigmas 为空（无随机变量）"]}
+        return error_envelope(["sigmas 为空（无随机变量）"])
     missing = [n for n in names if n not in nominal]
     if missing:
-        return {"ok": False, "errors": [f"名义点缺少随机变量坐标: {missing}"]}
+        return error_envelope([f"名义点缺少随机变量坐标: {missing}"])
     mu = [float(nominal[n]) for n in names]
     sigma = [float(sigmas[n]) for n in names]
     if any(s <= 0 for s in sigma):
-        return {"ok": False, "errors": [f"σ 必须 >0，收到 {sigma}"]}
+        return error_envelope([f"σ 必须 >0，收到 {sigma}"])
 
     def g_u(u: list[float]) -> float:
         pt = {n: m + s * float(ui)
               for n, m, s, ui in zip(names, mu, sigma, u, strict=True)}
         return threshold - float(cost_fn(pt))
 
-    def hlrf(start: list[float]) -> dict[str, Any]:
-        """单起点 HL-RF（跨界二分回边界；死起点/触顶如实不收敛）。"""
-        u = list(start)
-        converged = False
-        n_iter = 0
-        g_design = float("nan")
-        grad_norm = float("nan")
-        g0 = g_u(u)
-        for k in range(int(max_iter)):
-            grad = []
-            for j in range(len(names)):
-                up = list(u)
-                un = list(u)
-                h = float(fd_eps) * max(1.0, abs(u[j]))
-                up[j] += h
-                un[j] -= h
-                grad.append((g_u(up) - g_u(un)) / (2.0 * h))
-            gn = math.sqrt(sum(g * g for g in grad))
-            grad_norm = gn
-            if gn < 1e-14:
-                # 无梯度信息（hinge 安全区平坦）——死起点，如实不收敛
-                g_design = g0
-                n_iter = k + 1
-                break
-            coef = (sum(g * ui for g, ui in zip(grad, u, strict=True)) - g0) \
-                / (gn * gn)
-            u_new = [coef * g for g in grad]
-            g_new = g_u(u_new)
-            n_iter = k + 1
-            if g0 < 0.0 <= g_new:
-                # 违约侧→安全侧跨界（hinge 面上 HL-RF 的经典振荡；安全侧
-                # g 恒为 0，跨界落点常取 g_new==0）：沿线段二分回违约侧
-                # 边界端点（g 与 0 差 ≤2^-24 段长），从该点继续迭代——
-                # 逐步收敛到局部最近边界点，步长达标才判收敛
-                a, b = list(u), list(u_new)
-                for _ in range(24):
-                    m = [(x + y) * 0.5 for x, y in zip(a, b, strict=True)]
-                    if g_u(m) >= 0.0:
-                        b = m
-                    else:
-                        a = m
-                step = math.sqrt(sum((x - y) ** 2
-                                     for x, y in zip(a, u, strict=True)))
-                u = a
-                g0 = g_u(u)
-                g_design = g0
-                n_iter = k + 1
-                if step <= float(tol) * max(1.0, math.sqrt(
-                        sum(ui * ui for ui in u))):
-                    converged = True
-                    break
-                continue
-            step = math.sqrt(sum((x - y) ** 2
-                                 for x, y in zip(u_new, u, strict=True)))
-            u = u_new
-            g0 = g_new
-            g_design = g0
-            if step <= float(tol) * max(1.0, math.sqrt(
-                    sum(ui * ui for ui in u))):
-                converged = True
-                break
-        return {"u": u, "converged": converged, "n_iter": n_iter,
-                "g_design": g_design, "grad_norm": grad_norm,
-                "beta": math.sqrt(sum(ui * ui for ui in u))}
+    def limit_state_x(x_arr: Any) -> float:
+        """物理空间极限状态（core.form_beta 契约：ndarray → 标量）。"""
+        pt = {n: float(v) for n, v in zip(names, x_arr, strict=True)}
+        return threshold - float(cost_fn(pt))
+
+    def _grad_norm_report(u: list[float]) -> float:
+        """信封 gradient_norm 报告面：u 空间中心差分复算（fd_eps 口径）。"""
+        grad = []
+        for j in range(len(names)):
+            up = list(u)
+            un = list(u)
+            h = float(fd_eps) * max(1.0, abs(u[j]))
+            up[j] += h
+            un[j] -= h
+            grad.append((g_u(up) - g_u(un)) / (2.0 * h))
+        return math.sqrt(sum(g * g for g in grad))
 
     # 多起点 HL-RF：违约 hinge cost（threshold−cost）在安全区梯度恒 0，
     # 原点单起点会停在 u=0（pf=0.5 无信息）——加轴点（半径 2/4/8σ）与
     # 角点种子，命中违约侧种子即有梯度可走；取收敛设计点中 ‖u‖ 最小者
     # （FORM 定义=失效面上距原点最近点）。全部种子无梯度/不收敛 → 如实
     # converged=False（Pf 无信息量，公差内可能确无违约）。
+    # XD-11 换基：迭代内核=core.form_beta 单源（rx2-s6；本地 hlrf 副本
+    # 已退役——收敛判据/梯度步长以内核为准，本函数只做多起点播种与
+    # 最小 ‖u‖ 选点）。
+    import numpy as np
+
+    from rfauto.core.form_reliability import form_beta
+
     d = len(names)
     seeds: list[list[float]] = [[0.0] * d]
     for radius in (2.0, 4.0, 8.0):
@@ -392,16 +365,23 @@ def form_pf(
         for i in range(2 ** d):
             corner = [2.0 if (i >> j) & 1 else -2.0 for j in range(d)]
             seeds.append(corner)
-    runs = [hlrf(s) for s in seeds]
-    good = [r for r in runs if r["converged"]]
-    best = min(good, key=lambda r: r["beta"]) if good \
-        else min(runs, key=lambda r: r["beta"])
-    u = best["u"]
-    converged = bool(best["converged"])
-    n_iter = best["n_iter"]
-    g_design = best["g_design"]
-    grad_norm = best["grad_norm"]
-    beta_raw = float(best["beta"])
+    runs = [form_beta(limit_state_x, mu, sigma,
+                      u0=np.asarray(s, dtype=float),
+                      max_iter=int(max_iter), tol=float(tol))
+            for s in seeds]
+    good = [r for r in runs if r.converged]
+    if good:
+        best = min(good,
+                   key=lambda r: float(np.linalg.norm(r.design_point_u)))
+    else:
+        best = min(runs,
+                   key=lambda r: float(np.linalg.norm(r.design_point_u)))
+    u = [float(v) for v in best.design_point_u]
+    converged = bool(best.converged)
+    n_iter = int(best.n_iter)
+    beta_raw = math.sqrt(sum(ui * ui for ui in u))
+    g_design = g_u(u)
+    grad_norm = _grad_norm_report(u)
     n_converged = len(good)
 
     g_mean = g_u([0.0] * len(names))
@@ -474,34 +454,22 @@ def form_pf(
                          "（无外部对照）")
 
     all_notes = [*notes, *notes_start]
+    if fd_eps != FORM_DEFAULT_FD_EPS:
+        # 换基契约（见 docstring）：求解梯度步长由内核固定相对步长单源
+        # 承担，fd_eps 只作用报告面——非缺省值显式声明，不静默
+        all_notes.append(
+            f"fd_eps={fd_eps!r} 仅用于 gradient_norm 报告复算；求解梯度"
+            "步长由 core.form_beta 内核固定相对步长（1e-6）承担")
     if good and not converged:
         all_notes.append("最小 ‖u‖ 收敛点未达到（触顶如实报告）；"
                          "Pf 引用未收敛运行")
-    return {
-        "ok": True,
-        "form_engine": engine,
-        "pf": float(pf),
-        "beta": float(beta_signed),
-        "converged": bool(converged),
-        "n_iter": int(n_iter),
-        "max_iter": int(max_iter),
-        "n_starts": len(seeds),
-        "n_converged_starts": n_converged,
-        "g_at_mean": float(g_mean),
-        "g_at_design_point": float(g_design),
-        "gradient_norm": float(grad_norm),
-        "design_point_u": {n: float(ui)
-                           for n, ui in zip(names, u, strict=True)},
-        "design_point_x": design_x,
-        "threshold": float(threshold),
-        "sigmas": dict(sigmas),
-        "method_note": "FORM v1 一阶：失效面在设计点线性化（HL-RF 多起点，"
-                       "取最小 ‖u‖ 收敛点），强非线性（深谷/多模）面上 Pf "
-                       "为近似值——对照 MC 见 robustness_report.pf_vs_mc，"
-                       "如实报告不凑 PASS",
-        **({"cross_check": cross_check} if cross_check is not None else {}),
-        **({"notes": all_notes} if all_notes else {}),
-    }
+    return ok_envelope(
+        **{"form_engine": engine, "pf": float(pf), "beta": float(beta_signed), "converged": bool(converged), "n_iter": int(n_iter), "max_iter": int(max_iter), "n_starts": len(seeds), "n_converged_starts": n_converged, "g_at_mean": float(g_mean), "g_at_design_point": float(g_design), "gradient_norm": float(grad_norm), "design_point_u": {n: float(ui)
+                           for n, ui in zip(names, u, strict=True)}, "design_point_x": design_x, "threshold": float(threshold), "sigmas": dict(sigmas), "method_note": "FORM 一阶（core.form_beta 内核）：失效面在设计点线性化"
+                       "（HL-RF 多起点，取最小 ‖u‖ 收敛点），强非线性（深谷"
+                       "/多模）面上 Pf 为近似值——对照 MC 见 "
+                       "robustness_report.pf_vs_mc，如实报告不凑 PASS", **({"cross_check": cross_check} if cross_check is not None else {}), **({"notes": all_notes} if all_notes else {})},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -530,21 +498,21 @@ def surrogate_worst_case(
     from rfauto.core.pce import _pattern_search
 
     if k_sigma <= 0:
-        return {"ok": False, "errors": [f"k_sigma 必须 >0，收到: {k_sigma}"]}
+        return error_envelope([f"k_sigma 必须 >0，收到: {k_sigma}"])
     if max_iter < 1:
-        return {"ok": False, "errors": [f"max_iter 必须 ≥1，收到: {max_iter}"]}
+        return error_envelope([f"max_iter 必须 ≥1，收到: {max_iter}"])
     names = sorted(sigmas)
     if not names:
-        return {"ok": False, "errors": ["sigmas 为空（无公差参数）"]}
+        return error_envelope(["sigmas 为空（无公差参数）"])
     missing = [n for n in names if n not in nominal]
     if missing:
-        return {"ok": False, "errors": [f"名义点缺少公差参数: {missing}"]}
+        return error_envelope([f"名义点缺少公差参数: {missing}"])
     lo = []
     hi = []
     box: dict[str, list[float]] = {}
     for n in names:
         if n not in bounds:
-            return {"ok": False, "errors": [f"公差参数不在搜索空间: {n}"]}
+            return error_envelope([f"公差参数不在搜索空间: {n}"])
         blo, bhi = (float(bounds[n][0]), float(bounds[n][1]))
         base = float(nominal[n])
         b_lo = max(blo, base - float(k_sigma) * float(sigmas[n]))
@@ -590,18 +558,17 @@ def surrogate_worst_case(
     assert best_x is not None
     params = dict(nominal)
     params.update({n: float(v) for n, v in zip(names, best_x, strict=True)})
-    return {
-        "ok": True,
-        "params": params,
-        "cost": float(best_v),
-        "violated": bool(best_v > float(threshold)),
-        "threshold": float(threshold),
-        "k_sigma": float(k_sigma),
-        "box": box,
-        "n_evaluations": int(n_eval),
-        "n_starts": len(starts),
-        "search": "pce._pattern_search(multi-start corner+center)",
-    }
+    return ok_envelope(
+        params=params,
+        cost=float(best_v),
+        violated=bool(best_v > float(threshold)),
+        threshold=float(threshold),
+        k_sigma=float(k_sigma),
+        box=box,
+        n_evaluations=int(n_eval),
+        n_starts=len(starts),
+        search="pce._pattern_search(multi-start corner+center)",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -757,18 +724,16 @@ def robustness_report(
     )
 
     if not isinstance(specs, list) or not specs:
-        return {"ok": False,
-                "errors": ["specs 必须是非空列表（objectives schema）"]}
+        return error_envelope(["specs 必须是非空列表（objectives schema）"])
     if n_mc < 1:
-        return {"ok": False, "errors": [f"n_mc 必须 ≥1，收到: {n_mc}"]}
+        return error_envelope([f"n_mc 必须 ≥1，收到: {n_mc}"])
 
     # 公差解析：profile 优先，tolerances 兜底
     prof_out: dict[str, Any] | None = None
     if profile is not None:
         prof_out = load_tolerance_profile(profile)
         if not prof_out.get("ok"):
-            return {"ok": False,
-                    "errors": list(prof_out.get("errors") or [])}
+            return error_envelope(list(prof_out.get("errors") or []))
         sigmas = dict(prof_out["sigmas"])
         if prof_out.get("k_sigma"):
             k_sigma = float(prof_out["k_sigma"])
@@ -778,8 +743,7 @@ def robustness_report(
         sigmas = {k: float(v) for k, v in tolerances.items()}
         tolerance_source = "tolerances_arg"
     else:
-        return {"ok": False,
-                "errors": ["缺少公差：给 profile（推荐）或 tolerances"]}
+        return error_envelope(["缺少公差：给 profile（推荐）或 tolerances"])
 
     # 来源解析：samples.json | 数据集名 | 数据集目录 | run id
     src_path = Path(source)
@@ -789,7 +753,7 @@ def robustness_report(
             src_path, sigmas, kind=kind, order=order,
             ridge_lambda=ridge_lambda)
         if ctx is None:
-            return {"ok": False, "errors": list(errs or [])}
+            return error_envelope(list(errs or []))
         resolved = str(src_path)
     else:
         from rfauto.service.dataset_service import materialize_dataset
@@ -808,26 +772,30 @@ def robustness_report(
                     [str(source)], name=mat_name, out_dir=ds_out,
                     health_gate=False, registry_sync=False)
                 if not mat.get("ok"):
-                    return {"ok": False, "errors": [
-                        f"run 物化失败: {mat.get('errors')}"]}
+                    return error_envelope(
+                        [
+                        f"run 物化失败: {mat.get('errors')}"],
+                    )
                 ds_name, ds_out = mat_name, ds_out
             else:
-                return {"ok": False, "errors": [
+                return error_envelope(
+                    [
                     "来源不可解析（非 samples.json 文件/数据集/run id）: "
-                    f"{source}"]}
+                    f"{source}"],
+                )
         samples, bounds_or_errs = _dataset_samples(ds_name, ds_out)
         if samples is None:
-            return {"ok": False, "errors": list(bounds_or_errs)}
+            return error_envelope(list(bounds_or_errs))
         ctx, errs = build_yield_context(
             samples, bounds_or_errs, specs, sigmas, kind=kind, order=order,
             ridge_lambda=ridge_lambda)
         if ctx is None:
-            return {"ok": False, "errors": list(errs or [])}
+            return error_envelope(list(errs or []))
         dataset_used = ds_name
         resolved = str(ds_out / ds_name)
 
     if not sigmas:
-        return {"ok": False, "errors": ["公差解析结果为空"]}
+        return error_envelope(["公差解析结果为空"])
 
     # 名义点：样本集 cost 最小点（确定性）+ profile nominal 覆盖（界内校验）
     nominal = {k: float(v)
@@ -837,35 +805,36 @@ def robustness_report(
                if k not in ctx["bounds"]
                or not (ctx["bounds"][k][0] <= v <= ctx["bounds"][k][1])]
         if bad:
-            return {"ok": False, "errors": [
-                f"profile nominal 覆盖越界/未知参数: {bad}"]}
+            return error_envelope(
+                [
+                f"profile nominal 覆盖越界/未知参数: {bad}"],
+            )
         nominal.update(prof_out["nominal_overrides"])
 
     # ① 向量化 MC 良率
     mc = _mc_yield(ctx, nominal, sigmas, n=int(n_mc), seed=int(seed))
-    report: dict[str, Any] = {
-        "ok": True,
-        "source": resolved,
-        "dataset": dataset_used,
-        "surrogate_kind": kind,
-        "uncertainty_status": ctx["uncertainty_status"],
-        "profile": {k: v for k, v in (prof_out or {}).items()
+    report: dict[str, Any] = ok_envelope(
+        source=resolved,
+        dataset=dataset_used,
+        surrogate_kind=kind,
+        uncertainty_status=ctx["uncertainty_status"],
+        profile={k: v for k, v in (prof_out or {}).items()
                     if k in ("profile", "description", "k_sigma", "params",
                              "fab", "source")},
-        "tolerance_source": tolerance_source,
-        "sigmas": sigmas,
-        "n_mc": int(n_mc),
-        "seed": int(seed),
-        "nominal_params": nominal,
-        "nominal_metrics": mc["nominal_metrics"],
-        "yield_mc": {
+        tolerance_source=tolerance_source,
+        sigmas=sigmas,
+        n_mc=int(n_mc),
+        seed=int(seed),
+        nominal_params=nominal,
+        nominal_metrics=mc["nominal_metrics"],
+        yield_mc={
             "yield_rate": mc["yield_rate"],
             "n_draws": int(n_mc),
             "implementation": mc["implementation"],
             "wall_s": mc["wall_s"],
             "metric_stats": mc["metric_stats"],
         },
-    }
+    )
     if persist:
         sname = store_name or f"mc_{Path(resolved).stem}_{int(n_mc)}"
         store = store_mc_draws(

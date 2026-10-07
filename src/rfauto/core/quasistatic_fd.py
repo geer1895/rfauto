@@ -1,16 +1,26 @@
-"""2D 准静态 FD Laplace 裁判内核（#118 独立数值来源）。
+"""2D 准静态 FD Laplace 裁判内核（#118 独立数值来源；C9 传输线族 II 定标源）。
 
-职责（数值只在确定性内核；本模块 = 纯 numpy/scipy 叶子，无业务依赖）：
+职责（铁律 7：数值只在确定性内核；本模块 = 纯 numpy/scipy 叶子，无业务依赖）：
 - 张量网格（网格线**精确**落在导体边缘/介质面，远区几何递增）上以变分有限体积
   离散 ∇·(ε∇φ)=0：每条网格边的电导 g = (两侧 cell 的 ε·半格宽之和)/边长，
   能量法 C = 2W/V²，W = ½Σ g·Δφ²——离散二次型与离散算子同源，能量法 ≡ 通量法；
   ε 按边两侧 cell 半格加权 = 切向 E 连续、能量可加（介质面必须落在网格线上）。
 - 零厚度导体边缘场奇异使收敛阶 ≈1，提供一阶 Richardson 外推 2·v(d/2) − v(d)。
-- 三个几何族：cps_quasistatic（共面带，无地有限厚基板）、
+- **W4-A/P12 增强（2026-10-05，全部 opt-in，缺省路径零变化）**：
+  ①三点高阶 Richardson `richardson_three_point`（单源 core/gci.assess_triple，
+  Çelik 2008 标准过程：观察阶 p 由三级差比解出，外推+阶估计返回；退化
+  （零差/无正阶）诚实回退一阶）；②边缘奇异网格加密 `edge_refine=True`
+  （零厚导体边缘场 ~r^{-1/2}，边缘线密度几何渐变把能量收敛阶从 ~1 抬向
+  ~2，与三点外推组合消费）；③有限金属厚度 CPW 族
+  `cpw_finite_thickness_quasistatic`（导体截面矩形、全边界 Dirichlet，
+  为 core/fgcpw 有限厚修正档的数字裁判，P4 配套）。
+- 几何族：cps_quasistatic（共面带，无地有限厚基板）、
   suspended_stripline_quasistatic（悬置带线，基板对称居中）、
-  microstrip_quasistatic（微带，验证锚）。
+  microstrip_quasistatic（微带，验证锚）、
+  cpw_quasistatic（CPW/FGCPW，gnd 可有限宽）、
+  cpw_finite_thickness_quasistatic（有限厚导体 CPW）。
 
-验证锚（tests/unit/test_quasistatic_fd.py）：
+验证锚（tests/unit/test_quasistatic_fd.py，2026-09-18 w2f-c9-refs 实测）：
 - 微带 vs Hammerstad–Jensen 静态 εeff（skrf MLine，4 几何含 εr=9.8）：+0.18~+0.32%
   （d0=h/40，HJ 自身精度 ~0.2%）；
 - CPS h→∞ 半空间极限 (1+εr)/2：−0.1%（w=s=0.5、h=8mm）；
@@ -36,6 +46,10 @@ _C0 = 299792458.0
 #: 远区网格几何递增比（每格 +8%：远场衰减慢于网格增长，能量截断 <0.1%）
 DEFAULT_GRADING_RATIO = 1.08
 
+#: 边缘奇异网格加密比（edge_refine=True 时边缘侧几何渐变比；#152 同族守卫：
+#: 相邻格宽比须温和，1.35 实测不触发近重合线问题且能把能量收敛阶抬向 ~2）
+DEFAULT_EDGE_RATIO = 1.35
+
 
 @dataclass(frozen=True)
 class QuasiStaticResult:
@@ -51,8 +65,11 @@ class QuasiStaticResult:
     eps_eff_coarse: float
     eps_eff_fine: float
     n_nodes: int
+    #: 三点外推（three_point=True）时的观察收敛阶；一阶/单档路径为 None。
+    #: 数值诊断字段（#122：不参与任何判据布尔化，仅供精度档案登记）。
+    observed_order: float | None = None
 
-    def as_dict(self) -> dict[str, float | bool | int]:
+    def as_dict(self) -> dict[str, float | bool | int | None]:
         return {
             "eps_eff": self.eps_eff,
             "c_air_f_per_m": self.c_air_f_per_m,
@@ -64,6 +81,7 @@ class QuasiStaticResult:
             "eps_eff_coarse": self.eps_eff_coarse,
             "eps_eff_fine": self.eps_eff_fine,
             "n_nodes": self.n_nodes,
+            "observed_order": self.observed_order,
         }
 
 
@@ -176,10 +194,56 @@ def richardson_first_order(v_coarse: float, v_fine: float) -> float:
     return 2.0 * v_fine - v_coarse
 
 
+def richardson_three_point(v_coarse: float, v_medium: float,
+                           v_fine: float) -> tuple[float, float]:
+    """三点高阶 Richardson 外推（W4-A/P12）：返回 (v∞, 观察阶 p)。
+
+    单源 core/gci.assess_triple（Çelik 2008 恒定细化比 r=2 标准过程：
+    p = log2((v_coarse−v_medium)/(v_medium−v_fine))，外推
+    v∞ = (2^p·v_fine − v_medium)/(2^p − 1)）。gci 判不可估（零差/无正
+    收敛阶）时诚实回退一阶 2·v_fine − v_medium、p=1.0（回退即在返回值
+    中体现，调用方无第二语义）。
+
+    v_coarse/v_medium/v_fine 依次为格宽 d、d/2、d/4 上的同名量。
+    """
+    from rfauto.core.gci import assess_triple
+
+    res = assess_triple(float(v_fine), float(v_medium), float(v_coarse), 2.0)
+    if res.convergent and res.f_extrapolated is not None:
+        return float(res.f_extrapolated), float(res.p)
+    return 2.0 * float(v_fine) - float(v_medium), 1.0
+
+
+def edge_refined_lines(x0: float, x1: float, d0: float,
+                       ratio: float = DEFAULT_EDGE_RATIO) -> np.ndarray:
+    """[x0, x1] 上两端几何渐变加密的网格线（W4-A/P12 边缘奇异加密）。
+
+    零厚度导体边缘场 ~r^{-1/2}，能量误差由边缘附近格宽主导——把两端
+    （=导体边缘/介质面所在）的格宽做几何渐变（首格 d0、逐格 ×ratio，
+    中点收口），可把能量收敛阶从 ~1 抬向 ~2（标准奇异扰动结论，无新
+    经验常数；ratio 是实现旋钮非物理常数，缺省 1.35）。
+
+    实现按既有 graded_lines 两段拼接（中点镜像），复用 #152 温和递增
+    守卫语义；返回升序含端点。
+    """
+    x0 = float(x0)
+    x1 = float(x1)
+    if not x0 < x1:
+        raise ValueError("edge_refined_lines 须 x0 < x1")
+    mid = 0.5 * (x0 + x1)
+    lo = graded_lines(x0, mid, d0, ratio)          # 密端在 x0，向中点渐宽
+    hi = graded_lines(x1, mid, d0, ratio)[::-1]    # 密端在 x1（反转成升序）
+    return concat_lines(lo, hi)
+
+
 def _finish(c_diel_eps0: float, c_air_eps0: float, d0: float,
             richardson: bool, eps_coarse: float, eps_fine: float,
-            n_nodes: int) -> QuasiStaticResult:
-    eps_eff = richardson_first_order(eps_coarse, eps_fine) if richardson else eps_fine
+            n_nodes: int, observed_order: float | None = None,
+            *, eps_eff_override: float | None = None) -> QuasiStaticResult:
+    if eps_eff_override is not None:
+        eps_eff = float(eps_eff_override)
+    else:
+        eps_eff = richardson_first_order(eps_coarse, eps_fine) if richardson else eps_fine
     c_air = c_air_eps0 * _EPS0
     c_diel = eps_eff * c_air
     z0_air = 1.0 / (_C0 * c_air)
@@ -188,7 +252,9 @@ def _finish(c_diel_eps0: float, c_air_eps0: float, d0: float,
         c_diel_f_per_m=float(c_diel), z0_air_ohm=float(z0_air),
         z0_ohm=float(z0_air / np.sqrt(eps_eff)), d0_mm=float(d0),
         richardson=bool(richardson), eps_eff_coarse=float(eps_coarse),
-        eps_eff_fine=float(eps_fine), n_nodes=int(n_nodes))
+        eps_eff_fine=float(eps_fine), n_nodes=int(n_nodes),
+        observed_order=(float(observed_order)
+                        if observed_order is not None else None))
 
 
 # ─── 几何族：CPS（共面带，无地有限厚基板）────────────────────────────────────
@@ -196,19 +262,32 @@ def _finish(c_diel_eps0: float, c_air_eps0: float, d0: float,
 def cps_capacitance_eps0(w_mm: float, gap_mm: float, h_mm: float, eps_r: float,
                          d0_mm: float, xmax_mm: float | None = None,
                          zmax_mm: float | None = None,
-                         ratio: float = DEFAULT_GRADING_RATIO) -> tuple[float, int]:
+                         ratio: float = DEFAULT_GRADING_RATIO,
+                         edge_refine: bool = False,
+                         edge_ratio: float = DEFAULT_EDGE_RATIO
+                         ) -> tuple[float, int]:
     """CPS 半域：x∈[0,xmax]，对称轴 x=0 为 φ=0（奇模 Dirichlet），带 x∈[a,b]、
     z=0（基板上表面）φ=1；基板 z∈[−h,0] εr、其余空气；外边界 Neumann。
 
     两带 ±1 V → V=2、W_total=2·W_half → C = 2·W_total/V² = W_half（ε0 单位）。
     缺省外边界 20·b：CPS 空气场偶极衰减慢，8mm 域 C_air 截断 −3%（Z0_air +3%）
     而 εeff 比值不受影响（≤0.1%）；20·b 下 Z0_air 与共形闭式差 +0.03%（实测）。
+
+    edge_refine=True（W4-A/P12，opt-in）：带两缘（x=a、x=b，零厚导体边缘
+    场奇异位置）侧网格几何渐变加密（edge_ratio 渐变比），x=0 对称轴侧
+    （无奇点）保持向 a 渐变收敛。缺省 False=原均匀档逐字节不变。
     """
     a, b = gap_mm / 2.0, gap_mm / 2.0 + w_mm
     xmax = xmax_mm if xmax_mm is not None else max(8.0, 20.0 * b)
     zmax = zmax_mm if zmax_mm is not None else max(8.0, 20.0 * b, 3.0 * h_mm)
-    xs = concat_lines(uniform_lines(0.0, a, d0_mm), uniform_lines(a, b, d0_mm),
-                      graded_lines(b, xmax, d0_mm, ratio))
+    if edge_refine:
+        xs = concat_lines(
+            graded_lines(a, 0.0, d0_mm, edge_ratio)[::-1],   # 密端在带左缘 a
+            edge_refined_lines(a, b, d0_mm, edge_ratio),     # 带内两缘双加密
+            graded_lines(b, xmax, d0_mm, ratio))
+    else:
+        xs = concat_lines(uniform_lines(0.0, a, d0_mm), uniform_lines(a, b, d0_mm),
+                          graded_lines(b, xmax, d0_mm, ratio))
     zs = concat_lines(graded_lines(-h_mm, -zmax, d0_mm, ratio)[::-1],
                       uniform_lines(-h_mm, 0.0, d0_mm),
                       graded_lines(0.0, zmax, d0_mm, ratio))
@@ -229,19 +308,28 @@ def cps_capacitance_eps0(w_mm: float, gap_mm: float, h_mm: float, eps_r: float,
 
 def cps_quasistatic(w_mm: float, gap_mm: float, h_mm: float, eps_r: float,
                     d0_mm: float | None = None, richardson: bool = True,
+                    *, three_point: bool = False,
                     **grid_kw: float) -> QuasiStaticResult:
     """CPS εeff/Z0 裁判。缺省 d0 = min(h/20, gap/8)；richardson=True 时再算 d0/2
-    并一阶外推（εeff 与 C_air 均外推）。"""
+    并一阶外推（εeff 与 C_air 均外推）。three_point=True（W4-A/P12，opt-in）：
+    三级 d、d/2、d/4 + 三点高阶 Richardson（richardson_three_point 单源
+    core/gci.assess_triple），观察阶随结果返回。"""
     if w_mm <= 0 or gap_mm <= 0 or h_mm <= 0 or eps_r < 1.0:
         raise ValueError("CPS 裁判定义域：w>0、gap>0、h>0、εr≥1")
     d0 = d0_mm if d0_mm is not None else min(h_mm / 20.0, gap_mm / 8.0)
-    steps = (d0, d0 / 2.0) if richardson else (d0,)
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
     eps_v, cair_v, n_nodes = [], [], 0
     for d in steps:
         c_d, n_nodes = cps_capacitance_eps0(w_mm, gap_mm, h_mm, eps_r, d, **grid_kw)
         c_a, _ = cps_capacitance_eps0(w_mm, gap_mm, h_mm, 1.0, d, **grid_kw)
         eps_v.append(c_d / c_a)
         cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
     c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
              else cair_v[-1])
     return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],
@@ -253,18 +341,27 @@ def cps_quasistatic(w_mm: float, gap_mm: float, h_mm: float, eps_r: float,
 def suspended_stripline_capacitance_eps0(
         w_mm: float, b_mm: float, h_mm: float, eps_r: float, d0_mm: float,
         xmax_factor: float = 8.0,
-        ratio: float = DEFAULT_GRADING_RATIO) -> tuple[float, int]:
+        ratio: float = DEFAULT_GRADING_RATIO,
+        edge_refine: bool = False,
+        edge_ratio: float = DEFAULT_EDGE_RATIO) -> tuple[float, int]:
     """悬置带线半域：x∈[0, xmax_factor·b]，对称轴 x=0 Neumann（偶模）；地 z=0、
     z=b φ=0；零厚度带 z=b/2、x∈[0,w/2] φ=1；基板 z∈[b/2−h/2, b/2+h/2] εr。
 
     V=1、W_total=2·W_half → C = 4·W_half（ε0 单位）。h=b（全填充）/h=0（空气）
     两支退化段自动跳过。
+
+    edge_refine=True（W4-A/P12，opt-in）：带右缘 x=w/2（零厚边缘奇异）侧
+    几何渐变加密；缺省 False=原均匀档逐字节不变。
     """
     if w_mm <= 0 or b_mm <= 0 or eps_r < 1.0 or h_mm < 0 or h_mm > b_mm:
         raise ValueError("悬置带线裁判定义域：w>0、b>0、0≤h≤b、εr≥1")
     xmax = xmax_factor * b_mm
-    xs = concat_lines(uniform_lines(0.0, w_mm / 2.0, d0_mm),
-                      graded_lines(w_mm / 2.0, xmax, d0_mm, ratio))
+    if edge_refine:
+        xs = concat_lines(graded_lines(w_mm / 2.0, 0.0, d0_mm, edge_ratio)[::-1],
+                          graded_lines(w_mm / 2.0, xmax, d0_mm, ratio))
+    else:
+        xs = concat_lines(uniform_lines(0.0, w_mm / 2.0, d0_mm),
+                          graded_lines(w_mm / 2.0, xmax, d0_mm, ratio))
     z1, z2 = b_mm / 2.0 - h_mm / 2.0, b_mm / 2.0 + h_mm / 2.0
     zs = concat_lines(uniform_lines(0.0, z1, d0_mm),
                       uniform_lines(z1, b_mm / 2.0, d0_mm),
@@ -290,10 +387,16 @@ def suspended_stripline_capacitance_eps0(
 def suspended_stripline_quasistatic(
         w_mm: float, b_mm: float, h_mm: float, eps_r: float,
         d0_mm: float | None = None, richardson: bool = True,
+        *, three_point: bool = False,
         **grid_kw: float) -> QuasiStaticResult:
-    """悬置带线 εeff/Z0 裁判。缺省 d0 = b/40（标称 b=1.016 → 0.0254mm）。"""
+    """悬置带线 εeff/Z0 裁判。缺省 d0 = b/40（标称 b=1.016 → 0.0254mm）。
+
+    three_point=True（W4-A/P12，opt-in）：三级网格 + 三点高阶 Richardson
+    （观察阶随结果返回），缺省 False 零变化。
+    """
     d0 = d0_mm if d0_mm is not None else b_mm / 40.0
-    steps = (d0, d0 / 2.0) if richardson else (d0,)
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
     eps_v, cair_v, n_nodes = [], [], 0
     for d in steps:
         c_d, n_nodes = suspended_stripline_capacitance_eps0(
@@ -302,6 +405,11 @@ def suspended_stripline_quasistatic(
             w_mm, b_mm, h_mm, 1.0, d, **grid_kw)
         eps_v.append(c_d / c_a)
         cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
     c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
              else cair_v[-1])
     return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],
@@ -313,14 +421,24 @@ def suspended_stripline_quasistatic(
 def microstrip_capacitance_eps0(w_mm: float, h_mm: float, eps_r: float,
                                 d0_mm: float, xmax_mm: float = 20.0,
                                 zmax_mm: float = 20.0,
-                                ratio: float = DEFAULT_GRADING_RATIO
+                                ratio: float = DEFAULT_GRADING_RATIO,
+                                edge_refine: bool = False,
+                                edge_ratio: float = DEFAULT_EDGE_RATIO
                                 ) -> tuple[float, int]:
     """微带半域：x∈[0,xmax] 对称轴 Neumann；地 z=0 φ=0；零厚度带 z=h、x∈[0,w/2]
-    φ=1；基板 z∈[0,h] εr。C = 4·W_half（ε0 单位）。"""
+    φ=1；基板 z∈[0,h] εr。C = 4·W_half（ε0 单位）。
+
+    edge_refine=True（W4-A/P12，opt-in）：带缘 x=w/2（零厚边缘奇异）侧
+    几何渐变加密；缺省 False=原均匀档逐字节不变。
+    """
     if w_mm <= 0 or h_mm <= 0 or eps_r < 1.0:
         raise ValueError("微带裁判定义域：w>0、h>0、εr≥1")
-    xs = concat_lines(uniform_lines(0.0, w_mm / 2.0, d0_mm),
-                      graded_lines(w_mm / 2.0, xmax_mm, d0_mm, ratio))
+    if edge_refine:
+        xs = concat_lines(graded_lines(w_mm / 2.0, 0.0, d0_mm, edge_ratio)[::-1],
+                          graded_lines(w_mm / 2.0, xmax_mm, d0_mm, ratio))
+    else:
+        xs = concat_lines(uniform_lines(0.0, w_mm / 2.0, d0_mm),
+                          graded_lines(w_mm / 2.0, xmax_mm, d0_mm, ratio))
     zs = concat_lines(uniform_lines(0.0, h_mm, d0_mm),
                       graded_lines(h_mm, zmax_mm, d0_mm, ratio))
     nx, nz = xs.size, zs.size
@@ -339,16 +457,336 @@ def microstrip_capacitance_eps0(w_mm: float, h_mm: float, eps_r: float,
 
 def microstrip_quasistatic(w_mm: float, h_mm: float, eps_r: float,
                            d0_mm: float | None = None, richardson: bool = True,
+                           *, three_point: bool = False,
                            **grid_kw: float) -> QuasiStaticResult:
-    """微带静态 εeff/Z0 裁判（对照 HJ）。缺省 d0 = h/20。"""
+    """微带静态 εeff/Z0 裁判（对照 HJ）。缺省 d0 = h/20。
+
+    three_point=True（W4-A/P12，opt-in）：三级网格 + 三点高阶 Richardson
+    （观察阶随结果返回），缺省 False 零变化。
+    """
     d0 = d0_mm if d0_mm is not None else h_mm / 20.0
-    steps = (d0, d0 / 2.0) if richardson else (d0,)
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
     eps_v, cair_v, n_nodes = [], [], 0
     for d in steps:
         c_d, n_nodes = microstrip_capacitance_eps0(w_mm, h_mm, eps_r, d, **grid_kw)
         c_a, _ = microstrip_capacitance_eps0(w_mm, h_mm, 1.0, d, **grid_kw)
         eps_v.append(c_d / c_a)
         cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
+    c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
+             else cair_v[-1])
+    return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],
+                   n_nodes)
+
+
+# ─── 几何族：倒置微带（TA-7：地上气隙 h_air+零厚带+基板上覆 h_sub，开线无上地）──
+
+def inverted_microstrip_capacitance_eps0(
+        w_mm: float, h_air_mm: float, h_sub_mm: float, eps_r: float,
+        d0_mm: float, xmax_mm: float | None = None,
+        zmax_mm: float | None = None,
+        ratio: float = DEFAULT_GRADING_RATIO,
+        edge_refine: bool = False,
+        edge_ratio: float = DEFAULT_EDGE_RATIO) -> tuple[float, int]:
+    """倒置微带半域：x∈[0,xmax] 对称轴 x=0 Neumann；地 z=0 φ=0；零厚度带
+    z=h_air、x∈[0,w/2] φ=1；基板 z∈[h_air, h_air+h_sub] εr、其余空气；上/右
+    外边界 Neumann（开线无上地）。C = 4·W_half（ε0 单位）。
+
+    外域缺省（CPS 同款 20·b 口径，#303：开线族空气场衰减慢，域截断进 C_air
+    而 εeff 比值不敏感 ≤0.1%）：xmax = max(8, 20·max(w/2, h_air))、
+    zmax = max(8, 20·max(w/2, h_air), h_air+h_sub+4·h_sub)。
+
+    edge_refine=True（W4-A/P12，opt-in）：带缘 x=w/2 侧几何渐变加密；
+    缺省 False=原均匀档逐字节不变。
+    """
+    if w_mm <= 0 or h_air_mm <= 0 or h_sub_mm <= 0 or eps_r < 1.0:
+        raise ValueError(
+            "倒置微带裁判定义域：w>0、h_air>0、h_sub>0、εr≥1")
+    scale = max(w_mm / 2.0, h_air_mm)
+    xmax = xmax_mm if xmax_mm is not None else max(8.0, 20.0 * scale)
+    zmax = (zmax_mm if zmax_mm is not None
+            else max(8.0, 20.0 * scale, h_air_mm + 5.0 * h_sub_mm))
+    if edge_refine:
+        xs = concat_lines(graded_lines(w_mm / 2.0, 0.0, d0_mm, edge_ratio)[::-1],
+                          graded_lines(w_mm / 2.0, xmax, d0_mm, ratio))
+    else:
+        xs = concat_lines(uniform_lines(0.0, w_mm / 2.0, d0_mm),
+                          graded_lines(w_mm / 2.0, xmax, d0_mm, ratio))
+    z1 = h_air_mm
+    z2 = h_air_mm + h_sub_mm
+    zs = concat_lines(uniform_lines(0.0, z1, d0_mm),
+                      uniform_lines(z1, z2, d0_mm),
+                      graded_lines(z2, zmax, d0_mm, ratio))
+    nx, nz = xs.size, zs.size
+    eps = np.ones((nx - 1, nz - 1))
+    zc = 0.5 * (zs[:-1] + zs[1:])
+    eps[:, (zc > z1) & (zc < z2)] = eps_r
+    j1 = int(np.argmin(np.abs(zs - z1)))
+    iw = int(np.argmin(np.abs(xs - w_mm / 2.0)))
+    if abs(zs[j1] - z1) > 1e-12 or abs(xs[iw] - w_mm / 2.0) > 1e-12:
+        raise RuntimeError("倒置微带网格线未精确落在带缘/基板下表面（构造错误）")
+    diri = {i * nz: 0.0 for i in range(nx)}          # 地 z=0
+    for i in range(iw + 1):                           # 带 z=h_air φ=1
+        diri[i * nz + j1] = 1.0
+    return 4.0 * energy_quasistatic(xs, zs, eps, diri), nx * nz
+
+
+def inverted_microstrip_quasistatic(
+        w_mm: float, h_air_mm: float, h_sub_mm: float, eps_r: float,
+        d0_mm: float | None = None, richardson: bool = True,
+        *, three_point: bool = False,
+        **grid_kw: float) -> QuasiStaticResult:
+    """倒置微带 εeff/Z0 裁判（TA-7 数字裁判，#118 独立来源）。
+
+    缺省 d0 = min(h_air, h_sub)/20。族验证锚（tests/unit/test_ta_wave_a_
+    templates）：① εr=1 与已验证微带族（HJ 静态 +0.18~0.32%）同物理互检——
+    无介质边界时两族网格对同一拉普拉斯问题离散；② 1 ≤ εeff ≤ εr 单调括号；
+    ③ h_air→0+ 退化为普通微带（带贴地，电容发散——只作定性方向校验不作
+    数值锚）。three_point=True（W4-A/P12，opt-in）：三级网格 + 三点高阶
+    Richardson（观察阶随结果返回），缺省 False 零变化。
+    """
+    d0 = d0_mm if d0_mm is not None else min(h_air_mm, h_sub_mm) / 20.0
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
+    eps_v, cair_v, n_nodes = [], [], 0
+    for d in steps:
+        c_d, n_nodes = inverted_microstrip_capacitance_eps0(
+            w_mm, h_air_mm, h_sub_mm, eps_r, d, **grid_kw)
+        c_a, _ = inverted_microstrip_capacitance_eps0(
+            w_mm, h_air_mm, h_sub_mm, 1.0, d, **grid_kw)
+        eps_v.append(c_d / c_a)
+        cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
+    c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
+             else cair_v[-1])
+    return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],
+                   n_nodes)
+
+
+# ─── 几何族：CPW（TA-9 真共面波导：有限厚基板无底地；地可有限宽）──────────────
+
+def cpw_capacitance_eps0(w_mm: float, gap_mm: float, h_mm: float,
+                         eps_r: float, d0_mm: float,
+                         gnd_mm: float | None = None,
+                         xmax_mm: float | None = None,
+                         zmax_mm: float | None = None,
+                         ratio: float = DEFAULT_GRADING_RATIO,
+                         edge_refine: bool = False,
+                         edge_ratio: float = DEFAULT_EDGE_RATIO
+                         ) -> tuple[float, int]:
+    """CPW 半域：x∈[0,xmax] 对称轴 Neumann；带 x∈[0,w/2] z=0 φ=1；缝
+    (w/2, w/2+gap)；地 z=0 φ=0 自 x=w/2+gap 起——gnd_mm=None 地延伸到域边
+    （无穷地近似，Ghione-Naldi 闭式同口径）；gnd_mm>0 有限地（FGCPW），地缘
+    外 Neumann。基板 z∈[−h,0] εr、其余空气；外边界 Neumann，缺省
+    xmax=max(8, 20·b)、zmax 同（b=地外缘，CPS #303 口径）。
+    C = 4·W_half（V=1）。
+
+    edge_refine=True（W4-A/P12，opt-in）：带右缘 x=w/2 与缝缘/地缘侧（零厚
+    导体边缘奇异位置）几何渐变加密；缺省 False=原均匀档逐字节不变。
+    """
+    if w_mm <= 0 or gap_mm <= 0 or h_mm <= 0 or eps_r < 1.0:
+        raise ValueError("CPW 裁判定义域：w>0、gap>0、h>0、εr≥1")
+    if gnd_mm is not None and gnd_mm <= 0:
+        raise ValueError("CPW 裁判定义域：gnd_mm 须为 None（无穷地）或 >0")
+    a = w_mm / 2.0
+    g0 = a + gap_mm
+    b = g0 + (gnd_mm if gnd_mm is not None else 0.0)
+    if gnd_mm is None:
+        # 无穷地：地=域边，场自缝缘衰减——20·b 口径（CPS #303 同款）
+        xmax = xmax_mm if xmax_mm is not None else max(8.0, 20.0 * max(b, a))
+        zmax = zmax_mm if zmax_mm is not None else max(8.0, 20.0 * max(b, a),
+                                                       3.0 * h_mm)
+    else:
+        # 有限地：地外无场源，地缘偶极衰减——地缘外延 4·gnd 足够（实测与
+        # 20·b 大域差 <0.05%，b 含无场地导体不再放大域）
+        xmax = (xmax_mm if xmax_mm is not None
+                else max(8.0, b + 4.0 * gnd_mm))
+        zmax = (zmax_mm if zmax_mm is not None
+                else max(8.0, b + 4.0 * gnd_mm, 3.0 * h_mm))
+    if edge_refine:
+        lo = graded_lines(a, 0.0, d0_mm, edge_ratio)[::-1]  # 密端在带缘 a
+        mid = edge_refined_lines(a, g0, d0_mm, edge_ratio)  # 带缘+缝缘双加密
+        if gnd_mm is None:
+            xs = concat_lines(lo, mid, graded_lines(g0, xmax, d0_mm, ratio))
+        else:
+            xs = concat_lines(lo, mid,
+                              edge_refined_lines(g0, b, d0_mm, edge_ratio),
+                              graded_lines(b, xmax, d0_mm, ratio))
+    elif gnd_mm is None:
+        xs = concat_lines(uniform_lines(0.0, a, d0_mm),
+                          uniform_lines(a, g0, d0_mm),
+                          graded_lines(g0, xmax, d0_mm, ratio))
+    else:
+        xs = concat_lines(uniform_lines(0.0, a, d0_mm),
+                          uniform_lines(a, g0, d0_mm),
+                          uniform_lines(g0, b, d0_mm),
+                          graded_lines(b, xmax, d0_mm, ratio))
+    zs = concat_lines(graded_lines(-h_mm, -zmax, d0_mm, ratio)[::-1],
+                      uniform_lines(-h_mm, 0.0, d0_mm),
+                      graded_lines(0.0, zmax, d0_mm, ratio))
+    nx, nz = xs.size, zs.size
+    eps = np.ones((nx - 1, nz - 1))
+    zc = 0.5 * (zs[:-1] + zs[1:])
+    eps[:, (zc > -h_mm) & (zc < 0.0)] = eps_r
+    j0 = int(np.argmin(np.abs(zs)))
+    ia = int(np.argmin(np.abs(xs - a)))
+    ig = int(np.argmin(np.abs(xs - g0)))
+    if abs(zs[j0]) > 1e-12 or abs(xs[ia] - a) > 1e-12 or abs(xs[ig] - g0) > 1e-12:
+        raise RuntimeError("CPW 网格线未精确落在带缘/缝缘/基板面（构造错误）")
+    ib = int(np.argmin(np.abs(xs - b))) if gnd_mm is not None else nx - 1
+    if gnd_mm is not None and abs(xs[ib] - b) > 1e-12:
+        raise RuntimeError("CPW 网格线未精确落在有限地外缘（构造错误）")
+    diri: dict[int, float] = {}
+    for i in range(ig, ib + 1):                      # 地（无穷=域边 / 有限=b 缘）
+        diri[i * nz + j0] = 0.0                      # （缝节点 ia+1..ig-1 自由）
+    for i in range(ia + 1):                          # 带 φ=1（带缘节点覆盖地序）
+        diri[i * nz + j0] = 1.0
+    return 4.0 * energy_quasistatic(xs, zs, eps, diri), nx * nz
+
+
+def cpw_quasistatic(w_mm: float, gap_mm: float, h_mm: float, eps_r: float,
+                    gnd_mm: float | None = None,
+                    d0_mm: float | None = None, richardson: bool = True,
+                    *, three_point: bool = False,
+                    **grid_kw: float) -> QuasiStaticResult:
+    """CPW εeff/Z0 裁判（TA-9 数字裁判）。
+
+    gnd_mm=None（无穷地）对照 Ghione-Naldi 1984 有限厚闭式（skrf CPW 同源
+    公式族第三方实现）；gnd_mm>0（FGCPW）量化有限地效应带。缺省
+    d0 = min(h, gap)/20。族验证锚：h→∞ 半空间极限 (1+εr)/2（CPS 同款
+    −0.1% 口径）、闭式/skrf/FD 三方对拍（test_ta_wave_a_templates）。
+    three_point=True（W4-A/P12，opt-in）：三级网格 + 三点高阶 Richardson
+    （观察阶随结果返回），缺省 False 零变化。
+    """
+    d0 = d0_mm if d0_mm is not None else min(h_mm, gap_mm) / 20.0
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
+    eps_v, cair_v, n_nodes = [], [], 0
+    for d in steps:
+        c_d, n_nodes = cpw_capacitance_eps0(w_mm, gap_mm, h_mm, eps_r, d,
+                                            gnd_mm=gnd_mm, **grid_kw)
+        c_a, _ = cpw_capacitance_eps0(w_mm, gap_mm, h_mm, 1.0, d,
+                                      gnd_mm=gnd_mm, **grid_kw)
+        eps_v.append(c_d / c_a)
+        cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
+    c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
+             else cair_v[-1])
+    return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],
+                   n_nodes)
+
+
+# ─── 几何族：有限厚导体 CPW（W4-A/P12+P4：P4 厚度修正档的数字裁判）───────────
+
+def cpw_finite_thickness_capacitance_eps0(
+        w_mm: float, gap_mm: float, t_mm: float, h_mm: float, eps_r: float,
+        d0_mm: float, gnd_mm: float | None = None,
+        xmax_mm: float | None = None, zmax_mm: float | None = None,
+        ratio: float = DEFAULT_GRADING_RATIO) -> tuple[float, int]:
+    """有限金属厚度 CPW 半域（零厚族同口径 + 导体截面为实心矩形）。
+
+    导体：x∈[0, w/2]、z∈[0, t] 矩形截面（贴基板上表面生长），矩形全边界
+    节点 φ=1（Dirichlet）——能量法 C=2W/V² 对任意 Dirichlet 边界成立
+    （含镜面对称轴 x=0 上的导体节点，镜像延拓后仍为等位体）。地：z=0、
+    x≥w/2+gap 起 φ=0（gnd_mm=None 无穷地 / >0 有限地，零厚 CPW 同口径）。
+    基板 z∈[−h,0] εr。C = 4·W_half（V=1，ε0 单位）。
+
+    网格：x 向带缘 w/2 与缝缘两侧加密（edge_refined_lines，固定开启——
+    本族无"缺省均匀档"兼容负担，几何渐变是奇异场形的正确离散）；
+    z 向矩形缘 z=t 须精确落线。
+    """
+    if w_mm <= 0 or gap_mm <= 0 or t_mm <= 0 or h_mm <= 0 or eps_r < 1.0:
+        raise ValueError("有限厚 CPW 裁判定义域：w>0、gap>0、t>0、h>0、εr≥1")
+    if gnd_mm is not None and gnd_mm <= 0:
+        raise ValueError("有限厚 CPW：gnd_mm 须为 None（无穷地）或 >0")
+    a = w_mm / 2.0
+    g0 = a + gap_mm
+    b = g0 + (gnd_mm if gnd_mm is not None else 0.0)
+    if gnd_mm is None:
+        xmax = xmax_mm if xmax_mm is not None else max(8.0, 20.0 * max(b, a))
+        zmax = zmax_mm if zmax_mm is not None else max(8.0, 20.0 * max(b, a),
+                                                       3.0 * h_mm)
+    else:
+        xmax = (xmax_mm if xmax_mm is not None else max(8.0, b + 4.0 * gnd_mm))
+        zmax = (zmax_mm if zmax_mm is not None
+                else max(8.0, b + 4.0 * gnd_mm, 3.0 * h_mm))
+    if gnd_mm is None:
+        xs = concat_lines(graded_lines(a, 0.0, d0_mm, DEFAULT_EDGE_RATIO)[::-1],
+                          edge_refined_lines(a, g0, d0_mm, DEFAULT_EDGE_RATIO),
+                          graded_lines(g0, xmax, d0_mm, ratio))
+    else:
+        xs = concat_lines(graded_lines(a, 0.0, d0_mm, DEFAULT_EDGE_RATIO)[::-1],
+                          edge_refined_lines(a, g0, d0_mm, DEFAULT_EDGE_RATIO),
+                          edge_refined_lines(g0, b, d0_mm, DEFAULT_EDGE_RATIO),
+                          graded_lines(b, xmax, d0_mm, ratio))
+    zs = concat_lines(graded_lines(-h_mm, -zmax, d0_mm, ratio)[::-1],
+                      uniform_lines(-h_mm, 0.0, d0_mm),
+                      graded_lines(0.0, zmax, d0_mm, ratio))
+    # 导体顶面 z=t 必须精确落线（矩形全边界 Dirichlet 的构造前提）
+    if float(np.min(np.abs(zs - t_mm))) > 1e-12:
+        zs = np.unique(np.concatenate([zs, [t_mm]]))
+    nx, nz = xs.size, zs.size
+    eps = np.ones((nx - 1, nz - 1))
+    zc = 0.5 * (zs[:-1] + zs[1:])
+    eps[:, (zc > -h_mm) & (zc < 0.0)] = eps_r
+    j0 = int(np.argmin(np.abs(zs)))
+    it = int(np.argmin(np.abs(zs - t_mm)))
+    ia = int(np.argmin(np.abs(xs - a)))
+    ig = int(np.argmin(np.abs(xs - g0)))
+    if abs(zs[j0]) > 1e-12 or abs(zs[it] - t_mm) > 1e-12 \
+            or abs(xs[ia] - a) > 1e-12 or abs(xs[ig] - g0) > 1e-12:
+        raise RuntimeError("有限厚 CPW 网格线未精确落在导体矩形缘/基板面（构造错误）")
+    ib = int(np.argmin(np.abs(xs - b))) if gnd_mm is not None else nx - 1
+    diri: dict[int, float] = {}
+    for i in range(ig, ib + 1):                      # 地
+        diri[i * nz + j0] = 0.0
+    for i in range(ia + 1):                          # 导体矩形 z∈[0,t] 全边界 φ=1
+        for j in range(j0, it + 1):
+            diri[i * nz + j] = 1.0
+    return 4.0 * energy_quasistatic(xs, zs, eps, diri), nx * nz
+
+
+def cpw_finite_thickness_quasistatic(
+        w_mm: float, gap_mm: float, t_mm: float, h_mm: float, eps_r: float,
+        gnd_mm: float | None = None, d0_mm: float | None = None,
+        richardson: bool = True, *, three_point: bool = False,
+        **grid_kw: float) -> QuasiStaticResult:
+    """有限厚导体 CPW εeff/Z0 裁判（fgcpw 有限厚修正档的 #118 数字真值）。
+
+    缺省 d0 = min(h, gap, t)/20；richardson=True 双档一阶外推（零厚族同
+    语义），three_point=True 三级 + 三点高阶外推（观察阶随结果返回）。
+    退化锚：t→0⁺ 应与 cpw_quasistatic 同值收敛（容差随 t·ln(1/t) 的
+    网格分辨率极限，不逐位）。
+    """
+    d0 = d0_mm if d0_mm is not None else min(h_mm, gap_mm, t_mm) / 20.0
+    steps = ((d0, d0 / 2.0, d0 / 4.0) if three_point
+             else (d0, d0 / 2.0) if richardson else (d0,))
+    eps_v, cair_v, n_nodes = [], [], 0
+    for d in steps:
+        c_d, n_nodes = cpw_finite_thickness_capacitance_eps0(
+            w_mm, gap_mm, t_mm, h_mm, eps_r, d, gnd_mm=gnd_mm, **grid_kw)
+        c_a, _ = cpw_finite_thickness_capacitance_eps0(
+            w_mm, gap_mm, t_mm, h_mm, 1.0, d, gnd_mm=gnd_mm, **grid_kw)
+        eps_v.append(c_d / c_a)
+        cair_v.append(c_a)
+    if three_point:
+        eps_ext, p_hat = richardson_three_point(eps_v[0], eps_v[1], eps_v[2])
+        c_air, _ = richardson_three_point(cair_v[0], cair_v[1], cair_v[2])
+        return _finish(eps_v[-1] * c_air, c_air, d0, True, eps_v[0], eps_v[-1],
+                       n_nodes, p_hat, eps_eff_override=eps_ext)
     c_air = (richardson_first_order(cair_v[0], cair_v[1]) if richardson
              else cair_v[-1])
     return _finish(eps_v[-1] * c_air, c_air, d0, richardson, eps_v[0], eps_v[-1],

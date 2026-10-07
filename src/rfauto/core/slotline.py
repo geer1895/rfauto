@@ -1,6 +1,6 @@
-"""槽线（slotline）闭式：Janaswamy–Schaubert 曲线拟合式（闭式裁判面）。
+"""槽线（slotline）闭式：Janaswamy–Schaubert 曲线拟合式（W3⑧a 路线 A 闭式裁判面）。
 
-权威口径（常数逐个有出处、分段声明有效范围、超范围显式报错不外推）
+权威口径（铁律 1c：常数逐个有出处、分段声明有效范围、超范围显式报错不外推）
 ---------------------------------------------------------------------------
 - R. Janaswamy and D. H. Schaubert, "Characteristic Impedance of a Wide Slotline
   on Low-Permittivity Substrates," IEEE Trans. MTT-34(8), pp. 900–902, Aug. 1986。
@@ -15,10 +15,24 @@
   FORTRAN 源码（εr² √(W/λ0) 项）+ dokumen.pub《Networks and Devices Using Planar
   Transmission Lines》eq (9.4.19)–(9.4.22)（Z4 = 12.48(1+0.18 ln εr) 符号定版）。
 - 高介电常数段（9.7 ≤ εr ≤ 20）为 R. Garg & K. C. Gupta, IEEE Trans. MTT-24,
-  p.532, 1976（Cohn/Mariani 等效波导模型曲线拟合）——**本模块未实现**（原文
-  未取得可双源核对的文本，禁止凭记忆写常数）；同理 Janaswamy–Schaubert 宽槽段
-  0.075 < W/λ0 ≤ 1.0 的式 (10)/(11)/(14)/(15) OCR 不可靠亦未实现，调用时显式
-  ValueError。
+  p.532, 1976（Cohn/Mariani 等效波导模型曲线拟合）——**本模块仍未实现**（原文
+  系数未取得可双源核对的文本，禁止凭记忆写常数；2026-10-05 W4-B 复查：O'Reilly/
+  dokumen.pub/IEEE/NTRS 各通道不可达，维持显式 ValueError）。
+- 宽槽段（0.075 < W/λ0 ≤ 1.0）分档落地状态（2026-10-05 W4-B，#1c 证据账）：
+  * 式 (10)（2.22 ≤ εr ≤ 3.8 宽槽 λ'/λ0）**已实现**（`slotline_wide_low`）。
+    转录三源互证：① Janaswamy 博士论文（作者自稿，ANTLAB 8602 / NASA NTRS
+    19870016815）§3.3 式 (3.10)；② S. Chakraborty 等, JSIR 64(7):482-486,
+    2005（排版干净转录，归引 J-S MTT-34(8):900-902）；③ UMass 报告附录 A
+    OCR（N86-30893）。系数 0.62·εr^0.835·(W/λ0)^0.48/(1.344+W/d) 与
+    0.0617[1.91−(εr+2)/εr]·ln(d/λ0) 三源逐位一致。独立判据（#118）：在
+    W/λ0=0.075 段界与已双源核对的窄槽式 (8) 对拍，2.22≤εr≤3.8 ×
+    0.006≤d/λ0≤0.06 全网格 |Δ|≤2.7%（两拟合各自声明精度 2.2%/2.6% 之内，
+    tests/unit/test_w4_b_p3_slotline_wide.py 钉）。
+  * 式 (11)（低 εr 宽槽 Z0）/式 (14)/(15)（3.8 ≤ εr ≤ 9.8 宽槽）**未实现**：
+    三个独立转录源（N86-30893 OCR / 论文 OCR / MLS 4ed 检索片段）在平方项、
+    0.01 vs 0.04εr、0.116 vs 0.146εr、有无 tan 等细节互相冲突；以段界连续性
+    作裁判时所有可构造候选残差 10%~40%，无法闭环——维持显式 ValueError，
+    证据状态记档不凭记忆补常数（#122 如实）。
 
 几何/记号
 ---------
@@ -48,13 +62,15 @@ C0 = 299792458.0
 # 有效域常量（原文声明；模块级导出供模板/脚本复用）
 D_OVER_LAMBDA0_RANGE: tuple[float, float] = (0.006, 0.06)
 W_OVER_LAMBDA0_NARROW_RANGE: tuple[float, float] = (0.0015, 0.075)
+W_OVER_LAMBDA0_WIDE_RANGE: tuple[float, float] = (0.075, 1.0)
 EPS_R_LOW_RANGE: tuple[float, float] = (2.22, 3.8)
 EPS_R_MID_RANGE: tuple[float, float] = (3.8, 9.8)
 
-#: 原文各段拟合误差（分数），供调用方设门（闭式自身精度 ~2%）
+#: 原文各段拟合误差（分数），供调用方设门（闭式自身精度 ~2%，任务书验收口径）
 FIT_ERROR_MAX = {
     "lambda_low": 0.022, "z0_low": 0.027,
     "lambda_mid": 0.03, "z0_mid": 0.054,
+    "lambda_wide_low": 0.026,   # 式 (10)：Av 0.69% / Max −2.6%（W/λ0>0.8 两点）
 }
 
 
@@ -101,8 +117,10 @@ def slotline_segment(w_mm: float, d_mm: float, eps_r: float, freq_ghz: float) ->
             f"slotline: W/λ0={w_l:.5f} 低于窄槽段下限 {lo}（不外推）")
     if w_l > hi:
         raise ValueError(
-            f"slotline: W/λ0={w_l:.5f} 高于窄槽段上限 {hi}——宽槽段式 (10)/(11)/(14)/(15)"
-            " 常数未取得双源核对文本，本模块未实现（显式拒绝，不外推）")
+            f"slotline: W/λ0={w_l:.5f} 高于窄槽段上限 {hi}——本闭式只覆盖窄槽段；"
+            "宽槽段（0.075<W/λ0≤1.0）走 slotline_wide_low（式 (10)，2.22≤εr≤3.8，"
+            "仅 λ'/λ0 面）；宽槽 Z0 式 (11) 与 3.8<εr≤9.8 宽槽式 (14)/(15) "
+            "常数转录未闭环，未实现（显式拒绝，不外推）")
     if EPS_R_LOW_RANGE[0] <= er <= EPS_R_LOW_RANGE[1]:
         return "low"
     if EPS_R_MID_RANGE[0] < er <= EPS_R_MID_RANGE[1]:
@@ -225,3 +243,105 @@ def slotline_guide_wavelength_mm(w_mm: float, d_mm: float, eps_r: float,
     """槽波长 λ' = (λ'/λ0)·λ0（mm）。"""
     r = slotline_closed_form(w_mm, d_mm, eps_r, freq_ghz)
     return r.lambda_ratio * C0 / (float(freq_ghz) * 1e9) * 1e3
+
+
+# ── 宽槽段（0.075 < W/λ0 ≤ 1.0）：Janaswamy–Schaubert 式 (10) ────────────────
+#
+# 证据账（2026-10-05 W4-B，#1c）见模块 docstring“宽槽段分档落地状态”节：
+# 三源互证转录 + 段界连续性独立判据（对拍窄槽式 (8)，|Δ|≤2.7%）。式 (11)
+# （宽槽 Z0）与 (14)/(15)（3.8<εr≤9.8 宽槽）转录未闭环，本节不落地。
+
+
+@dataclass(frozen=True)
+class SlotlineWideLowResult:
+    """宽槽段（低 εr）式 (10) 评估量（SI：β rad/m；Z0 未实现不输出）。"""
+
+    lambda_ratio: float      # λ'/λ0
+    eps_eff: float           # (λ0/λ')²
+    beta_rad_m: float        # k0·√εeff
+    w_over_lambda0: float
+    d_over_lambda0: float
+    w_over_d: float
+    segment: str = "wide_low"
+
+
+def _validate_wide_low(w_mm: float, d_mm: float, eps_r: float,
+                       freq_ghz: float) -> tuple[float, float, float]:
+    """宽槽低 εr 段域守卫：(d/λ0, W/λ0, εr) 三条同时满足，越界 ValueError。"""
+    _validate_inputs(w_mm, d_mm, eps_r, freq_ghz)
+    lam0_mm = C0 / (float(freq_ghz) * 1e9) * 1e3
+    w_l = float(w_mm) / lam0_mm
+    d_l = float(d_mm) / lam0_mm
+    er = float(eps_r)
+    lo, hi = D_OVER_LAMBDA0_RANGE
+    if not (lo <= d_l <= hi):
+        raise ValueError(
+            f"slotline_wide: d/λ0={d_l:.5f} 超出 Janaswamy–Schaubert 有效域 "
+            f"[{lo}, {hi}]（不外推；调整基板厚/频率）")
+    lo, hi = W_OVER_LAMBDA0_WIDE_RANGE
+    if not (lo <= w_l <= hi):
+        raise ValueError(
+            f"slotline_wide: W/λ0={w_l:.5f} 超出宽槽段 [{lo}, {hi}]"
+            "（窄槽走 slotline_closed_form；不外推）")
+    lo, hi = EPS_R_LOW_RANGE
+    if not (lo <= er <= hi):
+        if er > 3.8:
+            raise ValueError(
+                f"slotline_wide: εr={er} > 3.8——3.8<εr≤9.8 宽槽段为式 (14)/(15)、"
+                "9.7≤εr≤20 为 Garg–Gupta 1976，两者常数均未取得可双源核对的转录"
+                "（转录源冲突/原文不可达），本模块未实现（显式拒绝，不外推）")
+        raise ValueError(
+            f"slotline_wide: εr={er} < {lo}，低于式 (10) 拟合下限（不外推）")
+    return w_l, d_l, er
+
+
+def _lambda_ratio_wide_low(w_l: float, d_l: float, er: float) -> float:
+    """式 (10)：2.22≤εr≤3.8，0.075≤W/λ0≤1.0（Av 0.69%，Max −2.6%）。
+
+    λ'/λ0 = 1.194 − 0.24·ln εr − 0.62·εr^0.835·(W/λ0)^0.48/(1.344+W/d)
+            − 0.0617·[1.91 − (εr+2)/εr]·ln(d/λ0)
+    """
+    return (1.194 - 0.24 * math.log(er)
+            - 0.62 * er ** 0.835 * w_l ** 0.48 / (1.344 + w_l / d_l)
+            - 0.0617 * (1.91 - (er + 2.0) / er) * math.log(d_l))
+
+
+def slotline_wide_low(w_mm: float, d_mm: float, eps_r: float,
+                      freq_ghz: float) -> SlotlineWideLowResult:
+    """宽槽段（低 εr）主入口：式 (10) → λ'/λ0、εeff、β（Z0 不实现，见 docstring）。
+
+    域：0.006≤d/λ0≤0.06、0.075≤W/λ0≤1.0、2.22≤εr≤3.8，越界 ValueError。
+    段界连续性判据（对拍窄槽式 (8)）与三源转录证据账见模块 docstring。
+    """
+    w_l, d_l, er = _validate_wide_low(w_mm, d_mm, eps_r, freq_ghz)
+    ratio = _lambda_ratio_wide_low(w_l, d_l, er)
+    if not (0.0 < ratio < 1.0):
+        raise ValueError(
+            f"slotline_wide: 闭式给出非物理 λ'/λ0={ratio:.4f}（应在 (0,1)），输入 "
+            f"W={w_mm} d={d_mm} εr={eps_r} f={freq_ghz}GHz——拒绝输出。注：域角点"
+            "（W/λ0→1 且 d/λ0→0.006）处式 (10) 拟合可越过空气极限 ≤0.1%，属其"
+            "自身 Max −2.6% 声明误差域内的拟合伪象，本模块不外推不夹逼")
+    f_hz = float(freq_ghz) * 1e9
+    k0 = 2.0 * math.pi * f_hz / C0
+    eps_eff = 1.0 / (ratio * ratio)
+    return SlotlineWideLowResult(
+        lambda_ratio=ratio, eps_eff=eps_eff, beta_rad_m=k0 * math.sqrt(eps_eff),
+        w_over_lambda0=w_l, d_over_lambda0=d_l, w_over_d=w_l / d_l)
+
+
+def slotline_wide_lambda_ratio(w_mm: float, d_mm: float, eps_r: float,
+                               freq_ghz: float) -> float:
+    """宽槽段 λ'/λ0（式 (10)）。"""
+    return slotline_wide_low(w_mm, d_mm, eps_r, freq_ghz).lambda_ratio
+
+
+def slotline_wide_eps_eff(w_mm: float, d_mm: float, eps_r: float,
+                          freq_ghz: float) -> float:
+    """宽槽段 εeff = (λ0/λ')²（式 (10)）。"""
+    return slotline_wide_low(w_mm, d_mm, eps_r, freq_ghz).eps_eff
+
+
+def slotline_wide_beta(w_mm: float, d_mm: float, eps_r: float,
+                       freq_ghz: float) -> float:
+    """宽槽段相位常数 β = k0·√εeff（rad/m，式 (10)）。"""
+    return slotline_wide_low(w_mm, d_mm, eps_r, freq_ghz).beta_rad_m

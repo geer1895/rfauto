@@ -1,12 +1,16 @@
-"""色散材料库：Debye / Djordjevic-Sarkar 因果宽带介电模型。
+"""色散材料库（D1，§10.4）：Debye / Djordjevic-Sarkar / Lorentz 因果介电模型
++ 多频点向量拟合面。
 
 背景
 ----
 模板库现有基板全部是常数 εr，宽带（>10 GHz 或超宽带）没有因果性保障。
-本模块提供两类**确定性**（纯 numpy，无网络、无求解器）色散介电模型，
-数据源 = 厂商 datasheet 单频点 (εr, tanδ) → 因果拟合：
+本模块提供**确定性**（纯 numpy，无网络、无求解器）色散介电模型：
 
 * **Debye（单极 / 多极）**：ε(ω) = ε∞ + Σ_i Δε_i / (1 + j ω τ_i)
+* **Lorentz 振子（W4-C P13，2026-10-05）**：ε(f) = ε∞ + Σ Δε_i·f0_i²/
+  (f0_i²−f²+jf·γ_i)——共振型介质/超材料等效参数的标准色散核，引擎接口
+  与 vendor openEMS CalcLorentzMaterial.m 逐式对齐（to_openems 直喂
+  AddLorentzMaterial；t_relax=1/(2πγ) 映射）；K-K 自检直接适用。
 * **Djordjevic-Sarkar（D-S）**：以 1/f 加权、在 [f1, f2] 上连续叠加 Debye
   弛豫的因果宽带模型 [1]：
 
@@ -15,6 +19,14 @@
 D-S 的**结构性因果保证**：它等价于无穷多 Debye 极点（每个极点单独满足
 Kramers-Kronig 关系）的非负加权叠加，故整体必然满足 K-K。模块另提供
 kramers_kronig_residual() 数值自检与 equivalent_debye() 有限多极对照。
+
+多频点向量拟合面（W4-C P13）：``fit_debye_multipoles``（datasheet/Gabriel
+组织数据 → 多极 Debye，固定对数极点 + nnls 非负最小二乘，无源性结构
+条件由解的非负性保证，拟合质量门 fail-loud）与 ``fit_djordjevic_sarkar_band``
+（多点数据 → (ε∞,Δε) 频带拟合）。与池 EC-12（openEMS 渲染通道 Debye，
+W2-E 已落 substrate loss_model 旋钮）互补：本批是 core 拟合面，缺省渲染
+路径零变化（#329 家法）。Cole-Cole/Havriliak-Negami 分数幂项未落（Gabriel
+表消费走 tissue_dielectric.cole_cole_eps），如实留后续增量。
 
 口径与来源（与 openEMS 官方实现逐行对齐）
 -----------------------------------------
@@ -45,11 +57,14 @@ CalcDjordjevicSarkarApprox 由**单频点测量 + 频带端点**拟合：
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import yaml
+
+from rfauto.core.materials import resolve_materials_yaml_path
 
 __all__ = [
     "C0",
@@ -376,6 +391,275 @@ class DjordjevicSarkar:
         }
 
 
+# ─── Lorentz 振子模型（W4-C P13 批 2026-10-05）────────────────────────────────
+#
+# 引源（#1c）：
+# * 模型（标准振子口径，本模块时间约定 e^{+jωt}/ε=ε′−jε″ 与既有 Debye/DS
+#   一致；f-form，ω=2πf 已归一）：ε(f) = ε∞ + Σ_i Δε_i·f0_i²/
+#   (f0_i² − f² + jf·γ_i) − jσ_DC/(2πf·ε0)。静态极限 ε(0)=ε∞+ΣΔε；
+#   谐振点损耗 ε″(f0)=Δε·f0/γ（闭式点锚）；共振介质/超材料等效参数的
+#   标准色散核（Lorentz 振子经典口径，教科书级）。
+# * 引擎接口单源（与 openEMS 逐式对齐，同既有 DS 面做法）：vendor
+#   openEMS CalcLorentzMaterial.m——
+#       eps = eps_r − eps_r·Σ (2π·f_p)²/(ω²−(2π·f_L)² − jω·ω_r) − jκ/(ωε0)
+#   其中 ω_r=1/t_relax。恒等变换 ε_i·ω0_i²/(ω0_i²−ω²+jωγ_i) ≡
+#   −ε∞·ω_p²/(ω²−ω0²−jωγ)（取 ω_p=ω0·sqrt(Δε_i/ε∞)）→ to_openems 导出
+#   EpsilonPlasmaFrequency=f0·sqrt(Δε/ε∞)（普通频率，公式内 ×2π）、
+#   EpsilonLorPoleFrequency=f0、EpsilonRelaxTime=1/(2π·γ_hz)（秒；γ_hz 为 Hz 频域极点），可直接喂
+#   AddLorentzMaterial/CSPropLorentzMaterial。
+# * K-K 因果性：Lorentz 核为实冲激响应有理函数（共轭极点对左半平面），
+#   kramers_kronig_residual 直接适用（sigma_dc=0 时）。
+
+
+class LorentzPole:
+    """单个 Lorentz 振子：Δε·f0²/(f0² − f² + jf·γ)（f-form，ω=2πf 已归一）。
+
+    delta_eps: 振子强度（≥0）；f0_hz: 固有频率（Hz，>0）；
+    gamma_hz: 阻尼系数（Hz，>0；f-form 分母 jf·γ 的直接系数——ω-form 的
+    jωγ 之 γ=2π·gamma_hz）。引擎映射：vendor CalcLorentzMaterial 的
+    ω·w_r=ω/t_relax 项在 f-form 即 f·(1/(2π·t_relax)) → t_relax=1/(2πγ_hz)
+    （to_openems 同式，回代裁判 test 钉）。
+    """
+
+    __slots__ = ("delta_eps", "f0_hz", "gamma_hz")
+
+    def __init__(self, delta_eps: float, f0_hz: float, gamma_hz: float) -> None:
+        self.delta_eps = _non_negative("delta_eps", delta_eps)
+        self.f0_hz = _positive("f0_hz", f0_hz)
+        self.gamma_hz = _positive("gamma_hz", gamma_hz)
+
+    def __repr__(self) -> str:  # pragma: no cover - 可读性辅助
+        return (
+            f"LorentzPole(delta_eps={self.delta_eps!r}, f0_hz={self.f0_hz!r}, "
+            f"gamma_hz={self.gamma_hz!r})"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LorentzPole):
+            return NotImplemented
+        return (
+            self.delta_eps == other.delta_eps
+            and self.f0_hz == other.f0_hz
+            and self.gamma_hz == other.gamma_hz
+        )
+
+
+class LorentzModel:
+    """单极/多极 Lorentz 振子复介电常数模型（纯 numpy，确定性）。
+
+    ε(ω) = ε∞ + Σ_i Δε_i·ω0_i²/(ω0_i² − ω² + jωγ_i) − jσ_DC/(ωε0)
+
+    接口与 DebyeModel 同构（epsilon/epsilon_r/loss_tangent/to_openems），
+    kramers_kronig_residual 直接适用（共振型介质的因果性合格门）。
+    """
+
+    def __init__(self, eps_inf: float, poles: Any = (), sigma_dc: float = 0.0) -> None:
+        self.eps_inf = _positive("eps_inf", eps_inf)
+        self.sigma_dc = _non_negative("sigma_dc", sigma_dc)
+        self.poles = tuple(poles)
+        for pole in self.poles:
+            if not isinstance(pole, LorentzPole):
+                raise TypeError(f"poles 元素必须是 LorentzPole，收到 {type(pole).__name__}")
+
+    def epsilon(self, freq_hz: Any) -> Any:
+        """复相对介电常数 ε = ε′ − jε″（标量输入返回标量）。"""
+        freq, scalar = _freq_array(freq_hz)
+        f = freq
+        eps = np.full(f.shape, complex(self.eps_inf), dtype=complex)
+        for pole in self.poles:
+            if pole.delta_eps == 0.0:
+                continue
+            num = pole.delta_eps * pole.f0_hz * pole.f0_hz
+            den = (pole.f0_hz * pole.f0_hz - f * f) + 1j * f * pole.gamma_hz
+            eps = eps + num / den
+        if self.sigma_dc:
+            omega = 2.0 * np.pi * f
+            eps = eps - 1j * self.sigma_dc / (omega * EPS0)
+        return _squeeze(eps, scalar)
+
+    def epsilon_r(self, freq_hz: Any) -> Any:
+        """实部 ε′(f)。"""
+        return np.real(self.epsilon(freq_hz))
+
+    def loss_tangent(self, freq_hz: Any) -> Any:
+        """损耗角正切 tanδ = −Im(ε)/Re(ε)。"""
+        eps = np.asarray(self.epsilon(freq_hz), dtype=complex)
+        return -eps.imag / eps.real
+
+    def to_openems(self) -> dict[str, Any]:
+        """导出 openEMS AddLorentzMaterial 可直接消费的参数。
+
+        恒等变换（vendor CalcLorentzMaterial.m 口径）：
+        EpsilonPlasmaFrequency_n = f0_n·sqrt(Δε_n/ε∞)（普通频率，公式内 ×2π）、
+        EpsilonLorPoleFrequency_n = f0_n、EpsilonRelaxTime_n = 1/(2π·γ_hz)。
+
+        推导：引擎 ω-form 阻尼项 ω·ω_r（ω_r=1/t_relax）在 f-form 为
+        f/(2π·t_relax)，与本模型 f-form 阻尼 f·γ_hz 对齐 → t_relax=1/(2πγ_hz)。
+        """
+        return {
+            "model": "lorentz",
+            "epsilon": self.eps_inf,
+            "kappa": self.sigma_dc,
+            "poles": [
+                {
+                    "eps_delta": pole.delta_eps,
+                    "f0_hz": pole.f0_hz,
+                    "f_plasma_hz": pole.f0_hz * math.sqrt(pole.delta_eps / self.eps_inf),
+                    "gamma_hz": pole.gamma_hz,
+                    "relax_time_s": 1.0 / (2.0 * np.pi * pole.gamma_hz),
+                }
+                for pole in self.poles
+            ],
+        }
+
+
+# ─── 多频点向量拟合面（W4-C P13：datasheet/Gabriel 数据 → 色散模型）────────────
+#
+# 确定性线性 LSQ（规则 7）：极点集固定（对数均布于数据带），未知量对复 ε(f)
+# 线性——实/虚部堆叠后 nnls（非负最小二乘，保 Δε_i≥0/ε∞≥0/σ≥0 的无源性
+# 结构条件，负振子=有源=违反无源性的解直接被排除）。拟合质量门（残差相对
+# 量级）fail-loud（同 render_core._debye_pole_fit 0.05 门，坏拟合禁静默）。
+
+
+def _stack_complex(a: np.ndarray) -> np.ndarray:
+    """复设计矩阵 → 实部/虚部堆叠的实矩阵（nnls 入口）。"""
+    return np.vstack([np.real(a), np.imag(a)])
+
+
+def _fit_gate(rel_residual: float, gate: float, ctx: str) -> None:
+    if rel_residual > gate:
+        raise ValueError(
+            f"{ctx}拟合质量门 FAIL：相对残差 {rel_residual:.3g} > {gate:g}"
+            "——坏拟合禁静默（#1b 家法），处置=增 n_poles/收窄频带/换模型")
+
+
+def fit_debye_multipoles(
+    freq_hz: Any,
+    eps_complex: Any,
+    n_poles: int = 4,
+    *,
+    sigma_dc: bool = False,
+    weights: str | None = None,
+    f_min_hz: float | None = None,
+    f_max_hz: float | None = None,
+    max_rel_residual: float = 0.05,
+) -> DebyeModel:
+    """多频点复 ε(f) 数据 → 多极 Debye 模型（固定对数极点 + nnls 向量拟合）。
+
+    参数：freq_hz/eps_complex 等长 1-D 数组（≥ n_poles+2 点；频率正有限）；
+    n_poles 极点数（≥1，对数均布于 [f_min, f_max]——缺省取数据带端点）；
+    sigma_dc=True 时增列 −jσ/(ωε0)（σ≥0 由 nnls 保证）；weights=None（缺省，
+    绝对残差 LSQ）| "relative"（逐点 1/|ε_data| 加权——宽频带含 σ_DC 尾时
+    绝对残差被低频大 |ε″| 支配，相对加权恢复中高频约束力，确定性同规则 7）；
+    max_rel_residual 拟合质量门（超门 ValueError，缺省 0.05 与
+    render_core._debye_pole_fit 同口径；加权门按加权范数计）。
+
+    返回 DebyeModel（eps_inf/poles/sigma_dc 均非负——无源性结构条件由
+    nnls 保证）。合成回收裁判与 Gabriel 组织数据真实数据锚见
+    tests/unit/test_w4_c_p13_dispersion.py。
+    """
+    from scipy.optimize import nnls
+
+    freq, _ = _freq_array(freq_hz)
+    eps = np.atleast_1d(np.asarray(eps_complex, dtype=complex))
+    if eps.shape != freq.shape:
+        raise ValueError(f"freq_hz/eps_complex 须等长一维，得 {freq.size}/{eps.size}")
+    if np.any(~np.isfinite(eps)):
+        raise ValueError("eps_complex 必须全为有限值")
+    n = int(n_poles)
+    if n < 1:
+        raise ValueError(f"n_poles 必须 >=1，收到 {n_poles!r}")
+    if freq.size < n + 2:
+        raise ValueError(
+            f"数据点数须 ≥ n_poles+2（过定），得 {freq.size} 点/{n} 极")
+    f_lo = float(np.min(freq)) if f_min_hz is None else _positive("f_min_hz", f_min_hz)
+    f_hi = float(np.max(freq)) if f_max_hz is None else _positive("f_max_hz", f_max_hz)
+    if f_hi <= f_lo:
+        raise ValueError(f"要求 f_max_hz > f_min_hz，得 [{f_lo!r}, {f_hi!r}]")
+    if freq.size and (np.min(freq) < f_lo - 1e-12 * f_lo or np.max(freq) > f_hi + 1e-12 * f_hi):
+        raise ValueError("数据频率越出 [f_min_hz, f_max_hz] 拟合带")
+    gate = _positive("max_rel_residual", max_rel_residual)
+
+    omega = 2.0 * np.pi * freq
+    tau = 1.0 / (2.0 * np.pi * np.geomspace(f_lo, f_hi, n))
+    cols = [np.ones_like(omega, dtype=complex)]
+    cols += [1.0 / (1.0 + 1j * omega * t) for t in tau]
+    if sigma_dc:
+        cols.append(-1j / (omega * EPS0))
+    a = _stack_complex(np.column_stack(cols))
+    b = np.concatenate([np.real(eps), np.imag(eps)])
+    if weights is None:
+        w_vec = np.ones_like(b)
+    elif weights == "relative":
+        w_vec = 1.0 / np.abs(eps)
+        w_vec = np.concatenate([w_vec, w_vec])
+    else:
+        raise ValueError(f"weights 只收 None/'relative'，收到 {weights!r}")
+    x, _ = nnls(a * w_vec[:, None], b * w_vec)
+    rel = float(np.linalg.norm((a @ x - b) * w_vec) / np.linalg.norm(b * w_vec))
+    _fit_gate(rel, gate, "debye 多极")
+    eps_inf = float(x[0])
+    poles = [
+        DebyePole(delta_eps=float(v), f_relax_hz=float(1.0 / (2.0 * np.pi * t)))
+        for v, t in zip(x[1:1 + n], tau, strict=True)
+        if float(v) > 0.0  # nnls 零振子极点剪枝（DebyePole 只收正 Δε）
+    ]
+    sigma = float(x[1 + n]) if sigma_dc else 0.0
+    return DebyeModel(eps_inf=eps_inf, poles=poles, sigma_dc=sigma)
+
+
+def fit_djordjevic_sarkar_band(
+    freq_hz: Any,
+    eps_complex: Any,
+    f1_hz: float,
+    f2_hz: float,
+    *,
+    sigma_dc: float = 0.0,
+    max_rel_residual: float = 0.05,
+) -> DjordjevicSarkar:
+    """多频点复 ε(f) 数据 → D-S 频带模型（(ε∞, Δε) 两参数线性 nnls 拟合）。
+
+    与 from_single_point（单点精解）互补：多点数据下同一 (f1,f2) 带内
+    最小二乘定 (ε∞, Δε)；σ_DC 作已知量先扣（非线性入参，不做拟合变量）。
+    质量门同 fit_debye_multipoles。
+    """
+    from scipy.optimize import nnls
+
+    freq, _ = _freq_array(freq_hz)
+    eps = np.atleast_1d(np.asarray(eps_complex, dtype=complex))
+    if eps.shape != freq.shape:
+        raise ValueError(f"freq_hz/eps_complex 须等长一维，得 {freq.size}/{eps.size}")
+    if np.any(~np.isfinite(eps)):
+        raise ValueError("eps_complex 必须全为有限值")
+    if freq.size < 4:
+        raise ValueError(f"数据点数须 ≥4（两参数过定），得 {freq.size}")
+    sigma = _non_negative("sigma_dc", sigma_dc)
+    gate = _positive("max_rel_residual", max_rel_residual)
+    f1 = _positive("f1_hz", f1_hz)
+    f2 = _positive("f2_hz", f2_hz)
+    if f1 >= f2:
+        raise ValueError(f"要求 f1_hz < f2_hz，得 [{f1!r}, {f2!r}]")
+
+    omega = 2.0 * np.pi * freq
+    omega1 = 2.0 * np.pi * f1
+    omega2 = 2.0 * np.pi * f2
+    m1 = float(np.log10(omega1))
+    m2 = float(np.log10(omega2))
+    kernel = np.log10((omega2 + 1j * omega) / (omega1 + 1j * omega)) / (m2 - m1)
+    target = eps.copy()
+    if sigma:
+        target = target - 1j * sigma / (omega * EPS0)
+    a = _stack_complex(np.column_stack([np.ones_like(omega, dtype=complex), kernel]))
+    b = np.concatenate([np.real(target), np.imag(target)])
+    x, _ = nnls(a, b)
+    rel = float(np.linalg.norm(a @ x - b) / np.linalg.norm(b))
+    _fit_gate(rel, gate, "D-S 频带")
+    return DjordjevicSarkar(
+        eps_inf=float(x[0]), delta_eps=float(x[1]), f1_hz=f1, f2_hz=f2,
+        sigma_dc=sigma,
+    )
+
+
 # ─── 独立解析对照（复对数路径之外的实/虚部闭式）──────────────────────────────
 
 def epsilon_analytic_ds(
@@ -428,7 +712,7 @@ def fit_djordjevic_sarkar(
 # ─── Kramers-Kronig 数值自检 ─────────────────────────────────────────────────
 
 def kramers_kronig_residual(
-    model: DebyeModel | DjordjevicSarkar,
+    model: DebyeModel | DjordjevicSarkar | LorentzModel,
     freq_hz: Any,
     *,
     n_points: int = 100001,
@@ -468,10 +752,9 @@ def kramers_kronig_residual(
 # ─── materials.yaml 色散条目加载 ─────────────────────────────────────────────
 
 def _materials_path(config_path: str | Path | None) -> Path:
-    if config_path is None:
-        # project root: src/rfauto/core/ -> src/rfauto/ -> src/ -> project root
-        return Path(__file__).resolve().parent.parent.parent.parent / "configs" / "materials.yaml"
-    return Path(config_path)
+    # AU-5 单点：发现顺序（显式→env→向上）收敛 core/materials；
+    # 函数名/签名保留（service/dispersion_service 既有引用）。
+    return resolve_materials_yaml_path(config_path)
 
 
 def load_dispersion_material(

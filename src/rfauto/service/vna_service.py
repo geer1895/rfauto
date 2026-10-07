@@ -24,13 +24,22 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 #: vna_measure.json（分支⑥标记文件）schema 版本
 VNA_MEASURE_SCHEMA_VERSION = "1.0"
+
+#: calibration_diagnostics.json（MS-1 规格 D-2 诊断产物）schema 版本
+VNA_CAL_DIAGNOSTICS_SCHEMA_VERSION = "1.0"
+
+#: calibration_diagnostics.json 缺省文件名（落 run 目录根，与 vna_measure.json 同级）
+CALIBRATION_DIAGNOSTICS_FILENAME = "calibration_diagnostics.json"
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +63,9 @@ def run_vna_measure(
     run_id: str = "",
     ref_s2p: str | Path | None = None,
     markdown_path: str | Path | None = None,
+    cal_result: Any = None,
+    cal_residual_max_db: float | None = None,
+    cal_tracking_ripple_db: float | None = None,
 ) -> dict[str, Any]:
     """执行一次测量 run 并落 runs/<id> 同构产物（JSON 进出）。
 
@@ -67,6 +79,11 @@ def run_vna_measure(
         runs_dir/run_id: 落盘位置（缺省 ``runs/`` + 自动生成 id；测试传
             tmp 目录隔离，#144）。
         ref_s2p: 仿真参考 Touchstone——给定时附带 En 报告（vna_en_report）。
+        cal_result: 软件校准链的 CalibrationResult（MS-1 规格 D-2，可选）
+            ——给定时构建残差诊断并落 ``calibration_diagnostics.json``
+            （经 :func:`vna_write_calibration_diagnostics`）。
+        cal_residual_max_db/cal_tracking_ripple_db: 诊断门限覆盖（None=
+            规格缺省 −40dB / 1.0dB）。
 
     Returns:
         {ok, run_id, run_dir, solve, health?, en_report?, errors}
@@ -98,9 +115,10 @@ def run_vna_measure(
 
     try:
         if not adapter.connect():
-            return {"ok": False,
-                    "errors": [f"VNA 连接失败（address={address!r}, "
-                               f"model={model!r}）"]}
+            return error_envelope(
+                [f"VNA 连接失败（address={address!r}, "
+                               f"model={model!r}）"],
+            )
         solve = adapter.solve()
         result["solve"] = {
             "success": bool(solve.success),
@@ -152,6 +170,23 @@ def run_vna_measure(
             "partial_matrix": bool(partial),
         }
 
+        # 校准残差诊断产物（MS-1 规格 D-2；cal_result 给定时落盘）
+        diag_summary: dict[str, Any] | None = None
+        if cal_result is not None:
+            diag_out = vna_write_calibration_diagnostics(
+                cal_result, run_dir,
+                residual_max_db=cal_residual_max_db,
+                tracking_ripple_db=cal_tracking_ripple_db)
+            if diag_out.get("ok"):
+                diag_summary = {
+                    "file": CALIBRATION_DIAGNOSTICS_FILENAME,
+                    "method": diag_out["diagnostics"].get("method"),
+                    "verdict": (diag_out["diagnostics"].get("verdict")
+                                or {}).get("status"),
+                }
+            else:
+                errors.extend(str(e) for e in diag_out.get("errors", []))
+
         mm = dict(getattr(solve, "measurement_meta", None) or {})
         vna_measure = {
             "schema_version": VNA_MEASURE_SCHEMA_VERSION,
@@ -163,7 +198,8 @@ def run_vna_measure(
             "instrument": {"idn": mm.get("idn", ""), "driver": mm.get("driver", "")},
             "calibration": {"calibrated": bool(mm.get("calibrated")),
                             "detail": mm.get("calibration_detail", ""),
-                            "calkit_id": calkit_id},
+                            "calkit_id": calkit_id,
+                            "diagnostics": diag_summary},
             "sweep": {"freq_range_ghz": list(freq_range_ghz),
                       "n_points": int(n_points), "ifbw_hz": float(ifbw_hz)},
             "afr": mm.get("afr", {"applied": False}),
@@ -193,6 +229,8 @@ def run_vna_measure(
             "touchstone": touchstone_rel,
             "sparams_csv": ("results/sparams.csv" if partial else None),
             "vna_measure": "vna_measure.json",
+            "calibration_diagnostics": (CALIBRATION_DIAGNOSTICS_FILENAME
+                                        if diag_summary else None),
         }
         result["metrics"] = metrics
 
@@ -236,6 +274,52 @@ def _write_masked_sparams_csv(path: Path, freq_hz: np.ndarray,
 
 
 # ---------------------------------------------------------------------------
+# 校准残差诊断产物（MS-1 规格 D-2）
+# ---------------------------------------------------------------------------
+
+def vna_write_calibration_diagnostics(
+    cal_result: Any,
+    run_dir: str | Path,
+    *,
+    residual_max_db: float | None = None,
+    tracking_ripple_db: float | None = None,
+    filename: str = CALIBRATION_DIAGNOSTICS_FILENAME,
+) -> dict[str, Any]:
+    """校准残差诊断报告落盘（JSON 进出，MS-1 规格 D-2）。
+
+    ``cal_result`` 为 measurement.calibration 校准入口返回的
+    CalibrationResult（需携带 skrf_cal），经
+    ``build_calibration_diagnostics`` 构建规格 schema（residual_networks/
+    error_terms 四参数正反向分列/thresholds/verdict）后写
+    ``<run_dir>/<filename>``；也可直接传已构建的 diagnostics dict 透传
+    落盘。失败如实 ``ok=False``（不阻塞测量 run 主链，#105）。
+
+    Returns:
+        {ok, path?, diagnostics?, errors?}
+    """
+    from rfauto.measurement.calibration import build_calibration_diagnostics
+
+    try:
+        if isinstance(cal_result, dict):
+            diag = dict(cal_result)
+        else:
+            kwargs: dict[str, Any] = {}
+            if residual_max_db is not None:
+                kwargs["residual_max_db"] = float(residual_max_db)
+            if tracking_ripple_db is not None:
+                kwargs["tracking_ripple_db"] = float(tracking_ripple_db)
+            diag = build_calibration_diagnostics(cal_result, **kwargs)
+        target = Path(run_dir) / filename
+        payload = {"schema_version": VNA_CAL_DIAGNOSTICS_SCHEMA_VERSION, **diag}
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return ok_envelope(path=str(target), diagnostics=payload)
+    except Exception as exc:
+        return error_envelope([f"校准诊断产物失败: {exc}"])
+
+
+# ---------------------------------------------------------------------------
 # En 报告（service 透传）
 # ---------------------------------------------------------------------------
 
@@ -266,19 +350,19 @@ def vna_en_report(
     errors: list[str] = []
     lab_p, ref_p = Path(lab_s2p), Path(ref_s2p)
     if not lab_p.exists():
-        return {"ok": False, "errors": [f"实测文件不存在: {lab_p}"]}
+        return error_envelope([f"实测文件不存在: {lab_p}"])
     if not ref_p.exists():
-        return {"ok": False, "errors": [f"参考文件不存在: {ref_p}"]}
+        return error_envelope([f"参考文件不存在: {ref_p}"])
     try:
         lab = skrf.Network(str(lab_p))
         ref = skrf.Network(str(ref_p))
     except Exception as exc:
-        return {"ok": False, "errors": [f"Touchstone 解析失败: {exc}"]}
+        return error_envelope([f"Touchstone 解析失败: {exc}"])
 
     try:
         budget = _en.load_budget(budget_path)
     except Exception as exc:
-        return {"ok": False, "errors": [f"GUM 预算表加载失败: {exc}"]}
+        return error_envelope([f"GUM 预算表加载失败: {exc}"])
     dt = float(budget["delta_t_c"] if delta_t_c is None else delta_t_c)
     gum = _en.gum_combined_uncertainty(budget["components"], k=budget["k"],
                                        delta_t_c=dt)
@@ -318,3 +402,128 @@ def vna_replay(
 
     return _replay(measured_s2p, sim_s2p, threshold_db=threshold_db,
                    session_path=session_path)
+
+
+# ---------------------------------------------------------------------------
+# 独立校准/去嵌入口（VI-1 单元 11：SOLT/TRL/multiline standalone 包装；
+# measurement 层视同 core 叶，本模块既有 build_calibration_diagnostics 先例）
+# ---------------------------------------------------------------------------
+
+def vna_calibrate_standalone(
+    measurements: Mapping[str, str | Path] | Sequence[str | Path],
+    calkit_id: str,
+    *,
+    calkit_dir: str | Path | None = None,
+    dut: str | Path | None = None,
+    out_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """独立软件校准/去嵌（measurement.calibration 的 JSON 进出包装，零硬件）。
+
+    与 :func:`run_vna_measure` 内嵌校准链解耦的 standalone 入口：给定各
+    标准件实测 Touchstone 与 calkit ID（knowledge/calkits/catalog.yaml），
+    经 :func:`rfauto.measurement.calibration.apply_calibration` 走
+    SOLT/TRL/multiline 全方法链，可选对 DUT 去嵌并把校准后网络落盘。
+
+    Args:
+        measurements: 两种形态——
+            **Mapping**（推荐）：``{标准件类型: 实测 Touchstone 路径}``，
+            本函数按 calkit 方法的顺序契约（skrf 严格序）自动排位，缺件
+            /多件显式报错；
+            **Sequence**：实测文件列表，按顺序契约位置直通（高级用法，
+            顺序错误由 apply_calibration 校验显式报错）。
+        calkit_id: 校准套件 ID（catalog.yaml 键）。
+        calkit_dir: catalog 目录覆盖（None=knowledge/calkits）。
+        dut: 待去嵌 DUT Touchstone（可选）。
+        out_path: 校准后网络 Touchstone 落盘路径（可选；无校准网络可写
+            时显式报错，不静默跳过）。
+
+    Returns:
+        ok 信封：``calibration``（CalibrationResult.to_dict()）+
+        ``calibration_order``（Mapping 形态下实际排位顺序）+ ``written``
+        + ``out_path``；加载/校验/执行失败走 error 信封（errors 恒
+        list[str]，不抛）。
+    """
+    import skrf
+
+    from rfauto.measurement.calibration import (
+        _calkit_standards_by_type,
+        _order_for_method,
+        apply_calibration,
+        load_calkit,
+    )
+
+    try:
+        kit = load_calkit(calkit_id, calkit_dir)
+    except Exception as exc:
+        return error_envelope([f"校准套件加载失败: {exc}"])
+
+    def _load_net(raw: str | Path, what: str) -> tuple[Any, str | None]:
+        path = Path(raw)
+        if not path.exists():
+            return None, f"{what}文件不存在: {path}"
+        try:
+            return skrf.Network(str(path)), None
+        except Exception as exc:
+            return None, f"{what}Touchstone 解析失败 {path}: {exc}"
+
+    order_note: list[str] = []
+    if isinstance(measurements, Mapping):
+        given: dict[str, Any] = {}
+        for std_type, raw in measurements.items():
+            net, err = _load_net(raw, f"标准件实测 {std_type} ")
+            if err:
+                return error_envelope([err])
+            given[str(std_type)] = net
+        by_type = _calkit_standards_by_type(kit)
+        order = _order_for_method(kit.method, by_type)
+        missing = [t for t in order if t in by_type and t not in given]
+        if missing:
+            return error_envelope(
+                [f"缺少标准件实测（方法 {kit.method.value} 顺序契约 "
+                 f"{list(order)}）: {missing}"])
+        extra = sorted(t for t in given if t not in by_type)
+        if extra:
+            return error_envelope(
+                [f"kit {calkit_id} 无此标准件类型: {extra}"
+                 f"（catalog 键: {sorted(by_type)}）"])
+        measured_input: Any = [given[t] for t in order if t in by_type]
+        order_note = [t for t in order if t in by_type]
+    else:
+        nets: list[Any] = []
+        for i, raw in enumerate(measurements):
+            net, err = _load_net(raw, f"measured[{i}] ")
+            if err:
+                return error_envelope([err])
+            nets.append(net)
+        measured_input = nets
+
+    dut_net = None
+    if dut is not None:
+        dut_net, err = _load_net(dut, "DUT ")
+        if err:
+            return error_envelope([err])
+
+    try:
+        result = apply_calibration(measured_input, kit, dut=dut_net)
+    except Exception as exc:
+        return error_envelope([f"校准执行失败: {exc}"])
+
+    payload = result.to_dict()
+    payload["n_measured"] = (len(measured_input)
+                             if isinstance(measured_input, list)
+                             else len(measurements))
+
+    written: str | None = None
+    if out_path is not None:
+        net_out = result.calibrated_network
+        if net_out is None and result.calibrated_networks:
+            net_out = result.calibrated_networks[0]
+        if net_out is None:
+            return error_envelope(
+                ["校准结果无网络可写（method="
+                 f"{result.method.value}, is_calibrated={result.is_calibrated}）"
+                 "——out_path 需要校准链产出网络，不给则显式失败不静默"])
+        net_out.write_touchstone(str(out_path))
+        written = str(out_path)
+    return ok_envelope(calibration=payload, calibration_order=order_note,
+                       written=written, out_path=written)

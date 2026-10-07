@@ -12,10 +12,12 @@ Imported by api.py via: from rfauto.service.r3_services import *
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 from rfauto.infra.db import RegistryDB  # R2-D-02：审批流生产读写接 RegistryDB.approvals
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── 6g: Solver Visualization Protocol ────────────────────────────────────────
 
@@ -36,7 +38,7 @@ def list_solver_visualizations(solver_name: str | None = None) -> dict[str, Any]
 
     results = []
     for stype, solver_cls in registry._solvers.items():
-        if solver_name and stype.value != solver_name:
+        if solver_name and stype.value if hasattr(stype, "value") else str(stype) != solver_name:
             continue
         # Instantiate with minimal config to query visualizations
         try:
@@ -45,18 +47,18 @@ def list_solver_visualizations(solver_name: str | None = None) -> dict[str, Any]
             instance = solver_cls(config)
             viz = instance.visualizations()
             results.append({
-                "solver": stype.value,
+                "solver": stype.value if hasattr(stype, "value") else str(stype),
                 "visualizations": viz,
                 "output_formats": instance.supported_output_formats(),
             })
         except Exception as e:
             results.append({
-                "solver": stype.value,
+                "solver": stype.value if hasattr(stype, "value") else str(stype),
                 "error": str(e),
                 "visualizations": [],
             })
 
-    return {"ok": True, "solvers": results}
+    return ok_envelope(solvers=results)
 
 
 # ─── 6h: Solver Management ────────────────────────────────────────────────────
@@ -85,14 +87,18 @@ def list_registered_solvers() -> dict[str, Any]:
         except Exception:
             available = False
             viz = []
+        # gpl 子包（pypo/scuff）注册键为 str 字面（ge8c 席5 gpl 隔离设计），
+        # 枚举键取 .value、str 键取自身——双形态防御（#105；终门八百一十九
+        # 实证：全模块 import 冒烟后 str 键致 AttributeError 污染下游）。
+        type_label = stype.value if hasattr(stype, "value") else str(stype)
         solvers.append({
-            "type": stype.value,
+            "type": type_label,
             "class": solver_cls.__name__,
             "available": available,
             "n_visualizations": len(viz),
         })
 
-    return {"ok": True, "solvers": solvers, "total": len(solvers)}
+    return ok_envelope(solvers=solvers, total=len(solvers))
 
 
 def add_solver_to_config(
@@ -106,7 +112,7 @@ def add_solver_to_config(
     6h: UI wizard writes solver config; human can add CST/COMSOL etc.
 
     写入 schema 与 em_solver_base.load_solvers_config 的读取约定一致：
-    `solvers:` 包裹 + 每条目 `solver_type` 字段（早期审查修复——
+    `solvers:` 包裹 + 每条目 `solver_type` 字段（审查缺口 #7 修复——
     曾写顶层 {name: {type}}，运行时永远读不到）。
     """
     import yaml
@@ -127,7 +133,7 @@ def add_solver_to_config(
         data["solvers"] = solvers
 
     if name in solvers:
-        return {"ok": False, "errors": [f"Solver '{name}' already exists"]}
+        return error_envelope([f"Solver '{name}' already exists"])
 
     entry: dict[str, Any] = {"solver_type": solver_type}
     if exe_path:
@@ -141,9 +147,13 @@ def add_solver_to_config(
     from rfauto.adapters.em_solver_base import load_solvers_config
     loaded = load_solvers_config(config_path)
     readable = name in loaded
-    return {"ok": True, "name": name, "config_path": str(config_path), "entry": entry,
-            "loadable": readable,
-            "errors": [] if readable else ["entry written but not loadable by load_solvers_config"]}
+    return ok_envelope(
+        name=name,
+        config_path=str(config_path),
+        entry=entry,
+        loadable=readable,
+        errors=[] if readable else ["entry written but not loadable by load_solvers_config"],
+    )
 
 
 def remove_solver_from_config(name: str) -> dict[str, Any]:
@@ -152,18 +162,18 @@ def remove_solver_from_config(name: str) -> dict[str, Any]:
 
     config_path = Path("configs") / "solvers.yaml"
     if not config_path.exists():
-        return {"ok": False, "errors": ["configs/solvers.yaml not found"]}
+        return error_envelope(["configs/solvers.yaml not found"])
 
     with open(config_path, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     solvers = data.get("solvers") or {}
 
     if name not in solvers:
-        return {"ok": False, "errors": [f"Solver '{name}' not found in config"]}
+        return error_envelope([f"Solver '{name}' not found in config"])
 
     removed = solvers.pop(name)
     config_path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
-    return {"ok": True, "name": name, "removed": removed}
+    return ok_envelope(name=name, removed=removed)
 
 
 def spice_tool_status(path: str | Path | None = None) -> dict[str, Any]:
@@ -202,12 +212,11 @@ def spice_tool_status(path: str | Path | None = None) -> dict[str, Any]:
         except Exception as exc:  # 探测只报告不抛（#105）
             tool["error"] = str(exc)
         tools[name] = tool
-    return {
-        "ok": True,
-        "tools": tools,
-        "note": "电路级 SPICE 通道（探测记录）；EM 求解器管理面见 "
+    return ok_envelope(
+        tools=tools,
+        note="电路级 SPICE 通道（探测记录）；EM 求解器管理面见 "
                 "list_registered_solvers（EMSolverRegistry）",
-    }
+    )
 
 
 # ─── 6i: Approval Inbox ───────────────────────────────────────────────────────
@@ -240,7 +249,7 @@ _STATUS_BY_EVENT = {
 
 
 def _approval_id(entry: dict[str, Any]) -> str:
-    """审批行主键：变更类用 change_id，配方提案用 token_hash（确定性哈希）。"""
+    """审批行主键：B-32 变更类用 change_id，配方提案用 token_hash（确定性哈希）。"""
     return str(entry.get("change_id") or entry.get("token_hash") or "")
 
 
@@ -353,7 +362,7 @@ def _pending_from_audit(audit_path: Path, kind: str | None) -> list[dict[str, An
     # First pass: collect all apply events' token hashes
     applied_tokens = {e.get("token_hash", "") for e in all_entries
                       if e.get("event") == "apply" and e.get("ok")}
-    # 被拒绝的提案同样离开收件箱（拒绝为终态）
+    # B-32：被拒绝的提案同样离开收件箱（拒绝为终态）
     rejected_tokens = {e.get("token_hash", "") for e in all_entries
                        if e.get("event") == "reject" and e.get("ok")}
 
@@ -365,7 +374,7 @@ def _pending_from_audit(audit_path: Path, kind: str | None) -> list[dict[str, An
         token_hash = entry.get("token_hash", "")
         if not token_hash or token_hash in applied_tokens or token_hash in rejected_tokens:
             continue
-        # 新变更类（solver_registration / resource_capacity）与配方提案
+        # B-32：新变更类（solver_registration / resource_capacity）与配方提案
         # 共存于同一收件箱；kind 过滤可只看某一类（缺省 kind 视为 recipe）
         if kind is not None and str(entry.get("kind") or "recipe") != kind:
             continue
@@ -391,7 +400,7 @@ def _find_proposal_in_db(token_hash_str: str) -> dict[str, Any] | None:
             continue
         th = str(payload.get("token_hash", ""))
         cid = str(payload.get("change_id", ""))
-        # 配方提案按 token_hash 前缀匹配；新变更类按 change_id 前缀匹配
+        # 配方提案按 token_hash 前缀匹配；B-32 新变更类按 change_id 前缀匹配
         if ((th and th.startswith(needle[:8]))
                 or (cid and cid.startswith(needle[:16]))):
             original = payload
@@ -407,7 +416,7 @@ def _find_proposal_in_audit(audit_path: Path,
             continue
         th = str(entry.get("token_hash", ""))
         cid = str(entry.get("change_id", ""))
-        # 配方提案按 token_hash 前缀匹配；新变更类按 change_id 前缀匹配
+        # 配方提案按 token_hash 前缀匹配；B-32 新变更类按 change_id 前缀匹配
         matched = ((th and th.startswith(token_hash_str[:8]))
                    or (cid and cid.startswith(token_hash_str[:16])))
         if matched:
@@ -425,7 +434,7 @@ def list_pending_approvals(limit: int = 20, kind: str | None = None) -> dict[str
     """
     audit_path = _audit_path()
     if not audit_path.exists():
-        return {"ok": True, "pending": [], "total": 0}
+        return ok_envelope(pending=[], total=0)
 
     entries: list[dict[str, Any]] | None = None
     if _sync_approvals_to_db(audit_path):
@@ -438,7 +447,7 @@ def list_pending_approvals(limit: int = 20, kind: str | None = None) -> dict[str
 
     entries = entries[-limit:]
     entries.reverse()
-    return {"ok": True, "pending": entries, "total": len(entries)}
+    return ok_envelope(pending=entries, total=len(entries))
 
 
 def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
@@ -449,7 +458,7 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
 
     L3 token 是 (L1, L2, params) 的确定性哈希——审计只存 token_hash（ADR-0025，
     原始 token 不可回取），因此批准路径是"用审计中的参数重新 propose 拿新 token，
-    校验哈希与 propose 时一致后再 apply"（早期审查修复——曾直接读
+    校验哈希与 propose 时一致后再 apply"（审查缺口 #6 修复——曾直接读
     original["token"]，恒为空串，apply 必被 L3 拒绝）。哈希一致同时证明
     存档参数与配方/Gate 状态未漂移。
 
@@ -462,7 +471,7 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
 
     audit_path = Path("runs") / "agent_proposals" / "audit.jsonl"
     if not audit_path.exists():
-        return {"ok": False, "errors": ["No audit log found"]}
+        return error_envelope(["No audit log found"])
 
     original = None
     if _sync_approvals_to_db(audit_path):
@@ -470,9 +479,9 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
     if not original:
         original = _find_proposal_in_audit(audit_path, token_hash_str)
     if not original:
-        return {"ok": False, "errors": [f"No matching proposal found for token {token_hash_str[:8]}..."]}
+        return error_envelope([f"No matching proposal found for token {token_hash_str[:8]}..."])
 
-    # 新变更类（求解器注册 / 资源容量）走分派——同一审批入口，
+    # B-32：新变更类（A6 求解器注册 / G13 资源容量）走分派——同一审批入口，
     # 但落配置而不是重跑配方 Gate/apply
     if str(original.get("kind", "")).strip():
         return _approve_change(original.get("change_id") or original.get("token_hash"))
@@ -487,9 +496,10 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
             "token_hash": token_hash_str, "recipe": recipe_path,
             "reason": "re-propose rejected by gate",
         })
-        return {"ok": False,
-                "errors": ["re-propose rejected by gate",
-                           *(reproposal.get("errors") or [])]}
+        return error_envelope(
+            ["re-propose rejected by gate",
+                           *(reproposal.get("errors") or [])],
+        )
 
     if compute_token_hash(reproposal["token"]) != original.get("token_hash"):
         append_audit_log({
@@ -497,9 +507,10 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
             "token_hash": token_hash_str, "recipe": recipe_path,
             "reason": "re-propose token hash differs from original; recipe or gate state drifted",
         })
-        return {"ok": False,
-                "errors": ["重 propose 的 token 哈希与 propose 时不一致："
-                           "配方或 Gate 状态已变化，请重新走 propose 流程"]}
+        return error_envelope(
+            ["重 propose 的 token 哈希与 propose 时不一致："
+                           "配方或 Gate 状态已变化，请重新走 propose 流程"],
+        )
 
     result = agent_apply(recipe_path, reproposal["token"], params, adapter_name=adapter)
 
@@ -518,11 +529,11 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
     return result
 
 
-# ─── 审批流接入新求解器上线与资源容量变更 ───────────────────────
+# ─── B-32: 审批流接入 A6 新求解器上线与 G13 资源容量变更 ───────────────────────
 #
-# 背景：收件箱此前只覆盖配方参数提案
-# （agent_propose → approve_proposal → agent_apply）。新求解器上线
-# （COMSOL 等接入 configs/solvers.yaml）与资源容量变更（license 席位/
+# 背景（方案 §10.23 补强第三批 B-32）：6i 收件箱此前只覆盖配方参数提案
+# （agent_propose → approve_proposal → agent_apply）。A6 新求解器上线
+# （COMSOL 等接入 configs/solvers.yaml）与 G13 资源容量变更（license 席位/
 # FDTD 并发，喂 service/resource_scheduler.SchedulerConfig）此前是直接写配置
 # 的旁路——无审批、不可审计。本段把二者并入同一条审批链（同一 audit.jsonl、
 # 同一收件箱）：
@@ -531,7 +542,7 @@ def approve_proposal(token_hash_str: str, recipe_path: str | None = None,
 #   * 拒绝写 reject 审计 → 收件箱移除、配置不动、拒绝为终态；
 #   * 重复提交/重复批准/重复拒绝 → 幂等（duplicate=True），不产生第二次副作用。
 #
-# 命名以 "_" 开头是刻意的：tests/unit/test_api_reexport.py 要求
+# 命名以 "_" 开头是刻意的：tests/unit/test_api_reexport.py（B-34）要求
 # r3_services 的**公开**函数全部在 api.py re-export，而本项文件面禁改
 # api.py，故新增 API 一律私有，对外审批入口复用 approve_proposal。
 
@@ -661,9 +672,9 @@ def _propose_solver_registration(
     clean_name = str(name or "").strip()
     clean_type = str(solver_type or "").strip()
     if not clean_name:
-        return {"ok": False, "errors": ["solver name 不能为空"]}
+        return error_envelope(["solver name 不能为空"])
     if not clean_type:
-        return {"ok": False, "errors": ["solver_type 不能为空"]}
+        return error_envelope(["solver_type 不能为空"])
     payload = {
         "name": clean_name,
         "solver_type": clean_type,
@@ -671,21 +682,29 @@ def _propose_solver_registration(
         "extra_params": dict(extra_params) if extra_params else None,
     }
     if clean_name in _current_solver_names():
-        return {"ok": False, "errors": [f"Solver '{clean_name}' already registered"]}
+        return error_envelope([f"Solver '{clean_name}' already registered"])
 
     entries = _read_audit_entries()
     change_id = _change_id("solver_registration", payload)
     pending = _change_entries(entries, kind="solver_registration")
     if any(e.get("change_id") == change_id for e in pending):
-        return {"ok": True, "duplicate": True, "already_pending": True,
-                "change_id": change_id, "kind": "solver_registration",
-                "status": "pending", "name": clean_name, "errors": []}
+        return ok_envelope(
+            duplicate=True,
+            already_pending=True,
+            change_id=change_id,
+            kind="solver_registration",
+            status="pending",
+            name=clean_name,
+            errors=[],
+        )
     conflict = [e for e in pending
                 if (e.get("payload") or {}).get("name") == clean_name]
     if conflict:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"Solver '{clean_name}' 已有待批提案 {conflict[-1].get('change_id')}；"
-            "请先批准或拒绝该提案，再提交新提案"]}
+            "请先批准或拒绝该提案，再提交新提案"],
+        )
 
     propose_event = {
         "event": "propose", "ok": True, "kind": "solver_registration",
@@ -695,9 +714,15 @@ def _propose_solver_registration(
     }
     _append_change_event(propose_event)
     _record_approval_event_in_db(propose_event)
-    return {"ok": True, "duplicate": False, "change_id": change_id,
-            "kind": "solver_registration", "status": "pending",
-            "name": clean_name, "payload": payload, "errors": []}
+    return ok_envelope(
+        duplicate=False,
+        change_id=change_id,
+        kind="solver_registration",
+        status="pending",
+        name=clean_name,
+        payload=payload,
+        errors=[],
+    )
 
 
 def _propose_resource_change(
@@ -720,40 +745,56 @@ def _propose_resource_change(
     clean_scope = str(scope or "").strip().lower()
     clean_res = str(resource or "").strip().lower()
     if clean_scope not in _RESOURCE_SCOPES:
-        return {"ok": False, "errors": [f"scope 必须是 {_RESOURCE_SCOPES} 之一"]}
+        return error_envelope([f"scope 必须是 {_RESOURCE_SCOPES} 之一"])
     if not clean_res:
-        return {"ok": False, "errors": ["resource 不能为空"]}
+        return error_envelope(["resource 不能为空"])
     try:
         cap = int(capacity)
     except (TypeError, ValueError):
-        return {"ok": False, "errors": [f"capacity 必须是整数: {capacity!r}"]}
+        return error_envelope([f"capacity 必须是整数: {capacity!r}"])
     if cap < 0:
-        return {"ok": False, "errors": ["capacity 不能为负"]}
+        return error_envelope(["capacity 不能为负"])
     if clean_scope == "class" and clean_res not in DEFAULT_CLASS_CAPACITY:
-        return {"ok": False, "errors": [
-            f"未知资源类 '{clean_res}'（已知: {sorted(DEFAULT_CLASS_CAPACITY)}）"]}
+        return error_envelope(
+            [
+            f"未知资源类 '{clean_res}'（已知: {sorted(DEFAULT_CLASS_CAPACITY)}）"],
+        )
 
     payload = {"scope": clean_scope, "resource": clean_res,
                "capacity": cap, "note": str(note or "")}
     change_id = _change_id("resource_capacity", payload)
     current = _load_resource_capacity_config().get(f"{clean_scope}_capacity", {})
     if current.get(clean_res) == cap:
-        return {"ok": True, "duplicate": True, "already_effective": True,
-                "change_id": change_id, "kind": "resource_capacity",
-                "status": "applied", "payload": payload, "errors": []}
+        return ok_envelope(
+            duplicate=True,
+            already_effective=True,
+            change_id=change_id,
+            kind="resource_capacity",
+            status="applied",
+            payload=payload,
+            errors=[],
+        )
 
     entries = _read_audit_entries()
     pending = [e for e in _change_entries(entries, kind="resource_capacity")
                if (e.get("payload") or {}).get("scope") == clean_scope
                and (e.get("payload") or {}).get("resource") == clean_res]
     if any(e.get("change_id") == change_id for e in pending):
-        return {"ok": True, "duplicate": True, "already_pending": True,
-                "change_id": change_id, "kind": "resource_capacity",
-                "status": "pending", "payload": payload, "errors": []}
+        return ok_envelope(
+            duplicate=True,
+            already_pending=True,
+            change_id=change_id,
+            kind="resource_capacity",
+            status="pending",
+            payload=payload,
+            errors=[],
+        )
     if pending:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"{clean_scope}:{clean_res} 已有待批容量提案 {pending[-1].get('change_id')}；"
-            "请先批准或拒绝该提案，再提交新提案"]}
+            "请先批准或拒绝该提案，再提交新提案"],
+        )
 
     propose_event = {
         "event": "propose", "ok": True, "kind": "resource_capacity",
@@ -763,9 +804,14 @@ def _propose_resource_change(
     }
     _append_change_event(propose_event)
     _record_approval_event_in_db(propose_event)
-    return {"ok": True, "duplicate": False, "change_id": change_id,
-            "kind": "resource_capacity", "status": "pending",
-            "payload": payload, "errors": []}
+    return ok_envelope(
+        duplicate=False,
+        change_id=change_id,
+        kind="resource_capacity",
+        status="pending",
+        payload=payload,
+        errors=[],
+    )
 
 
 def _apply_resource_capacity(payload: dict[str, Any]) -> dict[str, Any]:
@@ -807,11 +853,13 @@ def _apply_change(entry: dict[str, Any]) -> dict[str, Any]:
         if not result.get("ok"):
             return {"ok": False, "kind": kind,
                     "errors": result.get("errors") or ["solver registration failed"]}
-        return {"ok": True, "kind": kind,
-                "applied": {"solver": payload.get("name"),
+        return ok_envelope(
+            kind=kind,
+            applied={"solver": payload.get("name"),
                             "config_path": result.get("config_path"),
                             "loadable": result.get("loadable")},
-                "errors": []}
+            errors=[],
+        )
     if kind == "resource_capacity":
         return _apply_resource_capacity(payload)
     return {"ok": False, "kind": kind, "errors": [f"未知变更类型: {kind}"]}
@@ -823,14 +871,11 @@ def _approve_change(change_id_str: str, approved_by: str = "user",
     entries = _read_audit_entries()
     entry = _find_change(entries, change_id_str)
     if not entry:
-        return {"ok": False,
-                "errors": [f"No matching pending change for {change_id_str!r}"]}
+        return error_envelope([f"No matching pending change for {change_id_str!r}"])
     change_id = str(entry.get("change_id"))
     kind = str(entry.get("kind"))
     if _change_decided(entries, change_id, "apply"):
-        return {"ok": True, "duplicate": True, "already_applied": True,
-                "change_id": change_id, "kind": kind, "status": "applied",
-                "errors": []}
+        return ok_envelope(duplicate=True, already_applied=True, change_id=change_id, kind=kind, status="applied", errors=[])
     if _change_decided(entries, change_id, "reject"):
         return {"ok": False, "change_id": change_id, "kind": kind,
                 "status": "rejected",
@@ -863,14 +908,11 @@ def _reject_change(change_id_str: str, reason: str = "",
     entries = _read_audit_entries()
     entry = _find_change(entries, change_id_str)
     if not entry:
-        return {"ok": False,
-                "errors": [f"No matching pending change for {change_id_str!r}"]}
+        return error_envelope([f"No matching pending change for {change_id_str!r}"])
     change_id = str(entry.get("change_id"))
     kind = str(entry.get("kind"))
     if _change_decided(entries, change_id, "reject"):
-        return {"ok": True, "duplicate": True, "already_rejected": True,
-                "change_id": change_id, "kind": kind, "status": "rejected",
-                "errors": []}
+        return ok_envelope(duplicate=True, already_rejected=True, change_id=change_id, kind=kind, status="rejected", errors=[])
     if _change_decided(entries, change_id, "apply"):
         return {"ok": False, "change_id": change_id, "kind": kind,
                 "status": "applied",
@@ -883,14 +925,13 @@ def _reject_change(change_id_str: str, reason: str = "",
     }
     _append_change_event(reject_event)
     _record_approval_event_in_db(reject_event)
-    return {"ok": True, "duplicate": False, "change_id": change_id,
-            "kind": kind, "status": "rejected", "errors": []}
+    return ok_envelope(duplicate=False, change_id=change_id, kind=kind, status="rejected", errors=[])
 
 
 def _list_pending_changes(kind: str | None = None) -> dict[str, Any]:
     """便捷查看新变更类待批提案（收件箱的子视图，供 CLI/测试）。"""
     entries = _change_entries(_read_audit_entries(), kind=kind)
-    return {"ok": True, "pending": list(reversed(entries)), "total": len(entries)}
+    return ok_envelope(pending=list(reversed(entries)), total=len(entries))
 
 
 # ─── 6j: LLM Conversation ────────────────────────────────────────────────────
@@ -923,7 +964,12 @@ class AgentChat:
         self.cost_ledger: CostLedger = CostLedger()
         # 工具预算耗尽时保留的对话现场（用户说"继续"则原样续跑，不重探索）
         self._pending_messages: list[dict[str, Any]] | None = None
-        # Pi 式会话存档（schema 版本化 JSON，runs/chat_sessions/）
+        # AD-2 会话注入 memo（SK-V §2.1-2）：当轮任务词集键 → 已组装
+        # extra_system（""=已组装但两段皆空）；同键多轮追问复用，不重复检索
+        # 不重复占预算。键口径 knowledge_injection_service.injection_key。
+        self._last_injection_key: str | None = None
+        self._last_extra_system: str | None = None
+        # Pi 式会话存档（schema 版本化 JSON，runs/chat_sessions）
         self.session_id = "chat_" + _time.strftime("%Y%m%d_%H%M%S") + "_" + _uuid.uuid4().hex[:6]
         self._session_doc: dict[str, Any] | None = None
 
@@ -968,13 +1014,16 @@ class AgentChat:
         self.history.clear()
         self.tool_calls.clear()
         self._pending_messages = None
+        # AD-2 注入 memo 一并清空（新会话不继承上一会话注入缓存）
+        self._last_injection_key = None
+        self._last_extra_system = None
         self._session_doc = None
         self.cost_ledger = CostLedger()
         for key in self.stats:
             self.stats[key] = 0 if not isinstance(self.stats[key], float) else 0.0
         self.session_id = ("chat_" + _time.strftime("%Y%m%d_%H%M%S")
                            + "_" + _uuid.uuid4().hex[:6])
-        return {"ok": True, "session_id": self.session_id}
+        return ok_envelope(session_id=self.session_id)
 
     def _persist_session(self) -> None:
         """Pi 式会话存档（观测路径 best-effort，不阻塞对话 #105）。"""
@@ -987,6 +1036,96 @@ class AgentChat:
             self._session_doc["stats"] = dict(self.stats)
             persist_session(self._session_doc)
         except Exception:
+            pass
+
+    def _compose_extra_system(self, task_text: str) -> str | None:
+        """AD-2+AD-3 注入组装（extra_system 单通道；缺省关=返回 None 零变化）。
+
+        固定序 few_shot + knowledge（SK-V §2.1-2），共享 2400 chars 单账本：
+        few-shot 整块截断 ≤900（clamp_few_shot_section），知识节预算=
+        min(section, extra_system−len(few))。空命中两段皆空 → None（与不
+        注入档逐字节一致）。会话级 memo 按当轮词集键复用（多轮追问不重复
+        检索）。全链 best-effort #105：组装失败返回 None 不阻塞对话。
+        """
+        try:
+            from rfauto.service.knowledge_injection_service import (
+                EXTRA_SYSTEM_MAX,
+                FEW_SHOT_MAX,
+                KNOWLEDGE_INJECTION_SCHEMA,
+                SECTION_MAX,
+                clamp_few_shot_section,
+                compose_knowledge_injection,
+                injection_key,
+                knowledge_injection_settings,
+            )
+            settings = knowledge_injection_settings()
+            if not settings.get("enabled"):
+                return None
+        except Exception:  # 开关面故障=零注入，不阻塞对话（#105）
+            return None
+        key = injection_key(task_text)
+        if key == self._last_injection_key:
+            return self._last_extra_system or None
+        budgets = dict(settings.get("budgets") or {})
+        budgets.setdefault("few_shot", FEW_SHOT_MAX)
+        budgets.setdefault("extra_system", EXTRA_SYSTEM_MAX)
+        budgets.setdefault("section", SECTION_MAX)
+
+        few_raw = ""
+        few_dropped = 0
+        try:
+            from rfauto.service.few_shot_service import build_few_shot_system
+            few_raw = str(build_few_shot_system(task_text).get("section") or "")
+        except Exception:  # few-shot 源故障不阻塞知识注入（#105）
+            few_raw = ""
+        few, few_dropped = clamp_few_shot_section(
+            few_raw, max_chars=int(budgets["few_shot"]))
+
+        knowledge_usage: dict[str, Any] = {}
+        entries: list[dict[str, Any]] = []
+        know = ""
+        try:
+            remaining = int(budgets["extra_system"]) - len(few)
+            result = compose_knowledge_injection(
+                task_text,
+                budgets={**budgets,
+                         "section": min(int(budgets["section"]),
+                                        max(remaining, 0))})
+            if result.get("ok"):
+                know = str(result.get("section") or "")
+                entries = list(result.get("entries") or [])
+                knowledge_usage = dict(result.get("usage") or {})
+        except Exception:  # 知识源故障=零知识注入，不阻塞对话（#105）
+            know = ""
+        extra = few + know if (few or know) else ""
+        extra = extra.strip("\n") or ""
+        if not extra:
+            self._last_injection_key = key
+            self._last_extra_system = ""
+            return None
+        self._record_injections(KNOWLEDGE_INJECTION_SCHEMA, entries,
+                                knowledge_usage, len(few), few_dropped)
+        self._last_injection_key = key
+        self._last_extra_system = extra
+        return extra
+
+    def _record_injections(self, schema: str, entries: list[dict[str, Any]],
+                           usage: dict[str, Any], few_shot_chars: int,
+                           few_shot_dropped: int) -> None:
+        """注入留痕进会话档 meta.injections（best-effort，persist 不阻塞 #105）。"""
+        try:
+            from rfauto.service.agent_runtime import new_session_doc
+            if self._session_doc is None:
+                self._session_doc = new_session_doc(
+                    self.session_id, {"model": self.model})
+            meta = self._session_doc.setdefault("meta", {})
+            meta["injections"] = {
+                "schema": schema,
+                "entries": [dict(e) for e in entries],
+                "usage": {**usage, "few_shot_chars": int(few_shot_chars),
+                          "few_shot_truncated_blocks": int(few_shot_dropped)},
+            }
+        except Exception:  # 观测留痕失败不阻塞对话主路径（#105）
             pass
 
     def _llm_turn(self, message: str, pending: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -1002,13 +1141,19 @@ class AgentChat:
 
         if pending is not None:
             messages = pending  # 续跑：沿用上次的完整工具现场（含中间结果）
+            extra_system = None  # 现场 messages 已含已插入注入条，不重组（Q3）
         else:
             menu = list_recipes().get("recipes", [])
             menu_lines = "\n".join(f"- {r['path']}（{r['model']}）" for r in menu) or "-（无）"
             messages = [{"role": "system",
-                         "content": _SYSTEM_PROMPT + "\n当前可用配方（propose_params 的 recipe 参数请用这些完整路径）：\n" + menu_lines}]
+                         "content": get_system_prompt()
+                         + "\n当前可用配方（propose_params 的 recipe 参数请用这些完整路径）：\n" + menu_lines}]
             messages += [{"role": m["role"], "content": m["content"]}
                          for m in self.history[-16:]]
+            # AD-2 知识注入 + AD-3 few-shot：extra_system 单通道单账本
+            # （SK-V §2.1-2；缺省关=逐字节不变；绝不进 get_system_prompt
+            # 本体——AD-1 指纹门）。
+            extra_system = self._compose_extra_system(message)
         try:
             raw = get_chat_settings_raw()
             max_rounds = max(4, int(raw.get("max_tool_rounds", 12)))
@@ -1026,11 +1171,24 @@ class AgentChat:
                 result = {"error": str(exc)}
             self.stats["tool_calls"] += 1
             self.stats["tool_elapsed_s"] += _time.perf_counter() - t1
-            self.tool_calls.append({"action": name, "args": args})
+            # DS-2 留痕：工具结果正文摘要随 tool_calls 落会话档（与运行时
+            # 注入消息同渲染单源 agent_runtime.tool_context_content）——
+            # "LLM 可见即留痕"的写入侧；比对侧见 _llm_turn 尾部挂点。
+            entry: dict[str, Any] = {"action": name, "args": args}
+            try:
+                from rfauto.service.agent_runtime import tool_context_content
+                from rfauto.service.session_audit_service import content_digest
+
+                entry["result_digest"] = content_digest(
+                    tool_context_content(result))
+            except Exception:  # 留痕摘要属观测面，失败不阻塞工具执行（#105）
+                pass
+            self.tool_calls.append(entry)
             return result
 
         request = RuntimeRequest(messages=messages, tools=default_tool_specs(),
-                                 max_rounds=max_rounds)
+                                 max_rounds=max_rounds,
+                                 extra_system=extra_system)
         out = RuntimeRegistry.create(runtime_name).submit(request, _executor)
         self.stats["llm_calls"] += out.usage.llm_calls
         self.stats["llm_elapsed_s"] += out.usage.llm_elapsed_s
@@ -1043,8 +1201,46 @@ class AgentChat:
                              batch=self.session_id, actor=model_name)
         if out.finish_reason == "budget_exhausted":
             self._pending_messages = out.messages  # 保留工具现场，用户说"继续"即无损续跑
-        return {"text": out.text, "action": out.action or "chat",
-                "result": out.result, "tools": out.tools_used}
+        # DS-2 "LLM 可见即留痕"比对挂点（best-effort，告警不阻断 #105）：
+        # 本轮上下文的 role=tool 消息逐条对会话留痕（history+tool_calls
+        # 摘要集）核可溯性，违例计数进 stats/response 注记，绝不 raise。
+        response: dict[str, Any] = {"text": out.text,
+                                    "action": out.action or "chat",
+                                    "result": out.result,
+                                    "tools": out.tools_used}
+        audit = self._audit_turn(out.messages)
+        if audit is not None:
+            self.stats["audit_violates"] = (int(self.stats.get(
+                "audit_violates") or 0) + int(audit.violate_count or 0))
+            response["session_audit"] = audit.as_dict()
+        return response
+
+    def _audit_turn(self, turn_messages: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """DS-2 不变量逐轮校验（缺省开、告警不阻断；chat_settings 可关）。
+
+        会话留痕单源 = 本实例内存 trail（history+tool_calls，每轮经
+        _persist_session 落 runs/chat_sessions）。校验层任何异常收敛为
+        {ok: False, error: …} 回执（session_audit_service.audit_turn_
+        best_effort，#105）；``session_audit_invariant: off`` 时返回
+        None（不校验、response 无 session_audit 键）。
+        """
+        try:
+            raw = get_chat_settings_raw()
+            enabled = str(raw.get("session_audit_invariant", "on")) != "off"
+        except Exception:
+            enabled = True  # 配置读取故障不静默关不变量（缺省开）
+        if not enabled:
+            return None
+        try:
+            from rfauto.service.session_audit_service import audit_turn_best_effort
+        except Exception as exc:  # #105：校验层自身故障不阻塞主对话路径
+            return error_envelope(f"session_audit 导入失败: {exc}",
+                                  source="session_audit")
+
+        trail = {"history": list(self.history),
+                 "tool_calls": list(self.tool_calls)}
+        return audit_turn_best_effort(turn_messages, trail,
+                                      session_id=self.session_id)
 
     def _route_message(self, message: str) -> dict[str, Any]:
         """Route message to appropriate service function."""
@@ -1131,6 +1327,106 @@ _SYSTEM_PROMPT = (
     "5. 回答用中文，简洁，结尾给出下一步建议。")
 
 
+def get_system_prompt() -> str:
+    """Agent 系统提示词的公开访问口（F-4；AD-1 §D-4 起单源=外置文件）。
+
+    读 configs/prompts/system_prompt.md（frontmatter {schema,version,changelog}
+    + 正文；写入约定正文末尾恰一个换行符收尾，读取时剥除，正文与内置版
+    逐字节可比）。文件缺失/frontmatter 非法 → 回退内置 ``_SYSTEM_PROMPT``
+    并 WARN 一次（进程级去重——回退必须可见但不刷屏；#105 观测路径不得
+    阻塞对话主路径）。ui/server 等外部消费面不得穿透私有名
+    （``r3_services._SYSTEM_PROMPT``），一律走本函数。
+    """
+    global _prompt_warn_emitted
+    doc = _load_prompt_doc()
+    if doc.get("ok"):
+        return doc["prompt"]
+    if not _prompt_warn_emitted:
+        _prompt_warn_emitted = True
+        try:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "系统提示词外置文件不可用（%s），回退内置版：%s",
+                doc.get("path"), "; ".join(doc.get("errors") or []))
+        except Exception:
+            pass
+    return _SYSTEM_PROMPT
+
+
+# AD-1 系统提示词版本化：外置单源（frontmatter {schema,version,changelog}+正文）。
+# 锚仓库根（__file__ 推导，cwd 无关——相对 configs/ 读在 cd 后静默落空，#295 同族）。
+SYSTEM_PROMPT_SCHEMA = "rfauto.system_prompt/1"
+SYSTEM_PROMPT_PATH = (Path(__file__).resolve().parent.parent.parent.parent
+                      / "configs" / "prompts" / "system_prompt.md")
+_prompt_warn_emitted = False
+
+
+def _load_prompt_doc() -> dict[str, Any]:
+    """读取并解析外置系统提示词（内部：任何失败返回 ok=False+errors，不抛）。
+
+    解析口径：须以 ``---\\n`` 起，第一个 ``\\n---\\n`` 收 frontmatter（yaml）；
+    其后为正文，末尾恰一个换行符是写入约定、读取时剥除。
+    """
+    import yaml
+
+    path = str(SYSTEM_PROMPT_PATH)
+    try:
+        raw = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    except OSError as exc:
+        return {"ok": False, "source": "builtin", "path": path,
+                "errors": [f"读取失败: {exc}"]}
+    try:
+        if not raw.startswith("---\n"):
+            raise ValueError("缺 frontmatter 开头（须以 '---' 行起）")
+        close = raw.find("\n---\n", 4)
+        if close < 0:
+            raise ValueError("缺 frontmatter 收尾（'---' 行）")
+        front = yaml.safe_load(raw[4:close]) or {}
+        if not isinstance(front, dict):
+            raise ValueError("frontmatter 必须是映射")
+        schema = str(front.get("schema") or "")
+        if schema != SYSTEM_PROMPT_SCHEMA:
+            raise ValueError(
+                f"schema 不识别: {schema!r}（期望 {SYSTEM_PROMPT_SCHEMA!r}）")
+        body = raw[close + 5:]
+        if body.endswith("\n"):
+            body = body[:-1]  # 写入约定：正文末尾恰一个收尾换行
+        if not body.strip():
+            raise ValueError("提示词正文为空")
+    except Exception as exc:
+        return {"ok": False, "source": "builtin", "path": path,
+                "errors": [f"{type(exc).__name__}: {exc}"]}
+    return ok_envelope(
+        source="file",
+        path=path,
+        errors=[],
+        prompt=body,
+        schema=schema,
+        version=front.get("version"),
+        changelog=str(front.get("changelog") or ""),
+    )
+
+
+def get_system_prompt_meta() -> dict[str, Any]:
+    """系统提示词元数据与指纹（AD-1）：实际生效正文的 sha256 + 版本溯源。
+
+    返回 {ok, source: "file"|"builtin", path, schema, version, changelog,
+    sha256, errors}——source="builtin" 即已回退（errors 说明原因）；
+    sha256 对**实际生效正文**计算（file/builtin 同文则同指纹，prompt 回归门
+    可据此判"两版无差"）。
+    """
+    import hashlib
+
+    doc = _load_prompt_doc()
+    text = doc["prompt"] if doc.get("ok") else _SYSTEM_PROMPT
+    return {"ok": bool(doc.get("ok")), "source": doc.get("source"),
+            "path": doc.get("path"), "schema": doc.get("schema"),
+            "version": doc.get("version"), "changelog": doc.get("changelog"),
+            "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "errors": list(doc.get("errors") or [])}
+
+
 def get_chat_settings_raw() -> dict[str, Any]:
     """内部用：原始设置（含 api_key），不对外。"""
     import yaml
@@ -1145,13 +1441,15 @@ def get_chat_settings() -> dict[str, Any]:
     import yaml
 
     if not CHAT_SETTINGS_PATH.exists():
-        return {"ok": True, "configured": False, "base_url": "", "model": "",
-                "runtime": "builtin", "api_key_set": False}
+        return ok_envelope(configured=False, base_url="", model="", runtime="builtin", api_key_set=False)
     data = yaml.safe_load(CHAT_SETTINGS_PATH.read_text(encoding="utf-8")) or {}
-    return {"ok": True, "configured": bool(data.get("api_key")),
-            "base_url": data.get("base_url", ""), "model": data.get("model", ""),
-            "runtime": data.get("runtime", "builtin"),
-            "api_key_set": bool(data.get("api_key"))}
+    return ok_envelope(
+        configured=bool(data.get("api_key")),
+        base_url=data.get("base_url", ""),
+        model=data.get("model", ""),
+        runtime=data.get("runtime", "builtin"),
+        api_key_set=bool(data.get("api_key")),
+    )
 
 
 def save_chat_settings(base_url: str, model: str, api_key: str = "") -> dict[str, Any]:
@@ -1170,8 +1468,7 @@ def save_chat_settings(base_url: str, model: str, api_key: str = "") -> dict[str
     CHAT_SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     CHAT_SETTINGS_PATH.write_text(
         yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
-    return {"ok": True, "base_url": data.get("base_url", ""),
-            "model": data.get("model", ""), "api_key_set": bool(data.get("api_key"))}
+    return ok_envelope(base_url=data.get("base_url", ""), model=data.get("model", ""), api_key_set=bool(data.get("api_key")))
 
 
 def _llm_chat_completion(messages: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1228,10 +1525,96 @@ def _resolve_recipe(recipe: str) -> str:
 
 # ─── 文件浏览（工程导入选文件）与配方目录 ────────────────────────────────────
 
-def fs_list(path: str = "") -> dict[str, Any]:
-    """列出目录内容（目录 + 工程相关文件），供导入向导选文件。"""
+#: 敏感面单源（S-1/S-3，code_audit_slice6）：configs/ 目录承载凭据
+#: （chat_settings.yaml 含 LLM API key、remote_machines.local.yaml 含远程
+#: 主机凭据），*.local.yaml 是本机覆盖配置、同样不入暴露面。
+FS_SENSITIVE_DIR_NAMES = frozenset({"configs"})
+FS_SENSITIVE_FILE_NAMES = frozenset({"chat_settings.yaml"})
 
+
+def fs_allowed_roots() -> list[Path]:
+    """文件暴露面（fs_list / recipe_view）的允许根（单源）。
+
+    允许根 = 当前工作目录 + 环境变量 ``RFAUTO_FS_ROOT``（``os.pathsep``
+    分隔可设多个，如 Windows 下 ``D:\\proj;E:\\data``）。UI 的文件浏览与
+    配方读都以这组根做围栏，越界一律显式报错（见 :func:`fs_read_fence`）。
+    """
+    roots = [Path.cwd().resolve()]
+    for part in os.environ.get("RFAUTO_FS_ROOT", "").split(os.pathsep):
+        part = part.strip()
+        if part:
+            roots.append(Path(part).resolve())
+    return roots
+
+
+def _fs_within_roots(target: Path, roots: list[Path]) -> bool:
+    """target（应已 resolve）是否落在任一允许根内。
+
+    #318 铁律：Windows 路径比较必须 os.path.normcase（大小写/分隔符不敏感）；
+    根边界用"normcase 后 == 根 或 以 根+os.sep 为前缀"判定，防前缀串扰
+    （如 C:\\ab 不算 C:\\a 的子路径）。
+    """
+    t = os.path.normcase(str(Path(target).resolve()))
+    for r in roots:
+        rt = os.path.normcase(str(r))
+        if t == rt or t.startswith(rt.rstrip("\\/") + os.sep):
+            return True
+    return False
+
+
+def _fs_sensitive_dir_hit(resolved: Path) -> bool:
+    """路径任一分量（含自身）名为 configs 即命中凭据目录。"""
+    return any(p.name.lower() in FS_SENSITIVE_DIR_NAMES
+               for p in (resolved, *resolved.parents))
+
+
+def fs_read_fence(
+    path: str | Path, allow_outside_roots: bool = False
+) -> str | None:
+    """读路径围栏（S-1 列举 / S-3 单文件读共用）：拒绝返回错误消息，放行 None。
+
+    三条规则（依次判定）：
+    1. 敏感目录：路径任一分量名为 ``configs``（含 target 就是 configs 目录）
+       ——凭据面不暴露，任何根内/根外、任何放行参数都拒；
+    2. 敏感文件：文件名 ``*.local.yaml`` 或 ``chat_settings.yaml``——同上，
+       ``allow_outside_roots`` 只放宽根围栏、不放宽敏感过滤；
+    3. 根围栏（``allow_outside_roots=False`` 时）：resolve + normcase 后必须
+       落在 :func:`fs_allowed_roots` 之一内。错误消息指明允许根与
+       RFAUTO_FS_ROOT 出口，信封由调用方原样透传前端。
+    """
+    target = Path(path)
+    resolved = target.resolve()
+    if _fs_sensitive_dir_hit(resolved):
+        return f"敏感目录（configs，凭据面）不可访问: {target}"
+    low = resolved.name.lower()
+    if low.endswith(".local.yaml") or low in FS_SENSITIVE_FILE_NAMES:
+        return (f"敏感文件不可访问: {target}"
+                "（*.local.yaml / chat_settings.yaml 为凭据面）")
+    if not allow_outside_roots:
+        roots = fs_allowed_roots()
+        if not _fs_within_roots(resolved, roots):
+            allowed = "; ".join(str(r) for r in roots)
+            return (f"路径越界: {target}（允许根: {allowed}；"
+                    "如需其他根可设 RFAUTO_FS_ROOT 环境变量）")
+    return None
+
+
+def fs_list(path: str = "") -> dict[str, Any]:
+    """列出目录内容（目录 + 工程相关文件），供导入向导选文件。
+
+    根围栏（S-1，code_audit_slice6 审查）：/api/fs/list 是 loopback HTTP
+    暴露面，path 不设防时任意目录（系统盘/凭据目录）可被远程枚举。允许根
+    见 :func:`fs_allowed_roots`（cwd + RFAUTO_FS_ROOT），经
+    :func:`fs_read_fence` 判定（normcase 比较，#318），越界/敏感目录返回
+    ``{"ok": False, "error": ...}``（ui/server 路由信封原样透传）。
+    敏感条目过滤：名为 configs 的子目录、``*.local.yaml`` 与
+    ``chat_settings.yaml`` 文件不进 entries；返回形状
+    ok/path/parent/entries 与围栏前完全一致。
+    """
     target = Path(path) if path else Path.cwd()
+    fence_err = fs_read_fence(target)
+    if fence_err is not None:
+        return {"ok": False, "error": fence_err}
     if not target.exists() or not target.is_dir():
         return {"ok": False, "error": f"目录不存在: {target}"}
     entries = []
@@ -1239,6 +1622,12 @@ def fs_list(path: str = "") -> dict[str, Any]:
         for e in sorted(target.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
             if e.name.startswith("."):
                 continue
+            low = e.name.lower()
+            if e.is_dir() and low in FS_SENSITIVE_DIR_NAMES:
+                continue  # 凭据目录（configs）不进暴露面
+            if e.is_file() and (low.endswith(".local.yaml")
+                                or low in FS_SENSITIVE_FILE_NAMES):
+                continue  # 凭据文件（*.local.yaml / chat_settings.yaml）不进暴露面
             kind = "dir" if e.is_dir() else "file"
             # Touchstone（WP0.3/E8 S 参数页外部导入）与工程文件同列
             if e.is_file() and e.suffix.lower() not in (
@@ -1249,7 +1638,7 @@ def fs_list(path: str = "") -> dict[str, Any]:
             entries.append({"name": e.name, "path": str(e), "kind": kind})
     except PermissionError:
         return {"ok": False, "error": f"无权限读取: {target}"}
-    return {"ok": True, "path": str(target), "parent": str(target.parent), "entries": entries}
+    return ok_envelope(path=str(target), parent=str(target.parent), entries=entries)
 
 
 RECIPE_HELP = {
@@ -1319,10 +1708,9 @@ def list_recipes() -> dict[str, Any]:
     """
     originals = _scan_recipe_dir(Path("recipes"), "original")
     workcopies = _scan_recipe_dir(_workcopy_root(), "workcopy")
-    return {
-        "ok": True,
-        "recipes": originals,
-        "workcopies": workcopies,
-        "groups": {"originals": len(originals), "workcopies": len(workcopies)},
-        "help": RECIPE_HELP,
-    }
+    return ok_envelope(
+        recipes=originals,
+        workcopies=workcopies,
+        groups={"originals": len(originals), "workcopies": len(workcopies)},
+        help=RECIPE_HELP,
+    )

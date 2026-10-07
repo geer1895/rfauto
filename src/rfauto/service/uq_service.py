@@ -42,6 +42,8 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 
 def _metric_key(metric: str) -> str:
     """objectives 指标名 → compute_metrics 产物键（与 tolerance 模块同约定）。"""
@@ -70,6 +72,11 @@ def spread_skill(
     **数据一律不删**）。退化情形（n<3 / σ 或 |误差| 无离散度 → ρ NaN）如实
     qualitative + reason，不凑数。裁判先过已知基准：合成回收钉见
     tests/unit/test_uq_service.py（σ∝|噪声| 过门 / 随机 σ 不过门）。
+
+    ``gate_pass``（F-2/S3）= 独立的门布尔：ρ 达门为 True，降级/退化为
+    False——定性降级是"口径降档"不是"调用失败"，``ok`` 字段按既有语义
+    保持兼容（达门 True/未达门 False），消费者分流用 gate_pass 不再
+    与错误语义混载。
     """
     clean = [(float(s), float(e)) for s, e in pairs
              if s is not None and e is not None
@@ -77,7 +84,8 @@ def spread_skill(
     n = len(clean)
     if n < SPREAD_SKILL_MIN_PAIRS:
         return {
-            "ok": False, "status": "qualitative", "spearman_rho": None,
+            "ok": False, "gate_pass": False, "status": "qualitative",
+            "spearman_rho": None,
             "gate": float(gate), "n_pairs": n,
             "reason": f"有效样本对 {n} <{SPREAD_SKILL_MIN_PAIRS}，无法计算 Spearman ρ",
         }
@@ -85,7 +93,8 @@ def spread_skill(
     errors = [p[1] for p in clean]
     if len(set(sigmas)) < 2 or len(set(errors)) < 2:
         return {
-            "ok": False, "status": "qualitative", "spearman_rho": None,
+            "ok": False, "gate_pass": False, "status": "qualitative",
+            "spearman_rho": None,
             "gate": float(gate), "n_pairs": n,
             "reason": "σ 或 |误差| 无离散度，ρ 退化",
         }
@@ -98,14 +107,15 @@ def spread_skill(
     rho_f = float(rho) if rho is not None and math.isfinite(float(rho)) else None
     if rho_f is None:
         return {
-            "ok": False, "status": "qualitative", "spearman_rho": None,
+            "ok": False, "gate_pass": False, "status": "qualitative",
+            "spearman_rho": None,
             "gate": float(gate), "n_pairs": n,
             "reason": "Spearman ρ 非有限值（退化）",
         }
     ok = rho_f >= float(gate)
     return {
-        "ok": bool(ok), "status":
-            "quantitative" if ok else "qualitative",
+        "ok": bool(ok), "gate_pass": bool(ok), "status":
+        "quantitative" if ok else "qualitative",
         "spearman_rho": rho_f, "gate": float(gate), "n_pairs": n,
     }
 
@@ -120,7 +130,8 @@ def _spread_skill_for_model(
     模型无 σ（uncertainty→None，如 poly_ridge 缺省）→ qualitative + reason。
     """
     if not objs:
-        return {"ok": False, "status": "qualitative", "spearman_rho": None,
+        return {"ok": False, "gate_pass": False, "status": "qualitative",
+                "spearman_rho": None,
                 "gate": float(gate), "n_pairs": 0,
                 "reason": "无 objectives，无从取误差指标"}
     key = _metric_key(objs[0].metric)
@@ -131,7 +142,7 @@ def _spread_skill_for_model(
         except Exception:
             unc = None
         if not isinstance(unc, dict) or key not in unc:
-            return {"ok": False, "status": "qualitative",
+            return {"ok": False, "gate_pass": False, "status": "qualitative",
                     "spearman_rho": None, "gate": float(gate),
                     "n_pairs": 0,
                     "reason": "代理无不确定性估计（uncertainty→None）"
@@ -562,9 +573,10 @@ def store_mc_draws(
     """
     internal = mc.get("_draw_columns")
     if not internal:
-        return {"ok": False,
-                "errors": ["store_mc_draws 需要向量化 _mc_yield 产物"
-                           "（缺 _draw_columns；loop 路径不可落盘）"]}
+        return error_envelope(
+            ["store_mc_draws 需要向量化 _mc_yield 产物"
+                           "（缺 _draw_columns；loop 路径不可落盘）"],
+        )
     try:
         from rfauto.service.dataset_service import (
             MANIFEST_NAME,
@@ -577,7 +589,7 @@ def store_mc_draws(
         name = _validate_dataset_name(name)
         pa, pq = _import_pyarrow()
     except (ImportError, RuntimeError, ValueError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     import numpy as np
     import yaml
 
@@ -638,11 +650,13 @@ def store_mc_draws(
     (dataset_dir / MANIFEST_NAME).write_text(
         yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
         encoding="utf-8")
-    return {
-        "ok": True, "name": name, "dataset_dir": str(dataset_dir),
-        "points_file": str(points_path), "n_rows": n,
-        "columns": manifest["columns"],
-    }
+    return ok_envelope(
+        name=name,
+        dataset_dir=str(dataset_dir),
+        points_file=str(points_path),
+        n_rows=n,
+        columns=manifest["columns"],
+    )
 
 
 def surrogate_yield(
@@ -671,18 +685,20 @@ def surrogate_yield(
     """
     use_source = tolerance_source is not None
     if use_source and tolerances:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             "tolerances 与 tolerance_source 二选一（DP-7 P2 单源：引用"
-            "剖面时 σ 由 fab 剖面派生，不手工直传）"]}
+            "剖面时 σ 由 fab 剖面派生，不手工直传）"],
+        )
     if not use_source and not tolerances:
-        return {"ok": False, "errors": ["缺少 tolerances（{param: σ}）"]}
+        return error_envelope(["缺少 tolerances（{param: σ}）"])
     if n < 1:
-        return {"ok": False, "errors": [f"n 必须 ≥1，收到: {n}"]}
+        return error_envelope([f"n 必须 ≥1，收到: {n}"])
     ctx, errors = _load_yield_context(
         samples_path, tolerances or {}, kind=kind, order=order,
         ridge_lambda=ridge_lambda)
     if ctx is None:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
 
     nominal = {k: float(v) for k, v in ctx["nominal_sample"]["params"].items()}
     provenance: dict[str, Any] | None = None
@@ -691,18 +707,20 @@ def surrogate_yield(
 
         res = resolve_tolerance_source(tolerance_source, nominal)
         if not res.get("ok"):
-            return {"ok": False,
-                    "errors": list(res.get("errors")
-                                   or ["tolerance_source 解析失败"])}
+            return error_envelope(
+                list(res.get("errors")
+                                   or ["tolerance_source 解析失败"]),
+            )
         derived = {k: float(v) for k, v in (res.get("sigmas") or {}).items()}
         bad = [k for k in derived if k not in ctx["bounds"]]
         if bad:
-            return {"ok": False,
-                    "errors": [f"派生公差参数不在搜索空间: {bad}"]}
+            return error_envelope([f"派生公差参数不在搜索空间: {bad}"])
         if not derived:
-            return {"ok": False, "errors": [
+            return error_envelope(
+                [
                 "tolerance_source 未派生出任何参数公差"
-                "（检查样本参数分类/材料声明）"]}
+                "（检查样本参数分类/材料声明）"],
+            )
         tolerances = derived
         provenance = res.get("provenance")
     mc = _mc_yield(ctx, nominal, tolerances, n=n, seed=seed)
@@ -729,22 +747,21 @@ def surrogate_yield(
         sensitivity[p] = float(total)
 
     ranked = sorted(sensitivity, key=lambda k: sensitivity[k], reverse=True)
-    out: dict[str, Any] = {
-        "ok": True,
-        "samples_path": str(ctx["path"]),
-        "uncertainty_status": ctx["uncertainty_status"],
-        "surrogate_kind": kind,
-        "n_draws": n,
-        "seed": seed,
-        "nominal_params": nominal,
-        "nominal_metrics": base_metrics,
-        "tolerances": tolerances,
-        "yield_rate": mc["yield_rate"],
-        "metric_stats": mc["metric_stats"],
-        "implementation": mc["implementation"],
-        "sensitivity_ranking": ranked,
-        "sensitivity_violation_delta": sensitivity,
-    }
+    out: dict[str, Any] = ok_envelope(
+        samples_path=str(ctx["path"]),
+        uncertainty_status=ctx["uncertainty_status"],
+        surrogate_kind=kind,
+        n_draws=n,
+        seed=seed,
+        nominal_params=nominal,
+        nominal_metrics=base_metrics,
+        tolerances=tolerances,
+        yield_rate=mc["yield_rate"],
+        metric_stats=mc["metric_stats"],
+        implementation=mc["implementation"],
+        sensitivity_ranking=ranked,
+        sensitivity_violation_delta=sensitivity,
+    )
     if provenance is not None:  # DP-7 P2：仅 tolerance_source 分支追加
         out["tolerance_provenance"] = provenance
     return out
@@ -773,25 +790,27 @@ def surrogate_yield_at(
     ``tolerance_provenance``。
     """
     if n < 1:
-        return {"ok": False, "errors": [f"n 必须 ≥1，收到: {n}"]}
+        return error_envelope([f"n 必须 ≥1，收到: {n}"])
     if not nominal:
-        return {"ok": False, "errors": ["名义点为空"]}
+        return error_envelope(["名义点为空"])
     use_source = tolerance_source is not None
     if use_source and tolerances:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             "tolerances 与 tolerance_source 二选一（DP-7 P2 单源：引用"
-            "剖面时 σ 由 fab 剖面派生，不手工直传）"]}
+            "剖面时 σ 由 fab 剖面派生，不手工直传）"],
+        )
     ctx, errors = _load_yield_context(
         samples_path, tolerances or {}, kind=kind, order=order,
         ridge_lambda=ridge_lambda)
     if ctx is None:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
     bad = [k for k in nominal if k not in ctx["bounds"]]
     if bad:
-        return {"ok": False, "errors": [f"名义点参数不在搜索空间: {bad}"]}
+        return error_envelope([f"名义点参数不在搜索空间: {bad}"])
     missing = [p for p in (tolerances or {}) if p not in nominal]
     if missing:
-        return {"ok": False, "errors": [f"名义点缺少公差参数: {missing}"]}
+        return error_envelope([f"名义点缺少公差参数: {missing}"])
 
     nom = {k: float(v) for k, v in nominal.items()}
     provenance: dict[str, Any] | None = None
@@ -800,39 +819,39 @@ def surrogate_yield_at(
 
         res = resolve_tolerance_source(tolerance_source, nom)
         if not res.get("ok"):
-            return {"ok": False,
-                    "errors": list(res.get("errors")
-                                   or ["tolerance_source 解析失败"])}
+            return error_envelope(
+                list(res.get("errors")
+                                   or ["tolerance_source 解析失败"]),
+            )
         derived = {k: float(v) for k, v in (res.get("sigmas") or {}).items()}
         bad_derived = [k for k in derived if k not in ctx["bounds"]]
         if bad_derived:
-            return {"ok": False,
-                    "errors": [f"派生公差参数不在搜索空间: {bad_derived}"]}
+            return error_envelope([f"派生公差参数不在搜索空间: {bad_derived}"])
         missing = [p for p in derived if p not in nom]
         if missing:
-            return {"ok": False,
-                    "errors": [f"名义点缺少派生公差参数: {missing}"]}
+            return error_envelope([f"名义点缺少派生公差参数: {missing}"])
         if not derived:
-            return {"ok": False, "errors": [
+            return error_envelope(
+                [
                 "tolerance_source 未派生出任何参数公差"
-                "（检查名义参数分类/材料声明）"]}
+                "（检查名义参数分类/材料声明）"],
+            )
         tolerances = derived
         provenance = res.get("provenance")
     mc = _mc_yield(ctx, nom, tolerances, n=n, seed=seed)
-    out: dict[str, Any] = {
-        "ok": True,
-        "samples_path": str(ctx["path"]),
-        "uncertainty_status": ctx["uncertainty_status"],
-        "surrogate_kind": kind,
-        "n_draws": n,
-        "seed": seed,
-        "nominal_params": nom,
-        "nominal_metrics": mc["nominal_metrics"],
-        "tolerances": tolerances,
-        "yield_rate": mc["yield_rate"],
-        "metric_stats": mc["metric_stats"],
-        "implementation": mc["implementation"],
-    }
+    out: dict[str, Any] = ok_envelope(
+        samples_path=str(ctx["path"]),
+        uncertainty_status=ctx["uncertainty_status"],
+        surrogate_kind=kind,
+        n_draws=n,
+        seed=seed,
+        nominal_params=nom,
+        nominal_metrics=mc["nominal_metrics"],
+        tolerances=tolerances,
+        yield_rate=mc["yield_rate"],
+        metric_stats=mc["metric_stats"],
+        implementation=mc["implementation"],
+    )
     if provenance is not None:  # DP-7 P2：仅 tolerance_source 分支追加
         out["tolerance_provenance"] = provenance
     return out
@@ -864,16 +883,16 @@ def yield_design_center(
     （initial_yield_mc / final_yield_mc）。
     """
     if k_sigma <= 0:
-        return {"ok": False, "errors": [f"k_sigma 必须 >0，收到: {k_sigma}"]}
+        return error_envelope([f"k_sigma 必须 >0，收到: {k_sigma}"])
     if n_levels < 2:
-        return {"ok": False, "errors": [f"n_levels 必须 ≥2，收到: {n_levels}"]}
+        return error_envelope([f"n_levels 必须 ≥2，收到: {n_levels}"])
     if n_mc < 1:
-        return {"ok": False, "errors": [f"n_mc 必须 ≥1，收到: {n_mc}"]}
+        return error_envelope([f"n_mc 必须 ≥1，收到: {n_mc}"])
     ctx, errors = _load_yield_context(
         samples_path, tolerances, kind=kind, order=order,
         ridge_lambda=ridge_lambda)
     if ctx is None:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
 
     from rfauto.core.objectives import SpecEvaluator
     from rfauto.core.pce import design_centering
@@ -890,8 +909,7 @@ def yield_design_center(
         k in pred_keys
         for k in SpecEvaluator.metric_key_candidates(o.metric, o.op))]
     if missing_metrics:
-        return {"ok": False,
-                "errors": [f"目标指标不在代理预测面: {missing_metrics}"]}
+        return error_envelope([f"目标指标不在代理预测面: {missing_metrics}"])
 
     def cost_fn(point: dict[str, float]) -> float:
         return SpecEvaluator.evaluate_objectives(model.predict(point), objs)
@@ -908,8 +926,8 @@ def yield_design_center(
                            n=n_mc, seed=seed)
     mc_final = _mc_yield(ctx, dict(grid["center"]), tolerances,
                          n=n_mc, seed=seed)
-    return {
-        "ok": True,
+    return ok_envelope(
+        **{
         "samples_path": str(ctx["path"]),
         "uncertainty_status": ctx["uncertainty_status"],
         "surrogate_kind": kind,
@@ -931,7 +949,8 @@ def yield_design_center(
         "n_mc": n_mc,
         "seed": seed,
         "implementation": mc_final["implementation"],
-    }
+        },
+    )
 
 
 def temperature_zone_yield(
@@ -958,24 +977,26 @@ def temperature_zone_yield(
     from rfauto.core.bands import env_to_delta_t, env_to_uq_axis, get_env
 
     if k_sigma <= 0:
-        return {"ok": False, "errors": [f"k_sigma 必须 >0，收到: {k_sigma}"]}
+        return error_envelope([f"k_sigma 必须 >0，收到: {k_sigma}"])
     if n < 1:
-        return {"ok": False, "errors": [f"n 必须 ≥1，收到: {n}"]}
+        return error_envelope([f"n 必须 ≥1，收到: {n}"])
     try:
         env = get_env(env_key)
         axis = env_to_uq_axis(env_key, t_ref_c=t_ref_c, k_sigma=k_sigma)
         delta_t = env_to_delta_t(env_key, t_ref_c=t_ref_c)
     except (KeyError, ValueError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     ctx, errors = _load_yield_context(
         samples_path, tolerances, kind=kind, order=order,
         ridge_lambda=ridge_lambda)
     if ctx is None:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
     if "t_c" not in ctx["bounds"]:
-        return {"ok": False, "errors": [
-            "样本集无 t_c 维度（温区良率要求 D8 温度轴校准集含 t_c 参数）"]}
+        return error_envelope(
+            [
+            "样本集无 t_c 维度（温区良率要求 D8 温度轴校准集含 t_c 参数）"],
+        )
 
     # 温度 σ 以包络为准（覆盖调用方同名入参），其余参数公差照常
     merged = {**tolerances, "t_c": float(axis["sigma_c"])}
@@ -999,29 +1020,28 @@ def temperature_zone_yield(
         corners[label] = {"t_c": float(t_val), "metrics": m,
                           "pass": ok_all}
 
-    return {
-        "ok": True,
-        "samples_path": str(ctx["path"]),
-        "uncertainty_status": ctx["uncertainty_status"],
-        "surrogate_kind": kind,
-        "n_draws": n,
-        "seed": seed,
-        "env_key": env.key,
-        "env": env.to_dict(),
-        "axis": axis,
-        "delta_t": delta_t,
-        "sigma_c": float(axis["sigma_c"]),
-        "half_range_c": float(axis["half_range_c"]),
-        "nominal_params": nominal,
-        "nominal_metrics": mc["nominal_metrics"],
-        "tolerances": merged,
-        "yield_rate": mc["yield_rate"],
-        "metric_stats": mc["metric_stats"],
-        "implementation": mc["implementation"],
-        "corners": corners,
-        "corner_pass": {"t_min_c": corners["t_min_c"]["pass"],
+    return ok_envelope(
+        samples_path=str(ctx["path"]),
+        uncertainty_status=ctx["uncertainty_status"],
+        surrogate_kind=kind,
+        n_draws=n,
+        seed=seed,
+        env_key=env.key,
+        env=env.to_dict(),
+        axis=axis,
+        delta_t=delta_t,
+        sigma_c=float(axis["sigma_c"]),
+        half_range_c=float(axis["half_range_c"]),
+        nominal_params=nominal,
+        nominal_metrics=mc["nominal_metrics"],
+        tolerances=merged,
+        yield_rate=mc["yield_rate"],
+        metric_stats=mc["metric_stats"],
+        implementation=mc["implementation"],
+        corners=corners,
+        corner_pass={"t_min_c": corners["t_min_c"]["pass"],
                         "t_max_c": corners["t_max_c"]["pass"]},
-    }
+    )
 
 
 def wcd_design_center(
@@ -1062,20 +1082,20 @@ def wcd_design_center(
         （剔除内部 ``_draw_columns`` 列后嵌入，JSON 安全）。
     """
     if k_sigma <= 0:
-        return {"ok": False, "errors": [f"k_sigma 必须 >0，收到: {k_sigma}"]}
+        return error_envelope([f"k_sigma 必须 >0，收到: {k_sigma}"])
     if n_mc < 1:
-        return {"ok": False, "errors": [f"n_mc 必须 ≥1，收到: {n_mc}"]}
+        return error_envelope([f"n_mc 必须 ≥1，收到: {n_mc}"])
     if r_max_sigma <= 0:
-        return {"ok": False, "errors": [f"r_max_sigma 必须 >0，收到: {r_max_sigma}"]}
+        return error_envelope([f"r_max_sigma 必须 >0，收到: {r_max_sigma}"])
     if not (0.0 < shrink < 1.0):
-        return {"ok": False, "errors": [f"shrink 必须在 (0,1)，收到: {shrink}"]}
+        return error_envelope([f"shrink 必须在 (0,1)，收到: {shrink}"])
     if step_frac <= 0:
-        return {"ok": False, "errors": [f"step_frac 必须 >0，收到: {step_frac}"]}
+        return error_envelope([f"step_frac 必须 >0，收到: {step_frac}"])
     ctx, errors = _load_yield_context(
         samples_path, tolerances, kind=kind, order=order,
         ridge_lambda=ridge_lambda)
     if ctx is None:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
 
     import numpy as np
 
@@ -1094,8 +1114,7 @@ def wcd_design_center(
         k in pred_keys
         for k in SpecEvaluator.metric_key_candidates(o.metric, o.op))]
     if missing_metrics:
-        return {"ok": False,
-                "errors": [f"目标指标不在代理预测面: {missing_metrics}"]}
+        return error_envelope([f"目标指标不在代理预测面: {missing_metrics}"])
 
     def pred(point: dict[str, float]) -> dict[str, float]:
         return _numeric_pred(model, point)
@@ -1165,37 +1184,263 @@ def wcd_design_center(
     def mc_public(mc: dict[str, Any]) -> dict[str, Any]:
         return {k: v for k, v in mc.items() if k != "_draw_columns"}
 
-    return {
-        "ok": True,
-        "samples_path": str(ctx["path"]),
-        "uncertainty_status": ctx["uncertainty_status"],
-        "surrogate_kind": kind,
-        "objective": "min_wcd(sigma_normalized_boundary_distance,AGW-TCAD1994)",
-        "tolerances": tolerances,
-        "k_sigma": float(k_sigma),
-        "r_max_sigma": float(r_max_sigma),
-        "initial_center": initial_center,
-        "center": final_center,
-        "wcd": {
+    return ok_envelope(
+        samples_path=str(ctx["path"]),
+        uncertainty_status=ctx["uncertainty_status"],
+        surrogate_kind=kind,
+        objective="min_wcd(sigma_normalized_boundary_distance,AGW-TCAD1994)",
+        tolerances=tolerances,
+        k_sigma=float(k_sigma),
+        r_max_sigma=float(r_max_sigma),
+        initial_center=initial_center,
+        center=final_center,
+        wcd={
             "per_spec": wcd_final["per_spec"],
             "binding_spec": wcd_final["binding_spec"],
             "overall": wcd_final["overall"],
         },
-        "wcd_initial": {
+        wcd_initial={
             "per_spec": wcd_initial["per_spec"],
             "binding_spec": wcd_initial["binding_spec"],
             "overall": wcd_initial["overall"],
         },
-        "cpk": cpk_from_metric_stats(mc_final["metric_stats"], ctx["specs"]),
-        "cpk_initial": cpk_from_metric_stats(mc_initial["metric_stats"],
+        cpk=cpk_from_metric_stats(mc_final["metric_stats"], ctx["specs"]),
+        cpk_initial=cpk_from_metric_stats(mc_initial["metric_stats"],
                                              ctx["specs"]),
-        "yield_mc_before": mc_public(mc_initial),
-        "yield_mc_after": mc_public(mc_final),
-        "n_mc": n_mc,
-        "seed": seed,
-        "n_wcd_evaluations": n_wcd_evals,
-        "refined": bool(wcd_final.get("per_spec")
+        yield_mc_before=mc_public(mc_initial),
+        yield_mc_after=mc_public(mc_final),
+        n_mc=n_mc,
+        seed=seed,
+        n_wcd_evaluations=n_wcd_evals,
+        refined=bool(wcd_final.get("per_spec")
                         and all(v.get("refined") for v in
                                 wcd_final["per_spec"].values()
                                 if v.get("ok"))),
+    )
+
+
+# ---------------------------------------------------------------------------
+# XD-11 设计点重要性采样稀有失效挂点（rare_yield_is；W2-G）
+# ---------------------------------------------------------------------------
+
+#: RC §3.5D schema 强制键（结果缺任一键=落盘拒绝，service 层校验）
+_RARE_YIELD_REQUIRED_KEYS = ("pf", "cov", "method", "seed", "n_evals", "ess")
+
+
+def _assert_rare_yield_schema(result: dict[str, Any]) -> None:
+    """schema 强制（RC §3.5D）：缺任一强制键即 raise（调用方收敛失败信封）。"""
+    missing = [k for k in _RARE_YIELD_REQUIRED_KEYS if k not in result]
+    if missing:
+        raise ValueError(f"rare_yield 结果缺 schema 强制键: {missing}")
+
+
+def rare_yield_is(
+    samples_path: str | Path,
+    tolerances: dict[str, float] | None = None,
+    *,
+    threshold: float = 0.0,
+    n_is: int = 5000,
+    seed: int = 0,
+    n_mc_cross: int = 10000,
+    kind: str = "poly_ridge",
+    order: int = 2,
+    ridge_lambda: float = 0.1,
+    form_engine: str = "internal",
+) -> dict[str, Any]:
+    """设计点重要性采样稀有失效概率（FORM u* 喂 IS；JSON 契约）。
+
+    链路（sa_specs2 §9.2）：``_load_yield_context`` 装载 → FORM 求 u*
+    （``robustness_service.form_pf``——换基后即 core.form_beta 内核的
+    多起点服务面；hinge 违约 cost 在名义点梯度恒 0，单起点 form_beta
+    会把合法 hinge 面误判死点，多起点是服务层价值所在）→
+    ``converged=False`` 即 ok=False 拒绝（死点/不收敛禁喂 IS）→
+    limit_state 闭包走 ``_mc_predict_columns`` 批量列预测（无批路径代理
+    回退逐点）→ ``core.rare_event.importance_sampling_pf``。
+
+    返回 {ok, pf_form, pf_is, pf, beta, cov, cov_is, ess, ess_ratio,
+    n_evals, seed, method, rel_diff_form_is, form_is_consistency,
+    applicability, note, ...}——pf/cov/method/seed/n_evals/ess 为 RC
+    §3.5C/D schema 强制键（缺键落盘拒绝，`_assert_rare_yield_schema`）。
+
+    适用性预检（判读面，不改数值产出，铁律 7）：
+    ① FORM converged 前置（上述）；② ESS ≥ n_is/10 权重退化守卫
+    （触发=applicability suspect+note——大 β 均值移位 ESS 整体偏低是
+    N(u*,I) 的已知数学性质，数值采信以 cov_is 为准，内核 docstring 有
+    推导）；③ β-vs-MC 粗对拍（threshold=0 且全部 op 支持时，MC 失效
+    率与 Φ(−β) 差 >1 量级 → suspect"多叶/细长失效域嫌疑，单设计点 IS
+    不适用，需 SuS（followUp）"——如实报不凑绿 #122）。
+    """
+    import numpy as np
+
+    if not tolerances:
+        return error_envelope(["缺少 tolerances（{param: σ}）"])
+    if n_is < 1 or n_mc_cross < 1:
+        return error_envelope(
+            [f"n_is/n_mc_cross 必须 ≥1，收到 {n_is}/{n_mc_cross}"])
+    ctx, errors = _load_yield_context(
+        samples_path, tolerances, kind=kind, order=order,
+        ridge_lambda=ridge_lambda)
+    if ctx is None:
+        return error_envelope(errors)
+
+    from rfauto.core.rare_event import importance_sampling_pf
+    from rfauto.service.robustness_service import _mk_cost_fn, form_pf
+
+    nominal = {k: float(v) for k, v in
+               ctx["nominal_sample"]["params"].items()}
+    cost_fn = _mk_cost_fn(ctx["model"], ctx["objs"])
+
+    form = form_pf(cost_fn, nominal, tolerances, threshold=threshold,
+                   form_engine=form_engine)
+    if not form.get("ok"):
+        return error_envelope(list(form.get("errors") or ["FORM 求解失败"]))
+    if not form.get("converged"):
+        return error_envelope(
+            ["FORM 未收敛（死点/平坦面/触顶）——不收敛设计点禁喂 IS",
+             *(str(n) for n in (form.get("notes") or []))])
+
+    names = sorted(tolerances)
+    mean = np.array([float(nominal[n]) for n in names])
+    stddev = np.array([float(tolerances[n]) for n in names])
+    u_star = np.array([float(form["design_point_u"][n]) for n in names])
+    beta = float(form["beta"])
+
+    # limit_state 闭包：批路径（_mc_predict_columns 列批）优先，无批路径
+    # 代理回退逐点（_SigmaStub 类 monkeypatch 模型兼容，同 _mc_yield 分派）
+    all_names = sorted(ctx["bounds"])
+    t_index = {n: j for j, n in enumerate(names)}
+
+    def _full_matrix(Xt: Any) -> Any:
+        X = np.empty((Xt.shape[0], len(all_names)), dtype=float)
+        for j, nm in enumerate(all_names):
+            if nm in t_index:
+                X[:, j] = Xt[:, t_index[nm]]
+            else:
+                X[:, j] = float(nominal.get(nm, ctx["bounds"][nm][0]))
+        return X
+
+    def _costs_from_columns(cols: dict[str, Any],
+                            n_pts: int) -> tuple[Any, list[str] | None]:
+        from rfauto.core.objectives import SpecEvaluator
+
+        missing = [s["metric"] for s in ctx["specs"]
+                   if s["metric"] not in cols]
+        if missing:
+            return None, missing
+        g = np.empty(n_pts, dtype=float)
+        for i in range(n_pts):
+            metrics = {s["metric"]: float(cols[s["metric"]][i])
+                       for s in ctx["specs"]}
+            g[i] = threshold - float(
+                SpecEvaluator.evaluate_objectives(metrics, ctx["objs"]))
+        return g, None
+
+    try:
+        probe = _full_matrix(np.zeros((1, len(names))))
+        cols_probe = _mc_predict_columns(ctx["model"], probe, all_names)
+        if cols_probe is not None:
+            def limit_state(Xt: Any) -> Any:
+                g, missing = _costs_from_columns(
+                    _mc_predict_columns(ctx["model"], _full_matrix(Xt),
+                                        all_names),
+                    Xt.shape[0])
+                if g is None:
+                    raise ValueError(f"代理缺 spec 指标列: {missing}")
+                return g
+
+            is_res = importance_sampling_pf(
+                limit_state, mean, stddev, u_star,
+                n_samples=int(n_is), seed=int(seed), vectorized=True)
+            batch_path = "columns"
+        else:
+            def limit_state_pt(row: Any) -> float:
+                pt = dict(nominal)
+                pt.update({n: float(v) for n, v in zip(names, row,
+                                                       strict=True)})
+                return threshold - float(cost_fn(pt))
+
+            is_res = importance_sampling_pf(
+                limit_state_pt, mean, stddev, u_star,
+                n_samples=int(n_is), seed=int(seed), vectorized=False)
+            batch_path = "loop"
+    except (ValueError, OverflowError) as exc:
+        return error_envelope([f"IS 求解失败: {exc}"])
+
+    pf_is = float(is_res.pf_is)
+    cov_is = float(is_res.cov_is)
+    pf_form = float(form["pf"])
+    rel_diff = (abs(pf_is - pf_form) / pf_form if pf_form > 0.0
+                else (math.inf if pf_is > 0.0 else 0.0))
+
+    # C 件双方法一致性：对数差 >3σ（cov_is 的对数域换算）→ DISAGREE 如实
+    log_gap = abs(math.log10(max(pf_is, 1e-300))
+                  - math.log10(max(pf_form, 1e-300)))
+    three_sigma_log = (3.0 * cov_is / math.log(10.0)
+                       if math.isfinite(cov_is) else math.inf)
+    consistency = "AGREE" if log_gap <= three_sigma_log else "DISAGREE"
+
+    notes: list[str] = []
+    applicability = "ok"
+    # ② ESS 权重退化守卫（诊断面：大 β 均值移位 ESS 偏低是已知性质，
+    # 数值采信以 cov_is 为准——内核 docstring 推导）
+    ess_ratio = float(is_res.ess) / int(n_is)
+    if ess_ratio < 0.1:
+        applicability = "suspect"
+        notes.append(
+            f"ESS={float(is_res.ess):.1f} < n_is/10={n_is / 10:.1f}"
+            "（权重退化诊断：N(u*,I) 均值移位在 β≳1.5 下 ESS 整体偏低是"
+            "已知数学性质，估计量精度以 cov_is 为准）")
+    # ③ β-vs-MC 粗对拍（threshold=0 且 op 全支持时才同事件可比）
+    ops_supported = all(
+        str(getattr(o.op, "value", o.op)) in
+        ("max_below", "min_above", "mean_within") for o in ctx["objs"])
+    mc_pf: float | None = None
+    if threshold == 0.0 and ops_supported:
+        mc = _mc_yield(ctx, nominal, tolerances, n=int(n_mc_cross),
+                       seed=int(seed) + 1)
+        mc_pf = 1.0 - float(mc["yield_rate"])
+        scale_lo, scale_hi = pf_form * 0.1, pf_form * 10.0
+        if not (scale_lo <= mc_pf <= scale_hi):
+            applicability = "suspect"
+            notes.append(
+                f"MC 粗对拍失效概率 {mc_pf:.3e} 与 Φ(−β)={pf_form:.3e} "
+                "差 >1 量级——多叶/细长失效域嫌疑，单设计点 IS 不适用，"
+                "需 SuS（登记 followUp）")
+
+    result: dict[str, Any] = {
+        "pf_form": pf_form,
+        "pf_is": pf_is,
+        "beta": beta,
+        "pf": pf_is,
+        "cov": cov_is,
+        "cov_is": cov_is,
+        "ess": float(is_res.ess),
+        "ess_ratio": ess_ratio,
+        "n_evals": int(is_res.n_evals),
+        "seed": int(is_res.seed),
+        "method": "importance_sampling",
+        "rel_diff_form_is": rel_diff,
+        "form_is_consistency": consistency,
+        "applicability": applicability,
+        "weights_stats": {"max": float(is_res.weights_stats.max),
+                          "mean": float(is_res.weights_stats.mean)},
+        "batch_path": batch_path,
+        "n_is": int(n_is),
+        "n_mc_cross": int(n_mc_cross),
+        "mc_pf_cross": mc_pf,
+        "tolerances": dict(tolerances),
+        "nominal_params": dict(nominal),
+        "threshold": float(threshold),
+        "surrogate_kind": kind,
+        "uncertainty_status": ctx["uncertainty_status"],
+        "method_note": "设计点 IS（h=N(u*,I)）：FORM u* 喂料；单设计点对"
+                       "多峰失效域系统性低估（漏峰），深尾部 SuS 登记 "
+                       "followUp；FORM 一阶线性化边界见 form.method_note",
     }
+    if notes:
+        result["note"] = "；".join(notes)
+    try:
+        _assert_rare_yield_schema(result)
+    except ValueError as exc:
+        return error_envelope([f"rare_yield 落盘拒绝: {exc}"])
+    return ok_envelope(**result)

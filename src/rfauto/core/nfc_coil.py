@@ -32,7 +32,9 @@
 有效域（原文口径）：拟合库 d_in/d_out∈[0.1,0.9]（ρ∈[0.053,0.818]）、
 s≤3w（电流片式对 s>3w 误差增大，原文声明 max 8%）；集总适用域
 n·(w+s) ≪ λ/10（NFC 13.56 MHz / WPC 100–200 kHz 频段成立）。分布效应/
-邻近效应损耗不自欺建模——Q 面只消费调用方给定的 R。
+邻近效应损耗不自欺建模——Q 面只消费调用方给定的 R（W4-B P11 起新增
+ESR(f) 确定性模型面，见文末「ESR(f)/Q(f)」节：零经验常数，1-D 扩散
+闭式 + FD 数值仲裁钉，邻近场取等效单片近似并如实登记）。
 """
 
 from __future__ import annotations
@@ -43,6 +45,9 @@ from typing import Any
 
 #: 真空磁导率（H/m）
 MU0 = 4.0e-7 * math.pi
+
+#: 真空光速（m/s，SI 定义值；与 core 既有模块同值口径）
+C0 = 299792458.0
 
 #: 线圈形状（Mohan 1999 四形状）
 SHAPES = ("square", "hexagon", "octagon", "circle")
@@ -646,3 +651,269 @@ def coil_mutual_inductance(geom1: CoilGeometry, geom2: CoilGeometry,
             total += loop_pair_mutual_numeric(va, vb, dz_m=dz_m, n_gl=n_gl,
                                               max_sub=max_sub)
     return total
+
+
+# ─── ESR(f)/Q(f)：趋肤+邻近交流电阻（W4-B P11）───────────────────────────────
+#
+# 方法出处记档（#1c/#118，2026-10-05）：本节零借入经验系数，全部量来自
+# ① 精确 1-D 磁扩散解（平板导体 H''=γ²H，γ=(1+j)/δ，双面反反对称边界
+#    H(±t/2)=±I/(2w)）的闭式 R_ac/R_dc=(x/2)·[sinh x+sin x]/[cosh x−cos x]
+#    （x=t/δ）——**仓内数值仲裁**：1-D FD 求解（tests/unit/
+#    test_w4_b_p11_nfc_esr.py）逐位钉死（推导与闭式都可能错，FD 为裁判，
+#    #118）；该式≡Dowell 1966（Proc. IEE 113(8):1387-1394）层叠绕组因子
+#    首项在 Δ=x/2 的口径；
+# ② Dowell 层叠绕组因子全式（m 层 MMF 线性堆叠）——同 FD 链在
+#    (Δ,m)∈{0.2,0.5,1,2}×{1,2,3,5} 仲裁逐位吻合（文献转录另见
+#    Erickson-Maksimović《Fundamentals of Power Electronics》与 TI
+#    slup125 "Magnetics Design 3 - Windings" Fig 3-5 同源曲线族）；
+# ③ 薄板邻近损耗（均匀横场 B0 穿薄板 t≪δ）：法拉第定律初等解
+#    E_y(x)=−jωB₀(x−w/2) → P′/l=ω²B₀²w³t/(12ρ)（RMS 口径，
+#    ∫(x−w/2)²dx=w³/12 恒等式）；
+# ④ 邻近场 B₀ 的取法（2026-10-05 数值证伪记档，比例可复现）：共面螺旋
+#    相邻匝电流**平行**，其片层场在匝间隙相消——规格书"等效单片法"的
+#    局部片层口径 B₀=μ₀I/(2p) 忽略相消，系统性高估（5 匝 40mm 样例：
+#    1.5-9.4×，内匝最大=邻居最多方向性正确；test_w4_b_p11 窄带钉）；
+#    正确口径=**其余匝**（不含自匝，自场即趋肤项）在匝位置产生的 B_z 的
+#    Biot–Savart 数值线积分（段元 (dl×r̂)_z/r² 核，GL 求积，与本文件
+#    Neumann 互感机械同族），逐匝取顶点采样均值。
+# 局部适用域：集总 n·(w+s) ≪ λ/10（模块头既有口径，超界显式拒绝）。
+
+#: 退火铜电阻率（Ω·m，IACS 20°C 标准值；调用方可覆盖）
+RHO_CU_ANNEALED = 1.724e-8
+
+#: 平板趋肤因子闭式的大宗无溢出切换点（sinh(40)≈1.2e17，此后比率→1 机器级）
+_SKIN_FACTOR_X_EXACT_MAX = 40.0
+#: 小宗级数切换点（cosh x−cos x 在 x→0 双曲差相消，cancellation 守卫）
+_SKIN_FACTOR_X_SERIES_MAX = 0.1
+
+
+def slab_skin_resistance_factor(x_over_delta: float) -> float:
+    """孤立载流平板 R_ac/R_dc（x=t/δ，精确 1-D 扩散解，FD 仲裁钉）：
+
+    F(x) = (x/2)·[sinh x + sin x]/[cosh x − cos x]。
+
+    极限：x→0 → 1（逐位）；x→∞ → x/2（双面趋肤各 δ，R∝1/(2δw)）。
+    x<0.1 走级数 1+x⁴/180（cosh−cos 双曲差相消守卫，截断 <1e-12）；
+    x≥40 走大宗路（比率与 1 差 <e^−40，返回 x/2 无溢出）。
+    """
+    x = float(x_over_delta)
+    if not (math.isfinite(x) and x > 0.0):
+        raise ValueError(f"x_over_delta 须为正有限，得到 {x_over_delta!r}")
+    if x >= _SKIN_FACTOR_X_EXACT_MAX:
+        return 0.5 * x
+    if x < _SKIN_FACTOR_X_SERIES_MAX:
+        return 1.0 + x**4 / 180.0
+    return 0.5 * x * (math.sinh(x) + math.sin(x)) / (math.cosh(x) - math.cos(x))
+
+
+def dowell_layer_factor(delta: float, m_layers: float) -> float:
+    """Dowell 层叠绕组交流电阻因子（Δ=(t/δ)·√η，m=层数，FD 仲裁钉）：
+
+    F(Δ,m) = Δ·[sinh 2Δ+sin 2Δ]/[cosh 2Δ−cos 2Δ]
+             + (2/3)(m²−1)·Δ·[sinh Δ−sin Δ]/[cosh Δ+cos Δ]。
+
+    首项=趋肤（与层数无关），次项=层间 MMF 堆叠邻近（m=1 恒零）。
+    极限：Δ→0 → 1（Δ<0.05 首项走级数 1+2Δ⁴/45，cancellation 守卫）。
+    大宗 Δ≥40 走渐近 Δ·(1+(2/3)(m²−1))。
+    """
+    d = float(delta)
+    m = float(m_layers)
+    if not (math.isfinite(d) and d > 0.0):
+        raise ValueError(f"delta 须为正有限，得到 {delta!r}")
+    if not (math.isfinite(m) and m >= 1.0):
+        raise ValueError(f"m_layers 须 ≥1，得到 {m_layers!r}")
+    if d >= _SKIN_FACTOR_X_EXACT_MAX:
+        return d * (1.0 + (2.0 / 3.0) * (m * m - 1.0))
+    if d < _SKIN_FACTOR_X_SERIES_MAX / 2.0:
+        first = 1.0 + 4.0 * d**4 / 45.0
+    else:
+        first = d * (math.sinh(2.0 * d) + math.sin(2.0 * d)) \
+            / (math.cosh(2.0 * d) - math.cos(2.0 * d))
+    if m == 1.0:
+        return first
+    second = (2.0 / 3.0) * (m * m - 1.0) * d \
+        * (math.sinh(d) - math.sin(d)) / (math.cosh(d) + math.cos(d))
+    return first + second
+
+
+def _polygon_perimeter(verts: Any) -> float:
+    """闭合多边形环周长（中心线；末点→首点闭合）。"""
+    import numpy as np
+
+    v = np.asarray(verts, dtype=float)
+    nxt = np.roll(v, -1, axis=0)
+    return float(np.sum(np.hypot(*(nxt - v).T)))
+
+
+def _bz_from_segments(segs: list[tuple[Any, Any]], p: Any,
+                      n_gl: int = 8, max_sub: int = 8) -> float:
+    """段集合在平面点 p 产生的 B_z（T，载流 1A）：Biot–Savart 段元线积分。
+
+    B_z = (μ₀I/4π)·∮ (dl_x·Δy − dl_y·Δx)/|Δr|³，Δr = p − r′（共面 z=0）。
+    GL×细分求积（与 _segment_pair_mutual 同机械）；p 落在任段上（距离 0）
+    属自场问题，调用方保证排除自匝。
+    """
+    import numpy as np
+
+    px, py = float(p[0]), float(p[1])
+    xg, wg = np.polynomial.legendre.leggauss(int(n_gl))
+    total = 0.0
+    for a0, a1 in segs:
+        a0 = np.asarray(a0, dtype=float)
+        a1 = np.asarray(a1, dtype=float)
+        d = a1 - a0
+        seg_len = float(np.hypot(d[0], d[1]))
+        if seg_len <= 0.0:
+            raise ValueError("零长度段非法")
+        # 细分 max_sub 份 × n_gl 点 GL（t∈[0,1] 参数化）
+        tt = ((np.arange(max_sub)[:, None] + (xg[None, :] + 1.0) / 2.0)
+              / max_sub)                       # (max_sub, n_gl)
+        rx = a0[0] + tt * d[0]
+        ry = a0[1] + tt * d[1]
+        dx = px - rx
+        dy = py - ry
+        r3 = (dx * dx + dy * dy) ** 1.5
+        if float(r3.min()) <= 0.0:
+            raise ValueError("求积点落在源段上（自场问题混入邻近场求积）")
+        integrand = (d[0] * dy - d[1] * dx) / r3
+        w_flat = np.tile(wg, max_sub) / (2.0 * max_sub)
+        total += float(np.dot(w_flat, integrand.ravel()))
+    return MU0 / (4.0 * math.pi) * total
+
+
+def coil_track_dc_resistance(
+    geom: CoilGeometry,
+    thickness_m: float,
+    resistivity_ohm_m: float = RHO_CU_ANNEALED,
+    circle_sides: int = CIRCLE_SIDES,
+) -> float:
+    """螺旋线圈直流电阻（Ω）：R_dc = ρ·Σ匝中心线周长/(w·t)。
+
+    周长单源=polygon_loop_vertices（across-flats 口径，circle 用
+    circle_sides 离散，128 边对 2πa 误差 −0.024% 如实）。"""
+    geom.validate()
+    if not (thickness_m > 0.0):
+        raise ValueError(f"thickness_m 须为正，收到 {thickness_m!r}")
+    if not (resistivity_ohm_m > 0.0):
+        raise ValueError(f"resistivity_ohm_m 须为正，收到 {resistivity_ohm_m!r}")
+    total_len = sum(
+        _polygon_perimeter(polygon_loop_vertices(geom.shape, a_k,
+                                                 circle_sides=circle_sides))
+        for a_k in _spiral_turn_half_sizes(geom))
+    return resistivity_ohm_m * total_len / (geom.w_m * thickness_m)
+
+
+def coil_esr(
+    geom: CoilGeometry,
+    freq_hz: float,
+    thickness_m: float,
+    *,
+    resistivity_ohm_m: float = RHO_CU_ANNEALED,
+    include_proximity: bool = True,
+    circle_sides: int = CIRCLE_SIDES,
+) -> dict[str, Any]:
+    """单层共面螺旋 ESR(f)（Ω）：R_dc·F_skin(t/δ) + 邻匝数值场邻近项。
+
+    邻近项：其余匝（不含自匝）在各匝采样点的 B_z（Biot–Savart 段元
+    数值线积分，GL 求积）驱动初等薄板涡流 P′/l=ω²B₀²w³t/(12ρ)（RMS），
+    逐匝求和后按 I² 归一（B₀∝I，I 逐位消去）。层叠多层线圈几何请用
+    dowell_layer_factor（槽内 BC 精确口径）。
+
+    Returns:
+        dict：esr_ohm / r_dc_ohm / skin_factor / esr_skin_ohm /
+        esr_proximity_ohm / b0_per_turn_t（逐匝邻近场，T，RMS@1A）/
+        skin_depth_m / x_over_delta / f_lumped_max_hz。
+    """
+    geom.validate()
+    f = float(freq_hz)
+    if not (math.isfinite(f) and f > 0.0):
+        raise ValueError(f"freq_hz 须为正有限，收到 {freq_hz!r}")
+    if not (thickness_m > 0.0):
+        raise ValueError(f"thickness_m 须为正，收到 {thickness_m!r}")
+    if geom.s_m <= 0.0:
+        raise ValueError("s_m 须为正（匝间隙定义域）")
+    # 集总适用域：n·(w+s) ≪ λ/10（模块头口径；超界显式拒绝，不外推）
+    pitch = geom.w_m + geom.s_m
+    f_lumped_max = C0 / (10.0 * geom.n_turns * pitch)
+    if f > f_lumped_max:
+        raise ValueError(
+            f"f={f:.6g} Hz 超出集总适用域上限 c/(10·n·(w+s))="
+            f"{f_lumped_max:.6g} Hz（n·p ≪ λ/10，分布效应不自欺建模）")
+    sigma = 1.0 / resistivity_ohm_m
+    from rfauto.core.conductor_loss import skin_depth
+
+    delta = skin_depth(f, sigma, 1.0)
+    x = thickness_m / delta
+    f_skin = slab_skin_resistance_factor(x)
+    half_sizes = _spiral_turn_half_sizes(geom)
+    verts = [polygon_loop_vertices(geom.shape, a_k, circle_sides=circle_sides)
+             for a_k in half_sizes]
+    total_len = sum(_polygon_perimeter(v) for v in verts)
+    r_dc = resistivity_ohm_m * total_len / (geom.w_m * thickness_m)
+    esr_skin = r_dc * f_skin
+    esr_prox = 0.0
+    b0_per_turn: list[float] = []
+    if include_proximity and geom.n_turns >= 2.0:
+        import numpy as np
+
+        omega = 2.0 * math.pi * f
+        segs = [_loop_segments(v) for v in verts]
+        for k in range(len(verts)):
+            # 采样点=自匝顶点（非段中点，避开自匝奇异性即可；段元无自贡献）
+            samples = np.asarray(verts[k], dtype=float)
+            b_sq_sum = 0.0
+            for j, segs_j in enumerate(segs):
+                if j == k:
+                    continue  # 自场=趋肤项，不计入邻近
+                for p in samples:
+                    b_sq_sum += _bz_from_segments(segs_j, p) ** 2
+            b0 = math.sqrt(b_sq_sum / samples.shape[0])  # RMS@1A
+            b0_per_turn.append(b0)
+            esr_prox += (omega * omega * b0 * b0 * geom.w_m ** 3
+                         * thickness_m / (12.0 * resistivity_ohm_m)
+                         * _polygon_perimeter(verts[k]))
+    return {
+        "esr_ohm": esr_skin + esr_prox,
+        "r_dc_ohm": r_dc,
+        "skin_factor": f_skin,
+        "esr_skin_ohm": esr_skin,
+        "esr_proximity_ohm": esr_prox,
+        "b0_per_turn_t": b0_per_turn,
+        "skin_depth_m": delta,
+        "x_over_delta": x,
+        "f_lumped_max_hz": f_lumped_max,
+        "model": "current_sheet_local_field_thin_slab",
+    }
+
+
+def coil_q_curve(
+    geom: CoilGeometry,
+    f_grid_hz: list[float] | tuple[float, ...],
+    thickness_m: float,
+    *,
+    resistivity_ohm_m: float = RHO_CU_ANNEALED,
+    include_proximity: bool = True,
+    expression: str = "current_sheet",
+    circle_sides: int = CIRCLE_SIDES,
+) -> list[dict[str, float]]:
+    """Q(f)=ωL/ESR(f) 报告面（L 消费 Mohan 拟合式族，Table IV 锚已钉）。
+
+    逐频点 coil_esr；任一频点越集总域/域守卫即抛 ValueError（不静默截断）。"""
+    geom.validate()
+    if not f_grid_hz:
+        raise ValueError("f_grid_hz 不得为空")
+    l_h = spiral_inductance(geom, expression)
+    rows: list[dict[str, float]] = []
+    for f in f_grid_hz:
+        esr = coil_esr(geom, f, thickness_m,
+                       resistivity_ohm_m=resistivity_ohm_m,
+                       include_proximity=include_proximity,
+                       circle_sides=circle_sides)
+        omega = 2.0 * math.pi * float(f)
+        rows.append({
+            "f_hz": float(f),
+            "esr_ohm": esr["esr_ohm"],
+            "l_h": l_h,
+            "q_unloaded": omega * l_h / esr["esr_ohm"],
+        })
+    return rows

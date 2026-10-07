@@ -10,7 +10,7 @@ aedt:
   path: ""
   # gRPC 端口
   grpc_port: 50051
-  # 已测试版本组合（doctor 会核对；实测 2023R1 + 2025R1）
+  # 已测试版本组合（doctor 会核对；实测 2023R1 + 2025R1，2026-08-28 修正）
   tested_versions:
     - "2023R1"
     - "2025R1"
@@ -35,7 +35,7 @@ cache:
 
 # ── 计算器 ──
 calculators:
-  # 实验态计算器开关：符号回归归纳公式等
+  # 实验态计算器开关（W1⑨，2026-09-16 用户口径）：符号回归归纳公式等
   # experimental=True 的键默认拒绝运行；true 放行（也可逐次调用显式
   # allow_experimental=true）。环境变量 RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL
   # 可覆盖（1/true/yes/on）。清单（list_calculators）始终列出并打 experimental 标签。
@@ -48,7 +48,7 @@ workspace:
   runs_dir: runs
 # ── 注册表数据库 ──
 db:
-  # 注册表 SQLite 路径：空 = runs/registry.sqlite（缺省，行为不变）。
+  # 注册表 SQLite 路径（R2-D02 合流）：空 = runs/registry.sqlite（缺省，行为不变）。
   # 环境变量 RFAUTO_REGISTRY_DB 优先级高于本键（env > YAML > 默认，同全局三层口径）。
   path: ""
   # job 注册表持久化（R2-D03 ③半）：true 时 JobRegistry 的 create/finish/fail/
@@ -60,3 +60,21 @@ db:
   # visibility 切换把数据集行同步写进 datasets 表；false 不写库（缺省，零
   # 行为变化）。CLI --registry-sync/--no-registry-sync 显式实参优先于本键。
   dataset_registry_sync: false
+
+# ── Agent 会话注入（AD-2，SK 规格包 V §二）──
+agent:
+  knowledge_injection:
+    # 会话知识注入开关：true 时 chat 链经 RuntimeRequest.extra_system 注入
+    # few-shot+知识参考节（绝不进 get_system_prompt 本体——AD-1 指纹门）。
+    # 缺省 false=零行为变化（#329 纪律）；判分门（agentbench 回归，mock
+    # 通道）过后翻 true（两步预声明，翻开动作记 ）。
+    # 2026-10-05 W5 合流笔翻 true：判分门已过（agentbench 双臂差 0≥−2pp，
+    # W5-A 报告 §判分；注入面指纹解耦钉在），两步预声明的第二步执行。
+    enabled: true
+    # 注入预算（chars，Q4 单账本；null/缺键=用代码内常量缺省）。
+    budgets:
+      snippet: 200
+      source_section: 600
+      section: 1500
+      few_shot: 900
+      extra_system: 2400

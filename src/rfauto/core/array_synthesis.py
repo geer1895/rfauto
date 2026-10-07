@@ -1,4 +1,4 @@
-"""阵列综合内核（单元方向图 × 阵列因子）。
+"""d5-array: 阵列综合内核（单元方向图 × 阵列因子，续跑计划 §10.4 D5）。
 
 权威口径
 ========
@@ -15,8 +15,8 @@
 - C. L. Dolph, "A Current Distribution for Broadside Arrays Which Optimizes the
   Relationship Between Beam Width and Side-Lobe Level", Proc. IRE, 1946.
 - Balanis Ch. 6 §6.10 平面阵（"Planar Array"）：矩形栅格平面阵的阵列因子可分离
-  AF(θ,φ) = AF_x(u)·AF_y(v)，u = sinθcosφ、v = sinθsinφ（2×2 阵列裁判，
-  加法式扩展 planar_array_factor）。
+  AF(θ,φ) = AF_x(u)·AF_y(v)，u = sinθcosφ、v = sinθsinφ（C2 阵列族 2×2 裁判，
+  2026-09-15 加法式扩展 planar_array_factor）。
 - Balanis Ch. 14 微带天线腔模型（"Microstrip Antennas", 传输线/腔模型双缝口径）：
   矩形贴片 = 两条平行的等效磁流缝（长 W、厚 h，相距 L，同相），置于无限大
   地面上（镜像加倍、仅上半空间 θ∈[0°,90°]）；单元方向图闭式
@@ -37,11 +37,12 @@
 - 权重按阵列几何顺序给出；合成加权（uniform/binomial/chebyshev）为对称分布，
   归一化到 max|w| = 1。
 
-验收：对照解析/闭式——均匀阵 AF 闭式、HPBW 公式、栅瓣判据边界、
+验收（§10.4 D5）：对照解析/闭式——均匀阵 AF 闭式、HPBW 公式、栅瓣判据边界、
 Chebyshev 副瓣电平达标、方向图积定理；全波小阵对照属后续工作，不在本模块。
 """
 from __future__ import annotations
 
+import cmath
 import math
 from dataclasses import dataclass
 from math import comb
@@ -57,10 +58,13 @@ __all__ = [
     "aperture_to_n_elements",
     "array_factor",
     "array_factor_angles",
+    "bayliss_weights",
     "binomial_weights",
     "broadside_hpbw_deg",
     "broadside_hpbw_rad",
     "chebyshev_weights",
+    "difference_array_factor",
+    "difference_pattern_psll_db",
     "direction_cosine",
     "field_db",
     "grating_lobe_direction_cosines",
@@ -71,6 +75,7 @@ __all__ = [
     "pattern_multiplication",
     "peak_sidelobe_level_db",
     "planar_array_factor",
+    "schelkunoff_nulls",
     "series_feed_array_factor",
     "series_feed_beam_direction_cosine",
     "series_feed_excitations",
@@ -81,6 +86,7 @@ __all__ = [
     "taylor_weights",
     "uniform_af_closed_form",
     "uniform_weights",
+    "villeneuve_weights",
 ]
 
 AXES = ("z", "x", "y")
@@ -572,7 +578,7 @@ def planar_array_factor(
     """矩形栅格平面阵阵列因子（可分离积，Balanis Ch. 6 §6.10）。
 
     阵元位于 x-y 平面栅格 (m·d_x, n·d_y)，权重可分离 w_mn = w_x[m]·w_y[n]
-    （2×2/矩形阵均匀或逐轴 Chebyshev 加权皆属此类）时
+    （C2 2×2/矩形阵均匀或逐轴 Chebyshev 加权皆属此类）时
         AF(θ,φ) = AF_x(u)·AF_y(v)，u = sinθcosφ，v = sinθsinφ，
     两个因子各为线阵 array_factor（含各自扫描方向余弦 u0/v0）。normalize=True
     时各因子分别归一化，侧射（u=u0,v=v0）峰值为 1。返回复阵列因子，形状为
@@ -845,3 +851,288 @@ def series_feed_array_factor(
         2.0 * np.pi * (wavenumber * d / (2.0 * np.pi)) * u, -1)
         * np.arange(w.size))
     return phase @ w
+
+
+# ─── 差波束/离散修正综合三法（2026-10-05 Phase3 W3-E，RB-ALG-1 加法式扩展，
+# ── 既有 API 逐字节不动）───────────────────────────────────────────────────────
+# 口径：单脉冲差波束经典综合（Bayliss 四参数闭式）与和波束离散零点修正
+# （Villeneuve）+ Schelkunoff 单位圆零点置放。数值只在确定性内核（纯 numpy，
+# 铁律 7）。文献锚（出处逐字）：
+# - E. T. Bayliss, "Design of monopulse antenna difference patterns with low
+#   sidelobes", Bell Syst. Tech. J. 47(4):623-650, 1968（原文数表）；
+#   数表转载复核源 = A. W. Doerry, D. L. Bickel, "Notes on Bayliss Taper for
+#   Monopulse Radar", SAND-2025-07335, Sandia National Laboratories, 2025
+#   （OSTI 2585548，Table 1 = Bayliss 原文 Fig.4 参数多项式系数转载；
+#   #df6-⑬ citation-rot 防御：双源互证——A(30dB)=1.64127 与
+#   ξ1(30dB)=2.07086 两处独立验算锚逐位复现，落 test_w3_e_array_synth.py）。
+# - A. T. Villeneuve, "Taylor patterns for discrete arrays", IEEE Trans.
+#   Antennas Propag. 32(10):1089-1093, 1984（和波束零点离散修正）。
+# - S. A. Schelkunoff, "A mathematical theory of linear arrays", Bell Syst.
+#   Tech. J. 22(1):80-107, 1943（单位圆零点置放）。
+# 差波束约定：2N 元偶数阵、奇对称实权 w=[a_N..a_1, −a_1..−a_N]（broadside
+# 深零为差波束定义恒等式）；归一化 max|w|=1 与本模块 chebyshev/taylor 一致。
+
+_BAYLISS_PARAM_POLY: dict[str, tuple[float, float, float, float, float]] = {
+    # Bayliss 1968 Fig.4 参数多项式系数（Doerry SAND-2025-07335 Table 1 转载，
+    # 双源锚定求值约定 Parameter(S) = Σ_k C_k·(−S)^k，S=正 dB）：
+    # 锚1 A(30)=+1.64127、锚2 ξ1(30)=+2.07086（PMC12115648 §Table2 验算值
+    # 1.6413/2.0708 逐位复现，test_w3_e_array_synth.py 钉死）。
+    "A": (0.30387530, -0.05042922, -0.00027989, -0.00000343, -0.00000002),
+    "xi1": (0.98583020, -0.03338850, 0.00014064, 0.00000190, 0.00000001),
+    "xi2": (2.00337487, -0.01141548, 0.00041590, 0.00000373, 0.00000001),
+    "xi3": (3.00636321, -0.00683394, 0.00029281, 0.00000161, 0.00000000),
+    "xi4": (4.00518423, -0.00501795, 0.00021735, 0.00000088, 0.00000000),
+}
+"""Bayliss 参数（A、设计零点 ξ1..ξ4）对副瓣电平 S 的四次多项式系数。
+
+转录源：Doerry SAND-2025-07335 Table 1（=Bayliss 1968 原文 Fig.4 拟合多项
+式）；求值约定 Parameter(S)=Σ C_k·(−S)^k（S 为正 dB）由两处独立验算锚定
+（见测试常量）。p0（峰位参数）不参与权向量构造，故不转录。
+"""
+
+
+def _bayliss_parameter(name: str, sidelobe_db_positive: float) -> float:
+    c = _BAYLISS_PARAM_POLY[name]
+    s = float(sidelobe_db_positive)
+    return float(c[0] + c[1] * (-s) + c[2] * s * s + c[3] * (-s) ** 3
+                 + c[4] * s ** 4)
+
+
+def _bayliss_zeros_and_bm(sll_db: float, nbar: int,
+                          refine_scale: float = 1.0) -> np.ndarray:
+    """Bayliss 孔径 Fourier 系数 B_m（零点=数表零点×σ×refine_scale）。
+
+    零点表（Bayliss 1968；Doerry eq.19）：Z_0=0；Z_n=±ξ_n（n=1..4，移动过的
+    设计零点）；Z_n=±√(n²+A²)（n≥5，理想模型自然零点）。基础膨胀因子
+    σ=Z_{N+1}/Z_N（Doerry eq.21，Taylor 式边界匹配）；refine_scale 为兑现
+    "PSLL 回收=声明电平"门的确定性精化标量（见 bayliss_weights docstring）。
+    B_m（Doerry eq.36，(−1)^m 相位按实测形态定案——probe 2026-10-05：无
+    (−1)^m 时孔径退化为单调瓣、方向图无等纹波结构）。**B_m 必须随最终零点
+    集重算**（零点缩放与 B_m 脱钩会使精化失效，probe_scale2 实证）。
+    """
+    s = abs(float(sll_db))
+    big_a = _bayliss_parameter("A", s)
+    xi = [_bayliss_parameter(f"xi{i}", s) for i in range(1, 5)]
+    big_n = int(nbar)
+    # Z[1..N]：设计零点（n≤4 取 ξ_n，n≥5 取自然零点）；Z[N+1] 为边界匹配点
+    zeros = [xi[i - 1] if i <= 4 else math.sqrt(i * i + big_a * big_a)
+             for i in range(1, big_n + 1)]
+    z_next = (math.sqrt((big_n + 1) ** 2 + big_a * big_a) if big_n + 1 > 4
+              else xi[big_n])
+    sigma = z_next / zeros[-1]
+    zd = np.asarray(zeros, dtype=float) * (sigma * float(refine_scale))
+    m = np.arange(big_n, dtype=float)
+    u_m = m + 0.5
+    numer = np.prod(1.0 - u_m[:, None] ** 2 / zd[None, :] ** 2, axis=1)
+    l_idx = np.arange(big_n, dtype=float) + 0.5
+    denom = np.array([
+        np.prod(1.0 - u_m[i] ** 2 / np.delete(l_idx, i) ** 2)
+        for i in range(big_n)])
+    b_m = (u_m ** 2) * numer / denom * ((-1.0) ** m)
+    return zd, b_m
+
+
+def difference_pattern_psll_db(weights: np.ndarray,
+                               n_points: int = 60001) -> float:
+    """差波束 PSLL（dB，相对差主瓣峰）：|AF| 在 u∈(0,1] 的局部峰中，
+    距 broadside 零点最近的峰=差主瓣（差波束定义），其余峰取最大。
+
+    直接求值核（与 difference_array_factor 同式）：差波束权和恒为 0，
+    不可经 ``array_factor``（其校验拒绝零和权）。
+    """
+    w = np.asarray(weights, dtype=float)
+    u = np.linspace(1e-6, 1.0, n_points)
+    phase = np.exp(1j * np.expand_dims(np.pi * u, -1) * np.arange(w.size))
+    mag = np.abs(phase @ w)
+    idx = np.nonzero((mag[1:-1] >= mag[:-2]) & (mag[1:-1] >= mag[2:]))[0] + 1
+    if idx.size < 2:
+        raise ValueError("差波束在可见区不足两个瓣（无法定义副瓣），"
+                         "增大 n_elements")
+    main = float(mag[idx[0]])
+    if main <= 0.0:
+        raise ValueError("差主瓣峰值为 0")
+    return float(20.0 * np.log10(float(mag[idx[1:]].max()) / main))
+
+
+def difference_array_factor(direction_cosines, weights) -> np.ndarray:
+    """差波束阵列因子（直接求值核，**零和权**专用）。
+
+    差波束权向量为奇对称（权和恒为 0），被 ``array_factor`` 的
+    ``_validate_weights`` 零和守卫拒绝——本函数为差波束专用求值（与
+    ``array_factor`` 复指数核同式：AF(u)=Σ wₙ·exp(jπu·n)，d=λ/2 口径、
+    u 为方向余弦、不归一），并校验奇对称性（w[−k]=−w[k]，容差 1e-10）。
+    """
+    w = np.asarray(weights, dtype=float)
+    if w.ndim != 1 or w.size < 2 or w.size % 2 != 0:
+        raise ValueError(
+            f"差波束权重须为偶数长度一维数组（2N 元），收到 shape={w.shape}")
+    if not np.all(np.isfinite(w)):
+        raise ValueError("weights 含非有限值（nan/inf）")
+    half = w[: w.size // 2]
+    if not np.allclose(w[w.size // 2:], -half[::-1], atol=1e-10):
+        raise ValueError("差波束权重不满足奇对称 w[-k]=-w[k]")
+    u = np.asarray(direction_cosines, dtype=float)
+    phase = np.exp(1j * np.expand_dims(np.pi * u, -1) * np.arange(w.size))
+    return phase @ w
+
+
+def bayliss_weights(
+    n_elements: int,
+    sidelobe_level_db: float,
+    *,
+    nbar: int | None = None,
+) -> np.ndarray:
+    """Bayliss 差波束权向量（2N 元偶数阵，奇对称实权，max|w|=1）。
+
+    四参数闭式（Bayliss 1968）：参数 A 与设计零点 ξ1..ξ4 由副瓣电平的四次
+    拟合多项式给出（数表内嵌 ``_BAYLISS_PARAM_POLY``，双源验算锚见测试）；
+    零点表 Z_0=0、±ξ_n(n≤4)、±√(n²+A²)(n≥5)，膨胀 σ=Z_{N+1}/Z_N，孔径
+    Fourier 系数 B_m 按零点乘积式构造，2N 元阵取孔径采样并奇对称化。
+
+    与原文 σ 取法的偏差（如实声明）：原文 σ=Z_{N+1}/Z_N 使**渐近包络**的
+    等纹波=设计电平；有限 nbar 的离散实现 PSLL 系统性偏深（nbar=10@−30dB
+    实测 −31.2dB，probe 2026-10-05）。为兑现"PSLL 回收=声明电平"的预声明
+    门（spec §7.3-1），本实现将**单一膨胀标量**做确定性二分精化（约 40 轮
+    一维单调求根，无随机性），使离散方向图实测 PSLL=声明值（±0.05dB 收敛
+    带）；零点位置的 Bayliss 数表出处与相对形状不变。
+
+    参数
+    ----
+    n_elements : 偶数（≥8）；差波束要求奇对称、中心无单元。
+    sidelobe_level_db : 负 dB（相对差主瓣峰的副瓣电平声明值）。
+    nbar : 等纹波零点对数 N（Bayliss/Doerry 的 N）；None=自动 min(7, n//2)；
+      须 4 ≤ nbar ≤ n_elements//2。
+
+    返回
+    ----
+    长度 n_elements 的一维实数组 [a_N..a_1, −a_1..−a_N]，max|w|=1。
+    """
+    n = int(n_elements)
+    if n < 8 or n % 2 != 0:
+        raise ValueError(
+            f"n_elements 须为 ≥8 的偶数（差波束奇对称 2N 元阵），收到 {n_elements!r}")
+    sll = float(sidelobe_level_db)
+    if not np.isfinite(sll) or sll >= 0.0:
+        raise ValueError(
+            f"sidelobe_level_db 必须为负的有限值（dB），收到 {sidelobe_level_db!r}")
+    half = n // 2
+    big_n = int(min(7, half)) if nbar is None else int(nbar)
+    if big_n < 4 or big_n > half:
+        raise ValueError(
+            f"nbar 须落在 [4, n_elements//2={half}]，收到 {nbar!r}")
+    s = abs(sll)
+
+    def build(scale: float) -> np.ndarray:
+        _, b_m = _bayliss_zeros_and_bm(s, big_n, refine_scale=scale)
+        j = np.arange(1, half + 1, dtype=float)
+        half_w = b_m @ np.sin(
+            np.pi * (np.arange(big_n, dtype=float)[:, None] + 0.5)
+            * (j[None, :] - 0.5) / half)
+        w = np.concatenate([half_w[::-1], -half_w])
+        return w / np.abs(w).max()
+
+    # 单调二分：膨胀越大零点越外推、副瓣越深（probe 2026-10-05 实测单调）。
+    lo, hi = 0.75, 1.6
+    scale = 1.0
+    for _ in range(48):
+        scale = 0.5 * (lo + hi)
+        realized = difference_pattern_psll_db(build(scale))
+        if realized > sll:      # 偏浅 -> 零点再外推
+            lo = scale
+        else:                   # 偏深 -> 零点回拉
+            hi = scale
+    return build(scale)
+
+
+def villeneuve_weights(
+    n_elements: int,
+    sidelobe_level_db: float,
+    nbar: int = 4,
+) -> np.ndarray:
+    """Villeneuve 和波束权向量（Taylor 零点的离散阵精确修正，max|w|=1）。
+
+    口径（Villeneuve 1984）：均匀阵多项式 z^N−1 的零点 ψ_k=2πk/N 成对
+    ±ψ_k（偶 N 另有 ψ=π 单零点）；内侧 k=1..nbar−1 对零点按 Taylor 零点
+    公式重置：ψ_k = (2π/N)·σ·√(A²+(k−½)²)，A=acosh(R)/π、
+    σ=nbar/√(A²+(nbar−½)²)（nbar-th 零点与自然零点边界匹配，k≥nbar 保持
+    自然零点）。权向量=阵列多项式 Π(z−z_k) 系数（共轭零点对→实系数），
+    归一化 max|w|=1。
+
+    nbar=1 时无内侧重置 → 退化为均匀阵（自然锚，test_w3_e_array_synth
+    钉死）。n_elements ≥ 2·nbar（内侧修正零点须落在阵列多项式阶数内）。
+    """
+    n = int(n_elements)
+    if n < 2:
+        raise ValueError(f"n_elements 至少为 2，收到 {n_elements!r}")
+    nb = int(nbar)
+    if nb < 1:
+        raise ValueError(f"nbar 至少为 1，收到 {nbar!r}")
+    if nb * 2 > n:
+        raise ValueError(
+            f"nbar（{nb}）须满足 2·nbar ≤ n_elements（{n}）")
+    sll = float(sidelobe_level_db)
+    if not np.isfinite(sll) or sll >= 0.0:
+        raise ValueError(
+            f"sidelobe_level_db 必须为负的有限值（dB），收到 {sidelobe_level_db!r}")
+    ratio = 10.0 ** (-sll / 20.0)
+    big_a = float(np.arccosh(ratio)) / np.pi
+    sigma = nb / math.sqrt(big_a * big_a + (nb - 0.5) ** 2)
+    n_pairs = (n - 1) // 2
+    angles: list[float] = []
+    for k in range(1, n_pairs + 1):
+        psi = ((2.0 * math.pi / n) * sigma
+               * math.sqrt(big_a * big_a + (k - 0.5) ** 2)
+               if k < nb else 2.0 * math.pi * k / n)
+        if abs(psi) >= math.pi:
+            raise ValueError(
+                f"设计零点 ψ={psi:.4f} 越出单位圆主区间（nbar/n_elements 过大）")
+        angles.append(psi)
+    roots = [cmath.exp(1j * psi) for psi in angles]
+    roots += [cmath.exp(-1j * psi) for psi in angles]
+    if n % 2 == 0:
+        roots.append(complex(-1.0, 0.0))     # 偶 N 的 ψ=π 单零点
+    coeffs = np.poly(roots)
+    w = np.real(coeffs)
+    if np.abs(w).max() <= 0.0 or not np.all(np.isfinite(w)):
+        raise ValueError("Villeneuve 多项式系数退化（数值溢出），减小 nbar")
+    return w / np.abs(w).max()
+
+
+def schelkunoff_nulls(
+    n_elements: int,
+    null_positions,
+    *,
+    spacing_lambda: float = 0.5,
+) -> np.ndarray:
+    """Schelkunoff 单位圆零点置放：给定 n−1 个零方向，返回权向量。
+
+    口径（Schelkunoff 1943）：阵列多项式 E(z)=Σ w_m z^m 的零点放在单位圆
+    z_k=exp(jψ_k) 上，ψ_k=2π·(d/λ)·u_k（u_k 为方向余弦，任意实数、按
+    2π wrap 到 (−π,π]；|u_k|>1 的零点为不可见区续延，与多项式恒等式无碍）。
+    多项式系数即激励；零点共轭对称（±ψ 成对）时系数为实，否则为复——
+    实/复自动判定（max|Im| ≤ 1e-8·max|Re| 取实）。归一化 max|w|=1。
+
+    恒等式锚（test_w3_e_array_synth 钉死）：给全 (n−1) 个均匀阵自然零点
+    u_k=k·λ/(N·d)（d=λ/2 时 u_k=2k/N）→ 权向量=uniform（多项式恒等
+    z^{N−1}+…+1）；含 u=0 零点 → broadside 深零。
+    """
+    n = int(n_elements)
+    if n < 2:
+        raise ValueError(f"n_elements 至少为 2，收到 {n_elements!r}")
+    spacing = _validate_spacing(spacing_lambda)
+    u = np.asarray(null_positions, dtype=float).ravel()
+    if u.size != n - 1:
+        raise ValueError(
+            f"null_positions 须含 n−1={n - 1} 个零方向，收到 {u.size}")
+    if not np.all(np.isfinite(u)):
+        raise ValueError("null_positions 含非有限值（nan/inf）")
+    psi = 2.0 * math.pi * spacing * u
+    psi = (psi + math.pi) % (2.0 * math.pi) - math.pi
+    roots = np.exp(1j * psi)
+    coeffs = np.poly(roots)
+    re_max = float(np.abs(np.real(coeffs)).max())
+    if re_max <= 0.0 or not np.all(np.isfinite(coeffs)):
+        raise ValueError("Schelkunoff 多项式系数退化（数值溢出）")
+    w = (np.real(coeffs) if float(np.abs(np.imag(coeffs)).max())
+         <= 1e-8 * re_max else coeffs)
+    return w / np.abs(w).max()

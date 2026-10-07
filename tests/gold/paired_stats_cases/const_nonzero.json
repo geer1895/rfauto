@@ -1,0 +1,23 @@
+{
+ "schema": "rfauto-paired-stats-guard/1",
+ "n_pairs": 20,
+ "arm_a": "a",
+ "arm_b": "b",
+ "mean_diff": 1.000000082740371e-09,
+ "ci95_low": 1.000000082740371e-09,
+ "ci95_high": 1.000000082740371e-09,
+ "effect_size": null,
+ "noise_sigma": 0.0,
+ "snr": null,
+ "mde": 0.5,
+ "verdict": "requires_investigation",
+ "reason": "配对差为非零常数（sd=0，值=1e-09）：配对 d 无定义、MDE 门不适用——疑似 ulp 级系统偏移（#294/#287 族），须人工归因（来源/双源仲裁）后才能断言",
+ "notes": [
+  "sd(diff)=0 常数差：effect_size/snr 不可估（记 None 不虚构）；bootstrap CI 退化为点值"
+ ],
+ "bootstrap": {
+  "n_boot": 10000,
+  "seed": 0,
+  "ci_level": 0.95
+ }
+}

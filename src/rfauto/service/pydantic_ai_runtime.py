@@ -1,6 +1,6 @@
 """pydantic-ai Runtime：AgentRuntime 协议的 pydantic-ai 实现（WP3.1）。
 
-方案行（runtime 通道可替换，pydantic_ai 实现）：
+方案行（docs/续跑计划.md「第 3 期」WP3.1 + TODO 〇-c）：
 实现协议注册 ``runtime: pydantic_ai``，与 builtin A/B token 效率后再决定是否
 切默认。选择入口已有：configs/chat_settings.yaml 的 ``runtime:`` 键
 （r3_services._llm_turn 读 raw.get("runtime", "builtin") → RuntimeRegistry.create，
@@ -13,7 +13,7 @@
   路径不阻塞主链路）。
 - 库内 API 全部懒加载 + 防御式取值，token 字段同时兼容 1.x 前后两代命名
   （input_tokens/request_tokens/prompt_tokens 等，见 extract_usage）。
-- 真实 API 口径按上游源码核对（1.x 源码与 venv 实装
+- 真实 API 口径按上游源码核对（2026-09-13 zread 1.x；2026-09-15 venv 实装
   pydantic-ai-slim 2.43.0 逐项 introspect 复核）：
   · OpenAIChatModel(model_name, *, provider=...)；2.x 已删旧名 OpenAIModel
     （getattr 回退只为 <1.0 兼容）；OpenAIProvider(base_url, api_key,
@@ -41,9 +41,9 @@ build_pai_agent 离线可构造（不发请求），装了库的环境跑真类�
 
 A/B 仪表见 runtime_ab.py（离线结构 A/B + live 真模型 A/B）。默认裁决口径
 runtime_ab.recommend_default（真机留档 + 库可用 + 省 ≥5% 三条件）；裁决留档
-scripts/runtime_ab_live_out/evidence.json，配置键 ``runtime:`` 随时可回滚。
+runs/runtime_ab_live_out/evidence.json（E-10 起出代码树），配置键 ``runtime:`` 随时可回滚。
 
-默认裁决（真机 A/B，3×2 交替，max_rounds=6）：**维持
+默认裁决（2026-09-15 真机 A/B，mimo-v2.5-pro，3×2 交替，max_rounds=6）：**维持
 builtin**——模型上报总 token 均值 builtin 17663 vs pydantic_ai 18135（pydantic_ai
 多用 2.7%，未达省 5% 门槛）；pydantic_ai 3 次中 1 次 budget_exhausted（无 builtin
 的末段催办注入，模型把 6 轮预算全花在 run_detail 探索上），公平性未满足。该次
@@ -459,6 +459,16 @@ class PydanticAIRuntime(AgentRuntime):
         self._runner = runner or default_pydantic_ai_runner
 
     def submit(self, request: RuntimeRequest, executor: ToolExecutor) -> RuntimeResult:
+        # 审查 P2-2（2026-10-05）：extra_system（AD-2 知识注入面）当前仅
+        # builtin 运行时消费——pydantic_ai 路径收到非空 extra_system 时如实
+        # 告警（不静默失效；#122 不装死的诚实面），知识注入走 builtin。
+        _extra = getattr(request, "extra_system", None)
+        if _extra:
+            import logging
+            logging.getLogger(__name__).warning(
+                "pydantic_ai 运行时不消费 RuntimeRequest.extra_system"
+                "（%d chars 将被忽略）——知识注入需走 builtin 运行时",
+                len(_extra))
         usage = RuntimeUsage()
         tools_used: list[str] = []
         lock = threading.Lock()  # pydantic-ai 同响应多工具并发执行（sync 工具走线程池）

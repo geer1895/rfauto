@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.optimization.surrogate_loop import DEFAULT_VIRTUAL_TRIALS
+from rfauto.service.envelope import error_envelope
 
 
 def _make_evaluate_fn(
@@ -65,12 +66,18 @@ def surrogate_optimize(
     uncertainty_tol: float | None = None,
     uncertainty_rounds: int = 1,
     uncertainty_pool: int = 128,
+    registry_write: bool | None = None,
 ) -> dict[str, Any]:
     """代理寻优环服务入口：`rfauto tune --sampler sbo` 的后端。
 
     B5 不确定度终止判据透传（uncertainty_tol/rounds/pool 同名同义，见
     surrogate_loop.run_surrogate_loop）：仅服务层可编程入口暴露，
     CLI/MCP 不暴露；tol=None（缺省）时行为逐字节不变。
+
+    RB-ML-1 训练写点（registry_write 三态，缺省 None=env/
+    RFAUTO_SURROGATE_REGISTRY_WRITE 裁决）：开时环尾把最终代理 upsert 进
+    代理模型资产注册表（heldout 强制，best-effort #105；结果带
+    registry_upsert 键）。channel=adapter_name、template_family=配方 model。
     """
     import yaml
 
@@ -82,24 +89,28 @@ def surrogate_optimize(
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方文件不存在: {path}"]}
+        return error_envelope([f"配方文件不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe_data = yaml.safe_load(f)
 
     param_ranges = extract_param_ranges(recipe_data)
     if not param_ranges:
-        return {"ok": False, "errors": [
-            "无可选优化参数。请在配方中添加 optimization.params 段或 params.<name>.bounds。"]}
+        return error_envelope(
+            [
+            "无可选优化参数。请在配方中添加 optimization.params 段或 params.<name>.bounds。"],
+        )
     objectives = [Objective(**o) for o in recipe_data.get("objectives", [])]
     if not objectives:
-        return {"ok": False, "errors": ["缺少 objectives 段"]}
+        return error_envelope(["缺少 objectives 段"])
     # gain_db 依赖 far_field（build_objective 有远场分支，本服务环的
     # evaluate_fn 未接远场）——显式拒绝而非静默跳过（审查 P1-2：缺失
     # 键会被 evaluate_objectives 计 0 → cost 恒 0 → 环假收敛）
     if any(o.metric == "gain_db" for o in objectives):
-        return {"ok": False, "errors": [
-            "sbo 路径暂不支持 gain_db 目标（远场指标未接入代理环 evaluate_fn）"]}
-    # E10 约束段：optimization.constraints（元素结构同 objectives）
+        return error_envelope(
+            [
+            "sbo 路径暂不支持 gain_db 目标（远场指标未接入代理环 evaluate_fn）"],
+        )
+    # E10 约束段（P2⑥）：optimization.constraints（元素结构同 objectives）
     # 解析后透传给代理环软约束通道——此前显式拒绝（"sbo 路径无软约束通道"），
     # 现 run_surrogate_loop 已补齐（违约量 ≥0/≤0 可行 + 最优可行 best 语义，
     # 镜像 optimizer.py tpe 路径）。元素须为 dict（同 optimizer.py:731 口径），
@@ -107,7 +118,7 @@ def surrogate_optimize(
     constraints: list[Any] = []
     for c in (recipe_data.get("optimization") or {}).get("constraints") or []:
         if not isinstance(c, dict):
-            return {"ok": False, "errors": [f"constraints 元素须为 dict: {c!r}"]}
+            return error_envelope([f"constraints 元素须为 dict: {c!r}"])
         constraints.append(Objective(**c))
     # quota_guard 口径对齐 optimizer.py：显式参数与 recipe.limits 取更严者
     # （P2：sbo 路径此前不读 recipe.limits，配方配额对代理环不生效）
@@ -123,7 +134,7 @@ def surrogate_optimize(
         _prepare_env(recipe_data, adapter_name=adapter_name,
                      adapter_kwargs=adapter_kwargs))
     if adapter is None:
-        return {"ok": False, "errors": [prep_err]}
+        return error_envelope([prep_err])
 
     bounds = {k: (float(v["low"]), float(v["high"]))
               for k, v in param_ranges.items()}
@@ -133,6 +144,18 @@ def surrogate_optimize(
         constraints=constraints or None)
 
     t0 = time.time()
+    # RB-ML-1 训练写点三态裁决（#277 形态：显式 > env > False）
+    reg_write = registry_write
+    if reg_write is None:
+        from rfauto.optimization.model_registry import registry_write_enabled
+        reg_write = registry_write_enabled()
+    registry_meta: dict[str, Any] | None = None
+    if reg_write:
+        registry_meta = {
+            "enabled": True,
+            "template_family": str(recipe_data.get("model") or ""),
+            "channel": str(adapter_name),
+        }
     try:
         result = run_surrogate_loop(
             bounds, objectives, evaluate_fn,
@@ -142,7 +165,8 @@ def surrogate_optimize(
             constraints=constraints or None,
             uncertainty_tol=uncertainty_tol,
             uncertainty_rounds=uncertainty_rounds,
-            uncertainty_pool=uncertainty_pool)
+            uncertainty_pool=uncertainty_pool,
+            registry_meta=registry_meta)
     finally:
         adapter.close()
     elapsed = time.time() - t0

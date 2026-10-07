@@ -44,7 +44,7 @@ class TestValidateObjectName:
         "TraceArm1", "PortInput", "AirBox", "IsolationResistor",
     ])
     def test_valid_names_pass(self, good_name):
-        """语义化名称不应抛异常。"""
+        """语义化名称不应抛异常（不抛即过）。"""
         validate_object_name(good_name)
 
     @pytest.mark.parametrize("bad_name", [
@@ -125,14 +125,15 @@ class TestWilkinsonBuildVariables:
         # 固定结构参数
         assert "sub_h" in var_dict
         assert "sub_w" in var_dict
-        # sub_l 已移除：基板 Y 长度由 (arm_len+out_len+in_len) 派生（未使用的 50mm 设计变量会在每次导出的 Variables 块中造成误导）
+        # sub_l 已移除：基板 Y 长度由 (arm_len+out_len+in_len) 派生（P1 审查，
+        # 未使用的 50mm 设计变量会在每次导出的 Variables 块中造成误导）
         assert "sub_l" not in var_dict
         assert "copper_t" in var_dict
         assert "gap" in var_dict
         assert "in_len" in var_dict
         assert "out_len" in var_dict
         assert "air_margin" in var_dict
-        # 结构细节变量（魔法数字收编进变量通道）
+        # 结构细节变量（P1 审查：魔法数字收编进变量通道）
         assert "junction_len" in var_dict
         assert "resistor_offset" in var_dict
         assert "port_clear" in var_dict

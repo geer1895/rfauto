@@ -37,7 +37,7 @@ class TestFakeAdapterBasics:
 
     def test_close(self, fake_adapter):
         fake_adapter.connect({})
-        fake_adapter.close()
+        fake_adapter.close()  # 不抛即过：close 幂等干净（无异常即契约）
 
 
 class TestFakeAdapter3Port:

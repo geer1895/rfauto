@@ -111,7 +111,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 
 ```
 ✓ 仿真完成  run_id: 20260925_062950_1a6365e9
-  run 目录: runs/20260925_062950_1a6365e9
+  run 目录: D:/rf_workspace\runs\20260925_062950_1a6365e9
   cost: 7.424965102246688
   指标:
     s11_db_max_in_band: -8.0835
@@ -156,6 +156,19 @@ rfauto runs health 20260925_062950_1a6365e9
 `rfauto runs health --help` 与 docs/reference.md 指针。
 
 ## 7. 下一步
+
+四篇进阶教程（都假设你已走完本文）：
+
+- 想查、读懂并消费物理标定锚（跨引擎系统偏差的"换算基准"）：
+  docs/tutorials/anchor-guide.md
+- 想跑真电磁求解（openEMS 直连面：离线审计 → 真跑 → 读 S 参数）：
+  docs/tutorials/real-simulation.md
+- 想把归档判读用今天的判据重放一遍（RECAST 判据重放）：
+  docs/tutorials/recast-walkthrough.md
+- 想给 rfauto 加适配器/计算器/通道/模板（基类+注册表四条标准路径）：
+  docs/tutorials/extending-rfauto.md
+
+专题手册：
 
 - 想跑真实 openEMS 冒烟：docs/how-to/run-openems-smoke.md
 - 想做链路预算/混频杂散规划：docs/how-to/cascade-budget-and-spur.md

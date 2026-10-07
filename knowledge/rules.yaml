@@ -1,6 +1,6 @@
-# 知识库
+# 知识库（§11，P6 激活）
 # 初值估计公式 / 诊断启发式规则
-# 当前为占位，后续由 events 数据逐步反哺
+# 当前为占位，P6 阶段由 events 数据逐步反哺
 
 rules:
   - id: R001
@@ -39,7 +39,7 @@ rules:
     applicable_models:
       - all
 
-  # --- G0 gate findings ---
+  # --- G0 gate findings (2026-09) ---
   - id: R005
     category: linewidth
     description: "rogers4350b_h0.508 微带线宽定案值"
@@ -85,7 +85,7 @@ rules:
     applicable_models:
       - branchline_coupler
 
-  # --- 预筛通道调查（v1 收官）---
+  # --- v1 收官调查（2026-09-05，docs/fake_channel_investigation.md）---
   - id: R008
     category: architecture
     description: "预筛通道定案：校准代理（NN），fake/公式通道不承担预筛"
@@ -97,15 +97,15 @@ rules:
       冒烟/CI/UI 通道。权威公式的正确位置：综合层、代理物理特征、
       锚反推——不承担响应预测。
     evidence: |
-      预筛通道调查（五级实验 E1-E4/G-asset/
-      E-gate/E5/E6 全数据 + 可复跑脚本 + 重开条件，结论已内化为本条规则）
+      docs/fake_channel_investigation.md（五级实验 E1-E4/G-asset/
+      E-gate/E5/E6 全数据 + 可复跑脚本 + 重开条件）
     reopen_conditions:
       - "HFSS 仲裁裁决 openEMS 谷位残差为 openEMS 侧问题"
       - "代理 vs HFSS 配对 ρ<0.8（预筛价值主张失效）"
     applicable_models:
       - all
 
-  # --- patch 校准战役前置教训（未开跑即修三处）---
+  # --- patch 校准战役前置教训（2026-09-05，未开跑即修三处）---
   - id: R009
     category: campaign
     description: "patch 校准战役前置检查清单（辐射器件专属）"
@@ -123,7 +123,18 @@ rules:
          patch 冒烟脚本 runs/audit_freq_scale/smoke_patch.py（auto 网格
          +36000s 已配好），判据：谷位 2.2-2.6GHz 且深度 ≤-10dB。
     evidence: |
-      patch 冒烟超时实测记录；TEMPLATE_META patch 条目；
+      2026-09-05 patch 冒烟超时节；TEMPLATE_META patch 条目；
       recipes/patch_antenna_v1.yaml（feed_offset 披露注释）
     applicable_models:
       - patch_antenna
+
+  # --- MS-3 去嵌方法选择（SB22 4a，2026-10-05 W4-D，service 面零 CLI/MCP/CALC）---
+  - id: R010
+    category: deembedding
+    description: "去嵌方法按夹具形态分域选择：分布线夹具（2x-thru 电长）首选 P370 NZC 或自研 γ 差分链；电短夹具（集总等效域）可将对切 SplitTee/SplitPi 纳入候选；夹具阻抗偏离参考阻抗时给阻抗先验可回收（z0_prior_inhouse）；对切法前提是 2x-thru 对称（S11 约等于 S22）；ZC 变体在合成语料不达标（DP-15 C2 在档结论），结果照出不设门"
+    formula: "理想基线门：适用域内 gated 方法 s_error_max < 1e-6（referee gate_threshold 同口径）；ΔZ 取 0.5/1/3Ω 三档时无先验 γ 差分链 s_error 单调上升不少于 1 个数量级"
+    verify:
+      test: "tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline"
+      runner: "pytest"
+    applicable_models:
+      - all

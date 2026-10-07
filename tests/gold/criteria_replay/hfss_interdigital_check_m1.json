@@ -1,0 +1,19 @@
+{
+  "schema": "rfauto-criteria-replay-snapshot/1",
+  "criteria_stem": "hfss_interdigital_check_m1",
+  "criteria_id": "hfss_interdigital_check_m1",
+  "decision_rule_form": "nearest_reference_gate",
+  "evidence_path": null,
+  "artifact": {
+    "verdict": "UNDECIDED",
+    "reason": "合成最小样本：preflight 无合格级（eligibility 不过）——UNDECIDED 不判向不消耗 M1",
+    "curves": {},
+    "references": {"circuit": 0.0, "sentinel": -14.4657, "m1_gate_db": 0.5}
+  },
+  "expect": {
+    "replay_verdict": null,
+    "replay_vv_status": null,
+    "direction": "not_judged"
+  },
+  "note": "合成自足样本：nearest_reference_gate 为登记 not_machine_replayable 形态（core/recast.py 模块 docstring 预声明；bespoke 重放钉在 tests/unit/test_vv_recast.py）——快照钉注册面本身：重放侧恒 None+归档 UNDECIDED 开向 → direction=not_judged（如实不虚构判向）。归档口径与 runs/hfss_interdigital_check/verdict.json 现行 UNDECIDED 一致（只读拷贝口径，零改写原件）。"
+}

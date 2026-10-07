@@ -1,0 +1,6 @@
+{
+  "expect_verdict": "not_assertable",
+  "mde": null,
+  "n_pairs": 40,
+  "story": "#294 形：注入 ulp 级名义差 1e-12 被噪声（sigma=0.05, n=40）淹没——CI 含 0，差异不可断言"
+}

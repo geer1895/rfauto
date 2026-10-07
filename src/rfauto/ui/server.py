@@ -3,20 +3,70 @@
 设计红线：路由是薄壳，全部业务在 service/ui_service.py（JSON 进出）；
 只读 endpoints 无副作用，POST /api/run 复用 service.run_once（单写锁在那层）。
 启动：rfauto ui（默认 127.0.0.1:8642，不对外网监听）。
+
+双 HTTP 面职责边界（A-2，code_audit_slice6）：本模块是**人工工作台**
+（api/*，loopback 8642，浏览器交互消费）；程序化 REST 面在
+service/rest_api.py（api/v1/*，传输壳禁业务逻辑，8644）——两边各自独立
+路由表，新增能力按消费方选面，不在两边互相转发。
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
+from starlette.datastructures import MutableHeaders
+from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 _STATIC_DIR = Path(__file__).parent / "static"
+
+# D-04（2026-10-05 W1-E）：CSP 响应头——script-src 'self' + 唯一内联脚本的
+# 内容哈希钉。接地（index.html 现状）：6 个 <script> 中 5 个外链
+# （3 vendor + 2 module），唯一内联是 <script type="importmap">——外部
+# importmap 浏览器不支持（改外链不可行），'unsafe-inline' 又会豁免全部
+# 内联脚本，故按 CSP3 对该 JSON 内容做 sha256 哈希钉：importmap 内容任何
+# 改动都会被浏览器拒绝加载，tests/unit/test_w1e_ui_csp.py 会同步抓出
+# 哈希失配。只下 script-src 单指令、不下 default-src（index.html 有内联
+# <style> 与 style="" 属性，default-src 'self' 会连带禁掉内联样式打断
+# 现有渲染）；页内处理器全部是 JS 侧 .onclick= 属性赋值（非 HTML 内联
+# on* 属性），不受 script-src 影响；vendor/echarts.min.js 里的 new Function
+# 是 JSON.parse 守卫后的死回退分支（实测运行路径不触），无需 unsafe-eval。
+_IMPORTMAP_SHA256 = "sha256-IpwqAkJYJf7czCtp9NzVZDetH2T3BlxA1lkI/4V7auk="
+CSP_HEADER = "Content-Security-Policy"
+CSP_VALUE = f"script-src 'self' '{_IMPORTMAP_SHA256}'"
+
+
+class ContentSecurityPolicyMiddleware:
+    """纯 ASGI 中间件：全部 HTTP 响应附加 CSP 头（D-04）。
+
+    setitem 覆写语义保证重复包裹/上游已有同名头时单头不叠；非 http scope
+    （websocket/lifespan，如 SSE 由 http 起步不受影响）原样直通（#105：
+    观测/加固面故障不得阻塞业务主路径——头写入本身不抛，异常面已由
+    Starlette 响应生命周期兜住）。
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_csp(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers[CSP_HEADER] = CSP_VALUE
+            await send(message)
+
+        await self.app(scope, receive, send_with_csp)
 
 
 async def api_runs(request: Request) -> JSONResponse:
@@ -34,6 +84,80 @@ async def api_run_detail(request: Request) -> JSONResponse:
 
     detail = ui_service.run_detail(request.path_params["run_id"])
     return JSONResponse(annotate_contract("run_detail", detail))
+
+
+async def api_runs_diff(request: Request) -> JSONResponse:
+    """双 run 只读对比（PR-4 报告页深化 ③，规格 §D-8）。
+
+    业务在 rfauto.ui.runs_diff（ui 层，向下只 import service，分层契约
+    允许）；只读零副作用。**必须注册在 /api/runs/{run_id} 之前**——否则
+    "diff" 被参数路由当 run_id 吃掉（starlette 按注册序匹配，
+    test_compare_endpoint_route_order 同款坑）。
+    """
+    from rfauto.ui.runs_diff import runs_diff
+
+    q = request.query_params
+    return JSONResponse(runs_diff(q.get("a", ""), q.get("b", "")))
+
+
+#: P-1 SSE 桥参数（研究扩充 round3 P-1：events.jsonl→单 endpoint
+#: 按 run_id 过滤；前端 EventSource 自动重连，既有 3s 轮询端点保留为降级）。
+_SSE_POLL_INTERVAL_S = 1.0
+_SSE_MAX_IDLE_S = 300.0  # 无事件也定时断流——EventSource 自动重连续传
+
+
+async def api_run_events_stream(request: Request) -> Any:
+    """P-1 战役进度 SSE 端点：``/api/runs/{run_id}/events/stream``。
+
+    service.read_run_events 增量轮询 events.jsonl，每事件一帧 SSE
+    （event=事件类型，data=事件 JSON），读到终态（run_completed/
+    run_failed）后发 end 帧收束连接。长空闲自动断流靠 EventSource
+    自动重连续传（浏览器语义），旧 3s 轮询端点不动（降级路径保留）。
+    sse-starlette 缺装→503 JSON（best-effort #105，不拖垮整个 UI）。
+    """
+    from rfauto.service import ui_service
+
+    try:
+        from sse_starlette.sse import EventSourceResponse
+    except ImportError as exc:
+        return JSONResponse(
+            {"ok": False,
+             "errors": [f"sse-starlette 未安装（pip install rfauto[ui]）: {exc}"]},
+            status_code=503)
+
+    run_id = str(request.path_params["run_id"])
+
+    async def _gen():
+        offset = 0
+        idle_s = 0.0
+        while True:
+            snap = ui_service.read_run_events(run_id, offset)
+            if not snap.get("ok"):
+                yield {"event": "error",
+                       "data": json.dumps({"errors": snap.get("errors", [])},
+                                          ensure_ascii=False)}
+                return
+            if not snap.get("exists"):
+                yield {"event": "end",
+                       "data": json.dumps({"exists": False, "run_id": run_id},
+                                          ensure_ascii=False)}
+                return
+            events = snap.get("events") or []
+            for ev in events:
+                yield {"event": str(ev.get("event_type", "progress")),
+                       "id": str(ev.get("event_id", "")),
+                       "data": json.dumps(ev, ensure_ascii=False)}
+            offset = int(snap.get("offset") or 0)
+            if snap.get("terminal"):
+                yield {"event": "end", "data": json.dumps(
+                    {"terminal": True, "run_id": run_id}, ensure_ascii=False)}
+                return
+            idle_s = 0.0 if events else idle_s + _SSE_POLL_INTERVAL_S
+            if idle_s >= _SSE_MAX_IDLE_S:
+                return  # EventSource 自动重连后从 events.jsonl 重放续传
+            await asyncio.sleep(_SSE_POLL_INTERVAL_S)
+
+    return EventSourceResponse(_gen(), ping=15.0)
 
 
 async def api_recipe(request: Request) -> JSONResponse:
@@ -215,7 +339,7 @@ async def api_chat_reset(request: Request) -> JSONResponse:
 async def api_chat_prompt(request: Request) -> JSONResponse:
     from rfauto.service import r3_services
 
-    return JSONResponse({"ok": True, "prompt": r3_services._SYSTEM_PROMPT})
+    return JSONResponse({"ok": True, "prompt": r3_services.get_system_prompt()})
 
 
 async def api_chat_stats(request: Request) -> JSONResponse:
@@ -233,7 +357,7 @@ async def api_recipes(request: Request) -> JSONResponse:
 
 
 async def api_hfss_import(request: Request) -> JSONResponse:
-    """HFSS 工程导入（.aedt → 设计规格 + 配方草稿）。"""
+    """HFSS 工程导入（.aedt → 设计规格 + 配方草稿，2026-09-02 用户需求）。"""
     from rfauto.service.v3_services import hfss_import_recipe
     body: dict[str, Any] = await request.json()
     result = hfss_import_recipe(
@@ -371,7 +495,7 @@ async def api_playground_explore(request: Request) -> JSONResponse:
 
 
 async def api_loop_boards(request: Request) -> JSONResponse:
-    """执行看板清单（WP3.5 v1.2 增强：自治环步骤可视）。"""
+    """执行看板清单（WP3.5 v1.2 增强②：自治环步骤可视）。"""
     from rfauto.service import ui_service
     from rfauto.service.contracts import annotate_contract
 
@@ -489,6 +613,188 @@ async def api_feasibility(request: Request) -> JSONResponse:
         int(q.get("grid_n", "12"))))
 
 
+async def api_datasets(request: Request) -> JSONResponse:
+    """数据集页清单（只读）：runs/datasets 注册表总览。"""
+    from rfauto.service import ui_service
+    return JSONResponse(ui_service.datasets_overview())
+
+
+async def api_dataset_preview(request: Request) -> JSONResponse:
+    """数据集页行级预览（只读）：抽样 N 行；model 为等值过滤便捷参。"""
+    from rfauto.service import ui_service
+
+    q = request.query_params
+    return JSONResponse(ui_service.dataset_preview(
+        request.path_params["name"],
+        limit=int(q.get("limit", "20")),
+        model=q.get("model") or None))
+
+
+async def api_anchors(request: Request) -> JSONResponse:
+    """标定锚页清单（只读）：注册表摘要 + stale 新鲜度合并视图。"""
+    from rfauto.service import ui_service
+    return JSONResponse(ui_service.anchors_overview(
+        request.query_params.get("path") or None))
+
+
+async def api_anchor_detail(request: Request) -> JSONResponse:
+    """标定锚页单锚详情（只读）：raw 全量记录透传。"""
+    from rfauto.service import ui_service
+    return JSONResponse(ui_service.anchor_detail(
+        request.path_params["anchor_id"],
+        request.query_params.get("path") or None))
+
+
+async def api_uq_samples(request: Request) -> JSONResponse:
+    """UQ 页输入资产清单（只读）：runs/ 下校准样本集扫描。"""
+    from rfauto.service import ui_service
+
+    limit = int(request.query_params.get("limit", "200"))
+    return JSONResponse(ui_service.uq_samples_list(limit=limit))
+
+
+async def api_uq_yield(request: Request) -> JSONResponse:
+    """UQ 页运行面（确定性内核）：代理蒙特卡洛良率 + 敏感性。"""
+    from rfauto.service import ui_service
+
+    body: dict[str, Any] = await request.json()
+    return JSONResponse(ui_service.uq_yield_run(
+        body.get("samples_path", ""),
+        body.get("tolerances") or {},
+        n=int(body.get("n", 10000)),
+        seed=int(body.get("seed", 42)),
+        kind=str(body.get("kind", "poly_ridge"))))
+
+
+async def api_gallery(request: Request) -> JSONResponse:
+    """PR-5 画廊交互化（只读）：模板卡 + 名义参数 + 闭式预览通道映射。
+
+    前端滑块改值后直接 POST 既有 /api/calculators/run（闭式纯函数零 EM
+    求解）；映射/量程解释全在 service/gallery_service（前端只渲染）。
+    """
+    from rfauto.service.gallery_service import gallery_cards
+    return JSONResponse(gallery_cards())
+
+
+async def api_campaign_dashboard(request: Request) -> JSONResponse:
+    """PR-6 战役仪表盘（只读快照）：成本热图 + trial 表（虚拟列表数据面）。
+
+    实时进度走既有 SSE 流 ``/api/runs/{run_id}/events/stream``（P-1，前端
+    监听后回刷本端点）；本端点自身无流无副作用。
+    """
+    from rfauto.service.campaign_dashboard_service import campaign_dashboard
+
+    q = request.query_params
+    return JSONResponse(campaign_dashboard(
+        request.path_params["run_id"],
+        x_param=q.get("x_param") or None,
+        y_param=q.get("y_param") or None,
+        grid_n=int(q.get("grid_n", "12"))))
+
+
+async def api_profile(request: Request) -> JSONResponse:
+    """PR-8 剖析入口：GET=py-spy 可用性探测；POST=py-spy record 封装。
+
+    火焰图/speedscope 产物落 runs/（缺省 runs/profile），随 /runs 静态
+    挂载可直接人工打开；py-spy 缺装=ok 信封 available=False（GET）/
+    error 信封带安装提示（POST），不阻塞 UI 其余面。
+    """
+    from rfauto.service.envelope import error_envelope
+    from rfauto.service.profile_service import profile_run, profile_status
+
+    if request.method == "GET":
+        return JSONResponse(profile_status())
+    try:
+        body: dict[str, Any] = await request.json()
+        raw_pid = body.get("pid")
+        raw_cmd = body.get("cmd")
+        return JSONResponse(profile_run(
+            pid=int(raw_pid) if raw_pid not in (None, "") else None,
+            cmd=[str(c) for c in raw_cmd] if raw_cmd else None,
+            out_dir=str(body.get("out_dir") or "runs/profile"),
+            duration_s=float(body.get("duration_s", 30.0)),
+            rate_hz=int(body.get("rate_hz", 100)),
+            fmt=str(body.get("fmt", "flamegraph")),
+            out_name=str(body["out_name"]) if body.get("out_name") else None,
+        ))
+    except (TypeError, ValueError) as exc:
+        return JSONResponse(error_envelope([f"剖析请求参数非法: {exc}"]))
+
+
+#: PR-9 战役级 remote 附着面：mTLS 状态**如实登记不硬上**（条件项，v1 待
+#: 实切；正式通道切换按远程资源说明口径执行，本面只登记状态零真连）。
+_REMOTE_MTLS_NOTE = (
+    "insecure 内网冒烟通道；mTLS（ANSYS_GRPC_CERTIFICATES）v1 待实切"
+    "（条件项，按远程资源说明口径登记）")
+
+
+def _campaign_remote_block(plan: dict[str, Any], machine: str) -> dict[str, Any]:
+    """战役级 remote 附着块（PR-9 --remote 泛化的服务面拼装，只读零真连）。
+
+    复用既有 ``remote_service.hfss_remote_session_config``（v1 调度面口径：
+    只组装 settings 增量不写状态）；候选阶段=license_gated/adapter==hfss。
+    任何异常都降级为 ok=False 块（best-effort，#105：不阻塞队列清单）。
+    CLI 战役级 ``--remote`` 旗标接线仍是 v1 余项（cli 面另行登记）。
+    """
+    from rfauto.service.remote_service import hfss_remote_session_config
+
+    candidates = [
+        str(s.get("stage") or "") for s in plan.get("stages") or []
+        if s.get("license_gated") or s.get("adapter") == "hfss"]
+    try:
+        cfg = hfss_remote_session_config(machine)
+    except Exception as exc:  # 观测性 best-effort（#105）：宁缺勿阻塞
+        return {"ok": False, "machine": machine,
+                "stage_candidates": candidates,
+                "errors": [f"remote 配置解析失败: {exc}"],
+                "mtls": _REMOTE_MTLS_NOTE}
+    return {"ok": True, "machine": machine,
+            "remote_machine": cfg.get("remote"),
+            "stage_candidates": candidates,
+            "mtls": _REMOTE_MTLS_NOTE}
+
+
+async def api_campaign_queue(request: Request) -> JSONResponse:
+    """PR-9 调度队列页（只读）：战役计划队列 + G13 调度决策日志。
+
+    数据全部出自既有服务函数（service/campaign_manager.list_campaign_plans
+    + load_plan，JSON 进出），本 handler 只做清单级拼装，前端只渲染；
+    损坏计划逐条如实降级（list_campaign_plans 已按 #105 口径跳坏文件）。
+    ``machine=`` 显式查询时逐战役附 remote 附着面（``_campaign_remote_block``，
+    mTLS 条件项按远程资源说明口径如实登记，零真连零上传）。
+    """
+    from rfauto.service.campaign_manager import list_campaign_plans, load_plan
+
+    q = request.query_params
+    root = q.get("root") or "runs"
+    machine = q.get("machine") or None
+    listing = list_campaign_plans(root)
+    campaigns: list[dict[str, Any]] = []
+    for item in listing.get("campaigns", []):
+        plan = (load_plan(item["path"]).get("plan")) or {}
+        sched = plan.get("scheduling") or {}
+        entry = dict(item)
+        entry["stages"] = [
+            {"stage": str(s.get("stage") or ""),
+             "status": str(s.get("status") or ""),
+             "adapter": str(s.get("adapter") or ""),
+             "license_gated": bool(s.get("license_gated"))}
+            for s in plan.get("stages") or []]
+        entry["scheduling"] = {
+            "ok": bool(sched.get("ok")),
+            "n_jobs": sched.get("n_jobs"),
+            "predictor_used": bool(sched.get("predictor_used")),
+            "budget_gate_used": bool(sched.get("budget_gate_used")),
+            "decision_log": list(sched.get("decision_log") or []),
+        }
+        if machine is not None:
+            entry["remote"] = _campaign_remote_block(plan, machine)
+        campaigns.append(entry)
+    return JSONResponse({
+        "ok": True, "root": str(root), "machine": machine,
+        "campaigns": campaigns, "n_campaigns": len(campaigns)})
+
+
 async def index(request: Request) -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
 
@@ -503,7 +809,7 @@ def _is_loopback(host: str) -> bool:
 def resolve_runs_mount(host: str, expose_runs: bool | None) -> bool:
     """三态裁决 runs/ 静态挂载：显式 True/False 优先；缺省=回环绑定开、非回环关。
 
-    开源默认安全：runs/ 可能含未发布仿真数据，把 UI 绑到非回环地址
+    开源默认安全（R2-B-05）：runs/ 可能含未发布仿真数据，把 UI 绑到非回环地址
     （如 0.0.0.0）时不得未经确认整目录暴露，须显式 --expose-runs。
     """
     if expose_runs is not None:
@@ -516,7 +822,11 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
     routes = [
         Route("/", index),
         Route("/api/runs", api_runs),
+        # PR-4 双 run 对比：具体路径必须先于 /{run_id} 参数路由（顺序坑）
+        Route("/api/runs/diff", api_runs_diff),
         Route("/api/runs/{run_id}", api_run_detail),
+        # P-1 战役进度 SSE 桥（run_id 过滤；旧 3s 轮询端点保留为降级）
+        Route("/api/runs/{run_id}/events/stream", api_run_events_stream),
         Route("/api/recipe", api_recipe),
         Route("/api/recipe", api_recipe_save, methods=["POST"]),
         Route("/api/model3d", api_model3d, methods=["GET", "POST"]),
@@ -565,13 +875,26 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         Route("/api/smith/{run_id}", api_smith),
         Route("/api/runs/{run_id}/pareto", api_pareto_view),
         Route("/api/runs/{run_id}/feasibility", api_feasibility),
+        Route("/api/datasets", api_datasets),
+        Route("/api/datasets/{name}/preview", api_dataset_preview),
+        Route("/api/anchors", api_anchors),
+        Route("/api/anchors/{anchor_id}", api_anchor_detail),
+        Route("/api/uq/samples", api_uq_samples),
+        Route("/api/uq/yield", api_uq_yield, methods=["POST"]),
+        Route("/api/gallery", api_gallery),
+        Route("/api/runs/{run_id}/dashboard", api_campaign_dashboard),
+        # PR-9 调度队列页（ge8b Wave B 席B3）：战役队列+G13 决策日志（只读）
+        Route("/api/campaign_queue", api_campaign_queue),
+        Route("/api/profile", api_profile, methods=["GET", "POST"]),
         Mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static"),
     ]
     if include_runs_mount:
         # run 产物只读静态服务（人工核验直接看 PNG 曲线等中间产物）；
         # 非回环绑定默认关闭（R2-B-05 开源默认安全），显式 --expose-runs 才开
         routes.append(Mount("/runs", StaticFiles(directory="runs"), name="runs"))
-    return Starlette(routes=routes)
+    # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
+    return Starlette(routes=routes,
+                     middleware=[Middleware(ContentSecurityPolicyMiddleware)])
 
 
 def serve(

@@ -51,6 +51,8 @@ class EMSolverType(str, Enum):
     VNA = "vna"  # 实物 VNA 测量通道（DP-11：测量=一台"真机求解器"，与 fake 同接口）
     QUCSATOR = "qucsator"  # 电路级仿真器 qucsator_rf（qucs-S，GPL；DP-14 N7）
     MMT = "mmt"  # 自研 RWG/SIW 解析模基 MMT（GSM）求解器（DP-1：秒级模匹配，零外部进程零 license）
+    XYCE = "xyce"  # 电路级 SPICE 仿真器 Xyce（Sandia 开源；F-L.2 WSL 桥通道）
+    PSSFSS = "pssfss"  # PSSFSS.jl RWG MoM 周期结构快档（EC-20：FSS/超表面 ms_* 族单胞 Floquet，分钟级）
 
 
 # ─── A5 求解器能力协议（SolverCapabilities）────────────────────────────────────
@@ -167,10 +169,52 @@ _OPENEMS_CAPABILITIES = SolverCapabilities(
     availability_gate="exe_path",
 )
 
-#: 内置能力表：仅需覆盖无法在自身模块声明的通道（openEMS）。COMSOL/Palace 在
-#: 各自适配器模块以类属性 CAPABILITIES 声明（就近维护，避免两处漂移）。
+#: HFSS 能力声明（ME-23，2026-09-26）：仲裁通道此前零声明——
+#: solver_capabilities_for(EMSolverType.HFSS) 抛 KeyError，调用方无法按能力
+#: 选择求解器（r3 §1.2 P1 级发现）。HfssAdapter 走 SimulatorAdapter 旧协议且
+#: 不注册进 EMSolverRegistry，故按 openEMS 先例集中声明在本表（单一事实来源）。
+#: 事实依据（hfss_adapter/hfss_session 与仲裁战役先例逐条对应）：
+#:   - 端口：波端口与集总端口均在用（#307 多模波端口端子组、#308
+#:     integration_line 双模格式、#363 lumped_port 传 sheet 名）→ True/True；
+#:   - 场导出：get_far_field 无限球面 GainTotal → True；
+#:   - Touchstone：export_touchstone 主路径 _design_port_count 按 Σ模数计数（多模波端口 .s4p，#309 脚本先例升主路径，R4-1 审查批 2026-10-04）→ True；
+#:   - headless：gRPC 非图形化（-ng）→ True；
+#:   - 收敛报告/optimetrics：与既有 capabilities()（A5 旧协议七位）声明一致
+#:     → True/True；
+#:   - nf2ff：原生远场球≠近场→远场变换后处理 → False（远场面由
+#:     supports_field_export 承载，与 COMSOL 同口径）；
+#:   - SAR：适配器面无 SAR 方法 → False；
+#:   - 材料：PEC 片+有耗/无耗介质基板（仲裁面建模域，#356 薄片 PerfectE）；
+#:   - 并行：适配器不透传并行开关 → 空元组（不虚报引擎理论能力）；
+#:   - license：每次求解占商业席位 → True；
+#:   - 模板：仲裁通道无渲染模板（模板属 openEMS 渲染链）→ 空元组；
+#:   - availability：pyaedt+gRPC 会话门。
+_HFSS_CAPABILITIES = SolverCapabilities(
+    solver_type="hfss",
+    supports_wave_port=True,
+    supports_lumped_port=True,
+    supports_field_export=True,
+    supports_convergence_report=True,
+    supports_touchstone_export=True,
+    supports_headless_solve=True,
+    supports_optimetrics=True,
+    dimension="3d",
+    material_models=("pec", "lossless_dielectric", "lossy_dielectric"),
+    parallel_backends=(),
+    supports_sar=False,
+    supports_nf2ff=False,
+    supports_lumped_elements=True,
+    supported_templates=(),
+    requires_license=True,
+    availability_gate="pyaedt+grpc",
+)
+
+#: 内置能力表：仅需覆盖无法以 EMSolverAdapter 类属性声明的通道（openEMS/
+#: HFSS——前者适配器模块不在注册链内，后者走旧协议不注册）。COMSOL/Palace
+#: 等在各自适配器模块以类属性 CAPABILITIES 声明（就近维护，避免两处漂移）。
 _SOLVER_CAPABILITY_SPECS: dict[EMSolverType, SolverCapabilities] = {
     EMSolverType.OPENEMS: _OPENEMS_CAPABILITIES,
+    EMSolverType.HFSS: _HFSS_CAPABILITIES,
 }
 
 
@@ -361,6 +405,8 @@ class EMSolverAdapter(ABC):
         return _undeclared_capabilities(self.solver_type)
 
 
+
+
 class EMSolverRegistry:
     """EM 求解器注册表。
 
@@ -467,6 +513,56 @@ def ensure_adapter_plugins_loaded() -> None:
 def get_global_registry() -> EMSolverRegistry:
     """获取全局求解器注册表。"""
     return _global_registry
+
+
+# PSSFSS 能力声明（EC-20 W2-F，2026-10-05）：周期结构/FSS 族单胞 Floquet
+# 快档（RWG MoM，分钟级，介于 LC 闭式与 openEMS 单胞全波之间）。**位置纪
+# 律**：必须在 EMSolverAdapter 类定义之后构造——supported_templates 经
+# _pssfss_template_names() 反向 import pssfss_adapter，而后者 import 本模
+# 块的 EMSolverAdapter/EMSolverConfig/EMSolverResult；若本块前置于类定义
+# 则循环 import 失败被 best-effort 吞掉 → supported_templates 静默空表
+# （2026-10-05 W2-F 实证）。事实依据（pypssfss 0.1.0 包源逐文件核对 +
+# PSSFSS.jl stable 文档）：
+#   - 端口：周期结构 Floquet 端口为方法内建（非 wave/lumped 边界端口）
+#     → 两 False；
+#   - 材料：PEC 薄片（clas='J'）+ 均匀介质 Layer（epsr/tand）→ pec +
+#     无耗/有耗介质；集总元件无建模 → False；
+#   - Touchstone：S 参数经 extract_result 落盘（skrf 写 .s2p）→ True；
+#   - headless：纯 Julia 进程内计算无 GUI → True；
+#   - 场导出/收敛报告/optimetrics/nf2ff/SAR：无对应实现 → False
+#     （单胞近场 RWG 基非辐射方向图面）；
+#   - dimension："2d"（无限周期单胞，z 向分层一维堆叠）；
+#   - 模板：ms_* 超表面族（SUPPORTED_TEMPLATES 实测导入，防手写漂移）；
+#   - license：MIT 零席位（Julia 工具链自动装）→ False；
+#   - availability：pypssfss 可 import 门（缺装 fail-closed 显式报缺）。
+def _pssfss_template_names() -> tuple[str, ...]:
+    """PSSFSS 支持的模板名（从 pssfss_adapter 实测，防手写清单漂移）。"""
+    try:
+        from rfauto.adapters.pssfss_adapter import SUPPORTED_TEMPLATES
+    except Exception:  # best-effort：拿不到就声明为空，不臆造
+        return ()
+    return tuple(SUPPORTED_TEMPLATES)
+
+
+_SOLVER_CAPABILITY_SPECS[EMSolverType.PSSFSS] = SolverCapabilities(
+    solver_type="pssfss",
+    supports_wave_port=False,
+    supports_lumped_port=False,
+    supports_field_export=False,
+    supports_convergence_report=False,
+    supports_touchstone_export=True,
+    supports_headless_solve=True,
+    supports_optimetrics=False,
+    dimension="2d",
+    material_models=("pec", "lossless_dielectric", "lossy_dielectric"),
+    parallel_backends=(),
+    supports_sar=False,
+    supports_nf2ff=False,
+    supports_lumped_elements=False,
+    supported_templates=_pssfss_template_names(),
+    requires_license=False,
+    availability_gate="pypssfss",
+)
 
 
 def solver_capabilities_for(solver_type: EMSolverType | str) -> SolverCapabilities:

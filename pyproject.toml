@@ -45,7 +45,7 @@ dependencies = [
     "scikit-rf>=2.0,<3",
     "matplotlib>=3.8.0",
     "pandas>=2.1.0",
-    "optuna>=3.5.0",
+    "optuna>=5.0.0,<6.0",  # 5.0 升级实测无破坏面后抬底；锁 <6.0（set_constraint 新 API 为 5.0 引入面）
 ]
 
 [project.optional-dependencies]
@@ -54,10 +54,12 @@ hfss = ["pyaedt>=1.4.0,<2"]  # 开发基线 1.4.0：API 参数名与旧版差异
 # pymoo 多目标优化 —— P2 起按需；cmaes 为 optuna CmaEsSampler 的后端（缺口 5）
 multiobj = ["pymoo>=0.6.0", "cmaes>=0.13.0"]
 # MCP Server —— P4 起按需
-mcp = ["fastmcp>=3.0.0"]
+mcp = ["fastmcp>=3.0,<4"]  # 4.x 严格 JSON 把 inf 序列化为 null（MCP 工具回执 NaN/Inf 面，实测 2026-10）
 # UI（人工核验台 rfauto ui）—— starlette 路由 + uvicorn 服务
 #（#178 教训：旧 venv 手动装过、声明缺失，换机即断——WP0.1 收编）
-ui = ["starlette>=0.35", "uvicorn>=0.27"]
+# sse-starlette = 战役进度 SSE 桥（ui/server.py 事件流端点；缺装时
+# 端点 503 如实报缺，UI 其余面不受影响）
+ui = ["starlette>=0.35", "uvicorn>=0.27", "sse-starlette>=3.0"]
 # openEMS Python 绑定运行时依赖 —— 绑定本体（C 扩展）无 PyPI wheel，需从
 # openEMS 源码自行编译进 venv（参考 scripts/build_python_bindings.cmd），
 # 此处只声明绑定 import 时的依赖（numpy/matplotlib 已在核心依赖里）
@@ -134,6 +136,46 @@ report = ["scienceplots>=2.1", "plotly>=5.20", "typst>=0.11"]
 # 仅 core/render_constraints.py 惰性 import（顶层零依赖），未安装时
 # solve_rules 优雅降级 ok=False（不崩、不阻塞既有 if 链守卫主路径）
 z3 = ["z3-solver>=4.13"]
+# HFSS → 可机加交付包（T43）—— ezdxf DXF 出图/面轮廓 + PyYAML 规则库文件
+#（PyYAML 随 omegaconf 传递可得，extras 显式声明不靠传递）；仅
+# adapters/fab_export/* 惰性 import。安装：pip install rfauto[fab]
+fab = ["ezdxf>=1.0", "PyYAML>=6.0"]
+# pint 单位桥 —— core/quantity.py 的 to_pint/from_pint 互换面；quantity 内核
+# 本身零 pint 自洽（确定性内置单位表维持），桥函数惰性 import，未安装时
+# ImportError 诚实降级并指向本 extra。安装：pip install rfauto[units]
+units = ["pint>=0.24"]
+# 几何 GNN 代理 pyg 通道 —— torch-geometric（BSD）真训练通道位；缺省 numpy
+# 消息传递内核（optimization/surrogate/gnn_geom.py）零依赖覆盖小图合成验证面，
+# backend="pyg" 时惰性探测 import（缺席显式报错指路本 extra）。
+gnn = ["torch-geometric>=2.3"]
+# 版图互操作 —— gdstk GDSII 读写（layout_interchange 惰性 import）+
+# shapely LVS 连通分量（layout_lvs_service 惰性 import，缺装=error 信封带
+# 安装提示）。gdstk=Boost 许可、shapely=BSD-3。安装：pip install rfauto[layout]
+layout = ["gdstk>=1.0", "shapely>=2.0"]
+# PyPO 物理光学 —— pypopy（GPL-3，大电尺寸反射面/准光 PO 预估）；GPL 许可
+# 边界=fail-closed opt-in 门（RFAUTO_ALLOW_PYPO / RFAUTO_ALLOW_GPL_TOOLS，
+# adapters/gpl/license_gate）+ 可选依赖双门。安装：pip install rfauto[pypo]
+pypo = ["pypopy>=0.1"]
+# PSSFSS 严格快通道 —— pypssfss（MIT，Julia PSSFSS.jl RWG MoM 桥）FSS/超表面
+# 族单胞 Floquet 快档；仅 adapters/pssfss_adapter.py 惰性 import，缺装
+# is_available()=False 显式报缺。规格原文 pypssfss>=0.3 在 PyPI 无此版本
+# （实测只有 0.1.0），按实测约束登记。已知上游钉冲突：pypssfss 0.1.0 钉
+# rich~=14.0.0，会把 venv 内 rich 15 降级——安装后按需回装 rich（pypssfss
+# 实测 rich 15 下功能正常）。
+pssfss = ["pypssfss>=0.1"]
+# 多机协同远程求解（v0）—— paramiko SSH/SFTP 通道（infra/remote_machines
+# 懒加载，未安装时注册表/探活面可用、SSH 传输显式报错指明本 extra）。
+# 安装：pip install rfauto[remote]
+remote = ["paramiko>=3.0"]
+# 文档站（mkdocs-material 路线）：mkdocs build + GitHub Pages 部署；
+# 生成器 scripts/build_docs_pages.py 只用核心依赖（机读 rfauto 代码面），
+# mkdocs-material 仅站点构建期需要。安装：pip install rfauto[docs]
+docs = ["mkdocs-material>=9.5,<10"]
+# RAG 语义档真 embedding 换装 —— sentence-transformers 仅
+# service/rag_service.resolve_embedder 惰性 import；缺省（含本 extra 未装）
+# 走 core/rag_embedding 确定性 hashing/TF-IDF 降级路线（离线零网络零下载）。
+# 安装：pip install rfauto[rag]；模型获取是调用方环境责任（本 extra 不含模型）
+rag = ["sentence-transformers>=2.2"]
 # 开发依赖
 dev = [
     "pytest>=7.4.0",
@@ -159,6 +201,27 @@ dev = [
     "pyvisa-py>=0.7",  # tests：VNA 离线后端
     "loky>=3.4",  # tests：par_exec 复用池（loky extra 同内核）
     "zstandard>=0.24",  # tests：lake pack/verify（zstandard extra 同内核）
+    "pytest-randomly==5.0.0",  # 顺序依赖持续审计，seed 每次随机打印可复现
+    "pytest-benchmark==5.3.0",  # 三热点基准（tests/unit/test_qm5_benchmarks.py）
+    "pip-licenses==5.5.5",  # 许可合规门（scripts/license_gate.py 消费）
+    "pip-audit>=2.7",  # 依赖漏洞门（scripts/audit_deps.py 消费，OSV/PyPI）
+    "mutmut==2.5.1",  # 突变测试试点（scripts/qm9_mutmut_run.py；3.x 无原生 Windows 支持，钉 2.5.1）
+    "pytest-rerunfailures==16.7",  # known_flaky 用例重跑隔离（RFAUTO_FLAKY_RERUN=1 才启用，物理红永不隔离）
+    # 离线单测套件消费的可选内核（续）：缺位时相应测试组 fail 而非 skip，
+    # dev 一并声明保证 `pip install -e ".[dev]"` 后全套可跑（公开仓独立环境实测）
+    "h5py>=3.0",  # openEMS 绑定运行时依赖（openems extra 同内核；fd_oe 战役测试消费）
+    "ezdxf>=1.0",  # fab extra 同内核（fab_export 离线 DXF 面）
+    "shapely>=2.0",  # layout extra 同内核（layout_lvs_service 离线面）
+    "plotly>=5.20",  # report extra 同内核（report_render 离线面）
+    "scienceplots>=2.1",  # report extra 同内核
+    "typst>=0.11",  # report extra 同内核（render_typ jinja2/typst 链）
+    "PyMuPDF>=1.24",  # lit-mining extra 同内核
+    "lark>=1.1",  # lit-mining extra 同内核
+    "sympy>=1.12",  # lit-mining extra 同内核
+    "pint>=0.24",  # units extra 同内核
+    "pychopmarg>=3.1",  # si extra 同内核（com_pam4 离线面）
+    "pysr==2.5.0",  # pysr extra 同内核（锚 guesses 离线面；Julia 仅真拟合期首跑自装）
+    "mkdocs-material>=9.5,<10",  # docs extra 同内核（docs_site 构建测试）
 ]
 
 [project.scripts]
@@ -242,4 +305,5 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 markers = [
     "real_edt: 需要真实 AEDT/ADS 环境（deselect with -m not real_edt）",
+    "solo: 计时敏感/资源敏感测试，仅串行全量门与 CI 执行（并行门与 xdist 对照臂 deselect）",
 ]

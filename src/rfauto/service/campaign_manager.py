@@ -5,14 +5,14 @@ AI 调度、动态重排、自动放弃死胡同分支。rfauto 翻译为"设计
 输入配方 + 目标口径，确定性拆解为 校准→粗筛→精算→公差→报告 的
 多阶段队列（现在的 p0/tune 都是单发任务，缺战役层）。
 
-首片范围（确定性内核）：
+首片范围（确定性内核， #7）：
 - plan_campaign：配方 → 类型化阶段队列（依赖/预算/通道/license 门槛）；
 - apply_event：状态机推进（stage_done/stage_failed；校准失败=死胡同
   分支自动放弃，后续阶段标 aborted）。
 HFSS 精算阶段标 license_gated（license-aware 调度的占位，接 watchdog
 license_backoff 雏形）。执行接线（真实调度循环）属后续增量。
 
-（G13 调度接进生产路径）：plan_campaign 在阶段队列成形后、派发前经
+F2⑤（G13 调度接进生产路径）：plan_campaign 在阶段队列成形后、派发前经
 service.orchestration_wiring.schedule_campaign_jobs 过 G13 确定性调度
 （predictor 分档预测 / budget_gate 预算准入均为可注入项，生产缺省 None），
 调度决策挂 plan["scheduling"]，save_plan 同步落 <out_dir>/schedule.json。
@@ -23,8 +23,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +74,8 @@ def select_shadow_points(
     """影子点选择器（Z2，确定性纯函数）：cost top + 归一化空间 spread 补点。
 
     - top_k：cost 升序前 top_k 必选（同 cost 平局按参数规范 JSON 键序决，
-      逐字节可复现）；
+      逐字节可复现）；top_k 硬帽 = n_points（超量请求截断不越名额——
+      影子点预算语义，S2-2/W1b 越量交付反证）；
     - spread 补点：剩余实测点中贪心取"到已选集归一化最小距离"最大者，
       距离 ≥ min_norm_dist 才收（sample_design 归一化距离思想——候选全部
       过近则如实 shortfall，不硬凑）；
@@ -80,11 +84,9 @@ def select_shadow_points(
     - n_points ≤ 0 → 空（ok=False 如实）。
     """
     if n_points <= 0:
-        return {"ok": False, "errors": [f"n_points 必须 ≥1，收到: {n_points}"],
-                "selected": [], "n_selected": 0}
+        return error_envelope([f"n_points 必须 ≥1，收到: {n_points}"], selected=[], n_selected=0)
     if not points:
-        return {"ok": True, "selected": [], "n_selected": 0,
-                "shortfall": int(n_points), "n_irregular": 0}
+        return ok_envelope(selected=[], n_selected=0, shortfall=int(n_points), n_irregular=0)
 
     def sort_key(p: dict[str, Any]) -> tuple:
         cost = p.get("cost")
@@ -92,7 +94,10 @@ def select_shadow_points(
         return (cost_f, params_hash(p.get("params") or {}))
 
     ordered = sorted(points, key=sort_key)
-    top = ordered[:max(1, int(top_k))]
+    # S2-2 预算硬帽：top_k 超过 n_points 时截断，影子点不越名额
+    # （W1b 反证：原 `[:max(1, int(top_k))]` 在 top_k>n_points 时越量交付、
+    # shortfall 恒 0；对照 plan_campaign 内 n_points 已有 min(·, FINAL_VERIFY_BUDGET) 帽）
+    top = ordered[:min(max(1, int(top_k)), int(n_points))]
     pool = ordered[len(top):]
 
     # 归一化空间：显式 bounds 优先，否则候选集 min/max（含已选点）
@@ -138,9 +143,13 @@ def select_shadow_points(
         sel_norm.append(norm(picked))
 
     shortfall = max(0, int(n_points) - len(selected))
-    return {"ok": True, "selected": selected, "n_selected": len(selected),
-            "shortfall": shortfall, "n_irregular": n_irregular,
-            "bounds_used": {n: list(bounds[n]) for n in sorted(bounds)}}
+    return ok_envelope(
+        selected=selected,
+        n_selected=len(selected),
+        shortfall=shortfall,
+        n_irregular=n_irregular,
+        bounds_used={n: list(bounds[n]) for n in sorted(bounds)},
+    )
 
 
 def schedule_plan_jobs(
@@ -152,7 +161,7 @@ def schedule_plan_jobs(
     stage_durations: dict[str, float] | None = None,
     config: Any | None = None,
 ) -> dict[str, Any]:
-    """调度前置步：战役阶段作业派发前经编排接线跑确定性调度。
+    """G13 调度前置步（F2⑤）：战役阶段作业派发前经 B-29 接线跑确定性调度。
 
     参数原样透传 orchestration_wiring.schedule_campaign_jobs：
     - predictor：pipeline.quota_guard.TieredDurationPredictor（分档时长预测，
@@ -212,15 +221,19 @@ def plan_campaign(
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
     model = recipe.get("model", "")
     objectives = recipe.get("objectives") or []
     if not objectives:
-        return {"ok": False, "errors": ["配方无 objectives，无法立战役"]}
+        return error_envelope(["配方无 objectives，无法立战役"])
     limits = recipe.get("limits") or {}
-    budget = int(tune_budget or limits.get("max_trials") or 30)
+    # S2-3/#364④：显式判缺 is not None——tune_budget=0 是合法显式值
+    # （0=显式零预算，同 259 行 shadow_points 的 is None 写法收敛双标；
+    # 旧 `or` 惯语会把显式 0 顶替成缺省 30）
+    budget = int(tune_budget if tune_budget is not None
+                 else (limits.get("max_trials") or 30))
 
     def _stage(name: str, kind: str, adapter: str, depends: list[str],
                budget: int | None = None, note: str = "") -> dict[str, Any]:
@@ -239,7 +252,7 @@ def plan_campaign(
                "代理校准（surrogate 预筛通道的地基，v1 收官口径）"),
         _stage("prefilter", "prefilter", "surrogate", ["calibrate"],
                budget,
-               "校准代理粗筛（v1 定案：预筛通道=校准代理，fake 降级）"),
+               "校准代理粗筛（v1 拍板：预筛通道=校准代理，fake 降级）"),
         _stage("tune", "tune", mid_adapter, ["prefilter"], budget,
                "中保真精算；HFSS 终验由 high_adapter 阶段承接"),
         _stage("tolerance", "tolerance", "surrogate", ["tune"], 1000,
@@ -263,34 +276,110 @@ def plan_campaign(
             "capped": n_shadow > FINAL_VERIFY_BUDGET,
         }
         stages.append(stage)
-    plan = {
-        "ok": True,
-        "recipe": str(path).replace("\\", "/"),
-        "model": model,
-        "goal": {"objectives": objectives,
+    plan = ok_envelope(
+        recipe=str(path).replace("\\", "/"),
+        model=model,
+        goal={"objectives": objectives,
                  "max_wall_hours": limits.get("max_wall_hours")},
-        "stages": stages,
-        "campaign_schema": CAMPAIGN_SCHEMA,
-    }
-    # G13 调度前置步：派发前过确定性调度。缺省 predictor/budget_gate
+        stages=stages,
+        campaign_schema=CAMPAIGN_SCHEMA,
+    )
+    # F2⑤ G13 调度前置步：派发前过确定性调度。缺省 predictor/budget_gate
     # 均 None（申报时长、输入序、不拒绝），调度器异常只落 warning（#105），
     # 计划本体（阶段/依赖/状态机）逐字节不变。
     plan["scheduling"] = schedule_plan_jobs(plan)
+    # XN-1 Pre-mortem（第十九轮 P1）：战役开工前自动生成失败模式+检测探针。
+    # best-effort（#105）：生成失败只落 warning，不阻塞战役计划本体。
+    plan["premortem"] = _campaign_premortem(model=model, recipe=path.name)
+    # KD-4 失败知识注入（round16 P1）：预检强制调用——campaign 声明面提关键词
+    # → 既有失败库（premortem FAILURE_MODE_LIBRARY，同库对偶不重复建库）定向
+    # 检索出坑号可溯的失败模式子集注入开工 context。best-effort（#105）：
+    # 检索失败只落 warning，不阻塞战役计划本体。
+    plan["failure_knowledge"] = _campaign_failure_knowledge(
+        model=model, recipe=path.name, objectives=objectives)
     return plan
 
 
+def _campaign_premortem(*, model: str, recipe: str) -> dict[str, Any]:
+    """XN-1 战役开工失败预演（param_sweep 主类；best-effort #105）。"""
+    try:
+        from rfauto.service.premortem_service import campaign_premortem_block
+
+        return campaign_premortem_block(model=model, recipe=recipe)
+    except Exception as exc:  # 观测性 best-effort（#105）：宁缺勿阻塞
+        logger.warning("战役开工 premortem 生成失败（不阻塞战役）: %s", exc)
+        return {"ok": False, "warning": f"premortem 生成失败（#105）: {exc}"}
+
+
+def _campaign_failure_knowledge(*, model: str, recipe: str,
+                                objectives: Any) -> dict[str, Any]:
+    """KD-4 失败知识注入块（round16：campaign_manager 预检强制调用）。
+
+    战役=param_sweep 主类；关键词从战役声明面（模型名/objectives/配方名）
+    确定性提取，对 premortem 失败模式库（XN-1 同库，只读消费）做交集检索，
+    坑号可溯子集注入开工 context。best-effort（#105）：检索任何异常都不
+    阻塞战役计划——如实 ok=False+warning。
+    """
+    try:
+        from rfauto.core.failure_knowledge import (
+            failure_knowledge_for,
+            keywords_from_campaign,
+            render_failure_knowledge_markdown,
+        )
+
+        keywords = list(keywords_from_campaign(model, objectives, recipe))
+        block = failure_knowledge_for("param_sweep", keywords or None)
+        block["keywords_source"] = "campaign_declaration(model/objectives/recipe)"
+        block["markdown"] = render_failure_knowledge_markdown(block)
+        return block
+    except Exception as exc:  # 观测性 best-effort（#105）：宁缺勿阻塞
+        logger.warning("战役开工失败知识注入失败（不阻塞战役）: %s", exc)
+        return {"ok": False, "warning": f"失败知识注入失败（#105）: {exc}"}
+
+
+def _deposit_skill_on_complete(run_id: str | None,
+                               output_dir: str | Path | None) -> None:
+    """战役 COMPLETE 收官的 skill 自动沉淀钩子（ge8e W2/A4，best-effort #105）。
+
+    F8 已在 api.run_once 单 run 收官点接线 auto_deposit_hook；本函数补
+    战役级收官路径（apply_event 判定 COMPLETE 的同位分支——批次全部
+    阶段终态 done 的落档点）。campaign 级 run_id 走钩子的 run_id 路径
+    （health_check_run 判定，verdict 非 HEALTHY 如实不沉淀），幂等由
+    钩子内 _DEPOSITED_RUN_IDS 承担（同 campaign 只沉淀一次）；run_id
+    缺省 None 时无沉淀锚点直接跳过（既有调用方零感知）。钩子任何异常
+    只落 warning，不阻断战役结果（#105）。
+    """
+    if not run_id:
+        return
+    try:
+        from rfauto.service.skill_autopilot import auto_deposit_hook
+
+        auto_deposit_hook(run_id=str(run_id),
+                          output_dir=Path(output_dir) if output_dir
+                          else "skills")
+    except Exception as exc:  # 观测性 best-effort（#105）：宁缺勿阻塞
+        logger.warning("战役 skill 自动沉淀钩子失败（非阻断）: %s", exc)
+
+
 def apply_event(plan: dict[str, Any], stage: str, event: str,
-                *, detail: str = "") -> dict[str, Any]:
+                *, detail: str = "", run_id: str | None = None,
+                skill_output_dir: str | Path | None = None) -> dict[str, Any]:
     """战役状态机推进（确定性）。
 
     event ∈ stage_done | stage_failed | skip。stage_failed 时所有依赖
     它的未完成阶段递归标 aborted（死胡同分支自动放弃——SDL 核心行为）。
+
+    run_id / skill_output_dir（ge8e W2/A4，可选）：战役收官（全部阶段
+    done → verdict=COMPLETE）时把 campaign 级 run_id 交给 skill 自动沉淀
+    钩子（auto_deposit_hook，沉淀产物落 skill_output_dir——惯例
+    <campaign 目录>/skills，不污染仓根技能库）；两者缺省 None 时零感知
+    （不触发钩子），best-effort 语义见 _deposit_skill_on_complete。
     """
     stages = {s["stage"]: s for s in plan.get("stages", [])}
     if stage not in stages:
-        return {"ok": False, "errors": [f"未知阶段: {stage}"]}
+        return error_envelope([f"未知阶段: {stage}"])
     if event not in ("stage_done", "stage_failed", "skip"):
-        return {"ok": False, "errors": [f"未知事件: {event}"]}
+        return error_envelope([f"未知事件: {event}"])
 
     target = stages[stage]
     if event == "stage_done":
@@ -327,28 +416,41 @@ def apply_event(plan: dict[str, Any], stage: str, event: str,
     plan["verdict"] = verdict
     plan["n_done"] = done
     plan["n_dead"] = dead
-    return {"ok": True, "verdict": verdict, "plan": plan}
+    if verdict == "COMPLETE":
+        # A4 战役级 skill 自动沉淀（ge8e W2，best-effort #105）：批次全部
+        # 阶段终态 done（战役收官落档点）接线 auto_deposit_hook——
+        # campaign 级 run_id 走钩子内 health 判定，幂等由 _DEPOSITED_RUN_
+        # IDS 承担；异常只落 warning 不阻断战役结果。
+        _deposit_skill_on_complete(run_id, skill_output_dir)
+    return ok_envelope(verdict=verdict, plan=plan)
 
 
 def save_plan(plan: dict[str, Any], out_dir: str | Path) -> Path:
     """战役计划落盘（campaign.plan.json，幂等覆盖）。
 
-    计划含 scheduling（G13 调度前置步）时同步落 <out_dir>/schedule.json
+    计划含 scheduling（F2⑤ G13 调度前置步）时同步落 <out_dir>/schedule.json
     （排序键规范化 JSON：派发顺序、预测时长与来源、拒绝清单、审计事件），
     作为 runs/<campaign>/ 下的调度可审计副本。
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     p = out / "campaign.plan.json"
-    p.write_text(json.dumps(plan, ensure_ascii=False, indent=1, default=str),
-                 encoding="utf-8")
+    # 原子替换（审查 P2-1，2026-10-05）：kill 窗口内直写可截断 campaign.plan.json
+    # 致 resume 断链——tmp 同目录 + os.replace 原子落盘。
+    _atomic_write_text(p, json.dumps(plan, ensure_ascii=False, indent=1,
+                                     default=str))
     scheduling = plan.get("scheduling")
     if isinstance(scheduling, dict):
         s = out / SCHEDULE_FILE_NAME
-        s.write_text(json.dumps(scheduling, ensure_ascii=False, indent=1,
-                                sort_keys=True, default=str),
-                     encoding="utf-8")
+        _atomic_write_text(s, json.dumps(scheduling, ensure_ascii=False,
+                                         indent=1, sort_keys=True, default=str))
     return p
+
+
+def _atomic_write_text(target: Path, text: str) -> None:
+    tmp = target.with_name(target.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, target)
 
 
 PLAN_FILE_NAME = "campaign.plan.json"
@@ -366,17 +468,17 @@ def load_plan(plan_path: str | Path) -> dict[str, Any]:
     if path.is_dir():
         path = path / PLAN_FILE_NAME
     if not path.exists():
-        return {"ok": False,
-                "errors": [f"战役计划不存在: {path}"
-                           f"（先 plan_campaign + save_campaign_plan 落盘）"]}
+        return error_envelope(
+            [f"战役计划不存在: {path}"
+                           f"（先 plan_campaign + save_campaign_plan 落盘）"],
+        )
     try:
         plan = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        return {"ok": False, "errors": [f"战役计划读取失败: {exc}"]}
+        return error_envelope([f"战役计划读取失败: {exc}"])
     if not isinstance(plan, dict) or not isinstance(plan.get("stages"), list):
-        return {"ok": False,
-                "errors": [f"{path} 不是战役计划（缺 stages 列表）"]}
-    return {"ok": True, "path": str(path), "plan": plan}
+        return error_envelope([f"{path} 不是战役计划（缺 stages 列表）"])
+    return ok_envelope(path=str(path), plan=plan)
 
 
 def wrap_plan_v2(plan: dict[str, Any]) -> dict[str, Any]:
@@ -420,5 +522,4 @@ def list_campaign_plans(root: str | Path = "runs") -> dict[str, Any]:
                     "n_dead": plan.get("n_dead"),
                     "n_stages": len(plan.get("stages") or []),
                 })
-    return {"ok": True, "root": str(root_path), "campaigns": items,
-            "n_campaigns": len(items)}
+    return ok_envelope(root=str(root_path), campaigns=items, n_campaigns=len(items))

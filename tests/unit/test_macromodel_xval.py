@@ -1,6 +1,7 @@
 """D13 第三方 SPICE 交叉验证（ngspice .AC xval）定向单元测试——**全离线**。
 
-验收目标（方案冻结验收行 D13）："ngspice/Xyce 回放 vs 原 S 参数 FSV
+任务来源：TODO 0g followUp①（D13 第三方 .AC 对拍通道全无）+ 方案冻结验收行
+docs/续跑计划.md D13："ngspice/Xyce 回放 vs 原 S 参数 FSV
 （D12）评级 ≥Good"。
 
 本文件验证 `adapters.spice_netlist.xval_macromodel_spice` /
@@ -29,6 +30,7 @@ from rfauto.core.fsv import GRADE_CODES, grade_index_of
 from rfauto.core.macromodel import (
     GRADE_INDEX_GOOD,
     MIN_FREQ_POINTS,
+    MacromodelInputError,
     fit_macromodel,
     replay_spice_subcircuit_s,
 )
@@ -178,7 +180,7 @@ def test_xval_passes_through_replay_equivalent_errors(tmp_path) -> None:
     )
     assert x["status"] == "error"
     assert "未知指令" in x["error"]
-    with pytest.raises(Exception, match="未知指令"):
+    with pytest.raises(MacromodelInputError, match="未知指令"):
         replay_spice_subcircuit_s(sp, freq, z0=Z0)
 
 

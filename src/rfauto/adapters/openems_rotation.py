@@ -1,4 +1,4 @@
-"""N 端口全 S 矩阵装配器（ratrace/coupler 族，#208）。
+"""N 端口全 S 矩阵装配器（WP2.3 ratrace，§10.9 薄弱项 2，#208）。
 
 口径：N 端口宽带 S 参数 = 每端口各激励一次的激励轮转（openEMS 官方
 Full S-Parameter Simulation Loop）。**进程隔离**实现——按 excite_port=1..N
@@ -14,12 +14,12 @@ object has been deleted"（pt3/pt4 实测，#208）。进程隔离同时天然�
 产物布局（work_root 下）：p1/..pN/（各含 simulation.py + sparams.csv）、
 <template>.s{N}p（装配结果）、.smatrix_cache.npz（可选缓存）。
 
-**逐轮断点缓存**：每轮 CSV 即断点——重入时
+**逐轮断点缓存**（廿三）P2 残余收口）：每轮 CSV 即断点——重入时
 逐轮校验「simulation.py 与本次渲染逐字节一致 + sparams.csv 可解析」，
 二者齐备则跳过该轮子进程直接复用列（resume=True 默认开）；任一不满足
 即重跑该轮。脚本内容=轮次身份，杜绝换参/换 mesh 后错配陈旧产物。
 
-**装配归一化（#250 链，opt-in `line_z0`，C4 refix 实证）**：各轮 CSV
+**装配归一化（#250 链，opt-in `line_z0`，2026-09-17 C4 refix 实证）**：各轮 CSV
 是 footer `CalcPort(ref_impedance=50)` 的 **50Ω 伪波带载比值**；端口线在缺省网格
 下的引擎自算 ZL 并不等于 HJ 设计值（lange/cline 50Ω 馈线实测 ZL≈45.7Ω，−8.7%），
 非激励端由 PML 按离散线自身 ZL 匹配端接，50Ω 分解便在每端口引入伪反射
@@ -469,6 +469,12 @@ def solve_smatrix_openems(
     net = skrf.Network(frequency=freq, s=s_out, z0=z_ref_ohm)
     net.write_touchstone(str(s4p))
     _store_cache(cache_dir, key, freq_ghz, s_out, assembly_norm=norm_info)
+    # RB-WN-1 ②（W3-A）产物收尾增量去重：env RFAUTO_LAKE_DEDUP_ET_HT
+    # 真值才启用（缺省 None=零副作用）；best-effort 绝不阻塞装配返回。
+    with suppress(Exception):
+        from rfauto.infra.lake_blob_store import maybe_dedup_workdir_et_ht
+
+        maybe_dedup_workdir_et_ht(root)
 
     message = "全 S 矩阵完成（进程隔离激励轮转）"
     if resumed:

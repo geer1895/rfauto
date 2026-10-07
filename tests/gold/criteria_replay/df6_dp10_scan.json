@@ -1,0 +1,21 @@
+{
+  "schema": "rfauto-criteria-replay-snapshot/1",
+  "criteria_stem": "df6_dp10_scan",
+  "criteria_id": "df6_dp10_scan_j1c_coverage",
+  "decision_rule_form": "threshold_gate",
+  "evidence_path": "gate.phase_coverage_deg",
+  "artifact": {
+    "verdict": "PASS",
+    "gate": {
+      "phase_coverage_deg": 312.7,
+      "threshold_deg": 300.0,
+      "verdict": "PASS"
+    }
+  },
+  "expect": {
+    "replay_verdict": "PASS",
+    "replay_vv_status": "validated",
+    "direction": "same"
+  },
+  "note": "合成自足样本：gate 块键形与 runs/df6_dp10ms/launch_sweep.py --judge 产物同构（gate.phase_coverage_deg/threshold_deg/verdict），覆盖值取达标方向合成值（>=300 度）；threshold_gate 形态重放经 evidence_path 显式绑定证据。篡改 yaml threshold 即重放翻转（门红双向钉）。"
+}

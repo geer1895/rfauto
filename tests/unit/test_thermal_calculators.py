@@ -172,6 +172,7 @@ def test_ipc2152_coefficient_wiring_scaling():
 
 
 def test_ipc2152_invalid_inputs_are_explicit():
+    # 不抛即过：_fails 内部断言必抛路径（非法入参显式 ValueError）
     _fails("ipc2152_trace_temp_rise",
            {"width_mm": 0.0, "copper_oz": 1.0, "current_a": 1.0})
     _fails("ipc2152_trace_temp_rise",

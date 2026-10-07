@@ -1,0 +1,6 @@
+{
+  "expect_verdict": "below_mde",
+  "mde": 0.5,
+  "n_pairs": 2000,
+  "story": "#281 形：平台内 0.08 漂移（sigma=0.9, n=2000）CI 不含 0 但配对 d 约 0.09 低于 MDE=0.5——统计显著工程无意义"
+}

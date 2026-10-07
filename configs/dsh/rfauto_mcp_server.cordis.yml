@@ -1,0 +1,39 @@
+# rfauto MCP server → dsh（deepseek-harness）接入模板（DS-7，W5-D 件 3）
+#
+# 适用版本（预声明，citation-rot 防御）：
+#   - deepseek-ai/deepseek-harness 开发者预览期，master 分支，快照日期 2026-10-05；
+#   - MCP 客户端服务名 @deepseek-ai/dsh-mcp-client（packages/mcp/mcp-client）；
+#   - 字段面以 packages/mcp/mcp-client 配置目录为锚（serverName/transport/
+#     command/args/cwd/env），官方样例=apps/cli/config/examples/mcp-memory/
+#     engram.cordis.yml（- insert 行 id+name+config 同构）；
+#   - 预览期 breaking changes → 锁模式不锁版本（月度宏图 v3.2 §10.2 裁决③），
+#     升级 dsh 时先以 `dsh --profile web --dump-config` 核对键面再合入。
+#
+# 用法：
+#   1) 把本文件放入 dsh 侧配置补丁目录（cordis.yml patch 形态），或按 profile
+#      合入用户层配置（Web UI 载体用 --profile web；headless/sdk 同键面）；
+#   2) 挂接后 rfauto 的 149 工具在 dsh 内注册为 mcp__rfauto__<tool>，
+#      5 个 resources（rfauto:// scheme）经 mcp-resources 服务渲染；
+#      工具集目录见资源 rfauto://toolsets/definition（EC-6）；
+#   3) cwd 必须是仓根：rfauto 配置面（configs/settings.local.yaml 等）按
+#      cwd 相对读（#295 教训——子目录 cwd 会静默回退缺省路径）；
+#   4) 需要真机环境变量（RFAUTO_HPEESOF_DIR 等）时加 env 键显式传入——dsh
+#      stdio 子进程继承的是经凭据清洗的父环境，不保证带全本机环境。
+#
+# 本模板零 TS 依赖、不要求安装 dsh（互通性以配置面+对拍记录交付；
+# runs/w5_phase5/w5d/interop_report.md 为对拍记录真源）。
+- insert:
+    - id: mcp-rfauto
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: rfauto
+        transport: stdio
+        command: '{{REPO_ROOT}}\.venv\Scripts\python.exe'  # 占位符 {{REPO_ROOT}}=本仓根，部署时替换
+        args: [-m, rfauto.mcp_server]
+        cwd: "{{REPO_ROOT}}"
+        # env:                       # 可选：真机环境变量显式传入
+        #   RFAUTO_HPEESOF_DIR: "{{ADS_DIR}}"  # 本机安装根，按机器填
+        # 可选 HTTP 传输变体（rfauto 当前暴露 stdio；streamable-http 面预留）：
+        # transport: streamable-http
+        # url: http://127.0.0.1:8643/mcp
+        # headers: {}

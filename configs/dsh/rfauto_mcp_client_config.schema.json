@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "rfauto MCP server dsh mcp-client config（DS-7，W5-D 件 3）",
+  "description": "deepseek-harness（dsh）mcp-client 对 rfauto MCP server 的接入配置键面 schema。适用版本：deepseek-harness 开发者预览期（master，快照 2026-10-05）；字段面以 packages/mcp/mcp-client 配置目录为锚（serverName/transport/command/args/cwd/env + url/headers）；预览期 breaking changes→锁模式不锁版本（宏图 v3.2 §10.2 裁决③）。配套补丁模板：configs/dsh/rfauto_mcp_server.cordis.yml。rfauto 侧要求：stdio 传输，入口 python -m rfauto.mcp_server（与 rfauto-mcp console script 同源，stdout 零字节协议信道，#278），cwd=仓根（#295 配置面按 cwd 相对读）。",
+  "type": "object",
+  "required": [
+    "serverName",
+    "transport",
+    "command",
+    "args"
+  ],
+  "properties": {
+    "serverName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$",
+      "description": "dsh 内服务名（唯一）；工具注册为 mcp__<serverName>__<toolName>。rfauto 用 rfauto。",
+      "default": "rfauto"
+    },
+    "transport": {
+      "enum": [
+        "stdio",
+        "streamable-http"
+      ],
+      "description": "stdio=子进程（rfauto 当前口径）；streamable-http=MCP 端点（预留）。"
+    },
+    "command": {
+      "type": "string",
+      "description": "stdio：可执行命令。rfauto 用仓 venv 解释器 .venv/Scripts/python.exe（勿用 shim 链外的裸 python）。"
+    },
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "stdio：命令参数。rfauto 用 [-m, rfauto.mcp_server]（console script exe 未重装时 .exe 可能缺位，python -m 同源路径实测，#278）。",
+      "default": [
+        "-m",
+        "rfauto.mcp_server"
+      ]
+    },
+    "cwd": {
+      "type": "string",
+      "description": "stdio：子进程工作目录。必须=仓根（configs/settings.local.yaml 按 cwd 相对读，#295）。"
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "stdio：显式环境变量（与经凭据清洗的父环境合并）。真机面 RFAUTO_HPEESOF_DIR 等在此显式传。"
+    },
+    "url": {
+      "type": "string",
+      "description": "streamable-http：MCP 端点 URL（transport=streamable-http 时）。",
+      "format": "uri"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "streamable-http：附加请求头（可选）。"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "serverName": "rfauto",
+      "transport": "stdio",
+      "command": "{{REPO_ROOT}}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "rfauto.mcp_server"
+      ],
+      "cwd": "{{REPO_ROOT}}"
+    }
+  ]
+}

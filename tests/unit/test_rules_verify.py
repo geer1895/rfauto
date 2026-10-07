@@ -32,8 +32,8 @@ _STACKUP = "rogers4350b_h0.508"
 _FREQ_GHZ = 2.4  # G0 定案频率（scripts/g0_linewidth_verification.py FREQ_GHZ）
 _C_MM_GHZ = 299.792458  # mm·GHz
 
-#: 机器可验证子集（DP-13 K1 拍板）：恰好这四条，双向防漂移
-MACHINE_VERIFIABLE = {"R001", "R005", "R006", "R007"}
+#: 机器可验证子集（DP-13 K1 拍板四条 + MS-3 R010，2026-10-05 W4-D）：双向防漂移
+MACHINE_VERIFIABLE = {"R001", "R005", "R006", "R007", "R010"}
 #: 判"不可机器验证"显式省略（启发式诊断/战役结论，不凑绿）
 NOT_MACHINE_VERIFIABLE = {"R002", "R003", "R004", "R008", "R009"}
 
@@ -46,13 +46,21 @@ def _load_rules() -> dict[str, dict]:
 # ─── R001：λ/4 臂长公式 vs core/synthesis 闭式 ───────────────────────────────
 
 def test_r001_arm_formula_matches_synthesis():
-    from rfauto.core.synthesis import Stackup, forward_z0, synthesize_wilkinson
+    from rfauto.core.synthesis import (
+    Stackup,
+    forward_z0,
+    inverse_width,
+    synthesize_wilkinson,
+)
 
     stackup = Stackup.from_materials_yaml(_STACKUP)
     # 正例：R001 公式 arm = c/(4·f0·√εeff) 与 synthesize_wilkinson 闭式逐点一致
-    # （引擎 arm_len 2 位舍入 → 容差 0.02mm；εeff 同源 forward_z0(w=1mm)）
+    # （引擎 arm_len 2 位舍入 → 容差 0.02mm；εeff 参考面按 XA-3 修正后的
+    # 引擎语义=臂宽处 εeff：inverse_width(70.71Ω)→forward_z0(w_arm)——
+    # 旧参考 w=1mm 是引擎当时的近似口径，XA-3 修正后规则参考面随之对齐）
     for f0 in (2.0, 2.4, 3.0, 5.8):
-        _, eeff = forward_z0(1.0, f0, stackup)
+        w_arm, _z_arm, _src = inverse_width(70.71, f0, stackup)
+        _, eeff = forward_z0(w_arm, f0, stackup)
         rule_arm = _C_MM_GHZ / (4.0 * f0 * math.sqrt(eeff))
         engine_arm = synthesize_wilkinson(f0_ghz=f0).params["arm_len_mm"]
         assert abs(rule_arm - float(engine_arm)) <= 0.02, (
@@ -140,7 +148,41 @@ def test_r006_fix_values_consistent_with_g0():
     assert abs(z0_right - z0_35) <= 1.0
 
 
-# ─── 声明防漂移：机器可验证子集恰为四条 ──────────────────────────────────────
+# ─── R010：MS-3 去嵌方法选择——理想基线机器可验证子集 ────────────────────────
+
+def test_r010_deembed_selector_ideal_baseline():
+    """R010 verify：理想对称分布夹具上，适用域 gated 方法 s_error_max < 1e-6。
+
+    门=referee gate_threshold 同口径（规格 §4a.3 判据 1）；对切法在该语料
+    （分布线，超集总等效域）与 ZC（DP-15 C2 在档结论）不在 gated 集——
+    结果照出、不设门（#122 不凑绿）。合成语料=core/synthetic_fixture
+    真值自造（#118 回收钉）。
+    """
+    import skrf
+
+    from rfauto.core.synthetic_fixture import build_synthetic_fixture
+    from rfauto.service.deembed_selector_service import select_deembed_method
+
+    freq = skrf.Frequency(0.1, 40.0, 401, "GHz")
+    fx = build_synthetic_fixture(freq, fixture_length_m=25e-3)
+    out = select_deembed_method(
+        {"dut_fdf": fx.dut_fdf, "twoxthru": fx.twoxthru,
+         "dut_reference": fx.dut_reference,
+         "zc_fix_dut_fix": fx.dut_fdf},
+        {"fixture_length_m": 25e-3})
+    by_name = {m["method"]: m for m in out["methods"]}
+    # R010 门域=分布线语料的适用方法（对切法超集总域/ZC 在档结论均不设门）
+    for method in ("afr_2xthru", "p370_nzc", "inhouse_gamma_diff"):
+        entry = by_name[method]
+        assert entry["applicable"] and entry["ok"], method
+        assert entry["s_error_max"] < out["gate_threshold"], (
+            f"{method}: s_error_max={entry['s_error_max']:.3e} 越理想基线门")
+    # ZC 在档结论：合成语料不设门（gated=False）且结果如实透出
+    zc = by_name["p370_zc"]
+    assert zc["ok"] and not zc["gated"]
+
+
+# ─── 声明防漂移：机器可验证子集恰为 DP-13 四条+R010 ─────────────────────────
 
 def test_rules_verify_declared_subset_exact():
     rules = _load_rules()
