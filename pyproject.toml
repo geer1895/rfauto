@@ -155,7 +155,7 @@ gnn = ["torch-geometric>=2.3"]
 # 版图互操作 —— gdstk GDSII 读写（layout_interchange 惰性 import）+
 # shapely LVS 连通分量（layout_lvs_service 惰性 import，缺装=error 信封带
 # 安装提示）。gdstk=Boost 许可、shapely=BSD-3。安装：pip install rfauto[layout]
-layout = ["gdstk>=1.0", "shapely>=2.0"]
+layout = ["gdstk>=1.0", "shapely>=2.0", "pillow>=12"]
 # PyPO 物理光学（GPL-3，大电尺寸反射面/准光 PO 预估）——**无 PyPI 发行版**
 # （pypopy 404 实测 2026-10-07，uv lock 全 extras 解析被此不可解 extra 卡死
 # 实证），故不入 extras 面；使用=从上游源码安装 pypopy 后适配器自检可用

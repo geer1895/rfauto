@@ -211,8 +211,17 @@ jobs:
           # 审计面=上一步 uv export 的带哈希锁集（--no-emit-project 已排除
           # 本项目自体）：requirements 文件模式无 editable 分发解析问题
           # （venv 模式 --skip-editable 仍报 "distribution marked as
-          # editable" rc=1，2026-10-07 二跑实证）——锁集即供应链审计对象
-          pip-audit --strict --no-deps -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
+          # editable" rc=1，2026-10-07 二跑实证）——锁集即供应链审计对象。
+          #
+          # pillow 11.3.0 豁免清单（2026-10-07，18×PYSEC-2026，本注释即
+          # 留痕处）：diff-fdtd extra 的 fdtdx→moviepy>=2.1.1 钉
+          # pillow>=9.2.0,<12.0（冲突链 uv lock 亲证），pillow 12.3.0 虽
+          # 已修复全部 35 项但被该上限排除；漏洞面=PSD/PDF/FITS 等**图像
+          # 文件解析器**，本仓 pillow 仅作 matplotlib 栅格后端，不解析
+          # 不可信图像文件。解锁条件=fdtdx/moviepy 放开 pillow<12 上游
+          # 升级后删除全部 --ignore-vuln 并回归。豁免清单须与本注释同步
+          # 留痕（既定政策：不降级 continue-on-error）。
+          pip-audit --strict --no-deps              \n            --ignore-vuln PYSEC-2026-165 --ignore-vuln PYSEC-2026-2249 --ignore-vuln PYSEC-2026-2250 --ignore-vuln PYSEC-2026-2251 --ignore-vuln PYSEC-2026-2252 --ignore-vuln PYSEC-2026-2253 --ignore-vuln PYSEC-2026-2254 --ignore-vuln PYSEC-2026-2255 --ignore-vuln PYSEC-2026-2256 --ignore-vuln PYSEC-2026-2257 --ignore-vuln PYSEC-2026-2874 --ignore-vuln PYSEC-2026-3451 --ignore-vuln PYSEC-2026-3453 --ignore-vuln PYSEC-2026-3454 --ignore-vuln PYSEC-2026-3493 --ignore-vuln PYSEC-2026-3494 --ignore-vuln PYSEC-2026-3495 --ignore-vuln PYSEC-2026-3496             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
         uses: actions/upload-artifact@v4
