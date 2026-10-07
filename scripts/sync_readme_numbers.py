@@ -46,11 +46,14 @@ AUTO_END = "<!-- AUTO-NUMBERS:END -->"
 STRIP_HEADING_ANCHOR = "## Quick start"  # 公开仓 README.md 为英文版式
 
 # 内联载体行模式（与 check_numbers.DOC_PATTERNS["README.md"] 同源对齐：
-#  （N 个工具 + M 个 resources）/ CALCULATOR_REGISTRY N，含实验键 K——
-#  数字条用全角括号变体「（含实验键 K）」，两模式互不相交，各钉各的载体；
+#  (N MCP tools + M resources) / CALCULATOR_REGISTRY N (with experimental K)——
+#  数字条标签为英文变体，两模式互不相交，各钉各的载体；
 #  resources 亦为捕获变量（R5-02：旧版 "3" 字面量致 README 漂移 3→4 门恒绿）。
-CARRIER_MCP = r"（\d+ 个工具 \+ \d+ 个 resources）"
-CARRIER_CALC = r"CALCULATOR_REGISTRY (\d+)，含实验键 (\d+)"
+#  2026-10-07 英文化勘误：本脚本管的是 README.md（英文）——载体与渲染标签
+#  随之英文化（旧中文版式系从 zh README 拷贝的混入，连 check_numbers EN
+#  DOC_PATTERNS 都被钉成中文串）。zh 数字块由 zh README 手工维护，不经此脚本。
+CARRIER_MCP = r"\(\d+ MCP tools \+ \d+ resources\)"
+CARRIER_CALC = r"CALCULATOR_REGISTRY (\d+) \(with experimental (\d+)\)"
 
 
 def load_check_numbers() -> Any:
@@ -80,14 +83,15 @@ def collect_counts(cn: Any) -> dict[str, int]:
 
 def render_strip(counts: dict[str, int]) -> str:
     """数字条单行正文（数字恒在标签词之后，避开 check_numbers 退役数字
-    子串标记的碰撞面，如「35 CLI」「12 个工具」——见 check_numbers stale 扫描）。"""
+    子串标记的碰撞面——见 check_numbers stale 扫描；标签英文=README.md
+    本脚本管区，2026-10-07 英文化勘误）。"""
     return (
-        f"MCP 工具 {counts['mcp']}（+{counts['resources']} resources）｜ "
-        f"CLI 命令 {counts['cli']}（叶子）｜ "
+        f"MCP tools {counts['mcp']} (+{counts['resources']} resources) | "
+        f"CLI commands {counts['cli']} (leaves) | "
         f"CALCULATOR_REGISTRY {counts['calc']}"
-        f"（含实验键 {counts['calc_all']}）｜ "
-        f"器件模板 {counts['templates']} ｜ "
-        f"标定锚 {counts['anchors']}"
+        f" (with experimental {counts['calc_all']}) | "
+        f"device templates {counts['templates']} | "
+        f"anchors {counts['anchors']}"
     )
 
 
@@ -98,7 +102,7 @@ def render_block(counts: dict[str, int]) -> str:
         "<!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源"
         "计数生成；漂移修复=仓根重跑 "
         "`python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->\n\n"
-        f"**规模数字**：{render_strip(counts)}\n"
+        f"**Scale numbers**: {render_strip(counts)}\n"
         f"{AUTO_END}"
     )
 
@@ -114,16 +118,17 @@ def sync_text(text: str, counts: dict[str, int]) -> str:
     problems: list[str] = []
 
     new_text, n_mcp = re.subn(
-        CARRIER_MCP, f"（{counts['mcp']} 个工具 + {counts['resources']} 个 resources）",
+        CARRIER_MCP,
+        f"({counts['mcp']} MCP tools + {counts['resources']} resources)",
         text)
     if n_mcp != 1:
         problems.append(
             f"MCP 载体行命中 {n_mcp} 次（须恰 1）：{CARRIER_MCP}——README 格式"
-            "漂移，恢复「（N 个工具 + M 个 resources）」行后重跑")
+            "漂移，恢复「(N MCP tools + M resources)」行后重跑")
 
     new_text, n_calc = re.subn(
         CARRIER_CALC,
-        f"CALCULATOR_REGISTRY {counts['calc']}，含实验键 {counts['calc_all']}",
+        f"CALCULATOR_REGISTRY {counts['calc']} (with experimental {counts['calc_all']})",
         new_text,
     )
     if n_calc != 1:

@@ -26,9 +26,9 @@ exposes **254 CLI commands** and **149 MCP tools** (+5 resources) — kept
 honest by **21900+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 100，含实验键 101` · `TEMPLATE_META 71` ·
-`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI 命令 254（叶子） ·
-（149 个工具 + 5 个 resources）
+`CALCULATOR_REGISTRY 100 (with experimental 101)` · `TEMPLATE_META 71` ·
+`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI commands 254 (leaves) ·
+(149 MCP tools + 5 resources)
 <!-- numbers-end -->
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
@@ -94,7 +94,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**规模数字**：MCP 工具 149（+5 resources）｜ CLI 命令 254（叶子）｜ CALCULATOR_REGISTRY 100（含实验键 101）｜ 器件模板 71 ｜ 标定锚 60
+**Scale numbers**: MCP tools 149 (+5 resources) | CLI commands 254 (leaves) | CALCULATOR_REGISTRY 100 (with experimental 101) | device templates 71 | anchors 60
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start

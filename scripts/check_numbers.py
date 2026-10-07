@@ -48,11 +48,14 @@ FULL_GATE_LOG_GLOBS = ("*gate*full*.log", "gate_baseline_2*.log")
 DOC_PATTERNS: dict[str, list[tuple[str, str]]] = {
     # README.md（英文）与 README.zh-CN.md（中文）共用同一组 badge/数字版式；
     # 数字锚块（numbers-start/end 注释之间）由实测注入，勿手改。
+    # README.md（英文）：数字块标签为英文（2026-10-07 汉化混入勘误——builder
+    # 曾把中文版式 strip 注入英文 README，本模式表随之钉中文串；现 EN/ZN
+    # 各归其位，两表模式不得再共用）。
     "README.md": [
         (r"badge/tests-(\d+)", "tests_min"),
         # resources 用捕获组（硬编码字面量会让 README 漂移时门恒绿=结构性失明）
-        (r"[（(](\d+) 个工具 \+ (\d+) 个 resources[）)]", "mcp"),
-        (r"CLI 命令 (\d+)（叶子）", "cli_leaf"),
+        (r"\((\d+) MCP tools \+ (\d+) resources\)", "mcp"),
+        (r"CLI commands (\d+) \(leaves\)", "cli_leaf"),
         (r"(\d+) parameterized device templates", "templates"),
         (r"CALCULATOR_REGISTRY (\d+)", "calc_registry"),
         (r"TEMPLATE_META (\d+)", "template_meta"),

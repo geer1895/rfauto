@@ -220,10 +220,11 @@ def test_mcp_resources_dual_source_consistent():
 
 def test_readme_mcp_pattern_captures_both_numbers():
     # R5-02 结构钉：README 模式必须同时捕获 tools+resources 两个数字
-    # （任一为字面量即本红）。
+    # （任一为字面量即本红）。采样行=EN README 数字块现行版式
+    # （2026-10-07 英文化勘误：旧中文采样随 EN 模式一并更新）。
     pat = next(p for p, label in check_numbers.DOC_PATTERNS["README.md"]
                if label == "mcp")
-    m = re.search(pat, "（123 个工具 + 4 个 resources）")
+    m = re.search(pat, "(123 MCP tools + 4 resources)")
     assert m is not None and m.groups() == ("123", "4")
 
 
