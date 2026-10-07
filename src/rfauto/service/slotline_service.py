@@ -1,4 +1,4 @@
-"""槽线与过渡 service：JSON 进出，CLI/MCP 壳共享。
+"""槽线与过渡 service：JSON 进出，CLI/MCP 壳共享（W2⑨ w2i）。
 
 数值只在确定性内核（铁律 7）：本模块只做参数校验与异常到 JSON 信封的
 翻译，一切物理数字来自——
@@ -16,6 +16,8 @@ realizable=False 是**合法结果**（不可达如实返回 + 门 FAIL 如实�
 from __future__ import annotations
 
 from typing import Any
+
+from rfauto.service.envelope import ok_envelope
 
 #: 数值内核调用期可预期的异常族（参数不匹配/域拒绝/算术异常）——一律进信封
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError,
@@ -38,7 +40,7 @@ def slotline_analysis(w_mm: float, h_mm: float, epsilon_r: float,
                        float(freq_ghz))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "result": result}
+    return ok_envelope(result=result)
 
 
 def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
@@ -58,9 +60,9 @@ def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
                        float(freq_ghz))
     except _JSON_ERRORS as exc:
         if _UNREACHABLE_MARKER in str(exc):
-            return {"ok": True, "realizable": False, "reason": str(exc)}
+            return ok_envelope(realizable=False, reason=str(exc))
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "realizable": True, "result": result}
+    return ok_envelope(realizable=True, result=result)
 
 
 def msl_slot_transition_design(f0_ghz: float, h_mm: float, er: float,
@@ -76,7 +78,7 @@ def msl_slot_transition_design(f0_ghz: float, h_mm: float, er: float,
                                    float(z_msl_target))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "design": design.to_dict(), "gates": dict(TRANSITION_GATES)}
+    return ok_envelope(design=design.to_dict(), gates=dict(TRANSITION_GATES))
 
 
 def marchand_balun_design(f0_ghz: float, h_mm: float, er: float,
@@ -92,7 +94,7 @@ def marchand_balun_design(f0_ghz: float, h_mm: float, er: float,
                                  float(z_msl_target))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "design": design.to_dict(), "gates": dict(BALUN_GATES)}
+    return ok_envelope(design=design.to_dict(), gates=dict(BALUN_GATES))
 
 
 def marchand_two_section_synthesis(
@@ -129,6 +131,4 @@ def marchand_two_section_synthesis(
             band_ghz=band)
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "design": design.to_dict(),
-            "nominal_params": design.nominal_params(),
-            "gates": dict(MARCHAND2_GATES)}
+    return ok_envelope(design=design.to_dict(), nominal_params=design.nominal_params(), gates=dict(MARCHAND2_GATES))

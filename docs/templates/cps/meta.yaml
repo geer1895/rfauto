@@ -16,3 +16,4 @@ nominal_params:
   w_mm: 2.95
   gap_mm: 0.5
   line_len_mm: 40.0
+# XC-T 锚族补挂注记: cps.eps_eff.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）

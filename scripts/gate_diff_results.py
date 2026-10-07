@@ -1,18 +1,21 @@
 """DP-6 守卫比对器：串行 vs 并行两份 junitxml 逐位比对。
 
-规格：docs/plan_deepdive_specs_20260924.md §DP-6——测试 id 集合+失败/跳过
+规格：规格深案 §DP-6——测试 id 集合+失败/跳过
 集合逐位比对，diff 为空才算守卫过；任一轮不一致 → 冻结并行、`-n0`
 串行复现按 flake 流程取证。
 
 用法：
     .venv/Scripts/python.exe scripts/gate_diff_results.py SERIAL.xml PARALLEL.xml
+    .venv/Scripts/python.exe scripts/gate_diff_results.py --help
 
-exit code：0=两份完全一致（守卫过）；1=存在差异；2=解析/用法错误。
+exit code：0=两份完全一致（守卫过）；1=存在差异；2=解析/用法错误
+（argparse 缺参/坏参亦走 2）。
 比对维度：collected id 集合、failed 集合、skipped 集合、逐 id 状态变化。
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -44,12 +47,26 @@ def load_cases(xml_path: Path) -> dict[str, str]:
     return cases
 
 
+def _build_parser() -> argparse.ArgumentParser:
+    """E-08（2026-10-04）：手动 argv 换 argparse——--help 可用（rc=0）、
+    缺参/坏参错误信息标准库化（argparse error 退出码 2，与原用法错误口径同）。"""
+    parser = argparse.ArgumentParser(
+        prog="gate_diff_results.py",
+        description="DP-6 守卫比对器：串行 vs 并行两份 junitxml 的 "
+                    "id/failed/skipped 集合逐位比对；exit 0=一致 1=有差异 2=用法/解析错误")
+    parser.add_argument(
+        "serial_xml", type=Path,
+        help="串行轮 junitxml（pytest -n0）")
+    parser.add_argument(
+        "parallel_xml", type=Path,
+        help="并行轮 junitxml（pytest-xdist）")
+    return parser
+
+
 def main(argv: list[str] | None = None) -> int:
-    argv = list(sys.argv[1:] if argv is None else argv)
-    if len(argv) != 2:
-        print(__doc__)
-        return 2
-    serial_xml, parallel_xml = (Path(a) for a in argv)
+    # E-08：sys.argv 手动 len 校验 → argparse（--help/-- 自动机能；错误 rc=2 同口径）
+    args = _build_parser().parse_args(argv)
+    serial_xml, parallel_xml = args.serial_xml, args.parallel_xml
     for p in (serial_xml, parallel_xml):
         if not p.is_file():
             print(f"2: 文件不存在: {p}")

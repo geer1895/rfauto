@@ -1,0 +1,37 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（嵌入式微带均匀线：S21 相位斜率→εeff，β 金标准
+  mline 同口径；|S11| 显著非零=端口/网格判废信号）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- h2_mm
+- line_len_mm
+template: embedded_ms
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 1.0014
+  h2_mm: 0.254
+  line_len_mm: 40.0
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+topology: '嵌入式微带均匀段（TA-11）：地面=z=0 域 PEC 底界，基板 [0,H_SUB]，
+  零厚条带 z=H_SUB，同 εr 覆盖层 [H_SUB, H_SUB+H2]（嵌埋介质单材料盒，均匀
+  嵌埋电气精确），其上开放（top MUR）；双 MSLPort 板边入（端口面贴 PML）'
+param_semantics: 'w_mm=条带宽（设计链 core/embedded_line.embedded_ms_design_params：50Ω
+  FD 裁判反演，名义 1.0014mm@h1=H_SUB=0.508/h2=0.254/εr=3.66）、h2_mm=覆盖层厚
+  （嵌埋定义参数，效应=介质填充率升→εeff 升至 εr、同 w 阻抗降）、line_len_mm=两
+  端口间线长；h1/er/tan_d 走 substrate/nominal'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘 x 向
+  + 线两端 y 向精确入网（#198）；z 网格=基板 _sub_cells 层+覆盖层 _sub_cells 层
+  +AIR_TOP（条带 z 面恰在网格线，#212 审计①）'
+smoke_note: 离线审计先行（#212，test_ta_wave_c_templates）；内核数字裁判=FD 四锚
+  （h2→0 退化微带跨族互检/thick overlay εeff→εr/εr=1 精确同解/括号单调，
+  test_ta_wave_c_templates 钉）；近似级别如实登记：准静态/零厚带/PEC 地/无色散，
+  设计链=FD 裁判反演（Wadell 闭式系数不可达——core/embedded_line docstring 如实
+  账）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）

@@ -1,0 +1,99 @@
+f0_ghz: 10.0
+n_ports: 1
+template: pyramid_horn
+substrate:
+  er: 1.0
+  h_mm: 0.0
+  tan_d: 0.0
+params:
+- a_mm
+- b_mm
+- a1_mm
+- b1_mm
+- l_feed_mm
+- l_flare_mm
+nominal_params:
+  a_mm: 22.86
+  b_mm: 10.16
+  a1_mm: 76.40094536120978
+  b1_mm: 57.54769444861163
+  l_feed_mm: 60.0
+  l_flare_mm: 45.48234099926676
+  er: 1.0
+  h_mm: 0.0
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ RectWGPort 1（解析 TE10 模式端口，Z_ref=解析波导阻抗 ZL=k·Z0/β 口径）；
+  增益判读=口径场闭式（core/horn_synthesis）对照，方向图/nf2ff=Ph3 真机窗
+topology: >-
+  标准增益角锥喇叭：WR-90 波导馈电直管（端口面贴 y=−DOM_Y PML_8 域边）+ 四壁
+  梯形口径段（喉部 y=0、口径 y=l_flare；H 面宽沿 x a→a1、E 面高沿 z b→b1）；
+  斜壁以 8 段矩形截面阶梯链逼近（段间框面闭合=全 PEC 封闭腔）；空气填充无介质
+  板，y 轴双端 PML_8、x/z MUR
+param_semantics: >-
+  a_mm=波导口宽边（H 面，x 向，WR 口径）；b_mm=波导口窄边（E 面，z 向）；
+  a1_mm=口径宽边（H 面，综合目标增益下 Orfanidis(21.5.1)+Balanis δ_H=3λ/8
+  设计方程解）；b1_mm=口径窄边（E 面，δ_E=λ/4 同链）；l_feed_mm=馈电直管
+  最短长（实际管长=max(l_feed, l_flare+λ0/4+4mm) 口径侧空气域自动保证）；
+  l_flare_mm=喇叭轴向长（同设计链）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，官方 base
+  级）；NEAR=base/4；全部壁面站线（波导口缘/逐段截面缘/阶梯框/口径面/端口面）
+  显式入网（#198）+ 全轴 1µm 近重合去重（#152）；渲染守卫：阶梯步距 ≥4·NEAR
+  （#266 族）、a1>a 且 b1>b；口径侧空气域 ≥λ0/4+4mm 由管长自动外推保证
+  （#174 族）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_pyramid_horn_template）；近似级别如实登记：
+  ①斜壁 8 段阶梯化（矩形截面链，段中截面采样）；②闭式口径面模型不含壁损耗/
+  口面反射/边缘绕射；③方向图/nf2ff 与真机冒烟=Ph3 窗（本批零发射）
+nominal_derivation: |-
+  全综合单源精算（#1c/#252，core/horn_synthesis.synthesize_pyramid_horn 缺省
+  实参可重算，导入期字面落表 coil_nfc 同款）：目标 15 dB@10 GHz、WR-90
+  （wr_lookup：a=22.86/b=10.16mm）；Balanis 最优厚度档 σh=√1.5、σe=1
+  （δ_H=3λ/8、δ_E=λ/4），口径效率 e=Fresnel 闭式精算=0.5144（非 0.51 圆整）；
+  设计方程（Orfanidis 21.5.1）σe²/σh²=B(B−b)/(A(A−a)) + (4π/λ²)A·B·e=31.62
+  brentq 求根 → a1=76.40094536120978、b1=57.54769444861163、
+  l_flare=A(A−a)/(2λσh²)=45.48234099926676；l_feed=60.0（最短长语义，实际
+  管长=max(l_feed, l_flare+λ0/4+4mm)=60.0）；er=1.0/h_mm=0.0（空气填充无介质
+  板，er 消费=渲染脚本 summary 的 TE10 截止/波导波长回显）。恒等式
+  horn_gain_direct 回代==15.000000000011 dB（rtol 1e-6）由
+  test_pyramid_horn_template 钉住；教科书锚=Orfanidis Ex21.5.1/21.5.2 同书钉。
+  近似级别（v1，如实登记）：口径面一阶 Fresnel 模型不含壁损耗/口面反射/
+  边缘绕射；渲染斜壁 8 段阶梯化（段中截面采样）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 角锥喇叭=波导馈电直管 + H/E 双面张开口径段；增益由口径尺寸与轴长的 Fresnel 口径场模型给出，最优设计在 δ_H=3λ/8、δ_E=λ/4
+      厚度档（口径效率 ≈0.51）。
+    derivations:
+    - claim: 口径场模型增益/口径效率/最优 σ 设计方程（式号逐条在内核 docstring）
+      formula: G=(4π/λ²)·e·A_aperture（21.4.2）；σe²/σh²=B(B−b)/(A(A−a))+(4π/λ²)·A·B·e（21.5.1
+        设计方程，本仓名义点=31.62 brentq 求根）
+      source: S.G. Orfanidis, Electromagnetic Waves & Antennas, Ch.21（21.4.2/21.4.3/21.5.1；docs/rf_template_references.md
+        ME-7 已核，Ex.21.5.1/21.5.2 独立锚例）
+    - claim: 最优厚度档 δ_H=3λ/8、δ_E=λ/4 → (σa,σb)=(√1.5,1)，口径效率 ≈0.51
+      formula: σa=sqrt(1.5), σb=1 → e≈0.51（本仓精算 0.5144）
+      source: C.A. Balanis, Antenna Theory (3rd ed.), Ch.13 Horn Antennas（docs/rf_template_references.md
+        ME-7 已核；本仓 meta nominal_derivation 口径效率精算）
+    - claim: 往返恒等式：几何→增益正算为综合的逆（名义设计点 15dB）
+      formula: horn_gain_direct(a,b,a1,b1,l,f).gain_db == 15.0（rtol 1e-6）
+      source: 本仓 core/horn_synthesis.horn_gain_direct（tests/unit/test_pyramid_horn_template
+        逐位钉；docs/templates/pyramid_horn/meta.yaml nominal_derivation）
+  sensitivity_ranking:
+  - param: l_flare_mm
+    order: 1
+    basis: 轴向长经 σ=√(a1(a1−a)/(2λl)) 直接进入口径效率/增益（Orfanidis 21.4.3 链）
+  - param: a1_mm
+    order: 2
+    basis: 口径宽边=口径面积主项（G∝e·A）+ 设计方程联立自洽
+  - param: b1_mm
+    order: 3
+    basis: 口径窄边（E 面同链 δ_E=λ/4）
+  - param: a_mm
+    order: 4
+    basis: WR-90 波导口径（TE10 馈电边界条件，非自由综合维）
+  quiz_refs:
+  - Q-HORN-GAIN

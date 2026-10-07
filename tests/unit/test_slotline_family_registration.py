@@ -1,4 +1,4 @@
-"""槽线族四模板注册四件套同步 + fake 派发（2026-09-18）。
+"""槽线族四模板注册四件套同步 + fake 派发（w1b-slotline-reg，2026-09-18）。
 
 覆盖（followUps ④/0df②/0dl①，审计 #12/#17 修复）：
 - TEMPLATE_META/TEMPLATE_NOMINAL（openems_templates 文末 SLOTLINE_FAMILY 段，
@@ -67,14 +67,23 @@ class TestSlotlineFamilyRegistration:
                      "SLOTLINE_LUMPED_NOMINAL", "msl_slot_transition":
                      "MSL_SLOT_TRANSITION_NOMINAL", "marchand_balun":
                      "MARCHAND_BALUN_NOMINAL"}[t])
-        # 既有键未被重排（尾部追加契约，坑 #247）：新键恰在字典尾部
-        # 串馈毫米波阵批起：槽线族位次退居尾 10..6，ms 四件居尾 6..2，
-        # coil_nfc 尾 2、mmwave_series_array 尾 1（仍钉）
-        assert list(ot.TEMPLATE_META)[-10:-6] == list(SLOTLINE_FAMILY)
-        assert list(ot.TEMPLATE_META)[-6:-2] == ["ms_patch", "ms_cross",
-                                                 "ms_jcross", "ms_array_NxN"]
-        assert list(ot.TEMPLATE_META)[-1] == "mmwave_series_array"
-        # 42→43：hairpin_alt 注册在 hairpin 之后（同族段内），槽线族仍居尾；
+        # 键集断言（AU-1 b4，尾序槽位钉 [-N:] 退役）：新模板注册一律键集
+        # 覆盖核对 + 相对次序子序列钉（尾部追加契约保留"既有键不被重排/
+        # 中间插注"的保护，去掉绝对槽位——新增尾注不再打红本钉，#304 族
+        # 六次槽位算术翻新就此停付）。全量键集等式由审计文件单源钉
+        # （test_template_geometry_audit::frozenset(TEMPLATE_META) == EXPECTED）。
+        _TAIL_BLOCK = [
+            *SLOTLINE_FAMILY,
+            "ms_patch", "ms_cross", "ms_jcross", "ms_array_NxN",
+            "coil_nfc", "mmwave_series_array", "ring_resonator",
+            "pyramid_horn", "coax_waveguide_transition", "varactor_bpf",
+        ]
+        _keys = list(ot.TEMPLATE_META)
+        assert set(_TAIL_BLOCK) <= set(_keys)
+        _it = iter(_keys)  # 相对次序：块内名字按注册序出现（子序列）
+        for _name in _TAIL_BLOCK:
+            assert _name in _it, f"注册相对次序漂移：{_name}"
+        # 42→43：w2g hairpin_alt 注册在 hairpin 之后（同族段内），槽线族仍居尾；
         # 计数只与单源比对（#247 禁轨内自钉），字面基线在审计文件单点钉
         assert len(ot.TEMPLATE_META) == len(ot.TEMPLATE_NOMINAL) == len(_ET)
 
@@ -148,6 +157,30 @@ class TestSlotlineFamilyRegistration:
                                              "h_mm": 1.524, "er": 3.66},
                                 (2.25, 2.75))
         assert repr(round(r.z0_ohm, 4)) in text   # z_mode=闭式 Z0 缺省注入
+
+    def test_hfss_arbitration_backfill(self):
+        """TODO 0df followUp③：真机三方对拔回填 hfss_arbitration 字段（0dh
+        e35a517 收口数）。钉字段结构+预声明门+verdict AGREE+自洽门 FAIL 如实
+        记录（#122 不凑绿）；数字与 runs/slotline_arbitration/ 仲裁产物一致。"""
+        data = _meta_yaml("slotline")
+        ha = data.get("hfss_arbitration")
+        assert isinstance(ha, dict), "slotline meta.yaml 缺 hfss_arbitration 回填"
+        gates = ha["pre_declared_gates"]
+        for key in ("beta_le_5pct", "three_route_vs_hfss_le_2pct5",
+                    "amplitude_le_0p5db_same_direction", "z0_no_hard_gate"):
+            assert gates.get(key), key
+        bw = ha["beta_three_way"]
+        # 闭式锚与 core/slotline 现算一致（回填数字不漂移）
+        cf = slotline_closed_form(1.0, 1.524, 3.66, F0)
+        assert float(bw["closed_form_rad_m"]) == pytest.approx(cf.beta_rad_m, abs=1e-3)
+        assert float(bw["hfss_vs_cf_pct"]) == pytest.approx(-0.68, abs=0.01)
+        assert abs(float(bw["route_a_vs_hfss_pct"])) <= 2.5   # AGREE 判据内
+        assert abs(float(bw["route_b_vs_hfss_pct"])) <= 2.5
+        amp = ha["amplitude"]
+        assert float(amp["delta_db"]) <= 0.5                  # #350 幅度门
+        assert ha["consistency_gate_fail_record"]["s21_vs_gamma_pct"] > 1.0
+        assert ha["verdict"] == "AGREE"
+        assert "runs/slotline_arbitration" in ha["evidence"]
 
 
 class TestSlotlineFamilyFakeDispatch:

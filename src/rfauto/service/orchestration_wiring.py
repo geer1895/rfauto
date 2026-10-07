@@ -1,12 +1,12 @@
-"""编排接线：campaign 阶段事件 ↔ core.events 总线 ↔ 资源席位。
+"""B-29 编排接线：campaign 阶段事件 ↔ core.events 总线 ↔ G13 资源席位。
 
-背景：
+背景（续跑计划 §10.23 补强第三批 B-29）：
 service/campaign_manager 已能确定性拆解"校准→粗筛→精算→公差→报告"
 阶段队列，service/resource_scheduler（G13）已能对稀缺资源（license /
 FDTD / CPU）做确定性仲裁，但两者之间没有接线：战役阶段推进不会广播事件，
 作业到达/释放也不会进入调度器，更没有"哪类资源被哪个作业占用"的可查询账目。
 
-本模块只做三类接线，不产生任何新的物理/数值决策（数值铁律）：
+本模块只做三类接线，不产生任何新的物理/数值决策：
 1. **事件出口**：campaign 阶段事件经既有 core.events.EventBus 发布
    （复用 EventType，不改 core/events.py 与 core/state.py）；
 2. **调度入口**：作业到达/释放信号转发给 resource_scheduler.schedule
@@ -22,7 +22,7 @@ FDTD / CPU）做确定性仲裁，但两者之间没有接线：战役阶段推�
 - license 探测若调用方注入 probe 则按其结果走；不注入时沿用
   resource_scheduler 的 best-effort 探测（#105），接线层不吞异常、不编造。
 
-补强（G13 调度接进生产路径）：接线器消费注入接口——
+F2⑤ 补强（G13 调度接进生产路径）：接线器消费 W2⑦ 注入接口——
 ``predictor``（TieredDurationPredictor 分档时长预测：未申报作业按
 (solver, template, grid_tier) 填充 + 同刻 SJF）与 ``budget_gate``
 （budget_admission_gate 预算准入门：拒绝者落 unassigned）在重排时
@@ -37,6 +37,7 @@ from typing import Any
 
 from rfauto.core.events import Event, EventBus, EventType, get_event_bus
 from rfauto.pipeline.quota_guard import TieredDurationPredictor
+from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.job_registry import JobRegistry, get_job_registry
 from rfauto.service.resource_scheduler import (
     ResourceJob,
@@ -109,7 +110,7 @@ class OrchestrationWiring:
         self._config = config
         self._bus = event_bus if event_bus is not None else get_event_bus()
         self._probe = probe
-        # 注入面：分档时长预测器（未申报填充 + SJF）与预算准入门。
+        # W2⑦/F2⑤ 注入面：分档时长预测器（未申报填充 + SJF）与预算准入门。
         self._predictor = predictor
         self._budget_gate = budget_gate
         self._jobs: dict[str, ResourceJob] = {}
@@ -200,38 +201,36 @@ class OrchestrationWiring:
                 status = "elapsed"
             else:
                 status = "assigned"
-            return {
-                "ok": True,
-                "job_id": jid,
-                "solver": a["solver"],
-                "resource_class": a["resource_class"],
-                "status": status,
-                "admitted": admitted,
-                "seats": held.get(jid, []),
-                "planned_seats": [str(s) for s in a["resources"]],
-                "start_s": float(a["start_s"]),
-                "end_s": float(a["end_s"]),
-                "reason": "" if admitted else (
+            return ok_envelope(
+                job_id=jid,
+                solver=a["solver"],
+                resource_class=a["resource_class"],
+                status=status,
+                admitted=admitted,
+                seats=held.get(jid, []),
+                planned_seats=[str(s) for s in a["resources"]],
+                start_s=float(a["start_s"]),
+                end_s=float(a["end_s"]),
+                reason="" if admitted else (
                     f"资源未就绪，计划 {float(a['start_s']):g}s 起执行"),
-                "index": a.get("index"),
-            }
+                index=a.get("index"),
+            )
         for u in plan.get("unassigned") or []:
             if str(u["job_id"]) != jid:
                 continue
-            return {
-                "ok": True,
-                "job_id": jid,
-                "solver": u["solver"],
-                "resource_class": u["resource_class"],
-                "status": str(u["status"]),
-                "admitted": False,
-                "seats": [],
-                "planned_seats": [],
-                "start_s": None,
-                "end_s": None,
-                "reason": str(u["reason"]),
-                "index": u.get("index"),
-            }
+            return ok_envelope(
+                job_id=jid,
+                solver=u["solver"],
+                resource_class=u["resource_class"],
+                status=str(u["status"]),
+                admitted=False,
+                seats=[],
+                planned_seats=[],
+                start_s=None,
+                end_s=None,
+                reason=str(u["reason"]),
+                index=u.get("index"),
+            )
         return {
             "ok": False,
             "job_id": jid,
@@ -259,7 +258,7 @@ class OrchestrationWiring:
     ) -> dict[str, Any]:
         """作业到达信号：登记 → 交给 G13 内核重排 → 返回决策并同步席位。
 
-        ``template`` / ``grid_tier`` 为分档预测维度（空串=未申报），
+        ``template`` / ``grid_tier`` 为 W2⑦④ 分档预测维度（空串=未申报），
         predictor 注入时供 (solver, template, grid_tier) 分档填充时长。
         """
         jid = str(job_id)
@@ -317,14 +316,13 @@ class OrchestrationWiring:
                 EventType.SOLVE_COMPLETED, run_id=run_id, job_id=jid,
                 message=f"作业 {jid} 释放资源 {released_seats or '(无)'}",
                 data=record)
-        return {
-            "ok": True,
-            "job_id": jid,
-            "status": "released",
-            "released_seats": released_seats,
-            "at_s": self._clock_s,
-            "occupancy": self.seat_occupancy(),
-        }
+        return ok_envelope(
+            job_id=jid,
+            status="released",
+            released_seats=released_seats,
+            at_s=self._clock_s,
+            occupancy=self.seat_occupancy(),
+        )
 
     # ── campaign 阶段 → 事件总线 + 调度信号 ──────────────────────────────
     def campaign_stage(
@@ -347,9 +345,9 @@ class OrchestrationWiring:
         """
         stages = {str(s.get("stage")): s for s in plan.get("stages") or []}
         if stage not in stages:
-            return {"ok": False, "errors": [f"未知阶段: {stage}"], "event": None}
+            return error_envelope([f"未知阶段: {stage}"], event=None)
         if event not in CAMPAIGN_EVENT_TYPES:
-            return {"ok": False, "errors": [f"未知阶段事件: {event}"], "event": None}
+            return error_envelope([f"未知阶段事件: {event}"], event=None)
         stage_doc = stages[stage]
         jid = job_id or f"campaign:{stage}"
         slv = solver or adapter_solver(stage_doc.get("adapter"))
@@ -374,16 +372,15 @@ class OrchestrationWiring:
             emitted = self.emit_event(
                 CAMPAIGN_EVENT_TYPES[event], run_id=run_id, job_id=jid,
                 message=message, data=data)
-        return {
-            "ok": True,
-            "stage": stage,
-            "campaign_event": event,
-            "solver": slv,
-            "job_id": jid,
-            "decision": decision,
-            "emitted_type": CAMPAIGN_EVENT_TYPES[event].value,
-            "event_id": emitted.event_id if emitted is not None else None,
-        }
+        return ok_envelope(
+            stage=stage,
+            campaign_event=event,
+            solver=slv,
+            job_id=jid,
+            decision=decision,
+            emitted_type=CAMPAIGN_EVENT_TYPES[event].value,
+            event_id=emitted.event_id if emitted is not None else None,
+        )
 
     # ── 内部 ─────────────────────────────────────────────────────────────
     def emit_event(
@@ -459,7 +456,7 @@ class OrchestrationWiring:
                                message=message, data=decision)
 
 
-# ── 批量入口：战役计划 → G13 调度前置步（生产接线点） ─────────────────────
+# ── F2⑤ 批量入口：战役计划 → G13 调度前置步（生产接线点） ─────────────────────
 CAMPAIGN_SCHEDULE_SCHEMA = "rfauto-campaign-schedule-v1"
 
 
@@ -491,7 +488,7 @@ def schedule_campaign_jobs(
     probe: Callable[[str | None], dict[str, Any]] | None = None,
     stage_durations: dict[str, float] | None = None,
 ) -> dict[str, Any]:
-    """战役计划的批量调度前置步：阶段作业列表 → G13 schedule()。
+    """战役计划的批量调度前置步：阶段作业列表 → G13 schedule()（F2⑤）。
 
     生产接线入口（campaign_manager.plan_campaign 派发前调用）：把计划里每个
     阶段构造成 ResourceJob（job_id=``campaign:<stage>``、solver 由 adapter
@@ -503,7 +500,7 @@ def schedule_campaign_jobs(
 
     语义边界（诚实说明）：
     - 计划期零副作用：作业不进全局 JobRegistry（不传 registry 时用独立账本，
-      席位记账仍走 assign/release 路径并回带 ``seat_occupancy``）、不向
+      席位记账仍走 B-29 assign/release 路径并回带 ``seat_occupancy``）、不向
       事件总线广播（emit=False；审计事件 = 内核 decision_log）；
     - license 探测默认 :func:`plan_time_probe`（零网络 #139），可注入替身；
     - 时长申报：predictor 注入时默认 0（未申报，由分档预测填充；
@@ -593,27 +590,26 @@ def schedule_campaign_jobs(
             rejected.append({"stage": entry["stage"], **{k: v for k, v in u.items()}})
         dispatch.append(entry)
 
-    result: dict[str, Any] = {
-        "ok": True,
-        "schema": CAMPAIGN_SCHEDULE_SCHEMA,
-        "campaign_id": str(campaign_id),
-        "model": model,
-        "n_jobs": len(job_ids),
-        "job_ids": job_ids,
-        "predictor_used": predictor is not None,
-        "budget_gate_used": budget_gate is not None,
-        "dispatch": dispatch,
-        "assignments": assignments,
-        "unassigned": unassigned,
-        "rejected": rejected,
-        "decision_log": list(raw.get("decision_log") or []),
-        "peak_concurrency": dict(raw.get("peak_concurrency") or {}),
-        "capacities": dict(raw.get("capacities") or {}),
-        "probe_attempts": int(raw.get("probe_attempts", 0) or 0),
-        "audit": audit_schedule(raw),
-        "seat_occupancy": ledger.seat_occupancy(),
-        "clock_s": wiring.clock_s,
-    }
+    result: dict[str, Any] = ok_envelope(
+        schema=CAMPAIGN_SCHEDULE_SCHEMA,
+        campaign_id=str(campaign_id),
+        model=model,
+        n_jobs=len(job_ids),
+        job_ids=job_ids,
+        predictor_used=predictor is not None,
+        budget_gate_used=budget_gate is not None,
+        dispatch=dispatch,
+        assignments=assignments,
+        unassigned=unassigned,
+        rejected=rejected,
+        decision_log=list(raw.get("decision_log") or []),
+        peak_concurrency=dict(raw.get("peak_concurrency") or {}),
+        capacities=dict(raw.get("capacities") or {}),
+        probe_attempts=int(raw.get("probe_attempts", 0) or 0),
+        audit=audit_schedule(raw),
+        seat_occupancy=ledger.seat_occupancy(),
+        clock_s=wiring.clock_s,
+    )
     if predictor is not None:
         result["duration_predictions"] = dict(raw.get("duration_predictions") or {})
     return result

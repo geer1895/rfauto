@@ -1,6 +1,6 @@
 """rfauto-dag-v1：配方 DAG 化的确定性 schema 内核（DP-9 P2，规格 §2）。
 
-分层（分层铁律）：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
+分层：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
 构造期拓扑排序+环检测、旧配方/旧计划的兼容包装全在这里；键计算与 CAS
 落盘在 infra.dag_cache，执行与断点续跑在 pipeline.dag_runner。
 
@@ -16,7 +16,22 @@
       "retries": 1,
       "escalation": [{"budget_x": 1.5}, {"mesh_tier": "next"}],
       "rerun_triggers": ["code", "params", "env", "budget"],  # 缺省全开
+      # QW-7 扩展（可选，缺省缺省=旧文件零改动走原路径）：
+      "failure_policy": "abort",         # abort|continue|skip（缺省 abort）
+      "inconclusive_when": {"message_contains": "UNDECIDABLE",
+                            "outputs_missing_any": ["evidence/gate.csv"]},
     }
+
+QW-7 扩展字段（schema 向后兼容：旧声明零字段=缺省行为，归一化输出不含键）：
+
+- ``failure_policy``：节点失败后的下游处置策略（OpenTAP 语义三分）——
+  ``abort``（缺省=现行为：下游递归标 aborted，算失败）；``continue``
+  （下游照常执行，下游若因缺上游产物自然失败，注记归因策略而非上游）；
+  ``skip``（下游递归标 skipped，不算失败，续跑不复活）。
+- ``inconclusive_when``：节点"跑完但证据不可判"的声明判据（映射口径
+  预声明见 pipeline.dag_runner 模块注释）——``message_contains``（执行
+  成功且 message 含该子串 → inconclusive）、``outputs_missing_any``
+  （重试穷尽后仍缺这些声明产物 → inconclusive 而非 failed）。
 
 边=depends_on（节点字段）。旧 recipes/ YAML 无 ``dag`` 键 → 线性链降级；
 campaign plan v1/v1.1 的 stages → 节点映射（STAGE_KIND_MAP 确定性表）。
@@ -25,6 +40,7 @@ campaign plan v1/v1.1 的 stages → 节点映射（STAGE_KIND_MAP 确定性表�
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 #: schema 版本串（节点集 JSON 载体 + plan v2 的 dag.schema 字段）。
@@ -34,8 +50,20 @@ DAG_SCHEMA = "rfauto-dag-v1"
 NODE_KINDS: tuple[str, ...] = ("render", "solve", "postprocess", "judge")
 
 #: 节点/阶段状态（复用 campaign 状态机语义：failed→aborted 递归传播）。
+#: QW-7 增 inconclusive：执行成功但证据不可判（判定三态，非执行失败——
+#: #225 纪律：裁决不可判 ≠ 执行失败，两族不得混淆）。
 NODE_STATUSES: tuple[str, ...] = (
-    "pending", "running", "done", "failed", "aborted", "partial", "skipped")
+    "pending", "running", "done", "failed", "aborted", "partial", "skipped",
+    "inconclusive")
+
+#: QW-7 节点失败策略（OpenTAP 语义三分；缺省 abort=现行为零变化）。
+FAILURE_POLICIES: tuple[str, ...] = ("abort", "continue", "skip")
+DEFAULT_FAILURE_POLICY = "abort"
+
+#: inconclusive_when 合法判据键（声明形态与 escalation/budget 同风格：dict）。
+INCONCLUSIVE_WHEN_KEYS: frozenset[str] = frozenset({
+    "message_contains", "outputs_missing_any",
+})
 
 #: rerun-triggers 分级（规格 §4：code/params/env/budget；缺省全开；
 #: mtime 类不可靠触发器不采用——#325/#329 实证 mtime 语义不可靠）。
@@ -66,6 +94,15 @@ class DagSchemaError(ValueError):
     """DAG 构造期拒绝（schema 非法 / 未知依赖 / 环）——显式报错不静默。"""
 
 
+#: node_id 白名单（E1-3 审查批 2026-10-04，runs/review_ge8e/e1_pipeline/
+#: REPORT.md exp7）：node_id 进 dag_runner.node_work_dir=run_dir/node_id，
+#: 半可信计划面（recipes/campaign/agent 编排 JSON）里 '../escaped'、'..'、
+#: Windows 绝对路径曾全数通过并逃逸 run_dir——构造期字符白名单拒绝。
+#: 首字符限字母数字（防 '.' 开头的隐藏/相对形态），体内允内点/下划线/连字
+#: （点段 '.'、'..' 全串显式禁），路径分隔符 '/'、'\\' 与盘符 ':' 自然排除。
+NODE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
 def canonical(obj: Any) -> str:
     """稳定 JSON 串（sort_keys、无空格）——schema 内哈希/比对统一口径。"""
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str)
@@ -76,6 +113,7 @@ def canonical(obj: Any) -> str:
 _KNOWN_NODE_FIELDS: frozenset[str] = frozenset({
     "node_id", "kind", "depends_on", "inputs", "outputs", "cmd", "budget",
     "retries", "escalation", "rerun_triggers",
+    "failure_policy", "inconclusive_when",
 })
 
 
@@ -84,7 +122,9 @@ def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
 
     宽进严出：inputs/outputs/budget 缺省给空值（judge 节点可以只有 cmd）；
     但 node_id/kind/depends_on/rerun_triggers/retries/escalation 的类型
-    与取值域强制——非法节点在构造期炸而不是跑到一半炸。
+    与取值域强制——非法节点在构造期炸而不是跑到一半炸。QW-7 扩展字段
+    failure_policy/inconclusive_when 只在显式声明时校验并进归一化输出
+    （缺省零字段 → 归一化输出不含键，旧声明文件逐字节兼容）。
     """
     if not isinstance(raw, dict):
         raise DagSchemaError(f"节点 #{index} 不是 dict: {type(raw).__name__}")
@@ -94,6 +134,11 @@ def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
     node_id = raw.get("node_id")
     if not isinstance(node_id, str) or not node_id.strip():
         raise DagSchemaError(f"{where}: node_id 必须是非空字符串")
+    if node_id in (".", "..") or not NODE_ID_RE.fullmatch(node_id):
+        raise DagSchemaError(
+            f"{where}: node_id={node_id!r} 含非法字符或路径形态"
+            f"（白名单 {NODE_ID_RE.pattern}，禁 '.'/'..' 点段与 / \\ : 分隔符"
+            "——node_work_dir=run_dir/node_id 防路径逃逸，E1-3）")
     where = f"节点[{node_id}]"
 
     kind = raw.get("kind")
@@ -139,7 +184,45 @@ def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
             f"{where}: rerun_triggers 必须是 {list(RERUN_TRIGGER_CATEGORIES)}"
             f" 的非空子集，收到 {triggers!r}")
 
-    return {
+    # QW-7 扩展字段（显式声明才校验+进归一化输出；缺省零字段=旧文件零改动）
+    failure_policy = raw.get("failure_policy")
+    if failure_policy is not None and failure_policy not in FAILURE_POLICIES:
+        raise DagSchemaError(
+            f"{where}: failure_policy={failure_policy!r} 非法，"
+            f"可选 {list(FAILURE_POLICIES)}")
+
+    inc_when: dict[str, Any] | None = None
+    raw_inc = raw.get("inconclusive_when")
+    if raw_inc is not None and raw_inc != {}:
+        if not isinstance(raw_inc, dict):
+            raise DagSchemaError(f"{where}: inconclusive_when 必须是 dict")
+        unknown = sorted(set(raw_inc) - INCONCLUSIVE_WHEN_KEYS)
+        if unknown:
+            raise DagSchemaError(
+                f"{where}: inconclusive_when 未知判据键 {unknown}，"
+                f"可选 {sorted(INCONCLUSIVE_WHEN_KEYS)}")
+        inc_when = {}
+        needle = raw_inc.get("message_contains")
+        if needle is not None:
+            if not isinstance(needle, str) or not needle:
+                raise DagSchemaError(
+                    f"{where}: inconclusive_when.message_contains "
+                    "必须是非空字符串")
+            inc_when["message_contains"] = needle
+        soft = raw_inc.get("outputs_missing_any")
+        if soft is not None:
+            if (not isinstance(soft, list) or not soft
+                    or not all(isinstance(s, str) and s for s in soft)):
+                raise DagSchemaError(
+                    f"{where}: inconclusive_when.outputs_missing_any "
+                    "必须是非空字符串列表")
+            inc_when["outputs_missing_any"] = list(soft)
+        if not inc_when:
+            raise DagSchemaError(
+                f"{where}: inconclusive_when 不能是空判据"
+                f"（可选键 {sorted(INCONCLUSIVE_WHEN_KEYS)}）")
+
+    node = {
         "node_id": node_id,
         "kind": kind,
         "depends_on": list(depends_on),
@@ -154,6 +237,11 @@ def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
         # 扩展键透传（stage_extra 等；不覆盖已知字段）
         **{k: v for k, v in raw.items() if k not in _KNOWN_NODE_FIELDS},
     }
+    if failure_policy is not None:
+        node["failure_policy"] = failure_policy
+    if inc_when is not None:
+        node["inconclusive_when"] = inc_when
+    return node
 
 
 def topo_order(nodes: list[dict[str, Any]]) -> list[str]:

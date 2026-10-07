@@ -1,8 +1,8 @@
 """提议→沙箱→三层 Gate 链（#19）：拓扑草稿准入 + F8 LLM 模板草案 + 通过率统计。
 
-三条链，写面全部只在 runs/ 沙箱内（写面隔离）：
+三条链，写面全部只在 runs/ 沙箱内：
 
-1. 拓扑草稿准入链（接线）：propose_topology 落的 runs/recipe_sandbox
+1. 拓扑草稿准入链（0by⑥ 接线）：propose_topology 落的 runs/recipe_sandbox
    草稿 → ``promote_topology_draft``：L1 白名单（TEMPLATE_META[model].params，
    recipes/ 无 coupled_bpf 基方，不走 RecipeSandbox.promote 的 diff 路线）
    → L2 模板离线试运行（render + CSXCAD 几何实测，#212 手法；api.dry_run
@@ -22,7 +22,7 @@
    csxcad/anchor）。
 
 边界：F8 首族=衰减器变体（base ∈ {atten_pi, atten_t}，2 端口 MSLPort +
-z=0 PEC 地——电路提取的接地假设在此族成立）；其他家族=后续扩展。
+z=0 PEC 地——电路提取的接地假设在此族成立）；其他家族=followUp。
 """
 
 from __future__ import annotations
@@ -37,6 +37,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from rfauto.service.envelope import ok_envelope
 
 RUNS_PROMOTED_DIRNAME = "promoted"   # 与 agent_sandbox.PROMOTED_DIRNAME 同名（准入区）
 Z0_DEFAULT_OHM = 50.0
@@ -292,7 +294,7 @@ def template_dry_run(template: str, params: dict[str, Any], *,
             "template": template, "audit": audit}
 
 
-# ─── 链 1：拓扑草稿准入（不走 RecipeSandbox.promote 的 diff 路线）────────
+# ─── 链 1：拓扑草稿准入（0by⑥；不走 RecipeSandbox.promote 的 diff 路线）────────
 
 
 def _write_verdict(sandbox_root: Path, draft: Path, verdict: dict[str, Any]) -> Path:
@@ -879,9 +881,14 @@ def generate_template_draft(request: dict[str, Any], llm_call: Callable[[str], s
     verdict = {"event": "template_draft", "stage": "staged", "ok": True,
                **staged, "template_name": req["template_name"]}
     _write_verdict(sb.root, Path(staged["draft"]), verdict)
-    return {"ok": True, "stage": "staged", **staged,
-            "template_name": req["template_name"],
-            "base_template": req["base_template"]}
+    return ok_envelope(
+               **{
+               "stage": "staged",
+               **staged,
+               "template_name": req["template_name"],
+               "base_template": req["base_template"],
+               },
+           )
 
 
 def _validate_draft_request(request: dict[str, Any]) -> dict[str, Any]:
@@ -1019,11 +1026,17 @@ def promote_template_draft(draft_path: str | Path, *, params: dict[str, Any] | N
                              "checks": gates})
     l3 = gate.check_l3(l1, l2, dict(validation["anchor"].get("values") or {}))
     target = sb.move_to_promoted(Path(validation["draft"]).name)
-    result = {**validation, "ok": True, "status": "promoted",
-              "promoted": str(target), "token": l3.token,
-              "gate": {"L1": l1.to_dict(), "L2": l2.to_dict(), "L3": l3.to_dict()},
-              "message": "草案过全链验证+三层 Gate，已迁沙箱 promoted/ 准入区"
-                         "（正式入厂注册四件套留人工 commit）"}
+    result = ok_envelope(
+                 **{
+                 **validation,
+                 "status": "promoted",
+                 "promoted": str(target),
+                 "token": l3.token,
+                 "gate": {"L1": l1.to_dict(), "L2": l2.to_dict(), "L3": l3.to_dict()},
+                 "message": "草案过全链验证+三层 Gate，已迁沙箱 promoted/ 准入区"
+                         "（正式入厂注册四件套留人工 commit）",
+                 },
+             )
     if write_audit:
         append_audit_log({"event": "template_draft", "ok": True,
                           "stage": "promoted",
@@ -1132,8 +1145,10 @@ def proposal_chain_stats(*, audit_path: str | Path | None = None,
                 verdicts.append(json.loads(path.read_text(encoding="utf-8")))
             except (json.JSONDecodeError, OSError):
                 continue
-    return {"ok": True, "audit": _aggregate(records),
-            "sandbox_verdicts": _aggregate(verdicts),
-            "sources": {"audit_file": str(audit_file),
+    return ok_envelope(
+        audit=_aggregate(records),
+        sandbox_verdicts=_aggregate(verdicts),
+        sources={"audit_file": str(audit_file),
                         "audit_found": audit_file.exists(),
-                        "n_verdict_files": len(verdicts)}}
+                        "n_verdict_files": len(verdicts)},
+    )

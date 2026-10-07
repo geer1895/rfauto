@@ -1,4 +1,4 @@
-"""sweep 后端、ResultCache 集成、entry-point 插件发现测试。"""
+"""P2-D3 测试——sweep 后端、ResultCache 集成、entry-point 插件发现。"""
 
 import sys
 from pathlib import Path
@@ -68,6 +68,45 @@ class TestSamplers:
         assert len(combos) == 5
         assert combos[0]["a"] == 4.0
         assert combos[-1]["a"] == 6.0
+
+
+class TestSamplerSeedDeterminism:
+    """审查 D1-4 回归钉：采样器必须显式 seed 确定性（同 seed 逐位同）。
+
+    原缺陷：random_sweep 用全局未种子化 np.random.uniform——同输入两次调用
+    产生不同点集（违仓 C4 可复现红线）；LHS 反而硬编码 seed=42 不可换。
+    """
+
+    def test_random_same_seed_bitwise_identical(self):
+        a = random_sweep({"a": (0.0, 1.0), "b": (10.0, 20.0)}, n_samples=25, seed=7)
+        b = random_sweep({"a": (0.0, 1.0), "b": (10.0, 20.0)}, n_samples=25, seed=7)
+        assert a == b
+
+    def test_random_different_seed_differs(self):
+        a = random_sweep({"a": (0.0, 1.0)}, n_samples=25, seed=7)
+        b = random_sweep({"a": (0.0, 1.0)}, n_samples=25, seed=8)
+        assert a != b
+
+    def test_random_default_is_fixed_seed_42(self):
+        """缺省行为钉：缺省=显式 seed 42（确定性），两次调用逐位同。"""
+        a = random_sweep({"a": (0.0, 1.0)}, n_samples=10)
+        b = random_sweep({"a": (0.0, 1.0)}, n_samples=10)
+        assert a == b
+        assert a == random_sweep({"a": (0.0, 1.0)}, n_samples=10, seed=42)
+
+    def test_random_seed_none_rejected(self):
+        with pytest.raises(ValueError, match="seed"):
+            random_sweep({"a": (0.0, 1.0)}, n_samples=5, seed=None)  # type: ignore[arg-type]
+
+    def test_lhs_seed_param_and_default_compat(self):
+        """LHS seed 可传参；缺省 42 与历史硬编码行为逐位一致（兼容钉）。"""
+        ranges = {"a": (0.0, 1.0), "b": (10.0, 20.0)}
+        dflt = latin_hypercube_sweep(ranges, n_samples=12)
+        s42 = latin_hypercube_sweep(ranges, n_samples=12, seed=42)
+        assert dflt == s42
+        s7 = latin_hypercube_sweep(ranges, n_samples=12, seed=7)
+        assert s7 != s42
+        assert latin_hypercube_sweep(ranges, n_samples=12, seed=7) == s7
 
 
 class TestRunSweep:

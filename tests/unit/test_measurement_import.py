@@ -1,6 +1,6 @@
 """E9a 测量数据导入单元测试。
 
-验收标准：
+验收标准（扩展方案 §E9a）：
 ① Touchstone 文件导入（.s2p）
 ② CSV 格式导入
 ③ 元数据解析
@@ -130,3 +130,42 @@ class TestMeasurementMetadata:
         d = meta.to_dict()
         assert d["instrument"] == "VNA"
         assert d["temperature_c"] == 23.5
+
+
+class TestSnpExtensionRemovedFromWhitelist:
+    """S-1 C-06③ 2026-10-04：'.snp' 移出导入白名单——skrf 按 .sNp 扩展名
+    数字推端口秩（#248），'.snp' 无秩可推，留在白名单只会把明确的扩展名
+    错误降级成下游 skrf 解析错误。"""
+
+    def test_snp_extension_rejected_upfront(self, tmp_path):
+        path = tmp_path / "data.snp"
+        path.write_text("# Hz S RI R 50\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="不支持的文件格式"):
+            import_touchstone(path)
+
+    def test_s4p_still_accepted(self, sample_touchstone):
+        assert import_touchstone(sample_touchstone).n_ports == 2
+
+
+class TestMetadataNoneNormalization:
+    """S-1 C-07 2026-10-04：MeasurementData(metadata=None) 归一为缺省实例。
+
+    vna_capture apply_cal_kit/mock 链两处传 None 构造，消费面调
+    self.metadata.to_dict() 即 AttributeError 裸炸（latent footgun）。"""
+
+    def test_metadata_none_normalized_to_default(self, sample_touchstone):
+        data = import_touchstone(sample_touchstone)
+        md = MeasurementData(network=data.network, metadata=None,
+                             source_file="mock", n_ports=2,
+                             freq_range_ghz=(1.0, 3.0))
+        assert isinstance(md.metadata, MeasurementMetadata)
+        dumped = md.to_dict()                 # 旧实现此处 AttributeError
+        assert dumped["metadata"]["instrument"] == ""
+
+    def test_explicit_metadata_preserved(self, sample_touchstone):
+        data = import_touchstone(sample_touchstone)
+        meta = MeasurementMetadata(instrument="VNA-X")
+        md = MeasurementData(network=data.network, metadata=meta,
+                             source_file="mock", n_ports=2,
+                             freq_range_ghz=(1.0, 3.0))
+        assert md.metadata is meta

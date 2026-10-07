@@ -52,6 +52,23 @@ def test_normalize_node_rejects_bad_kind_and_empty_id() -> None:
         normalize_node({"kind": "render"})
 
 
+def test_node_id_whitelist_rejects_path_escape_forms() -> None:
+    """E1-3（审查批 2026-10-04，exp7 三例）：node_id 白名单拒绝路径逃逸形态
+    （'../escaped'、'..'、Windows 绝对路径），报错含违规值——防
+    node_work_dir=run_dir/node_id 逃逸 run_dir。"""
+    for bad in ("../escaped", "..", "C:\\abs\\path", "/etc/passwd", "."):
+        with pytest.raises(DagSchemaError, match="node_id"):
+            normalize_node(_node(bad))
+
+
+def test_node_id_whitelist_accepts_inner_dots_underscore_dash() -> None:
+    """白名单体内点/下划线/连字合法（campaign 旧 stage 名兼容）；点段 '.'/'..'
+    全串仍拒。"""
+    for good in ("render_main", "render.branchline_coupler", "p1", "tune-v2"):
+        node = normalize_node(_node(good))
+        assert node["node_id"] == good
+
+
 def test_normalize_node_rejects_self_dep_and_bad_triggers() -> None:
     with pytest.raises(DagSchemaError, match="自依赖"):
         normalize_node(_node("r1", deps=["r1"]))

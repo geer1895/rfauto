@@ -1,4 +1,4 @@
-"""执行看板：自治环步骤可视 + 暂停/接管控制（WP3.5 v1.2 增强）。
+"""执行看板：自治环步骤可视 + 暂停/接管控制（WP3.5 v1.2 增强②）。
 
 Gridy 人机协同经验里"CLI 批处理 + GUI 观察"的折中路线：
 - 环在 service 层每步把当前步骤/里程碑写入 runs/loop_boards/<board_id>.json
@@ -6,7 +6,7 @@ Gridy 人机协同经验里"CLI 批处理 + GUI 观察"的折中路线：
 - 暂停/接管命令也落同一文件，环只在**步骤边界**轮询执行（协作式暂停，
   不打断进行中的仿真——与 #145 同源：中途打断只会产生半截产物）；
   控制命令带单调递增 seq（环整文档落盘前必须并采盘上更新的命令，
-  防止人类刚写的 pause 被环的下一次 flush 冲掉——冒烟实证）；
+  防止人类刚写的 pause 被环的下一次 flush 冲掉——2026-09-13 冒烟实证）；
 - 接管（takeover）= 人收回控制权：环如实停止（verdict=TAKEN_OVER），
   best-so-far 参数已由环落沙箱草稿，人走既有三层 Gate 继续；
 - 文件是跨进程通道：CLI 批处理进程写，UI 进程（rfauto ui）读+发令，
@@ -22,6 +22,8 @@ import json
 import time
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import ok_envelope
 
 LOOP_BOARD_SCHEMA = "rfauto-loop-board-v1"
 LOOP_BOARD_ROOT = Path("runs") / "loop_boards"
@@ -195,8 +197,7 @@ class LoopBoard:
         if action == "pause":
             self.doc["status"] = "pause_requested"
         self._flush()
-        return {"ok": True, "board_id": self.board_id,
-                "command": action, "status": self.doc["status"]}
+        return ok_envelope(board_id=self.board_id, command=action, status=self.doc["status"])
 
     def pending_command(self) -> str | None:
         """未消费的命令（带 seq 判定；读前自动并采盘上更新）。"""
@@ -276,7 +277,7 @@ def read_board(board_id: str, root: Path | None = None) -> dict[str, Any]:
 def list_boards(root: Path | None = None, limit: int = 20) -> dict[str, Any]:
     base = (root or LOOP_BOARD_ROOT).resolve()
     if not base.exists():
-        return {"ok": True, "boards": []}
+        return ok_envelope(boards=[])
     items: list[dict[str, Any]] = []
     for p in sorted(base.glob("*.json")):
         try:
@@ -294,7 +295,7 @@ def list_boards(root: Path | None = None, limit: int = 20) -> dict[str, Any]:
             "updated_at": doc.get("updated_at"),
         })
     items.sort(key=lambda x: str(x.get("updated_at") or ""), reverse=True)
-    return {"ok": True, "boards": items[: max(1, int(limit))]}
+    return ok_envelope(boards=items[: max(1, int(limit))])
 
 
 def board_control(board_id: str, action: str,

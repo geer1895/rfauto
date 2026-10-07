@@ -1,4 +1,4 @@
-r"""双向定点迭代温漂内核。
+r"""D3-3 双向定点迭代温漂内核（续跑计划 §10.3 D3-3 / §10.21）。
 
 口径与公式来源（裁判 = 独立来源，不是本模块自己的推导，#118）
 ----------------------------------------------------------------
@@ -9,7 +9,7 @@ r"""双向定点迭代温漂内核。
    其中 P_diss(T_n) 由链路「T_n -> eps_r(T)/tan_delta(T)/sigma(T) -> EM
    （f0, Qu）-> 损耗/失谐」给出。方法论锚：空间电子技术 2025.03.014
    星载 3D 打印天线「假定初温 -> eps_r(T) -> EM -> 损耗 -> T 定点迭代」
-   （文献引用口径）；多物理电-热顺序求解（COMSOL Microwave
+   （§10.3 D3-3 引用口径）；多物理电-热顺序求解（COMSOL Microwave
    Heating：Frequency-Stationary，先频域 Maxwell 再稳态热）同构。
    迭代只做确定性算术：无随机、无网络、无真机。
 
@@ -50,6 +50,7 @@ r"""双向定点迭代温漂内核。
 - EM 评估函数（返回 f0/Qu）与损耗评估函数（返回耗散功率 W）均可注入，
   便于离线确定性测试或替换为场求解器回调；默认给微带解析链。
 - 全部 to_dict 结果 JSON 可序列化（allow_nan=False 安全，不含 inf/nan）。
+精度档案：knowledge/precision_profiles.yaml#thermal_iteration（行为=REFUSE，last_verified=2026-09-12）。
 """
 
 from __future__ import annotations
@@ -66,7 +67,7 @@ from typing import Any
 C0_M_PER_S = 299792458.0             # 真空光速 [m/s]（CODATA）
 MU0_H_PER_M = 1.2566370614359173e-6  # 真空磁导率 [H/m]（CODATA 2018）
 
-# 验收口径：微带谐振器 -40~85 C 场景迭代 <= 5 轮收敛
+# §10.3 D3-3 验收口径：微带谐振器 -40~85 C 场景迭代 <= 5 轮收敛
 DEFAULT_MAX_ITERATIONS = 5
 MAX_ITERATIONS_LIMIT = 100
 # 收敛判据默认 1 kHz：对 GHz 级谐振器约 0.4 ppm，比温漂量级（10^2~10^3 ppm）

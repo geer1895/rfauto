@@ -20,8 +20,22 @@ from typing import Any
 
 from rfauto.service.calculator_service import run_calculator
 
+#: diagnosis 域 schema 版本（AU-2③ 按域推广，PDN 惯例：service 返回信封
+#: 逐键落 ``schema_version``；旧档案无键照读=消费面向后兼容。与
+#: recipe_version/schema_version(插件参数) 语义区分，#106）。
+DIAGNOSIS_SCHEMA_VERSION = "1.0"
+
 _CROSS_TOL = 0.10   # Q 双通道互证门（规格 §2b）
 _THIRD_TOL = 0.15   # 三方极差门（判据族 ④）
+#: 目标矩阵逐元素相对偏差通过门（DP-2 诊断域 target_check 判据，F-4/S3：
+#: 5%=工程 CM 提取常规精度口径，原 :240 内联魔数收敛为单源常量）。
+_TARGET_CHECK_TOL = 0.05
+
+
+def _stamped(envelope: dict[str, Any]) -> dict[str, Any]:
+    """返回信封补域版本戳（已有则不动；透传壳统一出口）。"""
+    envelope.setdefault("schema_version", DIAGNOSIS_SCHEMA_VERSION)
+    return envelope
 
 
 def _load_touchstone(path: str, need_s21: bool) -> dict[str, Any]:
@@ -107,9 +121,9 @@ def diagnose_q(request: dict[str, Any]) -> dict[str, Any]:
     vf = run_calculator("q_factor_vf", vf_req)
     circle = run_calculator("q_factor_circle", dict(common))
     if not vf["ok"] or not circle["ok"]:
-        return {"ok": False, "error": "Q 双通道执行失败: "
+        return _stamped({"ok": False, "error": "Q 双通道执行失败: "
                 f"vf={vf.get('error') or vf.get('result', {}).get('ok')}; "
-                f"circle={circle.get('error') or circle.get('result', {}).get('ok')}"}
+                f"circle={circle.get('error') or circle.get('result', {}).get('ok')}"})
     rv, rc = vf["result"], circle["result"]
     qv = rv.get("q_unloaded")
     qc = rc.get("q_unloaded")
@@ -127,7 +141,7 @@ def diagnose_q(request: dict[str, Any]) -> dict[str, Any]:
         range_pct /= max(qv, qc, third["q_unloaded"])
         third_note = {"range_pct": round(range_pct, 6),
                       "within_15pct": bool(range_pct <= _THIRD_TOL)}
-    return {"ok": True, "result": {
+    return _stamped({"ok": True, "result": {
         "vf": rv, "circle": rc,
         "verdict": verdict,
         "cross_diff_pct": (round(diff_pct, 6) if diff_pct is not None
@@ -135,11 +149,32 @@ def diagnose_q(request: dict[str, Any]) -> dict[str, Any]:
         "cross_tol": _CROSS_TOL,
         "third_opinion": third,
         "third_check": third_note,
-        "method": "q_dual_channel+skrf_arbitration"}}
+        "method": "q_dual_channel+skrf_arbitration"}})
+
+
+def _deembed_data_pairs(data: dict[str, Any], tau_s: float) -> dict[str, Any]:
+    """数据面馈线粗去嵌（规格 §2a①）：段二 cm_refine_lm 无去嵌参数，用同一
+    core.deembed 内核同 τ 预去嵌——与段一 cm_extract_vf 内部去嵌保持同一
+    参考面（数值逻辑仍在确定性内核，#7；只去纯时延型相位，诚实边界同源）。"""
+    import numpy as np
+
+    from rfauto.core.deembed import deembed_reference_delay
+
+    f_hz = np.asarray(data["freq_ghz"], dtype=float) * 1e9
+    s11 = np.array([complex(a, b) for a, b in data["s11"]])
+    s21 = np.array([complex(a, b) for a, b in data["s21"]])
+    s11d, s21d = deembed_reference_delay(f_hz, s11, s21, tau_s, tau_s)
+    return {"s11": [[float(v.real), float(v.imag)] for v in s11d],
+            "s21": [[float(v.real), float(v.imag)] for v in s21d]}
 
 
 def diagnose_cm(request: dict[str, Any]) -> dict[str, Any]:
-    """CM 反向提取（VF 段一 + LM 段二）+ 可选目标逐元素偏差表（JSON 进出）。"""
+    """CM 反向提取（VF 段一 + LM 段二）+ 可选目标逐元素偏差表（JSON 进出）。
+
+    request 可选 ``deembed_delay_s``（每侧馈线单程时延 s，规格 §2a① 粗去嵌，
+    缺省关）：透传段一内核 cm_extract_vf；段二数据面同 τ 预去嵌（两段同一
+    参考面）。
+    """
     data = _data_ports(request, need_s21=True)
     common = {"freq_ghz": data["freq_ghz"], "s11": data["s11"],
               "s21": data["s21"]}
@@ -149,12 +184,21 @@ def diagnose_cm(request: dict[str, Any]) -> dict[str, Any]:
         common["fbw"] = float(request["fbw"])
     if request.get("order") is not None:
         common["order"] = int(request["order"])
-    ext = run_calculator("cm_extract_vf", dict(
-        common, topology=request.get("topology", "folded")))
+    tau_de = None if request.get("deembed_delay_s") is None \
+        else float(request["deembed_delay_s"])
+    ext_req = dict(common, topology=request.get("topology", "folded"))
+    if tau_de is not None:
+        ext_req["deembed_delay_s"] = tau_de
+    ext = run_calculator("cm_extract_vf", ext_req)
     if not ext["ok"]:
-        return {"ok": False, "error": f"cm_extract_vf 失败: {ext.get('error')}"}
+        return _stamped(
+            {"ok": False, "error": f"cm_extract_vf 失败: {ext.get('error')}"})
     rext = ext["result"]
-    refine_req = dict(common)
+    # order 只属于段一（cm_refine_lm 无此参）：透传会让段二直接
+    # 「参数不匹配」报错（T12 实测留痕 p3_crossval_result_order_bug.json）
+    refine_req = {k: v for k, v in common.items() if k != "order"}
+    if tau_de is not None:
+        refine_req.update(_deembed_data_pairs(data, tau_de))
     refine_req.update({
         "matrix": rext["coupling_matrix"],
         "f0_ghz": rext["f0_ghz"], "fbw": rext["fbw"],
@@ -162,9 +206,12 @@ def diagnose_cm(request: dict[str, Any]) -> dict[str, Any]:
         "transmission_zeros_norm": rext["transmission_zeros_norm"]})
     ref = run_calculator("cm_refine_lm", refine_req)
     if not ref["ok"]:
-        return {"ok": False, "error": f"cm_refine_lm 失败: {ref.get('error')}"}
+        return _stamped(
+            {"ok": False, "error": f"cm_refine_lm 失败: {ref.get('error')}"})
     rref = ref["result"]
     out: dict[str, Any] = {"extract": rext, "refine": rref}
+    if tau_de is not None:
+        out["deembed_delay_s"] = tau_de
     target = request.get("target_matrix")
     if target:
         from rfauto.core.calculators import (
@@ -193,8 +240,9 @@ def diagnose_cm(request: dict[str, Any]) -> dict[str, Any]:
         max_dev = max((d["rel_dev"] for d in devs), default=0.0)
         out["target_check"] = {
             "elements": devs, "max_rel_dev": max_dev,
-            "tol": 0.05, "pass": bool(max_dev <= 0.05)}
-    return {"ok": True, "result": out}
+            "tol": _TARGET_CHECK_TOL,
+            "pass": bool(max_dev <= _TARGET_CHECK_TOL)}
+    return _stamped({"ok": True, "result": out})
 
 
 def diagnose_cat(request: dict[str, Any]) -> dict[str, Any]:
@@ -219,17 +267,17 @@ def diagnose_cat(request: dict[str, Any]) -> dict[str, Any]:
         req["max_step_pct"] = float(request["max_step_pct"])
     if request.get("tol") is not None:
         req["tol"] = float(request["tol"])
-    return run_calculator("cat_critique", req)
+    return _stamped(run_calculator("cat_critique", req))
 
 
 def run_diagnosis(request: dict[str, Any]) -> dict[str, Any]:
     """DP-2 诊断总入口（mode 分派，缺省 full=Q 双通道+CM 反提，CAT 需 s21+目标）。
 
     request: {mode: "full"|"q"|"cm"|"cat", touchstone_path | freq_ghz+s11+s21,
-              f0_ghz/fbw/order/topology/target_matrix/q_e/...}
+              f0_ghz/fbw/order/topology/target_matrix/q_e/deembed_delay_s/...}
     """
     if not isinstance(request, dict):
-        return {"ok": False, "error": "request 须为 dict"}
+        return _stamped({"ok": False, "error": "request 须为 dict"})
     mode = request.get("mode", "full")
     try:
         if mode == "q":
@@ -243,17 +291,38 @@ def run_diagnosis(request: dict[str, Any]) -> dict[str, Any]:
                 raise ValueError("cat 模式须给 f0_ghz 与 fbw")
             return diagnose_cat(request)
         if mode == "full":
-            out: dict[str, Any] = {"ok": True, "result": {}}
-            out["result"]["q"] = diagnose_q(request)
-            cm_req = {k: v for k, v in request.items() if k != "q_e"}
-            out["result"]["cm"] = diagnose_cm(cm_req)
-            if request.get("target_matrix") and request.get("fbw") \
-                    and request.get("f0_ghz"):
+            out: dict[str, Any] = _stamped({"ok": True, "result": {}})
+            # 子诊断逐项兜底：单子项入参缺失（如 _data_ports 的 ValueError）
+            # 不再穿透到外层 except 把整个 full 调用打死——聚合面需要每个
+            # 子结果在场（R3-1，runs/review_ge8e/f3_fix/REPORT.md）。
+            for name, fn, req in (
+                    ("q", diagnose_q, request),
+                    ("cm", diagnose_cm,
+                     {k: v for k, v in request.items() if k != "q_e"}),
+                    ("cat", diagnose_cat, request)):
+                if name == "cat" and not (request.get("target_matrix")
+                                          and request.get("fbw")
+                                          and request.get("f0_ghz")):
+                    continue
                 try:
-                    out["result"]["cat"] = diagnose_cat(request)
-                except (ValueError, KeyError) as exc:
-                    out["result"]["cat"] = {"ok": False, "error": str(exc)}
+                    out["result"][name] = fn(req)
+                except (ValueError, KeyError, TypeError, OSError) as exc:
+                    out["result"][name] = _stamped(
+                        {"ok": False, "error": str(exc)})
+            # 聚合 verdict（R3-1）：只读顶层 ok 的消费者（CLI/MCP 薄壳）不再
+            # 把"全部子诊断失败"当"调用成立"。三态：全败 FAILED（顶层
+            # ok=False）/部分败 PARTIAL/全过 OK；子结果各自保留原样。
+            sub = [v for v in out["result"].values()
+                   if isinstance(v, dict) and "ok" in v]
+            n_failed = sum(1 for v in sub if not v.get("ok"))
+            if sub and n_failed == len(sub):
+                out["ok"] = False
+                out["verdict"] = "FAILED"
+            elif n_failed:
+                out["verdict"] = "PARTIAL"
+            else:
+                out["verdict"] = "OK"
             return out
-        return {"ok": False, "error": f"未知 mode: {mode}（full|q|cm|cat）"}
+        return _stamped({"ok": False, "error": f"未知 mode: {mode}（full|q|cm|cat）"})
     except (ValueError, KeyError, TypeError, OSError) as exc:
-        return {"ok": False, "error": str(exc)}
+        return _stamped({"ok": False, "error": str(exc)})

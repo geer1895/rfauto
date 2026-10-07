@@ -101,6 +101,42 @@ class TestWriteDiff:
         assert Path(result["proposal_recipe"]).name == expected_name
 
 
+class TestApplyQualityProbeTrace:
+    """F-1/S3：agent_apply 基线复算失败留痕不吞（原 except: pass）。"""
+
+    def test_baseline_failure_leaves_quality_error(self, tmp_path, monkeypatch):
+        import rfauto.service.api as api
+
+        recipe = _recipe(tmp_path)
+        params = {"arm_len_mm": 21.0}
+        proposed = agent_propose(recipe, params)
+        assert proposed["ok"]
+
+        calls = {"n": 0}
+
+        def _fake_run_once(path, adapter_name="fake"):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return {"ok": True, "cost": 1.0, "run_id": "r1"}
+            raise RuntimeError("baseline re-run exploded")
+
+        monkeypatch.setattr(api, "run_once", _fake_run_once)
+        result = agent_apply(recipe, proposed["token"], params)
+        assert result["ok"]
+        q = result["quality"]
+        # 基线复算炸掉 → 一行留痕（不再静默吞），主路径不被阻塞
+        assert q["proposal_cost"] == 1.0 and q["baseline_cost"] is None
+        assert "baseline re-run exploded" in q["quality_error"]
+
+    def test_baseline_success_keeps_quality_clean(self, tmp_path):
+        recipe = _recipe(tmp_path)
+        params = {"arm_len_mm": 21.0}
+        proposed = agent_propose(recipe, params)
+        result = agent_apply(recipe, proposed["token"], params)
+        assert result["ok"]
+        assert "quality_error" not in result["quality"]
+
+
 class TestAuditLog:
     def _read_audit(self) -> list[dict]:
         return [json.loads(line) for line in

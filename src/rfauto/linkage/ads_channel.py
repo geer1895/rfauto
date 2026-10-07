@@ -28,6 +28,20 @@ logger = logging.getLogger(__name__)
 
 _CHANNELS = ("m", "a", "b", "c")
 
+#: A 档（原生 Python API）的最低 ADS 年份门槛。
+_PY_API_MIN_YEAR = 2027
+
+
+def _version_year(version: str) -> int:
+    """版本串 → 主段数字年份（"2027"/"2027.1"/"27"→2027 归一后入参）。
+
+    解析不出返回 -1（比任何门槛都小 → 如实降级，不臆断可用）。
+    """
+    try:
+        return int(str(version).split(".")[0])
+    except (TypeError, ValueError):
+        return -1
+
 
 def _version_from_dir(ads_dir: Path) -> str | None:
     return detect_ads_version(ads_dir)
@@ -64,8 +78,10 @@ def probe_channel_availability(
         result["m"] = {"available": False, "reason": "未找到 bin/ads-mcp.exe（需 ADS 2027+）"}
 
     # A：原生 Python API（2027 起提供 keysight.ads 包；实际 import 在
-    # ADS 自带 python 子进程内进行，此处按版本门槛做静态判定）
-    if version is not None and version >= "2027":
+    # ADS 自带 python 子进程内进行，此处按版本门槛做静态判定）。
+    # 版本比较走数字年份（B-3/S3）：字符串序对 "999">="2027" 为 False、
+    # "2027.1" 等点分后缀形态不可比——取主段转 int；解析不出如实 False。
+    if version is not None and _version_year(version) >= _PY_API_MIN_YEAR:
         result["a"] = {"available": True, "reason": f"ADS {version} ≥ 2027，Python API 可用"}
     else:
         result["a"] = {"available": False, "reason": "Python API 需 ADS 2027+"}

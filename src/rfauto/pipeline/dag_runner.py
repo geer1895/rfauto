@@ -1,6 +1,6 @@
 """DP-9 P2：DAG 执行器（状态期刊 + 断点续跑 + #145/#261 接线）。
 
-规格=docs/plan_deepdive_specs_20260924.md §DP-9 §4。语义：
+规格=规格深案 §DP-9 §4。语义：
 
 - 状态期刊 ``<run_dir>/dag.state.json``：原子写（tmp+os.replace）+ 运行级
   文件锁（照抄 scripts/c3_fullcurve_runner.py acquire_lock/release_lock
@@ -23,7 +23,45 @@
 - 零真机零网络：执行面全部经注入的 executors（kind→callable），合成
   测试用确定性字节执行器。
 
-分层（分层铁律）：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
+QW-7（verdict 三态 + 失败策略，映射口径预声明）：
+
+- 节点 verdict 三态：done（含 partial 超预算入库）/failed（执行失败，
+  含 crash——执行族）/inconclusive（跑完但证据不可判——判定族）。
+  #225 纪律：裁决不可判 ≠ 执行失败，两族分别记录不混淆。
+- inconclusive 产生途径（三选一，显式声明/显式返回才生效，缺省零变化）：
+  ① executor 返回 ok=True 且 ``inconclusive`` 真值（可选
+  ``inconclusive_reason`` 进注记）→ 终态不重试（执行器已认定本轮证据
+  不可判，重试由续跑/计划层决定）；
+  ② 节点声明 ``inconclusive_when.outputs_missing_any=[rel...]``：
+  声明产物缺失仍走重试阶梯，最后一次尝试后仍缺且缺失集 ⊆ 软产物集
+  → inconclusive（不判 failed）；缺失集含软产物之外的产物 → 照旧 failed；
+  ③ 节点声明 ``inconclusive_when.message_contains``：执行成功（done 或
+  超预算 partial）且 message 命中子串 → inconclusive（覆盖 done/partial，
+  两类注记并存如实保留——证据不可判优先于超预算 partial 的"可用"语义）。
+- inconclusive 节点处置：产物原样留盘供人工检视；不写 artifact manifest、
+  不入 CAS 索引（不采信为可复用产物）；不判死下游（下游照常执行）；
+  断点续跑重执行（``_resume_decision`` 只认 done/partial，inconclusive
+  不在其列——再给一次判定的机会）。
+- ``failure_policy``（节点失败后的下游处置，OpenTAP 语义三分，缺省
+  abort=现行为逐字节不变）：
+  * abort（缺省）：下游递归标 aborted（算失败）——现行为；
+  * continue：不标死下游照常执行；下游节点若上游 failed 时在执行，
+    其注记追加"上游 failed 但 failure_policy=continue（按策略继续；
+    下游失败归因策略而非上游）"；
+  * skip：下游递归标 skipped（不算失败，不计入 n_dead，续跑不复活）。
+- run 级汇总：不引入新 verdict 态（消费面冻结）——新增期刊字段
+  ``inconclusive_count``（与 run 级 verdict 同源：按当前期刊节点状态
+  重算，非跨 run 累计）；verdict 规则仅微调：无 fail/aborted 且
+  n_inconclusive>0 → PARTIAL（原 COMPLETE 判定收紧：COMPLETE 要求
+  全部节点 done；inconclusive 无此微调会落入 RUNNING 空隙）。
+  同款收紧再补 skipped（2026-09-26 skip wart 修复）：skipped 节点既不
+  计 done 也不计 dead，也无此条则"上游失败已修复、下游仍按 skip 策略
+  留 skipped"的续跑终局会落入 RUNNING 空隙（循环已结束、verdict 却永
+  远 RUNNING/ok=False 的计数缺口）——无 fail/aborted 且 n_skipped>0 →
+  PARTIAL；期刊新增 ``skipped_count``（与 inconclusive_count 同源同
+  语义：按当前期刊节点状态重算，非跨 run 累计）。
+
+分层：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
 schema/拓扑在 core.compose.dag_schema。
 """
 
@@ -40,6 +78,7 @@ from typing import Any
 
 from rfauto.core.compose.dag_schema import (
     DAG_SCHEMA,
+    DEFAULT_FAILURE_POLICY,
     DagSchemaError,
     canonical,
     parse_dag,
@@ -166,7 +205,11 @@ ExecutorFn = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
 
 
 def _normalize_executor_result(raw: Any) -> dict[str, Any]:
-    """executor 返回值归一化（形状非法 = 失败，不吞不猜）。"""
+    """executor 返回值归一化（形状非法 = 失败，不吞不猜）。
+
+    QW-7：ok=True 时透传 ``inconclusive``（执行器声明证据不可判）与
+    ``inconclusive_reason``；ok=False 路径形状逐字节不变（执行失败族）。
+    """
     if not isinstance(raw, dict) or not raw.get("ok"):
         message = (raw.get("message") if isinstance(raw, dict) else None) \
             or "executor 返回 ok=False"
@@ -175,7 +218,10 @@ def _normalize_executor_result(raw: Any) -> dict[str, Any]:
     return {"ok": True,
             "outputs": [str(o) for o in (raw.get("outputs") or [])],
             "wall_s": float(raw.get("wall_s", 0.0) or 0.0),
-            "message": str(raw.get("message", ""))}
+            "message": str(raw.get("message", "")),
+            "inconclusive": bool(raw.get("inconclusive")),
+            "inconclusive_reason": str(raw.get("inconclusive_reason", "")
+                                       or "")}
 
 
 def _next_mesh_tier(tier: Any) -> str:
@@ -405,8 +451,14 @@ class DagRunner:
                     data.setdefault("plan_schema", DAG_SCHEMA)
                     data.setdefault("n_hit", 0)
                     data.setdefault("n_recompute", 0)
+                    data.setdefault("inconclusive_count", 0)
+                    data.setdefault("skipped_count", 0)
                     return data
-            except (OSError, json.JSONDecodeError):
+            # UnicodeDecodeError 与 OSError 并列（E1-2 审查批 2026-10-04，
+            # runs/review_ge8e/e1_pipeline/REPORT.md）：非法 UTF-8 字节的期刊
+            # 同属"损坏 = 不可信"，旧 except 漏接会带原始 UnicodeDecodeError
+            # 炸出加载链而非走 .corrupt 留痕重置。
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                 pass
             # 期刊损坏 = 不可信：状态重置（原文件留 .corrupt 痕），
             # 节点有效性随后逐个走 键+digest/CAS 复核（产物完好仍零重算），
@@ -496,9 +548,15 @@ class DagRunner:
         """执行单节点（重试阶梯 + #145 分类 + manifest/索引写序）。
 
         返回 (最终状态, outputs, notes, has_manifest)。
-        最终状态 ∈ done|partial|failed。"""
+        最终状态 ∈ done|partial|failed|inconclusive（QW-7 三态语义与
+        inconclusive 产生途径的映射口径见模块注释，预声明不猜）。
+        """
         retries = int(node.get("retries", 0) or 0)
         notes: list[str] = []
+        inc_when = node.get("inconclusive_when") or {}
+        soft_missing = {str(r) for r in (inc_when.get("outputs_missing_any")
+                                         or [])}
+        msg_needle = str(inc_when.get("message_contains", "") or "")
         for attempt in range(retries + 1):
             budget = escalated_budget(node, attempt)
             timeout_s = float(budget.get("timeout_s") or 0)
@@ -510,8 +568,14 @@ class DagRunner:
             mutex = (SolveMachineMutex(self.solve_lock_path)
                      if node["kind"] == "solve" else None)
             try:
+                # max_wait_s 透传 lock_max_wait_s（S-1 C-01 2026-10-04，runs/
+                # research_seats_20261004/s1_wave1）：此前缺省 -1（无限等）
+                # 使 acquire 永不返回 False——"#261 获取失败"分支不可达死码；
+                # 透传后缺省行为逐字节不变（-1 仍无限等=缺省串行），仅当
+                # 调用方声明有界等待（0=单次尝试 / >0=限期）时分支可达。
                 if mutex is not None and not mutex.acquire(
-                        poll_s=self.lock_poll_s):
+                        poll_s=self.lock_poll_s,
+                        max_wait_s=self.lock_max_wait_s):
                     return "failed", [], [
                         "#261 机器互斥获取失败（串行等待超时）"], False
                 try:
@@ -530,11 +594,39 @@ class DagRunner:
                              f"{result.get('message', '')}")
                 continue
 
+            # QW-7 途径①：executor 显式声明证据不可判 → 终态（不重试）。
+            # 执行成功族 ≠ 执行失败族（#225）：不判 failed 不触发失败策略。
+            if result.get("inconclusive"):
+                declared = [str(o) for o in (node.get("outputs") or [])]
+                cand = declared or list(result.get("outputs") or [])
+                existing = [rel for rel in cand
+                            if (work_dir / rel).exists()]
+                reason = str(result.get("inconclusive_reason") or "")
+                notes.append(
+                    f"attempt{attempt}: executor 声明 inconclusive"
+                    + (f"（{reason}）" if reason else "")
+                    + "→ 节点态 inconclusive（终态不重试；产物留盘"
+                      "不写 manifest/不入索引）")
+                return "inconclusive", existing, notes, False
+
             declared = [str(o) for o in (node.get("outputs") or [])]
             outputs = declared or result.get("outputs") or []
             missing = [rel for rel in outputs
                        if not (work_dir / rel).exists()]
             if outputs and missing:
+                # QW-7 途径②：最后一次尝试仍缺且缺失全部是声明软产物
+                # → 证据不可判（不判 failed）；此前尝试照旧走重试阶梯。
+                if (soft_missing and attempt >= retries
+                        and set(missing) <= soft_missing):
+                    notes.append(
+                        f"attempt{attempt}: 声明产物缺失 "
+                        f"{sorted(missing)[:3]} 全部命中 "
+                        f"inconclusive_when.outputs_missing_any → 节点态 "
+                        "inconclusive（跑完但证据不可判，不判 failed；"
+                        "产物留盘不写 manifest/不入索引）")
+                    existing = [rel for rel in outputs
+                                if rel not in set(missing)]
+                    return "inconclusive", existing, notes, False
                 notes.append(f"attempt{attempt}: 声明产物缺失 {missing[:3]}")
                 continue
 
@@ -545,6 +637,14 @@ class DagRunner:
                 notes.append(
                     f"超预算 PARTIAL 入库（wall {wall:.0f}s > 预算帽 "
                     f"{wall_budget:.0f}s，SAFETY_BUDGET={SAFETY_BUDGET}）")
+            # QW-7 途径③：声明 message_contains 命中 → 证据不可判
+            # （覆盖 done/partial，两类注记并存如实保留）。
+            if msg_needle and msg_needle in str(result.get("message", "")):
+                notes.append(
+                    f"inconclusive_when.message_contains 命中"
+                    f"（{msg_needle!r}）→ 节点态 inconclusive（跑完但"
+                    "证据不可判；产物留盘不写 manifest/不入索引）")
+                return "inconclusive", list(outputs), notes, False
             if not outputs:
                 # 无产物面节点（纯 judge）：无 manifest 可写，键同即可 skip
                 return status, [], notes, False
@@ -622,6 +722,19 @@ class DagRunner:
                 work_dir.mkdir(parents=True, exist_ok=True)
                 status, outputs, notes, has_manifest = self._run_node(
                     node, key, work_dir)
+                # QW-7 continue 归因注记：上游 failed 但按策略继续执行的
+                # 下游节点，其注记如实记录归因（下游失败归因策略而非上游）。
+                cont_ups = sorted(
+                    d for d in self.deps.get(node_id, [])
+                    if (self.state["nodes"].get(d) or {}).get("status")
+                    == "failed"
+                    and str(self.nodes.get(d, {}).get("failure_policy")
+                            or DEFAULT_FAILURE_POLICY) == "continue")
+                if cont_ups:
+                    notes.append(
+                        f"上游 {','.join(cont_ups)} failed 但 "
+                        "failure_policy=continue（按策略继续执行；本节点"
+                        "失败时归因策略而非上游）")
                 self.state["nodes"][node_id] = {
                     "status": status, "key": key, "outputs": outputs,
                     "artifact_run_dir": str(work_dir),
@@ -629,11 +742,26 @@ class DagRunner:
                 self._write_state()
                 self.log(f"[exec] {node_id}: {status}（{reason}）")
                 if status == "failed":
+                    policy = str(self.nodes[node_id].get("failure_policy")
+                                 or DEFAULT_FAILURE_POLICY)
+                    if policy == "continue":
+                        # QW-7：记录失败继续后续节点（不标死下游）
+                        self.log(f"[continue] {node_id}: failed 但 "
+                                 "failure_policy=continue，后续节点照常"
+                                 "执行")
+                        continue
+                    down_status = ("skipped" if policy == "skip"
+                                   else "aborted")
+                    down_note = (
+                        f"上游 {node_id} failed"
+                        + ("（failure_policy=skip：跳过，不算失败）"
+                           if policy == "skip" else ""))
                     for down in self._downstream(node_id):
                         self.state["nodes"][down] = {
-                            "status": "aborted", "key": "",
-                            "notes": [f"上游 {node_id} failed"]}
-                        self.log(f"[abort] {down}: 上游 {node_id} failed")
+                            "status": down_status, "key": "",
+                            "notes": [down_note]}
+                        self.log(f"[{down_status}] {down}: "
+                                 f"上游 {node_id} failed")
                     self._write_state()
         finally:
             if owner is not None:
@@ -644,9 +772,19 @@ class DagRunner:
         n_done = sum(1 for s in statuses.values() if s == "done")
         n_partial = sum(1 for s in statuses.values() if s == "partial")
         n_dead = sum(1 for s in statuses.values() if s in ("failed", "aborted"))
+        n_inconclusive = sum(1 for s in statuses.values()
+                             if s == "inconclusive")
+        n_skipped = sum(1 for s in statuses.values() if s == "skipped")
         if n_dead:
             verdict = "ABORTED"
-        elif n_partial:
+        elif n_partial or n_inconclusive or n_skipped:
+            # QW-7 微调：无 fail/aborted 且有 inconclusive → PARTIAL
+            # （原 COMPLETE 判定收紧——inconclusive 不是 done，无此微调
+            # 会落入 RUNNING 空隙；不引入新 run 级态，消费面冻结）。
+            # skipped 同款收紧（2026-09-26 skip wart 修复）：skipped 不计
+            # done 也不计 dead，续跑终局"上游已修复+下游按 skip 策略留
+            # skipped"无此条会落入 RUNNING 空隙（循环结束 verdict 永远
+            # RUNNING 的计数缺口）。
             verdict = "PARTIAL"
         elif n_done == len(self.order):
             verdict = "COMPLETE"
@@ -656,11 +794,22 @@ class DagRunner:
         total_recomp = prev_recomp + n_recompute
         self.state["n_hit"] = total_hit
         self.state["n_recompute"] = total_recomp
+        # QW-7：inconclusive 计数与 run 级 verdict 同源（按当前期刊节点
+        # 状态重算，非跨 run 累计——inconclusive 节点续跑重执行后可转正）。
+        self.state["inconclusive_count"] = n_inconclusive
+        # skipped_count 同源同语义（skip wart 修复；skipped 续跑不复活，
+        # 上游修复后仍按策略留 skipped——PARTIAL 注记不冒充 COMPLETE）。
+        self.state["skipped_count"] = n_skipped
         self.state["verdict"] = verdict
         self._write_state()
-        self.log(f"[done] verdict={verdict} hit={n_hit} "
-                 f"recompute={n_recompute}（累计 hit={total_hit} "
-                 f"recompute={total_recomp}）")
+        done_msg = (f"[done] verdict={verdict} hit={n_hit} "
+                    f"recompute={n_recompute}（累计 hit={total_hit} "
+                    f"recompute={total_recomp}）")
+        if n_inconclusive:
+            done_msg += f" inconclusive={n_inconclusive}"
+        if n_skipped:
+            done_msg += f" skipped={n_skipped}"
+        self.log(done_msg)
         return {
             "ok": verdict in ("COMPLETE", "PARTIAL"),
             "verdict": verdict,
@@ -668,6 +817,8 @@ class DagRunner:
             "n_recompute": n_recompute,
             "n_hit_total": total_hit,
             "n_recompute_total": total_recomp,
+            "inconclusive_count": n_inconclusive,
+            "skipped_count": n_skipped,
             "statuses": statuses,
             "state_path": str(self._state_path()),
         }

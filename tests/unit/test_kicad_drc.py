@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -417,3 +418,55 @@ class TestRunRFDRCAndMerge:
         report = generate_drc_report(base, out_path, rf_result=rf)
         assert out_path.read_text(encoding="utf-8") == report
         assert "## RF-DRC" in report
+
+
+class TestKicadPythonEnvResolution:
+    """AU-8 同款三钉：env 覆盖 / env 空串回退 / 显式参压过 env。
+
+    subprocess.run 打桩捕获 argv（不依赖真机 KiCad）；pcb 文件真实存在
+    以越过 file_exists 早退分支。
+    """
+
+    @staticmethod
+    def _run_capturing(monkeypatch, argv_box, returncode=1, stderr="boom"):
+        import rfauto.adapters.kicad_drc as kd
+
+        fake = SimpleNamespace(args=[], returncode=returncode,
+                               stdout="", stderr=stderr)
+
+        def _fake_run(argv, **kwargs):
+            argv_box.append(list(argv))
+            return fake
+
+        monkeypatch.setattr(kd.subprocess, "run", _fake_run)
+
+    def test_env_override_used(self, tmp_path, monkeypatch):
+        pcb = tmp_path / "b.kicad_pcb"
+        pcb.write_text("(kicad_pcb)", encoding="utf-8")
+        argv_box: list[list[str]] = []
+        self._run_capturing(monkeypatch, argv_box)
+        monkeypatch.setenv("RFAUTO_KICAD_PYTHON", r"E:\fake\python_env.exe")
+        out = run_drc_kicad(pcb)
+        assert argv_box, "子进程未被调用"
+        assert argv_box[0][0] == r"E:\fake\python_env.exe"
+        assert "boom" in out.violations[0].message
+
+    def test_env_empty_string_falls_back_to_constant(self, tmp_path, monkeypatch):
+        import rfauto.adapters.kicad_drc as kd
+
+        pcb = tmp_path / "b.kicad_pcb"
+        pcb.write_text("(kicad_pcb)", encoding="utf-8")
+        argv_box: list[list[str]] = []
+        self._run_capturing(monkeypatch, argv_box)
+        monkeypatch.setenv("RFAUTO_KICAD_PYTHON", "")
+        run_drc_kicad(pcb)
+        assert argv_box[0][0] == kd.KICAD_PYTHON
+
+    def test_explicit_beats_env(self, tmp_path, monkeypatch):
+        pcb = tmp_path / "b.kicad_pcb"
+        pcb.write_text("(kicad_pcb)", encoding="utf-8")
+        argv_box: list[list[str]] = []
+        self._run_capturing(monkeypatch, argv_box)
+        monkeypatch.setenv("RFAUTO_KICAD_PYTHON", r"E:\fake\python_env.exe")
+        run_drc_kicad(pcb, kicad_python=r"E:\fake\python_explicit.exe")
+        assert argv_box[0][0] == r"E:\fake\python_explicit.exe"

@@ -9,6 +9,7 @@ params:
 - z2_width_mm
 - seg_len_mm
 - n_segments
+- feed_w_mm
 template: stepped_impedance
 substrate:
   er: 3.66
@@ -18,3 +19,7 @@ nominal_params:
   z2_width_mm: 3.0
   seg_len_mm: 5.0
   n_segments: 5
+  # feed_w_mm=50Ω HJ 精算 1.1133mm（六百七十一/#1c 修复批：0.3mm=96.9Ω
+  # 非 50Ω 是 #250 参考系分裂机制，修复后端口线=50Ω、重归一链退化恒等；
+  # z1/z2=阶梯设计段不动）
+  feed_w_mm: 1.1133

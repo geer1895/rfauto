@@ -6,7 +6,7 @@
 可信度归仿真管）。
 
 首片语料引擎 = fake 通道批量合成（零 license、全内存零落盘——
-v1 定案后 fake 的正确定位：数据引擎/冒烟/CI）。100k 级条件扩散
+v1 拍板后 fake 的正确定位：数据引擎/冒烟/CI）。100k 级条件扩散
 升级（CVAE/diffusion）留待 GPU 档；本片的反演核 = 指标空间加权
 距离的近邻反演 + 有界抖动多样性，种子确定可复现。
 """
@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 
 def _fake_metrics(recipe: dict[str, Any], params: dict[str, float]) -> dict[str, float]:
@@ -67,16 +69,16 @@ def prefilter_candidates(
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
     space = (recipe.get("optimization") or {}).get("params") or {}
     bounds = {n: (float(v["low"]), float(v["high"]))
               for n, v in space.items() if "low" in v and "high" in v}
     if not bounds:
-        return {"ok": False, "errors": ["配方 optimization.params 无 low/high 搜索空间"]}
+        return error_envelope(["配方 optimization.params 无 low/high 搜索空间"])
     if not target_metrics:
-        return {"ok": False, "errors": ["target_metrics 为空"]}
+        return error_envelope(["target_metrics 为空"])
 
     corpus = lhs_points(bounds, n_corpus, seed=seed)["points"]
     names = sorted(target_metrics)
@@ -97,8 +99,7 @@ def prefilter_candidates(
             dist += abs(float(got) - t)
         scored.append((dist, pt, metrics))
     if not scored:
-        return {"ok": False,
-                "errors": ["语料评估全部失败", *errors[:3]]}
+        return error_envelope(["语料评估全部失败", *errors[:3]])
     scored.sort(key=lambda t: t[0])
 
     import numpy as np
@@ -120,13 +121,12 @@ def prefilter_candidates(
                                for n in metrics
                                if isinstance(metrics.get(n), (int, float))},
         })
-    return {
-        "ok": True,
-        "recipe": str(path).replace("\\", "/"),
-        "target_metrics": target_metrics,
-        "n_corpus": n_corpus,
-        "n_corpus_failed": len(errors),
-        "candidates": candidates,
-        "generator": "fake_corpus_nn_invert_v1",
-        "note": "生成式候选=优化器前滤波器；可信度归中/高保真仿真复核",
-    }
+    return ok_envelope(
+        recipe=str(path).replace("\\", "/"),
+        target_metrics=target_metrics,
+        n_corpus=n_corpus,
+        n_corpus_failed=len(errors),
+        candidates=candidates,
+        generator="fake_corpus_nn_invert_v1",
+        note="生成式候选=优化器前滤波器；可信度归中/高保真仿真复核",
+    )

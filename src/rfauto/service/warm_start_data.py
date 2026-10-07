@@ -1,4 +1,4 @@
-"""warm_start_data —— 数据面：数据集历史样本 → warm-start 先验注入。
+"""warm_start_data —— E11 stage-2 数据面：数据集历史样本 → warm-start 先验注入。
 
 分层职责（stage-1 的 optimization/warm_start.py 只 import 不改）：
 - 本模块（service 层）从 E1 数据集（dataset_service：Parquet 物化 + DuckDB
@@ -10,11 +10,11 @@
   由 stage-1 门统一拒绝。
 - 数据面只做"喂料合法性"清洗并计数上报：params_json 非法 JSON / None /
   非对象、params 或 cost 含 NaN/Inf、cost 缺失或非数值 → 跳过该样本并
-  计数（物化侧已在收集源头整点拦截 params/metrics 非有限值——数据面遗留②
+  计数（物化侧已在收集源头整点拦截 params/metrics 非有限值——E11 未尽②
   根治；此处拦截保留为纵深防御：直写 Parquet/外部数据集的坏行照样拦，
   不得静默喂进门）。
 - model/study 过滤经 query_dataset 的 ``?`` 参数绑定下推 DuckDB（值永不
-  拼进 SQL 文本，防注入面不倒退），limit 在过滤后生效（数据面遗留③）；
+  拼进 SQL 文本，防注入面不倒退），limit 在过滤后生效（E11 未尽③）；
   Python 侧精确相等过滤保留为纵深防御，where 参数仅原样透传
   query_dataset（其内部白名单校验负责防注入）。
 - CLI/MCP 是薄壳（规则 4）；run_optimization 惰性导入（optimizer 依赖重，
@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.service.dataset_service import DEFAULT_OUT_DIR, query_dataset
+from rfauto.service.envelope import error_envelope
 
 __all__ = [
     "collect_warm_start_samples",
@@ -61,7 +62,7 @@ def collect_warm_start_samples(
     limit: int = 1000,
     out_dir: str | Path = DEFAULT_OUT_DIR,
 ) -> dict[str, Any]:
-    """从数据集收集 warm-start 喂料样本（JSON 进出）。
+    """从 E1 数据集收集 warm-start 喂料样本（JSON 进出）。
 
     Args:
         dataset: 数据集名（``datasets materialize`` 产物目录名）。
@@ -69,7 +70,7 @@ def collect_warm_start_samples(
         source_study: 按来源 study 名过滤（``study_name`` 列精确匹配）；
             None=不过滤。
         where: 额外 SQL WHERE 片段，原样透传 query_dataset（白名单校验在其内）。
-        limit: 行数上限（数据面遗留③根治：model/study 过滤已 ``?`` 参数化下推
+        limit: 行数上限（E11 未尽③根治：model/study 过滤已 ``?`` 参数化下推
             DuckDB，limit 在过滤**之后**生效，按族取样不再漏样本）。
         out_dir: 数据集根目录（与 materialize_dataset 口径一致）。
 
@@ -92,7 +93,7 @@ def collect_warm_start_samples(
         out_dir=out_dir,
     )
     if not q.get("ok"):
-        return {"ok": False, "errors": list(q.get("errors") or ["数据集查询失败"])}
+        return error_envelope(list(q.get("errors") or ["数据集查询失败"]))
 
     samples: list[dict[str, Any]] = []
     n_filtered_model = 0
@@ -201,23 +202,18 @@ def run_optimization_warm_start_from_dataset(
     )
     data_stats = {k: v for k, v in collect.items() if k != "samples"}
     if not collect.get("ok"):
-        return {
-            "ok": False,
-            "errors": [*collect.get("errors", []), "数据集不可用，无法构建 warm-start 喂料"],
-            "warm_start_data": data_stats,
-        }
+        return error_envelope([*collect.get("errors", []), "数据集不可用，无法构建 warm-start 喂料"], warm_start_data=data_stats)
     if not collect.get("samples"):
-        return {
-            "ok": False,
-            "errors": [
+        return error_envelope(
+            [
                 f"数据集 {dataset} 无可用历史样本"
                 f"（扫描 {collect.get('n_rows_scanned', 0)} 行，"
                 f"无效 {collect.get('n_skipped_invalid', 0)}，"
                 f"族过滤 {collect.get('n_filtered_by_model', 0)}，"
                 f"study 过滤 {collect.get('n_filtered_by_study', 0)}）"
             ],
-            "warm_start_data": data_stats,
-        }
+            warm_start_data=data_stats,
+        )
 
     from rfauto.optimization.optimizer import run_optimization
 

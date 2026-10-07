@@ -1,6 +1,6 @@
-"""desktop_guard 单源三态行为钉（桌面治理批）。
+"""desktop_guard 单源三态行为钉（df5 桌面治理批）。
 
-语义（范式，scripts/factory_mf_hfss_anchors.py 原型上收）：
+语义（df4m 范式，scripts/factory_mf_hfss_anchors.py 原型上收）：
 活桌面（父进程存活）绝不代杀（strict 抛错/非 strict 记录跳过）；孤儿
 （父进程已死）点杀该 PID+退出窗+复核；枚举/查询/终止失败一律不杀
 （strict 抛错 fail-closed/非 strict 记录）。subprocess.run 全 mock，零真机。
@@ -273,3 +273,144 @@ class TestReleaseDesktopCapped:
                                         log=logs.append)
         assert ret is False
         assert any("未返回" in m for m in logs)
+
+
+class TestPowershellTimeoutsE3_8:
+    """E3-8（ge8e 审查批 F4）：powershell 全调用带 timeout；超时=未知态
+    （fail-unknown 而非 fail-hang——strict 路径挂起即挂起整个发射）。"""
+
+    def test_every_call_carries_timeout(self, monkeypatch):
+        seen: list[tuple[str, object]] = []
+        enum_calls = 0
+
+        def fake_run(cmd, **kwargs):
+            nonlocal enum_calls
+            joined = " ".join(cmd)
+            seen.append((joined, kwargs.get("timeout")))
+            if "Get-CimInstance" in joined:
+                enum_calls += 1
+                line = _enum_line(111, 222) if enum_calls == 1 else ""
+                return _ps_result(0, line)
+            if "Get-Process -Id" in joined:
+                return _ps_result(0, "dead")
+            return _ps_result(0, "")  # Stop-Process
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(dg.time, "sleep", lambda _s: None)
+        dg.kill_orphan_ansysedt_desktops(log=lambda _m: None)
+        assert seen, "未发生任何 powershell 调用？"
+        assert all(t is not None for _, t in seen), \
+            f"存在无 timeout 的 powershell 调用: {seen}"
+        by_shape = {("enum" if "Get-CimInstance" in j
+                     else "alive" if "Get-Process" in j else "kill"): t
+                    for j, t in seen}
+        assert by_shape.get("enum") == dg.ENUM_TIMEOUT_S
+        assert by_shape.get("alive") == dg.ALIVE_TIMEOUT_S
+        assert by_shape.get("kill") == dg.KILL_TIMEOUT_S
+
+    def test_process_alive_timeout_returns_none(self, monkeypatch):
+        """存活查询超时 → None=未知态（不抛不挂起，调用方按活桌面保守处置）。"""
+
+        def stuck_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+
+        monkeypatch.setattr(subprocess, "run", stuck_run)
+        assert dg.process_alive(222) is None
+
+    def test_alive_timeout_unknown_no_kill_non_strict(self, monkeypatch):
+        """strict=False：父存活查询超时 → 记录跳过不杀，整体正常返回。"""
+        kills: list[int] = []
+
+        def fake_run(cmd, **kwargs):
+            joined = " ".join(cmd)
+            if "Get-Process -Id" in joined:
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+            if "Get-CimInstance" in joined:
+                return _ps_result(0, _enum_line(111, 222))
+            if "Stop-Process" in joined:
+                kills.append(111)
+                return _ps_result(0, "")
+            return _ps_result(0, [])
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(dg.time, "sleep", lambda _s: None)
+        logs: list[str] = []
+        dg.kill_orphan_ansysedt_desktops(log=logs.append, strict=False)
+        assert kills == [], "未知态按活桌面处理，绝不点杀（fail-unknown）"
+        assert any("超时" in m and "未知态" in m for m in logs)
+
+    def test_alive_timeout_unknown_raises_strict(self, monkeypatch):
+        """strict=True（发射前置）：未知态 fail-closed 抛错交人工裁决。"""
+
+        def fake_run(cmd, **kwargs):
+            joined = " ".join(cmd)
+            if "Get-Process -Id" in joined:
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+            if "Get-CimInstance" in joined:
+                return _ps_result(0, _enum_line(111, 222))
+            return _ps_result(0, "")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        with pytest.raises(RuntimeError, match="未知态"):
+            dg.kill_orphan_ansysedt_desktops(log=lambda _m: None)
+
+    def test_enum_timeout_raises_fail_closed(self, monkeypatch):
+        """枚举超时 → RuntimeError（fail-closed 不盲杀，#245 语义不变）。"""
+
+        def stuck_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+
+        monkeypatch.setattr(subprocess, "run", stuck_run)
+        with pytest.raises(RuntimeError, match="枚举超时"):
+            dg.list_ansysedt_processes()
+
+    def test_kill_timeout_non_strict_logged_no_raise(self, monkeypatch):
+        kills: list[int] = []
+
+        def fake_run(cmd, **kwargs):
+            joined = " ".join(cmd)
+            if "Get-CimInstance" in joined:
+                return _ps_result(0, _enum_line(111, 222))
+            if "Get-Process -Id" in joined:
+                return _ps_result(0, "dead")
+            if "Stop-Process" in joined:
+                kills.append(111)
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+            return _ps_result(0, [])
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(dg.time, "sleep", lambda _s: None)
+        logs: list[str] = []
+        dg.kill_orphan_ansysedt_desktops(log=logs.append, strict=False)
+        assert any("终止失败" in m and "超时" in m for m in logs)
+        assert any("111" in m for m in logs)
+
+    def test_kill_timeout_strict_raises(self, monkeypatch):
+        def fake_run(cmd, **kwargs):
+            joined = " ".join(cmd)
+            if "Get-CimInstance" in joined:
+                return _ps_result(0, _enum_line(111, 222))
+            if "Get-Process -Id" in joined:
+                return _ps_result(0, "dead")
+            if "Stop-Process" in joined:
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+            return _ps_result(0, [])
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        with pytest.raises(RuntimeError, match="终止失败"):
+            dg.kill_orphan_ansysedt_desktops(log=lambda _m: None)
+
+    def test_by_ppid_kill_timeout_raises(self, monkeypatch):
+        """kill_ansysedt_by_ppid 点杀超时 → RuntimeError（fail-loud 契约）。"""
+
+        def fake_run(cmd, **kwargs):
+            joined = " ".join(cmd)
+            if "Get-CimInstance" in joined:
+                return _ps_result(0, _enum_line(111, 999))
+            if "Stop-Process" in joined:
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 0))
+            raise AssertionError(f"未预期的调用: {joined[:80]}")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        with pytest.raises(RuntimeError, match="终止超时"):
+            dg.kill_ansysedt_by_ppid(999, log=lambda _m: None)

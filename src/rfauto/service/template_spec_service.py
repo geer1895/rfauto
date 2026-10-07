@@ -13,12 +13,13 @@ from rfauto.models.template_spec import (
     TemplateComponentMissing,
 )
 from rfauto.models.template_specs import bootstrap_template_specs
+from rfauto.service.envelope import ok_envelope
 
 
 def list_template_specs() -> dict[str, Any]:
     """全部模板 spec 清单（组件齐备性/物理角色/meta 键）。"""
     bootstrap_template_specs()
-    return {"ok": True, "templates": TEMPLATE_SPECS.describe()}
+    return ok_envelope(templates=TEMPLATE_SPECS.describe())
 
 
 def draft_recipe_from_spec(
@@ -34,4 +35,4 @@ def draft_recipe_from_spec(
         return {"ok": False, "error": str(exc)}
     except (TypeError, ValueError, OSError) as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "template": name, "recipe_draft": draft}
+    return ok_envelope(template=name, recipe_draft=draft)

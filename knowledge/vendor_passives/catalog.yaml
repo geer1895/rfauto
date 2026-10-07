@@ -9,10 +9,25 @@
 # skip-not-fail 只标状态）。
 # synthetic 条目：模型文件由 core 生成器确定性再现（synthesize_seed_model_file），
 # sha256 留空不钉死（生成即校验，见测试）；真实厂商条目 sha256 必填。
-# 字段：vendor/mpn/type(inductor|capacitor)/nominal_value(H|F)/srf_ghz/esr_ohm/
-#       model_file(与本文件同目录)/sha256/source_url/license_note/
+# 字段：vendor/mpn/type(inductor|capacitor|ferrite_bead)/nominal_value
+#       (H|F；ferrite_bead=低频等效电感 H)/srf_ghz/esr_ohm(磁珠=额定阻抗
+#       R_loss)/model_file(与本文件同目录)/sha256/source_url/license_note/
 #       synthetic/downloaded_at。
 vendor_passives:
+  synth_bead600_100mhz_demo:
+    vendor: synthetic
+    mpn: SYNTH-BEAD-600OHM-100MHZ-L1UH
+    type: ferrite_bead
+    nominal_value: 1.0e-06
+    srf_ghz: 0.1
+    esr_ohm: 600.0
+    model_file: synth_bead600_100mhz_demo.s2p
+    sha256: null
+    source_url: ''
+    license_note: 合成种子件（core.vendor_passives 生成器确定性再现，无厂商条款约束）；口径=Murata BLM18AG601SN1（600Ω@100MHz）额定阻抗语义的合成再现，非真件；真件官方免费模型（Murata
+      SimSurfing/Coilcraft SPICE）须经下载器按条款获取，文件不入 git
+    synthetic: true
+    downloaded_at: null
   synth_l10n_cp0p25_demo:
     vendor: synthetic
     mpn: SYNTH-IND-10NH-0P25PF

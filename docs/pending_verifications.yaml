@@ -1,0 +1,209 @@
+# 待证断言登记簿（pending_verifications/v1）——2026-10-02 调研战役产物
+# 性质：调研登记制资产（本阶段零开发）；执行期可迁 knowledge/ 由代码消费。
+# 来源：研究扩充..18.md 五轮全账+池/宏图显式
+# "待证"标记（20 处新账）+research_session_lessons_20260926.md §三旧账（14 条，
+# 需刷新核对——部分或已被 ge5-ge7 执行波闭合，标 legacy_refresh）。
+# 消费纪律：A 档（P1/P2，阻对应池项排期）立项前必须先证；B 档落地前补钉。
+schema: pending_verifications/v1
+updated: "2026-10-04"  # review_ge8e F1 结构清洗（R7-7）：verified 项 blocks 解除（PV-001/006/016）+15 项重复 blocks 键去重——状态/证据/优先级零改动；回归钉=tests/unit/test_pending_verifications.py（禁重复键+verified 必无 blocks）
+
+items:
+  # ===== 新账（2026-10-02 战役，20 处）=====
+  - id: PV-001
+    claim: "FDTDX 0.6.2 是否支持色散材料(Debye/Lorentz)与 nf2ff 输出"
+    source: {doc: 研究扩充 round14, section: "§六 SV-4"}
+    verify_method: {kind: web_fetch, target: "github.com/ymahlau/fdtdx docs+discussion #161", accept: "文档/源码确认有/无"}
+    owner_hint: SV-4 立项人
+    blocks: []  # F1 清洗 2026-10-04：status=verified 依使用说明第 2 条解除（原 [SV-4]，R7-7①）
+    status: verified
+    evidence: {url: "api.github.com/repos/ymahlau/fdtdx+releases v0.6.2 树 dispersion.py", retrieved: "2026-10-02", note: "色散=Lorentz+Drude ADE(无原生Debye,高ω0 Lorentz近似替代并登记)；nf2ff 仅 main 分支(field_projection.py)未发布——SV-4 可排但钉 nf2ff=git+main 或等 release,版本敏感"}
+    priority: P1
+  - id: PV-002
+    claim: "SAW COM 参数文献例值可达（Hashimoto Springer 2000）"
+    source: {doc: 研究扩充 round14, section: "§五 PK-4"}
+    verify_method: {kind: library_check, target: "Hashimoto SAW Devices 教科书例值页", accept: "例值落档"}
+    owner_hint: PK-4 立项人
+    blocks: []  # F1 去重 2026-10-04：保留后键（ge8 Wave1 批解除语义，R7-7②）
+    status: partial
+    evidence: {url: "link.springer.com/book/10.1007/978-3-662-04223-6 Ch.7 COM 理论", retrieved: "2026-10-02", note: "精确定位 Springer 2000 DOI 落档+archive.org 可借副本(surfaceacousticw0000hash)——例值页需借阅,立项预留借阅步骤"}
+    priority: P2
+  - id: PV-003
+    claim: "AlN/ScAlN(0-0.43)/LN/LT 压电常数与 TCD 公开数值可引用"
+    source: {doc: 研究扩充 round14, section: "§五 PK-5"}
+    verify_method: {kind: web_fetch, target: "Akiyama 2009/Muralt 2017/Kovacs 1990+厂商 datasheet 双源", accept: "双源带值+URL+核对日期"}
+    owner_hint: PK-5 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "PMID 21161988(Akiyama 2009)+Crystals 2022 12:1431 双源+Kovacs 1990+PMC9695295", retrieved: "2026-10-02", note: "AlN 6→Sc0.43Al0.57N 27.6 pC/N 双源带值；LN/LT Kovacs 标准集；TCD −71~−75.7 ppm/°C 实测源。缺口如实：e33@x=0.43 无直测(外推标注)、LT 36°YX TCD 单源——PK-5 每常数≥2 源逐格填"}
+    priority: P1
+  - id: PV-004
+    claim: "SISL 共形闭式的具体卷期（Wang/Wu 组 IEEE）"
+    source: {doc: 研究扩充 round15, section: "§二·2 TA-10"}
+    verify_method: {kind: web_fetch, target: "RG 375827273 原文页", accept: "卷期号落档"}
+    owner_hint: TA-10 立项人
+    blocks: []
+    status: superseded
+    evidence: {url: "IEEE MWCL 26(2):95-97 Feb 2016 (Wang/Ma/Mou SISL branch-line)", retrieved: "2026-10-02", note: "RG 375827273 403+检索零命中放弃；替代定位=MWCL 2016 共形映射闭式(检索元数据单源)——TA-10 改引并由立项人机构访问落卷期"}
+    priority: P2
+  - id: PV-005
+    claim: "calibration.py apply_solt_calibration 传 ndarray 违反 skrf Network 列言语义（疑似 bug）"
+    source: {doc: 研究扩充 round15, section: "§六 MS-3"}
+    verify_method: {kind: venv_test, target: ".venv python 构造 Network 列表 vs ndarray 双跑对照+skrf 源码实测", accept: "行为差异实证"}
+    owner_hint: MS-3 立项人（规格 D 已给修复方案）
+    blocks: []
+    status: verified
+    evidence: {retrieved: "2026-10-02", note: "venv 双跑对照实证：ndarray 实参两种异常(IndexError/AttributeError)均被原 except Exception 吞成 is_calibrated=False——SOLT/TRL 静默死路确证真 bug；修复+9 测试锚落 runs/ms3_pv005/"}
+    priority: P1
+  - id: PV-006
+    claim: "PyPI emi-receiver 包许可可引用（CISPR 检波器对照裁判）"
+    source: {doc: 研究扩充 round15, section: "§六 MS-4"}
+    verify_method: {kind: web_fetch, target: "pypi.org/project/emi-receiver 许可字段", accept: "OSI 许可确认"}
+    owner_hint: MS-4 立项人（规格 D 已给修复方案）
+    blocks: []  # F1 清洗 2026-10-04：status=verified 依使用说明第 2 条解除（原 [MS-4]，R7-7①）
+    status: verified
+    priority: P2
+    evidence: {url: "pypi.org/project/emi-receiver/", retrieved: "2026-10-02", note: "规格 D 实证 MIT（readMe）；对拍协议仍不引代码不入运行时依赖（其需 numba）"}
+  - id: PV-007
+    claim: "UCIe 2.0 规范数值表可否再分发（下载点选许可条款）"
+    source: {doc: 研究扩充 round16, section: "§二 DR-5"}
+    verify_method: {kind: web_fetch, target: "uciexpress.org 规范下载条款页", accept: "条款明示允许/禁止"}
+    owner_hint: DR-5 立项人
+    blocks: [DR-5]
+    status: unverifiable
+    evidence: {url: "uciexpress.org/specifications 表单门控零公开条款", retrieved: "2026-10-02", note: "UCIe 全版本走 REQUEST 表单,EULA 在注册后——结构性证据支持按不可再分发假设处理；DR-5 数值表走手工转录+引用,或注册核 EULA 后回填"}
+    priority: P2
+  - id: PV-008
+    claim: "scikit-rf 2.1.0 是否含 IEEE370 ERL 度量实现"
+    source: {doc: 研究扩充 round16, section: "§二 DR-2"}
+    verify_method: {kind: venv_test, target: "dir(skrf)+IEEEP370 源码 grep ERL", accept: "有/无实证"}
+    owner_hint: DR-2 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "venv skrf 2.1.0 dir()+site-packages 全包 grep", retrieved: "2026-10-02", note: "结论：skrf 2.1.0 无 ERL 度量(IEEEP370 去嵌入族完整在 deembedding.py,FER=限值线绘图非 ERL)——DR-2 需自实现或外引参考实现(事实登记非阻断)"}
+    priority: P2
+  - id: PV-009
+    claim: "SSC 扩频时钟谱展宽与 RBW 关系的闭式出处存在"
+    source: {doc: 研究扩充 round16, section: "§二 DR-11"}
+    verify_method: {kind: web_search, target: "展频时钟 EMI 谱-解调带宽关系文献", accept: "教科书/论文出处"}
+    owner_hint: DR-11 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "TI LM5148/LM5148 datasheet(RBW impact on spread spectrum)+ResearchGate 2982209 三角调制 20log(M)", retrieved: "2026-10-02", note: "闭式出处存在：Δf/RBW 幂律峰抑制(10log 功率口径)+三角调制 20log(M) 学术双源——DR-11 可排"}
+    priority: P3
+  - id: PV-010
+    claim: "nevergrad 维护状态（放缓/弃用）"
+    source: {doc: 研究扩充 round16, section: "§六 no-go"}
+    verify_method: {kind: web_fetch, target: "github.com/facebookresearch/nevergrad releases/commits", accept: "活跃度实证"}
+    owner_hint: OP 流裁决人
+    blocks: []
+    status: verified
+    evidence: {url: "api.github.com/repos/facebookresearch/nevergrad", retrieved: "2026-10-02", note: "archived=false+最后 push 2026-07-24+17 个月无 release——维护明显放缓但存活,OP 流依赖风险按中级处理,无需 no-go"}
+    priority: P3
+  - id: PV-011
+    claim: "ITU-R SG3 数字产品（雨率图 netCDF）再分发许可"
+    source: {doc: 研究扩充 round17, section: "§三 AP-6"}
+    verify_method: {kind: web_fetch, target: "itu.int 数字产品授权页", accept: "条款落档（不行则手工 R0.01 兜底）"}
+    owner_hint: AP-6 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "itu.int terms-of-use+publications Disclaimer(CC BY-NC-SA 3.0 IGO 原文)", retrieved: "2026-10-02", note: "非商业可再分发但 SA 传染+MIT 仓 NC 冲突——AP-6 路线=代码内置手工录入 R0.01 幂律系数表(事实性数值+出处)或运行时指引用户自下载,不捆绑 netCDF"}
+    priority: P1
+  - id: PV-012
+    claim: "ACIR 合成式的 3GPP 官方口径可从免费版核对"
+    source: {doc: 研究扩充 round17, section: "§四 EM-6"}
+    verify_method: {kind: web_fetch, target: "ETSI TS 138 104 免费版定义节", accept: "条款式落档"}
+    owner_hint: EM-6 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "etsi.org TS 138 104 v17.5.0 (326p PDF 实测+pypdf 全文检索)", retrieved: "2026-10-02", note: "ACS §7.4.1+ACLR §6.6.3 免费版可核(ACIR 本身非 BS 命名,两组成分官方在)——EM-6 解除,引用口径=TS 138 104 §6.6.3+§7.4.1 合成"}
+    priority: P2
+  - id: PV-013
+    claim: "双各向异性 κ 反演需多极化信息（信息量不足则不可做）"
+    source: {doc: 研究扩充 round17, section: "§五 MM-5"}
+    verify_method: {kind: library_check, target: "Smith 反演文献可观测性讨论", accept: "结论落档"}
+    owner_hint: MM-5 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "PMID 15903809+Optics Express 22(24):29937 多源", retrieved: "2026-10-02", note: "法向单极化下 κ 与 εμ 纠缠+分支/符号不确定,消歧需正交极化/斜入射/无源性约束——MM-5 前提成立,能力边界项非实现项"}
+    priority: P3
+  - id: PV-014
+    claim: "导体粗糙度方向分离模型名 MVDT 是否真实存在"
+    source: {doc: 研究扩充 round17, section: "§六 MA-10"}
+    verify_method: {kind: web_search, target: "方向相关粗糙度 RF 损耗模型名", accept: "确认/证伪（疑记忆混淆）"}
+    owner_hint: MA-10 立项人
+    blocks: []
+    status: refuted
+    evidence: {url: "web_search_prime MVDT+roughness 零命中", retrieved: "2026-10-02", note: "MVDT 按名证伪(记忆混淆证实)；真实模型族=Huray snowball/Huray-Bracken/HJ/Groiss/MSE/SVK/Sanderson,方向依赖走 Pytel/Huray 箔各向异性——MA-10 改锚真实命名后重排"}
+    priority: P3
+  - id: PV-015
+    claim: "Cox《Analog Optical Links》Ch.4-6 数值例页码可定位"
+    source: {doc: 研究扩充 round18, section: "§五 LT-11"}
+    verify_method: {kind: library_check, target: "Cox 2004 Ch.4-6 例题页", accept: "页码+例值落档"}
+    owner_hint: LT-11 立项人
+    blocks: [LT-11]
+    status: partial
+    evidence: {url: "cambridge.org Cox 2004 官方 TOC(Ch.4:91-158/Ch.5:159-200/Ch.6:201-262)", retrieved: "2026-10-02", note: "章节页码官方落定可引用；章内例值页码付费墙公开网络不可得——LT-11 acceptance 需图书馆/购书后补,立项预留一步"}
+    priority: P1
+  - id: PV-016
+    claim: "synthesis.py patch 边缘修正 dL 疑似双计（0.824 vs 0.412 语义）"
+    source: {doc: 研究扩充 round18, section: "§三 XA-1"}
+    verify_method: {kind: grep_repo, target: "三副本（synthesis.py:374/rf_match.py:152/closedform.py:202）锚仲裁实验（规格 B §一已给完整设计）", accept: "语义 A/B 判定落档"}
+    owner_hint: XA-1 立项人
+    blocks: []  # F1 清洗 2026-10-04：status=verified 依使用说明第 2 条解除（原 [XA-1, XC-N]，R7-7①）
+    status: verified
+    evidence: {retrieved: "2026-10-02", note: "代码语义实证=三副本 0.824h 作 dL 再 ×2=总扣 4ΔL_Hammerstad（规格断言属实）；离线仲裁 INCONCLUSIVE 如实——两语义 K 差仅 0.02% ≪ ±5% 锚不确定度双落 openEMS 带；HFSS 锚 99.8 反解物理不可能已补 semantics 注记防误消费；单源化零行为收敛（patch_fringing_delta_l 三副本收敛+基线快照逐值全等）；A/B 终裁需 L≥5 点同参扫频（登记 K 窗数据工厂批）"}
+    priority: P1
+  - id: PV-017
+    claim: "池十二轮'三处单源待证回原文'清单的逐条现状"
+    source: {doc: 方案池, section: "十二轮节 L876"}
+    verify_method: {kind: library_check, target: "回该轮全账定位三处（Gruner?/Cassivi?/其他）", accept: "逐条核或销"}
+    owner_hint: 调研账本维护
+    blocks: []
+    status: verified
+    evidence: {url: "rotman_lens.py:5+sicl_line.py:11-15 仓内证据", retrieved: "2026-10-02", note: "逐条核销：①DRA 系数式 still-pending(src 零命中)②Rotman 原文 closed(单源待证条款闭合+数值表回收)③SICL Gatti superseded(勘误 2006 EuMC+FD 裁判钉)——②③可销①保持"}
+    priority: P3
+  - id: PV-018
+    claim: "Windows Defender 对 venv 进程的干扰差异（A/B 实测）"
+    source: {doc: 方案池, section: "旧账快赢"}
+    verify_method: {kind: local_ab, target: "Defender 开/关两臂跑同基准", accept: "差值落档"}
+    owner_hint: 三快赢执行人
+    blocks: []
+    status: pending
+    priority: P3
+  - id: PV-019
+    claim: "PSSFSS.jl 许可为 MIT（裁判依赖前置）"
+    source: {doc: 月度增强方案, section: "§六风险表"}
+    verify_method: {kind: web_fetch, target: "github.com/simonp0420/PSSFSS.jl LICENSE 文件", accept: "许可文本落档"}
+    owner_hint: MM/MS 流
+    blocks: []
+    status: verified
+    evidence: {url: "cdn.jsdelivr.net/gh/simonp0420/PSSFSS.jl@master/LICENSE", retrieved: "2026-10-02", note: "标准 MIT 文本 Copyright (c) 2020 Peter Simon(WebSearch 双确认)——MM-2/TA-13 解除阻断,可作裁判依赖(Julia 侧)或 pyPSSFSS 间接消费"}
+    priority: P1
+  - id: PV-020
+    claim: "ETSI ISG RIS 最新交付物存在性（GR 001/002 后续）"
+    source: {doc: 研究扩充 round14, section: "§四 NX-4/§二"}
+    verify_method: {kind: web_fetch, target: "etsi.org/committee/ris deliverables 页", accept: "交付物清单落档"}
+    owner_hint: NX-4 立项人
+    blocks: []
+    status: verified
+    evidence: {url: "etsi.org GR RIS 001 V1.2.1(2025-02)+GR RIS 002 V1.1.1/V1.2.1 免费直达 PDF", retrieved: "2026-10-02", note: "ISG RIS 交付物存在且免费(GR001 用例/KPI+GR002 通信模型/部署)——NX-4 引用面就绪"}
+    priority: P3
+  # ===== 旧账（research_session_lessons_20260926 §三，14 条——需刷新核对）=====
+  - id: PV-021
+    claim: "旧待证 14 条批量刷新（DRA 系数式/Rotman 原文/SICL Gatti/CISPR-CTIA 免费直链/FR4 漂移/IP5 级联式/TCXO/SALib/PyAEDT 磁偏置/½IF↔IP4/OCP/Defender/ETSI 掩模直链/RFID 灵敏度）"
+    source: {doc: docs/research_session_lessons_20260926.md, section: "§三"}
+    verify_method: {kind: legacy_refresh, target: "逐条核对 ge5-ge7 执行波是否已闭合（如 SICL Gatti 已在 round15 证实闭合——正名+FD 裁判已备）", accept: "逐条 verified/superseded 判定"}
+    owner_hint: 调研账本维护
+    blocks: []
+    status: verified
+    evidence: {url: "仓内 grep+venv 实测逐条(详见 七百一十五)", retrieved: "2026-10-02", note: "15 条三态：verified/closed=Rotman+IP5+kucherenko 降级销账+½IF↔IP4；superseded=SICL+IP5 级联式诚实弃权；partial=FR4 85/85(实测钉仍 pending)；still-pending=DRA/CISPR 次级源/CTIA/TCXO/PyAEDT MagneticBias/OCP/ETSI 直链/RFID(8 条)；Defender=agent-ineligible(=PV-018)"}
+    priority: P2
+    note: "刷新前不得假设仍 pending（#222 家规反向面）"
+
+# 使用说明：
+# 1. 立项批开工前先跑本簿 A 档项（blocks 字段指向被阻断池项）；
+# 2. verified 后回填 evidence{url,retrieved,note} 并同步解除 blocks；
+# 3. refuted 则触发对应池项修订（沿池裁决账惯例）；
+# 4. 主代理提示词自造示例（如 HiFinC）零命中=登记前先 grep 的纪律实证（已剔除）；
+# 5. 本簿结构卫生由 tests/unit/test_pending_verifications.py 钉死
+#    （禁重复键+verified 项必无未清 blocks，review_ge8e R7-7）。

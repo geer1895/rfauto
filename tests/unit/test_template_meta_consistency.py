@@ -1,6 +1,6 @@
-"""元数据漂移收口：TEMPLATE_META/TEMPLATE_NOMINAL ↔ docs meta.yaml 一致性钉。
+"""0aq 元数据漂移收口：TEMPLATE_META/TEMPLATE_NOMINAL ↔ docs meta.yaml 一致性钉。
 
-背景（离线几何审计发现）：src 元数据表与 docs/templates/<t>/meta.yaml
+背景（TODO 0aq，geom-audit 发现）：src 元数据表与 docs/templates/<t>/meta.yaml
 静态文档存在四处漂移——① patch 幽灵参数 feed_w_mm（已修：替换为渲染实读
 的 feed_offset_mm）；② wilkinson nominal 疑复制 branchline（1.87/1.1/18.4
 →真值 0.604/1.113/18.1）；③ ratrace 缺 r_ring_mm 且 w_ring 0.6035 为 gysel
@@ -12,7 +12,7 @@ yaml=1.0 vs meta=0.0。②③④ 的 docs 侧修复与原 KNOWN_* 台账清偿�
 - 那边管"声明即生效"（参数扰动改变几何）与条目集/identity；
 - 这边管"字段级漂移"（params 键集、nominal 键集与数值、mesh 值的逐模板
   对账），src ↔ docs 两侧全部严格相等——任何一侧再漂移即红，防新旧数字
-  并存（#97）；另钉 patch 配方不得回流幽灵几何参数。
+  并存（#97）；另钉 patch 配方不得回流幽灵几何参数（0aq followUp②）。
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def test_src_declared_params_have_nominal_values():
 
 
 def test_src_patch_has_no_ghost_param():
-    """回归钉：patch 声明渲染实读的 feed_offset_mm，幽灵 feed_w_mm 不得回流。"""
+    """0aq① 回归钉：patch 声明渲染实读的 feed_offset_mm，幽灵 feed_w_mm 不得回流。"""
     assert "feed_offset_mm" in TEMPLATE_META["patch"]["params"]
     assert "feed_w_mm" not in TEMPLATE_META["patch"]["params"]
     assert "feed_w_mm" not in TEMPLATE_NOMINAL["patch"]
@@ -58,7 +58,7 @@ def test_src_patch_has_no_ghost_param():
 
 
 def test_patch_recipe_has_no_dead_geometric_param():
-    """回归钉：patch 配方几何键 ⊆ TEMPLATE_META[patch].params。
+    """0aq followUp② 回归钉：patch 配方几何键 ⊆ TEMPLATE_META[patch].params。
 
     recipes/patch_antenna_v1.yaml 的幽灵 feed_w_mm 已删（全仓 grep 无消费者，
     仅配方自身残留）；本钉防其回流，也防配方再引入渲染不读的几何键。
@@ -72,7 +72,7 @@ def test_patch_recipe_has_no_dead_geometric_param():
     ghost = {k for k in keys if k.endswith("_mm")} - set(TEMPLATE_META["patch"]["params"])
     assert not ghost, (
         f"patch_antenna_v1.yaml 出现 TEMPLATE_META[patch].params 之外的几何键 "
-        f"{sorted(ghost)}——渲染不消费即幽灵参数，禁止回流"
+        f"{sorted(ghost)}——渲染不消费即幽灵参数（0aq 口径），禁止回流"
     )
 
 
@@ -80,7 +80,7 @@ def test_patch_recipe_has_no_dead_geometric_param():
 
 @pytest.mark.parametrize("template", TEMPLATES)
 def test_params_key_set_matches_docs(template):
-    """params 键集 src ↔ docs 完全一致（修复后 18 模板无一漂移）。"""
+    """params 键集 src ↔ docs 完全一致（0aq① 修复后 18 模板无一漂移）。"""
     data = _meta_yaml(template)
     src_keys = set(TEMPLATE_META[template]["params"])
     yaml_keys = set(data.get("params") or [])
@@ -148,15 +148,15 @@ def test_mesh_resolution_matches_docs(template):
     )
 
 
-# ─── 拓扑受限模板能力位（2026-09-18 收口：先期只覆盖了新模板
-#     hairpin_alt，同向本体漏标）──────────────────────────────────────────────────
+# ─── 拓扑受限模板能力位（R2-C-03，2026-09-18 round2 审查；B 轮 high"注册集内
+#     显式能力位"建议收口——上轮只覆盖了新模板 hairpin_alt，同向本体漏标）──────────────
 
 #: 拓扑受限（战役精算不可用）模板名单=docs 侧 campaign_capable=false 的唯一台账：
 #: 名单内模板 meta.yaml 必须带 campaign_capable: false + campaign_capable_reasons +
 #: campaign_unlock_criteria 三键（与 docs/templates/hairpin_alt/meta.yaml 同构）。
 #: 入选判据=真机/闭式证据证明参数空间无自洽设计点（hairpin：同向相邻臂开路端对齐
-#: →电/磁耦合反号相消，k_EM 非单调且上限 0.0155≪k_KJ 0.0515，FBW5% 名义无自洽点）。
-#: 维护规则：新受限模板→meta 补三键+进本名单；解锁须先过其
+#: →电/磁耦合反号相消，k_EM 非单调且上限 0.0155≪k_KJ 0.0515，FBW5% 名义无自洽点，
+#: ）。维护规则：新受限模板→meta 补三键+进本名单；解锁须先过其
 #: campaign_unlock_criteria 并同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake
 #: 派发口径，campaign_capable 翻 true 后从本名单移除（下方 sweep/名单双向钉会强制）。
 CAMPAIGN_RESTRICTED_TEMPLATES = ("hairpin", "hairpin_alt")
@@ -190,7 +190,7 @@ def test_campaign_restricted_sweep_declared_false_all_registered():
     """sweep：docs 声明 campaign_capable=false 的模板必须都进名单（名单=唯一台账）。
 
     新受限模板（reasons 含"无自洽"类签名或任何形式的能力位标注）落 docs 时若漏进
-    名单，此处即红——防止"只标新模板、本体漏标"式缺陷再现。
+    名单，此处即红——防止 R2-C-03 式"只标新模板、本体漏标"再现。
     """
     declared_false = set()
     for t in TEMPLATES:
@@ -214,3 +214,21 @@ def test_campaign_restricted_src_registry_consistency():
                 f"{t}: docs 受限标注与 src FILTER_FAMILY_REGISTRY 能力位漂移——"
                 f"解锁/维持两侧必须同步"
             )
+
+
+# ─── R2-1 branchline 名义臂注记钉（审查批 2026-10-04，不改既有断言）──────────
+
+def test_branchline_nominal_arm_thin_line_annotation_present():
+    """R2-1：branchline 名义臂 20.5 的薄线极限口径注记必须 src+docs 双面在场。
+
+    数值本身不改（锚历史，#252 定性 +11.8% 已裁定维持）——只钉注记存在，
+    防注记被后续批量编辑静默丢失。出处 runs/review_ge8e/
+    r2_synthesis_templates_anchors/REPORT.md R2-1。
+    """
+    assert "薄线极限" in TEMPLATE_META["branchline"]["param_semantics"], (
+        "TEMPLATE_META[branchline].param_semantics 缺名义臂薄线极限口径注记"
+    )
+    data = _meta_yaml("branchline")
+    note = data.get("nominal_note") or ""
+    for token in ("薄线极限", "18.09", "+11.8%", "R2-1", "锚定基线"):
+        assert token in note, f"branchline meta.yaml nominal_note 缺记号 {token!r}"

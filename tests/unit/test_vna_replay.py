@@ -314,3 +314,36 @@ def _corr_from(result: dict):
         warnings=result["correlation"]["warnings"],
         fsv=result["correlation"]["fsv"],
     )
+
+
+class TestCliDualEntryExitCode:
+    """E2-3 回归钉：vna replay（子命令）与 vna-replay（顶层）退出码同口径
+    （判读未过门 is_correlated=False → 两入口均 exit 1；过门均 exit 0）。"""
+
+    def test_both_entries_exit_1_when_gate_fails(self, historical_pair):
+        from typer.testing import CliRunner
+
+        from rfauto.cli.main import app
+
+        meas, sim, _, _ = historical_pair
+        run = CliRunner()
+        # 阈值 -100：任何非零偏差必判不相关 → 门未过必须 exit 1（两入口一致）
+        r1 = run.invoke(app, ["vna", "replay", meas, sim,
+                              "--threshold-db=-100"])
+        r2 = run.invoke(app, ["vna-replay", meas, "--sim", sim,
+                              "--threshold=-100"])
+        assert r1.exit_code == 1, r1.output
+        assert r2.exit_code == 1, r2.output
+
+    def test_both_entries_exit_0_when_gate_passes(self, historical_pair):
+        from typer.testing import CliRunner
+
+        from rfauto.cli.main import app
+
+        meas, _, _, _ = historical_pair
+        run = CliRunner()
+        # 自比对（sim 缺省=同文件）：偏差≈0 → 过门 → exit 0（两入口一致）
+        r1 = run.invoke(app, ["vna", "replay", meas])
+        r2 = run.invoke(app, ["vna-replay", meas])
+        assert r1.exit_code == 0, r1.output
+        assert r2.exit_code == 0, r2.output

@@ -1,0 +1,36 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（ISL 屏蔽悬置线均匀线：S21 相位斜率→εeff，β 金标准 mline 同口径；|S11| 显著非零=端口/网格判废信号）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- g_air_mm
+- h_top_mm
+- d_mm
+- s_mm
+- line_len_mm
+template: isl_shielded
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 2.4818
+  g_air_mm: 0.508
+  h_top_mm: 1.016
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 40.0
+  er: 3.66
+  tan_d: 0.0037
+topology: ISL 屏蔽悬置线均匀段（TA-10，准静态口径如实）：地面=z=0 域 PEC 底界→空气隙 g→基板 [g, g+h_sub]（悬浮）→零厚条带（基板上表面）→空气 h_top→屏蔽顶板（显式零厚板
+  z=z_wall）；两列过孔藩篱 x=±wall_x 贯通底地与顶板（藩篱止于端口面，hmsiw v2 端面口径）；双 MSLPort 板边入（端口面贴 PML）
+param_semantics: w_mm=条带宽（设计链 core/isl_line.isl_design_params：50Ω 准静态反解，名义 2.4818mm@g=0.508/h_sub=0.508/h_top=1.016/εr=3.66，εeff=1.2854——空气份额高，εeff
+  显著低于同叠层微带属悬置定义性质）、g_air_mm=地面→基板空气隙（悬置定义参数）、h_top_mm=条带→顶板腔高、d_mm/s_mm=过孔藩篱直径/心距、line_len_mm=两端口测量面间距；h_sub/er/tan_d
+  走 substrate/nominal
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘/藩篱三线对 x 向 + 线两端/每孔三线 y 向精确入网（#198）；过孔直径
+  ≥4·NEAR、孔间缝 ≥1 内部线（hmsiw 同守卫）、显式近场线 10µm 地板（#349）；基板 z 4 层+空气隙 2 层（z 网格字面与基板盒/条带同源）
+smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（round15
+  IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(|h1−h2|/D)（模型 wide-limit 与逐径混合差异，h1=h2
+  点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）

@@ -39,7 +39,7 @@ def _meta(run_id: str, *, model: str, adapter: str = "fake",
 
 @pytest.fixture
 def runs_env(tmp_path, monkeypatch):
-    """与 test_dataset_service 同款假 run 群：run_a/run_b（fake，trials）、
+    """与 tests/unit/_dataset_service_helpers.runs_env 同款假 run 群：run_a/run_b（fake，trials）、
     run_c（calibration:openems，校准样本=GT）、run_empty（无产物）。"""
     monkeypatch.chdir(tmp_path)
     root = tmp_path / "runs"

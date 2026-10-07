@@ -310,22 +310,25 @@ def test_mslsiw_registration_quartet():
     assert ot.TEMPLATE_META["msl_siw_taper"]["n_ports"] == 2
     assert ot._TEMPLATE_PORT_AXES["msl_siw_taper"] == ("y",)
     assert ot._TEMPLATE_RADIATOR["msl_siw_taper"] is False
-    # 槽线族字典尾契约（#247）
+    # 键集断言（AU-1 b4，尾序槽位钉 [-N:] 退役）：TEMPLATE_META/NOMINAL 双表
+    # 键集覆盖 + 相对次序子序列钉（保留"既有键不被重排/中间插注"的尾部追加
+    # 契约，去掉绝对槽位——新增尾注不再打红本钉，#304 族六次槽位算术翻新
+    # 就此停付）。全量键集等式由审计文件单源钉（test_template_geometry_audit）。
     from rfauto.adapters.openems_templates import SLOTLINE_FAMILY_TEMPLATES
 
-    # 注册序尾契约（df6 DP-10 起尾 4=§MS_METASURFACE 四件，槽线族退居
-    # 尾 8..4；df7 C10b 起 coil_nfc 居尾，df7 C10d 起 mmwave_series_array
-    # 居尾 1、coil_nfc 退居尾 2、ms 四件退居尾 6..3——次序仍钉，防中间插注漂移）
-    assert list(ot.TEMPLATE_META)[-10:-6] == list(SLOTLINE_FAMILY_TEMPLATES)
-    assert list(ot.TEMPLATE_NOMINAL)[-10:-6] == list(SLOTLINE_FAMILY_TEMPLATES)
-    assert list(ot.TEMPLATE_META)[-6:-2] == ["ms_patch", "ms_cross",
-                                             "ms_jcross", "ms_array_NxN"]
-    assert list(ot.TEMPLATE_NOMINAL)[-6:-2] == ["ms_patch", "ms_cross",
-                                                "ms_jcross", "ms_array_NxN"]
-    assert list(ot.TEMPLATE_META)[-2] == "coil_nfc"
-    assert list(ot.TEMPLATE_NOMINAL)[-2] == "coil_nfc"
-    assert list(ot.TEMPLATE_META)[-1] == "mmwave_series_array"
-    assert list(ot.TEMPLATE_NOMINAL)[-1] == "mmwave_series_array"
+    _TAIL_BLOCK = [
+        *SLOTLINE_FAMILY_TEMPLATES,
+        "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
+        "ms_array_NxN",
+        "coil_nfc", "mmwave_series_array", "ring_resonator",
+        "pyramid_horn", "coax_waveguide_transition", "varactor_bpf",
+    ]
+    for _reg in (ot.TEMPLATE_META, ot.TEMPLATE_NOMINAL):
+        _keys = list(_reg)
+        assert set(_TAIL_BLOCK) <= set(_keys)
+        _it = iter(_keys)  # 相对次序：块内名字按注册序出现（子序列）
+        for _name in _TAIL_BLOCK:
+            assert _name in _it, f"注册相对次序漂移：{_name}"
     # docs meta.yaml
     meta_path = REPO / "docs" / "templates" / "msl_siw_taper" / "meta.yaml"
     assert meta_path.exists()
@@ -345,9 +348,11 @@ def test_mslsiw_registration_quartet():
     from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
 
     assert "msl_siw_taper" in EXPECTED_TEMPLATES
-    # 49→53（df6_dp4p3 EEP 双模板 / df7 C10d mmwave_series_array）：四件套钉
-    # 随全局实测推进。
-    assert len(EXPECTED_TEMPLATES) == 53
+    # 49→58（df6_dp4p3 EEP 双模板 / df7 C10d mmwave_series_array /
+    # fap2-ring ring_resonator / ME-7 pyramid_horn / ME-6
+    # coax_waveguide_transition / M-5 varactor_bpf / J2FB ms_ring_patch）：
+    # 计数只与审计单源比对（AU-1B4/#247 禁轨内自钉），字面基线随单源推进。
+    assert len(ot.TEMPLATE_META) == len(EXPECTED_TEMPLATES)
 
 
 def test_mslsiw_synthesizer_roundtrip():

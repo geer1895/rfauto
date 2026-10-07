@@ -1,0 +1,41 @@
+f0_ghz: 2.5
+n_ports: 4
+template: schiffman
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- w_mm
+- gap_mm
+- l_coupled_mm
+- l_ref_mm
+- w_ref_mm
+nominal_params:
+  w_mm: 0.9051
+  gap_mm: 0.0692
+  l_coupled_mm: 18.192633
+  l_ref_mm: 54.577898
+  w_ref_mm: 1.1134
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: 全 S 矩阵 4×4 @ .s4p（官方激励轮转 4 run，#208 口径同 ratrace/lange；port1/2=耦合段两端、port3/4=参考段两端）。裁判=core.synthesis.schiffman_delta_phase
+  闭式：Δφ(f)=deg(unwrap∠S43)−deg(unwrap∠S21)（两路径测量面经 MeasPlaneShift 解嵌到段端面），@f0=+90°、带内平坦度对照 kernel phase_flatness；openEMS
+  DFT e^{−jωt} 口径（#253②），skrf 装配侧符号取反如实换算
+topology: Schiffman 90° 定差移相器（TA-1）：耦合段=远端桥接平行耦合 U 形全通段（C-section：双带条 x=±(gap/2+w/2) 沿 y、远端桥带闭合，port1/2
+  在 −BOARD 板边近端）+ 参考直通段（50Ω，长 l_ref，port3/4 在 ±BOARD 板边）；双路径同板 DC 隔离（净空 ≥3·h_sub）；全通匹配 Z0e·Z0o=Z0²=2500
+  由设计链构造保证
+param_semantics: w_mm=耦合段带条宽（Z0e/Z0o 经 KJ 反解联动，schiffman_design_params 单源）；gap_mm=耦合缝宽（同 KJ 反解；ρ=Z0e/Z0o
+  名义 2.0——低 εr 可达域上限见 nominal_derivation）；l_coupled_mm=耦合段长（θ0=ratio·90° 电长度闭式，ratio=1 经典 λ/4 耦合段）；l_ref_mm=参考段长（Δφ=90°
+  目标对 L_ref 线性一步反解，Schiffman 3L 惯例语义由内核解出实际值）；w_ref_mm=参考段/馈线宽（50Ω HJ 精算）
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；耦合缝 0.0692mm<NEAR 按 #311 缝中点精确入网（x=0
+  中线+±gap/2 带缘精确 AddLine，缝内内部线 ≥1 恒成立，不设 NEAR≤gap/3 硬守卫——C4 决议口径）；耦合对四带缘/桥带缘/段两端/参考段两端/参考带缘精确入网（#198）；真机建议显式
+  mesh_resolution_mm≤0.3（缝邻域分辨）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）'
+smoke_note: 未冒烟（离线审计过，#212，test_schiffman_qwt_templates）；近似级别如实登记：①准静态 εeff 逐模常数化无色散（内核 v1 声明）；②参考段 εeff
+  取偶/奇模相速平均口径（内核 v1）；③测量面解嵌到段端面，端面孤立线↔耦合对阶跃寄生不建模（Schiffman 原文口径）；④ρ=2.0 平坦度 ±25% 窗 max 偏差 ≈7.2°（低 εr 可达域内，不凑
+  ρ=3）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: 全链内核精算（#1c，零手抄毫米数；schiffman_design_params() 缺省实参可重算，单测钉逐键 rtol 1e-9）：全通匹配条件构造 (Z0e,Z0o)=(Z0·√ρ,Z0/√ρ)=(70.7107,35.3553)Ω（ρ=2.0，Z0e·Z0o=Z0²=2500）→
+  synthesize_schiffman 闭式：KJ 零厚耦合微带反解 w=0.905113436/s=0.06920872mm（εeff_e=2.9858/εeff_o=2.4581）→ 耦合段长
+  L_c=18.19263268mm（θ0=90° 电长度，ratio=1）→ 参考段长 L_ref=54.577898041mm（Δφ=+90° 对 L_ref 线性一步反解，回代 @f0 精确）→
+  w_ref=inverse_width(50Ω)@2.5GHz=1.1134（mline/gysel 同源档）。ρ 取值依据：Schiffman 原文 ρ≈3 于 εr≈9 氧化铝；KJ 零厚口径在
+  RO4350B h=0.508mm 的可达域上限 ρ≈2.2（ρ=2.4 起内核显式 ValueError 不外推），名义取可达域内经典档 ρ=2.0。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。

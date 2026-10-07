@@ -16,3 +16,29 @@ nominal_params:
   w_mm: 0.849
   gap_mm: 0.2
   line_len_mm: 40.0
+# XC-T 锚族补挂注记: cpw.z0_ohm.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 共面波导为准 TEM 混合模：Z0/εeff 由线宽-缝宽几何比值经 Gupta 部分电容法给出——空气/基板电容加权（填充比）决定 εeff。
+    derivations:
+    - claim: 部分电容口径：εeff 由空气电容与基板电容加权合成
+      formula: εeff = C_total(εr) / C_total(εr=1)（Gupta 共形映射部分电容）
+      source: Qucs technical document §12（Gupta 口径；docs/rf_template_references.md
+        CPW 闭式节已核与仓内 _cpwg_ri 逐式吻合）
+    - claim: 有限厚度 CPS 族 γ(εr) 单参数定标（本仓 FD 定标锚，域 a/h≲1 且 b/h≲3）
+      formula: gamma_er = 1 + 0.9014*er**-0.6361（族内 ≤1.4%）
+      source: 本仓 FD 定标锚 knowledge/anchors.yaml cps.gamma_er.fdref-v1（docs/rf_template_references.md
+        §11 重定标节：288 点 FD 裁判实证）
+  sensitivity_ranking:
+  - param: gap_mm
+    order: 1
+    basis: w/g 比值主导 Z0（Gupta 部分电容主依赖；缝几何同时是网格敏感点）
+  - param: w_mm
+    order: 2
+    basis: 与 gap 同为比值自变量（等比缩放 Z0 不变——比值主导）
+  - param: er
+    order: 3
+    basis: εeff 填充加权（|∂lnZ0/∂lnεeff|≤1/2 恒等式族）
+  quiz_refs: []

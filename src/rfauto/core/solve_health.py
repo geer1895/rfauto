@@ -1,10 +1,10 @@
-"""求解健康度体检内核。
+"""求解健康度体检内核（G11，续跑计划 §10.17）。
 
-把历史踩坑教训内核化为每 run 确定性体检——LLM/agent 永不产生物理数字，
-本模块全部判据为确定性数值规则，不健康 run 禁入
-数据集注册表（护数据集质量）。
+把历史踩坑教训内核化为每 run 确定性体检——LLM/agent 永不产生物理数字
+，本模块全部判据为确定性数值规则，不健康 run 禁入
+数据集注册表（护 E1/E11 数据质量）。
 
-内核化的教训（每条含踩坑编号）：
+内核化的教训（每条含 编号）：
 - #174 激励体积死：能量/传输曲线全零 = 激励体积死（零宽盒/盒边未进网格）
 - #195 cost 退化常数：窄带谐振器件带内 max 统计量恒定 → cost 无区分度
 - #152 CFL/网格塌缩：openEMS 时间步塌缩 6 个量级（近重合网格线）
@@ -13,17 +13,17 @@
   check_reciprocity 口径（|S|≤1.01、max|Sij−Sji|<0.01）；互易性只对
   **两向都独立已测**的端口对比对——openEMS 单激励 sparams.csv 部分矩阵
   （只测 S11/S21[/S31/S23]，S12/S13 置零）不构成互易证据，按 UNKNOWN 不
-  拦（6 个真机校准 run 曾被"置零元素 vs 已测元素"
+  拦（2026-09-17 数据入库批 6 个真机校准 run 被"置零元素 vs 已测元素"
   假阳性拦住的修正；掩码由服务层解析 csv 时给出，Touchstone 全矩阵不变）
 - 非物理增益：照 SpecEvaluator.sanity_check 插损口径（全带宽 |S21| dB 均值
   > 0.5 dB 物理上不可能）
-- 功率守恒闭合：损耗图积分 ∫q dV vs S 参数耗散
+- 功率守恒闭合（§10.21 D3-1 / G11 补强）：损耗图积分 ∫q dV vs S 参数耗散
   功率 P_in·(1−Σ|S_ij|²)，3% 门与 non_passive 判定同源
   core/loss_density.power_conservation_check；rel>3% 只 WARN（dump 覆盖
   不全/辐射是诊断不是病，防误杀既有归档 run 进 dataset health_gate），
   non_passive 才 FAIL。
-- 热合理性（判据原文 + #233）：热源非负；正热源下 ΔT==0
-  是 #233 Elmer 恒温陷阱；T_max 超材料额定是稳态 7215°C 非物理族；
+- 热合理性（§10.21 G11 行原文 + #233 + D3-2）：热源非负；正热源下 ΔT==0
+  是 #233 Elmer 恒温陷阱；T_max 超材料额定是 D3-2 稳态 7215°C 族；
   ΔT/(P·R_th) 出 [0.1, 10] 量级窗只 WARN。
 
 设计约束：
@@ -51,6 +51,7 @@
 
 from __future__ import annotations
 
+import cmath
 import math
 from collections.abc import Sequence
 from typing import Any
@@ -76,15 +77,18 @@ VERDICT_SUSPECT = "suspect"
 LESSON_EXCITATION_DEAD = "#174"
 LESSON_COST_DEGENERATE = "#195"
 LESSON_TIMESTEP_COLLAPSE = "#152"
-LESSON_PROBE_SCALE = "1.0491 探针窗（多模态几何审计）"
-LESSON_PASSIVITY = "SpecEvaluator.check_passivity"
-LESSON_RECIPROCITY = "SpecEvaluator.check_reciprocity"
-LESSON_UNPHYSICAL_GAIN = "SpecEvaluator.sanity_check 插损口径"
-LESSON_POWER_BALANCE = "core/loss_density.power_conservation_check（Jackson §6.9 / Pozar §1.6）"
-LESSON_THERMAL = "热合理性判据 + #233 Elmer 恒温陷阱 + 稳态 7215°C 族"
+LESSON_PROBE_SCALE = "1.0491 探针窗"
+LESSON_PASSIVITY = "SpecEvaluator.check_passivity（§7.5）"
+LESSON_RECIPROCITY = "SpecEvaluator.check_reciprocity（§7.5）"
+LESSON_UNPHYSICAL_GAIN = "SpecEvaluator.sanity_check 插损口径（§7.5）"
+LESSON_POWER_BALANCE = "core/loss_density.power_conservation_check（§10.21 D3-1，Jackson §6.9 / Pozar §1.6）"
+LESSON_THERMAL = "§10.21 G11 热合理性行 + #233 Elmer 恒温陷阱 + D3-2 稳态 7215°C 族"
+LESSON_GRID_CONVERGENCE = (
+    "core/gci.assess_grid_convergence（SV-6 round14；Çelik 2008 / "
+    "ASME J. Fluids Eng. 2008）")
 
 # ---------------------------------------------------------------------------
-# 判据阈值（与踩坑原文数值一致）
+# 判据阈值（与踩坑原文数值一致，改动须先对 ）
 # ---------------------------------------------------------------------------
 
 # #174：全带宽透射峰值线性幅值 < 1e-6 = 激励体积死（数值零，非弱耦合）
@@ -120,6 +124,9 @@ FACTOR_RECIPROCITY = "reciprocity"
 FACTOR_GAIN = "gain"
 FACTOR_POWER_BALANCE = "power_balance"
 FACTOR_THERMAL = "thermal_plausibility"
+#: SV-6（round14）：网格收敛因子——仅当调用方显式提供 grid_convergence
+#: 输入时追加（不进 _CHECK_SPEC 定序：既有 9 因子报告面/顺序钉不动）
+FACTOR_GRID_CONVERGENCE = "grid_convergence"
 
 # 新两因子的输入键（供服务层 dict 组装 / provenance 兜底按名取用）
 POWER_BALANCE_INPUT_KEYS = (
@@ -130,6 +137,14 @@ THERMAL_INPUT_KEYS = (
     "t_max_c", "t_ambient_c", "rise_k", "heat_source_w", "input_power_w",
     "thermal_resistance_k_per_w", "material_rating_c",
 )
+# SV-6 网格收敛因子的输入键（二选一形态：h_seq+f_seq 序列入口，或
+# f_fine/f_medium/f_coarse+r 恒定比三元入口；fs/gci_rel_warn 可选）
+GRID_CONVERGENCE_INPUT_KEYS = (
+    "h_seq", "f_seq", "f_fine", "f_medium", "f_coarse", "r", "fs",
+    "gci_rel_warn",
+)
+# GCI 相对误差带 WARN 门（gci_fine_rel 超此值=细网格误差带不可忽略）
+GCI_REL_WARN = 0.05
 
 # S 参数幅值的 log 地板（SpecEvaluator 同款 1e-30，防 log10(0)）
 _DB_FLOOR = 1e-30
@@ -227,7 +242,7 @@ def _check_excitation(freq_hz: np.ndarray | None, s_matrix: np.ndarray | None) -
     else:
         mags = np.abs(s[:, 0, 0]).reshape(-1, 1)
         target = "|S11|（单端口无透射列，退化口径）"
-    # finite 掩模（全 NaN 时 np.max 得 NaN，"NaN < 阈值"恒
+    # finite 掩模（审查 P1-2：全 NaN 时 np.max 得 NaN，"NaN < 阈值"恒
     # False → 假 PASS 穿透门禁；openEMS 非收敛 CSV 落 nan 是现实场景）
     finite = mags[np.isfinite(mags)]
     if finite.size == 0:
@@ -256,7 +271,7 @@ def _check_cost(costs: Any) -> dict[str, Any]:
     """#195 cost 退化常数：unique ≤1 或方差 <1e-12 且 trial ≥5 → FAIL。
 
     窄带谐振器件带内 max 统计量恒定的陷阱——cost 无区分度意味着优化
-    循环在盲走（历史上 47 样本批次的代价教训）。
+    循环在盲走，两轮战役 47 样本代价的教训。
     """
     if costs is None:
         return _unknown(FACTOR_COST, "cost 序列缺失，无法判定分布", LESSON_COST_DEGENERATE)
@@ -482,7 +497,7 @@ def _check_reciprocity(
             "产物不构成互易证据，不判定",
             LESSON_RECIPROCITY, evidence=evidence)
     if n_finite_pairs == 0:
-        # 全 NaN 时 worst 恒 0 → 假 PASS：退化为 UNKNOWN
+        # 全 NaN 时 worst 恒 0 → 假 PASS（审查 P1-2）：退化为 UNKNOWN
         return _unknown(
             FACTOR_RECIPROCITY,
             "互易性差分全为非有限值，无法校验",
@@ -529,7 +544,7 @@ def _check_gain(freq_hz: np.ndarray | None, s_matrix: np.ndarray | None) -> dict
             sij = s[:, i, j]
             sij = sij[np.isfinite(sij)]
             if sij.size == 0:
-                continue  # 全非有限对跳过；部分 NaN 过滤后再求均值（混 NaN 均值=NaN 会被静默跳过）
+                continue  # 全非有限对跳过；部分 NaN 过滤后再求均值（审查 P1-2 同族：混 NaN 均值=NaN 被静默跳过）
             mean_db = float(np.mean(20 * np.log10(np.abs(sij) + _DB_FLOOR)))
             if mean_db > worst_mean_db:
                 worst_mean_db = mean_db
@@ -557,7 +572,7 @@ def _check_gain(freq_hz: np.ndarray | None, s_matrix: np.ndarray | None) -> dict
 
 
 # ---------------------------------------------------------------------------
-# 新两因子的标量入参归一化（NaN/Inf 守卫：全 NaN 不得假 PASS）
+# 新两因子的标量入参归一化（NaN/Inf 守卫，审查 P1-2 族：全 NaN 不得假 PASS）
 # ---------------------------------------------------------------------------
 
 def _opt_float(value: Any) -> tuple[float | None, bool]:
@@ -682,14 +697,14 @@ def _check_thermal_plausibility(
     thermal_resistance_k_per_w: Any = None,
     material_rating_c: Any = None,
 ) -> dict[str, Any]:
-    """热合理性（T_max<材料额定、热源非负；补『温升量级 vs 输入功率』）。
+    """热合理性（§10.21 G11 行原文：T_max<材料额定、热源非负；补『温升量级 vs 输入功率』）。
 
     有效热源功率 P = heat_source_w（缺则 input_power_w）；温升 ΔT = rise_k
     （缺则 t_max_c − t_ambient_c）。判定（FAIL 支配 WARN）：
     - P < 0 → FAIL（热源非负，方案原文）；
     - P > 0 且 ΔT == 0 → FAIL（#233 Elmer HeatSolver 不消费 'Heat Source' 的
       恒温陷阱：给了热源却得常数 T=环境温度）；
-    - t_max_c > material_rating_c → FAIL（稳态口径 7215°C 非物理族）；
+    - t_max_c > material_rating_c → FAIL（D3-2 稳态口径 7215°C 非物理族）；
     - P > 0、R_th > 0、ΔT 可得时 ΔT/(P·R_th) 出 [0.1, 10] → WARN（量级窗，
       诊断量；R_th 缺失不判）；
     - 任一入参非有限 → UNKNOWN（全 NaN 不得假 PASS）；全部缺失 → UNKNOWN。
@@ -738,12 +753,12 @@ def _check_thermal_plausibility(
     if power is not None and power < 0.0:
         return _factor(
             FACTOR_THERMAL, FAIL,
-            f"{power_key}={power:.4g} W < 0：热源为负，非物理（热源非负判据）",
+            f"{power_key}={power:.4g} W < 0：热源为负，非物理（热源非负，方案 §10.21 G11 原文）",
             LESSON_THERMAL, evidence=ev)
     if rating is not None and t_max is not None and t_max > rating:
         return _factor(
             FACTOR_THERMAL, FAIL,
-            f"T_max={t_max:.4g}°C > 材料额定 {rating:.4g}°C：超温（稳态 7215°C 非物理族）",
+            f"T_max={t_max:.4g}°C > 材料额定 {rating:.4g}°C：超温（D3-2 稳态 7215°C 非物理族）",
             LESSON_THERMAL, evidence=ev)
     if power is not None and power > 0.0 and rise is not None and rise == 0.0:
         return _factor(
@@ -807,6 +822,74 @@ def _pick_inputs(source: Any, keys: Sequence[str]) -> dict[str, Any]:
     return {k: source[k] for k in keys if k in source and source[k] is not None}
 
 
+def _check_grid_convergence(**kwargs: Any) -> dict[str, Any]:
+    """SV-6 网格收敛因子（round14"网格序列-外推-报告进 solve_health"）。
+
+    输入（GRID_CONVERGENCE_INPUT_KEYS）二选一形态：
+    - 序列入口 ``h_seq`` + ``f_seq``（≥3 级网格，任意排序——core/gci
+      assess_grid_convergence 主入口）；
+    - 恒定比三元入口 ``f_fine``/``f_medium``/``f_coarse`` + ``r``。
+    可选 ``fs``（安全因子，缺省 1.25）/ ``gci_rel_warn``（相对误差带
+    WARN 门，缺省 0.05）。
+
+    判读（诚实语义，#122 族）：
+    - convergent 且 gci_fine_rel ≤ 门 → PASS（evidence 带完整 GCI 报告）；
+    - convergent 但相对带超门 → WARN（外推值可用、误差带不可忽略）；
+    - degenerate（逐级零差）→ WARN（已收敛与场死不可分辨——对照
+      excitation 因子判读，不单方面凑 PASS）；
+    - 其余不可估（无正收敛阶/无根/外推溢出/输入不合规）→ FAIL
+      （#316 方向：兜底选"多报"不选"放过"）。
+    """
+    from rfauto.core.gci import (
+        STATUS_DEGENERATE,
+        assess_grid_convergence,
+        assess_triple,
+    )
+
+    warn_thr = float(kwargs.get("gci_rel_warn") or GCI_REL_WARN)
+    if not 0.0 < warn_thr < 1.0:
+        raise ValueError(f"gci_rel_warn 须在 (0,1)，实得 {warn_thr}")
+    fs_raw = kwargs.get("fs")
+    fs = float(fs_raw) if fs_raw is not None else 1.25
+    h_seq, f_seq = kwargs.get("h_seq"), kwargs.get("f_seq")
+    triple = [kwargs.get(k) for k in ("f_fine", "f_medium", "f_coarse")]
+    if h_seq is not None or f_seq is not None:
+        if h_seq is None or f_seq is None:
+            raise ValueError("序列入口需同时提供 h_seq 与 f_seq")
+        res = assess_grid_convergence(list(h_seq), list(f_seq), fs=fs)
+    elif all(v is not None for v in triple):
+        r = kwargs.get("r")
+        if r is None:
+            raise ValueError("恒定比三元入口需提供 r（h_coarse/h_fine >1）")
+        res = assess_triple(*(float(v) for v in triple), r=float(r), fs=fs)
+    else:
+        raise ValueError(
+            "grid_convergence 输入二选一：{h_seq,f_seq} 或 "
+            "{f_fine,f_medium,f_coarse,r}")
+    evidence = res.as_dict()
+    detail = (
+        f"status={res.status} p={res.p} GCI_fine={res.gci_fine} "
+        f"rel={res.gci_fine_rel}")
+    if res.convergent and res.gci_fine_rel is not None \
+            and res.gci_fine_rel <= warn_thr:
+        return _factor(FACTOR_GRID_CONVERGENCE, PASS,
+                       f"网格收敛可估且相对误差带 ≤{warn_thr:g}: {detail}",
+                       LESSON_GRID_CONVERGENCE, evidence=evidence)
+    if res.convergent:
+        return _factor(FACTOR_GRID_CONVERGENCE, WARN,
+                       f"收敛可估但相对误差带 >{warn_thr:g}（外推可用、"
+                       f"误差带不可忽略）: {detail}",
+                       LESSON_GRID_CONVERGENCE, evidence=evidence)
+    if res.status == STATUS_DEGENERATE:
+        return _factor(FACTOR_GRID_CONVERGENCE, WARN,
+                       f"逐级零差（已收敛与场死不可分辨，对照 excitation "
+                       f"因子判读）: {detail}",
+                       LESSON_GRID_CONVERGENCE, evidence=evidence)
+    return _factor(FACTOR_GRID_CONVERGENCE, FAIL,
+                   f"网格收敛不可估（无正收敛阶/输入不合规）: {detail}",
+                   LESSON_GRID_CONVERGENCE, evidence=evidence)
+
+
 def solve_health_check(
     *,
     network: Any | None = None,
@@ -819,6 +902,7 @@ def solve_health_check(
     mirror_symmetric: bool | None = None,
     power_balance_inputs: dict[str, Any] | None = None,
     thermal_inputs: dict[str, Any] | None = None,
+    grid_convergence: dict[str, Any] | None = None,
     provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """求解健康度体检统一入口（纯函数，输入均为已加载数据结构）。
@@ -842,8 +926,15 @@ def solve_health_check(
         thermal_inputs: 热合理性因子入参 dict，键见 THERMAL_INPUT_KEYS
             （t_max_c / t_ambient_c / rise_k / heat_source_w / input_power_w /
             thermal_resistance_k_per_w / material_rating_c）。
+        grid_convergence: SV-6 网格收敛因子入参 dict（键见
+            GRID_CONVERGENCE_INPUT_KEYS；{h_seq,f_seq} 序列入口或
+            {f_fine,f_medium,f_coarse,r} 恒定比三元入口）。**仅当显式
+            提供时追加第 10 因子**（grid_convergence）——既有 9 因子
+            报告面与顺序钉（消费方按序渲染）不动；无输入时不出现该
+            因子（UNKNOWN 占位反而污染既有健康判定消费面）。
         provenance: 可选 provenance dict，可携带键 timestep(s)/timestep_values、
-            eps_eff_by_port、mirror_symmetric、costs、power_balance、thermal；
+            eps_eff_by_port、mirror_symmetric、costs、power_balance、thermal、
+            grid_convergence；
             显式 kwargs 优先。
 
     返回：见模块 docstring 的报告结构。每项检查独立 try/except，单项
@@ -864,15 +955,19 @@ def solve_health_check(
         power_balance_inputs = provenance.get("power_balance", provenance.get("power_balance_inputs"))
     if thermal_inputs is None:
         thermal_inputs = provenance.get("thermal", provenance.get("thermal_inputs"))
+    if grid_convergence is None:
+        grid_convergence = provenance.get("grid_convergence")
     power_kwargs = _pick_inputs(power_balance_inputs, POWER_BALANCE_INPUT_KEYS)
     thermal_kwargs = _pick_inputs(thermal_inputs, THERMAL_INPUT_KEYS)
 
     # network 优先于裸数组
+    network_extract_error: str | None = None
     if network is not None:
         try:
             freq_hz, s_matrix = _extract_network_arrays(network)
-        except Exception:
+        except Exception as exc:  # 兜 duck-type network 属性缺失/形状非法：降级为裸数据缺失走 UNKNOWN（#105），不炸整个体检
             freq_hz, s_matrix = None, None
+            network_extract_error = repr(exc)
 
     s_arr = None
     if s_matrix is not None:
@@ -903,11 +998,97 @@ def solve_health_check(
         except Exception as exc:  # 单项炸 → UNKNOWN，不传染（#105）
             factors.append(_factor(name, UNKNOWN, f"检查项异常: {exc!r}", lesson))
 
+    # SV-6：网格收敛因子按需追加（提供输入才出现——既有 9 因子报告面/
+    # 顺序钉不动；异常走 UNKNOWN 不传染，#105 同款）
+    if grid_convergence is not None:
+        try:
+            factors.append(_check_grid_convergence(
+                **_pick_inputs(grid_convergence, GRID_CONVERGENCE_INPUT_KEYS)))
+        except Exception as exc:
+            factors.append(_factor(
+                FACTOR_GRID_CONVERGENCE, UNKNOWN,
+                f"网格收敛检查异常: {exc!r}", LESSON_GRID_CONVERGENCE))
+
     has_fail = any(f["status"] == FAIL for f in factors)
     has_warn = any(f["status"] == WARN for f in factors)
     verdict = VERDICT_UNHEALTHY if has_fail else (VERDICT_SUSPECT if has_warn else VERDICT_HEALTHY)
-    return {
+    report: dict[str, Any] = {
         "ok": verdict == VERDICT_HEALTHY,
         "verdict": verdict,
         "factors": factors,
     }
+    if network_extract_error is not None:
+        # 兜底归类可见性（审查 P2-1）：network 提取炸过时根因不静默丢失——
+        # 各 S 类因子的"S 参数缺失"UNKNOWN 实由该异常所致
+        report["network_extract_error"] = network_extract_error
+    return report
+
+
+# ---------------------------------------------------------------------------
+# F2 负载面不变量（K-8 判据 v2，ge8b 批）：LumpedPort 纯 R 端接的健康锚
+# ---------------------------------------------------------------------------
+
+#: 幅值/相位容差（K-8 §2 实测病理 1.354∠171.7° 离带远、健全合成 <1e-9：
+#: 双侧留宽——幅 15% 吸收探针离散 ~3%、相位 30° 吸收近带退化）
+_F2_MAG_TOL = 0.15
+_F2_PHASE_TOL_DEG = 30.0
+
+
+def port_load_invariant_factor(
+    u_by_i: Any,
+    r_load_ohm: float,
+    *,
+    freq_label: str = "",
+    mag_tol: float = _F2_MAG_TOL,
+    phase_tol_deg: float = _F2_PHASE_TOL_DEG,
+) -> dict[str, Any]:
+    """F2 不变量（K-8 判据 v2）：纯 R 负载面 u/i 应=R∠0°，否则探针口径失配。
+
+    依据 runs/k8_half_anchor/REPORT.md §2：u 探针=盒中心零宽线（场峰采样）
+    vs i 探针=全口径安培环（均值）——模态权重失配时 uf±R·i 分解退化，
+    负载面读出负阻（κR≈1.35∠172° 实测病理）。此不变量入健康门族后，
+    K-8 家族（siw 负载面端口化）在渲染/判读前即可拦截。
+
+    纯函数零 IO；输入 u_by_i=u(i)/i(i) 频域复标量（单频点；多频点消费
+    方逐点调用），r_load_ohm>0。判据（预声明）：
+      κ=|u/i|/R；Δφ=deg(arg(u/i))；
+      |κ−1|≤mag_tol 且 |Δφ|≤phase_tol_deg → PASS；
+      二者一越带 → FAIL（负阻读数 hint：Δφ>90° 或 κ>1.2 时点名
+      "探针口径失配/负载面分解退化"）；
+      输入非有限/R≤0 → UNKNOWN 不翻门（#105/#314 掩码语义）。
+    """
+    lesson = "#175（K-8 §2 负载面不变量）"
+    factor: dict[str, Any] = {
+        "factor": "port_load_invariant",
+        "lesson_ref": lesson,
+    }
+    try:
+        z = complex(u_by_i)
+        r = float(r_load_ohm)
+    except (TypeError, ValueError):
+        return {**factor, "status": UNKNOWN, "detail": "输入不可解析"}
+    if not (math.isfinite(z.real) and math.isfinite(z.imag)
+            and math.isfinite(r) and r > 0.0):
+        return {**factor, "status": UNKNOWN,
+                "detail": "输入非有限或 R≤0——不翻门（#314 掩码语义）"}
+    if abs(z) == 0.0:
+        return {**factor, "status": UNKNOWN, "detail": "u/i=0——i 支路零或退化"}
+    kappa = abs(z) / r
+    phase_deg = math.degrees(cmath.phase(z))
+    factor["evidence"] = {
+        "kappa": round(kappa, 6),
+        "phase_deg": round(phase_deg, 3),
+        "r_load_ohm": r,
+        "freq_label": freq_label,
+    }
+    mag_ok = abs(kappa - 1.0) <= mag_tol
+    phase_ok = abs(phase_deg) <= phase_tol_deg
+    if mag_ok and phase_ok:
+        return {**factor, "status": PASS,
+                "detail": f"κ={kappa:.4f} Δφ={phase_deg:.2f}° 在带"}
+    hint = ""
+    if phase_deg > 90.0 or kappa > 1.2:
+        hint = "——负阻读数指纹：探针口径失配/负载面分解退化（K-8 §2 家族）"
+    return {**factor, "status": FAIL,
+            "detail": (f"κ={kappa:.4f} Δφ={phase_deg:.2f}° 越带"
+                       f"（容差 {mag_tol:.2f}/{phase_tol_deg:.0f}°）{hint}")}

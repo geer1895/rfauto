@@ -1,7 +1,7 @@
 """代理模型子包：接口契约见 base（v0 起，第三方正向代理由此接入）。
 
 历史模块 optimization/surrogate.py（P6 响应面预筛）已并入本包
-prescreener.py（v0 模块化合并）。
+prescreener.py（v0 模块化合并，2026-09-03）。
 """
 
 from rfauto.optimization.surrogate.base import (
@@ -12,6 +12,7 @@ from rfauto.optimization.surrogate.base import (
 from rfauto.optimization.surrogate.deeponet import DeepONetSurrogate
 from rfauto.optimization.surrogate.fno import FNOSurrogate
 from rfauto.optimization.surrogate.fno_lite import FNOLiteSurrogate
+from rfauto.optimization.surrogate.huber_ridge import HuberRidgeSurrogate
 from rfauto.optimization.surrogate.mapes_analytic import MapesAnalyticSurrogate
 from rfauto.optimization.surrogate.nn_model import (
     PHYSICS_AUGMENTERS,
@@ -39,6 +40,7 @@ __all__ = [
     "FNOLiteSurrogate",
     "FNOSurrogate",
     "GBDTSurrogate",
+    "HuberRidgeSurrogate",
     "MapesAnalyticSurrogate",
     "NNSurrogate",
     "PODROMSurrogate",

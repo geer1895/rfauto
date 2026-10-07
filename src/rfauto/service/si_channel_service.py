@@ -1,7 +1,7 @@
 """df7 T2：SI 通道一键报告 service 面（JSON 进出，规则 4；CLI/MCP 是薄壳）。
 
 纯后处理吃现成 sparams 资产（Touchstone 文件或 run 目录），零新几何模板。
-四检查段（方案池 docs/plan_expansion_pool_20260924.md T2）：
+四检查段（方案池 方案池 T2）：
 
 - **passivity 无源性**：全频段逐频 σmax(S)（numpy SVD），判据
   max σmax ≤ 1+tol（违规频点列 TOP N）；
@@ -35,11 +35,16 @@ core.si_channel/pychopmarg 确定性计算，LLM/agent 只消费报告。
 
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+logger = logging.getLogger(__name__)
 
 #: 报告 schema 版本
 SI_CHANNEL_REPORT_SCHEMA_VERSION = "1.0"
@@ -441,6 +446,10 @@ def _check_com(thru_path: str, n_ports: int, *,
     try:
         from pychopmarg.com import COM  # 惰性 import（#105：缺装如实降级）
     except Exception as exc:
+        # 宽兜豁免（AU-3①审计）：可选依赖缺装/破损装（import 期任意异常）
+        # 都按 #105 如实降级不阻塞报告主路径；异常文本已随 note 外显，
+        # debug 留痕补 traceback（best-effort）。
+        logger.debug("pychopmarg 不可用，COM 段降级", exc_info=True)
         return {"status": "degraded",
                 "note": f"pychopmarg 不可用（{exc}）——COM 段降级不阻塞"}
     try:
@@ -466,6 +475,10 @@ def _check_com(thru_path: str, n_ports: int, *,
             "params_note": params_note,
         }
     except Exception as exc:
+        # 宽兜豁免（AU-3①审计）：pychopmarg 计算失败（第三方内核任意异常
+        # 面）按 #105 段级降级不阻塞其余段；type+message 已随 note 外显，
+        # warning+traceback 留痕供溯源（best-effort，不改返回值）。
+        logger.warning("pychopmarg COM 计算失败，COM 段降级", exc_info=True)
         return {"status": "degraded",
                 "note": f"pychopmarg COM 计算失败（{type(exc).__name__}: "
                         f"{exc}）——COM 段降级不阻塞（#105）"}
@@ -510,6 +523,11 @@ def si_channel_report(
     try:
         src = _load_source(source)
     except Exception as exc:
+        # 信封边界豁免（AU-3①审计）：本函数契约="ok=False 仅当源不可读/
+        # 不可解析"（服务层 JSON 进出，规则 4）——任何源读取异常都折进
+        # errors 信封不外抛，message 已随 errors 外显；debug+traceback
+        # 留痕（best-effort，不改返回值）。
+        logger.debug("SI 报告源读取失败: %s", source, exc_info=True)
         return {"ok": False, "schema_version": SI_CHANNEL_REPORT_SCHEMA_VERSION,
                 "errors": [f"源读取失败: {exc}"], "warnings": []}
 
@@ -548,12 +566,11 @@ def si_channel_report(
     com = _check_com(src["path"], n_ports, fext_paths=fext_paths,
                      next_paths=next_paths)
 
-    report: dict[str, Any] = {
-        "ok": True,
-        "schema_version": SI_CHANNEL_REPORT_SCHEMA_VERSION,
-        "errors": errors,
-        "warnings": warnings,
-        "source": {
+    report: dict[str, Any] = ok_envelope(
+        schema_version=SI_CHANNEL_REPORT_SCHEMA_VERSION,
+        errors=errors,
+        warnings=warnings,
+        source={
             "kind": src["kind"],
             "path": src["path"],
             "n_ports": n_ports,
@@ -563,11 +580,11 @@ def si_channel_report(
             "z0_ref_ohm": z0,
             "partial_matrix": bool(mask is not None),
         },
-        "passivity": passivity,
-        "causality": causality,
-        "tdr": tdr,
-        "com": com,
-        "provenance": _provenance({
+        passivity=passivity,
+        causality=causality,
+        tdr=tdr,
+        com=com,
+        provenance=_provenance({
             "passivity_tol": passivity_tol,
             "violation_top_n": violation_top_n,
             "causality_threshold": causality_threshold,
@@ -576,7 +593,7 @@ def si_channel_report(
             "fext_paths": list(fext_paths or []),
             "next_paths": list(next_paths or []),
         }),
-    }
+    )
     if markdown:
         report["markdown"] = render_si_channel_markdown(report)
     return report
@@ -597,13 +614,19 @@ def _provenance(params: dict[str, Any]) -> dict[str, Any]:
         import skrf
 
         prov["skrf_version"] = str(skrf.__version__)
-    except Exception:
+    except (ImportError, AttributeError):
+        # 收窄（AU-3①）：预期异常面=缺装 ImportError / 版本属性缺失
+        # AttributeError——缺失如实 unknown 是 #105 设计语义（静默即契约，
+        # 非吞错）；skrf 若连 import 都炸非 ImportError，会早已在源读取段
+        # 显式失败，不会走到这里。
         pass
     try:
         from pychopmarg import __version__ as com_ver
 
         prov["pychopmarg_version"] = str(com_ver)
-    except Exception:
+    except ImportError:
+        # 收窄（AU-3①）：from-import 同时覆盖缺装与版本名缺失两类预期面
+        # （均 ImportError），缺失如实 None 不阻塞（#105）。
         pass
     return prov
 
@@ -696,3 +719,274 @@ def render_si_channel_markdown(report: dict[str, Any]) -> str:
                  f"pychopmarg: {prov.get('pychopmarg_version')}  "
                  f"numpy: {prov.get('numpy_version')}")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# 混合模 S 参数（QW-1：skrf 2.1 se2gmm 接线，非新算法；调研报告 §四 QW-1）
+# ---------------------------------------------------------------------------
+
+#: 混合模报告 schema 版本
+MIXED_MODE_SCHEMA_VERSION = "1.0"
+
+#: |S|=0 的 dB 地板（log10(0) 非有限值，JSON 面用地板截断；如实记 note）
+_MIXED_MODE_DB_FLOOR = -300.0
+_MIXED_MODE_ABS_FLOOR = 1e-15
+
+#: skrf se2gmm(p=2) 输出端口序（skrf 官方 docstring 4-port 图钉死）：
+#: [d0, d1, c0, c1]——对 1 = 单端 (0,1)、对 2 = 单端 (2,3)（0 起）。
+#: 指标键 → (行, 列)：S_行,列 = 列口激励、行口响应。
+_MIXED_MODE_MATRIX_INDEX: dict[str, tuple[int, int]] = {
+    "sdd21": (1, 0),   # 差模出@对2 ← 差模入@对1（插损）
+    "sdd11": (0, 0),   # 差模出@对1 ← 差模入@对1（回损）
+    "sdd12": (0, 1),   # 差模出@对1 ← 差模入@对2
+    "scc21": (3, 2),   # 共模出@对2 ← 共模入@对1
+    "scc11": (2, 2),   # 共模出@对1 ← 共模入@对1
+    "scd21": (1, 2),   # 模式转换：差模出@对2 ← 共模入@对1
+    "sdc21": (3, 0),   # 模式转换：共模出@对2 ← 差模入@对1
+    "scd12": (0, 3),   # 模式转换：差模出@对1 ← 共模入@对2
+    "sdc12": (2, 1),   # 模式转换：共模出@对1 ← 差模入@对2
+}
+
+
+def _mixed_mode_db(values: np.ndarray) -> np.ndarray:
+    """|S| → dB（|S|=0 用地板截断，避免 ±Infinity 破坏 JSON 严格性）。"""
+    mag = np.abs(np.asarray(values, dtype=complex))
+    return 20.0 * np.log10(np.maximum(mag, _MIXED_MODE_ABS_FLOOR))
+
+
+def mixed_mode_metrics(
+    source: str | Path | None = None,
+    ports_pair: tuple[int, int] = (1, 2),
+    *,
+    freq_hz: np.ndarray | None = None,
+    s: np.ndarray | None = None,
+    z0: float = 50.0,
+) -> dict[str, Any]:
+    """混合模 S 参数指标（QW-1，skrf se2gmm 薄封装；JSON 进出）。
+
+    4 端口单端网络 → 两对差分通道的混合模指标。skrf 口径（se2gmm 官方
+    docstring 4-port 图实测钉死）：相邻单端口成对 (0,1)/(2,3)，变换后输出
+    端口序 [d0, d1, c0, c1]；本函数按用户 1 起端口对重排（renumber）后
+    变换，指标矩阵下标见 ``_MIXED_MODE_MATRIX_INDEX`` 注释。
+
+    Args:
+        source: Touchstone 文件路径（.sNp，须 4 端口）或 run 目录
+            （sparams.csv/Touchstone，复用 si_channel_report 同款读取面）。
+        ports_pair: 第一差分对（1 起物理口号，(p+, p-)）；第二对缺省取
+            其余两口升序（4 端口缺省 (1,2)→(3,4)）。
+        freq_hz: 直传频轴（Hz）；与 ``s`` 同给时跳过文件读取。
+        s: 直传单端 S 矩阵（shape (F, 4, 4)）；与 ``freq_hz`` 同给时跳过
+            文件读取（测试/内存消费面）。
+        z0: 直传路径参考阻抗（Ω，缺省 50）。
+
+    Returns:
+        {ok, errors, notes, source, pairs, n_freqs, freq_hz,
+        metrics: {sdd21_db, sdd11_db, sdd12_db, scc21_db, scc11_db,
+        scd21_db, sdc21_db, scd12_db, sdc12_db（各逐频 dB 数组）},
+        summary: {同键 → {min, max, mean}}, provenance}；
+        非 4 端口/端口对非法/源不可读 → ok=False（显式，不抛出）。
+    """
+    notes: list[str] = []
+    if s is not None:
+        if freq_hz is None:
+            return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                    "errors": ["直传 s 矩阵必须同时给 freq_hz"], "notes": notes}
+        arr = np.asarray(s, dtype=complex)
+        n = arr.shape[-1] if arr.ndim == 3 else 0
+        if arr.ndim != 3 or n != 4:
+            return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                    "errors": [f"直传 s 须 shape (F, 4, 4)，实际 "
+                               f"{tuple(arr.shape)}"], "notes": notes}
+        import skrf
+
+        net = skrf.Network(
+            frequency=skrf.Frequency.from_f(np.asarray(freq_hz, dtype=float),
+                                            unit="hz"),
+            s=arr, z0=float(z0))
+        src_desc: dict[str, Any] = {"kind": "inline_array",
+                                    "path": None, "z0_ref_ohm": float(z0)}
+    else:
+        if source is None:
+            return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                    "errors": ["source 与 s 至少给其一"], "notes": notes}
+        try:
+            src = _load_source(source)
+        except Exception as exc:
+            # 信封边界豁免（AU-3①审计，同 si_channel_report）：源不可读
+            # 折进 ok=False 信封（函数契约），message 已随 errors 外显；
+            # debug+traceback 留痕（best-effort，不改返回值）。
+            logger.debug("混合模指标源读取失败: %s", source, exc_info=True)
+            return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                    "errors": [f"源读取失败: {exc}"], "notes": notes}
+        net = src["network"]
+        src_desc = {"kind": src["kind"], "path": src["path"],
+                    "z0_ref_ohm": float(src["z0"])}
+        notes.extend(src["notes"])
+
+    if net.nports != 4:
+        return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                "errors": [f"混合模变换须 4 端口单端网络，实际 "
+                           f"{net.nports} 端口（source={src_desc['path']}）"],
+                "notes": notes}
+
+    pair1 = tuple(ports_pair)
+    if (len(pair1) != 2 or not all(isinstance(v, int) and 1 <= v <= 4
+                                   for v in pair1) or pair1[0] == pair1[1]):
+        return {"ok": False, "schema_version": MIXED_MODE_SCHEMA_VERSION,
+                "errors": [f"ports_pair 须为 1..4 内两个不同口号，实际 "
+                           f"{ports_pair!r}"], "notes": notes}
+    pair2 = tuple(sorted(set(range(1, 5)) - set(pair1)))
+
+    import skrf
+
+    gmm = net.copy()
+    gmm.renumber([pair1[0] - 1, pair1[1] - 1, pair2[0] - 1, pair2[1] - 1],
+                 [0, 1, 2, 3])
+    gmm.se2gmm(p=2)
+
+    freq = np.asarray(net.f, dtype=float)
+    metrics: dict[str, list[float]] = {}
+    summary: dict[str, dict[str, float]] = {}
+    for key, (row, col) in _MIXED_MODE_MATRIX_INDEX.items():
+        db = _mixed_mode_db(gmm.s[:, row, col])
+        metrics[f"{key}_db"] = [float(v) for v in db]
+        summary[f"{key}_db"] = {"min": float(db.min()), "max": float(db.max()),
+                                "mean": float(db.mean())}
+    if np.abs(np.asarray(gmm.s)).min() == 0.0:
+        notes.append(f"|S|=0 频点按 {_MIXED_MODE_ABS_FLOOR:g} 地板截为 "
+                     f"{_MIXED_MODE_DB_FLOOR:g} dB（JSON 严格性，非物理值）")
+
+    return ok_envelope(
+        schema_version=MIXED_MODE_SCHEMA_VERSION,
+        errors=[],
+        notes=notes,
+        source=src_desc,
+        pairs={"diff_port_1": list(pair1), "diff_port_2": list(pair2)},
+        n_freqs=int(freq.size),
+        freq_hz=[float(v) for v in freq],
+        metrics=metrics,
+        summary=summary,
+        provenance=_provenance({"ports_pair": list(pair1),
+                                   "ports_pair_2": list(pair2),
+                                   "skrf_se2gmm": True}),
+    )
+
+
+# ---------------------------------------------------------------------------
+# W7 台账①态接线：core/com_pam4 消费面（2026-10-04，零消费内核接线批 X3）
+# ---------------------------------------------------------------------------
+
+#: COM PAM4 运行 schema 版本（core.COM_PAM4_SCHEMA_VERSION 同源镜像）
+COM_PAM4_RUN_SCHEMA_VERSION = "1.0"
+
+#: 粗档缺省（df7⑥：全档直积扫描分钟级不可用；g_dc 21→3 档、g_dc2 12→2 档）
+_COM_PAM4_G_DC_STRIDE_DEFAULT = 8
+_COM_PAM4_G_DC2_STRIDE_DEFAULT = 11
+
+
+def com_pam4_run(
+    thru_s4p: str,
+    *,
+    fext_s4p: list[str] | None = None,
+    next_s4p: list[str] | None = None,
+    preset: str = "8023dj",
+    fb_gbaud: float | None = None,
+    g_dc_stride: int = _COM_PAM4_G_DC_STRIDE_DEFAULT,
+    g_dc2_stride: int = _COM_PAM4_G_DC2_STRIDE_DEFAULT,
+    pinned_taps: list[float] | None = None,
+    tx_taps_step: float | None = None,
+    opt_mode: str = "przf",
+) -> dict[str, Any]:
+    """单点 COM 运行（W7 台账①态接线，core/com_pam4 薄消费；JSON 进出）。
+
+    按 pychopmarg 随包 preset 重建参数（``com_pam4.pam4_com_params``）后跑
+    ``com_pam4.run_com``：COM 数值权威 = pychopmarg 内核，fom_db（优化 FOM，
+    PRZF 时=93A-36）与 com_db（final-COM）两列并报不自证一致（审查 C2-1
+    口径，内核 docstring 同源）；verification 标记 unverified_vs_802com_vectors
+    如实透传。粗档旋钮缺省（g_dc_stride=8/g_dc2_stride=11）与 core 测试
+    同款，秒级—十秒级。
+
+    Args:
+        thru_s4p: 直通 4 端口 Touchstone 路径（只受理 .s4p，3.1.2 的
+            .s32p 直通路线有缺陷——内核口径）。
+        fext_s4p / next_s4p: 远/近端串扰 4 端口文件列表（可选）。
+        preset: 随包 preset（"8023by" | "8023dj"；802.3ck 未随包发布不注册）。
+        fb_gbaud: 覆盖波特率（None=preset 原值）。
+        g_dc_stride / g_dc2_stride: CTLE 档等距抽稀（≥1，1=全档）。
+        pinned_taps: 钉死 Tx FFE 全部抽头（长度=preset 抽头数，
+            |v|.sum()≤1；钉抽头路线，单组合秒级）。
+        tx_taps_step: Tx FFE 步进覆盖（更粗网格；与 pinned_taps 互斥语义，
+            同给时内核按钉抽头优先——pinned 分支不消费 step）。
+        opt_mode: 均衡选择目标（"przf"=93A 规格路线 | "mmse"）。
+
+    Returns:
+        ok 信封：{"ok": True, "schema_version", "result"（core run_com
+        schema，status=ok/unavailable/degraded）, "provenance"}；
+        契约错误（文件缺失/非 s4p/preset 未知/旋钮非法）→
+        {"ok": False, "errors": [str, ...]}，不抛异常。
+        pychopmarg 缺装 → ok=True + result.status="unavailable"（内核契约，
+        如实报缺不阻塞调用方）。
+    """
+    from rfauto.core.com_pam4 import pam4_com_params, run_com
+
+    errors: list[str] = []
+    if not isinstance(thru_s4p, (str, Path)) or not str(thru_s4p).strip():
+        errors.append(f"thru_s4p 必须是非空路径字符串，实际 {thru_s4p!r}")
+    if not isinstance(preset, str) or not preset.strip():
+        errors.append(f"preset 必须是非空字符串，实际 {preset!r}")
+    for name, lst in (("fext_s4p", fext_s4p), ("next_s4p", next_s4p)):
+        if lst is not None and not (
+            isinstance(lst, list) and all(isinstance(p, (str, Path)) for p in lst)
+        ):
+            errors.append(f"{name} 必须是路径字符串列表，实际 {lst!r}")
+    if pinned_taps is not None and not (
+        isinstance(pinned_taps, list)
+        and all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                for v in pinned_taps)
+    ):
+        errors.append(f"pinned_taps 必须是数值列表，实际 {pinned_taps!r}")
+    if errors:
+        return error_envelope(errors, schema_version=COM_PAM4_RUN_SCHEMA_VERSION)
+    try:
+        params, params_note = pam4_com_params(
+            preset,
+            fb_gbaud=fb_gbaud,
+            g_dc_stride=int(g_dc_stride),
+            g_dc2_stride=int(g_dc2_stride),
+            tx_taps_step=tx_taps_step,
+            pinned_taps=tuple(float(v) for v in pinned_taps)
+            if pinned_taps is not None else None,
+        )
+    except (ValueError, TypeError) as exc:
+        return error_envelope(
+            [f"参数重建失败: {exc}"], schema_version=COM_PAM4_RUN_SCHEMA_VERSION)
+    except Exception as exc:  # pychopmarg 缺装/破损装（import 期任意异常，AU-3①）
+        return error_envelope(
+            [f"pychopmarg 参数面不可用（{type(exc).__name__}: {exc}）"],
+            schema_version=COM_PAM4_RUN_SCHEMA_VERSION)
+    try:
+        result = run_com(
+            thru_s4p,
+            fext_s4p=tuple(fext_s4p or ()),
+            next_s4p=tuple(next_s4p or ()),
+            params=params,
+            params_note=params_note,
+            opt_mode=opt_mode,
+        )
+    except (ValueError, TypeError, FileNotFoundError, OSError) as exc:
+        # 输入面契约错误（文件缺失/非 s4p/端口数≠4/带宽不足/opt_mode 未知名）
+        # 按内核契约显式抛——本函数折进 ok=False 信封不外泄（信封纪律）；
+        # pychopmarg 缺装/计算失败不走此路径（内核降级 status 面，#105）。
+        return error_envelope(
+            [str(exc)], schema_version=COM_PAM4_RUN_SCHEMA_VERSION)
+    return ok_envelope(
+        schema_version=COM_PAM4_RUN_SCHEMA_VERSION,
+        result=result,
+        provenance={
+            "kernel": "rfauto.core.com_pam4",
+            "sources": (
+                "IEEE 802.3-22 Annex 93A（pychopmarg 包裹，数值权威）"
+                "；fom_db=93A-36 优化 FOM、com_db=final-COM 两列并报（C2-1 口径）"
+            ),
+        },
+    )

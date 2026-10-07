@@ -1,6 +1,6 @@
 """B6 stage-2：KiCad PCB 提取 → CPWG 锚判据 + 确定性代理寻优环。
 
-「接优化环」stage-2 的 service 面
+续跑计划 §10.2 B6 stage-2「接优化环」的 service 面
 （JSON 进出薄编排，同 parasitic_service 口径）：extract_pcb 产物 →
 CPWG 设计事实解析 → CPWG 共形映射闭式代理（core/calculators._cpwg_ri，
 确定性内核）→ 综合寻优（core/synthesis.synthesize_cpw_model，brentq+
@@ -27,6 +27,7 @@ from typing import Any
 
 from rfauto.core.calculators import _cpwg_ri
 from rfauto.core.synthesis import synthesize_cpw_model
+from rfauto.service.envelope import ok_envelope
 
 #: 目标特性阻抗默认值（CPWG 50Ω 系统）
 DEFAULT_TARGET_Z0_OHM = 50.0
@@ -192,24 +193,25 @@ def optimize_cpw_from_extract(payload: Mapping[str, Any]) -> dict[str, Any]:
         verdict = "PASS" if abs(z0_ext - target_z0) <= z0_tol else "FAIL"
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True,
-            "design": design,
-            "analysis": {
+    return ok_envelope(
+        design=design,
+        analysis={
                 "z0_extracted_ohm": round(z0_ext, 2),
                 "eps_eff_extracted": round(eps_ext, 4),
             },
-            "optimization": {
+        optimization={
                 "target_z0_ohm": target_z0,
                 "w_opt_mm": w_opt,
                 "z0_opt_ohm": round(z0_opt, 2),
                 "eps_eff_opt": round(eps_opt, 4),
                 "delta_w_mm": round(delta_w, 4),
             },
-            "verdict": verdict,
-            "z0_tol_ohm": z0_tol,
-            "freq_ghz": freq_ghz,
-            "recipe_draft": synth.recipe_draft,
-            "notes": list(synth.notes)}
+        verdict=verdict,
+        z0_tol_ohm=z0_tol,
+        freq_ghz=freq_ghz,
+        recipe_draft=synth.recipe_draft,
+        notes=list(synth.notes),
+    )
 
 
 def autotune_recipe_from_extract(payload: Mapping[str, Any],
@@ -286,7 +288,7 @@ def autotune_recipe_from_extract(payload: Mapping[str, Any],
         return {"ok": False, "error": str(exc)}
     except OSError as exc:
         return {"ok": False, "error": f"配方写入失败: {exc}"}
-    result = {"ok": True, "recipe_path": str(path), "recipe": recipe}
+    result = ok_envelope(recipe_path=str(path), recipe=recipe)
     if getattr(path, "overwritten", False):
         # R2-D-03：explicit 覆盖受保护 recipes/ 既有原件时如实标注
         result["overwritten"] = True
@@ -566,11 +568,11 @@ def board_facts_from_extract(extract: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-# ─── 文件面入口（CLI/MCP 薄壳消费）────────────────────────────
+# ─── 文件面入口（CLI/MCP 薄壳消费；0cb① followUp）────────────────────────────
 def extract_pcb_facts(pcb_path: str | Path,
                       kicad_python: str | None = None) -> dict[str, Any]:
     """.kicad_pcb → extract_pcb 产物契约（JSON 进出透传；子进程走 KiCad 自带
-    Python 3.11，KiCad 子进程纪律）。文件不存在/子进程失败 ok=False。"""
+    Python 3.11， 硬限制 2）。文件不存在/子进程失败 ok=False。"""
     from rfauto.adapters.kicad_extract import extract_pcb
 
     return extract_pcb(pcb_path, kicad_python=kicad_python)

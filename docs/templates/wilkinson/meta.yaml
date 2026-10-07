@@ -17,3 +17,33 @@ nominal_params:
   series_w_mm: 0.604
   shunt_w_mm: 1.113
   arm_len_mm: 18.1
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 输入 50Ω 在结点等分为两路，双 λ/4 臂（臂阻抗 √2·Z0）在中心频率使两输出同相，臂末端跨接 2Z0=100Ω 隔离电阻吸收差模——等分与隔离由对称性直接给出。
+    derivations:
+    - claim: 臂特征阻抗 √2·Z0、臂长 λg/4（臂长取臂线宽自身 εeff 口径）
+      formula: Z_t = sqrt(2)*Z0 ; L = c/(4*f0*sqrt(εeff))
+      source: Pozar, Microwave Engineering (4th ed.), Ch.7 例 7.2（Wilkinson 设计例；docs/rf_template_references.md
+        §1，Ansys 官方 FDTD 例同源；本仓 core/synthesis.synthesize_wilkinson XA-3 迭代序）
+    - claim: 隔离电阻 2Z0 接两臂末端，中心频率两输出理想隔离
+      formula: R_isolation = 2*Z0 = 100Ω@50Ω
+      source: Pozar, Microwave Engineering (4th ed.), Ch.7 例 7.2（docs/rf_template_references.md
+        §1：100Ω 片状电阻跨接输出侧双臂末端）
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；名义臂长=synthesize_wilkinson 综合链
+  - param: er
+    order: 2
+    basis: f0 ∝ 1/sqrt(εeff)，|∂lnf0/∂lnεeff|=1/2 恒等式（er 经 εeff(w) 打折）
+  - param: series_w_mm
+    order: 3
+    basis: 臂宽经 εeff(w) 二阶进入臂长，并直接定臂阻抗口径（R006 线宽失配坑族）
+  - param: shunt_w_mm
+    order: 4
+    basis: 50Ω 馈线宽：只影响馈线匹配，λ/4 恒等式不含此项（弱敏感）
+  quiz_refs:
+  - Q-WILK-ARM
+  - Q-WILK-ZT

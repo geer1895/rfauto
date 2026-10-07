@@ -3,7 +3,7 @@
 锚点（零回归纪律）：
 - tol=None（缺省）时 run_surrogate_loop 结果字典与不加参数逐字节一致——
   新代码路径零触发；
-- σ 序列同 seed 逐位一致（确定性内核纪律）；
+- σ 序列同 seed 逐位一致（确定性内核， 规则 7）；
 - uncertainty.py 分层 lint：optimization 禁 import service（import-linter
   layers 契约），内核是移植不是引用。
 """
@@ -184,3 +184,67 @@ class TestLoopUncertaintyTermination:
         assert len(entries) == len(res["rounds"]) - 1  # round-0 相位条目除外
         assert all(r["sigma_cost_max"] is None
                    or r["sigma_cost_max"] >= 0.0 for r in entries)
+
+
+class TestGpCostSigmaAnalyticAnchor:
+    """B-07（D1-12 处置）：gp_cost_sigma 的独立编码路径解析锚。
+
+    裁判=标准 GP 后验方差 k** − k*ᵀK⁻¹k* 的矩阵直算（Rasmussen & Williams
+    Eq. 2.26 口径），与本模块的 einsum 标量式构成两条独立编码路径——同源
+    恒等式（自己对自己）不构成证据（#118），此处为"同公式异实现"互证。
+    """
+
+    def test_two_point_rbf_posterior_matches_matrix_form(self) -> None:
+        from rfauto.optimization.uncertainty import gp_cost_sigma
+
+        bounds = {"x": (0.0, 2.0)}
+        samples = [
+            {"params": {"x": 0.4}, "cost": 1.0},
+            {"params": {"x": 1.6}, "cost": 3.0},
+        ]
+        queries = [{"x": 0.0}, {"x": 0.7}, {"x": 1.2}, {"x": 2.0}]
+        length_scale, noise = 0.3, 1e-6
+
+        got = gp_cost_sigma(samples, bounds, queries,
+                            length_scale=length_scale, noise=noise)
+
+        # 独立路径：手搓归一化 + 矩阵求逆（不走 einsum）。
+        xs = np.array([0.2, 0.8])  # 归一化到单位空间
+        ys = np.array([1.0, 3.0])
+        sd = ys.std()
+        l2 = length_scale**2
+
+        def rbf(a: float, b: float) -> float:
+            return float(np.exp(-((a - b) ** 2) / (2.0 * l2)))
+
+        K = np.array([[rbf(a, b) for b in xs] for a in xs]) + noise * np.eye(2)
+        K_inv = np.linalg.inv(K)
+        for q, g in zip([0.0, 0.35, 0.6, 1.0], got, strict=True):
+            k_star = np.array([rbf(q, a) for a in xs])
+            var = 1.0 - float(k_star @ K_inv @ k_star)
+            want = math.sqrt(max(var, 0.0)) * sd
+            assert g == pytest.approx(want, rel=1e-9, abs=1e-12), (q, g, want)
+
+    def test_query_at_training_point_nugget_limited(self) -> None:
+        """查询点落在训练点上：后验 σ 由 nugget 主导（趋零不恒零）。"""
+        from rfauto.optimization.uncertainty import gp_cost_sigma
+
+        bounds = {"x": (0.0, 1.0)}
+        samples = [
+            {"params": {"x": 0.2}, "cost": 2.0},
+            {"params": {"x": 0.8}, "cost": 5.0},
+        ]
+        sigma = gp_cost_sigma(samples, bounds, [{"x": 0.2}], noise=1e-8)
+        assert 0.0 <= sigma[0] < 1e-3 * 3.0  # sd=1.5，比值应远小于 1e-3
+
+    def test_identical_costs_sigma_near_zero(self) -> None:
+        """全同 cost：sd 地板 1e-12 → σ≈0（不编造不确定度）。"""
+        from rfauto.optimization.uncertainty import gp_cost_sigma
+
+        bounds = {"x": (0.0, 1.0)}
+        samples = [
+            {"params": {"x": 0.3}, "cost": 4.0},
+            {"params": {"x": 0.7}, "cost": 4.0},
+        ]
+        sigma = gp_cost_sigma(samples, bounds, [{"x": 0.5}])
+        assert float(np.max(sigma)) < 1e-9

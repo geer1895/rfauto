@@ -8,7 +8,7 @@ core/dispersion.py（Debye / Djordjevic-Sarkar 因果宽带模型，506 行）�
 导出）。
 
 **只读报告**：不改任何模板/适配器的渲染行为——"模板接色散渲染"属语义
-变更（需锚重跑）。数值全部出自 core/dispersion 确定性求值
+变更（需锚重跑），列 followUp。数值全部出自 core/dispersion 确定性求值
 （铁律 7）；零网络、零求解器。
 """
 
@@ -17,6 +17,8 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: 常数 εr 近似门：带内 ε' 相对漂移 ≤ 2% 视为常数近似成立
 DEFAULT_MAX_EPS_R_DRIFT = 0.02
@@ -29,9 +31,10 @@ def _load_materials_yaml(config_path: str | Path | None) -> dict[str, Any]:
     import yaml
 
     if config_path is None:
-        from rfauto.core.dispersion import _materials_path
+        # AU-5 单点：默认路径发现走 core/materials（env 覆盖+向上发现）
+        from rfauto.core.materials import resolve_materials_yaml_path
 
-        path = _materials_path(None)
+        path = resolve_materials_yaml_path()
     else:
         path = Path(config_path)
     try:
@@ -104,33 +107,27 @@ def dispersion_fitness_report(
     materials = _load_materials_yaml(config_path)
     available = _dispersion_material_names(materials)
     if material not in materials:
-        return {
-            "ok": False,
-            "errors": [f"未知材料: {material}，可用: {sorted(materials) or '（materials.yaml 不可读）'}"],
-            "available_dispersion_materials": available,
-        }
+        return error_envelope(
+            [f"未知材料: {material}，可用: {sorted(materials) or '（materials.yaml 不可读）'}"],
+            available_dispersion_materials=available,
+        )
     block = materials[material]
     if not isinstance(block, dict) or not block.get("dispersion"):
-        return {
-            "ok": False,
-            "errors": [
+        return error_envelope(
+            [
                 f"材料 {material} 没有 dispersion 条目（常数 εr={block.get('epsilon_r')}、"
                 f"tanδ={block.get('loss_tangent')}），无法评估带内漂移；"
                 f"色散评估请用: {available or '无（先在 materials.yaml 增补 dispersion 条目）'}",
             ],
-            "available_dispersion_materials": available,
-        }
+            available_dispersion_materials=available,
+        )
 
     from rfauto.core.dispersion import load_dispersion_material
 
     try:
         model = load_dispersion_material(material, config_path)
     except (KeyError, ValueError, OSError, TypeError) as exc:
-        return {
-            "ok": False,
-            "errors": [f"色散模型构造失败（材料 {material}）: {exc}"],
-            "available_dispersion_materials": available,
-        }
+        return error_envelope([f"色散模型构造失败（材料 {material}）: {exc}"], available_dispersion_materials=available)
 
     effective_band = (
         band_ghz if band_ghz is not None else (model.f1_hz / 1e9, model.f2_hz / 1e9)
@@ -138,11 +135,7 @@ def dispersion_fitness_report(
     try:
         freqs_hz = _band_samples_hz(effective_band, n_samples)
     except ValueError as exc:
-        return {
-            "ok": False,
-            "errors": [str(exc)],
-            "available_dispersion_materials": available,
-        }
+        return error_envelope([str(exc)], available_dispersion_materials=available)
 
     f_meas_hz = model.f_meas_hz if model.f_meas_hz is not None else math.sqrt(model.f1_hz * model.f2_hz)
     eps_r_meas = float(model.epsilon_r(f_meas_hz))
@@ -165,17 +158,16 @@ def dispersion_fitness_report(
     gate_passed = eps_r_drift <= float(max_eps_r_drift)
     verdict = "constant_eps_r_ok" if gate_passed else "dispersion_recommended"
     gate_pct = float(max_eps_r_drift) * 100.0
-    report: dict[str, Any] = {
-        "ok": True,
-        "material": material,
-        "band_ghz": [freqs_hz[0] / 1e9, freqs_hz[-1] / 1e9],
-        "f_meas_ghz": f_meas_hz / 1e9,
-        "eps_r_at_meas": eps_r_meas,
-        "tan_delta_at_meas": tan_d_meas,
-        "samples": samples,
-        "eps_r_drift_pct": eps_r_drift * 100.0,
-        "tan_delta_drift_pct": tan_d_drift * 100.0,
-        "gate": {
+    report: dict[str, Any] = ok_envelope(
+        material=material,
+        band_ghz=[freqs_hz[0] / 1e9, freqs_hz[-1] / 1e9],
+        f_meas_ghz=f_meas_hz / 1e9,
+        eps_r_at_meas=eps_r_meas,
+        tan_delta_at_meas=tan_d_meas,
+        samples=samples,
+        eps_r_drift_pct=eps_r_drift * 100.0,
+        tan_delta_drift_pct=tan_d_drift * 100.0,
+        gate={
             "passed": gate_passed,
             "verdict": verdict,
             "max_eps_r_drift_pct": gate_pct,
@@ -187,17 +179,13 @@ def dispersion_fitness_report(
                 "常数 εr 近似不成立，建议改用色散材料渲染（见 correction）"
             ),
         },
-        "available_dispersion_materials": available,
-        "config_note": (
-            "configs/materials.yaml 已有 RO4350B 色散条目 "
+        available_dispersion_materials=available,
+        config_note="configs/materials.yaml 已有 RO4350B 色散条目 "
             "rogers4350b_h0.508_dispersion（Dk=3.66/Df=0.0037 @10GHz，"
-            "openEMS 官方频带口径 f1=1MHz/f2=200GHz）"
-        ),
-        "follow_up_note": (
-            "本报告只读：不修改模板/适配器渲染行为；模板接 D-S 色散渲染"
-            "（AddDjordjevicSarkarMaterial / 多极 Debye）属语义变更，需重跑锚"
-        ),
-    }
+            "openEMS 官方频带口径 f1=1MHz/f2=200GHz）",
+        follow_up_note="本报告只读：不修改模板/适配器渲染行为；模板接 D-S 色散渲染"
+            "（AddDjordjevicSarkarMaterial / 多极 Debye）属语义变更，需重跑锚",
+    )
     if not gate_passed:
         report["correction"] = {
             "advice": (

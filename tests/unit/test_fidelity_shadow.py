@@ -77,6 +77,20 @@ class TestPlanShadowPoints:
                       if s["stage"] == "final_verify")
         assert verify["shadow_points"]["n_points"] == 0
 
+    def test_tune_budget_explicit_zero_not_substituted(self, sample_recipe):
+        """S2-3/#364④ 回归钉：tune_budget=0 是合法显式值（显式零预算），
+        旧 `tune_budget or limits...or 30` 惯语会把 0 顶替成 30——修后
+        is not None 判缺，0 如实落阶段 budget。"""
+        plan = plan_campaign(sample_recipe, tune_budget=0)
+        assert plan["ok"] is True
+        for name in ("prefilter", "tune"):
+            stage = next(s for s in plan["stages"] if s["stage"] == name)
+            assert stage["budget"] == 0, name
+        # 缺省（None）路径不变：仍走缺省 30
+        plan_default = plan_campaign(sample_recipe)
+        tune = next(s for s in plan_default["stages"] if s["stage"] == "tune")
+        assert tune["budget"] == 30
+
     def test_legacy_v1_plan_without_field_still_loads(
             self, tmp_path, sample_recipe):
         """旧 v1 plan 无 shadow_points 字段照常 load/apply（v1→v1.1 兼容）。"""
@@ -155,6 +169,30 @@ class TestSelectShadowPoints:
     def test_never_exceeds_budget_semantics(self):
         r = select_shadow_points(self._pts(), n_points=99)
         assert r["n_selected"] <= 5  # 候选只有 5 个，绝不硬凑
+
+    def test_top_k_capped_at_n_points_never_over_delivers(self):
+        """S2-2/W1b 回归钉：top_k > n_points 时原实现越量交付
+        （W1b 实测请求 2 实得 3、shortfall 恒 0）——预算语义=影子点不越
+        n_points 名额，超量请求截断。交付 4/4 时 shortfall 按定义
+        （n_points − n_selected）= 0。"""
+        r = select_shadow_points(self._pts(), n_points=4, top_k=10,
+                                 min_norm_dist=0.0)
+        assert r["ok"] is True
+        assert r["n_selected"] == 4  # 恰 n_points，不越名额
+        assert len(r["selected"]) == 4 and r["shortfall"] == 0
+        # top 截断仍按 cost 升序取前 min(top_k, n_points)
+        costs = [p["cost"] for p in r["selected"]]
+        assert costs == sorted(costs) == [0.01, 0.05, 0.10, 0.20]
+
+    def test_top_k_over_deliver_regression_w1b_shape(self):
+        """W1b 原复现形态（3 点、n_points=2、top_k=3）：修后交付恰 2。"""
+        pts = [
+            {"params": {"x": 0.0}, "cost": 0.0},
+            {"params": {"x": 5.0}, "cost": 1.0},
+            {"params": {"x": 2.0}, "cost": 2.0},
+        ]
+        r = select_shadow_points(pts, n_points=2, top_k=3)
+        assert r["ok"] and r["n_selected"] == 2 and r["shortfall"] == 0
 
 
 class TestFidelityShadowLeague:

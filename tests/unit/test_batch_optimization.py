@@ -178,6 +178,28 @@ class TestY3BatchBO:
         assert any("cmaes" in e and "batch_size" in e
                    for e in r["errors"])
 
+    def test_gp_batch_allowed_native_running_semantics(
+            self, tmp_path, monkeypatch, wilkinson_recipe):
+        """OP-1：gp 批模式放行——Optuna 5.0 GPSampler 建模原生纳入 RUNNING
+        trial（``_gp/sampler.py`` states=(COMPLETE, RUNNING)，qLogEI 真批量
+        语义），无需 constant_liar；批记账与预算语义照常。"""
+        r, trials = _run_isolated(
+            tmp_path, monkeypatch, "gp", wilkinson_recipe,
+            max_trials=6, study_name="gp_probe", seed=42,
+            batch_size=3, sampler="gp")
+        assert r["ok"], r.get("errors")
+        bm = r["batch_mode"]
+        assert bm["batch_size"] == 3
+        assert bm["n_batches"] >= 2  # 6 点 / 3+3
+        # 预算等价：评估（COMPLETE+PRUNED）== max_trials
+        n_evaluated = sum(1 for _, _, st, _ in trials
+                          if st in ("COMPLETE", "PRUNED"))
+        assert n_evaluated == 6
+        # 无僵尸 RUNNING（批 ask 全部收敛到终态）
+        assert all(st != "RUNNING" for _, _, st, _ in trials)
+        # 评估过的 trial 有 metrics 账（串行 tell 语义保持）
+        assert all(m for _, _, st, m in trials if st == "COMPLETE")
+
     def test_invalid_batch_size_rejected(
             self, tmp_path, monkeypatch, wilkinson_recipe):
         r, _ = _run_isolated(

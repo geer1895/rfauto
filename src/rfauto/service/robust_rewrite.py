@@ -1,12 +1,12 @@
 """robust_rewrite：工具调用层基准的 Δrobust 改写表（阶段 2.2 增量）。
 
-Δrobust 稳健改写方法论：同一任务改写表述（不改工具可调用
+FilterForge 方法论的 Δrobust 移植：同一任务改写表述（不改工具可调用
 意图）后重测 agent 得分，得分差 = 表述敏感性。分工：
 - 改写表生成 = LLM harness（表述是语言问题，LLM 生成；通道可注入，
   单测 monkeypatch 钉住——#139：配了 key 也不许测试真打外网）；
 - Δrobust 打分 = 既有确定性打分器（score_trajectory），零 LLM。
 
-验收口径（消融参照）：去掉工具选择规则的改写掉分应显著
+验收口径（FilterForge 消融参照）：去掉工具选择规则的改写掉分应显著
 ——Δrobust 是 curbed system prompt 有效性的度量，不是模型分。
 """
 
@@ -17,6 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.goldset_service import evaluate_trajectory_set, load_goldset
 
 _REWRITE_SYSTEM = (
@@ -121,7 +122,7 @@ def evaluate_robustness(
     table_path = Path(rewrite_table_path) if rewrite_table_path \
         else DEFAULT_TABLE_PATH
     if not table_path.exists():
-        return {"ok": False, "errors": [f"改写表不存在: {table_path}"]}
+        return error_envelope([f"改写表不存在: {table_path}"])
     table = (json.loads(table_path.read_text(encoding="utf-8"))
              or {}).get("table", {})
 
@@ -129,9 +130,11 @@ def evaluate_robustness(
         trajectories_original or [], goldset_path)
     re = evaluate_trajectory_set(trajectories_rewritten, goldset_path)
     if not (base.get("ok") and re.get("ok")):
-        return {"ok": False, "errors": ["轨迹评测失败",
+        return error_envelope(
+            ["轨迹评测失败",
                                         base.get("errors"),
-                                        re.get("errors")]}
+                                        re.get("errors")],
+        )
     by_id = {r["id"]: r for r in re["results"]}
     orig_by_id = {r["id"]: r for r in base["results"]}
     rows = []
@@ -158,13 +161,12 @@ def evaluate_robustness(
         "delta_pass3": sum(r["delta"]["pass3"] for r in rows) / n,
         "tsa_rewritten": sum(r["tsa"] for r in rows) / n,
     }
-    return {
-        "ok": True,
-        "rewrite_table": str(table_path),
-        "n_tasks_scored": len(rows),
-        "macro": macro,
-        "robust_gate": "PASS" if macro["delta_tsa"] >= -0.1 else "FAIL",
-        "rows": rows,
-        "note": "Δrobust=改写后-改写前（负值=表述敏感性掉分）；"
-                "口径 ΔTSA≥-0.1 为稳健线",
-    }
+    return ok_envelope(
+        rewrite_table=str(table_path),
+        n_tasks_scored=len(rows),
+        macro=macro,
+        robust_gate="PASS" if macro["delta_tsa"] >= -0.1 else "FAIL",
+        rows=rows,
+        note="Δrobust=改写后-改写前（负值=表述敏感性掉分）；"
+                "FilterForge 口径 ΔTSA≥-0.1 为稳健线",
+    )

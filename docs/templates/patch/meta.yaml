@@ -17,3 +17,34 @@ nominal_params:
   patch_len_mm: 34.9
   patch_w_mm: 50.0
   feed_offset_mm: 10.0
+# XC-N 巡检注记（2026-10-03 席B5）：当前 nominal_params 与 core 链再生值不一致（registered 34.9/50.0/10.0 vs regenerated 32.08/40.92/10.43，XA-1/XA-2 链前进名义未随动）——名义值修复须 adapters TEMPLATE_NOMINAL 与本卡同 commit 裁决（巡检面 rfauto.service.nominal_regen_service.nominal_regen_audit）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 传输线/腔模型：贴片沿谐振轴为 λg/2 开路-开路谐振腔，宽 W 定阻抗与带宽，边缘场延伸 ΔL 修正有效长度。
+    derivations:
+    - claim: 宽度设计式（主控阻抗/带宽，非谐振频率）
+      formula: W = c/(2*f0)*sqrt(2/(εr+1))
+      source: Balanis, Antenna Theory (3rd ed.), Ch.14 Microstrip Antennas（docs/rf_template_references.md
+        C2 阵列族节已核同式）
+    - claim: 谐振长度 = λg/2 + 2ΔL（εeff 薄线式 + 边缘延伸）
+      formula: L+2ΔL = c/(2*f0*sqrt(εeff)) ; εeff=(εr+1)/2+(εr-1)/2*(1+12h/W)^-1/2
+      source: Balanis, Antenna Theory (3rd ed.), Ch.14（docs/rf_template_references.md
+        patch 官方例节 εeff≈2.96 含 ΔL 口径已核；本仓 core/synthesis.patch_fringing_delta_l /
+        synthesize_patch）
+  sensitivity_ranking:
+  - param: patch_len_mm
+    order: 1
+    basis: 谐振 λ/2 轴：|∂lnf0/∂lnL|≈1（腔模型恒等式；名义链 synthesize_patch）
+  - param: er
+    order: 2
+    basis: f0 ∝ 1/sqrt(εeff) 恒等式
+  - param: patch_w_mm
+    order: 3
+    basis: 经 εeff 与 ΔL 弱进入谐振频率；主控阻抗/带宽（Balanis W 式语义）
+  - param: feed_offset_mm
+    order: 4
+    basis: 馈点位置定输入阻抗匹配点，不移动腔谐振频率（R009 参数消费核对先例）
+  quiz_refs:
+  - Q-PATCH-W

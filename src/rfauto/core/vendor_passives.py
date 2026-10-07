@@ -1,6 +1,6 @@
-"""厂商被动元件库确定性内核。
+"""C15 厂商被动元件库确定性内核（Plan §10.3 C15 / §10.22 #24）。
 
-职责（数值只在确定性内核）：
+职责（数值只在确定性内核，铁律 7）：
 - 元件 registry：catalog.yaml 索引（vendor/mpn/type/nominal_value/srf_ghz/
   esr_ohm/model_file/sha256/source_url/license_note/synthetic/downloaded_at），
   按 part_id 加载 + sha256 校验（不符 → ValueError 硬错，这是 provenance 门
@@ -10,10 +10,21 @@
 - 指标提取：SRF（|Z| 峰/谷 + log|Z| 三点抛物线细化；Im(Z) 过零交叉核对）、
   L_eff(f)=Im(Z)/ω、C_eff(f)=−1/(ω·Im(Z))、Q(f)=Im(Z)/Re(Z)。
 - 合成 RLC 模型生成器（写盘字节确定，不依赖 skrf 写盘格式——#175）：
-  电感 Z=(Rs+jωL)∥(1/jωCp)；电容 Z=ESR+1/(jωC)+jωESL。
+  电感 Z=(Rs+jωL)∥(1/jωCp)；电容 Z=ESR+1/(jωC)+jωESL；
+  磁珠（EM-5，round17）Z=(R∥L∥C)=1/(1/R+j(ωC−1/(ωL))) 并联 RLC。
 - 匹配链真元件替换：给定 MatchNetworkResult 的元件表（负载端→源端），
   指定槽位用真实元件阻抗曲线替换理想 LCElement，递推 Zin 并产出偏差报告
   （Δmatch_depth_dB / L_eff/L_nom / SRF/f0 / 最佳匹配频点偏移）。
+
+EM-5 磁珠注记（研究扩充 round17 §四 EM-5）：
+ferrite_bead 一阶模型取**并联 RLC**——R（损耗，=额定阻抗口径）∥ L（低频
+等效电感）∥ C_par（匝间/端子寄生电容）。规格记号 "R//L+C" 落定为
+(R∥L)+C_par 三元件并联形态：R//L 是复磁导率 μ''-损耗的并联等效，C 为并联
+寄生电容；把 C 解析成**串联**的字面读法被物理排除（磁珠必须直通直流——
+额定直流偏置电流是其规格面，串联 C 隔直）。锚恒等式：ω0=1/√(LC) 处 L/C
+电纳相消 → |Z(ω0)|=R **精确**（损耗限幅峰=磁珠 datasheet 额定阻抗语义，
+如 600Ω@100MHz）；低频 Z≈jωL（感性）、高频 Z≈1/jωC（容性）。Murata/
+Coilcraft 官方免费 SPICE 模型为同族多节梯形精修，catalog 索引+条款纪律不变。
 
 厂商条款纪律：模型文件（*.s2p/*.lib/*.cir 等）按厂商条款经下载器获取，
 永不入 git；catalog 只留索引+哈希+来源 URL+条款备注。
@@ -49,8 +60,9 @@ CATALOG_HEADER = """# 厂商被动元件库索引（C15）：S 参数/SPICE 模�
 # skip-not-fail 只标状态）。
 # synthetic 条目：模型文件由 core 生成器确定性再现（synthesize_seed_model_file），
 # sha256 留空不钉死（生成即校验，见测试）；真实厂商条目 sha256 必填。
-# 字段：vendor/mpn/type(inductor|capacitor)/nominal_value(H|F)/srf_ghz/esr_ohm/
-#       model_file(与本文件同目录)/sha256/source_url/license_note/
+# 字段：vendor/mpn/type(inductor|capacitor|ferrite_bead)/nominal_value
+#       (H|F；ferrite_bead=低频等效电感 H)/srf_ghz/esr_ohm(磁珠=额定阻抗
+#       R_loss)/model_file(与本文件同目录)/sha256/source_url/license_note/
 #       synthetic/downloaded_at。
 """
 
@@ -58,7 +70,7 @@ CATALOG_HEADER = """# 厂商被动元件库索引（C15）：S 参数/SPICE 模�
 # ─── registry 条目 ───────────────────────────────────────────────────────────
 
 _REQUIRED_FIELDS = ("vendor", "mpn", "type", "nominal_value", "model_file")
-_PART_TYPES = ("inductor", "capacitor")
+_PART_TYPES = ("inductor", "capacitor", "ferrite_bead")
 
 
 @dataclass(frozen=True)
@@ -68,11 +80,11 @@ class VendorPartEntry:
     part_id: str
     vendor: str
     mpn: str
-    type: str  # "inductor" | "capacitor"
-    nominal_value: float  # H（电感）或 F（电容）
+    type: str  # "inductor" | "capacitor" | "ferrite_bead"
+    nominal_value: float  # H（电感/磁珠低频等效电感）或 F（电容）
     model_file: str  # 与 catalog 同目录的模型文件名
     srf_ghz: float | None = None  # 厂商 datasheet 值；synthetic 为闭式推导值
-    esr_ohm: float | None = None
+    esr_ohm: float | None = None  # 磁珠语义=额定阻抗 R_loss（ω0 处 |Z|max=R）
     sha256: str | None = None  # None 仅允许 synthetic（provenance 门）
     source_url: str = ""
     license_note: str = ""
@@ -453,6 +465,42 @@ def synthesize_rlc_capacitor_z(
     return esr_ohm + 1.0 / (1j * w * c_f) + 1j * w * esl_h
 
 
+def synthesize_ferrite_bead_z(
+    freqs_hz: np.ndarray,
+    l_h: float,
+    r_loss_ohm: float,
+    c_par_f: float,
+) -> np.ndarray:
+    """合成磁珠 Z = (R∥L∥C) = 1/(1/R + j(ωC − 1/(ωL)))（EM-5 并联 RLC）。
+
+    - ω0 = 1/(2π√(LC)) 处 |Z| = R **精确**（L/C 电纳相消，损耗限幅峰 =
+      datasheet 额定阻抗语义，如 600Ω@100MHz）；
+    - 低频（ωL≪R）Z ≈ jωL（感性），高频（ωC≫1/ωL）Z ≈ 1/jωC（容性）；
+    - f=0（ω=0）→ Z=0 恒等（磁珠直通直流，额定偏置电流的规格面）。
+
+    Args:
+        freqs_hz: 频率数组 Hz（可含 0，对应 Z=0）。
+        l_h: 低频等效电感 H（>0）。
+        r_loss_ohm: 并联损耗电阻 Ω（>0；=额定阻抗口径）。
+        c_par_f: 并联寄生电容 F（>0）。
+
+    Returns:
+        Z 数组（complex，与 freqs_hz 同形）。
+    """
+    for name, value in (("l_h", l_h), ("r_loss_ohm", r_loss_ohm), ("c_par_f", c_par_f)):
+        if not math.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} 必须为正有限数，实际 {value!r}")
+    freqs = np.asarray(freqs_hz, dtype=float)
+    w = 2.0 * math.pi * freqs
+    # ω=0 → 1/ωL 发散 → Y 发散 → Z=0 恒等（DC 直通）；先只算非零频点再回填，避免 0 除告警
+    z = np.zeros(freqs.shape, dtype=complex)
+    nonzero = w > 0.0
+    wn = w[nonzero]
+    y = 1.0 / r_loss_ohm + 1j * (wn * c_par_f - 1.0 / (wn * l_h))
+    z[nonzero] = 1.0 / y
+    return z
+
+
 def _touchstone_text(
     freqs_hz: np.ndarray,
     s_rows: list[tuple[np.ndarray, ...]],
@@ -520,7 +568,9 @@ def synthesize_seed_model_file(entry: VendorPartEntry, directory: str | Path) ->
 
     电感：L=nominal_value、Rs=esr_ohm、Cp 由 srf_ghz 闭式反推
     （Cp = 1/((2π·f_srf)²·L)）；电容：C=nominal_value、ESR=esr_ohm、
-    ESL 由 srf_ghz 反推（ESL = 1/((2π·f_srf)²·C)）。
+    ESL 由 srf_ghz 反推（ESL = 1/((2π·f_srf)²·C)）；磁珠（EM-5）：
+    L=nominal_value、R=esr_ohm（额定阻抗口径）、C 由 srf_ghz 反推
+    （C = 1/((2π·f_srf)²·L)，ω0 处 |Z|=R 恒等式）。
     频带固定 [0.05, 3]×f_srf、4001 点——同一条目跨会话字节相同。
     """
     if not entry.synthetic:
@@ -539,10 +589,16 @@ def synthesize_seed_model_file(entry: VendorPartEntry, directory: str | Path) ->
         cp = 1.0 / ((2.0 * math.pi * f_srf) ** 2 * entry.nominal_value)
         z = synthesize_rlc_inductor_z(freqs, entry.nominal_value, entry.esr_ohm, cp)
         path = write_touchstone_series_2port(out, freqs, z, comment=comment)
-    else:
+    elif entry.type == "ferrite_bead":
+        c_par = 1.0 / ((2.0 * math.pi * f_srf) ** 2 * entry.nominal_value)
+        z = synthesize_ferrite_bead_z(freqs, entry.nominal_value, entry.esr_ohm, c_par)
+        path = write_touchstone_series_2port(out, freqs, z, comment=comment)
+    elif entry.type == "capacitor":
         esl = 1.0 / ((2.0 * math.pi * f_srf) ** 2 * entry.nominal_value)
         z = synthesize_rlc_capacitor_z(freqs, entry.nominal_value, entry.esr_ohm, esl)
         path = write_touchstone_series_2port(out, freqs, z, comment=comment)
+    else:
+        raise ValueError(f"不支持再现的元件类型 {entry.type!r}（条目 {entry.part_id!r}）")
     return path, sha256_file(path)
 
 

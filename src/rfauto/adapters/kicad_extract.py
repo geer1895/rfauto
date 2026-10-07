@@ -3,7 +3,7 @@
 子进程惯例同 kicad_pcell/kicad_drc：生成提取脚本 → KiCad 自带
 Python（3.11）执行 → stdout JSON 产物（标记包裹）→ 项目侧解析。
 
-KiCad 10.0.6 API 探查结论（子进程 dir() 实测，写死依据）：
+KiCad 10.0.6 API 探查结论（2026-09-09，子进程 dir() 实测，写死依据）：
 - 几何：BOARD.GetTracks() 同时含 PCB_TRACK 与 PCB_VIA（按 GetClass 分流）；
   PCB_TRACK.GetStart/GetEnd/GetWidth/GetLength/GetLayerName/GetNetname，
   PCB_VIA.GetPosition/GetWidth(焊盘)/GetDrill/GetNetname——内部单位 nm，
@@ -21,7 +21,7 @@ KiCad 10.0.6 API 探查结论（子进程 dir() 实测，写死依据）：
   （_parse_stackup）；板无 stackup 节（python 新建板默认如此）时
   返回 None 并注明。
 - ZONE_FILLER.Fill 单参调用段错误（10.0.6 实测），必须 Fill(zones, False)。
-- ZONE 自带 GetLayerName() 恒返回 "F.Cu"（stage-2 探针实测，
+- ZONE 自带 GetLayerName() 恒返回 "F.Cu"（2026-09-12 stage-2 探针实测，
   B.Cu zone 亦然）——zone 层名必须走 board.GetLayerName(int(z.GetLayer()))。
 
 extract_pcb JSON 契约：
@@ -35,7 +35,7 @@ traces 为折线聚合结果：同 (net, layer, width) 且端点重合（±1 nm�
 zones（B6 stage-2 深化）：每 zone 给 net/layer/layers/clearance_mm/
 min_thickness_mm/priority/filled/outline_points_mm（首轮廓点列，nm→mm
 无损换算）/n_outlines；clearance 未设（-1）时为 None。stage-2 深化
-新增三键：outlines_mm（全部设计轮廓点列）、holes_mm
+（2026-09-15）新增三键：outlines_mm（全部设计轮廓点列）、holes_mm
 （填充多边形孔洞点列，跨填充轮廓展平）、filled_polys_mm（填充纹理
 [{outer_mm, holes_mm}]）。KiCad 实测坑：填充多边形以**断裂**
 （fractured）形式存储——孔洞被编码成外轮廓上的零宽狭缝，直接
@@ -50,14 +50,39 @@ pads（number/net/shape 码/位置/尺寸/layers）。
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import time
 from pathlib import Path
 from typing import Any
 
+#: KiCad 自带 Python 缺省安装位（AU-8：env ``RFAUTO_KICAD_PYTHON`` 优先、
+#: 本常量兜底，缺省行为不变；env 规格已登记 infra/env_vars.py，与
+#: scripts/mtrl_kit_kicad.py 同一优先级口径：显式参 > env > 缺省位）。
 KICAD_PYTHON = r"E:\KiCad\bin\python.exe"
 KICAD_SITE_PACKAGES = r"E:\KiCad\bin\Lib\site-packages"
+
+#: KiCad 自带 Python 的 env 覆盖名（注册表 infra/env_vars.py 同名项）
+KICAD_PYTHON_ENV = "RFAUTO_KICAD_PYTHON"
+
+
+def resolve_kicad_python(explicit: str | None = None,
+                         default: str | None = None) -> str:
+    """KiCad 自带 Python 解析：显式参 > env ``RFAUTO_KICAD_PYTHON`` > 缺省位。
+
+    env 为空串视同未设（与历史 ``kicad_python or KICAD_PYTHON`` 的
+    falsy 语义一致，零行为变化）。``default`` 允许调用模块注入自己的
+    兜底常量（AU-8 同款：kicad_drc/kicad_pcell 各自的 ``KICAD_PYTHON``
+    仍是活的末级兜底——既有测试隔离面按各模块常量打桩）；缺省 None=
+    本模块 :data:`KICAD_PYTHON`，旧调用方零行为变化。
+    """
+    if explicit:
+        return explicit
+    env_val = os.environ.get(KICAD_PYTHON_ENV)
+    if env_val:
+        return env_val
+    return default if default else KICAD_PYTHON
 
 _NM_PER_MM = 1e6
 _JSON_START = "KICAD_EXTRACT_JSON_START"
@@ -166,7 +191,7 @@ try:
         # 填充纹理（B6 stage-2 深化）：HasFilledPolysForLayer 先探 →
         # GetFilledPolysList 拷贝 → Unfracture 还原孔洞（KiCad 填充存储
         # 为断裂多边形，孔洞=外轮廓零宽狭缝、直接 HoleCount 恒 0，
-        # demo 板实测）。best-effort：单 zone 填充提取失败
+        # 2026-09-15 demo 板实测）。best-effort：单 zone 填充提取失败
         # 不拖垮整个提取（#105）。
         filled_polys = []
         try:
@@ -507,7 +532,7 @@ def extract_pcb(
     {"ok": False, "errors": [...]}。
     """
     path = Path(pcb_path)
-    python_exe = kicad_python or KICAD_PYTHON
+    python_exe = resolve_kicad_python(kicad_python)
     if not path.exists():
         return {"ok": False, "errors": [f"PCB 文件不存在: {path}"]}
 
@@ -832,7 +857,7 @@ def build_demo_cpwg_pcb(
           "errors": [...], "filled": bool}。
     """
     out_path = Path(output_path)
-    python_exe = kicad_python or KICAD_PYTHON
+    python_exe = resolve_kicad_python(kicad_python)
     if not Path(python_exe).exists():
         return {"success": False, "output_path": None,
                 "message": f"KiCad Python 不存在: {python_exe}",

@@ -1,6 +1,6 @@
 """Runtime A/B token 效率仪表（WP3.1 验收件：离线结构 A/B + live 真模型 A/B）。
 
-方案口径（runtime 通道可替换，A/B 对照）：runtime: pydantic_ai
+方案口径（TODO 〇-c / 续跑计划 §第 3 期 WP3.1）：runtime: pydantic_ai
 与 builtin A/B token 效率后再决定是否切默认。
 
 离线结构 A/B（compare_runtime_token_efficiency，确定性、进测试）：同一脚本化
@@ -11,7 +11,7 @@ builtin 的末段催办 system 消息、工具结果 4000 字符截断等；库�
 ``lib_overhead``（不假装测过）。
 
 live 真模型 A/B（live_runtime_ab，需外网+API key，#139 禁入测试，运行时批次
-由 scripts/runtime_ab_live.py 调用、证据落 scripts/runtime_ab_live_out/）：同一
+由 scripts/runtime_ab_live.py 调用、证据落 runs/runtime_ab_live_out）：同一
 prompt/系统提示/只读工具表/预算，交替经 builtin（真实 transport）与 pydantic_ai
 （默认 runner 同款 build+run，仅 http_client 换成带请求钩子的客户端）各跑
 repeats 次，逐次记录模型上报 token、真实出站 body 字节、工具序列、收尾与耗时。
@@ -19,12 +19,13 @@ repeats 次，逐次记录模型上报 token、真实出站 body 字节、工具
 默认裁决 recommend_default()：只有「真机（真模型）A/B 留档 + 库可用 + 相对
 builtin 节省 ≥5%」三条件齐备才建议切默认；live 模式按模型上报总 token
 （prompt+completion 均值）计节省，离线/缺 token 时按总线字符计。
-真机实测（evidence.json）：builtin 17663 vs pydantic_ai 18135 token
+2026-09-15 真机实测（evidence.json）：builtin 17663 vs pydantic_ai 18135 token
 （省 −2.7%）、pydantic_ai 1/3 budget_exhausted → 维持 builtin。
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from collections.abc import Callable
@@ -38,6 +39,7 @@ from rfauto.service.agent_runtime import (
     ToolExecutor,
     ToolSpec,
 )
+from rfauto.service.envelope import ok_envelope
 from rfauto.service.pydantic_ai_runtime import (
     PaiRunInput,
     PaiRunResult,
@@ -185,7 +187,7 @@ def make_pai_scripted_runner(
 
 
 def _echo_executor(name: str, args: dict[str, Any]) -> dict[str, Any]:
-    return {"ok": True, "tool": name}
+    return ok_envelope(tool=name)
 
 
 def compare_runtime_token_efficiency(
@@ -336,7 +338,8 @@ def live_runtime_ab(
     """真模型 A/B：同任务交替跑 builtin / pydantic_ai 各 repeats 次，回 mode="live" 报告。
 
     通道 configs/chat_settings.yaml（base_url/model/api_key，缺任一即报错，不伪造）。
-    两轨同源：同一 system 提示（生产 _SYSTEM_PROMPT）、同一 prompt、同一只读工具表
+    两轨同源：同一 system 提示（生产 get_system_prompt()，AD-1 外置单源，
+    指纹进报告 system_prompt 块）、同一 prompt、同一只读工具表
     （默认 LIVE_READONLY_TOOLS，不触发 Gate/沙箱写面）、同一真实工具执行器
     （r3_services._execute_tool，读真实 run 库）、同一 max_rounds、同 temperature
     0.3。pydantic_ai 轨走默认 runner 同款 build_pai_agent+run_pai_agent，仅
@@ -345,7 +348,14 @@ def live_runtime_ab(
     """
     from rfauto.service.agent_runtime import default_tool_specs, openai_chat_completion
     from rfauto.service.pydantic_ai_runtime import build_pai_agent, run_pai_agent
-    from rfauto.service.r3_services import _SYSTEM_PROMPT, _execute_tool, get_chat_settings_raw
+    from rfauto.service.r3_services import (
+        _execute_tool,
+        get_chat_settings_raw,
+        get_system_prompt,
+        get_system_prompt_meta,
+    )
+    # AD-1：系统提示词改走公开访问口（外置单源 configs/prompts/system_prompt.md，
+    # 缺文件自动回退内置；私有名 _SYSTEM_PROMPT 不再穿透到本模块）
 
     cfg = get_chat_settings_raw()
     model_name = str(cfg.get("model") or "")
@@ -356,7 +366,13 @@ def live_runtime_ab(
     if tools is None:
         tools = [t for t in default_tool_specs() if t.name in LIVE_READONLY_TOOLS]
     executor = executor or _execute_tool
-    system_text = _SYSTEM_PROMPT if system is None else system
+    system_text = get_system_prompt() if system is None else system
+    system_fp: dict[str, Any] = (
+        {"version": get_system_prompt_meta().get("version"),
+         "sha256": hashlib.sha256(system_text.encode("utf-8")).hexdigest()}
+        if system is None else
+        {"version": None,
+         "sha256": hashlib.sha256(system_text.encode("utf-8")).hexdigest()})
     messages = [{"role": "system", "content": system_text},
                 {"role": "user", "content": prompt}]
     emit = log or (lambda _m: None)
@@ -438,6 +454,7 @@ def live_runtime_ab(
         "lib_version": lib_version(),
         "repeats": repeats, "max_rounds": max_rounds, "temperature": 0.3,
         "prompt": prompt, "tools": [t.name for t in tools],
+        "system_prompt": system_fp,
         "runtimes": {"builtin": b, "pydantic_ai": p},
         "fairness": {
             "no_errors": no_errors,
@@ -498,3 +515,66 @@ def recommend_default(report: dict[str, Any]) -> dict[str, Any]:
             "saving": round(saving, 4),
             "min_saving_ratio": SWITCH_MIN_SAVING_RATIO,
             "reasons": reasons}
+
+
+def scripted_prompt_track(
+        system_text: str,
+        turns: list[ScriptedTurn],
+        *,
+        user_prompt: str = "",
+        tools: list[ToolSpec] | None = None,
+        executor: ToolExecutor | None = None,
+        max_rounds: int = 4) -> dict[str, Any]:
+    """prompt 变体 × 双轨离线驱动（AD-1 prompt 回归门的通道层，§D-4）。
+
+    同一脚本轨迹分别过 builtin 与 pydantic_ai 注入缝（system 文本注入两轨
+    messages 首位），回工具调用轨迹与两轨结构量（出站载荷字符/催办注入/
+    双轨一致性）。#139：脚本化通道，绝不真打外网——真模型变体比较走
+    live_runtime_ab（--system 注入变体提示）。
+
+    用作 run_prompt_regression 的轨迹通道时，由调用方把返回 ``trajectory``
+    组装成埋点记录（artifacts/numeric 来自工具执行器产物，本函数只透传
+    工具调用序列；两轨 ``dual_track_consistent`` 应为 True，False 即注入缝
+    失真，别把这种轨迹送进回归门）。
+    """
+    from rfauto.service.agent_runtime import default_tool_specs
+
+    if tools is None:
+        tools = default_tool_specs()
+    base_executor = executor or _echo_executor
+
+    def request() -> RuntimeRequest:
+        # builtin submit 会就地改写 messages（追加催办/助手/工具轮）——两轨各持独立副本
+        return RuntimeRequest(
+            messages=[{"role": "system", "content": system_text},
+                      {"role": "user", "content": user_prompt}],
+            tools=list(tools), max_rounds=max_rounds)
+
+    rec_builtin: list[dict[str, Any]] = []
+
+    def exec_builtin(name: str, args: dict[str, Any]) -> dict[str, Any]:
+        rec_builtin.append({"tool": name, "args": dict(args or {})})
+        return base_executor(name, args)
+
+    tr = BuiltinScriptedTransport(list(turns))
+    rb = BuiltinOpenAIRuntime(transport=tr).submit(request(), exec_builtin)
+
+    ledger: dict[str, Any] = {"wire_chars": []}
+    rec_pai: list[dict[str, Any]] = []
+
+    def exec_pai(name: str, args: dict[str, Any]) -> dict[str, Any]:
+        rec_pai.append({"tool": name, "args": dict(args or {})})
+        return base_executor(name, args)
+
+    rp = PydanticAIRuntime(runner=make_pai_scripted_runner(
+        list(turns), ledger)).submit(request(), exec_pai)
+
+    return {
+        "trajectory": rec_builtin,
+        "dual_track_consistent": rec_builtin == rec_pai,
+        "finish_reasons": {"builtin": rb.finish_reason,
+                           "pydantic_ai": rp.finish_reason},
+        "builtin_wire_chars": sum(tr.wire_chars),
+        "pydantic_ai_wire_chars": sum(ledger["wire_chars"]),
+        "nudge_hits": tr.nudge_hits,
+    }

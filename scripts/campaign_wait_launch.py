@@ -1,14 +1,13 @@
 """内存守望战役启动器（阶段 1.3 patch 战役的纪律化发射）。
 
-铁律背景：真机求解内存门槛自查（仓内纪律；calibration_campaign.py 内置
---min-free-kb 门）。本启动器在内存不足时不压门槛，而是周期探测、
+铁律背景：真机求解内存门槛自查。本启动器在内存不足时不压门槛，而是周期探测、
 门开即射：
 - 默认目标 workers=2（需 4GB+1.5GB/worker ≈ 5.5GB 可用）；
 - --fallback-hours 后（默认 6h）降级为串行门（4GB）；
 - --max-wait-hours（默认 24h）超时未达标则退出（exit 2），交还人。
 门开后直接 exec calibration_campaign.py（其内部自带同款门，双保险）。
 
-守望者纪律（#177/#360 族）：
+守望者纪律（df7，#177/#360 族）：
 - 自身心跳：每个探测周期原子写心跳文件（缺省 runs/.wait_launch_heartbeat.json：
   pid/start_ts/last_poll_ts/门状态/已等时长），供新会话清点"无主守望进程"
   （#177：守望进程随会话死；消费面=按 pid 存活 + last_poll_ts 新鲜度判归属）；
@@ -22,10 +21,19 @@
 - 单实例守卫：启动时发现其他活跃 launcher 心跳（last_poll_ts 距今
   < 2×轮询周期——取新 launcher 与心跳自报 poll_s 的较大者——且 pid 存活）
   → exit 5 拒绝启动，防双发；过期/死 pid 心跳是无主遗痕（#177 清点面），
-  不阻塞新实例。
+  不阻塞新实例。H1-3 补强（2026-10-04 F6）：发射期心跳带 launched=True/
+  child_pid 续写（见 monitor_child_heartbeat）——即使 launcher 死而战役
+  子进程仍在跑（或心跳过期而子进程在），单实例守卫仍按子进程存活拦截
+  双发（子进程在=内存占用面仍在）。
 
 退出码：0=子进程码透传（发射并跑完）；2=内存门超时；3=心跳写连续失败；
 4=父会话心跳超时；5=检测到活跃同实例拒绝双发。
+注（H1-6 登记）：argparse 用法错亦 rc=2（argparse 缺省），与本表
+"内存门超时"双义——判读以输出标记为准（WAIT_TIMEOUT:=门超时交还人，
+usage 行=用法错）。本脚本只发射 calibration_campaign.py；如改接其他
+驱动，退出码判读须先对齐该驱动的退出码表（如 fd_oe_campaign 的座位
+退出码表，见其模块 docstring 与 runs/review_ge8e/f6_scripts_fix/
+REPORT.md 总表）。
 
 用法：
   .venv\\Scripts\\python.exe scripts\\campaign_wait_launch.py ^
@@ -64,7 +72,7 @@ def _parse_free_kb(out: str) -> int:
 
 
 def free_physical_memory_kb() -> int:
-    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（#182）
+    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM
     for cmd in (
         ["wmic", "OS", "get", "FreePhysicalMemory", "/Value"],
         ["powershell", "-NoProfile", "-Command",
@@ -167,17 +175,70 @@ def single_instance_conflict(
 ) -> tuple[bool, str]:
     """单实例判定（纯函数）：其他活跃 launcher 心跳（last_poll_ts 距今
     < 2×轮询周期——取本实例与心跳自报 poll_s 较大者——且 pid 存活）
-    → (True, 原因)；否则 (False, "")。"""
+    → (True, 原因)；否则 (False, "")。
+
+    H1-3 补强：发射期心跳带 launched=True/child_pid——①心跳过期但已发射
+    子进程仍存活、②launcher pid 已死但子进程仍存活，两种形态都按活跃
+    拦截双发（修复前两形态都放行：候跑段心跳 2×poll_s（缺省 20min）即
+    stale，发射期停写后新实例误判无主重复发射同一战役）。无 launched 键
+    的旧心跳走原语义（零变化面）。"""
     if not isinstance(hb, dict):
         return False, ""
     hb_poll = _num(hb.get("poll_s")) or 0.0
     window_s = 2.0 * max(_num(poll_s) or 0.0, hb_poll)
+    child = hb.get("child_pid") if hb.get("launched") else None
     if heartbeat_stale(hb, now, window_s):
+        if child is not None and pid_alive(child):
+            return True, (f"心跳已过期但已发射子进程 pid={child} 仍在跑"
+                          "——拦截双发（H1-3）")
         return False, ""
     if not pid_alive(hb.get("pid")):
+        if child is not None and pid_alive(child):
+            return True, (f"launcher pid={hb.get('pid')} 已退出但子进程 "
+                          f"pid={child} 仍在跑——拦截双发（H1-3）")
         return False, ""
     return True, (f"活跃 launcher pid={hb.get('pid')} "
                   f"last_poll_ts={hb.get('last_poll_ts')}")
+
+
+def monitor_child_heartbeat(
+    proc: subprocess.Popen, heartbeat_path: str | os.PathLike[str],
+    started: float, poll_s: float,
+    hb_writer=write_heartbeat, extra: dict | None = None,
+) -> int:
+    """发射后心跳续写循环（H1-3 修复面）：子进程存活期间按 poll_s 节拍
+    续写心跳（payload 增 launched=True/child_pid 两键，供单实例守卫的
+    双发拦截消费）。修复前心跳源只在候跑循环，subprocess 阻塞跑战役的
+    数小时里停写——last_poll_ts 经 2×poll_s（缺省 20min）即 stale，
+    新实例误判"无主遗痕"放行启动，双发面。
+
+    extra：发射决策时刻的候跑心跳上下文（gate 快照/父心跳路径等），随
+    发射期心跳续写保留——#177 清点面在已发射阶段不丢观测上下文。
+    此阶段心跳写失败只打印不自尽（#105：业务子进程已在跑，杀守望者
+    不杀子进程，反而重开双发窗）；返回子进程退出码（与被替换的
+    subprocess.call 透传语义一致）。"""
+    hb_period = max(float(poll_s), 1.0)   # poll_s<=0（H1-14 面）也不忙轮
+    chunk = max(0.5, min(5.0, hb_period / 4.0))
+    next_hb = 0.0
+    while True:
+        rc = proc.poll()
+        if rc is not None:
+            return rc
+        now = time.time()
+        if now >= next_hb:
+            if not hb_writer(heartbeat_path, {
+                    "pid": os.getpid(),
+                    "start_ts": started,
+                    "last_poll_ts": now,
+                    "poll_s": poll_s,
+                    "launched": True,
+                    "child_pid": proc.pid,
+                    **(extra or {}),
+            }):
+                print("HEARTBEAT_WRITE_FAIL(launched): 发射期心跳续写失败——"
+                      "业务子进程不受影响，继续守护", flush=True)
+            next_hb = now + hb_period
+        time.sleep(min(chunk, max(0.0, next_hb - time.time())))
 
 
 def heartbeat_self_terminate(failures: int, max_failures: int) -> bool:
@@ -285,7 +346,19 @@ def main() -> int:
                    str(REPO / "scripts" / "calibration_campaign.py"),
                    "--recipe", args.recipe, "--mesh", str(args.mesh),
                    "--n-new", str(args.n_new), "--n-workers", str(workers)]
-            return subprocess.call(cmd)
+            # H1-3：发射后心跳续写——subprocess.call 换 Popen+守护循环
+            # （退出码透传语义不变；心跳关闭时退化为裸 wait=旧行为）。
+            # extra=发射决策时刻的候跑心跳上下文（gate 快照+父心跳路径），
+            # 已发射阶段清点面观测不丢上下文。
+            proc = subprocess.Popen(cmd)
+            if not args.heartbeat:
+                return proc.wait()
+            return monitor_child_heartbeat(
+                proc, args.heartbeat, started, args.poll_s,
+                extra={"gate": {"free_kb": free, "need_kb": need,
+                                "workers": workers, "open": gate_open},
+                       "parent_heartbeat": args.parent_heartbeat or "",
+                       "waited_h": round(waited_h, 4)})
         print(f"[wait {waited_h:.1f}h] 可用 {free / 1e6:.2f}GB < "
               f"{need / 1e6:.2f}GB（workers={workers}）——"
               f"{args.poll_s}s 后复测", flush=True)

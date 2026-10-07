@@ -100,7 +100,14 @@ tools/*
 # 目录级兜底覆盖 *.lib/*.cir/*.mod/ADS zip 等扩展名规则未覆盖的 SPICE 模型
 knowledge/vendor_passives/*
 !knowledge/vendor_passives/catalog.yaml
+!knowledge/vendor_passives/synth_bead600_100mhz_demo.s2p
 
 # 校准套件合成冒烟夹具（.sNp 全局排除的例外）
 !knowledge/calkits/*.s1p
 !knowledge/calkits/*.s2p
+
+# ===== seat7 sync (internal batch 2026-09-26..10-05) =====
+configs/remote_machines.local.yaml
+third_party/
+outputs/
+.mutmut-cache

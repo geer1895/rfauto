@@ -55,3 +55,4 @@ nominal_derivation: |-
   （Cassivi 2002 反解）；line_len=round(3λg@10GHz,4)=63.0724
   （β=298.856 rad/m 闭式、λg=21.0241，与 synthesize_siw_model 逐位同源）；R_port=Z_PV=2b·Z_TE/w_eff=22.8393Ω（渲染层精算，非手数）；
   设计规则复核：s/d=1.667≤2、d=0.6<λ_sub/5=3.134
+# XC-T 锚族补挂注记: siw.fc_te10.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）

@@ -111,12 +111,90 @@ def test_ms_patch_near_guard_rejects_undersized_gap():
         render_script("ms_patch", params, BAND, mesh_resolution_mm=AUDIT_MESH_MM)
 
 
+def test_ms_patch_period_drives_domain():
+    """ms_patch period_mm「声明即生效」正面判据（DOMAIN_DRIVEN_PARAMS 豁免的
+    补偿钉，ge5 J2 fallback 段①读出修复后电阻片 bbox 不在——period 只驱动
+    单胞域 DOM_X/DOM_Y=period/2，导体（贴片 px/py）与读出面（λ0 分数）均不
+    随 period）。"""
+    nom = dict(TEMPLATE_NOMINAL["ms_patch"])
+    pert = dict(nom, period_mm=nom["period_mm"] * 1.37 + 0.013)
+    s0, _ = load_geometry("ms_patch", nom)
+    s1, _ = load_geometry("ms_patch", pert)
+    assert (s1["DOM_X"], s1["DOM_Y"]) != (s0["DOM_X"], s0["DOM_Y"]), \
+        "period_mm 扰动未驱动单胞域"
+
+
+def test_ms_patch_readout_is_soft_plane_probe_pair():
+    """ge5 J2 fallback 段①正面判据（runs/ge5_j2fb/，jcross 修法同族移植）：
+    渲染体无全口径 LumpedPort 电阻片（footer import 行不算）、含 soft plane+
+    探针对+反射垫片（_WgProbePairRefl 对调 uf）；探针 z 面单源落 z 网格。"""
+    text = render_script("ms_patch", dict(TEMPLATE_NOMINAL["ms_patch"]), BAND,
+                         mesh_resolution_mm=AUDIT_MESH_MM)
+    assert "LumpedPort(CSX" not in text, "ms_patch 仍残留全口径电阻片端口"
+    assert 'CSX.AddExcitation("wg_exc", exc_type=0' in text
+    assert 'CSX.AddProbe("u" + _nm, p_type=0, weight=-1)' in text
+    assert '("1a", Z_1A), ("1b", Z_1B)' in text
+    assert "class _WgProbePairRefl" in text
+    scope, _prims = load_geometry("ms_patch")
+    z_lines = mesh_lines(scope, "z")
+    lay = ms_unit_layout("ms_patch", dict(TEMPLATE_NOMINAL["ms_patch"]), BAND,
+                         AUDIT_MESH_MM * 1e-3,
+                         TEMPLATE_NOMINAL["ms_patch"]["h_mm"] * 1e-3)
+    for key in ("z_src", "z_1a", "z_1b"):
+        assert float(np.min(np.abs(z_lines - lay[key]))) <= 1e-6, \
+            f"ms_patch 读出面 {key} 未入 z 网格"
+
+
 def test_ms_cross_guard_rejects_arm_overflow():
     """臂越胞（2·arm>period）→ ValueError（审计扰动的 PERTURB_OVERRIDES 同源）。"""
     params = dict(TEMPLATE_NOMINAL["ms_cross"])
     params["arm_len_mm"] = 6.6   # 2·6.6=13.2 > 12
     with pytest.raises(ValueError, match="胞内"):
         render_script("ms_cross", params, BAND, mesh_resolution_mm=AUDIT_MESH_MM)
+
+
+def test_ms_cross_period_drives_domain_and_probes():
+    """ms_cross period_mm「声明即生效」正面判据（DOMAIN_DRIVEN_PARAMS 豁免的
+    补偿钉）：十字臂导体严格内含于胞（2·arm<period），period 不进导体签名；
+    其几何驱动面=单胞域（DOM_X/DOM_Y=period/2）+ 读出探针面（_portN
+    start/stop 随 DOM 与 λ0 分数面）——扰动实测两者随动（ge5 读出修复批）。"""
+    from tests.unit._geometry_audit_helpers import port_objects
+
+    nom = dict(TEMPLATE_NOMINAL["ms_cross"])
+    pert = dict(nom, period_mm=nom["period_mm"] * 1.37 + 0.013)
+    s0, _ = load_geometry("ms_cross", nom)
+    s1, _ = load_geometry("ms_cross", pert)
+    assert (s1["DOM_X"], s1["DOM_Y"]) != (s0["DOM_X"], s0["DOM_Y"]), \
+        "period_mm 扰动未驱动单胞域"
+    p0 = {n: (tuple(v.start), tuple(v.stop))
+          for n, v in port_objects(s0).items()}
+    p1 = {n: (tuple(v.start), tuple(v.stop))
+          for n, v in port_objects(s1).items()}
+    assert p0 != p1, "period_mm 扰动未驱动读出探针面"
+
+
+def test_ms_cross_readout_is_soft_plane_probe_pair():
+    """ge5 同族修复正面判据（runs/ge5_msfam/criteria.md §1）：渲染体无全口径
+    LumpedPort 电阻片（footer import 行不算）、含 soft plane+4 探针+垫片；
+    探针对 z 面单源落 z 网格。"""
+    text = render_script("ms_cross", dict(TEMPLATE_NOMINAL["ms_cross"]), BAND,
+                         mesh_resolution_mm=AUDIT_MESH_MM)
+    assert "LumpedPort(CSX" not in text, "ms_cross 仍残留全口径电阻片端口"
+    assert 'CSX.AddExcitation("wg_exc", exc_type=0' in text
+    # 探针=单循环字面（4 对槽位）——钉循环行与 4 槽位元组
+    assert 'CSX.AddProbe("u" + _nm, p_type=0, weight=-1)' in text
+    assert '("1a", Z_1A), ("1b", Z_1B), ("2a", Z_2A), ("2b", Z_2B)' in text
+    assert "class _WgProbePair" in text
+    for token in ("Z_SRC", "Z_1A", "Z_1B", "Z_2A", "Z_2B"):
+        assert token in text
+    scope, _prims = load_geometry("ms_cross")
+    z_lines = mesh_lines(scope, "z")
+    lay = ms_unit_layout("ms_cross", dict(TEMPLATE_NOMINAL["ms_cross"]), BAND,
+                         AUDIT_MESH_MM * 1e-3,
+                         TEMPLATE_NOMINAL["ms_cross"]["h_mm"] * 1e-3)
+    for key in ("z_src", "z_1a", "z_1b", "z_2a", "z_2b"):
+        assert float(np.min(np.abs(z_lines - lay[key]))) <= 1e-6, \
+            f"ms_cross 读出面 {key} 未入 z 网格"
 
 
 # ─── ms_jcross 屏几何（孔洞补集盒分解的互联性与覆盖）──────────────────────────
@@ -174,14 +252,38 @@ class TestJcrossScreen:
 
 class TestMsArray:
     def test_portless_and_illumination(self):
-        """无端口 + 软激励平面 + nf2ff 盒 + 地 PEC token（audit ② 正面判据）。"""
+        """无端口 + 软激励平面 + nf2ff 直构六面盒 + 地 PEC token（audit ②）。"""
         text = render_script("ms_array_NxN", dict(TEMPLATE_NOMINAL["ms_array_NxN"]),
                              BAND, mesh_resolution_mm=AUDIT_MESH_MM)
         assert "_port" not in text
         assert 'exc_type=0' in text
-        assert "CreateNF2FFBox" in text
         assert '"MUR", "MUR", "MUR", "MUR", "PEC", "MUR"' in text
         assert "E∥x" in text
+
+    def test_nf2ff_direct_six_face_closure(self):
+        """nf2ff 直构六面闭合零镜像（ge7 ffrender；runs/ge6_ffdbg/replay_
+        findings.md 定案：CreateNF2FFBox 的 BC 推导 PEC 镜像在悬空 Box 底面
+        错位 0.131λ0 → θ=0 宽瓣伪象抢峰）——字面钉 + 面序位移注记。"""
+        text = render_script("ms_array_NxN", dict(TEMPLATE_NOMINAL["ms_array_NxN"]),
+                             BAND, mesh_resolution_mm=AUDIT_MESH_MM)
+        # 旧调用形态绝迹（BC 自动镜像入口关闭；注释中的定案引述不算调用）
+        assert "_FF = FDTD.CreateNF2FFBox(" not in text
+        assert "FDTD.CreateNF2FFBox(\n" not in text
+        # 直构闭合字面 + K-6 底面剔除（ge8b 批销账：五面 vs 六面 cpp 重放
+        # 全对齐 rel≈4e-6 + 省 ~91GB/档 + 消除法向启发式失真源头）
+        assert "from openEMS.nf2ff import nf2ff as _NF2FF" in text
+        assert "directions=[True, True, True, True, False, True]" in text
+        assert "mirror=[0] * 6" in text
+        # 盒域字面不变（域缩 4×网格；阵与照明面之间）
+        assert ("np.array([-DOM_X + _FF_MARGIN, -DOM_Y + _FF_MARGIN, "
+                "H_SUB + _FF_MARGIN])") in text
+        assert ("np.array([DOM_X - _FF_MARGIN, DOM_Y - _FF_MARGIN, "
+                "Z_EXC - _FF_MARGIN])") in text
+        # 底面剔除判据注记在档（K-6 forensic 判读出处）
+        assert "底面剔除" in text
+        assert "k6_ff_forensic" in text
+        # ffdbg 定案出处可溯源
+        assert "ge6_ffdbg" in text
 
     def test_cell_map_coverage_guard(self):
         """cell_map 行列数与 n 逐维不等 → ValueError（覆盖完备守卫）。"""
@@ -278,6 +380,40 @@ class TestNominalClosedFormIdentity:
         lamg = 299792458.0 / 10e9 * 1e3 / (eps_eff ** 0.5)
         assert nom["slot_w_mm"] == pytest.approx(round(lamg / 40, 4), abs=1e-9)
 
+    def test_ms_ring_patch_nominal_is_closed_form(self):
+        """ge5 段③（runs/ge5_j2fb）：环几何=core 闭式单源、贴片=不动点复用。"""
+        from rfauto.core.metasurface_lut import ms_ring_patch_dims_mm
+
+        d = ms_ring_patch_dims_mm(10.0, 3.66)
+        lam0 = 299792458.0 / 10e9 * 1e3
+        lamg = lam0 / (((1 + 3.66) / 2) ** 0.5)
+        assert d["void_mm"] == round(0.4 * lam0, 4)          # 0.4λ0 屏族口径
+        assert d["ring_w_mm"] == pytest.approx(round(lamg / 40, 4), abs=1e-9)
+        assert d["ring_outer_mm"] == round(d["void_mm"] + 2 * d["ring_w_mm"], 4)
+        nom = TEMPLATE_NOMINAL["ms_ring_patch"]
+        assert nom["patch_px_mm"] == TEMPLATE_NOMINAL["ms_patch"]["px_mm"]
+        assert nom["period_mm"] == TEMPLATE_NOMINAL["ms_patch"]["period_mm"]
+        # 渲染缺省与 nominal 同源（layout 缺省漂移即红，jcross 同款口径）
+        lay = ms_unit_layout("ms_ring_patch", {}, BAND, 0.4e-3, 1.524e-3)
+        assert lay["px"] == pytest.approx(nom["patch_px_mm"] * 1e-3, rel=1e-12)
+        assert lay["void"] == pytest.approx(d["void_mm"] * 1e-3, rel=1e-12)
+        assert lay["ring_w"] == pytest.approx(d["ring_w_mm"] * 1e-3, rel=1e-12)
+        assert lay["ring_outer"] == pytest.approx(
+            d["ring_outer_mm"] * 1e-3, rel=1e-12)
+
+    def test_ms_ring_patch_screen_tiling(self):
+        """渲染实测：方环=4 条带盒+内贴片=1 盒；条带 tile 外方减内腔（无重叠）。"""
+        _scope, prims = load_geometry("ms_ring_patch")
+        ring = [p for p in prims if p.prop == "ring"]
+        patch = [p for p in prims if p.prop == "patch"]
+        assert len(ring) == 4 and len(patch) == 1
+        lay = ms_unit_layout("ms_ring_patch",
+                             dict(TEMPLATE_NOMINAL["ms_ring_patch"]),
+                             BAND, AUDIT_MESH_MM * 1e-3, 1.524e-3)
+        ro, void = lay["ring_outer"], lay["void"]
+        area = sum((p.hi[0] - p.lo[0]) * (p.hi[1] - p.lo[1]) for p in ring)
+        assert area == pytest.approx(ro * ro - void * void, rel=1e-12)
+
     def test_layout_defaults_match_nominal(self):
         """渲染缺省值与 nominal 同源（p.get 缺省漂移即红）。"""
         params = ms_unit_layout("ms_jcross", {}, BAND, 0.4e-3, 0.508e-3)
@@ -312,8 +448,12 @@ def test_synthesized_layout_feeds_cell_map_domain():
 
 
 def test_expected_templates_contains_ms_family():
-    """注册联动（#304）：四件全进冻结集；TEMPLATE_META 计数=53（df7 C10d
-    mmwave_series_array 52→53；主代理回填 docs 数字以实测为准）。"""
+    """注册联动（#304）：五件全进冻结集；TEMPLATE_META 计数=67（ge5 J2
+    fallback 段③ ms_ring_patch 57→58、TA 批 schiffman+qwt_multisection
+    58→60、TA 批第二批 sicl+nway_wilkinson 60→62、TA 批第三批 diplexer+
+    ridged_wg 62→64、ge8b WA 席1 inverted_ms+hmsiw+fgcpw 64→67、ge8b WB
+    席B9 isl_shielded+vivaldi_tsa 67→69、ge8d WD 席D2 embedded_ms+
+    xcheb_bpf4 69→71，runs/ge5_j2fb/；主代理回填 docs 数字以实测为准）。"""
     for t in METASURFACE_TEMPLATES:
         assert t in EXPECTED_TEMPLATES
-    assert len(TEMPLATE_META) == 53
+    assert len(TEMPLATE_META) == 71  # ge8d WD 席D2 +2（embedded_ms/xcheb_bpf4）

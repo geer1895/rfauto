@@ -1,6 +1,6 @@
-"""hairpin_alt：交替取向发夹线 BPF 模板单测（2026-09-18 根修；#212 离线零真机）。
+"""hairpin_alt：交替取向发夹线 BPF 模板单测（2026-09-18 w2g，TODO 0dk 根修；#212 离线零真机）。
 
-背景（离线审计 #11）：同向 hairpin 真机 k_EM(gap) 非单调、极大
+背景（TODO 0dk/audit #11）：同向 hairpin 真机 k_EM(gap) 非单调、极大
 0.0155@0.65 ≪ k_KJ 0.0515——相邻臂开路端对齐 → 电/磁耦合反号相消，FBW5% 名义在同向
 参数空间内无自洽设计点。根修 = 经典交替取向（奇数序谐振器上下翻转，相邻臂一端开路/
 一端弯带互补，电/磁耦合同号叠加）。本文件钉住：
@@ -84,11 +84,34 @@ def test_registered_same_object_and_dispatch_keys():
     keys = list(ot.TEMPLATE_META)
     assert keys.index("hairpin_alt") == keys.index("hairpin") + 1    # 同族段内紧随 hairpin
     # df7 C10d 起（coil_nfc 批次漏更新本钉、基线即红，随 C10d 一并修复）：
-    # 槽线族退居尾 10..6、ms 四件尾 6..2、coil_nfc 尾 2、mmwave_series_array 尾 1
-    assert keys[-10:-6] == ["slotline", "slotline_lumped", "msl_slot_transition",
-                            "marchand_balun"]                  # 槽线族位次（#247）
-    assert keys[-6:-2] == ["ms_patch", "ms_cross", "ms_jcross", "ms_array_NxN"]
-    assert keys[-1] == "mmwave_series_array"
+    # 槽线族退居尾 10..6、ms 四件尾 6..2、coil_nfc 尾 2、mmwave_series_array 尾 1；
+    # fap2-ring 起 ring_resonator 尾 1、mmwave_series_array 退居尾 2、
+    # 槽线族退居尾 11..7、ms 四件尾 7..3；
+    # ME-7 起 pyramid_horn 尾 1、ring_resonator 尾 2、mmwave_series_array 尾 3、
+    # 槽线族退居尾 12..8、ms 四件尾 8..4；
+    # ME-6 起 coax_waveguide_transition 尾 1、pyramid_horn 尾 2、
+    # ring_resonator 尾 3、mmwave_series_array 尾 4、
+    # 槽线族退居尾 13..9、ms 四件尾 9..5；
+    # M-5 起 varactor_bpf 尾 1、coax_waveguide_transition 尾 2、
+    # pyramid_horn 尾 3、ring_resonator 尾 4、mmwave_series_array 尾 5、
+    # 槽线族退居尾 14..10、ms 四件尾 10..6；
+    # J2FB 起（ms_ring_patch 2026-09-30 注册于 ms 族段内，ms_jcross 与
+    # ms_array_NxN 之间）槽位算术六次翻新停付（AU-1B4）：改键集覆盖 +
+    # 相对次序子序列钉——槽线族 → ms 五件 → coil_nfc → mmwave_series_array
+    # → ring_resonator → pyramid_horn → coax_waveguide_transition →
+    # varactor_bpf 依序出现，新批次注册不改块内既有相对次序
+    _TAIL_BLOCK = [
+        "slotline", "slotline_lumped", "msl_slot_transition",
+        "marchand_balun",
+        "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
+        "ms_array_NxN",
+        "coil_nfc", "mmwave_series_array", "ring_resonator",
+        "pyramid_horn", "coax_waveguide_transition", "varactor_bpf",
+    ]
+    assert set(_TAIL_BLOCK) <= set(keys)
+    _it = iter(keys)  # 相对次序：块内名字按注册序出现（子序列）
+    for _name in _TAIL_BLOCK:
+        assert _name in _it, f"注册相对次序漂移：{_name}"
     assert ot._TEMPLATE_PORT_AXES["hairpin_alt"] == ("x",)
     assert ot._TEMPLATE_RADIATOR["hairpin_alt"] is False
     meta = ot.template_meta("hairpin_alt")

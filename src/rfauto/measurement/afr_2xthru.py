@@ -217,9 +217,15 @@ def deembed_2xthru(
         try:
             th_z = _dc_preprocess(twoxthru_in, dc_mode)
             ff_z = _dc_preprocess(zc_in, dc_mode)
+            # S-1 C-08 2026-10-04：z0 取该变体实际消费网络（zc_fix_dut_fix）
+            # 的实测均值实部——与 NZC 主路同式（上方 z0=float(np.real(
+            # np.mean(dut_fdf.z0[:, 0])))）；旧值 50.0 系 skrf 构造缺省的
+            # 复制粘贴（IEEEP370_SE_ZC_2xThru 形参缺省 z0=50），对非 50Ω
+            # 语料会把去嵌参考面钉死在错误的理想 50Ω 上。
             zc = IEEEP370_SE_ZC_2xThru(
                 dummy_2xthru=th_z, dummy_fix_dut_fix=ff_z,
-                name="rfauto_dp11_afr_zc", z0=50.0,
+                name="rfauto_dp11_afr_zc",
+                z0=float(np.real(np.mean(zc_in.z0[:, 0]))),
             )
             zc_net = _back_to_grid(zc.deembed(ff_z), dut_fdf.frequency)
             zc_entry.update({"ran": True, "network": zc_net})
@@ -239,3 +245,174 @@ def recovery_delta_s21_db(deembedded: skrf.Network,
     a = 20.0 * np.log10(np.abs(deembedded.s[:, 1, 0]) + 1e-300)
     b = 20.0 * np.log10(np.abs(reference.s[:, 1, 0]) + 1e-300)
     return float(np.max(np.abs(a - b)))
+
+
+# ─── MS-2：多端口 MM_NZC（IEEEP370_MM_NZC_2xThru 放开多端口，round15 MS-2）────
+
+#: MM_NZC 支持的端口编号方案（skrf 约定：'second'=左右序（skrf ``**`` 级联
+#: 同款）；缺省沿 skrf 缺省。'first'/'third' 透传但测试只钉 'second'）。
+MM_PORT_ORDERS = ("first", "second", "third")
+
+
+def _mm_port_pairs(n_ports: int, port_order: str) -> tuple[tuple[int, int], ...]:
+    """MM 4 端口的（左,右）口对（口序方案语义见 skrf 类 docstring 图示）。
+
+    'second'（左右序，缺省）：左=[0,1]、右=[2,3] → 对 (0,2),(1,3)；
+    'first'（奇偶/前后）：左=[0,2]、右=[1,3] → 对 (0,1),(2,3)；
+    'third'：左=[0,1]、右=[3,2] → 对 (0,3),(1,2)。
+    """
+    if n_ports != 4:
+        raise ValueError(
+            f"MM_NZC 仅支持 4 端口（skrf IEEEP370_MM_NZC_2xThru 契约），实际 {n_ports}")
+    if port_order == "second":
+        return ((0, 2), (1, 3))
+    if port_order == "first":
+        return ((0, 1), (2, 3))
+    if port_order == "third":
+        return ((0, 3), (1, 2))
+    raise ValueError(f"port_order 须为 {MM_PORT_ORDERS} 之一，实际 {port_order!r}")
+
+
+def _as_4port(net: Any, arg_name: str) -> skrf.Network:
+    """Network 类型 + 4 端口守卫（MM 面专用）。"""
+    if not isinstance(net, skrf.Network):
+        raise TypeError(f"{arg_name} 须为 skrf.Network，实际 {type(net).__name__}")
+    if net.nports != 4:
+        raise ValueError(f"{arg_name} 须为 4 端口网络，实际 {net.nports} 端口")
+    return net
+
+
+def check_2xthru_preconditions_mm(
+    twoxthru: skrf.Network,
+    *,
+    port_order: str = "second",
+    sym_tol: float = DEFAULT_SYM_TOL,
+    smooth_tol_db: float = DEFAULT_SMOOTH_TOL_DB,
+) -> PrecheckResult:
+    """多端口 2x-thru 预检：逐（左，右）口对抽 2×2 子网络跑同款判据。
+
+    预检口径与单端完全一致（对称性线性域 + |S| 平滑性 dB 域二阶差分），
+    只是判据对象从 S21/S12 换成每个口对的 S[r,l]/S[l,r]。最坏口对落门。
+    """
+    th = _as_4port(twoxthru, "twoxthru")
+    if port_order not in MM_PORT_ORDERS:
+        raise ValueError(f"port_order 须为 {MM_PORT_ORDERS} 之一，实际 {port_order!r}")
+    worst = PrecheckResult(ok=True, symmetry_max=0.0, smoothness_max_db=0.0,
+                           sym_tol=float(sym_tol), smooth_tol_db=float(smooth_tol_db))
+    failures: list[str] = []
+    for left, right in _mm_port_pairs(4, port_order):
+        sub = th.s[:, [right, left], :][:, :, [right, left]]  # (n_f,2,2) 口对子阵
+        sub_net = skrf.Network(frequency=th.frequency, s=sub)
+        pre = check_2xthru_preconditions(
+            sub_net, sym_tol=sym_tol, smooth_tol_db=smooth_tol_db)
+        if pre.symmetry_max > worst.symmetry_max:
+            worst.symmetry_max = pre.symmetry_max
+        if pre.smoothness_max_db > worst.smoothness_max_db:
+            worst.smoothness_max_db = pre.smoothness_max_db
+        failures.extend(f"口对({left},{right}): {msg}" for msg in pre.failures)
+    worst.failures = failures
+    worst.ok = not failures
+    return worst
+
+
+def deembed_2xthru_mm(
+    dut_fdf: skrf.Network,
+    twoxthru: skrf.Network,
+    *,
+    port_order: str = "second",
+    dc_mode: str | None = DEFAULT_DC_MODE,
+    sym_tol: float = DEFAULT_SYM_TOL,
+    smooth_tol_db: float = DEFAULT_SMOOTH_TOL_DB,
+) -> dict[str, Any]:
+    """多端口（4 端口）2x-thru AFR 去嵌：IEEEP370_MM_NZC_2xThru 封装。
+
+    与单端 :func:`deembed_2xthru` 同款结果信封（ok/precheck/network/error）：
+    预检不过 → ``ok=False`` 不产出网络；skrf 契约 4 端口（差分对场景），
+    口序方案 ``port_order`` 缺省 'second'（skrf ``**`` 级联同款）。
+    DC 预处理沿用 extrapolate_to_dc/add_dc（skrf 静态方法天然支持多端口）。
+
+    Returns:
+        {ok, network | None, precheck, dc_mode, n_points, deembedder,
+        port_order, error?}
+    """
+    ff4 = _as_4port(dut_fdf, "dut_fdf")
+    th4 = _as_4port(twoxthru, "twoxthru")
+    if ff4.frequency != th4.frequency:
+        raise ValueError(
+            f"频率栅格不一致：dut_fdf {len(ff4.f)} 点 vs twoxthru {len(th4.f)} 点")
+    if port_order not in MM_PORT_ORDERS:
+        raise ValueError(f"port_order 须为 {MM_PORT_ORDERS} 之一，实际 {port_order!r}")
+
+    pre = check_2xthru_preconditions_mm(
+        th4, port_order=port_order, sym_tol=sym_tol, smooth_tol_db=smooth_tol_db)
+    out: dict[str, Any] = {
+        "ok": False,
+        "network": None,
+        "precheck": pre.to_dict(),
+        "dc_mode": dc_mode,
+        "n_points": int(np.asarray(ff4.f).size),
+        "deembedder": "IEEEP370_MM_NZC_2xThru",
+        "port_order": port_order,
+    }
+    if not pre.ok:
+        out["error"] = "2x-thru（多端口逐对）预检不过：" + "；".join(pre.failures)
+        return out
+
+    from skrf.calibration.deembedding import IEEEP370_MM_NZC_2xThru
+
+    try:
+        th = _dc_preprocess(th4, dc_mode)
+        ff = _dc_preprocess(ff4, dc_mode)
+        deembedder = IEEEP370_MM_NZC_2xThru(
+            dummy_2xthru=th, name="rfauto_ms2_afr_mm_nzc",
+            z0=float(np.real(np.mean(ff4.z0))),
+            port_order=port_order,
+        )
+        deembedded = _back_to_grid(deembedder.deembed(ff), ff4.frequency)
+    except Exception as exc:
+        out["error"] = f"P370 MM_NZC 去嵌失败: {exc}"
+        return out
+    out["ok"] = True
+    out["network"] = deembedded
+    return out
+
+
+def _check_same_grid(deembedded: skrf.Network,
+                     reference: skrf.Network) -> tuple[np.ndarray, np.ndarray]:
+    """残差度量的公共守卫：类型/端口数/频率栅格一致 → (s_rec, s_ref)。"""
+    if not (isinstance(deembedded, skrf.Network)
+            and isinstance(reference, skrf.Network)):
+        raise TypeError("两入参均须为 skrf.Network")
+    if deembedded.nports != reference.nports:
+        raise ValueError(
+            f"端口数不一致：{deembedded.nports} vs {reference.nports}")
+    if deembedded.frequency != reference.frequency:
+        raise ValueError("两网络频率栅格不一致")
+    return np.asarray(deembedded.s), np.asarray(reference.s)
+
+
+def recovery_delta_s_db(deembedded: skrf.Network,
+                        reference: skrf.Network,
+                        *,
+                        floor_lin: float = 1e-3) -> float:
+    """多端口回收残差：有效元 |S_ij| dB 幅度逐频最大值（MS-2 门 ≤1e-3 dB）。
+
+    ``floor_lin``（线性域地板，缺省 1e-3 = −60 dB）：|S_ref| 低于地板的
+    深零/隔离元 dB 比较无意义（−6000 dB 对 −5990 dB 的假差），排除出
+    dB 门；深零元残差由 :func:`recovery_delta_s_lin` 线性域另行把关。
+    """
+    s_rec, s_ref = _check_same_grid(deembedded, reference)
+    a = 20.0 * np.log10(np.abs(s_rec) + 1e-300)
+    b = 20.0 * np.log10(np.abs(s_ref) + 1e-300)
+    keep = np.abs(s_ref) >= float(floor_lin)
+    if not keep.any():
+        raise ValueError(
+            f"全部参考元素 |S| < floor_lin={floor_lin}（无可判 dB 残差）")
+    return float(np.max(np.abs(a - b)[keep]))
+
+
+def recovery_delta_s_lin(deembedded: skrf.Network,
+                         reference: skrf.Network) -> float:
+    """多端口回收残差：全部元素复数线性误差 max|S_rec − S_ref|（深零元把关）。"""
+    s_rec, s_ref = _check_same_grid(deembedded, reference)
+    return float(np.max(np.abs(s_rec - s_ref)))

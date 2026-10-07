@@ -1,0 +1,32 @@
+f0_ghz: 10.0
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（跨槽耦合馈；|S11| 谷=槽线模建立判读，f_low 由口面半波准则预声明）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_throat_mm
+- w_mouth_mm
+- l_mm
+- feed_w_mm
+template: vivaldi_tsa
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_throat_mm: 0.3
+  w_mouth_mm: 24.982705
+  l_mm: 80.0
+  feed_w_mm: 1.1134
+  er: 3.66
+  tan_d: 0.0037
+topology: Vivaldi 端射张口槽线天线（AP-11）：有限地面 z=0 带指数张口槽（喉部 y=−L/2 向口面 y=+L/2 指数张开，阶梯化栅格化），基板上覆、顶面 50Ω 微带跨槽馈（slot
+  模板已证机理；巴伦=独立馈电件留登记注记）；双 MSLPort 板边入（prop_dir=x）
+param_semantics: w_throat_mm=喉部槽宽（Gibson 1979 指数律 w(x)=w_throat·exp(kx)）、w_mouth_mm=口面槽宽（低截止f_low=c/(2·w_mouth)
+  口面半波准则，名义 24.9827mm↔6GHz）、l_mm=喉→口面轴向长（k=ln(w_mouth/w_throat)/L，板缘 MUR 净距 ≥5mm 守卫）、feed_w_mm=跨槽微带馈线宽（50Ω
+  HJ 1.1134）；er/tan_d 走 substrate/nominal
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；阶梯化站缘 x 向 + 馈线缘精确入网（#198）；底 MUR+域 z 下延（slot
+  同款：槽向下半空间辐射）；显式近场线 10µm 地板（#349）
+smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=指数律往返恒等+口面↔截止双向回收+单调性（core/vivaldi_tsa tests
+  钉）；近似级别如实登记：低截止=二手工程准则（Yngvesson 1985 介质加载修正未回原文不入码，citation-rot），巴伦面未做（登记注记），增益/方向图全波面不在本批；真机冒烟与 HFSS
+  仲裁属后续批次（本批零发射）

@@ -1,0 +1,37 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ CPWPort 1-2（有限地共面波导均匀线：S21 相位斜率→εeff，β 金标准
+  #162 cpw 同口径；|S11| 显著非零=端口/网格判废信号）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- gap_mm
+- gnd_mm
+- line_len_mm
+template: fgcpw
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 4.3466
+  gap_mm: 0.2
+  gnd_mm: 4.0
+  line_len_mm: 40.0
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+topology: '有限地共面波导 FGCPW 均匀段（TA-9，真 CPW 口径）：基板上表面中心条带+两有限宽接地（全长度含端口段），
+  无底地（基板下方空气、域底 MUR——cps 口径；与 cpw 模板 CPWG 强制底地相区别，registry
+  CPW 段注释自证）；双 CPWPort 板边入（端口面贴 PML）'
+param_semantics: 'w_mm=中心带宽（设计链 core/fgcpw.fgcpw_design_params：50Ω FD 裁判反演含有限地同参，
+  名义 4.3466mm@gap=0.2/gnd=4.0/h=0.508/εr=3.66；真 CPW 无底地故 50Ω 条带显著宽于 CPWG
+  的 0.849 属定义性质）、gap_mm=缝宽、gnd_mm=单侧地宽（有限地定义参数；地效应 FD 实测名义 ≤2%
+  带，guard gnd≥2·gap+0.5·w）、line_len_mm=两端口间线长'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；六条带/地缘（±w/2、±(w/2+gap)、±(w/2+gap+gnd)）+缝中线
+  x 向精确入网（#198/cpw pt4 同源）+线两端 y 向；基板 z 8 层（CPW/槽下场族 G3 分档）'
+smoke_note: 离线审计先行（#212，test_ta_wave_a_templates）；内核数字裁判=FD 裁判两精确极限（k=1/√2
+  空气线 Z0=30π、h→∞ 半空间 εeff=(1+εr)/2）+G-N/skrf 第三方对拍（设计点 ≤1% 带）；G-N
+  文献闭式系统偏差如实入账（名义点 εeff −6.6%/Z0 −3.6%，#302 同族，设计链以 FD 为准）；
+  近似级别：准静态/零厚金属/无损；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）

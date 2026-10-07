@@ -1,13 +1,13 @@
 """replan_service：R3 AQE 分段重规划多保真路由（Spark AQE 机制翻译）。
 
-分段语义（docs/plan_expansion_pool_20260924.md R3）：
+分段语义（方案池 R3）：
     fake 批=stage1，产出即查 cost 分布是否退化（#195/#207 常数陷阱）→
     退化换判据/采样器而非烧真机；openEMS 首批点回来按实测
     「代理误差/真机耗时」成本模型重规划是否升 HFSS。
     计划=带 checkpoint 的一等对象，可解释可回放。
 
 铁律落地：
-- 数值只在确定性内核（确定性内核铁律）：全部判定由纯函数从输入数值确定性
+- 数值只在确定性内核：全部判定由纯函数从输入数值确定性
   产出，无 LLM、无网络、无墙钟进决策；
 - 判据/决策表/成本模型阈值全部预声明于 runs/df7_r3aqe/criteria.md，
   本模块常量与其逐字对应，不得单侧改数（#122：门值与放行语义不可改）；
@@ -28,6 +28,8 @@ import math
 import statistics
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── 预声明阈值（criteria.md §一/§二/§三，逐字对应） ─────────────────────────
 
@@ -156,13 +158,12 @@ def assess_cost_degeneration(points: list[dict[str, Any]]) -> dict[str, Any]:
                      f"{COST_UNIQUE_RATIO_THRESHOLD}，n_unique={len(unique_vals)})")
 
     degenerate = bool(rule_a or rule_b)
-    return {
-        "ok": True,
-        "degenerate": degenerate,
-        "n": n,
-        "n_missing": n_missing,
-        "value_source": value_source,
-        "evidence": {
+    return ok_envelope(
+        degenerate=degenerate,
+        n=n,
+        n_missing=n_missing,
+        value_source=value_source,
+        evidence={
             "min": min(values),
             "max": max(values),
             "mean": mean,
@@ -172,12 +173,12 @@ def assess_cost_degeneration(points: list[dict[str, Any]]) -> dict[str, Any]:
             "unique_values": unique_vals[:10],
             "histogram": _histogram(values),
         },
-        "rules": {
+        rules={
             "A_rel_std": {"triggered": rule_a, "detail": rule_a_detail},
             "B_unique_ratio": {"triggered": rule_b, "detail": rule_b_detail},
         },
-        "errors": [],
-    }
+        errors=[],
+    )
 
 
 def _unique_preserve(values: list[float]) -> list[float]:
@@ -216,13 +217,7 @@ def replan_route(assessment: dict[str, Any],
     context = dict(context or {})
     reasons: list[str] = []
     action = _decide(assessment, context, reasons)
-    return {
-        "ok": True,
-        "action": action,
-        "reasons": reasons,
-        "stage": context.get("stage"),
-        "degenerate": assessment.get("degenerate"),
-    }
+    return ok_envelope(action=action, reasons=reasons, stage=context.get("stage"), degenerate=assessment.get("degenerate"))
 
 
 def _decide(assessment: dict[str, Any], context: dict[str, Any],
@@ -336,10 +331,9 @@ def escalate_cost_model(surr_err_rel: float, oe_cost_s: float,
                        "升 HFSS 路由（预期收益覆盖 ≥3× 单点成本）")
     else:
         reasons.append("结论 escalate=False：继续 openEMS 代理路由")
-    return {
-        "ok": True,
-        "escalate": escalate,
-        "evidence": {
+    return ok_envelope(
+        escalate=escalate,
+        evidence={
             "benefit_s": benefit,
             "benefit_multiple": benefit_multiple,
             "n_affordable_hfss": n_affordable,
@@ -349,9 +343,9 @@ def escalate_cost_model(surr_err_rel: float, oe_cost_s: float,
             "conditions": {"error_floor": cond_err, "gain_multiple": cond_gain,
                            "affordable": cond_afford, "guard_oe_cheaper": guard_oe},
         },
-        "reasons": reasons,
-        "errors": [],
-    }
+        reasons=reasons,
+        errors=[],
+    )
 
 
 # ─── ④ checkpoint 一等对象（幂等重放，criteria §四） ─────────────────────────
@@ -371,22 +365,24 @@ def save_replan_checkpoint(path: str | Path, decision: dict[str, Any]) -> dict[s
             encoding="utf-8")
     except OSError as exc:
         return {"ok": False, "path": str(path), "errors": [f"写入失败: {exc}"]}
-    return {"ok": True, "path": str(path), "errors": []}
+    return ok_envelope(path=str(path), errors=[])
 
 
 def load_replan_checkpoint(path: str | Path) -> dict[str, Any]:
     """读回 checkpoint；不存在/损坏/schema 不符一律 ok=False 不抛。"""
     path = Path(path)  # #140
     if not path.exists():
-        return {"ok": False, "errors": [f"checkpoint 不存在: {path}"]}
+        return error_envelope([f"checkpoint 不存在: {path}"])
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        return {"ok": False, "errors": [f"checkpoint 读取/解析失败: {exc}"]}
+        return error_envelope([f"checkpoint 读取/解析失败: {exc}"])
     if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
-        return {"ok": False, "errors": ["checkpoint schema 不符（非 "
-                                        f"{CHECKPOINT_SCHEMA}）"]}
+        return error_envelope(
+            ["checkpoint schema 不符（非 "
+                                        f"{CHECKPOINT_SCHEMA}）"],
+        )
     decision = payload.get("decision")
     if not isinstance(decision, dict):
-        return {"ok": False, "errors": ["checkpoint 缺 decision 对象"]}
-    return {"ok": True, "decision": decision, "errors": []}
+        return error_envelope(["checkpoint 缺 decision 对象"])
+    return ok_envelope(decision=decision, errors=[])

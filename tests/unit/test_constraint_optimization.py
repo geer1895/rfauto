@@ -8,6 +8,9 @@
   best 字段置空、不抛异常
 - cmaes+约束：显式报错（不走静默降级）
 - constraints_func 兼容口径：user_attrs 缺失视为可行 [0.0]（旧 study 断点续跑）
+- OP-2 双写弃用期：trial.set_constraint（system-attr，optuna 5.0 采样器原生
+  消费面）与旧 user_attrs 同写；读侧 system-attr 优先 + user_attrs 回退；
+  NaN 违约量只走旧通道（新通道拒 NaN，不把"记录 NaN"升级成 trial FAIL）
 
 fake 响应标定依据（FakeAdapter wilkinson 3 端口，band [2.3, 2.5]）：
 iso_s23_db_min_in_band 为正值口径（隔离深度），arm_len≈18-20.5mm 时
@@ -33,6 +36,8 @@ import optuna
 from rfauto.core.objectives import Objective, SpecEvaluator
 from rfauto.optimization import optimizer as opt_mod
 from rfauto.optimization.optimizer import (
+    _record_constraints,
+    _trial_is_feasible,
     run_optimization,
     trial_constraint_values,
 )
@@ -256,6 +261,24 @@ class TestSamplerPolicy:
         assert result["ok"]
         assert result["trials_completed"] == 3
 
+    def test_gp_batch_with_constraints_runs(self, tmp_path):
+        """OP-1×OP-2 交集：gp 批模式 + 软约束正常跑完（ME-12 后 GPSampler
+        原生消费 system-attr 约束，OP-1 放行批模式）。"""
+        constraints = [
+            {"metric": "iso_s23_db", "band": [2.3, 2.5],
+             "op": "min_above", "value": 27.0, "weight": 1.0},
+        ]
+        recipe = _write_recipe(tmp_path, "gp_batch.yaml", constraints)
+        result = run_optimization(
+            recipe, adapter_name="fake", max_trials=4, sampler="gp",
+            batch_size=2, study_name="e10_gp_batch",
+            adapter_kwargs={"n_ports": 3},
+        )
+        assert result["ok"], result.get("errors")
+        assert result["trials_completed"] == 4
+        assert result["batch_mode"]["n_batches"] >= 2
+        assert result["n_feasible"] >= 1
+
 
 class TestConstraintsFuncCompat:
     """constraints_func 兼容口径（E10）。"""
@@ -269,3 +292,88 @@ class TestConstraintsFuncCompat:
         """违约量直接透传（0=可行边界 ≤0，>0=违约，符合 optuna 语义）。"""
         dummy = SimpleNamespace(user_attrs={"constraint_values": [0.0, 2.5]})
         assert trial_constraint_values(dummy) == [0.0, 2.5]
+
+
+class TestSetConstraintDualWrite:
+    """OP-2 双写弃用期：set_constraint（system-attr）+ 旧 user_attrs 同写，
+    读侧 system-attr 优先 + user_attrs 回退（旧 study 兼容）。"""
+
+    def test_dual_write_user_attrs_and_system_attrs(self, tmp_path):
+        """有约束 run：每个 COMPLETE trial 两通道同写且逐值一致。"""
+        constraints = [
+            {"metric": "iso_s23_db", "band": [2.3, 2.5],
+             "op": "min_above", "value": 27.0, "weight": 1.0},
+        ]
+        recipe = _write_recipe(tmp_path, "dual.yaml", constraints)
+        result = run_optimization(
+            recipe, adapter_name="fake", max_trials=4,
+            study_name="op2_dual", adapter_kwargs={"n_ports": 3},
+        )
+        assert result["ok"]
+        for t in _load_study(result).get_trials(deepcopy=False):
+            if t.state != optuna.trial.TrialState.COMPLETE:
+                continue
+            ua = t.user_attrs["constraint_values"]
+            # 新通道：system-attr constraints:<i>（FrozenTrial.constraints）
+            cons = t.constraints
+            assert set(cons) == {str(i) for i in range(len(ua))}
+            assert [cons[str(i)] for i in range(len(ua))] == pytest.approx(ua)
+            # 读侧（新通道优先）与旧通道同值
+            assert trial_constraint_values(t) == pytest.approx(ua)
+            assert _trial_is_feasible(t) == all(v <= 0 for v in ua)
+
+    def test_read_side_prefers_system_attrs(self):
+        """读侧优先级：system-attr 命中时不读 user_attrs（优先序钉）。"""
+        pri = SimpleNamespace(
+            constraints={"0": 5.0},
+            user_attrs={"constraint_values": [0.0], "feasible": True},
+        )
+        assert trial_constraint_values(pri) == [5.0]
+        assert _trial_is_feasible(pri) is False
+
+    def test_read_side_sorts_numeric_keys(self):
+        """新通道键为约束序号字符串，读出按数值序（≥10 条不落字典序）。"""
+        cons = {str(i): float(i) for i in range(12)}
+        dummy = SimpleNamespace(constraints=cons, user_attrs={})
+        assert trial_constraint_values(dummy) == [
+            float(i) for i in range(12)]
+
+    def test_old_study_user_attrs_fallback_feasible_judgement(self):
+        """旧 study（仅 user_attrs）的可行性判定：_trial_is_feasible 回退口径。"""
+        violated = SimpleNamespace(
+            user_attrs={"constraint_values": [0.0, 2.5], "feasible": False})
+        feasible = SimpleNamespace(
+            user_attrs={"constraint_values": [0.0, 0.0], "feasible": True})
+        legacy = SimpleNamespace(user_attrs={})
+        assert _trial_is_feasible(violated) is False
+        assert _trial_is_feasible(feasible) is True
+        assert _trial_is_feasible(legacy) is True
+
+    def test_nan_constraint_keeps_old_channel_only(self, tmp_path, monkeypatch):
+        """NaN 违约量：新通道 set_constraint 拒 NaN——跳过新通道只走旧
+        user_attrs（不把"记录到 NaN"升级成 trial FAIL，行为与既有一致）。"""
+        import math
+        from unittest import mock
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        db_dir = tmp_path / "runs" / ".optuna"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        study = optuna.create_study(
+            study_name="op2_nan",
+            storage=f"sqlite:///{(db_dir / 'optuna.db').as_posix()}")
+        trial = study.ask()
+        cons = [Objective(metric="m", band=[1, 2], op="max_below",
+                          value=-10, weight=1.0)]
+        with mock.patch.object(
+                SpecEvaluator, "evaluate_objectives",
+                return_value=math.nan):
+            cvals = _record_constraints(trial, {}, cons)
+        assert len(cvals) == 1 and math.isnan(cvals[0])
+        assert trial.constraints == {}  # 新通道未写
+        assert math.isnan(trial.user_attrs["constraint_values"][0])  # 旧通道承载
+        assert trial.user_attrs["feasible"] is False
+        study.tell(trial, 0.0)  # 不因 NaN 约束而 FAIL
+        frozen = study.trials[-1]
+        assert frozen.state == optuna.trial.TrialState.COMPLETE
+        # 读侧：system-attr 空 → 回退旧通道 → NaN≤0 恒 False → 不可行
+        assert _trial_is_feasible(frozen) is False

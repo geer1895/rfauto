@@ -1,0 +1,42 @@
+f0_ghz: 2.5
+n_ports: 1
+template: qwt_multisection
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- widths_mm
+- lengths_mm
+- feed_w_mm
+- z_load_ohm
+nominal_params:
+  widths_mm:
+  - 0.966
+  - 0.603
+  - 0.344
+  lengths_mm:
+  - 17.851
+  - 18.162
+  - 18.462
+  feed_w_mm: 1.1134
+  z_load_ohm: 100.0
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: 3
+extraction: S11 @ MSLPort 1（λ/4 节级联 + 末端 LumpedElement R=ZL 端接到地，单端口回退 footer 同 patch）。裁判=skrf N 节理想 TL
+  级联 50Ω 端接闭式 |S11(f)|：@f0 深零（binomial/chebyshev 奇 N 中心精确匹配，内核谱系恒等式）、带内纹波电平=Γm、FBW 对照 kernel bandwidth_estimate；引擎-理想偏差=节间阶梯跳宽寄生（stepped_impedance
+  同口径）
+topology: 多节 λ/4 阻抗变换器（TA-2）：50Ω 馈线（port1，−BOARD 板边入）+ N 节 λ/4 均匀微带线级联（节阻抗 Z1..ZN 闭式表驱动，沿 y）+ 末端 LumpedElement
+  R=ZL 端接盒（z=0..H_SUB 对地，mmwave_series_array 链末负载同法）；z-min PEC 地 + 缺省 rogers4350b 叠层（guided 口径）
+param_semantics: widths_mm=各节线宽列表（HJ inverse_width 按节阻抗精算，qwt_multisection_design_params 单源）；lengths_mm=各节物理
+  λ/4 长（按节 εeff 精算）；feed_w_mm=50Ω 馈线宽（1.1134，mline 同源档）；z_load_ohm=端接集总电阻（=ZL，LumpedElement R 值——进元件值不进导体几何，combline
+  c_load_pf 同口径豁免）
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；馈线/各节带缘+节间 junction/端接盒缘精确入网（#198）；全轴
+  1µm 近重合去重（#152）；端口面贴 PML_8 域边
+smoke_note: 未冒烟（离线审计过，#212，test_schiffman_qwt_templates）；近似级别如实登记：①节间阶梯跳宽不连续性不进闭式裁判（离线裁判=理想 TL 级联，偏差即寄生）；②LumpedElement
+  集总端接的寄生电感/电容未建模（零厚度集总口径）；③一阶小反射表驱动闭式（N>4 chebyshev 需 Riblet 数值迭代，内核显式拒绝）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: 全链内核精算（#1c，零手抄毫米数；qwt_multisection_design_params() 缺省实参可重算，单测钉逐键 rtol 1e-9）：synthesize_multisection_quarter_wave(Z0=50,
+  ZL=100, N=3, binomial, Γm=−20dB)@2.5GHz——一阶小反射表驱动（Pozar 4ed Binomial Multisection Matching Transformer
+  节）：结点对数增量 δ_i=ln(2)·C(3,i)/8 → 节阻抗 (54.5254, 70.7107, 91.7004)Ω（谱系恒等式 Z_i·Z_{4−i}=5000 对称、N 奇中节=√5000）→
+  各节 HJ inverse_width/εeff → 物理 λ/4 长 (17.851, 18.162, 18.462)mm；feed_w=inverse_width(50Ω)=1.1134。中心频率精确匹配（|S11(f0)|≈0）为内核
+  ABCD 级联恒等式（单测钉）。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。

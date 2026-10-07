@@ -1,0 +1,43 @@
+f0_ghz: 10.0
+n_ports: 2
+extraction: 'LumpedPort z 桥×2 端面口径（R=闭式 Z_PV=2h·Z_TE/w_eff，CalcPort 同参考）：
+  β/εeff 主判=S21 解缠相位斜率÷port_beta.csv 实测 plane_dist（cps/siw 同契约，LumpedPort
+  无 β 属性）；fc 由带内 φ(f)=−β(f；fc)·L+φ0 单参数拟合对照式 (11) 链（预声明门归真机窗）'
+max_time_ns: 45.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- w_mm
+- d_mm
+- s_mm
+- line_len_mm
+template: hmsiw
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  w_mm: 5.5829
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 63.0721
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+topology: 'HM-SIW 半模基片集成波导均匀段（TA-8）：基板矩形域，底板=显式零厚板贴 z=0
+  PEC 底界+单列过孔藩篱 x=+w/2（藩篱止于端口面），开路边 x=−w/2=磁壁（域 MUR 余量
+  w_eff/2）、顶开放（MUR，无上板——HMSIW 定义性质）；端口=两端面 LumpedPort z 桥（跨介质孔径、R=Z_PV，
+  端口即终端负载 siw v2 口径）——准 TE0.5 模 fc 由式 (11) 链给出（Lai-Fumeaux 2009
+  T-MTT 式 (8)-(14)）'
+param_semantics: 'w_mm=HMSIW 宽（过孔列心到开路边；设计链 core/hmsiw.hmsiw_design_params：fc
+  目标=f0/1.5 反解，式 (8)(9)(13)(10)(11) 联立 brentq，名义 5.5829mm@fc=6.6667GHz/er=3.66/h=0.508/d=0.6/s=1.0）、d_mm=过孔直径、
+  s_mm=过孔心距（渲染按 k·s 精确栅格、藩篱止于端口面）、line_len_mm=两端口测量面间距；
+  h/er/tan_d 走 substrate/nominal（式 (13) 声明域 εr∈(2.2,15)/h∈(0.254,2.54)mm/w∈(2.5,10)mm，
+  hmsiw_check_validity 越界拒渲染）'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；过孔直径 ≥4·NEAR
+  守卫、孔间缝 ≥1 内部线（siw 同款）、显式近场线 10µm 地板（#349）、端口盒边/开路边/藩篱心线落格（#283，
+  生成期断言）、基板 z 4 层'
+smoke_note: 离线审计先行（#212，test_ta_wave_a_templates）；内核数字裁判=论文图面数值锚三方互证（Fig.6/7：fc
+  4.789/20.746GHz、β(12GHz) 342 rad/m，test_ta_wave_a_templates 钉）；近似级别如实登记：式
+  (13) 拟合 <2%（论文声明域内）、过孔藩篱离散化未经真机仲裁（siw 经验迁移）、端面 LumpedPort
+  R=Z_PV 对 1/4 余弦场分布的功率-电压近似（siw v1/v2 同族近似级）；真机冒烟与 HFSS
+  仲裁属后续批次（本批零发射）

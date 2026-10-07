@@ -6,10 +6,10 @@
     "arm_len_mm": 20.5
   },
   "metrics": {
-    "s11_db_max_in_band": -8.083476465503841,
-    "s11_db_min_in_band": -10.258089404372448,
-    "s21_db_mean_in_band": -4.108441567750529,
-    "iso_s23_db_min_in_band": 25.47169804394388
+    "s11_db_max_in_band": -7.643808775042392,
+    "s11_db_min_in_band": -9.747723288231917,
+    "s21_db_mean_in_band": -5.2467656009690815,
+    "iso_s23_db_min_in_band": 25.032030353482433
   },
   "tolerances": {
     "_rule": "每个指标允许 |delta| <= tol；未列出的指标用 default",

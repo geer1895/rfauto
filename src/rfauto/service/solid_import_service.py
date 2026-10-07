@@ -1,4 +1,4 @@
-"""实体导入服务层：JSON 进出的导入/分类/缩放薄壳（服务层薄壳）。
+"""B3 实体导入服务层：JSON 进出的导入/分类/缩放薄壳。
 
 CLI/MCP 若要暴露实体导入，直接消费本模块函数（与 B2 layout_service 同构：
 内核在 core/solid_mesh + adapters/solid_import，本层只做编排与错误翻译，
@@ -6,8 +6,8 @@ ok=False + error 显式契约仿 run_calculator）。
 
 格式口径：只支持 ``.stl``（binary/ASCII 自动判别）。STEP/.stp **显式拒绝**
 并说明原因：CSXCAD 绑定只读 STL/PLY（CSPrimPolyhedronReader docstring 实测），
-本机亦无 OCP/steputils 之类 CAD 内核（venv 实测未装）——STEP 内核属后续工作
-（候选：hfss 轨 pyaedt import_step，或另装 CAD 内核）。
+本机亦无 OCP/steputils 之类 CAD 内核（venv 实测未装）——STEP 内核属 followUp
+（候选：hfss 轨 pyaedt import_step，或 E 盘装 CAD 内核，需用户确认盘符）。
 
 D14/热族互操作（只注记，不改 core/thermo_mech.py）：scale_solid_payload 的
 「坐标 ×factor、体积 ×factor³」与 thermo_mech.scale_dimension（线尺寸 ×
@@ -24,17 +24,18 @@ from typing import Any
 
 from rfauto.adapters.solid_import import classify_solid, csx_lines
 from rfauto.core.solid_mesh import SolidMesh, parse_stl_file
+from rfauto.service.envelope import ok_envelope
 
 #: 支持的导入后缀（binary/ASCII STL 自动判别）。
 SUPPORTED_SUFFIXES = (".stl",)
 #: 显式缺口后缀 → 原因（如实申报，不假装支持）。
 REJECTED_SUFFIXES: dict[str, str] = {
     ".step": "STEP 不被支持：CSXCAD 绑定只读 STL/PLY，本机无 CAD 内核"
-             "（OCP/steputils 未安装）；后续可经 hfss 轨 pyaedt "
-             "import_step 或另装 CAD 内核支持",
+             "（OCP/steputils 未安装）；followUp 登记（hfss 轨 pyaedt "
+             "import_step 或 E 盘装 CAD 内核，待用户确认）",
     ".stp": "STEP 不被支持：CSXCAD 绑定只读 STL/PLY，本机无 CAD 内核"
-            "（OCP/steputils 未安装）；后续可经 hfss 轨 pyaedt "
-            "import_step 或另装 CAD 内核支持",
+            "（OCP/steputils 未安装）；followUp 登记（hfss 轨 pyaedt "
+            "import_step 或 E 盘装 CAD 内核，待用户确认）",
 }
 
 
@@ -67,12 +68,11 @@ def import_solid_payload(path: str, *, material: str = "metal") -> dict[str, Any
     solid = dict(solid)
     solid["csx_lines"] = csx_lines([solid])
     lo, hi = mesh.bbox_mm
-    out: dict[str, Any] = {
-        "ok": True,
-        "path": str(typed),
-        "format": detect_stl_format(typed),
-        "units": "mm",
-        "mesh": {
+    out: dict[str, Any] = ok_envelope(
+        path=str(typed),
+        format=detect_stl_format(typed),
+        units="mm",
+        mesh={
             "n_triangles": mesh.n_triangles,
             "volume_mm3": mesh.volume_mm3,
             "bbox_mm": {"lo": [float(v) for v in lo],
@@ -82,8 +82,8 @@ def import_solid_payload(path: str, *, material: str = "metal") -> dict[str, Any
             "n_connected_components": mesh.n_connected_components,
             "n_degenerate_triangles": mesh.n_degenerate_triangles,
         },
-        "solids": [solid],
-    }
+        solids=[solid],
+    )
     return out
 
 

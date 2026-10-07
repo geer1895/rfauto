@@ -166,3 +166,35 @@ class TestDeembed:
             frequency=freq, s=np.zeros((21, 1, 1), dtype=complex))
         with pytest.raises(ValueError, match="2 端口"):
             deembed_2xthru(one_port, one_port)
+
+
+class TestZcVariantZ0Measured:
+    """S-1 C-08 2026-10-04：ZC 变体 z0 取实测均值（与 NZC 主路同式）。
+
+    旧值 50.0 系 skrf IEEEP370_SE_ZC_2xThru 构造缺省的复制粘贴，对非 50Ω
+    语料会把去嵌参考面钉死在错误的理想 50Ω 上。"""
+
+    def test_zc_z0_follows_measured_network(self, monkeypatch):
+        import skrf.calibration.deembedding as dembed_mod
+
+        freq = _freq(101)
+        fix = _make_fix(freq, 25e-3, z0=75.0)
+        dut = _make_dut(freq, z0=75.0)
+        thru2x = fix ** fix
+        fdf = fix ** dut ** fix
+        captured: dict[str, float] = {}
+
+        class _FakeZC:
+            def __init__(self, *, dummy_2xthru, dummy_fix_dut_fix,
+                         name, z0):
+                captured["z0"] = float(z0)
+
+            def deembed(self, net):
+                return net
+
+        monkeypatch.setattr(dembed_mod, "IEEEP370_SE_ZC_2xThru", _FakeZC)
+        out = deembed_2xthru(fdf, thru2x, zc_fix_dut_fix=fdf)
+        assert out["ok"] is True
+        assert out["zc_variant"]["ran"] is True
+        assert captured["z0"] == pytest.approx(75.0), \
+            "ZC 变体 z0 应取 zc 网络实测均值（75），不是硬编码 50"

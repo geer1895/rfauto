@@ -210,3 +210,62 @@ class TestAnchorPipeline:
             tmp_path / "anchor", ngspice_runner=self._runner(REAL_NGSPICE_20260914),
         )
         assert summary["em"]["dc_mode"] == "closed_form_standin"
+
+
+class TestAnchorFailureTracebackPin:
+    """AU-3②：A3 锚段失败=invalid 标记（error 标记+提前 return fail-closed）
+    + traceback 留痕钉（logger.exception，不改控制流/返回值，best-effort）。"""
+
+    def test_all_four_segments_logged(self):
+        import ast
+        from pathlib import Path as _P
+
+        src = _P(fcn.__file__).read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        logged = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ExceptHandler):
+                for stmt in ast.walk(node):
+                    if (isinstance(stmt, ast.Call)
+                            and isinstance(stmt.func, ast.Attribute)
+                            and stmt.func.attr == "exception"):
+                        logged.add(node.lineno)
+        broad = [n for n in ast.walk(tree)
+                 if isinstance(n, ast.ExceptHandler)
+                 and _is_broad_handler(n)]
+        # 宽兜（except Exception）恰为 EM/HB/ngspice/对拍 四段，逐处留痕；
+        # except KeyError（compare 缺信号 → status=missing 行，预期异常
+        # 记录面非吞错）豁免留痕
+        assert len(broad) == 4
+        assert {h.lineno for h in broad} == logged
+
+    def test_em_segment_failure_marks_invalid_and_reports(self, tmp_path, caplog):
+        """EM 段失败动态行为链：invalid 标记+报告落盘+traceback 留痕.
+
+        ge5 审查 P1 修复：本测试曾被误缩进嵌进 _is_broad_handler 函数体
+        成死代码（--collect-only 不收集），动态行为链零验证。
+        """
+        import logging
+
+        # 外部 Touchstone 不存在 → EM 段失败：invalid 标记 + 报告落盘 +
+        # traceback 留痕（语义与改前一致，仅增日志面）
+        with caplog.at_level(logging.ERROR, logger="rfauto.linkage.field_circuit_nonlinear"):
+            summary = fcn.run_field_circuit_nonlinear_anchor(
+                tmp_path / "out", snp_path=tmp_path / "nope.s2p")
+        assert summary["ok"] is False
+        assert summary["em"]["status"] == "error"
+        assert (tmp_path / "out" / "anchor_report.json").exists()
+        assert any("EM 数据段失败" in r.getMessage() and r.exc_info
+                   for r in caplog.records)
+
+
+def _is_broad_handler(node) -> bool:
+    """except Exception（宽兜）判定：type 为空或恰为 Exception 单名。"""
+    import ast
+
+    t = node.type
+    if t is None:
+        return True
+    if isinstance(t, ast.Name):
+        return t.id == "Exception"
+    return False

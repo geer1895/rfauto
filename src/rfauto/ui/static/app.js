@@ -1,7 +1,11 @@
 /* rfauto 射频调优工作台前端（vanilla JS + three.js，无构建步骤）。
    本文件 = 外壳（导航/工具函数/3D）；各页面逻辑在 pages.js。 */
 import * as THREE from "three";
-import { initPages, showPage } from "./pages.js";
+import { initPages, showPage, esc } from "./pages.js";
+// PR-3 PlotCard：option 构造单源在 plotcard.js（buildEChartOption 与
+// 迁移前 drawEChart 逐字节等价，golden 快照钉 runs/pr34），drawEChart
+// 与 plotCard 共用；drawLineChart/Smith/3D 自研管线不动。
+import { buildEChartOption, plotCard } from "./plotcard.js";
 
 const $ = (id) => document.getElementById(id);
 export const api = async (url, opts) => {
@@ -24,22 +28,29 @@ for (const b of navBtns) {
 function activate(v) {
   for (const b of navBtns) {
     b.classList.toggle("active", b.dataset.v === v);
+    // PR-1 a11y：当前页 aria-current（读屏可知导航位置）
+    if (b.dataset.v === v) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
     if (b.dataset.v === "detail")
       b.style.display = v === "detail" ? "" : "none"; // 详情页仅从 run 点入时显示
   }
   for (const s of document.querySelectorAll("main > section"))
     s.style.display = s.id === "view-" + v ? "" : "none";
-  // 深链接：页面可收藏/直达（#runs、#sparams…）；detail 无固定内容不入 hash
-  if (v !== "detail") {
-    const h = "#" + v;
-    if (location.hash !== h) history.replaceState(null, "", h);
-  }
 }
 
-/* 通用小部件：徽章 */
-export const badge = (text, cls) => `<span class="badge ${cls}">${text}</span>`;
+/* 通用小部件：徽章（text 一律 esc 转义后再插值——AU-4：badge 是 API 数据
+   的 HTML 出口之一（如 run status/anchor 状态），单点转义覆盖全部调用面） */
+export const badge = (text, cls) => `<span class="badge ${cls}">${esc(text)}</span>`;
 export const passBadge = (p) =>
   p === true ? badge("PASS", "ok") : p === false ? badge("FAIL", "err") : badge("N/A", "muted");
+
+/* PR-1 对比度：图表系列调色板按主题分档（核算见 runs/pr1_contrast）。
+   深色档对 --plot-bg #0d1118、浅色档对白底逐色 ≥3:1（WCAG 图形）。
+   显式 s.color 仍优先——调色板只兜底缺省系列。 */
+const CHART_COLORS = {
+  dark: ["#4fc3f7", "#ffb74d", "#81c784", "#e57373", "#ba68c8"],
+  light: ["#0277bd", "#b26a00", "#276b2c", "#c62828", "#6a1b9a"],
+};
 
 /* 通用折线图（canvas，多曲线 + 主题自适应网格） */
 export function drawLineChart(canvas, series, labels) {
@@ -48,9 +59,13 @@ export function drawLineChart(canvas, series, labels) {
   canvas.height = canvas.clientHeight || 260;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const light = document.body.classList.contains("light");
-  const gridColor = light ? "#dde3ec" : "#1c2331";
-  const readColor = light ? "#67748a" : "#7d8aa0";
+  const gridColor = light ? "#dde3ec" : "#1c2331"; // 网格线=装饰性（读数靠刻度文字）
+  const readColor = light ? "#5f6a80" : "#7d8aa0"; // 刻度文字：双主题对底 ≥4.5:1
   if (!series.length || !series[0].x.length) return;
+  // PR-1 a11y：canvas 图像语义
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label",
+    `折线图：${series.map((s) => s.name).filter(Boolean).join("、") || "数据系列"}`);
   const W = canvas.width, H = canvas.height, L = 46, R = 14, T = 14, B = 26;
   const xs = series.flatMap((s) => s.x), ys = series.flatMap((s) => s.y);
   const xmin = Math.min(...xs), xmax = Math.max(...xs);
@@ -65,7 +80,7 @@ export function drawLineChart(canvas, series, labels) {
     ctx.moveTo(L, gy); ctx.lineTo(W - R, gy);
   }
   ctx.stroke();
-  const colors = ["#4fc3f7", "#ffb74d", "#81c784", "#e57373", "#ba68c8"];
+  const colors = CHART_COLORS[light ? "light" : "dark"];
   series.forEach((s, i) => {
     ctx.strokeStyle = s.color || colors[i % colors.length];
     ctx.lineWidth = 1.6;
@@ -88,59 +103,42 @@ export function drawLineChart(canvas, series, labels) {
   }
 }
 
-/* 交互式图表（ECharts：缩放/悬停读数/图例开关），theme 自适应 */
+/* 交互式图表（ECharts：缩放/悬停读数/图例开关），theme 自适应。
+   PR-3：option 构造委托 plotcard.js 单源 builder（等价快照钉在
+   tests/unit/test_ui_plotcard.py）；本壳保留容器语义（role/aria/height）
+   与故障可见化。新调用面请用 plotCard（带导出/十字线/收敛模式）。 */
 export function drawEChart(el, series, opts = {}) {
   try {
     const light = document.body.classList.contains("light");
-    const fg = light ? "#1b2330" : "#dce3ee";
-    const axis = { axisLine: { lineStyle: { color: light ? "#c3ccda" : "#2a3140" } },
-                   axisLabel: { color: light ? "#64708a" : "#8391a7" },
-                   splitLine: { lineStyle: { color: light ? "#e7ebf2" : "#1c2331" } } };
+    // PR-1 a11y：图表容器图像语义（系列名+轴标签进 aria-label；opts.ariaLabel 显式覆盖）
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", opts.ariaLabel ||
+      `图表：${series.map((s) => s.name).filter(Boolean).join("、") || "数据系列"}` +
+      `${opts.ylabel ? "，纵轴 " + opts.ylabel : ""}${opts.xlabel ? "，横轴 " + opts.xlabel : ""}`);
     el.innerHTML = "";
     el.style.height = opts.height || "280px";
     const chart = window.echarts.init(el);
-    chart.setOption({
-      backgroundColor: "transparent",
-      tooltip: { trigger: opts.xvalue ? "item" : "axis",
-                 valueFormatter: (v) => (+v).toFixed(2) },
-      legend: { top: 0, textStyle: { color: fg }, type: "scroll" },
-      grid: { left: 52, right: 20, top: 34, bottom: 44 },
-      xAxis: Object.assign(
-        opts.xvalue
-          ? { type: "value", scale: true }
-          : { type: "category", data: series[0]?.x || [] },
-        axis, { name: opts.xlabel || "", nameTextStyle: { color: fg } }),
-      yAxis: { type: "value", scale: true, ...axis,
-               name: opts.ylabel || "", nameTextStyle: { color: fg } },
-      dataZoom: opts.zoom === false ? [] : [
-        { type: "inside" }, { type: "slider", height: 18, bottom: 6 }],
-      series: series.map((s) => s.type === "scatter" ? ({
-        name: s.name, type: "scatter", data: s.data,
-        itemStyle: { color: s.color, opacity: 0.85 },
-        symbolSize: s.symbolSize || 10,
-        markLine: opts.markline ? {
-          silent: true, symbol: "none",
-          lineStyle: { type: "dashed", color: light ? "#b26a00" : "#ffb74d" },
-          data: opts.markline,
-        } : undefined,
-      }) : ({
-        name: s.name, type: "line", data: s.y, showSymbol: false,
-        lineStyle: { width: 1.6, color: s.color },
-        itemStyle: { color: s.color },
-        markLine: opts.band ? {
-          silent: true, symbol: "none", lineStyle: { type: "dashed", color: light ? "#b26a00" : "#ffb74d" },
-          label: { color: light ? "#b26a00" : "#ffb74d", formatter: "带内" },
-          data: [{ xAxis: opts.band[0] }, { xAxis: opts.band[1] }],
-        } : undefined,
-      })),
-    });
+    chart.setOption(buildEChartOption(series, opts, {
+      light,
+      palette: CHART_COLORS[light ? "light" : "dark"],
+    }));
     window.addEventListener("resize", () => chart.resize());
     return chart;
   } catch (e) {
     // 图表故障可见化——不静默吞错（排查 #135 教训）
-    el.innerHTML = `<span style="color:var(--err)">chart error: ${e.message}</span>`;
+    el.innerHTML = `<span style="color:var(--err)">chart error: ${esc(e.message)}</span>`;
     return null;
   }
+}
+
+/* PR-3 PlotCard 注入：主题态在本壳现取（与 drawEChart 同一判定时机），
+   调色板单源 CHART_COLORS 传入 plotcard.js。 */
+function uiPlotCard(el, props = {}) {
+  const light = document.body.classList.contains("light");
+  return plotCard(el, props, {
+    light,
+    palette: CHART_COLORS[light ? "light" : "dark"],
+  });
 }
 
 /* ── 灯箱 ── */
@@ -182,7 +180,7 @@ function makeLabelSprite(text, color) {
 export function drawBoxes(container, spec) {
   container.innerHTML = "";
   if (!spec || !spec.ok) {
-    container.innerHTML = `<span class="muted">${spec ? spec.errors.join("; ") : "无几何"}</span>`;
+    container.innerHTML = `<span class="muted">${spec ? esc(spec.errors.join("; ")) : "无几何"}</span>`;
     return;
   }
   const w = container.clientWidth || 600, h = 420;
@@ -203,7 +201,7 @@ export function drawBoxes(container, spec) {
     });
     // 轴向映射与下方 position 一致：模型 (x,y,z) → 场景 (x, z, y)，
     // 模型 z=高度（基板厚度轴）映射为场景竖直方向（three.js y=上）。
-    // 尺寸必须与位置做同一轴交换（修复案例：基板 120×120×0.51
+    // 尺寸必须与位置做同一轴交换（2026-09-15 修复：基板 120×120×0.51
     // 曾被 BoxGeometry(size[1]=120) 当高度渲染成竖立大板）。
     const geo = new THREE.BoxGeometry(size[0], size[2], size[1]);
     const mesh = new THREE.Mesh(geo, mat);
@@ -258,10 +256,14 @@ export function drawBoxes(container, spec) {
   legend.innerHTML =
     chip(0xc0c8d0, "金属") + chip(0x556070, "地面") + chip(0x2e7d32, "基板") +
     chip(0xffb74d, "端口") +
-    (portNotes.length ? `<span class="muted">　端口: ${portNotes.join("、")}</span>` : "") +
-    `<div class="muted" style="margin-top:4px">器件: ${deviceList}</div>` +
+    (portNotes.length ? `<span class="muted">　端口: ${esc(portNotes.join("、"))}</span>` : "") +
+    `<div class="muted" style="margin-top:4px">器件: ${esc(deviceList)}</div>` +
     `<div class="muted">拖动旋转 / 滚轮缩放</div>`;
   container.appendChild(legend);
+  // PR-1 a11y：3D 视图图像语义（器件清单可闻；交互提示留在图例文字里）
+  container.setAttribute("role", "img");
+  container.setAttribute("aria-label",
+    `3D 模型预览：${deviceList}${portNotes.length ? "，端口 " + portNotes.join("、") : ""}`);
 }
 
 function orbitLike(camera, dom, maxDim = 120) {
@@ -287,9 +289,6 @@ function orbitLike(camera, dom, maxDim = 120) {
 
 initPages({
   activate, msg, api, badge, passBadge, drawLineChart, drawEChart, drawBoxes,
-  lightboxImg, lightboxContent, $, THREE,
+  lightboxImg, lightboxContent, $, THREE, plotCard: uiPlotCard,
 });
-// 启动页：按 hash 深链接直达（#runs、#sparams…），无/未知 hash → 总览
-const initialPage = location.hash.replace("#", "");
-const knownPages = navBtns.map((b) => b.dataset.v);
-showPage(knownPages.includes(initialPage) ? initialPage : "dashboard");
+showPage("dashboard");

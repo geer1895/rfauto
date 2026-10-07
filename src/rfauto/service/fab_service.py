@@ -1,6 +1,6 @@
 """fab 剖面 / DFM 门服务层（DP-7 P1/P3，JSON 进出）。
 
-职责（分层铁律：服务层 JSON 进出，CLI/MCP 薄壳）：
+职责：
 - ``load_fab_profile``：knowledge/fab_profiles/*.yaml → JSON 视图；
 - ``check_template_dfm``：模板名义几何（``template_meta()`` 只读）+ 用户
   覆盖 → 对剖面校验（几何事实提取见 ``FAB_GEOMETRY_FACTS``——显式登记
@@ -36,11 +36,14 @@ from rfauto.core.fab_check import (
     check_geometry,
     load_profile,
 )
+from rfauto.core.materials import resolve_materials_yaml_path
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 __all__ = [
     "FAB_GEOMETRY_FACTS",
     "check_design_dfm",
     "check_design_dfm_best_effort",
+    "check_stub_backdrill_dfm",
     "check_template_dfm",
     "derive_tolerances_from_fab_profile",
     "design_for_yield",
@@ -64,7 +67,7 @@ FAB_GEOMETRY_FACTS: dict[str, dict[str, tuple[str, ...]]] = {
     "coupled_line": {"traces": ("line_w_mm",), "gaps": ("gap_mm",)},
     "dipole": {"traces": ("dipole_w_mm",), "gaps": ("gap_mm",)},
     "stepped_impedance": {
-        "traces": ("z1_width_mm", "z2_width_mm"), "gaps": ()},
+        "traces": ("z1_width_mm", "z2_width_mm", "feed_w_mm"), "gaps": ()},
 }
 
 _TRACE_SUFFIXES = ("w_mm", "_w_mm", "_width_mm")
@@ -99,29 +102,28 @@ def load_fab_profile(
     try:
         prof = load_profile(name, profiles_dir=profiles_dir)
     except FabProfileError as exc:
-        return {"ok": False, "errors": [str(exc)]}
-    return {
-        "ok": True,
-        "name": prof.name,
-        "profile_version": prof.profile_version,
-        "source_url": prof.source_url,
-        "retrieved_date": prof.retrieved_date,
-        "trace_tol_pct": prof.trace_tol_pct,
-        "impedance_tol_pct": prof.impedance_tol_pct,
-        "copper_rules": {
+        return error_envelope([str(exc)])
+    return ok_envelope(
+        name=prof.name,
+        profile_version=prof.profile_version,
+        source_url=prof.source_url,
+        retrieved_date=prof.retrieved_date,
+        trace_tol_pct=prof.trace_tol_pct,
+        impedance_tol_pct=prof.impedance_tol_pct,
+        copper_rules={
             f"{oz:g}": {"min_trace_mm": r.min_trace_mm,
                         "min_gap_mm": r.min_gap_mm}
             for oz, r in sorted(prof.copper_rules.items())
         },
-        "board_thickness_mm": [prof.board_thickness_min_mm,
+        board_thickness_mm=[prof.board_thickness_min_mm,
                                prof.board_thickness_max_mm],
-        "min_drill_mm": prof.min_drill_mm,
-        "min_via_annular_ring_mm": prof.min_via_annular_ring_mm,
-        "min_solder_mask_dam_mm": prof.min_solder_mask_dam_mm,
-        "surface_finishes": list(prof.surface_finishes),
-        "supported_materials": list(prof.supported_materials),
-        "path": prof.path,
-    }
+        min_drill_mm=prof.min_drill_mm,
+        min_via_annular_ring_mm=prof.min_via_annular_ring_mm,
+        min_solder_mask_dam_mm=prof.min_solder_mask_dam_mm,
+        surface_finishes=list(prof.surface_finishes),
+        supported_materials=list(prof.supported_materials),
+        path=prof.path,
+    )
 
 
 def check_template_dfm(
@@ -144,7 +146,7 @@ def check_template_dfm(
     try:
         meta = template_meta(template)
     except KeyError:
-        return {"ok": False, "errors": [f"未知模板: {template}"]}
+        return error_envelope([f"未知模板: {template}"])
     merged: dict[str, Any] = {**meta.get("nominal_params", {}),
                               **(params or {})}
     facts = FAB_GEOMETRY_FACTS.get(template) or _scan_geometry_params(merged)
@@ -155,7 +157,7 @@ def check_template_dfm(
     try:
         prof = load_profile(profile)
     except FabProfileError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     report = check_geometry(
         prof,
         traces_mm=traces,
@@ -190,7 +192,7 @@ def check_design_dfm(
     try:
         prof = load_profile(profile)
     except FabProfileError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     report = check_geometry(
         prof,
         traces_mm=[float(t["width"]) for t in design.get("traces") or []
@@ -266,22 +268,20 @@ def fab_profile_yield(
             model, nominal, spec=spec, tolerance_source=tolerance_source,
             n=n, seed=seed)
     if perturb_param is None:
-        return {"ok": False,
-                "errors": ["perturb_param 必填（或传 tolerance_source 引用）"]}
+        return error_envelope(["perturb_param 必填（或传 tolerance_source 引用）"])
     if n < 1:
-        return {"ok": False, "errors": [f"n 必须 ≥1，收到: {n}"]}
+        return error_envelope([f"n 必须 ≥1，收到: {n}"])
     if perturb_param not in nominal:
-        return {"ok": False, "errors": [f"扰动参数 {perturb_param} 不在名义点"]}
+        return error_envelope([f"扰动参数 {perturb_param} 不在名义点"])
     metric = str(spec.get("metric", ""))
     op = str(spec.get("op", ""))
     spec_value = float(spec.get("value", 0.0))
     if not metric or op not in ("max_below", "min_above"):
-        return {"ok": False,
-                "errors": ["spec 非法: metric/op 必填，op∈(max_below, min_above)"]}
+        return error_envelope(["spec 非法: metric/op 必填，op∈(max_below, min_above)"])
     try:
         prof = load_profile(profile)
     except FabProfileError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     tol = prof.trace_tol_pct if tol_pct is None else float(tol_pct)
 
     rng = np.random.default_rng(seed)
@@ -294,32 +294,30 @@ def fab_profile_yield(
         pt[perturb_param] = float(w)
         pred = model.predict(pt)
         if metric not in pred:
-            return {"ok": False,
-                    "errors": [f"代理预测缺指标 {metric}: keys={sorted(pred)}"]}
+            return error_envelope([f"代理预测缺指标 {metric}: keys={sorted(pred)}"])
         v = float(pred[metric])
         values[i] = v
         if not _violates(v, op, spec_value):
             passes += 1
-    return {
-        "ok": True,
-        "yield_rate": passes / float(n),
-        "n_draws": int(n),
-        "seed": int(seed),
-        "distribution": "uniform_multiplicative",
-        "perturb_param": perturb_param,
-        "nominal_params": {k: float(v) for k, v in nominal.items()},
-        "tolerance": {"param": perturb_param, "pct": tol},
-        "tolerance_source": f"fab_profile:{prof.name}:trace.tolerance_pct"
+    return ok_envelope(
+        yield_rate=passes / float(n),
+        n_draws=int(n),
+        seed=int(seed),
+        distribution="uniform_multiplicative",
+        perturb_param=perturb_param,
+        nominal_params={k: float(v) for k, v in nominal.items()},
+        tolerance={"param": perturb_param, "pct": tol},
+        tolerance_source=f"fab_profile:{prof.name}:trace.tolerance_pct"
                             if tol_pct is None else "explicit_override",
-        "profile": prof.name,
-        "profile_version": prof.profile_version,
-        "spec": {"metric": metric, "op": op, "value": spec_value},
-        "metric_stats": {
+        profile=prof.name,
+        profile_version=prof.profile_version,
+        spec={"metric": metric, "op": op, "value": spec_value},
+        metric_stats={
             "mean": float(values.mean()), "std": float(values.std()),
             "q05": float(np.quantile(values, 0.05)),
             "q95": float(np.quantile(values, 0.95)),
         },
-    }
+    )
 
 
 # ─── DP-7 P2：公差来源单源（fab 剖面 + materials.yaml → {param: σ}）─────────
@@ -339,8 +337,8 @@ _ER_EXACT_NAMES = ("er", "eps_r", "epsilon_r")
 
 
 def _materials_path() -> Path:
-    """configs/materials.yaml（与 core/synthesis.py 同根推导，×3 到根）。"""
-    return Path(__file__).resolve().parents[3] / "configs" / "materials.yaml"
+    """configs/materials.yaml（AU-5 单点：core/materials 向上发现薄转发）。"""
+    return resolve_materials_yaml_path()
 
 
 def load_material_epsilon_r_tolerance(
@@ -359,30 +357,31 @@ def load_material_epsilon_r_tolerance(
     """
     path = Path(materials_path) if materials_path else _materials_path()
     if not path.exists():
-        return {"ok": False, "errors": [f"materials.yaml 不存在: {path}"]}
+        return error_envelope([f"materials.yaml 不存在: {path}"])
     try:
         import yaml
 
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        return {"ok": False, "errors": [f"materials.yaml 解析失败: {exc}"]}
+        return error_envelope([f"materials.yaml 解析失败: {exc}"])
     mats = (data or {}).get("materials") or {}
     mat = mats.get(str(material_key))
     if not isinstance(mat, dict):
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"materials.yaml 无材料条目: {material_key}"
-            f"（可用: {sorted(mats)}）"]}
-    out: dict[str, Any] = {
-        "ok": True, "declared": False, "material": str(material_key),
-        "materials_path": str(path), "source": "not_declared",
-    }
+            f"（可用: {sorted(mats)}）"],
+        )
+    out: dict[str, Any] = ok_envelope(declared=False, material=str(material_key), materials_path=str(path), source="not_declared")
     if mat.get("epsilon_r") is not None:
         try:
             out["epsilon_r"] = float(mat["epsilon_r"])
         except (TypeError, ValueError):
-            return {"ok": False, "errors": [
+            return error_envelope(
+                [
                 f"{material_key}.epsilon_r 数值非法: "
-                f"{mat.get('epsilon_r')!r}"]}
+                f"{mat.get('epsilon_r')!r}"],
+            )
     tol_abs = mat.get("epsilon_r_tol_abs")
     tol_pct = mat.get("epsilon_r_tol_pct")
     if tol_abs is None and tol_pct is None:
@@ -402,8 +401,7 @@ def load_material_epsilon_r_tolerance(
                 raise ValueError("epsilon_r_tol_pct 需要条目含 epsilon_r 数值")
             tol = out["epsilon_r"] * pct / 100.0
     except (TypeError, ValueError) as exc:
-        return {"ok": False,
-                "errors": [f"{material_key}.{declared_by}: {exc}"]}
+        return error_envelope([f"{material_key}.{declared_by}: {exc}"])
     out.update({
         "declared": True, "tol": tol, "declared_by": declared_by,
         "source": f"configs/materials.yaml:{material_key}:{declared_by}",
@@ -465,11 +463,11 @@ def derive_tolerances_from_fab_profile(
     provenance 以 dist 字段标注，不混同。
     """
     if not k_sigma > 0:
-        return {"ok": False, "errors": [f"k_sigma 必须 >0，收到 {k_sigma!r}"]}
+        return error_envelope([f"k_sigma 必须 >0，收到 {k_sigma!r}"])
     try:
         prof = load_profile(profile)
     except FabProfileError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     nominal_f = {k: float(v) for k, v in nominal.items()
                  if isinstance(v, (int, float)) and not isinstance(v, bool)}
     classes = _classify_tolerance_params(nominal_f, facts=facts)
@@ -532,17 +530,16 @@ def derive_tolerances_from_fab_profile(
                     "class": "epsilon_r", "nominal": nominal_f[name],
                     "declared": False, "source": "not_declared",
                     "detail": f"materials.yaml {material} 未声明 εr 容差"}
-    return {
-        "ok": True,
-        "sigmas": sigmas,
-        "tolerances": tolerances,
-        "provenance": provenance,
-        "epsilon_r_declaration": er_decl,
-        "k_sigma": float(k_sigma),
-        "profile": prof.name,
-        "profile_version": prof.profile_version,
-        "classes": classes,
-    }
+    return ok_envelope(
+        sigmas=sigmas,
+        tolerances=tolerances,
+        provenance=provenance,
+        epsilon_r_declaration=er_decl,
+        k_sigma=float(k_sigma),
+        profile=prof.name,
+        profile_version=prof.profile_version,
+        classes=classes,
+    )
 
 
 def resolve_tolerance_source(
@@ -567,8 +564,7 @@ def resolve_tolerance_source(
     params 覆盖/追加其上（source="tolerance_source:params"）。
     """
     if tolerance_source is None:
-        return {"ok": True, "mode": "arg", "sigmas": None,
-                "provenance": None}
+        return ok_envelope(mode="arg", sigmas=None, provenance=None)
     src: dict[str, Any]
     if isinstance(tolerance_source, (str, Path)):
         p = Path(tolerance_source)
@@ -578,30 +574,32 @@ def resolve_tolerance_source(
 
                 loaded = yaml.safe_load(p.read_text(encoding="utf-8"))
             except Exception as exc:
-                return {"ok": False,
-                        "errors": [f"tolerance_source YAML 解析失败: {exc}"]}
+                return error_envelope([f"tolerance_source YAML 解析失败: {exc}"])
             if not isinstance(loaded, dict):
-                return {"ok": False,
-                        "errors": [f"tolerance_source 文件顶层必须为映射: {p}"]}
+                return error_envelope([f"tolerance_source 文件顶层必须为映射: {p}"])
             src = dict(loaded)
         elif isinstance(tolerance_source, str) \
                 and not tolerance_source.endswith(".yaml"):
             src = {"fab_profile": tolerance_source}
         else:
-            return {"ok": False, "errors": [f"tolerance_source 文件不存在: {p}"]}
+            return error_envelope([f"tolerance_source 文件不存在: {p}"])
     elif isinstance(tolerance_source, dict):
         src = dict(tolerance_source)
     else:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"tolerance_source 必须为 dict/str/Path/None，"
-            f"收到 {type(tolerance_source).__name__}"]}
+            f"收到 {type(tolerance_source).__name__}"],
+        )
     prof_name = src.get("fab_profile")
     material = src.get("material") or default_material
     try:
         ks = float(src.get("k_sigma", k_sigma))
     except (TypeError, ValueError):
-        return {"ok": False, "errors": [
-            f"tolerance_source.k_sigma 数值非法: {src.get('k_sigma')!r}"]}
+        return error_envelope(
+            [
+            f"tolerance_source.k_sigma 数值非法: {src.get('k_sigma')!r}"],
+        )
     if prof_name:
         res = derive_tolerances_from_fab_profile(
             nominal, profile=str(prof_name), material=material,
@@ -609,28 +607,36 @@ def resolve_tolerance_source(
         if not res.get("ok"):
             return res
     else:
-        res: dict[str, Any] = {
-            "ok": True, "sigmas": {}, "tolerances": {}, "provenance": {},
-            "epsilon_r_declaration": None, "k_sigma": ks, "profile": None,
-            "profile_version": None,
-        }
+        res: dict[str, Any] = ok_envelope(
+            sigmas={},
+            tolerances={},
+            provenance={},
+            epsilon_r_declaration=None,
+            k_sigma=ks,
+            profile=None,
+            profile_version=None,
+        )
     sigmas = dict(res["sigmas"])
     tolerances = dict(res["tolerances"])
     provenance = dict(res["provenance"])
     explicit = src.get("params") or {}
     if not isinstance(explicit, dict):
-        return {"ok": False, "errors": ["tolerance_source.params 必须为映射"]}
+        return error_envelope(["tolerance_source.params 必须为映射"])
     for name, spec in explicit.items():
         name = str(name)
         tol = spec.get("tol") if isinstance(spec, dict) else spec
         try:
             tol_f = float(tol)
         except (TypeError, ValueError):
-            return {"ok": False, "errors": [
-                f"tolerance_source.params.{name}.tol 数值非法: {tol!r}"]}
+            return error_envelope(
+                [
+                f"tolerance_source.params.{name}.tol 数值非法: {tol!r}"],
+            )
         if not tol_f > 0.0:
-            return {"ok": False, "errors": [
-                f"tolerance_source.params.{name}.tol 必须 >0，收到 {tol_f!r}"]}
+            return error_envelope(
+                [
+                f"tolerance_source.params.{name}.tol 必须 >0，收到 {tol_f!r}"],
+            )
         sigmas[name] = tol_f / ks
         tolerances[name] = tol_f
         provenance[name] = {"class": "explicit", "tol": tol_f,
@@ -685,50 +691,50 @@ def _fab_yield_from_tolerance_source(
 ) -> dict[str, Any]:
     """fab_profile_yield 的 tolerance_source 分支（P2 单源正态多参数 MC）。"""
     if n < 1:
-        return {"ok": False, "errors": [f"n 必须 ≥1，收到: {n}"]}
+        return error_envelope([f"n 必须 ≥1，收到: {n}"])
     metric = str(spec.get("metric", ""))
     op = str(spec.get("op", ""))
     spec_value = float(spec.get("value", 0.0))
     if not metric or op not in ("max_below", "min_above"):
-        return {"ok": False,
-                "errors": ["spec 非法: metric/op 必填，"
-                           "op∈(max_below, min_above)"]}
+        return error_envelope(
+            ["spec 非法: metric/op 必填，"
+                           "op∈(max_below, min_above)"],
+        )
     nom = {k: float(v) for k, v in nominal.items()}
     res = resolve_tolerance_source(tolerance_source, nom)
     if not res.get("ok"):
-        return {"ok": False,
-                "errors": list(res.get("errors") or ["tolerance_source 解析失败"])}
+        return error_envelope(list(res.get("errors") or ["tolerance_source 解析失败"]))
     sigmas = {k: float(v) for k, v in res["sigmas"].items()}
     if not sigmas:
-        return {"ok": False,
-                "errors": ["tolerance_source 未派生出任何参数公差"
+        return error_envelope(
+            ["tolerance_source 未派生出任何参数公差"
                            "（检查名义参数分类/材料声明）"],
-                "tolerance_provenance": res["provenance"]}
+            tolerance_provenance=res["provenance"],
+        )
     specs_norm = [{"metric": metric, "op": op, "spec": spec_value}]
     mc = _mc_from_model(model, nom, sigmas, specs_norm, n=n, seed=seed)
     from rfauto.core.wcd import cpk_from_metric_stats
 
     cpk = cpk_from_metric_stats(mc["metric_stats"], specs_norm)
-    return {
-        "ok": True,
-        "yield_rate": mc["yield_rate"],
-        "n_draws": int(n),
-        "seed": int(seed),
-        "distribution": "normal_additive_single_source",
-        "perturb_params": sorted(sigmas),
-        "nominal_params": nom,
-        "tolerances": sigmas,
-        "tolerance_source": "tolerance_source_ref:"
+    return ok_envelope(
+        yield_rate=mc["yield_rate"],
+        n_draws=int(n),
+        seed=int(seed),
+        distribution="normal_additive_single_source",
+        perturb_params=sorted(sigmas),
+        nominal_params=nom,
+        tolerances=sigmas,
+        tolerance_source="tolerance_source_ref:"
                             + str(res.get("profile") or "explicit_params"),
-        "tolerance_provenance": res["provenance"],
-        "epsilon_r_declaration": res.get("epsilon_r_declaration"),
-        "profile": res.get("profile"),
-        "profile_version": res.get("profile_version"),
-        "spec": {"metric": metric, "op": op, "value": spec_value},
-        "metric_stats": mc["metric_stats"],
-        "implementation": mc["implementation"],
-        "cpk_per_spec": cpk["per_spec"],
-    }
+        tolerance_provenance=res["provenance"],
+        epsilon_r_declaration=res.get("epsilon_r_declaration"),
+        profile=res.get("profile"),
+        profile_version=res.get("profile_version"),
+        spec={"metric": metric, "op": op, "value": spec_value},
+        metric_stats=mc["metric_stats"],
+        implementation=mc["implementation"],
+        cpk_per_spec=cpk["per_spec"],
+    )
 
 
 def design_for_yield(
@@ -766,19 +772,17 @@ def design_for_yield(
     from rfauto.adapters.openems_templates import template_meta
 
     if not isinstance(specs, list) or not specs:
-        return {"ok": False, "errors": ["specs 必须是非空列表"]}
+        return error_envelope(["specs 必须是非空列表"])
     try:
         meta = template_meta(template)
     except KeyError:
-        return {"ok": False, "errors": [f"未知模板: {template}"]}
+        return error_envelope([f"未知模板: {template}"])
     dfm = check_template_dfm(template, params, profile=profile,
                              material=material, copper_oz=copper_oz,
                              surface_finish=surface_finish,
                              board_thickness_mm=board_thickness_mm)
     if not dfm.get("ran"):
-        return {"ok": False,
-                "errors": list(dfm.get("errors") or ["DFM 门未运行"]),
-                "dfm": dfm}
+        return error_envelope(list(dfm.get("errors") or ["DFM 门未运行"]), dfm=dfm)
     nominal = {k: float(v) for k, v in meta.get("nominal_params", {}).items()
                if isinstance(v, (int, float)) and not isinstance(v, bool)}
     nominal.update({k: float(v) for k, v in (params or {}).items()})
@@ -792,50 +796,106 @@ def design_for_yield(
             nominal, profile=profile, material=material,
             k_sigma=k_sigma, facts=facts)
     if not res.get("ok"):
-        return {"ok": False, "errors": list(res.get("errors") or []),
-                "dfm": dfm}
+        return error_envelope(list(res.get("errors") or []), dfm=dfm)
     sigmas = {k: float(v) for k, v in res["sigmas"].items()}
     if not sigmas:
-        return {"ok": False,
-                "errors": ["公差单源未派生出任何参数"
+        return error_envelope(
+            ["公差单源未派生出任何参数"
                            "（检查模板几何参数分类与材料 εr 声明）"],
-                "dfm": dfm,
-                "tolerance_provenance": res["provenance"]}
+            dfm=dfm,
+            tolerance_provenance=res["provenance"],
+        )
     specs_norm: list[dict[str, Any]] = []
     for s in specs:
         op = str(s.get("op", ""))
         val = s.get("spec", s.get("value"))
         if not s.get("metric") or val is None \
                 or op not in ("max_below", "min_above", "mean_within"):
-            return {"ok": False,
-                    "errors": [f"spec 非法（metric/op/value 必填，op∈"
+            return error_envelope(
+                [f"spec 非法（metric/op/value 必填，op∈"
                                f"max_below/min_above/mean_within）: {s!r}"],
-                    "dfm": dfm}
+                dfm=dfm,
+            )
         specs_norm.append({"metric": str(s["metric"]), "op": op,
                            "spec": val})
     mc = _mc_from_model(model, nominal, sigmas, specs_norm, n=n, seed=seed)
     from rfauto.core.wcd import cpk_from_metric_stats
 
     cpk = cpk_from_metric_stats(mc["metric_stats"], specs_norm)
-    return {
-        "ok": True,
-        "template": template,
-        "dfm": dfm,
-        "dfm_pass": bool(dfm.get("ok")),
-        "profile": res.get("profile"),
-        "nominal_params": nominal,
-        "tolerances": sigmas,
-        "tolerance_provenance": res["provenance"],
-        "epsilon_r_declaration": res.get("epsilon_r_declaration"),
-        "k_sigma": float(res.get("k_sigma", k_sigma)),
-        "n_draws": int(n),
-        "seed": int(seed),
-        "yield_mc": {
+    return ok_envelope(
+        template=template,
+        dfm=dfm,
+        dfm_pass=bool(dfm.get("ok")),
+        profile=res.get("profile"),
+        nominal_params=nominal,
+        tolerances=sigmas,
+        tolerance_provenance=res["provenance"],
+        epsilon_r_declaration=res.get("epsilon_r_declaration"),
+        k_sigma=float(res.get("k_sigma", k_sigma)),
+        n_draws=int(n),
+        seed=int(seed),
+        yield_mc={
             "yield_rate": mc["yield_rate"],
             "nominal_metrics": mc["nominal_metrics"],
             "metric_stats": mc["metric_stats"],
             "implementation": mc["implementation"],
         },
-        "cpk_per_spec": cpk["per_spec"],
-        "cpk_min": cpk.get("min"),
+        cpk_per_spec=cpk["per_spec"],
+        cpk_min=cpk.get("min"),
+    )
+
+
+def check_stub_backdrill_dfm(
+    via_span_mm: float,
+    backdrill_depth_mm: float,
+    min_remaining_mm: float,
+    er_eff: float,
+    *,
+    nyquist_ghz: float | None = None,
+) -> dict[str, Any]:
+    """背钻残桩 notch 门 JSON 面（r4 HS-2 挂 fab DFM；CLI/MCP 后续批）。
+
+    core.check_backdrill 薄壳（数值只在确定性内核，#7）：残余桩长 =
+    max(via_span−backdrill_depth, 0) → fres=c/(4L√εr_eff) 与奈奎斯特带
+    比对。er_eff **显式传入**（FabProfile 无材料 er 字段；叠层名义值可
+    取 configs/materials.yaml 条目经 load_material_epsilon_r_tolerance
+    解析）。返回 {ran, ok, fres_ghz?, residual_stub_mm, violations,
+    info, checked}：``*_INFO`` 信息行（未给 nyquist_ghz 时的 fres 报告）
+    落 info **不算违规**，ok 只对硬违规判定；非法入参 → {ran: False,
+    ok: None, errors}（不抛异常，与 check_template_dfm 同风格）。
+    """
+    from rfauto.core.fab_check import check_backdrill, stub_resonance_ghz
+
+    try:
+        rows = check_backdrill(
+            via_span_mm, backdrill_depth_mm, min_remaining_mm, er_eff,
+            nyquist_ghz=nyquist_ghz)
+        span = float(via_span_mm)
+        depth = float(backdrill_depth_mm)
+        min_rem = float(min_remaining_mm)
+        er = float(er_eff)
+    except FabProfileError as exc:
+        return {"ran": False, "ok": None, "errors": [str(exc)]}
+    info = [r for r in rows if str(r.get("code", "")).endswith("_INFO")]
+    violations = [r for r in rows
+                  if not str(r.get("code", "")).endswith("_INFO")]
+    residual = max(span - depth, 0.0)
+    out: dict[str, Any] = {
+        "ran": True,
+        "ok": not violations,
+        "residual_stub_mm": round(residual, 9),
+        "violations": violations,
+        "info": info,
+        "checked": {
+            "via_span_mm": span,
+            "backdrill_depth_mm": depth,
+            "min_remaining_mm": min_rem,
+            "er_eff": er,
+            "nyquist_ghz": (float(nyquist_ghz)
+                            if nyquist_ghz is not None else None),
+        },
     }
+    if residual > 0.0:
+        # fres 确定性重算（与违规行同内核闭式）——全过/全信息路径也有值
+        out["fres_ghz"] = round(stub_resonance_ghz(residual, er), 9)
+    return out

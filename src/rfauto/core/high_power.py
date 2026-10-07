@@ -1,4 +1,4 @@
-r"""高功率效应预筛确定性内核。
+r"""D15 高功率效应预筛确定性内核（§10.3 D15 / §10.21 第九轮）。
 
 确定性纯函数、零 IO、JSON 可序列化；数值全部落在本内核，LLM/agent 只解释。
 
@@ -49,6 +49,7 @@ r"""高功率效应预筛确定性内核。
 
 设计约束：core 叶子层（仅 import numpy 与同层 calculators），非法输入显式
 ValueError，不静默兜底。
+精度档案：knowledge/precision_profiles.yaml#high_power（行为=REFUSE，last_verified=2026-09-12）。
 """
 
 from __future__ import annotations
@@ -258,7 +259,7 @@ def breakdown_from_field_peak(
 
     口径：margin_ratio = E_bd/|E|_peak，margin_db = 20*log10(margin_ratio)。
     material 命中 calculators 材料表且未给覆盖强度时，直接委托
-    calculators.parallel_plate_breakdown_margin（保证与 calculators 既有口径逐位
+    calculators.parallel_plate_breakdown_margin（保证与已入库 E4 口径逐位
     一致）；否则按同一闭式本地计算（含 override / 基材扩展表）。
 
     Args:
@@ -732,7 +733,7 @@ def prescreen(params: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def predict(params: Mapping[str, Any]) -> dict[str, float]:
-    """SurrogateModel 契约风格：平铺 params → 平铺数值 metrics（同参数同输出）。
+    """E3 契约风格：平铺 params → 平铺数值 metrics（同参数同输出）。
 
     布尔以 1.0/0.0 表示；未计算的分项不出现在 metrics 中。
     """

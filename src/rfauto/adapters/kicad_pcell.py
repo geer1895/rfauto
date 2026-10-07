@@ -1,4 +1,3 @@
-# ruff: noqa: F821
 """KiCad P-Cell 库（子进程方式）。
 
 设计原则：
@@ -25,7 +24,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-# KiCad Python 路径
+from rfauto.adapters.kicad_extract import resolve_kicad_python
+
+# KiCad Python 路径（AU-8 同款：解析单源走 kicad_extract.resolve_kicad_python
+# ——显式参 kicad_python > env RFAUTO_KICAD_PYTHON > 本模块 KICAD_PYTHON 常量
+# 兜底；本常量仍是活的末级缺省，既有测试隔离面按本模块常量打桩。
+# KICAD_SITE_PACKAGES 不随 env——生成脚本内 sys.path 注入仍用缺省安装位，
+# env 只换解释器，非缺省安装位场景由显式参路径的调用方自行保证）。
 KICAD_PYTHON = r"E:\KiCad\bin\python.exe"
 KICAD_SITE_PACKAGES = r"E:\KiCad\bin\Lib\site-packages"
 
@@ -158,13 +163,14 @@ def generate_pcb(
     Args:
         output_path: 输出 .kicad_pcb 文件路径
         design: PCB 设计描述
-        kicad_python: KiCad Python 路径（默认取模块常量 KICAD_PYTHON）
+        kicad_python: KiCad Python 路径（显式参 > env RFAUTO_KICAD_PYTHON >
+            缺省安装位常量，见 kicad_extract.resolve_kicad_python）
 
     Returns:
         PCBGenerationResult
     """
     output_path = Path(output_path)
-    python_exe = kicad_python or KICAD_PYTHON
+    python_exe = resolve_kicad_python(kicad_python, default=KICAD_PYTHON)
 
     # DP-7 P3：导出前 DFM 门（best-effort，#105——绝不阻塞导出，失败留痕
     # None/ran=False；剖面缺失或形状非法静默降级）。
@@ -306,9 +312,9 @@ for pad_data in pcb_data.get("pads", []):
 # 保存
 board.Save(r"{output_pcb}")
 print(f"PCB saved: {output_pcb}")
-print(f"Traces: {len(pcb_data.get('traces', []))}")  # noqa: F821
-print(f"Vias: {len(pcb_data.get('vias', []))}")  # noqa: F821
-print(f"Pads: {len(pcb_data.get('pads', []))}")  # noqa: F821
+print(f"Traces: {{len(pcb_data.get('traces', []))}}")
+print(f"Vias: {{len(pcb_data.get('vias', []))}}")
+print(f"Pads: {{len(pcb_data.get('pads', []))}}")
 '''
 
 

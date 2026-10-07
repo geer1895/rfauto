@@ -20,6 +20,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
 from rfauto.service.health_service import (
     _load_sparams_csv,
     health_check_run,
@@ -80,9 +81,12 @@ def load_playbook(path: str | Path | None = None) -> dict[str, Any]:
                 "rules": []}
     if not isinstance(data, dict) or not isinstance(data.get("rules"), list):
         return {"ok": False, "reason": "playbook 缺 rules 列表", "rules": []}
-    return {"ok": True, "path": str(p), "schema": data.get("schema"),
-            "detector_vocab": list(data.get("detector_vocab") or []),
-            "rules": data["rules"]}
+    return ok_envelope(
+        path=str(p),
+        schema=data.get("schema"),
+        detector_vocab=list(data.get("detector_vocab") or []),
+        rules=data["rules"],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +312,7 @@ def collect_run_features(run_dir: str | Path) -> dict[str, Any]:
                 f"{art['file']}: {art['verdict_raw']}")
 
     features["fingerprints"] = dict(sorted(fingerprints.items()))
-    return {"ok": True, **features}
+    return ok_envelope(**features)
 
 
 # ---------------------------------------------------------------------------
@@ -373,16 +377,15 @@ def explain_run(
     matched_rules.sort(key=lambda r: (-len(r["matched_fingerprints"]),
                                       str(r["root_cause_family"])))
     candidates = [r["root_cause_family"] for r in matched_rules]
-    return {
-        "ok": True,
-        "run_dir": str(run_dir),
-        "playbook": {"path": book["path"], "schema": book.get("schema"),
+    return ok_envelope(
+        run_dir=str(run_dir),
+        playbook={"path": book["path"], "schema": book.get("schema"),
                      "n_rules": len(book["rules"])},
-        "meta": collected.get("meta"),
-        "health_verdict": (collected.get("health") or {}).get("verdict"),
-        "fingerprints": fingerprints,
-        "matched_rules": matched_rules,
-        "candidates": candidates,
-        "skipped_rules": skipped_rules,
-        "overall": "candidates" if matched_rules else "no_hit",
-    }
+        meta=collected.get("meta"),
+        health_verdict=(collected.get("health") or {}).get("verdict"),
+        fingerprints=fingerprints,
+        matched_rules=matched_rules,
+        candidates=candidates,
+        skipped_rules=skipped_rules,
+        overall="candidates" if matched_rules else "no_hit",
+    )

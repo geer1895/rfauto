@@ -421,6 +421,24 @@ def test_corrupt_state_journal_resets_and_recomputes(tmp_path) -> None:
     assert len(calls) == 10, "期刊损坏不得触发真实重算（产物面仍可校验）"
 
 
+def test_non_utf8_state_journal_resets_as_corrupt(tmp_path) -> None:
+    """E1-2（审查批 2026-10-04）：非法 UTF-8 字节的期刊同属损坏=不可信，
+    与 OSError/JSONDecodeError 并列走 .corrupt 留痕+状态重置——旧 except
+    漏接 UnicodeDecodeError 会带原始解码错炸出加载链。"""
+    run_dir = tmp_path / "run_bad_utf8"
+    _seed_inputs(run_dir)
+    calls: list[str] = []
+    _run(tmp_path, run_dir, _chain_executors(calls), tmp_path / "cache",
+         solve_lock=tmp_path / "solve.lock")
+    assert len(calls) == 10
+    (run_dir / DAG_STATE_FILE).write_bytes(b"\xff\xfe{\x00bad utf-8 \xe4\xbd")
+    res = _run(tmp_path, run_dir, _chain_executors(calls),
+               tmp_path / "cache", solve_lock=tmp_path / "solve.lock")
+    assert (run_dir / (DAG_STATE_FILE + ".corrupt")).is_file()
+    assert res["n_hit"] == 10 and res["n_recompute"] == 0
+    assert len(calls) == 10
+
+
 # ─── 跨 run 零拷贝缓存复用 ───────────────────────────────────────────────────
 
 def test_cross_run_cache_hit_zero_copy(tmp_path) -> None:
@@ -477,6 +495,57 @@ def test_solve_mutex_second_writer_blocked(tmp_path) -> None:
     assert m2.acquire(max_wait_s=0.0) is True    # 释放后可入（串行推进）
     m2.release()
     assert not lock.exists()
+
+
+def test_solve_mutex_bounded_wait_failure_reachable(tmp_path) -> None:
+    """S-1 C-01：lock_max_wait_s 透传 solve 互斥后，"#261 获取失败"分支
+    可达——旧实现 acquire 不传 max_wait_s（缺省 -1 无限等）永真，该分支
+    为死码；有界等待（0=单次尝试）占不到锁时 solve 节点判 failed 留痕。"""
+    run_dir = tmp_path / "run1"
+    _seed_inputs(run_dir)
+    solve_lock = tmp_path / "dag_solve.lock"
+    holder = SolveMachineMutex(solve_lock)      # 本进程 pid=活锁持有者
+    assert holder.acquire(max_wait_s=0.0) is True
+    calls: list[str] = []
+    try:
+        res = run_dag(_plan_chain([("r1", "render"), ("s1", "solve")]),
+                      run_dir, _chain_executors(calls),
+                      cache_dir=tmp_path / "cache", engine_version="fake-1",
+                      solve_lock_path=solve_lock, lock_max_wait_s=0.0)
+    finally:
+        holder.release()
+    assert res["verdict"] == "ABORTED"
+    assert res["statuses"]["s1"] == "failed"
+    assert "s1" not in calls, "互斥占锁期间 solve 不应派发"
+    state = json.loads((run_dir / DAG_STATE_FILE).read_text(encoding="utf-8"))
+    assert any("#261 机器互斥获取失败" in n
+               for n in state["nodes"]["s1"].get("notes", []))
+
+
+def test_solve_mutex_acquire_passes_runner_max_wait(tmp_path,
+                                                    monkeypatch) -> None:
+    """S-1 C-01：solve 互斥 acquire 透传 runner 的 lock_max_wait_s（显式
+    有界值与缺省 -1=无限等两态都钉；语义与运行级锁 self.lock_max_wait_s
+    同源）。"""
+    original = SolveMachineMutex.acquire
+    recorded: list[float] = []
+
+    def spy(self, **kwargs):
+        recorded.append(float(kwargs.get("max_wait_s")))
+        return original(self, **kwargs)
+
+    monkeypatch.setattr(SolveMachineMutex, "acquire", spy)
+    for run_name, expected in (("run_a", 7.5), ("run_b", -1.0)):
+        run_dir = tmp_path / run_name
+        _seed_inputs(run_dir)
+        res = run_dag(_plan_chain([("s1", "solve")]), run_dir,
+                      _chain_executors([]), cache_dir=tmp_path / "cache",
+                      engine_version=f"fake-{run_name}",
+                      solve_lock_path=tmp_path / f"{run_name}.lock",
+                      **({"lock_max_wait_s": 7.5}
+                         if expected >= 0 else {}))
+        assert res["verdict"] == "COMPLETE"
+    assert recorded == [7.5, -1.0]
 
 
 def test_lock_stale_takeover_after_dead_holder(tmp_path, monkeypatch) -> None:

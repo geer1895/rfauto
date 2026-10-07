@@ -3,7 +3,7 @@
 数值只在确定性内核（铁律 7）：本模块只做参数校验与异常到 JSON 的翻译，
 一切物理数字来自 core/calculators.py 的闭式纯函数。
 
-实验计算器开关：experimental=True 的键
+实验计算器开关（W1⑨，2026-09-16 用户口径）：experimental=True 的键
 （符号回归归纳公式等）默认拒绝运行——run_calculator 显式传
 allow_experimental=True，或配置 calculators.allow_experimental: true
 （env RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL）放行；清单始终列出但带
@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from rfauto.core.calculators import CALCULATOR_REGISTRY
+from rfauto.service.envelope import ok_envelope
 
 
 def _experimental_allowed_by_config() -> bool:
@@ -45,11 +46,12 @@ def list_calculators(include_experimental: bool = True) -> dict[str, Any]:
         name for name in CALCULATOR_REGISTRY.names(include_experimental=True)
         if CALCULATOR_REGISTRY.is_experimental(name)
     ]
-    return {"ok": True,
-            "calculators": calculators,
-            "include_experimental": bool(include_experimental),
-            "n_experimental": len(experimental_names),
-            "experimental": experimental_names}
+    return ok_envelope(
+        calculators=calculators,
+        include_experimental=bool(include_experimental),
+        n_experimental=len(experimental_names),
+        experimental=experimental_names,
+    )
 
 
 def run_calculator(name: str, params: dict[str, Any] | None = None, *,
@@ -89,5 +91,4 @@ def run_calculator(name: str, params: dict[str, Any] | None = None, *,
         return {"ok": False, "error": f"参数不匹配: {exc}"}
     except (ValueError, ZeroDivisionError, OverflowError, ArithmeticError) as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "calculator": name, "params": params, "result": result,
-            "experimental": bool(spec.experimental)}
+    return ok_envelope(calculator=name, params=params, result=result, experimental=bool(spec.experimental))

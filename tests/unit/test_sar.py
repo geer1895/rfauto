@@ -204,3 +204,15 @@ class TestServiceEnvelope:
         assert rep["ok"] is True
         err = sar_report_from_grid([[1.0]], [[0.0]], 1.0, 1000.0, 1e-3)
         assert err["ok"] is False and "3D" in err["error"]
+
+
+def test_sar_report_help_renders_without_markup_error():
+    """E2-1 回归钉：sar report --help 可用（help 文本禁 rich 关闭标记
+    `[/x]`——#305 族"help 特殊字符炸 help"，MarkupError 即此红）。"""
+    from typer.testing import CliRunner
+
+    from rfauto.cli.main import app
+
+    r = CliRunner().invoke(app, ["sar", "report", "--help"])
+    assert r.exit_code == 0, r.output
+    assert "field_npz" in r.output

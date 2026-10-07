@@ -289,3 +289,65 @@ def test_calibration_report_on_exact_synthetic_family_is_calibrated(
     assert mline["coverage_ratio"] == pytest.approx(1.0)
     assert mline["loo_max_rel_error"] is not None
     assert mline["loo_max_rel_error"] <= 0.01
+
+
+# --------------------------------------------------------------------------- #
+# S-1 C-02 2026-10-04：solve_s 哨兵/拟合双层校验（ZeroDivisionError 收口）
+# --------------------------------------------------------------------------- #
+
+def test_duration_sample_rejects_negative_and_nonfinite_solve_s() -> None:
+    """构造期形状校验：负值/NaN/inf 的 solve_s 显式 ValueError（带 source）。"""
+    for bad in (-1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="solve_s"):
+            DurationSample(mesh_mm=0.4, solve_s=bad, source="synthetic/bad")
+
+
+def test_duration_sample_zero_sentinel_stays_legal_for_prediction() -> None:
+    """solve_s=0=未申报哨兵（预测查询样本合法）——构造不炸、fit 拒绝
+    （分层语义：形状层管负值/非有限，拟合层管严格正）。"""
+    sample = DurationSample(mesh_mm=0.4, source="synthetic/query")
+    assert sample.solve_s == 0.0
+
+
+def test_robust_fit_rejects_nonpositive_solve_s_with_source_context() -> None:
+    """fit 严格 solve_s>0 预校验：0 哨兵样本入拟合集此前直穿 loo 的
+    /solve_s 除法（ZeroDivisionError 裸炸），现显式 ValueError 列病灶
+    source（哨兵层不豁免——拟合必须带实测值）。"""
+    samples = _exact_offset_power_samples(4)
+    poisoned = [*samples, DurationSample(mesh_mm=0.35, solve_s=0.0,
+                                         source="synthetic/sentinel")]
+    with pytest.raises(ValueError, match="synthetic/sentinel"):
+        RobustDurationPredictor.fit(poisoned)
+    # 非法样本清出后同批拟合照常
+    assert RobustDurationPredictor.fit(samples).status == "calibrated"
+
+
+# --------------------------------------------------------------------------- #
+# S-1 C-09 2026-10-04：conv entries 逐条守卫（对齐 load_duration_sample_json）
+# --------------------------------------------------------------------------- #
+
+def test_loader_conv_malformed_entries_skipped_with_tags(tmp_path: Path) -> None:
+    """缺键/非 dict/wall_s 非正条目逐条记 skipped（带 #index 上下文），
+    良性条目照常装载——旧实现缺键直接 KeyError 炸掉整个装载器。"""
+    runs = tmp_path / "runs"
+    bench = runs / "benchmark"
+    for mesh in (0.6, 0.4):
+        d = bench / f"mline_m{mesh:g}"
+        d.mkdir(parents=True)
+        (d / "simulation.py").write_text(_simulation_py(mesh), encoding="utf-8")
+    (bench / "mline_mesh_convergence.json").write_text(
+        json.dumps({"entries": [
+            {"mesh_mm": 0.6, "ok": True, "wall_s": 239},      # 良性
+            "not-a-dict",                                       # 非 dict
+            {"mesh_mm": 0.4},                                   # 缺 wall_s
+            {"wall_s": 497},                                    # 缺 mesh_mm
+            {"mesh_mm": 0.3, "wall_s": 0},                      # wall_s 非正
+            {"mesh_mm": "garbage", "wall_s": 100},              # mesh 非数值
+        ]}), encoding="utf-8")
+    (runs / "ratrace_arbitration").mkdir(parents=True)  # ratrace 源缺席→best-effort
+    loaded = load_openems_duration_samples(runs)
+    assert [s.solve_s for s in loaded["families"][FAMILY_MLINE]] == [239.0]
+    skipped_text = "\n".join(loaded["skipped"])
+    for needle in ("#1", "#2", "#3", "#4", "#5"):
+        assert needle in skipped_text, f"畸形条目 {needle} 未留痕"
+    assert "#0" not in skipped_text, "良性条目被误 skip"

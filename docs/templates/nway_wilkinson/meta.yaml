@@ -1,0 +1,47 @@
+f0_ghz: 2.5
+n_ports: 5
+template: nway_wilkinson
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- w_arm_mm
+- w_feed_mm
+- arm_len_mm
+- iso_r_ohm
+nominal_params:
+  w_arm_mm: 0.6035
+  w_feed_mm: 1.1134
+  arm_len_mm: 18.1624
+  iso_r_ohm: 100.0
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: 全 S 矩阵 5×5 @ .s5p（进程隔离激励轮转 5 run，#208 口径推广；openems_rotation
+  n_ports 参数化；port1=输入、port2..5=输出 x=∓(XA1±XA2)）。裁判=内核 synthesize_nway_wilkinson(tree)
+  阻抗级：@f0 均分 −6.02dB（1/4 功率）、全端口匹配 |S11| 深谷、输出对隔离（每级 R=2·Z0
+  经典 2-way 单元级联保证）
+topology: 'N-way Wilkinson 功分器（TA-4，树形 N=4）：输入馈线（port1，−BOARD 板边）→
+  一级 T 叉（双 λ/4 臂 √2·Z0，x 向并列间距 G1=9mm，wilkinson GAP 口径）→ 50Ω 支线 →
+  二级双 T 叉（各叉臂间距 G2=5.5mm）→ 四路 50Ω 输出馈线（port2..5，+BOARD 板边）；隔离电阻
+  R=2·Z0 各臂端面跨接（LumpedElement ny=0，共 3 支）；全金属同层零交叉。拓扑选择：内核
+  star 分支（Pon 1961 浮点节点）单层 N≥3 不可布（浮点节点/Δ 环闭合路径必与边界馈线交叉）——渲染取
+  内核 tree 分支（阻抗级同源），N=2 与 wilkinson 模板同解、N≥8 超轮转管线规模（渲染守卫拒
+  n_way≠4）'
+param_semantics: 'w_arm_mm=λ/4 臂宽（√2·Z0=70.7107Ω HJ 精算，gysel 同源档）；w_feed_mm=50Ω
+  馈线/支线/输出线宽（1.1134，mline 同源档）；arm_len_mm=臂 λ/4 长（εeff=2.72456 精算
+  18.1624mm@2.5GHz）；iso_r_ohm=隔离电阻值（=2·Z0，LumpedElement R 值——进元件值不进导体几何，qwt
+  z_load_ohm 同口径豁免）'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；全部盒缘（叉臂带缘/T
+  条缘/电阻盒边/支线与输出馈线缘）+ 端口 junction 精确入网（#198）；显式近场线 10µm 地板（#349）；全轴
+  1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）'
+smoke_note: 未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①λ/4
+  臂窄带理想口径——T 叉/臂端电阻位结点寄生不进闭式裁判（gysel/branchline 同口径，离线裁判=skrf
+  理想 2-way 单元级联装配）；②隔离电阻 LumpedElement 零厚度集总（qwt 端接同法，寄生 L/C
+  未建模）；③star 分支单层不可布为渲染面拓扑约束（非内核语义变更）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: '全链内核精算（#1c，零手抄毫米数；nway_wilkinson_design_params() 缺省实参可重算，单测钉逐键
+  rtol 1e-9）：synthesize_nway_wilkinson(n=4, z0=50, topology=''tree'') → 臂 √2·Z0=70.7107Ω、隔离
+  R=2·Z0=100Ω（2 级 6 臂 3 电阻，内核 params 单源）→ HJ inverse_width(70.7107)@2.5GHz
+  rogers4350b_h0.508 → w_arm=0.6035mm（gysel 臂同源档，forward_z0 εeff=2.72456）→ λ/4=18.1624mm；w_feed=inverse_width(50)=1.1134mm（mline/W50_MM
+  同源档）。布局常量 G1=9/G2=5.5/Y_T1=−45/Y_T2=−10mm 为版图选择（非电学量；内对输出馈线
+  3·h_sub 净空与 #347 分离由 _nway_layout 守卫核算）。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'

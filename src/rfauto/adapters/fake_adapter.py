@@ -24,7 +24,7 @@ from rfauto.core.interfaces import (
     SolveReport,
 )
 
-# ─── fake 联合校准（fake ↔ openEMS，铁律：先验模型再校准）──────────
+# ─── fake 联合校准（fake ↔ openEMS， 硬限 1b：先验模型再校准）──────────
 
 _CAL_CACHE: dict[str, Any] | None = None
 
@@ -32,7 +32,7 @@ _CAL_CACHE: dict[str, Any] | None = None
 # v0（2026-09-03）：wilkinson 撤绝对 eps_eff 锚（旧锚 3.28 是 branchline 真机
 # 值，误用于 wilkinson 会把 f0 压低 10%，P0 FAIL 复盘时发现），谐振频率改由
 # synthesis.forward_z0 按线宽物理计算 εeff。
-# v1（裁定口径，位置锚）：wilkinson 落**位置锚（乘法缩放
+# v1（2026-09-23 用户拍板，上批遗留拍板项①）：wilkinson 落**位置锚（乘法缩放
 # 语义）**——eps_eff_scale=K=3.54/2.725 对 HJ 物理推导值做频率尺度修正
 # （3.54=openEMS 名义谷位 2.2GHz λ/4 反推，2.725=HJ 参考点 series 臂 εeff
 # @2.4GHz，实测 2.724642；缩放语义与实验推导口径同源，拒绝绝对覆盖）。
@@ -78,7 +78,9 @@ def load_fake_calibration(path: str | Path | None = None) -> dict[str, dict[str,
                     merged.setdefault(model, {}).update(
                         {k: float(v) for k, v in kv.items() if isinstance(v, (int, float))})
     except Exception:
-        pass  # best-effort（#105）：校准缺失不阻塞求解
+        # 兜 yaml 模块缺失/配置文件缺失/内容损坏/键非数值等一切读配置侧异常——
+        # 校准只是锚点修正（#105 best-effort），任一异常都退回内置默认锚，不阻塞求解
+        pass
     _CAL_CACHE = merged
     return merged
 
@@ -201,9 +203,6 @@ def _wilkinson_sparams_3port(
     s11_far = float(np.clip(s11_far_lin, s11_min + 0.01, 0.7))
     s11_mag = s11_far - (s11_far - s11_min) * resonance
 
-    # 传输：S21 = S31 = -j/√2 @f0（等功率分配 + 传输相位 -θ）
-    s21_complex = (1 / np.sqrt(2)) * np.exp(-1j * theta)
-
     # 隔离：f0 处最好（一阶 -30dB），随失谐线性退化（封顶 -15dB）
     s23_mag = 0.03 + 0.12 * np.minimum(np.abs(delta), 0.3)
 
@@ -217,24 +216,31 @@ def _wilkinson_sparams_3port(
     s[:, 1, 1] = s11_mag * p2  # S22
     s[:, 2, 2] = s11_mag * p3  # S33
 
+    # 能量守恒透射因子（QM-1 无源门修复）：|S21| 全带恒定 1/√2 会在失谐区
+    # 与反射能量相加超界（|S11|=0.7 时行范数 √1.49）——透射幅度按可用功率
+    # √(1-|S_kk|²) 逐端口服乘，随失谐同步下降（物理：失配反射吃掉分配功率）；
+    # 0.995 因子给隔离电阻/辐射损耗留余量。
+    t_in = np.sqrt(np.maximum(0.0, 1.0 - s11_mag**2)) * 0.995
+    t21 = (1 / np.sqrt(2)) * np.exp(-1j * theta) * t_in * t_in
+
     # 输入 → 输出（互易）
-    s[:, 1, 0] = s21_complex  # S21
-    s[:, 0, 1] = s21_complex  # S12
-    s[:, 2, 0] = s21_complex  # S31
-    s[:, 0, 2] = s21_complex  # S13
+    s[:, 1, 0] = t21  # S21
+    s[:, 0, 1] = t21  # S12
+    s[:, 2, 0] = t21  # S31
+    s[:, 0, 2] = t21  # S13
 
     # 输出间隔离（互易）
     s23_complex = s23_mag * p2 * p3.conj()
     s[:, 1, 2] = s23_complex  # S23
     s[:, 2, 1] = s23_complex  # S32
 
-    # 确保 passivity：逐行归一化
+    # 无源守卫：σmax(S) ≤ 1 是充要判据（行和/元素界均不充分——QM-1 实测
+    # 行归一漏 σmax=1.184）。隔离项超界时按 σmax 等比收缩（只发生在深失谐
+    # s23_mag 大值点，f0 附近 |S21|²+|S11|²+|S23|²<1 不触发）。
     for i in range(n):
-        row_mag = np.sum(np.abs(s[i]) ** 2, axis=1)
-        scale = np.sqrt(row_mag)
-        max_scale = np.max(scale)
-        if max_scale > 0.99:
-            s[i] *= 0.95 / max_scale
+        sv = np.linalg.svd(s[i], compute_uv=False)
+        if sv[0] > 1.0:
+            s[i] /= sv[0] * 1.001
 
     return s
 
@@ -324,9 +330,11 @@ def _patch_sparams_1port(
     矩形贴片：λ/2 谐振器，|S11| 远离 f_res 趋近全反射 s11_far_lin，
     在 f_res 处下陷到 s11_min_lin（馈电匹配物理值，Lorentzian 谷形）。
     匹配深度物理来源（一阶传输线模型）：
-        R_in(x0) = R_edge·cos²(π·x0/L)，R_edge ≈ 60·λ0/W
-    其中 x0 自辐射边起算（Balanis 谐振腔模型一阶近似，忽略 G12 与有限
-    基板厚度修正）；s11_min = |（R_in-Z0)/(R_in+Z0)|。
+        R_in(off) = R_edge·sin²(π·off/L)，R_edge ≈ 60·λ0/W
+    其中 off=feed_offset 自贴片中心沿谐振轴起算（openEMS 官方教程口径
+    x=-off 同基，#154 单源化 2026-10-03；等价 Balanis 自边形式
+    R_edge·cos²(π·y0/L)，y0=L/2−off 为自辐射边 inset 深度；谐振腔模型
+    一阶近似，忽略 G12 与有限基板厚度修正）；s11_min = |(R_in-Z0)/(R_in+Z0)|。
     patch_len 决定 f_res（λ/2 反推），patch_w/feed_offset 决定谷深。
 
     端口契约：patch 物理上 1 端口（coax feed，0da followUp②）——返回
@@ -929,7 +937,7 @@ def _hairpin_sparams(
     """发夹线带通滤波器解析（WP2.3 滤波器族）——耦合矩阵理想频响。
 
     电气量 (k_list, Q_e) 优先：由几何反演给出（gap→k KJ 闭式、tap_frac→Q_e 抽头
-    闭式 × c(τ)，在适配器派发处完成，收口 A4 接通）；缺省时退回 C13
+    闭式 × c(τ)，在适配器派发处完成，2026-09-16 收口 A4 接通）；缺省时退回 C13
     设计点（fbw/rl_db 常数锚：k=FBW·|M_{i,i+1}|、Q_e=1/(FBW·|M_{0,1}|²)，与旧口径
     逐位一致）。矩阵经 hairpin_coupling_matrix 以规范 fbw_g=fbw 重归一（规范不变，
     见其 docstring），响应走 core/calculators coupling_matrix_response（S22=S11/
@@ -1064,7 +1072,7 @@ def _coupled_bpf_sparams(
     - w_feed_mm 只进几何（50Ω 线宽由 HJ 综合定），不进电气模型——同
       atten_pi/atten_t 的 w_mm 口径，如实标注。
     已知口径限制同裁判：宽度台阶不连续性、开路端边缘导纳残差、KJ 色散
-    不进模型（EM 冒烟实测其总量，平行耦合 BPF 战役段）。
+    不进模型（EM 冒烟实测其总量，平行耦合 BPF 段）。
     """
     from rfauto.adapters.openems_templates import (
         _coupled_bpf_section_lengths_mm,
@@ -1106,6 +1114,45 @@ def _coupled_bpf_sparams(
 # 副本（同 _ANT2_TEMPLATES 口径：fake 对 openems_templates 只做惰性导入）
 _C3_TEMPLATES: tuple[str, ...] = ("interdigital", "combline", "sir_bpf")
 
+# c3.l_via_h 锚消费改道（G-06，2026-10-04）：l_via_h="auto" 的取值改经
+# knowledge/anchors.yaml 的 c3.l_via_h.openems-hfss-v1（值 0.125e-9 H，HFSS
+# 仲裁中点）惰性解析——照 render_c3._c3_l_via_anchor_h 同款范式（模块级缓存
+# 首解析后复用，避免每渲染 IO），使本文件成为锚的 runtime_resolve 真消费者
+# （anchors.yaml consumers 声明自此如实；此前 auto 经 c3_circuit_sparams 侧
+# 同锚解析，行为不变）。注册表缺文件/schema 错/任何异常一律回退字面
+# _C3_L_VIA_CAL_FALLBACK_H（=锚值 0.125e-9，逐位同，best-effort #105：
+# 渲染主路径永不因锚系统故障阻塞；test_anchor_wire_df7 G-06 席钉）。
+_C3_L_VIA_CAL_FALLBACK_H = 0.125e-9  # HFSS 仲裁校准值（df5f R1）＝openems_templates.C3_L_VIA_CAL_H 字面
+_C3_L_VIA_ANCHOR_ID = "c3.l_via_h.openems-hfss-v1"
+_c3_l_via_anchor_ready = False
+_c3_l_via_anchor_h_cache: float = _C3_L_VIA_CAL_FALLBACK_H
+
+
+def _c3_l_via_anchor_h() -> float:
+    """惰性解析 c3.l_via_h 锚（模块级缓存；任何失败回退字面校准值）。
+
+    解析成功条件=注册表命中且 source=anchor 且非 stale 且有限 float；
+    其余（未知锚/awaiting_data/域外/stale/装载失败/异常）一律回退
+    _C3_L_VIA_CAL_FALLBACK_H——回退值与锚值逐位相等，零行为变化
+    （与 render_c3._c3_l_via_anchor_h 同构，df7 第二批先例）。"""
+    global _c3_l_via_anchor_ready, _c3_l_via_anchor_h_cache
+    if not _c3_l_via_anchor_ready:
+        _c3_l_via_anchor_ready = True
+        try:
+            from rfauto.infra.anchors_store import load_anchors
+
+            got = load_anchors().resolve_anchor(_C3_L_VIA_ANCHOR_ID)
+            value = got.get("value")
+            if (got.get("hit") and got.get("source") == "anchor"
+                    and not got.get("stale")
+                    and isinstance(value, (int, float))
+                    and not isinstance(value, bool)
+                    and math.isfinite(float(value))):
+                _c3_l_via_anchor_h_cache = float(value)
+        except Exception:  # best-effort 兜底（#105）
+            _c3_l_via_anchor_h_cache = _C3_L_VIA_CAL_FALLBACK_H
+    return _c3_l_via_anchor_h_cache
+
 
 def _c3_sparams(
     freq_ghz: np.ndarray,
@@ -1127,8 +1174,10 @@ def _c3_sparams(
 
     l_via_h=接地过孔电感（H，§C3 口径 8/10）：0.0（缺省）=理想短路——正式
     契约，逐位复现旧名义（旧黄金钉保持，登记⑨ 保守判定）；None=auto=取校准
-    值 C3_L_VIA_CAL_H（0.125nH，df5f HFSS 仲裁校准；原 G-P 几何闭式
-    c3_via_inductance_h 高估已弃）；显式 float=指定电感（H）。
+    锚 c3.l_via_h.openems-hfss-v1（0.125nH，df5f HFSS 仲裁校准；本侧
+    "auto" 变量经 _c3_l_via_anchor_h 就地解析、None 透传由裁判侧同锚解析
+    ——G-06 改道后两路同锚单源；原 G-P 几何闭式 c3_via_inductance_h 高估
+    已弃）；显式 float=指定电感（H）。
 
     #154 纪律（三通道同索引同语义，与 _c3_layout 逐参数对齐）：
     - gaps_mm[j]=第 j 缝边到边（j=0 输入馈-棒1 … j=N 棒N-输出馈；长度 N+1
@@ -1269,13 +1318,16 @@ def _stepped_impedance_sparams(
     er: float = 3.66,
     h_mm: float = 0.508,
     z_ref: float = 50.0,
+    feed_w_mm: float | None = None,
 ) -> np.ndarray:
     """阶梯阻抗线解析（初始模板补注册，2026-09-16）——HJ (Z,εeff) → cosim
     ABCD 级联频响（无耗/互易由构造保证）。
 
     几何口径（openems_templates._stepped_lines 渲染同源，#154 同名同语义）：
     段链奇偶交替——偶数段（0 基）宽 z1_width_mm、奇数段宽 z2_width_mm，每段
-    物理长 seg_len_mm；两端 feed 段（板边 BOARD=60mm → 段链端点）宽=z1 宽、
+    物理长 seg_len_mm；两端 feed 段（板边 BOARD=60mm → 段链端点）宽
+    feed_w_mm（六百七十一/#1c 修复批：50Ω HJ 精算 1.1133mm；None=回退
+    z1 宽=修复前口径，存量调用与测试字节面零漂移）、
     长各 = BOARD − n·seg_len/2（进模型：MSLPort 端口面在板边）。每段独立
     HJ 正向 (Z_i, εeff_i)（core/synthesis.forward_z0 唯一介质口径，铁律 1c），
     电长 θ_i(f)=2πf√εeff_i·L_i/c；级联走 core.cosim.cascade_two_port_networks
@@ -1296,6 +1348,10 @@ def _stepped_impedance_sparams(
                       thickness_mm=float(h_mm))
     z1, ere1 = forward_z0(float(z1_width_mm), float(f0_ghz), stackup)
     z2, ere2 = forward_z0(float(z2_width_mm), float(f0_ghz), stackup)
+    feed_w = (float(feed_w_mm) if feed_w_mm is not None
+              else float(z1_width_mm))
+    zf, eref = (forward_z0(feed_w, float(f0_ghz), stackup)
+                if feed_w_mm is not None else (z1, ere1))
     board_mm = 60.0                       # _stepped_lines 渲染 BOARD 字面量
     feed_len_mm = board_mm - int(n_segments) * float(seg_len_mm) / 2.0
     if feed_len_mm <= 0.0:
@@ -1306,7 +1362,7 @@ def _stepped_impedance_sparams(
         return np.stack([_tl_two_port_s(z_ohm, float(th), float(z_ref))
                          for th in theta])
 
-    blocks = [CascadeBlock(name="feed_in", s_params=_sec_s(z1, ere1, feed_len_mm),
+    blocks = [CascadeBlock(name="feed_in", s_params=_sec_s(zf, eref, feed_len_mm),
                            freq_ghz=f)]
     for i in range(int(n_segments)):
         z_i, ere_i = (z1, ere1) if i % 2 == 0 else (z2, ere2)
@@ -1314,7 +1370,7 @@ def _stepped_impedance_sparams(
             name=f"seg_{i}", s_params=_sec_s(z_i, ere_i, float(seg_len_mm)),
             freq_ghz=f))
     blocks.append(CascadeBlock(name="feed_out",
-                               s_params=_sec_s(z1, ere1, feed_len_mm),
+                               s_params=_sec_s(zf, eref, feed_len_mm),
                                freq_ghz=f))
     return cascade_two_port_networks(blocks)
 
@@ -1909,7 +1965,7 @@ class FakeAdapter(SimulatorAdapter):
                 "shunt_line_width_mm", self._variables, default=1.10)
             s11_min_lin, eps_eff_series = self._wilkinson_s11_min(
                 series_w, shunt_w, self.f0_ghz, self._substrate_name)
-            # 位置锚（乘法缩放语义）：eps_eff_scale 对 HJ
+            # 位置锚（2026-09-23 用户拍板，乘法缩放语义）：eps_eff_scale 对 HJ
             # 物理推导值乘 K=3.54/2.725 的频率尺度修正（openEMS 名义谷位
             # 2.2GHz λ/4 反推；HJ 参考点 series 臂 εeff≈2.725@2.4GHz）——
             # 谷位下移 ×√(2.725/3.54)=0.8774，对齐 openEMS 名义口径。
@@ -1951,10 +2007,11 @@ class FakeAdapter(SimulatorAdapter):
             patch_w = resolve_role(
                 "patch_width_mm", self._variables, default=30.0)
             lambda0_mm = 300.0 / self.f0_ghz
-            # 一阶谐振腔模型：R_edge ≈ 60λ0/W，R_in = R_edge·cos²(π·x0/L)
-            # （x0 自辐射边起算；忽略 G12 与有限 h 修正）
+            # 一阶谐振腔模型：R_edge ≈ 60λ0/W，R_in = R_edge·sin²(π·off/L)
+            # （off=feed_offset 自贴片中心沿谐振轴起算——openEMS 官方口径
+            # x=-off 同基，#154 单源化 2026-10-03；忽略 G12 与有限 h 修正）
             r_edge = 60.0 * lambda0_mm / patch_w
-            r_in = r_edge * math.cos(math.pi * feed_offset / patch_len) ** 2
+            r_in = r_edge * math.sin(math.pi * feed_offset / patch_len) ** 2
             gamma_in = abs((r_in - self.z0) / (r_in + self.z0))
             s_data = _patch_sparams_1port(
                 freq.f / 1e9, z0=self.z0, f0_ghz=self.f0_ghz,
@@ -2330,7 +2387,7 @@ class FakeAdapter(SimulatorAdapter):
             # 参数敏感度由引擎对照提供，fake 为确定性理想裁判）
             s_data = _gysel_sparams(freq.f / 1e9, z_ref=self.z0)
         elif self.model_type in ("hairpin", "hairpin_alt"):
-            # 发夹线带通滤波器（WP2.3 滤波器族；收口 A4 接通电气通道）：
+            # 发夹线带通滤波器（WP2.3 滤波器族；2026-09-16 收口 A4 接通电气通道）：
             # arm_len→f0（λg/2 反演，εeff 走 HJ；同 hairpin_arm_len_mm 闭式的精确逆）
             # + gap_mm/gaps_mm→k（KJ 闭式 hairpin_k_from_gap_mm；#154 与渲染同语义：
             # 相邻谐振器外臂缝，逐缝列表优先）+ tap_frac→Q_e（抽头闭式
@@ -2409,6 +2466,85 @@ class FakeAdapter(SimulatorAdapter):
             s_data = _hairpin_sparams(freq.f / 1e9, f0_ghz=f0_ghz,
                                       order=order, z_ref=self.z0,
                                       k_list=k_list, qe=qe)
+        elif self.model_type == "varactor_bpf":
+            # 变容管调谐 BPF（M-5 首个半有源模板，2026-09-27 注册）：谐振族
+            # 「谷位等效伸缩」惯例的 C(V) 版——arm_len/εeff 固定，偏置 V 经
+            # 突变结 C(V)=Cj0/√(1+V/φ) 进主谐振方程 tan(βL)=−ωCZ0
+            # （core/varactor.py 单源）解 f0(C(V))，响应=hairpin 耦合矩阵理想
+            # 频响平移到 f0(C(V))。耦合链纯 KJ（gap→k structural_correction=
+            # False——同向 U 的 c(gap) 修正是 hairpin 真机标定（W4④），本族
+            # **预声明不转移**，与 hairpin_alt 同制度）。抽头链 τ→Q_e 走
+            # **loaded 廓线** branch B（2026-09-29 P0 修复，与设计链同一新函数
+            # 单源 varactor_tap_qe_loaded——旧 hairpin 无载廓线闭式（βL=π）
+            # 与本族 βL∈(π/2,π) 节点不等位，外耦失配 3-1139×，审计 P0；
+            # τ 语义自 C 端计 #154）。变量名与渲染同名同语义
+            # （#154）；cj0_pf/phi_v/bias_v 只进 f0(C(V)) 不进导体几何。
+            from rfauto.adapters.openems_templates import VARACTOR_BPF_NOMINAL
+            from rfauto.core.coupled_microstrip import hairpin_k_from_gap_mm
+            from rfauto.core.physics_roles import resolve_role
+            from rfauto.core.synthesis import Stackup, forward_z0
+            from rfauto.core.varactor import (
+                C0,
+                abrupt_junction_capacitance_pf,
+                varactor_line_f0_ghz,
+                varactor_tap_qe_loaded,
+            )
+
+            nominal = VARACTOR_BPF_NOMINAL
+            w = resolve_role("line_width_mm", self._variables,
+                             candidates=("w_mm",),
+                             default=float(nominal["w_mm"]))
+            arm_len = resolve_role("resonator_length_mm", self._variables,
+                                   candidates=("arm_len_mm",),
+                                   default=float(nominal["arm_len_mm"]))
+            raw_order = self._variables.get("order", nominal["order"])
+            try:
+                order = int(float(raw_order))
+            except (TypeError, ValueError):
+                order = int(nominal["order"])
+            stackup = Stackup.from_materials_yaml(
+                self._substrate_name or "rogers4350b_h0.508")
+            # 无耗准静态 Stackup（hairpin 同口径：tanδ 会偏移 εeff ~0.2%，
+            # 设计几何无法逐位复现理想响应）
+            stackup = Stackup(name=stackup.name, epsilon_r=stackup.epsilon_r,
+                              thickness_mm=stackup.thickness_mm)
+            _, eps_eff = forward_z0(w, self.f0_ghz, stackup)
+            cj0 = float(resolve_role("cj0_pf", self._variables,
+                                     candidates=("cj0_pf",),
+                                     default=float(nominal["cj0_pf"])))
+            phi = float(resolve_role("phi_v", self._variables,
+                                     candidates=("phi_v",),
+                                     default=float(nominal["phi_v"])))
+            bias = float(resolve_role("bias_v", self._variables,
+                                      candidates=("bias_v",),
+                                      default=float(nominal["bias_v"])))
+            c_v = abrupt_junction_capacitance_pf(bias, cj0, phi)
+            f0_bias = varactor_line_f0_ghz(c_v, float(arm_len), self.z0,
+                                           eps_eff)
+            gaps = self._parse_list_variable("gaps_mm", [])
+            if len(gaps) != order - 1:
+                gap = resolve_role("gap_width_mm", self._variables,
+                                   candidates=("gap_mm",),
+                                   default=float(nominal["gap_mm"]))
+                gaps = [float(gap)] * (order - 1)
+            k_list = [hairpin_k_from_gap_mm(g_mm, w, self.f0_ghz,
+                                            stackup.epsilon_r,
+                                            stackup.thickness_mm,
+                                            structural_correction=False)
+                      for g_mm in gaps]
+            raw_tau = self._variables.get("tap_frac", nominal["tap_frac"])
+            try:
+                tau = float(raw_tau)
+            except (TypeError, ValueError):
+                tau = float(nominal["tap_frac"])
+            # loaded 廓线抽头外耦（P0 同步）：βL 在本档工作点 f0(C(V)) 求值
+            # ——偏压耦合固变（C↑ ⇒ βL↓ ⇒ 同 τ 下 Q_e↑），与渲染同口径
+            beta_l = (2.0 * math.pi * f0_bias * 1e9 * math.sqrt(eps_eff)
+                      * float(arm_len) * 1e-3 / C0)
+            qe = varactor_tap_qe_loaded(tau, beta_l)
+            s_data = _hairpin_sparams(freq.f / 1e9, f0_ghz=f0_bias,
+                                      order=order, z_ref=self.z0,
+                                      k_list=k_list, qe=qe)
         elif self.model_type == "coupled_bpf":
             # 平行耦合 BPF（WP2.3 BPF 族锚，2026-09-14 注册）：几何列表
             # widths_mm/gaps_mm（与 openEMS 渲染同索引同语义，#154）→ KJ
@@ -2462,16 +2598,18 @@ class FakeAdapter(SimulatorAdapter):
                         default=float(default)))
             stackup = Stackup.from_materials_yaml(
                 self._substrate_name or "rogers4350b_h0.508")
-            # 过孔电感开关（登记⑨+R1 校准 df5-c3fix）：缺省 0.0=理想短路（旧名义
-            # 逐位不变，旧黄金钉保持）；变量 "l_via_h" 显式开启——"auto"=取
-            # C3_L_VIA_CAL_H（HFSS 仲裁校准值 0.125nH，真机裁判口径，原 G-P
-            # 几何值高估已弃），数值=指定电感（H）。
-            # 补偿后的再生名义几何配 l_via_h="auto" 裁判时谐振回 f0。
+            # 过孔电感开关（登记⑨+R1 校准 df5-c3fix；G-06 改道 2026-10-04）：
+            # 缺省 0.0=理想短路（旧名义逐位不变，旧黄金钉保持）；变量
+            # "l_via_h" 显式开启——"auto"=经锚注册表 c3.l_via_h.openems-hfss-v1
+            # 解析（本模块 _c3_l_via_anchor_h 惰性+模块级缓存，回退字面 0.125nH
+            # HFSS 仲裁校准值，真机裁判口径，原 G-P 几何值高估已弃），数值=指定
+            # 电感（H）。补偿后的再生名义几何配 l_via_h="auto" 裁判时谐振回 f0。
             lv_raw = self._variables.get("l_via_h")
-            l_via: float | None = 0.0
+            l_via: float = 0.0
             if lv_raw is not None:
-                l_via = (None if isinstance(lv_raw, str)
-                         and lv_raw.strip().lower() == "auto" else float(lv_raw))
+                l_via = (_c3_l_via_anchor_h() if isinstance(lv_raw, str)
+                         and lv_raw.strip().lower() == "auto"
+                         else float(lv_raw))
             s_data = _c3_sparams(
                 freq.f / 1e9, self.model_type, c3_params,
                 f0_ghz=self.f0_ghz, er=stackup.epsilon_r,
@@ -2531,7 +2669,8 @@ class FakeAdapter(SimulatorAdapter):
                 s_data = _stepped_impedance_sparams(
                     freq.f / 1e9, z1_width_mm=geom["z1_width_mm"],
                     z2_width_mm=geom["z2_width_mm"], seg_len_mm=geom["seg_len_mm"],
-                    n_segments=geom["n_segments"], **common)
+                    n_segments=geom["n_segments"],
+                    feed_w_mm=geom.get("feed_w_mm"), **common)
             else:
                 s_data = _coupled_line_sparams(
                     freq.f / 1e9, coupled_len_mm=geom["coupled_len_mm"],
@@ -2768,7 +2907,7 @@ class FakeAdapter(SimulatorAdapter):
 # ─── 槽线族 fake 解析模型（2026-09-18 w1b 注册；数值只在 core 闭式内核，铁律 7）───
 # #154 同名同语义：变量名与 openEMS 渲染/TEMPLATE_NOMINAL 逐键一致；
 # h_mm 从模板参数取（缺省 1.524 设计点）——缺省叠层 0.508@2.5GHz 落 Janaswamy–
-# Schaubert 闭式域外（战役档案），越域 ValueError 如实上抛。
+# Schaubert 闭式域外，越域 ValueError 如实上抛。
 
 
 def _slotline_gamma(w_mm: float, h_mm: float, er: float, freq_ghz: Any,
@@ -2888,7 +3027,7 @@ def _marchand_balun_sparams(freq_ghz: Any, w_slot_mm: float = 1.0,
                             **_: Any) -> Any:
     """Marchand fake：两节对称耦合段电路级裁判（3 端口，P1 50Ω/P2P3 50Ω 单端）。
 
-    **口径如实**：模板双槽臂几何已被两引擎互证证伪（战役档案），本
+    **口径如实**：模板双槽臂几何已被两引擎互证证伪，本
     fake 与模板几何不同源——数值来自 core/slotline_transitions 两节对称耦合段
     电路级内核（synthesize_marchand_two_section + marchand_two_section_sparams，
     确定性/可复现），差分负载取 2×槽线 Z0（双槽臂输出口径）。
@@ -2951,3 +3090,47 @@ def _coil_nfc_sparams(freq_ghz: Any, n_turns: int = 7,
         z_in = complex(r_s, omega * l_h) + 1.0 / complex(0.0, omega * c_f)
         out[i, 0, 0] = (z_in - complex(z0)) / (z_in + complex(z0))
     return out
+
+
+# ══ AU-1 b4 fake 私有名公开化（2026-09-30）═══════════════════════
+# 下列 fake 模型函数被 models/template_specs.py 跨层消费（models→adapters
+# 依赖方向合法、私有符号不合法）——升格公开名作为跨层契约；私有名保留为
+# 向后兼容别名（仓内 tests/scripts 既有私有拼法继续可用），同一函数对象、
+# 零行为变化。新代码一律用公开名。
+wilkinson_sparams_3port = _wilkinson_sparams_3port
+branchline_sparams = _branchline_sparams
+patch_sparams_1port = _patch_sparams_1port
+mline_sparams = _mline_sparams
+cpw_sparams = _cpw_sparams
+dipole_sparams = _dipole_sparams
+cps_sparams = _cps_sparams
+suspended_stripline_sparams = _suspended_stripline_sparams
+msl_cpw_sparams = _msl_cpw_sparams
+sma_launcher_sparams = _sma_launcher_sparams
+wstep_sparams = _wstep_sparams
+tjunc_sparams = _tjunc_sparams
+bend_sparams = _bend_sparams
+via_sparams = _via_sparams
+atten_pi_sparams = _atten_pi_sparams
+atten_t_sparams = _atten_t_sparams
+ratrace_sparams = _ratrace_sparams
+gysel_sparams = _gysel_sparams
+hairpin_sparams = _hairpin_sparams
+coupled_bpf_sparams = _coupled_bpf_sparams
+antenna2_sparams = _antenna2_sparams
+cline_coupler_sparams = _cline_coupler_sparams
+branchline_2sect_sparams = _branchline_2sect_sparams
+lange_sparams = _lange_sparams
+stepped_impedance_sparams = _stepped_impedance_sparams
+coupled_line_sparams = _coupled_line_sparams
+c3_sparams = _c3_sparams
+array_sparams = _array_sparams
+eep_sparams = _eep_sparams
+siw_sparams = _siw_sparams
+msl_siw_taper_sparams = _msl_siw_taper_sparams
+slotline_route_a_sparams = _slotline_route_a_sparams
+slotline_route_b_sparams = _slotline_route_b_sparams
+msl_slot_transition_sparams = _msl_slot_transition_sparams
+marchand_balun_sparams = _marchand_balun_sparams
+coil_nfc_sparams = _coil_nfc_sparams
+mmwave_series_sparams = _mmwave_series_sparams

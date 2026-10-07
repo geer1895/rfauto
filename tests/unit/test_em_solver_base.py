@@ -145,13 +145,28 @@ class TestKiCadPCell:
 class TestCreateMicrostripPCB:
     """微带线 PCB 快捷函数测试。"""
 
-    def test_create_without_kicad(self):
-        """没有 KiCad 时应返回失败。"""
+    def test_create_without_kicad(self, tmp_path):
+        """没有 KiCad 时应返回失败；有 KiCad 时产物只落 tmp_path。
+
+        CWD 卫生钉（ge6 followUp，ge5 月终门两次再生实证）：本测试曾以
+        相对路径 ``test.kicad_pcb`` 调真机生成——KiCad 在位的开发机上每次
+        全量门都在 pytest CWD（仓根）再生 test.kicad_p* 三个产物文件。
+        改 tmp_path 后生成面不再污染仓根。
+        """
+        out = tmp_path / "test.kicad_pcb"
         result = create_microstrip_pcb(
-            output_path="test.kicad_pcb",
+            output_path=str(out),
             width_mm=1.0,
             length_mm=10.0,
         )
         # 如果 KiCad 不存在，应该失败
         if not Path(r"E:\KiCad\bin\python.exe").exists():
             assert not result.success
+        else:
+            # KiCad 在位：真机子进程成败皆如实（生成链自身健康另有
+            # test_kicad_pcell 面）；本测试只钉 CWD 卫生——生成成功时
+            # 产物必须落 tmp_path
+            if result.success:
+                assert out.is_file()
+        cwd_new = {p.name for p in Path.cwd().glob("test.kicad_p*")}
+        assert not cwd_new, f"测试产物泄漏进 CWD: {sorted(cwd_new)}"

@@ -109,6 +109,7 @@ class TestLevel2ChainAnchors:
                             "2.4GHz Wilkinson 功分器，50 欧系统"})
         assert "error" not in rec
         assert rec["numeric"]["s11_db_min_in_band"] == pytest.approx(
-            -18.924, abs=0.1)
-        assert rec["numeric"]["s21_db_at_dip"] == pytest.approx(-3.518, abs=0.02)
-        assert rec["numeric"]["f_dip_ghz"] == pytest.approx(2.148, abs=0.005)
+            -18.446, abs=0.1)  # ge8b 七百七十五 fake 无源修复后新物理值（行归一伪象 −18.924→能量守恒 −18.446，链路实测）
+        assert rec["numeric"]["s21_db_at_dip"] == pytest.approx(-3.253, abs=0.02)
+  # 同批重钉（七百七十五：能量守恒构造，链路实测 −3.2531）
+        assert rec["numeric"]["f_dip_ghz"] == pytest.approx(2.1084, abs=0.005)  # XA-3 重钉 2026-10-02：λ/4 各臂 εeff 修正 2.148→2.1084（精确等比）

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 
 import numpy as np
 import pytest
@@ -67,7 +68,7 @@ def _make_adapter(tmp_path, **extra) -> NGSolveAdapter:
 
 
 class TestRegistration:
-    """注册表/枚举接线（基类+注册表模式）。"""
+    """注册表/枚举接线。"""
 
     def test_enum_member_value(self):
         assert EMSolverType.NGSOLVE.value == "ngsolve"
@@ -297,7 +298,7 @@ class TestTe10ClosedForm:
     """TE10 闭式（P2⑫）：WR-90 独立锚 + 截止拒绝（确定性，无 ngsolve）。"""
 
     def test_fc_wr90_independent_anchor(self):
-        # 锚：WR-90（a=22.86mm 空气）fc=6.5571GHz（文献值）
+        # 锚：WR-90（a=22.86mm 空气）fc=6.5571GHz（任务书/文献值）
         fc = te10_fc_ghz(22.86, 1.0)
         assert abs(fc - 6.5571) < 5e-4
         # 独立路径：fc = c·kc/(2π)，kc=π/a
@@ -327,7 +328,7 @@ class TestTe10ClosedForm:
 
     def test_wave_impedance_anchor_and_crosscheck(self):
         fc = te10_fc_ghz(22.86, 1.0)
-        # 锚：Z_TE10@10GHz=498.97Ω（文献值）
+        # 锚：Z_TE10@10GHz=498.97Ω（任务书/文献值）
         assert abs(te10_wave_impedance(10.0, fc) - 498.97) < 0.05
         for f in (8.2, 10.0, 12.4):
             z_te = te10_wave_impedance(f, fc)
@@ -601,9 +602,16 @@ class TestLifecycle:
         assert any(v["kind"] == "sparams" for v in viz)
 
 
-@pytest.mark.skipif(not _HAS_NGSOLVE,
-                    reason="ngsolve 未安装——真机语义测试跳过"
-                           "（.venv/Scripts/python.exe -m pip install ngsolve 后生效）")
+# df4-⑥ opt-in 双门（ge8e 审查 G1-2：本类重内存 FEM 曾在缺省 unit 门 OOM
+# 真红——真跑语义必须 env 意图门显式启用，装了 ngsolve 不等于愿意在门里跑）：
+_RFAUTO_NGSOLVE_ITEST = os.environ.get("RFAUTO_NGSOLVE_ITEST", "") == "1"
+_RREALRUN_SKIPPED = not (_HAS_NGSOLVE and _RFAUTO_NGSOLVE_ITEST)
+
+
+@pytest.mark.skipif(_RREALRUN_SKIPPED,
+                    reason=("真跑集成测试 opt-in：设 RFAUTO_NGSOLVE_ITEST=1 "
+                            "启用（依赖宿主 ngsolve+≥内存余量；缺省 unit 门"
+                            "不跑——重内存 FEM 在门内 OOM flaky，审查 G1-2）"))
 class TestRealRun:
     """真机全链（ngsolve 已装时执行）：闭式对照门 + 无源性/互易性。"""
 

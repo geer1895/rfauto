@@ -18,7 +18,7 @@
 - optuna TPE（内存 study，种子确定），**综合初值经 enqueue_trial 入队**
   ——「确定性算初值、战役只做有界精化」；单测离线秒级（无真机求解）。
 
-已知边界（如实）：C13 coupling_matrix_extract 反提对
+已知边界（如实，2026-09-15 ③ 闭门更新）：C13 coupling_matrix_extract 反提对
 含馈线/λ/4 段参考面相位的电路裁判输出：原始 rms ~6e-2（±5% 窗）> 1e-2 门不
 收敛。根因=参考面相位在 Ω 域非有理（馈线时延 e^{−j2πfτ} + λ/4 commensurate
 段，Richards 变量 tan(θ) ≠ Ω 映射）；已败三策略：相位滚转 ±（滚不动 f 的
@@ -41,6 +41,8 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 import numpy as np
+
+from rfauto.service.envelope import ok_envelope
 
 # 提议阶数上限（结构计数；>12 的综合链数值病态，无工程意义）
 MAX_ORDER = 12
@@ -329,7 +331,7 @@ class LLMTopologyProposer(TopologyProposer):
 
     llm_call 必须由调用方注入（prompt → 文本）；本类**不内置任何网络通道**
     ——「存在配置则走外部服务」的分支在单测中一律 monkeypatch 注入
-    （#139），构造时无 llm_call 即显式报错，杜绝意外真连。
+    ，构造时无 llm_call 即显式报错，杜绝意外真连。
     LLM 输出走与规则提议器同一个 parse_topology_proposal 严格校验：
     结构对→typed 提议；走私数字/未注册字段→TopologyProposalError（不静默回退）。
     """
@@ -459,7 +461,7 @@ def run_fine_campaign(proposal: TopologyProposal, spec: FilterSpec, *,
       代价 = −RL + 40·(阻带劣化量)_+ + 20·(缝下限违反量/下限)_+；
       由「初值点惩罚恒 0 + 初值入队」可证 best 的 RL 恒 ≥ 初值 RL
       （代价 ≤ 初值代价 ⟹ RL_best ≥ RL_init + P_best ≥ RL_init），
-      杜绝「牺牲回损换阻带」的指标作弊（探针实测教训）；
+      杜绝「牺牲回损换阻带」的指标作弊（2026-09-14 探针实测教训）；
     - 搜索域（有界精化）：res_len ±2%、逐段宽 [0.85,1.2]×、逐段缝 [0.6,1.6]×；
       综合初值经 enqueue_trial 首点入队（#123：不等返回值，优化后按
       study.trials 校验入队点被评估）。
@@ -575,7 +577,7 @@ def run_fine_campaign(proposal: TopologyProposal, spec: FilterSpec, *,
 
     # 阶段 2：确定性坐标精化（pattern search，步长折半；同守卫下单调不劣化，
     # 从 TPE 最优与初值中较优者出发）。TPE 在 9 维有界域内常锁死初值，
-    # 局部精化补最后一段「精算」（探针实测）。
+    # 局部精化补最后一段「精算」（2026-09-14 探针实测）。
     bounds: dict[str, tuple[float, float]] = {"res_len_scale": (0.98, 1.02)}
     steps: dict[str, float] = {"res_len_scale": 0.005}
     for j in range(n_sec):
@@ -626,23 +628,27 @@ def run_fine_campaign(proposal: TopologyProposal, spec: FilterSpec, *,
         "res_len_mm": round(float(best_design["res_len_mm"]), 4),
         "feed_len_mm": round(float(best_design["feed_len_mm"]), 4),
     }
-    return {
-        "ok": True, "family": proposal.family, "order": proposal.order,
-        "coupling_form": proposal.coupling_form, "spec": spec.to_dict(),
-        "n_trials": int(n_trials), "seed": int(seed),
-        "gap_floor_mm": float(gap_floor_mm), "stage": stage,
-        "targets": {k: round(float(v), 6)
+    return ok_envelope(
+        family=proposal.family,
+        order=proposal.order,
+        coupling_form=proposal.coupling_form,
+        spec=spec.to_dict(),
+        n_trials=int(n_trials),
+        seed=int(seed),
+        gap_floor_mm=float(gap_floor_mm),
+        stage=stage,
+        targets={k: round(float(v), 6)
                     for k, v in targets.items()},
-        "initial": {**initial, "params": initial_params},
-        "best": {**best, "params": {k: round(float(v), 9)
+        initial={**initial, "params": initial_params},
+        best={**best, "params": {k: round(float(v), 9)
                                     for k, v in best_params.items()}},
-        "improvement": {
+        improvement={
             "cost_delta": round(initial["cost"] - best["cost"], 6),
             "rl_delta_db": round(best["rl_min_db"] - initial["rl_min_db"], 6),
             "stop_delta_db": round(best["stop_max_db"]
                                    - initial["stop_max_db"], 6)},
-        "recipe_params": recipe_params,
-        "notes": [
+        recipe_params=recipe_params,
+        notes=[
             "裁判：coupled_bpf_circuit_sparams（真偶/奇模准静态级联，"
             "宽度台阶/开路端残差不进模型，假设清单见 openems_templates "
             "WP2.3 平行耦合 BPF 段）",
@@ -660,12 +666,12 @@ def run_fine_campaign(proposal: TopologyProposal, spec: FilterSpec, *,
             "tests/unit/test_c13_refplane_deembed.py），"
             "故精算闭环以响应域 hinge 收敛为准",
         ],
-    }
+    )
 
 
 def stage_design_to_sandbox(recipe_params: dict[str, Any], name: str, *,
                             root: Any = None) -> dict[str, Any]:
-    """把精算后的配方参数落成沙箱草稿（写面隔离）。
+    """把精算后的配方参数落成沙箱草稿（写面隔离， 规则 6）。
 
     仅写 runs/recipe_sandbox（或显式 root）内以 name 派生的草稿文件，
     生效必须走既有三层 Gate——本函数不做任何 promote。
@@ -686,7 +692,7 @@ def stage_design_to_sandbox(recipe_params: dict[str, Any], name: str, *,
         name, yaml.safe_dump(draft_doc, allow_unicode=True, sort_keys=False))
 
 
-# ─── JSON 进出入口（CLI/MCP 薄壳消费）─────────────────────────
+# ─── JSON 进出入口（CLI/MCP 薄壳消费；0by③ followUp）─────────────────────────
 _SPEC_KEYS = frozenset({"f0_ghz", "fbw", "rl_db", "stop_rejection_db",
                         "stop_fbw_mult", "order_hint", "family_hint"})
 
@@ -715,7 +721,7 @@ def propose_topology(
       （写面隔离，规则 6；本函数不做 promote）；
     - promote=True（须同时给 sandbox_name）时草稿继续走
       proposal_chain_service.promote_topology_draft（L1 白名单 / L2 模板离线
-      试运行 / L3 token → 迁 runs/recipe_sandbox/promoted/），结果落
+      试运行 / L3 token → 迁 runs/recipe_sandbox/promoted），结果落
       out["promote"]；未给 sandbox_name 时如实 skipped。
     异常一律折成 {ok: False, error}（确定性、可序列化）。
     """
@@ -736,11 +742,14 @@ def propose_topology(
             ) from None
         proposal = engine.propose(fspec)
         initial = design_initial_values(proposal, fspec)
-        out: dict[str, Any] = {
-            "ok": True, "proposer": engine.name,
-            "proposal": proposal.to_dict(), "initial": initial,
-            "campaign": None, "sandbox": None, "promote": None,
-        }
+        out: dict[str, Any] = ok_envelope(
+            proposer=engine.name,
+            proposal=proposal.to_dict(),
+            initial=initial,
+            campaign=None,
+            sandbox=None,
+            promote=None,
+        )
         recipe_params: dict[str, Any] | None = None
         if campaign:
             if initial["campaign_capable"]:

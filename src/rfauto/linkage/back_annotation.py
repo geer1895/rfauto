@@ -50,24 +50,28 @@ class BackAnnotator:
 
         Args:
             ads_metrics: ADS 仿真结果（包含元件值）
-            mapping_rules: 自定义映射规则（可选）
+            mapping_rules: 自定义映射规则（可选；只作用于本次调用的局部副本，
+                不回写实例状态——单例复用下规则不跨调用累积，审查 D1-5）
 
         Returns:
             dict: HFSS 变量名 → 值
         """
+        # 合并作用于调用内局部副本（审查 D1-5：get_back_annotator 是进程级
+        # 单例，原先直接回写 self.mapping 会让 mapping_rules 跨调用累积污染；
+        # 本调用优先级 = 传入规则 > 构造期 mapping > DEFAULT_MAPPING）
+        effective_mapping = dict(self.mapping)
         if mapping_rules:
-            # 合并自定义规则
             for rule in mapping_rules:
                 key = rule.get("ads_component", "")
                 if key:
-                    self.mapping[key] = rule
+                    effective_mapping[key] = rule
 
         result: dict[str, Any] = {}
 
         # 遍历 ADS 指标，查找可映射的元件值
         for ads_key, ads_value in ads_metrics.items():
-            if ads_key in self.mapping:
-                rule = self.mapping[ads_key]
+            if ads_key in effective_mapping:
+                rule = effective_mapping[ads_key]
                 hfss_var = rule.get("hfss_variable", "")
                 transform = rule.get("transform", "linear")
                 ref = rule.get("reference", {})
@@ -102,6 +106,12 @@ class BackAnnotator:
 
         elif transform == "inverse_linear":
             # 反线性映射：hfss_value = ref_ads * ref_hfss / ads_value
+            # ads_value=0 显式报错（B-9/S3）：1/0 物理无定义，静默 ZeroDivisionError
+            # 或 inf 污染下游 HFSS 变量不如在写回面拒绝
+            if ads_value == 0:
+                raise ValueError(
+                    "inverse_linear 变换在 ads_value=0 无定义"
+                    "（ads_key 对应值=0，1/W 类映射不可反推）")
             return ref_ads * ref_hfss / ads_value
 
         else:

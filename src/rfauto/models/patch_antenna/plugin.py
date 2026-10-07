@@ -33,9 +33,11 @@ class PatchAntennaPlugin(RFModelPlugin):
     schema_version: ClassVar[int] = 1
     # 物理上 1 端口（coax feed）——与 openEMS 模板 TEMPLATE_META["patch"]
     # n_ports=1、docs/templates/patch/meta.yaml n_ports: 1 三通道一致
-    # （收口修正：旧值 2 是 fake 曾借 2 端口形状产 s11/s21 的历史残留，
-    # 导致契约≠设计实际端口）。fake 解析近似同步产 1 端口 S11 曲线
-    # （_patch_sparams_1port）；patch 配方 objectives 全为 S11 语义。
+    # （0da followUp② 收口：旧值 2 是 fake 曾借 2 端口形状产 s11/s21 的
+    # 历史残留，导致 HFSS GT 战役里契约≠设计实际端口、每点导出触发
+    # contract_for_port_count 重建告警）。fake 解析近似同步改产 1 端口
+    # S11 曲线（_patch_sparams_1port）；patch 配方 objectives 全为 S11
+    # 语义，调优回路无 S21 消费链。
     n_ports: ClassVar[int] = 1
     fake_model_type: ClassVar[str] = "patch"
     hfss_var_map: ClassVar[dict[str, str]] = {
@@ -132,7 +134,7 @@ class PatchAntennaPlugin(RFModelPlugin):
         )
 
         # ─── 4. 同轴探针馈电（pyaedt stackup_3d 官方模式） ────────────────────
-        # 真机多轮验证后的结论：
+        # 真机多轮验证后的结论（详见 2026-08-30 真机批次）：
         # - 导体与介质的"部分相交"（贯穿边界）会被 HFSS 校验拒绝，导体须
         #   完全含于介质或互相分离；
         # - 外导体用 PEC sheet 圆柱壁（不是实体管），介质柱用 vacuum；
@@ -142,9 +144,15 @@ class PatchAntennaPlugin(RFModelPlugin):
         #   FeedPinUp:  PEC 针上段 z=0..sub_h（穿基板孔，顶面贴贴片底面）
         #   FeedOuter:  vacuum 柱 r=coax_wall_r z=-coax_ext..0（同轴介质）
         #   外导体:     FeedOuter 侧面 PEC sheet（贴地板）
+        # 探针位置（#154 feed_offset 单源化 2026-10-03）：本模型谐振轴=y
+        # （patch box y 向尺寸=patch_len），探针在 (x=0, y=-feed_offset)——
+        # 自贴片中心沿谐振轴偏移，openEMS 官方口径 x=-off 同基。旧版把
+        # feed_offset 写在 x（=patch_w 非谐振轴）且 y=0（谐振轴场节点），
+        # 同键异语义静默错几何（2026-08-31 tune 战役 best 仅 -6.4dB 的
+        # 合理解释面之一），已收口。
         modeler.create_cylinder(
             orientation="Z",
-            origin=["feed_offset", zero_mm, "(-coax_ext)"],
+            origin=[zero_mm, "(-feed_offset)", "(-coax_ext)"],
             radius="coax_r",
             height="coax_ext",
             name="FeedWire",
@@ -152,7 +160,7 @@ class PatchAntennaPlugin(RFModelPlugin):
         )
         modeler.create_cylinder(
             orientation="Z",
-            origin=["feed_offset", zero_mm, zero_mm],
+            origin=[zero_mm, "(-feed_offset)", zero_mm],
             radius="coax_r",
             height="sub_h",
             name="FeedPinUp",
@@ -160,7 +168,7 @@ class PatchAntennaPlugin(RFModelPlugin):
         )
         modeler.create_cylinder(
             orientation="Z",
-            origin=["feed_offset", zero_mm, "(-coax_ext)"],
+            origin=[zero_mm, "(-feed_offset)", "(-coax_ext)"],
             radius="coax_wall_r",
             height="coax_ext",
             name="FeedOuter",

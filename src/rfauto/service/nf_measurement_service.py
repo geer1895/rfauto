@@ -12,6 +12,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
+
 #: 数值内核调用期可预期的异常族（参数不匹配/域拒绝/算术异常）——一律进信封
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError,
                 ArithmeticError, OSError)
@@ -67,21 +69,20 @@ def nf_to_farfield(
         return [[(round(float(abs(v)), 8) if v == v else None) for v in row]
                 for row in g]
 
-    return {
-        "ok": True,
-        "method": out["method"],
-        "window": out["window"],
-        "kaiser_beta": out["kaiser_beta"],
-        "freq_hz": out["freq_hz"],
-        "theta_deg": [float(t) for t in out["theta_deg"]],
-        "phi_deg": [float(p) for p in out["phi_deg"]],
-        "pattern_db": _db_json(out["pattern_db"]),
-        "e_theta_amp": _amp_json(out["e_theta"]),
-        "e_phi_amp": _amp_json(out["e_phi"]),
-        "validity_max_deg": out["validity_max_deg"],
-        "scan_span_m": list(out["scan_span_m"]),
-        "note": out["note"],
-    }
+    return ok_envelope(
+        method=out["method"],
+        window=out["window"],
+        kaiser_beta=out["kaiser_beta"],
+        freq_hz=out["freq_hz"],
+        theta_deg=[float(t) for t in out["theta_deg"]],
+        phi_deg=[float(p) for p in out["phi_deg"]],
+        pattern_db=_db_json(out["pattern_db"]),
+        e_theta_amp=_amp_json(out["e_theta"]),
+        e_phi_amp=_amp_json(out["e_phi"]),
+        validity_max_deg=out["validity_max_deg"],
+        scan_span_m=list(out["scan_span_m"]),
+        note=out["note"],
+    )
 
 
 def ffs_info(path: str) -> dict[str, Any]:
@@ -94,22 +95,21 @@ def ffs_info(path: str) -> dict[str, Any]:
         out = read_ffs(path, freq_index=0)
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {
-        "ok": True,
-        "reader_version": out["reader_version"],
-        "path": str(path),
-        "n_freq": out["n_freq"],
-        "frequencies_hz": [float(f) for f in out["frequencies_hz"]],
-        "power_first_block": out["power_radiated_accepted_stimulated"][0],
-        "n_phi": int(out["phi_deg"].size),
-        "n_theta": int(out["theta_deg"].size),
-        "phi_deg_span": [float(out["phi_deg"][0]),
+    return ok_envelope(
+        reader_version=out["reader_version"],
+        path=str(path),
+        n_freq=out["n_freq"],
+        frequencies_hz=[float(f) for f in out["frequencies_hz"]],
+        power_first_block=out["power_radiated_accepted_stimulated"][0],
+        n_phi=int(out["phi_deg"].size),
+        n_theta=int(out["theta_deg"].size),
+        phi_deg_span=[float(out["phi_deg"][0]),
                          float(out["phi_deg"][-1])],
-        "theta_deg_span": [float(out["theta_deg"][0]),
+        theta_deg_span=[float(out["theta_deg"][0]),
                            float(out["theta_deg"][-1])],
-        "row_order": out["row_order"],
-        "units_note": out["units_note"],
-    }
+        row_order=out["row_order"],
+        units_note=out["units_note"],
+    )
 
 
 def ffs_cut_view(path: str, freq_index: int = 0,

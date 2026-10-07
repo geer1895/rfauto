@@ -407,18 +407,34 @@ class TestRegistration:
         from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
 
         assert "mmwave_series_array" in EXPECTED_TEMPLATES
-        assert len(EXPECTED_TEMPLATES) == 53
-        assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == 53
+        # 计数只与审计单源比对（AU-1B4/#247 禁轨内自钉；M-5 57、J2FB
+        # ms_ring_patch 58、TA 批 schiffman+qwt_multisection 60、TA 批第二
+        # 批 sicl+nway_wilkinson 62、TA 批第三批 diplexer+ridged_wg 64、
+        # ge8b WA 席1 inverted_ms+hmsiw+fgcpw 67、WB 席B9 69、ge8d WD 席D2
+        # embedded_ms+xcheb_bpf4 71 由单源承载，字面计数退役）
+        assert len(EXPECTED_TEMPLATES) == 71
+        assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == len(EXPECTED_TEMPLATES)
 
     def test_tail_order_contract(self):
-        """尾部追加契约（#247）：本批居尾 1，coil_nfc 退居尾 2，既有段不重排。"""
+        """尾部追加契约（#247→AU-1B4 键集+相对次序子序列）：尾块依
+        槽线族 → ms 族 → coil_nfc → mmwave_series_array → ring_resonator →
+        pyramid_horn → coax_waveguide_transition → varactor_bpf 的注册序出现；
+        J2FB ms_ring_patch（2026-09-30）注册于 ms 族段内（ms_jcross 与
+        ms_array_NxN 之间），其余既有键零重排——新批次尾部追加/族内注册
+        不改块内既有相对次序（[-N:] 槽位算术退役，#304 族翻新停付）。"""
         keys = list(TEMPLATE_META)
-        assert keys[-1] == "mmwave_series_array"
-        assert keys[-2] == "coil_nfc"
-        assert keys[-6:-2] == ["ms_patch", "ms_cross", "ms_jcross",
-                               "ms_array_NxN"]
-        assert keys[-10:-6] == ["slotline", "slotline_lumped",
-                                "msl_slot_transition", "marchand_balun"]
+        _TAIL_BLOCK = [
+            "slotline", "slotline_lumped", "msl_slot_transition",
+            "marchand_balun",
+            "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
+            "ms_array_NxN",
+            "coil_nfc", "mmwave_series_array", "ring_resonator",
+            "pyramid_horn", "coax_waveguide_transition", "varactor_bpf",
+        ]
+        assert set(_TAIL_BLOCK) <= set(keys)
+        _it = iter(keys)  # 相对次序：块内名字按注册序出现（子序列）
+        for _name in _TAIL_BLOCK:
+            assert _name in _it, f"注册相对次序漂移：{_name}"
 
     def test_render_smoke_note_honest(self):
         """smoke_note 必须如实声明未冒烟（不得虚报真机状态）。"""

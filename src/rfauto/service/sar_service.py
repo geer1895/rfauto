@@ -14,6 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
+
 #: 数值内核调用期可预期的异常族——一律进信封
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError,
                 ArithmeticError, OSError)
@@ -81,7 +83,7 @@ def sar_report_from_grid(
         out = sar_report(sar, r, voxel, mass_kg_list=masses)
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, **out}
+    return ok_envelope(**{**out})
 
 
 def sar_analytic_plane_wave(
@@ -115,16 +117,15 @@ def sar_analytic_plane_wave(
         side = cube_side_m(float(mass_g) * 1e-3, float(rho_kg_m3))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {
-        "ok": True,
-        "alpha_np_per_m": float(alpha),
-        "tan_delta": float(td),
-        "depth_m": [float(v) for v in z],
-        "sar_w_per_kg": [float(v) for v in sar],
-        "cube_side_m": float(side),
-        "note": "均匀媒质内固定质量立方平均==点值（解析恒等）；体表出体"
+    return ok_envelope(
+        alpha_np_per_m=float(alpha),
+        tan_delta=float(td),
+        depth_m=[float(v) for v in z],
+        sar_w_per_kg=[float(v) for v in sar],
+        cube_side_m=float(side),
+        note="均匀媒质内固定质量立方平均==点值（解析恒等）；体表出体"
                 "场景见 core/sar coverage 注记",
-    }
+    )
 
 
 def sar_phantom_spec(kind: str, sigma: float | None = None,
@@ -146,9 +147,8 @@ def sar_phantom_spec(kind: str, sigma: float | None = None,
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
     if hasattr(ph, "layers"):
-        return {"ok": True, "kind": "layered",
-                "layers": [list(t) for t in ph.layers]}
-    return {"ok": True, "kind": "uniform", "sigma": ph.sigma, "rho": ph.rho}
+        return ok_envelope(kind="layered", layers=[list(t) for t in ph.layers])
+    return ok_envelope(kind="uniform", sigma=ph.sigma, rho=ph.rho)
 
 
 def sar_load_field_npz(path: str) -> dict[str, Any]:
@@ -179,4 +179,4 @@ def sar_load_field_npz(path: str) -> dict[str, Any]:
         out = sar_report(sar, rho, voxel)
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "path": str(path), **out}
+    return ok_envelope(**{"path": str(path), **out})

@@ -218,11 +218,18 @@ class TestFfsReader:
 
 
 class TestSweInterface:
-    def test_contract_placeholder(self):
-        with pytest.raises(NotImplementedError, match="SWE"):
+    def test_contract_landed_ms6(self):
+        """MS-6 落地后契约改为数值实现（原 NotImplementedError 占位钉 retired）：
+        极点采样显式拒绝；freq/k 二选一守卫保持。"""
+        with pytest.raises(ValueError, match="极点"):
             spherical_wave_expansion(
                 np.ones((3, 4), dtype=complex), np.ones((3, 4), dtype=complex),
-                np.array([0.0, 45.0, 90.0]), np.arange(4.0), l_max=4)
+                np.array([0.0, 45.0, 90.0]), np.arange(4.0), l_max=4,
+                k_rad_m=10.0)
+        with pytest.raises(ValueError, match="恰须给其一"):
+            spherical_wave_expansion(
+                np.ones((3, 4), dtype=complex), np.ones((3, 4), dtype=complex),
+                np.array([10.0, 45.0, 90.0]), np.arange(4.0), l_max=4)
 
 
 class TestServiceEnvelope:

@@ -1,0 +1,94 @@
+{
+  "_provenance": {
+    "primary": "NIST Cryogenic Material Properties Database (E.D. Marquardt, J.P. Le, R. Radebaugh, Cryocoolers 11, 2002, pp. 681-687; 标准口径名，页码 UNVERIFIED，#122 如实)",
+    "secondary_dual_source": [
+      "[A] github.com/circuitqed/cryocalc cryocalc/data/materials.json (检索 2026-10-03，raw 逐格读数)",
+      "[B] github.com/CMB-S4/Cryogenic_Material_Properties tc_compilation_allfits_20260821.csv (检索 2026-10-03)"
+    ],
+    "digit_crosscheck": "al6061_t6 k 与 aluminum_1100 k 两源逐格一致（B 侧 6 位截断）；其余行单源 [A] + 已知值锚（锚值写进各 fit 的 anchor 字段）",
+    "retrieved": "2026-10-03"
+  },
+  "fits": {
+    "al6061_t6_thermal_conductivity": {
+      "material": "Aluminum 6061-T6",
+      "property": "thermal_conductivity_w_m_k",
+      "type": "logpoly",
+      "coefficients": [0.07918, 1.0957, -0.07277, 0.08084, 0.02803, -0.09464, 0.04179, -0.00571, 0.0],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": true,
+      "anchor": "k(4K)=5.35, k(77K)=83.5, k(300K)=155.3（文献带 ±10%）"
+    },
+    "al6061_t6_specific_heat": {
+      "material": "Aluminum 6061-T6",
+      "property": "specific_heat_j_kg_k",
+      "type": "logpoly",
+      "coefficients": [46.6467, -314.292, 866.662, -1298.3, 1162.27, -637.795, 210.351, -38.3094, 2.96344],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "cp(300K)=954 J/kg-K（文献带 ~900，±10%）"
+    },
+    "al6061_t6_linear_expansion": {
+      "material": "Aluminum 6061-T6",
+      "property": "delta_l_over_l_native",
+      "type": "poly",
+      "coefficients": [-412.77, -0.30389, 0.0087696, -9.9821e-06, 0.0],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "ΔL/L(4K)=-413.85 原生单位；293→4K 总收缩公开带 [0.40,0.43]% → 原生单位=1e-5 m/m（single_source 判定）"
+    },
+    "al1100_thermal_conductivity": {
+      "material": "Aluminum 1100",
+      "property": "thermal_conductivity_w_m_k",
+      "type": "logpoly",
+      "coefficients": [23.39172, -148.5733, 422.1917, -653.6664, 607.0402, -346.152, 118.4276, -22.2781, 1.770187],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": true,
+      "anchor": "k(4K)=54.1, k(300K)=211.8（文献带 220±5%）"
+    },
+    "g10_cr_normal_thermal_conductivity": {
+      "material": "G10 CR (normal direction)",
+      "property": "thermal_conductivity_w_m_k",
+      "type": "logpoly",
+      "coefficients": [-4.1236, 13.788, -26.068, 26.272, -14.663, 4.4954, -0.6905, 0.0397, 0.0],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "k(4K)≈0.27, k(300K)≈0.6（文献带 ±15%）"
+    },
+    "ss304_thermal_conductivity": {
+      "material": "Stainless Steel 304",
+      "property": "thermal_conductivity_w_m_k",
+      "type": "logpoly",
+      "coefficients": [-1.4087, 1.3982, 0.2543, -0.626, 0.2334, 0.4256, -0.4658, 0.165, -0.0199],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "k(4K)=0.27, k(77K)=7.9, k(300K)=15.3（NIST 公开表带 ±10%）"
+    },
+    "ss304_specific_heat": {
+      "material": "Stainless Steel 304",
+      "property": "specific_heat_j_kg_k",
+      "type": "logpoly",
+      "coefficients": [22.0061, -127.5528, 303.647, -381.0098, 274.0328, -112.9212, 24.7593, -2.239153, 0.0],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "cp(300K)=469 J/kg-K（文献 ~480，±5%）"
+    },
+    "teflon_thermal_conductivity": {
+      "material": "PTFE (Teflon)",
+      "property": "thermal_conductivity_w_m_k",
+      "type": "logpoly",
+      "coefficients": [2.738, -30.677, 89.43, -136.99, 124.69, -69.556, 23.32, -4.3135, 0.33829],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "k(4K)=0.046, k(300K)=0.27（文献带 0.25±10%）"
+    },
+    "cu_ofhc_resistivity": {
+      "material": "Copper OFHC (general)",
+      "property": "resistivity_nohm_m",
+      "type": "logpoly",
+      "coefficients": [-17.9081289, 67.131914, -118.809316, 109.9845997, -53.8696089, 13.30247491, -1.30843441, 0.0, 0.0],
+      "t_range_k": [4.0, 300.0],
+      "dual_source": false,
+      "anchor": "ρ(300K)=16.58 nΩ·m → σ=6.03e7 S/m（纯 Cu 已知 5.8e7，+4%带内）"
+    }
+  }
+}

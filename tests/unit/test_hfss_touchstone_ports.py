@@ -6,7 +6,7 @@ HFSS 设计实际 1 端口，``export_touchstone`` 原条件 ``n_ports >= 2`` �
 ``skrf.Network(.s2p)`` 按 2x2 reshape 抛 "cannot reshape array of size N
 into shape (4,newaxis)"。
 
-全部 mock PyAEDT 通道（单测禁真打 HFSS）；Touchstone 样例用
+全部 mock PyAEDT 通道（单测禁真打 HFSS， 硬规则）；Touchstone 样例用
 skrf 合成（1/2/3/4/5 端口往返）+ 内嵌 HFSS ExportNetworkData 导出格式片段
 （2025.1 真机 .s1p 头部原样摘录，数值截短），不读 runs/。
 """
@@ -38,7 +38,7 @@ from rfauto.core.errors import ContractViolationError
 
 _HFSS_S1P_SAMPLE = """\
 ! Touchstone file exported from HFSS 2025.1.0
-!        File:           <repo>/runs/wp34_patch_gt/diag/diag_build.aedt
+!        File:           D:/rf_workspace/runs/wp34_patch_gt/diag/diag_build.aedt
 !        Design:         RFADesign
 !        Setup:          Setup1
 !        Solution:       Sweep1
@@ -184,11 +184,18 @@ class _FakeSetup:
 
 
 class _FakeHfss:
-    """模拟 Hfss 会话：健康 profile + 可配置端口列表（或查询抛错）。"""
+    """模拟 Hfss 会话：健康 profile + 可配置端口列表（或查询抛错）。
 
-    def __init__(self, ports, *, ports_raise: bool = False):
+    R4-1 扩展：可选 boundaries（BoundaryObject 形状，含 props["Modes"]）
+    供多模波端口 Σ模数计数钉；不传则保持旧形状（无 boundaries 属性）。
+    """
+
+    def __init__(self, ports, *, ports_raise: bool = False,
+                 boundaries=None, boundaries_raise: bool = False):
         self._ports = list(ports)
         self._ports_raise = ports_raise
+        self._boundaries = boundaries
+        self._boundaries_raise = boundaries_raise
         self.osolution = object()
         self.working_directory = None
         self.project_path = None
@@ -200,6 +207,12 @@ class _FakeHfss:
         if self._ports_raise:
             raise RuntimeError("gRPC blip")
         return self._ports
+
+    @property
+    def boundaries(self):
+        if self._boundaries_raise:
+            raise RuntimeError("gRPC blip")
+        return list(self._boundaries or [])
 
     are_there_simulations_running = False
 
@@ -309,3 +322,99 @@ class TestGetSparamsOnePort:
         assert len(calls) == 1 and calls[0].suffix == ".s1p"
         assert not calls[0].exists(), "导出的临时 .s1p 须清理"
         assert not calls[0].with_suffix(".s2p").exists(), "占位 .s2p 须清理"
+
+
+# ─── R4-1 多模波端口 Σ模数计数（审查批 2026-10-04，#309 先例升主路径） ──────
+
+class _FakeBoundary:
+    """BoundaryObject 形状最小仿真：name + props（含 Modes）。"""
+
+    def __init__(self, name: str, modes=None):
+        self.name = name
+        self.props = {} if modes is None else {"Modes": modes}
+
+
+class TestDesignPortCountSumModes:
+    def test_two_ports_two_modes_each_sums_to_four(self):
+        """2 波端口×2 模（#307/#309 hairpin 锚形态）→ Σ模数=4，非边界数 2。"""
+        hfss = _FakeHfss(
+            ["P1sheetP", "P2sheetP"],
+            boundaries=[_FakeBoundary("P1sheetP", 2), _FakeBoundary("P2sheetP", 2)])
+        assert HfssAdapter._design_port_count(hfss) == 4
+
+    def test_lumped_port_without_modes_counts_one(self):
+        """集总端口无 Modes 键按 1 模；混排按逐端口累加。"""
+        hfss = _FakeHfss(
+            ["W1", "L1"],
+            boundaries=[_FakeBoundary("W1", 3), _FakeBoundary("L1")])
+        assert HfssAdapter._design_port_count(hfss) == 4
+
+    def test_boundaries_query_fails_falls_back_to_boundary_count(self):
+        """boundaries 查询抛错：退回端口边界数口径（旧行为，单模设计逐位一致）。"""
+        hfss = _FakeHfss(["P1", "P2"], boundaries_raise=True)
+        assert HfssAdapter._design_port_count(hfss) == 2
+
+    def test_no_boundaries_attribute_old_fake_shape(self):
+        """旧 _FakeHfss 形状（无 boundaries 属性）→ 边界数口径，不炸。"""
+        assert HfssAdapter._design_port_count(_FakeHfss(["P1", "P2"])) == 2
+
+    def test_ports_query_fails_returns_none(self):
+        assert HfssAdapter._design_port_count(_FakeHfss(["P1"], ports_raise=True)) is None
+
+
+class TestMultimodeExportS4p:
+    def test_two_port_two_mode_design_exports_s4p(self, adapter, monkeypatch, tmp_path):
+        """回归钉（R4-1/#248 复发面）：2 端口×2 模设计请求 .s2p → 按 Σ模数=4
+        修正为 .s4p，skrf 按扩展名读出 4 端口网络（旧径把 4×4 模态数据改名
+        .s2p → skrf reshape IndexError）。"""
+        hfss = _FakeHfss(
+            ["P1sheetP", "P2sheetP"],
+            boundaries=[_FakeBoundary("P1sheetP", 2), _FakeBoundary("P2sheetP", 2)])
+        adapter.session.hfss = hfss
+        calls = _patch_direct_export(monkeypatch, n_ports=4)
+        out = adapter.export_touchstone(tmp_path / "params.s2p")
+        assert out == tmp_path / "params.s4p"
+        assert calls == [out], "应直接导出到 Σ模数修正后的 .s4p 路径"
+        assert rf.Network(str(out)).nports == 4
+
+
+class TestPatchPluginContractOnePort:
+    """0da followUp② 收口回归钉：patch 插件契约 1 端口与三通道一致。
+
+    wp34 GT 战役根因的另一半：插件契约 n_ports=2 与单馈 patch 设计实际
+    1 端口不一致（导出侧 contract_for_port_count 每点重建+告警兜底）。
+    契约改 1 后三通道（插件/TEMPLATE_META/docs meta.yaml）逐位一致，
+    HFSS 导出路径不再触发重建告警。
+    """
+
+    @staticmethod
+    def _repo() -> Path:
+        return Path(__file__).resolve().parents[2]
+
+    def test_plugin_n_ports_matches_single_feed(self):
+        from rfauto.models.registry import get
+        assert get("patch_antenna").n_ports == 1
+
+    def test_three_channel_port_count_consistency(self):
+        import yaml
+
+        from rfauto.adapters.openems_templates import TEMPLATE_META
+        from rfauto.models.registry import get
+        plugin = int(get("patch_antenna").n_ports)
+        oe_meta = int(TEMPLATE_META["patch"]["n_ports"])
+        docs = yaml.safe_load(
+            (self._repo() / "docs" / "templates" / "patch" / "meta.yaml")
+            .read_text(encoding="utf-8"))
+        assert plugin == oe_meta == int(docs["n_ports"]) == 1
+
+    def test_run_once_patch_contract_matches_fake_network(self, tmp_path, monkeypatch):
+        """run_once(fake) 全链：契约 1 端口 × fake 网络 1 端口一致——
+        FakeAdapter.export_touchstone 的契约校验不再可能触发
+        ContractViolationError（旧 2 端口形状残留已删）。"""
+        monkeypatch.chdir(tmp_path)
+        recipe = self._repo() / "recipes" / "patch_antenna_v1.yaml"
+        from rfauto.service.api import run_once
+        result = run_once(recipe)
+        assert result["ok"], result.get("errors")
+        s1p = list((Path(result["run_dir"]) / "results").glob("params.s1p"))
+        assert s1p, "契约 1 端口 → 请求扩展名应为 .s1p"

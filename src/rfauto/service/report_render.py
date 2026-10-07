@@ -1,6 +1,6 @@
 """DP-13 U1 双输出报告链：run → 报告模型 → typst PDF ‖ plotly 自包含 HTML 同源双出。
 
-合规形态（确定性内核铁律 + #105/#122）：
+合规形态：
 
 1. **同源双出**：:func:`build_report_model` 产出唯一报告模型（schema
    ``rfauto-report/v1``，纯 dict、可直接 json.dumps）；:func:`render_typ` 与
@@ -32,10 +32,14 @@ import json
 import math
 import re
 import subprocess
+from collections.abc import Mapping
 from datetime import datetime
 from html.parser import HTMLParser as HtmlParser
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import ok_envelope
+from rfauto.service.report_domains import DOMAINS_TYP_BLOCK
 
 REPORT_SCHEMA = "rfauto-report/v1"
 _CRITERIA_V2_SCHEMA = "criteria/v2"
@@ -605,11 +609,16 @@ def _default_criteria_dir() -> Path | None:
 
 
 def build_report_model(run_dir: str | Path, *, criteria_dir: str | Path | None = None,
-                       git_commit: str | None = None) -> dict:
+                       git_commit: str | None = None,
+                       domain_results: Mapping[str, Any] | None = None) -> dict:
     """run 目录 → 报告模型（schema ``rfauto-report/v1``，纯 dict 可 json 化）。
 
     四段式大纲：identification / method / criteria / conclusion；
     全部数值载体节点带 ``source`` 键（:func:`bare_number_fields` 判零）。
+    ``domain_results``（B3 报告四新节：{aging/pi/ota/emc: 各内核输出}）
+    给定时经 :func:`rfauto.service.report_domains.assemble_domain_sections`
+    挂 ``domains`` 节；不给定（缺省 None）时模型无该键——既有输出逐字节
+    不变。
     """
     run_path = Path(run_dir)
     if not run_path.is_dir():
@@ -682,6 +691,10 @@ def build_report_model(run_dir: str | Path, *, criteria_dir: str | Path | None =
         },
         "curves": curves,
     }
+    if domain_results is not None:
+        from rfauto.service.report_domains import assemble_domain_sections
+
+        model["domains"] = assemble_domain_sections(domain_results)
     return model
 
 
@@ -697,6 +710,12 @@ _SECTION_TITLES = (
 
 def _typ_cell(text: str) -> str:
     return f"[{typ_escape(text)}]"
+
+
+# 垂直域四新节（aging/PI/OTA/EMC）的 typst 条件块（B3 批）——纯静态拼接，
+# 未传 domain_results 时 jinja 条件不渲染，PDF 输出与既有逐字节一致。
+# （report_domains 零 rfauto 内依赖，顶层导入无环。）
+_DOMAINS_TYP_BLOCK = DOMAINS_TYP_BLOCK
 
 
 _TYP_TEMPLATE = r"""#set text(font: ("Microsoft YaHei", "SimHei", "Noto Sans CJK SC"), lang: "zh")
@@ -761,7 +780,7 @@ trace 标签：{{ ((model.curves.traces | map(attribute="label") | join(", ")) o
 
 trace 出处：{% for t in model.curves.traces %}{{ (t.label ~ "(" ~ t.source ~ ")") | tc }} {% else %}无
 {% endfor %}
-"""
+""" + _DOMAINS_TYP_BLOCK
 
 
 def _jinja_env() -> Any:
@@ -935,6 +954,12 @@ def render_html(model: dict) -> str:
         fig = _build_figure(curves)
         parts.append(fig.to_html(full_html=False, include_plotlyjs=True,
                                  config={"displaylogo": False}))
+    # ⑤ 垂直域四新节（B3 批）：domain_results 给定时才有该键——缺省输出
+    # 与既有逐字节一致。
+    if model.get("domains"):
+        from rfauto.service.report_domains import render_domains_html
+
+        parts.append(render_domains_html(model["domains"]))
     parts.append("</body></html>")
     return "".join(parts)
 
@@ -984,15 +1009,14 @@ def render_run_report(run_dir: str | Path, out_dir: str | Path | None = None, *,
         return {"ok": False, "error": f"报告产物写盘失败：{exc}"}
     except Exception as exc:  # 渲染链故障如实上报，不让调用方拿半截产物（#105）
         return {"ok": False, "error": f"报告渲染失败：{type(exc).__name__}: {exc}"}
-    return {
-        "ok": True,
-        "schema": REPORT_SCHEMA,
-        "pdf_path": str(pdf_path),
-        "html_path": str(html_path),
-        "typ_path": str(target / "report.typ"),
-        "run_id": model["identification"]["run_id"],
-        "criteria_status": model["criteria"]["status"],
-        "verdict": model["conclusion"]["verdict"],
-        "vv_status": model["conclusion"]["vv_status"],
-        "n_anomalies": len(model["conclusion"]["anomalies"]),
-    }
+    return ok_envelope(
+        schema=REPORT_SCHEMA,
+        pdf_path=str(pdf_path),
+        html_path=str(html_path),
+        typ_path=str(target / "report.typ"),
+        run_id=model["identification"]["run_id"],
+        criteria_status=model["criteria"]["status"],
+        verdict=model["conclusion"]["verdict"],
+        vv_status=model["conclusion"]["vv_status"],
+        n_anomalies=len(model["conclusion"]["anomalies"]),
+    )

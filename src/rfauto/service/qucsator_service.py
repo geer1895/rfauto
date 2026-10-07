@@ -25,6 +25,7 @@ from rfauto.adapters.qucsator_adapter import (
     qucsator_version,
 )
 from rfauto.core.synthesis import Stackup
+from rfauto.service.envelope import ok_envelope
 
 #: KJ vs HJ 口径差声明（随 verdict 返回，防消费方误读成数值 bug）。
 _KJ_VS_HJ_NOTE = (
@@ -106,30 +107,29 @@ def solve_mline(
     if not result.success:
         return {"ok": False, "status": "solve_failed", "errors": [result.message]}
     fd = result.field_data or {}
-    return {
-        "ok": True,
-        "status": "ok",
-        "engine": "qucsator_rf",
-        "version": qucsator_version(exe),
-        "work_dir": str(wd),
-        "freqs_ghz": [float(f) for f in result.freq_ghz],
-        "s11": [[float(v.real), float(v.imag)] for v in result.s_params[:, 0, 0]],
-        "s21": [[float(v.real), float(v.imag)] for v in result.s_params[:, 1, 0]],
-        "beta_rad_per_m": [float(b) for b in fd.get("beta_rad_per_m", [])],
-        "epsilon_eff": [float(e) for e in fd.get("epsilon_eff", [])],
-        "params": {"w_mm": float(params.get("w_mm", 1.113)),
+    return ok_envelope(
+        status="ok",
+        engine="qucsator_rf",
+        version=qucsator_version(exe),
+        work_dir=str(wd),
+        freqs_ghz=[float(f) for f in result.freq_ghz],
+        s11=[[float(v.real), float(v.imag)] for v in result.s_params[:, 0, 0]],
+        s21=[[float(v.real), float(v.imag)] for v in result.s_params[:, 1, 0]],
+        beta_rad_per_m=[float(b) for b in fd.get("beta_rad_per_m", [])],
+        epsilon_eff=[float(e) for e in fd.get("epsilon_eff", [])],
+        params={"w_mm": float(params.get("w_mm", 1.113)),
                    "line_len_mm": float(params.get("line_len_mm", 40.0)),
                    "stackup": _stackup_from_dict(stackup).name,
                    "disp_model": "Kirschning", "quasi_static_model": "Hammerstad"},
-        "artifacts": {
+        artifacts={
             "netlist": str(wd / "qucsator_mline.net"),
             "dataset": str(wd / "qucsator_dataset.dat"),
             "sparams_csv": str(wd / "qucsator_sparams.csv"),
             "port_beta_csv": str(wd / "qucsator_port_beta.csv"),
             "touchstone": str(wd / "qucsator_mline.s2p"),
         },
-        "message": result.message,
-    }
+        message=result.message,
+    )
 
 
 def solve_mline_three_way(

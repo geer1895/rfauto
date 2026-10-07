@@ -15,11 +15,12 @@
 - 校验 verify_artifact_manifest / verify_reproducibility_manifest：给定清单
   + 当前目录，报 missing / changed / extra 三态差异，顺序确定（sorted）。
 
-设计约束（best-effort 纪律）：环境探测（git/包版本）全部 best-effort，失败退化
+设计约束：环境探测（git/包版本）全部 best-effort，失败退化
 为 None；但**入参非法**（类型错、空依赖集、清单缺字段）显式 ValueError，
 绝不静默产出无意义摘要。缺路径属于数据态，返回 {"ok": False, "errors": [...]}。
 
-如实记未做：Docker 镜像构建/镜像内干净 venv 重放（本机无 Docker，模块设计本身不依赖 Docker）。
+如实记未做：Docker 镜像构建/镜像内干净 venv 重放（本机无 Docker，任务书
+明确不依赖 Docker）。
 """
 
 from __future__ import annotations
@@ -33,6 +34,8 @@ import sys
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 SCHEMA_VERSION = 1
 HASH_ALGORITHM = "sha256"
@@ -258,7 +261,7 @@ def build_artifact_manifest(target: str | Path, *, ignore: Any = ()) -> dict[str
     """
     base = _resolve_target(target)
     if not base.exists():
-        return {"ok": False, "errors": [f"目标不存在: {base}"]}
+        return error_envelope([f"目标不存在: {base}"])
     patterns = _normalize_ignore(ignore)
 
     entries: dict[str, str] = {}
@@ -268,18 +271,17 @@ def build_artifact_manifest(target: str | Path, *, ignore: Any = ()) -> dict[str
         try:
             entries[rel] = _sha256(path.read_bytes())
         except OSError as exc:
-            return {"ok": False, "errors": [f"读取失败: {rel}: {exc}"]}
+            return error_envelope([f"读取失败: {rel}: {exc}"])
 
     ordered = dict(sorted(entries.items()))
-    return {
-        "ok": True,
-        "schema_version": SCHEMA_VERSION,
-        "root": str(base),
-        "files": ordered,
-        "file_count": len(ordered),
-        "digest": _sha256(_canonical_json(ordered)),
-        "ignored": list(patterns),
-    }
+    return ok_envelope(
+        schema_version=SCHEMA_VERSION,
+        root=str(base),
+        files=ordered,
+        file_count=len(ordered),
+        digest=_sha256(_canonical_json(ordered)),
+        ignored=list(patterns),
+    )
 
 
 def _manifest_files(manifest: Any) -> dict[str, str]:
@@ -294,19 +296,16 @@ def _manifest_files(manifest: Any) -> dict[str, str]:
 def verify_artifact_manifest(manifest: Any, target: str | Path) -> dict[str, Any]:
     """给定产物清单 + 当前目录 → missing/changed/extra 三态差异（确定性排序）。"""
     if not isinstance(manifest, Mapping):
-        return {"ok": False, "errors": ["manifest 需要映射"],
-                "missing": [], "changed": [], "extra": []}
+        return error_envelope(["manifest 需要映射"], missing=[], changed=[], extra=[])
     try:
         recorded = _manifest_files(manifest)
     except ValueError as exc:
-        return {"ok": False, "errors": [str(exc)],
-                "missing": [], "changed": [], "extra": []}
+        return error_envelope([str(exc)], missing=[], changed=[], extra=[])
 
     ignore = manifest.get("ignored") or ()
     current = build_artifact_manifest(target, ignore=ignore)
     if not current.get("ok"):
-        return {"ok": False, "errors": list(current.get("errors", [])),
-                "missing": [], "changed": [], "extra": []}
+        return error_envelope(list(current.get("errors", [])), missing=[], changed=[], extra=[])
 
     current_files: dict[str, str] = current["files"]
     recorded_keys = set(recorded)
@@ -357,8 +356,7 @@ def verify_environment(recorded: Any, current: Any) -> dict[str, Any]:
     rec_pkgs = _extract_packages(recorded)
     cur_pkgs = _extract_packages(current)
     if rec_pkgs is None or cur_pkgs is None:
-        return {"ok": False, "errors": ["环境清单缺少 packages 映射"],
-                "missing": [], "changed": [], "extra": []}
+        return error_envelope(["环境清单缺少 packages 映射"], missing=[], changed=[], extra=[])
     report = diff_packages(rec_pkgs, cur_pkgs)
     rec_lock = recorded.get("lock_digest") if isinstance(recorded, Mapping) else None
     cur_lock = current.get("lock_digest") if isinstance(current, Mapping) else None
@@ -406,8 +404,7 @@ def verify_reproducibility_manifest(
 ) -> dict[str, Any]:
     """校验完整清单：产物三态差异 + 环境 packages/lock 差异。"""
     if not isinstance(manifest, Mapping):
-        return {"ok": False, "errors": ["manifest 需要映射"],
-                "artifacts": None, "environment": None}
+        return error_envelope(["manifest 需要映射"], artifacts=None, environment=None)
 
     errors: list[str] = []
     artifact_report: dict[str, Any] | None = None
@@ -433,8 +430,15 @@ def verify_reproducibility_manifest(
     if environment_report is not None:
         ok = ok and bool(environment_report.get("ok"))
 
-    return {"ok": ok, "errors": errors,
-            "artifacts": artifact_report, "environment": environment_report}
+    # ge8e W2 快偿（R5-06）：裸 ok 信封 → 构造器（键集/键序/语义零变化；
+    # ok 可能 False 而 errors 空（子报告失败）——按 ok 值分支不按 errors）
+    if ok:
+        return ok_envelope(errors=errors,
+                           artifacts=artifact_report,
+                           environment=environment_report)
+    return error_envelope(errors,
+                          artifacts=artifact_report,
+                          environment=environment_report)
 
 
 def write_manifest(manifest: Any, path: str | Path) -> dict[str, Any]:
@@ -445,18 +449,18 @@ def write_manifest(manifest: Any, path: str | Path) -> dict[str, Any]:
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
                     encoding="utf-8")
-    return {"ok": True, "path": str(dest), "digest": _sha256(_canonical_json(manifest))}
+    return ok_envelope(path=str(dest), digest=_sha256(_canonical_json(manifest)))
 
 
 def read_manifest(path: str | Path) -> dict[str, Any]:
     """读回清单；文件缺失/解析失败 → {"ok": False, "errors": [...]}。"""
     src = Path(path)
     if not src.is_file():
-        return {"ok": False, "errors": [f"清单不存在: {src}"]}
+        return error_envelope([f"清单不存在: {src}"])
     try:
         data = json.loads(src.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        return {"ok": False, "errors": [f"清单解析失败: {exc}"]}
+        return error_envelope([f"清单解析失败: {exc}"])
     if not isinstance(data, Mapping):
-        return {"ok": False, "errors": ["清单根节点需要 JSON 对象"]}
-    return {"ok": True, "manifest": dict(data)}
+        return error_envelope(["清单根节点需要 JSON 对象"])
+    return ok_envelope(manifest=dict(data))

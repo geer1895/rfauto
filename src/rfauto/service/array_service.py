@@ -1,6 +1,6 @@
 """DP-4 P2：阵列两档方向图服务层（快速档编排；互耦档接口预留）。
 
-职责（分层铁律：服务层 JSON 进出，CLI/MCP 薄壳；数值只在
+职责（ 硬限 4：服务层 JSON 进出，CLI/MCP 薄壳；铁律 7：数值只在
 确定性内核——全部物理数字来自 core/array_synthesis.py（零改动复用）与
 core/array_scan.py 纯函数，本模块只做参数校验、布局/激励构建与结果装配）：
 
@@ -80,6 +80,7 @@ from rfauto.core.farfield import (
     parse_farfield_cut_csv,
     pattern_db,
 )
+from rfauto.service.envelope import ok_envelope
 
 __all__ = [
     "NotImplementedPhase",
@@ -211,7 +212,7 @@ def synthesize_array_weights(request: dict) -> dict[str, Any]:
             }
         else:
             raise ValueError(f"layout 须为 ula/rect，收到 {layout!r}")
-        return {"ok": True, "result": result}
+        return ok_envelope(result=result)
     except (ValueError, TypeError) as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -458,7 +459,7 @@ def _dmax_elem_dbi(elem_info: dict[str, Any],
             if v is None:
                 return None, f"meta {cand} 无 dmax_dbi 字段"
             return float(v), None
-    return None, f"未找到伴生 {FARFIELD_META_NAME}（{base} 及 fdtd/）"
+    return None, f"未找到伴生 {FARFIELD_META_NAME}（{base} 及 fdtd）"
 
 
 # ─── 门 ──────────────────────────────────────────────────────────────────────
@@ -586,7 +587,7 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
                 raise NotImplementedPhase(
                     "DP-4 互耦档（EEP+全 S 矩阵真机编排）属 P3：本批仅预定义"
                     "接口，不发射真机（详见 runs/df6_dp4af/criteria.md P3 交接）")
-            return {"ok": True, "result": coupled_solver(request)}
+            return ok_envelope(result=coupled_solver(request))
 
         # ── 快速档（秒级）：单元方向图 × AF 复域逐点乘 ──
         elem_fn, elem_info = _element_provider(request)
@@ -598,16 +599,29 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
                     if isinstance(phi_cuts_raw, (list, tuple))
                     else [float(phi_cuts_raw)])
         th_cut = _default_theta_grid(request, elem_info)
+        # SLL 切面方向余弦轴（F-8/S3）：矩形阵原恒用 x 轴 u 切面——scan_phi≠0
+        # 时主瓣不在 x 向余弦切面内（scan_phi=90 时 ux≡0 退化），副瓣会被
+        # peak_sidelobe_level_db 当主瓣量出假 SLL。按扫描方位选轴：主瓣分量
+        # 大的一侧承载 u 切面；主瓣方向余弦同步取该轴分量。ULA 保持阵轴
+        # u 切面（phi_cut 应与扫描平面对齐，属调用方口径）。sll_u_axis 字段
+        # 如实标注实际用轴（dmax_fast_assumption 同惯例）。
+        if lay["kind"] == "ula":
+            sll_cut_axis = str(lay["axis"])
+            main_u_default = float(ex["u0"])
+        else:
+            ph0 = float(ex["scan_phi_deg"])
+            sll_cut_axis = ("x" if abs(np.cos(np.radians(ph0)))
+                            >= abs(np.sin(np.radians(ph0))) else "y")
+            main_u_default = float(ex["u0"] if sll_cut_axis == "x"
+                                   else ex["scan_u_y"])
         cuts_out = []
         for phi_cut in phi_cuts:
             et, ep = elem_fn(th_cut, np.full_like(th_cut, phi_cut))
             af = _af_on_angles(lay, ex, th_cut, np.full_like(th_cut, phi_cut))
             f = (et + ep) * af
             f_abs = np.abs(f)
-            u_cut = (direction_cosine(th_cut, phi_cut, lay["axis"])
-                     if lay["kind"] == "ula"
-                     else direction_cosine(th_cut, phi_cut, "x"))
-            main_u = float(ex["u0"])
+            u_cut = direction_cosine(th_cut, phi_cut, sll_cut_axis)
+            main_u = main_u_default
             pdb = pattern_db(f_abs)
             cuts_out.append({
                 "phi_deg": phi_cut,
@@ -620,6 +634,7 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
                 "sll_db": (float(peak_sidelobe_level_db(
                     f_abs, u_cut, main_lobe_direction_cosine=main_u))
                     if f_abs.max() > 0.0 else None),
+                "sll_u_axis": sll_cut_axis,
                 "hpbw_deg": hpbw_deg(th_cut, pdb),
             })
 
@@ -685,6 +700,7 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
             "element": elem_info,
             "cuts": cuts_out,
             "sll_db": cuts_out[0]["sll_db"],
+            "sll_u_axis": cuts_out[0]["sll_u_axis"],
             "hpbw_deg": cuts_out[0]["hpbw_deg"],
             "dmax_elem_dbi": dmax_elem,
             "dmax_elem_note": dmax_elem_note,
@@ -702,7 +718,7 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
             "coupled_tier": coupled_tier,
             "coupled_solver_hooked": coupled_solver is not None,
         }
-        return {"ok": True, "result": result}
+        return ok_envelope(result=result)
     except (ValueError, TypeError, KeyError) as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -754,14 +770,16 @@ def array_scan_sweep(request: dict) -> dict[str, Any]:
                                         if not bs.get("skipped") else None)
             rows.append(row)
         n_blind = sum(1 for r in rows if r.get("blind") is True)
-        return {"ok": True, "result": {
+        return ok_envelope(
+            result={
             "layout": lay["kind"], "n_elements": lay["n"],
             "n_angles": int(angles.size), "n_blind": n_blind,
             "coupling_db": coupling_db,
             "has_slab_screen": (request.get("slab") is not None
                                 or request.get("beta_sw_rad_per_m") is not None),
             "rows": rows,
-        }}
+        },
+        )
     except (ValueError, TypeError, KeyError) as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -909,15 +927,20 @@ def collect_eep_manifest(run_dirs: list[str], n_ports: int, *,
         if s4p_hits:
             s_matrix = {"source": "s4p", "ref": s4p_hits[0].name,
                         "path": str(s4p_hits[0])}
-    return {
-        "ok": True, "layout": layout, "n_ports": n,
-        "run_root": str(root), "run_dirs": [str(b) for b in bases],
-        "ports": ports, "rounds": rounds, "s_matrix": s_matrix,
-        "skipped": skipped, "n_skipped": len(skipped),
-        "curve_refs_policy": ("显式引用优先（#320）；缺省 p{k}/farfield3d_cplx.csv"
+    return ok_envelope(
+        layout=layout,
+        n_ports=n,
+        run_root=str(root),
+        run_dirs=[str(b) for b in bases],
+        ports=ports,
+        rounds=rounds,
+        s_matrix=s_matrix,
+        skipped=skipped,
+        n_skipped=len(skipped),
+        curve_refs_policy="显式引用优先（#320）；缺省 p{k}/farfield3d_cplx.csv"
                               if layout == "work_root" else
-                              "显式引用优先（#320）；缺省 farfield3d_cplx.csv"),
-    }
+                              "显式引用优先（#320）；缺省 farfield3d_cplx.csv",
+    )
 
 
 def _load_smatrix_from_rounds(work_root: str | Path,
@@ -1251,6 +1274,6 @@ def coupled_tier_solve(request: dict) -> dict[str, Any]:
         if bool(request.get("include_s_matrix")):
             result["s_params"] = [
                 _cplx_pairs(s_mat[f].ravel()) for f in range(s_mat.shape[0])]
-        return {"ok": True, "result": result}
+        return ok_envelope(result=result)
     except (ValueError, TypeError, KeyError, FileNotFoundError) as exc:
         return {"ok": False, "error": str(exc)}

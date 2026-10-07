@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussions
+    url: https://github.com/geer1895/rfauto/discussions
+    about: Usage questions, ideas and community discussion (please do not open an issue for questions).
+  - name: Documentation
+    url: https://github.com/geer1895/rfauto#readme
+    about: README, templates gallery and the offline quick-start guide.

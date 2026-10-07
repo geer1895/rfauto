@@ -18,7 +18,8 @@ class PatchAntennaParams(BaseModel):
 
     初值基于 2.4GHz Rogers 4350B 0.508mm 设计：
     - patch_len ≈ λg/2，按 εeff≈2.33 估算 λg≈81.9mm → patch≈40mm
-    - feed_offset：馈电点偏移（阻抗匹配用）
+    - feed_offset：馈电点自贴片中心沿谐振轴的偏移（阻抗匹配用；openEMS
+      官方口径 x=-feed_offset 同基，#154 单源化 2026-10-03）
     """
 
     f0_ghz: float = Field(default=2.4, description="中心频率 GHz")
@@ -26,4 +27,4 @@ class PatchAntennaParams(BaseModel):
     substrate: str = Field(default="rogers4350b_h0.508", description="基板材料（materials.yaml 键）")
     patch_len_mm: float = Field(default=40.0, ge=5.0, le=200.0, description="贴片长度 mm")
     patch_w_mm: float = Field(default=50.0, ge=5.0, le=200.0, description="贴片宽度 mm")
-    feed_offset_mm: float = Field(default=10.0, ge=0.0, le=50.0, description="馈电点偏移 mm")
+    feed_offset_mm: float = Field(default=10.0, ge=0.0, le=50.0, description="馈电点自贴片中心沿谐振轴偏移 mm")

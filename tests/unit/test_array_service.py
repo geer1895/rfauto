@@ -191,6 +191,37 @@ def test_j3d_fast_tier_request_keeps_invalid_mark():
     assert res["coupled_tier"]["status"] == "NotImplementedPhase"
 
 
+def test_s3_rect_sll_cut_axis_follows_scan_plane():
+    """F-8/S3：矩形阵 SLL 切面方向余弦轴按扫描平面选取。
+
+    scan_phi=90°（y-z 平面扫描）时旧恒 x 轴 u 切面 ux≡0 退化——主瓣不在
+    切面方向余弦轴上，副瓣被当主瓣量出假 SLL。修后切面轴=y、主瓣余弦取
+    scan_u_y；扫描 θ=50° 使首副瓣（Δu=±0.75）进入可见半空间，phi_cut=90
+    切面 SLL 回到均匀 4 元线阵口径（首副瓣 −11.3dB）；sll_u_axis 字段如实
+    标注（dmax_fast_assumption 同惯例）。"""
+    res = array_pattern({
+        "layout": "rect", "n_x": 4, "n_y": 4,
+        "spacing_x_lambda": 0.5, "spacing_y_lambda": 0.5,
+        "element": "isotropic", "scan_deg": 50.0, "scan_phi_deg": 90.0,
+        "theta_grid": {"start": 0.0, "stop": 90.0, "step": 0.25},
+        "phi_cut_deg": 90.0,
+    })["result"]
+    assert res["sll_u_axis"] == "y"
+    assert res["cuts"][0]["sll_u_axis"] == "y"
+    # 4 元均匀阵首副瓣 −11.3dB（0.25° 网格数值实测 −11.3035）
+    assert res["sll_db"] == pytest.approx(-11.30, abs=0.3)
+    # 对照：phi=0 平面扫描（x 切面）行为对称不变
+    res_x = array_pattern({
+        "layout": "rect", "n_x": 4, "n_y": 4,
+        "spacing_x_lambda": 0.5, "spacing_y_lambda": 0.5,
+        "element": "isotropic", "scan_deg": 50.0, "scan_phi_deg": 0.0,
+        "theta_grid": {"start": 0.0, "stop": 90.0, "step": 0.25},
+        "phi_cut_deg": 0.0,
+    })["result"]
+    assert res_x["sll_u_axis"] == "x"
+    assert res_x["sll_db"] == pytest.approx(-11.30, abs=0.3)
+
+
 # ─── 扫描扫掠 ────────────────────────────────────────────────────────────────
 
 def test_scan_sweep_blind_spot_and_gate():

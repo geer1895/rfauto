@@ -15,6 +15,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 SCHEMA_VERSION = 1
 
 
@@ -45,7 +47,7 @@ def runs_summary(db_path: str | Path | None = None,
     try:
         conn = _connect(db_path)
     except FileNotFoundError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     try:
         where, params = "", []
         if since:
@@ -73,9 +75,14 @@ def runs_summary(db_path: str | Path | None = None,
                 "metrics": (json.loads(r["metrics"])
                             if r["metrics"] else {}),
             })
-        return {"ok": True, "total": total, "by_model": by_model,
-                "by_adapter": by_adapter, "by_status": by_status,
-                "recent": recent, "schema_version": SCHEMA_VERSION}
+        return ok_envelope(
+            total=total,
+            by_model=by_model,
+            by_adapter=by_adapter,
+            by_status=by_status,
+            recent=recent,
+            schema_version=SCHEMA_VERSION,
+        )
     finally:
         conn.close()
 
@@ -89,7 +96,7 @@ def query_runs(db_path: str | Path | None = None, *,
     try:
         conn = _connect(db_path)
     except FileNotFoundError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     try:
         clauses, params = [], []
         for col, val in (("model", model), ("adapter", adapter),
@@ -108,6 +115,6 @@ def query_runs(db_path: str | Path | None = None, *,
                  "metrics": (json.loads(r["metrics"])
                              if r["metrics"] else {})}
                 for r in rows]
-        return {"ok": True, "n_runs": len(runs), "runs": runs}
+        return ok_envelope(n_runs=len(runs), runs=runs)
     finally:
         conn.close()

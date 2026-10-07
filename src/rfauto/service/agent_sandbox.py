@@ -15,8 +15,20 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
+
 SANDBOX_ROOT = Path("runs") / "recipe_sandbox"
 ALLOWED_SUFFIXES = {".yaml", ".yml"}
+
+
+def _resolve_root(root: Path) -> Path:
+    """沙箱根解析（R3-9）：cwd 相对缺省根走 runs 双根收敛（chdir 仓内
+    子目录时收敛回仓库 runs/，测试 tmp/显式绝对根不受影响）。"""
+    if root.is_absolute():
+        return root.resolve()
+    from rfauto.infra.runs_paths import resolve_runs_dir
+
+    return resolve_runs_dir(root)
 
 
 class SandboxViolation(PermissionError):
@@ -27,7 +39,7 @@ class RecipeSandbox:
     """每个真实配方对应一份确定性命名的草稿（stem+源路径哈希）。"""
 
     def __init__(self, root: Path | None = None):
-        self.root = (root or SANDBOX_ROOT).resolve()
+        self.root = _resolve_root(root or SANDBOX_ROOT)
 
     # ── 守卫 ──────────────────────────────────────────────────────────────
     def _guard(self, path: str | Path) -> Path:
@@ -50,24 +62,23 @@ class RecipeSandbox:
         """复制真实配方为草稿；已存在则不覆盖（保留未 promote 的编辑）。"""
         draft = self.draft_path(recipe_path)
         if draft.exists():
-            return {"ok": True, "draft": str(draft), "already_staged": True}
-        # copyfile 绕不过 yaml 出口，先行校验草稿目标（沙箱根禁指向 recipes/）
+            return ok_envelope(draft=str(draft), already_staged=True)
+        # copyfile 绕不过 yaml 出口，先行校验草稿目标（沙箱根禁指向 recipes）
         from rfauto.infra.recipe_guard import check_recipe_write_target
 
         check_recipe_write_target(draft)
         self.root.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(Path(recipe_path), draft)
-        return {"ok": True, "draft": str(draft), "already_staged": False}
+        return ok_envelope(draft=str(draft), already_staged=False)
 
     def discard(self, recipe_path: str | Path) -> dict[str, Any]:
         draft = self.draft_path(recipe_path)
         draft.unlink(missing_ok=True)
-        return {"ok": True, "discarded": str(draft)}
+        return ok_envelope(discarded=str(draft))
 
     def list_drafts(self) -> dict[str, Any]:
         self.root.mkdir(parents=True, exist_ok=True)
-        return {"ok": True,
-                "drafts": [str(p) for p in sorted(self.root.glob("*.yaml"))]}
+        return ok_envelope(drafts=[str(p) for p in sorted(self.root.glob("*.yaml"))])
 
     # ── 编辑（写面只在沙箱内）────────────────────────────────────────────
     def _load_yaml(self, path: Path) -> dict[str, Any]:
@@ -75,7 +86,7 @@ class RecipeSandbox:
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
     def _save_yaml(self, path: Path, data: dict[str, Any]) -> None:
-        # 统一出口守卫：草稿写面不得越到受保护 recipes/ 下
+        # 统一出口守卫（TODO 增量②）：草稿写面不得越到受保护 recipes/ 下
         from rfauto.infra.recipe_guard import write_recipe_yaml
 
         write_recipe_yaml(path, data)
@@ -103,11 +114,11 @@ class RecipeSandbox:
     def write_yaml(self, recipe_path: str | Path, content: str) -> dict[str, Any]:
         """整文件覆写草稿（给将来的原文编辑模式；守卫同 apply）。"""
         draft = self.draft_path(recipe_path)
-        # 统一出口守卫：沙箱根不可被指到受保护 recipes/ 下
+        # 统一出口守卫（TODO 增量②）：沙箱根不可被指到受保护 recipes/ 下
         from rfauto.infra.recipe_guard import write_recipe_text
 
         write_recipe_text(draft, content)
-        return {"ok": True, "draft": str(draft)}
+        return ok_envelope(draft=str(draft))
 
     # ── 对比与生效 ────────────────────────────────────────────────────────
     def diff(self, recipe_path: str | Path) -> dict[str, Any]:
@@ -125,8 +136,7 @@ class RecipeSandbox:
                               "new": self._effective(draft_p.get(k))}
                           for k in set(orig_p) | set(draft_p)
                           if self._effective(orig_p.get(k)) != self._effective(draft_p.get(k))}
-        return {"ok": True, "draft": str(draft), "unified_diff": text_diff,
-                "params_changed": params_changed}
+        return ok_envelope(draft=str(draft), unified_diff=text_diff, params_changed=params_changed)
 
     def promote(self, recipe_path: str | Path,
                 adapter_name: str = "fake") -> dict[str, Any]:
@@ -173,7 +183,10 @@ class TemplateDraftSandbox:
     """模板渲染脚本草案沙箱（.py 白名单；根 runs/template_sandbox）。"""
 
     def __init__(self, root: Path | None = None):
-        self.root = (root or TEMPLATE_SANDBOX_ROOT).resolve()
+        # F-6/S3：与 RecipeSandbox 同走 _resolve_root（runs 双根收敛）——
+        # 原 (root or TEMPLATE_SANDBOX_ROOT).resolve() 在 chdir 仓内子目录时
+        # 草稿静默分叉到 <子目录>/runs/（#295 族）。
+        self.root = _resolve_root(root or TEMPLATE_SANDBOX_ROOT)
 
     # ── 守卫 ──────────────────────────────────────────────────────────────
     def _guard(self, path: str | Path) -> Path:
@@ -204,7 +217,7 @@ class TemplateDraftSandbox:
         draft = self.draft_path(name)
         draft.parent.mkdir(parents=True, exist_ok=True)
         draft.write_text(content, encoding="utf-8")
-        return {"ok": True, "draft": str(draft)}
+        return ok_envelope(draft=str(draft))
 
     def read_draft(self, name: str) -> str:
         return self.draft_path(name).read_text(encoding="utf-8")
@@ -212,14 +225,15 @@ class TemplateDraftSandbox:
     def discard(self, name: str) -> dict[str, Any]:
         draft = self.draft_path(name)
         draft.unlink(missing_ok=True)
-        return {"ok": True, "discarded": str(draft)}
+        return ok_envelope(discarded=str(draft))
 
     def list_drafts(self) -> dict[str, Any]:
         self.root.mkdir(parents=True, exist_ok=True)
-        return {"ok": True,
-                "drafts": [str(p) for p in sorted(self.root.glob("*.py"))],
-                "promoted": [str(p) for p in sorted(self.promoted_dir.glob("*.py"))]
-                if self.promoted_dir.exists() else []}
+        return ok_envelope(
+            drafts=[str(p) for p in sorted(self.root.glob("*.py"))],
+            promoted=[str(p) for p in sorted(self.promoted_dir.glob("*.py"))]
+                if self.promoted_dir.exists() else [],
+        )
 
     def promote_path(self, name: str) -> Path:
         """promoted/ 准入区目标路径（守卫同草稿：仍在沙箱根内、.py 后缀）。"""

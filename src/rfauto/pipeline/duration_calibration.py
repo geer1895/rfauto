@@ -1,13 +1,13 @@
-"""openEMS 历史实耗标定档案装载与覆盖面统计。
+"""G14 close-out: openEMS 历史实耗标定档案装载与覆盖面统计。
 
-:mod:`quota_guard` 的
+任务来源：续跑计划 §10.20 补强（g14-close）。:mod:`quota_guard` 的
 :class:`~rfauto.pipeline.quota_guard.RobustDurationPredictor` 是纯确定性内核；
 本模块负责唯一允许 IO 的一部分——把 runs/ 下可读的 openEMS 历史实耗数据
 装配成 :class:`~rfauto.pipeline.quota_guard.DurationSample` 标定档（family），
 并给出覆盖面（coverage ratio）实测统计。
 
 标定档（family）划分口径：按模板家族分档，不同几何模板的求解机时不具可比
-性（验收教训：受控同模板 mline 序列 LOO_max=22.4%，跨模板混池
+性（§10.7 G14 验收教训：受控同模板 mline 序列 LOO_max=22.4%，跨模板混池
 281%）：
 
 * ``mline_benchmark``——runs/benchmark/mline_mesh_convergence.json 受控同模板
@@ -20,7 +20,7 @@
 scripts/cost_report.py 同一口径）；缺文件的源按 best-effort 跳过并记录在
 ``skipped``（#105：数据装配不得成为主路径故障点）。
 
-另设 :func:`load_duration_sample_json`：直接装载
+0-P2⑱另设 :func:`load_duration_sample_json`：直接装载
 duration_sample 同构 schema 归档（``nr_ts_cap_declared``/``hit_nr_ts_cap``
 停机机制面 -> DurationSample 的 ``nrts_limit``/``stop_reason`` 特征字段），
 供 NrTS/stop_reason 特征就绪后的重训并入训练集。
@@ -58,9 +58,9 @@ __all__ = [
 MLINE_CONVERGENCE_REL = "benchmark/mline_mesh_convergence.json"
 #: ratrace 仲裁精算实耗（相对 runs/ 的路径）。
 RATRACE_CONVERGENCE_REL = "ratrace_arbitration/openems_convergence.json"
-#: duration_sample 同构 schema 前缀（"同构可并入训练集"）。
+#: duration_sample 同构 schema 前缀（0-P2⑱；二百六十"同构可并入训练集"）。
 #: 实档：runs/quota_guard/ratrace_duration_samples.json（14 样本档）、
-#: runs/ratrace_03mm_sample/duration_sample.json。schema 缺省按同构宽容
+#: runs/ratrace_03mm_sample/duration_sample.json（R10）。schema 缺省按同构宽容
 #: 装载；schema 存在且前缀不符时整文件记 skipped（不猜格式）。
 DURATION_SAMPLE_SCHEMA_PREFIX = "rfauto.quota_guard.ratrace_duration_samples"
 #: ratrace 冒烟日志（0.4mm，次级样本）。
@@ -133,9 +133,32 @@ def load_openems_duration_samples(runs_dir: str | Path) -> dict[str, Any]:
         skipped.append(MLINE_CONVERGENCE_REL)
     else:
         provenance.append(MLINE_CONVERGENCE_REL)
-        for entry in conv.get("entries", []):
-            mesh = float(entry["mesh_mm"])
-            wall = float(entry["wall_s"])
+        # S-1 C-09 2026-10-04：逐条守卫（对齐同文件 load_duration_sample_json
+        # 的既有纪律）——此前缺键/非 dict 条目直接 float(entry["mesh_mm"])
+        # 以 KeyError/TypeError 穿透炸掉整个装载器；畸形条目如实记入
+        # skipped 继续装载（best-effort #105），wall_s 非正亦跳过（0/负值
+        # 实耗入拟合集会在 RobustDurationPredictor.fit 被拒，此处提前以
+        # 更精确的条目上下文记录）。mesh_mm<=0 保留既有 mauto 回退语义
+        # （runs/benchmark/mline_mesh_convergence.json 实档 mesh_mm=0.0 行）。
+        for index, entry in enumerate(conv.get("entries", [])):
+            tag = f"{MLINE_CONVERGENCE_REL}#{index}"
+            if not isinstance(entry, dict):
+                skipped.append(f"{tag}: non-dict entry "
+                               f"({type(entry).__name__})")
+                continue
+            try:
+                mesh = float(entry["mesh_mm"])
+                wall_raw = entry["wall_s"]
+            except KeyError as exc:
+                skipped.append(f"{tag}: 缺键 {exc}")
+                continue
+            except (TypeError, ValueError) as exc:
+                skipped.append(f"{tag}: 非数值 ({exc})")
+                continue
+            wall = _positive_float(wall_raw)
+            if wall is None:
+                skipped.append(f"{tag}: wall_s={wall_raw!r} 非正/非有限/非数")
+                continue
             sim = (
                 runs / "benchmark" / "mline_mauto" / "simulation.py"
                 if mesh <= 0.0
@@ -227,9 +250,9 @@ def _stop_reason_from_entry(entry: dict[str, Any]) -> str:
 def load_duration_sample_json(path: str | Path) -> dict[str, Any]:
     """装载 duration_sample 同构 schema 归档 -> :class:`DurationSample` 档。
 
-    消费该归档形态（``runs/quota_guard/ratrace_duration_samples.json``
-    14 样本档与 ``runs/ratrace_03mm_sample/duration_sample.json`` 同构；
-    "同构可并入训练集"）。逐条字段映射：
+    消费 0-P2⑱ 归档形态（``runs/quota_guard/ratrace_duration_samples.json``
+    14 样本档与 ``runs/ratrace_03mm_sample/duration_sample.json`` R10 同构；
+    二百六十声明"同构可并入训练集"）。逐条字段映射：
 
     * ``wall_s`` -> ``solve_s``、``base_mm``（缺省回退 ``mesh_mm``）->
       ``mesh_mm``——两者必需，缺/非法该条记入 ``skipped``；
@@ -315,7 +338,7 @@ def load_duration_sample_json(path: str | Path) -> dict[str, Any]:
 def calibration_report(runs_dir: str | Path) -> dict[str, Any]:
     """分档 + 混池的稳健预测器标定摘要与覆盖面统计（JSON 原生）。
 
-    每档独立拟合 :class:`RobustDurationPredictor`（稳健语义：样本不足
+    每档独立拟合 :class:`RobustDurationPredictor`（g14-close 语义：样本不足
     或 LOO 不可信 -> status="unknown" + 保守上界），另给混池结果作对照——
     跨模板混池预计落入 unknown（这正是分档口径的实证依据）。
     """

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import subprocess
 
 import pytest
 
@@ -171,6 +172,38 @@ def test_uv_lock_and_registration_ts_best_effort(tmp_path) -> None:
     assert registration_commit_ts(tmp_path / "ghost.py") == ""
 
 
+def test_env_fingerprint_git_sha_populated(repo_root) -> None:
+    """review-slice4 P3-5：git_sha 组件补全（subprocess git rev-parse
+    best-effort #105）。git 环境下=HEAD 短 SHA、两次调用同值（同 HEAD 键
+    确定=缓存键不变性）；非 git 环境 → ""（键面与补全前逐位同值）。"""
+    fp = env_fingerprint(repo_root)
+    ref = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                         cwd=str(repo_root), capture_output=True, text=True)
+    if ref.returncode == 0 and ref.stdout.strip():
+        assert fp["git_sha"] == ref.stdout.strip()
+        assert env_fingerprint(repo_root)["git_sha"] == fp["git_sha"]
+    else:
+        assert fp["git_sha"] == ""               # 无 git 环境：空串不抛
+
+
+def test_git_sha_short_best_effort(tmp_path, monkeypatch) -> None:
+    """_git_sha_short：非 git 目录 → ""；子进程异常 → ""（#105 不抛穿）；
+    env_fingerprint 键面三键不因补值变化（键集钉）。"""
+    from rfauto.infra.dag_cache import _git_sha_short
+
+    assert _git_sha_short(tmp_path) == ""
+    assert _git_sha_short(tmp_path / "ghost") == ""
+
+    def _boom(*args, **kwargs):
+        raise OSError("git unavailable（mock）")
+
+    monkeypatch.setattr(subprocess, "run", _boom)
+    assert _git_sha_short() == ""
+    fp = env_fingerprint()
+    assert set(fp) == {"git_sha", "pip_freeze_sha", "uv_lock_sha256"}
+    assert fp["git_sha"] == ""
+
+
 # ─── 判据 ④：CAS manifest 与 incomplete 语义 ────────────────────────────────
 
 def test_manifest_roundtrip_and_verify(tmp_path) -> None:
@@ -306,3 +339,30 @@ def test_index_readwrite_mode_is_default(tmp_path, monkeypatch) -> None:
     monkeypatch.delenv("RFAUTO_CACHE", raising=False)
     index = DagCasIndex(tmp_path / "cache")
     assert index.enabled is True and index._mode == "readwrite"
+
+
+def test_nearest_entry_skips_tmp_residue(tmp_path, monkeypatch) -> None:
+    """E3-7（ge8e 审查批 F4）回归钉：`{key}.tmp-{pid}` 残留不进比对面。
+
+    原过滤 `endswith(".tmp-*")` 恒 False（字面 * 不出现在真实文件名）；
+    现子串守卫 `.tmp-` 语义正确——tmp 残留（非 json 命名，glob 已排除）
+    即使被手工改名为 .json 也不会被当成比对面消费。"""
+    monkeypatch.delenv("RFAUTO_CACHE", raising=False)
+    cache = tmp_path / "cache"
+    index = DagCasIndex(cache)
+    # 合法索引一条（比对面）
+    (cache / "aaaaaaaa.json").write_text(
+        json.dumps({"components": {"tpl": "wilkinson", "er": "4.4"}}),
+        encoding="utf-8")
+    # tmp 残留（真实命名规约：无 .json 后缀，glob 本就不拾）
+    (cache / "bbbbbbbb.tmp-4242").write_text("{broken", encoding="utf-8")
+    # 纵深形态：tmp 残留伪装成合法 .json 索引（守卫必须在解析/比对前
+    # 剔除——旧死过滤下此条会以 diffs=0 赢得比对，本测试即红）
+    (cache / "cccccccc.tmp-4242.json").write_text(
+        json.dumps({"components": {"tpl": "patch", "er": "2.2"}}),
+        encoding="utf-8")
+    best = index._nearest_entry({"tpl": "wilkinson", "er": "4.4"})
+    assert best == {"tpl": "wilkinson", "er": "4.4"}
+    # 全不同成分：合法条目仍参与比对，tmp 伪装条目不抛不入选
+    best2 = index._nearest_entry({"tpl": "patch", "er": "2.2"})
+    assert best2 == {"tpl": "wilkinson", "er": "4.4"}

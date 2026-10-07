@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
+
 #: 数值内核调用期可预期的异常族——一律进信封
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError,
                 ArithmeticError)
@@ -34,7 +36,7 @@ def coil_evaluate(shape: str, n_turns: float, d_out_m: float, w_m: float,
                                                s_m))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, **result.to_dict()}
+    return ok_envelope(**result.to_dict())
 
 
 def coil_synthesize(target_l_h: float, shape: str, n_turns: float,
@@ -75,7 +77,7 @@ def coil_link(l1_h: float, l2_h: float, m_h: float) -> dict[str, Any]:
         k = coupling_coefficient(float(l1_h), float(l2_h), float(m_h))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "k": k}
+    return ok_envelope(k=k)
 
 
 def coil_resonance(l_h: float, c_f: float) -> dict[str, Any]:
@@ -86,7 +88,7 @@ def coil_resonance(l_h: float, c_f: float) -> dict[str, Any]:
         f0 = resonant_frequency(float(l_h), float(c_f))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "f0_hz": f0}
+    return ok_envelope(f0_hz=f0)
 
 
 def coil_q(f_hz: float, l1_h: float, r1_ohm: float, m_h: float = 0.0,
@@ -104,7 +106,7 @@ def coil_q(f_hz: float, l1_h: float, r1_ohm: float, m_h: float = 0.0,
                                                 float(z_load_im_ohm)))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, **out}
+    return ok_envelope(**out)
 
 
 def coil_mutual_approx(shape1: str, n1: float, d_out1_m: float, w1_m: float,
@@ -121,7 +123,9 @@ def coil_mutual_approx(shape1: str, n1: float, d_out1_m: float, w1_m: float,
             float(d_sep_m))
     except _JSON_ERRORS as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "m_h": m_h,
-            "model": "grover_avg_radius_approx",
-            "note": "贴面耦合需镜像/分段积分（另批），本式只对轴向分离"
-                    "≳线圈径向厚度场景有效"}
+    return ok_envelope(
+        m_h=m_h,
+        model="grover_avg_radius_approx",
+        note="贴面耦合需镜像/分段积分（另批），本式只对轴向分离"
+                    "≳线圈径向厚度场景有效",
+    )

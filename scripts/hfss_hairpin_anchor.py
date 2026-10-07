@@ -1,7 +1,7 @@
-"""hairpin_alt k(gap) 标尺 HFSS 全波仲裁。
+"""hairpin_alt k(gap) 标尺 HFSS 全波仲裁（wf:hfss-hairpin-anchor，登记队列第 3 项）。
 
 背景：hairpin_alt k(gap) 图谱 5 点 openEMS 真机
-（runs/hairpin_kgap_refix，k_EM 严格单调 0.0934→0.0110）但预声明门 FAIL=
+（runs/hairpin_kgap_refix，k_EM 严格单调 0.0934→0.0110）但预声明门 G3 FAIL=
 提取模型失配。本任务=HFSS 全波 2 个 gap 点（0.5/2.2mm）给独立 k，锚定
 openEMS k_EM 标尺（c=k_EM/k_KJ 随之锚定）。判据 runs/hairpin_hfss_anchor/
 criteria.md 起跑前写死（#122）。
@@ -18,15 +18,14 @@ criteria.md 起跑前写死（#122）。
   模阻抗基准 Z_common=Z0e/2、Z_diff=2·Z0o（真机实证），
   k_Z=(Z0e−Z0o)/(Z0e+Z0o)=KJ 同口径链校验（门 ≤10%）；导出 .s4p（#309）。
 
-导体薄片要点（真机实证根因）：零厚度盒 material="pec" **不导电**（端口
+导体薄片铁律（本轮真机实证根因）：零厚度盒 material="pec" **不导电**（端口
 解出空框 TE10/TE20 倏逝模为证），必须 assign_perfecte_to_sheets（CPS/
 marchand 既有配方）。
 
-运行（#157 分离+日志轮询；#242 stdout 落文件；#243 绝对路径；示例以
-本仓 checkout 根为工作目录）：
-  powershell Start-Process <仓库根>\\.venv\\Scripts\\python.exe
+运行（#157 分离+日志轮询；#242 stdout 落文件；#243 绝对路径）：
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_anchor.py" -WorkingDirectory
-    <仓库根> -RedirectStandardOutput
+    D:/rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/hfss/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/hfss/run.err.log
 """
@@ -47,6 +46,8 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
+
+from rfauto.core.coupled_mode_z import dual_conductor_mode_impedances  # noqa: E402
 
 OUT = REPO / "runs" / "hairpin_hfss_anchor" / "hfss"
 RESULT = REPO / "runs" / "hairpin_hfss_anchor" / "hairpin_anchor.json"
@@ -81,7 +82,7 @@ LINE_NUM_MODES = 3      # 偶/奇 TEM 对 + 1 个倏逝框模余量（分析按�
 
 C0 = 299792458.0
 
-# ── 预声明常数（criteria §4，repo 内核现算钉死；判决用常数不因
+# ── 预声明常数（criteria §4，2026-09-19 repo 内核现算钉死；判决用常数不因
 #    结果改 #122）──
 K_EM = {0.5: 0.09337262, 2.2: 0.01102196}          # 归档 openEMS（results_summary）
 C_ARCH = {0.5: 0.77130054, 2.2: 0.57074457}        # 归档 c=k_EM/k_KJ
@@ -92,7 +93,7 @@ EPSE_KJ = {0.5: 3.04109, 2.2: 2.93451}
 EPSO_KJ = {0.5: 2.61448, 2.2: 2.77976}
 F_PEAK_ARCH = {0.5: 2.4106, 2.2: 2.494}            # 响应形态 sanity（不作门）
 
-GATE_ANCHOR_PCT = 15.0     # 主判门（预声明）
+GATE_ANCHOR_PCT = 15.0     # 主判门（任务书立规）
 GATE_CHAIN_PCT = 10.0      # 链校验门 k_Z vs k_KJ
 GATE_CONSIST_PCT = 10.0    # 自洽门 g0500 s21 vs eigen（信息项）
 BUDGET_TOTAL_S = 70 * 60   # 两点总墙钟 ≤70min（判据 §5.5）
@@ -155,7 +156,7 @@ def _write_orphan_check(stage: str) -> list[dict]:
 
 
 def _kill_desktops(*, strict: bool = True) -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
     记失败；杀前清单仍由 _write_orphan_check 留证）；全场收尾扫尾传
@@ -451,7 +452,7 @@ def _build_and_solve_eigen(gap_mm: float) -> dict:
     work.mkdir(parents=True, exist_ok=True)
     lay = _layout_mm(gap_mm, taps=False)
     # solution_type="Eigenmode" 必须在建 design 时给定：HFSSEigen setup 插进
-    # Driven Modal design=非法组合，analyze 零 CPU 挂起（真机实证，
+    # Driven Modal design=非法组合，analyze 零 CPU 挂起（2026-09-19 真机实证，
     # 35min 零 CPU 后杀；该错误组合下 pyaedt 不抛错）
     h = Hfss(project=str(work / f"hairpin_eigen_{tag}.aedt"),
              design=f"eigen_{tag}", version="2025.1",
@@ -488,7 +489,7 @@ def _build_and_solve_eigen(gap_mm: float) -> dict:
 def _extract_eigen_freqs(h) -> list[float]:
     """本征频率提取（reports_by_category.eigenmode 专用路由）。
 
-    路由根因（逐路由实证）：Modal Solution Data 全套查询
+    路由根因（2026-09-19 逐路由实证）：Modal Solution Data 全套查询
     （available_report_quantities/get_solution_data，带或不带 solution kwarg）
     在 eigen design 上零 CPU 挂起；GetMessages 非图形模式恒空。
     唯一可用路由=reports_by_category.eigenmode()，量名=Mode(1..N)，
@@ -746,9 +747,9 @@ def analyze_eigen_modes(modes_ghz: list[float], gap_mm: float) -> dict:
 
 
 def analyze_line2t_modes(port_data: dict, gap_mm: float) -> dict:
-    """双口径探针分析（P1=Zpv / P2=Zpi）→ Zvi 重构偶/奇模阻抗（根因修正）。
+    """双口径探针分析（P1=Zpv / P2=Zpi）→ Zvi 重构偶/奇模阻抗（本轮根因修正）。
 
-    根因（line2t 实测钉死）：HFSS 波端口端子分组随模而变——偶模
+    根因（2026-09-19 line2t 实测钉死）：HFSS 波端口端子分组随模而变——偶模
     （两条带等电位）端子合并 → I=2·I_strip → Zvi=Z0e/2；奇模（±V 分立端子）
     → I=I_strip → Zvi=Z0o。故 Z0e=2·Zvi_even、Z0o=Zvi_odd，其中
     Zvi=√(Zpi·Zpv)（HFSS 内部恒等式，实测逐位成立）。验证：even 重构
@@ -814,7 +815,7 @@ def analyze_line_modes(port_data: dict, gap_mm: float) -> dict:
     量名解析：多模端口 Modal 量带模式后缀（Zo(P1sheetP:1)）→ 按模分组；
     传播模过滤：Im(Γ)>Re(Γ)（倏逝框模排除，本轮空框根因实证）∧
     εeff∈[2,4]；须恰好 2 个传播模=偶/奇 TEM 对，偶模=εeff 较高者
-    （勿按 Z 大小，#307 口径）；换算 Z0e=2·Z_even、Z0o=Z_odd/2
+    （勿按 Z 大小，#307 铁律）；换算 Z0e=2·Z_even、Z0o=Z_odd/2
     （HFSS 双导体端口模阻抗基准=共模 Z0e/2 与差模 2·Z0o）；
     k_Z=(Z0e−Z0o)/(Z0e+Z0o)。
     """
@@ -853,13 +854,26 @@ def analyze_line_modes(port_data: dict, gap_mm: float) -> dict:
                 "error": f"传播 TEM 模数={len(tem_modes)}（须恰 2；"
                          f"mode_props={ {m: {'eps': [round(e, 4) for e in r['eps']], 'prop': r['prop']} for m, r in mode_props.items()} }）",
                 "raw_quantities": raw_names}
-    even_mode = max(tem_modes, key=lambda m: float(np.mean(mode_props[m]["eps"])))
-    odd_mode = min(tem_modes, key=lambda m: float(np.mean(mode_props[m]["eps"])))
-    z0e = 2.0 * float(np.mean(mode_props[even_mode]["zo"]))
-    z0o = 0.5 * float(np.mean(mode_props[odd_mode]["zo"]))
+    # 换算走 core 单源（ge8e W1 A2 接线收口，审查 R4-4：此前内联两行与
+    # core/coupled_mode_z 双轨）。行为逐位不变——回归钉=runs/hairpin_hfss_anchor
+    # 归档读数回代（tests/unit/test_hfss_hairpin_anchor.py 逐位字面量）。
+    # 偶/奇识别（εeff 较高者=偶，#307）与跨端口均值口径同在单源内；εeff
+    # 并列由此显式拒绝（此前静默同模双算，拒绝面更诚实）。
+    # 注：analyze_line2t_modes 的 Zvi 重构（Z0e=2·Zvi_even、Z0o=Zvi_odd）是
+    # 端子级基准（#356⑤），不属本换算链，保持内联不动。
+    try:
+        conv = dual_conductor_mode_impedances(
+            zo_by_mode={m: mode_props[m]["zo"] for m in tem_modes},
+            eps_eff_by_mode={m: mode_props[m]["eps"] for m in tem_modes})
+    except ValueError as exc:
+        return {"ok": False, "error": f"模阻抗换算拒绝：{exc}"}
+    even_mode = conv.even_mode_key
+    odd_mode = conv.odd_mode_key
+    z0e = conv.z0e_ohm
+    z0o = conv.z0o_ohm
     if not (z0e > z0o > 0):
         return {"ok": False, "error": f"Z0e/Z0o 病态（{z0e}, {z0o}）"}
-    k_z = (z0e - z0o) / (z0e + z0o)
+    k_z = conv.k_z
     per_port = {f"{pn}:m{mode}": {
         "beta_rad_m": float(entries[(pn, mode)]["gamma"].imag),
         "alpha_np_m": float(entries[(pn, mode)]["gamma"].real),
@@ -909,7 +923,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     only = sys.argv[1] if len(sys.argv) > 1 else ""
     _write_result({
-        "stage": "start", "item": "hfss-hairpin-anchor",
+        "stage": "start", "item": "wf:hfss-hairpin-anchor",
         "gaps_mm": list(GAPS_MM), "criteria": str(
             REPO / "runs" / "hairpin_hfss_anchor" / "criteria.md"),
         "predeclared": {"k_em": K_EM, "c_arch": C_ARCH, "k_kj": K_KJ,
@@ -944,7 +958,7 @@ def main() -> int:
                     _progress(f"hfss/{kind}/{gap}: ok {res['solve_s']}s")
             _write_result({f"point_wall_s_{gap}": round(time.time() - t_pt, 1)})
             _progress(f"point {gap}: wall_s={round(time.time() - t_pt, 1)}")
-        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐（df5）
         _write_orphan_check("post_solve")
 
     verdict = analyze_all()

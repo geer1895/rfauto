@@ -4,17 +4,26 @@
 <meta charset="utf-8">
 <title>rfauto 射频调优工作台</title>
 <style>
+  /* PR-1 切换矩阵（10 变量×2 主题逐格表见 runs/pr1_contrast/contrast_table.md）：
+     双主题正文 ≥4.5:1、UI 图形 ≥3:1（WCAG AA），核算脚本
+     runs/pr1_contrast/compute_contrast.py（改动配色先跑它再提交）。
+     深色 --err #ef5350→#f4706c、浅色 --err #c62828→#b3261e：badge 14%
+     透明底上文字 ≥4.5:1 留余量。 */
   :root {
     --bg:#0e1116; --bg2:#12161e; --panel:#171c26; --panel2:#1d2432;
     --fg:#dce3ee; --muted:#8391a7; --accent:#4fc3f7; --accent2:#22d3a5;
-    --ok:#5ac26f; --warn:#ffb74d; --err:#ef5350; --border:#232b3a;
+    --ok:#5ac26f; --warn:#ffb74d; --err:#f4706c; --border:#232b3a;
     --input-bg:#0d1118; --plot-bg:#0d1118; --shadow:0 6px 20px rgba(0,0,0,.35);
+    --act2:#3aa5d8; /* 主按钮渐变第二停靠色（深色配深字 #04121c 6.8:1） */
   }
+  /* 浅色全矩阵补洞（原块漏 --accent2，浅色沿用深色 #22d3a5 在白底仅 ~1.9:1）：
+     accent/muted/ok/warn/accent2 全部按白底与 panel2 双底重新定标。 */
   body.light {
     --bg:#f3f5f9; --bg2:#ffffff; --panel:#ffffff; --panel2:#eaeef5;
-    --fg:#1b2330; --muted:#64708a; --border:#d9e0ea;
+    --fg:#1b2330; --muted:#5b6780; --accent:#0165a7; --accent2:#0e8f74;
+    --ok:#276b2c; --warn:#8a5300; --err:#b3261e; --border:#d9e0ea;
     --input-bg:#ffffff; --plot-bg:#ffffff; --shadow:0 6px 18px rgba(30,40,70,.10);
-    --ok:#2e7d32; --err:#c62828; --warn:#b26a00; --accent:#0277bd;
+    --act2:#015f9c; /* 浅色白字按钮渐变尾 ≥4.5:1 */
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.55 "Segoe UI","Microsoft YaHei",system-ui,sans-serif; display:flex; min-height:100vh; }
@@ -86,7 +95,27 @@
   input,select,textarea { background:var(--input-bg); color:var(--fg); border:1px solid var(--border);
     padding:6px 10px; border-radius:7px; font:inherit; }
   input:focus,select:focus,textarea:focus { outline:1.5px solid var(--accent); }
-  button.act { background:linear-gradient(90deg,var(--accent),#3aa5d8); color:#04121c; border:none;
+  /* PR-1 a11y：全局键盘焦点环（:focus-visible 只在键盘导航时出现，
+     不删既有 outline；对比度 accent vs panel ≥4.5:1 已核算）。 */
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ── PR-2 命令面板（Cmd/Ctrl+K；零构建 vanilla，逻辑在 palette.js）── */
+  #palette-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+    z-index:80; align-items:flex-start; justify-content:center; padding:12vh 16px 0; }
+  #palette-overlay.show { display:flex; }
+  #palette { width:min(620px,100%); background:var(--panel); border:1px solid var(--border);
+    border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+  #palette-in { width:100%; border:none; background:var(--input-bg); color:var(--fg);
+    padding:12px 14px; font:inherit; border-bottom:1px solid var(--border); border-radius:0; }
+  #palette-list { max-height:46vh; overflow-y:auto; margin:0; padding:6px; list-style:none; }
+  #palette-list li { padding:8px 12px; border-radius:8px; cursor:pointer; display:flex;
+    align-items:baseline; gap:10px; }
+  #palette-list li .pk { color:var(--muted); font-size:11.5px; margin-left:auto; white-space:nowrap; }
+  #palette-list li.sel { background:var(--panel2); }
+  #palette-list li.sel .pt { color:var(--accent); }
+  #palette-hint { padding:6px 12px 9px; color:var(--muted); font-size:11.5px;
+    border-top:1px solid var(--border); }
+  button.act { background:linear-gradient(90deg,var(--accent),var(--act2)); color:#04121c; border:none;
     padding:7px 18px; border-radius:8px; cursor:pointer; font-weight:650; }
   body.light button.act { color:#ffffff; }
   button.act:hover { filter:brightness(1.12); }
@@ -140,12 +169,48 @@
   .guide-step b { display:block; margin:4px 0; }
   .guide-step div { font-size:12px; color:var(--muted); }
   .glossary td:first-child { font-weight:600; color:var(--accent); white-space:nowrap; }
+
+  /* ── PR-3 PlotCard 工具条（CSV/PNG 导出）── */
+  .plotcard-tools { display:flex; gap:6px; align-items:center; margin-bottom:2px; }
+  .plotcard-tools .plotcard-spacer { flex:1; }
+  .plotcard-tools .plotcard-title { color:var(--accent); font-size:12.5px; }
+  .plotcard-tools .plotcard-btn { padding:1px 9px; font-size:11px; border-radius:6px; }
+
+  /* ── PR-4 ① 报告 TOC（左侧栏 + scrollspy 高亮）── */
+  .report-toc { flex:none; width:190px; position:sticky; top:8px; align-self:flex-start;
+    max-height:80vh; overflow:auto; border-right:1px solid var(--border);
+    padding-right:8px; font-size:12px; }
+  .report-toc a { display:block; color:var(--muted); text-decoration:none;
+    padding:2px 6px; border-radius:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .report-toc a.toc-h3 { padding-left:18px; font-size:11.5px; }
+  .report-toc a:hover, .report-toc a.active { color:var(--accent); background:var(--panel2); }
+  .report-toc a.active { font-weight:600; }
+  .report-body { flex:1; min-width:0; }
+  .report-body h2, .report-body h3 { scroll-margin-top:12px; }
+
+  /* ── PR-4 ② 打印面（浏览器"打印为 PDF"，不自研导出）：
+     隐导航/工具/交互控件（dataZoom 画在 canvas 内 CSS 不可及，其 DOM 面
+     即工具条随本规则隐藏）、强制白底黑字、面板/表格行防跨页截断
+     （page-break-avoid / break-inside:avoid）。 ── */
+  @media print {
+    body { background:#fff !important; color:#111 !important; display:block; }
+    aside, #msg, #lightbox, #palette-overlay, #chat-float, .plotcard-tools,
+    .report-toc, .spin, #fs-browser { display:none !important; }
+    button, .toolbar .chipbtn { display:none !important; }
+    main { padding:0; max-width:none; }
+    .panel, .widget, .card { box-shadow:none !important; background:#fff !important;
+      border:1px solid #ccc !important; break-inside:avoid; page-break-inside:avoid; }
+    table tr { break-inside:avoid; page-break-inside:avoid; }
+    pre { max-height:none; background:#f6f6f6; color:#111; }
+    a { color:#111 !important; text-decoration:none; }
+    .bubble { max-width:100%; }
+  }
 </style>
 </head>
 <body>
-<aside>
+<aside aria-label="侧边栏">
   <div class="logo">rfauto<small>HFSS · ADS 调优工作台</small></div>
-  <nav id="nav">
+  <nav id="nav" aria-label="主导航">
     <div class="group">工作区</div>
     <button data-v="dashboard" class="active"><span class="ico">◈</span>总览</button>
     <button data-v="import"><span class="ico">⇩</span>工程导入</button>
@@ -153,6 +218,11 @@
     <button data-v="tune"><span class="ico">⚙</span>优化调参</button>
     <button data-v="optstack"><span class="ico">◍</span>优化洞察</button>
     <button data-v="loopboard"><span class="ico">▤</span>执行看板</button>
+    <!-- PR-6 战役仪表盘 / PR-5 画廊交互化（ge8b Wave B 席B2）-->
+    <button data-v="campaign"><span class="ico">▦</span>战役仪表盘</button>
+    <!-- PR-9 调度队列页（ge8b Wave B 席B3）：战役队列+G13 决策日志（只读）-->
+    <button data-v="queue"><span class="ico">≣</span>调度队列</button>
+    <button data-v="gallery"><span class="ico">❖</span>模板画廊</button>
     <div class="group">分析</div>
     <button data-v="runs"><span class="ico">☰</span>Run 历史</button>
     <button data-v="detail" style="display:none"><span class="ico">◉</span>Run 详情</button>
@@ -160,6 +230,9 @@
     <button data-v="farfield"><span class="ico">✧</span>远场方向图</button>
     <button data-v="field"><span class="ico">▦</span>场可视化 3D</button>
     <button data-v="calibration"><span class="ico">⌖</span>校准工作台</button>
+    <button data-v="datasets"><span class="ico">◫</span>数据集</button>
+    <button data-v="anchors"><span class="ico">⚓</span>标定锚</button>
+    <button data-v="uq"><span class="ico">σ</span>UQ 不确定度</button>
     <button data-v="playground"><span class="ico">◐</span>代理 Playground</button>
     <button data-v="timeline"><span class="ico">⌛</span>成本时间线</button>
     <button data-v="reports"><span class="ico">▣</span>报告中心</button>
@@ -168,15 +241,31 @@
     <div class="group">帮助与系统</div>
     <button data-v="guide"><span class="ico">📖</span>使用指南</button>
     <button data-v="solvers"><span class="ico">⛁</span>求解器</button>
+    <!-- PR-8 剖析入口（ge8b Wave B 席B2；py-spy 可选）-->
+    <button data-v="profile"><span class="ico">⏱</span>剖析</button>
   </nav>
   <div class="foot">
-    <button class="minor" id="theme-toggle" style="width:100%;margin-bottom:8px">☀ 浅色模式</button>
+    <button class="minor" id="palette-open" style="width:100%;margin-bottom:8px" aria-label="打开命令面板（Ctrl+K）">⌘ 命令面板 <span class="pk-hint">Ctrl+K</span></button>
+    <button class="minor" id="theme-toggle" style="width:100%;margin-bottom:8px">🌗 深色模式</button>
     HFSS 2023.1 verified<br>127.0.0.1:8642 · 本机服务
   </div>
 </aside>
 <main>
-  <div id="msg" class="msg"></div>
-  <div id="lightbox"><div class="cap" id="lightbox-cap"></div></div>
+  <!-- PR-1 a11y：toast 语义（role=status 隐式 aria-live=polite，textContent 更新即播报） -->
+  <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  <!-- PR-1 a11y：灯箱=模态对话框 -->
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="图片灯箱预览"><div class="cap" id="lightbox-cap"></div></div>
+
+  <!-- PR-2 命令面板（渲染/键盘/焦点陷阱在 palette.js） -->
+  <div id="palette-overlay">
+    <div id="palette" role="dialog" aria-modal="true" aria-label="命令面板">
+      <input id="palette-in" type="text" role="combobox" aria-expanded="true"
+             aria-controls="palette-list" aria-autocomplete="list"
+             placeholder="跳转页面、# 搜 run、> 命令…" aria-label="搜索命令、页面与 run">
+      <ul id="palette-list" role="listbox" aria-label="结果列表"></ul>
+      <div id="palette-hint">↑↓ 选择 · Enter 跳转 · Esc 关闭 · <code>#</code> run · <code>&gt;</code> 命令 · Ctrl+K 开关</div>
+    </div>
+  </div>
 
   <section id="view-dashboard"></section>
   <section id="view-import" style="display:none"></section>
@@ -187,6 +276,9 @@
   <section id="view-runs" style="display:none"></section>
   <section id="view-detail" style="display:none"></section>
   <section id="view-calibration" style="display:none"></section>
+  <section id="view-datasets" style="display:none"></section>
+  <section id="view-anchors" style="display:none"></section>
+  <section id="view-uq" style="display:none"></section>
   <section id="view-playground" style="display:none"></section>
   <section id="view-sparams" style="display:none"></section>
   <section id="view-farfield" style="display:none"></section>
@@ -194,12 +286,22 @@
   <section id="view-timeline" style="display:none"></section>
   <section id="view-reports" style="display:none"></section>
   <section id="view-tools" style="display:none"></section>
+  <!-- PR-5 画廊交互化 / PR-6 战役仪表盘 / PR-8 剖析入口（ge8b Wave B 席B2）-->
+  <section id="view-gallery" style="display:none"></section>
+  <section id="view-campaign" style="display:none"></section>
+  <!-- PR-9 调度队列页（ge8b Wave B 席B3）-->
+  <section id="view-queue" style="display:none"></section>
+  <section id="view-profile" style="display:none"></section>
   <section id="view-agent" style="display:none"></section>
   <section id="view-guide" style="display:none"></section>
   <section id="view-solvers" style="display:none"></section>
 </main>
 <script src="/static/vendor/echarts.min.js"></script>
 <script src="/static/vendor/marked.min.js"></script>
+<!-- S-2 XSS 主向量防御（code_audit_slice6）：marked 渲染的 LLM/报告内容
+     一律经 DOMPurify 白名单净化后才入 innerHTML（pages.js mdSanitize）。
+     顺序约定：marked 之后、app.js/pages.js（module，天然延后）之前。 -->
+<script src="/static/vendor/purify.min.js"></script>
 <style>
   /* 对话气泡内的 markdown 样式 */
   .bubble.md p { margin: 4px 0; }
@@ -212,5 +314,6 @@
 </style>
 <script type="importmap">{"imports":{"three":"/static/vendor/three.module.js"}}</script>
 <script type="module" src="/static/app.js"></script>
+<script type="module" src="/static/palette.js"></script>
 </body>
 </html>

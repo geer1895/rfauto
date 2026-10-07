@@ -1,0 +1,52 @@
+f0_ghz: 2.5
+n_ports: 2
+template: sicl
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- w_mm
+- a_mm
+- d_mm
+- s_mm
+- line_len_mm
+nominal_params:
+  w_mm: 0.554
+  a_mm: 2.54
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 40.0
+  h_mm: 1.016
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: S11/S21 @ StripLinePort 1-2（height=b/2 带-地半高对称探针，suspended_stripline
+  同法）：β 金标准→εeff 对照内核闭式 εeff=εr=3.66（均匀填充 TEM，|Δ|≤2% 口径同 stripline
+  族）；|S11| 带谷=Z0 锚（名义反解 Z0=50 故 ref=50；cps 口径）。内核裁判=sicl_line.sicl_closed_form（FD
+  裁判 ±5% 声明域，名义点 in_referee_band=True）
+topology: 'SICL 基片集成同轴线均匀段（TA-3）：矩形同轴腔（上下地板=域 z 边界 PEC+显式零厚板
+  siw 同款；两列接地过孔墙 x=±a/2、心距 s、藩篱贯通全域直入 PML=匹配端接 siw v1 口径）+
+  零厚度内导体条带（w，中面 z=b/2=H_SUB/2）；端口=双 StripLinePort（面贴 ±DOM_Y 域边界
+  PML_8）；矩形域 DOM_X/DOM_Y 字面注入'
+param_semantics: 'w_mm=内导体条带宽（Z0=50Ω 对 sicl_closed_form 共形闭式 brentq 反解，sicl_design_params
+  单源）；a_mm=两过孔列心距（外腔宽，a/b=2.5 名义）；d_mm=过孔直径、s_mm=过孔心距（SIW
+  经验迁移 s≤2d、d<λ_sub/5，内核 docstring 登记面；siw 同源档 0.6/1.0）；line_len_mm=条带两端间距；腔高
+  b=H_SUB=nominal h_mm=1.016（RO4350B 双板，stripline 同源）；er/tan_d 只进基板材料（MATERIAL_VALUE_PARAMS
+  豁免）——w 的 Z0 联动仅在名义设计点（sicl_design_params），渲染期 er 扰动不改导体（slotline/siw
+  同口径）'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；条带缘/过孔墙三线对（列心±d/2、列心）/条带两端/端口面精确入网（#198）；条带中面
+  z=b/2 落格依赖基板 z 偶数格（_sub_cells 缺省 4，生成期断言 #283 口径）；过孔直径 ≥4·NEAR
+  + 孔间缝>NEAR（#311 先例口径）守卫；显式近场线 10µm 地板（#349）；全轴 1µm 近重合去重（#152）'
+smoke_note: 未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①准静态闭式无色散/零厚带/均匀填充（内核
+  FD 裁判 ±5% 声明域，UNVERIFIED-1 公式族归属如实登记）；②过孔墙离散化（s=1.0mm 圆柱列）对理想连续壁的等效性未经真机仲裁（SIW
+  经验迁移，内核 docstring 登记面）；③StripLinePort 端口段=屏蔽腔内均匀延伸无过渡（同 stripline
+  口径）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: '全链内核精算（#1c，零手抄毫米数；sicl_design_params() 缺省实参可重算，单测钉逐键
+  rtol 1e-9）：a/b=2.5 选档（FD 裁判声明域 [1.5,4] 中档）→ a=2.54mm；Z0=50Ω 对
+  core/sicl_line.sicl_z0 共形闭式（Howe/Cristal-Gunston 矩形同轴族，k=tanh(πa/2b)·sech(πw/2b)，UNVERIFIED-1
+  归属内核如实登记）brentq 反解 w=0.55395262mm（共形模数 k=0.71901068）→ 4 位舍入
+  0.5540 回代 Z0=49.9976Ω（−0.0024Ω=4 位舍入固有，如实登记）；声明域复核：w/b=0.5452∈[0.3,0.9]、gap/b=0.9774≥0.5、t/b=0、均匀填充——in_referee_band=True；εeff=εr=3.66（均匀填充
+  TEM）；过孔墙 d/s=0.6/1.0（siw 同源档，s/d=1.667≤2、d<λ_sub/5 复核）；h_mm=1.016=2×0.508
+  RO4350B 双板（stripline 同源）。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'

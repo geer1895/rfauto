@@ -1,6 +1,6 @@
 """ADS circuit recipe model and utilities.
 
-AdsCircuitRecipe 是 ADS 侧系统指标 / 拓扑 / 元件的抽象——
+AdsCircuitRecipe 是 ADS 侧系统指标 / 拓扑 / 元件的抽象（P3, Plan §10）——
 没有这个抽象, ADS 侧要么拓扑写死背叛 G1, 要么临时发明第二套插件机制。
 
 职责:
@@ -12,8 +12,8 @@ AdsCircuitRecipe 是 ADS 侧系统指标 / 拓扑 / 元件的抽象——
 系统指标命名（与契约 dataset_export 对齐）:
 - system_gain_db      : 20*log10(|S21|) 带内均值 (dB)
 - input_vswr          : 端口1 驻波 (1+|S11|)/(1-|S11|) 带内均值
-- amplitude_balance_db: |S21_db - S31_db| 带内均值 (两输出幅度差, dB)
-- output_phase_balance: phase(S21)-phase(S31) 带内均值 (deg)
+- amplitude_balance_db: |S21_db - S31_db| 逐点绝对差的带内均值 (两输出幅度差, dB)
+- output_phase_balance: Δφ=∠S21−∠S31 的圆均值 arg(mean(exp(jΔφ))) (deg)
 - S11_db / S21_db / S31_db / S22_db / S23_db / S32_db: 对应 S 参数 dB 带内均值
 """
 
@@ -162,13 +162,20 @@ def compute_system_metrics(
             out[name] = float(np.mean((1 + s11) / (1 - s11 + 1e-30)))
         elif name == "amplitude_balance_db":
             if n_ports >= 3:
-                out[name] = abs(mean_db(2, 1) - mean_db(3, 1))
+                # 口径=docstring 契约「|S21_db−S31_db| 带内均值」（逐点绝对差
+                # 再平均，B-2/S3）：|均值−均值| 会让带内反向纹波对消、系统性
+                # 低估失衡；逐点口径与平衡器逐频物理量一致。
+                out[name] = float(np.mean(np.abs(
+                    db(s[:, 1, 0]) - db(s[:, 2, 0]))))
             else:
                 out[name] = float("nan")
         elif name == "output_phase_balance":
             if n_ports >= 3:
+                # 圆均值（mean(exp(jΔφ)) 再取 arg，B-2/S3）：±180° 绕圈处
+                # 线性均值会正负相消失真（+179/−179 均值=0 而真值=180）。
                 d = np.angle(s[:, 1, 0]) - np.angle(s[:, 2, 0])
-                out[name] = float(np.mean(np.degrees(d)))
+                out[name] = float(np.degrees(
+                    np.angle(np.mean(np.exp(1j * d)))))
             else:
                 out[name] = float("nan")
         elif name in ("S11_db", "S21_db", "S31_db", "S22_db", "S23_db", "S32_db"):

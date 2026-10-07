@@ -1,0 +1,14 @@
+# 低温 tanδ(T) 点带表（band + single_source；不新录数字——本表把本仓
+# cryo_materials.py CRYO_DIELECTRICS 既有登记带按 (T, band) 点带形态
+# 承接，逐格转录 2026-10-03；来源 provenance 沿用该注册表：Krupka 低温
+# 介电测量汇编+OSTI 汇编（round4 方案书 [16]），single_source 如实）。
+# 单位：f_ghz [GHz]、t_k [K]、tan_delta_* [无量纲]（10 GHz 口径）。
+# 中间温度 = loader 在 log10(T) 轴对 band 上/下界分别插值（插值产物
+# 显式标 interpolated=True，不冒充测量点）。
+t_key,f_ghz,t_k,tan_delta_low,tan_delta_high,source_ref
+sapphire_al2o3,10.0,4.0,1.0e-9,1.0e-7,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_4k_10ghz
+sapphire_al2o3,10.0,300.0,1.0e-5,1.0e-4,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_300k_10ghz
+alumina_99p6,10.0,4.0,1.0e-7,1.0e-5,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_4k_10ghz
+alumina_99p6,10.0,300.0,3.0e-5,3.0e-4,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_300k_10ghz
+ptfe,10.0,4.0,1.0e-6,1.0e-4,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_4k_10ghz
+ptfe,10.0,300.0,1.5e-4,4.0e-4,cryo_materials.py CRYO_DIELECTRICS tan_delta_band_300k_10ghz

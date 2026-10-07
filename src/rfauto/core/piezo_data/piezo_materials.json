@@ -1,0 +1,355 @@
+{
+  "schema": "piezo_materials/v1",
+  "retrieval_session": "2026-10-03 ge8d wave seat D1",
+  "retrieval_channels": [
+    "Wikipedia en (article + action=raw wikitext) via web_reader; direct curl/WebFetch DNS-polluted for wikipedia/wikiwand domains",
+    "vendor datasheet pages unreachable (americanpiezo 404/no-table, bostonpiezooptics 401, steinermartins fetch error)",
+    "search-engine summaries treated as paraphrase only, never registered (df6-9)"
+  ],
+  "materials": {
+    "aln": {
+      "display": "AlN, wurtzite (aluminium nitride)",
+      "point_group": "6mm",
+      "space_group": "P6_3mc (No. 186), hP4",
+      "notes": "piezoelectric + elastic table verified bit-for-bit from Wikipedia article body (table 'Critical spontaneous and piezoelectric polarization constants for AlN', dual-cited Ambacher 1998 J Phys D 31,2653 doi:10.1088/0022-3727/31/20/001 + Ambacher 2000 JAP 87,334 doi:10.1063/1.371866, both open access)",
+      "properties": {
+        "density_g_cm3": {
+          "value": 3.255,
+          "status": "dual_source_agree",
+          "sources": [
+            "Wikipedia infobox Density=3.255 g/cm3, citing Haynes CRC Handbook 97e p.4.45 (retrieved bit-for-bit 2026-10-03)",
+            "crystallographic derivation from verified unit cell a=0.31117nm c=0.49788nm Z=2 M=40.989: rho=3262 kg/m3 (agrees 0.2%)"
+          ]
+        },
+        "molar_mass_g_mol": {
+          "value": 40.989,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia Chembox MolarMass=40.989 g/mol citing Haynes CRC (retrieved bit-for-bit 2026-10-03)"]
+        },
+        "lattice_a_nm": {
+          "value": 0.31117,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia Chembox LattConst_a=0.31117 nm citing Vurgaftman & Meyer JAP 94,3675 (2003) doi:10.1063/1.1600519"]
+        },
+        "lattice_c_nm": {
+          "value": 0.49788,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia Chembox LattConst_c=0.49788 nm citing Vurgaftman & Meyer JAP 94,3675 (2003)"]
+        },
+        "z_formula_units": {
+          "value": 2,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia Chembox UnitCellFormulas=2 (wurtzite hP4)"]
+        },
+        "e31_c_per_m2": {
+          "value": -0.6,
+          "status": "single_source_quoted",
+          "sources": [
+            "Wikipedia body table e31(C/m2)=-0.60, dual-cited Ambacher 1998 + Ambacher 2000 (single retrieval channel, two independent journal citations)"
+          ]
+        },
+        "e33_c_per_m2": {
+          "value": 1.46,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia body table e33(C/m2)=1.46, dual-cited Ambacher 1998 + Ambacher 2000"]
+        },
+        "c13_gpa": {
+          "value": 108.0,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia body table c13(GPa)=108, dual-cited Ambacher 1998 + Ambacher 2000"]
+        },
+        "c33_gpa": {
+          "value": 373.0,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia body table c33(GPa)=373, dual-cited Ambacher 1998 + Ambacher 2000"]
+        },
+        "bandgap_ev": {
+          "value": 6.015,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia Chembox BandGap=6.015 eV (300K direct), citing Haynes p.12.85 + Feneberg PRB 82,075208 (2010)"]
+        },
+        "thermal_conductivity_w_m_k_intrinsic": {
+          "value": 321.0,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia body: intrinsic kappa=321 W/(m.K) citing Cheng PRMaterials 4,044602 (2020) doi:10.1103/PhysRevMaterials.4.044602, arXiv:1911.01595"]
+        },
+        "eps33_relative": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": [
+            "Ambacher 2000 JAP 87,334 open access (epsilon table section)",
+            "IEEE Std 176-1987 piezoelectric constants",
+            "vendor AlN thin-film datasheets (e.g. TDK/Avago FBAR app notes)"
+          ]
+        },
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": [
+            "Guy et al. 1999 interferometric d33(AlN) (extensional piezoelectric coefficients of GaN and AlN)",
+            "MDPI/PMC AlScN thin-film reviews with tabulated d33"
+          ]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": [
+            "FBAR literature standard kt2~6.5% claims need bit-for-bit source (search summaries paraphrase only)",
+            "IEEE UFFC AlN resonator papers"
+          ]
+        },
+        "longitudinal_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "note": "DERIVED alternative: v_c=sqrt(c33/rho) is computable from registered c33+density via piezo_materials.longitudinal_velocity_m_s; direct literature velocity NOT bit-verified this session (11000-11350 m/s claims are paraphrase) — registered as pointers only",
+          "retrieval_pointers": ["IEEE UFFC BAW papers tabulating v_L(AlN) along c-axis"]
+        }
+      }
+    },
+    "quartz": {
+      "display": "alpha-Quartz (SiO2, trigonal 32)",
+      "point_group": "32",
+      "space_group": "P3_221 (No. 154)",
+      "notes": "alpha↔beta transition 573 C verified; piezoelectricity discovered by J.&P. Curie 1880 (article body + primary citations)",
+      "properties": {
+        "specific_gravity_g_cm3": {
+          "value": 2.65,
+          "status": "dual_source_agree",
+          "sources": [
+            "Wikipedia infobox gravity=2.65 (impure 2.59-2.63), citing Deer/Howie/Zussman (retrieved bit-for-bit 2026-10-03)",
+            "crystallographic derivation from a=4.9133A c=5.4053A Z=3 M=60.084: rho=2646 kg/m3 (agrees 0.16%)"
+          ]
+        },
+        "molar_mass_g_mol": {
+          "value": 60.084,
+          "status": "single_source_quoted",
+          "sources": ["SiO2 standard molar mass; infobox formula SiO2 with chem molar mass template (retrieved 2026-10-03)"]
+        },
+        "lattice_a_angstrom": {
+          "value": 4.9133,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox unit cell a=4.9133 A (retrieved bit-for-bit 2026-10-03)"]
+        },
+        "lattice_c_angstrom": {
+          "value": 5.4053,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox unit cell c=5.4053 A"]
+        },
+        "z_formula_units": {
+          "value": 3,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox unit cell Z=3"]
+        },
+        "alpha_beta_transition_c": {
+          "value": 573.0,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia body: transformation alpha->beta at 573 C (retrieved bit-for-bit 2026-10-03)"]
+        },
+        "d11_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987", "Uchino (ed.) Advanced Piezoelectric Materials ch.5 (Saigusa 2017) doi:10.1016/B978-0-08-102135-4.00005-9"]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987", "crystal oscillator literature (Parzen-Ballato)"]
+        },
+        "acoustic_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["AT/BT-cut bulk velocities: IEEE Std 176 cut tables", "core/crystal.py PK-3 consumer面"]
+        }
+      }
+    },
+    "linbo3": {
+      "display": "LiNbO3 (lithium niobate, trigonal 3m)",
+      "point_group": "3m",
+      "space_group": "R3c (No. 161)",
+      "notes": "DENSITY CONFLICT registered: CRC infobox 4.30 vs rhombohedral-crystallographic derivation 4.62 (Z_rh=2 by R-centering). NOT adjudicated; memory-level piezo-literature ~4.64 is NOT registered. Infobox d33=27 pm/V is the NONLINEAR-OPTICAL coefficient (PPLN context) — deliberately NOT registered as piezoelectric d33.",
+      "properties": {
+        "density_g_cm3": {
+          "value": [4.3, 4.624],
+          "status": "CONFLICT_registered",
+          "sources": [
+            "Wikipedia infobox Density=4.30 g/cm3 citing Haynes CRC 97e (retrieved bit-for-bit 2026-10-03)",
+            "crystallographic derivation from rhombohedral cell a=5.1501A c=5.4952A alpha=beta=62.057deg gamma=60deg Z_rh=2 M=147.846: rho=4624 kg/m3 (DISAGREES 7%)"
+          ],
+          "conflict_note": "two verified-derived sources disagree ~7%; adjudication pending reachable piezo-literature table (IEEE Std 176 / Weis-Gaylord 1985 Appl Phys A 37,191)"
+        },
+        "molar_mass_g_mol": {
+          "value": 147.846,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox Molar mass=147.846 g/mol (retrieved bit-for-bit 2026-10-03)"]
+        },
+        "rhombo_a_angstrom": {
+          "value": 5.1501,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox lattice a=0.51501 nm (rhombohedral setting), citing Wilkinson JAP 74,3080 (1993) doi:10.1063/1.354572"]
+        },
+        "rhombo_c_angstrom": {
+          "value": 5.4952,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox lattice c=0.54952 nm (rhombohedral setting)"]
+        },
+        "rhombo_alpha_deg": {
+          "value": 62.057,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox alpha=62.057 deg (rhombohedral setting)"]
+        },
+        "rhombo_gamma_deg": {
+          "value": 60.0,
+          "status": "single_source_quoted",
+          "sources": ["Wikipedia infobox gamma=60 deg (rhombohedral setting)"]
+        },
+        "z_formula_units_rhombohedral": {
+          "value": 2,
+          "status": "derived_from_verified",
+          "sources": [
+            "infobox Z=6 applies to the hexagonal cell; R-centered rhombohedral cell = hex/3 by group theory (exact), so Z_rh=2",
+            "sanity: Z_rh=2 derivation gives rho=4.62 g/cm3 (physical); Z=6 with rhombohedral cell would give 13.9 (impossible)"
+          ]
+        },
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": [
+            "IEEE Std 176-1987 LiNbO3 table",
+            "Weis & Gaylord 1985 Appl Phys A 37,191 doi:10.1007/BF00614817 (paywalled this session)",
+            "do NOT use infobox d33=27 pm/V — that is the nonlinear-optical coefficient (PPLN), different tensor"
+          ]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987", "SAW/BAW substrate tables (IEEE UFFC)"]
+        },
+        "acoustic_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["SAW substrate velocity tables (YZ-LN etc.): IEEE UFFC / Morgan SAW monograph"]
+        }
+      }
+    },
+    "litao3": {
+      "display": "LiTaO3 (lithium tantalate, trigonal 3m)",
+      "point_group": "3m",
+      "space_group": "R3c (No. 161)",
+      "notes": "no bit-for-bit table reachable this session (search paraphrase only)",
+      "properties": {
+        "density_g_cm3": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987", "vendor wafer datasheets (Roditi/Stanford Advanced Materials)"]
+        },
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987 LiTaO3 table"]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987"]
+        },
+        "acoustic_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["SAW substrate tables (36YX-LT / X-112Y-LT): IEEE UFFC"]
+        }
+      }
+    },
+    "scaln_x043": {
+      "display": "Sc0.43Al0.57N (wurtzite endpoint, ferroelectric-switching regime)",
+      "point_group": "6mm (below x~0.43 boundary; x>=0.43 wurtzite/layered transition)",
+      "space_group": "P6_3mc nominal",
+      "notes": "round14 PK-5 asks ScAlN(0-0.43); endpoint x=0.43 registered as slot. No bit-for-bit constants reachable this session.",
+      "properties": {
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": [
+            "Fichtner et al., Adv. Eng. Mater. 21, 1900605 (2019) 'Scandium aluminum nitride: highly piezoelectric thin film material for MEMS'",
+            "search summaries quote d33~27.6 pC/N for Sc0.43 (ResearchGate paraphrase) — NOT registered per df6-9"
+          ]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["BAW resonator literature for Sc0.43AlN kt2 (search paraphrase only)"]
+        },
+        "density_g_cm3": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["ScAlN alloy density vs Sc fraction: Vegard-law sources with tables"]
+        }
+      }
+    },
+    "pzt5a": {
+      "display": "PZT-5A (soft PZT ceramic)",
+      "point_group": "6mm (poled ceramic)",
+      "space_group": null,
+      "notes": "vendor pages unreachable/no tables this session; search paraphrase (d33~374, er~1700) NOT registered",
+      "properties": {
+        "density_g_cm3": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["Morgan Electroceramics PZT-5A datasheet", "APC International material tables", "Steiner & Martins material tables"]
+        },
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987 / IEC 60483 ceramic tables", "vendor datasheets above"]
+        },
+        "er33_relative": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets above"]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets above"]
+        },
+        "acoustic_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets above"]
+        }
+      }
+    },
+    "pzt5h": {
+      "display": "PZT-5H (soft PZT ceramic, highest er family)",
+      "point_group": "6mm (poled ceramic)",
+      "space_group": null,
+      "notes": "no bit-for-bit table reachable this session",
+      "properties": {
+        "density_g_cm3": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["Morgan Electroceramics PZT-5H datasheet", "vendor material tables"]
+        },
+        "d33_pc_per_n": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["IEEE Std 176-1987 / vendor datasheets"]
+        },
+        "er33_relative": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets"]
+        },
+        "kt2_thickness_mode": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets"]
+        },
+        "acoustic_velocity_m_s": {
+          "value": null,
+          "status": "NO_VALUE_retrieval_pending",
+          "retrieval_pointers": ["vendor datasheets"]
+        }
+      }
+    }
+  }
+}

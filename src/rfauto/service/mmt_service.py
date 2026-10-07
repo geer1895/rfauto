@@ -21,6 +21,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import ok_envelope
+
 #: 信封携带的诚实声明（与 adapters/mmt_adapter 同源文案，单一出处）
 _ABSOLUTE_S_NOTE = (
     "膜片/阶梯的绝对 S 值 UNDECIDABLE（P1 判据 runs/df6_dp1mmt/criteria.md "
@@ -76,34 +78,33 @@ def solve_mmt(payload: dict[str, Any],
         return {"ok": False, "status": "solve_failed",
                 "errors": [str(result.message)]}
     meta = dict(adapter.get_meta() or {})
-    return {
-        "ok": True,
-        "status": "ok",
-        "engine": "mmt",
-        "work_dir": str(wd),
-        "freqs_ghz": meta.get("freqs_ghz", []),
-        "s11": meta.get("s11", []),
-        "s21": meta.get("s21", []),
-        "s12": meta.get("s12", []),
-        "s22": meta.get("s22", []),
-        "z_pv_ports": meta.get("z_pv_ports", []),
-        "beta_te10_ports": meta.get("beta_te10_ports", []),
-        "converged": bool(meta.get("converged", False)),
-        "n_modes": meta.get("n_modes", []),
-        "warnings": meta.get("warnings", []),
-        "n_determined": meta.get("n_determined", 0),
-        "n_undetermined": meta.get("n_undetermined", 0),
-        "undetermined_freqs_ghz": meta.get("undetermined_freqs_ghz", []),
-        "sections": meta.get("sections", []),
-        "z0_ref": meta.get("z0_ref", 50.0),
-        "artifacts": {
+    return ok_envelope(
+        status="ok",
+        engine="mmt",
+        work_dir=str(wd),
+        freqs_ghz=meta.get("freqs_ghz", []),
+        s11=meta.get("s11", []),
+        s21=meta.get("s21", []),
+        s12=meta.get("s12", []),
+        s22=meta.get("s22", []),
+        z_pv_ports=meta.get("z_pv_ports", []),
+        beta_te10_ports=meta.get("beta_te10_ports", []),
+        converged=bool(meta.get("converged", False)),
+        n_modes=meta.get("n_modes", []),
+        warnings=meta.get("warnings", []),
+        n_determined=meta.get("n_determined", 0),
+        n_undetermined=meta.get("n_undetermined", 0),
+        undetermined_freqs_ghz=meta.get("undetermined_freqs_ghz", []),
+        sections=meta.get("sections", []),
+        z0_ref=meta.get("z0_ref", 50.0),
+        artifacts={
             "sparams_csv": str(wd / "sparams.csv"),
             "touchstone": str(wd / "mmt.s2p"),
             "meta": str(wd / "mmt_meta.json"),
         },
-        "absolute_s_note": _ABSOLUTE_S_NOTE,
-        "message": str(result.message),
-    }
+        absolute_s_note=_ABSOLUTE_S_NOTE,
+        message=str(result.message),
+    )
 
 
 def solve_mmt_from_file(sections_path: str | Path,
@@ -272,5 +273,4 @@ def iris_refinement_report(payload: dict[str, Any]) -> dict[str, Any]:
                     "errors": [f"g1: {exc}"]}
         g1_out = verdict.to_json_dict()
 
-    return {"ok": True, "status": "ok", "engine": "mmt",
-            "comparison": comparison, "g1": g1_out}
+    return ok_envelope(status="ok", engine="mmt", comparison=comparison, g1=g1_out)

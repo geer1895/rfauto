@@ -17,27 +17,63 @@ substrate:
   h_mm: 0.508
 nominal_params:
   order: 3
-  # 2026-09-16 名义定版：四项几何 = hairpin_design_from_order(3, 2.5, 0.05, 20.0)
+  # 2026-09-16 名义定版（WP2.3 收口 A2）：四项几何 = hairpin_design_from_order(3, 2.5, 0.05, 20.0)
   # 按 scripts/hairpin_calib design_params 同规则舍入（名义 = 设计链 = 标定脚本逐位同源）；
   # arm_gap 1.0→3.0（k_self(3.0)=0.0115 < 互耦 0.0515 < k_self(1.0)=0.0602，防同臂自耦反超互耦）
   w_mm: 1.1117
-  # 闭式 λg/2=35.4676 × 真机谐振修正 c_f0=1.0370（真机标定 pt4：通带中心 2.5925）
+  # 闭式 λg/2=35.4676 × 真机谐振修正 c_f0=1.0370（B2 runs/hairpin_calib/pt4_ag30_plane3mm：通带中心 2.5925）
   arm_len_mm: 36.7799
   arm_gap_mm: 3.0
   gap_mm: 1.1328
-  # 真机标定 c(τ)=1.37437−0.75218·τ（Q 提取真机汇总）重解：Q_e_EM=c(τ)·Q_e_closed=17.0689
+  # B1 真机标定 c(τ)=1.37437−0.75218·τ（runs/hairpin_q_extract/summary.json）重解：Q_e_EM=c(τ)·Q_e_closed=17.0689
   tap_frac: 0.398159
-topology: 发夹线带通：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（T 形，板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 自开路端计）
-# ── 精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────
-# 同向本体能力位标注（2026-09-18 补），与 hairpin_alt/meta.yaml 同构；
-# 物理证据=真机 c(gap) 图谱 + N=3 复验，非新裁决。
+topology: 发夹线带通（WP2.3 Tier1 滤波器族）：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（T 形，板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 自开路端计）
+# ── 战役精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────
+# R2-C-03（2026-09-18 round2 审查）补同向本体能力位标注，与 hairpin_alt/meta.yaml 同构；
+# 物理证据=真机 c(gap) 图谱 + N=3 B3 复验，非新裁决。
 campaign_capable: false
 campaign_capable_reasons:
 - 同向拓扑结构性受限：相邻臂开路端对齐→电/磁耦合反号相消，k_EM 非单调（真机 5 点图谱极大 0.0155@gap0.65）≪ k_KJ=0.0515（真机比值上限 ≈0.30）
 - FBW5% 名义（k=0.0515）落在可达域 [0.0133, 0.0155] 之外，且 Q_e·k=0.879 恒等式需 Q_e≥57＞抽头上限 ~47-50——参数空间内无自洽 Chebyshev 设计点，名义 gap 不可给出
-# 解锁判据：同向本体无独立解锁路径；唯一路线=交替取向根修变体 hairpin_alt
+# 解锁判据：同向本体无独立解锁路径；唯一路线=交替取向根修变体 hairpin_alt（TODO 0dk）
 campaign_unlock_criteria:
   route_alternating:
   - hairpin_alt 真机 k(gap) 图谱过门（scripts/hairpin_q_extract --kgap-analyze --gate alt，门常数 HAIRPIN_ALT_KGAP_GATE；offline+real_machine 判据全文见 docs/templates/hairpin_alt/meta.yaml）→ 先评估解锁 hairpin_alt 本体；同向 hairpin 维持 false（c(gap) 标定链/A2 名义定版/fake 派发口径均绑定同向拓扑，不随 alt 解锁迁移）
   body_same_direction:
-  - 无解锁路径：除非新物理证据推翻电/磁反号相消机理（须独立源交叉验证，#122 不凑绿）；届时解锁动作须同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake 派发口径，并从 test_template_meta_consistency.CAMPAIGN_RESTRICTED_TEMPLATES 名单移除
+  - 无解锁路径：除非新物理证据推翻 电/磁反号相消机理（须独立源交叉验证，#122 不凑绿）；届时解锁动作须同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake 派发口径，并从 test_template_meta_consistency.CAMPAIGN_RESTRICTED_TEMPLATES 名单移除
+# XC-T 锚族补挂注记: hairpin.f0_coupling.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 发夹 BPF：N 个 λg/2 半波谐振器折成 U 形，相邻臂平行耦合缝提供级间耦合 k，抽头位置定外部 Q；带内纹波由 Chebyshev
+      k 矩阵综合闭环。
+    derivations:
+    - claim: 耦合系数由双模分裂恒等式测量/校核
+      formula: k = (f2^2 − f1^2)/(f2^2 + f1^2)
+      source: J.-S. Hong & M.J. Lancaster, Microstrip Filters for RF/Microwave Applications
+        (Wiley 2001), §5 耦合谐振器测量节（docs/rf_template_references.md §11.2/§15 已核；M. Makimoto
+        & S. Yamashita 耦合谐振章同口径；权威源头 M. Dishal, Proc. IRE 37(9), 1949）
+    - claim: 外部 Q 由抽头位置（自开路端计 tap_frac）综合，Q_e·k 自洽校核
+      formula: Q_e = g0*g1/FBW；Q_e·k=0.879（本仓名义自洽实录）
+      source: Hong & Lancaster 同书外部 Q 测量节（群时延 τmax 法；docs/rf_template_references.md
+        §15 hairpin 名义定版实录）
+    - claim: 同向拓扑相邻臂开路端对齐→电/磁耦合反号相消（k_EM 非单调，上限 ≪ k_KJ）；交替取向是根修
+      formula: k_total = k_E + k_M（同向相消；交替取向相加）
+      source: 本仓真机 c(gap) 图谱（docs/templates/hairpin/meta.yaml campaign_capable_reasons（文件在场可复核）
+        同源登记；物理结论，TODO 0dk/0cv）
+  sensitivity_ranking:
+  - param: gap_mm
+    order: 1
+    basis: 耦合缝 k(gap) 强敏感（repo 真机图谱单调陡降：gap 0.65 处 k 极大 0.0155，名义 k=0.0515 所需缝更小）
+  - param: arm_len_mm
+    order: 2
+    basis: λg/2 谐振 |S|≈1（恒等式；名义含真机修正 c_f0=1.0370）
+  - param: tap_frac
+    order: 3
+    basis: 外部 Q 抽头敏感（repo B1 标定 c(τ)=1.37437−0.75218·τ 链）
+  - param: order
+    order: 4
+    basis: 阶数=离散综合参数（Chebyshev g 值表驱动，非连续几何维）
+  quiz_refs:
+  - Q-HAIRPIN-K

@@ -92,7 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--part-id", default=None, help="registry ID（--register 必填）")
     parser.add_argument("--vendor", default=None, help="厂商（--register 必填）")
     parser.add_argument("--mpn", default=None, help="料号（--register 必填）")
-    parser.add_argument("--type", default=None, choices=["inductor", "capacitor"], help="元件类型")
+    parser.add_argument("--type", default=None, choices=["inductor", "capacitor", "ferrite_bead"], help="元件类型")
     parser.add_argument("--nominal-value", type=float, default=None, help="标称值（SI：H 或 F）")
     parser.add_argument("--srf-ghz", type=float, default=None, help="datasheet 自谐振频率 (GHz)")
     parser.add_argument("--esr-ohm", type=float, default=None, help="ESR (ohm)")

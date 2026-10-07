@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.core.cascade import PASSIVE_TYPES
+from rfauto.service.envelope import ok_envelope
 
 _IL_TYPES = ("filter", "atten", "cable")
 
@@ -143,7 +144,7 @@ def cascade_budget_report(
 
         result = _core(resolved, snr_min_db=snr_min_db,
                        rx_power_dbm=rx_power_dbm, bw_hz=bw_hz, t_kelvin=t_kelvin)
-        return {"ok": True, "result": result}
+        return ok_envelope(result=result)
     except (ValueError, TypeError, KeyError, ArithmeticError, OverflowError) as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -167,15 +168,16 @@ def spur_search_report(
                       max_order=max_order)
         n_in_band = sum(1 for s in spurs
                         if s["in_band"] and s["role"] == "spur")
-        return {"ok": True,
-                "result": {"f_rf_hz": f_rf_hz, "f_lo_hz": f_lo_hz,
+        return ok_envelope(
+            result={"f_rf_hz": f_rf_hz, "f_lo_hz": f_lo_hz,
                            "if_center_hz": (abs(f_rf_hz - f_lo_hz)
                                             if if_center_hz is None
                                             else if_center_hz),
                            "max_order": max_order,
                            "n_products": len(spurs),
                            "n_spurs_in_band": n_in_band,
-                           "spurs": spurs}}
+                           "spurs": spurs},
+        )
     except (ValueError, TypeError, KeyError, ArithmeticError, OverflowError) as exc:
         return {"ok": False, "error": str(exc)}
 
@@ -200,7 +202,55 @@ def if_plan_report(
                        side=side, n_points=n_points, if_bw_hz=if_bw_hz,
                        rf_bw_hz=rf_bw_hz, lo_bw_hz=lo_bw_hz,
                        max_order=max_order)
-        return {"ok": True, "result": result}
+        return ok_envelope(result=result)
+    except (ValueError, TypeError, KeyError, ArithmeticError, OverflowError) as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def nonlinear_cascade_report(
+    stages: list[dict[str, Any]],
+    *,
+    order: int = 3,
+    pin_dbm: float | None = None,
+    delta_db: float = 11.7,
+    oip3_dbm: float | None = None,
+) -> dict[str, Any]:
+    """ME-18/ME-19 非线性级联扫描报告（JSON 进出；错误 ok=False + error）。
+
+    薄壳：数值全部来自 core/cascade.py 的 cascade_nonlinear_scan
+    （IPn 合并 + IMn 外推 + 压缩定位/P1dB 估计 + AM-PM 加权），本函数只做
+    异常到 JSON 信封的翻译（铁律 7：数值只在确定性内核）。
+    """
+    try:
+        from rfauto.core.cascade import cascade_nonlinear_scan as _core
+
+        scan = _core(stages, order=order, pin_dbm=pin_dbm, delta_db=delta_db,
+                     oip3_dbm=oip3_dbm)
+        return ok_envelope(result=scan.to_dict())
+    except (ValueError, TypeError, KeyError, ArithmeticError, OverflowError) as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def pim_products_report(
+    f1_hz: float,
+    f2_hz: float,
+    *,
+    p_max: int = 7,
+    rx_center_hz: float | None = None,
+    rx_bw_hz: float = 0.0,
+    amplitudes: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """双载波 PIM 产物枚举报告（JSON 进出；错误 ok=False + error）。
+
+    薄壳：枚举/落带/实测幅度归并全部来自 core/pim_products.py 的
+    enumerate_pim_products（幅度只接收实测/规格 dBc，IEC 62037 口径）。
+    """
+    try:
+        from rfauto.core.pim_products import enumerate_pim_products as _core
+
+        result = _core(f1_hz, f2_hz, p_max=p_max, rx_center_hz=rx_center_hz,
+                       rx_bw_hz=rx_bw_hz, amplitudes=amplitudes)
+        return ok_envelope(result=result.to_dict())
     except (ValueError, TypeError, KeyError, ArithmeticError, OverflowError) as exc:
         return {"ok": False, "error": str(exc)}
 

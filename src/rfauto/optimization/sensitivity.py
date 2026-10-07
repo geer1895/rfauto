@@ -1,6 +1,6 @@
 """Direction 8b: Sensitivity analysis (Sobol/Morris methods).
 
-Sobol: 正确的 Saltelli (2002) 采样 + 经典一阶/Jansen 总阶估计量（历史审查补强
+Sobol: 正确的 Saltelli (2002) 采样 + 经典一阶/Jansen 总阶估计量（审查缺口 #11
 修复——旧实现 ST=S1*1.2 是编造系数，总阶指数无统计含义）。numpy 实现，不引入
 SALib 依赖。
 
@@ -131,6 +131,13 @@ def morris_screening(
 ) -> dict[str, Any]:
     """Morris elementary effects screening (for high-dimensional problems).
 
+    边界处理（D1-3 修复 2026-10-04，runs/review_ge8e/d1_opt_linkage/
+    REPORT.md）：x+delta 越上界时**反射**取 x−delta（Morris 1991 原始
+    OAT 轨道惯例，步长仍=delta）——旧径 min(1.0, x+delta) 把上界附近
+    的实际步长截半（起点 x>1−delta 时步长=1−x<delta），效应被 |Δx|
+    除以名义 delta 放大/压缩失衡：线性 f=x1 全域均匀设计下 mu_star
+    实测偏置 ~0.75 倍（D1 席解析），反射后≈1.0。
+
     Returns: {param_name: {"mu_star": float, "sigma": float}}
     """
     rng = np.random.default_rng(seed)
@@ -152,7 +159,10 @@ def morris_screening(
         order = rng.permutation(n_params)
         for j in order:
             x_new = x.copy()
-            x_new[j] = min(1.0, x[j] + delta)
+            # D1-3：越上界反射（x−delta），保持名义步长=delta（Morris OAT
+            # 轨道惯例）——min(1.0,·) 截断使上界附近步长<delta，mu_star
+            # 系统性偏置 ~0.75（线性 f 全域实测）
+            x_new[j] = (x[j] + delta) if x[j] + delta <= 1.0 else (x[j] - delta)
             y_new = objective_fn(_unit_to_params(names, lows, highs, x_new))
             effect = (y_new - y_prev) / delta
             all_effects[names[j]].append(effect)

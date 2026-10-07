@@ -23,11 +23,15 @@ ROLE_CANDIDATES: dict[str, tuple[str, ...]] = {
     "impedance_line_width_mm": ("series_w_mm", "series_w"),
     # 50Ω 臂/分支线宽
     "shunt_line_width_mm": ("shunt_w_mm", "shunt_w"),
-    # 贴片馈电点离中心/边缘的偏移
+    # 贴片馈电位置偏移量（#154 单源化 2026-10-03）：单贴片 feed_offset_mm=
+    # 自贴片中心沿谐振轴偏移（openEMS 官方口径 x=-off 同基，综合/fake/HFSS
+    # 三面统一）；阵列插入馈 elem_feed_mm=缺口深（自辐射边 inset 深度，
+    # render_array_eep/fake 阵列模型自洽对）；pifa pin_back_mm/ifa
+    # feed_off_mm 各按其模板 meta 声明口径
     "feed_offset_mm": ("feed_offset_mm", "feed_offset"),
     # 贴片宽度（边缘阻抗 R_edge ∝ 1/W）
     "patch_width_mm": ("patch_w_mm", "patch_w"),
-    # 均匀传输线宽（mline 锚模板；Z0 由综合精算决定）
+    # 均匀传输线宽（WP2.1 锚模板 mline；Z0 由综合精算决定）
     "line_width_mm": ("w_mm", "line_w_mm"),
     # 均匀传输线长（两端口间，非谐振长度）
     "line_length_mm": ("line_len_mm", "line_len"),

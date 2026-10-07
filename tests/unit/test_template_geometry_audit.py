@@ -40,7 +40,7 @@ from tests.unit import _geometry_audit_helpers as gh
 
 # 冻结的模板清单（#212：覆盖数即验收门，缺一即失败）。新增模板必须同步
 # 更新此处与 docs/templates/<t>/meta.yaml，否则覆盖断言红。
-# 2026-09-14：coupled_bpf（WP2.3 BPF 族锚）+ C1 天线族 II 六模板
+# 2026-09-14 合流轮：coupled_bpf（WP2.3 BPF 族锚）+ §10.3 C1 天线族 II 六模板
 # （monopole/pifa/ifa/loop/helix/slot）由附加模板升格正式注册（18→25）。
 # 2026-09-15 c3-filter-family-ii：§C3 滤波器族 II 三模板（interdigital/
 # combline/sir_bpf）正式注册（25→28）。
@@ -54,12 +54,12 @@ from tests.unit import _geometry_audit_helpers as gh
 # 2026-09-16 wp25-sma-launcher-rootcause：WP2.5 Tier 2 过渡族两模板（msl_cpw
 # MSL↔CPWG 过渡 / sma_launcher SMA edge-launch 夹具口径，真机 FAIL 根治）正式
 # 注册（36→38；多轨同日合流，计数以合流实测为准）。
-# 2026-09-18：槽线族四模板（slotline 路线 A WaveguidePort 文件
+# 2026-09-18 w1b-slotline-reg：槽线族四模板（slotline 路线 A WaveguidePort 文件
 # 模式 / slotline_lumped 路线 B LumpedPort 跨槽 / msl_slot_transition Roberts-
 # Knorr 过渡 / marchand_balun 双槽臂最小族——单支节设计已证伪、保留作对照口径）
 # 由附加模块升格正式注册（38→42；整脚本渲染器，分发见 openems_templates 文末
 # SLOTLINE_FAMILY 段）。
-# 2026-09-18：hairpin_alt 交替取向发夹线（根修：奇数序
+# 2026-09-18 w2g-hairpin-alt：hairpin_alt 交替取向发夹线（TODO 0dk 根修：奇数序
 # 谐振器翻转使相邻臂开路端交替、电/磁耦合同号叠加；纯 KJ gap→k 口径）正式注册
 # （42→43；注册在 hairpin 之后、coupled_bpf 之前，槽线族仍居尾 #247）。
 # 2026-09-22 siw-family：SIW 族首族=直 SIW 传输线段（LumpedPort z 桥×2、矩形域
@@ -78,6 +78,43 @@ from tests.unit import _geometry_audit_helpers as gh
 # （78GHz 行波串馈 1×N、链末匹配集总负载到地、RO3003 类毫米波板、相位递推闭式
 # core/array_synthesis.series_feed_*）正式注册（52→53；注册在文末
 # MMWAVE_SERIES_ARRAY 段，coil_nfc 同款整脚本渲染器早分发）。
+# 2026-09-26 fap2-ring：§F-A M3 环形谐振器模板 ring_resonator（介质提取
+# fixture：闭环环带+径向对置双 50Ω 间隙耦合馈线，名义值 HJ 反解单源
+# ring_resonator_design_params）正式注册（53→54；注册在文末 RING_RESONATOR
+# 段，mline 同款 render_fns 路径）。
+# 2026-09-26 ME-7：§ME-7 标准增益角锥喇叭模板 pyramid_horn（WR-90 馈电直管
+# + 四壁梯形口径段 3D 阶梯化、单 RectWGPort 解析 TE10、名义值导入期
+# core/horn_synthesis 综合单源）正式注册（54→55；注册在文末 PYRAMID_HORN
+# 段，mmwave 同款整脚本渲染器早分发）。
+# 2026-09-26 ME-6：§ME-6 波导-同轴 3D 探针过渡模板 coax_waveguide_transition
+# （官方 openEMS Coax-to-Waveguide 教程直抄起手：WR-90 厚壁腔+探针柱经底壁
+# +探针基 LumpedPort 集总桥+腔端 RectWGPort 解析 TE10+λg/4 背短路，名义值
+# wr_lookup+闭式导入期精算单源）正式注册（55→56；注册在文末 COAX_WG 段，
+# pyramid_horn 同款整脚本渲染器早分发）。
+# 2026-10-02 TA 批：TA-1 schiffman（Schiffman 90° 移相器，耦合段 C-section+
+# 参考段双路径 4 端口轮转，Δφ 闭式裁判）+ TA-2 qwt_multisection（多节 λ/4
+# 变换器，单端口+末端集总 ZL 端接，|S11| 匹配带指纹）正式注册（58→60；
+# 注册在 render_phase_qwt 文末块，render_fns 分发路径，layout 单源）。
+# 2026-10-02 TA 批第二批：TA-3 sicl（基片集成同轴线均匀段，矩形同轴腔+
+# 过孔墙+双 StripLinePort 矩形域，内核 sicl_line 闭式裁判）+ TA-4
+# nway_wilkinson（树形 N=4 功分器，两级 2-way 单元级联 5 端口轮转，内核
+# synthesize_nway_wilkinson tree 分支单源）正式注册（60→62；注册在
+# render_sicl_nway 文末块，render_fns 分发路径，layout 单源）
+# diplexer（一阶 CR 对 3 端口单激励列轮转，内核 diplexer_compose 单源）+
+# ridged_wg（空气单脊波导双 RectWGPort 加宽馈段，内核 ridged_waveguide
+# 单源）正式注册（62→64；注册在 render_diplexer_ridged 文末块，
+# diplexer=render_fns 分发路径 / ridged_wg=整脚本渲染器早分发，layout 单源）
+# ge8b Wave A 席 1（2026-10-03）：TA-7 inverted_ms（倒置微带均匀段，FD 反演
+# 设计链 core/inverted_ms）+ TA-8 hmsiw（半模 SIW，Lai-Fumeaux 2009 T-MTT
+# 式 (8)-(14) 内核 core/hmsiw，layout 单源 siw 同款机制）+ TA-9 fgcpw
+# （有限地共面波导无底地，FD 反演设计链 core/fgcpw + Ghione-Naldi 交叉
+# 参考）正式注册（64→67；注册在 render_ta_wave_a 文末块，render_fns 分发
+# 路径，hmsiw layout 单源字面注入）
+# ge8b Wave B 席 B9（2026-10-03）：TA-10 isl_shielded（ISL 屏蔽悬置线，准
+# 静态闭式链 core/isl_line，layout 单源 hmsiw 同款机制）+ AP-11 vivaldi_tsa
+# （Vivaldi 端射指数张口槽线天线，闭式链 core/vivaldi_tsa，_ant2_body 同构
+# 纯函数 layout）正式注册（67→69；注册在 render_ta_wave_b 文末块，
+# render_fns 分发路径；分发接线=render_core 最小追加，席1 行零改动）
 EXPECTED_TEMPLATES = frozenset({
     "wilkinson", "patch", "branchline", "dipole", "stepped_impedance",
     "coupled_line", "mline", "cpw", "stripline", "wstep", "tjunc", "bend",
@@ -94,6 +131,9 @@ EXPECTED_TEMPLATES = frozenset({
     "siw", "msl_siw_taper",
     # §MS_METASURFACE 超表面/FSS 族（2026-09-24 df6 DP-10，文末注册块）
     "ms_patch", "ms_cross", "ms_jcross", "ms_array_NxN",
+    # ms_ring_patch 双谐振方环+内贴片（DP-10 §1c 预登记 fallback，2026-10-01
+    # ge5 J2 战役段③注册，57→58）
+    "ms_ring_patch",
     # §DP-4 P3 EEP 阵列族（2026-09-24 df6，文末注册块）
     "patch_eep_2x2", "patch_eep_1x4",
     # §COIL_NFC NFC/WPC 线圈族（2026-09-26 df7 C10b，文末注册块；
@@ -102,6 +142,53 @@ EXPECTED_TEMPLATES = frozenset({
     # §MMWAVE_SERIES_ARRAY 串馈毫米波阵（2026-09-26 df7 C10d，文末注册块；
     # 单端口 MSLPort + 链末匹配集总负载，整脚本渲染器早分发）
     "mmwave_series_array",
+    # §F-A M3 环形谐振器（2026-09-26 fap2-ring，文末注册块；双 MSLPort
+    # 间隙耦合，mline 同款 render_fns 路径）
+    "ring_resonator",
+    # §ME-7 标准增益角锥喇叭（2026-09-26 ME-7，文末注册块；单 RectWGPort
+    # 解析 TE10 + 3D 阶梯化，整脚本渲染器早分发）
+    "pyramid_horn",
+    # §ME-6 波导-同轴 3D 探针过渡（2026-09-26 ME-6，文末注册块；探针基
+    # LumpedPort 集总桥 + RectWGPort 解析 TE10 + λg/4 背短路，整脚本渲染器
+    # 早分发）
+    "coax_waveguide_transition",
+    # §M-5 varactor_bpf 变容管调谐 BPF（2026-09-27，openems_templates 文末
+    # 注册块；hairpin 族增量 + 开路端 lumped C(V) 静态电容口径，render_fns
+    # 路径，几何单源 _hairpin_layout）
+    "varactor_bpf",
+    # TA 批（2026-10-02，render_phase_qwt 文末注册块；TA-1 四端口轮转 +
+    # TA-2 单端口集总端接，render_fns 路径，layout 单源）
+    "schiffman",
+    "qwt_multisection",
+    # TA 批第二批（2026-10-02，render_sicl_nway 文末注册块；TA-3 sicl
+    # 基片集成同轴线双 StripLinePort 矩形域 + TA-4 nway_wilkinson 树形
+    # 功分器 5 端口轮转，render_fns 路径，layout 单源）
+    "sicl",
+    "nway_wilkinson",
+    # TA 批第三批（2026-10-02，render_diplexer_ridged 文末注册块；TA-5
+    # diplexer 一阶 CR 对 3 端口轮转 + TA-6 ridged_wg 空气脊波导双
+    # RectWGPort 加宽馈段整脚本早分发，layout 单源）
+    "diplexer",
+    "ridged_wg",
+    # ge8b Wave A 席 1（2026-10-03，render_ta_wave_a 文末注册块；TA-7
+    # inverted_ms 倒置微带 + TA-8 hmsiw 半模 SIW（layout 单源 siw 同款）
+    # + TA-9 fgcpw 有限地共面波导，render_fns 路径）
+    "inverted_ms",
+    "hmsiw",
+    "fgcpw",
+    # ge8b Wave B 席 B9（2026-10-03，render_ta_wave_b 文末注册块；TA-10
+    # isl_shielded 屏蔽悬置线 + AP-11 vivaldi_tsa 端射张口槽线天线，
+    # render_fns 路径）
+    "isl_shielded",
+    "vivaldi_tsa",
+    # ge8b Wave D 席 D2（2026-10-03，render_ta_wave_c 文末注册块）：TA-11
+    # embedded_ms（嵌入式微带均匀段，FD 反演设计链 core/embedded_line）+
+    # TA-14 xcheb_bpf4（交叉耦合开路环四重奏 BPF，cm_core folded 矩阵消费
+    # +非相邻 m14→缝映射 core/cross_coupled_map）正式注册（69→71；注册在
+    # render_ta_wave_c 文末块，render_fns 分发路径；分发接线=render_core/
+    # grid/registry 最小追加，既有行零改动）
+    "embedded_ms",
+    "xcheb_bpf4",
 })
 
 # 渲染脚本实际创建的端口对象数与 meta n_ports 的差异（历史口径）：
@@ -117,7 +204,10 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 53, "覆盖基线漂移：台账记 53 个模板"
+    assert len(EXPECTED_TEMPLATES) == 71, (
+        "覆盖基线漂移：记 71 个模板（ge8d Wave D 席 D2 TA-11 "
+        "embedded_ms+TA-14 xcheb_bpf4 注册 69→71，render_ta_wave_c 文末"
+        "块，2026-10-03）")
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {
@@ -376,6 +466,39 @@ def test_domain_and_substrate_match_meta(template):
         assert z_lines.min() == pytest.approx(0.0, abs=1e-12)
         assert z_lines.max() == pytest.approx(b_cav, rel=1e-9)
         return
+    if template == "inverted_ms":
+        # TA-7 倒置微带：金属/介质 z 序对调——基板悬浮 [h_air, h_air+H_SUB]
+        # （地面=z=0 域 PEC 底界，条带 z=h_air=基板下表面，顶 AIR_TOP）
+        z_air = float(TEMPLATE_NOMINAL[template]["h_air_mm"]) * 1e-3
+        assert sub.lo[2] == pytest.approx(z_air, rel=1e-9)
+        assert sub.hi[2] == pytest.approx(z_air + h_sub, rel=1e-9)
+        z_lines = gh.mesh_lines(scope, "z")
+        assert z_lines.min() == pytest.approx(0.0, abs=1e-12)
+        return
+    if template == "embedded_ms":
+        # TA-11 嵌入式微带：基板+覆盖层同 εr 单盒 [0, H_SUB+H2]（地面=z=0
+        # 域 PEC 底界，条带 z=H_SUB=覆盖层下界面，顶 AIR_TOP）
+        h2 = float(TEMPLATE_NOMINAL[template]["h2_mm"]) * 1e-3
+        assert sub.lo[2] == pytest.approx(0.0, abs=1e-12)
+        assert sub.hi[2] == pytest.approx(h_sub + h2, rel=1e-9)
+        z_lines = gh.mesh_lines(scope, "z")
+        assert z_lines.min() == pytest.approx(0.0, abs=1e-12)
+        assert z_lines.max() == pytest.approx(h_sub + h2 + 5e-3, rel=1e-9)
+        return
+    if template == "isl_shielded":
+        # TA-10 ISL：基板悬浮于空气隙顶 [g_air, g_air+H_SUB]（TA-7 对偶 z
+        # 序：空气隙在基板之下；条带 z=g_air+H_SUB=基板上表面，顶板 z=
+        # g_air+H_SUB+h_top 在域内，顶板上方 AIR_TOP）
+        z_gap = float(TEMPLATE_NOMINAL[template]["g_air_mm"]) * 1e-3
+        z_top_nom = (z_gap + h_sub
+                     + float(TEMPLATE_NOMINAL[template]["h_top_mm"]) * 1e-3)
+        assert sub.lo[2] == pytest.approx(z_gap, rel=1e-9)
+        assert sub.hi[2] == pytest.approx(z_gap + h_sub, rel=1e-9)
+        z_lines = gh.mesh_lines(scope, "z")
+        assert z_lines.min() == pytest.approx(0.0, abs=1e-12)
+        assert z_lines.max() == pytest.approx(
+            z_top_nom + 5e-3, rel=1e-9), "顶板上方应有 AIR_TOP=5mm"
+        return
     if template == "sma_launcher":
         # WP2.5 SMA edge-launch 夹具口径：PCB 抬高 Z_G=r_os−r_i−H_SUB（针底切线=
         # 基板顶），基板 [Z_G, Z_G+H_SUB]；z=0 PEC=夹具底板（壳底切线）；域顶=
@@ -414,13 +537,15 @@ def test_declared_params_drive_geometry(template):
     """TEMPLATE_META.params 每个键扰动后必须改变 CSXCAD 导体几何。
 
     atten_db 由合成层消费（SYNTHESIS_ROUTED_PARAMS）；patch 的幽灵参数
-    feed_w_mm 已随元数据修复替换为渲染实读的 feed_offset_mm（白名单清空）——
+    feed_w_mm 已随 0aq 修复替换为渲染实读的 feed_offset_mm（白名单清空）——
     集合外的新"声明但不生效"参数即红。JOINT_DOMAIN_PARAMS（coupled_bpf/C3
     order）单键扰动结构非法，几何驱动性由其模板单测直接覆盖。
     LUMPED_VALUE_PARAMS（combline c_load_pf）进渲染脚本的 LumpedElement 元件值
     而非导体几何，字面量接线由其模板单测钉住。MATERIAL_VALUE_PARAMS
     （sma_launcher er_fill）进渲染脚本的 AddMaterial 介电常数而非导体几何，
     字面量接线与"不驱动导体"语义由 test_sma_launcher_template 钉住。
+    DOMAIN_DRIVEN_PARAMS（ms_cross period_mm）驱动单胞域/读出探针面而非导体
+    原语（ge5 读出修复后电阻片 bbox 不在），正面判据由其模板单测钉住。
     """
     declared = list(TEMPLATE_META[template]["params"])
     changed = gh.geometry_changing_params(template, declared)
@@ -428,7 +553,8 @@ def test_declared_params_drive_geometry(template):
         gh.KNOWN_METADATA_DRIFT.get(template, frozenset())
     ) | set(gh.JOINT_DOMAIN_PARAMS.get(template, frozenset())) | set(
         gh.LUMPED_VALUE_PARAMS.get(template, frozenset())
-    ) | set(gh.MATERIAL_VALUE_PARAMS.get(template, frozenset()))
+    ) | set(gh.MATERIAL_VALUE_PARAMS.get(template, frozenset())
+            ) | set(gh.DOMAIN_DRIVEN_PARAMS.get(template, frozenset()))
     unwired = set(declared) - changed - allowed
     assert not unwired, f"{template}: 声明但未驱动几何的参数 {sorted(unwired)}"
 
@@ -459,7 +585,8 @@ def test_meta_yaml_params_drive_geometry(template):
     unwired = (set(declared) - changed - set(gh.SYNTHESIS_ROUTED_PARAMS)
                - set(gh.JOINT_DOMAIN_PARAMS.get(template, frozenset()))
                - set(gh.LUMPED_VALUE_PARAMS.get(template, frozenset()))
-               - set(gh.MATERIAL_VALUE_PARAMS.get(template, frozenset())))
+               - set(gh.MATERIAL_VALUE_PARAMS.get(template, frozenset()))
+               - set(gh.DOMAIN_DRIVEN_PARAMS.get(template, frozenset())))
     assert not unwired, f"{template}: meta.yaml 声明但渲染不用 {sorted(unwired)}"
 
 

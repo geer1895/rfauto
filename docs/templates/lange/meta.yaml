@@ -20,4 +20,5 @@ nominal_params:
   w_feed_mm: 1.1117
 topology: 展开型 Lange 电桥（3dB 正交，C4 族）：四指交替并联（网络 A=指1/3、B=指2/4，DC 隔离），air-bridge=抬高薄金属+竖直立柱（同端 A/B 桥错位、两端分置）；外指承馈 P1/P2/P3/P4，等效两线 (Ze4,Zo4)=(120.71,20.71)Ω 精确成立
 param_semantics: w_mm=单指宽，gap_mm=指缝（边到边；3dB 于本叠层 s=0.0386mm，g=s/h=0.076 略低于 KJ 标称有效域下限 0.1，openems_templates §C4 段首口径 3 如实记录），finger_len_mm=指长（λ/4 @平均 εeff=2.4972），w_feed_mm=50Ω 馈线宽。相邻对 (Z0e,Z0o)=(176.216,52.609)Ω（Pozar 设计式 C=1/√2）
-smoke_note: 真机未跑：指缝 38.6µm 小于 0.4mm 审计网格（near 加密入网）；桥缝耦合寄生于理想裁判之外，冒烟按 g=0.076 提示与一阶口径判读
+smoke_note: 真机未跑（followUp）：指缝 38.6µm 小于 0.4mm 审计网格（near 加密入网）；桥缝耦合寄生于理想裁判之外，冒烟按 g=0.076 提示与一阶口径判读
+# XC-T 锚族补挂注记: lange.s31_coupling.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）

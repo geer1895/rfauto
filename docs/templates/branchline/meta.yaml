@@ -16,3 +16,36 @@ nominal_params:
   arm_len_mm: 20.5
   series_w_mm: 1.87
   shunt_w_mm: 1.11
+
+# 名义臂注记（R2-1 审查批 2026-10-04）：arm_len_mm=20.5 为薄线极限捷径口径
+# （HJ 精算正解 18.09mm，偏差 +11.8%，已裁定维持锚定基线不改数值——锚历史，
+# 坑#252 定性）；出处：runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1
+nominal_note: 名义臂=薄线极限口径（HJ 精算 18.09，偏差 +11.8% 已裁定维持锚定基线，见 runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1 与坑#252）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 正交混合电桥：四臂 λ/4，臂阻抗两档（35.35Ω 与 50Ω@50Ω 系统）；理想匹配下直通/耦合口 −3dB 且输出相差 90°，隔离口理想无输出。
+    derivations:
+    - claim: 单节 branchline 臂阻抗两档 Z0 与 Z0/√2、臂长 λ/4
+      formula: L = c/(4*f0*sqrt(εeff)) ; Z ∈ {Z0, Z0/√2}
+      source: Pozar, Microwave Engineering (4th ed.), Ch.7（正交混合；docs/rf_template_references.md
+        §13.2 两节推广从单节偶/奇模分析出发已核；本仓 core/synthesis.synthesize_branchline）
+    - claim: 线宽必须综合回代：旧配方 2.20mm 实测 ~31Ω 非名义 35.35Ω → −6dB 平台坑
+      formula: w(35.35Ω)=1.87mm ; w(50Ω)=1.11mm（rogers4350b_h0.508 G0 定案）
+      source: knowledge/rules.yaml R005/R006/R007（G0 门 HJ 综合 max dev 0.45%；R006 −6dB
+        平台根因实录）
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）
+  - param: series_w_mm
+    order: 2
+    basis: 阻抗口径敏感（R006：线宽失配是耦合度平台主因，臂长调参为无效维）
+  - param: shunt_w_mm
+    order: 3
+    basis: 50Ω 馈线匹配（弱于串联臂阻抗口径）
+  - param: er
+    order: 4
+    basis: f0 ∝ 1/sqrt(εeff) 恒等式
+  quiz_refs: []

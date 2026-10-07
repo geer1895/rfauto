@@ -1,0 +1,51 @@
+f0_ghz: 5.2
+n_ports: 2
+template: ridged_wg
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- a_mm
+- b_mm
+- s_mm
+- d_mm
+- l_ridge_mm
+- l_feed_mm
+nominal_params:
+  a_mm: 22.86
+  b_mm: 10.16
+  s_mm: 9.144
+  d_mm: 5.5434
+  l_ridge_mm: 40.0
+  l_feed_mm: 25.0
+  er: 1.0
+  h_mm: 0.0
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: S11/S21 @ RectWGPort 1-2（解析 TE10 打在加宽馈段，Z_ref=解析波导阻抗；S21=port2.uf_inc
+  口径——自然升序定义端口透射在 uf_inc，coax_wg 同款）。判读锚（预声明，真机窗）：①交越膝点 |S21|
+  −3dB 落内核 fc·(1±8%)（脊段消逝衰减 @0.8fc≈22dB/40mm 使过渡陡峭）；②带底消逝衰减斜率对照 evanescent_attenuation_db；
+  ③带内 |S21| 平台≈1（馈段/脊段单模行波）。内核裁判=ridged_waveguide.cutoff_fc_hz 同参复算（XC-P
+  精度域 g/b≥0.4，名义 0.454）
+topology: '空气单脊矩形波导均匀段（TA-6）：脊段外廓 a×b+顶壁居中脊 s×d（y∈±l_ridge/2）+ 两端加宽馈波导
+  a_feed×b（H 面对称阶跃，a_feed=c/(2·0.75·fc_ridge) 结构性 >4a/3）+ 阶跃端面框板闭合（零泄漏）；
+  双 RectWGPort 打在馈段（激励/探针面均内移 16·BASE 出 PML_8）；空气填充全金属（无介质板）'
+param_semantics: 'a_mm/b_mm=脊段外廓宽/窄边（b/a=0.5 标准档）；s_mm=脊宽（s/a=0.4 档）；d_mm=脊深（design_ridge_depth
+  对 fc_target=5.0GHz 反解，名义 g/b=0.454 落 XC-P 精度域 ≥0.4；g=b−d 单脊）；l_ridge_mm=脊段长（40mm→消逝衰减
+  ≈22dB@0.8fc）；l_feed_mm=单侧馈段最短长（实际域长自动外推保端口两面+余量，horn 同款）；er=1.0/h_mm=0.0
+  为空气填充占位键（MATERIAL_VALUE_PARAMS 豁免）'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，horn 同款）；全部壁面站线（外廓缘/脊缘/馈段缘/阶跃框/端口面）显式入网（#198）+
+  全轴 1µm 近重合去重（#152）；渲染守卫：NEAR ≤ min(s,g)/3（#266 族特征分辨）、g/b≥0.4（XC-P 精度域）、判读带
+  ⊂（fc_feed, min(1.5·fc_ridge, 外廓 TE10)）单模域'
+smoke_note: 未冒烟（离线审计过，#212，test_diplexer_ridged_templates）；近似级别如实登记：①一阶横磁共振闭式遗漏脊缘杂散电容（kc
+  高估 +1.5~+8% @g/b≥0.4 分档域，内核精度档案 WARN）；②H 面阶跃结反射不进闭式裁判（v1 直阶跃无渐变——工程实践为
+  λ/4 锥削过渡，后续变体）；③RectWGPort 打在馈段，脊模经阶跃结的耦合损耗计入 S21；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: '全链内核精算（#1c，零手抄毫米数；ridged_wg_design_params() 缺省实参可重算，单测按独立闭式复算钉
+  4 位舍入档回代 |Δfc|/fc ≤1e-4）：a=22.86/b=10.16（b/a=0.5 标准档，WR-90 宽边口径）、s/a=0.4 选档 →
+  core/ridged_waveguide.design_ridge_depth 对 fc_target=5.0GHz 反解脊深 d=5.5433545mm → round4=5.5434
+  回代 fc=4.99998GHz（|Δ|/fc=3.8e-6，4 位舍入固有）；g=b−d=4.6166mm → g/b=0.4544≥0.4 落内核 XC-P
+  精度域（kc 对独立 FEM +1.5%~+8% 分档域，深脊 g/b<0.4 定量不可信由渲染守卫拒收）。馈段 a_feed=c/(2·0.75·fc_ridge)=39.9725mm（结构性
+  >4a/3，构造不变式）；判读带（真机窗）=(0.8, 1.26)·fc_ridge=(4.0, 6.3)GHz⊂（fc_feed=3.75, min(1.5·fc_ridge=7.5,
+  外廓 TE10=6.557)）单模域；l_ridge=40mm→消逝衰减 ≈21.9dB@0.8fc（evanescent_attenuation_db 精算）。真机冒烟与
+  HFSS 仲裁=后续窗（本批零发射）。'

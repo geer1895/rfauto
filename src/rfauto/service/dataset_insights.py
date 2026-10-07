@@ -1,7 +1,7 @@
-"""dataset_insights —— 数据集注册表余量（待做列收口）。
+"""dataset_insights —— 数据集注册表余量（WP2.4 + §10.5 E1 待做列）。
 
-dataset_service 已落 Parquet 物化 + DuckDB 直查 + 健康门禁 +
-数据面消费；本模块补齐余量统计三件事：
+E1 v2（dataset_service）已落 Parquet 物化 + DuckDB 直查 + G11 健康门禁 +
+E11 数据面消费；本模块补齐该行待做列的三件事：
 
 - **点数/参数空间覆盖度统计**（``dataset_coverage``）：点数按
   model/adapter/source 分布 + 数值参数逐维 distinct/界/等宽分箱占用率
@@ -49,6 +49,7 @@ from rfauto.service.dataset_service import (
     _validate_dataset_name,
     is_ground_truth_adapter,
 )
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # 6.3 神经算子解锁门槛（roadmap 6.3：LHS 增广至 100+ 点；WP2.4 行口径）
 NEURAL_OPERATOR_THRESHOLD_DEFAULT = 100
@@ -150,18 +151,18 @@ def dataset_coverage(
     """
     bins_i = int(bins)
     if bins_i < 2:
-        return {"ok": False, "errors": [f"bins 必须 >= 2，收到 {bins!r}"]}
+        return error_envelope([f"bins 必须 >= 2，收到 {bins!r}"])
     try:
         dataset_dir, manifest = _resolve_dataset(name, out_dir)
     except (ValueError, FileNotFoundError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     try:
         rows = _read_rows(
             dataset_dir, ["model", "adapter", "source", "params_json"], manifest)
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     except Exception as exc:
-        return {"ok": False, "errors": [f"点级数据读取失败: {exc}"]}
+        return error_envelope([f"点级数据读取失败: {exc}"])
 
     # 数值参数逐维收集（bool 与非有限值不进统计——与写入侧拦截口径一致）
     values: dict[str, set[float]] = {}
@@ -215,19 +216,18 @@ def dataset_coverage(
         "min_occupancy": min(r for _k, r in occupancies) if occupancies else 0.0,
         "weakest_key": min(occupancies, key=lambda t: t[1])[0] if occupancies else "",
     }
-    return {
-        "ok": True,
-        "name": str(manifest.get("name") or name),
-        "dataset_dir": str(dataset_dir),
-        "n_points": int(manifest.get("n_points") or 0),
-        "n_rows": int(manifest.get("n_rows") or len(rows)),
-        "by_model": _tally(rows, "model"),
-        "by_adapter": _tally(rows, "adapter"),
-        "by_source": _tally(rows, "source"),
-        "bins": bins_i,
-        "per_key": per_key,
-        "coverage": coverage,
-    }
+    return ok_envelope(
+        name=str(manifest.get("name") or name),
+        dataset_dir=str(dataset_dir),
+        n_points=int(manifest.get("n_points") or 0),
+        n_rows=int(manifest.get("n_rows") or len(rows)),
+        by_model=_tally(rows, "model"),
+        by_adapter=_tally(rows, "adapter"),
+        by_source=_tally(rows, "source"),
+        bins=bins_i,
+        per_key=per_key,
+        coverage=coverage,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -278,21 +278,20 @@ def _progress_view(
     for model_key, spec in per_model.items():  # 键已排序：并列取字典序最小
         if spec["n_gt"] > best_gt:
             best_model, best_gt = model_key, spec["n_gt"]
-    return {
-        "ok": True,
-        "name": str(manifest.get("name") or name),
-        "manifest": str(dataset_dir / MANIFEST_NAME),
-        "n_rows": int(gt.get("n_rows")
+    return ok_envelope(
+        name=str(manifest.get("name") or name),
+        manifest=str(dataset_dir / MANIFEST_NAME),
+        n_rows=int(gt.get("n_rows")
                       or manifest.get("n_rows") or 0),
-        "n_gt_rows": int(gt.get("n_gt_rows") or 0),
-        "threshold": threshold,
-        "unlocked": bool(gt.get("unlocked")),
-        "per_model": per_model,
-        "best_model": best_model,
-        "best_model_gt": best_gt,
-        "progress_ratio": min(1.0, best_gt / threshold) if threshold else 0.0,
-        "deficit": max(0, threshold - best_gt),
-    }
+        n_gt_rows=int(gt.get("n_gt_rows") or 0),
+        threshold=threshold,
+        unlocked=bool(gt.get("unlocked")),
+        per_model=per_model,
+        best_model=best_model,
+        best_model_gt=best_gt,
+        progress_ratio=min(1.0, best_gt / threshold) if threshold else 0.0,
+        deficit=max(0, threshold - best_gt),
+    )
 
 
 def annotate_ground_truth(
@@ -310,17 +309,17 @@ def annotate_ground_truth(
     """
     thr = int(threshold)
     if thr < 1:
-        return {"ok": False, "errors": [f"threshold 必须 >= 1，收到 {threshold!r}"]}
+        return error_envelope([f"threshold 必须 >= 1，收到 {threshold!r}"])
     try:
         dataset_dir, manifest = _resolve_dataset(name, out_dir)
     except (ValueError, FileNotFoundError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     try:
         rows = _read_rows(dataset_dir, ["model", "adapter"], manifest)
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     except Exception as exc:
-        return {"ok": False, "errors": [f"点级数据读取失败: {exc}"]}
+        return error_envelope([f"点级数据读取失败: {exc}"])
 
     gt = _gt_block(rows, thr)
     manifest["ground_truth"] = gt
@@ -342,11 +341,11 @@ def neural_operator_readiness(
     """
     thr = int(threshold)
     if thr < 1:
-        return {"ok": False, "errors": [f"threshold 必须 >= 1，收到 {threshold!r}"]}
+        return error_envelope([f"threshold 必须 >= 1，收到 {threshold!r}"])
     try:
         dataset_dir, manifest = _resolve_dataset(name, out_dir)
     except (ValueError, FileNotFoundError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     gt = manifest.get("ground_truth")
     need_annotate = (
@@ -375,12 +374,14 @@ def set_dataset_visibility(
     结果信封 ``registry_sync`` 如实透出是否已登记。
     """
     if visibility not in VISIBILITIES:
-        return {"ok": False, "errors": [
-            f"visibility 只允许 {'/'.join(VISIBILITIES)}，收到 {visibility!r}"]}
+        return error_envelope(
+            [
+            f"visibility 只允许 {'/'.join(VISIBILITIES)}，收到 {visibility!r}"],
+        )
     try:
         dataset_dir, manifest = _resolve_dataset(name, out_dir)
     except (ValueError, FileNotFoundError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     manifest["visibility"] = visibility
     _save_manifest(dataset_dir, manifest)
     # 注册表回写（默认关零行为变化；写失败不回滚 manifest——文件是事实源）
@@ -393,13 +394,12 @@ def set_dataset_visibility(
             manifest.get("n_rows"),
             visibility=visibility,
         )
-    return {
-        "ok": True,
-        "name": str(manifest.get("name") or name),
-        "visibility": visibility,
-        "manifest": str(dataset_dir / MANIFEST_NAME),
-        "registry_sync": registry_synced,
-    }
+    return ok_envelope(
+        name=str(manifest.get("name") or name),
+        visibility=visibility,
+        manifest=str(dataset_dir / MANIFEST_NAME),
+        registry_sync=registry_synced,
+    )
 
 
 def export_hf_dataset(
@@ -423,12 +423,14 @@ def export_hf_dataset(
     try:
         dataset_dir, manifest = _resolve_dataset(name, out_dir)
     except (ValueError, FileNotFoundError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     visibility = str(manifest.get("visibility") or "private")
     if visibility != "public" and not allow_private:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"数据集 {name} 为 {visibility}：公开导出需先 "
-            "set_dataset_visibility(name, 'public')，或显式 allow_private=True"]}
+            "set_dataset_visibility(name, 'public')，或显式 allow_private=True"],
+        )
 
     lic = str(license or "").strip()
     hf_dir = dataset_dir / HF_DIR_NAME
@@ -447,7 +449,7 @@ def export_hf_dataset(
 
             pq.write_table(table, hf_parquet)
         except (RuntimeError, FileNotFoundError, ImportError) as exc:
-            return {"ok": False, "errors": [str(exc)]}
+            return error_envelope([str(exc)])
 
     front: dict[str, Any] = {
         "name": str(manifest.get("name") or name),
@@ -489,17 +491,16 @@ def export_hf_dataset(
     card_path = hf_dir / HF_CARD_NAME
     card_path.write_text(card, encoding="utf-8")
 
-    return {
-        "ok": True,
-        "name": str(manifest.get("name") or name),
-        "hf_dir": str(hf_dir),
-        "parquet": str(hf_parquet),
-        "card": str(card_path),
-        "visibility": visibility,
-        "license": lic,
-        "n_rows": int(manifest.get("n_rows") or 0),
-        "n_gt_rows": int(gt.get("n_gt_rows") or 0) if isinstance(gt, dict) else None,
-    }
+    return ok_envelope(
+        name=str(manifest.get("name") or name),
+        hf_dir=str(hf_dir),
+        parquet=str(hf_parquet),
+        card=str(card_path),
+        visibility=visibility,
+        license=lic,
+        n_rows=int(manifest.get("n_rows") or 0),
+        n_gt_rows=int(gt.get("n_gt_rows") or 0) if isinstance(gt, dict) else None,
+    )
 
 
 def list_datasets(
@@ -510,9 +511,11 @@ def list_datasets(
     """注册表余量总览：逐数据集关键数字（点数/GT 标注/可见性/HF 导出态），
     按 name 排序；visibility 过滤只影响列表不影响盘面。"""
     if visibility is not None and visibility not in VISIBILITIES:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"visibility 只允许 {'/'.join(VISIBILITIES)} 或 None，"
-            f"收到 {visibility!r}"]}
+            f"收到 {visibility!r}"],
+        )
     out_root = Path(out_dir)
     items: list[dict[str, Any]] = []
     if out_root.is_dir():
@@ -539,12 +542,7 @@ def list_datasets(
                 "has_hf": (d / HF_DIR_NAME).is_dir(),
                 "dataset_dir": str(d),
             })
-    return {
-        "ok": True,
-        "out_dir": str(out_root),
-        "datasets": items,
-        "n_datasets": len(items),
-    }
+    return ok_envelope(out_dir=str(out_root), datasets=items, n_datasets=len(items))
 
 
 # ---------------------------------------------------------------------------
@@ -631,7 +629,7 @@ def load_dataset_sets(
     """公开/私有双集装载 + 防污染检查（对齐 WP3.7 agent_bench.load_bench_sets）。
 
     - 公开集 = ``<out_dir>/public_set.yaml`` 注册表条目（状态 loaded /
-      not_configured（缺文件，合法空集）/ invalid（结构非法=硬错误））；
+      not_configured（缺文件，合法空集）/ invalid（结构非法=硬错误）；
     - 私有集 = 本地 manifest visibility=private 的数据集（manifest 派生，
       永远可装载）；
     - **两集 id 交集非空即 FAIL**（ok=False + overlap_ids）：公开集条目
@@ -653,19 +651,32 @@ def load_dataset_sets(
         errors.append(
             f"双集污染：公开/私有数据集 id 交集非空（{len(overlap)} 个）→ "
             f"{overlap[:5]}")
-    return {
-        "ok": not errors,
-        "errors": errors,
-        "public": {
+    # ge8e W2 快偿（R5-06）：裸 ok 信封 → 构造器（键集/键序/语义零变化）
+    if errors:
+        return error_envelope(
+            errors,
+            public={
+                "status": public_status,
+                "path": str(_public_set_path(out_root)),
+                "n_ids": len(public_ids),
+                "ids": public_ids,
+                "entries": list(entries or []),
+            },
+            private={"n_ids": len(private_ids), "ids": private_ids},
+            overlap_ids=overlap,
+        )
+    return ok_envelope(
+        errors=errors,
+        public={
             "status": public_status,
             "path": str(_public_set_path(out_root)),
             "n_ids": len(public_ids),
             "ids": public_ids,
             "entries": list(entries or []),
         },
-        "private": {"n_ids": len(private_ids), "ids": private_ids},
-        "overlap_ids": overlap,
-    }
+        private={"n_ids": len(private_ids), "ids": private_ids},
+        overlap_ids=overlap,
+    )
 
 
 def register_public_dataset(
@@ -676,7 +687,7 @@ def register_public_dataset(
     license: str = "",
     promote: bool = False,
 ) -> dict[str, Any]:
-    """公开集注册路径（E1 收口；E2 公开 RF 数据集接入的登记面）。
+    """公开集注册路径（E1 收口②；E2 公开 RF 数据集接入的登记面）。
 
     把数据集 id 登记进 ``public_set.yaml``（幂等：同名条目覆盖）；本地
     尚未物化的外部公开集也可先登记（source 记来源）。
@@ -690,25 +701,27 @@ def register_public_dataset(
     try:
         name = _validate_dataset_name(name)
     except ValueError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     out_root = Path(out_dir)
     entries, errors = _load_public_set(out_root)
     if errors:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors)
 
     manifest = _load_manifest(out_root / name)
     local_private = (
         manifest is not None
         and str(manifest.get("visibility") or "private") == "private")
     if local_private and not promote:
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             f"双集污染防护：{name} 是本地私有数据集，公开集注册需显式 "
-            "promote=True（先转 public 再登记），或为公开集改用不同 id"]}
+            "promote=True（先转 public 再登记），或为公开集改用不同 id"],
+        )
     promoted = False
     if local_private:
         flip = set_dataset_visibility(name, "public", out_dir=out_root)
         if not flip.get("ok"):
-            return {"ok": False, "errors": list(flip.get("errors") or [])}
+            return error_envelope(list(flip.get("errors") or []))
         promoted = True
 
     registered_at = datetime.now(timezone.utc).isoformat()
@@ -731,13 +744,25 @@ def register_public_dataset(
         encoding="utf-8")
 
     check = load_dataset_sets(out_dir=out_root)
-    return {
-        "ok": bool(check.get("ok")),
-        "errors": list(check.get("errors") or []),
-        "name": name,
-        "registered_at": registered_at,
-        "promoted": promoted,
-        "public_set": str(_public_set_path(out_root)),
-        "n_entries": len(kept),
-        "overlap_ids": list(check.get("overlap_ids") or []),
-    }
+    # ge8e W2 快偿（R5-06）：裸 ok 信封 → 构造器（键集/键序/语义零变化；
+    # ok=check 的真值可能 False 而 errors 空——按 ok 值分支不按 errors）
+    check_ok = bool(check.get("ok"))
+    if check_ok:
+        return ok_envelope(
+            errors=list(check.get("errors") or []),
+            name=name,
+            registered_at=registered_at,
+            promoted=promoted,
+            public_set=str(_public_set_path(out_root)),
+            n_entries=len(kept),
+            overlap_ids=list(check.get("overlap_ids") or []),
+        )
+    return error_envelope(
+        list(check.get("errors") or []),
+        name=name,
+        registered_at=registered_at,
+        promoted=promoted,
+        public_set=str(_public_set_path(out_root)),
+        n_entries=len(kept),
+        overlap_ids=list(check.get("overlap_ids") or []),
+    )

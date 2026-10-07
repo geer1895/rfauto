@@ -140,7 +140,7 @@ class TestWilkinsonPhysicsResponse:
         ——绝对位置有 ~20% 模型偏差（留给 v1 校准吸收），但"过细→恶化"
         的方向与幅度是排序可信度的底线。旧版三者差异 <0.1dB。
 
-        2026-09-23 fake 位置锚 3.54（乘法缩放 K=3.54/2.725）落
+        2026-09-23 fake 位置锚 3.54（乘法缩放 K=3.54/2.725，用户拍板）落
         配置后，名义点谷位在带下方（~1.98GHz，对齐 openEMS 名义肩部口径
         ——2026-09-04 决策注释记载的同一"谷在带下方肩部"现象），带内 S11
         的失配对比被肩部阻尼（thin/opt 带内仅 ~0.4dB），失配响应的主载体
@@ -186,12 +186,14 @@ class TestWilkinsonPhysicsResponse:
         """名义点带内 S11 落在真机量级附近（HFSS 实测名义点 -12.93dB）。
 
         2026-09-23 位置锚落配置后带内值在肩部（~-8dB，谷在带下方）——
-        窗口 (-25,-8) 的物理合理性上缘从此贴边，量级语义以谷位锚为准
-        （openEMS 名义口径 2.2GHz，非 HFSS 带内 -12.93dB）。
+        2026-10-03 ge8b fake 无源门修复（能量守恒幅度构造，七百七十五）后
+        带内肩部再抬至 ~-7.64dB（行归一伪象曾把带内值压深）——窗口上缘
+        随构造修正到 -7；量级语义仍以谷位锚为准（openEMS 名义口径），
+        HFSS 带内 -12.93dB 是锚定名义点实测、非本 fake 模型的量级依据。
         """
         s11 = _band_s11_db(
             _solved_adapter("wilkinson", self.NOMINAL), self.BAND)
-        assert -25 < s11 < -8, s11
+        assert -25 < s11 < -7, s11
 
 
 class TestPatchPhysicsResponse:

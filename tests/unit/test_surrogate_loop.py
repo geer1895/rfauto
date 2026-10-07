@@ -347,11 +347,11 @@ class TestCli:
 
 
 class TestReviewHardening:
-    """补强回归（空样本不炸代理 fit / 预算钳制 / 代理异常罚值）。"""
+    """审查补强回归（优化栈审查 P1-1/P1-4 + P2-9）。"""
 
     def test_all_init_fail_no_crash(self):
         # 全部初始点真跑失败：环必须以 surrogate_fit_failed 停，
-        # 不得让空样本炸代理 fit
+        # 不得让空样本炸代理 fit（审查 P1-1）
         def always_fail(params):
             raise RuntimeError("求解失败注入")
 
@@ -364,7 +364,7 @@ class TestReviewHardening:
         assert res["best"] is None
 
     def test_n_init_clamped_to_budget(self):
-        # 预算契约：n_init > max_real 时钳到 max_real
+        # 预算契约：n_init > max_real 时钳到 max_real（审查 P1-4）
         calls = {"n": 0}
 
         def eval_count(params):
@@ -377,7 +377,7 @@ class TestReviewHardening:
         assert res["n_attempts"] <= 6
 
     def test_virtual_predict_exception_penalized(self):
-        # 虚拟寻优中代理预测异常按大罚值处理，不炸环
+        # 虚拟寻优中代理预测异常按大罚值处理，不炸环（审查 P2-9）
         calls = {"n": 0}
 
         from rfauto.optimization.surrogate.base import SurrogateModel
@@ -434,7 +434,8 @@ class TestQualityReport:
         # ρ 在交叉验证预测为常数时无定义（诚实返回 None，非占位 0）
         rho = quality["spearman_rho"]
         assert rho is None or -1.0 <= rho <= 1.0
-        assert abs(sum(quality["param_importance"].values()) - 1.0) < 1e-6
+        # D1-1：重要性降级 None（不可辨识）透传，sum 假排行断言撤
+        assert all(v is None for v in quality["param_importance"].values())
         # 数值必须等于对同一批真实样本重跑 analyze_run_surrogate 的输出
         direct = analyze_run_surrogate("probe", records).to_dict()["quality"]
         for key in ("rms_error", "mae", "max_abs_residual",

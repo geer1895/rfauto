@@ -1,6 +1,6 @@
 """DP-8 compose service：模板几何组合的 YAML 进出编排（JSON 进出薄服务）。
 
-分层（core 分层契约/.importlinter）：cli/mcp_server → 本模块 → core.compose.
+分层：cli/mcp_server → 本模块 → core.compose.
 layout_netlist（纯确定性引擎）+ adapters.openems_templates（组合契约注册表
 COMPOSE_CONTRACTS + TEMPLATE_META port_pins schema）。本模块职责：
 1. 组合契约/schema 注入（唯一 adapters 依赖点；core 零反向依赖由此保证）；
@@ -16,6 +16,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import ok_envelope
 
 #: 首例 netlist（golden fixture 的单一事实源；测试/CLI 示例共用）。
 #: 直段解耦口径（criteria.md §1）：过渡=msl_siw_taper 最小结构段
@@ -71,8 +73,10 @@ def list_composable_templates() -> dict[str, Any]:
         templates.append({"template": tid,
                           "port_pins": schema.get(tid),
                           "schema_declared": tid in schema})
-    return {"ok": True, "result": {"templates": templates,
-                                   "n_templates": len(templates)}}
+    return ok_envelope(
+        result={"templates": templates,
+                                   "n_templates": len(templates)},
+    )
 
 
 def compose_from_netlist(netlist: dict[str, Any]) -> dict[str, Any]:
@@ -89,7 +93,7 @@ def compose_from_netlist(netlist: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "error": str(exc)}
     except (KeyError, TypeError, ValueError) as exc:
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
-    return {"ok": True, "result": {"script": script, "meta": meta}}
+    return ok_envelope(result={"script": script, "meta": meta})
 
 
 def compose_from_yaml_file(netlist_path: str | Path) -> dict[str, Any]:
@@ -137,14 +141,15 @@ def compose_write(netlist: dict[str, Any], out_dir: str | Path, *,
             encoding="utf-8", newline="\n")
     except OSError as exc:
         return {"ok": False, "error": f"组合产物落盘失败: {exc}"}
-    return {"ok": True,
-            "result": {"out_dir": str(out), "script_path": str(out /
+    return ok_envelope(
+        result={"out_dir": str(out), "script_path": str(out /
                                                                script_name),
                        "meta_path": str(out / meta_name),
                        "netlist_path": str(out / netlist_name),
                        "render_sha256":
                            composed["result"]["meta"]["render_sha256"],
-                       "guards": composed["result"]["meta"]["guards"]}}
+                       "guards": composed["result"]["meta"]["guards"]},
+    )
 
 
 def compose_write_from_yaml_file(netlist_path: str | Path,
@@ -173,7 +178,7 @@ def load_golden_netlist(example: str = "siw_chain") -> dict[str, Any]:
         return {"ok": False,
                 "error": f"未知组合示例 {example!r}（可用 "
                          f"{sorted(GOLDEN_NETLISTS)}）"}
-    return {"ok": True, "result": copy.deepcopy(GOLDEN_NETLISTS[example])}
+    return ok_envelope(result=copy.deepcopy(GOLDEN_NETLISTS[example]))
 
 
 def verify_compose_provenance(out_dir: str | Path) -> dict[str, Any]:

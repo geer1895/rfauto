@@ -1,4 +1,4 @@
-"""DP-10 超表面/FSS 离线内核（P1：纯函数零 IO，规格 docs/plan_deepdive_specs_20260924.md §DP-10）。
+"""DP-10 超表面/FSS 离线内核（P1：纯函数零 IO，规格 规格深案 §DP-10）。
 
 四个子面（判据预声明 runs/df6_dp10ms/criteria.md，实现前冻结）：
 
@@ -6,13 +6,17 @@
    JSON（元数据+数组）+ CSV（长表）双载体互转；interp=pchip；
    run_dir provenance（#320 口径：真机行必须带产物目录指针，合成 LUT
    置空串并标 origin="synthetic"）。
-2. 布局综合闭式（确定性内核，确定性内核铁律——物理数字只出在这里）：
+2. 布局综合闭式（确定性内核， 硬规则 7——物理数字只出在这里）：
    - 反射阵（点馈）：φ_mn = k0·(R_mn − r_mn·û_beam) mod 2π
      （Huang-Encinar《Reflectarray Antennas》空间相位延迟式；
      R_mn=馈相心到单元距离）；
+   - 透射阵（点馈，MM-6）：φ_mn = k0·(|F−r| − r·û_out) mod 2π（与反射阵
+     同形——透射几何=反射几何对口径面的镜像，路径延迟账相同；差异=
+     域守卫 û_out[2]<0 + LUT 消费走 s21 载体）；
    - 平面波照明（反射或透射/编码面统一）：φ_mn = k0·(û_in − û_out)·r_mn
      mod 2π（光栅条件；规格书透射式 φ_mn=−k0(r·û0) 是其法向入射特例，
-     相位集合 mod 2π 等价）；
+     相位集合 mod 2π 等价；透射阵专用档 required_phase_transmitarray_
+     plane_wave 另设——出射/照明方向取物理传播方向并设域守卫）；
    - 逐单元 LUT 最近邻反查（圆周距离）+ b-bit 相位量化（取整到 2π/2^b 栅格）。
 3. 量化口径：σ²=(π/2^b)²/3（副瓣基底）；增益损失 10·log10(sinc²(1/2^b))
    （均匀量化误差复相干因子 E[e^{jε}]² 的精确期望；文献带 1/2/3-bit≈
@@ -32,14 +36,19 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass, field, fields
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
 #: LUT schema 版本（recipe_version/schema_version 双版本语义先例 #106：
-#: 这是 LUT 载体版本，不是插件参数版本）
-LUT_SCHEMA = "metasurface_lut/v1"
+#: 这是 LUT 载体版本，不是插件参数版本）。v2（MM-3，2026-10-02，规格
+#: 规格深案 §C-2）：追加 s21_db/s21_phase_deg
+#: 透射载体（GSTC 对拍通道）；from_dict/from_csv 兼容读 v1 旧载体
+#: （s21=None），只追加不改既有字段语义。
+LUT_SCHEMA = "metasurface_lut/v2"
+#: v1 旧载体版本串（只读兼容用；写出恒为 v2）
+_LUT_SCHEMA_V1 = "metasurface_lut/v1"
 #: 相位插值口径（冻结于 criteria §1b）
 LUT_INTERP = "pchip"
 #: 真空波阻抗（方胞波导模拟器 TEM 口径的匹配参考，Ω）
@@ -58,10 +67,16 @@ _J1_COVERAGE_DEG_MIN = 300.0
 
 @dataclass
 class MetasurfaceLUT:
-    """单元 LUT：cell_id/f0/substrate_key/params/provenance/freq 网格/|S|dB+解缠相位。
+    """单元 LUT：cell_id/f0/substrate/params/provenance/freq 网格/|S|dB+解缠相位。
 
     数组形状统一 (n_sweep, n_freq)：s11_db=|S11| dB、s11_phase_deg=解缠
-    相位（度，np.unwrap 口径）。sweep_values 严格升序；interp=pchip。
+    相位（度，np.unwrap 口径）。v2 追加透射载体 s21_db/s21_phase_deg
+    （同形状，可 None=v1 旧行未采集透射——GSTC 对拍通道消费，MM-3）。
+    sweep_values 严格升序；interp=pchip。
+    存储相位可能含 px 轴 ±360° 分支切割跳变（逐行频轴解缠的伪象，T13
+    实证）——覆盖/插值/反查一律走本模块圆周原语（arc_coverage_deg/
+    unwrap_sweep_axis_deg/lut_lookup_phase），禁对存储列直接 max−min 或
+    差值插值。
     """
 
     cell_id: str
@@ -77,12 +92,20 @@ class MetasurfaceLUT:
     origin: str = "synthetic"
     validity: dict[str, Any] = field(default_factory=dict)
     gate: dict[str, Any] = field(default_factory=dict)
+    # v2 追加（MM-3 §C-2）：透射载体，None=v1 旧行（兼容读，#106）；
+    # 必须成对给出（validate 裁决），形状=(n_sweep, n_freq) 同 s11
+    s21_db: np.ndarray | None = None
+    s21_phase_deg: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         self.sweep_values = np.asarray(self.sweep_values, dtype=float)
         self.freq_ghz = np.asarray(self.freq_ghz, dtype=float)
         self.s11_db = np.asarray(self.s11_db, dtype=float)
         self.s11_phase_deg = np.asarray(self.s11_phase_deg, dtype=float)
+        if self.s21_db is not None:
+            self.s21_db = np.asarray(self.s21_db, dtype=float)
+        if self.s21_phase_deg is not None:
+            self.s21_phase_deg = np.asarray(self.s21_phase_deg, dtype=float)
 
     # ── 校验 ──
     def validate(self) -> list[str]:
@@ -101,6 +124,13 @@ class MetasurfaceLUT:
             problems.append(f"s11_db 形状 {self.s11_db.shape} != {shape}")
         if self.s11_phase_deg.shape != shape:
             problems.append(f"s11_phase_deg 形状 {self.s11_phase_deg.shape} != {shape}")
+        # v2：透射载体成对出现且同形状（None=v1 旧行合法）
+        if (self.s21_db is None) != (self.s21_phase_deg is None):
+            problems.append("s21_db/s21_phase_deg 须成对给出（v2 载体）")
+        if self.s21_db is not None and self.s21_db.shape != shape:
+            problems.append(f"s21_db 形状 {self.s21_db.shape} != {shape}")
+        if self.s21_phase_deg is not None and self.s21_phase_deg.shape != shape:
+            problems.append(f"s21_phase_deg 形状 {self.s21_phase_deg.shape} != {shape}")
         if self.interp != LUT_INTERP:
             problems.append(f"interp={self.interp!r} != {LUT_INTERP!r}")
         if self.origin not in ("synthetic", "openems_wg_sim", "hfss_floquet"):
@@ -128,14 +158,20 @@ class MetasurfaceLUT:
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> MetasurfaceLUT:
         known = {f.name for f in fields(cls)}
-        missing = known - set(d)
+        missing = known - set(d) - {"s21_db", "s21_phase_deg"}
         if missing:
             raise ValueError(f"LUT dict 缺字段 {sorted(missing)}")
         extra = set(d) - known - {"schema"}
         if extra:
             raise ValueError(f"LUT dict 多余字段 {sorted(extra)}")
-        if d.get("schema") != LUT_SCHEMA:
-            raise ValueError(f"schema={d.get('schema')!r} != {LUT_SCHEMA!r}")
+        # #106 v1→v2 兼容：v1 旧载体（无 s21 字段）合法读入 → s21=None；
+        # 未知版本串仍显式拒绝
+        if d.get("schema") not in (LUT_SCHEMA, _LUT_SCHEMA_V1):
+            raise ValueError(
+                f"schema={d.get('schema')!r} 不在 "
+                f"({LUT_SCHEMA!r}, {_LUT_SCHEMA_V1!r}) 兼容集")
+        s21_db = d.get("s21_db")
+        s21_ph = d.get("s21_phase_deg")
         return cls(
             cell_id=d["cell_id"],
             f0_ghz=float(d["f0_ghz"]),
@@ -150,22 +186,35 @@ class MetasurfaceLUT:
             origin=str(d.get("origin") or "synthetic"),
             validity=dict(d.get("validity") or {}),
             gate=dict(d.get("gate") or {}),
+            s21_db=None if s21_db is None else np.asarray(s21_db, dtype=float),
+            s21_phase_deg=None if s21_ph is None else np.asarray(s21_ph, dtype=float),
         )
 
     @classmethod
     def from_json(cls, text: str) -> MetasurfaceLUT:
         return cls.from_dict(json.loads(text))
 
-    # ── CSV 长表载体（# key=value 注释头 + sweep,freq,db,phase 四列）──
+    # ── CSV 长表载体（# key=value 注释头 + sweep,freq,db,phase 列；
+    #    v2 有 s21 载体时为 6 列，无 s21（v1 旧行）保持 4 列旧格式）──
+    _CSV_BASE_HEADER: ClassVar[list[str]] = [
+        "sweep_value", "freq_ghz", "s11_db", "s11_phase_deg"]
+    _CSV_S21_HEADER: ClassVar[list[str]] = ["s21_db", "s21_phase_deg"]
+
     def to_csv(self) -> str:
         head = "#" + json.dumps(self.to_dict(), ensure_ascii=False,
                                 sort_keys=True) + "\n"
-        rows = ["sweep_value,freq_ghz,s11_db,s11_phase_deg"]
+        has_s21 = self.s21_db is not None
+        cols = self._CSV_BASE_HEADER + (self._CSV_S21_HEADER if has_s21 else [])
+        rows = [",".join(cols)]
         for i, sv in enumerate(self.sweep_values):
             for j, fv in enumerate(self.freq_ghz):
-                rows.append(f"{float(sv)!r},{float(fv)!r},"
-                            f"{float(self.s11_db[i, j])!r},"
-                            f"{float(self.s11_phase_deg[i, j])!r}")
+                vals = [f"{float(sv)!r}", f"{float(fv)!r}",
+                        f"{float(self.s11_db[i, j])!r}",
+                        f"{float(self.s11_phase_deg[i, j])!r}"]
+                if has_s21:
+                    vals += [f"{float(self.s21_db[i, j])!r}",
+                             f"{float(self.s21_phase_deg[i, j])!r}"]
+                rows.append(",".join(vals))
         return head + "\n".join(rows) + "\n"
 
     @classmethod
@@ -175,32 +224,70 @@ class MetasurfaceLUT:
             raise ValueError("CSV 缺 # 注释头（双载体约定）")
         d = json.loads(lines[0][1:])
         header = lines[1].split(",")
-        if header != ["sweep_value", "freq_ghz", "s11_db", "s11_phase_deg"]:
+        if header == cls._CSV_BASE_HEADER:
+            pass  # v1 4 列旧格式：s21 载体缺席，from_dict 兼容路径
+        elif header == cls._CSV_BASE_HEADER + cls._CSV_S21_HEADER:
+            pass  # v2 6 列
+        else:
             raise ValueError(f"CSV 列头漂移: {header}")
+        n_col = len(header)
         body = [ln.split(",") for ln in lines[2:] if ln.strip()]
+        for r in body:
+            if len(r) != n_col:
+                raise ValueError(f"CSV 行列数 {len(r)} != 表头 {n_col}")
         sv = sorted({float(r[0]) for r in body})
         fv = sorted({float(r[1]) for r in body})
         db = np.empty((len(sv), len(fv)))
         ph = np.empty((len(sv), len(fv)))
         si = {v: i for i, v in enumerate(sv)}
         fi = {v: i for i, v in enumerate(fv)}
+        t_db = np.empty((len(sv), len(fv))) if n_col == 6 else None
+        t_ph = np.empty((len(sv), len(fv))) if n_col == 6 else None
         for r in body:
             i, j = si[float(r[0])], fi[float(r[1])]
             db[i, j] = float(r[2])
             ph[i, j] = float(r[3])
+            if n_col == 6:
+                t_db[i, j] = float(r[4])
+                t_ph[i, j] = float(r[5])
         d["sweep_values"], d["freq_ghz"], d["s11_db"], d["s11_phase_deg"] = (
             sv, fv, db, ph)
+        if n_col == 6:
+            d["s21_db"], d["s21_phase_deg"] = t_db, t_ph
         return cls.from_dict(d)
 
     # ── 判据面 ──
     def phase_coverage_deg(self) -> float:
-        """f0（取最近频点）处扫描覆盖的反射相位跨度（解缠域 min..max，度）。"""
+        """f0（取最近频点）处扫描的真实圆周相位覆盖（度，分支切割免疫）。
+
+        criteria §1c 冻结原文为「max−min，解缠域」——T13 实证
+        （runs/dp10_j2j3/launch_ready.md §1.1）该口径对 launch_sweep.load_lut
+        逐行频轴解缠的 px 轴 ±360° 分支切割跳变失真：fine 存储列 max−min
+        358.09° 伪值 vs 真实圆周覆盖 100.90°（原始 sparams.csv 双路径独立
+        复核一致）。周期量的正确度量=360°−最大圆周间隙（arc_coverage_deg
+        单源，T26 移入内核）。旧口径保留为 phase_span_deg()（诊断面）；
+        四四八归档 verdict 零改写（#325），本度量自 T26 起为 J1c 门与
+        coverage_gate 的计算口径。
+        """
+        j = int(np.argmin(np.abs(self.freq_ghz - self.f0_ghz)))
+        return arc_coverage_deg(self.s11_phase_deg[:, j])
+
+    def phase_span_deg(self) -> float:
+        """旧口径诊断：f0 列存储值的 max−min 跨度（度）。
+
+        对含 ±360° 分支切割跳变的列被系统性抬升（T13：fine 实测 358.09°
+        存储伪值）——只作新旧度量对照/诊断，不作门判据。
+        """
         j = int(np.argmin(np.abs(self.freq_ghz - self.f0_ghz)))
         col = self.s11_phase_deg[:, j]
         return float(np.max(col) - np.min(col))
 
     def coverage_gate(self) -> dict[str, Any]:
-        """J1c 覆盖门（≥300°，criteria §1c）：只算数值与判定，不跑仿真。"""
+        """J1c 覆盖门（≥300°，criteria §1c）：只算数值与判定，不跑仿真。
+
+        度量=T26 起为真实圆周覆盖（phase_coverage_deg → arc_coverage_deg
+        单源；旧 max−min 口径对分支切割列失真，T13 实证，见该 docstring）。
+        """
         cov = self.phase_coverage_deg()
         return {"phase_coverage_deg": cov,
                 "threshold_deg": _J1_COVERAGE_DEG_MIN,
@@ -215,13 +302,76 @@ def unwrap_phase_deg(phases_deg: np.ndarray) -> np.ndarray:
     return np.degrees(np.unwrap(np.radians(np.asarray(phases_deg, dtype=float))))
 
 
+def unwrap_sweep_axis_deg(phases_deg: np.ndarray) -> np.ndarray:
+    """沿扫描（px）轴的圆周连续化解缠：相邻差折回最短角差后累积。
+
+    T13 定案（runs/dp10_j2j3/launch_ready.md §1.1）：launch_sweep.load_lut
+    的解缠发生在逐行频轴，px 轴 ±180° cut 穿越在存储列里留下 ±360° 级
+    伪跳变（fine 实测 +358.09° @px 6.7988→6.8125）——本原语把每对相邻
+    样本的差 wrap 到 [−180,180) 再累积，输出列与输入 mod 360 逐点相等、
+    相邻差全部 ∈[−180,180)（圆周连续）。pchip 相位插值与跨度类诊断必须在
+    本连续域进行（跨跳变插值会扫过整 360° 伪摆幅）。
+    """
+    a = np.asarray(phases_deg, dtype=float)
+    out = np.array(a, dtype=float)
+    if a.ndim != 1 or a.size < 2:
+        return out
+    wrapped = (np.diff(a) + 180.0) % 360.0 - 180.0
+    out[1:] = out[0] + np.cumsum(wrapped)
+    return out
+
+
+def arc_coverage_deg(phases_deg: np.ndarray) -> float:
+    """真实圆周相位覆盖（度）= 360°−最大圆周间隙（对分支切割免疫，单源）。
+
+    周期量的覆盖正确口径（T13/T26 单源，原实现 runs/dp10_j2j3/launch_j2.py
+    驱动侧已迁入本内核）：样本 mod 360 排序后，覆盖=360°减去最大圆周间隙
+    （含首尾 wrap 间隙）。max−min 口径（phase_span_deg）对含 ±360° 分支
+    切割跳变的列失真（fine 存储列 358.09° 伪值 vs 真实圆周 100.90°，T13
+    双路径复核一致）。样本 <2 或全同相位覆盖=0。
+    """
+    v = np.mod(np.asarray(phases_deg, dtype=float).ravel(), 360.0)
+    if v.size < 2:
+        return 0.0
+    v.sort()
+    gaps = np.diff(v)
+    return float(360.0 - max(float(gaps.max()), float(v[0]) + 360.0 - float(v[-1])))
+
+
 def lut_interp_pchip(lut: MetasurfaceLUT, sweep_value: float,
                      f0_ghz: float | None = None) -> tuple[float, float]:
-    """pchip 插值单点 (|S|dB, 解缠相位 deg)：对扫描轴在 f0（缺省 LUT.f0）插值。"""
+    """pchip 插值单点 (|S|dB, 相位 deg)：对扫描轴在 f0（缺省 LUT.f0）插值。
+
+    相位在扫描轴圆周连续化域插值（unwrap_sweep_axis_deg 先行——T13：存储列
+    的 ±360° 分支切割跳变不折回时，跨跳变插值会扫过整 360° 伪摆幅）。
+    返回相位与网格存储值 mod 360 一致（绝对分支可平移 k·360°：周期消费者
+    无感——lut_lookup_phase 按圆周距离、fpa_antenna 腔方程含 2π·n 松弛）。
+    """
     j = int(np.argmin(np.abs(lut.freq_ghz - (lut.f0_ghz if f0_ghz is None
                                              else f0_ghz))))
-    ph = PchipInterpolator(lut.sweep_values, lut.s11_phase_deg[:, j])
+    ph = PchipInterpolator(lut.sweep_values,
+                           unwrap_sweep_axis_deg(lut.s11_phase_deg[:, j]))
     db = PchipInterpolator(lut.sweep_values, lut.s11_db[:, j])
+    return float(db(sweep_value)), float(ph(sweep_value))
+
+
+def lut_interp_s21_pchip(lut: MetasurfaceLUT, sweep_value: float,
+                         f0_ghz: float | None = None) -> tuple[float, float]:
+    """s21 载体 pchip 插值单点 (|T|dB, 相位 deg)——lut_interp_pchip 透射版（v2 追加）。
+
+    缺 s21 载体（v1 旧行/未采集透射）显式 ValueError；相位在扫描轴圆周
+    连续化域插值（unwrap_sweep_axis_deg 先行，T13 同纪律）。(dB, deg) 出
+    参配 gstc.t_r_from_db_phase 构成 LUT→GSTC 复透射通道桥（MM-3 §C-2）。
+    """
+    if lut.s21_db is None or lut.s21_phase_deg is None:
+        raise ValueError(
+            f"LUT {lut.cell_id!r} 无 s21 载体（v1 旧行/未采集透射）——"
+            "透射通道需 schema v2 的 s21_db/s21_phase_deg 列")
+    j = int(np.argmin(np.abs(lut.freq_ghz - (lut.f0_ghz if f0_ghz is None
+                                             else f0_ghz))))
+    ph = PchipInterpolator(lut.sweep_values,
+                           unwrap_sweep_axis_deg(lut.s21_phase_deg[:, j]))
+    db = PchipInterpolator(lut.sweep_values, lut.s21_db[:, j])
     return float(db(sweep_value)), float(ph(sweep_value))
 
 
@@ -246,6 +396,28 @@ def lut_lookup_phase(lut: MetasurfaceLUT,
             "phase_deg": float(col[i])}
 
 
+def lut_lookup_phase_s21(lut: MetasurfaceLUT,
+                         target_phase_deg: float) -> dict[str, float]:
+    """逐单元最近邻反查（s21 透射载体）——lut_lookup_phase 的透射版（MM-6 差异③）。
+
+    透射阵布局综合消费的是单元**透射**相位响应：反查列=f0 处
+    s21_phase_deg（非 s11）；最近邻同样按圆周距离唯一决定（并列取 sweep
+    较小者）。缺 s21 载体（v1 旧行/未采集透射）显式 ValueError——透射
+    通道拿 s11 载体反查是"反射相位冒充透射相位"的静默错（ carriers 独立
+    采集，逐点可差任意角度），必须硬拒绝。
+    """
+    if lut.s21_db is None or lut.s21_phase_deg is None:
+        raise ValueError(
+            f"LUT {lut.cell_id!r} 无 s21 载体（v1 旧行/未采集透射）——"
+            "透射阵反查需 schema v2 的 s21_db/s21_phase_deg 列（MM-6 差异③）")
+    j = int(np.argmin(np.abs(lut.freq_ghz - lut.f0_ghz)))
+    col = lut.s21_phase_deg[:, j]
+    dist = np.array([_circ_diff_deg(target_phase_deg, float(v)) for v in col])
+    i = int(np.argmin(dist))
+    return {"sweep_value": float(lut.sweep_values[i]),
+            "phase_deg": float(col[i])}
+
+
 def quantize_phase_deg(target_phase_deg: float, bits: int) -> float:
     """b-bit 相位量化（取整到 2π/2^b 栅格，度域）。bits≥1。"""
     if bits < 1:
@@ -254,7 +426,7 @@ def quantize_phase_deg(target_phase_deg: float, bits: int) -> float:
     return round(target_phase_deg / step) * step
 
 
-# ─── 布局综合闭式（确定性内核，确定性内核铁律）──────────────────────────────
+# ─── 布局综合闭式（确定性内核， 硬规则 7）──────────────────────────────
 
 
 def _k0_rad_m(f0_ghz: float) -> float:
@@ -300,6 +472,90 @@ def required_phase_plane_wave(
     uo = np.asarray(u_out, dtype=float)
     ui = ui / float(np.linalg.norm(ui))
     uo = uo / float(np.linalg.norm(uo))
+    phi = _k0_rad_m(f0_ghz) * ((ui - uo) * pos).sum(axis=1)
+    return np.degrees(phi) % 360.0
+
+
+def _normalize_unit(v: np.ndarray, name: str) -> np.ndarray:
+    """归一化方向向量；零向量显式拒绝（透射阵域守卫共用）。"""
+    u = np.asarray(v, dtype=float).ravel()
+    if u.size != 3:
+        raise ValueError(f"{name} 需为 (3,) 方向向量，得 shape={u.shape}")
+    n = float(np.linalg.norm(u))
+    if not n > 0.0:
+        raise ValueError(f"{name} 为零向量，非法")
+    return u / n
+
+
+def _require_transmit_side(u: np.ndarray, name: str) -> np.ndarray:
+    """差异①域守卫：方向必须指向 −z 半空间（û[2]<0 严格）。
+
+    透射阵的出射束穿口径面进入馈源对侧（−z）半空间；z 分量 ≥0（含掠射
+    z=0，不定义半空间束）显式 ValueError。反射阵（required_phase_
+    reflectarray）的束在馈侧、无此守卫——两入口非互换即此。
+    """
+    if not float(u[2]) < 0.0:
+        raise ValueError(
+            f"{name} z 分量={float(u[2]):.6g} 须 <0（透射束在馈源对侧 −z "
+            "半空间，MM-6 差异①域守卫；反射侧向量请改用反射阵入口）")
+    return u
+
+
+def required_phase_transmitarray(
+    positions_m: np.ndarray,
+    feed_pos_m: np.ndarray,
+    u_out: np.ndarray,
+    f0_ghz: float,
+) -> np.ndarray:
+    """透射阵（点馈）所需单元透射相位（度，mod 360）——MM-6 §A-6。
+
+    φ_mn = k0·(|F−r| − r·û_out) mod 2π（规格式原文；与反射阵 Huang-Encinar
+    式同形：透射几何=反射几何对口径面的镜像，馈→单元→远场的路径延迟账
+    相同——镜像对拍钉见 tests/unit/test_transmitarray_phase.py）。û_out
+    为**物理透射方向**（单位向量，z 分量 <0，域守卫强制，差异①）；
+    R=|r−F|，馈相心 feed_pos_m 在 +z 侧。锚：馈源后退（法向+广角）退化
+    为 −k0·r·û_out（mod 2π 常数）。
+    """
+    pos = np.atleast_2d(np.asarray(positions_m, dtype=float))
+    u = _require_transmit_side(_normalize_unit(u_out, "u_out"), "u_out")
+    r = np.asarray(feed_pos_m, dtype=float).ravel()
+    ranges = np.linalg.norm(pos - r, axis=1)
+    phi = _k0_rad_m(f0_ghz) * (ranges - pos @ u)
+    return np.degrees(phi) % 360.0
+
+
+def required_phase_transmitarray_plane_wave(
+    positions_m: np.ndarray,
+    u_in: np.ndarray,
+    u_out: np.ndarray,
+    f0_ghz: float,
+) -> np.ndarray:
+    """透射阵平面波照明档所需单元透射相位（度，mod 360）——MM-6 差异②。
+
+    φ_mn = k0·(û_in − û_out)·r_mn mod 2π，û_in/û_out 均**物理传播方向**
+    （照明自 +z 侧向下 û_in[2]<0；透射束 û_out[2]<0，双域守卫强制）。
+    法向入射 û_in=(0,0,−1) 退化为规格书透射式 φ=−k0·r·û_out（mod 2π
+    常数）——§A-6 锚同式。
+
+    差异②记档（#122 如实，不凑规格字面）：规格原文"平面波照明档相位梯度
+    符号相反（required_phase_plane_wave 为反射约定）"。物理上反射/透射
+    光栅条件在 z=0 口径面上同号（口径面只感受切向分量，dφ/dr_t=−k0·û_t
+    决定束向，反射/透射同一关系）；"符号相反"的可实现形态=**方向向量
+    约定相反**：required_phase_plane_wave 的透射特例 docstring 以馈侧
+    约定（û_out z 分量>0）书写，本入口取物理透射方向（z<0，守卫强制）
+    ——同一波束的馈侧约定向量与物理向量 z 镜像，馈侧向量传入本入口被
+    域守卫拒绝（负例钉 tests/unit/test_transmitarray_phase.py）。若按
+    "整体反号"字面实现（φ=+k0·(û_out−û_in)·r=+k0·r·û_out 法向），波束
+    将打到镜像侧、且与 §A-6 自身锚（退化 −k0·r·û 对拍）矛盾——按锚与
+    既有测试冻结口径（test_phase_and_law_identity_transmission）实现。
+    """
+    pos = np.atleast_2d(np.asarray(positions_m, dtype=float))
+    ui = _normalize_unit(u_in, "u_in")
+    if not float(ui[2]) < 0.0:
+        raise ValueError(
+            f"u_in z 分量={float(ui[2]):.6g} 须 <0（透射阵照明自 +z 侧向下，"
+            "MM-6 差异②域守卫）")
+    uo = _require_transmit_side(_normalize_unit(u_out, "u_out"), "u_out")
     phi = _k0_rad_m(f0_ghz) * ((ui - uo) * pos).sum(axis=1)
     return np.degrees(phi) % 360.0
 
@@ -355,6 +611,74 @@ def synthesize_layout(
             "phase_quantized_deg": q if bits else None,
             "sweep_value": hit["sweep_value"],
             "phase_achieved_deg": hit["phase_deg"],
+        })
+    return cells
+
+
+def synthesize_layout_transmitarray(
+    n_x: int,
+    n_y: int,
+    period_m: float,
+    f0_ghz: float,
+    lut: MetasurfaceLUT,
+    *,
+    feed_pos_m: np.ndarray | None = None,
+    u_in: np.ndarray | None = None,
+    u_out: np.ndarray,
+    bits: int = 0,
+) -> list[dict[str, Any]]:
+    """透射阵布局综合：闭式目标相位 →（可选 b-bit 量化）→ LUT s21 载体反查。
+
+    MM-6 §A-6：目标相位走 required_phase_transmitarray（feed_pos_m 给出，
+    点馈）或 required_phase_transmitarray_plane_wave（否则，u_in 缺省
+    (0,0,−1) 软平面口径）；差异③=LUT 消费走 **s21 透射载体**
+    （lut_lookup_phase_s21），v1 旧行（无 s21）显式拒绝。bits>0 的量化
+    覆盖门同样按 s21 列裁决（既有 coverage_gate 读 s11 列，透射阵不适用
+    ——禁改其语义，此处独立按 arc_coverage_deg 判）。返回逐单元参数表
+    （schema 同 synthesize_layout，另加 carrier="s21" 标记）。纯函数零 IO。
+    """
+    if n_x < 1 or n_y < 1:
+        raise ValueError(f"n_x/n_y 须 ≥1，得 {n_x}/{n_y}")
+    if period_m <= 0:
+        raise ValueError("period_m 须 >0")
+    if lut.s21_db is None or lut.s21_phase_deg is None:
+        raise ValueError(
+            f"LUT {lut.cell_id!r} 无 s21 载体（v1 旧行/未采集透射）——透射阵"
+            "布局综合需 schema v2 s21 载体（MM-6 差异③）")
+    problems = lut.validate()
+    if problems:
+        raise ValueError(f"LUT 不合格: {problems}")
+    if bits:
+        j0 = int(np.argmin(np.abs(lut.freq_ghz - lut.f0_ghz)))
+        cov = arc_coverage_deg(lut.s21_phase_deg[:, j0])
+        if cov < _J1_COVERAGE_DEG_MIN:
+            raise ValueError(
+                f"bits>0 要求 s21 载体相位覆盖 ≥{_J1_COVERAGE_DEG_MIN:.0f}°"
+                f"（J1c 门，s21 列实测 {cov:.2f}°）")
+    xs = (np.arange(n_x) - (n_x - 1) / 2.0) * period_m
+    ys = (np.arange(n_y) - (n_y - 1) / 2.0) * period_m
+    xx, yy = np.meshgrid(xs, ys, indexing="ij")
+    pos = np.stack([xx.ravel(), yy.ravel(), np.zeros(n_x * n_y)], axis=1)
+    if feed_pos_m is not None:
+        phi = required_phase_transmitarray(pos, np.asarray(feed_pos_m, float),
+                                           u_out, f0_ghz)
+    else:
+        phi = required_phase_transmitarray_plane_wave(
+            pos, np.asarray(u_in, float) if u_in is not None
+            else np.array([0.0, 0.0, -1.0]), u_out, f0_ghz)
+    cells: list[dict[str, Any]] = []
+    for k in range(pos.shape[0]):
+        tgt = float(phi[k])
+        q = quantize_phase_deg(tgt, bits) if bits else tgt
+        hit = lut_lookup_phase_s21(lut, q)
+        cells.append({
+            "i": int(k % n_x), "j": int(k // n_x),
+            "x_m": float(pos[k, 0]), "y_m": float(pos[k, 1]),
+            "phase_target_deg": tgt,
+            "phase_quantized_deg": q if bits else None,
+            "sweep_value": hit["sweep_value"],
+            "phase_achieved_deg": hit["phase_deg"],
+            "carrier": "s21",
         })
     return cells
 
@@ -418,6 +742,24 @@ def ms_jcross_slot_dims_mm(f0_ghz: float, er: float) -> dict[str, float]:
     lam0_mm = C0_M_S / (f0_ghz * 1e9) * 1e3
     lamg_mm = lam0_mm / math.sqrt(ms_screen_eps_eff(er))
     return {"slot_len_mm": lamg_mm / 4.0, "stub_len_mm": lamg_mm / 8.0}
+
+
+def ms_ring_patch_dims_mm(f0_ghz: float, er: float) -> dict[str, float]:
+    """双谐振方环+内贴片单元的环几何初值（mm；J2 fallback 预登记单元）。
+
+    口径（criteria §1c 预登记 fallback 的闭式初值，#1c/#252 单源）：环空腔
+    void=0.4λ0（屏族 0.4λ0 周期口径，ms_cross/ms_jcross period 同式）、环线宽
+    ring_w=λg/40（ms_jcross 缝宽口径）、环外边 ring_outer=void+2·ring_w；
+    εeff=ms_screen_eps_eff(er)（(1+εr)/2 单侧基板加载）。内贴片谐振边长复用
+    ms_patch_resonant_len_mm（Hammerstad 不动点），不在此重复实现。初值语义
+    =几何骨架闭式（谐振由段④ LUT 扫描实证，J1c 门≥300° 裁决）。
+    """
+    lam0_mm = C0_M_S / (f0_ghz * 1e9) * 1e3
+    lamg_mm = lam0_mm / math.sqrt(ms_screen_eps_eff(er))
+    void_mm = round(0.4 * lam0_mm, 4)
+    ring_w_mm = round(lamg_mm / 40.0, 4)
+    return {"void_mm": void_mm, "ring_w_mm": ring_w_mm,
+            "ring_outer_mm": round(void_mm + 2.0 * ring_w_mm, 4)}
 
 
 # ─── Luukkonen/Costa EC 闭式（FSS 屏带心初值）────────────────────────────────
@@ -541,3 +883,24 @@ def lut_summary(lut: MetasurfaceLUT) -> dict[str, Any]:
             "run_dir": lut.run_dir, "n_sweep": int(lut.sweep_values.size),
             "n_freq": int(lut.freq_ghz.size), "interp": lut.interp,
             "validity": dict(lut.validity), "gate": dict(lut.gate)}
+
+
+# ─── PRS 供体接口（LM-1 FPA 桥；纯增量：只增函数，零改既有行为）──────────────
+
+
+def lut_prs_reflectance(lut: MetasurfaceLUT, sweep_value: float,
+                        f0_ghz: float | None = None) -> dict[str, float]:
+    """LM-1 PRS 供体：LUT 单点反射系数 → FPA 闭式入参 (R, phi_PRS)。
+
+    s11_db 本就是 |Γ| 的 dB 载体——|Γ|=10^(s11_db/20)（幅度）、
+    R=|Γ|²=10^(s11_db/10)（功率反射率，0..1）、phi_PRS=解缠相位（度）。
+    本接口只做单位换算+插值（lut_interp_pchip 同口径，f0 缺省 lut.f0_ghz），
+    **不改任何既有函数行为**（LM-1 纯增量硬边界）。返回
+    {"r_amp", "r_power", "phase_deg"}；输出直接作
+    rfauto.core.fpa_antenna 的 (r=R 功率反射率, phi_prs_deg) 入参。
+    R=1（s11_db=0 全反 ideal PRS）时 fpa_antenna.directivity/resonance_q
+    会拒绝（R∈[0,1) 口径）——调用方在 LUT 扫描网格上取 R<1 的单元即可。
+    """
+    db, ph = lut_interp_pchip(lut, sweep_value, f0_ghz)
+    r_amp = 10.0 ** (db / 20.0)
+    return {"r_amp": r_amp, "r_power": r_amp * r_amp, "phase_deg": ph}

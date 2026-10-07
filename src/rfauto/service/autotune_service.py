@@ -1,4 +1,4 @@
-"""autotune_loop：确定性 critique 自治调优环（阶段 2.1，与既有闭环调优环同构）。
+"""autotune_loop：确定性 critique 自治调优环（阶段 2.1，FilterForge 同构）。
 
 环结构（无人在环，HFSS 仅终验）：
     synthesis/名义点 → openEMS 快验证 → 确定性评判器 critique_point →
@@ -18,6 +18,8 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── 确定性评判器 ────────────────────────────────────────────────────────────
 
@@ -265,7 +267,7 @@ def autotune_loop(
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
     opt = recipe.get("optimization") or {}
@@ -273,7 +275,7 @@ def autotune_loop(
               for k, v in (opt.get("params") or {}).items()}
     objectives = list(recipe.get("objectives", []))
     if not objectives:
-        return {"ok": False, "errors": ["配方无 objectives，无从评判"]}
+        return error_envelope(["配方无 objectives，无从评判"])
     freq_range = tuple((recipe.get("setup") or {}).get("freq_range_ghz", (1.0, 5.0)))
 
     if sampler_fn is None:
@@ -364,18 +366,17 @@ def autotune_loop(
         replan_plan = {"assessment": assessment, "decision": decision,
                        "checkpoint": saved}
 
-    result: dict[str, Any] = {
-        "ok": True,
-        "run_id": run_id,
-        "run_dir": str(run_dir),
-        "verdict": verdict,
-        "budget": budget,
-        "rounds_used": len(history),
-        "best": best,
-        "final_params": current,
-        "history": history,
-        "elapsed_s": round(elapsed, 1),
-    }
+    result: dict[str, Any] = ok_envelope(
+        run_id=run_id,
+        run_dir=str(run_dir),
+        verdict=verdict,
+        budget=budget,
+        rounds_used=len(history),
+        best=best,
+        final_params=current,
+        history=history,
+        elapsed_s=round(elapsed, 1),
+    )
     if replan_plan is not None:
         result["replan_plan"] = replan_plan
     (run_dir / "autotune.json").write_text(
@@ -405,34 +406,33 @@ def autotune_to_sandbox(
 
     读取 runs/<run_id>/autotune.json 的 final_params，经 RecipeSandbox
     合并进草稿；promote 走既有三层 Gate（本函数不直接改真实配方——
-    agent 写面隔离）。
+    agent 写面隔离， #6）。
     """
     from rfauto.service.agent_sandbox import RecipeSandbox
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     autotune_json = Path("runs") / run_id / "autotune.json"
     if not autotune_json.exists():
-        return {"ok": False, "errors": [f"自治环产物不存在: {autotune_json}"]}
+        return error_envelope([f"自治环产物不存在: {autotune_json}"])
     data = json.loads(autotune_json.read_text(encoding="utf-8"))
     final_params = data.get("final_params") or {}
     if not final_params:
-        return {"ok": False, "errors": ["自治环产物无 final_params"]}
+        return error_envelope(["自治环产物无 final_params"])
 
     sb = sandbox or RecipeSandbox()
     applied = sb.apply_param_edits(path, final_params)
     if not applied.get("ok"):
         return {**applied, "ok": applied.get("ok", False)}
-    return {
-        "ok": True,
-        "run_id": run_id,
-        "recipe": str(path),
-        "draft": applied["draft"],
-        "applied_params": applied.get("applied", final_params),
-        "verdict": data.get("verdict"),
-        "next": "promote 走既有三层 Gate（rfauto inbox / agent apply）",
-    }
+    return ok_envelope(
+        run_id=run_id,
+        recipe=str(path),
+        draft=applied["draft"],
+        applied_params=applied.get("applied", final_params),
+        verdict=data.get("verdict"),
+        next="promote 走既有三层 Gate（rfauto inbox / agent apply）",
+    )
 
 
 def orchestrate_tournament(
@@ -449,18 +449,18 @@ def orchestrate_tournament(
     """Goal 编排锦标赛（阶段 5.4 首片，Co-Scientist 式：variants=假设起点）。
 
     每个变体以小预算跑一轮确定性自治环 → 按 best cost 排序出胜者。
-    变体由调用方给定（LLM 只出假设参数起点——typed；数值裁决归自治环）；
-    全程无人在环，HFSS 仅终验。
+    变体由调用方给定（LLM 只出假设参数起点——typed；数值裁决归自治环，
+     #7）；全程无人在环，HFSS 仅终验。
     """
     import yaml as _yaml
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = _yaml.safe_load(f) or {}
     if not variants:
-        return {"ok": False, "errors": ["variants 为空（至少 1 个假设起点）"]}
+        return error_envelope(["variants 为空（至少 1 个假设起点）"])
 
     trials = []
     for idx, start_params in enumerate(variants):
@@ -476,7 +476,7 @@ def orchestrate_tournament(
                 params_sec[name] = value
         patched["params"] = params_sec
         # 变体是临时工作文件：源配方在 recipes/ 下时经守卫重定向到
-        # runs/recipe_workcopy/（禁在 recipes/ 生成 *_variantN.yaml）
+        # runs/recipe_workcopy/（禁在 recipes/ 生成 *_variantN.yaml，TODO 增量②）
         from rfauto.infra.recipe_guard import write_recipe_yaml
 
         variant_path = write_recipe_yaml(
@@ -502,14 +502,13 @@ def orchestrate_tournament(
         (t for t in trials if t.get("best_cost") is not None),
         key=lambda t: t["best_cost"])
     winner = ranked[0] if ranked else None
-    return {
-        "ok": True,
-        "recipe": str(path),
-        "n_variants": len(variants),
-        "trials": trials,
-        "winner": winner,
-        "note": "胜者加大预算复验前，先按 2.5 落沙箱草稿走三层 Gate",
-    }
+    return ok_envelope(
+        recipe=str(path),
+        n_variants=len(variants),
+        trials=trials,
+        winner=winner,
+        note="胜者加大预算复验前，先按 2.5 落沙箱草稿走三层 Gate",
+    )
 
 
 # ─── WP3.5 自验证环收口：propose→verify→fix 闭环 + milestone 由易到难 ────────
@@ -525,7 +524,7 @@ def decompose_milestones(
     f0_tolerance: float = 0.15,
     fine_epsilon: float = 0.2,
 ) -> list[dict[str, Any]]:
-    """由易到难 milestone 分解（v1.2 增强，确定性内核，无 LLM）。
+    """由易到难 milestone 分解（v1.2 增强①，确定性内核，无 LLM）。
 
     粗网格→细网格、单点→战役；每个里程碑带显式验收判据（逐里程碑验收）。
     id 固定 M1..M5、难度严格递增；self_verify_loop 按此顺序推进并逐项标注
@@ -630,7 +629,7 @@ def self_verify_loop(
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
     opt = recipe.get("optimization") or {}
@@ -638,7 +637,7 @@ def self_verify_loop(
               for k, v in (opt.get("params") or {}).items()}
     objectives = list(recipe.get("objectives", []))
     if not objectives:
-        return {"ok": False, "errors": ["配方无 objectives，无从评判"]}
+        return error_envelope(["配方无 objectives，无从评判"])
     freq_range = tuple((recipe.get("setup") or {}).get("freq_range_ghz", (1.0, 5.0)))
     band_center = _band_center_ghz(objectives)
 
@@ -910,16 +909,22 @@ def self_verify_loop(
     run_dir = create_run_dir(Path(".").resolve(), run_id)
     final_params = dict(best["params"]) if best else dict(current)
     elapsed = time.time() - t0
-    result: dict[str, Any] = {
-        "ok": True, "run_id": run_id, "run_dir": str(run_dir),
-        "board_id": brd.board_id if brd is not None else None,
-        "verdict": "PENDING", "loop": "self_verify",
-        "proposer_note": proposal_note, "budget_coarse": budget_coarse,
-        "rounds_used": len(history), "best": best,
-        "final_params": final_params, "history": history,
-        "milestones": milestones, "sandbox": None,
-        "elapsed_s": round(elapsed, 1),
-    }
+    result: dict[str, Any] = ok_envelope(
+        run_id=run_id,
+        run_dir=str(run_dir),
+        board_id=brd.board_id if brd is not None else None,
+        verdict="PENDING",
+        loop="self_verify",
+        proposer_note=proposal_note,
+        budget_coarse=budget_coarse,
+        rounds_used=len(history),
+        best=best,
+        final_params=final_params,
+        history=history,
+        milestones=milestones,
+        sandbox=None,
+        elapsed_s=round(elapsed, 1),
+    )
     (run_dir / "autotune.json").write_text(
         json.dumps(result, ensure_ascii=False, indent=1, default=str),
         encoding="utf-8")

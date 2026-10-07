@@ -18,6 +18,8 @@ import importlib
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 # EMSolverAdapter 的 6 个抽象方法（骨架必须全部实现；与 em_solver_base 同步）
 ADAPTER_CONTRACT_METHODS: tuple[str, ...] = (
     "connect",
@@ -141,27 +143,26 @@ def scaffold_adapter(name: str, output_dir: str | Path | None = None) -> dict[st
     """
     safe = "".join(ch for ch in name if ch.isalnum() or ch == "_")
     if not safe or safe[0].isdigit():
-        return {"ok": False, "errors": [f"非法适配器名: {name}"]}
+        return error_envelope([f"非法适配器名: {name}"])
     class_name = "".join(part.capitalize() for part in safe.split("_")) + "Adapter"
     out_dir = Path(output_dir) if output_dir else Path("src") / "rfauto" / "adapters"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"{safe}_adapter.py"
     if out.exists():
-        return {"ok": False, "errors": [f"已存在: {out}"]}
+        return error_envelope([f"已存在: {out}"])
     content = _SCAFFOLD.format(name=name, class_name=class_name, safe=safe)
     try:
         compile(content, str(out), "exec")
     except SyntaxError as exc:  # 显式失败，不落盘半成品
-        return {"ok": False, "errors": [f"骨架语法错误: {exc}"]}
+        return error_envelope([f"骨架语法错误: {exc}"])
     out.write_text(content, encoding="utf-8")
-    return {
-        "ok": True,
-        "path": str(out),
-        "class_name": class_name,
-        "module": f"{safe}_adapter",
-        "register_fn": f"register_{safe}",
-        "contract_methods": list(ADAPTER_CONTRACT_METHODS),
-    }
+    return ok_envelope(
+        path=str(out),
+        class_name=class_name,
+        module=f"{safe}_adapter",
+        register_fn=f"register_{safe}",
+        contract_methods=list(ADAPTER_CONTRACT_METHODS),
+    )
 
 
 def check_adapter_contract(adapter_cls: type) -> dict[str, Any]:
@@ -314,12 +315,12 @@ def check_param_semantics(recipe_path: str | Path) -> dict[str, Any]:
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
     opt_params = (recipe.get("optimization") or {}).get("params") or {}
     if not opt_params:
-        return {"ok": False, "errors": ["配方无 optimization.params"]}
+        return error_envelope(["配方无 optimization.params"])
 
     issues: list[dict[str, str]] = []
     model_name = str(recipe.get("model", ""))

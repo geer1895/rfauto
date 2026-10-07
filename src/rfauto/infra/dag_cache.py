@@ -1,6 +1,6 @@
 """DP-9 P1：DAG 级内容寻址缓存（键 + CAS manifest + 零拷贝索引）。
 
-规格=docs/plan_deepdive_specs_20260924.md §DP-9 §3。核心事实（接地已钉）：
+规格=规格深案 §DP-9 §3。核心事实（接地已钉）：
 **runs/ 湖已是事实 CAS——本模块只建索引，零拷贝**（runs/ 证据面零改写；
 infra/result_cache.py 零 hunk——DAG 键成分名不同，白名单与理由表本地定义，
 canonical/模式语义只读复用）。
@@ -118,27 +118,53 @@ def uv_lock_sha256(repo_root: str | Path | None = None) -> str:
     return file_sha256(lock)
 
 
+def _git_sha_short(repo_root: str | Path | None = None) -> str:
+    """当前 HEAD 短 SHA（best-effort #105：非 git 环境/失败 → ""，不抛穿）。
+
+    review-slice4 P3-5 补全：env_fingerprint 的 git_sha 组件此前恒空串
+    （collect_provenance 不产出该键）。缓存键不变性注记：同一 HEAD 下键
+    确定（同环境确定性钉不变）；commit 推进使 env_fingerprint_sha 变化=
+    按设计失效（rerun_triggers "env" 维度声明含 git_sha）；非 git 环境
+    （安装包/CI 快照）→ ""，键面与补全前逐位同值（无一次性失效）。
+    """
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(repo_root) if repo_root else str(_repo_root_guess()))
+        sha = (out.stdout or "").strip()
+        return sha if out.returncode == 0 and sha else ""
+    except Exception:
+        return ""
+
+
 def env_fingerprint(
     repo_root: str | Path | None = None,
     *,
     solver_versions: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """环境指纹 dict：git_sha + pip_freeze_sha（collect_provenance 复用）+
-    uv.lock sha256。全部 best-effort（#105）：缺失 → 空串，键仍确定性。"""
+    uv.lock sha256。全部 best-effort（#105）：缺失 → 空串，键仍确定性。
+
+    git_sha 来源（review-slice4 P3-5 补全）：collect_provenance 现不产出
+    该键 → 直采 ``git rev-parse --short HEAD``（_git_sha_short，best-effort）；
+    collect_provenance 若未来补该键则优先取其值。缓存键语义见
+    _git_sha_short docstring（同 HEAD 键确定 / 非 git 环境空串同值）。"""
     try:
         from rfauto.infra.run_store import collect_provenance
         prov = collect_provenance(solver_versions=solver_versions)
     except Exception:                      # pragma: no cover - 防御性
         prov = {"git_sha": "", "pip_freeze_sha": ""}
     return {
-        "git_sha": str(prov.get("git_sha", "") or ""),
+        "git_sha": (str(prov.get("git_sha", "") or "")
+                    or _git_sha_short(repo_root)),
         "pip_freeze_sha": str(prov.get("pip_freeze_sha", "") or ""),
         "uv_lock_sha256": uv_lock_sha256(repo_root),
     }
 
 
 def _repo_root_guess() -> Path:
-    """仓根推断（本文件位于 <root>/src/rfauto/infra/）。"""
+    """仓根推断（本文件位于 <root>/src/rfauto/infra）。"""
     return Path(__file__).resolve().parents[3]
 
 
@@ -521,7 +547,12 @@ class DagCasIndex:
             return None
         best: tuple[int, dict[str, str]] | None = None
         for child in sorted(self.cache_dir.glob("*.json")):
-            if child.name.endswith(".tmp-*"):
+            # E3-7（ge8e 审查批）：原 `endswith(".tmp-*")` 恒 False（字面 *
+            # 不出现在真实文件名）。tmp 命名规约=`{name}.tmp-{pid}`
+            # （write_index/write_artifact_manifest，os.replace 原子写），
+            # 无 .json 后缀、上方 glob("*.json") 已排除；此处保留语义正确
+            # 的子串守卫作纵深（glob 形态若变更，tmp 残留不混入比对面）。
+            if ".tmp-" in child.name:
                 continue
             try:
                 data = json.loads(child.read_text(encoding="utf-8"))

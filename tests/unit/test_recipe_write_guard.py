@@ -1,10 +1,10 @@
-"""recipes/ 原件写守卫回归（配方污染根修）。
+"""recipes/ 原件写守卫回归（配方污染根修，TODO 增量②）。
 
 取证背景：2026-09-17 17:18 UI「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件重序列化（注释全丢/notes 引号丢/optimization 段被表单归一化整段替换，
-diff 85 行留证），同刻触发 fake run_once。本文件钉住：
+diff 85 行留 runs/pollution_evidence），同刻触发 fake run_once。本文件钉住：
 
-1. run_once（fake）本身不改配方原件字节（快照只落 runs/）；
+1. run_once（fake）本身不改配方原件字节（快照只落 runs）；
 2. 复现污染链（recipe_view → recipe_save → run_once）——原件字节不变，
    重序列化结果落 runs/recipe_workcopy/ 工作副本，运行消费副本；
 3. 守卫三档语义（缺省抛 / redirect 工作副本 / explicit 原地）与 Windows
@@ -13,7 +13,7 @@ diff 85 行留证），同刻触发 fake run_once。本文件钉住：
    但新建不得覆盖 recipes/ 既有原件；
 5. 沙箱/快照等旁路写点被指到 recipes/ 时拒绝。
 
-全部用例 chdir 到 tmp_path（#144：优化/run 类单测必须隔离，不污染真实 runs/）。
+全部用例 chdir 到 tmp_path（#144：优化/run 类单测必须隔离，不污染真实 runs）。
 """
 
 from __future__ import annotations
@@ -141,7 +141,7 @@ class TestUiSaveAndRunChain:
         assert not (tmp_path / "runs" / "recipe_workcopy").exists()
 
     def test_save_with_numpy_scalar_payload_writes_clean_yaml(self, tmp_path):
-        """numpy 标量复现钉：表单透传 np.float64/np.int64 payload 走
+        """R3-C-02（c9920eb 复现钉）：表单透传 np.float64/np.int64 payload 走
         recipe_save，落盘前套 sanitize_numpy_scalars——不抛 RepresenterError，
         写出文件可 yaml.safe_load 且零 numpy 残留（与 write_recipe_yaml 同口径）。"""
         import numpy as np
@@ -368,7 +368,10 @@ class TestWriteBackInventory:
     GUARDED_MODULES = (
         "service/ui_service.py", "service/api.py", "service/autotune_service.py",
         "service/agent_sandbox.py", "service/v3_services.py",
-        "service/kicad_em_service.py", "cli/main.py", "infra/run_store.py",
+        "service/kicad_em_service.py", "infra/run_store.py",
+        # AU-1 批3 拆分（2026-09-30）：cli/main.py 的 recipe_guard 写出口
+        # （template_spec_draft_cmd）随域迁至 cli/domains/bands_uq.py
+        "cli/domains/bands_uq.py",
     )
 
     def test_known_recipe_writers_import_guard(self):
@@ -382,7 +385,7 @@ class TestWriteBackInventory:
         assert "tmp.replace(target)" in text
 
 
-# ─── 7. explicit 覆盖既有受保护原件的 overwritten 标记 ──────────────────────
+# ─── 7. explicit 覆盖既有受保护原件的 overwritten 标记（R2-D-03）──────────────
 
 class TestExplicitOverwriteMarker:
     """explicit 档覆盖既有受保护原件必须可感知（消除与 recipe_create 拒覆盖
@@ -450,7 +453,7 @@ class TestExplicitOverwriteMarker:
         assert r2["ok"] and "overwritten" not in r2
 
 
-# ─── 8. numpy 标量泄漏的递归 sanitize ────────────────────────────────────────
+# ─── 8. numpy 标量泄漏的递归 sanitize（fix-tsdraft-npfloat64）─────────────────
 
 class TestNumpyScalarSanitizer:
     """综合内核 np.float64 透传 recipe_draft → yaml.safe_dump RepresenterError
@@ -520,7 +523,8 @@ class TestNumpyScalarSanitizer:
         data = yaml.safe_load(target.read_text(encoding="utf-8"))
         assert data["model"] == "branchline_coupler"
         arm = data["params"]["arm_len_mm"]["value"]
-        assert type(arm) is float and arm == pytest.approx(18.57, abs=0.01)
+        # XA-3 修正后值（series 臂各自 εeff；旧 18.57=w=1mm 近似口径已废）
+        assert type(arm) is float and arm == pytest.approx(18.09, abs=0.01)
 
 
 # ─── 9. UI 配方目录级写面钉（TODO C22 followUp：UI 配方目录守卫）──────────────
@@ -555,7 +559,7 @@ class TestDirectoryLevelWriteSurface:
         # 守卫决策后目标（工作副本/非受保护路径）建父目录；临时文件与目标
         # 同目录是原子替换前提（#319）
         ("ui_service.py", "recipe_save"): {"mkdir"},
-        # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare/）
+        # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare）
         ("ui_service.py", "sparams_compare_png"): {"mkdir"},
         # configs/ 三个配置保存器的父目录创建（非 recipes/ 面）
         ("r3_services.py", "add_solver_to_config"): {"mkdir"},

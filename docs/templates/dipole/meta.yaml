@@ -16,3 +16,29 @@ nominal_params:
   dipole_len_mm: 58.0
   dipole_w_mm: 2.0
   gap_mm: 2.0
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 中心馈电细线偶极子：长度=λ/2 时电流为半波正弦分布，输入阻抗为纯电阻 ≈73Ω（电抗过零即谐振）；粗细影响带宽与谐振长度修正。
+    derivations:
+    - claim: 半波谐振输入阻抗 ≈73+j42.5 Ω（细偶极子极限）
+      formula: Zin(l=λ/2) ≈ 73 + j42.5 Ω
+      source: Balanis, Antenna Theory (3rd ed.), Ch.4 Linear Wire Antennas（docs/rf_template_references.md
+        馈电阻节「谐振阻抗 ~73Ω」口径已核）
+    - claim: 谐振长度略短于 λ/2（末端效应/长径比修正，粗偶极子更短）
+      formula: l_res < λ/2（长径比依赖）
+      source: Balanis, Antenna Theory (3rd ed.), Ch.4（长径比修正章节口径；本仓 core/synthesis.synthesize_dipole_model 与 dipole 模板名义 58mm@2.4GHz
+        综合口径即含此修正）
+  sensitivity_ranking:
+  - param: dipole_len_mm
+    order: 1
+    basis: 谐振长度主控（λ/2 恒等式 |∂lnf0/∂lnl|≈1）
+  - param: dipole_w_mm
+    order: 2
+    basis: 长径比修正与带宽（Ch.4 修正项；弱于长度一阶）
+  - param: gap_mm
+    order: 3
+    basis: 馈电间隙局部电容（LumpedPort 桥接口径，对谐振频率弱）
+  quiz_refs:
+  - Q-DIPOLE-RIN

@@ -175,7 +175,8 @@ def test_def_requires_name_and_box() -> None:
         def_from_dict({"name": "bad",
                        "boxes": [{"layer": "m", "start": [0, 0],
                                   "stop": [1, 1, 1]}]})
-    with pytest.raises(PCellError, match="至少需要一个 box"):
+    # LC-2：空原语集 + 无 kernel 才拒绝（kernel-only cell 合法）
+    with pytest.raises(PCellError, match="至少需要一个原语"):
         def_from_dict({"name": "empty", "boxes": []})
 
 
@@ -195,10 +196,12 @@ def test_dict_and_yaml_roundtrip(tmp_path: Path) -> None:
 
 
 def test_geometry_to_dicts_json_friendly() -> None:
+    # LC-2：to_dicts 全原语类统一带 kind 标类；box 行保持原键集
     rows = evaluate_pcell(_toy_def(), {}, {"H": 0.5}).to_dicts()
     assert len(rows) == 2
-    assert set(rows[0]) == {"name", "layer", "start", "stop", "lo", "hi",
-                            "priority"}
+    assert all(row["kind"] == "box" for row in rows)
+    assert set(rows[0]) == {"kind", "name", "layer", "start", "stop", "lo",
+                            "hi", "priority"}
     assert all(isinstance(v, float)
                for row in rows for v in (*row["lo"], *row["hi"]))
 
@@ -206,7 +209,9 @@ def test_geometry_to_dicts_json_friendly() -> None:
 # ─── 迁移库与注册表一致性 ─────────────────────────────────────────────────────
 
 def test_library_has_exactly_the_three_migrated_templates() -> None:
-    assert sorted(PCELL_LIBRARY) == sorted(MIGRATED)
+    # LC-2：库扩到 9（3 迁移模板 + 6 新单元），但迁移三元组与
+    # TEMPLATE_NOMINAL 的注册表一致性钉保持不变（#231 精神）
+    assert set(MIGRATED) < set(PCELL_LIBRARY)
     for name in MIGRATED:
         defn = get_pcell(name)
         assert set(p.name for p in defn.params) == set(TEMPLATE_NOMINAL[name])
@@ -214,6 +219,164 @@ def test_library_has_exactly_the_three_migrated_templates() -> None:
             # 默认值 = TEMPLATE_NOMINAL 同名条目（注册表一致性，#231 精神）
             assert p.default == pytest.approx(
                 float(TEMPLATE_NOMINAL[name][p.name])), (name, p.name)
+
+
+# ─── LC-2 扩面：path/polygon/via/旋转 + 内核面（8+ PCell 验收锚）─────────────
+
+#: LC-2 新单元（坐标域=毫米，Layout 口径）；四类原语/内核全覆盖
+LC2_CELLS = ("ms_bend", "gnd_void", "gnd_via_quad", "rf_taper",
+             "rf_miter_bend", "rf_round_bend", "via_rail")
+
+#: LC-3 新单元（2026-10-02，RF 保护结构套件，内核面 guard_*；消费面
+#: rfauto pcell list/show/eval/render 自动可达；专锚在 test_rf_guard.py）
+LC3_CELLS = ("guard_ring_fence", "cpw_ground_stitch", "stitch_mesh",
+             "ground_void")
+
+
+def test_library_has_at_least_8_cells_with_kind_coverage() -> None:
+    """验收锚：8+ PCell；四类原语（box/path/polygon/via）+ 内核面全覆盖。"""
+    assert len(PCELL_LIBRARY) >= 8
+    assert sorted(set(MIGRATED) | set(LC2_CELLS)
+                  | set(LC3_CELLS)) == sorted(PCELL_LIBRARY)
+    kinds: set[str] = set()
+    for name in LC2_CELLS:
+        defn = get_pcell(name)
+        kinds.update({"path"} if defn.paths else ())
+        kinds.update({"polygon"} if defn.polygons else ())
+        kinds.update({"via"} if defn.vias else ())
+        if defn.kernel is not None:
+            kinds.add("kernel")
+    assert kinds == {"path", "polygon", "via", "kernel"}
+
+
+@pytest.mark.parametrize("name", LC2_CELLS)
+def test_lc2_cells_dict_yaml_roundtrip(name: str, tmp_path: Path) -> None:
+    """锚树①：新单元 def→dict/YAML→def 往返逐字段相等 + 求值签名不变。"""
+    defn = get_pcell(name)
+    assert def_from_dict(def_to_dict(defn)) == defn
+    path = tmp_path / f"{name}.yaml"
+    path.write_text(def_to_yaml(defn), encoding="utf-8")
+    assert def_from_yaml(path) == defn
+    ctx: dict[str, float] = {}
+    sig_def = evaluate_pcell(defn, {}, ctx).signature()
+    sig_loaded = evaluate_pcell(def_from_yaml(path), {}, ctx).signature()
+    assert sig_def == sig_loaded
+
+
+def test_path_polygon_via_rotation_anchors() -> None:
+    """锚树②：旋转/路径/多边形/过孔数值锚（手算闭式逐位）。"""
+    ctx: dict[str, float] = {}
+    # ms_bend：rot=0 恒等（cos0/sin0 精确），三点 L 形
+    geo0 = evaluate_pcell(get_pcell("ms_bend"),
+                          {"rot_deg": 0.0}, ctx)
+    assert geo0.paths[0].points == ((0.0, 0.0), (10.0, 0.0), (10.0, 8.0))
+    assert geo0.paths[0].width == pytest.approx(1.113)
+    # rot=90°：(x,y)→(-y,x)（绕原点；cos(π/2)=6.1e-17 非零，abs 容差判）
+    geo90 = evaluate_pcell(get_pcell("ms_bend"),
+                           {"rot_deg": 90.0}, ctx)
+    assert np.allclose(
+        np.array(geo90.paths[0].points),
+        np.array([(0.0, 0.0), (0.0, 10.0), (-8.0, 10.0)]), atol=1e-12)
+    # gnd_via_quad：rot=0 逐位四孔；rot=90 手算（(±.5,±.5)→(∓.5,±.5)）
+    quad0 = evaluate_pcell(get_pcell("gnd_via_quad"), {}, ctx)
+    assert sorted(v.name for v in quad0.vias) == [
+        "via_mm", "via_mp", "via_pm", "via_pp"]
+    pp = next(v for v in quad0.vias if v.name == "via_pp")
+    assert pp.position == (0.5, 0.5) and pp.pad_diameter == 0.6
+    quad90 = evaluate_pcell(get_pcell("gnd_via_quad"), {"rot_deg": 90.0}, ctx)
+    pp90 = next(v for v in quad90.vias if v.name == "via_pp")
+    assert np.allclose(pp90.position, (-0.5, 0.5), atol=1e-12)
+    # gnd_void：绕自身中心旋转 45°，对角点距离不变
+    geo45 = evaluate_pcell(get_pcell("gnd_void"), {"rot_deg": 45.0}, {})
+    pts = geo45.polygons[0].points
+    c = (0.0, 0.0)
+    d0 = math.hypot(pts[0][0] - c[0], pts[0][1] - c[1])
+    assert d0 == pytest.approx(math.hypot(1.5, 1.0))  # 半对角
+    # via_rail：n=3 沿 +x 每 pitch 一孔，位置逐位
+    geo_rail = evaluate_pcell(get_pcell("via_rail"),
+                              {"n": 3, "pitch_mm": 1.2,
+                               "x0_mm": 0.5, "y0_mm": -0.25}, {})
+    assert [(v.position, v.pad_diameter, v.drill_diameter)
+            for v in geo_rail.vias] == [
+        ((0.5 + k * 1.2, -0.25), 0.6, 0.3) for k in range(3)]
+
+
+def test_box_rotation_quarter_turn_only() -> None:
+    """盒旋转只收 90° 倍数（轴对齐语义）；任意角显式报错指路 polygon。"""
+    d = def_from_dict({
+        "name": "rotbox", "params": {"a": 1.0},
+        "boxes": [{"layer": "m", "start": [0, 0, 0], "stop": ["a", 2, 1],
+                   "rotate": {"angle_deg": 90, "center": [0, 0]}}],
+    })
+    geo = evaluate_pcell(d, {}, {})
+    # (x,y)→(-y,x)：(0,0)→(0,0)，(1,2)→(-2,1) → lo=(-2,0), hi=(0,1)
+    assert geo.boxes[0].lo == pytest.approx((-2.0, 0.0, 0.0), abs=1e-12)
+    assert geo.boxes[0].hi == pytest.approx((0.0, 1.0, 1.0), abs=1e-12)
+    d45 = def_from_dict({
+        "name": "rotbox45", "params": {"a": 1.0},
+        "boxes": [{"layer": "m", "start": [0, 0, 0], "stop": ["a", 2, 1],
+                   "rotate": {"angle_deg": 45, "center": [0, 0]}}],
+    })
+    with pytest.raises(PCellError, match="90° 倍数"):
+        evaluate_pcell(d45, {}, {})
+
+
+def test_n14_kernel_area_identities() -> None:
+    """锚树③：N14 三原语迁可组合 PCell——面积恒等式双源对照（#118：
+    提取侧 shoelace 与设计参数代数独立互证，非同源复读）。"""
+    def shoelace(pts) -> float:
+        total = 0.0
+        for i in range(len(pts)):
+            x1, y1 = pts[i]
+            x2, y2 = pts[(i + 1) % len(pts)]
+            total += x1 * y2 - x2 * y1
+        return abs(total) / 2.0
+
+    taper = evaluate_pcell(get_pcell("rf_taper"),
+                           {"len_mm": 8.0, "w1_mm": 1.113,
+                            "w2_mm": 1.897}, {})
+    poly = taper.polygons[0].points
+    assert shoelace(poly) == pytest.approx(8.0 * (1.113 + 1.897) / 2.0,
+                                           rel=1e-12)
+    miter = evaluate_pcell(get_pcell("rf_miter_bend"),
+                           {"l1_mm": 6.0, "l2_mm": 6.0, "w_mm": 1.113,
+                            "chamfer_mm": 0.5565}, {})
+    assert shoelace(miter.polygons[0].points) == pytest.approx(
+        1.113 * (6.0 + 6.0) - 0.5565 ** 2 / 2.0, rel=1e-9)
+    round_b = evaluate_pcell(get_pcell("rf_round_bend"),
+                             {"l1_mm": 6.0, "l2_mm": 6.0, "w_mm": 1.113,
+                              "r_mm": 2.0, "n_arc": 256.0}, {})
+    closed = 1.113 * (6.0 + 6.0) - 2.0 * 1.113 * (2.0 - math.pi / 2.0)
+    assert shoelace(round_b.polygons[0].points) == pytest.approx(
+        closed, rel=2e-3)  # 弧离散 O(1/n²)，n=256 收敛判据
+
+
+@pytest.mark.parametrize("bad", [
+    # 负例树：形状/取值/内核/旋转成对性/线宽/过孔盘径
+    {"name": "p1", "paths": [{"layer": "F.Cu", "points": [[0, 0]],
+                              "width": 1}]},
+    {"name": "p2", "polygons": [{"layer": "F.Cu",
+                                 "points": [[0, 0], [1, 1]]}]},
+    {"name": "k1", "kernel": "no_such_kernel"},
+    {"name": "rot1", "boxes": [{"layer": "m", "start": [0, 0, 0],
+                                "stop": [1, 1, 1],
+                                "rotate": {"angle_deg": 30}}]},
+    {"name": "w0", "paths": [{"layer": "F.Cu", "points": [[0, 0], [1, 0]],
+                              "width": 0}]},
+])
+def test_lc2_negative_cases(bad: dict) -> None:
+    with pytest.raises(PCellError):
+        evaluate_pcell(def_from_dict(bad), {}, {})
+
+
+def test_via_pad_must_exceed_drill() -> None:
+    d = def_from_dict({
+        "name": "badvia",
+        "vias": [{"pad_layer": "F.Cu", "x": 0, "y": 0,
+                  "pad_diameter": 0.3, "drill_diameter": 0.5}],
+    })
+    with pytest.raises(PCellParamError, match="焊盘直径"):
+        evaluate_pcell(d, {}, {})
 
 
 def test_library_definitions_are_yaml_shaped() -> None:
@@ -343,5 +506,5 @@ def test_pcell_dataclasses_direct_python_face() -> None:
     geo = evaluate_pcell(defn, {"w": 2.0}, {})
     assert geo.boxes[0].hi[0] == 4.0
     assert geo.boxes[0].priority == 3.0
-    with pytest.raises(KeyError, match="未迁移的 PCell"):
+    with pytest.raises(KeyError, match="未知 PCell"):
         get_pcell("nope")

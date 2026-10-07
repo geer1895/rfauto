@@ -1,4 +1,4 @@
-"""ansysedt 桌面进程治理单源（桌面治理批；fail-closed 范式）。
+"""ansysedt 桌面进程治理单源（df5 桌面治理批；df4m fail-closed 范式）。
 
 范式（scripts/factory_mf_hfss_anchors.py 原型 + hfss_interdigital_check.py
 预检/看门狗口径，坑账 #245/#265/#145/#105）：
@@ -24,18 +24,32 @@ from typing import Any
 
 RELEASE_DESKTOP_CAP_S = 150.0  # hfss_interdigital_check 口径：超时候实测阻塞 3.6h
 
+# E3-8（ge8e 审查批）：powershell 子进程一律带 timeout——Get-CimInstance/
+# Stop-Process 挂起曾可无限阻塞杀环（strict 路径在发射前置段，挂起即挂起
+# 整个发射：fail-closed 的反面 fail-hang）。量级对齐同类调用面：
+# 枚举 30s（Win32_Process 全表）/ 存活 15s（Get-Process 单查）/ 点杀 60s
+# （Stop-Process 单杀）。超时=未知态，按 fail-unknown 处置（不冒充结果）。
+ENUM_TIMEOUT_S = 30.0
+ALIVE_TIMEOUT_S = 15.0
+KILL_TIMEOUT_S = 60.0
+
 LogFn = Callable[[str], None]
 
 
 def list_ansysedt_processes() -> list[dict[str, Any]]:
-    """枚举 ansysedt 进程（pid/ppid/命令行）；枚举失败抛错（fail-closed，
-    #245：不核对命令行不杀）。"""
-    r = subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         "Get-CimInstance Win32_Process -Filter \"Name='ansysedt.exe'\" "
-         "| ForEach-Object { \"$($_.ProcessId)|$($_.ParentProcessId)|"
-         "$($_.CommandLine)\" }"],
-        capture_output=True, text=True)
+    """枚举 ansysedt 进程（pid/ppid/命令行）；枚举失败/超时抛错（fail-closed，
+    #245：不核对命令行不杀；E3-8：超时不无限阻塞杀环）。"""
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "Get-CimInstance Win32_Process -Filter \"Name='ansysedt.exe'\" "
+             "| ForEach-Object { \"$($_.ProcessId)|$($_.ParentProcessId)|"
+             "$($_.CommandLine)\" }"],
+            capture_output=True, text=True, timeout=ENUM_TIMEOUT_S)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"ansysedt 进程枚举超时（>{ENUM_TIMEOUT_S:.0f}s，fail-closed "
+            f"不盲杀，E3-8）: {exc}") from exc
     if r.returncode != 0:
         raise RuntimeError(
             f"ansysedt 进程枚举失败 rc={r.returncode}（fail-closed，"
@@ -55,14 +69,21 @@ def list_ansysedt_processes() -> list[dict[str, Any]]:
     return procs
 
 
-def process_alive(pid: int) -> bool:
-    """进程存活判定；查询失败/输出不可解析抛错（fail-closed，按活桌面
-    处理不杀——#245 杀前核对立规）。"""
-    r = subprocess.run(
-        ["powershell", "-NoProfile", "-Command",
-         f"if (Get-Process -Id {int(pid)} -ErrorAction SilentlyContinue) "
-         "{'alive'} else {'dead'}"],
-        capture_output=True, text=True)
+def process_alive(pid: int) -> bool | None:
+    """进程存活判定：True=存活 / False=已死 / None=未知（查询超时，E3-8）。
+
+    查询失败（rc≠0/输出不可解析）抛错（fail-closed，按活桌面处理不杀
+    ——#245 杀前核对立规）；**超时**不再无限阻塞（fail-hang 反例，E3-8）
+    ——归 None=未知态，由调用方按"活桌面"保守处置（不杀不挂起）。
+    """
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             f"if (Get-Process -Id {int(pid)} -ErrorAction SilentlyContinue) "
+             "{'alive'} else {'dead'}"],
+            capture_output=True, text=True, timeout=ALIVE_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return None  # E3-8：超时=未知态（fail-unknown 而非 fail-hang）
     if r.returncode != 0:
         raise RuntimeError(
             f"pid {pid} 存活查询失败（fail-closed，按活桌面处理不杀）: "
@@ -81,7 +102,7 @@ def kill_orphan_ansysedt_desktops(
     """ansysedt 清场（#245/#265 合规）：只杀**父进程已死**的孤儿。
 
     strict=True（发射前/重试轮内，try 内承接）：活桌面与枚举/查询/终止
-    失败一律 fail-closed 抛错不代杀，调用方决策（factory_mf 口径）。
+    失败一律 fail-closed 抛错不代杀，调用方决策（factory_mf df4m 口径）。
     strict=False（attempt 间 try 外清理/收尾扫尾）：失败与活桌面只记录
     不抛——收尾清扫绝不连坐已完成战役（#105 best-effort）。
     旧实现 Get-Process|Stop-Process -Force 代杀全部 ansysedt——会误杀
@@ -106,6 +127,15 @@ def kill_orphan_ansysedt_desktops(
             log(f"[desktop_guard][warn] pid={p['pid']} 父进程查询失败，"
                 f"跳过不杀（按活桌面处理）：{exc}")
             continue
+        if parent_alive is None:
+            # E3-8：存活查询超时=未知态——按活桌面保守处置（不杀不挂起）
+            msg = (f"pid={p['pid']} 父进程 {p['ppid']} 存活查询超时"
+                   f"（>{ALIVE_TIMEOUT_S:.0f}s，未知态按活桌面处理不杀，"
+                   f"E3-8 fail-unknown）")
+            if strict:
+                raise RuntimeError(msg)
+            log(f"[desktop_guard][warn] {msg}")
+            continue
         if parent_alive:
             msg = (f"检测到活桌面 ansysedt pid={p['pid']}（父进程 "
                    f"{p['ppid']} 存活，cmdline={p['cmdline'][:120]}）——"
@@ -119,13 +149,18 @@ def kill_orphan_ansysedt_desktops(
 
     killed: list[int] = []
     for p in orphans:
-        r = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             f"Stop-Process -Id {p['pid']} -Force"],
-            capture_output=True, text=True)
-        if r.returncode != 0:
+        try:
+            r = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"Stop-Process -Id {p['pid']} -Force"],
+                capture_output=True, text=True, timeout=KILL_TIMEOUT_S)
+        except subprocess.TimeoutExpired:  # E3-8：点杀超时=终止失败态
+            r = None
+        if r is None or r.returncode != 0:
+            detail = (f"超时（>{KILL_TIMEOUT_S:.0f}s，E3-8）" if r is None
+                      else (r.stderr or "").strip()[:200])
             msg = (f"孤儿 ansysedt pid={p['pid']} 终止失败（fail-closed）: "
-                   f"{(r.stderr or '').strip()[:200]}")
+                   f"{detail}")
             if strict:
                 raise RuntimeError(msg)
             log(f"[desktop_guard][warn] {msg}")
@@ -166,10 +201,15 @@ def kill_ansysedt_by_ppid(ppid: int, *, log: LogFn = print) -> list[int]:
     mine = [q for q in procs if q["ppid"] == ppid]
     killed: list[int] = []
     for q in mine:
-        r = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             f"Stop-Process -Id {q['pid']} -Force"],
-            capture_output=True, text=True)
+        try:
+            r = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"Stop-Process -Id {q['pid']} -Force"],
+                capture_output=True, text=True, timeout=KILL_TIMEOUT_S)
+        except subprocess.TimeoutExpired as exc:  # E3-8：点杀超时不挂起
+            raise RuntimeError(
+                f"ansysedt pid={q['pid']} 终止超时（>"
+                f"{KILL_TIMEOUT_S:.0f}s，E3-8 fail-closed）: {exc}") from exc
         if r.returncode != 0:
             raise RuntimeError(
                 f"ansysedt pid={q['pid']} 终止失败: "

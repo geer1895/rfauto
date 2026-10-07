@@ -154,20 +154,34 @@ def test_parent_heartbeat_timed_out_semantics(tmp_path: Path):
 
 # ── main() 集成（monkeypatch 钉 time/memory/subprocess，禁真等） ────────────
 
+class _FakeProc:
+    """模拟子进程（存活探针面）：poll() 依序吐 results，耗尽后恒吐末值。"""
+
+    def __init__(self, pid: int, results: list):
+        self.pid = pid
+        self._results = list(results)
+
+    def poll(self):
+        if len(self._results) > 1:
+            return self._results.pop(0)
+        return self._results[0]
+
+
 def test_main_launch_path_zero_change_gate_open_launches(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """缺省调用路径零变化钉：门开→发射→子进程码透传；心跳是纯增量观测面
-    （写成功、gate.open=True），不改变发射决策/退出码。"""
+    """门开→发射→子进程码透传（零变化面保留）；H1-3 增量：发射后心跳
+    续写 launched=True/child_pid（Popen+守护循环替代 subprocess.call）。"""
     monkeypatch.setattr(wl, "free_physical_memory_kb",
                         lambda: 8 * 1024 * 1024)
     hb = tmp_path / "hb.json"
     calls: list[list[str]] = []
+    fake = _FakeProc(pid=424242, results=[None, 42])
     monkeypatch.setattr(sys, "argv",
                         ["campaign_wait_launch.py", "--heartbeat", str(hb),
                          "--poll-s", "1"])
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    monkeypatch.setattr(subprocess, "call",
-                        lambda cmd: (calls.append(cmd), 42)[1])
+    monkeypatch.setattr(subprocess, "Popen", lambda cmd: calls.append(cmd)
+                        or fake)
     rc = wl.main()
     assert rc == 42, "发射路径必须透传子进程码（与旧实现一致）"
     assert len(calls) == 1
@@ -179,6 +193,8 @@ def test_main_launch_path_zero_change_gate_open_launches(
     assert payload["pid"] == os.getpid()
     assert payload["gate"]["open"] is True
     assert payload["gate"]["workers"] == 2
+    assert payload["launched"] is True, "发射后心跳必须带 launched 标记"
+    assert payload["child_pid"] == 424242
 
 
 def test_main_timeout_exit2_unchanged_before_any_probe(
@@ -356,3 +372,89 @@ def test_main_default_flags_take_no_new_exit_paths(
     payload = wl.read_heartbeat(hb)
     assert payload is not None and payload["gate"]["open"] is False
     assert payload["parent_heartbeat"] == ""
+
+
+# ── H1-3 修复面：发射后心跳续写 + child_pid 双发拦截（2026-10-04 F6）────────
+
+def test_monitor_child_heartbeat_writes_while_child_alive(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """发射后心跳续写断言（模拟子进程存活探针）：子进程存活期间按节拍
+    续写心跳（launched=True/child_pid），子进程退出后透传其 rc。"""
+    hb = tmp_path / "hb.json"
+    proc = _FakeProc(pid=31337, results=[None] * 5 + [7])
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(time, "time", lambda: clock["t"])
+    monkeypatch.setattr(time, "sleep", lambda s: clock.__setitem__(
+        "t", clock["t"] + s))
+    writes: list[dict] = []
+
+    def writer(path, payload):
+        writes.append(dict(payload))
+        return wl.write_heartbeat(path, payload)
+
+    rc = wl.monitor_child_heartbeat(proc, hb, 1000.0, 2.0, hb_writer=writer)
+    assert rc == 7, "子进程码透传语义与被替换的 subprocess.call 一致"
+    assert len(writes) >= 2, "存活期间至少两个节拍的心跳续写"
+    assert wl.read_heartbeat(hb)["launched"] is True
+    assert wl.read_heartbeat(hb)["child_pid"] == 31337
+    assert wl.read_heartbeat(hb)["pid"] == os.getpid()
+    assert writes[0]["last_poll_ts"] <= writes[-1]["last_poll_ts"]
+
+
+def test_monitor_child_heartbeat_immediate_exit_returns_rc_without_write(
+        tmp_path: Path):
+    """子进程秒退：透传 rc，无需补写心跳（发射决策时心跳仍新鲜）。"""
+    hb = tmp_path / "hb.json"
+    proc = _FakeProc(pid=1, results=[5])
+    rc = wl.monitor_child_heartbeat(proc, hb, 1000.0, 2.0)
+    assert rc == 5
+    assert wl.read_heartbeat(hb) is None
+
+
+def test_monitor_child_heartbeat_write_failure_is_not_lethal(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """发射期心跳写失败只不自尽（#105：业务子进程在跑，杀守望者反而
+    重开双发窗）——透传子进程 rc。"""
+    hb = tmp_path / "hb.json"
+    proc = _FakeProc(pid=2, results=[None, 9])
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    rc = wl.monitor_child_heartbeat(proc, hb, 1000.0, 2.0,
+                                    hb_writer=lambda p, d: False)
+    assert rc == 9
+    assert wl.read_heartbeat(hb) is None
+
+
+def test_single_instance_conflict_child_alive_blocks_even_if_launcher_dead():
+    """H1-3 补强①：心跳新鲜但 launcher 已死、已发射子进程在 → 拦截双发。"""
+    now = time.time()
+    hb = {"pid": 999999999, "last_poll_ts": now - 5, "poll_s": 600,
+          "launched": True, "child_pid": os.getpid()}
+    conflict, reason = wl.single_instance_conflict(hb, now, 600)
+    assert conflict is True
+    assert "子进程" in reason and str(os.getpid()) in reason
+
+
+def test_single_instance_conflict_stale_heartbeat_child_alive_blocks():
+    """H1-3 补强②：心跳过期（>2×poll_s）但已发射子进程仍在跑 → 拦截
+    （修复前此形态放行=20min 双发窗本源）。"""
+    now = time.time()
+    hb = {"pid": os.getpid(), "last_poll_ts": now - 1201, "poll_s": 600,
+          "launched": True, "child_pid": os.getpid()}
+    conflict, reason = wl.single_instance_conflict(hb, now, 600)
+    assert conflict is True
+    assert "拦截双发" in reason
+
+
+def test_single_instance_conflict_stale_child_dead_passes():
+    """子进程死透+心跳过期=真无主遗痕（#177 清点面），放行不阻塞。"""
+    now = time.time()
+    hb = {"pid": 999999999, "last_poll_ts": now - 1201, "poll_s": 600,
+          "launched": True, "child_pid": 999999999}
+    assert wl.single_instance_conflict(hb, now, 600) == (False, "")
+
+
+def test_single_instance_conflict_without_launched_key_unchanged():
+    """旧心跳（无 launched 键）零变化面：launcher 死+新鲜 → 放行。"""
+    now = time.time()
+    hb = {"pid": 999999999, "last_poll_ts": now - 5, "poll_s": 600}
+    assert wl.single_instance_conflict(hb, now, 600)[0] is False

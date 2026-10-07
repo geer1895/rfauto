@@ -1,0 +1,388 @@
+# XC-P 精度档案（specs 规格深案 §B-3，2026-10-02 首批 10 内核）。
+#
+# 三载体（规格载体裁决）：
+#   1. 本 YAML —— 机器可消费单源（schema 见下）；
+#   2. 各内核模块 docstring 的「精度档案」镜像行 —— 人读面（KD-1 同款防漂移，
+#      收集器=tests/unit/test_precision_profiles.py 逐条对照）；
+#   3. core/precision_profiles.py —— 加载/schema 校验/域判查询/能力卡"精度域"节
+#      数据面（kernel_id→模块映射 KERNEL_MODULES 也在该模块）。
+#
+# schema（每 kernel 一个键，值必须恰含下列 6 键，多键/缺键=PrecisionProfileSchemaError）：
+#   quantities: [str]                  内核量名（查询 quantity 的键域，非空、唯一）
+#   valid_domain:                      域声明（机器可判条件 + 人读注记）
+#     point_params: [str]              point 查询变量名（可选）
+#     conditions:                      机器可判约束（op ∈ {">", ">=", "<", "<=", "=="}；value 数值）
+#       - {param: str, op: str, value: num}
+#     note: str                        人读域注记（含机器判不了的口径假设）
+#   typical_deviation:                 分档+方向+条件（铁律 7：只录 docstring/测试容差已声明档；
+#     - quantity: str | null             docstring 没有的一律 UNVERIFIED 不编数）
+#       band: str | "UNVERIFIED"
+#       direction: overestimate|underestimate|none|known_sign_only|unknown|bound_only
+#       condition: str
+#       unverified: bool               band="UNVERIFIED" ⟺ unverified=true（双向钉）
+#   refs: [str]                        DOI/页码/数据表 URL/仓内判据路径
+#   out_of_domain_behavior: REFUSE | WARN | UNVERIFIED
+#   last_verified: YYYY-MM-DD          精度声明最后核实时点（取模块末次精度面 commit 日）
+#
+# docstring 镜像行规范（各内核模块 docstring 末尾一行，收集器逐字对照）：
+#   精度档案：knowledge/precision_profiles.yaml#<kernel_id>（行为=<BEHAVIOR>，last_verified=<YYYY-MM-DD>）。
+---
+schema_version: 1
+kernels:
+  ridged_waveguide:
+    quantities:
+      - cutoff_kc
+      - cutoff_fc_hz
+      - lambda_c_m
+      - beta_z
+      - lambda_g_m
+      - z_pv_ohm
+      - evanescent_alpha_np_per_m
+      - design_ridge_depth
+    valid_domain:
+      point_params:
+        - g_over_b
+      conditions:
+        - {param: g_over_b, op: ">=", value: 0.4}
+        - {param: g_over_b, op: "<=", value: 1.0}
+      note: "机器判域=定量可信带 g/b≥0.4（docstring 口径：深脊 g/b<0.4 定量不可信，设计面应换数值求解器 rwg_mmt 或全波，行为=WARN）；g/b→1（d→0）偏差→0，d=0 极限逐位；g/b<0.4 的分档值（+12~21%）仅存档参考不供守卫放行；g/b→0 深脊极限模型失效不采信（隙区 TEM 线假设失效）。"
+    typical_deviation:
+      - quantity: cutoff_kc
+        band: "+1.5% @g/b=0.9；+3.4%（双脊）~+5.0%（单脊）@g/b=0.75；+8.0%（双）~+13.3%（单）@g/b=0.5；+12~19% @g/b=0.3；+17~21% @g/b=0.15"
+        direction: overestimate
+        condition: "对独立 FEM 标定（arXiv:2606.23703v1 色散图数字化 + 本仓 P1 三角元 FEM 复算互证）；方向与'遗漏脊缘杂散电容=欠加载'物理签名一致。"
+        unverified: false
+      - quantity: z_pv_ohm
+        band: UNVERIFIED
+        direction: unknown
+        condition: "等效阻抗对 Cohn 阻抗曲线无独立数值锚（仅极限恒等式钉结构与加载方向）。"
+        unverified: true
+      - quantity: design_ridge_depth
+        band: "目标 f_c 反解脊深往返回收 rel≤1e-9（数值代数锚）"
+        direction: none
+        condition: "求根自洽口径（tests 单测钉），非物理精度声明。"
+        unverified: false
+    refs:
+      - "Cohn 1947, Proc. IRE 35(8):783-788"
+      - "Hopfer 1955, IRE Trans. MTT-3(5):20-29"
+      - "Pyle 1966, IEEE Trans. MTT-14(5):175-183"
+      - "Hoefer & Burton 1982, IEEE Trans. MTT-30(12):2190-2194"
+      - "数值锚 arXiv:2606.23703v1（S. Saima, Purdue, 2026）Fig.7/Fig.8"
+    out_of_domain_behavior: WARN
+    last_verified: "2026-09-28"
+
+  etch_trapezoid:
+    quantities:
+      - bottom_width_mm
+      - etch_angle_deg
+      - etch_factor
+      - undercut_mm
+      - equivalent_widths
+      - delta_z_estimate
+      - etch_bias_compensation
+    valid_domain:
+      point_params:
+        - etch_angle_deg
+        - w_top_mm
+        - t_cu_mm
+      conditions:
+        - {param: etch_angle_deg, op: ">=", value: 0.0}
+        - {param: etch_angle_deg, op: "<", value: 90.0}
+        - {param: w_top_mm, op: ">", value: 0.0}
+        - {param: t_cu_mm, op: ">=", value: 0.0}
+      note: "θ=90°（tan 发散/侧壁外翻非物理）渲染端显式 ValueError；t=0 退化为垂直壁恒等。ΔZ 幅值精度全域 UNVERIFIED（无公开权威系数可对），方向恒等式为硬判据。"
+    typical_deviation:
+      - quantity: null
+        band: "几何恒等式机器精度（w_b=w_t+2t·tanθ、θ↔EF↔undercut 往返、等面积=算术平均，单测 rel≤1e-12 钉）"
+        direction: none
+        condition: "代数恒等，不涉物理模型。"
+        unverified: false
+      - quantity: delta_z_estimate
+        band: UNVERIFIED
+        direction: known_sign_only
+        condition: "无公开权威系数可对（Polar Si9000 闭源）；方向恒等式为硬判据（正蚀刻 Z 升/负蚀刻 Z 降，合成单调裁判+skrf HJ 真链双裁判钉死）。"
+        unverified: true
+      - quantity: etch_factor
+        band: UNVERIFIED
+        direction: unknown
+        condition: "业界典型带 EF≈1.5-3、bias 0.5-1 mil 均为二手 fab 指南口径（Sierra Circuits/Eurocircuits），只作量级参考非精度背书。"
+        unverified: true
+    refs:
+      - "无公开权威系数表（Polar Si9000 闭源，如实 UNVERIFIED）"
+      - "fab 指南二手口径：Sierra Circuits / Eurocircuits"
+      - "ΔZ 链只读复用 core/synthesis.forward_z0（skrf Hammerstad-Jensen）"
+    out_of_domain_behavior: UNVERIFIED
+    last_verified: "2026-09-28"
+
+  conductor_loss:
+    quantities:
+      - skin_depth
+      - smooth_surface_resistance
+      - hammerstad_roughness_factor
+      - huray_roughness_factor
+      - hall_huray_surface_ratio
+      - finite_thickness_factor
+      - roughness_gain
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "良导体趋肤区口径（δ≪横向尺寸）；有限厚度 K_t 对 t/δ 全程有解析守卫（t≫δ→1，t≪δ→δ/t 直流层）；Hammerstad RF≥1 饱和式、Huray 需 nodule 半径 r_i>0 与面比 SR。粗糙度模型的实测保真度为模型形态不确定性，非本表定级范围。"
+    typical_deviation:
+      - quantity: null
+        band: "教材公式恒等（Pozar/RWVD 逐式实现）；K_t 大 x 直返 1 误差 ~2·exp(−2x)<4.2e-18（低于双精度分辨率）"
+        direction: none
+        condition: "代数实现口径（非对测量定级）。"
+        unverified: false
+      - quantity: roughness_gain
+        band: UNVERIFIED
+        direction: unknown
+        condition: "Huray/Hammerstad 为经验模型；已刊参数点（Ansys SIwave r=0.5µm、SR=1/3/6）是模型参数非精度背书；对实测导体损耗的保真度本仓未定级。"
+        unverified: true
+    refs:
+      - "Pozar, Microwave Engineering 4th ed., §1.7.1"
+      - "Huray et al. 2007, 11th IEEE SPI（雪球模型）；Hall et al. 2007, IEEE Trans. MTT pp.2614-2624"
+      - "Hammerstad & Jensen 1980, IEEE MTT-S pp.407-409"
+      - "Shlepnev & Nwachukwu 2011, DOI 10.1109/ISEMC.2011.6038367（RF 参数化）"
+      - "Ramo/Whinnery/Van Duzer 3rd ed., §5.5/§5.18（有限厚度 Z_s）"
+      - "Ansys SIwave EditingLayerRoughness（已刊参数点 r=0.5um SR=1/3/6）"
+    out_of_domain_behavior: UNVERIFIED
+    last_verified: "2026-09-27"
+
+  dielectric_extract:
+    quantities:
+      - gamma_mtrl
+      - gamma_single_line
+      - er_eff
+      - er
+      - tan_d
+      - nrw
+      - baker_jarvis
+      - ring_resonator_er
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "无源 γ 口径（α≥0、β≥0，有源显式拒收）；tan_d 提取缺省为无耗导体合成夹具口径（带导体实测须先减模型 α_c）；NRW 在 n·λg/2 厚度谐振点失稳→走 Baker-Jarvis 迭代稳定法；环谐振器为单点 f_n→εr。真实测量件精度取决于校准件质量/噪声/夹具，未定级。"
+    typical_deviation:
+      - quantity: er
+        band: "合成回收（无噪声、同源正向模型）：γ 链 ≈1e-13 机器精度；er 反演 ≤1e-6；NRW ≤1e-3 相对"
+        direction: none
+        condition: "同源正向模型合成回收（自洽口径，非独立物理精度）。"
+        unverified: false
+      - quantity: tan_d
+        band: "|Δtanδ|/tanδ ≤5%（G1 预声明带，mTRL 两线+单线两法）"
+        direction: none
+        condition: "已知 (εr,tanδ)→skrf MLine 解析正向→提取（G1 主门口径）；加性复高斯噪声→蒙特卡洛回收带放大且线性 u95 覆盖 ≥95%（G4）。"
+        unverified: false
+      - quantity: er
+        band: "|Δεr|/εr ≤1%（G1 预声明带）；独立源对照 HJ εeff vs Wheeler 闭式 ≤0.5%"
+        direction: none
+        condition: "G1 主门口径（mTRL 两线+单线两法）；Wheeler 对照为独立来源裁判（#118，单测钉）。"
+        unverified: false
+      - quantity: null
+        band: UNVERIFIED
+        direction: unknown
+        condition: "真实测量数据（非合成夹具）的提取精度未定级——取决于校准件质量/噪声/夹具误差盒。"
+        unverified: true
+    refs:
+      - "Pozar, Microwave Engineering 4th ed., §3.8（HJ/α_d 式）"
+      - "scikit-rf NISTMultilineTRL / MLine（model=hammerstadjensen, disp=kirschningjansen）"
+      - "仓内预声明判据：方案书 F-A §4（G1/G4，tests/unit/test_dielectric_extract.py 钉）"
+    out_of_domain_behavior: UNVERIFIED
+    last_verified: "2026-09-29"
+
+  synthesis.forward_z0:
+    quantities:
+      - z0
+      - er_eff
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "skrf MLine model='hammerstadjensen' 准静态微带口径（薄带/零厚度近似、无盖）；εeff 取值通道 source∈{ep_reff, er_eff, beta, bulk_fallback}（XA-4 显式化）；source=bulk_fallback 时 λ 反推 f0 带偏（已显式下泄 SynthesisResult.status='er_eff_fallback'，不静默）。对测量的模型保真度未定级。"
+    typical_deviation:
+      - quantity: z0
+        band: "反解回代 |ΔZ0|<0.5Ω；对拍矩阵常规 Z0（35.35/50Ω）<3%、极端（20/120Ω）<5%"
+        direction: none
+        condition: "inverse_width 回代自洽断言（扩展方案 验收①③，tests 钉）——代数自洽口径，非对测量。"
+        unverified: false
+      - quantity: er_eff
+        band: UNVERIFIED
+        direction: unknown
+        condition: "source=bulk_fallback 兜底通道：体介电常数代替 εeff 会把 λ 反推的 f0 带偏（2026-09-03 v0 实测），偏差幅度未定级。"
+        unverified: true
+      - quantity: null
+        band: UNVERIFIED
+        direction: unknown
+        condition: "HJ 模型对实测的保真度本仓未定级；G0 数值锚 forward_z0(1.11mm, 2.4GHz, rogers4350b_h0.508)=50.094Ω（runs/df6_dp13 K1 定案）。"
+        unverified: true
+    refs:
+      - "Hammerstad & Jensen（skrf MLine model=hammerstadjensen）"
+      - "Pozar, Microwave Engineering 4th ed., §3.8"
+      - "扩展方案 §E6a 验收①③（仓内判据）"
+      - "G0 定案数值锚 runs/df6_dp13（K1，tests/unit/test_rules_verify.py）"
+    out_of_domain_behavior: WARN
+    last_verified: "2026-10-02"
+
+  coupled_microstrip:
+    quantities:
+      - even_odd_impedance
+      - coupling_k
+      - hairpin_kgap_correction
+      - qe_tap_frac
+      - arm_len
+    valid_domain:
+      point_params:
+        - s_over_h
+        - gap_mm
+      conditions:
+        - {param: s_over_h, op: ">=", value: 0.1}
+      note: "KJ 1984 准静态闭式适用条件：零厚、无盖、s/h≥0.1（规格预声明准静态适用下界）；hairpin 结构经验修正 c(gap) 限同口径几何（rogers4350b h=0.508/er=3.66、w=1.1117、f0=2.5GHz、τ=0.43、N=2、openEMS 0.4mm 网格）且标定域 gap∈[0.5, 1.1328]mm（域外缺省 raise 不外推）。"
+    typical_deviation:
+      - quantity: coupling_k
+        band: "k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6mm（KJ 平行线口径低估 k 约 0.3~4.9%）"
+        direction: underestimate
+        condition: "独立 NGSolve 2D 准静态对照（runs/hairpin_kgap/offline_kj_vs_ngsolve.json）；闭式本身独立来源核实无误。"
+        unverified: false
+      - quantity: hairpin_kgap_correction
+        band: "单口径真机标定表（4 点分段线性内插，表点逐位精确）；跨口径外推 UNVERIFIED"
+        direction: unknown
+        condition: "本战役 openEMS N=2 弱抽头双谐振器真机（scripts/hairpin_q_extract.py --kgap-analyze 可复算，铁律 7）；域外缺省 ValueError（clamp 仅限 fake 前向裁判显式假设）。"
+        unverified: false
+      - quantity: qe_tap_frac
+        band: "Q_e=(π/2)(Z0/Z_r)sec²(πτ) 本仓派生闭式，精确分布参数 Y_res(ω) 数值微分独立校核（#118）"
+        direction: none
+        condition: "独立裁判口径（单测钉）。"
+        unverified: false
+    refs:
+      - "Kirschning & Jansen 1984（准静态偶/奇模闭式，零厚/无盖口径）"
+      - "Hong,《Microstrip Filters for RF/Microwave Applications》§5.4（k=(Z0e−Z0o)/(Z0e+Z0o)）"
+      - "runs/hairpin_kgap/offline_kj_vs_ngsolve.json（NGSolve 2D 独立对照）"
+      - "runs/hairpin_kgap/kgap_curve.json（c(gap) 真机标定表）"
+    out_of_domain_behavior: REFUSE
+    last_verified: "2026-09-17"
+
+  high_power:
+    quantities:
+      - breakdown_margin
+      - thermal_rise
+      - multipactor_fd
+      - pim_rules
+      - current_density
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "平行板 E=V/d 准静态口径；材料击穿强度限表内材料（air/alumina/fused_silica/PTFE/mica 等）或显式 override——层压板（FR-4/RO4003C）随厚度与分档差异达数倍量级，表不编造、须按厂商数据表注入（未知材料且无 override 显式 ValueError）；ECSS f·d 判据限 Al/Cu/Ag/Au 边界表。"
+    typical_deviation:
+      - quantity: null
+        band: "裕量/温升代数恒等（margin=E_bd/E_peak、dB 换算、Tj=Ta+P·θ_tot，构造性回收机器精度）"
+        direction: none
+        condition: "代数口径，不涉物理模型。"
+        unverified: false
+      - quantity: breakdown_margin
+        band: UNVERIFIED
+        direction: unknown
+        condition: "击穿强度输入值为数据表直取（alumina 16.7 / fused_silica 50.0 MV/m 附 URL；air 3 MV/m 经典值）；实际击穿统计分散（脉宽/气压/表面状况）未定级——工程预筛语义，非精度声明。"
+        unverified: true
+      - quantity: current_density
+        band: UNVERIFIED
+        direction: unknown
+        condition: "缺省阈值 10 A/mm²=电迁移临界 1e5 A/cm² 的 1/10 工程降额——上线是预筛策略非标准限值（docstring 显式声明），可按 max_current_density_a_per_mm2 覆盖。"
+        unverified: true
+    refs:
+      - "Jackson, Classical Electrodynamics 3rd ed., §1.3（平行板 E=V/d）"
+      - "ECSS-E-ST-20-01C (15 June 2020), Table 5-1（多载波 f·d 边界）"
+      - "Accuratus Alumox 数据表 https://accuratus.com/alumox.html（alumina 16.7 MV/m）"
+      - "Insaco/AZOOptics https://www.azooptics.com/Article.aspx?ArticleID=161（fused silica 50.0 MV/m）"
+      - "RF Cafe Passive Intermodulation（PIM 规则来源）"
+    out_of_domain_behavior: REFUSE
+    last_verified: "2026-09-12"
+
+  bounds:
+    quantities:
+      - bode_fano_rc
+      - chu_q_bound
+      - cohn_il_lower_bound
+      - directivity_bounds
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "理论天花板口径：Chu 只判无耗下界（Yaghjian-Best 含损修正仅注记不实现）；Bode-Fano 本实现=并联 RC 负载（复阻抗数组经并联 RC 拟合）+矩形带教材近似（带内常数 Γm、带外 |Γ|=1）；Cohn 窄带近似（f0/BW≫1）。与 core/budget.py 矩形近似 Bode-Fano 闭式口径一致（交叉数值钉）。"
+    typical_deviation:
+      - quantity: null
+        band: "verdict/margin 代数恒等（达界例 margin≈0 逐位级回收；budget.py 交叉一致性单测钉）"
+        direction: none
+        condition: "构造性回收+跨模块交叉钉，非物理精度声明。"
+        unverified: false
+      - quantity: null
+        band: UNVERIFIED
+        direction: bound_only
+        condition: "界是理论天花板：实际可达性差于界（Fano 等式需无穷阶匹配网络，贴界运行按 marginal 风险提示）；近似形态（矩形带/窄带）相对原积分的误差未定级。"
+        unverified: true
+    refs:
+      - "Bode 1945,《Network Analysis and Feedback Amplifier Design》"
+      - "Fano 1950, J. Franklin Inst.（任意阻抗宽带匹配理论极限）"
+      - "Youla 1964, IEEE Trans. CT"
+      - "Chu 1948, J. Appl. Phys.；McLean 1996, IEEE Trans. AP（Q_min 严格式）"
+      - "Cohn 1959, Proc. IRE（多耦合谐振器耗散损耗）"
+      - "Harrington 1960, J. Res. NBS（球包络方向性界）"
+    out_of_domain_behavior: UNVERIFIED
+    last_verified: "2026-09-29"
+
+  thermal_iteration:
+    quantities:
+      - f0_fixed_point
+      - qu
+      - closed_form_drift_ratio
+      - eps_eff
+      - z0
+      - surface_resistance
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "材料温度模型插值域内有效（多项式外推出物理域显式 raise，status=out_of_bounds）；微带 HJ 准静态口径（eps_eff/Z0）；一阶温漂闭式为 dT 小量条件（对数一阶展开）；定点迭代确定性算术（无随机/网络/真机）。"
+    typical_deviation:
+      - quantity: f0_fixed_point
+        band: "收敛残差 ≤ freq_tolerance（缺省 1kHz≈0.4ppm@GHz）；−40~85°C 场景 ≤5 轮收敛（验收口径）；线性合成 EM 解析不动点回收逐位"
+        direction: none
+        condition: "构造性收敛判据（D3-3 验收口径，tests 钉：解析不动点/残差单调收缩）。"
+        unverified: false
+      - quantity: closed_form_drift_ratio
+        band: UNVERIFIED
+        direction: none
+        condition: "一阶（对数一阶展开，Pozar）——dT 小量条件外偏差未定级；与 calculators.resonator_thermal_drift 逐值互证为同式双实现（非独立物理精度）。"
+        unverified: true
+    refs:
+      - "Pozar, Microwave Engineering 4th ed., §3.8/§6.4"
+      - "空间电子技术 2025.03.014（定点迭代方法论锚，D3-3 引用口径）"
+      - "core/calculators.resonator_thermal_drift（同式互证实现）"
+    out_of_domain_behavior: REFUSE
+    last_verified: "2026-09-12"
+
+  shield_cavity_mode:
+    quantities:
+      - f_mnp
+      - preflight_verdict
+    valid_domain:
+      point_params: []
+      conditions: []
+      note: "理想 PEC 矩形封闭腔、均匀 εr（有效介电常数责任在调用方）；封闭盒假设——罩-板开放侧壁结构存在 p≈0 平板腔模（频率不高于封闭盒同指数模），开放结构应以 pdn.plane_cavity_modes 作保守补充筛查。"
+    typical_deviation:
+      - quantity: f_mnp
+        band: "闭式恒等（独立直写三维腔模闭式全表逐值一致；f_101 解析回收；与 pdn.plane_cavity_modes 同源共享内核）"
+        direction: none
+        condition: "对教科书闭式（Pozar Ch.6）逐式实现，单测钉。"
+        unverified: false
+      - quantity: preflight_verdict
+        band: "门判据充分条件逻辑恒等（最长边<λ_min/2 ⟺ 带内零腔模，单测钉；边界相等判 fail）"
+        direction: none
+        condition: "与波导截止式等价性（Pozar Ch.3 f_c(TE10)），逻辑推导非经验拟合。"
+        unverified: false
+      - quantity: null
+        band: UNVERIFIED
+        direction: unknown
+        condition: "真实屏蔽罩（开放侧壁/缝隙/含吸波片）：封闭盒模型模频偏高、可能漏低频平板腔模——模型形态局限如实 UNVERIFIED，verdict 不替用户放宽。"
+        unverified: true
+    refs:
+      - "Pozar, Microwave Engineering 4th ed., Ch.3（波导截止）/Ch.6（矩形谐振腔）"
+      - "round4 中件包一 HS-3 规格（仓内判据，tests/unit/test_shield_cavity_mode.py 钉）"
+    out_of_domain_behavior: WARN
+    last_verified: "2026-09-28"

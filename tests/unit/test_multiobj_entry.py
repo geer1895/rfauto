@@ -73,6 +73,41 @@ class TestRunMultiOptimization:
         assert meta["status"] == "done"
         assert meta["algorithm"] == "nsga2"
 
+    def test_missing_metric_counted_not_phantom_perfect(self, tmp_path):
+        """B-4/S3：objective 指标键缺位 → n_missing_metric 计数回显+告警。
+
+        cost 行为不变（缺键按 0 计——既有口径），但 result 不再静默
+        phantom-perfect：计数与 warnings 如实在场；健康配方计数=0 无告警。
+        """
+        from rfauto.optimization.optimizer import run_multi_optimization
+
+        healthy = run_multi_optimization(
+            _dual_obj_recipe(tmp_path), adapter_name="fake", n_gen=2, pop_size=4)
+        assert healthy["ok"]
+        assert healthy["n_missing_metric"] == 0
+        assert not any("指标键缺位" in w for w in healthy.get("warnings", []))
+
+        recipe = {
+            "model": "wilkinson_power_divider",
+            "params": {"arm_len_mm": {"value": 20.5, "unit": "mm",
+                                      "bounds": [15.0, 30.0]}},
+            "objectives": [
+                {"metric": "s11_db", "band": [2.3, 2.5], "op": "max_below",
+                 "value": -20},
+                # gain_db 无 far_field 数据面被 compute_metrics 静默跳过
+                # （多目标 evaluate 不传 far_field）→ 指标键缺位真样本
+                {"metric": "gain_db", "band": [2.3, 2.5],
+                 "op": "max_below", "value": 5.0},
+            ],
+        }
+        path = tmp_path / "recipe_bogus_metric.yaml"
+        path.write_text(yaml.safe_dump(recipe), encoding="utf-8")
+        result = run_multi_optimization(
+            path, adapter_name="fake", n_gen=2, pop_size=4)
+        assert result["ok"]
+        assert result["n_missing_metric"] > 0
+        assert any("指标键缺位" in w for w in result.get("warnings", []))
+
     def test_single_objective_rejected(self, tmp_path):
         """单目标配方应显式报错（应走 TPE 通道）。"""
         recipe = {

@@ -1,17 +1,18 @@
-"""Icepak 热通道适配器（Icepak 电-热首案例，AEDT/pyaedt）。
+"""Icepak 热通道适配器 —— WP4.4a（Icepak 电-热首案例，AEDT/pyaedt）。
 
-定位：
+定位（docs/续跑计划.md §4 WP4.4a）：
 - **AEDT 热通道**：Wilkinson 隔离电阻损耗 → Icepak 温度场 →（经
   core/electrothermal + core/thermal_iteration）材料温漂 → S 参数失谐；
-- 首轮落地**最小传导首案例**（发热块 + 基板 1-D 传导锚 ≤2%）；后续补齐：**附着既有工程**（project_path）、**自然对流工况**
+- 首轮落地**最小传导首案例**（发热块 + 基板 1-D 传导锚 ≤2%）；本轮
+  （WP4.4a 深化）补齐：**附着既有工程**（project_path）、**自然对流工况**
   （TemperatureAndFlow：空气域/重力/开口/环境温度 + HeatFlowRate 能量
   平衡判据）；HFSS→Icepak 场级损耗端到端由 map_em_losses 暴露 pyaedt
   官方 API（真机编排见 scripts/icepak_hfss_loss_e2e.py）。
 
 通道纪律：
-- **延迟 import**：`ansys.aedt.core` 只在 adapter 方法内引入（延迟 import 纪律，
+- **延迟 import**：`ansys.aedt.core` 只在 adapter 方法内引入（军规 8，
   同 hfss_session）——未装 AEDT/pyaedt 的环境可安全 import 本模块；
-- **损耗导入 API 名（检索确证）**：pyaedt
+- **损耗导入 API 名（方案注记"本轮检索未确证"的解答）**：pyaedt
   `Icepak.assign_em_losses(assignment, design, setup, sweep, ...)`
   （底层 AEDT 命令 `oModule.AssignEMLoss`，本地
   pyaedt-main/src/ansys/aedt/core/icepak.py:1188 实证）；集总功率块
@@ -23,16 +24,22 @@
   `core/electrothermal.conduction_stack_rise_k`
   （Incropera 稳态傅里叶传导 + 均匀体热源中面平均）；真机验收门
   max|ΔT|/ΔT ≤ 2%。
-- **版本钉扎与整轮重试**：AEDT 2025.1（与 hfss 脚本同池；
-  license 探测 elec_solve_icepak=exists）；2025.1 gRPC 通道级
+- **版本钉扎与整轮重试**：AEDT 2025.1（本机 v251，与 hfss 脚本同池；
+  license 探测 2026-09-12 elec_solve_icepak=exists，见
+  runs/multiphysics_probe/capability_matrix.json）；2025.1 gRPC 通道级
   不稳定（#191）由调用方（scripts/icepak_electrothermal_case.py）做
   整轮重试，本适配器不做单调用级重试。
+- **#244 五坑静态守卫（MP-B4 清偿）**：`audit_geometry_unit_literals`
+  （几何调用单位敏感实参禁裸数字字面量，#218 复踩守卫）与
+  `audit_no_face_monitor_usage`（面监控 API 禁用，判据数据源一律边界名
+  field summary）——语义钉见 tests/unit/test_icepak_mpb4_guards.py。
 - 非法输入显式 ValueError；失败一律 success=False + 明确 message
   （best-effort #105），不抛异常、不伪造结果。
 """
 
 from __future__ import annotations
 
+import ast
 import logging
 import math
 import re
@@ -69,7 +76,7 @@ ENERGY_BALANCE_TOLERANCE = 0.10
 
 #: 自然对流默认重力方向：pyaedt edit_design_settings 口径 0..5 = −X..+Z，
 #: 2 = −Z（安装 pyaedt 1.4.0 icepak.py:1106-1115 实装：>2 判正方向，
-#: axis=Z）；早期草案"5=−Z"与实装相反，按代码实裁定（verdict 存档记录）。
+#: axis=Z）；任务书草案"5=−Z"与实装相反，按代码实裁定（WP4.4a verdict 记录）。
 DEFAULT_GRAVITY_DIR = 2
 
 #: 模板默认参数（SI 内核 mm 几何；满覆锚工况：块=基板足印）：
@@ -110,6 +117,110 @@ RING_DEFAULTS: dict[str, float] = {
 
 #: 数值 token 提取（"61.3cel"/" 60 cel"/"-12.5C" → 数值部分）
 _NUMBER_RE = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
+
+# ── #244 五坑静态守卫（MP-B4 清偿：AST 级，离线零 AEDT 依赖）───────────────
+
+#: 几何构建调用审计规则（#244 坑5=#218 复踩）：API 名 → 单位敏感形参
+#: （位置序号, 形参名）。命中调用的这些实参若为**裸数字字面量**（含一元
+#: 正负号包裹）即违规——AEDT 把裸数字按 SI 米求值（#218 首跑实证：空气
+#: 盒 5m×8m、端口悬空 2.78m）。合法形态 = 带单位/表达式字符串、计算值
+#: （Name/Call/BinOp/JoinedStr…）及其 list/tuple（逐元素递归）。
+#: 审计范围=长度/位置族形参（#218 坑形态）；温度/功率量纲由调用点单测
+#: 逐值钉（test_icepak_adapter 断言 "25.0cel"/"0.5W"）。
+GEOMETRY_UNIT_PARAM_RULES: dict[str, tuple[tuple[int, str], ...]] = {
+    "create_box": ((0, "origin"), (1, "sizes")),
+    "create_cylinder": ((1, "origin"), (2, "radius"), (3, "height")),
+    "create_circle": ((1, "origin"), (2, "radius")),
+    "create_rectangle": ((0, "origin"), (1, "sizes")),
+    "create_region": ((0, "padding"),),
+    "assign_point_monitor": ((0, "position"),),
+}
+
+#: 面监控禁用 API（#244 坑2）：面 id 监控随 Region 重生成被 AEDT 删除
+#: （2025.1 真机实证 6 丢 2）、对象级面监控对 3D Region 被 AEDT 拒——
+#: 判据数据源一律走边界名 field summary（evaluate_boundary_quantity）。
+FORBIDDEN_MONITOR_APIS: tuple[str, ...] = (
+    "assign_face_monitor",
+    "assign_surface_monitor",
+)
+
+
+def _audit_unit_value(node: ast.expr, param: str, api: str, filename: str,
+                      violations: list[str]) -> None:
+    """递归审计单个实参：裸数字字面量（含一元正负号）记违规。
+
+    违规行号取违规 Constant 节点自身行（比调用行更利于定位修复）。
+    """
+    if isinstance(node, (ast.List, ast.Tuple)):
+        for element in node.elts:
+            _audit_unit_value(element, param, api, filename, violations)
+        return
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        _audit_unit_value(node.operand, param, api, filename, violations)
+        return
+    if (isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
+            and not isinstance(node.value, bool)):
+        violations.append(
+            f"{filename}:{node.lineno}: {api}(...{param}=...) 裸数字字面量 "
+            f"{node.value!r}（AEDT 按 SI 米求值，#218）——"
+            "写带单位字符串/设计变量表达式")
+
+
+def audit_geometry_unit_literals(source: str, *,
+                                 filename: str = "<source>") -> list[str]:
+    """静态守卫（#244 坑5）：几何调用单位敏感实参禁裸数字字面量。
+
+    Args:
+        source: Python 源码文本。
+        filename: 报告标签（不参与解析）。
+
+    Returns:
+        违规清单（每条 ``filename:lineno: ...``），空 = 通过；语法错误
+        原样抛 SyntaxError（审计器不吞语法面）。
+    """
+    tree = ast.parse(source, filename=filename)
+    violations: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        api_name = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
+        rules = GEOMETRY_UNIT_PARAM_RULES.get(api_name)
+        if not rules:
+            continue
+        keywords = {kw.arg: kw.value for kw in node.keywords if kw.arg is not None}
+        for position, param in rules:
+            if position < len(node.args):
+                value: ast.expr | None = node.args[position]
+            elif param in keywords:
+                value = keywords[param]
+            else:
+                continue  # 该调用未传此形参（默认值形态）不判
+            _audit_unit_value(value, param, api_name, filename, violations)
+    return violations
+
+
+def audit_no_face_monitor_usage(source: str, *,
+                                filename: str = "<source>") -> list[str]:
+    """静态守卫（#244 坑2）：Icepak 通道源码禁用面监控 API。
+
+    判据数据源必须走边界名 field summary
+    （``post.evaluate_boundary_quantity(boundary=<名>, side=...)``）。
+    Returns:
+        违规清单（空 = 通过）；语法错误原样抛 SyntaxError。
+    """
+    tree = ast.parse(source, filename=filename)
+    violations: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        api_name = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
+        if api_name in FORBIDDEN_MONITOR_APIS:
+            violations.append(
+                f"{filename}:{node.lineno}: 禁用面监控 API {api_name}()——"
+                "面 id 监控随 Region 重生成丢失（2025.1 实证 6 丢 2）、"
+                "对象级面监控对 3D Region 被拒（#244 坑2）；"
+                "判据数据源改边界名 evaluate_boundary_quantity")
+    return violations
 
 
 def normalize_ring_params(params: dict[str, Any] | None) -> dict[str, float]:
@@ -196,7 +307,7 @@ def pyaedt_installed() -> bool:
     try:
         import ansys.aedt.core  # noqa: F401
     except Exception:
-        return False
+        return False  # ImportError/SDK 加载失败（缺包/装坏）一律视为未安装；license 可用性推迟到真机 connect 判定
     return True
 
 
@@ -1139,6 +1250,23 @@ def _mm_float(raw: Any) -> float:
 # ── 注册（把 Icepak 通道接入全局注册表）──────────────────────────────────────
 
 def register_icepak_adapter(registry: Any | None = None) -> None:
-    """向求解器注册表注册 Icepak 通道（调用方显式调用，同 Elmer 通道）。"""
+    """向求解器注册表注册 Icepak 通道（调用方显式调用，同 Elmer 通道）。
+
+    消费链注记（AU-9 决策件，2026-09-30；判定=有生产消费链→写明路径）：
+    solve 产出的生产消费面为「结果注入式」（真机面与编排面解耦，
+    service 不直接调用 adapter，消费其落档产出）——
+
+    - ``service/electrothermal_service.py``：``thermal.t_hot_c`` 温度注入
+      编排 + ``derive_r_th_from_field``（Icepak 场解→有效热阻 R_th 推导）
+      + ``run_electrothermal_fixed_point``（温漂定点迭代的热侧入参）；
+    - ``service/health_service.py``：G11 热合理性门读归档 icepak 块
+      （``icepak.anchor.sim`` 真跑锚 rise_sim_k 优先于注入场景）；
+    - ``core/electrothermal.py``：温漂失谐链内核（场解温度/R_th 为入参）。
+
+    adapter 本体调用面=显式脚本（scripts/icepak_convection_case.py、
+    scripts/icepak_electrothermal_case.py、scripts/icepak_hfss_loss_e2e.py）；
+    注册为显式式（tests/unit/test_adapters_registry_completeness.py
+    REGISTRY_EXPLICIT，模块导入本身不注册）——本注记零行为变化。
+    """
     reg = registry or get_global_registry()
     reg.register(EMSolverType.ICEPAK, IcepakAdapter)

@@ -1,6 +1,6 @@
 """自愈环 / LogDistiller 生产接线信封（WP3.5 F5 + WP3.6 消费端装车）。
 
-早期审查修复（"接线层"类缺口）：
+审查缺口修复（functional_audit_20260917 第二类"接线层"缺口，D 分片 M1/M5）：
 pipeline/self_heal.self_heal_loop 与 pipeline/log_distiller 此前生产零调用
 （仅测试引用）。本模块把它们装进三条只读生产路径：
 
@@ -24,6 +24,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+
+from rfauto.service.envelope import error_envelope, ok_envelope, skipped_envelope
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ def write_log_digest_for_run(run_dir: str | Path) -> dict[str, Any]:
         root = Path(run_dir)
         surface = collect_run_log_surface(root)
         if not surface.strip():
-            return {"ok": True, "skipped": True, "reason": "无可蒸馏日志面（空 run/目录缺失）"}
+            return skipped_envelope("无可蒸馏日志面（空 run/目录缺失）")
         from rfauto.pipeline.log_distiller import distill_log
 
         digest = distill_log(surface, source="auto")
@@ -95,7 +97,7 @@ def write_log_digest_for_run(run_dir: str | Path) -> dict[str, Any]:
         out_path.write_text(
             json.dumps(digest, indent=2, ensure_ascii=False), encoding="utf-8",
         )
-        return {"ok": True, "path": str(out_path), "digest": digest}
+        return ok_envelope(path=str(out_path), digest=digest)
     except Exception as exc:  # 观测性兜底：宁可 unknown 也不阻塞收尾（#105）
         logger.warning("log_digest 落盘失败（非阻断）: %s", exc)
         return {"ok": False, "skipped": True, "reason": f"蒸馏/落盘异常（已降级）: {exc!r}"}
@@ -118,36 +120,32 @@ def self_heal_run_for_run(
     """
     root = Path(runs_root) / run_id
     if not (root / "meta.json").is_file():
-        return {
-            "ok": False,
-            "errors": [f"run 不存在或缺少 meta.json: runs/{run_id}"],
-        }
+        return error_envelope([f"run 不存在或缺少 meta.json: runs/{run_id}"])
     surface = collect_run_log_surface(root)
     from rfauto.pipeline.self_heal import self_heal_loop
 
     loop_result = self_heal_loop(lambda: surface, retries=max(0, int(retries)))
     critique = loop_result.get("critique")
-    return {
-        "ok": True,
-        "run_id": run_id,
-        "run_dir": str(root),
-        "attempts": loop_result.get("attempts"),
-        "verdict": critique["verdict"] if critique else "clean",
-        "root_cause_id": critique.get("root_cause_id") if critique else None,
-        "root_cause": critique.get("root_cause") if critique else None,
-        "lesson_ref": critique.get("lesson_ref") if critique else None,
-        "severity": critique.get("severity") if critique else None,
-        "causes": critique.get("causes", []) if critique else [],
-        "actions": critique.get("actions", []) if critique else [],
-        "signatures": critique.get("signatures", []) if critique else [],
-        "digest": critique.get("digest") if critique else None,
-        "history": loop_result.get("history", []),
-        "log_surface_chars": len(surface),
-        "llm_used": loop_result.get("llm_used", False),
-        "llm_explainer_available": loop_result.get("llm_explainer_available", False),
-        "advisory_only": True,
-        "note": "只读诊断+建议：不自动修改配方；落地动作走三层 Gate/沙箱（agent propose/apply）",
-    }
+    return ok_envelope(
+        run_id=run_id,
+        run_dir=str(root),
+        attempts=loop_result.get("attempts"),
+        verdict=critique["verdict"] if critique else "clean",
+        root_cause_id=critique.get("root_cause_id") if critique else None,
+        root_cause=critique.get("root_cause") if critique else None,
+        lesson_ref=critique.get("lesson_ref") if critique else None,
+        severity=critique.get("severity") if critique else None,
+        causes=critique.get("causes", []) if critique else [],
+        actions=critique.get("actions", []) if critique else [],
+        signatures=critique.get("signatures", []) if critique else [],
+        digest=critique.get("digest") if critique else None,
+        history=loop_result.get("history", []),
+        log_surface_chars=len(surface),
+        llm_used=loop_result.get("llm_used", False),
+        llm_explainer_available=loop_result.get("llm_explainer_available", False),
+        advisory_only=True,
+        note="只读诊断+建议：不自动修改配方；落地动作走三层 Gate/沙箱（agent propose/apply）",
+    )
 
 
 def log_digest_for_path(
@@ -163,11 +161,11 @@ def log_digest_for_path(
     """
     target = Path(path)
     if not target.exists():
-        return {"ok": False, "errors": [f"路径不存在: {target}"]}
+        return error_envelope([f"路径不存在: {target}"])
     from rfauto.pipeline.log_distiller import distill_file, distill_log
 
     if target.is_dir():
         digest = distill_log(collect_run_log_surface(target), source=source)
     else:
         digest = distill_file(target, source=source)
-    return {"ok": True, "path": str(target), "digest": digest}
+    return ok_envelope(path=str(target), digest=digest)

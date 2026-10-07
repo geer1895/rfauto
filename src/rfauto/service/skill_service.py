@@ -15,6 +15,8 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 
 def recipe_to_skill(recipe_path: str | Path) -> dict[str, Any]:
     """配方 → SKILL.md 内容（JSON 契约：ok/content/skill_name/output_path）。"""
@@ -22,7 +24,7 @@ def recipe_to_skill(recipe_path: str | Path) -> dict[str, Any]:
 
     path = Path(recipe_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"配方不存在: {path}"]}
+        return error_envelope([f"配方不存在: {path}"])
     with open(path, encoding="utf-8") as f:
         recipe = yaml.safe_load(f) or {}
 
@@ -94,15 +96,14 @@ def recipe_to_skill(recipe_path: str | Path) -> dict[str, Any]:
     ]
 
     content = "\n".join(lines)
-    return {
-        "ok": True,
-        "skill_name": skill_name,
-        "content": content,
-        "output_path": str(path.parent / "SKILL.md"),
-        "model": model,
-        "n_params": len(opt_params),
-        "n_objectives": len(objectives),
-    }
+    return ok_envelope(
+        skill_name=skill_name,
+        content=content,
+        output_path=str(path.parent / "SKILL.md"),
+        model=model,
+        n_params=len(opt_params),
+        n_objectives=len(objectives),
+    )
 
 
 def write_skill(recipe_path: str | Path,
@@ -199,15 +200,14 @@ def experience_to_skill(entries: Sequence[Any] | None = None, *,
             lines += ["## 历史经验核对表（本次任务）", "",
                       "（本次任务未命中历史经验——无相近坑编号）", ""]
     content = "\n".join(lines)
-    return {
-        "ok": True,
-        "skill_name": skill_name,
-        "content": content,
-        "n_entries": len(typed),
-        "checklists": sorted({e.checklist for e in typed if e.checklist}),
-        "recall": recall,
-        "output_path": f"{skill_name}/SKILL.md",
-    }
+    return ok_envelope(
+        skill_name=skill_name,
+        content=content,
+        n_entries=len(typed),
+        checklists=sorted({e.checklist for e in typed if e.checklist}),
+        recall=recall,
+        output_path=f"{skill_name}/SKILL.md",
+    )
 
 
 def write_experience_skill(entries: Sequence[Any] | None = None,

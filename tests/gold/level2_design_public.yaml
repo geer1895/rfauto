@@ -1,0 +1,275 @@
+# rfauto §10.10 Level 2 端到端验收集：10 句自然语言设计任务（公开集）
+#
+# 口径（方案 §10.10:663-673）：一句中文需求进 → 七环节确定性链路
+# （NL→spec 抽取 → 模板族路由 → 综合初值 → 离线求解 → 指标评估 → provenance
+# → 报告叙事）→ agentbench record 出；逐任务按执行轴判 pass，成功率 ≥7/10 判 PASS。
+# 执行器：src/rfauto/service/level2_design.py（design_chain / run_level2_acceptance）。
+#
+# 字段照 tests/gold/agentbench_public.yaml 先例（version/set_kind/family/level/prompt/
+# expected.calls/artifacts/numeric+source）。**family 语义=器件族**（§10.10），与
+# WP3.7 公开集的操作族（template_render/fail_diagnosis/…）区分；任务 id 前缀 l2d 与
+# ab* 零交集（防污染：load 时与 agentbench_public.yaml 取交集，非空即 FAIL）。
+# 器件族由链路自己从 NL 路由——本文件的 family 只是裁判元数据（design.route 的
+# expected args 钉住"路由必须对"），不喂给链路。
+#
+# 轨迹词汇（typed tool call，每步可复现、模型无关）：
+#   design.parse{prompt} → design.route{family} → design.synthesize{family,f0_ghz}
+#   → design.simulate{family,adapter:fake} → design.evaluate{family} → design.report{family}
+#   design.synthesize.f0_ghz 钉的是"链路从 NL 抽取到的用户要求频率"（NL→spec 判据）。
+#
+# 数值纪律（铁律 7 / #207）：expected.numeric 全部是 **确定性链路回归锚**——
+# 2026-09-15 用 design_chain 对本文件逐句实测钉值（综合内核 → fake 闭式模型 →
+# SpecEvaluator），不是物理基准；物理口径以 source 引 docs/rf_template_references.md。
+# fake 模型/综合内核/评估器任何改动让锚漂移都应亮红——这是回归门的敏感度，不是凑绿。
+# 已修重钉（#154 实例，W1① 2026-09-15）：core/synthesis.py:synthesize_wilkinson 曾把
+# series_w=50Ω/shunt_w=70.7Ω，与 TEMPLATE_META/fake 统一口径（series=70.7Ω 臂窄、
+# shunt=50Ω 馈线宽）反置——旧 verbatim 链谷深 -9.772dB，内核修正后 -18.924dB
+# （≈0.12 结寄生地板 × 行归一化）。修后 wilkinson 五条锚（l2d001 三条 + l2d002 两条）
+# 用 design_chain 逐句重测钉值：series_w 0.603/shunt_w 1.113（与 TEMPLATE_META
+# 名义 0.604/1.113 对齐）；f_dip 随 eps_eff_series（fake 谐振反演 εeff）上移、
+# s21@dip 随 |S11| 谷深经 passivity 行归一化抬升。
+# 2026-10-03 ge8b fake 3 端口无源门修复（能量守恒幅度构造，七百七十五）：
+# 谷深类锚 s11_db_min/s21@dip 全批重钉（−18.924→−18.446/−3.518→−3.253）——
+# 上次（3.54 位置锚批）"谷深类不变"的前提是仅频率缩放；本次改的是幅度
+# 构造（行归一伪象→物理守恒），谷深物理值本身变化，重钉属行为修正跟进。
+# 2026-09-23 fake 位置锚 3.54 落配置（乘法缩放 K=3.54/2.725，用户拍板，语义裁定
+# runs/fake_anchor_354/criteria.md）：wilkinson f_dip 两条锚同批重钉
+# （谷位 ×√(2.725/3.54)=0.8774 下移；谷深类锚 s11_db_min/s21@dip 不变——
+# 谷深由线宽失配决定，eps 不进 _wilkinson_s11_min，实测逐位未动）。
+version: 1
+set_kind: public
+design_kind: nl_design_level2
+tasks:
+  # ── 族：wilkinson（功分器，3 端口 fake 闭式；等分口径见 rf_template_references）──
+  - id: l2d001_wilkinson_2g4
+    family: wilkinson
+    level: 2
+    prompt: "帮我设计一个工作在 2.4GHz 的 Wilkinson 功分器，50 欧系统，先用综合内核出初值再离线验证响应。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: wilkinson}}
+        - {tool: design.synthesize, args: {family: wilkinson, f0_ghz: 2.4}}
+        - {tool: design.simulate, args: {family: wilkinson, adapter: fake}}
+        - {tool: design.evaluate, args: {family: wilkinson}}
+        - {tool: design.report, args: {family: wilkinson}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_dip_ghz
+          value: 2.148
+          tol_pct: 2.0
+          source: 链路回归锚（arm_len=λ/4 综合 → fake λ/4 反推 f0，eps_eff 取 70.7Ω series 臂 HJ εeff；W1① #154 内核修后重钉 2026-09-15，旧 2.3928，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 2.4468，runs/fake_anchor_354）；物理口径 docs/rf_template_references.md#L27 Wilkinson 谷位收敛证据
+        - metric: s11_db_min_in_band
+          value: -18.924
+          tol_pct: 15.0
+          source: 链路回归锚（fake _wilkinson_s11_min 线宽失配一阶模型，verbatim 综合参数 series=70.7Ω/shunt=50Ω 各自零失配 → 0.12 结寄生地板 × 行归一化；W1① #154 内核修后重钉 2026-09-15，旧 -9.772，commit 0ec531d）；谷深语义 s11_db_min（#195）
+        - metric: s21_db_at_dip
+          value: -3.253
+          tol_pct: 5.0
+          source: 链路回归锚（fake 3 端口 passivity 行归一：|S11|谷≈0.113 时把 1/√2 压到 ~0.667；W1① #154 内核修后重钉 2026-09-15，旧 -3.995，commit 0ec531d）；教科书等分 -3.01dB 见 docs/rf_template_references.md#L28（非本锚口径）；2026-10-03 fake 3 端口 Wilkinson 无源门修复（ge8b 七百七十五，能量守恒幅度构造替代行归一）谷深类锚同批重钉：s21@dip −3.518→−3.253（f0 处 √(1−|S11|²) 端口服乘，物理上更贴教科书 −3.01dB），链路实测 l2d001/l2d002 双任务 2.4G/3.5G 各自 −3.2531/−3.2534
+      rationale: 用户给了频率与阻抗，NL→spec 须同时抽到 f0_ghz=2.4 与 z0_ohm=50；家族路由命中"Wilkinson/功分器"
+
+  - id: l2d002_wilkinson_3g5_equal_split
+    family: wilkinson
+    level: 3
+    prompt: "设计 3.5GHz 威尔金森功分器，要求两路等分分配，离线跑一遍看 S11 谷位与等分深度。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: wilkinson}}
+        - {tool: design.synthesize, args: {family: wilkinson, f0_ghz: 3.5}}
+        - {tool: design.simulate, args: {family: wilkinson, adapter: fake}}
+        - {tool: design.evaluate, args: {family: wilkinson}}
+        - {tool: design.report, args: {family: wilkinson}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_dip_ghz
+          value: 3.1325
+          tol_pct: 2.0
+          source: 链路回归锚（同 l2d001 机制；W1① #154 内核修后重钉 2026-09-15，旧 3.4843，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 3.5683，runs/fake_anchor_354）；物理口径 docs/rf_template_references.md#L27
+        - metric: s21_db_at_dip
+          value: -3.253
+          tol_pct: 5.0
+          source: 链路回归锚（fake 3 端口 passivity 行归一，同 l2d001 机制；W1① #154 内核修后重钉 2026-09-15，旧 -3.995，commit 0ec531d）；教科书等分 -3.01dB 见 docs/rf_template_references.md#L28
+      rationale: 中文族名"威尔金森"路由 + 未给阻抗时综合内核取 50Ω 缺省（TEMPLATE_META 口径）
+
+  - id: l2d003_wilkinson_5g8_smoke
+    family: wilkinson
+    level: 1
+    prompt: "用 5.8GHz 做 wilkinson 功分器设计冒烟，fake 适配器快速验证跑通。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: wilkinson}}
+        - {tool: design.synthesize, args: {family: wilkinson, f0_ghz: 5.8}}
+        - {tool: design.simulate, args: {family: wilkinson, adapter: fake}}
+        - {tool: design.evaluate, args: {family: wilkinson}}
+        - {tool: design.report, args: {family: wilkinson}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      rationale: 冒烟级只考"跑通+工件齐全"，不设数值锚（照 ab001 先例，#207）
+
+  # ── 族：branchline（分支线电桥，4 端口 fake 闭式）──
+  - id: l2d004_branchline_2g4
+    family: branchline
+    level: 2
+    prompt: "设计一个 2.4GHz 分支线电桥（branchline 正交混合），50 欧端口，先综合再离线验证。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: branchline}}
+        - {tool: design.synthesize, args: {family: branchline, f0_ghz: 2.4}}
+        - {tool: design.simulate, args: {family: branchline, adapter: fake}}
+        - {tool: design.evaluate, args: {family: branchline}}
+        - {tool: design.report, args: {family: branchline}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_dip_ghz
+          value: 1.6836
+          tol_pct: 2.0
+          source: 链路回归锚（【XA-3 重钉 2026-10-02】综合修正 w=1mm 近似 εeff→各臂各自 εeff 后重测；fake branchline 谷位实为归一化纹波伪象（响应幅平坦、argmin 落带缘，fake 无 arm_len 灵敏度、dip 由 f0 参数直接设定）——旧值 2.0904 同为伪象（旧注记自证谷位系统性低于 f0）；fake 模型改造=followUp）
+        - metric: s21_db_at_dip
+          value: -5.280
+          tol_pct: 5.0
+          source: 链路回归锚（fake _branchline_sparams 包络 -j/√2 × passivity 行归一）；3dB 正交混合口径见 docs/rf_template_references.md
+      rationale: 中文族名「分支线/电桥」路由；f0 从 NL 抽取，z0 抽到 50Ω
+
+  - id: l2d005_branchline_5g2
+    family: branchline
+    level: 2
+    prompt: "来一个 5.2GHz branchline 耦合器设计，端口阻抗 50 欧，离线跑响应形态。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: branchline}}
+        - {tool: design.synthesize, args: {family: branchline, f0_ghz: 5.2}}
+        - {tool: design.simulate, args: {family: branchline, adapter: fake}}
+        - {tool: design.evaluate, args: {family: branchline}}
+        - {tool: design.report, args: {family: branchline}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_dip_ghz
+          value: 3.8038
+          tol_pct: 2.0
+          source: 链路回归锚（同 l2d004 机制；【XA-3 重钉 2026-10-02】综合修正后 3.9442→3.8038，伪象语义同 l2d004 注记）
+        - metric: s11_db_min_in_band
+          value: -8.098
+          tol_pct: 15.0
+          source: 链路回归锚（fake branchline 线宽偏离真机最优 1.50/1.12mm 的退化模型）；谷深语义 s11_db_min（#195）
+
+  # ── 族：patch（矩形微带贴片天线，fake λ/2 谐振腔一阶模型）──
+  - id: l2d006_patch_2g4
+    family: patch
+    level: 2
+    prompt: "设计 2.4GHz 矩形微带贴片天线（patch），底馈，谐振点对照闭式综合初值核对。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: patch}}
+        - {tool: design.synthesize, args: {family: patch, f0_ghz: 2.4}}
+        - {tool: design.simulate, args: {family: patch, adapter: fake}}
+        - {tool: design.evaluate, args: {family: patch}}
+        - {tool: design.report, args: {family: patch}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_res_ghz
+          value: 2.5872
+          tol_pct: 2.0
+          source: 链路回归锚（Hammerstad 综合 patch_len(εr3.66) → fake λ/2 反推用 eps_eff=2.33 校准锚 → 谷位高于要求 f0，2026-09-15 实测）；物理口径 docs/rf_template_references.md#L78 patch 闭式 sanity
+        - metric: s11_db_min_in_band
+          value: -45.8657
+          tol_pct: 15.0
+          source: 链路回归锚（【XA-2 重钉 2026-10-02】feed_offset=0.3L 魔数→inset 闭式 y0=(L/π)arccos√(Rin_t/Rin_edge) 后 fake cos² 馈电精确匹配 50Ω → 谷深 −19.0→−45.9dB；f_res 2.5872 不变）
+      rationale: 「贴片/patch」路由；谷深语义 s11_db_min（#195，窄带谐振禁 max）
+
+  - id: l2d007_patch_3g2_sensor
+    family: patch
+    level: 3
+    prompt: "我要一个 3.2GHz 贴片天线用于传感，先给综合初值再离线跑响应形态。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: patch}}
+        - {tool: design.synthesize, args: {family: patch, f0_ghz: 3.2}}
+        - {tool: design.simulate, args: {family: patch, adapter: fake}}
+        - {tool: design.evaluate, args: {family: patch}}
+        - {tool: design.report, args: {family: patch}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: f_res_ghz
+          value: 3.4688
+          tol_pct: 2.0
+          source: 链路回归锚（同 l2d006 机制，2026-09-15 实测）
+
+  # ── 族：mline（均匀微带线，WP2.1 锚模板；确定性闭式，无 rng）──
+  - id: l2d008_mline_2g5_probe
+    family: mline
+    level: 1
+    prompt: "设计一段 2.5GHz 的 50 欧均匀微带线（mline 校准线），做引擎仲裁探针，检查带内匹配。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: mline}}
+        - {tool: design.synthesize, args: {family: mline, f0_ghz: 2.5}}
+        - {tool: design.simulate, args: {family: mline, adapter: fake}}
+        - {tool: design.evaluate, args: {family: mline}}
+        - {tool: design.report, args: {family: mline}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: s11_db_max_in_band
+          value: -80.0
+          tol_pct: 5.0
+          source: 链路回归锚（fake _mline_sparams 理想匹配 S11=1e-4 数值底 → -80dB；|S11| 显著非零=判废信号，TEMPLATE_META mline extraction 口径）
+        - metric: s21_db_mean_in_band
+          value: -0.0569
+          tol_pct: 50.0
+          source: 链路回归锚（介质损耗 α_d=πf√εeff·tanδ/c，tanδ=0.0037，line_len=40mm 内核缺省，2026-09-15 实测）
+      rationale: 线宽由 skrf HJ 综合精算（铁律 1c），链路不沿用任何文档毫米数
+
+  - id: l2d009_mline_3g0
+    family: mline
+    level: 2
+    prompt: "帮我出一条 3.0GHz 均匀微带传输线设计，阻抗 50 欧，离线核对带内匹配。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: mline}}
+        - {tool: design.synthesize, args: {family: mline, f0_ghz: 3.0}}
+        - {tool: design.simulate, args: {family: mline, adapter: fake}}
+        - {tool: design.evaluate, args: {family: mline}}
+        - {tool: design.report, args: {family: mline}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: s21_db_mean_in_band
+          value: -0.0682
+          tol_pct: 50.0
+          source: 链路回归锚（同 l2d008 机制，3.0GHz 损耗略高，2026-09-15 实测）
+
+  # ── 族：atten_pi（π 型衰减器，E4 attenuator_pi 闭式电阻 → 理想 ABCD）──
+  - id: l2d010_atten_pi_6db
+    family: atten_pi
+    level: 2
+    prompt: "设计一个 6dB π 型衰减器，工作频率 2.5GHz，50 欧系统，验证平坦衰减。"
+    expected:
+      calls:
+        - {tool: design.parse, args: {prompt: "<...>"}}
+        - {tool: design.route, args: {family: atten_pi}}
+        - {tool: design.synthesize, args: {family: atten_pi, f0_ghz: 2.5}}
+        - {tool: design.simulate, args: {family: atten_pi, adapter: fake}}
+        - {tool: design.evaluate, args: {family: atten_pi}}
+        - {tool: design.report, args: {family: atten_pi}}
+      artifacts: [design_intent, synthesis_params, s_params, metrics, design_report]
+      numeric:
+        - metric: s21_db_mean_in_band
+          value: -6.0
+          tol_pct: 2.0
+          source: E4 attenuator_pi 闭式电阻 → 理想 ABCD 网络 |S21|=-A dB 平坦（core/calculators 同源；均值语义匹配平坦响应形态，#195）
+        - metric: s11_db_max_in_band
+          value: -600.0
+          tol_pct: 25.0
+          source: 链路回归锚（理想电阻网络零反射，dB 下探到评估器 1e-30 守卫地板 -600dB；锚定"零反射"结构特征，非物理量级）
+      rationale: NL→spec 须抽到 atten_db=6（句含"衰减"才把 dB 数当衰减量）、f0=2.5、z0=50 三个需求
+
+scoring:
+  abstraction: (TSA + FCA) / 2 —— 六步 typed 调用序列 + args 子集匹配（family 路由对、f0 抽取对）
+  execution: 声明维度宏平均 —— 工件齐全性（5 工件）+ 数值 vs 链路回归锚（tol_pct 相对容差）
+  gate: 逐任务 execution==1 计 pass，成功率 ≥7/10 判 PASS（§10.10:671）；七环节需求覆盖矩阵随结果内嵌

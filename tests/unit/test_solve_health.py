@@ -630,7 +630,7 @@ def app_for_test():
 
 
 class TestNaNGuard:
-    """全 NaN S 参数不得假 PASS（健康门禁穿透防线）。"""
+    """审查 P1-2：全 NaN S 参数不得假 PASS（健康门禁穿透防线）。"""
 
     def test_all_nan_sparams_not_false_pass(self):
         nf, np_ = 11, 2
@@ -717,7 +717,7 @@ class TestPowerBalanceCheck:
         assert f["status"] == "PASS"
 
     def test_nan_inputs_unknown_not_false_pass(self):
-        """同族：NaN/Inf 入参 → UNKNOWN，不因比较恒 False 假 PASS。"""
+        """审查 P1-2 族：NaN/Inf 入参 → UNKNOWN，不因比较恒 False 假 PASS。"""
         for bad in ({"field_power_w": float("nan"), "incident_power_w": 1.0,
                      "reflected_fraction": 0.1},
                     {"field_power_w": 1.0, "incident_power_w": float("inf"),
@@ -789,7 +789,7 @@ class TestThermalPlausibilityCheck:
         assert 0.1 <= f["evidence"]["rise_ratio"] <= 10.0
 
     def test_all_nan_unknown_not_fake_pass(self):
-        """同族：全 NaN 热入参 → UNKNOWN，不得假 PASS。"""
+        """审查 P1-2 族：全 NaN 热入参 → UNKNOWN，不得假 PASS。"""
         f = _factor_map(solve_health_check(thermal_inputs={
             "t_max_c": float("nan"), "t_ambient_c": float("nan"),
             "heat_source_w": float("nan")}))["thermal_plausibility"]
@@ -955,3 +955,39 @@ class TestDumpAndThermalDiscovery:
         statuses = {f["factor"]: f["status"] for f in result["factors"]}
         assert statuses["thermal_plausibility"] == "FAIL"
         assert result["verdict"] == "unhealthy"
+
+
+def test_port_load_invariant_healthy_three_r():
+    """F2 不变量健康面（K-8 判据 v2）：纯 R 端接 u/i=R∠0° → PASS。"""
+    from rfauto.core.solve_health import PASS, port_load_invariant_factor
+    for r in (22.8393, 50.0, 300.0):
+        f = port_load_invariant_factor(r * (1.0 + 1e-12j), r)
+        assert f["status"] == PASS, f["detail"]
+        assert abs(f["evidence"]["kappa"] - 1.0) <= 1e-9
+
+
+def test_port_load_invariant_k8_pathology_replay():
+    """K-8 实测病理回放钉（#340 回收范式）：1.354∠171.7° → FAIL+负阻指纹。"""
+    import cmath
+
+    from rfauto.core.solve_health import FAIL, port_load_invariant_factor
+    z = 1.354 * 22.8393 * cmath.exp(cmath.pi * 1j * 171.7 / 180.0)
+    f = port_load_invariant_factor(z, 22.8393, freq_label="@10G")
+    assert f["status"] == FAIL
+    assert "负阻" in f["detail"]
+    assert f["evidence"]["kappa"] == pytest.approx(1.354, abs=1e-4)
+    assert f["evidence"]["phase_deg"] == pytest.approx(171.7, abs=1e-3)
+
+
+def test_port_load_invariant_suspect_band_and_unknown():
+    """越带分档：1.20∠20° 幅越带 FAIL 无负阻指纹；NaN/零 R→UNKNOWN 不翻门。"""
+    import cmath
+
+    from rfauto.core.solve_health import FAIL, UNKNOWN, port_load_invariant_factor
+    f = port_load_invariant_factor(1.20 * 50.0 * cmath.exp(1j * cmath.pi / 9.0), 50.0)
+    assert f["status"] == FAIL
+    assert "负阻" not in f["detail"]
+    g = port_load_invariant_factor(float("nan") * 1j, 50.0)
+    assert g["status"] == UNKNOWN
+    h = port_load_invariant_factor(50.0 * 1j, 0.0)
+    assert h["status"] == UNKNOWN

@@ -1,0 +1,29 @@
+{
+  "title": "rfauto: automated RF/microwave simulation and tuning across HFSS, ADS and openEMS",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "rfauto developers"
+    }
+  ],
+  "description": "rfauto is an open framework that automates RF/microwave simulation workflows across commercial (HFSS, ADS) and open (openEMS) solvers: template-driven model factories, surrogate-assisted optimization, multi-fidelity calibration with provenance, and an MCP tool surface for LLM agents. All physical numbers are produced by deterministic kernels only.",
+  "version": "0.10.0",
+  "license": "GPL-3.0-only",
+  "keywords": [
+    "RF",
+    "microwave",
+    "S-parameters",
+    "simulation",
+    "optimization",
+    "calibration",
+    "multi-fidelity"
+  ],
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/geer1895/rfauto",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

@@ -19,6 +19,8 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 _UCB_C = 1.4142135623730951  # sqrt(2)
 
 
@@ -59,12 +61,12 @@ def mcts_search(
 
     path = Path(samples_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"样本集不存在: {path}"]}
+        return error_envelope([f"样本集不存在: {path}"])
     data = json.loads(path.read_text(encoding="utf-8"))
     samples = list(data.get("samples") or [])
     bounds_raw = data.get("bounds") or {}
     if len(samples) < 5:
-        return {"ok": False, "errors": ["样本点不足（需 ≥5）"]}
+        return error_envelope(["样本点不足（需 ≥5）"])
     bounds = {k: (float(v[0]), float(v[1])) for k, v in bounds_raw.items()}
     names = sorted(bounds)
     lower = [bounds[n][0] for n in names]
@@ -152,20 +154,19 @@ def mcts_search(
 
     params = {n: round(lower[i] + best_vec[i] * span[i], 6)
               for i, n in enumerate(names)}
-    return {
-        "ok": True,
-        "samples_path": str(path),
-        "surrogate_kind": kind,
-        "n_simulations": n_simulations,
-        "n_steps": n_steps,
-        "root_cost_pred": round(predict_cost(root.vec), 6),
-        "best_cost_pred": round(best_cost, 6),
-        "best_params": params,
-        "best_path_moves": [
+    return ok_envelope(
+        samples_path=str(path),
+        surrogate_kind=kind,
+        n_simulations=n_simulations,
+        n_steps=n_steps,
+        root_cost_pred=round(predict_cost(root.vec), 6),
+        best_cost_pred=round(best_cost, 6),
+        best_params=params,
+        best_path_moves=[
             {"param": names[i], "delta_norm": round(d, 3)}
             for i, d in best_seq],
-        "note": "值函数=校准代理预测；路径候选需真机复核（置信度归 gate）",
-    }
+        note="值函数=校准代理预测；路径候选需真机复核（置信度归 gate）",
+    )
 
 
 # ─── 通用离散 MCTS（E14：UCB1 选择/扩展/回传 + 可注入动作/奖励）───────────────
@@ -341,26 +342,25 @@ def mcts_plan(
     prefix.reverse()
     policy: list[Any] = prefix + best_suffix
 
-    return {
-        "ok": True,
-        "best_state": best_state,
-        "best_reward": best_reward,
-        "best_policy": policy,
-        "n_simulations": n_simulations,
-        "n_simulations_used": n_simulations,
-        "n_nodes": n_nodes,
-        "n_evaluations": n_evaluations,
-        "max_depth": max_depth,
-        "max_depth_reached": max_depth_reached,
-        "ucb_c": ucb_c,
-        "seed": seed,
-        "root_visits": root.visits,
-        "root_mean_reward": root.mean_reward,
-        "root_children": [
+    return ok_envelope(
+        best_state=best_state,
+        best_reward=best_reward,
+        best_policy=policy,
+        n_simulations=n_simulations,
+        n_simulations_used=n_simulations,
+        n_nodes=n_nodes,
+        n_evaluations=n_evaluations,
+        max_depth=max_depth,
+        max_depth_reached=max_depth_reached,
+        ucb_c=ucb_c,
+        seed=seed,
+        root_visits=root.visits,
+        root_mean_reward=root.mean_reward,
+        root_children=[
             {"action": c.action, "visits": c.visits,
              "mean_reward": c.mean_reward}
             for c in sorted(root.children, key=lambda c: -c.visits)],
-    }
+    )
 
 
 # ─── E14 × C13：滤波器阶数选择（coupling_matrix 内核作确定性评估器）──────────
@@ -432,7 +432,7 @@ def filter_order_search(
     if int(n_simulations) < 1:
         errors.append(f"n_simulations 必须 ≥1，当前 {n_simulations}")
     if errors:
-        return {"ok": False, "errors": errors}
+        return error_envelope(errors, )
 
     from rfauto.core.calculators import CALCULATOR_REGISTRY
 
@@ -503,19 +503,18 @@ def filter_order_search(
     folded = CALCULATOR_REGISTRY.get("coupling_matrix_folded").func(
         synth_out["coupling_matrix"])
 
-    return {
-        "ok": True,
-        "best_order": best_order,
-        "best_reward": search["best_reward"],
-        "feasible": bool(feasible),
-        "best_metrics": best_metrics,
-        "evaluated_orders": {str(k): metrics[k] for k in sorted(metrics)},
-        "realizability": {
+    return ok_envelope(
+        best_order=best_order,
+        best_reward=search["best_reward"],
+        feasible=bool(feasible),
+        best_metrics=best_metrics,
+        evaluated_orders={str(k): metrics[k] for k in sorted(metrics)},
+        realizability={
             "folded_ok": bool(folded["ok"]),
             "pattern_residual": folded["pattern_residual"],
             "cross_family": folded["cross_family"],
         },
-        "spec": {
+        spec={
             "f0_ghz": f0, "fbw": bw, "design_rl_db": design_rl,
             "min_return_loss_db": rl_floor,
             "stopband_freq_ghz": f_stop,
@@ -523,7 +522,7 @@ def filter_order_search(
             "min_order": lo, "max_order": hi,
             "transmission_zeros": list(tz),
         },
-        "search": search,
-        "note": "评估器=coupling_matrix 确定性内核；奖励越大越好，"
+        search=search,
+        note="评估器=coupling_matrix 确定性内核；奖励越大越好，"
                 "可行解中阶数越低越优（最优=最小可行阶数）",
-    }
+    )

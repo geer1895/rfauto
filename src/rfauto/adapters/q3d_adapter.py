@@ -1,11 +1,11 @@
-"""Q3D 寄生提取通道适配器（PCB 无源/互连 RLC，AEDT/pyaedt）。
+"""Q3D 寄生提取通道适配器 —— WP4.4b（PCB 无源/互连 RLC，AEDT/pyaedt）。
 
-定位：Q3D/SIwave 寄生提取
+定位（docs/续跑计划.md §4 WP4.4b）：Q3D/SIwave 寄生提取
 首案例——**直条微带走线 RLC 提取 + 闭式锚对照**；本项落地 Q3D 主路，
 SIwave EDB 全板链路为后续项（如实不虚报）。
 
 通道纪律：
-- **延迟 import**：`ansys.aedt.core` 只在 adapter 方法内引入（延迟 import 纪律，
+- **延迟 import**：`ansys.aedt.core` 只在 adapter 方法内引入（军规 8，
   同 icepak_adapter）——未装 AEDT/pyaedt 的环境可安全 import 本模块；
 - **pyaedt API 名（本地 pyaedt-main 实证，不凭想象）**：
   `ansys.aedt.core.Q3d(project, design, version, non_graphical, new_desktop)`、
@@ -16,20 +16,22 @@ SIwave EDB 全板链路为后续项（如实不虚报）。
   `create_setup(name)`（SetupQ3D，ac_rl_enabled/capacitance_enabled 开关）、
   `analyze(setup)`、`export_matrix_data(file_name, problem_type="AC RL"/"C",
   r_unit, l_unit, c_unit, freq, ...)`（q3d.py:547，底层 oDesign.ExportMatrixData）；
-- **版本钉扎**：AEDT 2025.1（与 hfss/icepak 同池；license 探测
-  q3d_desktop=exists + Q3D.dll/Q3DCOMENGINE.exe 齐）；
+- **版本钉扎**：AEDT 2025.1（本机 v251，与 hfss/icepak 同池；license 探测
+  2026-09-12 q3d_desktop=exists + Q3D.dll/Q3DCOMENGINE.exe 齐，见
+  runs/multiphysics_probe/capability_matrix.json）；
 - **闭式锚（裁判=独立来源 #118）**：提取的每长度 L/C 对
   core/parasitic.interconnect_rlc_anchor（传输线恒等式 L=Z0·√εeff/c0、
   C=√εeff/(Z0·c0)，Z0/εeff=skrf MLine HJ）做门判 ≤5%；R（DC/AC 参考）
   只报告不判门（趋肤/粗糙度模型单向偏差，如实声明）；
-- **真机实证**：connect→几何→网络→source/sink→setup→
+- **真机实证（2026-09-13）**：connect→几何→网络→source/sink→setup→
   solve（58s）→save 全链通；但本机 AEDT 2025.1（无 Service Pack，
   pyaedt 连接时警告缺 SP）gRPC 桥的**矩阵导出族命令全部失败**——
   export_matrix_data / 裸 oDesign.ExportMatrixData（6 组参数×图形/非图形）、
   oanalysis.ExportCircuit（WElement/Spice）、AlphaNumericMatrix（返回
-  None）逐一实证（探针日志与 case_result.json 存档）。solve 本身成功（RL/CG/DC RL 三张 Table 均出解），
+  None）逐一实证，详见 runs/wp44b_q3d/probe_export*.log 与
+  case_result.json。solve 本身成功（RL/CG/DC RL 三张 Table 均出解），
   数值取不出的阻塞点在工具桥不在建模；装 SP/升级 AEDT 后按本适配器
-  原路径复跑即可；
+  原路径复跑即可（followUps）；
 - 显式单位字符串（#218 同法）；非法输入显式 ValueError；失败一律
   success=False + 明确 message（best-effort #105），不抛异常、不伪造结果。
 """
@@ -274,7 +276,7 @@ class Q3dAdapter(EMSolverAdapter):
     def connect(self) -> bool:
         """启动/连接 AEDT Desktop 并创建 Q3D Extractor 设计（non_graphical）。
 
-        真机实证（探针脚本 + 三轮
+        真机实证（2026-09-13 探针 runs/wp44b_q3d/probe_rename.py + 三轮
         case_result.json）：``Q3d(project="<不存在路径>")`` 会走
         ``oProject.Rename``，在 AEDT 2025.1 gRPC 下**确定性失败**
         （非 #191 瞬态抖动，3 次整轮重试同错）——改为 project=None
@@ -554,6 +556,25 @@ class Q3dAdapter(EMSolverAdapter):
 # ── 注册（把 Q3D 通道接入全局注册表）──────────────────────────────────────
 
 def register_q3d_adapter(registry: Any | None = None) -> None:
-    """向求解器注册表注册 Q3D 通道（调用方显式调用，同 Icepak/Elmer 通道）。"""
+    """向求解器注册表注册 Q3D 通道（调用方显式调用，同 Icepak/Elmer 通道）。
+
+    消费链注记（AU-9 决策件，2026-09-30；判定=有生产消费链（结果注入式）
+    →写明路径；**非**纯脚本级通道）——
+
+    - ``service/parasitic_service.py``：链源 payload 的 ``q3d`` 键注入
+      对比（L/C/R 对闭式锚 ≤5% 门，ANCHOR_TOLERANCE 同源钉）；
+    - ``mcp_tools/multiphysics.py`` 与 ``cli/domains/scattered.py``：
+      PCB 互连 RLC 链（几何→DRC→闭式锚→Q3D 注入对比）的消费端点；
+    - ``core/parasitic.interconnect_rlc_anchor``：闭式锚裁判（本模块
+      门判同源）。
+
+    adapter 本体调用面=显式脚本（scripts/q3d_parasitic_case.py，唯一
+    生产外入口）；**未入全局注册表是有意现状**——
+    tests/unit/test_solver_capabilities.py 以 Q3D 为「未注册探针」
+    （test_registry_create_unknown_enum_raises），硬接线注册须先改该
+    探针，故本项不硬接线；真机阻塞点（AEDT 2025.1 无 SP 矩阵导出族
+    命令失败）与复跑 followUps 见模块 docstring「真机实证」节。
+    本注记零行为变化。
+    """
     reg = registry or get_global_registry()
     reg.register(EMSolverType.Q3D, Q3dAdapter)

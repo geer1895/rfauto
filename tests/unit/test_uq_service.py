@@ -144,6 +144,34 @@ class TestSpreadSkill:
         assert spread_skill(mixed, gate=2.0)["status"] == "qualitative"
         assert spread_skill(mixed, gate=-1.0)["status"] == "quantitative"
 
+    def test_gate_pass_carries_degradation_independent_of_ok(self):
+        """F-2/S3：gate_pass 独立承载定性降级，ok 语义保持兼容。
+
+        定性降级=口径降档不是调用失败——消费者分流用 gate_pass，不再与
+        ok/errors 错误语义混载；ok 原值原样（达门 True/未达门 False）。
+        """
+        from rfauto.service.uq_service import spread_skill
+
+        rng = np.random.default_rng(11)
+        eps = rng.normal(0.0, 1.0, 30)
+        good = spread_skill([(0.1 + 0.5 * abs(e), abs(e)) for e in eps])
+        assert good["gate_pass"] is True
+        assert good["ok"] is True and good["status"] == "quantitative"
+
+        rng3 = np.random.default_rng(3)
+        eps3 = rng3.normal(0.0, 1.0, 40)
+        sigma3 = rng3.uniform(0.1, 1.0, 40)
+        bad = spread_skill(list(zip(sigma3, np.abs(eps3).tolist(),
+                                    strict=True)))
+        assert bad["gate_pass"] is False
+        assert bad["ok"] is False and bad["status"] == "qualitative"
+
+        # 退化路径同样带 gate_pass=False（缺键不炸消费者）
+        r2 = spread_skill([(0.5, 0.1), (0.3, 0.2)])
+        assert r2["gate_pass"] is False
+        rc = spread_skill([(0.5, float(e)) for e in (0.1, 0.4, 0.9, 0.2)])
+        assert rc["gate_pass"] is False
+
     def test_uq_output_carries_status_qualitative_without_sigma(
             self, samples_path):
         """poly_ridge（uncertainty→None）→ qualitative 降级标注，数据不删。"""
@@ -153,6 +181,7 @@ class TestSpreadSkill:
         assert r["ok"]
         st = r["uncertainty_status"]
         assert st["status"] == "qualitative" and st["ok"] is False
+        assert st["gate_pass"] is False
         assert st["spearman_rho"] is None
         assert "uncertainty" in st["reason"]
         # 数据不删：良率/统计等既有键原样在
@@ -197,5 +226,6 @@ class TestSpreadSkill:
         assert r["ok"]
         st = r["uncertainty_status"]
         assert st["status"] == "quantitative"
+        assert st["gate_pass"] is True
         assert st["spearman_rho"] >= 0.999
         assert "yield_rate" in r  # 数据不删

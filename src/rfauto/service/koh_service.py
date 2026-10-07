@@ -4,7 +4,7 @@ p0 A/B 实证"标量锚不改善排序"——因为 fake 与 openEMS 的差异�
 失配（discrepancy）而非参数错。KOH（Kennedy-O'Hagan, JRSS-B 2001）的
 正解是把差异建成高斯过程 δ(x)。
 
-两级能力（确定性内核，无 MCMC、无新依赖）：
+两级能力（确定性内核，无 MCMC、无新依赖， 铁律 7）：
 
 1. fit_discrepancy（首片，返回契约保持不变）：δ(x) ≈ GP 拟合的
    (openEMS metrics − fake metrics)(x)（real−fake，KOH 口径，与
@@ -23,7 +23,7 @@ p0 A/B 实证"标量锚不改善排序"——因为 fake 与 openEMS 的差异�
    - 95% 区间：mean ± Z95·sqrt(δ 后验方差 + noise_var)，interval_coverage
      给出区间覆盖率指标。
 
-真实数据应用见 scripts/koh_calibrate.py（产物 runs/koh_calibration/）。
+真实数据应用见 scripts/koh_calibrate.py（产物 runs/koh_calibration）。
 """
 
 from __future__ import annotations
@@ -35,20 +35,22 @@ from typing import Any
 
 import numpy as np
 
+from rfauto.service.envelope import error_envelope, ok_envelope
+
 __all__ = ["DELTA_CONVENTION", "DELTA_CONVENTION_SINCE", "Z95", "KOHCalibrator",
            "estimate_rho", "fit_discrepancy"]
 
 #: 95% 正态分位（确定性常量；不额外引入 scipy 依赖）
 Z95 = 1.959963984540054
 
-#: δ 符号口径（机器可读登记）：real−fake（KOH 口径，正 δ=仿真器低估观测）。
-#: 切换时点=2026-09-13：**只涉 fit_discrepancy 分支**——该
+#: δ 符号口径（P2⑩ 机器可读登记）：real−fake（KOH 口径，正 δ=仿真器低估观测）。
+#: 切换时点=commit 2d68012（2026-09-13）：**只涉 fit_discrepancy 分支**——该
 #: 分支此前实现为 fake−real（与模块头旧文案一致、与 KOH 口径相反）；
 #: KOHCalibrator 分支 δ=y−ρ·η 自 D10 补强起一直是 KOH 口径，不受翻转影响。
 #: 消费历史产物时：早于该时点且出自 fit_discrepancy 的 δ 需反号解读；
 #: 出自 KOHCalibrator 的无需反号。
 DELTA_CONVENTION = "real_minus_fake"
-DELTA_CONVENTION_SINCE = "2026-09-13"
+DELTA_CONVENTION_SINCE = "2026-09-13 commit 2d68012"
 
 
 def estimate_rho(eta: Any, y: Any) -> float:
@@ -179,8 +181,7 @@ class KOHCalibrator:
                 continue
             obs.append({"params": dict(item["params"]), "eta": eta, "y": y})
         if len(obs) < 2:
-            return {"ok": False,
-                    "errors": ["KOH 标定需 ≥2 个 (params, eta, y) 有效观测"]}
+            return error_envelope(["KOH 标定需 ≥2 个 (params, eta, y) 有效观测"])
 
         eta_arr = np.array([o["eta"] for o in obs], dtype=float)
         y_arr = np.array([o["y"] for o in obs], dtype=float)
@@ -217,17 +218,16 @@ class KOHCalibrator:
                 self._coef = np.asarray(coef, dtype=float)
 
         self.fitted = True
-        return {
-            "ok": True,
-            "kind": self.KIND,
-            "n_obs": self.n_obs,
-            "rho": float(self.rho),
-            "gp_fitted": bool(self.gp_fitted),
-            "prior_var": float(self.prior_var),
-            "noise_var": float(self.noise_var),
-            "theta0": float(self.theta0),
-            "delta_train": [float(d) for d in delta],
-        }
+        return ok_envelope(
+            kind=self.KIND,
+            n_obs=self.n_obs,
+            rho=float(self.rho),
+            gp_fitted=bool(self.gp_fitted),
+            prior_var=float(self.prior_var),
+            noise_var=float(self.noise_var),
+            theta0=float(self.theta0),
+            delta_train=[float(d) for d in delta],
+        )
 
     # ------------------------------------------------------------------ 预测
     def predict(
@@ -236,7 +236,7 @@ class KOHCalibrator:
         """预测 z(x)：返回 {mean, lo95, hi95, sigma, eta, delta, rho}。
 
         eta 缺省用构造时注入的 eta_fn(params)；两者都没有则显式报错，
-        不静默降级（数值纪律）。
+        不静默降级。
         """
         if not self.fitted:
             raise RuntimeError("KOHCalibrator 未拟合，先调用 fit()")
@@ -313,15 +313,15 @@ def fit_discrepancy(
     """
     path = Path(samples_path)
     if not path.exists():
-        return {"ok": False, "errors": [f"样本集不存在: {path}"]}
+        return error_envelope([f"样本集不存在: {path}"])
     data = json.loads(path.read_text(encoding="utf-8"))
     samples = list(data.get("samples") or [])
     objectives = list(data.get("objectives") or [])
     bounds_raw = data.get("bounds") or {}
     if len(samples) < 5:
-        return {"ok": False, "errors": ["openEMS 样本点不足（需 ≥5）"]}
+        return error_envelope(["openEMS 样本点不足（需 ≥5）"])
     if not objectives:
-        return {"ok": False, "errors": ["样本集无 objectives，指标键无从对齐"]}
+        return error_envelope(["样本集无 objectives，指标键无从对齐"])
     bounds = {k: (float(v[0]), float(v[1])) for k, v in bounds_raw.items()}
 
     if fake_sampler is None:
@@ -362,7 +362,7 @@ def fit_discrepancy(
             residuals.append({"params": pt, "metrics": delta})
 
     if len(residuals) < 5:
-        return {"ok": False, "errors": ["有效配对残差不足"]}
+        return error_envelope(["有效配对残差不足"])
 
     # 逐指标 KRG 拟合 δ(x)（残差样本即"训练集"，契约与代理一致）
     from rfauto.optimization.surrogate.smt_kriging import SMTKrigingSurrogate
@@ -389,7 +389,7 @@ def fit_discrepancy(
         "delta_summary": delta_summary,
         "model_kind": model_gp.KIND,
         "gp_fitted": model_gp.fitted,
-        # 机器可读口径戳（加性键，既有契约键不变）
+        # P2⑩ 机器可读口径戳（加性键，既有契约键不变）
         "delta_convention": DELTA_CONVENTION,
         "delta_convention_since": DELTA_CONVENTION_SINCE,
         "note": "δ(x)=openEMS−fake（real−fake，KOH 口径）的 GP 残差；"

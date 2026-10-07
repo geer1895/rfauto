@@ -38,6 +38,27 @@ class TestSurrogateAnalysis:
         with pytest.raises(ValueError, match="至少需要 3 个"):
             analyze_run_surrogate("test", [{"params": {"a": 1}, "cost": 1}])
 
+    def test_param_key_union_with_missing_key_explicit_error(self):
+        """B-6/S3：参数键集取全 trials 并集；缺并集键显式报错不静默。
+
+        旧行为只取首 trial 键集：后到 trial 的额外参数列被静默丢弃、
+        反向缺键直接裸 KeyError——两者都无痕。现在缺键 ValueError 指名
+        trial 序号与缺哪些键；键集不同序/超集（全员齐备）正常分析。
+        """
+        # 后到 trial 携带新参数列且首批缺它 → 显式报错（不再静默丢列）
+        trials = _make_trials(4)
+        trials.append({"params": {"arm_len": 1.0, "series_w": 2.0,
+                                  "extra_knob": 0.5}, "cost": 1.0})
+        with pytest.raises(ValueError, match=r"trials_data\[[0-4]\] 缺参数键"):
+            analyze_run_surrogate("test_union", trials)
+
+        # 键序不同但全员同键集 → 正常（sorted 并集与既有行为一致）
+        shuffled = [{"params": {"series_w": t["params"]["series_w"],
+                                "arm_len": t["params"]["arm_len"]},
+                     "cost": t["cost"]} for t in _make_trials(5)]
+        result = analyze_run_surrogate("test_union_ok", shuffled)
+        assert result.n_params == 2
+
     def test_to_dict(self):
         trials = _make_trials(5)
         result = analyze_run_surrogate("test_001", trials)
@@ -46,10 +67,53 @@ class TestSurrogateAnalysis:
         assert "best_params" in d
 
     def test_param_importance(self):
+        """D1-1（审查批 2026-10-04）：isotropic RBF 下逐参数重要性不可辨识，
+        旧 1/n 归一化=假排行已撤——现降级全 None+说明（不造排行）。"""
         trials = _make_trials(20)
         result = analyze_run_surrogate("test_001", trials)
         assert len(result.param_importance) == 2
-        assert abs(sum(result.param_importance.values()) - 1.0) < 0.01
+        assert all(v is None for v in result.param_importance.values())
+        assert "不可辨识" in result.param_importance_note
+        d = result.to_dict()  # None 值 JSON 面不炸
+        assert d["param_importance"]["arm_len"] is None
+
+
+class TestSurrogateDegradedImportance:
+    """D1-1 回归钉：N/A 降级语义（消费面不渲染假排行、不炸）。"""
+
+    def test_single_param_dependency_no_fake_uniform_ranking(self):
+        """单参数依赖用例（y 只依赖 x1，x2 纯噪声）：降级语义下输出 None——
+        旧径在此恒返 0.5/0.5 假排行（isotropic 复制标量 length_scale；
+        ARD-GML 实验证伪可辨识性，0.43/0.57 反向均匀，见审查报告 D1-1）。"""
+        import numpy as np
+
+        rng = np.random.default_rng(7)
+        x1 = rng.uniform(0.0, 1.0, 40)
+        x2 = rng.uniform(0.0, 1.0, 40)
+        cost = 10.0 * x1 + 0.01 * rng.standard_normal(40)
+        trials = [{"params": {"x1": float(a), "x2": float(b)},
+                   "cost": float(c)}
+                  for a, b, c in zip(x1, x2, cost, strict=True)]
+        result = analyze_run_surrogate("d1_degrade", trials)
+        assert all(v is None for v in result.param_importance.values())
+        assert result.param_importance_note
+
+    def test_sklearn_unavailable_degrades_to_none(self, monkeypatch):
+        """sklearn 缺席支路同样降级 None（旧 1/n 占位排行撤）。"""
+        import builtins
+
+        trials = _make_trials(8)
+        real_import = builtins.__import__
+
+        def _no_sklearn(name, *a, **kw):
+            if name.startswith("sklearn"):
+                raise ImportError("blocked for pin")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", _no_sklearn)
+        result = analyze_run_surrogate("d1_nosklearn", trials)
+        assert all(v is None for v in result.param_importance.values())
+        assert "sklearn" in result.param_importance_note
 
 
 class TestQualityMetrics:
@@ -97,7 +161,8 @@ class TestQualityMetrics:
         assert q["cv_folds"] >= 2
         assert q["rms_error"] > 0
         assert -1.0 <= q["spearman_rho"] <= 1.0
-        assert abs(sum(result.param_importance.values()) - 1.0) < 1e-6
+        # D1-1：重要性降级 None（不可辨识），sum 断言随之撤
+        assert all(v is None for v in result.param_importance.values())
         assert result.to_dict()["quality"]["rms_error"] == pytest.approx(
             q["rms_error"], abs=1e-6)
 
@@ -165,4 +230,95 @@ class TestMetricDomainMeta:
         result = analyze_run_surrogate("test_deg", trials, auto_domain=True)
         assert result.domain_selection is not None
         assert result.metric_domain in ("dB", "gamma_linear")
+
+
+class TestPointwiseNoise:
+    """ME-14：GPR 逐点噪声（异方差）——y±σ 校准数据入代理，σ 不再被丢弃。
+
+    判据：None=构造面逐字节不变（GPR 不带 alpha kwarg）；给定时透传
+    GPR(alpha=σ²)（主拟合 + CV 折内 alpha[train] 同口径）；校验与观测块。
+    """
+
+    @staticmethod
+    def _spy_gpr_alpha(monkeypatch):
+        """钉住 GPR 构造通道：记录每次构造收到的 alpha kwarg。"""
+        import sklearn.gaussian_process as sgp
+
+        real_cls = sgp.GaussianProcessRegressor
+        alphas: list = []
+
+        class SpyGPR(real_cls):
+            def __init__(self, **kwargs):
+                alphas.append(kwargs.get("alpha", "ABSENT"))
+                super().__init__(**kwargs)
+
+        monkeypatch.setattr(sgp, "GaussianProcessRegressor", SpyGPR)
+        return alphas
+
+    def test_none_keeps_default_construction(self, monkeypatch):
+        """y_sigma=None：GPR 构造不带 alpha kwarg——现行为逐字节不变。"""
+        alphas = self._spy_gpr_alpha(monkeypatch)
+        result = analyze_run_surrogate("noise_none", _make_trials(10))
+        assert result.quality["available"] is True
+        assert all(a == "ABSENT" for a in alphas)
+        assert "pointwise_noise" not in result.quality  # 缺省不加观测键
+
+    def test_sigma_passed_as_alpha_squared(self, monkeypatch):
+        """y_sigma 给定：主拟合收到 alpha=σ²，CV 折内收到 alpha[train]。"""
+        import numpy as np
+
+        alphas = self._spy_gpr_alpha(monkeypatch)
+        trials = _make_trials(10)
+        sigma = np.linspace(0.01, 0.10, len(trials))
+        result = analyze_run_surrogate("noise_sig", trials, y_sigma=sigma)
+        assert result.quality["available"] is True
+        assert len(alphas) >= 2  # 主拟合 + ≥1 个 CV 折
+        main_alpha = np.asarray(alphas[0], dtype=float)
+        np.testing.assert_allclose(main_alpha, sigma ** 2)
+        # 其余为折内子集（值取自 σ²、长度 < n）
+        for fold_alpha in alphas[1:]:
+            fa = np.asarray(fold_alpha, dtype=float)
+            assert 0 < fa.size < len(trials)
+            assert np.isin(fa, sigma ** 2).all()
+
+    def test_noisy_fit_reasonable_and_observable(self):
+        """含噪拟合合理：配 σ 后质量仍产出 + 观测块入 quality。"""
+        import numpy as np
+
+        rng = np.random.default_rng(3)
+        trials = []
+        sigma = []
+        for i in range(12):
+            p = {"a": float(rng.uniform(17, 21)), "b": float(rng.uniform(1.5, 2.5))}
+            noise = 0.5 if i % 2 else 2.0
+            sigma.append(noise)
+            trials.append({"params": p, "cost": (p["a"] - 18.0) ** 2
+                           + (p["b"] - 1.8) ** 2 + noise})
+        sigma = np.asarray(sigma)
+        result = analyze_run_surrogate("noise_fit", trials, y_sigma=sigma)
+        q = result.quality
+        assert q["available"] is True
+        assert np.isfinite(q["rms_error"])
+        # 观测块：σ 使用如实登记（调用方提供，非估计值）
+        pn = q["pointwise_noise"]
+        assert pn["used"] is True
+        assert pn["n"] == len(trials)
+        assert pn["sigma_min"] == pytest.approx(float(sigma.min()))
+        assert pn["sigma_max"] == pytest.approx(float(sigma.max()))
+        d = result.to_dict()
+        assert d["quality"]["pointwise_noise"]["used"] is True
+
+    def test_sigma_validation(self):
+        """长度不一致 / 负值 / 非有限值显式拒绝。"""
+        import numpy as np
+
+        trials = _make_trials(6)
+        with pytest.raises(ValueError, match="长度"):
+            analyze_run_surrogate("v1", trials, y_sigma=np.full(3, 0.1))
+        with pytest.raises(ValueError, match="非负"):
+            analyze_run_surrogate("v2", trials, y_sigma=np.full(6, -0.1))
+        bad = np.full(6, 0.1)
+        bad[2] = np.nan
+        with pytest.raises(ValueError, match="非负"):
+            analyze_run_surrogate("v3", trials, y_sigma=bad)
 

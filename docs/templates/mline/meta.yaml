@@ -14,3 +14,32 @@ substrate:
 nominal_params:
   w_mm: 1.113
   line_len_mm: 40.0
+# XC-T 锚族补挂注记: mline.eps_eff.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: '准 TEM 传输线：Z0 与 εeff 由 w/h 与 εr 经 Hammerstad-Jensen 精确闭式给出；S21 相位斜率即
+      εeff 的直接读数（β 金标准口径 #162）。'
+    derivations:
+    - claim: 正向模型锁定 HJ 精确经验闭式（薄线极限退化为 εeff=(εr+1)/2+(εr−1)/2·(1+12h/w)^−1/2 型）
+      formula: Z0, εeff = HJ(w/h, εr)（core/synthesis.forward_z0，model='hammerstadjensen'）
+      source: E. Hammerstad & Ø. Jensen, IEEE MTT-S 1980（Hammerstad 1975 前身；本仓 core/synthesis.py
+        正向锁死口径；薄线 εeff 式与 Balanis Ch.14 同式口径，docs/rf_template_references.md patch
+        官方例节已核）
+    - claim: 反解=单调求逆（Z0 随 w 单调降），回代自洽 |ΔZ0|<0.5Ω
+      formula: w = brentq_inverse(Z0_target)
+      source: 本仓 core/synthesis.inverse_width（验收③ 对拍矩阵常规 <3%/极端 <5%；G0 门线宽定案 knowledge/rules.yaml
+        R005 max dev 0.45%）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: Z0 对 w/h 最敏感（HJ 单调主依赖；repo 验收② Z0 单调降→W 单调升）
+  - param: er
+    order: 2
+    basis: εeff 直接进入 Z0 与 β（部分填充加权，薄线极限 |S|=1/2）
+  - param: h_mm
+    order: 3
+    basis: w/h 比第二自变量（与 w 等比缩放可互消——比值主导）
+  quiz_refs:
+  - Q-MLINE-Z0

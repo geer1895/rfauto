@@ -52,7 +52,7 @@ class TestSobolSensitivity:
         assert result["sensitivity"] == {}
 
     def test_saltelli_indices_against_analytic(self):
-        # 解析对照（旧实现 ST=S1*1.2 是编造系数）。
+        # 解析对照（审查缺口 #11：旧实现 ST=S1*1.2 是编造系数）。
         # f = 3x + 0.1y，x/y 独立均匀 → 解析 S1_x = 9/(9+0.01) ≈ 0.9989。
         from rfauto.optimization.sensitivity import sobol_sensitivity
         ranges = {"x": {"low": -1.0, "high": 1.0}, "y": {"low": -1.0, "high": 1.0}}
@@ -153,6 +153,18 @@ class TestMorrisScreening:
         assert result["ok"]
         assert result["sensitivity"]["a"]["mu_star"] > result["sensitivity"]["b"]["mu_star"]
 
+    def test_linear_full_domain_mu_star_unbiased(self):
+        """D1-3（审查批 2026-10-04）回归钉：线性 f=x1 全域 mu_star≈1.0
+        （单位域斜率，容差 0.02）——旧径 min(1.0, x+delta) 边界截断使上界
+        附近实际步长<delta，效应 |Δf|/delta 失真（解析偏置 ~0.75，D1 席）；
+        反射处理（越界取 x−delta，名义步长恒=delta）后无偏。"""
+        from rfauto.optimization.sensitivity import morris_screening
+        result = morris_screening(
+            {"x1": {"low": 0.0, "high": 1.0}},
+            lambda p: p["x1"], n_trajectories=20, seed=42)
+        mu_star = result["sensitivity"]["x1"]["mu_star"]
+        assert abs(mu_star - 1.0) < 0.02, mu_star
+
 
 class TestEnhancedReport:
     def test_report_from_run(self, tmp_path, monkeypatch):
@@ -188,7 +200,7 @@ class TestEnhancedReport:
         assert not result["ok"]
 
     def test_report_contains_five_elements(self, tmp_path, monkeypatch):
-        # 8c 验收口径 = 五要素（收敛曲线/前沿/top-3 叠加/基线偏差/诊断）
+        # 审查缺口 #13：8c 验收口径 = 五要素（收敛曲线/前沿/top-3 叠加/基线偏差/诊断）
         import yaml as _yaml
 
         from rfauto.service.api import generate_enhanced_report
@@ -235,7 +247,7 @@ class TestSensitivityCLI:
 
 
 class TestAgentQuality:
-    """4b 提议质量指标：接受率/改进率/否决原因分类落 audit。"""
+    """4b 提议质量指标（审查缺口 #16）：接受率/改进率/否决原因分类落 audit。"""
 
     def _recipe(self, tmp_path: Path) -> Path:
         import yaml as _yaml

@@ -1,4 +1,4 @@
-"""测量数据导入。
+"""E9a 测量数据导入（扩展方案 §E9a）。
 
 职责：
 - 导入 Touchstone 文件（.s1p/.s2p/.s3p/.s4p）
@@ -51,6 +51,17 @@ class MeasurementData:
     n_ports: int
     freq_range_ghz: tuple[float, float]
 
+    def __post_init__(self) -> None:
+        """metadata=None 归一为缺省实例（S-1 C-07 2026-10-04）。
+
+        vna_capture 的 apply_cal_kit/mock 链两处传 metadata=None 构造，
+        to_dict()/消费面调 self.metadata.to_dict() 即 AttributeError 裸炸
+        （latent footgun）；None 一律归一为缺省 MeasurementMetadata，
+        与 import_touchstone 的 ``metadata or MeasurementMetadata()`` 同语义。
+        """
+        if self.metadata is None:
+            self.metadata = MeasurementMetadata()
+
     @property
     def s_params(self) -> np.ndarray:
         """S 参数矩阵。"""
@@ -92,9 +103,11 @@ def import_touchstone(
     if not path.exists():
         raise FileNotFoundError(f"测量文件不存在: {path}")
 
-    # 检查文件扩展名
+    # 检查文件扩展名（S-1 C-06③ 2026-10-04：白名单移除 '.snp'——skrf 按
+    # .sNp 扩展名数字推端口秩（#248），'.snp' 无秩可推、skrf 读面必炸，
+    # 留在白名单只会把明确的扩展名错误降级成下游解析错误）。
     ext = path.suffix.lower()
-    if ext not in ('.s1p', '.s2p', '.s3p', '.s4p', '.snp'):
+    if ext not in ('.s1p', '.s2p', '.s3p', '.s4p'):
         raise ValueError(f"不支持的文件格式: {ext}")
 
     # 使用 skrf 导入

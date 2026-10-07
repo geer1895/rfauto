@@ -24,6 +24,8 @@ from typing import Any
 
 import numpy as np
 
+from rfauto.service.envelope import ok_envelope
+
 RUNS_DIR = Path("runs")
 
 
@@ -57,7 +59,7 @@ def playground_runs() -> dict[str, Any]:
                 except (OSError, ValueError):
                     pass
             runs.append(info)
-    return {"ok": True, "runs": runs}
+    return ok_envelope(runs=runs)
 
 
 def _prepare_run_model(
@@ -162,23 +164,22 @@ def playground_predict(
         (a - b) ** 2 for a, b in zip(
             target, _norm(nearest.get("params") or {}), strict=False)))
 
-    return {
-        "ok": True,
-        "run_id": prep["run_id"],
-        "kind": prep["kind"],
-        "bounds": {k: [float(v[0]), float(v[1])] for k, v in bounds.items()},
-        "params": {k: round(v, 6) for k, v in clean.items()},
-        "clamped": prep["clamped"],
-        "predicted": {k: round(float(v), 4) for k, v in predicted.items()},
-        "quality": prep["quality"],
-        "nearest_sample": {
+    return ok_envelope(
+        run_id=prep["run_id"],
+        kind=prep["kind"],
+        bounds={k: [float(v[0]), float(v[1])] for k, v in bounds.items()},
+        params={k: round(v, 6) for k, v in clean.items()},
+        clamped=prep["clamped"],
+        predicted={k: round(float(v), 4) for k, v in predicted.items()},
+        quality=prep["quality"],
+        nearest_sample={
             "params": nearest.get("params"),
             "metrics": nearest.get("metrics"),
             "normalized_distance": round(dist, 4),
         },
-        "honest_note": "代理预测非真值：数值由校准样本拟合的代理模型给出，"
+        honest_note="代理预测非真值：数值由校准样本拟合的代理模型给出，"
                        "仅供趋势/排序参考；精算以 openEMS/HFSS 求解为准。",
-    }
+    )
 
 
 def explore(

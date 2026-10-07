@@ -1,6 +1,6 @@
-"""hairpin 级间耦合结构经验修正 c(gap) 单测（2026-09-17；#212 离线零真机）。
+"""hairpin 级间耦合结构经验修正 c(gap) 单测（W4④，2026-09-17；#212 离线零真机）。
 
-背景（早前真机轮判读记录）：pt5 插损 −8.60dB FAIL 归因「KJ 平行耦合线 k
+背景（runs/hairpin_kgap/progress.log）：B3 pt5 插损 −8.60dB FAIL 归因「KJ 平行耦合线 k
 对并排同向 hairpin 结构性高估」。本项先离线分离两个假设（#1b）：
 ① 闭式错？——NGSolve 2D 准静态偶/奇模独立源：k_NG/k_KJ=1.003/1.018/1.049 @gap
    0.8/1.1328/1.6（收敛向 HJ 单线 <1%）→ 闭式在自身假设类内无误，且方向为略低估；
@@ -324,3 +324,27 @@ def _ngsolve_k_ratio(w_mm: float, g_mm: float) -> float:
         z[mode] = 1.0 / (c0 * np.sqrt(c_a * c_d))
     k_ng = (z["even"] - z["odd"]) / (z["even"] + z["odd"])
     return k_ng / cm.hairpin_k_from_gap_mm(g_mm, w_mm)
+
+
+def test_cross_mesh_default_w_guard():
+    """XC-W 跨档缺省守卫（ge8b 批销账）：w_mm=None 只在标定档 (3.66, 0.508) 生效。
+
+    跨档三函数统一 ValueError（指路显式传 w 或现场综合）；显式传 w 跨档放行；
+    同档缺省行为与历史逐位一致（HAIRPIN_50OHM_W_MM=1.1134）。
+    """
+    import pytest
+
+    import rfauto.core.coupled_microstrip as cm
+    # 同档缺省不变
+    assert (cm._hairpin_default_w_mm(None, 3.66, 0.508)
+            == cm.HAIRPIN_50OHM_W_MM == 1.1134)
+    # 显式传 w 跨档放行
+    assert cm._hairpin_default_w_mm(2.0, 4.4, 1.6) == 2.0
+    # 跨档 + w=None → ValueError（三函数一致）
+    for fn in (cm.hairpin_k_from_gap_mm, cm.hairpin_gap_mm_from_k,
+               cm.hairpin_kgap_design_branch_mm):
+        args = [0.5, None, 2.5, 4.4, 1.6] if fn is cm.hairpin_k_from_gap_mm else (
+            [0.01, None, 2.5, 4.4, 1.6] if fn is cm.hairpin_gap_mm_from_k
+            else [None, 2.5, 4.4, 1.6])
+        with pytest.raises(ValueError, match="仅在标定档"):
+            fn(*args)

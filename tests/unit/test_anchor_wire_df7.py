@@ -113,6 +113,69 @@ def test_c3_sparams_none_routes_through_anchor(
                               l_via_h=ot.C3_L_VIA_CAL_H))
 
 
+# ── 交付1b：c3.l_via_h fake 侧改道（G-06，2026-10-04）─────────────────────
+
+def test_c3_l_via_fake_resolver_bit_exact_real_registry(
+        monkeypatch: pytest.MonkeyPatch):
+    """G-06：fake 侧惰性解析真实注册表，值逐位 == 回退字面 == 0.125e-9。"""
+    from rfauto.adapters import fake_adapter as fa
+    from rfauto.infra import anchors_store
+
+    assert anchors_store.load_anchors() is not None
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_ready", False)
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_h_cache",
+                        fa._C3_L_VIA_CAL_FALLBACK_H)
+    assert fa._c3_l_via_anchor_h() == fa._C3_L_VIA_CAL_FALLBACK_H == 0.125e-9
+
+
+def test_c3_l_via_fake_resolver_routes_through_anchor(
+        monkeypatch: pytest.MonkeyPatch):
+    """G-06 改道证明：注册表锚值改 0.2e-9 时 fake 侧解析跟随（真走锚）。"""
+    from rfauto.adapters import fake_adapter as fa
+
+    modified = _anchor_set_with({
+        "anchor_id": "c3.l_via_h.openems-hfss-v1", "kind": "constant",
+        "status": "active", "value": 0.2e-9})
+    monkeypatch.setattr("rfauto.infra.anchors_store.load_anchors",
+                        lambda *a, **k: modified)
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_ready", False)
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_h_cache", 0.125e-9)
+    assert fa._c3_l_via_anchor_h() == 0.2e-9
+
+
+def test_c3_l_via_fake_resolver_fallback_on_store_failure(
+        monkeypatch: pytest.MonkeyPatch):
+    """G-06 best-effort（#105）：装载层任何异常回退字面 0.125e-9，不抛。"""
+
+    def _boom(*a, **k):
+        raise RuntimeError("store down")
+
+    from rfauto.adapters import fake_adapter as fa
+
+    monkeypatch.setattr("rfauto.infra.anchors_store.load_anchors", _boom)
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_ready", False)
+    monkeypatch.setattr(fa, "_c3_l_via_anchor_h_cache", 999.0)
+    assert fa._c3_l_via_anchor_h() == fa._C3_L_VIA_CAL_FALLBACK_H == 0.125e-9
+
+
+def test_c3_l_via_fake_auto_variable_bit_exact_vs_explicit():
+    """G-06 零行为变化（逐位）：fake "auto" 变量（锚解析 0.125e-9）与显式
+    0.125e-9 指定电感产出逐位相同的 S 参数；与 0.0（理想短路）不同。"""
+    from rfauto.adapters.fake_adapter import FakeAdapter
+
+    def _run(l_via: object) -> np.ndarray:
+        adapter = FakeAdapter(model_type="interdigital",
+                              freq_ghz=(2.0, 3.0, 61))
+        adapter.connect({})
+        adapter.set_variables({"l_via_h": l_via})
+        adapter.solve("g06")
+        return adapter.get_sparams().s.copy()
+
+    s_auto = _run("auto")
+    assert np.array_equal(s_auto, _run(0.125e-9))  # auto=锚值逐位同
+    assert not np.array_equal(s_auto, _run(0.0))  # ≠理想短路（改道真生效）
+
+
 # ── 交付2：cps.gamma_er 公式锚改道 ─────────────────────────────────────────
 
 def test_cps_gamma_er_consumer_routes_through_anchor(

@@ -1,0 +1,55 @@
+f0_ghz: 10.0
+n_ports: 1
+template: ms_ring_patch
+substrate:
+  er: 3.66
+  h_mm: 1.524
+  tan_d: 0.0037
+params:
+- patch_px_mm
+- period_mm
+- h_mm
+nominal_params:
+  patch_px_mm: 8.5406
+  period_mm: 14.9896
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区
+  2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl
+  对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变，
+  _port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读出，空波导标定
+  EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/stage2/smoke_report.json）。
+  波导模拟器≡无限阵@θ=0，E∥x 极化前提；|S11|≈1 的 argΓ 逐 patch_px 入反射
+  相位 LUT；健康判据=|Γ| 线性域 ≈1
+topology: >-
+  双谐振反射阵单元：接地基板（z 底 PEC 边界）+ 零厚方环（外边
+  ring_outer=void+2·ring_w，内空腔 void=0.4λ0，环宽 λg/40）+ 环心方贴片
+  （边长=LUT 扫描变量）；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波）；
+  贴片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 soft plane
+  激励面，域内零电阻片
+param_semantics: >-
+  patch_px_mm=环心方贴片边长（=py，LUT 扫描变量），period_mm=单胞周期
+  （方形域边长），h_mm=基板厚；环几何（void/ring_w/ring_outer）=core 闭式
+  派生非声明参数；er 进环闭式（εeff=(1+εr)/2）+基板材料，tan_d 只进材料
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘/环内外缘
+  精确入网+环-贴片缝与环-胞缝 3+ 中点入网（#311）；NEAR≤最小缝/3 渲染期
+  守卫（#266）；全轴最小网格间距 ≥10µm
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；段④ J1c 扫描（粗 21 点档
+  +圆周覆盖门 ≥300°）发射面=runs/ge5_j2fb/stage2/campaign_j2fb.py
+  --template ms_ring_patch
+nominal_derivation: |-
+  全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1c 预登记
+  fallback）：period=λ0/2=14.9896（同 ms_patch 阵格口径）；
+  void=0.4λ0=11.9917（屏族 0.4λ0 口径，ms_cross/ms_jcross period 同式）；
+  ring_w=λg/40=0.491（λg=λ0/√εeff、εeff=(1+εr)/2，ms_jcross 缝宽口径）；
+  ring_outer=void+2·ring_w=12.9737（几何闭包）；patch_px=内贴片谐振边长
+  λ0/(2√εeff(w)) 不动点（Hammerstad，复用 ms_patch_resonant_len_mm）=8.5406；
+  h=1.524（60mil 板材，同 ms_patch）。扫描变量=patch_px_mm（贴片谐振扫过
+  f0 为主谐振段+环/槽环境第二谐振=双谐振宽摆幅机理，段④ J1c ≥300° 实证）。

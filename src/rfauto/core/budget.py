@@ -1,4 +1,4 @@
-"""链路预算引擎。
+"""E8c 链路预算引擎（扩展方案 §E8c）。
 
 Friis 噪声级联自实现（<50行；skrf 无内置且其 NF 分析与 ADS 不符，issue #538）。
 对拍基准为 Friis 手算（可复现零 license），非 ADS GUI。
@@ -33,6 +33,11 @@ class StageResult:
     oip3_dbm: float | None = None
     cumulative_iip3_dbm: float | None = None
     cumulative_oip3_dbm: float | None = None
+    # B5 IIP2 损伤预算统一面（逐级；无 IP2 级为 None）
+    iip2_dbm: float | None = None
+    oip2_dbm: float | None = None
+    cumulative_iip2_dbm: float | None = None
+    cumulative_oip2_dbm: float | None = None
 
 
 @dataclass
@@ -44,6 +49,10 @@ class BudgetResult:
     cascade_p1db_dbm: float | None
     cascade_iip3_dbm: float | None = None
     cascade_oip3_dbm: float | None = None
+    # B5 IIP2 损伤预算统一面（盘点依据：docs/audit/plan_gap_inventory_20260928.md
+    # §二 B5「IIP2 损伤预算统一面（budget.py 现无 iip2 键）」）
+    cascade_iip2_dbm: float | None = None
+    cascade_oip2_dbm: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -60,6 +69,12 @@ class BudgetResult:
                                             if s.cumulative_iip3_dbm is not None else None),
                     "cumulative_oip3_dbm": (round(s.cumulative_oip3_dbm, 2)
                                             if s.cumulative_oip3_dbm is not None else None),
+                    "iip2_dbm": round(s.iip2_dbm, 2) if s.iip2_dbm is not None else None,
+                    "oip2_dbm": round(s.oip2_dbm, 2) if s.oip2_dbm is not None else None,
+                    "cumulative_iip2_dbm": (round(s.cumulative_iip2_dbm, 2)
+                                            if s.cumulative_iip2_dbm is not None else None),
+                    "cumulative_oip2_dbm": (round(s.cumulative_oip2_dbm, 2)
+                                            if s.cumulative_oip2_dbm is not None else None),
                 }
                 for s in self.stages
             ],
@@ -68,6 +83,10 @@ class BudgetResult:
             "cascade_p1db_dbm": round(self.cascade_p1db_dbm, 2) if self.cascade_p1db_dbm is not None else None,
             "cascade_iip3_dbm": round(self.cascade_iip3_dbm, 2) if self.cascade_iip3_dbm is not None else None,
             "cascade_oip3_dbm": round(self.cascade_oip3_dbm, 2) if self.cascade_oip3_dbm is not None else None,
+            "cascade_iip2_dbm": (round(self.cascade_iip2_dbm, 2)
+                                 if self.cascade_iip2_dbm is not None else None),
+            "cascade_oip2_dbm": (round(self.cascade_oip2_dbm, 2)
+                                 if self.cascade_oip2_dbm is not None else None),
         }
 
 
@@ -88,6 +107,21 @@ class LinkBudget:
     该级之前全部级的线性功率增益之积；级间无增益时前级损耗同式计入。
     无 oip3 级视为理想透明（IIP3→∞，不进求和）；全链无 oip3 → 级联
     IP3 为 None（不硬造）。OIP3_tot = IIP3_tot + G_tot（恒等式）。
+
+    二阶截点级联（B5 IIP2 损伤预算统一面；盘点依据 docs/audit/
+    plan_gap_inventory_20260928.md §二 B5）：同一功率和式取 order=2，
+
+        1/IIP2_tot = Σ_i (Π_{j<i} G_j) / IIP2_i
+
+    iip2_dbm 直接给（混频器/零中频接收机惯例）或 oip2_dbm 给后按
+    IIP2_i = OIP2_i − G_i 折算，二选一（双给显式 ValueError）。
+    诚实边界：功率和式为**非相干功率和口径**（与 core/cascade.py
+    cascade_ipn_merge(order=2) 同口径，交叉一致性钉在
+    tests/unit/test_budget_iip2.py）——不建模偶次产物跨级再混频、
+    平衡（差分）拓扑的 IM2 抵消（实际 IIP2 可高于此值）。**注意它不是
+    经典"最坏情形"**：二阶电压相干相加的最坏上限是 1/√IIP2=Σ√(G/IIP2)
+    （review_slice2 P2），恒比本式更保守——做 IM2 最坏情形预算时须
+    自行换算，勿直接采信本值。
     """
 
     def __init__(self) -> None:
@@ -100,6 +134,8 @@ class LinkBudget:
         nf_db: float,
         p1db_dbm: float | None = None,
         oip3_dbm: float | None = None,
+        iip2_dbm: float | None = None,
+        oip2_dbm: float | None = None,
     ) -> None:
         """添加级。
 
@@ -110,17 +146,36 @@ class LinkBudget:
             p1db_dbm: 1dB 压缩点 (dBm)，可选
             oip3_dbm: 输出三阶截点 (dBm)，可选；缺省=理想透明级（不参与
                 IP3 级联）
+            iip2_dbm: 输入二阶截点 (dBm)，可选（与 oip2_dbm 二选一；
+                B5 IIP2 损伤预算统一面——混频器/检波器惯例常给输入参考）
+            oip2_dbm: 输出二阶截点 (dBm)，可选（与 iip2_dbm 二选一；
+                IIP2_i = OIP2_i − G_i 折算，与 IP3 同口径）
         """
         if oip3_dbm is not None:
             oip3_dbm = float(oip3_dbm)
             if not math.isfinite(oip3_dbm):
                 raise ValueError(f"oip3_dbm 必须为有限实数，收到 {oip3_dbm!r}")
+        if iip2_dbm is not None and oip2_dbm is not None:
+            raise ValueError(
+                "iip2_dbm 与 oip2_dbm 只能二选一（另一量由 OIP2=IIP2+G 恒等换算，"
+                "双给即歧义）")
+        for key, val in (("iip2_dbm", iip2_dbm), ("oip2_dbm", oip2_dbm)):
+            if val is not None:
+                val = float(val)
+                if not math.isfinite(val):
+                    raise ValueError(f"{key} 必须为有限实数，收到 {val!r}")
+                if key == "iip2_dbm":
+                    iip2_dbm = val
+                else:
+                    oip2_dbm = val
         self._stages.append({
             "name": name,
             "gain_db": gain_db,
             "nf_db": nf_db,
             "p1db_dbm": p1db_dbm,
             "oip3_dbm": oip3_dbm,
+            "iip2_dbm": iip2_dbm,
+            "oip2_dbm": oip2_dbm,
         })
 
     def compute(self) -> BudgetResult:
@@ -136,12 +191,18 @@ class LinkBudget:
         # P2 IP3 级联：Σ (Π_{j<i} G_j) / IIP3_i [1/mW]；无 oip3 级跳过
         iip3_inv_sum = 0.0
         has_ip3 = False
+        # B5 IIP2 损伤预算：同一幂和式（order=2；与 cascade.cascade_ipn_merge
+        # order=2 同口径，交叉一致性见 tests/unit/test_budget_iip2.py）
+        iip2_inv_sum = 0.0
+        has_ip2 = False
 
         for i, stage in enumerate(self._stages):
             gain_db = stage["gain_db"]
             nf_db = stage["nf_db"]
             p1db_dbm = stage.get("p1db_dbm")
             oip3_dbm = stage.get("oip3_dbm")
+            iip2_dbm = stage.get("iip2_dbm")
+            oip2_dbm = stage.get("oip2_dbm")
 
             # 转换为线性
             gain_linear = 10 ** (gain_db / 10)
@@ -170,6 +231,19 @@ class LinkBudget:
                 cumulative_iip3_dbm = 10.0 * math.log10(1.0 / iip3_inv_sum)
                 cumulative_oip3_dbm = cumulative_iip3_dbm + cumulative_gain_db
 
+            # B5 IP2 级联：与 IP3 同一功率和式（iip2 直接给/由 oip2 折算二选一）
+            cumulative_iip2_dbm: float | None = None
+            cumulative_oip2_dbm: float | None = None
+            if iip2_dbm is not None or oip2_dbm is not None:
+                iip2_in_mw = (10.0 ** (iip2_dbm / 10.0)
+                              if iip2_dbm is not None
+                              else 10.0 ** ((oip2_dbm - gain_db) / 10.0))
+                iip2_inv_sum += gain_before_linear / iip2_in_mw
+                has_ip2 = True
+            if has_ip2:
+                cumulative_iip2_dbm = 10.0 * math.log10(1.0 / iip2_inv_sum)
+                cumulative_oip2_dbm = cumulative_iip2_dbm + cumulative_gain_db
+
             # P1dB 级联（简化：逐级回推）
             cascade_p1db = p1db_dbm
             if p1db_dbm is not None and i > 0:
@@ -186,6 +260,10 @@ class LinkBudget:
                 oip3_dbm=oip3_dbm,
                 cumulative_iip3_dbm=cumulative_iip3_dbm,
                 cumulative_oip3_dbm=cumulative_oip3_dbm,
+                iip2_dbm=iip2_dbm,
+                oip2_dbm=oip2_dbm,
+                cumulative_iip2_dbm=cumulative_iip2_dbm,
+                cumulative_oip2_dbm=cumulative_oip2_dbm,
             ))
 
         # 最终 P1dB：取所有级中最小的输入 P1dB
@@ -199,6 +277,13 @@ class LinkBudget:
             cascade_iip3_dbm + 10.0 * math.log10(cumulative_gain_linear)
             if has_ip3 else None)
 
+        # B5 链路级联 IP2（同一幂和式 order=2；全链无 IP2 级如实 None）
+        cascade_iip2_dbm = (
+            10.0 * math.log10(1.0 / iip2_inv_sum) if has_ip2 else None)
+        cascade_oip2_dbm = (
+            cascade_iip2_dbm + 10.0 * math.log10(cumulative_gain_linear)
+            if has_ip2 else None)
+
         return BudgetResult(
             stages=stages,
             cascade_gain_db=10 * math.log10(cumulative_gain_linear),
@@ -206,9 +291,11 @@ class LinkBudget:
             cascade_p1db_dbm=final_p1db,
             cascade_iip3_dbm=cascade_iip3_dbm,
             cascade_oip3_dbm=cascade_oip3_dbm,
+            cascade_iip2_dbm=cascade_iip2_dbm,
+            cascade_oip2_dbm=cascade_oip2_dbm,
         )
 
-# ─── Bode-Fano 匹配带宽极限 + 有载/无载 Q 提取 ────────────────────────────────
+# ─── C16 收尾：Bode-Fano 匹配带宽极限 + 有载/无载 Q 提取（§10.3 C16）────────────
 #
 # 课本闭合判据（Bode 1945 / Fano 1950；Pozar《Microwave Engineering》Bode-Fano 节；
 # Steer《Microwave and RF Design III》§7.2 "Fano-Bode Limits"）：
@@ -223,7 +310,23 @@ class LinkBudget:
 # 其中 Γmax = 10^(-RL_dB/20)，RL_dB 为回波损耗门限。
 #   经典算例：R=50Ω、C=1pF、VSWR≤2（|Γ|≤1/3，RL≈9.542dB）
 #   ⇒ Δf_max = 1/(2·50ps·ln3) ≈ 9.10 GHz（独立来源同口径，
-#   https://rfessentials.com/resources/rf-glossary/bode-fano-limit/）。
+#   https://rfessentials.com/resources/rf-glossary/bode-fano-limit）。
+#
+# 常数出处（V1 席 P0 裁决 2026-10-04 逐字核对；errata:
+# runs/review_ge8e/v1_bode_fano/ERRATA_C1.md）：π/τ 与
+# Δf_max=1/(2τ·ln(1/Γmax)) 为并联 RC/串联 RL 行——Fano 1948 MIT RLE
+# TR-41 §1 Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω=rad/s 全带宽）
+# + p.16 "parallel RC ⇒ A₁=2/RC"（×π/2 积分恰=π/(RC)）；Kerr NRAO
+# EDM-295 §II 同式；Steer《Microwave and RF Design III》§7.2 eq.(1)(3)
+# 同口径；rfessentials 词条原文即上方算例。防再犯注记：串联 RC/并联 RL
+# （|Γ(∞)|≠1 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个 2 因子，勿混
+# ——C1-1 "π/(2RC)" 即此类混读误报（复核不成立，不改常数）。
+#
+# 合流注记（followup-ground 2026-09-28）：Γm 直接进出 + 复阻抗拟合路径的
+# 可行性门在 core/bounds.py（bode_fano_rc/BodeFanoVerdict，F-K.A 谱系）；
+# 两面闭式同源（π/τ 与 Δω·ln(1/Γm)），数值一致性由
+# tests/unit/test_bounds.py::test_bode_fano_cross_budget_consistency 交叉钉
+# 守卫；API/内核各自保持不动（不重写、不 re-export——public_api 金快照面）。
 #
 # 数值稳健性：ln(1/Γmax) = RL_dB·ln(10)/20 直接由 dB 计算——避免 Γmax 在高回波
 # 损耗下下溢为 0 再取 ln(1/0) 的除零/溢出。
@@ -335,7 +438,7 @@ class MatchBandwidthVerdict:
 
 @dataclass(frozen=True)
 class BodeFanoLimit:
-    """负载的 Bode-Fano 匹配带宽极限（矩形近似，见模块内判据注释）。"""
+    """负载的 Bode-Fano 匹配带宽极限（矩形近似，见模块内 C16 判据注释）。"""
 
     load_kind: str
     resistance_ohm: float
@@ -418,7 +521,7 @@ def bode_fano_limit(
     )
 
 
-# ─── 有载/无载 Q 提取（同源确定性计算器；不改 calculators.py）──────────────
+# ─── 有载/无载 Q 提取（C16 同源确定性计算器；不改 calculators.py）──────────────
 # 定义：Q_L = f0 / Δf_3dB（-3dB 带宽）。
 # 对称耦合双端口谐振器在谐振点的传输幅度（线性）满足
 #   |S21(f0)| = 2β/(1+2β)，Q_L = Q_u/(1+2β)

@@ -25,6 +25,7 @@ sys.path.insert(0, str(SRC))
 from rfauto.core.calculators import (
     _CAT_C_REFLECTION,
     _CAT_C_TRANSMISSION,
+    _cm_band_edges,
     _cm_from_list,
     _cm_reduce_arrow,
     _cm_reduce_folded,
@@ -35,6 +36,7 @@ from rfauto.core.calculators import (
     _dp2_response_batch,
     _taubin_circle_fit,
 )
+from rfauto.core.deembed import deembed_reference_delay
 from rfauto.service.calculator_service import run_calculator
 from rfauto.service.diagnosis_service import (
     diagnose_q,
@@ -214,6 +216,79 @@ def test_q_loss_degraded_flag():
         "freq_ghz": [float(v) for v in freq], "s11": [_pair(v) for v in g],
         "f0_hint_ghz": F0_GHZ})
     assert rv["result"]["loss_degraded"] is True
+
+
+# ─── §4.2b Q 回收·零点法（T36 vf_zero 腿：Γ 极点+零点求和口径，免 q_e）────────
+# 公式 ground 与存档验证见 calculators.q_factor_vf_zero docstring 与
+# runs/df6_dp2diag/q_half/vf_zero_archive_check.json（vs circle 0.01%/0.19%）。
+
+
+@pytest.mark.parametrize("q_u,beta", [(100.0, 0.5), (100.0, 2.0),
+                                      (500.0, 0.5), (500.0, 1.0),
+                                      (500.0, 2.0), (2000.0, 0.5),
+                                      (2000.0, 1.0), (2000.0, 2.0)])
+def test_q_zero_recovery_noiseless(q_u: float, beta: float):
+    """合成单极点回收 ≤2%（criteria §2 门）；β 消去恒等式经 beta_implied
+    回收输入 β；最小阶规则（rms 达标即停）在纯合成数据上取 1 对。"""
+    n_pts = {100.0: 201, 500.0: 401, 2000.0: 1201}[q_u]
+    freq = np.linspace(F0_GHZ * 0.96, F0_GHZ * 1.04, n_pts)
+    g = _single_pole_s11(freq, q_u, beta)
+    r = run_calculator("q_factor_vf_zero", {
+        "freq_ghz": [float(v) for v in freq], "s11": [_pair(v) for v in g],
+        "f0_hint_ghz": F0_GHZ})
+    assert r["ok"], r
+    res = r["result"]
+    assert abs(res["q_unloaded"] - q_u) / q_u <= 0.02, (
+        f"vf_zero: {res['q_unloaded']} vs {q_u}")
+    assert abs(res["beta_implied"] - beta) / beta <= 0.05
+    assert res["n_poles_used"] == 1
+    assert res["loss_degraded"] is False
+    assert abs(res["f0_ghz"] - F0_GHZ) / F0_GHZ <= 1e-3
+
+
+@pytest.mark.parametrize("q_u,beta", [(100.0, 0.5), (500.0, 1.0),
+                                      (2000.0, 2.0)])
+def test_q_zero_recovery_noise_sigma_1e3(q_u: float, beta: float):
+    """σ=1e-3 注入回收 ≤8%（criteria §2 门）；含临界耦（零点贴虚轴）与
+    过耦（零点在右半平面）两边界形态。"""
+    rng = np.random.default_rng(42)
+    n_pts = {100.0: 201, 500.0: 401, 2000.0: 1201}[q_u]
+    freq = np.linspace(F0_GHZ * 0.96, F0_GHZ * 1.04, n_pts)
+    g = _single_pole_s11(freq, q_u, beta)
+    g = g + 1e-3 * (rng.standard_normal(g.size)
+                    + 1j * rng.standard_normal(g.size))
+    r = run_calculator("q_factor_vf_zero", {
+        "freq_ghz": [float(v) for v in freq], "s11": [_pair(v) for v in g],
+        "f0_hint_ghz": F0_GHZ})
+    assert r["ok"], r
+    qz = r["result"]["q_unloaded"]
+    assert abs(qz - q_u) / q_u <= 0.08, f"vf_zero noise: {qz} vs {q_u}"
+
+
+def test_q_zero_loss_degraded_flag_and_no_hint():
+    """损耗退化标记（极点面口径与 q_factor_vf 同源）+ 无 f0_hint 缺省路径
+    （最弱阻尼极点对锚定）。"""
+    freq = np.linspace(F0_GHZ * 0.96, F0_GHZ * 1.04, 201)
+    g = _single_pole_s11(freq, 8.0, 1.0)  # |Re p|/|Im p| ≈ 0.0625 > 0.05
+    r = run_calculator("q_factor_vf_zero", {
+        "freq_ghz": [float(v) for v in freq], "s11": [_pair(v) for v in g]})
+    assert r["result"]["loss_degraded"] is True
+    assert r["ok"], r
+
+
+def test_q_zero_degenerate_inputs_explicit():
+    """退化输入显式失败不静默（#118 家法）：平数据/无耗旋转均无谐振凹陷。"""
+    freq = list(np.linspace(2.4, 2.6, 201))
+    r_flat = run_calculator("q_factor_vf_zero", {
+        "freq_ghz": freq, "s11": [[0.3, 0.0]] * 201})
+    assert r_flat["ok"] is False
+    assert "零点法不适用" in r_flat["error"], r_flat
+    ph = np.exp(1j * 2.0 * np.pi * np.asarray(freq) * 3.0)
+    r_rot = run_calculator("q_factor_vf_zero", {
+        "freq_ghz": freq, "s11": [[float(v.real), float(v.imag)]
+                                  for v in ph]})
+    assert r_rot["ok"] is False
+    assert "零点法不适用" in r_rot["error"], r_rot
 
 
 # ─── §4.3 C 系数钉（合成回收唯一确定，写死 docstring）────────────────────────
@@ -508,7 +583,225 @@ def test_service_cm_target_check_pass():
     assert r["result"]["refine"]["ok"] is True
 
 
+def test_service_cm_target_check_tol_single_source_constant():
+    """F-4/S3：target_check 的 tol 魔数收敛为模块级常量 _TARGET_CHECK_TOL。
+
+    判据值与常量同源（改常量必改判据），不再两处内联 0.05 漂移。"""
+    from rfauto.service.diagnosis_service import _TARGET_CHECK_TOL
+
+    assert _TARGET_CHECK_TOL == 0.05
+    freq = list(np.linspace(F0_GHZ * (1 - 0.09), F0_GHZ * (1 + 0.09), 121))
+    m_true = _cm_true(3, [1.5])
+    s11, s21 = _cm_sweep(m_true, np.array(freq))
+    r = run_diagnosis({
+        "mode": "cm", "freq_ghz": freq,
+        "s11": [_pair(v) for v in s11], "s21": [_pair(v) for v in s21],
+        "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded",
+        "target_matrix": [[_pair(v) for v in row] for row in m_true]})
+    assert r["result"]["target_check"]["tol"] == _TARGET_CHECK_TOL
+
+
+def test_service_cm_order_not_forwarded_to_refine():
+    """回归钉（T20 修③，T12 实测留痕
+    runs/df6_dp2diag/p3_real/p3_crossval_result_order_bug.json）：带 order 的
+    diagnose_cm 请求曾把 order 透传给 cm_refine_lm（该内核无此参）→
+    「参数不匹配: ... unexpected keyword argument 'order'」直接失败。
+    修法=refine_req 剔除 order；钉=带 order 全链路 ok=True 且段一按
+    order 定阶。"""
+    freq = list(np.linspace(F0_GHZ * (1 - 0.09), F0_GHZ * (1 + 0.09), 121))
+    m_true = _cm_true(3, [1.5])
+    s11, s21 = _cm_sweep(m_true, np.array(freq))
+    r = run_diagnosis({
+        "mode": "cm", "freq_ghz": freq,
+        "s11": [_pair(v) for v in s11], "s21": [_pair(v) for v in s21],
+        "f0_ghz": F0_GHZ, "fbw": FBW, "order": 3, "topology": "folded"})
+    assert r["ok"], r
+    assert r["result"]["extract"]["order"] == 3
+    assert r["result"]["refine"]["ok"] is True
+
+
+def test_cm_extract_vf_band_edge_failure_explicit_not_silent():
+    """回归钉（T20 修②，T12 P3 口径 A 实测）：through 耦合/低对比度 S11
+    找不到纹波带边时，cm_extract_vf 曾静默兜底 fbw=0.1（f0=扫窗几何均值）
+    在假尺度上空转——现显式报错不静默（#122：不可判就如实说不可判）。
+    显式 f0_ghz+fbw 路径（口径 B）不受影响。"""
+    # through 主导响应：|S11| 恒模+线性相位 → 无局部峰谷 → 带缘必 None
+    freq = np.linspace(2.3, 2.7, 161)
+    s11 = 0.05 * np.exp(1j * 2.0 * np.pi * freq * 3.0)
+    s21 = math.sqrt(1.0 - 0.05 ** 2) * np.exp(-1j * 2.0 * np.pi * freq * 3.0)
+    assert _cm_band_edges(freq, 20.0 * np.log10(np.abs(s11))) is None
+    r = run_calculator("cm_extract_vf", {
+        "freq_ghz": [float(v) for v in freq],
+        "s11": [_pair(v) for v in s11], "s21": [_pair(v) for v in s21],
+        "topology": "folded", "k_max": 2})
+    assert r["ok"] is False
+    assert "带缘检测失败" in r["error"], r
+    # 显式 f0/fbw → 不触发带缘报错（后续提取成败如实，不在本钉范围）
+    r2 = run_calculator("cm_extract_vf", {
+        "freq_ghz": [float(v) for v in freq],
+        "s11": [_pair(v) for v in s11], "s21": [_pair(v) for v in s21],
+        "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded", "k_max": 2})
+    assert "带缘检测失败" not in (r2.get("error") or "")
+
+
+# ─── T20 修①：规格 §2a① 馈线粗去嵌选项（deembed_delay_s，缺省关）─────────────
+
+
+def _delayed_sweep(s11, s21, freq, tau_s: float):
+    """级联对称纯时延（每侧单程 τ，deembed_reference_delay docstring 级联
+    代数）：S11_meas=S11·e^{−j2πf·2τ}、S21_meas=S21·e^{−j2πf·2τ}。"""
+    ph = np.exp(-1j * 2.0 * np.pi * np.asarray(freq, dtype=float) * 1e9
+                * 2.0 * tau_s)
+    return s11 * ph, s21 * ph
+
+
+def test_cm_extract_vf_deembed_delay_option_recovers_matrix():
+    """回归钉（T20 修①，规格 §2a① 补账，T12 P3 缺口登记）：复 S 含每侧
+    0.2ns 纯时延时——缺省链如实失败（rms 塌、ok=False 不冒充）；
+    deembed_delay_s=τ 恢复真值（段一 ok + 段二同参考面数据全链 ≤5%）；
+    输出回显 deembed_delay_s，缺省调用回显 None（缺省关=既有行为零变化）；
+    负 τ 显式守卫。"""
+    freq = np.linspace(F0_GHZ * 0.91, F0_GHZ * 1.09, 141)
+    m_true = _cm_true(3, [1.5])
+    s11, s21 = _cm_sweep(m_true, freq)
+    tau = 0.2e-9
+    s11d, s21d = _delayed_sweep(s11, s21, freq, tau)
+    req = {"freq_ghz": [float(v) for v in freq],
+           "s11": [_pair(v) for v in s11d], "s21": [_pair(v) for v in s21d],
+           "order": 3, "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded",
+           "k_max": 3}
+    r_no = run_calculator("cm_extract_vf", dict(req))
+    assert r_no["ok"] and r_no["result"]["ok"] is False  # 如实失败
+    r_de = run_calculator("cm_extract_vf", dict(req, deembed_delay_s=tau))
+    assert r_de["ok"], r_de.get("error")
+    assert r_de["result"]["ok"] is True
+    assert r_de["result"]["deembed_delay_s"] == pytest.approx(tau, abs=1e-18)
+    # 段二消费同参考面（去嵌后）数据——与 service._deembed_data_pairs 同构
+    s11c, s21c = deembed_reference_delay(np.asarray(freq) * 1e9, s11d, s21d,
+                                         tau, tau)
+    ref = run_calculator("cm_refine_lm", {
+        "freq_ghz": [float(v) for v in freq],
+        "s11": [_pair(v) for v in s11c], "s21": [_pair(v) for v in s21c],
+        "matrix": r_de["result"]["coupling_matrix"],
+        "f0_ghz": r_de["result"]["f0_ghz"], "fbw": r_de["result"]["fbw"],
+        "topology": "folded",
+        "transmission_zeros_norm": r_de["result"]["transmission_zeros_norm"],
+        "homotopy_steps": 4, "n_starts": 2})
+    assert ref["ok"], ref.get("error") or ref["result"]
+    m_true_topo, _ = _cm_reduce_folded(m_true)
+    dev = _rel_dev(_cm_from_list(ref["result"]["coupling_matrix"]),
+                   m_true_topo)
+    assert dev <= 0.05, f"去嵌后全链逐元素偏差 {dev:.2e}"
+    # 缺省关：无请求键 → 回显 None（行为与既有链路逐字节同径）
+    r_def = run_calculator("cm_extract_vf", {
+        "freq_ghz": [float(v) for v in freq],
+        "s11": [_pair(v) for v in s11], "s21": [_pair(v) for v in s21],
+        "order": 3, "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded",
+        "k_max": 3})
+    assert r_def["ok"] and r_def["result"]["deembed_delay_s"] is None
+    # 负 τ 显式守卫
+    r_neg = run_calculator("cm_extract_vf", dict(req, deembed_delay_s=-1.0))
+    assert r_neg["ok"] is False and "非负" in r_neg["error"]
+
+
+def test_service_cm_deembed_delay_end_to_end():
+    """回归钉（T20 修① service 面）：diagnose_cm 的 deembed_delay_s 透传
+    段一内核 + 段二数据面同 τ 预去嵌（两段同一参考面），含时延数据全链
+    回收真值（target_check pass）并回显 deembed_delay_s。"""
+    freq = list(np.linspace(F0_GHZ * 0.91, F0_GHZ * 1.09, 141))
+    m_true = _cm_true(3, [1.5])
+    s11, s21 = _cm_sweep(m_true, np.array(freq))
+    tau = 0.2e-9
+    s11d, s21d = _delayed_sweep(s11, s21, freq, tau)
+    r = run_diagnosis({
+        "mode": "cm", "freq_ghz": freq,
+        "s11": [_pair(v) for v in s11d], "s21": [_pair(v) for v in s21d],
+        "f0_ghz": F0_GHZ, "fbw": FBW, "order": 3, "topology": "folded",
+        "deembed_delay_s": tau,
+        "target_matrix": [[_pair(v) for v in row] for row in m_true]})
+    assert r["ok"], r
+    assert r["result"]["deembed_delay_s"] == pytest.approx(tau, abs=1e-18)
+    assert r["result"]["extract"]["ok"] is True
+    assert r["result"]["refine"]["ok"] is True
+    assert r["result"]["target_check"]["pass"] is True
+
+
 def test_service_unknown_mode_explicit_error():
     r = run_diagnosis({"mode": "nope"})
     assert r["ok"] is False
     assert "未知 mode" in r["error"]
+
+
+# ─── full 模式聚合 verdict（R3-1，runs/review_ge8e/f3_fix/REPORT.md）──────────
+# 信封口径对齐 R3 席 evidence_envelope_sampling.md：diagnosis_service 属契约
+# §3.1 遗留族（_stamped 出口 + schema_version 落键 + 失败面单数 error 键），
+# 聚合只加 verdict 键不改信封形态。
+
+
+def test_full_mode_all_failed_verdict():
+    """全败：q/cm 全 ok=False → 顶层 ok=False + verdict=FAILED（子结果保留）。"""
+    r = run_diagnosis({"mode": "full"})
+    assert r["ok"] is False
+    assert r["verdict"] == "FAILED"
+    assert r["result"]["q"]["ok"] is False
+    assert r["result"]["cm"]["ok"] is False
+    assert r["schema_version"]
+
+
+def test_full_mode_all_ok_verdict(monkeypatch):
+    """全过：q/cm 子诊断全 ok → 顶层 ok=True + verdict=OK（无 target 无 cat）。"""
+    import rfauto.service.diagnosis_service as ds
+
+    real = ds.run_calculator
+
+    def fake(name, req):
+        if name == "q_factor_vf":
+            return {"ok": True, "result": {"q_unloaded": 500.0}}
+        if name == "q_factor_circle":
+            return {"ok": True, "result": {"q_unloaded": 505.0}}
+        if name == "cm_extract_vf":
+            return {"ok": True, "result": {
+                "coupling_matrix": [[0.0, 0.1], [0.1, 0.0]],
+                "f0_ghz": 2.5, "fbw": 0.1, "topology": "folded",
+                "transmission_zeros_norm": []}}
+        if name == "cm_refine_lm":
+            return {"ok": True,
+                    "result": {"coupling_matrix": [[0.0, 0.1], [0.1, 0.0]]}}
+        return real(name, req)
+
+    monkeypatch.setattr(ds, "run_calculator", fake)
+    r = run_diagnosis({
+        "mode": "full", "freq_ghz": [2.3, 2.5, 2.7],
+        "s11": [[0.0, 0.0]] * 3, "s21": [[0.0, 0.0]] * 3,
+        "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded"})
+    assert r["ok"] is True, r
+    assert r["verdict"] == "OK"
+    assert r["result"]["q"]["ok"] is True
+    assert r["result"]["cm"]["ok"] is True
+    assert "cat" not in r["result"]
+
+
+def test_full_mode_partial_verdict(monkeypatch):
+    """部分败：cm 段一注入失败 → 顶层 ok=True + verdict=PARTIAL（q 保留 OK）。"""
+    import rfauto.service.diagnosis_service as ds
+
+    real = ds.run_calculator
+
+    def fake(name, req):
+        if name == "cm_extract_vf":
+            return {"ok": False, "error": "注入失败（R3-1 PARTIAL 钉）"}
+        if name == "q_factor_vf":
+            return {"ok": True, "result": {"q_unloaded": 500.0}}
+        if name == "q_factor_circle":
+            return {"ok": True, "result": {"q_unloaded": 505.0}}
+        return real(name, req)
+
+    monkeypatch.setattr(ds, "run_calculator", fake)
+    r = run_diagnosis({
+        "mode": "full", "freq_ghz": [2.3, 2.5, 2.7],
+        "s11": [[0.0, 0.0]] * 3, "s21": [[0.0, 0.0]] * 3,
+        "f0_ghz": F0_GHZ, "fbw": FBW, "topology": "folded"})
+    assert r["ok"] is True
+    assert r["verdict"] == "PARTIAL"
+    assert r["result"]["q"]["ok"] is True
+    assert r["result"]["cm"]["ok"] is False

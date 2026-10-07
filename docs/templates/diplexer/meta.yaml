@@ -1,0 +1,44 @@
+f0_ghz: 2.5
+n_ports: 3
+template: diplexer
+substrate:
+  er: 3.66
+  h_mm: 0.508
+params:
+- w_feed_mm
+- l_lpf_nh
+- c_hpf_pf
+nominal_params:
+  w_feed_mm: 1.1134
+  l_lpf_nh: 3.1831
+  c_hpf_pf: 1.2732
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: S11/S21/S31 @ MSLPort 1-3 单激励 7 列 CSV（port1=antenna 公共口激励，port2=LP/port3=HP
+  探针；3 端口轮转 footer，#208 口径）。裁判=core.diplexer_compose 同参精确复算 + diplexer_verdict
+  四门：能量守恒（幺正性恒等式 ≤1e-8）、交越=fc（|S21|=|S31| 交点 ±tol）、通带 |S11|、互补亏缺；
+  CR 一阶对闭式锚 S11≡0/|S21|²+|S31|²≡1/交越精确 fc
+topology: 'Diplexer LP+HP T 结（TA-5，一阶常阻互补对偶 CR 型）：输入 50Ω 馈线（port1=antenna，
+  −BOARD 板边）→ 微带 T 结 → LPF 臂（+x：50Ω 短段+LumpedElement 串联 L 断口桥接+50Ω stub 至
+  +BOARD=port2）与 HPF 臂（−x 镜像，串联 C=port3）；集总元件 atten_pi 串臂同法（ny=0 断口桥接）；
+  全金属同层零交叉'
+param_semantics: 'w_feed_mm=全臂 50Ω 馈线/连接线宽（nominal_width_mm 单源）；l_lpf_nh=LPF 臂串联电感（=Z0/ωc，
+  内核 element_values 单源，LumpedElement L 值——进元件值不进导体几何，qwt z_load_ohm 同口径豁免）；
+  c_hpf_pf=HPF 臂串联电容（=1/(ωc·Z0)，对偶值同口径豁免）。f0=交越频率 fc（meta f0_ghz）；元件位置/断口长为版图常量（近端
+  4mm/断口 0.4mm，电小寄生段口径）'
+mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；全盒缘（馈线/T 条/臂带缘/元件断口缘）+
+  端口 junction 精确入网（#198）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）；#347 输入段测量面-激励分离守卫'
+smoke_note: 未冒烟（离线审计过，#212，test_diplexer_ridged_templates）；近似级别如实登记：①理想集总
+  LumpedElement（无寄生 L/C/自谐振——2.5GHz 下 nH/pF 级元件自谐振 ≫fc，PCB 集总现实口径如实登记）；
+  ②元件间 50Ω 连接线/馈线 stub 电长度寄生不进闭式裁判（qwt 节间阶梯同口径，元件紧凑排布使寄生段电小）；
+  ③≥2 阶对固有回损地板使其判读门不可判读——v1 取一阶 CR 对（20dB/dec 选择性为一阶固有）；真机冒烟与
+  HFSS 仲裁属后续批次（本批零发射）
+nominal_derivation: '全链内核精算（#1c，零手抄毫米数；diplexer_design_params() 缺省实参可重算，单测按独立闭式复算钉）：
+  fc=2.5GHz → ωc=2π·2.5e9 → 一阶常阻互补对偶（CR，lpf_order=hpf_order=1，g_eff=1 定标非 Butterworth
+  N=1 表值）：L=Z0/ωc=3.1831nH（round4）、C=1/(ωc·Z0)=1.2732pF（round4），内核
+  diplexer_lpf_hpf element_values 单源——S11≡0/|S21|²+|S31|²≡1/交越精确 fc 三锚闭式精确（内核恒等式）；
+  w_feed=nominal_width_mm(50)@2.5GHz rogers4350b=1.1134（W50_MM 同源档，XC-W 单源）。
+  拓扑选择（如实登记）：≥2 阶 Butterworth 对复合回损有固有地板（T 结两臂阻抗状态交互，~−7dB@3/3 阶实测，
+  内核 docstring 判据节；无耗互易三口不可全匹配 Pozar §7.5）——渲染取 CR 一阶对使 EM 版判读门可判读
+  （|S11| 深谷全带），选择性 20dB/dec 为一阶固有。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'

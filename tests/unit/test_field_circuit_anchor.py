@@ -306,3 +306,54 @@ class TestRunAnchorOffline:
         )
         assert summary["macromodel"]["status"] == "skipped"
         assert summary["ok"] is True
+
+
+class TestAnchorFailureTracebackPin:
+    """AU-3②：锚点失败=invalid 标记（fail-closed 下游可见）+ traceback 留痕。
+
+    判定：锚是多段批量裁判编排（docstring 契约"任一段失败如实降级记录，
+    不掩盖、不抛出"），fail-fast 会砍掉后续段报告——保持 invalid 标记语义
+    不变（既有 TestRunAnchorOffline 钉），本类只钉新增的 logger.exception
+    留痕（best-effort #105：不改控制流、不改返回值）。
+    """
+
+    def test_ads_segment_failure_logs_traceback(self, tmp_path, caplog):
+        import logging
+
+        snp = _make_touchstone(tmp_path)
+
+        def boom(netlist):
+            raise RuntimeError("hpeesofsim 模拟失败")
+
+        with caplog.at_level(logging.ERROR, logger="rfauto.linkage.field_circuit_anchor"):
+            summary = fca.run_field_circuit_anchor(
+                snp, tmp_path / "out", ads_runner=boom)
+        assert summary["ads"]["status"] == "error"  # invalid 标记语义不变
+        assert summary["ok"] is False
+        records = [r for r in caplog.records
+                   if "ADS 段失败" in r.getMessage()]
+        assert records, "锚点段失败必须有 traceback 留痕（logger.exception）"
+        assert records[0].exc_info is not None  # traceback 在档
+        assert "hpeesofsim 模拟失败" in records[0].exc_text
+
+    def test_all_four_segments_marked_and_logged(self, tmp_path, caplog):
+        """四段各自的 except 都带 logger.exception（静态钉：源码逐处核对）。"""
+        import ast
+        from pathlib import Path as _P
+
+        src = _P(fca.__file__).read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        logged = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ExceptHandler):
+                for stmt in ast.walk(node):
+                    if (isinstance(stmt, ast.Call)
+                            and isinstance(stmt.func, ast.Attribute)
+                            and stmt.func.attr == "exception"):
+                        logged.add(node.lineno)
+        handlers = [n for n in ast.walk(tree)
+                    if isinstance(n, ast.ExceptHandler)]
+        assert len(handlers) == 4  # ADS/FSV/宏模型/反标注 四段
+        assert {h.lineno for h in handlers} == logged  # 每处都有留痕
+        # （ge5 审查 P3-1：尾部恒真断言 assert logging.getLogger(...).name
+        #  已删——getLogger().name 恒返回名字串，占位无效果。）

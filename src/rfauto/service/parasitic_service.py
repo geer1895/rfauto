@@ -1,4 +1,4 @@
-"""PCB 寄生提取链 service 编排（Q3D/SIwave）。
+"""WP4.4b PCB 寄生提取链 service 编排（续跑计划 §4 WP4.4b）。
 
 JSON 进出薄编排：把 KiCad pcell/DRC 链与 core/parasitic 确定性内核串成
 PCB 无源/互连 RLC 提取链路::
@@ -58,6 +58,7 @@ from rfauto.core.parasitic import (
     interconnect_rlc_anchor,
     microstrip_lc_per_length,
 )
+from rfauto.service.envelope import ok_envelope
 
 #: 最小线宽规则默认值（= adapters/kicad_drc.DEFAULT_RF_RULES 的 min_trace_width）
 DEFAULT_MIN_TRACE_WIDTH_MM = 0.1
@@ -293,7 +294,8 @@ def extract_interconnect_rlc(payload: Mapping[str, Any]) -> dict[str, Any]:
             }
     except ValueError as exc:
         return {"ok": False, "error": str(exc)}
-    return {"ok": True, "chain": {
+    return ok_envelope(
+        chain={
         "geometry": {
             "primary_trace": primary,
             "n_traces": len(pcb.get("traces") or []),
@@ -304,4 +306,5 @@ def extract_interconnect_rlc(payload: Mapping[str, Any]) -> dict[str, Any]:
         "drc": drc_out,
         "anchor": anchor,
         "q3d": q3d_out,
-    }}
+    },
+    )

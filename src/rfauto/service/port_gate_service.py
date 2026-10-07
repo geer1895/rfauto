@@ -42,6 +42,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
+from rfauto.service.envelope import ok_envelope
+
 __all__ = [
     "FAMILY_LADDERS",
     "FamilyLadder",
@@ -552,15 +554,19 @@ def run_port_gate(
     }
 
     if fam not in FAMILY_LADDERS:
-        return {**base, "ok": True, "verdict": "UNKNOWN",
-                "reasons": [f"physics_roles 无法识别端口族: {fam!r}，"
-                            "不猜阶梯（#154 角色口径）"]}
+        return ok_envelope(
+                   **{
+                   **base,
+                   "verdict": "UNKNOWN",
+                   "reasons": [f"physics_roles 无法识别端口族: {fam!r}，"
+                            "不猜阶梯（#154 角色口径）"],
+                   },
+               )
 
     rungs, ladder = ladder_rungs(fam, float(line_width_mm),
                                  float(substrate_h_mm), max_rungs=max_rungs)
     if not rungs or ladder is None:
-        return {**base, "ok": True, "verdict": "UNKNOWN",
-                "reasons": ["阶梯档数不足两档，无法做收敛比较"]}
+        return ok_envelope(**{**base, "verdict": "UNKNOWN", "reasons": ["阶梯档数不足两档，无法做收敛比较"]})
 
     base["official_note"] = ladder.official_note
 
@@ -725,13 +731,13 @@ def port_gate_from_json(payload: dict[str, Any]) -> dict[str, Any]:
     """
     kind = str((payload or {}).get("driver", "synthetic"))
     if kind == "hfss":
-        return {
-            "ok": True, "gate": "port_size_convergence",
-            "verdict": "UNKNOWN",
-            "reasons": ["hfss 驱动 JSON 面不发射（真机发射走脚本对象注入："
+        return ok_envelope(
+            gate="port_size_convergence",
+            verdict="UNKNOWN",
+            reasons=["hfss 驱动 JSON 面不发射（真机发射走脚本对象注入："
                         "HfssPortDriver 构造 + run_port_gate 对象面；"
                         "license solo #246）"],
-        }
+        )
     if kind != "synthetic":
         return {"ok": False, "gate": "port_size_convergence",
                 "verdict": "UNKNOWN",
