@@ -37,7 +37,7 @@ honest by **21900+ unit tests** that run without any commercial license.
 [Roadmap](#status--roadmap) · [Contributing](#contributing)
 
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="rfauto architecture: interfaces → service → domain → adapters → deterministic core, with the AI agent loop and the iron rule" width="100%">
+  <img src="docs/assets/architecture.png" alt="rfauto architecture: interfaces → service → domain → adapters → deterministic core, with the AI agent loop and the iron rule" width="100%">
 </p>
 
 ## Why

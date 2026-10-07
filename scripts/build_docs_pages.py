@@ -441,7 +441,16 @@ def build_capability_map_page(checknum) -> tuple[str, int, int]:
 # ─── 首页数字条（AUTO-NUMBERS 标记块回填）────────────────────────────────
 
 def numbers_strip(checknum) -> str:
-    tests_n, tests_src = checknum.count_tests()
+    # 全量门测试行=README 徽章 floor（环境无关单一来源）——活 collect 随
+    # 平台/依赖面漂移（本机 21809 vs CI 21914，2026-10-07 四跑实证），地板
+    # 语义下 collect ≥ badge 即诚实；badge 诚实性由 numbers self-check job
+    # 单独执法（与 strip 比对解耦）。checknum 参数保留（其余行仍同源实测）。
+    import re as _re
+    _readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(
+        encoding="utf-8")
+    _m = _re.search(r"badge/tests-(\d+)", _readme)
+    tests_n = int(_m.group(1))
+    tests_src = "README badge floor（环境无关）"
     cli_n = checknum.count_cli()
     mcp_n = checknum.count_mcp()
     calc_n = checknum.count_calculators()
