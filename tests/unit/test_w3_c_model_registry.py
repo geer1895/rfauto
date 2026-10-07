@@ -627,8 +627,14 @@ class TestTuneCliFlag:
         # COLUMNS=200 宽渲染：rich 窄表截断点随平台 CJK 宽度计算漂移
         # （Linux CI 截断位比 Windows 更早，截断前缀钉假红，2026-10-07
         # 首跑实证）——强制宽端让旗标完整渲染，断言语义跨平台稳定
-        result = runner.invoke(app, ["tune", "--help"],
-                               env={"COLUMNS": "200"})
+        # typer rich_utils 在【导入期】读 TERMINAL_WIDTH 存 MAX_WIDTH
+        # 全局（invoke 期 env 太晚，2026-10-07 二跑实证 COLUMNS 单独
+        # 无效）——render 期逐次读模块全局，monkeypatch 确定生效。
+        import pytest
+        import typer.rich_utils
+        with pytest.MonkeyPatch.context() as _mp:
+            _mp.setattr(typer.rich_utils, "MAX_WIDTH", 200)
+            result = runner.invoke(app, ["tune", "--help"])
         assert result.exit_code == 0
         flat = result.output.replace("\n", "").replace(" ", "")
         # 宽端无截断：旗标全名+help 关键词钉（真跑不炸=#305 主判据）

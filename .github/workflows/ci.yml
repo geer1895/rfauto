@@ -208,10 +208,11 @@ jobs:
         run: |
           # 环境模式审计（安装集即审计面，含供应链工具自身）；发现已知漏洞
           # 即非零退出；机器可读报告落 pip-audit-report.json 供 artifact 留档。
-          # --skip-editable：本项目自身 editable 安装（rfauto 0.10.0）不在
-          # PyPI，--strict 下 "Dependency not found on PyPI" 即 job 红
-          # （2026-10-07 CI 首跑实证）——自身发行版不属第三方漏洞审计对象
-          pip-audit --strict --skip-editable --progress-spinner off -f json -o pip-audit-report.json
+          # 审计面=上一步 uv export 的带哈希锁集（--no-emit-project 已排除
+          # 本项目自体）：requirements 文件模式无 editable 分发解析问题
+          # （venv 模式 --skip-editable 仍报 "distribution marked as
+          # editable" rc=1，2026-10-07 二跑实证）——锁集即供应链审计对象
+          pip-audit --strict --no-deps -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
         uses: actions/upload-artifact@v4

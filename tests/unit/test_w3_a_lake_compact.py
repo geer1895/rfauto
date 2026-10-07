@@ -426,8 +426,14 @@ class TestCliCompact:
     def test_help_true_run(self):
         # COLUMNS=200 宽渲染：rich 截断点随平台漂移（Linux CI 假红
         # 2026-10-07 首跑实证）——宽端旗标完整渲染，断言跨平台稳定
-        result = runner.invoke(app, ["lake", "compact", "--help"],
-                               env={"COLUMNS": "200"})
+        # typer rich_utils 在【导入期】读 TERMINAL_WIDTH 存 MAX_WIDTH
+        # 全局（invoke 期 env 太晚，2026-10-07 二跑实证 COLUMNS 单独
+        # 无效）——render 期逐次读模块全局，monkeypatch 确定生效。
+        import pytest
+        import typer.rich_utils
+        with pytest.MonkeyPatch.context() as _mp:
+            _mp.setattr(typer.rich_utils, "MAX_WIDTH", 200)
+            result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
         assert "--apply" in result.output
         assert "dry-run" in result.output
