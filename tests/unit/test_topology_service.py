@@ -208,9 +208,11 @@ def test_campaign_constrained_improvement_and_deterministic():
     assert best["min_gap_mm"] >= rec["gap_floor_mm"] - 1e-9
     assert rec["stage"] == "polish"
     # 首案例关键数字（2026-09-14 实测）：初值 12.93dB → 精化 13.79dB
+    # optuna 5.0 TPE 轨迹重钉（ME-12，2026-09-27）：初值锚不变；best 14.930
+    # （轨迹改变但更优——约束语义/确定性/stage 语义断言全部不变，仅采样轨迹量级漂移）
     assert init["rl_min_db"] == pytest.approx(12.932, abs=0.01)
-    assert best["rl_min_db"] == pytest.approx(13.792, abs=0.01)
-    assert rec["improvement"]["rl_delta_db"] == pytest.approx(0.859, abs=0.02)
+    assert best["rl_min_db"] == pytest.approx(14.930, abs=0.01)
+    assert rec["improvement"]["rl_delta_db"] == pytest.approx(2.0, abs=0.02)
     # C13 理想目标锚与守卫入 record
     assert rec["targets"]["rl_ideal_db"] == pytest.approx(19.047, abs=0.01)
     assert rec["targets"]["stop_ideal_db"] == pytest.approx(-8.309, abs=0.01)

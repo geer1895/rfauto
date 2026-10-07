@@ -1,0 +1,8 @@
+{
+  "project_slug": "rfauto-{{ cookiecutter.bench_name }}-bench",
+  "bench_name": "my_bench",
+  "module_name": "rfauto_{{ cookiecutter.bench_name }}",
+  "version": "0.1.0",
+  "author": "your-name",
+  "min_python": "3.11"
+}

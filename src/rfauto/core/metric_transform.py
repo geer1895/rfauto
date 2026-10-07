@@ -1,6 +1,6 @@
 """变换域注册表与逐域 LOO-LML 选择器（DP-15 C1，plan_deepdive_specs §15.1）。
 
-深谷判据背景（#370/#371 结论，数据工厂一期收官结论）：深谐振
+深谷判据背景（#370/#371 结论，「数据工厂一期收官两经验」）：深谐振
 谷族 S11 的 dB 表示在谷底把微小线性误差放大成几十 dB，GP 在 dB 目标上
 "看着病"、线性 |Γ| 才是消费口径——本模块把"选哪种表示"从人工裁定变成
 确定性统计量：逐域 leave-one-out 对数边缘似然（LOO-LML），argmax 者胜。
@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -53,13 +54,16 @@ __all__ = [
     "LOO_GP_RESTARTS",
     "MetricDomain",
     "available_domains",
+    "delta_lml_ci",
     "forward_domain",
     "get_domain",
     "inverse_domain",
     "is_explicit_statistic_name",
     "loo_loglik",
+    "loo_loglik_per_point",
     "loo_loglik_table",
     "register_domain",
+    "select_domain_with_ci",
     "select_metric_domain",
 ]
 
@@ -449,4 +453,272 @@ def select_metric_domain(
         "values_domain": values_domain,
         "priority": list(DOMAIN_PRIORITY),
         "gp": {"n_restarts": int(n_restarts), "random_state": int(random_state)},
+    }
+
+
+# ------------------------------------- paired permutation + BCa bootstrap
+#
+# S-2（研究扩充 round3 §3.1）：LOO-LML 域选择
+# 补强——逐点 LOO logpdf 在同一折划分下逐域天然配对，对两域 LML 差做
+# 配对置换检验 + BCa 自助区间，把"域选择"从点估计升级为置信区间化。
+# 本节为纯增量：不改上方任何既有行为（select_metric_domain 的 meta
+# 契约键零删除、零改动）；scipy 惰性导入（core 层顶层只依赖 numpy，
+# 与 GP 经 lazy import sklearn 同例）。
+
+
+def loo_loglik_per_point(
+    X: np.ndarray,
+    y: np.ndarray,
+    *,
+    random_state: int = 0,
+    n_restarts: int = LOO_GP_RESTARTS,
+) -> np.ndarray:
+    """逐折 LOO 高斯 logpdf 数组（配对区间化的逐点样本 producer）。
+
+    与 loo_loglik 同一折循环/同参（相对 nugget alpha、GP 配置一致），
+    按折序累加 sum(本函数输出) 与 loo_loglik 逐位相等——本函数只是把
+    逐点 logpdf 暴露出来供 delta_lml_ci / select_domain_with_ci 做
+    配对统计；loo_loglik 行为零改动。
+    """
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float).ravel()
+    if X.shape[0] != y.size:
+        raise ValueError(f"X/y 行数不一致: {X.shape[0]} vs {y.size}")
+    alpha = max(RELATIVE_NUGGET * float(np.var(y)), 1e-10)
+    per_point: list[float] = []
+    for i in range(y.size):
+        test = np.array([i])
+        train = np.array([j for j in range(y.size) if j != i])
+        gp = _make_selection_gp(n_restarts, random_state, alpha)
+        gp.fit(X[train], y[train])
+        mu, sigma = gp.predict(X[test], return_std=True)
+        s = max(float(np.asarray(sigma).ravel()[0]), _SIGMA_FLOOR)
+        per_point.append(_gaussian_logpdf(
+            float(y[i]), float(np.asarray(mu).ravel()[0]), s))
+    return np.asarray(per_point, dtype=float)
+
+
+def _delta_statistic(name: str) -> Callable[..., np.ndarray]:
+    """差统计量分派（显式参数化，缺省 median 稳健）。"""
+    if name == "median":
+        return np.median
+    if name == "mean":
+        return np.mean
+    raise ValueError(f"未知差统计量 {name!r}（支持 'median'/'mean'）")
+
+
+def _paired_delta_statistic(
+    name: str,
+) -> Callable[[np.ndarray, np.ndarray, int], np.ndarray]:
+    """scipy 配对统计量适配：statistic(x, y, axis) = stat(x − y, axis)。"""
+    base = _delta_statistic(name)
+
+    def stat(x: np.ndarray, y: np.ndarray, axis: int = -1) -> np.ndarray:
+        return base(x - y, axis=axis)
+
+    return stat
+
+
+def delta_lml_ci(
+    lml_a: np.ndarray,
+    lml_b: np.ndarray,
+    n_resamples: int = 9999,
+    rng_seed: int = 0,
+    confidence: float = 0.95,
+    statistic: str = "median",
+) -> dict[str, Any]:
+    """两域逐点 LML 差的配对置换检验 + BCa 自助置信区间（S-2 主入口）。
+
+    Args:
+        lml_a/lml_b: 两域逐点（逐折）LOO logpdf 数组（loo_loglik_per_point
+            产出），同一折划分下天然配对，长度须一致。
+        n_resamples: 置换与自助共用重采样数（缺省 9999）。
+        rng_seed: numpy default_rng 种子（每次调用新建，逐字节可复现）。
+        confidence: 区间置信水平（缺省 0.95）。
+        statistic: 差统计量 'median'（缺省，稳健）/'mean'。
+
+    Returns:
+        {delta_point, ci_lo, ci_hi, p_perm, confidence, n, method_notes}：
+        - delta_point = statistic(lml_a − lml_b)，正值=域 a 优于 b；
+        - 退化守卫（不炸不虚构）：n<4 → ci/p 如实 None + method_notes
+          含 "insufficient_n"；逐点差全同 → p=1.0、区间零宽 + 含
+          "degenerate_all_identical"；BCa 对部分结不可算（NaN）→
+          区间如实 None + 含 "bca_degenerate_ci"（p 有限仍返回）；
+        - method_notes 另含机器可读口径 token（statistic=/permutation=/
+          bootstrap=/n_resamples=）。
+
+    判定语义（纯确定性）：CI 不含 0 且 p<alpha → 差显著；CI 含 0 →
+    如实并列，不虚构显著性。
+    """
+    a = np.asarray(lml_a, dtype=float).ravel()
+    b = np.asarray(lml_b, dtype=float).ravel()
+    if a.size == 0 or b.size == 0:
+        raise ValueError("lml_a/lml_b 不能为空数组")
+    if a.size != b.size:
+        raise ValueError(f"配对样本长度不一致: {a.size} vs {b.size}")
+    if not (bool(np.all(np.isfinite(a))) and bool(np.all(np.isfinite(b)))):
+        raise ValueError("lml_a/lml_b 含非有限值（逐点 LOO logpdf 应有限）")
+    stat_fn = _delta_statistic(statistic)
+    diff = a - b
+    n = int(diff.size)
+    delta_point = float(stat_fn(diff))
+    notes = [
+        f"statistic={statistic}",
+        "permutation=paired_sign_flip",
+        "bootstrap=BCa",
+        f"n_resamples={int(n_resamples)}",
+    ]
+    if n < 4:
+        return {
+            "delta_point": delta_point,
+            "ci_lo": None,
+            "ci_hi": None,
+            "p_perm": None,
+            "confidence": float(confidence),
+            "n": n,
+            "method_notes": ["insufficient_n", *notes],
+        }
+    if bool(np.all(diff == diff[0])):
+        return {
+            "delta_point": delta_point,
+            "ci_lo": delta_point,
+            "ci_hi": delta_point,
+            "p_perm": 1.0,
+            "confidence": float(confidence),
+            "n": n,
+            "method_notes": ["degenerate_all_identical", *notes],
+        }
+    from scipy import stats as _stats  # 惰性导入：core 顶层只依赖 numpy
+
+    pair_stat = _paired_delta_statistic(statistic)
+    with warnings.catch_warnings():
+        # 全同差等退化形态已被上方守卫拦截；残余边界 warning 吞掉不进
+        # 业务路径（观测性不得阻塞主路径，#105/#284 同族）
+        warnings.simplefilter("ignore")
+        res_perm = _stats.permutation_test(
+            (a, b), pair_stat, permutation_type="samples",
+            n_resamples=int(n_resamples), alternative="two-sided",
+            rng=np.random.default_rng(int(rng_seed)))
+        res_boot = _stats.bootstrap(
+            (a, b), pair_stat, method="BCa", paired=True,
+            n_resamples=int(n_resamples),
+            confidence_level=float(confidence), alternative="two-sided",
+            rng=np.random.default_rng(int(rng_seed)))
+    ci_lo = float(res_boot.confidence_interval.low)
+    ci_hi = float(res_boot.confidence_interval.high)
+    if not (math.isfinite(ci_lo) and math.isfinite(ci_hi)):
+        # 部分结（两点分布差等）下 BCa 可能不可算（NaN，实测）——区间
+        # 如实 None 不虚构（#316 多报不放过方向）；p 值有限仍如实返回
+        notes.append("bca_degenerate_ci")
+        ci_lo = None
+        ci_hi = None
+    return {
+        "delta_point": delta_point,
+        "ci_lo": ci_lo,
+        "ci_hi": ci_hi,
+        "p_perm": float(res_perm.pvalue),
+        "confidence": float(confidence),
+        "n": n,
+        "method_notes": list(notes),
+    }
+
+
+def select_domain_with_ci(
+    domain_lmls: dict[str, np.ndarray],
+    alpha: float = 0.05,
+    **ci_kwargs: Any,
+) -> dict[str, Any]:
+    """多域 LOO-LML 选择 + ΔLML 置信区间化判定（S-2 域选择补强入口）。
+
+    判定语义（纯确定性，零 IO 零墙钟）：
+    - 点估计锚：各域总 LML = sum(逐点)，argmax 为 top；总 LML 同分按
+      DOMAIN_PRIORITY 序取先（与 select_metric_domain 同规则，未注册
+      域再按名字序保确定性）；
+    - 对每个其余域 d 做 delta_lml_ci(lml_top, lml_d)（正差=top 更优），
+      逐对 verdict：
+        "top_significant"   —— CI 不含 0（ci_lo>0）且 p<alpha；
+        "other_significant" —— CI 不含 0（ci_hi<0）且 p<alpha（CI 证据
+                               与点估计矛盾，如实上报不硬拗）；
+        "tied"              —— CI 含 0 或 p≥alpha（并列如实，不虚构）；
+        "undecidable"       —— 样本不足（n<4，ci/p 为 None）；
+    - 总 verdict：
+        "single_domain"     —— 仅一域（无对照，无检验可言）；
+        "significant"       —— 全部逐对均 top_significant；
+        "beaten"            —— 任一逐对 other_significant（selected 仍为
+                               点估计最高域，标注 CI 证据矛盾供人工复核）；
+        "undecidable"       —— 无 top_significant 且存在 undecidable；
+        "tied"              —— 其余情形（存在并列对）；
+    - selected 恒为点估计最高域（与既有点估计契约同锚：本函数只增
+      置信标注，不改选择行为）。
+
+    Args:
+        domain_lmls: 域名 → 逐点 LOO logpdf 数组（loo_loglik_per_point
+            产出；各域必须同长——同一折划分的配对前提）。
+        alpha: 显著性水平（缺省 0.05）。
+        **ci_kwargs: 透传 delta_lml_ci（n_resamples/rng_seed/confidence/
+            statistic）。
+
+    Returns:
+        {selected, verdict, top_domain, n, totals, pairwise, alpha,
+        method_notes}；pairwise[d] 为 delta_lml_ci 输出 + verdict 键。
+    """
+    if not domain_lmls:
+        raise ValueError("domain_lmls 为空（无可评域）")
+    arrays = {d: np.asarray(v, dtype=float).ravel()
+              for d, v in domain_lmls.items()}
+    if len({int(arr.size) for arr in arrays.values()}) != 1:
+        detail = {d: int(arr.size) for d, arr in arrays.items()}
+        raise ValueError(f"各域逐点 LML 必须同长（配对前提）: {detail}")
+    if not all(bool(np.all(np.isfinite(arr))) for arr in arrays.values()):
+        raise ValueError("逐点 LML 含非有限值")
+    totals = {d: float(arr.sum()) for d, arr in arrays.items()}
+
+    def _rank(d: str) -> tuple[float, int, str]:
+        pri = (DOMAIN_PRIORITY.index(d) if d in DOMAIN_PRIORITY
+               else len(DOMAIN_PRIORITY))
+        return (-totals[d], pri, d)
+
+    top = sorted(arrays, key=_rank)[0]
+    others = sorted(d for d in arrays if d != top)
+    pairwise: dict[str, Any] = {}
+    verdicts: list[str] = []
+    for d in others:
+        ci = delta_lml_ci(arrays[top], arrays[d], **ci_kwargs)
+        if ci["ci_lo"] is None or ci["p_perm"] is None:
+            pair_verdict = "undecidable"
+        elif ci["p_perm"] < float(alpha) and ci["ci_lo"] > 0.0:
+            pair_verdict = "top_significant"
+        elif ci["p_perm"] < float(alpha) and ci["ci_hi"] < 0.0:
+            pair_verdict = "other_significant"
+        else:
+            pair_verdict = "tied"
+        verdicts.append(pair_verdict)
+        pairwise[d] = {**ci, "verdict": pair_verdict}
+
+    if not others:
+        verdict = "single_domain"
+    elif "other_significant" in verdicts:
+        verdict = "beaten"
+    elif all(v == "top_significant" for v in verdicts):
+        verdict = "significant"
+    elif "undecidable" in verdicts:
+        verdict = "undecidable"
+    else:
+        verdict = "tied"
+    notes = [
+        "selection_anchor=point_estimate_argmax",
+        f"alpha={float(alpha)}",
+        f"verdict={verdict}",
+    ]
+    if verdict in ("tied", "undecidable", "beaten"):
+        notes.append("selection_not_ci_confirmed")
+    return {
+        "selected": top,
+        "verdict": verdict,
+        "top_domain": top,
+        "n": int(arrays[top].size),
+        "totals": totals,
+        "pairwise": pairwise,
+        "alpha": float(alpha),
+        "method_notes": notes,
     }

@@ -1,6 +1,6 @@
 """A8 MAPES stage-1 定向单元测试（确定性、无网络、无真机依赖）。
 
-覆盖验证点：
+覆盖任务书验证点：
 1. 原文端口数公式参考实现（paper_port_count，仅作对照，不冒充 stage-1 约定）；
 2. 尺寸一致性：布局端口编号/数量与 :class:`PixelLayout` 约定一致；
 3. 占位映射：同一 `topology_key` 的展平 bool 与矩阵往返；
@@ -23,8 +23,8 @@
 - 合成 Z_ALL 互易误差 `max|Z - Z^T|` 实测 **8.95e-16**，
   `min eig Re(Z)` 实测 **+0.1336**（>0 → 无源）。
 
-公式来源：src/rfauto/core/mapes.py 模块 docstring（原文实读与借鉴
-整理见该 docstring）。stage-1 的像素域编号约定是
+公式来源：src/rfauto/core/mapes.py 模块 docstring（stage-0
+原文实读 + 借鉴节 + TODO 6b）。stage-1 的像素域编号约定是
 本仓自定（原文 Fig. 端口格点未复刻，见 honest notes），故不编造原文数值。
 """
 
@@ -42,6 +42,7 @@ from rfauto.core.mapes import (
     CATEGORY_PIXEL,
     CATEGORY_PIXEL_H,
     CATEGORY_PIXEL_V,
+    METRIC_METADATA_KEYS,
     VIA_GROUND,
     VIA_INTERLAYER,
     MapesModel,
@@ -435,7 +436,12 @@ def test_predict_flat_contract_and_chain() -> None:
     assert model.uncertainty(LAYOUT_4.flatten(CHECKERBOARD_4)) is None
     metrics = model.predict(LAYOUT_4.flatten(CHECKERBOARD_4))
     assert isinstance(metrics, dict)
-    assert all(isinstance(v, float) for v in metrics.values())
+    # 审查 P2-2：predict 附 stage/z_all_source 两个 str 元数据键，
+    # 数值指标断言排除之（METRIC_METADATA_KEYS 单源）
+    assert all(isinstance(v, float) for k, v in metrics.items()
+               if k not in METRIC_METADATA_KEYS)
+    assert metrics["stage"] == "synthetic"
+    assert metrics["z_all_source"] == "synthetic"
     for key in ("s11_db_at_fc", "s21_db_at_fc", "s12_db_at_fc", "s22_db_at_fc",
                 "s11_db_min", "s21_db_min", "passive_margin", "reciprocity_err"):
         assert key in metrics

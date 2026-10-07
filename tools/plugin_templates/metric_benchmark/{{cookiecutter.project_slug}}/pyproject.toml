@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ cookiecutter.project_slug }}"
+version = "{{ cookiecutter.version }}"
+description = "rfauto metric/benchmark 插件：{{ cookiecutter.bench_name }}（AgentBench 任务集+指标计算+参考提供器）"
+readme = "README.md"
+requires-python = ">= {{ cookiecutter.min_python }}"
+dependencies = ["rfauto"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["{{ cookiecutter.module_name }}"]

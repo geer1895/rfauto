@@ -1,6 +1,6 @@
 """DP-14 M1：PySR 锚公式自动发现（合成回收先行 → γ(εr) 8 档重发现对照）。
 
-规格书 docs/plan_deepdive_specs_20260924.md §14.1；判据预声明
+规格书 规格深案 §14.1；判据预声明
 runs/df6_dp14m1/criteria.md（开工前落盘，不事后改门）。
 
 流程：
@@ -29,6 +29,11 @@ procs=1/parallelism=serial + deterministic=True + random_state 固定。
 用法：
   .venv/Scripts/python.exe scripts/pysr_anchor_fit.py \
       --out-dir runs/df6_dp14m1 [--skip-synthetic] [--niterations 40]
+
+QW-14（月计划 D 流，2026-09-28 批）：--guesses {off,on,ab}——PySR 2.x
+guesses 播种已知锚闭式族（build_anchor_guesses）；ab=缩减预算 A/B 对照
+（小预算一档，判据预声明见 run_guesses_ab docstring）；KAN 备选登记为
+torch extras 探索档，非主路线，不实现。
 """
 
 from __future__ import annotations
@@ -98,6 +103,44 @@ NESTED_CONSTRAINTS = {
     "log": {op: 0 for op in _NEST_ZERO_OPS},
     "sqrt": {"exp": 0, "log": 0, "sqrt": 0},
 }
+
+
+# ── QW-14：PySR 2.x guesses 播种（已知锚闭式族 → initial guesses）─────────
+# 月计划（月度增强方案 §D 流 QW-14）：把 core 内
+# 已注册闭式族作为 PySRRegressor(guesses=[...])（2.x 新 API，实测 2.5.0
+# 签名在册；fraction_replaced_guesses 配套）传入，对比有/无 guesses 的
+# 收敛表现。铁律 7 不破：播种=搜索整形 hints（锚常数可溯源），不产生
+# 新物理常数；候选登记面与既有门零改动。
+# KAN 备选登记（月计划同条）：KAN（Kolmogorov-Arnold 网络）为 torch
+# extras 探索档备选路线，非主路线，本批不实现（月计划已登记）。
+GUESS_AB_CONFIG = {"niterations": 60, "populations": 20,
+                   "population_size": 40, "nested": True,
+                   "timeout_s": 300, "maxsize": 16}
+
+
+def build_anchor_guesses(var: str) -> list[str]:
+    """已知锚闭式族 → PySR initial guesses（sympy/Julia 可析字符串，^ 幂）。
+
+    族来源（core 注册闭式，可溯源）：
+    - γ(εr) 锚形精确式与等价倒数书写（calculators.CPS_H_EFF_GAMMA_C/P，
+      knowledge/anchors.yaml expr=1 + 0.9014*er**-0.6361 同源）；
+    - 同族粗形（结构性 hint，常数取整——播种结构不播种精确解）。
+    逐条过本脚本 AST 白名单（^→** 归一 + 变量名绑定），非法 var
+    fail-fast（ValueError）。
+    """
+    c0, c1 = CPS_H_EFF_GAMMA_C, CPS_H_EFF_GAMMA_P
+    guesses = [
+        f"1 + {c0}*{var}^(-{c1})",
+        f"1 + {c0}/({var}^{c1})",
+        f"1 + 0.9*{var}^(-0.64)",
+    ]
+    try:
+        for g in guesses:
+            validate_formula_ast(g, frozenset({var}))
+    except (SyntaxError, ValueError) as exc:
+        raise ValueError(
+            f"guesses 构造失败（var={var!r} 须为合法标识符）: {exc}") from exc
+    return guesses
 
 
 # ── AST 白名单（复刻 core/calculators.py:3206-3236 词表；测试与仓内原版
@@ -341,7 +384,7 @@ def make_synthetic(seed: int = SYNTHETIC_SEED,
     return x, y
 
 
-# ── PySR 拟合（版本自适应：parallelism（新）/procs+multithreading（旧））──
+# ── PySR 拟合（版本自适应：parallelism（新）/procs+multithreading（旧）──
 # 分阶段搜索整形（criteria.md 执行期澄清四；词表不变，纯搜索配置）：
 #   合成阶段 exp∘嵌套平台实测需 nested_constraints 破局（三轮 PASS 实证）；
 #   8 点阶段 nested 会偏移普通锚族式轨迹（四轮实证），用二轮同参
@@ -355,7 +398,8 @@ GAMMA8_CONFIG = {"niterations": 80, "populations": 25,
 
 def pysr_kwargs(seed: int, niterations: int, populations: int,
                 maxsize: int, timeout_s: int, nested: bool = True,
-                popsize: int = POPULATION_SIZE) -> dict[str, Any]:
+                popsize: int = POPULATION_SIZE,
+                guesses: list[str] | None = None) -> dict[str, Any]:
     import inspect
 
     from pysr import PySRRegressor
@@ -381,6 +425,13 @@ def pysr_kwargs(seed: int, niterations: int, populations: int,
         "output_torch_format": False,
         "model_selection": "best",
     }
+    # QW-14：guesses 仅显式给定时进构造 dict——None=旧路径字典逐字节不变
+    if guesses is not None:
+        if "guesses" not in params:
+            raise ValueError(
+                "当前 pysr 版本 PySRRegressor 不支持 guesses 播种参数"
+                "（需 PySR 2.x）")
+        base["guesses"] = list(guesses)
     if "parallelism" in params:
         base["parallelism"] = "serial"          # procs=1 等价（新版口径）
     else:
@@ -393,10 +444,12 @@ def run_pysr_fit(x: np.ndarray, y: np.ndarray, var: str, tag: str,
                  out_dir: Path, seed: int, niterations: int, populations: int,
                  maxsize: int, timeout_s: int, nested: bool = True,
                  popsize: int = POPULATION_SIZE,
+                 guesses: list[str] | None = None,
                  ) -> tuple[list[dict[str, Any]], Any]:
     """跑一次 PySR 拟合，返回 Pareto 前沿 [{complexity, loss, equation}] 与
     模型对象（HOF csv 从 tempdir 抄到 out_dir 留证；pysr 2.5 无
-    equation_file 参数，产物在 tempdir 下）。"""
+    equation_file 参数，产物在 tempdir 下）。guesses（QW-14）：播种
+    表达式列表透传 PySRRegressor（None=不播种，行为不变）。"""
     import shutil
 
     from pysr import PySRRegressor
@@ -404,7 +457,7 @@ def run_pysr_fit(x: np.ndarray, y: np.ndarray, var: str, tag: str,
     tmp = out_dir / f"pysr_tmp_{tag}"
     model = PySRRegressor(
         **pysr_kwargs(seed, niterations, populations, maxsize, timeout_s,
-                      nested=nested, popsize=popsize),
+                      nested=nested, popsize=popsize, guesses=guesses),
         tempdir=str(tmp),
     )
     model.fit(np.asarray(x, dtype=float).reshape(-1, 1), y,
@@ -419,6 +472,70 @@ def run_pysr_fit(x: np.ndarray, y: np.ndarray, var: str, tag: str,
         for row in eqs.itertuples()
     ]
     return pareto, model
+
+
+def run_guesses_ab(x: np.ndarray, y: np.ndarray, var: str, out_dir: Path,
+                   seed: int) -> dict[str, Any]:
+    """QW-14 A/B：同 seed 同预算（GUESS_AB_CONFIG 缩减档），无/有 guesses
+    两臂合成对照——播种收敛增益的量化裁判。
+
+    判据预声明（开工前冻结，不事后改门；#122）：
+    - 门只钉播种臂：GUESS_AB_CONFIG 缩减预算内命中 1+c0·x^-c1 结构
+      （match_power_law 等价书写）**且**确定性精修后 c0/c1 rel err
+      ≤ SYNTH_PARAM_REL_TOL（与全预算合成回收门同容差——精修是
+      确定性 LSQ，播种把结构送进前沿后精修即可钉参数）；
+    - 对照臂（no_guess）只如实报告（elapsed/结构命中/参数），FAIL
+      不设门——缩减预算下基线不命中恰是播种增益的证据，不是缺陷。
+    """
+    guesses = build_anchor_guesses(var)
+    arms: dict[str, Any] = {}
+    for name, gs in (("no_guess", None), ("guess", guesses)):
+        t0 = time.monotonic()
+        pareto, _ = run_pysr_fit(x, y, var, f"ab_{name}", out_dir, seed,
+                                 GUESS_AB_CONFIG["niterations"],
+                                 GUESS_AB_CONFIG["populations"],
+                                 GUESS_AB_CONFIG["maxsize"],
+                                 GUESS_AB_CONFIG["timeout_s"],
+                                 nested=GUESS_AB_CONFIG["nested"],
+                                 popsize=GUESS_AB_CONFIG["population_size"],
+                                 guesses=gs)
+        elapsed = time.monotonic() - t0
+        matched = None
+        for row in sorted(pareto, key=lambda r: r["loss"]):
+            m = match_power_law(row["equation"], var=var)
+            if m is not None:
+                matched = (row, m)
+                break
+        arm: dict[str, Any] = {
+            "elapsed_s": elapsed, "n_pareto": len(pareto),
+            "structure_hit": matched is not None,
+            "seeded": gs is not None,
+        }
+        if matched is not None:
+            row, (c0_raw, c1_raw) = matched
+            c0_fit, c1_fit = refine_power_law(x, y, c0_raw, c1_raw)
+            c0_rel = abs(c0_fit - CPS_H_EFF_GAMMA_C) / CPS_H_EFF_GAMMA_C
+            c1_rel = abs(c1_fit - CPS_H_EFF_GAMMA_P) / CPS_H_EFF_GAMMA_P
+            arm.update(equation=row["equation"], complexity=row["complexity"],
+                       loss=row["loss"],
+                       c0_fit=c0_fit, c1_fit=c1_fit,
+                       c0_rel_err=c0_rel, c1_rel_err=c1_rel,
+                       param_pass=bool(c0_rel <= SYNTH_PARAM_REL_TOL
+                                       and c1_rel <= SYNTH_PARAM_REL_TOL))
+        arms[name] = arm
+        print(f"[ab {name}] elapsed {elapsed:.1f}s "
+              f"structure_hit={arm['structure_hit']} "
+              f"param_pass={arm.get('param_pass')}")
+    g = arms["guess"]
+    gate_pass = bool(g.get("structure_hit") and g.get("param_pass"))
+    return {
+        "config": dict(GUESS_AB_CONFIG),
+        "guesses": guesses,
+        "criteria": ("播种臂缩减预算内结构命中 + 精修 rel err ≤ "
+                     f"{SYNTH_PARAM_REL_TOL}；对照臂如实报告不设门"),
+        "arms": arms,
+        "pass": gate_pass,
+    }
 
 
 def eval_formula(expr: str, x: np.ndarray, var: str = "x") -> np.ndarray:
@@ -580,6 +697,11 @@ def main() -> int:
                         help="跳过合成回收门（仅限复跑 8 档对照的调试档）")
     parser.add_argument("--no-rerun", action="store_true",
                         help="跳过 8 点复现性第二遍拟合")
+    parser.add_argument("--guesses", choices=("off", "on", "ab"),
+                        default="off",
+                        help="QW-14 guesses 播种：off=现行为逐字节不变；"
+                             "on=合成阶段播种已知锚族；ab=只跑缩减预算"
+                             " A/B 对照（小预算一档，不进 8 档阶段）")
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -620,9 +742,27 @@ def main() -> int:
 
     report["julia"] = julia_version_evidence()
 
+    # ── QW-14 ab 模式：只跑缩减预算 A/B 对照（小预算一档）──────────────
+    if args.guesses == "ab":
+        xs_ab, ys_ab = make_synthetic(args.seed)
+        ab = run_guesses_ab(xs_ab, ys_ab, "x", out_dir, args.seed)
+        report["qw14_guesses"] = ab
+        gates["guesses_seed_hit"] = {"pass": bool(ab["pass"]),
+                                     "note": ab["criteria"]}
+        report["gates"] = gates
+        (out_dir / "pysr_report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2),
+            encoding="utf-8")
+        print(f"===GATE GUESSES_SEED {'PASS' if ab['pass'] else 'FAIL'}===")
+        print(f"===ALL GATES {'PASS' if ab['pass'] else 'FAIL'}===")
+        return 0 if ab["pass"] else 1
+
     # ── 第 1 步：合成回收门 ────────────────────────────────────────────
     selected8: dict[str, Any] | None = None
     pareto8: list[dict[str, Any]] = []
+    synth_guesses = build_anchor_guesses("x") if args.guesses == "on" else None
+    if synth_guesses is not None:
+        report["qw14_guesses"] = {"mode": "on", "guesses": synth_guesses}
     if not args.skip_synthetic:
         xs, ys = make_synthetic(args.seed)
         t0 = time.monotonic()
@@ -631,7 +771,8 @@ def main() -> int:
                                      SYNTH_CONFIG["populations"],
                                      args.maxsize, args.timeout,
                                      nested=SYNTH_CONFIG["nested"],
-                                     popsize=SYNTH_CONFIG["population_size"])
+                                     popsize=SYNTH_CONFIG["population_size"],
+                                     guesses=synth_guesses)
         synth_elapsed = time.monotonic() - t0
         print(f"[synthetic] elapsed {synth_elapsed:.1f}s, "
               f"pareto {len(pareto_syn)} rows")

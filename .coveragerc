@@ -1,0 +1,19 @@
+# 覆盖率配置（r4 F-G 件2，2026-09-27）。
+# 口径（Google Testing Blog 2020）：覆盖率是信号不是门——不设阈值 fail_under，
+# 首跑基线落 runs/coverage.json+term 报告供趋势对照。
+[run]
+branch = True
+source = src
+omit =
+    */__main__.py
+# dynamic_context 不进配置（pytest-cov+xdist 已知冲突 DistCovError）——
+# 需要逐测试上下文时在命令行传 --cov-context=test_function
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+show_missing = False
+skip_covered = False

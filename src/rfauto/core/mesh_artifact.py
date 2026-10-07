@@ -1,20 +1,20 @@
-"""网格伪象自动诊断与收敛控制器内核。
+"""网格伪象自动诊断与收敛控制器内核（D11，续跑计划 §10.3 D11 / §10.18 第7条）。
 
 把历史"网格病"教训内核化为确定性诊断链（numpy + 标准库，无第三方依赖）：
-- #198/#219 rat-race 阶梯环：0.4mm 阶梯环慢波/容性栅格化伪象——六门在带内低端
+- #198/#219 rat-race pt8：0.4mm 阶梯环慢波/容性栅格化伪象——六门在带内低端
   几乎全过、随 f 单调劣化；等效 εeff=3.28 超微带闭式上限（εr=3.66，HJ 直线
-  2.7246）；全 4×4 矩阵对理想 (θ,θ,3θ,θ) 环线性幅值最小二乘得环电长缩放
-  k=1.0975）。反推 k = f_target / f_center_raw；
+  2.7246）；pt8 全 4×4 矩阵对理想 (θ,θ,3θ,θ) 环线性幅值最小二乘得环电长缩放
+  k=1.0975（廿九）/（三十九）。反推 k = f_target / f_center_raw；
   亦等价于 k = sqrt(εeff_等效 / εeff_闭式)。
 - #205 via：底层倒置馈 MSLPort 的 β2/β1 = 1.0491±0.0011 带内恒定——乘性
   探针尺度常数（端口提取链归一化偏移），非网格伪象。
 - #152：SmoothMesh/AddEdges2Grid 留下 nm 级近重合网格线 → CFL 时间步塌缩
   6 个量级（7.7e-19 s），症状是 CalcPort IndexError 而非网格报错。
 
-与 core/solve_health.py 分工：solve_health 判"病"（本次 solve 是否可采信），
-本模块判"网格病"并开药（局部加密 / 更换 BASE / 标定常数落 provenance）。
-本模块不 import solve_health，两者独立；集成（service/CLI 薄壳、健康报告
-内嵌网格伪象附件）留待后续增量（见 honestNotes）。
+与 core/solve_health.py（G11）分工：G11 判"病"（本次 solve 是否可采信），
+D11 判"网格病"并开药（局部加密 / 更换 BASE / 标定常数落 provenance）。
+本模块不 import solve_health，两者独立；集成（service/CLI 薄壳、G11 报告
+内嵌 D11 附件）留待后续增量（见 honestNotes）。
 
 设计约束：
 - 纯函数内核：输入为已加载的物理量（频率轴 + S 矩阵 / 网格细化序列 /
@@ -23,8 +23,8 @@
 - 产物缺失 → UNKNOWN，不误报。
 - 判据只判"网格病"：单一"随 f 单调劣化"证据不足以定性（可能是设计错），
   必须叠加网格特异证据（细化中心上移 / 等效 εeff 超物理界）才落
-  MESH_ARTIFACT，否则 INCONCLUSIVE（先验模型再校准）。
-- 裸数据路径（PARTIAL）：k 反推不再要求完整
+  MESH_ARTIFACT，否则 INCONCLUSIVE。
+- 裸数据路径（D11 PARTIAL 收口）：k 反推不再要求完整
   provenance 链——直接输入多网格档响应数据（tiers，每档 mesh_mm + 频率轴
   + S 数据，全矩阵或驱动行均可）即可判伪象（各档中心裸定位 → 中心随细化
   上移）+ 给 k 估计（F0/最粗档裸定位中心，带沿截断时如实打界旗标）；带
@@ -44,6 +44,8 @@ from typing import Any
 
 import numpy as np
 
+from rfauto.core.num_utils import coerce_float
+
 # ---------------------------------------------------------------------------
 # 状态与检定常量
 # ---------------------------------------------------------------------------
@@ -60,18 +62,18 @@ FAIL = "FAIL"
 UNKNOWN = "UNKNOWN"
 
 # 教训编号——写进每条 factor，保证报告可回溯到踩坑原文
-LESSON_GATE_DEGRADE = "#219（六门随 f 单调劣化+带内低端全过）"
+LESSON_GATE_DEGRADE = "#219（六门随 f 单调劣化+带内低端全过，廿九）"
 LESSON_CENTER_SHIFT = "#219②（网格细化中心单调上移=伪象自证）"
-LESSON_EPS_BOUND = "#198/#219（等效 εeff 超物理界）"
+LESSON_EPS_BOUND = "#198/#219（等效 εeff 超物理界，廿九）"
 LESSON_PROBE_SCALE = "#205（MSLPort 倒置叠层探针尺度常数 1.0491）"
 LESSON_TIMESTEP = "#152（nm 级近重合网格线 → CFL 时间步塌缩）"
 
-# 教训常数（与踩坑原文数值一致）
+# 教训常数（与踩坑原文数值一致，改动须先对 ）
 # 1.0491 探针窗（#205）：β2/β1=1.0491±0.0011 带内恒定——
 # 探针尺度常数是 β 的乘性因子 s；等效 εeff 比值 = s²（故 εeff 口径须先开方）
 PROBE_SCALE_CENTER = 1.0491
 PROBE_SCALE_HALF_WIDTH = 0.01
-# 等效 εeff 超闭式容差：>5% 判"远超闭式"（阶梯环案例实测 +20.4%）
+# 等效 εeff 超闭式容差：>5% 判"远超闭式"（pt8 实测 +20.4%）
 EPS_OVER_CLOSED_TOL = 0.05
 # 网格细化中心上移显著门槛：细化档中心相对粗档上移 >2% 判伪象自证
 CENTER_SHIFT_TOL = 0.02
@@ -82,7 +84,7 @@ ISO_PASS_DB = -15.0
 # 单调劣化：badness 递增步占比 ≥0.8 且首末比 >1.5
 MONOTONE_STEP_FRAC = 0.8
 MONOTONE_RATIO = 1.5
-# timestep 塌缩（#152，与健康体检同口径）：min/max <1e-3 = 塌缩 6 个量级
+# timestep 塌缩（#152 与 G11 同口径）：min/max <1e-3 = 塌缩 6 个量级
 TIMESTEP_COLLAPSE_RATIO = 1e-3
 # 近重合网格线：AddEdges2Grid 留下的 nm~µm 级间距 <1µm（最小间距守卫口径）
 NEAR_COINCIDENT_GAP_M = 1e-6
@@ -130,12 +132,12 @@ def _db(x: Any) -> np.ndarray:
 
 
 def _as_float(value: Any) -> float | None:
-    """尽力转 float，失败/非有限返回 None。"""
-    try:
-        v = float(value)
-    except (TypeError, ValueError):
-        return None
-    return v if np.isfinite(v) else None
+    """尽力转 float，失败/非有限返回 None（单源 num_utils 薄包装，AU-2⑤）。
+
+    历史语义：bool 放行（float(True)=1.0）、数字串参与解析、NaN/inf 判失败。
+    """
+    return coerce_float(value, accept_str=True, accept_bool=True,
+                        finite_only=True)
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +209,7 @@ def locate_hybrid_center_ghz(freq_hz: Any, s_matrix: Any,
 
 def locate_tier_center_ghz(freq_hz: Any, s_matrix: Any,
                            ports: dict[str, int] | None = None) -> dict[str, Any]:
-    """单档响应数据裸定位混合环中心（跨档同口径）。
+    """单档响应数据裸定位混合环中心（跨档同口径，D11 收口）。
 
     数据形态二选一：
     - 全矩阵 (n_freq, n, n)：额外给 badness_min（#219 口径）；
@@ -611,12 +613,12 @@ def _analyze_timestep(timestep_values: Any, mesh_line_gaps_m: Any) -> dict[str, 
 _ACTIONS = {
     MESH_ARTIFACT: [
         "局部加密网格（BASE/2）复核中心是否继续上移（伪象自证）",
-        "更换 BASE/网格策略（环带带缘对齐或柱坐标，避免阶梯化）",
+        "更换 BASE/网格策略（环带带缘对齐或柱坐标，避免阶梯化，§10.18 补强①）",
         "把引擎常数 k 与生效范围（mesh/BASE）写进 provenance，换档必须重定标",
         "以 HFSS（物理 R 无补偿）为对齐基准仲裁归属",
     ],
     PROBE_SCALE: [
-        "端口去嵌入/标定 MSLPort 探针尺度常数（skrf de-embedding）",
+        "端口去嵌入/标定 MSLPort 探针尺度常数（skrf de-embedding，§10.18 补强②）",
         "核对端口叠层 start/stop 约定与参考面（#150/#205），勿以加密网格求解",
         "把探针常数（如 1.0491）落 provenance，与网格伪象常数分开记账",
     ],
@@ -700,7 +702,7 @@ def diagnose_mesh_artifact(
         timestep_values: 同 run 的 FDTD timestep 记录序列(s)（#152）。
         mesh_line_gaps_m: 相邻网格线间距序列(m)（#152 近重合线判据）。
         tiers: 多网格档裸响应数据 [{"mesh_mm": m, "freq_hz": f, "s_matrix": S},
-              ...]）——不要求完整 provenance 链：
+              ...]（D11 收口）——不要求完整 provenance 链：
               每档裸定位中心（locate_tier_center_ghz，全矩阵或驱动行均可），
               缺 mesh_study 时由各档中心合成；缺 freq_hz/s_matrix 时取带全
               矩阵的最粗档供六门判据；缺 center_ghz 时以最粗档裸定位中心
@@ -740,7 +742,7 @@ def diagnose_mesh_artifact(
     if hybrid_ports is None:
         hybrid_ports = provenance.get("hybrid_ports")
 
-    # 多档裸响应数据兜底：显式 kwargs > provenance 键 > 裸定位。
+    # 多档裸响应数据兜底（D11 收口）：显式 kwargs > provenance 键 > 裸定位。
     # 每档独立定位（单项炸 → 该档 ok=False，不传染，#105）。
     tier_centers: list[dict[str, Any]] = []
     center_route_note: str | None = None
@@ -796,7 +798,7 @@ def diagnose_mesh_artifact(
         try:
             factors.append(runners[name]())
         except Exception as exc:  # 单项炸 → UNKNOWN，不传染（#105）
-            factors.append(_factor(name, UNKNOWN, f"检查项异常: {exc!r}", "mesh_artifact 内核"))
+            factors.append(_factor(name, UNKNOWN, f"检查项异常: {exc!r}", "D11 内核"))
     fmap = {f["factor"]: f for f in factors}
 
     def _is(name: str, status: str) -> bool:

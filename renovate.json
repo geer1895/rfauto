@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "rfauto 依赖自动更新骨架（B6-2 预备稿 2026-09-28；生效落点=公开仓 github.com/geer1895/rfauto，公开仓 push 时同批携带；内部仓 Renovate app 未启用故本文件在内部仓为惰性草稿）。核心纪律：任何依赖更新禁止 automerge，必须过本地全量门（pytest 串行终门+ruff+import-linter）后人工合入。",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitScope(deps)",
+    ":disableRateLimiting"
+  ],
+  "timezone": "Asia/Shanghai",
+  "schedule": ["after 9am and before 3pm on monday"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "replace",
+  "separateMajorMinor": true,
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 4,
+  "branchConcurrentLimit": 4,
+  "automerge": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["after 9am and before 3pm on the first day of the month"],
+    "commitMessageAction": "uv.lock 例行维护"
+  },
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "schedule": ["at any time"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "ci.yml 质量门 pip 钉版（ruff/import-linter，D4 纪律：CI 钉版与本地门一致）与 pyproject dev extras 联动升级",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.ya?ml$/"],
+      "matchStrings": [
+        "pip install\\s+\"(?<depName>ruff)==(?<currentValue>[0-9][0-9.]*)\"",
+        "pip install\\s+\"(?<depName>import-linter)==(?<currentValue>[0-9][0-9.]*)\""
+      ],
+      "datasourceTemplate": "pypi"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "运行时依赖（[project.dependencies]）：一笔一 PR，禁 automerge；更新须过定向测试+全量门",
+      "matchDepTypes": ["dependencies"],
+      "automerge": false,
+      "semanticCommitType": "fix"
+    },
+    {
+      "description": "dev 工具链（ruff/mypy/pytest 系/import-linter 等）：分组单 PR 降低门次数；钉版条目（==）升级必须在同一 PR 重钉 ci.yml",
+      "matchDepTypes": ["dev-dependencies"],
+      "groupName": "dev toolchain",
+      "automerge": false,
+      "semanticCommitType": "chore"
+    },
+    {
+      "description": "extras 可选依赖（hfss/mcp/multiobj/z3/dev 之外的新增组与 dev 组）：分组；z3-solver 升级后须复跑诚实 skip 集合（df6 ⑦）",
+      "matchDepTypes": ["optional-dependencies"],
+      "groupName": "extras",
+      "automerge": false
+    },
+    {
+      "description": "门内精确钉版工具（pytest-xdist==3.8.0 / ruff== / import-linter== / pip-licenses==5.5.5 / pytest-randomly==5.0.0）：major 升级走看板审批，人工裁决后才开 PR",
+      "matchDepTypes": ["dev-dependencies"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "GitHub Actions：commit-ish 钉版升级为 digest 钉 + 分组每周一批",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "groupName": "ci actions",
+      "schedule": ["after 9am and before 3pm on monday"]
+    },
+    {
+      "description": "pre-commit 钩子（ruff-pre-commit/mirrors-mypy）：与 pyproject dev extras 版本不强制对齐，单独小批",
+      "matchManagers": ["pre-commit"],
+      "groupName": "pre-commit hooks",
+      "automerge": false
+    }
+  ]
+}

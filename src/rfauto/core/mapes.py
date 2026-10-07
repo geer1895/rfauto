@@ -1,10 +1,12 @@
-"""MAPES stage-1：像素解析电磁仿真器闭式内核（纯代码 / fake Z_ALL / 零真机）。
+"""A8 MAPES stage-1：像素解析电磁仿真器闭式内核（纯代码 / fake Z_ALL / 零真机）。
 
 依据
 ----
-- Rao et al., arXiv:2511.21274v3 原文实读口径；
-- staged 接入路径：stage-1 纯代码先导、predict(params) 平铺契约、
-  topology_key + 展平布尔映射约定。
+- "队列 6b MAPES stage-0 精读"节（Rao et al.,
+  arXiv:2511.21274v3 原文实读口径）；
+- "MAPES 像素电磁仿真器借鉴"节（staged 接入路径）；
+- TODO 队列 6b（stage-1 纯代码先导、predict(params) 平铺契约、
+  topology_key + 展平布尔映射约定）。
 
 机制（stage-0 实读口径，不凭想象补公式）
 ----------------------------------------
@@ -23,7 +25,7 @@
    **不再做任何全波计算**。
 4. **互易/无源**由 Schur 补结构天然保证（`Z_ALL` 互易无源 + 无源对角负载）。
 
-独立裁判（不得自证）
+独立裁判（铁律：不得自证）
 --------------------------
 本模块的闭式路径是 `load_network_z`（Z_ALL 分块 + Schur 补）；
 :func:`nodal_reference_s` 是**完全独立**的第二条路径：直接对底层物理网络
@@ -39,14 +41,14 @@ stage-1 边界（诚实声明）
 - 像素域端口编号是本模块自定约定 :class:`PixelLayout`（逐像素占位口 +
   4/8 邻域耦合端口 + 过孔槽），**不复刻原文 Fig. 的虚拟端口格点**；原文端口数公式
   `Q = L(6MN-3M-3N+4) + (L-1)MN` 以 :func:`paper_port_count` 保留为参考，
-  其 "+4" 物理落位仍是 stage-0 遗留 openQuestion。
+  其 "+4" 物理落位仍是 stage-0 遗留 openQuestion（TODO 6b）。
 - β（虚拟像素占比 0.70-0.85）/α（全局缩放）校准超参**不在 stage-1**，
   走 stage-3 的 #190 校准范式（HFSS 仲裁背书后再定常数）。stage-4 落了
   确定性 α 内核：:class:`MapesModel` keyword-only ``alpha``（频率缩放，
   提取网格上插值）+ :func:`fit_alpha_scaling`（对直接全波案网格搜索 +
   留一验证）；α 数值是否被 HFSS 背书由调用方标注（openEMS 同引擎对拍
   得到的 α 只是 openEMS-internal）。
-- 与 `SurrogateModel` 契约兼容（`KIND` + `predict(params) -> metrics`
+- 与 E3 `SurrogateModel` 契约兼容（`KIND` + `predict(params) -> metrics`
   平铺 dict + `uncertainty` 返回 None），本模块**不注册**任何 registry。
 
 像素域约定（stage-1 固定，测试钉死）
@@ -55,7 +57,7 @@ stage-1 边界（诚实声明）
 （0-based，紧随外部 I/O 端口之后）：
 
 1. `pixel`：逐像素占位口 `(r,c)`，`M*N` 个，行主序——**缺席=开路、
-   在场=短路**（占用→对角负载字面口径）；
+   在场=短路**（"占用→对角负载"字面口径）；
 2. `pixel_h`：行内相邻耦合 `(r,c)-(r,c+1)`，`M*(N-1)` 个，行主序；
 3. `pixel_v`：列内相邻耦合 `(r,c)-(r+1,c)`，`(M-1)*N` 个，行主序；
 4. `diag_main`：对角虚拟像素 `(r,c)-(r+1,c+1)`，`(M-1)*(N-1)` 个；
@@ -164,7 +166,7 @@ class LoadSlot(NamedTuple):
 
 
 def paper_port_count(n_rows: int, n_cols: int, n_layers: int = 1) -> int:
-    """MAPES 原文端口数公式（arXiv:2511.21274v3 实读）。
+    """MAPES 原文端口数公式（arXiv:2511.21274v3，实读）。
 
     `Q = L(6MN - 3M - 3N + 4) + (L-1)MN`
 
@@ -1001,13 +1003,27 @@ class MapesResult:
         }
 
 
+#: predict 输出中的元数据键（str 值，非数值指标；消费面按此排除，审查 P2-2）
+METRIC_METADATA_KEYS: tuple[str, ...] = ("stage", "z_all_source")
+
+#: z_all_source 允许取值：synthetic=stage-1 合成 RLC 网格（缺省，模块现状），
+#: extracted=真机/全波提取的 Z_ALL（stage-2+ 由调用方显式声明）
+Z_ALL_SOURCES: tuple[str, ...] = ("synthetic", "extracted")
+
+
 class MapesModel:
     """MAPES 解析像素代理（stage-1）。
 
-    与 `rfauto.optimization.surrogate.SurrogateModel` 的契约同构：
-    `KIND` 类属性 + `predict(params) -> dict[str, float]`（纯函数语义）
+    与 E3 `rfauto.optimization.surrogate.SurrogateModel` 的契约同构：
+    `KIND` 类属性 + `predict(params) -> metrics 平铺 dict`（纯函数语义）
     + `uncertainty(params) -> None`。本类**不注册**进 `surrogate_registry`
     （stage-3 达标后再注册为"解析代理档"）。
+
+    stage 标记（审查 P2-2，#273 同族）：predict 输出除数值指标外附
+    ``stage="synthetic"``（stage-1 合成闭式口径）与 ``z_all_source``
+    （Z_ALL 来源，构造时声明，缺省 "synthetic"）两个 str 元数据键——
+    下游判读按 stage 分派，防止把 stage-1 合成输出当真机物理 S 参数消费；
+    消费面用模块常量 :data:`METRIC_METADATA_KEYS` 排除元数据键取数值指标。
     """
 
     KIND = "mapes_pixel_analytic"
@@ -1020,15 +1036,20 @@ class MapesModel:
         *,
         reference_impedance: float = DEFAULT_REFERENCE_IMPEDANCE,
         alpha: float = 1.0,
+        z_all_source: str = "synthetic",
     ) -> None:
         if not isinstance(layout, PixelLayout):
             raise ConfigError(f"layout 必须是 PixelLayout，实得 {type(layout).__name__}")
+        if z_all_source not in Z_ALL_SOURCES:
+            raise ConfigError(
+                f"z_all_source 必须是 {Z_ALL_SOURCES} 之一，实得 {z_all_source!r}")
         self.layout = layout
         self.reference_impedance = float(reference_impedance)
         alpha_val = float(alpha)
         if not np.isfinite(alpha_val) or alpha_val <= 0.0:
             raise ConfigError(f"alpha 必须是有限正数（频率缩放因子），实得 {alpha!r}")
         self.alpha = alpha_val
+        self.z_all_source = z_all_source
         z = np.asarray(z_all, dtype=complex)
         if z.ndim == 2:
             z = z[None, :, :]
@@ -1099,13 +1120,18 @@ class MapesModel:
             s_external=s_ext,
         )
 
-    def predict(self, params: dict[str, Any]) -> dict[str, float]:
-        """SurrogateModel 契约：平铺 params → 平铺 metrics（同参数同输出，纯函数语义）。"""
+    def predict(self, params: dict[str, Any]) -> dict[str, Any]:
+        """E3 契约：平铺 params → 平铺 metrics（同参数同输出，纯函数语义）。
+
+        除数值指标外附两个 str 元数据键（:data:`METRIC_METADATA_KEYS`）：
+        ``stage="synthetic"``（stage-1 合成闭式口径）与 ``z_all_source``
+        （Z_ALL 来源，构造 kwarg，缺省 synthetic）——审查 P2-2 可见性标记。
+        """
         result = self.evaluate(params)
         s = np.asarray(result.s_external)
         n_io = result.n_io
         center = result.n_freq // 2
-        metrics: dict[str, float] = {}
+        metrics: dict[str, Any] = {}
         for i in range(n_io):
             for j in range(n_io):
                 metrics[f"s{i + 1}{j + 1}_db_at_fc"] = float(_db(s[center, i, j]))
@@ -1118,6 +1144,9 @@ class MapesModel:
             1.0 - np.max(np.linalg.norm(s, ord=2, axis=(-2, -1))))
         metrics["reciprocity_err"] = float(np.max(np.abs(
             s - np.swapaxes(s, -1, -2))))
+        # stage 标记（审查 P2-2）：合成口径/Z_ALL 来源显式随产物走，不靠文档自律
+        metrics["stage"] = "synthetic"
+        metrics["z_all_source"] = self.z_all_source
         return metrics
 
 
@@ -1173,7 +1202,7 @@ def fit_alpha_scaling(
     ``w_指标`` = α=1 时该指标逐案误差的 RMS（两指标量纲同为 dB 仍做尺度归一，
     避免深谷 s11_db_min 的大 dB 摆幅淹没 s21@fc）；``w=0`` 的指标（α=1 已
     精确）取 1。留一验证：逐案剔除后重拟 α_i，报告留出案在 α_i 与 α=1 下
-    的归一误差。数值只在确定性内核：全部数值只来自闭式内核与真机基准，本函数不产生
+    的归一误差。铁律 7：全部数值只来自闭式内核与真机基准，本函数不产生
     任何物理常数；α 是否被 HFSS 背书（#190）由调用方标注。
     """
     if not isinstance(layout, PixelLayout):
@@ -1256,14 +1285,14 @@ def fit_alpha_scaling(
 
 
 # --------------------------------------------------------------------------- #
-# stage-5：探针装配偏差重推导（零仿真；离线诊断定根因后的
-# 通用内核。误差模型与证据链：
+# stage-5：探针装配偏差重推导（零仿真；runs/mapes_s5_diag 诊断定根因后的
+# 通用内核。误差模型与证据链见 stage-5 与 runs/mapes_s5_diag/*.json：
 # u 探针=盒内单棱采样（主项）、i 探针=z0 对偶环位移拾取（次项、轮相关→旋度）、
 # 激励口 SREF 探针偏差→列缩放（轮无关→势场）；逐端口纯相位（对角相似）被
 # 实证否证（σmax/min_eig 在相似变换下严格不变）。
 # --------------------------------------------------------------------------- #
 
-#: 预声明 Z_ALL 质量门（写死）：
+#: 预声明 Z_ALL 质量门（写死，2026-09-15 W3③ 任务书口径）：
 #: 互易 ≤ 1e-3 且全频 min_eig(Re Z) ≥ −1e-6（数值容差）且 σmax(S) ≤ 1.001。
 ZALL_GATE_RECIPROCITY_MAX = 1.0e-3
 ZALL_GATE_MIN_EIG_RE = -1.0e-6
@@ -1294,7 +1323,7 @@ def assemble_s_from_ui(
       偏差全额进入）；
     - ``"current"``：非激励口 ``b_i = −Z0·I_i``——离散集总电阻定律
       ``U_avg = R·I_total`` 在端接口精确成立（棱均值电压可由总电流单读
-      复原），绕开 u 单棱采样主项（诊断档实测互易残差
+      复原），绕开 u 单棱采样主项（runs/mapes_s5_diag 实测互易残差
       5.6× 改善）；激励口对角元仍用波分解（含源，电阻定律不可用）。
 
     ``sref_recal``（opt-in，缺省 None=行为逐位不变）：SREF 列因子
@@ -1437,7 +1466,7 @@ def reciprocity_pair_residual(s: Any) -> dict[str, np.ndarray]:
     """逐端口对互易残差定位：``max_f |S_ik − S_ki|`` 与耦合量 ``max_f |S_ik|``。
 
     返回 (i, k) 上三角展平索引 ``pair_i/pair_k``（0 基）及对应残差/耦合数组，
-    供坏对定位（同贴片/同类聚集判读，诊断用）。
+    供坏对定位（同贴片/同类聚集判读，runs/mapes_s5_diag 诊断用）。
     """
     sm = np.asarray(s, dtype=complex)
     if sm.ndim != 3 or sm.shape[1] != sm.shape[2]:
@@ -1542,7 +1571,7 @@ def z_all_gate(
 # （0.2×0.3mm）在 0.6mm 网格下不足 2 格——u 探针（盒横断面中心零宽线）不在
 # 网格线上时吸附到最近棱=盒角单棱积分（dump 实证 io1 u 落 (0.4,0.85)、中心
 # (0.5,1.0)）；i 探针（激励轴中面）请求 z=h/2 被吸附到 z=0 地面 PEC 对偶环、
-# 面积≈3× 盒。修法（离线侧；真机重提取另行执行）：
+# 面积≈3× 盒。修法（离线侧；真机重提取由司机执行）：
 #   ① probe_midlines：每端口盒三轴中线全部落硬网格线（= u 探针两横轴中心线
 #      + i 探针激励轴中面线），探针按 ports.py 字面口径逐位落位；
 #   ② probe_box_guard：终网格守卫——每端口盒每轴 [start, mid, stop] 三线
@@ -1624,7 +1653,7 @@ def probe_box_guard(
     - 中线到线集中最近邻线的距离 > min_gap_m（否则去重吞中线，修复静默失效）。
     三条同时成立 ⇔ 该轴 ≥2 格且中线平滑/去重后必存活。返回 JSON 友好 dict：
     ``pass``、``violations``（端口号/标签/轴/原因）、``min_half_span_m`` 与
-    ``min_mid_gap_m``（全部盒实测最小值）。
+    ``min_mid_gap_m``（全部盒实测最小值，供任务书回填数字）。
     """
     if not isinstance(geom, PixelBoardGeom):
         raise ConfigError(f"geom 必须是 PixelBoardGeom，实得 {type(geom).__name__}")
@@ -1715,7 +1744,7 @@ def ui_cross_round_drift(
     中位与最大，另报 **逐轮频中位的跨轮最大** ``port_max_freqmedian_rel``
     （先对 f 取中位再对 k 取最大：压掉单频尖峰，回答"哪一轮把这口带偏"）。
 
-    信噪分层（真机档实证，2026-09-18 150 轮零仿真复算）：漂移
+    信噪分层（真机档实证，2026-09-18 runs/mapes_s4 150 轮零仿真复算）：漂移
     随样本电流信噪 ``snr = |if[k,p,f]| / median_k |if[k,p,f]|`` 单调——弱耦合
     远端轮（snr<1%）桶中位 18.8%/最大 17.5，强信号桶（snr≥10）中位 1.1%/最大
     0.19；前者是比值噪声（中线修复不针对它），后者才是探针几何拾取底（修复
@@ -1726,7 +1755,7 @@ def ui_cross_round_drift(
     ``port_zui_abs_median``（Ω，端接量级对照）、``n_valid_samples``，及汇总
     ``median_of_port_median`` / ``max_of_port_max`` / ``max_of_port_max_freqmedian``
     / ``worst_port``（1 基端口号，按 ``port_max_freqmedian_rel``）/
-    ``n_ports_defined``。本函数不设门限、不产生物理常数：健康/病理
+    ``n_ports_defined``。本函数不设门限、不产生物理常数（铁律 7）：健康/病理
     判读由调用方对照真机档数字。
     """
     um = np.asarray(uf_all, dtype=complex)
@@ -1834,13 +1863,13 @@ def ui_cross_round_drift(
 
 
 # --------------------------------------------------------------------------- #
-# stage-5c：激励口参考面重定标（SREF 探针链自提取）。
-# 证据链=150 轮零仿真离线复算（基线与
-# 修正后 verdict 逐位一致），误差模型：
+# stage-5c：激励口参考面重定标（SREF 探针链自提取；fix-mapes-sref-recal）。
+# 证据链 runs/mapes_sref_study/evidence.json（150 轮零仿真复算，基线与
+# runs/mapes_zall_refix/verdict.json 逐位一致），误差模型：
 #   接收口集总律 u_t=−z0·i_t（离散意义精确，同 stage-5 S1 口径）、探针误差
 #   u=e^a·u_t、i=e^b·i_t、m=(a+b)/2 共模、Δ=a−b 差分。定案四条：
 #   ① Δ_p(f)=log(median_k[−Z_ui/z0]) 是**纯延时**（Im Δ∝f，R²=0.9998；τ 中位
-#      −1.087ps≈采样位差 0.21mm、跨口 std 0.417ps——预期"~1.3ps 量级"
+#      −1.087ps≈采样位差 0.21mm、跨口 std 0.417ps——任务书候选"~1.3ps 量级"
 #      在此意义下成立；但近共模，公共延时在互易差分中消去，对 rec 底是
 #      二阶小量）；
 #   ② num_wav=num_cur+inc^meas 逐样本精确（恒等式）→ wave 口径 = 逐条目
@@ -1948,7 +1977,7 @@ def delay_model_delta(delta: Any, freq_hz: Any) -> tuple[np.ndarray, dict[str, A
     ``re_c≈0``、``τ``=等效延时（空间偏 δx = τ·c0/√εeff）。返回
     ``(delta_fit, info)``；``info`` 含逐口 ``tau_s``/``re_const``/``im_const``、
     Im 线性拟合 R²（真机档中位 0.9998 = 纯延时判据）与最大拟合残差。
-    真机 150 轮实测 τ 中位 **−1.087ps**（≈u/i 采样位差 0.21mm，预期
+    真机 150 轮实测 τ 中位 **−1.087ps**（≈u/i 采样位差 0.21mm，任务书候选
     "~1.3ps 量级"在此意义下成立——但跨口 std 仅 0.42ps、近共模，互易差分
     中大部分消去，见 :func:`termination_delta` 与 stage-5c 节注释）。
     """
@@ -2024,7 +2053,7 @@ def apply_sref_recal(s: Any, column_factors: Any) -> np.ndarray:
 
     与 :func:`assemble_s_from_ui` 的 ``sref_recal`` 参数同效（列归一化，
     激励口参考面重定标）。**诚实口径**：只修可辨识部分；剩余每口常数相位
-    规范 m 不可自辨识——真机 150 轮
+    规范 m 不可自辨识——runs/mapes_sref_study/evidence.json 真机 150 轮
     实测修正上限 rec 1.460e-2→7.077e-3（≤5e-3 目标未达，剩余结构见
     stage-5c 节注释与 m 规范归因）。
     """
@@ -2050,11 +2079,11 @@ def sref_etht_column_factors(
     *,
     reference_impedance: float = DEFAULT_REFERENCE_IMPEDANCE,
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    """et/ht 源参考精修列（预声明口径定义）。
+    """et/ht 源参考精修列（runs/mapes_etht_refine/criteria.md 预声明定义）。
 
     以归档激励时序 ``et`` 的 DFT 为绝对相位/幅度参考，逐激励口精修 SREF
-    参考列的非平滑逐频 wobble（纯离线零仿真；预声明
-    "列侧已近极限，预期增益小"）：
+    参考列的非平滑逐频 wobble（纯离线零仿真，correction_limit.next_steps ①，
+    任务书预声明"列侧已近极限，预期增益小"）：
 
     ``E(f) = dft_time2freq(et_t, et_v, f)``（引擎同式 e^{−jωt} 口径）
     ``r_k(f) = inc_k^meas(f)/E(f)``，``inc_k^meas = 0.5(uf[k,k]+z0·if[k,k])``
@@ -2139,20 +2168,22 @@ def sref_etht_column_factors(
 
 
 # --------------------------------------------------------------------------- #
-# stage-5c+：互易判读口径显式消费（2026-09-19 口径）。定案：SREF 重定标非循环上限 raw
+# stage-5c+：互易判读口径显式消费（fix-mapes-sref-recal 执行项；0-用户口径
+# 2026-09-19①）。定案：SREF 重定标非循环上限 raw
 # 1.460e-2→7.077e-3（≤5e-3 未达），剩余=每口常数相位规范 m 自提取不可辨识；
 # S2 互易势场数值口径 rec→3.27e-3 达标但仅"显式标注"未进消费。本节把
 # raw/wave/s2 做成判读路径的显式量径（缺省 raw=现状逐位不变，门阈值常量
 # 全部不动）；τ 延迟模型口径不纳入消费（挂起为已知事项）。
 # --------------------------------------------------------------------------- #
 
-#: 互易判读可用量径（2026-09-19 口径）。``raw``=current-only 原始
+#: 互易判读可用量径（0-用户口径 2026-09-19①）。``raw``=current-only 原始
 #: 装配（缺省，现状）、``wave``=波分解装配、``s2``=S2 互易势场数值口径
 #: （循环量）。τ 延迟模型（:func:`delay_model_delta`）**不在枚举内**——
-#: 2026-09-19 口径挂起，不纳入消费。
+#: 0-用户口径 2026-09-19① 挂起，不纳入消费。
 RECIPROCITY_CALIBERS: tuple[str, ...] = ("raw", "wave", "s2")
 
-#: stage-5c 登记的互易修正目标（≤5e-3）。**informational 参照，不是门**：
+#: stage-5c 登记的互易修正目标（≤5e-3；runs/mapes_sref_study/evidence.json
+#: ``correction_limit.target`` 同源）。**informational 参照，不是门**：
 #: :func:`z_all_gate` 的预声明门（:data:`ZALL_GATE_*` 三常量）原样不动，
 #: verdict 两套判据如实并报（``pass*``=预声明门、``reciprocity_target_met``
 #: =5e-3 目标），互不改写。
@@ -2172,24 +2203,24 @@ def reciprocity_caliber_matrix(
       缺省路径逐位一致；150 轮真机 rec 1.460e-2）；
     - ``"wave"``：波分解装配（150 轮真机 rec 8.965e-3；= 逐条目精确去 Δ 的
       current 口径，stage-5c ②恒等式）；
-    - ``"s2"``：**S2 数值口径**（循环量，2026-09-19 口径显式消费）：
+    - ``"s2"``：**S2 数值口径**（循环量，0-用户口径 2026-09-19① 显式消费）：
       wave 装配 → :func:`termination_delta` 端接律 Δ →
       :func:`sref_column_factors` 列因子（= stage-5c 非循环最优 wav+colC）
       → :func:`fit_reciprocity_gain` 互易势场 → :func:`apply_port_gain`。
-      150 轮真机 rec→3.2722e-3（wav+colC 口径；
-      raw_wave 基变体 3.2615e-3 同达标）。
+      150 轮真机 rec→3.2722e-3（runs/mapes_sref_study/evidence.json
+      ``s2_reference["wav+colC"]``；raw_wave 基变体 3.2615e-3 同达标）。
 
     **循环性如实声明**：互易势场用互易残差自身定标——连不可辨识的 m 规范
     也一并吸收（这正是"循环"的含义）——只作"数值无源投影"同级的显式标注
     口径，**不是物理修复**；绝对尺度/物理可信度仍须 HFSS 仲裁（#190）。
-    τ 延迟模型不在链内（挂起事项）。返回 ``prov`` 携带
+    τ 延迟模型不在链内（0-用户口径挂起）。返回 ``prov`` 携带
     ``caliber`` / ``caliber_circular`` / ``caliber_chain``（s2 档另含
     ``gain_fit`` 拟合残差=旋度下界、``delta_info`` 提取有效性摘要）。
     """
     if caliber not in RECIPROCITY_CALIBERS:
         raise ConfigError(
             f"caliber 只接受 {'/'.join(RECIPROCITY_CALIBERS)}，实得 {caliber!r}"
-            "（τ 延迟模型口径挂起，不纳入消费）")
+            "（τ 延迟模型口径按 0-用户口径 2026-09-19① 挂起，不纳入消费）")
     um = np.asarray(uf_all, dtype=complex)
     im = np.asarray(if_all, dtype=complex)
     z0 = float(reference_impedance)

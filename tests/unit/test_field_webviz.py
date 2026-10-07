@@ -114,6 +114,35 @@ def write_nf2ff_h5(path: Path, theta_deg: np.ndarray, phi_deg: np.ndarray,
     return path
 
 
+def write_nf2ff_h5_compound(path: Path, theta_deg: np.ndarray, phi_deg: np.ndarray,
+                            e_theta: np.ndarray, dmax_lin: float = 1.642,
+                            f_hz: float = 2.45e9) -> Path:
+    """v0.37 master 引擎 compound 形态（M-4① 审计 §3.4 A1 回归载体）：
+    nf2ff/E_theta|E_phi/FD/f0 为 {r,i} compound（h5py 由 numpy 复数 dtype
+    自动落成），存 (n_theta, n_phi)；P_rad 双格式皆实数 (theta, phi)。"""
+    with h5py.File(path, "w") as h:
+        m = h.create_group("Mesh")
+        m.attrs["MeshType"] = np.array([2.0], dtype=np.float32)
+        m.create_dataset("theta", data=np.deg2rad(theta_deg).astype(np.float32))
+        m.create_dataset("phi", data=np.deg2rad(phi_deg).astype(np.float32))
+        m.create_dataset("r", data=np.array([1.0], dtype=np.float32))
+        nf = h.create_group("nf2ff")
+        nf.attrs["Dmax"] = np.array([dmax_lin])
+        nf.attrs["Frequency"] = np.array([f_hz], dtype=np.float32)
+        nf.attrs["Prad"] = np.array([1e-3])
+        nf.create_dataset("E_theta/FD/f0", data=e_theta.T)  # (n_theta, n_phi)
+        nf.create_dataset("E_phi/FD/f0",
+                          data=np.zeros(e_theta.T.shape, dtype=complex))
+        nf.create_dataset("P_rad/FD/f0", data=np.abs(e_theta.T) ** 2)
+    return path
+
+
+def _dipole_e(theta_deg: np.ndarray, phi_deg: np.ndarray) -> np.ndarray:
+    """半波偶极型方向场 (n_phi, n_theta)：θ=90° 峰、θ=0 零点。"""
+    TH, _ = np.meshgrid(np.deg2rad(theta_deg), np.deg2rad(phi_deg))
+    return (np.sin(TH) + 1e-6).astype(complex)
+
+
 @pytest.fixture()
 def blob():
     return _blob(X_MM, Y_MM, Z_MM)
@@ -271,6 +300,57 @@ class TestFarfieldPatternH5:
         with pytest.raises(ValueError, match="CalcNF2FF"):
             V.farfield_pattern_from_h5(write_fd_vector_dump(tmp_path / "d.h5", blob))
 
+    def test_compound_format_matches_legacy(self, tmp_path):
+        """M-4① A1 回归钉：v0.37 compound 引擎格式与 legacy 同图逐值等价。
+
+        同一偶极场分别按 legacy（f0_real/f0_imag 拆分，(n_phi,n_theta)）与
+        compound（f0 {r,i} 复数，(n_theta,n_phi)）落盘，读端输出逐键一致
+        （跨格式等价＝legacy 分支未被改写、compound 转置方向正确）。
+        """
+        theta = np.arange(0.0, 181.0, 5.0)
+        phi = np.arange(0.0, 360.0, 10.0)
+        e = _dipole_e(theta, phi)
+        p_leg = write_nf2ff_h5(tmp_path / "legacy.h5", theta, phi, e)
+        p_cpd = write_nf2ff_h5_compound(tmp_path / "compound.h5", theta, phi, e)
+        a = V.farfield_pattern_from_h5(p_leg)
+        b = V.farfield_pattern_from_h5(p_cpd)
+        assert a.keys() == b.keys()
+        assert a["theta_deg"] == b["theta_deg"] and a["phi_deg"] == b["phi_deg"]
+        assert a["db"] == b["db"]
+        assert a["dmax_dbi"] == b["dmax_dbi"] == pytest.approx(
+            10 * np.log10(1.642), abs=1e-3)
+        assert a["dmax_pattern_dbi"] == b["dmax_pattern_dbi"]
+        assert a["lower_upper_power_ratio"] == b["lower_upper_power_ratio"]
+        # db 主形态：theta 行 × phi 列，θ=90° 峰归一
+        db = np.asarray(b["db"])
+        assert db.shape == (theta.size, phi.size)
+        assert db[18].max() == pytest.approx(0.0)
+
+    def test_compound_real_dtype_raises(self, tmp_path):
+        """f0 若为实数数据集（写端错把 P_rad 形态当 E 分量）显式报错不静默。"""
+        theta = np.array([0.0, 90.0, 180.0])
+        phi = np.array([0.0, 90.0])
+        p = write_nf2ff_h5_compound(tmp_path / "bad.h5", theta, phi,
+                                    _dipole_e(theta, phi))
+        with h5py.File(p, "a") as h:
+            del h["nf2ff/E_theta/FD/f0"]
+            h["nf2ff/E_theta/FD"].create_dataset(
+                "f0", data=np.zeros((theta.size, phi.size)))
+        with pytest.raises(ValueError, match="compound 应为复数"):
+            V.farfield_pattern_from_h5(p)
+
+    def test_fd_without_f0_raises(self, tmp_path):
+        """FD 组既无拆分也无 f0（截断产物）显式报错并列出实际键。"""
+        theta = np.array([0.0, 90.0, 180.0])
+        phi = np.array([0.0, 90.0])
+        p = write_nf2ff_h5(tmp_path / "empty.h5", theta, phi,
+                           _dipole_e(theta, phi))
+        with h5py.File(p, "a") as h:
+            del h["nf2ff/E_theta/FD/f0_real"]
+            del h["nf2ff/E_theta/FD/f0_imag"]
+        with pytest.raises(ValueError, match="无 f0"):
+            V.farfield_pattern_from_h5(p)
+
 
 # ─── 内核：Smith 圆图几何 ───────────────────────────────────────────────────
 
@@ -424,9 +504,9 @@ class TestFieldService:
         assert ui_service.field_view("20260915_000003_empty")["ok"] is False
 
 
-# ─── 场页远场指标：PEC 镜像修正接线 + patch 族 η 门复议（#249）────────────────
+# ─── 场页远场指标：PEC 镜像修正接线 + patch 族 η 门复议（#249；followUp ⑤）──
 #
-# 两份 meta 逐字段复刻真机 runs/ 产物（数字出自判读 json，测试不读 runs/）：
+# 两份 meta 逐字段复刻真机 runs/ 产物（数字出自判读 json，测试不读 runs）：
 # * 收敛轮 runs/patch_field_smoke_recheck/farfield_meta.json（盒底 z=0 贴 PEC 地）；
 # * 全包盒 runs/nf2ff_smoke_ff_dipole/farfield_meta.json（z_start<0，不受镜像影响）。
 
@@ -519,7 +599,7 @@ class TestFieldViewMirrorAndEtaGate:
         """门下沿 0.55 由实测锚 + 解析式复现（坑 #118：裁判不是自己的推导）。
 
         η = Q_d/(Q_d+Q_rad)，Q_d = 1/tanδ（RO4350B 0.0037）；收敛轮 η_corr 反推
-        Q_rad≈203（早期口径 ≈200）；紧贴盒轮 η 0.6215 = Prad 虚高 +8.82%，
+        Q_rad≈203（任务书口径 ≈200）；紧贴盒轮 η 0.6215 = Prad 虚高 +8.82%，
         守卫带取该观测值 → Q_d/(Q_d+203×1.0882) = 0.5503 → 0.55。
         """
         from rfauto.service.ui_service import PATCH_ETA_GATE, PATCH_ETA_GATE_BASIS

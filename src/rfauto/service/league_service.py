@@ -26,11 +26,15 @@ import contextlib
 import hashlib
 import json
 import logging
+import math
 import os
 import re
+import warnings
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
+
+from rfauto.core.num_utils import coerce_float
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +78,19 @@ _VERDICT_FILE_KEYWORDS = ("verdict", "judg", "judge", "gate", "arbitration")
 #: meta.status → verdict 归一（白名单之外 skip 计数）
 _STATUS_VERDICT = {"done": "DONE", "failed": "FAILED", "fail": "FAILED"}
 
-#: 参考引擎（HFSS 结果为对齐基准）
+#: 参考引擎（HFSS 结果为对齐基准，2026-09-08 用户立规）
 DEFAULT_REF_ENGINE = "hfss"
+
+#: league 域 schema 版本（AU-2③ 按域推广，PDN 惯例；旧档案无键照读。
+#: 注意 reason 族失败信封属遗留形状（契约文档 §3），本批只加版本戳
+#: 不改形）。
+LEAGUE_SCHEMA_VERSION = "1.0"
+
+
+def _stamped(envelope: dict[str, Any]) -> dict[str, Any]:
+    """返回信封补域版本戳（已有则不动）。"""
+    envelope.setdefault("schema_version", LEAGUE_SCHEMA_VERSION)
+    return envelope
 
 #: 设计参数指纹键（跨引擎配对用途；非全量参数，如实注记）
 _DESIGN_KEY_RE = re.compile(r"_mm$|_ghz$|^er$|^tan_d$|^turns$")
@@ -206,9 +221,10 @@ def _meta_engine(meta: dict[str, Any]) -> str | None:
 
 
 def _as_float(value: Any) -> float | None:
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return float(value)
-    return None
+    """只收原生 int/float（不解析字符串、排除 bool），原样转 float
+    （单源 num_utils 薄包装，AU-2⑤；不查有限性=历史语义）。"""
+    return coerce_float(value, accept_str=False, accept_bool=False,
+                        finite_only=False)
 
 
 def _as_opt_str(value: Any) -> str | None:
@@ -311,7 +327,7 @@ def _rows_from_meta(run_dir: Path, campaign: str) -> tuple[list[dict[str, Any]],
 
 
 # ---------------------------------------------------------------------------
-# 目录扫描（有界三种形态：顶层 / 一层嵌套 / campaign/runs/）
+# 目录扫描（有界三种形态：顶层 / 一层嵌套 / campaign/runs）
 # ---------------------------------------------------------------------------
 
 def _iter_candidate_run_dirs(runs_dir: Path) -> list[tuple[Path, str]]:
@@ -403,8 +419,8 @@ def collect_league_rows(runs_dir: str | Path | None = None) -> dict[str, Any]:
     """只读扫描 runs/ → 联赛行 + 如实统计（纯内存，零写面）。"""
     base = Path(runs_dir) if runs_dir is not None else default_league_runs_dir()
     if not base.is_dir():
-        return {"ok": False, "reason": f"runs 目录不存在: {base}",
-                "rows": [], "stats": {}}
+        return _stamped({"ok": False, "reason": f"runs 目录不存在: {base}",
+                         "rows": [], "stats": {}})
 
     candidates = _iter_candidate_run_dirs(base)
     rows: list[dict[str, Any]] = []
@@ -424,7 +440,7 @@ def collect_league_rows(runs_dir: str | Path | None = None) -> dict[str, Any]:
 
     rows, n_paired = _compute_deltas(rows)
     skip_counter.setdefault("artifact_dir_no_meta", 0)
-    return {
+    return _stamped({
         "ok": True,
         "rows": rows,
         "stats": {
@@ -434,7 +450,7 @@ def collect_league_rows(runs_dir: str | Path | None = None) -> dict[str, Any]:
             "n_paired_deltas": n_paired,
             "skipped": dict(sorted(skip_counter.items())),
         },
-    }
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -470,11 +486,11 @@ def rebuild_league(
                                 "table": ENGINE_LEAGUE_TABLE,
                                 "stats": collected.get("stats", {})}
     if not collected.get("ok"):
-        return {"ok": False, "reason": collected.get("reason"), **base_out}
+        return _stamped({"ok": False, "reason": collected.get("reason"), **base_out})
     try:
         import duckdb
     except ImportError as exc:
-        return {"ok": False, "reason": f"duckdb 未安装: {exc}", **base_out}
+        return _stamped({"ok": False, "reason": f"duckdb 未安装: {exc}", **base_out})
 
     rows = [_league_row_values(r) for r in collected["rows"]]
     col_names = [c for c, _ in ENGINE_LEAGUE_COLUMNS]
@@ -494,10 +510,10 @@ def rebuild_league(
         con.execute("COMMIT")
         n_total = int(con.execute(
             f"SELECT COUNT(*) FROM {ENGINE_LEAGUE_TABLE}").fetchone()[0])
-        return {"ok": True, "n_rows_written": len(rows),
-                "n_rows_total": n_total, **base_out}
+        return _stamped({"ok": True, "n_rows_written": len(rows),
+                         "n_rows_total": n_total, **base_out})
     except Exception as exc:
-        return {"ok": False, "reason": f"联赛表重建失败: {exc}", **base_out}
+        return _stamped({"ok": False, "reason": f"联赛表重建失败: {exc}", **base_out})
     finally:
         if con is not None:
             with contextlib.suppress(Exception):
@@ -509,11 +525,11 @@ def league_content_hash(db_path: str | Path | None = None,
     """全表内容哈希（按主键序拼接 sha256）——幂等判据①的度量。"""
     path = Path(db_path) if db_path is not None else league_db_path(runs_dir)
     if not path.exists():
-        return {"ok": False, "reason": f"联赛库不存在: {path}"}
+        return _stamped({"ok": False, "reason": f"联赛库不存在: {path}"})
     try:
         import duckdb
     except ImportError as exc:
-        return {"ok": False, "reason": f"duckdb 未安装: {exc}"}
+        return _stamped({"ok": False, "reason": f"duckdb 未安装: {exc}"})
     con = None
     try:
         con = duckdb.connect(str(path), read_only=True)
@@ -522,9 +538,9 @@ def league_content_hash(db_path: str | Path | None = None,
             f"SELECT {', '.join(col_names)} FROM {ENGINE_LEAGUE_TABLE} "
             "ORDER BY run_id, engine, quantity")
         blob = repr(cur.fetchall()).encode("utf-8")
-        return {"ok": True, "content_sha256": hashlib.sha256(blob).hexdigest()}
+        return _stamped({"ok": True, "content_sha256": hashlib.sha256(blob).hexdigest()})
     except Exception as exc:
-        return {"ok": False, "reason": f"内容哈希失败: {exc}"}
+        return _stamped({"ok": False, "reason": f"内容哈希失败: {exc}"})
     finally:
         if con is not None:
             with contextlib.suppress(Exception):
@@ -564,6 +580,140 @@ def _pareto_front(points: list[dict[str, Any]]) -> None:
                 break
 
 
+# ---------------------------------------------------------------------------
+# 组级显著性（S-1）：Dunnett（各引擎 vs 参考引擎）+ BH 多重校正
+# ---------------------------------------------------------------------------
+
+def _holm(pvals: list[float]) -> list[float]:
+    """Holm step-down 校正（备用口径）：返回与输入同序的校正 p 值列。"""
+    order = sorted(range(len(pvals)), key=lambda i: pvals[i])
+    m = len(pvals)
+    running = 0.0
+    out = [0.0] * m
+    for rank, idx in enumerate(order):
+        running = max(running, (m - rank) * pvals[idx])
+        out[idx] = min(1.0, running)
+    return out
+
+
+def significance_vs_reference(
+    samples_by_engine: dict[str, list[float]],
+    reference_engine: str = DEFAULT_REF_ENGINE,
+    alpha: float = 0.05,
+) -> dict[str, dict[str, Any]]:
+    """组级显著性：各非参考引擎 vs 参考引擎样本的 Dunnett 检验 + BH 校正。
+
+    - 每引擎样本 = 同（campaign, template_family, quantity）组内各 run 的
+      同名量数值；参考引擎样本为 Dunnett 控制组，全部有效引擎在单次
+      stats.dunnett 调用内联合检验（S-1 单发口径）；
+    - 确定性：固定 rng=0（dunnett 缺省 QMC 积分带随机噪声，不固定则
+      league_report md 双出无法逐字节一致）；
+    - 退化如实（不抛异常不虚构，#105）：引擎/参考有效样本 <2、组内数值
+      全同（方差 0）→ p_raw/p_adj=None + reject=False + note 注记；
+      scipy 缺失 → 全部 None + note=scipy_unavailable（显著性是注解面，
+      不得阻塞联赛主路径）；
+    - p 值可以为 0.0（#364④）——判缺失一律 is None，禁 `or`；
+      reject = p_adj < alpha（严格小于，p_adj==alpha 不判显著）；
+      reject_raw = p_raw < alpha（校正前对照）。
+    返回每引擎 {p_raw, p_adj, reject, reject_raw, note}（note=None 表
+    正常检验路径）。
+    """
+
+    def _clean(values: Any) -> list[float]:
+        if not isinstance(values, (list, tuple)):
+            return []
+        out = []
+        for v in values:
+            f = _as_float(v)
+            if f is not None and math.isfinite(f):
+                out.append(f)
+        return out
+
+    ref = _clean(samples_by_engine.get(reference_engine))
+    result: dict[str, dict[str, Any]] = {}
+    valid: dict[str, list[float]] = {}
+    for engine in sorted(samples_by_engine):
+        if engine == reference_engine:
+            result[engine] = {"p_raw": None, "p_adj": None, "reject": False,
+                              "reject_raw": False, "note": "is_reference"}
+            continue
+        vals = _clean(samples_by_engine.get(engine))
+        if len(vals) < 2 or len(ref) < 2:
+            result[engine] = {"p_raw": None, "p_adj": None, "reject": False,
+                              "reject_raw": False,
+                              "note": "insufficient_samples"}
+            continue
+        valid[engine] = vals
+
+    if not valid:
+        return result
+
+    def _degenerate(note: str) -> None:
+        for engine in valid:
+            result[engine] = {"p_raw": None, "p_adj": None, "reject": False,
+                              "reject_raw": False, "note": note}
+
+    pooled = ref + [v for vals in valid.values() for v in vals]
+    if max(pooled) == min(pooled):
+        _degenerate("zero_variance")
+        return result
+    try:
+        from scipy import stats as _stats
+    except ImportError as exc:
+        _degenerate(f"scipy_unavailable:{exc}")
+        return result
+
+    order = list(valid)
+    try:
+        with warnings.catch_warnings():
+            # 零组内方差+均值差 → t=inf、p=0.0 是合法边界值（#364④），
+            # 引擎内 RuntimeWarning 属预期数值路径，就地静音不外溢
+            warnings.simplefilter("ignore", RuntimeWarning)
+            res = _stats.dunnett(*[valid[e] for e in order], control=ref,
+                                 rng=0)
+        pvals = [float(p) for p in res.pvalue]
+    except Exception as exc:  # best-effort：显著性不阻塞报告主路径（#105）
+        _degenerate(f"dunnett_error:{type(exc).__name__}")
+        return result
+    good = [i for i, p in enumerate(pvals) if math.isfinite(p)]
+    adj: dict[int, float] = {}
+    if good:
+        adj_raw = _stats.false_discovery_control([pvals[i] for i in good],
+                                                 method="bh")
+        adj = {i: float(a) for i, a in zip(good, adj_raw, strict=True)}
+    for i, engine in enumerate(order):
+        if i not in adj:
+            result[engine] = {"p_raw": None, "p_adj": None, "reject": False,
+                              "reject_raw": False,
+                              "note": "degenerate_statistic"}
+            continue
+        p_raw, p_a = pvals[i], adj[i]
+        result[engine] = {"p_raw": p_raw, "p_adj": p_a,
+                          "reject": bool(p_a < alpha),
+                          "reject_raw": bool(p_raw < alpha), "note": None}
+    return result
+
+
+def _group_significance(
+    engines: dict[str, list[dict[str, Any]]],
+) -> dict[str, dict[str, Any]]:
+    """组内（engine→rows）样本抽取 → significance_vs_reference。
+
+    样本 = 各 run 行 provenance_json.metric_value（_metric_value 单一
+    读取面）；无任何数值样本的组（如 gate_verdict 裁决登记组）返回 {}，
+    行级三键落 None/None/False。
+    """
+    samples: dict[str, list[float]] = {}
+    for engine, erows in engines.items():
+        vals = [v for v in (_metric_value(r) for r in erows)
+                if v is not None and math.isfinite(v)]
+        if vals:
+            samples[engine] = vals
+    if not samples:
+        return {}
+    return significance_vs_reference(samples)
+
+
 def league_report(
     db_path: str | Path | None = None,
     runs_dir: str | Path | None = None,
@@ -577,15 +727,18 @@ def league_report(
     - delta 轴只统计引擎!=ref 且 delta 非 NULL 的行（ref 行 delta=0 是
       构造基准，参与即偏差轴退化）；wall_s 轴只统计非 NULL 行；
     - 单轴缺失的引擎如实入表、on_front=NULL（不硬凑前沿）；
-    - engine="unknown"/量=gate_verdict 的裁决登记行不进前沿（无物理量纲）。
+    - engine="unknown"/量=gate_verdict 的裁决登记行不进前沿（无物理量纲）；
+    - S-1 显著性列：每引擎点附 p_raw/p_adj/sig_reject（组内 Dunnett vs
+      参考引擎 + BH 校正；样本取组内各 run 的 metric_value；参考引擎或
+      样本不足 → None/None/False 如实不判）。
     """
     path = Path(db_path) if db_path is not None else league_db_path(runs_dir)
     if not path.exists():
-        return {"ok": False, "reason": f"联赛库不存在: {path}"}
+        return _stamped({"ok": False, "reason": f"联赛库不存在: {path}"})
     try:
         import duckdb
     except ImportError as exc:
-        return {"ok": False, "reason": f"duckdb 未安装: {exc}"}
+        return _stamped({"ok": False, "reason": f"duckdb 未安装: {exc}"})
     con = None
     try:
         con = duckdb.connect(str(path), read_only=True)
@@ -604,7 +757,7 @@ def league_report(
         cur = con.execute(sql, params)
         all_rows = [dict(zip(col_names, r, strict=True)) for r in cur.fetchall()]
     except Exception as exc:
-        return {"ok": False, "reason": f"联赛表读取失败: {exc}"}
+        return _stamped({"ok": False, "reason": f"联赛表读取失败: {exc}"})
     finally:
         if con is not None:
             with contextlib.suppress(Exception):
@@ -635,6 +788,12 @@ def league_report(
         if len(points) < max(1, int(min_rows)):
             continue
         _pareto_front(points)
+        sig = _group_significance(engines)
+        for p in points:
+            s = sig.get(p["engine"])
+            p["p_raw"] = None if s is None else s["p_raw"]
+            p["p_adj"] = None if s is None else s["p_adj"]
+            p["sig_reject"] = False if s is None else bool(s["reject"])
         out_groups.append({
             "template_family": family,
             "quantity": qty,
@@ -645,20 +804,26 @@ def league_report(
         "# 引擎联赛报告（|delta_vs_ref| 中位 × wall_s 中位 Pareto 前沿）", "",
         f"- 库：`{path}`；行数：{len(all_rows)}；分组数：{len(out_groups)}",
         f"- 参考引擎：`{DEFAULT_REF_ENGINE}`（其行 delta=0 为构造基准，"
-        "不进 delta 轴）", "",
+        "不进 delta 轴）",
+        "- 显著性（S-1）：p_raw/p_adj=组内 Dunnett（各引擎 vs 参考，"
+        "BH 校正）；sig_reject=p_adj<0.05；\"-\"=样本不足/退化如实不判",
+        "",
     ]
     for g in out_groups:
         md_lines.append(f"## {g['template_family']} · {g['quantity']}")
         md_lines.append("")
         md_lines.append("| engine | n_rows | median_abs_delta | "
-                        "median_wall_s | on_front |")
-        md_lines.append("|---|---|---|---|---|")
+                        "median_wall_s | p_raw | p_adj | sig_reject "
+                        "| on_front |")
+        md_lines.append("|---|---|---|---|---|---|---|---|")
         for p in g["engines"]:
             fmt = lambda v: "NULL" if v is None else f"{v:.4g}"  # noqa: E731
+            fmt_p = lambda v: "-" if v is None else f"{v:.4g}"  # noqa: E731
             md_lines.append(
                 f"| {p['engine']} | {p['n_rows']} | "
                 f"{fmt(p['median_abs_delta'])} | {fmt(p['median_wall_s'])} | "
-                f"{p['on_front']} |")
+                f"{fmt_p(p['p_raw'])} | {fmt_p(p['p_adj'])} | "
+                f"{p['sig_reject']} | {p['on_front']} |")
         md_lines.append("")
-    return {"ok": True, "groups": out_groups, "md": "\n".join(md_lines),
-            "n_rows_scanned": len(all_rows), "db_path": str(path)}
+    return _stamped({"ok": True, "groups": out_groups, "md": "\n".join(md_lines),
+                     "n_rows_scanned": len(all_rows), "db_path": str(path)})

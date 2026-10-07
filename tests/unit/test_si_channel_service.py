@@ -1,6 +1,6 @@
 """df7 T2 SI 通道报告 service 测试（判据预声明，合成通道全确定性）。
 
-判据与出处（方案池 T2 / 规格预声明，逐条对号）：
+判据与出处（方案池 T2 / 任务书预声明，逐条对号）：
 1. 理想无耗匹配线 → passivity PASS、TDR 平坦 Z0（±1%）；
 2. 注入无源性违规（S×1.2）→ FAIL 且违规频点命中；
 3. 已知阻抗阶梯（两段无损线 ABCD 合成，50Ω→75Ω）→ TDR 两平台各 ±3%；
@@ -403,3 +403,49 @@ class TestCliSmoke:
         rc = CliRunner().invoke(
             app, ["si", "report", str(tmp_path / "nope.s2p")])
         assert rc.exit_code == 1
+
+
+# ---------------------------------------------------------------------------
+# AU-3① except 收窄行为钉（_provenance 收窄 + 信封边界语义保持）
+# ---------------------------------------------------------------------------
+
+class TestExceptNarrowingPins:
+    """AU-3①：_provenance 版本探针收窄到 ImportError/AttributeError 面。
+
+    判定：缺失如实 unknown/None 是 #105 设计语义（静默即契约）；收窄后
+    预期面行为逐位不变，非预期异常不再被吞。
+    """
+
+    def test_provenance_skrf_missing_folds_to_unknown(self, monkeypatch):
+        from rfauto.service.si_channel_service import _provenance
+
+        monkeypatch.setitem(sys.modules, "skrf", None)  # import → ImportError
+        prov = _provenance({})
+        assert prov["skrf_version"] == "unknown"
+
+    def test_provenance_pychopmarg_missing_folds_to_none(self, monkeypatch):
+        from rfauto.service.si_channel_service import _provenance
+
+        monkeypatch.setitem(sys.modules, "pychopmarg", None)
+        prov = _provenance({})
+        assert prov["pychopmarg_version"] is None
+
+    def test_provenance_normal_versions_present(self):
+        from rfauto.service.si_channel_service import _provenance
+
+        prov = _provenance({})
+        assert prov["skrf_version"] != "unknown"
+        assert isinstance(prov["timestamp"], str)
+
+    def test_report_missing_source_envelope_preserved(self, tmp_path):
+        # 信封边界（ok=False + errors）语义在收窄批保持逐位
+        r = si_channel_report(tmp_path / "nope.s2p")
+        assert r["ok"] is False
+        assert r["errors"] and "源读取失败" in r["errors"][0]
+
+    def test_mixed_mode_missing_source_envelope_preserved(self, tmp_path):
+        from rfauto.service.si_channel_service import mixed_mode_metrics
+
+        r = mixed_mode_metrics(tmp_path / "nope.s4p")
+        assert r["ok"] is False
+        assert r["errors"] and "源读取失败" in r["errors"][0]

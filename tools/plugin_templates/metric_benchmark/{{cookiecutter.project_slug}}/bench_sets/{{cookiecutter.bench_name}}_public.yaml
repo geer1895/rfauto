@@ -1,0 +1,38 @@
+# rfauto AgentBench 任务集样例（{{ cookiecutter.bench_name }}，cookiecutter metric_benchmark 模板渲染产物）
+#
+# 消费：service/agent_bench.load_bench_set(path=本文件)（结构自检：
+#   goldset 基础 id/level/prompt/expected/calls 五关 + AgentBench 专属
+#   family/artifacts/numeric 三关，见 service/agent_bench.load_bench_set）。
+# 公开/私有双集防污染：本文件为公开集样例；任务 id 一律带
+#   {{ cookiecutter.bench_name }} 前缀，防与主仓 tests/gold/agentbench_public.yaml
+#   的 ab* id 撞车（双集 id 交集非空即 FAIL）。
+# 数值纪律（铁律 7）：ground truth 逐条引用权威出处（source 字段）——
+#   闭式解/官方例验收基准口径集中维护在 docs/rf_template_references.md；
+#   打分器只做比较、不产生任何物理数字。
+version: 1
+set_kind: public
+tasks:
+  - id: "{{ cookiecutter.bench_name }}001_render_wilkinson_fake"
+    family: template_render
+    level: 1
+    prompt: 渲染 2.5GHz Wilkinson 功分器模板，用 fake 适配器快速冒烟看响应形态
+    expected:
+      calls:
+        - {tool: run, args: {recipe: "recipes/wilkinson_pd_v1.yaml", adapter: fake}}
+      artifacts: [s_params, run_summary]
+      rationale: fake 冒烟只考"跑通+工件齐全"，不设数值 ground truth（fake 响应形态非物理基准，#207 同口径）
+
+  - id: "{{ cookiecutter.bench_name }}002_patch_closedform_resonance"
+    family: template_render
+    level: 2
+    prompt: 先综合初值再用 openEMS 跑 patch 天线，谐振点对照闭式 sanity 判读
+    expected:
+      calls:
+        - {tool: syn, args: {kind: patch}}
+        - {tool: run, args: {adapter: openems}}
+      artifacts: [s_params, mesh_report]
+      numeric:
+        - metric: f_res_ghz
+          value: 2.16
+          tol_pct: 5.0
+          source: docs/rf_template_references.md patch 闭式 sanity（patch_len=40mm εr3.66 h0.508 w50 → f_res≈2.16GHz；与主仓公开集同源口径，非本插件新造数字）

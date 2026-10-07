@@ -1,6 +1,6 @@
 """Direction 3: VNA capture interface (skrf instruments adapter).
 
-缺口修复（#12）：
+审查缺口 #12 修复：
 - skrf 2.x 的 `skrf.vi.Network` 不存在——真机路径现走 `skrf.vi.vna` 驱动类
   （keysight.PNA / keysight.FieldFox / rohde_schwarz.ZNB 等，pyvisa 底座），
   驱动不可用时回退到**完整实现的** raw SCPI 测量（此前 `_raw_measure` 解析后
@@ -256,7 +256,7 @@ class VNAInterface:
         return response
 
     def _raw_measure(self) -> skrf.Network | None:
-        """Raw SCPI S-parameter measurement（完整实现——缺口 #12）。
+        """Raw SCPI S-parameter measurement（完整实现——审查缺口 #12）。
 
         PNA/ZNB 兼容的最小公共命令集：
           SENS<x>:FREQ:DATA?   频率数组（Hz）
@@ -277,6 +277,9 @@ class VNAInterface:
             frequency = skrf.Frequency.from_f(freq[:n], unit="hz")
             return skrf.Network(frequency=frequency, s=s.reshape(-1, 1, 1))
         except Exception:
+            # 宽兜 raw SCPI 采集链全程异常（VISA I/O/超时、仪器 SCPI 报错、
+            # 频点/数据解析失败）：返回 None 交由 capture() 记 "capture_failed"
+            # 会话日志——采集失败不抛错断链，调用方按 None 处理（会话日志可查）。
             return None
 
     def apply_cal_kit(self, calkit, measured_network) -> dict[str, Any]:

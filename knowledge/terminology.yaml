@@ -1,0 +1,271 @@
+# rfauto 术语卡（QW-6，2026-09-26 首版）
+# schema：terms: [{term, definition, unit?, scope?, see_also?}]
+#   term       - 术语规范名（ASCII/程序可查，get_term 大小写不敏感）
+#   definition - 定义（口径从本仓 docstring/坑账既有语义提炼，不编造）
+#   unit       - 物理单位（无量纲可写"无量纲"；纯约定类省略）
+#   scope      - 领域标签：general / antenna / port / engine / resonator /
+#                measurement / mimo（list_terms(scope=) 过滤键）
+#   see_also   - 坑号/出处注记（引用半角 '#' 坑号一律用全角括号包裹，
+#                规避 YAML plain scalar '#' 注释截断——#324）
+# 消费面：MCP resource rfauto://knowledge/terminology +
+#         service/terminology_service.py（list_terms/get_term/report_footnotes）。
+# 铁律 7 面一致：本文件只承载术语文本与单位，不承载任何设计/仿真数值。
+
+terms:
+  - term: "dB"
+    definition: "分贝：功率比 10·log10(P2/P1)、幅值比 20·log10(V2/V1) 的对数单位，无量纲。"
+    unit: "dB"
+    scope: "general"
+
+  - term: "dBm"
+    definition: "相对 1 mW 的功率分贝（0 dBm = 1 mW）；P(dBm)=10·log10(P/1mW)。"
+    unit: "dBm"
+    scope: "general"
+
+  - term: "dBi"
+    definition: "相对理想各向同性源的天线增益（dB），含损耗增益口径 G=4πU/P_tx（Balanis §2.7，本仓 ota_metrics 同口径）。"
+    unit: "dBi"
+    scope: "antenna"
+
+  - term: "dBc"
+    definition: "相对载波功率的分贝（谐波/杂散/相噪常用口径）。"
+    unit: "dBc"
+    scope: "general"
+
+  - term: "return_loss"
+    definition: "回损：反射损耗的正 dB 口径，RL(dB)=−20·log10|Γ|，越大匹配越好。"
+    unit: "dB"
+    scope: "general"
+
+  - term: "insertion_loss"
+    definition: "插损：二端口网络传输损耗口径 IL(dB)=−20·log10|S21|（含反射与耗散两部分贡献）。"
+    unit: "dB"
+    scope: "general"
+
+  - term: "VSWR"
+    definition: "电压驻波比 (1+|Γ|)/(1−|Γ|)∈[1,∞)；与回损同源换算，1=完全匹配。"
+    unit: "无量纲"
+    scope: "general"
+
+  - term: "reflection_coefficient"
+    definition: "反射系数 Γ：端口反射波/入射波复比；对参考阻抗与波定义口径敏感（见 power_wave/pseudo_wave 条目）。"
+    unit: "无量纲"
+    scope: "general"
+
+  - term: "S_parameters"
+    definition: "S 参数：多端口网络归一化入射/反射波比矩阵；引擎单激励产物可能是零填充部分矩阵，判读须配合掩码（见 measured_mask_matrix）。"
+    unit: "无量纲"
+    scope: "general"
+
+  - term: "mixed_mode_S"
+    definition: "混合模 S 参数：差模/共模分解（Sdd/Scc/Sdc/Scd）；平衡器件 4 端口 2 模口径，模态数据按 Σ模数命名与读取。"
+    scope: "mimo"
+    see_also: "#307（双导体端口模阻抗基准）·#309（.s4p 命名）"
+
+  - term: "Q"
+    definition: "品质因数：储能与每周期耗散之比的 2π 倍；谐振系统按损耗归属三分（Q_u/Q_e/Q_L）。"
+    unit: "无量纲"
+    scope: "resonator"
+
+  - term: "Q_u"
+    definition: "无载 Q：只计材料/导体损耗的 Q 分量；窄带高 Q 模材料限衰减率 ≈8.686·π·f0/Q_u dB/ns。"
+    unit: "无量纲"
+    scope: "resonator"
+    see_also: "#344（hairpin_alt 材料限衰减实证）"
+
+  - term: "Q_e"
+    definition: "外部 Q：耦合到外部电路引入的 Q 分量（馈线/探针耦合强度度量）。"
+    unit: "无量纲"
+    scope: "resonator"
+
+  - term: "Q_L"
+    definition: "有载 Q：1/Q_L = 1/Q_u + 1/Q_e，含内耗与外部耦合的合成 Q。"
+    unit: "无量纲"
+    scope: "resonator"
+
+  - term: "epsilon_r"
+    definition: "相对介电常数 εr：介质介电常数与真空之比，无量纲；板材参数（与 tanδ 成对）。"
+    unit: "无量纲"
+    scope: "general"
+
+  - term: "epsilon_eff"
+    definition: "有效介电常数 εeff：准 TEM 线的等效填充介质常数；提取口径=β（端口三点差分或 S21 相位斜率互证）或引擎 ZL 落盘，禁用 S11 深谷隐含反推（引擎空气阻抗≠闭式精确值）。"
+    unit: "无量纲"
+    scope: "general"
+    see_also: "#301（εeff 与匹配度两量分立）"
+
+  - term: "tan_delta"
+    definition: "介质损耗正切 tanδ：损耗角正切，介质有耗度的无量纲度量（板材参数，与 εr 成对）。"
+    unit: "无量纲"
+    scope: "general"
+
+  - term: "characteristic_impedance"
+    definition: "特性阻抗 Z0：传输线行波电压/电流比；本仓线宽一律 skrf HJ 综合精算（core/synthesis），禁止沿用其他来源毫米数。"
+    unit: "Ω"
+    scope: "general"
+    see_also: "#1c（射频模板建模先对照官方例）"
+
+  - term: "power_wave"
+    definition: "功率波（Kurokawa）：端接复阻抗共轭基的波定义，Γ=(Z−Z0*)/(Z+Z0)；NFC 标签调制取 Nikitin 功率波口径 Γ=(Z_chip−Z_ant*)/(Z_chip+Z_ant)（core/calculators）。"
+    scope: "port"
+    see_also: "#280（线基反演与 renormalize 口径）"
+
+  - term: "pseudo_wave"
+    definition: "伪波（pseudo/traveling wave）：端接实阻抗基的行波定义；Z0 为实数时与功率波一致，复 Z0 下同名 S 参数跨口径不可直接比。"
+    scope: "port"
+    see_also: "#280（engine ZL 与 HJ 设计值两基分立）"
+
+  - term: "Zpi"
+    definition: "HFSS 端口阻抗三定义之一：功率-电流定义（功率/电流²口径）；槽线类准 TE 模的电流定义物理偏低，禁作 Z0。"
+    unit: "Ω"
+    scope: "port"
+    see_also: "#254④（槽线 Z0 禁用 Zpi）"
+
+  - term: "Zpv"
+    definition: "HFSS 端口阻抗三定义之一：功率-电压定义（电压路径取积分线）；Gravity.ZPos 自动积分线穿导带金属时电压路径无效，积分线须显式指到导带上缘。"
+    unit: "Ω"
+    scope: "port"
+    see_also: "df6⑪（Modal Solution Data 无 Zpi/Zpv/Zvi 类别的版本差异）"
+
+  - term: "Zvi"
+    definition: "HFSS 端口阻抗三定义之一：电压-电流定义；恒等式 Zvi=√(Zpi·Zpv) 可实测自校（port_gate_service 逐档 1e-6 门）。"
+    unit: "Ω"
+    scope: "port"
+    see_also: "#356⑤（端子分组随模而变）"
+
+  - term: "CharImp"
+    definition: "HFSS 特性阻抗三定义（Zpi/Zpv/Zvi）统称；宽端口三定义天然分散 ~2.5%（准 TEM 截面电压/电流路径真实分歧），测量面须显式选定义并申报。"
+    unit: "Ω"
+    scope: "port"
+    see_also: "#254（ExportNetworkData 恒写 Zpi 的坑）·df7+⑲（三定义互差 1% 门不可达实例）"
+
+  - term: "modal_impedance_conversion"
+    definition: "HFSS Driven Modal 双导体（耦合线对）端口模阻抗基准：共模 Z0e/2、差模 2·Z0o（端子等电位合并/分立所致）；按 εeff 较高者识别偶模。"
+    unit: "Ω"
+    scope: "port"
+    see_also: "#307（首判反转实例）"
+
+  - term: "TE_mode"
+    definition: "横电模：Ez=0（纵向只含磁场）的波导模族，有截止频率。"
+    scope: "general"
+
+  - term: "TM_mode"
+    definition: "横磁模：Hz=0（纵向只含电场）的波导模族，有截止频率。"
+    scope: "general"
+
+  - term: "TEM_mode"
+    definition: "横电磁模：Ez=Hz=0，仅多导体（≥2 导体）结构支持，无截止频率；准 TEM（微带/CPW）为其介质填充微扰近似。"
+    scope: "general"
+
+  - term: "cutoff_frequency"
+    definition: "截止频率 fc：波导模可传播的频率下限，fc 以下为倏逝衰减模；仲裁端口截面不足时会解出截止倏逝模假数据。"
+    unit: "Hz"
+    scope: "general"
+    see_also: "#254③（微带尺寸端口得 fc≈10GHz 假解实例）"
+
+  - term: "guided_wavelength"
+    definition: "导波波长 λg=λ0/√εeff（准 TEM 口径）：导行波在同轴/微带内一个整周期的物理长度，λ/4 部件长度基准。"
+    unit: "m"
+    scope: "general"
+
+  - term: "group_delay"
+    definition: "群延迟 τg=dφ/dω（S21 相位斜率）；驻波下禁用线性相位斜率法，须双行波拟合 V=A·e^(−jβx)+B·e^(+jβx) 后提取。"
+    unit: "s"
+    scope: "general"
+    see_also: "#255（|Γ_load|≈0.3 偏 +10.7% 实例）"
+
+  - term: "AM_PM"
+    definition: "AM-PM 转换：功率放大器输入幅度变化引起的输出相位变化（dB 压缩区非线性相位效应，rad/dB 口径）。"
+    unit: "rad/dB"
+    scope: "general"
+
+  - term: "P1dB"
+    definition: "1 dB 压缩点：增益相对小信号线性值压缩 1 dB 的输入/输出功率点（OP1dB 指输出侧）。"
+    unit: "dBm"
+    scope: "general"
+
+  - term: "IP2"
+    definition: "二阶交调截点（IIP2/OIP2）：基波与二阶交调产物外推相交的等效功率点（宽带有源链杂散度量）。"
+    unit: "dBm"
+    scope: "general"
+
+  - term: "IP3"
+    definition: "三阶交调截点（IIP3/OIP3）：基波与三阶交调（IM3）外推相交的等效功率点；与 P1dB 共同界定线性动态范围。"
+    unit: "dBm"
+    scope: "general"
+
+  - term: "EIRP"
+    definition: "等效各向同性辐射功率：EIRP(θ,φ)=P_tx(dBm)+G(θ,φ)(dBi)（dB 域逐方向，Balanis §2.7；本仓 core/ota_metrics 物理定义层同式）。"
+    unit: "dBm"
+    scope: "antenna"
+
+  - term: "TRP"
+    definition: "总辐射功率：TRP=(1/4π)∮EIRP dΩ；3GPP TS 37.105 §5.5 给球面网格离散式 (Δθ·Δφ/4π)·ΣΣ EIRP·sinθ（core/ota_metrics 同口径）。"
+    unit: "dBm"
+    scope: "antenna"
+
+  - term: "directivity"
+    definition: "方向性 D=4π·U_max/P_rad（Balanis §2.4）；由增益图形状积分得到时辐射效率自动消去（G=η·D_shape，分子分母同消）。"
+    unit: "dBi"
+    scope: "antenna"
+
+  - term: "beam_efficiency"
+    definition: "波束效率：锥角域积分功率/全球积分功率（Balanis §2.6 波束立体角锥角截断的覆盖式口径，非 3GPP 协议指标）。"
+    unit: "无量纲"
+    scope: "antenna"
+
+  - term: "radiation_efficiency"
+    definition: "辐射效率 η=Prad/Pin；nf2ff 遇 PEC 地镜像时 Prad 双计可使 η>1 非物理，须按镜像修正后判读。"
+    unit: "无量纲"
+    scope: "antenna"
+    see_also: "#249（PEC 镜像 Prad 双计与 pec_mirror_factor 修正）"
+
+  - term: "ECC"
+    definition: "包络相关系数：MIMO 分集度量；本仓双路径（core/ecc_metrics）=方向图复内积（3GPP TR 37.977 annex 口径）与 S 参数式（Blanch 2003 双端口式+列 Gram 推广）互为对照。"
+    unit: "无量纲"
+    scope: "mimo"
+
+  - term: "TRL_mTRL"
+    definition: "TRL（Thru-Reflect-Line）校准/去嵌：thru 与 line 两标准件 S21 之比 line/thru=exp(−γ·Δl) 提取传播常数 γ 并平移参考面；mTRL 为多线变体（core/deembed.extract_line_gamma）。"
+    scope: "measurement"
+    see_also: "#205（β 乘性偏移标准化为去嵌量）"
+
+  - term: "NRW"
+    definition: "Nicholson-Ross-Weir 提取：由反射/传输双测量同时反演材料 μr 与 εr 的经典算法（材料参数测量口径）。"
+    scope: "measurement"
+
+  - term: "CMA"
+    definition: "特征模分析（Characteristic Mode Analysis）：结构本征电流模分解，给天线/散射体的自然辐射模式与模权重（模式选取与馈点布局依据）。"
+    scope: "antenna"
+
+  - term: "s11_db_min"
+    definition: "带内 S11 最小值（谷深语义的显式指标名）；判据统计量禁用带内 max/argmax 充当谷深——窄带谐振器件带内 max 是常数陷阱。"
+    unit: "dB"
+    scope: "engine"
+    see_also: "#195（两轮战役 47 样本代价）·#197（内核收口）"
+
+  - term: "engine_ZL"
+    definition: "openEMS MSLPort 引擎自算端口阻抗 ZL=√(Et·dEt/(Ht·dHt))：与负载无关但随驻波形态漂移 ~0.5%，跨轮取中位；≠HJ 设计值时按列反演线基再归一。"
+    unit: "Ω"
+    scope: "engine"
+    see_also: "#280（缺省网格 45.7Ω 偏 −8.6% 与 line_z0=engine 修法）"
+
+  - term: "renormalize"
+    definition: "S 参数参考阻抗换算（skrf renormalize_s）；单激励引擎矩阵整矩阵直接 renormalize 到 50Ω 是错路——正确链=按列 u/i 反演到线自身 Z0 基→线基去嵌→再 renormalize 到 50Ω。"
+    scope: "engine"
+    see_also: "#250（整矩阵 renormalize 合成误差=|Γ_step|）"
+
+  - term: "measured_mask_matrix"
+    definition: "已测掩码矩阵：单激励引擎产物为部分矩阵，对称/互易补齐元素必须随掩码流转；判据只对两向独立已测对下结论，无对如实 UNKNOWN（不凑 PASS 也不冒充 FAIL）。"
+    scope: "engine"
+    see_also: "#314（互易因子按全矩阵比的假 FAIL 指纹）·#316（兜底方向选多报不选放过）"
+
+  - term: "Touchstone_rank"
+    definition: "Touchstone 文件端口数口径：skrf 只按 .sNp 扩展名推断 rank（1 端口写成 .s2p 即 reshape 报错）；多模端口按 Σ模数改名（2 端口 2 模=.s4p）。"
+    scope: "measurement"
+    see_also: "#248（扩展名推断 rank 之坑）·#309（多模 .s4p 改名）"
+
+  - term: "PEC_mirror_factor"
+    definition: "PEC 镜像功率双计修正因子：nf2ff 对 PEC 面 mirror=1 时每个积分面追加镜像通量（Prad=2×物理、Dmax −3.01dB、η 可>1）；修正后必须幂等直通（以产出源标记键防二次套用）。"
+    scope: "engine"
+    see_also: "#249（判 η>1 先查镜像）·#296（修正前移产出源防双套）"

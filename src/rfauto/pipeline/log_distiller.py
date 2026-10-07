@@ -1,15 +1,15 @@
-"""工件语义化 LogDistiller。
+"""工件语义化 LogDistiller（WP3.6，续跑计划 §10.6 / §10.22 #21）。
 
 把 openEMS stdout / HFSS(PyAEDT) 日志 / 审计 JSON 解析压缩为结构化 digest
-（rc / errors / warnings / 关键指标 / 失败签名），供最小自愈环、MCP 工具
-与 UI 消费（LLM 先读语义压缩工件可显著省 token）。
+（rc / errors / warnings / 关键指标 / 失败签名），供 F5 最小自愈环、MCP 工具
+与 UI 消费（德州农工团队实测：LLM 先读语义压缩工件可省 ~2/3 token）。
 
-设计约束：
+设计约束（与  硬限制一致）：
 - 纯规则、确定性、best-effort：**解析失败/输入损坏绝不向调用方抛异常**
   （#105：观测性代码不得成为业务主路径的故障点）。
 - 只用标准库（re/json/pathlib），不引入新依赖，不联网、不碰真机。
 - 不产生物理数字：digest 里所有数值都取自日志原文，只做单位标量转换，
-  不做任何物理推断（数值只在确定性内核）。
+  不做任何物理推断。
 - 失败签名只做"指纹识别"（本模块）；根因判定与建议动作属确定性 critique，
   在 pipeline/self_heal.critique_failure（LLM 只解释不判定）。
 
@@ -35,6 +35,8 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+
+from rfauto.core.num_utils import coerce_float
 
 # ---------------------------------------------------------------------------
 # 常量：数据源 / 失败签名 / 阈值
@@ -155,16 +157,10 @@ _KNOWN_METRIC_KEYS = (
 # ---------------------------------------------------------------------------
 
 def _as_float(value: Any) -> float | None:
-    """尽力转 float（排除 bool），失败/非有限返回 None。"""
-    if isinstance(value, bool) or value is None:
-        return None
-    try:
-        out = float(value)
-    except (TypeError, ValueError):
-        return None
-    if out != out or out in (float("inf"), float("-inf")):
-        return None
-    return out
+    """尽力转 float（排除 bool），失败/非有限返回 None（单源
+    num_utils 薄包装，AU-2⑤；历史语义：数字串参与解析、NaN/inf 判失败）。"""
+    return coerce_float(value, accept_str=True, accept_bool=False,
+                        finite_only=True)
 
 
 def _clip(text: str) -> str:

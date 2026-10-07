@@ -28,12 +28,14 @@ from rfauto.adapters.kicad_extract import (
     DEMO_VIA_Y_MM,
     DEMO_W_MM,
     KICAD_PYTHON,
+    KICAD_PYTHON_ENV,
     _aggregate_traces,
     _parse_footprints,
     _parse_stackup,
     _parse_zones,
     build_demo_cpwg_pcb,
     extract_pcb,
+    resolve_kicad_python,
 )
 
 KICAD_AVAILABLE = Path(KICAD_PYTHON).exists()
@@ -281,12 +283,12 @@ class TestZoneExtraction:
 class TestFillExtraction:
     """B6 stage-2 深化：填充纹理往返锚（KiCad 10.0.6 真机，opt-in fill 腿）。
 
-    实测口径（2026-09-15，判据按现实修正）：
+    实测口径（2026-09-15，任务书判据按现实修正）：
     - KiCad 填充多边形以断裂（fractured）形式存储，孔洞=外轮廓零宽
       狭缝，HoleCount 恒 0——提取侧拷贝后 Unfracture 才还原孔洞；
     - demo 板 F.Cu 填充 = 1 外轮廓 + **1 孔洞**（主线走廊 + 两端射焊盘
       cutout 空间相连，ZONE_FILLER 先并障碍物再切 → 合并为一个走廊孔；
-      原判据"孔洞≥2"对本 demo 几何物理上不可达，如实按 ≥1 + 走廊
+      任务书"孔洞≥2"对本 demo 几何物理上不可达，如实按 ≥1 + 走廊
       包住主线与焊盘钉住）；B.Cu 实平面 0 孔；
     - 走廊边到主线边实测缝 = clearance + KiCad 填充圆角补偿 ≈0.5µm
       （0.2005 vs 0.2，±0.01mm 判据内）。
@@ -609,6 +611,46 @@ class TestBuildScriptOwnership:
         assert "ZONE_FILLER(board).Fill(zones, False)" in fill_code
         assert "LoadBoard(" in fill_code
         build_code = "\n".join(ln for ln in _BUILD_SCRIPT_TEMPLATE.splitlines()
-                               if not ln.lstrip().startswith("#"))
+                              if not ln.lstrip().startswith("#"))
         assert "ZONE_FILLER" not in build_code
         assert ".Fill(" not in build_code
+
+
+class TestResolveKicadPython:
+    """AU-8：KiCad Python 解析 env 化（离线，秒级）。
+
+    优先级：显式参 > env ``RFAUTO_KICAD_PYTHON`` > 缺省安装位常量；
+    env 空串视同未设（零行为变化：缺省路径下解析结果与旧
+    ``kicad_python or KICAD_PYTHON`` 逐位一致）。
+    """
+
+    def test_env_unset_falls_back_to_default_constant(self, monkeypatch):
+        monkeypatch.delenv(KICAD_PYTHON_ENV, raising=False)
+        assert resolve_kicad_python() == KICAD_PYTHON
+        assert resolve_kicad_python(None) == KICAD_PYTHON
+
+    def test_env_takes_priority_over_default(self, monkeypatch):
+        monkeypatch.setenv(KICAD_PYTHON_ENV, r"D:\custom\kicad\python.exe")
+        assert resolve_kicad_python() == r"D:\custom\kicad\python.exe"
+
+    def test_env_empty_string_treated_as_unset(self, monkeypatch):
+        monkeypatch.setenv(KICAD_PYTHON_ENV, "")
+        assert resolve_kicad_python() == KICAD_PYTHON
+
+    def test_explicit_arg_beats_env_and_default(self, monkeypatch):
+        monkeypatch.setenv(KICAD_PYTHON_ENV, r"D:\custom\kicad\python.exe")
+        assert resolve_kicad_python(r"E:\explicit\python.exe") == \
+            r"E:\explicit\python.exe"
+
+    def test_extract_pcb_consumes_resolver(self):
+        """提取入口真走 resolve（不许旁路回硬编码 or 惯语）。"""
+        import inspect
+
+        from rfauto.adapters import kicad_extract as mod
+
+        src = inspect.getsource(mod.extract_pcb)
+        assert "resolve_kicad_python(" in src
+        assert "or KICAD_PYTHON" not in src
+        src_build = inspect.getsource(mod.build_demo_cpwg_pcb)
+        assert "resolve_kicad_python(" in src_build
+        assert "or KICAD_PYTHON" not in src_build

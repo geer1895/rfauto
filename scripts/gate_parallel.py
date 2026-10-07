@@ -1,6 +1,6 @@
 """DP-6 并行日常门运行器（pytest-xdist）。
 
-规格：docs/plan_deepdive_specs_20260924.md §DP-6。日常=并行、终门=串行
+规格：规格深案 §DP-6。日常=并行、终门=串行
 双轨制——本运行器只服务"日常并行门 + 串行对照"，不替代终门口径
 （runs/wf_gate_full-*.log，#355 glob 口径不受影响）。
 
@@ -17,7 +17,9 @@
 
 守卫：
     OPENBLAS_NUM_THREADS=1 在子进程 env 构造期钉死（#258：worker×BLAS
-    线程超订实测慢 85×）；日志头回写 env 证据。
+    线程超订实测慢 85×）；日志头回写 env 证据。solo 标记用例（perf 计时
+    类）双臂一致 -m "not solo" deselect（假红豁免），由终门/CI 串行覆盖
+    ——两臂收集数保持一致是 gate_diff_results diff 空判的前提。
 """
 
 from __future__ import annotations
@@ -44,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="附加 pytest 参数（冒烟/取证用，日常勿传）")
     parser.add_argument("--pytest-root", default=None,
                         help="pytest 运行根目录（冻结快照/工作树隔离用；"
-                             "缺省=本仓根。日志与 junitxml 仍落本仓 runs/）")
+                             "缺省=本仓根。日志与 junitxml 仍落本仓 runs）")
     args = parser.parse_args(argv)
 
     pytest_root = Path(args.pytest_root).resolve() if args.pytest_root else REPO_ROOT
@@ -58,6 +60,11 @@ def main(argv: list[str] | None = None) -> int:
 
     dist_args = (["-n0"] if args.serial
                  else ["-n", args.workers, "--dist=loadfile"])
+    # solo 标记双臂一致 deselect（perf 计时测试 xdist/coverage 争用假红，
+    # r4 批 million-rows 实证）：并行门与串行对照臂都排除才能保
+    # gate_diff_results "并行 vs 串行 diff 空" 守卫可比；solo 用例由
+    # 终门（wf_gate_full 串行裸 pytest）与 CI（单进程）覆盖。
+    marker_args = ["-m", "not solo"]
 
     # #258 超订守卫：必须在 pytest/numpy import 之前生效——子进程 env 构造
     # 期注入，本进程（父）只 import stdlib，不会提前加载 numpy。
@@ -66,13 +73,14 @@ def main(argv: list[str] | None = None) -> int:
 
     cmd = [
         sys.executable, "-m", "pytest", "tests/unit", "-q",
-        *dist_args, f"--junitxml={xml_path}", *args.extra,
+        *dist_args, *marker_args, f"--junitxml={xml_path}", *args.extra,
     ]
 
     header = (
         f"# DP-6 gate runner mode={mode}\n"
         f"# cmd: {' '.join(cmd)}\n"
         f"# pytest_root: {pytest_root}\n"
+        f"# deselect: -m 'not solo' (双臂一致，守卫可比；solo 由终门/CI 覆盖)\n"
         f"# OPENBLAS_NUM_THREADS={env['OPENBLAS_NUM_THREADS']} (forced)\n"
         f"# junitxml: {xml_path}\n"
         f"# started: {datetime.now().isoformat()}\n\n"

@@ -1,4 +1,4 @@
-"""多项式岭回归代理（v1 默认校准代理）。
+"""多项式岭回归代理（v1 默认校准代理，docs/surrogate_calibration_design.md §3）。
 
 设计取舍：
 - 小样本友好：Taguchi 9 点 + 3 维参数下，2 阶特征 10 个系数用岭回归闭式解
@@ -34,6 +34,9 @@ def _features(unit: dict[str, float], names: list[str],
     return feats
 
 
+# F8：与其余代理模块（deeponet/fno/nn 等）一致的装饰器注册风格
+# （第三方代理按 base 模块 docstring 的方式自行注册）
+@surrogate_registry.register("poly_ridge")
 class PolyRidgeSurrogate(SurrogateModel):
     """逐指标多项式岭回归代理（params→metrics 字典契约，见 base）。
 
@@ -181,7 +184,3 @@ def _spearman(a: list[float], b: list[float]) -> float:
 
 def math_sqrt(x: float) -> float:
     return x ** 0.5
-
-
-# 默认注册（第三方代理按 base 模块 docstring 的方式自行注册）
-surrogate_registry.register("poly_ridge")(PolyRidgeSurrogate)

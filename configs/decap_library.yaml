@@ -1,0 +1,97 @@
+# decap 库首批条目（F-B.1 P1，research_expansion §F-B 第 2/3 节）
+#
+# provenance 纪律（铁律 7）：本批全部条目为工程典型量级，provenance 一律
+# "typical_engineering_value: 待 vendor 实测替换"——禁止虚构 vendor 实测数字；
+# 后续 vendor 实测（Murata SimSurfing 手工导出/Samsung weblib）逐条替换并把
+# provenance 换成真实出处（URL+日期）。DC-bias 曲线同样为典型形状示例，
+# vendor 实测曲线（如 CDFER 社区 CSV）入 dc_bias_curve 键并改写 provenance。
+#
+# schema（DecapSpec.from_dict）：part/c_f(F)/esr_ohm/esl_h/provenance 必填；
+# mount_l_h（板级安装电感典型值，H）、dc_bias_curve（{"v": [...], "c": [...]}，
+# v 严格升序，端点外夹持不外推）、cost（选型成本权重，缺省 1.0）、notes 可选。
+# 加载入口：core.pdn.load_decap_library（单条不合法即 ValueError 硬错）。
+# 单位说明：esl_h 与 mount_l_h 均为 H，0.4nH 写 4.0e-10。
+decap_library:
+  gen_0201_100n:
+    part: "generic 0201 100nF X7R（0201 封装典型量级）"
+    c_f: 1.0e-7
+    esr_ohm: 0.030
+    esl_h: 3.0e-10
+    mount_l_h: 3.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "0201 体电感小但安装公差敏感，ESL+安装合计典型 0.6nH 量级"
+  gen_0402_100n:
+    part: "generic 0402 100nF X7R（0402 封装典型量级）"
+    c_f: 1.0e-7
+    esr_ohm: 0.020
+    esl_h: 4.0e-10
+    mount_l_h: 4.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "任务书 F-B 示例条目：0402 100nF 典型 ESR 约 20mΩ、ESL 约 0.4nH"
+  gen_0201_1u:
+    part: "generic 0201 1uF X5R（0201 封装典型量级）"
+    c_f: 1.0e-6
+    esr_ohm: 0.025
+    esl_h: 3.0e-10
+    mount_l_h: 3.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "小封装大容量的 DC-bias 折减显著，正式使用必须补实测曲线"
+  gen_0402_1u:
+    part: "generic 0402 1uF X7R（0402 封装典型量级）"
+    c_f: 1.0e-6
+    esr_ohm: 0.015
+    esl_h: 4.0e-10
+    mount_l_h: 4.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+  gen_0402_10u_x5r:
+    part: "generic 0402 10uF X5R（0402 封装典型量级）"
+    c_f: 1.0e-5
+    esr_ohm: 0.010
+    esl_h: 4.5e-10
+    mount_l_h: 4.0e-10
+    dc_bias_curve:
+      v: [0.0, 1.8, 3.3, 5.0]
+      c: [1.0e-5, 7.6e-6, 5.9e-6, 4.8e-6]
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "X5R 小封装大容量 DC-bias 折减典型形状（5V 下约剩一半），曲线为示例非实测"
+  gen_0603_10u:
+    part: "generic 0603 10uF X5R（0603 封装典型量级）"
+    c_f: 1.0e-5
+    esr_ohm: 0.008
+    esl_h: 6.0e-10
+    mount_l_h: 5.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+  gen_0805_22u_x5r:
+    part: "generic 0805 22uF X5R（0805 封装典型量级）"
+    c_f: 2.2e-5
+    esr_ohm: 0.005
+    esl_h: 8.0e-10
+    mount_l_h: 5.0e-10
+    dc_bias_curve:
+      v: [0.0, 2.5, 5.0, 8.0]
+      c: [2.2e-5, 1.94e-5, 1.72e-5, 1.54e-5]
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "0805 封装折减比 0402 缓和（典型 5V 下约剩七八成），曲线为示例非实测"
+  gen_1210_47u:
+    part: "generic 1210 47uF X5R（1210 封装典型量级）"
+    c_f: 4.7e-5
+    esr_ohm: 0.004
+    esl_h: 1.0e-9
+    mount_l_h: 5.0e-10
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+  gen_bulk_100u_polymer:
+    part: "generic 100uF polymer（散装聚合物典型量级）"
+    c_f: 1.0e-4
+    esr_ohm: 0.010
+    esl_h: 2.0e-9
+    mount_l_h: 1.0e-9
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "聚合物散装：低 ESR 高 ESL，负责中低频段"
+  gen_bulk_470u_alu:
+    part: "generic 470uF 铝电解（散装典型量级）"
+    c_f: 4.7e-4
+    esr_ohm: 0.080
+    esl_h: 1.0e-8
+    mount_l_h: 5.0e-9
+    provenance: "typical_engineering_value: 待 vendor 实测替换"
+    notes: "铝电解：大容量高 ESR，负责最低频段与 VRM 后第一级储能"

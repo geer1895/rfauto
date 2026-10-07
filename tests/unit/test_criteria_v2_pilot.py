@@ -9,6 +9,13 @@ criteria.md §1c 冻结零改写）：
   判读 JSON 附 vv_* 附加字段，verdict 键零改动）；
 - 行为零变化钉：改造前基线（合成 LUT fixture 跑改造前 judge() 采集，
   2026-09-25，verdict/coverage/stdout 判读行写死于 BASELINE_*）。
+  T26 重钉基线注记（2026-09-29）：J1c 覆盖度量按 T13 定案改为真实圆周
+  覆盖（core/metasurface_lut.arc_coverage_deg=360−最大圆周间隙，分支切割
+  免疫）——PASS fixture（10 点铺 340° 跨度）coverage 340.0→322.22
+  （=360−37.78 采样步；离散采样下圆周口径保守低估，对 ≥300° 门只可能
+  保守 FAIL 不可能伪 PASS）；FAIL fixture coverage=200.0 恰好不变（真
+  160° 覆盖洞主导最大圆周间隙）。verdict 语义零变化（PASS/FAIL 两态同
+  改造前）。
 
 runs/ 资产（launch_sweep.py）缺在（干净检出）时 skip——本测试钉工作区
 资产，不伪造数据（test_vv_recast 同款纪律）。
@@ -54,15 +61,17 @@ REQUIRED_CLAIM = ("quantity", "template", "f_ghz")
 REQUIRED_U_VAL = ("u_num", "u_input", "u_D")
 REQUIRED_PROVENANCE = ("commit", "devlog", "referee_run", "gate_db_legacy")
 
-# ── 改造前基线（judge 行为零变化钉；采集口径见模块 docstring） ────────────────
-# PASS fixture：px 2..13mm 10 点、f0=10GHz 处解缠相位 −170°..+170°（覆盖 340°）
+# ── 基线（T26 圆周度量重钉，注记见模块 docstring；改造前原值=340.0/200.0）──────
+# PASS fixture：px 2..13mm 10 点、f0=10GHz 处解缠相位 −170°..+170°（跨度 340°；
+# 圆周覆盖=360−最大采样步 340/9=322.22）
 BASELINE_PASS = {
-    "phase_coverage_deg": 340.0,
+    "phase_coverage_deg": 360.0 - 340.0 / 9,
     "threshold_deg": 300.0,
     "verdict": "PASS",
-    "stdout_line": "[coarse] n_sweep=10 coverage=340.0° verdict=PASS validate=OK",
+    "stdout_line": "[coarse] n_sweep=10 coverage=322.2° verdict=PASS validate=OK",
 }
-# FAIL fixture：同网格、相位 −100°..+100°（覆盖 200° <300° → FAIL 如实落档）
+# FAIL fixture：同网格、相位 −100°..+100°（真覆盖洞 160° 主导最大圆周间隙
+# →覆盖 200.0 <300° → FAIL 如实落档，值与改造前一致）
 BASELINE_FAIL = {
     "phase_coverage_deg": 200.0,
     "threshold_deg": 300.0,
@@ -261,7 +270,13 @@ def test_judge_behavior_unchanged(tmp_path: Path,
     for k, v in baseline.items():
         if k == "stdout_line":
             continue
-        assert gate[k] == v, f"基线键 {k} 漂移：{gate[k]!r} != {v!r}"
+        # 浮点键 approx 比较（T26：覆盖值经排序/间隙浮点链路，与基线字面量
+        # 可差 1 ulp；322.2222... 非整型字面量可逐位书写）
+        if isinstance(v, float):
+            assert gate[k] == pytest.approx(v, rel=1e-12), \
+                f"基线键 {k} 漂移：{gate[k]!r} != {v!r}"
+        else:
+            assert gate[k] == v, f"基线键 {k} 漂移：{gate[k]!r} != {v!r}"
     # ② gate 键集合=基线三键+vv 附加六键（无其他漂移，verdict 键零改动）
     assert set(gate) == {"phase_coverage_deg", "threshold_deg", "verdict"
                          } | VV_ADDED_KEYS
@@ -358,12 +373,12 @@ def test_vv_attach_is_best_effort(tmp_path: Path,
     assert any("vv 段附加失败" in n for n in gate["vv_notes"])
 
 
-@pytest.mark.skipif(
-    not (Path(__file__).resolve().parents[2] / 'runs' / 'df6_dp10ms' / 'criteria.md').exists(),
-    reason='runs/ evidence not distributed with git')
 def test_v2_pilot_does_not_touch_frozen_md_or_index() -> None:
     # 冻结面存在性核对（内容零改写由 git status 抽查承担，这里钉机器源指向）
-    assert (REPO / "runs" / "df6_dp10ms" / "criteria.md").exists()
+    if not (REPO / "runs" / "df6_dp10ms" / "criteria.md").exists():
+        # 公开分发视图：runs/ 冻结证据档不入公开仓——如实 skip
+        import pytest
+        pytest.skip("runs/df6_dp10ms 冻结证据档缺席（公开分发视图）")
     assert (REPO / "knowledge" / "criteria" / "index.yaml").exists()
 
 

@@ -1,0 +1,71 @@
+f0_ghz: 10.0
+n_ports: 2
+template: coax_waveguide_transition
+substrate:
+  er: 1.0
+  h_mm: 0.0
+  tan_d: 0.0
+params:
+- a_mm
+- b_mm
+- l_wg_mm
+- wg_t_mm
+- pin_len_mm
+- pin_r_mm
+- port_h_mm
+- backshort_mm
+nominal_params:
+  a_mm: 22.86
+  b_mm: 10.16
+  l_wg_mm: 30.0
+  wg_t_mm: 2.0
+  pin_len_mm: 5.588000000000001
+  pin_r_mm: 0.5
+  port_h_mm: 1.0
+  backshort_mm: 9.926779802778025
+  er: 1.0
+  h_mm: 0.0
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S 参数 @ LumpedPort 1（探针基同轴截面集总桥，Z_ref=R=50Ω 实常数）+ RectWGPort 2
+  （解析 TE10，Z_ref=ZL=k·Z0/β 色散）；跨口传输含 sqrt(ZL1/ZL2) 阻抗校正（官方
+  wiki Coax-to-Waveguide 教程口径）；HFSS 仲裁=Ph3 窗
+topology: >-
+  波导-同轴探针过渡：WR-90 矩形厚壁腔（a×b×l_wg，四壁+背短路板厚 wg_t，封闭 PEC
+  腔）+ 探针柱经底壁伸入腔内（针轴平行 TE10 E 场沿 y，针中心距背短路内侧面
+  backshort=λg/4）；port1=探针基 LumpedPort 集总桥（R=50Ω），port2=腔端面
+  RectWGPort 解析 TE10；z 轴双端 PML_8、x/y MUR
+param_semantics: >-
+  a_mm=波导宽边（x 向，WR 表口径）；b_mm=波导窄边（y 向，WR 表口径）；l_wg_mm=
+  腔长（背短路内侧面 z=0 到腔端面）；wg_t_mm=壁厚（官方教程 2.0 直抄）；
+  pin_len_mm=探针伸入深（壁内侧面起算，官方教程 0.55·b 比例档）；pin_r_mm=
+  探针截面半宽（官方教程 0.5 直抄）；port_h_mm=集总口隙高（壁内侧面到针底，
+  官方教程 1.0 直抄）；backshort_mm=探针中心距背短路内侧面（λg/4@f0 精算档）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，官方 base
+  级）；NEAR=base/4；全部壁面/探针特征站线（±a/2、±(a/2+wg_t)、±b/2、
+  ±(b/2+wg_t)、±pin_r、−b/2+port_h、−b/2+pin_len、背短路面、探针 z 缘、端口
+  校准面）显式入网（#198）+ 全轴 1µm 近重合去重（#152）；背面空气余量
+  6mm≈λ0/5（封闭腔无外漏场）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_coax_wg_template）；近似级别如实登记：①探针柱
+  为矩形盒阶梯化（官方教程亦为矩形截面 pin，非圆柱）；②同轴连接器理想化为探针基
+  集总桥（官方 Python 教程口径，不含连接器体/介质填充）；③S21 跨口阻抗校正按
+  wiki 教程 sqrt(ZL1/ZL2) 一阶口径；④真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）
+nominal_derivation: |-
+  wr_lookup+闭式导入期精算（#1c，零手抄毫米数；coax_wg_design_params 缺省实参
+  可重算）：a/b=wr_lookup("WR-90") 表口径（22.86/10.16mm，三源一致）；fc10=
+  c0/2a=6.557140376202975 GHz（与表 fc10_ghz 恒等，审计测试钉）；λg=λ0/√(1−
+  (fc10/f0)²)@f0=10 GHz=39.70711921111211 mm → backshort=λg/4=9.926779802778025
+  （官方 wiki Coax-to-Waveguide Adapter 教程 BackShort 结构 + 官方 Python
+  "Horn Antenna with Coaxial Pin Feed" 教程 quarter-λg back-short 口径）；
+  探针参数官方 Python 教程直抄：wg_t=2.0、pin_len=0.55·b=5.588（"tune for best
+  impedance match"比例档）、pin_r=0.5（≈SMA 内导体）、port_h=1.0、feed_R=50Ω；
+  l_wg=30.0（官方教程 feed_length=50mm 为喇叭馈管口径，本过渡取背腔+探针+
+  >λ0/2 传输段，参数可调）；er=1.0/h_mm=0.0（空气填充无介质板，er 消费=渲染
+  脚本 summary 的 TE10 截止/波导波长回显）。端口口径决定：CoaxialPort 绑定
+  存在但不用（仓内 sma_launcher pt2 真机判废先例 β=4166 vs TEM 闭式 68 +
+  官方讨论 #437 尺寸上限病态），采纳探针柱+LumpedPort 集总桥（官方 Python
+  教程口径）。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。

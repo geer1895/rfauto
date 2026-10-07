@@ -276,3 +276,93 @@ class TestSparamsCache:
         s.build_geometry({"template": "wilkinson", "params": {"arm_len_mm": 20.0}})
         s.solve()
         assert len(calls) == 2  # 键不同，互不命中
+
+
+class TestEngineLogArtifact:
+    """P1-1（review_slice6_20260929）：成功路径也落 _last_stdout.log。
+
+    nrts_converged 门（fd_oe_campaign）唯一证据源是该文件；此前仅 rc≠0+解析
+    失败分支落盘，rc=0（含触 NrTS 帽的正常终止）stdout 被 capture 后丢弃 →
+    门恒 ok=None（设计空档）。varactor_smoke._run_engine 同款先例（成功路径
+    也落）。失败路径行为不变（原有 _last_stderr.log+_last_stdout.log 双落盘）。
+    """
+
+    _CAP_STDOUT = (
+        "FDTD simulation size: 100x100x100 --> 1.0e6 FDTD cells\n"
+        "Max. number of timesteps was reached before the end-criteria of -60dB\n")
+
+    @staticmethod
+    def _fake_csv(run_dir: Path) -> None:
+        (run_dir / "sparams.csv").write_text(
+            "freq_hz,re_S11,im_S11,re_S21,im_S21\n"
+            "2e9,0.05,0.0,0.7,0.0\n"
+            "3e9,0.1,0.0,0.6,0.0\n",
+            encoding="utf-8")
+
+    def _solver(self, tmp_path: Path) -> OpenEMSSolver:
+        s = _connected_solver(tmp_path)
+        s._config.extra_params["cache"] = False
+        s._config.extra_params["cache_dir"] = str(tmp_path / "cache")
+        s.build_geometry({"template": "wilkinson", "params": {"f0_ghz": 2.4}})
+        return s
+
+    def test_success_path_writes_engine_log(self, tmp_path, monkeypatch):
+        def fake_run(cmd, **kw):
+            self._fake_csv(Path(kw["cwd"]))
+            import subprocess as sp
+
+            return sp.CompletedProcess(cmd, 0, stdout=self._CAP_STDOUT, stderr="")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+        s = self._solver(tmp_path)
+        r = s.solve()
+        assert r.success
+        log = tmp_path / "openems_run" / "_last_stdout.log"
+        assert log.is_file(), "rc=0 成功路径必须落引擎日志（nrts 门主证）"
+        assert log.read_text(encoding="utf-8") == self._CAP_STDOUT
+
+    def test_products_first_branch_also_writes_log(self, tmp_path, monkeypatch):
+        # rc≠0 但 CSV 已完整落盘 → 产物优先分支同样接受并落日志（审查建议面）
+        def fake_run(cmd, **kw):
+            self._fake_csv(Path(kw["cwd"]))
+            import subprocess as sp
+
+            return sp.CompletedProcess(cmd, 1, stdout=self._CAP_STDOUT, stderr="x")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+        s = self._solver(tmp_path)
+        r = s.solve()
+        assert r.success
+        assert (tmp_path / "openems_run" / "_last_stdout.log").read_text(
+            encoding="utf-8") == self._CAP_STDOUT
+
+    def test_failure_path_writes_both_logs_unchanged(self, tmp_path, monkeypatch):
+        def fake_run(cmd, **kw):
+            import subprocess as sp
+
+            return sp.CompletedProcess(cmd, 3, stdout="s-out", stderr="s-err")
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+        s = self._solver(tmp_path)
+        r = s.solve()
+        assert r.success is False
+        run_dir = tmp_path / "openems_run"
+        assert (run_dir / "_last_stderr.log").read_text(
+            encoding="utf-8") == "s-err"
+        assert (run_dir / "_last_stdout.log").read_text(
+            encoding="utf-8") == "s-out"
+        assert "rc=3" in r.message
+
+    def test_timeout_path_writes_no_log(self, tmp_path, monkeypatch):
+        # TimeoutExpired 无 stdout 可落——不写空文件冒充证据（缺测如实 #314）
+        import subprocess as sp
+
+        def fake_run(cmd, **kw):
+            raise sp.TimeoutExpired(cmd, 5.0)
+
+        monkeypatch.setattr("subprocess.run", fake_run)
+        s = self._solver(tmp_path)
+        r = s.solve()
+        assert r.success is False
+        assert "超时" in r.message
+        assert not (tmp_path / "openems_run" / "_last_stdout.log").exists()

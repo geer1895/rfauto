@@ -424,10 +424,12 @@ def wcd_specs(
             return spec_margin(op, value, float(pred[resolved]))
         return g
 
+    pred_probe_error: str | None = None
     try:
         pred_keys = set(dict(predict({k: float(v) for k, v in center.items()})).keys())
-    except Exception:
+    except Exception as exc:  # 兜 predict(名义点) 探测失败：键面探针 best-effort（#105），后续 per_spec 逐项如实报缺键而非中断整轮
         pred_keys = set()
+        pred_probe_error = repr(exc)
 
     per_spec: dict[str, Any] = {}
     n_eval_total = 0
@@ -490,7 +492,7 @@ def wcd_specs(
     finite = {k: float(v["distance"]) for k, v in per_spec.items()
               if v.get("ok") and math.isfinite(float(v["distance"]))}
     binding = min(finite, key=lambda k: finite[k]) if finite else None
-    return {
+    result: dict[str, Any] = {
         "ok": all_ok,
         "errors": errors or None,
         "per_spec": per_spec,
@@ -500,6 +502,11 @@ def wcd_specs(
         "dim": dim,
         "r_max": r_max,
     }
+    if pred_probe_error is not None:
+        # 兜底归类可见性（审查 P2-1）：键面探针炸过时诊断信息不静默丢失——
+        # 此时各 per_spec 的"缺该指标键"note 实为 predict 异常所致
+        result["pred_probe_error"] = pred_probe_error
+    return result
 
 
 # ---------------------------------------------------------------------------

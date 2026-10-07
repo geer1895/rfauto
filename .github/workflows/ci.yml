@@ -95,6 +95,21 @@ jobs:
           python -m pytest tests/unit -m "real_edt" --co -q | tail -1
           echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
 
+  licenses:
+    name: license compliance gate (P-3 pip-licenses)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package with test-relevant extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[hfss,mcp,multiobj]" pytest pip-licenses
+      - name: Run license compliance gate (scripts/license_gate.py, ALLOWED+EXEMPT 表)
+        run: python scripts/license_gate.py
+
   rules-verify:
     name: live rules periodic re-verify (K1, cron only)
     runs-on: ubuntu-latest

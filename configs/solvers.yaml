@@ -5,14 +5,16 @@
 solvers:
   openems:
     solver_type: openems
-    # 可移植化：路径走 RFAUTO_OPENEMS_BIN（每台机器自设 openEMS 安装 bin
-    # 目录，见 docs/migration_guide.md）
+    # 2026-09-06 可移植化：路径走 RFAUTO_OPENEMS_BIN（每台机器自设——
+    # 旧机 E:\openEMS\install\bin；单工作区方案 B 则是
+    # D:/rf_workspace\vendor\openEMS\install\bin，见 docs/migration_guide.md）
     exe_path: "${RFAUTO_OPENEMS_BIN}\\openEMS.exe"
     working_dir: "runs/openems"
     freq_range_ghz: [1.0, 5.0]
-    # 官方方法学语义：mesh_resolution_mm = 网格 base 覆盖（mm）；
+    # 2026-09-05 官方方法学语义：mesh_resolution_mm = 网格 base 覆盖（mm）；
     # 0 = 自动 λ_sub/50（官方 MSL_NotchFilter 基线，近走线区自动 /4）。
-    # 0.5 ≈ λ_sub/100 已收敛校准档（收敛实证：base 减半谷位漂 -2.5%）。
+    # 0.5 ≈ λ_sub/100 已收敛校准档（runs/audit_freq_scale E4-fine 实证：
+    # base 减半谷位漂 -2.5%，收敛）。
     mesh_resolution_mm: 0.5
     boundary_condition: "PML_8"
     extra_params:
@@ -28,7 +30,7 @@ solvers:
       #   extra_params 无 →Run kwargs 透传点，接线需模板面逐处开洞
       #   （另行立项）；本键先做存在性登记，防止后续批次重复调查。
   comsol:
-    # COMSOL RF Module（第三方仲裁通道，稀缺 license 不做日常主力）。
+    # COMSOL RF Module（WP4.4c 第三方仲裁通道，稀缺 license 不做日常主力）。
     # 纪律（docs/comsol_references.md / #215）：mph.start 显式钉 version="6.3"
     # （6.4 license 已过期）；每次求解占一个 RF license 席位，进程内串行；
     # 一 Python 进程一 Client（JPype 单 JVM）。
@@ -39,13 +41,13 @@ solvers:
     extra_params:
       comsol_version: "6.3"
       cores: 2
-      # comsol_root: 默认指向本机 COMSOL 安装位（随版本/机器而异），
+      # comsol_root: 默认 E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics，
       # 可用 RFAUTO_COMSOL_ROOT 覆盖（非默认安装位时在此显式给路径）。
       # save_mph: true   # 保留 .mph 模型文件（调试用）
   elmer:
-    # Elmer 开源多物理（GPL 免 license）：开源热兜底 + 对 COMSOL
+    # Elmer 开源多物理（A4/WP4.4d，GPL 免 license）：开源热兜底 + 对 COMSOL
     # ht/Icepak 的交叉验证器；当前只做 heat_slab_1d（1-D 均匀热源平板）。
-    # 开源 FEM 高频 EM 通道已择一 NGSolve，Elmer VectorHelmholtz 不实现
+    # 开源 FEM 高频 EM 通道已择一 A9 NGSolve，Elmer VectorHelmholtz 不实现
     # （择一结论与理由见 elmer_adapter.py 模块 docstring）。
     solver_type: elmer
     working_dir: "runs/elmer"
@@ -73,10 +75,13 @@ solvers:
     # 子进程批处理口径：ngspice_con -b（无 GUI）。
     solver_type: ngspice
   xyce:
-    # Xyce 诚实探测钩子（#215：本机无 Xyce 二进制，渲染器不凭想象写
-    # API——装二进制后按 Xyce Reference Guide 补 Ylin/.HB 渲染器并与
-    # 本仓 HB 内核交叉验证，0ca followUp①）。
-    # 探测链：adapters/spice_netlist.resolve_xyce_exe／xyce_available：
-    # RFAUTO_XYCE_BIN > PATH；无安装时探测如实报不可用，
-    # 不阻塞其他求解器（service 层 spice_tool_status 逐项 best-effort）。
+    # Xyce 电路级 SPICE 通道（F-L.2，2026-09-29 起 WSL 真机可用）：Xyce 7.11
+    # 装在 WSL 默认发行版 Ubuntu（wf:xyce-build），驱动链 adapters/
+    # xyce_adapter.py——resolve_xyce_exe：RFAUTO_XYCE_EXE（WSL 侧路径）>
+    # 缺省 /home/pc/apps/xyce/bin/Xyce；不可达时按 tools/xyce_stack_build.sh
+    # 构建指引。v0 面向 DC/.tran/.ac 三基本分析（rlc_lowpass 锚），
+    # .HB 分析面登记未实现（master plan F-L.2 HB 后续批次）。
+    # 注意与 spice_netlist.resolve_xyce_exe（Windows 原生 Xyce.exe 探测钩子，
+    # env RFAUTO_XYCE_BIN）是两条独立链，勿混用。
+    # 此处不写 exe_path（解析在 WSL 侧 env/缺省链，elmer exe 同款口径）。
     solver_type: xyce

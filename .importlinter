@@ -7,6 +7,7 @@ type = layers
 layers =
     rfauto.cli
     rfauto.mcp_server
+    rfauto.ui
     rfauto.service
     rfauto.linkage
     rfauto.optimization

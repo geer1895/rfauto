@@ -1,6 +1,6 @@
 """F3（df7）runs/ 湖索引+分层压实 MVP 测试。
 
-判据（规格预声明）：
+判据（任务书预声明）：
 - 索引：tmp 造合成战役目录（多 run/多形态）→ build_runs_index 行数/
   字段正确 + 缺失 meta 跳过如实（NULL 不臆造）+ 幂等重建行数不变；
   query_runs_index 参数化过滤（template/adapter/study/campaign/日期段）；
@@ -365,3 +365,82 @@ class TestPackVerifyRestore:
             "out/campaign.tar.zst.manifest.json"
         assert lake_service.default_lake_index_db_path().as_posix() == \
             "runs/.lake_index.duckdb"
+
+
+# ---------------------------------------------------------------------------
+# AU-3① except 收窄行为钉（宽异常收窄批：预期异常面折语义，其余上抛）
+# ---------------------------------------------------------------------------
+
+class TestExceptNarrowingPins:
+    """AU-3①：_read_json_object/_load_manifest/_decompress_pack 收窄钉。
+
+    判定：预期异常面（OSError/ValueError 族、zstandard.ZstdError）保持
+    既有折语义（None/错误串，best-effort #105）；非预期异常类型如实上抛
+    （多报不放过，#316 方向），由调用面单目录兜底接住留痕。
+    """
+
+    def test_read_json_object_expected_faces_fold_to_none(self, tmp_path):
+        missing = lake_service._read_json_object(tmp_path / "nope.json")
+        assert missing is None  # OSError 面
+        bad = tmp_path / "bad.json"
+        bad.write_text("{not json", encoding="utf-8")
+        assert lake_service._read_json_object(bad) is None  # JSONDecodeError 面
+        bad_enc = tmp_path / "bad_enc.json"
+        bad_enc.write_bytes(b"\xff\xfe{\x00}")  # 非法 UTF-8（UnicodeDecodeError 面）
+        assert lake_service._read_json_object(bad_enc) is None
+        nonobj = tmp_path / "arr.json"
+        nonobj.write_text("[1, 2]", encoding="utf-8")
+        assert lake_service._read_json_object(nonobj) is None  # 非 dict 如实 None
+
+    def test_read_json_object_unexpected_exception_propagates(self, tmp_path):
+        # 收窄核心钉：深嵌套触发 RecursionError（非 OSError/ValueError）
+        # → 不再被静默折成 None，如实上抛（调用面单目录兜底仍接得住）
+        deep = tmp_path / "deep.json"
+        deep.write_text("[" * 10000 + "]" * 10000, encoding="utf-8")
+        with pytest.raises(RecursionError):
+            lake_service._read_json_object(deep)
+
+    def test_index_build_survives_unexpected_meta_exception(self, tmp_path, monkeypatch):
+        # 上抛被 build_runs_index 单目录兜底接住：坏目录进 errors，其余行照建
+        monkeypatch.chdir(tmp_path)
+        root = tmp_path / "runs"
+        _write_json(root / "ok_pt" / "meta.json", _meta("m", "fake", "s", "2026-08-01T00:00:00"))
+        deep = root / "bad_pt"
+        deep.mkdir(parents=True)
+        (deep / "meta.json").write_text("[" * 10000 + "]" * 10000, encoding="utf-8")
+        r = build_runs_index(root, db_path=tmp_path / "idx.duckdb")
+        assert r["ok"] is True
+        assert r["n_rows"] == 1  # 坏目录跳过不阻塞
+        assert any("bad_pt" in e for e in r["errors"])
+
+    def test_load_manifest_expected_faces_fold_to_error_string(self, tmp_path):
+        missing_manifest, err = lake_service._load_manifest(tmp_path / "nope.json")
+        assert missing_manifest is None and "清单读取/解析失败" in err
+        bad = tmp_path / "bad.json"
+        bad.write_text("{oops", encoding="utf-8")
+        m2, err2 = lake_service._load_manifest(bad)
+        assert m2 is None and "清单读取/解析失败" in err2
+        arr = tmp_path / "arr.json"
+        arr.write_text("[]", encoding="utf-8")
+        m3, err3 = lake_service._load_manifest(arr)
+        assert m3 is None and "格式不符" in err3
+
+    def test_decompress_pack_corrupt_still_zstd_error_face(self, tmp_path):
+        # 包体损坏（ZstdError 面）保持既有"解压失败"错误串语义
+        import zstandard
+
+        corrupt = tmp_path / "corrupt.tar.zst"
+        corrupt.write_bytes(b"this is not a zstd frame at all" * 4)
+        out_tar = tmp_path / "out.tar"
+        err = lake_service._decompress_pack(corrupt, str(out_tar))
+        assert err is not None and "解压失败" in err
+        assert issubclass(zstandard.ZstdError, Exception)  # 收窄类型面自检
+
+    def test_verify_campaign_corrupt_pack_reports_not_ok(self, tmp_path, packed_env):
+        # 收窄后端到端不变：损坏包 → 解压面失败 → ok=False 信封（不炸不假绿）
+        data = bytearray(packed_env["pack"].read_bytes())
+        data[100] ^= 0xFF
+        data[101] ^= 0xFF
+        packed_env["pack"].write_bytes(bytes(data))
+        r = verify_campaign(packed_env["pack"], packed_env["manifest"])
+        assert r["ok"] is False

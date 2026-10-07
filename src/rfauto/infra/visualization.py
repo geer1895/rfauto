@@ -1,4 +1,4 @@
-"""可视化模块。
+"""E5 可视化模块（扩展方案 §E5）。
 
 可视化功能：
 - S 参数曲线图（幅度/相位）
@@ -212,15 +212,15 @@ def generate_html_report(
     return html
 
 
-# ═══ 场可视化 3D：openEMS DumpHDF5 → 切片/等值面 web 化 ═══
+# ═══ G9 场可视化 3D：openEMS DumpHDF5 → 切片/等值面 web 化（§10.7 G9 余量）═══
 #
-# 设计（数值只在确定性内核 + #105 best-effort）：
+# 设计：
 # - 本节 = 确定性 numpy 内核：只做求解器产物的几何/代数变换（|E| 包络、
 #   轴对齐切片、等值面/等值线、dB 归一、Γ→阻抗），不发明任何物理数字；
 # - PyVista（VTK）只在 field_isosurface(engine="auto"|"pyvista") 内惰性
 #   import（extras [viz3d]）；未安装 → matplotlib 等值线降级（每个切片一组
 #   等值线），engine 标签如实回写，可视化故障永不阻塞主路径（#105）；
-# - HDF5 契约按真机产物逐字段核对（nf2ff 冒烟产物）：
+# - HDF5 契约按真机产物逐字段核对（runs/nf2ff_smoke_*/fdtd，2026-09-15 审计）：
 #   * TD 矢量 dump（dump_type 0）：FieldData/TD/<step> (3,nx,ny,nz) float32，
 #     d_order='NXYZ'，逐步 attrs.time；
 #   * FD 矢量 dump（dump_type 29，Python 绑定）：FieldData/FD/f0 (3,nx,ny,nz)
@@ -559,10 +559,17 @@ def field_isosurface(
 def farfield_pattern_from_h5(path: str | Path) -> dict[str, Any]:
     """CalcNF2FF 原生 HDF5（nf2ff.h5 / farfield_3d.h5）→ 方向图网格（dB 归一）。
 
-    契约（真机产物核对）：Mesh/theta|phi 弧度；nf2ff/E_theta|E_phi/FD/
-    f0_real|f0_imag 形状 (n_phi, n_theta)；nf2ff attrs Dmax（线性）、
+    契约（真机产物核对）：Mesh/theta|phi 弧度；nf2ff attrs Dmax（线性）、
     Frequency、Prad。返回 theta_deg[]、phi_deg[]、db[theta][phi]（与
     nf2ff_service.pattern3d 同向：theta 行 × phi 列）。
+
+    双格式（M-4① 审计 §3.4 A1，runs/m4_openems_v037_audit/report.md）：
+    - legacy 拆分（本机 dev11 引擎实测写此格式）：nf2ff/E_theta|E_phi/FD/
+      f0_real|f0_imag，各存 (n_phi, n_theta)；
+    - v0.37 compound（上游 master 引擎）：同路径 f0 为 {r,i} compound，
+      h5py 映射为原生复数，存 (n_theta, n_phi)（upstream nf2ff._ReadFD：
+      legacy swapaxes、compound 不转置——两支在此归一到内部
+      (n_phi, n_theta) 约定，等价无信息差异）。
     """
     from rfauto.core.farfield import (
         dmax_dbi,
@@ -582,8 +589,19 @@ def farfield_pattern_from_h5(path: str | Path) -> dict[str, Any]:
         comps = []
         for name in ("E_theta", "E_phi"):
             grp = nf[name]["FD"]
-            comps.append(np.asarray(grp["f0_real"][...], dtype=float)
-                         + 1j * np.asarray(grp["f0_imag"][...], dtype=float))
+            if "f0_real" in grp:
+                comps.append(np.asarray(grp["f0_real"][...], dtype=float)
+                             + 1j * np.asarray(grp["f0_imag"][...], dtype=float))
+            elif "f0" in grp:
+                arr = np.asarray(grp["f0"][...])
+                if not np.iscomplexobj(arr):
+                    raise ValueError(
+                        f"nf2ff/{name}/FD/f0 compound 应为复数数据集，"
+                        f"实得 dtype={arr.dtype}")
+                comps.append(arr.T)  # (n_theta, n_phi) → 内部 (n_phi, n_theta)
+            else:
+                raise ValueError(
+                    f"nf2ff/{name}/FD 无 f0 数据集：{sorted(grp.keys())}")
         e_norm = np.sqrt(np.abs(comps[0]) ** 2 + np.abs(comps[1]) ** 2)
         if e_norm.shape != (phi.size, theta.size):
             raise ValueError(f"远场形状 {e_norm.shape} 与 (n_phi={phi.size}, n_theta={theta.size}) 不符")

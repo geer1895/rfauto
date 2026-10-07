@@ -1,6 +1,6 @@
 """fab 能力剖面加载 + 纯几何 DFM 门（DP-7 P1/P3）。
 
-定位（docs/plan_deepdive_specs_20260924.md DP-7）：制造现实接进设计链——
+定位（规格深案 DP-7）：制造现实接进设计链——
 fab 能力剖面 YAML（knowledge/fab_profiles/{jlcpcb,huaqiu}.yaml）→ 渲染后
 几何 DFM 门（本模块，**纯几何零仿真**：无网络、无求解器、无文件 I/O 依赖
 于校验调用点——唯一 I/O 是 load_profile 读剖面）。
@@ -34,15 +34,18 @@ __all__ = [
     "FabProfile",
     "FabProfileError",
     "best_effort_dfm_for_design",
+    "check_backdrill",
     "check_board_thickness",
     "check_copper",
     "check_drill",
     "check_gaps",
     "check_geometry",
     "check_material",
+    "check_stub_resonance",
     "check_surface_finish",
     "check_trace_widths",
     "load_profile",
+    "stub_resonance_ghz",
 ]
 
 VIOLATION_CODES = (
@@ -55,6 +58,11 @@ VIOLATION_CODES = (
     "BOARD_THICKNESS_OUT_OF_RANGE",
     "SURFACE_FINISH_UNSUPPORTED",
     "INVALID_GEOMETRY",
+    # HS-2 残桩/背钻 notch 门（r4 中件包一）：STUB_RES_INFO 为信息行
+    # 约定 code（非违规，聚合方按 endswith("_INFO") 分离），不入本表。
+    "STUB_RES",
+    "BACKDRILL_OD",
+    "BACKDRILL_UNDER",
 )
 
 #: 支持板材 token 匹配口径：material 归一化小写后 == token 或以 token 为前缀
@@ -477,3 +485,128 @@ def best_effort_dfm_for_design(
         return out
     except Exception as exc:
         return {"ran": False, "ok": None, "reason": f"{type(exc).__name__}: {exc}"}
+
+
+# ── HS-2：残桩/背钻 notch 门（r4 中件包一，挂 fab DFM）────────────────
+#
+# 口径（研究扩充 round4 中件包一 HS-2）：
+# 开路四分之一波残桩谐振 fres = c/(4·L_stub·√εr_eff)（Simonovich EDN
+# RoT#17 惯例：0.5in≈12.7mm、εr≈4 → ≈2.95GHz "3GHz 残桩" 量级互证）。
+# εr_eff 用叠层该层名义值**显式传入**（FabProfile 无材料 er 字段，
+# 名义值可取 configs/materials.yaml 经 service 层解析）；背钻残桩
+# L = 过孔跨度 − 背钻深度（下限截 0）。规则：fres ≥ margin_frac ×
+# f_nyquist（残桩谐振须在奈奎斯特带外，带内即 notch 风险）。
+# 数值只在确定性内核（#7）：纯闭式零仿真零 I/O，与上文 check_* 同层。
+
+#: 信息行 code 约定：非违规行 code 以 ``_INFO`` 结尾，聚合方按
+#: ``code.endswith("_INFO")`` 从硬违规中分离（nyquist_ghz=None 时
+#: check_stub_resonance 只产信息行不算违规）。
+
+_SPEED_OF_LIGHT_M_S = 299792458.0
+
+
+def _positive_no_bool(value: Any, where: str) -> float:
+    """``_positive`` + bool 拒收（df7+⑯：float(True)=1.0 静默污染）。
+
+    既有 ``_positive`` 不动（零改动约束）——HS-2 新门入参一律走本守卫。
+    """
+    if isinstance(value, bool):
+        raise FabProfileError(f"{where}: 不接受 bool，收到 {value!r}")
+    return _positive(value, where)
+
+
+def _non_negative_no_bool(value: Any, where: str) -> float:
+    """≥0 数值守卫（bool 拒收；0 合法——背钻深度 0 = 未背钻）。"""
+    if isinstance(value, bool):
+        raise FabProfileError(f"{where}: 不接受 bool，收到 {value!r}")
+    try:
+        v = float(value)
+    except (TypeError, ValueError) as exc:
+        raise FabProfileError(f"{where}: 数值非法 {value!r}") from exc
+    if not v >= 0.0:
+        raise FabProfileError(f"{where}: 必须 ≥0，收到 {v!r}")
+    return v
+
+
+def stub_resonance_ghz(stub_len_mm: float, er_eff: float) -> float:
+    """开路四分之一波残桩谐振频率（GHz，闭式 100%）。
+
+    fres = c/(4·L·√εr_eff)，c=299792458 m/s，L 单位 mm。
+    手算锚：L=10mm、εr_eff=4.0 → 299792458/(4×0.010×2) =
+    3.747405725 GHz（tests/unit/test_fab_stub_gate.py 逐位钉）。
+    """
+    length_m = _positive_no_bool(stub_len_mm, "stub_len_mm") * 1e-3
+    er = _positive_no_bool(er_eff, "er_eff")
+    return _SPEED_OF_LIGHT_M_S / (4.0 * length_m * er ** 0.5) / 1e9
+
+
+def check_stub_resonance(
+    stub_len_mm: float,
+    er_eff: float,
+    nyquist_ghz: float | None = None,
+    margin_frac: float = 1.0,
+) -> list[dict[str, Any]]:
+    """残桩谐振 vs 奈奎斯特带（_violation 同款违规清单）。
+
+    规则：fres ≥ margin_frac×nyquist_ghz（残桩谐振须在奈奎斯特带外），
+    违反报 code=``STUB_RES``（field=fres_ghz，value=fres，limit=门限）。
+    ``nyquist_ghz=None``（缺省）→ 只报一条信息行
+    code=``STUB_RES_INFO``（value=fres），**不算违规**——口径：奈奎斯特
+    频率未给时无从判带内带外，信息行供上层报告展示，聚合方按
+    ``code.endswith("_INFO")`` 从硬违规中分离。
+    """
+    fres = stub_resonance_ghz(stub_len_mm, er_eff)
+    if nyquist_ghz is None:
+        return [_violation(
+            "STUB_RES_INFO", "fres_ghz", fres, float("nan"),
+            f"信息行（非违规）: 残桩 {stub_len_mm}mm/εr_eff {er_eff} → "
+            f"fres={fres:.4f}GHz；未给 nyquist_ghz，不做带内比对")]
+    nyq = _positive_no_bool(nyquist_ghz, "nyquist_ghz")
+    mf = _positive_no_bool(margin_frac, "margin_frac")
+    limit = mf * nyq
+    if fres < limit:
+        return [_violation(
+            "STUB_RES", "fres_ghz", fres, limit,
+            f"残桩谐振 fres={fres:.4f}GHz < 门限 {mf:g}×nyquist="
+            f"{limit:.4f}GHz（残桩 {stub_len_mm}mm/εr_eff {er_eff}），"
+            f"带内 notch 风险")]
+    return []
+
+
+def check_backdrill(
+    via_span_mm: float,
+    backdrill_depth_mm: float,
+    min_remaining_mm: float,
+    er_eff: float,
+    nyquist_ghz: float | None = None,
+) -> list[dict[str, Any]]:
+    """背钻残桩门：over-drill / under-drill 余量 / 残余桩谐振三面合一。
+
+    残余桩长 = max(via_span − backdrill_depth, 0)。
+    - 背钻深度 > 过孔跨度 → ``BACKDRILL_OD``（钻穿对侧焊盘/信号层；
+      此时残余=0 不再做谐振比对）；
+    - 残余 < min_remaining → ``BACKDRILL_UNDER``（背钻余量不足：
+      钻尖距信号层过近，工艺要求保最小间距）；
+    - 残余 > 0 时谐振面复用 :func:`check_stub_resonance`
+      （code ``STUB_RES``/信息行 ``STUB_RES_INFO``，nyquist_ghz
+      语义同彼处；残余=0 只报余量面）。
+    """
+    span = _positive_no_bool(via_span_mm, "via_span_mm")
+    depth = _non_negative_no_bool(backdrill_depth_mm, "backdrill_depth_mm")
+    min_rem = _positive_no_bool(min_remaining_mm, "min_remaining_mm")
+    if depth > span:
+        return [_violation(
+            "BACKDRILL_OD", "backdrill_depth_mm", depth, span,
+            f"背钻深度 {depth}mm > 过孔跨度 {span}mm（over-drill）：会钻穿"
+            f"对侧焊盘/信号层，残余桩=0 不做谐振比对")]
+    residual = span - depth
+    out: list[dict[str, Any]] = []
+    if residual < min_rem:
+        out.append(_violation(
+            "BACKDRILL_UNDER", "stub_len_mm", residual, min_rem,
+            f"背钻后残余桩 {residual:.4f}mm < 最小残余 {min_rem}mm"
+            f"（under-drill：背钻余量不足，钻尖距信号层过近）"))
+    if residual > 0.0:
+        out += check_stub_resonance(
+            residual, er_eff, nyquist_ghz=nyquist_ghz)
+    return out

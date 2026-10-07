@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import math
 import time
 from pathlib import Path
 from typing import Any, ClassVar
@@ -57,6 +58,88 @@ def _vna_settings(config: EMSolverConfig) -> dict[str, Any]:
     if not isinstance(extra, dict):
         raise TypeError(f"extra_params 须为 dict，实际 {type(extra).__name__}")
     return extra
+
+
+# ─── 2-port shunt-through PDN 阻抗换算（F-B P3 前置件）────────────────────
+#
+# spec 出处：月度增强方案 L162「2-port shunt-
+# through 换算（F-B P3 前置件，VNA 适配器加法）」；docs/audit/
+# plan_gap_inventory_20260928.md §二 B5（vna_adapter 零命中确认未做）。
+#
+# 拓扑与口径：被测 DUT（PDN）并联在两台 50Ω 端口之间（shunt-through），
+# 并联元 ABCD = [[1, 0], [Y, 1]]，Y = 1/Z：
+#     S21 = 2 / (A + B/Z0 + C·Z0 + D) = 2 / (2 + Y·Z0) = 2Z / (2Z + Z0)
+# 逆换算：
+#     Z = Z0·S21 / (2(1 − S21)) = (Z0/2)·S21 / (1 − S21)
+# 经典锚点（业界公开口径，Novak PDN 2-port shunt-through 应用笔记同式；
+# 本式为 ABCD 并联元一步自推，锚点作独立数钉）：50Ω 系统 S21 = 0.5
+# （−6.0206 dB）⟺ Z = 25 Ω。
+#
+# 诚实边界（#122）：换算式对理想 shunt-through 拓扑**精确**（全 Z 域，
+# 无近似的近似）；真机精度受夹具并联寄生/通路电感限制（工程上 |Z| 远小于
+# 端口阻抗档最准），本模块不建模夹具寄生（UNVERIFIED 精度等级，硬件裁定
+# 后走 D 流真机标定）。
+def shunt_through_s21_from_z(z_ohm: Any, *, z0_ohm: float = 50.0) -> complex:
+    """正问题：并联 DUT 阻抗 → shunt-through S21（合成裁判/mock 通道用）。
+
+    S21 = 2Z/(2Z + Z0)；Z=0（短路）→ S21=0；Z→∞（开路）→ S21→1。
+    """
+    z0 = _positive_z0(z0_ohm)
+    z = _complex_impedance(z_ohm)
+    return 2.0 * z / (2.0 * z + z0)
+
+
+def shunt_through_z_from_s21(s21: Any, *, z0_ohm: float = 50.0) -> complex:
+    """逆问题：shunt-through S21 → 并联 DUT 阻抗 Z（复数，欧姆）。
+
+    Z = (Z0/2)·S21/(1 − S21)。
+    |S21| ≥ 1 → ValueError（无源并联 DUT 物理上 |S21|<1；|S21|=1 为开路
+    极限 Z→∞，分母为零——如实拒绝不硬造；近高阻谐振 |S21|≈1±噪声的
+    实测调用方应先按仪器噪声底预裁剪再换算）。
+    """
+    z0 = _positive_z0(z0_ohm)
+    s = _complex_impedance(s21)
+    if abs(s) >= 1.0:
+        raise ValueError(
+            f"|S21|={abs(s):.6g} ≥ 1 非物理（shunt-through 无源并联 DUT 要求"
+            "|S21|<1；=1 为开路极限，Z→∞ 不构成有限换算）")
+    return (z0 / 2.0) * s / (1.0 - s)
+
+
+def shunt_through_impedance_curve(
+    freq_hz: Any,
+    s21: Any,
+    *,
+    z0_ohm: float = 50.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """逐频批量换算：S21 轨迹 → (freq_hz, Z 复数组)（PDN 阻抗谱）。"""
+    f = np.asarray(freq_hz, dtype=float)
+    s = np.asarray(s21, dtype=complex)
+    if f.shape != s.shape or f.ndim != 1:
+        raise ValueError(
+            f"freq_hz 与 s21 必须同形一维，收到 {f.shape}/{s.shape}")
+    z = np.empty(s.shape, dtype=complex)
+    for i, s_i in enumerate(s):
+        z[i] = shunt_through_z_from_s21(s_i, z0_ohm=z0_ohm)
+    return f, z
+
+
+def _positive_z0(z0_ohm: Any) -> float:
+    if isinstance(z0_ohm, bool) or not isinstance(z0_ohm, (int, float)):
+        raise ValueError(f"z0_ohm 必须是实数，收到 {z0_ohm!r}")
+    out = float(z0_ohm)
+    if not math.isfinite(out) or out <= 0.0:
+        raise ValueError(f"z0_ohm 必须 >0 且有限，收到 {z0_ohm!r}")
+    return out
+
+
+def _complex_impedance(value: Any) -> complex:
+    if isinstance(value, bool) or not isinstance(value, (int, float, complex)):
+        raise ValueError(f"复数阻抗/S21 入参必须是 int|float|complex，收到 {value!r}")
+    out = complex(value)
+    if not (math.isfinite(out.real) and math.isfinite(out.imag)):
+        raise ValueError(f"复数入参必须有限，收到 {value!r}")
+    return out
 
 
 class VnaAdapter(EMSolverAdapter):
@@ -315,6 +398,25 @@ class VnaAdapter(EMSolverAdapter):
                 raise RuntimeError(result.message)
         return (np.asarray(self._network.f, dtype=float) / 1e9,
                 np.asarray(self._network.s, dtype=complex))
+
+    def get_shunt_through_impedance(
+        self, *, z0_ohm: float = 50.0,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """测量网络 S21 → PDN 并联阻抗谱（shunt-through 拓扑；2-port 换算面）。
+
+        前置=被测件按 shunt-through 拓扑装台（DUT 并联在两端口之间）且
+        校准参考面到 DUT（2x-thru AFR 可剥离夹具）；未测量先 solve。
+        Returns:
+            (freq_hz, Z 复数组)；逐频做 shunt_through_z_from_s21 换算。
+        """
+        if self._network is None:
+            result = self.solve()
+            if not result.success:
+                raise RuntimeError(result.message)
+        return shunt_through_impedance_curve(
+            np.asarray(self._network.f, dtype=float),
+            np.asarray(self._network.s, dtype=complex)[:, 1, 0],
+            z0_ohm=z0_ohm)
 
     def export_touchstone(self, path: str | Path, contract: Any = None) -> Path:
         """导出测量网络 Touchstone（results/params.sNp 同构产物用）。"""

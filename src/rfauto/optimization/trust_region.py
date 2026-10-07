@@ -1,6 +1,7 @@
 """stage-2 精修环：TR-ARS 式信任域 + Bandler 输出空间映射（WP3.2 步骤 b）。
 
-方案口径（cjors.2025184 综述锚）：
+方案口径（docs/续跑计划.md §10.9 薄弱项 1b / §10.18 表#5，
+cjors.2025184 综述锚）：
 - Bandler ASM：粗模型（代理/解析快档，毫秒级）× 细模型（真跑）分层；
   最简输出空间映射 `Rs ≈ Rc + Δ(x)`——细跑残差修正粗模型 bias；
 - Koziel TR-ARS：信任域内用"校正后的粗模型"寻优 → 细模型验证 →
@@ -16,7 +17,7 @@
     验证候选 → ρ 接受/拒绝 + 半径伸缩 → 收敛（半径塌缩 / 停摆 / 预算）。
 
 铁律落地（同 stage-1）：
-- 数值只在确定性内核（数值铁律）：粗模型出自 surrogate_registry，
+- 数值只在确定性内核：粗模型出自 surrogate_registry，
   映射为闭式 lstsq，cost 出自 SpecEvaluator.evaluate_objectives，LLM 不入环；
 - 零真机验证路径：evaluate_fn 注入（单测用合成解析裁判面，§4 口径）；
 - 本模块不改 surrogate_loop.py 任何行为——run_two_stage 用 evaluate_fn
@@ -29,6 +30,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable
 from typing import Any
@@ -36,6 +38,8 @@ from typing import Any
 import numpy as np
 
 from rfauto.core.objectives import Objective, SpecEvaluator
+
+logger = logging.getLogger(__name__)
 
 __all__ = ["refine_trust_region", "run_two_stage"]
 
@@ -177,6 +181,10 @@ def predicted_cost(
     """校正模型 cost：代理指标→SpecEvaluator cost（+ 加性映射 Δ）。
 
     单点预测异常按大罚值处理（与 stage-1 P2-9 同款：不炸环）。
+    判定（AU-3③）：**承重吞**——代理 predict/SpecEvaluator 可抛任意异常，
+    收窄会让单点异常炸掉整轮 TPE 虚拟寻优，与"单点失败=大罚值"设计语义
+    相反；故不收窄，仅加 debug 级 traceback 留痕（best-effort #105，不改
+    返回值）。
     """
     try:
         value = SpecEvaluator.evaluate_objectives(model.predict(params),
@@ -185,6 +193,8 @@ def predicted_cost(
             value += mapping.delta(_to_unit(params, bounds))
         return value
     except Exception:
+        logger.debug("predicted_cost 单点预测失败，按大罚值处理: %r",
+                     params, exc_info=True)
         return 1e12
 
 
@@ -269,6 +279,12 @@ def refine_trust_region(
         try:
             metrics = evaluate_fn(dict(params))
         except Exception as exc:
+            # 承重吞（AU-3③，docstring 契约）：evaluate_fn 抛任意异常 = 该点
+            # 失败，记 failure 不入样本按拒绝处理；evaluate_fn 是真机/注入
+            # 通道（pyaedt gRPC、子进程等任意异常面），不可收窄。failure 已
+            # 随返回契约外显，此处补 traceback 留痕（best-effort）。
+            logger.debug("evaluate_real 细跑失败 phase=%s: %s", phase, exc,
+                         exc_info=True)
             failures.append({"params": dict(params), "phase": phase,
                              "error": str(exc)})
             attempts += 1
@@ -390,6 +406,11 @@ def refine_trust_region(
                     base = SpecEvaluator.evaluate_objectives(
                         coarse.predict(s["params"]), objectives)
                 except Exception:
+                    # 承重吞（AU-3③）：单点粗模型基线预测失败 → 跳过该点不进
+                    # 残差拟合（映射拟合的容错语义，同 P2-9 族）；不可收窄
+                    # （收窄=拟合段炸环），补 debug 留痕（best-effort #105）。
+                    logger.debug("残差映射拟合跳过单点（粗模型预测失败）: %r",
+                                 s["params"], exc_info=True)
                     continue
                 pts.append(_to_unit(s["params"], bounds))
                 res.append(float(s["cost"]) - base)

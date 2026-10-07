@@ -1,0 +1,75 @@
+# 器件老化律注册表（F-C.1 P1 批，研究扩充 F-C §2/§3(4)）
+# 消费者：src/rfauto/core/aging.py（内核只认 aging_frac_per_decade/ea_ev 数值，
+# 本文件是数值唯一来源）；P2 的 service/aging_service.py 按模板材料查表。
+#
+# provenance 政策（F-C §3 判据 4）：每条数值必须带出处（标准/手册/文献）并
+# 标注单源性；没有可靠出处的条目 status: awaiting_data 且数值字段必须为 null
+# ——不产数字（锚 awaiting_data 先例，knowledge/anchors.yaml 头注同源口径）。
+# status 枚举：typical（文献/标准典型值，未经本仓真机仲裁）| awaiting_data
+# （待文献或实测回填）。typical 条目均为单源或标准缺省，不得当作仲裁值消费。
+# 温度轴参数（TCDk 等）不收本表——那是 core/calculators.py
+# resonator_thermal_drift 的温度轴口径，本表只收时间轴老化律。
+# yaml 行内引注禁 '#' 后半角空格（#324）——引注用全角括号包裹。
+schema: aging_laws/v1
+materials:
+  # ── 行业标准缺省档（无具体材料时的保守回退，service 层显式声明才可消费）──
+  - material_id: generic_jesd85
+    kind: class_default
+    description: 电子整机稳态温度加速的行业标准缺省档（非特定材料实测）
+    arrhenius:
+      status: typical
+      ea_ev: 0.7
+      single_source: false
+      provenance: "JEDEC JESD47G 应力驱动鉴定工作例（Ea=0.7 eV，125°C 应力 vs 55°C 使用）与 JESD85 FIT 计算口径的行业缺省（机制未知时的保守值，机制典型域 0.3-1.1 eV）"
+    er_aging:
+      status: awaiting_data
+      reason: 通用档不绑定介质材料，εr 老化率无行业标准缺省——逐材料回填
+
+  # ── FR-4（环氧-玻璃布层压板）──
+  - material_id: laminate_fr4
+    kind: substrate_laminate
+    description: FR-4 环氧-玻璃布层压板（Tg 级热退化通道）
+    arrhenius:
+      status: typical
+      ea_ev: 0.35
+      single_source: true
+      provenance: "TU Delft 学位论文（电子整机健康监测，research.tudelft.nl）引用 0.35 eV 为电子元器件/层压板温度加速的合理平均值——单源典型值，未经本仓仲裁，消费面必须标注 UNVERIFIED 单源"
+    er_aging:
+      status: awaiting_data
+      reason: FR-4 无公开 log-时间 εr 老化律；εr 漂移以吸湿为主（可逆且非 log-时间律），时间轴老化率待文献/实测回填
+
+  # ── Rogers RO4350B（PTFE-陶瓷碳氢热固层压板）──
+  - material_id: laminate_ro4350b
+    kind: substrate_laminate
+    description: Rogers RO4350B 高频层压板（Dk 3.48±0.05 @10GHz 设计档）
+    arrhenius:
+      status: awaiting_data
+      reason: 厂商手册只给温度轴参数（TCDk=+50 ppm/°C，−50°C 至 +150°C），热退化通道的 Arrhenius Ea 无公开单源典型值
+    er_aging:
+      status: awaiting_data
+      reason: 手册 TCDk 是温度轴不是时间轴老化率；per-decade εr 老化率厂商未发布，待文献/实测回填
+
+  # ── 氧化铝陶瓷（99.6%，微波基板/介质谐振器档）──
+  - material_id: ceramic_alumina_99p6
+    kind: ceramic_substrate
+    description: 99.6% 氧化铝（刚玉相，εr≈9.8-10.6，微波基板与 DRO 谐振器常用）
+    arrhenius:
+      status: awaiting_data
+      reason: 烧结氧化铝基体本身热退化通道的可靠性 Arrhenius Ea 无公开单源典型值（金属化互连的电迁移 Ea 是另一材料域，不属本表）
+    er_aging:
+      status: awaiting_data
+      reason: 顺电刚玉相无 Class-2 铁电畴老化机制，99.6% 档 300-400K εr 稳定性有实测文献（TE01δ 谐振法），但 per-decade 定量老化率无单源典型值——机理上预期远低于 Class-2 陶瓷，如实待回填
+
+  # ── Class-2 铁电陶瓷（BaTiO₃ 基，X7R 档）——er_aging_drift 的规范用户 ──
+  - material_id: ceramic_class2_x7r
+    kind: ceramic_dielectric_class2
+    description: Class-2 铁电陶瓷（BaTiO₃ 基 X7R 档，MLCC 与瓷介元件介质）
+    arrhenius:
+      status: awaiting_data
+      reason: 老化速率自身的温度依赖（Arrhenius Ea）无公开单源典型值；且老化在超过居里点（约 125°C）回火后重置，温度轴建模需含重置语义，先如实留空
+    er_aging:
+      status: typical
+      frac_per_decade: -0.01
+      t_ref_h: 1.0
+      single_source: true
+      provenance: "Knowles（Syfer）电容器器件手册族（VC1/0805/AEC-Q200/HiT 各档一致标注）——X7R 老化率典型 1% per time decade hour，C0G/NP0 为零；老化自末次超居里点回火起按 log10(时间) 线性外推，超过居里点后重置。单源典型值，未经本仓仲裁"

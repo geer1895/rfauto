@@ -9,11 +9,11 @@ runner_binding: launch_sweep_judge   # df7 试点接线（DP-12 §四 followUp �
 # 与 md 逐值一致）。本文件只消费 --judge 现场产物（wg_sim/lut_*.json 的 gate
 # 块），不改写任何已归档判读（#325/#326）。
 claim:
-  quantity: s11_phase_coverage_deg   # J1c：f0 处 |arg Γ| 覆盖（max−min，解缠域，度）
+  quantity: s11_phase_coverage_deg   # J1c：f0 处 |arg Γ| 圆周覆盖（arc_coverage_deg=360°−最大圆周间隙，度；T26 定案——对离散采样为保守低估=fail-closed 安全方向；旧注记「max−min，解缠域」口径已废）
   template: ms_patch
   f_ghz: 10.0
 evidence_fields:
-  - gate.phase_coverage_deg   # coverage_gate() 实测：f0 最近频点列 max−min
+  - gate.phase_coverage_deg   # coverage_gate() 实测：f0 最近频点列圆周覆盖（arc_coverage_deg=360°−最大圆周间隙；T26 起取代旧 max−min 解缠口径）
   - gate.threshold_deg        # 内置门值 300.0（与 decision_rule.threshold 逐位互证）
   - gate.verdict              # 现行 verdict 字符串 PASS/FAIL（原样保留，零改名）
 u_val:

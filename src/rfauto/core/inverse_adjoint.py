@@ -1,6 +1,6 @@
-"""逆向设计研究线：JAX 可微 1D FDTD + 伴随（反向模式）拓扑优化（CPU 小规模）。
+"""E5 逆向设计研究线：JAX 可微 1D FDTD + 伴随（反向模式）拓扑优化（CPU 小规模）。
 
-定位
+定位（docs/续跑计划.md §10.5 E5 / §10.18 第 2 条）
 ====================================================================
 研究分支，不接入主求解链、不阻塞主线。本模块给三件事：
 
@@ -244,7 +244,12 @@ def profile_to_layers(eps_profile: Any, dx: float = DX) -> list[tuple[float, flo
 
 
 def _enable_x64() -> bool:
-    """尽力开启 jax x64（float64）；不可用则退回默认 dtype（best-effort，不阻断）。"""
+    """尽力开启 jax x64（float64）；不可用则退回默认 dtype（best-effort，不阻断）。
+
+    降级可见性（审查 P2-3）：本函数只返回 bool，dtype 回退事实经
+    ``_Simulators.x64`` 外露到所有 dict 型公开入口（simulate /
+    gradient_check / optimize_density 的 ``"x64"`` 键，False 即 float32 回退）。
+    """
     if "x64" in _X64_CACHE:
         return _X64_CACHE["x64"]
     enabled = False
@@ -253,7 +258,8 @@ def _enable_x64() -> bool:
 
         jax.config.update("jax_enable_x64", True)
         enabled = bool(getattr(jax.config, "x64_enabled", False))
-    except Exception:  # jax 缺失或配置已冻结：退回默认 dtype
+    except Exception as exc:  # 兜 jax 缺失或配置已冻结：退回默认 dtype（best-effort，#105），不阻断可微内核构建
+        del exc  # bool 返回无 reason 承载面；降级事实经 _Simulators.x64 外露
         enabled = False
     _X64_CACHE["x64"] = enabled
     return enabled
@@ -539,6 +545,8 @@ def optimize_density(
 
     目标：sense="min" 最小化 T(omega0)（反射器），"max" 最大化 T。
     每步用 L_inf 归一化梯度，回溯保证目标单调不劣（因此历史可断言非增/非减）。
+    返回 dict 含 ``"x64"``（False = jax x64 不可用，全程 float32 默认 dtype 回退，
+    审查 P2-3 可见性标记）。
     """
     cfg = cfg or FDTD1DConfig()
     optimize_cfg = optimize_cfg or OptimizeConfig()
@@ -579,6 +587,7 @@ def optimize_density(
         beta_history.append(beta)
 
     final_beta = beta_history[-1]
+    sim = _compiled(cfg)  # 命中 lru_cache，零额外编译；只为取 x64 降级标记（审查 P2-3）
     eps_profile = reference_eps_profile(rho, final_beta, cfg)
     tmm_num = tmm_transmission(
         profile_to_layers(eps_profile), cfg.omega, courant=cfg.courant, numerical=True
@@ -613,6 +622,8 @@ def optimize_density(
         "tmm_transmission_numerical": float(tmm_num),
         "tmm_transmission_physical": float(tmm_phys),
         "tmm_rel_error": relative_error(history[-1], tmm_num),
+        # x64=False 即 jax 不可用/配置冻结 → float32 默认 dtype 回退（审查 P2-3）
+        "x64": sim.x64,
     }
 
 
@@ -620,7 +631,7 @@ LITERATURE_NOTES: tuple[str, ...] = (
     "经典闭式对照：单层板 Airy 公式 T = 1/(1 + F sin^2(delta))，F = ((eps_r-1)/(2n))^2（教科书法布里-珀罗口径）。",
     "独立数值对照：分层介质转移矩阵（TMM）——本模块用离散色散波数给网格修正版，残差如实报告。",
     "方法学路线指引（本次未真跑，不硬凑）：Meep adjoint 教程（meep.readthedocs.io Adjoint_Solver，密度法拓扑优化 + nlopt）；"
-    "FDTDX（arXiv 2412.12360）与 rfx 的 JAX 原生可微 FDTD；HFSS Adjoint Solver 商业锚待后续增量。",
+    "FDTDX（arXiv 2412.12360）与 rfx 的 JAX 原生可微 FDTD；E5 的 HFSS Adjoint Solver 商业锚待后续增量。",
     "本增量范围：1D、CPU、小规模、单频目标；2D 波导弯头/宽频/最小特征尺寸约束未实现。",
 )
 

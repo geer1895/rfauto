@@ -1,0 +1,34 @@
+# 多机协同仿真资源登记（多机协同 v0 模板）
+#
+# 用途：远程 HFSS/ADS 仿真机器注册表。服务面：
+#   - service/remote_service.py（probe/status/hfss_remote_session_config）
+#   - adapters 层 HFSS 远程会话透传（machine/port，见 hfss_session.py）
+#
+# ⚠ 凭据零入库：本文件不含 SSH 用户名/密码/私钥。
+#   凭据面=环境变量 RFAUTO_REMOTE_SSH_USER / RFAUTO_REMOTE_SSH_PASSWORD，
+#   或同目录 remote_machines.local.yaml（已 gitignore）里的
+#   ssh_user / ssh_key_path 覆盖。
+#
+# ⚠ 版本口径：远程 AEDT 必须与本机同版本（PyAEDT gRPC 客户端-服务端版本
+#   配对 + HFSS=对齐基准数值可比性）。
+#
+# 本文件为入库模板：machines 条目均为占位示例（RFC 5737 文档 IP 段），
+# 部署时替换为本机网络的实注册值（或改写本机 local 覆盖文件）。
+
+machines:
+  sim_host:
+    host: 192.0.2.50
+    ssh_port: 22
+    # 探活端口表（语义名→端口；probe_machine 消费）
+    probe_ports:
+      rdp: 3389
+      ansys_license: 1055
+      ads_license: 27009
+      smb: 445
+    hfss:
+      version: "2025.1"          # 服务器实测 ansysedt.exe 文件版本=本机安装
+      grpc_port: 50051           # ansysedt -grpcsrv 监听端口（SSH 拉起后本机 attach）
+      project_root: 'E:\rfauto_remote'   # 服务器侧项目工作根（远程会话 project 路径语义）
+      ansysedt_exe: 'E:\ANSYS Inc\v251\AnsysEM\ansysedt.exe'
+    ads:
+      hpeesof_dir: 'E:\ADS'    # 服务器侧 ADS 根（hpeesofsim 远跑 HPEESOF_DIR 前置）

@@ -761,6 +761,12 @@ def run_field_circuit_anchor(
                 "sim_time_s": float(ads["payload"].get("_sim_time_s", float("nan"))),
             }
         except Exception as exc:
+            # 锚点失败=invalid 标记（AU-3②判定）：锚是多段批量裁判编排
+            # （docstring 契约"任一段失败如实降级记录，不掩盖、不抛出"），
+            # fail-fast 会砍掉后续段报告；ok=False fail-closed 下游可见，
+            # error 串随 summary 外显。宽兜豁免（ADS/求解器/宏模型任意异
+            # 常面），此处补 traceback 留痕（best-effort #105，不改控制流）。
+            logger.exception("场路锚 ADS 段失败（invalid 标记）")
             # 观测性 best-effort：把求解器 stdout/stderr 尾巴带进错误串，
             # 许可/语法类失败的正文（如 "Linear features are not licensed"）可溯源。
             det = getattr(exc, "details", None)
@@ -784,6 +790,8 @@ def run_field_circuit_anchor(
             summary["fsv"] = report
             ok = ok and report["at_least_vg"] and report["phase_consistent"] is not False
         except Exception as exc:
+            # 锚点失败=invalid 标记（AU-3②判定，同 ADS 段）；补 traceback 留痕
+            logger.exception("场路锚 FSV 裁判段失败（invalid 标记）")
             summary["fsv"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
             ok = False
     else:
@@ -820,6 +828,8 @@ def run_field_circuit_anchor(
                 and mm_report["at_least_vg"] and mm_report["phase_consistent"] is not False
             )
         except Exception as exc:
+            # 锚点失败=invalid 标记（AU-3②判定，同 ADS 段）；补 traceback 留痕
+            logger.exception("场路锚宏模型桥段失败（invalid 标记）")
             summary["macromodel"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
             ok = False
     elif not with_macromodel:
@@ -831,6 +841,8 @@ def run_field_circuit_anchor(
         summary["back_annotation"] = ba
         ok = ok and ba["consistent"]
     except Exception as exc:
+        # 锚点失败=invalid 标记（AU-3②判定，同 ADS 段）；补 traceback 留痕
+        logger.exception("场路锚反标注一致性段失败（invalid 标记）")
         summary["back_annotation"] = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
         ok = False
 

@@ -1,6 +1,6 @@
 """A8 MAPES stage-3 定向单元测试（确定性、离线、零真机依赖）。
 
-覆盖文件面：
+覆盖任务书文件面：
 1. **E3 registry 注册**：``mapes_pixel_analytic`` 可用且既有 kind 全部保留
    （"不破既有语义"回归）；create → fit → predict 契约；与
    :class:`core.mapes.MapesModel` 二进制参数下逐值一致（包装不改数值）；
@@ -190,6 +190,10 @@ def test_symmetrize_repairs_injected_asymmetry(tmp_path):
     sym_metrics = surrogate_sym.predict(dict(params))
     assert set(raw_metrics) == set(sym_metrics)
     for key, val in raw_metrics.items():
+        if not isinstance(val, (int, float)):
+            # 审查 P2-2：stage/z_all_source 元数据键是 str，只断言两口径一致
+            assert val == sym_metrics[key]
+            continue
         assert abs(val - sym_metrics[key]) <= 1.0e-9 * (1.0 + abs(val))
     # 非对称数据下两种口径预测不同（口径开关真实生效）
     asym_npz = tmp_path / "asym.npz"
@@ -379,5 +383,5 @@ def test_build_layout_grid_option_scales_port_count():
     s2 = mod._stage2_module()
     assert s2.build_layout().n_ports == 150  # 缺省 6×6 与 runs/mapes_s2·s4 同拓扑
     big = s2.build_layout(10)
-    assert big.n_ports == 446 and big.n_load_ports == 444  # ⑦ 口径
+    assert big.n_ports == 446 and big.n_load_ports == 444  # 任务书 ⑦ 口径
     assert big.via_slots == ((0, 9, "via_ground"), (9, 0, "via_ground"))

@@ -1,9 +1,9 @@
-"""RunArtifact 数据契约。
+"""E5d RunArtifact 数据契约（扩展方案 §E5d）。
 
 RunArtifact：每次仿真运行的标准化数据契约。
 设计决策：
 - schema: run_id/recipe_hash/mapping_hash/fidelity/seed/measurement_metadata
-- 入 runs 数据湖，供代理与 Agent 消费
+- 入 runs 数据湖，供 E3 代理与 E4b Agent 消费
 """
 
 from __future__ import annotations
@@ -97,7 +97,8 @@ class RunArtifactStore:
                     artifact = self.load(run_id)
                     if artifact.fidelity == fidelity:
                         runs.append(run_id)
-                except Exception:
+                except Exception as exc:  # 兜损坏/半成品 artifact json：列表过滤 best-effort（#105），坏文件跳过不炸整个清点
+                    del exc  # 返回 list 无 reason 承载面（L0 纯函数层无日志），仅保留 as exc 归类
                     continue
             else:
                 runs.append(run_id)

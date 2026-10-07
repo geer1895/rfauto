@@ -1,6 +1,6 @@
 """DP-5 系统级预算引擎 + 混频杂散搜索（纯函数，零 IO，微秒级确定性内核）。
 
-规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书：
+规格：规格深案 §DP-5；判据书：
 runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。
 
 公式口径（§0，含规格书勘误 1 处）：
@@ -49,7 +49,9 @@ stage schema（顺序=信号流向）::
 
 from __future__ import annotations
 
+import cmath
 import math
+from dataclasses import dataclass
 from typing import Any
 
 # k_B：SI 定义精确值（2019 SI，不引入 scipy.constants 依赖）
@@ -485,3 +487,578 @@ def if_plan_sweep(
         "points": points,
         "windows": windows,
     }
+
+
+# ─── 4. 非线性级联扩展（ME-18：IPn 合并 / IMn 外推 / P1dB 估计与压缩定位；
+#        ME-19：AM-AM/AM-PM 多项式模型与级联加权）─────────────────────────────
+#
+# 口径来源（2026-09-27 实测抓取逐式核对，非转述记忆）：
+# - Kundert《Accurate and Rapid Measurement of IP2 and IP3》
+#   (www.designers-guide.org/Analysis/intercept-point.pdf, v1b 2002-05-22)：
+#   · 式(1) IPn = P + ΔP/(n−1)——P=基波功率 dBm、ΔP=基波与 n 阶产物功率差 dB；
+#     反解即 IMn(dBc) = (n−1)·(Pin − IPn)。
+#   · 式(30) iIP3 = dB20(4a/3c)——三阶幂级数 x = a·u + c·u³ 的 IP3 电压闭式。
+#   · 式(33) αCP² = (4a/3c)(1−10^(−1/20))（αCP 为幅度，即 [·]^½）与式(35)
+#     iCP1dB ≈ iIP3 − 9.6 dB（纯三阶压缩估计；本文件常量
+#     CP1_IP3_DELTA_THIRD_ORDER_DB = −10·log10(1−10^(−1/20)) = 9.6357 dB
+#     即其精确值）。
+# - RF Cafe "Cascaded 2-Tone, 2nd-Order Intercept Point (IP2)" 与
+#   "…3rd-Order…(IP3)"（references/electrical/ip2.htm / ip3.htm）：级联合并式
+#   1/IPn = Σ G_pre,i/IPn_i（线性 mW、逐对迭代；"do not use dB and dBm
+#   values" verbatim）；产物电平 P_n = n·P_out − (n−1)·IPn（与 Kundert 式(1)
+#   同构反解）。
+# - RF Cafe "Cascaded 1 dB Compression Point (P1dB)"（references/electrical/
+#   p1db.htm）：53 份随机选取 amp/mixer datasheet 的 IP3−P1dB 间距统计均值
+#   11.7 dB（σ=2.9 dB，~68% 落 8.8–14.6 dB）——**单源统计口径**。
+#
+# 规格书勘误（先例：cascade_budget 的 iip3_convention 勘误注记）：任务书
+# monthly_plan J 系写作 "IM_n(dBc) = n·(Pin−IPn)"，与上述双源相反——正确为
+# (n−1)·(Pin−IPn)（IM3 斜率 2 dB/dB、IM5 斜率 4 dB/dB 为教科书普适结论；
+# n 倍形式连 IM2 的 1 dB/dB 斜率都不满足）。本模块按权威双源实现，
+# im_products_extrapolate 返回值带 spec_erratum 注记字段（判据书"Pin−IP5=−10
+# → IM5=−50 dBc"同源笔误，正确值 −40 dBc）。
+#
+# 级联合并的叠加口径：**功率域（线性 mW）非相干叠加**——判据锚=两级等值
+# IPn、G=1 → 合并值=单级−3.01 dB（等功率叠加；若同相电压叠加则 −6.02 dB，
+# Kundert 论文未给级联相关性定论，如实缺位）。合并式权威源=RF Cafe ip2/ip3
+# 级联页 + Pozar 教科书（见 cascade_budget docstring 同口径先引）。
+# 更高阶（IP4+）合并式与 IP2/IP3 同构系业界工具惯例外推，无逐阶权威源核对
+# （#122 如实标注）。级联 IMn 幅度直并式缺位（待证）：IMn 电平可经合并后的
+# IIPn_tot 单级外推（cascade_ipn_merge → im_products_extrapolate），IMn 幅度
+# 直接级联合并无权威闭式——不实现（Kundert 论文无此式）。
+#
+# 非线性面 stage schema（与 cascade_budget 键兼容但校验独立——不要求 type/
+# nf_db，非线性扫描只消费增益与非线性参数）::
+#
+#     {gain_db, name?, ipn_dbm?, p1db_dbm?, p_sat_dbm?, alpha_deg_per_db?}
+#
+# - ipn_dbm：该级输入参考 n 阶截断点（IIPn，dBm）；p1db_dbm：该级**输出**
+#   参考 1dB 压缩点（OP1dB，与 cascade_budget 同约定）；p_sat_dbm：饱和输出
+#   功率（AM-PM 压缩深度归一用，可选）；alpha_deg_per_db：AM-PM 系数（°/dB）。
+# - 数值 0.0 合法；判缺失一律 is not None（#364④）。
+
+DEFAULT_P1DB_DELTA_DB = 11.7  # RF Cafe 53 份 datasheet 统计均值（σ=2.9 dB；单源）
+# 纯三阶幂级数模型的 IP3−CP1 间距（dB）：−10·log10(1−10^(−1/20))。
+# Kundert 式(35) verbatim："iCP1dB = iIP3 − 9.6 dB"（本常量=其精确值 9.6357…）。
+CP1_IP3_DELTA_THIRD_ORDER_DB = -10.0 * math.log10(1.0 - 10.0 ** (-1.0 / 20.0))
+
+_IPN_MERGE_CONVENTION = (
+    "1/IPn_tot = Σ G_pre,i/IPn_i（线性 mW 功率域非相干叠加；RF Cafe ip2/ip3 "
+    "级联页 + Pozar 教科书口径；锚=两级等值 IPn、G=1 → 合并=单级−3.01 dB）")
+_IM_CONVENTION = (
+    "IMn(dBc) = (n−1)·(Pin − IPn)——Kundert intercept-point.pdf 式(1) "
+    "IPn = P + ΔP/(n−1) 反解；RF Cafe P_n = n·P_out − (n−1)·IPn 同构")
+_IM_CASCADE_PENDING = (
+    "级联 IMn 幅度直并式缺位（待证）：可经合并 IIPn_tot 单级外推"
+    "（cascade_ipn_merge → 本函数）；IMn 幅度直接级联合并无权威闭式，不臆造")
+
+
+def _complex_coeff(value: Any, name: str) -> complex:
+    """收敛入参为有限复数（bool/str 显式拒收，df7+⑯ 同源）。"""
+    if isinstance(value, bool) or not isinstance(value, (int, float, complex)):
+        raise ValueError(f"{name} 必须是实数或复数，收到 {value!r}")
+    c = complex(value)
+    if not (math.isfinite(c.real) and math.isfinite(c.imag)):
+        raise ValueError(f"{name} 必须为有限复数，收到 {value!r}")
+    return c
+
+
+def _normalize_nl_stage(index: int, raw: Any) -> dict[str, Any]:
+    """非线性面级表校验（轻量独立于 _normalize_stage：不要求 type/nf_db；
+    可选键缺失=None 语义，数值 0.0 合法，判缺失 is not None）。"""
+    if not isinstance(raw, dict):
+        raise ValueError(f"stages[{index}] 必须是 dict，收到 {type(raw)!r}")
+    stage = dict(raw)
+    if "gain_db" not in stage:
+        raise ValueError(f"stages[{index}] 缺 gain_db")
+    gain_db = _finite_bounded(stage["gain_db"], f"stages[{index}].gain_db",
+                              lo=-MAX_ABS_GAIN_DB)
+    if gain_db > MAX_ABS_GAIN_DB:
+        raise ValueError(
+            f"stages[{index}].gain_db 必须 ≤ {MAX_ABS_GAIN_DB}，收到 {gain_db!r}")
+    stage["gain_db"] = gain_db
+    if stage.get("name") is not None and not isinstance(stage["name"], str):
+        raise ValueError(f"stages[{index}].name 必须是 str，收到 {stage['name']!r}")
+    for key in ("ipn_dbm", "p1db_dbm", "p_sat_dbm", "alpha_deg_per_db"):
+        if stage.get(key) is not None:
+            stage[key] = _finite(stage[key], f"stages[{index}].{key}")
+    return stage
+
+
+def ipn_merge_linear(ipn_linear: list[float],
+                     gain_pre_linear: list[float]) -> float:
+    """n 阶截断点合并核（线性域）：1/IPn = Σ G_pre,i/IPn_i → IPn（线性 mW）。
+
+    ipn_linear[i]：第 i 级输入参考 IPn（线性功率，必须 >0——线性域 ≤0 即
+    ValueError，本函数是"IPn≤0 → ValueError"判据的落点；dBm 入口不禁负 dBm，
+    混频器 IIP3<0 dBm 物理合法，与 cascade_budget 口径一致，如实登记）。
+    gain_pre_linear[i]：该级之前全部级增益之积（线性，必须 >0）。空表 ValueError。
+    """
+    if not ipn_linear or len(ipn_linear) != len(gain_pre_linear):
+        raise ValueError(
+            "ipn_linear 与 gain_pre_linear 必须同长非空，收到 "
+            f"{len(ipn_linear)}/{len(gain_pre_linear)}")
+    inv = 0.0
+    for i, (ipn, g) in enumerate(zip(ipn_linear, gain_pre_linear, strict=True)):
+        if not isinstance(ipn, (int, float)) or isinstance(ipn, bool) \
+                or not math.isfinite(float(ipn)) or ipn <= 0.0:
+            raise ValueError(f"ipn_linear[{i}] 必须为正的有限实数，收到 {ipn!r}")
+        if not isinstance(g, (int, float)) or isinstance(g, bool) \
+                or not math.isfinite(float(g)) or g <= 0.0:
+            raise ValueError(
+                f"gain_pre_linear[{i}] 必须为正的有限实数，收到 {g!r}")
+        inv += g / ipn
+    return 1.0 / inv
+
+
+def cascade_ipn_merge(stages: list[dict[str, Any]], *,
+                      order: int) -> dict[str, Any]:
+    """n 阶截断点级联合并（IP2/IP3/通用 IPn 同一幂和式——合并代数与阶数无关，
+    order 只进元数据与产出注记）。
+
+    闭式（线性 mW）：1/IPn_tot = Σᵢ G_pre,i/IPn_i，G_pre,i=该级之前全部级增益
+    之积；输出参考恒等式 OIPn_tot = IIPn_tot + G_tot（dB）。
+
+    Examples
+    --------
+    两级（LNA IIPn=−10 dBm、增益 20 dB；混频 IIPn=0 dBm、增益 10 dB）：
+
+    >>> from rfauto.core.cascade import cascade_ipn_merge
+    >>> r = cascade_ipn_merge(
+    ...     [{"name": "lna", "gain_db": 20.0, "ipn_dbm": -10.0},
+    ...      {"name": "mix", "gain_db": 10.0, "ipn_dbm": 0.0}], order=3)
+    >>> round(r["ipn_total_input_dbm"], 6)
+    -20.413927
+    >>> r["ipn_total_output_dbm"] == r["ipn_total_input_dbm"] + r["gain_total_db"]
+    True
+    >>> r["dominant_stage"]
+    1
+    """
+    if isinstance(order, bool) or not isinstance(order, int):
+        raise ValueError(f"order 必须是整数，收到 {order!r}")
+    if order < 2:
+        raise ValueError(f"order 必须 ≥2（截断点从 2 阶起），收到 {order!r}")
+    if not isinstance(stages, (list, tuple)) or not stages:
+        raise ValueError("stages 必须是非空级表（按信号流向排序）")
+    norm = [_normalize_nl_stage(i, s) for i, s in enumerate(stages)]
+    ipn_lin: list[float] = []
+    g_pre: list[float] = []
+    g_run = 1.0
+    gain_total_db = 0.0
+    for i, st in enumerate(norm):
+        v = st.get("ipn_dbm")
+        if v is None:
+            raise ValueError(
+                f"stages[{i}] 缺 ipn_dbm——合并式要求全级提供（跳过=静默造假）；"
+                "如需'缺 IPn 级跳过'语义请改用 cascade_budget")
+        ipn_lin.append(10.0 ** (v / 10.0))
+        g_pre.append(g_run)
+        g_run *= 10.0 ** (st["gain_db"] / 10.0)
+        if not math.isfinite(g_run) or g_run > 1e300:
+            raise ValueError(
+                f"stages[{i}] 处前级增益积溢出（>1e300）——增益表异常")
+        gain_total_db += st["gain_db"]
+    total_lin = ipn_merge_linear(ipn_lin, g_pre)
+    inv = 1.0 / total_lin  # = Σ g_pre/ipn（ipn_merge_linear 的分子）
+    contributions = [
+        {"index": i,
+         "name": norm[i].get("name"),
+         "share": (g_pre[i] / ipn_lin[i]) / inv}
+        for i in range(len(norm))]
+    dominant = max(range(len(norm)), key=lambda i: contributions[i]["share"])
+    order_note = (
+        "合并代数与阶数无关（任意 IPn 同构）；IP2/IP3 有 RF Cafe 明示式，"
+        "更高阶为业界工具惯例外推（无逐阶权威源核对，#122 标注）")
+    return {
+        "order": order,
+        "n_stages": len(norm),
+        "gain_total_db": gain_total_db,
+        "ipn_total_input_dbm": 10.0 * math.log10(total_lin),
+        "ipn_total_output_dbm": 10.0 * math.log10(total_lin) + gain_total_db,
+        "contributions": contributions,
+        "dominant_stage": dominant,
+        "convention": _IPN_MERGE_CONVENTION,
+        "order_scope_note": order_note,
+        "im_cascade_status": _IM_CASCADE_PENDING,
+    }
+
+
+def im_products_extrapolate(pin_dbm: float, ipn_dbm: float,
+                            order: int) -> dict[str, Any]:
+    """单级 IMn 产物外推：IMn(dBc) = (n−1)·(Pin − IPn)（Kundert 式(1) 反解）。
+
+    外推域守卫：Pin ≤ IPn（Pin > IPn 时外推律预测产物高于载波=非物理，交截
+    点即模型有效域边界；Pin == IPn → 0.0 dBc 逐位合法）。
+
+    Examples
+    --------
+    >>> from rfauto.core.cascade import im_products_extrapolate
+    >>> im_products_extrapolate(-20.0, -10.0, 3)["im_n_dbc"]
+    -20.0
+    >>> im_products_extrapolate(-30.0, -20.0, 5)["im_n_dbc"]
+    -40.0
+    """
+    if isinstance(order, bool) or not isinstance(order, int):
+        raise ValueError(f"order 必须是整数，收到 {order!r}")
+    if order < 2:
+        raise ValueError(f"order 必须 ≥2（IM 产物从 2 阶起），收到 {order!r}")
+    pin = _finite(pin_dbm, "pin_dbm")
+    ipn = _finite(ipn_dbm, "ipn_dbm")
+    if pin > ipn:
+        raise ValueError(
+            f"外推域越界：Pin={pin} dBm > IPn={ipn} dBm——外推律在该域预测"
+            "产物高于载波（正 dBc）非物理；Pin ≤ IPn 为有效域（等号=0 dBc）")
+    return {
+        "order": order,
+        "pin_dbm": pin,
+        "ipn_dbm": ipn,
+        "im_n_dbc": (order - 1.0) * (pin - ipn),
+        "convention": _IM_CONVENTION,
+        "spec_erratum": (
+            "任务书 monthly_plan J 系 'IM_n(dBc)=n·(Pin−IPn)' 系笔误：正确为 "
+            "(n−1)·(Pin−IPn)（Kundert 式(1)/RF Cafe 双源一致；IM3 斜率 2、"
+            "IM5 斜率 4 dB/dB），本字段如实登记勘误"),
+        "cascade_status": _IM_CASCADE_PENDING,
+    }
+
+
+def p1db_from_oip3(oip3_dbm: float, *,
+                   delta_db: float = DEFAULT_P1DB_DELTA_DB) -> float:
+    """P1dB 工程估计：P1dB ≈ OIP3 − Δ（Δ 缺省 11.7 dB）。
+
+    Δ=11.7 dB 出处（单源注明）：RF Cafe "Cascaded 1 dB Compression Point"
+    页对 53 份随机选取 amp/mixer datasheet 的统计均值（σ=2.9 dB，~68% 落
+    8.8–14.6 dB）。纯三阶幂级数模型的理论间距见
+    CP1_IP3_DELTA_THIRD_ORDER_DB（9.6357 dB，Kundert 式(35) "−9.6 dB"）。
+    适用前提：链路各级均未工作于饱和区（RF Cafe verbatim 口径，见
+    cascade_compression_scan 的 caution 字段）。
+
+    >>> from rfauto.core.cascade import p1db_from_oip3
+    >>> p1db_from_oip3(30.0)
+    18.3
+    >>> p1db_from_oip3(30.0, delta_db=10.0)
+    20.0
+    """
+    o = _finite(oip3_dbm, "oip3_dbm")
+    d = _finite_bounded(delta_db, "delta_db", lo=0.0)
+    return o - d
+
+
+def cascade_compression_scan(
+    stages: list[dict[str, Any]],
+    *,
+    pin_dbm: float,
+    delta_db: float = DEFAULT_P1DB_DELTA_DB,
+    oip3_dbm: float | None = None,
+) -> dict[str, Any]:
+    """逐级压缩余量扫描 + "最先压缩级"定位 + OIP3−Δ 的 P1dB 估计（回退量表）。
+
+    信号电平链 L_i = Pin + Σ_{j≤i} G_j（第 i 级输出电平）；压缩余量
+    headroom_i = OP1dB_i − L_i（OP1dB=该级输出参考 P1dB，与 cascade_budget
+    同约定）；首个 headroom < 0 的级即最先压缩级（headroom == 0 恰在阈值、
+    不计压缩）。oip3_dbm 显式入参 > 级表合并（全级带 ipn_dbm 时按 order=3
+    幂和取输出参考）> None——两级皆无则 p1db_estimate_dbm=None（不臆造）。
+
+    Examples
+    --------
+    前级强后级弱构造例（第二级先压缩）：
+
+    >>> from rfauto.core.cascade import cascade_compression_scan
+    >>> r = cascade_compression_scan(
+    ...     [{"name": "pa1", "gain_db": 30.0, "p1db_dbm": 30.0},
+    ...      {"name": "pa2", "gain_db": 0.0, "p1db_dbm": 5.0}],
+    ...     pin_dbm=-10.0, oip3_dbm=30.0)
+    >>> r["first_compression_stage"], r["first_compression_name"]
+    (1, 'pa2')
+    >>> r["p1db_estimate_dbm"]
+    18.3
+    """
+    if not isinstance(stages, (list, tuple)) or not stages:
+        raise ValueError("stages 必须是非空级表（按信号流向排序）")
+    norm = [_normalize_nl_stage(i, s) for i, s in enumerate(stages)]
+    pin = _finite(pin_dbm, "pin_dbm")
+    delta = _finite_bounded(delta_db, "delta_db", lo=0.0)
+    oip3_in = None if oip3_dbm is None else _finite(oip3_dbm, "oip3_dbm")
+
+    level = pin
+    rows: list[dict[str, Any]] = []
+    first_idx: int | None = None
+    for i, st in enumerate(norm):
+        level += st["gain_db"]
+        op1db = st.get("p1db_dbm")
+        headroom = None if op1db is None else op1db - level
+        compressing = headroom is not None and headroom < 0.0
+        if compressing and first_idx is None:
+            first_idx = i
+        rows.append({
+            "index": i,
+            "name": st.get("name"),
+            "gain_db": st["gain_db"],
+            "level_out_dbm": level,
+            "op1db_dbm": op1db,
+            "headroom_db": headroom,
+            "compressing": compressing,
+        })
+
+    if oip3_in is not None:
+        oip3_resolved = oip3_in
+        oip3_source = "explicit"
+    elif all(st.get("ipn_dbm") is not None for st in norm):
+        oip3_resolved = cascade_ipn_merge(norm, order=3)["ipn_total_output_dbm"]
+        oip3_source = "stage_merge_order3"
+    else:
+        oip3_resolved = None
+        oip3_source = None
+    headrooms = [r["headroom_db"] for r in rows if r["headroom_db"] is not None]
+    return {
+        "pin_dbm": pin,
+        "delta_db": delta,
+        "delta_reference": (
+            "RF Cafe 53 份 amp/mixer datasheet 统计：均值 11.7 dB、σ=2.9 dB"
+            "（单源口径）"),
+        "oip3_dbm": oip3_resolved,
+        "oip3_source": oip3_source,
+        "p1db_estimate_dbm": None if oip3_resolved is None else oip3_resolved - delta,
+        "first_compression_stage": first_idx,
+        "first_compression_name": (
+            None if first_idx is None else rows[first_idx]["name"]),
+        "n_compressing": sum(1 for r in rows if r["compressing"]),
+        "min_headroom_db": min(headrooms) if headrooms else None,
+        "stages": rows,
+        "caution": (
+            "OIP3−Δ 估计仅当各级均未工作于饱和/压缩区成立（RF Cafe verbatim："
+            "'only holds when none of the stages are normally operating "
+            "outside of the linear region'）；first_compression_stage 非 None "
+            "时该前提已破，估计值只作参考，以逐级 headroom 表（回退量表）为准"),
+    }
+
+
+def am_am_pm_third_order(a1: float, a3: float, v_in: float) -> dict[str, Any]:
+    """三阶幂级数单级模型 x = a₁·u + a₃·u³ 的 AM-AM/AM-PM/IM3/1dB 压缩闭式。
+
+    口径（Kundert intercept-point.pdf §4，逐式核对）：
+    - 单音驱动（β=0，式(31)）：基波 phasor = a₁v·(1 + ¾(a₃/a₁)v²)，记
+      r = ¾(a₃/a₁)v²——AM-AM 增益变化 = 20log10|1+r|，AM-PM 相位误差 =
+      arg(1+r)（a₃ 复数时非零、实数时恒 0）；
+    - 双音等幅 IM3（α=β=v，式(25)）：IM3(dBc) = 20log10(¾|a₃/a₁|v²)；
+      iIP3 电压 = √(4|a₁|/(3|a₃|))（式(30) dB20(4a/3c) 电压域）；
+    - 1dB 压缩幅度：|1+xu|² = 10^(−1/10)（u=v²、x=¾a₃/a₁）二次方程的较小正根
+      ——a₃ 实负时严格退化为 Kundert 式(33)：αCP² = (4a₁/(3|a₃|))
+      (1−10^(−1/20))，αCP=[·]^½（判据：与独立闭式 rel 1e-12 逐位带）。
+
+    幅度域=电压（V）；功率换算需调用方给参考阻抗（本模块不臆造 50Ω）。
+    a3=0 合法（线性：IM3/压缩/IIP3 如实 None，AM-AM/AM-PM 严格 0）。
+
+    Examples
+    --------
+    >>> from rfauto.core.cascade import am_am_pm_third_order
+    >>> r = am_am_pm_third_order(1.0, -0.01, 0.1)
+    >>> round(r["im3_dbc"], 6)
+    -82.498775
+    >>> r["am_pm_phase_deg"]
+    0.0
+    """
+    a1c = _complex_coeff(a1, "a1")
+    a3c = _complex_coeff(a3, "a3")
+    v = _finite_bounded(v_in, "v_in", lo=0.0, allow_eq=False)
+    if abs(a1c) == 0.0:
+        raise ValueError("a1 必须非零（小信号增益系数）")
+    r = 0.75 * (a3c / a1c) * v * v
+    has_a3 = a3c != 0
+    # 1dB 压缩：|1+xu|² = 10^(−1/10)（u=v²）二次方程较小正根
+    v1db = None
+    no_compress_note = None
+    if has_a3:
+        x = r / (v * v)
+        quad_a = abs(x) ** 2
+        quad_b = 2.0 * x.real
+        disc = quad_b * quad_b - 4.0 * quad_a * (1.0 - 10.0 ** (-0.1))
+        if disc < 0.0:
+            no_compress_note = "判别式<0：该模型在实域无 1dB 压缩交越（增益扩张型）"
+        else:
+            u = (-quad_b - math.sqrt(disc)) / (2.0 * quad_a)
+            if u > 0.0:
+                v1db = math.sqrt(u)
+            else:
+                no_compress_note = "首个正交越非压缩（增益扩张先于压缩），如实不报"
+    return {
+        "a1": a1c,
+        "a3": a3c,
+        "v_in_v": v,
+        "small_signal_gain_db": 20.0 * math.log10(abs(a1c)),
+        "am_am_gain_db": 20.0 * math.log10(abs(a1c * (1.0 + r))),
+        "am_am_delta_db": 20.0 * math.log10(abs(1.0 + r)),
+        "am_pm_phase_deg": math.degrees(cmath.phase(1.0 + r)),
+        "im3_dbc": (None if not has_a3
+                    else 20.0 * math.log10(0.75 * abs(a3c / a1c) * v * v)),
+        "iip3_amplitude_v": (None if not has_a3
+                             else math.sqrt(4.0 * abs(a1c) / (3.0 * abs(a3c)))),
+        "v_1db_v": v1db,
+        "no_compression_note": no_compress_note,
+        "cp1_ip3_delta_db": CP1_IP3_DELTA_THIRD_ORDER_DB,
+        "conventions": {
+            "am_am_am_pm": "单音 β=0（Kundert 式(31)）：基波=a₁v(1+¾(a₃/a₁)v²)",
+            "im3": "双音等幅 α=β=v（Kundert 式(25)）：IM3=20log10(¾|a₃/a₁|v²)",
+            "v_1db": "|1+xu|²=10^(−1/10) 较小正根；a₃ 实负→Kundert 式(33) αCP",
+        },
+    }
+
+
+def cascade_am_pm(stages: list[dict[str, Any]], *,
+                  pin_dbm: float) -> dict[str, Any]:
+    """级联 AM-PM 主导级加权估计（**工程近似**——无标准级联闭式，#122 如实标注）。
+
+    公式（本模块约定定义，非权威源推导；与 core/pa_architectures.py
+    "IP5/AM-PM 级联式缺权威源=待证标注"的预声明同口径）::
+
+        L_i    = Pin + Σ_{j≤i} G_j                                （级输出电平）
+        comp_i = clip((L_i − OP1dB_i)/(P_sat_i − OP1dB_i), 0, 1)  （P_sat 给定）
+               = max(0, L_i − OP1dB_i)                            （无 P_sat）
+        w_i    = comp_i / Σⱼ compⱼ                                （近饱和主导）
+        α_tot  = Σᵢ w_i·α_i                                （°/dB，输入每 dB）
+
+    Σcomp = 0（无级处于压缩区）→ α_tot=None（不外推不臆造）。
+    锚（单测钉）：单级链 w=1 → α_tot ≡ α_1（逐位）；等压缩等 α → 算术均值。
+
+    Examples
+    --------
+    >>> from rfauto.core.cascade import cascade_am_pm
+    >>> r = cascade_am_pm(
+    ...     [{"gain_db": 20.0, "p1db_dbm": 25.0, "p_sat_dbm": 27.0,
+    ...       "alpha_deg_per_db": 1.5}], pin_dbm=10.0)
+    >>> r["alpha_total_deg_per_db"]
+    1.5
+    """
+    if not isinstance(stages, (list, tuple)) or not stages:
+        raise ValueError("stages 必须是非空级表（按信号流向排序）")
+    norm = [_normalize_nl_stage(i, s) for i, s in enumerate(stages)]
+    pin = _finite(pin_dbm, "pin_dbm")
+    for i, st in enumerate(norm):
+        if st.get("alpha_deg_per_db") is None:
+            raise ValueError(f"stages[{i}] 缺 alpha_deg_per_db（AM-PM 面全级必填，"
+                             "fail-fast 不静默跳级）")
+        if st.get("p1db_dbm") is None:
+            raise ValueError(f"stages[{i}] 缺 p1db_dbm（压缩深度度量需要 OP1dB）")
+        psat = st.get("p_sat_dbm")
+        if psat is not None and psat <= st["p1db_dbm"]:
+            raise ValueError(
+                f"stages[{i}].p_sat_dbm={psat} 必须 > p1db_dbm="
+                f"{st['p1db_dbm']}（饱和点低于 1dB 压缩点非物理）")
+
+    level = pin
+    comps: list[float] = []
+    rows: list[dict[str, Any]] = []
+    for i, st in enumerate(norm):
+        level += st["gain_db"]
+        op1db = st["p1db_dbm"]
+        psat = st.get("p_sat_dbm")
+        if psat is not None:
+            raw = (level - op1db) / (psat - op1db)
+            comp = min(1.0, max(0.0, raw))
+        else:
+            comp = max(0.0, level - op1db)
+        comps.append(comp)
+        rows.append({"index": i, "name": st.get("name"),
+                     "level_out_dbm": level, "op1db_dbm": op1db,
+                     "p_sat_dbm": psat, "comp": comp,
+                     "alpha_deg_per_db": st["alpha_deg_per_db"]})
+    comp_sum = math.fsum(comps)
+    weights = [0.0] * len(comps)
+    alpha_total: float | None = None
+    status = "no_stage_in_compression"
+    if comp_sum > 0.0:
+        weights = [c / comp_sum for c in comps]
+        alpha_total = math.fsum(
+            w * rows[i]["alpha_deg_per_db"] for i, w in enumerate(weights))
+        status = "engineering_approximation"
+    dominant = max(range(len(rows)),
+                   key=lambda i: (weights[i], -i)) if comp_sum > 0.0 else None
+    return {
+        "pin_dbm": pin,
+        "alpha_total_deg_per_db": alpha_total,
+        "dominant_stage": dominant,
+        "weights": weights,
+        "per_stage": rows,
+        "status": status,
+        "formula": ("comp_i=clip((L_i−OP1dB_i)/(P_sat_i−OP1dB_i),0,1)；"
+                    "w_i=comp_i/Σcomp；α_tot=Σ w_i·α_i（本模块约定定义）"),
+        "note": (
+            "工程近似（#122 如实标注）：级联 AM-PM 无标准闭式（与 "
+            "core/pa_architectures.py 预声明同口径）——加权式为约定定义，"
+            "非权威源推导；单级链恒等 α_tot≡α_1 为其自洽锚"),
+    }
+
+
+@dataclass
+class NonlinearCascadeResult:
+    """ME-18/ME-19 非线性级联扫描结果容器（新 dataclass——既有
+    cascade_budget/spur_search/if_plan_sweep 的返回结构零改动）。
+
+    merge：cascade_ipn_merge 输出（全级带 ipn_dbm 时）；im_at_pin：合并后
+    IIPn 在 pin_dbm 处的单级 IMn 外推；compression：cascade_compression_scan
+    输出（含 P1dB 估计与最先压缩级，需 pin_dbm）；am_pm：cascade_am_pm 输出
+    （任一级带 alpha_deg_per_db 时）。
+    """
+
+    order: int
+    merge: dict[str, Any] | None
+    im_at_pin: dict[str, Any] | None
+    compression: dict[str, Any] | None
+    am_pm: dict[str, Any] | None
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON 可序列化平面字典（纯透传，不再加工）。"""
+        return {
+            "order": self.order,
+            "merge": self.merge,
+            "im_at_pin": self.im_at_pin,
+            "compression": self.compression,
+            "am_pm": self.am_pm,
+        }
+
+
+def cascade_nonlinear_scan(
+    stages: list[dict[str, Any]],
+    *,
+    order: int = 3,
+    pin_dbm: float | None = None,
+    delta_db: float = DEFAULT_P1DB_DELTA_DB,
+    oip3_dbm: float | None = None,
+) -> NonlinearCascadeResult:
+    """一站式非线性扫描：IPn 合并 + IMn 外推 + 压缩定位/P1dB 估计 + AM-PM 加权。
+
+    子面可用性规则（缺输入如实 None，不臆造）：
+    - merge：全级带 ipn_dbm 才合并（混合缺级=静默造假，记 None）；
+    - im_at_pin：merge 可用且给 pin_dbm 时，对合并 IIPn 单级外推（阶数同 order）；
+    - compression：给 pin_dbm 即出表（P1dB 估计需 oip3：显式入参 > order=3 级表
+      合并 > None）；pin_dbm=None 时 compression/im_at_pin 均缺；
+    - am_pm：全级带 alpha_deg_per_db 时需要 pin_dbm（缺即显式报错）；
+      混合缺级记 None（all-or-None，与 merge 同语义）。
+    """
+    if not isinstance(stages, (list, tuple)) or not stages:
+        raise ValueError("stages 必须是非空级表（按信号流向排序）")
+    norm = [_normalize_nl_stage(i, s) for i, s in enumerate(stages)]
+    has_ipn = [st.get("ipn_dbm") is not None for st in norm]
+
+    merge = cascade_ipn_merge(norm, order=order) if all(has_ipn) else None
+    im_at_pin = None
+    compression = None
+    am_pm = None
+    if pin_dbm is not None:
+        if merge is not None:
+            im_at_pin = im_products_extrapolate(
+                _finite(pin_dbm, "pin_dbm"),
+                merge["ipn_total_input_dbm"], order)
+        compression = cascade_compression_scan(
+            norm, pin_dbm=pin_dbm, delta_db=delta_db, oip3_dbm=oip3_dbm)
+    if all(st.get("alpha_deg_per_db") is not None for st in norm):
+        # all-or-None（与 merge 同语义）：混合缺 alpha 走 cascade_am_pm 的
+        # fail-fast 会误伤其余子面——扫描面如实记 None
+        if pin_dbm is None:
+            raise ValueError(
+                "级表全级带 alpha_deg_per_db（AM-PM 面）但未给 pin_dbm——"
+                "压缩深度度量需要工作电平，请补 pin_dbm")
+        am_pm = cascade_am_pm(norm, pin_dbm=pin_dbm)
+    return NonlinearCascadeResult(
+        order=order, merge=merge, im_at_pin=im_at_pin,
+        compression=compression, am_pm=am_pm)

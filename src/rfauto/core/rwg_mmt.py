@@ -2,7 +2,7 @@
 
 纯算法 numpy-only 零 IO 零外部进程（铁律 7 合规）；参照 adapters/ngsolve_modes.py
 先例不进 @register_calculator（免 #231 注册表消费者三表同步），导出函数供
-service 层直接调。规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；
+service 层直接调。规格 = 规格深案 DP-1 §2；
 判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。
 
 数学口径（推导在档，#1b 先验模型）
@@ -63,6 +63,7 @@ from __future__ import annotations
 
 import itertools
 import math
+import numbers
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -638,7 +639,7 @@ def _guide_list(chain: list) -> tuple[list, list]:
     返回 (elements, guides)：elements=[("J", step) | ("S", wg, L)]；
     相邻构件 guide 不衔接（缺显式 HStepJunction）显式报错。
 
-    guide 表契约（P1 缺陷根治后口径）：按 **值语义**（frozen
+    guide 表契约（P1 缺陷根治，四一零）：按 **值语义**（frozen
     dataclass 逐字段相等）去重与反查——链中"值相等但实例不同"的 Waveguide
     （JSON 段表逐段新造、调用方分开构造）必须命中同一 guide 序；消费端
     禁止 id() 反查（曾致 KeyError，见 solve_at_counts）。
@@ -814,8 +815,8 @@ def solve_chain(chain: list, freqs_hz, policy: ModePolicy | None = None) -> Solv
 
 # ── DP-1 风险分流④：G1 触发判定与膜片精化对照归档（df7_dp1r4） ─────────────────
 #
-# 上游终态（runs/df6_dp1p3/g1_verdict.json）：膜片绝对值
-# UNDECIDABLE→规格风险分流④（docs/plan_deepdive_specs_20260924.md DP-1 §5）
+# 上游终态（runs/df6_dp1p3/g1_verdict.json，四二三）：膜片绝对值
+# UNDECIDABLE→规格风险分流④（规格深案 DP-1 §5）
 # 登记 followUp。本段为**最小诚实交付**（分支选择树与出处核查见
 # runs/df7_dp1r4/criteria.md §1，先写死后动工 #122）：
 # - 触发判定 helper：判据=scripts/df6_dp1p3_judge.py summarize() 逐位同式
@@ -1025,3 +1026,283 @@ def iris_refinement_comparison(
                        if refinement_slot is not None else None),
     }
     return out
+
+
+# ── ME-5 MMT 不连续性扩面：感性销钉/谐振窗一阶闭式（ge-me5，2026-09-26） ──────
+#
+# 出处等级（#1c 逐式核对，原书可达）：N. Marcuvitz, Waveguide Handbook
+# （MIT Rad Lab Vol. 10, McGraw-Hill 1951）原书 PDF 公开镜像（introni.it）
+# 逐页多模态核对（ge-me5 批实测在档）：
+#   - 感性窗口：§5.2(a) Symmetrical Window, Eq.(1a)/(1b)/(1c), p.221；
+#   - 容性窗口：§5.1(a) Window Formed by Two Obstacles, 对称款 Eq.(2a), p.218；
+#   - 感性销钉：§5.11(a) Off-centered Post, Eq.(1)/(2) 与 Schwinger S₀/S₁
+#     级数, p.257-258（居中精化式 Eq.(3) p.258 见截断声明）。
+#   - 原书 §5.21 "Inductive Posts"（p.286）实为**自由空间栅阵/斜入射**口径，
+#     与波导 TE10 单杆问题不同源——任务书预写节号 §5.21 与原书实际节号
+#     §5.11 的出入如实登记，本实现采 §5.11 原式。
+#
+# 符号纪律：电纳归一波导特征导纳 b=B/Y₀（无量纲），**感性为负**——与
+# shunt_admittance_from_s11 docstring（感性 B<0）及一阶感性膜片校准锚同口径
+# （WR-90 d=16mm@10GHz：b=−(λg/a)·cot²(πd/2a)=−0.451，iris 校准面）。
+# 单位制：接口 GHz/mm，内部光速 c=299.792458 mm·GHz 单源自洽；数值锚在
+# tests/unit/test_rwg_mmt_expansion.py 以独立标量路径复算（#118 双路径）。
+
+_C_MM_GHZ = C0 * 1e-6  # 299.792458 mm·GHz（mm/GHz 单位制光速）
+
+
+def _num_finite(name: str, v: float) -> float:
+    """数值入参收敛：显式拒收 bool（float(True)=1.0 静默污染，df7⑯）与非有限数。"""
+    if isinstance(v, bool) or not isinstance(v, numbers.Real):
+        raise ValueError(f"{name}: 必须为实数（拒收 bool），得到 {v!r}")
+    fv = float(v)
+    if not math.isfinite(fv):
+        raise ValueError(f"{name}: 必须为有限数，得到 {fv!r}")
+    return fv
+
+
+def _num_positive(name: str, v: float) -> float:
+    fv = _num_finite(name, v)
+    if fv <= 0.0:
+        raise ValueError(f"{name}: 必须为正数，得到 {fv!r}")
+    return fv
+
+
+def _post_s0_s1_series(x_over_a: float, gamma: float, n_max: int = 50000) -> tuple[float, float]:
+    """Schwinger S₀/S₁ 公共级数体（原书 p.258 定义中 n=2..∞ 求和项，向量化）。
+
+    项衰减：S₀ 括号 ~γ²/(2n³)、S₁ 括号 ~γ²/(2n²)（γ=2a/λ∈(1,2) 由调用方
+    守卫保证）——N=5e4 时截断尾界 |R_N| ≤ γ²/(2N) < 4e-5（绝对值，docstring
+    级声明）。
+    """
+    n = np.arange(2, n_max + 1, dtype=float)
+    root = np.sqrt(n * n - gamma * gamma)
+    sn = np.sin(np.pi * x_over_a * n)
+    s2n = np.sin(2.0 * np.pi * x_over_a * n)
+    s0_sum = float(np.sum(sn * sn * (1.0 / root - 1.0 / n)))
+    s1_sum = float(np.sum(s2n * (n / root - 1.0)))
+    return s0_sum, s1_sum
+
+
+def inductive_post_susceptance(
+    f_ghz: float, a_mm: float, r_mm: float, n_posts: int = 1, offset_mm: float = 0.0
+) -> dict:
+    """感性圆柱销钉（矩形波导 TE10，杆轴平行 E 场、横贯高度 b）归一化并联电纳。
+
+    原式（Marcuvitz §5.11(a) Eq.(1)/(2), p.257-258；d=杆**直径**=2r、x=杆心
+    距侧壁，注意 r_mm 接口是**半径**）::
+
+        X_b/Z₀ = (a/λg)·(πd/a)²·sin²(πx/a)                                    (2)
+        X_a/Z₀ − X_b/(2Z₀) = (a/2λg)·csc²(πx/a)·
+                             [S₀ − (πd/2λ)² − (πd/2a)²·(S₀·cot(πx/a) − S₁)²]  (1)
+        S₀ = ln((4a/πd)·sin(πx/a)) − 2sin²(πx/a)
+             + 2·Σ_{n=2}^∞ sin²(nπx/a)·[1/√(n²−(2a/λ)²) − 1/n]
+        S₁ = ½·cot(πx/a) − sin(2πx/a)
+             + Σ_{n=2}^∞ sin(2nπx/a)·[n/√(n²−(2a/λ)²) − 1]
+
+    等效电路为 T 型（串联 −jX_b×2 + 并联 jX_a）。本函数取原式 (1) 左端组合
+    为纯并联归一电抗 x_norm=X/Z₀（**一级纯并联口径**：串联臂为 O((πd/a)²)
+    二阶小量，纯并联化吸收为参考面微移；全 T 参数可经 Eq.(2) 重建——
+    x_series_norm=X_b/Z₀ 一并输出，X_a = x_norm + x_series_norm/2）。
+    b_norm = −1/x_norm < 0（感性，与既有膜片口径同号）；r→0 时 S₀→∞、
+    b_norm→0（微扰极限连续）。
+
+    截断声明：居中情形与精化式 Eq.(3)（§5.11(b), p.258, x=a/2）在 (πd/2λ)²
+    阶一致；Eq.(3) 的 (πd/2λ)⁴ 阶两项（含 S₂）未含——d/a≤0.1 时相对贡献
+    ≤1e-3 量级。级数尾界 <4e-5（_post_s0_s1_series）。
+
+    限制（原书 declared，逐条强制为 ValueError）：a<λ<2a（即 fc<f<2fc；
+    TE20 项在 f→2fc 发散）；d/a<0.10；0.2<x/a<0.8。n_posts>1 为**并联工程
+    口径**（各杆同 offset 位置、b_norm=n×单杆，忽略根间互耦；根间距须数倍
+    于直径互耦才可略。原书无波导内 n 杆闭式，§5.21 栅阵口径不适用，如实
+    声明——严格多杆分布需模解/全波）。
+
+    :param f_ghz: 频率 GHz（须 fc<f<2fc）
+    :param a_mm: 波导宽边 mm
+    :param r_mm: 销钉**半径** mm（直径 d=2r，须 d/a<0.10）
+    :param n_posts: 并联杆数（正整数，拒收 bool/浮点）
+    :param offset_mm: 杆组中心偏离波导中心线 mm（x=a/2+offset；0=居中主口径）
+    :return: {b_norm, x_norm, x_series_norm, lambda_g_mm, lambda_0_mm,
+              d_over_a, x_over_a, regime_notes}
+    """
+    f = _num_positive("f_ghz", f_ghz)
+    a = _num_positive("a_mm", a_mm)
+    r = _num_positive("r_mm", r_mm)
+    if isinstance(n_posts, bool) or not isinstance(n_posts, int):
+        raise ValueError(f"n_posts: 必须为正整数（拒收 bool/浮点），得到 {n_posts!r}")
+    if n_posts < 1:
+        raise ValueError(f"n_posts: 必须 ≥1，得到 {n_posts!r}")
+    offset = _num_finite("offset_mm", offset_mm)
+    lam0 = _C_MM_GHZ / f
+    fc = _C_MM_GHZ / (2.0 * a)
+    if not (fc < f < 2.0 * fc):
+        raise ValueError(
+            f"inductive_post_susceptance: f={f:g}GHz 须落在 (fc,2fc)=({fc:.6g},"
+            f"{2.0 * fc:.6g})GHz 内（原书限制 a<λ<2a，§5.11 Restrictions）")
+    d = 2.0 * r
+    d_over_a = d / a
+    if d_over_a >= 0.10:
+        raise ValueError(
+            f"inductive_post_susceptance: d/a={d_over_a:.4g} ≥ 0.10 超出原书变释式"
+            "可靠域（d/a<0.10，§5.11 Restrictions）")
+    x_over_a = 0.5 + offset / a
+    if not (0.2 < x_over_a < 0.8):
+        raise ValueError(
+            f"inductive_post_susceptance: x/a={x_over_a:.4g} 超出原书可靠域 "
+            "(0.2<x/a<0.8，§5.11 Restrictions)")
+    lam_g = lam0 / math.sqrt(1.0 - (fc / f) ** 2)
+    theta = math.pi * x_over_a
+    sin_t = math.sin(theta)
+    cot_t = math.cos(theta) / sin_t
+    s0_sum, s1_sum = _post_s0_s1_series(x_over_a, 2.0 * a / lam0)
+    s0 = (math.log((4.0 * a / (math.pi * d)) * sin_t) - 2.0 * sin_t * sin_t
+          + 2.0 * s0_sum)
+    s1 = 0.5 * cot_t - math.sin(2.0 * theta) + s1_sum
+    bracket = (s0 - (math.pi * d / (2.0 * lam0)) ** 2
+               - (math.pi * d / (2.0 * a)) ** 2 * (s0 * cot_t - s1) ** 2)
+    x_norm = (a / (2.0 * lam_g)) * bracket / (sin_t * sin_t)
+    if x_norm <= 0.0:
+        raise ValueError(
+            f"inductive_post_susceptance: x_norm={x_norm:.6g} 非正（感性销钉主项应为"
+            "正电抗）——参数越界或式失效，不外推")
+    x_series_norm = (a / lam_g) * (math.pi * d_over_a) ** 2 * sin_t * sin_t
+    b_norm = -n_posts / x_norm
+    notes = [
+        "式源：Marcuvitz §5.11(a) Eq.(1)/(2) p.257-258（原书 PDF 逐式核对）；"
+        "居中与 Eq.(3) 在 (πd/2λ)² 阶一致，(πd/2λ)⁴ 阶两项未含（≤1e-3 相对）",
+        "纯并联口径：x_norm 取 Eq.(1) 左端组合（T 型串联臂 O((πd/a)²) 吸收为"
+        "参考面微移）；全 T 参数 X_a=x_norm+x_series_norm/2、X_b=x_series_norm",
+        "n_posts>1 为并联工程口径（同位置、忽略根间互耦），严格多杆需模解/全波",
+    ]
+    return {
+        "b_norm": b_norm,
+        "x_norm": x_norm,
+        "x_series_norm": x_series_norm,
+        "lambda_g_mm": lam_g,
+        "lambda_0_mm": lam0,
+        "d_over_a": d_over_a,
+        "x_over_a": x_over_a,
+        "regime_notes": notes,
+    }
+
+
+def resonant_window_susceptance(
+    f_ghz: float, a_mm: float, b_mm: float, window_w_mm: float, window_h_mm: float,
+    er_fill: float = 1.0,
+) -> dict:
+    """谐振窗（对称零厚感性+容性复合窗口）归一化电纳分解与谐振频率解析估计。
+
+    模型（Marcuvitz 原书一阶口径，窗口= a 向缩窄 w 的感性膜片与 b 向缩窄 h
+    的容性膜片同面并联复合，角区互作用为高阶小量）::
+
+        b_L = −(λg/a)·cot²(πw/2a)                       §5.2(a) Eq.(1a) 主项
+        b_C = (4b/λg)·[ ln csc(πh/2b)
+                        + Q₂cos⁴(πh/2b)/(1+Q₂sin⁴(πh/2b))
+                        + (1/16)(b/λ₀)²(1−3sin²(πh/2b))²cos⁴(πh/2b) ]
+                                                        §5.1(a) Eq.(2a) 全式三项
+        Q₂ = 1/√(1−(2b/(2λ₀))²) − 1
+        b_total = b_L + b_C（感性<0、容性>0）
+
+    谐振条件（一阶模型解析零点）：b_total=0 ⟺
+        λg_res = tan(πw/2a)·√(4ab·L_C)，L_C=b_C 括号内总量
+        f_res = √(c² + λg_res²·fc²) / (λg_res·√εr)   （εr=1 退化为 √(fc²+(c/λg_res)²)）
+
+    物理结构：f<f_res 时感性主导（b_total<0，近截止 b_L→−∞）、f>f_res 时
+    容性主导（b_total>0）——符号过零即谐振判据。单调方向（模型推导+数值
+    双核）：w↑（a 向加宽，感性碍量 cot²↓）→ f_res 下移（w→a 时 f_res→fc⁺）；
+    h↑（b 向加高，容性碍量 L_C↓）→ f_res 上移（h→b 时 f_res→∞）；εr↑ →
+    f_res 下移（介质加载）。全窗（w=a,h=b）为无扰动退化点，两侧极限夹逼。
+
+    介质口径：er_fill 按**等效均匀填充一级口径**作用（λ₀_eff=λ₀/√εr、
+    λg_eff=λ₀/√(εr−(fc/f)²)，fc 为空气截止，对 b_L/b_C/Q₂ 一致代入）；
+    窗口局域介质填充的严格口径需全波/HFSS 仲裁（W3 窗，归真机窗），此处
+    如实声明为一级近似。
+
+    截断声明：b_L 取 Eq.(1a) 主项——(1b) 修正式 (1+(πd/λ)²/6) 原书仅对
+    d/a≪1 声明，未含；主项口径与仓内 MMT 膜片校准锚（−0.451 vs 独立单平面
+    −0.443）同级（~2%）。b_C 为 Eq.(2a) 全式（原书三项，无截断）。f_res 是
+    该一阶模型的解析零点（评估频点冻结 L_C 的一阶口径——非 b_total(f) 自洽零点，二阶小量），非全波谐振频率。
+
+    退化情形（f_res=None 如实返回，不外推）：w=a 且 h=b → 无扰动透明面
+    （b_total≡0）；w=a、h<b → 纯容性无带内零点；w<a、h=b → 纯感性无带内
+    零点；解析零点落带外（f_res≤fc，窗口过大近全开口）亦如实 None+注记。
+
+    :param f_ghz: 频率 GHz（须 f>fc10；带内上半段为一阶式惯例使用域）
+    :param a_mm: 波导宽边 mm
+    :param b_mm: 波导窄边 mm
+    :param window_w_mm: 窗口 a 向宽度 mm（0<w≤a）
+    :param window_h_mm: 窗口 b 向高度 mm（0<h≤b）
+    :param er_fill: 等效介质填充介电常数（≥1；1=空气）
+    :return: {b_inductive, b_capacitive, b_total, f_resonant_ghz_est,
+              lambda_g_mm, lambda_0_mm, notes}
+    """
+    f = _num_positive("f_ghz", f_ghz)
+    a = _num_positive("a_mm", a_mm)
+    b_dim = _num_positive("b_mm", b_mm)
+    w = _num_positive("window_w_mm", window_w_mm)
+    h = _num_positive("window_h_mm", window_h_mm)
+    er = _num_finite("er_fill", er_fill)
+    if er < 1.0:
+        raise ValueError(f"er_fill: 必须 ≥1（介质填充不小于空气），得到 {er!r}")
+    if w > a:
+        raise ValueError(f"window_w_mm: 须 ≤ a_mm={a:g}，得到 {w!r}")
+    if h > b_dim:
+        raise ValueError(f"window_h_mm: 须 ≤ b_mm={b_dim:g}，得到 {h!r}")
+    fc = _C_MM_GHZ / (2.0 * a)
+    if f <= fc:
+        raise ValueError(
+            f"resonant_window_susceptance: f={f:g}GHz ≤ fc10={fc:.6g}GHz，"
+            "截止以下不外推（criteria §0 同口径）")
+    lam0 = _C_MM_GHZ / f
+    sq_er = math.sqrt(er)
+    lam0_eff = lam0 / sq_er
+    lam_g = lam0 / math.sqrt(er - (fc / f) ** 2)
+    theta_w = math.pi * w / (2.0 * a)
+    cot_w = math.cos(theta_w) / math.sin(theta_w)
+    b_l = -(lam_g / a) * cot_w * cot_w
+    theta_h = math.pi * h / (2.0 * b_dim)
+    sin_h = math.sin(theta_h)
+    cos_h = math.cos(theta_h)
+    q2 = 1.0 / math.sqrt(1.0 - (b_dim / lam0_eff) ** 2) - 1.0
+    l_c = (math.log(1.0 / sin_h)
+           + q2 * cos_h ** 4 / (1.0 + q2 * sin_h ** 4)
+           + (1.0 / 16.0) * (b_dim / lam0_eff) ** 2
+           * (1.0 - 3.0 * sin_h ** 2) ** 2 * cos_h ** 4)
+    b_c = (4.0 * b_dim / lam_g) * l_c
+    b_total = b_l + b_c
+
+    notes = [
+        "b_L=§5.2(a) Eq.(1a) 主项（(1b) 修正仅 d/a≪1 有效未含，主项口径与仓内"
+        "MMT 膜片锚 −0.451 同级）；b_C=§5.1(a) Eq.(2a) 全式三项",
+        "f_res 为一阶模型 b_total=0 的解析零点，非全波谐振频率（HFSS W3 仲裁"
+        "归真机窗）",
+    ]
+    if er != 1.0:
+        notes.append("er_fill 按等效均匀填充一级口径作用（λ₀_eff=λ₀/√εr、"
+                     "λg_eff=λ₀/√(εr−(fc/f)²)）；窗口局域填充需全波仲裁")
+
+    f_res: float | None = None
+    full_w = w >= a * (1.0 - 1e-12)
+    full_h = h >= b_dim * (1.0 - 1e-12)
+    if full_w and full_h:
+        notes.append("全高全宽窗=无扰动透明面（b_total≡0），谐振退化")
+    elif full_w:
+        notes.append("无 a 向缩窄（b_L≡0）：纯容性无带内零点，f_res=None")
+    elif full_h or l_c <= 0.0:
+        notes.append("无 b 向缩窄（b_C≡0）：纯感性无带内零点，f_res=None")
+    else:
+        lam_g_res = math.tan(theta_w) * math.sqrt(4.0 * a * b_dim * l_c)
+        f_res_v = math.sqrt(_C_MM_GHZ ** 2 + lam_g_res ** 2 * fc ** 2) / (lam_g_res * sq_er)
+        if math.isfinite(f_res_v) and f_res_v > fc:
+            f_res = f_res_v
+        else:
+            notes.append("解析零点落带外（f_res≤fc：窗口过大近全开口），"
+                         "带内无谐振，f_res=None")
+    return {
+        "b_inductive": b_l,
+        "b_capacitive": b_c,
+        "b_total": b_total,
+        "f_resonant_ghz_est": f_res,
+        "lambda_g_mm": lam_g,
+        "lambda_0_mm": lam0,
+        "notes": notes,
+    }

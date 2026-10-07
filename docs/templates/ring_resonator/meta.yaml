@@ -1,0 +1,55 @@
+f0_ghz: 2.5
+n_ports: 2
+template: ring_resonator
+substrate:
+  er: 3.66
+  h_mm: 0.508
+  tan_d: 0.0037
+params:
+- r_mean_mm
+- w_mm
+- gap_mm
+- feed_w_mm
+nominal_params:
+  r_mean_mm: 11.299802692199101
+  w_mm: 1.1134
+  gap_mm: 0.4
+  feed_w_mm: 1.1134
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11/S21 @ MSLPort 1-2（环形谐振器：S21 谐振指纹 f_n≈n·c/(2πr_mean·√εeff)
+  反演 εr；1/Q_L=1/Q_d+1/Q_c+1/Q_r 分离提取 tanδ——F-A M3 口径，提取内核
+  core/dielectric_extract 属后续批次）
+topology: >-
+  微带环形谐振器（F-A M3 材料提取 fixture）：闭环环带（r_mean±w/2，逐网格行
+  栅格化，ratrace 同法 #198 零台阶）+ 径向对置双 50Ω 间隙耦合馈线（x=0 沿 y，
+  端口面贴 y=±BOARD PML_8 域边）；对置 180° 馈点对各次模均为场腹（全 n 模可
+  激励）；z-min PEC 地 + 缺省 rogers4350b 叠层（guided 口径）
+param_semantics: >-
+  r_mean_mm=环平均半径（谐振尺度：闭环周长 2πr_mean=n·λg；名义值由 f1 经 HJ
+  εeff 反解 c/(2πf1√εeff)，ring_resonator_design_params 单源）；w_mm=环带
+  线宽（50Ω HJ 口径 1.1134mm，εeff 随之）；gap_mm=馈线-环带间隙（间隙电容
+  耦合 v1 口径，决定 Q_c/抽头强度）；feed_w_mm=50Ω 馈线宽（HJ 精算）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）——本
+  模板缺省自动档触发缝分辨守卫（NEAR=0.285mm>gap/3），须显式 mesh≤4·gap/3
+  （C3 族同口径）；环带基点缘/馈线带缘/馈端与缝缘精确入网 + 缝中线入网
+  （#198/#311）；渲染守卫：NEAR≤gap/3（#266 族缝分辨）、feed_len≥42·NEAR
+  （#347 族 MeasPlaneShift-FeedShift 分离）、r_in>0；全轴 1µm 近重合去重
+  （#152）；端口面贴 PML_8 域边（#154 前节）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_ring_resonator_template）；近似级别如实
+  登记：v1 闭式未含色散/曲率修正与栅格化慢波补偿（ratrace_ring_mesh_k 两锚
+  定标于 70.7Ω 线宽未对本模板定标，禁止外推复用），εr 提取精度由 G2 闭环+
+  HFSS 仲裁另批兑现
+nominal_derivation: |-
+  全 HJ 精算（#1c/#252，core/synthesis 单源，ring_resonator_design_params
+  可重算）：f1=2.5GHz（基模 n=1）→ 50Ω 馈线宽 inverse_width=1.1133997546767287
+  → 取 4 位档 1.1134（mline/gysel 同源口径）；环带线宽名义档下 εeff=
+  forward_z0(1.1134, 2.5GHz)=2.852725152270805 → r_mean=c/(2π·f1·√εeff)=
+  11.299802692199101mm（基模：闭环周长=λg）。恒等式由
+  test_ring_resonator_template 综合反解自洽测试钉住（rtol 1e-9）。
+  近似级别（v1，如实登记）：εeff 取直微带 HJ 值未含曲率/色散修正；间隙耦合
+  按间隙电容口径。

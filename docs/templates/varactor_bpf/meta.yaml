@@ -1,0 +1,35 @@
+f0_ghz: 2.5
+n_ports: 2
+extraction: S11/S21 @ MSLPort 1-2（变容管调谐 BPF：三档偏压=三次静态 run 各自谷位；裁判=hairpin 耦合矩阵理想频响平移到 f0(C(V))，主谐振方程 tan(βL)=−ωCZ0 同源闭式 core/varactor.py）
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+params:
+- order
+- w_mm
+- arm_len_mm
+- arm_gap_mm
+- gap_mm
+- tap_frac
+- cj0_pf
+- phi_v
+- bias_v
+template: varactor_bpf
+substrate:
+  er: 3.66
+  h_mm: 0.508
+nominal_params:
+  order: 3
+  w_mm: 1.1117
+  arm_len_mm: 31.6675
+  arm_gap_mm: 3.0
+  gap_mm: 1.1328
+  tap_frac: 0.330119
+  cj0_pf: 1.0
+  phi_v: 0.9
+  bias_v: 3.6342
+topology: 变容管调谐发夹线带通（M-5 首个半有源模板，hairpin 族增量）：N 个 λg/2 级 U 形谐振器沿 x 并排、相邻外臂平行耦合（缝 gap_mm），每 U 左臂开路端对地并联一只 lumped C(V)（CSXCAD LumpedElement，ny=2 全隙盒）；输入/输出 50Ω 抽头馈线（T 形，板边 x=∓BOARD；单轴 x PML）
+param_semantics: order=谐振器阶数 N（每腔一只变容管），w_mm=谐振器/馈线宽（50Ω，skrf HJ 综合），arm_len_mm=装载臂展开中心线总长（无载谐振 f_unloaded 的 λg/2；C 装载使工作点下移——主谐振方程 tan(βL)=−ωCZ0，core/varactor.py 单源），arm_gap_mm=U 内两臂缝（家族名义 3.0），gap_mm=相邻谐振器耦合缝（fake/openEMS 同语义；纯 KJ 口径，结构修正预声明不转移），tap_frac=输入抽头位置比例（loaded 廓线闭式 τ，自 C 端计 branch B——C 端与电压节点之间，τ_node=1−π/(2βL)；#154 收口：与 hairpin 无载族「自开路端计」同名不同义；输出抽头在无 C 臂、自真开路端锚定，两锚不等价=P1 交决策暂同 τ 值），cj0_pf/phi_v=变容管突变结零偏电容（pF）/内建电位（V，选型常数），bias_v=本次 run 的反偏电压（V）——cj0/φ/bias 三键只进 C 字面量不进导体几何（LUMPED_VALUE_PARAMS 口径）
+static_c_note: 静态电容口径：FDTD 无时变 C——三档偏压=三次静态 run，各档 C(V)=Cj0/√(1+V/φ) 在该档 bias_v 处为常数，调谐曲线由多点静态解组成（CSXCAD LumpedElement .pyx 口径核实）；C 字面量=C(V)−C_geo（2026-09-29 P2：盒几何寄生平行板项 ε0·εr·WF²/H_SUB=0.0788pF 单源 core/varactor.varactor_box_geo_capacitance_pf——引擎盒区背景位移电流与 lumped 并联，不扣则实感 C=C(V)+C_geo 频偏 #252 族；边缘项欠估 ≤31% 如实预声明，见该函数 docstring）
+mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部臂缘/弯带缘/抽头缘+变容管盒外 y 缘精确入网（#198）
+smoke_note: 真机三档偏压冒烟（V=0.5/3.6342/10.0，各档 C 为常数）未发射——本件只备妥发射面与离线审计（M-5 判据「openEMS 名义点 3 档偏压冒烟」归真机批）；离线几何审计（#212 制度化）见 tests/unit/test_varactor_bpf_template.py。2026-09-29 更新：三档冒烟已跑全 FAIL（触帽+慢振铃），规则 1b 模型审计定案 P0=抽头 τ 沿用无载廓线闭式（loaded 节点恰扫过旧设计值 0.401892）外耦失配 3-1139×——本批 P0（loaded 廓线 τ 自 C 端计，名义 0.330119）+P2（C_literal=C(V)−C_geo）修复后真机复验待 oe-queue 排期，详见 runs/varactor_smoke/model_audit_verdict.md
