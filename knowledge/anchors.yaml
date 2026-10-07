@@ -721,7 +721,7 @@ anchors:
       verdict: runs/ge6_hfsswin/seat2_mscross/verdict.json
       verdict_state: "BRANCH_A_OPENEMS_ENGINE_FAITHFUL（收敛仲裁 AGREE：G-branch 0.180≤0.30GHz 过；G-conv trusted（ΔS 三档 8/0.01621→9/0.00969→11/0.00244 末档达标未触顶，#335 合法判读）；G-passive 6.8e-14；G-health 谷位 0.99998/通带 0.899）"
       criteria: runs/ge6_hfsswin/seat2_mscross/criteria.md（2026-09-30 发射前落盘，#122）
-      referee_note: "PSSFSS 三方裁判 10.152GHz（无限阵 Floquet，|f_v−10.150|=1.345GHz 裁判侧门外 4.5×）——前提差锚定证据，非本锚仲裁对"
+      referee_note: "PSSFSS 三方裁判 10.152GHz（无限阵 Floquet，|f_v−10.150|=1.345GHz 裁判侧门外 4.5×）——前提差锚定证据，非本锚仲裁对〔**2026-10-07 哨兵形证伪重述**：10.152 系 PSSFSS 渲染哨兵形 A=aw/2（面积 −38.2% 静默改形）读数，非本征 Floquet 值；真形 A=L2−ε 重读 11.4265GHz 对 HFSS Floquet 11.4199 仅 +0.06%，两引擎无 13-15% 前提差——旧'偏高 ~13-15%'结论作废，wg 通道双值对真形 Floquet 残差 +0.7%（hfss）/ +2.2%（openems）；本锚双值（wg 通道读数）不受影响零变，MS_CROSS_PSSFSS_REF_GHZ 已重锚 11.4265〕"
       geometry_source: "runs/ge5_msfam/smoke_screen/simulation.py 字面量逐字转抄（criteria §一，单胞 11.9917mm/十字臂 9.82mm/基板 εr=3.66 h=0.508mm）；原始解 hfss/ms_cross_wgsim.s2p（201 点 Discrete，模态基 renormalize=False）"
       machine: sim_host
       wall_s: 582.0

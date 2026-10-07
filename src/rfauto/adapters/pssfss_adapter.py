@@ -17,8 +17,9 @@
   模式数由引擎按光栅瓣判据自动管理；geometry 传 n_floquet_modes≠None
   显式报错（不虚报旋钮，B2 版本漂移纪律）；
 - **EC 初值口径**：本通道的闭式互证锚是设计值口径（半波/EC 带），不是
-  绝对精度裁判——绝对锚 = ms_cross 10.152GHz PSSFSS 参考值（#300 升级
-  路径）与 HFSS Floquet 终裁（scripts/hfss_floquet_anchor.py 通道）。
+  绝对精度裁判——绝对锚 = ms_cross 11.4265GHz PSSFSS 参考值（2026-10-07
+  真形重锚，哨兵形 10.152 证伪作废）与 HFSS Floquet 终裁
+  （scripts/hfss_floquet_anchor.py 通道）。
 
 sheet 映射表（与仓内可复跑裁判 runs/dp10_j2j3/judge_pssfss.jl 逐构造参数
 同源——该驱动即 ge5/ge6 归档参考值 10.152GHz 的产生器，2026-10-01 起
@@ -86,10 +87,15 @@ _SPARAMS_CSV_HEADER = ("freq_hz", "re_S11", "im_S11", "re_S21", "im_S21")
 _JULIA_DEPOT_DEFAULT = r"E:\julia_depot"
 
 #: #300 文献回收钉（judge 口径 §3.3.2）：ms_cross 无限阵 Floquet 参考值。
-#: 出处=knowledge/anchors.yaml ms_cross.wg_resonance.openems-hfss-v1
-#: semantics 引 PSSFSS 10.152GHz（ge6 裁判链 10.150 格点值在档）；
-#: |Δf|≤1% 门=规格 §3.3.2 预声明。
-MS_CROSS_PSSFSS_REF_GHZ = 10.152
+#: **真形重锚 2026-10-07（哨兵形证伪定谳）**：
+#: 旧值 10.152GHz（ge6 裁判链 10.150 格点值在档）产生于**哨兵形 A=aw/2**
+#: 渲染（臂带减半+端垫成方垫，面积 −38.2%，静默改形）——真形 A=L2−ε
+#: （ε=1e-3·L2）实测 PSSFSS Floquet 谷位 11.4265GHz，ε→0 收敛
+#: 11.4206–11.4265，对 HFSS Floquet 终裁 11.4199 偏差 +0.006%~+0.06%
+#: （四源包络内）。旧"两引擎一致偏高 13-15% 前提差"结论系哨兵形污染，
+#: 作废重述：wg 通道双值（11.675/11.4951）对真形 Floquet 残差仅 +0.7%~+2.2%。
+#: |Δf|≤1% 门=规格 §3.3.2 预声明不变；judge_ms_cross 消费本值。
+MS_CROSS_PSSFSS_REF_GHZ = 11.4265
 MS_CROSS_GATE_REL = 0.01
 #: ms_jcross 原判读门（render_metasurface.py:1156 原文）：Δf ≤0.3GHz 或 ≤5%。
 MS_JCROSS_GATE_ABS_GHZ = 0.3

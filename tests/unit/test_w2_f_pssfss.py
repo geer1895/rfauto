@@ -241,10 +241,14 @@ class TestExtremumEstimators:
 
 class TestJudgeGates:
     def test_ms_cross_gate_recovery_pin(self):
-        v = judge_ms_cross(10.15)
+        # 2026-10-07 真形重锚（哨兵形 10.152 证伪作废，新 ref=11.4265）：
+        # 真形引擎读数与 HFSS Floquet 11.4199 差 +0.06%，1% 门内 PASS；
+        # +2% 偏离（哨兵形量级）必须 FAIL——门判别力钉。
+        v = judge_ms_cross(11.4265)
         assert v["verdict"] == "PASS"
-        assert v["delta_rel"] == pytest.approx(0.000197, abs=1e-4)
-        assert judge_ms_cross(10.152 * 1.02)["verdict"] == "FAIL"
+        assert v["delta_rel"] == pytest.approx(0.0, abs=1e-9)
+        assert judge_ms_cross(11.4265 * 0.995)["verdict"] == "PASS"  # −0.5% 门内
+        assert judge_ms_cross(11.4265 * 1.02)["verdict"] == "FAIL"
 
     def test_ms_jcross_or_gate_semantics(self):
         # 绝对门过、相对门不过：Δ=0.25GHz@10GHz（2.5% 也过，改 10.6 基）
