@@ -1,6 +1,6 @@
-"""HFSS 波端口仲裁：MSL↔slotline 过渡 + Marchand 双槽臂巴伦。
+"""W4⑧c HFSS 波端口仲裁：MSL↔slotline 过渡 + Marchand 双槽臂巴伦。
 
-大截面波端口口径（路线 B 实证：微带惯例窄框=fin-line 截止倏逝模）：
+同大截面波端口铁律（路线 B 实证：微带惯例窄框=fin-line 截止倏逝模）：
 - 槽线口 P2/P3 = **端面全截面**波端口（板宽=端口宽），积分线跨槽 z=0，
   CharImp=Zpv、renormalize=False → 广义模态 S（线基，与 Zo 定义无关）；
 - 微带口 P1 = 5w×5h 惯例波端口（微带无该陷阱；底面整版地），CharImp=Zpi，
@@ -12,7 +12,7 @@
 （顶带/底带/侧墙上下段）且跳过端口所在整面（x− 与 y− 过渡 / x± 与 y+ 巴伦）；
 未指派外表面默认 PEC（ratrace 实证口径）。
 
-判据（写死）：巴伦幅度不平衡 ≤1dB、P1 回损 ≤−10dB、隔离 |S23| ≤−15dB、
+判据（任务书写死）：巴伦幅度不平衡 ≤1dB、P1 回损 ≤−10dB、隔离 |S23| ≤−15dB、
 带内 |S21| ≥−3.5dB；过渡段带内 max|S11| ≤−10dB、S21 超额损耗 ≤1dB@f0（HFSS
 无抽头基线，理想 DUT 基线=0dB）；β 对闭式 ≤5%（信息门）。达不到如实 PARTIAL。
 
@@ -100,7 +100,7 @@ def _write_result(patch: dict) -> None:
 
 
 def wait_ansysedt_free(busy_timeout_s: float) -> None:
-    """先到先得：ansysedt.exe 在跑则 60s 轮询等待（预声明规则）。"""
+    """他轨优先：ansysedt.exe 在跑则 60s 轮询等待（任务书规则）。"""
     t0 = time.time()
     while True:
         r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq ansysedt.exe"],
@@ -209,7 +209,7 @@ def _build_and_solve(kind: str) -> dict:
                     integration_line=[["0mm", _mm(p1_y), "0mm"],
                                       ["0mm", _mm(p1_y), _mm(H)]],
                     characteristic_impedance="Zpi")
-        # 槽线口：端面全截面 YZ（路线 B 大截面口径），积分线跨槽 z=0、y 递增
+        # 槽线口：端面全截面 YZ（路线 B 大截面铁律），积分线跨槽 z=0、y 递增
         slot_ports = (["P2sheet", -DOM_X, -0.5, 0.5] if kind == "trans" else
                       ["P2sheet", DOM_X, A1, A2])
         specs = [slot_ports]
@@ -404,7 +404,7 @@ def main() -> int:
                 _write_result({"stage": f"failed_all_attempts_{kind}",
                                "error": last_err})
                 _progress(f"stage5 hfss/{kind}: FAILED all attempts {last_err}")
-        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐（df5）
 
     analyses: dict = {}
     for kind in wanted:

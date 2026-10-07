@@ -7,32 +7,68 @@ from pathlib import Path
 
 import pytest
 
+# openEMS 引擎重建后新 .pyd 的依赖 DLL（CSXCAD.dll/fparser.dll/hdf5 等）在
+# 引擎 bin 目录——子进程/测试进程需 PATH 含此目录才能加载（否则 CSXCAD
+# import 即崩）。目录缺席（干净环境）时为 no-op。
+_oe_bin = r"E:\openEMS\install\bin"
+if os.path.isdir(_oe_bin) and _oe_bin not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = _oe_bin + os.pathsep + os.environ.get("PATH", "")
+
 # ── CSXCAD/openEMS 绑定缺失环境的文件级跳过 ──────────────────────────────────
 # CSXCAD/openEMS Python 绑定无 PyPI wheel，需从 openEMS 源码编译进 venv
 # （见 docs/openems_build_guide.md）。下列测试文件验证 CSXCAD 级几何结构/
 # 网格/渲染产物，缺绑定时无法运行——整文件 skip，纯 Python 逻辑测试不受
 # 影响；绑定就位时全部照常运行。
 _CSXCAD_TEST_MODULES = frozenset({
-    "test_antenna2_templates.py", "test_array_templates.py",
-    "test_coil_nfc_template.py", "test_combline_template.py",
+    "test_antenna2_templates.py",
+    "test_array_templates.py",
+    "test_coax_wg_template.py",
+    "test_coil_nfc_template.py",
+    "test_combline_template.py",
+    "test_compose_layout_netlist.py",
     "test_coupled_bpf_template.py",
-    "test_coupler2_templates.py", "test_cps_template.py",
+    "test_coupler2_templates.py",
+    "test_cps_template.py",
+    "test_diplexer_ridged_templates.py",
     "test_eep_templates.py",
-    "test_gysel_miter_ab.py", "test_gysel_template.py",
-    "test_hairpin_alt_template.py", "test_hairpin_template.py",
-    "test_interdigital_template.py", "test_kicad_board_render.py",
-    "test_marchand_via_ab.py", "test_metasurface_templates.py",
-    "test_mmwave_series_array_template.py", "test_msl_cpw_template.py",
+    "test_gysel_miter_ab.py",
+    "test_gysel_template.py",
+    "test_hairpin_alt_template.py",
+    "test_hairpin_template.py",
+    "test_interdigital_template.py",
+    "test_kicad_board_render.py",
+    "test_layout_sim_service.py",
+    "test_marchand_via_ab.py",
+    "test_metasurface_templates.py",
+    "test_mmwave_series_array_template.py",
+    "test_msl_cpw_template.py",
     "test_msl_siw_taper_template.py",
-    "test_openems_real_bundle_offline.py", "test_openems_slotline_port.py",
-    "test_openems_templates_bridge.py", "test_pcell_dsl.py",
-    "test_proposal_chain.py", "test_ratrace_cylindrical.py",
-    "test_ratrace_template.py", "test_sir_bpf_template.py",
-    "test_siw_template.py", "test_sma_launcher_template.py",
-    "test_solid_import.py", "test_slotline_template.py",
+    "test_nrts_wiring.py",
+    "test_oe_phase3_driver.py",
+    "test_openems_real_bundle_offline.py",
+    "test_openems_real_smoke.py",
+    "test_openems_slotline_port.py",
+    "test_openems_templates_bridge.py",
+    "test_pcell_dsl.py",
+    "test_proposal_chain.py",
+    "test_pyramid_horn_template.py",
+    "test_ratrace_cylindrical.py",
+    "test_ratrace_template.py",
+    "test_ring_resonator_template.py",
+    "test_schiffman_qwt_templates.py",
+    "test_sicl_nway_templates.py",
+    "test_sir_bpf_template.py",
+    "test_siw_template.py",
+    "test_slotline_template.py",
+    "test_sma_launcher_template.py",
+    "test_solid_import.py",
     "test_stepped_coupled_line_specs.py",
     "test_suspended_stripline_template.py",
+    "test_ta_wave_b_templates.py",
+    "test_ta_wave_c_templates.py",
     "test_template_geometry_audit.py",
+    "test_varactor_bpf_template.py",
+    "test_w2_d_z16.py",
 })
 
 
@@ -56,9 +92,18 @@ def _ngspice_available() -> bool:
     return (_REPO_ROOT / "tools" / "ngspice" / "Spice64" / "bin").is_dir()
 
 
+#: Z-6 flaky 隔离（ENV_FLAKY 分级）参数：known_flaky 用例的最大重跑次数。
+_FLAKY_RERUNS = 2
+#: 重跑隔离总开关（显式意图门，opt-in 口径）：仅 RFAUTO_FLAKY_RERUN=1 时
+#: known_flaky 才映射为 pytest.mark.flaky。缺省（含全量终门/并行门）一律
+#: 单次执行，失败即回归如实计数。物理红永不隔离——重跑仍红=物理红。
+_FLAKY_RERUN_ENV = "RFAUTO_FLAKY_RERUN"
+
+
 def pytest_configure(config):
-    # DP-6：known_flaky marker 注册（仅注册不使用——并行守卫冻结期间按
-    # flake 流程取证后，才允许对个别并行不安全测试打此 marker）。
+    # DP-6：known_flaky marker 注册；该 marker 在
+    # pytest_collection_modifyitems 被 RFAUTO_FLAKY_RERUN=1 显式开启时消费
+    # （映射为 pytest-rerunfailures 的 flaky(reruns=N)）。
     config.addinivalue_line(
         "markers",
         "known_flaky: 已知偶发/并行不安全测试（须附取证理由，禁止掩盖失败）",
@@ -110,6 +155,16 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_ngspice)
         if on_linux_ci and (name, item.name) in linux_numeric:
             item.add_marker(skip_numeric)
+    # ── Z-6：known_flaky 消费（ENV_FLAKY 分级）──
+    # 重跑只对显式打 known_flaky marker（附取证理由）的用例生效，且必须
+    # RFAUTO_FLAKY_RERUN=1 显式开启；未打 marker 的用例在任何配置下都不重跑
+    # ——物理红首红就是判定；"首红+重跑绿"只把该次失败分级为 ENV_FLAKY，
+    # 重跑仍红=物理红，最终 FAIL 照常上报。
+    if os.environ.get(_FLAKY_RERUN_ENV) != "1":
+        return
+    for item in items:
+        if item.get_closest_marker("known_flaky") is not None:
+            item.add_marker(pytest.mark.flaky(reruns=_FLAKY_RERUNS))
 
 
 # 确保 src 在 path 中（editable install 时通常不需要，但安全起见）

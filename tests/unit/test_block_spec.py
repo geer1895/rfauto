@@ -1,6 +1,6 @@
 """E8a 器件模型库单元测试。
 
-验收标准：
+验收标准（扩展方案 §E8a）：
 ① BlockSpec 数据模型 + 类型校验
 ② DeviceCatalog 从 catalog.yaml 加载
 ③ 有源器件必须有 NF/P1dB（物理事实）

@@ -1,6 +1,6 @@
 """对称结构奇偶模分解几何变换内核（纯函数零 IO；DP-14 Y1，2026-09-24）。
 
-规格：docs/plan_deepdive_specs_20260924.md §14.3；判据书：
+规格：规格深案 §14.3；判据书：
 runs/df6_dp14y1/criteria.md（判据预声明）。口径权威：
 docs/rf_template_references.md §13.1（耦合线 cline_coupler）/§13.2
 （两节分支线 branchline_2sect）。

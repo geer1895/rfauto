@@ -69,17 +69,69 @@ class TestMCPToolsRegistered:
         # shell-bundle +26（2026-09-15）：回归门 2 + 多 Agent 5 + 自验证环 1 +
         #   uq 3 + farfield 2 + kicad 2 + 电热/寄生 2 + topology 1 + dataset 4 +
         #   vna 回放 1 + F9 叙述 1 + F11 经验 2
-        # +2（rag_query/rag_explain，只读词法 BM25 检索薄壳）
-        # 接线层 +3（self_heal_run/log_digest/dispersion_report）
-        # +6（db_init/db_migrate/db_status/db_reindex_runs/
-        #   db_query/db_analytics_attach，注册表薄壳，2026-09-18）
-        # +5（slotline_analysis/slotline_synthesis/
+        # F2⑥ +2（rag_query/rag_explain，只读词法 BM25 检索薄壳）
+        # 接线层装车 +3（self_heal_run/log_digest/dispersion_report，审查 M1/M5/D1）
+        # w1a-shell-front +6（db_init/db_migrate/db_status/db_reindex_runs/
+        #   db_query/db_analytics_attach，W1⑫ 注册表薄壳，2026-09-18）
+        # w2i-shell-back +5（slotline_analysis/slotline_synthesis/
         #   msl_slot_transition_design/marchand_balun_design/
-        #   marchand_two_section_synthesis，槽线与过渡薄壳）
-        # 增量史：导入器+2 → cascade+3 → cm 诊断+3 → vna en+1 → mmt+1 →
-        # anchors+2 → si 通道报告+1 → lake+2（index/verify/restore 属本地
-        # 运维面不进 MCP 最小面）→ render_constraint_check+1 = 106
-        assert len(tools) == 106
+        #   marchand_two_section_synthesis，W2⑨ 槽线与过渡薄壳，2026-09-18）
+        # fix-importer +2（discover_workdir_runs/import_workdir_runs，工作目录
+        #   形态真机产物导入器薄壳，审查修复队列增量③，2026-09-18）
+        # df6_dp5cascade +3（cascade_budget/spur_search/if_plan_sweep，DP-5
+        #   系统级预算+杂散搜索薄壳，2026-09-24）
+        # df6_dp2diag +3（cm_diagnose_q/cm_extract_refine/cm_cat_critique，
+        #   DP-2 耦合矩阵诊断三件套薄壳，2026-09-24）
+        # df6_dp11vna +1（vna_en_report，DP-11 En 相关性报告薄壳，2026-09-24）
+        # df6_dp1p2 +1（mmt_solve，DP-1 MMT 秒级段表求解薄壳，2026-09-24）= 89
+        # df6_dp3anchors +2（anchors_list/anchors_inspect，DP-3 锚注册表
+        #   薄壳，零逻辑转发 anchors_service，2026-09-24）
+        # df7_t2 +1（si_channel_report，SI 通道报告薄壳，零逻辑转发
+        #   si_channel_service，2026-09-25）
+        # df7_f3lake +2（lake_query_runs/lake_pack_campaign，runs 湖薄壳，
+        #   零逻辑转发 lake_service；index/verify/restore 属本地运维面不进
+        #   MCP 最小面，2026-09-25）
+        # df7wire +1（render_constraint_check，R4 渲染前声明式几何约束
+        #   一次求解薄壳，零逻辑转发 render_constraint_service，2026-09-26）
+        # me17a-shell1 +3（import_solid_payload/certify_design/port_gate，
+        #   ME-17a 接线批第一组三工具薄壳，零逻辑转发 solid_import_service/
+        #   certify_design/port_gate_service，2026-09-26）
+        # qw123 +1（search_knowledge，QW-2 知识库统一检索薄壳，零逻辑转发
+        #   knowledge_service.search_knowledge，2026-09-26）
+        # ge-fbp2 +3（pdn_analyze/pdn_select/pdn_gate，F-B P2 PI/PDN AC 阻抗域
+        #   三工具薄壳，零逻辑转发 pdn_service，2026-09-26）
+        # ge-fcp2 +3（aging_simulate/aging_verdict/aging_report，F-C P2 器件
+        #   老化漂移三工具薄壳，零逻辑转发 aging_service，2026-09-26）
+        # ge-code3 +2（afs_plan，M-3 AFS 扫频计划纯计划面薄壳，零逻辑转发
+        #   afs_service；read_hfss_touchstone_comments，ME-10' HFSS 注释块
+        #   直读薄壳，零逻辑转发 interop_service，2026-09-26）
+        # remote-v0 +2（remote_probe_machine/remote_machine_status，多机协同
+        #   只读探活/状态薄壳，零逻辑转发 remote_service，2026-09-28）
+        # me17b-wire +3（even_odd_report/mcts_search/inverse_prefilter，
+        #   ME-17b 接线批第二组三工具薄壳，零逻辑转发 even_odd_service/
+        #   mcts_search/inverse_prefilter（agent 原语 typed tool call），
+        #   2026-09-28）
+        # x3-wiring +9（2026-10-04，W7 台账①态零消费内核接线批）：ADC 域 2
+        #   （adc_interleave_spurs/jitter_budget_snr，零逻辑转发
+        #   adc_budget_service 新增函数）+ EMC 域 4（emc_cispr_band_params/
+        #   emc_cispr_detect/emc_ground_spacing_check/emc_cm_radiated_budget，
+        #   零逻辑转发新建 emc_service）+ 超表面域 2（
+        #   metasurface_coding_pattern/metasurface_quant_loss_db，零逻辑
+        #   转发新建 metasurface_service）+ SI 域 1（com_pam4_run，零逻辑
+        #   转发 si_channel_service 新增函数，挂 si_lake 工具组）= 132
+        # W1 孤儿接线批 +2（2026-10-05，规格包 VI-1 钉 3）：error_hints_lookup
+        #   （零逻辑转发 error_hints_service，失败面 agent 消费主工具）+
+        #   run_monitor（零逻辑转发 runtime_monitor_service，run 看门）= 134
+        # W2 Phase 2 +3（2026-10-05）：run_campaign（VI-2 战役执行器）+
+        #   recommend_templates（VI-3 模板推荐器）+ uq_rare_yield（XD-11
+        #   稀有失效 IS，零逻辑转发 uq_service.rare_yield_is）= 137
+        # W3 Phase 3 +8（2026-10-05，W3-D F-10 六服务壳 MCP 面 env_reliability
+        #   单文件八工具）= 145
+        # W5 Phase 5 +1（2026-10-05，EC-6 guidelines_service 检索薄壳：
+        #   get_guidelines_for，pitfalls+playbook+rules 三源确定性检索）= 146
+        # W6 +3（2026-10-06）：start_tune/run_sweep（SN-16 tune/sweep 主入口）
+        #   + preflight_run（D-07 MCP preflight 挂点）= 149
+        assert len(tools) == 149
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -129,16 +181,29 @@ class TestMCPToolsRegistered:
         "wait_job",
             "report_narrative", "rationale_recall", "rationale_checklist",
             "rag_query", "rag_explain",
-            # 接线层（内核能力接入生产路径）
+            # W1 孤儿接线批（2026-10-05，规格包 VI-1）：error_hints 挂 explain
+            # 组、run_monitor 挂 runs 组——失败面/看门 agent 消费主工具
+            "error_hints_lookup", "run_monitor",
+            # W2 Phase 2（2026-10-05）：VI-2 战役执行器/VI-3 推荐器/XD-11 稀有失效
+            "run_campaign", "recommend_templates", "uq_rare_yield",
+            # W3 Phase 3（2026-10-05，W3-D F-10 六服务壳 env_reliability 组）
+            "fault_tree_report", "build_datasheet", "netlist_goldset_replay",
+            "humidity_uptake", "msl_floor_life_query", "weave_style_info",
+            "weave_skew_estimate", "cryo_surface_estimate",
+            # W5 Phase 5（2026-10-05，EC-6 guidelines 三源检索薄壳）
+            "get_guidelines_for",
+            # W6（2026-10-06）：SN-16 tune/sweep 主入口 + D-07 preflight
+            "start_tune", "run_sweep", "preflight_run",
+            # 接线层装车（审查 D 分片 M1/M5 + C 分片 D1）
             "self_heal_run", "log_digest", "dispersion_report",
-            # 注册表数据库薄壳
+            # W1⑫ 注册表数据库薄壳（w1a-shell-front）
             "db_init", "db_migrate", "db_status", "db_reindex_runs",
             "db_query", "db_analytics_attach",
-            # 槽线与过渡薄壳
+            # W2⑨ 槽线与过渡薄壳（w2i-shell-back）
             "slotline_analysis", "slotline_synthesis",
             "msl_slot_transition_design", "marchand_balun_design",
             "marchand_two_section_synthesis",
-            # 工作目录形态真机产物导入器薄壳
+            # 工作目录形态真机产物导入器薄壳（fix-importer，增量③）
             "discover_workdir_runs", "import_workdir_runs",
             # DP-5 系统级预算引擎+杂散搜索薄壳（df6_dp5cascade）
             "cascade_budget", "spur_search", "if_plan_sweep",
@@ -155,6 +220,33 @@ class TestMCPToolsRegistered:
             "lake_query_runs", "lake_pack_campaign",
             # df7wire R4 渲染前声明式几何约束一次求解薄壳（2026-09-26）
             "render_constraint_check",
+            # ME-17a 接线批第一组三工具薄壳（me17a-shell1，2026-09-26）
+            "import_solid_payload", "certify_design", "port_gate",
+            # QW-2 知识库统一检索薄壳（qw123，2026-09-26）
+            "search_knowledge",
+            # F-B P2 PI/PDN AC 阻抗域三工具薄壳（ge-fbp2，2026-09-26）
+            "pdn_analyze", "pdn_select", "pdn_gate",
+            # F-C P2 器件老化漂移三工具薄壳（ge-fcp2，2026-09-26）
+            "aging_simulate", "aging_verdict", "aging_report",
+            # M-3 AFS 扫频计划纯计划面薄壳（ge-code3，2026-09-26）
+            "afs_plan",
+            # ME-10' HFSS Touchstone 注释块直读薄壳（ge-code3，2026-09-26）
+            "read_hfss_touchstone_comments",
+            # 多机协同远程求解只读两工具（remote-v0，2026-09-28）——真机冒烟
+            # （remote_hfss_smoke env 门 opt-in）与配置组装属运维面不进 MCP
+            "remote_probe_machine", "remote_machine_status",
+            # ME-17b 接线批第二组三工具（me17b-wire，2026-09-28）——
+            # 奇偶模分解报告+MCTS 搜索+逆设计前滤波（agent 原语 typed
+            # tool call）；CLI 半边归 chain/even-odd/repro 命令面
+            "even_odd_report", "mcts_search", "inverse_prefilter",
+            # X3 接线批九工具薄壳（x3-wiring，2026-10-04）——W7 台账①态
+            # 零消费内核查询面：interleave_spurs/com_pam4/cispr_detector/
+            # common_mode/coding_metasurface 五内核
+            "adc_interleave_spurs", "jitter_budget_snr",
+            "com_pam4_run",
+            "emc_cispr_band_params", "emc_cispr_detect",
+            "emc_ground_spacing_check", "emc_cm_radiated_budget",
+            "metasurface_coding_pattern", "metasurface_quant_loss_db",
         }
         assert names == expected
 
@@ -170,6 +262,10 @@ class TestMCPResources:
             "rfauto://runs/index",
             "rfauto://knowledge/materials",
             "rfauto://knowledge/compat_matrix",
+            # QW-6 术语卡（2026-09-26，ge-qw6）
+            "rfauto://knowledge/terminology",
+            # W5-D（2026-10-05，EC-6）：toolsets 定义单源
+            "rfauto://toolsets/definition",
         }
 
     def test_read_compat_matrix_resource(self, mcp_server, monkeypatch):
@@ -357,7 +453,7 @@ class TestBudgetAnalysisIp3:
 
 
 def _rag_corpus(tmp_path: Path) -> Path:
-    """rag 工具端到端离线小语料：docs/*.md + runs/<id>/meta.json（零网络）。"""
+    """F2⑥ rag 工具端到端离线小语料：docs/*.md + runs/<id>/meta.json（零网络）。"""
     docs = tmp_path / "docs"
     docs.mkdir()
     (docs / "note.md").write_text(
@@ -375,7 +471,7 @@ def _rag_corpus(tmp_path: Path) -> Path:
 
 
 class TestRagTools:
-    """rag_query/rag_explain 端到端（fastmcp call_tool，tmp 语料，零网络）。"""
+    """F2⑥ rag_query/rag_explain 端到端（fastmcp call_tool，tmp 语料，零网络）。"""
 
     def test_rag_query_hits_doc_with_traceable_citation(self, mcp_server, tmp_path):
         import asyncio
@@ -437,7 +533,7 @@ class TestRagTools:
         assert "索引构建失败" in data["errors"][0]
 
 
-# ─── 实验计算器透传 / db 六工具 / 接线层三工具归位（2026-09-18）──────────────
+# ─── w1a-shell-front（2026-09-18）：实验计算器透传 / db 六工具 / 接线层三工具归位 ──
 
 
 def _call(mcp_server, tool_name: str, arguments: dict) -> dict:
@@ -452,7 +548,7 @@ _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 
 class TestCalculatorExperimentalPassthrough:
     """list_calculators/run_calculator 的 experimental 标签与 allow_experimental
-    三态透传（默认不参与、显式开关才启用）。"""
+    三态透传（followUp ①；默认不参与、显式开关才启用）。"""
 
     def test_list_default_includes_experimental_with_label(self, mcp_server):
         data = _call(mcp_server, "list_calculators", {})
@@ -529,7 +625,7 @@ def _seed_runs(tmp_path: Path) -> None:
 
 
 class TestDbTools:
-    """注册表六工具：零逻辑转发 db_service；隔离 cwd + 显式 db_path。"""
+    """W1⑫ 注册表六工具：零逻辑转发 db_service；隔离 cwd + 显式 db_path。"""
 
     def test_status_missing_file_not_created(self, mcp_server, tmp_path):
         target = tmp_path / "reg.sqlite"
@@ -646,9 +742,9 @@ _SLOTLINE_TOOLS = ("slotline_analysis", "slotline_synthesis",
 
 
 class TestWiringToolsConsistency:
-    """自愈环/日志蒸馏/材料色散三类工具归位本文件：#270 可调用性
+    """自愈环/日志蒸馏/材料色散三类工具归位本文件（任务 ④）：#270 可调用性
     双检（dis LOAD_GLOBAL 对 globals∪builtins + AST 惰性 import 目标 hasattr）
-    + 逐工具 call_tool 烟测；db 六工具同批纳入双检；槽线/过渡五工具同法。"""
+    + 逐工具 call_tool 烟测；db 六工具同批纳入双检；w2i 槽线/过渡五工具同法。"""
 
     @staticmethod
     def _tools_by_name(mcp_server) -> dict:
@@ -662,15 +758,17 @@ class TestWiringToolsConsistency:
         import ast
 
         from tests.unit.test_mcp_tool_consistency import (
-            MCP_SERVER_PY,
             _callability_issues,
+            _mcp_source_files,
             _unresolved_load_globals,
         )
 
         tool = self._tools_by_name(mcp_server)[tool_name]
         assert _unresolved_load_globals(tool.fn) == []
-        tree = ast.parse(MCP_SERVER_PY.read_text(encoding="utf-8"))
-        assert _callability_issues(tool, tree) == []
+        # AU-1 批3 拆分：按 facade+mcp_tools 全部源码文件逐棵解析
+        trees = [ast.parse(f.read_text(encoding="utf-8"))
+                 for f in _mcp_source_files()]
+        assert _callability_issues(tool, trees) == []
 
     @pytest.mark.parametrize("tool_name", [*_WIRING_TOOLS, *_DB_TOOLS, *_SLOTLINE_TOOLS])
     def test_docstring_args_match_signature(self, mcp_server, tool_name):
@@ -735,8 +833,8 @@ _SLOT_SUB = {"h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}
 
 
 class TestSlotlineTransitionTools:
-    """槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
-    确定性内核（锚 core/slotline_transitions 设计点：w=1.0/h=1.524/εr=3.66@2.5GHz →
+    """W2⑨ 槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
+    确定性内核（锚 ②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
     Z0=110.92Ω、εeff=1.6462、λ'=93.462mm；名义两节 Marchand (w,s,ℓ)=
     (1.7616,0.1016,18.467)mm）；越域/不可达如实进信封不抛出。"""
 
@@ -805,6 +903,60 @@ class TestSlotlineTransitionTools:
         assert "band_ghz" in bad["error"]
 
 
+# 最小 HFSS 导出样例（与 test_touchstone_interop 同族口径的浓缩版）
+_HFSS_SYNTHETIC_MIN = """\
+! Touchstone file exported from HFSS 2025.1.0
+!Data is not renormalized
+! Port[1] = P1sheetP
+! Port[2] = P2sheetP
+! Gamma         0.0530712446981517 54.3985472418686 0.0529216771735167 54.3576788427241
+! Port Impedance         124.508419923945 0.118158499611523 123.420787286298 0.117243616912253
+! Gamma         0.0531383846661528 54.4666304440237 0.0529886297481866 54.4257108689338
+! Port Impedance         124.507429694236 0.118162008837496 123.419809796638 0.117247075148764
+# GHZ S MA R 50
+2.0 0.5 -10.0 0.7 30.0 0.7 30.0 0.4 5.0
+2.5 0.5 -12.0 0.7 28.0 0.7 28.0 0.4 6.0
+"""
+
+
+class TestAfsAndInteropTools:
+    """ge-code3 两新工具 call_tool 烟测：afs_plan（M-3 纯计划面薄壳）与
+    read_hfss_touchstone_comments（ME-10' HFSS 注释块直读薄壳）。
+    零逻辑转发 service 信封；afs_plan 不得求解（纯计划零回调）。"""
+
+    def test_afs_plan_returns_plan_without_solving(self, mcp_server):
+        data = _call(mcp_server, "afs_plan",
+                     {"f_min_ghz": 1.0, "f_max_ghz": 4.0, "tol": 0.02})
+        assert data["ok"] is True
+        plan = data["plan"]
+        assert plan["band_hz"] == [1.0e9, 4.0e9], "GHz 入参 Hz 口径换算在本壳"
+        assert len(plan["initial_frequencies_hz"]) == 7
+        assert plan["protocol"]["name"] == "afs_midpoint_refinement"
+        assert plan["acceptance_criteria"]["reduction_ratio_min"] == 0.5
+        assert "evaluate_contract" in plan
+
+    def test_afs_plan_invalid_band_envelope(self, mcp_server):
+        data = _call(mcp_server, "afs_plan",
+                     {"f_min_ghz": 4.0, "f_max_ghz": 1.0})
+        assert data["ok"] is False
+
+    def test_read_hfss_touchstone_comments_synthetic(self, mcp_server,
+                                                     tmp_path):
+        path = tmp_path / "hfss_style.s2p"
+        path.write_text(_HFSS_SYNTHETIC_MIN, encoding="utf-8")
+        # 工具按字面 path 直读（不依赖 cwd），直接传绝对路径
+        data = _call(mcp_server, "read_hfss_touchstone_comments",
+                     {"path": str(path)})
+        assert data["ok"] is True
+        d = data["data"]
+        assert d["n_ports"] == 2 and d["n_freqs"] == 2
+        assert d["gamma"][0][0] == [0.0530712446981517, 54.3985472418686]
+        assert d["port_names"] == ["P1sheetP", "P2sheetP"]
+        missing = _call(mcp_server, "read_hfss_touchstone_comments",
+                        {"path": str(tmp_path / "nope.s2p")})
+        assert missing["ok"] is False
+
+
 class TestMainEntry:
     """rfauto-mcp console script（F4）：pyproject [project.scripts] → mcp_server.main。"""
 
@@ -846,7 +998,7 @@ class TestLakeTools:
 
     index/verify/restore 属本地运维面不进 MCP（最小面注记，mcp_server.py）；
     查询面用例先经 service build_runs_index 备好索引库（测试自备前置），
-    工具本身只透传 service 信封。autouse chdir 隔离（#144，零触真实 runs/）。
+    工具本身只透传 service 信封。autouse chdir 隔离（#144，零触真实 runs）。
     """
 
     @pytest.fixture(autouse=True)
@@ -914,7 +1066,7 @@ class TestRenderConstraintCheckTool:
     """render_constraint_check（df7wire R4 薄壳）透传冒烟。
 
     stub 调用钉零逻辑转发；真实 SAT 用例（z3 importorskip）钉端到端
-    verdict 面。autouse chdir 隔离（#144，零触真实 runs/）。
+    verdict 面。autouse chdir 隔离（#144，零触真实 runs）。
     """
 
     @staticmethod
@@ -950,3 +1102,97 @@ class TestRenderConstraintCheckTool:
         assert data["status"] == "sat"
         assert data["witness"], data
         assert data["assembled"]["rules"]
+
+
+class TestRemoteTools:
+    """remote_probe_machine/remote_machine_status（多机协同 v0 薄壳）透传冒烟。
+
+    真机冒烟（remote_hfss_smoke，env RFAUTO_REMOTE_SMOKE=1）与 HFSS 远程
+    会话配置组装属运维/开发面不进 MCP（最小面注记，mcp_server.py §42）；
+    本类全部走 mock service 通道（#139 零真网零真机）。
+    """
+
+    @staticmethod
+    def _call(mcp_server, tool_name: str, arguments: dict) -> dict:
+        import asyncio
+        result = asyncio.run(mcp_server.call_tool(tool_name, arguments))
+        return _extract_result(result)
+
+    def test_remote_probe_machine_passthrough(self, mcp_server, monkeypatch):
+        """probe 工具零逻辑转发 remote_service.remote_probe。"""
+        import rfauto.service.remote_service as rsvc
+
+        captured: dict = {}
+
+        def fake_probe(machine):
+            captured["machine"] = machine
+            return {"ok": True, "machines": [{"name": "sim_host",
+                                              "reachable": True}]}
+
+        monkeypatch.setattr(rsvc, "remote_probe", fake_probe)
+        data = self._call(mcp_server, "remote_probe_machine",
+                          {"machine": "sim_host"})
+        assert data["ok"] is True
+        assert data["machines"][0]["name"] == "sim_host"
+        assert captured["machine"] == "sim_host"
+
+    def test_remote_machine_status_missing_credentials_envelope(
+            self, mcp_server, monkeypatch):
+        """status 工具：service 信封原样透传（含 missing_credentials 如实）。"""
+        import rfauto.service.remote_service as rsvc
+
+        monkeypatch.setattr(rsvc, "remote_status", lambda machine: {
+            "ok": True,
+            "machines": [{"name": "m", "host": "h", "reachable": True,
+                          "ports": {}, "probe_s": 0.0,
+                          "ssh": {"auth": "missing_credentials"}}],
+        })
+        data = self._call(mcp_server, "remote_machine_status", {"machine": None})
+        assert data["ok"] is True
+        assert data["machines"][0]["ssh"]["auth"] == "missing_credentials"
+
+    def test_remote_tools_error_envelope(self, mcp_server, monkeypatch):
+        """service 抛错→ok=False 信封（不炸 MCP 会话，仓内薄壳惯例）。"""
+        import rfauto.service.remote_service as rsvc
+
+        def boom(machine):
+            raise RuntimeError("probe channel down")
+
+        monkeypatch.setattr(rsvc, "remote_probe", boom)
+        data = self._call(mcp_server, "remote_probe_machine", {"machine": None})
+        assert data["ok"] is False
+        assert "probe channel down" in data["error"]
+
+
+class TestStdioChannelPurity:
+    """D-03（2026-10-04）：stdio 传输把 stdout 当 JSON-RPC 信道——子进程级钉。
+
+    #278 当时的验证口径原样转正：`python -m rfauto.mcp_server < NUL`
+    （Windows 下用 subprocess stdin=DEVNULL 等价实现）必须零 stdout 字节。
+    背景：MCP stdio 传输下客户端按行解析 stdout，main() 里任何 print 都会
+    污染信道（fastmcp banner 走 stderr 属正常，不判）。stdin 立即 EOF →
+    服务器正常收场退出（本机实测 rc=0、~5s）。
+    """
+
+    def test_module_main_with_devnull_stdin_emits_zero_stdout(self):
+        import subprocess
+        import sys
+
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "rfauto.mcp_server"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,  # banner/日志走 stderr，不在本门口径
+        )
+        try:
+            stdout, _ = proc.communicate(timeout=20)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # 挂 CI 防护：杀干净再抛（不留孤儿 python）
+            proc.communicate(timeout=10)
+            pytest.fail("rfauto.mcp_server 未在 20s 内随 stdin EOF 退出")
+        assert proc.returncode == 0, (
+            f"stdin EOF 后应正常退出（rc={proc.returncode}）"
+        )
+        assert stdout == b"", (
+            f"stdout 必须零字节（JSON-RPC 信道纯度），实得 {len(stdout)} 字节: {stdout[:200]!r}"
+        )

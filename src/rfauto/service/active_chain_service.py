@@ -1,6 +1,6 @@
-"""有源链路 service（JSON 进出）: LNA 匹配链协同 + PA load-pull 口径。
+"""C14 有源链路 service（JSON 进出）: LNA 匹配链协同 + PA load-pull 口径。
 
-方案依据: "LNA/PA 匹配网络 EM 提取+ADS
+方案依据（续跑计划 §10.3 C14）: "LNA/PA 匹配网络 EM 提取+ADS
 非线性/噪声协同; PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull）"。
 验收列: "匹配网络 EM↔ADS 联合 vs 手工口径; load-pull 等增益/等功率圈合理性"。
 
@@ -10,7 +10,8 @@
   （skrf 级联 + core.active_chain 闭式）+ 稳定性 + 噪声口径;
 - run_pa_loadpull: Cripps 等功率圈全口径（网格面 + 解析线 + 合理性裁判,
   零仿真离线）, 可选器件 S2P 作恒增益面叠加; ADS HB 逐点通道由
-  linkage.render_loadpull_netlist / run_ads_loadpull_point 承载（HB 语法真机实证, 见 linkage.ads_active_chain 模块 docstring）。
+  linkage.render_loadpull_netlist / run_ads_loadpull_point 承载（HB 语法
+  2026-09-18 真机实证, 见 linkage.ads_active_chain 模块 docstring）。
 
 数值只在确定性内核（core.active_chain / skrf）; LLM 不产生物理数字。
 """

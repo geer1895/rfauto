@@ -659,7 +659,7 @@ def _cheb_g_table(n, ripple_db):
     g0=1, g1=2a1/γ, gk=4a_{k−1}a_k/(g_{k−1} b_{k−1})，
     a_k=sin((2k−1)π/2n), b_k=γ²+sin²(kπ/n), γ=sinh(β/2n),
     β=ln(coth(L_ar/17.37))（0.1dB,N=3 → g1=1.03159，与文献表 1.0316 一致）。
-    注：早期文档引用的「0.1dB N=3 g1=2.0304」实为 ≈1.0dB 的数值
+    注：任务书引用的「0.1dB N=3 g1=2.0304」实为 ≈1.0dB 的数值
     （同一递推 1.0dB → g1=2.0290），本测试以递推/文献表为准。
     """
     beta = math.log(1.0 / math.tanh(ripple_db / 17.37))
@@ -1222,7 +1222,7 @@ def test_bpf_model_nominal_labels_n9_disambiguated():
 # 本文件逐例可复现）：响应不变 ≤1.6e−15（合同旋转保证）；pattern 清洁度分化
 # ——N3[2.0] 残差 0/family=anti、N2[1.5] 残差 0/shifted，N3[1.5,−2.0]≈0.3124、
 # N4[1.2,2.5]≈0.7990、N5[1.5,2.5]≈0.2101 均 mixed（各恰 1 个非 keeper 违例）。
-# 复系数 folded 拓扑增量不在本内核（冻结范围外，另立增量）。
+# 复系数 folded 拓扑增量不在本内核（方案 §10.18-§10.23 冻结，TODO 另立增量）。
 
 FOLDED_COMPLEX_BOUNDARY = [
     (3, [2.0], 0.0, "anti", 0),

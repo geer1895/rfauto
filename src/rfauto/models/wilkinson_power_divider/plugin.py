@@ -2,8 +2,8 @@
 
 P1 实现特性：
 - 完整 Wilkinson 拓扑：T-junction + 2× λ/4 臂(70.7Ω) + 隔离电阻(100Ω)
-- 所有尺寸经变量通道写入，几何用表达式引用
-- 命名规范强制：使用 hfss_builder_utils 常量表
+- 所有尺寸经变量通道写入，几何用表达式引用（军规 2a）
+- 命名规范强制：使用 hfss_builder_utils 常量表（军规 2b）
 - 微带线端口：空气域 + 辐射边界（Spike A 验证）
 - 端口阻抗 50Ω，wave_port 用 face_id 自动积分线
 """
@@ -45,7 +45,7 @@ class WilkinsonPDPlugin(RFModelPlugin):
     def build(self, ad: SimulatorAdapter, params: BaseModel) -> None:
         """声明式构建 Wilkinson 功分器。
 
-        硬性约束：
+        铁律：
         - 尺寸只经 hfss['VarName']=value 写成变量再以表达式引用
         - 对象命名用常量表（Substrate, TraceArm1, PortInput ...）
         - 端口/边界绑定只允许命名对象
@@ -54,7 +54,7 @@ class WilkinsonPDPlugin(RFModelPlugin):
             raw = params.model_dump() if hasattr(params, "model_dump") else params.__dict__
             params = WilkinsonPDParams(**raw)
 
-        # ─── 1. 写入设计变量（尺寸经变量通道）──────────────────────
+        # ─── 1. 写入设计变量（尺寸经变量通道，军规 2a）──────────────────────
         var_dict = {
             # 用户可调参数
             "arm_len": f"{params.arm_len_mm}mm",
@@ -111,7 +111,7 @@ class WilkinsonPDPlugin(RFModelPlugin):
               50Ω     50Ω
               Out1   Out2 (y_min)
 
-        所有尺寸引用设计变量，避免硬编码。
+        所有尺寸引用设计变量，避免硬编码（军规 2a）。
         """
         from ansys.aedt.core.generic.constants import Gravity, Plane
 

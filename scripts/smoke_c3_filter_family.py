@@ -1,12 +1,12 @@
-"""C3 滤波器族 II 真机冒烟：interdigital / combline / sir_bpf。
+"""C3 滤波器族 II 真机冒烟：interdigital / combline / sir_bpf（真机冒烟收尾批）。
 
 循 coupled_bpf 先例（scripts/coupled_bpf_smoke.py 五门 + scripts/
 smoke_coupled_bpf_nrts.py NrTS 加长与终止诊断）：三模板皆 fbw=5% 窄带高 Q，
 NrTS=100000 官方口径会截断于激励脉冲进行中（pt1 探针实证），本脚本脚本级改写
-NrTS→--nrts（默认 1000000，followUp 收口）并解析引擎日志给终止
+NrTS→--nrts（默认 1000000，followUp ②）并解析引擎日志给终止
 诊断。零源码改动。
 
-三处收紧（c3 PARTIAL 归因三项由假设级落地）：
+2026-09-18 w2e 三处收紧（c3 PARTIAL 归因三项由假设级落地）：
 - 网格：--mesh 0 不再是 λ_sub/50 缺省（NEAR 0.285mm > 外缝 0.139~0.242mm ⇒
   缝内零内部线），而是取 c3_mesh_max_mm（NEAR ≤ 缝_min/3，#266 渲染守卫上限）
   向下取整到 µm；显式 --mesh 越界由 render_script 抛错（不许静默粗网格）。
@@ -23,13 +23,13 @@ NrTS→--nrts（默认 1000000，followUp 收口）并解析引擎日志给终�
   #154 同索引同语义）；
 - 参照 = C13 coupling_matrix_response（理想切比雪夫）。
 
-预声明门（与 coupled_bpf 完全同口径，写死不调）：
+预声明门（铁律 7，与 coupled_bpf 完全同口径，写死不调）：
   il_min_db ∈ [−3.0, −0.2]、ripple_db ≤ 4.0、rl_band_max_db ≤ −8.0、
   峰位 vs 电路 ≤ 5%、β 馈线 ±3%（MSLPort port1，50Ω 馈段）、
   无源性 |S11|max ≤ 0 / |S21|max ≤ 0 / max(|S11|²+|S21|²) ≤ 1.02、
   激励覆盖（实际步数 ≥ 激励脉冲长度）、收敛（未触 NrTS 顶或能量 ≤ EndCriteria）。
 verdict：PASS=全过；PARTIAL=无源性+激励覆盖+收敛过而五门有失；FAIL=其余
-（未收敛一律 FAIL）。--q-extrap：增「Q 外推
+（未收敛一律 FAIL）。--q-extrap（TODO c3 下一假设②，2026-09-18）：增「Q 外推
 置信门」选项——能量未达判据/无 sparams.csv 时从探针时间序列提取谐振 Q 并外推
 稳态 S（内核 scripts/c3_resonance_q_extract.py），外推稳态与截断态偏差 ≤
 Q_EXTRAP_DEV_DB_MAX(0.5dB) 且 holdout ≤ 5% 且 span ≥ 20dB（三面写死）则端口 S
@@ -44,7 +44,7 @@ _rfauto_runner/simulation.py 的同轨进程 #261）：
   python scripts/smoke_c3_filter_family.py --template combline --probe   # NrTS=10 探针
   python scripts/smoke_c3_filter_family.py --template sir_bpf --root runs/smoke_c3_refix
 证据链 <root>/<template>/{simulation.py,engine.log,sparams.csv,
-port_beta.csv,_smoke_result.json}（--root 缺省 runs/smoke_c3；合规网格复跑
+port_beta.csv,_smoke_result.json}（--root 缺省 runs/smoke_c3；rm-oe-c3 合规网格复跑
 落 runs/smoke_c3_refix，旧轮产物不覆盖）。
 """
 from __future__ import annotations
@@ -101,7 +101,7 @@ DESIGNERS = {
 }
 FEED_WIDTH_KEY = {"interdigital": "w_mm", "combline": "w_mm", "sir_bpf": "w_feed_mm"}
 
-# 预声明门（coupled_bpf 同口径）
+# 预声明门（coupled_bpf 同口径，铁律 7）
 GATE_IL_RANGE = (-3.0, -0.2)
 GATE_RIPPLE_MAX = 4.0
 GATE_RL_MAX = -8.0
@@ -112,7 +112,7 @@ GATE_POWER_SUM = 1.02
 # "before the end-criteria of -60dB"）——日志无显式判据行时按此判读
 DEFAULT_END_CRITERIA_DB = -60.0
 NRTS_DEFAULT = 1000000
-# Q 外推置信门（谐振 Q 时域提取替代端口 S 全响应收敛判据）。
+# Q 外推置信门（TODO c3 下一假设②：谐振 Q 时域提取替代端口 S 全响应收敛判据）。
 # 预声明写死，依据：
 # - dev 0.5dB = 5.7% 线性：低于既有判读粒度（ripple 门 4dB、IL 区间宽 2.8dB、
 #   RL 门在 −8dB），0.1dB 量级扰动不翻转任何既有门结论（#298 峰位 argmax 歧义带
@@ -254,7 +254,7 @@ def judge(f_ghz: np.ndarray, s11: np.ndarray, s21: np.ndarray,
 
     q_extrap（可选，缺省 None=零行为变化）：内核 Q 外推报告 → 增门
     q_extrap_confident；该门过=端口 S 已稳态可读，可替代能量收敛判据参与
-    verdict（未达 −60dB 的截断轮提前判读）。
+    verdict（未达 −60dB 的截断轮提前判读，TODO c3 下一假设②）。
     """
     s11_db = 20 * np.log10(np.abs(s11) + 1e-12)
     s21_db = 20 * np.log10(np.abs(s21) + 1e-12)
@@ -327,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--q-extrap", action="store_true",
                         help="Q 外推置信门：能量未达判据/无 sparams.csv 时，从探针时间"
                              "序列提取谐振 Q 并外推稳态 S，偏差过门则提前判读"
-                             "（阈值 Q_EXTRAP_*）")
+                             "（阈值 Q_EXTRAP_*，TODO c3 下一假设②）")
     parser.add_argument("--mesh", type=float, default=0.0,
                         help="0=合规缺省 c3_mesh_max_mm（NEAR≤缝/3）向下取整到 µm；"
                              "显式值越界由 render_script 守卫抛错")
@@ -335,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fhi", type=float, default=2.75)
     parser.add_argument("--timeout", type=float, default=21600.0)
     parser.add_argument("--root", default="runs/smoke_c3",
-                        help="工作根目录（分模板子目录 <root>/<pt>；复跑用 "
+                        help="工作根目录（分模板子目录 <root>/<pt>；rm-oe-c3 复跑用 "
                              "runs/smoke_c3_refix，旧轮产物不覆盖）")
     args = parser.parse_args(argv)
 
@@ -522,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
                                    "holdout_rel_max": Q_EXTRAP_HOLDOUT_REL_MAX,
                                    "span_db_min": Q_EXTRAP_SPAN_DB_MIN},
                       "source": "coupled_bpf_smoke.py 五门 + smoke_coupled_bpf_nrts.py "
-                                "无源性/激励覆盖 + 收敛判读门（触顶未达判据=FAIL）+ "
+                                "无源性/激励覆盖 + w2e 收敛门（触顶未达判据=FAIL）+ "
                                 "Q 外推置信门（未达能量判据时 S 可读性提前判读）"},
         "design_notes": design.get("notes"),
     }

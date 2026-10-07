@@ -1,4 +1,4 @@
-"""slotline_service 单测：JSON 信封契约 + 内核透传（数值只出内核）。
+"""W2⑨ slotline_service 单测：JSON 信封契约 + 内核透传（数值只出内核，铁律 7）。
 
 口径：
 - 成功信封 ok=True，数值与 core 直调逐位相等（service 零复算）；
@@ -7,7 +7,7 @@
   slotline_synthesis 目标超可达区间同语义（D5 与 marchand 两节统一：
   ok=True + realizable=False + reason 含可达范围）；
 - 全部信封 json.dumps 可序列化（MCP/CLI 直出）。
-锚：core/slotline_transitions 模块 docstring 设计点
+锚：②③ 与 core/slotline_transitions 模块 docstring 设计点
 （w=1.0/h=1.524/εr=3.66@2.5GHz → Z0=110.92Ω/εeff=1.6462/λ'=93.462mm）。
 """
 
@@ -130,7 +130,7 @@ class TestMarchandTwoSectionSynthesis:
         json.dumps(data)
 
     def test_unrealizable_is_result_not_error(self):
-        # 常规 50→100Ω 差分：边耦合微带 L 下限实证不可达
+        # 常规 50→100Ω 差分：边耦合微带 L 下限实证不可达（③）
         data = svc.marchand_two_section_synthesis(2.5, 50.0, 100.0)
         assert data["ok"] is True
         assert data["design"]["realizable"] is False

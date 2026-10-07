@@ -1,6 +1,6 @@
 """DP-1 P2：自研 RWG/SIW 解析模基 MMT（GSM）适配器（EMSolverRegistry 通道）。
 
-定位（规格 = docs/plan_deepdive_specs_20260924.md DP-1 §3）：保真梯级中
+定位（规格 = 规格深案 DP-1 §3）：保真梯级中
 "秒级有物理"档——优化内环预筛/耦合矩阵初值/校准 GT 快速扩充。纯 numpy
 零外部进程零 license（#261 免役/#246 免标），is_available() 恒 True。
 
@@ -279,7 +279,7 @@ def _normalized_sections_echo(chain: list[Any]) -> list[dict[str, Any]]:
     return out
 
 
-# canonicalize_chain 已删除（P1 core 根治后清理，followUp 闭合）：
+# canonicalize_chain 已删除（P1 core 根治后清理，四一零 followUp 闭合）：
 # 曾为 solve_chain ``id()`` 反查 guide 表的适配器侧权宜（iris 预展开 + 值相等
 # Waveguide 归一实例）。core/rwg_mmt 现按值语义去重+按值反查（frozen dataclass
 # 值哈希，_guide_list 契约），JSON 段表逐段新造实例直连可解；iris 展开本就由

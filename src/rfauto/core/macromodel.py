@@ -1,6 +1,6 @@
-"""S 参数宏模型内核（向量拟合 + 无源性 + SPICE 导出 + FSV 保真裁判）。
+"""D13 S 参数宏模型内核（向量拟合 + 无源性 + SPICE 导出 + FSV 保真裁判）。
 
-目标是把频域 S 参数
+任务来源：续跑计划 §10.3 D13 / §10.19 第 2 条。目标是把频域 S 参数
 （Touchstone / 仿真归档）转成"电路可用宏模型"：有理极点-留数模型 + 无源性
 处理 + SPICE 子电路 + 保真判定。
 
@@ -26,7 +26,7 @@ core/synthesis.py）+ 同层 core/errors、core/fsv。不做 IO 编排、不起�
 ------------------
 1. 合成已知网络：测试用闭式 Y/Z 矩阵构造有理网络（series RLC / 串联电感 /
    电感星形四端口），原始 S 由闭式公式给出，与拟合器无共享代码路径；
-2. FSV：拟合响应 vs 原始响应交给 **core/fsv.py 内核**（IEEE 1597.1
+2. FSV：拟合响应 vs 原始响应交给 **D12 已落库的 fsv.py 内核**（IEEE 1597.1
    独立实现）给 ADM/FDM/GDM 等级，目标 GDM ≤ Good（等级下标 ≤ 2）；
 3. 无源性另设**独立于 skrf 半尺寸测试的直判**：在数据频带内密集重采样，
    直接对模型 S 矩阵做 SVD 取最大奇异值（``sigma_max_in_band``）。
@@ -66,7 +66,7 @@ skrf 自带的 ``get_rms_error`` 只作诊断旁证（本模块主口径是逐�
   2026-09-15 真机标定 .AC/wrdata 复数输出格式，见
   ``adapters/spice_netlist.py`` 模块 docstring）——
   ``adapters.spice_netlist.xval_macromodel_spice`` 渲染 .AC deck → 逐端口
-  1V 激励真跑 → wrdata 复数解析 → Y→S → FSV（fsv.py 内核）评级；Xyce 仍无
+  1V 激励真跑 → wrdata 复数解析 → Y→S → FSV（D12 内核）评级；Xyce 仍无
   二进制，维持探测钩子。``fit_macromodel`` 主链**不缺省依赖 ngspice**
   （存量测环境无该工具，#139 精神：缺工具时 best-effort 跳过，不炸主链）。
 - ``passivity_enforce`` 是 skrf 的启发式迭代，实践中可能（a）改不动带内违规，
@@ -1264,7 +1264,7 @@ def spice_subcircuit_port_info(path: str | Path, z0: Any = None) -> dict[str, An
 
 
 def compare_s_matrices(freq_hz: Any, s_reference: Any, s_test: Any) -> dict[str, Any]:
-    """S 矩阵对拍裁判：FSV 逐响应评级（同 ``fit_macromodel.fsv`` 口径）+ 误差摘要。
+    """S 矩阵对拍裁判：D12 FSV 逐响应评级（同 ``fit_macromodel.fsv`` 口径）+ 误差摘要。
 
     ``s_reference``/``s_test``：复数 ndarray ``[nf, n, n]``；返回
     ``{"fsv": {...per_response/worst_gdm_grade/gdm_at_least_good...},
@@ -1325,7 +1325,7 @@ def request_from_touchstone(path: str | Path) -> dict[str, Any]:
 # --------------------------------------------------------------------------- #
 
 def _fsv_section(freq: np.ndarray, s_orig: np.ndarray, s_model: np.ndarray, n_ports: int) -> dict[str, Any]:
-    """逐响应 dB 幅度 FSV（fsv.py 内核）-> 最差 GDM 等级与判定。"""
+    """逐响应 dB 幅度 FSV（D12 内核）-> 最差 GDM 等级与判定。"""
     per_response: dict[str, Any] = {}
     worst_idx = 0
     worst_key: str | None = None
@@ -1428,7 +1428,7 @@ def fit_macromodel(request: dict[str, Any]) -> dict[str, Any]:
     ``spice_replay``（None / 回放自检结果 / {"status": "error", ...}；仅导出
     SPICE 且未显式关闭（request["spice_replay"]=False）时执行：回放 vs 原始/
     模型的 rms_db 与 max_abs + 回放 S 矩阵；``consistent`` = 回放 vs 模型
-    max|ΔS| ≤ ``replay_consistency_tol_abs``（缺省 1e-6））/
+    max|ΔS| ≤ ``replay_consistency_tol_abs``（缺省 1e-6）/
     ``fsv``（逐响应 ADM/FDM/GDM 等级 + worst_gdm_grade + gdm_at_least_good）/
     ``ok``（最终 RMS ≤ 阈值 且 带内无源 且 SPICE 结构有效 且 FSV ≥ Good
     且（若执行了回放自检）回放 vs 模型一致）。

@@ -1,13 +1,13 @@
 """E12 像素域生成式逆设计最小闭环演示（6x6 域，零真机、纯闭式内核）。
 
-链条（stage-1 档）：
+链条（方案 §10.18 E12 stage-1 档）：
     随机伯努利 + 1-bit 局部贪心提议器（只产出拓扑）
     → core/mapes.py MAPES 闭式内核（占用→Z_L(P)→Schur 补→S）
     → 指定通带/双阻带 hinge 评判（error_db + PASS/NEAR/MISS 等级）
     → top-k 记录。
 
 诚实边界：Z_ALL 为合成 RLC 网格（stage-1 档，非真机提取）；扩散/流匹配
-提议器未实现。数值纪律：全部数字由确定性评判器产出。
+提议器未实现。铁律 7：全部数字由确定性评判器产出。
 
 用法：
     .venv\\Scripts\\python.exe scripts\\e12_inverse_demo.py

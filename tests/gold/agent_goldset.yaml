@@ -1,4 +1,4 @@
-# rfauto 工具调用层基准 gold set（阶段 2.2，TSA/FCA/pass3/Δrobust 移植）
+# rfauto 工具调用层基准 gold set（阶段 2.2，FilterForge TSA/FCA/pass3/Δrobust 移植）
 #
 # 任务层级：level1 单工具直调 / level2 多工具顺序 / level3 状态依赖（前一步
 # 产物是后一步输入）。expected.calls 为 typed 期望序列；scorer 按序匹配

@@ -1,6 +1,6 @@
 """物理先验 NN 代理（v2，纯 numpy 实现——零重依赖，接口对齐 torch 可换后端）。
 
-设计要点（代理校准设计要点 + 法动比赛实战沉淀）：
+设计要点（docs/surrogate_calibration_design.md §v2 + 法动比赛实战沉淀）：
 - 小样本（9~30 点）场景： MLP(24,24) + bagging 集成（bootstrap K 份），
   集成 std 即不确定度（MC-Dropout 的廉价替代）。
 - 物理先验 = 特征增广层（PHYSICS_AUGMENTERS 注册表）：原始参数之外补充
@@ -133,7 +133,7 @@ class NNSurrogate(SurrogateModel):
         self.bounds = {k: (float(v[0]), float(v[1]))
                        for k, v in (config.get("bounds") or {}).items()}
         self.hidden = int(config.get("hidden", 24))
-        # 默认值来自 run2 真采样超参扫（LOOCV ρ 最优组合）：
+        # 默认值来自 run2 真采样超参扫（2026-09-04，LOOCV ρ 最优组合）：
         # epochs=4000 / wd=1e-3 / n_ensemble=3；增广器在 n=9 上
         # polynomial_cross(ρ=0.52) 与 wilkinson_rf(ρ=0.47) 同档——
         # 默认保 wilkinson_rf（物理先验语义），追平性能靠样本量。

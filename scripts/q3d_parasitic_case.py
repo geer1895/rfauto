@@ -29,7 +29,7 @@ MAX_ATTEMPTS = 3
 
 
 def _kill_desktops() -> None:
-    """attempt 间清理（治理单源，#157 先查后杀，不用 taskkill /T 连坐）。
+    """attempt 间清理（df5 治理单源，#157 先查后杀，不用 taskkill /T 连坐）。
 
     委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
     活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉

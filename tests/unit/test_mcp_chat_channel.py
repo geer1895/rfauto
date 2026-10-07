@@ -1,4 +1,4 @@
-"""6j MCP 客户端通道测试（双通道可选之 mcp 路）。
+"""6j MCP 客户端通道测试（审查缺口 #17：双通道可选之 mcp 路）。
 
 in-memory 连接 get_mcp_server()，验证"对话→MCP tool call→同源结果"；
 同源语义：MCP 工具内部调与内嵌通道相同的 service 函数。

@@ -1,4 +1,4 @@
-"""mline 均匀线 HFSS 通道探针（#191）。
+"""mline 均匀线 HFSS 通道探针（WP1.2/WP2.1 锚的 HFSS 侧，#191）。
 
 分水岭实验：mline 已过 openEMS β 金标准（εeff≈2.886 @2.5GHz）。
 若 HFSS 同几何健康（匹配 + εeff 双锚达标）→ HFSS 通道健康，
@@ -6,7 +6,7 @@ wilkinson 仲裁脚本问题在模板细节；若均匀线也全反射 → 手�
 几何：均匀线 w=1.113mm 贯通 y∈[-40,40]（全均匀，总电长 80mm，
 端面即端口面），S21 相位斜率→εeff 无歧义。
 
-εeff 判读——双锚口径：
+εeff 判读——双锚口径（2026-09-12 队列3 改判据，廿八未尽①）：
   主锚 = HFSS 对 openEMS β 金标准 ±2% → PASS/FAIL。锚值 2.886 为同几何
          全波真跑单点金标准（runs/benchmark/mline_mesh_convergence.json
          收敛值族 2.8813~2.8884，#189；归因档 §二采 2.886，HFSS 实测
@@ -18,7 +18,7 @@ wilkinson 仲裁脚本问题在模板细节；若均匀线也全反射 → 手�
          出准静态有效域应显式重标定两锚，而非静默放水）。
   双锚任一超门或 |S11|min 未深于 -10dB → FAIL（如实不凑绿）。
 判据内核（常量+dual_anchor_verdict）落 core/anchor_verdict.py 单一事实源
-（engine harness 与 sweep_assert unitfix 臂同源
+（2026-09-12 WP1.2 收尾：engine harness 与 sweep_assert unitfix 臂同源
 消费，防 scripts 多副本漂移 #116 同族）；本脚本为调用侧。
 
 几何一律预计算浮点 + 显式单位（#218）：波端口 sheet 数值经
@@ -58,7 +58,7 @@ PORT_X_FACTOR = -2.5
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。

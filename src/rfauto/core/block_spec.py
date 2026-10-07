@@ -1,4 +1,4 @@
-"""器件 BlockSpec 协议。
+"""E8a 器件 BlockSpec 协议（扩展方案 §E8a）。
 
 BlockSpec：器件规格的数据模型，用于 co-sim 和链路预算。
 物理事实：无源 sNp 级联推不出有源 NF/P1dB/IP3——

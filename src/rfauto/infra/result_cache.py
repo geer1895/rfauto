@@ -9,7 +9,7 @@ import shutil
 import time
 from pathlib import Path
 
-# ── 内容寻址键成分（#106 / #158）─────────────────────────────────────────
+# ── 内容寻址键成分（§10.20 ⑨ / #106 / #158）─────────────────────────────
 #
 # 键成分**分列**存放，便于定位"为什么失效"（why_miss）。
 # #106：recipe_version（配方文档 schema 版本）与 schema_version（插件参数
@@ -135,7 +135,7 @@ class ResultCache:
         )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-    # ---- Content-addressed key (#106 / #158) ---------------------
+    # ---- Content-addressed key (§10.20 ⑨ / #106 / #158) ---------------------
 
     @staticmethod
     def canonical_json(obj: object) -> str:
@@ -307,7 +307,7 @@ class ResultCache:
         原子性（C5）：先写临时目录再改名，中途崩溃不会留下被 check 判为
         命中的半成品。model_name 写入条目 manifest 供选择性清理。
 
-        （#158）：study/seed **不参与 key**，只作为 provenance 记入
+        §10.20 ⑨（#158）：study/seed **不参与 key**，只作为 provenance 记入
         manifest——同几何不同 study 复用同一条目，lookup 据此标 cross_study。
         components 为内容寻址键的**分列成分**（compute_content_key 的输入，
         content_components 归一化后），供 diagnose_miss 给出 why_miss。
@@ -331,7 +331,7 @@ class ResultCache:
             "key": key,
             "model": model_name,
             "stored_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            # 产物来源=真跑（provenance="computed"）；命中侧改写为
+            # §10.20 ⑨：产物来源=真跑（provenance="computed"）；命中侧改写为
             # "cache"（lookup 返回值），manifest 保留原始求解 provenance。
             "provenance": PROVENANCE_COMPUTED,
             "study": study,
@@ -402,7 +402,7 @@ class ResultCache:
                 return None
         return None
 
-    # ---- Provenance / why_miss (#106 / #158) ----------------------------
+    # ---- Provenance / why_miss (§10.20 ⑨ / #158) ----------------------------
 
     @classmethod
     def _load_manifest(cls, entry: str | Path) -> dict | None:
@@ -428,7 +428,7 @@ class ResultCache:
         seed: str = "",
         components: dict[str, str] | None = None,
     ) -> dict:
-        """查询缓存并返回带 provenance 的结果（#158）。
+        """查询缓存并返回带 provenance 的结果（§10.20 ⑨ / #158）。
 
         key 由 compute_content_key 产出（**不含 study/seed**）。返回 dict：
 

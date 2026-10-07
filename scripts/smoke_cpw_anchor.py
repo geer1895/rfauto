@@ -24,7 +24,7 @@ W = synthesize_cpw_model(gap_mm=GAP, line_len_mm=L).params["w_mm"]
 eps_ref, z0_ref = _cpwg_ri(W, GAP, 0.508, 3.66)
 print(f"CPWG 综合: w={W}mm gap={GAP}mm  闭式 Z0=50Ω εeff={eps_ref:.4f}")
 
-work = Path("runs/cpw_smoke/pt4")  # pt1-3 历史证据链见 #198
+work = Path("runs/cpw_smoke/pt4")  # pt1-3 历史证据链见
 solver = OpenEMSSolver(EMSolverConfig(
     solver_type="openems", exe_path=resolve_openems_exe(),
     working_dir=str(work), freq_range_ghz=(2.25, 2.75), mesh_resolution_mm=0,

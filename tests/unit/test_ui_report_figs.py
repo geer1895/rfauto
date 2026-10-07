@@ -41,7 +41,7 @@ def _make_fig_run(tmp_path: Path, run_id: str = RUN_A) -> Path:
     (figs / "s11_curve.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 16)
     (figs / "s21_curve.svg").write_text("<svg/>", encoding="utf-8")
     (figs / "notes.txt").write_text("not an image", encoding="utf-8")
-    # 同 run 下 figs 之外的图：必须被白名单拒绝（只放 results/figs/）
+    # 同 run 下 figs 之外的图：必须被白名单拒绝（只放 results/figs）
     (run_dir / "results" / "secret.png").write_bytes(b"png")
     (run_dir / "report.md").write_text(
         "# report\n\n![S11 Curve](results/figs/s11_curve.png)\n\n"

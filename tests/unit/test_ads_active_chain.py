@@ -189,7 +189,7 @@ class TestChainRunAndCompare:
         assert cmp_res["consistent"] is False
 
     def test_frequency_ulp_mismatch_is_not_a_disagreement(self, tmp_path):
-        """真机实证钉子: ADS 数据集频率比 skrf 网格低 1 ulp 时,
+        """真机实证钉子（rm-ads-c14 ①）: ADS 数据集频率比 skrf 网格低 1 ulp 时,
         旧 searchsorted 越位一格把 0 差报成 0.0236 dB; 最近邻对齐须报 ~0。"""
         m, d = _write_match_snp(tmp_path), _write_device_snp(tmp_path)
         _, _, manual = aac.chain_manual_reference(m, d)
@@ -239,7 +239,7 @@ class TestRenderLoadpullNetlist:
         t1, t2 = out1.read_bytes(), out2.read_bytes()
         assert t1 == t2
         text = t1.decode("ascii")
-        # 真机实证语法（2026-09-18）: HB 基波/阶数带谐波索引
+        # 真机实证语法（rm-ads-c14 ②, 2026-09-18）: HB 基波/阶数带谐波索引
         assert "HB:HB1 Freq[1]=2.4 GHz Order[1]=7 StatusLevel=2" in text
         # P_1Tone 网表模型名 = Port, 功率/频率带 [1] 索引, 自带源阻抗
         assert "Port:SRC  N_IN 0 Num=1 Z=50 Ohm P[1]=dbmtow(28) Freq[1]=2.4 GHz" in text

@@ -83,7 +83,7 @@ class DiagnosisEngine:
         }
 
     def diagnose_divergence(self, config_a: Any, config_b: Any, **kwargs: Any) -> dict[str, Any]:
-        """跨引擎分歧诊断（薄委托，见模块级 diagnose_divergence）。"""
+        """G12：跨引擎分歧诊断（薄委托，见模块级 diagnose_divergence）。"""
         return diagnose_divergence(config_a, config_b, **kwargs)
 
     def _check_diagnosis_rule(
@@ -180,7 +180,7 @@ def diagnose_results(
 
 
 # ---------------------------------------------------------------------------
-# 跨引擎分歧诊断
+# G12 跨引擎分歧诊断（续跑计划 §10.7 G12 / §10.22 #19）
 # ---------------------------------------------------------------------------
 # 与既有 rules 诊断（R001-R009）正交：本段不读 rules.yaml、不调用任何 LLM。
 # 输入=两引擎配置与结果，输出=配置逐项 diff + 教训核对表 + 有序根因清单。
@@ -190,7 +190,7 @@ CONFIG_DIMENSIONS: tuple[str, ...] = ("mesh", "port", "material", "boundary")
 
 LESSON_SAME_NAME_INVERSE = "#154（同名参数跨适配器语义相反）"
 LESSON_WAVE_PORT_SIZE = "#191（波端口尺寸不符官方口径）"
-LESSON_VERIFY_MODEL_FIRST = "先验模型/先对照官方例"
+LESSON_VERIFY_MODEL_FIRST = "铁律 1c（先验模型/先对照官方例）"
 
 CAUSE_MESH_LEVEL = "mesh_level_mismatch"
 CAUSE_PORT_OFFICIAL = "port_size_official_deviation"
@@ -560,7 +560,7 @@ def _detect_dimension(
         "evidence": {f"{dim}_diff": entries},
         "actions": [
             f"逐项核对 {dim} 配置是否同源（#121：先统一单位再比较）",
-            "模型不一致时禁止进入校准（先验模型）",
+            "模型不一致时禁止进入校准（铁律 1b：先验模型）",
         ],
     }
 
@@ -581,7 +581,7 @@ def diagnose_divergence(
     config_abs_tol: float = 1e-9,
     provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """跨引擎分歧诊断（配置逐项 diff + 教训核对表 + 有序根因清单）。
+    """G12：跨引擎分歧诊断（配置逐项 diff + 教训核对表 + 有序根因清单）。
 
     参数：
         config_a / config_b: 两引擎配置 dict（含 mesh/port/material/boundary
@@ -620,7 +620,7 @@ def diagnose_divergence(
         candidates.append(mesh_cand)
     material_cand = _detect_dimension(
         config_diff, "material", CAUSE_MATERIAL,
-        "两引擎材料参数不一致", "材料口径（#121 单位归一 + 先验模型）", 1.3)
+        "两引擎材料参数不一致", "材料铁律（#121 单位归一 + 1b 先验模型）", 1.3)
     if material_cand:
         candidates.append(material_cand)
     boundary_cand = _detect_dimension(
@@ -645,7 +645,7 @@ def diagnose_divergence(
                 for e in results_diff.get("entries", [])),
             "evidence": {"result_diff": results_diff.get("entries", [])},
             "actions": [
-                "结果超容差但无已知配置指纹：先人工审计建模，勿直接调参",
+                "结果超容差但无已知配置指纹：先人工审计建模（铁律 1c），勿直接调参",
             ],
         })
 
@@ -657,10 +657,10 @@ def diagnose_divergence(
             "lesson_ref": LESSON_VERIFY_MODEL_FIRST,
             "severity": "info",
             "score": 0.3,
-            "detail": "配置分歧未命中 #154/#191 已知签名，先做建模审计",
+            "detail": "配置分歧未命中 #154/#191 已知签名，按铁律 1c 先做建模审计",
             "evidence": {"differing_dimensions": config_diff["differing"]},
             "actions": [
-                "先验模型再校准：逐行审计渲染脚本/几何拓扑/端口约定/单位",
+                "先验模型再校准：逐行审计渲染脚本/几何拓扑/端口约定/单位（铁律 1b/1c）",
                 "对照 docs/rf_template_references.md 官方例口径，确认模型正确后再比较差异",
             ],
         })

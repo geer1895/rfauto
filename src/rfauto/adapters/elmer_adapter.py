@@ -1,20 +1,21 @@
-"""Elmer 开源多物理求解器适配器（开源免 license 热/结构回退）。
+"""Elmer 开源多物理求解器适配器 —— A4 / WP4.4d（开源免 license 热/结构回退）。
 
-定位：
+定位（docs/续跑计划.md §10.1 A4 / §4 WP4.4d）：
 - **开源免 license 的热/结构回退通道**，兼作第三方**交叉验证器**（与 COMSOL ht /
   Icepak 对拍）；
 - 本项只落地**最小热传导案例：1-D 均匀热源平板**，验收口径 =
   「闭式温度分布 ≤1%」（D3-2 开源兜底案例），不虚报结构/HFSS 级能力。
 
-VectorHelmholtz 择一结论（收口冻结，结论记于此不再反复）：**开源 FEM 高频 EM 通道 = A9 NGSolve；Elmer 定位 =
+VectorHelmholtz 择一结论（WP4.4d 收口，2026-09-15；方案 §10.18-§10.23 冻结，
+结论记于此不改方案）：**开源 FEM 高频 EM 通道 = A9 NGSolve；Elmer 定位 =
 D3-2 开源热兜底 + 对 COMSOL ht/Icepak 的交叉验证器；Elmer
 VectorHelmholtz/结构求解不实现**。理由：
-1. 立项口径本就写明「与 NGSolve 比较后择一
+1. 方案 A4 行（续跑计划 §A4）本就写明「与 A9 NGSolve 比较后择一
    作开源 FEM 通道，避免两套」（能力口径当时标假设待证）；
-2. NGSolve 已真机确证（PEC 立方腔 vs 闭式 0.31%、适配器真机 1e-7 量级）
-   且已导入即注册（ngsolve_adapter）；Elmer 高频链
-   至今未检索实证（假设未消），且其高频波端口/S 参数提取需自定义
-   边界 + 后处理、无现成去嵌；
+2. A9 NGSolve 已真机确证（PEC 立方腔 vs 闭式 0.31%、适配器真机 1e-7 量级）
+   且已导入即注册（ngsolve_adapter），波导模端口由队列续做；Elmer 高频链
+   至今未检索实证（方案标假设未消），且其高频波端口/S 参数提取需自定义
+   边界 + 后处理、无现成去嵌（plan-review v3 评审结论）；
 3. 热通道与 EM 通道能力面正交：Elmer 补位的是「免 license 热/结构」，
    与 NGSolve 补位的「免 license 频域 EM」不重叠，择二反而各司其职、
    不构成能力重复建设。
@@ -421,7 +422,7 @@ class ElmerAdapter(EMSolverAdapter):
 
     用法：
         cfg = EMSolverConfig(solver_type=EMSolverType.ELMER,
-                             exe_path=..., working_dir="runs/elmer_case")
+                             exe_path=..., working_dir="runs/a4_elmer")
         solver = ElmerAdapter(cfg); solver.connect()
         solver.build_geometry({"thickness_mm": 100.0, ...})
         result = solver.solve()

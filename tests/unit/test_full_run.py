@@ -89,8 +89,7 @@ class TestFullRunFake:
     def test_run_once_generates_figs_and_report(self, tmp_path, monkeypatch, wilkinson_recipe):
         """P0 验收防再犯：run_once 全链路必须产出 S 参数图 + report.md。
 
-        回归背景：审计发现 run 目录只有 s2p/metrics.json、没有 figs（与
-        "出 S 参数图"的预期记录不符）。根因是 run_once 未调用 generate_report。
+        回归背景：P0 审计发现 run 目录只有 s2p/metrics.json、没有 figs。根因是 run_once 未调用 generate_report。
         """
         from rfauto.service.api import run_once
 

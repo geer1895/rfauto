@@ -1,6 +1,6 @@
 """A8 MAPES stage-2 定向单元测试（确定性、离线、零真机依赖）。
 
-覆盖文件面：
+覆盖任务书文件面：
 1. ``core/mapes.s_to_z``：与 :func:`z_to_s` 往返一致性（stage-2 装配入口
    的代数正确性）+ 单口解析锚；
 2. ``core/mapes.z_all_quality``：互易/无源/条件数诊断对合成好/坏矩阵的

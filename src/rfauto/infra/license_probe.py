@@ -1,4 +1,4 @@
-"""License-aware 队列。
+"""License-aware 队列（扩展方案 方向 1 工程必要条件）。
 
 探测 license server 可用性；不可用时调用方应挂起（等待重试）而非失败——
 真机 HFSS 求解 40 分钟成本，一次探测失败不应烧掉整个多保真管线。
@@ -83,7 +83,7 @@ def wait_for_license(
     poll_s: float = DEFAULT_POLL_S,
     timeout_s: float = DEFAULT_PROBE_TIMEOUT_S,
 ) -> dict:
-    """等待 license 可用；挂起重试而非立即失败（license-aware 队列）。
+    """等待 license 可用；挂起重试而非立即失败（方向 1 license-aware 队列）。
 
     Returns: {"available": bool, "waited_s": float, "probes": int, ...probe fields}
     """

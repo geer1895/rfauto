@@ -1,11 +1,11 @@
-"""nf2ff 远场确定性内核（openEMS 原生）。
+"""nf2ff 远场确定性内核（WP4.1 / §10.4 D4，openEMS 原生）。
 
-职责（数值只在确定性内核；本模块 = 纯 numpy 叶子，无业务依赖）：
+职责（铁律 7：数值只在确定性内核；本模块 = 纯 numpy 叶子，无业务依赖）：
 - 从 openEMS nf2ff 产物（模板脚本落盘的 farfield_cut.csv / farfield3d.csv /
   farfield_meta.json）计算方向图（dB 归一）、按角/峰值方向性（directivity）、
   增益（gain）、辐射效率（efficiency）、半功率波瓣宽度（HPBW）、前后比
   （F/B）与功率守恒闭合；
-- 文献口径（Balanis《Antenna Theory》表 4.1 / §4.4）：
+- 文献口径（Balanis《Antenna Theory》表 4.1 / §4.4，D4 验收列"文献口径"）：
   * 无耗半波偶极子 D0 = 1.642（2.15 dBi）、HPBW ≈ 78°；
   * 无方向性归一：D(θ,φ) = 4π·U(θ,φ)/Prad，U = r²·P_rad；
   * 效率 η = Prad / P_acc（P_acc = 端口接受功率），G = η·D；
@@ -112,14 +112,14 @@ def power_budget_closure(
 
 # ─── PEC 地镜像修正（openEMS CreateNF2FFBox 单镜像面 Prad 双计）────────────
 #
-# 根因（2026-09-16 离线判读，源码+数据双证）：
+# 根因（2026-09-16 W2⑥a 离线判读，源码+数据双证）：
 # * openEMS.pyx CreateNF2FFBox：PEC 边界侧 → 该面 directions=False 且
 #   mirror=1；nf2ff_calc.cpp AddPlane 在"单一镜像面开启"时对**每个**积分面
 #   追加一次镜像面积分（AddMirrorPlane→AddSinglePlane），m_radPower 逐面累加；
 #   nf2ff.cpp Write2HDF5 写出的 Prad = m_radPower = 真实 5 面 + 镜像 5 面
 #   通量之和 = **2×物理辐射功率**；Dmax = 4π·U_max/m_radPower = 常规
 #   D0（Balanis：Prad 取实际辐射的上半球）的 **½（−3.01 dB）**。
-# * 真机复核（归档 farfield_3d.h5）：下/上半球图积分比
+# * 真机复核（runs/patch_field_smoke/fdtd/farfield_3d.h5）：下/上半球图积分比
 #   1.0000、逐点镜像误差 5.7e-7——下半球是纯镜像、非物理。
 # 修正口径：盒底 z_start==0（贴 PEC 地）→ Prad/2、Dmax×2、η/2、增益与闭合重算。
 # 六面全包（dipole/slot/loop，z_start<0）不受影响（dipole η=0.990 闭合 1%）。
@@ -154,7 +154,7 @@ def correct_pec_mirror(meta: dict[str, Any]) -> dict[str, Any]:
     指标原值）。数值链：Prad/k → η=Prad/P_acc → Dmax×k → G=Dmax+10lg η →
     闭合=|P_acc−Prad|/P_acc（无 SAR 面时即"未被远场捕获的损耗占比"）。
 
-    幂等：meta 已带 pec_mirror_factor（渲染脚本 ff_calc_block
+    幂等（2026-09-18 w2e）：meta 已带 pec_mirror_factor（渲染脚本 ff_calc_block
     在产出源按同一公式修正过，raw 已留痕）→ 原样直通，不二次折半；服务层
     （nf2ff_service/ui_service）对同一 meta 再调用本函数因此安全。
     """

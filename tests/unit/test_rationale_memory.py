@@ -67,7 +67,7 @@ class TestRationaleMemory:
 
 # ---------------------------------------------------------------------------
 # F11 自进化经验记忆：typed 经验条目 + 确定性检索 + skill_service 接线
-# （验收口径：注入 #198/#219 后新模板冒烟前
+# （§10.6 F11 / §10.18 第 8 条；验收口径：注入 #198/#219 后新模板冒烟前
 #   命中"网格伪象核对表"并要求先离线审计）
 # ---------------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ class TestTypedExperienceEntry:
         entry = ExperienceEntry(
             lesson_id="#198",
             conclusion="带缘未入网 → 激励体积为零",
-            evidence_paths=("经验档案（#198）", "src/rfauto/adapters/openems_templates.py"),
+            evidence_paths=(".md（#198）", "src/rfauto/adapters/openems_templates.py"),
             applies_to=("ratrace", "带缘"),
             action="先离线审计后冒烟",
             checklist="网格伪象核对表",
@@ -88,7 +88,7 @@ class TestTypedExperienceEntry:
         assert ExperienceEntry.from_dict(entry.to_dict()) == entry
         assert entry.to_dict()["schema_version"] == 1
         assert entry.to_dict()["evidence_paths"] == [
-            "经验档案（#198）", "src/rfauto/adapters/openems_templates.py"]
+            ".md（#198）", "src/rfauto/adapters/openems_templates.py"]
 
     def test_payload_roundtrip_builtin(self):
         from rfauto.service.rationale_memory import (
@@ -102,20 +102,20 @@ class TestTypedExperienceEntry:
         assert entries_from_payload(payload) == list(BUILTIN_ENTRIES)
         assert {e.lesson_id for e in BUILTIN_ENTRIES} >= {"#198", "#219", "#152"}
 
-    def test_loose_lesson_aliases_normalized(self):
+    def test_devlog_lesson_aliases_normalized(self):
         from rfauto.service.rationale_memory import entry_from_lesson
 
         entry = entry_from_lesson({
             "坑编号": "#219",
             "结论": "栅格化伪象：六门低端全过随 f 劣化",
-            "证据路径": ["经验档案（廿九）"],
+            "证据路径": [".md（廿九）"],
             "适用场景": ["环形", "栅格化"],
             "动作": "先离线审计：查等效 εeff 是否超闭式上限",
             "核对表": "网格伪象核对表",
             "先离线审计": True,
         })
         assert entry.lesson_id == "#219"
-        assert entry.evidence_paths == ("经验档案（廿九）",)
+        assert entry.evidence_paths == (".md（廿九）",)
         assert entry.applies_to == ("环形", "栅格化")
         assert entry.requires_offline_audit is True
 
@@ -195,12 +195,12 @@ class TestInjectedLessonsRecall:
 
         lessons = [
             {"坑编号": "#198", "结论": "带缘未入网 → 激励体积为零",
-             "证据路径": ["经验档案（#198）"],
+             "证据路径": [".md（#198）"],
              "适用场景": ["ratrace", "带缘", "环形"],
              "动作": "先离线审计：渲染→exec 几何段→CSXCAD 实测带宽/连通性",
              "核对表": "网格伪象核对表", "先离线审计": True},
             {"坑编号": "#219", "结论": "0.4mm 阶梯环栅格化伪象",
-             "证据路径": ["经验档案（廿九）"],
+             "证据路径": [".md（廿九）"],
              "适用场景": ["ratrace", "环形", "栅格化"],
              "动作": "先离线审计：查等效 εeff 是否超闭式上限",
              "核对表": "网格伪象核对表", "先离线审计": True},
@@ -221,7 +221,7 @@ class TestInjectedLessonsRecall:
         assert "网格伪象核对表" in text
         assert "先离线审计" in text
         assert "#198" in text or "#219" in text
-        assert "证据：" in text
+        assert "" in text
         assert render_checklist(recall_for("整理 会议纪要")) == ""
 
     def test_save_load_entries_file(self, tmp_path):

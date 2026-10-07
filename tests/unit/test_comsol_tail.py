@@ -1,6 +1,6 @@
-"""COMSOL 收尾特性单测：mock/闭式级。
+"""队列4 COMSOL 尾巴（廿七）未尽②-⑤）单测：mock/闭式级。
 
-零 COMSOL/license/JVM 依赖；真机断言不进单测（真机证据归档不入库）。
+零 COMSOL/license/JVM 依赖；真机断言不进单测（证据 runs/comsol_tail）。
 A1: r3_services 显式 import comsol_adapter（注册副作用不依赖调用方）；
 A2: configs/solvers.yaml comsol 条目可读；
 A3: scripts/comsol_probe.py 正式探针 #217 口径（6.3 钉扎 + ElectromagneticWaves）；
@@ -153,7 +153,7 @@ class TestA1ExplicitImport:
         from rfauto.service import r3_services
 
         src = inspect.getsource(r3_services)
-        # 注册副作用 import 不得只靠调用方先 import 包
+        # （廿七）未尽②：注册副作用 import 不得只靠调用方先 import 包
         assert "comsol_adapter" in src
 
     def test_list_registered_solvers_reports_comsol(self):

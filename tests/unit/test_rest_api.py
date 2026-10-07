@@ -287,7 +287,7 @@ _EXP_PARAMS = {"l_mm": 40.0, "w_mm": 50.0}
 
 
 class TestCalculatorsExperimentalPassthrough:
-    """REST 壳层 experimental 标签 + allow_experimental 三态透传。"""
+    """w1a-shell-front：REST 壳层 experimental 标签 + allow_experimental 三态透传。"""
 
     @pytest.fixture(autouse=True)
     def _no_env_switch(self, monkeypatch):

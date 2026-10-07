@@ -1,4 +1,4 @@
-"""版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳（服务层薄壳）。
+"""B2/B5 版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳。
 
 CLI/MCP 若要暴露版图互操作，直接消费本模块的 *_payload 函数；
 数值与几何全部来自确定性内核（adapters/layout_generator、
@@ -210,7 +210,7 @@ def laymap_conflicts(mapping: Mapping[Any, Any]) -> list[str]:
 
 
 def load_laymap(path: str | Path) -> dict[str, str]:
-    """读外部 laymap 层名映射文件：{GDS 层号串: 模板层名}。
+    """读外部 laymap 层名映射文件（P2⑳）：{GDS 层号串: 模板层名}。
 
     按后缀分派：``.json``（stdlib json）/ ``.yaml``、``.yml``（惰性 import yaml，
     循 service/api.py validate_recipe 惯例）。键统一 ``str(int(key))`` 归一
@@ -256,7 +256,7 @@ def import_layout_payload(
 ) -> dict[str, Any]:
     """互操作文件 → 版图载荷。
 
-    ``laymap_path``（可选）：外部 laymap 层名映射文件，语义仅 gdsii
+    ``laymap_path``（可选，P2⑳）：外部 laymap 层名映射文件，语义仅 gdsii
     （GDS 层号→模板层名，消费 adapters 层 import_gdsii 的 laymap 参数）；
     缺省 None 读回层号串名，JSON 进出契约不变、payload 不加新键。
     """

@@ -1,12 +1,12 @@
 """WP4.3 real_edt: 场路协同回归锚真机验收（ADS 2027 hpeesofsim B 档）。
 
-验收口径：branchline S 参数进 ADS 级联
+验收口径（续跑计划 §10.22 补强16）：branchline S 参数进 ADS 级联
 vs skrf 级联，FSV ≥VG。branchline .s4p 用 linkage/field_circuit_anchor 的
 闭式基准生成（离线回归同一数据形态；真机 EM 数据接入不改下游）。
-需本机 ADS 安装（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir 指定）。
+需 E:/ADS/ADS27（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir）。
 
 许可欠配时 skip 而非 fail（2026-09-13 实证：本机唯一 EEsof 许可文件
-全部 INCREMENT 签名校验失败
+E:/ads2026/ADS_2026_config/bin/agileesofd.lic 全部 INCREMENT 签名校验失败
 "Invalid license key (inconsistent authentication code)"，vendor daemon
 "No features to serve"，hpeesofsim 于 circuit set up 报
 "Linear features are not licensed ... (0 tokens)"）——许可修复后本测试
@@ -20,7 +20,7 @@ import pytest
 
 pytestmark = pytest.mark.real_edt
 
-_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027"))
+_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"E:/ADS/ADS27"))
 
 _LICENSE_MARKERS = ("not licensed", "0 tokens", "license", "licensed")
 

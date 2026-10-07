@@ -5,8 +5,8 @@
 # 在 150 轮归档上零仿真复算互易底四档并列：
 #   raw_current / raw_wave / wav+colC / wav+et(诊断) / wav+colC+et(主判)。
 #
-# 预声明门见 runs/mapes_etht_refine/criteria.md（先于任何计算写就）。
-# 主档 runs/mapes_zall_refix（evidence.json 同源，
+# 预声明门见 runs/mapes_etht_refine/criteria.md（先于任何计算写就；含
+# 2026-09-19 符号修订记录）。主档 runs/mapes_zall_refix（evidence.json 同源，
 # wav+colC 锚 0.0070773704118137 必须逐位复现 rel≤1e-9）；副档 runs/mapes_s4
 # （原始 port_ut/port_it 零仿真重导，复刻 scripts/mapes_s2_zall.py
 # read_rounds_ui 口径），门相对其自身 wav+colC 评估，仅作稳健性并列。

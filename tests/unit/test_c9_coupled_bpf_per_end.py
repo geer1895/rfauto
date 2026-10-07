@@ -1,6 +1,6 @@
 """C9：coupled_bpf 中谐振器逐端 Δl 二阶残差闭合（2026-09-21 复核批）。
 
-登记语境（0-P2 余项③，已落地面）：
+登记语境（TODO 0-P2余项③，commit 3577d3b 已落地面）：
 各谐振器两开路端 Δl 依赖该端自身线宽（Hammerstad/Pozar eq.4.23），统一 Δl
 口径下 res2 残差 6.465µm/182ppm（r_2 声明 35.5107 vs 逐端 35.5042mm）。
 本文件钉四件事（与 test_coupled_bpf_template.py 互补，不重复其钉值面）：

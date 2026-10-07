@@ -168,7 +168,7 @@ def run_ratrace_k_bias() -> dict:
         "cross_check_json_k_scaling_F0_2p5": {
             "k_needed_0p4mm": arb["k_scaling"]["k_needed_0p4mm"],
             "k_needed_0p2mm": arb["k_scaling"]["k_needed_0p2mm"],
-            "note": "仲裁 JSON 的 k_scaling 用 F0=2.5GHz 反演；本脚本按预声明"
+            "note": "仲裁 JSON 的 k_scaling 用 F0=2.5GHz 反演；本脚本按任务书"
                     "用 HFSS 物理中心 2.465GHz，故 k 值不同（差 ~1.4%）",
         },
         "caveats": [
@@ -409,8 +409,9 @@ def main() -> int:
             "频率相关偏差：0.1⑤ E4 的 openEMS 频域曲线未归档，改用 ratrace "
             "跨引擎曲线替代；替代配对非同尺寸（k 标定差异），结论限于"
             "'偏差是否随频率变化'。",
-            "P2⑩ 口径登记：runs/koh_calibration 既有产物生成于 δ 口径翻转"
-            "之前；既有产物全部出自 KOHCalibrator 分支"
+            "P2⑩ 口径登记：runs/koh_calibration 既有产物（mtime "
+            "2026-09-12 10:36）生成于 δ 口径翻转 commit 2d68012（"
+            "2026-09-13）之前；既有产物全部出自 KOHCalibrator 分支"
             "（δ=y−ρ·η，口径未变）无需反号解读，但缺口径戳——如后续有"
             "基于 fit_discrepancy（旧 fake−real）的历史产物，其 δ 需反号"
             "解读。",

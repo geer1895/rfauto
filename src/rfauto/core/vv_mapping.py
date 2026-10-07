@@ -1,6 +1,6 @@
 """V&V 20 术语映射层 + u_num 保守上界（DP-12，纯函数，零真机零网络）。
 
-背景（docs/plan_deepdive_specs_20260924.md DP-12 §2/§4/§5；预声明判据
+背景（规格深案 DP-12 §2/§4/§5；预声明判据
 runs/df6_dp12vv/criteria.md 先于动工落盘）：现有判据门（AGREE_*/SPLIT/
 UNDECIDED/UNDECIDABLE/FAIL/PARTIAL/UNKNOWN、passivity 旁证）纪律已备但
 语言是项目黑话——对外无标准可信度表述。本模块是**唯一翻译层**：
@@ -26,7 +26,7 @@ UNDECIDED/UNDECIDABLE/FAIL/PARTIAL/UNKNOWN、passivity 旁证）纪律已备但
   （preflight_invalid）。各 criteria 的数据健全性带（如 ≤1.02 越界=数据
   坏）是另一语义，在 v2 YAML preflight 分开声明，本模块不混用。
 
-LLM/agent 永不产生物理数字（确定性内核铁律）：本模块只做确定性换算与
+LLM/agent 永不产生物理数字：本模块只做确定性换算与
 判定，全部数值来自调用方传入的证据字段（verdict.json / stage1 判读档 /
 v2 YAML 声明值）。
 

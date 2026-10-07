@@ -1,4 +1,4 @@
-"""Agent 编排。
+"""E4b Agent 编排（扩展方案 §E4b）。
 
 Gate 三层协议（ADR-0020）：
 - L1 参数白名单（params_model 校验，越界拒绝）

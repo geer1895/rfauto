@@ -1,6 +1,6 @@
-"""热-结构-电磁单向链（stage-1）。
+"""D14 stage-1 热-结构-电磁单向链（§10.3 D14 / §10.21）。
 
-口径与公式来源（来源写 docstring；裁判=独立来源，不自证）：
+口径与公式来源（铁律 5：来源写 docstring；裁判=独立来源，不自证）：
 
 - 热应变（1-D / 等温近似）：ε_th = CTE·ΔT，ΔL = L·ε_th。线弹性小应变
   热膨胀关系 ε_th = α·ΔT；来源：Incropera & DeWitt《Fundamentals of Heat
@@ -26,7 +26,7 @@ stage-1 只做**单向链**：稳态温度场（等温 / 1-D）→ 结构尺寸�
 （add_structural_properties/add_thermal_expansion/build_thermal_drift_study
 等，官方 cavity_filter_thermal_expansion.mph 实录）+ 真机脚本
 scripts/comsol_thermal_drift_3field.py；本模块提供其验收判据纯函数
-three_field_vs_oneway（三场漂移 vs 单向链漂移 ≤10%）。
+three_field_vs_oneway（三场漂移 vs 单向链漂移 ≤10%，§10.4 D14）。
 
 接口：全部函数返回 JSON 可序列化 dict（float/str/bool/None），
 单位显式（长度 mm、频率 GHz、温度 K/°C 差值、CTE/TCDk 为 ppm/K）。
@@ -39,9 +39,9 @@ import math
 C_MM_GHZ = 299.792458  # mm·GHz（真空光速，f[GHz]·λ[mm] = 该值；与 calculators 同口径）
 _PPM = 1e-6
 _MODELS = ("patch", "hairpin")
-# 单向链 vs 闭式锚的验收阈值（≤20% 漂移量）
+# 单向链 vs 闭式锚的验收阈值（§10.3 D14：≤20% 漂移量）
 ACCEPTANCE_RELATIVE_DEVIATION = 0.20
-# stage-2 三场 vs 单向链的验收阈值（COMSOL 三场 vs 单向链 ≤10%
+# stage-2 三场 vs 单向链的验收阈值（§10.4 D14 验收列：COMSOL 三场 vs 单向链 ≤10%
 # ——口径为**漂移量**（drift = f(T)/f(Tref) − 1）的相对偏差）
 STAGE2_ACCEPTANCE_RELATIVE_DEVIATION = 0.10
 
@@ -202,10 +202,10 @@ def three_field_vs_oneway(
     f0_oneway_ghz: float,
     f0_three_field_ghz: float,
 ) -> dict:
-    """stage-2 验收判据：COMSOL 三场漂移 vs stage-1 单向链漂移 ≤10%。
+    """D14 stage-2 验收判据：COMSOL 三场漂移 vs stage-1 单向链漂移 ≤10%。
 
     漂移量定义 drift = f(T)/f(Tref) − 1（无量纲，方向保号）；验收口径
-    （COMSOL 三场 vs 单向链 ≤10%）= 漂移量的相对偏差
+    （§10.4 D14 验收列「COMSOL 三场 vs 单向链 ≤10%」）= 漂移量的相对偏差
     |drift_3f − drift_oneway| / |drift_oneway|，阈值
     STAGE2_ACCEPTANCE_RELATIVE_DEVIATION = 0.10。
 
@@ -238,7 +238,7 @@ def three_field_vs_oneway(
         "acceptance_threshold": STAGE2_ACCEPTANCE_RELATIVE_DEVIATION,
         "method": "stage2_three_field_vs_stage1_oneway_drift_deviation",
         "note": ("漂移量 = f(T)/f(Tref) − 1；相对偏差分母 = 单向链漂移量"
-                 "（验收口径）；单向链零漂移时判据无定义、"
+                 "（§10.4 D14 验收列口径）；单向链零漂移时判据无定义、"
                  "如实返回 None。"),
     }
 
@@ -256,14 +256,14 @@ def thermo_mech_chain(
     line_len_mm: float | None = None,
     eps_eff: float | None = None,
 ) -> dict:
-    """stage-1 单向链主入口：ΔT + CTE/TCDk → 几何更新 → f0 漂移 + 闭式对照。
+    """D14 stage-1 单向链主入口：ΔT + CTE/TCDk → 几何更新 → f0 漂移 + 闭式对照。
 
     patch 需 patch_len_mm/patch_w_mm/h_mm/eps_r；hairpin 需
     line_len_mm/eps_eff。stage-1 假设面内尺寸按 CTE 缩放（ΔL/ΔW），
     基板厚度 h 不随面内 CTE；介电常数按 TCDk·ΔT 线性修正。返回 JSON dict，
     含 geometry（供重渲染的修改后模板几何参数）、oneway_*（单向链几何重算
     漂移）、closed_form_*（闭式锚）与 relative_deviation / within_20pct
-    （验收口径）。
+    （§10.3 D14 验收口径）。
     """
     if model not in _MODELS:
         raise ValueError(f"model 必须是 {list(_MODELS)} 之一，得到 {model!r}")

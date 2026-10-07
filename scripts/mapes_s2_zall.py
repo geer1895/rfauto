@@ -1,6 +1,6 @@
 r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍（6×6）。
 
-链路（stage-1 未尽项承接）：
+链路（stage-1 未尽项 / §10.24 A8 stage-2）：
 1. **Z_ALL 实采**：6×6 像素单层 PCB（底面地 + 基板 + 36 浮地贴片），Q=150
    端口（io×2 + pixel 36 + h/v 60 + diag 50 + via_ground 2，PixelLayout
    stage-1 槽序）。进程隔离激励轮转（#208 同款）：每端口渲染一份单激励
@@ -13,7 +13,7 @@ r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍
    结构，无虚拟口元件）×2 激励 vs 同 Z_ALL 的 Schur 闭式（MapesModel），
    首组误差数字落 report.json。
 
-规模控制（硬要求）：先跑 p1/p2 计时冒烟 → Q×单激励时长推演；
+规模控制（任务书硬要求）：先跑 p1/p2 计时冒烟 → Q×单激励时长推演；
 >4h 不启动全量（或中断后如实 PARTIAL）。轮转中途每轮打印 ETA。
 
 物理实现口径（core/mapes.pixel_board_geom docstring 详述）：贴片永远在
@@ -21,7 +21,7 @@ r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍
 在场像素=贴片-地金属化过孔，耦合槽=缝隙金属桥，与 stage-1 占用→负载
 语义逐槽对应。β/α 校准超参不在 stage-2（stage-3 #190 范式）。
 
-stage-4 增补（残模根治）：缺省产物目录改为 runs/mapes_s4
+stage-4 增补（2026-09-15，残模根治）：缺省产物目录改为 runs/mapes_s4
 （runs/mapes_s2 原档只读留存）；横向空气垫 EDGE_PAD_MM 1→6mm（PML 不再
 覆盖外圈端口——真根因，见常量注释）；``gamma`` 子命令对任一轮 fdtd/
 port_ut·port_it 时域档做零仿真逐口端接质量诊断；``--base-mm`` 细网格档、
@@ -43,7 +43,7 @@ port_ut·port_it 时域档做零仿真逐口端接质量诊断；``--base-mm`` �
         （#257：只做跨轮 Z_ui 漂移诊断——装配矩阵类先做跨轮漂移诊断，逐口/
         逐类中位·最大相对偏差 → runs/mapes_s5_diag/drift_report.json）
 
-探针装配侧根因修复（#257，core.mapes stage-5b 节）：渲染时每
+探针装配侧根因修复（2026-09-18，#257，core.mapes stage-5b 节）：渲染时每
 端口盒三轴中线全部落硬网格线（u 探针横断面中心 + i 探针激励轴中面按
 openEMS ports.py 字面口径逐位落位），并以 ``probe_box_guard`` 做终网格
 ≥2 格守卫（缺中线/半跨不足/中线贴邻线即 raise，先于任何真跑）。副作用：
@@ -90,7 +90,7 @@ from rfauto.core.mapes import (
 
 REPO = Path(__file__).resolve().parents[1]
 # 缺省产物根目录 = runs/mapes_s4（stage-4 质量版）；stage-2 原档 runs/mapes_s2
-# 只读留存（原始 Z_ALL 与 150 轮时域档零覆盖，硬要求）。可用 --out-dir 覆盖。
+# 只读留存（原始 Z_ALL 与 150 轮时域档零覆盖，任务书硬要求）。可用 --out-dir 覆盖。
 OUT_DIR = REPO / "runs" / "mapes_s4"
 FREQ_RANGE_GHZ = (1.0, 6.0)
 N_FREQ_POINTS = 41
@@ -105,12 +105,12 @@ BASE_M = 0.6e-3
 ROUND_TIMEOUT_S = 5400
 BUDGET_S = 4.0 * 3600.0
 # 横向空气垫（贴片阵四侧到域界的距离，mm）。stage-2 首版 1.0mm 的实测后果
-# （stage-4 逐口 Z_ui 离线复算，runs/mapes_s2/rounds/p1）：
+# （2026-09-15 stage-4 逐口 Z_ui 离线复算，runs/mapes_s2/rounds/p1）：
 # PML_8 在 0.6mm 平滑网格下厚 ~4.8mm，1mm 垫意味着**最外圈贴片及其全部
 # 端口（io/via/外圈 pixel/h/v 口）整体落在 PML 区内**——内圈 4×4 全部
 # 端口端接实测 |Z|≈50Ω 完美、外圈全部 600~1400Ω 失效；同时外圈 PML 掠射
-# 反射囚禁横向高 Q 模（-18.5dB 能量 plateau 的真根因，猜测后经实证）。
-# 6mm 垫 > PML 4.8mm + 1.2mm 余量：任何端口/金属不再进 PML。
+# 反射囚禁横向高 Q 模（-18.5dB 能量 plateau 的真根因，TODO 0k① 猜测升级
+# 实证）。6mm 垫 > PML 4.8mm + 1.2mm 余量：任何端口/金属不再进 PML。
 EDGE_PAD_MM = 6.0
 # FDTD 步数上限：6×6 实测场能在脉冲结束后恒定在峰值 −18.5dB 附近的高 Q
 # 数值残模上（衰减 0.01dB/千步量级，10 万步与 3 万步残差同阶）——加长
@@ -123,9 +123,9 @@ _SCRIPT_HEADER = """#!/usr/env/python3
 import csv
 import os
 
-# CSXCAD/openEMS 扩展模块依赖 DLL 不在 Python 3.8+ PATH 搜索里（审计实测）。
-# 目录可用 RFAUTO_OPENEMS_BIN 覆盖。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
+# CSXCAD/openEMS 扩展模块依赖 DLL 不在 Python 3.8+ PATH 搜索里（house 口径，
+# 2026-09-03 审计实测）。目录可用 RFAUTO_OPENEMS_BIN 覆盖。
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"E:\\openEMS\\install\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
@@ -247,7 +247,7 @@ def _pattern_defs() -> dict[str, np.ndarray]:
 def bleed_boxes(geom: PixelBoardGeom) -> list[tuple[float, float, float, float]]:
     """每贴片一个 10kΩ 直流泄放电阻的落位（x0,y0,x1,y1，贴片局部 → 全局）。
 
-    动机（p1 verbose 实测）：LumpedPort 的 R 元件 caps=True
+    动机（2026-09-13 p1 verbose 实测）：LumpedPort 的 R 元件 caps=True
     （openEMS.ports 硬编码）串电容隔断直流，高斯激励经端口注入的净电荷
     困在浮地贴片阵上，场能恒定在峰值 −18.6dB 永不衰减（数值静电模）。
     每贴片并联 10kΩ（|Z|≫50Ω，RF 近开路，负载语义不变；τ=R·C≈2ns 电荷
@@ -722,8 +722,8 @@ def complex_str(v: Any) -> str:
 # --------------------------------------------------------------------------- #
 
 #: 端接合格门：非激励口 |Z_ui/Z0 + 1| ≤ 0.05（相对理想匹配负载 −Z0 的偏差，
-#: stage-4 max|Γ|≤0.05 口径在非激励口的无歧义等价量——完美匹配时
-#: uf_inc=(U+Z0·I)/2≡0，b/a 是 0/0 不可用，实测定版）
+#: stage-4 任务书口径的 max|Γ|≤0.05 在非激励口的无歧义等价量——完美匹配时
+#: uf_inc=(U+Z0·I)/2≡0，b/a 是 0/0 不可用，2026-09-15 实测定版）
 GAMMA_MATCH_TOL = 0.05
 #: 尾段能量 plateau 判读：激励口 ut 末 1/4 窗 RMS 相对峰值 ≤ −40dB 视为已衰减
 UT_TAIL_PLATEAU_DB = -40.0
@@ -1148,7 +1148,7 @@ def stage_reassemble(args: argparse.Namespace) -> int:
     print(f"[reassemble] raw u/i ready ({time.time() - t0:.0f}s) {meta}", flush=True)
 
     # #257：装配矩阵类先做跨轮漂移诊断（同端口跨轮 Z_ui 应轮不变；漂移 =
-    # 探针装配偏差直接观测量），数字随报告落盘，不设门限（数值纪律）。
+    # 探针装配偏差直接观测量），数字随报告落盘，不设门限（铁律 7）。
     drift = ui_cross_round_drift(uf_all, if_all)
     _print_drift_summary("reassemble", drift)
     _print_snr_buckets("reassemble", drift)
@@ -1157,8 +1157,8 @@ def stage_reassemble(args: argparse.Namespace) -> int:
     if args.gauge:
         g0_s, tau_s = args.gauge.split(",")
         gauge = (float(g0_s), float(tau_s))
-    # OpenBLAS 多线程在 150×150 批量 solve 上实测慢 85×（9.7s vs 0.11s），
-    # 重推导阶段限单线程；threadpoolctl 为 sklearn 传递依赖，缺则跳过
+    # OpenBLAS 多线程在 150×150 批量 solve 上实测慢 85×（9.7s vs 0.11s，
+    # 2026-09-15 本机），重推导阶段限单线程；threadpoolctl 为 sklearn 传递依赖，缺则跳过
     try:
         from threadpoolctl import threadpool_limits
     except Exception:  # pragma: no cover - 可选加速
@@ -1197,11 +1197,11 @@ def stage_reassemble(args: argparse.Namespace) -> int:
     }
     if res["log_gamma"] is not None:
         save["log_gamma"] = res["log_gamma"]
-    # S2 口径矩阵顺带落盘（此前只在分析时算出）：
+    # S2 口径矩阵顺带落盘（此前只在分析时算出，fix-mapes-sref-recal 执行项）：
     # 管线 S2_gain_cal 阶段矩阵 = S1(numerator)·diag(e^x)。
     if "S2_gain_cal" in res["stages"]:
         save["s2_gain_cal"] = res["stages"]["S2_gain_cal"]["s"]
-    # 口径纪律：S2 数值口径显式消费——verdict 记录所用量径与
+    # 0-用户口径 2026-09-19①：S2 数值口径显式消费——verdict 记录所用量径与
     # 消费矩阵；缺省 caliber="raw" 不新增任何键（报告/落盘与现状逐字节一致）。
     caliber = getattr(args, "caliber", "raw") or "raw"
     if caliber != "raw":
@@ -1297,7 +1297,7 @@ def main() -> int:
     p_re.add_argument("--no-project", action="store_true", help="跳过无源投影")
     p_re.add_argument("--caliber", default="raw",
                       choices=("raw", "wave", "s2"),
-                      help="互易判读量径：raw=current-only "
+                      help="互易判读量径（0-用户口径 2026-09-19①）：raw=current-only "
                            "原始装配（缺省，报告零新增键）/ wave=波分解 / "
                            "s2=互易势场数值口径（循环量，达标档）。非 raw 时报告增 "
                            "caliber/caliber_gate 且 npz 落盘 s_caliber_matrix；"

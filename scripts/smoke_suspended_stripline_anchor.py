@@ -1,4 +1,5 @@
-"""悬置带线锚冒烟（C9 传输线族 II）+ 预声明判读门（后续定标批更新缺省几何）。
+"""悬置带线锚冒烟（C9 传输线族 II）+ 预声明判读门（w2f-c9-refs 改写，2026-09-18；
+w2f 后续定标批更新缺省几何）。
 
 真机：50Ω 设计线 w=0.9058mm b=1.016 H_SUB=0.508 对称居中 L=40mm（SSL 闭式
 FD 重定标后的 50Ω 设计点；pt1/pt2 历史配对 #158 为旧 q 式口径 w=0.731，
@@ -11,9 +12,9 @@ FD 重定标后的 50Ω 设计点；pt1/pt2 历史配对 #158 为旧 q 式口径
     L'=Z·β/ω 比 Cohn 低 12%（粗网格有效带宽化）；引擎自洽口径 √εeff=
     Z0_air,eng/Z=71.5/50.2=1.42 → εeff≈2.03 ≈ β 口径。
   · 真值锚=core/quasistatic_fd.py 裁判（过 HJ 微带 ±0.3%/Cohn/半空间极限基准，
-    标称 εeff_FD≈2.092、Z0≈56.1Ω @w=0.731）；旧 refs 3.02 与 2.36 两份
+    标称 εeff_FD≈2.092、Z0≈56.1Ω @w=0.731）；旧 refs 3.02 与收尾批 2.36 两份
     临时 FD 撤。
-  · **SSL 闭式已重定标**（后续定标批，softmin 修正族）：旧 q 式 2.641
+  · **SSL 闭式已重定标**（w2f 后续定标批，softmin 修正族）：旧 q 式 2.641
     中段 +26% 高估撤；重定标闭式在旧标称 −0.58%、验证族 ≤1.94%（信息项，
     不设门）。
 
@@ -24,7 +25,7 @@ FD 重定标后的 50Ω 设计点；pt1/pt2 历史配对 #158 为旧 q 式口径
   G3 |ZL/Z_FD − 1| ≤ 5%（ZL 优先 port_beta.csv 的 re_zl1_ohm，缺列时由 S11@f0
      反演 ZL=50(1+S11)/(1−S11)——H1 定案：|S11| ≡ |Γ(ZL,50)|，测量面见纯线模）。
 粗网格 pt1 基线（旧标称 w=0.731）：G2 −3.6%（PARTIAL 档）、G3 −10.6%——复跑按
-按预声明做 z 网格（基板 ≥8 格）与 NEAR（≤w/6）加密，预期两者同向收敛到 FD。
+任务书做 z 网格（基板 ≥8 格）与 NEAR（≤w/6）加密，预期两者同向收敛到 FD。
 工作目录参数化（#198 教训）。证据链 runs/suspended_stripline_smoke/<pt>/。
 """
 
@@ -77,7 +78,7 @@ def zl_from_s11(s11: complex | np.ndarray, z_ref: float = 50.0) -> float:
 
 def nominal_plane_dist_m(board_m: float = BOARD_M, line_len_m: float = 40e-3) -> float:
     """模板两端口测量面名义间距（4·BOARD/3 + L/3；精确值见 port_beta.csv
-    plane_dist_m 列，新契约模板落盘）。"""
+    plane_dist_m 列，w2f 后模板落盘）。"""
     return 4.0 * board_m / 3.0 + line_len_m / 3.0
 
 
@@ -146,7 +147,7 @@ def judge_suspended_stripline(f_hz: np.ndarray, s11: np.ndarray, s21: np.ndarray
     notes = [
         "β 口径已审定（refs §11.2）：三点差分 β 与 S21 斜率/绝对相位三重自洽，"
         "探针有偏假设否证；S11 隐含 εeff 旧推理（假设引擎 L'=Cohn）撤。",
-        "SSL 闭式已 FD 重定标（softmin 修正族，后续定标批）：验证族 "
+        "SSL 闭式已 FD 重定标（softmin 修正族，w2f 后续定标批）：验证族 "
         "max|err| 1.94%（信息项，不设门）；旧 q 式 +26% 高估撤。",
     ]
     return {"verdict": verdict, "gates": checks, "numbers": numbers,
@@ -174,7 +175,7 @@ def main(argv: list[str] | None = None) -> dict:
                         help="NEAR=base/near_ratio 旋钮（0=官方 base/4；"
                              "合规复跑 10 → 0.114mm ≤ w/6）")
     parser.add_argument("--sub-cells", type=int, default=0,
-                        help="基板 z 格数旋钮（0=缺省 4；合规复跑 8）")
+                        help="基板 z 格数旋钮（0=缺省 4；合规复跑 8，w2f 建议）")
     parser.add_argument("--nrts", type=int, default=0,
                         help="FDTD NrTS 上限（0=缺省 100000；细网格 150000）")
     args = parser.parse_args(argv)
@@ -233,7 +234,7 @@ def main(argv: list[str] | None = None) -> dict:
 
 
 def _read_port_beta(work: Path) -> tuple[np.ndarray, np.ndarray | None, float]:
-    """读 port_beta.csv：兼容旧两列契约与新八列（β2/ZL/plane_dist_m）。"""
+    """读 port_beta.csv：兼容旧两列契约与 w2f 八列（β2/ZL/plane_dist_m）。"""
     with open(work / "port_beta.csv", encoding="utf-8") as fh:
         rows = list(csv.reader(fh))
     header = rows[0]

@@ -88,7 +88,7 @@ class TestMutualConsistency:
     def test_three_expression_agreement(self):
         """判据 b1：实用几何族（ρ∈[0.35,0.6]）三式互一致。
 
-        门限两级（实测标定，原文 Fig.3 各式 ±3-4% 精度口径）：
+        门限两级（2026-09-24 实测标定，原文 Fig.3 各式 ±3-4% 精度口径）：
         - 全对互差 ≤6%（实测最差 5.80% = hexagon ρ=0.6 的 wheeler-vs-
           current_sheet，Wheeler hexagon K₂=3.82 对填充率更敏感）；
         - 单项式 vs 电流片（原文最准的一对）≤3.5%。

@@ -34,7 +34,7 @@ def _spearman_rank_corr(x: list[float], y: list[float]) -> float:
     """Compute Spearman rank-order correlation coefficient.
 
     任一侧为常数数组时排名无信息量（scipy 返回 nan，校准后 fake 成本趋同
-    的真实场景）——按惯例返回 0.0。
+    的真实场景，2026-09-02）——按惯例返回 0.0。
     """
     import numpy as _np
     from scipy import stats
@@ -272,7 +272,7 @@ def cross_fidelity_experiment(
 ) -> dict:
     """Cross-fidelity ranking experiment: same params, two independently-evaluated models.
 
-    缺口 #4 修复：原 P0 是同一 study/同一 adapter 自比较——Phase 1 排名是
+    审查缺口 #4 修复：原 P0 是同一 study/同一 adapter 自比较——Phase 1 排名是
     最终排名的子集，Spearman/top-5 按构造 ≈1.0，硬门槛永不 FAIL（gate 架空）。
     本实验对同一组参数分别用 low/high 两个保真度求值，再算排序一致性：
     - high != low（如 openems/hfss）：真实跨保真 gate；
@@ -314,11 +314,9 @@ def cross_fidelity_experiment(
 
         workdir = base_out / f"ems_{idx}"
         workdir.mkdir(parents=True, exist_ok=True)
-        from rfauto.adapters.em_solver_base import resolve_openems_exe
-
         cfg = EMSolverConfig(
             solver_type="openems",
-            exe_path=os.environ.get("RFAUTO_OPENEMS_EXE", resolve_openems_exe()),
+            exe_path=os.environ.get("RFAUTO_OPENEMS_EXE", r"E:\openEMS\install\bin\openEMS.exe"),
             working_dir=str(workdir),
             freq_range_ghz=tuple(recipe_data["setup"]["freq_range_ghz"]),
             mesh_resolution_mm=float(os.environ.get("RFAUTO_OPENEMS_MESH", "0.5")),
@@ -500,7 +498,7 @@ def main():
     else:
         print("  Edge sampling returned no valid results")
 
-    # 5. Cross-fidelity gate（缺口 #4：同模型自比较不再是有效证据）
+    # 5. Cross-fidelity gate（审查缺口 #4：同模型自比较不再是有效证据）
     print("\n=== Phase 5: Cross-Fidelity Ranking Gate ===")
     cross = cross_fidelity_experiment(
         args.recipe, args.cross_samples, args.seed,

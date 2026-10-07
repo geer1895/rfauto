@@ -345,7 +345,7 @@ class TestHonestDeclarations:
         """Palace 适配器仅解析 port-S.csv（官方 Driven 结果文件），无 Touchstone
         写出 → 能力位如实 False。
 
-        C-LOW ③：supported_output_formats() 的 6g 遗留 touchstone 声明
+        df5 C-LOW ③：supported_output_formats() 的 6g 遗留 touchstone 声明
         已按实际实现修正为 ["csv"]（消费者 r3_services output_formats 透出
         面），声明 vs 产物两口径现已一致。
         """

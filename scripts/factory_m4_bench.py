@@ -1,6 +1,6 @@
-"""M4·代理寻优（查库存）vs HFSS 基线墙钟账。
+"""数据工厂 M4·代理寻优（查库存）vs HFSS 基线墙钟账（G2 门）。
 
-判据/口径全部预声明 runs/datafactory_m4/criteria.md（写死再跑）。
+判据/口径全部预声明 runs/datafactory_m4/criteria.md（写死再跑，2026-09-20）。
 链路：M1 库存（120 点 parquet，只读）→ smt_kriging GP 训练（墙钟实测）→
 run_surrogate_loop 代理寻优（evaluate_fn=GP 查询，环内零现算零真跑，
 max_real=25 对齐 wp39 预算）→ 验证点选择（环最优 + GP 预测最深优先，
@@ -87,7 +87,7 @@ BUDGET_WALL_S = 90 * 60.0
 BUDGET_PARTIAL_S = 90 * 60.0 * 1.5
 
 C_COLLECT_MEASURED_S = 4197.5   # M1 120 点 Σwall 实测（points_index）
-C_COLLECT_NOMINAL_S = 120 * 35.8  # 名义单点墙钟（旁注）
+C_COLLECT_NOMINAL_S = 120 * 35.8  # 任务书名义（旁注）
 
 #: #261 OE 互斥标记（本仓 openEMS=python 进程内 FDTD.Run，tasklist 守卫无效）
 OE_GUARD_MARKERS = r"_rfauto_runner|simulation\.py|factory_m1_collect"
@@ -101,14 +101,14 @@ REFINE_INDEX_PATH = ROOT / "refine_index_v2.json"
 REFINE_EVALS_ROOT = ROOT / "refine_evals_v2"
 VERDICT_V2_PATH = ROOT / "verdict_v2_refine.json"
 
-REFINE_ANCHOR_A_MM = 0.910346   # 库存最优（写死舍入值；门分母用 parquet 全精度）
+REFINE_ANCHOR_A_MM = 0.910346   # 库存最优（任务书写死舍入值；门分母用 parquet 全精度）
 REFINE_ANCHOR_B_MM = 0.905512   # 环最优（run1 v1 已实测 −48.3801，不重跑）
 REFINE_OFFSETS_A_UM = (0.5, 1.0, 1.5, 2.0, 3.0)
 REFINE_OFFSETS_B_UM = (1.0, 2.0)
 REFINE_DEDUP_UM = 1.0           # 贪心去重阈（恰 1.0µm 距保留）
 REFINE_MAX_POINTS = 10          # 帽：9 谷芯点 + 1 锚复现 ra
 REFINE_ANCHOR_REPRO_W_MM = 0.910346  # ra：库存最优复跑（诊断，不进门不替代分母）
-REFINE_GATE_FACTOR = 0.95       # 门阈 = 库存最优 × 0.95（预声明直比形式）
+REFINE_GATE_FACTOR = 0.95       # 门阈 = 库存最优 × 0.95（任务书预声明直比形式）
 
 BUDGET_WALL_S_V2 = 40 * 60.0
 BUDGET_PARTIAL_S_V2 = 40 * 60.0 * 1.5
@@ -263,7 +263,7 @@ def refine_best_of(
 def refine_threshold_db(
     stock_best_db: float, factor: float = REFINE_GATE_FACTOR
 ) -> float:
-    """cost 门 v2 阈值：库存最优 × 0.95（单次舍入，预声明主形式）。"""
+    """cost 门 v2 阈值：库存最优 × 0.95（单次舍入，任务书预声明主形式）。"""
     return float(stock_best_db) * float(factor)
 
 
@@ -1102,7 +1102,7 @@ def build_verdict_v2(offline: dict[str, Any], index: dict[str, Any]) -> int:
     threshold = refine_threshold_db(sb_v)
     best = refine_best_of(index)
     gate = m4_cost(None if best is None else best[1], sb_v, DEG_GATE_PCT)
-    # 门主判=预声明直比（refine_best ≤ 库存×0.95，单次舍入）；
+    # 门主判=任务书预声明直比（refine_best ≤ 库存×0.95，单次舍入）；
     # 劣化百分比仍由 wp39 内核产出并列报告（阈值恰点浮点差 ~1e-14 见
     # refine_gate_pass docstring；criteria_v2 预声明）。
     gate_pass = refine_gate_pass(None if best is None else best[1], threshold)
@@ -1472,7 +1472,7 @@ def _selftest() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="M4 代理寻优 vs HFSS 基线墙钟账（criteria 预声明判据）")
+        description="数据工厂 M4 代理寻优 vs HFSS 基线墙钟账（criteria 预声明判据）")
     ap.add_argument("--selftest", action="store_true",
                     help="纯函数面+合成 GP 冒烟（零真机）")
     ap.add_argument("--offline", action="store_true",

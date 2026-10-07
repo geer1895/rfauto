@@ -1,6 +1,6 @@
 """DP-9 P3：c3_fullcurve_runner stage 真跑段 DAG 包装单测（tmp run_dir 零真机）。
 
-判据（规格 §5，全合成零真机零网络；已落接口 core.compose.dag_schema/
+判据（任务书 §5，全合成零真机零网络；已落接口 core.compose.dag_schema/
 infra.dag_cache/pipeline.dag_runner 只消费不改）：
 ① 缺省路径零变化：同参数缺省路径 vs DAG 路径（mock 发射）plan.json stage1
    声明块关键段一致（declared_utc 除外，_payload_equal 口径）+ 缺省路径零
@@ -164,7 +164,7 @@ def test_build_stage_dag_plan_structure_and_parse():
 
 
 def test_openems_registration_ts_nonempty_in_repo():
-    """handoff §四：registration_commit_ts 对 openems_templates.py 实测非空。"""
+    """任务书 §四：registration_commit_ts 对 openems_templates.py 实测非空。"""
     if not (REPO / ".git").exists():
         pytest.skip("非 git 工作区")
     ts = runner.openems_registration_ts()

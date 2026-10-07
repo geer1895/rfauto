@@ -6,11 +6,11 @@
 ③ None/NaN 诚实性：任一输入缺失 → 对应门 FAIL + reason 写明「不可判」
    （#122 不凑绿）；
 ④ 门常量钉值：改门=显式重标定决策，须同步本文件与 golden 快照；
-⑤ msl_cpw 无源上界（20260915b 增补）：|S21| 带内 max ≤1.02 上侧门
+⑤ msl_cpw 无源上界（20260915b，F1② 审查）：|S21| 带内 max ≤1.02 上侧门
    与 mean ≥0.90 下侧门共同折入 thru_ok；首轮真跑归档（mean 1.0296 /
    带内 max 1.290）在旧纯下侧门 PASS、现门如实 FAIL；带内 max 缺失
    （旧四参调用）→ 不可判 FAIL 而非静默过门；
-⑥ via 无源上界（20260918a 增补）：与 msl_cpw 完全同构
+⑥ via 无源上界（20260918a，round2 R2-A-01 审查）：与 msl_cpw 完全同构
    （双侧门=均值下界+峰值上界共折 thru_ok，passive_ok 诊断键）；合成
    max|S21|>1.02 负控制 → verdict FAIL 且 passive_ok=False；归档 pt3
    （带内 max 0.9503 离线复算）现门零翻转；带内 max 缺失（旧五参调用）
@@ -26,7 +26,7 @@ import pytest
 from rfauto.core import anchor_benchmark as ab
 from rfauto.core.anchor_verdict import S11_HEALTH_DB
 
-# 归档真值（离线复算，与 smoke 归档日志逐值一致）
+# 归档真值（本会话 scratch 复算，与 smoke 日志/逐值一致）
 RATRACE_PT9 = dict(delta_eps_pct=0.89, s21_db=-3.11, s41_db=-3.27,
                    s31_db=-24.32, s24_db=-23.81, s11_db=-26.57,
                    recip_lin=0.0017)
@@ -179,7 +179,7 @@ class TestAttenVerdict:
         assert r["atten_dev_db"] == pytest.approx(dev, abs=1e-9)
 
     def test_old_minus20_gate_would_have_failed_pi(self):
-        # 旧 -20 门（校准前）对 pt2 -12.77dB 判 FAIL；
+        # 旧 -20 门（§3 校准前）对 pt2 -12.77dB 判 FAIL；
         # 现门 -12 商用 lumped 地板 PASS——内核只认现门，旧判定归 provenance
         assert ATTEN_PI_PT2["s11_db_band_max"] > -20.0
         assert ab.atten_benchmark_verdict(**ATTEN_PI_PT2)["match_ok"] is True
@@ -274,7 +274,7 @@ class TestViaVerdict:
         assert "无 S22 列" in r["reason"]
 
 
-# ─── via 无源上界（20260918a 增补） ─────────────────────────────────────
+# ─── via 无源上界（20260918a，R2-A-01 审查增补） ─────────────────────────────
 
 class TestViaPassiveUpperBound:
     """|S21| 带内 max ≤ VIA_S21_MAX_LIN 上侧门：与 msl_cpw 20260915b 同构。
@@ -404,7 +404,7 @@ class TestMslCpwVerdict:
         assert r["reason"].count("不可判") == 5   # 五门（含无源上界）
 
 
-# ─── msl_cpw 无源上界（20260915b 增补） ──────────────────────────────────
+# ─── msl_cpw 无源上界（20260915b，F1② 审查增补） ────────────────────────────
 
 class TestMslCpwPassiveUpperBound:
     """|S21| 带内 max ≤ CPW_S21_MAX_LIN 上侧门：无源二端口逐频 |S21|≤1 硬约束。

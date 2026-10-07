@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """H3 方法学论文图脚本：从 runs/ 既有 JSON 出图到 runs/release_staging/paper/figs/。
 
-数值纪律：图中一切数字 100% 出自 runs/ 既有 JSON 的原值（零算术改写、
+铁律 7 口径：图中一切数字 100% 出自 runs/ 既有 JSON 的原值（零算术改写、
 零新数字）；本脚本不产生任何物理量。离线（matplotlib Agg，无网络）。
 产物：3 张 PNG + manifest.json（每图数据来源文件+SHA256，可溯）。
 

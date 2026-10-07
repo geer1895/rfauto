@@ -1,4 +1,4 @@
-"""PDF 报告导出测试（FSV 验收 / 编排成本 / 叙述位 + 数值可溯）。
+"""WP4.7 PDF 报告导出测试（D12 FSV / G14 成本 / F9 叙述位 + 数值可溯）。
 
 全部确定性：只落盘到 tmp_path，不触网、不碰真机、不引入新依赖（pypdf 为 dev extra）。
 """
@@ -16,7 +16,7 @@ def _extract(pdf_path):
 
 
 def _fsv_payload():
-    """FSV 位：模拟 core/fsv.py 的评级结果（数值均为传入值，测试不新造）。"""
+    """D12 位：模拟 core/fsv.py 的评级结果（数值均为传入值，测试不新造）。"""
     return {
         "gdm_grade": "Very Good",
         "gdm_grade_level": 2,
@@ -29,7 +29,7 @@ def _fsv_payload():
 
 
 def _cost_rollup():
-    """编排成本位：模拟 pipeline/quota_guard.py CostLedger.rollup() 表。"""
+    """G14 位：模拟 pipeline/quota_guard.py CostLedger.rollup() 表。"""
     totals = {
         "total_tokens": 424242.0,
         "solve_hours": 1.25,
@@ -67,7 +67,7 @@ class TestPdfExport:
 
         path = export_report_pdf(tmp_path, {"m": 1.0}, fsv=_fsv_payload())
         text, _ = _extract(path)
-        assert "FSV Validation" in text
+        assert "D12 FSV Validation" in text
         assert "gdm_grade: Very Good" in text
         assert "gdm_mean: 0.1357" in text
         assert "adm_grade: Good" in text
@@ -78,7 +78,7 @@ class TestPdfExport:
 
         path = export_report_pdf(tmp_path, {"m": 1.0}, cost_rollup=_cost_rollup())
         text, _ = _extract(path)
-        assert "Orchestration Cost" in text
+        assert "G14 Orchestration Cost" in text
         assert "batch-001" in text
         assert "total_tokens" in text
         assert "424242.0" in text

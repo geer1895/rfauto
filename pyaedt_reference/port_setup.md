@@ -121,7 +121,7 @@ hfss.assign_radiation_boundary_to_faces(top_face)
 | length of port lines must be greater than zero | 积分线起点=终点 | 检查坐标，确保两点不同 |
 | List of coordinates is not set correctly | 积分线格式错误 | 用 [[x1,y1,z1], [x2,y2,z2]] 格式 |
 
-## 真机验证补充（Wilkinson 功分器全链路实测）
+## P1-D5 真机验证补充（2026-08-29，Wilkinson 功分器全链路实测）
 
 ### ⚠ 模式 1（trace 端面 + is_microstrip）在本项目场景失效
 

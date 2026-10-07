@@ -154,7 +154,8 @@ class TestGeometrySpec:
         assert len(spec["ports"]) == 3
 
     def test_coupled_line_spec_matches_script_topology(self):
-        # 防回归：geometry_spec 与 render_script 必须描述同一拓扑（曾出现 coupled_line 缺 geometry_spec 分支、UI 3D 回落画成 patch）
+        # 防回归：geometry_spec 与 render_script 必须描述同一拓扑（审查缺口 #9：
+        # 曾出现 coupled_line 缺 geometry_spec 分支、UI 3D 回落画成 patch）
         spec = geometry_spec("coupled_line", {"coupled_len_mm": 20.0, "line_w_mm": 1.0, "gap_mm": 0.5})
         assert spec["template"] == "coupled_line"
         names = [b["name"] for b in spec["boxes"]]

@@ -1,4 +1,4 @@
-"""hfss_c4_arbitration 判读纯函数合成回收单测。
+"""hfss_c4_arbitration 判读纯函数合成回收单测（rm-hfss-c4-arbitration）。
 
 预声明门（三方对账 ±0.5dB 判向）与 #310 薄片连通审计必须在合成数据上回收：
 - three_way_verdict 四分支（openems 侧/judge 侧/双远/打平）；

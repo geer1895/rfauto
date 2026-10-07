@@ -1,4 +1,4 @@
-"""TemplateSpec：一个模板的声明式全集。
+"""E2 TemplateSpec（WP2.0 接口先行）：一个模板的声明式全集。
 
 目标（方案 §3 E2）：新模板 = 一个 spec 条目，不改注册代码。把散在
 adapters（openEMS 渲染器/fake 解析模型）、core（synthesis/physics_roles）、
@@ -28,7 +28,7 @@ class TemplateSpec:
     - meta: TEMPLATE_META 条目（max_time_ns/mesh_resolution_mm/extraction/
       n_ports/n_segments/param_semantics…，见 adapters.openems_templates 公约）
     - synthesizer: (**kwargs) -> ModelSynthesisResult——core/synthesis 综合
-      入口，产物含 recipe_draft（线宽/长度精算走 skrf HJ）
+      入口，产物含 recipe_draft（线宽/长度精算走 skrf HJ，铁律 1c）
     - render_script: (params, freq_range_ghz, mesh_resolution_mm=0.0) -> CSX
       文本（openEMS 通道；None=暂无）
     - fake_model: fake 解析模型底层函数（adapters/fake_adapter）

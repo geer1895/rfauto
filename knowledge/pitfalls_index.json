@@ -1,0 +1,824 @@
+{
+  "schema_version": "rfauto-pitfalls-index-v1",
+  "description": "坑账结构化索引 v1（ge8e X6 席，宏图弱点#3「坑账 300+ 纯文本」最小闭环）——从 项目规则 踩坑速查节抽取本会话逐行实读可验证的子集；宁少而真，不虚构未读条目。",
+  "generated_by": "ge8e X6 席（KD-坑账 v1）",
+  "generated_date": "2026-10-04",
+  "id_scheme": "#N[#M...]=坑号（按 项目规则 原文照录，逗号/连号组=同条多坑）；A<行号>=该条无坑号时的 项目规则 行锚合成 id（前缀 A = 合成，非 坑号）。",
+  "source": {
+    "file": "项目规则",
+    "section": "踩坑速查（详见 ）",
+    "lines": "97-1073",
+    "note": "编号勘误：#103/#119/#150/#240/#244/#256/#260 为合订前账期编号，现行 /TODO 已无对应条目——溯源以教训内容为口径，勿按号检索；本索引照录原文编号，不代勘误。"
+  },
+  "category_vocab": [
+    "shell",
+    "encoding",
+    "docs",
+    "python",
+    "testing",
+    "numerics",
+    "process",
+    "hfss",
+    "openems",
+    "kicad",
+    "comsol",
+    "elmer",
+    "git",
+    "workflow"
+  ],
+  "n_entries": 66,
+  "entries": [
+    {
+      "id": "A104",
+      "title": "代理环境网络断流自愈",
+      "category": "shell",
+      "lesson_one_line": "vcpkg/GitHub 经代理断流用重试循环自愈；大文件可手动断点下载（哈希对上即被复用）。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 104,
+        "line_end": 105
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A106",
+      "title": "确定性测试清环境变量要清全前缀",
+      "category": "testing",
+      "lesson_one_line": "确定性测试要清空同名前缀的整个环境变量集合，不是只清自己 set 的那一个。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 147,
+        "line_end": 147
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A107",
+      "title": "文档引用的配置文件必须真实存在",
+      "category": "docs",
+      "lesson_one_line": "文档串引用的配置文件必须真实存在——要么实现要么删话。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 107,
+        "line_end": 107
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#89",
+      "title": "PowerShell 读写文本必须显式 UTF8",
+      "category": "encoding",
+      "lesson_one_line": "PowerShell 改文本文件必须显式 -Encoding UTF8（读写两端都要），否则中文静默变乱码且纯代码照常运行——改完抽查中文内容。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 149,
+        "line_end": 150
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#90/#92",
+      "title": "数据解释逻辑放服务层",
+      "category": "python",
+      "lesson_one_line": "前端数据解释逻辑（YAML/CSV 解析）放服务层，前端只渲染；删代码后核对入口调用仍在。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 151,
+        "line_end": 152
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#96",
+      "title": "cmd 惯语带进 git-bash 生成垃圾文件",
+      "category": "shell",
+      "lesson_one_line": "cmd 惯语（> nul、del \"$null\"）带进 git-bash 会生成实体垃圾文件；bash 用 /dev/null，操作后 git status 抽查根目录。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 153,
+        "line_end": 154
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#97",
+      "title": "文档统计数字必须代码实测",
+      "category": "docs",
+      "lesson_one_line": "文档里的统计数字（测试数/CLI 数/MCP 数）必须代码实测（grep 装饰器），不沿用上一份文档；文档与代码改动同 commit。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 155,
+        "line_end": 156
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#98",
+      "title": "移动文档用 git mv 并修活引用",
+      "category": "docs",
+      "lesson_one_line": "移动文档用 git mv，移动后全仓 grep 旧路径修活引用；根目录只放当前有效文件，历史进 docs/history/。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 157,
+        "line_end": 158
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#102",
+      "title": "edit 工具对三引号 old_string 不可靠",
+      "category": "python",
+      "lesson_one_line": "edit 工具对含三引号的 old_string 不可靠（抛 TypeError），大块重构直接用 write 完整替换文件。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 159,
+        "line_end": 160
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#103",
+      "title": "write 工具在缓存目录下可能 EISDIR",
+      "category": "python",
+      "lesson_one_line": "write 工具在有 __pycache__/.pytest_cache 的目录下可能 EISDIR，改用 pwsh Base64+File.WriteAllText 绕过（勘误注记：合订前账期编号，溯源以内容为口径）。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 161,
+        "line_end": 162
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#104",
+      "title": "新文件先 ruff check 再提交",
+      "category": "python",
+      "lesson_one_line": "新文件写完先 ruff check 再提交；import 组间空行是 I001 高频触发点。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 163,
+        "line_end": 163
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#105",
+      "title": "观测性代码必须 best-effort",
+      "category": "process",
+      "lesson_one_line": "观测性代码（provenance/日志/审计）必须 best-effort，不得成为业务主路径的故障点——宁可 unknown 也不能阻塞真机求解。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 164,
+        "line_end": 165
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#106",
+      "title": "recipe_version 与 schema_version 语义不同",
+      "category": "python",
+      "lesson_one_line": "recipe_version（配方 schema 版本）与 schema_version（插件参数版本）语义不同，混淆会导致缓存失效策略错误。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 166,
+        "line_end": 167
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#108",
+      "title": "大块 append 先验证目标函数存在",
+      "category": "python",
+      "lesson_one_line": "大块代码 append 超 50 行后先 grep 验证目标函数确实存在再提交——长 f-string 含特殊字符时 write 可能静默截断。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 127,
+        "line_end": 128
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#112",
+      "title": "大 api.py 新函数拆独立模块",
+      "category": "python",
+      "lesson_one_line": "大型 api.py 的 v3 新函数拆到独立模块（v3_services.py），api.py 仅做 re-export——比反复丢失函数更安全。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 170,
+        "line_end": 171
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#113",
+      "title": "禁用 PowerShell 管道编辑含中文 Python 文件",
+      "category": "encoding",
+      "lesson_one_line": "永远不要用 PowerShell 管道编辑含中文的 Python 文件——管道编码默认 UTF-16 会把中文变 mojibake；用 edit 工具或 pwsh Base64+File.WriteAllText。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 172,
+        "line_end": 173
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#116",
+      "title": "「修了不生效」先查名字绑定",
+      "category": "python",
+      "lesson_one_line": "大文件尾部的本地同名 def 会遮蔽 re-export——治理拆分后必须删净旧副本，否则新实现是死代码。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 174,
+        "line_end": 175
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#117",
+      "title": "setdefault or 空字典陷阱",
+      "category": "python",
+      "lesson_one_line": "d.setdefault(k, {}) or {} 是游离字典陷阱：空 dict 为 falsy，or 返回脱离父容器的新 dict，写入静默丢失。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 176,
+        "line_end": 177
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#118",
+      "title": "数值裁判是收敛值+独立解析值",
+      "category": "numerics",
+      "lesson_one_line": "数值算法（估计量/拟合）的裁判是「小步长收敛数值+独立来源解析值」，不是自己的推导——推导和解析期望都可能算错。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 137,
+        "line_end": 138
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#119",
+      "title": "f-string 条件格式符运行即炸",
+      "category": "python",
+      "lesson_one_line": "f-string 条件格式符 {x:.4f if x else 'N/A'} 语法合法、运行即炸；lint 范围必须覆盖 scripts/，不留盲区（勘误注记：合订前账期编号）。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 180,
+        "line_end": 181
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#121",
+      "title": "跨适配器比较先统一单位归一",
+      "category": "numerics",
+      "lesson_one_line": "跨适配器比较数据先统一单位并显式归一——空交集会静默通过而非报错。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 182,
+        "line_end": 182
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#122",
+      "title": "如实记 FAIL/PARTIAL 不凑绿",
+      "category": "process",
+      "lesson_one_line": "校准目标冲突如实记 FAIL/PARTIAL，不凑绿；学术诚信原则优先于验收表全勾。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 183,
+        "line_end": 184
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#123",
+      "title": "Optuna enqueue_trial 返回值随版本可为 None",
+      "category": "python",
+      "lesson_one_line": "Optuna enqueue_trial 返回值随版本可能是 None：注入后回查 user_attrs 标记的 WAITING trial 号，不依赖返回值。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 185,
+        "line_end": 186
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A146",
+      "title": "反爬文档走用户配置的 MCP 工具箱",
+      "category": "docs",
+      "lesson_one_line": "官方文档被反爬拦截时用用户配置的 MCP 工具箱：web_reader 读反爬文档、web-search-prime 搜案例、zai-mcp-server 做多模态审计、zread 读热门仓库。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 146,
+        "line_end": 150
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#139",
+      "title": "外部服务分支单测必须 monkeypatch 钉通道",
+      "category": "testing",
+      "lesson_one_line": "配了 API key 后「存在配置则走外部服务」的分支会让单测真打外网（实测 22s/次、断言漂移）——此类单测必须 monkeypatch 钉住通道。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 151,
+        "line_end": 153
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#140",
+      "title": "PathLike 函数第一行先 Path() 收敛入参",
+      "category": "python",
+      "lesson_one_line": "PathLike 接口函数（守卫/路径计算）第一行先 Path() 收敛入参——注解写了 Path 不代表调用方传的是 Path。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 195,
+        "line_end": 196
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A156",
+      "title": "含密配置必须进 .gitignore",
+      "category": "process",
+      "lesson_one_line": "含 API key 的配置文件必须进 .gitignore，新增配置文件时 git status 抽查是否被跟踪。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 156,
+        "line_end": 157
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#142",
+      "title": "cmd 内联多行 python -c 静默失败",
+      "category": "shell",
+      "lesson_one_line": "cmd 里内联多行 python -c 静默失败（无输出无报错看似成功）：多行逻辑写临时 .py 跑完即删；命令链用 && 不用 ;。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 199,
+        "line_end": 200
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#146",
+      "title": "整段替换文档忘带标题=静默吞标题",
+      "category": "docs",
+      "lesson_one_line": "Edit 工具整段替换文档时 new_string 忘带章节标题=静默吞标题：文档编辑后 grep 全部标题完整性再提交。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 201,
+        "line_end": 202
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#144/#145",
+      "title": "run 真伪看 meta 字段+watchdog 竞态",
+      "category": "testing",
+      "lesson_one_line": "判别 run 真伪看 meta.json 的 adapter/study 字段；优化循环类单测必须 chdir 隔离；watchdog 超时只在 Abort 真打断求解时判废，竞态完成要接受真实结果。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 203,
+        "line_end": 206
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#143",
+      "title": "常驻旧进程占端口带旧代码",
+      "category": "process",
+      "lesson_one_line": "常驻旧进程会占端口/带旧代码：新端点 404 先想旧实例，验证用备用端口。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 207,
+        "line_end": 208
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#154",
+      "title": "同名参数跨适配器语义可能相反",
+      "category": "hfss",
+      "lesson_one_line": "recipe/HFSS/fake/openEMS 各通道消费同名几何参数，接入新适配器必须逐参数对语义（走 physics_roles）——单通道各自「看着对」跨保真就是两个器件家族。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 209,
+        "line_end": 211
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#149/#150/#155",
+      "title": "openEMS CSXCAD 绑定与 MATLAB 版 API 不同源",
+      "category": "openems",
+      "lesson_one_line": "openEMS CSXCAD Python 绑定：AddMetal 不收 priority、SetPriority 在原语不在属性、取原语用 GetAllPrimitives()；MSLPort 的 start 必须=边界侧+金属面 z——逐条对照 .pyx 源码验证。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 171,
+        "line_end": 174
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#152",
+      "title": "openEMS 网格最小间距守卫防 CFL 塌缩",
+      "category": "openems",
+      "lesson_one_line": "openEMS 网格构建末尾必须做最小间距守卫（近重合线 → CFL 时间步塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错）；端口面必须贴 PML_8 边界。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 175,
+        "line_end": 177
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#157/#158",
+      "title": "后台长任务分离进程+清进程先看命令行",
+      "category": "shell",
+      "lesson_one_line": "后台长任务（>10min）必须 Start-Process 分离进程+日志轮询；清重复进程先看命令行再动手，taskkill /T 会整树连坐；study 复用+缓存下配对实验合法、新轨迹要换 study/seed。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 219,
+        "line_end": 222
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#174",
+      "title": "辐射模板域扩时端口/馈线随域走",
+      "category": "openems",
+      "lesson_one_line": "辐射器件模板改空气隙时端口面/馈线终点必须随域走，否则馈线止于域中=开路 stub（|S11|>1 非物理）；历史失败结论只有物理定位后才可否决权威文档。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 182,
+        "line_end": 186
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#175",
+      "title": "测试书写四坑（枚举比较/宽松转型/浮点长尾/ridge）",
+      "category": "testing",
+      "lesson_one_line": "pydantic 枚举字段别用 ==字符串比较；v2 宽松模式能把 \"yes\" 强转 bool；浮点 repr 有长尾；ridge 收缩使中心预测偏差数 dB——判定边界测试用线性语料+扫描法。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 187,
+        "line_end": 191
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#176",
+      "title": "cmd shell 补充：分号与括号块",
+      "category": "shell",
+      "lesson_one_line": "cmd 里 ; 不是分隔符（会当参数传给前命令）、括号块内 echo 带逗号/括号直接语法错——多行临时脚本一律写文件再执行。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 192,
+        "line_end": 194
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#177",
+      "title": "wait-launcher 门开即射+守望进程生命周期",
+      "category": "process",
+      "lesson_one_line": "长跑遇内存/许可不足：挂周期探测的 wait-launcher 门开即射（双门降级）；守望进程随会话关闭而死，新会话先查它死前是否已发射过任务再决定重挂。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 220,
+        "line_end": 223
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#195",
+      "title": "判据统计量必须匹配响应形态",
+      "category": "numerics",
+      "lesson_one_line": "窄带谐振器件带内 max 是常数陷阱——谷深语义走显式指标名 s11_db_min；新器件族接校准前先离线小样本验证 cost 分布非退化常数。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 199,
+        "line_end": 202
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A204",
+      "title": "开源发布与跨平台 CI 批经验",
+      "category": "git",
+      "lesson_one_line": "shell cwd 会被框架重置回仓根（跨目录操作一律绝对路径+pwd 自检）；bash heredoc 超 ~10KB 静默截断（大脚本走 Write）；另有可选依赖必须声明进 extras 等 12 条。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 204,
+        "line_end": 215
+      },
+      "devlog_ref": ""
+    },
+    {
+      "id": "A216",
+      "title": "HFSS 仿真异常第一时间查官方文档（用户立规）",
+      "category": "hfss",
+      "lesson_one_line": "HFSS 同模型仿真异常几乎必然是我方建模错误——修正路径=官方文档→官方例惯例→健康判据达标后再采信。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 216,
+        "line_end": 219
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A220",
+      "title": "HFSS 结果为对齐基准（用户立规）",
+      "category": "hfss",
+      "lesson_one_line": "其他引擎/设计值向 HFSS 对齐；经 HFSS 仲裁背书的引擎经验常数可作为配方设计依据。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 220,
+        "line_end": 222
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A223",
+      "title": "子代理并发编排纪律",
+      "category": "workflow",
+      "lesson_one_line": "任务书必须显式「文件面+禁改清单」；子代理三禁（不 commit/不写账本文档/不跑全量）；共享文件命令做惰性导入；实现类并发 ≤3-4；报告「全绿」后主代理独立复跑再验收。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 223,
+        "line_end": 226
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#208",
+      "title": "openEMS 跨 Run 绑定对象销毁",
+      "category": "openems",
+      "lesson_one_line": "Run(cleanup=True) 会销毁激励属性乃至 CSX 的 C++ 对象——多端口全 S 矩阵用进程隔离单激励渲染（excite_port 参数化 ×N 子进程），禁用进程内 SetEnabled/包装器复用路线。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 251,
+        "line_end": 254
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#210/#214/#220",
+      "title": "KiCad 10 pcbnew 坑族",
+      "category": "kicad",
+      "lesson_one_line": "SaveBoard 间歇段错误真根因=ZONE::SetOutline 裸指针接管 Python 持有对象→悬空指针（一律 AppendCorner 写 zone 自有 m_Poly）；另有 ZONE_FILLER 单参 Fill 段错误、层 id 禁写死等 SWIG 归属陷阱。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 255,
+        "line_end": 258
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#212",
+      "title": "模板几何必须离线审计测试",
+      "category": "openems",
+      "lesson_one_line": "字符串存在性+compile() 抓不住画法错误（径向馈「中心线弦」盒厚=设计 1/13 且不导通）——渲染→exec 几何段→CSXCAD 实测带宽/连通性（秒级零仿真）。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 262,
+        "line_end": 265
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#215/#217",
+      "title": "COMSOL 6.3 可用/6.4 禁用+API 口径",
+      "category": "comsol",
+      "lesson_one_line": "COMSOL 开发先读官方参考文档与本地 PDF（禁凭想象写 API）；mph.start 必须显式 version=\"6.3\"（自动选最新=过期版）；RF 接口类型串是 ElectromagneticWaves，study 步 Frequency。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 266,
+        "line_end": 269
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#207",
+      "title": "裁判面选型用合成函数",
+      "category": "numerics",
+      "lesson_one_line": "优化缩减率裁判用合成函数——fake 原生模型病态不可用；目标阈值低于极值下限（无零平台）否则随机搜索有种子彩票。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 251,
+        "line_end": 253
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A254",
+      "title": "文档/工具杂项坑",
+      "category": "docs",
+      "lesson_one_line": "用 Edit 以标题行做 old_string 会吞标题；pytest -q | tail -N 吞失败明细（排查落完整输出到文件）；optuna 4.9 无 waiting_trials()（用 get_trials 差集）。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 295,
+        "line_end": 298
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#221",
+      "title": "动态工作流编排五轨批次六坑",
+      "category": "workflow",
+      "lesson_one_line": "commit 步必须「路径校验+退出码断言+暂存非空守卫+失败落 manifest」；共享文件整文件暂存会捎带后完成批次的 hunk；基线修复轮必须独立 commit；归因一律标「假设/待证」。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 258,
+        "line_end": 275
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#222",
+      "title": "方案表系统性落后于代码",
+      "category": "process",
+      "lesson_one_line": "方案增补/立项前先 grep 代码面（模块名+行数+API 名），能力存在性与统计数字同为实测项——29 处已实现能力曾被标「未开始」；登记未排期项开工前必须先查处置面。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 317,
+        "line_end": 322
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#225-#229",
+      "title": "动态工作流排空循环五坑",
+      "category": "workflow",
+      "lesson_one_line": "裁决 FAIL≠执行失败（重排会二次创建同名 actor）；子代理 filesToCommit 清单不可信（配留树清点兜底）；续跑脚本须把已完成项预置 done；验收门作用域限本项文件；运行时层故障如实记失败不烧重试。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 306,
+        "line_end": 309
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#235",
+      "title": "git porcelain 解析禁 trim-then-slice",
+      "category": "git",
+      "lesson_one_line": "status --porcelain 行格式为「两字符状态码+空格+路径」，先 trim 再 slice(3) 会把已跟踪文件修改砍成乱码永远匹配不上——保留原始行直接 slice(3)。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 334,
+        "line_end": 335
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A304",
+      "title": "antenna2 真机三坑",
+      "category": "openems",
+      "lesson_one_line": "金属针盒与 LumpedPort 同体积共存不改端口结果；无耗短路桩馈谐振器带外 Zin R≈0 是正常反应（判短路看电抗过零）；PIFA 的 L+W−Ws 谐振通式前提=角部短路板。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 328,
+        "line_end": 331
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#230",
+      "title": "并行轨合并后必须复跑全量门",
+      "category": "testing",
+      "lesson_one_line": "多轨各按「门限本项文件」跑定向门，合流后无人跑全量——跨轨契约恰是全量门才覆盖；批次合流后主代理独立复跑全量 pytest+ruff+lint 作最终验收门。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 333,
+        "line_end": 336
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#232",
+      "title": "openEMS 柱坐标不支持 MUR",
+      "category": "openems",
+      "lesson_one_line": "CoordSystem=1 下 MUR 吸收边界被引擎静默跳过并退化为 PEC（症状=z 向成 PEC 盖板腔、传输崩）——柱坐标一律用 PML_8。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 356,
+        "line_end": 357
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#233",
+      "title": "Elmer HeatSolver 不消费 Heat Source",
+      "category": "elmer",
+      "lesson_one_line": "Elmer 的 HeatSolver 忽略 SIF 里的 Heat Source 项（实测得恒温陷阱），必须用 Volumetric Heat Source；Solver 编号必须连续；网格走 Gmsh v2.2 → ElmerGrid 14 2。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 346,
+        "line_end": 349
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#234",
+      "title": "Saltelli 一阶估计量大数相减失效",
+      "category": "numerics",
+      "lesson_one_line": "S1 估计在 E[f] 远大于 std(f) 时被抵消误差吞掉——先对目标做常数居中（Sobol 指数对加性常数平移不变），居中后估计量恢复正常。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 327,
+        "line_end": 331
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#231",
+      "title": "新注册计算器必须同步注册表覆盖类测试",
+      "category": "testing",
+      "lesson_one_line": "core/calculators 用 @register_calculator 新增键后，test_calculators 的 EXPECTED 与 test_physics_invariants 的每键输入表必须同步补键——只跑定向测试绿灯、合流全量门必红。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 374,
+        "line_end": 379
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#237-#241",
+      "title": "排空四轮五坑",
+      "category": "workflow",
+      "lesson_one_line": "看板 artifact 的 items 数≠队列卡片数；共享文件项独占轮规则有插队副作用；实现 ask 失败后抢救入库的代码无人写文档；用户停止后 run 快照仍显示 running（收尾前 TaskStop 停干净）；CreateWorkflow 缓存不可跨脚本。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 363,
+        "line_end": 366
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#314-#316",
+      "title": "健康门掩码三坑",
+      "category": "numerics",
+      "lesson_one_line": "凡按对称/互易补齐的矩阵必须随矩阵给出已测掩码，判据只对两向独立已测对下结论；改公共解析器返回形状前先 grep 全仓解包点；兜底方向选「多报」不选「放过」。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 654,
+        "line_end": 663
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "#323",
+      "title": "长跑看门与整树无声消失",
+      "category": "openems",
+      "lesson_one_line": "长跑必挂周期存活探针把无声死亡窗口钉到 2 分钟内；判读输入缺失时如实重建元数据（终止信息缺失不采信）；收敛预算按实测衰减率重排，不沿用设计 Q 外推。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 650,
+        "line_end": 657
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A819",
+      "title": "登记快照过时系统性模式（升格立规）",
+      "category": "process",
+      "lesson_one_line": "任务书/TODO 登记行只作线索不作现状——登记未排期项开工前必须先 grep 处置面（代码现状+TODO 处置注记+runs/ 归档）；查实已闭合的零改动交付同样是有价值产出。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 860,
+        "line_end": 866
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A1046",
+      "title": "工具计数漂移判定先查口径",
+      "category": "process",
+      "lesson_one_line": "未锚定 grep 会把注释/docstring 里的提法计入造成假漂移——凡「计数漂移」先跑权威锚定口径（行首 ^@mcp.tool 正则）再定性。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 1070,
+        "line_end": 1073
+      },
+      "devlog_ref": null
+    },
+    {
+      "id": "A1050",
+      "title": "scipy least_squares 小量纲参数地雷",
+      "category": "numerics",
+      "lesson_one_line": "scipy 1.18.1 least_squares 入口以绝对 1e-10 距离判活跃界——SI 小量纲参数（1e-12 级）首次求值前即被强行重定位且 success=True 假绿；小量纲参数拟合一律 log10 空间参数化。",
+      "source": {
+        "file": "项目规则",
+        "line_start": 1091,
+        "line_end": 1095
+      },
+      "devlog_ref": null
+    }
+  ]
+}

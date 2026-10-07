@@ -23,10 +23,10 @@ _DEFAULT_SETTINGS: dict[str, Any] = {
     "timeout_default_s": 3600,
     "workspace_dir": ".",
     "cache_mode": "readwrite",
-    # 嵌套节（实验计算器开关）：YAML 侧为
+    # 嵌套节（W1⑨ 实验计算器开关，2026-09-16 用户口径）：YAML 侧为
     # calculators.allow_experimental；env 侧 RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL
     "calculators": {"allow_experimental": False},
-    # 嵌套节：注册表数据库路径。YAML 侧 db.path；
+    # 嵌套节（R2-D-02 合流）：注册表数据库路径。YAML 侧 db.path；
     # env 侧 RFAUTO_REGISTRY_DB 由 infra/db.default_registry_db_path 直接读
     # （优先级高于本节，同三层口径：env > YAML > 默认 runs/registry.sqlite）。
     # db.job_registry_persist（R2-D-03 ③半）：job 注册表持久化开关，
@@ -75,7 +75,7 @@ _DEFAULT_YAML = Path("configs/settings.yaml")
 # Pydantic model
 # ---------------------------------------------------------------------------
 class CalculatorsSettings(BaseModel):
-    """计算器行为设置（实验态开关）。"""
+    """计算器行为设置（W1⑨ 实验态开关）。"""
 
     allow_experimental: bool = Field(
         False,
@@ -84,7 +84,7 @@ class CalculatorsSettings(BaseModel):
 
 
 class DbSettings(BaseModel):
-    """注册表数据库设置（db 默认路径与 settings 合流）。"""
+    """注册表数据库设置（R2-D-02：db 默认路径与 settings 合流）。"""
 
     path: str = Field(
         "",
@@ -200,7 +200,7 @@ def doctor_check(settings: Settings | None = None) -> dict[str, Any]:
     if aedt and aedt.exists():
         result["aedt"]["path"] = str(aedt)
         result["aedt"]["exists"] = True
-        # 目录名 vNNN → 版本串（解析不出则缺省，doctor 侧会再探测）
+        # 项目 B：目录名 vNNN → 版本串（解析不出则缺省，doctor 侧会再探测）
         m = re.match(r"^[vV]?(\d{3,4})$", aedt.name)
         if m:
             year = 2000 + int(m.group(1)) // 10

@@ -179,6 +179,48 @@ class TestCommandRegistryCount:
         #   与分层压实薄壳零逻辑转发 lake_service）= 146
         # +1（df7wire 2026-09-26：constraints check，R4 渲染前声明式几何约束
         #   一次求解薄壳零逻辑转发 render_constraint_service）= 147
+        # +5（me17a-shell1 2026-09-26：runs stats/export-tracking + certify +
+        #   solid-import + port-gate，ME-17a 接线批第一组五件纯薄壳零逻辑转发
+        #   runs_stats/tracking_export/certify_design/solid_import_service/
+        #   port_gate_service）= 152
+        # +2（qw123 2026-09-26：si mixed（QW-1 混合模 S 参数薄壳零逻辑转发
+        #   si_channel_service.mixed_mode_metrics）+ anchors stale（QW-3 锚
+        #   新鲜度薄壳零逻辑转发 anchors_service.anchors_stale_report）= 154
+        # +3（ge-fbp2 2026-09-26：pdn analyze/select/gate，F-B P2 PI/PDN AC
+        #   阻抗域三命令薄壳零逻辑转发 pdn_service）= 157
+        # +3（ge-fcp2 2026-09-26：aging simulate/verdict/report，F-C P2 器件
+        #   老化漂移三命令薄壳零逻辑转发 aging_service）= 160
+        # +1（ge-w4 2026-09-26：lint，W4 design-lint 统一门面（聚合器不是
+        #   新判据），零逻辑转发 design_lint_service.design_lint）= 161
+        # +1（ge-code2 2026-09-26：anchors drift，QW-16 锚漂移预警薄壳
+        #   零逻辑转发 anchors_service.anchor_drift_status）= 162
+        # +4（ge-code3 2026-09-26：afs plan/sweep（M-3 AFS 自适应频扫薄壳，
+        #   sweep --synthetic 合成演示零真机）+ interop ts21-write/hfss-comments
+        #   （ME-10' 尾巴：TS 2.1 写出 + HFSS 注释块直读薄壳，零逻辑转发
+        #   interop_service）= 166
+        # +2（remote-v0 2026-09-28：remote probe/status，多机协同仿真资源
+        #   探活/状态薄壳零逻辑转发 remote_service）= 168
+        # +7（me17b-wire 2026-09-28：ME-17b 接线批后半——repro-manifest/
+        #   repro-verify（复现清单组装+校验，零逻辑转发
+        #   reproducibility_service）+ chain lna/loadpull（C14 有源链路，
+        #   零逻辑转发 active_chain_service）+ even-odd（奇偶模分解报告，
+        #   零逻辑转发 even_odd_service）+ lake sweep/export-parquet
+        #   （QW-13 只读清点+P-5 冷层 COPY，零逻辑转发 lake_service）= 175
+        # +9（t43-fab-absorb 2026-09-29：fab 子应用 go/pipeline/snapshot/
+        #   draw/audit/pack/rules/catalog/export，HFSS→可机加交付包薄壳
+        #   零逻辑转发 fab_export_service）= 184
+        # +1（AD-1 2026-10-02：bench prompt-regression，系统提示词 A/B 回归门
+        #   薄壳零逻辑转发 agent_bench.run_prompt_regression）= 185
+        # +3（PT-1/2/3 2026-10-02：stats guardband/cpk/weibull，量产三件套
+        #   薄壳域内惰性 import core/manufacturing_stats 直连）= 188
+        # +3（PT-6 2026-10-02：firmware beam/varactor/dpd，固件工件三出口
+        #   薄壳域内惰性 import core/firmware_export 直连）= 191
+        # +4（LC-2 2026-10-02：pcell list/show/eval/render，PCell DSL 孤儿
+        #   复活消费面——scattered 子应用惰性 import core/pcell_dsl 直连 +
+        #   渲染桥直产 Layout）= 195
+        # +1（AD-4 2026-10-02：bench consistency，pass^k×成本一致性评测门
+        #   薄壳零逻辑转发 agent_bench.evaluate_agentbench_consistency，
+        #   k 缺省 3 进月门）= 196
         # 口径注记（2026-09-25 df6 合流对账；2026-09-25 df7 shadow 裁定更新）：
         # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
         # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
@@ -188,7 +230,232 @@ class TestCommandRegistryCount:
         total = len(app.registered_commands)
         for info in app.registered_groups:
             total += len(info.typer_instance.registered_commands)
-        assert total == 147
+        # ge8b 收口：XC-F preflight 门面 CLI 接线（run+gates 两叶子）
+        # +2（X2 2026-10-04：profile status/run，PR-8 剖析入口 CLI 面
+        # 薄壳零逻辑转发 profile_service）= 200
+        # +21（W1 孤儿接线批 2026-10-05，规格包 VI-1：kicad gerber 1 +
+        # layout 子应用 8 + tolerance-allocate 1 + vna measure/calibrate 2 +
+        # diagnose detective 1 + hints list 1 + teaching show/index 2 +
+        # few-shot build 1 + runs monitor/retrieve-similar 2 +
+        # zenodo export/validate 2，全部零逻辑转发既有 service）= 221
+        # +6（W2 Phase 2 2026-10-05：dag run/status 2 + campaign run 1 +
+        # template-spec recommend 1 + simci-pin-baseline 1 +
+        # lake audit-stale 1，规格包 VI-4/VI-2/VI-3+SA §八）= 227
+        # +10（W3 Phase 3 2026-10-05：lake lineage 1（XD-1）+ W3-D F-10 六
+        # 服务壳 env_reliability 五子应用七叶+bench netlist-goldset 1
+        # （bench 分解 5→6），ra_criteria §一）= 237
+        # +4（W5 Phase 5 2026-10-05：goal set/status/advance/list，DS-3
+        # goal 域 CLI 面）= 241
+        # +13（W6 2026-10-06：SN-3 kickoff/close 2 + SN-17 沙箱 list/diff/
+        # promote 3 + dev new-template/new-calculator 2 + diagnose deviation 1
+        # + kicad design-from-run 1 + SN-7/8/13/14/15/6/18 旗标伴随叶 4，
+        # 合流实测口径）= 254
+        assert total == 254
+
+    def test_pcell_commands_registered(self):
+        """LC-2 pcell 子应用四命令注册面在位（PCell DSL 孤儿复活消费面）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        pcell_cmd = cmd.commands["pcell"]
+        assert set(pcell_cmd.commands) == {"list", "show", "eval", "render"}
+
+    def test_firmware_commands_registered(self):
+        """PT-6 firmware 子应用三命令注册面在位（固件工件三出口薄壳）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        fw_cmd = cmd.commands["firmware"]
+        assert set(fw_cmd.commands) == {"beam", "varactor", "dpd"}
+
+    def test_bench_prompt_regression_registered(self):
+        """AD-1 bench prompt-regression 注册面在位（bench 子应用第 4 命令）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        bench_cmd = cmd.commands["bench"]
+        assert "prompt-regression" in set(bench_cmd.commands)
+
+    def test_bench_consistency_registered(self):
+        """AD-4 bench consistency 注册面在位（bench 子应用第 5 命令）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        bench_cmd = cmd.commands["bench"]
+        assert "consistency" in set(bench_cmd.commands)
+
+    def test_afs_commands_registered(self):
+        """M-3 afs 子应用两命令注册面在位：plan/sweep（ge-code3 批）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        afs_cmd = cmd.commands["afs"]
+        assert {"plan", "sweep"} <= set(afs_cmd.commands)
+
+    def test_remote_commands_registered(self):
+        """多机协同 remote 子应用两命令注册面在位：probe/status（remote-v0）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        remote_cmd = cmd.commands["remote"]
+        assert {"probe", "status"} <= set(remote_cmd.commands)
+
+    def test_fab_commands_registered(self):
+        """T43 fab 子应用九命令注册面在位（HFSS→可机加交付包薄壳）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        fab_cmd = cmd.commands["fab"]
+        assert set(fab_cmd.commands) == {
+            "go", "pipeline", "snapshot", "draw", "audit",
+            "pack", "rules", "catalog", "export",
+        }
+
+    def test_fab_rules_catalog_smoke(self, tmp_path, monkeypatch):
+        """fab rules/catalog JSON 烟测：零配置离线可跑（T43 定向门）。"""
+        result = runner.invoke(app, ["fab", "rules"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["ok"] is True
+        assert payload["tol_classes"]["IRIS"]["plus"] == 0.02
+
+        result = runner.invoke(app, ["fab", "catalog"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert "WR-90" in payload["catalog"]["waveguides"]
+
+    def test_remote_probe_no_registry_json_smoke(self, tmp_path, monkeypatch):
+        """remote probe JSON 烟测：登记文件缺失=空表（零配置零行为变化）。"""
+        from typer.testing import CliRunner
+
+        import rfauto.service.remote_service as rsvc
+
+        monkeypatch.setattr(rsvc, "load_remote_machines", lambda: {})
+        runner = CliRunner()
+        result = runner.invoke(app, ["remote", "probe", "--json"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload == {"ok": True, "machines": []}
+
+    def test_remote_probe_with_registry_mock_channel(self, tmp_path, monkeypatch):
+        """remote probe 通道 mock（#139 零真网）：登记机器探活结构断言。"""
+        from typer.testing import CliRunner
+
+        import rfauto.service.remote_service as rsvc
+        from rfauto.infra.remote_machines import RemoteMachineConfig
+
+        cfg = RemoteMachineConfig(
+            name="sim_host", host="10.20.30.40", ssh_port=22,
+            probe_ports={"rdp": 3389},
+        )
+        monkeypatch.setattr(rsvc, "load_remote_machines",
+                            lambda: {"sim_host": cfg})
+        monkeypatch.setattr(
+            rsvc, "probe_machine",
+            lambda c: {"name": c.name, "host": c.host, "reachable": True,
+                       "ports": {"ssh": {"port": 22, "open": True,
+                                          "latency_ms": 1.0}},
+                       "probe_s": 0.01},
+        )
+        runner = CliRunner()
+        result = runner.invoke(app, ["remote", "probe", "sim_host", "--json"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        m = payload["machines"][0]
+        assert m["name"] == "sim_host" and m["reachable"] is True
+        assert m["ports"]["ssh"]["open"] is True
+
+    def test_afs_plan_json_smoke(self):
+        """afs plan JSON 进出烟测（纯计划面，不求解）。"""
+        from typer.testing import CliRunner
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["afs", "plan", "--f-min-ghz", "1.0",
+                                     "--f-max-ghz", "4.0", "--json"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["ok"] is True
+        assert len(payload["plan"]["initial_frequencies_hz"]) == 7
+        assert payload["plan"]["acceptance_criteria"]["fsv_min_grade"] == "VG"
+
+    def test_afs_sweep_synthetic_end_to_end(self):
+        """afs sweep --synthetic 端到端演示（合成多谐振函数，零真机）：
+        缩减 >= 50% 且 FSV >= VG → exit 0；坏规格 → exit 2。"""
+        from typer.testing import CliRunner
+
+        runner = CliRunner()
+        result = runner.invoke(app, [
+            "afs", "sweep", "--f-min-ghz", "1.0", "--f-max-ghz", "4.0",
+            "--synthetic", "2.4:40;3.1:60;ripple=0.02", "--json"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["ok"] is True
+        acc = payload["result"]["acceptance"]
+        assert acc["passed"] is True
+        assert payload["result"]["vs_full"]["reduction_ratio"] >= 0.5
+        bad = runner.invoke(app, [
+            "afs", "sweep", "--f-min-ghz", "1.0", "--f-max-ghz", "4.0",
+            "--synthetic", "bogus-spec", "--json"])
+        assert bad.exit_code == 2
+
+    def test_interop_commands_registered(self):
+        """ME-10' interop 子应用两命令注册面在位：ts21-write/hfss-comments。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        interop_cmd = cmd.commands["interop"]
+        assert {"ts21-write", "hfss-comments"} <= set(interop_cmd.commands)
+
+    def test_interop_hfss_comments_missing_file_exit_2(self):
+        from typer.testing import CliRunner
+
+        runner = CliRunner()
+        result = runner.invoke(
+            app, ["interop", "hfss-comments", "no_such_file.s2p", "--json"])
+        assert result.exit_code == 2
+        payload = json.loads(result.output)
+        assert payload["ok"] is False
+
+    def test_lint_registered(self):
+        """W4 design-lint 统一门面注册面在位（顶层 lint，防 shadow 已核）。"""
+        names = {cmd.name for cmd in app.registered_commands}
+        assert "lint" in names
+
+    def test_qw123_new_commands_registered(self):
+        """qw123 批新命令注册面在位：si mixed + anchors stale。"""
+        group_names = {info.name for info in app.registered_groups
+                       if info.name}
+        assert {"si", "anchors"} <= group_names
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        si_cmd = cmd.commands["si"]
+        anchors_cmd = cmd.commands["anchors"]
+        assert "mixed" in si_cmd.commands
+        assert "stale" in anchors_cmd.commands
+
+    def test_anchors_drift_registered(self):
+        """QW-16 anchors drift 子命令注册面在位（ge-code2 批）。"""
+        from typer.main import get_command
+
+        anchors_cmd = get_command(app).commands["anchors"]
+        assert "drift" in anchors_cmd.commands
+
+    def test_pdn_commands_registered(self):
+        """F-B P2 pdn 子应用三命令注册面在位：analyze/select/gate。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        pdn_cmd = cmd.commands["pdn"]
+        assert {"analyze", "select", "gate"} <= set(pdn_cmd.commands)
+
+    def test_aging_commands_registered(self):
+        """F-C P2 aging 子应用三命令注册面在位：simulate/verdict/report。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        aging_cmd = cmd.commands["aging"]
+        assert {"simulate", "verdict", "report"} <= set(aging_cmd.commands)
 
     def test_export_report_pdf_registered(self):
         names = {cmd.name for cmd in app.registered_commands}
@@ -423,9 +690,12 @@ class TestRagCommands:
         result = runner.invoke(app, [
             "rag", "query", "   ", "--docs", str(tmp_path / "docs"),
             "--scope", "docs"])
+        # F-01：_emit 缺省 json_output=True，失败路径出 JSON 信封（service
+        # errors 原样带上；fail_msg 只在信封缺 errors/error 时兜底）
         assert result.exit_code == 1
-        assert "RAG 检索失败" in result.output
-        assert "query 为空" in result.output
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert any("query 为空" in e for e in data["errors"])
 
     def test_rag_query_missing_docs_dir_fails(self, tmp_path):
         result = runner.invoke(app, [
@@ -529,6 +799,50 @@ class TestCalcExperimentalPassthrough:
         assert result.exit_code == 0, result.output
         data = json.loads(result.output)
         assert data["ok"] is True
+
+
+class TestEmitFailureJsonContract:
+    """F-01 回归钉：_emit 失败分支在 --json 下输出失败信封（成功路径同构），
+    json_output=False 保持 rich 红字。载体=bands list（service 局部导入可注入）。"""
+
+    def _invoke_bands_list(self, monkeypatch, canned, *extra):
+        import rfauto.service.bands_service as bands_mod
+
+        monkeypatch.setattr(bands_mod, "bands_list", lambda **kw: canned)
+        return runner.invoke(app, ["bands", "list", *extra])
+
+    def test_json_failure_envelope_loads_and_exits_nonzero(self, monkeypatch):
+        result = self._invoke_bands_list(
+            monkeypatch, {"ok": False, "error": "boom"}, "--json")
+        assert result.exit_code != 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert data["error"] == "boom"
+
+    def test_json_failure_carries_errors_list(self, monkeypatch):
+        result = self._invoke_bands_list(
+            monkeypatch, {"ok": False, "errors": ["e1", "e2"]}, "--json")
+        assert result.exit_code != 0, result.output
+        data = json.loads(result.output)
+        assert data["errors"] == ["e1", "e2"]
+        assert "error" not in data  # 已有键原样带上，不凭空补
+
+    def test_json_failure_without_errors_falls_back_to_fail_msg(self, monkeypatch):
+        """errors/error 都缺时 fail_msg 兜底入 errors 一元列表。"""
+        result = self._invoke_bands_list(monkeypatch, {"ok": False}, "--json")
+        assert result.exit_code != 0, result.output
+        data = json.loads(result.output)
+        assert data["errors"] == ["频段查询失败"]
+
+    def test_text_failure_keeps_rich_red(self, monkeypatch):
+        """json_output=False（无 --json）保持红字行为，输出非 JSON。"""
+        result = self._invoke_bands_list(
+            monkeypatch, {"ok": False, "error": "boom"})
+        assert result.exit_code != 0, result.output
+        assert "✗ 频段查询失败" in result.output
+        assert "- boom" in result.output
+        with pytest.raises(ValueError):
+            json.loads(result.output)
 
 
 def _seed_registry_runs(tmp_path: Path) -> None:
@@ -942,3 +1256,318 @@ class TestConstraintsCheckCommand:
         assert verdict["status"] == "sat"
         assert verdict["witness"]
         assert verdict["near_mm"] == pytest.approx(0.125)
+
+
+class TestDbLeagueReportWiring:
+    def test_league_report_kwargs_wiring(self, monkeypatch):
+        """回归钉（S-1 批）：CLI `db league-report` 必须以 template_family=
+        kwarg 调服务（曾传 family= → 调即 TypeError，现网命令损坏）。"""
+        import rfauto.service.league_service as league_mod
+
+        captured: dict = {}
+
+        def fake_league_report(**kwargs):
+            captured.update(kwargs)
+            return {"ok": True, "groups": [], "md": ""}
+
+        monkeypatch.setattr(league_mod, "league_report", fake_league_report)
+        result = runner.invoke(app, [
+            "db", "league-report", "--family", "mline",
+            "--quantity", "s21_db", "--json",
+        ])
+        assert result.exit_code == 0, result.output
+        assert captured.get("template_family") == "mline"
+        assert captured.get("quantity") == "s21_db"
+        assert "family" not in captured
+
+
+class TestME17aShellCommands:
+    """ME-17a 接线批第一组五命令（runs stats/export-tracking + certify +
+    solid-import + port-gate）：零逻辑转发 service 面，tmp 夹具全链冒烟。
+
+    造法对齐各自 service 单测（test_runs_stats / test_tracking_export /
+    test_certify_design / test_solid_import / test_port_gate_service）；
+    路径全部显式指到 tmp_path（chdir 隔离兜底，#144），不真跑服务长任务。
+    """
+
+    @staticmethod
+    def _write_json(path: Path, data: object) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    # ── runs stats ────────────────────────────────────────────────────────
+
+    def test_runs_stats_ok(self, tmp_path):
+        from rfauto.infra.run_store import record_run
+
+        db = tmp_path / "index.db"
+        record_run(db, {"run_id": "r1", "model": "mline", "adapter": "fake",
+                        "status": "done", "timestamp": "2026-09-05 01:00:00",
+                        "metrics": {"rho": 0.8}})
+        record_run(db, {"run_id": "r2", "model": "cpw", "adapter": "fake",
+                        "status": "done", "timestamp": "2026-09-05 02:00:00",
+                        "metrics": {"rho": 0.85}})
+        result = runner.invoke(app, ["runs", "stats", "--db", str(db)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True
+        assert data["total"] == 2
+        assert data["by_model"]["mline"] == 1
+
+    def test_runs_stats_missing_db_exits_nonzero(self, tmp_path):
+        result = runner.invoke(
+            app, ["runs", "stats", "--db", str(tmp_path / "nope.db")])
+        # F-01：失败信封 JSON 化，service 的 errors 原样带上
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert data["errors"]
+
+    # ── runs export-tracking ──────────────────────────────────────────────
+
+    def test_runs_export_tracking_ok(self, tmp_path):
+        rid = "20260101_000000_ab12cd34"
+        run_dir = tmp_path / "runs" / rid
+        self._write_json(run_dir / "meta.json", {
+            "run_id": rid, "model": "mline", "adapter": "fake",
+            "algorithm": "tune", "study_name": "study_x", "seed": 7,
+            "timestamp": "2026-01-01T00:00:00+00:00", "status": "done"})
+        self._write_json(run_dir / "trials" / "trial_0.json", {
+            "trial_number": 0, "params": {"w_mm": 1.0},
+            "metrics": {"s11_db_max_in_band": -10.0}, "cost": 0.1})
+        out = tmp_path / "tr"
+        result = runner.invoke(app, [
+            "runs", "export-tracking", rid,
+            "--runs-root", str(tmp_path / "runs"),
+            "--out-dir", str(out)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True
+        assert data["n_trials"] == 1
+
+    def test_runs_export_tracking_missing_run_exits_nonzero(self, tmp_path):
+        result = runner.invoke(app, [
+            "runs", "export-tracking", "no_such_run",
+            "--runs-root", str(tmp_path / "runs"),
+            "--out-dir", str(tmp_path / "tr")])
+        # F-01：失败信封 JSON 化（service 的 source_run_id/errors 原样带上）
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert data["source_run_id"] == "no_such_run"
+        assert data["errors"]
+
+    # ── certify ───────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _linear_samples(tmp_path: Path) -> Path:
+        """线性指标样本集（造法对齐 test_certify_design._linear_samples）。"""
+        bounds = {"arm_len_mm": [18.0, 23.0], "series_w_mm": [0.25, 0.45]}
+        samples = []
+        for i in range(10):
+            a = 18.0 + i * 5.0 / 9
+            s = 0.25 + (i % 3) * 0.08
+            samples.append({
+                "params": {"arm_len_mm": round(a, 6),
+                           "series_w_mm": round(s, 6)},
+                "metrics": {"s11_db_max_in_band":
+                            round(-15 + 2 * (a - 20), 6)}})
+        path = tmp_path / "samples.json"
+        TestME17aShellCommands._write_json(path, {
+            "bounds": bounds,
+            "objectives": [{"metric": "s11_db", "band": [2.3, 2.5],
+                            "op": "max_below", "value": -15}],
+            "samples": samples})
+        return path
+
+    def test_certify_ok(self, tmp_path):
+        samples = self._linear_samples(tmp_path)
+        result = runner.invoke(app, [
+            "certify", str(samples),
+            "--param", "arm_len_mm=20.0", "--param", "series_w_mm=0.33"])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True
+        assert data["verdict"] in {"CERTIFIED", "PARTIAL", "FAIL"}
+        assert data["certificates"][0]["verdict"] in {"PASS", "FAIL", "UNKNOWN"}
+
+    def test_certify_missing_samples_exits_nonzero(self, tmp_path):
+        result = runner.invoke(app, [
+            "certify", str(tmp_path / "nope.json"),
+            "--param", "arm_len_mm=20.0"])
+        # F-01：失败信封 JSON 化，service 的 errors 原样带上
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert any("样本集不存在" in e for e in data["errors"])
+
+    # ── solid-import ──────────────────────────────────────────────────────
+
+    @staticmethod
+    def _box_stl(tmp_path: Path) -> Path:
+        """12 三角轴对齐盒二进制 STL（造法对齐 test_solid_import 夹具）。"""
+        import struct
+
+        import numpy as np
+
+        lo, hi = (10.0, 4.0, 5.0), (20.0, 14.0, 15.0)
+        x0, y0, z0 = lo
+        x1, y1, z1 = hi
+        v = np.array([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+                      [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
+                     dtype=float)
+        quads = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4),
+                 (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+        tris = []
+        for a, b, c, d in quads:
+            tris.extend([[v[a], v[b], v[c]], [v[a], v[c], v[d]]])
+        t32 = np.asarray(tris, dtype=np.float32)
+        buf = bytearray(b"\0" * 80)
+        buf += struct.pack("<I", len(t32))
+        for tri in t32:
+            nrm = np.cross(tri[1] - tri[0], tri[2] - tri[0]).astype(float)
+            nrm = nrm / max(float(np.linalg.norm(nrm)), 1e-30)
+            buf += struct.pack("<12fH", *nrm,
+                               *[float(c) for vt in tri for c in vt], 0)
+        path = tmp_path / "box.stl"
+        path.write_bytes(bytes(buf))
+        return path
+
+    def test_solid_import_ok(self, tmp_path):
+        stl = self._box_stl(tmp_path)
+        result = runner.invoke(app, ["solid-import", str(stl)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True
+        assert data["solids"]
+        assert data["mesh"]["n_triangles"] == 12
+
+    def test_solid_import_missing_file_exits_nonzero(self, tmp_path):
+        result = runner.invoke(
+            app, ["solid-import", str(tmp_path / "nope.stl")])
+        # F-01：失败信封 JSON 化，service 的 error 原样带上
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["ok"] is False
+        assert "文件不存在" in data["error"]
+
+    # ── port-gate ─────────────────────────────────────────────────────────
+
+    def test_port_gate_synthetic_pass(self, tmp_path):
+        payload = {
+            "driver": "synthetic",
+            "line_width_mm": 3.0, "substrate_h_mm": 1.5,
+            "probe_freq_ghz": 2.5,
+            "physics_roles": {"w_mm": "line_width_mm"},
+            "template": "mline",
+            "z0_ohm_sequence": [49.0, 49.8, 50.0],
+            "s21_db_sequence": [-0.010, -0.008, -0.008],
+            "l_ext_mm": 1.016,
+        }
+        payload_path = tmp_path / "payload.json"
+        self._write_json(payload_path, payload)
+        result = runner.invoke(app, ["port-gate", str(payload_path)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["ok"] is True
+        assert data["verdict"] == "PASS"
+
+    def test_port_gate_unknown_driver_exits_nonzero(self, tmp_path):
+        payload_path = tmp_path / "payload.json"
+        self._write_json(payload_path, {"driver": "bogus"})
+        result = runner.invoke(app, ["port-gate", str(payload_path)])
+        assert result.exit_code == 1
+        assert "端口门检查失败" in result.output
+
+    def test_port_gate_missing_payload_file_exits_two(self, tmp_path):
+        result = runner.invoke(
+            app, ["port-gate", str(tmp_path / "nope.json")])
+        assert result.exit_code == 2
+
+
+# ─── E2-2 link --to-ads 真接线（runs/review_ge8e/f3_fix/REPORT.md）────────────
+
+def test_link_to_ads_flag_wired(monkeypatch):
+    """E2-2 回归钉：link 的 --to-ads 旗标真透传（缺省 False 不联动、
+    True 执行）——死旗标（声明未消费）回归即此红。"""
+    import rfauto.service.api as api_mod
+
+    calls: list[bool] = []
+
+    def fake_run_link(run_id, rounds=2, ads_dir=None, to_ads=True):
+        calls.append(to_ads)
+        return {"ok": True, "skipped": True, "reason": "skip-probe",
+                "snp_path": "x", "rounds_completed": 0,
+                "summary": {"results": []}}
+
+    monkeypatch.setattr(api_mod, "run_link", fake_run_link)
+    r = runner.invoke(app, ["link", "run_x"])
+    assert r.exit_code == 0, r.output
+    assert calls == [False]
+    r2 = runner.invoke(app, ["link", "run_x", "--to-ads"])
+    assert r2.exit_code == 0, r2.output
+    assert calls == [False, True]
+
+
+def test_run_link_to_ads_false_skips_ads_chain(tmp_path, monkeypatch):
+    """E2-2 服务面钉：to_ads=False 不触碰 HfssAdsLink（skipped 信封），
+    True 才实例化 ADS 链。"""
+    from rfauto.service import api as api_mod
+
+    runs = tmp_path / "runs" / "run_y" / "results"
+    runs.mkdir(parents=True)
+    (runs / "params.s2p").write_text("# mock touchstone\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    instantiated: list[int] = []
+
+    class _SpyLink:
+        def __init__(self, *a, **kw):
+            instantiated.append(1)
+
+        def run_from_snp(self, *a, **kw):
+            return {"rounds_completed": 0}
+
+    import rfauto.linkage.ads_channel as channel_mod
+    import rfauto.linkage.hfss_ads_link as link_mod
+
+    monkeypatch.setattr(link_mod, "HfssAdsLink", _SpyLink)
+    monkeypatch.setattr(channel_mod, "select_ads_channel",
+                        lambda ads_dir: {"ok": True, "channel": "b"})
+
+    out = api_mod.run_link("run_y", to_ads=False)
+    assert out["ok"] is True and out.get("skipped") is True
+    assert out.get("reason")
+    assert not instantiated
+
+    out2 = api_mod.run_link("run_y", to_ads=True)
+    assert out2["ok"] is True, out2
+    assert instantiated == [1]
+
+
+# ─── S3 F-9：array pattern tier=coupled 阶段边界壳层（exit 2）────────────────
+
+def test_array_pattern_coupled_tier_exit_two_with_message(tmp_path):
+    """F-9/S3 回归钉：tier=coupled 未注入求解器 → NotImplementedPhase 不再
+    裸穿透 traceback；壳层显式文案 + exit 2（与通用失败 exit 1 区分：
+    功能属后续阶段，非本次调用错误；exit 2 口径同 port-gate 缺文件先例）。"""
+    req = tmp_path / "req_coupled.json"
+    req.write_text(json.dumps({
+        "layout": "ula", "n_elements": 4, "spacing_lambda": 0.5,
+        "element": "isotropic", "scan_deg": 90.0, "tier": "coupled",
+    }), encoding="utf-8")
+    result = runner.invoke(app, ["array", "pattern", str(req)])
+    assert result.exit_code == 2
+    assert result.exception is None or result.exit_code == 2
+    assert "阶段未实现" in result.output
+
+
+def test_array_pattern_fast_tier_still_works(tmp_path):
+    """对照钉：快档请求照常 exit 0（壳层只拦阶段边界不吞正常路径）。"""
+    req = tmp_path / "req_fast.json"
+    req.write_text(json.dumps({
+        "layout": "ula", "n_elements": 4, "spacing_lambda": 0.5,
+        "element": "isotropic", "scan_deg": 90.0,
+    }), encoding="utf-8")
+    result = runner.invoke(app, ["array", "pattern", str(req)])
+    assert result.exit_code == 0

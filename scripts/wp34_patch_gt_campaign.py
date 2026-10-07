@@ -1,11 +1,11 @@
 r"""W1⑪a WP3.4 神经算子数据门槛解锁——patch_antenna 族 HFSS ground-truth 点补齐战役。
 
-背景（对账发现）：``neural_operator_readiness("wp24_registry_20260913")``
+背景（主代理 2026-09-16 对账）：``neural_operator_readiness("wp24_registry_20260913")``
 逐族 ground-truth 点数 patch_antenna n_gt=69（threshold=100，deficit 31）。
 GT 判定走 ``dataset_service.is_ground_truth_adapter``（adapter 含 hfss/openems/
 comsol/meas 词根且不含 fake）。本战役只补 **HFSS** 真机点。
 
-参数空间对齐（不发明数字，数值纪律）：
+参数空间对齐（不发明数字，铁律 7）：
 - 参数名 = 旧注册表 patch 族 **hfss 行** params_json 键并集（实测
   {feed_offset_mm, patch_len_mm, patch_w_mm}：run 20260831_125228_db3856cb 的
   15 行三参数 + run 20260831_003706_338afc6c 的 8 行两参数子集）；

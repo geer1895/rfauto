@@ -7,7 +7,7 @@
   .venv\\Scripts\\python.exe scripts/calibration_campaign.py \\
       --recipe recipes/wilkinson_pd_v1.yaml --mesh 0.45 --n-new 16 [--n-workers 2]
 
-内存门槛纪律：启动前查可用内存，<4GB 不开跑
+内存门槛：启动前查可用内存，<4GB 不开跑
 （0.45mm base ≈ 1M cells ≈ 1-1.5GB/求解）；n_workers>1 时每 worker
 占 1-1.5GB，按可用内存折算（2 worker 建议门槛 5.5GB）。
 """

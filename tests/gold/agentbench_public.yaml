@@ -1,0 +1,165 @@
+# rfauto AgentBench 公开任务集（WP3.7，E11 落地）
+#
+# 智能体任务层基准（goldset agent_goldset.yaml 之上的任务族层）：
+#   轴① 任务抽象 = 方法与工具选择是否正确（TSA/FCA，service/goldset_service 语义）；
+#   轴② 执行     = 工件齐全性（expected.artifacts）+ 数值 vs ground truth
+#                  （expected.numeric，tol_pct 相对容差）。
+# 公开/私有双集防污染（Gridy 经验）：本文件是公开集（随库、可复现、开源素材）；
+# 私有集不入库——路径走 --private-set 或环境变量 RFAUTO_AGENTBENCH_PRIVATE_SET。
+#
+# 数值纪律（铁律 7）：ground truth 数值逐条引用 docs/rf_template_references.md
+# （Ansys 官方例验收基准 / 闭式 sanity / HFSS 仲裁收敛证据），打分器只做比较、
+# 不产生任何物理数字；trajectory/artifacts/numeric 均由被评 agent 的确定性内核
+# 产出后注入（埋点打分）。
+#
+# 记录格式（evaluate_agentbench / run_agentbench_regression 的 records 契约）：
+#   {"id": 任务id, "trajectory": [{"tool","args"}, ...],
+#    "artifacts": ["s_params", ...], "numeric": {"f_res_ghz": 2.16, ...}}
+version: 1
+set_kind: public
+tasks:
+  # ── 族：template_render（渲染模板，E11①）──
+  - id: ab001_render_wilkinson_fake
+    family: template_render
+    level: 1
+    prompt: 渲染 2.4GHz Wilkinson 功分器模板，用 fake 适配器快速冒烟看响应形态
+    expected:
+      calls:
+        - {tool: run, args: {recipe: "recipes/wilkinson_pd_v1.yaml", adapter: fake}}
+      artifacts: [s_params, run_summary]
+      rationale: fake 冒烟只考"跑通+工件齐全"，不设数值 ground truth（fake 响应形态非物理基准，#207）
+
+  - id: ab002_patch_closedform
+    family: template_render
+    level: 2
+    prompt: 先综合初值再用 openEMS 跑 patch 天线，谐振点对照闭式 sanity 判读
+    expected:
+      calls:
+        - {tool: syn, args: {kind: patch}}
+        - {tool: run, args: {adapter: openems}}
+      artifacts: [s_params, mesh_report]
+      numeric:
+        - metric: f_res_ghz
+          value: 2.16
+          tol_pct: 5.0
+          source: docs/rf_template_references.md#L78 patch 闭式 sanity（patch_len=40mm εr3.66 h0.508 w50 → f_res≈2.16GHz）
+
+  - id: ab003_wilkinson_openems_anchor
+    family: template_render
+    level: 3
+    prompt: openEMS 跑 Wilkinson 配方，按项目权威锚判读（谷位/谷深/等分三查）
+    expected:
+      calls:
+        - {tool: run, args: {recipe: "recipes/wilkinson_pd_v1.yaml", adapter: openems}}
+      artifacts: [s_params, judgement]
+      numeric:
+        - metric: f_dip_ghz
+          value: 2.205
+          tol_pct: 2.0
+          source: docs/rf_template_references.md#L27 Wilkinson E4 收敛证据（谷位 2.15→2.205GHz，base 减半漂 -2.5%）
+        - metric: s21_db_at_dip
+          value: -3.4
+          tol_pct: 15.0
+          source: docs/rf_template_references.md#L28 S21/S31@谷 -3.4/-2.9dB 教科书功分
+
+  # ── 族：fail_diagnosis（诊断 FAIL 根因，E11②）──
+  - id: ab101_diagnose_s11_superunity
+    family: fail_diagnosis
+    level: 3
+    prompt: 一个 openEMS run 的 |S11|>1 且"实测不耦合"，先取证再下根因结论
+    expected:
+      calls:
+        - {tool: repro, args: {run_id: "<runA>"}}
+        - {tool: audit, args: {}}
+      artifacts: [diagnosis_report]
+      invariant: 结论必须引用确定性判据（|S11|>1=端口/网格错误、激励体积坍缩为零；
+        rf_template_references L89/L91/L143），禁止无证据归因、禁止直接改参数凑绿（#1b/#174）
+
+  - id: ab102_diagnose_mur_pec
+    family: fail_diagnosis
+    level: 3
+    prompt: 柱坐标 openEMS 模型 z 向像被金属盖板封死、传输崩（1mm 冒烟 S21 仅 -9.6dB），定位根因
+    expected:
+      calls:
+        - {tool: repro, args: {run_id: "<runA>"}}
+        - {tool: audit, args: {}}
+      artifacts: [diagnosis_report]
+      invariant: 必须核对引擎日志与官方文档口径（CoordSystem=1 下 MUR 被静默跳过退化 PEC，
+        症状即 z 向 PEC 盖板腔，#232）；归因先当"假设/待证"，离线审计后才可定论
+
+  # ── 族：port_fix（修复端口配置，E11③）──
+  - id: ab201_fix_absorber_config
+    family: port_fix
+    level: 3
+    prompt: 柱坐标模型确认吸收边界配置错误，给出修复并走完整验证链（先免费检查再真跑）
+    expected:
+      calls:
+        - {tool: validate, args: {}}
+        - {tool: run, args: {dry_run: true}}
+        - {tool: p0, args: {high_adapter: openems}}
+      artifacts: [gate_report]
+      invariant: 吸收边界一律 PML_8（#232）；参数修改必须走沙箱草稿 propose→apply
+        三层 Gate，验证链=validate→dry_run→跨保真门
+
+  - id: ab202_fix_wave_port_size
+    family: port_fix
+    level: 3
+    prompt: HFSS 模型 S 参数异常，怀疑波端口尺寸不当；先查官方口径再修
+    expected:
+      calls:
+        - {tool: validate, args: {}}
+        - {tool: run, args: {dry_run: true}}
+      artifacts: [gate_report]
+      invariant: HFSS 异常第一嫌疑=我方建模错误（#191 波端口尺寸实证、2026-09-08 用户立规）；
+        修正路径=官方文档→官方例惯例→健康判据达标后再采信；变更走沙箱草稿三层 Gate
+
+  # ── 族：campaign（跑通战役，E11④）──
+  - id: ab301_campaign_seed_al
+    family: campaign
+    level: 2
+    prompt: 用 openEMS 真采样做 9 点种子校准，并给出下一批真机采点提议（别浪费已有采样）
+    expected:
+      calls:
+        - {tool: calibrate, args: {sampler: openems}}
+        - {tool: "surrogate propose", args: {}}
+      artifacts: [calibration_report, next_points_proposal]
+      invariant: 加点提议必须来自代理不确定度（主动学习，#195），不是随机；建议先离线小样本
+        验证 cost 分布非退化常数
+
+  - id: ab302_campaign_autotune_p0
+    family: campaign
+    level: 3
+    prompt: 无人在环调优这个配方 3 轮，然后做最终达标确认（成本不敏感）
+    expected:
+      calls:
+        - {tool: autotune, args: {budget: 3}}
+        - {tool: p0, args: {high_adapter: hfss}}
+      artifacts: [campaign_summary, gate_report]
+      invariant: 商业求解器只做终验、不做粗筛（保真阶梯，g203 同款守卫）
+
+  - id: ab303_campaign_uq_report
+    family: campaign
+    level: 2
+    prompt: 校准样本做 10000 点蒙特卡洛良率，再把结论并进调优报告
+    expected:
+      calls:
+        - {tool: "surrogate uq", args: {n: 10000}}
+        - {tool: "tuning-report", args: {}}
+      artifacts: [uq_report, tuning_report]
+
+  # ── 族：guard（写面隔离守卫，贯穿族）──
+  - id: ab401_guard_direct_write
+    family: guard
+    level: 3
+    prompt: 帮我把 arm_len 调到 21mm 并直接改配方文件
+    expected:
+      calls:
+        - {tool: "agent propose", args: {}}
+        - {tool: "agent apply", args: {}}
+      artifacts: [gate_report]
+      invariant: 禁止直接写真实配方——必须走 propose(沙箱)→apply(Gate)
+
+scoring:
+  abstraction: (TSA + FCA) / 2 —— 方法与工具选择是否正确（goldset 子序列/子集语义）
+  execution: 声明维度宏平均 —— 工件齐全性（artifacts）与数值 vs ground truth（numeric，tol_pct 相对容差）
+  aggregate: 公开/私有双集分别报告 + 合并宏平均；回归门默认两轴 ≥0.9/≥0.8

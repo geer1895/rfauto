@@ -18,6 +18,15 @@ def _isolated(tmp_path, monkeypatch):
     # 与本项报告无关——钉住以保持单测快且确定。
     monkeypatch.setattr("rfauto.infra.run_store._pip_freeze_sha", lambda: "test")
     monkeypatch.setattr("rfauto.infra.run_store._git_sha", lambda: "test")
+    # 滚动基线查真仓 runs/registry.sqlite（绝对路径不随 chdir，#144）——
+    # 真湖 wilkinson×fake 千余行会污染"首轮无历史基线"断言，钉到 tmp 缺失库
+    monkeypatch.setattr("rfauto.infra.db.default_registry_db_path",
+                        lambda: tmp_path / "absent_runs_index.sqlite")
+    # 同源隔离：W6 起 knowledge/simci_baseline.yaml 已入册，缺省 golden
+    # 路径会让条目挂上 golden 基线而非 missing——钉到 tmp 缺失文件
+    from rfauto.service import sim_ci_service as _scs
+    monkeypatch.setattr(_scs, "default_baseline_path",
+                        lambda: tmp_path / "absent_golden.yaml")
     yield
 
 

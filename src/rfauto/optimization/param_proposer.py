@@ -4,7 +4,7 @@
 - :class:`ParamProposer` 基类统一接口 ``propose(bounds, rng, *, x_start,
   score_fn) -> 参数点 dict``；
 - :data:`PROPOSER_PARAM_REGISTRY` + :func:`register_proposer_param`：
-  基类+注册表模式（分层架构约束：新增可替换组件走基类+注册表）。形态仿
+  基类+注册表模式。形态仿
   ``core/inverse_diffusion.py`` 的 ``register_proposer``（重名/空名显式
   报错、同类幂等），但**不继承** :class:`PixelProposer`——接口不同：
   像素提议器产出 0/1 拓扑矩阵，本注册表产出连续参数向量。
@@ -12,7 +12,7 @@
   + 注入 ``score_fn`` 的贪心接受（只接受严格改善；``score_fn=None``
   时退化为纯噪声游走，仍受 bounds 裁剪）。
 
-诚实边界（#122，不冒充；确定性内核纪律：数值只在确定性内核）
+诚实边界（#122，不冒充； 铁律 7：数值只在确定性内核）
 - 本模块只产出**参数点**；它消费的每一个分数都来自注入的 ``score_fn``
   （确定性评判器/代理/求解器响应包装），模块自身不产生任何物理数字
   ——频率/损耗/几何数值永不由提议器凭空给出。

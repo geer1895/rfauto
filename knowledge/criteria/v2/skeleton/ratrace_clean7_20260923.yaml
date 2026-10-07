@@ -1,0 +1,30 @@
+schema: criteria/v2
+criteria_id: ratrace_clean7_20260923
+title: criteria.md — c14a ratrace 0.2mm 长预算干净补样 R13 + clean7 重训（30% 门复判）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: ratrace, f_ghz: null}
+migration:
+  tier: A
+  source_index: index.yaml
+  source_md: runs/ratrace_clean7_20260923/criteria.md
+  families: [ratrace]
+  n_gates: 3
+evidence_fields: [ratrace_clean7_20260923#1, ratrace_clean7_20260923#2, ratrace_clean7_20260923#3]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: ratrace_clean7_20260923#1, tier: A, raw: '- 读数门（rkf._gates，Σ 激励口径）：f_center_balance ∈ 2.5GHz±2%；',
+    threshold: 2.0}
+  - {gate_id: ratrace_clean7_20260923#2, tier: A, raw: bal<=0.5dB；S11@bal<=−20dB；S31@bal<=−20dB；|S21@bal+3.2|<=0.5dB；,
+    threshold: null}
+  - {gate_id: ratrace_clean7_20260923#3, tier: A, raw: '|S41@bal+3.2|<=0.5dB → 须 all_pass；', threshold: null}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/ratrace_clean7_20260923,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#ratrace_clean7_20260923/criteria.md gates[1..3]'}

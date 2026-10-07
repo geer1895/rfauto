@@ -1,10 +1,10 @@
-"""hairpin 电气标定（真机 FAIL 归因轮）。
+"""hairpin 电气标定（WP2.3 真机 FAIL 归因轮；续做建议③）。
 
 背景：pt1 冒烟（runs/hairpin_smoke/pt1/，solve_s=1235，β 金标准 PASS）响应
 FAIL——@2.5GHz |S21|=-44.89dB / |S11|=+0.1dB，2.485GHz 有 -46dB 传输零点、
 带内无通带。几何离线审计全绿（#212，27 测）⇒ 属电气标定缺项，非画法错误。
 
-方法（先定位后单变量标定；每轮只动一个变量、留 runs/ 证据）：
+方法（任务书：先定位后单变量标定；每轮只动一个变量、留 runs/ 证据）：
 - R0 宽带定位：2.0-3.5GHz 扫频原设计（扫频窗是定位手段、非设计变量），
   读 S21 通带形状 + S11 回损谷 + 传输零点位，区分 f0 偏移 vs 耦合/抽头问题。
   **预登记判读规则**（纪律：归因先当假设/待证，规则先于数据写死）：
@@ -171,7 +171,7 @@ def apply_single_override(design_params: dict, overrides: dict,
 
 
 def verdict_of(m: dict, beta_dev_pct: float | None) -> str:
-    """预声明判据 → PASS/FAIL（与冒烟同口径）。"""
+    """任务书判据 → PASS/FAIL（与冒烟同口径）。"""
     ok = (-3.0 <= m["il_min_db"] <= -0.2 and m["ripple_db"] <= 4.0
           and m["rl_max_db"] <= -8.0 and abs(m["peak_dev_pct"]) <= 8.0
           and (beta_dev_pct is None or abs(beta_dev_pct) <= 3.0))
@@ -185,11 +185,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pt", required=True)
     parser.add_argument("--root", default="runs/hairpin_calib",
-                        help="证据根目录（缺省 runs/hairpin_calib；"
+                        help="证据根目录（缺省 runs/hairpin_calib；rm-oe-hairpin "
                              "hairpin_alt k(gap) 图谱复跑指 runs/hairpin_kgap_refix）")
     parser.add_argument("--template", choices=("hairpin", "hairpin_alt"),
                         default="hairpin",
-                        help="hairpin_alt=交替取向变体（同设计链几何，奇数序腔翻转；"
+                        help="w2g：hairpin_alt=交替取向变体（同设计链几何，奇数序腔翻转；"
                              "k(gap) 图谱复跑用 --order 2 --tap-frac 0.43 逐 --gap 点跑，"
                              "再 hairpin_q_extract --kgap-analyze --gate alt 判读）")
     parser.add_argument("--mesh", type=float, default=0.4)
@@ -209,7 +209,7 @@ def main() -> None:
                         help="单变量：相邻谐振器耦合缝 mm")
     parser.add_argument("--timeout", type=float, default=7200.0)
     parser.add_argument("--nr-ts", type=int, default=None,
-                        help="FDTD 步数上限覆盖（渲染缺省 100000；实测"
+                        help="FDTD 步数上限覆盖（渲染缺省 100000；rm-oe-hairpin 实测"
                              "交替 y 网格 dt 减半触顶截断，#323 外推后 350000 起跑）")
     parser.add_argument("--ladder", action="store_true",
                         help="阶梯模式：相对上一轮配置单变量（允许多个偏离"

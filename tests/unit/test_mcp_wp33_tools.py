@@ -169,7 +169,7 @@ def _write_json(path: Path, data: dict) -> None:
 
 
 def _seed_one_run(root: Path) -> None:
-    """1 个 mline run × 2 trials（照 test_dataset_service runs_env 口径）。"""
+    """1 个 mline run × 2 trials（照 _dataset_service_helpers runs_env 口径）。"""
     _write_json(root / "run_a" / "meta.json", {
         "run_id": "run_a", "model": "mline", "adapter": "fake",
         "algorithm": "tune", "study_name": "s1", "seed": 42,
@@ -266,7 +266,7 @@ class TestBandsTools:
     def test_bands_get_unknown_key(self, mcp_server):
         data = _call(mcp_server, "bands_get", {"key": "no_such_band"})
         assert data["ok"] is False
-        assert "gpp_n78" in data["error"]  # 报错带可用键列表
+        assert "gpp_n78" in data["errors"][0]  # 报错带可用键列表
 
     def test_bands_find_3g5(self, mcp_server):
         data = _call(mcp_server, "bands_find", {"freq_ghz": 3.5})

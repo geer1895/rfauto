@@ -1,9 +1,9 @@
 """A3 real_edt：场-路协同（非线性/谐波平衡）真机验收——对照真 ngspice。
 
-验收口径："对照 ngspice 参考解"。
+验收口径（续跑计划 §10.1 A3 验收列）："对照 ngspice 参考解"。
 链路：闭式 L 截面 EM 替身 .s2p → s_to_y 逐谐波 → HB 二极管检波器求解 →
 同一物理 RLC 的 ngspice 瞬态+傅里叶参考（ngspice-47 批处理，2026-09-14
-本机实测可用；tools/ngspice/Spice64/bin 或 PATH）→ 逐量互差判定。
+本机实测可用，工作区 tools/ngspice/Spice64/bin）→ 逐量互差判定。
 
 ngspice 缺席时 skip（非 fail）；其余失败如实 fail。
 """

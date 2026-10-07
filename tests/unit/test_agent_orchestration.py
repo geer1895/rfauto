@@ -1,4 +1,4 @@
-"""agent_propose / agent_apply 编排闭环测试。"""
+"""agent_propose / agent_apply 编排闭环测试（E4b 接线批次）。"""
 
 from __future__ import annotations
 

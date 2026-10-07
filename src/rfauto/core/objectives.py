@@ -278,7 +278,7 @@ class SpecEvaluator:
                         cost += obj.weight * (val - high)
             elif obj.op == MetricOp.BANDWIDTH:
                 # 带宽目标：val（实测带宽）应 ≥ value（要求带宽），不足部分惩罚。
-                # （历史缺陷：原先该操作符无分支，带宽目标静默不生效。）
+                # 审查发现：原先该操作符无分支，带宽目标静默不生效。
                 threshold = obj.value if isinstance(obj.value, (int, float)) else obj.value[0]
                 violation = max(0.0, threshold - val)
                 cost += obj.weight * violation

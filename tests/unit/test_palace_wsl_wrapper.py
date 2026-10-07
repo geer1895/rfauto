@@ -1,4 +1,4 @@
-"""palace_wsl_wrapper.py 生成器单测（E-MED-6）。
+"""palace_wsl_wrapper.py 生成器单测（df5 E-MED-6）。
 
 三态面（生成/幂等/--check）全离线：monkeypatch BIN_DIR 到 tmp_path、
 _wsl_helper_path 钉常量（POSIX 上 tmp 路径无盘符段，路径推导另有专门
@@ -25,7 +25,7 @@ import palace_wsl_wrapper as psw
 
 # 生成的 wrapper 资产（tools/ 不入 git；在位与否决定真实资产门是否执行）
 _REAL_BIN_DIR = scripts_dir.parent / "tools" / "palace-install" / "bin"
-_HELPER_PIN = "/mnt/e/rfauto/tools/palace-install/bin/palace_wsl.sh"
+_HELPER_PIN = "/mnt/e/rf_workspace/tools/palace-install/bin/palace_wsl.sh"
 
 
 @pytest.fixture()
@@ -38,7 +38,7 @@ def sandbox_bin(tmp_path, monkeypatch):
 
 
 class TestDriveLetterGuard:
-    """盘符提取护栏（extract_drive_letter，E-MED-6）。
+    """盘符提取护栏（extract_drive_letter，df5 E-MED-6）。
 
     历史实现对首段 '/'（POSIX 绝对路径）或相对路径静默提取出空串得
     /mnt// 坏路径——改为 ValueError 显式报错。纯函数，跨平台同断言。
@@ -46,7 +46,7 @@ class TestDriveLetterGuard:
 
     def test_windows_drive_forms(self):
         # Path.parts 首段实测形态（bridge_criteria §2）：'E:\\' 带反斜杠尾
-        assert psw.extract_drive_letter(("E:\\", "rfauto", "tools")) == "e"
+        assert psw.extract_drive_letter(("E:\\", "rf_workspace", "tools")) == "e"
         assert psw.extract_drive_letter(("C:", "x")) == "c"
         assert psw.extract_drive_letter(("d:/", "y")) == "d"
 

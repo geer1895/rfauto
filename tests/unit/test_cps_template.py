@@ -3,7 +3,7 @@
 闭式出处（docs/rf_template_references.md §11.1）：Wadell (1991) p.83
 均匀线 Z0=120π·K(k1)/K'(k1)/√εeff（MathWorks RF PCB 官方例 MoM 对拍）+
 Gupta/Ghione 部分电容 tanh 板映射（同 _cpwg_ri 框架）+ **FD 定标有效厚度
-γ(εr)=1+0.9014·εr^−0.6361**（2026-09-18 定标：裸映射对无地薄基板
+γ(εr)=1+0.9014·εr^−0.6361**（2026-09-18 w2f-c9-refs：裸映射对无地薄基板
 系统性偏低 −3~−12%，定标后 ≤1.4%；裁判=core/quasistatic_fd.py，其自身先过
 HJ 微带/Cohn/半空间极限基准，见 test_quasistatic_fd.py）。#118 判据全部取
 独立来源：Babinet/Booker 对偶恒等式 Z_CPS·Z_CPW=η0²/4（skrf media.CPW
@@ -150,7 +150,7 @@ def test_cps_effective_thickness_factor_contract():
 
 
 def test_cps_corner_domain_boundary_pinned():
-    """适用域边界钉（#122 如实不硬凑）：定标域（a/h≲1 且
+    """适用域边界钉（w2f 后续定标批 ③，#122 如实不硬凑）：定标域（a/h≲1 且
     b/h≲3）之外 γ(εr) 单参数修正数据不支持（逐点最优 γ 增强比是 (a/h,b/h)
     二维曲面），闭式在宽带缝角落**低估**——FD 单档裁判（d0=min(H/20,a/4)，
     与定标族扫描同档）实测：a/h=2,b/h=6,εr=10.2 → −2.8%；a/h=3,b/h=6,
@@ -265,7 +265,7 @@ def _load(params=None):
 def test_cps_render_ports_bc_and_reference_impedance():
     """LumpedPort×2 跨缝差分（R=闭式 Z0）、CalcPort 参考阻抗=R、六面 MUR、
     域向下延 AIR_TOP（无地）；port_beta.csv 落盘端口元 y 坐标/实测差分线长
-    （同 SSL beta 块先例；LumpedPort 无 β 无 beta 列）。"""
+    （w2f 定标批 ②，同 SSL beta 块先例；LumpedPort 无 β 无 beta 列）。"""
     from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL, render_script
 
     nom = dict(TEMPLATE_NOMINAL["cps"])

@@ -1,7 +1,7 @@
 """§10.3 C1 天线族 II：单极子/PIFA/IFA/环形/螺旋/缝隙 六模板单测。
 
-方案行：贴片已锚，向变形
-扩展。2026-09-14 起六模板正式注册（原"附加模板"边界升格）：
+方案行（docs/续跑计划.md §10.3 C1）：贴片已锚，向变形
+扩展。2026-09-14 合流轮起六模板正式注册（原"附加模板"边界升格）：
 - 注册态钉：ANTENNA2_META/ANTENNA2_NOMINAL 同对象入 TEMPLATE_META/
   TEMPLATE_NOMINAL（18→25，含 coupled_bpf）；注册四件套 docs/templates/<t>/
   meta.yaml、EXPECTED_TEMPLATES、fake 派发 _antenna2_sparams、template_specs
@@ -61,7 +61,7 @@ def _load(template: str, params: dict | None = None,
     return scope, gh.extract_primitives(scope["CSX"])
 
 
-# ─── 正式注册（2026-09-14：原"附加不注册"边界升格）─────────────────────────
+# ─── 正式注册（2026-09-14 合流轮：原"附加不注册"边界升格）───────────────────
 
 def test_antenna2_registered_in_registry():
     """六模板已正式注册：同对象入两表；渲染四链路键保持。"""
@@ -86,7 +86,7 @@ def test_antenna2_registered_in_registry():
     # （cline_coupler/branchline_2sect/lange，2026-09-16）= 36 → +WP2.5 过渡族
     # 两模板（msl_cpw/sma_launcher，2026-09-16）= 38 → +槽线族四模板（slotline/
     # slotline_lumped/msl_slot_transition/marchand_balun，2026-09-18）= 42 →
-    # +hairpin_alt 交替取向发夹线（2026-09-18）= 43
+    # +hairpin_alt 交替取向发夹线（2026-09-18 w2g）= 43
     # （单源计数=审计文件 EXPECTED_TEMPLATES，#247 禁轨内自钉）
     from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES as _ET
 
@@ -109,7 +109,7 @@ def test_antenna2_registration_surface_complete():
 
     bootstrap_template_specs()
     # 单源计数（#247：禁轨内自钉，只与审计文件单源比对，不钉字面；
-    # 2026-09-18 slotline 族四模板注册 38→42、hairpin_alt 注册 42→43 实证）
+    # 2026-09-18 slotline 族四模板注册 38→42、w2g hairpin_alt 注册 42→43 实证）
     assert len(ot.TEMPLATE_META) == len(EXPECTED_TEMPLATES)
     for t in ot.ANTENNA2_TEMPLATES:
         data = yaml.safe_load(

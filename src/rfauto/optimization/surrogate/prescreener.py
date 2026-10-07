@@ -1,4 +1,4 @@
-"""响应面代理（P6 原实现移植）。
+"""响应面代理（P6 原实现移植，2026-09-03 模块化合并）。
 
 历史：P6 批次的 GP/RBF 响应面预筛器（原 optimization/surrogate.py，
 单模块形态）。v0 接口化后并入 surrogate 包，类名改为 ResponseSurfaceModel

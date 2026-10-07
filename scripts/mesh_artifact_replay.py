@@ -1,12 +1,12 @@
-"""网格伪象诊断三教训复算脚本（真实/带 provenance 数据 → runs/mesh_artifact/*.json）。
+"""D11 网格伪象诊断三教训复算脚本（真实/带 provenance 数据 → runs/mesh_artifact/*.json）。
 
 三案例（全部有出处，禁止编造）：
 1. ratrace pt8 回放——真实逐点归档 runs/ratrace_smoke/pt8/ratrace.s4p（0.4mm、k=1
    原始渲染）+ runs/ratrace_arbitration/openems_convergence.json（0.4→0.2mm 中心上移）
-   + 定版 k=1.0975。期望 MESH_ARTIFACT 且 k≈1.10。
-2. via 1.0491——真实逐点归档 runs/via_smoke/pt3/port_beta.csv（β2/β1 带内恒定，
-   1.0491±0.0011）。期望 PROBE_SCALE（探针尺度常数，非网格伪象）。
-3. #152 nm 近重合网格线——实测塌缩值 7.7e-19 s（正常 CFL 步长按 0.4mm
+   + （廿九）/（三十九）定版 k=1.0975。期望 MESH_ARTIFACT 且 k≈1.10。
+2. via 1.0491——真实逐点归档 runs/via_smoke/pt3/port_beta.csv（β2/β1 带内恒定）
+   + §205。期望 PROBE_SCALE（探针尺度常数，非网格伪象）。
+3. #152 nm 近重合网格线—— 塌缩值 7.7e-19 s（正常 CFL 步长按 0.4mm
    网格闭式 dx/(2c) 推算）。期望 TIMESTEP_COLLAPSE。
 
 用法：.venv\\Scripts\\python.exe scripts\\mesh_artifact_replay.py
@@ -33,15 +33,15 @@ from rfauto.core.mesh_artifact import (  # noqa: E402
 OUT_DIR = REPO / "runs" / "mesh_artifact"
 C0 = 299792458.0
 
-# 带 provenance 的定版常量（改动须同步核对出处）
+# 带 provenance 的定版常量（改动须先对 ）
 TARGET_GHZ = 2.5
-# 模板注（openems_templates.py pt7/pt8 注）"实测 hybrid 中心 ≈2.28GHz"
+# 模板注（openems_templates.py:1491）"pt7/pt8 实测 hybrid 中心 ≈2.28GHz"
 CENTER_RAW_GHZ = 2.279
-EPS_EQUIV = 3.28       # 等效 εeff=3.28 超微带物理上限（pt8 定标）
-EPS_CLOSED = 2.7246    # HJ 直线 2.72（同几何闭式）
+EPS_EQUIV = 3.28       # （廿九）"等效 εeff=3.28 超微带物理上限"
+EPS_CLOSED = 2.7246    # （廿九）"HJ 直线 2.72"
 EPS_R = 3.66           # rogers4350b（hfss_arbitration.json sub.er）
-VIA_BETA_RATIO = 1.0491  # via β2/β1 带内恒定比（#205 定征）
-TIMESTEP_COLLAPSED_S = 7.7e-19  # #152 实测 CFL 塌缩值
+VIA_BETA_RATIO = 1.0491  # §205
+TIMESTEP_COLLAPSED_S = 7.7e-19  #
 
 
 def _panel(title: str) -> None:
@@ -106,8 +106,8 @@ def case_ratrace_pt8() -> dict[str, Any]:
     }
     sources = {
         "k_definition": "openems_templates._RATRACE_RING_MESH_K=1.0975（pt8 定标）",
-        "center_raw": "模板注（openems_templates.py pt7/pt8 注）≈2.28GHz",
-        "equiv_eps_eff": "等效 εeff=3.28（HJ 直线 2.7246，εr=3.66）",
+        "center_raw": "模板注 openems_templates.py:1491（pt7/pt8 ≈2.28GHz）",
+        "equiv_eps_eff": "（廿九）等效 εeff=3.28（HJ 直线 2.7246，εr=3.66）",
         "mesh_study": str(conv_path),
         "s4p": str(s4p),
     }
@@ -162,8 +162,8 @@ def case_ratrace_pt8() -> dict[str, Any]:
 def case_via_probe() -> dict[str, Any]:
     _panel("案例 2：via 1.0491（倒置叠层 MSLPort 探针尺度常数）→ 期望 PROBE_SCALE")
     beta_path = REPO / "runs" / "via_smoke" / "pt3" / "port_beta.csv"
-    sources = {"probe_constant": "via β2/β1=1.0491±0.0011 带内恒定（#205 定征）",
-               "derivation": "via β2 倒置叠层调查定征（#205）"}
+    sources = {"probe_constant": "§205 β2/β1=1.0491±0.0011 带内恒定",
+               "devlog": "via β2 调查定征（#205）"}
     packet: dict[str, Any] = {"eps_r": EPS_R}
     if beta_path.exists():
         f_hz, betas = _read_beta_at(beta_path, 2.5)
@@ -179,8 +179,8 @@ def case_via_probe() -> dict[str, Any]:
               f"εeff1={e1:.4f} εeff2={e2:.4f}")
     else:
         packet["beta_by_port"] = {"port1": 80.0, "port2": 80.0 * VIA_BETA_RATIO}
-        sources["port_beta"] = "缺失——用定版 β 比 1.0491"
-        print("警告：缺 via 归档，用定版 β 比复算")
+        sources["port_beta"] = "缺失——用 §205 定版 β 比 1.0491"
+        print("警告：缺 via 归档，用 §205 定版 β 比复算")
 
     packet["provenance"] = {"sources": sources,
                             "note": "探针尺度是端口提取链乘性偏移，非网格病"}
@@ -205,7 +205,7 @@ def case_timestep_152() -> dict[str, Any]:
         "mesh_line_gaps_m": [1e-9, 4e-4, 5e-4],
         "provenance": {
             "sources": {
-                "collapsed_timestep": "#152 实测 CFL 塌缩 7.7e-19 s",
+                "collapsed_timestep": " CFL 塌缩 7.7e-19 s",
                 "normal_step": f"0.4mm 网格闭式 dx/(2c)={dt_normal:.3e} s",
                 "near_coincident_gap": "nm 级近重合线（#152 SmoothMesh/AddEdges2Grid）",
             },

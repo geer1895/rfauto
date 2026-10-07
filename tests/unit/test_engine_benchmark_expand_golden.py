@@ -10,14 +10,14 @@ G8 扩容结果快照入库：tests/golden/engine_benchmark_expand_20260915.json
 ③ criteria == 内核默认门常量（判据改动=显式重标定，须同步快照）；
 ④ 四离线锚 verdict==PASS 硬钉（归档数值离线复算实测现门全过）；
    msl_cpw 为真跑快照，只钉自洽不预设 PASS（#122 不凑绿）；
-⑤ mline 证据面未动（新时点只新增不覆写）；
-⑥ 20260915b 重标定：msl_cpw 传输门增补无源上界 |S21| 带内
+⑤ mline 证据面未动（新时点只新增不覆写，TODO :561 followUp 口径）；
+⑥ 20260915b 重标定（F1② 审查）：msl_cpw 传输门增补无源上界 |S21| 带内
    max ≤1.02，首轮真跑 mean 1.0296 / 带内 max 1.2902 由 PASS 如实改判
    FAIL（#122）；快照 metrics 补 s21_lin_band_max、gate_flags 补
    passive_ok、criteria 补 s21_lin_band_max_le，五锚 gate_version 同步；
    归档 runs/benchmark/msl_cpw_engine_benchmark.json 保持原样（归档不改），
    零仿真重归一证据见 runs/benchmark/msl_cpw_renorm/renorm_report.json；
-⑦ 20260918a 重标定：via 传输门同构增补无源上界
+⑦ 20260918a 重标定（round2 R2-A-01 审查）：via 传输门同构增补无源上界
    |S21| 带内 max ≤1.02，快照 metrics 补 s21_lin_band_max（0.9503，
    runs/via_smoke/pt3/sparams.csv 离线复算）、gate_flags 补 passive_ok、
    criteria 补 s21_lin_band_max_le，五锚 gate_version 同步；归档 401 点
@@ -254,7 +254,7 @@ class TestMslCpwRealRun:
 
 
 class TestMslCpwRecalibration20260915b:
-    """无源上界重标定链条钉子：历史 PASS 如实改判 FAIL（#122 不凑绿）。"""
+    """F1② 无源上界重标定链条钉子：历史 PASS 如实改判 FAIL（#122 不凑绿）。"""
 
     def test_verdict_flipped_to_fail_by_passive_upper_bound(self):
         entry = _load()["anchors"]["msl_cpw"]
@@ -290,7 +290,7 @@ class TestMslCpwRecalibration20260915b:
         assert any("msl_cpw_renorm" in e for e in rc["evidence"])
         # harness 尚未传带内 max 的 followUp 必须入册（不可静默）
         assert "s21_lin_band_max" in rc["harness_followup"]
-        # followUp 已闭环（2026-09-18）：ingest_msl_cpw 同批补传
+        # followUp 已闭环（fix-small-batch-3）：ingest_msl_cpw 同批补传
         # 带内 max + criteria/gate_flags 同步（与 via 20260918a 同款钉）
         assert "已闭环" in rc["harness_followup"]
 
@@ -306,7 +306,7 @@ class TestMslCpwRecalibration20260915b:
 
 
 class TestViaRecalibration20260918a:
-    """无源上界重标定链条钉子（与 msl_cpw 20260915b 同类缺陷的预防性延伸）。
+    """round2 R2-A-01（F1② 同类缺陷延伸）无源上界重标定链条钉子。
 
     与 msl_cpw 20260915b 的差异：via 归档 401 点带内 max 0.9503 全部
     ≤1.02，判定零翻转——收紧为预防性（堵住未来非物理放行），不翻任何
@@ -351,7 +351,7 @@ class TestViaRecalibration20260918a:
 
 
 class TestMlineEvidenceUntouched:
-    """新时点只新增不覆写 mline golden。"""
+    """新时点只新增不覆写 mline golden（TODO :561 followUp 口径）。"""
 
     def test_mline_golden_still_present(self):
         assert MLINE_GOLDEN.exists(), "mline 证据 golden 被误删/移动"

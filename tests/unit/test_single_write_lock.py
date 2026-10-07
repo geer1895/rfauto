@@ -130,7 +130,10 @@ class TestAsyncJobSerialization:
         active = threading.Semaphore(1)  # 值为 1：同一时刻至多 1 个 run
         overflow: list[str] = []
 
-        def tracked_run_once(recipe_path, *, adapter_name="fake"):
+        def tracked_run_once(recipe_path, *, adapter_name="fake",
+                             progress_cb=None):
+            # progress_cb 形参=SN-10 播报接线同步（api 后台 worker 无条件
+            # 注入注册表播报，替身须同签名，#362③ stub 同步分支）
             name = threading.current_thread().name
             if not active.acquire(blocking=False):
                 overflow.append(name)

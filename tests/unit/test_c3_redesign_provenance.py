@@ -1,9 +1,9 @@
-"""c3 重设计出处纪律单测（criteria.md §四）。
+"""c3 重设计出处纪律单测（R2，df5-c3fix；criteria.md §四）。
 
 覆盖：
 ① render_input_sha256 确定性（同名义同哈希、改 res_len 变哈希）；
 ② crosscheck_run_literal：字节一致 ok / 篡改几何字面量不 ok / 缺档案不 ok
-   （#122 不臆造）/ 存在但畸形不 ok 不裸抛（E-M2）；
+   （#122 不臆造）/ 存在但畸形不 ok 不裸抛（round6 E-M2）；
 ③ registration_freshness 时戳边界（mtime ≥ commit；缺失 → None）；
 ④ synthesis 主流程产物带 render_input_sha256（tmp_path --out 端到端，零仿真）。
 真机层全 mock/零依赖：不碰 openEMS/HFSS、零网络、零 git（nominal_commit_ts
@@ -91,7 +91,7 @@ def test_crosscheck_run_literal_missing_archive(tmp_path):
 
 def test_crosscheck_run_literal_malformed_archive(tmp_path):
     """存在但畸形（缺几何段标记）的归档：显式 ok=False 带路径与畸形描述，
-    不裸抛 StopIteration（E-M2，#105 观测面故障不炸整跑）。"""
+    不裸抛 StopIteration（round6 E-M2，#105 观测面故障不炸整跑）。"""
     sim = tmp_path / "simulation.py"
     sim.write_text("print('garbage: 无 CSX.AddMetal 无 SetPriority')\n",
                    encoding="utf-8")

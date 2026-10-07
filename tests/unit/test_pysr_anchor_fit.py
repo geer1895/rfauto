@@ -3,7 +3,7 @@
 被测对象：scripts/pysr_anchor_fit.py 的纯逻辑（AST 白名单校验器/结构
 匹配器/合成数据/确定性精修/公式求值/Pareto 选式）与候选 JSON 契约。
 
-设计约束（规格预声明）：
+设计约束（任务书预声明）：
 - 测试不依赖 Julia 装成——pysr/Julia 相关断言全部 skipif 保护；
 - 候选 JSON 是运行产物，存在才校验（skipif 保护），校验含 AST 白名单
   复验 + 8 档逐档 ≤1.4% 复算；

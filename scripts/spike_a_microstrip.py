@@ -1,8 +1,7 @@
 """Spike A: PyAEDT -> microstrip -> solve -> export S-params"""
 import os
-from pathlib import Path
 
-os.chdir(str(Path(__file__).resolve().parents[1]))
+os.chdir(r"D:/rf_workspace")
 
 from ansys.aedt.core import Hfss
 
@@ -65,7 +64,7 @@ hfss.create_linear_count_sweep(
 )
 
 # Auto-export touchstone BEFORE solving (gRPC may drop after long solve)
-hfss.export_touchstone_on_completion(export=True, output_dir=os.getcwd())
+hfss.export_touchstone_on_completion(export=True, output_dir=r"D:/rf_workspace")
 
 # Solve
 hfss.analyze(setup="main_setup")
@@ -75,7 +74,7 @@ hfss.save_project()
 
 print("=" * 50)
 print("Spike A DONE!")
-print("Touchstone auto-exported to cwd: spike_a_microstrip*.s2p")
+print(r"Touchstone auto-exported to D:/rf_workspace\spike_a_microstrip*.s2p")
 print(f"Project: {hfss.project_path}")
 print("=" * 50)
 

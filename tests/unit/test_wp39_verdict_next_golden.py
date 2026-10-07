@@ -1,6 +1,6 @@
 """WP3.9 MVP 基准换代战役 2026-09-16 证据 golden 钉子（离线零真机）。
 
-背景：wp39-factory-verdict-next 真跑产物只落 runs/ 下同名战役目录
+背景：wp39-factory-verdict-next 真跑产物只落 runs/wp39_factory_verdict_next/
 （runs/ 不入库），按 tests/golden/ 惯例（参照 mline_benchmark_rescan_20260913）
 把汇总 summary.json 逐字节回录为 tests/golden/wp39_factory_verdict_next.json。
 本文件离线回放四件事：
@@ -144,7 +144,7 @@ class TestProbeEpsGateReplay:
 class TestKeyNumbers:
     def test_ratrace_null_degradation_narrowed(self):
         rn = _result()["problems"]["ratrace_null"]
-        # 旧单频谷深判据 sbo 劣化 +11.01%（旧战役归档）→
+        # 旧单频谷深判据 sbo 劣化 +11.01%（runs/wp39_mvp/summary.json）→
         # 邻域能量判据 +1.85%（≤5% 门）；wall 比 1.347≈旧 1.30（#224）
         assert rn["degradation_pct"] == pytest.approx(1.8455, abs=1e-3)
         assert rn["degradation_pct"] < COST_MAX_DEGRADATION_PCT < 11.01

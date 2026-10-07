@@ -1,0 +1,76 @@
+# rfauto 文档站（PR-10，round16 规格；mkdocs-material 路线）
+# 本地构建：.venv/Scripts/python.exe -m mkdocs build
+# 预览产物：runs/pr10/site_preview/（gitignored，不入库）
+# 部署面：GitHub Pages（准备就绪、未执行——workflow 草案与启用步骤见
+#   runs/pr10/deploy_preview/；公开仓 push 逐次授权后才接线）
+
+site_name: rfauto
+site_description: "rfauto —— HFSS ↔ ADS 自动化仿真调优框架文档站"
+site_author: rfauto contributors
+# site_url / repo_url 待公开仓库 URL 就绪后补填（不编造 URL——F4 followUp 同纪律）
+docs_dir: docs_site
+site_dir: runs/pr10/site_preview
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: "切换到暗色主题"
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: "切换到亮色主题"
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+
+nav:
+  - 首页: index.md
+  - 用户指南:
+      - 30 分钟跑通第一条链路: tutorials/getting-started.md
+      - CLI 快速上手: guide/cli-quickstart.md
+      - 实测对齐链路: tutorials/measurement-alignment.md
+      - 战役逐阶段推进: tutorials/campaign-walkthrough.md
+  - 参考:
+      - 能力目录: reference/capabilities.md
+      - CLI 命令参考: reference/cli.md
+      - MCP 工具参考: reference/mcp.md
+      - 计算器注册表: reference/calculators.md
+  - 内核文档卡:
+      - macromodel: kernel_cards/macromodel.md
+      - rwg_mmt: kernel_cards/rwg_mmt.md
+      - pdn: kernel_cards/pdn.md
+      - pce: kernel_cards/pce.md
+      - cascade: kernel_cards/cascade.md
+  - 模板库: catalog/index.md
+  - 架构与方法论:
+      - 分层架构: explanation/layered-architecture.md
+      - 架构与方法论: architecture/methodology.md
+  - 画廊: gallery.md
+
+copyright: "MIT License · rfauto contributors"

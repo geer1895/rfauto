@@ -1,12 +1,13 @@
-"""引擎基准扩容：ratrace/atten/via/msl_cpw 四锚判读内核（纯函数零真机）。
+"""G8 引擎基准扩容：ratrace/atten/via/msl_cpw 四锚判读内核（纯函数零真机）。
 
-背景：mline 锚已有 harness
+背景（#222 对账 + 方案冻结行 docs/续跑计划.md:495
+「G8 引擎基准扩容…每新锚模板即入基准」）：WP1.2 mline 锚已有 harness
 范式（scripts/engine_benchmark_mline.py + core/anchor_verdict.
 mline_benchmark_verdict + tests/golden/mline_benchmark_rescan_20260913.json），
 其余四锚判据此前仅内联在各 smoke 脚本（scripts/smoke_*_anchor.py），
 无纯函数内核、无 per-anchor benchmark JSON。本内核把四锚判据收编为
 确定性纯函数，scripts/engine_benchmark_expand.py 以 --ingest 离线读
-smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺档锚，
+runs/*_smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺档锚，
 逐锚落 runs/benchmark/<anchor>_engine_benchmark.json。
 
 判据口径（每锚显式统计量名，#195 谷深/带内 max 语义不混；与 smoke
@@ -19,26 +20,26 @@ smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺档锚，
 - atten（smoke_atten_pi_anchor.py:80 / smoke_atten_t_anchor.py:79 三门）：
   β ±2%；|S21| 带内 mean 对 −10dB 目标 ±0.5dB（平坦均值语义 #195）；
   |S11| 带内 max <−12dB（商用 lumped 衰减模块回损规格地板 12~18dB
-  口径，原 −20 门经真机校准落地 −12）。
+  口径，原 −20 门经真机校准落地 −12，§3 匹配门校准记录）。
 - via（smoke_via_anchor.py:82 四门 + 20260918a 无源上界）：β1 顶馈 ±2%
-  （β2 倒置馈提取污染 real_modal_difference 仅诊断不判，#203 定征）；
-  |S11| 带内 max <−10dB；
+  （β2 倒置馈提取污染 real_modal_difference 仅诊断不判，/
+  1.0491 分解段 + 2026-09-09（四）§2 pt3）；|S11| 带内 max <−10dB；
   |S21| 线性 mean ≥0.90 **且** 带内 max ≤1.02 无源上界（20260918a
-  增补，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1
-  是能量守恒硬约束，纯下侧门对 >1 的端口提取伪象会非物理放行；在档
-  数据离线复算带内 max 0.9503、401 点全部 ≤1.02，判定零翻转）；互易
+  R2-A-01 审查增补，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1
+  是能量守恒硬约束，纯下侧门对 >1 的端口提取伪象会非物理放行；归档
+  pt3 离线复算带内 max 0.9503、401 点全部 ≤1.02，判定零翻转）；互易
   |mean S11−mean S22| ≤0.5dB（sparams.csv 无 S22 列不可复算，只能引
-  归档日志转录 0.000dB，source=archive_log）。
+  归档日志/:5122 转录 0.000dB，source=archive_log）。
 - msl_cpw（core/synthesis.py:881 synthesize_msl_cpw_model docstring 口径）：
   port1 β→εeff 对 er_eff1（HJ）±2%；port2 β→εeff 对 er_eff2（CPWG
   共形映射 _cpwg_ri）±2%；|S11| 带内 max <−10dB（保守文献地板，
   #195 worst-case 语义）；|S21| 线性 mean ≥0.90 健康 **且** |S21| 带内
-  max ≤1.02 无源上界（2026-09-15 增补：无源二端口逐频
+  max ≤1.02 无源上界（2026-09-15 F1② 审查增补：无源二端口逐频
   |S21|≤1 是能量守恒硬约束，>1 只能是端口提取伪象——首轮 msl_cpw 真跑
   mean 1.0296 / 带内 max 1.290 曾在纯下侧门下 PASS，非物理放行；上界
   取带内 max（#195 worst-case 语义，与 |S11| 门同形）而非 mean，mean 会
   被带内健康点稀释；2% 裕量只覆盖单位附近数值噪声，已实证的伪波分解
-  伪象量级 ~3%（−30dB 地板）刻意不予吸收——宁保守 FAIL 再审计，
+  伪象量级 ~3%（cba2687 −30dB 地板）刻意不予吸收——宁保守 FAIL 再审计，
   #122）。对 fake 理想级联（同阻异模对接，|S21| 地板=1）的偏差只作
   信息量不设门。
 
@@ -63,10 +64,11 @@ import math
 from rfauto.core.anchor_verdict import S11_HEALTH_DB
 
 # 判据版本（判据/门常量集的时点戳；改任一门=显式重标定，须递增并附真机证据）
-# 20260915b：msl_cpw 传输门增补无源上界 CPW_S21_MAX_LIN（证据=
-# 归档 sparams.csv 离线复算 带内 max 1.290 与 零仿真重归一查证）
-# 20260918a：via 传输门同构增补无源上界 VIA_S21_MAX_LIN（证据=
-# 归档 sparams.csv 离线复算 带内 max 0.9503
+# 20260915b：msl_cpw 传输门增补无源上界 CPW_S21_MAX_LIN（F1② 审查；证据=
+# runs/benchmark/msl_cpw_m0.4 归档 sparams.csv 离线复算 带内 max 1.290 与
+# runs/benchmark/msl_cpw_renorm/ 零仿真重归一查证）
+# 20260918a：via 传输门同构增补无源上界 VIA_S21_MAX_LIN（round2 R2-A-01
+# 审查；证据=runs/via_smoke/pt3 归档 sparams.csv 离线复算 带内 max 0.9503
 # @2.25GHz、401 点全部 ≤1.02——收紧为预防性，判定零翻转）
 GATE_VERSION = "20260918a"
 
@@ -77,7 +79,7 @@ EPS_EFF_TOL_PCT = 2.0
 RATRACE_SPLIT_TARGET_DB = -3.0   # 均分目标 |S21|/|S41|
 RATRACE_SPLIT_TOL_DB = 1.0       # 对 -3dB ±1dB
 RATRACE_BALANCE_MAX_DB = 0.5     # 均分差 ≤0.5dB
-RATRACE_ISO_DELTA_MAX_DB = -20.0  # |S31|(Δ) ≤ -20dB
+RATRACE_ISO_DELTA_MAX_DB = -20.0  # |S31|(Δ) ≤ -20dB（方案 §10.9 口径）
 RATRACE_ISO_OUT_MAX_DB = -15.0   # |S24|(out1↔out2) ≤ -15dB
 RATRACE_RECIP_MAX_LIN = 0.02     # 互易 max||Sij|-|Sji|| ≤0.02（线性）
 # ratrace |S11| 门 = S11_HEALTH_DB（-10dB，单一事实源 core/anchor_verdict）
@@ -85,16 +87,16 @@ RATRACE_RECIP_MAX_LIN = 0.02     # 互易 max||Sij|-|Sji|| ≤0.02（线性）
 # atten 三门（atten_pi/atten_t 共用；沿 smoke_atten_*_anchor.py:80/:79）
 ATTEN_TARGET_DB = -10.0          # 衰减目标（ABCD 电阻网络确定性裁判同源）
 ATTEN_FLAT_TOL_DB = 0.5          # |S21| 带内 mean 对目标 ±0.5dB（#195 平坦均值）
-ATTEN_S11_FLOOR_DB = -12.0       # 商用 lumped 地板（真机校准记录）
+ATTEN_S11_FLOOR_DB = -12.0       # 商用 lumped 地板（§3 校准记录）
 
 # via 四门（沿 smoke_via_anchor.py:82 + 20260918a 无源上界折入 thru）
 VIA_S21_MIN_LIN = 0.90           # |S21| 线性 mean ≥0.90（过渡损耗宽于均匀线）
 VIA_RECIP_MAX_DB = 0.5           # 互易 |mean S11-mean S22| ≤0.5dB
-# 无源上界（上侧，带内 max 语义，20260918a 增补）：与 msl_cpw
+# 无源上界（上侧，带内 max 语义，20260918a R2-A-01 审查增补）：与 msl_cpw
 # CPW_S21_MAX_LIN 同构——无源二端口逐频 |S21|≤1 是能量守恒硬约束，纯下侧
 # mean 门对 >1 的端口提取伪象（伪波分解/时域截断/参考阻抗口径）会非物理
 # 放行；理想无源地板 1.0 + 0.02 裕量仅覆盖单位附近数值噪声，已实证伪象
-# ~3%（−30dB 地板）刻意不吸收，超门=先审计提取口径再谈校准。
+# ~3%（cba2687）刻意不吸收，超门=先审计提取口径再谈校准。
 # 独立常量不引用 CPW_*：门重标定按锚显式、互不牵连（#231）。
 VIA_S21_MAX_LIN = 1.0 + 0.02
 # via |S11| 门 = S11_HEALTH_DB（-10dB 绝对门）
@@ -104,7 +106,7 @@ CPW_S21_MIN_LIN = 0.90           # |S21| 线性 mean ≥0.90 健康（下侧）
 CPW_IDEAL_S21_LIN = 1.0          # 理想级联地板（同阻异模对接，仅信息量）
 # 无源上界（上侧，带内 max 语义）：无源二端口逐频 |S21|≤1 是能量守恒硬约束，
 # 超出只能是端口提取伪象（伪波分解 / 时域截断 / 参考阻抗口径），不是器件
-# 性能。裕量 0.02 仅覆盖单位附近数值噪声；已实证伪象 ~3%（−30dB 地板）刻意
+# 性能。裕量 0.02 仅覆盖单位附近数值噪声；已实证伪象 ~3%（cba2687）刻意
 # 不吸收，超门=先审计提取口径再谈校准。
 CPW_S21_MAX_LIN = CPW_IDEAL_S21_LIN + 0.02
 # msl_cpw |S11| 门 = S11_HEALTH_DB（-10dB 保守文献地板，#195 worst-case）
@@ -290,12 +292,12 @@ def via_benchmark_verdict(
     """via 四门判读（β1 顶馈单判，β2 仅诊断，纯函数零真机）。
 
     β2（倒置馈 CalcPort 提取污染，real_modal_difference）不设门——
-    #203 定征，
+    /1.0491 分解段 + 2026-09-09（四）#203 pt3 定征，
     只回传 beta2_modal_difference_pct 供诊断。传输门为双侧（20260918a
-    增补，与 msl_cpw 20260915b 同构）：|S21| 线性 mean
+    R2-A-01 审查增补，与 msl_cpw 20260915b 同构）：|S21| 线性 mean
     ≥0.90 健康（下侧）**且** |S21| 带内 max ≤ VIA_S21_MAX_LIN=1.02
     无源上界（上侧），上下侧共同折入 thru_ok，另以 passive_ok 单独回传
-    上侧结果供诊断。recip_db 来源只可能是归档日志转录
+    上侧结果供诊断。recip_db 来源只可能是归档日志/转录
     （sparams.csv 无 S22 列），调用方须标 source=archive_log。
 
     s21_lin_band_max 为 keyword-only 可选：旧调用（五位置参数）不抛

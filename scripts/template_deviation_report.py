@@ -44,12 +44,12 @@ def fake_cost_curve(recipe_data: dict) -> tuple[np.ndarray, np.ndarray]:
 
 def openems_curve(recipe_data: dict, mesh: float, out_dir: Path) -> tuple[np.ndarray, np.ndarray]:
     """openEMS 真跑 |S11| dB 曲线（子进程 + 绑定，同 openems_solver 模式）。"""
-    from rfauto.adapters.em_solver_base import EMSolverConfig, resolve_openems_exe
+    from rfauto.adapters.em_solver_base import EMSolverConfig
     from rfauto.adapters.openems_solver import OpenEMSSolver
 
     cfg = EMSolverConfig(
         solver_type="openems",
-        exe_path=resolve_openems_exe(),
+        exe_path=r"E:\openEMS\install\bin\openEMS.exe",
         working_dir=str(out_dir),
         freq_range_ghz=tuple(recipe_data["setup"]["freq_range_ghz"]),
         mesh_resolution_mm=mesh,

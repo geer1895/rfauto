@@ -1,7 +1,6 @@
-"""hfss_marchand_anchor 判读纯函数合成回收单测。
+"""hfss_marchand_anchor 判读纯函数合成回收单测（rm-hfss-anchor）。
 
-反演核必须在合成数据上精确回收设计值（#118：数值算法的裁判=独立来源
-解析值/合成回收），合成两条独立路线：
+反演核必须在合成数据上精确回收设计值，合成两条独立路线：
 - 模态路线：偶/奇模 TL 的 S（z_to_s 解析构造，含各自相速）拼 4×4 模态
   S（grouped 与 interleaved 两种端口序）→ coupled_anchor_from_s4 回收；
 - 标准 4 端口路线：core coupled_line_z_matrix（与 adapters Pozar (7.83)/(7.84)
@@ -92,7 +91,7 @@ def test_mode_line_rejects_out_of_domain():
 
 
 def test_coupled_anchor_recovers_design_point(ctx):
-    """模态路线合成回收设计名义点（Z0e/Z0o/εeff_e/εeff_o），两种端口序。"""
+    """模态路线合成回收 w1b 名义点（Z0e/Z0o/εeff_e/εeff_o），两种端口序。"""
     kj = ctx["kj_ref"]
     ell = ctx["l_sect_mm"] * 1e-3
     for order in ("grouped", "interleaved"):
@@ -157,7 +156,7 @@ def test_verdict_of_gates():
 
 
 def test_design_point_single_source(ctx):
-    """单源读取钉住设计任务数字（禁手抄的对账基准）。"""
+    """单源读取钉住 w1b 任务书数字（禁手抄的对账基准）。"""
     kj = ctx["kj_ref"]
     assert abs(kj["z0e_ohm"] - 95.21) <= 0.01
     assert abs(kj["z0o_ohm"] - 36.49) <= 0.01

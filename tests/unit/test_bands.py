@@ -1,4 +1,4 @@
-"""D9 标准频段/法规掩模注册表单测。
+"""D9 标准频段/法规掩模注册表单测（续跑计划 §10.4/§10.17）。
 
 覆盖：种子表完整性（唯一键/lo<hi/出处非空）、查表显式报错、包含查找、
 过滤、to_spec_bounds 结构与 SpecEvaluator（core/objectives.py，只读参照）
@@ -62,7 +62,7 @@ def test_seed_registry_integrity():
 
 
 def test_seed_required_coverage():
-    """最小覆盖面要求：ISM/Wi-Fi/UWB/3GPP/CN/SRD/GNSS/EMC 限值线。"""
+    """任务书要求的最小覆盖面：ISM/Wi-Fi/UWB/3GPP/CN/SRD/GNSS/EMC 限值线。"""
     required = {
         "ism_2g4", "ism_5g8",                     # ITU-R RR 5.150
         "wifi_2g4", "wifi_unii1", "wifi6e_us",    # Wi-Fi 2.4/5/6E
@@ -206,7 +206,7 @@ def test_service_bands_get_contract():
     assert band["kind"] == "licensed" and band["source"]
     json.dumps(r)                                              # 可直接 JSON 序列化
     bad = bands_get("no_such_band")
-    assert bad["ok"] is False and "gpp_n78" in bad["error"]
+    assert bad["ok"] is False and "gpp_n78" in bad["errors"][0]
     assert bands_get("")["ok"] is False
     assert bands_get(None)["ok"] is False                      # 非字符串 key 显式拒绝
 
@@ -228,7 +228,7 @@ def test_service_bands_find_param_validation():
     for bad_freq in (-1.0, 0, "2.4", None, True):              # 负数/零/字符串/None/bool 拒绝
         r = bands_find(bad_freq)
         assert r["ok"] is False, f"freq={bad_freq!r} 应被拒绝"
-        assert "error" in r
+        assert r["errors"]
 
 
 def test_service_bands_spec_bounds():
@@ -239,7 +239,7 @@ def test_service_bands_spec_bounds():
     obj = Objective(metric="s21_db", **r["spec_bounds"])
     assert obj.band == [3.3, 3.8]
     bad = bands_spec_bounds("no_such_band")
-    assert bad["ok"] is False and "no_such_band" in bad["error"]
+    assert bad["ok"] is False and "no_such_band" in bad["errors"][0]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -413,7 +413,7 @@ def test_service_env_list_and_get_contract():
     assert env["kind"] == "automotive" and env["source"]
     json.dumps(g)
     bad = bands_env_get("no_such_env")
-    assert bad["ok"] is False and "aec_q100_grade1" in bad["error"]
+    assert bad["ok"] is False and "aec_q100_grade1" in bad["errors"][0]
     assert bands_env_get("")["ok"] is False
     assert bands_env_get(None)["ok"] is False
     f = bands_env_find(-40.0)

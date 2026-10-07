@@ -1,11 +1,11 @@
-"""EDA 版本探测（AEDT/ADS 共用基础设施）。
+"""EDA 版本探测（项目 B / 项目 A 共用基础设施）。
 
 职责：
 - 枚举本机 AEDT 安装（ANSYSEM_ROOTxxx 环境变量 + 注册表），解析版本号
 - 解析 ADS 安装版本（目录名 ADS<yyyy>）
 - 从 knowledge/compat_matrix.yaml 读取版本支持等级（verified / best_effort / unsupported）
 
-背景：原先 aedt_version 由"路径含 v231"字符串启发式推导，
+背景（TODO 项目 B）：原先 aedt_version 由"路径含 v231"字符串启发式推导，
 脆弱且只认两个硬编码版本（经验 10：EDA 默认值不可信）。本模块把探测
 收敛到 infra 层，service/optimization 只调用 resolve 函数。
 """
@@ -24,8 +24,8 @@ _COMPAT_MATRIX_PATH = Path(__file__).parent.parent.parent.parent / "knowledge" /
 
 _ANSYSEM_ENV_RE = re.compile(r"^ANSYSEM_ROOT(\d+)$")
 _AEDT_DIR_RE = re.compile(r"^[vV]?(\d{3,4})$")
-# ADS 安装目录名：4 位年份（ADS2027）或 2 位短年（ADS27），
-# 短年统一归一到 20xx。
+# ADS 安装目录名：4 位年份（ADS2027）或 2 位短年（ADS27，2026-09-18 现役安装
+# E:/ADS/ADS27 实测目录名，rm-ads-wp43 治理），短年统一归一到 20xx。
 _ADS_DIR_RE = re.compile(r"ADS(\d{4}|\d{2})$", re.IGNORECASE)
 
 _DEFAULT_AEDT_VERSION = "2024.1"  # pyaedt 未指定版本时的默认值
@@ -122,7 +122,7 @@ def resolve_aedt_install(explicit_path: str | Path | None = None) -> dict[str, A
     优先级：
     1. explicit_path（RFAUTO_AEDT_PATH）：存在即用；版本号优先从目录名
        （vNNN）解析，解析不出时按路径前缀匹配已探测安装，再不行回退默认值
-    2. 自动探测取最高版本（无环境变量也能发现本机 AEDT）
+    2. 自动探测取最高版本（项目 B 验收：无环境变量也能发现本机 AEDT）
 
     Returns:
         {"path": Path, "aedt_version": str, "source": str} 或 None（未找到）

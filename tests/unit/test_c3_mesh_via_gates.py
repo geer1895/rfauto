@@ -1,9 +1,9 @@
-"""C3 滤波器族 II 三项收紧的离线单测（零真机、零网络）。
+"""w2e-c3-mesh：§C3 滤波器族 II 三项收紧的离线单测（零真机、零网络）。
 
 ① 耦合缝网格守卫（#266）：render_script 对 interdigital/combline/sir_bpf 断言
    NEAR=base/4 ≤ 最小耦合缝/3，违反即 ValueError（不许静默粗网格）；
 ② NrTS/EndCriteria 收敛判读门：scripts/smoke_c3_filter_family.judge 在引擎触
-   NrTS 上限且能量未达判据时判 FAIL（真机 −46/−29dB 触顶实证）；
+   NrTS 上限且能量未达判据时判 FAIL（−46/−29dB 触顶实证）；
 ③ 过孔电感进裁判：Goldfarb-Pucel 1991 闭式 L=(μ0/2π)·h·[ln(4h/d)+1] 端接
    短路端，c3_circuit_sparams(l_via_h=None) 自动取几何值；缺省 0.0 逐位复现
    理想短路旧口径。数值锚：|Y| 数值极小化 vs 闭式谐振条件 tanθ=Z_r/(ωL)
@@ -30,7 +30,7 @@ from rfauto.adapters import openems_templates as ot
 
 BAND = (2.25, 2.75)
 H_MM = 0.508
-# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm（真机实测）
+# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm
 NEAR_DEFAULT_MM = 3e8 / (2.75e9 * math.sqrt(3.66)) / 50 / 4 * 1e3
 
 
@@ -131,7 +131,7 @@ class TestViaInductanceKernel:
 class TestCircuitJudgeViaInductance:
     @pytest.mark.parametrize("template", ot.C3_TEMPLATES)
     def test_default_is_ideal_short_and_auto_equals_calibrated(self, template, freqs):
-        """校准：auto（l_via_h=None）=C3_L_VIA_CAL_H（HFSS 仲裁
+        """R1 校准（df5-c3fix）：auto（l_via_h=None）=C3_L_VIA_CAL_H（HFSS 仲裁
         0.125nH），不再等于 Goldfarb-Pucel 几何值（0.29596nH 系高估已弃）；
         缺省 0.0=理想短路不变。"""
         nom = dict(ot.TEMPLATE_NOMINAL[template])
@@ -156,8 +156,8 @@ class TestCircuitJudgeViaInductance:
     ])
     def test_compensated_nominal_resonates_at_f0(self, template, ideal_up_pct,
                                                  auto_off_pct, freqs):
-        """登记⑨ 校准过孔补偿口径：NOMINAL 已按设计链 l_via_h=None
-        （=校准值 0.125nH）再生（棒长按谐振条件精确解缩短）
+        """登记⑨+R1 校准过孔补偿口径：NOMINAL 已按设计链 l_via_h=None
+        （=C3_L_VIA_CAL_H 0.125nH，df5-c3fix）再生（棒长按谐振条件精确解缩短）
         ——过孔裁判（l_via_h=None）带心回 f0（|偏移|≤0.1%）；理想短路裁判同
         几何则上移 2.4~3.3%（0.125nH 补偿量，lcal_compute.py 实测；旧 G-P
         0.296nH 口径为 5.8~8.0%）；无耗/互易/回文对称由构造保持。"""
@@ -169,7 +169,7 @@ class TestCircuitJudgeViaInductance:
         assert (bc_auto / 2.5 - 1.0) * 100.0 == pytest.approx(auto_off_pct, abs=0.05)
         assert (bc_ideal / 2.5 - 1.0) * 100.0 == pytest.approx(ideal_up_pct, abs=0.05)
         shift = (bc_auto / bc_ideal - 1.0) * 100.0
-        # 0.125nH 补偿量（实测 −2.47/−3.18/−2.36%）；旧 G-P 口径 −8~−3%
+        # 0.125nH 补偿量（df5-c3fix 实测 −2.47/−3.18/−2.36%）；旧 G-P 口径 −8~−3%
         assert -8.0 < shift < -2.0
         p = np.abs(s1[:, 0, 0]) ** 2 + np.abs(s1[:, 1, 0]) ** 2
         assert float(np.max(np.abs(p - 1.0))) < 1e-9
@@ -185,7 +185,7 @@ class TestCircuitJudgeViaInductance:
         assert _band_center_ghz(freqs, s1) < _band_center_ghz(freqs, s0)
 
     def test_fake_channel_default_ideal_and_via_opt_in(self, freqs):
-        """fake 同源通道缺省=理想短路（保守判定：显式旧几何黄金钉保持，
+        """fake 同源通道缺省=理想短路（登记⑨ 保守判定：显式旧几何黄金钉保持，
         逐位复现旧名义）；过孔裁判经 l_via_h（"auto"/数值 H）显式开启，与
         c3_circuit_sparams 同口径逐位一致。"""
         from rfauto.adapters.fake_adapter import _c3_sparams
@@ -290,7 +290,7 @@ class TestConvergenceGate:
 
     def test_judge_fails_when_unconverged_even_if_gates_pass(self, smoke, freqs):
         """用裁判自身响应（带心 F0、叠 −0.5dB 均匀损耗落进 IL 门）冒充 EM：五门+
-        无源全过，仅收敛门翻转 verdict PASS→FAIL。NOMINAL 为过孔补偿
+        无源全过，仅收敛门翻转 verdict PASS→FAIL。NOMINAL 为登记⑨ 过孔补偿
         口径，合成响应取过孔裁判（l_via_h=None）带心回 F0。"""
         nom = dict(ot.TEMPLATE_NOMINAL["interdigital"])
         s = ot.c3_circuit_sparams("interdigital", freqs, nom, l_via_h=None)

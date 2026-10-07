@@ -1,4 +1,4 @@
-"""E11 "同族真跑次数再降 ≥30%" 验收战役（fake 通道验证面）。
+"""E11 "同族真跑次数再降 ≥30%" 验收战役（TODO 队列 e11-campaign，fake 通道验证面）。
 
 对照设计：同族 recipe（默认仓内 recipes/wilkinson_pd_v1.yaml 的 fake 通道）
 在相同预算 budget 下跑 冷启动 vs warm-start（数据集源=runs/ 已注册数据集，
@@ -20,10 +20,11 @@
   臂未达标记 censored（不进均值），censored 种子数在 n_censored/verdict
   透出。旧口径 min(双臂末代 best) 是**事后 target**——末代质量优势会被
   合成"次数缩减"（warm 每个前缀都不优于 cold 也能 PASS），已废弃。
-- **通道口径**：campaign_verdict 带顶层 ``channel``
+- **通道口径**（2026-09-17 审查修复）：campaign_verdict 带顶层 ``channel``
   字段（=adapter_name：fake|openems|hfss…），meta 记 cold/warm 双臂通道
-  与 adapter——fake 通道数字不得填"真跑次数"判据，判据引用必须带通道。
-- **历史集上界剔除**：warm 历史集构造
+  与 adapter——fake 通道数字不得填"真跑次数"判据，方案行引用必须带通道
+  （functional_audit_20260917 E11 行/踩坑候选 3）。
+- **历史集上界剔除**（2026-09-17 审查修复）：warm 历史集构造
   （build_history_samples，纯函数）剔除全部 ``cost ≤ target+ε`` 的
   上界/目标点（target 与判据同款：先验固定或逐配对冷臂末代 best）——
   历史集含最优点时 warm 首 trial 即命中（e11c_main 实证 95.5% 为构造
@@ -233,7 +234,7 @@ def build_history_samples(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """构造 warm 历史集：剔除会让判据虚高的上界/目标点（纯函数，单测钉死）。
 
-    设计动机：历史集本身
+    审查发现（functional_audit_20260917 E11 行/踩坑候选 3）：历史集本身
     含最优点（cost ≤ target）时 warm 首 trial 即命中 target，"次数缩减"
     是**构造上界**而非 warm-start 方法红利（e11c_main 实证 95.5% 即此）。
     本函数按与判据同款的 target 语义（先验固定或逐配对冷臂末代 best），
@@ -351,7 +352,7 @@ def run_campaign(
 ) -> dict[str, Any]:
     """跑整场战役（真评估走 adapter_name 通道，默认 fake），返回判定 JSON。
 
-    通道与历史上界剔除：verdict 顶层带 ``channel``=adapter_name，
+    通道与历史上界剔除（审查修复）：verdict 顶层带 ``channel``=adapter_name，
     meta 记 cold/warm 双臂通道（配对来源可追溯）；warm 臂注入的历史先验经
     build_history_samples 剔除全部 cost ≤ target+ε 的上界/目标点（target
     与判据同款：显式传入或逐配对冷臂末代 best），剔除统计在

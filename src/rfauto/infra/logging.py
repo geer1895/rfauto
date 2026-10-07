@@ -90,7 +90,7 @@ def setup_logging(
             filter=lambda record: record["extra"].get("run_id") == run_id,
         )
         # bind() 返回新 logger、不修改全局对象——丢弃返回值的写法是无效的
-        # （历史缺陷：原代码导致 run_events.jsonl 永远不写入）。
+        # （审查发现：原代码导致 run_events.jsonl 永远不写入）。
         # 正确做法：configure(extra=...) 设置全局默认 extra，使 filter 能匹配。
         logger.configure(extra={"run_id": run_id})
 

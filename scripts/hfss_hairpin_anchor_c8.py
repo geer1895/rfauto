@@ -17,9 +17,9 @@ HFSSEigen MinFreq 2GHz/NumModes 4/MaxDeltaFreq 2%/MaxPasses 15，5 面 377Ω
 - k_split_eigen=2|f2−f1|/(f2+f1) 主判；k_Z 旁证本轮不做（任务书 optional）；
   4 模齐全/双模过带/无带内第三模 intruder/band_sanity 同先例守卫。
 
-运行（#157 分离+日志轮询；#243 绝对路径；HFSS 串行 1 preflight 互斥；示例以本仓 checkout 根为工作目录）：
-  <仓库根>\\.venv\\Scripts\\python.exe
-    <仓库根>\\scripts\\hfss_hairpin_anchor_c8.py
+运行（#157 分离+日志轮询；#243 绝对路径；HFSS 串行 1 preflight 互斥）：
+  D:/rf_workspace\\.venv\\Scripts\\python.exe
+    D:/rf_workspace\\scripts\\hfss_hairpin_anchor_c8.py
     （stdout/stderr 重定向 runs/hairpin_alt_k_extract/hfss_anchor_c8/run*.log）
 """
 from __future__ import annotations

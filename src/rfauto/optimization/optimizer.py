@@ -1,7 +1,9 @@
 """Optuna 外环优化器（P2-D2）—— TPE 采样 + SQLite 持久化 + 保守剪枝 + 断点续跑。
 
 设计决策：
-- 剪枝保守化（ADR-0004 D1）：仅 solve 失败即剪，不做激进 MedianPruner
+- 剪枝保守化（ADR-0004 D1）：仅 solve 失败即剪，不做激进 MedianPruner；
+  ME-13 起提供 opt-in 的 ASHA/Hyperband 多保真裁剪（pruner 参数，缺省
+  "none"=既有保守语义逐字节不变）
 - SQLite storage 天然支持断点续跑（load_if_exists=True）
 - 适配器连接一次，每个 trial 只更新变量 + solve（避免重复 connect/build）
 - 所有 trial 结果存入 run_dir/trials/ 便于事后审计
@@ -13,6 +15,7 @@ import hashlib
 import json
 import logging
 import time
+import warnings
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -35,6 +38,57 @@ SAMPLER_SEED = 42
 # 扎堆点（constant_liar 未拉开），弃批重 ask 一次，再犯如实降级串行。
 # 门值预声明 runs/df6_dp13/criteria.md §Y3。
 BATCH_MIN_DIST = 0.01
+
+# ME-13 多保真裁剪：pruner 三态。保真阶梯 fake→openEMS→HFSS 的 Phase1
+# （低保真粗筛）里，差配方早停省真机预算——与本仓 mf_backend 两阶段
+# 语义天然同构（Phase2 只消费 COMPLETE trial，被裁点不再进精算候选）。
+PRUNER_CHOICES = ("none", "asha", "hyperband", "sprt")
+
+
+def _build_pruner(
+    pruner: str,
+    pruner_kwargs: dict[str, Any] | None,
+) -> optuna.pruners.BasePruner | None:
+    """ME-13：pruner 名 → Optuna pruner 实例（"none" → None=与旧路径一致）。
+
+    - asha: SuccessiveHalvingPruner（异步逐次减半）。参数缺省
+      min_resource=1 / reduction_factor=4 / min_early_stopping_rate=0
+      （显式 min_resource=1 而非 optuna 5.0 的 'auto'：本仓 simple-report
+      单步语义下从首个 trial 起即确定性生效）；
+    - hyperband: HyperbandPruner（多 bracket SHA，缺省 min_resource=1 /
+      max_resource='auto' / reduction_factor=3）；
+    - sprt: OP-8（round16）Wald SPRT 早停（optimization/sprt_pruner.py，
+      H0=无改进→剪；delta/sigma 必填 pruner_kwargs，不臆造 cost 尺度）；
+    - 各者均支持经 pruner_kwargs 覆盖各自构造参数（SuccessiveHalvingPruner
+      无 max_resource 概念——其 docstring 明示最大资源由目标函数内 step 决定）。
+    """
+    kw = dict(pruner_kwargs or {})
+    if pruner == "asha":
+        return optuna.pruners.SuccessiveHalvingPruner(
+            min_resource=kw.get("min_resource", 1),
+            reduction_factor=int(kw.get("reduction_factor", 4)),
+            min_early_stopping_rate=int(kw.get("min_early_stopping_rate", 0)),
+        )
+    if pruner == "hyperband":
+        return optuna.pruners.HyperbandPruner(
+            min_resource=int(kw.get("min_resource", 1)),
+            max_resource=kw.get("max_resource", "auto"),
+            reduction_factor=int(kw.get("reduction_factor", 3)),
+        )
+    if pruner == "sprt":
+        from rfauto.optimization.sprt_pruner import SPRTPruner
+
+        missing = [k for k in ("delta", "sigma") if k not in kw]
+        if missing:
+            raise ValueError(
+                f"pruner='sprt' 缺必填 pruner_kwargs: {missing}"
+                "（H1 期望改进 delta 与单步观测 σ 须由调用方从 cost 历史"
+                "显式给出，不臆造 cost 尺度）")
+        return SPRTPruner(
+            delta=float(kw["delta"]), sigma=float(kw["sigma"]),
+            alpha=float(kw.get("alpha", 0.05)),
+            beta=float(kw.get("beta", 0.10)))
+    return None
 
 
 # ─── Y3 批 ask/tell 内核 ─────────────────────────────────────────────────────
@@ -245,12 +299,23 @@ def _suggest_params(
 
 
 def trial_constraint_values(trial: Any) -> list[float]:
-    """Optuna constraints_func（E10）：从 trial user_attrs 读约束违约量。
+    """Optuna constraints_func（E10/OP-2）：读 trial 约束违约量。
 
     Optuna 软约束语义（官方 FAQ / issue #4265）：返回值 ≤0 视为可行。
-    本引擎的违约量恒 ≥0 且 0=可行边界，直接透传即满足该语义；旧 study
-    断点续跑的 trial 无 constraint_values 记录，视为可行 [0.0]。
+    本引擎的违约量恒 ≥0 且 0=可行边界，直接透传即满足该语义。
+
+    读侧双格式兼容（OP-2 弃用期）：优先 system-attr 新通道
+    ``trial.constraints``（dict[str, float]，键=约束序号字符串，由
+    ``trial.set_constraint`` 写入，optuna 5.0 TPE/GPSampler 建模原生
+    消费面）；缺失或空时回退旧 user_attrs ``constraint_values``
+    （旧 study 断点续跑兼容）。两者皆无视为可行 [0.0]。
     """
+    cons = getattr(trial, "constraints", None)
+    if cons:
+        def _key(k: str) -> tuple[int, int, str]:
+            return (0, int(k), "") if str(k).isdigit() else (1, -1, str(k))
+
+        return [float(cons[k]) for k in sorted(cons, key=_key)]
     vals = trial.user_attrs.get("constraint_values")
     if not vals:
         return [0.0]
@@ -258,11 +323,16 @@ def trial_constraint_values(trial: Any) -> list[float]:
 
 
 def _trial_is_feasible(trial: Any) -> bool:
-    """结果汇总用的可行性判定（E10）：constraint_values 全部 ≤0=可行。
+    """结果汇总用的可行性判定（E10/OP-2）：约束违约量全部 ≤0=可行。
 
-    无 constraint_values 记录的旧 trial 与 constraints_func 口径一致，
-    视为可行（缺失视为可行，兼容旧 study 断点续跑）。
+    读侧双格式兼容（OP-2，与 :func:`trial_constraint_values` 同序）：
+    优先 system-attr ``trial.constraints``，空则回退旧 user_attrs；
+    两者皆无的旧 trial 视为可行（缺失视为可行，兼容旧 study 断点续跑）。
+    NaN 违约量（``nan <= 0`` 恒 False）按违约处理，与既有口径一致。
     """
+    cons = getattr(trial, "constraints", None)
+    if cons:
+        return all(float(v) <= 0.0 for v in cons.values())
     vals = trial.user_attrs.get("constraint_values")
     if vals is None:
         return True
@@ -274,10 +344,16 @@ def _record_constraints(
     metrics: dict[str, float],
     constraints: list[Objective] | None,
 ) -> list[float]:
-    """逐 trial 约束评估（E10）：违约量写 user_attrs，供 TPE 软约束与结果汇总。
+    """逐 trial 约束评估（E10/OP-2）：违约量双写，供采样器软约束与结果汇总。
 
     每条约束用 SpecEvaluator.evaluate_objectives(metrics, [约束]) 算违约量
-    （>0=违约，0=可行边界）；写入 constraint_values 与 feasible 两个 attr。
+    （>0=违约，0=可行边界）。OP-2 双写（一弃用期）：新通道
+    ``trial.set_constraint(str(i), v)`` 落 system-attr（``constraints:<i>``，
+    optuna 5.0 TPE/GPSampler 建模原生消费），旧通道 user_attrs
+    ``constraint_values``/``feasible`` 保留（旧 study 断点续跑与既有审计
+    消费方兼容）；弃用期后移除旧写面。任一违约量为 NaN 时跳过新通道
+    （``set_constraint`` 拒 NaN 会把"记录到 NaN"升级成 trial FAIL，改变
+    既有行为——此场景由 user_attrs 通道承载，读侧回退口径不变）。
     无约束时返回空列表、不写 attr（行为与既有完全一致）。
     """
     if not constraints:
@@ -285,7 +361,27 @@ def _record_constraints(
     cvals = [SpecEvaluator.evaluate_objectives(metrics, [c]) for c in constraints]
     trial.set_user_attr("constraint_values", cvals)
     trial.set_user_attr("feasible", all(v <= 0.0 for v in cvals))
+    if not any(v != v for v in cvals):  # NaN 守卫（nan != nan）
+        for i, v in enumerate(cvals):
+            trial.set_constraint(str(i), v)
     return cvals
+
+
+def _constraints_func_compat(factory: Callable[[], Any]) -> Any:
+    """构造带 constraints_func 的采样器（OP-2 弃用期过渡助手）。
+
+    optuna 5.0 起 sampler 构造参数 ``constraints_func`` 标记弃用
+    （FutureWarning，7.0 移除；新 API=trial.set_constraint 直写
+    system-attr，采样器原生消费）。本仓双写弃用期内两通道同活：写面
+    ``_record_constraints`` 已双写，读面 ``trial_constraint_values`` 双格式
+    兼容——继续传 constraints_func 保旧通道行为逐字节不变，构造点的
+    FutureWarning 属预期内过渡噪音，此处定向静音（仅作用于该构造调用，
+    不动全局 warning 过滤）。
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", category=FutureWarning, message=".*constraints_func.*")
+        return factory()
 
 
 def build_objective(
@@ -299,6 +395,7 @@ def build_objective(
     result_cache: Any | None = None,
     cache_scope: dict[str, Any] | None = None,
     constraints: list[Objective] | None = None,
+    prune_report: bool = False,
 ) -> Callable[[optuna.Trial], float]:
     """构建 Optuna 目标函数。
 
@@ -312,8 +409,15 @@ def build_objective(
        （constraint_values / feasible，≤0=可行）；cost 仍只含 objectives
        贡献，约束通过 Optuna 软约束通道（constraints_func）生效。
        指标计算按 objectives+constraints 并集取，保证约束指标恒有产物。
+    7. ME-13：``prune_report=True`` 时（study 配了 ASHA/Hyperband），cost
+       完成后 ``trial.report(cost, step=1)`` + ``should_prune()`` 裁决——
+       simple-report 单步语义（fake/openEMS 适配器单点无中间量，以既有
+       mf_backend Phase1 语义为准，不发明中间接口；未来适配器提供多保真
+       中间 cost 时同一 pruner 消费多步 report）。False=不 report 不裁决
+       （缺省路径行为逐字节不变）。裁决在审计落盘/缓存回写之后、返回前：
+       被裁 trial 的求解数据不丢（audit/cache 完整），仅状态记 PRUNED。
 
-    cache_scope（内容寻址）：``{"study": str, "seed": str, "components":
+    cache_scope（P2① 内容寻址）：``{"study": str, "seed": str, "components":
     dict}``——components 为 ResultCache.components_for_run 派生的固定成分
     （params_canonical_json 逐 trial 由 param_system **全参**规范 JSON 填充，
     非仅调谐参数：两配方固定参数不同、调谐参数相同时旧键会串台）；
@@ -322,6 +426,14 @@ def build_objective(
     # 指标计算口径：objectives + constraints 并集（无约束时即 objectives，
     # 行为逐字节不变）。cost 只由 objectives 决定。
     eval_specs: list[Objective] = objectives + list(constraints or [])
+
+    def _pruner_gate(trial: optuna.Trial, cost: float) -> None:
+        """ME-13：cost 完成后 report + pruner 裁决；prune_report=False 直通。"""
+        if not prune_report:
+            return
+        trial.report(float(cost), step=1)
+        if trial.should_prune():
+            raise optuna.TrialPruned()
 
     def objective(trial: optuna.Trial) -> float:
         # 1. 建议参数
@@ -332,7 +444,7 @@ def build_objective(
         param_system.write_to_adapter(adapter, name_map=name_map)
 
         # ResultCache：同参数重评估直接复用 Touchstone（HFSS 级秒回，#148）。
-        # compute_content_key（13 成分分列）+ lookup 带 provenance；
+        # P2①：compute_content_key（13 成分分列）+ lookup 带 provenance；
         # 同几何异 study 命中同一条目（cross_study=True）。热循环里不传
         # components 给 lookup（why_miss 需扫全部条目 manifest，逐 trial 做
         # 是 O(N) 观测开销），why_miss 走 run_once / dry_run 单次路径。
@@ -387,6 +499,7 @@ def build_objective(
                         (trial_dir / f"trial_{trial.number}.json").write_text(
                             json.dumps(payload, indent=2, ensure_ascii=False),
                             encoding="utf-8")
+                    _pruner_gate(trial, cost)
                     return cost
                 except Exception as exc:  # 缓存损坏按 miss 处理（#105 降级）
                     trial.set_user_attr("cache_hit_error", str(exc))
@@ -396,6 +509,10 @@ def build_objective(
         try:
             report = solve_with_self_heal(adapter, setup_name)
         except Exception as e:
+            # 求解主路径宽兜：self_heal 重连重试后仍抛出的任意异常（适配器
+            # 掉线/求解器崩溃/license 失败等）。转 TrialPruned——该 trial 剪枝
+            # 而 study 继续；失败原因可见于 trial.user_attrs["error"] 与
+            # Optuna 的剪枝日志，非静默。
             trial.set_user_attr("error", str(e))
             raise optuna.TrialPruned() from e
 
@@ -412,6 +529,10 @@ def build_objective(
                 try:
                     far_field = adapter.get_far_field(setup_name)
                 except Exception:
+                    # 观测性降级：适配器未实现 get_far_field / 求解未算远场等
+                    # 异常一律降级 None。下游 compute_metrics 对 far_field=None
+                    # 的 gain_db 目标静默跳过（缺失指标不惩罚）——即该目标本
+                    # trial 无值而 study 不中断；远场故障仅此处 None 可查。
                     far_field = None
             metrics = SpecEvaluator.compute_metrics(network, eval_specs, far_field=far_field)
         except Exception as e:
@@ -461,6 +582,7 @@ def build_objective(
                 encoding="utf-8",
             )
 
+        _pruner_gate(trial, cost)
         return cost
 
     return objective
@@ -519,6 +641,10 @@ def _prepare_env(
         ))
         param_system.write_to_adapter(adapter, name_map=getattr(plugin_cls, "hfss_var_map", {}))
     except Exception as e:
+        # 构建主路径宽兜：插件 build（几何构建/参数写入/自愈重试）抛出的
+        # 任意异常。关闭 adapter 后返回 error 串——调用方（run_optimization/
+        # run_multi_optimization）落 {"ok": False, "errors": [...]} 终止该
+        # run，错误信息随返回值可见，非静默。
         adapter.close()
         return None, "", None, None, "main_setup", f"模型构建失败: {e}"
 
@@ -603,8 +729,13 @@ def run_multi_optimization(
     # E9：x → 违约向量缓存（前沿点的 X 即已评估的精英个体，浮点逐位一致；
     # 12 位舍入防哈希边界。未命中如实记 None，不重解、不编造）。
     viol_cache: dict[tuple, list[float]] = {}
+    # B-4/S3：objective/constraint 指标键缺位计数（_single_objective_cost 对
+    # 缺键按 0 计=phantom-perfect；cost 行为保持不变，只把缺位事实回显到
+    # result["n_missing_metric"]，透明度而非行为变更）。
+    n_missing_metric = 0
 
     def evaluate(x: np.ndarray) -> np.ndarray:
+        nonlocal n_missing_metric
         params = {n: float(low[i] + x[i] * (high[i] - low[i])) for i, n in enumerate(names)}
         param_system.update(params)
         param_system.write_to_adapter(adapter, name_map=getattr(_plugin_cls, "hfss_var_map", {}))
@@ -614,11 +745,19 @@ def run_multi_optimization(
                 return np.full(len(objectives), 1e3)
             network = adapter.get_sparams()
         except Exception:
+            # 多目标求解主路径宽兜（与单目标 solve 处同一故障面）：返回罚向量
+            # 1e3，NSGA-II 视同最差可行个体、进化不中断。已知代价：真机故障
+            # 与不可行设计在前沿排序上不可区分。
             return np.full(len(objectives), 1e3)
         # 指标按 objectives+constraints 并集取（约束指标键恒有产物，
         # 镜像 build_objective 的 eval_specs 口径）；cost 向量仍只由
         # objectives 决定。
         metrics = SpecEvaluator.compute_metrics(network, eval_specs)
+        for spec in eval_specs:
+            if not any(k in metrics
+                       for k in SpecEvaluator.metric_key_candidates(
+                           spec.metric, spec.op)):
+                n_missing_metric += 1
         vec = []
         for obj in objectives:
             vec.append(_single_objective_cost(metrics, obj))
@@ -687,6 +826,7 @@ def run_multi_optimization(
         "pop_size": pop_size,
         "n_pareto": result_multi.get("n_pareto", len(pareto_points)),
         "n_evaluations": result_multi.get("n_evaluations", 0),
+        "n_missing_metric": n_missing_metric,
         "elapsed_s": round(elapsed, 1),
         "pareto_points": pareto_points,
     }
@@ -696,6 +836,11 @@ def run_multi_optimization(
             result.setdefault("warnings", []).append(
                 f"{missing_constraint_points} 个前沿点约束缓存未命中，"
                 "constraint_values 如实记 null（#105）")
+    if n_missing_metric:
+        result.setdefault("warnings", []).append(
+            f"{n_missing_metric} 次 objective/constraint 指标键缺位被按 "
+            "cost=0 计（phantom-perfect 风险，B-4/S3）——核对 objectives "
+            "metric 名与适配器指标产物键（s11_db_min 类显式统计量名，#195）")
     hv_trace = result_multi.get("hv_convergence")
     if hv_trace is not None:
         result["hv_convergence"] = hv_trace
@@ -906,10 +1051,13 @@ def run_optimization(
     seed: int = SAMPLER_SEED,
     cache: bool | None = None,
     batch_size: int = 1,
+    pruner: str = "none",
+    pruner_kwargs: dict[str, Any] | None = None,
+    callbacks: list[Any] | None = None,
 ) -> dict[str, Any]:
-    """运行 Optuna 优化外环（sampler: "tpe" | "cmaes"，计划内缺口 5）。
+    """运行 Optuna 优化外环（sampler: "tpe" | "cmaes" | "gp"，ME-12 起 GPSampler 转正）。
 
-    seed（参数化）：采样器随机种子，缺省沿用模块常量 SAMPLER_SEED=42
+    seed（P2⑦ 参数化）：采样器随机种子，缺省沿用模块常量 SAMPLER_SEED=42
     （行为不变）；显式给不同 seed 即换搜索轨迹（配对实验/新轨迹 #158，
     同 seed+同 study 复用缓存秒回属合法配对）。seed 同时写入缓存 provenance。
 
@@ -919,12 +1067,13 @@ def run_optimization(
     裁决（env=off 时维持旁路——环境关是最高优先级）。生效与否回显
     ``result["cache_enabled"]``。
 
-    E10 约束优化：配方 optimization.constraints（元素结构同 objectives）时走
-    Optuna 软约束语义（trial user_attrs 存违约量，≤0=可行；TPE
-    constraints_func），结果 best 语义为"最优可行 trial"，全不可行时
-    all_infeasible=True 如实报告。缺省无约束，行为不变。
+    # E10 约束优化：配方 optimization.constraints（元素结构同 objectives）时走
+    # Optuna 软约束语义（OP-2 双写：trial.set_constraint 落 system-attr +
+    # 旧 user_attrs constraint_values 同写，≤0=可行；TPE/GPSampler
+    # constraints_func），结果 best 语义为"最优可行 trial"，全不可行时
+    # all_infeasible=True 如实报告。缺省无约束，行为不变。
 
-    warm-start：warm_start 为非空历史点列表（每点
+    E11 warm-start：warm_start 为非空历史点列表（每点
     ``{"params": {...}, "cost": float}``，由调用方从 dataset_service 查得）
     时，先过相似度门（warm_start.warm_start_points，负迁移防线）再 enqueue
     ——WAITING trial 在 optimize 中先被弹出执行=先验起点，结果带
@@ -933,11 +1082,31 @@ def run_optimization(
     Y3 批次 BO（DP-13）：``batch_size`` 缺省 1=旧路径逐字节等价
     （study.optimize 原样）；>1 走批 ask/tell（ask k 点全 RUNNING → 串行
     逐个 tell），TPE 显式 ``constant_liar=True`` 惩罚 RUNNING 防扎堆
-    （Optuna 4.9 缺省 False，须显式开启）；批内归一化最小距离低于
-    BATCH_MIN_DIST 弃批重 ask 一次，再犯如实降级串行；cmaes 不支持批模式
-    显式报错不静默。批记账（n_batches/re_ask/degraded_serial/
-    min_batch_distance/discarded_by_gate）只进 batch_size>1 的
-    ``result["batch_mode"]``，缺省路径输出键集不变。
+    （Optuna 4.9 缺省 False，须显式开启）；OP-1 起 gp 同样放行批模式
+    （Optuna 5.0 GPSampler 建模原生纳入 RUNNING trial，`_gp/sampler.py`
+    states=(COMPLETE, RUNNING)，qLogEI 真批量语义）；批内归一化最小距离
+    低于 BATCH_MIN_DIST 弃批重 ask 一次，再犯如实降级串行；cmaes 无批量
+    口径不支持批模式，显式报错不静默。批记账（n_batches/re_ask/
+    degraded_serial/min_batch_distance/discarded_by_gate）只进
+    batch_size>1 的 ``result["batch_mode"]``，缺省路径输出键集不变。
+
+    ME-13 多保真裁剪（ASHA/Hyperband）：``pruner`` 缺省 "none"=行为
+    逐字节不变（ADR-0004 保守剪枝语义原样）。"asha"=SuccessiveHalvingPruner、
+    "hyperband"=HyperbandPruner（构造参数经 ``pruner_kwargs`` 覆盖，见
+    :func:`_build_pruner`）；未知值显式拒绝。多保真语义：保真阶梯
+    fake→openEMS→HFSS 的 Phase1（低保真粗筛）路径上，每个 trial 的 cost
+    完成后 report（step=1，simple-report 单步——fake 单点无中间量，以
+    mf_backend Phase1 既有语义为准）并交 pruner 裁决，差配方早停记
+    PRUNED：mf_backend Phase2 只消费 COMPLETE trial，被裁点不再进 HV
+    精算候选、TPE 建模也不再采信——低保真已可判死的配置不占真机预算。
+    被裁 trial 的审计文件/缓存回写照常（数据不丢，仅状态 PRUNED）。
+    pruner != "none" 时 ``result["pruner"]`` 回显（缺省不加键）。
+
+    SN-9（2026-10-05 W1-D）``callbacks``：逐 trial 完成回调列表（Optuna
+    ``study.optimize(callbacks=...)`` 原样语义，签名 ``f(study, trial)``），
+    仅缺省单 trial 路径（batch_size=1）消费；批 ask/tell 循环与缺省 None
+    行为不变。服务层 start_tune(on_trial=...) 单回调经此透传（条件传参
+    #df6③：None 不加键，旧 stub/调用方零感知）。
     """
     from rfauto.core.state import generate_run_id
     from rfauto.infra.run_store import create_run_dir, record_run, snapshot_recipe, write_meta
@@ -966,6 +1135,11 @@ def run_optimization(
     if batch_size < 1:
         return {"ok": False, "errors": [
             f"batch_size 必须 ≥1，收到: {batch_size}"]}
+
+    # ME-13：pruner 旋钮校验（未知值显式拒绝不静默；在适配器创建前拦截）
+    if pruner not in PRUNER_CHOICES:
+        return {"ok": False, "errors": [
+            f"未知 pruner: {pruner}（可选 {' | '.join(PRUNER_CHOICES)}）"]}
 
     # ─── E10 约束段：optimization.constraints（元素结构同 objectives） ────
     # 缺省=无约束，全流程行为不变。约束走 Optuna 软约束通道（≤0=可行），
@@ -1023,6 +1197,7 @@ def run_optimization(
     if sampler == "cmaes":
         if batch_size > 1:
             # Y3：CMA-ES 无 constant_liar 口径，批模式显式拒绝不静默降级
+            # （OP-1 保留：CmaEsSampler 建模不消费 RUNNING trial，无批量口径属实）
             adapter.close()
             return {"ok": False, "errors": [
                 "sampler='cmaes' 不支持 batch_size>1（无 constant_liar 口径）；"
@@ -1034,24 +1209,45 @@ def run_optimization(
         if batch_size > 1:
             # Y3 批模式：constant_liar 显式开启（Optuna 4.9 缺省 False），
             # RUNNING trial 以失败"谎言"惩罚防批内扎堆；约束语义照常兼容。
-            opt_sampler = optuna.samplers.TPESampler(
-                seed=seed, constant_liar=True,
-                constraints_func=trial_constraint_values if constraints else None)
+            opt_sampler = _constraints_func_compat(
+                lambda: optuna.samplers.TPESampler(
+                    seed=seed, constant_liar=True,
+                    constraints_func=trial_constraint_values if constraints else None))
         elif constraints:
-            # E10 TPE 软约束：constraints_func 从 trial user_attrs 读违约量
-            # （≤0=可行，optuna 官方语义 issue #4265；缺失视为可行 [0.0]，
-            # 兼容旧 study 断点续跑）
-            opt_sampler = optuna.samplers.TPESampler(
-                seed=seed, constraints_func=trial_constraint_values)
+            # E10 TPE 软约束：读侧 trial_constraint_values 双格式兼容
+            # （OP-2：优先 system-attr trial.constraints，回退旧 user_attrs；
+            # ≤0=可行，optuna 官方语义 issue #4265；缺失视为可行 [0.0]）
+            opt_sampler = _constraints_func_compat(
+                lambda: optuna.samplers.TPESampler(
+                    seed=seed, constraints_func=trial_constraint_values))
         else:
             opt_sampler = optuna.samplers.TPESampler(seed=seed)
+    elif sampler == "gp":
+        # ME-12（Optuna 5.0 GPSampler 转正）+ OP-1：批模式放行——
+        # GPSampler 建模原生纳入 RUNNING trial（qLogEI 真批量 BO 语义，
+        # `_ask_batch` ask k 点全 RUNNING 后逐个 tell，后续点以前序 RUNNING
+        # 点为条件采样），无需 constant_liar；constraints_func 与 TPE 同口径
+        # （软约束 ≤0=可行）。
+        opt_sampler = _constraints_func_compat(
+            lambda: optuna.samplers.GPSampler(
+                seed=seed,
+                constraints_func=trial_constraint_values if constraints else None))
     else:
         adapter.close()
-        return {"ok": False, "errors": [f"未知 sampler: {sampler}（可选 tpe | cmaes）"]}
+        return {"ok": False, "errors": [f"未知 sampler: {sampler}（可选 tpe | cmaes | gp）"]}
+    # ME-13：pruner 实例（"none" → None，create_study(pruner=None) 与不传
+    # 该参等价——既有路径行为逐字节不变）。OP-8：sprt 档缺必填 kwargs 时
+    # 按同款 {"ok": False} 软失败面返回（与"未知 sampler/pruner"一致，不裸抛）。
+    try:
+        opt_pruner = _build_pruner(pruner, pruner_kwargs)
+    except ValueError as exc:
+        adapter.close()
+        return {"ok": False, "errors": [str(exc)]}
     study = optuna.create_study(
         study_name=study_name,
         storage=storage,
         sampler=opt_sampler,
+        pruner=opt_pruner,
         direction="minimize",
         load_if_exists=True,
     )
@@ -1060,7 +1256,7 @@ def run_optimization(
     if existing_trials > 0:
         logger.info(f"恢复已有 study: {existing_trials} 个已完成 trial")
 
-    # ResultCache 接线（内容寻址）：同几何重评估秒回；
+    # ResultCache 接线（阶段 0.4 → P2① 内容寻址）：同几何重评估秒回；
     # RFAUTO_CACHE=off 旁路。固定成分由 components_for_run 一处派生（与
     # service.run_once 同源，#106 recipe_version/schema_version 分列）；
     # params_canonical_json 逐 trial 填充；study/seed 只作 provenance（#158）。
@@ -1098,9 +1294,10 @@ def run_optimization(
         result_cache=result_cache,
         cache_scope=cache_scope,
         constraints=constraints,
+        prune_report=(pruner != "none"),
     )
 
-    # ─── warm-start：历史先验点注入（相似度门=负迁移防线） ────────────
+    # ─── E11 warm-start：历史先验点注入（相似度门=负迁移防线） ────────────
     # 数据获取与本环分离（分层契约）：历史点由调用方从 dataset_service 查得
     # 后以 list[dict] 注入。门通过→enqueue（WAITING trial 先跑=先验起点）；
     # 门拒绝→如实降级冷启动，不凑数注入。warm_start=None 时本段整体跳过。
@@ -1128,7 +1325,11 @@ def run_optimization(
                 batch_size=batch_size, eff_max_trials=eff_max_trials,
                 eff_max_wall_s=eff_max_wall_s, start_time=start_time)
         else:
-            study.optimize(objective_fn, n_trials=eff_max_trials, timeout=eff_max_wall_s)
+            # SN-9：callbacks 条件透传（None=不加键，study.optimize 行为逐字节不变）
+            optimize_kw: dict[str, Any] = (
+                {"callbacks": list(callbacks)} if callbacks else {})
+            study.optimize(objective_fn, n_trials=eff_max_trials,
+                           timeout=eff_max_wall_s, **optimize_kw)
     except QuotaExceededError:
         logger.warning("达到配额上限，提前结束优化")
     except KeyboardInterrupt:
@@ -1170,9 +1371,13 @@ def run_optimization(
         "best_metrics": {},
     }
 
-    # 显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）
+    # E11：显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）
     if warm_start is not None:
         result["warm_start_n"] = warm_start_n
+
+    # ME-13：pruner 回显只进非缺省路径（缺省输出键集不变）
+    if pruner != "none":
+        result["pruner"] = pruner
 
     # Y3：批记账只进 batch_size>1（缺省路径输出键集不变）
     if batch_size > 1 and batch_notes is not None:
@@ -1272,85 +1477,76 @@ def _create_adapter(
     adapter_kwargs: dict[str, Any] | None,
     recipe_data: dict[str, Any],
 ) -> tuple[Any | None, str]:
-    """创建并连接适配器，返回 (adapter, aedt_version)。"""
-    kwargs = adapter_kwargs or {}
+    """创建并连接适配器，返回 (adapter, aedt_version)。
+
+    AU-6 收拢：三通道（fake/hfss/openems）具体类 lazy import 与构造体已
+    迁至 rfauto.optimization.adapter_channels 注册表（基类+注册表模式），
+    本函数只做公共预处理（setup/freq 提取——保留改前"分支前先取 setup_cfg"
+    的报错语义）+ 注册表分发。行为零变化（tests/unit/test_adapter_channels
+    .py 钉死；test_openems_optimizer_channel.py 既有分支钉同过）。
+    """
     setup_cfg = recipe_data.get("setup", {})
     freq_range = setup_cfg.get("freq_range_ghz", [1.5, 3.5])
     freq_points = setup_cfg.get("points", 201)
 
-    if adapter_name == "fake":
-        from rfauto.adapters.fake_adapter import FakeAdapter
-        kwargs = dict(adapter_kwargs or {})
-        freq_ghz = (freq_range[0], freq_range[1], freq_points)
-        n_ports = kwargs.pop("n_ports", None)
-        model_type = kwargs.pop("model_type", None)
-        # 未显式指定时从插件元数据推导（C4：branchline 4 端口 / patch 2 端口）
-        if n_ports is None or model_type is None:
-            try:
-                from rfauto.models.registry import get as _get_plugin
-                plugin_cls = _get_plugin(recipe_data.get("model", ""))
-                n_ports = n_ports if n_ports is not None else plugin_cls.n_ports
-                model_type = model_type if model_type is not None else plugin_cls.fake_model_type
-            except KeyError:
-                pass
-        adapter = FakeAdapter(
-            freq_ghz=freq_ghz,
-            n_ports=n_ports if n_ports is not None else 3,
-            model_type=model_type or "wilkinson",
-            **kwargs,
-        )
-        adapter.connect({})
-        return adapter, "fake"
+    from rfauto.optimization.adapter_channels import create_via_channel
 
-    elif adapter_name == "hfss":
-        import os
+    return create_via_channel(
+        adapter_name,
+        setup_cfg=setup_cfg,
+        freq_range=freq_range,
+        freq_points=freq_points,
+        adapter_kwargs=adapter_kwargs,
+        recipe_data=recipe_data,
+    )
 
-        from rfauto.adapters.hfss_adapter import HfssAdapter
-        from rfauto.infra.version_probe import resolve_aedt_install
 
-        aedt_path = os.environ.get("RFAUTO_AEDT_PATH", "")
-        if aedt_path and not Path(aedt_path).exists():
-            return None, ""
-        # 项目 B：版本探测收敛（显式路径优先，否则自动探测本机安装）
-        install = resolve_aedt_install(aedt_path or None)
-        if install is None:
-            return None, ""
-        aedt_version = install["aedt_version"]
-        adapter = HfssAdapter()
-        adapter.connect({"desktop_version": aedt_version, "non_graphical": True})
-        return adapter, aedt_version
+def plan_tolerance(
+    recipe_path: str | Path,
+    *,
+    n_samples: int = 200,
+    tolerances: dict[str, float] | None = None,
+) -> dict[str, Any]:
+    """公差分析计划预览（SN-18 ``tolerance --dry-run``）：零执行零写盘。
 
-    elif adapter_name == "openems":
-        # openEMS 真评估优化通道（产物化自真机战役层补丁）：
-        # OpenEMSOptAdapter 逐评估整脚本重渲染 + OpenEMSSolver 子进程求解，
-        # 与 fake/hfss 分支同构消费优化回路（set_variables/solve/get_sparams/close）。
-        from rfauto.adapters.openems_optimizer_adapter import (
-            OpenEMSOptAdapter,
-            template_for_model,
-        )
+    与 run_tolerance_analysis 同源解析（tolerances 缺省/n_samples 覆盖/
+    公差参数在 params 中的存在性检查），只算账不建适配器不采样。
+    """
+    path = Path(recipe_path)
+    if not path.exists():
+        return {"ok": False, "errors": [f"配方文件不存在: {path}"]}
+    with open(path, encoding="utf-8") as f:
+        recipe_data = yaml.safe_load(f)
 
-        kwargs = dict(adapter_kwargs or {})
-        try:
-            # 模板解析：显式 adapter_kwargs.template > 插件 openems_template
-            # ClassVar > 子串映射（与 service._template_hint 同口径）
-            template = str(kwargs.pop("template", "") or "")
-            if not template:
-                try:
-                    from rfauto.models.registry import get as _get_plugin
-                    plugin_cls = _get_plugin(str(recipe_data.get("model", "")))
-                    template = str(getattr(plugin_cls, "openems_template", "") or "")
-                except KeyError:
-                    template = ""
-            if not template:
-                template = template_for_model(str(recipe_data.get("model", "")))
-            adapter = OpenEMSOptAdapter(
-                (float(freq_range[0]), float(freq_range[1])),
-                template=template, **kwargs)
-            if not adapter.connect({}):
-                return None, ""
-            return adapter, "openems"
-        except Exception as e:
-            logger.warning("openems 适配器创建失败: %s", e)
-            return None, ""
-
-    return None, ""
+    tol_section = recipe_data.get("tolerance", {})
+    tols = tolerances or tol_section.get("tolerances", {})
+    if not tols:
+        return {"ok": False, "errors": [
+            "缺少公差定义：请在配方添加 tolerance.tolerances 段（如 {arm_len_mm: 0.1}）"
+        ]}
+    n_samples_eff = int(tol_section.get("n_samples", n_samples))
+    nominal = {
+        k: (v.get("value") if isinstance(v, dict) else v)
+        for k, v in recipe_data.get("params", {}).items()
+        if isinstance(v.get("value") if isinstance(v, dict) else v, (int, float))
+    }
+    missing = [t for t in tols if t not in nominal]
+    if missing:
+        return {"ok": False, "errors": [f"公差参数不在配方 params 中: {missing}"]}
+    try:
+        objectives = [Objective(**o) for o in recipe_data.get("objectives", [])]
+    except Exception as exc:
+        return {"ok": False, "errors": [f"objectives 段非法: {exc}"]}
+    if not objectives:
+        return {"ok": False, "errors": ["缺少 objectives 段"]}
+    return {
+        "ok": True,
+        "mode": "dry-run",
+        "recipe": str(path),
+        "model": recipe_data.get("model", ""),
+        "adapter_note": "适配器未创建（dry-run 不连接不采样）",
+        "tolerances": {str(k): float(v) for k, v in tols.items()},
+        "n_samples": n_samples_eff,
+        "n_objectives": len(objectives),
+        "nominal_params": {k: float(v) for k, v in nominal.items() if k in tols},
+    }

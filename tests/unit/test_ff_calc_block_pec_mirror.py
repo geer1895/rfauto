@@ -1,4 +1,4 @@
-"""patch ff_calc_block 渲染侧接 PEC 地镜像修正（#249）。
+"""w2e-c3-mesh ④：patch ff_calc_block 渲染侧接 PEC 地镜像修正（#249）。
 
 渲染脚本保持纯净（不 import rfauto 内核，openems_solver 可用其他 python_exe 跑
 绑定），故 ff_calc_block 内联同一公式；本测试把渲染出的修正段（RFAUTO_PEC_MIRROR

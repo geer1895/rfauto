@@ -381,8 +381,8 @@ class TestPlanImmutability:
             runner.build_plan(root, force=True)
 
     def test_registered_nominal_matches_redesign_doc(self):
-        """真面一致性钉（当轮口径）：TEMPLATE_NOMINAL 与设计链
-        l_via_h=None（auto=校准值 0.125nH）再生名义 4 位舍入一致（经 doc 参数
+        """真面一致性钉（R2 df5-c3fix 改当轮口径）：TEMPLATE_NOMINAL 与设计链
+        l_via_h=None（auto=C3_L_VIA_CAL_H）再生名义 4 位舍入一致（经 doc 参数
         注入，脱 runs/ 存档依赖）；--plan fail-closed 机制面用篡改 doc 钉
         （改任一在册几何键 → 不一致）。"""
         designers = {"interdigital": ot.interdigital_design_from_order,
@@ -500,9 +500,6 @@ class TestStage2EndToEnd:
         _declare_stage1(root)
 
     def test_declare_launch_judge_pass_and_resume(self, tmp_path):
-        if not runner.CPASS_PATH.exists():
-            pytest.skip("runs/smoke_c3_redesign/cpass_verdict.json 归档不在"
-                        "（pred_stored_cpass_pct 交叉钉依赖真机存档）")
         root = tmp_path / "runs"
         self._prepare(root)
         calls: list[dict] = []
@@ -527,6 +524,10 @@ class TestStage2EndToEnd:
         assert out["verdict"] == "PASS"
         assert out["G1_peak_shift"]["status"] == "PASS"
         assert out["G1_peak_shift"]["abs_dev_pt"] == pytest.approx(0.0, abs=1e-9)
+        if out["G1_peak_shift"]["pred_stored_cpass_pct"] is None:
+            # 公开分发视图：cpass 存档（runs/smoke_c3_redesign）缺席——
+            # 交叉记录字段如实 None；主门（G1 当轮判）已在本测断言
+            pytest.skip("cpass 存档缺席（公开分发视图），交叉记录如实 None")
         assert out["G1_peak_shift"]["pred_stored_cpass_pct"] == pytest.approx(0.0,
                                                                              abs=1e-9)
         assert out["G2_il_rl"]["status"] == "PASS"
@@ -614,7 +615,7 @@ class TestStage2EndToEnd:
         assert judged["verdict"] == "FAIL_NOT_CONVERGED"
 
 
-# ─── 2① stage1 帽值落痕 / 2② band_center_3db 脚本内实现（杂项批）──────────
+# ─── 2① stage1 帽值落痕 / 2② band_center_3db 脚本内实现（df5 杂项批）──────────
 
 class TestStage1CapTrace:
     def test_default_cap_recorded_explicitly(self, tmp_path):

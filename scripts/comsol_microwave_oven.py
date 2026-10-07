@@ -4,7 +4,7 @@
 真机复现 COMSOL 官方微波炉例：金属腔体 + 矩形波导馈（TE10，2.45 GHz，1 kW）
 + 玻璃盘 + 土豆介质负载，跑「频域 Maxwell → 稳态传热」并导出 T_max 与温度场。
 
-官方口径来源（本机 COMSOL 6.3 安装，逐条实录；纪律 1c/#215：禁止凭想象写 API/数值）：
+官方口径来源（本机 COMSOL 6.3 安装，逐条实录；铁律 1c/#215：禁止凭想象写 API/数值）：
 - applications/RF_Module/Microwave_Heating/microwave_oven.mph（model 1424，
   usedlicenses=COMSOL+RF，lastComputationTime 53.4 s）及其同目录
   microwave_oven_parameters.txt（几何/材料参数逐行实录）；
@@ -18,23 +18,23 @@
   Integration of ht.Qtot over Potato）；定性口径 "about 60% of the input"；
   半模型 314 W。
 
-**温度场验证口径（官方文档检索定论）**：
+**温度场验证口径（§10.24 d3-2 收口，2026-09-13 官方文档检索定论）**：
 官方对温度场**无任何标量参考量**——模型文档全文（本机 PDF 30 页逐页核）
 只有 Figure 3 瞬态中心温度曲线（图，无数值）；"中心的温度最终达到 100℃"
 是沸腾物理叙述且明示本模型未建该非线性；RF Module User's Guide 第 6 章
 （Microwave Heating 接口，pp.311-317）仅接口说明；姊妹模型
 rotating_microwave_oven 文档唯一温度数字 "average temperature gradually
 approaches 380 K" 属**相变封顶（373.15 K）+ 旋转 + 变介电常数**的另一模型，
-对本模型不构成参考量。故走**能量守恒自洽锚**（如实标注非官方）：
+对本模型不构成参考量。故按任务书走**能量守恒自洽锚**（如实标注非官方）：
   - transient（官方 study 型，绝热）：∫P dt = m·Cp·ΔT_mean 精确成立
     （单向耦合 + 材料温度无关 + 无热汇），偏差只来自求解器容差；
-  - stationary（本脚本口径）：∮ht.ntflux dS = ∫ht.Qtot dV 稳态闭合；
+  - stationary（任务书口径）：∮ht.ntflux dS = ∫ht.Qtot dV 稳态闭合；
   - 中心温度取官方三维截点位 (wo/2, 0, rpot+bp+hp)（官方 dmodel.xml
     CutPoint3D 实录），对照官方 Figure 2/3 定性"中心峰化"：
     ΔT_center ≥ ΔT_mean。
 
 **口径差异（如实声明）**：官方例是 Frequency-Transient（range(0,1,5) 单向
-电磁加热）。本脚本默认跑 Frequency-Stationary（COMSOL 预设
+电磁加热）。本脚本按任务书要求默认跑 Frequency-Stationary（COMSOL 预设
 "Frequency-Stationary, One-Way Electromagnetic Heating"）。稳态热必须有热沉，
 否则纯体积源问题奇异，故在土豆表面加对流换热边界（h_conv/Text 可配）。
 因此稳态 T_max **不是**官方报告值（官方只给 Figure 3 的瞬态中心温度曲线，
@@ -426,7 +426,7 @@ def build_oven_model(client: Any, spec: dict[str, float],
 def _dataset_candidates(model: Any) -> list[str | None]:
     """数据集候选序：默认解优先，其后按标签倒序（新建靠后=新解靠前）。
 
-    真机实证：双步 study 的默认数据集可能是
+    真机实证（踩坑③）：双步 study 的默认数据集可能是
     频率步解（无 T 场/ht 变量）→ 全 NaN 或报错；逐候选重试兜底
     （best-effort，不阻塞主读数）。
     """
@@ -503,7 +503,7 @@ def evaluate_oven(model: Any, spec: dict[str, float], opts: dict[str, Any],
         "point_exprs": list(OFFICIAL_CENTER_POINT_EXPRS),
         "point_source": "官方 dmodel.xml CutPoint3D cpt1（Figure 3 截点位）",
         "t_center_c": center_last,
-        # 逐输出时刻中心温度序列（官方 Figure 3 对照数据——
+        # 队列 #26③：逐输出时刻中心温度序列（官方 Figure 3 对照数据——
         # 此前只落末值，整条曲线未存，Figure 3 形态对照无从做起）
         "t_center_series_c": [float(v) for v in np.asarray(center_series, float)],
         "center_delta_t_k": center_delta,
@@ -749,7 +749,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help="端口输入功率 W（默认官方例 full model 1 kW）")
     parser.add_argument("--thermal", choices=SUPPORTED_THERMAL_MODES,
                         default="stationary",
-                        help="stationary=本脚本缺省的 Frequency-Stationary；"
+                        help="stationary=任务书要求的 Frequency-Stationary；"
                              "transient=官方例 Frequency-Transient")
     parser.add_argument("--h-conv", type=float, default=DEFAULT_H_CONV_W_M2K,
                         help="稳态对流换热系数 W/(m^2*K)（stationary 用）")
@@ -858,14 +858,14 @@ def main(argv: list[str] | None = None) -> int:
         "field_csv": field_path,
         "center_curve_fig3_png": fig3_path,
         "honest_notes": [
-            "官方例是 Frequency-Transient；本跑为 Frequency-Stationary（本脚本口径）"
+            "官方例是 Frequency-Transient；本跑为 Frequency-Stationary（任务书口径）"
             if opts["thermal"] == "stationary" else
             "官方例即 Frequency-Transient，本跑与其同 study 型",
             "稳态 T_max 不是官方报告值（官方只给瞬态中心温度曲线），量级由 h_conv 决定"
             if opts["thermal"] == "stationary" else
             "瞬态末态温度为物理量级（绝热 5s 平均温升 = P·Δt/(m·Cp)，能量锚校验）",
             "官方标量验收门只有土豆吸收功率 631 W (full model, 1 kW) 的 ±5%",
-            "温度场无官方标量（官方文档检索定论：模型 PDF 仅 Figure 3 "
+            "温度场无官方标量（2026-09-13 官方文档检索定论：模型 PDF 仅 Figure 3 "
             "瞬态曲线；姊妹模型 rotating_microwave_oven 的 380 K 属相变封顶物理，"
             "不适用）——temperature_anchor 为能量守恒自洽锚，official=False",
             "腔体 x=0 壁若为单个 U 形面则保持默认 PEC（薄盒无法完整包含该面），"

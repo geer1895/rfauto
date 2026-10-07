@@ -41,7 +41,7 @@ FBW = 0.05
 RL_DB = 20.0
 NOMINAL = dict(ot.COMBLINE_NOMINAL)
 DESIGN = ot.combline_design_from_order(3, F0, FBW, RL_DB)
-# 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
+# 登记⑨ 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
 # （理想短路）冻结常数——设计链缺省 l_via_h=0.0 逐位复现口径的对拍参照。
 DESIGN_VIA = ot.combline_design_from_order(3, F0, FBW, RL_DB, l_via_h=None)
 IDEAL_NOMINAL = {"order": 3, "w_mm": 1.1117, "res_len_mm": 8.8669,
@@ -68,7 +68,7 @@ def freqs() -> np.ndarray:
 
 def test_design_matches_nominal_constants():
     """NOMINAL 常数 = design(3, 2.5, 0.05, 20, l_via_h=None) 的 4 位舍入（再生
-    守卫，过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
+    守卫，登记⑨ 过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
     IDEAL_NOMINAL（渲染/设计链 byte-identical 对拍钉）。"""
     assert DESIGN["order"] == 3
     for ref, want_map in ((DESIGN_VIA, NOMINAL), (DESIGN, IDEAL_NOMINAL)):
@@ -81,7 +81,7 @@ def test_design_matches_nominal_constants():
             else:
                 assert round(got, 4) == want, key
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    # R1：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    # R1（df5-c3fix）：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
     assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
         IDEAL_NOMINAL["res_len_mm"] - NOMINAL["res_len_mm"], abs=5e-4)
@@ -161,7 +161,7 @@ def test_order_sweep_designable_and_coupling_boundary():
 
 
 class TestViaCompensationDesign:
-    """过孔补偿（口径 10）：C 不变、棒长按 C+过孔联合谐振条件精确解
+    """登记⑨ 过孔补偿（口径 10）：C 不变、棒长按 C+过孔联合谐振条件精确解
     t=(1−Ax)/(A+x)（A=ω0CZ_r）重解；缺省 l_via_h=0.0 逐字节复现补偿前口径。"""
 
     def test_delta_l_matches_hand_calculation(self):
@@ -183,7 +183,7 @@ class TestViaCompensationDesign:
         assert d["theta_c_rad"] == pytest.approx(0.69269, abs=5e-6)
         assert d["via_delta_mm"] == pytest.approx(1.0467, abs=5e-4)
         assert d["c_load_pf"] == DESIGN["c_load_pf"]      # C 不变
-        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        # 旋钮语义（R1 df5-c3fix）：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
         d_cal = ot.combline_design_from_order(3, F0, FBW, RL_DB,
                                               l_via_h=ot.C3_L_VIA_CAL_H)
         assert d_cal["res_len_mm"] == DESIGN_VIA["res_len_mm"]
@@ -250,7 +250,7 @@ def test_synchronous_tem_matches_c13_matrix_response(freqs):
 
 def test_geometry_mode_tracks_synchronous_limit(freqs):
     """几何模式（KJ 回代 + Δl 等效长度）与同步极限带内差 <0.005dB（理想短路域
-    对照：NOMINAL 为过孔补偿口径，几何模式取未补偿设计长度）。"""
+    对照：NOMINAL 为登记⑨ 过孔补偿口径，几何模式取未补偿设计长度）。"""
     p_ideal = dict(NOMINAL, res_len_mm=round(DESIGN["res_len_mm"], 4))
     s_geo = ot.c3_circuit_sparams(T, freqs, p_ideal)
     s_syn = ot.c3_circuit_sparams(T, freqs, {}, synchronous_tem=True, design=DESIGN)
@@ -337,7 +337,7 @@ def test_render_structure_and_lumped_cap_literal():
     assert text.count("AddCylinder(") == NOMINAL["order"]           # 同端接地过孔
     assert text.count("AddLumpedElement(") == NOMINAL["order"]      # 顶端装载电容
     assert text.count("caps=True, C=1.2732e-12)") == NOMINAL["order"]
-    # R3 帽语义钉（审计）：CSXCAD 方向 kwarg 参数名叫 ny，值=方向
+    # R3 帽语义钉（df5-c3fix 审计）：CSXCAD 方向 kwarg 参数名叫 ny，值=方向
     # 索引（CheckNyDir 0/1/2=x/y/z）⇒ ny=2 即 z-directed shunt 对地（电压沿 z
     # 跨基板隙、端帽板落在既有 PEC 面）——防"参数名误读为 y 方向"复发
     assert text.count('ny=2, caps=True') == NOMINAL["order"]

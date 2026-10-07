@@ -1,6 +1,6 @@
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-9700%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -14,10 +14,15 @@
 > **所有物理数字（频率、损耗、几何尺寸）都由确定性公式内核或求解器产生，
 > 永远不由大语言模型编造。**
 
-它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **53 个参数化器件模板**和
-配套的物理验收判据，提供 **147 条 CLI 命令**和 **106 个 MCP 工具**（+3 个
-resources），并靠 **9700+ 条单元测试**保持诚实——这些测试不需要任何商业许可
+它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **71 个参数化器件模板**和
+配套的物理验收判据，提供 **254 条 CLI 命令**和 **149 个 MCP 工具**（+5 个
+resources），并靠 **21900+ 条单元测试**保持诚实——这些测试不需要任何商业许可
 就能跑。
+
+<!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
+`CALCULATOR_REGISTRY 100` · `TEMPLATE_META 71` · `EXPECTED_TEMPLATES 71` ·
+`ANCHORS 60` · CLI 命令 254（叶子） · （149 个工具 + 5 个 resources）
+<!-- numbers-end -->
 
 **目录** · [为什么做](#为什么做这个) · [它能做什么](#它能做什么) ·
 [信任层](#信任层) · [快速开始](#快速开始) · [Web UI](#web-ui) ·

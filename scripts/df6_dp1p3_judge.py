@@ -97,7 +97,7 @@ def renorm_s(s: np.ndarray, z_from: list[float],
 def mmt_modal_s(mmt: dict) -> tuple[np.ndarray, np.ndarray]:
     """MMT 50Ω S（meta）反归一回 TE10 模基（Z_TE=ωμ0/β 解析逐频）。
 
-    v3（缺陷①修复后版本）：以归档完整 2×2
+    v3（df7_dp1fix 缺陷①修复，四四六登记）：以归档完整 2×2
     [[s11,s12],[s21,s22]] 重建后反归一——v2 曾以 [[s11,s21],[s21,s11]] 对称
     假定重建，而归档 meta s22≠s11（旧 core 端口交换缺陷在档证据），模态腿
     被污染（judge −13.146 vs 真模态 −12.957 dB @8GHz 实例）。straight 例

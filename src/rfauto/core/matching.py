@@ -1,4 +1,4 @@
-"""匹配网络与滤波器综合。
+"""E6b 匹配网络与滤波器综合（扩展方案 §E6b）。
 
 匹配网络综合（L/π/T，L-section 闭式）
 滤波器综合（commensurate-line，Richard 变换）
@@ -83,7 +83,7 @@ def synthesize_l_section(
       这是 0bf 标注的歧义核心：闭式值正确、属性↔位置映射在本分支相反。
 
     闭式解本身正确（q、z1、z2 在 f0 精确共轭匹配，值不含糊），仅标签与
-    属性排布映射有歧义。新代码请用 synthesize_l_match：response
+    属性排布映射有歧义。新代码请用 synthesize_l_match（C14 锚）：response
     参数显式声明响应型（low_pass=串 L 并 C / high_pass=串 C 并 L），元件
     以 LCElement(kind/role/value) 显式给出且按负载端→源端排布、逐元件
     语义无歧义。本函数保留仅为行为兼容（标签字符串与 z1/z2 逐字节不变，
@@ -287,7 +287,7 @@ def synthesize_commensurate_line(
     )
 
 
-# ─── L / π / T 匹配网络闭式解（vs skrf 对拍锚）───────────────────────
+# ─── L / π / T 匹配网络闭式解（C14 锚，Plan §10.22 #24）───────────────────────
 #
 # 给定 Rs、RL、f0（π/T 另给有载 Q 或带宽目标）→ 集总 LC 元件值。
 # 元件表按「负载端 → 源端」排列，便于自负载做阻抗递推（input_impedance）。

@@ -71,7 +71,7 @@ FIELD_NOTES_REF = "runs/quota_guard/ratrace_duration_samples.json"
 DEFAULT_OUT_ROOT = REPO / "runs" / "ratrace_clean_sample_20260921"
 RETRAIN_ROOT = REPO / "runs" / "ratrace_clean6_retrain"
 
-#: 既有干净集（登记口径 n=4：R1/R2/R3/R10，runs/quota_guard 14 样本档 +
+#: 既有干净集（任务书口径 n=4：R1/R2/R3/R10，runs/quota_guard 14 样本档 +
 #: runs/ratrace_03mm_sample R10 档；宽松口径 R4/R5/R6-R9 禁用）。
 EXISTING_CLEAN_TIERS: tuple[tuple[str, float], ...] = (
     ("R1", 0.2),

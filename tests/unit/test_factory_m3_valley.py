@@ -3,8 +3,8 @@
 被测对象：scripts/factory_m3_valley.py 的纯逻辑
 （core_grid_points / nudge_free / build_valley_plan / judge_batch /
 core_min_spacing_um）与采集链复用契约（factory_m1_collect re-export 面）。
-真跑面不在单测范围——真机批量按判据文件独立执行
-（共享锁 + #261 互斥 + 首点探针）。
+真跑面不在单测范围——真机批量由主控按 runs/datafactory_m3/criteria.md
+独立执行（共享锁 + #261 互斥 + 首点探针）。
 
 数值口径（#118 合成注入→回收）：查重/重采样用合成指纹集验证确定性回收；
 判据门用构造输入逐门验证（#364④ 数值判缺 is not None 语义随行钉）。
@@ -199,7 +199,7 @@ def test_core_min_spacing_um_insufficient_points():
 # ─── 采集链复用契约（只 import 不改源；provenance 覆盖面） ────────────────────
 
 def test_reexport_contract_with_m1_collect():
-    # 复用面逐个可从本模块导入（import 面钉死，防改名漂移）
+    # 任务书点名的复用面逐个可从本模块导入（import 面钉死，防改名漂移）
     from factory_m3_valley import (  # noqa: F401
         beta_metrics_from_port_beta,
         compute_point_metrics,

@@ -65,7 +65,7 @@ assert _SCRIPT_SPEC is not None and _SCRIPT_SPEC.loader is not None
 dl = importlib.util.module_from_spec(_SCRIPT_SPEC)
 _SCRIPT_SPEC.loader.exec_module(dl)
 
-# 判据 A 锚参数（给定值，闭式 SRF 由内核公式复算）
+# 判据 A 锚参数（任务书给定，闭式 SRF 由内核公式复算）
 L0, RS0, CP0 = 10e-9, 0.5, 0.25e-12
 SRF0_HZ = 1.0 / (2.0 * math.pi * math.sqrt(L0 * CP0))  # ≈3.1831 GHz
 

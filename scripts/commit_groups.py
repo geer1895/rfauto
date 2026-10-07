@@ -1,6 +1,6 @@
 """Grouped git committer with correct `status --porcelain` parsing.
 
-坑 #235：porcelain 行格式为「两字符状态码 + 空格 + 路径」，
+坑 #235（2026-09-12）：porcelain 行格式为「两字符状态码 + 空格 + 路径」，
 先 trim() 再 slice(3) 会把 " M path" 砍成乱码——已跟踪文件的修改永远匹配
 不上 manifest，提交守卫整天报 "manifest 全部不存在"（只有新增 "??" 恰好
 解析对）。本模块是修复落地：所有解析一律保留原始行取 ``line[3:]``。

@@ -1,4 +1,4 @@
-"""HFSS g0 仲裁脚本自验门：预声明门与规范回收（零仿真）。
+"""rm-hfss-mapes-g0 自验门：HFSS g0 仲裁脚本的预声明门与规范回收（零仿真）。
 
 钉死三件事（scripts/hfss_mapes_g0_arbitration.py）：
 1. 预声明门阈值写死且边界语义正确（≤5% AGREE / 5–15% PARTIAL / >15% DISAGREE）；

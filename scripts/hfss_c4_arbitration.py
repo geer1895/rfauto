@@ -1,6 +1,6 @@
-"""HFSS 名义几何仲裁 C4 耦合器族裁判口径（对齐基准口径）。
+"""rm-hfss-c4-arbitration：HFSS 名义几何仲裁 C4 耦合器族裁判口径（对齐基准口径）。
 
-背景（C4 下一假设①）：openEMS 合规网格两轮复跑 S31 归一后 −2.03（lange）/
+背景（TODO「C4 下一假设」①）：openEMS 合规网格两轮复跑 S31 归一后 −2.03（lange）/
 −8.00（cline）vs 裁判闭式 −3.01/−10.05——耦合度强 1~2dB；z 向地板已排除面内离散；
 剩余假设=裁判闭式在 lange s/h=0.076<KJ 有效域 0.1（cline 0.161 边缘）不适用，即
 "裁判错"而非"引擎错"。
@@ -428,9 +428,9 @@ def main(argv: list[str] | None = None) -> int:
     else:
         conclusion = "无有效模板进判（全部 skipped/失败）"
         confidence = "none"
-    verdict = {"id": "hfss_c4_arbitration",
+    verdict = {"id": "rm-hfss-c4-arbitration",
                "hypothesis": "裁判闭式在 lange s/h=0.076（<KJ 有效域 0.1，cline 0.161 "
-                             "边缘）不适用——'裁判错'而非'引擎错'（C4 下一假设①）",
+                             "边缘）不适用——'裁判错'而非'引擎错'（TODO C4 下一假设①）",
                "gates": {"tol_side_db": TOL_SIDE_DB, "sigma_max_gate": SIGMA_MAX_GATE,
                          "primary_metric": "|S31| @f0=2.5GHz（deembed 后 50Ω 口径）"},
                "budget_total_s": BUDGET_TOTAL_S, "wall_s": round(time.time() - t0, 1),

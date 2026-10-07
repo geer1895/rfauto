@@ -459,7 +459,7 @@ def test_apply_laymap_key_normalization():
 
 
 # ---------------------------------------------------------------------------
-# KiCad 10 真实导出样例对拍（tests/fixtures/external/）。
+# R2-B-08②：KiCad 10 真实导出样例对拍（tests/fixtures/external）。
 # 样例由本机 KiCad 10.0.6 kicad-cli 生成（microwave 官方 demo 板）：
 #   kicad-cli pcb export ipc2581 <pcb> -o <xml>
 #   kicad-cli pcb export odb <pcb> -o <dir> --compression none

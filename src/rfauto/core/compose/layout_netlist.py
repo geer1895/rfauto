@@ -1,12 +1,12 @@
 """DP-8 几何组合引擎：netlist → 单一 simulation.py（布局合并路线，纯确定性）。
 
-规格=docs/plan_deepdive_specs_20260924.md §DP-8；判据预声明
+规格=规格深案 §DP-8；判据预声明
 runs/df6_dp8compose/criteria.md。关键路线裁决（规格 §3）：**不做渲染文本
 拼接**——实例契约拆为 layout(params, frame)→{pins, 图元, 域/板/守卫声明}
 + 引擎单一文本发射器（图元→CSXCAD 语句逐条渲染），杜绝 CSX/FDTD/mesh
 头尾与守卫段的重复拼接。
 
-分层（core 分层契约/.importlinter）：本模块属 core，零 I/O、零 adapters 依赖
+分层：本模块属 core，零 I/O、零 adapters 依赖
 ——实例契约（布局/图元）由调用方（service/adapters）注入 ``contracts``；
 pin schema（TEMPLATE_META[t]["port_pins"]）经 ``schema_map`` 注入做 opt-in
 一致性校验。契约形态（adapters/openems_templates.py COMPOSE_CONTRACTS）::

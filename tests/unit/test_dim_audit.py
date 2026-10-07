@@ -1,7 +1,7 @@
-"""全仓"字面算术表达式作几何值"审计器单测（#218 家族）。
+"""全仓"字面算术表达式作几何值"审计器单测（队列3-B，#218 家族）。
 
 含当前树回归门：scan_repo() 零未豁免违规——今后在被扫范围
-（src/rfauto/adapters/ + scripts/）新引入字面算术几何值会让本测试红灯。
+（src/rfauto/adapters/ + scripts）新引入字面算术几何值会让本测试红灯。
 """
 
 from __future__ import annotations
@@ -88,7 +88,7 @@ class TestRepoScanGate:
         # 豁免≠漏扫：仲裁脚本的 f"({center_x_expr}-2.5*w_in)" 必须
         # 仍被分类器看见为 LITERAL_ARITH_VAR（再经人工确认豁免——变量
         # 带 mm 量纲，#218 语义四，r8 真机 PASS_A 背书）
-        # 行号钉 :175（桌面治理批：_kill_desktops 委托单源+移除未用
+        # 行号钉 :175（df5 桌面治理批：_kill_desktops 委托单源+移除未用
         # import 后整体 -1，原钉 :176）
         findings = audit.scan_repo()
         arb = [f for f in findings

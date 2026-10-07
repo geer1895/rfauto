@@ -227,7 +227,7 @@ class TestG12CrossEngineDivergence:
         lessons = [entry["lesson"] for entry in report["checklist"]]
         assert any("#154" in item for item in lessons)
         assert any("#191" in item for item in lessons)
-        assert any("先对照官方" in item for item in lessons)
+        assert any("1c" in item for item in lessons)
         assert all(isinstance(entry["hit"], bool) for entry in report["checklist"])
         assert report["llm_role"] == "explain-only"
 

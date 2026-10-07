@@ -1,4 +1,4 @@
-"""rat-race HFSS 仲裁（#219③ 物理通道）：物理 R=17.344
+"""rat-race HFSS 仲裁：物理 R=17.344
 的 4 端口 rat-race 在 HFSS 2026 中 2-3GHz 扫频全 S 矩阵，仲裁
 k=1.0975 的归属（0.4mm 网格伪象 / 设计错 / 不可判定）。
 
@@ -77,7 +77,7 @@ def _mm(v: float) -> str:
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
@@ -202,7 +202,7 @@ def _build_and_solve() -> dict:
         # 时 sizes=[宽沿 Z, 高沿 X]）：法向 X 的端口面必须用 "YZ" 且
         # sizes=[宽沿 Y, 高沿 Z]。首版 P1 用 "ZY" 落 else→法向 Y，sheet
         # x∈[60,65.57] 全在空气盒（x≤60）外 → "no solved inside material
-        # on either side"（attempt1-3 实败归因）。
+        # on either side"（attempt1-3 实败，2026-09-12 归因）。
         port_specs = [
             ("P1sheet", "YZ", [_mm(BOARD), _mm(-PORT_W / 2), "0mm"],
              [_mm(PORT_W), _mm(PORT_H)]),                       # Σ @ x=+60
@@ -226,7 +226,7 @@ def _build_and_solve() -> dict:
         # （ceiling z=sub_h、内壁 z<sub_h）是域内面——负向过滤会把它们
         # 选进辐射 → "An internal radiation boundary has been detected"
         # （run2 attempt1-3 实败；hfss_same_geometry_arbitration.py r8
-        # 同因同修）。
+        # 同因同修，2026-09-12 归因）。
         top_z = SUB_H + AIR_TOP
         air_faces = h.modeler.get_object_faces("Air")
         open_faces = []
@@ -347,7 +347,7 @@ def main() -> int:
                                                    "h_mm": SUB_H},
                    "sweep": "2-3GHz 401pt", "timeout_s": TIMEOUT_S})
     last_err = None
-    for attempt in range(3):     # 初次 + 重试 ≤2（预声明）
+    for attempt in range(3):     # 初次 + 重试 ≤2（任务书）
         try:
             _kill_desktops()
             shutil.rmtree(WORK, ignore_errors=True)

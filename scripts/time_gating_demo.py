@@ -5,9 +5,9 @@ r"""§10.20 ③ S 参数时域门控案例——归档上的 before/after 对比
 
 输出（确定性、无网络、无真机）：对每个存在的归档跑固定门参数，打印
 "谷位 GHz / 谷深 dB / 带内纹波 dB / 肩部纹波 dB / 门外冲激能量比"的 before/after，
-并对预点名的两个优先归档给出"是否适合做门控验收"的裁决。
+并对任务书点名的两个优先归档给出"是否适合做门控验收"的裁决。
 
-固定口径（与 tests/unit/test_time_gating.py 同源）：
+固定口径（与 tests/unit/test_time_gating.py 同源，2026-09-12 本机实测）：
     patch sparams.csv  门 span=20 ns  → 谷位 0 Hz 不漂，但凹口被削平（不适合）
     pt8 ratrace.s4p    门 span=40 ns  → 谷位贴带边，门后内移 18 频点（不适合）
     hfss_ratrace.s4p   门 span=20 ns  → 漂移 0 Hz，纹波 12.68→10.37 dB

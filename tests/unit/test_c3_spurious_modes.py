@@ -1,4 +1,4 @@
-"""c3 零衰减伪模判别模块单测（判据 runs/c3_sirbpf_spurious/criteria.md）。
+"""c3 零衰减伪模判别模块单测（拍板项④；判据 runs/c3_sirbpf_spurious/criteria.md）。
 
 覆盖：
 ① 材料 Q 帽分类（物理/伪模二分；q_loaded 缺失防御；被困模假设的材料帽界定）；
@@ -306,7 +306,7 @@ class TestSplitPhysicalRefit:
                 == pytest.approx(math.pi * 2.5 / 0.30, rel=0.05))
 
     def test_empty_physical_refit_not_ok_no_probe_read(self):
-        # 物理模空：refit 如实不可行且不触探针读入（/nonexistent 不炸）
+        # 物理模空：refit 如实不可行且不触探针读入（nonexistent 不炸）
         modes = [{"f0_ghz": 2.7, "alpha_per_ns": 5e-14, "q_loaded": 1.7e14,
                   "span_db": 0.0, "n_fit": 244}]
         split = spur.split_physical_refit("/nonexistent",

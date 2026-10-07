@@ -9,8 +9,8 @@ autotune_service.py:617-626，均为 openEMS 真机），零源码改动。0bq�
 验收（如实）：M1..M5 状态原样（passed/failed/skipped）；M4 detail 含粗/细 cost
 且判据 fine ≤ coarse_best×(1+fine_epsilon)（:857）——脚本按 history 独立复算并与
 M4 status 对账；runs/loop_boards/<board_id>.json 与 runs/<run_id>/autotune.json
-落盘；M5 仅沙箱草稿（runs/recipe_sandbox/）不 promote——配方文件哈希前后不变
-（采样纪律）；活跑检测（采样器工作目录 pt_*/fdtd/），全为缓存回放则 PARTIAL。
+落盘；M5 仅沙箱草稿（runs/recipe_sandbox）不 promote——配方文件哈希前后不变
+（铁律 6）；活跑检测（采样器工作目录 pt_*/fdtd），全为缓存回放则 PARTIAL。
 
 产物 runs/<run_id>/autotune.json（服务落盘）+ runs/selfverify_m4_real/_smoke_result.json。
 """

@@ -13,8 +13,8 @@
 4. 后处理：farfield_meta.json → core.farfield.correct_pec_mirror（Prad/2、Dmax×2、
    η/2）；farfield3d.csv → 图形自归一 Dmax（上半球，Balanis 口径）。
 
-预声明门（写死）：
-  G1 η_corrected ∈ [0.55, 0.79]（门复议：下沿 0.62→0.55——旧门出自
+预声明门（铁律 7，写死）：
+  G1 η_corrected ∈ [0.55, 0.79]（2026-09-17 门复议：下沿 0.62→0.55——旧门出自
      W2⑥a "Q_rad~60–80" 估计；本脚本收敛轮实测 η=0.5711 → Q_rad=203，守卫带取
      紧贴盒轮观测 Prad 虚高 8.82% → Q_d/(Q_d+203×1.088)=0.550；依据链与单测钉在
      service/ui_service.py PATCH_ETA_GATE。复议前该轮 G1 判 FAIL→verdict PARTIAL
@@ -56,7 +56,7 @@ from rfauto.core.farfield import (
 from smoke_coupled_bpf_nrts import _run_engine, parse_engine_log, rewrite_nrts
 
 RUN_ID = "patch_field_smoke_recheck"
-# 门复议：与 service/ui_service.PATCH_ETA_GATE 单源一致（脚本不 import
+# 2026-09-17 门复议：与 service/ui_service.PATCH_ETA_GATE 单源一致（脚本不 import
 # service 层，此处字面值由 test_field_webviz 的门链测试对账）。
 ETA_RANGE = (0.55, 0.79)
 DMAX_CONVERGE_DB = 1.0

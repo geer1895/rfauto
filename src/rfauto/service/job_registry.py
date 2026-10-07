@@ -95,14 +95,19 @@ class _JobEntry:
     thread: threading.Thread | None = None
     cancel_event: threading.Event = field(default_factory=threading.Event)
     started: bool = False
-    #: 编排席位记账：本作业当前占用的资源席位（resource_scheduler 资源键）
+    #: B-29 编排席位记账：本作业当前占用的资源席位（resource_scheduler 资源键）
     seats: tuple[str, ...] = ()
+    #: SN-10（W6-A，2026-10-06）进度实化：后台线程经 set_progress() 逐阶段
+    #: 播报（百分比+阶段名）；缺省 0/空串=无进度信息（诚实缺省，不臆造）。
+    progress_pct: float = 0.0
+    stage: str = ""
+    progress_updated_at: float | None = None
 
 
 class JobRegistry:
     """线程安全的进程内 job 注册表（带容量上限防内存无限增长）。
 
-    增加可选持久化后端 ``persist``（RegistryDB）：开启后 create/finish/
+    W1⑫ 增加可选持久化后端 ``persist``（RegistryDB）：开启后 create/finish/
     fail/cancel/mark_cancelled 同步写 jobs 表；``get`` 未命中内存时先查表
     再返回 None（poll 调用方的磁盘 meta.json 回落链保持不变）。持久化
     全程 best-effort（#105）：写失败静默，绝不影响内存主路径。
@@ -133,9 +138,16 @@ class JobRegistry:
         if self._persist is None:
             return None
         try:
-            return self._persist.get_job(job_id)
+            row = self._persist.get_job(job_id)
         except Exception:
             return None
+        if row is not None:
+            # poll 侧快照形状契约（SN-10 进度三键）：旧库表行无进度列时
+            # 缺省填充，回落快照与内存快照逐键同形（best-effort，#105）
+            row.setdefault("progress_pct", None)
+            row.setdefault("stage", None)
+            row.setdefault("progress_updated_at", None)
+        return row
 
     def create(self, job_id: str, thread: threading.Thread | None = None) -> None:
         with self._lock:
@@ -229,7 +241,39 @@ class JobRegistry:
             entry.started = True
             return not entry.cancel_event.is_set()
 
-    # ── 编排接线：席位记账（哪类资源被哪个作业占用，可查询） ──────
+    def set_progress(self, job_id: str, pct: float, stage: str = "") -> bool:
+        """后台线程逐阶段播报进度（SN-10，2026-10-06 W6-A）。
+
+        语义：
+        - pct 钳位到 [0, 100] 且**单调不回退**（乱序回调以最大值为准）；
+        - stage 是阶段名（如 prepared/build/solve/post/trial），只透传不校验；
+        - 终态（done/failed/cancelled）后调用为空操作（终态即 100/丢弃）；
+        - 纯内存记账（best-effort，#105）：不持久化、不抛异常，未知 job_id
+          返回 False。
+
+        Returns:
+            bool: 是否登记成功（未知 job_id=False）。
+        """
+        try:
+            p = float(pct)
+        except (TypeError, ValueError):
+            return False
+        if p != p or p in (float("inf"), float("-inf")):  # NaN/Inf 拒收
+            return False
+        p = max(0.0, min(100.0, p))
+        with self._lock:
+            entry = self._jobs.get(job_id)
+            if entry is None:
+                return False
+            if entry.state in ("done", "failed", "cancelled"):
+                return False
+            entry.progress_pct = max(entry.progress_pct, p)
+            if stage:
+                entry.stage = str(stage)
+            entry.progress_updated_at = time.time()
+            return True
+
+    # ── B-29 编排接线：席位记账（哪类资源被哪个作业占用，可查询） ──────
     def assign_seats(self, job_id: str, seats: Sequence[str]) -> bool:
         """登记作业占用的资源席位（加性字段；未知作业返回 False）。"""
         with self._lock:
@@ -271,7 +315,7 @@ class JobRegistry:
     def get(self, job_id: str) -> dict[str, Any] | None:
         """返回 job 快照 dict；未知 job_id 返回 None。
 
-        开启持久化后端时，内存未命中先查 jobs 表（跨进程重启后
+        W1⑫：开启持久化后端时，内存未命中先查 jobs 表（跨进程重启后
         仍可查到终态）；表也未命中才返回 None——调用方既有 meta.json
         磁盘回落链（poll 侧）不变。
         """
@@ -295,6 +339,9 @@ class JobRegistry:
             "created_at": entry.created_at,
             "finished_at": entry.finished_at,
             "seats": list(entry.seats),
+            "progress_pct": entry.progress_pct,
+            "stage": entry.stage,
+            "progress_updated_at": entry.progress_updated_at,
         }
 
     def wait(self, job_id: str, timeout_s: float = 300.0) -> dict[str, Any] | None:

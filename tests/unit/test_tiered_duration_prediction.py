@@ -70,7 +70,7 @@ def tiered() -> TieredDurationPredictor:
     """两个可信桶（small/big 各 5 点，两条律）+ 一个不足桶（tiny 2 点，服从 small 律）。
 
     注意：small/big 两律混池令**全局档不可信**——这正是分档口径的实证依据
-    （跨模板混池 281% 实证），本夹具用于桶命中/预算门用例。
+    （TODO 0d 跨模板混池 281%），本夹具用于桶命中/预算门用例。
     """
     samples = (
         _bucket("small", "0p4mm", _law_small)

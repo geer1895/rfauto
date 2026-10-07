@@ -3,10 +3,10 @@
 数据来源（禁止编造，全部带 provenance 注释）：
 - ratrace pt8 真实逐点归档 runs/ratrace_smoke/pt8/ratrace.s4p（0.4mm、k=1 原始渲染；
   实测 @2.5GHz S21 −2.75 / S41 −4.08 / S31 −17.01 / S24 −19.09 / S11 −16.46，与
-  真机判读记录逐字一致）；带 provenance 的中心 / 等效 εeff / 网格细化记录见常量注释。
+  （廿九）逐字一致）；带 provenance 的中心 / 等效 εeff / 网格细化记录见常量注释。
 - via 1.0491 真实逐点归档 runs/via_smoke/pt3/port_beta.csv（β2/β1 带内恒定 1.0491）
-  ；§205 定版口径。
-- #152 塌缩值取历史实测（7.7e-19 s）；"正常" CFL 步长由 0.4mm 网格闭式推算
+  + §205。
+- #152 塌缩值取 （7.7e-19 s）；"正常" CFL 步长由 0.4mm 网格闭式推算
   （dx/(2c)，非编造参考值）。
 
 真实归档缺失时相关用例 pytest.skip（不假装通过）；核心三教训各有一条不依赖文件、
@@ -43,18 +43,18 @@ from rfauto.core.mesh_artifact import (
 
 # ── 带 provenance 的定版常量（禁止改动成"恰好通过"的值）──────────────────
 _PT8_TARGET_GHZ = 2.5
-# 模板注（openems_templates.py）"pt7/pt8 实测 hybrid 中心 ≈2.28GHz"；
+# 模板注（openems_templates.py:1491）"pt7/pt8 实测 hybrid 中心 ≈2.28GHz"；
 # 定版 k=1.0975 与之互洽：2.5/1.0975=2.2779
 _PT8_CENTER_RAW_GHZ = 2.279
-_PT8_EPS_EQUIV = 3.28       # 历史判读 "等效 εeff=3.28 超微带物理上限"
-_PT8_EPS_CLOSED = 2.7246    # 历史判读 "HJ 直线 2.72"（test_ratrace_template er_eff 独立锚）
+_PT8_EPS_EQUIV = 3.28       # （廿九）"等效 εeff=3.28 超微带物理上限"
+_PT8_EPS_CLOSED = 2.7246    # （廿九）"HJ 直线 2.72"（test_ratrace_template er_eff 独立锚）
 _PT8_EPS_R = 3.66           # rogers4350b（runs/ratrace_arbitration/hfss_arbitration.json sub.er）
 # runs/ratrace_arbitration/openems_convergence.json f_center_avg_0p4mm/0p2mm
 _PT8_MESH_STUDY = [{"mesh_mm": 0.4, "f_center_ghz": 2.3544},
                    {"mesh_mm": 0.2, "f_center_ghz": 2.5225}]
 _K_DEFINITION = 1.0975      # openems_templates._RATRACE_RING_MESH_K 定版
-_VIA_BETA_RATIO = 1.0491    # §205 定版 "β2/β1 = 1.0491 ± 0.0011 带内恒定"
-_TIMESTEP_COLLAPSED_S = 7.7e-19  # #152 CFL 塌缩值
+_VIA_BETA_RATIO = 1.0491    # §205 "β2/β1 = 1.0491 ± 0.0011 带内恒定"
+_TIMESTEP_COLLAPSED_S = 7.7e-19  #  CFL 塌缩值
 _C0 = 299792458.0
 
 _PT8_S4P = REPO / "runs" / "ratrace_smoke" / "pt8" / "ratrace.s4p"
@@ -176,7 +176,7 @@ class TestRatracePt8Replay:
         fmap = _factor_map(report)
         assert fmap["mesh_center_shift"]["status"] == FAIL   # 伪象自证
         assert fmap["equiv_eps_eff"]["status"] == FAIL       # 超物理界
-        # 建议动作覆盖验收要求：局部加密 / 更换 BASE / 常数落 provenance
+        # 建议动作覆盖任务书要求：局部加密 / 更换 BASE / 常数落 provenance
         joined = " ".join(report["actions"])
         assert "加密" in joined and "BASE" in joined and "provenance" in joined
 
@@ -446,7 +446,7 @@ class TestViaProbeScale:
         assert _factor_map(report)["probe_scale_offset"]["status"] == FAIL
 
     def test_via_documented_beta_ratio_is_probe_scale(self):
-        """定版 β 比 1.0491（不依赖文件）→ PROBE_SCALE。"""
+        """§205 定版 β 比 1.0491（不依赖文件）→ PROBE_SCALE。"""
         report = diagnose_mesh_artifact(
             beta_by_port={"port1": 80.0, "port2": 80.0 * _VIA_BETA_RATIO})
         assert report["status"] == PROBE_SCALE
@@ -481,7 +481,7 @@ def _normal_cfl_step_s(dx_mm: float = 0.4) -> float:
 
 class TestTimestepCollapse:
     def test_152_timestep_ratio_collapse(self):
-        """#152 塌缩值 7.7e-19 s vs 正常 CFL 步长 → TIMESTEP_COLLAPSE。"""
+        """ 塌缩值 7.7e-19 s vs 正常 CFL 步长 → TIMESTEP_COLLAPSE。"""
         dt_normal = _normal_cfl_step_s()
         report = diagnose_mesh_artifact(
             timestep_values=[dt_normal, _TIMESTEP_COLLAPSED_S])
@@ -554,7 +554,7 @@ class TestDiagnosisBoundaries:
         assert report["status"] == MESH_ARTIFACT
 
     def test_degradation_only_is_inconclusive_not_mesh_artifact(self):
-        """只有频率劣化、无网格特异证据 → INCONCLUSIVE（可能是设计错）。"""
+        """只有频率劣化、无网格特异证据 → INCONCLUSIVE（可能是设计错， 1b）。"""
         loaded = _load_pt8()
         if loaded is None:
             pytest.skip("runs/ratrace_smoke/pt8/ratrace.s4p 归档缺失")

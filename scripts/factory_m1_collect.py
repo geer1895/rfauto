@@ -1,6 +1,6 @@
-"""M1 数据面采集管线（M1 里程碑）。
+"""数据工厂 M1 数据面采集管线（datafactory_phase1_plan §2/§5，M1 里程碑）。
 
-判据/口径全部预声明 runs/data_factory_m1/criteria.md（写死再跑）。
+判据/口径全部预声明 runs/data_factory_m1/criteria.md（写死再跑，2026-09-19）。
 链路：lhs_points 批量（+锚点预置）→ OpenEMSOptAdapter 逐点求解（e11 harness
 产物化通道，OE 串行 1）→ 标准 run 产物落盘（api.run_once 兼容布局）→
 materialize_dataset 成行（dataset_service ⑤ 分支，#251④ 先例）→ 三门判读。
@@ -42,7 +42,7 @@ for _p in (REPO / "src",):
         sys.path.insert(0, str(_p))
 
 C0 = 299792458.0
-#: M3 扩 2D 时的显式变量键集（params_json 按 optimization.params
+#: M3 扩 2D 时的显式变量键集（round4 C-05：params_json 按 optimization.params
 #: 键集成行——第二维 line_len_mm 不声明则静默不入行）；M1/M2 保持 1D 缺省。
 VARIABLE_PARAM_KEYS = ("w_mm",)
 
@@ -205,7 +205,7 @@ def beta_metrics_from_port_beta(
     εeff=(β·c/ω)²（带内中位 β、带心中位频率）；并列 ZL Re 带内中位。
     文件缺失/带内无点/无 β 列 → 返回 None（调用方降级 S21 斜率路径并记
     note——斜率口径 L=参数线长，但参考面含馈段（#329 port_ut 头证据），
-    仅留档不消费）。
+    仅留档不消费，见 round4 C-03）。
     """
     try:
         rows = list(csv.DictReader(
@@ -249,10 +249,10 @@ def compute_point_metrics(
     """单点指标（确定性内核复用 SpecEvaluator；数值只出内核）。
 
     eps_eff 走 eps_eff_band_average 相位斜率内核——#255 守卫如实：
-    返回 None 时键缺省 + note 记跳过原因，禁填占位数值。
+    返回 None 时键缺省 + note 记跳过原因，禁填占位数值（plan §6.5）。
     port_beta_csv 提供时并列 β 口径 eps_eff_beta_mean_in_band（参考面
     无关，首选消费列）+ ZL 中位列；S21 斜率口径键保留留档（其 L 语义
-    含端口参考面外长度，仅留档）。
+    含端口参考面外长度，round4 C-03）。
     """
     import numpy as np
 
@@ -297,7 +297,7 @@ def compute_point_metrics(
 def existing_mline_w(
     dataset_name: str = REGISTRY_FOR_DEDUP,
 ) -> tuple[list[float], list[str]]:
-    """存量数据集里 mline 行的 w_mm 清单（查重先于新算）。
+    """存量数据集里 mline 行的 w_mm 清单（查重先于新算，plan §2.3）。
 
     查询失败不阻塞采集（如实透出 error，查重退化为空集=全量新算）。
     """
@@ -338,7 +338,7 @@ def write_run_products(
     布局：meta.json(status=done) + recipe.snapshot.yaml
     (optimization.params=变量键集) + results/metrics.json +
     results/params.s2p（2 端口，#248 扩展名契约）。
-    opt_params：变量键集显式声明——缺省 {"w_mm"}（M1/M2
+    opt_params（round4 C-05）：变量键集显式声明——缺省 {"w_mm"}（M1/M2
     1D 口径）；M3 扩 2D 时须传 {"w_mm":…, "line_len_mm":…}，否则第二维
     静默不入数据集行。
     """
@@ -581,7 +581,7 @@ def run_judge() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="M1 数据面采集管线（criteria 预声明判据）")
+        description="数据工厂 M1 数据面采集管线（criteria 预声明判据）")
     ap.add_argument("--plan", action="store_true", help="打印采样计划与查重统计")
     ap.add_argument("--collect", action="store_true", help="真机批量采集")
     ap.add_argument("--materialize", action="store_true", help="物化数据集")

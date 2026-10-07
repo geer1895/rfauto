@@ -1,6 +1,7 @@
 """M档 ADS 官方 MCP 后端（项目 A）—— 通过 bin/ads-mcp.exe 驱动 ADS。
 
-真机评估结论（ADS 2027；安装根一律 RFAUTO_HPEESOF_DIR 优先、settings.local.yaml 回退）：
+真机评估结论（2026-08-30，ADS 2027；当时安装根已退役，现役 E:/ADS/ADS27，
+2026-09-18 rm-ads-wp43 治理：安装根一律 RFAUTO_HPEESOF_DIR 优先、E:/ADS/ADS27 回退）：
 - stdio 传输，fastmcp Client 直连，零新增依赖
 - 8 个工具：connect_session / start_local_session / execute_python /
   list_sessions / workspace_summary / search_docs / get_docs / disconnect_session

@@ -8,11 +8,11 @@
   "commands": [
    ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier probe_eps -outdir runs/wp39_factory_verdict_next",
    ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier factory_eps -outdir runs/wp39_factory_verdict_next -budget 25 -seed 42",
-   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem mline_eps -engine pattern_search -outdir runs/wp39_factory_verdict_next",
-   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier replay_eps -outdir runs/wp39_factory_verdict_next",
-   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine pattern_search -outdir runs/wp39_factory_verdict_next",
-   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine sbo -outdir runs/wp39_factory_verdict_next",
-   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier summary_next -outdir runs/wp39_factory_verdict_next"
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem mline_eps -engine pattern_search -outdir D:/rf_workspace/runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier replay_eps -outdir D:/rf_workspace/runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine pattern_search -outdir D:/rf_workspace/runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_benchmark_run.py -problem ratrace_null -engine sbo -outdir D:/rf_workspace/runs/wp39_factory_verdict_next",
+   ".venv/Scripts/python.exe scripts/wp39_followup_run.py -tier summary_next -outdir D:/rf_workspace/runs/wp39_factory_verdict_next"
   ],
   "engines": {
    "openems": "vendor/openEMS/install/bin/openEMS.exe（mline 模板 β→εeff，mesh 1.2mm，cache=False）",
@@ -29,7 +29,7 @@
  "result": {
   "schema": "wp39_followup_verdict_next_summary_v1",
   "generated_at": "2026-09-16 13:55:53",
-  "outdir": "<repo>/runs/wp39_factory_verdict_next",
+  "outdir": "D:/rf_workspace\\runs\\wp39_factory_verdict_next",
   "criteria": {
    "budget": 25,
    "wallclock_max_ratio": 0.5,
@@ -234,7 +234,7 @@
       "total_s": 308.49
      }
     },
-    "note": "口径决策输入：原生 Optimetrics（同单频 setup、|S11|@2.5 指标）对 scripted Pattern Search 基线的 judge；仅作决策输入"
+    "note": "④ 口径决策输入：原生 Optimetrics（同单频 setup、|S11|@2.5 指标）对 scripted Pattern Search 基线的 judge；决策归主控"
    },
    "optislang_mop": {
     "status": "NOT_RUN",
@@ -345,9 +345,9 @@
    "stage": "done"
   },
   "attribution": {
-   "path": "<repo>/runs/wp39_factory_verdict_next/attribution_mline_s11_pseudofloor.md",
+   "path": "D:/rf_workspace\\runs\\wp39_factory_verdict_next\\attribution_mline_s11_pseudofloor.md",
    "conclusion": "mline |S11| 地貌=MSLPort 端口级伪底（加密网格不消），β→εeff 地貌物理且随 w 单调——工厂换引擎一致指标 |εeff−target|"
   },
-  "note": "overall 只计本战役两判定项；native_vs_scripted 与 optiSLang 为决策输入（由使用方裁决，不进 overall）"
+  "note": "overall 只计本战役两判定项；native_vs_scripted 与 optiSLang 为决策输入（④ 口径决策归主控）"
  }
 }

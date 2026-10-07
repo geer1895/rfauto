@@ -1,13 +1,5 @@
 # openEMS Build Script for Windows
 # This script will install dependencies and compile openEMS
-# Usage:
-#   .\scripts\build_openems.ps1 [-OpenemsRoot "D:\openEMS"]
-# (OpenemsRoot is the per-machine install root; defaults to D:\openEMS and is
-#  also configurable via the OPENEMS_ROOT environment variable.)
-
-param(
-    [string]$OpenemsRoot = $(if ($env:OPENEMS_ROOT) { $env:OPENEMS_ROOT } else { "D:\openEMS" })
-)
 
 Write-Host "=== openEMS Build Script ===" -ForegroundColor Cyan
 Write-Host "This will take 30-60 minutes to complete." -ForegroundColor Yellow
@@ -42,7 +34,7 @@ Write-Host "Setting up build environment..." -ForegroundColor Cyan
 & $vsPath x64
 
 # Clone openEMS-Project if not exists
-$openemsDir = Join-Path $OpenemsRoot "openEMS-Project"
+$openemsDir = "E:\openEMS\openEMS-Project"
 if (-not (Test-Path $openemsDir)) {
     Write-Host "Cloning openEMS-Project..." -ForegroundColor Cyan
     git clone https://github.com/thliebig/openEMS-Project.git $openemsDir

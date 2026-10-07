@@ -18,7 +18,7 @@ import pytest
 def _isolated(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("RFAUTO_CACHE", "off")
-    # 审批读写接 RegistryDB 后，清掉注册表 DB 路径 env，
+    # R2-D-02：审批读写接 RegistryDB 后，清掉注册表 DB 路径 env，
     # 防止本机 set 的 RFAUTO_REGISTRY_DB 把测试写入写到 tmp 之外（#144）
     monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
     yield
@@ -55,7 +55,7 @@ class TestSolverManagement:
         assert result["loadable"], result["errors"]
 
         # 写入 schema 必须与 load_solvers_config 读取约定一致
-        # （曾写顶层 {name: {type}}，运行时读不到）
+        # （审查缺口 #7：曾写顶层 {name: {type}}，运行时读不到）
         from rfauto.adapters.em_solver_base import load_solvers_config
         loaded = load_solvers_config(tmp_path / "configs" / "solvers.yaml")
         assert "test_solver" in loaded
@@ -392,13 +392,13 @@ class TestEMSolverVisualizations:
         viz = solver.visualizations()
         assert isinstance(viz, list)
         formats = solver.supported_output_formats()
-        # C-LOW ③：palace 实际仅产 CSV（port-S.csv），无 Touchstone 写出
+        # df5 C-LOW ③：palace 实际仅产 CSV（port-S.csv），无 Touchstone 写出
         # ——6g 遗留 touchstone 声明已按实现如实修正
         assert "csv" in formats
         assert "touchstone" not in formats
 
     def test_palace_registered_in_global_registry(self):
-        # palace_solver 曾从未注册（死代码，solvers list 不可见）
+        # 审查缺口 #8：palace_solver 曾从未注册（死代码，solvers list 不可见）
         import rfauto.adapters  # noqa: F401 - 触发注册
         from rfauto.adapters.em_solver_base import EMSolverType, get_global_registry
         registry = get_global_registry()

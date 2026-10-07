@@ -1,6 +1,6 @@
 """datafactory M2 消费面线性域判据单测（纯函数面 + 合成回收 + 划分确定性）。
 
-判据文件（先写后算）。#118 合成回收
+判据：runs/datafactory_m2/criteria_linear.md（先写后算）。#118 合成回收
 钉：解析已知 |Γ| 函数注入同一条线性域管线，GP 回收 |ΔΓ| 须 ≤ 0.04，证明
 判读管线（划分/线性头/门内核）自身无偏。GP-LOO 慢路径由驱动脚本
 （scripts/factory_m2_linear_gate.py --judge）在真实判读前全跑并落 verdict。

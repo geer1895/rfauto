@@ -191,7 +191,7 @@ class TestHvObjectivesFromRecipe:
 
 
 class TestRunMultifidelity:
-    """全链：Phase 2 必须真评估 Phase 1 选出的候选。"""
+    """全链：Phase 2 必须真评估 Phase 1 选出的候选（审查缺口 #3）。"""
 
     def _recipe(self, tmp_path):
         import yaml

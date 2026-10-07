@@ -1,13 +1,7 @@
-import os
 import subprocess
-from pathlib import Path
 
-# KiCad 自带 Python 3.11（pcbnew ABI 只兼容其自带解释器）。
-# 缺省按 Windows 官方安装位推断，可用环境变量 RFAUTO_KICAD_PYTHON 覆盖。
-KICAD_PYTHON = os.environ.get("RFAUTO_KICAD_PYTHON",
-                              r"C:\Program Files\KiCad\10.0\bin\python.exe")
-KICAD_SITE_PACKAGES = os.path.join(os.path.dirname(KICAD_PYTHON),
-                                   "Lib", "site-packages")
+KICAD_PYTHON = r"E:\KiCad\bin\python.exe"
+KICAD_SITE_PACKAGES = r"E:\KiCad\bin\Lib\site-packages"
 
 def generate_minimal_pcb(output_path: str) -> dict:
     """生成最小 .kicad_pcb 文件（KiCad 10.0.6 API）。"""
@@ -69,7 +63,7 @@ print(f"Vias: 1 (0.5mm drill)")
 
 
 if __name__ == "__main__":
-    output = str(Path(__file__).resolve().parents[1] / "parts" / "test_minimal.kicad_pcb")
+    output = "D:/rf_workspace\\parts\\test_minimal.kicad_pcb"
     print("Generating minimal .kicad_pcb file...")
     result = generate_minimal_pcb(output)
     print(f"Success: {result['success']}")

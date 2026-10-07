@@ -1,4 +1,4 @@
-"""hairpin 单谐振器双抽头 Q 标定（τ 扫描 → Q_u 本体 + Q_e(τ) 修正）。
+"""hairpin 单谐振器双抽头 Q 标定（WP2.3 收口 B1：τ 扫描 → Q_u 本体 + Q_e(τ) 修正）。
 
 背景：runs/hairpin_calib/pt0-pt3 四轮 N=3 真机复合 Q≈22-36，远低于介质上限
 1/tanδ=270（substrate kappa=tanδ·ω·ε0·εr，金属 PEC），损耗不在介质模型——按
@@ -388,7 +388,7 @@ def solve_tap_frac_for_qe(qe_target: float, c0: float, c1: float,
     return float(brentq(_res, tau_lo, tau_hi, xtol=1e-9))
 
 
-# ── N=2 弱抽头双谐振器 k(gap) 提取（runs/hairpin_kgap）────────
+# ── W4④ N=2 弱抽头双谐振器 k(gap) 提取（2026-09-17，runs/hairpin_kgap）────────
 # 结构：order=2 等几何双 U 谐振器，两抽头同 τ（B1 已标定 Q_e/Q_u 的 τ=0.43）→ 对称
 # 同步（无 N=3 中间无抽头谐振器失谐问题）。观测量：
 #   ① 峰电平：k·Q_L ≪ 1 时 S21≈½(Γ_e−Γ_o) 为导数线形，|S21|peak ∝ k（合成 ≈8.7dB/ln k），
@@ -496,8 +496,8 @@ def kgap_curve(gaps_mm: list[float], c_vals: list[float]) -> dict:
             "domain_mm": [float(g[0]), float(g[-1])], "powerlaw": diag}
 
 
-# ── hairpin_alt k(gap) 图谱判读门（先于真机写死，#122 不凑绿）────
-# 背景：同向 hairpin 真机 k_EM(gap) 非单调、极大
+# ── hairpin_alt k(gap) 图谱判读门（2026-09-18 w2g；先于真机写死，#122 不凑绿）────
+# 背景（TODO 0dk）：同向 hairpin 真机 k_EM(gap) 非单调、极大
 # 0.0155@0.65 ≪ k_KJ 0.0515，比值 c=k_EM/k_KJ∈[0.12,0.26]、设计点比值 ≈0.29——相邻臂
 # 开路端对齐的电/磁相消签名。交替取向变体（hairpin_alt）的预声明期望：
 #   ① 单调：k_EM 随 gap 严格递减（与 KJ 平行线闭式同向；非单调=相消未消除）；
@@ -508,7 +508,7 @@ def kgap_curve(gaps_mm: list[float], c_vals: list[float]) -> dict:
 #   ③ 点数 ≥3（单调性至少三点可判）。
 # 全过=PASS（campaign_capable 解锁的真机侧条件，另需设计点自洽的离线条件，见
 # docs/templates/hairpin_alt/meta.yaml）；任一不过=FAIL 并列原因。k_KJ 缺省由
-# core.coupled_microstrip 纯 KJ 复算（数值只在内核，纪律 7）。
+# core.coupled_microstrip 纯 KJ 复算（数值只在内核，铁律 7）。
 HAIRPIN_ALT_KGAP_GATE: dict[str, float] = {
     "c_min": 0.6, "c_max": 1.2, "min_points": 3,
     "same_orientation_c_ceiling": 0.30,   # 参照：同向拓扑真机比值上限（0.0155/0.0515）
@@ -814,7 +814,7 @@ def _kgap_analyze(args: argparse.Namespace) -> None:
     """runs/hairpin_calib/<pt>/（N=2 τ0.43 弱抽头轮）→ 逐点 k_EM/c(gap) → kgap_curve.json。
 
     Q_e/Q_u 取 B1 同 τ 单腔实测（runs/hairpin_q_extract/<qe-pt>/q_extract.json），
-    k_KJ 取 core 闭式（w=名义 1.1117、2.5GHz、rogers4350b）。常数全部可由本函数
+    k_KJ 取 core 闭式（w=名义 1.1117、2.5GHz、rogers4350b）。铁律 7：常数全部可由本函数
     从归档 sparams.csv 复算。"""
     from rfauto.core.coupled_microstrip import hairpin_k_from_gap_mm
 
@@ -849,9 +849,9 @@ def _kgap_analyze(args: argparse.Namespace) -> None:
     summary = {"qe_pt": args.qe_pt, "qe_em": qe, "q_u": q_u, "tap_frac": qe_src["tap_frac"],
                "f0_ghz_kj": args.f0, "points": pts_out, "curve": curve,
                "gate": "峰电平法（k<0.03）宽度一致 ≤25% / 全拟合（k≥0.03）rms ≤1dB；"
-                       "域=入选点 gap 范围，域外不外推（本 JSON 由 --kgap-analyze 复算）"}
+                       "域=入选点 gap 范围，域外不外推（铁律 7：本 JSON 由 --kgap-analyze 复算）"}
     if args.gate == "alt":
-        # hairpin_alt 图谱判读：只对 template=hairpin_alt 的入选点判读——同向数据
+        # hairpin_alt 图谱判读（w2g）：只对 template=hairpin_alt 的入选点判读——同向数据
         # 误喂 alt 门是口径错误（会被 c_min 判 FAIL 但结论无意义），显式跳过并记录。
         templates = sorted({r["template"] for r in ok})
         if templates == ["hairpin_alt"]:
@@ -890,15 +890,15 @@ def main() -> None:
     parser.add_argument("--reanalyze", action="store_true",
                         help="从 runs/<pt>/sparams.csv 重算 q_extract.json（免重跑）")
     parser.add_argument("--kgap-analyze", action="store_true",
-                        help="runs/hairpin_calib/<pts>（N=2 弱抽头轮）→ kgap_curve.json")
+                        help="W4④：runs/hairpin_calib/<pts>（N=2 弱抽头轮）→ kgap_curve.json")
     parser.add_argument("--qe-pt", default="tau043",
                         help="kgap 轮 Q_e/Q_u 来源（B1 同 τ 单腔 q_extract.json）")
     parser.add_argument("--calib-root", default="runs/hairpin_calib",
                         help="kgap 轮证据根目录（缺省 runs/hairpin_calib；"
-                             "复跑可指 runs/hairpin_kgap_refix）")
+                             "rm-oe-hairpin 复跑指 runs/hairpin_kgap_refix）")
     parser.add_argument("--pts", nargs="*", default=[])
     parser.add_argument("--gate", choices=("none", "alt"), default="none",
-                        help="alt=对 template=hairpin_alt 的入选点跑交替取向 k(gap) "
+                        help="w2g：alt=对 template=hairpin_alt 的入选点跑交替取向 k(gap) "
                              "判读门 hairpin_alt_kgap_gate（单调+比值 [0.6,1.2]）")
     parser.add_argument("--k-target", type=float, default=None,
                         help="alt 门可选：设计 k（如 FBW5%% N=3 的 0.0515）可达性报告")

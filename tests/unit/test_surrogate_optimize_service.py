@@ -1,4 +1,4 @@
-"""WP3.2 sbo 服务环的配方契约单测（含软约束通道）。
+"""WP3.2 sbo 服务环的配方契约单测（审查 P1/P2 + P2⑥ 软约束通道）。
 
 被测对象：rfauto/service/surrogate_optimize_service.py 的入口契约面——
 - optimization.constraints 解析透传（P2⑥：run_surrogate_loop 已补 sbo

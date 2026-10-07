@@ -19,7 +19,7 @@ v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
   `<Problem.Output>/port-S.csv`（v0.18.1 后处理 S 参数文件，dB 幅值+
   度相位列，频率列 GHz）为 (n, n_ports, n_ports) 线性复数矩阵；单激励
   run 仅激励列有测量值，未测条目零填并在 message 报告已测清单。
-- 多激励 S 矩阵（2026-09-22 消账 PENDING #3，源码+真跑双取证见
+- 多激励 S 矩阵（2026-09-22 df5 消账 PENDING #3，源码+真跑双取证见
   runs/palace_spike/df5_multiexcite_criteria.md）：官方**单 run 多激励**
   （drivensolver.cpp L154 主循环激励外层×频率内层，每激励扫全频段）；
   port-S.csv 单文件逐激励列块（postoperatorcsv.cpp InitializePortS：列
@@ -28,7 +28,7 @@ v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
   =每端口 `Excitation: <自身 Index>`（utils/configfile.cpp ParsePortExcitation
   L416：bool/非负整数→组索引，缺省 0 不激励）。build 期守卫拒绝
   多端口共享激励组（该形态 IsMultipleSimple()==false → port-S.csv 必不
-  产出，run rc=0 静默——Case B 真跑实证），激励组索引≠端口 Index 时
+  产出，run rc=0 静默——df5 Case B 真跑实证），激励组索引≠端口 Index 时
   warning（官方归一化不适用，S 列按激励组索引）。解析按 (o,e) 列标签
   回填全矩阵；已测掩码经 get_measured_mask() 结构化透出（#314 口径）。
 - exe 解析链（resolve_palace_exe，2026-09-23 WSL2 通道落地，判据见
@@ -180,7 +180,7 @@ class PalaceSolver(EMSolverAdapter):
     #   - 场导出/收敛报告/optimetrics/nf2ff/SAR：适配器无对应实现 → False；
     #   - Touchstone：_parse_palace_csv 仅解析 port-S.csv（CSV），无 Touchstone
     #     写出 → False；supported_output_formats() 已按实际实现如实只报 csv；
-    #   - 多激励 S 矩阵：官方单 run 多激励（每端口 Excitation:<Index>
+    #   - 多激励 S 矩阵：官方单 run 多激励（每端口 Excitation:<Index>，df5
     #     真跑取证全 (n,2,2) 掩码+互易 |S12−S21|=0）；
     #   - 模板：无模板机制（网格 .msh 由调用方提供）→ 空元组；
     #   - 并行：subprocess 不传 MPI 开关 → 空元组；license：Apache-2.0 → False。
@@ -208,7 +208,7 @@ class PalaceSolver(EMSolverAdapter):
         super().__init__(config)
         self._exe_path: str | None = config.exe_path
         self._config_file: Path | None = None
-        self._mesh_file: str | None = None  # Model.Mesh 单源（C-LOW ②）
+        self._mesh_file: str | None = None  # Model.Mesh 单源（df5 C-LOW ②）
         self._last_measured_mask: list[tuple[int, int]] | None = None
 
     def connect(self) -> bool:
@@ -244,7 +244,7 @@ class PalaceSolver(EMSolverAdapter):
         - port-S.csv 仅当每个激励组恰 1 端口（IsMultipleSimple）才产出。
 
         返回 None=通过；返回字符串=拒绝理由。多端口共享同一激励组 → 必拒
-        （该形态 port-S.csv 必不产出，官方 run rc=0 静默——Case B 真跑
+        （该形态 port-S.csv 必不产出，官方 run rc=0 静默——df5 Case B 真跑
         实证，等到 solve 后报"未产出"会白烧一次完整求解）。激励组索引≠端口
         Index 且官方归一化不适用 → warning（合法但 S 列按激励组索引，不与
         端口轴对齐）。
@@ -270,7 +270,7 @@ class PalaceSolver(EMSolverAdapter):
                 detail = ", ".join(f"{k}#{i}" for k, i in members)
                 return (
                     f"激励组 {ex_idx} 含 {len(members)} 个端口（{detail}）：官方 "
-                    "IsMultipleSimple()==false，port-S.csv 必不产出（"
+                    "IsMultipleSimple()==false，port-S.csv 必不产出（df5 "
                     "Case B 真跑实证）；S 参数提取请为每个端口指定互异激励"
                     "索引（Excitation: <自身 Index>）"
                 )
@@ -539,7 +539,7 @@ class PalaceSolver(EMSolverAdapter):
 
     def visualizations(self) -> list[dict[str, Any]]:
         workdir = self._config.working_dir or "."
-        # Model.Mesh 单源（C-LOW ②）：mesh_file 只来自 build_geometry 的
+        # Model.Mesh 单源（df5 C-LOW ②）：mesh_file 只来自 build_geometry 的
         # geometry["mesh_file"]（即写进 config Model.Mesh 的同一值），
         # 不再读 extra_params 第二源；build 前调用返回空串。
         mesh = self._mesh_file or ""
@@ -551,7 +551,7 @@ class PalaceSolver(EMSolverAdapter):
 
     def supported_output_formats(self) -> list[str]:
         # 实际产物仅 CSV（官方 port-S.csv 解析链）；无 Touchstone 写出——
-        # 6g 遗留缺省声明已按实现如实修正（C-LOW ③，消费者
+        # 6g 遗留缺省声明已按实现如实修正（df5 C-LOW ③，消费者
         # r3_services.list_solver_visualizations 透出 output_formats）。
         return ["csv"]
 

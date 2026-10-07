@@ -1,6 +1,6 @@
-"""rfauto 注册表数据库层—— SQLite 事务型注册表 + PostgreSQL 迁移接缝。
+"""rfauto 注册表数据库层（W1⑫）—— SQLite 事务型注册表 + PostgreSQL 迁移接缝。
 
-设计口径：
+设计口径（TODO 5.5 / 用户 2026-09-16 口径⑤）：
 - 零服务器：SQLite（WAL + busy_timeout），默认文件 ``runs/registry.sqlite``，
   env ``RFAUTO_REGISTRY_DB`` 或 settings ``db.path`` 可覆盖（env 优先）；
   runs/ 已 gitignore，不入 git。
@@ -45,7 +45,7 @@ REGISTRY_TABLES = ("runs", "jobs", "approvals", "datasets", "owners")
 
 def default_registry_db_path() -> Path:
     """解析注册表数据库路径：env ``RFAUTO_REGISTRY_DB`` 优先，其次 settings
-    的 ``db.path``（configs/settings.yaml），缺省 runs/registry.sqlite。
+    的 ``db.path``（configs/settings.yaml，R2-D-02 合流），缺省 runs/registry.sqlite。
 
     优先级与全局三层口径一致：env > YAML（settings.local.yaml 后加载覆盖）
     > 代码默认。每次调用即时读取（不在 import 期固化），测试可用 monkeypatch
@@ -100,7 +100,7 @@ _MIGRATION_V1: tuple[str, ...] = (
         metadata TEXT
     )
     """,
-    # approvals：审批流读模型（audit.jsonl 为产物
+    # approvals：审批流读模型（R2-D-02 起接 r3_services：audit.jsonl 为产物
     # 事实源，本表存状态/审计行，payload 内 audit_file 为外键）
     """
     CREATE TABLE IF NOT EXISTS approvals (
@@ -326,7 +326,7 @@ class _SQLiteTransaction:
 
 
 class PostgresBackend:
-    """PostgreSQL 迁移接缝（团队化：当前版本不实现）。
+    """PostgreSQL 迁移接缝（团队化，用户 2026-09-16 口径⑤：本波不实现）。
 
     届时实现要点：
     - 驱动：psycopg（本波禁改 pyproject.toml，不加依赖）；
@@ -338,7 +338,7 @@ class PostgresBackend:
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError(
-            "PostgresBackend 是团队化迁移接缝（当前仅留桩）："
+            "PostgresBackend 是团队化迁移接缝（W1⑫ 仅留桩）："
             "实现 psycopg 驱动接入 + ?→%s 占位符适配后启用，"
             "见 src/rfauto/infra/db.py 模块文档与类文档。"
         )
@@ -566,7 +566,7 @@ class RegistryDB:
             })
         return out
 
-    # -- approvals（审批流读模型） ----
+    # -- approvals（审批流读模型：r3_services 生产读写经此；见 R2-D-02） ----
 
     def insert_approval(self, kind: str, payload: dict[str, Any] | None,
                         approval_id: str | None = None,

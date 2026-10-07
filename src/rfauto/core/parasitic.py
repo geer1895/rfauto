@@ -1,6 +1,6 @@
-"""PCB 无源/互连 RLC 闭式锚。
+"""PCB 无源/互连 RLC 闭式锚（续跑计划 §4 WP4.4b）。
 
-定位（对照电-热链的 1-D 传导锚）：Q3D/SIwave 寄生提取通道的**裁判内核**。
+定位（对照 WP4.4a 的 1-D 传导锚）：Q3D/SIwave 寄生提取通道的**裁判内核**。
 Q3D 数值提取出的每单位长度 L/C 与总 R，须对独立来源闭式解校验：
 
 - **L/C 锚（传输线恒等式，给定 Z0/εeff 后精确成立）**：
@@ -198,7 +198,7 @@ def interconnect_rlc_anchor(
     rho_ohm_m: float = COPPER_RHO_OHM_M,
     rough_mm: float = 0.0,
 ) -> dict[str, Any]:
-    """互连段总 RLC 闭式锚（主入口，服务/Q3D 对比共用单一实现）。
+    """互连段总 RLC 闭式锚（WP4.4b 主入口，服务/Q3D 对比共用单一实现）。
 
     L/C 总量 = 每长度 × 段长（准 TEM 均匀段）；R 给 DC 精确值 + AC 每长度
     参考（不做门判）。返回 dict 供 adapters/q3d_adapter 与

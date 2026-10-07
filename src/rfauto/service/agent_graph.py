@@ -1,6 +1,6 @@
 """LangGraph 式工作流状态机（WP3.8 三层栈·第 1 层）。
 
-方案口径：propose→verify→fix
+方案口径（续跑计划 §4 WP3.8，2026-09-09 检索增补）：propose→verify→fix
 自愈环的**图实现**，作为 WP3.5 self_verify_loop（过程式 while 环）的升级路径。
 借鉴 LangGraph 的最小语义子集，零新增依赖：
 

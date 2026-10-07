@@ -18,7 +18,8 @@ criteria.md，先于本脚本运行落盘）：
      预测峰移（路线 a G1 消费口）。
 
 产物：runs/smoke_c3_redesign/{redesign_nominals.json, cpass_verdict.json}。
-全程零电磁仿真（只有闭式电路裁判）；不跑 openEMS/HFSS；src/** 零改动。
+全程零电磁仿真（只有闭式电路裁判）；不 commit、不写 /TODO、不跑
+openEMS/HFSS；src/** 零改动。
 """
 from __future__ import annotations
 
@@ -142,7 +143,7 @@ def refix_run_params(template: str) -> dict | None:
         return None
 
 
-# ── R2 出处纪律（防 no-op 复发/陈旧档误读，criteria.md §四）─────────
+# ── R2 出处纪律（df5-c3fix，防 no-op 复发/陈旧档误读，criteria.md §四）─────────
 
 def render_input_sha256(template: str, params: dict, mesh_mm: float | None = None
                         ) -> str:
@@ -159,7 +160,7 @@ def _geometry_section(text: str, template: str) -> str | None:
     频轴/mesh 无关——跨 run 字面量比对的稳定粒度）。
 
     标记缺失（畸形/异模板归档）返回 None——调用方如实记 not-ok，不让
-    StopIteration 裸穿透炸整跑（E-M2，#105 观测面故障不阻塞主路径）。
+    StopIteration 裸穿透炸整跑（round6 E-M2，#105 观测面故障不阻塞主路径）。
     """
     lines = text.splitlines()
     starts = [i for i, ln in enumerate(lines)
@@ -177,7 +178,7 @@ def crosscheck_run_literal(template: str, params: dict,
     R2：SC 主根因 (a') 的复发守卫——归档 run 的几何出处以渲染字面量为裁决
     （不认 metadata 自述）；不一致=该 run 渲染的不是本名义。缺失档案与
     存在但畸形（几何段标记缺失）的档案均如实 ok=False（不臆造，#122；
-    畸形含归档路径与描述由调用方决策，E-M2）。
+    畸形含归档路径与描述由调用方决策，round6 E-M2）。
     """
     p = Path(simulation_py)
     if not p.exists():

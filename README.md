@@ -1,6 +1,6 @@
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-9700%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -17,9 +17,15 @@ whole pipeline through MCP, under one hard rule:
 > deterministic kernel or solver — never by the LLM.**
 
 It drives **16 EM/EDA engines** behind one interface, ships
-**53 parameterized device templates** with built-in physics checks, and
-exposes **147 CLI commands** and **106 MCP tools** (+3 resources) — kept
-honest by **9700+ unit tests** that run without any commercial license.
+**71 parameterized device templates** with built-in physics checks, and
+exposes **254 CLI commands** and **149 MCP tools** (+5 resources) — kept
+honest by **21900+ unit tests** that run without any commercial license.
+
+<!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
+`CALCULATOR_REGISTRY 100，含实验键 101` · `TEMPLATE_META 71` ·
+`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI 命令 254（叶子） ·
+（149 个工具 + 5 个 resources）
+<!-- numbers-end -->
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
 [Trust layer](#the-trust-layer) · [Quick start](#quick-start) ·
@@ -78,6 +84,12 @@ every run, reference responses per template, deterministic kernels for every
 number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 
 ![trust layer](docs/assets/trust_layer.png)
+
+<!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
+<!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
+
+**规模数字**：MCP 工具 149（+5 resources）｜ CLI 命令 254（叶子）｜ CALCULATOR_REGISTRY 100（含实验键 101）｜ 器件模板 71 ｜ 标定锚 60
+<!-- AUTO-NUMBERS:END -->
 
 ## Quick start
 

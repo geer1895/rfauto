@@ -1,4 +1,4 @@
-"""实验计算器开关机制 + E13 候选公式实验态入库（2026-09-16 定案）。
+"""W1⑨ 实验计算器开关机制 + E13 候选公式实验态入库（2026-09-16 用户口径）。
 
 口径：所有符号回归归纳公式一律 experimental=True 入库——注册表默认不列
 （names/describe）、service 运行默认拒绝；显式 allow_experimental=True 或
@@ -6,9 +6,9 @@
 EXPERIMENTAL）放行；清单（list_calculators）始终列出但打 experimental 标签。
 
 数值断言口径（#175）：断言函数返回值，不匹配渲染文本。E13 三点核对锚 =
-归纳公式记录的系数（0.0261448 + 75.1834/L + 0.0162789·L/W），
+记录的公式系数（0.0261448 + 75.1834/L + 0.0162789·L/W），
 独立裁判 = symbolic_fit.patch_resonance_hj_ghz（Hammerstad/HJ，#118 不自证），
-阈值 = 归纳记录的验收门 2%。
+阈值 = 记录的验收门 2%。
 
 通道钉子（#139 同源纪律）：开关相关单测清掉 env、CWD 隔离到 tmp_path（repo
 configs/settings.yaml 与本机 settings.local.yaml 不参与），默认分支可复现。
@@ -39,8 +39,8 @@ from rfauto.service.calculator_service import list_calculators, run_calculator
 EXP_KEY = "patch_f0_symbolic_e13"
 ENV_KEY = "RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL"
 
-# 归纳公式记录系数（渲染文本 6 位有效数字）——三点核对的独立锚
-_RECORDED_A, _RECORDED_B, _RECORDED_C = 0.0261448, 75.1834, 0.0162789
+# 记录系数（渲染文本 6 位有效数字）——三点核对的独立锚
+_LEDGER_A, _LEDGER_B, _LEDGER_C = 0.0261448, 75.1834, 0.0162789
 # 三个已知点（拟合数据域内：L∈[35,45]、W∈[40,60]）
 _THREE_POINTS = ((35.0, 40.0), (40.0, 50.0), (45.0, 60.0))
 # 数据集基底（er/h 在数据集上恒定，公式不含 er/h）
@@ -55,8 +55,8 @@ def _pin_switch_channel(tmp_path, monkeypatch):
     yield
 
 
-def _recorded_f0(l_mm: float, w_mm: float) -> float:
-    return _RECORDED_A + _RECORDED_B / l_mm + _RECORDED_C * l_mm / w_mm
+def _devlog_f0(l_mm: float, w_mm: float) -> float:
+    return _LEDGER_A + _LEDGER_B / l_mm + _LEDGER_C * l_mm / w_mm
 
 
 # ─── 注册表：默认不列 / 显式含 / 标签 ─────────────────────────────────────────
@@ -97,7 +97,7 @@ def test_get_still_reaches_experimental_spec():
     spec = CALCULATOR_REGISTRY.get(EXP_KEY)
     assert spec.experimental is True
     assert spec.required == ("l_mm", "w_mm")
-    assert "符号回归标定产物 patch_f0" in spec.description
+    assert "E13" in spec.description
 
 
 # ─── service 清单：默认列出但打标签 ───────────────────────────────────────────
@@ -114,7 +114,7 @@ def test_service_list_includes_experimental_with_label():
 
 
 def test_service_list_ledger_and_exclude_switch():
-    """壳层透传口径：清单附实验键台账；include_experimental=
+    """壳层透传口径（w1a-shell-front）：清单附实验键台账；include_experimental=
     False 剔除实验键但台账（n_experimental/experimental 名单）仍如实报告。"""
     full = list_calculators()
     assert full["include_experimental"] is True
@@ -155,7 +155,7 @@ def test_service_run_explicit_allow_runs():
     out = run_calculator(EXP_KEY, {"l_mm": 40.0, "w_mm": 50.0},
                          allow_experimental=True)
     assert out["ok"] is True
-    assert out["result"]["f0_ghz"] == pytest.approx(_recorded_f0(40.0, 50.0), abs=1e-4)
+    assert out["result"]["f0_ghz"] == pytest.approx(_devlog_f0(40.0, 50.0), abs=1e-4)
     assert "provenance" in out["result"]
     assert "formula" in out["result"]
 
@@ -172,7 +172,7 @@ def test_service_run_env_switch_allows(monkeypatch, raw):
     monkeypatch.setenv(ENV_KEY, raw)
     out = run_calculator(EXP_KEY, {"l_mm": 40.0, "w_mm": 50.0})
     assert out["ok"] is True, out
-    assert out["result"]["f0_ghz"] == pytest.approx(_recorded_f0(40.0, 50.0), abs=1e-4)
+    assert out["result"]["f0_ghz"] == pytest.approx(_devlog_f0(40.0, 50.0), abs=1e-4)
 
 
 @pytest.mark.parametrize("raw", ["0", "false", "off", "garbage"])
@@ -272,27 +272,27 @@ def test_repo_settings_yaml_declares_key_default_false():
 # ─── E13 公式：三点核对 / 适用域 / 独立裁判 / 确定性 ─────────────────────────
 
 @pytest.mark.parametrize("l_mm,w_mm", _THREE_POINTS)
-def test_e13_three_points_match_recorded_coefficients(l_mm, w_mm):
-    """注册函数值 vs 归纳公式记录系数：6 位有效数字截断 → |Δ|≲1e-5GHz。"""
+def test_e13_three_points_match_devlog_coefficients(l_mm, w_mm):
+    """注册函数值 vs 记录系数：6 位有效数字截断 → |Δ|≲1e-5GHz。"""
     spec = CALCULATOR_REGISTRY.get(EXP_KEY)
     value = spec.func(l_mm=l_mm, w_mm=w_mm)["f0_ghz"]
-    assert value == pytest.approx(_recorded_f0(l_mm, w_mm), abs=1e-4)
+    assert value == pytest.approx(_devlog_f0(l_mm, w_mm), abs=1e-4)
     # 物理量级护栏：数据集基模 [1.3, 2.7] GHz
     assert 1.3 < value < 2.7
 
 
 @pytest.mark.parametrize("l_mm,w_mm", _THREE_POINTS)
 def test_e13_within_2pct_of_hj_referee(l_mm, w_mm):
-    """独立裁判（Hammerstad/HJ 闭式，#118 不自证）：归纳记录验收门 2%。"""
+    """独立裁判（Hammerstad/HJ 闭式，#118 不自证）：记录验收门 2%。"""
     value = CALCULATOR_REGISTRY.get(EXP_KEY).func(l_mm=l_mm, w_mm=w_mm)["f0_ghz"]
     hj = patch_resonance_hj_ghz(l_mm, w_mm, _ER, _H_MM)
     assert abs(value - hj) / hj < 0.02
-    # 归纳式系统性略低于 HJ（mean −0.699%）：符号方向一致
+    # 记录归纳式系统性略低于 HJ（mean −0.699%）：符号方向一致
     assert value < hj
 
 
-def test_e13_formula_text_matches_recorded_form():
-    """公式渲染串含三项（1 / 1/L / L/W）——结构与归纳记录一致。"""
+def test_e13_formula_text_matches_devlog_form():
+    """公式渲染串含三项（1 / 1/L / L/W）——结构与 记录一致。"""
     out = CALCULATOR_REGISTRY.get(EXP_KEY).func(l_mm=40.0, w_mm=50.0)
     assert out["formula"].startswith("f0_ghz = ")
     assert "1/L_mm" in out["formula"] and "L_mm/W_mm" in out["formula"]

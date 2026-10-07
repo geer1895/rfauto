@@ -81,7 +81,7 @@ class TestFitDiscrepancy:
             "min", "max", "mean"}
 
     def test_delta_convention_stamp(self, samples_path):
-        """P2⑩ 机器可读口径戳：real−fake + 切换时点，note 区分
+        """P2⑩ 机器可读口径戳：real−fake + 切换时点（2d68012），note 区分
         fit_discrepancy 翻转与 KOHCalibrator 恒定口径两条路径。"""
         from rfauto.service.koh_service import (
             DELTA_CONVENTION,
@@ -96,7 +96,7 @@ class TestFitDiscrepancy:
                             n_extra_fake=6)
         assert r["ok"], r.get("errors")
         assert r["delta_convention"] == DELTA_CONVENTION == "real_minus_fake"
-        assert "2026-09-13" in r["delta_convention_since"]
+        assert "2d68012" in r["delta_convention_since"]
         assert r["delta_convention_since"] == DELTA_CONVENTION_SINCE
         assert "fit_discrepancy" in r["note"]
         assert "KOHCalibrator" in r["note"]

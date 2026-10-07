@@ -1,4 +1,4 @@
-"""hairpin_alt_ksplit 纯函数离线单测（#212 先离线，零真机/零网络）。
+"""hairpin_alt_ksplit 纯函数离线单测（wf:hairpin-alt-extract；#212 先离线，零真机/零网络）。
 
 裁判（#118 独立来源）：
   ① 分裂公式闭式回代：手算 2|f2−f1|/(f2+f1) 与平方变体逐位对照；

@@ -1,9 +1,9 @@
-"""有源链路确定性内核（LNA/PA 匹配+噪声+load-pull 口径）。
+"""C14 有源链路确定性内核（LNA/PA 匹配+噪声+load-pull 口径）。
 
-设计范围:
+方案依据（续跑计划 §10.3 C14 行）:
     "LNA/PA 匹配网络 EM 提取+ADS 非线性/噪声协同（场-路：EM S 参数进 ADS
-    电路层）；PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull，无需硬件）；
-    匹配网络 EM↔ADS 联合 vs 手工口径；load-pull 等增益/等功率圈合理性"。
+    电路层）；PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull，无需硬件）"
+验收列: "匹配网络 EM↔ADS 联合 vs 手工口径；load-pull 等增益/等功率圈合理性"。
 
 本模块只放零依赖（numpy）的确定性射频内核，全部公式为教科书口径
 （Pozar《Microwave Engineering》ch.12 有源网络稳定性/增益/噪声；
@@ -717,7 +717,7 @@ def load_pull_plausibility(
     gain_peak_dist_tol: float = 0.15,
     sparams: np.ndarray | None = None,
 ) -> dict[str, Any]:
-    """等功率/等增益圈合理性裁判（验收口径的确定性落地）。
+    """等功率/等增益圈合理性裁判（C14 验收列的确定性落地）。
 
     五项检查:
     1. optimum_matches_model: 网格最优点 ≈ 模型 Γ_L,opt（G_opt−jωC_out）;

@@ -1,6 +1,6 @@
-"""Icepak 电-热首案例真机脚本（WP4.4a）。
+"""WP4.4a Icepak 电-热首案例真机脚本（续跑计划 §4 WP4.4a）。
 
-链路：Wilkinson 隔离电阻损耗 → Icepak 温度场 → 材料温漂 →
+链路（方案行口径）：Wilkinson 隔离电阻损耗 → Icepak 温度场 → 材料温漂 →
 S 参数失谐。全部数值由确定性内核产出（#7 纪律：LLM/脚本不发明物理数字）：
 
   1) 损耗（core/electrothermal）：隔离注入工况——输出端口 2 注入
@@ -43,7 +43,7 @@ CTE_PPM_PER_K = 14.0        # 同上（面内有效值量级）
 # 锚定状态（WP4.4a ⑤，#190 "HFSS 为对齐基准"范式）：锚定腿已实装于
 # scripts/icepak_hfss_loss_e2e.py（HFSS 环形谐振器两温度点 → df0/dT 有效
 # 斜率 → TCDk_eff = 2·(|slope|−CTE)，仲裁工件 =
-# runs/icepak_hfss_loss_e2e/e2e_case.json["anchor"]）。真机首跑
+# runs/icepak_hfss_loss_e2e/e2e_case.json["anchor"]）。2026-09-15 真机首跑
 # 锚定判据未过（斜率对一阶闭式偏差 >20%，f0 提取受 HFSS 重解跳变污染、
 # 归因待证），故占位常数维持数据手册口径并如实标注，未回写锚值
 # （不凑绿 #122）；锚定判据通过后应以此处两常量替换为锚定值。
@@ -53,7 +53,7 @@ MAX_ATTEMPTS = 3
 
 
 def _kill_desktops() -> None:
-    """attempt 间清理（治理单源，#157 先查后杀）。
+    """attempt 间清理（df5 治理单源，#157 先查后杀）。
 
     委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
     活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉
@@ -173,8 +173,8 @@ def _run_case() -> dict:
 
 def _clean_project_artifacts() -> None:
     """清掉上次运行遗留的 AEDT 工程（陈旧设计会让 insert_design 重建出
-    重名对象/边界，监控点读数退化为默认 20C——真机二跑实证）。
-    只点名 AEDT 工程产物，不碰日志与 JSON 证据（白名单式清理）。"""
+    重名对象/边界，监控点读数退化为默认 20C——2026-09-13 二跑实证）。
+    只点名 AEDT 工程产物，不碰日志与 JSON 证据（白名单式清理， 硬规 3）。"""
     import shutil
 
     for name in ("wp44a_electrothermal.aedt",

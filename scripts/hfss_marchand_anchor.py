@@ -1,12 +1,12 @@
-"""HFSS 波端口提取 Marchand 两节耦合段/slotline β 锚点（对齐基准口径）。
+"""rm-hfss-anchor：HFSS 波端口提取 Marchand 两节耦合段/slotline β 锚点（对齐基准口径）。
 
-背景：电路级综合
+背景（承接 w1b 两节 Marchand 综合 4436c60）：电路级综合
 （core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω
 差分、(Z0e,Z0o)=(95.21,36.49)Ω、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）
 缺全波锚点。HFSS 是对齐基准，本脚本三个锚点：
 
 (a) 耦合段锚：HFSS 四端口边耦合微带段（w,s,ℓ 同源导入，端口面=全截面
-    **2 模大截面波端口**，#254 口径；模 1/模 2=偶/奇模，模序按 Z0 幅值
+    **2 模大截面波端口**，#254 铁律；模 1/模 2=偶/奇模，模序按 Z0 幅值
     识别——偶模 Z0 恒大）→ 由 50Ω 归一 S 反推 Z0e/Z0o/εeff_e/εeff_o
     （模态分组→每模均匀线段 Z 参数反演，纯函数+合成回收单测）。
     门（写死）：max(|Z0e/Z0e_KJ−1|,|Z0o/Z0o_KJ−1|)·100 @f0
@@ -499,7 +499,7 @@ def analyze_anchor_a(freq_hz: np.ndarray, s4: np.ndarray, ctx: dict,
     rel_pct = max(abs(rel_e), abs(rel_o))
     return {
         "anchor": "a",
-        "title": "耦合段锚：2 模大截面波端口 S 反演 vs KJ 综合（名义点）",
+        "title": "耦合段锚：2 模大截面波端口 S 反演 vs KJ 综合（w1b 名义点）",
         "gate": {"agree_max_pct": GATE_AGREE_MAX_PCT,
                  "partial_max_pct": GATE_PARTIAL_MAX_PCT,
                  "metric": "max(|Z0e/Z0e_KJ−1|,|Z0o/Z0o_KJ−1|)·100 @f0；"
@@ -755,8 +755,8 @@ def analyze_anchor_c() -> dict:
                            "齐全 → AGREE；否则 PARTIAL（数据漂移如实）",
                  "source": str(src)},
         "declared_differences": [
-            "零新求解：消费 runs/slotline_port_b/result.json（HFSS-wide "
-            "β=Gamma 口径）+ core/slotline 闭式重算",
+            "零新求解：消费 runs/slotline_port_b/result.json（"
+            "HFSS-wide β=Gamma 口径）+ core/slotline 闭式重算",
         ],
     }
 
@@ -924,7 +924,7 @@ def write_summary() -> dict:
     if len(anchors) < 3 and anchors:
         overall = ("PARTIAL" if rank.get(overall, 2) < 1 else overall)
     summary = {
-        "item_id": "hfss_marchand_anchor",
+        "item_id": "rm-hfss-anchor",
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "anchors": anchors,
         "overall": overall,

@@ -1,6 +1,6 @@
-"""M2 首版代理+LOO/held-out 判读驱动（纯离线，零引擎真跑）。
+"""datafactory M2 首版代理+LOO/held-out 判读驱动（纯离线，零引擎真跑）。
 
-判据预声明见 runs/datafactory_m2/criteria.md（逐字门）：
+判据预声明见 runs/datafactory_m2/criteria.md（plan §5 M2 行逐字门）：
 - held-out（24 点，w 排序每 5 取 1 分层）三门：
   带内(2.4-2.6GHz) max|ΔS21| ≤0.5dB、max|ΔS11| ≤1dB、|Δεeff|/εeff ≤1%；
 - LOO 全量 120 点同口径统计量作次级量并列（不设门）；
@@ -341,7 +341,7 @@ def run_judgment(dataset_dir: Path, out_path: Path, freq_step: float,
     t_start = time.perf_counter()
     freqs = band_freqs(freq_step)
     keys = head_keys(freqs)
-    log("[M2] 判据：runs/datafactory_m2/criteria.md（逐字门）")
+    log("[M2] 判据：runs/datafactory_m2/criteria.md（plan §5 M2 行逐字门）")
     log(f"[M2] 栅格 {len(freqs)} 点 {freqs[0]}–{freqs[-1]}GHz 步进 "
         f"{freq_step}GHz；头数 {len(keys)}（含 eps_eff）")
 
@@ -423,7 +423,7 @@ def run_judgment(dataset_dir: Path, out_path: Path, freq_step: float,
 
     verdict: dict = {
         "schema": "factory_m2_verdict/1",
-        "milestone": "M2",
+        "milestone": "M2（plan datafactory_phase1 §5）",
         "criteria": "runs/datafactory_m2/criteria.md",
         "generated_at": datetime.now(UTC).isoformat(),
         "dataset": str(dataset_dir),

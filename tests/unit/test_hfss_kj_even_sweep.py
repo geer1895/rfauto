@@ -1,6 +1,6 @@
 """P-KJ-EVEN P2：HFSS 宽端口扫描战役发射面离线单测（零真机，HFSS 未装可跑）。
 
-覆盖（规格离线可测面，v2 测量架构口径）：①点表与毫米换算/KJ 锚转写钉；
+覆盖（任务书离线可测面，v2 测量架构口径）：①点表与毫米换算/KJ 锚转写钉；
 ②εeff 包络；③Γ 反演与参考阻抗无关性（合成已知量回收 #118）；④γL 解缠；
 ⑤基准确认门（#307 格点 {1,0.5,2}）与单线基准换算因子；⑥直读-反演互证门；
 ⑦gate0 v2 判据（步进单调递减+末档<1% 双条件）；⑧judge_point 门矩阵
@@ -276,7 +276,7 @@ def _synth_level(*, z0e: float, eps_e: float, z0o: float, eps_o: float,
     for pn in ("P1", "P2"):
         level["port_data"][pn] = {
             "Zo": {m: {"re": zr_by[m], "im": 0.0} for m in ("1", "2")},
-            # HFSS port Gamma 读数=该模传播常数 γ（/m）＝γL/L
+            # HFSS port Gamma 读数=该模传播常数 γ（m）＝γL/L
             "Gamma": {m: {"re": gl_by[m].real / L_M, "im": gl_by[m].imag / L_M}
                       for m in ("1", "2")},
         }

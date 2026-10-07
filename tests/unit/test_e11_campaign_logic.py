@@ -3,7 +3,7 @@
 被测对象：scripts/e11_warm_start_campaign.py 的纯判定函数
 （cumulative_best / trials_to_target / judge_campaign /
 build_history_samples）与战役编排接线（run_campaign，monkeypatch 假通道）。
-真跑面不在单测范围——验收真跑按战役脚本独立执行。
+真跑面不在单测范围——验收真跑由主控按战役脚本独立执行。
 
 判定口径（target 偏置修复后的新语义）：
 - "同族真跑次数再降 ≥30%" → 配对 time-to-target 的平均缩减率 ≥ 阈值；
@@ -14,7 +14,7 @@ build_history_samples）与战役编排接线（run_campaign，monkeypatch 假�
   均值），censored 种子数在 n_censored/verdict 透出——未达标如实
   FAIL，不凑绿。
 
-判定钉死（2026-09-17 收口）：
+审查修复钉死（2026-09-17，functional_audit_20260917 E11 行/踩坑候选 3）：
 - channel 口径：verdict 顶层带 ``channel``=adapter_name，meta 记 cold/warm
   双臂通道——fake 通道数字不得填"真跑次数"判据（TestRunCampaignWiring）；
 - 历史集上界剔除：warm 历史集构造剔除全部 cost ≤ target+ε 的上界/目标点
@@ -285,7 +285,7 @@ class TestJudgeCampaignPriorTarget:
         assert v["per_seed"] == {}
 
     def test_real_campaign_verdict_shape_regression(self):
-        # 真实战役 verdict 文件（归档不入库）实录形状：
+        # runs/e11_warm_campaign/e11c_main/campaign_verdict.json 实录形状：
         # target=0（fake wilkinson 平底碗）双臂均达——新口径下 target 仍为
         # 冷臂末代 0.0，结论不变（3 种子 PASS，均值 95.49%）
         pairs = {
@@ -309,7 +309,7 @@ class TestJudgeCampaignPriorTarget:
 
 
 class TestBuildHistorySamples:
-    """历史集上界剔除（历史集含最优点 → 缩减率是构造上界）。
+    """历史集上界剔除（审查 E11：历史集含最优点 → 缩减率是构造上界）。
 
     断言口径：全量集 − 构造集 = 恰为上界点（cost ≤ target+ε），差集互斥、
     溯源字段原样保留、统计可追溯。
@@ -399,7 +399,7 @@ class TestBuildHistorySamples:
 class TestRunCampaignWiring:
     """战役编排接线（monkeypatch 假通道，零真机零 optuna 真跑）。
 
-    钉死两件事：verdict.channel 通道口径（配对来源可追溯）+ warm 臂
+    钉死审查修复两件事：verdict.channel 通道口径（配对来源可追溯）+ warm 臂
     注入先验不含上界点（构造逻辑真接线，非仅纯函数）。#144：workdir 落
     tmp_path 沙箱（run_campaign 自带 chdir+还原），RFAUTO_CACHE 经
     monkeypatch.setenv 保还原；#139：run_optimization/materialize/collect/
@@ -455,7 +455,7 @@ class TestRunCampaignWiring:
     def test_channel_field_and_upper_bound_excluded_from_warm_injection(
             self, tmp_path, monkeypatch):
         calls: list[dict] = []
-        # 历史集含最优点 0.0 与 target 之下点 0.4（实证的构造上界形态）
+        # 历史集含最优点 0.0 与 target 之下点 0.4（审查实证的构造上界形态）
         dataset_samples = [
             {"params": {"w": 1}, "cost": 0.0, "run_id": "h1", "point_index": 0},
             {"params": {"w": 2}, "cost": 0.4, "run_id": "h1", "point_index": 1},

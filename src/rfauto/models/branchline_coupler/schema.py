@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 class BranchlineCouplerParams(BaseModel):
     """Branchline Coupler 参数。
 
-    初值基于 2.4GHz Rogers 4350B 0.508mm 设计（真机验证前修正：
+    初值基于 2.4GHz Rogers 4350B 0.508mm 设计（2026-08-30 真机验证前修正：
     原默认值把两种臂宽写反——该板材上 50Ω 线约 1.1mm，35.35Ω 线更宽约 2.2mm）：
     - arm_len ≈ λg/4，按 εeff≈2.6 估算 λg≈77mm → arm≈19.5mm（取 20.5 留容差）
     - 35.35Ω 线宽（series 臂）≈ 2.20mm

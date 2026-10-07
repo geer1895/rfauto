@@ -4,8 +4,8 @@ PEP 639 口径：
 - ``[project].license`` 必须是 SPDX 表达式字符串（禁旧式 ``{ text = ... }`` 表）；
 - ``license-files`` 列表声明许可文件；
 - 废弃的 ``License ::`` classifier 禁止与 SPDX 并存（构建后端会报错/告警）。
-SPDX 值必须跟随 LICENSE 文件文本（本仓 LICENSE=GPL-3.0 文本，SPDX 表达式
-以其是否含 "or later" 措辞为准）。
+SPDX 值必须跟随 LICENSE 文件文本（内部仓 LICENSE=MIT；GPL-3.0 整仓替换
+只落在公开仓 release/rfauto_public，见 口径）。
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ def test_license_is_spdx_string_not_table():
     license_field = _load_project()["license"]
     assert isinstance(license_field, str), (
         f"license 须为 SPDX 字符串，实际 {license_field!r}（旧式 table 未迁移）")
-    assert license_field.startswith("GPL-3.0")
+    assert license_field == "GPL-3.0-only"  # 公开仓口径=GPL-3.0-only（与 LICENSE/README/CITATION 同源）
 
 
 def test_license_files_declares_license():

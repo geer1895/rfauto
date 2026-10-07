@@ -8,7 +8,7 @@
   openEMS WaveguidePort；另一子代理产物，只读）；
 - 路线 B：runs/slotline_port_b/result.json（LumpedPort 跨槽两档 R）。
 
-结论口径（验收）：路线 B β vs HFSS ≤3%；LumpedPort 适用性分级
+结论口径（验收，任务书）：路线 B β vs HFSS ≤3%；LumpedPort 适用性分级
 （β 可用 / S 参数可用与否）如实；哪条可作生产口径、误差量级、局限逐条写明。
 用法：.venv/Scripts/python.exe scripts/compare_slotline_routes.py
 """

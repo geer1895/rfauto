@@ -214,7 +214,7 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
             deltas.append(abs(sh - sl))
             s11_low.append(sl)
             s11_high.append(sh)
-    # schema 对齐多保真通道：fidelity_delta.json 含 S11_low/S11_high
+    # schema 对齐 扩展方案 方向 1：fidelity_delta.json 含 S11_low/S11_high
     return {"freq_ghz": freq_ghz or [], "s11_low": s11_low, "s11_high": s11_high,
             "abs_delta_db": deltas,
             "mean_abs_delta_db": float(np.mean(deltas)) if deltas else None,
@@ -333,7 +333,7 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
     else:
         warnings_note = None
     top_k = select_top_k_by_hv(all_trials, k=n_phase2, objectives=hv_objectives)
-    # 选点策略审计（best-effort 落盘，#105）：HV 目标解析结果此前只喂
+    # P2⑤ 选点策略审计（best-effort 落盘，#105）：HV 目标解析结果此前只喂
     # select_top_k_by_hv、降级仅留 result["warnings"]——fidelity_delta.json /
     # meta.metrics / 返回体三处均无"按什么策略、哪些键、哪个方向选的点"，
     # 选点不可复现。此处显式登记，三处同源写入。
@@ -344,7 +344,7 @@ def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
         "k": int(n_phase2),
     }
 
-    # Phase 2 用 enqueue_trial 固定候选参数（早期审查修复——曾直接
+    # Phase 2 用 enqueue_trial 固定候选参数（审查缺口 #3 修复——曾直接
     # run_optimization(max_trials=1) 不带候选参数，跑的是 TPE 新建议点，
     # 结果却挂候选名，fidelity_delta 配对失真）。enqueue 的固定参数由
     # study.optimize 消费，Phase 2 精算的就是 Phase 1 选出的那批点。

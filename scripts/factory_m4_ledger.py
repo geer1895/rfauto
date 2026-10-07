@@ -73,7 +73,7 @@ ENTRIES_FILENAME = "entries.jsonl"
 #: 台账汇总。
 LEDGER_FILENAME = "ledger.json"
 
-#: 预声明常数（一期 M4 实测口径；verdict 档缺省时回退）。
+#: 预声明常数（一期 M4 实测口径，；verdict 档缺省时回退）。
 DECLARED_BREAKEVEN_K = 3.35
 DECLARED_TARGET_5X_K = 16.7
 #: 一期 M4 verdict 归档（实测常数优先源，相对 runs 根）。
@@ -229,7 +229,7 @@ def breakeven_constants(runs_dir: str | Path) -> dict[str, Any]:
     return {
         "breakeven_k": DECLARED_BREAKEVEN_K,
         "target_5x_k": DECLARED_TARGET_5X_K,
-        "source": f"declared（{M4_VERDICT_REL} 缺档回退，一期 M4 实测口径）",
+        "source": f"declared（{M4_VERDICT_REL} 缺档回退，口径）",
     }
 
 

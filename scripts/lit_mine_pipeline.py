@@ -1,6 +1,6 @@
 """DP-18 C9 文献挖掘管线（降级路线全链）——scripts 唯一所有者批内工具。
 
-规格书：docs/plan_deepdive_specs_20260924.md §18.2；判据预声明：
+规格书：规格深案 §18.2；判据预声明：
 runs/df6_dp18c9/criteria.md（2026-09-24 开工前落盘）。
 
 六级（降级路线：MinerU Windows VLM 后端需 GPU 不可用→PyMuPDF 文本层+md 直读）：
@@ -24,8 +24,8 @@ runs/df6_dp18c9/criteria.md（2026-09-24 开工前落盘）。
 由定向测试双检钉住（tests/unit/test_lit_mine_pipeline.py）。
 
 语料约定（本批 corpus convention，显式声明）：
-  - md 行内公式以 **（加粗）、行尾、中文标点（，。；）、全角括号（）为界
-    （公式上标一律半角括号，全角（）=注释起点）；
+  - md 行内公式以 **（加粗）、行尾、中文标点（。）、全角括号为界
+    （公式上标一律半角括号，全角=注释起点）；
   - bullet：以可选缩进+``- `` 开的行，后续缩进行归属同 bullet 直到下一
     bullet/标题/EOF；pdf 文本以页为配对域（数值表与变量集合的配对只在
     同组内进行）；
@@ -238,11 +238,11 @@ def sympy_symbols_map(expr: Any) -> dict[str, Any]:
 # 第 3 级：抽取层（确定性 regex；LLM 抽取接口预留不实现）
 # ---------------------------------------------------------------------------
 # 公式定义式：fn(arg) = body（fn 含希腊/拉丁字母；body 到中文标点/加粗/
-# 全角括号止——语料约定：全角（）=注释起点，公式上标一律半角括号）
+# 全角括号止——语料约定：全角=注释起点，公式上标一律半角括号）
 _FORMULA_DEF_RE = re.compile(
     r"(?P<lhs>[A-Za-z_\u0370-\u03FF][\w\u0370-\u03FF]*\s*"
     r"\(\s*(?P<arg>[^\s()，。；;]{1,8})\s*\)\s*=\s*)"
-    r"(?P<body>[^，。；;*=\n（）]+)")
+    r"(?P<body>[^，。；;*=\n]+)")
 # 变量集合：x∈{a,b,...}
 _SET_RE = re.compile(r"(?P<var>[^\s∈{,，]+)\s*∈\s*\{(?P<set>[^}]+)\}")
 # 斜杠数值表：v1/v2/…/vN（前后不粘数字/点/斜杠）
@@ -383,7 +383,7 @@ def llm_schema_extract(unit_text: str) -> dict[str, Any]:
     """LLM 抽取接口（预留不实现——本批零 LLM 调用）。
 
     规格书 §18.2 的「schema 约束 LLM 抽取」段在本批以确定性 regex/sympy
-    管线替代（确定性内核铁律：LLM 永不产生物理数字）。若未来接入 LLM：
+    管线替代。若未来接入 LLM：
     只允许其回填结构字段 {formula_latex, variables[{symbol,unit}], domain,
     source{doc,anchor}}；一切数值仍由门 B 的确定性求值器 vs 仓内真值裁定，
     且候选必须过门 A 引文回链（formula_raw 在场）才能 promote。

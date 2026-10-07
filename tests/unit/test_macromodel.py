@@ -1,6 +1,6 @@
 """D13 宏模型内核定向单元测试（确定性、无网络、无真机依赖）。
 
-覆盖（验收列出的验证点）：
+覆盖（任务书列出的验证点）：
 1. skrf 2.1.0 API 契约（先用 inspect.signature 核对再调用，不凭想象写 API）；
 2. N=1 合成有理网络（series RLC 闭式 S11）→ 拟合 RMS ≤ -40 dB、带内无源、
    SPICE 结构有效、FSV GDM ≥ Good、整体 ok；

@@ -1,7 +1,8 @@
 # PyAEDT API Reference for RFAuto
 
-> 本目录内容提取自 [PyAEDT](https://github.com/ansys/pyaedt) 官方源码（MIT License），
-> 供开发参考；提取自 pyaedt 1.4.0 版本源码通读整理。
+> 从 pyaedt 官方源码提取的精华，供 P1+ 开发参考。
+> 源码位置：`D:/rf_workspace\pyaedt-main\`
+> 提取日期：2026-08-28（完整源码阅读后更新）
 
 ## 文件索引
 
@@ -9,7 +10,7 @@
 |------|------|
 | `api_quick_ref.md` | 关键方法签名速查（Hfss/Modeler/Constants/Object3d） |
 | `examples_hfss.py` | 从官方测试提取的 HFSS 示例代码（6 个完整示例） |
-| `port_setup.md` | 端口设置模式（5 种模式 + 常见错误表 + **真机验证补充：显式端口 sheet 模式、求解域边界约束、batch.log 调试法**） |
+| `port_setup.md` | 端口设置模式（5 种模式 + 常见错误表 + **P1-D5 真机验证补充：显式端口 sheet 模式、求解域边界约束、batch.log 调试法**） |
 | `setup_sweep.md` | Setup + Sweep 设置模式（3 种创建方式 + 3 种扫描类型） |
 | `modeler_primitives.md` | 3D 建模原语速查（体素 + 布尔 + 属性） |
 | `material_mesh.md` | 材料管理 + 网格操作（新增） |
@@ -18,7 +19,7 @@
 | `variables_hpc.md` | 变量管理 + HPC 选项 + 批处理求解（新增） |
 | `constants_utils.md` | 常量 + 工具函数 + 错误类型（全阶段通用） |
 
-## 核心发现（必读）
+## 核心发现（P1 必读）
 
 ### 1. Import 路径
 ```python
@@ -29,10 +30,10 @@ from ansys.aedt.core.generic.constants import Axis   # 轴常量
 
 ### 2. Hfss() 构造函数
 ```python
-# ★ pyaedt 1.4.0 inspect.signature 真实签名（真机验证）
+# ★ pyaedt 1.4.0 inspect.signature 真实签名（P1-D2 验证）
 # Desktop(version=, non_graphical=, new_desktop=, close_on_exit=, student_version=, machine=, port=, aedt_process_id=)
 # Hfss(project=, design=, solution_type=, setup=, version=, non_graphical=, new_desktop=, close_on_exit=, student_version=, machine=, port=, aedt_process_id=, remove_lock=)
-# ★ 注意：参数名是 version= 不是 specified_version=（真机踩坑修正）
+# ★ 注意：参数名是 version= 不是 specified_version=（P1-D2 踩坑修正）
 hfss = Hfss(
     project="my_project",      # 项目名
     design="my_design",        # 设计名
@@ -52,7 +53,7 @@ hfss = Hfss(
 - `wave_port(assignment=, name=, impedance=, renormalize=)` — assignment 传 face_id 最可靠
 - `assign_radiation_boundary_to_objects(assignment=, name=)` — 传对象名
 - `assign_radiation_boundary_to_faces(assignment=, name=)` — 传 face_id
-- ★ Desktop 健康检查：用 `desktop.current_version` 属性，不是 `version_keys()`（真机踩坑）
+- ★ Desktop 健康检查：用 `desktop.current_version` 属性，不是 `version_keys()`（P1-D2 踩坑）
 - ★ Desktop 其他属性：`aedt_version`、`installed_versions`（都是 property）
 
 ### 4. 端口物理要点

@@ -1,4 +1,4 @@
-"""NGSolve 开源 FEM 频域适配器（最小实现）。
+"""NGSolve 开源 FEM 频域适配器（§10.19 A9 最小实现）。
 
 事实基线（真机确证，非假设）：NGSolve 6.2.2607 Windows
 cp312 wheel 可装可用，HCurl 时谐 Maxwell 可建可解（PEC 立方腔特征模
@@ -37,7 +37,7 @@ o2 闭式 rel_err 0.31%）；**端口激励与 S 参数无现成 API**（dir() 2
 - 相位/符号约定：与 TEM 链完全一致（NGSolve e^{−iωt} 解取共轭、
   a1=−E_INC/√Zref、激励 G=2jβγE_INC/b·sin(πy/a) 剖面口径）；验证由
   闭式全 2×2 复数逐元对照门承载（|ΔS|≤0.02，实测预期 ≪1e-3 量级）。
-- 边界条件（真机实证锚定）：NGSolve 边界积分项
+- 边界条件（真机实证锚定，2026-09-12）：NGSolve 边界积分项
   ``a += C·(u.Trace()*v.Trace())*ds`` 对应自然 BC 为
   **n×curlE − C·E_t = G**（注意符号：C=+jkγ 实测给出反阻负载
   Γ=(1+γ)/(1−γ)，C=−jkγ 才是 n×curlE + jkγE_t = g 吸收/负载侧）。
@@ -94,7 +94,7 @@ PARALLEL_PLATE_DEFAULTS: dict[str, float] = {
     "z_ref_ohm": 50.0,
 }
 E_INC = 1.0  # 入射模电压振幅 [V]（归一化基准，S 为比值不受其影响）
-DEFAULT_MESH_MAXH_MM = 0.4  # 真机收敛档（o2 下闭式对照 <1e-3，实证）
+DEFAULT_MESH_MAXH_MM = 0.4  # 真机收敛档（o2 下闭式对照 <1e-3，2026-09-12 实证）
 DEFAULT_ORDER = 2
 N_SAMPLE_PLANES = 5  # 行波采样面数（0.3L–0.7L 均布）
 SAMPLE_WINDOW = (0.3, 0.7)  # 采样窗（避开端口面凋落场）
@@ -239,7 +239,7 @@ def port_waves_to_b(c_plus: complex, c_minus: complex, k_rad_m: float,
                     z_ref_ohm: float) -> tuple[complex, complex]:
     """线内行波幅值 → 两端口 b 变量（Zref 归一）。
 
-    链路（真机闭式锚定）：
+    链路（真机闭式锚定，2026-09-12）：
     - 模电压/电流：V(x)=c₊e^{jkx}+c₋e^{−jkx}，I(x)=(c₊e^{jkx}−c₋e^{−jkx})/Z0
       （端口 2 参考面 x=L 处 I 取入网方向 = −I_line(L)）；
     - 波变量（Zref 归一）：b_p=(V_p−Zref·I_p)/(2√Zref)。
@@ -715,7 +715,7 @@ class NGSolveAdapter(EMSolverAdapter):
     def _solve_parallel_plate(self) -> tuple[list[float], np.ndarray, dict[str, Any]]:
         """真机链路：netgen.occ 盒子+命名面 → HCurl 逐频解 → 行波提取。
 
-        API/符号约定全部真机实证（探针闭式对照逐频全复数
+        API/符号约定全部真机实证（2026-09-12，探针闭式对照逐频全复数
         <1e-3）：见模块 docstring。惰性 import——无 ngsolve 环境显式报错。
         """
         if not ngsolve_installed():

@@ -1,4 +1,4 @@
-"""real_edt 真机全链验收——build→solve→export→metrics（HANDOFF #3，轻量窄带版）。
+"""real_edt 真机全链验收——build→solve→export→metrics（ #3，轻量窄带版）。
 
 P2 目标：确认真机全链跑通 + S 参数物理合理 + SolveReport 收敛真值（D6 get_profile）。
 时间敏感：轻量 setup ~45s，单次。断言不硬卡 passes 数量（轻量 setup 自适应 pass 少，

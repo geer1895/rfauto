@@ -95,7 +95,7 @@ def test_fake_wstep_matches_skrf_cascade_referee():
 def test_wstep_asymmetric_s22_differs_from_s11():
     """非对称阶跃（z1≠z2）全矩阵：S22≠S11（Pozar T4.2 + 级联序修正）。
 
-    回归钉：旧实现 s[:,1,1]=s11 且级联序倒置（第二段矩阵
+    回归钉（WP2.2 审查）：旧实现 s[:,1,1]=s11 且级联序倒置（第二段矩阵
     在输入侧），z1=50→z2=30 时 S22 与真值线性差 0.43-0.74。修复后闭式
     必须与两路独立裁判逐位一致：
     ① 第一性原理波动方程直解（边界条件直接解电压波幅，不经 ABCD 公式）；

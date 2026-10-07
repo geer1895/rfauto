@@ -1,11 +1,11 @@
 """C12：Marchand 巴伦 −18% 归因——过孔 PEC 薄片单变量对照 A/B（离线面+真机编排）。
 
-登记语境（排空五轮段账项）：Marchand 巴伦 −18% 归因（过孔 PEC 薄片单变量
+登记语境（ 排空五轮段）：Marchand 巴伦 −18% 归因（过孔 PEC 薄片单变量
 对照+综合器修正项）。−18%=HFSS 巴伦锚全波中心（S11 零点 2.04GHz）比理想电路
-（2.5GHz）低 ≈18%（runs/hfss_marchand_anchor 归档；归因假设
-=过孔柱电感 ≈0.7nH+开路 fringe ≈3%）。后续 marchand_line_calibration
-把 openEMS 侧偏差主体定位到 Z0 窄线 −11.6%+激励口提取伪像，
-engine_z0_correction（PCHIP 4 点）已落地——**该修正项是 openEMS 引擎
+（2.5GHz）低 ≈18%（runs/hfss_marchand_anchor；归因假设
+=过孔柱电感 ≈0.7nH+开路 fringe ≈3%）。后续 marchand_line_calibration（
+（二百八十二）把 openEMS 侧偏差主体定位到 Z0 窄线 −11.6%+激励口提取伪像，
+engine_z0_correction（PCHIP 4 点，a967188）已落地——**该修正项是 openEMS 引擎
 偏差修正，与 HFSS −18% 结构效应正交**；本对照回答的是 −18% 的过孔份额。
 
 电路级预判（本文件 via_circuit_s11，core coupled_line_z_matrix + 短路口 jωL
@@ -88,9 +88,9 @@ PARTIAL_FACTOR = 1.5               # 超 1.5× → PARTIAL(超预算)
 #: 可证伪预测（电路级；judge 归因结论阈值预声明）
 THEORY_L_VIA_NH = 0.7              # HFSS 锚归因估计（Goldfarb-Pucel d=0.25mm 给 1.278nH，并列）
 THEORY_NULL_TOL_REL = 0.10         # 实测 Δ 与电路级理论 Δ 相对偏差容忍
-VIA_CONFIRMED_MIN_REL = 0.05       # Δ<5% → VIA_FALSIFIED（预声明）
+VIA_CONFIRMED_MIN_REL = 0.05       # Δ<5% → VIA_FALSIFIED（任务书预声明）
 
-#: HFSS 先验（runs/hfss_marchand_anchor/verdict_b.json 归档实测）
+#: HFSS 先验（runs/hfss_marchand_anchor/verdict_b.json）
 HFSS_PRIOR: dict[str, float] = {
     "s11_null_ghz": 2.04,
     "band_max_s11_db": -10.299805691301849,
@@ -433,8 +433,8 @@ CRITERIA_TEXT = """# criteria.md — C12 过孔 PEC 薄片单变量对照（起�
 ## 问题钉死（语境）
 
 - −18%=HFSS 巴伦锚全波中心（S11 零点 2.04GHz）比理想电路（2.5GHz）低 ≈18%
-  （runs/hfss_marchand_anchor 归档）。
-- engine_z0_correction（PCHIP 4 点）=openEMS 引擎 Z0 偏差修正，与
+  （runs/hfss_marchand_anchor）。
+- engine_z0_correction（PCHIP 4 点，a967188）=openEMS 引擎 Z0 偏差修正，与
   HFSS −18% 结构效应正交——本对照**固定名义设计**（reference 口径，未做预畸
   变），单变量只有过孔表征。Z0 修正后的全波复跑（engine="openems" 设计）留
   独立项，不在本 A/B 混变量。
@@ -601,8 +601,7 @@ def release_lock(owner_pid: int) -> None:
 def oe_foreign_running() -> list[str]:
     """#261 互斥查：python 进程 CommandLine 含 _rfauto_runner|simulation.py。
 
-    自身名不入模式（#261 自锁坑：互斥模式含自身名会命中自身 shim+解释器
-    对死锁；自身求解期真互斥由他侧检查承担）。
+    自身名不入模式。
 
     临时 .ps1 经 powershell -NoProfile -ExecutionPolicy Bypass -File 执行
     （#289：内联 $_ 会被 shell 层展开）。探测失败=如实抛错（fail-closed）。

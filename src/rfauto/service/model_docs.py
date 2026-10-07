@@ -2,7 +2,7 @@
 
 仿 gdsfactory：每个模板自动生成参数文档页。
 
-扩展：除模型插件（pydantic schema）外，generate_all_model_docs 还覆盖
+B-30 扩展：除模型插件（pydantic schema）外，generate_all_model_docs 还覆盖
 全部注册计算器（CALCULATOR_REGISTRY.names()）与全部 openEMS 模板
 （TEMPLATE_META）。三类文档一次性生成，确定性（两次生成逐字节一致），
 输出目录由调用方给定（单测走 tmp_path，不污染工作区）。
@@ -81,7 +81,7 @@ def generate_model_docs(model_name: str, output_dir: str | Path | None = None) -
     return doc_content
 
 
-# ─── 计算器文档（CALCULATOR_REGISTRY 全键覆盖）─────────────────────────
+# ─── 计算器文档（B-30：CALCULATOR_REGISTRY 全键覆盖）─────────────────────────
 
 def generate_calculator_docs(
     calculator_name: str, output_dir: str | Path | None = None
@@ -123,7 +123,7 @@ def generate_calculator_docs(
     return doc_content
 
 
-# ─── 模板文档（TEMPLATE_META 全键覆盖）─────────────────────────────────
+# ─── 模板文档（B-30：TEMPLATE_META 全键覆盖）─────────────────────────────────
 
 # param_semantics 自由文本按 "name=含义（到下一个分隔符）" 抽取；只搬运声明，
 # 不产生任何新数值。前缀用负向后顾避免 w_mm 误匹配 series_w_mm。

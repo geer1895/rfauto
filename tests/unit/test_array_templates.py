@@ -1,6 +1,6 @@
 """§10.3 C2 阵列族：1×4 corporate / 2×2 H-tree / 1×3 串馈 三模板单测（2026-09-15）。
 
-方案行（阵列族｜阵列因子综合接口，接 D5 内核）。
+方案行（续跑计划 §10.3 C2 阵列族｜阵列因子综合接口，接 D5 内核）。
 - 注册态钉：ARRAY_META/ARRAY_NOMINAL 同对象入 TEMPLATE_META/TEMPLATE_NOMINAL；
   渲染四链路键（PORT_AXES/RADIATOR/render_fns/ff 元组）；注册四件套 docs
   meta.yaml ×3 / EXPECTED_TEMPLATES / fake 派发 _array_sparams / template_specs

@@ -1,6 +1,6 @@
-"""直 SIW 线段 OE 锚冒烟驱动（siw-family 首族；2026-09-22 备妥，真机锚已落判）。
+"""直 SIW 线段 OE 锚冒烟驱动（siw-family 首族；2026-09-22 备妥，df4f 真机锚已落判）。
 
-**已真跑落判**（G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，
+**df4f 已真跑落判**（G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，
 runs/siw_family/；本驱动复跑即重走同链）。预声明门与预算：
 runs/siw_family/criteria.md §6（#122：判据先写
 后跑，真跑后不因结果改门；#350：AGREE 需幅度差 ≤ 门限且方向一致）。
@@ -46,10 +46,10 @@ max|S11|>1 先查 NrTS 截断再疑物理，#262）；墙钟预估
 建、30s 轮询、stale 接管、finally 释放，factory_m4/gysel 家族同式）——
 命令行查→起跑之间的一次性 TOCTOU 窗由此收口；#261 查保留作双保险。
 
-端口方案 v2（2026-09-23，runs/siw_family/v2_criteria.md）：
+端口方案 v2（2026-09-23 df5-SE 批，runs/siw_family/v2_criteria.md）：
   --port-mode v2 = 藩篱止于端口面+端面口径 LumpedPort（跨介质孔径 ±W/2，
   R=Z_PV 闭式不变）——消除 §R2 归因的端面 fixture 汇（延拓支路 4/9 分光+
-  探针中间抽头耗散）后按**原 G3 门（≥−3dB）**重裁；缺省 v1（上列口径）
+  探针中间抽头耗散）后按**原 G3 门（≥−3dB）**重裁；缺省 v1（上列 df4f 口径）
   渲染逐字节不变。四门与门值零改动（#122）；G1 拟合公式=§R1 勘误口径
   （beta_closed）。v2 预算：终网格最小格逐轴与 v1 实测相同（x 50µm/y 40µm/
   z 127µm，离线 exec）→ 引擎 dt=0.1936ps 同 v1、NrTS=1e5 时窗 19.36ns≥需求

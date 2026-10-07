@@ -3,7 +3,7 @@
 被测对象：scripts/factory_m1_collect.py 的纯逻辑
 （build_sampling_plan / compute_point_metrics / judge_m1 / w_fingerprint）
 与标准 run 产物落盘接线（write_run_products → dataset_service 成行契约）。
-真跑面不在单测范围——真机批量按判据文件独立执行。
+真跑面不在单测范围——真机批量由主控按 criteria.md 独立执行。
 
 数值口径（#118 合成注入→回收）：合成无损线网络（已知 εeff）验证
 SpecEvaluator.eps_eff_band_average 内核经 compute_point_metrics 精确回收；
@@ -144,7 +144,7 @@ class TestJudgeM1:
 
 
 class TestBetaMetricsFromPortBeta:
-    """β 口径指标（参考面无关口径）合成回收钉。"""
+    """β 口径指标（参考面无关，round4 C-02/C-03 修复面）合成回收钉。"""
 
     def _write_csv(self, path, rows):
         import csv as _csv
@@ -243,7 +243,7 @@ class TestWriteRunProducts:
         assert snap["params"]["line_len_mm"]["value"] == 40.0
 
     def test_2d_opt_params_makes_second_dim_a_variable(self, tmp_path):
-        # 扩 2D 须显式声明第二维，否则静默不入行
+        # round4 C-05：扩 2D 须显式声明第二维，否则静默不入行
         import yaml
 
         from rfauto.service.dataset_service import _collect_run_points

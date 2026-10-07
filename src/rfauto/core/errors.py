@@ -88,7 +88,7 @@ class SolveTimeoutError(RFAutoError):
     """操作超时（求解/连接等）。
 
     原名 TimeoutError 会遮蔽内置 TimeoutError——`except TimeoutError` 将
-    永远捕不到 socket/subprocess 的内置超时异常，故更名。
+    永远捕不到 socket/subprocess 的内置超时异常，故更名（审查发现）。
     """
 
     error_type = "SolveTimeoutError"

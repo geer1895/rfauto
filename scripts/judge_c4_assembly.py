@@ -1,4 +1,4 @@
-"""C4 耦合器族离线判读 + 装配归一化诊断（零真机）。
+"""C4 耦合器族离线判读 + 装配归一化诊断（w1d-c4-assembly-diag，零真机）。
 
 ① 对已在档的 <template>.s4p 复用 smoke_c4_coupler_family.judge_network 离线判读
    （同门 G1–G5），补 refix 现场缺失的 cline 判读 json；
@@ -172,7 +172,7 @@ def build_markdown(results: dict[str, dict[str, Any]], zl_table: dict[str, dict[
                    eps_hj: float, tan_d: float) -> str:
     lines: list[str] = []
     a = lines.append
-    a("# C4 耦合器族 refix 装配归一化诊断（离线）")
+    a("# C4 耦合器族 refix 装配归一化诊断（w1d-c4-assembly-diag，2026-09-17 离线）")
     a("")
     a("> 全部离线：`.s4p` 在档不复跑真机；数值只出自确定性内核（openEMS 探针 DFT 同式复算、")
     a("> `openems_templates.renorm_engine_s_to_ref` #250 链、skrf、fake 同源闭式裁判）。")

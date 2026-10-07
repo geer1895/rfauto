@@ -1,6 +1,6 @@
 r"""P3: 契约端口顺序形式化规则 + ADS 侧对拍（验收项 2）。
 
-规则（定案口径）:
+规则（用户拍板 + ADR-0009）:
   1. port_order 每个 token 匹配 ^(input|output_\d+)$;
   2. input 恰好出现一次;
   3. output_N 序号严格递增 -> [input, output_2, output_1] 判非法。

@@ -1,6 +1,6 @@
 """C7：gysel mitered-jog 切角旋钮真机 A/B（离线面+真机编排，marchand_via_ab 同骨架）。
 
-登记语境（排空五轮 followUps "gysel 弯折等效长度/mitered-jog 再
+登记语境（TODO:285/794 排空五轮 followUps "gysel 弯折等效长度/mitered-jog 再
 一轮真机"）：gysel L-jog 等长变体（P2⑪，runs/gysel_smoke/pt3）真跑 S32@f0
 -38.1dB，电路级 ≤-88dB 增益被 EM 地板吃掉大半（归因假设待证 #122：两处未切角
 90° 弯折等效长度/弯角寄生）。IC67 已落 `_jog_miter_mm` opt-in 旋钮
@@ -30,7 +30,7 @@ YJ+G/2 间距=(W_F−G)/2−c=0.3067−c；c≥0.3 时后者塌到 6.7µm、c=0.
 历史参考 wall=pt3 6926s（并发批嫌疑，solo 预期更低）；单轮硬超时 90min、两轮
 名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**；共享锁 runs/.oe_collect.lock
 （O_CREAT|O_EXCL、30s 轮询、30min 上限 fail-closed、陈锁 pid 接管）+#261 命令
-行互斥查（自身名 gysel_miter_ab 不入模式——#261 自锁坑）；断点 resume=
+行互斥查（自身名 gysel_miter_ab 不入模式—— #261 自锁坑）；断点 resume=
 collect_ok.json 逐变体幂等。
 
 判读（G11 掩码纪律）：gysel 9 列 CSV=部分矩阵——S11/S21/S31 出自激励 1 run、
@@ -473,7 +473,7 @@ CRITERIA_TEXT = """# criteria.md — C7 gysel mitered-jog 切角旋钮真机 A/B
 
 ## 问题钉死（语境）
 
-- 登记项：gysel 隔离线两处未切角 90° 弯折构成 EM 地板，电路级 −88dB
+- TODO:285/794：gysel 隔离线两处未切角 90° 弯折构成 EM 地板，电路级 −88dB
   增益被 EM 弯折/网格地板吃掉大半（归因假设待证 #122）；IC67 落
   `_jog_miter_mm` opt-in（缺口贴竖直段缘、内外移自适应、渲染单源，缺省 0=
   未切角基线渲染逐字节不变）。
@@ -503,7 +503,7 @@ CRITERIA_TEXT = """# criteria.md — C7 gysel mitered-jog 切角旋钮真机 A/B
   pt2=1702s；单轮硬超时 90min；两轮名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**。
 - 共享锁 runs/.oe_collect.lock（O_CREAT|O_EXCL、30s 轮询、30min 忙等上限
   fail-closed、陈锁 pid 接管）+#261 命令行互斥查（`_rfauto_runner|simulation.py|
-  render_script.py`；自身名 gysel_miter_ab 不入模式——#261 自锁坑）。
+  render_script.py`；自身名 gysel_miter_ab 不入模式—— #261 自锁坑）。
 - 断点 resume=collect_ok.json 逐变体幂等；判据/产出零改写（判读独立于渲染
   侧产物）。
 
@@ -683,10 +683,9 @@ def release_lock(owner_pid: int) -> None:
 
 def oe_foreign_running() -> list[str]:
     """#261 互斥查：python 进程 CommandLine 含 `_rfauto_runner|simulation.py|
-    render_script.py`（渲染脚本名=#261 口径第二模式）。
+    render_script.py`（渲染脚本名= #261 口径第二模式）。
 
-    自身名 gysel_miter_ab 不入模式（#261 自锁坑：互斥模式含自身名会
-    命中自身 shim+解释器对死锁）。临时 .ps1 经 powershell -NoProfile
+    自身名 gysel_miter_ab 不入模式。临时 .ps1 经 powershell -NoProfile
     -ExecutionPolicy Bypass -File 执行（#289：内联 $_ 会被 shell 层展开）。
     探测失败=如实抛错（fail-closed）。
     """

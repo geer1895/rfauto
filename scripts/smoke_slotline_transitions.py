@@ -6,11 +6,11 @@
      balun_ep2（P2 抽头作源，S23 隔离）；已有 summary.json 且脚本文本逐字节
      一致则复用（#158 缓存口径；--no-cache 强制重跑）；
   3) 后处理：core/slotline_transitions 判据（transition_metrics/balun_metrics，
-     门=预声明）+ 双行波 β vs 闭式 + 微带 β vs HJ 锚；抽头原始读数与
+     门=任务书预声明）+ 双行波 β vs 闭式 + 微带 β vs HJ 锚；抽头原始读数与
      基线修正值并列如实记录（#250 口径，不凑绿）；
   4) 结果落 runs/slotline_transitions/openems_result.json，progress.log 全程。
 
-判据（预声明）：过渡段带内 max|S11|≤−10dB、S21 超额损耗≤1dB@f0（对
+判据（预声明，任务书）：过渡段带内 max|S11|≤−10dB、S21 超额损耗≤1dB@f0（对
 抽头基线）；巴伦幅度不平衡≤1dB、P1 回损≤−10dB、隔离 |S23|≤−15dB、带内
 |S21|≥−3.5dB（均为抽头修正口径）；β 信息门 vs 闭式 ≤5%。
 用法：.venv/Scripts/python.exe scripts/smoke_slotline_transitions.py [--mesh-mm 0]

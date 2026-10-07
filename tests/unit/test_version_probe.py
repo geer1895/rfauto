@@ -135,7 +135,7 @@ class TestAdsVersion:
 
     def test_parse_short_year_real_install_name(self, tmp_path):
         # 现役安装 E:/ADS/ADS27 的目录名形态（2026-09-18 实测），短年归一 20xx；
-        # 修前返回 None → ads_channel 版本降级 [b,c]
+        # 修前返回 None → ads_channel 版本降级 [b,c]（rm-ads-wp43 治理）
         d = tmp_path / "ADS27"
         d.mkdir()
         assert detect_ads_version(d) == "2027"

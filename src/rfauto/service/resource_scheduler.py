@@ -1,7 +1,7 @@
 """G13 稀缺资源调度器 —— 确定性资源仲裁内核 + 可审计决策日志。
 
-背景（稀缺资源确定性仲裁，多轨并发复盘沉淀）：
-多轨并发此前靠人工"轨内串行"约定避免抢 license / 抢 CPU，
+背景（方案 §10.7 G13 / §10.18 第 10 条 / 五轨分轨复盘）：
+2026-09-11 的五轨并发批次靠人工"轨内串行"约定避免抢 license / 抢 CPU，
 本模块把该约定固化为确定性内核。
 
 资源模型（默认容量，全部可配置）
@@ -18,7 +18,7 @@
 - best-effort（#105）：license 探测异常绝不抛出主路径——异常按"假设可用"
   处理（观测性代码不得阻塞真机求解），探测报告不可用只让作业等待。
 
-消费 G14 分档时长预测（pipeline/quota_guard.TieredDurationPredictor）：
+W2⑦④ 消费 G14 分档时长预测（pipeline/quota_guard.TieredDurationPredictor）：
 - ``predictor`` 注入后，``duration_s<=0``（未申报）的作业按其
   (solver, template, grid_tier) 分档预测填充时长（预测 unknown 则不编造，
   按申报值处理并标注 ``duration_source="unknown_fallback_declared"``）；
@@ -73,7 +73,7 @@ DEFAULT_LICENSE_MAX_WAIT_S = 600.0
 class ResourceJob:
     """一个待调度作业：资源声明 + 预估耗时 + 到达时刻（+ 可选分档维度）。
 
-    ``template`` / ``grid_tier`` 为分档预测维度（空串=未申报）；
+    ``template`` / ``grid_tier`` 为 W2⑦④ 分档预测维度（空串=未申报）；
     ``duration_s<=0`` 表示"时长未申报"，注入 predictor 时由分档预测填充。
     """
 
@@ -194,10 +194,10 @@ def schedule(
             research ≤1、GPU 禁用）。
         probe: license 探测函数（可注入以离线测试）；None 时调用
             infra.license_probe.probe_license（best-effort，#105）。
-        predictor: G14 分档时长预测器；注入后 ``duration_s<=0`` 的作业
+        predictor: W2⑦④ G14 分档时长预测器；注入后 ``duration_s<=0`` 的作业
             按分档预测填充时长，且同到达时刻按预测时长短者优先（SJF）。
             None 时排程逐字节不变。
-        budget_gate: 预算准入门 ``gate(job_doc) -> {"ok", "reason", ...}``
+        budget_gate: W2⑦④ 预算准入门 ``gate(job_doc) -> {"ok", "reason", ...}``
             （quota_guard.budget_admission_gate 构造）；作业获得资源前裁决，
             拒绝者落 unassigned status=budget_rejected。None 时不设门。
 
@@ -223,7 +223,7 @@ def schedule(
             raise ValueError(f"job_id 重复: {job.job_id}")
         seen.add(job.job_id)
 
-    # ── 分档预测填充未申报时长（不编造：unknown 按申报值处理） ──
+    # ── W2⑦④：分档预测填充未申报时长（不编造：unknown 按申报值处理） ──
     duration_source: dict[str, str] = {}
     duration_predictions: dict[str, dict[str, Any]] = {}
     if predictor is not None:

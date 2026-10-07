@@ -1,4 +1,4 @@
-"""开跑前 fake 成本非退化探针（health_service.fake_cost_degeneracy_probe）。
+"""P2⑲ 开跑前 fake 成本非退化探针（health_service.fake_cost_degeneracy_probe）。
 
 裁判=core/solve_health 的 #195 因子（公开入口 solve_health_check(costs=...)）
 + 逐参数单轴方差（fake 确定性下不消费的参数方差恰为 0）。全部零真机、
@@ -9,9 +9,9 @@
 ② hairpin arm_len_mm 扫描（fake 走 λg/2 反演 arm_len→f0）→ PASS；
 ③ hairpin {gap_mm, tap_frac} 扫描 → PASS 且二者不入 insensitive_params。
 
-**③ 期望已按接线翻转**（原钉死"未定标态"FAIL）：fake hairpin 已接通
-gap→k（KJ 闭式）/ tap_frac→Q_e（抽头闭式 × c(τ)），二者进入 cost 通路
-（test_hairpin_template.py
+**③ 期望已按接线翻转**（原钉死"未定标态"FAIL）：队列 #3（wp23-hairpin-
+calib-close，3ddd7c4）把 fake hairpin 接通 gap→k（KJ 闭式）/ tap_frac→Q_e
+（抽头闭式 × c(τ)），二者进入 cost 通路（test_hairpin_template.py
 TestHairpinFakeDispatch 同述）。tap_frac 物理域为 (0,0.5)（0.5=电压节点，
 core/coupled_microstrip 显式拒绝），探针 bounds 取域内区间。
 """
@@ -73,7 +73,7 @@ class TestHairpinProbe:
         assert r["sampling"]["f0_ghz"] == pytest.approx(2.5)
 
     def test_gap_tap_sweep_is_non_degenerate_after_wiring(self):
-        """{gap_mm, tap_frac} 调参：接线后 fake 消费二者（gap→k、
+        """{gap_mm, tap_frac} 调参：队列 #3 接线后 fake 消费二者（gap→k、
         tap_frac→Q_e）→ cost 有区分度 → PASS，二者不入 insensitive_params
         （见模块 docstring；接线前此处钉死 FAIL）。tap_frac 上界取 0.45
         （物理域 (0,0.5)，0.5=电压节点 fake 显式拒绝）。"""

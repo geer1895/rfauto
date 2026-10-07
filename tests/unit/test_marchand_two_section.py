@@ -1,4 +1,4 @@
-"""真 Marchand 两节对称耦合段电路级综合（2026-09-18）。
+"""真 Marchand 两节对称耦合段电路级综合（W4⑧c followUp ②，2026-09-18 w1b）。
 
 裁判分层（#118：不自证）：
 - 耦合线四端口 Z 矩阵（core，偶/奇模叠加推导）→ S，逐点对照 adapters 的偶/奇模
@@ -287,7 +287,7 @@ def test_metrics_gate_keys_and_band():
 
 # ─── ⑥ 逐引擎修正（engine="reference"|"openems"，2026-09-18 marchand_line_calibration 标定）──
 
-#: 改前基线 SHA256（本项改码前捕获）：缺省 reference 输出逐字节钉。
+#: 改前基线 SHA256（a016740 树面、本项改码前由临时脚本捕获）：缺省 reference 输出逐字节钉。
 #: C6 开路支节符号修正（2026-09-21，l_stub λg/4+Δl→λg/4−Δl）后重算：slot_balanced
 #: 路径两例哈希随 transition.l_stub_mm（18.3725→17.1253）与 notes 数值回显合法变更
 #: （对拍 HEAD 实证全 dict 仅此两字段移动）；nominal/explicit_zc 不含 transition 档、

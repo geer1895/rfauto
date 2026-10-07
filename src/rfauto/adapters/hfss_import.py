@@ -318,7 +318,7 @@ def _strip_units(s: str) -> str:
 
 # ─── B-27：真实 .aedt → spec → 配方草案端到端（只读副本 + 渲染往返）──────────
 #
-# 真机安全（B-27）：打开的是工程**副本**，用户 .aedt 不可能被改；
+# 真机安全（2026-09-12 B-27）：打开的是工程**副本**，用户 .aedt 不可能被改；
 # 独立 new_desktop 会话 + remove_lock=False；读完 release（pyaedt 1.4.0 无
 # .release()，旧调用被 suppress 吞成静默泄漏，见 _release_hfss）；副本即删。
 # 硬超时由 scripts/hfss_import_roundtrip.py 的父子进程看门狗兜底；库内 timeout_s
@@ -347,7 +347,7 @@ def _open_hfss_readonly(project_path: str, design_name: str | None, version: str
     """只读打开工程副本（独立非图形会话，不附着用户桌面、不碰锁）。"""
     from ansys.aedt.core import Hfss
 
-    # 真机实证：不要开 settings.use_multi_desktop——开了之后
+    # 真机实证（2026-09-12）：不要开 settings.use_multi_desktop——开了之后
     # variable_manager 读回 0 个变量（design 能开、变量全丢）；默认路径实测
     # 稳定读回 35 个变量。安全性由"只打开副本"保证，不靠会话隔离。
     return Hfss(
@@ -365,7 +365,7 @@ def _release_hfss(hfss: Any) -> None:
     """释放 AEDT 会话，绝不保存工程（best-effort，异常不外抛）。
 
     pyaedt 1.4.0 的 Hfss 没有 .release()——旧代码 hfss.release() 被
-    contextlib.suppress 吞掉，等于从不释放（B-27 真机实证）。
+    contextlib.suppress 吞掉，等于从不释放（2026-09-12 B-27 真机实证）。
     正确收尾是 release_desktop() / close_desktop()（内部 CloseProject
     不落盘）；仅老版本才回退 .release()。
     """
@@ -475,7 +475,7 @@ def detect_derived_variables(spec: dict[str, Any]) -> list[str]:
     """从变量表达式检测"派生变量"（表达式引用了同工程其他变量）。
 
     这是 is_dependent 漏检的兜底：pyaedt 1.4.0 对 h2=h1+hmetal*2+hsub2 这类
-    表达式变量实测 is_dependent=False（B-27 真机实证），只靠它会把
+    表达式变量实测 is_dependent=False（2026-09-12 B-27 真机实证），只靠它会把
     派生量当独立可调参数放进草案——写回 HFSS 时会覆盖原公式，必须剔除。
     """
     variables = spec.get("variables") or {}

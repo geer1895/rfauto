@@ -17,7 +17,10 @@ sys.path.insert(0, str(SRC))
 
 from rfauto.adapters.slotline_template import (
     N_PROBE_STATIONS,
+    SLOT_NEAR_DIVISOR,
+    SLOT_NEAR_FLOOR_M,
     render_slotline_script,
+    slot_edge_refinement,
     slotline_layout,
 )
 
@@ -201,3 +204,84 @@ class TestGeometryAudit:
             assert np.min(np.diff(ls)) > 1e-6, f"{ax} 轴存在近重合线"
         # 激励面出 PML：内移量 > 8·边界区网格
         assert lay.x_exc1_m - min(lx) > 8 * 1.1 * lay.base_m
+
+
+class TestSlotEdgeRefinement:
+    """槽缘 NEAR→w/8 细化（TODO 0df④）：纯函数口径 + #212 离线网格实测。
+
+    #311 判据：缝内内部线 ≥1（缝缘线不算）；#349：槽区最小线距 ≥10µm。
+    """
+
+    def test_helper_auto_band_step_is_w_over_8(self):
+        """自动档（NEAR=base/4 ≫ w/8）：步长恰为 w/8、中线在线集（偶数段）。"""
+        lay = slotline_layout(PARAMS, BAND)
+        step, n_seg = slot_edge_refinement(W_MM * 1e-3, lay.near_m)
+        assert lay.near_m > W_MM / 2 * 1e-3 / SLOT_NEAR_DIVISOR  # 前提：NEAR 更粗
+        assert step == pytest.approx(W_MM * 1e-3 / SLOT_NEAR_DIVISOR)
+        assert n_seg == int(SLOT_NEAR_DIVISOR)
+        assert lay.slot_near_m == pytest.approx(step)
+        assert lay.slot_n_seg == n_seg
+
+    def test_helper_explicit_mesh_near_dominates(self):
+        """显式 0.4mm 档（NEAR=0.1mm < w/8=0.125）：步长=NEAR，网格不变语义。"""
+        lay = slotline_layout(PARAMS, BAND, mesh_resolution_mm=0.4)
+        step, n_seg = slot_edge_refinement(W_MM * 1e-3, lay.near_m)
+        assert lay.near_m == pytest.approx(0.1e-3)
+        assert step == pytest.approx(lay.near_m)
+        assert n_seg == 10
+
+    def test_helper_floor_guard(self):
+        """#349 地板：步长夹到 10µm；槽宽小到均分后仍 <10µm → 拒渲染。"""
+        # 20µm 槽：恰好 2 段 ×10µm = 地板（不抛）
+        step, n_seg = slot_edge_refinement(20e-6, 1e-3)
+        assert step == pytest.approx(SLOT_NEAR_FLOOR_M) and n_seg == 2
+        # 50µm 槽：5 段 ×10µm = 地板（不抛）
+        step, n_seg = slot_edge_refinement(50e-6, 1e-3)
+        assert step == pytest.approx(SLOT_NEAR_FLOOR_M) and n_seg == 5
+        # 15µm 槽：均分 7.5µm < 地板 → ValueError
+        with pytest.raises(ValueError, match="地板"):
+            slot_edge_refinement(15e-6, 1e-3)
+
+    def test_rendered_grid_slot_interior_lines_and_floor(self, tmp_path):
+        """离线渲染实测（#212 exec）：槽缘内部线 ≥1、槽区步长 ≤w/8、#349 地板。"""
+        text = _render(tmp_path)
+        head = text[: text.index("FDTD.Run(")]
+        g: dict = {"__name__": "__main__", "__file__": str(tmp_path / "sim.py")}
+        exec(compile(head, "sim", "exec"), g)
+        ly = np.asarray(g["CSX"].GetGrid().GetLines("y"), dtype=float)
+        half = W_MM / 2 * 1e-3
+        in_slot = ly[(ly >= -half - 1e-15) & (ly <= half + 1e-15)]
+        interior = in_slot[(in_slot > -half + 1e-12) & (in_slot < half - 1e-12)]
+        assert len(interior) >= 1, "#311：槽内内部线为 0（缘线不算）"
+        assert len(interior) == g["N_SEG"] - 1
+        gaps = np.diff(in_slot)
+        assert float(gaps.max()) <= half * 2 / g["N_SEG"] + 1e-12, "槽区步长 >w/8"
+        assert float(gaps.min()) >= SLOT_NEAR_FLOOR_M * (1 - 1e-9), "#349 地板破"
+        # 端点/中线恰在（缝缘线必须落格，#212①）
+        for v in (-half, 0.0, half):
+            assert np.any(np.abs(in_slot - v) < 1e-12), f"槽线缺 {v}"
+        # 全轴 #152 守卫（1µm 去重）仍成立
+        assert np.min(np.diff(ly)) > 1e-6
+
+    def test_explicit_mesh_grid_unchanged_semantics(self, tmp_path):
+        """显式 0.4mm 档（NEAR=0.1 < w/8）：槽区步长=NEAR=0.1mm（细化冗余档
+        与细化前一致，#297 审计消费者不受渲染器改动级联）。"""
+        text = _render(tmp_path, mesh_resolution_mm=0.4)
+        head = text[: text.index("FDTD.Run(")]
+        g: dict = {"__name__": "__main__", "__file__": str(tmp_path / "sim.py")}
+        exec(compile(head, "sim", "exec"), g)
+        assert g["SLOT_NEAR"] == pytest.approx(0.1e-3)
+        assert g["N_SEG"] == 10
+        ly = np.asarray(g["CSX"].GetGrid().GetLines("y"), dtype=float)
+        half = W_MM / 2 * 1e-3
+        in_slot = ly[(ly >= -half - 1e-15) & (ly <= half + 1e-15)]
+        np.testing.assert_allclose(np.diff(in_slot), 0.1e-3, rtol=1e-9)
+
+    def test_summary_records_effective_refinement(self, tmp_path):
+        """生效细化值落 summary（#283：同 NrTS 时窗随 dt 减半，须可离线重排）。"""
+        text = _render(tmp_path)
+        lay = slotline_layout(PARAMS, BAND)
+        assert "SLOT_NEAR = " + repr(lay.slot_near_m) in text
+        assert f"N_SEG = {lay.slot_n_seg}" in text
+        assert '"slot_near_m": SLOT_NEAR' in text
+        assert '"slot_n_seg": N_SEG' in text

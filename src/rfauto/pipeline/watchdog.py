@@ -1,7 +1,7 @@
 """Timeout watchdog with license-release-aware backoff.
 
 Starts a background timer that calls a callback on timeout.
-Includes license-release-aware backoff for reconnect.
+Includes license-release-aware backoff for reconnect (per S8.5 R4).
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ class Watchdog:
         """Whether the watchdog has fired."""
         return self._fired
 
-    # License-release-aware backoff for reconnect
+    # License-release-aware backoff for reconnect (per S8.5 R4)
     @staticmethod
     def license_backoff(
         attempt: int,

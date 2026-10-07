@@ -9,7 +9,7 @@ S23 第二激励 run 出输出互隔离）。
 - pt1/pt2：矩形环（Δ 在角部，桥带继承 2·arm_len=36.324mm，+2.32% 二阶偏差）；
   pt2 基线 PASS（runs/gysel_smoke/pt2_pass.log）：β+0.94%、均分差 0.00dB、
   S32=-32.6dB、S11=-26.7dB，solve 1702s/run×双激励。
-- pt3+（P2⑪ L-jog 等长变体）：Δ 节点内移到 x=±iso_len（桥带跨度
+- pt3+（P2⑪ L-jog 等长变体，2026-09-16）：Δ 节点内移到 x=±iso_len（桥带跨度
   2·iso_len=35.500mm=λ/2 精确），隔离线竖直段 YJ=iso_len−jog + 顶端横移
   jog=|arm_len−iso_len|=0.412mm 保 λ/4 电长度。电路级 @f0 S32/S11 由 -34.8dB
   → ≤-88dB（装配实测）；EM 地板由两处未切角 90° 弯折决定，估 -35~-40dB 档。

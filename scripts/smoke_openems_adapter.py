@@ -1,4 +1,4 @@
-"""openEMS 适配器冒烟验证（编译构建完成后运行）。"""
+"""openEMS 适配器冒烟验证（2026-09-01 编译完成后）。"""
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8")

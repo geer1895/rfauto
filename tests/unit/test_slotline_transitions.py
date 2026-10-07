@@ -1,4 +1,4 @@
-"""离线单测：MSL↔slotline 过渡 + Marchand 巴伦。
+"""W4⑧c 离线单测：MSL↔slotline 过渡 + Marchand 巴伦。
 
 理论设计数（闭式/综合）、判据纯函数（合成数据）、布局校验、渲染脚本结构与
 #212 几何审计（exec 头 → CSXCAD 实测）、抽头基线因子（独立来源 skrf 裁判）。
@@ -84,7 +84,7 @@ class TestDesignNumbers:
         assert 0 < m.a1_mm < m.a2_mm
 
     def test_design_rejects_out_of_domain_slotline(self):
-        # 示例 h=0.508 @2.5GHz：d/λ0<0.006 落闭式域外 → 显式拒绝不外推
+        # 任务书示例 h=0.508 @2.5GHz：d/λ0<0.006 落闭式域外 → 显式拒绝不外推
         with pytest.raises(ValueError):
             transition_design(2.5, 0.508, 3.66, 1.0)
 

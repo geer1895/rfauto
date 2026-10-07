@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(r"D:/rf_workspace")
 WORK = ROOT / "runs" / "audit_forensic"
 PY = str(ROOT / ".venv" / "Scripts" / "python.exe")
 
@@ -63,6 +63,6 @@ for name, script in VARIANTS.items():
 m = re.search(r'mesh\.AddLine\("z", np\.linspace\(-H_SUB, 0, 5\)\)', base_script)
 results.append("template has substrate z-lines: " + str(bool(m)))
 
-with open(WORK / "_tmp_forensic.txt", "w", encoding="utf-8") as fh:
+with open(r"D:/rf_workspace\_tmp_forensic.txt", "w", encoding="utf-8") as fh:
     fh.write("\n".join(results))
 print("FORENSIC_DONE")

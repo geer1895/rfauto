@@ -1,6 +1,6 @@
 """2D 准静态 FD Laplace 裁判内核（core/quasistatic_fd.py）验证锚（#118 独立来源）。
 
-裁判本身必须先过已知闭式基准才有资格裁判闭式（#118 纪律）：
+裁判本身必须先过已知闭式基准才有资格裁判闭式：
 - 解析精确：平行板/串联双层板（场均匀 → FD 逐位精确，钉 ε 权重与能量法系数）；
 - 微带 vs Hammerstad–Jensen（skrf MLine，含 εr=9.8）；
 - CPS 半空间极限 (1+εr)/2、空气 CPS vs 共形映射闭式 Z0（MathWorks MoM 对拍口径）；
@@ -146,7 +146,7 @@ def test_suspended_stripline_nominal_referee_pinned():
 
 
 def test_suspended_stripline_closed_form_tracks_referee_after_recalibration():
-    """重定标闭式 `_suspended_stripline_ri`（2026-09-18 定标，softmin
+    """重定标闭式 `_suspended_stripline_ri`（2026-09-18 w2f 后续定标批，softmin
     修正族）跟踪裁判（w=0.6 b=1.6 序列）：h/b=0.5 +0.23%、0.994 −0.12%（旧
     q 式中段 +22% 高估方向钉随重定标撤，换向为"残余 ≤2%"防静默漂移）。"""
     from rfauto.core.calculators import _suspended_stripline_ri

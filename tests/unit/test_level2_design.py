@@ -46,19 +46,6 @@ from rfauto.service.level2_design import (
 
 runner = CliRunner()
 
-#: 验收集（tests/gold/level2_design_public.yaml）不随本仓分发（规划中的后续
-#: 公开项，见 README 路线图）；缺集时依赖它的测试整体 skip，意图解析等
-#: 合成语料测试照常运行。
-_LEVEL2_PUBLIC_MISSING = not default_level2_path().exists()
-requires_level2_set = pytest.mark.skipif(
-    _LEVEL2_PUBLIC_MISSING,
-    reason="level2 public validation set not distributed in this repo "
-           "(see README roadmap)")
-
-# 本模块绝大多数测试（验收门/设计链/kickoff/CLI）都直接或间接消费验收集，
-# 缺集时整模块 skip（意图解析等合成语料测试一并跳过，代价可接受）。
-pytestmark = requires_level2_set
-
 
 @pytest.fixture(autouse=True)
 def _no_network(monkeypatch):
@@ -654,7 +641,7 @@ class TestOptimizeKickoffEnabled:
         assert prov["seed"] == KICKOFF_SEED and prov["algorithm"] == "surrogate_loop"
         assert prov["adapter"] == "fake" and prov["stop_reason"] == "budget"
         assert prov["real_cost_trace"] == [2.0, 1.0, 0.5]
-        assert prov["artifact_path"] is None, "缺省不落盘（不污染 runs/）"
+        assert prov["artifact_path"] is None, "缺省不落盘（不污染 runs）"
         assert "优化发起" in rec["report"] and "kickoff.best" in rec["report"]
         # 七环节数值锚不被 kickoff 触碰
         assert set(rec["numeric"]) == {"f_dip_ghz", "s11_db_min_in_band",
@@ -781,7 +768,7 @@ class TestOptimizeKickoffRealLoop:
 
     def test_real_loop_atten_pi_fixes_requested_attenuation(self):
         """需求量固定不入搜索域：atten_pi 6dB 任务的 atten_db 进 fixed_params，
-        目标区间按要求值落 [-7, -5]（环不能靠改需求量作弊）。"""
+        目标区间按用户要求值落 [-7, -5]（环不能靠改需求量作弊）。"""
         from rfauto.service.level2_design import synthesize_initial
 
         synth = synthesize_initial("atten_pi", {"atten_db": 6.0, "f0_ghz": 2.5})

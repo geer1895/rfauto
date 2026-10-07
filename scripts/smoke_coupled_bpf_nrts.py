@@ -1,6 +1,6 @@
 """平行耦合 BPF 真机加长复跑：NrTS 截断假设裁决（openems-real-smoke-bundle ②）。
 
-背景：前两轮真机（runs/coupled_bpf_smoke/pt1 与
+背景：前两轮真机（f469c22；runs/coupled_bpf_smoke/pt1 与
 pt2_wide）同频 |S21| 互差 13dB、带缘 |S11|=+0.4dB 非物理，归因『NrTS=100000
 截断高 Q 储能』为假设待证。本脚本：
 
@@ -61,8 +61,8 @@ _RE_PROG = re.compile(r"Timestep:\s+(\d+) \|\|.*?Energy: ~([0-9.eE+-]+) \(\s*(-?
 _RE_NRTS_WARN = re.compile(
     r"Max\. number of timesteps was reached before the end-criteria of (-?[0-9.]+)dB")
 
-# pt1（runs/coupled_bpf_smoke/pt1/simulation.py 原脚本）探针实证（
-# NrTS=10 十步 + NrTS=1e6 头部读取后 kill；日志留档 pt3_nrts/_probe_nrts10/）：
+# pt1（runs/coupled_bpf_smoke/pt1/simulation.py 原脚本）探针实证（2026-09-16，
+# NrTS=10 十步 + NrTS=1e6 头部读取后 kill；日志留档 pt3_nrts/_probe_nrts10）：
 # 旧轮终止诊断必须用旧脚本自身的 dt——模板此后有漂移（本轮渲染 377×1203×19、
 # dt=7.58e-14s），拿新 dt 反推旧步数会误判。
 PT1_PROBE: dict[str, float | int] = {

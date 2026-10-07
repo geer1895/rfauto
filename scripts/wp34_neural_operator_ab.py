@@ -1,7 +1,7 @@
-r"""神经算子（E3 插件）× kriging A/B（验收脚本）。
+r"""W4⑪b WP3.4 神经算子（E3 插件）× kriging A/B（续跑计划 :245 验收脚本）。
 
-方案：「数据集 ≥100 点后，FNO/DeepONet 同接口插入与 kriging A/B」；
-E3 验收口径：「既有锚数据集上 ρ 不劣于 poly_ridge」。
+方案行（:245）：「数据集 ≥100 点后，FNO/DeepONet 同接口插入与 kriging A/B」；
+E3 验收口径（:482）：「既有锚数据集上 ρ 不劣于 poly_ridge」。
 
 ═══ 预声明门（跑前写死，#122 不凑绿；本脚本只记录不 exit 非零） ═══
   (a) 标量 K 折 CV，目标 s11_db_min_in_band（谷深，#195/#197 显式指标名）：
@@ -10,7 +10,7 @@ E3 验收口径：「既有锚数据集上 ρ 不劣于 poly_ridge」。
   (b) 曲线级 CV（dB rms / 谷位误差 MHz）：只报告不设门。
 ═════════════════════════════════════════════════════════════════════════
 
-数据（只读，纪律：模型是代理不是物理数字来源，报告只引实测/CV 数字）：
+数据（只读，铁律 7：模型是代理不是物理数字来源，报告只引实测/CV 数字）：
 - runs/datasets/wp34_registry_20260916/points.parquet：patch_antenna 族 105 行，
   其中 hfss+run_once 36 行同时带 s11_db_min_in_band 标量与 provenance.run_id →
   runs/<run_id>/results/params.s1p 曲线（11 频点 2.3–2.5GHz，1 端口，MA 格式）；

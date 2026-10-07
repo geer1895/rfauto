@@ -1,4 +1,4 @@
-"""方向 3 全链测试）：mock 仪器 capture → calibrate → correlate。
+"""方向 3 全链测试（审查缺口 #12）：mock 仪器 capture → calibrate → correlate。
 
 真机路径语义验证：raw SCPI 测量必须产出真实 skrf.Network（旧实现解析后
 恒 return None，capture 真机不可用）；calibrate 方法存在且可记录校准态。

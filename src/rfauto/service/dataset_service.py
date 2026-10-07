@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.infra.par_exec import map_ordered
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 SCHEMA_VERSION = "2.0"
 DEFAULT_OUT_DIR = Path("runs") / "datasets"
@@ -74,7 +75,7 @@ DATASET_SCHEMA: list[tuple[str, str]] = [
 # ground truth 判别（WP2.4 待做列：ground truth 标注，6.3 神经算子前置）
 # ---------------------------------------------------------------------------
 
-# 真机引擎白名单词根：HFSS 为对齐基准（仓内铁律），openEMS/COMSOL 为
+# 真机引擎白名单词根：HFSS 为对齐基准，openEMS/COMSOL 为
 # 真跑全波引擎，"meas" 覆盖实测导入通道（calibration:* 前缀按词根命中）。
 # adapter 含 "fake" 一律不标（含 mf:fake+hfss 混合保真——行级 provenance
 # 混杂廉价模型，训练数据不认）；6.3 神经算子门槛=100+ GT 点/器件族。
@@ -870,6 +871,7 @@ def materialize_dataset(
     fmt: str = DEFAULT_FORMAT,
     registry_sync: bool | None = None,
     n_workers: int = 0,
+    dry_run: bool = False,
 ) -> dict[str, Any]:
     """把指定 run（None=runs/ 下全部有 meta.json 的 run）的点级数据物化为
     数据集（行式 schema 见 DATASET_SCHEMA）。
@@ -906,19 +908,21 @@ def materialize_dataset(
     try:
         name = _validate_dataset_name(name)
     except ValueError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     if fmt not in DATASET_FORMATS:
-        return {"ok": False, "errors": [
-            f"fmt 只允许 {'/'.join(DATASET_FORMATS)}，收到 {fmt!r}"]}
+        return error_envelope(
+            [
+            f"fmt 只允许 {'/'.join(DATASET_FORMATS)}，收到 {fmt!r}"],
+        )
 
     try:
         pa, pq = _import_pyarrow()
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     runs_root = Path("runs")
     if not runs_root.is_dir():
-        return {"ok": False, "errors": [f"runs 目录不存在: {runs_root.resolve()}"]}
+        return error_envelope([f"runs 目录不存在: {runs_root.resolve()}"])
 
     missing_runs: list[str] = []
     if run_ids is not None:
@@ -926,14 +930,32 @@ def materialize_dataset(
         missing_runs = [rid for rid in ids if not (runs_root / rid / "meta.json").exists()]
         target_ids = [rid for rid in ids if rid not in missing_runs]
         if not target_ids:
-            return {"ok": False, "errors": [
-                f"指定的 run 均无 meta.json: {missing_runs}"]}
+            return error_envelope(
+                [
+                f"指定的 run 均无 meta.json: {missing_runs}"],
+            )
     else:
         target_ids = sorted(
             d.name for d in runs_root.iterdir()
             if d.is_dir() and (d / "meta.json").exists())
         if not target_ids:
-            return {"ok": False, "errors": [f"{runs_root.resolve()} 下无有效 run"]}
+            return error_envelope([f"{runs_root.resolve()} 下无有效 run"])
+
+    # SN-18（W6-A）：dry-run 计划面——枚举/入参校验后即回，零收集零写盘
+    # （健康门逐 run 体检属收集段，计划面如实标注 not_evaluated）
+    if dry_run:
+        return ok_envelope(
+            mode="dry-run",
+            name=name,
+            dataset_dir=str(Path(out_dir) / name),
+            fmt=fmt,
+            would_materialize=target_ids,
+            n_points_planned=len(target_ids),
+            missing_runs=missing_runs,
+            health_gate=health_gate,
+            health_gate_note="not_evaluated（计划面不跑 G11 体检）",
+            adapter_note="零写入（未建数据集目录）",
+        )
 
     created_at = datetime.now(timezone.utc).isoformat()
     skipped_runs: list[str] = []
@@ -1046,7 +1068,7 @@ def materialize_dataset(
         else:
             pq.write_table(table, points_path)
     except RuntimeError as exc:  # 缺 h5py 等可选依赖，显式报错不半写
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -1116,6 +1138,24 @@ def materialize_dataset(
         result["warnings"] = collect_errors
     # 格式专属路径键：parquet 键向后兼容既有消费者，hdf5 键对称
     result["parquet" if fmt == "parquet" else "hdf5"] = str(points_path)
+    # XD-1（W3-B）数据集节点血缘 meta（best-effort #105，失败仅 warnings
+    # 留痕不阻塞物化）：runs/datasets/<name>/meta.json 落 derived_from=
+    # source_runs（边来源=调用方上下文 manifest source_runs，非目录名猜测），
+    # edge_kind=dataset——数据集成为湖 lineage 图一等节点。
+    try:
+        from rfauto.infra.run_store import write_meta
+
+        write_meta(
+            dataset_dir,
+            {"run_id": name, "model": "dataset", "status": "done",
+             "adapter": "dataset_factory", "study_name": name},
+            derived_from=sorted({str(ri.get("run_id")) for ri in run_infos
+                                 if ri.get("run_id")}),
+            edge_kind="dataset")
+    except Exception as exc:
+        result["warnings"] = [
+            *(result.get("warnings") or []),
+            f"数据集血缘 meta 写入失败（非阻断，XD-1）: {exc}"]
     return result
 
 
@@ -1132,6 +1172,10 @@ def query_dataset(
     model: str | None = None,
     study_name: str | None = None,
     out_dir: str | Path = DEFAULT_OUT_DIR,
+    order_by: str | None = None,
+    order: str = "desc",
+    offset: int = 0,
+    out_fmt: str = "json",
 ) -> dict[str, Any]:
     """DuckDB 直查 Parquet 数据集（谓词下推/列裁剪）。
 
@@ -1142,6 +1186,16 @@ def query_dataset(
     且在 LIMIT 之前生效（E11 未尽③：collect 按族过滤时不再被过滤前
     截断漏样本）。返回 {ok, rows, n_rows, columns, dataset, where,
     filters, limit}。
+
+    SN-13（W6-A，2026-10-06）增量（全部可选，缺省零行为变化）：
+    - ``order_by``：排序列名（标识符校验；列存在性执行期校验，未知列
+      ok=False 如实报错）；``order``：``asc``|``desc``（缺省 desc）。
+    - ``offset``：分页偏移（>=0，在 LIMIT 前生效）。
+    - ``out_fmt``：``json``（缺省，rows 键不变）|``csv``（额外给 ``csv`` 键：
+      RFC4180 文本，表头+数据行；rows 仍带便于双消费）。信封 ``format``
+      键保持数据集存储格式（parquet/hdf5）不变。
+    - ``total_rows``：过滤后（LIMIT/OFFSET 前）总行数（治 #369
+      "n_rows=limit 截断被误当总数"复发——总数语义显式单列一键）。
     """
     try:
         name = _validate_dataset_name(name)
@@ -1150,8 +1204,20 @@ def query_dataset(
         limit_i = int(limit)
         if limit_i < 1:
             raise ValueError(f"limit 必须 >= 1，收到 {limit!r}")
+        offset_i = int(offset)
+        if offset_i < 0:
+            raise ValueError(f"offset 必须 >= 0，收到 {offset!r}")
+        if order not in ("asc", "desc"):
+            raise ValueError(f"order 只允许 asc|desc，收到 {order!r}")
+        if out_fmt not in ("json", "csv"):
+            raise ValueError(f"out_fmt 只允许 json|csv，收到 {out_fmt!r}")
+        if order_by is not None:
+            order_col = _validate_columns([order_by])
+            order_col_name = order_col[0]
+        else:
+            order_col_name = None
     except (ValueError, TypeError) as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     # 等值谓词下推准备：值只进参数绑定不进 SQL；空串视为未过滤；
     # 非 str 拒绝（防静默 str() 成与列值永不相等的垃圾字面量）
@@ -1160,8 +1226,10 @@ def query_dataset(
         if val is None:
             continue
         if not isinstance(val, str):
-            return {"ok": False, "errors": [
-                f"{key} 必须是 str 或 None，收到 {type(val).__name__}"]}
+            return error_envelope(
+                [
+                f"{key} 必须是 str 或 None，收到 {type(val).__name__}"],
+            )
         if val:
             filters[key] = val
 
@@ -1177,13 +1245,15 @@ def query_dataset(
             points_path = alt
             fmt = "hdf5" if fmt == "parquet" else "parquet"
         else:
-            return {"ok": False, "errors": [
-                f"数据集不存在: {name}（缺 {points_path}，先 materialize）"]}
+            return error_envelope(
+                [
+                f"数据集不存在: {name}（缺 {points_path}，先 materialize）"],
+            )
 
     try:
         duckdb = _import_duckdb()
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     # hdf5：经 h5py 重建 Arrow 表并注册为 DuckDB 视图，where/filters/limit
     # 与 Parquet 路径共用同一 SQL 管线（防注入面不分叉）
@@ -1192,10 +1262,12 @@ def query_dataset(
         try:
             arrow_table = _read_points_hdf5(points_path, None)
         except RuntimeError as exc:
-            return {"ok": False, "errors": [str(exc)]}
+            return error_envelope([str(exc)])
         except Exception:
-            return {"ok": False, "errors": [
-                "HDF5 点级数据读取失败（文件损坏或列缺失；原始错误不透出）"]}
+            return error_envelope(
+                [
+                "HDF5 点级数据读取失败（文件损坏或列缺失；原始错误不透出）"],
+            )
         source_sql = "dataset_points"
     else:
         source_sql = ("read_parquet("
@@ -1213,7 +1285,18 @@ def query_dataset(
         where_parts.append(f"({where_sql})")
     if where_parts:
         sql += " WHERE " + " AND ".join(where_parts)
-    sql += f" LIMIT {limit_i}"
+
+    # SN-13：总数语义（过滤后、LIMIT/OFFSET 前的行数；#369 复发治理）。
+    # count 查询与数据查询共享同一 WHERE/filters 管线，值同样只进 ? 绑定。
+    count_sql = f"SELECT count(*) FROM {source_sql}"
+    if where_parts:
+        count_sql += " WHERE " + " AND ".join(where_parts)
+
+    if order_col_name is not None:
+        # 列名经 _validate_columns 标识符白名单，方向是 asc|desc 枚举——
+        # 二者都不进自由 SQL 文本面
+        sql += f' ORDER BY "{order_col_name}" {order}'
+    sql += f" LIMIT {limit_i} OFFSET {offset_i}"
 
     con = duckdb.connect()
     try:
@@ -1222,28 +1305,57 @@ def query_dataset(
         cur = con.execute(sql, bind_params) if bind_params else con.execute(sql)
         col_names = [d[0] for d in cur.description]
         rows = [dict(zip(col_names, r, strict=False)) for r in cur.fetchall()]
+        total_rows = int((con.execute(count_sql, bind_params).fetchone()
+                          or [0])[0])
     except Exception:  # duckdb.Error 及其子类：语法/缺列/表函数越权等查询期错误
         # 错误文案统一收敛，不透传引擎原始消息：parquet_scan 等变体会把
         # 目标路径织进 IO Error 文本，回传即存在性 oracle（任意路径探测）。
         # "sql" 是调用方自身输入（含 where 原文）的回显，非引擎内部信息，
         # 保留供归因。
-        return {"ok": False, "errors": [
+        return error_envelope(
+            [
             "查询执行失败: where 表达式被拒绝（仅允许对本数据集列的"
-            "比较/逻辑表达式；原始引擎错误不透出）"], "sql": sql}
+            "比较/逻辑表达式；原始引擎错误不透出）"],
+            sql=sql,
+        )
     finally:
         con.close()
 
-    return {
-        "ok": True,
-        "dataset": name,
-        "format": fmt,
-        "rows": rows,
-        "n_rows": len(rows),
-        "columns": col_names,
-        "where": where_sql or "",
-        "filters": filters,
-        "limit": limit_i,
-    }
+    out = ok_envelope(
+        dataset=name,
+        format=fmt,
+        rows=rows,
+        n_rows=len(rows),
+        total_rows=total_rows,
+        offset=offset_i,
+        order_by=order_col_name,
+        order=order,
+        columns=col_names,
+        where=where_sql or "",
+        filters=filters,
+        limit=limit_i,
+    )
+    if out_fmt == "csv":
+        out["csv"] = _rows_to_csv(col_names, rows)
+    return out
+
+
+def _rows_to_csv(columns: list[str], rows: list[dict[str, Any]]) -> str:
+    """行字典 → RFC4180 CSV 文本（SN-13 --format csv 导出面；确定性渲染）。
+
+    空值渲染空串；数值 str() 直转；含引号/逗号/换行的字段按 RFC4180 双写
+    引号包裹。表头恒为查询列序（col_names）。
+    """
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(columns)
+    for row in rows:
+        writer.writerow(
+            ["" if row.get(c) is None else row.get(c) for c in columns])
+    return buf.getvalue()
 
 
 # ---------------------------------------------------------------------------
@@ -1693,25 +1805,24 @@ def discover_workdir_candidates(
     try:
         fams = _normalize_families(models)
     except ValueError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     if not root.is_dir():
-        return {"ok": False, "errors": [f"runs 目录不存在: {root.resolve()}"]}
+        return error_envelope([f"runs 目录不存在: {root.resolve()}"])
     scans, n_scanned, n_with_meta = _discover_workdir_scans(root, fams)
     candidates = [_serialize_scan(s) for s in scans]
     per_family: dict[str, int] = {}
     for c in candidates:
         key = c["family"] or "other"
         per_family[key] = per_family.get(key, 0) + 1
-    return {
-        "ok": True,
-        "runs_root": str(root),
-        "families": list(WORKDIR_FAMILIES),
-        "n_scanned": n_scanned,
-        "n_with_meta": n_with_meta,
-        "n_candidates": len(candidates),
-        "per_family": dict(sorted(per_family.items())),
-        "candidates": candidates,
-    }
+    return ok_envelope(
+        runs_root=str(root),
+        families=list(WORKDIR_FAMILIES),
+        n_scanned=n_scanned,
+        n_with_meta=n_with_meta,
+        n_candidates=len(candidates),
+        per_family=dict(sorted(per_family.items())),
+        candidates=candidates,
+    )
 
 
 def _workdir_health_verdict(
@@ -1770,17 +1881,19 @@ def import_workdir_runs(
         fams = (_normalize_families(models) if models is not None
                 else WORKDIR_FAMILIES)
     except ValueError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     if fmt not in DATASET_FORMATS:
-        return {"ok": False, "errors": [
-            f"fmt 只允许 {'/'.join(DATASET_FORMATS)}，收到 {fmt!r}"]}
+        return error_envelope(
+            [
+            f"fmt 只允许 {'/'.join(DATASET_FORMATS)}，收到 {fmt!r}"],
+        )
     try:
         pa, pq = _import_pyarrow()
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
     root = Path(runs_root)
     if not root.is_dir():
-        return {"ok": False, "errors": [f"runs 目录不存在: {root.resolve()}"]}
+        return error_envelope([f"runs 目录不存在: {root.resolve()}"])
 
     scans, _n_scanned, _n_with_meta = _discover_workdir_scans(root, fams)
     missing_runs: list[str] = []
@@ -1790,13 +1903,17 @@ def import_workdir_runs(
         missing_runs = [rid for rid in ids if rid not in known]
         scans = [s for s in scans if s["run_id"] in ids]
         if not scans:
-            return {"ok": False, "errors": [
+            return error_envelope(
+                [
                 "指定的工作目录均不可导入（不存在/有 meta.json 走 materialize/"
                 f"不属所选器件族）: {missing_runs}"],
-                "missing_runs": missing_runs}
+                missing_runs=missing_runs,
+            )
     if not scans:
-        return {"ok": False, "errors": [
-            f"{root.resolve()} 下无 {'/'.join(fams)} 族工作目录形态产物"]}
+        return error_envelope(
+            [
+            f"{root.resolve()} 下无 {'/'.join(fams)} 族工作目录形态产物"],
+        )
 
     created_at = datetime.now(timezone.utc).isoformat()
     collect_errors: list[str] = []
@@ -1925,12 +2042,11 @@ def import_workdir_runs(
         "health_verdicts": health_verdicts,
     }
     if not rows:
-        return {
-            "ok": False,
-            "errors": ["没有可导入的曲线点（候选工作目录均无可归属设计参数的"
+        return error_envelope(
+            ["没有可导入的曲线点（候选工作目录均无可归属设计参数的"
                        "曲线产物，或全部被健康门拦下）", *collect_errors],
             **base_counts,
-        }
+        )
 
     bounds = _aggregate_bounds(rows)
     columns = [c for c, _t in DATASET_SCHEMA]
@@ -1968,7 +2084,7 @@ def import_workdir_runs(
         else:
             pq.write_table(table, points_path)
     except RuntimeError as exc:
-        return {"ok": False, "errors": [str(exc)]}
+        return error_envelope([str(exc)])
 
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -2012,27 +2128,28 @@ def import_workdir_runs(
         registry_synced = _register_dataset_row(
             name, manifest_path, fmt, len(rows), visibility="private")
 
-    result: dict[str, Any] = {
-        "ok": True,
-        "name": name,
-        "dataset_dir": str(dataset_dir),
-        "format": fmt,
-        "points_file": str(points_path),
-        "manifest": str(manifest_path),
-        "schema_version": SCHEMA_VERSION,
-        "importer": "workdir",
-        "runs_root": str(root),
-        "families": list(fams),
-        **base_counts,
-        "n_rows": len(rows),
-        "n_dup": n_dup,
-        "per_family_rows": dict(sorted(per_family_rows.items())),
-        "bounds": bounds,
-        "columns": columns,
-        "visibility": "private",
-        "ground_truth": gt_block,
-        "registry_sync": registry_synced,
-    }
+    result: dict[str, Any] = ok_envelope(
+                                 **{
+                                 "name": name,
+                                 "dataset_dir": str(dataset_dir),
+                                 "format": fmt,
+                                 "points_file": str(points_path),
+                                 "manifest": str(manifest_path),
+                                 "schema_version": SCHEMA_VERSION,
+                                 "importer": "workdir",
+                                 "runs_root": str(root),
+                                 "families": list(fams),
+                                 **base_counts,
+                                 "n_rows": len(rows),
+                                 "n_dup": n_dup,
+                                 "per_family_rows": dict(sorted(per_family_rows.items())),
+                                 "bounds": bounds,
+                                 "columns": columns,
+                                 "visibility": "private",
+                                 "ground_truth": gt_block,
+                                 "registry_sync": registry_synced,
+                                 },
+                             )
     if sync_enabled and not registry_synced:
         result["warnings"] = [*result.get("warnings", []),
                               "注册表回写失败（datasets 表未登记；"

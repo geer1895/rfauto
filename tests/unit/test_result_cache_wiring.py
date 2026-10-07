@@ -1,7 +1,7 @@
 """P2①（§10.20 ⑨ 生产接线）：内容寻址 ResultCache 接入 api.run_once / dry_run /
 optimizer.build_objective 主路径。
 
-验收口径（result-cache 内容键）：
+验收口径（任务书 p2-01-result-cache-content-key）：
 - 同几何不同 study 二次评估命中且 provenance=cache（run_once 与优化外环两条路径）；
 - RFAUTO_CACHE=off 旁路回归不破（两路径均恒真跑）；
 - 四类失效策略（recipe_version / schema_version / mesh_params / adapter_version）

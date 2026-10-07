@@ -1,10 +1,10 @@
-r"""via β2 收口：镜像前提裁决 + openEMS 单激励可复现数据路径。
+r"""§10.20 ② via β2 收口：镜像前提裁决 + openEMS 单激励可复现数据路径。
 
 用法（工作区根目录）：
     .venv\Scripts\python.exe scripts\via_beta2_derivation.py            # 离线推导（秒级，读归档）
     .venv\Scripts\python.exe scripts\via_beta2_derivation.py --run      # 真机小例（openEMS 空闲时，分钟级）
 
-背景（上轮 PARTIAL 尾巴）
+背景（commit 61851a4 的 PARTIAL 尾巴）
 ----------------------------------------------------
 上轮把 via β2 案例的 4.91% 当"探针尺度常数"去嵌（εeff2'≈εeff1 ≤1% 达标），
 但第一性推导未达成。本轮新增 core/deembed.beta_from_voltage_trio：由同一端口
@@ -144,7 +144,7 @@ _SIM_TEMPLATE = r'''#!/usr/env/python3
 import csv
 import os
 
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"D:/rf_workspace\vendor\openEMS\install\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

@@ -6,23 +6,24 @@
 产物：runs/fsv/pair_probe.json（配对存在性核查）+ runs/fsv/ratrace_fsv.json
 （GDM 等级等），stdout 打印摘要。
 
-配对优先级：patch 同几何对 > wilkinson 同几何对 > ratrace。
+配对优先级（任务书 D12）：patch 同几何对 > 0.1⑤ E4 wilkinson > ratrace。
 每个候选都做**文件存在性 + 几何一致性**核查，缺失/不同几何一律如实记录，
-不做跨几何拼接（模型不对齐的比较没有意义）。
+不做跨几何拼接。
 
-候选归档说明（脚本运行时重新核查，结论落 pair_probe.json）：
-1. patch：HFSS 与 openEMS 侧曲线几何不同（HFSS patch_w=45mm / 基板
-   80x80mm；openEMS 分别 50mm/60mm 板 与 34.9mm/50mm/120x120mm）
-   -> 无同几何对。
-2. wilkinson：HFSS 曲线存在，但 openEMS 侧只归档了时域端口文件
-   （port_ut_*、port_it_*），**无频域 S 参数曲线 / sparams.csv**
+本仓实测（脚本运行时重新核查，结论落 pair_probe.json）：
+1. patch：HFSS 曲线存在（runs/wp39_probe_patch/probe.s1p）；openEMS 侧
+   runs/audit_freq_scale/smoke_patch_auto/sparams.csv 与
+   runs/template_deviation/patch/fdtd/fdtd/sparams.csv 存在，但**几何不同**
+   （HFSS patch_w=45mm / 基板 80x80mm；openEMS 分别 50mm/60mm 板 与
+   34.9mm/50mm/120x120mm）-> 无同几何对。
+2. 0.1⑤ E4 wilkinson：HFSS 曲线存在（runs/audit_freq_scale/hfss_arbitration/
+   hfss_arb.s3p，见 scripts/hfss_same_geometry_arbitration.py），但 openEMS 侧
+   只归档了时域端口文件（e4_wilk*/fdtd/port_ut_*, port_it_*），**无频域
+   S 参数曲线 / sparams.csv**（与 scripts/koh_calibrate.py 的核查一致）
    -> 无法做频率分辨对照。
-3. ratrace：HFSS 全 4 端口 s4p + openEMS sparams.csv（端口 1 激励）
+3. ratrace：HFSS runs/ratrace_arbitration/hfss_ratrace.s4p（全 4 端口）+
+   openEMS runs/ratrace_arbitration/mesh_0p2mm/p1/sparams.csv（端口 1 激励）
    -> **本仓唯一真实可用的频域配对**，本脚本采用。
-
-已知非严格同几何声明：ratrace 的
-openEMS 渲染层用了 k=1.0975 标定，HFSS 为物理 R=17.344mm，故两者是"同标称
-设计、非严格同尺寸"。该偏差本身就是本对照要量化的对象。
 
 已知非严格同几何声明（沿用 scripts/koh_calibrate.py 的 caveat）：ratrace 的
 openEMS 渲染层用了 k=1.0975 标定，HFSS 为物理 R=17.344mm，故两者是"同标称
@@ -51,8 +52,8 @@ from rfauto.core.fsv import fsv, to_jsonable  # noqa: E402
 
 OUT_DIR = REPO / "runs" / "fsv"
 
-# ── 候选归档路径（存在性运行期核查；默认指向 runs/ 下的同名归档，缺失时如实记录）─
-PATCH_HFSS = REPO / "runs" / "patch_hfss_probe" / "probe.s1p"
+# ── 候选归档路径（存在性运行期核查）─────────────────────────────────────────
+PATCH_HFSS = REPO / "runs" / "wp39_probe_patch" / "probe.s1p"
 PATCH_OEMS = [
     REPO / "runs" / "audit_freq_scale" / "smoke_patch_auto" / "sparams.csv",
     REPO / "runs" / "template_deviation" / "patch" / "fdtd" / "fdtd" / "sparams.csv",
@@ -66,14 +67,14 @@ RATRACE_OEMS = REPO / "runs" / "ratrace_arbitration" / "mesh_0p2mm" / "p1" / "sp
 PATCH_GEOMETRY = {
     "hfss_probe": {"patch_len_mm": 40.0, "patch_w_mm": 45.0, "feed_offset_mm": 7.8,
                    "sub_mm": [80.0, 80.0], "sub_h_mm": 0.508,
-                   "source": "HFSS 工程变量（probe.aedt VariableProp）"},
+                   "source": "runs/wp39_probe_patch/probe.aedt VariableProp"},
     "openems_smoke_patch_auto": {"patch_len_mm": 40.0, "patch_w_mm": 50.0,
                                  "feed_offset_mm": 7.8, "board_mm": 60.0,
                                  "sub_h_mm": 0.508,
-                                 "source": "openEMS 冒烟渲染脚本 simulation.py"},
+                                 "source": "runs/audit_freq_scale/smoke_patch_auto/simulation.py"},
     "openems_template_deviation": {"patch_len_mm": 34.9, "patch_w_mm": 50.0,
                                    "sub_mm": [120.0, 120.0], "sub_h_mm": 0.508,
-                                   "source": "openEMS 模板偏差轮渲染脚本 simulation.py"},
+                                   "source": "runs/template_deviation/patch/fdtd/simulation.py"},
 }
 
 

@@ -1,4 +1,4 @@
-"""数据工厂低保真修正复判单测（合成语料，零 HFSS 零真机）。
+"""数据工厂 df5 低保真修正复判单测（合成语料，零 HFSS 零真机）。
 
 被测对象：scripts/factory_mfk_lowfi_fix.py 的纯逻辑面——
 - DiscrepancyGP1D：KOH 简化式离散差异 GP（独立 numpy 实现 #118）——

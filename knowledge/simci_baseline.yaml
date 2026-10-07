@@ -1,0 +1,27 @@
+adapter: fake
+baselines:
+  branchline_coupler:
+    s11_db_max_in_band: -8.037353634123406
+    s11_db_min_in_band: -8.03735363412341
+    s21_db_mean_in_band: -5.314783949707477
+  p0_experiment:
+    rho_pass: true
+    spearman_rho: 1.0
+  wilkinson_power_divider:
+    iso_s23_db_min_in_band: 25.47169804394388
+    s11_db_max_in_band: -8.083476465503841
+    s11_db_min_in_band: -10.258089404372448
+    s21_db_mean_in_band: -4.108441567750529
+channel: fake
+git_sha: '72311783'
+metrics_digest: afbf2788623dd3f2fd34ebf3a82e32078711acbac7bbe777d0e2749b727d28c7
+model_run_ids:
+  branchline_coupler: 20260917_171845_2d7b7fbf
+  p0_experiment: 20260904_054933_9d695d9c
+  wilkinson_power_divider: 20260925_062950_1a6365e9
+pinned_at: '2026-10-05T16:26:57Z'
+pinned_run_id: 20260925_062950_1a6365e9
+schema: simci_baseline/v1
+tool_versions:
+  engine: ''
+  package: 0.10.0

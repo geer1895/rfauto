@@ -6,7 +6,7 @@ core/calculators.attenuator_bridged_t）：
   params，缺键/多键都拒）→ L2 模板离线试运行（render + CSXCAD 几何实测）→ L3
   token → 迁 runs/recipe_sandbox/promoted/；recipes/ 逐字节不动；
 - F8 链：注入 llm 的桥 T 草案过全链（compile → AST 静态门 → 契约 → 数值流向
-  → CSXCAD 实测 → 电路提取闭式锚 S11=0/|S21|=1/N → 三层 Gate → promoted/）；
+  → CSXCAD 实测 → 电路提取闭式锚 S11=0/|S21|=1/N → 三层 Gate → promoted）；
 - 负路径全拒绝且计入统计：走私数字（硬编码电阻）/未注册字段/越界路径/非法
   后缀/compile 失败/静态门（import）/接线错误（桥并互换，compile 抓不住）/注入；
 - 通过率统计：audit.jsonl 事件 + 沙箱 verdict 双源聚合，每阶段 attempted/passed。

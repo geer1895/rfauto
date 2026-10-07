@@ -67,10 +67,10 @@ class ConvergenceReport(BaseModel):
 class SimulatorAdapter(ABC):
     """仿真器适配器协议——核心八方法（P0–P4 EXPERIMENTAL）。
 
-    硬性约束：
-    - 核心包不引 EDA SDK：SDK import 仅在具体 adapter 实现内
-    - 长任务返回 JobHandle，永不阻塞调用方
-    - build 时强制命名规范校验
+    铁律：
+    - 核心包不引 EDA SDK（军规 8）：SDK import 仅在具体 adapter 实现内
+    - 长任务返回 JobHandle，永不阻塞调用方（军规 4）
+    - build 时强制命名规范校验（军规 2b）
     """
 
     @abstractmethod
@@ -124,7 +124,7 @@ class SimulatorAdapter(ABC):
         return None
 
     def raw_escape(self, *args: Any, **kwargs: Any) -> Any:
-        """oEditor 等原生逃逸口（使用须记录改动依据）。"""
+        """oEditor 等原生逃逸口（使用须记 ）。"""
         raise NotImplementedError("raw_escape 未实现，请检查 capabilities")
 
     def get_far_field(self, setup_name: str, freq_ghz: float = 2.4) -> dict[str, Any] | None:
@@ -145,7 +145,7 @@ class SimulatorAdapter(ABC):
         return True
 
     def ensure_connected(self) -> None:
-        """自愈重连：连接掉线（license 回收等）后重建会话。
+        """自愈重连（缺口 4 R5）：连接掉线（license 回收等）后重建会话。
 
         实现应带退避；重试耗尽抛 ConnectFailedError。
         """
@@ -157,7 +157,7 @@ class SimulatorAdapter(ABC):
 class RFModelPlugin(ABC):
     """模板插件协议——每个射频模型（功分器/耦合器/天线…）实现此接口。
 
-    新模型 = 新目录，零改核心。
+    新模型 = 新目录，零改核心（军规 7）。
     第三个实例出现时才把共性抽进 base 脚手架。
     """
 
@@ -186,7 +186,7 @@ class RFModelPlugin(ABC):
     def build(self, ad: SimulatorAdapter, params: BaseModel) -> None:
         """声明式构建：创建 design → 设置变量 → 画几何（显式命名）→ 赋材料 → 端口/边界 → 默认 setup。
 
-        硬性约束：
+        铁律：
         - 尺寸只经 hfss['VarName']=value 写成变量再以表达式引用
         - 对象命名用 builder 常量表
         - 端口/边界绑定只允许命名对象或参数坐标推导的辅助面

@@ -1,4 +1,4 @@
-r"""损耗图提取确定性内核。
+r"""D3-1 损耗图提取确定性内核（续跑计划 §10.21 第九轮 D3-1）。
 
 口径与公式来源（裁判 = 独立来源，不是本模块自己的推导，#118）
 ----------------------------------------------------------------
@@ -18,7 +18,7 @@ r"""损耗图提取确定性内核。
    - 本模块的 LossMaterial 用 **相对损耗因子** eps_r'' = eps_r * tan_delta
      （无量纲），内部乘真空介电常数 eps0；等价绝对口径
      eps''_abs = eps0 * eps_r * tan_delta [F/m]，即 q 第二项
-     = 0.5 * omega * eps''_abs * |E|^2。
+     = 0.5 * omega * eps''_abs * |E|^2（与任务书公式逐字一致）。
    - eps0 = 8.8541878128e-12 F/m、mu0 = 1.25663706212e-6 H/m
      （CODATA 2018，NIST）。
 
@@ -40,7 +40,7 @@ r"""损耗图提取确定性内核。
 - core 叶子层：只 import numpy（不引 scipy/skrf）。规则网格重采样自实现
   线性/最近邻插值，避免给 core 增加任何新依赖。
 - 全部纯函数 / 冻结数据类；非法输入显式 ValueError，不静默兜底。
-- 判据阈值与口径集中在模块常量，供 service 层复用。
+- 判据阈值与口径集中在模块常量，供 service / G11 补强复用。
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ import numpy as np
 EPS0 = 8.8541878128e-12  # 真空介电常数 [F/m]
 MU0 = 1.25663706212e-6  # 真空磁导率 [H/m]
 
-# 验收口径：|integral(q dV) - P_sparams| / scale <= 3%
+# §10.21 D3-1 验收口径：|integral(q dV) - P_sparams| / scale <= 3%
 DEFAULT_CLOSURE_TOLERANCE = 0.03
 
 RESAMPLE_LINEAR = "linear"

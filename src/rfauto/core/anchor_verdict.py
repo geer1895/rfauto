@@ -1,14 +1,16 @@
-"""mline 锚 εeff 双锚判读内核（确定性判据）。
+"""mline 锚 εeff 双锚判读内核（WP1.2 廿八未尽①收口，确定性判据）。
 
 背景（#218 归因收口后唯一未过门）：HFSS mline 探针 εeff 对 HJ 准静态
 闭式 +2.36%/+2.53% 超旧 ±2% 单门——跨引擎同向偏移（openEMS 自身对 HJ
-+1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿。
-双锚口径 2026-09-12 定稿（本内核统一
++1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿（廿八）。
+双锚口径 2026-09-12 定稿（廿八未尽①，队列3-A 探针侧先行、本内核收口
 engine harness 与 sweep_assert 旧单门）：
 
   主锚（金标准）：εeff 对 openEMS β 金标准 ``EPS_EFF_MLINE_GOLD``（2.886
                 @2.5GHz），|Δ|≤2%。金标准为同几何全波真跑收敛值族
-                （#189：2.8813~2.8884，网格收敛扫描最细档）。
+                （#189：2.8813~2.8884，runs/benchmark/
+                mline_mesh_convergence.json 最细档；归因档
+                runs/mline_repro_attribution_20260911.md §二采 2.886）。
   副锚（解析哨兵）：εeff 对 HJ 准静态闭式（core/synthesis.forward_z0，
                 w=1.113 rogers4350b → 2.8526），|Δ|≤3%（放宽口径）。
                 HJ 是独立来源解析锚（#118 纪律），完全降级为信息量会
@@ -20,13 +22,13 @@ engine harness 与 sweep_assert 旧单门）：
                 harness 看全带 max，语义同向：浅于门=端口/网格判废信号。
 
 判据改动=显式重标定决策（改动须附真机证据）。纯函数零真机，单测钉死于
-tests/unit/test_mline_probe_dual_anchor.py。LLM/agent 永不产生物理数字：
-锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
+tests/unit/test_mline_probe_dual_anchor.py。LLM/agent 永不产生物理数字
+：锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
 β 推导 / HFSS S21 相位斜率推导 / core/synthesis HJ 闭式）。
 
 消费方：
 - scripts/hfss_mline_probe.py（HFSS 探针，dual_anchor_verdict）
-- scripts/engine_benchmark_mline.py（引擎基准 harness，
+- scripts/engine_benchmark_mline.py（WP1.2 引擎基准 harness，
   mline_benchmark_verdict：收敛性+最细档双锚+健康门）
 - scripts/hfss_mline_repro_sweep_assert.py（#191 复现脚本 unitfix 臂，
   旧 HJ ±2% 单门收编为双锚）
@@ -96,9 +98,9 @@ def mline_benchmark_verdict(
     sub_tol_pct: float = SUB_ANCHOR_TOL_PCT,
     s11_max_db_lt: float = S11_HEALTH_DB,
 ) -> dict[str, float | bool | str | None]:
-    """引擎基准 harness 判读（收敛性+最细档双锚+健康门，纯函数零真机）。
+    """WP1.2 引擎基准 harness 判读（收敛性+最细档双锚+健康门，纯函数零真机）。
 
-    判据显式决策（scripts/engine_benchmark_mline.py 调用）：
+    判据显式决策（廿八未尽①收口，scripts/engine_benchmark_mline.py 调用）：
     1. 收敛性：最细两档 εeff 相对移动 < convergence_tol_pct；
     2. 主锚：最细档 εeff 对金标准 eps_gold |Δ|≤main_tol_pct（#189 收敛值族
        复现一致性——harness 升级/换机/模板迁移后复跑的复现锚）；

@@ -1,4 +1,4 @@
-"""interdigital 全波分歧 HFSS 对拍复核（判读门先于求解落盘）。
+"""interdigital 全波分歧 HFSS 对拍复核（拍板⑦；判读门先于求解落盘）。
 
 仲裁问题（runs/hfss_interdigital_check/criteria.md §〇）：
   c3 interdigital 全波哨外推 S21∞@f0=−14.4657dB（帽停不可信）vs 电路裁判
@@ -70,7 +70,7 @@ SOLVE_TIMEOUT_S = 21600      # 单 setup 看门狗（6h 防挂死上限，非预
 BUILD_ATTEMPTS = 2           # 整轮重建重试（#191 anchors 同款）
 GAP_TOL_MM = 1e-6
 
-# audit2（2026-09-23/24，runs/hfss_interdigital_check/_audit2/）过孔接触结论：
+# audit2（2026-09-23/24，runs/hfss_interdigital_check/_audit2）过孔接触结论：
 # 全模型（缺省网格）bars_only eigen=2.485/2.607/2.692GHz 三棒耦合簇——原构型
 # 共面顶盘-薄片键合正常（棒短路），建模段零改动；单棒小盒四变体（原构型+网格
 # 指派/pad±网格指派）均 5.2/4.4GHz λ/2 悬空口径且无 λ/4 模——共面键合是网格

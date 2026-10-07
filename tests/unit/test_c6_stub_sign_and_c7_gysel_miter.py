@@ -3,12 +3,12 @@
 C6：msl_slot_transition/marchand_balun 开路支节 Δl 符号修正——物理长=
 λg/4−Δl（开路端边缘场使电长比物理长长 Δl，电长取 λg/4；Pozar
 《Microwave Engineering》eq.4.23 口径，与仓内 _open_end_delta_mm 消费者
-"物理长=电长−Δl" 同口径；旧 +Δl 系符号反，历史观察项收口）。
+"物理长=电长−Δl" 同口径；旧 +Δl 系符号反，观察项）。
 钉：符号公式、设计点数值、f0 电路级往返（开路端模型下新符号残抗→0、
 旧符号 +j·Z0·tan(2βΔl)≈+j5.54Ω 感性残差）、自谐振方向（旧符号 −6.57%）、
 渲染链单源（design→layout→render 同值）。
 
-C7：gysel `_jog_miter_mm` mitered-jog 切角旋钮（排空五轮 followUps
+C7：gysel `_jog_miter_mm` mitered-jog 切角旋钮（TODO 排空五轮 followUps
 "gysel 弯折等效长度/mitered-jog"）——缺省 0=未切角基线渲染逐字节不变
 （缓存/锁定测试零波及）；c>0 每侧 jog 转角外上角 c×c 台阶缺口（45° 切角
 的阶梯网格单步近似），金属并集=原 jog 段减两缺口、竖直段/桥带不动；

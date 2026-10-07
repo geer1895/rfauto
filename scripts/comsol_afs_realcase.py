@@ -1,6 +1,6 @@
-"""AFS 自适应频扫真机验收 harness（冻结判据）。
+"""AFS 自适应频扫真机验收 harness（§10.20⑩ 冻结判据，队列 #26①）。
 
-判据（预声明原文："频点数减半且 vs 全扫 FSV >= VG"，
+判据（续跑计划 §10.20⑩ 原文："频点数减半且 vs 全扫 FSV >= VG"，
 core/afs.py:303 已按此预置 ``vs_full.fsv.at_least_vg``）：
     status == "converged" 且 summary["vs_full"]["fsv"]["at_least_vg"] 为真
     且 reduction_ratio >= 0.5（reduction_ratio = 1 - n_solves / n_full，

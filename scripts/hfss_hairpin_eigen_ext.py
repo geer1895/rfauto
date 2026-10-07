@@ -1,10 +1,10 @@
-"""hairpin_alt HFSS eigen 补锚中间两 gap 点。
+"""hairpin_alt HFSS eigen 补锚中间两 gap 点（wf:hfss-hairpin-eigen2）。
 
 任务：hairpin_alt 解锁补锚——HFSS eigen 再锚中间两个 gap 点（0.8 / 1.1328mm），
-把 alt 口径可判点从 2 提到 4 的最廉路径（复用先例 ~26s/点）。
+把 alt 口径可判点从 2 提到 4 的最廉路径（round3 后登记解锁路径，先例 ~26s/点）。
 复用先例 scripts/hfss_hairpin_anchor.py 全套几何/求解/提取函数（模块级导入，
 同 0.5/2.2 先例几何与配置，仅 gap 参数变）；旧档零改写（本脚本全部产物落
-runs/hairpin_hfss_anchor/eigen_ext/）。
+runs/hairpin_hfss_anchor/eigen_ext）。
 
 判别预声明（criteria.md，起跑前写死 #122）：
 - gap=0.8：openEMS alt 口径已双峰（k_split_alt=0.0348/pull 修正 0.0481），
@@ -12,10 +12,10 @@ runs/hairpin_hfss_anchor/eigen_ext/）。
 - gap=1.1328：openEMS 合并区间 [0.0330, 0.0466]，HFSS 分裂=合并是响应面
   分辨极限（k 真值=eigen 值）；HFSS 不分裂（Δf≤2MHz 地板）=合并是物理。
 
-运行（#157 分离+日志轮询；#243 绝对路径；示例以本仓 checkout 根为工作目录）：
-  powershell Start-Process <仓库根>\\.venv\\Scripts\\python.exe
+运行（#157 分离+日志轮询；#243 绝对路径）：
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_eigen_ext.py" -WorkingDirectory
-    <仓库根> -RedirectStandardOutput
+    D:/rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/eigen_ext/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/eigen_ext/run.err.log
 """
@@ -53,7 +53,7 @@ EIGEN_ANCHORED_PREV = {0.5: 0.07625418440361244, 2.2: 0.010559540842792706}
 
 SPLIT_FLOOR_MHZ = 2.0      # 分裂分辨率地板（criteria §3.2）
 INTERVAL_TOL = 0.15        # 合并区间判别容差（criteria §3.3）
-BUDGET_POINT_S = 600.0     # 单点 ≤10min（预声明）
+BUDGET_POINT_S = 600.0     # 单点 ≤10min（任务书）
 BUDGET_TOTAL_S = 1800.0    # 总 ≤30min（含建模与桌面启动）
 BUDGET_FACTOR = 1.5
 
@@ -237,7 +237,7 @@ def analyze_point(gap: float, modes_ghz: list[float], solve_s: float,
     if split_mhz <= SPLIT_FLOOR_MHZ:
         row["merged_verdict"] = "MERGED_PHYSICAL"
         row["verdict_note"] = ("本征分裂 ≤2MHz 地板：HFSS 侧也合并=合并是物理"
-                               "（预声明判别证据）")
+                               "（任务书预声明判别证据）")
     elif gap == 1.1328:
         lo = K_EM_ARCH[gap] * (1 - INTERVAL_TOL)
         hi = float(K_MERGE_SYMMODEL[gap]) * (1 + INTERVAL_TOL)
@@ -315,7 +315,7 @@ def analyze_all(raw: dict[float, dict | None], kj: dict,
     else:
         verdict.update({
             "verdict": "ANCHORED_4PTS_WITH_MERGED", "ok": True,
-            "note": f"判别结果 {mv}（含合并=物理分支，两分支均有效证据）"})
+            "note": f"判别结果 {mv}（含合并=物理分支，任务书两分支均有效证据）"})
     return verdict
 
 
@@ -324,7 +324,7 @@ def analyze_all(raw: dict[float, dict | None], kj: dict,
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     _write_result({
-        "stage": "start", "item": "hfss-hairpin-eigen2",
+        "stage": "start", "item": "wf:hfss-hairpin-eigen2",
         "gaps_mm": list(GAPS_MM),
         "criteria": str(OUT / "criteria.md"),
         "predeclared": {

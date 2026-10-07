@@ -1,4 +1,4 @@
-r"""WP3.9 MVP followUps 运行器（followUps①-⑤）。
+r"""WP3.9 MVP followUps 运行器（TODO 队列2 followUps①-⑤，2026-09-13）。
 
 基线轮（runs/wp39_mvp/，0/3 如实 FAIL）已证：同 HFSS 求解器口径下
 wall≤1/2 被算术锁死（#224）——本脚本补测 §10.0 两档基线与判据缺口：
@@ -7,8 +7,8 @@ wall≤1/2 被算术锁死（#224）——本脚本补测 §10.0 两档基线与
                 +线长不变性，①档前置，④"问题定义前先标定"纪律）；
 - factory       ①档 openEMS 数据工厂 sbo 环（run_surrogate_loop 同内核，
                 预算 25，smt_kriging，与 wp39 战役 sbo 臂同配置）；
-- replay        工厂最优参数回代 HFSS 评估器判 cost（"回代
-                同一评估器"口径）+ judge_problem_pair 对既有基线判定；
+- replay        工厂最优参数回代 HFSS 评估器判 cost（方案 §10.0"回代
+                同一评估器"）+ judge_problem_pair 对既有基线判定；
 - ratrace_null  ③ 深零点判据对照：归档 ratrace .s4p 上单频谷深 vs
                 深零点邻域/带宽积分指标的网格敏感性对照（零真机）；
 - native        ⑤ HFSS Optimetrics 原生 setup 补测（PyAEDT
@@ -16,11 +16,11 @@ wall≤1/2 被算术锁死（#224）——本脚本补测 §10.0 两档基线与
                 Search，MaxNumIteration=预算锚点，无法硬帽评估数——
                 实际评估数按提取梯次如实记录）；
 - patch_calib   ④ openEMS patch 单点扫频谷位标定（f_dip·L 常数，
-                对照归档 HFSS 99.8 与 openEMS 76.8，漂移比值定标）；
+                对照归档 HFSS 99.8 与 76.8，漂移比值定标）；
 - optislang_probe  ② optiSLang MOP 超额线可用性探测（license/链路）；
 - judge         汇总 outdir 全部 followup JSON → summary。
 
-换判据档（wp39-factory-verdict-next；一律 -outdir
+换判据档（wp39-factory-verdict-next，2026-09-16；一律 -outdir
 runs/wp39_factory_verdict_next，禁写既有归档 #122）：
 - probe_eps     网格 1.2/2.0/3.0 × w 三点 β→εeff 地貌 → service 健康门
                 （副锚 ≤3% ∧ 单调）取最快网格，名义点 εeff 即工厂 target（④）；
@@ -39,7 +39,7 @@ Start-Process 分离+日志轮询：
     -RedirectStandardError runs/wp39_mvp_followup/factory.err.log -Wait
 
 产出：runs/wp39_mvp_followup/{tier}.json（schema wp39_followup_*_v1）。
-数值纪律：只出确定性内核/真机求解器；观测性失败 best-effort 不阻塞
+铁律：数值只出确定性内核/真机求解器；观测性失败 best-effort 不阻塞
 主路径（#105）；任何"提取不到"的字段如实 null，绝不填猜测值。
 """
 from __future__ import annotations
@@ -92,7 +92,7 @@ PROBE_EPS_MESHES = [1.2, 2.0, 3.0]
 PROBE_W_LIST = [0.85, 1.113, 1.4]
 # ④ 标定参考常数（GHz·mm）：HFSS=归档 probe.s1p 离线复核值；
 # openEMS=#190 23 点战役定标值。
-# DP-3 第二批改道（锚消费接线）：单源=knowledge/anchors.yaml
+# DP-3 第二批改道（df7 锚消费接线）：单源=knowledge/anchors.yaml
 # （patch.f_dip_l.hfss-v1 / .openems-v1），消费点经 _resolve_patch_constant
 # 按引擎对选锚解析；下列字面值降级为解析失败时的回退值（锚值与字面值
 # 逐位相等——test_anchors_store_service a2 正则钉本字面行，零行为变化）。
@@ -354,8 +354,8 @@ def run_replay_tier(outdir: Path, factory_json: Path,
                     baseline_json: Path) -> Path:
     """工厂最优 w 回代 HFSS 评估器（同 wp39 HfssEvaluator 导出链）。
 
-    回代评估独立记账（仲裁步，不计入工厂预算——"回代同一
-    评估器"口径）；判定对既有 pattern_search 基线战役（wall≤1/2 且劣化
+    回代评估独立记账（仲裁步，不计入工厂预算——方案 §10.0"回代同一
+    评估器"）；判定对既有 pattern_search 基线战役（wall≤1/2 且劣化
     ≤5% 门，judge_problem_pair 唯一裁判）。
     """
     import wp39_benchmark_run as runner
@@ -641,7 +641,7 @@ def run_native_tier(outdir: Path, budget_anchor: int,
         "tier": "native", "problem": problem.name,
         "budget_anchor_iterations": budget_anchor,
         "goal_db": goal_db, "calculation": calc,
-        "note": "⑤ 口径：原生 Optimetrics 无法硬帽评估数（followUp⑤"
+        "note": "⑤ 口径：原生 Optimetrics 无法硬帽评估数（TODO followUp⑤"
                 "原话）——MaxNumIteration 为迭代锚点，实际评估数如实提取",
     }
     try:
@@ -670,7 +670,7 @@ def run_native_tier(outdir: Path, budget_anchor: int,
         opt.update()
         # 原生口径实证：从 design_properties 回读实际生效的优化器与停机项
         # （键匹配不可靠——PyAEDT 生成名与桌面内部名大小写/后缀可漂移，
-        # 按 SetupType=OptiOptimization 扫描；真机实证）
+        # 按 SetupType=OptiOptimization 扫描；真机实证 2026-09-13）
         rb: dict[str, Any] = {}
         try:
             setups = h.design_properties["Optimetrics"]["OptimetricsSetups"]
@@ -773,7 +773,7 @@ def run_patch_calib_tier(outdir: Path,
                          hfss_probe_path: Path) -> Path:
     """④ 标定：openEMS patch 名义尺寸单点扫频 → f_dip·L 常数。
 
-    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与 #190
+    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与
     23 点战役定标值（76.8）；漂移比值 = 常数(HFSS)/常数(openEMS)——
     问题定义（f0/尺寸）必须按本引擎常数定标，否则目标落空（wp39
     首轮 patch 2.0GHz 目标盒内无谷的根因）。
@@ -823,7 +823,7 @@ def run_patch_calib_tier(outdir: Path,
             "f_dip_ghz": round(hf_dip, 5),
             "constant": round(dip_constant(hf_dip, dim_mm), 2),
             "dip_db": round(hf_meta["dip_db"], 2),
-            "source": "归档真机数据离线复核"})
+            "source": "归档真机数据离线复核（2026-09-12 实测）"})
     hfss_const = hfss_entry.get("constant")
     # DP-3 第二批改道：参考常数改经锚注册表按引擎对解析（失败回退字面值，
     # 值逐位同——单源换锚后报告/漂移口径自动跟随注册表，无需改脚本）。
@@ -927,12 +927,12 @@ def probe_optislang(scan_roots: list[str] | None = None) -> dict[str, Any]:
         "conclusion": (
             "超额线可补测：需另立增量接 MOP study"
             if available else
-            "optiSLang 本机不可用（license/链路未接，与 followUp② "
+            "optiSLang 本机不可用（license/链路未接，与 TODO followUp② "
             "预判一致）——MOP 对照档如实 NOT_RUN，不占冒名数字"),
     }
 
 
-# ── 换判据档（wp39-factory-verdict-next）─────────────────────────
+# ── 换判据档（wp39-factory-verdict-next，2026-09-16）─────────────────────────
 #
 # 归因（子项 A，NEXT_OUTDIR/attribution_mline_s11_pseudofloor.md）：mline
 # |S11| 地貌被 MSLPort 端口级伪底主导（加密网格不消），β→εeff 地貌物理
@@ -1535,7 +1535,7 @@ def main() -> int:
     elif args.tier == "patch_calib":
         run_patch_calib_tier(
             outdir, (1.5, 2.5),
-            REPO / "runs" / "patch_hfss_probe" / "probe.s1p")
+            REPO / "runs" / "wp39_probe_patch" / "probe.s1p")
     elif args.tier == "optislang_probe":
         payload = probe_optislang()
         _write_json(outdir / "optislang_probe.json", payload)

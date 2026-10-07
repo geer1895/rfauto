@@ -1,4 +1,4 @@
-"""Feature Selective Validation (FSV) 确定性内核（IEEE 1597.1 口径）。
+"""D12 Feature Selective Validation (FSV) 确定性内核（IEEE 1597.1 口径）。
 
 FSV = Feature Selective Validation，计算电磁学验证国际标准 IEEE 1597.1
 （2008 首版 / 2022 修订）的核心曲线比较度量：把两条曲线之差按频谱分解为

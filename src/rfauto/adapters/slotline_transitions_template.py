@@ -1,7 +1,7 @@
-"""MSL↔slotline 过渡 + Marchand 双槽臂巴伦 openEMS 渲染器（附加模板口径）。
+"""MSL↔slotline 过渡 + Marchand 双槽臂巴伦 openEMS 渲染器（W4⑧c，附加模板口径）。
 
 **附加模板**（不进 openems_templates.py/TEMPLATE_META/EXPECTED_TEMPLATES，
-注册四件套另行登记）。理论口径与设计式见 `core/slotline_transitions.py`
+注册四件套列 followUps）。理论口径与设计式见 `core/slotline_transitions.py`
 docstring（Roberts 1957 / Knorr 1974 / Schuppert 1988 / Garg-Bahl-Bozzi 3rd ed /
 Marchand 1944）；复用路线 B 的双行波 β 拟合与抽头拓扑口径（只读 import
 `slotline_lumped_template.two_wave_beta_fit`，inspect 单源注入渲染脚本）。
@@ -45,9 +45,6 @@ render_marchand_balun（3 口，双槽臂最小 Marchand）：
 
 离线审计（#212）：exec 脚本头（RUN_MARKER 前）→ CSXCAD 实测金属连通分组
 （槽真断开/中条真隔离）、端口盒三向非零、探针与网格边。
-
-运行前置：openEMS Python 绑定（CSXCAD/openEMS）需已安装——在 PATH，
-或经 RFAUTO_OPENEMS_BIN 环境变量指定 bin 目录（渲染脚本不注入固定安装路径）。
 """
 
 from __future__ import annotations
@@ -285,22 +282,19 @@ def render_msl_slot_transition(params: dict[str, Any],
     probes = ", ".join(repr(float(x)) for x in lay.probe_x_m)
     port_len = abs(lay.y_p1_edge_m - lay.y_p1_inner_m)
     return f'''#!/usr/bin/env python3
-"""openEMS slotline transition script (rfauto, auto-generated).
+"""openEMS slotline transition script (rfauto W4⑧c, auto-generated).
 
 几何/端口/网格口径与理论出处见
 src/rfauto/adapters/slotline_transitions_template.py 与
 src/rfauto/core/slotline_transitions.py 模块 docstring。
-运行前置：openEMS Python 绑定需已安装——在 PATH，或经 RFAUTO_OPENEMS_BIN
-环境变量指定 bin 目录。
 """
 import csv
 import json
 import os
 
-# openEMS Python 绑定（CSXCAD/openEMS）需已安装并在 PATH；也可用
-# RFAUTO_OPENEMS_BIN 环境变量显式指定 bin 目录（未给出时不注入任何路径）。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
-if _OE_BIN and os.path.isdir(_OE_BIN):
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
+                         r"D:/rf_workspace\\vendor\\openEMS\\install\\bin")
+if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
 
@@ -506,22 +500,19 @@ def render_marchand_balun(params: dict[str, Any],
     probes_b = ", ".join(repr(float(x)) for x in lay.probe_b_x_m)
     port_len = abs(lay.y_p1_edge_m - lay.y_p1_inner_m)
     return f'''#!/usr/bin/env python3
-"""openEMS Marchand balun script (rfauto, auto-generated, excite={excite_port}).
+"""openEMS Marchand balun script (rfauto W4⑧c, auto-generated, excite={excite_port}).
 
 几何/端口/网格口径、极性约定与理论出处见
 src/rfauto/adapters/slotline_transitions_template.py 与
 src/rfauto/core/slotline_transitions.py 模块 docstring。
-运行前置：openEMS Python 绑定需已安装——在 PATH，或经 RFAUTO_OPENEMS_BIN
-环境变量指定 bin 目录。
 """
 import csv
 import json
 import os
 
-# openEMS Python 绑定（CSXCAD/openEMS）需已安装并在 PATH；也可用
-# RFAUTO_OPENEMS_BIN 环境变量显式指定 bin 目录（未给出时不注入任何路径）。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
-if _OE_BIN and os.path.isdir(_OE_BIN):
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
+                         r"D:/rf_workspace\\vendor\\openEMS\\install\\bin")
+if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
 

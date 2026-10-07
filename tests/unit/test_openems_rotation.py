@@ -1,4 +1,4 @@
-"""openems_rotation 逐轮断点缓存单测。
+"""openems_rotation 逐轮断点缓存单测（廿三）P2 残余收口）。
 
 口径：进程隔离激励轮转的每轮 sparams.csv 即断点——重入时「simulation.py
 与本次渲染逐字节一致 + 产物可解析」齐备才复用该轮，否则重跑。全部子进程

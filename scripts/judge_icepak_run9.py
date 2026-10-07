@@ -1,10 +1,10 @@
-"""Icepak e2e run9 收官轮判读（离线，不重跑 AEDT）。
+"""Icepak e2e run9 收官轮判读（W2⑥a-C，离线，不重跑 AEDT）。
 
-问题（三个待证假设）：① 守恒门（底面出热 vs P_diss，门 5%）
+问题（TODO 0cr 三个待证假设）：① 守恒门（底面出热 vs P_diss，门 5%）
 环带网格+全程细扫后是否改善；② HFSS@T1 f0 重解跳变是否复现、机制是什么；
 ③ 场级/集总温差（锚定斜率）能否把锚值回写 lumped 模型。
 
-判据全部从 runs/icepak_hfss_loss_e2e/e2e_run*.log 的门行确定性解析（数值纪律；
+判据全部从 runs/icepak_hfss_loss_e2e/e2e_run*.log 的门行确定性解析（铁律 7；
 e2e_case.json 只记录了最后一次 attempt 的失败信息，三门数字只在日志里）。
 
 用法：.venv\\Scripts\\python.exe scripts/judge_icepak_run9.py [--dir runs/icepak_hfss_loss_e2e]

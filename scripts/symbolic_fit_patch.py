@@ -6,7 +6,7 @@
 产物：runs/symbolic_fit/patch_f0.json（确定性、无时间戳；同输入重跑逐字节一致），
       stdout 打印复杂度-精度 Pareto 与裁判偏差。
 
-数据面（先确认真实路径存在，再归纳）：
+数据面（先确认真实路径存在，再归纳—— #222 规则）：
     遍历 runs/**/simulation.py，取带 AddMetal("patch") 且同目录有 sparams.csv
     的渲染点，从脚本常量块解析 ER / H_SUB / PL / PW（脚本即真值，不回读样本
     记录），再从 sparams.csv 的 |S11| 谱提取**最低频合格局部谷**（基模 TM10
@@ -45,7 +45,7 @@ from rfauto.core.symbolic_fit import (  # noqa: E402
 )
 
 OUT_PATH = REPO / "runs" / "symbolic_fit" / "patch_f0.json"
-HFSS_PROBE = REPO / "runs" / "patch_hfss_probe" / "probe.s1p"
+HFSS_PROBE = REPO / "runs" / "wp39_probe_patch" / "probe.s1p"
 
 DIP_WINDOW_GHZ = (1.3, 2.7)   # 基模频窗：L∈[35,45]mm 时 HJ 闭式落在 1.74-2.24GHz
 MIN_DEPTH_DB = 3.0            # 谷深门：浅于 3dB 的局部极小不算谐振

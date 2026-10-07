@@ -1,4 +1,4 @@
-"""MCP 工具描述一致性（只读 mcp_server.py，不强判语义）。
+"""§10.20 补强⑮：MCP 工具描述一致性（只读 mcp_server.py，不强判语义）。
 
 口径（全部确定性、无网络、无 LLM）：
 - 源码 @mcp.tool 装饰器数（实测）== 运行时注册工具数（fastmcp list_tools）；
@@ -9,9 +9,9 @@
 - 实现签名有、docstring 未记录的参数只列出（report-only），不臆断语义；
 - @mcp.resource 只读资源不被计入工具；
 - 逐工具可调用性烟测（静态）：函数体全局名引用与惰性 import 目标
-  必须可解析（diagnose 死壳实证的系统性盲区）。
+  必须可解析（diagnose 死壳实证的系统性盲区，confirm_2 第 1 条）。
 
-工具计数以源码/运行时实测为准。
+记 18 个工具，本文件以源码/运行时实测为准。
 """
 
 from __future__ import annotations
@@ -33,39 +33,93 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MCP_SERVER_PY = REPO_ROOT / "src" / "rfauto" / "mcp_server.py"
 
+
+def _mcp_source_files() -> list[Path]:
+    """AU-1 批3 拆分（2026-09-30）：mcp_server 为 facade + mcp_tools/ 工具组包
+    ——源码口径聚合 facade 与全部工具组模块（注册面正则/AST 双检不漏域）。"""
+    return [MCP_SERVER_PY, *sorted(MCP_SERVER_PY.parent.glob("mcp_tools/*.py"))]
+
 _TOOL_DECORATOR_RE = re.compile(r"^\s*@mcp\.tool\b", re.MULTILINE)
 _RESOURCE_DECORATOR_RE = re.compile(r"^\s*@mcp\.resource\(", re.MULTILINE)
 _DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(")
 _ARGS_ENTRY_RE = re.compile(r"^\s{4,}([A-Za-z_]\w*)\s*(?:\([^)]*\))?\s*:")
 _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes):\s*$")
 
-# 工具计数基线（仅作交叉核对；实测不符时断言会直接暴露）
-# （18→19：2026-09-13 export_report_pdf 工具入库）
-# （19→36：2026-09-13 MCP 工具面全量开放 +17——模板库 2/战役 3/
-#   数据集 2/bands 10（D9 归口））
-# （36→62：2026-09-15 shell 工具批量 +26——回归门 2（goldset/agentbench）
+# 记录值，仅作交叉核对；实测不符时断言会直接暴露
+# （18→19：2026-09-13 export_report_pdf 工具入库，/090e631）
+# （19→36：2026-09-13 WP3.3 MCP 工具面全量开放 +17——模板库 2/战役 3/
+#   数据集 2/bands 10（D9 归口）；数字待主控合流轮同步）
+# （36→62：2026-09-15 cli-mcp-api-shell-bundle +26——回归门 2（goldset/agentbench）
 #   /多 Agent 4 内核工具+multi_agent_run/autotune_self_verify/uq 3/farfield 2/
 #   kicad 2/electrothermal/parasitic/topology/dataset 4/vna_offline_replay/
-#   report_narrative/rationale 2）
-# （62→64：2026-09-15 RAG 只读检索薄壳 +2——rag_query/rag_explain，词法
+#   report_narrative/rationale 2；数字待主控合流轮同步）
+# （62→64：2026-09-15 F2⑥ RAG 只读检索薄壳 +2——rag_query/rag_explain，词法
 #   BM25、citation 可溯；零逻辑转发 rag_service 一步式包装）
-# （64→67：2026-09-15 接线层薄壳 +3——self_heal_run（只读自愈环）/
-#   log_digest（LogDistiller）/dispersion_report（D1 色散适应性）；
+# （64→67：2026-09-15 审查接线层装车 +3——self_heal_run（F5 只读自愈环）/
+#   log_digest（WP3.6 LogDistiller）/dispersion_report（D1 色散适应性）；
 #   零逻辑转发 self_heal_service / dispersion_service 信封）
-# （67→73：2026-09-18 注册表数据库薄壳 +6——db_init/
+# （67→73：2026-09-18 w1a-shell-front W1⑫ 注册表数据库薄壳 +6——db_init/
 #   db_migrate/db_status/db_reindex_runs/db_query/db_analytics_attach；
 #   零逻辑转发 db_service，query 走只读 SELECT 白名单信封）
-# （73→78：2026-09-18 槽线与过渡薄壳 +5——slotline_analysis/
+# （73→78：2026-09-18 w2i-shell-back W2⑨ 槽线与过渡薄壳 +5——slotline_analysis/
 #   slotline_synthesis/msl_slot_transition_design/marchand_balun_design/
 #   marchand_two_section_synthesis；零逻辑转发 slotline_service，越域拒绝进信封）
-# （78→80：2026-09-18 工作目录产物导入器 +2——discover_workdir_runs/
+# （78→80：2026-09-18 fix-importer 审查修复队列增量③ +2——discover_workdir_runs/
 #   import_workdir_runs；工作目录形态真机产物（无 meta.json）导入器薄壳，零逻辑
 #   转发 dataset_service.discover_workdir_candidates/import_workdir_runs）
-# 增量史（每键=零逻辑转发对应 service 薄壳）：cm 诊断三件套+3、
-# vna_en_report+1、mmt_solve+1、anchors 两键+2、si_channel_report+1、
-# lake 两键+2（index/verify/restore 属本地运维面不进 MCP 最小面）、
-# render_constraint_check+1
-_DECLARED_TOOL_COUNT = 106
+# （83→86：2026-09-24 df6_dp2diag DP-2 耦合矩阵诊断三件套薄壳 +3——
+#   cm_diagnose_q/cm_extract_refine/cm_cat_critique；零逻辑转发 diagnosis_service）
+# （87→88：2026-09-24 df6_dp11vna DP-11 En 相关性报告薄壳 +1——vna_en_report；
+#   零逻辑转发 vna_service.vna_en_report）
+# （88→89：2026-09-24 df6_dp1p2 DP-1 MMT 秒级段表求解薄壳 +1——mmt_solve；
+#   零逻辑转发 mmt_service.solve_mmt）
+# （100→102：2026-09-24 df6_dp3anchors DP-3 物理标定锚注册表薄壳 +2——
+#   anchors_list/anchors_inspect；零逻辑转发 anchors_service）
+# （102→103：2026-09-25 df7_t2 SI 通道报告薄壳 +1——si_channel_report；
+#   零逻辑转发 si_channel_service.si_channel_report）
+# （103→105：2026-09-25 df7_f3lake runs 湖薄壳 +2——lake_query_runs/
+#   lake_pack_campaign；零逻辑转发 lake_service，index/verify/restore 属
+#   本地运维面不进 MCP 最小面）
+# （105→106：2026-09-26 df7wire R4 渲染前声明式几何约束一次求解薄壳 +1——
+#   render_constraint_check；零逻辑转发 render_constraint_service）
+# （106→109：2026-09-26 me17a-shell1 ME-17a 接线批第一组三工具 +3——
+#   import_solid_payload/certify_design/port_gate；零逻辑转发
+#   solid_import_service/certify_design/port_gate_service）
+# （109→110：2026-09-26 qw123 QW-2 知识库统一检索 +1——search_knowledge；
+#   零逻辑转发 knowledge_service.search_knowledge）
+# （110→113：2026-09-26 ge-fbp2 F-B P2 PI/PDN 三工具 +3——pdn_analyze/
+#   pdn_select/pdn_gate；零逻辑转发 pdn_service 同名函数）
+# （113→116：2026-09-26 ge-fcp2 F-C P2 器件老化漂移三工具 +3——
+#   aging_simulate/aging_verdict/aging_report；零逻辑转发 aging_service
+#   同名函数）
+# （116→118：2026-09-26 ge-code3 +2——afs_plan（M-3 AFS 扫频计划纯计划面
+#   薄壳，零逻辑转发 afs_service.afs_sweep_plan）+ read_hfss_touchstone_comments
+#   （ME-10' HFSS 注释块直读薄壳，零逻辑转发 interop_service 同名函数）
+# （118→120：2026-09-28 remote-v0 +2——remote_probe_machine/remote_machine_status
+#   （多机协同只读探活/状态薄壳，零逻辑转发 remote_service 同名函数）
+# （120→123：2026-09-28 me17b-wire +3——even_odd_report/mcts_search/
+#   inverse_prefilter（ME-17b 接线批第二组，零逻辑转发 even_odd_service/
+#   mcts_search/inverse_prefilter 同名函数；agent 原语 typed tool call）
+# （123→132：2026-10-04 x3-wiring +9——W7 台账①态零消费内核接线批：
+#   adc_interleave_spurs/jitter_budget_snr（零逻辑转发 adc_budget_service
+#   新增函数）+ emc_cispr_band_params/emc_cispr_detect/
+#   emc_ground_spacing_check/emc_cm_radiated_budget（零逻辑转发新建
+#   emc_service）+ metasurface_coding_pattern/metasurface_quant_loss_db
+#   （零逻辑转发新建 metasurface_service）+ com_pam4_run（零逻辑转发
+#   si_channel_service 新增函数，挂 si_lake 工具组）
+# （132→134：2026-10-05 W1 孤儿接线批 +2——error_hints_lookup（零逻辑转发
+#   error_hints_service，挂 explain 工具组）+ run_monitor（零逻辑转发
+#   runtime_monitor_service，挂 runs 工具组）
+# （134→137：2026-10-05 W2 Phase 2 +3——run_campaign（VI-2 战役执行器，
+#   挂 specs_campaign 组）+ recommend_templates（VI-3 推荐器同组）+
+#   uq_rare_yield（XD-11 稀有失效 IS，挂 uq 组）
+# （137→145：2026-10-05 W3 Phase 3 +8——env_reliability 单文件八工具
+#   （F-10 六服务壳 MCP 面，W3-D）
+# （145→146：2026-10-05 W5 Phase 5 +1——get_guidelines_for（EC-6
+#   guidelines_service 三源检索薄壳，W5-D）
+# （146→149：2026-10-06 W6 +3——start_tune/run_sweep（SN-16，W6-A）+
+#   preflight_run（D-07，W6-E）
+_LEDGER_DECLARED_TOOL_COUNT = 149
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:
@@ -167,11 +221,15 @@ def _unresolved_load_globals(fn: Any) -> list[str]:
     return sorted(unresolved)
 
 
-def _module_level_function_node(tree: ast.Module, name: str) -> ast.AST | None:
-    """模块顶层同名函数节点（工具函数均为顶层 def，不下钻嵌套定义）。"""
-    for node in tree.body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
-            return node
+def _module_level_function_node(
+        trees: list[ast.Module], name: str) -> ast.AST | None:
+    """模块顶层同名函数节点（工具函数均为顶层 def，不下钻嵌套定义；
+    AU-1 拆分后在 facade+mcp_tools 全部源码树上查找）。"""
+    for tree in trees:
+        for node in tree.body:
+            if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and node.name == name):
+                return node
     return None
 
 
@@ -205,14 +263,14 @@ def _import_target_issue(module: str, name: str | None) -> str | None:
     return None
 
 
-def _callability_issues(tool: Any, tree: ast.Module) -> list[str]:
+def _callability_issues(tool: Any, trees: list[ast.Module]) -> list[str]:
     """单工具的全部死引用（全局名 + 惰性 import 目标），空列表=可调用。"""
     fn = tool.fn
     issues = [
         f"LOAD_GLOBAL 名字不可解析: {name}（NameError 隐患）"
         for name in _unresolved_load_globals(fn)
     ]
-    fn_node = _module_level_function_node(tree, fn.__name__)
+    fn_node = _module_level_function_node(trees, fn.__name__)
     if fn_node is None:
         return [*issues, f"源码顶层未找到工具函数 def: {fn.__name__}"]
     for module, name in _lazy_import_targets(fn_node):
@@ -224,7 +282,17 @@ def _callability_issues(tool: Any, tree: ast.Module) -> list[str]:
 
 @pytest.fixture(scope="module")
 def source_text() -> str:
-    return MCP_SERVER_PY.read_text(encoding="utf-8")
+    # AU-1 批3 拆分：facade + mcp_tools/ 工具组模块聚合（正则口径按行匹配，
+    # 拼接不破坏行首语义；断言本身零改动）。
+    return "\n".join(
+        p.read_text(encoding="utf-8") for p in _mcp_source_files())
+
+
+@pytest.fixture(scope="module")
+def source_trees() -> list[ast.Module]:
+    """按文件解析的源码树（`from __future__` 每文件必须居首，不可拼接解析）。"""
+    return [ast.parse(p.read_text(encoding="utf-8"))
+            for p in _mcp_source_files()]
 
 
 @pytest.fixture(scope="module")
@@ -234,13 +302,27 @@ def mcp_tools() -> list[Any]:
     return asyncio.run(mcp.list_tools())
 
 
+@pytest.fixture(scope="module")
+def mcp_function_resources() -> list[Any]:
+    """list_resources() 中函数背书的资源（D-02，2026-10-04）。
+
+    fastmcp 3.x list_resources 会附加合成 Prefab 渲染资源（无 .fn），
+    本守卫只覆盖 @mcp.resource 装饰的函数资源（死壳盲区与工具同源：
+    注册期不炸、调用期才 ImportError）。
+    """
+    from rfauto.mcp_server import mcp
+
+    resources = asyncio.run(mcp.list_resources())
+    return [r for r in resources if hasattr(r, "fn")]
+
+
 class TestMcpToolRegistryConsistency:
     """源码装饰器 vs 运行时注册：数量/名字/描述一致性。"""
 
     def test_source_decorator_count_matches_registered(self, source_text, mcp_tools):
         source_names = _decorated_function_names(source_text, _TOOL_DECORATOR_RE)
         assert len(source_names) == len(mcp_tools)
-        assert len(mcp_tools) == _DECLARED_TOOL_COUNT
+        assert len(mcp_tools) == _LEDGER_DECLARED_TOOL_COUNT
 
     def test_source_function_names_equal_registered_names(self, source_text, mcp_tools):
         source_names = set(_decorated_function_names(source_text, _TOOL_DECORATOR_RE))
@@ -298,7 +380,7 @@ class TestMcpResourcesNotCountedAsTools:
 class TestMcpToolBodyCallability:
     """逐工具可调用性烟测：62 个工具函数体的引用必须全部可解析。
 
-    背景（历史死壳缺陷）：diagnose 工具引用不存在的 run_diagnosis，
+    背景（confirm_2 第 1 条）：diagnose 工具引用不存在的 run_diagnosis，
     注册期不炸、描述/签名检查全过、调用即 ImportError——描述/签名类
     测试对此系统性盲。本组静态检查（不执行工具体，零副作用）堵两类
     死引用：
@@ -317,23 +399,22 @@ class TestMcpToolBodyCallability:
             f"{len(offenders)} 个工具存在 NameError 隐患（LOAD_GLOBAL 不可解析）: {offenders}"
         )
 
-    def test_lazy_import_targets_resolve_for_every_tool(self, source_text, mcp_tools):
-        tree = ast.parse(source_text)
+    def test_lazy_import_targets_resolve_for_every_tool(
+            self, source_trees, mcp_tools):
         offenders: dict[str, list[str]] = {}
         for tool in mcp_tools:
-            issues = _callability_issues(tool, tree)
+            issues = _callability_issues(tool, source_trees)
             if issues:
                 offenders[tool.name] = issues
         assert offenders == {}, (
             f"{len(offenders)} 个工具存在死引用（模块在、目标名无/模块坏）: {offenders}"
         )
 
-    def test_diagnose_tool_targets_existing_api(self, source_text, mcp_tools):
+    def test_diagnose_tool_targets_existing_api(self, source_trees, mcp_tools):
         """历史死壳回归钉：diagnose 的惰性 import 目标必须真实存在。"""
-        tree = ast.parse(source_text)
         by_name = {t.name: t for t in mcp_tools}
         assert "diagnose" in by_name
-        assert _callability_issues(by_name["diagnose"], tree) == []
+        assert _callability_issues(by_name["diagnose"], source_trees) == []
 
     def test_detector_flags_dead_import_target_negative_control(self):
         """探测器灵敏度：历史死壳 run_diagnosis 必须被判死，真实 API 必须放行。"""
@@ -353,10 +434,54 @@ class TestMcpToolBodyCallability:
         assert _unresolved_load_globals(_dead_shell) == ["_name_that_does_not_exist_anywhere"]
 
 
+class TestMcpResourceBodyCallability:
+    """D-02（2026-10-04）：@mcp.resource 资源函数体双检——与工具同一对探测器。
+
+    背景：resources.py（runs 索引/materials/compat/terminology 四件）的函数体
+    惰性 import 形态与工具同源（`from rfauto.infra.run_store import list_runs`），
+    describe/签名类检查同样对此盲——死壳资源在 read_resource 调用期才炸。
+    遍历 list_resources()（运行时注册面，新增资源天然纳入），只检函数资源
+    （合成 Prefab 资源无 fn，不在死壳盲区口径内）。
+    """
+
+    def test_function_resources_cover_current_registry(self, mcp_function_resources):
+        """守卫遍历面健全性：当前 5 个函数资源全部被 fixture 覆盖
+        （W5-D +rfauto://toolsets/definition，2026-10-05）。"""
+        uris = {str(r.uri) for r in mcp_function_resources}
+        assert uris == {
+            "rfauto://runs/index",
+            "rfauto://knowledge/materials",
+            "rfauto://knowledge/compat_matrix",
+            "rfauto://knowledge/terminology",
+            "rfauto://toolsets/definition",
+        }
+
+    def test_load_global_names_resolve_for_every_resource(self, mcp_function_resources):
+        offenders = {
+            str(r.uri): _unresolved_load_globals(r.fn)
+            for r in mcp_function_resources
+            if _unresolved_load_globals(r.fn)
+        }
+        assert offenders == {}, (
+            f"{len(offenders)} 个资源存在 NameError 隐患（LOAD_GLOBAL 不可解析）: {offenders}"
+        )
+
+    def test_lazy_import_targets_resolve_for_every_resource(
+            self, source_trees, mcp_function_resources):
+        offenders: dict[str, list[str]] = {}
+        for resource in mcp_function_resources:
+            issues = _callability_issues(resource, source_trees)
+            if issues:
+                offenders[str(resource.uri)] = issues
+        assert offenders == {}, (
+            f"{len(offenders)} 个资源存在死引用（模块在、目标名无/模块坏）: {offenders}"
+        )
+
+
 class TestDiagnoseToolEndToEnd:
     """diagnose 修复钉：经 fastmcp call_tool 真调用（原缺陷正是调用期才炸）。
 
-    chdir 隔离到 tmp_path（#144：不触真实 runs/）；run 目录手工落盘，不跑
+    chdir 隔离到 tmp_path（#144：不触真实 runs）；run 目录手工落盘，不跑
     求解。规则引擎读 knowledge/rules.yaml（按 __file__ 定位的绝对路径，
     不受 chdir 影响），R001-R004 判定全确定性。
     """

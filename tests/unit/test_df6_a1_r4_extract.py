@@ -2,7 +2,7 @@
 
 钉面（criteria.md §一，runs/df6_a1_r4/selftest_result.json 同源判定）：
 ① C 常数裁决：无耗单端口（J 倒置器耦合谐振臂）S11 群时延 Lorentzian 拟合
-   A=4Qe/ω0 ⇒ **C=4**（/2 口径被合成回收否决）；对称双馈 S21 口径 C=1（记
+   A=4Qe/ω0 ⇒ **C=4**（2 口径被合成回收否决）；对称双馈 S21 口径 C=1（记
    录量）；tap2 弱加载的系统性偏移由点位配置钉 C_cfg 吸收（回收逐位）。
 ② k 主判精确式 (f2²−f1²)/(f2²+f1²)：合成 order=2 链已知 J12=k·b → 峰检
    → 偏置曲线（馈 tap 加载拉动，节点处负偏 ≤8%）log-log 逆映射回收逐位。
@@ -52,7 +52,7 @@ def st():
 
 
 def test_c_s11_reflection_caliber_is_four(runner, st):
-    """C=4 裁决：纯单端口钉电路（tap2 Qe=1e5）回收 C 落 4±0.2（/2 否决）。"""
+    """C=4 裁决：纯单端口钉电路（tap2 Qe=1e5）回收 C 落 4±0.2（2 否决）。"""
     assert abs(st["c_s11_pure"] - 4.0) < 0.2
     # 配置钉（tap2 弱加载）贴近 4：qe_g02263 偏移 <0.1%、qe_g0800 <1%
     assert abs(st["c_by_pt"]["qe_g02263"]["c_cfg"] - 4.0) < 0.05

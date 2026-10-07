@@ -1,6 +1,6 @@
 """DP-8 组合引擎离线审计（P1+P2；#212 制度化升级）。
 
-权威口径：docs/plan_deepdive_specs_20260924.md §DP-8 +
+权威口径：规格深案 §DP-8 +
 runs/df6_dp8compose/criteria.md（C1-C3 判据预声明；C4/C5 留 P3）。
 
 覆盖：
@@ -56,9 +56,13 @@ H = 0.508e-3
 SUB = {"h_mm": 0.508, "er": 3.66, "tan_d": 0.0037}
 
 # 缺省渲染字节钉（§3 判据；taper/v2 二值=DP-8 改动前实测基线冻结）
-_V1_RENDER_SHA256 = "80d24e932c826b61906964aa0e5bad084a721ec905cbf656bc598adea030e2af"
-_TAPER_RENDER_SHA256 = "c5aeb12cf6edda74eb527523f449fe967daf24ed8be036e956cedc9113c07a48"
-_SIW_V2_RENDER_SHA256 = "f9524bf1fe128626e6a672a18f02d0331857c80f401e935c4e206ab96bf73d1f"
+# wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案 render_script 尾段追加
+# sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
+# runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
+# 随尾段追加必移，port_pins 契约断言（本文件其余）保留不变。
+_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
+_TAPER_RENDER_SHA256 = "0dfef4dddcf82de7b700fb3090733975382e42d6ad5379a38151a2e974130c83"
+_SIW_V2_RENDER_SHA256 = "3a45ca9a50e5474fa38b74c9190284b66326ad28f51060ae995a908deeda7796"
 
 _GOLDEN = REPO / "tests" / "golden" / "compose_siw_chain_simulation.py"
 
@@ -525,9 +529,12 @@ def test_default_render_byte_pins_unchanged():
 # ─── 五消费者同步核对（TEMPLATE_META 增 port_pins 键不改模板数）────────────
 
 def test_consumers_template_count_and_params_unchanged():
-    """45 不变；port_pins 只增值不改 params/nominal 键集（五消费者口径）。"""
+    """计数只与审计单源比对（AU-1B4/#247 禁轨内自钉；M-5 varactor_bpf 57、
+    J2FB ms_ring_patch 58 均由单源承载）；port_pins 只增值不改 params/nominal
+    键集（五消费者口径）。"""
     from rfauto.adapters.openems_templates import TEMPLATE_META, TEMPLATE_NOMINAL
-    assert len(TEMPLATE_META) == 53 and len(TEMPLATE_NOMINAL) == 53
+    from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
+    assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == len(EXPECTED_TEMPLATES)
     assert TEMPLATE_META["siw"]["params"] == ["w_mm", "d_mm", "s_mm",
                                               "line_len_mm"]
     assert TEMPLATE_META["msl_siw_taper"]["params"] == [
@@ -537,8 +544,6 @@ def test_consumers_template_count_and_params_unchanged():
         "port_type", "n_modes", "cross_section"}
     schema = _schema_map()
     assert set(schema) == {"siw", "msl_siw_taper"}
-    from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
-    assert len(EXPECTED_TEMPLATES) == 53
     assert {"siw", "msl_siw_taper"} <= set(EXPECTED_TEMPLATES)
 
 

@@ -3,7 +3,7 @@
 - dag_schema（DP-9）：配方 DAG 化确定性 schema 内核。
 - layout_netlist（DP-8）：模板 pin 契约+几何组合引擎（布局合并路线）。
 
-分层约束（分层铁律）：本包只做纯函数（schema/排序/映射/文本发射），
+分层约束：本包只做纯函数（schema/排序/映射/文本发射），
 零 I/O、零网络、零 adapters 依赖；组合实例契约由调用方注入
 （COMPOSE_CONTRACTS 经 service/compose_service 组装）。
 """

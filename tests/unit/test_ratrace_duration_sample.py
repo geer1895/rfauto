@@ -1,6 +1,6 @@
 """C14a ratrace 干净补样采样驱动单测（零真机、零网络、零引擎）。
 
-覆盖（登记判据面）：
+覆盖（任务书面）：
 ① schema 行构造与 loader 兼容：build_sample_row/write_duration_sample 产出
    v1 同构档 -> pipeline.duration_calibration.load_duration_sample_json 消费，
    DurationSample 字段映射（wall_s/base_mm/nr_ts_cap_declared/stop_reason/

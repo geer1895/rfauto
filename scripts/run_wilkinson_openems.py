@@ -2,12 +2,14 @@
 import os
 import sys
 
-from rfauto.adapters.em_solver_base import EMSolverConfig, resolve_openems_exe
+os.environ["PATH"] = r"E:\openEMS\install\bin;" + os.environ["PATH"]
+
+from rfauto.adapters.em_solver_base import EMSolverConfig
 from rfauto.adapters.openems_solver import OpenEMSSolver
 
 cfg = EMSolverConfig(
     solver_type="openems",
-    exe_path=resolve_openems_exe(),
+    exe_path=r"E:\openEMS\install\bin\openEMS.exe",
     working_dir=sys.argv[1] if len(sys.argv) > 1 else "runs/openems_wilk_smoke",
     freq_range_ghz=(2.0, 3.0),
     mesh_resolution_mm=1.0,

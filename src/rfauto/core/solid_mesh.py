@@ -1,7 +1,7 @@
-"""实体网格内核：纯 numpy STL 解析与闭合网格度量（零新依赖）。
+"""B3 实体网格内核：纯 numpy STL 解析与闭合网格度量（零新依赖）。
 
-STEP/STL 导入能力的内核层。
-依赖对账（实测）：venv 里的 trimesh 5.1.0 仅是 fdtdx 的传递依赖
+方案行 B3（docs/续跑计划.md:396「STEP/STL 导入」）的内核层。
+依赖对账（2026-09-15 实测）：venv 里的 trimesh 5.1.0 仅是 fdtdx 的传递依赖
 （pyproject/uv.lock 均未声明），本内核**禁止消费它**——STL 解析用纯 numpy
 自写（binary + ASCII 两种格式），零新依赖、零网络。
 
@@ -13,7 +13,7 @@ STEP/STL 导入能力的内核层。
   endfacet / endsolid`` 行结构，逐 vertex 行取三个浮点。
 
 单位口径（显式，#218）：STL 数字按 **mm** 读入（CAD 惯例），SolidMesh 全部
-度量以 mm 计；转 m 由 adapters/solid_import.py 负责（/1000）。STEP/.stp 不被
+度量以 mm 计；转 m 由 adapters/solid_import.py 负责（1000）。STEP/.stp 不被
 CSXCAD 支持（venv 绑定 docstring 实测：CSPrimPolyhedronReader 只读 STL/PLY；
 OCP/steputils 均未安装），在 service 层显式拒绝并登记 followUp。
 
@@ -172,7 +172,7 @@ class SolidMesh:
     # ── 变换 ─────────────────────────────────────────────────────────────
 
     def scaled(self, factor: float) -> SolidMesh:
-        """均匀缩放（与 core/thermo_mech.scale_dimension 同语义）。"""
+        """均匀缩放（D14 互操作：与 core/thermo_mech.scale_dimension 同语义）。"""
         return SolidMesh(np.asarray(self.triangles_mm, dtype=float) * float(factor))
 
 

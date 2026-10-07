@@ -169,7 +169,7 @@ def test_cps_ideal_line_ladder(cps_anchor):
 
 
 def test_cps_line_len_source_port_beta_csv(cps_anchor):
-    """判读器用模板落盘的实测差分线长替代标称 L
+    """w2f 定标批 ②：判读器用模板落盘的实测差分线长替代标称 L
     （line_len_source=port_beta_csv → numbers 记录来源；端口元落格 +1 格时
     实测线长吸收该偏移，不再落 PARTIAL 档——标称口径下同数据 = PARTIAL）。"""
     eps = cps_anchor["eps_eff"]

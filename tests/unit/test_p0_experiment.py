@@ -58,7 +58,7 @@ class TestP0Experiment:
         )
         assert result["ok"]
         # fake vs fake 自比较：gate 关闭，verdict 必须是 INCONCLUSIVE
-        # （曾对自比较输出 PASS，硬门槛被架空）
+        # （审查缺口 #4：曾对自比较输出 PASS，硬门槛被架空）
         assert result["verdict"] == "INCONCLUSIVE"
         assert result["gate"] == "self_comparison_disabled"
         assert "correlation" in result
@@ -99,7 +99,7 @@ class TestP0CLI:
 
 
 class TestStudyInject:
-    """study_inject 服务函数测试（enqueue_trial 语义）。"""
+    """study_inject 服务函数测试（审查缺口 #5：enqueue_trial 语义）。"""
 
     def _make_study(self, study_name: str):
         import optuna

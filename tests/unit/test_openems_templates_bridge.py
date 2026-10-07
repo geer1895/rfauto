@@ -1,10 +1,10 @@
 """lange 去桥对照旋钮（_bridge=0）单测：缺省逐字节不变 + 去桥恰桥相关行。
 
-c4-去桥单变量对照（判据预声明）：
+c4-去桥单变量对照（wf:c4-debridge，runs/c4_debridge/criteria.md 预声明）：
 params["_bridge"]=0 → 桥金属 4 盒+立柱 8 盒不渲染、桥面 z 网格线不再入网
 （哨兵 np.array([H_SUB])——CSRectGrid.AddLine 拒绝空数组）、_near_y 恰去 8 个
 桥 y 缘值；缺省（无键或 =1）渲染与旋钮落位前快照逐字节不变（离线自证
-IDENTITY_OK 归档：基线渲染脚本 + 渲染差异清单）。
+IDENTITY_OK 归档 runs/c4_debridge/render_base_lange.py + render_diff_*.txt）。
 本文件钉行为契约：旋钮缺省不动分毫、=0 单变量干净、几何仍合法（去桥后
 无端口悬空，指2/指3 悬浮 PEC 为预声明语义）。
 """

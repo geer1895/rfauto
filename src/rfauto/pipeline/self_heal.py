@@ -1,12 +1,12 @@
-"""自愈编排——掉线重连 + 几何失败重建。
+"""自愈编排（计划内缺口 4）—— R5 掉线重连 + R1 几何失败重建。
 
 此前 reconnect_with_backoff（hfss_session）已实现但零调用方；
 几何建模失败也没有编排层重试。本模块提供两个编排原语，供
 service/api.run_once 与 optimization/optimizer 接线：
 
-- solve_with_self_heal：solve 抛异常或健康检查失败时，
+- R5 solve_with_self_heal：solve 抛异常或健康检查失败时，
   ensure_connected()（带退避重连）后重试一次
-- build_with_self_heal：插件几何构建失败时重建重试一次
+- R1 build_with_self_heal：插件几何构建失败时重建重试一次
   （HFSS 建模常见瞬态失败：上一次会话残留、对象名冲突等）
 """
 
@@ -27,7 +27,7 @@ def solve_with_self_heal(
     *,
     retries: int = 1,
 ) -> Any:
-    """带掉线自愈的求解。返回 SolveReport；重试耗尽后异常/失败报告透传。"""
+    """R5：带掉线自愈的求解。返回 SolveReport；重试耗尽后异常/失败报告透传。"""
     last_exc: Exception | None = None
     for attempt in range(retries + 1):
         try:
@@ -52,7 +52,7 @@ def build_with_self_heal(
     *,
     retries: int = 1,
 ) -> None:
-    """带几何失败自愈的构建。首次失败后重试（重建）一次，仍失败则抛出。"""
+    """R1：带几何失败自愈的构建。首次失败后重试（重建）一次，仍失败则抛出。"""
     for attempt in range(retries + 1):
         try:
             build_fn()
@@ -64,11 +64,11 @@ def build_with_self_heal(
 
 
 # ---------------------------------------------------------------------------
-# 最小自愈环
+# F5 最小自愈环（续跑计划 §10.6 F5 / §10.22 #21）
 # ---------------------------------------------------------------------------
-# LogDistiller digest → 确定性 critique（失败签名 → 根因/建议动作）→
+# WP3.6 LogDistiller digest → 确定性 critique（失败签名 → 根因/建议动作）→
 # 可选重试。**本环不调用任何 LLM**：llm_explainer 只作预留接口接受，绝不在
-# 环内触发（判定与建议只在确定性内核，LLM 只编排与解释）。
+# 环内触发（铁律 7：判定与建议只在确定性内核，LLM 只编排与解释）。
 
 _ROOT_CAUSE_CATALOG: dict[str, dict[str, Any]] = {
     log_distiller.SIG_CALCPORT_INDEX_ERROR: {
@@ -123,7 +123,7 @@ _ROOT_CAUSE_CATALOG: dict[str, dict[str, Any]] = {
     },
     log_distiller.SIG_LICENSE_UNAVAILABLE: {
         "root_cause": "license 席位不可用（HFSS/COMSOL 许可被占或未授权）",
-        "lesson_ref": "稀缺资源调度",
+        "lesson_ref": "G13 稀缺资源调度",
         "severity": "warning",
         "priority": 70,
         "actions": [
@@ -148,12 +148,12 @@ _ROOT_CAUSE_CATALOG: dict[str, dict[str, Any]] = {
         "priority": 60,
         "actions": [
             "核对网格收敛档与 timestep 量级；补网格收敛研究后再采信结果",
-            "检查端口激励与边界是否自洽（先验模型）",
+            "检查端口激励与边界是否自洽（先验模型，铁律 1b）",
         ],
     },
     log_distiller.SIG_GEOMETRY_BUILD: {
         "root_cause": "几何构建瞬态失败（对象名冲突/残留会话）",
-        "lesson_ref": "几何重建自愈",
+        "lesson_ref": "R1",
         "severity": "warning",
         "priority": 55,
         "actions": [
@@ -182,7 +182,7 @@ _ROOT_CAUSE_CATALOG: dict[str, dict[str, Any]] = {
 
 _GENERIC_UNKNOWN_ACTIONS = [
     "保留完整日志原文并人工判读（未命中已知失败签名）",
-    "先审计建模与官方例口径，再考虑调参",
+    "按铁律 1b/1c 先审计建模与官方例口径，再考虑调参",
 ]
 
 
@@ -195,7 +195,7 @@ def _has_failure_evidence(digest: dict[str, Any]) -> bool:
 
 
 def critique_failure(raw: Any, *, source: str = "auto") -> dict[str, Any]:
-    """确定性 critique：日志/digest → 有序根因清单 + 建议动作。
+    """F5 确定性 critique：日志/digest → 有序根因清单 + 建议动作。
 
     输入可为 LogDistiller digest（dict）或原始日志/审计 JSON（自动蒸馏）。
     返回 JSON 友好结构（根因按 priority 排序，root_cause_id 为 top-1）。
@@ -261,7 +261,7 @@ def self_heal_loop(
     source: str = "auto",
     llm_explainer: Callable[[dict[str, Any]], str] | None = None,
 ) -> dict[str, Any]:
-    """最小自愈环：attempt → digest → 确定性 critique → apply_fix → 重试。
+    """F5 最小自愈环：attempt → digest → 确定性 critique → apply_fix → 重试。
 
     参数：
         attempt: 被测动作（返回结果对象/日志/字符串；抛异常也算失败）。

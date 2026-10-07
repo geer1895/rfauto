@@ -1,4 +1,4 @@
-"""数据工厂 MFK：OE 低保真面 KOH 离散差异修正 + MFK 融合复判（纯离线）。
+"""数据工厂 df5-MFK 拍板②：OE 低保真面 KOH 离散差异修正 + MFK 融合复判（纯离线）。
 
 判据（预声明，零改动）：runs/df5_mfk_lowfi_fix/criteria.md。
 背景（B2 终态 runs/factory_mf_anchors/mfk_verdict_full8.json）：held-out
@@ -366,7 +366,7 @@ def run_fix(low_rows: list[Row], high_rows: list[Row], freqs: np.ndarray,
             *, prefix_verdict_path: Path | None = None,
             out_dir: Path | None = None,
             log: Callable[[str], None] = print) -> dict[str, Any]:
-    """复判主链：合成钉→δGP 修正→四臂判读→双对照→确定性→verdict。"""
+    """df5 复判主链：合成钉→δGP 修正→四臂判读→双对照→确定性→verdict。"""
     m2, rj = load_scripts()
     out_dir = out_dir or OUT_DIR_DEFAULT
     out_dir = Path(out_dir)
@@ -567,7 +567,7 @@ def _plot(verdict: dict[str, Any], held_rows: list[Row],
     ax.set_title("eps_eff gate per held anchor")
     ax.legend(fontsize=8)
     fig.suptitle(
-        f"low-fi fix re-judge: overall={verdict['overall']} "
+        f"df5 low-fi fix re-judge: overall={verdict['overall']} "
         f"(gates {verdict['judgment']['gates_pass']}, "
         f"vsOE {verdict['judgment']['value_add_pass_vs_oe']}, "
         f"vsPrefix {verdict['judgment']['second_control_vs_prefix']})")
@@ -578,7 +578,7 @@ def _plot(verdict: dict[str, Any], held_rows: list[Row],
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="MFK 低保真面 KOH 修正 + MFK 复判（--judge）",
+        description="df5-MFK 拍板②：OE 低保真面 KOH 修正 + MFK 复判（--judge）",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("--judge", action="store_true", help="执行复判")
     ap.add_argument("--dataset", type=str, default=str(DATASET_DEFAULT))
@@ -606,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
     verdict = run_fix(low_rows, high_rows, freqs,
                       prefix_verdict_path=Path(args.prefix_verdict),
                       out_dir=Path(args.out_dir), log=log)
-    print(f"\n===== 低保真修正复判摘要（overall={verdict['overall']}） =====")
+    print(f"\n===== df5 低保真修正复判摘要（overall={verdict['overall']}） =====")
     if "judgment" in verdict:
         for name, arm in verdict["judgment"]["arms"].items():
             print(f"{name:>20}: |ΔΓ|max={arm['gamma_lin']['max']:.5f} "

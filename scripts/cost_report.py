@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-"""成本报告示例：per-batch 成本表 + openEMS 历史求解时长预测误差。
+"""G14 成本报告：per-batch 编排成本表 + openEMS 历史求解时长预测误差。
 
 只读工作区真实数据：
 
+* .md（三十一）五轨批次记录（run dwfrun-40bb6d54：5h46m / ~6240 万
+  token / 62 节点 / 8 子代理）——LLM token 记账来源；
 * runs/benchmark/mline_mesh_convergence.json、runs/ratrace_arbitration/
   openems_convergence.json 及 runs/**/simulation.py——openEMS 求解机时
   （solve_s）与网格/域特征来源；
@@ -36,10 +38,11 @@ from rfauto.pipeline.quota_guard import (  # noqa: E402
     OffsetPowerDurationPredictor,
 )
 
+_PATH = _ROOT / ".md"
 RUNS_DIR = _ROOT / "runs"
 OUT_PATH = RUNS_DIR / "cost" / "cost_report.json"
 
-#: 验收口径：留出 openEMS 历史 run 误差 <= 30%
+#: 验收口径（方案 §10.7 G14）：留出 openEMS 历史 run 误差 <= 30%
 LOO_TARGET = 0.30
 
 _MLINE_CONVERGENCE = "benchmark/mline_mesh_convergence.json"
@@ -49,6 +52,44 @@ _RATRACE_CONVERGENCE = "ratrace_arbitration/openems_convergence.json"
 # ---------------------------------------------------------------------------
 # 数据读取
 # ---------------------------------------------------------------------------
+def parse_devlog_batch(devlog_path: Path) -> dict[str, Any]:
+    """从 小节提取五轨批次规模记录（真实文本，缺一即报错）。"""
+    text = devlog_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    start = None
+    for index, line in enumerate(lines):
+        if line.startswith("## ") and "（三十一）" in line:
+            start = index
+            break
+    if start is None:
+        raise SystemExit(f"未找到（三十一）小节: {devlog_path}")
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if lines[index].startswith("## "):
+            end = index
+            break
+    section = "\n".join(lines[start:end])
+
+    run_match = re.search(r"run\s+(dwfrun-[0-9a-f]+)", section)
+    wall_match = re.search(r"(\d+)h(\d+)m", section)
+    token_match = re.search(r"~?\s*([0-9]+)\s*万\s*token", section)
+    node_match = re.search(r"([0-9]+)\s*节点", section)
+    agent_match = re.search(r"([0-9]+)\s*子代理", section)
+    if not (run_match and wall_match and token_match):
+        raise SystemExit("小节缺少 run id / 墙钟 / token 记录")
+
+    wall_hours = int(wall_match.group(1)) + int(wall_match.group(2)) / 60.0
+    return {
+        "source": str(devlog_path.relative_to(_ROOT)),
+        "section": lines[start].strip(),
+        "run_id": run_match.group(1),
+        "wall_hours": round(wall_hours, 4),
+        "tokens": int(token_match.group(1)) * 10_000,
+        "nodes": int(node_match.group(1)) if node_match else None,
+        "subagents": int(agent_match.group(1)) if agent_match else None,
+    }
+
+
 def read_json(path: Path) -> dict[str, Any]:
     if not path.is_file():
         raise SystemExit(f"缺少真实数据文件: {path}")
@@ -220,11 +261,17 @@ def evaluate_offset_power(samples: list[DurationSample], mesh_power: float) -> d
 
 
 def main() -> int:
+    if not _PATH.is_file():
+        raise SystemExit(f"缺少 : {_PATH}")
+    batch = parse_devlog_batch
     controlled, provenance = load_controlled_samples()
     smoke = load_smoke_samples(controlled)
 
     ledger = CostLedger()
-    # openEMS 受控收敛求解机时（真实 run 产物）
+    # 批次 1：五轨动态工作流——LLM token 实耗
+    ledger.add(batch["run_id"], "workflow_orchestration", tokens=batch["tokens"])
+
+    # 批次 2/3：openEMS 受控收敛求解机时（真实 run 产物）
     for sample in controlled:
         if "benchmark" in sample.source:
             name = Path(sample.source).parent.name
@@ -295,7 +342,8 @@ def main() -> int:
                 ),
             },
         },
-        "provenance": [*provenance],
+        "provenance": [*provenance, batch["source"]],
+        "devlog_batch": batch,
     }
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

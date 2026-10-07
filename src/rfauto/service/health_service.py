@@ -1,6 +1,6 @@
 """run 健康度体检服务层（G11）——runs/<run_id>/ 产物读取 + core 内核组装。
 
-职责切分（服务层薄壳约定）：run 产物发现/解析/JSON 编排在 service，确定性
+职责切分：run 产物发现/解析/JSON 编排在 service，确定性
 判据全部在 core/solve_health.py。本模块 best-effort（#105）：run 目录不
 存在/全空 → ok=False + errors 说明，不抛异常；单类产物解析失败记入
 errors 后继续，缺失因子由内核标 UNKNOWN。
@@ -48,6 +48,7 @@ from rfauto.core.solve_health import (
     WARN,
     solve_health_check,
 )
+from rfauto.service.envelope import ok_envelope
 
 _C0 = 299792458.0
 _TIMESTEP_RE = re.compile(r"FDTD timestep is:\s*([0-9.eE+\-]+)\s*s")
@@ -163,6 +164,44 @@ class _SparamsCsvCorrupt(Exception):
     """
 
 
+#: H-01 掩码自描述 sidecar（W6-E，ra_criteria SPECS §六 B 案）：写出端
+#: （oe_templates/render_core 四分支）在 sparams.csv 旁并排落
+#: sparams.mask.json（schema_version/n_ports/excite_port/measured_mask/
+#: filler_columns/reciprocity_filled/symmetry_filled，#314 全语义）；
+#: 读入端 sidecar 在档 → 掩码权威，缺档 → 回退列数启发式（旧 runs/ 归档
+#: 永续可读，契约 §2 向后兼容同款）。
+_SIDECAR_NAME = "sparams.mask.json"
+
+
+def _read_mask_sidecar(
+    csv_path: Path, errors: list[str],
+) -> tuple[list | None, bool]:
+    """读 csv 同目录的 sparams.mask.json sidecar → (measured_mask 行表, 在档)。
+
+    缺档 → (None, False)（回退启发式，零破坏）；在档但 JSON 截断/非法/
+    缺 measured_mask 键 → errors 留痕 + 抛 _SparamsCsvCorrupt（#316 多报
+    方向：掩码载体不可信=S 参数证据不可信，不回退 Touchstone 全矩阵假
+    阳性，S 参数因子走 UNKNOWN）。
+    """
+    sc_path = csv_path.parent / _SIDECAR_NAME
+    if not sc_path.is_file():
+        return None, False
+    doc: Any = None
+    try:
+        doc = json.loads(sc_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        errors.append(f"sparams.mask.json sidecar 损坏（截断/非法 JSON）"
+                      f"{sc_path}: {exc}")
+    if not isinstance(doc, dict) or not isinstance(doc.get("measured_mask"), list):
+        if doc is not None:
+            errors.append(f"sparams.mask.json sidecar 形状非法"
+                          f"（缺 measured_mask 列表）{sc_path}")
+        raise _SparamsCsvCorrupt(
+            f"sparams.mask.json sidecar 损坏（{sc_path}）——掩码载体不可信，"
+            "不回退 Touchstone（#316 多报方向：S 参数因子走 UNKNOWN）")
+    return doc["measured_mask"], True
+
+
 def _load_sparams_csv(
     run_dir: Path, errors: list[str],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
@@ -173,6 +212,13 @@ def _load_sparams_csv(
     csv 存在但**全部**解析失败（异常 / shape-reject）→ 抛
     _SparamsCsvCorrupt（调用方**不回退** Touchstone）；csv 不存在 → 返回
     None（调用方回退 Touchstone，现行为不变）。
+
+    掩码权威链（H-01，W6-E）：csv 旁 sparams.mask.json sidecar 在档且形状
+    与 csv 矩阵一致 → sidecar measured_mask 权威（写出端自描述，含
+    filler 列如实标未测）；缺档 → 列数启发式（旧归档行为逐位不变）；
+    sidecar 在档但损坏 → _SparamsCsvCorrupt（见 _read_mask_sidecar）；
+    sidecar 形状与 csv 矩阵不符（如轮转 N 口 csv 被启发式按 3 口解析）→
+    errors 留痕 + 掩码回 None=全矩阵已测（#316 形状不符多报方向先例）。
     """
     n_found = 0
     for path in sorted(run_dir.rglob("sparams.csv")):
@@ -183,7 +229,25 @@ def _load_sparams_csv(
             errors.append(f"sparams.csv 解析失败 {path}: {exc}")
             continue
         if parsed is not None:
-            return parsed
+            freq_hz, s_matrix, mask = parsed
+            sidecar_rows, present = _read_mask_sidecar(path, errors)
+            if present:
+                n = int(s_matrix.shape[1])
+                rows = sidecar_rows if isinstance(sidecar_rows, list) else []
+                if (len(rows) == n
+                        and all(isinstance(r, list) and len(r) == n
+                                for r in rows)):
+                    mask = np.zeros((n, n), dtype=bool)
+                    for _i, row in enumerate(rows):
+                        for _j, flag in enumerate(row):
+                            if flag:
+                                mask[_i, _j] = True
+                else:
+                    errors.append(
+                        f"sparams.mask.json 形状与 csv 矩阵不符（{path}）"
+                        "——掩码回退全矩阵已测（#316 多报方向）")
+                    mask = None
+            return freq_hz, s_matrix, mask
         errors.append(f"sparams.csv 存在但解析失败（shape-reject：0 行或 "
                       f"<5 列）{path}")
     if n_found:
@@ -771,7 +835,7 @@ def fake_cost_degeneracy_probe(
     单点求解失败记 errors、不炸探针；有效点不足则 ok=False。
 
     注意：本探针只消费 FakeAdapter，不接线任何参数（gap→k / tap_frac→Q_e
-    电气反演独占项）；接线后 hairpin {gap_mm, tap_frac} 探针
+    电气反演属队列 #3 独占）；#3 接线后 hairpin {gap_mm, tap_frac} 探针
     预期由 FAIL 翻 PASS，对应测试期望须同步改。
     """
     from rfauto.adapters.openems_templates import TEMPLATE_META
@@ -866,19 +930,18 @@ def fake_cost_degeneracy_probe(
         if flag:
             insensitive.append(name)
 
-    result: dict[str, Any] = {
-        "ok": True,
-        "model_type": model_type,
-        "verdict": report["verdict"],
-        "degenerate": cost_factor.get("status") == FAIL,
-        "cost_factor": cost_factor,
-        "factors": report["factors"],
-        "n_points": len(costs),
-        "costs": costs,
-        "param_sensitivity": sensitivity,
-        "insensitive_params": insensitive,
-        "lesson_ref": LESSON_COST_DEGENERATE,
-        "sampling": {
+    result: dict[str, Any] = ok_envelope(
+        model_type=model_type,
+        verdict=report["verdict"],
+        degenerate=cost_factor.get("status") == FAIL,
+        cost_factor=cost_factor,
+        factors=report["factors"],
+        n_points=len(costs),
+        costs=costs,
+        param_sensitivity=sensitivity,
+        insensitive_params=insensitive,
+        lesson_ref=LESSON_COST_DEGENERATE,
+        sampling={
             "design": "lhs", "seed": int(seed), "n_ports": n_ports,
             "f0_ghz": f0_ghz,
             "freq_ghz": [f0_ghz * _PROBE_FREQ_SPAN[0],
@@ -886,7 +949,132 @@ def fake_cost_degeneracy_probe(
             "fixed_params": fixed,
             "bounds": {k: list(v) for k, v in bounds.items()},
         },
-    }
+    )
     if errors:
         result["errors"] = errors
     return result
+
+
+# ---------------------------------------------------------------------------
+# SN-6（W6-A，2026-10-06）：runs health 批量化——G11 门从"手工逐点"变周批门
+# ---------------------------------------------------------------------------
+
+def health_check_batch(
+    run_ids: list[str] | None = None,
+    *,
+    runs_dir: str | Path | None = None,
+    since: str | None = None,
+    template: str | None = None,
+    campaign: str | None = None,
+    limit: int = 500,
+) -> dict[str, Any]:
+    """批量体检（SN-6）：逐 run 调 :func:`health_check_run` 并聚合红绿账。
+
+    枚举口径（显式清单优先，扫描缺省一级 + ``campaign`` 指定二级）：
+    - ``run_ids`` 给定 → 逐个点名体检（不存在照常入账 verdict=suspect）；
+    - 否则扫 ``runs_dir``（缺省 ``runs/``）一级子目录（``campaign`` 给定时
+      扫 ``runs_dir/<campaign>/`` 二级）；目录含 ``meta.json`` 才入选
+      （G11 体检以 meta 为事实源，无 meta 的产物目录走 runs monitor 面）。
+
+    过滤（都可选，组合生效）：
+    - ``since``：``YYYY-MM-DD``，按 meta.timestamp（缺退目录 mtime）闭区间；
+    - ``template``：meta.model 等值；
+    - ``campaign``：见上（枚举域收窄到该战役目录）。
+
+    单 run 体检失败只计入该 run 的 ``failed`` 账（#105 不传染）；聚合
+    ``ok`` 只表示批量本身执行成功，**门禁判据是 ``unhealthy`` 名单**（与
+    数据集物化 health_gate 同口径：仅真实 FAIL 证据拦，suspect 放行留档）。
+
+    Returns:
+        dict: ``{ok, n_checked, verdicts, healthy, suspect, unhealthy,
+        failed, truncated}``（verdicts/failed 为 run_id → 值映射）。
+    """
+    base = Path(runs_dir) if runs_dir is not None else Path("runs")
+    since_date: Any = None
+    if since:
+        try:
+            import datetime as _dt
+
+            since_date = _dt.date.fromisoformat(str(since))
+        except ValueError:
+            return ok_envelope(
+                n_checked=0, verdicts={}, healthy=[], suspect=[], unhealthy=[],
+                failed={}, truncated=False,
+                errors=[f"since 非法（YYYY-MM-DD）: {since!r}"])
+
+    candidates: list[Path] = []
+    if run_ids:
+        candidates = [base / str(rid) for rid in run_ids]
+    else:
+        root = base / str(campaign) if campaign else base
+        if not root.is_dir():
+            return ok_envelope(
+                n_checked=0, verdicts={}, healthy=[], suspect=[], unhealthy=[],
+                failed={}, truncated=False,
+                errors=[f"扫描目录不存在: {root}"])
+        candidates = sorted(p for p in root.iterdir() if p.is_dir()
+                            and (p / "meta.json").is_file())
+
+    def _run_date(p: Path) -> Any:
+        meta = _read_json(p / "meta.json") or {}
+        ts = str(meta.get("timestamp") or "")[:10]
+        if ts:
+            try:
+                import datetime as _dt
+
+                return _dt.date.fromisoformat(ts)
+            except ValueError:
+                pass
+        import datetime as _dt
+
+        return _dt.date.fromtimestamp(p.stat().st_mtime)
+
+    verdicts: dict[str, str] = {}
+    healthy: list[str] = []
+    suspect: list[str] = []
+    unhealthy: list[str] = []
+    failed: dict[str, str] = {}
+    n_scanned = 0
+    truncated = False
+    for p in candidates:
+        if n_scanned >= max(1, int(limit)):
+            truncated = True
+            break
+        n_scanned += 1
+        meta = _read_json(p / "meta.json") or {}
+        if since_date is not None and _run_date(p) < since_date:
+            n_scanned -= 1
+            continue
+        if template and str(meta.get("model") or "") != str(template):
+            n_scanned -= 1
+            continue
+        try:
+            out = health_check_run(p.name, runs_dir=base)
+        except Exception as exc:  # 单 run 失败不传染（#105）
+            failed[p.name] = f"{type(exc).__name__}: {exc}"
+            continue
+        if not out.get("ok") and not out.get("factors"):
+            # 目录不存在/全空：照 runs health 单点口径如实入 suspect 账
+            suspect.append(p.name)
+            verdicts[p.name] = "suspect"
+            continue
+        verdict = str(out.get("verdict", "suspect"))
+        verdicts[p.name] = verdict
+        if verdict == "healthy":
+            healthy.append(p.name)
+        elif verdict == "unhealthy":
+            unhealthy.append(p.name)
+        else:
+            suspect.append(p.name)
+
+    return ok_envelope(
+        n_checked=len(verdicts) + len(failed),
+        verdicts=verdicts,
+        healthy=healthy,
+        suspect=suspect,
+        unhealthy=unhealthy,
+        failed=failed,
+        truncated=truncated,
+        runs_root=str(base),
+        campaign=campaign or "",
+    )

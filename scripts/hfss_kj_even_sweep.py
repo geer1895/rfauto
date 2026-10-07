@@ -2,7 +2,7 @@
 
 判据预声明：runs/df7_kjeven/p2_criteria_v2.md（**v2 测量面架构**，先写后
 跑；判读冲突如实记 FAIL/UNKNOWN 不事后改门 #122/#286）。v1 判据
-p2_criteria.md 零改写留档；v1 战役 7 点全 UNKNOWN 归因见战役档案（P2 criteria 同目录留档）：
+p2_criteria.md 零改写留档；v1 战役 7 点全 UNKNOWN 归因=：
 CharImp 三定义重建 Z0 互差在准 TEM 宽端口 0.09~14%（物理路径分歧，≤1% 门
 不可达）+ gate0 0.5% 绝对步进门边缘假警报。P1 输入：runs/df7_kjeven/
 p1_audit.md（H2 成立：半模型小波端口横向截断偶模场尾）。
@@ -977,7 +977,7 @@ def _solve_read(h, ds: float, mp: int, char_imp: str, label: str,
     #145 看门狗）。v2 主判路由 char_imp=Zvi（criteria v2 §一.2）。
 
     n_modes=CharImp 声明与读数的模数（主判路由=2；半模型对照档=1——
-    其端口只有 Mode1，对 Mode2 声明会抛"缺 Mode2 props"（fail-closed））。"""
+    其端口只有 Mode1，对 Mode2 声明会抛"缺 Mode2 props"（fail-closed）。"""
     from rfauto.adapters.hfss_adapter import HfssAdapter
     from rfauto.infra.desktop_guard import run_with_watchdog
     from rfauto.service.port_gate_service import HfssPortDriver

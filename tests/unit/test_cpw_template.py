@@ -1,7 +1,10 @@
 """WP2.1 CPW 均匀共面波导锚单测：渲染（CPWPort 口径）/解析/综合/spec。
 
 口径依据：绑定源码 L1117+（CPWPort：start/stop=中心带、gap_width、
-地自画、exc_dir='z'）+ CPWG 共形映射闭式综合（50Ω@gap0.2 → w=0.849mm）。
+地自画、exc_dir='x'=缝间横向）+ CPWG 共形映射闭式综合（50Ω@gap0.2 →
+w=0.849mm）。exc_dir 语义随上游 openEMS 2026-10-02 CPWPort 重定义更新：
+旧=面法向/高度方向（'z'），新=缝间电场方向=CPW 宽度方向（'x'），
+高度法向改由 prop×exc 叉积自算（ports.py:1278 高度校验）。
 参照系=CPWG：openEMS 官方口径 z-min=PEC 强制地，实际结构即底接地
 共面波导（#193 参照系错位教训，#198 闭式收口——skrf CPW 无地口径作废）。
 """

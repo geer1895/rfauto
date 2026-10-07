@@ -1,5 +1,5 @@
-"""工作目录 params JSON 落盘 → import_workdir_runs 全链单测（#320-#322
-实证 marchand/mline 0 行的战役侧补链）。
+"""工作目录 params JSON 落盘 → import_workdir_runs 全链单测（fix-importer
+followUp，#320-#322 实证 marchand/mline 0 行的战役侧补链）。
 
 覆盖两层：
 - 服务写出端 ``write_workdir_params_json``（与读取端 _params_from_json 同
@@ -88,7 +88,7 @@ class TestWriteWorkdirParamsJson:
         assert data["curve"] == "hfss_marchand_anchor_a.s4p"
 
     def test_curve_outside_dir_uses_relative_path_ref(self, tmp_path):
-        """曲线在 point_dir 外 → 回退相对 JSON 所在目录的相对路径
+        """R3-C-03：曲线在 point_dir 外 → 回退相对 JSON 所在目录的相对路径
         （不再退纯文件名），无歧义标记。"""
         other = tmp_path.parent / "elsewhere.s2p"
         p = write_workdir_params_json(tmp_path / "pt1", {"w_mm": 1.0}, curve=other)
@@ -98,7 +98,7 @@ class TestWriteWorkdirParamsJson:
         assert "curve_ref_ambiguous" not in data
 
     def test_curve_cross_subdir_same_stem_refs_disambiguated(self, tmp_path):
-        """主场景：曲线在 point_dir 外且多子目录同名 stem——相对路径
+        """R3-C-03 主场景：曲线在 point_dir 外且多子目录同名 stem——相对路径
         引用可区分（旧回退 c.name 会把两个点写成同一个歧义引用 "pt1.s2p"）。"""
         ca = tmp_path / "batch_a" / "pt1.s2p"
         cb = tmp_path / "batch_b" / "pt1.s2p"

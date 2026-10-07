@@ -1,6 +1,6 @@
 """D3-1 实档损耗 dump 读取器单测（infra/loss_dump，§10.21 第九轮 D3-1）。
 
-两道门并存：
+两道门并存（任务书②）：
 - **合成 fixture 门（CI 恒跑）**：tmp_path 手写 openEMS dump_type=29 布局
   （FieldData/FD/f0 + CellData + CellWidth + Mesh），裁判 = 闭式
   P = 0.5·σ·|E0|²·V（Jackson §6.9，#118 独立来源）与可分离求和闭式；

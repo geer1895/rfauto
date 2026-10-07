@@ -117,7 +117,7 @@ def test_tjunc_spec_wiring():
 
 
 def test_three_port_beta_single_source_block():
-    """β 锚单源锁定（「tjunc beta2 混源」历史问题收口）。
+    """β 锚单源锁定（廿三）P2 残余「tjunc beta2 混源」收口）。
 
     port_beta.csv 必须由唯一插桩槽写出：三端口 β（beta1/beta2/beta3）
     全部取自同一 run 的 CalcPort 探针（_port1/_port2/_port3），且写在

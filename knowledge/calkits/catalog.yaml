@@ -4,7 +4,7 @@
 # 文件与本目录相对。加载入口 measurement.calibration.load_calkit()。
 #
 # 当前 kit 的标准件为**合成参考件**（skrf 生成的理想 Through/Match/Short），
-# 待首次 VNA 实测后用实测校准件 S 参数替换。
+# 待首次 VNA 实测后用实测校准件 S 参数替换（TODO 〇-c）。
 calkits:
   wl_2g5_response:
     description: wilkinson 2.0-3.0GHz 响应式（Through 归一化）冒烟 kit（合成标准件）

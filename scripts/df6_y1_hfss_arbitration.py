@@ -3,7 +3,7 @@
 判据预声明：runs/df6_hfss_track/criteria.md 件 2 节 + 真机口径修订 v2
 （2026-09-24：Modal 面类别=Gamma/Port Zo/S Parameter；renormalize=False；
 CharImp 三定义子解；门 1 端口切耦合段）。发射草案：
-runs/df6_dp14y1/handoff.md（A 主判/B 互检/门 0-4/坑位清单）。
+战役任务书（A 主判/B 互检/门 0-4/坑位清单）。
 
 五设计各占一次桌面会话（#191：一桌面同时只活一个 Hfss 实例）：
 - y1_even_z / y1_odd_z（门 1 主判）：半模型**仅耦合段**（线 A，对称面 x=0
@@ -222,7 +222,7 @@ def _build_z_half(h, sym_bc: str) -> None:
 
 
 def _build_s_half(h, sym_bc: str) -> None:
-    """门 3 S 设计：带馈线半模型（板边端口，handoff 原案几何）。"""
+    """门 3 S 设计：带馈线半模型（板边端口，任务书 原案几何）。"""
     _base_stack(h, -BOARD, 0.0, -BOARD, BOARD)
     names = []
     for (nm, x0, x1) in _metal_boxes(-1):
@@ -680,7 +680,7 @@ def main() -> int:
     result: dict = {
         "gate": "y1_half_model_hfss_arbitration",
         "criteria": "runs/df6_hfss_track/criteria.md 件 2 节 + v2 修订",
-        "handoff": "runs/df6_dp14y1/handoff.md（A 主判/B 互检/门 0-4）",
+        "任务书": "战役任务书（A 主判/B 互检/门 0-4）",
         "template_scope": ("cline_coupler only（branchline_2sect 第二发"
                            "不在本窗口）"),
         "port_convention": {

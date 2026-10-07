@@ -1,6 +1,6 @@
-"""设计报告叙述生成器：LLM 执笔 + 数字白名单（数值铁律）。
+"""F9 设计报告叙述生成器：LLM 执笔 + 数字白名单（§10.6 F9 /  规则 7）。
 
-合规形态（「数值只在确定性内核」）：
+合规形态：
 
 1. **数字白名单**：从 runs/ 产物或调用方传入的确定性数据递归抽取数字，每个
    条目携带 **value / unit / source(provenance) / label / 容差**；
@@ -737,7 +737,7 @@ def generate_narrative(
     )
 
 
-# ─── F9 报告叙述位（接 CLI/MCP/report）────────────────────────
+# ─── F9 报告叙述位（0bj followUp：接 CLI/MCP/report）────────────────────────
 
 
 def report_narrative_for_run(

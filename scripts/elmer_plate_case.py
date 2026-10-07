@@ -1,7 +1,7 @@
 """A4 Elmer 1-D 均匀热源平板真机验收脚本（闭式温度分布 ≤1%）。
 
 用途：真机跑 ElmerSolver，把平板温度剖面与独立解析解（左端 Dirichlet、
-右端绝热、均匀体热源）逐点对照，打印实测偏差并判定验收口径。
+右端绝热、均匀体热源）逐点对照，打印实测偏差并判定 WP4.4d 验收口径。
 
 用法（工作区根目录；路径用正斜杠）：
     .venv/Scripts/python.exe scripts/elmer_plate_case.py

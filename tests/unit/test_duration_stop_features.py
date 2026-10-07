@@ -1,4 +1,4 @@
-"""时长预测 NrTS/stop_reason 停机机制特征 单元测试。
+"""0-P2⑱ / 二百六十：时长预测 NrTS/stop_reason 停机机制特征 单元测试。
 
 钉死四条语义（全部合成样本，零 runs/ 依赖、零网络、零仿真）：
 
@@ -196,7 +196,7 @@ def test_load_duration_sample_json_maps_stop_fields(tmp_path: Path) -> None:
                 "domain_volume_mm3": 79315.2, "adapter": "openems",
                 "source": "ratrace_03mm_sample/result.json:solve_s",
             },
-            {  # 触顶停机（R2 机制）
+            {  # 触顶停机
                 "id": "RX", "base_mm": 0.2, "wall_s": 13936.7,
                 "nr_ts_cap_declared": 100000, "hit_nr_ts_cap": True,
             },

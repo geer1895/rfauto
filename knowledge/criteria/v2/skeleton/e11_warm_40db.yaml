@@ -1,0 +1,46 @@
+schema: criteria/v2
+criteria_id: e11_warm_40db
+title: wf:oe-e11-40db 预声明判据（起跑前写死，2026-09-19）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: unknown_skeleton, f_ghz: null}
+migration:
+  tier: B
+  source_index: index.yaml
+  source_md: runs/e11_warm_40db/criteria.md
+  families: []
+  n_gates: 5
+evidence_fields: [e11_warm_40db#1, e11_warm_40db#2, e11_warm_40db#3, e11_warm_40db#4, e11_warm_40db#5]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: e11_warm_40db#1, tier: A, raw: （复测为 −24）；cost = 带内 max|S11| 超 −40dB 的 dB 违约量（≥0）。, threshold: 0.0}
+  - {gate_id: e11_warm_40db#2, tier: A, raw: 带内 max|S11| ≤ −40dB（即 cost(−40)=0）→ **G0 PASS 放行战役**；, threshold: null}
+  - {gate_id: e11_warm_40db#3, tier: A, raw: '> −40dB → 战役不跑，本项 FAIL 如实（target 不可测，登记关闭该路线）。', threshold: null}
+  - gate_id: e11_warm_40db#4
+    tier: B
+    raw: '| G1 缩减率 | scripts judge_campaign 平均 time-to-target 缩减 | ≥30% |'
+    threshold: 30.0
+    table:
+      name: G1 缩减率
+      op: ≥
+      unit: '%'
+      observed: []
+  - gate_id: e11_warm_40db#5
+    tier: B
+    raw: '| G2 cost 不劣化 | 逐种子 warm_final_best − cold_final_best ≤ max(0.05\|cold\|, 0.25dB) | 3 种子全过 |'
+    threshold: null
+    table:
+      name: G2 cost 不劣化
+      op: null
+      unit: null
+      observed: []
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/e11_warm_40db,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#e11_warm_40db/criteria.md gates[1..5]'}

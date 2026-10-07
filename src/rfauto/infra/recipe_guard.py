@@ -1,7 +1,7 @@
-"""recipes/ 原件写守卫（配方污染根修）。
+"""recipes/ 原件写守卫（配方污染根修，TODO 增量②）。
 
-背景（一次真实污染事故的取证）：
-UI 配方页「保存并运行」链曾把 recipes/branchline_coupler_v1.yaml
+背景（收尾「疑似污染」/取证 runs/pollution_evidence）：
+2026-09-17 17:18 UI 配方页「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件 ``yaml.safe_dump`` 重序列化后 ``tmp.replace()`` 覆盖原件——注释全丢、
 notes 引号丢失、``optimization`` 段被表单归一化结果（``n_trials: null`` /
 ``sampler: tpe``）整段替换（diff 85 行），随后同刻触发 fake ``run_once``。
@@ -17,7 +17,7 @@ notes 引号丢失、``optimization`` 段被表单归一化结果（``n_trials: 
 - 受保护 + ``explicit=True`` → 原地写出。**边界如实**：只给用户把目标路径
   作为命令本意显式指定的入口（``rfauto recipe migrate <path>``、CLI/MCP
   ``--out/--output``、UI 新建向导的用户键入路径）。若覆盖既有原件，返回
-  路径带 ``overwritten=True`` 标记（消除与 ui ``recipe_create``
+  路径带 ``overwritten=True`` 标记（R2-D-03：消除与 ui ``recipe_create``
   拒覆盖的不对称盲写，调用方须把标记透传给用户）。
 - 受保护且两者皆否 → 抛 :class:`RecipeWriteForbidden`（默认档，抓未来
   新增的隐式写回）。
@@ -54,12 +54,8 @@ def _absolute(path: str | Path) -> Path:
 
 
 def _norm(path: Path) -> Path:
-    """比较用规范形：Windows normcase + 全平台大小写折叠。
-
-    recipes 保护语义要求大小写变体同样受保护（Linux 上 normcase 是恒等，
-    若不折叠，大写变体路径会绕过守卫——CI Linux 实测修复）。仅用于比较，
-    不改写任何实际写入路径（写入保留原始大小写）。"""
-    return Path(os.path.normcase(str(path)).lower())
+    """比较用规范形（Windows 大小写/分隔符不敏感）。"""
+    return Path(os.path.normcase(str(path)))
 
 
 def protected_recipe_roots() -> tuple[Path, ...]:
@@ -140,7 +136,7 @@ class GuardedWritePath(Path):
     """受保护原件 explicit 写出的返回路径：附 ``overwritten`` 覆盖标记。
 
     ``overwritten=True`` 表示本次 explicit 写**覆盖**了受保护 recipes/ 根内
-    的既有原件（消除与 ui ``recipe_create`` 拒覆盖的不对称盲写）；
+    的既有原件（R2-D-03，消除与 ui ``recipe_create`` 拒覆盖的不对称盲写）；
     ``False`` 为受保护根内新建。派生路径（``parent``/``with_name`` 等）
     继承本类、标记恒为类缺省 False。非受保护路径照旧返回普通 ``Path``、
     不带标记（保持既有行为，读取方用 ``getattr(p, "overwritten", False)``）。

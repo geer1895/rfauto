@@ -1,6 +1,7 @@
 """mline（均匀微带线锚模板）插件——openEMS 优化通道的最小模型插件。
 
-产物化自优化战役 harness 的进程内注册。定位（与 Wilkinson/Branchline/Patch 插件同一
+产物化自 runs/e11_warm_20260919/e11_openems_harness.py 的战役层进程内注册
+。定位（与 Wilkinson/Branchline/Patch 插件同一
 注册表模式，rfauto.models.registry）：
 
 - **仅参数 schema + 构建钩子**：build() 有意不画几何。mline 的几何单一

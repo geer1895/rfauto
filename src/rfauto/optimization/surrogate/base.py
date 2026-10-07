@@ -1,6 +1,6 @@
-"""代理模型接口（v0 契约层）。
+"""代理模型接口（v0 契约层，docs/surrogate_calibration_design.md §1）。
 
-设计目标（接口化要求）：任何外部正向代理模型——无论是内置的
+设计目标（用户拍板的接口化要求）：任何外部正向代理模型——无论是内置的
 空间映射/GP，还是第三方 NN（如法动 SOTA）、他人自定义模型——都通过实现
 SurrogateModel 并注册进 SurrogateRegistry 接入 tune/校准链路，框架其余
 部分只依赖基类契约。

@@ -6,7 +6,7 @@
 # - symptom_fingerprints 多指纹 = AND（同击才命中，控归纳过度泛化）；
 # - 多规则并击只出**候选根因族列表**（按命中指纹数降序），不下黑箱结论；
 # - 本文件与 knowledge/rules.yaml 零关联（规则库零改动）；
-# - 坑号 #NNN 为内部台账出处标记（保留口径），取证命令只读 runs/
+# - 坑号 #NNN 为 出处标记（D1 裁决保留口径），取证命令只读 runs/
 #   证据面，禁改写。
 schema: rfauto-diag-playbook-v1
 updated: 2026-09-24

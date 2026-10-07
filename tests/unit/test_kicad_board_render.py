@@ -4,7 +4,7 @@
 → render_script("cpw", {**nominal, "b6_board": facts}) → exec 几何段 →
 CSXCAD 实测原语/优先级解析/网格。判据全部量在 CSXCAD 对象上，不做字符串门。
 
-判据（按实测口径落地）：
+判据（任务书 ②，按实测口径落地）：
 ① 直通：gh.load_geometry("cpw", {**nominal, "b6_board": facts}) 不炸；
 ② 2 pad 0.8×0.6 @(10,15)/(50,15)（w×h 不等抓轴交换）、4 via 桶壁
    @y=18 x=12/24/36/48、主线矩形、F.Cu/B.Cu 填充多边形、走廊切除多边形；

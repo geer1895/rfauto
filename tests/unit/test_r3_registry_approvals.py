@@ -1,6 +1,6 @@
-"""审批流接入钉：生产路径必须真接 RegistryDB.approvals。
+"""R2-D-02 接入钉：审批流生产路径必须真接 RegistryDB.approvals。
 
-背景（同类历史缺陷）：内核表+CRUD+单测全绿，但生产函数仍读旧路径
+背景（上轮 G13/H3 家族）：内核表+CRUD+单测全绿，但生产函数仍读旧路径
 （audit.jsonl），表零生产消费——"单测绿而主路径不接"。本文件两层钉：
 
 1. 源码级：r3_services.py 必须引用 RegistryDB（grep 级断言）；

@@ -713,4 +713,4 @@ Import:  app.configurations.import_config(path)
 
 ---
 
-*Generated from the PyAEDT official source tree (MIT License).*
+*Generated from PyAEDT source at `D:/rf_workspace\pyaedt-main\src\ansys\aedt\core\`*

@@ -17,7 +17,7 @@
                        CPS_CORNER2D_COEFFS，C5 followUp 2026-09-21）+ 修正后
                        全表残差（走 _cps_ri(corner2d=True) 生产路径；约 2~3 min）
   --json PATH          结果落盘
-数值纪律：只在确定性内核（本脚本不产生新常数，仅复现/打印）。
+铁律 7：数值只在确定性内核（本脚本不产生新常数，仅复现/打印）。
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def nominal() -> dict:
         "ssl_nominal": {**ssl.as_dict(),
                         "closed_recalibrated": _suspended_stripline_ri(0.9058, 1.016, H, ER),
                         "z0_air_cohn": _stripline_z0(0.9058, 1.016, 1.0)},
-        # 旧 q 式口径标称（FD 定案真值 εeff 2.092/Z0 56.1，历史锚保留）
+        # 旧 q 式口径标称（w2f 定案 FD 真值 εeff 2.092/Z0 56.1，历史锚保留）
         "ssl_old_nominal_w0.731": {**ssl_old.as_dict(),
                                    "closed_recalibrated": _suspended_stripline_ri(
                                        0.731, 1.016, H, ER),

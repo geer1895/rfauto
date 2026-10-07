@@ -1,15 +1,15 @@
-"""多物理工具/license 能力探测（WP4.4-0）。
+"""WP4.4-0 多物理工具/license 能力探测（续跑计划 §10.21 / §4 WP4.4 首步）。
 
-只探能力、不求解、不建/存任何用户资产，产出「多物理能力矩阵」JSON，供
-上层路线决策。每项硬超时 + best-effort（#105）：任何异常
+只探能力、不求解、不建/存任何用户资产，产出「多物理能力矩阵」JSON，供方案
+§1 表回写，决定 WP4.4a/c/d 路线。每项硬超时 + best-effort（#105）：任何异常
 落成 available="unknown"，脚本不崩。
 
 探测面：
 - AEDT（本机 v251 / 2025.1）：Icepak / Q3D Extractor / Maxwell / SIwave —— 安装
   面二进制 + Ansys Licensing Client ansysli_util -checkexists <feature> 真实
   license 查询；配 hfss_solve 正控 + 不存在 feature 负控证明探针能判别。
-  安装路径以实际探测为准（如 E:/ANSYSINC/ANSYS Inc/v251/AnsysEM，
-  2025.1）——如实记录，不臆造。
+  任务书写的 E:/HFSS/ANSYS Inc/v261 本机实测不存在，实际安装为
+  E:/ANSYSINC/ANSYS Inc/v251/AnsysEM（2025.1）——如实记录，不臆造。
 - COMSOL 6.3：license.dat PACKAGE 特征核对（HEATTRANSFER/HT、
   STRUCTURALMECHANICS/SME）+ MPh 子进程建 HeatTransfer(ht) /
   SolidMechanics(solid) 接口试探（version="6.3" 显式钉版本，#215）。
@@ -57,7 +57,7 @@ ADS_TIMEOUT_S = 5.0
 ELMER_TIMEOUT_S = 30.0
 
 # ── AEDT（ANSYS Electronics Desktop）────────────────────────────────────────────
-# 常见安装根候选（env 优先；候选逐一探测，缺失即如实记 unavailable）：
+# 任务书口径（本机实测不存在，保留用于对账）：
 AEDT_TASK_STATED_ROOT = Path("E:/HFSS/ANSYS Inc/v261")
 AEDT_ROOT_ENV_VARS = ("ANSYSEM_ROOT251", "ANSYSEM_ROOT261", "RFAUTO_AEDT_PATH")
 AEDT_ROOT_CANDIDATES = (
@@ -90,11 +90,12 @@ COMSOL_INTERFACES: dict[str, tuple[tuple[str, ...], str]] = {
 }
 
 # ── ADS ───────────────────────────────────────────────────────────────────────
-# ADS 安装根治理：安装根经环境变量 RFAUTO_HPEESOF_DIR 指定（缺省不假定任何
-# 本机安装路径）；license 由 Windows 服务 "EEsof FlexNet License Server"
+# ADS 27 治理（2026-09-18 rm-ads-wp43）：安装根 env RFAUTO_HPEESOF_DIR 优先、
+# E:/ADS/ADS27 回退；license 由 Windows 服务 "EEsof FlexNet License Server"
 # （C:/Program Files/Keysight/EEsof_License_Tools/bin/lmgrd.exe，27009@localhost，
-# 注册表 FLEXlm License Manager 登记 lic 文件）供给。
-ADS_HOME = Path(os.environ.get("RFAUTO_HPEESOF_DIR", ""))
+# 注册表 FLEXlm License Manager 登记 lic 文件）供给。E 盘旧 2027/2026 安装
+# 均已不存在，不再列为候选。
+ADS_HOME = Path(os.environ.get("RFAUTO_HPEESOF_DIR", "E:/ADS/ADS27"))
 ADS_LICENSE_FILE_CANDIDATES = (
     Path("C:/Program Files/Keysight/EEsof_License_Tools/bin/agileesofd.lic"),
     ADS_HOME / "license" / "agileesofd.lic",
@@ -308,7 +309,7 @@ def probe_aedt(timeout_s: float = AEDT_TIMEOUT_S) -> list[dict]:
             available = True
         evidence = f"ansysli_util -checkexists -> {by_state}; binaries={binaries}; root={root}; {control_txt}"
         detail = (
-            f"AEDT 安装 {root}；"
+            f"AEDT 安装 {root}（任务书 v261 / E:/HFSS 口径本机不存在）；"
             f"license 查询工具 {util}；不启动桌面、不求解"
         )
         entries.append(entry("aedt", product, available, evidence, detail))

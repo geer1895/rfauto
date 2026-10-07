@@ -411,7 +411,7 @@ class TestRenormalize:
 
 
 class TestGuideValueSemantics:
-    """guide 表值语义单源（P1 缺陷根治钉，DP-1 P2 交付面）。
+    """guide 表值语义单源（P1 缺陷根治钉，四一零 DP-1 P2 交付笔转交）。
 
     缺陷背景：_guide_list 按**值相等**去重 guide 表，而 solve_at_counts 曾按
     ``id()`` 反查——链中"值相等但实例不同"的 Waveguide（JSON 段表逐段新造、

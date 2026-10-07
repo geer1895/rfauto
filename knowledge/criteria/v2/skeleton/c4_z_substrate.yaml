@@ -1,0 +1,60 @@
+schema: criteria/v2
+criteria_id: c4_z_substrate
+title: c4-z-substrate 预声明判据（写死再跑，2026-09-18，起跑前落盘）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: branchline, f_ghz: null}
+migration:
+  tier: B
+  source_index: index.yaml
+  source_md: runs/c4_z_substrate/criteria.md
+  families: [branchline, cline_coupler, lange]
+  n_gates: 10
+evidence_fields: [c4_z_substrate#1, c4_z_substrate#2, c4_z_substrate#3, c4_z_substrate#4, c4_z_substrate#5,
+  c4_z_substrate#6, c4_z_substrate#7, c4_z_substrate#8, c4_z_substrate#9, c4_z_substrate#10]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: c4_z_substrate#1, tier: A, raw: '`mesh.AddLine("z", np.linspace(0, H_SUB, 5→9))` 基板行；`render_diff_<t>_vs_base_archive.txt`',
+    threshold: null}
+  - gate_id: c4_z_substrate#2
+    tier: B
+    raw: '| cline_coupler | −5.4693 | −2.1877 | −2.9030 | \|b₈\| ≤ 1.4515% | 2.0321% |'
+    threshold: 1.4515
+    table:
+      name: cline_coupler
+      op: ≤
+      unit: '%'
+      observed: []
+  - gate_id: c4_z_substrate#3
+    tier: B
+    raw: '| lange | −6.5208 | −2.6083 | −1.8038 | \|b₈\| ≤ 0.9019% | 1.2627% |'
+    threshold: 0.9019
+    table:
+      name: lange
+      op: ≤
+      unit: '%'
+      observed: []
+  - {gate_id: c4_z_substrate#4, tier: A, raw: '- **地板非 z 主导（面内/其他）**：|b₈| ≥ 0.7·|b₄|——z 加密对地板改变 < 30%。',
+    threshold: 0.7}
+  - {gate_id: c4_z_substrate#5, tier: A, raw: '- |ΔS31| ≤ 0.15dB → **z 零响应**（与面内加密零响应 −0.13/−0.02dB 同级）——耦合超量',
+    threshold: 0.15}
+  - {gate_id: c4_z_substrate#6, tier: A, raw: '- |ΔS31| ≥ 0.2dB → **z 层化对耦合度有实测贡献**（方向记录：向裁判=改善/远离=恶化）。',
+    threshold: 0.2}
+  - {gate_id: c4_z_substrate#7, tier: A, raw: '- 截断核查（#262/#266）：port_ut_*B 末 5% 窗残差 ≤ −45dB 或未触 NrTS；4
+      轮', threshold: null}
+  - {gate_id: c4_z_substrate#8, tier: A, raw: lange 63.17 → ~61.3fs（−3%）。同时窗 NrTS 上限：cline 100000×dt ≥
+      10ns、, threshold: 10.0}
+  - {gate_id: c4_z_substrate#9, tier: A, raw: lange 200000×dt ≥ 12.2ns，均 ≫ 激励脉冲 5.73ns + refix 能量停机 5.95ns。,
+    threshold: 12.2}
+  - {gate_id: c4_z_substrate#10, tier: A, raw: '**回退预案（预声明）**：实测同时窗 < 6.5ns → 该模板 NrTS 抬至 200000/400000
+      重渲染', threshold: 6.5}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/c4_z_substrate,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#c4_z_substrate/criteria.md gates[1..10]'}

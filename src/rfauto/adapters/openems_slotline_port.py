@@ -1,6 +1,6 @@
 """openEMS 槽线 WaveguidePort 桥（W3⑧a 路线 A）：NGSolve 模场 → HDF5 模式文件 → 端口。
 
-契约（逐条对照源码）
+契约（逐条对照源码，2026-09-16）
 --------------------------------
 - 模式文件格式（vendor/openEMS/install/include/CSXCAD/CSModeData.h）：HDF5，
   一维 double 数据集 ``/x``、``/y``（≥2 点，可非均匀）；二维 double ``/Vx``、

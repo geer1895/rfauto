@@ -1,9 +1,9 @@
-"""mline MSLPort |S11| 伪底判据内核单测（H1/H2 合成钉子，零真机）。
+"""W3② mline MSLPort |S11| 伪底判据内核单测（H1/H2 合成钉子，零真机）。
 
-背景：wp39 mline 工厂地貌 |S11|@2.5 反物理归因（#250 线阻抗反演）+ 引擎
-自算线阻抗 ZL 新证据。本项离线重放归档 10 档实证
+背景：wp39 mline 工厂地貌 |S11|@2.5 反物理归因+ 引擎
+自算线阻抗 ZL 新证据（一百九十二）#250）。本项离线重放归档 10 档实证
 H1（伪底 ≡ |Γ(ZL_engine,50)|，残差 ≤0.94dB；换引擎 ZL 基后 −50dB 量级）
-——真机数字归档不入库，关键量级以**合成等价**
+——真机数字归档 runs/mline_pseudofloor/（不入库），关键量级以**合成等价**
 形式钉进本文件（ZL/偏差取真机档位值构造）。
 """
 from __future__ import annotations
@@ -220,7 +220,7 @@ def test_judge_empty_raises():
         judge_pseudofloor_hypothesis([])
 
 
-# ── mline_landscape_health_gate 的 port_match 可选融合（向后兼容）───────────
+# ── mline_landscape_health_gate 的 port_match 可选融合（W3②，向后兼容）──────
 
 def _health_h1_like() -> dict:
     zl = 44.11 + 0.0j
@@ -330,7 +330,7 @@ def test_template_readuidata_before_run_and_calcport_unchanged(mline_script: str
 
 def test_other_templates_rendering_untouched():
     # β 块分支改动不得波及其它模板：cpw/via/sma_launcher 无 ReadUIData；
-    # wstep 保持既有 2 次（行为钉住）
+    # wstep 保持既有 2 次（W2⑤ 行为钉住）
     for tpl, params in (("cpw", {"w_mm": 0.849, "gap_mm": 0.2}),
                         ("via", {}),
                         ("sma_launcher", {})):

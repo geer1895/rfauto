@@ -1,4 +1,5 @@
-"""接线层装车测试（内核能力接入生产路径的回归钉）。
+"""接线层装车测试（审查 functional_audit_20260917 第二类缺口，D 分片 M1/M5
++ C 分片 D1 最小安全口径）。
 
 三个"造了零件没装上车"的内核接进生产路径的回归钉：
 - 零件 1：pipeline/self_heal.self_heal_loop → service.self_heal_service.

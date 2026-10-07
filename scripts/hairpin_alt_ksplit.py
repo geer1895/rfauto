@@ -1,7 +1,7 @@
-"""hairpin_alt k(gap) 交替取向·极点分裂口径（k_split）逐点提取。
+"""hairpin_alt k(gap) 交替取向·极点分裂口径（k_split）逐点提取（wf:hairpin-alt-extract）。
 
-背景（runs/hairpin_hfss_anchor/ 仲裁）：hairpin_alt 5 点
-openEMS 真机 k_EM 图谱（runs/hairpin_kgap_refix）单调但预声明门 FAIL——对称
+背景（+ runs/hairpin_hfss_anchor/ 仲裁）：hairpin_alt 5 点
+openEMS 真机 k_EM 图谱（runs/hairpin_kgap_refix）单调但预声明门 G3 FAIL——对称
 2 极有耗模型对交替拓扑失配（强耦点 full_fit rms 2.24-4.35dB > 门 1dB，g11328 实测
 峰电平 −1.175dB 高于对称模型渐近峰 −1.2304dB=模型类够不着）。机理：交替取向使
 偶/奇模对外部抽头加载不对称（不对称 2 极），对称等耦合模型类不覆盖。HFSS 锚
@@ -35,7 +35,8 @@ openEMS 真机 k_EM 图谱（runs/hairpin_kgap_refix）单调但预声明门 FAI
 
 适用域：order=2 双谐振器、|S21| 通带 1-2 峰、扫频 ≥401 点覆盖双模；Qe/Q_u 取同
 τ 单腔标定（弱抽头 τ=0.43）；k_merge/pull 曲线只作对称模型参照界，交替拓扑的
-k 真值以 HFSS eigen 锚修正后的 c(gap) 表为准。数值全部由本文件确定性函数产出。
+k 真值以 HFSS eigen 锚修正后的 c(gap) 表为准。数值全部由本文件确定性函数产出
+（铁律 7）。
 
 运行（离线复算，旧档零改写，产物落 --out 新目录）：
 .venv/Scripts/python.exe scripts/hairpin_alt_ksplit.py --analyze

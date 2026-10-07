@@ -1,4 +1,4 @@
-"""注册表数据库层单测：SQLite 事务注册表 + PG 迁移接缝 + DuckDB attach。
+"""W1⑫ 注册表数据库层单测：SQLite 事务注册表 + PG 迁移接缝 + DuckDB attach。
 
 隔离纪律（#144）：全部用 tmp_path + monkeypatch 清空/注入 env
 （RFAUTO_REGISTRY_DB / RFAUTO_JOB_REGISTRY_DB），绝不落真实 runs/。
@@ -32,7 +32,9 @@ from rfauto.service.job_registry import (
 )
 
 _SNAPSHOT_KEYS = {"job_id", "state", "run_id", "result", "error",
-                  "created_at", "finished_at", "seats"}
+                  "created_at", "finished_at", "seats",
+                  "progress_pct", "stage", "progress_updated_at"}
+# 进度三键=SN-10（W6）快照形状扩展；回落读缺省填充见 job_registry._persist_get
 
 
 @pytest.fixture(autouse=True)
@@ -511,7 +513,7 @@ class TestDbQuery:
         assert out["truncated"] is True
 
     def test_db_query_safe_envelopes_rejection_and_execution_errors(self, tmp_path):
-        """薄壳用变体：拒绝/执行错误进信封，成功路径与 db_query 同。"""
+        """薄壳用变体（w1a-shell-front）：拒绝/执行错误进信封，成功路径与 db_query 同。"""
         target = tmp_path / "reg.sqlite"
         record_run(target, {"run_id": "r1", "adapter": "fake", "status": "done"})
         ok = db_service.db_query_safe("SELECT run_id FROM runs", db_path=target)
@@ -585,7 +587,7 @@ class TestPostgresSeam:
 
 
 # ---------------------------------------------------------------------------
-# approvals：单键取行 + 载荷刷新（审批读模型新增 API）
+# approvals：单键取行 + 载荷刷新（R2-D-02 审批读模型新增 API）
 # ---------------------------------------------------------------------------
 
 class TestApprovalGetAndPayload:
@@ -620,7 +622,7 @@ class TestApprovalGetAndPayload:
 
 
 # ---------------------------------------------------------------------------
-# db 默认路径与 settings 合流：settings db.path 读链
+# db 默认路径与 settings 合流（R2-D-02）：settings db.path 读链
 # ---------------------------------------------------------------------------
 
 class TestSettingsPathMerge:

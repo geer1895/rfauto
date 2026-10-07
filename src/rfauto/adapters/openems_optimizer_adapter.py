@@ -1,6 +1,7 @@
 """openEMS 优化回路适配器——optimizer._create_adapter "openems" 分支的构造体。
 
-产物化自真机战役层的进程内评估补丁：与 fake/hfss 分支同构接入 run_optimization 优化
+产物化自 runs/e11_warm_20260919/e11_openems_harness.py 的战役层进程内补丁
+：与 fake/hfss 分支同构接入 run_optimization 优化
 回路（消费面 = FakeAdapter/HfssAdapter 的 build_objective/self_heal 子集：
 set_variables / solve→SolveReport / get_sparams→skrf.Network / close /
 health_check / ensure_connected）。
@@ -15,7 +16,7 @@ openEMS 模板，无桌面会话可建）。
 ResultCache 是两套独立缓存。本适配器 cache 缺省跟随 RFAUTO_CACHE 环境变量
 （=off 时引擎缓存同关）——战役脚本 run_campaign 设 RFAUTO_CACHE=off 的
 "真评估口径"（历史点也真跑、不吃缓存）经此传递到引擎层，两套缓存同时
-关闭（真机战役预声明口径）。
+关闭（e11 战役预声明）。
 """
 
 from __future__ import annotations

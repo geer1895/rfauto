@@ -1,4 +1,4 @@
-"""桌面治理静态钉（汇总）：杀进程原语单点化 + 逐脚本委托存在性。
+"""df5 桌面治理静态钉（汇总）：杀进程原语单点化 + 逐脚本委托存在性。
 
 不变量（runs/df5_desktop_governance/criteria.md §3）：
 - 16 个直接委托脚本的 **subprocess 调用参数里不得再出现 Stop-Process**
@@ -82,7 +82,7 @@ def test_direct_delegators_no_stop_process_in_subprocess_args():
         bad = [c for c in consts if "Stop-Process" in c]
         assert not bad, (
             f"{name}: subprocess 调用参数含杀进程原语 {bad!r}——杀进程必须"
-            f"委托 src/rfauto/infra/desktop_guard.py（单源，#245/#265）")
+            f"委托 src/rfauto/infra/desktop_guard.py（df5 单源，#245/#265）")
 
 
 def test_direct_delegators_reference_single_source():
@@ -91,7 +91,7 @@ def test_direct_delegators_reference_single_source():
         assert "kill_orphan_ansysedt_desktops" in src or (
             name == "factory_mf_hfss_anchors.py"
             and "_kill_desktops" in src), (
-            f"{name}: 未委托单源 kill_orphan_ansysedt_desktops")
+            f"{name}: 未委托单源 kill_orphan_ansysedt_desktops（df5）")
         assert "desktop_guard" in src, (
             f"{name}: 未引用 src/rfauto/infra/desktop_guard 单源模块")
 
@@ -105,7 +105,7 @@ def test_factory_mf_single_sourced_no_local_kill_defs():
                  "_process_alive"):
         assert gone not in funcs, (
             f"factory_mf: 本地 {gone} 应已上收 src/rfauto/infra/"
-            "desktop_guard.py（单源化），不得残留本地副本（#116 死副本族）")
+            "desktop_guard.py（df5 单源化），不得残留本地副本（#116 死副本族）")
 
 
 def test_transitive_consumers_wiring_intact():
@@ -123,7 +123,7 @@ def test_transitive_consumers_wiring_intact():
     for name in ("hfss_hairpin_anchor.py", "hfss_cps_arbitration.py",
                  "hfss_slotline_arbitration.py"):
         assert "_kill_desktops(strict=False)" in _src(name), (
-            f"{name}: 收尾扫尾点未传 strict=False（criteria B 类）")
+            f"{name}: 收尾扫尾点未传 strict=False（df5 criteria B 类）")
 
 
 def test_interdigital_check_preflight_fail_closed():

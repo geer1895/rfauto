@@ -1,6 +1,6 @@
 """§DP-4 P3 EEP 阵列族：patch_eep_2x2 / patch_eep_1x4 单测（2026-09-24）。
 
-方案行（docs/plan_deepdive_specs_20260924.md DP-4 §2c/§3）：互耦档（EEP）
+方案行（规格深案 DP-4 §2c/§3）：互耦档（EEP）
 专用阵模板——单元平铺参数化（elem_len/w/feed_mm + spacing_x/y_mm），每元
 独立 LumpedPort 底探针（端口 1..4）、无 corporate 馈树、元间 DC 隔离=EEP
 定义性质；N 次单激励轮转（#208）逐轮产出第 n 列 S 参数与第 n 元有源方向图
@@ -44,13 +44,22 @@ C_MM_GHZ = 299.792458
 
 #: 缺省渲染字节钉（audit 收敛档 0.4mm；openems_templates.py 缺省路径任何
 #: 漂移即红，换钉须留 diff 证据——msl_siw_taper/compose 三钉同纪律）
+#: wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案（ra_criteria SPECS
+#: §六）——render_script 尾段追加 sparams.mask.json sidecar 写出块
+#: （csv 写出段逐字节零漂移，diff 证据 runs/w6_phase6/w6e/{pre,post}_
+#: render_h01/ removed=0 实测）；本钉=整脚本 sha，随尾段追加必移，
+#: 语义断言（nf2ff 面注入/缺省不含）保留不变。
+#: wf:nrts-fix 换钉（2026-09-28）：patch_eep_1x4 系四 F-D 模板之一，缺省
+#: 路径新增 EndCriteria=1e-06+Run 前 NrTS 终网格 CFL 折算块（#262 截断族
+#: 修复面，tests/unit/test_nrts_wiring.py 同钉）；patch_eep_2x2 非 F-D 席位
+#: 逐字节不变（旧钉保留实测通过）。
 EEP_BASE_RENDER_SHA256 = {
-    "patch_eep_2x2": "faab122d73202dec413e72295620a5d0535090175ffdf10827b0eead9033cde0",
-    "patch_eep_1x4": "93bd95c5bae57116a09d69bc6a4d07de0e16a8560652be73320547364df58648",
+    "patch_eep_2x2": "862bd5ee6747f9f5760dda4269c091beb9c22c6d83eebe5ff078994b7ae17a95",
+    "patch_eep_1x4": "78106deb872b3e52774932d5f6a96c4d5d88f427d222ba7f6573baf6156ecb49",
 }
 EEP_FF_RENDER_SHA256 = {
-    "patch_eep_2x2": "aca4040f96ba52fd28d28ffb9a575a580b9e440c2d82575707cf75c79e9b3db6",
-    "patch_eep_1x4": "1c2d3b7e21e0ba5d3c30cdf795e1f43b6b1879f3e0d1632546ad7795a8ab0659",
+    "patch_eep_2x2": "9d5a5035d12e281639e993ab8a323f010b9117f345afe809bcc0f74f6911b271",
+    "patch_eep_1x4": "cd255b51fb00afc1dbdba7b46d6cdda65f93606984eee35c437312d89fc0126f",
 }
 
 
@@ -74,7 +83,9 @@ def test_eep_registered_in_registry():
     from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
 
     assert set(ot.EEP_TEMPLATES) <= EXPECTED_TEMPLATES
-    assert len(ot.TEMPLATE_META) == 53, "TEMPLATE_META 计数 52→53（df7 C10d mmwave_series_array）"
+    # 计数只与审计单源比对（AU-1B4/#247 禁轨内自钉）：M-5 varactor_bpf 57、
+    # J2FB ms_ring_patch 58 由单源承载，字面计数退役
+    assert len(ot.TEMPLATE_META) == len(EXPECTED_TEMPLATES)
     for t in ot.EEP_TEMPLATES:
         assert ot.TEMPLATE_META[t] is ot.EEP_META[t], t
         assert ot.TEMPLATE_NOMINAL[t] is ot.EEP_NOMINAL[t], t
@@ -380,13 +391,11 @@ def test_excite_switching_and_clamp():
         # 单激励 9 列 CSV footer（#208 轮转装配消费）
         assert '"freq_hz", "re_S11", "im_S11", "re_S21", "im_S21"' in text
         assert "S41[_i].imag" in text
-    # 钳位 1..4（excite_port=0/7 恰容 4 口）
-    for clamp, active in ((0, 1), (7, 4)):
-        text = ot.render_script(t, dict(ot.EEP_NOMINAL[t]), BAND,
-                                mesh_resolution_mm=MESH_MM, excite_port=clamp)
-        seg = text[text.index(f"_port{active} = LumpedPort"):]
-        exc = next(ln for ln in seg.splitlines() if "excite=" in ln)
-        assert exc.split("excite=")[1].split(",")[0] == "1"
+    # TA-3/4 起 excite_port 越域显式拒绝（静默钳位会偷偷换激励口=实验语义漂移）
+    for bad in (0, 5, 7, -1):
+        with pytest.raises(ValueError, match="excite_port"):
+            ot.render_script(t, dict(ot.EEP_NOMINAL[t]), BAND,
+                             mesh_resolution_mm=MESH_MM, excite_port=bad)
 
 
 def test_far_field_head_executes():

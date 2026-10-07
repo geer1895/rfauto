@@ -1,6 +1,6 @@
-"""异步 job 链路测试。
+"""异步 job 链路测试（审查修复 C3）。
 
-钉住的原始问题：run_once_async 返回的 job_id 与 run_once 内部的真实
+审查发现的原始问题：run_once_async 返回的 job_id 与 run_once 内部的真实
 run_id 无关联，poll_job 永远查不到；结果写入 result_holder 后无人读取。
 """
 

@@ -3,8 +3,8 @@
 P5 实现特性：
 - 完整 Branchline 拓扑：两对 λ/4 臂（series 35.4Ω + shunt 50Ω）
 - 4 端口：Input / Through / Coupled / Isolated（完整实现）
-- 所有尺寸经变量通道写入，几何用表达式引用
-- 命名规范强制
+- 所有尺寸经变量通道写入，几何用表达式引用（军规 2a）
+- 命名规范强制（军规 2b）
 - 验证"新增模板未改动任何核心层文件"（P5 验收项）
 """
 
@@ -75,7 +75,7 @@ class BranchlineCouplerPlugin(RFModelPlugin):
     def _build_hfss(self, hfss, params: BranchlineCouplerParams) -> None:
         """真实 HFSS 建模——标准方形环 Branchline 拓扑（Pozar §7.2）。
 
-        真机验证前重写。原实现两个致命问题：
+        2026-08-30 真机验证前重写。原实现两个致命问题：
         1. 几何不是环——shunt 臂用 in_len/out_len 拼接，四臂不构成回路；
         2. P3/P4 波端口放在 x=±gap/2，位于空气盒内部，必然触发
            "Wave port internal to solution domain"。

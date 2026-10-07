@@ -1,11 +1,12 @@
-"""经验公式符号归纳：确定性稀疏符号回归内核 + 谷位提取（core 叶子，仅 numpy）。
+"""E13 经验公式符号归纳：确定性稀疏符号回归内核 + 谷位提取（core 叶子，仅 numpy）。
 
 依据
 ----
-- 符号回归（PySR 类）从仿真数据归纳闭式经验公式（f0(L,W,er,h)、k(BASE) 等），
-  确定性可复现、可审计；产出经人工审核入 core/calculators，喂 fake 派发 /
-  synthesis 初值 / 报告白名单数字；裁判 = 独立数值对照（#118：不得自证）。
-- 候选须确定性可审计。
+- docs/续跑计划.md §10.5 E13：符号回归（PySR 类）从 runs/
+  战役数据归纳闭式经验公式（f0(L,W,er,h)、k(BASE) 等），确定性可复现、可
+  审计；产出经人工审核入 core/calculators，喂 fake 派发 / synthesis 初值 /
+  报告白名单数字；裁判 = 独立数值对照。
+- §10.18 第 9 条：候选来自"开放思考"，须确定性可审计。
 
 机制（不引入新依赖，纯 numpy 自实现；不装 PySR/gplearn/sympy）
 --------------------------------------------------------------
@@ -24,18 +25,18 @@
    选择准则三选一——"penalty"（mse·(1+penalty·complexity)）、"tolerance"
    （最小复杂度中误差已达最优容差）、"holdout"（留出误差最小，并列取低复杂度）。
 4. **裁判面** `patch_resonance_hj_ghz`：Hammerstad（Balanis 教科书口径）
-   矩形贴片谐振闭式，作为 patch 数据集的**独立闭式对照**。拟合路径
+   矩形贴片谐振闭式，作为 E13 patch 数据集的**独立闭式对照**。拟合路径
    **不经过它**（#118 不作自证），只有测试与 scripts/symbolic_fit_patch.py
    把它当裁判调用。
 5. `resonance_dip`：从稠密 S 参数谱确定性提取指定频窗内最深**局部**
    谷（patch f0 数据面提取内核）。刻意不用全局 argmin：W>46mm 的宽贴片存在
    更深的高阶模簇（实测 3.1-3.5GHz 谷深可达 -26dB），全局 argmin 会把高阶模
-   误当基模（见 patch_f0 标定归档的证据）。
+   误当基模（见 runs/symbolic_fit/patch_f0.json 的证据）。
 
 诚实边界
 --------
 - 归纳式只是对**观测数据**的最小二乘近似，不含任何物理推导；任何准备入
-  core/calculators 的常数必须经独立对照 + 人工审核。
+  core/calculators 的常数必须经独立对照 + 人工审核（§10.5 E13 原文口径）。
 - 本模块不读 runs/、不联网、不依赖 skrf/optuna（core 零依赖叶子约束）。
 """
 
@@ -71,7 +72,7 @@ _C_MM_GHZ = 299.792458
 
 @dataclass(frozen=True)
 class BasisConfig:
-    """候选基函数库开关（默认覆盖公式归纳需要的多项式/1/x/sqrt/ln/比值族）。"""
+    """候选基函数库开关（默认覆盖 E13 需要的多项式/1/x/sqrt/ln/比值族）。"""
 
     max_power: int = 2
     allow_inverse: bool = True
@@ -668,7 +669,7 @@ def patch_resonance_hj_ghz(l_mm: float, w_mm: float, er: float, h_mm: float) -> 
     dL = 0.824*h*(ee+0.3)*(W/h+0.264) / ((ee-0.258)*(W/h+0.8))；
     f0 = c / (2*(L+2*dL)*sqrt(ee))。
 
-    本函数只作经验公式归纳的独立对照（#118），拟合路径不调用它。
+    本函数只作 E13 的独立对照（#118），拟合路径不调用它。
     """
     values = {"l_mm": l_mm, "w_mm": w_mm, "er": er, "h_mm": h_mm}
     for label, value in values.items():

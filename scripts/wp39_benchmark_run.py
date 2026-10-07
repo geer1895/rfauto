@@ -7,7 +7,7 @@ r"""WP3.9 MVP 基准运行器（§10.0）：3 问题 × 2 引擎 × 真跑预算
 
 引擎：
 - pattern_search = HFSS Optimetrics 口径基线（达标线）：Hooke-Jeeves
-  Pattern Search 的**等价 scripted loop**（预声明允许口径）——PyAEDT
+  Pattern Search 的**等价 scripted loop**（任务书允许口径）——PyAEDT
   驱动设计变量更新 + analyze + 导出，与 Optimetrics 同一求解语义；
   不用 GUI 原生 Optimetrics setup 的原因：其 Pattern Search 无法硬帽
   评估次数（预算 25 固定不得超无法保证），MVP 以等价环保预算精确；
@@ -40,7 +40,7 @@ r"""WP3.9 MVP 基准运行器（§10.0）：3 问题 × 2 引擎 × 真跑预算
 几何纪律：字面量一律显式 mm（#218）；设计变量表达式随变量量纲
 （#218 三类语义③），不出现纯数字串/纯字面算术。
 
-换判据变体（wp39-factory-verdict-next；产出走新目录
+换判据变体（wp39-factory-verdict-next，2026-09-16；产出走新目录
 runs/wp39_factory_verdict_next/，不覆盖既有归档 #122）：
 - mline_eps     |εeff−target|（S21 相位斜率抽取，sweep 2.4–2.6 Discrete 41 点，
                 ④ 名义点先标定 target；非 dB 越小越好）——mline 基线臂与
@@ -91,7 +91,7 @@ SBO_TOL_ABS_EPS = 0.003
 
 SCHEMA = "wp39_mvp_campaign_v1"
 
-# ── 换判据常量（wp39-factory-verdict-next）────────────────────────
+# ── 换判据常量（wp39-factory-verdict-next，2026-09-16）────────────────────────
 # mline_eps：HFSS 波端口面=线两端（y=±MLINE_Y_HALF），S21 相位斜率抽取 εeff
 # 的线长精确 = 2·MLINE_Y_HALF；sweep 2.4–2.6GHz（±4%，与 β 抽取窗同口径）
 MLINE_Y_HALF = 40.0
@@ -185,7 +185,7 @@ def _sub_expr(literal_mm: float, term: str) -> str:
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
@@ -642,7 +642,7 @@ PROBLEMS: dict[str, ProblemDef] = {
         name="patch", metric_name="s11_f0_db",
         metric_desc="|S11|@2.45GHz dB（越负越好；谐振调频对准 2.45GHz "
                     "ISM。目标经真机标定：标称 L=40 实测谷位 2.495GHz/"
-                    "深 -13.9dB（runs/patch_hfss_probe，f_dip·L≈99.8 本机"
+                    "深 -13.9dB（runs/wp39_probe_patch，f_dip·L≈99.8 本机"
                     "口径），首版 2.0GHz 目标在盒内无谷（地貌平坦，两臂"
                     "同判无效基准）后重定心）",
         bounds={"patch_len_mm": (36.5, 41.5), "patch_w_mm": (40.0, 45.0)},
@@ -667,7 +667,7 @@ PROBLEMS: dict[str, ProblemDef] = {
         ports_desc="4 波端口（官方 5w×4h，#219③ 仲裁几何变量化）",
         extra={"family": "rat-race 混合环（hfss_ratrace_arbitration 几何）",
                "w_ring_mm": W_RING, "w_feed_mm": W_F, "k_y": KY}),
-    # ── 换判据变体（wp39-factory-verdict-next）───────────────────
+    # ── 换判据变体（wp39-factory-verdict-next，2026-09-16）───────────────────
     "mline_eps": ProblemDef(
         name="mline_eps", metric_name="eps_eff_abs_err",
         metric_desc="|εeff_engine(w)−εeff_target|（无量纲非 dB，越小越好；"
@@ -723,7 +723,7 @@ class HfssEvaluator:
         self.problem = problem
         # #140：第一行 Path() 收敛并转绝对——AEDT Project.Rename 按 ansysedt
         # 自身 cwd 解析相对路径，相对 -outdir 会让 Hfss() 构造期 Rename 挂起
-        # ~6min 后 GrpcApiError（mline_eps 3/3 实证，绝对路径即过）
+        # ~6min 后 GrpcApiError（2026-09-16 mline_eps 3/3 实证，绝对路径即过）
         self.workdir = Path(workdir).resolve()
         self.h = None
         self.adapter = None
@@ -759,7 +759,7 @@ class HfssEvaluator:
         if not report.success:
             raise RuntimeError(f"solve 失败: {report.message}")
         if self.problem.sweep:
-            # #191 家族：导出前显式确认 sweep 真正完成
+            # 方案 §10.9 / #191 家族：导出前显式确认 sweep 真正完成
             # （HfssAdapter.assert_sweep_completed，adapter 禁改直接消费）
             self.adapter.assert_sweep_completed(
                 "Setup", str(self.problem.sweep.get("name", "Sweep")))
@@ -800,7 +800,7 @@ class HfssEvaluator:
     def _normalize_touchstone_suffix(self, path: Path) -> Path:
         """字面 .sNp 扩展名归一成 .s{N}p（skrf 按扩展名推断端口数）。
 
-        patch 预检实证：1 端口设计走 HfssAdapter.export_touchstone
+        patch 预检实证（2026-09-12）：1 端口设计走 HfssAdapter.export_touchstone
         时不触发 n_ports≥2 的扩展名修正分支，HFSS 2025.1 落盘字面 ".sNp"，
         skrf.Network 无法解析——按问题端口数改名后读取。adapter 禁改，
         归一化留在本基准 evaluator。
@@ -1022,7 +1022,7 @@ def judge(outdir: Path) -> Path:
             "budget": BUDGET_DEFAULT,
             "wallclock_max_ratio": WALLCLOCK_MAX_RATIO,
             "cost_max_degradation_pct": COST_MAX_DEGRADATION_PCT,
-            "source": "WP3.9 MVP 基准"},
+            "source": "方案 §10.0 / 队列项（WP3.9 MVP 基准）"},
         "baseline_tiers": {
             "pattern_search": "达标线（本 MVP 实测）",
             "optislang_mop": "超额线（未接，见 followUps）"},

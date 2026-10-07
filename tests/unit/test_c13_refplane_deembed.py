@@ -1,6 +1,6 @@
-"""C13 参考面去嵌闭门（2026-09-15）。
+"""C13 followUp ③：0by② 参考面去嵌闭门（2026-09-15，排空队 #33）。
 
-闭环对象：topology_service 旧边界注记——
+闭环对象：/topology_service 旧边界注记——
 「coupling_matrix_extract 对含馈线/λ/4 参考面相位的电路裁判输出不收敛
 （rms ~7e-2 > 1e-2 门，相位非有理可吸收）」。本文件用名义设计链
 （coupled_bpf_design_from_order → coupled_bpf_circuit_sparams）逐项复现、
@@ -89,7 +89,7 @@ def _mag_kij(m_list: list) -> float:
 
 def test_circuit_judge_raw_extraction_fails_gate_honestly():
     """名义设计电路裁判（色散模式，±5% 窗）原始反提：拟合残差 0.060（实测，
-    即旧注记的 ~7e-2 档）超 1e-2 门 → 显式 raise，不凑绿。"""
+    即 的 ~7e-2 档）超 1e-2 门 → 显式 raise，不凑绿。"""
     design = _design()
     s11, s21 = _sparams(design, _WIN_5, sync=False)
     # 门前的拟合残差（独立量一遍，钉住「不收敛」的量级）

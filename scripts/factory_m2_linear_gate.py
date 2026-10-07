@@ -1,4 +1,4 @@
-"""M2 消费面线性域判据判读驱动（纯离线，零引擎）。
+"""datafactory M2 消费面线性域判据判读驱动（纯离线，零引擎）。
 
 背景：run1（scripts/factory_m2_surrogate.py --judge → m2_verdict.json）
 S11 dB 门 FAIL 如实；其 fail_diagnosis 实证深谷族 dB 域判据被深零点 dB
@@ -43,7 +43,7 @@ if str(_SRC) not in sys.path:
 
 LINEAR_TOL = 0.04
 EPS_TOL = 0.01  # εeff 门沿用 run1（≤1%）
-S21_DB_TOL = 0.5  # S21 dB 门（run1 原门，本 run 复算作对照）
+S21_DB_TOL = 0.5  # S21 dB 门（run1 方案门，本 run 复算作对照）
 RUN1_VERDICT_PATH = REPO / "runs/datafactory_m2/m2_verdict.json"
 CRITERIA = "runs/datafactory_m2/criteria_linear.md"
 
@@ -312,9 +312,9 @@ def build_comparison(run1: dict, held: dict, loo: dict) -> dict:
 
     return {
         "note": (
-            "两口径并列出账：run1 dB 门如实 FAIL（m2_verdict.json "
+            "两口径并列出账：run1 dB 门按 plan 如实 FAIL（m2_verdict.json "
             "零改写）；线性域门是深谷族消费口径补充（criteria_linear.md），"
-            "不替代原门。线性域过门 ≠ dB 域过门。"),
+            "不替代方案门。线性域过门 ≠ dB 域过门。"),
         "heldout": {
             "s11_db_gate_run1": s11_run1(r1h),
             "s11_linear_gate_this_run": s11_lin(held),
@@ -402,8 +402,8 @@ def run_judgment(dataset_dir: Path, out_path: Path, freq_step: float,
             "freq_step_ghz": freq_step,
             "seed": m2.SEED,
             "run1_db_gate_disposition": (
-                "run1 如实保持 FAIL（runs/datafactory_m2/m2_verdict.json "
-                "零改写）；本门为消费口径补充，不替代原门"),
+                "按 plan 如实保持 FAIL（runs/datafactory_m2/m2_verdict.json "
+                "零改写）；本门为消费口径补充，不替代方案门"),
         },
         "synthetic_recovery": {
             "truth": ("解析无耗线 Z0=60+15w Ω, εeff=2.5+0.5w, L=40mm（#118），"

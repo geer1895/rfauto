@@ -95,7 +95,7 @@ def test_grad_matches_finite_difference(cavity: DiffCavity):
 
 
 def test_grad_deterministic(cavity: DiffCavity):
-    """同点两次求梯度逐位一致（确定性内核数值纪律）。"""
+    """同点两次求梯度逐位一致（确定性内核， 数值纪律）。"""
     g1 = cavity.grad_at(0.5)
     g2 = cavity.grad_at(0.5)
     assert g1 == g2

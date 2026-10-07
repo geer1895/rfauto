@@ -1,7 +1,7 @@
-"""M3 谷区定向加密采集（M3 第一批）。
+"""数据工厂 M3 谷区定向加密采集（datafactory_phase1_plan §2.2/§5 M3 第一批）。
 
-判据/口径全部预声明 runs/datafactory_m3/criteria.md（写死再跑）。
-承接 M2/M4 独立同因归因：S11 深谷区
+判据/口径全部预声明 runs/datafactory_m3/criteria.md（写死再跑，2026-09-20）。
+承接 M2/M4 独立同因归因（三百零二）：S11 深谷区
 （w≈0.9055-0.9103）亚栅格锐度 → 谷区定向加密 30 点（谷区 LHS 20 + 谷芯
 均匀 10）。采集链复用 factory_m1_collect（只 import 不改源）：
 write_run_products / compute_point_metrics(port_beta_csv=) /
@@ -41,7 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# 采集链复用（只 import 不改源）：m1 模块导入时自注入 src 路径，
+# 采集链复用（只 import 不改源，b9aa07a）：m1 模块导入时自注入 src 路径，
 # 脚本目录经 python 运行/测试 sys.path 注入解析（本文件 cwd 守卫=仓库根）。
 import factory_m1_collect as m1
 from factory_m1_collect import (
@@ -70,7 +70,7 @@ STUDY = "datafactory_m3"
 SOLVE_TIMEOUT_S = 900.0
 QUOTA_TRIALS = 30
 QUOTA_WALL_H = 1.0
-MEDIAN_WALL_GATE_S = 90.0            # 30×~90s 预算带
+MEDIAN_WALL_GATE_S = 90.0            # 任务书 30×~90s 预算带
 N_ROWS_TARGET = 30
 BUDGET_WALL_S = 45.0 * 60.0          # 目标预算
 PARTIAL_FACTOR = 1.5                 # 超 1.5× → PARTIAL(超预算)（67.5min）
@@ -710,7 +710,7 @@ def run_materialize() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="M3 谷区定向加密采集（criteria 预声明判据）")
+        description="数据工厂 M3 谷区定向加密采集（criteria 预声明判据）")
     ap.add_argument("--plan", action="store_true", help="采样计划落盘/打印")
     ap.add_argument("--audit", action="store_true", help="PG1 渲染审计（离线）")
     ap.add_argument("--benchmark", action="store_true", help="PG0 合成非退化门（离线）")

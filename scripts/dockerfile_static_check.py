@@ -1,4 +1,4 @@
-"""Dockerfile 静态校验。
+"""G7 Dockerfile 静态校验（fix-queue14-g14g7h6，2026-09-18）。
 
 如实口径：本机无 docker 守护（`docker` 命令不存在），**未真构建**；
 本脚本只做静态校验，不冒充构建 PASS：

@@ -1,7 +1,7 @@
-"""均匀槽线段·LumpedPort 跨槽近似渲染器（路线 B，openEMS）。
+"""均匀槽线段·LumpedPort 跨槽近似渲染器（W3⑧b 路线 B，openEMS）。
 
-路线定位（定案，两条路线并行验证）：openEMS 无 slotline 端口原语，
-路线 A 用 NGSolve 模场喂 WaveguidePort（自研端口，
+路线定位（用户 2026-09-16"两条路线都试"）：openEMS 无 slotline 端口原语
+（方案 §4 阻塞注记），路线 A 用 NGSolve 模场喂 WaveguidePort（自研端口，
 `slotline_template.py`，只读复用其几何口径）；本路线用**官方 LumpedPort
 跨槽集总馈**（refs §8 AddLumpedPort 范式、§11.1 CPS 同法）——不需要模式
 文件，代价是集总近似失配（|S11| 如实记录）。HFSS 波端口仲裁基准见
@@ -31,9 +31,6 @@ uf_ref/uf_inc 中幅值大者（匹配端接下恰一者≡0，另一者=到达�
 离线审计（#212）：exec 脚本头（FDTD.Run 之前）→ CSXCAD 实测金属原语 DC 隔离
 （槽真断开）、LumpedPort 盒三向非零且边在网格线上、探针数/位置、网格含槽缘
 与基板界面与端口盒边。
-
-运行前置：openEMS Python 绑定（CSXCAD/openEMS）需已安装——在 PATH，
-或经 RFAUTO_OPENEMS_BIN 环境变量指定 bin 目录（渲染脚本不注入固定安装路径）。
 """
 
 from __future__ import annotations
@@ -135,20 +132,17 @@ def render_slotline_lumped_script(params: dict[str, Any],
     two_wave_src = inspect.getsource(two_wave_beta_fit)   # 单源注入（脚本自包含）
 
     return f'''#!/usr/bin/env python3
-"""openEMS slotline route-B script (rfauto, auto-generated).
+"""openEMS slotline route-B script (rfauto W3⑧b, auto-generated).
 
 几何/端口/网格口径见 src/rfauto/adapters/slotline_lumped_template.py 模块 docstring。
-运行前置：openEMS Python 绑定需已安装——在 PATH，或经 RFAUTO_OPENEMS_BIN
-环境变量指定 bin 目录。
 """
 import csv
 import json
 import os
 
-# openEMS Python 绑定（CSXCAD/openEMS）需已安装并在 PATH；也可用
-# RFAUTO_OPENEMS_BIN 环境变量显式指定 bin 目录（未给出时不注入任何路径）。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
-if _OE_BIN and os.path.isdir(_OE_BIN):
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
+                         r"D:/rf_workspace\\vendor\\openEMS\\install\\bin")
+if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
 

@@ -5,7 +5,7 @@
 
 真实归档（运行期先核查存在性，缺失即硬失败并给出路径）：
 - runs/ratrace_arbitration/hfss_ratrace.s4p（HFSS 四端口环形电桥）
-- runs/patch_hfss_probe/probe.s1p（HFSS patch 单端口探针）
+- runs/wp39_probe_patch/probe.s1p（HFSS patch 单端口探针）
 
 产物：runs/macromodel/<stem>.json（完整宏模型结果，JSON 原生，含 spice_xval
 段）+ runs/macromodel/<stem>.sp（SPICE 子电路）+ runs/macromodel/<stem>_xval/
@@ -44,7 +44,7 @@ OUT_DIR = REPO / "runs" / "macromodel"
 
 CASES: tuple[tuple[str, Path], ...] = (
     ("ratrace", REPO / "runs" / "ratrace_arbitration" / "hfss_ratrace.s4p"),
-    ("patch", REPO / "runs" / "patch_hfss_probe" / "probe.s1p"),
+    ("patch", REPO / "runs" / "wp39_probe_patch" / "probe.s1p"),
 )
 
 

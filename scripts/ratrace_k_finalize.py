@@ -1,7 +1,7 @@
 """rat-race k(BASE) 定版真机核验（ratrace-k-finalize 子项 B）：openEMS Σ 单激励
 进程隔离 run，按网格档施加 ratrace_ring_mesh_k(BASE) 复跑并判读 hybrid 中心。
 
-口径（openems_convergence.json 两点标度的定版回验）：
+口径：
 - 同 pt9/convergence 渲染（render_script("ratrace")，band 2.25–2.75GHz），
   excite_port=1（Σ）单激励单进程（#208 安全模式）；--excite-port 3 可选加跑 Δ 口；
 - 产物 sparams.csv 9 列（S11/S21/S31/S41 相对激励口），单列判读中心：
@@ -199,7 +199,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def _propose_round2_k(f_avg_new: float, k_new: float, f_avg_old: float, k_old: float) -> dict:
-    """两点线性 df/dk 拟合 → 把 f_center_avg 拉到 F0 的 k（敏感度<1/R 情形）。"""
+    """两点线性 df/dk 拟合 → 把 f_center_avg 拉到 F0 的 k。"""
     dfdk = (f_avg_new - f_avg_old) / (k_new - k_old)
     k2 = k_new + (F0 - f_avg_new) / dfdk if abs(dfdk) > 1e-9 else None
     return {"df_dk_ghz_per_k": round(dfdk, 4), "k_round2": (round(k2, 4) if k2 else None),

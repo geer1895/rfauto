@@ -1,4 +1,4 @@
-"""COMSOL 收口包离线门（零 COMSOL/license/JVM）。
+"""队列 #26 COMSOL 轨收口包离线门（零 COMSOL/license/JVM）。
 
 覆盖（对应 scripts/comsol_afs_realcase.py、scripts/comsol_mline_tem_benchmark.py
 --port-sweep 腿、scripts/comsol_microwave_oven.py Figure 3 字段）：

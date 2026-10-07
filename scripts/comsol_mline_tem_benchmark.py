@@ -1,4 +1,4 @@
-"""COMSOL mline 锚「数值 TEM 边界模端口」三档网格收敛 harness。
+"""COMSOL mline 锚「数值 TEM 边界模端口」三档网格收敛 harness（队列4 未尽 6i③）。
 
 物理裁判：COMSOL 通道 mline 锚真机对拍升级——集总端口 Uniform 准静态场形
 失配致 εeff +4.81% 如实 FAIL（run7/11，runs/comsol_tail/mline_summary.json），
@@ -30,8 +30,8 @@ core/anchor_verdict.mline_benchmark_verdict——
 非法属性/类型串当场抛错，零席位验证建模序列；同时 best-effort 回读端口
 特征属性核 StudyStep 解引用落位。退出码：0=PASS；2=FAIL（判据或求解失败）。
 
---port-sweep：tem 链 × 端口扫描组合（官方 PortSweepSettings +
-外层 Parametric 步扫 PortName）——步序约束：bma1/bma2 在 Frequency 步前
+--port-sweep（队列 #26②）：tem 链 × 端口扫描组合（官方 PortSweepSettings +
+外层 Parametric 步扫 PortName）——步序铁律：bma1/bma2 在 Frequency 步前
 （端口模变量只在边界模分析步产生），Parametric 为外层（先建=外层，官方
 h_bend_waveguide_3d 同构）；离线序列由
 tests/unit/test_comsol_tail.py::test_solve_tem_chain_supports_port_sweep 钉住。
@@ -129,8 +129,8 @@ def probe_only(loss_tangent: float | None, port_sweep: bool = False) -> int:
                 "StudyStep": str(feat.getString("StudyStep")),
             }
         print(f"port props: {json.dumps(report)}", flush=True)
-        # 端口扫描腿：回读 study 步序（约束：bma1/bma2 在 Frequency 步前，
-        # Parametric 外层=先建；官方 cpw/h_bend 同构）。
+        # 端口扫描腿：回读 study 步序（铁律：bma1/bma2 在 Frequency 步前，
+        # Parametric 外层=先建；官方 cpw/h_bend 同构，队列 #26②）。
         # study 步在 StudyFeatureList 下（study.feature().tags()）——
         # study 本体无 tags()（MPh StudyClient 真机实证 AttributeError）。
         step_tags = [str(t) for t in model.java.study(
@@ -187,7 +187,7 @@ def main() -> int:
                         help="零席位建模序列验证后退出（不 solve）")
     parser.add_argument("--port-sweep", action="store_true",
                         help="tem 链 × 端口扫描组合腿（全 2×2 S 矩阵 + 原生 "
-                             "Touchstone；产物落 mline_tem_parametric/）")
+                             "Touchstone；产物落 mline_tem_parametric）")
     args = parser.parse_args()
 
     tan_d = args.loss_tangent if args.loss_tangent > 0 else None
@@ -263,7 +263,7 @@ def main() -> int:
                                     eps_gold=EPS_EFF_MLINE_GOLD,
                                     eps_hj=eps_hj)
     verdict = str(bench["verdict"])
-    # 端口扫描腿附加判据：无源性 + Touchstone 原生导出为门（#26②
+    # 端口扫描腿附加判据：无源性 + Touchstone 原生导出为门（任务书 #26②
     # 判据清单）；互易性**只记录不作门**——真机实测 max|S12−S21|≈7.6e-3
     # （2.3GHz，|S21|≈0.985 的 0.8%）：数值端口两端口各自 bma 模归一在
     # 非同构端面网格上有亚百分位差异（假设/待证），1e-3 门对 FEM 数值端口

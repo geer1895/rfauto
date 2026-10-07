@@ -1,4 +1,4 @@
-"""c3 谐振 Q 时域提取 + S 参数稳态外推内核与判读门单测（零真机）。
+"""fix-c3-q-extract：c3 谐振 Q 时域提取 + S 参数稳态外推内核与判读门单测（零真机）。
 
 ① 合成衰减正弦（已知 f0/Q 多模）回收 Q 与稳态幅值；② 截断敏感性（不同截断点外推
 稳定；模型外模式在短截断下被置信门如实拦下）；③ c3 归档 107.6ns 部分数据复现
@@ -280,7 +280,7 @@ class TestArchiveReproduction:
 
         freqs = np.linspace(2.0, 3.0, 4001)
         nom = dict(ot.TEMPLATE_NOMINAL["interdigital"])
-        # NOMINAL 为过孔补偿口径 → 合成响应取过孔裁判带心回 F0
+        # NOMINAL 为登记⑨ 过孔补偿口径 → 合成响应取过孔裁判带心回 F0
         s = ot.c3_circuit_sparams("interdigital", freqs, nom, l_via_h=None)
         s11 = s[:, 0, 0]
         s21 = s[:, 1, 0] * 10 ** (-0.5 / 20)
@@ -303,7 +303,7 @@ class TestArchiveReproduction:
 
         freqs = np.linspace(2.0, 3.0, 4001)
         nom = dict(ot.TEMPLATE_NOMINAL["interdigital"])
-        # NOMINAL 为过孔补偿口径 → 合成响应取过孔裁判带心回 F0
+        # NOMINAL 为登记⑨ 过孔补偿口径 → 合成响应取过孔裁判带心回 F0
         s = ot.c3_circuit_sparams("interdigital", freqs, nom, l_via_h=None)
         s21 = s[:, 1, 0] * 10 ** (-0.5 / 20)
         circ_db = 20.0 * np.log10(np.abs(s[:, 1, 0]) + 1e-12)

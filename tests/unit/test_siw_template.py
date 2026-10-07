@@ -307,7 +307,11 @@ def test_siw_layout_rule_guard_rejects_rule_violation():
 
 #: v1 缺省渲染字节钉（审计档 NOM×BAND×0.4mm 全文 sha256；任何缺省路径漂移
 #: 即红——改 v1 缺省行为必须显式换钉并在 runs/siw_family/ 留 unified diff 证据）
-_V1_RENDER_SHA256 = "80d24e932c826b61906964aa0e5bad084a721ec905cbf656bc598adea030e2af"
+# wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案 render_script 尾段追加
+# sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
+# runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
+# 随尾段追加必移（旋钮语义断言：显式 v1==缺省 逐字节，保留不变）。
+_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
 
 
 def test_siw_v1_default_render_byte_pin():

@@ -16,7 +16,7 @@
 
 设计点（与路线 A/HFSS 同）：f0=2.5GHz、εr=3.66、h=1.524mm、W=1.0mm、
 L=1λ'=93.4624mm；扫描 2.25–2.75GHz（路线 A 同带）。
-门（预声明）：β_B vs HFSS ≤3%；β_B vs 闭式 ≤5% 信息门；LumpedPort
+门（预声明，任务书）：β_B vs HFSS ≤3%；β_B vs 闭式 ≤5% 信息门；LumpedPort
 适用性分级：β 可用 / S 参数可用与否按 |S11| 线基水平如实。
 用法：.venv/Scripts/python.exe scripts/smoke_slotline_port_b.py [--r-modes closed,hfss]
       [--mesh-mm 0] [--nrts N] [--poll-timeout-s 14400] [--busy-timeout-s 7200] [--no-cache]

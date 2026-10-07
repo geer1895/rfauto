@@ -10,7 +10,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 from ansys.aedt.core import Hfss
-from ansys.aedt.core.generic.constants import Axis, Plane
+from ansys.aedt.core.generic.constants import Plane, Axis
 
 hfss = Hfss(
     project="my_project",
@@ -155,7 +155,7 @@ hfss.create_linear_count_sweep(
 # ─────────────────────────────────────────────────────────────────────────────
 
 # 求解前设置自动导出（防 gRPC 断连）
-hfss.export_touchstone_on_completion(export=True, output_dir=".")
+hfss.export_touchstone_on_completion(export=True, output_dir="D:/rf_workspace")
 
 # 求解
 hfss.analyze(setup="main_setup")
@@ -174,7 +174,7 @@ hfss.save_project()
 # 6. 微带线完整示例
 # ─────────────────────────────────────────────────────────────────────────────
 
-from ansys.aedt.core import Hfss  # noqa: E402  示例 2：各示例自含导入
+from ansys.aedt.core import Hfss
 
 hfss = Hfss(
     project="microstrip_example",

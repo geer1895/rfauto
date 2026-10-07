@@ -1,4 +1,4 @@
-"""WP3.9 MVP followUps 单测（followUps 内核——零真机）。
+"""WP3.9 MVP followUps 单测（TODO 队列2 followUps①-⑤ 内核——零真机）。
 
 覆盖面：
 1. ③ 深零点判据内核：带宽积分（band_power_avg_db）与深零点邻域
@@ -16,7 +16,7 @@
 5. judge 汇总档 run_judge_tier 对 tmp outdir 的聚合契约。
 
 真机路径（probe/factory/replay/native/patch_calib）不在单测范围——
-单测零真机零 runs/ 依赖（真机证据走 runs/ 下战役归档 JSON）。
+单测零真机零 runs/ 依赖（真机证据走 runs/wp39_mvp_followup/ JSON）。
 """
 
 from __future__ import annotations

@@ -11,8 +11,7 @@ import（optimization → service 属违例）；而 surrogate_loop（B5 判据�
 两处实现由同一套公式与单测锚定，口径漂移由 test_uncertainty 的同源断言
 拦截）。
 
-纯函数、纯 numpy、固定超参（无优化迭代）→ 确定且快（确定性内核纪律：
-数值只出确定性内核）。
+纯函数、纯 numpy、固定超参（无优化迭代）→ 确定且快。
 """
 
 from __future__ import annotations

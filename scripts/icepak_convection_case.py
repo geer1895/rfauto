@@ -5,14 +5,14 @@ core/electrothermal.isolation_injection_case）+ RO4350B 量级基板，置入
 空气域（adapter.build_convection_case）：
 
   - create_region：包围盒 Absolute Offset 10mm 六向空气域；
-  - edit_design_settings：重力 −Z（pyaedt gravity_dir=2；预声明草案
+  - edit_design_settings：重力 −Z（pyaedt gravity_dir=2；任务书草案
     "5=−Z" 与 pyaedt icepak.py:1106-1115 实装相反，按代码实裁定）、
     环境温度 25C；
   - assign_openings：空气域六面开口（自然对流进出口）；
   - HeatFlowRate 面监控：壁面 1 + 开口每面 1（能量平衡数据源）；
   - problem_type=TemperatureAndFlow（层流默认）。
 
-判据（冻结口径；无闭式自然对流裁判——如实冒烟级）：
+判据（方案 §4 WP4.4a 冻结口径；无闭式自然对流裁判——如实冒烟级）：
   - 能量平衡 ≤10%：壁面导出热 + 开口对流热 ≈ P_in（HeatFlowRate 监控
     汇总，adapter.solve() 内置门）；
   - 物理健康：同功率下 T_自然对流 < T_纯传导（对照=同几何纯传导设计
@@ -43,7 +43,7 @@ MAX_ATTEMPTS = 3
 
 
 def _kill_desktops() -> None:
-    """attempt 间清理（治理单源，#157 先查后杀）。
+    """attempt 间清理（df5 治理单源，#157 先查后杀）。
 
     委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
     活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉
@@ -158,7 +158,7 @@ def _run_case() -> dict:
             "energy_balance": balance,
             "problem_type": "TemperatureAndFlow",
             "gravity_dir": 2,
-            "gravity_note": "pyaedt edit_design_settings 口径 2=−Z（预声明"
+            "gravity_note": "pyaedt edit_design_settings 口径 2=−Z（任务书"
                             "草案 5=−Z 与实装相反，按代码实裁定）",
             "region_pad_mm": 10.0,
         },

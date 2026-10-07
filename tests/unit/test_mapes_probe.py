@@ -1,6 +1,6 @@
 """A8 MAPES 探针装配侧根因修复定向单测（#257；确定性、离线、零真机）。
 
-覆盖 core/mapes.py stage-5b 节 + scripts/mapes_s2_zall.py 文件面：
+覆盖 w2h-mapes-probe 文件面（core/mapes.py stage-5b 节 + scripts/mapes_s2_zall.py）：
 1. ``port_probe_axes``：缝隙口按缝隙跨度取 x/y、竖直口恒 z，与渲染脚本
    ``exc_dir`` 逐端口一致（150/150，单一事实源回归钉）；
 2. ``probe_midlines``：每端口盒三轴中线齐备（u 探针横断面中心 + i 探针激励
@@ -451,7 +451,7 @@ def test_load_raw_ui_reuses_cache_and_rejects_shape_mismatch(tmp_path):
 
 
 def test_reassemble_and_drift_subcommand_report_cross_round_drift(tmp_path, monkeypatch):
-    """q=150 合成轮不变档（缓存直读，不触任何 rounds/）：reassemble 报告含
+    """q=150 合成轮不变档（缓存直读，不触任何 rounds）：reassemble 报告含
     cross_round_drift（≈0）且四阶段仍在；drift 子命令落 drift_report.json 含逐类汇总。"""
     mod = _stage2_module()
     layout = mod.build_layout()
@@ -486,7 +486,7 @@ def test_reassemble_and_drift_subcommand_report_cross_round_drift(tmp_path, monk
     assert all(v["n_defined"] == v["n"] for v in by.values())
 
 # ------------------------------------------------------------------------- #
-# stage-5c：激励口参考面重定标（SREF 探针链自提取）
+# stage-5c：激励口参考面重定标（SREF 探针链自提取，fix-mapes-sref-recal）
 # ------------------------------------------------------------------------- #
 
 def _synth_probe_case(
@@ -695,8 +695,8 @@ def test_refix150_sref_recal_regression_pin():
 
 
 # ------------------------------------------------------------------------- #
-# stage-5c+：互易判读口径显式消费（S2 数值口径；2026-09-19 定案：
-# τ 口径不纳入消费挂起，S2 做成 raw/wave 并列第三档）
+# stage-5c+：互易判读口径显式消费（S2 数值口径；fix-mapes-sref-recal 执行项，
+# 0-用户口径 2026-09-19①：τ 口径不纳入消费挂起，S2 做成 raw/wave 并列第三档）
 # ------------------------------------------------------------------------- #
 
 def test_caliber_gate_default_raw_unchanged_and_wave_matches():
@@ -766,7 +766,7 @@ def test_caliber_gate_s2_consumes_gain_fit_and_absorbs_gauge():
 
 
 def test_caliber_gate_rejects_unknown_and_suspended_tau_caliber():
-    """未知量径显式报错；τ 延迟模型口径按 2026-09-19 定案挂起——
+    """未知量径显式报错；τ 延迟模型口径按 0-用户口径 2026-09-19① 挂起——
     不在枚举内（RECIPROCITY_CALIBERS 恰为 raw/wave/s2 三档）。"""
     from rfauto.core.mapes import RECIPROCITY_CALIBERS, z_all_gate_caliber
 
@@ -782,7 +782,7 @@ def test_refix150_caliber_gate_regression_pin():
     """150 轮真机档三档口径钉（无档机器 skip，不算绿；与
     runs/mapes_sref_study/evidence.json 同源）：raw 1.460e-2 / wave 8.965e-3
     均超 ≤5e-3 目标，s2（wav+colC→互易势场）3.2722e-3 达标——S2 数值口径
-    消费使互易判读可用达标档（2026-09-19 定案）。"""
+    消费使互易判读可用达标档（0-用户口径 2026-09-19①）。"""
     from rfauto.core.mapes import z_all_gate_caliber
 
     raw_npz = REPO / "runs" / "mapes_zall_refix" / "s5_diag" / "raw_ui.npz"

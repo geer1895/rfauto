@@ -9,11 +9,11 @@ _FOUR_PORT_ROTATION_TEMPLATES，#212 离线审计九判据先过），本脚本�
 
 1. solve_smatrix_openems(template="branchline", n_ports=4, mesh 0.4) → 4 次
    单激励进程隔离真跑（#208）→ runs/<root>/branchline.s4p；
-2. 门（预声明口径；#122 不凑绿）：
+2. 门（任务书口径；#122 不凑绿）：
    G1 无源性 max σ_max(S) ≤ 1+1%；G2 互易 max|S−Sᵀ| ≤ 0.02；
    G3 f0=2.4GHz（TEMPLATE_META 名义）处 |S21|、|S31| ∈ −3±1dB；
    G4 f0 处 |S11|、|S41| ≤ −15dB；另测 G5 β 金标准（p1 port_beta，50Ω 馈线 HJ
-   εeff）|Δ|≤2%——β 不在预声明门内，失守只记录为模板面异象不翻转判定。
+   εeff）|Δ|≤2%——β 不在任务书门内，失守只记录为模板面异象不翻转判定。
    并在引擎实测均分中心 f_c（||S21|−|S31|| 最小点）复评 G3/G4：2.4GHz 未过
    而 f_c 过 → PARTIAL 并量化偏移（HJ synthesize_branchline 参照；不改名义参数）。
 3. 报告项：闭式 branchline_smatrix 对拍 D12 FSV 等级（f0 名义与 f_c 两口径；
@@ -189,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
                                 "ok": all(v["ok"] for v in g_f0.values())},
         "G3_G4_at_fc_measured": {"f_ghz": m_fc["f_ghz"], "gates": g_fc,
                                  "ok": all(v["ok"] for v in g_fc.values())},
-        # β 不在预声明门内（本项新增测量）：+11.5% 失守如实记录为模板面新异象，
+        # β 不在任务书门内（本项新增测量）：+11.5% 失守如实记录为模板面新异象，
         # 独立三探针复算与引擎 β 逐位一致 → 非提取 bug（见 hypothesis_beta）
         "G5_beta_feed_pct_recorded": {"value": d_beta, "limit": 2.0,
                                       "recorded": True,

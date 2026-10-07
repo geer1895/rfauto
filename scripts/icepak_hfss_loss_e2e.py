@@ -1,11 +1,11 @@
-"""HFSS→Icepak 场级损耗端到端 + 双向温漂 + 锚定 真机脚本（WP4.4a ①③⑤）。
+"""WP4.4a ①③⑤ HFSS→Icepak 场级损耗端到端 + 双向温漂 + 锚定 真机脚本。
 
 同一 AEDT 工程（wp44a_e2e.aedt）内双设计同桌面（#191 gRPC 整轮重试）：
 
   - ``rfauto_hfss_src``（HFSS 源设计，本脚本 pyaedt 直驱，不走
     hfss_session 公共通道）：环形谐振器（ring resonator，馈线-环 gap
     耦合，PEC 金属=无导体损耗，介质损耗在基板体积内）——RO4350B 量级
-    基板，50Ω 馈线宽由 core/synthesis skrf-HJ 综合产出（综合精算，1c），
+    基板，50Ω 馈线宽由 core/synthesis skrf-HJ 综合产出（铁律 1c），
     环均值半径初值 = λg/2π（初值而已，f0 以 HFSS 实测为准）；
     几何全部挂 $scale（CTE 尺寸膨胀）与 $epsr（TCDk 介电温漂）两个
     工程变量，重解温度点只改这两个变量；
@@ -15,7 +15,7 @@
   - ``rfauto_et_lumped``（同功率集总对照）：环带体 assign_solid_block
     总功率 = HFSS |S|² 口径耗散功率。
 
-判据（冻结口径，全部由真机数据+确定性内核
+判据（方案 §4 WP4.4a / §10.21 D3 冻结口径，全部由真机数据+确定性内核
 产出，不凑绿 #122）：
 
   A. 功率守恒 ≤5%：HFSS P_diss = P_in·(1−|S11|²−|S21|²)（port1 单端口
@@ -34,7 +34,7 @@
      仲裁 provenance 工件。
 
 纪律：
-- 数值纪律：几何/频率估计值全部出自确定性内核（synthesis/闭式）；一切
+- 铁律 7：几何/频率估计值全部出自确定性内核（synthesis/闭式）；一切
   "实测"数字（f0/P_diss/T/R_th/斜率）出自 HFSS/Icepak 真机；
 - AEDT 2025.1 gRPC 通道级不稳（#191）：整轮重试 ×3，仅杀本脚本遗留
   桌面；每轮前白名单清工程产物（陈旧设计重名=监控读默认值的坑）；
@@ -84,7 +84,7 @@ AIR_TOP_MM = 8.0                 # 空气盒 z 向净高
 
 
 def _kill_desktops() -> None:
-    """attempt 间清理（治理单源，#157 先查后杀）。
+    """attempt 间清理（df5 治理单源，#157 先查后杀）。
 
     委托 src/rfauto/infra/desktop_guard.py：孤儿（父进程已死）点杀，
     活桌面/枚举失败只记录不抛（本调用点在 try 外，strict 抛错会炸掉
@@ -97,7 +97,7 @@ def _kill_desktops() -> None:
 
 
 def _clean_project_artifacts() -> None:
-    """白名单清 AEDT 工程产物（陈旧设计重名=监控读默认值，真机实证）。
+    """白名单清 AEDT 工程产物（陈旧设计重名=监控读默认值，2026-09-13 实证）。
     只点名工程四件，不碰日志与 JSON 证据。"""
     import shutil
 
@@ -228,7 +228,7 @@ def _build_hfss_source(h: Any) -> dict:
 
     # 空气盒：y 向不留边距（端口贴外边界），x/z 留辐射缓冲（mline 探针
     # 同法：必须从空气盒 subtract 实体，重叠体=端口材质接触歧义）。
-    # #218 规则：加法表达式里的字面量**必须带 mm 量纲**（裸数字被 AEDT
+    # #218 铁律：加法表达式里的字面量**必须带 mm 量纲**（裸数字被 AEDT
     # 按 SI 米求值——首跑实证空气盒变 5m/8m，面选择全空）；缓冲量走
     # 带 mm 的设计变量 air_pad/air_top（=AIR_PAD_MM/AIR_TOP_MM）；纯乘系数
     # （2.5*feed_w）无量纲歧义、允许

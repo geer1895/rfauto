@@ -38,7 +38,7 @@ AR1 相关结构成立、"纯 OE 直接当预测"基线臂可做同 w 精确配�
   python scripts/factory_mf_hfss_anchors.py --collect          # HFSS 真跑（主代理排机）
   python scripts/factory_mf_hfss_anchors.py --collect --full   # 真跑并加可选锚
   python scripts/factory_mf_hfss_anchors.py --collect --extra-w 1.5
-      # 补锚收尾：补充训练锚（名义 w；吸附最近数据集精确值，
+      # df5 拍板②收尾：补充训练锚（名义 w；吸附最近数据集精确值，
       # 剔除既有锚含 held-out 门点——判据 anchor15_criteria.md §1/§2）
 断点续跑：--collect 幂等；已有 anchor.json(status=done) 的点自动跳过。
 
@@ -260,8 +260,8 @@ def load_dataset_ws(dataset_dir: Path = DATASET_DIR) -> list[float]:
 
 # ─── HFSS 面（真跑；离线 --audit 不触） ──────────────────────────────────────
 
-# 桌面治理单源：原 _list_ansysedt_processes/_process_alive/
-# _kill_desktops 三函数（原型）已上收 src/rfauto/infra/desktop_guard.py，
+# 桌面治理单源（df5）：原 _list_ansysedt_processes/_process_alive/
+# _kill_desktops 三函数（df4m 原型）已上收 src/rfauto/infra/desktop_guard.py，
 # 语义不变（活桌面不杀 fail-closed/孤儿点杀/枚举失败不杀，#245/#265）；
 # 本模块顶部 alias `_kill_desktops` 供 run_collect 调用与既有测试兼容。
 
@@ -298,13 +298,13 @@ def _audit_geometry(h: Any, w_mm: float, line_len_mm: float) -> dict[str, Any]:
         assert abs(abs(c[1]) - half) <= SPAN_ASSERT_TOL_MM, (
             f"端口面 y={c[1]:.6f}mm 与线端 ±{half} 不符")
     # 断言 3：line y 向贯通跨度 == L_span（线端触及两端口面，#336 精神）
-    bbox = [float(v) for v in h.modeler.get_object_bounding_box("Line")]
+    bbox = [float(v) for v in h.modeler["Line"].bounding_box]  # pyaedt 1.x：Modeler3D 无 get_object_bounding_box，Object3d.bounding_box 为 property
     line_span = bbox[4] - bbox[1]
     assert abs(line_span - l_span) <= SPAN_ASSERT_TOL_MM, (
         f"line y 向跨度 {line_span:.9f}mm != 端口面跨度 {l_span:.9f}mm"
         f"——线未贯通到端口面（开路 stub 风险，#174 族）")
     # 断言 4：空气盒 y 向与端口面齐平（端口在外边界，#191）
-    air = [float(v) for v in h.modeler.get_object_bounding_box("Air")]
+    air = [float(v) for v in h.modeler["Air"].bounding_box]  # 同上：per-object API
     assert abs(air[1] - (-half)) <= SPAN_ASSERT_TOL_MM and \
         abs(air[4] - half) <= SPAN_ASSERT_TOL_MM, (
         f"空气盒 y 范围 [{air[1]:.6f},{air[4]:.6f}] 与端口面 ±{half} 不齐平"
@@ -604,7 +604,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="加入可选训练锚 {0.745, 1.182}")
     ap.add_argument("--extra-w", type=float, nargs="+", default=(),
                     help="补充训练锚（名义 w 列表；吸附最近数据集精确值，"
-                         "剔除既有锚含 held-out 门点；补锚收尾）")
+                         "剔除既有锚含 held-out 门点；df5 拍板②收尾）")
     ap.add_argument("--aedt-version", type=str, default=AEDT_VERSION_DEFAULT)
     args = ap.parse_args(argv)
     if args.audit:

@@ -1,4 +1,4 @@
-"""C4 耦合器族 II 真机冒烟：cline_coupler / branchline_2sect / lange。
+"""C4 耦合器族 II 真机冒烟：cline_coupler / branchline_2sect / lange（收尾批）。
 
 循 branchline 四端口先例（scripts/smoke_branchline_real_anchor.py）：
 solve_smatrix_openems 进程隔离激励轮转（#208）4 次单激励真跑 → .s4p，门 G1-G5
@@ -8,7 +8,7 @@ solve_smatrix_openems 进程隔离激励轮转（#208）4 次单激励真跑 →
   lange         → fake_adapter._lange_sparams（四线等效理想裁判，段首口径 3）；
   branchline_2sect → fake_adapter._branchline_2sect_sparams（二分频响，段首口径 2）。
 
-预声明门（写死不调；branchline 同门数值）：
+预声明门（铁律 7，写死不调；branchline 同门数值）：
   G1 无源性 max σ_max(S) ≤ 1.01；G2 互易 max|S−Sᵀ| ≤ 0.02；
   G3/G4 @f0=2.5GHz（TEMPLATE_META 名义）：
     3dB 族（branchline_2sect/lange）：|S21|、|S31| ∈ −3±1dB；|S11|、|S41| ≤ −15dB；
@@ -17,10 +17,10 @@ solve_smatrix_openems 进程隔离激励轮转（#208）4 次单激励真跑 →
   G5 β 金标准（p1 port_beta，50Ω 馈线 w_feed HJ εeff）|Δ| ≤ 2%——记录项，失守不翻转判定。
   引擎实测中心 f_c（3dB 族=||S21|−|S31|| 最小点；10dB 族=|S31| 峰）复评 G3/G4：
   f0 未过而 f_c 过 → PARTIAL 并量化偏移；f_c 落带沿（持续过/欠耦合，带内无最小点）
-  记 fc_at_band_edge=True，偏移量不可辨识（lange refix 实证 +20% 系带沿夹持）。
+  记 fc_at_band_edge=True，偏移量不可辨识（2026-09-17 lange refix 实证 +20% 系带沿夹持）。
 verdict：PASS=G1+G2+G3/G4@f0；PARTIAL=G1+G2 过且 G3/G4@f_c 过；FAIL=其余。
 
-装配归一（#250 链，refix 实证）：
+装配归一（#250 链，2026-09-17 refix 实证；w1d-c4-assembly-diag）：
   缺省网格下 50Ω HJ 馈线的引擎自算 ZL≈45.7Ω（−8.6%），CalcPort(ref=50) 伪波分解
   使装配矩阵非无源（lange/cline σmax 1.0275/1.0344 虚假越门）。--line-z0 engine（缺省）
   让 solve_smatrix_openems 按各轮探针复算 ZL 走线基→50Ω 归一（原始矩阵留

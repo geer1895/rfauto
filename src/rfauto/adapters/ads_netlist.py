@@ -358,7 +358,7 @@ def parse_hb_dataset(
 ) -> dict[str, Any]:
     """解析 HB (谐波平衡) 输出数据集 (.ds) -> 结构化 dict。
 
-    真机实证口径 (ADS 2027 hpeesofsim 650.shp):
+    真机实证口径 (2026-09-18, ADS 2027 hpeesofsim 650.shp, rm-ads-c14 ②):
     HB 块键形如 ``HB1.HB``, 列 = ``freq`` / ``Mix[1]`` (谐波序号, 0=DC) /
     各节点电压相量 (复数); 网表 ``aele`` 测量方程各自成块 ``aele_N.HB1.HB``
     (列 ``__i`` + 变量名, 单行标量)。返回::

@@ -1,6 +1,6 @@
-"""sma_launcher 精确几何接触审计（真机 FAIL 根治·离线先行，#1b/#212）。
+"""sma_launcher 精确几何接触审计（WP2.5 真机 FAIL 根治·离线先行，#1b/#212）。
 
-背景：pt2 真机 FAIL（|S11|=+5.42dB 非物理、
+背景（TODO 0bo①）：pt2 真机 FAIL（|S11|=+5.42dB 非物理、
 |S21|≈−375dB、port2 表观 εeff≈2866）。渲染代码只读审计得到三条结构线索
 （按 #221⑥ 标"假设/待证"，本脚本以**精确实体相交**（圆柱/柱壳截面圆盘/
 圆环-矩形距离判据，禁 bbox 近似）出逐导体接触图证实/证伪）：
@@ -12,7 +12,7 @@
 （H3 文献几何对照见 docs/rf_template_references.md SMA 节。）
 
 接触图内核（exact_contact/exact_components）供
-tests/unit/test_sma_launcher_template.py 复用；纪律 1b：归因在接触图证实前
+tests/unit/test_sma_launcher_template.py 复用；铁律 1b：归因在接触图证实前
 一律"假设/待证"。
 
 运行（工作区根目录）：

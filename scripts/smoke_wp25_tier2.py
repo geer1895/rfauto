@@ -1,8 +1,8 @@
 """WP2.5 Tier 2 过渡结构真机冒烟：MSL↔CPWG 过渡 + SMA 边缘弹射（串行）。
 
-范围：MSL↔CPW、SMA
+方案行（docs/续跑计划.md §4 WP2.5）：MSL↔CPW、SMA
 launcher（验收靠文献曲线）；MSL↔slotline（Marchand）随 slotline 端口原语
-阻塞另立项，不在本件。名义点 = 附加模板 NOMINAL（综合闭式再生，测试
+阻塞归 C5 行，不在本件。名义点 = 附加模板 NOMINAL（综合闭式再生，测试
 test_msl_cpw/test_sma_launcher 钉）。
 
 裁判（wstep/via 族同型，Tier 2 无谐振）：
@@ -11,8 +11,8 @@ test_msl_cpw/test_sma_launcher 钉）。
   sma_launcher port2→HJ，|Δ|≤2%（port1=同轴截面集总桥，LumpedPort 无 β）。
 - |S11| 门 ≤-10dB（带内 max，2.25-2.75GHz）：理想级联地板≈0，引擎偏差
   即过渡/弹射寄生总量；SMA edge-launch 文献带内回损常规 15-20dB，-10dB 为
-  保守地板（"验收靠文献曲线"口径）。
-- 物理性门（sma 根治增设）：带内 |S11|≤0dB 无源性、带内
+  保守地板（方案行"验收靠文献曲线"口径）。
+- 物理性门（2026-09-16 sma 根治增设）：带内 |S11|≤0dB 无源性、带内
   min|S21|≥−3dB（pt2 FAIL 签名 +5.42dB/−375dB 即结构死亡，非精度门）。
 
 运行（串行：同一进程内先 msl_cpw 后 sma_launcher，满足 openEMS 全机
@@ -139,7 +139,7 @@ def run_case(tag: str, template: str, params: dict,
         print(f"[{tag}] port{col} β锚 {name}: εeff闭式={eps_ref:.4f} "
               f"引擎={eps_eng:.4f} Δ={d:+.2f}%", flush=True)
 
-    # 物理性门（sma 根治增设，pt2 FAIL 签名：|S11|=+5.42dB 非物理、
+    # 物理性门（2026-09-16 sma 根治增设，pt2 FAIL 签名：|S11|=+5.42dB 非物理、
     # |S21|≈−375dB 零传输）：带内 |S11|≤0dB 无源性 + |S21| 物理量级（理想
     # 级联 ≈−0.5dB；地板 S21_FLOOR_DB 抓"短路/悬空"类结构死亡，非精度门）
     s11_max_all = float(s11_db[band].max())

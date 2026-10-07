@@ -1,7 +1,7 @@
 """a6-mwoven COMSOL 官方 Microwave Oven 例复现单测（离线确定性）。
 
 零 COMSOL / license / JVM 依赖：MPh 与适配器的 Java 调用全部用记录桩，
-脚本真机路径 run_real 不执行（真机证据另落 runs/comsol_microwave_oven/）。
+脚本真机路径 run_real 不执行（真机证据另落 runs/comsol_microwave_oven）。
 
 覆盖三层：
 A. 多物理纯函数（study 步序列/清单校验/温度统计/能量守恒/官方对照/球体

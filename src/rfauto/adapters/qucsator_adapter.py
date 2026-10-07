@@ -4,11 +4,11 @@
 GPL）——与 openEMS/Meep（全波 FDTD）互补：微带传输线类结构在电路级
 按准静态+色散闭式模型求解，秒级零网格，适合名义点快速对照与采样扩容。
 
-**部署口径（本机真机可用）**：Qucs-S 26.1.1 win64 便携包
+**部署口径（2026-09-24 本机真机可用）**：Qucs-S 26.1.1 win64 便携包
 （ra3xdh/qucs_s release，sha256 80025a24…b3ef1c 实测对上）自带
 ``bin/qucsator_rf.exe``（版本串 Qucsator 1.0.7 fork；模拟器源码为
 qucs_s 的 git submodule ra3xdh/qucsator_rf）。安装位置 E 盘
-（工作区工具链落盘约定）：``E:\\tools\\qucsatorRF\\bin``。
+：``E:\\tools\\qucsatorRF\\bin``。
 
 可执行解析链（同 spice_netlist.resolve_ngspice_exe 口径）：显式参数 →
 env ``RFAUTO_QUCSATOR_BIN``（exe 或目录）→ configs/solvers.yaml
@@ -82,10 +82,10 @@ logger = logging.getLogger(__name__)
 
 _C0_M_S = 299792458.0
 
-#: 工作区随带 qucsatorRF 的缺省位置（工具链落 E 盘工作区的仓内约定）。
+#: 工作区随带 qucsatorRF 的缺省位置。
 _WORKSPACE_QUCSATOR = Path(__file__).resolve().parents[3] / "tools" / "qucsatorRF" / "bin"
 
-#: N7 安装探测落点（E:\qucsatorRF 或 E:\tools\qucsatorRF；
+#: N7 安装探测落点（任务书指定 E:\qucsatorRF 或 E:\tools\qucsatorRF；
 #: 字面量兜底先例同 resolve_openems_exe 的 E:\openEMS 字面量）。
 _DRIVE_INSTALL_QUCSATOR = (Path("E:/tools/qucsatorRF/bin"), Path("E:/qucsatorRF/bin"))
 

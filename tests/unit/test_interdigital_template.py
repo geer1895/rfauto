@@ -46,7 +46,7 @@ FBW = 0.05
 RL_DB = 20.0
 NOMINAL = dict(ot.INTERDIGITAL_NOMINAL)
 DESIGN = ot.interdigital_design_from_order(3, F0, FBW, RL_DB)
-# 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
+# 登记⑨ 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
 # （理想短路）冻结常数——设计链缺省 l_via_h=0.0 逐位复现口径的对拍参照。
 DESIGN_VIA = ot.interdigital_design_from_order(3, F0, FBW, RL_DB, l_via_h=None)
 IDEAL_NOMINAL = {"order": 3, "w_mm": 1.1117, "res_len_mm": 17.5252,
@@ -74,7 +74,7 @@ def freqs() -> np.ndarray:
 
 def test_design_matches_nominal_constants():
     """NOMINAL 常数 = design(3, 2.5, 0.05, 20, l_via_h=None) 的 4 位舍入（再生
-    守卫，过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
+    守卫，登记⑨ 过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
     IDEAL_NOMINAL（渲染/设计链 byte-identical 对拍钉）。"""
     assert DESIGN["order"] == 3
     for ref, want_map in ((DESIGN_VIA, NOMINAL), (DESIGN, IDEAL_NOMINAL)):
@@ -88,7 +88,7 @@ def test_design_matches_nominal_constants():
                 assert round(got, 4) == want, key
     # 关=不增键（逐字节复现补偿前设计 dict 形状），开=增补过孔三键
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    # 校准：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    # R1（df5-c3fix）：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
     assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     # Δl_via = 补偿前后物理棒长差（开路端 Δl 两口径同减，相消）
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
@@ -174,7 +174,7 @@ def test_order_sweep_designable():
 
 
 class TestViaCompensationDesign:
-    """过孔补偿（口径 10）：棒长按谐振条件精确解 tanθ_c=Z_r/(ω0L) 缩短，
+    """登记⑨ 过孔补偿（口径 10）：棒长按谐振条件精确解 tanθ_c=Z_r/(ω0L) 缩短，
     补偿后过孔端接谐振回 f0；缺省 l_via_h=0.0 逐字节复现补偿前口径。"""
 
     def test_delta_l_matches_hand_calculation(self):
@@ -196,7 +196,7 @@ class TestViaCompensationDesign:
         assert d["via_delta_mm"] == pytest.approx(
             lg_quarter * (1.0 - 2.0 * theta_c / math.pi), rel=1e-12)
         assert d["via_delta_mm"] == pytest.approx(1.0467, abs=5e-4)
-        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        # 旋钮语义（R1 df5-c3fix）：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
         # （≠ G-P 显式值）；缝/宽/斜率不受补偿影响
         d_cal = ot.interdigital_design_from_order(3, F0, FBW, RL_DB,
                                                   l_via_h=ot.C3_L_VIA_CAL_H)
@@ -268,7 +268,7 @@ def test_synchronous_tem_matches_c13_matrix_response(freqs):
 def test_geometry_mode_tracks_synchronous_limit(freqs):
     """几何模式（KJ 回代 + Δl 等效长度）与同步极限带内差 <0.005dB。
 
-    NOMINAL 已是过孔补偿口径（配过孔裁判谐振回 f0）；本钉在理想短路
+    NOMINAL 已是登记⑨ 过孔补偿口径（配过孔裁判谐振回 f0）；本钉在理想短路
     域对照——几何模式参数取未补偿设计长度（=补偿前 NOMINAL 逐位值），
     同步极限（设计理想值）同为理想短路口径。"""
     p_ideal = dict(NOMINAL, res_len_mm=round(DESIGN["res_len_mm"], 4))
@@ -347,9 +347,9 @@ class TestInterdigitalFakeDispatch:
             _c3_sparams(freqs, T, dict(NOMINAL, order=4), f0_ghz=F0)
 
     def test_fake_via_opt_in_switch(self, freqs):
-        """登记⑨ fake 开关（保守判定）：缺省（无 l_via_h 变量）=理想短路——
+        """登记⑨+R1 fake 开关（保守判定）：缺省（无 l_via_h 变量）=理想短路——
         再生名义几何带心上移 ~+2.6%（0.125nH 补偿量，旧黄金钉保持，逐位复现
-        理想短路旧口径）；l_via_h="auto" 开过孔裁判带心回
+        理想短路旧口径）；l_via_h="auto" 开过孔裁判（C3_L_VIA_CAL_H）带心回
         f0，数值 H 与 "auto" 逐位一致，FakeAdapter 通道与裁判函数同源。"""
         from rfauto.adapters.fake_adapter import FakeAdapter, _c3_sparams
 

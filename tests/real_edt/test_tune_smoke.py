@@ -1,4 +1,4 @@
-"""real_edt: tune(hfss) 独立 2-trial smoke。
+"""real_edt: tune(hfss) 独立 2-trial smoke（TODO 遗留项）。
 
 setup 通道（configure_setup→solve）已随 R3/R5 真机验证，本文件补上
 "tune 独立通道真机冒烟"：2 个 TPE trial 走完整优化外环（参数建议→

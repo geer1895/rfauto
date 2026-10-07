@@ -3,7 +3,7 @@
 
 背景：far_field 注入面（render_script far_field=True → CreateNF2FFBox +
 CalcNF2FF → farfield_meta.json）与 G9 场图服务（ui_service.field_view，dump
-契约 Mesh+FieldData，候选 run 根与 fdtd/）均已有；dipole 真机双例已跑，但
+契约 Mesh+FieldData，候选 run 根与 fdtd）均已有；dipole 真机双例已跑，但
 patch far_field 真机未跑、场图页只吃过合成 fixture（test_field_webviz
 write_td_vector_dump）。本脚本零源码改动：
 

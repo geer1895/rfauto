@@ -1,8 +1,8 @@
-"""D9 标准频段/法规掩模注册表。
+"""D9 标准频段/法规掩模注册表（续跑计划 §10.4/§10.17）。
 
 3GPP/Wi-Fi/UWB/ISM 频段预设 + EMC 限值线（CISPR/FCC）作为一等可查对象，
 喂 SpecEvaluator objectives 的 band 字段（[f_low, f_high] GHz，core/objectives.py）
-与优化 bounds。本表是标准常量数据（非计算产物），每条带出处
+与优化 bounds。铁律 7 兼容：本表是标准常量数据（非计算产物），每条带出处
 （标准号+版本），数值以公开标准文本为准——不确定的数值宁可不上表。
 
 kind 语义：
@@ -14,10 +14,10 @@ kind 语义：
 
 region 语义：global（国际统一）/ eu / us / cn（区域监管口径）。
 
-本模块另含**环境包络注册表**（温度/试验等级一等对象，
+D9 强化（§10.21）：本模块另含**环境包络注册表**（温度/试验等级一等对象，
 ENVIRONMENTS）。它与频段表严格分离，把"温区"变成确定性可查对象，并给出
 "温区 → ΔT 上下限"的确定性转换（env_to_delta_t / env_to_uq_axis），供
-温区扫描、UQ、良率分析把温度作为维度消费。数值出处逐条写入
+D3 温区扫描、D8 UQ、WP4.2 良率把温度作为维度消费。数值出处逐条写入
 _ENV_SEED 上方注释与条目 source；不确定的数值不上表。
 """
 
@@ -427,10 +427,10 @@ def validate_registry() -> list[str]:
     return issues
 
 
-# ── D9 环境包络注册表（温度/试验等级一等对象）────────────────────────────────
+# ── D9 环境包络注册表（温度/试验等级一等对象，§10.21 D9 强化）────────────────
 # 与频段表严格分离（独立 registry），不改变 BANDS 计数与 SpecEvaluator band
 # 掩模语义。每条包络给出工作温区 [t_min_c, t_max_c]（°C）与参考温度 t_ref_c
-# （ΔT 转换基准，默认 25 °C 室温），供温区扫描 / UQ / 良率分析把
+# （ΔT 转换基准，默认 25 °C 室温），供 D3 温区扫描 / D8 UQ / WP4.2 良率把
 # "温区"作为确定性维度消费：
 #     ΔT ∈ [t_min_c − t_ref_c, t_max_c − t_ref_c]
 #
@@ -719,7 +719,7 @@ def search_env(standard: str | None = None,
 
 
 def env_to_delta_t(key: str, t_ref_c: float | None = None) -> dict[str, Any]:
-    """环境包络 → 相对参考温度的 ΔT 上下限（温区扫描/UQ/良率消费接口）。
+    """环境包络 → 相对参考温度的 ΔT 上下限（D3/D8/WP4.2 消费接口）。
 
     ΔT_min = t_min_c − t_ref_c，ΔT_max = t_max_c − t_ref_c（K/°C 数值相同）。
     t_ref_c=None 时用条目自身参考温度（默认 25 °C）；降温方向为负 ΔT。
@@ -746,7 +746,7 @@ def env_delta_t_bounds(key: str, t_ref_c: float | None = None) -> tuple[float, f
 
 
 def env_temperature_points(key: str, n: int = 5) -> list[float]:
-    """温区等距采样点（含两端），供温区扫描的确定性网格。"""
+    """温区等距采样点（含两端），供 D3 温区扫描的确定性网格。"""
     e = get_env(key)
     if isinstance(n, bool) or not isinstance(n, int):
         raise ValueError(f"n 必须为整数，收到: {n!r}")

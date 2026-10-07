@@ -1,6 +1,6 @@
-"""MSL↔slotline 过渡 + Marchand 巴伦：理论核验、设计参数与判据计算。
+"""MSL↔slotline 过渡 + Marchand 巴伦：理论核验、设计参数与判据计算（W4⑧c）。
 
-理论核验（零仿真；公式与常数逐个有出处，
+理论核验轮（任务书先行轮，零仿真；铁律 1b/1c：公式与常数逐个有出处，
 不凭记忆写未核对的式子；无法双源核对的量只给"文献典型量级"并标注口径级别）
 ================================================================================
 
@@ -30,12 +30,12 @@
 
 设计式（本模块实现）：
 - 微带 50Ω 线宽 w_m 与 εeff_m：skrf HJ 综合（core/synthesis.inverse_width /
-  forward_z0，线宽一律综合精算不拍脑袋）。
+  forward_z0，铁律 1c 线宽不拍脑袋）。
 - 支节长 l_stub = λg_m/4 − Δl_open；Hammerstad 经典开路端修正
   Δl = h·0.412·(εeff+0.3)·(w/h+0.264) / [(εeff−0.258)·(w/h+0.813)]
   （Hammerstad 1975 族闭式，CAD 工具通用口径；微带 w=3.344/h=1.524、
   εeff=2.853 @2.5GHz → Δl≈0.624mm，量级 0.4h，二阶但计入）。
-  **符号惯例（2026-09-21 C6 followUp 修正）**：
+  **符号惯例（2026-09-21 C6 followUp 修正，观察项收口）**：
   开路端边缘场使支节电长比物理长长 Δl（等效延长），故物理长=电长−Δl
   （Pozar《Microwave Engineering》eq.4.23 开路端口径；本仓
   adapters/openems_templates._open_end_delta_mm 消费者同口径：耦合段
@@ -78,7 +78,7 @@
 --------------------------------------------------------------------------------
 "reference"（缺省）=HJ 综合现状（输出逐字节不变）；"openems"=本仓 openEMS 逐档
 修正：Z0 目标经 engine_z0_correction（4 点直微带线标定 PCHIP@log10 w，数据
-marchand_line_calibration 标定）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
+runs/marchand_line_calibration）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
 定点），节长按 β +2% 常数缩短。**标定基准=直微带单线，耦合段 Z0e/Z0o 适用性是
 外推**（修正模型/适用域/域外钳制详见 engine_z0_correction docstring）。
 
@@ -98,7 +98,7 @@ marchand_line_calibration 标定）预畸变反解设计宽（耦合段 + w_feed
 - 过渡段：带内(2.25–2.75GHz) max|S11|≤−10dB（P1 线基）；S21 对"理想 DUT
   抽头模型基线"的超额损耗 ≤1dB@f0（基线由 scripts 层 tap_network_sparams
   计算——分层：core 不 import adapters）；β 对闭式 ≤5%（信息门）。
-- 巴伦（预声明门写死）：带内幅度不平衡 ≤1dB；P1 回损 ≤−10dB；隔离
+- 巴伦（任务书口径写死）：带内幅度不平衡 ≤1dB；P1 回损 ≤−10dB；隔离
   |S23| ≤−15dB；带内 |S21| ≥−3.5dB；相位差按上述极性约定如实报告。
 """
 
@@ -113,7 +113,7 @@ from rfauto.core.synthesis import Stackup, forward_z0, inverse_width
 
 #: 判据带（f0±10%，与路线 B 同）
 BAND_GHZ_DEFAULT: tuple[float, float] = (2.25, 2.75)
-#: 巴伦预声明门
+#: 任务书预声明门（巴伦）
 BALUN_GATES = {
     "amp_imbalance_db_le": 1.0,
     "rl_db_le": -10.0,
@@ -295,7 +295,7 @@ def transition_metrics(f_hz, s11, s21, band_ghz=BAND_GHZ_DEFAULT,
 
 def balun_metrics(f_hz, s11, s21, s31, s23=None,
                   band_ghz=BAND_GHZ_DEFAULT) -> dict:
-    """巴伦指标（预声明门写死；相位差按模板极性约定如实报告）。
+    """巴伦指标（任务书门写死；相位差按模板极性约定如实报告）。
 
     相位约定（见模块 docstring 二）：两口 start/stop 同为 y 递增 →
     push-pull 平衡 ⇒ phase_diff ≈ 0°；≈180° ⇒ 实为同相分配器。
@@ -340,13 +340,13 @@ def balun_metrics(f_hz, s11, s21, s31, s23=None,
     return out
 
 
-# ═══════════════ 三、真 Marchand：两节对称耦合段电路级综合（2026-09-18）═══════════════
+# ═══════════════ 三、真 Marchand：两节对称耦合段电路级综合（2026-09-18 followUp ②）═══════════════
 #
 # 背景：双槽臂"单支节串接=最小 Marchand"猜想四门 FAIL 两引擎
 # 互证→证伪（共享单支节使两跨越点激励不对称、拓扑无隔离机制）。真 Marchand 必须是
 # **两节 λ/4 耦合段、各臂独立端接**（Marchand 1944 原理；Cloete 1979 精确综合；
 # Ang & Robertson, IEEE MTT-49(2) 2001 阻抗变换型分析）。本段只做确定性电路级内核
-# （数值只在内核）：
+# （数值只在内核，铁律 7）：
 #
 # ① 对称耦合线四端口 Z 矩阵——偶/奇模叠加推导（本模块自推，Pozar §7.6 同源）：
 #    单模 TL 二端口 Z = −jZ0[[cotθ, cscθ],[cscθ, cotθ]]；V1=Ve+Vo、V3=Ve−Vo、
@@ -370,7 +370,7 @@ def balun_metrics(f_hz, s11, s21, s31, s23=None,
 #    Marchand 文献常引设计点一致（推导后核对，非抄录；数值互证见单测）。
 # ④ 几何：KJ 偶/奇模闭式二维反解 (w,s)（core/coupled_microstrip 正向，嵌套
 #    brentq，与 adapters.coupled_bpf_width_gap_from_zee_zoo 同法、core 层独立实现，
-#    分层不可反向 import）；节长 λ/4 @ (εeff_e+εeff_o)/2（耦合器族同口径）；
+#    分层不可反向 import）；节长 λ/4 @ (εeff_e+εeff_o)/2（C4 族同口径）；
 #    50Ω 馈线 / Z_t 平衡臂线宽 skrf HJ 综合；平衡侧若走槽线：Z_L 槽宽由
 #    core/slotline 闭式反解（越域 None 如实），过渡段 λ/4 参数复用 transition_design。
 # ⑤ 预声明验收门（真机渲染冒烟前写死，#122 不凑绿）：MARCHAND2_GATES。
@@ -755,10 +755,10 @@ def _slot_balanced_option(f0: float, h_mm: float, er: float, tan_d: float,
                  f"{td.to_dict()['l_stub_mm']}mm/短路臂 {td.to_dict()['l_short_mm']}mm")
 
 
-# ─── openEMS 逐引擎修正（2026-09-18 marchand_line_calibration 4 点标定）──
+# ─── openEMS 逐引擎修正（2026-09-18 marchand_line_calibration 4 点标定，wf:marchand-correction）──
 
 #: openEMS 单线 Z0 引擎偏差标定表：(w_mm, Z0_engine/Z0_HJ − 1)，负=引擎偏低阻。
-#: 数据源 marchand_line_calibration 标定表 calibration_table.json 的 dev_pct_primary
+#: 数据源 runs/marchand_line_calibration/calibration_table.json 的 dev_pct_primary
 #: （Z0 主判据=四路由中位，spread ≤0.6%；p1_wbal/p2_w80/p3_wmain/p4_wfeed，2026-09-18）
 MARCHAND_OPENEMS_Z0_DEV_CAL: tuple[tuple[float, float], ...] = (
     (0.2981, -0.11559883283386052),
@@ -987,7 +987,7 @@ def synthesize_marchand_two_section(
         clamp_txt = (f"域外钳制 {len(engine_clamps)} 处（{'、'.join(engine_clamps)}）；"
                      if engine_clamps else "")
         notes = (*notes, (
-            f"openEMS 逐引擎修正（engine=openems；标定 marchand_line_calibration "
+            f"openEMS 逐引擎修正（engine=openems；标定 runs/marchand_line_calibration "
             f"4 点直微带线、PCHIP@log10(w)、适用域 w∈[{MARCHAND_OPENEMS_W_DOMAIN_MM[0]:.4f},"
             f"{MARCHAND_OPENEMS_W_DOMAIN_MM[1]:.4f}]mm/基板 h=1.524/εr=3.66 专用，域外钳制）："
             f"Z0 目标预畸变 Z_HJ=Z_target/(1+dev(w)) 反解设计宽——耦合段 (Z0e,Z0o)=({ze:.3f},"

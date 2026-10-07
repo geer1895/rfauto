@@ -1,6 +1,6 @@
 """hairpin_alt 逐点 k 提取（双口径：k_split 主判 + k_Z 旁证）+ c 标尺 HFSS 仲裁锚任务书。
 
-登记（排空五轮 followUp）：解锁 alt 口径逐点 k 提取/HFSS 仲裁 1-2 点锚
+登记（ 排空五轮段）：解锁 followUp=alt 口径逐点 k 提取/HFSS 仲裁 1-2 点锚
 c 标尺。语境与实际缺口（见 tests/unit/test_hairpin_alt_k_extract.py 同源）：
 
   已有  scripts/hairpin_alt_ksplit.py（wf:hairpin-alt-extract）——alt 口径 k_split
@@ -21,7 +21,7 @@ c 标尺。语境与实际缺口（见 tests/unit/test_hairpin_alt_k_extract.py 
 口径（先于数据写死）：
   主判 k_split = 2·|f2−f1|/(f2+f1)（复用 hairpin_alt_ksplit.alt_ksplit_point，
   峰检/邻域守卫/pull 修正/合并区间全同源）；主判依据=#361⑥"k 标尺主判用本征
-  分裂 k_split=eigen 口径"，主判口径=k_split_eigen（alt 同源）。
+  分裂 k_split=eigen 口径"+主判口径=k_split_eigen（alt 同源）。
   k_Z = (Z0e−Z0o)/(Z0e+Z0o)：KJ 闭式逐点（core/coupled_microstrip，Kirschning-
   Jansen 1984）+ HFSS line2t 模阻抗实测（锚点，Zvi=√(Zpi·Zpv) 重构，#361⑤）。
   SNL 警告规则（#361⑥"±0.5Ω 噪声→±30% 量级"）：对 Z0e/Z0o 注入 ±noise 单边
@@ -263,7 +263,7 @@ def extract_point(curve: dict, root: Path, qe: float, q_u: float,
                          f"{'内' if abs(dev) <= ANCHOR_GATE_PCT else '外'}）")
         if merged_verdict == "SPLIT_MERGE_IS_RESOLUTION":
             notes.append("HFSS 本征证合并=响应面分辨极限（非伪象/非物理简并，"
-                         "本征证据）")
+                         "）")
     if kz["snl"]["snl_dominant"]:
         notes.append(f"k_Z SNL 支配：ΔZ0={kz['delta_z0_ohm']:.2f}Ω，±{K_Z_NOISE_OHM}Ω "
                      f"最坏对漂移 {kz['snl']['worst_pair_pct']:.0f}%（#361⑥，"
@@ -370,7 +370,7 @@ def analyze(root: Path = DEFAULT_ROOT, kz_noise_ohm: float = K_Z_NOISE_OHM) -> d
     verdict = {
         "primary_caliber": PRIMARY_CALIBER,
         "primary_basis": "k_split 与 HFSS 仲裁主判同源（k_split_eigen；"
-                         "#361⑥ k 标尺主判=本征分裂口径）",
+                         "（二百八十一）；#361⑥ k 标尺主判=本征分裂口径）",
         "k_z_role": "corroboration_only（旁证不作门，#361⑥）；openEMS 归档无耦合线对"
                     "端口仿真→无引擎实测 k_Z，逐点只报 KJ 闭式（全点）+HFSS line2t"
                     "（锚点 0.5/2.2）",

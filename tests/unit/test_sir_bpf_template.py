@@ -40,7 +40,7 @@ FBW = 0.05
 RL_DB = 20.0
 NOMINAL = dict(ot.SIR_BPF_NOMINAL)
 DESIGN = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB)
-# 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
+# 登记⑨ 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
 # （理想短路）冻结常数——设计链缺省 l_via_h=0.0 逐位复现口径的对拍参照。
 DESIGN_VIA = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB, l_via_h=None)
 IDEAL_NOMINAL = {"order": 3, "w_feed_mm": 1.1117, "w_low_mm": 1.8944,
@@ -68,7 +68,7 @@ def freqs() -> np.ndarray:
 
 def test_design_matches_nominal_constants():
     """NOMINAL 常数 = design(3, 2.5, 0.05, 20, l_via_h=None) 的 4 位舍入（再生
-    守卫，过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
+    守卫，登记⑨ 过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
     IDEAL_NOMINAL（渲染/设计链 byte-identical 对拍钉）。"""
     assert DESIGN["order"] == 3
     for ref, want_map in ((DESIGN_VIA, NOMINAL), (DESIGN, IDEAL_NOMINAL)):
@@ -81,7 +81,7 @@ def test_design_matches_nominal_constants():
             else:
                 assert round(got, 4) == want, key
     assert "l_via_h" not in DESIGN and "via_delta_mm" not in DESIGN
-    # R1：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
+    # R1（df5-c3fix）：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
     assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
         IDEAL_NOMINAL["l_high_mm"] - NOMINAL["l_high_mm"], abs=5e-4)
@@ -159,7 +159,7 @@ def test_order_sweep_designable():
 
 
 class TestViaCompensationDesign:
-    """过孔补偿（口径 10）：低阻段/缝不变，高阻段按过孔端接谐振条件
+    """登记⑨ 过孔补偿（口径 10）：低阻段/缝不变，高阻段按过孔端接谐振条件
     精确解 t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x) 重解；缺省 l_via_h=0.0 逐字节
     复现补偿前口径。"""
 
@@ -184,7 +184,7 @@ class TestViaCompensationDesign:
         assert d["via_delta_mm"] == pytest.approx(0.7656, abs=5e-4)
         assert d["l_low_mm"] == DESIGN["l_low_mm"]        # 低阻段不变
         assert d["gaps_mm"] == DESIGN["gaps_mm"] and d["b_s"] == DESIGN["b_s"]
-        # 旋钮语义：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
+        # 旋钮语义（R1 df5-c3fix）：auto（None）=显式 C3_L_VIA_CAL_H 逐位一致
         d_cal = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB,
                                              l_via_h=ot.C3_L_VIA_CAL_H)
         assert d_cal["l_high_mm"] == DESIGN_VIA["l_high_mm"]
@@ -269,7 +269,7 @@ def test_synchronous_tem_matches_c13_matrix_response(freqs):
 
 def test_geometry_mode_tracks_synchronous_limit(freqs):
     """几何模式（KJ 回代 + Δl 等效长度）与同步极限带内差 <0.005dB（理想短路域
-    对照：NOMINAL 为过孔补偿口径，几何模式取未补偿设计高阻段长）。"""
+    对照：NOMINAL 为登记⑨ 过孔补偿口径，几何模式取未补偿设计高阻段长）。"""
     p_ideal = dict(NOMINAL, l_high_mm=round(DESIGN["l_high_mm"], 4))
     s_geo = ot.c3_circuit_sparams(T, freqs, p_ideal)
     s_syn = ot.c3_circuit_sparams(T, freqs, {}, synchronous_tem=True, design=DESIGN)

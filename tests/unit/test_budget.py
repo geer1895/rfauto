@@ -1,6 +1,6 @@
 """E8c 链路预算单元测试。
 
-验收标准：
+验收标准（扩展方案 §E8c）：
 ① Friis 噪声级联公式正确性（对拍手算）
 ② 单级 = 自身
 ③ 级联 NF > 第一级 NF（物理事实）
@@ -186,7 +186,7 @@ class TestIp3Cascade:
         return budget.compute()
 
     def test_two_stage_hand_calculation(self):
-        """手算例：G1=10/OIP3_1=20、G2=20/OIP3_2=30。
+        """任务书手算例：G1=10/OIP3_1=20、G2=20/OIP3_2=30。
 
         IIP3_1=10dBm(10mW)、IIP3_2=10dBm(10mW) →
         1/IIP3_tot = (1 + 10)/10mW → IIP3_tot = 1/1.1 mW ≈ −0.414 dBm；

@@ -1,0 +1,1126 @@
+schema: trace-matrix/v1
+note: EP-2 C-7 四向追溯矩阵（机械生成；strength=mechanical 待人工复核，四向键=gate/param/test/anchor；审计=check_numbers trace）
+criteria_index_sha256: 6ed6ec023992199cafd3cdc7c23be7e1088081364d087b3889514281117de296
+source: {index: index.yaml, n_files: 50, n_gate_rows: 368, n_migrate_files: 47, n_legacy_files: 3, n_curated_skipped: 2,
+  n_test_modules: 646}
+ratchet: {gate_min_pct: 82.61, param_min_pct: 61.14, note: 首批棘轮（specs C-7）：只升不降——update 只取 max，重生成保留既有更高
+    floor}
+links:
+- {gate_id: c3_combline_cap7p8h_20260923#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#9, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#9, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#10, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#10, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#11, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#11, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#12, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_combline_cap7p8h_20260923#12, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_interdigital_cap12k_20260923#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#9, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#9, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#10, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#10, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#11, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#11, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#12, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#12, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#13, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#13, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#14, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#14, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#15, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: c3_sirbpf_spurious#15, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: c4_debridge#1, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#2, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#3, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#4, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#5, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#6, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#7, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_debridge#8, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#1, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#2, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#3, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#4, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#5, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#6, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#7, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#8, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#9, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: c4_z_substrate#10, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: cps_hfss_arbitration#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#1, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#2, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#2, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#3, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#3, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#4, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#4, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#5, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#5, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#6, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#6, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#7, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#7, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#8, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#8, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#9, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#9, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#10, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#10, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#11, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#11, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#12, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#12, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#13, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#13, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#14, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#14, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#15, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#15, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#16, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#16, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#17, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#17, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#18, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_hfss_arbitration#18, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#1, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#2, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#2, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#3, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#3, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#4, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#4, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#5, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#5, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#6, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#6, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#7, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#7, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#8, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#8, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#9, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#9, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#10, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#10, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#11, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#11, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#12, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#12, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#13, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#13, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#14, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#14, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#15, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#15, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#16, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#16, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#17, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#17, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#18, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#18, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#19, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#19, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#20, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine#20, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#1, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#2, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#2, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#3, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#3, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#4, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#4, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#5, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#5, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#6, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#6, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#7, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#7, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#8, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#8, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#9, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#9, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#10, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#10, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#11, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
+  anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
+- {gate_id: cps_xrefine_x1_repro#11, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py,
+  anchor_id: cps.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#1, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#1, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#2, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#2, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#3, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#3, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#4, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#4, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#5, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#5, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#6, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#6, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#7, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#7, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#8, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#8, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#9, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_g2_cpw_20260922#9, param_key: cpw_synthesis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#1, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#1, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#2, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#2, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#3, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: datafactory_m2d_20260921#3, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: df5_c3_mapping#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3_mapping#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3_mapping#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3_mapping#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#9, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#9, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#10, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: df5_c3fix#10, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#1, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#1, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: gysel_miter_ab#2, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#2, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: gysel_miter_ab#3, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#3, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: gysel_miter_ab#4, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#4, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: gysel_miter_ab#5, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#5, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: gysel_miter_ab#6, param_key: null, test_id: tests/unit/test_c6_stub_sign_and_c7_gysel_miter.py,
+  anchor_id: gysel.s32_iso.openems-hfss-v1, strength: mechanical}
+- {gate_id: gysel_miter_ab#6, param_key: null, test_id: tests/unit/test_gysel_miter_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#9, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#9, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#10, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#10, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#11, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#11, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#12, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#12, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#13, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#13, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#14, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#14, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#15, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#15, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#16, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#16, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#17, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#17, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#18, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#18, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#19, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#19, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#20, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#20, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#21, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#21, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#22, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor#22, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor_eigen_ext#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor_eigen_ext#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor_eigen_ext#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_hfss_anchor_eigen_ext#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#9, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hairpin_kgap_refix#9, param_key: coupling_matrix_extract, test_id: tests/unit/test_hairpin_alt_k_extract.py,
+  anchor_id: hairpin_alt.cheb_g.closedform-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#8, param_key: coupling_matrix_arrow, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: hfss_interdigital_check#8, param_key: coupling_matrix_extract, test_id: tests/unit/test_interdigital_template.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#1, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#1, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#2, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#2, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#3, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#3, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#4, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#4, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#5, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#5, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#6, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#6, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#7, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#7, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#8, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#8, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#9, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#9, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#10, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#10, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#11, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#11, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_line_calibration#12, param_key: microstrip_analysis, test_id: tests/unit/test_mline_benchmark_rescan_golden.py,
+  anchor_id: marchand.f_null.openems-hfss-v1, strength: mechanical}
+- {gate_id: marchand_line_calibration#12, param_key: microstrip_synthesis, test_id: tests/unit/test_mline_probe_dual_anchor.py,
+  anchor_id: null, strength: mechanical}
+- {gate_id: marchand_sameport_arb#1, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#2, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#3, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#4, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#5, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#6, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#7, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#8, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#9, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#10, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_sameport_arb#11, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#1, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#1, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#2, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#2, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#3, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#3, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#4, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#4, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#5, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#5, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#6, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#6, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#7, param_key: null, test_id: tests/unit/test_c3_mesh_via_gates.py, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: marchand_via_ab#7, param_key: null, test_id: tests/unit/test_marchand_via_ab.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#1, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#1, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#2, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#2, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#3, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#3, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#4, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#4, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#5, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#5, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#6, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#6, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#7, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#7, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#8, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#8, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#9, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#9, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#10, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#10, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#11, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#11, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#12, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#12, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#13, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#13, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#14, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#14, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#15, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py,
+  anchor_id: cpw.z0_ohm.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_beta2_audit#15, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_zconv#1, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#1, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#2, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#2, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#3, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#3, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#4, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#4, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#5, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#5, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#6, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#6, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#7, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#7, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#8, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#8, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#9, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#9, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py, anchor_id: msl_cpw.s11_f0.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#10, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#10, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_zconv#11, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#11, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: msl_cpw_zconv#12, param_key: cpw_analysis, test_id: tests/unit/test_cpw_template.py, anchor_id: cpw.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: msl_cpw_zconv#12, param_key: cpw_synthesis, test_id: tests/unit/test_msl_cpw_template.py,
+  anchor_id: msl_cpw.s11_f0.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#1, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#1, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#2, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#2, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#3, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#3, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#4, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#4, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#5, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#5, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#6, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#6, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_03mm_sample#7, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py, anchor_id: ratrace.r_ring_mm.closedform-v1,
+  strength: mechanical}
+- {gate_id: ratrace_03mm_sample#7, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#1, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#1, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#2, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#2, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#3, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean7_20260923#3, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#1, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#1, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#2, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#2, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#3, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#3, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#4, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#4, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#5, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#5, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#6, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_clean_sample_20260921#6, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_df5_stratified#1, param_key: null, test_id: tests/unit/test_ratrace_cylindrical.py,
+  anchor_id: ratrace.r_ring_mm.closedform-v1, strength: mechanical}
+- {gate_id: ratrace_df5_stratified#1, param_key: null, test_id: tests/unit/test_ratrace_duration_sample.py,
+  anchor_id: ratrace.ring_z_ohm.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#1, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#1, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#2, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#2, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#3, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#3, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#4, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#4, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#5, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#5, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#6, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#6, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#7, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#7, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#8, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#8, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#9, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#9, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#10, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#10, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#11, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#11, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: siw_family#12, param_key: siw_analysis, test_id: tests/unit/test_msl_siw_taper_template.py,
+  anchor_id: siw.fc_te10_ghz.closedform-v1, strength: mechanical}
+- {gate_id: siw_family#12, param_key: siw_synthesis, test_id: tests/unit/test_siw_anchor_lock.py, anchor_id: null,
+  strength: mechanical}
+- {gate_id: smoke_c3_redesign#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_redesign#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_hfss_interdigital_check_hygiene.py,
+  anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#1, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#1, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#2, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#2, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#3, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#3, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#4, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#4, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#5, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#5, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#6, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#6, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#7, param_key: coupling_matrix_arrow, test_id: tests/unit/test_c3_mesh_via_gates.py,
+  anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c3_refix#7, param_key: coupling_matrix_extract, test_id: tests/unit/test_combline_template.py,
+  anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
+- {gate_id: smoke_c4_final#1, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c4_final#2, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c4_final#3, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c4_final#4, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c4_final#5, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c4_final#6, param_key: null, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#1, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#2, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#2, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#3, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#3, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#4, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#4, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#5, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#5, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#6, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#6, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#7, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#7, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#8, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#8, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#9, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#9, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#10, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#10, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#11, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#11, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#12, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#12, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#13, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#13, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#14, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_c9_refix#14, param_key: cps_synthesis, test_id: tests/unit/test_cps_template.py, anchor_id: cps.z0_ohm.closedform-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#1, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#2, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#3, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#4, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#5, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#6, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#7, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#8, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#9, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#10, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#11, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#12, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#13, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}
+- {gate_id: smoke_marchand_2sect#14, param_key: null, test_id: null, anchor_id: marchand.f_null.openems-hfss-v1,
+  strength: mechanical}

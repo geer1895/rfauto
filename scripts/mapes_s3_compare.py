@@ -1,6 +1,6 @@
-r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选档达标门 + 环 A/B。
+r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选档达标门 + WP3.2 A/B。
 
-链路（stage-3，承接 stage-2 followUps ③⑥）：
+链路（§10.24 A8 stage-3 / stage-2 followUps ③⑥）：
 1. **新增滤波器图案**（`patterns`）：阶梯金属桥链 route_full / route_broken /
    route_half——像素桥链 = 串联桥（L）+ 贴片接地（并联对地）的梯形像素滤波
    结构，直通 / 中断 / 半程三档给排序面；直接全波每图案 2 激励（渲染器与
@@ -10,7 +10,7 @@ r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选�
    逐案矩阵级 max|ΔS| + 指标级（s11_db_min / |S21|@fc 线性）误差 +
    Spearman ρ 排序保真 → 预声明门（GATE_*，写死于本文件常量，#190 精神：
    先定判读带与指标再给诚实判定）→ report.json。
-3. **环 A/B**（`ab`）：同一 evaluate_fn（openEMS 直接全波真跑）+
+3. **WP3.2 环 A/B**（`ab`）：同一 evaluate_fn（openEMS 直接全波真跑）+
    同一环参数，surrogate_kind="mapes_pixel_analytic"（解析代理档）vs
    "poly_ridge"（环默认数据驱动档），如实记录不强求胜出 → ab_loop.json。
 

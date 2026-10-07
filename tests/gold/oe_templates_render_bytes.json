@@ -1,0 +1,65 @@
+{
+ "schema": "rfauto-oe-templates-render-bytes-v1",
+ "note": "AU-1 批1 拆分逐字节恒等的常驻抽样钉；重钉=显式评审",
+ "templates": {
+  "wilkinson": {
+   "params": {
+    "series_w_mm": 0.604,
+    "shunt_w_mm": 1.113,
+    "arm_len_mm": 18.1
+   },
+   "band": [
+    2.0,
+    3.0
+   ],
+   "mesh": 0.4,
+   "sha256": "645c94f5b6801bd586931013cbff0956f0779fb6180461dddb9da8f65d151add"
+  },
+  "lange": {
+   "params": {
+    "w_mm": 0.1672,
+    "gap_mm": 0.0386,
+    "finger_len_mm": 18.9712,
+    "w_feed_mm": 1.1117
+   },
+   "band": [
+    2.0,
+    3.0
+   ],
+   "mesh": 0.4,
+   "sha256": "7be922ce0454aab3b6fb0b88046aa82b2b0bec86407392b11295edfcc363257b"
+  },
+  "ms_patch": {
+   "params": {
+    "px_mm": 8.5406,
+    "py_mm": 8.5406,
+    "period_mm": 14.9896,
+    "h_mm": 1.524,
+    "er": 3.66,
+    "tan_d": 0.0037
+   },
+   "band": [
+    8.0,
+    12.0
+   ],
+   "mesh": 0.4,
+   "sha256": "f072b6d99fc57e44021dc1364250f58a3432f57216caff49285ddaec701c5a8c"
+  },
+  "hairpin": {
+   "params": {
+    "order": 3,
+    "w_mm": 1.1117,
+    "arm_len_mm": 36.7799,
+    "arm_gap_mm": 3.0,
+    "gap_mm": 1.1328,
+    "tap_frac": 0.398159
+   },
+   "band": [
+    2.0,
+    3.0
+   ],
+   "mesh": 0.4,
+   "sha256": "5ecbedcbcb864c021741f4bcf6a844bd3b47a6b9d36d1631311d0d12cac9b2ea"
+  }
+ }
+}

@@ -1,4 +1,4 @@
-r"""实档损耗 dump 读取器（openEMS SAR/AddDump HDF5，dump_type=29 形态）。
+r"""D3-1 实档损耗 dump 读取器（openEMS SAR/AddDump HDF5，dump_type=29 形态）。
 
 定位：core/loss_density.py 是纯 numpy 内核（不引 h5py），本模块是它的
 infra 侧实档入口——把 openEMS 落盘的 HDF5 解析成逐 cell 对齐的
@@ -6,7 +6,7 @@ infra 侧实档入口——把 openEMS 落盘的 HDF5 解析成逐 cell 对齐�
 （.importlinter layers），h5py 只在本层出现，走 visualization._h5py 的
 懒加载守卫（extras [openems]）。
 
-实档布局（离线实测，SAR 冒烟产物的 fdtd/ 目录）
+实档布局（2026-09-15 本会话离线实测，runs/nf2ff_smoke_sar_dipole/fdtd）
 --------------------------------------------------------------------
 ``SAR_raw.h5``（根 attrs dump_type=29、dual_mesh=1、openEMS_HDF5_version=0.3）::
 

@@ -1,4 +1,4 @@
-# 物理标定锚注册表（DP-3，docs/plan_deepdive_specs_20260924.md §DP-3）
+# 物理标定锚注册表（DP-3，规格深案 §DP-3）
 # 锚 = (模板族 × 引擎对 × 域) → (常量 | 曲线 | 公式)，描述引擎对系统偏差。
 # 运行时只读；写入只经人工 commit（Agent 写面隔离，仓内约定）。
 # 版本演进：锚修订不改历史——新证据登记 -vN+1，旧版 status: retired +
@@ -8,6 +8,8 @@
 # status 枚举：active | stale | experimental | retired | awaiting_data
 # （awaiting_data 为 DP-3 P1 批预声明扩展：骨架锚如实登记，data 回填后翻 active，
 # 见 runs/df6_dp3anchors/criteria.md 〇节口径决定）。
+# kind 枚举：constant | curve | formula | pointer（pointer=双值指针锚，
+# OE/HFSS 双值登记不产 constant 数字、不就地求值——HFSS 窗 B→A 批启用）。
 schema: anchors/v1
 anchors:
   # ── c3 过孔寄生电感（df5f R1，HFSS 对齐基准中点）─────────────────────────
@@ -51,16 +53,19 @@ anchors:
     provenance:
       arbitration_runs: [runs/wp39_mvp_followup]
       commit: 3f1d18c
-      devlog: "#190 23 点战役定标值；scripts/wp39_followup_run.py OPENEMS_PATCH_CONSTANT_DOC"
+      devlog: "#190 23 点战役定标值；scripts/wp39_followup_run.py OPENEMS_PATCH_CONSTANT_DOC；【复测回填（2026-10-04 ge8e W1 席，runs/review_ge8e/w1_followup/REPORT.md）】归档复测证据=runs/wp39_mvp_followup/patch_calib.json（openEMS 真机 1.5-2.5GHz 401 点单点扫频，f_dip=1.94455GHz×L=40mm → 常数 77.78，fresh_vs_doc_pct=1.28）——77.78 相对锚值 76.8 偏差 1.28% 带内（保守包络 5% 内），沿 ge8b patch 名义 MISMATCH 同款保守裁决：锚值 76.8 维持（断锚历史零改写），仅回填 last_verified（at=复测落档时点）；任务书原指证据文件（runs/ge8_patch2x2/run_nrts1p25m/_last_stdout.log）经实测仅含能量读数（−77.78dB）同字面巧合、非本常数证据面，证据以 wp39 patch_calib.json 为准（#222 登记线索实测勘误先例同款）"
       referee_script: scripts/wp39_followup_run.py
       replaces: "无（首登记；此前仅脚本常量+注释散落）"
     registered_at: "2026-09-24T12:00:00+08:00"
-    last_verified: null
+    last_verified: {at: "2026-09-13T15:34:23+08:00", residual: 0.0128}
     fallback: closed_form
     status: active
     consumers:
       - scripts/wp39_followup_run.py
       - src/rfauto/service/wp39_benchmark.py
+      - src/rfauto/core/anchors.py
+      - src/rfauto/service/level2_design.py
+      - src/rfauto/service/anchors_service.py
 
   - anchor_id: patch.f_dip_l.hfss-v1
     kind: constant
@@ -69,18 +74,18 @@ anchors:
     quantity:
       name: f_dip_L
       unit: "GHz·mm"
-      semantics: "HFSS 归档 probe.s1p 离线复核的谷位标定常数（HFSS 为对齐基准口径）"
+      semantics: "HFSS 归档 probe.s1p 离线复核的谷位标定常数（HFSS 为对齐基准口径）；XA-1 仲裁实证（2026-10-02，runs/xa1_arbitration）：该值反解 D_eng=−8.24mm 物理不可能（隐含 εeff 2.26<(εr+1)/2）——引擎内部定标口径非物理谐振量，禁止当物理 TM10 锚消费（对照 openems-v1 可物理反解）；status=active 表验证态非消费许可（J1 归 deliberate_excluded 有意排除：锚值在档经复核、消费面零接线如实——active 不构成任何物理消费授权，消费禁令持续有效）"
     value: 99.8
     uncertainty: {value: 0.05, kind: relative, note: "保守包络估计，待归档复判回填"}
     domain: null
     provenance:
       arbitration_runs: [runs/wp39_probe_patch]
       commit: 3f1d18c
-      devlog: "scripts/wp39_followup_run.py HFSS_PATCH_CONSTANT_REF；service/wp39_benchmark.py ④ 标定注释（HFSS 99.8 对 openEMS 76.8 漂移比值口径）"
+      devlog: "scripts/wp39_followup_run.py HFSS_PATCH_CONSTANT_REF；service/wp39_benchmark.py ④ 标定注释（HFSS 99.8 对 openEMS 76.8 漂移比值口径）；【last_verified 回填（2026-10-04 G1 G-14）】 一百二十三 ④（2026-09-13）+runs/wp39_mvp_followup/patch_calib.json hfss 块：归档 probe.s1p 离线复核常数 99.79（2026-09-12 实测），相对锚值 99.8 残差 1.0e-4——at 取同件 openems-v1 席同款口径（artifact generated_at 2026-09-13 15:34:23），residual=0.0001"
       referee_script: scripts/wp39_benchmark_run.py
       replaces: "无（首登记）"
     registered_at: "2026-09-24T12:00:00+08:00"
-    last_verified: null
+    last_verified: {at: "2026-09-13T15:34:23+08:00", residual: 0.0001}
     fallback: closed_form
     status: active
     consumers:
@@ -169,11 +174,1507 @@ anchors:
     provenance:
       arbitration_runs: [runs/df6_a1_r4]
       commit: f21f661
-      devlog: "df6 P1 骨架登记：points 留 A1 曲线判读产出后回填，届时翻 active 并补 uncertainty/arbitration_runs（本 criteria 预声明，不事后改）。df7 收尾笔回填：curve_verdict.json 6 点全 PASS+严格单调（k_monotone_decreasing_in_gap=true），y=k_corr（馈 tap 加载偏置逆映射修正后引擎 k）；馈耦合 J01 两点（qe_g0800 J01 比 0.730@0.8mm、qe_g02263 0.074@设计缝 0.2263mm——KJ 馈抽头闭式小缝端严重高估耦合，df5 发现定量化）同表存档 curve_verdict.json qe_rows"
+      devlog: "df6 P1 骨架登记：points 留 A1 曲线判读产出后回填，届时翻 active 并补 uncertainty/arbitration_runs（本 criteria 预声明，不事后改）。df7 收尾笔回填：curve_verdict.json 6 点全 PASS+严格单调（k_monotone_decreasing_in_gap=true），y=k_corr（馈 tap 加载偏置逆映射修正后引擎 k）；馈耦合 J01 两点（qe_g0800 J01 比 0.730@0.8mm、qe_g02263 0.074@设计缝 0.2263mm——KJ 馈抽头闭式小缝端严重高估耦合，df5 发现定量化）同表存档 curve_verdict.json qe_rows。【consumers 勘误（2026-10-04 R2 审查批 R2-2，runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md）】原声明消费者 src/rfauto/core/synthesis.py 实测零消费（全仓 grep k_of_g 无 synthesis 消费点；src 侧 resolve_anchor 现接线的只有 render_c3 的 l_via_h 锚与 rf_line 的 cps.gamma_er 锚）——按如实原则改 consumers=[]，锚数值/等级/interp/points 零改动；quantity.semantics 所述 synthesis c3 臂 k 设计消费面接入留 N2 k_split_pair 批如实登记"
       replaces: "无"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（synthesis c3 臂 k 设计/N2 k_split_pair 批）接入排期按 TODO anchor_family_service 批计划推进，active 语义与 semantics 消费承诺自此有台账可对"
     registered_at: "2026-09-24T12:00:00+08:00"
     last_verified: {at: "2026-09-25T15:29:17+08:00", residual: 0.0}
     fallback: closed_form
     status: active
+    consumers: []
+  # ── HFSS 窗 B→A 仲裁批（wf:anchor-register，2026-09-29；6 席 verdict 落档
+  #    a9b12c9）——constant 2 席（AGREE 门值定锚）+ pointer 4 席（DISAGREE
+  #    双值指针，experimental，消费面不接）──────────────────────────────────
+  # wilkinson：verdict AGREE_OPENEMS——f_match 相对偏差 1.132503% 在预声明
+  # 3% 门内，注册为引擎对系统偏差 constant（双引擎 f_match 均越 x_ref 窗
+  # [2.375,2.625]，一致性判=引擎互证非裁判窗，AGREE_OPENEMS 口径）。
+  - anchor_id: wilkinson.f_match.openems-hfss-v1
+    kind: constant
+    template_family: [wilkinson]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: wilkinson_f_match_dev_pct
+      unit: percent
+      semantics: "wilkinson 引擎对 f_match 系统偏差幅度（|HFSS−OE|/|OE|×100，HFSS 高于 OE 1.13%）；verdict per_metric diff 逐位"
+    value: 1.132503
+    values_note: "源值对：hfss f_match_ghz=2.2325 / oe f_match_ghz=2.2075（窗 2.0-3.0GHz，401 点）"
+    uncertainty: {value: 3.0, kind: arbitration_interval, note: "预声明 rel_pct 门宽 3%（criteria §4 冻结）作单点仲裁保守包络，非拟合 σ"}
+    domain:
+      arm_len_mm: [15, 25]
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/wilkinson]
+      verdict: runs/hfss_window_b2a/wilkinson/hfss_side/verdict.json
+      verdict_state: AGREE_OPENEMS
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00348，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS，max_abs_s 阈 1.05）"
+      machine: sim_host
+      wall_s: 774.4
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/core/anchors.py
+      - src/rfauto/service/level2_design.py
+      - src/rfauto/service/anchors_service.py
+  # gysel：verdict AGREE_JUDGE——S32 band_max(2.25-2.75GHz) 偏差 1.203787dB
+  # 在预声明 5dB 门内且逐指标 AGREE_JUDGE，注册 constant（HFSS 隔离更深，
+  # 即更负 1.204dB；方向记 semantics，幅度=verdict diff 逐位）。
+  - anchor_id: gysel.s32_iso.openems-hfss-v1
+    kind: constant
+    template_family: [gysel]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: gysel_s32_iso_dev_db
+      unit: dB
+      semantics: "gysel 隔离 S32 band_max 引擎对偏差幅度 |HFSS−OE|（HFSS 隔离更深 1.20dB，即更负）；带 2.25-2.75GHz 与产物同口径"
+    value: 1.203787
+    values_note: "源值对：hfss s32_band_max_db=-23.68392628660665 / oe s32_band_max_db=-22.48013901217108"
+    uncertainty: {value: 5.0, kind: arbitration_interval, note: "预声明 db_diff 门宽 5dB（criteria §4 冻结）作单点仲裁保守包络，非拟合 σ"}
+    domain:
+      arm_len_mm: [15, 22]
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/gysel]
+      verdict: runs/hfss_window_b2a/gysel/hfss_side/verdict.json
+      verdict_state: AGREE_JUDGE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00324，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS）"
+      machine: sim_host
+      wall_s: 991.2
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册；OE 源 runs/gysel_miter_ab/verdict.json variants.off.judged（带 2.25-2.75 与 README §4 标注不符已如实注记）"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（XC-A 修正表扩族/隔离偏差指引）接入排期按 TODO anchor_family_service 批计划推进"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers: []
+  # ── pointer 4 席（verdict DISAGREE，SEATS 预声明分支改指针锚）─────────────
+  # pointer 语义：kind=pointer 不就地求值（evaluate 恒 None）、双值在
+  # quantity.values {openems, hfss} 逐位=verdict 实测；status=experimental
+  # 不产 constant 数字、consumers=[] 消费面不接（gamma_er 等公式锚消费不
+  # 受影响）；双引擎不自洽的分歧如实登记待归因，禁止取平均凑常数（#122）。
+  - anchor_id: stepped_impedance.f_pass.openems-hfss-v1
+    kind: pointer
+    template_family: [stepped_impedance]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: stepped_f_pass_dev_pct
+      unit: percent
+      semantics: "阶梯阻抗 |S11| 谷位 f_dip 引擎对分歧指针——verdict DISAGREE（f_dip 偏 7.573% 超预声明门 3%；s21@f0 差 5.215dB、bw_3db 差 62.99% 同席 DISAGREE），双值登记不产常数。P3-7 错位注记（2026-09-29 review-slice9）：anchor_id/quantity.name 沿 SEATS 预声明 f_pass 字面，实际 metric=f_dip_ghz（S11 谷位）——按 metric 名检索锚的消费者须以 metric 键为准；指针锚零消费（consumers=[]），改名涉消费面惰性顺带。【review-fix8 勘误 2026-09-29（review-slice11 P1-1）】bw_3db 旧差 62.99% 撤销——旧值 hfss=0.705（窗沿截断上瓣，非主瓣）/oe=1.905（主瓣段窗沿截断下界）为不同语义量不可比；主瓣口径重判（含峰段+触窗沿截断如实 UNKNOWN）双侧均触窗沿 → bw 门 UNKNOWN，总态 DISAGREE 不变（f_dip/s21@f0 两门独立成立）。本锚 values（f_dip 双值）与 uncertainty 不受影响。（review-fix9 2026-09-29 补注）：id 错位仅指 anchor_id 与 quantity.name 字面——SEATS 提取器与 verdict per_metric 均无名为 f_pass 的 metric，f_pass↔f_dip_ghz 为唯一对应且 quantity.metric 键已显式登记，检索一律以 metric 键为准；id 维持不改（零消费指针锚，改名无收益、徒增 provenance 断链）。【名义几何修复注记（2026-09-30 六百七十一/#1c 修复批）】stepped 馈线宽 0.3mm（96.9Ω 非 50Ω）是本席 DISAGREE 的参考系分裂机制主体（离线重归一实验实证）；自本批起模板名义新增 feed_w_mm=1.1133mm（50Ω HJ 精算）——本锚 values 双值（openems 3.235/hfss 2.99）与 uncertainty 为**修复前几何**归档证据零改写，对新名义点的重跑不回写本锚（pointer 锚封档口径维持，判新跑走预声明门另落 verdict）。"
+      values: {openems: 3.235, hfss: 2.99}
+      value_unit: GHz
+      metric: f_dip_ghz
+    value: null
+    uncertainty: {value: 7.573416, kind: arbitration_interval, note: "观测引擎对分裂幅度（per_metric diff，超门即 DISAGREE 实测）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/stepped_impedance]
+      verdict: runs/hfss_window_b2a/stepped_impedance/hfss_side/verdict.json
+      verdict_state: DISAGREE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00305，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS）"
+      machine: sim_host
+      wall_s: 514.4
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册（SEATS 预声明 DISAGREE 改 pointer 锚分支兑现）"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  - anchor_id: coupled_line.s31_coupling.openems-hfss-v1
+    kind: pointer
+    template_family: [coupled_line]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: coupled_line_s31_coupling_dev_db
+      unit: dB
+      semantics: "耦合线 @f0 耦合度引擎对分歧指针——verdict DISAGREE（coupling@f0 差 0.759dB 超门 0.5；f_peak 偏 22.84% 超门 3%；through@f0 AGREE_JUDGE 单项不救总态），双值登记不产常数。【review-fix8 勘误 2026-09-29（review-slice11 P1-2）】f_peak 在档 22.84% 为两个病态 argmax 之差（双侧峰 −3dB 带上沿触窗 censored，OE 峰至窗沿仅降 0.0124dB，真峰可在窗外）——不可作定量引用；提取口径改峰 −3dB 带心（#298）：HFSS 2.4075 vs OE 2.694，分歧 10.635% 仍超 3% 门、verdict 总态 DISAGREE 不变；本锚 values/uncertainty 为 coupling@f0 量，不受 f_peak 口径修正影响（verdict.json review_fix8 块留账）"
+      values: {openems: -12.009570091162512, hfss: -11.250498778233599, openems_wideband_ge7: -12.0387}
+      value_unit: dB
+      metric: coupling_at_f0_db
+      # ge8 K-8b 锚批复核（2026-10-02，runs/k8_half_anchor）：第三 OE 值 −12.0387（ge7_clwide 宽窗席
+      # @2.40125GHz）逐位复提取可入档，随行两注记=①宽窗口径（1.5-5.0GHz vs 原席窄窗）②PARTIAL 信封
+      # （引擎产物完成后拆卸段 0xC0000005，产物完整，rc 链见 judge_wideband §1）；三次独立复现
+      # 0.7555/0.7546/0.7837 同号同量级，DISAGREE 语义不变。
+    value: null
+    uncertainty: {value: 0.759071, kind: arbitration_interval, note: "观测引擎对分裂幅度（per_metric diff）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/coupled_line]
+      verdict: runs/hfss_window_b2a/coupled_line/hfss_side/verdict.json
+      verdict_state: DISAGREE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00421，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS）"
+      machine: sim_host
+      wall_s: 485.3
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册（OE 源=wideband 档，窄带档峰被窗沿截断 #281 族注记随 verdict）"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  - anchor_id: marchand.f_null.openems-hfss-v1
+    kind: pointer
+    template_family: [marchand_balun]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: marchand_f_null_dev_pct
+      unit: percent
+      semantics: "marchand S11 谷位 f_null 引擎对分歧指针——verdict DISAGREE 为 SEATS 预声明高概率分支兑现（f_null 偏 10.88% 超门 10%；BALUN_GATES 记录不判），双值登记不产常数"
+      values: {openems: 3.272, hfss: 2.916}
+      value_unit: GHz
+      metric: f_null_ghz
+    value: null
+    uncertainty: {value: 10.880196, kind: arbitration_interval, note: "观测引擎对分裂幅度（per_metric diff）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/marchand_balun]
+      verdict: runs/hfss_window_b2a/marchand_balun/hfss_side/verdict.json
+      verdict_state: DISAGREE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00378，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS）"
+      machine: sim_host
+      wall_s: 496.3
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册；OE 源=runs/smoke_marchand_2sect/verdict.json+runs/marchand_sameport_arb/arbverdict.json（f_null 驻波免疫估计器主判，随 verdict provenance）"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  - anchor_id: branchline.f_match.openems-hfss-v1
+    kind: pointer
+    template_family: [branchline]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: branchline_f_match_dev_pct
+      unit: percent
+      semantics: "分支线耦合器 f_match 引擎对分歧指针——verdict DISAGREE（引擎间偏 4.284% 超预声明门 3%，且双越 x_ref 窗 [2.28,2.52]；split/amp_mid/s41/s11_min 四项 AGREE_JUDGE 不救总态），双值登记不产常数"
+      values: {openems: 2.1360000000000006, hfss: 2.2275}
+      value_unit: GHz
+      metric: f_match_ghz
+    value: null
+    uncertainty: {value: 4.283708, kind: arbitration_interval, note: "观测引擎对分裂幅度（per_metric diff）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/branchline]
+      verdict: runs/hfss_window_b2a/branchline/hfss_side/verdict.json
+      verdict_state: DISAGREE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00437，未触顶"
+      g11: "PASS（finite=True passive=True reciprocity=PASS）"
+      machine: sim_host
+      wall_s: 759.2
+      commit: a9b12c9
+      devlog: " 五百八十八（a9b12c9 六席 verdict 落档）；本批 wf:anchor-register 注册；名义 −10.78% 分解账在案（#252）随 provenance 引用不重写"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-07 pointer 契约对齐】XC-A 回填时点（374cc5b）挂 +3 消费者（core/anchors.py/level2_design.py/anchors_service.py）与本表 pointer 契约（头注'pointer=双值指针锚……不就地求值'+pointer 4 席块注'consumers=[] 消费面不接'）自相矛盾——core/anchors.py 模块头注 pointer 契约原文'值在模型档案不就地求值'，本锚 evaluate 恒 None、level2/anchors_service 均无 pointer 消费分支（find_anchors/resolve 对 pointer 不产可消费值），对齐其余 5 条 pointer 锚（stepped/coupled_line/marchand/patch_array/ring）改 consumers=[]；双值 values/uncertainty/status 零改动"
+    registered_at: "2026-09-29T12:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:07:36+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  # ── HFSS 窗 B→A 仲裁补批（wf:anchor-register-p1x4，2026-09-29；第 7 席）────
+  # patch_array_1x4：verdict AGREE_JUDGE——f_min 相对偏差 0.292068% 在预声明
+  # 5% 门内（辐射族谷位门宽，criteria §4 冻结），注册为引擎对系统偏差
+  # constant。criteria §7 预声明族级 patch_array.*（2x2 并入同锚族级单源）
+  # ——2x2 席 FAIL 不注册，族级单源前提失效，本锚落
+  # seat 作用域 template_family=[patch_array_1x4]；族级拓宽待 2x2/series
+  # 有效 verdict 再演进 -v2（零改写演进，头部规则）。
+  - anchor_id: patch_array_1x4.f_res.openems-hfss-v1
+    kind: constant
+    template_family: [patch_array_1x4]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: patch_array_1x4_f_res_dev_pct
+      unit: percent
+      semantics: "patch_array_1x4 S11 谷位引擎对系统偏差幅度（|HFSS−OE|/|OE|×100，OE 谷位低于 HFSS 0.29%——hfss 6.0436>oe 6.026，review-slice12 F-2A 勘误）；verdict per_metric diff 逐位。主判=两引擎谷位/谷深一致，不判 vs 设计 5.8GHz（criteria §1 预声明，OE 谷位偏设计 +3.9% 已知）。anchor_id 沿批次任务书面，verdict metric=f_min_ghz——按 metric 名检索以本注记为准（stepped_impedance P3-7 错位注记同款）"
+    value: 0.292068
+    values_note: "源值对：hfss f_min_ghz=6.0436 / oe f_min_ghz=6.026（窗 4.64-6.96GHz，401 点）"
+    uncertainty: {value: 5.0, kind: arbitration_interval, note: "预声明 rel_pct 门宽 5%（criteria §4 冻结，辐射族谷位门）作单点仲裁保守包络，非拟合 σ"}
+    domain:
+      spacing_mm: [20.675, 31.013]
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/patch_array_1x4]
+      verdict: runs/hfss_window_b2a/patch_array_1x4/hfss_side/verdict.json
+      verdict_state: AGREE_JUDGE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.0049，未触顶（26/30 passes）"
+      g11: "PASS（finite=True passive=True max_abs_s=0.971822 阈 1.05；reciprocity=NOT_APPLICABLE 单端口 criteria §5 如实不设门）"
+      machine: sim_host
+      wall_s: 3332.8
+      commit: 7a9ed9f
+      domain_note: "criteria §7 预声明 d 0.4-0.6λ0 折算 spacing_mm @f0=5.8GHz（λ0=51.688mm）：0.4λ0=20.675、0.6λ0=31.013；实测 spacing 25.0172mm=0.484λ0 居中"
+      devlog: " 五百九十二（7a9ed9f plaunch 8 席落档：patch_1x4 AGREE_JUDGE f_min +0.29%/谷深 1.86dB/S11@5.8 1.72dB 三门全过，wall 0.62×预算）；本批 wf:anchor-register-p1x4 注册。OE 源 runs/ge_fd/patch_array_1x4（F-D 战役 PASS 4372s 归档 CSV）。任务书线索 commit=f1f9b40 经 git log 实测为 review-slice10 笔（早于本席落档时刻），落档笔实取 7a9ed9f"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记）"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（谷位偏差指引/辐射族真机判读窗）接入排期按 TODO anchor_family_service 批计划推进"
+    registered_at: "2026-09-29T16:30:00+08:00"
+    last_verified: {at: "2026-09-29T12:48:22+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers: []
+  # ── HFSS 窗 B→A 仲裁指针补批（wf:anchor-pointer-register，2026-09-29）──────
+  # patch_array.f_res 族级指针锚（criteria §7 预声明，LAUNCH_SUMMARY 锚注册表
+  # 补行）：席 8 patch_array_2x2 timeout-env 重跑
+  # verdict DISAGREE（合法判读）→ 预声明 pointer 分支落地。与席 7（1x4
+  # AGREE_JUDGE constant，五百九十四批 seat 作用域先行注册）判态不同 → 族锚
+  # 降级 experimental + 拓扑相关性注记（H-tree 折弯链头号候选），禁止取平均
+  # 凑族锚（#122）。前 4 席 pointer 锚已由 wf:anchor-register 批注册（本批
+  # 开工核对防重复注册，#222 语境钉死）。
+  - anchor_id: patch_array.f_res.openems-hfss-v1
+    kind: pointer
+    template_family: [patch_array_1x4, patch_array_2x2, patch_array_series]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: patch_array_f_res_dev_pct
+      unit: percent
+      semantics: "patch 阵列 S11 谷位 f_res 族级引擎对分歧指针——criteria §7 预声明族锚（template_family 含 1x4/2x2/series 三模板），双值=席 8 patch_array_2x2 timeout-env 重跑 verdict DISAGREE 实测（f_min 偏 14.345% 超预声明门 5%；谷深 s11_min 分歧 9.71dB 同记 DISAGREE；s11@5.8 AGREE_JUDGE 单项不救总态）。与席 7 判态不同（1x4 AGREE_JUDGE）→ 按 criteria §7 预声明降级 experimental 并记拓扑相关性：两引擎在 2x2 H-tree 拓扑上真实分歧（H-tree 折弯链头号候选病因；同单元 1x4 互差仅 +0.29%——分歧随拓扑出现非数值噪声，rung1/2 与并行段/v3 三方逐位一致实证）；HFSS 5.6898 反比 OE 4.976 更近设计 5.8（−1.9% vs −14.2% 预声明已知越窗）。禁止取平均凑族锚（#122）。1x4 席 constant 见 patch_array_1x4.f_res.openems-hfss-v1（seat 作用域）。anchor_id 沿 criteria §7 预声明 f_res 字面，verdict metric=f_min_ghz——按 metric 名检索以本注记为准（stepped P3-7 错位注记同款）"
+      values: {openems: 4.976, hfss: 5.6898}
+      value_unit: GHz
+      metric: f_min_ghz
+    value: null
+    uncertainty: {value: 14.344855, kind: arbitration_interval, note: "观测引擎对分裂幅度（per_metric f_min diff，超门即 DISAGREE 实测）"}
+    domain:
+      spacing_mm: [20.675, 31.013]
+    provenance:
+      arbitration_runs: [runs/hfss_window_b2a/patch_array_2x2]
+      verdict: runs/hfss_window_b2a/patch_array_2x2/hfss_side/verdict.json
+      verdict_state: DISAGREE
+      hfss_setup: "Setup（ΔS 阶梯同 setup 逐档改 MaxDeltaS/MaximumPasses）"
+      ladder_last_rung: "chosen_level=3（max_delta_s=0.005）final_delta_s=0.00412，未触顶（25/30 passes）"
+      g11: "PASS（finite=True passive=True max_abs_s=0.969667 阈 1.05；reciprocity=NOT_APPLICABLE 单端口 criteria §5 如实不设门）"
+      machine: sim_host
+      wall_s: 6095.7
+      commit: 99a44e6
+      domain_note: "criteria §7 预声明 d 0.4-0.6λ0 折算 spacing_mm @f0=5.8GHz（λ0=51.688mm）：0.4λ0=20.675、0.6λ0=31.013；两席实测 spacing 25.0172mm=0.484λ0 居中（1x4/2x2 同值，criteria §1）"
+      devlog: " 六百（99a44e6 wf:review-fix9 patch_2x2 重跑 DISAGREE 合法判读落账：env timeout 7200 生效 rung3 3899.4s 越旧 3600s 门收敛 25/30 passes；总态 8 席 FAIL 清零）；本批 wf:anchor-pointer-register 注册。OE 源 runs/ge_fd/patch_array_2x2（F-D 战役 PASS 4028.5s 归档 CSV）；谷位越 x_ref 窗 −14.2% 预声明已知，互差 14.3% 前提不成立如实 DISAGREE 不事后改窗"
+      referee_script: scripts/hfss_window_arbitration.py
+      replaces: "无（首登记；criteria §7 预声明族级锚——1x4 席判读时 2x2 FAIL 族级单源前提未立（五百九十二），先行 seat 作用域 patch_array_1x4.f_res.openems-hfss-v1 constant（五百九十四批），本锚补族级 2x2 双值指针，两锚并存零改写；族级合并/拓 series 待有效 verdict 演进 -v2）"
+    registered_at: "2026-09-29T23:30:00+08:00"
+    last_verified: {at: "2026-09-29T17:27:14+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  # ── P-KJ-EVEN P3 批（wf:goal-t5，2026-09-30）：KJ even 闭式适用域盒锚──────
+  # P1 §8.5「锚域盒注册+越域告警」主路线兑现（T3 核验 0795b2a 解锁；全波
+  # 修正系数路线前提不成立，Elmer 复核 J1 全 PASS=KJ 洗冤坐实）。
+  # schema 决策：既有 kind 无「域盒型」——域盒经标准 domain 字段（u/g/er
+  # 三键参数盒）+ constant 域内基准值表达，schema: anchors/v1 零扩展
+  # （决策记 runs/df7_kjeven/p3_domain_register_report.md §2）。
+  - anchor_id: coupled_microstrip.kj_even_domain.lit-v1
+    kind: constant
+    template_family: ["*"]
+    engine_pair: null
+    quantity:
+      name: kj_even_domain_dev_pct
+      unit: percent
+      semantics: "KJ even 闭式（Kirschning-Jansen 1984，core/coupled_microstrip.coupled_microstrip_even_odd_ohm）适用域盒声明+域内基准：域盒 u=w/h∈[0.1,10]、g=s/h∈[0.1,10]、er∈[1,18]（qucs-doc technical/microstrip.tex 文献声明域，精确度声明仅域内成立）；value=域内观测最大偏差上界 0.66%（εeff_e @y1 工作点 u=1.8195/g=0.1614/er=3.66，Elmer m=4 20h 盒，其中约半为盒截断贡献）。消费语义：工作点入盒→KJ even 可信（观测 ≤0.66%）；出盒→resolve 结构化 fallback（out_of_domain 越域告警，不抛）；越域消费现状按 Elmer g=0.0394 点证据渐进恶化无突变（P1 §8.6），运行时 warning 接线由主代理裁定（consumers=[] 零接线本批如实）"
+    value: 0.66
+    values_note: "源值分解（全部 Elmer 逐位转抄，零重算）：even Z0e 域内 5 点 |dev|≤0.45%（y1 −0.06/u_small +0.37/g_large +0.45/edge_a −0.180/edge_b −0.439）；紧缝·域外参考点 cline6（g=0.0394 域外）−0.590%；εeff_e 域内 ≤0.66%（y1 +0.66）·Elmer 复核 3 点 ≤0.41%（+0.071/+0.043/−0.406）；文献口径 qucs 技术文档 KJ 静态阻抗精度 <0.6%（与 P1 Elmer 实测 ≤0.7% 一致，二级可信）"
+    uncertainty: {value: 1.0, kind: arbitration_interval, note: "Elmer 复核预声明 J1 门 |Z∞−KJ|/KJ≤1%（elmer_recheck_criteria.md 数值求解前冻结）作保守包络，非拟合 σ"}
+    domain:
+      u: [0.1, 10]
+      g: [0.1, 10]
+      er: [1, 18]
+    provenance:
+      arbitration_runs: [runs/df7_kjeven]
+      verdict: runs/df7_kjeven/elmer_recheck/elmer_recheck_summary.md
+      verdict_state: "KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）"
+      kj_recheck: "P2 数据不支持任何 ≥1% 的 KJ 物理偏差（p2_verdict_report §4）；cline6/edge_b 的 HFSS even −1.34%/−1.63% 为测量面残差，不得反向修正 KJ（elmer_recheck §5.2）"
+      domain_note: "两条域缘 MARGINAL 注记（P2 判读 §6/elmer_recheck §5.3，不设运行时门）：（1）odd 在 u=10/g=0.1 角 ~−1.5%（Elmer Z0o −1.553% 网格干净实测，与 HFSS odd −2.60% 同向；1-3% MARGINAL 带不强行归类）；（2）even 在 u=10 对空气盒顶高敏感（W=80h/H=10h 顶 vs 无限 +1.07%；HFSS 实测 −1.63% 并不坐在该值上）"
+      hfss_side: "P2 v2 全模型宽端口 7 点 even 残差 +0.02~+1.63% 全正偏（P1 半模型小端口 −6~−7.6% 截断病理消解；H2 逐字兑现：edge_a 宽度阶梯 +1.387%→+0.311%→+0.019% 单调回收，g4 PASS）"
+      machine: "本机（Elmer 复核零 HFSS 离线 418.5s；P2 两轮本机 HFSS 61.6min，sim_host 零占用）"
+      wall_s: 418.5
+      commit: 0795b2a
+      devlog: " 六百一十九（0795b2a T3 核验落档=P3 解锁）；证据链 2101d01（P1 审计 H2 成立/H1 否定）→f2a4b43（P2 v2 FAIL 可判定+Elmer 复核 J1 全 PASS）；域盒出处 P1 §8.6（qucs-doc technical/microstrip.tex 公开可达 GitHub raw 实取；KJ 1984 原文 IEEE 反爬未核，qucs 技术文档+qucs-core 双源交叉=二级可信）"
+      referee_script: runs/df7_kjeven/elmer_recheck/elmer_recheck.py
+      p1_driver: runs/df7_kjeven/elmer_kj_audit.py
+      data_source: runs/df7_kjeven/p1_audit.md
+      data_source_note: "§3 文献域界+§4 消费方工作点域界判定（lange g=0.076/cline6 g=0.0394/bpf N=2 FBW10% g=0.0885 三越域消费点在案）；y1/edge_a/edge_b 域角·域缘点+g_small/g_large/u_small 域内扫描全读数在档"
+      replaces: "无（首登记）"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（越域 warning 运行时接线，P1 §8.6 主代理裁定）接入排期按 TODO anchor_family_service 批计划推进"
+    registered_at: "2026-09-30T00:30:00+08:00"
+    last_verified: {at: "2026-09-26T15:28:38+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers: []
+
+  # ── Goal 批 T14（wf:goal-t14，2026-09-30）：ME-5 MMT 销钉/谐振窗 HFSS
+  # 仲裁锚（sim_host 远程，runs/mmt_anchor_20260930/criteria.md §6 实测；
+  # 两案 AGREE_HFSS：偏差方向 100% 系统闭式偏感性，HFSS 对齐基准偏差即
+  # 锚值；幅值双路测量通道——去嵌反演通道被预声明 |Re(y)|≤0.05 门否决
+  # 如实改道）。锚值只抄落档数字（#122），内核公式零改动。
+  # provenance.commit=2f36040 系被仲裁内核（ME-5 闭式）源 commit；仲裁面
+  # runs/criteria 与本注册的入库 commit 留主代理（T14 三禁不 commit）。
+  - anchor_id: mmt.inductive_post_b.hfss-v1
+    kind: constant
+    template_family: ["*"]
+    engine_pair: {calibrated: mmt, referee: hfss}
+    quantity:
+      name: inductive_post_b_dev_pct
+      unit: percent
+      semantics: "ME-5 感性销钉闭式（Marcuvitz §5.11(a) Eq.(1)/(2)，core/rwg_mmt.inductive_post_susceptance）单工作点 HFSS 仲裁偏差：value=(b_hfss−b_cf)/|b_cf|×100=+9.224%，方向=闭式偏感性（b_hfss 比闭式弱感性，201/201 全带点同号系统偏差）。测量通道=幅值双路（|S11| 路 −3.88217 与 |S21| 路 −3.90014 独立反解，互证 0.461%；去嵌相位反演通道被预声明 |Re(y)|≤0.05 自洽门否决——波端口模态 S 相位参考约定所致，informational 落档不采信）。工作点入 domain（f=10GHz 主锚点=test_wr90_center_anchor_dual_path 同点）→ 闭式预期偏感性 ~9%；出域未验证不外推。消费语义：偏差指引（非修正系数），内核公式未改（规格风险分流④ Xu-Wu 精化式对照留后续批）。HFSS 侧自洽锚全过（直段 |S11|max 7.6e-4/β 分支解码 2.6e-4/功率守恒 0.0018）"
+      values_note: "双值（源值逐位转抄 g_verdict.json，零重算）：b_cf=−4.286531（内核运行时重算，与 test_wr90_center_anchor_dual_path 双路径锚同点）、b_hfss=−3.891153（幅值双路均值）；带内偏差 max 10.22%/med 9.22%（8–12GHz 全带同向）"
+      value_unit: dimensionless (b_norm)
+      metric: b_norm
+    value: 9.224
+    uncertainty: {value: 7.0, kind: arbitration_interval, note: "预声明起步门 7%（criteria §2 G-post-main：内核声明二阶项+纯并联化 O((πd/a)²)≈1.9%+高阶倏逝残差）；实测 9.224% 超门按 #350 判向 AGREE_HFSS，偏差幅度即锚值"}
+    domain:
+      f_ghz: 10.0
+      a_mm: 22.86
+      b_mm: 10.16
+      r_mm: 1.0
+      x_over_a: 0.5
+      d_over_a: 0.087489
+    provenance:
+      arbitration_runs: [runs/mmt_anchor_20260930]
+      verdict: runs/mmt_anchor_20260930/g_verdict.json
+      verdict_state: AGREE_HFSS
+      criteria: runs/mmt_anchor_20260930/criteria.md
+      hfss_setup: "Setup（ΔS 阶梯 0.02/12→0.01/18→0.005/24 @10GHz）+Sweep 离散 8-12GHz/201 点；波端口模态基 renormalize=False"
+      ladder_last_rung: "ma_post passes=4 final_delta_s=0.00497 未触顶（trusted）"
+      machine: sim_host
+      g12_port: "请求 50065 实听 50052（G12 挪口发现：实际口以 aedt_console.log 公告为准，attach 前解析）"
+      wall_s: 288
+      commit: 2f36040
+      domain_note: "工作点=内核测试主锚点同点（WR-90 居中 r=1mm@10GHz，d/a=0.0875<0.10 原书限制域内）；n_posts=1 主口径（并联口径未仲裁）；全带 8-12GHz 偏差 9.2-10.2% 同向（rel_dev_band_med 9.22%）"
+      devlog: "Goal 批 T14（2026-09-30， 条目留主代理）；criteria §6 实测记录全账（材质库 vacuum 回退事故+G12 挪口定案+幅值双路改道依据）；本批 wf:goal-t14 注册"
+      referee_script: scripts/mmt_anchor_20260930_judge.py
+      replaces: "无（首登记）"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（偏差指引消费：工作点入 domain 预期闭式偏感性 ~9%，内核公式未改，Xu-Wu 精化式对照留后续批）接入排期按 TODO anchor_family_service 批计划推进"
+    registered_at: "2026-09-30T03:50:00+08:00"
+    last_verified: {at: "2026-09-30T03:45:39+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers: []
+
+  - anchor_id: mmt.resonant_window_fres.hfss-v1
+    kind: constant
+    template_family: ["*"]
+    engine_pair: {calibrated: mmt, referee: hfss}
+    quantity:
+      name: resonant_window_f_res_dev_pct
+      unit: percent
+      semantics: "ME-5 谐振窗闭式（Marcuvitz §5.2(a) Eq.(1a)+§5.1(a) Eq.(2a)，core/rwg_mmt.resonant_window_susceptance）单工作点 HFSS 仲裁 f_res 偏差：value=(f_res_hfss−f_res_cf)/f_res_cf×100=+16.600%（全波谐振 11.659972GHz 高于一阶解析零点 10.000GHz）。方向与销钉锚同族（闭式在该几何偏感性——w=13.916/h=3.0mm，h/b=0.295 角区占比大）。谷真实性自洽：|S11|min=−87.16dB 深谷+S21@res=−0.0038dB 全通+|S21| 峰位与谷位同格（gap=0）+功率守恒 ≤0.0014——真实传输谐振非数值伪象。er_fill=1（空气窗；局域介质填充的一级口径未仲裁，内核 docstring 预留）。消费语义：工作点入 domain→闭式 f_res 预期偏高需 ×1.166 量级修正指引（非修正系数），出域未验证不外推；内核公式未改"
+      values_note: "双值（源值逐位转抄 g_verdict.json）：f_res_cf=10.000000（闭式 b_total(f) 曲线自洽零点，w 经 f_res 解析式二分构造于 10.0）、f_res_hfss=11.659972（|S11| 谷位 slope-bracket 估计，201 点网+三点邻域；与 |S21| 峰位同格）"
+      value_unit: GHz
+      metric: f_res_ghz
+    value: 16.6
+    uncertainty: {value: 3.0, kind: arbitration_interval, note: "预声明起步门 3%（criteria §2 G-window-main：一阶式角区互作用高阶小量声明）；实测 16.600% 大幅超门——单标量方向天然系统，AGREE_HFSS 偏差即锚值（该工作点角区效应远超一阶声明）"}
+    domain:
+      f_res_cf_ghz: 10.0
+      a_mm: 22.86
+      b_mm: 10.16
+      window_w_mm: 13.916189
+      window_h_mm: 3.0
+      er_fill: 1.0
+    provenance:
+      arbitration_runs: [runs/mmt_anchor_20260930]
+      verdict: runs/mmt_anchor_20260930/g_verdict.json
+      verdict_state: AGREE_HFSS
+      criteria: runs/mmt_anchor_20260930/criteria.md
+      hfss_setup: "Setup（ΔS 阶梯 0.02/12→0.01/18→0.005/24 @10GHz）+Sweep 离散 8-12GHz/201 点；窗=全截面 PEC 框片减居中矩形孔（assign_perfecte_to_sheets，#356① 薄片导电口径）"
+      ladder_last_rung: "ma_window passes=7 final_delta_s=0.00136 未触顶（trusted）"
+      machine: sim_host
+      g12_port: "请求 50065 实听 50052（同销钉锚）"
+      wall_s: 300
+      commit: 2f36040
+      domain_note: "w 由 f_res 解析式在评估频点 10GHz 冻结 L_C 二分构造（内核声明口径）；h=3.0mm 预选（孔角距壁 3.6-4.5mm）；判读 f_res_cf 取 b_total(f) 曲线自洽零点（与构造点重合 10.000000）"
+      devlog: "Goal 批 T14（2026-09-30， 条目留主代理）；criteria §6 实测记录全账；与 mmt.inductive_post_b.hfss-v1 跨案例同向互证（两案均闭式偏感性，一阶式系统偏差非数值噪声）"
+      referee_script: scripts/mmt_anchor_20260930_judge.py
+      replaces: "无（首登记）"
+      consumption_note: "待消费窗排期（G1 G-05 登记 2026-10-04）：status=active 维持不降级（保守口径，J1-5）——消费面（偏差指引消费：工作点入 domain 预期闭式 f_res 偏高 ×1.166 量级修正指引，内核公式未改）接入排期按 TODO anchor_family_service 批计划推进"
+    registered_at: "2026-09-30T03:50:00+08:00"
+    last_verified: {at: "2026-09-30T03:45:39+08:00", residual: 0.0}
+    fallback: closed_form
+    status: active
+    consumers: []
+
+  # ── ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2 ─────────────────────
+  # ring.design_dk：FA3 Design Dk 锚战役预备稿
+  # 兑现——双引擎 DISAGREE（f1 互差 +2.479% 超预声明 1.5% 门）→ pointer 分支
+  # （criteria §G3 预声明）。提取基准式依赖引擎几何表征（implied R_eff：HFSS
+  # ≈r_mean+0.8% 平滑圆环 vs OE +3.3% 逐行栅格化）=禁产 constant 的物理根据。
+  - anchor_id: ring.design_dk.openems-hfss-v1
+    kind: pointer
+    template_family: [ring_resonator]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: ring_design_dk_dev
+      unit: dimensionless
+      semantics: "谐振法 Design Dk 引擎对分歧指针——verdict DISAGREE（f1 主模峰位互差 +2.479% 超预声明 1.5% 门；f2 真峰 post-hoc 互差 +2.263% 同向超带），双值登记不产 constant。同一预声明提取链（R_eff=R_OUT 基准+HJ 反演，n=1 主模，#301 谐振位置法 S21 峰位）：OE/HFSS 各自对名义 3.66 回收差 −3.46%/−8.68%。物理归因（假设/待证 #221⑥，证据=implied R_eff）：HFSS 11.391mm≈r_mean+0.8%（平滑圆环符合设计基准）；OE 11.673mm（逐行栅格化阶梯+粗网格慢波，#219 直角阶梯化同族）——提取基准式本身依赖引擎几何表征，故不产 constant（FA3 criteria §G3 DISAGREE 分支兑现）。基准敏感度矩阵（information，runs/ge5_fa3_dk/basis_sensitivity_matrix.json）：HFSS+mean-radius +1.82% / HFSS+R_OUT −8.68% / OE+R_OUT −3.46% / OE+mean-radius +7.57%——基准式依赖（R_OUT vs mean-radius）为引擎对带最大单项"
+      values: {openems: 3.5332928518364177, hfss: 3.342460048981009}
+      value_unit: dimensionless
+      metric: eps_r_from_f1_peak
+    value: null
+    uncertainty: {value: 0.13, kind: engine_pair_spread, note: "双值极差 0.1908 的 ~2/3（对名义 3.66≈5.2% 引擎对系统差带）；基准式依赖（R_OUT vs mean-radius）为最大单项"}
+    domain:
+      f_ghz: [2.42, 2.42]
+    provenance:
+      arbitration_runs: [runs/ge5_fa3_dk, runs/oe_phase3/ring_tier2_gap020]
+      verdict: runs/ge5_fa3_dk/verdict.json
+      verdict_state: DISAGREE
+      criteria: runs/ge5_fa3_dk/criteria.md（2026-10-01 HFSS 发射前落盘）
+      anchor_prep: runs/ge5_fa3_dk/anchor_prep.json
+      basis_sensitivity_matrix: runs/ge5_fa3_dk/basis_sensitivity_matrix.json
+      oe_evidence: "Tier-2 A 席 verdict.json（2026-09-30 硬门全绿）+FA3 oe_recovery.json 复算逐位一致（提取链可复现性副证）"
+      hfss_evidence: "sim_host DrivenModal 2025.1 同几何（平滑圆环）ΔS 0.02@15pass 收敛（#335 如实 PARTIAL：显示 target 与预声明 0.005 不符留档 followUp，峰位判向不受影响）、Discrete 401 点同栅、50Ω 重归一（hfss_side/ring_fa3.s2p+ring_fa3_conv.prof）"
+      domain_note: "方法域=RO4350B（datasheet Design Dk 3.66 名义）@2.42GHz 单材料单频点；extrapolate: forbidden（#302 禁跨 εr/频段外推）——C10d/RO3003 禁直移本锚数字，可继承的是方法域背书+引擎对不确定度带"
+      server_cleanup: "remote_hfss_cleanup ok：ansysedt_after=0/任务已删/端口零残留/工作目录已删（FA3 report §5）"
+      machine: sim_host
+      wall_s: 1823.2
+      commit: f0ce39a
+      devlog: " 六百八十九（f0ce39a FA3 战役收官：OE 3.5333 vs HFSS 3.3425 DISAGREE→pointer 分支）；本批 wf:ge6-anchor 注册（锚批交付门=EXPECTED_ANCHORS 单源+本表+test_anchors_store_service 三面同步）"
+      referee_script: scripts/oe_phase3_ring_rejudge.py
+      replaces: "无（首登记）"
+    registered_at: "2026-10-01T14:06:00+08:00"
+    last_verified: {at: "2026-10-01T03:54:38+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+
+  # mmwave.design_dk：FA3 report §4 C10d 解锁建议落地——OE 单引擎 pointer 封档
+  # （单引擎单工作点，constant 须待 78GHz HFSS 仲裁腿）；值=既有真跑谷位反推
+  # er_design，C10d 离线复判（零仿真）PASS 落 runs/ge6_anchor/verdict.json。
+  - anchor_id: mmwave.design_dk.ro3003-oe-v1
+    kind: pointer
+    template_family: [mmwave_series_array]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: mmwave_design_dk_oe
+      unit: dimensionless
+      semantics: "RO3003 类毫米波板引擎校准 Design Dk 指针（OE 单引擎）——value 反推链=既有真跑冒烟 S11 谷位（76.20GHz vs 设计 78=−2.31%， 四四五）经平方法 er_design=3.0×(78/f_dip)²=3.1434（谐振位置法只消费谷位置，#301 合规；全闭式自洽反解 3.1664 为信息项，与平方法差 0.73% 同带）。C10d 离线复判（runs/ge6_anchor/criteria.md 门 R0-R4 预声明）：R3 主门 er_design 代入旧几何预测谷位 76.4415 vs 实测 76.20=+0.317%≤1%（门不动）→ PASS=旧名义 −2.31% 偏差被 Dk 锚解释（模型一致性；G_new 真机谷位未验证，新 1 点冒烟留 followUp）。unlock 条件：constant 须待 78GHz HFSS 仲裁腿（单引擎单点禁产 constant——FA3 实证引擎对系统差可达 ~5% εr 量级，五席 DISAGREE 封档先例同口径）；HFSS 腿回填后本锚演进 -v2（零改写）"
+      values: {openems: 3.1434}
+      value_unit: dimensionless
+      metric: design_dk_from_s11_dip
+    value: null
+    uncertainty: {value: 0.16, kind: engine_pair_spread, note: "FA3 方法域背书的引擎对相对带 ~5.2%（RO4350B@2.4GHz 实测极差归一）预置折算 @3.1434；HFSS 仲裁腿回填实测带（非 RO4350B 数字迁移，#302）"}
+    domain:
+      f_ghz: [78.0, 78.0]
+    provenance:
+      arbitration_runs: [runs/df7_c10d, runs/ge6_anchor]
+      verdict: runs/ge6_anchor/verdict.json
+      verdict_state: "REJUDGE_PASS（离线复判模型一致性 PASS——单引擎单点封档 experimental 非消费级 constant）"
+      criteria: runs/ge6_anchor/criteria.md
+      engine_data: "runs/df7_c10d/smoke_nominal/sparams.csv"
+      referee_script: runs/ge6_anchor/rejudge_c10d_dk.py
+      domain_note: "方法域=RO3003 类（datasheet er=3.0/h=0.127/tan_d=0.001）@78GHz 设计点单材料单频点；extrapolate: forbidden（#302）——RO4350B@2.42GHz 锚值（ring.design_dk）禁直移，本锚继承的是方法域背书+引擎对相对带"
+      commit: f0ce39a
+      commit_note: "f0ce39a=FA3 战役收官笔（er_design 建议预声明源）；C10d 模板注册批与复判批的注册 commit 留主代理（本批三禁不 commit，T14 先例）"
+      devlog: " 六百八十九 §C10d 解锁建议（f0ce39a 预声明）；复判判读 runs/ge6_anchor/（criteria 先落盘+verdict.json）；本批 wf:ge6-anchor 注册"
+      replaces: "无（首登记； 四四五「闭式 vs 引擎离散系统差需再校准」待办由本锚改道根治路=Design Dk 进综合链）"
+    registered_at: "2026-10-01T14:06:00+08:00"
+    last_verified: {at: "2026-10-01T14:06:00+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+
+  # ── ge6 A22 批（wf:ge6-a22，2026-10-01）+1：ms_cross.wg_resonance ─────────
+  # ms_cross：ge6 Wave1 席 2 HFSS 仲裁（runs/ge6_hfsswin/seat2_mscross）
+  # 分支 A 收敛判读——两引擎同几何（字面量逐字转抄）谷位一致
+  # （G-branch |f_v−11.675|=0.180GHz ≤ 预声明 0.30GHz 门，verdict=
+  # BRANCH_A_OPENEMS_ENGINE_FAITHFUL），+15% 偏离 Floquet 属「wg 模拟器
+  # vs 无限阵」建模前提差（候选②，verdict 三方裁判 PSSFSS 在档）。
+  # 双值口径裁定：pointer 双值（两引擎读数并列，非单一真值）——偏离
+  # Floquet 的前提差未定标，禁产 constant（#122 不凑数）；A 级判据走
+  # T22「收敛仲裁 AGREE」分支（主代理 wf:ge6-a22 任务书裁定），锚本体
+  # 为 wg 通道谷位双值封档（consumers=[] 零接线如实）。
+  - anchor_id: ms_cross.wg_resonance.openems-hfss-v1
+    kind: pointer
+    template_family: [ms_cross]
+    engine_pair: {calibrated: openems, referee: hfss}
+    quantity:
+      name: ms_cross_wg_resonance_ghz
+      unit: GHz
+      semantics: "ms_cross 波导模拟器通道 |S21| 谷位双值指针——ge6 分支 A 收敛仲裁（同几何重建：HFSS 无探针波端口全解 vs openEMS 内部探针读出，两引擎谷位互差 0.180GHz ≤ 预声明 0.30GHz 门=AGREE）；wg 模拟器谷位对 Floquet 无限阵裁判（PSSFSS 10.152GHz）两引擎一致地偏高 ~13-15%，属建模前提差（候选②装载语义升主嫌）非引擎面病——任何把 wg 谷位当无限阵真值的消费面须走 Floquet 通道或承认 ~15% 偏置（verdict §3 消费建议）。谷深维度两引擎不同（OE −29.3dB vs HFSS −44.7dB vs 裁判 −49.5dB）：EN 探针蒸逝污染真实但不移谷位（候选①降级定案，谷深不在本锚语义内）。双值=格点谷位（判读门消费口径）；细化值 openems 11.6673/hfss 11.4951 随 verdict 在档（judge 抛物线细化，自检三 case ≤7e-6 GHz）。〔provenance 升级 2026-10-05 W2-F/EC-20：Floquet 裁判值 PSSFSS 10.152GHz 由文献值升仓内可复跑——scripts/pssfss_ms_judge.py engine_pair 面实测 10.1532GHz（Δ=0.011%≤0.3% 门，面数 1010 与原 judge_pssfss.jl 链逐位一致，证据 runs/w2_phase2/w2f/judge_ms_cross_final）；锚 kind/values 零变、ANCHORS 计数零变（裁决=升 provenance 非立新锚，HFSS Floquet 终裁仍 opt-in 随窗）〕"
+      values: {openems: 11.675, hfss: 11.495129657775005}
+      value_unit: GHz
+      metric: f_valley_ghz
+    value: null
+    uncertainty: {value: 0.3, kind: arbitration_interval, note: "预声明 G-branch 门 0.30GHz（criteria §三冻结）作单点仲裁包络，非拟合 σ；观测互差 0.180GHz 门内"}
+    domain:
+      f_ghz: [10.0, 12.0]
+    provenance:
+      arbitration_runs: [runs/ge6_hfsswin/seat2_mscross]
+      verdict: runs/ge6_hfsswin/seat2_mscross/verdict.json
+      verdict_state: "BRANCH_A_OPENEMS_ENGINE_FAITHFUL（收敛仲裁 AGREE：G-branch 0.180≤0.30GHz 过；G-conv trusted（ΔS 三档 8/0.01621→9/0.00969→11/0.00244 末档达标未触顶，#335 合法判读）；G-passive 6.8e-14；G-health 谷位 0.99998/通带 0.899）"
+      criteria: runs/ge6_hfsswin/seat2_mscross/criteria.md（2026-09-30 发射前落盘，#122）
+      referee_note: "PSSFSS 三方裁判 10.152GHz（无限阵 Floquet，|f_v−10.150|=1.345GHz 裁判侧门外 4.5×）——前提差锚定证据，非本锚仲裁对"
+      geometry_source: "runs/ge5_msfam/smoke_screen/simulation.py 字面量逐字转抄（criteria §一，单胞 11.9917mm/十字臂 9.82mm/基板 εr=3.66 h=0.508mm）；原始解 hfss/ms_cross_wgsim.s2p（201 点 Discrete，模态基 renormalize=False）"
+      machine: sim_host
+      wall_s: 582.0
+      commit: caafd48
+      commit_note: "caafd48=ge6 HFSS 窗 A 收官批；席 2 本身零 src 改动，驱动/判读脚本与产物全落 gitignored 的 runs/ge6_hfsswin/seat2_mscross/（runs/ 资产目录无 git 可恢复性，证据以目录为准）"
+      devlog: "runs/ge6_hfsswin/seat2_mscross/report.md（判读 §2/结论 §3/收尾复核 §5）；本批 wf:ge6-a22 注册（锚批三面同步=本表+EXPECTED_ANCHORS+定向测试；矩阵升 A 走 T22 收敛仲裁分支，主代理任务书裁定）"
+      referee_script: runs/ge6_hfsswin/seat2_mscross/judge_mscross.py
+      replaces: "无（首登记）"
+    registered_at: "2026-10-01T18:30:00+08:00"
+    last_verified: {at: "2026-09-30T14:36:00+08:00", residual: null}
+    fallback: none
+    status: experimental
+    consumers: []
+  # ── ge8 TA 批注册（wf:ge8-ta12，2026-10-02；内核恒等锚 experimental，真机首判窗随 K 窗）────
+  - anchor_id: schiffman.delta_phase.closedform-v1
+    kind: constant
+    template_family: [schiffman]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: schiffman_delta_phase_deg
+      unit: deg
+      semantics: "Schiffman Δφ(f0) 闭式恒等（ρ=2.0 可达域内经典档，内核精确 90°；单测 abs=1e-6° 回代钉）；真机首判窗 |Δφ_engine(f0)−90|≤5°、带内平坦度 ≤12°（kernel 7.17°+网格余量）"
+    value: 90.0
+    uncertainty: {value: 0.0, kind: identity, note: "闭式恒等锚；工程带内平坦度见 semantics"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: ec491e6
+      devlog: "ge8 TA 批（本笔随  七百二十八）；名义推导=core/synthesis.synthesize_schiffman+Schiffman IRE MTT-6(2) 1958"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_phase_qwt.py 双口径 grep（锚存储符号 anchors_store/resolve_anchor/load_anchors + 大小写不敏感 anchor 字面，覆盖 from rfauto.core/infra import 全形态）实测零命中——声明消费者消费的是同一闭式内核而非注册表锚值，照 R2-2（c3.k_of_g）同标如实改 consumers=[]；值/status/uncertainty 零改动，运行时接线（J1-4 建议 a）待判读窗批按需补做"
+    registered_at: "2026-10-02T06:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: qwt_multisection.s11_f0.closedform-v1
+    kind: constant
+    template_family: [qwt_multisection]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: qwt_s11_at_f0_db
+      unit: dB
+      semantics: "多节 λ/4 变换器 |S11(f0)| 闭式=0（ABCD 级联恒等式单测钉）；真机首判窗 ≤−20dB（阶梯跳宽寄生地板，stepped_impedance 同族量级）；FBW 一阶估计 0.9339（kernel bandwidth_estimate，只作 sanity 不作门）"
+    value: 0.0
+    uncertainty: {value: 0.0, kind: identity, note: "闭式恒等锚"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: ec491e6
+      devlog: "ge8 TA 批（本笔随  七百二十八）；名义=synthesize_multisection_quarter_wave(50→100,N=3,binomial) HJ 逐节精算"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_phase_qwt.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T06:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  # ── ge8 TA 批二注册（wf:ge8-ta34，2026-10-02；内核恒等锚 experimental）────
+  - anchor_id: sicl.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [sicl]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: sicl_z0_ohm
+      unit: ohm
+      semantics: "SICL 特征阻抗闭式回代（sicl_closed_form 名义几何；4 位舍入带 ±0.005Ω 如实注）；引擎首判窗=StripLinePort Z0 |Δ|≤2%"
+    value: 50.0
+    uncertainty: {value: 0.005, kind: rounding_band, note: "w_mm 4 位舍入回代 49.9976"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批二；core/sicl_line.sicl_z0 共形闭式"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_sicl_nway.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T07:20:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: sicl.eps_eff.closedform-v1
+    kind: constant
+    template_family: [sicl]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: sicl_eps_eff
+      unit: dimensionless
+      semantics: "SICL 有效介电常数=εr（均匀填充 TEM）；引擎首判窗=StripLinePort β→εeff |Δ|≤2%"
+    value: 3.66
+    uncertainty: {value: 0.0, kind: identity, note: "均匀填充闭式恒等"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批二"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_sicl_nway.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T07:20:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: nway_wilkinson.arm_z_ohm.closedform-v1
+    kind: constant
+    template_family: [nway_wilkinson]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: nway_arm_z_ohm
+      unit: ohm
+      semantics: "N-way 臂特征阻抗=√2·Z0（内核 tree 分支发布值 4 位舍入 70.7107）"
+    value: 70.7107
+    uncertainty: {value: 0.0, kind: identity, note: "内核 params 单源"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批二；synthesize_nway_wilkinson(n=4, topology=tree)"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_sicl_nway.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T07:20:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: nway_wilkinson.isolation_r_ohm.closedform-v1
+    kind: constant
+    template_family: [nway_wilkinson]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: nway_isolation_r_ohm
+      unit: ohm
+      semantics: "N-way 隔离电阻 R=2·Z0（内核 params 单源）"
+    value: 100.0
+    uncertainty: {value: 0.0, kind: identity, note: "内核单源恒等"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批二"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_sicl_nway.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T07:20:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  # ── ge8 TA 批三注册（wf:ge8-ta56，2026-10-02；内核恒等锚 experimental）────
+  - anchor_id: diplexer.crossover_ghz.closedform-v1
+    kind: constant
+    template_family: [diplexer]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: diplexer_crossover_ghz
+      unit: GHz
+      semantics: "Diplexer CR 对交越频率=fc（互补恒等：S11≡0/功率互补≡1/交越=fc 三锚闭式精确；一阶 20dB/dec 选择性为拓扑固有如实注）"
+    value: 2.5
+    uncertainty: {value: 0.0, kind: identity, note: "内核 element_values 恒等"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批三；core/diplexer_compose element_values"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_diplexer_ridged.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T09:35:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: diplexer.s21_power_f0.closedform-v1
+    kind: constant
+    template_family: [diplexer]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: diplexer_s21_power_at_f0
+      unit: dimensionless
+      semantics: "|S21|²@fc=1/(1+x²)|x=1=0.5（-3dB 交越功率点恒等）"
+    value: 0.5
+    uncertainty: {value: 0.0, kind: identity, note: "闭式恒等"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批三"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_diplexer_ridged.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T09:35:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: ridged_wg.fc_ghz.closedform-v1
+    kind: constant
+    template_family: [ridged_wg]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: ridged_wg_fc_ghz
+      unit: GHz
+      semantics: "空气单脊波导截止=design_ridge_depth(5.0) 名义反解点（round4 回代 |Δfc|/fc=3.8e-6）；真机首判窗=RectWGPort β→fc |Δ|≤2%；g/b=0.4544 落 XC-P 可信域 ≥0.4"
+    value: 5.0
+    uncertainty: {value: 0.0, kind: identity, note: "awaiting_data 真机对；恒等=内核 cutoff@名义 d"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批三；core/ridged_waveguide cutoff 闭式（XC-P：kc 对 FEM +1.5%~+8% 域 g/b≥0.4）"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_diplexer_ridged.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T09:35:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: ridged_wg.evanescent_atten_db_0p8fc.closedform-v1
+    kind: constant
+    template_family: [ridged_wg]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: ridged_wg_evanescent_atten_db
+      unit: dB
+      semantics: "40mm 消逝段衰减 @0.8fc≈21.85dB（kernel evanescent_attenuation_db；判读带恒消逝域口径）"
+    value: 21.85
+    uncertainty: {value: 0.05, kind: rounding_band, note: "4 位名义几何回代带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ta12_schiffman_qwt]
+      commit: 3750d88
+      devlog: "ge8 TA 批三"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_diplexer_ridged.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-02T09:35:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  # ── ge8 K-4 dk78r 三档 AGREE 锚演进（wf:ge8-k4，2026-10-02；v1 零改写零触碰）────
+  # unlock 条件兑现（v1 semantics 原文）："HFSS 腿回填后本锚演进 -v2（零改写）"；
+  # 三档 AGREE（76.65/76.70/76.70 谷位稳定）+ budget 跳 SWF 走 R2 末扫（前席 §6 先例）。
+  - anchor_id: mmwave.design_dk.ro3003-oe-hfss-v2
+    kind: constant
+    template_family: [mmwave_series_array]
+    engine_pair: {calibrated: hfss, referee: openems}
+    quantity:
+      name: mmwave_design_dk_ro3003
+      unit: dimensionless
+      semantics: "RO3003 @78GHz Design Dk 双引擎仲裁常量——value=HFSS 平方法口径 3.00×(78/76.70)²（referee 对齐基准， 规则 0）；OE 同法 3.1434 为交叉证（差 1.32% < FA3 引擎对带 5.2%）；v1（OE 单引擎 3.1434 pointer）零改写封档由本锚取代消费。unlock 条件=dk78r 三档 AGREE（Δ=0.656%≤1%，谷位稳定，runs/ge7_hfsswin/dk78r/verdict.json verdict=AGREE）"
+    value: 3.1025
+    value_unit: dimensionless
+    metric: design_dk_from_s11_dip
+    uncertainty: {value: 0.0132, kind: engine_pair_spread, note: "双引擎平方法差 1.32%（3.1434 vs 3.1025），FA3 带 5.2% 内"}
+    domain:
+      f_ghz: [78.0, 78.0]
+    provenance:
+      arbitration_runs: [runs/ge7_hfsswin/dk78r, runs/df7_c10d]
+      verdict: runs/ge7_hfsswin/dk78r/verdict.json
+      verdict_state: "AGREE（三档 AGREE Δ=0.656%；budget 跳 SWF 走 R2 末扫=criteria R2 预声明）"
+      criteria: runs/ge7_hfsswin/dk78r/criteria.md
+      engine_data: "HFSS runs/ge7_hfsswin/dk78r（三档 76.65/76.70/76.70，f_dip HFSS 76.70）；OE runs/df7_c10d/smoke_nominal/sparams.csv（76.20）"
+      referee_script: runs/ge7_hfsswin/dk78r/run_dk78r_hfss.py
+      domain_note: "方法域同 v1（RO3003 类 @78GHz 单材料单频点；extrapolate forbidden #302）；平方法口径与 v1 同法可比"
+      commit: f759753
+      devlog: "ge8 K-4 dk78r 三档补齐 AGREE；v1= 六百八十九/ge6-anchor 批"
+      replaces: "mmwave.design_dk.ro3003-oe-v1（v1 pointer 零改写封档，消费切至本锚）"
+    registered_at: "2026-10-02T18:10:00+08:00"
+    last_verified: {at: "2026-10-02T18:02:00+08:00", residual: null}
+    fallback: none
+    status: active
+    consumers:
+      - src/rfauto/core/material_uncertainty.py
+  # ── ge8b Wave A 席 1 注册（2026-10-03；TA-7/8/9 内核恒等锚 experimental）────
+  - anchor_id: inverted_ms.z0_ohm.fdref-v1
+    kind: constant
+    template_family: [inverted_ms]
+    engine_pair: {calibrated: quasistatic_fd, referee: null}
+    quantity:
+      name: inverted_ms_z0_ohm
+      unit: ohm
+      semantics: "倒置微带 50Ω 名义点 Z0（FD 裁判 inverted_microstrip_quasistatic 反演链回代；文献闭式不可达——core/inverted_ms docstring 如实账，FD 裁判资格=求解器四文献锚+族内 εr=1 与微带族互检 0.22%）；引擎首判窗=MSLPort β→εeff/S11 谷深（真机窗未排期）"
+    value: 49.9994
+    value_unit: ohm
+    metric: z0_ohm
+    uncertainty: {value: 0.5, kind: fd_referee_band, note: "FD 离散+Richardson 族内实测地板 ~0.2-0.5%（w 4 位舍入回代 49.9994）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ge8_followup/wave_a, runs/ge8_followup/wave_a/refs]
+      commit: c7df3ec6
+      devlog: "ge8b Wave A 席 1（本笔随  ge8b 批，commit 随批更新）；名义=core/inverted_ms.inverted_ms_design_params FD 反演"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_ta_wave_a.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-03T02:30:00+08:00"
+    last_verified: null
+    fallback: none
+    status: experimental
+    consumers: []
+  - anchor_id: hmsiw.fc_ghz.closedform-v1
+    kind: constant
+    template_family: [hmsiw]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: hmsiw_fc_te05_ghz
+      unit: GHz
+      semantics: "HMSIW 准 TE0.5 截止频率（Lai-Fumeaux 2009 T-MTT 式 (8)-(14) 链，名义 w=5.5829 回代 6.666664=f0/1.5 设计点 4 位舍入带）；文献数值锚三方互证（Fig.7 原型 fc 链算 4.789 vs 图面 ~4.8-5.0、β(12GHz) 342 vs ~340-350、Fig.6 星点 20.746 vs ~20.2，论文自声明 <2%）；引擎首判窗=带内 φ(f) 拟合 fc |Δ|≤2%（式 (13) 声明域）"
+    value: 6.666664
+    value_unit: GHz
+    metric: fc_te05_ghz
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "w 4 位舍入回代偏 6.666667 目标 −3e-6GHz"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ge8_followup/wave_a/refs]
+      commit: c7df3ec6
+      devlog: "ge8b Wave A 席 1（本笔随  ge8b 批，commit 随批更新）；名义=core/hmsiw.hmsiw_design_params(fc=f0/1.5) 反解；式源=runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_ta_wave_a.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-03T02:30:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: fgcpw.z0_ohm.fdref-v1
+    kind: constant
+    template_family: [fgcpw]
+    engine_pair: {calibrated: quasistatic_fd, referee: null}
+    quantity:
+      name: fgcpw_z0_ohm
+      unit: ohm
+      semantics: "有限地 FGCPW 50Ω 名义点 Z0（FD 裁判 cpw_quasistatic 含有限地同参反演回代；裁判资格=k=1/√2 空气线 Z0=30π −0.016%+半空间 εeff −0.02% 两精确极限）；G-N 1984 文献闭式同点偏差 εeff −6.6%/Z0 −3.6% 如实登记（#302 同族系统低估，设计链以 FD 为准）；引擎首判窗=β→εeff/S11（真机窗未排期）"
+    value: 50.0
+    value_unit: ohm
+    metric: z0_ohm
+    uncertainty: {value: 0.5, kind: fd_referee_band, note: "w 4 位舍入回代 50.000；FD 离散带 ~0.5%"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ge8_followup/wave_a]
+      commit: c7df3ec6
+      devlog: "ge8b Wave A 席 1（本笔随  ge8b 批，commit 随批更新）；名义=core/fgcpw.fgcpw_design_params FD 反演（gnd=4.0 同参）；G-N 交叉参考=core/fgcpw.fgcpw_gn_closed_form"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_ta_wave_a.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；本条系枚举发现任务书 14 清单外第 15 条（与 inverted_ms/hmsiw 同 render 文件同证据类，J1 桶曾归 doc_ref_only——anchor_family_service 同族先例引用非锚存储消费，一并如实清）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-03T02:30:00+08:00"
+    last_verified: null
+    fallback: none
+    status: experimental
+    consumers: []
+  - anchor_id: isl_shielded.eps_eff.closedform-v1
+    kind: constant
+    template_family: [isl_shielded]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: isl_shielded_eps_eff
+      unit: dimensionless
+      semantics: "TA-10 ISL 屏蔽悬置线名义点 εeff（准静态双半腔 Cohn 分解链 core/isl_line.suspended_ms_qs：g_air=0.508/h_sub=0.508/h_top=1.016/εr=3.66 → 1.2854，4 位舍入带）；三精确极限裁判=对称退化≡_stripline_z0 逐位/εr=1→1/串联层 wide-limit；文献频变闭式不可达如实账（round15 IET 口径）；引擎首判窗=S21 相位斜率→εeff |Δ|≤5%（真机窗未排期）"
+    value: 1.2854
+    value_unit: dimensionless
+    metric: eps_eff
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "w 4 位舍入回代 εeff 偏 <1e-4"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ge8_followup/wave_b]
+      commit: e789e69b
+      devlog: "ge8b Wave B 席 B9（本笔随  ge8b 批，commit 随批更新）；名义=core/isl_line.isl_design_params(50Ω) 反解；式源=双半腔 Cohn 电容分解（Howe/Wadell §3.3 口径二手转写，恒等式/极限裁判）"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_ta_wave_b.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-03T04:30:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: vivaldi_tsa.f_low_ghz.closedform-v1
+    kind: constant
+    template_family: [vivaldi_tsa]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: vivaldi_tsa_f_low_ghz
+      unit: GHz
+      semantics: "AP-11 Vivaldi 低截止工程准则值（口面半波口径 f_low=c/(2·w_mouth)：名义 w_mouth=24.9827mm → 6.000000GHz，core/vivaldi_tsa.vivaldi_tsa_design 回代恒等）；二手工程准则如实登记（Yngvesson 1985 介质加载修正未回原文不入码，citation-rot）；引擎首判窗=|S11| 谷/辐射带缘对照 ±20%（真机窗未排期）"
+    value: 6.0
+    value_unit: GHz
+    metric: f_low_ghz
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "w_mouth 4 位舍入回代 5.9997→6.0 设计点带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/ge8_followup/wave_b]
+      commit: e789e69b
+      devlog: "ge8b Wave B 席 B9（本笔随  ge8b 批，commit 随批更新）；名义=core/vivaldi_tsa.vivaldi_tsa_design(f_low=6GHz, w_throat=0.3, l=80)；式源=Gibson 1979 指数律+口面半波准则（二手转写，恒等式裁判）"
+      replaces: "无（首登记）"
+      consumers_note: "【consumers cleared 2026-10-04 G1 G-04/J1-4 超报勘误】原声明消费者 src/rfauto/adapters/oe_templates/render_ta_wave_b.py 双口径 grep（锚存储符号+anchor 字面全形态）零命中——消费同一闭式内核非注册表锚值，照 R2-2 同标改 consumers=[]（值/status/uncertainty 零改动）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-03T04:30:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  # ── ge8e X5 解析档锚批（wf:review-ge8e-x5，2026-10-04）+13 ─────────────────
+  # 首批 analytic 锚扩面（宏图 §十 L1 杠杆：36/71→49/71 有锚族）。verdict 语义
+  # =闭式推导档（kind=constant + engine_pair.calibrated=closedform + uncertainty
+  # identity/rounding_band，与引擎档可区分——XA-10 helper 规范形，ge8 TA 三批
+  # 先例同制度）；引擎档 VERIFIED 仍需真机。#118 双源纪律逐锚兑现：文献原文或
+  # 双公式链作公式出处，锚值另经测试独立重算钉（tests/unit/
+  # test_x5_analytic_anchors.py 第二实现回代，禁内核自证）；cpw 候选因
+  # skrf-CPW（无底地，67.44Ω）与 _cpwg_ri（底接地 CPWG，50.0Ω）模型二义
+  # 落 followUp（宁缺勿滥），mline 候选因 HJ 系数无仓内已核原文转录面
+  # 落 followUp（#df6-⑬ citation-rot 防御）。逐锚账=runs/review_ge8e/
+  # x5_analytic_anchors/REPORT.md；provenance.commit=各被钉内核引入 commit
+  # （T14 先例），本批入库 commit 由主代理收口回填。
+  - anchor_id: atten_pi.r_series_mid_ohm.closedform-v1
+    kind: constant
+    template_family: [atten_pi]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: atten_pi_r_series_mid_ohm
+      unit: ohm
+      semantics: "π 型电阻衰减器中点串臂 @10dB/50Ω 闭式恒等（匹配+分压两条件闭式 r_ser=Z0(N²−1)/(2N)，N=10^(A/20)=√10；内核=core/calc_families/rf_match.attenuator_pi，ABCD 级联裁判在既有单测）；#118 双源=经典 10dB/50Ω 表值 71.15Ω（Pozar Microwave Engineering 衰减器节/Mini-Circuits pad 表同值）+测试独立重算 71.151247 回代钉；渲染消费=render_tl _atten_pi_lines f-string 缺省同值；真机首判窗=带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB（LumpedElement 理想电阻集总）"
+    value: 71.151
+    uncertainty: {value: 0.001, kind: rounding_band, note: "内核 3 位舍入；全精度 71.151247"}
+    domain:
+      atten_db: [10.0, 10.0]
+      z0_ohm: [50.0, 50.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 09cae046
+      devlog: "ge8e X5 批（本笔随 runs/review_ge8e/x5_analytic_anchors/REPORT.md，入库 commit 主代理回填）；内核引入=09cae046（AU-1批2 calc_families 拆分）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】波 1 解析 PASS 而 EM 门红（S21med=-9.679dB S11max=-11.32dB）——渲染面离散/寄生差异待诊断，锚值不改如实落档）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: atten_pi.r_shunt_end_ohm.closedform-v1
+    kind: constant
+    template_family: [atten_pi]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: atten_pi_r_shunt_end_ohm
+      unit: ohm
+      semantics: "π 型电阻衰减器两端对地并臂 @10dB/50Ω 闭式恒等（r_sh=Z0(N+1)/(N−1)=96.24753，同 attenuator_pi 内核）；#118 双源=经典表值 96.25Ω+测试独立重算钉；渲染消费同 r_series 席；真机首判窗同族"
+    value: 96.248
+    uncertainty: {value: 0.001, kind: rounding_band, note: "内核 3 位舍入；全精度 96.247530"}
+    domain:
+      atten_db: [10.0, 10.0]
+      z0_ohm: [50.0, 50.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 09cae046
+      devlog: "ge8e X5 批（同 atten_pi.r_series_mid_ohm 席）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】波 1 解析 PASS 而 EM 门红（S21med=-9.679dB S11max=-11.32dB）——渲染面离散/寄生差异待诊断，锚值不改如实落档）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: atten_t.r_series_arm_ohm.closedform-v1
+    kind: constant
+    template_family: [atten_t]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: atten_t_r_series_arm_ohm
+      unit: ohm
+      semantics: "T 型电阻衰减器串臂（上下各一）@10dB/50Ω 闭式恒等（r_ser=Z0(N−1)/(N+1)=25.97469；内核=core/calc_families/rf_match.attenuator_t）；#118 双源=经典 10dB/50Ω 表值 25.98Ω+测试独立重算钉；渲染消费=render_tl _atten_t_lines f-string 缺省同值；真机首判窗同族（|S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB）"
+    value: 25.975
+    uncertainty: {value: 0.001, kind: rounding_band, note: "内核 3 位舍入；全精度 25.974693"}
+    domain:
+      atten_db: [10.0, 10.0]
+      z0_ohm: [50.0, 50.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 09cae046
+      devlog: "ge8e X5 批（同批）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】波 1 解析 PASS 而 EM 门红（S21med=-9.644dB S11max=-15.05dB）——渲染面离散/寄生差异待诊断，锚值不改如实落档）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: atten_t.r_shunt_mid_ohm.closedform-v1
+    kind: constant
+    template_family: [atten_t]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: atten_t_r_shunt_mid_ohm
+      unit: ohm
+      semantics: "T 型电阻衰减器中点对地并臂 @10dB/50Ω 闭式恒等（r_sh=2·Z0·N/(N²−1)=35.13642，同 attenuator_t 内核）；#118 双源=经典表值 35.14Ω+测试独立重算钉；渲染消费同 r_series 席；真机首判窗同族"
+    value: 35.136
+    uncertainty: {value: 0.001, kind: rounding_band, note: "内核 3 位舍入；全精度 35.136418"}
+    domain:
+      atten_db: [10.0, 10.0]
+      z0_ohm: [50.0, 50.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 09cae046
+      devlog: "ge8e X5 批（同批）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】波 1 解析 PASS 而 EM 门红（S21med=-9.644dB S11max=-15.05dB）——渲染面离散/寄生差异待诊断，锚值不改如实落档）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: ratrace.ring_z_ohm.closedform-v1
+    kind: constant
+    template_family: [ratrace]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: ratrace_ring_z_ohm
+      unit: ohm
+      semantics: "rat-race 环形电桥环特性阻抗 @Z0=50Ω 闭式恒等（Z_ring=√2·Z0=70.7107，Pozar Microwave Engineering 4ed §7.5 180° hybrid 口径，docs/rf_template_references.md ratrace 权威节已核；内核=synthesis.synthesize_ratrace_model 环宽 inverse_width 精算）；#118 独立重算=√2·50 纯算术逐位钉；域盒钉 50Ω 系统点（其他系统阻抗按 √2·Z0 换算，不读本锚值）；真机首判窗=带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB（mesh_artifact ratrace 七门口径）"
+    value: 70.7107
+    uncertainty: {value: 0.0, kind: identity, note: "√2·50 精确恒等（内核 4 位舍入同值）"}
+    domain:
+      z0_ohm: [50.0, 50.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: ba828285
+      devlog: "ge8e X5 批；内核引入=ba828285（WP2.3 rat-race 全链）；teaching_service Q-RATRACE 系消费面在档【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=PASS】波 1 理想环 PASS（平衡对 S21/S41 diff=0、S11=−130dB）+ EM（平衡差=0.525dB≤1、S11max=-10.88dB≤−10）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: {at: "2026-10-06T18:20:38+08:00", residual: "balance_diff=0.5245dB"}
+    fallback: closed_form
+    status: active
     consumers:
       - src/rfauto/core/synthesis.py
+      - src/rfauto/service/teaching_service.py
+  - anchor_id: ratrace.r_ring_mm.closedform-v1
+    kind: constant
+    template_family: [ratrace]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: ratrace_r_ring_mm
+      unit: mm
+      semantics: "rat-race 环半径 @2.5GHz 名义闭式恒等（R=C/(2π)，周长 C=1.5λg（Pozar §7.5），λg=λ0/√εeff、εeff=HJ(w_ring=0.604mm)@仓内缺省基板 εr=3.66/h=0.508——双文献链同 siw.fc 席制度；内核=synthesize_ratrace_model；独立重算=R 反解 εeff=(λ0·1.5/(2πR))²=2.7247 与 HJ 正算一致+2πR·1000µm 教学问答回代）；真机首判窗=f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）"
+    value: 17.344
+    uncertainty: {value: 0.001, kind: rounding_band, note: "内核 3 位舍入；w_ring 4 位舍入传播 ≤0.0007mm（0.604 回代 17.3437 vs 未舍入链 17.344）"}
+    domain:
+      f0_ghz: [2.5, 2.5]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: ba828285
+      devlog: "ge8e X5 批（同批）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=PASS】|S21| 谷位（3dB 分裂点）2.5093GHz 对 2.5GHz 偏 +0.37%≤3%（隔离谷 -2.40%、匹配谷 +0.40% 同证；峰读法带缘饱和 deg 如实披露）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: {at: "2026-10-06T18:20:38+08:00", residual: "f_peak_offset=None%"}
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/core/synthesis.py
+      - src/rfauto/service/teaching_service.py
+  - anchor_id: stripline.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [stripline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: stripline_z0_ohm
+      unit: ohm
+      semantics: "对称零厚带状线 Z0 @名义 w=0.5554mm、b=2·h=1.016mm、εr=3.66 闭式回代（Z0=30π/(√εr·r)，r=K(k)/K′(k)、k=tanh(πw/2b)——Cohn 椭圆积分共形映射精确解（Cohn 1955/Wadell TLDH 口径），内核=calc_families/rf_line._stripline_z0 AGM 无相消形态）；#118 独立重算=测试内 AGM 恒等式第二实现 49.99780237 逐位钉；真机首判窗=StripLinePort Z0 |Δ|≤2%"
+    value: 49.9978
+    uncertainty: {value: 0.001, kind: rounding_band, note: "w 4 位舍入回代 49.99780"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: f9bf0ce2
+      devlog: "ge8e X5 批；AGM 形态引入=f9bf0ce2（审查 R1-1 饱和域根治批）；对称退化恒等裁判=isl_line/embedded_line 消费链在档【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】双档 Z0 互差 2.25%>1% 或 εeff 互差超 0.5%——离散未收敛（#335），如实）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: stripline.eps_eff.closedform-v1
+    kind: constant
+    template_family: [stripline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: stripline_eps_eff
+      unit: dimensionless
+      semantics: "带状线有效介电常数=εr（均匀填充 TEM 精确恒等——带与上下地间同质介质无空气隙，Pozar §3.x 带状线 TEM 口径；渲染口径=render_tl 中面带+域 z 边界 PEC 上下地全填充）；#118 独立重算=恒等式本身+渲染几何逐面核对；sicl.eps_eff 同形先例；真机首判窗=S21 相位斜率→εeff |Δ|≤2%（β 金标准口径，render_tl 注记）"
+    value: 3.66
+    uncertainty: {value: 0.0, kind: identity, note: "均匀填充 TEM 恒等（值=模板基板 εr 名义）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 78e8b371
+      devlog: "ge8e X5 批；渲染口径=render_tl _stripline_lines（中面带/上下域 PEC 注记在档）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】同上（阶梯未收敛）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: slotline.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [slotline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: slotline_z0_ohm
+      unit: ohm
+      semantics: "槽线特性阻抗 @名义 w=1.0mm/h=1.524mm/εr=3.66/f=2.5GHz 闭式回代（Janaswamy-Schaubert 1986 MTT-34(8) 式(9) 窄槽低 εr 段，Z0=|V0|²/(2P) 功率-电压定义；原文四源常数核对+SDA 拟合误差段内 Av 0.67%/Max 2.7% 见 core/slotline 模块头；内核=slotline.slotline_z0）；#118 独立重算=测试内式(9) 逐项转录 110.92058220 逐位钉+仓内 Janaswamy Table 3.2/NJIT Table 2 文献值回放（test_slotline_closed_form）；渲染消费=render_slotline 以 cf.z0_ohm 作 z_mode 端口参考；真机首判窗=带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格余量）"
+    value: 110.9206
+    uncertainty: {value: 0.001, kind: rounding_band, note: "4 位舍入回代 110.92058；文献内禀拟合带（Max 2.7%）不入本带——真机首判窗口径见 semantics"}
+    domain:
+      f0_ghz: [2.5, 2.5]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 08d63b00
+      devlog: "ge8e X5 批；内核引入=08d63b00（slotline 端口路线 A 批，式(8)(9)(12)(13) 双源核实+文献锚 Table 3.2 五频点 −0.83~−0.97% 在档）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】EM 证据缺（seat status=PARTIAL）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_slotline.py
+  - anchor_id: siw.fc_te10_ghz.closedform-v1
+    kind: constant
+    template_family: [siw]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: siw_fc_te10_ghz
+      unit: GHz
+      semantics: "SIW TE10 截止频率 @名义 w=12.1317/d=0.6/s=1.0/εr=3.66 闭式链回代（w_eff=w−d²/(0.95·s)=11.7528（Cassivi 2002 MWCL 12(9):333-335，同族 siw.w_eff.lit-v1 已核双源）+fc10=c/(2·w_eff·√εr)（矩形波导 TE10 教科书式）=6.666695=f0/1.5 设计点（render_siw 预声明口径）；#118 独立重算=双链全算术测试钉；内核=calc_families/slotline_siw.siw_effective_width_mm+siw_beta_rad_m；真机首判窗=带内 φ(f) 拟合 fc |Δ|≤2%（render_siw TEMPLATE_META 口径）"
+    value: 6.6667
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "4 位舍入回代 6.666695"}
+    domain:
+      f0_ghz: [10.0, 10.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 09cae046
+      devlog: "ge8e X5 批；w_eff 双源出处转引 siw.w_eff.lit-v1 provenance（runs/siw_family/criteria.md §1）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=PASS】φ(f) 三参拟合 fc=6.6667GHz 偏 0.000%≤2%（相位残差 RMS>5° 未收敛倾向注记）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: {at: "2026-10-06T18:20:38+08:00", residual: "fc_err=0.0%"}
+    fallback: closed_form
+    status: active
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_siw.py
+  - anchor_id: monopole.mon_len_mm.closedform-v1
+    kind: constant
+    template_family: [monopole]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: monopole_mon_len_mm
+      unit: mm
+      semantics: "λ0/4 单极子一阶谐振设计恒等 @2.4GHz（mon_len=c/(4·f0)=31.22838mm——像理论口径（Balanis Antenna Theory 4ed Ch.9 monopole=PEC 地面上 λ/4 短路单极子），模板无介质板纯空气域设计规则，meta param_semantics 同口径；独立重算=纯算术回代）；端效应实际谷位低于设计 ~11%（runs/antenna2_smoke/monopole −17.39dB@2.135GHz 已知）——真机首判窗=|S11| 谷位对设计 2.4GHz 偏 ≤15%（端效应带内），谷对 31.2284mm 的 λ0/4 关系偏 ≤2%核算走 εeff=1 假设"
+    value: 31.2284
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "4 位舍入回代 31.228381"}
+    domain:
+      f0_ghz: [2.4, 2.4]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: b25bdb34
+      devlog: "ge8e X5 批；设计规则=docs/templates/monopole/meta.yaml param_semantics（λ0/4=c/(4f0) 像理论）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=PASS】λ0/4 恒等核（c/4L=2.400000GHz）+ EM 谷位 2.1379GHz 偏 -10.92%（端效应带内 ≤15%；先例 −11.0% 同向）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: {at: "2026-10-06T18:20:38+08:00", residual: "dip_offset=-10.922%"}
+    fallback: closed_form
+    status: active
+    consumers: []
+  - anchor_id: coil_nfc.l_uh.closedform-v1
+    kind: constant
+    template_family: [coil_nfc]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: coil_nfc_l_uh
+      unit: uH
+      semantics: "NFC 方形螺旋线圈电感 @名义 n=7/d_out=38.2988mm/w=s=0.5mm 闭式回代（Mohan-Schneider-Chibante JSSC 34(10) 1999 current-sheet 表达式（Table II square c1..c4=1.27/2.07/0.18/0.13，系数经 600dpi 渲染逐位目检、原文 PDF 在仓 runs/df6_dp18c10/_ref_mohan1999.pdf）；内核=core/nfc_coil.spiral_inductance/evaluate_coil）；#118 独立重算=测试内 current-sheet 式逐项转录 2.931054µH 逐位钉+仓内 Table IV 实测例回放面（test_nfc_coil）+Neumann 数值参考链同模块双路径；渲染消费=render_coil_nfc 以 synthesize_coil 同源反解 d_out；真机首判窗=引擎 L 提取 |Δ|≤10%（准静态极限、13.56MHz 波长远大于结构）"
+    value: 2.9311
+    uncertainty: {value: 0.0001, kind: rounding_band, note: "4 位舍入回代 2.931054；Mohan 三式内禀散布（wheeler 2.9330/current_sheet 2.9311/monomial 3.1348）如实注——锚钉 current_sheet 主口径"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: 8c58cb4a
+      devlog: "ge8e X5 批；内核引入=8c58cb4a（C10b coil_nfc 四件套，Neumann vs Mohan ≤5% 判据在档）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】引擎窗结构性超预算（判据 §12 预声明）：max_time_ns=60<13.56MHz 单周期73.75ns，DFT@f0 不可收敛；df7 §e 冻结审计 NrTS≥5e6/8h-天级；缩放阶梯研究属独立立项。#118 双源维持 test_nfc_coil 第二实现钉。）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_coil_nfc.py
+  - anchor_id: pyramid_horn.gain_db.closedform-v1
+    kind: constant
+    template_family: [pyramid_horn]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: pyramid_horn_gain_db
+      unit: dB
+      semantics: "角锥喇叭增益 @名义几何（a=22.86/b=10.16/a1=76.4009/b1=57.5477/l_flare=45.4823mm/f=10GHz）闭式恒等（最优 σ 设计方程 G=15dB 解点——Orfanidis EMW&A Ch.21 式 21.4.2/21.4.3/21.5.1 × Balanis Ch.13 双源，内核=core/horn_synthesis.horn_gain_direct，rtol 1e-6 roundtrip 在 test_pyramid_horn_template）；#118 独立重算=①最优厚度档文献常数钉（σh=√1.5、σe=1、δh=3λ/8、δe=λ/4 逐位）②Balanis 最优喇叭近似 G≈10log10(4π·0.51·A·B/λ²)=14.963dB 带内互证；真机首判窗=方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗，render_horn 注记）"
+    value: 15.0
+    uncertainty: {value: 0.0, kind: identity, note: "最优 σ 设计方程在名义几何的解（设计点恒等）"}
+    domain:
+      f_ghz: [10.0, 10.0]
+    provenance:
+      arbitration_runs: [runs/review_ge8e/x5_analytic_anchors, runs/real_machine_window/w7a]
+      commit: b673ce5e
+      devlog: "ge8e X5 批；内核引入=b673ce5e（ME-7 角锥喇叭综合批，Orfanidis×Balanis 双源注记在内核头）【真机首判回填（W7-A 2026-10-06，G-13；判据 runs/real_machine_window/w7a_criteria.md；verdict=INCONCLUSIVE】nf2ff 链证据缺/败（seat=PARTIAL，meta=None）——Balanis 第二源互证报告随档，主判窗未到证据）"
+      replaces: "无（首登记）"
+    registered_at: "2026-10-04T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_horn.py
+  # ── Phase 4 W4-E 锚批（ra_criteria §七 UX-B1 档①+X5 analytic 二批，
+  #    2026-10-05）+10：cps×2/suspended_stripline×2/cheb_g×5/msl_cpw×1
+  #    ——闭式全在仓零真机注册；cpw（模型二义）与 mline（HJ 系数无仓内
+  #    已核原文）仍缓，裁决材料=runs/w4_phase4/w4e/cpw_ambiguity_evidence.md
+  #    （两候选并列证据，裁决权在用户）；via/dipole/helix followUp 接地
+  #    见同目录 REPORT.md §四（G-12 逐条材料）
+  - anchor_id: cps.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [cps]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: cps_z0_ohm
+      unit: ohm
+      semantics: "CPS 特性阻抗 @名义 w=2.95/gap=0.5/h=0.508mm/εr=3.66 闭式回代（共形映射部分电容链：空气线 c_air=ε0/r1、k1=a/b=0.1266（Wadell TLDH p.83 eqs 3.4.6.x 口径，MathWorks RF PCB Toolbox 官方例 MoM 对拍）+ Gupta/Ghione 有限厚 tanh 映射超额项 × FD 定标 h_eff=γ(εr)·h（γ=1+0.9014·εr^−0.6361，C9 裁判定标，复现 scripts/fd_laplace_tline_referee.py --refit-cps-gamma），内核=calc_families/rf_line._cps_ri/cps_analysis）；#118 独立重算=测试内 AGM 恒等式第二实现 116.1703 逐位钉+Wen 半空间极限（h→∞ εeff→(1+εr)/2）+εr=1 时 Z_CPS·Z_CPW 互补对偶自洽（本仓双式乘积=30π·η0 与 k 无关即对偶本体；教科书 (60π)² 系 η0=120π 旧惯例，SI-2019 后差 0.069% 如实注）；定标域注记=名义 a/h=0.49/b/h=6.3 域内（INFO 门 ≤1.2%）；真机首判窗=带内 |S11| 深谷 Z0 口径 |Δ|≤5%（LumpedPort 差分直馈无 β 金标准，registry 提取口径如实降级；闭式-FD 带 ≤1.2% 之上留网格+端口余量）"
+    value: 116.17
+    uncertainty: {value: 0.005, kind: rounding_band, note: "内核计算器 2 位舍入口径 round(116.170323,2)=116.17；全精度 116.170323"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: cb7e9008
+      devlog: "Phase 4 W4-E 锚批（ra_criteria §七 UX-B1 档①）；γ(εr) FD 定标=cb7e9008（w2f-c9-refs，#300-#303 裁判链）、域边界补注=8c1f3229、内核模块拆分=09cae046（ge5-au1b2 calc_families）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=模板名义设计点的闭式回代参考（渲染/综合链消费同一闭式内核 _cps_ri 而非注册表锚值，消费者文件零 anchors_store import——G-08 两语义二分口径如实声明）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: cps.eps_eff.closedform-v1
+    kind: constant
+    template_family: [cps]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: cps_eps_eff
+      unit: dimensionless
+      semantics: "CPS 有效介电常数 @名义几何（同 cps.z0_ohm 锚链）：εeff=c_tot/c_air=1+(εr−1)·r1/(2·r3)，全精度 1.676469；FD 裁判真值 1.667（Richardson 外推，C9 定标档）闭式偏差 +0.57% 带内（#118 双源=第二实现转录×FD 数值裁判两独立路径）；真机首判窗=S21 解缠相位斜率 εeff |Δ|≤5%（LumpedPort 无 β 属性，registry 提取口径如实降级）"
+    value: 1.6765
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "4 位舍入口径 round(1.676469,4)=1.6765；FD 1.667 差带不入本带（真机首判窗口径见 semantics）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: cb7e9008
+      devlog: "Phase 4 W4-E 锚批；定标/边界/拆分同 cps.z0_ohm 锚 provenance.devlog"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】同 cps.z0_ohm 锚注记（同源闭式内核消费，非注册表锚值）"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: suspended_stripline.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [suspended_stripline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: suspended_stripline_z0_ohm
+      unit: ohm
+      semantics: "悬置带线 Z0 @名义 w=0.9058/b=1.016/H_SUB=0.508/εr=3.66（基板对称居中）闭式回代（Z0=_stripline_z0(w,b,1)/√εeff——Z0_air Cohn 共形侧 FD 对拍 −0.1% 未动；εeff=softmin 串联饱和修正族（SSL_Q_G1/G2/SSL_D/SSL_P 13 常数，FD 288 点定标 max|err| 3.84%/独立验证族 75 点 max 1.94%，fit/域注记见内核 SSL 常数块），内核=calc_families/rf_line._suspended_stripline_ri）；#118 独立重算=测试内 AGM+softmin 常数转录第二实现 49.99995 逐位钉+h→0/h→b 两端点精确极限（Cohn 空气/全填充带状线闭式，两支极限锚本会话实算复核）；FD 裁判注记=同几何 FD 真值 49.7Ω（−0.6% 带内，2026-09-18 定标批档）；真机首判窗=StripLinePort Z0 |Δ|≤2%（sicl/stripline 同款端口口径）"
+    value: 50.0
+    uncertainty: {value: 0.005, kind: rounding_band, note: "w 4 位舍入回代 49.99995；FD 49.7 差带不入本带（sicl.eps_eff 同形先例）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: 8c1f3229
+      devlog: "Phase 4 W4-E 锚批；softmin 串联饱和重定标=8c1f3229（fix-w2f-rescale，#333 形状族先定纪律）、C9 FD 裁判首立=cb7e9008、内核模块拆分=09cae046"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=名义设计点闭式回代参考（渲染/综合消费同一闭式内核，非注册表锚值；G-08 两语义二分）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: suspended_stripline.eps_eff.closedform-v1
+    kind: constant
+    template_family: [suspended_stripline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: suspended_stripline_eps_eff
+      unit: dimensionless
+      semantics: "悬置带线有效介电常数 @名义几何（同 suspended_stripline.z0_ohm 锚链）：εeff=1+(Δ^(−p)+D^(−p))^(−1/p) softmin 串联饱和式，全精度 2.001062；FD 裁判真值 2.025（+1.2% 带内，8c1f3229 定标档）——落在独立验证族带 max 1.94% 内（#118 双源=第二实现×FD 数值裁判）；单调性 h↑→εeff↑（FD 域内 2001 点零违例，内核注记）测试抽样钉；真机首判窗=β 金标准 εeff |Δ|≤2%（registry suspended_stripline extraction 预声明口径，同 stripline）"
+    value: 2.0011
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "4 位舍入口径 round(2.001062,4)=2.0011；FD 2.025 差带不入本带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: 8c1f3229
+      devlog: "Phase 4 W4-E 锚批；定标/裁判/拆分同 suspended_stripline.z0_ohm 锚 provenance.devlog"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】同 suspended_stripline.z0_ohm 锚注记"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: coupled_bpf.cheb_g.closedform-v1
+    kind: constant
+    template_family: [coupled_bpf]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: coupled_bpf_cheb_g
+      unit: dimensionless
+      semantics: "Chebyshev 等纹波 LPF 原型 g 值（MYJ Table 4.05-1 0.1dB 档 N=3 行 g=[1.0316, 1.1474, 1.0316]（端接 g4=1.0），锚值=g1，表 4 位舍入带 ±5e-5）；#118 双源=测试内表行第二转录×Pozar §8.4 递推式独立复算（0.1dB 精确值 1.031585/1.147400/1.031585，4 位逐位合表）双文献路径互证；档位注记（§7.4 防综合侧换档误判 stale）=本模板设计链 coupled_bpf_design_from_order(3, 2.5, fbw=0.05, rl_db=20)（Pozar §8.6 J 倒置器→(Z0e,Z0o)→KJ 反解，名义 widths/gaps 本会话实算逐位复现）名义纹波 0.0436dB 最近内嵌档=0.1dB——设计链实际消耗 core/matching.chebyshev_g_values 精确递推（0.0436dB 精确 g=[0.8535, 1.1039, 0.8535]）非本表行，本锚=原型族参考档 tripwire（综合侧换档即按锚演进纪律如实翻 -v2）；真机首判不在 g 值本身（原型常数），随族既有真机门（−3dB 带心 #298 口径/带内 RL）"
+    value: 1.0316
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "MYJ 表 4 位舍入带；递推精确值 1.031585 带内逐位合"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: a871d75b
+      devlog: "Phase 4 W4-E 锚批；g 值表引入=a871d75b（getf5 TF-5；出处注记 _CHEBYSHEV_G_TABLE_SOURCE='MYJ Table 4.05-1 同源教科书通行值（Pozar 4ed Ch.5 等纹波 LPF 原型表同值）'）；偶 N 端接未内嵌 #118 口径随行"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=原型档参考（设计链消费 matching.chebyshev_g_values 递推内核与 synthesis g 表，非注册表锚值；G-08 两语义二分）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: xcheb_bpf4.cheb_g.closedform-v1
+    kind: constant
+    template_family: [xcheb_bpf4]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: xcheb_bpf4_cheb_g
+      unit: dimensionless
+      semantics: "Chebyshev 等纹波 LPF 原型 g 值（MYJ Table 4.05-1 0.1dB 档 N=4 行 g=[1.1088, 1.3062, 1.7704, 0.8181]，锚值=g1，偶 N 端接 g5 未内嵌（#118：未双源核对不入表，内核口径随行）——**N=4 g4 修正（W4-E 批 #118 双源钉 2026-10-05）**：内核内嵌表旧值 g4=1.3062 系 g2 镜像转录错，经 Pozar §8.4 递推式独立复算（core/matching.chebyshev_g_values 同式互证）+教科书通行值回核改 0.8181（0.5/1.0 档同型修正 0.8419/0.7892；该表唯一消费点=prototype_reference 参照字段，修正零设计链数值影响）；#118 双源=测试内表行第二转录×Pozar §8.4 递推式独立复算（0.1dB 精确 1.108812/1.306183/1.770378/0.818081，4 位逐位合表）；档位注记=设计链 cross_coupled_ring_quad_design(f0=2.5, fbw=0.05, rl=20, TZ=[2.0]) 定点收敛（XCHEB_NOMINAL 逐键钉在 test_ta_wave_c_templates）——名义含 TZ=准椭圆非全极点，classical g 行=cm 链全极点退化参考（cross_coupled_map 验证锚①：tz=[] 时 k_i↔FBW/√(g_j·g_{j+1})、Q_e↔g0·g1/FBW 对 core/matching.chebyshev_g_values 独立互证，本批实测 g_value_max_rel_dev=1.16e-5）；真机首判随 xcheb_bpf4 族既有真机门（TZ 零点保持/带形，cross_coupled_map 验证锚③口径）"
+    value: 1.1088
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "MYJ 表 4 位舍入带；递推精确值 1.108812 带内逐位合"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: a871d75b
+      devlog: "Phase 4 W4-E 锚批；g 值表引入=a871d75b（getf5 TF-5）；cm 全极点退化互证锚①=cross_coupled_map 模块头（TA-14 ge8d Wave D）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=原型档参考（设计链消费 cm_core/matching 递推内核，非注册表锚值；G-08 两语义二分）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: hairpin.cheb_g.closedform-v1
+    kind: constant
+    template_family: [hairpin]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: hairpin_cheb_g
+      unit: dimensionless
+      semantics: "Chebyshev 等纹波 LPF 原型 g 值（同 coupled_bpf.cheb_g 锚：MYJ Table 4.05-1 0.1dB 档 N=3 行 g=[1.0316, 1.1474, 1.0316]，锚值=g1）；#118 双源=表行第二转录×Pozar §8.4 递推独立复算逐位合表（同 coupled_bpf 席，证据链共享不重复转录）；档位注记=hairpin 设计链 hairpin_design_from_order(3, 2.5, fbw=0.05, rl_db=20)（C13 Cameron 矩阵→k→KJ 反解，名义 gap=1.1328 本会话实算复现）名义纹波 0.0436dB 最近档=0.1dB，设计链实际消耗=synthesize_bpf_model Cameron 链（_gcheb 原型），本锚=原型族参考档 tripwire；真机首判随 hairpin 族既有真机门（带内 RL/耦合峰位）"
+    value: 1.0316
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "MYJ 表 4 位舍入带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: a871d75b
+      devlog: "Phase 4 W4-E 锚批；g 值表引入=a871d75b（getf5 TF-5）；hairpin/hairpin_alt 分立二席（ra_criteria §7.1 行 9 同款二席口径）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=原型档参考（设计链消费 Cameron/递推内核，非注册表锚值；G-08 两语义二分）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: hairpin_alt.cheb_g.closedform-v1
+    kind: constant
+    template_family: [hairpin_alt]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: hairpin_alt_cheb_g
+      unit: dimensionless
+      semantics: "Chebyshev 等纹波 LPF 原型 g 值（同 hairpin.cheb_g 锚：MYJ Table 4.05-1 0.1dB 档 N=3 行，锚值=g1=1.0316；hairpin_alt=交替取向变体，设计链/原型与 hairpin 同上游，仅取向布局不同——w2g 批注册注记）；#118 双源/档位注记/真机首判窗同 hairpin.cheb_g 锚 semantics（共享证据链不重复转录）"
+    value: 1.0316
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "MYJ 表 4 位舍入带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: a871d75b
+      devlog: "Phase 4 W4-E 锚批；g 值表引入=a871d75b（getf5 TF-5）；hairpin_alt 变体注册=w2g 批（#304 注册三坑批）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】同 hairpin.cheb_g 锚注记"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: varactor_bpf.cheb_g.closedform-v1
+    kind: constant
+    template_family: [varactor_bpf]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: varactor_bpf_cheb_g
+      unit: dimensionless
+      semantics: "Chebyshev 等纹波 LPF 原型 g 值（同 hairpin.cheb_g 锚：MYJ Table 4.05-1 0.1dB 档 N=3 行，锚值=g1=1.0316）；档位注记=varactor_bpf 设计链同 hairpin C13 N=3/RL20/FBW5%（VARACTOR_BPF_NOMINAL 注记 k=FBW·|M12|=0.051514 本会话实算复现）名义纹波 0.0436dB 最近档=0.1dB；#118 双源/真机首判窗同 hairpin.cheb_g 锚 semantics（共享证据链）"
+    value: 1.0316
+    uncertainty: {value: 0.00005, kind: rounding_band, note: "MYJ 表 4 位舍入带"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: a871d75b
+      devlog: "Phase 4 W4-E 锚批；g 值表引入=a871d75b（getf5 TF-5）；varactor_bpf 模板注册=M-5 批（2026-09-27）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】同 hairpin.cheb_g 锚注记"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  - anchor_id: msl_cpw.s11_f0.closedform-v1
+    kind: constant
+    template_family: [msl_cpw]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: msl_cpw_s11_f0
+      unit: dB
+      semantics: "MSL↔CPWG 过渡理想级联 |S11(f0)|=0 恒等（两段同 50Ω 目标同阻异模对接：w_msl=1.1134 HJ inverse_width × w_cpw=0.849 @gap=0.2 _cpwg_ri 共形映射 brentq 反解，synthesize_msl_cpw_model 名义复现 w_msl/w_cpw 本会话实算逐位；#118 独立重算=测试内 ABCD 两段等特征阻抗级联 Zin≡Z0 → S11≡0 对任意段长/εeff 恒等式钉+失配对照 S11≠0 sanity；qwt_multisection.s11_f0 同族先例）；真机首判窗=带内 |S11|max ≤−10dB（anchor_benchmark.msl_cpw_benchmark_verdict 健康门既有口径）；WP2.5 真机 PASS 带内 −20dB 证据在档（61595f63，双 β 锚 +0.37%/−1.04%）——翻 active 待注册批按锚演进纪律，本批如实保持 experimental"
+    value: 0.0
+    uncertainty: {value: 0.0, kind: identity, note: "同阻异模理想级联恒等（Z0 一致则反射与段长/εeff 无关的解析事实）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: 61595f63
+      devlog: "Phase 4 W4-E 锚批；msl_cpw 全链引入+真机 PASS=61595f63（WP2.5 Tier 2）；zconv 网格定案=runs/msl_cpw_zconv（_SUB_CELLS_8 依据）"
+      replaces: "无（首登记）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W4-E】锚=理想级联地板参考（综合链消费 synthesize_msl_cpw_model 闭式，非注册表锚值；G-08 两语义二分）；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []
+  # ── cpw Z0 closedform 锚（Phase 6 W6-F 席，用户裁决⑥执行件：条件裁 A=
+  #    CPWG/50Ω、核验优先——渲染几何核验 2026-10-05 本席实测通过，A 胜出；
+  #    裁决材料=runs/w4_phase4/w4e/cpw_ambiguity_evidence.md 两候选并列档，
+  #    本条目落地即消歧）。ANCHORS 单源计数 59→60 由主代理合流时同步
+  #    （EXPECTED_ANCHORS/EXPECTED_ANCHOR_COUNT @ core/anchors.py，席位禁碰）
+  - anchor_id: cpw.z0_ohm.closedform-v1
+    kind: constant
+    template_family: [cpw]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: cpw_z0_ohm
+      unit: ohm
+      semantics: "CPW 模板特性阻抗 @名义 w=0.849/gap=0.2/h=0.508mm/εr=3.66（rogers4350b）闭式回代——口径 A=CPWG（底接地共面波导：底 PEC 地+两侧共面地贯穿全域），内核=calc_families/rf_line._cpwg_ri 共形映射闭式（部分电容 C_air=2ε0(r1+r4)/C_tot=2ε0(r1+εr·r4)，k1=a/b 上半空间共面映射、k4=tanh(πa/2h)/tanh(πb/2h) 接地介质板映射，r=K/K′ 椭圆积分比），全精度 49.9999816；#118 双源=①渲染几何一致性（2026-10-05 W6-F 逐行核验：侧地 render_tl.py:61-62 贯穿全域 ±BOARD+底边界 render_core.py:1899-1906 MUR 白名单不含 cpw→底=PEC 地，结构=真 CPWG；synthesis.py synthesize_cpw_model 同源按 _cpwg_ri 反解 w=0.849 逐位复现 50.0000）+②文献值（CPWG 共形映射闭式，Simons/Gupta 口径；h→∞ 极限退化为无地 CPW 与 skrf 同式的极限自洽单测在钉）；**口径 B 对照注记（防 skrf 消费者踩口径差，#154 同名跨通道语义族）**：skrf CPW 无底地口径（cpw_analysis 计算器）同几何 Z0=67.44Ω/εeff=2.0895——与 A 差 35% 是参照系差非物理对错（#193 参照系错位教训：无地口径合成 50Ω 线在真实 CPWG 结构=18Ω）；教科书 'CPW' 语义按本注记读，εeff 亦为 A/B 判别量（A=2.5673 vs B=2.0895 差 23%，首判双向消歧）；真机首判窗=S21 相位斜率 εeff |Δ|≤5%（registry 提取口径 'S21 相位斜率→εeff'，CPWPort 无直接 Z0 读出面——Z0 口径待判读窗批按需声明，cps 同款如实降级注记）"
+    value: 50.0
+    uncertainty: {value: 0.005, kind: rounding_band, note: "w 4 位舍入回代 49.9999816；suspended_stripline.z0_ohm 同形先例（50.0 带 0.005）"}
+    domain: null
+    provenance:
+      arbitration_runs: [runs/w4_phase4/w4e]
+      commit: 72311783
+      devlog: "Phase 6 W6-F 席（用户裁决⑥：cpw 锚条件裁 A=CPWG/50Ω、核验优先，2026-10-05）；二义证据档=runs/w4_phase4/w4e/cpw_ambiguity_evidence.md（W4-E 席两候选并列）；#198 参照系修正=registry 名义注记原文（旧 4.035mm 系无地 skrf CPW 口径错配）；核验引用行号=render_tl.py:47/59/61-62+render_core.py:1899-1906+registry.py:128-140+synthesis.py:892-941——commit 随 W6 批合流更新"
+      replaces: "无（首登记；二义悬置期 W4-E/X5 两批均如实缓立，本笔=裁决执行）"
+      consumers_note: "【declarative_identity 注记 2026-10-05 W6-F】锚=模板名义设计点闭式回代参考（渲染/综合链消费同一闭式内核 _cpwg_ri 而非注册表锚值，消费者文件零 anchors_store import——G-08 两语义二分口径如实声明）；fgcpw 语义边界=fgcpw=有限宽侧地（fdref 锚）、cpw=全域侧地+底地（本锚，CPWG 口径）——#154 族声明随本锚立档；运行时接线待判读窗批按需补做"
+    registered_at: "2026-10-05T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers: []

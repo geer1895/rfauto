@@ -1,4 +1,4 @@
-"""ADS 参数化模板族 service（JSON 进出）：渲染 / 真机运行 / 对拍。
+"""ADS 参数化模板族 service（JSON 进出）：渲染 / 真机运行 / 对拍（TODO 0bn④）。
 
 两个入口（CLI/MCP 薄壳归 WP3.3，本轮只落 service）：
 - render_ads_template：request → 渲染族网表写盘，返回路径与频扫/参数快照；

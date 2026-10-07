@@ -77,7 +77,7 @@ class TestHfssScriptDesign:
         r = slotline_closed_form(m.W, m.H, m.ER, m.F0)
         assert r.segment == "low"
         assert pytest.approx(r.lambda_ratio * 299792458.0 / (m.F0 * 1e9) * 1e3, abs=1e-3) == m.L
-        # 示例 h=0.508 在 2.5GHz 落域外（d/λ0<0.006）——脚本必须拒绝该口径
+        # 任务书示例 h=0.508 在 2.5GHz 落域外（d/λ0<0.006）——脚本必须拒绝该口径
         with pytest.raises(ValueError):
             slotline_closed_form(0.5, 0.508, 3.66, 2.5)
 

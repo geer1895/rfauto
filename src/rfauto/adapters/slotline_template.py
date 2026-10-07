@@ -1,9 +1,9 @@
-"""均匀槽线段附加模板渲染器（路线 A：NGSolve 模式文件 → openEMS WaveguidePort）。
+"""均匀槽线段附加模板渲染器（W3⑧a 路线 A：NGSolve 模式文件 → openEMS WaveguidePort）。
 
 附加模板口径（本波 openems_templates.py 归 wstep 子代理独占）：独立渲染模块 +
 独立测试，**不注册** TEMPLATE_META/EXPECTED_TEMPLATES/TEMPLATE_NOMINAL（注册
-四件套另行登记）；闭式用 core/slotline.py 普通函数（不加 @register_calculator，
-另行登记）。
+四件套列 followUps）；闭式用 core/slotline.py 普通函数（不加 @register_calculator，
+登记列 followUps）。
 
 几何（layout 单一事实源 ``slotline_layout``，米）：
 - 传播沿 x；金属零厚面 z=h，槽居中 |y|≤w/2 贯通全域至两端边界（端口面在
@@ -17,13 +17,12 @@
   N_PROBE 站沿线均布 [−L/4,+L/4]，逐频相位斜率 → β_probe(f)。
 
 网格：官方方法学基线（docs §0）base=λ_sub/50@F_MAX、近槽/近端口 NEAR=base/4、
-基板 z 6 层、#152 最小间距守卫。
+基板 z 6 层、#152 最小间距守卫；槽缘细化（TODO 0df④）：槽跨 linspace 精确
+均分，步长 min(NEAR, w/8)、地板 10µm（#349）——w/8 比 NEAR 细时引擎 dt 减半
+（#283 家族），同 NrTS 时窗减半，真跑前按 et 实测 dt 重排 NrTS。
 
 离线审计测试（#212）：exec 脚本头（FDTD.Run 之前）→ CSXCAD 实测金属原语
 （DC 两组隔离=槽真断开）、端口/探针属性、网格线含槽缘与基板界面。
-
-运行前置：openEMS Python 绑定（CSXCAD/openEMS）需已安装——在 PATH，
-或经 RFAUTO_OPENEMS_BIN 环境变量指定 bin 目录（渲染脚本不注入固定安装路径）。
 """
 
 from __future__ import annotations
@@ -38,11 +37,13 @@ SUBSTRATE_Z_LAYERS = 6        # 基板 z 网格层数（官方 substrate_cells=4
 PORT_INSET_BASE = 16.0        # 激励面内移（×BASE，须 > PML_8 厚度 ≈8·BASE）
 PORT_LEN_NEAR = 10.0          # 激励面→测量面距离（×NEAR）
 PORT_BOX_INSET_BASE = 2.0     # 端口盒 y/z 各内移（×BASE）：出 MUR 边界胞层。
-# 真机实证（pt1 首跑）：盒跨满截面时触发 "Excitation inside the
+# 真机实证（2026-09-16 pt1 首跑）：盒跨满截面时触发 "Excitation inside the
 # Mur-ABC"，MUR 被延迟到激励结束（29534 步）才开启，开启瞬态激起悬浮双金属
 # 零模 → 探针信号自 ~11ns 起纯线性 DC 漂移（15ns 内涨到信号 10 倍）。内缩
 # 2·BASE 后盒缘离开边界胞层（该处模场 ≈0，无激励损失；U/I 模式探针同步内缩
 # 保持与激励同一权重口径）。
+SLOT_NEAR_DIVISOR = 8.0       # 槽缘细化：槽跨步长 ≤ w/8（TODO 0df④）
+SLOT_NEAR_FLOOR_M = 1e-5      # 细化地板 10µm（#349：nm 级线距塌缩 CFL 时间步）
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,34 @@ class SlotlineLayout:
     port_inset_m: float
     port_len_m: float
     box_inset_m: float      # 端口盒 y/z 内移（出 MUR 边界胞层，见常量注）
+    slot_near_m: float      # 槽缘细化步长（min(NEAR, w/8)，地板 10µm，#349）
+    slot_n_seg: int         # 槽跨均分段数（步长=2·w_half/n_seg ≥ 地板）
+
+
+def slot_edge_refinement(w_m: float, near_m: float) -> tuple[float, int]:
+    """槽缘细化步长/均分段数（纯函数，layout 单源消费；TODO 0df④）。
+
+    口径：槽跨有效步长 = min(NEAR, w/8)，地板 10µm（#349：线距 <10µm 有 CFL
+    时间步塌缩风险，宁可拒渲染不静默降级）；自动档（NEAR=w/8 量级之上）步长
+    恰为 w/8、引擎 dt 相应减半（#283 家族，真跑前按 et 实测 dt 重排 NrTS）；
+    NEAR 已细于 w/8（显式网格档）时步长=NEAR，网格与细化前一致。返回
+    (step_m, n_seg)，槽跨 n_seg 均分、步长 ≥ 地板；违反地板（槽宽过小）抛
+    ValueError。
+    """
+    w = float(w_m)
+    near = float(near_m)
+    step = min(near, w / SLOT_NEAR_DIVISOR)
+    if step < SLOT_NEAR_FLOOR_M:
+        step = SLOT_NEAR_FLOOR_M
+    n_seg = max(2, math.ceil(w / step - 1e-12))
+    actual = w / n_seg
+    if actual < SLOT_NEAR_FLOOR_M * (1.0 - 1e-9):
+        raise ValueError(
+            "slot_edge_refinement: 槽宽 "
+            f"{w * 1e3:.6f}mm 过小——槽跨均分步长 {actual * 1e9:.1f}nm 低于 #349 "
+            f"地板 {SLOT_NEAR_FLOOR_M * 1e6:.0f}µm，拒绝渲染（nm 级线距塌缩 "
+            f"CFL 时间步）")
+    return actual, n_seg
 
 
 def slotline_layout(params: dict[str, Any], freq_range_ghz: tuple[float, float],
@@ -103,12 +132,14 @@ def slotline_layout(params: dict[str, Any], freq_range_ghz: tuple[float, float],
     x_exc2 = x_meas2 + port_len
     n = N_PROBE_STATIONS
     probes = tuple(-line_len / 4.0 + k * line_len / (2.0 * (n - 1)) for k in range(n))
+    slot_near, slot_n_seg = slot_edge_refinement(w, near)
     return SlotlineLayout(w_m=w, h_m=h, er=er, y_half_m=y_half, z_bot_m=z_bot,
                           z_top_m=z_top, dom_x_m=dom_x, x_exc1_m=x_exc1,
                           x_meas1_m=x_meas1, x_meas2_m=x_meas2, x_exc2_m=x_exc2,
                           probe_x_m=probes, base_m=base, near_m=near,
                           port_inset_m=port_inset, port_len_m=port_len,
-                          box_inset_m=PORT_BOX_INSET_BASE * base)
+                          box_inset_m=PORT_BOX_INSET_BASE * base,
+                          slot_near_m=slot_near, slot_n_seg=slot_n_seg)
 
 
 def render_slotline_script(params: dict[str, Any],
@@ -139,21 +170,18 @@ def render_slotline_script(params: dict[str, Any],
     kc_txt = f"complex({kc.real!r}, {kc.imag!r})"
 
     return f'''#!/usr/bin/env python3
-"""openEMS slotline route-A script (rfauto, auto-generated).
+"""openEMS slotline route-A script (rfauto W3⑧a, auto-generated).
 
 几何/端口/网格口径见 src/rfauto/adapters/slotline_template.py 模块 docstring。
 模式文件路径见下方 E_FILE/H_FILE 字面量。
-运行前置：openEMS Python 绑定需已安装——在 PATH，或经 RFAUTO_OPENEMS_BIN
-环境变量指定 bin 目录。
 """
 import csv
 import json
 import os
 
-# openEMS Python 绑定（CSXCAD/openEMS）需已安装并在 PATH；也可用
-# RFAUTO_OPENEMS_BIN 环境变量显式指定 bin 目录（未给出时不注入任何路径）。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
-if _OE_BIN and os.path.isdir(_OE_BIN):
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
+                         r"D:/rf_workspace\\vendor\\openEMS\\install\\bin")
+if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
 
@@ -173,6 +201,8 @@ Z_BOT = {zb!r}
 Z_TOP = {zt!r}
 BASE = {lay.base_m!r}   # 网格 base：λ_sub/50 @F_MAX（官方口径）或显式覆盖
 NEAR = {lay.near_m!r}   # 近槽/近端口 = base/4
+SLOT_NEAR = {lay.slot_near_m!r}   # 槽缘步长 min(NEAR, W/8)，地板 10µm（#349）
+N_SEG = {lay.slot_n_seg}          # 槽跨均分段数（步长=W/N_SEG）
 E_FILE = {e_mode_file!r}
 H_FILE = {h_mode_file!r}
 KC = {kc_txt}            # f0 反解（SI 1/m，可纯虚；带内色散假设=路线 A 已知局限）
@@ -208,7 +238,13 @@ def _axis(ax, near_pts, dom_lo, dom_hi):
     mesh.SmoothMeshLines(ax, BASE)
 
 _axis("x", [X_EXC1, X_MEAS1] + list(PROBE_X) + [X_MEAS2, X_EXC2], DOM_LO, DOM_HI)
-_axis("y", [-W / 2, 0.0, W / 2], -Y_HALF, Y_HALF)
+# 槽缘细化（TODO 0df④）：槽跨 linspace 精确均分步长 SLOT_NEAR=min(NEAR, W/8)
+#（自动档恰为 W/8、dt 相应减半 #283 家族；显式档 NEAR 更细时步长=NEAR、网格
+# 与细化前一致）；槽缘 ±W/2 与中线 0 必在线集中（W/8 偶数段含 0）
+mesh.AddLine("y", np.linspace(-W / 2, W / 2, N_SEG + 1))
+mesh.SmoothMeshLines("y", SLOT_NEAR)
+mesh.AddLine("y", np.array([-Y_HALF, Y_HALF]))
+mesh.SmoothMeshLines("y", BASE)
 mesh.AddLine("z", np.linspace(0, H_SUB, {n_sub}))   # 基板 6 层（槽线加密档）
 mesh.AddLine("z", np.array([-NEAR, 0.0, H_SUB, H_SUB + NEAR]))
 mesh.AddLine("z", np.array([-Z_BOT, H_SUB + Z_TOP]))
@@ -346,6 +382,8 @@ summary = {{
     "port_inset_m": float(X_EXC1 - DOM_LO),
     "e_mode_file": E_FILE, "h_mode_file": H_FILE,
     "kc": [KC.real, KC.imag], "z_mode_ohm": Z_MODE,
+    "base_m": BASE, "near_m": NEAR,
+    "slot_near_m": SLOT_NEAR, "slot_n_seg": N_SEG,
     "z_ref_used_1_ohm": _z_ref1, "z_ref_used_2_ohm": _z_ref2,
     "z1_over_z2_minus_1": _z1_raw / abs(_z2_raw) - 1.0,
     "beta_ref_rad_m": BETA_REF,

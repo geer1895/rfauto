@@ -1,0 +1,27 @@
+schema: criteria/v2
+criteria_id: ratrace_df5_stratified
+title: criteria.md — df5-SD 拍板⑥ A→B 串联：0.2mm 辨簇补样（R14/R15）+ 机制分层拟合复判
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: ratrace, f_ghz: null}
+migration:
+  tier: A
+  source_index: index.yaml
+  source_md: runs/ratrace_df5_stratified/criteria.md
+  families: [ratrace]
+  n_gates: 1
+evidence_fields: [ratrace_df5_stratified#1]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: ratrace_df5_stratified#1, tier: A, raw: '- 落簇带 = [0.9×7188.6, 1.1×7681.6] = **[6469.7, 8449.8]s**（R1/R13
+      簇两锚各 ±10%）；', threshold: 10.0}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/ratrace_df5_stratified,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#ratrace_df5_stratified/criteria.md gates[1..1]'}

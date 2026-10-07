@@ -1,0 +1,37 @@
+schema: criteria/v2
+criteria_id: c4_debridge
+title: c4-去桥对照 预声明判据（写死再跑，2026-09-19，起跑前落盘）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: branchline, f_ghz: null}
+migration:
+  tier: A
+  source_index: index.yaml
+  source_md: runs/c4_debridge/criteria.md
+  families: [branchline, cline_coupler, lange]
+  n_gates: 8
+evidence_fields: [c4_debridge#1, c4_debridge#2, c4_debridge#3, c4_debridge#4, c4_debridge#5, c4_debridge#6,
+  c4_debridge#7, c4_debridge#8]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: c4_debridge#1, tier: A, raw: '全轴最小线距 x/y/z = 17.6/92.6/127.0µm ≥ 10µm（#349；z 最小格从 50µm[桥厚]',
+    threshold: 10.0}
+  - {gate_id: c4_debridge#2, tier: A, raw: '- |ΔS31| ≤ 0.15dB → **桥零响应**——耦合超量非桥寄生（假设链排除一支；与面内加密', threshold: 0.15}
+  - {gate_id: c4_debridge#3, tier: A, raw: '- |ΔS31| ≥ 0.2dB → **桥对耦合度有实测贡献**（方向记录：向 −3.01dB 裁判=改善 /',
+    threshold: 0.2}
+  - {gate_id: c4_debridge#4, tier: A, raw: '- 截断核查（#262/#266）：port_ut_*B 末 5% 窗残差 ≤ −45dB 或未触 NrTS；4 轮',
+    threshold: null}
+  - {gate_id: c4_debridge#5, tier: A, raw: CFL 只松不紧；预期 63–66fs 区间）。同时窗 NrTS 上限：200000×dt ≥ 12.2ns ≫, threshold: 12.2}
+  - {gate_id: c4_debridge#6, tier: A, raw: '- 回退预案（预声明）：实测同时窗 < 6.5ns → NrTS 抬至 400000 重渲染重跑（计入墙', threshold: 6.5}
+  - {gate_id: c4_debridge#7, tier: A, raw: '- **桥零响应**（|ΔS31| ≤ 0.15dB）：假设链再排除一支；耦合超量归因余 z 向层化', threshold: 0.15}
+  - {gate_id: c4_debridge#8, tier: A, raw: '- **桥有贡献**（|ΔS31| ≥ 0.2dB）：按 (A) 警示的混合归因如实记录，方向注明改善/', threshold: 0.2}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/c4_debridge,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#c4_debridge/criteria.md gates[1..8]'}

@@ -3,7 +3,7 @@ r"""ADS 交换契约（§8.2）—— 端口顺序错乱是'不报错但优化�
 两台软件不要求同机同进程同时打开；数据交换介质只有 Touchstone 文件 + 网表/数据集文件。
 单位与参考阻抗严格随契约走，interchange.py 在导出与导入两侧都做契约校验。
 
-端口顺序的形式化规则：
+端口顺序的形式化规则（P3, 用户拍板）：
   1. 每个 token 必须匹配正则 ^(input|output_\d+)$；
   2. "input" 恰好出现一次；
   3. output_N 的序号 N 必须严格递增 —— 形如 [input, output_2, output_1] 即判非法。
@@ -60,7 +60,7 @@ class AdsExchangeContract(BaseModel):
 
     @classmethod
     def for_n_ports(cls, n_ports: int) -> AdsExchangeContract:
-        """按端口数生成标准契约：1 个 input + (n-1) 个严格递增 output。
+        """按端口数生成标准契约（C4）：1 个 input + (n-1) 个严格递增 output。
 
         port_order 形式化规则（下方 validator）天然接受该序列。n_ports=3 时
         与历史默认值 ["input", "output_1", "output_2"] 完全一致。

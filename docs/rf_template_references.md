@@ -1,7 +1,7 @@
 # 射频模板建模·官方例对照表（开发前必读）
 
 > 2026-09-02 多模态审计批次沉淀。给 openEMS 模板/新结构建模时的**权威对照来源**
-> 与已验证口径。修改模板前先对照本表，避免重复踩坑。
+> 与已验证口径。修改模板前先对照本表，避免重复踩坑（详证见 多模态审计节）。
 > **2026-09-04 增补（阶段 0.1 根因闭环）**：网格/边界方法学升级为官方
 > MSL_NotchFilter 基线（见 §0），旧 λ/20@空气粗网格口径作废。
 
@@ -35,7 +35,7 @@
 | 项目 | 官方口径 |
 |---|---|
 | 拓扑 | 输入 Z0 → 双 √2·Z0 λ/4 **环形臂** → 双 Z0 输出（Port1 左入，Port2/3 右侧上下出） |
-| 阻抗/线宽 | h=1.59mm εr=2.2 上：50Ω=3.195mm、70.7Ω=2.804mm（由微带综合公式算，**不拍脑袋**） |
+| 阻抗/线宽 | h=1.59mm εr=2.2 上：50Ω=4.90mm、70.7Ω=2.804mm（由微带综合公式算，**不拍脑袋**。勘误 2026-10-04 review_ge8e R7-5/F1：原载"50Ω=3.195mm"系 Pozar 式号 3.195 误作线宽的转写残留——本仓双源复算 HJ `inverse_width(50Ω)`=4.907mm、skrf MLine 交叉一致，3.195mm 回代 z0=65.6Ω≠50Ω；70.7Ω=2.804mm 复算 70.7Ω 吻合保留。官方正文口径见 §5 "50Ω=4.9mm"） |
 | 臂长 | 环周长 = λ/4 = 55.5mm @1GHz |
 | 隔离电阻 | 2Z0=100Ω，2D 片状材料，跨接在**输出侧双臂末端之间** |
 | 网格 | 走线区 mesh override；弯曲/斜走线区 dx=dy；直走线对齐坐标轴即可 |
@@ -73,7 +73,8 @@
   （盒未进网格，非引擎缺陷，官方同款盒式可行）；②"微带边缘馈"冒烟病态
   （辐射器件 λ0/4 空气隙把域扩到 ±(BOARD+λ0/4) 后端口面仍贴 ±BOARD——
   馈线止于域中违反端口贴 PML 铁律；且馈点 x=0 是 patch_len 谐振模场节点，
-  谐振激励不起来）。证据：patch 冒烟审计存档（含三视图 PNG 复核）。
+  谐振激励不起来）。证据：runs/audit_freq_scale/smoke_patch_auto/、
+  patch_fix_threeview.png。
 - 闭式 sanity：patch_len=40mm @εr3.66 h0.508 patch_w=50 → f_res≈2.16GHz
   （Balanis: ε_eff=(εr+1)/2+(εr-1)/2·(1+12h/W)^-1/2≈2.96，含 ΔL 边缘延伸）。
   **判读窗口 2.2-2.6GHz 的下沿按此修正为 ~2.05GHz**——谷位落 2.05-2.25GHz
@@ -119,43 +120,48 @@
 ## 5b. 官方文档读取方式与 MCP 工具箱（2026-09-02 实测）
 
 **背景**：内置 WebFetch 抓 Ansys Optics（Zendesk）会 403/连接超时；改用
-配置好的外置 MCP 工具箱后解决。逐个实测结果：
+用户在 ZCode 配置的 MCP 工具后解决。逐个实测结果：
 
 | MCP 工具 | 实测结果 | 本项目用途 |
 |---|---|---|
 | `web_reader` (webReader) | ✅ 完整读取 Ansys 官方例全文 | **受反爬/需代理的官方文档首选**；还纠正了截图看不清的口径（官方 50Ω=4.9mm） |
 | `web-search-prime` (web_search_prime) | ✅ 返回结构化文献列表（标题/链接/摘要，Wilkinson 案例命中 COMSOL/SIMWORKS/CST 教程） | 建模借鉴搜索（官方例/商业软件案例/论文） |
 | `zai-mcp-server` (analyze_image / ui_diff_check / analyze_data_visualization / extract_text_from_screenshot / understand_technical_diagram) | ✅ 多模态读图 | **多模态审计核心**：三视图 PNG 复核、UI 与参考截图 diff、S 曲线图分析、截图提取文字/报错诊断 |
-| `zread` (get_repo_structure / read_file / search_doc) | ⚠️ 热门仓库可用（langchain ✅）；小众 RF 仓库未索引（microwave-structures、pyems 均报 repo not found） | 读大型开源库结构/文档；小众仓库 fallback 用 `git clone` 到本地工作区 |
+| `zread` (get_repo_structure / read_file / search_doc) | ⚠️ 热门仓库可用（langchain ✅）；小众 RF 仓库未索引（microwave-structures、pyems 均报 repo not found） | 读大型开源库结构/文档；小众仓库 fallback 用 `git clone` 到 E 盘工作区 |
 | `node_repl`（Browser Use） | 未实测 | 需登录/交互的官方资料页面（.fsp 工程下载等） |
 | `computer-use` | 未实测 | 桌面级 GUI 审计（如打开 HFSS/CST 对照建模） |
 
 **选型流程**：受反爬的官方文档 → `web_reader`；找借鉴案例 →
-`web-search-prime` + 截图互证；图像复核 → `zai-mcp-server` 系列读图；
+`web-search-prime` + 用户截图互证；图像复核 → `zai-mcp-server` 系列读图；
 参考仓库 → 先 `zread`，未索引则 clone 到工作区再本地读。
 
 ## 6. 校准前验模型的审计工具链
 
 1. 文本：逐行读 render_script 生成的 simulation.py；
-2. 视觉：`scripts/gen_three_view_audit.py` 出三视图 PNG（人工/多模态复核）；
+2. 视觉：`scripts/gen_three_view_audit.py` 出三视图 PNG（归档 docs/audit）；
 3. 文献：本表 + 官方教程；
 4. 数值：谐振点对照闭式解；端口健康检查（|S11|>1 即端口/网格错误）；
 5. 标定：以上全过后才允许 `scripts/derive_fake_calibration.py` 生成校准锚。
 
-## 7. CPW 端口口径（2026-09-08 侦察定稿）
+## 7. CPW 端口口径（WP2.1 续，2026-09-08 侦察定稿）
 
-- 本机 openEMS v0.37.0-rc1 绑定有一等 CPW 端口：`CPWPort/AddCPWPort(
+- 本机 openEMS 绑定有一等 CPW 端口：`CPWPort/AddCPWPort(
   port_nr, metal_prop, start, stop, prop_dir, exc_dir, gap_width,
-  excite=0, FeedShift/MeasPlaneShift/Feed_R)`（ports.py L1117+，逐条
-  对照源码）。
+  excite=0, FeedShift/MeasPlaneShift/Feed_R)`（逐条对照源码）。
 - 口径：start/stop 宽度范围=**中心带宽度**（端口只画中心导体段）；
-  gap_width=每侧缝宽；两侧地金属**自画**（端口不补）；exc_dir='z'
-  （height 方向=探针 z 向，同 MSL 惯例；width 方向由 cross(prop,exc)
-  推导为 x）；FeedShift/MeasPlaneShift 语义同 MSLPort。
+  gap_width=每侧缝宽；两侧地金属**自画**（端口不补）；
+  FeedShift/MeasPlaneShift 语义同 MSLPort。
+- **exc_dir 语义（2026-10-02 上游破坏性重定义，EC-12 适配批核实）**：
+  新绑定 `exc_dir`=**缝间 E 场方向=宽度方向**（`width_ny=CheckNyDir(
+  exc_dir)`），高度法向自动推算 `height_ny=3−prop_ny−width_ny`，并新增
+  校验 `start[height_ny]==stop[height_ny]`（ports.py CPWPort 构造器）。
+  共面端口（y 传播/z 法向）须传 `exc_dir='x'`；旧口径 exc_dir='z'
+  （面法向）会被当作宽度轴撞上中心带宽度差抛错。金属厚度盒不可再传入
+  start/stop（高度向须平面化）。
 - 合成/分析：skrf media.CPW(w, s, h, ep_r)（反解 w 用 bisection，同
   mline 手法）；fake 闭式同 mline（β=2πf√εeff/c）。
 
-## 8. dipole 官方口径（2026-09-08 侦察定稿）
+## 8. dipole 官方口径（WP1.3 修复依据，2026-09-08 侦察定稿）
 
 来源：openEMS 官方 Helical Antenna 教程（Python，wire primitive +
 LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
@@ -165,16 +171,16 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   带 box；中央 gap 处 **FDTD.AddLumpedPort(port_nr, R, start, stop,
   'x', 1.0, priority=5)** 直馈（跨 gap，norm 方向沿振子轴）。
 - **自由空间器件：无基板、无地**，域全 MUR（官方 Helical 用
-  ['MUR'×5, 'PML_8']）+ nf2ff box（远场接口）。
+  ['MUR'×5, 'PML_8']）+ nf2ff box（WP4.1 远场接口）。
 - 馈电阻：半波偶极子谐振阻抗 ~73Ω（官方 Helical 示例 R_in=120Ω 是
   螺旋特定值）——模板口径 R=z0_ohm(50)，S11 判读窗放宽（-10~-15dB）。
-- 我方 _dipole_lines 现状缺陷（确认）：振子贴基板顶面 + MSL 微带
+- 我方 _dipole_lines 现状缺陷（⑭ 确认）：振子贴基板顶面 + MSL 微带
   馈线侧面接入 = "微带馈偶极子"混合怪 + MSLPort 悬空；render_script
   底边界恒 PEC（dipole 镜像破坏输入阻抗）。修复=重写 _dipole_lines
   （LumpedPort 中央直馈）+ render_script 底边界 per-template 特判
   （dipole→MUR 且域 z 向下延 λ0/4）+ fake 派发分支 + meta 同步。
 
-## 9. rat-race 180° 混合环（#208 理论核验轮定版，2026-09-09）
+## 9. rat-race 180° 混合环（WP2.3，#208 理论核验轮定版，2026-09-09）
 
 - 权威口径：Pozar《Microwave Engineering》§7.5（180° hybrid ring）；
   环特性阻抗 Z√2=70.7Ω，周长 3λg/2，arcs λ/4×3 + 3λ/4。
@@ -190,10 +196,10 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   λg 分开精算；径向馈必须真带宽栅格化（每列盒 y=线心±W/(2cosθ)，
   中心线弦画法在 FDTD 网格不导通，#212）。
 
-### 9.1 k 定版结论（2026-09-16）
+### 9.1 k 定版结论（ratrace-k-finalize，2026-09-16；权威数据 runs/ratrace_arbitration）
 
 - **k=1.0975 归属 MESH_ARTIFACT（HFSS 仲裁背书）**：HFSS 物理 R=17.344mm
-  （无 k）balance 中心 2.465GHz / S11 谷 2.41GHz（仲裁存档
+  （无 k）balance 中心 2.465GHz / S11 谷 2.41GHz（ratrace_arbitration.json
   verdict.k_attribution=MESH_ARTIFACT）；openEMS 直角坐标同一 k=1.0975 下
   hybrid 中心随网格细化上移（0.4mm 2.354 → 0.2mm 2.5225GHz，f_center_avg，
   openems_convergence.json），伪象随细化收敛而非几何问题。
@@ -205,7 +211,7 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   BASE=λ_sub/50=1.1405mm → k(0.4)），禁止外推；近场线（_near_points）与几何段
   （_ratrace_lines）同 BASE 同 k。pt8 归档常数 `_RATRACE_RING_MESH_K=1.0975`
   仅存证不再消费。
-- **真机回验（Σ 单激励进程隔离 #208）**：
+- **真机回验（Σ 单激励进程隔离 #208，runs/ratrace_arbitration/k_finalize）**：
   0.4mm k=1.1654 → balance 中心 **2.5013GHz**（对 2.5 +0.05%、对 HFSS 2.465
   +1.47%）、S11 谷 2.5088、bal 0.001dB、S11 −39.3dB、S31 −35.1dB、S21/S41
   −3.17dB 全门过，k_eff=1.1631（锚差 −0.2% ≤1% → 锚保留，756.8s）——一阶
@@ -226,11 +232,11 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   k(0.4) 下 0.4mm 档候选判据已是**无操作**（顶行上缘 15.2921 > R_OUT 15.1842，
   中心圈覆盖 100%）；原"非无操作"断言曾因 round6→round4 双重舍入产生 8 行假差集
   而假绿，已改原始浮点比较并按实测钉值（test_ratrace_template.py，#122）。
-- **权威数据**：k_finalize 仲裁与收敛核验存档（HFSS 仲裁存档的
-  error/verdict 键为早期陈旧残留，已改名
+- **权威数据**：ratrace_arbitration.json（含追加 k_finalize 段）；
+  hfss_arbitration.json 的 error/verdict 键为 run2 陈旧残留（已改名
   stale_error_run2 / stale_verdict_run2，与 ok=True/attempt=1 并存属数据卫生）。
 
-## 10. Gysel 功分器（#211 理论核验轮定版，2026-09-09）
+## 10. Gysel 功分器（WP2.3，#211 理论核验轮定版，2026-09-09）
 
 - 权威口径：Microwaves101 "Gysel power divider / even-odd mode
   analysis"（Gysel 1970 拓扑）。**六节 λ/4 环**：P1—[70.7Ω λ/4 臂]—
@@ -245,12 +251,12 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
 - 工程注意：70.7Ω 臂（w=0.6035，εeff=2.72）与 50Ω 线（w=1.1134，
   εeff=2.85）εeff 差 4.5%，λ/4 长度分开精算不可混用。
 
-### 10.1 拓扑重设计：L-jog 等长变体（2026-09-16 离线审计定版）
+### 10.1 P2⑪ 拓扑重设计：L-jog 等长变体（2026-09-16 离线审计定版）
 
 - **问题**：矩形六节环只有 2 个自由边长——顶边桥带继承臂 λ/4 跨度
   2·arm_len=36.324mm，对 50Ω λ/2 设计值 2·iso_len=35.500mm 有 **+2.32%**
   二阶偏差（桥带 184.176°@2.5GHz）。#211 pt2 矩形真跑 S32=-32.6dB/
-  S11=-26.7dB PASS（二阶效应），但该项残余未量化归因。
+  S11=-26.7dB PASS（二阶效应），但 P2 残余未量化归因。
 - **电路级归因**（无损线 Y 装配，`test_gysel_template._candidate_ring_s`
   固化，与 #206 角度装配互检 atol=1e-7）：矩形桥带相位误差把 @f0 S32/S11
   **封顶 -34.8dB**（-34.77/-34.78），为主因；junction 宽度台阶
@@ -278,7 +284,7 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   S11 -26.7dB）的改善量如实落账，硬门不变（β±2%、均分差≤0.5dB、
   S32≤-15dB、S11≤-10dB）；增益有限时如实 PARTIAL 不凑绿（#122）。
 
-## 11. CPS 共面带 / 悬置带线（2026-09-15 侦察定稿；2026-09-18 口径改写）
+## 11. CPS 共面带 / 悬置带线（C9 传输线族 II，2026-09-15 侦察定稿；2026-09-18 w2f-c9-refs 口径改写）
 
 闭式内核：`core/calculators.py` `_cps_ri` / `_suspended_stripline_ri`
 （注册键 cps_analysis / cps_synthesis / suspended_stripline_analysis /
@@ -286,10 +292,10 @@ suspended_stripline_synthesis）。铁律 1c：所有常数出处如下，无拍
 **独立数值裁判（#118）统一为 `core/quasistatic_fd.py`**（张量网格变分 FD Laplace，
 网格线精确落导体缘/介质面，能量法 C=2W/V²，一阶 Richardson 外推；CLI
 `scripts/fd_laplace_tline_referee.py`）——裁判自身先过已知基准才有资格裁判闭式
-（校准前先验模型铁律）：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
+：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
 CPS 半空间极限 (1+εr)/2 −0.1%、零厚度带状线空气 Z0 vs Cohn −0.1%、悬置带线
 h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此前两份未入库
-的临时 FD（§11.1 旧表/§11.2 的 3.02；事后复核的 1.68/2.36）均
+的临时 FD（侦察批 §11.1 旧表/§11.2 的 3.02；收尾批 postmortem 的 1.68/2.36）均
 未经上述基准，其中 §11.2 两份互相矛盾（3.02 vs 2.36），全部撤下**——只有 CPS
 标称 1.68 与本裁判 1.667 巧合一致（≤1%）。
 
@@ -350,15 +356,15 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   G1 带内 |S11|max < −15 dB；G2 |εeff(S21 斜率)/εeff_FD − 1| ≤3% PASS / ≤7%
   PARTIAL（线长口径地板）/ 其余 FAIL；INFO 定标闭式 vs FD ≤1.2%（不设门）。
   FD 锚由判读器按实际几何**现算**（cps_quasistatic，20·b 域，≈0.8s）。
-  **pt1 基线（cps 冒烟 pt1，2026-09-17，缺省网格 BASE 1.14/NEAR 0.285）**：
+  **pt1 基线（runs/cps_smoke/pt1，2026-09-17，缺省网格 BASE 1.14/NEAR 0.285）**：
   |S11|max −23.9 dB 过；εeff 1.8909 vs FD 1.667 **+13.4% FAIL**（旧口径 vs 裸闭式
-  +20.35%）。引擎侧候选由合规网格复跑分离：端口元落格线长（±5.7%）、z 域
+  +20.35%）。引擎侧候选由复跑（rm-oe-c9）分离：端口元落格线长（±5.7%）、z 域
   ±5mm MUR 非 PML、基板 4 格台阶化；建议差分线长（两 L）或落盘端口元 y 坐标把
   口径地板压到 ~1%。
 
 ### 11.2 悬置带线（suspended substrate stripline，基板对称居中）
 
-- 几何口径（**本项定版，与早期设计稿 "[B/2−h, B/2]" 单侧写法的差异**）：腔高 b
+- 几何口径（**本项定版，与任务书 "[B/2−h, B/2]" 单侧写法的差异**）：腔高 b
   （上下地=域 z 边界 PEC），零厚度带在中面 z=b/2，厚 H_SUB 基板以带为中面
   **对称**悬浮 z∈[b/2−H/2, b/2+H/2]，两侧空气隙各 (b−H)/2。选对称填充的
   理由=验收锚 "h→b → (εr, _stripline_z0(w,b,εr))" 只对对称填充是物理真值
@@ -374,7 +380,7 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   q 式 +3.9/+15.2/+20.6/+21.7/+15.5/+0.6%——方向与旧表结论（"q 式中段偏低
   −10~−27%"）**相反**。旧表（FD 1.769/2.394/2.777/3.106/3.388/3.656）与其
   标称 3.02 撤：h/b=0.0625（0.1mm 板悬在 1.6mm 腔）得 1.769 物理不合理（裁判
-  1.284），且该临时求解器无任何已知基准对拍；事后复核的 2.36
+  1.284），且该临时求解器无任何已知基准对拍；收尾批 postmortem 的 2.36
   （2.412/2.376/2.356 序列）同样未过基准、与验证序列 2.084/2.088/2.092 不符，
   一并撤。
   **标称几何真值（w=0.731 b=1.016 h=0.508 εr=3.66）**：d0=b/40、b/80 →
@@ -383,7 +389,7 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   ≈56Ω。标称几何保持不动（真机配对 #158、docs meta 同源）；**SSL 闭式重定标=
   followUp**（裁判定点迭代：真 50Ω 需 w≈0.897mm，εeff≈2.028；重定标后
   TEMPLATE_NOMINAL/meta/fake 锚同步）。
-- **StripLinePort β 口径审（离线定案）**：
+- **StripLinePort β 口径审（followUps ⑦，离线定案）**：
   1. 源码口径（openEMS ports.py L914+）：U 探针=带中心线到上/下地各一条
      （weight 0.5 求和=平均带-地电压）×测量面附近 A/B/C 三条网格线；I 探针=
      包住全带宽 ±1.5 格的两环；**β=√(−dU·dI/(U·I))、Z=√(U·dU/(I·dI))**——电报员
@@ -412,7 +418,7 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   （2026-09-18）前两列契约不变，追加 beta2/re·im_zl1·zl2/plane_dist_m（两测量面
   精确间距，G0 不再含网格吸附 ±BASE/2 不确定度）。**pt1 基线**：G0 0.1% ✓、
   G1 −56.4 dB（带内）✓、G2 −3.6% PARTIAL、G3 ZL≈50 vs 56.1 −11% ✗ → **PARTIAL**。
-  复跑：z 网格基板 ≥8 格、NEAR ≤w/6，预期 G2/G3 同向收敛到 FD；
+  复跑（rm-oe-c9）：z 网格基板 ≥8 格、NEAR ≤w/6，预期 G2/G3 同向收敛到 FD；
   闭式 q 式对照只作信息项。
 - **端口口径（openEMS）**：StripLinePort×2（v0.37 源码 L914+，`height`=带到
   每面地的对称距离=b/2，本 session inspect 实证），同 stripline 模板已真跑
@@ -421,11 +427,12 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
 - 标称：b=1.016（=2·H_SUB，与 stripline 同 z 域、网格友好）、H_SUB=0.508
   对称居中、q 式 50Ω → **w=0.731mm，q 式 εeff=2.641（裁判真值 2.092/56.1Ω，
   见上）**。扰动域：审计 ×1.37 扰动 b→1.392 仍 >H_SUB ✔（对称填充守卫为
-  H_SUB<b，非单侧的 h<b/2；早期设计稿 "b≥2.8h" 系单侧口径，本项不适用）。
+  H_SUB<b，非单侧的 h<b/2；任务书 "b≥2.8h" 系单侧口径，本项不适用）。
 
-## 12. 贴片阵列族：1×4 corporate / 2×2 H-tree / 1×3 串馈贴片阵（2026-09-15 理论核验定稿）
+## 12. C2 阵列族：1×4 corporate / 2×2 H-tree / 1×3 串馈贴片阵（2026-09-15 理论核验定稿）
 
-本节为 openems_templates.py 阵列族段的权威口径出处（antenna2 §同款制度）。
+方案行：续跑计划.md §10.3 器件族表 "C2 阵列族"。本节为
+openems_templates.py C2 段的权威口径出处（antenna2 §同款制度）。
 
 - **权威口径（铁律 1c/1b，先理论后几何）**：
   - C. A. Balanis, *Antenna Theory: Analysis and Design*, 3rd ed., Wiley,
@@ -441,6 +448,10 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
     εeff（Hammerstad）、ΔL 边缘修正、L = c/(2f0√εeff)−2ΔL——与
     `core/calculators.patch_length`、`core/synthesis.synthesize_patch` 同公式，
     `core/symbolic_fit.patch_resonance_hj_ghz` 为独立裁判（f0 = c/(2(L+2ΔL)√εeff)）。
+    **实现总扣口径注记（R1-2 审查批 2026-10-04）**：仓内实现总扣=4ΔL
+    （三副本一致，与本行字面 −2ΔL 的矛盾即 0.824 终裁本体；历史仲裁
+    INCONCLUSIVE 在档 runs/xa1_arbitration/，语义终裁挂 L5 v2 批，见
+    runs/xa1_arbitration/l5_sweep/criteria.md §一——出处标签如实，数值零改动）。
     双缝方向图闭式：`core/array_synthesis.patch_element_field`（等效磁面流同相、
     地面镜像、上半空间；E 面 ∝ cos((k0L/2)sinθ)、H 面 ∝ cosθ·sinc((k0W/2)sinθ)，
     函数文档含矢量推导）。馈电阻抗一阶口径（fake 常数出处，未标定不进锚）：
@@ -460,7 +471,7 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
   全 MUR）；2×2 H-tree（顶排缺口向 +y，馈线走元列外侧走廊自上入缺口——同层
   零交叉）；1×3 串馈（λg/2 互联接辐射边中心，MSLPort 自 y=−BOARD 入，单轴 y
   PML；相位账：λg/2 段 180° + λ/2 贴片两边场反相 180° ⇒ 同相侧射）。
-- **真机冒烟判据（scripts/smoke_array_anchor.py 已备离线判据函数）**：
+- **真机冒烟判据（followUp，scripts/smoke_array_anchor.py 已备离线判据函数）**：
   S11 谷位 f0±12% 窗 + 谷深 ≤−6dB（s11_db_min 语义 #195）；far_field nf2ff
   主瓣天顶 |θ|≤5°、阵列面 HPBW 与闭式（patch_element_field×AF，同算法
   core/farfield.hpbw_deg）相对偏差 ≤30%、Dmax 与闭式（无限地面上半空间积分，
@@ -558,7 +569,7 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   NrTS=100000 可能不足 30ns（coupled_bpf 冒烟 NrTS 截断同类），
   冒烟前先估 Δt。
 
-## 14. SMA 边缘弹射 sma_launcher（2026-09-16 真机 FAIL 根治定版）
+## 14. SMA 边缘弹射 sma_launcher（WP2.5 Tier 2，2026-09-16 真机 FAIL 根治定版）
 
 铁律 1c 权威口径（本节此前缺位——grep 0 命中）。模板 `sma_launcher`
 （openems_templates `_sma_launcher_lines` / 几何单源 `sma_launcher_layout`）、
@@ -585,7 +596,8 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   30mil Rogers 4350B、41mil 线宽、12mil 缝下**仿真回损优于 22dB 至 20GHz**。
 - 厂商口径（Cinch/Amphenol RF 132413/L-com/SV Microwave end-launch 系列，
   web_search 2026-09-16）：PTFE 介质、VSWR ≤1.2–1.3 至 18–27GHz（对应回损
-  ≥17.7–20.8dB）；验收口径"验收靠文献曲线"：**带内回损常规 15–20dB，保守地板 −10dB**（objectives 口径）。
+  ≥17.7–20.8dB）；方案行（docs/续跑计划.md §4 WP2.5）"验收靠
+  文献曲线"：**带内回损常规 15–20dB，保守地板 −10dB**（objectives 口径）。
 - 几何要点转译到 openEMS（全部由 `sma_launcher_layout` 单源给出，米）：
   针轴高 `Z_AX = r_os`（壳底切 z=0 PEC 夹具底板）；PCB 抬高 `Z_G = r_os − r_i − H_SUB`
   使**针底切线 = 基板顶 = 微带面 Z_TOP**（针水平搭焊，焊锡盒填实针下半侧）；
@@ -612,7 +624,8 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
 - 域顶 = 壳顶 + AIR_TOP（5mm）；根治前域顶距壳顶仅 0.251mm=1 cell（H5）。
 - β 金标准只锚 port2（MSL HJ εeff）；LumpedPort 无 beta 属性。
 
-### 14.4 真机 FAIL 根因实证（精确接触图，禁 bbox；legacy 接触图留档）
+### 14.4 真机 FAIL 根因实证（精确接触图，禁 bbox；legacy 留档
+runs/wp25_tier2_smoke/pt3_sma_launcher_diag/legacy_contacts.json）
 pt2 签名：|S11|=+5.42dB（非物理）、|S21|≈−375dB（零传输）、port2 表观 εeff≈2866。
 `scripts/diag_sma_launcher.py` 在根治前几何上：H2 引脚柱盒-壳底壁**实交叠**
 （`legacy_H2_column_touches_shell=true`，y 重叠 0.635mm、壳底壁 z∈[0.508,0.855]
@@ -622,14 +635,15 @@ H4 port1 y∈[−59.5,−59.4]mm ⊂ PML_8；H5 顶净距 0.251mm。旧测试漏
 不含 shell、净空判据只算 x 半对角忽略 z 延伸；另发现壳底切线与微带起点在
 (0, Y_S, H_SUB) 恰触（第四条短路路径）。根治后接触图：信号链/地链各一分量、
 互不接触、桥同时触针顶与壳内壁顶、port1 出 PML_8 1.75mm、顶净距 5.0mm
-。
+（fixed_contacts.json）。
 
 ### 14.5 验收门与真机结果（scripts/smoke_wp25_tier2.py `--only pt3_sma_launcher_v2 --no-cache --flo 1.5 --fhi 3.5`）
 门：带内 2.25–2.75GHz max|S11| ≤ −10dB（文献保守地板）、|S11| ≤ 0dB 无源性、
 带内 min|S21| ≥ −3dB 物理量级（理想级联 ≈−0.5dB；地板抓结构死亡，非精度门）、
 port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz（高斯脉冲比
 2.25–2.75 档短 4×，判据仍取带内 2.25–2.75），0.4mm 收敛档，绕开缓存。
-- **v2（最终几何，PASS）** pt3_sma_launcher_v2 存档 summary：solve 2215s；|S11|@2.5G **−11.75dB**、带内
+- **v2（最终几何，PASS）** runs/wp25_tier2_smoke/pt3_sma_launcher_v2 +
+  summary_pt3_sma_launcher_v2.json：solve 2215s；|S11|@2.5G **−11.75dB**、带内
   max|S11| **−10.71dB**（门 −10）、|S21|@2.5G −0.42dB、带内 min|S21| −0.50dB、
   port2 εeff 引擎 2.8806 vs HJ 2.8527（**+0.98%**）、|S11|²+|S21|²=0.974（无耗
   一致，余为基板 tanδ）。Z_in@2.5G ≈ 48.6+j26Ω。
@@ -641,14 +655,12 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
   （针搭焊段/焊锡台阶），厂商笔记的"launch 处线宽渐变补偿寄生"为 followUp
   （pin_lay/焊锡宽度或渐变段参数扫描，走 recipe 优化）；HFSS 仲裁可选。
 
-## §11.2 追加：SSL 闭式重定标（2026-09-19）
+## §11.2 追加：SSL 闭式重定标（2026-09-19，wf:fix-w2f-rescale-batch；上轮 F-R2-4 跟进）
 
-- **softmin 修正族替换 q 式**：εeff=1+(Δ^−p+D^−p)^(−1/p)，Δ=(εr−1)·q̃，q̃=q·G(u,s)，D=D0(1+u)^d1·(4s(1−s))^d2，p=p0+p1·s（常数 SSL_Q_G1/SSL_Q_G2/SSL_D/SSL_P 共 13 个，core 内单源）。依据：FD 裁判 288 点（6u×6s×8εr）实证 q_fd 随 εr 单调降（softmin 串联饱和物理；2.2↔12.9 差 2.5×），q 式单 εr 定标在 εr=12.9 外推 +82% 不可行。精度：fit max 3.84%/rms 0.95%；独立验证族 75 点 max 1.94%/rms 0.74%；(u,s,εr) 单调 2001 点网格零违例；h→0/h→b 端点精确。复现：`scripts/fd_laplace_tline_referee.py --ssl-family/--refit-ssl-q`（逐位复现）。
+- **softmin 修正族替换 q 式**：εeff=1+(Δ^−p+D^−p)^(−1/p)，Δ=(εr−1)·q̃，q̃=q·G(u,s)，D=D0(1+u)^d1·(4s(1−s))^d2，p=p0+p1·s（常数 SSL_Q_G1/SSL_Q_G2/SSL_D/SSL_P 共 13 个，core 内单源）。依据：FD 裁判 288 点（6u×6s×8εr）实证 q_fd 随 εr 单调降（softmin 串联饱和物理；2.2↔12.9 差 2.5×），q 式单 εr 定标在 εr=12.9 外推 +82% 不可行。精度：fit max 3.84%/rms 0.95%；独立验证族 75 点 max 1.94%/rms 0.74%；(u,s,εr) 单调 2001 点网格零违例；h→0/h→b 端点精确。复现：`scripts/fd_laplace_tline_referee.py --ssl-family/--refit-ssl-q`（逐位复现 runs/w2f_rescale_batch/refit_ssl_q_repro.json）。
 - **新 50Ω 设计点 w=0.9058**（闭式 εeff 2.0011/Z0 50.0；FD 真值 2.0250/49.67Ω=+0.67%）；旧 w=0.731 口径（q 式 +26%、FD 2.092/56.1）撤为历史锚。TEMPLATE_NOMINAL/meta.yaml/fake 缺省/render 默认已全链级联；历史 pt 复放用 --w-mm 0.731。
 - **CPS γ 定标域边界更新（R2-B-08③ 跟进，240 点角落扫描）**：单参数 γ(εr) 修正在角落不可修（增强比=(a/h,b/h) 二维曲面+εr 混叠；固定 a/h 随 b/h 非单调）——定标域写死 a/h≲1 且 b/h≲3；域外低估实测 (a/h=2,b/h=6,εr=10.2)→**−2.8%**、(a/h=3,b/h=6,εr=12.9)→**−5.7%**（比本文件旧注记 −2~−4% 更重，以本块为准）；复现 `--cps-corner`。
-- **CPS 端口元落盘新契约**：render cps beta 块增 port_y1_m/port_y2_m/plane_dist_m（E 场节点=cell 中心，终网格实测；前两列 freq_hz/beta_rad_per_m 契约不变），判读器 G2 优先实测线长（地板 ±5.7%→~±1% 待真机仲裁）。
-
-### 15. c3 耦合/馈耦合标定锚
+### 15. c3 耦合/馈耦合标定锚（df6 A1 R4，2026-09-24）
 
 - **k 模分裂精确式**：k=(f₂²−f₁²)/(f₂²+f₁²)（M. Makimoto, S. Yamashita,
   Microwave Resonators and Filters for Wireless Communication（MYJ）耦合谐振
@@ -660,10 +672,108 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
   vol.37, no.9, pp.968-983, Sept. 1949（谐振器耦合网络测量口径）；
   群时延法外部 Q：Hong & Lancaster 同书外部 Q 测量节（τmax 法）。
 - **C 常数裁决（本仓合成回收钉死，runs/df6_a1_r4/selftest_result.json；
-  独立互证一致）**：反射单载口径 S11 τmax=4·Qe/ω0 ⇒ Qe=ω0·τmax/**4**
+  DP-2 轨独立互证一致）**：反射单载口径 S11 τmax=4·Qe/ω0 ⇒ Qe=ω0·τmax/**4**
   （C=4；实测钉 3.9972）；"/2"口径被否决。对称双馈 S21 口径
   τmax=2·Q_L/ω0（对称时 =Qe/ω0，C=1）。群时延四参数 Lorentzian+基线拟合
   τ(f)=A/(1+((f−f0)/w)²)+D——带缘斜率法测线时延被谐振器电抗斜率污染
   （实测 3.2×），禁用。
 - **k–gap 全波标定曲线**：行业标准实践=用 fixture 的 k(g) 曲线整体替代
   KJ 闭式缝映射；曲线门=严格单调（hairpin 先例）。
+
+- **CPS 端口元落盘新契约**：render cps beta 块增 port_y1_m/port_y2_m/plane_dist_m（E 场节点=cell 中心，终网格实测；前两列 freq_hz/beta_rad_per_m 契约不变），判读器 G2 优先实测线长（地板 ±5.7%→~±1% 待真机仲裁）。
+
+## 16. 介质测量/材料参数提取（F-A P1，2026-09-28 增补）
+
+- **确定性内核**：`src/rfauto/core/dielectric_extract.py`（四法纯算法零 IO；
+  铁律 7 合规；不进 @register_calculator，免 #231 注册表消费者三表连动）；
+  合成回收判据预声明见模块 docstring，测试=`tests/unit/test_dielectric_extract.py`。
+- **mTRL（多线校准）**：γ 提取直接消费 skrf `NISTMultilineTRL` 校准的副产物
+  （line 标准传播常数）——权威实现=NIST Multiline TRL（Agilent/Anritsu 应用
+  注记口径，skrf 内建）；单线特征值法（`extract_gamma_single_line`）与 mTRL
+  互证（免校准件对称性假设）。
+- **NRW / Baker-Jarvis**：透射反射法（NRW）在 n·λg/2 厚度谐振点失稳是教科书
+  已知缺陷；`baker_jarvis_iter` 迭代稳定法为修复路径（NIST TN 1341 Baker-Jarvis
+  迭代口径；厚度选点避 n·λg/2）。合成回收判据：NRW ≤1e-3 相对。
+- **环形谐振器**：`ring_resonator_f0_to_er`（f_n→εr 解析面）+ `ring_resonator`
+  模板（全波段闭环）；**Design Dk 锚**（F-A.3 仿真域闭环：mline/ring 提取回收
+  +HFSS 仲裁=Design Dk 锚→C10d 78GHz 复判）登记于月计划 §三 OE 队列，未发射。
+- **γ→材料链口径**：`gamma_to_er_eff → er_eff_to_er`（HJ 正向模型 brentq 数值
+  反演，正向与 `core/synthesis.py` 综合链同一模型口径：skrf MLine
+  `model='hammerstadjensen'`/`disp='kirschningjansen'`）；tanδ 从 γ 实部提取：
+  α_d = (β/2)·(εr/εeff)·(εeff−1)/(εr−1)·tanδ（skrf `mline.analyse_loss` 经典
+  准静态介质损耗式）；带导体实测先减 Wheeler 增量电感 α_c 再走
+  `tan_d_from_alpha_d`。
+- **时谐约定**：γ = α + jβ，行波因子 e^{−γz}（e^{+jωt}）；无源线 α≥0、β≥0；
+  εeff = (Im γ·c/ω)²——与 skrf 同口径，跨模块对拍前先对约定（#250 族教训）。
+- **不确定度面**：GUM 一阶线性传播 vs 蒙特卡洛扰动对照（G4：u95 覆盖 ≥95%）；
+  加性复高斯噪声→蒙特卡洛回收带放大（合成注入→回收钉，#118 纪律）。
+- **真机段（UNVERIFIED）**：P2 SMA mTRL 校准件 KiCad 生成已登记；P3 真机测量
+  硬件待定（D 裁决点），本节全部数值口径经合成回收钉，真机回收证据未产生。
+
+## 17. EMC 参考口径（ME-1..3，2026-09-28 增补）
+
+- **ME-1 传导发射**：`core/emi_filter.py`（两口 ABCD 级联口径）。ABCD 约定
+  [V1;I1]=[[A,B],[C,D]][V2;I2']（Pozar *Microwave Engineering* 4th ed. §4.4，
+  与 skrf `Network.a` 同约定，测试互证）；ABCD→S 伪波口径与 skrf `a2s` 逐位
+  同式。LISN 双型内建子网：CISPR 16-1-2 50 µH/50 Ω 主电源 + CISPR 25 5 µH
+  汽车；**CISPR-17 三端接（50/50、0.1/100、100/0.1）三口径 IL 并列**（失配
+  口径差=频率无关常数 20·log10((ZS+ZL)/(2√(ZS·ZL)))，50/100 对=0.515 dB——
+  消费方如需 CISPR-17 电压比口径自行加常数）。`emi_filter` 模板族挂同源内核。
+- **限值线来源纪律（ME-1）**：FCC Part 15 传导限值（47 CFR §15.107/15.109）
+  eCFR 现行文本**合法内嵌**（美国政府作品公有领域，双源核对）；CISPR 表收费
+  ——走 provenance 次级源交叉核对模块（**不抄收费表**，#1c 同源纪律）。
+- **ME-2 辐射发射**：`core/emc_radiated.py`（闭式层）。CM 电流 Ott 式
+  E=1.257e-6·f·L·I_CM/d（H. W. Ott, *EMC Engineering*, Wiley 2009；单位推导
+  表在模块 docstring——**带 10⁻⁶ 的常数输出 V/m，µV/m 口径常数是 1.25750**，
+  两者差 10⁶ 勿混）；DM 环路 E=263e-16·f²·A·I/d（含地镜像）；镜像定理
+  2·|cos(k·h·sinα)|；偶极上限对照面（偏移随结果并出，不做硬判定）。限值叠加
+  `radiated_margin`（FCC Part 15B / CISPR 32 Class B 两表内建）复用 ME-1
+  `margin_report`（最小裕量+首违频点）。精算层=openEMS nf2ff 既有链
+  （#249 PEC 镜像 Prad 双计修正已内建）。
+- **ME-3 ESD/浪涌免疫门**：`core/emc_tvs_gate.py`。IEC 61000-4-2:2008 /
+  61000-4-5:2014 正文收费→**次级源双源交叉核对固化**（出处常量
+  `IEC61000_4_2_PROVENANCE`/`IEC61000_4_5_PROVENANCE`，值面钉模块常量表）；
+  TVS 选型闭式 VC=VBR+IPP·Rdyn、PPPM=VC·IPP。**警示（任务书 ME-3 明文）**：
+  PyPI 包 `emc2` 是大气科学同名假朋友——EMC 面勿引用勿进依赖（
+  `PYPI_EMC2_FAKE_FRIEND`）。
+- **接线现状（如实）**：ME-1..3 均为 core 纯函数层（不进注册表，#231 约定）；
+  `rfauto emc gate` CLI/service 接线属后续批，报告链挂接见
+  `service/report_domains.py`（aging/PI/OTA/EMC 四节）。
+
+## 18. 波导族参考口径（ME-4..7，2026-09-28 增补）
+
+- **ME-4 WR 标准表**：`core/rw_tables.py`（EIA WR 系 a/b/推荐带/UG 法兰）。
+  三源口径：计划点名 Copper Mountain/RF Essentials/A-Info；2026-09-26 实测
+  检索 RF Essentials+同业多源（QuinStar/Keysight/Mi-Wave 等）命中，
+  Copper Mountain/A-Info 未直接命中——来源等级**逐行标注**（`3src`=教科书
+  EIA 表+检索多源一致+恒等式自洽 12 行；`2src`=教科书+恒等式自洽 5 行），
+  单源行不收。主自洽判据：fc10 = c/(2a) 恒等式全表 rtol 1e-9；教科书推荐带
+  本身重叠（9.5 GHz 同落 WR-112/WR-90）→ 多命中**显式并列**返回，不静默取一。
+- **ME-5 MMT 不连续性**：`core/rwg_mmt.py`（TE_m0 模基 GSM）。权威源头
+  N. Marcuvitz *Waveguide Handbook*（公开 PDF；销钉/谐振窗闭式逐式核对 #1c）；
+  阶梯耦合积分闭式=Wexler 1967 / Masterman-Clarricoats 1971 矩形特例口径。
+  **规格印式两处勘误（#1b 动工前裁决，以模块 docstring 为准）**：结面 GSM
+  投影域=E 连续投影主侧全域/H 连续投影口径窗（规格印式恰为转置，校准实证
+  不收敛）；cos-分子显式式系笔误（半角稳定形式数学等价替代）。
+  HFSS 仲裁锚 1-2 点=月计划 W3 窗（**UNVERIFIED，未发射**）。
+- **ME-6 波导-同轴过渡**：`coax_waveguide_transition` 模板（WR-90 起手）。
+  官方口径=openEMS 官方 wiki *Coax-to-Waveguide Adapter* 教程（结构直抄：
+  背短路板 λg/4）+ 官方 Python *Horn Antenna with Coaxial Pin Feed* 教程
+  （探针参数直抄：wg_t=2.0、pin_len=0.55·b、pin_r=0.5、port_h=1.0）；
+  名义几何全 `wr_lookup`+闭式导入期精算（#1c 零手抄毫米数）。**端口决定**：
+  CoaxialPort 绑定存在但不用（仓内 sma_launcher pt2 真机判废先例 β=4166 vs
+  TEM 闭式 68 + 官方讨论 #437 尺寸上限病态），采纳探针柱+LumpedPort 集总桥；
+  跨口传输含 sqrt(ZL1/ZL2) 一阶阻抗校正（wiki 教程口径）。真机冒烟与 HFSS
+  仲裁=Ph3 窗（**UNVERIFIED**；离线审计已过，`test_coax_wg_template`）。
+- **ME-7 角锥喇叭**：`pyramid_horn` 模板 + `core/horn_synthesis.py`。
+  主源 S.G. Orfanidis *Electromagnetic Waves & Antennas* Ch.21（增益式 21.4.2/
+  口径效率 21.4.3/最优 σ 21.4.4-5/设计方程 21.5.1，式号逐条在 docstring）；
+  对照源 Balanis *Antenna Theory* Ch.13（δ_H=3λ/8、δ_E=λ/4→(σa,σb)=(√1.5,1)，
+  e≈0.51 缺省综合档）；**独立锚例**=Orfanidis Ex.21.5.1/21.5.2
+  （`test_pyramid_horn_template` 逐位钉）。近似级别如实：一阶 Fresnel 口径场
+  模型，不含壁损耗/口面反射/边缘绕射/高阶模；全波验证=openEMS（Ph3 窗，
+  **UNVERIFIED**）。**波纹喇叭降级**（月计划原文）：综合公式+openEMS 验证，
+  自研圆波导 MM 延期不排。
+- **WR 表消费纪律**：波导族模板名义尺寸一律 `wr_lookup` 表口径导入期精算
+  （coax_waveguide_transition/pyramid_horn 先例），禁止沿用其他文档毫米数
+  （#1c/#252 同源）；跨模块 C0 同值由单测钉住。

@@ -1,4 +1,4 @@
-"""谐波平衡确定性内核（场-路协同的数值根）。
+"""A3 谐波平衡确定性内核（§10.1 A3 场-路协同的数值根）。
 
 方案行口径
 ----------
@@ -8,7 +8,7 @@ EM S 参数（任意频点，含真机 Touchstone 插值产物）经 s_to_y 转�
 作为线性多端口元件与非线性电路（二极管等）一起进入单音谐波平衡
 （harmonic balance / harmonic-Newton）求解，产出各节点直流分量与谐波相量。
 
-数值只在确定性内核：本模块纯 numpy 确定性实现，LLM/agent 不接触
+铁律 7（数值只在确定性内核）：本模块纯 numpy 确定性实现，LLM/agent 不接触
 任何数值；linkage 层只编排（组装电路、调 ngspice 参考、写报告）。
 
 方法
@@ -24,7 +24,7 @@ EM S 参数（任意频点，含真机 Touchstone 插值产物）经 s_to_y 转�
   （K < N/2 时投影精确）；Jacobian 用链式法则 Q·diag(g)·P 精确装配。
 - Newton 迭代 + 回溯阻尼；失败时源幅度同伦阶梯（0.05→1.0 暖启动）兜底。
 
-与 ngspice 的对照由 linkage/field_circuit_nonlinear +
+与 ngspice 的对照（验收列）由 linkage/field_circuit_nonlinear +
 adapters/spice_netlist 承载：同一物理电路（RLC+二极管）两侧独立求解，
 HB（频域）vs ngspice 瞬态+傅里叶（时域）互差进报告。
 

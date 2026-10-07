@@ -662,7 +662,7 @@ class TestHairpinFakeDispatch:
     """FakeAdapter(model_type="hairpin")：耦合矩阵理想频响裁判（确定性、零真机）。
 
     口径（与 _hairpin_sparams docstring 一致；2026-09-16 收口 A4 接通电气通道；
-    2026-09-17 起 gap→k 乘 hairpin 结构修正 c(gap)）：
+    2026-09-17 W4④ gap→k 乘 hairpin 结构修正 c(gap)）：
     arm_len→f0 走 λg/2 反演（hairpin_arm_len_mm 的精确逆）、order 变阶、
     gap_mm/gaps_mm→k（KJ 闭式 × c(gap) 真机表，域外 clamp）、tap_frac→Q_e（抽头
     闭式 × c(τ)）→ hairpin_coupling_matrix（规范不变）→ coupling_matrix_response。
@@ -685,7 +685,7 @@ class TestHairpinFakeDispatch:
         return ad.get_sparams()
 
     def test_bandpass_shape_at_nominal(self):
-        """名义几何在 EM 标定 fake 下=欠耦窄带（修正后的诚实状态）：名义 gap 1.1328 的
+        """名义几何在 EM 标定 fake 下=欠耦窄带（W4④ 后的诚实状态）：名义 gap 1.1328 的
         k_EM=c(1.1328)·k_KJ=0.0133（c(gap) 结构修正），故 5% 设计窗内 |S21| 深陷、
         通带为 ~k_EM 限定的窄峰。修正链设计几何复现 C13 理想见
         test_a4_design_geometry_reproduces_c13_ideal。"""
@@ -794,7 +794,7 @@ class TestHairpinFakeDispatch:
             hairpin_coupling_matrix([0.05, -0.01], qe, 0.05)
 
     def test_a4_design_geometry_reproduces_c13_ideal(self):
-        """验收（修正链口径）：**修正链**设计几何（kgap_corrected=True，gap 落设计支
+        """验收（W4④ 改口径）：**修正链**设计几何（kgap_corrected=True，gap 落设计支
         [0.65,1.1328]）经 gap→c(gap)·k_KJ / τ→Q_e×c(τ) 反演后与该设计的 C13 理想响应
         max|ΔS|≤1e-9；FBW 取设计支可达 k（k_EM 上限 ~0.0155 → FBW≈1.35%）——名义 5% 设计
         在 c(gap) 表下不可达（test_hairpin_kgap_correction 钉 ValueError），故名义几何
@@ -822,7 +822,7 @@ class TestHairpinFakeDispatch:
         c = np.asarray(r["s_matrix"], dtype=float)
         s_ideal = c[..., 0] + 1j * c[..., 1]
         c0, c1 = _HAIRPIN_QE_CORR
-        # τ 解到 0.49：该设计 Q_e≈63 超出物理抽头上限（布局 τ≤0.444 → Q_e≲50，定论
+        # τ 解到 0.49：该设计 Q_e≈63 超出物理抽头上限（布局 τ≤0.444 → Q_e≲50，W4④ 定论
         # 『同向 hairpin 无自洽 Chebyshev 点』），此处只验 fake 电气通道数学一致性（fake
         # 不受布局限，c(τ) 线性外推）
         tau_c = float(brentq(lambda t: (c0 + c1 * t) * ot.hairpin_qe_from_tap_frac(t)

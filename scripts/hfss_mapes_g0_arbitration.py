@@ -1,6 +1,6 @@
-"""HFSS 真机跑 MAPES Z_ALL 参考结构，仲裁基准 g0（对齐基准口径）。
+"""rm-hfss-mapes-g0：HFSS 真机跑 MAPES Z_ALL 参考结构，仲裁基准 g0（对齐基准口径）。
 
-背景：MAPES 装配
+背景（TODO 0-停止点（六轮）⑤ / followUps ②）：MAPES 装配
 Z_ALL 的全局复规范 ``g(f) = g0·exp(j·2π·f·τ)``（core/mapes.gauge_factor）互易
 原理性不可辨识；openEMS 侧直接全波腿对拍标定 g0=1.005/τ=−0.25ps 因"直接腿与
 装配腿同类探针同源偏差"被否作裁判。HFSS 是对齐基准，
@@ -29,7 +29,7 @@ HFSS 只把 io 两口设为 port，其余负载=纯边界（无激励），2 端
 - d = median_f( ||S11,h(f)| − |S11,oe(f)|| / max(|S11,h(f)|, 0.05) )，
   |S11,h| < 0.05 的深谷频点剔除（若全带无剔除点则全带入样）；
 - 对照口径 primary = runs/mapes_s5_diag/z_all_s5.npz 的 s_cal_sym_proj
-  （消费口径，followUps ⑤ 定版）；s_cal_sym 与 s4 raw 作副证；
+  （消费口径，followUps ⑤）；s_cal_sym 与 s4 raw 作副证；
 - d ≤ 5% → AGREE；5% < d ≤ 15% → PARTIAL；> 15% → DISAGREE（附方向：
   HFSS 高/低）。S21(io1→io2)≈2e-5 近零（重度加载阻尼格栅），只作绝对
   量级旁证 median|ΔS21|（线性），不进门。
@@ -295,7 +295,7 @@ def analyze(s2p: Path, passes: int, delta_s: float, version: str,
         direction = ("hfss_higher" if np.median(s11_h[mask] - s11_oe_p[mask]) > 0
                      else "hfss_lower")
     return {
-        "id": "hfss_mapes_g0",
+        "id": "rm-hfss-mapes-g0",
         "verdict": verdict,
         "direction": direction,
         "gate": {
@@ -327,7 +327,7 @@ def analyze(s2p: Path, passes: int, delta_s: float, version: str,
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。

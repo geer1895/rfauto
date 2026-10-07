@@ -2,12 +2,12 @@
 
 依据
 ----
-- 稀疏 PCE（ChaosPy/OpenTURNS 思路）
+- docs/续跑计划.md §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）
   →Sobol 指数直读（较 Saltelli 采样省 1-2 量级）+ worst-case 角分析 +
   设计中心化（良率最大化）；验收口径 = patch 公差问题 PCE-Sobol vs 既有
-  Saltelli 互证 ±10%。
+  Saltelli 互证 ±10%（§10.15）。
 - core 零依赖叶子约束（.importlinter）：只依赖 numpy，不装 chaospy/openturns，
-  不 import optimization/sensitivity（互证在测试里做，#118）。
+  不 import optimization/sensitivity（互证在测试里做，见  #118）。
 
 机制（纯 numpy，确定性）
 ------------------------

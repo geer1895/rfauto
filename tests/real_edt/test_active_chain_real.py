@@ -1,13 +1,14 @@
 """C14 real_edt: 有源链路 ADS 真机验收（ADS 2027 hpeesofsim B 档）。
 
-验收口径: 匹配网络 EM↔ADS 联合 vs 手工口径。
+验收口径（续跑计划 §10.3 C14）: 匹配网络 EM↔ADS 联合 vs 手工口径。
 匹配网络用 core/matching 闭式 L 型（离线回归同一数据形态; 真机 EM 数据
-接入不改下游）。需本机 ADS 安装（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir 指定）。
+接入不改下游）。需 E:/ADS/ADS27（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir）。
 
 许可欠配时 skip 而非 fail——2026-09-13/14 实证: hpeesofsim 650.shp 于
 circuit set up 报 "Linear features are not licensed ... (0 tokens)"
-（EEsof 许可文件签名校验失败, 见 tests/real_edt conftest 记录; 网表
-parsing/flattening 本身已通过）。许可修复后本测试自动恢复为真验收。
+（EEsof 许可文件签名校验失败, 见 tests/real_edt conftest 记录与
+runs/c14_active_chain_ads_smoke_20260914/ 证据; 网表 parsing/flattening
+本身已通过）。许可修复后本测试自动恢复为真验收。
 """
 
 import os
@@ -17,7 +18,7 @@ import pytest
 
 pytestmark = pytest.mark.real_edt
 
-_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"C:\Program Files\Keysight\ADS2027"))
+_ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"E:/ADS/ADS27"))
 
 _LICENSE_MARKERS = ("not licensed", "0 tokens", "license", "licensed")
 

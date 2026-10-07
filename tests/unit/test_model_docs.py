@@ -25,7 +25,7 @@ class TestCalculatorDocs:
         from rfauto.core.calculators import CALCULATOR_REGISTRY
         from rfauto.service.model_docs import CALCULATOR_DOC_PREFIX, generate_all_model_docs
 
-        # 覆盖含实验态键（文档可见可审计，标签见 test_experimental_doc_has_label）
+        # 覆盖含实验态键（W1⑨：文档可见可审计，标签见 test_experimental_doc_has_label）
         names = CALCULATOR_REGISTRY.names(include_experimental=True)
         assert names, "计算器注册表不能为空（防空测）"
         results = generate_all_model_docs(tmp_path / "docs")
@@ -40,7 +40,7 @@ class TestCalculatorDocs:
         assert set(CALCULATOR_REGISTRY.names()) < set(names)
 
     def test_experimental_doc_has_label(self):
-        """实验键文档带实验标签；非实验键不带。"""
+        """实验键文档带实验标签；非实验键不带（W1⑨）。"""
         from rfauto.service.model_docs import generate_calculator_docs
 
         exp_doc = generate_calculator_docs("patch_f0_symbolic_e13")
@@ -140,7 +140,7 @@ class TestDeterminismAndCoverage:
         results = generate_all_model_docs(tmp_path / "docs")
         models = list_models()
         assert set(models) <= set(results)
-        # 计算器覆盖含实验态键；覆盖数 == 注册键数/模板数（缺一即失败）
+        # 计算器覆盖含实验态键（W1⑨）；覆盖数 == 注册键数/模板数（缺一即失败）
         calc_names = CALCULATOR_REGISTRY.names(include_experimental=True)
         expected = len(models) + len(calc_names) + len(TEMPLATE_META)
         assert len(results) == expected

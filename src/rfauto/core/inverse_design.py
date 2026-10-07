@@ -1,20 +1,21 @@
-"""像素域生成式逆设计最小闭环（stage-1：提议器 × MAPES 闭式评判 × top-k）。
+"""E12 像素域生成式逆设计最小闭环（stage-1：提议器 × MAPES 闭式评判 × top-k）。
 
-方案口径（边界：与 PCell DSL 参数化路线**正交**，作用于像素化设计域）：
+方案口径（docs/续跑计划.md §10.18 E12 行；
+边界：与 B1 PCell DSL 参数化路线**正交**，作用于像素化设计域）：
 
-    像素提议器 → 图案 P → MAPES 闭式内核（占用→Z_L(P)→Schur 补→S，
+    像素提议器 → 图案 P → A8/MAPES 闭式内核（占用→Z_L(P)→Schur 补→S，
     core/mapes.py 既有实现，本模块零改动复用）→ 指定双/三频段传输响应
     评判（hinge 误差 dB + 等级）→ top-k 记录 → 局部搜索精修。
 
-数值只在确定性内核：提议器只产出**拓扑**（0/1 像素矩阵），
+铁律 7（数值只在确定性内核）：提议器只产出**拓扑**（0/1 像素矩阵），
 全部数字（误差/等级/S 参数）由 MAPES 闭式评判器产出；同参数同输出，
 无 LLM、无随机数值进入评判链。
 
 诚实边界（stage-1，如实标注）：
 - 提议器 = 随机伯努利 + 1-bit 翻转局部贪心两档；可选第三档为
-  core/inverse_diffusion.DiffusionProposer（**确定性退火
+  core/inverse_diffusion.DiffusionProposer（W2⑦⑭ 离线段：**确定性退火
   噪声-去噪**提议器，``diffusion_steps>0`` 启用）——它不是训练出的神经扩散/
-  流匹配生成模型，**流匹配仍未实现**（可选上档）；
+  流匹配生成模型，**流匹配仍未实现**（§10.18 E12 的可选上档）；
 - Z_ALL 由合成 RLC 网格（core/mapes.RlcMesh/fake_mesh）显式构造，**不是
   真机提取**——stage-2 才接 adapters/openems_rotation.py 多端口轮转；
 - 评判目标是"图案可实现的指定频段传输响应"（BPF 式通带/阻带 hinge
@@ -241,7 +242,7 @@ def run_inverse_search(
     排序——同 seed 同模型同目标，结果逐字段一致（elapsed_s 除外）。
     全部数字出自 evaluate_design（MAPES 闭式内核），提议器只给拓扑。
 
-    ``diffusion_steps>0`` 时在随机阶段与局部精修之间插入
+    ``diffusion_steps>0`` 时（W2⑦⑭ 离线段）在随机阶段与局部精修之间插入
     ``core/inverse_diffusion.DiffusionProposer``（确定性退火噪声-去噪，非训练
     生成模型）的 ``diffusion_steps`` 个提议：每个提议以当前最优为种子、
     评判器引导去噪；只有严格改善才推进搜索起点（单调护栏），全部提议照常
@@ -279,7 +280,7 @@ def run_inverse_search(
             random_best_occ = occ
     random_phase_best_err = random_best_err
 
-    # ── 阶段 1.5（可选）：扩散式噪声-去噪提议 ───────────
+    # ── 阶段 1.5（可选）：扩散式噪声-去噪提议（W2⑦⑭ 离线段） ───────────
     diffusion_steps = max(0, int(diffusion_steps))
     proposers = ["random_bernoulli"]
     diffusion_phase: dict[str, Any] | None = None
@@ -343,7 +344,7 @@ def run_inverse_search(
         "扩散式提议器=确定性退火噪声-去噪（core/inverse_diffusion，非训练"
         "生成模型）；流匹配未实现；Z_ALL 真机段 followUp"
         if diffusion_steps > 0
-        else "扩散/流匹配提议器未实现（可选上档）"
+        else "扩散/流匹配提议器未实现（§10.18 E12 可选上档）"
     )
     return {
         "ok": True,

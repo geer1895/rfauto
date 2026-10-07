@@ -15,6 +15,7 @@
       "solver_capabilities_for"
     ],
     "core/solve_health": [
+      "port_load_invariant_factor",
       "solve_health_check"
     ],
     "models/registry": [
@@ -42,6 +43,7 @@
     ],
     "service/health_service": [
       "fake_cost_degeneracy_probe",
+      "health_check_batch",
       "health_check_run"
     ],
     "service/league_service": [
@@ -52,7 +54,8 @@
       "league_report",
       "normalize_verdict",
       "read_verdict_artifacts",
-      "rebuild_league"
+      "rebuild_league",
+      "significance_vs_reference"
     ]
   },
   "files": {
@@ -64,15 +67,212 @@
       "ngsolve_adapter",
       "openems_solver",
       "palace_solver",
+      "pssfss_adapter",
       "qucsator_adapter",
-      "vna_adapter"
+      "vna_adapter",
+      "xyce_adapter"
+    ],
+    "adapters/fab_export/__init__.py": [
+      "DimsPort",
+      "DrawPort",
+      "ExportRequest",
+      "ExportResult",
+      "FabPortRegistry",
+      "GeometryExportPort",
+      "GeometryReadPort",
+      "PackPort",
+      "PluginInfo",
+      "audit_package_with_dir",
+      "compare_dxf_to_truth",
+      "dxf_closed_map",
+      "ensure_builtin_plugins",
+      "file_hashes",
+      "get_registry",
+      "load_critical_chars",
+      "load_dims",
+      "load_entry_point_plugins",
+      "load_manifest",
+      "load_ruleset",
+      "read_composite_dxf",
+      "register_builtin_plugins",
+      "save_critical_chars",
+      "save_dims",
+      "save_manifest",
+      "write_composite_dxf"
+    ],
+    "adapters/fab_export/hfss_dims.py": [
+      "DictDimsPort",
+      "PyAedtDimsPort",
+      "parse_dim_value",
+      "snapshot_from_dict",
+      "write_dims_from_hfss"
+    ],
+    "adapters/layout_ports.py": [
+      "COMPOSE_PIN_KEYS",
+      "DIR_DOT_MIN",
+      "LayoutPort",
+      "PORT_SOURCES",
+      "PORT_TYPES",
+      "POSITION_TOL_M",
+      "WIDTH_RTOL",
+      "load_port_table",
+      "port_table_from_records",
+      "ports_from_marker_layer",
+      "ports_from_open_ends",
+      "resolve_ports"
+    ],
+    "adapters/layout_stack.py": [
+      "LAYER_KINDS",
+      "PRIMITIVE_SCHEMA_VERSION",
+      "RFRouteLayer",
+      "RFStackup",
+      "bridge_layout_to_stackup",
+      "dump_stackup",
+      "load_stackup",
+      "polygon_to_render_primitives",
+      "rectangularize_segment",
+      "stackup_from_dict",
+      "stackup_to_dict",
+      "validate_polygon"
+    ],
+    "adapters/layout_substrate.py": [
+      "MaterialProps",
+      "PLAN_SUBSTRATE_VERSION",
+      "plan_substrate_boxes",
+      "render_substrate_block",
+      "render_substrate_mesh_block",
+      "resolve_material_props",
+      "stackup_from_kicad_pcb",
+      "stackup_from_kicad_text",
+      "validate_stackup_z_order"
+    ],
+    "core/aaa.py": [
+      "AaaFit",
+      "SCIPY_AAA_HINT",
+      "aaa_fit",
+      "aaa_vs_vf_compare",
+      "match_poles"
+    ],
+    "core/acceptance_sampling.py": [
+      "asn_attribute",
+      "bernoulli_llr",
+      "binomial_oc",
+      "c0_plan",
+      "design_plan",
+      "hypergeometric_oc",
+      "oc_curve",
+      "sprt_attribute_run"
     ],
     "core/afs.py": [
       "AFSError",
       "DEFAULT_ORDER_LADDER",
       "DEFAULT_RMS_THRESHOLD_DB",
       "DEFAULT_TOL",
+      "DEFAULT_TOL_DB",
+      "DELTA_F_HZ",
+      "LOEWNER_Q1",
+      "LOEWNER_Q2",
+      "MEMORY_LIMIT",
+      "afs_initial_grid",
       "afs_sample"
+    ],
+    "core/allan_variance.py": [
+      "adev",
+      "adev_slope",
+      "avar_from_h",
+      "classify_adev_slope",
+      "classify_joint",
+      "fit_loglog_slope",
+      "h_from_l_points",
+      "mdev"
+    ],
+    "core/alt_planning.py": [
+      "af_ci",
+      "coffin_manson_af",
+      "demo_reliability_lower",
+      "ea_from_slope",
+      "equivalent_use_cycles",
+      "equivalent_use_time",
+      "eta_at_temperature",
+      "eta_ci_at_temperature",
+      "fit_arrhenius_weibull",
+      "min_samples_for_demo",
+      "plan_alt_demo",
+      "slope_from_ea"
+    ],
+    "core/amc_mushroom.py": [
+      "amc_gap_capacitance_f",
+      "amc_phase_band_hz",
+      "amc_reflection_coeff",
+      "amc_reflection_phase_deg",
+      "amc_resonance_hz",
+      "amc_surface_impedance",
+      "amc_via_inductance_h",
+      "mushroom_design_report"
+    ],
+    "core/anchor_drift.py": [
+      "ALPHA_DEFAULT",
+      "MEAN_SHIFT_REL_MAX_DEFAULT",
+      "STD_RATIO_MAX_DEFAULT",
+      "anchor_drift_report",
+      "drift_fingerprint",
+      "mann_kendall"
+    ],
+    "core/anchor_drift_spc.py": [
+      "ALPHA_DEFAULT",
+      "CUSUM_H_DEFAULT",
+      "CUSUM_K_DEFAULT",
+      "CUSUM_MIN_N",
+      "ESD_MIN_N",
+      "EWMA_LAMBDA_DEFAULT",
+      "EWMA_L_DEFAULT",
+      "EWMA_MIN_N",
+      "SERIES_MIN_N",
+      "anchor_drift_spc_report",
+      "cusum_test",
+      "ewma_control",
+      "generalized_esd_test"
+    ],
+    "core/aperture_coupling.py": [
+      "APERTURE_CIRCULAR",
+      "APERTURE_SLOT",
+      "SUPPORTED_APERTURE_TYPES",
+      "SUPPORTED_Z0S_MODES",
+      "aperture_effective_width_m",
+      "aperture_impedance_ohm",
+      "bethe_polarizability_circle",
+      "bethe_polarizability_rectangle",
+      "bethe_polarizability_square",
+      "bethe_transmission_cross_section_m2",
+      "coplanar_strip_impedance_approx_ohm",
+      "coplanar_strip_impedance_exact_ohm",
+      "robinson_enclosure_se",
+      "slot_cutoff_frequency_hz",
+      "slot_thickness_se_db"
+    ],
+    "core/aperture_holography.py": [
+      "C0",
+      "EVANESCENT_FLOOR",
+      "ROUNDTRIP_TOL",
+      "WINDOW_CHOICES",
+      "aperture_to_near_field",
+      "near_field_to_aperture",
+      "nyquist_guard",
+      "roundtrip_identity"
+    ],
+    "core/array_calib.py": [
+      "apply_delay_correction",
+      "firstcal_delay_solve",
+      "lincal_gain_solve",
+      "logcal_gain_solve",
+      "redundant_group_degeneracy"
+    ],
+    "core/array_error_injection.py": [
+      "array_factor_with_errors",
+      "calibration_roundtrip",
+      "degradation_metrics",
+      "ideal_array_factor",
+      "inject_errors"
     ],
     "core/array_scan.py": [
       "C_M_S",
@@ -93,10 +293,13 @@
       "aperture_to_n_elements",
       "array_factor",
       "array_factor_angles",
+      "bayliss_weights",
       "binomial_weights",
       "broadside_hpbw_deg",
       "broadside_hpbw_rad",
       "chebyshev_weights",
+      "difference_array_factor",
+      "difference_pattern_psll_db",
       "direction_cosine",
       "field_db",
       "grating_lobe_direction_cosines",
@@ -107,6 +310,7 @@
       "pattern_multiplication",
       "peak_sidelobe_level_db",
       "planar_array_factor",
+      "schelkunoff_nulls",
       "series_feed_array_factor",
       "series_feed_beam_direction_cosine",
       "series_feed_excitations",
@@ -116,7 +320,84 @@
       "synthesize_taylor",
       "taylor_weights",
       "uniform_af_closed_form",
-      "uniform_weights"
+      "uniform_weights",
+      "villeneuve_weights"
+    ],
+    "core/birdcage_mri.py": [
+      "birdcage_mode_frequencies",
+      "birdcage_mode_shape",
+      "homogeneity_note",
+      "quadrature_drive_field"
+    ],
+    "core/bounds.py": [
+      "BodeFanoVerdict",
+      "BoundVerdict",
+      "ChuQBound",
+      "SPEED_OF_LIGHT_M_S",
+      "bbox_to_ka",
+      "bode_fano_rc",
+      "chu_q_bound",
+      "cohn_il_lower_bound",
+      "directivity_bounds"
+    ],
+    "core/calc_families/mask_spec.py": [
+      "mask_filter_synthesize",
+      "mask_margin_report_calc",
+      "mask_min_order"
+    ],
+    "core/cispr25_limits.py": [
+      "ALSE_1M_NOTE",
+      "CISPR25_CEV_CLASS5",
+      "CISPR25_RE_ALSE_CLASS5",
+      "CISPR25_SOURCE_NOTE",
+      "cispr25_class5_cev",
+      "cispr25_class5_re_alse",
+      "cispr25_margin_report"
+    ],
+    "core/cispr_detector.py": [
+      "CISPR16_SOURCE",
+      "band_params",
+      "cispr_detect"
+    ],
+    "core/clock_noise.py": [
+      "DEFAULT_ROLLOFF_DB_PER_DEC",
+      "INTERP_CONST",
+      "INTERP_DB_LINEAR",
+      "PLLSplitResult",
+      "POWER_LAW_SLOPES",
+      "PhaseJitterResult",
+      "build_power_law_segments",
+      "phase_jitter_from_l",
+      "pll_integrate",
+      "power_law_l_dbc",
+      "power_law_sigma_phi2",
+      "rms_jitter_s"
+    ],
+    "core/coding_metasurface.py": [
+      "CodingPattern",
+      "code_phases_rad",
+      "coding_scattering_pattern",
+      "coding_weights",
+      "crosscheck_array_factor_1d",
+      "gradient_code_matrix",
+      "pattern_db",
+      "quantization_loss_db",
+      "quantization_loss_measured_db",
+      "validate_code_matrix"
+    ],
+    "core/common_mode.py": [
+      "CommonModeRadiatedBudget",
+      "DUAL_PATH_BAND_DB",
+      "FloatingGroundCmResult",
+      "GroundSpacingCriterionResult",
+      "LAMBDA20",
+      "chassis_coupling_capacitance",
+      "cm_radiated_via_chassis",
+      "floating_ground_cm_current",
+      "ground_spacing_criteria",
+      "ground_spacing_criterion",
+      "grounding_critical_frequency_hz",
+      "max_ground_spacing_m"
     ],
     "core/compose/__init__.py": [
       "COMPOSE_META_SCHEMA",
@@ -158,6 +439,210 @@
       "skin_depth",
       "smooth_surface_resistance"
     ],
+    "core/conductor_sigma_t.py": [
+      "CONDUCTOR_SOURCE",
+      "IMAG_THICKNESS_M",
+      "METAL_RHO_REF_293K",
+      "T_REF_K",
+      "directional_sr_note",
+      "finish_conductivity_face",
+      "metal_conductivity",
+      "metal_resistivity",
+      "mvdt_register_note"
+    ],
+    "core/conformal.py": [
+      "ConformalInterval",
+      "SurrogateConformalWrapper",
+      "calibrate",
+      "predict_interval"
+    ],
+    "core/conformal_array.py": [
+      "BALANIS_SOURCE",
+      "C0_M_S",
+      "conformal_array_factor",
+      "cylindrical_positions",
+      "phase_mode_count",
+      "planar_degeneracy_af",
+      "ring_mode_decomposition",
+      "spherical_cap_positions"
+    ],
+    "core/corona.py": [
+      "AIR_TOWNSEND_A_PER_CM_TORR",
+      "AIR_TOWNSEND_B_V_PER_CM_TORR",
+      "AIR_TOWNSEND_GAMMA_SE",
+      "ISA_P0_PA",
+      "ISA_T0_K",
+      "ISA_TROPOPAUSE_M",
+      "PEEK_E0_KV_PER_CM_PEAK",
+      "PEEK_E0_KV_PER_CM_RMS",
+      "PEEK_K_PEAK",
+      "PEEK_K_RMS",
+      "PEEK_SURFACE_SMOOTH",
+      "REFERENCE_P_PA",
+      "REFERENCE_T_C",
+      "SCHUMANN_LINEAR_KV_PER_CM",
+      "SCHUMANN_SQRT_KV",
+      "air_density_factor",
+      "altitude_derated_breakdown_v",
+      "corona_geometry_factor_m",
+      "corona_onset_voltage_v",
+      "corona_pd_check",
+      "corona_uniform_gap_breakdown_v",
+      "isa_pressure_pa",
+      "isa_temperature_c",
+      "partial_discharge_inception_v",
+      "peek_onset_field_kv_per_cm",
+      "townsend_paschen_voltage_v"
+    ],
+    "core/corrugated_horn.py": [
+      "TE11_KC_A",
+      "TM11_KC_A",
+      "bessel_root_j1_first",
+      "bessel_root_j1p_first",
+      "grooved_surface_reactance_ohm",
+      "he11_balance_report",
+      "quarter_wave_depth_m"
+    ],
+    "core/cost_model.py": [
+      "PRICE_TIERS",
+      "bom_totals",
+      "panel_utilization",
+      "quantity_price_curve",
+      "unit_price_at",
+      "validate_price_point"
+    ],
+    "core/coupling_gradient.py": [
+      "CS_H",
+      "FD_H_DEFAULT",
+      "GradientCheck",
+      "SynthesisTrace",
+      "ToleranceSensitivity",
+      "TwoStageResult",
+      "char_poly_coeffs",
+      "check_char_poly_gradient",
+      "check_response_gradient",
+      "gd_minimize",
+      "grad_char_poly_complex_step",
+      "grad_char_poly_fd",
+      "grad_response_complex_step",
+      "grad_response_fd",
+      "objective_char_poly",
+      "objective_response",
+      "pack_upper",
+      "s11_response",
+      "s21_response",
+      "tolerance_sensitivity",
+      "two_stage_synthesize",
+      "unpack_upper"
+    ],
+    "core/criteria_schema.py": [
+      "CRITERIA_SCHEMA_ID",
+      "CriteriaV2Document",
+      "DecisionRuleForm",
+      "GateOp",
+      "VVStatus",
+      "preflight_for_replay",
+      "validate_criteria_document",
+      "validate_registered_dir"
+    ],
+    "core/crlh.py": [
+      "SPEED_OF_LIGHT_M_PER_S",
+      "_DB_PER_NAPIER",
+      "crlh_beta",
+      "crlh_bloch_impedance",
+      "crlh_image_impedance_t",
+      "crlh_lh_rh_cascade_s21",
+      "crlh_lh_rh_skrf_cascade_s21",
+      "crlh_s21_closed_form",
+      "crlh_skrf_cascade_s21",
+      "crlh_unit_cell_report",
+      "imbalance_parameter",
+      "leaky_wave_angle_deg",
+      "lh_rh_balance_frequency_hz",
+      "pure_lh_bloch",
+      "pure_rh_bloch",
+      "series_resonance_omega",
+      "shunt_resonance_omega",
+      "zeroth_order_resonance_omega"
+    ],
+    "core/cross_coupled_map.py": [
+      "CROSS_COUPLED_MIN_M",
+      "cross_coupled_bpf_design",
+      "cross_coupled_ring_quad_design"
+    ],
+    "core/cryo_data/__init__.py": [
+      "NATIVE_EXPANSION_UNIT_FACTOR",
+      "NIST_PROVENANCE",
+      "contraction_delta_l",
+      "eval_nist_fit",
+      "integral_kappa",
+      "load_nist_fits",
+      "load_tandelta_points",
+      "sigma_cu_ofhc",
+      "tandelta_band"
+    ],
+    "core/design_space_projection.py": [
+      "PROJECTION_SCHEMA",
+      "project_design_space",
+      "render_projection_markdown"
+    ],
+    "core/dft_testability.py": [
+      "AccessibilityRule",
+      "DFT_SCHEMA",
+      "DftRuleSet",
+      "ProbeKeepoutRule",
+      "ProbeSpacingRule",
+      "check_accessibility",
+      "check_keepout",
+      "check_probe_spacing",
+      "review_testability"
+    ],
+    "core/dielectric_extract.py": [
+      "BJResult",
+      "C0",
+      "ErTanProfile",
+      "GammaResult",
+      "MeasuredSchemaError",
+      "NRWResult",
+      "RingResult",
+      "UncertaintyResult",
+      "baker_jarvis_iter",
+      "er_eff_to_er",
+      "extract_er_tand_profile",
+      "extract_gamma_mtrl",
+      "extract_gamma_single_line",
+      "gamma_to_er_eff",
+      "nrw_extract",
+      "propagate_uncertainty",
+      "ring_resonator_f0_to_er",
+      "tan_d_from_alpha_d",
+      "tem_slab_sparams",
+      "validate_measured_entry"
+    ],
+    "core/diff_harness.py": [
+      "ANCHOR_ID_RE",
+      "FsvGateSpec",
+      "RelationVerdict",
+      "check_metamorphic",
+      "discover_engine_pairs",
+      "even_symmetry_relation",
+      "fsv_pair_gate",
+      "golden_identity_relation",
+      "linear_scale_relation",
+      "pair_matrix_curves",
+      "pair_matrix_scalar",
+      "pointer_anchor_candidates",
+      "slugify",
+      "wave_unit_product_relation"
+    ],
+    "core/diplexer_compose.py": [
+      "BUTTERWORTH_G",
+      "BUTTERWORTH_G_TEXTBOOK",
+      "ENERGY_ATOL_VERDICT",
+      "butterworth_g_values",
+      "diplexer_lpf_hpf",
+      "diplexer_verdict"
+    ],
     "core/dispersion.py": [
       "C0",
       "DebyeModel",
@@ -169,6 +654,53 @@
       "kramers_kronig_residual",
       "load_dispersion_material"
     ],
+    "core/dispersion_calibration.py": [
+      "DispersionRangeError",
+      "DispersionTable",
+      "apply_dispersion",
+      "build_dispersion_table",
+      "interp_eps_eff",
+      "interp_z0",
+      "lambda_g_mm",
+      "static_consistency",
+      "table_quality"
+    ],
+    "core/dpp_passport.py": [
+      "DPP_DISCLAIMER",
+      "DPP_SCHEMA",
+      "DataCarrier",
+      "DppMaterial",
+      "DppPassport",
+      "DppProcessStep",
+      "DppVerificationRef",
+      "dpp_from_mapping",
+      "dpp_to_jsonld"
+    ],
+    "core/ebg_fss.py": [
+      "fss_band_edges_hz",
+      "fss_design_report",
+      "fss_series_lc_impedance",
+      "fss_sheet_reflection_coeff",
+      "fss_sheet_transmission_coeff",
+      "jerusalem_screen_lc",
+      "square_loop_fss_lc"
+    ],
+    "core/ecc_metrics.py": [
+      "ecc_crosscheck",
+      "ecc_from_patterns",
+      "ecc_from_sparams"
+    ],
+    "core/electromigration.py": [
+      "COPPER_ATOMIC_VOLUME_M3",
+      "COPPER_RESISTIVITY_OHM_M",
+      "COPPER_TCR_PER_K",
+      "E_CHARGE_C",
+      "blech_check",
+      "blech_critical_product",
+      "em_mttf_check",
+      "local_current_density",
+      "resistivity_at"
+    ],
     "core/electrothermal.py": [
       "band_guard",
       "combiner_imbalance_case",
@@ -178,6 +710,151 @@
       "isolation_injection_case",
       "resistor_power_from_waves",
       "thermal_detune"
+    ],
+    "core/embedded_line.py": [
+      "asym_stripline_capacitance_eps0",
+      "asym_stripline_design_params",
+      "asym_stripline_quasistatic",
+      "embedded_microstrip_capacitance_eps0",
+      "embedded_ms_design_params",
+      "embedded_ms_quasistatic",
+      "suspended_stripline_2layer_quasistatic"
+    ],
+    "core/emc_radiated.py": [
+      "C0_M_S",
+      "CmDmSplitResult",
+      "CmRadiatedResult",
+      "DUAL_PATH_BAND_DB",
+      "DmLoopResult",
+      "ETA0_OHM",
+      "K_CM_FREE_V_PER_M",
+      "K_CM_V_PER_M",
+      "K_LOOP_FREE_V_PER_M",
+      "K_LOOP_V_PER_M",
+      "PRECISION_LAYER_NOTE",
+      "cispr32_classb_radiated_limits",
+      "cm_dm_split",
+      "cm_radiated_field",
+      "dipole_upper_bound",
+      "dm_loop_radiated_field",
+      "fcc_part15b_radiated_limits",
+      "ground_image_factor",
+      "radiated_margin"
+    ],
+    "core/emc_tvs_gate.py": [
+      "ESD_GENERATOR_C_PF",
+      "ESD_GENERATOR_R_OHM",
+      "IEC61000_4_2_LEVELS",
+      "IEC61000_4_2_PROVENANCE",
+      "IEC61000_4_2_WAVEFORM_PER_KV",
+      "IEC61000_4_5_CWG",
+      "IEC61000_4_5_PROVENANCE",
+      "PYPI_EMC2_FAKE_FRIEND",
+      "TvsGateResult",
+      "esd_generator_energy",
+      "esd_levels",
+      "esd_waveform_currents",
+      "surge_gate",
+      "surge_levels",
+      "surge_short_circuit_current",
+      "tvs_clamp_voltage",
+      "tvs_peak_pulse_power",
+      "tvs_rdyn_ohm",
+      "tvs_select"
+    ],
+    "core/emi_filter.py": [
+      "CISPR16_50UH_VALUES",
+      "CISPR25_5UH_VALUES",
+      "LISN_PROVENANCE",
+      "TOPOLOGIES",
+      "abcd_cascade",
+      "abcd_parallel",
+      "abcd_series",
+      "abcd_to_s",
+      "cm_choke_il",
+      "fcc_limits_part15",
+      "feedthrough_il",
+      "il_three_terminations",
+      "lc_filter_il",
+      "lisn_network",
+      "margin_report"
+    ],
+    "core/emp_hemp.py": [
+      "BELL_FWHM_S",
+      "BELL_TR_S",
+      "E1_ALPHA_PER_S",
+      "E1_BETA_PER_S",
+      "E1_K_V_PER_M",
+      "EMP_SCHEMA",
+      "HEMP_COMPONENTS",
+      "HIRF_F_RANGE_MHZ",
+      "HIRF_TABLES",
+      "HempComponent",
+      "HirfBand",
+      "MIL_STD_464C_EMP_POINTER",
+      "SOURCE_API_WHITEPAPER",
+      "SOURCE_DOE_WF_GUIDE",
+      "SOURCE_MIL_STD_464C",
+      "SOURCE_PIER_C100_IEC",
+      "check_e1_self_consistency",
+      "e1_double_exponential",
+      "e1_spectrum",
+      "hirf_band_for",
+      "hirf_peak_for",
+      "hirf_platforms",
+      "validate_hirf_tables"
+    ],
+    "core/enkf.py": [
+      "closed_form_kf_update",
+      "enkf_analysis_step",
+      "es_mda"
+    ],
+    "core/environment_tables.py": [
+      "PA_PER_PSI",
+      "TEMPERATURE_CYCLE_FIELDS",
+      "get_condition",
+      "life_from_condition",
+      "list_conditions",
+      "list_families",
+      "list_standards",
+      "make_temperature_cycle_profile",
+      "sample_temperature_cycle_profiles",
+      "validate_temperature_cycle_profile"
+    ],
+    "core/error_budget.py": [
+      "BUDGET_REGISTRY",
+      "BudgetItem",
+      "BudgetRegistry",
+      "BudgetTrace",
+      "CalibrationResidualItem",
+      "GridDiscretizationItem",
+      "MODE_COHERENT",
+      "MODE_QUADRATIC",
+      "PortReferenceItem",
+      "SurrogateErrorItem",
+      "ToleranceItem",
+      "ToleranceMcItem",
+      "budget_evaluate",
+      "budget_report",
+      "budget_report_stacked"
+    ],
+    "core/etch_trapezoid.py": [
+      "DeltaZResult",
+      "ETCH_BIAS_TYPICAL_MIL",
+      "ETCH_FACTOR_TYPICAL",
+      "EquivalentWidths",
+      "EtchTrapezoidSpec",
+      "MIL_TO_MM",
+      "bottom_width_mm",
+      "delta_z_estimate",
+      "delta_z_signed_undercut",
+      "equivalent_widths",
+      "etch_angle_deg_from_etch_factor",
+      "etch_angle_deg_from_widths",
+      "etch_bias_compensation",
+      "etch_factor_from_undercut",
+      "trapezoid_from_nominal",
+      "undercut_from_etch_factor"
     ],
     "core/even_odd_split.py": [
       "BC_NOTE",
@@ -209,15 +886,129 @@
       "FabProfileError",
       "VIOLATION_CODES",
       "best_effort_dfm_for_design",
+      "check_backdrill",
       "check_board_thickness",
       "check_copper",
       "check_drill",
       "check_gaps",
       "check_geometry",
       "check_material",
+      "check_stub_resonance",
       "check_surface_finish",
       "check_trace_widths",
-      "load_profile"
+      "load_profile",
+      "stub_resonance_ghz"
+    ],
+    "core/fab_export/__init__.py": [
+      "AUDIT_CHECKS",
+      "AuditResult",
+      "COMPOSITE_LAYERS",
+      "CSV_HEADER",
+      "CompositeLayers",
+      "CompositeObject",
+      "CriticalChar",
+      "DimsDocument",
+      "FIT_BANDS_MM",
+      "FLANGES",
+      "GcodeProgram",
+      "GeometrySummary",
+      "KERR_RULES",
+      "Manifest",
+      "RemovedHole",
+      "RuleSet",
+      "TolClass",
+      "ToolSpec",
+      "ToolpathOp",
+      "VariableDim",
+      "ViewGeometry",
+      "WAVEGUIDES",
+      "WaveguideSpec",
+      "audit_package",
+      "build_wr90_program",
+      "build_wr90_views",
+      "catalog_tables",
+      "classify_object",
+      "contour_op",
+      "critical_char_to_row",
+      "dedup_circles",
+      "dedup_segments",
+      "default_ruleset",
+      "dfm_notes",
+      "drill_op",
+      "filter_unsupported_holes",
+      "finish_allowance",
+      "finish_note",
+      "fit_note",
+      "flange_critical_chars",
+      "flange_hole_table",
+      "get_flange",
+      "get_waveguide",
+      "group_composite_layers",
+      "infer_mapping",
+      "infer_role_and_tol",
+      "match_geometry",
+      "normalize_y",
+      "parse_dim_value",
+      "pocket_op",
+      "process_tag_for",
+      "rect",
+      "render_cam_notes",
+      "render_mbd_note",
+      "render_qif3_document",
+      "render_qif_characteristics",
+      "ruleset_from_data",
+      "shift_y",
+      "snapshot_from_dict",
+      "split_mapping",
+      "thread_note",
+      "unit_fingerprint_ok"
+    ],
+    "core/failure_knowledge.py": [
+      "DEFAULT_TOP_K",
+      "FAILURE_KNOWLEDGE_SCHEMA",
+      "failure_knowledge_for",
+      "keywords_from_campaign",
+      "normalize_keywords",
+      "render_failure_knowledge_markdown"
+    ],
+    "core/fgcpw.py": [
+      "fgcpw_design_params",
+      "fgcpw_fd",
+      "fgcpw_gn_closed_form",
+      "fgcpw_gn_closed_form_thickness"
+    ],
+    "core/form_reliability.py": [
+      "FormResult",
+      "SormResult",
+      "form_beta",
+      "sorm_beta_correction"
+    ],
+    "core/frequency_invariant.py": [
+      "ETA0_OHM",
+      "SELF_COMPLEMENTARY_ARM_WIDTH_RAD",
+      "SPEED_OF_LIGHT",
+      "alpha_from_growth",
+      "archimedean_arc_length_from_zero",
+      "archimedean_arm_radial_separation",
+      "archimedean_band_radii",
+      "archimedean_points",
+      "equiangular_arc_length",
+      "equiangular_band_from_design",
+      "equiangular_band_radii",
+      "equiangular_growth_per_turn",
+      "equiangular_points",
+      "equiangular_radius",
+      "log_spiral_rotation_for_scale",
+      "numeric_arc_length",
+      "self_complementary_impedance"
+    ],
+    "core/fresnel_zone_plate.py": [
+      "fzp_focal_efficiency_band_model",
+      "fzp_num_zones",
+      "fzp_transmission_profile",
+      "fzp_zone_radii_m",
+      "metalens_hyperbolic_phase_rad",
+      "metalens_ray_axis_intercept_m"
     ],
     "core/fsv.py": [
       "CUM_AREA",
@@ -232,6 +1023,36 @@
       "grade_index_of",
       "grade_of",
       "to_jsonable"
+    ],
+    "core/gci.py": [
+      "FS_DEFAULT",
+      "GridConvergenceResult",
+      "REASON_EXTRAP_OVERFLOW",
+      "REASON_NONPOSITIVE_ORDER",
+      "REASON_NO_ROOT",
+      "REASON_OSC_REQUIRES_CONSTANT_R",
+      "REASON_ZERO_DIFFERENCE",
+      "R_TOL",
+      "STATUS_DEGENERATE",
+      "STATUS_MONOTONIC",
+      "STATUS_OSCILLATORY",
+      "assess_grid_convergence",
+      "assess_triple",
+      "gci_from_order"
+    ],
+    "core/gp_tensor_kernel.py": [
+      "DEFAULT_MAX_POINTS",
+      "RELATIVE_NUGGET",
+      "fit_weights_loocv",
+      "generalized_distance",
+      "regression_predict",
+      "tensor_rbf_kernel"
+    ],
+    "core/gstc.py": [
+      "gstc_crosscheck",
+      "gstc_forward",
+      "gstc_synthesize",
+      "t_r_from_db_phase"
     ],
     "core/high_power.py": [
       "AIR_BREAKDOWN_MV_PER_M",
@@ -255,6 +1076,76 @@
       "resolve_dielectric_strength",
       "thermal_from_average_power"
     ],
+    "core/hmsiw.py": [
+      "HMSIW_VALID_ER",
+      "HMSIW_VALID_H_MM",
+      "HMSIW_VALID_W_MM",
+      "hmsiw_beta_rad_m",
+      "hmsiw_check_validity",
+      "hmsiw_closed_form",
+      "hmsiw_delta_w_mm",
+      "hmsiw_design_params",
+      "hmsiw_eff_width_siw_mm",
+      "hmsiw_z_pv_ohm"
+    ],
+    "core/homogenization.py": [
+      "bruggeman_eff",
+      "depolarization_factors",
+      "looyenga_eff",
+      "maxwell_garnett_eff",
+      "mix_eff",
+      "retrieve_eff_params",
+      "slab_panel_rt",
+      "srr_permeability",
+      "wiener_bounds",
+      "wire_media_plasma"
+    ],
+    "core/horn_synthesis.py": [
+      "C0",
+      "SIGMA_E_BALANIS",
+      "SIGMA_E_GAIN_MAX",
+      "SIGMA_H_BALANIS",
+      "SIGMA_H_GAIN_MAX",
+      "aperture_efficiency",
+      "aperture_to_taper_sides",
+      "horn_gain_direct",
+      "horn_gain_exact_aperture",
+      "horn_wall_loss_db",
+      "synthesize_pyramid_horn",
+      "synthesize_pyramid_horn_ab"
+    ],
+    "core/impedance_drc.py": [
+      "DEFAULT_CORNER_WARN_TURN_DEG",
+      "DEFAULT_JUNCTION_TOL_MM",
+      "DEFAULT_Z0_STEP_TOL_OHM",
+      "FLAG_CODES",
+      "ImpedanceDrcIssue",
+      "ImpedanceDrcReport",
+      "Point",
+      "RULE_CODES",
+      "SEVERITY_FLAG",
+      "SEVERITY_WARNING",
+      "TracePathSpec",
+      "ViaPadSpec",
+      "WARNING_CODES",
+      "check_impedance_continuity",
+      "check_layout_impedance",
+      "extract_layout_geometry"
+    ],
+    "core/interval_arith.py": [
+      "IVal",
+      "iadd",
+      "idiv",
+      "iexp",
+      "imul",
+      "isin_monotone",
+      "isqrt",
+      "isub",
+      "ival",
+      "lipschitz_band",
+      "point",
+      "propagate"
+    ],
     "core/inverse_design.py": [
       "PassbandTarget",
       "build_demo_model",
@@ -273,6 +1164,84 @@
       "list_proposers",
       "register_proposer"
     ],
+    "core/inverted_ms.py": [
+      "inverted_ms_design_params",
+      "inverted_ms_fd"
+    ],
+    "core/isac_ambiguity.py": [
+      "C0_M_S",
+      "WOODWARD_SOURCE",
+      "chip_code_ambiguity",
+      "doppler_resolution_hz",
+      "lfm_ambiguity",
+      "numeric_ambiguity",
+      "pulse_ambiguity",
+      "range_resolution_m",
+      "sinc_norm",
+      "unambiguous_range_m",
+      "unambiguous_velocity_m_s",
+      "velocity_resolution_m_s",
+      "woodward_volume_invariant"
+    ],
+    "core/isl_line.py": [
+      "inverted_ms_qs",
+      "isl_design_params",
+      "isl_layer_stack_eps_eq",
+      "isl_two_half_c",
+      "suspended_ms_qs"
+    ],
+    "core/jitter_budget.py": [
+      "JitterComponents",
+      "RJDJFit",
+      "bathtub_ber",
+      "bathtub_curve",
+      "combine_rj",
+      "compose_dj_pp",
+      "eye_width_ui",
+      "gauss_tail_q",
+      "q_from_ber",
+      "rms_ui_to_sigma_rj",
+      "separate_rj_dj",
+      "tj_dual_dirac"
+    ],
+    "core/judge_notes.py": [
+      "magnitude_band_note",
+      "sentinel_dual_report"
+    ],
+    "core/lc_filter.py": [
+      "CAUER_RESPONSES",
+      "CauerLadder",
+      "FosterNetwork",
+      "FosterTank",
+      "LadderElement",
+      "PrototypeSpec",
+      "RESPONSES",
+      "ToleranceStudy",
+      "cauer_ladder_gk",
+      "denormalize_ladder",
+      "esr_from_q",
+      "find_fc_3db_hz",
+      "foster_i_synthesis",
+      "foster_ii_synthesis",
+      "foster_impedance",
+      "ladder_sparams",
+      "make_prototype",
+      "power_gain_ideal",
+      "power_loss_ratio",
+      "prototype_pz",
+      "tolerance_study"
+    ],
+    "core/limits_registry.py": [
+      "LimitLine",
+      "LimitTable",
+      "from_emc_radiated",
+      "from_emi_filter",
+      "from_emsc_radiated",
+      "from_exposure",
+      "get_limit_table",
+      "limits_query",
+      "list_limit_tables"
+    ],
     "core/loss_density.py": [
       "DEFAULT_CLOSURE_TOLERANCE",
       "EPS0",
@@ -287,6 +1256,21 @@
       "resample_regular",
       "resolve_omega",
       "uniform_cell_measure"
+    ],
+    "core/lpda_synthesis.py": [
+      "GAIN_FACE_STATUS",
+      "LPDADesign",
+      "SPEED_OF_LIGHT_M_S",
+      "active_region_bandwidth",
+      "apex_half_angle_deg",
+      "apex_half_angle_rad",
+      "boom_length_closed",
+      "directivity_note",
+      "element_count",
+      "n_elements_exact",
+      "optimal_spacing_factor",
+      "structure_bandwidth",
+      "synthesize_lpda"
     ],
     "core/macromodel.py": [
       "DEFAULT_ENFORCE_SAMPLES",
@@ -306,6 +1290,19 @@
       "request_from_touchstone",
       "spice_subcircuit_port_info",
       "validate_spice_subcircuit"
+    ],
+    "core/magnetic_shield.py": [
+      "GAMMA_RAD_S_T",
+      "MAGNETIC_SOURCE",
+      "cylinder_demag_table",
+      "cylinder_shielding_factor_thin",
+      "demag_factor_oblate",
+      "demag_factor_prolate",
+      "demag_factor_sphere",
+      "llg_damping_conversion",
+      "mu_metal_band",
+      "multilayer_shield_estimate",
+      "spherical_shell_shielding_factor"
     ],
     "core/mapes.py": [
       "CATEGORY_DIAG_ANTI",
@@ -364,6 +1361,102 @@
       "z_all_quality",
       "z_to_s"
     ],
+    "core/mask_filter_synthesis.py": [
+      "MaskSegment",
+      "MaskSpec",
+      "channel_fbw",
+      "chebyshev_min_order",
+      "get_mask_template",
+      "mask_margin_report",
+      "mask_template_names",
+      "min_order_for_mask",
+      "offset_to_omega",
+      "omega_to_offset",
+      "ripple_from_rl",
+      "synthesize_from_mask"
+    ],
+    "core/material_characterization.py": [
+      "CourtneyResult",
+      "FreeSpaceResult",
+      "LRRDeembedResult",
+      "PerturbationResult",
+      "SplitCylinderLossResult",
+      "SplitCylinderResult",
+      "cavity_perturbation_extract",
+      "courtney_er_from_f0",
+      "courtney_extract",
+      "courtney_f0_of_er",
+      "courtney_tand_from_q",
+      "fpor_er_first_order",
+      "fpor_er_from_fshift",
+      "fpor_fill_factor",
+      "fpor_fshift",
+      "fpor_pe_uniform_field",
+      "fpor_tand_from_q",
+      "free_space_extract",
+      "free_space_extract_network",
+      "lateral_coverage_guard",
+      "lrr_deembed",
+      "spdr_extract",
+      "split_cylinder_er_from_f0",
+      "split_cylinder_extract",
+      "split_cylinder_f0_of_er",
+      "split_cylinder_tand_from_q",
+      "te01p_sample_filling_factor",
+      "thickness_resonance_guard"
+    ],
+    "core/material_library.py": [
+      "SOURCE_DATASHEET_VERIFIED",
+      "SOURCE_LITERATURE_SECONDARY",
+      "SOURCE_REPO_VERIFIED_WEB",
+      "SOURCE_UNVERIFIED_BAND",
+      "SOURCE_UNVERIFIED_SINGLE_SOURCE",
+      "SOURCE_WEB_VERIFIED",
+      "VENDOR_LAMINATES",
+      "dk_at_temperature",
+      "dk_tolerance_band",
+      "get_laminate",
+      "interpolate_vs_frequency",
+      "laminate_df",
+      "laminate_dk",
+      "list_laminates",
+      "recommend_substitutes",
+      "validate_material_entry"
+    ],
+    "core/material_uncertainty.py": [
+      "C10D_CASE",
+      "back_out_design_dk",
+      "back_out_design_dk_full_cf",
+      "case_78ghz_design_dk",
+      "dk_log_sensitivity_numeric",
+      "eps_eff_quasi_static",
+      "propagate_dk_tolerance",
+      "quasi_static_microstrip",
+      "resolve_anchor_er_design",
+      "z0_air_quasi_static",
+      "z0_sensitivity_closed_form"
+    ],
+    "core/materials.py": [
+      "MATERIALS_YAML_ENV",
+      "default_materials_yaml_path",
+      "load_materials_yaml",
+      "resolve_materials_yaml_path"
+    ],
+    "core/meta_retrieval.py": [
+      "METRIC_EUCLIDEAN",
+      "METRIC_STANDARDIZED_MAHALANOBIS",
+      "SUPPORTED_METRICS",
+      "TEMPLATE_FAMILY_VOCAB",
+      "build_meta_vector",
+      "compute_standardization",
+      "meta_feature_names",
+      "retrieve_warm_start_prior"
+    ],
+    "core/metamaterial_inversion.py": [
+      "SampledCausalResponse",
+      "auto_branch_select",
+      "passivity_report"
+    ],
     "core/metric_transform.py": [
       "DB_FLOOR_DB",
       "DB_FLOOR_LINEAR",
@@ -372,14 +1465,193 @@
       "LOO_GP_RESTARTS",
       "MetricDomain",
       "available_domains",
+      "delta_lml_ci",
       "forward_domain",
       "get_domain",
       "inverse_domain",
       "is_explicit_statistic_name",
       "loo_loglik",
+      "loo_loglik_per_point",
       "loo_loglik_table",
       "register_domain",
+      "select_domain_with_ci",
       "select_metric_domain"
+    ],
+    "core/microwave_heating.py": [
+      "EPS0_F_PER_M",
+      "dielectric_power_density",
+      "exponential_tand_power_chain",
+      "heating_fixed_point",
+      "multimode_load_match",
+      "process_window",
+      "rect_cavity_mode_count",
+      "runaway_boundary_alpha",
+      "single_mode_load_report",
+      "te10p_field_report",
+      "te10p_mode",
+      "te10p_shape_factor",
+      "weyl_mode_stats"
+    ],
+    "core/mimo_capacity.py": [
+      "capacity_from_eigenvalues",
+      "effective_diversity_order",
+      "eigenvalues_hh",
+      "mimo_capacity",
+      "mimo_capacity_report",
+      "waterfilling_powers"
+    ],
+    "core/mimo_metrics.py": [
+      "array_pattern_gain_grid",
+      "branch_power_ratio_db",
+      "fixed_weight_combining_gain_db",
+      "mean_effective_gain",
+      "mrc_mean_array_gain_db",
+      "polarized_branch_report",
+      "selection_combining_gain_db",
+      "sphere_integral"
+    ],
+    "core/mimo_virtual_array.py": [
+      "CONVENTIONS",
+      "equivalent_physical_array_factor",
+      "mimo_virtual_array_report",
+      "virtual_array_elements",
+      "virtual_array_factor"
+    ],
+    "core/mtl_modes.py": [
+      "mtl_crosstalk_coeffs",
+      "mtl_homogeneous_residual",
+      "mtl_modal_decomposition",
+      "mtl_mode_skew",
+      "symmetric_pair_even_odd",
+      "symmetric_pair_pul"
+    ],
+    "core/multipactor.py": [
+      "DEFAULT_DELTA_MAX",
+      "DEFAULT_EMAX_EV",
+      "DEFAULT_K_S",
+      "E_CHARGE_C",
+      "M_E_KG",
+      "SEY_MATERIALS",
+      "multi_carrier_equivalent_power_w",
+      "multipactor_susceptibility_check",
+      "orbit_impact_energy_ev",
+      "order_sustainable_band_v",
+      "series_gap_chain_threshold_v",
+      "sey_crossover_energies_ev",
+      "susceptibility_band_v",
+      "susceptibility_scale_v",
+      "transit_resonance_voltage_v",
+      "vaughan_angle_adjusted",
+      "vaughan_yield"
+    ],
+    "core/near_field_se.py": [
+      "SOURCE_ELECTRIC_DIPOLE",
+      "SOURCE_MAGNETIC_DIPOLE",
+      "SOURCE_PLANE_WAVE",
+      "SUPPORTED_SOURCES",
+      "absorption_loss_db",
+      "multiple_reflection_db",
+      "near_field_se",
+      "reflection_loss_db",
+      "skin_depth_m",
+      "source_wave_impedance_ohm"
+    ],
+    "core/nf_focusing_oam.py": [
+      "C0_M_S",
+      "NF_WP_SOURCE",
+      "farfield_tilt_phases",
+      "focal_field_map",
+      "focusing_farfield_limit_check",
+      "focusing_phases",
+      "fraunhofer_distance_m",
+      "oam_axis_field",
+      "oam_mode_purity",
+      "oam_ring_excitation",
+      "phase_mode_count"
+    ],
+    "core/noise_correlation.py": [
+      "K_B_J_PER_K",
+      "MAX_ABS_GAIN_DB",
+      "T0_DEFAULT_K",
+      "cascade_noise_factor",
+      "cholesky_factor",
+      "combine_noise_power",
+      "correlation_matrix",
+      "correlation_min_eigenvalue",
+      "synthesize_correlated"
+    ],
+    "core/num_utils.py": [
+      "coerce_float"
+    ],
+    "core/oscillator_synthesis.py": [
+      "ClappDesign",
+      "ColpittsDesign",
+      "CrossCoupledStartup",
+      "HartleyDesign",
+      "K_B_SI",
+      "LeesonResult",
+      "MarginSweep",
+      "NegativeResistanceResult",
+      "OperatingPointResult",
+      "ReflectionStartupResult",
+      "T0_REF_K",
+      "clapp_design",
+      "clapp_frequency",
+      "colpitts_design",
+      "colpitts_equivalent_cap",
+      "colpitts_frequency",
+      "cross_coupled_design",
+      "cross_coupled_frequency",
+      "cross_coupled_margin_sweep",
+      "cross_coupled_negative_resistance",
+      "cross_coupled_startup",
+      "dro_coupling_power",
+      "dro_loaded_q",
+      "hartley_design",
+      "hartley_equivalent_ind",
+      "hartley_frequency",
+      "lc_resonant_frequency",
+      "leeson_floor_dbc",
+      "leeson_floor_lin",
+      "leeson_l_dbc",
+      "leeson_lin",
+      "leeson_model",
+      "leeson_sigma_phi2_exact",
+      "negative_resistance_operating_point",
+      "negative_resistance_startup",
+      "reflection_startup"
+    ],
+    "core/ota_metrics.py": [
+      "beam_efficiency",
+      "directivity_from_gain",
+      "eirp_cdf",
+      "ota_report_card",
+      "trp_from_gain"
+    ],
+    "core/papr.py": [
+      "CfrClipResult",
+      "PAPR_MC_DEFAULT_SEED",
+      "PAPR_MC_MODULATIONS",
+      "PAPR_PROB_GRID",
+      "PRNT_PROBABILITY",
+      "PaprMcResult",
+      "ccdf_analytic",
+      "ccdf_monte_carlo",
+      "cfr_soft_clip",
+      "evm_clip_gauss_closed_form",
+      "ofdm_symbol_batches",
+      "ofdm_symbols",
+      "papr_db_of_lin",
+      "papr_lin_of_db",
+      "papr_threshold_db",
+      "papr_threshold_db_numeric",
+      "prnt_db"
+    ],
+    "core/pass_at_k.py": [
+      "pass_at_k",
+      "pass_at_k_all",
+      "pass_at_k_empirical",
+      "pass_at_k_from_rows"
     ],
     "core/pce.py": [
       "PCEModel",
@@ -397,6 +1669,7 @@
       "worst_case"
     ],
     "core/pcell_dsl.py": [
+      "KERNEL_REGISTRY",
       "PCELL_LIBRARY",
       "PCellBox",
       "PCellBoxGeom",
@@ -406,8 +1679,319 @@
       "PCellGeometry",
       "PCellParam",
       "PCellParamError",
+      "PCellPath",
+      "PCellPathGeom",
+      "PCellPolygon",
+      "PCellPolygonGeom",
+      "PCellVia",
+      "PCellViaGeom",
+      "def_from_dict",
+      "def_from_yaml",
+      "def_to_dict",
+      "def_to_yaml",
+      "eval_expr",
+      "evaluate_library",
       "evaluate_pcell",
-      "get_pcell"
+      "get_pcell",
+      "register_pcell_kernel"
+    ],
+    "core/pdn_vertical.py": [
+      "LayerSpec",
+      "MAX_ARRAY_ELEMENTS",
+      "array_equivalent_inductance",
+      "find_anti_resonance_peaks",
+      "plane_pair_capacitance",
+      "suggest_decaps_for_violations",
+      "vertical_pdn_impedance"
+    ],
+    "core/phase_center.py": [
+      "estimate_phase_center",
+      "phase_center_stability"
+    ],
+    "core/pll_budget.py": [
+      "CRYSTAL_OFFSETS_HZ",
+      "CRYSTAL_OSC_TABLE",
+      "DEFAULT_PM_WARNING_THRESHOLD_DEG",
+      "LoopConstants",
+      "StabilityResult",
+      "closed_loop_transfer",
+      "crystal_l_dbc",
+      "error_transfer",
+      "gain_crossover_closed_form",
+      "gain_crossover_numeric",
+      "loop_constants",
+      "mash_sd_phi_psd_rad2_per_hz",
+      "mash_sd_psd_db",
+      "mash_sd_psd_rad2_per_hz",
+      "open_loop_transfer",
+      "phase_margin_closed_form",
+      "phase_margin_numeric",
+      "pll_jitter_budget",
+      "pll_output_noise_l",
+      "stability_budget"
+    ],
+    "core/poke_predistortion.py": [
+      "PokeSpectrum",
+      "beam_predistortion_report",
+      "interaction_spectrum",
+      "predistortion_weights",
+      "tikhonov_sweep"
+    ],
+    "core/production_data.py": [
+      "PRODUCTION_SCHEMA_VERSION",
+      "failure_pareto",
+      "lot_yield",
+      "normalize_record",
+      "normalize_records",
+      "vendor_batch_summary"
+    ],
+    "core/public_dataset_anchors.py": [
+      "DatasetAnchor",
+      "PUBLIC_DATASET_ANCHORS",
+      "list_public_dataset_anchors",
+      "load_s11_table"
+    ],
+    "core/quantity.py": [
+      "DIMENSIONS",
+      "Dimension",
+      "PINT_SI_UNITS",
+      "Quantity",
+      "QuantityDimensionError",
+      "QuantityError",
+      "UNIT_TABLE",
+      "check_dimension",
+      "dimension_of",
+      "from_pint",
+      "parse_quantity",
+      "quantity_of",
+      "to_pint",
+      "validate_quantity_args"
+    ],
+    "core/quantized_array_milp.py": [
+      "linearized_peak_field",
+      "quantized_array_milp",
+      "sidelobe_grid"
+    ],
+    "core/quantum_cryo.py": [
+      "BCS_GAP_RATIO",
+      "GL_THERMAL_RATIO",
+      "PHI0_WEBER",
+      "QUANTUM_SOURCE",
+      "SUPERCONDUCTOR_TABLE",
+      "bcs_gap_ev",
+      "gao_engineering_note",
+      "quantum_register_note",
+      "rcsj_iv",
+      "rcsj_plasma_frequency",
+      "rcsj_stewart_mccumber",
+      "superconductor_params",
+      "superconductor_rs",
+      "two_fluid_sigma1"
+    ],
+    "core/radome.py": [
+      "C0_M_S",
+      "RADOME_SOURCE",
+      "boresight_error_note",
+      "dielectric_abcd",
+      "half_wave_slab_transmission",
+      "normal_incidence_fresnel",
+      "single_interface_rt",
+      "slab_deviation_angle",
+      "spherical_shell_ray_bse",
+      "stack_power_rt"
+    ],
+    "core/rare_event.py": [
+      "IsResult",
+      "WeightsStats",
+      "importance_sampling_pf"
+    ],
+    "core/recast.py": [
+      "DIRECTION_FLIP",
+      "DIRECTION_NOT_JUDGED",
+      "DIRECTION_SAME",
+      "RECAST_SCHEMA",
+      "load_criteria_dir",
+      "replay_batch",
+      "replay_one"
+    ],
+    "core/reflectionless_filter.py": [
+      "KIND_HPF",
+      "KIND_LPF",
+      "ReflectionlessElement",
+      "ReflectionlessNetwork",
+      "ReflectionlessSpec",
+      "chebyshev_g_table",
+      "duality_residual",
+      "make_network",
+      "make_spec",
+      "network_sparams",
+      "network_sparams_by_modes"
+    ],
+    "core/requirements_engine.py": [
+      "ConstraintOp",
+      "REQ_SCHEMA",
+      "Requirement",
+      "RequirementSet",
+      "Z3_INSTALL_HINT",
+      "requirements_review"
+    ],
+    "core/return_path_check.py": [
+      "FLAG_CODES",
+      "RETURN_CURRENT_MODEL_FORMULA",
+      "RETURN_CURRENT_MODEL_NOTE",
+      "RULE_CODES",
+      "ReturnPathIssue",
+      "ReturnPathReport",
+      "SEVERITY_FLAG",
+      "SEVERITY_WARNING",
+      "SplitRegion",
+      "TraceSpec",
+      "ViaSpec",
+      "WARNING_CODES",
+      "check_return_path",
+      "point_distance",
+      "point_in_polygon",
+      "point_in_polygon_inclusive",
+      "point_polygon_boundary_closest",
+      "point_polygon_boundary_distance",
+      "point_polygon_distance",
+      "point_segment_closest",
+      "polygons_distance",
+      "polygons_intersect",
+      "segments_intersect",
+      "trace_rectangle"
+    ],
+    "core/reverb_chamber.py": [
+      "C0_M_S",
+      "CHI2_STATISTICS_SOURCE",
+      "Q_WALL_FORMULA_SOURCE",
+      "STIRRER_SAMPLES_SOURCE",
+      "chi2_df6_cdf",
+      "chi2_df6_pdf",
+      "independent_stirrer_samples",
+      "max_of_n_exponential_mean",
+      "quality_factor_wall_loss",
+      "rc_vs_sac_note",
+      "skin_depth_wall_m",
+      "well_stirred_chi2_cdf",
+      "well_stirred_chi2_pdf",
+      "well_stirred_chi2_quantile",
+      "weyl_mode_count"
+    ],
+    "core/review_report.py": [
+      "GRADES",
+      "REVIEW_REPORT_SCHEMA",
+      "SEVERITIES",
+      "VERDICT_GLOBS",
+      "generate_review_report",
+      "normalize_grade",
+      "render_markdown",
+      "write_review_report"
+    ],
+    "core/rf_guard_structures.py": [
+      "CpwGroundStitch",
+      "GroundVoid",
+      "GuardVia",
+      "StitchMesh",
+      "cpw_ground_stitch",
+      "ground_void",
+      "guard_return_path_check",
+      "stitch_mesh",
+      "via_fence_polyline",
+      "via_fence_ring"
+    ],
+    "core/rf_process_corners.py": [
+      "ARCHETYPE_CORNERS",
+      "Corner",
+      "DEFAULT_ALIGNMENT_BAND_UM",
+      "DEFAULT_ER_TOL_ABS",
+      "DEFAULT_ETCH_BIAS_BAND_UM",
+      "DEFAULT_TAN_DELTA_REL_PCT",
+      "FIVE_CORNER_PARAM_NAMES",
+      "ProcessParam",
+      "RESPONSE_CLASS_TABLE",
+      "THIEVING_TABLE",
+      "build_five_corners",
+      "corner_injection_set",
+      "corner_spread",
+      "corner_spread_from_slopes",
+      "enumerate_corners",
+      "expected_extreme_directions",
+      "make_param",
+      "predict_extreme_corner",
+      "t_cu_param",
+      "t_cu_thieving_band_um"
+    ],
+    "core/ridged_waveguide.py": [
+      "C0",
+      "ETA0",
+      "MU0",
+      "RidgedWaveguide",
+      "beta_z",
+      "cutoff_fc_hz",
+      "cutoff_fc_hz_cohn",
+      "cutoff_kc",
+      "cutoff_kc_cohn",
+      "cutoff_lambda_m",
+      "cutoff_lambda_m_cohn",
+      "cutoff_scan",
+      "design_ridge_depth",
+      "evanescent_alpha_np_per_m",
+      "evanescent_attenuation_db",
+      "lambda_g_m",
+      "omega_mu",
+      "whinnery_jamieson_edge_capacitance",
+      "z_pv_ohm",
+      "z_te_ohm"
+    ],
+    "core/ridged_waveguide_panel.py": [
+      "alpha_c_te10_estimate",
+      "even_mode_kcs",
+      "next_mode_cutoff",
+      "odd_mode_kcs",
+      "ridged_waveguide_panel"
+    ],
+    "core/ris_cascade.py": [
+      "C0_M_S",
+      "cascade_geometry_sum",
+      "cascade_power_ratio",
+      "coherent_vs_random_ratio",
+      "conjugate_phases_rad",
+      "crossover_direct_distance_m",
+      "direct_power_ratio",
+      "farfield_cascade_power_ratio",
+      "farfield_validity",
+      "fspl_db",
+      "quantized_conjugate_loss_db",
+      "random_gain_mc",
+      "ris_cascade_report",
+      "ris_positions_ura",
+      "steering_spectrum"
+    ],
+    "core/rw_tables.py": [
+      "C0",
+      "WRBandEntry",
+      "WRRecord",
+      "WR_TABLE",
+      "cutoff_te10",
+      "wavelength_g",
+      "wr_bands",
+      "wr_from_frequency",
+      "wr_lookup"
+    ],
+    "core/rx_impairments.py": [
+      "DEFAULT_MAX_ORDER",
+      "SMALL_ANGLE_LIMIT_RAD",
+      "blocking_budget",
+      "iq_imbalance_irr",
+      "phase_noise_evm"
+    ],
+    "core/sensitivity_prior.py": [
+      "PRIOR_SCHEMA",
+      "SensitivityRecord",
+      "allocate_budget",
+      "build_template_prior",
+      "render_prior_markdown"
     ],
     "core/si_channel.py": [
       "ChannelEyeResult",
@@ -435,6 +2019,150 @@
       "save_touchstone_s2p",
       "step_response"
     ],
+    "core/sir_filter.py": [
+      "SirGeometry",
+      "SirTwoPoleCoupling",
+      "band_ratio_from_rz",
+      "rz_from_band_ratio",
+      "sir_coupling",
+      "sir_geometry",
+      "sir_resonance_residual",
+      "sir_slope",
+      "sir_theta2_unequal",
+      "sir_theta_equal",
+      "sir_two_pole_sparams",
+      "sir_zin",
+      "sir_zin_abcd"
+    ],
+    "core/sla_print.py": [
+      "DEFAULT_PROFILE",
+      "SLAPrinterProfile",
+      "check_printability",
+      "current_fraction_in_thickness",
+      "material_prior_gate",
+      "plating_check",
+      "skin_depth"
+    ],
+    "core/solder_mask_svl.py": [
+      "CPW_GHIONE_NALDI_STATUS",
+      "FillingFactors",
+      "MASK_OPENING_RULES",
+      "MaskedLineResult",
+      "SOLDER_MASK_MATERIALS",
+      "SOLDER_MASK_TYPICAL_BANDS",
+      "eps_eff_masked",
+      "eps_eff_single_hj",
+      "eps_eff_via_capacitance",
+      "filling_factors",
+      "requires_mask_open",
+      "z0_air_hj",
+      "z0_masked"
+    ],
+    "core/sparse_array_cs.py": [
+      "DEFAULT_TAPER_SEED",
+      "DensityTaperComparison",
+      "PSLL_BAND_DB",
+      "SparseArrayDesign",
+      "density_taper_indices",
+      "forward_matrix",
+      "irwl1_reweight",
+      "mutual_coherence",
+      "soft_threshold",
+      "synthesize_sparse_array",
+      "u_values_from_theta",
+      "weighted_lasso_ista"
+    ],
+    "core/sparse_pce.py": [
+      "SparsePCEModel",
+      "fit_sparse_pce",
+      "hyperbolic_indices",
+      "ishigami",
+      "ishigami_sobol_analytic",
+      "sample_canonical",
+      "sparse_pce_sobol"
+    ],
+    "core/sprt.py": [
+      "ASNWald",
+      "MSPRTDecision",
+      "SPRTBounds",
+      "SPRTDecision",
+      "SPRTTrace",
+      "asn_wald",
+      "msprt_decide",
+      "msprt_log_statistic",
+      "msprt_pvalue",
+      "msprt_run",
+      "normal_drift",
+      "normal_llr_increment",
+      "optuna_prune_decision",
+      "sprt_decide",
+      "sprt_run",
+      "wald_bounds"
+    ],
+    "core/spur_templates.py": [
+      "ABSOLUTE_BS_CLASSES",
+      "ACIR_FORMULA_SOURCE",
+      "ACLR_ABSOLUTE",
+      "ACLR_RELATIVE",
+      "ACS_BS_CLASSES",
+      "ACS_INTERFERER",
+      "ACS_OFFSETS",
+      "AbsolutePsdLimit",
+      "AclrRelativeLimit",
+      "AcsInterfererLimit",
+      "AcsOffset",
+      "BW_CHANNEL_MHZ",
+      "CACLR_ABSOLUTE",
+      "CACLR_RELATIVE",
+      "PROVENANCE",
+      "STANDARD_TOKENS",
+      "absolute_psd_limit",
+      "acir_synthesize",
+      "aclr_relative_limit",
+      "acs_interferer_limit",
+      "acs_offset_for_bw",
+      "bs_acs_db",
+      "c_over_n_plus_i_db",
+      "carrier_to_interference_db",
+      "resolve_standard",
+      "spur_template_check"
+    ],
+    "core/sra.py": [
+      "BANDWIDTH_FLOOR",
+      "COM_HALF_WINDOW",
+      "COND_WARN_DEFAULT",
+      "EXTENT_RATIO_DEFAULT",
+      "LAMBDA_RATIO_MAX_DEFAULT",
+      "RESIDUAL_GATE_DB_DEFAULT",
+      "solve_sra",
+      "sra_operator",
+      "sra_solve"
+    ],
+    "core/srft_matching.py": [
+      "srft_extract_ladder",
+      "srft_fit_flat_gain",
+      "srft_gain_response",
+      "srft_impedance_matrix",
+      "srft_input_impedance",
+      "srft_network_response",
+      "srft_polynomials",
+      "srft_synthesize"
+    ],
+    "core/stub_k_inverter.py": [
+      "DEFAULT_THETA0",
+      "SIR_STUB_SLOPE",
+      "StubFilter",
+      "band_edges_3db",
+      "inverter_table",
+      "k_to_shunt_b",
+      "richards_omega",
+      "richards_omega_inverse",
+      "shunt_b_to_k",
+      "shunt_b_to_neg_length",
+      "stub_elec_length",
+      "stub_filter_design",
+      "stub_filter_sparams"
+    ],
     "core/symbolic_fit.py": [
       "BasisConfig",
       "CandidateFormula",
@@ -449,6 +2177,14 @@
       "patch_resonance_hj_ghz",
       "resonance_dip",
       "select_subsets"
+    ],
+    "core/synthetic_fixture.py": [
+      "DEFAULT_STACKUP",
+      "DEFAULT_SYNTH_FREQ_GHZ",
+      "DegradeOptions",
+      "SyntheticFixture",
+      "build_synthetic_fixture",
+      "s_param_asymmetry"
     ],
     "core/thermal_iteration.py": [
       "C0_M_PER_S",
@@ -479,6 +2215,29 @@
       "solve_thermal_fixed_point",
       "surface_resistance"
     ],
+    "core/thermal_transient.py": [
+      "cauer_step_response_zth",
+      "cauer_to_foster",
+      "cauer_zth_frequency",
+      "convolve_power_response",
+      "foster_to_cauer",
+      "pulse_response",
+      "pulse_train_waveform",
+      "step_response_zth",
+      "zth_frequency"
+    ],
+    "core/thin_film_se.py": [
+      "C0_M_S",
+      "ETA0_OHM",
+      "IEEE299_SOURCE",
+      "RWV_SOURCE",
+      "coated_substrate_se",
+      "ieee299_measurement_note",
+      "resistive_sheet_se",
+      "skin_depth_m",
+      "thin_film_sheet_resistance",
+      "thin_film_surface_impedance"
+    ],
     "core/time_gating.py": [
       "TIME_UNIT_SCALE",
       "TimeGate",
@@ -489,6 +2248,79 @@
       "has_interior_valley",
       "impulse_out_of_gate_energy_ratio",
       "shoulder_ripple_db"
+    ],
+    "core/tissue_dielectric/__init__.py": [
+      "C0_M_S",
+      "EPS0_F_M",
+      "GABRIEL_PROVENANCE",
+      "SAR_GATE_W_PER_KG_10G",
+      "cole_cole_eps",
+      "implant_link_chain",
+      "load_gabriel1996"
+    ],
+    "core/tma_array.py": [
+      "BeamAgilityResult",
+      "TmaPatternResult",
+      "beam_agility_compare",
+      "harmonic_patterns",
+      "parseval_residual",
+      "pattern_peak",
+      "sll_metrics",
+      "switch_fourier_coefficients"
+    ],
+    "core/tr38901_pathloss.py": [
+      "C0_M_S",
+      "CDL_NAMES",
+      "TDL_PROFILES",
+      "cdl_profile",
+      "external_wall_loss_db",
+      "inh_office_los_db",
+      "inh_office_nlos_db",
+      "material_penetration_db",
+      "o2i_building_db",
+      "o2i_car_db",
+      "o2i_legacy_db",
+      "rma_los_db",
+      "rma_nlos_db",
+      "tdl_delay_spread_ns",
+      "tdl_k_factor_db",
+      "tdl_profile",
+      "tdl_rescale_k_factor",
+      "tdl_scale_delays",
+      "uma_effective_height_rule",
+      "uma_los_db",
+      "uma_nlos_db",
+      "umi_los_db",
+      "umi_nlos_db"
+    ],
+    "core/transfer_impedance.py": [
+      "inductive_leakage_term",
+      "transfer_impedance",
+      "transfer_impedance_dc",
+      "zt_solid_tube",
+      "zt_solid_tube_hf_asymptote"
+    ],
+    "core/via_process_params.py": [
+      "HOLE_COPPER_UM_BY_CLASS",
+      "IPC4761_TYPE_VII",
+      "IPC4761_VIA_PROTECTION_TYPES",
+      "LASER_DRILL_CO2",
+      "LASER_DRILL_UV",
+      "LaserDrillCapability",
+      "MECHANICAL_DRILL",
+      "MechanicalDrillCapability",
+      "ViaMfgReport",
+      "backdrill_fres_verdict",
+      "backdrill_residual_len_mm",
+      "backdrill_verdict_from_span",
+      "check_via_manufacturability",
+      "residual_stub_fres_ghz"
+    ],
+    "core/vivaldi_tsa.py": [
+      "vivaldi_low_cutoff_ghz",
+      "vivaldi_slot_half_width_mm",
+      "vivaldi_taper_k_per_mm",
+      "vivaldi_tsa_design"
     ],
     "core/vv_mapping.py": [
       "ADJACENT_TOL_DB",
@@ -525,6 +2357,18 @@
       "spec_margin",
       "wcd_specs"
     ],
+    "core/wpt_envelope.py": [
+      "C0_M_S",
+      "QI2_POWER_REGISTER",
+      "WPT_SOURCE",
+      "friis_received_power",
+      "link_efficiency_vs_load",
+      "link_max_efficiency",
+      "optimal_load",
+      "qi_power_envelope",
+      "rectenna_dc_budget",
+      "rectifier_efficiency_curve"
+    ],
     "infra/compat.py": [
       "deprecated",
       "deprecation_message"
@@ -536,6 +2380,10 @@
       "SAR_RAW_DUMP_TYPE",
       "find_volume_loss_dumps",
       "read_loss_dump"
+    ],
+    "infra/numeric_env.py": [
+      "THREAD_ENV_KEYS",
+      "numeric_env_fingerprint"
     ],
     "infra/par_exec.py": [
       "BLAS_SINGLE_THREAD_ENV",
@@ -556,6 +2404,36 @@
       "write_recipe_text",
       "write_recipe_yaml"
     ],
+    "infra/remote_machines.py": [
+      "DEFAULT_CONFIG_FILENAME",
+      "DEFAULT_GRPC_PORT",
+      "DEFAULT_HFSS_MAX_PARALLEL",
+      "DEFAULT_SSH_PORT",
+      "ENV_REMOTE_SSH_PASSWORD",
+      "ENV_REMOTE_SSH_USER",
+      "ENV_SSH_STRICT",
+      "HfssMtlsCerts",
+      "RemoteMachineConfig",
+      "SSH_HOST_FINGERPRINTS_FILENAME",
+      "SshTransport",
+      "decide_host_key_policy",
+      "default_fingerprint_store_path",
+      "default_remote_config_path",
+      "fingerprint_of_key",
+      "hfss_mtls_certs",
+      "load_errors",
+      "load_fingerprint_ledger",
+      "load_remote_machines",
+      "probe_machine",
+      "probe_port",
+      "record_fingerprint",
+      "resolve_machine",
+      "ssh_strict_enabled"
+    ],
+    "infra/runs_paths.py": [
+      "resolve_runs_dir",
+      "runs_root"
+    ],
     "models/template_specs.py": [
       "TEMPLATE_SPECS",
       "bootstrap_template_specs"
@@ -565,6 +2443,30 @@
       "run_optimization",
       "run_refine"
     ],
+    "optimization/adapter_channels.py": [
+      "ChannelFactory",
+      "channel_names",
+      "create_via_channel",
+      "register_channel"
+    ],
+    "optimization/model_registry.py": [
+      "FINGERPRINT_LEN",
+      "KEY_FIELDS",
+      "ModelRegistry",
+      "REGISTRY_SCHEMA_VERSION",
+      "STATUS_CHALLENGER",
+      "STATUS_CHAMPION",
+      "STATUS_RETIRED",
+      "canonical_key",
+      "current_git_sha",
+      "default_model_store_dir",
+      "default_registry_path",
+      "feature_set_fingerprint",
+      "heldout_linf",
+      "key_sort_id",
+      "registry_write_enabled",
+      "upsert_from_surrogate_loop"
+    ],
     "optimization/param_proposer.py": [
       "PROPOSER_PARAM_REGISTRY",
       "ParamAnnealedProposer",
@@ -573,11 +2475,17 @@
       "list_param_proposers",
       "register_proposer_param"
     ],
+    "optimization/storage_backends.py": [
+      "build_journal_storage",
+      "journal_lock",
+      "resolve_storage"
+    ],
     "optimization/surrogate/__init__.py": [
       "DeepONetSurrogate",
       "FNOLiteSurrogate",
       "FNOSurrogate",
       "GBDTSurrogate",
+      "HuberRidgeSurrogate",
       "MapesAnalyticSurrogate",
       "NNSurrogate",
       "PHYSICS_AUGMENTERS",
@@ -597,6 +2505,9 @@
       "SurrogateModel",
       "SurrogateRegistry",
       "surrogate_registry"
+    ],
+    "optimization/surrogate/huber_ridge.py": [
+      "HuberRidgeSurrogate"
     ],
     "optimization/surrogate/mapes_analytic.py": [
       "MapesAnalyticSurrogate"
@@ -644,6 +2555,13 @@
       "load_duration_sample_json",
       "load_openems_duration_samples"
     ],
+    "service/_helpers.py": [
+      "err_envelope",
+      "load_run_trials",
+      "optional_num",
+      "parse_num",
+      "require_payload_dict"
+    ],
     "service/array_service.py": [
       "NotImplementedPhase",
       "array_pattern",
@@ -651,12 +2569,34 @@
       "collect_eep_manifest",
       "synthesize_array_weights"
     ],
+    "service/campaign_dashboard_service.py": [
+      "MAX_TABLE_ROWS",
+      "campaign_dashboard"
+    ],
+    "service/campaign_executor.py": [
+      "CAMPAIGN_EXECUTORS",
+      "CAMPAIGN_KINDS",
+      "CAMPAIGN_LOG_FILE",
+      "STAGE_RESULT_FILE",
+      "campaign_kind_of",
+      "run_campaign",
+      "wrap_campaign_plan"
+    ],
     "service/cascade_service.py": [
       "PASSIVE_TYPES",
       "cascade_budget_report",
       "if_plan_report",
       "resolve_stage_losses",
       "spur_search_report"
+    ],
+    "service/cloud_sandbox_service.py": [
+      "SANDBOX_SCHEMA",
+      "build_binder_url",
+      "build_colab_url",
+      "build_environment_yml",
+      "build_notebook",
+      "make_sandbox_bundle",
+      "probe_bundle_urls"
     ],
     "service/compose_service.py": [
       "GOLDEN_NETLISTS",
@@ -667,6 +2607,45 @@
       "list_composable_templates",
       "load_golden_netlist",
       "verify_compose_provenance"
+    ],
+    "service/convergence_service.py": [
+      "convergence_report",
+      "duplicate_evals",
+      "improvement_rate",
+      "parallel_coordinate_figure"
+    ],
+    "service/cost_entry_service.py": [
+      "PRICE_TIERS",
+      "add_price_points",
+      "cost_usd_estimate",
+      "empty_book",
+      "load_book",
+      "panelized_board_cost",
+      "save_book"
+    ],
+    "service/data_detective.py": [
+      "DATA_DETECTIVE_SCHEMA",
+      "data_detective_report",
+      "render_detective_markdown"
+    ],
+    "service/datasheet_service.py": [
+      "DATASHEET_DISCLAIMER",
+      "build_datasheet",
+      "load_template_meta",
+      "render_html",
+      "render_markdown"
+    ],
+    "service/design_lint_service.py": [
+      "LINT_REGISTRY",
+      "LintCheckRegistry",
+      "design_lint"
+    ],
+    "service/envelope.py": [
+      "ENVELOPE_SCHEMA_VERSION",
+      "error_envelope",
+      "normalize_errors",
+      "ok_envelope",
+      "skipped_envelope"
     ],
     "service/even_odd_service.py": [
       "EVEN_ODD_TEMPLATES",
@@ -679,6 +2658,7 @@
       "FAB_GEOMETRY_FACTS",
       "check_design_dfm",
       "check_design_dfm_best_effort",
+      "check_stub_backdrill_dfm",
       "check_template_dfm",
       "derive_tolerances_from_fab_profile",
       "design_for_yield",
@@ -686,6 +2666,49 @@
       "load_fab_profile",
       "load_material_epsilon_r_tolerance",
       "resolve_tolerance_source"
+    ],
+    "service/field_audit_service.py": [
+      "build_field_audit_request",
+      "dispatch_field_audit",
+      "png_precheck"
+    ],
+    "service/gallery_service.py": [
+      "FAMILY_LABELS",
+      "PREVIEW_RULES",
+      "RECOMMEND_F0_TOL",
+      "TEMPLATE_FAMILIES",
+      "gallery_cards",
+      "recommend_templates",
+      "resolve_preview_params",
+      "template_family"
+    ],
+    "service/goal_domain.py": [
+      "CRITERIA_KINDS",
+      "GOALS_DIR_ENV",
+      "GOAL_SCHEMA",
+      "GOAL_STATUSES",
+      "campaign_evidence",
+      "criteria_met",
+      "evaluate_criteria",
+      "get_goal",
+      "goal_path",
+      "goals_root",
+      "list_goals",
+      "set_goal",
+      "update_goal"
+    ],
+    "service/guidelines_service.py": [
+      "get_guidelines_for",
+      "repo_root"
+    ],
+    "service/injection_corpus.py": [
+      "INJECTION_CORPUS_SCHEMA",
+      "MUTATION_OPERATORS",
+      "SEED_PAYLOADS",
+      "build_corpus",
+      "corpus_gate",
+      "evaluate_corpus",
+      "render_corpus_report"
     ],
     "service/koh_service.py": [
       "DELTA_CONVENTION",
@@ -699,12 +2722,91 @@
       "LAKE_INDEX_COLUMNS",
       "LAKE_INDEX_TABLE",
       "PACK_FORMAT",
+      "RUN_LINEAGE_TABLE",
+      "build_index_cli_entry",
       "build_runs_index",
+      "configure_duckdb_connection",
       "default_lake_index_db_path",
+      "export_index_parquet",
+      "extract_study_tuple",
       "pack_campaign",
+      "query_lineage",
       "query_runs_index",
+      "render_lineage_md",
       "restore_campaign",
-      "verify_campaign"
+      "study_tuples_from_index",
+      "sweep_runs",
+      "verify_campaign",
+      "verify_lineage"
+    ],
+    "service/layout_assembly_service.py": [
+      "ASSEMBLY_JSON_END",
+      "ASSEMBLY_JSON_START",
+      "SCRIPT_NAME",
+      "aggregate_bom",
+      "assembly_payload",
+      "build_kicad_script",
+      "parse_assembly_stdout",
+      "write_bom_csv",
+      "write_pos_csv"
+    ],
+    "service/layout_diff_service.py": [
+      "DEFAULT_TOL_NM",
+      "diff_layout_payload",
+      "item_fingerprint"
+    ],
+    "service/layout_lvs_service.py": [
+      "DEFAULT_JOIN_TOL_MM",
+      "expected_from_compose_netlist",
+      "lvs_check"
+    ],
+    "service/layout_panel_service.py": [
+      "DEFAULT_EDGE_RAIL_MM",
+      "TAB_HOLES_DEFAULT",
+      "TAB_HOLE_DIA_MM",
+      "TAB_LEN_MM_DEFAULT",
+      "TAB_MIN_COMPONENT_CLEARANCE_MM",
+      "VSCORE_DEFAULT_ANGLE_DEG",
+      "VSCORE_MIN_COMPONENT_CLEARANCE_MM",
+      "VSCORE_WEB_RATIO",
+      "fiducial_layout",
+      "panelize",
+      "vcut_geometry"
+    ],
+    "service/layout_sim_service.py": [
+      "LAYOUT_SIM_SERVICE_SCHEMA_VERSION",
+      "layout_sim_prepare"
+    ],
+    "service/layout_stencil_service.py": [
+      "AR_MIN_IPC7525",
+      "ASPECT_MIN_IPC7525",
+      "aperture_area_ratio",
+      "evaluate_apertures",
+      "max_foil_thickness"
+    ],
+    "service/layout_step_service.py": [
+      "DEFAULT_KICAD_CLI",
+      "export_step",
+      "kicad_cli_info",
+      "resolve_kicad_cli"
+    ],
+    "service/meta_retrieval_service.py": [
+      "SUPPORTED_METRICS",
+      "TEMPLATE_FAMILY_VOCAB",
+      "gate_meta_warm_start",
+      "retrieve_meta_warm_start"
+    ],
+    "service/netlist_goldset_service.py": [
+      "DEFAULT_TOL",
+      "load_netlist_goldset",
+      "netlist_fingerprint",
+      "replay_case",
+      "replay_netlist_goldset"
+    ],
+    "service/netlist_sim_channels.py": [
+      "build_qucsator_channel",
+      "build_simulator_channel",
+      "dataset_metrics"
     ],
     "service/output_sm_service.py": [
       "EXACT_W_TOL",
@@ -713,6 +2815,28 @@
       "S11_DB_FLOOR",
       "TAU_PCT_DEFAULT",
       "TRUST_FLOOR_DEFAULT"
+    ],
+    "service/pattern_lib_service.py": [
+      "PATTERNS",
+      "PATTERNS_SCHEMA",
+      "list_patterns",
+      "pattern_by_topology",
+      "search_patterns",
+      "to_yaml_dict"
+    ],
+    "service/pcb_export_service.py": [
+      "export_pcb_gerber_x2"
+    ],
+    "service/physics_funnel_service.py": [
+      "DEFAULT_STAGES",
+      "filter_query_dataset_result",
+      "run_physics_funnel"
+    ],
+    "service/plate_modal_service.py": [
+      "compare_elmer_modes",
+      "plate_flexural_rigidity",
+      "rayleigh_quotient_frequency",
+      "simply_supported_mode_frequency"
     ],
     "service/port_gate_service.py": [
       "FAMILY_LADDERS",
@@ -726,6 +2850,153 @@
       "ladder_rungs",
       "port_gate_from_json",
       "run_port_gate"
+    ],
+    "service/production_service.py": [
+      "PRODUCTION_SCHEMA_VERSION",
+      "load_json_records",
+      "production_overview",
+      "records_from_payload"
+    ],
+    "service/profile_service.py": [
+      "PROFILE_FORMATS",
+      "profile_run",
+      "profile_status"
+    ],
+    "service/rationale_intake_service.py": [
+      "INTAKE_MEMORY_DIRNAME",
+      "INTAKE_MEMORY_FILENAME",
+      "INTERVIEW_SCHEMA",
+      "default_intake_memory_path",
+      "intake_review",
+      "load_intake_entries",
+      "load_interview_yaml",
+      "save_intake_entries",
+      "to_experience_entries"
+    ],
+    "service/remote_ads_service.py": [
+      "ADS_MUTEX_FINGERPRINT",
+      "ADS_MUTEX_PROCESS",
+      "REMOTE_ADS_ENV",
+      "RemoteAdsError",
+      "remote_ads_run"
+    ],
+    "service/remote_oe_service.py": [
+      "REMOTE_OE_ENV",
+      "RemoteOeError",
+      "build_driver_py",
+      "build_mutex_command",
+      "build_run_task_bat",
+      "remote_oe_run"
+    ],
+    "service/remote_service.py": [
+      "LICENSE_PREFLIGHT_SEAT_QUERY",
+      "REMOTE_SMOKE_ENV",
+      "hfss_remote_session_config",
+      "license_preflight",
+      "remote_hfss_cleanup",
+      "remote_hfss_l2_smoke",
+      "remote_hfss_smoke",
+      "remote_mutex_command",
+      "remote_mutex_precheck",
+      "remote_probe",
+      "remote_status"
+    ],
+    "service/report_assumptions.py": [
+      "ASSUMPTIONS_SCHEMA",
+      "UNVERIFIED_TAG",
+      "collect_unverified_from_sources",
+      "render_assumptions_markdown",
+      "report_assumptions"
+    ],
+    "service/runtime_monitor_service.py": [
+      "monitor_cycle",
+      "monitor_run_dir"
+    ],
+    "service/session_audit_service.py": [
+      "AuditVerdict",
+      "MIN_TRACE_LEN",
+      "assert_visible_implies_logged",
+      "audit_turn_best_effort",
+      "audit_visible_messages",
+      "content_digest",
+      "logged_tool_digests"
+    ],
+    "service/sop_executor_service.py": [
+      "DANGEROUS_TOKENS",
+      "DEFAULT_ALLOWLIST",
+      "SOP_SCHEMA",
+      "dry_run",
+      "render_sop_markdown",
+      "sop_from_playbook_entry",
+      "validate_sop"
+    ],
+    "service/surrogate_registry_service.py": [
+      "judge_registry_warm_start_benefit",
+      "mark_stale_from_anchor_drift",
+      "resolve_warm_start_registry_flag",
+      "run_optimization_with_registry_warm_start",
+      "surrogate_registry_champion_points",
+      "surrogate_registry_mark_stale",
+      "surrogate_registry_query",
+      "surrogate_registry_set_status",
+      "surrogate_registry_upsert"
+    ],
+    "service/synthetic_factory.py": [
+      "SYNTH_FACTORY_SCHEMA",
+      "lhs_unit",
+      "make_dataset"
+    ],
+    "service/systemone_service.py": [
+      "DeterministicProvider",
+      "OpenAICompatibleProvider",
+      "ProviderUnavailableError",
+      "SystemOneAnswer",
+      "SystemOneProvider",
+      "SystemOneProviderError",
+      "SystemOneQuestion",
+      "SystemOneRegistry",
+      "TypesafeJevProvider",
+      "ask_systemone",
+      "get_systemone_registry",
+      "hint_question_for_message",
+      "resolve_systemone_provider",
+      "sanitize_outbound",
+      "systemone_status",
+      "validate_answer_against_question"
+    ],
+    "service/teaching_service.py": [
+      "QUIZ_BANK",
+      "TEACHING_SCHEMA",
+      "TEXTBOOK_INDEX",
+      "check_answer",
+      "list_teaching_templates",
+      "load_teaching",
+      "render_quiz",
+      "render_teaching_markdown",
+      "textbook_index"
+    ],
+    "service/terminology_service.py": [
+      "get_term",
+      "list_terms",
+      "report_footnotes"
+    ],
+    "service/tool_intel_service.py": [
+      "TOOL_INTEL_SCHEMA",
+      "TOOL_TARGETS",
+      "build_releases_url",
+      "detect_installed_version",
+      "parse_release_payload",
+      "render_intel_markdown",
+      "scan_tools"
+    ],
+    "service/toolsets_service.py": [
+      "TOOLSETS_RESOURCE_URI",
+      "TOOLSETS_SCHEMA",
+      "build_toolsets_definition",
+      "default_toolsets_yaml_path",
+      "enumerate_registered_tool_names",
+      "mcp_source_files",
+      "repo_root"
     ],
     "service/tracking_export.py": [
       "DEFAULT_OUT_DIR",
@@ -755,6 +3026,12 @@
     "service/warm_start_data.py": [
       "collect_warm_start_samples",
       "run_optimization_warm_start_from_dataset"
+    ],
+    "service/zenodo_service.py": [
+      "CFF_REQUIRED_FIELDS",
+      "SUPPORTED_CFF_VERSION",
+      "export_zenodo_metadata",
+      "validate_citation_metadata"
     ]
   },
   "schema": "rfauto-public-api-snapshot-v1"

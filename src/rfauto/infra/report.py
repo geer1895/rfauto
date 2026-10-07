@@ -407,19 +407,19 @@ def _render_html(now: str, sections: dict[str, Any]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# PDF export：FSV 等级 / 成本表 / 叙述位（数值 100% 可溯）
+# WP4.7 — PDF export：D12 FSV 等级 / G14 成本表 / F9 叙述位（数值 100% 可溯）
 #
 # 渲染层只做「把传入值转成字符串并排版」，不计算 / 不四舍五入 / 不硬编码任何
 # 物理数字：PDF 里出现的每个数值都必须来自调用方传入的
 # report data / sections。多页输出用 matplotlib PdfPages（matplotlib 是既有
-# 核心依赖，不引入新 GUI 依赖）。叙述位只放传入文本 / None，绝不调用 LLM。
+# 核心依赖，不引入新 GUI 依赖）。F9 叙述位只放传入文本 / None，绝不调用 LLM。
 # ---------------------------------------------------------------------------
 
 #: A4 纵向（英寸）——纯版面常数，不进入 PDF 文本。
 _PDF_PAGE_SIZE: tuple[float, float] = (8.27, 11.69)
 #: 每页文本行数缺省值（版面常数，不进入 PDF 文本）。
 _PDF_LINES_PER_PAGE = 34
-#: CostLedger.rollup() 成本表展示列（只选取，不计算）。
+#: G14 CostLedger.rollup() 成本表展示列（只选取，不计算）。
 _COST_COLUMNS: tuple[str, ...] = (
     "total_tokens",
     "solve_hours",
@@ -449,8 +449,8 @@ def _is_scalar(value: Any) -> bool:
 
 
 def _fsv_lines(fsv: Any) -> list[str]:
-    """FSV 位：评级结果（core/fsv.py 输出）逐字段写入，含 gdm_grade。"""
-    lines = ["FSV Validation"]
+    """D12 位：FSV 评级结果（core/fsv.py 输出）逐字段写入，含 gdm_grade。"""
+    lines = ["D12 FSV Validation"]
     if not isinstance(fsv, dict) or not fsv:
         lines.append("  (not provided)")
         return lines
@@ -465,8 +465,8 @@ def _fsv_lines(fsv: Any) -> list[str]:
 
 
 def _cost_lines(cost_rollup: Any) -> list[str]:
-    """成本位：CostLedger.rollup() 表（batch / actor 两级，值原样）。"""
-    lines = ["Orchestration Cost", "  scope | " + " | ".join(_COST_COLUMNS)]
+    """G14 位：CostLedger.rollup() 表（batch / actor 两级，值原样）。"""
+    lines = ["G14 Orchestration Cost", "  scope | " + " | ".join(_COST_COLUMNS)]
     if not isinstance(cost_rollup, dict) or not cost_rollup:
         lines.append("  (not provided)")
         return lines
@@ -490,7 +490,7 @@ def _cost_lines(cost_rollup: Any) -> list[str]:
 
 
 def _narrative_lines(narrative: Any) -> list[str]:
-    """叙述位：只放传入文本 / None 占位——本模块不做任何 LLM 调用。"""
+    """F9 位：只放传入文本 / None 占位——本模块不做任何 LLM 调用。"""
     lines = ["F9 Narrative"]
     if narrative is None or narrative == "":
         lines.append("  (not provided)")
@@ -608,7 +608,7 @@ def export_report_pdf(
     filename: str = "report.pdf",
     lines_per_page: int = _PDF_LINES_PER_PAGE,
 ) -> Path:
-    """把报告 sections 渲染为多页 PDF 并落盘（additive，不影响 generate_report）。
+    """把报告 sections 渲染为多页 PDF 并落盘（WP4.7；additive，不影响 generate_report）。
 
     参数
     ----
@@ -620,11 +620,11 @@ def export_report_pdf(
         既有报告 sections（metrics / objectives / figures / diagnosis），
         可选附 fsv / cost_rollup / narrative。传入时直接渲染，不重算任何内容。
     fsv:
-        FSV 位——core/fsv.py 评级结果（如 gdm_grade）；值原样写入 PDF。
+        D12 位——core/fsv.py 评级结果（如 gdm_grade）；值原样写入 PDF。
     cost_rollup:
-        成本位——pipeline/quota_guard.py CostLedger.rollup() 表；值原样写入。
+        G14 位——pipeline/quota_guard.py CostLedger.rollup() 表；值原样写入。
     narrative:
-        叙述位——叙述文本 / None 占位。**不触发任何 LLM 调用。**
+        F9 位——叙述文本 / None 占位。**不触发任何 LLM 调用。**
     filename:
         输出文件名（默认 report.pdf）。
     lines_per_page:

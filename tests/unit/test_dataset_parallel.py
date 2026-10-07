@@ -1,6 +1,6 @@
 """F2（df7）物化并行化判据测试：serial vs n_workers 并行**逐位一致**。
 
-规格 F2 步骤 4(a) 预声明判据：构造多 run 临时战役目录 → serial 与
+任务书 F2 步骤 4(a) 预声明判据：构造多 run 临时战役目录 → serial 与
 n_workers=4 的物化结果 == 断言，含行序。战役覆盖全部收集通道：
 
 - ① trials ×2（同 study/seed 共享同参点 → 去重路径）

@@ -2,7 +2,7 @@
 
 闭式（docs/rf_template_references.md §11.2）：两支精确极限锚回到 repo 零厚度
 对称带状线共形闭式 _stripline_z0（h→0 空气线、h→b 全填充）。**FD 重定标**
-（2026-09-18 定标）：裸 q 式把介质份额按平行份额计，中段系统性
+（2026-09-18 w2f 后续定标批）：裸 q 式把介质份额按平行份额计，中段系统性
 高估（标称 +26%），重定标为 softmin 串联饱和修正族（calculators.SSL_Q_G1/
 G2/SSL_D/SSL_P；288 点 fit max|err| 3.84% / 独立验证族 75 点 max 1.94%，
 本文件钉其中 εr=3.66 的 10 点验证子族 ≤1% 与 εr 2.2/10.2 点 ≤2%）——
@@ -10,7 +10,7 @@ G2/SSL_D/SSL_P；288 点 fit max|err| 3.84% / 独立验证族 75 点 max 1.94%�
 q 式 tanh 双精度饱和地板（w/h 大时 q 恒 0）由 _kk_ratio_tanh（sech/AGM
 无相消）根除。
 
-几何口径：基板 H_SUB 以带为中面对称悬浮于腔高 b（单侧写法 [B/2−h,B/2]
+几何口径：基板 H_SUB 以带为中面对称悬浮于腔高 b（任务书单侧写法 [B/2−h,B/2]
 与 "h→b→εr" 锚不可兼得——FD 实证单侧饱和于 (1+εr)/2；本项取对称填充，§11.2）。
 标称=50Ω 设计点（重定标后 w=0.9058，旧 q 式口径 0.731/εeff 2.641 撤；
 FD 真值 εeff≈2.025/Z0≈49.7Ω）。
@@ -42,7 +42,7 @@ ER, H, B = 3.66, 0.508, 1.016
 _C0 = 299792458.0
 
 
-# ─── 闭式锚（两支精确极限 + 单调）────────────────────────────────────────────
+# ─── 闭式锚（任务书两支精确极限 + 单调）──────────────────────────────────────
 
 @pytest.mark.parametrize("w", (0.1, 0.3, 0.5554, 0.731, 1.5, 3.0))
 def test_limits_reduce_exactly_to_stripline_closed_form(w):
@@ -109,7 +109,7 @@ def test_fd_independent_validation_family_pinned():
 
 def test_fd_referee_live_confirms_recalibration_at_old_nominal():
     """裁判现算（零常数复用，#118）：旧标称几何（w=0.731，FD 真值
-    εeff≈2.092/Z0≈56.1Ω，定案值不变）上重定标闭式 −0.58%（旧 q 式
+    εeff≈2.092/Z0≈56.1Ω，w2f 定案值不变）上重定标闭式 −0.58%（旧 q 式
     +26% 高估已撤）。"""
     from rfauto.core.quasistatic_fd import suspended_stripline_quasistatic
 

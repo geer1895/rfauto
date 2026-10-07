@@ -52,6 +52,6 @@ verdict_map:
   UNKNOWN: not_judged
 provenance:
   commit: 9ed833b
-  devlog: "df5 批语境（#335① 勘误、#195 s11_db_min 收口）；DP-12 批条目随批留档"
+  devlog: "-（三七一）df5 批语境（#335① 勘误、#195 s11_db_min 收口）；本批（DP-12）条目待主代理补记（三禁不写账本）"
   referee_run: runs/df5_c3fix/sentinel_verdict.json
   gate_db_legacy: "runs/df5_c3fix/criteria.md §五（2026-09-22 预声明，门值沿用 criteria_a 既有常量）；现行四门阈值即历史 U_val 近似"

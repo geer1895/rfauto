@@ -1,6 +1,6 @@
 """A3 PalaceSolver 官方 schema 对齐测试（v0.18.1 五分节配置 → mock 可执行 → CSV 解析）。
 
-官方口径出处（实测取证，见 runs/palace_spike/schema_fix_plan.md）：
+官方口径出处（2026-09-22 实测取证，见 runs/palace_spike/schema_fix_plan.md）：
 - 配置顶层五分节 + 各键名：官方 scripts/schema/config-schema.json（tag v0.18.1）；
 - CLI 位置参数（无 -config 旗标）：官方 docs/src/run.md；
 - 结果文件 <Problem.Output>/port-S.csv（dB/deg 列、频率列 GHz）：
@@ -34,7 +34,7 @@ OFFICIAL_PORT_S_HEADER = (
     "|S[2][1]| (dB),arg(S[2][1]) (deg.)"
 )
 
-# 双激励全矩阵表头（取证实跑表头回填：官方单文件逐激励列块，块序
+# 双激励全矩阵表头（df5 取证实跑表头回填：官方单文件逐激励列块，块序
 # e=1 全列 → e=2 全列；实测 Case A rc=0、行数=频点数、掩码全 4 对）
 OFFICIAL_PORT_S_HEADER_2EXC = (
     "idx,f (GHz),"
@@ -188,7 +188,7 @@ class TestPalaceConfigGeneration:
     def test_ports_passthrough_into_boundaries(self, tmp_path):
         """端口组以官方 Boundaries 形态透传（WavePort/LumpedPort 分组）。
 
-        激励形态按官方多激励契约：每端口 Excitation: <自身 Index>
+        激励形态按官方多激励契约（df5）：每端口 Excitation: <自身 Index>
         （两端口同 Excitation: true 会落同一激励组，官方 IsMultipleSimple()
         ==false → port-S.csv 必不产出，build 期守卫拒绝——df5_multiexcite_
         criteria.md §1-§2）。
@@ -586,7 +586,7 @@ def test_no_legacy_config_flag_in_cmd(tmp_path, monkeypatch, flag):
     assert cmd[1].endswith("palace_config.json")
 
 
-# ── 多激励 S 矩阵（消账 PENDING #3；判据 runs/palace_spike/
+# ── 多激励 S 矩阵（df5 消账 PENDING #3；判据 runs/palace_spike/
 #    df5_multiexcite_criteria.md，源码+真跑双取证）────────────────────────────
 class TestPalaceMultiExcitation:
     """官方单 run 多激励语义（每端口 Excitation: <自身 Index>）。
@@ -654,7 +654,7 @@ class TestPalaceMultiExcitation:
 
     def test_shared_excitation_group_rejected(self, tmp_path):
         """多端口共享激励组 → build 期拒绝（官方 IsMultipleSimple()==false →
-        port-S.csv 必不产出，官方 run rc=0 静默——Case B 真跑实证：
+        port-S.csv 必不产出，官方 run rc=0 静默——df5 Case B 真跑实证：
         两端口 Excitation:true，wall 2.3s、postpro 无 port-S.csv）。"""
         solver = _make_solver(tmp_path)
         both_true = {"LumpedPort": [
@@ -715,7 +715,7 @@ class TestPalaceMultiExcitation:
         assert solver.get_measured_mask() is None
 
 
-# ── C-LOW 三项回归钉───────────────────────────────────────────────────
+# ── C-LOW 三项回归钉（df5）───────────────────────────────────────────────────
 class TestPalaceCLowPins:
     def test_convergence_threshold_not_mapped_to_adaptivetol(self, tmp_path):
         """C-LOW ①：convergence_threshold 不映射 Solver.Driven.AdaptiveTol。
@@ -787,7 +787,7 @@ _BRIDGE_MESH_WSL = "/root/palace_ws/src/palace/examples/coaxial/mesh/coaxial.msh
 @pytest.mark.skipif(
     os.environ.get("RFAUTO_PALACE_ITEST", "") != "1",
     reason=("真跑集成测试 opt-in：设 RFAUTO_PALACE_ITEST=1 启用（依赖宿主 "
-            "PATH/WSL VM 状态，套件内 PATH 泄漏可致 "
+            "PATH/WSL VM 状态，终门 20260923df4 实证套件内 PATH 泄漏可致 "
             "wsl.exe 9009 假红；unit 门保持封闭 #139）。绿记录 2026-09-23 "
             "单跑 19.95s。"),
 )
@@ -869,13 +869,13 @@ class TestPalaceWslBridgeIntegration:
               f"|S11|@4GHz={s11_db:.4f}dB (reference only)")
 
     def test_end_to_end_multi_excitation(self, tmp_path):
-        """官方单 run 多激励（PENDING #3 消账）：两端口 Excitation: 1/2。
+        """官方单 run 多激励（df5 PENDING #3 消账）：两端口 Excitation: 1/2。
 
         判据预声明 runs/palace_spike/df5_multiexcite_criteria.md §2-§3：
         同 dr_matched 几何（εr=2.08 同轴 + 50Ω LumpedPort×2 + PEC 壳），
         port1/port2 各自激励；断言面=全 (n,2,2) 已测掩码（get_measured_mask
         结构化口径）+ 未测条目零 + 互易对 |S12−S21|（线性幅值）≤ 0.05
-        （对称网格 FEM 离散，Case A 实测 0.0）+ |S21|@4GHz 物理带
+        （对称网格 FEM 离散，df5 Case A 实测 0.0）+ |S21|@4GHz 物理带
         （同 §4，Case A 实测 −0.9685dB 与单激励逐位一致）。
         """
         import numpy as np
@@ -921,7 +921,7 @@ class TestPalaceWslBridgeIntegration:
         assert sorted(solver.get_measured_mask()) == [
             (1, 1), (1, 2), (2, 1), (2, 2)]
         assert np.all(result.s_params != 0)
-        # 互易对（预声明带 ≤0.05 线性幅值；Case A 实测 0.0）
+        # 互易对（df5 预声明带 ≤0.05 线性幅值；Case A 实测 0.0）
         recip = float(np.max(np.abs(result.s_params[:, 0, 1]
                                     - result.s_params[:, 1, 0])))
         assert recip <= 0.05, f"|S12-S21|max={recip:.4f} 越互易带"

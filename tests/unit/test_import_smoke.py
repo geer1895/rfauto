@@ -1,6 +1,6 @@
-"""全模块导入冒烟测试。
+"""全模块导入冒烟测试（审查修复 C2 新增）。
 
-背景：pipeline/orchestrator.py 曾引用三个不存在的模块、job_manager.py
+审查发现 pipeline/orchestrator.py 引用了三个不存在的模块、job_manager.py
 用了与 core.state 不一致的状态词表——两者 import 即崩，但因零引用从未暴露。
 本测试遍历 rfauto 包的所有子模块逐一导入，任何模块损坏都会在此失败，
 而不是等到运行期才被发现。

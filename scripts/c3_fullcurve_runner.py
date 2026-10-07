@@ -25,7 +25,7 @@ runs/smoke_c3_redesign/criteria_a.md，写死再跑；铁律 7 数值只出内�
 消除后衰减动力学不同——stage1 前哨实测衰减率是 NrTS 的唯一合法输入，禁沿用
 旧值外推新设计（criteria_a.md §〇）。
 
-用法（cwd=仓库根）：
+用法（真机发射归主代理；cwd=仓库根）：
   python scripts/c3_fullcurve_runner.py --plan                 # 离线：渲染+exec 几何段落 plan 基座
   python scripts/c3_fullcurve_runner.py --template interdigital --stage stage1
   python scripts/c3_fullcurve_runner.py --template interdigital --stage stage2
@@ -72,7 +72,7 @@ import numpy as np  # noqa: E402
 
 from c3_resonance_q_extract import load_msl_probes  # noqa: E402  内核探针读入（剔残行守卫预检）
 
-# 伪模分类+物理模基重外推；无伪模返回 None=缺省路径零改动
+# 拍板项④：伪模分类+物理模基重外推；无伪模返回 None=缺省路径零改动
 from c3_spurious_modes import split_physical_refit  # noqa: E402
 from rfauto.adapters import openems_templates as _openems_templates  # noqa: E402
 from rfauto.adapters.openems_templates import (  # noqa: E402
@@ -366,7 +366,7 @@ def _refix_dt_reference(template: str) -> float | None:
 
 
 def _load_nominals_doc(nominals_path: Path | None = None) -> dict[str, Any]:
-    """重设计名义 doc 装载（出处纪律：缺省=smoke_c3_redesign 存档；
+    """重设计名义 doc 装载（R2 出处纪律 df5-c3fix：缺省=smoke_c3_redesign 存档；
     新批次经 nominals_path 指向当轮 redesign_nominals.json——防陈旧档误读）。"""
     path = Path(nominals_path) if nominals_path is not None else NOMINALS_PATH
     return json.loads(path.read_text(encoding="utf-8"))
@@ -680,7 +680,7 @@ def classify_stage1_outcome(outcome: dict[str, Any],
 
 
 def _sanitize_probe_dir(work: Path) -> Path | None:
-    """fdtd/ 探针 → fdtd_partial/（剔除被 kill 截断的残行；refix 轮
+    """fdtd/ 探针 → fdtd_partial/（剔除被 kill 截断的残行；runs/smoke_c3_refix/
     extract_partial.py prepare_partial_dir 同式收敛进 runner，归档目录零改写）。
 
     fdtd_partial/ 已在档（先前归档）→ 不覆盖返回 None；无可解析数据行 → None。
@@ -837,7 +837,7 @@ def stage1_partial_verdict(template: str, root: Path | None = None,
     doc["confidence"] = conf
     doc["sentinel"] = sent
     doc["rates"] = rates
-    if summary.get("spurious") is not None:          # 伪模判别留痕
+    if summary.get("spurious") is not None:          # 伪模判别留痕（拍板项④）
         doc["spurious"] = {k: v for k, v in summary["spurious"].items()
                            if k != "report_physical"}
     verdict_pass = not data_reasons and bool(sent.get("ok"))
@@ -967,7 +967,7 @@ def summarize_stage1(template: str, root: Path | None = None,
             freq = np.linspace(FREQ_RANGE_GHZ[0] * 1e9, FREQ_RANGE_GHZ[1] * 1e9, N_FREQ)
             qrep = q_extrap_report_from_probes(str(pdir), freq, float(t_exc),
                                                F0_GHZ * 1e9)
-            # 伪模判别：材料 Q 帽以上非器件模 → 物理模基重外推；
+            # 伪模判别（拍板项④）：材料 Q 帽以上非器件模 → 物理模基重外推；
             # 无伪模 split=None → 以下逐字节走原路径（缺省不变铁律）
             if "keys" in qrep:
                 split_doc = split_physical_refit(str(pdir), freq, float(t_exc),
@@ -1211,7 +1211,7 @@ def _write_cap_result(template: str, work: Path, outcome: dict[str, Any],
 def band_center_3db(f: np.ndarray, s_db: np.ndarray) -> dict:
     """全局峰邻域连续 −3dB 带（含峰的最大连通段）→ 中心/边沿/带宽；另记包络口径。
 
-    （杂项批 2②：原 judge_refix.py:51 只读 import 改
+    （df5 杂项批 2②：原 runs/smoke_c3_refix/judge_refix.py:51 只读 import 改
     本脚本内逐位拷贝——判读链脱 runs/ 证据树 import 依赖；判读数字须与归档
     口径逐位一致，本函数体任一侧改动须双侧同步并跑通 test_c3_fullcurve_runner
     的 G1 dev=0 端到端钉背书。）
@@ -1454,7 +1454,7 @@ def judge_fullcurve_stage1_as_full(template: str,
 #     <root>/<template>/<node_id> ——stage 节点工作目录即现状 stage_dir
 #     （证据面只新增 dag.artifact.json / dag.state.json / stageN_decl/，零改写）。
 # 已落接口缺口注记（P2 接口零改动消费，缺口如实报告）：
-#   ① P2 normalize_node 只保 inputs.files/params——handoff 字面
+#   ① P2 normalize_node 只保 inputs.files/params——任务书 字面
 #     inputs.registration_commit_ts 会被剥除 ⇒ 注册 ts 走 decl params 成分
 #     （params_canonical_json 进 render 键，语义等价：变即键变）；
 #   ② P2 solve 键成分（render_artifact_sha256/engine_version/budget_tier）不含
@@ -1486,7 +1486,7 @@ def _dag_deps() -> tuple[Any, Any]:
 
 
 def openems_registration_ts() -> str:
-    """渲染源 openems_templates.py 末次 commit 时戳（handoff §二.1）。
+    """渲染源 openems_templates.py 末次 commit 时戳（任务书 §二.1）。
 
     best-effort（#105）：非 git 环境/未跟踪 → 空串（键退化仍确定）。"""
     _dr, dc = _dag_deps()
@@ -1494,7 +1494,7 @@ def openems_registration_ts() -> str:
 
 
 def engine_version_tag() -> str:
-    """openEMS 引擎版本指纹（handoff §四：load_solver_versions，空串兜底）。"""
+    """openEMS 引擎版本指纹（任务书 §四：load_solver_versions，空串兜底）。"""
     try:
         from rfauto.infra.run_store import load_solver_versions
         return str((load_solver_versions() or {}).get("openems", "") or "")

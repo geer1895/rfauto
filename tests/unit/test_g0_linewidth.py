@@ -1,4 +1,4 @@
-"""G0 线宽定案单元测试。
+"""G0 线宽定案单元测试（扩展方案.md §3 G0 gate）。
 
 验证三来源交叉检查的阻抗计算和线宽反解：
 1. skrf MLine (Hammerstad-Jensen)
@@ -88,7 +88,7 @@ def find_width(calc_fn, z0_target: float) -> float:
 
 
 class TestKnownWidths:
-    """验证已知线宽的阻抗值（实测数据）。"""
+    """验证已知线宽的阻抗值（扩展方案.md §1.2 实测数据）。"""
 
     @pytest.mark.parametrize("calc_fn", [calc_z0_skrf, calc_z0_pozar, calc_z0_schneider])
     def test_2_20mm_gives_approx_31ohm(self, calc_fn):

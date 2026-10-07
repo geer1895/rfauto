@@ -1,6 +1,6 @@
 """D13 real_edt：第三方 SPICE 交叉验证真机门——ngspice-47 .AC 对拍。
 
-验收口径（方案冻结行 D13 验收列）：
+验收口径（方案冻结行 docs/续跑计划.md D13 验收列）：
 "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。
 
 链路：闭式合成网络（原始 S 由闭式解析式给出，与拟合器/ngspice 无共享代码

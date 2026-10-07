@@ -1,4 +1,4 @@
-"""C4 装配归一化链 + 离线判读单测（零 openEMS/零网络）。
+"""C4 装配归一化链 + 离线判读单测（w1d-c4-assembly-diag，零 openEMS/零网络）。
 
 钉住：
 1. `engine_msl_line_z0`：合成均匀无耗 TL 三面探针（openEMS 探针文件格式）→ 复算 ZL 回收

@@ -1,14 +1,14 @@
-"""槽线（slotline）HFSS 波端口仲裁基准（路线 B，阶段 1）。
+"""槽线（slotline）HFSS 波端口仲裁基准（W3⑧b 路线 B，阶段 1）。
 
-背景：openEMS 无 slotline 端口原语；HFSS 波端口对端口截面解二维本征模，
-天然支持槽线——
+背景（用户 2026-09-16 决定）：openEMS 无 slotline 端口原语（方案 §4 阻塞
+注记 :167/:210/:453）；HFSS 波端口对端口截面解二维本征模，天然支持槽线——
 本脚本用真机数字钉死"波端口能不能做槽线仲裁基准"的答案。
 
 同几何口径（与路线 A runs/slotline_port_a 设计点逐键一致，三方可比）：
 - W=1.0mm 槽宽、RO4350B 基板 er=3.66/tand=0.0037/h=1.524mm、f0=2.5GHz、
   线长 L=1λ'=93.4624mm（core/slotline 闭式：εeff=1.6462、β=67.227rad/m、
   Z0=110.92Ω）；
-- 名义示例 h=0.508/w=0.5 在 2.5GHz 落闭式有效域外（d/λ0=0.00424<0.006，
+- 任务书示例 h=0.508/w=0.5 在 2.5GHz 落闭式有效域外（d/λ0=0.00424<0.006，
   core/slotline.slotline_segment 显式 ValueError），按"闭式有效范围内"硬
   约束与路线 A 可比性取 h=1.524（本 docstring 即偏离说明）；
 - 开放槽线（单面金属、无背板）：基板 z∈[0,h]，金属零厚 PEC sheet z=h，
@@ -16,12 +16,12 @@
 - 板宽=端口宽（端口面覆盖整个端截面）；3D 外表面顶/底/两侧 y 墙=辐射边界
   （开放结构），x 两端=端口面。
 
-波端口尺寸——**槽线特有陷阱（首跑真机实证）**：
+波端口尺寸——**槽线特有陷阱（本项首跑真机实证，2026-09-17）**：
 - 首跑按微带官方惯例（#191：5×w 宽、4×h 高 + 2h 下方空气，5.0×10.668mm）
   → 端口模式 γ=206.8+j0.02 /m、Zo≈j31Ω、S21=−24dB：**截止倏逝模**。根因：
   HFSS 波端口外框默认 Perfect E，框把槽两侧地短接 → 端口截面=带槽金属隔板
   的封闭矩形波导（fin-line），单导体无 TEM，主模截止 ≈9.9GHz（由 α 反推
-  kc=206.8/m），2.5GHz 不传播——即"端口边界贴地"的闭合端口口径。
+  kc=206.8/m），2.5GHz 不传播。任务书"端口边界贴地为闭合端口"即此闭合口径。
 - 修正：端口截面必须**大到框短接的 fin-line 主模在带内传播、且框远离槽场**
   （槽模横向渐近衰减 κ=k0√(εeff−1)≈42/m → 1/e≈24mm）。取三档：
   mid y±40/z(−20,h+20)mm、**wide y±60/z(−30,h+30)mm（=路线 A openEMS
@@ -104,7 +104,7 @@ def _progress(msg: str) -> None:
 
 
 def _kill_desktops(*, strict: bool = True) -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
     记失败）；全场收尾扫尾传 strict=False（活桌面/枚举失败只记录不抛，
@@ -589,12 +589,82 @@ def _finalize(analyses: dict) -> dict:
     return verdict
 
 
+def _plan() -> int:
+    """离线预检（无 HFSS、零写入）：设计点/闭式锚/端口档/预声明判据/schema。
+
+    TODO 0df followUp③ 的 --plan 段：真机前一条命令核对全部锚与判据——
+    闭式锚由 core/slotline 现算（不沿用本文件历史数字）；判据预声明后真机
+    判读不得改门（#122：预声明门错了也如实记 FAIL 不事后改门）。
+    """
+    from rfauto.core.slotline import slotline_closed_form
+
+    cf = slotline_closed_form(W, H, ER, F0)
+    plan = {
+        "design_point": {"w_mm": W, "h_mm": H, "er": ER, "tan_d": TAND,
+                         "f0_ghz": F0, "line_len_mm": L,
+                         "sweep": f"{F_LO}-{F_HI}GHz {N_PTS}pt interpolating"},
+        "closed_form_anchor": {
+            "beta_rad_m": cf.beta_rad_m, "z0_ohm": cf.z0_ohm,
+            "eps_eff": cf.eps_eff, "lambda_ratio": cf.lambda_ratio,
+            "segment": cf.segment,
+            "note": "Janaswamy–Schaubert 闭式（core/slotline，文献锚 −0.83~−0.97%）"},
+        "port_variants": PORT_VARIANTS,
+        "primary_variant": PRIMARY_TAG,
+        "port_size_rule": "波端口截面 ≥±60/∓30mm 量级（#254③：微带惯例框短接槽侧"
+                          "地成 fin-line 截止倏逝模，narrow5w 留证）；mid→wide→xl "
+                          "收敛量化框截断",
+        "z0_rule": "Z0 用 Modal Solution Data Zo(P1, CharImp=Zpv)；touchstone "
+                   "\"! Port Impedance\" 两列恒为 Zpi（#254④）只作旁证",
+        "beta_rule": "β 双路互证：Gamma 虚部 @f0 + S21 绝对相位（分支由闭式先验"
+                     "锁定；群时延法带内 εeff 漂移 ~+4.7% 弃用，#255 线性斜率法"
+                     "驻波下偏 +10.7% 弃用）",
+        "pre_declared_gates": {
+            "gate_beta_le_5pct": "|β_HFSS − β_闭式|/β_闭式 @f0 ≤ 5%（闭式自身拟合"
+                                 " ~2% 带内）",
+            "gate_beta_s21_le_5pct": "|β_S21 − β_闭式|/β_闭式 @f0 ≤ 5%",
+            "gate_s21_vs_gamma_le_1pct_consistency": "|β_S21 − β_Gamma|/β_Gamma "
+                                                     "≤ 1%（两路自洽）",
+            "gate_three_route_vs_hfss_le_2pct5": "路线 A/B openEMS β 对 HFSS 互差 "
+                                                 "≤ ±2.5% → AGREE（e35a517 收口"
+                                                 "口径，槽线族解锁判据）",
+            "gate_amplitude_le_0p5db_same_direction": "#350 跨引擎幅度对拍：|S21|@"
+                                                      "f0 差 ≤0.5dB 且相对闭式偏移"
+                                                      "方向一致才 AGREE（路线 A 匹配"
+                                                      "线口径可比；路线 B 原始 S=并联"
+                                                      "抽头拓扑 #256 不比幅，只比 β）",
+            "z0_no_hard_gate": "Zpv/Zpi/Zvi 三定义 vs 闭式 Z0 全记录不硬判（闭式="
+                               "功率-电压定义，预期 Zpv 最近）",
+        },
+        "hfss_arbitration_meta_schema": {
+            "where": "docs/templates/slotline/meta.yaml 顶层 hfss_arbitration 键"
+                     "（docs-only 注释性元数据，ratrace engine_constants 同款先例）",
+            "fields": {
+                "pre_declared_gates": "本 plan 的 pre_declared_gates 原文",
+                "design_point": "w/h/er/f0/line_len + 三档端口截面",
+                "beta_three_way": "闭式/HFSS(wide)/路线 A/路线 B β@f0 与互差 %",
+                "z0_records": "Zpv/Zpi/Zvi vs 闭式 Z0（% 差，不硬判）",
+                "amplitude": "|S21|@f0 路线 A vs HFSS（dB 差 + 方向）",
+                "verdict": "AGREE / DISAGREE（逐门给 PASS/FAIL）",
+                "evidence": "runs/slotline_arbitration/{hfss_arbitration.json,"
+                            "compare.json} + 脚本名",
+            },
+        },
+    }
+    print(json.dumps(plan, indent=2, ensure_ascii=False), flush=True)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--plan", action="store_true",
+                    help="离线预检（无 HFSS、零写入）：设计点/闭式锚/端口档/"
+                         "预声明判据/hfss_arbitration schema")
     ap.add_argument("--analyze-only", action="store_true", help="只对既有产物重分析")
     ap.add_argument("--variants", default=",".join(v["tag"] for v in PORT_VARIANTS),
                     help="逗号分隔要求解的档（默认全部）")
     args = ap.parse_args()
+    if args.plan:
+        return _plan()
     OUT.mkdir(parents=True, exist_ok=True)
     wanted = [v.strip() for v in args.variants.split(",") if v.strip()]
     _write_result({"stage": "start", "w_mm": W, "h_mm": H, "er": ER,
@@ -627,7 +697,7 @@ def main() -> int:
                 _write_result({"stage": f"failed_all_attempts_{tag}", "error": last_err})
                 _progress(f"stage2 hfss/{tag}: FAILED all attempts {last_err}")
                 print(f"SLOTLINE_HFSS_ARB_FAIL_{tag}", flush=True)
-        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐（df5）
 
     # ── 分析阶段（只读产物；失败不重解）──
     pm_all = _load_port_modes()

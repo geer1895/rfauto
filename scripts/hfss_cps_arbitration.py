@@ -1,4 +1,4 @@
-"""CPS εeff 之争 HFSS 全波仲裁。
+"""CPS εeff 之争 HFSS 全波仲裁（wf:hfss-cps-arbitration，登记队列第 1 项）。
 
 背景：c9 复跑——openEMS 引擎三通道互证 CPS εeff≈1.90 且
 Z·√εeff≈空气闭式 0.1%；FD 裁判（core/quasistatic_fd.py，#300 已过基准）给
@@ -18,16 +18,15 @@ criteria.md 起跑前写死）。
 - modes=1：CPS 奇模 εeff 最高按 β 降序居首（偶模/框盒模均低于之，sanity 窗
   复核）；renormalize=False → 广义模态 S。
 
-提取（#255/#254④ 口径）：β 主通道=端口 Gamma 虚部（Modal 二维本征解，无接头
+提取（#255/#254④ 铁律）：β 主通道=端口 Gamma 虚部（Modal 二维本征解，无接头
 污染/无解缠分支歧义）；交叉验证=S21 绝对相位（分支由 FD 先验锁定，门 ≤1%）；
 驻波线性相位斜率法禁用；Z0=LastAdaptive Zo(P1,CharImp=Zpv)（touchstone
 "! Port Impedance" 恒写 Zpi 禁作判据，Zvi=√(Zpi·Zpv) 记录）。
 
-运行（长任务分离+日志轮询 #157；stdout 落文件 #242；outdir 绝对路径 #243；
-示例以本仓 checkout 根为工作目录）：
-  powershell Start-Process <仓库根>\\.venv\\Scripts\\python.exe
+运行（长任务分离+日志轮询 #157；stdout 落文件 #242；outdir 绝对路径 #243）：
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_cps_arbitration.py" -WorkingDirectory
-    <仓库根> -RedirectStandardOutput runs/cps_hfss_arbitration/hfss/run.log
+    D:/rf_workspace -RedirectStandardOutput runs/cps_hfss_arbitration/hfss/run.log
     -RedirectStandardError runs/cps_hfss_arbitration/hfss/run.err.log
 产物：runs/cps_hfss_arbitration/hfss/{hfss_cps_<档>.s2p, hfss_cps_<档>_gamma.s2p,
   port_modes.json, project_<档>/}、runs/cps_hfss_arbitration/hfss_arbitration.json
@@ -78,7 +77,7 @@ EPS_ENGINE = 1.90        # c9 三通道互证（敏感性窗 pt2 1.8889/pt3 1.90
 EPS_ENGINE_PT2 = 1.8889
 EPS_ENGINE_PT3 = 1.9025
 Z0_ENGINE = 108.5        # c9 双站行波拟合（差分口径）
-GATE_PCT = 3.0           # 预声明：谁在 ±3% 内谁胜
+GATE_PCT = 3.0           # 任务书立规：谁在 ±3% 内谁胜
 GATE_CONV_PCT = 1.0      # 截面收敛采信门 |β_wide/β_xl−1|
 GATE_S21_VS_GAMMA_PCT = 1.0   # β 双通道一致性门
 GATE_PORT_ASYM_PCT = 1.0      # 两口 Gamma 相对不对称门
@@ -134,7 +133,7 @@ def _write_orphan_check(stage: str) -> list[dict]:
 
 
 def _kill_desktops(*, strict: bool = True) -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     attempt 起点用缺省 strict=True（活桌面 fail-closed 抛错，重试架如实
     记失败；杀前清单仍由 _write_orphan_check 留证）；全场收尾扫尾传
@@ -801,7 +800,7 @@ def main() -> int:
                                "error": last_err})
                 _progress(f"hfss/{tag}{suffix}: FAILED all attempts {last_err}")
                 print(f"CPS_HFSS_ARB_FAIL_{tag}{suffix}", flush=True)
-        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐
+        _kill_desktops(strict=False)  # 收尾扫尾：只清孤儿，不连坐（df5）
         _write_orphan_check("post_solve" + suffix)
 
     # ── 分析阶段（只读产物；失败不重解）──

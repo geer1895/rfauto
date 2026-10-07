@@ -1,9 +1,9 @@
-"""端口去嵌入标准化（skrf）——把 MSLPort 测量面问题变成可推导量。
+"""§10.20 ② 端口去嵌入标准化（skrf）——把 MSLPort 测量面问题变成可推导量。
 
 背景
 ----
 openEMS MSLPort.CalcPort 的参考面/探针安排在倒置叠层下产生**乘性**传播
-常数偏移（#205：实测数据 β2/β1 = 1.0491±0.0011 带内恒定），
+常数偏移（#205：runs/via_smoke/pt3 β2/β1 = 1.0491±0.0011 带内恒定），
 以及 S21 相位含端口分解伪象（#161：相位门撤下）。此前项目把这类偏差当
 "经验常数"（ratrace k=1.0975 / via 1.0491）使用。本模块把去嵌入过程
 **标准化、确定化、可审计化**：
@@ -24,15 +24,15 @@ openEMS MSLPort.CalcPort 的参考面/探针安排在倒置叠层下产生**乘�
 诚实边界（不得含糊）
 --------------------
 1. 本模块给出的是**确定性算法**，不提供物理第一性推导。via 案例的 1.0491
-   在该案例数据（只有 β 与 2 端口 S，无 thru/line/open/short 实测标准件）
+   在既有归档（只有 β 与 2 端口 S，无 thru/line/open/short 实测标准件）
    下只能作为"以镜像对称的参考端口为标准的乘性尺度"被**复现**（算出
    1.049083），不能被几何量独立推导。详见 analyze_via_port_scale 与
    scripts/deembed_via_case.py 的证据链。
 2. thru/line 法要求标准件是匹配线；OpenShort 法要求夹具可建模为
    "串联 Z_s + 并联 Y_p"。模型不成立时结果无物理意义——调用方自负其责。
-3. **后续修订（推翻上条的镜像前提）**：beta_from_voltage_trio
+3. **2026-09-13 收口修订（推翻上条的镜像前提）**：beta_from_voltage_trio
    （三点波动方程估计器 β²=−U″/U，对任意驻波比精确、只用电压探针、与
-   CalcPort 的 −dEt·dHt/(Ht·Et) 链路无关）作用在 via 案例
+   CalcPort 的 −dEt·dHt/(Ht·Et) 链路无关）作用在 runs/via_smoke/pt3 的
    **原始电压探针场数据**上给出 β2/β1 = 1.0467±0.0003（带内平坦 0.03%）
    ——即 4.9% 的比值**主要是真实模态差异**（εeff2/εeff1 ≈ 1.095），
    仅 ~0.23% 是探针链路驻波采样残差。因此：
@@ -384,13 +384,13 @@ def analyze_via_port_scale(
     documented_scale: float = DOCUMENTED_VIA_SCALE,
     documented_half_width: float = DOCUMENTED_VIA_SCALE_HALF_WIDTH,
 ) -> dict[str, Any]:
-    """via β2 案例的确定性去嵌报告（验收口径，**条件性**）。
+    """via β2 案例的确定性去嵌报告（§10.20 ② 验收口径，**条件性**）。
 
     物理前提（#203/#206）：两条馈线几何镜像且同截面，故 εeff2 ≡ εeff1；
     port1（正向馈）为可信参考。去嵌 = 以 port1 为标准的乘性尺度校正。
 
     .. warning::
-        镜像前提其后已被原始场数据否证（见模块 docstring 第 3 条
+        2026-09-13 收口：镜像前提已被原始场数据否证（见模块 docstring 第 3 条
         与 derive_via_mirror_verdict）。本函数保留为"声明前提下的条件去嵌"
         ——s=mean(β2/β1) 相除后 eps_eff2_deembedded_mean 与 eps_eff1_mean 的
         自洽是代数近恒等（自证），deembedded_rel_deviation 不承载物理信息；
@@ -431,7 +431,7 @@ def analyze_via_port_scale(
 
 
 # ---------------------------------------------------------------------------
-# 三点波动方程估计器（驻波免疫的独立 β 通道）
+# 三点波动方程估计器（2026-09-13 收口：驻波免疫的独立 β 通道）
 # ---------------------------------------------------------------------------
 
 def beta_from_voltage_trio(
@@ -504,7 +504,7 @@ def derive_via_mirror_verdict(
     documented_scale: float = DOCUMENTED_VIA_SCALE,
     documented_half_width: float = DOCUMENTED_VIA_SCALE_HALF_WIDTH,
 ) -> dict[str, Any]:
-    """via β2 案例的镜像前提裁决（权威推导）。
+    """via β2 案例的镜像前提裁决（§10.20 ② 收口口径，权威推导报告）。
 
     推导链（全部来自原始探针场数据，不循环引用 CalcPort 链路）：
     1. 每端口用 beta_from_voltage_trio 从电压探针三重奏独立估计 β_trio；
@@ -518,7 +518,7 @@ def derive_via_mirror_verdict(
         - "chain_artifact"：镜像前提成立、链路比值偏离 1 → 偏移是探针伪象，
           乘性去嵌（analyze_via_port_scale 语义）正当；
         - "real_modal_difference"：镜像前提被否证 → 偏移主要是真实模态差异，
-          乘性去嵌会把真实物理当误差除掉（via 案例即此判）；
+          乘性去嵌会把真实物理当误差除掉（pt3 归档即此判）；
         - "consistent_mirror"：前提成立且链路比值 ≈1，无需去嵌。
     """
     freq = np.asarray(freq_hz, dtype=float)
@@ -578,7 +578,7 @@ def derive_via_mirror_verdict(
 
 
 # ---------------------------------------------------------------------------
-# 参考面时延相位去嵌（逐点色散相位原语，2026-09-15 定稿）
+# 参考面时延相位去嵌（C13 followUp ③，2026-09-15：逐点色散相位原语）
 # ---------------------------------------------------------------------------
 
 def reference_delay_phase(freq_hz: np.ndarray, tau_s: Any) -> np.ndarray:
@@ -623,7 +623,7 @@ def deembed_reference_delay(
 
     诚实边界：只能去除**纯时延型**参考面相位。λ/4 耦合段级联这类
     commensurate 网络的相位在 Ω=(f/f0−f0/f)/fbw 域非有理（Richards 变量
-    tan(θ) ≠ Ω 映射），不是时延、任何 τ 都无法完全吸收——反提对此类
+    tan(θ) ≠ Ω 映射），不是时延、任何 τ 都无法完全吸收——C13 反提对此类
     数据的收敛边界见 calculators.coupling_matrix_extract 注释块。
     """
     f = np.asarray(freq_hz, dtype=float)

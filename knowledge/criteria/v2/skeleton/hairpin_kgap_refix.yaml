@@ -1,0 +1,42 @@
+schema: criteria/v2
+criteria_id: hairpin_kgap_refix
+title: hairpin_alt k(gap) 图谱真机复跑（rm-oe-hairpin）·预声明门与点集
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: hairpin, f_ghz: null}
+migration:
+  tier: A
+  source_index: index.yaml
+  source_md: runs/hairpin_kgap_refix/criteria.md
+  families: [hairpin, hairpin_alt]
+  n_gates: 9
+evidence_fields: [hairpin_kgap_refix#1, hairpin_kgap_refix#2, hairpin_kgap_refix#3, hairpin_kgap_refix#4,
+  hairpin_kgap_refix#5, hairpin_kgap_refix#6, hairpin_kgap_refix#7, hairpin_kgap_refix#8, hairpin_kgap_refix#9]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: hairpin_kgap_refix#1, tier: A, raw: k<0.03 走峰电平法（模型 3dB 宽 vs 实测差 ≤25%）；k≥0.03 走全线形拟合（rms
+      ≤1dB）；, threshold: 0.03}
+  - {gate_id: hairpin_kgap_refix#2, tier: A, raw: '- 总预算 ≤4h（14400s）串行。首跑 g11328（设计点）实测单点墙钟 + fdtd 能量衰减',
+    threshold: 4.0}
+  - {gate_id: hairpin_kgap_refix#3, tier: A, raw: 实测 ≤1800s/点 → 6 点（5 alt + A/B）≈ ≤3h，全做；若 >2400s/点 →
+      缩到 5 alt 点、, threshold: 1800.0}
+  - {gate_id: hairpin_kgap_refix#4, tier: A, raw: → 最坏 ~2.1dB/ns → −60dB 需 ~30ns → NrTS≥~296000。, threshold: null}
+  - {gate_id: hairpin_kgap_refix#5, tier: A, raw: 约 −40dB 量级，~39min/点，5 alt 点+A/B 总计 ≈3.3h，预算 ≤4h 内留 ~25min
+      余量）。, threshold: 4.0}
+  - {gate_id: hairpin_kgap_refix#6, tier: A, raw: '提取 k_EM，|Δk|/k ≤2% 则抽取对尾部截断稳健（门带 c∈[0.6,1.2] 宽 20%、单调性',
+    threshold: 2.0}
+  - {gate_id: hairpin_kgap_refix#7, tier: A, raw: '- **逐点收敛验收（先于数据声明）**：跑后 port_ut 衰减 ≤−50dB 或 t_end<NrTS
+      上限', threshold: null}
+  - {gate_id: hairpin_kgap_refix#8, tier: A, raw: （EndCriteria 停机）为收敛；触上限且衰减 >−50dB → 该点单独加窗重跑一次（每点, threshold: null}
+  - {gate_id: hairpin_kgap_refix#9, tier: A, raw: '- 判据收敛性旁证：β 金标准 |β偏差| ≤3% 档案域、端口 max|S11| ≤1、NrTS 不触顶',
+    threshold: 3.0}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/hairpin_kgap_refix,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#hairpin_kgap_refix/criteria.md gates[1..9]'}

@@ -1,11 +1,11 @@
-"""mline 探针 r2-r4 挂起最小复现（#191 家族归因，断言验证）。
+"""mline 探针 r2-r4 挂起最小复现（#191 家族归因，方案 §10.9 断言验证）。
 
 双臂实验（几何逐坐标同 scripts/hfss_mline_probe.py r4 版）：
   --solution-type default : 忠实复刻探针（Hfss() 不传 solution_type，
                             AEDT 2025.1 新设计默认 = HFSS Terminal Network）
   --solution-type modal   : 复刻 adapter 通道（open_or_create_project 显式
                             solution_type="DrivenModal"）
-r4 证据链（真机归因收口）：
+r4 证据链（2026-09-11 真机归因收口）：
   真因 = 端口 sheet origin 用了**字面算术表达式** "-2.5*1.113"（无单位），
   HFSS 模型器表达式引擎按 SI 米求值（=-2.7825m），端口 sheet 悬空在域外
   ~2.78m 处（活会话实测面心 x=-2779.718mm）→ solve 4-7s 静默败，profile
@@ -16,7 +16,7 @@ r4 证据链（真机归因收口）：
   Normal Completion，|S11|min=-52dB，εeff 对 openEMS β 锚 +1.2%）。
   解类型（Terminal/Modal）两臂同败已证伪，非根因。
 
-εeff 判读（双锚定稿，内核 core/anchor_verdict.dual_anchor_verdict）：
+εeff 判读（2026-09-12 双锚定稿，内核 core/anchor_verdict.dual_anchor_verdict）：
   unitfix 臂健康 = |S11|min<-10dB ∧ 对 openEMS β 金标准 ≤2% ∧ 对 HJ
   准静态闭式 ≤3%。旧 HJ ±2% 单门在 diag4/diag5 实测 +2.36%/+2.53% 超
   门（跨引擎同向偏移，openEMS 自身对 HJ +1.18%）——口径修订理由见
@@ -24,7 +24,7 @@ r4 证据链（真机归因收口）：
   臂 port origin 字面表达式（复现核心，test_dim_audit 钉住 NON_LITERAL
   行为）外一律预计算浮点+显式 mm 后缀（#218 ①）。
 
-用法（分离进程，#157）：
+用法（分离进程， #157）：
   Start-Process 分离运行，stdout/stderr 落 runs/mline_repro_rN_<臂>.log
 产物：runs/audit_freq_scale/hfss_mline_repro/<臂>/mline_repro.aedt
 结论打印（供归因判读）：
@@ -51,7 +51,7 @@ L_TOTAL = 2 * Y_HALF
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
@@ -68,7 +68,7 @@ def _build_mline(h, solution_mode: str, port_origin_unit_fix: bool = False) -> N
     h.modeler.model_units = "mm"
     h.materials.add_material("rfauto_m366", properties={
         "permittivity": ER, "dielectric_loss_tangent": TAND})
-    # 几何坐标一律预计算浮点+显式 mm（#218 ①；port origin
+    # 几何坐标一律预计算浮点+显式 mm（#218 ①，2026-09-12 补；port origin
     # x0 的 literal 臂字面表达式是缺陷复现核心，唯一豁免）
     h.modeler.create_box(origin=[f"-{X_HALF}mm", f"-{Y_HALF}mm", "0mm"],
                          sizes=[f"{2 * X_HALF}mm", f"{2 * Y_HALF}mm",
@@ -220,7 +220,7 @@ def _run_once(solution_mode: str, work: Path,
 
     stackup = Stackup.from_materials_yaml("rogers4350b_h0.508")
     _, eps_hj = forward_z0(W, 2.5, stackup)
-    # 双锚判读（旧 HJ±2% 单门收编；diag4/diag5 实测
+    # 双锚判读（2026-09-12，旧 HJ±2% 单门收编；diag4/diag5 实测
     # +2.36%/+2.53% 在副锚放宽 ±3% 口径下如实入册）
     res = dual_anchor_verdict(s11_min_db=float(m11.min()),
                               eps_hfss=float(eps_eff),

@@ -240,7 +240,7 @@ def classify_solid(mesh: SolidMesh, *, name: str = "solid",
         approximation={"kind": _APPROX_ENGINE_STL, "volume_rel_err": 0.0},
         requires_stl=True, stl_path=stl_path,
         bbox_mm=mesh.bbox_mm, volume_mm3=mesh.volume_mm3,
-        # CSXCAD 实测：PolyhedronReader 按文件原生数字读入
+        # CSXCAD 实测（2026-09-15）：PolyhedronReader 按文件原生数字读入
         # （不知道单位），故必须挂 AddTransform('Scale', 1e-3) 把 mm 映到 m；
         # 变换只作用于 IsInside（网格器消费面），GetBoundBox 仍报原生 mm——
         # render 脚本的网格线须由 payload bbox_mm/1000 推导，勿读原语 bbox。
@@ -288,7 +288,7 @@ def csx_lines(payloads: list[dict[str, Any]], *, csx_var: str = "CSX") -> list[s
             prim_var = f"_solid_prim_{prim_seq}"
             prim_seq += 1
             # mm 文件 → m 引擎域：挂 Scale 变换（GetBoundBox 不随变换，
-            # IsInside/网格器按变换后坐标，CSXCAD 实测）
+            # IsInside/网格器按变换后坐标，CSXCAD 2026-09-15 实测）
             lines.append(f"{prim_var} = {var}.AddPolyhedronReader("
                          f"{str(args['filename'])!r})")
             lines.append(f"{prim_var}.AddTransform('Scale', "

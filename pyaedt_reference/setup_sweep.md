@@ -316,7 +316,7 @@ dens.props["LayersNum"] == "1"
 
 ---
 
-## 收敛信息提取（pyaedt 1.4.0 · 实测补充）
+## 收敛信息提取（pyaedt 1.4.0 · P2-D6 实测补充）
 
 自适应求解的 passes / delta_s **真值不能用** `getattr(setup, "passes", 0)`（1.4.0 恒为 0）。
 正确 API 是 `setup.get_profile()`（返回 `Profiles` 映射；类在 `ansys.aedt.core.modules.profile`）：
@@ -351,7 +351,7 @@ delta_s = float(getattr(last, "delta_s_max", 0.0) or 0.0)
   正确模式：`d = Desktop(version=, non_graphical=)` 先起桌面，再
   `Hfss(version=, non_graphical=, new_desktop=False)` 复用同一桌面。
 - **版本**：`HfssSession.connect` 默认 `desktop_version="2024.1"`；当目标机是 AEDT 2023R1 时
-  必须显式传 `"2023R1"`，否则连错版本失败（版本误判坑）。`configs/settings.yaml` 现无
+  必须显式传 `"2023R1"`，否则连错版本失败。`configs/settings.yaml` 现无
   `desktop_version` 字段——真机接入时需在 connect settings 里注入。
-- **路径**：`RFAUTO_AEDT_PATH`（加载优先级 env > settings.yaml > 默认；指向
-  本机 AEDT Win64 安装目录）。
+- **路径**：`RFAUTO_AEDT_PATH=E:\HFSS\v231\Win64`（加载优先级 env > settings.yaml > 默认）。
+  已验证该路径下 AEDT 2023R1 非图形模式约 12s 启动成功（gRPC 端口动态分配）。

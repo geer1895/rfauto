@@ -26,7 +26,7 @@ def main() -> int:
     parser.add_argument("--runs-limit", type=int, default=200,
                         help="最多索引多少个 run 目录")
     parser.add_argument("--skip-runs", action="store_true",
-                        help="只索引 docs/（不读 runs/）")
+                        help="只索引 docs/（不读 runs）")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()

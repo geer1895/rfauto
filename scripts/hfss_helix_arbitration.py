@@ -77,7 +77,7 @@ def _mm(v: float) -> str:
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
@@ -147,19 +147,18 @@ def _build_and_solve() -> dict:
         # 平面取向实测口径（hfss_ratrace_arbitration #191 注）：
         #   "XY"→法向 Z（sizes=[x_ext, y_ext]）；"YZ"→法向 X（sizes=[y_ext, z_ext]）；
         #   其余（"ZX"）→法向 Y（sizes=[z_ext, x_ext]）
-        # 零厚 sheet 改**薄实体**（T_MM 等效铜厚，几何位置
-        # 不变）。此前 14 片独立 sheet 仅"边落在相邻片面内"接触（riser 底边落在
+        # 第 6 轮（2026-09-17 收尾批）：零厚 sheet 改**薄实体**（T_MM 等效铜厚，几何位置
+        # 不变）。第 2-4 轮 14 片独立 sheet 仅"边落在相邻片面内"接触（riser 底边落在
         # 水平带面中间），HFSS 独立 sheet 网格节点不共享 → 电气不连通 → 14 块孤立板
-        # 电容堆叠=全带容性/R≈0/无过零（多轮一致）；unite(sheets) 对边-面接触的
-        # sheet 布尔会返回 False（AEDT 不收此类接触）；
-        # openEMS FDTD 同格金属自动连通、网格/域
+        # 电容堆叠=全带容性/R≈0/无过零（三轮一致），第 5 轮 unite(sheets) 返回 False
+        # （AEDT 不收边-面接触的 sheet 布尔）；openEMS FDTD 同格金属自动连通、网格/域
         # 双稳健 f_x≈3.30GHz。薄实体面-面接触 unite 稳健、材料 pec 直赋；unite 后
         # 对象数记入结果（连通性证据，须为 1）。
-        # 早期失败的根因：_ant2_layout 的 t0_d/t1_d 是 0.6×3.0×0.9mm
-        # **三维金属块**（斜升段 FDTD 近似），sheet 映射 else 分支把它压成
+        # 第 7 轮（2026-09-17 收尾批）根因：_ant2_layout 的 t0_d/t1_d 是 0.6×3.0×0.9mm
+        # **三维金属块**（斜升段 FDTD 近似），第 2-6 轮的 sheet 映射 else 分支把它压成
         # x=x0 外侧面零厚板 → riser t*_cd 与它仅点接触、下一圈 t*_a（x 起于 −1.5）与它
         # 不接触 → HFSS 螺旋在 C→D→A 断路，只驱动 ¾ 圈 → 全带容性/无电感/无过零
-        # （多轮一致，2× 电抗、缺 ~7nH 螺旋电感）。修法：所有盒按真实三维尺寸建，
+        # （五轮一致，2× 电抗、缺 ~7nH 螺旋电感）。修法：所有盒按真实三维尺寸建，
         # 仅零厚轴用 T_MM 等效铜厚；unite 后对象数须为 1。
         T_MM = 0.035
         sheet_names = []
@@ -198,7 +197,7 @@ def _build_and_solve() -> dict:
             orientation="ZX",
             origin=[_mm(-d / 2 - w / 2), _mm(-d / 2 - w / 2), "0mm"],
             sizes=[_mm(g), _mm(w)], name="FeedSheet")
-        # 真机实证（同点三次尝试失败）：lumped_port 传 int
+        # 真机实证（2026-09-17 收尾批，三次尝试同点失败）：lumped_port 传 int
         # face id → PyAEDT convert_to_selections(int, False) 回字符串 face id →
         # _create_lumped_driven 当**对象名**写 props["Objects"]=["<id>"] →
         # AEDT「a geometry selection is required」。与 wave_port（props["Faces"]
@@ -220,12 +219,12 @@ def _build_and_solve() -> dict:
         h.assign_perfecte_to_sheets(assignment=ground_faces, name="GndPEC")
         h.assign_radiation_boundary_to_faces(assignment=rad_faces, name="Rad")
 
-        # 显式面网格精化（真机实证）：几何/边界审计逐盒正确
+        # 显式面网格精化（2026-09-17 收尾批第 2 轮实证）：几何/边界审计逐盒正确
         # 而 70.6s 极速解得全带 X∈[−430,−45]Ω 无过零（openEMS −238→+163Ω 过零
         # 3.3146GHz）——0.6mm 带/2mm 馈柱在 ±110mm 开域空气盒里，HFSS 初始网格
-        # ~λ/3@3GHz 量级对细带欠分辨；先审模型再加面长度网格 + 最少收敛
-        # 2 趟。0.15mm 面网格与粗网格差 <3%（网格非主因）；真实三维块几何
-        # 下 0.15mm 使 hf3d 5.8GB 爬行（10min 推进 26s CPU）→ 放宽 0.3mm
+        # ~λ/3@3GHz 量级对细带欠分辨； 1b 先审模型：加面长度网格 + 最少收敛
+        # 2 趟。第 3 轮 0.15mm 与粗网格差 <3%（网格非主因）；第 7 轮真实三维块几何
+        # 下 0.15mm 使 hf3d 5.8GB 爬行（10min 推进 26s CPU）→ 第 8 轮放宽 0.3mm
         # （0.6mm 带仍 2 格），自适应趟数补足。
         h.mesh.assign_length_mesh(assignment=[*pec_targets, "FeedSheet"],
                                   inside_selection=False, maximum_length=0.3,

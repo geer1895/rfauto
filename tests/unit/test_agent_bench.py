@@ -10,23 +10,12 @@ import socket
 import sys
 from pathlib import Path
 
-import pytest
 import yaml
 from typer.testing import CliRunner
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 runner = CliRunner()
-
-#: 评测任务集（tests/gold/agentbench_public.yaml）不随本仓分发（规划中的后续
-#: 公开项，见 README 路线图）；缺集时依赖它的测试整体 skip，打分/CLI 逻辑
-#: 测试用合成任务集照常运行。
-PUBLIC_SET = (Path(__file__).resolve().parents[1] / "gold"
-              / "agentbench_public.yaml")
-requires_public_set = pytest.mark.skipif(
-    not PUBLIC_SET.exists(),
-    reason="agentbench public task set not distributed in this repo "
-           "(see README roadmap)")
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +48,6 @@ def _call(tool, **args):
 # 公开集结构（E11 四族 + ground truth 可溯）
 # ---------------------------------------------------------------------------
 
-@requires_public_set
 class TestPublicSetStructure:
     def test_public_set_loads_with_e11_families(self):
         from rfauto.service.agent_bench import load_bench_set
@@ -213,7 +201,6 @@ class TestTwoAxisScoring:
         })
         assert r["abstraction"] == 1.0
 
-    @requires_public_set
     def test_malformed_trajectory_reported_not_raised(self):
         from rfauto.service.agent_bench import _score_one_set, load_bench_sets
 
@@ -228,7 +215,6 @@ class TestTwoAxisScoring:
 # 公开/私有双集（防污染）
 # ---------------------------------------------------------------------------
 
-@requires_public_set
 class TestDualSets:
     def test_default_public_only_not_configured(self):
         from rfauto.service.agent_bench import load_bench_sets
@@ -275,7 +261,6 @@ class TestDualSets:
         assert sets["overlap_ids"] == ["ab001_render_wilkinson_fake"]
         assert any("污染" in e for e in sets["errors"])
 
-    @requires_public_set
     def test_evaluate_partition_mixed_records(self, tmp_path):
         from rfauto.service.agent_bench import evaluate_agentbench, load_bench_set
 
@@ -303,7 +288,6 @@ class TestDualSets:
 # 回归门
 # ---------------------------------------------------------------------------
 
-@requires_public_set
 class TestAgentbenchGate:
     def test_gate_green_with_reference_provider(self):
         from rfauto.service.agent_bench import (
@@ -462,7 +446,6 @@ class TestAgentbenchGate:
 # CLI 薄壳（typer CliRunner 直接驱动 bench_app；main.py 注册一行后行为一致）
 # ---------------------------------------------------------------------------
 
-@requires_public_set
 class TestCliBenchApp:
     def test_help_lists_both_gates(self):
         from rfauto.cli.bench_app import bench_app

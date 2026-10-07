@@ -1,0 +1,54 @@
+schema: criteria/v2
+criteria_id: siw_family
+title: SIW 族立项·预声明判据（criteria 先写后跑，2026-09-22）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: siw, f_ghz: null}
+migration:
+  tier: B
+  source_index: index.yaml
+  source_md: runs/siw_family/criteria.md
+  families: [siw]
+  n_gates: 12
+evidence_fields: [siw_family#1, siw_family#2, siw_family#3, siw_family#4, siw_family#5, siw_family#6,
+  siw_family#7, siw_family#8, siw_family#9, siw_family#10, siw_family#11, siw_family#12]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - gate_id: siw_family#1
+    tier: B
+    raw: '| s（过孔心距） | **1.0 mm** | 同上；复核 s/d=1.667 ≤ 2 ✔、d=0.6 < λ_sub(f0)/5=3.134 ✔、< λg(f0)/5=4.205
+      ✔ |'
+    threshold: 2.0
+    table:
+      name: s（过孔心距）
+      op: ≤
+      unit: null
+      observed: []
+  - {gate_id: siw_family#2, tier: A, raw: 派生（渲染层 siw_layout 单源，米）：端口面 y=±31.5mm；端口盒=中线 z 桥, threshold: 31.5}
+  - {gate_id: siw_family#3, tier: A, raw: ~±1%）；② R=Z_PV 与电桥实际视入阻抗非严格相等 → 带内 |S11| 含残余失配, threshold: 1.0}
+  - {gate_id: siw_family#4, tier: A, raw: 3. **#349**：全轴网格最小间距 ≥10µm（渲染守卫 ValueError 拒渲染；审计复测）。, threshold: 10.0}
+  - {gate_id: siw_family#5, tier: A, raw: ⇒ fc10 = c/(2a) = 6.5571 GHz（Pozar 教科书值，|Δ|≤0.05% 钉死）。, threshold: 0.05}
+  - {gate_id: siw_family#6, tier: A, raw: −60dB 需 Q·ln(1000)/ω≈16.5ns）≈19ns < 42ns ✔；, threshold: 42.0}
+  - {gate_id: siw_family#7, tier: A, raw: variable projection）：|fc_fit/fc_closed − 1| ≤ 3% PASS / ≤ 5%
+      PARTIAL /, threshold: 3.0}
+  - {gate_id: siw_family#8, tier: A, raw: '- **G2（波导性滚降）**：|S21|@6.2GHz ≤ |S21|@f0 − 15dB（fc 以下倏逝：', threshold: null}
+  - {gate_id: siw_family#9, tier: A, raw: '- **G3（物理量级地板，sma §14.5 同式）**：带内 max|S21| ≥ −3dB；', threshold: null}
+  - {gate_id: siw_family#10, tier: A, raw: fc_fit=6.83724GHz、dev=+2.5587%≤3%、sign=+、rms=0.0553rad（贴纹波地板非撞界）,
+    threshold: 3.0}
+  - {gate_id: siw_family#11, tier: A, raw: '① 线路固有 α_d=k²tanδ/(2β)=0.518dB/单程@10GHz（占实测 5.8%；功率差额硬界 19.3%）；导体=0（全
+      PEC by construction）、泄漏 s/d=1.667≤2 文献可略；② 构造性证明：z 桥探针悬在贯通 PML 的连续 SIW 中间→每端三支路节点按 (1/9,4/9,4/9)
+      分功率，理想探针天花板 −2.50dB（解析 (2/3)·9/8 逐位复现）、含真实 α_d 后 −3.10dB<−3dB 门=**理想探针也过不了门**；③ V2 分布式替代模型反推需 5.74dB/单程
+      vs 闭式 0.52dB——无机制。', threshold: 2.0}
+  - {gate_id: siw_family#12, tier: A, raw: 汇项账@10GHz：反射 0.395（实测）｜介质 ≤0.092｜端面 fixture 汇 ≥0.385（探针电阻+端口背后
+      3.5mm 延拓入 PML）。附带发现：tanδ_eff 实测反推 0.003515 vs 名义 0.0037（健康互洽）；as-run R_PORT=Z_PV(9.5GHz) 逐位复算（带宽边取值，非失配源）。,
+    threshold: 0.092}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: b31ab8a8, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/siw_family,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#siw_family/criteria.md gates[1..12]'}

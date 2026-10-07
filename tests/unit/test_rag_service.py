@@ -354,7 +354,7 @@ def test_bm25_hyperparameters_validated():
 
 
 # ---------------------------------------------------------------------------
-# 一步式语料包装（CLI/MCP 薄壳消费的 JSON 信封）
+# 一步式语料包装（F2⑥ CLI/MCP 薄壳消费的 JSON 信封）
 # ---------------------------------------------------------------------------
 
 def test_index_corpus_returns_stats_envelope(docs_dir, tmp_path):

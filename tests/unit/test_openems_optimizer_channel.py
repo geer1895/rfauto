@@ -1,6 +1,6 @@
-"""openEMS 优化通道产物化——分支挂点/registry 键/参数传递钉。
+"""openEMS 优化通道产物化（登记项④）——分支挂点/registry 键/参数传递钉。
 
-产物化面（先战役层补丁验证、后转 src 正式路径）：
+产物化面（战役层补丁 → src 正式路径）：
 - models.registry 注册 mline 最小插件（rfauto.models.mline.plugin）；
 - optimizer._create_adapter 增 "openems" 分支（与 fake/hfss 同构）；
 - 真评估链 = OpenEMSOptAdapter → OpenEMSSolver（render_script 整脚本重渲染）。
@@ -33,7 +33,7 @@ from rfauto.optimization.optimizer import _create_adapter, run_optimization
 
 @pytest.fixture(autouse=True)
 def _sandbox(tmp_path, monkeypatch):
-    """chdir 沙箱 + 临时 optuna storage（#144：优化循环类单测禁污染真实 runs/）。"""
+    """chdir 沙箱 + 临时 optuna storage（#144：优化循环类单测禁污染真实 runs）。"""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("RFAUTO_CACHE", "off")
     db_dir = tmp_path / "runs" / ".optuna"

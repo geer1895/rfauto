@@ -105,7 +105,7 @@ class TestSlotlineNominal:
 
         sec, m = nominal_mode
         cf = slotline_closed_form(sec.w_mm, sec.h_mm, sec.er, 2.5)
-        assert abs(m.beta_rad_m / cf.beta_rad_m - 1.0) <= 0.05  # 判据门；实测 −0.12%
+        assert abs(m.beta_rad_m / cf.beta_rad_m - 1.0) <= 0.05  # 任务书门；实测 −0.12%
         assert m.beta_rad_m > 2 * math.pi * 2.5e9 / C0  # 慢波
         assert m.imag_over_real_eig < 1e-8
 

@@ -88,7 +88,7 @@ class AutotuneHistoryEntry(BaseModel):
 
 
 class AutotunePayload(_Contract):
-    """autotune_loop 返回契约（数值全部来自确定性内核）。"""
+    """autotune_loop 返回契约（数值全部来自确定性内核， #7）。"""
 
     ok: bool
     run_id: str
@@ -115,7 +115,7 @@ class SelfVerifyMilestone(BaseModel):
 
 
 class SelfVerifyPayload(_Contract):
-    """self_verify_loop 返回契约（WP3.5 收口；AutotunePayload
+    """self_verify_loop 返回契约（WP3.5 收口，0bq② 注册；AutotunePayload
     不覆盖 board_id/milestones/sandbox/loop 等新返回形状）。
 
     verdict：PASS=全部非 skipped 里程碑通过；FAIL=如实；TAKEN_OVER=人接管。
@@ -155,7 +155,7 @@ class LoopBoardSummary(BaseModel):
 
 
 class LoopBoardsPayload(_Contract):
-    """UI /api/loop/boards 返回契约（执行看板清单）。"""
+    """UI /api/loop/boards 返回契约（执行看板清单，0bq②）。"""
 
     ok: bool
     boards: list[LoopBoardSummary] = Field(default_factory=list)
@@ -258,7 +258,7 @@ class RunsSummaryPayload(_Contract):
 class CrossGatePayload(_Contract):
     """p0 跨保真 gate 契约（1.1 资产复用通道 / 原生通道共用判定字段）。
 
-    top5_recall 允许 None：p0_gate_service.cross_gate_from_asset 在
+    top5_recall 允许 None（P2②）：p0_gate_service.cross_gate_from_asset 在
     n_evaluated<8 时 top5/top8 recall 恒 1 退化（#195 同族常数陷阱），
     如实置 None 仅按 ρ 门判定——契约窄类型 float 会把该合法路径判成违约。
     spearman_rho 保持 float（登记范围冻结）。

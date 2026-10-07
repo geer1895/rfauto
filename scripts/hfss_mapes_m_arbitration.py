@@ -1,4 +1,4 @@
-"""HFSS 逐口 m 规范仲裁（sref 剩余互易底）。
+"""rm-hfss-mapes-g0m：HFSS 逐口 m 规范仲裁（sref 剩余互易底，TODO ⑥）。
 
 预声明：runs/hfss_mapes_m_arb/criteria.md（先于任何真跑写死，判读常量
 不许跑后改）。模板：scripts/hfss_mapes_g0_arbitration.py（结构构建/负载
@@ -264,7 +264,7 @@ def make_setup(adapter, delta_s: float, max_passes: int) -> str:
 
 
 def _kill_desktops() -> None:
-    """ansysedt 清场（治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
+    """ansysedt 清场（df5 治理单源）：孤儿点杀+活桌面 fail-closed（#245/#265）。
 
     委托 src/rfauto/infra/desktop_guard.py；旧实现 Get-Process|
     Stop-Process -Force 无条件代杀已废弃（误杀他轨合法桌面，#265）。
@@ -523,7 +523,7 @@ def judge() -> dict:
         budget = f"PARTIAL_over_1p5x_wall_{wall}s"
 
     res = {
-        "id": "hfss_mapes_m",
+        "id": "rm-hfss-mapes-g0m",
         "verdict": verdict,
         "budget_status": budget,
         "gate": {

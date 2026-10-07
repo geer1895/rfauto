@@ -1,4 +1,4 @@
-"""M2 复判驱动——M1+M3 合并 150 点（dB 门+线性域门双口径）。
+"""datafactory M2 复判驱动——M1+M3 合并 150 点（dB 门+线性域门双口径）。
 
 判据预声明见 runs/datafactory_m2/criteria_merged150.md（先写后算）。
 背景：run1（m2_verdict.json）S11 dB 门 held-out FAIL 5.10dB，归因谷区
@@ -52,7 +52,7 @@ N_LOO_FOLDS = 30
 SEED = 20260920  # 与 run1/criteria_linear 同源
 BUDGET_WALL_S = 2 * 3600
 PARTIAL_FACTOR = 1.5
-# 谷区带（M3 criteria 口径，写死）
+# 谷区带（M3 criteria / 口径，写死）
 VALLEY_LO, VALLEY_HI = 0.70, 1.00
 CORE_LO, CORE_HI = 0.900, 0.920
 DEPTH_SPLIT_DB = -30.0  # 真值深度分桶（run1 fail_diagnosis 同）
@@ -643,7 +643,7 @@ def run_judgment(out_path: Path = DEFAULT_OUT, n_loo_folds: int = N_LOO_FOLDS,
     elif lin_pass:
         verdict["attribution"] = (
             "dB 门 S11 复判 PASS（谷区加密翻门）+ 线性域门 PASS：谷区定向"
-            "加密（M3 30 点，谷芯 2.2222µm 步距）补齐深谷采样密度后，原门"
+            "加密（M3 30 点，谷芯 2.2222µm 步距）补齐深谷采样密度后，方案门"
             "与消费口径双双达标；run1 FAIL 归档状态保持不变（#122，两时点"
             "并列出账）。")
     else:
@@ -667,7 +667,7 @@ def run_judgment(out_path: Path = DEFAULT_OUT, n_loo_folds: int = N_LOO_FOLDS,
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="M2 复判（M1+M3 合并 150 点，双口径）",
+        description="datafactory M2 复判（M1+M3 合并 150 点，双口径）",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("--judge", action="store_true",
                     help="执行复判（合成→回归自证→物化→双口径→诊断→verdict）")

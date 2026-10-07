@@ -1,6 +1,6 @@
 """C14 有源链路 ADS 通道：匹配网络 EM S2P × 器件 S2P 联合链 + load-pull 网表。
 
-方案依据:
+方案依据（续跑计划 §10.3 C14）:
     "LNA/PA 匹配网络 EM 提取+ADS 非线性/噪声协同（场-路：EM S 参数进 ADS
     电路层）；PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull，无需硬件）"
 
@@ -14,8 +14,8 @@
    与"手工口径"（skrf 级联 + core.active_chain 闭式增益）对拍。
    `Port:`/`SnP:` 语法与 field_circuit_anchor 同族（真机实证 `Term:` 不存在,
    不可用, 见 field_circuit_anchor docstring）。本模块模板已在真机
-   hpeesofsim 650.shp 上通过 netlist parsing + flattening（
-   license 门前最后一步, 真机冒烟证据存档）;
+   hpeesofsim 650.shp 上通过 netlist parsing + flattening（2026-09-14,
+   license 门前最后一步, 证据 runs/c14_active_chain_ads_smoke_20260914）;
    求解本身被 license 拦截（"Linear features are not licensed / 0 tokens"）,
    真机对拍数字待许可恢复（skip-not-fail, 与 real_edt 同口径）。
 2. load-pull 网表（谐波平衡口径）:
@@ -24,8 +24,8 @@
    `run_ads_loadpull_point` = 渲染 → hpeesofsim → `parse_hb_dataset` → 点结果
    （Pout/增益/基波相量）, `loadpull_point_closed_form` 给线性 S2P 器件的
    确定性参考（转换增益 GT(ΓS=0, ΓL)）, `compare_loadpull_point` 对拍。
-   **HB/P_1Tone/复数 Z 语法已真机实证**（ADS 2027 hpeesofsim
-   650.shp 真机实证, 输出数据集解析证据存档）, 三条修正:
+   **HB/P_1Tone/复数 Z 语法已真机实证**（2026-09-18, ADS 2027 hpeesofsim
+   650.shp, rm-ads-c14 ②, 证据 runs/rm_ads_c14/loadpull_hb）, 三条修正:
    ① 复数端口阻抗写 ``Z=re+j*(im)``（官方 Term/P_1Tone 文档 "use 1+j*0 for
    complex"; 旧 ``Z=[re Ohm + im Ohm*im]`` 报 "syntax error, unexpected '['"）;
    ② P_1Tone 原理图件网表模型名是 ``Port``, 功率/频率参数带谐波索引
@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 _TPL_DIR = Path(__file__).resolve().parent / "templates" / "ads"
 #: 匹配链 S 参数网表模板（ADR-0009 SnP/Port 语法族, 已实证）。
 CHAIN_TEMPLATE = _TPL_DIR / "active_chain_sparam.net"
-#: load-pull 谐波平衡网表模板（HB/Port 源/复数 Z/aele 语法真机实证）。
+#: load-pull 谐波平衡网表模板（HB/Port 源/复数 Z/aele 语法 2026-09-18 真机实证）。
 LOADPULL_TEMPLATE = _TPL_DIR / "loadpull_hb.net"
 
 _UNIT_SCALE = {"GHz": 1e9, "MHz": 1e6, "kHz": 1e3, "Hz": 1.0}
@@ -234,7 +234,7 @@ def compare_chain_with_manual(
 
     返回各 S 参数最大 |ΔdB| 与判定（≤tol_db 判 consistent）。
     频轴不一致时取公共频段按**真最近邻**重采样（网表导出与 skrf 同源频轴时
-    应恒等）。真机实证: ADS 数据集频率可比
+    应恒等）。真机实证（rm-ads-c14 ①, 2026-09-18）: ADS 数据集频率可比
     skrf 网格低 1 ulp（2.38e-7 Hz @2 GHz, 41 点中 22 点）, 旧 ``searchsorted``
     在此越位一格, 把逐频 1e-16 dB 的真差报成 斜率×步长 = 0.0236 dB（S21）;
     最近邻索引不受 ulp 噪声影响（#287 家族）。

@@ -1,6 +1,6 @@
 """openEMS 槽线 WaveguidePort 桥（adapters/openems_slotline_port.py）单测。
 
-离线面（无 NGSolve/无引擎）：模式文件格式（/x /y /Vx /Vy + Version 属性、行主序
+离线面（无 NGSolve/无引擎）：模式文件格式（x /y /Vx /Vy + Version 属性、行主序
 nx×ny、非均匀轴合法、非单调轴拒绝）、轴映射 (nPy+1)%3/(nPy+2)%3（上游
 CSPropExcitation.cpp 逐字口径）、kc 反解（慢波纯虚）与 β_port(f) 重构、H 文件
 同幅归一（Z_mode·H）、端口盒 start/stop 语义。

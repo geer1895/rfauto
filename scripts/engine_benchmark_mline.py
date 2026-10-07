@@ -1,10 +1,10 @@
-"""引擎健康度基准：mline 锚网格收敛 harness（openEMS 侧）。
+"""WP1.2 引擎健康度基准：mline 锚网格收敛 harness（openEMS 侧）。
 
 物理裁判：openEMS 升级/换机/模板迁移后重跑本脚本——mline 均匀线
 多点网格求解，β→εeff（金标准判据 #162），结果入库
 runs/benchmark/mline_mesh_convergence.json。
 
-判据显式决策（内核=
+判据显式决策（2026-09-12，廿八未尽①收口；内核=
 core/anchor_verdict.mline_benchmark_verdict，与 HFSS 探针
 scripts/hfss_mline_probe.py 同一事实源）：
 1. 收敛性：最细两档 εeff 相对移动 <1%（不变）；
@@ -13,7 +13,7 @@ scripts/hfss_mline_probe.py 同一事实源）：
    （2.8813~2.8884）在升级/换机/模板迁移后复跑的复现一致性；
 3. 副锚（解析哨兵）：最细档 εeff 对 HJ 闭式 |Δ|≤3%（放宽口径，替代旧
    ±2% HJ 单锚——钉死几何/频点实测系统偏移全谱 openEMS +1.18%/HFSS
-   +2.36%/+2.53%，旧单门对该锚偏严；HJ 为独立来源解析
+   +2.36%/+2.53%，旧单门对该锚偏严致廿八 PARTIAL；HJ 为独立来源解析
    锚（#118），完全降级会失去哨兵；移出准静态有效域须显式重标定两锚）；
 4. 健康：每档 |S11|max<-10dB（50Ω 匹配线）。
 历史回放不误杀：#189 最细档 2.8813 → 对金标准 −0.16%/对 HJ +1.01%，

@@ -1,6 +1,6 @@
 """M1 数据集 eps_eff 列修复：β 口径重导（参考面无关，零重仿真）。
 
-发现：compute_point_metrics 的
+发现（2026-09-20）：compute_point_metrics 的
 eps_eff_mean_in_band 用 S21 解缠相位斜率 × L=line_len_mm=40mm，但 mline 模板
 S21 参考面在板缘端口面（port_ut_1A start-coordinates y=−47.7mm，非 ±20mm
 线端）——斜率对应总电跨度 ~93.2mm（含馈段），L=40mm 语义下 εeff 系统性

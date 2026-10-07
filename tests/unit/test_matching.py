@@ -1,10 +1,10 @@
 """E6b 匹配网络与滤波器综合单元测试。
 
-验收标准：
+验收标准（扩展方案 §E6b）：
 ① L-section 闭式解正确性
 ② Chebyshev g 值对拍
 ③ Commensurate line 结构完整性
-④ L/π/T 匹配网络闭式解 vs skrf 对拍（C14 锚，±0.1dB）
+④ L/π/T 匹配网络闭式解 vs skrf 对拍（C14 锚，Plan §10.22 #24，±0.1dB）
 """
 
 from __future__ import annotations

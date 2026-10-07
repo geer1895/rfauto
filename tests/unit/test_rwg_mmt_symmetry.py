@@ -1,7 +1,7 @@
 """df7_dp1fix 缺陷②/① 回归钉：镜像对称门 + 级联星积独立裁判 + judge
 模态重建 s22≠s11 fixture（判据 runs/df7_dp1fix/criteria.md §2/§5，先写后跑）。
 
-背景（战役 followUp 登记）：
+背景：
 - 缺陷②：solve_chain 镜像对称链 S11≠S22（@10GHz 相位差 31.7°）——两根因
   Fix-A=gsm_cascade s12/s21 中间逆互换；Fix-B=窄→宽结面按 canonical（宽→窄）
   计算后 gsm_flip 精确翻转（反向 Petrov 重解非镜像协变）。

@@ -26,18 +26,18 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+# 公开分发视图：runs/df7_dp8p3 证据档不入公开仓——缺席时整组如实 skip
+pytestmark = pytest.mark.skipif(
+    not (Path(__file__).resolve().parents[2] / 'runs' / 'df7_dp8p3').is_dir(),
+    reason='runs/df7_dp8p3 证据档缺席（公开分发视图），如实 skip')
+
+
 REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 _RUN_DIR = REPO / "runs" / "df7_dp8p3"
-
-# 证据脚本（render_half.py / judge 脚本）随 runs/ 留档、不随 git 分发——
-# 缺失环境整文件诚实 skip（证据恢复后照常全量判读）。
-pytestmark = pytest.mark.skipif(
-    not (_RUN_DIR / "render_half.py").exists(),
-    reason="runs/df7_dp8p3 evidence scripts not distributed with git")
 
 
 def _load_module(name: str, path: Path):

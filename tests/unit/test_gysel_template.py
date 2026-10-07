@@ -11,7 +11,7 @@ analysis" 官方口径）：六节 λ/4 环——P1—70.7Ω 臂—P2/P3；P2/P3
 - 六节环 @f0：S21=S31=-3.01dB 同相、全匹配/隔离数值零（PASS）。
 裁判=理想六节环 S 矩阵（f0 闭式），fake 与 skrf 装配互检（#205 纪律）。
 
-拓扑重设计（2026-09-16 离线审计，本文件固化四候选对照）：矩形旧版
+P2⑪ 拓扑重设计（2026-09-16 离线审计，本文件固化四候选对照）：矩形旧版
 桥带继承 2·arm_len=36.324mm，对 50Ω λ/2=2·iso_len=35.500mm 有 +2.32%
 二阶偏差（桥带 184.176°@f0），电路级把 @f0 S32/S11 封顶 -34.8dB——归因
 主因（junction 台阶/双臂对称性为二阶）。候选：rect（矩形现状）/ trap
@@ -46,7 +46,7 @@ ISO_LEN = 17.75
 NOMINAL = {"w_arm_mm": W_ARM, "w_feed_mm": W_FEED,
            "arm_len_mm": ARM_LEN, "iso_len_mm": ISO_LEN}
 
-# 派生量（_gysel_layout 同式；纯几何恒等，非物理数字发明）
+# P2⑪ 派生量（_gysel_layout 同式；纯几何恒等，非物理数字发明）
 JOG = abs(ARM_LEN - ISO_LEN)      # 0.412mm 顶端横移
 YJ = ISO_LEN - JOG                # 17.338mm 竖直段
 XB = ISO_LEN                      # Δ 节点 x=±17.75mm → 桥带跨度 35.5mm
@@ -125,7 +125,7 @@ def _candidate_ring_s(
     iso_len: float = ISO_LEN,
     z0: float = 50.0,
 ) -> np.ndarray:
-    """四候选拓扑物理长度装配 @f_ghz（无损 TEM，theta ∝ d·√εeff·f）。
+    """P2⑪ 四候选拓扑物理长度装配 @f_ghz（无损 TEM，theta ∝ d·√εeff·f）。
 
     kind="rect"：桥带 50Ω 物理长 2·arm_len（矩形现状，@f0 184.176°）；
     kind="trap"/"ljog"：桥带 50Ω 2·iso_len 精确（电路级同构，差异只在 EM）；
@@ -179,7 +179,7 @@ def test_template_tables_have_gysel():
                                                                     abs=0.05)
     assert _TEMPLATE_PORT_AXES["gysel"] == ("y",)
     assert _TEMPLATE_RADIATOR["gysel"] is False
-    # 参数表仍为 4 键（jog/YJ/XB 为派生量，schema/缓存零波及）
+    # P2⑪：参数表仍为 4 键（jog/YJ/XB 为派生量，schema/缓存零波及）
     assert TEMPLATE_META["gysel"]["params"] == [
         "w_arm_mm", "w_feed_mm", "arm_len_mm", "iso_len_mm"]
 
@@ -200,7 +200,7 @@ def test_render_gysel_structure():
     # λ/2 桥带（隔离必要环节，#206 判废锚）：顶边带缘 YJ±W_F/2、跨度 ±XB
     assert "YJ - W_F / 2" in text and "YJ + W_F / 2" in text
     assert "gysel.AddBox((-XB - W_F / 2, YJ - W_F / 2, H_SUB)" in text
-    # L-jog 横移段：方向无关 min/max 写法 + 派生量常量
+    # L-jog 横移段（P2⑪）：方向无关 min/max 写法 + 派生量常量
     assert "min(-XA, -XB) - W_F / 2" in text and "max(XA, XB) + W_F / 2" in text
     assert "JOG = " in text and "YJ = " in text and "XB = " in text
     # 隔离线竖直段止于 YJ（不再是 YI）
@@ -227,7 +227,7 @@ def test_near_points_exact_edges():
     for edge_mm in (-(ARM_LEN + 0.5567), -(ARM_LEN - 0.5567),
                     ARM_LEN - 0.5567, ARM_LEN + 0.5567):
         assert min(abs(v - edge_mm * 1e-3) for v in nx) < 1e-12
-    # Δ 节点负载盒 x 缘 ±XB±W_F/2（新增）
+    # Δ 节点负载盒 x 缘 ±XB±W_F/2（P2⑪ 新增）
     for edge_mm in (-(XB + 0.5567), -(XB - 0.5567), XB - 0.5567, XB + 0.5567):
         assert min(abs(v - edge_mm * 1e-3) for v in nx) < 1e-12
     # 臂带缘 ±W_A/2
@@ -283,7 +283,7 @@ def test_candidate_assembly_method_matches_locked_ring():
 
 
 def test_topology_candidates_offline_audit_locked():
-    """离线核验轮四候选对照（2026-09-16 装配实测，本测试固化）。
+    """P2⑪ 离线核验轮四候选对照（2026-09-16 装配实测，本测试固化）。
 
     电路级归因：矩形桥带 +2.32%（184.176°@f0）把 @f0 S32/S11 封顶 -34.8dB；
     ljog/trap 电长度精确 @f0 ≤-88dB（−90.1/−88.4，残余来自 mm 三位舍入），
@@ -294,7 +294,7 @@ def test_topology_candidates_offline_audit_locked():
     s = {k: {f: _candidate_ring_s(k, f) for f in (2.3, 2.5, 2.7)}
          for k in ("rect", "trap", "ljog", "z70")}
     d = {k: {f: _db(v) for f, v in fs.items()} for k, fs in s.items()}
-    # ① 矩形现状基线（与历史归因数字 -34.78dB 互洽）
+    # ① 矩形现状基线（与 P2⑪ 任务书归因数字 -34.78dB 互洽）
     assert d["rect"][2.5][2, 1] == pytest.approx(-34.77, abs=0.15)
     assert d["rect"][2.5][0, 0] == pytest.approx(-34.78, abs=0.15)
     assert d["rect"][2.3][2, 1] == pytest.approx(-29.46, abs=0.15)
@@ -384,7 +384,7 @@ def test_synthesize_gysel_model_roundtrip():
         299.792458 / 2.5 / np.sqrt(ei) / 4, abs=0.02)
     assert result.params["iso_len_mm"] != pytest.approx(
         result.params["arm_len_mm"], abs=0.1)
-    # 参数表仍为 4 几何键 + f0（派生量只进 notes）
+    # P2⑪：参数表仍为 4 几何键 + f0（派生量只进 notes）
     assert set(result.params) == {"w_arm_mm", "w_feed_mm", "arm_len_mm",
                                   "iso_len_mm", "f0_ghz"}
     assert any("L-jog" in n and "2·iso_len" in n for n in result.notes)
@@ -409,9 +409,9 @@ def test_gysel_spec_wiring():
 
 
 def test_rect_bridge_deviation_historical_math_lock():
-    """矩形旧版 +2.32% 二阶偏差——历史事实的纯数学锁（改判后保留）。
+    """矩形旧版 +2.32% 二阶偏差——历史事实的纯数学锁（P2⑪ 改判后保留）。
 
-    几何事实（「Gysel 桥带 εeff 二阶偏差」历史判读）：矩形环顶边
+    几何事实（廿三）「Gysel 桥带 εeff 二阶偏差」）：矩形环顶边
     继承 70.7Ω 臂 λ/4 跨度 2·arm_len，而 50Ω λ/2 桥带设计值 = 2·iso_len——
     矩形环只有 2 个自由边长，臂/隔离线/桥带三个 λ/4 约束不可同时满足。
     本锁只钉数学关系（防标称参数静默漂移）：① 偏差落在 +2.32% 邻域；
@@ -433,7 +433,7 @@ def test_rect_bridge_deviation_historical_math_lock():
 
 
 def test_ljog_render_measured_electrical_lengths_locked():
-    """渲染实测锁（#212 手法：render→exec→CSXCAD 原语实测，零仿真）。
+    """P2⑪ 渲染实测锁（#212 手法：render→exec→CSXCAD 原语实测，零仿真）。
 
     在实测原语上钉两条电长度恒等式：
     ① P2→Δ 路径物理长（竖直段 YJ + 横移 |XA−XB|）== iso_len ±0.5%；

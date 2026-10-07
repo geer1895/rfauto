@@ -1,4 +1,4 @@
-"""数据库注册表 service—— JSON 进出，CLI/MCP 薄壳的后端。
+"""数据库注册表 service（W1⑫）—— JSON 进出，CLI/MCP 薄壳的后端。
 
 职责：
 - init/migrate：建库 + 幂等迁移（schema_version 表，重复执行零变更）
@@ -25,6 +25,7 @@ from rfauto.infra.db import (
     RegistryDB,
     default_registry_db_path,
 )
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ---------------------------------------------------------------------------
 # 只读 SQL 白名单（与 dataset_service._validate_where 同款纵深防御思路）
@@ -97,18 +98,45 @@ def db_init(db_path: str | Path | None = None) -> dict[str, Any]:
     return db_migrate(db_path)
 
 
-def db_migrate(db_path: str | Path | None = None) -> dict[str, Any]:
-    """执行幂等迁移，返回 {"ok", "path", "schema_version", "applied"}。"""
+def db_migrate(db_path: str | Path | None = None,
+               *, dry_run: bool = False) -> dict[str, Any]:
+    """执行幂等迁移，返回 {"ok", "path", "schema_version", "applied"}。
+
+    dry_run（SN-18，W6-A）：只读计划面——报告当前 schema 版本/目标版本/
+    预计迁移步数，零写入（库不存在时如实 not_exists，不建库）。
+    """
+    if dry_run:
+        path = Path(db_path) if db_path is not None else default_registry_db_path()
+        if not path.exists():
+            from rfauto.infra.db import LATEST_SCHEMA_VERSION as _latest
+
+            return ok_envelope(
+                mode="dry-run", path=str(path), exists=False,
+                schema_version=0, target_schema_version=int(_latest),
+                would_apply=int(_latest),
+                note="库不存在（真实执行时 init+迁移建库）")
+        db = _open_registry(path)
+        try:
+            current = int(db.current_schema_version())
+        finally:
+            db.close()
+        from rfauto.infra.db import LATEST_SCHEMA_VERSION as _latest
+
+        return ok_envelope(
+            mode="dry-run", path=str(path), exists=True,
+            schema_version=current,
+            target_schema_version=int(_latest),
+            would_apply=max(0, int(_latest) - current),
+            note="幂等迁移：已最新则 applied=0（零变更）")
     db = _open_registry(db_path)
     try:
         info = db.migrate()
-        return {
-            "ok": True,
-            "path": str(db.path),
-            "schema_version": int(info["version"]),
-            "applied": int(info["applied"]),
-            "backend": "sqlite",
-        }
+        return ok_envelope(
+            path=str(db.path),
+            schema_version=int(info["version"]),
+            applied=int(info["applied"]),
+            backend="sqlite",
+        )
     finally:
         db.close()
 
@@ -116,12 +144,7 @@ def db_migrate(db_path: str | Path | None = None) -> dict[str, Any]:
 def db_status(db_path: str | Path | None = None) -> dict[str, Any]:
     """注册表状态盘点：文件路径、schema 版本、各表行数（文件不存在不创建）。"""
     path = Path(db_path) if db_path is not None else default_registry_db_path()
-    base: dict[str, Any] = {
-        "ok": True,
-        "backend": "sqlite",
-        "path": str(path),
-        "exists": path.exists(),
-    }
+    base: dict[str, Any] = ok_envelope(backend="sqlite", path=str(path), exists=path.exists())
     if not path.exists():
         base.update({"schema_version": 0,
                      "tables": {t: 0 for t in REGISTRY_TABLES}})
@@ -150,10 +173,14 @@ def reindex_runs(runs_dir: str | Path = "runs",
     """
     root = Path(runs_dir)
     if not root.is_dir():
-        return {"ok": True, "reindexed": 0, "failed": 0, "errors": [],
-                "db_path": str(Path(db_path) if db_path is not None
+        return ok_envelope(
+            reindexed=0,
+            failed=0,
+            errors=[],
+            db_path=str(Path(db_path) if db_path is not None
                                else default_registry_db_path()),
-                "note": f"runs 目录不存在: {root}"}
+            note=f"runs 目录不存在: {root}",
+        )
     db = _open_registry(db_path)
     reindexed = 0
     failed = 0
@@ -173,8 +200,7 @@ def reindex_runs(runs_dir: str | Path = "runs",
                 failed += 1
                 if len(errors) < 20:
                     errors.append(f"{meta_file}: {exc}")
-        return {"ok": True, "reindexed": reindexed, "failed": failed,
-                "errors": errors, "db_path": str(db.path)}
+        return ok_envelope(reindexed=reindexed, failed=failed, errors=errors, db_path=str(db.path))
     finally:
         db.close()
 
@@ -206,14 +232,13 @@ def db_query(sql: str, params: list[Any] | tuple[Any, ...] | None = None,
             safe_sql, safe_params, limit=n_limit + 1)
         truncated = len(rows) > n_limit or truncated_requested
         rows = rows[:n_limit]
-        return {
-            "ok": True,
-            "columns": columns,
-            "rows": [list(r) for r in rows],
-            "row_count": len(rows),
-            "truncated": truncated,
-            "limit": n_limit,
-        }
+        return ok_envelope(
+            columns=columns,
+            rows=[list(r) for r in rows],
+            row_count=len(rows),
+            truncated=truncated,
+            limit=n_limit,
+        )
     finally:
         db.close()
 
@@ -230,9 +255,9 @@ def db_query_safe(sql: str, params: list[Any] | tuple[Any, ...] | None = None,
     try:
         return db_query(sql, params, limit=limit, db_path=db_path)
     except ValueError as exc:
-        return {"ok": False, "errors": [f"查询被拒绝: {exc}"], "sql": sql}
+        return error_envelope([f"查询被拒绝: {exc}"], sql=sql)
     except Exception as exc:  # sqlite OperationalError 等执行期错误
-        return {"ok": False, "errors": [f"查询执行失败: {exc}"], "sql": sql}
+        return error_envelope([f"查询执行失败: {exc}"], sql=sql)
 
 
 # ---------------------------------------------------------------------------
@@ -287,8 +312,7 @@ def analytics_attach(sqlite_path: str | Path | None = None,
         except Exception:
             sample_runs = []
         version = getattr(duckdb, "__version__", "unknown")
-        return {"ok": True, "duckdb_version": version, "tables": tables,
-                "sample_runs": sample_runs, **base}
+        return ok_envelope(**{"duckdb_version": version, "tables": tables, "sample_runs": sample_runs, **base})
     except Exception as exc:
         return {"ok": False, "reason": f"attach/查询失败: {exc}", **base}
     finally:
@@ -377,10 +401,15 @@ def record_fidelity_shadow(
                 f"VALUES ({placeholders})", list(values))
         n_total = int(con.execute(
             f"SELECT COUNT(*) FROM {LEAGUE_TABLE}").fetchone()[0])
-        return {"ok": True, "n_rows_written": len(valid),
-                "n_rows_rejected": len(rejected),
-                "rejected_indexes": rejected,
-                "n_rows_total": n_total, **base}
+        return ok_envelope(
+                   **{
+                   "n_rows_written": len(valid),
+                   "n_rows_rejected": len(rejected),
+                   "rejected_indexes": rejected,
+                   "n_rows_total": n_total,
+                   **base,
+                   },
+               )
     except Exception as exc:
         return {"ok": False, "reason": f"联赛表写入失败: {exc}", **base}
     finally:
@@ -424,7 +453,7 @@ def query_fidelity_shadow(
         rows_raw = con.execute(sql, params).fetchall()
         cols = [c for c, _ in LEAGUE_COLUMNS]
         rows = [dict(zip(cols, r, strict=True)) for r in rows_raw]
-        return {"ok": True, "rows": rows, "n_rows": len(rows), **base}
+        return ok_envelope(**{"rows": rows, "n_rows": len(rows), **base})
     except Exception as exc:
         return {"ok": False, "reason": f"联赛表查询失败: {exc}", **base}
     finally:

@@ -5,7 +5,7 @@
 的 arm_len_mm=20.5 按何种 εeff 综合）、② 端接口径（35.4Ω/50Ω 臂宽是否错）、
 ③ 引擎频率尺度（#190 openEMS 系统差 ~−10% 同族？）。
 
-判据全部确定性复算：
+判据全部确定性复算（铁律 7）：
 - f_c：|S11| 谷 + |S21|=|S31| 均分交叉（skrf 读 .s4p）；
 - HJ 闭式（core.synthesis.forward_z0，与 synthesize_branchline 同源）：名义
   臂长对应的 λ/4 频率、2.4GHz 所需臂长、名义臂长反推的 εeff；

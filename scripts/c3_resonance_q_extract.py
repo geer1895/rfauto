@@ -1,4 +1,4 @@
-"""c3 谐振 Q 时域提取 + S 参数稳态外推（确定性内核，纯离线零引擎）。
+"""c3 谐振 Q 时域提取 + S 参数稳态外推（TODO「c3 下一假设②」确定性内核，纯离线零引擎）。
 
 背景（#323 实测）：c3 族合规网格到 openEMS 能量判据 −60dB 需 ~10h+/模板（预算不可承受）；
 归档 107.6ns 部分数据实证——能量尾部由弱负载环振模式主导（本模块从 port_ut 提取：
@@ -30,7 +30,7 @@ smoke_c3_filter_family 的「Q 外推置信门」在未达 −60dB 时提前判�
 −37.5dB 被预算 kill）：截断 S21 峰 2.4525GHz/−5.81dB；外推稳态 −5.77dB（偏差
 +0.036dB）、S21@2.5GHz 偏差 −0.12dB、S11@带心偏差 +0.008dB；拟合残差 2.8e-4、
 holdout@峰 2.5e-4；T_req(s21_peak 2.4525GHz ±5%)=52ns、带心 2.5GHz=25.2ns
-（口径勘误：旧注误标"带心"，判读取 max=52ns 保守）。判读意义：截断态
+（口径勘误 round3 C-01：旧注误标"带心"，判读取 max=52ns 保守）。判读意义：截断态
 已可信（0.04dB 量级），−60dB 能量判据对 S 参数可读性是过严判据；2h 处（~20ns）
 模型预测偏差 ~2dB，门如实判红不许提前停，~4h（≥52ns 峰口径）出可信结论。
 
@@ -469,7 +469,7 @@ def _read_sparams_csv(path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndar
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     parser.add_argument("--fdtd-dir", required=True,
-                        help="探针目录（port_ut_*/port_it_* 所在，fdtd/ 或 fdtd_partial/）")
+                        help="探针目录（port_ut_*/port_it_* 所在，fdtd/ 或 fdtd_partial）")
     parser.add_argument("--t-excite-ns", type=float, required=True,
                         help="激励时长 ns（引擎日志 excitation_s，勿从数据猜）")
     parser.add_argument("--f-lo", type=float, default=2.25, help="扫频下沿 GHz")

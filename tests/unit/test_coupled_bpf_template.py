@@ -1,6 +1,6 @@
 """WP2.3 Tier 1：平行耦合（边缘耦合）BPF 模板单测（BPF 族锚，2026-09-12 增量）。
 
-注册口径（2026-09-14：原"附加模板不注册"边界升格）：
+注册口径（2026-09-14 合流轮：原"附加模板不注册"边界升格）：
 openems_templates.COUPLED_BPF_META/COUPLED_BPF_NOMINAL 同对象注册进
 TEMPLATE_META/TEMPLATE_NOMINAL；注册四件套 docs/templates/coupled_bpf/meta.yaml
 / EXPECTED_TEMPLATES（18→25）/ fake 派发 _coupled_bpf_sparams / template_specs
@@ -386,7 +386,7 @@ def test_order_sweep_designable():
 
 # ─── 渲染与 #212 离线几何审计（CSXCAD 实测，秒级零仿真）────────────────────
 
-# ─── 正式注册（2026-09-14：原"附加不注册"边界升格）─────────────────────────
+# ─── 正式注册（2026-09-14 合流轮：原"附加不注册"边界升格）───────────────────
 
 def test_coupled_bpf_registered_in_registry():
     """coupled_bpf 已正式注册：同对象入两表（#230 契约的注册态半边）。"""
@@ -423,7 +423,7 @@ def test_coupled_bpf_registration_surface_complete():
     from tests.unit.test_template_geometry_audit import EXPECTED_TEMPLATES
     assert "coupled_bpf" in EXPECTED_TEMPLATES
     # 单源计数（#247 禁轨内自钉，只与审计文件单源比对，不钉字面；2026-09-18
-    # slotline 族四模板注册 38→42、hairpin_alt 注册 42→43 实证）
+    # slotline 族四模板注册 38→42、w2g hairpin_alt 注册 42→43 实证）
     assert len(ot.TEMPLATE_META) == len(EXPECTED_TEMPLATES)
     from rfauto.models.template_spec import TEMPLATE_SPECS
     from rfauto.models.template_specs import bootstrap_template_specs

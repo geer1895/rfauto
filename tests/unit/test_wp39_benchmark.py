@@ -306,7 +306,7 @@ class TestRunnerDryRun:
         for pname, v in data["problems"].items():
             # dry-run 两引擎跑同一解析面：预算与 cost 门必过；wall-clock
             # 取决于两环算法开销比（sbo 含 2000 虚拟寻优，解析面秒级），
-            # 不在此钉死——真机判据见 runs/ 下战役归档 summary.json
+            # 不在此钉死——真机判据见 runs/wp39_mvp/summary.json
             assert v["budget_ok"], (pname, v)
             assert v["cost_ok"], (pname, v)
         assert data["summary"]["overall"] in ("PASS", "FAIL")

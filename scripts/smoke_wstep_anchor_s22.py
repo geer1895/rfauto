@@ -1,12 +1,12 @@
-"""wstep 阶跃基元真机锚 pt3（定案 (a) 版）：双激励进程隔离 + 端接口径统一后按 50Ω 裁判重判。
+"""wstep 阶跃基元真机锚 pt3（W2⑤ 定案 (a) 版）：双激励进程隔离 + 端接口径统一后按 50Ω 裁判重判。
 
 背景：
-- pt3_s22（#208 进程隔离版）：两次激励进程隔离，
+- pt3_s22（①，commit 9cbb1b9）：两次激励进程隔离（#208），
   G1-G3 连续复现，新门 G4 幅度镜像 0.208 / G5 互易 0.072 失守 ⇒ FAIL；根因已
   闭式定位——openEMS 端口面贴 PML，非激励端的线由 PML 按线自身 Z0 端接，
   CalcPort(ref_impedance=50) 只是 50Ω 伪波分解，与 fake/skrf "50Ω 双端接"
   裁判本非同一 S 定义（engine_termination_model 逐点 0.033/0.029 为证）。
-- 定案 (a)（本脚本落实）：裁判 50Ω 口径不动；引擎
+- W2⑤ 定案 (a)（本脚本落实；TODO 五轮 followUps ⑤）：裁判 50Ω 口径不动；引擎
   S 经 rfauto.adapters.openems_templates.renorm_engine_s_to_ref 后处理——
   ① 单激励 uf **带载比值**按列反演到各端口线自身 Z0 真波基
      （loaded_ratios_to_line_basis ≡ CalcPort(ref_impedance=Z_k) 代数恒等；

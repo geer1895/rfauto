@@ -21,20 +21,20 @@
   "msl_cpw_working_dir": "runs/benchmark/msl_cpw_m0.4",
   "openems_exe": "vendor/openEMS/install/bin/openEMS.exe",
   "mline_golden_untouched": "tests/golden/mline_benchmark_rescan_20260913.json",
-  "note": "G8 引擎基准扩容 2026-09-15 证据入库快照（runs/ 不入库，验收门要求可提交面覆盖证据）；anchors 为五份 live_results 逐字节内容回录：四离线锚=runs/*_smoke 归档只读入账（ratrace pt9 / atten_pi pt2 / atten_t pt1 / via pt3），msl_cpw=openEMS 真机补跑（mesh 0.4mm，cache=False，wall 1325s，与 2026-09-13 旧缓存解 max|ΔS|=0.0 逐位一致）；新时点只新增不覆写 mline golden",
+  "note": "G8 引擎基准扩容 2026-09-15 证据入库快照（runs/ 不入库，验收门要求可提交面覆盖证据）；anchors 为五份 live_results 逐字节内容回录：四离线锚=runs/*_smoke 归档只读入账（ratrace pt9 / atten_pi pt2 / atten_t pt1 / via pt3），msl_cpw=openEMS 真机补跑（mesh 0.4mm，cache=False，wall 1325s，与 2026-09-13 旧缓存解 max|ΔS|=0.0 逐位一致）；新时点只新增不覆写 mline golden（TODO :561 followUp 口径）",
   "recalibration_20260915b": {
    "scope": "仅 msl_cpw 传输门：增补无源上界 |S21| 带内 max ≤ CPW_S21_MAX_LIN=1.02（折入 thru_ok，另回传 passive_ok）；四离线锚判据未动、判定不变",
-   "trigger": "首轮 msl_cpw 真跑 s21_lin_mean 1.0296>1 非物理却 PASS——旧门 s21v>=0.90 纯下侧无上界",
+   "trigger": "docs/audit/confirm/confirm_1.md 第 5 条（F1②）：首轮 msl_cpw 真跑 s21_lin_mean 1.0296>1 非物理却 PASS——旧门 s21v>=0.90 纯下侧无上界",
    "evidence": [
     "runs/benchmark/msl_cpw_m0.4/sparams.csv 离线复算：|S21| 带内 max 1.2902@2.25GHz、195/401 点 >1、|S21|²+|S11|² 带内 max 1.682",
     "runs/benchmark/msl_cpw_renorm/renorm_report.json 零仿真重归一：归档两端口均显式 ref_impedance=50，自标定 Z_ref（MSL 47.72+j0.03Ω / CPW 42.96+j0.11Ω@2.5GHz）首次落盘 port_zref.csv；功率波归一 mean 1.0296→1.0242、带内 max 1.290→1.283（<1% 变化）——参考阻抗归一不能解释也不能消除 |S21|>1"
    ],
    "msl_cpw_verdict_change": "PASS（20260915 纯下侧门）→ FAIL（20260915b 无源上界超门），归档 runs/benchmark/msl_cpw_engine_benchmark.json 保持原样（归档），本快照如实改判（#122 不凑绿）",
-   "harness_followup": "已闭环（2026-09-18）：ingest_msl_cpw 现同批补传 s21_lin_band_max=float(np.max(np.abs(s21)))，criteria 补 s21_lin_band_max_le=CPW_S21_MAX_LIN、gate_flags 补 passive_ok（与 via 20260918a 同款口径，无悬空 followUp）；离线复判（OUT_DIR 重定向零覆写归档）实测带内 max 1.2902 超 1.02 → 判定 FAIL 不变，与本快照 msl_cpw 条目逐值一致，归档 runs/benchmark/msl_cpw_engine_benchmark.json 仍按约保持旧门原样（归档不改）"
+   "harness_followup": "已闭环（fix-small-batch-3，2026-09-18）：ingest_msl_cpw 现同批补传 s21_lin_band_max=float(np.max(np.abs(s21)))，criteria 补 s21_lin_band_max_le=CPW_S21_MAX_LIN、gate_flags 补 passive_ok（与 via 20260918a 同批口径，无悬空 followUp）；离线复判（OUT_DIR 重定向零覆写归档）实测带内 max 1.2902 超 1.02 → 判定 FAIL 不变，与本快照 msl_cpw 条目逐值一致，归档 runs/benchmark/msl_cpw_engine_benchmark.json 仍按约保持旧门原样（归档不改）"
   },
   "recalibration_20260918a": {
    "scope": "仅 via 传输门：增补无源上界 |S21| 带内 max ≤ VIA_S21_MAX_LIN=1.02（折入 thru_ok，另回传 passive_ok；与 msl_cpw 20260915b 同构）；其余四锚判据未动、判定不变",
-   "trigger": "via 门仍是纯 mean≥0.90 单侧（20260915b 同类缺陷未延伸到 via），|S21|>1 非物理值在 via 门仍会 PASS",
+   "trigger": "docs/audit/round2/A_fixes_review.md R2-A-01（medium）：via 门仍是纯 mean≥0.90 单侧（20260915b 同类缺陷未延伸到 via），|S21|>1 非物理值在 via 门仍会 PASS",
    "evidence": [
     "runs/via_smoke/pt3/sparams.csv 离线复算：|S21| 带内 max 0.9503@2.25GHz、401 点全部 ≤1.02、n_over_1=0——归档不存在非物理放行实例，收紧为预防性"
    ],
@@ -163,11 +163,11 @@
     "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest atten_pi",
     "old_gate_verdict": {
      "verdict": "FAIL→现门 PASS",
-     "source": "log_transcript",
-     "path": "（历史会话日志转录，2026-09-09 匹配门校准记录）",
+     "source": "devlog",
+     "path": ".md 2026-09-09（五）§3",
      "note": "冒烟控制台 FAIL 系旧 −20 匹配门（实测带内 −13.4dB 未过）；现门 −12dB 商用 lumped 地板下现判定 PASS。pt3 为缓存复用致 port_beta.csv 缺失坏点，弃用（本 harness 取 pt2）"
     },
-    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地（2026-09-09 匹配门校准记录）；|S21| 带内 mean 平坦均值语义 #195",
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地，2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },
@@ -223,9 +223,9 @@
      "verdict": "PASS",
      "source": "archive_console",
      "path": "（冒烟控制台输出，归档无日志文件；数值经本 harness 离线复算 sparams.csv/port_beta.csv 逐值复核一致）",
-     "note": "β +0.96%/dev 0.36dB/|S11|max −15.3dB（勘察阶段转录）"
+     "note": "β +0.96%/dev 0.36dB/|S11|max −15.3dB（任务书 recon 转录）"
     },
-    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地（2026-09-09 匹配门校准记录）；|S21| 带内 mean 平坦均值语义 #195",
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地，2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },
@@ -286,12 +286,12 @@
     "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest via",
     "old_gate_verdict": {
      "verdict": "FAIL→现门 PASS",
-     "source": "log_transcript",
-     "path": "（历史会话日志转录，2026-09-09 #203 pt3）",
-     "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；1.0491 分解段定征 β2=real_modal_difference（倒置馈 CalcPort 提取污染），现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py:82 同口径）→ 现判定 PASS"
+     "source": "devlog",
+     "path": ".md 2026-09-09（四）#203 pt3（:5122 转录）",
+     "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；/1.0491 分解段定征 β2=real_modal_difference（倒置馈 CalcPort 提取污染），现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py:82 同口径）→ 现判定 PASS"
     },
-    "recip_provenance": "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引自历史归档日志转录，source=archive_log",
-    "gate_calibration": "β1 单判（β2=real_modal_difference 不设门），2026-09-09（四）#203 pt3 定征；20260918a 增补无源上界 |S21| 带内 max ≤1.02（审查增补，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1 能量守恒硬约束；归档 401 点带内 max 0.9503 全部 ≤1.02，判定零翻转）",
+    "recip_provenance": "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 :5122 归档转录，source=archive_log",
+    "gate_calibration": "β1 单判（β2=real_modal_difference 不设门），与 2026-09-09（四）#203 pt3 定征；20260918a 增补无源上界 |S21| 带内 max ≤1.02（R2-A-01 审查，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1 能量守恒硬约束；归档 401 点带内 max 0.9503 全部 ≤1.02，判定零翻转）",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },
@@ -364,7 +364,7 @@
     "kernel": "src/rfauto/core/anchor_benchmark.py::msl_cpw_benchmark_verdict",
     "harness": ".venv/Scripts/python.exe scripts/engine_benchmark_expand.py --msl-cpw（求解+判读）/ --msl-cpw-ingest（只读复判）",
     "ref_sources": "er_eff1=core/synthesis.forward_z0（HJ）；er_eff2=core/calculators._cpwg_ri（共形映射）——运行时闭式计算不硬编码（铁律 7）；名义参数=synthesize_msl_cpw_model()",
-    "gate_calibration": "core/synthesis.py:881 docstring 口径：双端口 β 金标准 + |S11| −10dB 保守文献地板（#195 worst-case）+ |S21| 线性 mean ≥0.90 健康；对 fake 理想级联偏差只作信息量不设门；20260915b 增补无源上界 |S21| 带内 max ≤1.02（无源二端口逐频 |S21|≤1 能量守恒硬约束，超出=端口提取伪象；带内 max 而非 mean 防稀释；2% 只覆盖数值噪声，~3% 伪波伪象（历史实测案例）刻意不吸收）",
+    "gate_calibration": "core/synthesis.py:881 docstring 口径：双端口 β 金标准 + |S11| −10dB 保守文献地板（#195 worst-case）+ |S21| 线性 mean ≥0.90 健康；对 fake 理想级联偏差只作信息量不设门；20260915b 增补无源上界 |S21| 带内 max ≤1.02（无源二端口逐频 |S21|≤1 能量守恒硬约束，超出=端口提取伪象；带内 max 而非 mean 防稀释；2% 只覆盖数值噪声，~3% 伪波伪象 cba2687 刻意不吸收）",
     "note": "runs/ 此前无任何 msl_cpw 归档——本锚为 G8 唯一真机补跑（2026-09-15 实测 ls runs/ | grep -i msl 为空）",
     "old_gate_verdict": {
      "verdict": "PASS",

@@ -600,7 +600,7 @@ def test_c4_feed_boxes_reach_board_edge_and_jog_extent(template):
             assert abs(y1 - y0) == pytest.approx(wf, abs=1e-9), b
 
 
-# ─── 缝中线加密起跑门（网格假设复跑，2026-09-18，#212/#266）────────────────
+# ─── 缝中线加密起跑门（rm-oe-c4 网格假设复跑，2026-09-18，#212/#266）────────
 
 def test_c4_gap_interior_lines_enter_mesh():
     """耦合缝/指缝内必须有 ≥1 条内部 x 网格线（缝缘本身也精确入网）。

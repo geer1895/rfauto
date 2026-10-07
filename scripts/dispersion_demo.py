@@ -2,7 +2,7 @@ r"""D1 色散材料库演示：扫频打印 RO4350B 的 εr(f)/tanδ(f) 与微�
 
 数据源 = configs/materials.yaml 的 dispersion 条目（datasheet 单点 + D-S 因果
 拟合），纯解析求值，**不调用任何 EM solver**（真机 openEMS 宽带 mline 冒烟需
-后台 + 日志轮询且可跳过）。
+后台 + 日志轮询且可跳过，见 ）。
 
 用法：
     .venv\Scripts\python.exe scripts/dispersion_demo.py
