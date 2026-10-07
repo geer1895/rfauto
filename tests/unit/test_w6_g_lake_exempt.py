@@ -396,7 +396,10 @@ class TestCliExemptCompact:
         assert "reversible" in result.output
 
     def test_cli_help_carries_new_flags(self):
-        result = runner.invoke(app, ["lake", "compact", "--help"])
+        # COLUMNS=200 宽渲染：rich 截断点随平台漂移（Linux CI 假红
+        # 2026-10-07 首跑实证）——宽端旗标完整渲染，断言跨平台稳定
+        result = runner.invoke(app, ["lake", "compact", "--help"],
+                               env={"COLUMNS": "200"})
         assert result.exit_code == 0, result.output
         assert "--exempt-subtree" in result.output
         assert "--reversible" in result.output

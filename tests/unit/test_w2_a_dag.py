@@ -25,6 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from rfauto.cli.domains.dag import dag_app, dag_run, dag_status
@@ -156,6 +157,11 @@ def _child_env() -> dict:
 
 # ─── 判据①：断点续跑演练（node2 中段 kill → 重跑 node1 零重执行）─────────────
 
+# 整树硬杀形态钉=#157 Windows taskkill /T 语义；POSIX 无 taskkill（等价面
+# 是进程组语义，另一套形态），诚实跳过（skip-not-fail，Linux CI 首跑实证）。
+@pytest.mark.skipif(
+    os.name != "nt",
+    reason="整树硬杀钉依赖 Windows taskkill /T（#157 形态）；POSIX 无此语义")
 def test_resume_after_mid_solve_tree_kill(tmp_path) -> None:
     run_dir = tmp_path / "run1"
     cache_dir = tmp_path / "cache"

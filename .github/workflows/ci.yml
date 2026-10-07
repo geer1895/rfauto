@@ -78,6 +78,13 @@ jobs:
           # dev 组含离线套件全部可选内核（smt/pyarrow/duckdb/gdstk/scikit-learn…），
           # 缺位时相应测试组 fail 而非 skip
           pip install -e ".[hfss,mcp,multiobj,dev]"
+          # CJK 字体：report_render PDF 测试（typst 嵌字+pypdf 抽取 CJK 段
+          # 标题）。runner 缺省无 Noto CJK → typst 无 CJK 字形可嵌，抽取
+          # 全为 \x00（2026-10-07 CI 首跑实证）——装系统字体供
+          # report_render._font_paths 的 /usr/share/fonts 扫描面拾取
+          # （模板字体表第三顺位 "Noto Sans CJK SC"）。
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
       - name: Run unit + integration-fake tests (real_edt deselected)
         run: |
           # xdist loadfile 并行：内部仓 gate_parallel.py 先例直接搬
@@ -200,8 +207,11 @@ jobs:
       - name: pip-audit fail on known vulnerabilities
         run: |
           # 环境模式审计（安装集即审计面，含供应链工具自身）；发现已知漏洞
-          # 即非零退出；机器可读报告落 pip-audit-report.json 供 artifact 留档
-          pip-audit --strict --progress-spinner off -f json -o pip-audit-report.json
+          # 即非零退出；机器可读报告落 pip-audit-report.json 供 artifact 留档。
+          # --skip-editable：本项目自身 editable 安装（rfauto 0.10.0）不在
+          # PyPI，--strict 下 "Dependency not found on PyPI" 即 job 红
+          # （2026-10-07 CI 首跑实证）——自身发行版不属第三方漏洞审计对象
+          pip-audit --strict --skip-editable --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
         uses: actions/upload-artifact@v4

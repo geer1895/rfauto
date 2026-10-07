@@ -95,9 +95,17 @@ class TestKicadCliInfo:
         assert r["env_hint"] == ENV_KICAD_CLI
 
     def test_version_probe_stub(self, tmp_path, monkeypatch):
-        cli = tmp_path / "stub" / "kicad-cli.cmd"
-        cli.parent.mkdir(parents=True)
-        cli.write_text("@echo 10.0.6\r\n", encoding="utf-8")
+        # 桩形态随平台：Windows=.cmd 批处理；POSIX=可执行 sh 脚本
+        # （真实子进程版本探测面双平台覆盖，skip-not-fail 不弃守）
+        if os.name == "nt":
+            cli = tmp_path / "stub" / "kicad-cli.cmd"
+            cli.parent.mkdir(parents=True)
+            cli.write_text("@echo 10.0.6\r\n", encoding="utf-8")
+        else:
+            cli = tmp_path / "stub" / "kicad-cli"
+            cli.parent.mkdir(parents=True)
+            cli.write_text("#!/bin/sh\necho 10.0.6\n", encoding="utf-8")
+            cli.chmod(0o755)
         monkeypatch.setattr(svc, "DEFAULT_KICAD_CLI", str(cli))
         r = kicad_cli_info()
         assert r["ok"] is True and r["available"] is True

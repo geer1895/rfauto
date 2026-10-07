@@ -8,6 +8,7 @@ stub（kicad_drc 测试同款隔离面），纯函数面（脚本生成/解析/C
 from __future__ import annotations
 
 import json
+import os
 from types import SimpleNamespace
 
 import pytest
@@ -97,6 +98,13 @@ class TestSubprocessPath:
         r = assembly_payload(tmp_path / "nope.kicad_pcb", tmp_path)
         assert r["ok"] is False and "不存在" in r["errors"][0]
 
+    # 钉面=Windows KiCad 安装位（E:\KiCad\bin）+ PATH 前置断言：POSIX 上
+    # 盘符串是单段路径名（Path.parent="."），KiCad 安装布局亦不同（真机档
+    # 覆盖）——诚实跳过（skip-not-fail，Linux CI 首跑实证）。
+    @pytest.mark.skipif(
+        os.name != "nt",
+        reason="KiCad Windows 安装位/PATH 前置口径为 Windows 面；"
+               "POSIX 安装布局不同（真机档覆盖）")
     def test_happy_path_uses_kicad_python_and_writes_artifacts(self, tmp_path, monkeypatch):
         pcb = tmp_path / "demo.kicad_pcb"
         pcb.write_text("(kicad_pcb)", encoding="utf-8")

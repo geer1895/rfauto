@@ -54,8 +54,13 @@ def _absolute(path: str | Path) -> Path:
 
 
 def _norm(path: Path) -> Path:
-    """比较用规范形（Windows 大小写/分隔符不敏感）。"""
-    return Path(os.path.normcase(str(path)))
+    """比较用规范形（大小写/分隔符不敏感）。
+
+    安全/保护类比较显式 casefold，不依赖 :func:`os.path.normcase`——
+    normcase 在 POSIX 是恒等（开源发布批⑤），仅靠它会使大小写变体
+    （``/HOME/.../RECIPES/X.YAML``）在 Linux 上逃逸保护根判定。
+    """
+    return Path(os.path.normcase(str(path)).lower())
 
 
 def protected_recipe_roots() -> tuple[Path, ...]:

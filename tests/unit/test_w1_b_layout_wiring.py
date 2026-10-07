@@ -527,7 +527,18 @@ class TestStencil:
 
 class TestStep:
     def test_missing_board_failure_envelope(self, tmp_path):
-        """板缺失在子进程发射前拦截（hermetic，不依赖 KiCad 是否在装）。"""
+        """板缺失在子进程发射前拦截。
+
+        隐含前提=本机 kicad-cli 可解析（service 先探 CLI 后验板：CLI 缺位
+        时 skipped 信封先行——见 test_skipped_envelope_when_no_cli 的兄弟
+        口径）。CI Linux 无 KiCad → 原断言假红（Linux CI 首跑实证）——
+        前提不满足诚实跳过，语义由兄弟用例+本机真机档覆盖。
+        """
+        import rfauto.service.layout_step_service as svc
+
+        if svc.resolve_kicad_cli() is None:
+            pytest.skip("本机 kicad-cli 不可解析：skipped 信封先于板缺失 "
+                        "error 信封（service 探测序），前提不满足如实跳")
         result, payload = _invoke_json([
             "layout", "step", str(tmp_path / "nope.kicad_pcb"), "--json"])
         assert result.exit_code == 1

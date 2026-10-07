@@ -624,11 +624,14 @@ class TestTuneCliFlag:
         from rfauto.cli.domains.workflow import app
 
         runner = CliRunner()
-        result = runner.invoke(app, ["tune", "--help"])
+        # COLUMNS=200 宽渲染：rich 窄表截断点随平台 CJK 宽度计算漂移
+        # （Linux CI 截断位比 Windows 更早，截断前缀钉假红，2026-10-07
+        # 首跑实证）——强制宽端让旗标完整渲染，断言语义跨平台稳定
+        result = runner.invoke(app, ["tune", "--help"],
+                               env={"COLUMNS": "200"})
         assert result.exit_code == 0
         flat = result.output.replace("\n", "").replace(" ", "")
-        # rich 窄表把旗标名/help 按单元格截断（warm-start-regis…），格间有
-        # 边框字符——按截断稳定的前缀+help 关键词钉（真跑不炸=#305 主判据）
+        # 宽端无截断：旗标全名+help 关键词钉（真跑不炸=#305 主判据）
         assert "代理模型注册表" in flat and "warm-start" in flat
         assert "--warm-start-regis" in flat
         assert "--no-warm-start-r" in flat

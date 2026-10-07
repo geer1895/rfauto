@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -23,6 +24,14 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+
+# WSL 桥（盘符→/mnt、wsl.exe 发射）是 Windows 侧功能：POSIX 上 Path 对
+# 盘符串/POSIX tmp 目录无盘符语义（parts[0] 非盘符段），桥护栏按设计拒绝
+# ——诚实跳过（skip-not-fail；Linux 侧 Xyce 原生接入属新适配器范畴）。
+_WSL_BRIDGE = os.name == "nt"
+_SKIP_NON_NT = pytest.mark.skipif(
+    not _WSL_BRIDGE,
+    reason="WSL 桥为 Windows 侧功能（盘符/wsl.exe 语义 POSIX 不成立）")
 
 import rfauto.adapters.xyce_adapter as mod
 from rfauto.adapters.xyce_adapter import (
@@ -151,6 +160,7 @@ class TestVerifyReachable:
 # ── WSL 桥工具 ────────────────────────────────────────────────────────────────
 
 class TestBridgeUtils:
+    @_SKIP_NON_NT
     def test_windows_to_wsl_path(self):
         assert windows_to_wsl_path("E:\\a\\b.cir") == "/mnt/e/a/b.cir"
         assert windows_to_wsl_path("E:/") == "/mnt/e"
@@ -173,6 +183,7 @@ class TestBridgeUtils:
 
 
 class TestRunXyce:
+    @_SKIP_NON_NT
     def test_command_shape_and_quoting(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b"* t\n.end\n")
@@ -196,6 +207,7 @@ class TestRunXyce:
         with pytest.raises(XyceError, match="网表不存在"):
             run_xyce(tmp_path / "nope.cir", runner=lambda a, t: _proc(0))
 
+    @_SKIP_NON_NT
     def test_timeout_returns_flagged_result(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")
@@ -206,6 +218,7 @@ class TestRunXyce:
         res = run_xyce(cir, runner=slow_runner)
         assert res.timed_out and res.rc == -1
 
+    @_SKIP_NON_NT
     def test_utf16_output_decoded(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")

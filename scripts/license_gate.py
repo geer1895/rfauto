@@ -45,6 +45,9 @@ EXEMPT: dict[str, str] = {
                 "须过 release §5 人工审查（2026-09-28 批 B1 P-3 接线时逐案补裁）",
     "fdtdx": "元数据 UNKNOWN 但上游 MIT（round5 许可表[20] arXiv:2603.24027+GitHub 实证）——豁免+建议上游补元数据",
     "pymupdf": "AGPL-3.0——仅内部 scripts（lit_mine_pipeline PDF 提取）无分发面不触发网络服务条款；分发前必须替换或合规（2026-09-27 裁决）",
+    "rfauto": "本项目自身发行版（editable 安装进被审计环境）——GPL-3.0-only 是"
+              "产品自身声明许可而非第三方供应链依赖，不属本门审计对象"
+              "（2026-10-07 CI 首跑裁决）",
 }
 
 #: 已知弱 copyleft/特殊族：出现即点名（裁决记录用，不自动放行）。

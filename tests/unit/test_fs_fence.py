@@ -60,6 +60,13 @@ class TestFsListRootFence:
         d = fs_list(str(tmp_path.parent))
         assert d["ok"] is False and "路径越界" in d["error"]
 
+    # 盘符逃逸形态=Windows 盘符语义（POSIX 上 "D:\x" 是 cwd 内相对名，
+    # resolve 后落允许根内→走"目录不存在"分支，围栏行为本身正确）；
+    # POSIX 逃逸形态由 test_absolute_outside_root_rejected 覆盖——诚实跳过。
+    @pytest.mark.skipif(
+        os.name != "nt",
+        reason="盘符逃逸（D:\\x）为 Windows 盘符语义；POSIX 逃逸由"
+               " absolute_outside_root 用例覆盖")
     def test_drive_escape_rejected(self) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")
