@@ -2300,6 +2300,11 @@
       "zt_solid_tube",
       "zt_solid_tube_hf_asymptote"
     ],
+    "core/trl_solt.py": [
+      "apply_calibration",
+      "solt_extract",
+      "trl_extract"
+    ],
     "core/via_process_params.py": [
       "HOLE_COPPER_UM_BY_CLASS",
       "IPC4761_TYPE_VII",

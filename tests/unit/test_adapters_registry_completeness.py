@@ -78,6 +78,7 @@ NON_REGISTRY: dict[str, str] = {
     "hfss_session": "HFSS 会话工具层",
     "hfss_builder_utils": "HFSS 建模工具层",
     "hfss_import": "HFSS 导入互操作",
+    "hfss_batch": "HFSS 一次性批处理求解（每求解一进程，无长驻会话）",
     "interchange": "版图互换",
     "kicad_board_render": "KiCad 渲染（子进程）",
     "kicad_drc": "KiCad DRC（子进程）",
