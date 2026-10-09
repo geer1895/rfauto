@@ -50,6 +50,7 @@ from rfauto.infra.remote_machines import (
     resolve_machine,
 )
 from rfauto.service.envelope import ok_envelope, skipped_envelope
+from rfauto.service.remote_sftp_pull import record_pull_manifest
 
 __all__ = [
     "LICENSE_PREFLIGHT_SEAT_QUERY",
@@ -976,6 +977,25 @@ def remote_hfss_l2_smoke(
             "local": str(s2p_local),
             "bytes": s2p_local.stat().st_size,
         }
+        # 尾程项 11 薄接线：L2 单文件回拉也落回拉清单 JSON（remote_sftp_pull
+        # 的清单构造器，纯本地写；best-effort 不阻塞判读——#105 观测性
+        # 零故障点纪律，写失败 suppress 判读面零感知）。
+        with contextlib.suppress(Exception):
+            manifest_rec = record_pull_manifest(
+                out_path,
+                files=[{
+                    "remote": s2p_remote_sftp,
+                    "local": str(s2p_local),
+                    "bytes": s2p_local.stat().st_size,
+                    "status": "pulled",
+                }],
+                machine=cfg.name,
+                remote_dir=f"{cfg.hfss_project_root}/l2_smoke",
+            )
+            steps["pull_manifest"] = {
+                "path": manifest_rec.get("path"),
+                "counts": manifest_rec.get("counts"),
+            }
 
         import skrf as rf
 
