@@ -5,6 +5,27 @@ All notable changes to rfauto will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **EDB layout fast lane** (planar device families): declarative spec
+  emitters (`edb_branchline`, `edb_power_divider`, `edb_coupled_line`,
+  `edb_ratrace`; `edb_lange` returns a structured refusal until air-bridge
+  primitives exist), `EdbAdapter` build with config-JSON provenance and
+  lumped-RLC resistor landing, `hfss_batch` one-shot solving (one
+  short-lived `ansysedt -ng -BatchSolve` process per solve point, two-stage
+  `-batchextract` Touchstone export with HFSS-3D-Layout auto dispatch),
+  offline emit-layer gates, the framework-level seven-factor
+  `edb-health-gate-v1`, a dataset collector sharing the fingerprint/query
+  surface of every other channel, and `rfauto edb build/solve/status` CLI
+  leaves plus `edb_emit_spec`/`edb_build_solve`/`edb_status` MCP tools.
+- **TRL/SOLT calibration kernel + HFSS one-shot batch base**: SOLT/TRL
+  standards-to-error-box extraction with gauge fixing and an eight-term
+  `apply_calibration` path (numerically cross-checked against the extender
+  forward model), on top of a watchdog-bounded batch launch base with
+  fail-closed desktop-governance interop.
+- **Remote campaign additions**: SFTP pull-back executor
+  (enumerate/whitelist/verify/manifest chain) with L2 single-file pull
+  manifest records, a recipe-loop remote launcher, and a campaign queue
+  daemon with resource scheduler views behind the new
+  `campaign queue-daemon` CLI leaf.
 - **Palace adapter** (opt-in, WSL2): full driven-simulation channel with
   official v0.18.1 five-section config schema, multi-excitation S-matrix
   port-S.csv parsing with measured-entry masks, a generated Windows-side

@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-22300%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -20,7 +20,7 @@
 
 它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **71 个参数化器件模板**和
 配套的物理验收判据，提供 **258 条 CLI 命令**和 **152 个 MCP 工具**（+7 个
-resources），并靠 **21900+ 条单元测试**保持诚实——这些测试不需要任何商业许可
+resources），并靠 **22300+ 条单元测试**保持诚实——这些测试不需要任何商业许可
 就能跑。
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
@@ -54,7 +54,7 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
   QucsatorRF、VNA 接在同一个适配层后面。
   商业引擎按需安装（可选依赖），核心功能全部跑在内置 fake 求解器上——零许可
   就能体验完整框架。
-- **器件模板工厂** —— 53 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
+- **器件模板工厂** —— 71 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
   结构……）。每个模板先用闭式物理公式综合出初始尺寸，并注册该器件族的验收
   判据，让你分得清"真结果"和"网格假象"。
 - **优化闭环** —— TPE、CMA-ES、NSGA-II 多目标；还有代理模型路线：先用一批
@@ -66,6 +66,13 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
 - **AI 能指挥，但不许编数** —— 完整的 MCP 服务器，Claude Desktop、Cursor 或
   你自己的 agent 都能操作框架。agent 的修改先进沙箱草稿、过验证门，才允许
   碰你的工作区。
+
+新增能力：面向平面器件族的 **EDB 快车道** —— 声明式发射器用闭式物理内核
+综合出版图 spec，每个求解点只起一个短命 `ansysedt -BatchSolve` 进程（不
+存在可被毒化的长驻桌面会话），第二段 `-batchextract` 导出 Touchstone，
+每件产物过七因子健康门才能进数据集。同期落地：从原始标准件测量反解二端
+口误差箱的 **TRL/SOLT 校准内核**，以及把整条链从单一入口驱动的 HFSS 一次
+性批处理基座。
 
 ![工作流](docs/assets/zh/workflow.png)
 
@@ -85,7 +92,7 @@ AI 想改任何东西都要走沙箱加三道门。
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # 或者：uv sync --extra dev
 
-# 跑测试套件（约 9700 条，不需要任何 EDA 软件）
+# 跑测试套件（约 22300 条，不需要任何 EDA 软件）
 python -m pytest tests/unit -q
 
 # 探测本机可见的求解器与许可

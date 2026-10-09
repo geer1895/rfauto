@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-21900%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-22300%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -22,8 +22,8 @@ whole pipeline through MCP, under one hard rule:
 
 It drives **16 EM/EDA engines** behind one interface, ships
 **71 parameterized device templates** with built-in physics checks, and
-exposes **254 CLI commands** and **149 MCP tools** (+5 resources) — kept
-honest by **21900+ unit tests** that run without any commercial license.
+exposes **258 CLI commands** and **152 MCP tools** (+7 resources) — kept
+honest by **22300+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 100 (with experimental 101)` · `TEMPLATE_META 71` ·
@@ -64,7 +64,7 @@ and every reported number carries its provenance.
   (analytic modal), QucsatorRF and VNA behind a common adapter layer. Commercial engines stay opt-in extras; everything
   core runs against a built-in fake solver, so you can try the whole framework
   with zero licenses.
-- **Device template factory** — 53 parameterized families (couplers, power
+- **Device template factory** — 71 parameterized families (couplers, power
   dividers, filters, antennas, transitions…). Each template synthesizes
   starting dimensions from closed-form physics, and registers acceptance
   checks so you can tell "real result" from "mesh artifact".
@@ -79,6 +79,16 @@ and every reported number carries its provenance.
 - **AI that drives but doesn't invent** — a full MCP server so Claude Desktop,
   Cursor or your own agent can operate the framework. Agent edits go through a
   sandbox draft and validation gates before they touch your workspace.
+
+Newest additions: an **EDB layout fast lane** for planar devices — declarative
+emitters synthesize the layout spec from closed-form physics, every solve
+point runs as an independent short-lived `ansysedt -BatchSolve` process (no
+long-lived desktop session to poison), a second `-batchextract` pass exports
+Touchstone, and a seven-factor health gate judges each artifact before it can
+reach a dataset. Alongside it: a **TRL/SOLT calibration kernel** that
+recovers two-port error boxes from raw standards measurements, and the
+one-shot HFSS batch base that drives the whole chain from a single entry
+point.
 
 ![workflow](docs/assets/workflow.png)
 
@@ -105,7 +115,7 @@ No commercial tools needed — the built-in fake solver covers the whole core.
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # or: uv sync --extra dev
 
-# run the test suite (~9700 tests, no EDA required)
+# run the test suite (~22300 tests, no EDA required)
 python -m pytest tests/unit -q
 
 # check which solvers/licenses are visible on your machine
