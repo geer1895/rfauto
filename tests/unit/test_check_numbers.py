@@ -101,7 +101,8 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # W6 +13（2026-10-06：SN-3/17/dev/diagnose deviation/kicad design-from-run
     # 等，合流实测口径）→ 254。
     # EDB 快车道批 +3（2026-10-08：edb build/solve/status 三叶）→ 257。
-    assert check_numbers.count_cli() == 257
+    # 远程回拉与队列批 +1（2026-10-09：campaign queue-daemon 叶）→ 258。
+    assert check_numbers.count_cli() == 258
 
 
 def test_cli_bench_subapp_breakdown():

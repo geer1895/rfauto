@@ -251,7 +251,8 @@ class TestCommandRegistryCount:
         # + kicad design-from-run 1 + SN-7/8/13/14/15/6/18 旗标伴随叶 4，
         # +3（EDB 快车道批 2026-10-08：edb build/solve/status 三叶，
         # cli/domains/edb.py 域内自注册 add_typer）= 257
-        assert total == 257
+        # +1（远程回拉与队列批 2026-10-09：campaign queue-daemon 叶）= 258
+        assert total == 258
 
     def test_pcell_commands_registered(self):
         """LC-2 pcell 子应用四命令注册面在位（PCell DSL 孤儿复活消费面）。"""

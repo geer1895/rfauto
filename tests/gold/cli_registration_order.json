@@ -246,6 +246,7 @@
   "rfauto campaign event",
   "rfauto campaign list",
   "rfauto campaign run",
+  "rfauto campaign queue-daemon",
   "rfauto template-spec list",
   "rfauto template-spec draft",
   "rfauto template-spec recommend",
@@ -371,6 +372,6 @@
   "rfauto edb solve",
   "rfauto edb status"
  ],
- "n_leaves": 257,
+ "n_leaves": 258,
  "n_top": 111
 }

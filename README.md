@@ -27,7 +27,7 @@ honest by **21900+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 100 (with experimental 101)` · `TEMPLATE_META 71` ·
-`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI commands 257 (leaves) ·
+`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI commands 258 (leaves) ·
 (152 MCP tools + 7 resources)
 <!-- numbers-end -->
 
@@ -94,7 +94,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 152 (+7 resources) | CLI commands 257 (leaves) | CALCULATOR_REGISTRY 100 [with experimental 101] | device templates 71 | anchors 60
+**Scale numbers**: MCP tools 152 (+7 resources) | CLI commands 258 (leaves) | CALCULATOR_REGISTRY 100 [with experimental 101] | device templates 71 | anchors 60
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start
