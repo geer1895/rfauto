@@ -198,6 +198,21 @@ from rfauto.mcp_tools.optim import run_sweep as run_sweep
 from rfauto.mcp_tools.optim import start_tune as start_tune
 
 
+# ─── edb 快车道工具组（CLI 出口同批，2026-10-08：+3 工具；append-only ────
+# 金快照 diff 最小化惯例同 env_reliability/preflight 组（facade 尾=注册序
+# 末尾；_normalize_tool_registration_order 按 from-import 源序自动收录）。
+from rfauto.mcp_tools.edb import edb_build_solve as edb_build_solve
+from rfauto.mcp_tools.edb import edb_emit_spec as edb_emit_spec
+from rfauto.mcp_tools.edb import edb_status as edb_status
+
+# edb 资源两件 re-export（2026-10-08：rfauto://edb/status 与
+# rfauto://edb/datasets，@mcp.resource 挂本组模块随上三行首导注册；
+# 不计入工具数，非工具组件归一化整块后置）。**禁前移**到上方 resources
+# 组——from-import 源序=模块首导序，前移会把本组三工具注册序整体带前，
+# 金快照 tool_names_order 即漂。
+from rfauto.mcp_tools.edb import edb_datasets_resource as edb_datasets_resource
+from rfauto.mcp_tools.edb import edb_status_resource as edb_status_resource
+
 
 # ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order）═══
 # 根因：@mcp.tool 注册是工具组模块**首次 import** 的装饰器副作用——注册序

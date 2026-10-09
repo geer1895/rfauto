@@ -104,22 +104,21 @@ def test_cli_leaf_paths_registration_order():
     """叶命令深度优先注册序逐位=金快照（E2-8：失败消息改动态 len 防再陈旧）。"""
     gold = json.loads(_GOLD_CLI.read_text(encoding="utf-8"))
     snap = _cli_tree_snapshot()
-    assert snap["n_leaves"] == 254, (
-        f"叶命令数漂移: {snap['n_leaves']} != 254（check_numbers CLI 口径；"
-        "W6 2026-10-06 SN-3/17/dev/diagnose deviation/kicad design-from-run"
-        " 等 +13 重钉）")
+    assert snap["n_leaves"] == 257, (
+        f"叶命令数漂移: {snap['n_leaves']} != 257（check_numbers CLI 口径；"
+        "EDB 快车道批 2026-10-08 edb build/solve/status +3 重钉）")
     assert snap["leaf_paths"] == gold["leaf_paths"], (
         "CLI 叶命令注册序漂移（同族段内次序是 AU-1B4 钉的镜像面）")
 
 
 def test_mcp_tool_and_resource_order():
-    """132 个 MCP 工具注册序 + 资源清单=金快照（批3 拆分对账面转正）。"""
+    """MCP 工具注册序 + 资源清单=金快照（批3 拆分对账面转正）。"""
     gold = json.loads(_GOLD_MCP.read_text(encoding="utf-8"))
     snap = _mcp_snapshot()
-    assert len(snap["tool_names_order"]) == 149, (
-        f"MCP 工具数漂移: {len(snap['tool_names_order'])} != 149"
-        "（check_numbers MCP 口径；W6 2026-10-06 start_tune/run_sweep/"
-        "preflight_run +3 重钉）")
+    assert len(snap["tool_names_order"]) == 152, (
+        f"MCP 工具数漂移: {len(snap['tool_names_order'])} != 152"
+        "（check_numbers MCP 口径；EDB 快车道批 2026-10-08 edb 组三工具"
+        " +3 重钉）")
     assert snap["tool_names_order"] == gold["tool_names_order"], (
         "MCP 工具注册序漂移")
     assert snap["resources"] == gold["resources"], "MCP 资源清单漂移"

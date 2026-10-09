@@ -72,6 +72,61 @@
       "vna_adapter",
       "xyce_adapter"
     ],
+    "adapters/edb_templates/__init__.py": [
+      "KNOWN_TEMPLATES",
+      "LANGE_EDB_SUPPORTED",
+      "SPEC_SCHEMA_VERSION",
+      "TEMPLATE_KEY_RESERVED",
+      "assemble_config",
+      "emit_branchline_spec",
+      "emit_coupled_line_spec",
+      "emit_lange_spec",
+      "emit_power_divider_spec",
+      "emit_ratrace_spec",
+      "lange_synth",
+      "quarter_wave_len_mm",
+      "solve_microstrip",
+      "trace_attach_graph",
+      "trace_connected_components",
+      "validate_spec"
+    ],
+    "adapters/edb_templates/branchline.py": [
+      "emit_branchline_spec"
+    ],
+    "adapters/edb_templates/coupled_line.py": [
+      "DEFAULT_COUPLING_DB",
+      "DEFAULT_FEED_LEN_MM",
+      "emit_coupled_line_spec"
+    ],
+    "adapters/edb_templates/lange.py": [
+      "LANGE_EDB_SUPPORTED",
+      "TEMPLATE_KEY_RESERVED",
+      "emit_lange_spec",
+      "lange_synth"
+    ],
+    "adapters/edb_templates/power_divider.py": [
+      "emit_power_divider_spec"
+    ],
+    "adapters/edb_templates/ratrace.py": [
+      "DEFAULT_FEED_LEN_MM",
+      "emit_ratrace_spec"
+    ],
+    "adapters/edb_templates/schema.py": [
+      "DEFAULT_BOARD_MARGIN_MM",
+      "DEFAULT_COPPER_THICKNESS_MM",
+      "DEFAULT_STACKUP",
+      "KNOWN_TEMPLATES",
+      "SPEC_SCHEMA_VERSION",
+      "assemble_config",
+      "build_spec_stackup",
+      "point_segment_distance_mm",
+      "quarter_wave_len_mm",
+      "resolve_stackup",
+      "solve_microstrip",
+      "trace_attach_graph",
+      "trace_connected_components",
+      "validate_spec"
+    ],
     "adapters/fab_export/__init__.py": [
       "DimsPort",
       "DrawPort",

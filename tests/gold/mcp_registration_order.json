@@ -148,9 +148,14 @@
   "cryo_surface_estimate",
   "preflight_run",
   "start_tune",
-  "run_sweep"
+  "run_sweep",
+  "edb_emit_spec",
+  "edb_build_solve",
+  "edb_status"
  ],
  "resources": [
+  "rfauto://edb/datasets",
+  "rfauto://edb/status",
   "rfauto://knowledge/compat_matrix",
   "rfauto://knowledge/materials",
   "rfauto://knowledge/terminology",

@@ -131,7 +131,9 @@ class TestMCPToolsRegistered:
         #   get_guidelines_for，pitfalls+playbook+rules 三源确定性检索）= 146
         # W6 +3（2026-10-06）：start_tune/run_sweep（SN-16 tune/sweep 主入口）
         #   + preflight_run（D-07 MCP preflight 挂点）= 149
-        assert len(tools) == 149
+        # EDB 快车道批（2026-10-08）：edb_emit_spec/edb_build_solve/
+        #   edb_status（edb 组三工具薄壳）= 152
+        assert len(tools) == 152
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -247,6 +249,9 @@ class TestMCPToolsRegistered:
             "emc_cispr_band_params", "emc_cispr_detect",
             "emc_ground_spacing_check", "emc_cm_radiated_budget",
             "metasurface_coding_pattern", "metasurface_quant_loss_db",
+            # EDB 快车道批（2026-10-08）：edb 组三工具薄壳（JSON 进出
+            # service/edb_lane_service 同源同名函数）
+            "edb_emit_spec", "edb_build_solve", "edb_status",
         }
         assert names == expected
 
@@ -266,6 +271,9 @@ class TestMCPResources:
             "rfauto://knowledge/terminology",
             # W5-D（2026-10-05，EC-6）：toolsets 定义单源
             "rfauto://toolsets/definition",
+            # EDB 快车道批（2026-10-08）：edb 状态面+数据集清单两资源
+            "rfauto://edb/status",
+            "rfauto://edb/datasets",
         }
 
     def test_read_compat_matrix_resource(self, mcp_server, monkeypatch):

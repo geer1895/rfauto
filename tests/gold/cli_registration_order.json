@@ -109,7 +109,8 @@
   "goal",
   "dev",
   "design",
-  "sandbox"
+  "sandbox",
+  "edb"
  ],
  "leaf_paths": [
   "rfauto doctor",
@@ -365,8 +366,11 @@
   "rfauto design close",
   "rfauto sandbox list",
   "rfauto sandbox diff",
-  "rfauto sandbox promote"
+  "rfauto sandbox promote",
+  "rfauto edb build",
+  "rfauto edb solve",
+  "rfauto edb status"
  ],
- "n_leaves": 254,
- "n_top": 110
+ "n_leaves": 257,
+ "n_top": 111
 }

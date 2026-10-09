@@ -212,7 +212,9 @@ _HFSS_CAPABILITIES = SolverCapabilities(
 #: 内置能力表：仅需覆盖无法以 EMSolverAdapter 类属性声明的通道（openEMS/
 #: HFSS——前者适配器模块不在注册链内，后者走旧协议不注册）。COMSOL/Palace
 #: 等在各自适配器模块以类属性 CAPABILITIES 声明（就近维护，避免两处漂移）。
-_SOLVER_CAPABILITY_SPECS: dict[EMSolverType, SolverCapabilities] = {
+#: 值类型含 str 键：独立协议通道（如 "edb"，见文件尾部条目）不扩
+#: EMSolverType 枚举（枚举扩值必须过注册面决策门），以原始字符串键入表。
+_SOLVER_CAPABILITY_SPECS: dict[EMSolverType | str, SolverCapabilities] = {
     EMSolverType.OPENEMS: _OPENEMS_CAPABILITIES,
     EMSolverType.HFSS: _HFSS_CAPABILITIES,
 }
@@ -665,3 +667,51 @@ def create_solver_from_config(
     if name not in configs:
         raise KeyError(f"configs/solvers.yaml 中无此求解器条目: {name}")
     return reg.create(configs[name].solver_type, configs[name])
+
+
+# EDB 能力声明（EDA 快车道底座，2026-10-08）：平面器件族经 EDB（分层版图
+# 数据库）建模 + hfss_batch 批处理求解的新求解路径（Ansys 团队建议）。
+# **键形纪律**：EdbAdapter 是独立协议通道（workdir 构造、非
+# EMSolverAdapter 契约、不注册进 EMSolverRegistry——hfss_session 工具层
+# 同口径），故**不扩 EMSolverType 枚举**（枚举扩值必须过
+# test_adapters_registry_completeness::TestEnumCoverage 注册面决策门），
+# 能力条目以字符串字面量键入表（本表值类型已放宽为 EMSolverType | str），
+# 经 solver_capabilities_for("edb") 反查（自定义 EDA 字符串类型原值保留
+# 路径，本模块 solver_capabilities_for docstring 口径）。事实依据
+# （adapters/edb_adapter.py v1 面 + pyedb 0.83.0 configuration 官方源码
+# 2026-10-08 逐条核对）：
+#   - 端口：configuration ports 走 circuit/coax 集总电路端口原语
+#     （CfgPort.CFG_PORT_TYPE）→ wave=False / lumped=True；
+#   - 场导出：适配器面无场提取实现（只建库+发求解请求）→ False；
+#   - Touchstone：S 参数回收归 hfss_batch 批处理通道 → True（本通道声明
+#     求解管线可产出 Touchstone）；
+#   - headless：EDB 独立内存态 API 无需桌面会话 + 批处理命令行 → True；
+#   - 收敛报告/optimetrics/nf2ff/SAR：v1 无对应实现 → False（不虚报）；
+#   - 集总元件（电阻/负载建模）：spec v1 无集总元件分节（circuit 端口是
+#     端口类型非集总元件）→ False；
+#   - dimension："2d"（分层版图数据库，平面器件族）；
+#   - 材料：signal 层 PEC/导体（copper）+ 介质层 er/tanD → pec +
+#     无耗/有耗介质；
+#   - 模板：v1 走声明式 spec dict（无渲染模板机制）→ 空元组；
+#   - 并行：适配器不透传并行开关 → 空元组；
+#   - license：批处理求解经 AEDT 命令行占商业席位 → True；
+#   - availability：pyedb 可 import 门（缺装显式报缺，fail-closed）。
+_SOLVER_CAPABILITY_SPECS["edb"] = SolverCapabilities(
+    solver_type="edb",
+    supports_wave_port=False,
+    supports_lumped_port=True,
+    supports_field_export=False,
+    supports_convergence_report=False,
+    supports_touchstone_export=True,
+    supports_headless_solve=True,
+    supports_optimetrics=False,
+    dimension="2d",
+    material_models=("pec", "lossless_dielectric", "lossy_dielectric"),
+    parallel_backends=(),
+    supports_sar=False,
+    supports_nf2ff=False,
+    supports_lumped_elements=False,
+    supported_templates=(),
+    requires_license=True,
+    availability_gate="pyedb",
+)

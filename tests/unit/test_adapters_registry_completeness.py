@@ -79,6 +79,8 @@ NON_REGISTRY: dict[str, str] = {
     "hfss_builder_utils": "HFSS 建模工具层",
     "hfss_import": "HFSS 导入互操作",
     "hfss_batch": "HFSS 一次性批处理求解（每求解一进程，无长驻会话）",
+    "edb_adapter": "EDB 快车道独立协议通道（workdir 构造、非 "
+                   "SimulatorAdapter 契约、不注册进 EMSolverRegistry）",
     "interchange": "版图互换",
     "kicad_board_render": "KiCad 渲染（子进程）",
     "kicad_drc": "KiCad DRC（子进程）",
@@ -323,7 +325,8 @@ class TestModuleInventory:
         # 存量子包层豁免（oe_templates=工具·模板层/fab_export=LC-5 面/
         # sv=可选引擎适配——历史上按目录约定不在注册面清单；gpl/ 不豁免：
         # 其 pypo/scuff 注册键泄入全局表必须显式登记，八百一十九终门实证）
-        _SUBPKG_EXEMPT = ("oe_templates/", "fab_export/", "sv/")
+        _SUBPKG_EXEMPT = ("oe_templates/", "fab_export/", "sv/",
+                      "edb_templates/")
         discovered -= {d for d in discovered if d.startswith(_SUBPKG_EXEMPT)}
         planned = _all_planned_modules()
         assert discovered == planned, (

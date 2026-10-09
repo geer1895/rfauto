@@ -509,5 +509,16 @@ from rfauto.cli.domains.sandbox import sandbox_list_cmd as sandbox_list_cmd
 from rfauto.cli.domains.sandbox import sandbox_promote_cmd as sandbox_promote_cmd
 
 
+# ─── edb（EDB 快车道 CLI 出口，2026-10-08：build/solve/status 三叶；
+# stats/firmware 同款域内自注册 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 `edb` 域
+# （#df6① 冲突检查 2026-10-08：全 CLI 树零撞名）。
+
+from rfauto.cli.domains.edb import edb_app as edb_app
+from rfauto.cli.domains.edb import edb_build_cmd as edb_build_cmd
+from rfauto.cli.domains.edb import edb_solve_cmd as edb_solve_cmd
+from rfauto.cli.domains.edb import edb_status_cmd as edb_status_cmd
+
+
 if __name__ == "__main__":
     app()

@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **254** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **257** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -901,3 +901,13 @@ agent 配方沙箱治理（草稿列表/差异/三层 Gate 提案）
 - `rfauto sandbox list` — 列出沙箱草稿（含与真实配方的匹配 + 参数差异摘要）。
 - `rfauto sandbox diff` — 查看单个沙箱草稿与真实配方的差异（unified diff+参数差异表）。
 - `rfauto sandbox promote` — 草稿差异送三层 Gate（L1 白名单+L2 dry-run+L3 确认）——生成提案进收件箱。
+
+## rfauto edb
+
+EDB 快车道（PyEDB 建库+hfss_batch 批解，平面族发射器）
+
+共 3 条叶子命令。
+
+- `rfauto edb build` — 发射 spec + EDB 建库（pyedb configuration → .aedb 工程+存证）。
+- `rfauto edb solve` — 批处理求解（ansysedt -BatchSolve）+ 可选 Touchstone 批后导出。
+- `rfauto edb status` — 扫描产物根目录的快车道资产清单（工程/存证/日志/Touchstone）。

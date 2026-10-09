@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **110** 组 / **254** 条叶子命令，MCP 工具 **149** 个（分布在 38 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **111** 组 / **257** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -36,6 +36,7 @@
 | `dev` | 2 | — | 维护者脚手架（骨架生成+消费钉清单，SO §7 P5） |
 | `diagnose` | 5 | `diagnose`（4 个） | 耦合矩阵/Q 诊断三件套（DP-2，JSON 进出薄壳） |
 | `doctor` | 1 | — | 环境探测：AEDT/ADS 版本、license、路径、已测试版本组合核对。 |
+| `edb` | 3 | `edb`（3 个） | EDB 快车道（PyEDB 建库+hfss_batch 批解，平面族发射器） |
 | `electrothermal` | 1 | — | Wilkinson 隔离电阻损耗 → 温升 → 材料温漂 → S 参数失谐（+带内判据），纯闭式。 |
 | `even-odd` | 1 | — | 奇偶模分解报告（对称性检查+半模型切割+端口改写表+守卫，只读）。 |
 | `explain-run` | 1 | — | 失败指纹解释（DP-17 W2：确定性指纹匹配→候选根因族+取证命令+坑号链，无 LLM）。 |
@@ -117,7 +118,7 @@
 | `weave` | 2 | — | 玻纤编织 skew（HS-1：样式表查询+最坏/期望 skew 估计） |
 | `zenodo` | 2 | — | Zenodo 元数据导出与 CITATION.cff 校验（PR-11，零网络） |
 
-双入口域共 **19** 个。计算器键与器件模板另见[计算器注册表](calculators.md)与[模板库](../catalog/index.md)（数字构建时实测互证）。
+双入口域共 **20** 个。计算器键与器件模板另见[计算器注册表](calculators.md)与[模板库](../catalog/index.md)（数字构建时实测互证）。
 
 ## 仅 MCP 侧模块（无同名 CLI 组）
 

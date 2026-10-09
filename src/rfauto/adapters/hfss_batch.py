@@ -734,12 +734,33 @@ def export_touchstone_after_solve(
             elapsed=_elapsed(started))
 
     stem = project.stem if kind == "aedt" else project.name
+    # 路径参数形态守卫（审查批 P2 补）：非路径形态（如 int）在 Path() 构造
+    # 即 TypeError、嵌空字节在 mkdir/unlink 处 ValueError——两者都不是
+    # OSError，裸抛即违"本函数不抛异常"承诺（edb_solve 只捕
+    # RuntimeError/OSError），一律结构化落账。
+    for _pname, _pval in (("out_path", out_path),
+                          ("logfile_dir", logfile_dir)):
+        if _pval is not None and not isinstance(_pval, (str, os.PathLike)):
+            return _export_fail_result(
+                errors=[f"{_pname} 形态非法: {_pval!r}（须为路径或 None）"],
+                project=str(project), project_kind=kind, mode=mode,
+                elapsed=_elapsed(started))
     out = (Path(out_path) if out_path
            else project.parent / BATCH_EXPORT_TOUCHSTONE_FMT.format(stem=stem))
     log_dir = Path(logfile_dir) if logfile_dir else project.parent
+    if "\x00" in str(out) or "\x00" in str(log_dir):
+        # 空字节路径早拦（is_file 对其吞错返回 False，探测不到）——防带病
+        # out 路径白发射一段真机 ansysedt 会话（license 席位浪费）。
+        return _export_fail_result(
+            errors=["导出路径/日志目录形态非法（含空字节）: "
+                    f"out={out!r} log_dir={log_dir!r}"],
+            project=str(project), project_kind=kind,
+            ansysedt_exe=str(exe_path), mode=mode, elapsed=_elapsed(started))
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError=路径嵌空字节等形态非法（mkdir 对其抛 ValueError 非
+        # OSError，审查批 P2 补），与磁盘/权限失败同落结构化出口。
         return _export_fail_result(
             errors=[f"日志目录不可创建: {log_dir}（{exc}）"],
             project=str(project), project_kind=kind,
@@ -767,7 +788,9 @@ def export_touchstone_after_solve(
             ansysedt_exe=str(exe_path), mode=mode, elapsed=_elapsed(started))
 
     # 陈旧产物防御：同路径旧导出文件先行移除，防失败路径误读旧解
-    with contextlib.suppress(OSError):
+    # （ValueError=路径嵌空字节等形态非法，suppress(OSError) 接不住——
+    # 审查批 P2 补；坏路径在下方 out.is_file() 处自然落"未生成"出口）
+    with contextlib.suppress(OSError, ValueError):
         Path(out).unlink(missing_ok=True)
 
     cmd = build_batch_extract_command(exe_path, script_path, project)
@@ -928,10 +951,23 @@ def solve_project_batch(
             project=str(project), project_kind=kind,
             elapsed=_elapsed(started))
 
+    if logfile_dir is not None and not isinstance(logfile_dir,
+                                                  (str, os.PathLike)):
+        # 形态守卫（审查批 P2 补）：非路径形态 Path() 构造即 TypeError——
+        # 结构化落账，不让裸异常逃到 executor/服务层。
+        return _fail_result(
+            errors=[f"logfile_dir 形态非法: {logfile_dir!r}"
+                    "（须为路径或 None）"],
+            project=str(project), project_kind=kind, elapsed=_elapsed(started))
+
     log_dir = Path(logfile_dir) if logfile_dir else project.parent
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # ValueError=logfile_dir 嵌空字节等形态非法（mkdir 抛 ValueError 非
+        # OSError，审查批 P2 补）——结构化失败同路，绝不让裸异常逃到
+        # executor/服务层（_route_batch_stage 对本函数不设 try，节点失败
+        # 面留给真正的求解异常）。
         return _fail_result(
             errors=[f"日志目录不可创建: {log_dir}（{exc}）"],
             project=str(project), project_kind=kind,

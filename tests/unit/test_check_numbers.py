@@ -100,7 +100,8 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # → 241。
     # W6 +13（2026-10-06：SN-3/17/dev/diagnose deviation/kicad design-from-run
     # 等，合流实测口径）→ 254。
-    assert check_numbers.count_cli() == 254
+    # EDB 快车道批 +3（2026-10-08：edb build/solve/status 三叶）→ 257。
+    assert check_numbers.count_cli() == 257
 
 
 def test_cli_bench_subapp_breakdown():
@@ -212,9 +213,11 @@ def test_mcp_resources_dual_source_consistent():
     # 增删 resource 时随本锚注释递增，同 CLI/ANCHORS 锚演进惯例）。
     # W5-D（2026-10-05）+1 rfauto://toolsets/definition（EC-6 toolsets 单源）
     # → 5。
+    # EDB 快车道批（2026-10-08）+2 rfauto://edb/status 与
+    # rfauto://edb/datasets → 7。
     n, src = check_numbers.count_mcp_resources()
     n_rx = check_numbers.count_mcp_resources_regex()
-    assert n == n_rx == 5
+    assert n == n_rx == 7
     assert src.startswith("list_resources()")  # 注册面主口径可达（非回退态）
 
 

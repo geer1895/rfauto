@@ -170,6 +170,13 @@ layout = ["gdstk>=1.0", "shapely>=2.0", "pillow>=12"]
 # rich~=14.0.0，会把 venv 内 rich 15 降级——安装后按需回装 rich（pypssfss
 # 实测 rich 15 下功能正常）。
 pssfss = ["pypssfss>=0.1"]
+# PyEDB（EDA 快车道底座，2026-10-08）—— 平面器件族经 EDB（分层版图数据
+# 库）建模 + hfss_batch 批处理求解的新求解路径（Ansys 团队建议）；仅在
+# adapters/edb_adapter.py 函数内惰性 import（建库/configuration 面）。
+# EDB 建模本身零桌面会话；批处理求解通道 adapters/hfss_batch（他席交付）
+# 自身依赖 pyaedt，走 hfss extra。缺装时 build/solve 显式报错指明本 extra。
+# 安装：pip install rfauto[edb]
+edb = ["pyedb>=0.83"]
 # 多机协同远程求解（v0）—— paramiko SSH/SFTP 通道（infra/remote_machines
 # 懒加载，未安装时注册表/探活面可用、SSH 传输显式报错指明本 extra）。
 # 安装：pip install rfauto[remote]

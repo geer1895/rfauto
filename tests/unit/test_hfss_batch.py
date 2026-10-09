@@ -941,6 +941,63 @@ def test_solve_export_valueerror_structured_fallback_keeps_solve_ok(
     assert any("boom" in e and "导出失败" in e for e in res["errors"])
 
 
+# ─── 路径参数形态守卫（ge8e W7 审查批 P2 补钉）────────────────────────────────
+
+def test_export_null_byte_out_path_structured_no_raise(tmp_path, monkeypatch,
+                                                       no_real_popen):
+    """out_path 嵌空字节：结构化 ok=False 零发射（mkdir/unlink 对空字节抛
+    ValueError 非 OSError，裸抛即违"本函数不抛异常"承诺——空字节路径
+    is_file() 吞错返回 False 探测不到，须早拦防白发射真机会话）。"""
+    proj = _aedt_project(tmp_path, with_results=False)
+    _patch_exe(monkeypatch)
+
+    res = export_touchstone_after_solve(proj, out_path="bad\0path.s2p")
+
+    assert res["ok"] is False and res["rc"] is None
+    assert res["command"] == []  # 带病路径绝不发射 ansysedt
+    assert any("空字节" in e for e in res["errors"])
+
+
+def test_export_bad_logfile_dir_structured_no_raise(tmp_path, monkeypatch,
+                                                    no_real_popen):
+    """logfile_dir 嵌空字节 / 非路径形态：结构化 ok=False 零发射
+    （mkdir ValueError 面 + Path() TypeError 面双盖）。"""
+    proj = _aedt_project(tmp_path, with_results=False)
+    _patch_exe(monkeypatch)
+
+    res = export_touchstone_after_solve(proj, logfile_dir="bad\0dir")
+    assert res["ok"] is False and res["rc"] is None
+    assert res["command"] == []
+    assert any("空字节" in e for e in res["errors"])  # 早拦在 mkdir 之前
+
+    res2 = export_touchstone_after_solve(proj, logfile_dir=123)  # type: ignore[arg-type]
+    assert res2["ok"] is False and res2["command"] == []
+    assert any("logfile_dir 形态非法" in e for e in res2["errors"])
+
+    res3 = export_touchstone_after_solve(proj, out_path=123)  # type: ignore[arg-type]
+    assert res3["ok"] is False and res3["command"] == []
+    assert any("out_path 形态非法" in e for e in res3["errors"])
+
+
+def test_solve_bad_logfile_dir_structured_fail(tmp_path, monkeypatch,
+                                               no_real_popen):
+    """solve_project_batch 侧 logfile_dir 空字节：结构化失败零发射
+    （executor _route_batch_stage 对本函数不设 try，裸异常=节点失败面）。"""
+    proj = _aedt_project(tmp_path, with_results=False)
+    _patch_exe(monkeypatch)
+
+    res = solve_project_batch(proj, timeout_s=60.0,
+                              logfile_dir="bad\0dir")
+
+    assert res["ok"] is False and res["rc"] is None
+    assert res["command"] == []
+    assert any("不可创建" in e for e in res["errors"])
+
+    res2 = solve_project_batch(proj, timeout_s=60.0, logfile_dir=123)  # type: ignore[arg-type]
+    assert res2["ok"] is False and res2["command"] == []
+    assert any("logfile_dir 形态非法" in e for e in res2["errors"])
+
+
 def test_baked_script_special_chars_compile_and_value_roundtrip():
     """P2：含特殊字符的名烘焙前转义——脚本 compile() 通过、转义形态在档
     （反斜杠加倍/双引号前缀反斜杠/控制字符 \\xNN）且值经字面 exec 逐位

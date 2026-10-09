@@ -119,7 +119,9 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 #   guidelines_service 三源检索薄壳，W5-D）
 # （146→149：2026-10-06 W6 +3——start_tune/run_sweep（SN-16，W6-A）+
 #   preflight_run（D-07，W6-E）
-_LEDGER_DECLARED_TOOL_COUNT = 149
+# （149→152：2026-10-08 EDB 快车道批 +3——edb_emit_spec/edb_build_solve/
+#   edb_status（edb 组薄壳，CLI 出口同批）
+_LEDGER_DECLARED_TOOL_COUNT = 152
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:
@@ -445,8 +447,9 @@ class TestMcpResourceBodyCallability:
     """
 
     def test_function_resources_cover_current_registry(self, mcp_function_resources):
-        """守卫遍历面健全性：当前 5 个函数资源全部被 fixture 覆盖
-        （W5-D +rfauto://toolsets/definition，2026-10-05）。"""
+        """守卫遍历面健全性：当前 7 个函数资源全部被 fixture 覆盖
+        （W5-D +rfauto://toolsets/definition，2026-10-05；EDB 快车道批
+        +rfauto://edb/status 与 +rfauto://edb/datasets，2026-10-08）。"""
         uris = {str(r.uri) for r in mcp_function_resources}
         assert uris == {
             "rfauto://runs/index",
@@ -454,6 +457,8 @@ class TestMcpResourceBodyCallability:
             "rfauto://knowledge/compat_matrix",
             "rfauto://knowledge/terminology",
             "rfauto://toolsets/definition",
+            "rfauto://edb/status",
+            "rfauto://edb/datasets",
         }
 
     def test_load_global_names_resolve_for_every_resource(self, mcp_function_resources):
