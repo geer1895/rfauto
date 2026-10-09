@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -352,6 +353,69 @@ def campaign_run_cmd(
                       f"{s.get('stage')}（节点态 {s.get('node_status')}）")
     console.print(f"  权威账本: {result.get('state_path')}")
     raise typer.Exit(code=0)
+
+
+@campaign_app.command("queue-daemon")
+def campaign_queue_daemon_cmd(
+    root: str = typer.Option("runs", "--root", help="队列扫描根目录（直属子目录的 campaign.plan.json=队列项，与队列页同口径）"),
+    once: bool = typer.Option(False, "--once", help="单步模式：执行一个 tick 即退出（测试/cron 拉起）"),
+    interval_s: float = typer.Option(60.0, "--interval-s", help="常驻轮询间隔（秒）"),
+    machine: str = typer.Option(None, "--machine", help="license 预检指名机器（缺省=注册表缺省机器）"),
+    license_gate: bool | None = typer.Option(
+        None, "--license-gate/--no-license-gate",
+        help="license 预检门三态（#277 惯例）：缺省=仅对声明 license 消耗面"
+             "（stage license_gated/adapter=hfss）的计划预检；--license-gate="
+             "全部强制预检；--no-license-gate=一律不预检"),
+    state_path: str = typer.Option(None, "--state-path", help="队列状态 JSON 落盘路径（缺省 runs/campaign_queue/queue_state.json，崩溃重启可续）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出（--once=信封；常驻=逐 tick JSON 行流）"),
+) -> None:
+    """campaign 排队常驻执行体：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。"""
+    from rfauto.service.campaign_queue_daemon import run_queue_daemon
+
+    def _tick_line(payload: dict) -> None:
+        # 常驻逐 tick 输出：--json=单行 JSON 流（机器可读可 grep）；
+        # 缺省=rich 单行（tick 序号+动作词表）。观测面抛错不拆循环（#105，
+        # 服务侧已兜底），此处自身也 suppress 兜底。
+        # markup 纪律：payload 动态内容禁走 rich markup
+        # 解析——plan/reason 等字符串含 "[...]" 形态（如 runs/[debug]x）
+        # 会被当样式标签整段吞掉，JSON 行流被静默截改；故 JSON 分支
+        # markup=False（保单行机器可读），人读分支动态段 rich.markup.escape。
+        with contextlib.suppress(Exception):
+            if json_output:
+                console.print(json.dumps(payload, ensure_ascii=False,
+                                         default=str),
+                              markup=False, soft_wrap=True)
+            else:
+                from rich.markup import escape
+
+                actions = [str(a.get("action") or "")
+                           for a in payload.get("actions") or []
+                           if isinstance(a, dict)]
+                console.print("[cyan]\\[queue-daemon][/cyan] "
+                              f"tick={payload.get('tick')} "
+                              f"actions={escape(str(actions))}",
+                              soft_wrap=True)
+
+    result = run_queue_daemon(
+        root=root, machine=(machine if machine else None),
+        license_gate=license_gate, interval_s=interval_s, once=once,
+        state_path=state_path,
+        log=(None if once else _tick_line))
+    _emit(result, "queue-daemon 启动失败", json_output=json_output)
+    if json_output:
+        return
+    status = result.get("items") or {}
+    console.print(
+        f"[green]✓ queue-daemon 退出[/green]  ticks={result.get('ticks')}  "
+        f"items={status.get('n_items', 0)}  "
+        f"in_flight={status.get('in_flight', 0)}  "
+        f"状态档: {result.get('state_path')}")
+    final = result.get("final") or {}
+    for a in final.get("actions") or []:
+        kind = str(a.get("action") or "")
+        detail = f" pid={a['pid']}" if a.get("pid") is not None else ""
+        console.print(f"  - {kind}: {a.get('plan') or a.get('reason', '')}"
+                      f"{detail}")
 
 
 # ─── template-spec（E2 模板库注册表；WP3.3 CLI 半边） ─────────────────────────
