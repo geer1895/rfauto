@@ -133,9 +133,16 @@ jobs:
           # docs_site/kernel_cards 再生差异 + 注册序/信封契约/help 卫生
           # + CLI/MCP 计数互证（10 个 pytest 目标，详见脚本内清单）。
           # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
-          # tee 进 step summary：失败面（FAILED 行）免登录公开可读。
+          # 失败面经 ::error:: 变 annotation（API 免登录可读）；tail 落
+          # step summary 双保险。
           set -o pipefail
-          python scripts/merge_preflight.py 2>&1 | tee "${GITHUB_STEP_SUMMARY}"
+          python scripts/merge_preflight.py 2>&1 | tee /tmp/preflight.log
+          rc=${PIPESTATUS[0]}
+          grep -E "^\[FAIL\]|^FAILED |== preflight" /tmp/preflight.log | head -12 | while IFS= read -r line; do
+            echo "::error ::$line"
+          done
+          tail -5 /tmp/preflight.log > "${GITHUB_STEP_SUMMARY}"
+          exit $rc
         env:
           OPENBLAS_NUM_THREADS: "1"
 
