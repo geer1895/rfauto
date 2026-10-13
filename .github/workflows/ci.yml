@@ -17,7 +17,14 @@ on:
   schedule:
     # 活规则周期重跑（K1）：每周一 03:00 UTC 复跑 rules.yaml verify
     # 验证测试，防综合引擎（skrf/scipy）或依赖版本漂移使定案值失真。
+    # （rules-verify 用 github.event.schedule 锁定本条触发，日触发不跑）
     - cron: "0 3 * * 1"
+    # 文档再生漂移日检：docs_site/kernel_cards 重生成产物 vs 已提交
+    # 逐字节比对（test_docs_site/test_kernel_cards，与 merge_preflight
+    # 同判据同源），漂移即 job 红——防站点产物静默落后于代码面。
+    # （docs-drift 用 github.event.schedule 锁定本条触发；两个触发器
+    # 按调度串分轨，互不串扰）
+    - cron: "30 2 * * *"
 
 jobs:
   quality:
@@ -102,6 +109,34 @@ jobs:
           python -m pytest tests/unit -m "real_edt" --co -q | tail -1
           echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
 
+  preflight:
+    name: merge preflight (drift-face early gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          # 同 quality/test：pyproject.toml 哈希作缓存 key
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+      - name: Install package with test-relevant extras
+        run: |
+          python -m pip install --upgrade pip
+          # 与 test job 同依赖面（dev extra 含 pytest）；工具钉版纪律由
+          # quality job 承担（ruff==0.16.6 在每个 push/PR 都跑），本 job
+          # 只跑 scripts/merge_preflight.py 自带的漂移面预检
+          pip install -e ".[hfss,mcp,multiobj,dev]"
+      - name: Run scripts/merge_preflight.py (numbers + goldens + regen diffs)
+        run: |
+          # 漂移类失败前移门：check_numbers 全链 + public_api 金快照 +
+          # docs_site/kernel_cards 再生差异 + 注册序/信封契约/help 卫生
+          # + CLI/MCP 计数互证（10 个 pytest 目标，详见脚本内清单）。
+          # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
+          python scripts/merge_preflight.py
+        env:
+          OPENBLAS_NUM_THREADS: "1"
+
   licenses:
     name: license compliance gate (P-3 pip-licenses)
     runs-on: ubuntu-latest
@@ -118,10 +153,11 @@ jobs:
         run: python scripts/license_gate.py
 
   rules-verify:
-    name: live rules periodic re-verify (K1, cron only)
+    name: live rules periodic re-verify (K1, weekly cron only)
     runs-on: ubuntu-latest
-    # 只在 cron 触发时跑（push/PR 由 test job 覆盖同一批测试）
-    if: github.event_name == 'schedule'
+    # 只在周一 03:00 UTC 的 weekly 触发跑（push/PR 由 test job 覆盖同一批
+    # 测试；每日 02:30 触发归 docs-drift，按调度串分轨互不串扰）
+    if: github.event.schedule == '0 3 * * 1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -139,6 +175,34 @@ jobs:
           # 单测试文件串行：xdist 分发无收益（loadfile 下单文件=单 worker），
           # 定案值复验保持确定性顺序。
           python -m pytest tests/unit/test_rules_verify.py -q -m "not real_edt"
+
+  docs-drift:
+    name: docs_site regeneration drift (daily schedule)
+    runs-on: ubuntu-latest
+    # 只在每日 02:30 UTC 触发跑（周一 03:00 weekly 触发归 rules-verify）
+    if: github.event.schedule == '30 2 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+      - name: Install package with test-relevant extras
+        run: |
+          python -m pip install --upgrade pip
+          # 与 test job 同依赖面——再生成结果随依赖版本漂移正是本 job
+          # 要抓的对象，审计面必须与真实安装集一致
+          pip install -e ".[hfss,mcp,multiobj,dev]"
+      - name: Regenerate docs_site and kernel_cards, diff against committed
+        run: |
+          # 再生差异判据=仓内既有测试（与 merge_preflight 的 docs 面同
+          # 判据同源，零新脚本）：重生成到临时目录 vs 已提交产物逐字节
+          # 比对。红=站点/内核卡落后于代码面或源文档——修复=仓根重跑
+          # 对应生成器并同笔提交产物，勿手改产物。
+          python -m pytest tests/unit/test_docs_site.py tests/unit/test_kernel_cards.py -q
+        env:
+          OPENBLAS_NUM_THREADS: "1"
 
   docker-build:
     name: Dockerfile build smoke (C14b)

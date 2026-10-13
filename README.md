@@ -160,7 +160,7 @@ rfauto replay <run_id>                                     # reproduce a past ru
 
 ```bash
 pip install -e ".[mcp]"
-python -m rfauto.mcp_server        # stdio transport; 80 tools
+python -m rfauto.mcp_server        # stdio transport; 152 tools (+7 resources)
 ```
 
 Then register it in your MCP client (Claude Desktop example):

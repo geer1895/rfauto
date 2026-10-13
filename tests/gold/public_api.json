@@ -2642,6 +2642,22 @@
       "run_campaign",
       "wrap_campaign_plan"
     ],
+    "service/campaign_queue_daemon.py": [
+      "DEFAULT_INTERVAL_S",
+      "ITEM_EXTERNAL",
+      "ITEM_LAUNCHED",
+      "QUEUE_DAEMON_SCHEMA",
+      "QUEUE_STATE_DIRNAME",
+      "QUEUE_STATE_FILE",
+      "default_queue_state_path",
+      "item_id_of",
+      "load_queue_state",
+      "queue_status_view",
+      "queue_tick",
+      "run_queue_daemon",
+      "save_queue_state",
+      "scan_queue"
+    ],
     "service/cascade_service.py": [
       "PASSIVE_TYPES",
       "cascade_budget_report",
@@ -2933,6 +2949,20 @@
       "save_intake_entries",
       "to_experience_entries"
     ],
+    "service/recipe_loop_remote.py": [
+      "EvalResult",
+      "LEDGER_FILENAME",
+      "LocalLoopLauncher",
+      "LoopLauncher",
+      "LoopLedger",
+      "RESULT_FILENAME",
+      "RecipeLoopRemoteSession",
+      "RemoteLoopLauncher",
+      "STATUS_DONE",
+      "STATUS_FAILED",
+      "params_fingerprint",
+      "run_recipe_loop_remote"
+    ],
     "service/remote_ads_service.py": [
       "ADS_MUTEX_FINGERPRINT",
       "ADS_MUTEX_PROCESS",
@@ -2948,6 +2978,21 @@
       "build_run_task_bat",
       "remote_oe_run"
     ],
+    "service/remote_scheduler_service.py": [
+      "CALENDAR_SCHEMA",
+      "HFSS_MUTEX_FINGERPRINT",
+      "OE_MUTEX_FINGERPRINT",
+      "QUEUE_ACTIVE_STATES",
+      "RESOURCE_CALENDAR_FILE",
+      "calendar_launch_view",
+      "calendar_view",
+      "default_resource_calendar_path",
+      "local_hfss_view",
+      "local_openems_view",
+      "queue_view",
+      "remote_resources",
+      "resources_view"
+    ],
     "service/remote_service.py": [
       "LICENSE_PREFLIGHT_SEAT_QUERY",
       "REMOTE_SMOKE_ENV",
@@ -2960,6 +3005,18 @@
       "remote_mutex_precheck",
       "remote_probe",
       "remote_status"
+    ],
+    "service/remote_sftp_pull.py": [
+      "L2_PRODUCT_PATTERNS",
+      "MANIFEST_SCHEMA",
+      "PULL_ATTEMPTS",
+      "PULL_MANIFEST_NAME",
+      "RemotePullError",
+      "enumerate_remote_files",
+      "pull_artifacts",
+      "record_pull_manifest",
+      "resolve_pull_out_dir",
+      "sha256_file"
     ],
     "service/report_assumptions.py": [
       "ASSUMPTIONS_SCHEMA",
