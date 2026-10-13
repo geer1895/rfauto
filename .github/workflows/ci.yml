@@ -131,6 +131,11 @@ jobs:
 
   preflight:
     name: merge preflight (drift-face early gate)
+    # timeout-minutes：job 级兜底闸（GitHub 缺省 360min 过宽）。上游口径
+    # =check_numbers 900s 上限 + pytest 漂移面 600s 上限 + 3 个 AST/meta
+    # 快审（各 ≤120s 上限）——30min 已含 2 核 runner 的 collect fallback
+    # 冷收集余量，超时=runner 异常态而非门红。
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -147,11 +152,15 @@ jobs:
           # quality job 承担（ruff==0.16.6 在每个 push/PR 都跑），本 job
           # 只跑 scripts/merge_preflight.py 自带的漂移面预检
           pip install -e ".[hfss,mcp,multiobj,dev]"
-      - name: Run scripts/merge_preflight.py (numbers + goldens + regen diffs)
+      - name: Run scripts/merge_preflight.py (numbers + goldens + regen diffs + AST/meta audits)
         run: |
           # 漂移类失败前移门：check_numbers 全链 + public_api 金快照 +
           # docs_site/kernel_cards 再生差异 + 注册序/信封契约/help 卫生
-          # + CLI/MCP 计数互证（10 个 pytest 目标，详见脚本内清单）。
+          # + CLI/MCP 计数互证（10 个 pytest 目标）+ 3 个零依赖快审
+          # （sleep-AST 常驻守卫/几何字面算术审计/模板 meta 健康度，
+          # 详见脚本 docstring 的 16 面移植判定表——pip-audit 面由
+          # supply-chain job 承担，help-bracket 与锚 freshness 两面待
+          # cli/anchors 代际同步后接线，runs 湖面不移植）。
           # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
           # 失败面经 ::error:: 变 annotation（API 免登录可读）；tail 落
           # step summary 双保险。
