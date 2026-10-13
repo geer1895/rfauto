@@ -105,7 +105,7 @@ jobs:
           # worker 被 kill 时 pytest 汇总零 failed 但退出码打穿为 1
           # （2026-10-13 run 37 实证），钉死并行度消除该变量。
           # 失败面经 ::error:: annotation 公开可读（诊断期；稳定后可收）。
-          set -o pipefail
+          set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/注解/summary 手工序列必须自管
           python -m pytest tests/unit -q -m "not real_edt" -n 2 --dist=loadfile 2>&1 | tee /tmp/unit.log
           rc=${PIPESTATUS[0]}
           grep -E "^FAILED" /tmp/unit.log | head -12 | while IFS= read -r line; do
@@ -155,7 +155,7 @@ jobs:
           # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
           # 失败面经 ::error:: 变 annotation（API 免登录可读）；tail 落
           # step summary 双保险。
-          set -o pipefail
+          set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/注解/summary 手工序列必须自管
           python scripts/merge_preflight.py 2>&1 | tee /tmp/preflight.log
           rc=${PIPESTATUS[0]}
           grep -E "^\[FAIL\]|^FAILED |== preflight" /tmp/preflight.log | head -12 | while IFS= read -r line; do
