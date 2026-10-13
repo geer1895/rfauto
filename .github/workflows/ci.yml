@@ -133,7 +133,9 @@ jobs:
           # docs_site/kernel_cards 再生差异 + 注册序/信封契约/help 卫生
           # + CLI/MCP 计数互证（10 个 pytest 目标，详见脚本内清单）。
           # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
-          python scripts/merge_preflight.py
+          # tee 进 step summary：失败面（FAILED 行）免登录公开可读。
+          set -o pipefail
+          python scripts/merge_preflight.py 2>&1 | tee "${GITHUB_STEP_SUMMARY}"
         env:
           OPENBLAS_NUM_THREADS: "1"
 
