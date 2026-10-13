@@ -56,11 +56,21 @@ def main(argv: list[str] | None = None) -> int:
     print("== merge_preflight（合流预检；红=席位返回前自证自愈）==", flush=True)
 
     # 1) check_numbers 全链
-    r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
-                       capture_output=True, text=True, timeout=180)
-    ok = "All numbers consistent" in (r.stdout + r.stderr)
-    print(f"[{'PASS' if ok else 'FAIL'}] check_numbers 全链一致")
-    if not ok:
+    # timeout=900：无 gate 日志的仓（CI/冷检出）走 pytest --collect-only
+    # 兜底，2 万+用例冷收集在 2 核 runner 上可达 3-5min——180s 实测必超
+    # （TimeoutExpired 未捕获=裸 traceback 退出，2026-10-13 CI 实证）。
+    try:
+        r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
+                           capture_output=True, text=True, timeout=900)
+    except subprocess.TimeoutExpired:
+        print("[FAIL] check_numbers 全链一致（>900s 超时；collect fallback "
+              "过慢——检查 runner 负载或固化 gate 日志口径）")
+        failures.append("check_numbers")
+        r = None
+    ok = r is not None and "All numbers consistent" in (r.stdout + r.stderr)
+    if r is not None:
+        print(f"[{'PASS' if ok else 'FAIL'}] check_numbers 全链一致")
+    if r is not None and not ok:
         failures.append("check_numbers")
         print((r.stdout + r.stderr)[-1200:])
 
@@ -75,11 +85,16 @@ def main(argv: list[str] | None = None) -> int:
         print(r.stdout[-800:])
 
     # 3-9) pytest 漂移面
-    r = subprocess.run(
-        [PY, "-m", "pytest", *PYTEST_TARGETS, "-q", "--tb=line",
-         "-p", "no:cacheprovider"],
-        cwd=str(REPO_ROOT), timeout=600)
-    ok = r.returncode == 0
+    try:
+        r = subprocess.run(
+            [PY, "-m", "pytest", *PYTEST_TARGETS, "-q", "--tb=line",
+             "-p", "no:cacheprovider"],
+            cwd=str(REPO_ROOT), timeout=600)
+    except subprocess.TimeoutExpired:
+        print("[FAIL] pytest 漂移面（>600s 超时）")
+        failures.append("pytest-drift面（超时）")
+        r = None
+    ok = r is not None and r.returncode == 0
     print(f"[{'PASS' if ok else 'FAIL'}] pytest 漂移面 "
           f"（{len(PYTEST_TARGETS)} 文件）")
     if not ok:
