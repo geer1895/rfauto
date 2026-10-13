@@ -565,7 +565,7 @@ class TestMcpWiring:
         tools = asyncio.run(mcp_server.mcp.list_tools())
         names = [t.name for t in tools]
         assert len(names) == len(set(names)), "工具重名（遮蔽事故形态）"
-        assert len(names) == 141 + len(SEAT_TOOL_NAMES), (  # 141=W6 三钉后基数（run_monitor/start_tune/preflight_run，合流集中更新）
+        assert len(names) == 144 + len(SEAT_TOOL_NAMES), (  # 144=edb 快车道三工具入册后基数（141+3，2026-10-13 合流集中更新）
             f"工具总数漂移: {len(names)}（合流钉由主代理集中更新，"
             "本钉只断言本席 +8 落位）")
 

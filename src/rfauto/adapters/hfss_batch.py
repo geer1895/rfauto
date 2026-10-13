@@ -574,7 +574,7 @@ def build_batch_extract_script(
     for token, value in (
         ("<<OUT_FILE>>",
          _bake_string_literal(
-             Path(out_file).as_posix() if str(out_file) else "")),
+             str(out_file).replace("\\", "/") if str(out_file) else "")),
         ("<<DESIGN_NAME>>", _bake_string_literal(design or "")),
         ("<<SETUP_NAME>>", _bake_string_literal(setup or "")),
         ("<<SWEEP_NAME>>", _bake_string_literal(sweep or "")),

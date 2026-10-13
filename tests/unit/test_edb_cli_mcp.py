@@ -31,6 +31,7 @@ test_check_numbers（五钉清单批纪律），本文件只自证资源体接�
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import ClassVar
 
@@ -499,13 +500,18 @@ class TestCliHelpHygiene:
     """
 
     @pytest.mark.parametrize("leaf", ["build", "solve", "status"])
-    def test_help_clean_and_json_flag(self, leaf):
+    def test_help_clean_and_json_flag(self, leaf, monkeypatch):
+        # Linux CI 上 rich 以 ANSI+80 列渲染 help，'--json' 可能被面板截断——
+        # 钉宽列+无色环境，并剥 ANSI 后断言（跨平台等价）。
+        monkeypatch.setenv("COLUMNS", "200")
+        monkeypatch.setenv("NO_COLOR", "1")
         from rfauto.cli.domains.edb import edb_app
 
         r = runner.invoke(root_app, ["edb", leaf, "--help"])
         assert r.exit_code == 0, r.output
-        assert "%" not in r.output
-        assert "--json" in r.output
+        out = re.sub(r"\[[0-9;]*[A-Za-z]", "", r.output)
+        assert "%" not in out
+        assert "--json" in out
         # 自写 help 文本面（app 描述+该叶 docstring）零裸 % 零方括号
         info = edb_app.info.help or ""
         assert "%" not in info and "[" not in info
