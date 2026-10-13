@@ -101,7 +101,15 @@ jobs:
           # rules-verify 单文件 cron job 保持串行。
           # OPENBLAS_NUM_THREADS=1：xdist worker×BLAS 线程超订实测慢
           # 85×（内部 #258），必须在 pytest/numpy import 前生效。
-          python -m pytest tests/unit -q -m "not real_edt" -n auto --dist=loadfile
+          # 失败面经 ::error:: annotation 公开可读（诊断期；稳定后可收）。
+          set -o pipefail
+          python -m pytest tests/unit -q -m "not real_edt" -n auto --dist=loadfile 2>&1 | tee /tmp/unit.log
+          rc=${PIPESTATUS[0]}
+          grep -E "^FAILED" /tmp/unit.log | head -12 | while IFS= read -r line; do
+            echo "::error ::$line"
+          done
+          tail -3 /tmp/unit.log > "${GITHUB_STEP_SUMMARY}"
+          exit $rc
         env:
           OPENBLAS_NUM_THREADS: "1"
       - name: Verify real_edt tests are collectable and always deselected in CI
