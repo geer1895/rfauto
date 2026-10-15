@@ -4,9 +4,12 @@
 - 登记表过 W8 消费链：capability_cards_export.load_sensitivity_rankings
   （真实路径装载）+ normalize_sensitivity_entry 逐条 PASS + 三态
   resolve_sensitivity computed 胜出（provenance 数据指针）；
-- 入表集=COMPUTABLE_TEMPLATES（18=25 可算 − 9 teaching 重叠）：teaching
-  模板不入表钉（test_w6_sensitivity_face_non_regression 的钉前提）+ 回退
-  卡代表（ring_resonator）维持无条目；
+- 入表集=COMPUTABLE_TEMPLATES（46 = X7 首批 18 + aurora72 A3-D 扩批 22 +
+  R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + aurora_d
+  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4；
+  teaching 首批 9 模板不入表=test_w6_sensitivity_face_non_regression 的钉
+  前提 + 回退卡代表（ring_resonator）维持无条目；aurora72 批起新 teaching
+  卡与登记表双源并存，W8 消费优先级 computed>teaching）；
 - schema 面：ranking 参数集==模板注册名义参数（TEMPLATE_NOMINAL 单源）、
   分数有限非负、R9 序（-score, param）、n_samples=1+2·n_params、
   method/source_run/registered_at 在场；
@@ -40,11 +43,12 @@ def _load() -> dict:
 # ── 入表集与 W8 消费链 ───────────────────────────────────────────────────────
 
 def test_registry_exists_and_matches_computable_set():
-    """登记表在场、模板集==生成器可算集（18=25 可算 − 9 teaching 重叠）。"""
+    """登记表在场、模板集==生成器可算集（46=X7 首批 18+A3-D 扩批 22
+    +R8-KN 扩批 4+SENS-ANC 复核扩批 2，2026-10-14 计数钉按新值更新）。"""
     reg = _load()
     assert set(reg) == set(srb.COMPUTABLE_TEMPLATES)
-    assert len(reg) == 18
-    assert 15 <= len(reg) <= 25  # 任务书目标带
+    assert len(reg) == 46
+    assert 35 <= len(reg) <= 50  # 任务书目标带（R8-KN 扩批后）
 
 
 def test_registry_entries_pass_w8_normalize():
@@ -157,8 +161,112 @@ def test_sanity_resonant_length_identity_one():
             ("gysel", "arm_len_mm"), ("coupled_line", "coupled_len_mm"),
             ("monopole", "mon_len_mm"), ("ifa", "ifa_arm_mm"),
             ("loop", "loop_side_mm"), ("pifa", "pifa_l_mm"),
-            ("slot", "slot_l_mm"), ("stepped_impedance", "seg_len_mm")):
+            ("slot", "slot_l_mm"), ("stepped_impedance", "seg_len_mm"),
+            ("nway_wilkinson", "arm_len_mm"),
+            ("branchline_2sect", "sect_len_mm"),
+            ("cline_coupler", "coupled_len_mm"),
+            ("lange", "finger_len_mm"),
+            ("ms_cross", "arm_len_mm"), ("ms_jcross", "slot_len_mm"),
+            ("vivaldi_tsa", "w_mouth_mm")):
         assert _scores(reg, tpl)[length_param] == 1.0, tpl
+
+
+def test_sanity_a3d_expansion_closed_chains():
+    """aurora72 扩批闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
+    reg = _load()
+    # siw：fc=c/(2·w_eff·√εr)、w_eff=w−d²/(0.95s)（Cassivi 反解正向）——
+    # dw 弹性=w/w_eff 解析精确（1.032246…）、der=1/2（fc∝εr^−1/2 恒等式）
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
+    nom = TEMPLATE_NOMINAL["siw"]
+    w_eff = nom["w_mm"] - nom["d_mm"] ** 2 / (0.95 * nom["s_mm"])
+    assert abs(_scores(reg, "siw")["w_mm"] - nom["w_mm"] / w_eff) < 1e-5
+    assert abs(_scores(reg, "siw")["er"] - 0.5) < 1e-6
+    # 贴片族 λ/2 腔模型 f∝1/(px·√εeff(px))：εeff(px) 通道使弹性>1（HJ 域）
+    assert _scores(reg, "ms_patch")["px_mm"] > 1.0
+    assert _scores(reg, "ms_ring_patch")["patch_px_mm"] > 1.0
+    # 单侧基板加载 εeff=(1+εr)/2（Luukkonen eq.3）：der=0.5·εr/(1+εr) 解析精确
+    expected = 0.5 * 3.66 / (1.0 + 3.66)
+    assert abs(_scores(reg, "ms_cross")["er"] - expected) < 1e-5
+    assert abs(_scores(reg, "ms_jcross")["er"] - expected) < 1e-5
+    # AMC LC 模型 L=μ0·h（Sievenpiper 过孔电感律）：dh 弹性=1/2 恒等式
+    assert abs(_scores(reg, "ms_mushroom")["h_mm"] - 0.5) < 1e-6
+    # coil_nfc：电流片式 L 的 n² 通道被 d_avg=(d_out−(n−1)(w+s)) 随 n 同变
+    # 稀释（±1 整数步复合弹性 1.26，非纯 2.0）——钉"圈数通道强于 w/s 几何
+    # 修正通道"的序关系，不钉解析精确值（复合式无闭式常值）
+    scores_coil = _scores(reg, "coil_nfc")
+    assert 1.0 < scores_coil["n_turns"] < 2.5
+    assert scores_coil["n_turns"] > scores_coil["w_mm"]
+    assert scores_coil["n_turns"] > scores_coil["s_mm"]
+
+
+def test_sanity_r8kn_expansion_closed_chains():
+    """R8-KN 扩批 +4 闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
+    reg = _load()
+    # diplexer：一阶 CR 对偶 fc=Z0/(2πL)（diplexer_lpf_hpf element_values
+    # 单源）——L 反比恒等式弹性=1 精确；HPF 臂 C=L/Z0² 对偶锁定同一 ωc
+    # （非独立维=0）、w_feed 不进截止式=0
+    scores_dip = _scores(reg, "diplexer")
+    assert scores_dip["l_lpf_nh"] == 1.0
+    assert scores_dip["c_hpf_pf"] == 0.0 and scores_dip["w_feed_mm"] == 0.0
+    # schiffman：Δφ(f0)=β_ref·L_ref−Φ_c（内核相位链）——参考段长为 β_ref·
+    # L_ref=Φ_c+90° 主控通道、耦合段 Φ_c 通道次之（ABCD 对 l 非线性无解析
+    # 常值，只钉序关系）、w_ref 不进相位式=0（内核 v1 参考段 εeff 取偶/奇
+    # 模相速平均口径）
+    scores_sch = _scores(reg, "schiffman")
+    assert scores_sch["l_ref_mm"] > scores_sch["l_coupled_mm"] > 1.0
+    assert scores_sch["w_ref_mm"] == 0.0
+    assert scores_sch["gap_mm"] > 0.0  # KJ εeff_e/o 通道在场
+    # msl_siw_taper：与 siw 同链 Cassivi 截止——w 弹性=w/w_eff 解析精确
+    # 1.032246…、der=1/2 恒等式、传输段长（taper/siw_len）与 h/tan_d 不进
+    # 截止式=0
+    scores_tap = _scores(reg, "msl_siw_taper")
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
+    nom_tap = TEMPLATE_NOMINAL["msl_siw_taper"]
+    w_eff_tap = (nom_tap["w_mm"] - nom_tap["d_mm"] ** 2
+                 / (0.95 * nom_tap["s_mm"]))
+    assert abs(scores_tap["w_mm"] - nom_tap["w_mm"] / w_eff_tap) < 1e-5
+    assert abs(scores_tap["er"] - 0.5) < 1e-6
+    for zero_p in ("taper_len_mm", "siw_len_mm", "h_mm", "tan_d"):
+        assert scores_tap[zero_p] == 0.0, zero_p
+    # msl_cpw：CPWG 段 Z0（_cpwg_ri 单源）——窄缝域缝控电容量（cps 同族
+    # 序）：gap 通道虽小于 w（k4 接地映射摊薄）但双双在场；微带段/版图量
+    # 六参数不进 CPWG Z0 恒等式=0
+    scores_cpw = _scores(reg, "msl_cpw")
+    assert scores_cpw["w_cpw_mm"] > scores_cpw["gap_cpw_mm"] > 0.0
+    for zero_p in ("w_msl_mm", "line_len_mm", "trans_len_mm", "r_via_mm",
+                   "via_spacing_mm", "via_offset_mm"):
+        assert scores_cpw[zero_p] == 0.0, zero_p
+
+
+def test_sanity_sensanc_expansion_closed_chains():
+    """SENS-ANC 复核扩批 +2 闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
+    reg = _load()
+    # varactor_bpf：装载谐振链（突变结 C(bias)→主谐振方程正解）——βL<π
+    # 装载臂长通道 0.90<1（C 装载使 f0 对 L 次线性）、cj0 通道次之（C∝cj0
+    # 线性→f0 弹性 ~0.10）、bias/phi 突变结幂律通道减半（(1+V/φ)^-1/2 链
+    # 折半）、w 经 εeff 弱通道；耦合缝/抽头/阶数不进装载谐振式=0
+    scores_var = _scores(reg, "varactor_bpf")
+    assert 0.8 < scores_var["arm_len_mm"] < 1.0
+    assert 0.05 < scores_var["cj0_pf"] < 0.2
+    assert abs(scores_var["bias_v"] - scores_var["phi_v"]) < 1e-6
+    assert scores_var["bias_v"] < scores_var["cj0_pf"]
+    assert 0.0 < scores_var["w_mm"] < 0.1
+    for zero_p in ("order", "arm_gap_mm", "gap_mm", "tap_frac"):
+        assert scores_var[zero_p] == 0.0, zero_p
+    # xcheb_bpf4：开路环周长恒等式（perimeter=4a+2Δl）——a 通道 ≈−1（边缘
+    # 延伸 Δl 稀释至 0.988）、er 经 εeff+Δl 双通道 ~0.44（λg/2 腔模型
+    # 0.5·dlnεeff/dlnεr 主项）、h/w 经 Δl/εeff 弱通道；耦合缝/版图量/
+    # tan_d 不进环谐振式=0
+    scores_xch = _scores(reg, "xcheb_bpf4")
+    assert 0.95 < scores_xch["a_mm"] < 1.0
+    assert abs(scores_xch["er"] - 0.5 * 3.66 / (1.0 + 3.66)) < 0.1
+    assert 0.0 < scores_xch["w_mm"] < 0.1
+    assert 0.0 < scores_xch["h_mm"] < 0.1
+    for zero_p in ("g12_mm", "g23_mm", "g34_mm", "g14_mm", "g_open_mm",
+                   "g_pos_mm", "tap_t_mm", "tan_d"):
+        assert scores_xch[zero_p] == 0.0, zero_p
 
 
 def test_sanity_helix_wire_linear_chain():

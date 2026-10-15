@@ -29,7 +29,7 @@ def certify_design(
     n_grid: int = 9,
     kind: str = "poly_ridge",
 ) -> dict[str, Any]:
-    """公差盒 → 指标区间证书（确定性内核， #7）。
+    """公差盒 → 指标区间证书（确定性内核，AGENTS #7）。
 
     tolerance_pct：每参数 ±公差（相对该轴搜索空间 span 的百分比）。
     """
@@ -150,7 +150,7 @@ def certify_design(
 # ---------------------------------------------------------------------------
 # NASA-STD-7009 八因素可信度证据包（§10.20 补强⑭）
 # ---------------------------------------------------------------------------
-# 汇流三源（只搬运既有确定性结果，不新造物理数字， 规则 7）：
+# 汇流三源（只搬运既有确定性结果，不新造物理数字，AGENTS 规则 7）：
 #   G11  service/health_service.health_check_run → core/solve_health（九因子）
 #   D12  service/calibration_service.fsv_curve_levels → core/fsv（ADM/FDM/GDM）
 #   D10  service/koh_service.KOHCalibrator.predict（调用方给出已算好的 95% 区间）

@@ -18,7 +18,7 @@ WP4.2 收口（2026-09-14，方案 §4）：
 
 与 tolerance 模块的差别：tolerance 每点真机求解（贵，n≤数百）；
 本模块全部在代理上（免费，n≥10k），代理可信度由校准 gate 背书。
-数值全部确定性内核。
+数值全部确定性内核（AGENTS #7）。
 
 DP-13 R1 spread-skill 总闸：全部四个输出面带 ``uncertainty_status``——
 代理 σ 与真实误差的 Spearman ρ ≥ 0.5（spread_skill 门）→

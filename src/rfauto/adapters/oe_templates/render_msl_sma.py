@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     pass
 from . import _nominal_width  # 50Ω 标称线宽单源（XC-W，惰性：取属性才算）
+from .cpw_port_probe import exc_dir_probe_lines  # CPWPort exc_dir 自适应探针单源
 from .registry import TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ─── WP2.5 Tier 2 过渡结构（2026-09-16 wp25-sma-launcher-rootcause 正式注册）────
@@ -128,7 +129,11 @@ def _msl_cpw_lines(p: dict[str, Any]) -> str:
     # （NT 段等分过渡区）→ CPW 中心段+两侧地（延至板边）+ 接地过孔栅栏
     # （CPWG 地缝合底板 PEC，抑制平行板模——过渡族必要件）。
     # port1=MSLPort（50Ω 微带口径）、port2=CPWPort（CPWG 口径，地自画——
-    # cpw 锚模板同口径）。双段 β 金标准见 render_script beta_block。
+    # cpw 锚模板同口径；exc_dir 走绑定两代自适应探针单源
+    # oe_templates.cpw_port_probe——CPW-PROBE 推广批 2026-10-13，同字面量
+    # 旧代绑定构造即炸，口径见该模块 docstring）。双段 β 金标准见
+    # render_script beta_block。
+    _cpw_probe_src = exc_dir_probe_lines()
     return f'''W_M = {p.get("w_msl_mm", _nominal_width.W50_MM)!r} * 1e-3
 W_C = {p.get("w_cpw_mm", 0.849)!r} * 1e-3
 GAP = {p.get("gap_cpw_mm", 0.2)!r} * 1e-3
@@ -170,10 +175,10 @@ _port1 = MSLPort(CSX, port_nr=1, metal_prop=mslcpw,
                  stop=np.array([-W_M / 2, Y0, 0]),
                  prop_dir="y", exc_dir="z", excite=1, FeedShift=10 * NEAR,
                  MeasPlaneShift=(Y0 + BOARD) / 3, priority=10)
-_port2 = CPWPort(CSX, port_nr=2, metal_prop=mslcpw,
+{_cpw_probe_src}_port2 = CPWPort(CSX, port_nr=2, metal_prop=mslcpw,
                  start=np.array([W_C / 2, BOARD, H_SUB]),
                  stop=np.array([-W_C / 2, Y1, H_SUB]),
-                 prop_dir="y", exc_dir="x", gap_width=GAP,
+                 prop_dir="y", exc_dir=_CPW_EXC_DIR, gap_width=GAP,
                  excite=0, FeedShift=10 * NEAR,
                  MeasPlaneShift=(BOARD - Y1) / 3, priority=10)
 for _prim in mslcpw.GetAllPrimitives():
@@ -249,7 +254,7 @@ sma_pin.AddBox((-RI / 2, Y_P0, Z_AX), (RI / 2, Y_PL, Z_AX + RI), priority=10)
 # 搭焊焊锡：针下半侧填实至微带面（针—微带实接触，宽度=微带宽）
 sma_pin.AddBox((-W_M / 2, Y_E, Z_TOP), (W_M / 2, Y_PE, Z_AX), priority=10)
 # port1：同轴截面集总桥（针顶 z=Z_AX+RI → 壳内壁顶 z=Z_AX+RO，E 沿 z=径向；
-# 优先级 6：高于 PTFE 5（桥内为集总元件）、低于金属 10（端面归金属）
+# 优先级 6：高于 PTFE 5（桥内为集总元件）、低于金属 10（端面归金属））
 _port1 = LumpedPort(CSX, port_nr=1, R=50.0,
                     start=np.array([-RI / 2, Y_P0, Z_AX + RI]),
                     stop=np.array([RI / 2, Y_PL, Z_AX + RO]),

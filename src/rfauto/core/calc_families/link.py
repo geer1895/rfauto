@@ -12,7 +12,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "gt_ratio",
-    "LT-1 G/T 组合优值（ITU-R S.733-2 定义口径）：G/T = G_dB − "
+    "G/T优值：LT-1 G/T 组合优值（ITU-R S.733-2 定义口径）：G/T = G_dB − "
     "10·log10(T_sys) [dB/K]。T_sys 三路径显式择一：t_sys_k 直接给定 / "
     "nf_db（=cascade_budget.nf_total_db 直连，Te=T0·(F−1)）/ t_e_k"
     "（=nf_measurement y-factor 链等效输入噪声温度）；t_ant_k 并入系统"

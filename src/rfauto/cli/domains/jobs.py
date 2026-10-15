@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope, skipped_envelope
 
 # ─── jobs ─────────────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ def jobs_status(
     if json_output:
         # VI-5 W6-B：清单信封（空表如实 runs=[]）
         console.print_json(json.dumps(
-            {"ok": True, "n_runs": len(rows), "runs": rows},
+            ok_envelope(n_runs=len(rows), runs=rows),
             ensure_ascii=False, default=str))
         return
     if not rows:
@@ -80,12 +81,12 @@ def jobs_cancel(
     if json_output:
         # VI-5 W6-B：失败/成功同构信封（state 三态原样透传；_emit 失败即 Exit）
         if snapshot is None:
-            _emit({"ok": False, "errors": [
+            _emit(error_envelope(
                 f"未找到任务: {job_id}（进程内注册表无此 job；"
-                f"跨进程历史 run 请直接用 jobs status 查看）"]},
+                f"跨进程历史 run 请直接用 jobs status 查看）"),
                 "任务取消失败", json_output=True)
         else:
-            _emit({"ok": True, "job_id": job_id, "state": snapshot["state"]},
+            _emit(ok_envelope(job_id=job_id, state=snapshot["state"]),
                   "任务取消失败", json_output=True)
         return
     if snapshot is None:
@@ -143,7 +144,7 @@ def cache_clear(
     if json_output:
         # VI-5 W6-B：--json 信封（清理为无失败面操作，ok=True 如实）
         console.print_json(json.dumps(
-            {"ok": True, "removed": removed, "model": model},
+            ok_envelope(removed=removed, model=model),
             ensure_ascii=False, default=str))
         return
     scope = f"（模型: {model}）" if model else ""
@@ -168,7 +169,7 @@ def link(
         # VI-5 W6-B：--json 信封（skipped 是合法零动作态，ok=True 如实）
         if result.get("skipped"):
             console.print_json(json.dumps(
-                {"ok": True, "skipped": True, "reason": result.get("reason", "")},
+                skipped_envelope(result.get("reason", "")),
                 ensure_ascii=False, default=str))
             return
         _emit(result, "link 失败", json_output=True)
@@ -234,9 +235,9 @@ def report(
                 return
             ids = list(disc.get("run_ids") or [])
         if not ids:
-            _emit({"ok": False, "errors": [
+            _emit(error_envelope(
                 "批量面未发现可报告的 run（--dir 下无 results/metrics.json，"
-                "或未给 --run-id）"]}, "批量报告失败", json_output=json_output)
+                "或未给 --run-id）"), "批量报告失败", json_output=json_output)
             return
         result = report_runs_batch(ids, fmt=fmt,
                                    out_dir=index_dir or (Path("runs") / "report_batch"))
@@ -249,7 +250,7 @@ def report(
         return
 
     if not run_id:
-        _emit({"ok": False, "errors": ["单 run 报告需要 run_id（批量面请加 --dir/--run-id）"]},
+        _emit(error_envelope("单 run 报告需要 run_id（批量面请加 --dir/--run-id）"),
               "报告生成失败", json_output=json_output)
         return
     from rfauto.service.api import generate_report_for_run
@@ -301,8 +302,8 @@ def export_report_pdf_cmd(
             Path(report_path).replace(dest)
             report_path = dest
         console.print_json(json.dumps(
-            {"ok": True, "report_path": str(report_path),
-             "metrics": data.get("metrics") or {}},
+            ok_envelope(report_path=str(report_path),
+                        metrics=data.get("metrics") or {}),
             ensure_ascii=False, default=str))
         return
     if not result["ok"]:
@@ -403,7 +404,7 @@ def validate(
         return
 
     if not recipe:
-        _emit({"ok": False, "errors": ["单文件校验需要配方路径（批量面请加 --dir）"]},
+        _emit(error_envelope("单文件校验需要配方路径（批量面请加 --dir）"),
               "配方校验失败", json_output=json_output)
         return
     from rfauto.service.api import validate_recipe

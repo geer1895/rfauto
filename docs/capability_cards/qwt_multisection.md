@@ -22,7 +22,15 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+
+| 名次 | 参数 | 依据 |
+|---|---|---|
+| 1 | lengths_mm | 各节 λ/4 恒等式 |∂lnf0/∂lnL|=1（精确，逐节） |
+| 2 | widths_mm | 节宽经各自 εeff 进入节电长度+节阻抗谱系（宽带形状维） |
+| 3 | z_load_ohm | 负载阻抗=谱系恒等式的另一端（Z_i·Z_{4−i}=Z0·ZL） |
+| 4 | feed_w_mm | 50Ω 馈线匹配（不进节谐振式） |
+- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
 
 ## 判据
 
@@ -44,7 +52,7 @@
 - 参数语义：widths_mm=各节线宽列表（HJ inverse_width 按节阻抗精算，qwt_multisection_design_params 单源）；lengths_mm=各节物理 λ/4 长（按节 εeff 精算）；feed_w_mm=50Ω 馈线宽（1.1134，mline 同源档）；z_load_ohm=端接集总电阻（=ZL，LumpedElement R 值——进元件值不进导体几何，combline c_load_pf 同口径豁免）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；馈线/各节带缘+节间 junction/端接盒缘精确入网（#198）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边
 - 冒烟现状：未冒烟（离线审计过，#212，test_schiffman_qwt_templates）；近似级别如实登记：①节间阶梯跳宽不连续性不进闭式裁判（离线裁判=理想 TL 级联，偏差即寄生）；②LumpedElement 集总端接的寄生电感/电容未建模（零厚度集总口径）；③一阶小反射表驱动闭式（N>4 chebyshev 需 Riblet 数值迭代，内核显式拒绝）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

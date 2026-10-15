@@ -41,9 +41,14 @@ ROLE_CANDIDATES: dict[str, tuple[str, ...]] = {
 
 
 def parse_length(value: Any) -> float | None:
-    """解析长度值：数字直接返回；字符串剥离 mm/m 单位后取浮点。
+    """解析长度值：数字直接返回；字符串剥离 mm 后缀取浮点。
 
-    返回 None 表示不可解析（缺失/非数值），由调用方决定回退。
+    单位口径=毫米（参数面全链 mm）。**异量纲后缀 fail-loud（A2 P2-5，
+    2026-10-13）**：裸 ``"m"``（米）后缀在毫米口径参数面没有合法用途——
+    旧实现剥 "m" 把 ``"20m"`` 静默读成 20.0（米语义被读成 mm，千倍量纲
+    错），现显式 ValueError；``"2.5cm"`` 等其他量纲后缀同面收紧（消费面
+    grep 实证无合法 "m" 尾串用例）。无单位杂串（``"abc"``）与缺失仍返回
+    None 由调用方回退（原 fail-safe 语义不变）。
     """
     if value is None:
         return None
@@ -53,7 +58,10 @@ def parse_length(value: Any) -> float | None:
     if text.endswith("mm"):
         text = text[:-2]
     elif text.endswith("m"):
-        text = text[:-1]
+        raise ValueError(
+            f"长度值 {value!r} 带非 mm 量纲后缀：毫米口径参数面静默剥除会"
+            "引入量纲错（旧实现把 20m 读成 20.0mm，A2 P2-5 fail-loud）——"
+            "请改写为 mm 或无量纲数值")
     try:
         return float(text)
     except ValueError:
@@ -72,12 +80,27 @@ def resolve_role(
         role: 物理角色名（ROLE_CANDIDATES 的键）。
         variables: 设计变量（值可为 str/float）。
         default: 全部候选缺失/不可解析时的回退值。
-        candidates: 覆盖默认候选表（自定义模型可传入自己的候选名）。
+        candidates: 覆盖默认候选表（自定义模型可传入自己的候选名——
+            这也是未知角色名的**白名单出口**）。
 
     Returns:
         解析出的数值；解析失败返回 default（default=None 时也是 None）。
+
+    Raises:
+        ValueError: candidates 未传且 role 不在 ROLE_CANDIDATES（A2 P2-5
+            fail-loud，2026-10-13）——拼写错静默 default 会把错值/缺省带进
+            公式链且无痕；自定义模型请显式传 candidates（消费面 grep 实证：
+            现存全部表外角色调用均已显式传 candidates，零行为漂移）。
     """
-    names = candidates if candidates is not None else ROLE_CANDIDATES.get(role, ())
+    if candidates is not None:
+        names = candidates
+    else:
+        names = ROLE_CANDIDATES.get(role)
+        if names is None:
+            raise ValueError(
+                f"未知物理角色 {role!r}（ROLE_CANDIDATES 无此键且未传 "
+                "candidates）——拼写错静默回退 default 会把几何错值带进"
+                "公式链（A2 P2-5 fail-loud）；自定义模型请显式传 candidates")
     for name in names:
         if name in variables:
             parsed = parse_length(variables[name])

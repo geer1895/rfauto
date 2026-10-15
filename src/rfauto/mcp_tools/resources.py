@@ -1,4 +1,4 @@
-"""@mcp.resource 只读资源五件（runs 索引/materials/compat/terminology/toolsets）——不计入工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正 parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D EC-6 +1 toolsets 工具集目录资源）。"""
+"""@mcp.resource 只读资源七件（runs 索引/materials/compat/terminology/toolsets/calculators 目录/datasets 目录）——不计入工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正 parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D EC-6 +1 toolsets 工具集目录资源；2026-10-14 aurora_d MCP-B 席 +2 calculators/datasets 目录资源——Agent 发现面，与同名工具同源 service 单点）。"""
 
 from __future__ import annotations
 
@@ -60,3 +60,29 @@ def toolsets_definition_resource() -> dict[str, Any]:
     from rfauto.service.toolsets_service import build_toolsets_definition
 
     return build_toolsets_definition()
+
+
+@mcp.resource("rfauto://calculators/index")
+def calculators_index_resource() -> dict[str, Any]:
+    """计算器注册表目录（只读）：名单/说明/参数表（mm/GHz/Ω/dB 口径）。
+
+    service/calculator_service.list_calculators 同源薄资源（全量含实验
+    键，experimental 标签在册——与 list_calculators 工具同参同源）；
+    执行走 run_calculator 工具。纯清单面恒 ok=True，空注册如实回空清单。
+    """
+    from rfauto.service.calculator_service import list_calculators
+
+    return list_calculators(include_experimental=True)
+
+
+@mcp.resource("rfauto://datasets/index")
+def datasets_index_resource() -> dict[str, Any]:
+    """数据集注册表总览（只读）：逐数据集点数/GT/可见性 manifest 汇总。
+
+    service/dataset_insights.list_datasets 同源薄资源（盘面 manifest 自动
+    汇总非手工名单——与 list_datasets 工具同参同源）；行级查询走
+    query_dataset 工具。目录缺失=ok 空清单如实（不臆造）。
+    """
+    from rfauto.service.dataset_insights import list_datasets
+
+    return list_datasets()

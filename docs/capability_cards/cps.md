@@ -52,7 +52,7 @@
 
 - 参数语义：w_mm=单带宽（Z0 由 CPS 无地共形闭式综合定：120Ω@rogers4350b gap=0.5 → w=2.95mm，refs §11；印制 CPS 天然高阻，50Ω 需亚 0.1mm 缝不可制造），gap_mm=两带间缝宽，line_len_mm=两端口间线长
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；四条带缘 x 向精确入网 + 缝中线加密 + 线两端（LumpedPort 面）y 向精确入网（#198）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

@@ -1,6 +1,6 @@
 """WP2.5 Tier 2：MSL↔CPWG 过渡模板单测（附加模板口径，同 coupled_bpf 段）。
 
-方案行（docs/续跑计划.md §4 WP2.5）：MSL↔CPW、
+方案行（延续计划 §4 WP2.5）：MSL↔CPW、
 MSL↔slotline（Marchand，随 slotline 端口原语缺失阻塞，归 C5 行）、
 SMA launcher。本件覆盖 MSL↔CPW：
 - 正式注册（2026-09-16 wp25-sma-launcher-rootcause）：MSL_CPW_META/NOMINAL
@@ -442,3 +442,25 @@ def test_declared_params_drive_geometry(key):
     changed = [p for p in _load(params)[1] if gh.is_conductor(p)]
     assert gh.conductor_signature(changed) != base, \
         f"声明但未驱动几何的参数 {key}"
+
+
+def test_cpwport_exc_dir_adaptive_probe():
+    """CPW-PROBE 推广批（2026-10-13）：port2 CPWPort exc_dir 绑定两代自适应
+    探针钉。同渲染字面量跨代部署必有一侧构造即炸（旧代绑定把 exc_dir 当面
+    法向，start/stop 等值检查轴互换）——渲染文本必须经单源
+    oe_templates.cpw_port_probe 注入 _CPW_EXC_DIR（禁硬编码 "x"），且几何段
+    exec 后探针落位与本机新代语义一致（width=x/height=z）。单源消费与三
+    发射点全量钉在 test_cpw_port_probe.py，此处钉本模板渲染形态。"""
+    text = ot.render_script("msl_cpw", dict(NOMINAL), BAND,
+                            mesh_resolution_mm=MESH_MM)
+    assert "exc_dir=_CPW_EXC_DIR" in text
+    assert 'exc_dir="x"' not in text
+    # 探针块在 port2 构造之前（单源文本含指纹行与两分支）
+    probe = text.index("import inspect as _insp")
+    assert probe < text.index("_port2 = CPWPort")
+    assert 'if "self.width_ny = CheckNyDir(exc_dir)" in _cpw_src:' in text
+    # exec 几何段：探针执行落位 + port2 构造成功（新代 width_ny=x/height_ny=z）
+    scope, _ = _load()
+    assert scope["_CPW_EXC_DIR"] == "x"
+    ports = gh.port_objects(scope)
+    assert int(ports[2].width_ny) == 0 and int(ports[2].height_ny) == 2

@@ -351,6 +351,110 @@ class TestMsArray:
         assert "15×15" in note and "4×10⁷" in note
 
 
+# ─── ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：蘑菇 EBG/AMC ─────────
+
+
+class TestMsMushroom:
+    """Sievenpiper 蘑菇单元：LC 内核互证（nominal 回代）+ 过孔柱接地 + 守卫。"""
+
+    def test_nominal_is_kernel_roundtrip(self):
+        """名义闭式互证（#252/#1c）：gap=eq.4 解析逆 → amc_resonance_hz 回代
+        逐位 =f0；带边=amc_phase_band_hz（±90° 带宽律 R=√(L/C)/η₀）。"""
+        from rfauto.adapters.openems_templates import ms_mushroom_dims_mm
+        from rfauto.core.amc_mushroom import (
+            amc_phase_band_hz,
+            amc_resonance_hz,
+            amc_via_inductance_h,
+        )
+        from rfauto.core.metasurface_lut import (
+            EPS0_F_M,
+            fss_patch_grid_capacitance_f,
+        )
+
+        nom = TEMPLATE_NOMINAL["ms_mushroom"]
+        d = ms_mushroom_dims_mm(10.0, 3.66, 0.508)
+        assert d["period_mm"] == nom["period_mm"] == round(
+            299792458.0 / 10e9 * 1e3 / 2, 4)                    # λ0/2 阵格
+        assert d["gap_mm"] == nom["gap_mm"]
+        # 回代自洽：C(period, gap) → f0 ≈10GHz（独立路径=内核直接函数；
+        # 4dp 名义圆整的 gap 量化 0.1µm → Δf/f≈7e-5，容差 1e-4 承载圆整噪声）
+        period_m = nom["period_mm"] * 1e-3
+        gap_m = nom["gap_mm"] * 1e-3
+        l_via = amc_via_inductance_h(0.508e-3)
+        c_gap = fss_patch_grid_capacitance_f(period_m, gap_m,
+                                             (1 + 3.66) / 2)
+        assert amc_resonance_hz(l_via, c_gap) == pytest.approx(10e9, rel=1e-4)
+        # 名义 gap 与解析逆公式一致（独立重算不共享代码路径；rel=1e-4 承载
+        # nominal 4dp 圆整，真值 1.275337 → 名义 1.2753）
+        c_req = 1.0 / (2 * math.pi * 10e9) ** 2 / l_via
+        k = c_req * math.pi / (2 * period_m * EPS0_F_M * 2.33)
+        assert gap_m == pytest.approx(
+            2 * period_m / math.pi * math.asin(math.exp(-k)), rel=1e-4)
+        # 稠密栅声明域 g≪D（Luukkonen eq.4 有效域，EC 初值口径的前提）
+        assert gap_m / period_m < 0.2
+        band = amc_phase_band_hz(l_via, c_gap)
+        assert band["f0_hz"] == pytest.approx(10e9, rel=1e-4)
+
+    def test_via_connects_patch_to_ground(self):
+        """exec 实测：过孔柱 z 0→H_SUB（接 z 底 PEC 边界地）+ 贴片在 H_SUB
+        面（bbox 接触=同导体网络）；贴片边=period−gap。"""
+        _scope, prims = load_geometry("ms_mushroom")
+        nom = TEMPLATE_NOMINAL["ms_mushroom"]
+        text = render_script("ms_mushroom", dict(nom), BAND,
+                             mesh_resolution_mm=AUDIT_MESH_MM)
+        assert '"PEC", "PEC", "PMC", "PMC"' in text
+        # 地=z 底 PEC（波导模拟器对壁+底 PEC+顶 MUR；ms_patch 反射族同构）
+        assert '"PEC", "PEC", "PMC", "PMC", "PEC", "MUR"' in text
+        patch = [p for p in prims if p.prop == "mushroom_patch"]
+        via = [p for p in prims if p.prop == "mushroom_via"]
+        assert len(patch) == 1 and len(via) == 1
+        px = (nom["period_mm"] - nom["gap_mm"]) * 1e-3
+        assert patch[0].extent[0] == pytest.approx(px, rel=1e-12)
+        assert patch[0].lo[2] == pytest.approx(0.508e-3, rel=1e-12)  # z=H_SUB
+        assert via[0].radius == pytest.approx(0.15e-3, rel=1e-12)
+        assert via[0].lo[2] == pytest.approx(0.0, abs=1e-12)         # 接地端
+        assert via[0].hi[2] == pytest.approx(0.508e-3, rel=1e-12)    # 贴片面
+        # 过孔=sub-cell 阶梯化口径：2r < 审计档 BASE
+        assert 2 * via[0].radius < AUDIT_MESH_MM * 1e-3
+
+    def test_guard_rejects_via_overflow_and_bad_gap(self):
+        """渲染期守卫（#266 口径）：gap≥period / 缝 <3·NEAR / 过孔 4r≥px 抛。"""
+        base = dict(TEMPLATE_NOMINAL["ms_mushroom"])
+        bad_gap = dict(base, gap_mm=base["period_mm"])
+        with pytest.raises(ValueError, match="0<gap<period"):
+            render_script("ms_mushroom", bad_gap, BAND,
+                          mesh_resolution_mm=AUDIT_MESH_MM)
+        # 缝 <3·NEAR（0.4 档 NEAR=0.1）：period=1.0/gap=0.25 → px=0.75mm
+        # 仍 > 4r=0.6（过孔守卫不抢跑），缝守卫先触发
+        tight = dict(base, period_mm=1.0, gap_mm=0.25)
+        with pytest.raises(ValueError, match="守卫"):
+            render_script("ms_mushroom", tight, BAND,
+                          mesh_resolution_mm=AUDIT_MESH_MM)
+        # 过孔柱守卫：px 贴满胞只剩 0.3mm < 4r=0.6
+        tight_via = dict(base, period_mm=base["gap_mm"] + 0.3)
+        with pytest.raises(ValueError, match="过孔柱"):
+            render_script("ms_mushroom", tight_via, BAND,
+                          mesh_resolution_mm=AUDIT_MESH_MM)
+
+    def test_readout_is_patch_family_reflection(self):
+        """读出=ms_patch 同族反射口径（_WgProbePairRefl 对调 uf）+ 探针 z 面
+        入网；单端口 fallback 契约 _port2=_port1。"""
+        text = render_script("ms_mushroom", dict(TEMPLATE_NOMINAL["ms_mushroom"]),
+                             BAND, mesh_resolution_mm=AUDIT_MESH_MM)
+        assert "class _WgProbePairRefl" in text
+        assert 'CSX.AddExcitation("wg_exc", exc_type=0' in text
+        assert "mushroom_via.AddCylinder" in text
+        scope, _prims = load_geometry("ms_mushroom")
+        assert scope.get("_port2") is scope.get("_port1")
+        z_lines = mesh_lines(scope, "z")
+        lay = ms_unit_layout("ms_mushroom",
+                             dict(TEMPLATE_NOMINAL["ms_mushroom"]), BAND,
+                             AUDIT_MESH_MM * 1e-3, 0.508e-3)
+        for key in ("z_src", "z_1a", "z_1b"):
+            assert float(np.min(np.abs(z_lines - lay[key]))) <= 1e-6, \
+                f"ms_mushroom 读出面 {key} 未入 z 网格"
+
+
 # ─── 名义尺寸闭式互证（#252/#1c：nominal=core 闭式导入期计算，逐位互证）────────
 
 
@@ -381,7 +485,7 @@ class TestNominalClosedFormIdentity:
         assert nom["slot_w_mm"] == pytest.approx(round(lamg / 40, 4), abs=1e-9)
 
     def test_ms_ring_patch_nominal_is_closed_form(self):
-        """ge5 段③（runs/ge5_j2fb）：环几何=core 闭式单源、贴片=不动点复用。"""
+        """ge5 段③（runs/ge5_j2fb/）：环几何=core 闭式单源、贴片=不动点复用。"""
         from rfauto.core.metasurface_lut import ms_ring_patch_dims_mm
 
         d = ms_ring_patch_dims_mm(10.0, 3.66)
@@ -448,12 +552,13 @@ def test_synthesized_layout_feeds_cell_map_domain():
 
 
 def test_expected_templates_contains_ms_family():
-    """注册联动（#304）：五件全进冻结集；TEMPLATE_META 计数=67（ge5 J2
+    """注册联动（#304）：六件全进冻结集；TEMPLATE_META 计数=72（ge5 J2
     fallback 段③ ms_ring_patch 57→58、TA 批 schiffman+qwt_multisection
     58→60、TA 批第二批 sicl+nway_wilkinson 60→62、TA 批第三批 diplexer+
     ridged_wg 62→64、ge8b WA 席1 inverted_ms+hmsiw+fgcpw 64→67、ge8b WB
     席B9 isl_shielded+vivaldi_tsa 67→69、ge8d WD 席D2 embedded_ms+
-    xcheb_bpf4 69→71，runs/ge5_j2fb/；主代理回填 docs 数字以实测为准）。"""
+    xcheb_bpf4 69→71、TA-13 ms_mushroom 71→72（2026-10-08），runs/ge5_j2fb/；
+    主代理回填 docs 数字以实测为准）。"""
     for t in METASURFACE_TEMPLATES:
         assert t in EXPECTED_TEMPLATES
-    assert len(TEMPLATE_META) == 71  # ge8d WD 席D2 +2（embedded_ms/xcheb_bpf4）
+    assert len(TEMPLATE_META) == 72  # TA-13 +1（ms_mushroom，EBG/AMC 蘑菇单元）

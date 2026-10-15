@@ -57,7 +57,12 @@ def query_dataset(
         out_dir: 数据集根目录（默认 runs/datasets）
 
     Returns:
-        dict: {ok, rows, n_rows, columns, dataset, where, filters, limit}
+        dict: {ok, rows, n_rows, total_rows, columns, dataset, format,
+        where, filters, limit, order_by, order, offset}。
+        行数两键语义（#369）：``n_rows``=返回行数（受 limit 截断，
+        =len(rows)，不是数据集总行数）；``total_rows``=过滤后
+        （LIMIT/OFFSET 前）总行数——凡"总数语义"消费一律取
+        total_rows，拿 n_rows 当总数会把截断当全量（G1 假 FAIL 先例）。
     """
     from rfauto.service.dataset_service import query_dataset as _query
     return _query(

@@ -1,6 +1,6 @@
 """MA-9 低温数据面：NIST 低温材料拟合表 + tanδ(T) 点带 + 积分量闭式。
 
-规格：研究扩充 round17 §六 MA-9（低温数据面，
+规格：docs/research_expansion_20261002_round17.md §六 MA-9（低温数据面，
 P2/M）——"tanδ(T) 点表（NIST/Krupka/Braginsky，band+single_source）+
 ∫κ(T)dT 热流与 ∫α dT 收缩（NIST 低温材料库免费表数字化）+低温焊料/
 键合线 σ(T)"。数据包形态：data/nist_cryo_fits.json（NIST log10 多项式

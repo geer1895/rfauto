@@ -102,7 +102,8 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # 等，合流实测口径）→ 254。
     # EDB 快车道批 +3（2026-10-08：edb build/solve/status 三叶）→ 257。
     # 远程回拉与队列批 +1（2026-10-09：campaign queue-daemon 叶）→ 258。
-    assert check_numbers.count_cli() == 258
+    # 公开仓追平批（2026-10-14：aurora_d 同步，+11 叶）→ 269。
+    assert check_numbers.count_cli() == 269
 
 
 def test_cli_bench_subapp_breakdown():
@@ -188,7 +189,7 @@ def test_anchors_count_matches_core_single_source():
     from rfauto.core.anchors import EXPECTED_ANCHOR_COUNT
 
     assert check_numbers.count_anchors() == EXPECTED_ANCHOR_COUNT
-    assert EXPECTED_ANCHOR_COUNT == 60  # W6-F cpw.z0_ohm.closedform-v1 +1（核验裁决 A=CPWG/50Ω 胜出）  # W4-E 锚二批+UX-B1 档① +10（cps z0+eps/suspended_stripline z0+eps/cheb_g 五模板/xcheb_bpf4/msl_cpw.s11_f0）  # ge8e X5 批 +13（atten_pi/atten_t/ratrace/stripline/slotline/siw/monopole/coil_nfc/pyramid_horn 九族 analytic 锚）  # ge8b WB 席B9 +2（isl_shielded/vivaldi_tsa closedform）  # ge8 K-4 锚演进 +1  # ge8 TA 批三 +4  # ge8 TA 批二 +4  # ge8 TA 批 +2（schiffman/qwt_multisection 内核恒等锚 experimental）  # ge8b WA 席1 +3（TA-7/8/9 fdref×2+closedform×1）
+    assert EXPECTED_ANCHOR_COUNT == 75  # W6-F cpw.z0_ohm.closedform-v1 +1（核验裁决 A=CPWG/50Ω 胜出）  # W4-E 锚二批+UX-B1 档① +10（cps z0+eps/suspended_stripline z0+eps/cheb_g 五模板/xcheb_bpf4/msl_cpw.s11_f0）  # ge8e X5 批 +13（atten_pi/atten_t/ratrace/stripline/slotline/siw/monopole/coil_nfc/pyramid_horn 九族 analytic 锚）  # ge8b WB 席B9 +2（isl_shielded/vivaldi_tsa closedform）  # ge8 K-4 锚演进 +1  # ge8 TA 批三 +4  # ge8 TA 批二 +4  # ge8 TA 批 +2（schiffman/qwt_multisection 内核恒等锚 experimental）  # ge8b WA 席1 +3（TA-7/8/9 fdref×2+closedform×1）
 
 
 def test_anchors_consistency_check_returns_none_when_aligned():
@@ -216,9 +217,11 @@ def test_mcp_resources_dual_source_consistent():
     # → 5。
     # EDB 快车道批（2026-10-08）+2 rfauto://edb/status 与
     # rfauto://edb/datasets → 7。
+    # 公开仓追平批（2026-10-14）+2 rfauto://calculators/index 与
+    # rfauto://datasets/index → 9。
     n, src = check_numbers.count_mcp_resources()
     n_rx = check_numbers.count_mcp_resources_regex()
-    assert n == n_rx == 7
+    assert n == n_rx == 9
     assert src.startswith("list_resources()")  # 注册面主口径可达（非回退态）
 
 

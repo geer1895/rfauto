@@ -16,7 +16,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "chipless_tag_plan",
-    "chipless RFID 码字→谐振器组规划（等 Q 假设深谷）：code 槽位 0/1 →"
+    "无芯片RFID规划：chipless RFID 码字→谐振器组规划（等 Q 假设深谷）：code 槽位 0/1 →"
     "各谐振器频率（槽中心）/R=x/Q/预期谷深 20lg(2R/(2R+Z0))/无耗近似"
     "带宽 f·Z0/(2x)（Matthaei 电抗斜率口径，core/chipless_rfid.py）",
     (("code", "list[int] 码字（每槽 0/1，长度=n_slots）"),

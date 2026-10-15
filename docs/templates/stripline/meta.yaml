@@ -14,3 +14,32 @@ substrate:
 nominal_params:
   w_mm: 0.5554
   line_len_mm: 40.0
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 对称带状线：导带内嵌于两接地平面之间的均匀介质中，场完全束缚在介质内
+      → 纯 TEM 主模（无色散，εeff≡εr 是精确恒等式而非近似）；Z0 由零厚度保形映射
+      椭圆积分闭式精确给出（Cohn 形态），线宽综合=闭式 brentq 求逆+回代自洽。
+      与微带的本质差别：无空气/介质混合场，故 εeff 不随 w/f 漂移，相位提取最干净。
+    derivations:
+    - claim: 零厚度对称带状线共形映射闭式（Cohn 椭圆积分）：阻抗只由保形比 r=K(k)/K′(k) 与 √εr 定；均匀填充 TEM 无色散 → 有效介电常数恒等于 εr
+      formula: Z0 = 30π/(√εr·r)；r = K(k)/K′(k)；k = tanh(πw/2b)；εeff ≡ εr；λg = λ0/√εr
+      source: knowledge/anchors.yaml（stripline.z0_ohm/stripline.eps_eff closedform 锚，Cohn 1955/Wadell 口径+εeff=εr 恒等式钉）+ calc_families/rf_line.py（stripline_analysis/stripline_synthesis，AGM 椭圆积分无相消形态）+ Pozar, Microwave Engineering (4th ed.), Ch.3（带状线静态 TEM 解）
+    - claim: 线宽综合=闭式求逆：目标 Z0 → w 走内核 brentq（括号扫描+回代自洽保险带），数值一律由内核键产出（名义 w 与锚 provenance 见 meta nominal_params 与 knowledge/anchors.yaml，不手抄不手算）
+      formula: w = stripline_synthesis(z0_ohm, b_mm, εr)；回代 |Z0(w)−z0|/z0 ≤ 1e-4
+      source: calc_families/rf_line.py（stripline_synthesis 回代自洽保险带）+ knowledge/anchors.yaml（#118 双源=测试内 AGM 恒等式第二实现逐位钉）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 保形比 k=tanh(πw/2b) 对 w 强单调——Z0 唯一的一阶强敏感几何
+  - param: er
+    order: 2
+    basis: εeff≡εr 精确恒等 → Z0 ∝ 1/√εr 且 β ∝ √εr（线性进入两处）
+  - param: h_mm
+    order: 3
+    basis: b=2h 进入 k 双曲正切（与 w 同一恒等式），弱于 w（一阶量级差）
+  - param: line_len_mm
+    order: 4
+    basis: 纯相位量（β·L），Z0/匹配不受其影响
+  quiz_refs: []

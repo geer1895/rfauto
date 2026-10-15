@@ -357,7 +357,7 @@ def analyze(root: Path = DEFAULT_ROOT, kz_noise_ohm: float = K_Z_NOISE_OHM) -> d
                           kz_noise_ohm=float(kz_noise_ohm))
             for c in CURVES]
 
-    # 曲线级 verdict（主判口径标注；#361⑥）
+    # 曲线级 verdict（主判口径标注；#361⑥/）
     map_rows = [r for r in rows if r["in_gap_map"]]
     n_resolved = sum(1 for r in map_rows if r["k_split"]["quality"] == "resolved")
     n_shallow = sum(1 for r in map_rows if r["k_split"]["quality"] == "shallow_valley")

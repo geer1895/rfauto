@@ -108,7 +108,7 @@ if str(REPO / "src") not in sys.path:
 
 OUT_ROOT = REPO / "runs" / "hfss_window_b2a"
 B2A_ROOT_ON_SERVER = "hfss_window_b2a"      # 服务器侧 project_root 下的相对段
-HFSS_VERSION = "2025.1"                     # 与 v251 配对
+HFSS_VERSION = "2025.1"                     # 与 v251 配对（AGENTS 规则 0）
 SOLVE_TIMEOUT_S_DEFAULT = 3600.0            # watchdog（criteria §6 单结构 3600s）
 
 
@@ -3756,7 +3756,7 @@ def main(argv: list[str] | None = None) -> int:
                              "与 --machine 互斥；缺省（不带 --remote）=local "
                              "行为零变化")
     parser.add_argument("--out-dir", default=None,
-                        help="产物目录（缺省 runs/hfss_window_b2a/<t>/hfss_side）")
+                        help="产物目录（缺省 runs/hfss_window_b2a/<t>/hfss_side/）")
     parser.add_argument("--dry-run", action="store_true",
                         help="离线端到端（合成 S，零 pyaedt 零求解）——交付 dry-call 钉")
     parser.add_argument("--parallel", type=int, default=1,

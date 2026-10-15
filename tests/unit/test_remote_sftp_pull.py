@@ -159,8 +159,8 @@ def test_pull_lifecycle_self_built_transport(tmp_path, monkeypatch):
     fake = FakeSftpTransport(
         listing=_listing(("l2_smoke.s2p", len(body))), files={_F1: body})
     cfg = RemoteMachineConfig(
-        name="sim_host", host="192.0.2.50", ssh_port=22,
-        ssh_user="testuser", ssh_password="fake-pass",
+        name="sim_host", host="10.20.30.40", ssh_port=22,
+        ssh_user="member01", ssh_password="secret",
         hfss_project_root="E:\\rfauto_remote")
     monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
     monkeypatch.setattr(rsp, "SshTransport", lambda c: fake)
@@ -435,7 +435,7 @@ def test_no_registry_skipped(tmp_path, monkeypatch):
 def test_missing_credentials_skipped_no_connect(tmp_path, monkeypatch):
     """凭据缺失：如实 skipped，不构造通道不发起连接。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="192.0.2.50", ssh_port=22,
+        name="sim_host", host="10.20.30.40", ssh_port=22,
         hfss_project_root="E:\\rfauto_remote")
     monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
     monkeypatch.delenv(rsp.ENV_REMOTE_SSH_USER, raising=False)
@@ -454,7 +454,7 @@ def test_missing_credentials_skipped_no_connect(tmp_path, monkeypatch):
 def test_unknown_machine_error_envelope(tmp_path, monkeypatch):
     """未登记机器名：error 信封（resolve_machine 报错转信封，不裸抛）。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="192.0.2.50", ssh_port=22,
+        name="sim_host", host="10.20.30.40", ssh_port=22,
         ssh_user="u", ssh_password="p")
     monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
     out = pull_artifacts("nope", remote_dir=_REMOTE_ROOT,
@@ -466,7 +466,7 @@ def test_unknown_machine_error_envelope(tmp_path, monkeypatch):
 def test_paramiko_missing_becomes_error_envelope(tmp_path, monkeypatch):
     """paramiko 缺装（SshTransport 构造抛 RemoteTransportError）→ error 信封。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="192.0.2.50", ssh_port=22,
+        name="sim_host", host="10.20.30.40", ssh_port=22,
         ssh_user="u", ssh_password="p")
     monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
 

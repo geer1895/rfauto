@@ -3,8 +3,9 @@
 > RECAST（判据重放）回答一个问题："当年那个判读，用今天登记的机器
 > 判据再算一遍，结论还一样吗？"本文从判据格式讲到动手重放，全部代码
 > 实测过。前置：docs/how-to/read-verdict-gates.md（判据与门的基本
-> 读法）。RECAST 目前是 Python API 面（无 CLI/MCP 壳），本文即
-> Python 用法。
+> 读法）。CLI 出口已闭合：aurora36 W2-D（2026-10-11）起有 `rfauto
+> recast status/replay` 两只读薄壳（MCP 面仍无，见第 5 节）；本文
+> 1-4 节讲 Python API 的语义细节，CLI 与 Python 共用同一确定性内核。
 
 ## 1. 概念：判据先行 + 归档零改写
 
@@ -122,7 +123,76 @@ same 也不虚构 flip**。这与体检门的 UNKNOWN 同一哲学——如实�
 批量面用 `replay_batch`（`core/recast.py`）：一次重放多份证据文件，
 坏条目登记进报告、不静默跳过——批量结果里每个输入都有下落。
 
-## 5. 练习
+## 5. CLI 出口：rfauto recast status / replay
+
+两只读薄壳（零逻辑转发 `service/recast_service` → `core.recast` 重放
+内核；零写盘、不碰归档；全叶带 `--json`）。第 3-4 节的语义——三向
+标注、fail-closed、`archived_verdict_path`——在 CLI 下逐条适用；
+MCP 面暂无壳（2026-10-11 实测，需走 Python API）。
+
+`rfauto recast --help` 实测，子命令恰两只：
+
+```text
+Commands:
+  status  判据注册面清单（每条 id/规则形态/装载状态；坏条目如实登记）。
+  replay  批量重放（全部已注册判据×全部证据，三向标注
+          same/flip/not_judged）。
+```
+
+### status：判据注册面清单
+
+`--criteria-dir` 缺省 `knowledge/criteria/v2`（等价于第 3 节的
+`load_criteria_dir`）。`rfauto recast status` 实测输出：
+
+```text
+✓ 判据 3/3 条装载合格 ← knowledge\criteria\v2
+┌───────────────────────────────┬────────────────────────┬────┬────────┐
+│ criteria_id                   │ form                   │ ok │ errors │
+├───────────────────────────────┼────────────────────────┼────┼────────┤
+│ df5_c3fix_sentinel_four_gates │ multi_gate_all_pass    │ ✓  │        │
+│ df6_dp10_scan_j1c_coverage    │ threshold_gate         │ ✓  │        │
+│ hfss_interdigital_check_m1    │ nearest_reference_gate │ ✓  │        │
+└───────────────────────────────┴────────────────────────┴────┴────────┘
+```
+
+坏条目不炸整表：`ok=✗` 且 errors 逐条登记（与 Python 面"坏条目如实
+登记"同一口径）。
+
+### replay：批量重放
+
+关键旗标（`rfauto recast replay --help` 实测，节选）：
+
+```text
+--artifact               -a  归档证据 JSON 文件路径（可多次；
+                             重放名=文件主干）
+--evidence-path              threshold_gate 判据的证据绑定
+                             criteria_id=点路径（可多次）
+--archived-verdict-path      归档 verdict 在证据 JSON 内的点路径；
+                             传 none 表示不比归档侧（方向恒
+                             not_judged）  [default: verdict]
+--json                   -j  JSON 输出
+```
+
+第 3 节哨档的 CLI 等价重放——`--archived-verdict-path
+four_gates.verdict` 正对应 Python 例的第三个参数（缺省 `verdict`
+落在顶层时不用传，第 3 节"最省时间的一课"在 CLI 下同样成立）：
+
+```console
+$ rfauto recast replay -a runs/df5_c3fix/sentinel_verdict.json \
+      --archived-verdict-path four_gates.verdict
+✓ 重放完成 对数=3 判据=3（坏 0）
+  same=1 flip=0 not_judged=2
+  not_judged 2 对（证据缺失/非机器直放——如实不判，明细见 --json）
+```
+
+same=1 就是第 3 节 Python 例的那一对（归档 FAIL × 重放 FAIL）；另两
+对如实 `not_judged`——threshold_gate 未给 `--evidence-path` 绑定、
+nearest_reference_gate 非机器直放（第 2/4 节口径）。CLI 是纯批量面：
+`-a` 可重复喂多份证据，全部判据 × 全部证据两两重放；`flip>0` 时终端
+以醒目红字浮出（人工仲裁信号，如实透传不吞），明细与逐对结果走
+`--json`。
+
+## 6. 练习
 
 1. 对 `hfss_interdigital_check_m1.yaml`（nearest_reference_gate 形态）
    走一遍重放——它的归档判读就在证据 JSON 顶层 `verdict` 键，不用传
@@ -132,8 +202,10 @@ same 也不虚构 flip**。这与体检门的 UNKNOWN 同一哲学——如实�
    `not_judged` 而非报错——然后解释为什么这是正确行为。
 3. `load_criteria_dir` 的条目直接喂 `replay_one`（不取 `criteria`
    键），读 notes 里的"非机器直放"注记与 direction。
+4. CLI 面重放哨档但不传 `--archived-verdict-path`——观察 not_judged
+   计数（实测 3/3）与 Python 面"缺省取顶层 verdict"行为的一致性。
 
-## 6. 下一步
+## 7. 下一步
 
 - 判据与门的判读基本面：docs/how-to/read-verdict-gates.md
 - 锚——判据之外另一类"跨引擎可信证据"：docs/tutorials/anchor-guide.md

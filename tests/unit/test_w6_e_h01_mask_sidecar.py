@@ -17,12 +17,13 @@
 
 零仿真零真机：写出端=渲染文本+stub exec 尾段（#212 几何段级审计同款手法
 延伸到产物落盘段），读入端=tmp 目录合成产物（#144 chdir 隔离不适用——
-全程 tmp_path，不触真实 runs）。
+全程 tmp_path，不触真实 runs/）。
 """
 
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -118,7 +119,7 @@ class TestRenderTailExecRoundtrip:
             uf_ref = np.ones(401, dtype=complex)
             uf_inc = np.ones(401, dtype=complex)
 
-        scope: dict = {
+        scope: dict = {"os": os,
             "__name__": "__main__",
             "SIM_PATH": str(tmp / "fdtd"),
             "_port1": _P1(),
@@ -168,7 +169,7 @@ class TestRenderTailExecRoundtrip:
             uf_ref = np.ones(401, dtype=complex)
             uf_inc = np.ones(401, dtype=complex)
 
-        scope: dict = {
+        scope: dict = {"os": os,
             "__name__": "__main__",
             "SIM_PATH": str(tmp_path / "fdtd"),
             "_port1": _P1(),

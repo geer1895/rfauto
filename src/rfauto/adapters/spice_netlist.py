@@ -722,7 +722,7 @@ def xval_macromodel_spice(
 ) -> dict[str, Any]:
     """第三方 SPICE 对拍（ngspice .AC）→ D12 FSV 评级（best-effort，不抛异常）。
 
-    验收口径（方案冻结行 docs/续跑计划.md D13 验收列）：
+    验收口径（方案冻结行 延续计划 D13 验收列）：
     "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。``s_reference``
     为原始 S 矩阵（复数 ndarray ``[nf, n, n]``）；对拍 S 由
     :func:`run_ngspice_ac_sparam` 真跑重建；FSV/误差摘要用

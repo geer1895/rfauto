@@ -1,0 +1,51 @@
+[
+  {
+    "variant": "v1_base_smatrixio",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     1.81 seconds.\r\n\r\n    Memory used:  103 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:52:57 2026"
+  },
+  {
+    "variant": "v2_uselib",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": ".\r\n\r\nError detected by hpeesofsim during netlist parsing.\r\n    ADS-syntax parser error in `netlist.txt', line 2:\r\n        syntax error, unexpected IDENT, expecting STRING_CONSTANT\r\n\r\nFlushing data (please wait) ...\r\n     ... data flush done.\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:52:58 2026"
+  },
+  {
+    "variant": "v3_touchstone",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     0.87 seconds.\r\n\r\n    Memory used:  102 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:52:59 2026"
+  },
+  {
+    "variant": "v4_type_snp",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     0.88 seconds.\r\n\r\n    Memory used:  103 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:53:01 2026"
+  },
+  {
+    "variant": "v5_nodes_with_gnd",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     0.78 seconds.\r\n\r\n    Memory used:  102 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:53:02 2026"
+  },
+  {
+    "variant": "v6_interpdom_ma",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     0.77 seconds.\r\n\r\n    Memory used:  102 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:53:03 2026"
+  },
+  {
+    "variant": "v7_no_numports",
+    "returncode": 1,
+    "ds": [],
+    "stderr_tail": "hpeesofsim terminated due to an error.",
+    "stdout_tail": "   Total stopwatch time      =     0.77 seconds.\r\n\r\n    Memory used:  102 MBytes\r\n\r\n    Max threads used:  8\r\n        (NOTE: max threads includes very-low-CPU-usage support threads,\r\n         as well as high-CPU-usage computational threads.)\r\n\r\n\r\n***** Simulation finished at Sat Aug 29 21:53:04 2026"
+  }
+]

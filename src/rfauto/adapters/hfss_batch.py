@@ -32,7 +32,7 @@ L2 先例）。脚本为模块内字符串资产按字面量烘焙（IronPython 
 ASCII 无 f-string、不读 argv/env）；导出失败只向 errors 追加告警项，
 绝不推翻求解 ok（#105）。
 
-导出分派（2026-10-08 W5 真机实证）：
+导出分派（2026-10-08 W5 真机实证，runs/edblane85/w5_batch_campaign/）：
 HFSS 3D Layout 设计（EDB 快车道产物形态）**无任何 Analysis 模块**——
 GetModule("AnalysisSetup"/"Setup"/"Output"/"Solutions") 四名全 FAIL，
 ``ExportNetworkData`` 直接挂在 design 对象上（pyaedt analysis.py 源码
@@ -87,6 +87,21 @@ _TOUCHSTONE_RE = re.compile(r"\.s(\d{1,2})p$", re.IGNORECASE)
 
 #: AEDT 结果文件扩展名（BatchSolve 常见落盘面；touchstone 之外的白名单）。
 _RESULT_EXTS = (".prof", ".csv", ".mesh", ".sol")
+
+#: ``-designs`` 设计限定在 AEDT 2025 R1 (v251) ``-BatchSolve`` **不受支持**
+#: （2026-10-13 sim_host 真机核实 verdict=FAIL，runs/aurora_c/designs_verify/
+#: ：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态旗标被静默吞掉，
+#: 值按 ``Unexpected command line argument 'DesignB' ignored.`` 丢弃并
+#: **退化为全设计求解（rc=0）**；desktop.dll 命令行选项表无 -designs）。
+#: 带"假限定"发射是静默 solve-all 隐患（多烧许可/墙钟+产物新鲜度误信），
+#: 故本模块对 design/setup 限定请求 fail-closed（结构化失败，零发射）。
+_DESIGNS_UNSUPPORTED_MSG = (
+    "-designs 设计限定不受 AEDT 2025 R1 (v251) -BatchSolve 支持"
+    "（2026-10-13 真机核实：旗标被忽略并退化为全设计求解，console log"
+    " 'Unexpected command line argument ... ignored'，证据"
+    " runs/aurora_c/designs_verify/）——为避免静默 solve-all 本模块拒绝"
+    "发射；限定了设计的需求请按设计拆分工程（每工程单设计）后批解，或走"
+    " hfss_session 会话通道指定设计分析")
 
 _EXE_NAME = "ansysedt.exe"
 
@@ -156,19 +171,23 @@ def build_batch_command(
 ) -> list[str]:
     """拼 ansysedt 批处理命令行（官方形态，非交互 ``-ng`` 无 GUI）。
 
-    模板：``ansysedt.exe -ng -BatchSolve [-designs <design:setup>]
-    [-Logfile <path>] <project>``——design/setup 限定可只给 design
-    （setup 缺省时限定词退化为纯 design 名）；-Logfile 收 AEDT 自身
-    输出（进程 console 输出另由 Popen 重定向追加进同一文件）。
+    模板：``ansysedt.exe -ng -BatchSolve [-Logfile <path>] <project>``；
+    -Logfile 收 AEDT 自身输出（进程 console 输出另由 Popen 重定向追加进
+    同一文件）。
 
-    参数顺序纪律（真机实证 2026-10-08）：
+    参数顺序纪律（真机实证 2026-10-08，runs/edblane85/w1_smoke/）：
     AEDT 2025 R1 拒收"-Logfile 置于工程之后"（requires a filename
     ... last parameter，rc=1）——**工程路径必须恒为末位**。
+
+    design/setup（历史形态 ``-designs <design:setup>``）：**2026-10-13
+    真机核实不受 v251 支持**（旗标被静默吞、值按 unexpected argument
+    丢弃、退化全设计求解，见 :data:`_DESIGNS_UNSUPPORTED_MSG`）——传非
+    None 即抛 ValueError（纯函数 fail-loud；solve_project_batch 在发射
+    前先行结构化 fail-closed，生产链不会触达本抛错）。
     """
+    if design or setup:
+        raise ValueError(_DESIGNS_UNSUPPORTED_MSG)
     cmd = [str(ansysedt_exe), "-ng", "-BatchSolve"]
-    if design:
-        qualifier = f"{design}:{setup}" if setup else str(design)
-        cmd += ["-designs", qualifier]
     if logfile:
         cmd += ["-Logfile", str(logfile)]
     cmd.append(str(project_path))
@@ -253,7 +272,7 @@ def collect_solve_artifacts(project_path: str | Path,
     会把同父目录下兄弟工程/他 run 的同名白名单产物混进本工程清单——父目录
     常为共享工作目录；②results 目录名原为 ``<p.name>.aedtresults``（对
     demo.aedt 拼出 demo.aedt.aedtresults，恒不存在——真机布局是
-    ``<stem>.aedtresults``，真机实证），其失
+    ``<stem>.aedtresults``，runs/edblane85/w1_smoke/branchline 实证），其失
     效一直被①的父目录递归扫描掩盖；两处同修后工程旁浅层+工程专属目录递归）：
     - .aedt 工程 → ``<stem>.aedtresults/``（递归）+ 工程旁浅层（批后导出
       ``<stem>_export.sNp`` 落工程旁，浅层即覆盖）；
@@ -574,7 +593,7 @@ def build_batch_extract_script(
     for token, value in (
         ("<<OUT_FILE>>",
          _bake_string_literal(
-             str(out_file).replace("\\", "/") if str(out_file) else "")),
+             Path(out_file).as_posix() if str(out_file) else "")),
         ("<<DESIGN_NAME>>", _bake_string_literal(design or "")),
         ("<<SETUP_NAME>>", _bake_string_literal(setup or "")),
         ("<<SWEEP_NAME>>", _bake_string_literal(sweep or "")),
@@ -894,11 +913,16 @@ def solve_project_batch(
     扫描 + logfile 尾部回读 → 结构化结果。
 
     参数：
-    - ``design``/``setup``：``-designs <design:setup>`` 限定（可只给
-      design）；None=工程内全部 setup（官方缺省语义）。
+    - ``design``/``setup``：历史形态为 ``-designs <design:setup>`` 限定；
+      **2026-10-13 真机核实 AEDT 2025 R1 (v251) ``-BatchSolve`` 不支持该
+      旗标**（静默退化为全设计求解，证据 :data:`_DESIGNS_UNSUPPORTED_MSG`
+      与 runs/aurora_c/designs_verify/）——传非 None 时**发射前结构化
+      fail-closed**（``ok=False``/``rc=None``/零进程零许可消耗），绝不带
+      假限定发射；``None``=工程内全部设计求解（AEDT 缺省语义，真机对照
+      臂实证）。
     - ``sweep``：批后导出段的 sweep 选择（仅 ``export_touchstone=True``
       时生效，透传 ``export_touchstone_after_solve``；求解命令行不带
-      sweep——AEDT 官方 -BatchSolve 语义只有 design:setup 限定）；
+      sweep——``-BatchSolve`` 求解面无 sweep/设计限定旗标可传）；
       None=导出脚本内自动枚举/名义兜底。
     - ``timeout_s``：watchdog 超时（秒），到点整树击杀并如实记
       ``timed_out=True``、``ok=False``；``<=0`` 视为不设超时（无限等）。
@@ -941,12 +965,19 @@ def solve_project_batch(
             project=str(project_path), elapsed=_elapsed(started))
     project, kind = resolved
 
+    # -designs 设计限定不受 v251 支持（真机核实 FAIL，2026-10-13）——
+    # 发射前结构化 fail-closed（零进程零许可），绝不带假限定静默 solve-all。
+    if design or setup:
+        return _fail_result(
+            errors=[_DESIGNS_UNSUPPORTED_MSG],
+            project=str(project), project_kind=kind, elapsed=_elapsed(started))
+
     exe_path = find_ansysedt_exe(ansysedt_exe)
     if exe_path is None:
         return _fail_result(
             errors=["未找到 ansysedt.exe：RFAUTO_AEDT_PATH 未设置且自动"
                     "探测未发现安装（可设 RFAUTO_AEDT_PATH=<AEDT 版本目录>，"
-                    "如 <安装盘>:\\ANSYSINC\\ANSYS Inc\\v251，或显式传 ansysedt_"
+                    "如 E:\\ANSYSINC\\ANSYS Inc\\v251，或显式传 ansysedt_"
                     "exe=<...>/ansysedt.exe）"],
             project=str(project), project_kind=kind,
             elapsed=_elapsed(started))

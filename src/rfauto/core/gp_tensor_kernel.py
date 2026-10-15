@@ -4,7 +4,7 @@
 Its Application to the Design of 3D Printed Antennas"；配套数据 GitHub
 xichennn/GP_dataset——仓库只含 CSV 数据集、无核代码：方法层双源
 （arXiv abstract + repo README），**核心式单源**（arXiv HTML 全文
-Eq.7-9，如实标注）：
+Eq.7-9，如实标注））：
 
 - 论文把 IMED（Image Euclidean Distance，图像欧氏距离）嵌入标准 RBF：
   k(𝒳,𝒳') = σ²·exp(−d_IMED(𝒳,𝒳')/(2l))（Eq.8），其中

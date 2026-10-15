@@ -42,6 +42,7 @@
   "solid-import",
   "port-gate",
   "lint",
+  "pool-patrol",
   "models",
   "jobs",
   "cache",
@@ -62,6 +63,7 @@
   "solvers",
   "calc",
   "vna",
+  "oracle",
   "bench",
   "bands",
   "campaign",
@@ -100,6 +102,7 @@
   "zenodo",
   "few-shot",
   "hints",
+  "pitfalls",
   "dag",
   "fault-tree",
   "datasheet",
@@ -110,7 +113,9 @@
   "dev",
   "design",
   "sandbox",
-  "edb"
+  "edb",
+  "recast",
+  "rest"
  ],
  "leaf_paths": [
   "rfauto doctor",
@@ -155,6 +160,7 @@
   "rfauto solid-import",
   "rfauto port-gate",
   "rfauto lint",
+  "rfauto pool-patrol",
   "rfauto models list",
   "rfauto models docs",
   "rfauto jobs status",
@@ -225,6 +231,9 @@
   "rfauto vna replay",
   "rfauto vna measure",
   "rfauto vna calibrate",
+  "rfauto oracle list",
+  "rfauto oracle check",
+  "rfauto oracle check-all",
   "rfauto bench goldset",
   "rfauto bench agentbench",
   "rfauto bench level2",
@@ -324,6 +333,8 @@
   "rfauto fab export",
   "rfauto remote probe",
   "rfauto remote status",
+  "rfauto remote resources",
+  "rfauto remote queue",
   "rfauto stats guardband",
   "rfauto stats cpk",
   "rfauto stats weibull",
@@ -348,6 +359,8 @@
   "rfauto zenodo validate",
   "rfauto few-shot build",
   "rfauto hints list",
+  "rfauto pitfalls search",
+  "rfauto pitfalls get",
   "rfauto dag run",
   "rfauto dag status",
   "rfauto fault-tree report",
@@ -370,8 +383,11 @@
   "rfauto sandbox promote",
   "rfauto edb build",
   "rfauto edb solve",
-  "rfauto edb status"
+  "rfauto edb status",
+  "rfauto recast status",
+  "rfauto recast replay",
+  "rfauto rest schema"
  ],
- "n_leaves": 258,
- "n_top": 111
+ "n_leaves": 269,
+ "n_top": 116
 }

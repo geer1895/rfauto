@@ -55,14 +55,16 @@ class TestNetworkPinned:
         # 全部 HTTP 收敛在 _http_get 单点（monkeypatch 目标稳定）
         assert callable(lw._http_get)
 
-    def test_watch_without_injection_refuses_env_free_network(self, monkeypatch):
+    def test_watch_without_injection_refuses_env_free_network(self, monkeypatch,
+                                                              tmp_path):
         # 拔网：把 _http_get 换成必炸哨兵——watch 内部必须走到它（说明
-        # 没有绕过单点的旁路 HTTP），异常被记 parse_error 不静默成功
+        # 没有绕过单点的旁路 HTTP），异常被记 parse_error 不静默成功。
+        # ledger 走 tmp_path（#144 cwd 相对路径曾污染仓根误提交 unused.jsonl）
         def _boom(url, timeout):
             raise AssertionError(f"真网调用逃逸：{url}")
 
         monkeypatch.setattr(lw, "_http_get", _boom)
-        r = watch(["antenna"], ledger_path=Path("unused.jsonl"))
+        r = watch(["antenna"], ledger_path=tmp_path / "ledger.jsonl")
         # 哨兵异常 → 每查询一次 parse_error，零条目零登记
         assert r["n_parse_error"] >= 1 and r["n_new"] == 0
 

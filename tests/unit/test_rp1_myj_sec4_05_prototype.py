@@ -1,7 +1,7 @@
 """RP-1 复现卡 3/5：MYJ §4.05 原型表（G. L. Matthaei, L. Young, E. M. T. Jones,
 《Microwave Filters, Impedance-Matching Networks, and Coupling Structures》
 1964，§4.05 低通原型元件值表——最平坦 Table 4.05-1 系 + 切比雪夫系）。
-RP-1 首批"现双路径互证升级为正式复现卡"（研究扩充 round19 §一；
+RP-1 首批"现双路径互证升级为正式复现卡"（docs/research_expansion_20261002_round19.md §一；
 既有双路径=tests/unit/test_lc_filter.py 路径 B1/B2/B3，本卡升级为逐值回收的
 论文锚卡，消费三内核：lc_filter.cauer_ladder_gk（scipy Darlington）、
 synthesis.chebyshev_lpf_g_values（内嵌表）、diplexer_compose（Butterworth 表）。

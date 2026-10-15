@@ -20,3 +20,36 @@ nominal_params:
   iso_len_mm: 17.75
 topology: Gysel 高隔离功分器（1975 六节 λ/4 环，P2⑪ L-jog 等长拓扑重设计 2026-09-16）：P1—70.7Ω λ/4 臂—P2/P3；P2/P3—50Ω λ/4 隔离线（竖直段 YJ=iso_len−jog + 顶端横移 jog=|arm_len−iso_len| 保电长度）—Δ1/Δ2（x=±iso_len，各接 50Ω LumpedElement 端接，隔离负载外置）；Δ1—50Ω λ/2 桥带（跨度 2·iso_len=λ/2 精确，中点开路）—Δ2。矩形旧版（Δ 在角部、桥带继承 2·arm_len，+2.32% 二阶偏差）为历史口径（#211）
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；三带缘+jog 顶边带缘+Δ 节点负载盒边精确入网（#198）；jog 横移 0.412mm ≈1 网格胞（0.4mm 档），Δ 缘与竖边带缘最小间距=jog≫1µm（#152 守卫）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: Gysel 高隔离功分器：六 λ/4 电气段——P1 经两臂 √2·Z0 分送 P2/P3，P2/P3
+      各经 Z0 隔离线接外置 50Ω 负载（Δ1/Δ2），Δ1/Δ2 间再以 Z0 λ/2 桥带相连（中点
+      M 为对称面真实节点）。与 Wilkinson 的本质差别：隔离负载外置可独立散热 →
+      大功率口径；λ/2 桥带是隔离的必要环节（无桥带朴素拓扑带心 S21≈−6.5dB 判废，
+      #206 理论核验轮定版）。
+    derivations:
+    - claim: 偶/奇模半电路（对称面：偶模虚开路/奇模虚地，P1 的 Z0 在半电路拆半为 2Z0）：偶模——臂 λ/4 把 2Z0 变换为 Z0（Γe=0），桥带半段 λ/4 端接虚开路 → 短路压 Δ 点 → 隔离线 λ/4 变开路（负载支路在输出端不可见）；奇模——P1/M 虚地使臂与桥带半段变开路，输出只见 λ/4 隔离线端接 Z0 → Γo=0；由此 S22=(Γe+Γo)/2=0、S32=(Γe−Γo)/2=0（f0 精确匹配+隔离）
+      formula: 臂阻抗 = √2·Z0；Zin,e = Z0 = Zin,o；S32 = (Γe−Γo)/2 = 0（f0 精确隔离）
+      source: calc_families/gysel_core.py（gysel_core_synthesize docstring——#206 定版拓扑+半电路推导+判废锚）+ knowledge/anchors.yaml（gysel.s32_iso 真机锚）
+    - claim: f0 理想三口 S 与精确频响：S21=S31=−j/√2（臂 −90°+均分）；频响面=五线六节点导纳网络精确解（Y_self=−j·cotθ/Zc、Y_mutual=j/(Zc·sinθ)；桥带按 M 拆两段规避 θ=kπ 奇异），耗散守恒残差字段构造恒成立（内负载吸收 → 非无耗不幺正，如实注记）
+      formula: S21 = S31 = −j/√2；|a1|² = Σ|b_k|²+|V_Δ1|²/Z0+|V_Δ2|²/Z0
+      source: core/calculators.py（计算器注册面）转引 calc_families/gysel_core.py（gysel_frequency_response docstring）+ U. Gysel, IEEE MTT-S Int. Microwave Symposium（1975，原始拓扑，venue 级）
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（臂电长度——匹配+均分主量）
+  - param: iso_len_mm
+    order: 2
+    basis: 隔离线 λ/4 口径（S32 隔离与负载支路不可见性的电长度）
+  - param: w_arm_mm
+    order: 3
+    basis: 臂阻抗 √2·Z0 口径（线宽失配即耦合度/回损平台，R006 同族机理）
+  - param: w_feed_mm
+    order: 4
+    basis: 50Ω 端口馈线（匹配面弱敏感）
+  - param: er
+    order: 5
+    basis: 经 εeff(w) 进入全部 λ/4 电长度（f0 ∝ 1/√εeff）
+  quiz_refs: []

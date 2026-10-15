@@ -1,4 +1,4 @@
-"""WP4.4b PCB 寄生提取链 service 编排（续跑计划 §4 WP4.4b）。
+"""WP4.4b PCB 寄生提取链 service 编排（延续计划 §4 WP4.4b）。
 
 JSON 进出薄编排：把 KiCad pcell/DRC 链与 core/parasitic 确定性内核串成
 PCB 无源/互连 RLC 提取链路::
@@ -34,9 +34,10 @@ adapters/q3d_adapter.Q3dAdapter.solve() 产出后，把 extracted 结果
 
 输出::
 
-    {"ok": true, "chain": {"geometry": ..., "drc": ..., "anchor": ...,
-                           "q3d": {...verdict} | null}}
-非法输入/DRC 门不过：{"ok": false, "error"|"stage": ...}（确定性、可序列化）。
+    {"ok": true, "schema_version": ..., "chain": {"geometry": ..., "drc": ...,
+                           "anchor": ..., "q3d": {...verdict} | null}}
+非法输入/DRC 门不过：{"ok": false, "errors": [...], "schema_version", ...}
+（确定性、可序列化；DRC 门失败带 stage="drc" 与 drc 明细）。
 """
 
 from __future__ import annotations
@@ -58,7 +59,16 @@ from rfauto.core.parasitic import (
     interconnect_rlc_anchor,
     microstrip_lc_per_length,
 )
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：失败信封单数 ``error``
+#: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读
+#: 规则 2 口径的破坏性形状变更，按 §2 规则升位；DRC 门不过的 stage 失败形
+#: 同笔统一进 errors（stage/drc 诊断键保留，``stage=="drc"`` 消费判据
+#: 不变——CLI scattered 薄壳+MCP 薄壳透传 grep 实测）。消费测试
+#: （tests/unit/test_parasitic_service.py）同笔迁移。1.0=首批推广口径。
+PARASITIC_SERVICE_SCHEMA_VERSION = "1.1"
 
 #: 最小线宽规则默认值（= adapters/kicad_drc.DEFAULT_RF_RULES 的 min_trace_width）
 DEFAULT_MIN_TRACE_WIDTH_MM = 0.1
@@ -205,8 +215,9 @@ def _run_drc_gate(pcb: Mapping[str, Any], drc: Mapping[str, Any],
 def extract_interconnect_rlc(payload: Mapping[str, Any]) -> dict[str, Any]:
     """PCB 互连 RLC 提取链编排：pcell 几何 → DRC 门 → 闭式锚 →（Q3D 注入对比）。
 
-    Raises 不外泄：任何 ValueError 转成 {"ok": False, "error": str}；
-    DRC 门不过返回 {"ok": False, "stage": "drc", ...}（不进提取）。
+    Raises 不外泄：任何 ValueError 转成 {"ok": False, "errors": [str]}；
+    DRC 门不过返回 {"ok": False, "errors", "stage": "drc", "drc": ...}
+    （不进提取）。
     """
     try:
         src = _as_mapping(payload, "payload")
@@ -252,7 +263,10 @@ def extract_interconnect_rlc(payload: Mapping[str, Any]) -> dict[str, Any]:
             drc_out = _run_drc_gate(pcb, drc_cfg, eps_eff, freq_ghz)
             drc_out["enabled"] = True
         if not drc_out["passed"]:
-            return {"ok": False, "stage": "drc", "drc": drc_out}
+            return error_envelope(
+                "RF-DRC 门不过（不进提取）",
+                schema_version=PARASITIC_SERVICE_SCHEMA_VERSION,
+                stage="drc", drc=drc_out)
 
         # ── RLC 闭式锚（core 单一实现）───────────────────────────────────
         rho = substrate.get("rho_ohm_m")
@@ -293,8 +307,10 @@ def extract_interconnect_rlc(payload: Mapping[str, Any]) -> dict[str, Any]:
                 "dc_r_reference_ohm": anchor["dc_r_ohm"],
             }
     except ValueError as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=PARASITIC_SERVICE_SCHEMA_VERSION)
     return ok_envelope(
+        schema_version=PARASITIC_SERVICE_SCHEMA_VERSION,
         chain={
         "geometry": {
             "primary_trace": primary,

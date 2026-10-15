@@ -1,6 +1,6 @@
 """F-J.4 RF 工艺角五角 worst-case 集（确定性极值版 = MC 注入链的确定性投影）。
 
-定位（研究扩充 round5 §三件 4）：给 PCB 制造工艺
+定位（docs/research_expansion_20260926_round5.md §三件 4）：给 PCB 制造工艺
 波动一个**确定性**的 2^5=32 角全枚举极值集——每参数取 (nominal, lo, hi)
 三元组的两端，角向量全枚举即蒙特卡洛注入链的确定性投影（MC 采样支撑集的
 端点；角间 spread 是工艺波动对响应影响的上界估计）。与 core/pce.py 的

@@ -34,3 +34,36 @@ mesh_note: 'mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50�
 smoke_note: 离线审计先行（#212，test_ta_wave_a_templates）；近似级别如实登记：准静态/零厚带/PEC
   地/无色散，设计链=FD 裁判反演（文献闭式不可达——core/inverted_ms docstring 如实账）；
   真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 倒置微带：金属/介质 z 序对调——条带悬在空气隙顶、基板覆在条带上方，空气填充率高使 εeff 显著低于同叠层微带（1.25 vs ~2.86）。典型用于低速微波/毫米波低色散布线与滤波器基板悬浮腔；常见误用=文献闭式不可达时凭记忆补系数——本仓以
+      FD 裁判反演为设计链（内核 docstring 如实账）。
+    derivations:
+    - claim: FD 准静态裁判链（零厚带/PEC 地/无色散近似级别如实登记）
+      formula: Z0(w, h_air, h_sub, εr)（名义 2.1359mm → 49.999Ω）
+      source: 本仓 core/inverted_ms（inverted_ms_fd 单源；docs/templates/inverted_ms/meta.yaml smoke_note（文献闭式不可达如实账））
+  sensitivity_ranking:
+  - param: h_air_mm
+    order: 1
+    basis: 空气隙高=倒置定义参数（空气份额主控）；登记表 0.6722
+  - param: w_mm
+    order: 2
+    basis: 线宽；登记表 0.6210
+  - param: er
+    order: 3
+    basis: 填充加权（空气份额高故弱）；登记表 0.1044
+  - param: h_sub_mm
+    order: 4
+    basis: 上覆基板厚（次级填充）；登记表 0.0512
+  - param: h_mm
+    order: 5
+    basis: 历史名义字段（目标式消费 h_sub_mm，登记表 0）
+  - param: line_len_mm
+    order: 6
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

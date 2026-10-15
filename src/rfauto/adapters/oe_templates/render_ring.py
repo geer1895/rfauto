@@ -15,7 +15,7 @@ from .registry import (
 )
 
 # ═══ §F-A M3 环形谐振器 ring_resonator（2026-09-26 F-A P2 前置段）══════════════
-# 方案锚：研究扩充 F-A §2 M3——微带环形谐振器作
+# 方案锚：docs/research_expansion_20260926.md F-A §2 M3——微带环形谐振器作
 # 介质参数提取 fixture（同一工件三用：提取 fixture / 引擎 β 仲裁锚 / VNA 实测
 # 样片），闭式 f_n ≈ n·c/(2π·r_mean·√εeff)；tanδ 走 Q 分离
 # （1/Q_L = 1/Q_d + 1/Q_c + 1/Q_r）。提取内核（core/dielectric_extract.py）与

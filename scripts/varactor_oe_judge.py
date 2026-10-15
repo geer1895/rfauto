@@ -880,7 +880,7 @@ def _write_md(r: dict, path: Path) -> None:
             f"峰值包络斜率 {en['peaks_slope_db_per_ns']:.3f}dB/ns（R2="
             f"{en['peaks_fit_r2']:.3f}）-> **形态 {_SHAPE_TXT.get(shape, shape)}"
             + (f"/{en['ring_subclass']}" if en.get("ring_subclass") else "") + "**；"
-            f"晃动频率 {en['slosh_freq_hz'] / 1e9:.3f}GHz（2="
+            f"晃动频率 {en['slosh_freq_hz'] / 1e9:.3f}GHz（/2="
             f"{en['slosh_mode_if_single_hz'] / 1e9:.3f}GHz，"
             f"与主音一致={en.get('slosh_half_matches_tone')}）；"
             + (f"Q_eff≈{en['q_eff_energy']:.0f}"

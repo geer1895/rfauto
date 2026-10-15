@@ -4,7 +4,7 @@
 configs/remote_machines.local.yaml 覆盖凭据，gitignore）→ TCP 探活 →
 SSH 传输（paramiko 懒加载，可选依赖 ``rfauto[remote]``）。
 
-设计约束：
+设计约束（AGENTS）：
 
 - **无配置=零行为变化**：配置文件不存在时 load 返回空表，adapter/service
   全部走本地路径，与无本模块时逐字节同行为。
@@ -20,7 +20,7 @@ SSH 传输（paramiko 懒加载，可选依赖 ``rfauto[remote]``）。
   error 醒目告警仍放行；``RFAUTO_SSH_STRICT=1``=严格档（无落档指纹/
   不匹配拒连）。全量严格（缺省即拒）等 mTLS 通道一起收口。
 
-服务器侧版本口径：远程 AEDT 必须
+服务器侧版本口径（AGENTS 规则 0，2026-09-28 勘误后）：远程 AEDT 必须
 与本机同版本（PyAEDT gRPC 客户端-服务端版本配对 + HFSS=对齐基准的数值
 可比性）；服务器仅以 ``ansysedt -grpcsrv <port>`` 监听，无需装 pyaedt。
 """
@@ -707,7 +707,7 @@ class SshTransport:
     ----------
     fingerprint_store_path : str | Path | None
         主机指纹账本路径（E3-3）；None=:func:`default_fingerprint_store_path`
-        （仓根 runs）。测试/多账本场景注入，生产路径不传。
+        （仓根 runs/）。测试/多账本场景注入，生产路径不传。
     """
 
     def __init__(

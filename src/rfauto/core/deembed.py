@@ -61,7 +61,7 @@ import skrf
 #: 真空光速 (m/s)，与 core/synthesis.py 同口径
 C0 = 299_792_458.0
 
-#: #205 定版的探针尺度常数与半宽（独立来源裁判，禁止改成本项恰好通过的值）
+#: #205  定版的探针尺度常数与半宽（独立来源裁判，禁止改成本项恰好通过的值）
 DOCUMENTED_VIA_SCALE = 1.0491
 DOCUMENTED_VIA_SCALE_HALF_WIDTH = 0.0011
 

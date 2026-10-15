@@ -1,8 +1,8 @@
 """F-B P2：电源完整性（PI/PDN）service 面（JSON 进出，规则 4；CLI/MCP 是薄壳）。
 
 消费 core/pdn.py 闭式族（F-B.1 P1 已落地；本服务零物理公式，全部数字出自
-确定性内核，铁律 7）。三入口（方案 研究扩充
-§F-B 第 3 节文件面级分解）：
+确定性内核，铁律 7）。四入口（方案 docs/research_expansion_20260926.md
+§F-B 第 3 节文件面级分解；第四入口=PK-2 垂直叠层 2026-10-08 本席接线）：
 
 - :func:`pdn_analyze`：decap 库/内联规格 + VRM + 平面几何 → Z 谱 + 逐频
   裕量 + 反谐振峰清单（峰频 + Q 估计）+ 腔模清单；
@@ -11,7 +11,10 @@
   裕量；infeasible 如实透传（不凑解语义由内核保证）；
 - :func:`pdn_gate`：KiCad AC-PI 门（fab DFM 门同框架的薄面）——平面腔模
   筛查（f_mn vs 关注带）+ 安装位置避让判据 +（可选）Z 谱裕量门，verdict
-  PASS/FAIL/UNKNOWN 三值。
+  PASS/FAIL/UNKNOWN 三值；
+- :func:`pdn_vertical_analyze`：垂直叠层（on-die→interposer→基板→PCB）
+  梯形级联 Z 谱 + 反谐振峰层对归因 +（可选）超标峰去耦建议——
+  core/pdn_vertical（SB22-4b W4-D 已落内核）的 JSON 薄壳。
 
 **KiCad 提取面现状（B5-5 已落，如实登记）**：:func:`pdn_power_pairs` 从
 .kicad_pcb **文本 s-expression**（不走 pcbnew 子进程）提取电源对——网分类
@@ -65,15 +68,23 @@ from rfauto.core.pdn import (
     plane_cavity_modes,
     target_impedance_freq,
 )
+from rfauto.core.pdn_vertical import (
+    LayerSpec,
+    array_equivalent_inductance,
+    find_anti_resonance_peaks,
+    plane_pair_capacitance,
+    suggest_decaps_for_violations,
+    vertical_pdn_impedance,
+)
 
 # F-13 批 2（W6-E）：payload 解析助手单源化——_num/_require_payload_dict
 # 自 service/_helpers 别名 import（W2-G 批 1 同款，#116 旧副本删净）；
 # pdn 本地副本三处文案分歧（bool/positive/nonneg）与 None 语义（本地
 # 「必须是数字，实际 None」vs 单源「缺失」）统一为单源文案——ok=False
-# 语义逐位不变，文案变更已声明（W6-E 报告/口径）。
+# 语义逐位不变，文案变更已声明（W6-E 报告/ 口径）。
 from rfauto.service._helpers import parse_num as _num
 from rfauto.service._helpers import require_payload_dict as _require_payload_dict
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）
 PDN_SERVICE_SCHEMA_VERSION = "1.0"
@@ -871,3 +882,193 @@ def pdn_power_pairs(payload: dict[str, Any]) -> dict[str, Any]:
     except (KeyError, TypeError, ValueError, OSError) as exc:
         return {"ok": False, "schema_version": PDN_SERVICE_SCHEMA_VERSION,
                 "errors": [str(exc)]}
+
+
+# ─── PK-2 垂直叠层 PDN（core/pdn_vertical 薄壳，2026-10-08 本席接线） ─────────
+
+#: 垂直叠层 PDN service schema 版本（与 PDN_SERVICE_SCHEMA_VERSION 分轨：
+#: 内核/信封演进互不牵连）
+PDN_VERTICAL_SCHEMA_VERSION = "1.0"
+
+
+def _vertical_layers_from(
+    raw: Any, errors: list[str]
+) -> list[LayerSpec] | None:
+    """payload.layers → [LayerSpec]（plane 几何/via_array 阵列电感在壳内
+    消费 core 单源回填，零新公式）。"""
+    if not isinstance(raw, list) or not raw:
+        errors.append(f"layers 必须是非空列表，实际 {raw!r}")
+        return None
+    out: list[LayerSpec] = []
+    for i, item in enumerate(raw):
+        if not isinstance(item, dict):
+            errors.append(f"layers[{i}] 必须是对象，实际 {item!r}")
+            return None
+        name = str(item.get("name", f"layer_{i}"))
+        # 平面对电容：显式 c_plane_f 或 plane 几何（后者走
+        # core.pdn_vertical.plane_pair_capacitance 单源，附腔模口径回填）。
+        if item.get("plane") is not None:
+            plane = item["plane"]
+            if not isinstance(plane, dict):
+                errors.append(f"layers[{i}].plane 必须是对象，实际 {plane!r}")
+                return None
+            try:
+                pp = plane_pair_capacitance(
+                    float(plane["a_m"]), float(plane["b_m"]),
+                    float(plane["gap_m"]), float(plane["er"]))
+            except (KeyError, TypeError, ValueError) as exc:
+                errors.append(f"layers[{i}].plane 非法: {exc}")
+                return None
+            c_plane, f_cav = pp["c_f"], pp["f_cavity1_hz"]
+        elif item.get("c_plane_f") is not None:
+            c_num = _num(item.get("c_plane_f"), f"layers[{i}].c_plane_f",
+                         errors, positive=True)
+            if c_num is None:
+                return None
+            c_plane, f_cav = c_num, math.inf
+        else:
+            errors.append(
+                f"layers[{i}] 缺平面对电容（给 c_plane_f 或 plane 几何）")
+            return None
+        l_num = None
+        if item.get("via_array") is not None:
+            va = item["via_array"]
+            if not isinstance(va, dict):
+                errors.append(f"layers[{i}].via_array 必须是对象，实际 {va!r}")
+                return None
+            try:
+                arr = array_equivalent_inductance(
+                    int(va["n_x"]), int(va["n_y"]), float(va["length_m"]),
+                    float(va["radius_m"]), float(va["pitch_x_m"]),
+                    float(va["pitch_y_m"]))
+            except (KeyError, TypeError, ValueError) as exc:
+                errors.append(f"layers[{i}].via_array 非法: {exc}")
+                return None
+            l_num = float(arr["l_eff_h"])
+        elif item.get("l_array_h") is not None:
+            l_num = _num(item.get("l_array_h"), f"layers[{i}].l_array_h",
+                         errors)
+            if l_num is None:
+                return None
+            if l_num < 0.0:
+                errors.append(
+                    f"layers[{i}].l_array_h 必须非负，实际 {l_num!r}")
+                return None
+        else:
+            errors.append(
+                f"layers[{i}] 缺向下阵列电感（给 l_array_h 或 via_array）")
+            return None
+        decaps_raw = item.get("decaps", [])
+        if not isinstance(decaps_raw, list):
+            errors.append(f"layers[{i}].decaps 必须是列表，实际 {decaps_raw!r}")
+            return None
+        decaps: list[tuple[float, ...]] = []
+        for j, dec in enumerate(decaps_raw):
+            if not isinstance(dec, (list, tuple)) or len(dec) not in (3, 4):
+                errors.append(
+                    f"layers[{i}].decaps[{j}] 必须是 (c,esr,esl[,mount]) "
+                    f"三/四元组，实际 {dec!r}")
+                return None
+            nums: list[float] = []
+            for k, v in enumerate(dec):
+                nv = _num(v, f"layers[{i}].decaps[{j}][{k}]", errors)
+                if nv is None:
+                    return None
+                nums.append(nv)
+            decaps.append(tuple(nums))
+        out.append(LayerSpec(
+            name=name, c_plane_f=c_plane, l_array_h=l_num,
+            decaps=tuple(decaps),
+            er=float(item["plane"]["er"]) if item.get("plane") else 1.0,
+            f_cavity1_hz=f_cav))
+    return out
+
+
+def pdn_vertical_analyze(payload: dict[str, Any]) -> dict[str, Any]:
+    """垂直叠层 PDN 阻抗谱报告（JSON 进出；core/pdn_vertical 薄壳，零数值逻辑）。
+
+    垂直链模型：层序 layers[0]=最上（负载侧）→layers[-1]=最下；每层
+    并联节点=平面对电容∥挂点去耦，串联支路=该层向下垂直阵列等效电感
+    （bump/TGV/BGA 阵列折减，core.pdn_vertical.array_equivalent_inductance
+    单源）；梯形级联拓扑与适用域预声明见 core 模块 docstring。
+
+    Args:
+        payload:
+            f_axis 或 f_start/f_stop/n_points(+scale)（同 :func:`pdn_analyze`）；
+            layers: [{name?, c_plane_f | plane{a_m,b_m,gap_m,er},
+            l_array_h | via_array{n_x,n_y,length_m,radius_m,pitch_x_m,
+            pitch_y_m}, decaps?: [[c,esr,esl(,mount)],...]}，≥1 条]；
+            vrm: {r0,l0,r1,l1} 可选（缺省=理想源 0Ω，退化语义见内核）；
+            peaks: bool 缺省 True（反谐振峰定位+层对归因）；
+            suggestions: {z_target_ohm, candidates: [[c,esr,esl(,mount)],...],
+            attach_layer?} 可选（超标峰去耦建议，判读文本不自动改设计）。
+
+    Returns:
+        {ok, schema_version, f_hz, z_mag_ohm, z_re_ohm, n_layers,
+        layer_details, cavity_flags, peaks?, suggestions?, note}；
+        契约错误 → {ok: False, errors}（同 :func:`pdn_analyze` 家族口径）。
+    """
+    try:
+        payload = _require_payload_dict(payload)
+        errors: list[str] = []
+        freqs = _build_freq_axis(payload, errors)
+        layers = _vertical_layers_from(payload.get("layers"), errors)
+        vrm_raw = payload.get("vrm")
+        vrm: VrmModel | None = None
+        if vrm_raw is not None:
+            if not isinstance(vrm_raw, dict):
+                errors.append(f"vrm 必须是对象，实际 {vrm_raw!r}")
+            else:
+                try:
+                    vrm = VrmModel(
+                        r0=float(vrm_raw["r0"]), l0=float(vrm_raw["l0"]),
+                        r1=float(vrm_raw["r1"]), l1=float(vrm_raw["l1"]))
+                except (KeyError, TypeError, ValueError) as exc:
+                    errors.append(f"vrm 非法: {exc}")
+        sug_raw = payload.get("suggestions")
+        if sug_raw is not None and not isinstance(sug_raw, dict):
+            errors.append(f"suggestions 必须是对象，实际 {sug_raw!r}")
+        if errors or freqs is None or layers is None:
+            return error_envelope(errors,
+                                  schema_version=PDN_VERTICAL_SCHEMA_VERSION)
+        out = ok_envelope(schema_version=PDN_VERTICAL_SCHEMA_VERSION)
+        core = vertical_pdn_impedance(layers, vrm, freqs)
+        out["f_hz"] = [float(x) for x in core["f_hz"]]
+        out["z_mag_ohm"] = _float_list(core["z_abs"])
+        out["z_re_ohm"] = _float_list(core["z_real"])
+        out["n_layers"] = core["n_layers"]
+        out["layer_details"] = core["layer_details"]
+        out["cavity_flags"] = [bool(x) for x in core["cavity_flags"]]
+        out["note"] = core["note"]
+        if payload.get("peaks", True):
+            out["peaks"] = find_anti_resonance_peaks(
+                freqs, core["z_abs"], layers)
+        if sug_raw is not None:
+            z_target = _num(sug_raw.get("z_target_ohm"),
+                            "suggestions.z_target_ohm", errors, positive=True)
+            cand_raw = sug_raw.get("candidates")
+            candidates: list[tuple[float, ...]] = []
+            if not isinstance(cand_raw, list) or not cand_raw:
+                errors.append("suggestions.candidates 必须是非空列表")
+            else:
+                for j, dec in enumerate(cand_raw):
+                    if (not isinstance(dec, (list, tuple))
+                            or len(dec) not in (3, 4)):
+                        errors.append(
+                            f"suggestions.candidates[{j}] 须 (c,esr,esl"
+                            f"[,mount]) 三/四元组，实际 {dec!r}")
+                        break
+                    nums = tuple(float(x) for x in dec)
+                    candidates.append(nums)
+            if errors:
+                return error_envelope(
+                    errors, schema_version=PDN_VERTICAL_SCHEMA_VERSION)
+            assert z_target is not None  # errors 非空时已提前返回
+            sug = suggest_decaps_for_violations(
+                layers, vrm, freqs, z_target, candidates,
+                attach_layer=sug_raw.get("attach_layer"))
+            out["suggestions"] = sug
+        return out
+    except (KeyError, TypeError, ValueError) as exc:
+        return error_envelope([str(exc)],
+                              schema_version=PDN_VERTICAL_SCHEMA_VERSION)

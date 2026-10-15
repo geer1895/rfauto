@@ -1,4 +1,4 @@
-"""XC-P 精度档案锚树（specs 规格深案 §B-3，2026-10-02）。
+"""XC-P 精度档案锚树（specs docs/plan_deepdive_specs_20261002.md §B-3，2026-10-02）。
 
 五面锚（specs §B-3 载体裁决=三载体缺一即漂移）：
 1. KD-1 同款收集器——YAML 键集 × KERNEL_MODULES 键集 × 各内核 docstring

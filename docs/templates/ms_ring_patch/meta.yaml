@@ -23,7 +23,7 @@ extraction: >-
   2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl
   对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变，
   _port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读出，空波导标定
-  EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/stage2/smoke_report.json）。
+  EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/stage2/wg_sim/smoke_report.json）。
   波导模拟器≡无限阵@θ=0，E∥x 极化前提；|S11|≈1 的 argΓ 逐 patch_px 入反射
   相位 LUT；健康判据=|Γ| 线性域 ≈1
 topology: >-
@@ -53,3 +53,30 @@ nominal_derivation: |-
   λ0/(2√εeff(w)) 不动点（Hammerstad，复用 ms_patch_resonant_len_mm）=8.5406；
   h=1.524（60mil 板材，同 ms_patch）。扫描变量=patch_px_mm（贴片谐振扫过
   f0 为主谐振段+环/槽环境第二谐振=双谐振宽摆幅机理，段④ J1c ≥300° 实证）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 方环+内贴片双谐振单元：外环/槽环境给第二谐振、内贴片给主谐振——双谐振叠摆使单元反射相位覆盖 ≥300°（J1c 实证）。典型用于宽摆幅反射阵；常见误用=只扫内贴片尺寸——相位摆幅是双谐振耦合的结果，环/槽几何同时进入第二谐振。
+    derivations:
+    - claim: 双谐振机理：主谐振=内贴片 λ0/(2√εeff) 不动点+环/槽第二谐振
+      formula: patch_px = c/(2*f0*sqrt(εeff(patch_px))) ; void = 0.4λ0 ; ring_w = λg/40
+      source: 本仓 core/metasurface_lut（ms_patch_resonant_len_mm 复用单源；docs/templates/ms_ring_patch/meta.yaml
+        nominal_derivation（段④ J1c ≥300° 实证））
+  sensitivity_ranking:
+  - param: patch_px_mm
+    order: 1
+    basis: 内贴片主谐振主维（扫描变量）；登记表 1.0424
+  - param: er
+    order: 2
+    basis: 填充加权；登记表 0.4629
+  - param: h_mm
+    order: 3
+    basis: 板厚经 εeff 弱进入；登记表 0.0424
+  - param: period_mm
+    order: 4
+    basis: 阵格不进单元谐振式（登记表 0）
+  - param: tan_d
+    order: 5
+    basis: 损耗角不进谐振式（登记表 0）
+  quiz_refs: []

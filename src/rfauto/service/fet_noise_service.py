@@ -3,7 +3,7 @@
 消费 core/fet_noise.py 确定性内核（全部物理数字出自内核，规则 7），本服务
 零物理公式：入参 payload → 白名单收敛 → 内核四参 + 可选等噪声圆组/LNA 匹配
 建议/fT/Fukui 对照 → JSON 信封返回。任何入参异常（缺键/非法值/内核
-ValueError）→ ``ok=False`` + error 文案，**不抛**（服务层信封纪律）。
+ValueError）→ ``ok=False`` + ``errors`` 文案列表，**不抛**（服务层信封纪律）。
 
 payload 约定（全部可选除 model/f_hz/tg_k/td_k）：
     model: {cgs_f, ri_ohm, gm_s, gds_s, rg_ohm?, rs_ohm?, cgd_f?}（SI）
@@ -28,10 +28,14 @@ from rfauto.core.fet_noise import (
     pospieszalski_noise_params,
     transition_frequency_hz,
 )
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 
-#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）
-FET_NOISE_SERVICE_SCHEMA_VERSION = "1.0"
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d ENGH 席）：失败信封单数 ``error``
+#: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读规则 2
+#: 口径的破坏性形状变更，按 §2 规则升位；消费面（tests/unit/test_fet_noise.py）
+#: 同笔迁移，无 CLI/MCP/UI 消费者（grep 实测）。1.0=首批推广口径。
+FET_NOISE_SERVICE_SCHEMA_VERSION = "1.1"
 
 _MODEL_KEYS = ("cgs_f", "ri_ohm", "gm_s", "gds_s", "rg_ohm", "rs_ohm", "cgd_f")
 _MODEL_REQUIRED = ("cgs_f", "ri_ohm", "gm_s", "gds_s")
@@ -122,5 +126,4 @@ def fet_noise_evaluate(payload: dict) -> dict:
             }
         return ok_envelope(schema_version=FET_NOISE_SERVICE_SCHEMA_VERSION, data=data)
     except (KeyError, TypeError, ValueError) as exc:
-        return {"ok": False, "schema_version": FET_NOISE_SERVICE_SCHEMA_VERSION,
-                "error": str(exc)}
+        return error_envelope(str(exc), schema_version=FET_NOISE_SERVICE_SCHEMA_VERSION)

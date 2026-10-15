@@ -84,10 +84,10 @@ _OUR_OVERRIDES: dict[str, str] = {
     "read_hfss_touchstone_comments": "校准",  # HFSS 仲裁读回=校准对拍面
     "diagnose": "知识",               # run 诊断→知识/诊断域（explain 家族）
     "compare_runs": "后处理",
-    # edb 快车道批（2026-10-13 CI 合流钉补；语义按 mcp_tools/edb.py docstring）
-    "edb_emit_spec": "建模",      # 声明式 spec 发射（synthesis 闭式产尺寸）
-    "edb_build_solve": "求解",    # 建库+ansysedt 批解
-    "edb_status": "基准",         # 产物根目录资产清单（只读清点）
+    # EDB 快车道三工具（edblane W3 批，spec 发射=设计域/批解=求解域/状态=后处理域）
+    "edb_emit_spec": "建模",
+    "edb_build_solve": "求解",
+    "edb_status": "后处理",
 }
 
 _UNMAPPED = "未映射"

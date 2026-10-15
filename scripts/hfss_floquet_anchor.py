@@ -1,7 +1,7 @@
 """DP-4 J4c HFSS Floquet 对拍锚驱动（wf:goal-t15，半登记件落地）。
 
 语境（#222）：runs/df6_dp4p3/criteria.md §J4c 预声明「Γ_act,n(侧射)=Σ_m S_nm，
-报逐端口 |Γ_act| 与 |ΔΓ| vs HFSS Floquet」。
+报逐端口 |Γ_act| 与 |ΔΓ| vs HFSS Floquet」（ 四五零登记后续批）。
 本驱动=缺位的发射面（research_expansion "E3 脚本缺"）+判读一体：
 sim_host per-port grpcsrv（不碰他人实例 #261）→ 远程 attach（四开关
 remote_session_switches，§1.3）→ 单元胞 Floquet 模型（Region+lattice pair×2

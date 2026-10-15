@@ -506,7 +506,7 @@ class TestFieldService:
 
 # ─── 场页远场指标：PEC 镜像修正接线 + patch 族 η 门复议（#249；followUp ⑤）──
 #
-# 两份 meta 逐字段复刻真机 runs/ 产物（数字出自判读 json，测试不读 runs）：
+# 两份 meta 逐字段复刻真机 runs/ 产物（数字出自判读 json，测试不读 runs/）：
 # * 收敛轮 runs/patch_field_smoke_recheck/farfield_meta.json（盒底 z=0 贴 PEC 地）；
 # * 全包盒 runs/nf2ff_smoke_ff_dipole/farfield_meta.json（z_start<0，不受镜像影响）。
 
@@ -634,7 +634,11 @@ class TestFieldViewMirrorAndEtaGate:
         assert (float(m.group(1)), float(m.group(2))) == PATCH_ETA_GATE
 
     def test_frontend_renders_mirror_factor_and_eta_gate(self):
-        pages = (SRC / "rfauto" / "ui" / "static" / "pages.js").read_text(encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        _sf = SRC / "rfauto" / "ui" / "static"
+        pages = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [_sf / "pages.js", *sorted((_sf / "pages").glob("*.js"))])
         assert "m.pec_mirror_factor" in pages and "m.eta_gate" in pages
 
 
@@ -712,7 +716,10 @@ class TestUiRoutes:
 class TestStaticContracts:
     def test_frontend_wires_field_page_and_smith_mode(self):
         static = SRC / "rfauto" / "ui" / "static"
-        pages = (static / "pages.js").read_text(encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        pages = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [static / "pages.js", *sorted((static / "pages").glob("*.js"))])
         assert "field: pageField" in pages and "async function pageField()" in pages
         for token in ("function drawSmith", "sp-mode-smith", "/api/smith/", "/api/smith/external",
                       "/api/field", "function drawFieldSlice", "function drawIsoMesh",

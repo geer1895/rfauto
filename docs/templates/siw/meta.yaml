@@ -56,3 +56,40 @@ nominal_derivation: |-
   （β=298.856 rad/m 闭式、λg=21.0241，与 synthesize_siw_model 逐位同源）；R_port=Z_PV=2b·Z_TE/w_eff=22.8393Ω（渲染层精算，非手数）；
   设计规则复核：s/d=1.667≤2、d=0.6<λ_sub/5=3.134
 # XC-T 锚族补挂注记: siw.fc_te10.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 基片集成波导：两排过孔藩篱把介质板变成矩形波导，Cassivi 等效腔宽 w_eff=w−d²/(0.95·s) 把过孔离散化为实体壁——TE10 截止与导波波长全闭式。典型用于毫米波低损传输与滤波器；常见误用=过孔间距
+      s 放大省事——s/d>2 藩篱开始漏场，等效腔宽模型失效，设计规则复核 s/d≤2 必须守。
+    derivations:
+    - claim: Cassivi 等效腔宽与 TE10 截止（反解式 w=w_eff+d²/(0.95s) 的正向）
+      formula: w_eff = w - d**2/(0.95*s) ; fc10 = c/(2*w_eff*sqrt(εr))
+      source: 本仓 core/synthesis（synthesize_siw_model 同源；docs/templates/siw/meta.yaml nominal_derivation（Cassivi
+        2002 反解：w=12.1317 → w_eff=11.7528 → fc=6.6667GHz））
+    - claim: 端口阻抗口径 Z_PV=2b·Z_TE/w_eff（渲染层精算非手数）
+      formula: R_port = 2*b*Z_TE/w_eff = 22.8393 Ω
+      source: 本仓 core/synthesis（siw 综合链；docs/templates/siw/meta.yaml nominal_derivation）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 腔宽（dw 弹性=w/w_eff 解析精确 1.0322）；登记表 1.0322
+  - param: er
+    order: 2
+    basis: fc∝εr^−1/2 恒等式（精确 0.5）；登记表 0.5
+  - param: d_mm
+    order: 3
+    basis: 孔径经 w_eff 修正项进入（d²/s 通道）；登记表 0.0645
+  - param: s_mm
+    order: 4
+    basis: 孔距经 w_eff 修正项进入；登记表 0.0322
+  - param: line_len_mm
+    order: 5
+    basis: 线长不进截止式（登记表 0）
+  - param: h_mm
+    order: 6
+    basis: 板厚不进截止式（登记表 0——进 Z_PV/损耗维）
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进截止式（登记表 0）
+  quiz_refs: []

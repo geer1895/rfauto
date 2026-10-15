@@ -1,4 +1,4 @@
-"""MM-2 编码超表面方向图内核测试（规格 规格深案 §A-5，全离线零仿真）。
+"""MM-2 编码超表面方向图内核测试（规格 docs/plan_deepdive_specs_20261002.md §A-5，全离线零仿真）。
 
 锚（预声明，实现与判据同 commit）：
 - A1 全 0 码 → 均匀阵 2D sinc² 闭式逐格互证（uniform_af_closed_form 可分离积，

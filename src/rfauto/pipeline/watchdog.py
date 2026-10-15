@@ -111,8 +111,10 @@ class Watchdog:
 # 批处理进程看门扩展（2026-10-08 batch 看门批，纯追加）：单次 ansysedt
 # -BatchSolve 求解的超时/存活看门（BatchSolveWatchdog）、孤儿检测
 # （find_batch_processes / find_orphan_batch_processes）、命令行核对后
-# 点杀（kill_process_tree）与许可证席位预检（assert_license_headroom）
-# 等新概念一律实现在 rfauto.pipeline.batch_guard（依赖 infra 单源
+# 点杀（kill_process_tree）与许可证席位/RAM 预检
+# （assert_license_headroom / assert_ram_headroom，后者 2026-10-09 W11
+# 批补入门面——ge8e 审查席勘误：W11 落 batch_guard 时漏同步本 re-export
+# 门面）等新概念一律实现在 rfauto.pipeline.batch_guard（依赖 infra 单源
 # desktop_guard / license_probe）；本文件仅做 re-export 门面，既有
 # Watchdog 类与其全部签名零变化（hfss_session 等既有消费者不受影响）。
 # 尾部只加 import 不加同名 def（#116 死副本/遮蔽教训）；刻意不定义
@@ -123,6 +125,7 @@ from rfauto.pipeline.batch_guard import (  # noqa: E402, F401
     ProcessInfo,
     WatchResult,
     assert_license_headroom,
+    assert_ram_headroom,
     find_batch_processes,
     find_orphan_batch_processes,
     kill_process_tree,

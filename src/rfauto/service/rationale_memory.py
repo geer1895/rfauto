@@ -8,7 +8,7 @@
 索引构建 best-effort（#105）：坏产物跳过不阻塞。
 
 F11 增量（自进化经验记忆，§10.6 F11 / §10.18 第 8 条，与 F2/F3 并轨）：
-在上面的"理由语料检索"之外，把 踩坑/战役判读沉淀为 typed 经验条目
+在上面的"理由语料检索"之外，把  踩坑/战役判读沉淀为 typed 经验条目
 （坑编号/结论/证据路径/适用场景/动作/核对表），并提供确定性检索
 （recall_for / checklist_for，关键词与标签子串匹配，无 embedding、无网络、
 无 LLM）。新模板冒烟 / critique 生成前调用，命中相关经验即要求先离线审计。
@@ -144,7 +144,7 @@ def search_rationale(query: str, index: dict[str, Any], *,
 # （§10.6 F11 / §10.18 第 8 条，与 F2 理由检索 / F3 技能库并轨）
 # ---------------------------------------------------------------------------
 # 与上面的 TF-IDF 理由检索并存而非替换：上面回答"为什么这么做"（runs/ 产物
-# 语料），本段回答"这个坑踩过没有"。
+# 语料），本段回答"这个坑踩过没有"（ 踩坑/战役判读的 typed 记忆）。
 # 检索是确定性关键词/标签子串匹配——无 embedding、无网络、无 LLM（硬约束 6/7），
 # 同一输入两次结果逐字节一致。
 
@@ -178,9 +178,9 @@ def _as_str_tuple(value: Any) -> tuple[str, ...]:
 class ExperienceEntry:
     """typed 经验条目（坑编号 + 结论 + 证据链 + 适用场景 + 动作）。
 
-    - lesson_id：坑编号（如 "#198"），与 / 内核 lesson_ref 同源
+    - lesson_id：坑编号（如 "#198"），与  / 内核 lesson_ref 同源
     - conclusion：一句话结论（战役判读，不含未经核验的新数值）
-    - evidence_paths：证据链，承载可回溯性
+    - evidence_paths：证据链（ 节 / 测试 / 产物路径），承载可回溯性
     - applies_to：适用场景关键词/标签（确定性匹配用，中英文均可）
     - action：命中后的动作（如"先离线审计……"）
     - checklist：核对表名（如"网格伪象核对表"），同类坑归并到同一张表
@@ -224,7 +224,7 @@ class ExperienceEntry:
         )
 
 
-# 式松散条目的键别名（中文键可直接喂给 entry_from_lesson）
+#  式松散条目的键别名（中文键可直接喂给 entry_from_lesson）
 _LESSON_KEYS: dict[str, tuple[str, ...]] = {
     "lesson_id": ("lesson_id", "坑编号", "编号", "id"),
     "conclusion": ("conclusion", "结论", "判读", "detail"),
@@ -237,7 +237,7 @@ _LESSON_KEYS: dict[str, tuple[str, ...]] = {
 
 
 def entry_from_lesson(lesson: Mapping[str, Any]) -> ExperienceEntry:
-    """式松散 dict（中英文键均可）→ typed 经验条目。"""
+    """ 式松散 dict（中英文键均可）→ typed 经验条目。"""
     flat: dict[str, Any] = {}
     for name, aliases in _LESSON_KEYS.items():
         for alias in aliases:
@@ -250,7 +250,7 @@ def entry_from_lesson(lesson: Mapping[str, Any]) -> ExperienceEntry:
 def entries_from_lessons(
     lessons: Sequence[Mapping[str, Any]],
 ) -> list[ExperienceEntry]:
-    """批量沉淀：式教训列表 → typed 经验条目列表（保序）。"""
+    """批量沉淀： 式教训列表 → typed 经验条目列表（保序）。"""
     return [entry_from_lesson(lesson) for lesson in lessons]
 
 
@@ -281,7 +281,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         ),
         applies_to=("ratrace", "环形", "环带", "栅格化", "阶梯化", "网格伪象"),
         action=f"{OFFLINE_AUDIT_ACTION_PREFIX}：核对等效 εeff 是否超闭式上限 + 网格"
-               "细化中心是否上移；未定性前不得进入校准/细调",
+               "细化中心是否上移；未定性前不得进入校准/细调（项目规则 1b）",
         checklist=MESH_ARTIFACT_CHECKLIST,
         requires_offline_audit=True,
     ),

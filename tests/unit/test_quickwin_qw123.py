@@ -416,7 +416,7 @@ class TestAnchorsStaleReport:
     def test_negative_threshold_rejected(self, registry):
         r = anchors_stale_report(-1.0, path=str(registry))
         assert r["ok"] is False
-        assert r["error"]
+        assert r["errors"]  # AU-2C 域升版（2026-10-14）：单数 error → errors
 
     def test_status_field_carried(self, registry):
         r = anchors_stale_report(30.0, path=str(registry), now=self.NOW)

@@ -4,7 +4,7 @@
 
 ## 适用场景
 
-- 拓扑：π 型衰减器（WP2.3 Tier 1 首族：串臂 LumpedElement 桥接中点断口，两端对地 shunt LumpedElement 经短柱接 z-min PEC 地）
+- 拓扑：π 型衰减器（WP2.3 Tier 1 首族：串臂 LumpedElement 桥接中点断口，两端对地 shunt LumpedElement 经短柱接 z-min PEC 地；元件电共位——shunt 与断口缘齐贴，E4 集总闭式裁判前提，W7-A 残座批 D=6mm 分布式失配定谳后改 0.75mm）
 - f0：2.5 GHz ｜ 端口：2 ｜ 时长 ≤30.0 ns ｜ 网格档：0.0 mm
 - 提取口径：S11/S21 @ MSLPort 1-2（π 型电阻衰减器：|S21|≈-A dB 平坦，锚=ABCD 电阻网络闭式裁判+E4 attenuator_pi 同源）
 - 参数：atten_db, w_mm, shunt_off_mm
@@ -15,7 +15,7 @@
 | 参数 | 名义值 |
 |---|---|
 | atten_db | 10.0 |
-| shunt_off_mm | 6.0 |
+| shunt_off_mm | 0.75 |
 | w_mm | 1.1134 |
 - 名义参数来源：`docs/templates/atten_pi/meta.yaml`（与 TEMPLATE_NOMINAL 一致性由 test_gallery_export 钉）
 
@@ -50,9 +50,9 @@
 
 ## 已知边界
 
-- 参数语义：atten_db=目标衰减（电阻值由 E4 attenuator_pi ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=shunt 离中点距离
+- 参数语义：atten_db=目标衰减（电阻值由 E4 attenuator_pi ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=shunt 离中点距离（电共位守卫：θ=β·D≤0.1rad ⇒ ≤0.83mm，大 D=分布式衰减器非本裁判域）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；带缘+串臂断口+shunt 盒边精确入网（#198）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

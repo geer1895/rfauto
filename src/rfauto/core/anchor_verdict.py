@@ -2,7 +2,7 @@
 
 背景（#218 归因收口后唯一未过门）：HFSS mline 探针 εeff 对 HJ 准静态
 闭式 +2.36%/+2.53% 超旧 ±2% 单门——跨引擎同向偏移（openEMS 自身对 HJ
-+1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿（廿八）。
++1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿（）。
 双锚口径 2026-09-12 定稿（廿八未尽①，队列3-A 探针侧先行、本内核收口
 engine harness 与 sweep_assert 旧单门）：
 
@@ -23,7 +23,7 @@ engine harness 与 sweep_assert 旧单门）：
 
 判据改动=显式重标定决策（改动须附真机证据）。纯函数零真机，单测钉死于
 tests/unit/test_mline_probe_dual_anchor.py。LLM/agent 永不产生物理数字
-：锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
+（项目规则 规则 7）：锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
 β 推导 / HFSS S21 相位斜率推导 / core/synthesis HJ 闭式）。
 
 消费方：

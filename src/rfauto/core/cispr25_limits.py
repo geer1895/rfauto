@@ -1,6 +1,6 @@
 """NX-9 车载 CISPR 25 限值数据面（Class 5 传导电压 CEV + 辐射 ALSE RE）。
 
-规格：研究扩充 round14 §四 NX-9——"CISPR
+规格：docs/research_expansion_20261002_round14.md §四 NX-9——"CISPR
 25:2021 零部件辐射限值表（次级源双源纪律仿 emc_tvs_gate）+ALSE 1m 场强
 折算复用 emc_radiated+ISO 11452-2"；宏图依赖链 EM-10(限值库) ─→ EM-6 ─→
 NX-9 并入。任务书 ge8b Wave A 席4：NX-9 若 EM-6/EM-10 已含车载限值面则

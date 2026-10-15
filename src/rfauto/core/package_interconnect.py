@@ -1,6 +1,6 @@
 r"""PK-7 封装互连闭式库（TGV/RDL/凸点/IPD 螺旋/MIM/QFN 腔模）。
 
-规格：研究扩充 round14 §五 PK-7（P2/M）："TGV
+规格：docs/research_expansion_20261002_round14.md §五 PK-7（P2/M）："TGV
 准静态（sicl_line 改造）、RDL 微带（synthesis.forward_z0 换材料组）、倒装
 凸点 C/L、薄膜 IPD 螺旋电感（Greenhouse）+MIM 电容、air-cavity QFN 腔模
 （复用 shield_cavity_mode）"。

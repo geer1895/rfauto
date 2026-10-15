@@ -5,7 +5,7 @@
 随机源、固定 seed 可复现的"扩散式"提议器——噪声-去噪迭代把可行像素图案向
 目标推进，评判仍走既有确定性内核（core/mapes 闭式代理）。
 
-设计（基类 + 注册表， 硬限制 3）
+设计（基类 + 注册表，AGENTS 硬限制 3）
 - :class:`PixelProposer` 基类统一接口 ``propose(layout, rng, *, seed_pattern,
   score_fn) -> 0/1 numpy 矩阵``；:data:`PROPOSER_REGISTRY` 以名字注册，
   :func:`create_proposer` 工厂构造——换/加提议器实现注册即可。

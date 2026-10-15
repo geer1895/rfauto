@@ -94,7 +94,7 @@ def marchand_balun_design(f0_ghz: float, h_mm: float, er: float,
 
     无副作用，可安全调用。两跨越点共享开路支节与两段 λg'/4 短路臂；a1/a2
     为槽内/外缘到中线距离。注意：该单支节串接族已被两引擎互证不满足巴伦
-    四门，保留作对照几何**不用于产品化设计**；真
+    四门（），保留作对照几何**不用于产品化设计**；真
     Marchand 走 marchand_two_section_synthesis。越有效域 → {ok: False,
     error} 信封不外推；gates 为预声明巴伦门。只读无时序约束。
 

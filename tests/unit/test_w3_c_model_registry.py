@@ -617,10 +617,8 @@ class TestJudgeBenefit:
 
 class TestTuneCliFlag:
     def test_tune_help_renders_with_flag(self):
-        """--help 真跑不炸（#305）+ 旗标注册存在性（渲染器解耦：rich 截断位
-        随版本/平台漂移——COLUMNS/TERMINAL_WIDTH/MAX_WIDTH 三代钉均被 CI
-        rich 15 证伪（2026-10-07 三跑实证），改查 click 参数注册树）。"""
-        from typer.main import get_command
+        """--help 真跑不炸（#305）；rich 窄端截断旗标名——按 help 文本+
+        旗标前缀钉（截断形态 warm-start-regis…）。"""
         from typer.testing import CliRunner
 
         from rfauto.cli.domains.workflow import app
@@ -628,13 +626,12 @@ class TestTuneCliFlag:
         runner = CliRunner()
         result = runner.invoke(app, ["tune", "--help"])
         assert result.exit_code == 0
-        # 渲染冒烟：Usage 行在
-        assert "Usage" in result.output
-        # 旗标注册存在性：click 参数树（渲染无关，跨平台确定）
-        tune_cmd = get_command(app).commands["tune"]
-        flat = str([list(p.opts) + [str(s) for s in p.secondary_opts]
-                    for p in tune_cmd.params])
-        assert "--warm-start-registry" in flat
+        flat = result.output.replace("\n", "").replace(" ", "")
+        # rich 窄表把旗标名/help 按单元格截断（warm-start-regis…），格间有
+        # 边框字符——按截断稳定的前缀+help 关键词钉（真跑不炸=#305 主判据）
+        assert "代理模型注册表" in flat and "warm-start" in flat
+        assert "--warm-start-regis" in flat
+        assert "--no-warm-start-r" in flat
 
     def test_non_single_path_explicit_flag_not_silent(self, tmp_path):
         """显式开关走非单目标路径：如实提示不静默（#122）；--json 下提示走

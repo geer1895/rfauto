@@ -1,0 +1,109 @@
+# ═══ EDB 快车道模板元面（信息文档形态，不入 TEMPLATE_META 注册表）══════════
+# 本文件是 EDB 快车道发射族的元数据文档。edb_* 族不是
+# openems_templates.TEMPLATE_NOMINAL 注册模板：
+# tests/unit/test_template_meta_consistency.py 与
+# tests/unit/test_template_geometry_audit.py 的 EXPECTED_TEMPLATES（冻结
+# 72 项）不扫描本目录；scripts/build_docs_pages.build_templates_page 将
+# 非注册目录按信息文档排除（2026-10-08 同笔调整）。schema 单源=
+# src/rfauto/adapters/edb_templates/schema.py（KNOWN_TEMPLATES /
+# SPEC_SCHEMA_VERSION / validate_spec）。
+#
+# 门值口径：acceptance 全部是"离线发射层门"（发射自检与冒烟判读层的
+# offline gate）；真机求解产物的质量仲裁另有 health gate
+# （service/edb_health_gate，W3/W4 已落地：门常量按模板作用域分派，
+# 登记表 S11_DIP_DB_BY_TEMPLATE / S_WINDOW_DB_BY_TEMPLATE 为单源，
+# 改动门值读源码核对、禁止臆造物理数字）。
+#
+# 用户指南：docs/edb_lane_guide.md
+
+template: edb_power_divider
+registry_status: 已落地（src/rfauto/adapters/edb_templates/power_divider.py
+  emit_power_divider_spec；KNOWN_TEMPLATES 成员）
+schema_version: 1
+edb_lane: EDB 快车道（PyEDB 声明式 spec 建库 + hfss_batch 批处理求解）
+f0_ghz: 2.4
+n_ports: 3
+units:
+  length: mm
+  frequency: GHz
+
+# 设计参数（emit_power_divider_spec 入参；缺省值见发射器 docstring）
+params:
+- f0_ghz          # 必填，>0
+- z0_ohm          # 缺省 50.0；仅支持 50（pyedb CfgEdgePort 波端口阻抗硬编码 50Ω）
+- gap_mm          # 缺省 6.0（DEFAULT_GAP_MM，波端口扩展守卫约束下的缺省——见 gap_note）
+- in_len_mm       # 缺省 10.0（输入馈线长）
+- out_len_mm      # 缺省 5.0（输出馈线长）
+- copper_thickness_mm  # 缺省 0.035
+- board_margin_mm      # 缺省 2.0
+# 非"设计参数"的发射器键：stackup、sweep、adapt（同 edb_branchline 缺省档）
+
+substrate:
+  name: rogers4350b_h0.508
+  er: 3.66
+  h_mm: 0.508
+  loss_tangent: 0.0037
+
+# 名义参数 @2.4GHz 缺省层叠——emit_power_divider_spec 实跑产出（2026-10-08
+# 实测，非手抄；gap 缺省 2.0→6.0 变更后同日发射器复跑核对一致；综合单源
+# core.synthesis，禁手抄毫米数）
+nominal_params:
+  series_w_mm: 0.6035      # 70.711Ω 臂（Z0·√2）HJ 反解
+  shunt_w_mm: 1.1133       # 50Ω 馈线 HJ 反解
+  arm_len_mm: 18.9184      # λg/4 @ 臂自身 εeff=2.7248
+  iso_r_ohm: 100.0         # 隔离电阻闭式 R=2·Z0（Pozar §7.3，非手抄）
+  gap_mm: 6.0
+  in_len_mm: 10.0
+  out_len_mm: 5.0
+
+synthesis_source: core.synthesis inverse_width/forward_media +
+  edb_templates.quarter_wave_len_mm（与 synthesize_wilkinson 同引擎同序；
+  单源一致性钉 tests/unit/test_edb_templates.py，舍入档容差）
+topology: T 结两等分 Wilkinson（与 HFSS 插件 models/wilkinson_power_divider
+  同布局口径，Y 正向=输入方向）；隔离电阻=共面矩形跨两臂端内侧壁，
+  走 spec["resistors"] 由 edb_adapter._land_resistors 落成 pyedb lumped
+  RLC 边界（不产金属电阻体，间隙保持开路）
+port_roles: P1 输入 / P2 右出 / P3 左出（等分 -3dB，RISO=2·Z0 隔离）
+extraction: 全 S 矩阵 3 端口（批处理求解后 Touchstone .s3p，401 频点；
+  端口序=AEDT 端口号序，sNp 头注释存证）
+
+# 离线发射层门（W1 真机冒烟判读表；runs/edblane85/w1_smoke/REPORT.md §2.2。
+# 真机判读另有 health gate——S21/S31 窗已按裁定登记其单源，见各 status）
+acceptance:
+  s11_db_at_f0:        {op: "<=", bound: -15.0, label: "|S11| 谷深"}
+  s21_s31_balance_db:  {op: "<=", bound: 0.5,   label: "输出幅度平衡差"}
+  s21_db_at_f0:        {op: "in", bound: [-3.8, -2.5],
+    label: "S21 分配损耗（等分分配窗，双边界闭区间）",
+    status: 已裁定（窗语义）——单源=edb_health_gate.S_WINDOW_DB_BY_TEMPLATE
+      的 edb_power_divider 行，见 gate_semantics_note}
+  s31_db_at_f0:        {op: "in", bound: [-3.8, -2.5],
+    label: "S31 分配损耗（等分分配窗，双边界闭区间）",
+    status: 已裁定（窗语义）——同 S21 行单源，两腿各自落窗内才算过}
+
+gate_semantics_note: W1 任务书字面门"各 ≤-3.8dB"与物理健康语义错位——
+  无阻/有阻 Wilkinson 的健康输出分配都是 ≈-3.0dB（理想 -3.01dB + 损耗），
+  字面单边门会误杀任何健康功分器；冒烟席按坑#122 口径如实记字面 FAIL 不凑
+  绿，双读数存档 power_divider_judgment.json。门语义已裁定（2026-10-09
+  门语义仲裁，runs/edblane85/w1_smoke REPORT §3.2）：等分分配窗
+  [-3.8,-2.5]dB 双边界闭区间——下界=3dB 分配+0.8dB 实现容差（健康实测
+  -3.19/-3.26 落窗内有余量），上界排除异常增益/提取伪象；单源登记于
+  service/edb_health_gate.S_WINDOW_DB_BY_TEMPLATE（同窗覆盖 "wilkinson"
+  插件族；改动窗值须带真机/仲裁出处，铁律 7）。W1 冒烟两读数按裁定窗
+  语义即健康 PASS（非物理 FAIL），字面 FAIL 记录留档不改。
+gap_note: 缺省 gap 已由 2.0mm（HFSS 插件同口径）改为 6.0mm（DEFAULT_GAP_MM，
+  有意分叉）——wave_port 水平扩展因子 5 下端口物理片宽 5×shunt_w≈5.57mm >
+  两输出口中心距 2.0mm，P2/P3 端口片互相交叠，AEDT 网格生成失败 rc=103
+  （"Port#Port2 intersects mesh body"，gap=2.0 真跑实证，
+  runs/edblane85/w1_smoke/power_divider/ansysedt_batch_power_divider.log）；
+  冒烟取 gap=6.0mm 通过（臂长/线宽综合不变）。交叠守卫已落地（W4，#347
+  家法）：发射期 gap_mm ≤ 因子×shunt_w 即 fail-fast 抛 ValueError（因子读
+  发射端口自带 horizontal_extent_factor，与 schema.make_wave_port 单源；
+  恰等/近恰等同样拦下），报错带建议放宽值（最小可行间隙×1.05 上取 0.5mm
+  网格——缺省层叠下建议值恰为 6.0mm）。原"守卫落地前真跑必须显式放宽"
+  注记就此作废：缺省即安全值，小 gap 显式入参时守卫拦下并给建议值。
+w1_smoke_note: 无阻版（W1.3 resistors 落地与冒烟并行，冒烟按任务书跑无阻
+  隔离版）2/4 PASS——S11 -17.89dB / 平衡差 0.068dB 过；S21/S31 字面 FAIL
+  见 gate_semantics_note。信息读数（无阻特征性劣化，只记不判门）：
+  S22=-6.74 / S33=-6.58dB，S32 隔离=-5.62dB，σmax=0.988，f0_offset
+  -12.75%（无阻两臂结构多匹配谷，f0 标记语义失真）。有阻版真跑留后续
+  （resistors lumped RLC 已由 edb_adapter._land_resistors 落地，W1.3）。

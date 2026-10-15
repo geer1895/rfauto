@@ -61,6 +61,16 @@ class TestPhysicsRoles:
         assert parse_length("abc") is None
         assert parse_length(None) is None
 
+    def test_parse_length_rejects_non_mm_unit_suffix(self):
+        """A2 P2-5：非 mm 量纲后缀 fail-loud——旧实现剥 "m" 把 "20m"
+        静默读成 20.0（米语义读成 mm，千倍量纲错）。"""
+        with pytest.raises(ValueError, match="量纲"):
+            parse_length("20m")
+        with pytest.raises(ValueError, match="量纲"):
+            parse_length("2.5cm")
+        # 无单位杂串仍走 None 回退语义（fail-safe 面不变）
+        assert parse_length("abc") is None
+
     def test_resolve_role_candidates_and_fallback(self):
         variables = {"arm_len_mm": "20.5mm", "series_w": 0.4}
         assert resolve_role("resonator_length_mm", variables) == 20.5
@@ -68,6 +78,19 @@ class TestPhysicsRoles:
         assert resolve_role("feed_offset_mm", variables, default=10.0) == 10.0
         # _mm 省略兜底：变量 arm_len 匹配候选 arm_len_mm
         assert resolve_role("resonator_length_mm", {"arm_len": 19}) == 19.0
+
+    def test_resolve_role_unknown_role_fails_loud(self):
+        """A2 P2-5：未知角色名（未传 candidates 且不在 ROLE_CANDIDATES，
+        典型=拼写错）显式报错，不静默 default；显式 candidates 是白名单
+        出口（语义不变）。"""
+        with pytest.raises(ValueError, match="未知物理角色"):
+            resolve_role("resonator_lenght_mm", {"arm_len_mm": 20.0})
+        with pytest.raises(ValueError, match="未知物理角色"):
+            resolve_role("no_such_role", {}, default=1.0)
+        # 白名单出口：显式 candidates 的表外角色名照常工作
+        assert resolve_role(
+            "resonator_lenght_mm", {"res_len": 12.0},
+            candidates=("res_len",)) == 12.0
 
     def test_custom_candidates_override(self):
         assert resolve_role(

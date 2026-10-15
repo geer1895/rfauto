@@ -1,4 +1,4 @@
-"""MM-6 透射阵相位综合入口锚树（规格 规格深案 §A-6）。
+"""MM-6 透射阵相位综合入口锚树（规格 docs/plan_deepdive_specs_20261002.md §A-6）。
 
 锚（全部离线合成，零仿真，零求解器依赖）：
 - 法向+广角退化：点馈 required_phase_transmitarray 馈源后退极限 =

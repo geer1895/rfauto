@@ -1,13 +1,13 @@
 # 无人值守 HFSS 自动化：会话模式与批处理模式
 
-> 状态：正式文档（2026-10 首版）。
-> 定位：把项目真机踩坑经验中关于"无人值守跑 HFSS"的部分沉淀成
+> 状态：正式文档（2026-10-08 首版）。
+> 定位：把本项目一年多真机踩坑经验中关于"无人值守跑 HFSS"的部分沉淀成
 > 可执行的操作纪律。核心结论已在 Ansys Developer 社区分享并获 Ansys
 > 团队成员确认（EDB/批处理路线的口径即来自该答疑）。
 > 证据基线：pyaedt 1.4.0 × AEDT 2025 R1（v251），gRPC 非图形会话，
-> Windows x64，商用许可。文内 `#NNN` 为开发过程沉淀的坑号，逐条可溯源
+> Windows x64，商用许可。文内 `#NNN` 为本仓  坑号，逐条可溯源
 > （对照表见文末附录）。
-> 标注约定：未经真机实测、只引自官方文档或社区答疑的口径，写
+> 标注约定：未经本仓真机实测、只引自官方文档或社区答疑的口径，写
 > "待验证"。
 
 ---
@@ -72,8 +72,7 @@ ansysedt -ng -BatchSolve -Logfile solve.log <project>.aedb
   建模错误全靠读 log 定位，见附录 #srv）。
 - 工程参数：普通 `.aedt`；EDB 场景**直接指向 `*.aedb` 文件夹**——
   求解自动启动、`.aedt` 工程自动生成。这是 Ansys 团队成员在社区答疑中
-  确认的口径（本仓 EDB 快车道已按它落地批处理通路，操作面见
-  `docs/edb_lane_guide.md`）。
+  确认的口径（本仓 EDB 批处理原型尚未打通，端到端待验证，§4）。
 - 注意不要与 `-grpcsrv`（gRPC 服务监听，供 PyAEDT 远程 attach）混淆：
   那是"驻留会话被人驱动"的形态，不是批求解。
 
@@ -84,11 +83,9 @@ ansysedt -ng -BatchSolve -Logfile solve.log <project>.aedb
   不会无限期占许可席位。
 - 代价：每点付启动成本；跨点状态只能落盘传递（工程文件或 §4 的 JSON
   仿真配置）。
-- 本仓现状：EDB 快车道已按批处理模式落地（建库→每求解一进程批解→
-  Touchstone 二段导出，`src/rfauto/adapters/hfss_batch.py`，真机五点
-  战役实证，见 `docs/edb_lane_guide.md`）；三维参数化模板的无人值守
-  脚本仍用"每点整轮新会话"（每点独立 Python 子进程 +
-  `new_desktop=True` + `finally` 必释放）近似同一哲学。
+- 本仓现状：现行无人值守仲裁/锚点脚本用"每点整轮新会话"（每点独立
+  Python 子进程 + `new_desktop=True` + `finally` 必释放）近似同一哲学；
+  EDB→`-BatchSolve` 直跑通路打通后应迁移（§4、§5.1）。
 
 ### 1.3 决策树
 
@@ -101,11 +98,10 @@ ansysedt -ng -BatchSolve -Logfile solve.log <project>.aedb
 │        毒化即弃：整个会话作废重建，绝不带毒续跑
 └─ 否 → 进程隔离（每求解一进程）
          ├─ 平面/版图族，几何可由 EDB 表达
-         │    → PyEDB 建库 + ansysedt -ng -BatchSolve 直指 *.aedb（§4，
-         │      已落地，见 EDB 快车道指南）
+         │    → PyEDB 建库 + ansysedt -ng -BatchSolve 直指 *.aedb（§4）
          └─ 3D 参数化模板
               → 驱动脚本每点独立进程 + 独立会话（new_desktop，
-                finally 必释放）
+                finally 必释放）；批处理直跑通路打通后迁 -BatchSolve
 ```
 
 判据经验：**无人值守一律优先进程隔离**。长会话省下的启动成本，只有在
@@ -116,8 +112,9 @@ ansysedt -ng -BatchSolve -Logfile solve.log <project>.aedb
 
 ## 2. 会话污染案例研究：一次失败赋值带死整个会话
 
-素材：内部复现档案（同形最小复现已作为可复现 issue 报告提交 PyAEDT
-上游，坑号 #413/#308），全部当日真机实测。
+素材：`docs/upstream_issue_draft_pyaedt_wave_port.md`（已作为可复现
+issue 提交 PyAEDT 上游，坑号 #413/#308），复现探针在
+`runs/pyaedt_issue_probe/`，全部当日真机实测。
 
 ### 2.1 事故链
 
@@ -214,7 +211,7 @@ def session_health(desktop, hfss) -> str:
 - 有人的时候，第一跳的泛化异常一个下午能调试出来；无人值守时 agent/
   脚本只会看到一个 `AttributeError`，直接失败，且**后续队列里每个点都
   陪葬**（共享会话）。
-- 这一类故障是无人值守实战中最大的实际障碍——同样的结论写进了
+- 这一类故障是我们一年无人值守实战中最大的实际障碍——同样的结论写进了
   Ansys Developer 社区分享帖。批处理模式（§1.2/§4）之所以值得每点多付
   启动成本，就是因为它从结构上消灭了这一类。
 
@@ -283,21 +280,21 @@ def session_health(desktop, hfss) -> str:
 
 适用对象：平面/版图族器件（耦合器、功分器、滤波器版图实现、封装
 RDL/过孔阵列），以及一切"几何可由版图数据库表达"的数据集生成。
-操作面（发射器/建库/批解/判读/数据集入库）见 `docs/edb_lane_guide.md`。
 
 ### 4.1 PyEDB 是独立的内存态 API
 
 - `pyedb`（PyAnsys 生态）直接操作 EDB/AEDB 数据库：**无需桌面会话**，
   进程内内存态读写；但**需要本机有合法许可的 AEDT 安装**（官方 README
-  口径）。官方对它的定位包含 "completely
+  口径；我们据此确认本仓可用）。官方对它的定位包含 "completely
   non-graphical flows, from layout translation through simulation
   results"。
-- 实测安装版本：pyedb 0.83.0（下述 API 名逐字核对自该安装包源码）。
+- 本仓环境实测安装版本：pyedb 0.83.0（下述 API 名逐字核对自该安装包
+  源码）。
 
 ```python
 from ansys.aedt.core import Edb   # 工厂函数，惰性导入，返回 pyedb.Edb
 
-edb = Edb("runs/branchline.aedb", version="2025.1")
+edb = Edb(r"E:\runs\branchline.aedb", version="2025.1")
 #   叠层/连线/过孔/端口等版图操作 ...
 edb.save()
 edb.close()
@@ -313,8 +310,8 @@ pyedb 内置声明式仿真配置（`Configuration` 对象，`edb.configuration`
 属性暴露，dotnet/grpc 两后端一致）：
 
 ```python
-edb.configuration.load("runs/branchline_sim_config.json")   # 应用配置
-edb.configuration.export("runs/branchline_sim_config.json") # 导出配置
+edb.configuration.load(r"E:\runs\branchline_sim_config.json")   # 应用配置
+edb.configuration.export(r"E:\runs\branchline_sim_config.json") # 导出配置
 ```
 
 - `load(config_file, ...)` / `export(file_path, ...)`；导出覆盖面
@@ -322,7 +319,7 @@ edb.configuration.export("runs/branchline_sim_config.json") # 导出配置
   控制（缺省大多为 True）——细节以当版 docstring 为准。
 - 对配方驱动架构的意义：器件模板可以在产几何的同时**产出一份 JSON
   仿真配置**，批处理一步保持全声明式——参数到求解之间没有任何脚本化
-  手感环节。这是该 API 最干净的契合点（Ansys 团队成员在社区
+  手感环节。这是该 API 对我们最干净的契合点（Ansys 团队成员在社区
   答疑中主动指出的方向）。
 
 ### 4.3 批处理命令行直接消费 aedb 文件夹
@@ -330,15 +327,12 @@ edb.configuration.export("runs/branchline_sim_config.json") # 导出配置
 - 建好 ready-to-solve 的 EDB 后，AEDT 批处理命令行与普通工程同款，
   路径指向 `*.aedb` 文件夹而非 `.aedt` 文件即可：求解自动启动、
   `.aedt` 工程自动生成（Ansys 团队成员确认的口径）。
-- 于是无人值守形态收敛为：**建库（无桌面会话）→ `ansysedt -ng
+- 于是无人值守形态收敛为：**PyEDB 建库（无桌面会话）→ `ansysedt -ng
   -BatchSolve -Logfile ... <点>.aedb`（每求解一进程）→ 收 Touchstone**。
   全链没有长驻会话，§2 的故障类无处附着。
-- 本仓状态：该通路已落地（`src/rfauto/adapters/hfss_batch.py` 一次性
-  批解 + `-batchextract` 二段导出 Touchstone；branchline 五点 f0 扫描
-  真机战役全绿）。端到端操作面与实测读数见 `docs/edb_lane_guide.md`；
-  与既有 HFSS 3D 通路的对拍仲裁（HFSS 为对齐基准）仍开放。注意建库段
-  依赖 pyedb 后端在本机的可用性（部分环境有已知兼容性问题，见指南
-  §4/§8），批解/导出/判读段只消费工程文件、不受影响。
+- 本仓状态：branchline/功分器两模板的原型在计划中（建库→批解→与既有
+  HFSS 3D 通路对拍，HFSS 为对齐基准），端到端时序与产物形态**待验证**；
+  打通前，§1.2 的"每点整轮新会话"仍是现行无人值守通路。
 
 ### 4.4 适用与不适用
 
@@ -354,9 +348,9 @@ edb.configuration.export("runs/branchline_sim_config.json") # 导出配置
 ### 5.1 每求解一进程（openEMS 先例与 HFSS 的统一）
 
 - openEMS 侧既有先例：多端口全 S 矩阵按激励拆成 N 个子进程
-  （`excite_port` 参数化 ×N 子进程，`adapters/openems_rotation.py`），
-  进程内对象复用被明确禁用（#208：`Run(cleanup=True)` 会销毁 C++ 对象）
-  ——教训是**跨求解复用进程内状态，失败模式又隐蔽又难清**。
+  （`excite_port` 参数化 ×N 子进程，`openems_rotation.py`），进程内对象复用
+  被明确禁用（#208：`Run(cleanup=True)` 会销毁 C++ 对象）——教训是
+  **跨求解复用进程内状态，失败模式又隐蔽又难清**。
 - HFSS 批处理把同一哲学下沉到 `ansysedt` 进程级：每求解一进程，进程
   退出即回收一切。两引擎在战役 runner 层面统一为同一种调度形态：
   点队列 → 子进程 → 产物 → 下一点。
@@ -418,8 +412,8 @@ finally:
 1. **杀前核对命令行**：枚举必须拿到 `pid/ppid/CommandLine`（PowerShell
    `Get-CimInstance Win32_Process`），枚举失败/不可解析=不杀
    （fail-closed，#245）。
-2. **只杀孤儿**：父进程存活=活桌面，绝不代杀（可能是并行任务的合法
-   桌面，#265 族连坐教训）；父进程已死=孤儿，点杀该 PID。
+2. **只杀孤儿**：父进程存活=活桌面，绝不代杀（可能是并行轨的合法桌面，
+   #265 族连坐教训）；父进程已死=孤儿，点杀该 PID。
 3. **杀后复核**：留退出窗再枚举，确认清场后才允许开新会话；未清场则
    fail-closed 不开新点。
 4. 两档严格度：发射前/重试轮内 `strict=True`（任何异常即抛，宁可不开
@@ -474,16 +468,15 @@ MSYS 路径转换吃掉（静默不杀）——用 `//PID` 或 PowerShell
 
 | 文中主张 | 来源 |
 |---|---|
-| 会话污染全链（integration_line 误形、`[]`→`None`、`default_solution` 级联、gRPC 通道损坏） | PyAEDT 上游 issue 复现档案与真机探针（pyaedt 1.4.0 + AEDT 2025 R1 实测）；#413/#308 |
-| EDB 无会话/内存态/需本机 AEDT 许可；`-BatchSolve` 直指 `*.aedb`；JSON 仿真配置方向 | Ansys Developer 社区答疑（Ansys 团队成员）与项目核实批账 |
-| `Edb()` 工厂、`edb.configuration.load/export` 方法名与关键字 | pyedb 0.83.0 安装包源码逐字核对（`pyedb/configuration/configuration.py`、`pyedb/dotnet/edb.py`、`pyedb/grpc/edb.py`） |
-| `-Logfile` 纪律、GetMessages 常空、发射存活复核、隐蔽进程被杀毒击杀 | 项目运维纪律（console 可见发射形态 + 发射后存活复核） |
+| 会话污染全链（integration_line 误形、`[]`→`None`、`default_solution` 级联、gRPC 通道损坏） | `docs/upstream_issue_draft_pyaedt_wave_port.md`；`runs/pyaedt_issue_probe/`（pyaedt 1.4.0 + AEDT 2025 R1 真机实测）； #413/#308 |
+| EDB 无会话/内存态/需本机 AEDT 许可；`-BatchSolve` 直指 `*.aedb`；JSON 仿真配置方向 | Ansys Developer 社区答疑（Ansys 团队成员）与本仓核实批账：`docs/ansys_dev_forum_post_draft.md` 回复草稿 1–3 |
+| `Edb()` 工厂、`edb.configuration.load/export` 方法名与关键字 | 本仓 pyedb 0.83.0 安装包源码逐字核对（`pyedb/configuration/configuration.py`、`pyedb/dotnet/edb.py`、`pyedb/grpc/edb.py`） |
+| `-Logfile` 纪律、GetMessages 常空、发射存活复核、隐蔽进程被杀毒击杀 | `docs/audit/server_invocation_playbook.md`；项目规则 规则 0b-2 |
 | `ansysedt` 进程治理（枚举/只杀孤儿/复核/两档严格度、150s 释放上限、3.6h 阻塞实测） | `src/rfauto/infra/desktop_guard.py`（#245/#265/#105） |
 | watchdog + `odesign.Abort()` + 竞态保护、`RFAUTO_HFSS_SOLVE_TIMEOUT_S`、profile/sweep 复核 | `src/rfauto/adapters/hfss_adapter.py`；`src/rfauto/pipeline/watchdog.py`；#145/#191 |
 | `HfssSession` 单例行为（幂等 connect、license 退避、`current_version` 健康检查、唯一 Hfss 实例） | `src/rfauto/adapters/hfss_session.py`；#191 |
-| 相对 `-outdir` 挂起 | #243（真机实测） |
-| openEMS 每求解一进程先例 | #208、#261 |
-| EDB 批处理通路（建库→批解→二段导出→判读） | `docs/edb_lane_guide.md`；`src/rfauto/adapters/hfss_batch.py` |
+| 相对 `-outdir` 挂起 | 项目规则（df5 批 ②，#243） |
+| openEMS 每求解一进程先例 |  #208、#261；`docs/audit/server_invocation_playbook.md` §2.5 |
 
 > 维护约定：本文只沉淀"操作纪律 + 已验证事实"。新增坑例时按节归入，
 > 并在附录表加一行来源；未实测的新口径先标"待验证"，真机闭环后回填。

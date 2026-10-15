@@ -166,3 +166,11 @@ class TestKindHonesty:
         oc = CLOSED_FORM_ORACLES["siw_analysis"]
         assert oc.kind == "formula_reimpl"
         assert "Cassivi" in oc.reference
+
+
+def test_cross_check_all_empty_registry_fails_loud() -> None:
+    """空 oracle 注册表=无证据可对拍——防空集全称量词假 PASS（A-11 尾项）。"""
+    report = cross_check_all(registry={})
+    assert report["ok"] is False
+    assert report["n_oracles"] == 0
+    assert "empty_registry" in report["flags"]

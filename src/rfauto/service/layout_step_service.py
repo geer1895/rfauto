@@ -1,6 +1,6 @@
 """LC-10 STEP MCAD 协同：KiCad 官方 ``kicad-cli pcb export step`` 子进程面。
 
-规格=研究扩充 round15 §四 LC-10"STEP 板级+
+规格=docs/research_expansion_20261002_round15.md §四 LC-10"STEP 板级+
 屏蔽腔 MCAD 协同（P3/L）"；席D3 任务书口径："KiCad step 导出子进程面
 （铁律 2；kicad-cli 探测+skipif，真跑非本席门）"。
 

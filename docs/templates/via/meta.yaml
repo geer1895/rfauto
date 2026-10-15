@@ -16,3 +16,41 @@ nominal_params:
   w_mm: 1.1134
   antipad_mm: 0.8
   r_via_mm: 0.15
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 双层板信号过孔=一段竖直短同轴：孔柱为内导体、反焊盘开孔定外导体
+      口径、介质填充——局部特性阻抗走同轴 TEM 闭式口径
+      Z_via=(60/√εr)·ln(r_pad/r_via)（设计规则口径，非严格闭式边界）；反焊盘
+      是唯一的低阶阻抗旋钮（加大 r_pad 使 Z_via 升向 50Ω 匹配口径），过孔电
+      长度短到谐振可忽略，馈线 50Ω 线宽与 Z_via 设计规则解耦。单模带宽受同轴
+      TE11 高阶模截止限制。
+    derivations:
+    - claim: 反焊盘同轴口径：过孔段按同轴 TEM 闭式 Z0=(60/√εr)·ln(b/a) 估阻抗
+        （r_pad=b、r_via=a）；综合反解直径比 b/a=exp(Z0√εr/60)（roundtrip
+        恒等），数值一律内核键产出（标称见 meta nominal_params）
+      formula: Z_via = (60/√εr)·ln(r_pad/r_via)；
+        r_pad/r_via = exp(Z0·√εr/60)
+      source: core/synthesis.py（synthesize_via_model 反焊盘同轴口径设计规则
+        单源）+ calc_families/coax_line.py（coax_line_z0 键：同轴 TEM 闭式+
+        综合反解 roundtrip 恒等）+ Pozar, Microwave Engineering (4th ed.),
+        Ch.2（同轴线场分析 TEM 闭式）
+    - claim: 匹配口径与单模带宽折中：Z_via→Z0 即反焊盘口径条件；口径加大虽升
+        Z_via 但压低 TE11 截止（单模带宽收窄）——反焊盘是阻抗匹配与单模带宽
+        的折中旋钮；馈线 w 不进 Z_via（设计规则解耦，登记表弹性 w=0）
+      formula: f_c,TE11 = c0/(π·(r_pad+r_via)·√εr)
+        （coax_line_z0 TE11 截止口径）
+      source: docs/templates/via/meta.yaml（param_semantics antipad_mm=r_pad
+        口径）+ calc_families/coax_line.py（coax_line_z0 键 TE11 截止闭式）
+  sensitivity_ranking:
+  - param: antipad_mm
+    order: 1
+    basis: ln(r_pad/r_via) 分子通道（口径加大→Z_via 升向匹配）；登记表
+      0.597405
+  - param: r_via_mm
+    order: 2
+    basis: 分母通道（与 antipad 对称等幅反号）；登记表 0.597369
+  - param: w_mm
+    order: 3
+    basis: 馈线 50Ω 线宽不进 Z_via 设计规则（登记表 0）
+  quiz_refs: []

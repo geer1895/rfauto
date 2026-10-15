@@ -1,12 +1,12 @@
-"""profile 子命令组（PR-8 剖析入口：py-spy 火焰图落 runs）。
+"""profile 子命令组（PR-8 剖析入口：py-spy 火焰图落 runs/）。
 
 薄壳层，零业务逻辑（军规 10）——全部转发 service 层确定性函数：
   rfauto profile status            → service.profile_service.profile_status
   rfauto profile run               → service.profile_service.profile_run
 
-宏图口径=研究扩充 round16 §四 PR-8：
+宏图口径=docs/research_expansion_20261002_round16.md §四 PR-8：
 "``rfauto profile`` 封装 py-spy（MIT）火焰图落 runs/"。此前 ge8b Wave B
-席B2 按当时任务书收窄为 UI 面（api/profile + 剖析页）；本席补 CLI 面——
+席B2 按当时任务书收窄为 UI 面（/api/profile + 剖析页）；本席补 CLI 面——
 py-spy 可用性探测与采样封装对 CLI 脚本/CI 同样可发现可驱动。
 
 注册说明：profile_app 在 cli/main.py 注册上线（``app.add_typer(profile_app,
@@ -57,9 +57,9 @@ def run(
     out_dir: str = typer.Option(
         "runs/profile", "--out-dir", help="产物目录（缺省 runs/profile，随 /runs 静态可看）"),
     duration: float = typer.Option(
-        30.0, "--duration", help="采样时长秒（[1, 3600]）"),
+        30.0, "--duration", help="采样时长秒（1 到 3600）"),
     rate: int = typer.Option(
-        100, "--rate", help="采样频率 Hz（[10, 1000]）"),
+        100, "--rate", help="采样频率 Hz（10 到 1000）"),
     fmt: str = typer.Option(
         "flamegraph", "--format", help="输出格式：flamegraph(.svg) | speedscope(.json)"),
     out_name: str | None = typer.Option(

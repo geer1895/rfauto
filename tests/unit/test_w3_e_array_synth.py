@@ -106,6 +106,63 @@ def test_bayliss_invalid_inputs():
         bayliss_weights(20, -30.0, nbar=11)
 
 
+def test_bayliss_band_saturation_warns_not_silent():
+    """ge9 审查 P2 勘误钉：声明电平越出膨胀界 [0.75,1.6] 可达带 → 终值
+    复核 UserWarning（#105 观测面语义：不静默也不抛异常），界端权向量
+    照常返回（形状有效、实测 PSLL≠声明值如实可见）。
+
+    合成越带需求：n=16/nbar=4 的可达带实测 ~[−17.8, −67.4]dB（界端点
+    扫描），−80dB 落带外 → 二分收敛到 hi=1.6，实测 −67.35dB（|偏差|
+    ~12.7dB ≫ 0.05dB 收敛带）；带内 −45dB 对照不发警告。"""
+    import warnings as _warnings
+
+    from rfauto.core.array_synthesis import difference_pattern_psll_db
+
+    with _warnings.catch_warnings(record=True) as caught:
+        _warnings.simplefilter("always")
+        w = bayliss_weights(16, -80.0, nbar=4)
+    sat = [x for x in caught if issubclass(x.category, UserWarning)
+           and "可达带" in str(x.message)]
+    assert sat, "界饱和须发 UserWarning（含'可达带'指引）"
+    msg = str(sat[0].message)
+    assert "n_elements=16" in msg and "-80.0" in msg and "nbar=4" in msg
+    realized = difference_pattern_psll_db(w)
+    assert abs(realized - (-80.0)) > 0.05          # 电平声明确实不成立
+    assert abs(realized - (-67.35)) < 0.2          # 收敛在界端可达带边缘
+    half = 8
+    np.testing.assert_allclose(w[half:], -w[:half][::-1], atol=1e-12)
+    assert np.abs(w).max() == pytest.approx(1.0)   # 形状仍有效
+    # 带内对照：可达带中段目标不发警告
+    with _warnings.catch_warnings(record=True) as caught_ok:
+        _warnings.simplefilter("always")
+        bayliss_weights(16, -45.0, nbar=4)
+    assert not [x for x in caught_ok
+                if issubclass(x.category, UserWarning)
+                and "可达带" in str(x.message)]
+
+
+def test_calc_bayliss_psll_converged_field():
+    """CALC 壳层界饱和显式标志钉：带内 psll_converged=True；越带 False+
+    notes 告警行（ge9 审查 P2 勘误，JSON 消费面可判，#122 不静默）。"""
+    import json as _json
+
+    from rfauto.service.calculator_service import run_calculator
+
+    out_ok = run_calculator("array.bayliss_weights",
+                            {"n_elements": 20, "sidelobe_level_db": -30.0})
+    assert out_ok["ok"] is True
+    assert out_ok["result"]["psll_converged"] is True
+
+    with pytest.warns(UserWarning, match="可达带"):
+        out_sat = run_calculator("array.bayliss_weights",
+                                 {"n_elements": 16, "sidelobe_level_db": -80.0,
+                                  "nbar": 4})
+    assert out_sat["ok"] is True   # 观测面告警不转失败（#105）
+    assert out_sat["result"]["psll_converged"] is False
+    assert any("界饱和" in n for n in out_sat["result"]["notes"])
+    _json.dumps(out_sat, allow_nan=False)          # 信封可 JSON 化
+
+
 # ─── Villeneuve ───────────────────────────────────────────────────────────────
 
 def test_villeneuve_nbar1_degenerates_to_uniform():

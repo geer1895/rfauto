@@ -128,7 +128,9 @@ from rfauto.mcp_tools.slotline import msl_slot_transition_design as msl_slot_tra
 from rfauto.mcp_tools.slotline import slotline_analysis as slotline_analysis
 from rfauto.mcp_tools.slotline import slotline_synthesis as slotline_synthesis
 from rfauto.mcp_tools.guidelines import get_guidelines_for as get_guidelines_for
+from rfauto.mcp_tools.resources import calculators_index_resource as calculators_index_resource
 from rfauto.mcp_tools.resources import compat_matrix_resource as compat_matrix_resource
+from rfauto.mcp_tools.resources import datasets_index_resource as datasets_index_resource
 from rfauto.mcp_tools.resources import materials_resource as materials_resource
 from rfauto.mcp_tools.resources import runs_index_resource as runs_index_resource
 from rfauto.mcp_tools.resources import terminology_resource as terminology_resource
@@ -214,7 +216,8 @@ from rfauto.mcp_tools.edb import edb_datasets_resource as edb_datasets_resource
 from rfauto.mcp_tools.edb import edb_status_resource as edb_status_resource
 
 
-# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order）═══
+
+# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order/）═══
 # 根因：@mcp.tool 注册是工具组模块**首次 import** 的装饰器副作用——注册序
 # =各工具组模块的首次执行序。金快照（tests/gold/mcp_registration_order.json）
 # 钉的是本文件 from-import 语句顺序（facade 序；isort: skip_file 保证源序
@@ -223,7 +226,7 @@ from rfauto.mcp_tools.edb import edb_status_resource as edb_status_resource
 # 测试收集期 test_mcp_longtask_wait.py 的模块级 ``from rfauto.mcp_tools
 # import jobs``（b74ec8cc 2026-10-03 落地；pytest 收集阶段 eager import
 # 全部测试模块，先于一切测试执行），症状即"组合跑红/单跑绿/同命令两轮
-# 不同结果"的顺序敏感偶发。
+# 不同结果"的顺序敏感偶发（ 八百二十二）。
 # 对策：facade import 收尾按本文件 from-import 语句序对工具做**稳定重排**
 # （注册幂等化）——任意 import 顺序收敛到同一 facade 注册序；组内工具相对
 # 序由稳定排序保持；非工具组件（resource/prompt/template）整块后置且相互

@@ -22,3 +22,34 @@ topology: 均匀槽线段（路线 B，官方 AddLumpedPort 范式）：金属/�
 param_semantics: w_mm=槽宽，line_len_mm=两端口间距，h_mm=基板厚（模板参数，理由同 slotline）；r_port_ohm 缺省=闭式 Z0（可注入 HFSS Zpv 档）
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；端口盒/槽缘/基板界面精确入网、#152 守卫
 smoke_note: 真机 β_B 68.40 vs HFSS-wide +2.44%（门 3% PASS，e35a517）。原始 |S11|/|S21| 为"PML 匹配线上并联抽头"拓扑解析必然（βL=2π 时 S11=−1/2/S21=+1/2）：β 生产口径可用，S 参数 D 级需 tap_network_sparams 换算（#250）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 槽线 LumpedPort 路线 B：与 slotline 同一槽线闭式，端口改跨槽集总桥——跨槽端口的 S 参数是「PML 匹配线上并联抽头」拓扑解析（βL=2π 时 S11=−1/2/S21=+1/2
+      的必然），不是器件 S 参数。典型用于 β 生产口径提取；常见误用=拿原始 |S11| 判匹配好坏——须走 tap_network_sparams 换算后才能按 S 参数判读。
+    derivations:
+    - claim: 与路线 A 共享 JS 闭式（r_port 缺省=闭式 Z0）
+      formula: Z0(w, d, εr, f)（slotline_z0 单源）
+      source: 本仓 core/slotline（slotline_z0 单源；docs/templates/slotline_lumped/meta.yaml param_semantics）
+    - claim: 并联抽头拓扑解析（β 可用、S 需抽头网络换算）
+      formula: 'βL=2π: S11=-1/2, S21=+1/2（拓扑解析必然）'
+      source: docs/templates/slotline_lumped/meta.yaml smoke_note（真机 β_B 68.40 vs HFSS-wide +2.44% 门 3%
+        PASS，e35a517）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 槽宽=Z0 主维；登记表 0.2538
+  - param: er
+    order: 2
+    basis: 填充通道；登记表 0.1304
+  - param: h_mm
+    order: 3
+    basis: 基板厚；登记表 0.0611
+  - param: line_len_mm
+    order: 4
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 5
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

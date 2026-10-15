@@ -17,7 +17,11 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rfauto.core.errors import ConnectFailedError, LicenseError
+from rfauto.core.errors import (
+    ConnectFailedError,
+    HfssSessionDeadError,
+    LicenseError,
+)
 
 if TYPE_CHECKING:
     from rfauto.infra.remote_machines import HfssMtlsCerts
@@ -54,6 +58,129 @@ def _dso_active_config(desktop: Any, product: str = "HFSS") -> str | None:
         return str(value) if value is not None else None
     except Exception:
         return None
+
+
+def last_desktop_message(desktop: Any) -> str | None:
+    """best-effort 取 AEDT 最后一条 Desktop 错误消息（#413；#105 绝不二次抛）。
+
+    与 pyaedt 同源配方（``general_methods`` 的 "Last Electronics Desktop
+    Message" 提取链）：``odesktop.GetMessages("", "", 2)``（severity=2 错误
+    级）取回消息列表，定位 ``[error]`` 标记从标记处截取——与日志行
+    ``PyAEDT ERROR: Last Electronics Desktop Message - [error] ...`` 同一
+    字段；全列表无标记时回落到末条消息原文。
+
+    Parameters
+    ----------
+    desktop : Any
+        pyaedt Desktop 实例（或裸 odesktop 对象）；None 亦可。
+
+    Returns
+    -------
+    str | None
+        消息文本；取不到（无 desktop/无 odesktop/调用异常/无消息）一律
+        None——调用方注明 unknown，绝不因取消息而二次抛错（#105）。
+    """
+    try:
+        target = getattr(desktop, "odesktop", None) or desktop
+        if target is None or not hasattr(target, "GetMessages"):
+            return None
+        messages = [str(m) for m in (target.GetMessages("", "", 2) or [])]
+    except Exception:
+        return None
+    if not messages:
+        return None
+    for message in reversed(messages):
+        low = message.lower()
+        if "[error]" in low:
+            extracted = message[low.index("[error]"):].strip()
+            return extracted or message.strip()
+    return messages[-1].strip() or None
+
+
+def _grpcsrv_port_from_cmdline(cmdline: str) -> int | None:
+    """从 ansysedt 命令行解析 ``-grpcsrv`` 监听端口（#265 兜底武装）。
+
+    实测形态（AEDT 2025.1 本机 WNUA，w8_pid_probe/probe_result.json）：
+    ``"...ansysedt.exe" -grpcsrv 61359 -ng``（裸端口）；pyaedt 1.4.0
+    ``_get_grpcsrv_args`` 另产出 ``host:port:InsecureMode`` 三段式
+    （TCP/mTLS）。取 ``-grpcsrv`` 后随 token 按双形解析；无该旗标或
+    不可解析一律 None（不猜）。
+    """
+    tokens = str(cmdline).split()
+    for i, token in enumerate(tokens):
+        if token == "-grpcsrv" and i + 1 < len(tokens):
+            parts = tokens[i + 1].split(":")
+            raw = parts[1] if len(parts) >= 2 else parts[0]
+            try:
+                return int(raw)
+            except ValueError:
+                return None
+    return None
+
+
+def extract_desktop_pid(desktop: Any) -> int | None:
+    """读 pyaedt Desktop 实例的 ``aedt_process_id``（#265 兜底武装）。
+
+    该属性**只存在于 Desktop 类**（pyaedt 1.4.0 desktop.py:934 property；
+    gRPC 形态由 ``__initialize`` 的 ``odesktop.GetProcessID()`` 赋值，
+    desktop.py:3067）。app 级（Hfss/Hfss3dLayout）没有该属性——
+    ``getattr(hfss, "aedt_process_id", None)`` 恒 None（W5/W6 误读根因，
+    w8_pid_probe 静态+真机双证）。非整型值（mock/漂移形态）收敛 None。
+    """
+    pid = getattr(desktop, "aedt_process_id", None)
+    if pid is None:
+        return None
+    try:
+        return int(pid)
+    except (TypeError, ValueError):
+        return None
+
+
+def resolve_desktop_pid(desktop: Any, *, fallback_cmdline_scan: bool = True) -> int | None:
+    """会话 ansysedt PID 解析：主源属性 + 命令行扫描兜底（#265 兜底武装）。
+
+    主源=:func:`extract_desktop_pid`（Desktop 级属性，实测本地新起/单例
+    复用两路均有值，w8_pid_probe 真机双证）。兜底=desktop_guard 单源
+    枚举（Get-CimInstance，pid/cmdline）取 ``-grpcsrv`` 端口与本会话
+    ``desktop.port`` 一致的唯一进程——唯一才采信（多候选=端口歧义，不
+    猜）；枚举失败/无匹配/端口缺失一律 None（best-effort，#105：观测
+    不得阻塞主路径）。**远程会话传 ``fallback_cmdline_scan=False``**：
+    枚举只看本机进程，远程 PID 属服务器侧，本地扫描会张冠李戴。
+
+    Parameters
+    ----------
+    desktop : Any
+        pyaedt Desktop 实例（或兼容 duck-type：aedt_process_id + port）。
+    fallback_cmdline_scan : bool
+        主源缺失时是否允许本机命令行扫描兜底（本地会话 True）。
+
+    Returns
+    -------
+    int | None
+        ansysedt PID；取不到 None（调用方按"兜底降级"如实记档）。
+    """
+    pid = extract_desktop_pid(desktop)
+    if pid is not None:
+        return pid
+    if not fallback_cmdline_scan:
+        return None
+    port = getattr(desktop, "port", None)
+    try:
+        port_num = int(port) if port is not None else 0
+    except (TypeError, ValueError):
+        return None
+    if port_num <= 0:
+        return None
+    try:
+        from rfauto.infra.desktop_guard import list_ansysedt_processes
+
+        candidates = [
+            proc["pid"] for proc in list_ansysedt_processes()
+            if _grpcsrv_port_from_cmdline(proc["cmdline"]) == port_num
+        ]
+    except Exception:
+        return None
+    return candidates[0] if len(candidates) == 1 else None
 
 
 class _AutoSwitches:
@@ -133,7 +260,7 @@ def remote_session_switches(
     """远程 attach 四开关+一环境变量的作用域管理（共享单源，L1/L2/session 同款）。
 
     远程分支的 ``Desktop`` 构造必需（pyaedt 1.4.0 × AEDT 2025.1.0 无 SP
-    实证配方，五百三十四；原实现见 remote_service
+    实证配方， 五百三十四；原实现见 remote_service
     ``_attach_and_verify``，审查分片 1 P1-1 提升到本模块共享）：
 
     - ``grpc_local=False``：远程走 TCP 传输（缺省 WNUA 是 Windows 本机通道）；
@@ -242,6 +369,10 @@ class HfssSession:
         if not self._initialized:
             self.desktop: Any = None
             self.hfss: Any = None
+            # 本会话 ansysedt PID（#265 兜底武装，w8_pid_probe 批）：
+            # connect 捕获（Desktop 级属性+命令行扫描兜底），close 清空。
+            # 远程会话=服务器侧 PID（本地存活判定无意义，只记档）。
+            self._desktop_pid: int | None = None
             self._connected: bool = False
             self._settings: dict[str, Any] = {}
             # 远程会话信息（多机协同 v0）：connect(settings) 带 remote_machine
@@ -348,7 +479,7 @@ class HfssSession:
         # 远程会话解析（多机协同 v0）：settings["remote_machine"]=注册表名
         # → infra/remote_machines 解析 host/grpc 端口透传 Desktop(machine=,
         # port=)。无该键=本地会话（零行为变化）。版本配对口径：远程 AEDT
-        # 必须与本机 pyaedt 配对版本一致。
+        # 必须与本机 pyaedt 配对版本一致（项目规则 规则 0）。
         remote_name = settings.get("remote_machine")
         remote_kwargs: dict[str, Any] = {}
         if remote_name:
@@ -358,7 +489,7 @@ class HfssSession:
             )
 
             cfg = resolve_machine(str(remote_name))
-            # 版本配对交叉断言：
+            # 版本配对交叉断言（项目规则 规则 0，审查分片 1 P1-1 附带项）：
             # pyaedt gRPC 客户端-服务端版本必须配对——settings 与注册表
             # 静默失配（如 settings 2024.1 + 注册表 2025.1）会让远程 attach
             # 走错客户端插件，显式拒绝并指引改配置。
@@ -369,7 +500,7 @@ class HfssSession:
                     f"HFSS 远程版本配对失配：settings.desktop_version="
                     f"{local_version!r} 与注册表 {cfg.name!r}.hfss_version="
                     f"{remote_version!r} 不一致——pyaedt gRPC 客户端-服务端"
-                    "版本必须配对；请对齐 settings 的 "
+                    "版本必须配对（项目规则 规则 0）；请对齐 settings 的 "
                     "desktop_version 与 configs/remote_machines.yaml 的 "
                     "hfss.version。",
                     details={
@@ -521,7 +652,19 @@ class HfssSession:
                         _hpc_cores, _hpc_saved_dso, _hpc_dso_config,
                         "已记" if _hpc_saved_dso else "未知（不回写）")
                 self._connected = True
-                logger.info("AEDT Desktop 连接成功 (%s)", version)
+                # #265 兜底武装：捕获本会话 ansysedt PID（Desktop 级属性
+                # 主源+本地命令行扫描兜底；远程只取属性值记档，不做本机
+                # 扫描——枚举看不到远端进程，w8_pid_probe 批）。
+                self._desktop_pid = resolve_desktop_pid(
+                    self.desktop,
+                    fallback_cmdline_scan=self._remote is None,
+                )
+                logger.info(
+                    "AEDT Desktop 连接成功 (%s%s)", version,
+                    f", pid={self._desktop_pid}"
+                    if self._desktop_pid is not None
+                    else "，PID 未捕获（#265 兜底降级——残留清场走 "
+                         "desktop_guard 枚举）")
                 return
             except Exception as exc:
                 last_exc = exc
@@ -573,6 +716,117 @@ class HfssSession:
             self._connected = False
             return False
 
+    def check_session_health(self) -> dict[str, Any]:
+        """会话毒化探针（#413）：依次调设计元数据原始查询，None=毒化。
+
+        失败的边界/端口赋值后（#413，pyaedt 1.4.0 × AEDT 2025 R1 gRPC
+        实证），AEDT 设计元数据查询面由 [] 静默转 None：
+        ``oboundary.GetBoundaries()``/``odesign.GetVariables()``/
+        ``GetSolutionType()``——后续所有操作连环失败且自动化脚本的
+        finally 清理路径必死。本探针按 **返回值 None=毒化、[]/非
+        None=健康** 判读；探针自身 try 全包绝不抛（#105）。
+
+        探针源（键面恒定四探针，源对象未建立=unavailable 不计入毒化）：
+
+        - ``self.hfss``（Hfss 实例，adapter open_or_create_project 挂载）：
+          ``oboundary.GetBoundaries``/``odesign.GetVariables``/
+          ``odesign.GetSolutionType``（#413 三签名）；
+        - ``self.desktop``：``odesktop.GetProjectList``（桌面面活性，
+          #413 实证桌面进程存活——若它也返 None 属更深层毒化，一并拦）。
+
+        Returns
+        -------
+        dict[str, Any]
+            键：
+
+            - ``connected`` : bool，会话连接状态（is_connected）；
+            - ``poisoned`` : bool，任一**可得**探针返回 None（#413 签名）；
+            - ``probes`` : dict，逐探针状态——``healthy``（[]/非 None）/
+              ``poisoned``（None）/``unavailable``（源对象未建立，如未开
+              设计）/``error``（调用抛异常，传输级故障归 health_check/
+              reconnect_with_backoff 面，不计入毒化）；
+            - ``errors`` : dict，error 探针的异常摘要（观测面，#105）。
+        """
+        targets: list[tuple[str, Any, str, str]] = [
+            ("oboundary.GetBoundaries", self.hfss, "oboundary",
+             "GetBoundaries"),
+            ("odesign.GetVariables", self.hfss, "odesign", "GetVariables"),
+            ("odesign.GetSolutionType", self.hfss, "odesign",
+             "GetSolutionType"),
+            ("odesktop.GetProjectList", self.desktop, "odesktop",
+             "GetProjectList"),
+        ]
+
+        probes: dict[str, str] = {}
+        errors: dict[str, str] = {}
+        poisoned = False
+        for name, source, attr, method in targets:
+            if source is None:
+                probes[name] = "unavailable"
+                continue
+            try:
+                obj = getattr(source, attr, None)
+                if obj is None:
+                    probes[name] = "unavailable"
+                    continue
+                value = getattr(obj, method)()
+            except Exception as exc:
+                probes[name] = "error"
+                errors[name] = f"{type(exc).__name__}: {exc}"
+                continue
+            if value is None:
+                probes[name] = "poisoned"
+                poisoned = True
+            else:
+                probes[name] = "healthy"
+        return {
+            "connected": self.is_connected,
+            "poisoned": poisoned,
+            "probes": probes,
+            "errors": errors,
+        }
+
+    def require_healthy(self) -> dict[str, Any]:
+        """关键操作前的毒化 fail-fast 门（#413）。
+
+        任一可得探针返回 None 即抛
+        :class:`~rfauto.core.errors.HfssSessionDeadError`（消息附 AEDT
+        最后 Desktop 消息，取不到注明 unknown——:func:`last_desktop_message`
+        best-effort，#105）；健康/不可探（如未开设计）原样返回探针结果。
+        不自动重建——重建决策（:meth:`reconnect`）留给上层，业务操作
+        不自动重试。
+
+        Returns
+        -------
+        dict[str, Any]
+            :meth:`check_session_health` 的探针结果（poisoned=False）。
+
+        Raises
+        ------
+        HfssSessionDeadError
+            #413 毒化签名（元数据查询返回 None）。
+        """
+        health = self.check_session_health()
+        if not health["poisoned"]:
+            return health
+        poisoned_probes = [
+            name for name, status in health["probes"].items()
+            if status == "poisoned"
+        ]
+        last_msg = last_desktop_message(self.desktop)
+        raise HfssSessionDeadError(
+            "AEDT 会话已毒化（#413）：设计元数据查询返回 None（探针 "
+            + ", ".join(poisoned_probes)
+            + "）——最后 Desktop 消息: " + (last_msg or "unknown")
+            + "；可用 HfssSession.reconnect() 重建会话（业务操作重试由"
+            "上层决策）。",
+            details={
+                "probes": health["probes"],
+                "probe_errors": health["errors"],
+                "last_desktop_message": last_msg,
+            },
+        )
+
     def reconnect_with_backoff(
         self,
         max_retries: int = 3,
@@ -604,6 +858,7 @@ class HfssSession:
         self._connected = False
         self.desktop = None
         self.hfss = None
+        self._desktop_pid = None
 
         last_error: Exception | None = None
         for attempt in range(1, max_retries + 1):
@@ -630,6 +885,40 @@ class HfssSession:
             f"重连失败（已重试 {max_retries} 次）: {last_error}",
             details={"max_retries": max_retries, "last_error": str(last_error)},
         ) from last_error
+
+    def reconnect(self, settings: dict[str, Any] | None = None) -> None:
+        """毒化后重建会话（#413 自动重建钩子，复用 connect 路径）。
+
+        与 :meth:`reconnect_with_backoff` 的差异：单次直连不退避等待
+        （#413 毒化不是 License 释放问题，等无用）；旧桌面优雅释放
+        best-effort（``close_on_exit=False`` 不杀 AEDT 进程，只解绑
+        gRPC 客户端）。业务操作不自动重试——失败的赋值不会因重建而
+        变对，重试决策留给上层。
+
+        Parameters
+        ----------
+        settings : dict, optional
+            覆盖连接配置；缺省复用上次 connect 的配置
+            （从未 connect 过=空配置走 connect 缺省值）。
+
+        Raises
+        ------
+        ConnectFailedError
+            重建失败（connect 路径既有传播，含 LicenseError 分支）。
+        """
+        eff_settings = (
+            dict(settings) if settings is not None else dict(self._settings))
+        try:
+            if self.desktop is not None:
+                self.desktop.release_desktop(
+                    close_on_exit=False, close_projects=False)
+        except Exception as exc:
+            logger.warning("断开毒化旧连接时出错（忽略，#105）: %s", exc)
+        self._connected = False
+        self.desktop = None
+        self.hfss = None
+        self._desktop_pid = None
+        self.connect(eff_settings)
 
     def _restore_hpc(self, hpc: dict[str, Any] | None) -> None:
         """HPC/DSO 旋钮退出恢复（best-effort，#105：失败只告警不阻塞）。
@@ -676,6 +965,31 @@ class HfssSession:
         """
         return self._hpc
 
+    def _warn_pid_residue(self) -> None:
+        """release 后 PID 残留探针（#265 武装，warn-only，#105 best-effort）。
+
+        本地会话且已捕获 PID 时，release_desktop 返回后若该 PID 仍存活
+        （pyaedt ``QuitApplication``+``os.kill(pid, 9)`` 兜底失效的
+        #265 孤儿形态）记 warning 留 desktop_guard 清场/人工核对——
+        **不就地击杀**：杀进程原语单源在 infra/desktop_guard.py（df5
+        静态钉），且 release 异常/超时形态下桌面可能仍在求解，杀否由
+        上层清场决策。远程会话 PID 属服务器侧，本地存活判定无意义，
+        一律跳过。任何异常吞掉（探针绝不阻塞 close 主路径）。
+        """
+        if self._desktop_pid is None or self._remote is not None:
+            return
+        try:
+            from rfauto.infra.desktop_guard import process_alive
+
+            alive = process_alive(self._desktop_pid)
+            if alive:
+                logger.warning(
+                    "release 后 ansysedt pid=%s 仍存活（#265 孤儿风险）"
+                    "——留 desktop_guard 清场或人工核对命令行后处置",
+                    self._desktop_pid)
+        except Exception as exc:
+            logger.warning("PID 残留探针失败（忽略，#105）: %s", exc)
+
     def close(self, save: bool = True) -> None:
         """关闭 AEDT Desktop 会话。
 
@@ -695,11 +1009,23 @@ class HfssSession:
             except Exception as exc:
                 logger.warning("关闭 Desktop 时出错: %s", exc)
             finally:
+                self._warn_pid_residue()
                 self._restore_hpc(hpc)
                 self._connected = False
                 self.desktop = None
                 self.hfss = None
+                self._desktop_pid = None
                 logger.info("AEDT Desktop 会话已关闭")
+
+    @property
+    def desktop_pid(self) -> int | None:
+        """本会话 ansysedt 进程 PID（#265 兜底武装；未连接/未捕获=None）。
+
+        本地会话=本机 PID（可喂 desktop_guard 精确击杀/存活判定）；
+        远程会话=服务器侧 PID（只记档，服务器侧清场消费，项目规则 规则
+        0b 任务毕清理）。
+        """
+        return self._desktop_pid
 
     @property
     def is_connected(self) -> bool:

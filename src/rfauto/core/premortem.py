@@ -1,14 +1,15 @@
 """Pre-mortem 失败预演内核（XN-1，第十九轮 P1，KD-4 的对偶）。
 
 战役/设计开工前自动生成"最可能失败模式 + 症状指纹 + 早期检测探针"——
-把坑账从"事后追账"变"前置防线"（#157/#177 家族
+把坑账（项目规则 踩坑速查）从"事后追账"变"前置防线"（#157/#177 家族
 教训前置化）。与 service/rationale_memory.py 的 recall_for（"这个坑踩过
 没有"检索）互为对偶：那里按任务文本检索历史经验，这里按任务类别把整张
 失败模式表确定性铺开。
 
 设计约束（与 rationale_memory / solve_health 同源）：
 - 失败模式生成 = **确定性规则引擎**：按 task_kind 查静态模式库，无 LLM、
-  无网络、无随机数。
+  无网络、无随机数（项目规则 硬规则 7——LLM/agent 永不产生失败模式与物理
+  判断；库是内嵌模块常量的结构化知识，每条带坑号 source 可溯）。
 - 纯函数内核：同输入两次输出逐位一致（JSON sort_keys 往返逐字节同）。
 - 每条失败模式：模式名 / 可能性档（high|medium|low）/ 症状指纹（早期信号）
   / 检测探针 id / 缓解引用（坑号/TODO 项）+ 出处。
@@ -17,7 +18,7 @@
   发射前后台分离+存活探针在案？"。探针不碰文件系统/进程/网络（纯读
   context），可静态检查、可单测钉死。
 
-模式库种子 = 仓内真实坑账提炼，
+模式库种子 = 仓内真实坑账提炼（项目规则 踩坑速查 +  批次账），
 五类起步：真机求解 / 参数扫描战役 / 校准 / 综合注册 / 模板注册，
 每类 5-10 条。扩库 = 往 ``FAILURE_MODE_LIBRARY`` 追加条目 + 需要的新探针
 spec（注册表消费者：tests/unit/test_premortem.py 完整性锚）。
@@ -205,7 +206,7 @@ for _p in (
     _spec("extend_budget_accounting", "帽停自动展延按重跑全程计预算（wall 突回退=展延信号）在案？",
           keys=("extend_budget_accounting",),
           lessons=("#df7⑦",)),
-    _spec("chdir_isolation", "优化循环 chdir 隔离（不污染真实 runs）在案？",
+    _spec("chdir_isolation", "优化循环 chdir 隔离（不污染真实 runs/）在案？",
           keys=("chdir_isolation",),
           lessons=("#144",)),
     _spec("waiting_trial_recheck", "enqueue 注入后回查 user_attrs WAITING trial 号（不依赖返回值）在案？",
@@ -377,8 +378,8 @@ class FailureMode:
     - likelihood_band：可能性档 high|medium|low（仓内复发频次的经验定档）
     - early_signals：症状指纹（早期信号，判读时逐条对照）
     - detection_probe：检测探针 id（PROBE_REGISTRY 键）
-    - mitigation_ref：缓解引用（坑号/TODO 项/ 规则号，可溯）
-    - source：出处
+    - mitigation_ref：缓解引用（坑号/TODO 项/项目规则 规则号，可溯）
+    - source：出处（项目规则 踩坑速查 /  批次账）
     """
 
     mode_id: str
@@ -575,7 +576,7 @@ FAILURE_MODE_LIBRARY: dict[str, tuple[FailureMode, ...]] = {
     ),
     "calibration": (
         _fm("CA-01", "calibration",
-            "对错误模型校准：建模错误（几何/单位/端口）被调参固化",
+            "对错误模型校准：建模错误（几何/单位/端口）被调参固化（项目规则 规则 1b）",
             "high",
             ("校准残差系统性偏移且多保真互不一致",
              "网格收敛后指标整体平移不收敛"),

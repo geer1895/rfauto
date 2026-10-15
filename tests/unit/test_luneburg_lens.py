@@ -549,7 +549,33 @@ def test_service_optional_channels_and_error_envelope():
     # 内核异常 → ok=False 信封不抛
     out3 = lls.luneburg_lens_design(-1.0, 8)
     assert out3["ok"] is False
-    assert "error" in out3
+    assert "errors" in out3
     out4 = lls.luneburg_lens_design(1.0, 0)
     assert out4["ok"] is False
-    assert "error" in out4
+    assert "errors" in out4
+
+
+def test_service_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（1.0→1.1，2026-10-14 AU-2B）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键保留；成功信封同笔带戳。
+    """
+    import json
+
+    from rfauto.service.luneburg_lens_service import (
+        LUNEBURG_LENS_SERVICE_SCHEMA_VERSION,
+    )
+
+    assert LUNEBURG_LENS_SERVICE_SCHEMA_VERSION == "1.1"
+    env = lls.luneburg_lens_design(-1.0, 8)
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    assert env["schema_version"] == "1.1"
+    env_ok = lls.luneburg_lens_design(0.05, 4)
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    json.dumps([env, env_ok])

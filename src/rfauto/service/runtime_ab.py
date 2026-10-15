@@ -1,6 +1,6 @@
 """Runtime A/B token 效率仪表（WP3.1 验收件：离线结构 A/B + live 真模型 A/B）。
 
-方案口径（TODO 〇-c / 续跑计划 §第 3 期 WP3.1）：runtime: pydantic_ai
+方案口径（TODO 〇-c / 延续计划 §第 3 期 WP3.1）：runtime: pydantic_ai
 与 builtin A/B token 效率后再决定是否切默认。
 
 离线结构 A/B（compare_runtime_token_efficiency，确定性、进测试）：同一脚本化
@@ -11,7 +11,7 @@ builtin 的末段催办 system 消息、工具结果 4000 字符截断等；库�
 ``lib_overhead``（不假装测过）。
 
 live 真模型 A/B（live_runtime_ab，需外网+API key，#139 禁入测试，运行时批次
-由 scripts/runtime_ab_live.py 调用、证据落 runs/runtime_ab_live_out）：同一
+由 scripts/runtime_ab_live.py 调用、证据落 runs/runtime_ab_live_out/）：同一
 prompt/系统提示/只读工具表/预算，交替经 builtin（真实 transport）与 pydantic_ai
 （默认 runner 同款 build+run，仅 http_client 换成带请求钩子的客户端）各跑
 repeats 次，逐次记录模型上报 token、真实出站 body 字节、工具序列、收尾与耗时。

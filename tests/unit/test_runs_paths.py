@@ -96,7 +96,7 @@ def test_resolve_runs_dir_absolute_passthrough(tmp_path):
 
 def test_template_sandbox_root_converges_in_repo_subdir(monkeypatch):
     """F-6/S3：TemplateDraftSandbox 缺省根 chdir 仓内 runs/ 子目录时收敛回
-    仓库 runs/（原 cwd 相对 .resolve() 会分叉到 <子目录>/runs）。只断言
+    仓库 runs/（原 cwd 相对 .resolve() 会分叉到 <子目录>/runs/）。只断言
     解析零写入。"""
     runs_dir = REPO_ROOT / "runs"
     if not runs_dir.is_dir():
@@ -193,3 +193,45 @@ def test_campaign_dashboard_runs_root_converges_in_repo_subdir(
         monkeypatch.chdir(tmp_path)
         with contextlib.suppress(OSError):
             shutil.rmtree(probe_run)
+
+
+# ─── ge9 审查批修复席 B：batch_ops 双根收敛钉（P2-3，F-6 家族同域）────────────
+
+
+def test_batch_ops_discover_run_ids_converges_in_repo_subdir(monkeypatch):
+    """ge9 审查 P2-3：batch_ops discover_run_ids 缺省 ``runs`` 接双根收敛
+    ——chdir 仓内 runs/ 子目录时枚举仓库 runs/（旧 cwd 相对形态静默报
+    "runs 目录不存在"）。只读枚举，零写入。"""
+    runs_dir = REPO_ROOT / "runs"
+    if not runs_dir.is_dir():
+        pytest.skip("仓库 runs/ 不在场")
+    from rfauto.service.batch_ops_service import (
+        _resolve_runs_dir,
+        discover_run_ids,
+    )
+
+    monkeypatch.chdir(runs_dir)
+    assert _resolve_runs_dir("runs") == runs_dir
+    r = discover_run_ids(limit=5)
+    assert r["ok"] is True, r.get("errors")
+    assert Path(r["runs_root"]) == runs_dir
+    assert isinstance(r["run_ids"], list) and len(r["run_ids"]) <= 5
+
+
+def test_batch_ops_discover_run_ids_cwd_root_passthrough(tmp_path,
+                                                         monkeypatch):
+    """新工作区语义不回归：tmp cwd 有 runs/ 时用 cwd 根（双根收敛
+    cwd 优先态）。探针 run 自建自清。"""
+    import json as _json
+
+    from rfauto.service.batch_ops_service import discover_run_ids
+
+    runs = tmp_path / "runs" / "_ge9b_probe_run"
+    runs.mkdir(parents=True)
+    (runs / "results").mkdir()
+    (runs / "results" / "metrics.json").write_text(
+        _json.dumps({"cost": 0.5}), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    r = discover_run_ids()
+    assert r["ok"] is True, r.get("errors")
+    assert r["run_ids"] == ["_ge9b_probe_run"]

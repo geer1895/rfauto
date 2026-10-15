@@ -2,13 +2,16 @@
 
 背景：批处理模式下每次求解 spawn 独立 ``ansysedt -ng -BatchSolve`` 进程；
 卡死进程会一直占许可席位（仓内实证：孤儿 ansysedt 曾占席位 5 小时，
-#265）。本模块为 hfss_batch 席提供四类守卫 API：
+#265）。本模块为 hfss_batch 席提供五类守卫 API：
 
 - 进程枚举 / 孤儿发现：find_batch_processes / find_orphan_batch_processes；
 - 命令行核对后点杀：kill_process_tree（#245 杀前核对命令行；#157 不用
   ``taskkill /T`` 防整树连坐 shim 嵌套的合法进程）；
 - 许可证席位预检：assert_license_headroom（复用 infra.license_probe；
   缺省 fail-open——查不到=放行+warning，守卫绝不阻塞主路径，#105）；
+- 发射前 RAM 预检：assert_ram_headroom（W10 批量战役事故形态守卫；
+  psutil 优先 WMI 兜底；低于阈值=fail-skip（ok=False）由调用方延后
+  发射，查不到=fail-open，#105）；
 - 单次批求解看门：BatchSolveWatchdog（超时/存活探针；竞态完成接受真实
   结果，#145）。
 
@@ -29,6 +32,11 @@ import adapters / service（.importlinter layers 契约）。
   合法桌面）——只点杀 ``-Id`` 参数化的明确 PID。
 - E3-8：powershell 子进程一律带 timeout（枚举/存活/点杀上限对齐
   infra/desktop_guard 常量）；超时=未知态，按保守方向处置。
+- W10：批解启动时物理内存可用率 ~10%（RAM 90% 占用）→ AEDT Com Engine
+  non-responsive → 解无效 → 导出断链 → 连带 python 子进程 0xC0000142
+  秒死（三件套判据）——assert_ram_headroom 发射前预检可用内存百分比；
+  低于阈值=fail-skip（ok=False，调用方决定延后发射，守卫不原地等待），
+  查询通道全挂=fail-open 放行+detail 注明（#105）。
 
 注意：本模块**刻意不定义** ``__all__``——public_api 金快照按 ``__all__``
 收录模块，新增登记属翻公开面评审动作（scripts/check_public_api.py 口径），
@@ -38,6 +46,7 @@ import adapters / service（.importlinter layers 契约）。
 from __future__ import annotations
 
 import logging
+import math
 import subprocess
 import time
 from collections import defaultdict
@@ -68,17 +77,19 @@ class ProcessInfo:
 
 @dataclass
 class GuardResult:
-    """assert_license_headroom 的裁决结果。
+    """assert_license_headroom / assert_ram_headroom 共用的裁决结果。
 
-    ok=False 仅出现在"server 已配置且确认不可达"（继续发射必然在求解期
-    失败的唯一硬信号）；其余一律 ok=True（fail-open），由 fail_open 标记
-    "本次放行是因守卫无法确证"——调用方自行决定是否记录/等待（可配合
-    infra.license_probe.wait_for_license）。守卫本身永不抛、永不阻塞主路径
-    （#105）。
+    license 侧 ok=False 仅出现在"server 已配置且确认不可达"（继续发射
+    必然在求解期失败的唯一硬信号）；RAM 侧 ok=False=可用内存已确证低于
+    阈值（fail-skip：调用方决定延后发射）。其余一律 ok=True（fail-open），
+    由 fail_open 标记"本次放行是因守卫无法确证"——调用方自行决定是否
+    记录/等待（license 侧可配合 infra.license_probe.wait_for_license）。
+    守卫本身永不抛、永不阻塞主路径（#105）。
     """
 
     ok: bool
-    status: str  # "reachable" | "no_server" | "unreachable" | "error"
+    status: str  # license: reachable/no_server/unreachable/error;
+    # ram: sufficient/insufficient/error
     fail_open: bool
     detail: str = ""
     min_free: int = 1
@@ -362,6 +373,166 @@ def assert_license_headroom(min_free: int = 1) -> GuardResult:
     return GuardResult(ok=False, status="unreachable", fail_open=False,
                        detail=detail, min_free=min_free,
                        elapsed_s=time.monotonic() - t0)
+
+
+# ---------------------------------------------------------------------------
+# 发射前 RAM 预检（W10 批量战役事故形态；psutil 优先、WMI 兜底、fail-open）
+# ---------------------------------------------------------------------------
+
+
+def _query_free_ram_pct_psutil() -> float | None:
+    """psutil 通道：物理内存可用百分比（available/total*100）。
+
+    psutil 惰性导入（非硬依赖，对齐 adapters/hfss_batch 的兜底口径）；
+    导入失败 / 查询异常 / total<=0 一律返回 None（fail-open 由调用方
+    处置，通道自身绝不抛）。
+    """
+    try:
+        import psutil
+    except ImportError:
+        return None
+    try:
+        vm = psutil.virtual_memory()
+    except Exception:
+        return None
+    total = float(vm.total)
+    if total <= 0.0:
+        return None
+    return 100.0 * float(vm.available) / total
+
+
+def _query_free_ram_pct_wmi() -> float | None:
+    """WMI 兜底通道：Win32_OperatingSystem 物理内存可用百分比。
+
+    FreePhysicalMemory/TotalVisibleMemorySize 单位均为 KiB（WMI 文档
+    口径）；查询/解析任何环节失败一律返回 None（E3-8：powershell 子
+    进程带 timeout，超时=未知态=不确证）。
+    """
+    script = (
+        "Get-CimInstance Win32_OperatingSystem | ForEach-Object { "
+        "\"$($_.TotalVisibleMemorySize)|$($_.FreePhysicalMemory)\" }"
+    )
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            capture_output=True, text=True,
+            timeout=desktop_guard.ENUM_TIMEOUT_S)
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    if r.returncode != 0:
+        return None
+    lines = [ln.strip() for ln in (r.stdout or "").splitlines() if ln.strip()]
+    if len(lines) != 1:
+        return None
+    parts = lines[0].split("|")
+    if len(parts) != 2:
+        return None
+    try:
+        total_kib = float(parts[0])
+        free_kib = float(parts[1])
+    except ValueError:
+        return None
+    if total_kib <= 0.0:
+        return None
+    return 100.0 * free_kib / total_kib
+
+
+def _query_free_ram_pct() -> tuple[float | None, str]:
+    """双通道顺序查询：psutil 优先、WMI 兜底；永不抛（异常折入原因串）。
+
+    返回 ``(pct, channel)``：查到时 pct 非 None、channel="psutil"/"wmi"；
+    两通道皆不可用时 pct=None、channel 注明逐通道原因（进 GuardResult
+    detail 供 fail-open 留痕）。
+    """
+    reasons: list[str] = []
+    for name, query in (("psutil", _query_free_ram_pct_psutil), ("wmi", _query_free_ram_pct_wmi)):
+        try:
+            pct = query()
+        except Exception as exc:  # 防御：通道实现变更也不许炸守卫（#105）
+            reasons.append(f"{name} raised ({exc})")
+            continue
+        if pct is not None:
+            return pct, name
+        reasons.append(f"{name} unavailable")
+    return None, "; ".join(reasons)
+
+
+def assert_ram_headroom(min_free_pct: float = 15.0) -> GuardResult:
+    """发射批量战役（批解启动）前的 RAM 余量预检。
+
+    背景（W10 批量战役实证新事故形态，三件套判据）：批解启动时物理内存
+    可用率 ~10% → AEDT Com Engine non-responsive → 解无效 → 导出断链 →
+    连带 python 子进程 0xC0000142 秒死。本守卫在发射前查可用内存百分比：
+
+    - pct < min_free_pct → ok=False（fail-skip：已确证的不足是硬信号，
+      调用方据此延后发射/转等待，守卫不原地 sleep/重试）；
+    - 查询通道全挂 → ok=True + fail_open=True（fail-open 放行，detail
+      注明原因，#105：守卫绝不阻塞主路径）；
+    - pct >= min_free_pct → ok=True（fail_open=False，已确证充足；恰
+      等于阈值=达标放行，严格小于才拦）。
+
+    口径=物理内存 available 比例（含 standby 可回收页，psutil available
+    语义 / WMI FreePhysicalMemory 同族），非 committed/虚拟内存——事故
+    形态是整机物理内存挤压。阈值缺省 15%。
+
+    阈值须为有限数：NaN/±inf 使比较失去"已确证"语义（NaN 侧
+    ``pct < threshold`` 恒 False 会产出**假的 confirmed sufficient**），
+    非有限阈值按"无法确证"走 fail-open（ok=True + fail_open=True +
+    status="error"，#105 守卫不抛不阻塞）；有限越界值（负数/>100）比较
+    语义仍良定义（恒放行/恒 fail-skip），detail 回显阈值自说明，不在此
+    二次仲裁。
+    """
+    t0 = time.monotonic()
+    threshold = float(min_free_pct)
+    if not math.isfinite(threshold):
+        logger.warning(
+            "assert_ram_headroom: 阈值非有限（%r）——比较无法确证，fail-open "
+            "放行（#105；NaN 会产出假 confirmed sufficient，故显式按 "
+            "error/fail_open 落痕）", min_free_pct)
+        return GuardResult(
+            ok=True,
+            status="error",
+            fail_open=True,
+            detail=(f"min_free_pct non-finite ({min_free_pct!r}); threshold "
+                    "comparison unverifiable; fail-open per #105"),
+            elapsed_s=time.monotonic() - t0,
+        )
+    pct, channel = _query_free_ram_pct()
+    elapsed = time.monotonic() - t0
+    if pct is None:
+        logger.warning(
+            "assert_ram_headroom: 可用内存不可查（%s），fail-open 放行 (min_free_pct=%s，#105)", channel, min_free_pct
+        )
+        return GuardResult(
+            ok=True,
+            status="error",
+            fail_open=True,
+            detail=(f"ram headroom unverifiable ({channel}); fail-open per #105"),
+            elapsed_s=elapsed,
+        )
+    if pct < min_free_pct:
+        logger.error(
+            "assert_ram_headroom: 可用内存 %.2f%% < 阈值 %s%%——ok=False"
+            "（fail-skip），调用方延后发射（W10 事故形态：RAM 挤压→Com "
+            "Engine non-responsive→解无效→导出断链→0xC0000142）",
+            pct,
+            min_free_pct,
+        )
+        return GuardResult(
+            ok=False,
+            status="insufficient",
+            fail_open=False,
+            detail=(f"free ram {pct:.2f}% < min_free_pct {float(min_free_pct):.2f}% (channel={channel}); defer launch"),
+            elapsed_s=elapsed,
+        )
+    logger.info("assert_ram_headroom: 可用内存 %.2f%% >= 阈值 %s%%（%s 通道）——放行", pct, min_free_pct, channel)
+    return GuardResult(
+        ok=True,
+        status="sufficient",
+        fail_open=False,
+        detail=(f"free ram {pct:.2f}% >= min_free_pct {float(min_free_pct):.2f}% (channel={channel})"),
+        elapsed_s=elapsed,
+    )
 
 
 # ---------------------------------------------------------------------------

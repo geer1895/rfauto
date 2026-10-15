@@ -121,7 +121,7 @@ def _ant2_eps_eff(w_mm: float, freq_ghz: float, er: float, h_mm: float) -> float
 
 # ═══ §10.3 C2 阵列族（2026-09-15 注册）：patch_array_1x4 / patch_array_2x2 /
 # patch_array_series ═══
-# 方案行：续跑计划.md §10.3 器件族表 "C2 阵列族｜1×4/2×2 贴片阵、
+# 方案行：延续计划 §10.3 器件族表 "C2 阵列族｜1×4/2×2 贴片阵、
 # 串馈阵｜阵列因子综合接口"（接 D5 综合内核 core/array_synthesis）。
 #
 # ── 理论核验轮（#206/铁律 1b：先理论后几何；antenna2 六模板同款制度）──

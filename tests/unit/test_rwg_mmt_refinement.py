@@ -31,7 +31,7 @@ from rfauto.core.rwg_mmt import (
 # 固定小例（WR-90 居中感性膜片 d=16mm 零厚；两点带内，秒级零真机）：
 # golden 以缺省路径实测固定。df7_dp1fix 缺陷②根因修复（gsm_cascade 星积
 # s12/s21 中间逆 + 窄→宽结面 canonical 翻转，criteria §2）为**授权变更**，
-# 金钉随之按修后缺省路径实测重钉（修前值见 四四六 batch 档案；
+# 金钉随之按修后缺省路径实测重钉（修前值见  四四六 batch 档案；
 # 本钉职能=强迫缺省数学变更显式化，非禁止变更）。只钉 S11/S21 两腿。
 _WG = Waveguide(a=22.86e-3, b=10.16e-3)
 _CHAIN = [UniformSection(_WG, 10e-3), InductiveIris(_WG, 16e-3, 0.0),

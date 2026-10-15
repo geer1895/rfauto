@@ -1,4 +1,4 @@
-# XC-P 精度档案（specs 规格深案 §B-3，2026-10-02 首批 10 内核）。
+# XC-P 精度档案（specs docs/plan_deepdive_specs_20261002.md §B-3，2026-10-02 首批 10 内核）。
 #
 # 三载体（规格载体裁决）：
 #   1. 本 YAML —— 机器可消费单源（schema 见下）；
@@ -202,7 +202,7 @@ kernels:
       - quantity: z0
         band: "反解回代 |ΔZ0|<0.5Ω；对拍矩阵常规 Z0（35.35/50Ω）<3%、极端（20/120Ω）<5%"
         direction: none
-        condition: "inverse_width 回代自洽断言（扩展方案 验收①③，tests 钉）——代数自洽口径，非对测量。"
+        condition: "inverse_width 回代自洽断言（规划扩展 验收①③，tests 钉）——代数自洽口径，非对测量。"
         unverified: false
       - quantity: er_eff
         band: UNVERIFIED
@@ -217,7 +217,7 @@ kernels:
     refs:
       - "Hammerstad & Jensen（skrf MLine model=hammerstadjensen）"
       - "Pozar, Microwave Engineering 4th ed., §3.8"
-      - "扩展方案 §E6a 验收①③（仓内判据）"
+      - "规划扩展 §E6a 验收①③（仓内判据）"
       - "G0 定案数值锚 runs/df6_dp13（K1，tests/unit/test_rules_verify.py）"
     out_of_domain_behavior: WARN
     last_verified: "2026-10-02"

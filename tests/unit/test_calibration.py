@@ -1,6 +1,6 @@
 """E9b 校准框架单元测试。
 
-验收标准（扩展方案 §E9b）：
+验收标准（规划扩展 §E9b）：
 ① SOLT 校准套件加载
 ② TRL 校准套件加载
 ③ 无校准时返回原样数据
@@ -564,7 +564,7 @@ class TestPatchV2Recompute:
 
 # ─── MS-3 calibration 传参修复（规格 D-1，2026-10-02）───────────────────────
 # 病灶三连修复锚（PV-005 已证：ndarray 逐频切片 → IndexError/AttributeError
-# 被 except 吞成 is_calibrated=False，证据 runs/ms3_pv005）：
+# 被 except 吞成 is_calibrated=False，证据 runs/ms3_pv005/）：
 # ① measured=各标准件实测 Network 列表：合成 12 项误差盒 embed→校准→DUT
 #    回收 max|ΔS|≤1e-9 + residual 全带 ≤−300dB；
 # ② 长度不等/频率不齐显式 ValueError（不再被 except 吞）；

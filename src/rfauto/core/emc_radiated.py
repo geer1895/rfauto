@@ -1,6 +1,6 @@
 """ME-2 EMC v2：辐射发射闭式层（Ott CM 电流式 + 偶极上限/镜像定理 + DM 环路 + 限值叠加）。
 
-规格：月度增强方案 §三 A 流 ME-2。判据预声明：双路径
+规格：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-2。判据预声明：双路径
 裁判（#118）——Ott 工程常数直代 vs 第一性天线式独立推导，同参数点一致带预声明
 ±3 dB 工程带（``DUAL_PATH_BAND_DB``；实际两路代数恒等，实测差 ~1e-14 dB，远窄于带）。
 参照 core/aging.py（docstring 法源）与 core/emi_filter.py（ME-1；限值报告面复用其

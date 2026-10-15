@@ -5,7 +5,7 @@ mline 锚 β 三方对照（Meep/openEMS/HJ）互差 ≤5% 的 Meep 腿。
 
 **部署口径（CI-only，方案冻结裁决）**：Meep 官方仅 conda-on-Linux
 （Windows 仅 WSL2，违反本机约束）——本机不出报告，交叉验证在 Linux CI
-runner 上跑（扩展方案 §方向5 回退链 / knowledge/compat_matrix.yaml
+runner 上跑（规划扩展 §方向5 回退链 / knowledge/compat_matrix.yaml
 meep 条目）。因此本适配器 = 「脚本生成 → 子进程执行 → CSV 解析」的
 openEMS/Palace 同构模式，exe 指向**装有 meep 的 Python 解释器**
 （configs/solvers.yaml exe_path / RFAUTO_MEEP_PYTHON 环境变量 /

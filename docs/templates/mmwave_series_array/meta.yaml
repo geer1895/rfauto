@@ -63,3 +63,41 @@ nominal_derivation: |-
   2.4664mm → 互联长 s=1.7482（倾斜设计式 s=(u0·k0·L+π)/(βg−u0·k0)，u0=0.30
   主分支 m=1，未舍入闭合往返 ≤1e-9）→ d/λ0=0.696（栅瓣判据 <0.769）；链末
   load_r=50Ω=线 Z0（一阶未载入口径）；feed_margin=3.0（#347 守卫余量）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 78GHz 串馈毫米波阵：单元间倾斜互联段用设计式 s=(u0·k0·L+π)/(βg−u0·k0) 补偿串馈相位（主分支 u0=0.30），链末 50Ω 集中负载吸收残余。典型用于毫米波定波束低成本串馈；常见误用=只核栅瓣不核倾斜角——d/λ0=0.696<0.769
+      判据过而倾斜设计式的 βg 取舍（先舍入再算）同样进相位账。
+    derivations:
+    - claim: 倾斜串馈设计式（主分支 u0=0.30 的相位补偿）
+      formula: s = (u0*k0*L + π)/(βg - u0*k0) ; 未舍入闭合往返 ≤1e-9
+      source: docs/templates/mmwave_series_array/meta.yaml nominal_derivation（导入期 mmwave_series_design_params
+        非手抄）；C.A. Balanis, Antenna Theory (3rd ed.), Ch.6 阵列相位口径（docs/rf_template_references.md §12 同族）
+    - claim: 栅瓣判据与单元口径（Balanis Ch.14，er=3.0/h=0.127）
+      formula: d/λ0 = 0.696 < 0.769（判据） ; W = c/(2f0)·√(2/(εr+1))
+      source: docs/templates/mmwave_series_array/meta.yaml nominal_derivation；docs/rf_template_references.md
+        §12
+  sensitivity_ranking:
+  - param: link_len_mm
+    order: 1
+    basis: 倾斜互联长=相位补偿主维（设计式分母 βg−u0·k0 通道）
+  - param: elem_len_mm
+    order: 2
+    basis: 单元 λ/2 谐振恒等式（精确 1.0 通道，设计式分子 k0·L）
+  - param: feed_w_mm
+    order: 3
+    basis: 馈线宽经 εeff→βg 进入设计式（相位账弱维）
+  - param: elem_w_mm
+    order: 4
+    basis: 单元宽（波束/弱进谐振）
+  - param: n_elem
+    order: 5
+    basis: 单元数（离散整数维，增益/口径长）
+  - param: load_r_ohm
+    order: 6
+    basis: 链末负载（=线 Z0 一阶口径，不进相位账）
+  - param: feed_margin_mm
+    order: 7
+    basis: 板边馈段守卫余量（不进相位账）
+  quiz_refs: []

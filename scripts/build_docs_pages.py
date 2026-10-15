@@ -15,6 +15,9 @@
 用法（在 venv 内，仓根执行）：
     python scripts/build_docs_pages.py            # 原地重建 docs_site/
     python scripts/build_docs_pages.py --out DIR  # 重建到指定目录（测试用）
+    python scripts/build_docs_pages.py --check    # 漂移检查（退出码 1=需重建；
+                                                  # 挂 scripts/check_docs_drift.py
+                                                  # 日检驱动）
 
 产物确定性：不写时间戳/环境相关内容（锚树测试按逐字节比对钉漂移）。
 """
@@ -24,9 +27,11 @@ from __future__ import annotations
 import argparse
 import ast
 import importlib.util
+import json
 import re
 import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -57,7 +62,7 @@ AUTO_END = "<!-- AUTO-NUMBERS:END -->"
 
 def load_check_numbers():
     """按文件路径装载 scripts/check_numbers.py（与 tests/unit/test_check_numbers
-    同款 importlib 模式；不依赖 sys.path 含 scripts）。"""
+    同款 importlib 模式；不依赖 sys.path 含 scripts/）。"""
     path = Path(__file__).resolve().parent / "check_numbers.py"
     spec = importlib.util.spec_from_file_location("_pr10_check_numbers", path)
     if spec is None or spec.loader is None:  # pragma: no cover - 防御
@@ -289,16 +294,28 @@ def build_calculators_page(checknum) -> tuple[str, int, int]:
 def build_templates_page(checknum) -> tuple[str, int]:
     import yaml
 
+    # 注册模板键集单源（openems_templates.TEMPLATE_META，与 checknum 同源惰性
+    # import）：docs/templates/*/meta.yaml 下非注册目录=信息文档形态（2026-10-08
+    # EDB 快车道族 docs/templates/edb_*/meta.yaml 起，不入注册表——其一致性
+    # 消费者另有约定，见各文件头注记），不进本页、不进计数。
+    from rfauto.adapters.openems_templates import TEMPLATE_META
+
     metas: list[tuple[str, dict[str, Any]]] = []
+    info_docs: list[str] = []
     for path in sorted(TEMPLATES_DOCS.glob("*/meta.yaml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        metas.append((path.parent.name, data))
+        if path.parent.name in TEMPLATE_META:
+            metas.append((path.parent.name, data))
+        else:
+            info_docs.append(path.parent.name)
 
     expected = checknum.count_template_meta()
     if len(metas) != expected:
         raise RuntimeError(
-            f"模板页 docs/templates/*/meta.yaml 数 {len(metas)} != "
-            f"check_numbers.count_template_meta() {expected}（同源互证失败）")
+            f"注册模板 docs/templates/*/meta.yaml 数 {len(metas)} != "
+            f"check_numbers.count_template_meta() {expected}（同源互证失败；"
+            f"信息文档目录（不入 TEMPLATE_META，正常排除）={info_docs or '无'}——"
+            "若新注册模板缺 meta.yaml 请补文件而非改本判定）")
 
     lines: list[str] = [
         "# 模板库",
@@ -438,19 +455,66 @@ def build_capability_map_page(checknum) -> tuple[str, int, int]:
     return "\n".join(lines).rstrip() + "\n", cli_total, mcp_total
 
 
+# ─── REST schema 机读页（endpoint_inventory 单源；E2E-REST 席）────────────
+
+def build_rest_schema_page() -> tuple[str, int]:
+    """REST 面 schema 常驻产物（docs_site/rest_schema.json）生成。
+
+    rfauto.service.rest_api.endpoint_inventory() 单源（_ROUTE_TABLE 程序化
+    枚举，禁手抄清单），构建时与 create_rest_app() ASGI 路由表反射互证
+    （路径+声明方法集逐位一致，不一致 RuntimeError 拒绝出页——#97 同源契约；
+    starlette 对 GET 自动补 HEAD，对账口径剔除）。带 ``_provenance`` 溯源头
+    （机生页惯例）；inventory 零时间戳/环境量——产物逐字节可复算（锚树
+    保鲜比对前提）。漂移钉=tests/unit/test_rest_e2e_smoke_script.py +
+    build_docs_pages --check。返回 (JSON 文本, 端点数)。
+    """
+    from starlette.routing import Route
+
+    from rfauto.service import rest_api
+
+    inventory = rest_api.endpoint_inventory()
+    if not inventory.get("ok"):
+        raise RuntimeError(
+            f"endpoint_inventory 返回失败信封: {inventory.get('errors')!r}"
+            "（拒绝出页）")
+    endpoints = inventory.get("endpoints") or []
+
+    route_map: dict[str, list[str]] = {}
+    for r in rest_api.create_rest_app().routes:
+        if isinstance(r, Route):
+            route_map[r.path] = sorted(
+                m for m in (r.methods or ()) if m != "HEAD")
+    inv_map = {e["path"]: sorted(e["methods"]) for e in endpoints}
+    if route_map != inv_map:
+        method_diffs = [p for p in route_map if p in inv_map
+                        and route_map[p] != inv_map[p]]
+        raise RuntimeError(
+            "REST 端点清单与 ASGI 路由表漂移（拒绝出页）："
+            f"仅路由表有={sorted(set(route_map) - set(inv_map))} "
+            f"仅清单有={sorted(set(inv_map) - set(route_map))} "
+            f"方法差异={method_diffs}——_ROUTE_TABLE 与路由装配失同步")
+
+    document: dict[str, Any] = {
+        "_provenance": {
+            "artifact": "docs_site/rest_schema.json",
+            "generator": "scripts/build_docs_pages.py",
+            "source": "rfauto.service.rest_api.endpoint_inventory()"
+                      "（_ROUTE_TABLE 程序化枚举单源，禁手抄）",
+            "regenerate": "python scripts/build_docs_pages.py",
+            "drift_pins": "tests/unit/test_rest_e2e_smoke_script.py + "
+                          "scripts/build_docs_pages.py --check",
+            "note": "机读产物勿手改；线上同源 GET /api/v1/openapi.json",
+        },
+        **inventory,
+    }
+    text = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+    return text, len(endpoints)
+
+
 # ─── 首页数字条（AUTO-NUMBERS 标记块回填）────────────────────────────────
 
 def numbers_strip(checknum) -> str:
-    # 全量门测试行=README 徽章 floor（环境无关单一来源）——活 collect 随
-    # 平台/依赖面漂移（本机 21809 vs CI 21914，2026-10-07 四跑实证），地板
-    # 语义下 collect ≥ badge 即诚实；badge 诚实性由 numbers self-check job
-    # 单独执法（与 strip 比对解耦）。checknum 参数保留（其余行仍同源实测）。
-    import re as _re
-    _readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(
-        encoding="utf-8")
-    _m = _re.search(r"badge/tests-(\d+)", _readme)
-    tests_n = int(_m.group(1))
-    tests_src = "README badge floor（环境无关）"
+    tests_n, tests_src = checknum.count_tests()
     cli_n = checknum.count_cli()
     mcp_n = checknum.count_mcp()
     calc_n = checknum.count_calculators()
@@ -585,6 +649,7 @@ def build_all(out_dir: Path, index_src: Path | None = None) -> dict[str, int]:
     calc_md, calc_n, _calc_all = build_calculators_page(checknum)
     tmpl_md, tmpl_n = build_templates_page(checknum)
     cap_md, _cap_cli, _cap_mcp = build_capability_map_page(checknum)
+    rest_json, rest_n = build_rest_schema_page()
 
     (out_dir / "reference" / "cli.md").write_text(cli_md, encoding="utf-8")
     (out_dir / "reference" / "mcp.md").write_text(mcp_md, encoding="utf-8")
@@ -593,6 +658,7 @@ def build_all(out_dir: Path, index_src: Path | None = None) -> dict[str, int]:
     (out_dir / "reference" / "capabilities.md").write_text(cap_md,
                                                            encoding="utf-8")
     (out_dir / "catalog" / "index.md").write_text(tmpl_md, encoding="utf-8")
+    (out_dir / "rest_schema.json").write_text(rest_json, encoding="utf-8")
     fill_index_strip(checknum, out_dir)
     sync_assets(out_dir)
 
@@ -601,19 +667,76 @@ def build_all(out_dir: Path, index_src: Path | None = None) -> dict[str, int]:
         "mcp": mcp_n,
         "calculators": calc_n,
         "templates": tmpl_n,
+        "rest_endpoints": rest_n,
         "tests": checknum.count_tests()[0],
         "anchors": checknum.count_anchors(),
     }
 
 
+def _rel_files(root: Path) -> set[Path]:
+    """root 下全部文件的相对路径集（rglob 文件面；目录不参与比对）。"""
+    return {p.relative_to(root) for p in root.rglob("*") if p.is_file()}
+
+
+def check_drift(ref_dir: Path, *, list_cap: int = 20) -> int:
+    """--check 漂移检查：重生成到临时目录与基准逐字节比对（不写基准）。
+
+    与 scripts/build_kernel_cards.py --check 同语义（退出码 1=需重建）。
+    判红面=生成集内的缺文件与内容漂移（与 tests/unit/test_docs_site 的
+    已提交保鲜逐字节口径一致）；基准目录中生成集之外的多余文件只 WARN
+    不判红（生成器不拥有其保鲜契约，误判红会挡住合法历史资产）。
+    """
+    if not ref_dir.is_dir():
+        print(f"[docs_site] 漂移：基准目录不存在 {ref_dir}——仓根重跑 "
+              f"python scripts/build_docs_pages.py")
+        return 1
+    with tempfile.TemporaryDirectory(prefix="docs_site_check_") as td:
+        fresh = Path(td) / "docs_site"
+        build_all(fresh)
+        fresh_files = _rel_files(fresh)
+        ref_files = _rel_files(ref_dir)
+        missing = sorted(fresh_files - ref_files)
+        drifted = sorted(
+            rel for rel in fresh_files & ref_files
+            if (fresh / rel).read_bytes() != (ref_dir / rel).read_bytes())
+        extras = sorted(ref_files - fresh_files)
+    if missing or drifted:
+        if missing:
+            shown = [str(p) for p in missing[:list_cap]]
+            print(f"[docs_site] 漂移：基准缺 {len(missing)} 个生成产物"
+                  f"（前 {len(shown)}）：{shown}")
+        if drifted:
+            shown = [str(p) for p in drifted[:list_cap]]
+            print(f"[docs_site] 漂移：{len(drifted)} 个文件与基准不一致"
+                  f"（前 {len(shown)}）：{shown}——仓根重跑 "
+                  f"python scripts/build_docs_pages.py")
+        return 1
+    if extras:
+        shown = [str(p) for p in extras[:list_cap]]
+        print(f"[docs_site] WARN：基准含 {len(extras)} 个生成集之外文件"
+              f"（不判红；前 {len(shown)}）：{shown}")
+    print(f"[docs_site] OK：{len(fresh_files)} 个产物与基准 {ref_dir} "
+          f"逐字节一致")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="PR-10 文档站机读页生成器")
     parser.add_argument("--out", type=str, default=None,
-                        help="输出目录（缺省 docs_site）")
+                        help="输出目录（缺省 docs_site/；--check 时=比对"
+                             "基准目录，缺省已提交 docs_site/）")
+    parser.add_argument(
+        "--check", action="store_true",
+        help="漂移检查：重生成到临时目录与基准逐字节比对，缺文件/内容"
+             "漂移即退出码 1（不写基准；与 build_kernel_cards --check "
+             "同语义）",
+    )
     args = parser.parse_args(argv)
-    out = Path(args.out) if args.out else DOCS_SITE_DEFAULT
-    manifest = build_all(out)
-    print(f"build_docs_pages: rebuilt {out}")
+    target = Path(args.out) if args.out else DOCS_SITE_DEFAULT
+    if args.check:
+        return check_drift(target)
+    manifest = build_all(target)
+    print(f"build_docs_pages: rebuilt {target}")
     for key in sorted(manifest):
         print(f"  {key} = {manifest[key]}")
     return 0

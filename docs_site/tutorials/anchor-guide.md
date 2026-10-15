@@ -18,14 +18,14 @@
 这个差值不是 bug，而是每个引擎的系统性偏差——把它测出来、登记成
 锚，后续综合与判读就有了跨引擎的"换算基准"。
 
-当前注册表共 49 条锚（`rfauto anchors validate` 实测），分型分布：
+当前注册表共 60 条锚（`rfauto anchors validate` 实测），分型分布：
 
 | 维度 | 分布 |
 |---|---|
-| kind | constant 38 / pointer 8 / formula 2 / curve 1 |
-| status | experimental 36 / active 13 |
-| engine_pair | closedform→∅ 26 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / 无 3 |
-| 模板族 | 38 族（c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
+| kind | constant 49 / pointer 8 / formula 2 / curve 1 |
+| status | experimental 41 / active 19 |
+| engine_pair | closedform→∅ 37 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / 无 3 |
+| 模板族 | 47 族（c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
 
 **pointer（双值指针锚）值得单说**：openEMS 与 HFSS 各登记一个值，
 **不合并成单一常数、也不就地求值**。设计意图是"双值并存、比对消费"，
@@ -101,14 +101,14 @@ rfauto anchors stale --threshold 30   # 新鲜度盘点
 实测 `validate` 输出：
 
 ```
-锚注册表校验（DP-3）：49 条（单源期望 49，匹配=True），registry=None
+锚注册表校验（DP-3）：60 条（单源期望 60，匹配=True），registry=None
 ✓ schema + provenance 全过
 ```
 
 实测 `stale` 输出头（`no_date` 是"从未复验、如实不算 stale"）：
 
 ```
-锚新鲜度（QW-3，阈值 30.0 天，stale 0/no_date 30/49 条）
+锚新鲜度（QW-3，阈值 30.0 天，stale 0/no_date 35/60 条）
 ```
 
 另有 `rfauto anchors drift <anchor_id>`：Mann-Kendall 趋势 + 分布
@@ -132,7 +132,7 @@ find_anchors_request("patch", "f_dip_L", engine="openems")
 from rfauto.service.knowledge_service import search_knowledge
 
 search_knowledge("l_via_h", scope="anchors")
-# → {'ok': True, 'n_hits': 1, 'scanned': {'rules': 9, 'anchors': 49,
+# → {'ok': True, 'n_hits': 1, 'scanned': {'rules': 10, 'anchors': 60,
 #    'playbook': 17, 'fab': 2}}
 ```
 

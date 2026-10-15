@@ -22,3 +22,32 @@ topology: 展开型 Lange 电桥（3dB 正交，C4 族）：四指交替并联�
 param_semantics: w_mm=单指宽，gap_mm=指缝（边到边；3dB 于本叠层 s=0.0386mm，g=s/h=0.076 略低于 KJ 标称有效域下限 0.1，openems_templates §C4 段首口径 3 如实记录），finger_len_mm=指长（λ/4 @平均 εeff=2.4972），w_feed_mm=50Ω 馈线宽。相邻对 (Z0e,Z0o)=(176.216,52.609)Ω（Pozar 设计式 C=1/√2）
 smoke_note: 真机未跑（followUp）：指缝 38.6µm 小于 0.4mm 审计网格（near 加密入网）；桥缝耦合寄生于理想裁判之外，冒烟按 g=0.076 提示与一阶口径判读
 # XC-T 锚族补挂注记: lange.s31_coupling.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: Lange 电桥：四指交替并联把相邻耦合对换算为等效两线 (Ze4,Zo4)，在 3dB 耦合度下用普通光刻可达的 (w,s) 实现 3dB——这是相对两线耦合器（3dB 所需缝隙不可制造）的存在理由。典型用于平衡混频/放大器正交分配；常见误用=忽略展开型拓扑前提（air-bridge
+      交替并联）直接套四线换算式，或漏掉 DC 直通口相连的端口约定。
+    derivations:
+    - claim: 四线→等效两线换算与设计反解式（C=1/√2 → 相邻对 (176.216,52.609)Ω）
+      formula: Ze4 = Z0e*(Z0o+Z0e)/(3*Z0o+Z0e) ; Zo4 = Z0o*(Z0o+Z0e)/(3*Z0e+Z0o)
+      source: Pozar, Microwave Engineering (4th ed.), §7.6 Lange 节；J. Lange, IEEE-MTT-S 1969；docs/rf_template_references.md
+        §13.3 已核（换算回 (120.711,20.711)Ω → C=0.707107 逐位闭合）
+    - claim: 指长 λ/4 取相邻对 KJ 平均填充 εeff（名义 2.4972）
+      formula: L_finger = c/(4*f0*sqrt((εeff_e+εeff_o)/2))
+      source: 本仓 core/coupled_microstrip（KJ 单源；docs/templates/lange/meta.yaml param_semantics（g=s/h=0.076
+        略低于 KJ 标称有效域下限 0.1，如实记录不判废））
+  sensitivity_ranking:
+  - param: finger_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；登记表同值 1.0
+  - param: w_mm
+    order: 2
+    basis: 指宽经 KJ 填充进入（等效两线阻抗口径）；登记表 0.0138
+  - param: gap_mm
+    order: 3
+    basis: 指缝定 3dB 耦合度（KJ 强敏感维，且是光刻工艺极限所在）；登记表 0.0016
+  - param: w_feed_mm
+    order: 4
+    basis: 50Ω 馈线匹配（不进指谐振式）
+  quiz_refs: []

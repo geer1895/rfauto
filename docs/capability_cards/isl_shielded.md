@@ -26,7 +26,21 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=17 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | w_mm | 0.73477 |
+| 2 | h_top_mm | 0.326616 |
+| 3 | g_air_mm | 0.291283 |
+| 4 | er | 0.065562 |
+| 5 | d_mm | 0.0 |
+| 6 | line_len_mm | 0.0 |
+| 7 | s_mm | 0.0 |
+| 8 | tan_d | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -48,7 +62,7 @@
 - 参数语义：w_mm=条带宽（设计链 core/isl_line.isl_design_params：50Ω 准静态反解，名义 2.4818mm@g=0.508/h_sub=0.508/h_top=1.016/εr=3.66，εeff=1.2854——空气份额高，εeff 显著低于同叠层微带属悬置定义性质）、g_air_mm=地面→基板空气隙（悬置定义参数）、h_top_mm=条带→顶板腔高、d_mm/s_mm=过孔藩篱直径/心距、line_len_mm=两端口测量面间距；h_sub/er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘/藩篱三线对 x 向 + 线两端/每孔三线 y 向精确入网（#198）；过孔直径 ≥4·NEAR、孔间缝 ≥1 内部线（hmsiw 同守卫）、显式近场线 10µm 地板（#349）；基板 z 4 层+空气隙 2 层（z 网格字面与基板盒/条带同源）
 - 冒烟现状：离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（round15 IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(|h1−h2|/D)（模型 wide-limit 与逐径混合差异，h1=h2 点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

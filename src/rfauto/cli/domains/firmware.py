@@ -10,6 +10,12 @@ stats.py 先例：纯计算命令域内惰性 import core 直连，模块级 add
 JSON 信封直出（ok=false → 退出码 1）；表格输入走 --file JSON（复数按
 dpd_static.to_dict 的 {"re","im"} 对约定）；--csv/--ch 落盘（显式 UTF-8，
 #89）。
+
+信封契约（aurora_d AU-2C 域升版 2026-10-14）：响应信封一律走
+rfauto.service.envelope 构造器；失败形单数 ``error`` 键统一为
+``errors`` list[str]（error_envelope 单源，契约 §1 判读规则 2）——
+无戳域补戳 ``FIRMWARE_EXPORT_SCHEMA_VERSION="1.1"``，成功/失败信封同笔
+带戳（键序 ok → schema_version → 域字段）。
 """
 
 from __future__ import annotations
@@ -19,9 +25,15 @@ import json
 import typer
 
 from rfauto.cli.domains._core import app as app
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 firmware_app = typer.Typer(help="固件工件三出口（波束码字/变容管 DAC/DPD 定点，§B-6）")
 app.add_typer(firmware_app, name="firmware")
+
+#: firmware 导出域 schema 版本（无戳域补戳，AU-2C 2026-10-14；recipe_version
+#: 与 schema_version 语义区分，#106——本常量只描述本域 CLI 返回信封结构，
+#: 不进缓存键。1.1=首批推广即失败形 errors 化口径，无 1.0 存档）。
+FIRMWARE_EXPORT_SCHEMA_VERSION = "1.1"
 
 
 def _emit_firmware(result: dict) -> None:
@@ -39,7 +51,9 @@ def _write_text(path: str, text: str, what: str) -> str | None:
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
     except OSError as exc:
-        _emit_firmware({"ok": False, "error": f"{what}写入失败: {exc}"})
+        _emit_firmware(error_envelope(
+            f"{what}写入失败: {exc}",
+            schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION))
         raise typer.Exit(code=1) from None
     return path
 
@@ -59,8 +73,8 @@ def firmware_beam_cmd(
     bits: int = typer.Option(..., "--bits", min=1, max=16,
                              help="相位量化位宽（1..16）"),
     file: str = typer.Option(..., "--file", help=(
-        '单元表 JSON：{"element_ids":[...], "x_mm":[...], "y_mm":[...], '
-        '"phase_target_deg":[...], "u0":[...]可选, "temp_comp_channels":N可选}')),
+        '单元表 JSON：键 element_ids、x_mm、y_mm、phase_target_deg（必给等长数组），'
+        'u0（等长数组，可选），temp_comp_channels（整数 N，可选）')),
     csv_out: str = typer.Option("", "--csv", help="CSV 输出路径（可选）"),
     ch_out: str = typer.Option("", "--ch", help="C 头输出路径（可选）"),
     show_rows: bool = typer.Option(False, "--rows/--no-rows",
@@ -82,19 +96,20 @@ def firmware_beam_cmd(
         )
         audit = beam_backsub_audit(table)
     except (ValueError, KeyError) as exc:
-        _emit_firmware({"ok": False,
-                        "error": f"波束码字表失败: {exc}（KeyError=缺键）"})
+        _emit_firmware(error_envelope(
+            f"波束码字表失败: {exc}（KeyError=缺键）",
+            schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION))
         return
-    envelope: dict = {
-        "ok": True,
-        "bits": table["bits"],
-        "n_elements": table["n_elements"],
-        "quant_step_deg": table["quant_step_deg"],
-        "quant_loss_db": table["quant_loss_db"],
-        "audit": audit,
-        "csv_path": _write_text(csv_out, beam_table_csv(table), "CSV"),
-        "ch_path": _write_text(ch_out, beam_table_c_header(table), "C 头"),
-    }
+    envelope: dict = ok_envelope(
+        schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION,
+        bits=table["bits"],
+        n_elements=table["n_elements"],
+        quant_step_deg=table["quant_step_deg"],
+        quant_loss_db=table["quant_loss_db"],
+        audit=audit,
+        csv_path=_write_text(csv_out, beam_table_csv(table), "CSV"),
+        ch_path=_write_text(ch_out, beam_table_c_header(table), "C 头"),
+    )
     if show_rows:
         envelope["rows"] = table["rows"]
     _emit_firmware(envelope)
@@ -103,8 +118,8 @@ def firmware_beam_cmd(
 @firmware_app.command("varactor")
 def firmware_varactor_cmd(
     file: str = typer.Option(..., "--file", help=(
-        '载荷 JSON：{"f_targets_ghz":[...], "line_len_mm":, "z0_ohm":, '
-        '"ereff":, "cj0_pf":, "phi_v":, "v_ref_v":, "bit_width":}')),
+        '载荷 JSON：键 f_targets_ghz（数值数组）、line_len_mm、z0_ohm、'
+        'ereff、cj0_pf、phi_v、v_ref_v、bit_width')),
     csv_out: str = typer.Option("", "--csv", help="CSV 输出路径（可选）"),
     json_output: bool = typer.Option(
         False, "--json",
@@ -122,19 +137,20 @@ def firmware_varactor_cmd(
             v_ref_v=data["v_ref_v"], bit_width=int(data["bit_width"]),
         )
     except (ValueError, KeyError) as exc:
-        _emit_firmware({"ok": False,
-                        "error": f"varactor DAC 表失败: {exc}（KeyError=缺键）"})
+        _emit_firmware(error_envelope(
+            f"varactor DAC 表失败: {exc}（KeyError=缺键）",
+            schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION))
         return
-    _emit_firmware({
-        "ok": True,
-        "bit_width": table["bit_width"],
-        "v_ref_v": table["v_ref_v"],
-        "lsb_v": table["lsb_v"],
-        "full_scale_v": table["full_scale_v"],
-        "audit": table["audit"],
-        "rows": table["rows"],
-        "csv_path": _write_text(csv_out, varactor_table_csv(table), "CSV"),
-    })
+    _emit_firmware(ok_envelope(
+        schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION,
+        bit_width=table["bit_width"],
+        v_ref_v=table["v_ref_v"],
+        lsb_v=table["lsb_v"],
+        full_scale_v=table["full_scale_v"],
+        audit=table["audit"],
+        rows=table["rows"],
+        csv_path=_write_text(csv_out, varactor_table_csv(table), "CSV"),
+    ))
 
 
 def _complex_from_json(value) -> complex:
@@ -164,9 +180,9 @@ def _complex_matrix(value, name: str) -> list:
 @firmware_app.command("dpd")
 def firmware_dpd_cmd(
     file: str = typer.Option(..., "--file", help=(
-        '载荷 JSON：{"coeffs":[[{"re","im"}...]], "x":[{"re","im"}...] 或 '
-        '[re,im] 列表, "pa_coeffs":可选, "word_bits":16, "frac_bits":12, '
-        '"nmse_gate_db":0.5}')),
+        '载荷 JSON：键 coeffs（re,im 键对象数组）、x（re,im 键对象数组，或 '
+        're,im 二元列表）、pa_coeffs（可选）、word_bits=16、frac_bits=12、'
+        'nmse_gate_db=0.5')),
     csv_out: str = typer.Option("", "--csv", help="CSV 输出路径（可选）"),
     json_output: bool = typer.Option(
         False, "--json",
@@ -189,22 +205,23 @@ def firmware_dpd_cmd(
             nmse_gate_db=float(data.get("nmse_gate_db", 0.5)),
         )
     except (ValueError, KeyError, TypeError) as exc:
-        _emit_firmware({"ok": False,
-                        "error": f"DPD 定点表失败: {exc}（KeyError=缺键）"})
+        _emit_firmware(error_envelope(
+            f"DPD 定点表失败: {exc}（KeyError=缺键）",
+            schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION))
         return
-    _emit_firmware({
-        "ok": True,
-        "word_bits": table["word_bits"],
-        "frac_bits": table["frac_bits"],
-        "q_format": table["q_format"],
-        "warnings_count": table["warnings_count"],
-        "overflow": table["overflow"],
-        "nmse_db": table["nmse_db"],
-        "gain_delta_db": table["gain_delta_db"],
-        "cascade": table["cascade"],
-        "nmse_gate_db": table["nmse_gate_db"],
-        "verdict": table["verdict"],
-        "notes": table["notes"],
-        "coeffs_int": table["coeffs_int"],
-        "csv_path": _write_text(csv_out, dpd_table_csv(table), "CSV"),
-    })
+    _emit_firmware(ok_envelope(
+        schema_version=FIRMWARE_EXPORT_SCHEMA_VERSION,
+        word_bits=table["word_bits"],
+        frac_bits=table["frac_bits"],
+        q_format=table["q_format"],
+        warnings_count=table["warnings_count"],
+        overflow=table["overflow"],
+        nmse_db=table["nmse_db"],
+        gain_delta_db=table["gain_delta_db"],
+        cascade=table["cascade"],
+        nmse_gate_db=table["nmse_gate_db"],
+        verdict=table["verdict"],
+        notes=table["notes"],
+        coeffs_int=table["coeffs_int"],
+        csv_path=_write_text(csv_out, dpd_table_csv(table), "CSV"),
+    ))

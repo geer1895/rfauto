@@ -1,6 +1,6 @@
 """C14 有源链路 service（JSON 进出）: LNA 匹配链协同 + PA load-pull 口径。
 
-方案依据（续跑计划 §10.3 C14）: "LNA/PA 匹配网络 EM 提取+ADS
+方案依据（延续计划 §10.3 C14）: "LNA/PA 匹配网络 EM 提取+ADS
 非线性/噪声协同; PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull）"。
 验收列: "匹配网络 EM↔ADS 联合 vs 手工口径; load-pull 等增益/等功率圈合理性"。
 

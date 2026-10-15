@@ -19,7 +19,9 @@ from rfauto.service.envelope import error_envelope
 def preflight_run(payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """XC-F 开工前统一预检（精度档案/极限/功率/热/加工五门联合）。
 
-    与 CLI ``rfauto preflight run`` 同源同名 service 函数。缺省五门全跑
+    与 CLI ``rfauto preflight run`` 同源同名 service 函数。无副作用，可
+    安全调用（纯判定面：五门全在确定性 service 内核计算，不落盘不发射）。
+    缺省五门全跑
     （顺序 0..4）；payload.gates 给子集时只跑子集（未知名 → ok=False，
     程序性错误如实报）。任何单门段缺/崩溃归一为 unknown 行不阻塞其余门
     （#105 best-effort）；verdict 聚合语义与 design_lint 同式：

@@ -16,3 +16,32 @@ nominal_params:
   coupled_len_mm: 20.0
   line_w_mm: 1.0
   gap_mm: 0.5
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 平行耦合微带对：两正交本征模——偶模（两线等电位，等效更宽单线，Z0e>Z0）
+      与奇模（对称面虚地，Z0o<Z0）；λg/4 耦合段构成反向波定向耦合器，f0 中带电压耦合度
+      由偶/奇阻抗差决定。微带非 TEM → 偶/奇相速不等 → 定向性有固有极限（非同步残差，
+      Pozar 明述、仓内 references §13.1 已核口径）。
+    derivations:
+    - claim: 偶/奇模阻抗闭式（Kirschning-Jansen 准静态族）：单线量取 skrf HJ 正向（core/synthesis.forward_z0），耦合修正取 KJ 偶/奇填充因子+Q 因子族（与 Qucs/transcalc c_microstrip.cpp 零厚无盖分支逐式对应）；λ/4 段中带电压耦合度与同步设计条件如下式
+      formula: C = (Z0e−Z0o)/(Z0e+Z0o)（f0 中带电压耦合度）；Z0e·Z0o = Z0²（同步设计条件）
+      source: core/coupled_microstrip.py（coupled_microstrip_even_odd_ohm，KJ MTT-32(1) 逐式转录+Wcalc 对拍）+ docs/rf_template_references.md（§13.1 Pozar 闭式对照，单测逐位钉）+ Pozar, Microwave Engineering (4th ed.), §7.6（耦合线定向耦合器）
+    - claim: 定向性固有极限：偶/奇 εeff 不等 → 两模相速分裂 → 理想无限定向性只在均匀介质（εeff_e=εeff_o）成立；真 KJ 相速下 f0 的非同步残差是微带定向耦合器的物理地板（公式面与真机锚各自在档，不混用不凑数）
+      formula: v_p,e ≠ v_p,o ⇒ 定向性有限（非同步残差）
+      source: docs/rf_template_references.md（§13.1 非同步残差节，Pozar 明述转写）+ knowledge/anchors.yaml（coupled_line.s31_coupling pointer 锚——引擎对 0.759dB 分裂 DISAGREE 在档如实，不产常数）
+  sensitivity_ranking:
+  - param: gap_mm
+    order: 1
+    basis: 缝是偶/奇阻抗分裂的唯一直接旋钮——耦合度 C 对 gap 指数级敏感
+  - param: coupled_len_mm
+    order: 2
+    basis: λg/4 谐振恒等式 |∂lnf0/∂lnL|=1（耦合段电长度）
+  - param: line_w_mm
+    order: 3
+    basis: Z0e/Z0o 的共同基线（单线阻抗口径），对 C 二阶
+  - param: er
+    order: 4
+    basis: 经 εeff_e/εeff_o 进入 λg 与相速分裂（定向性面）
+  quiz_refs: []

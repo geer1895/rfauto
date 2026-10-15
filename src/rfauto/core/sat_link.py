@@ -1,4 +1,4 @@
-"""AP-9 卫星链路预算器（规格深案 §A-10，2026-10-02）。
+"""AP-9 卫星链路预算器（plan_deepdive_specs_20261002.md §A-10，2026-10-02）。
 
 传播域主线第四件：单跳（单向）卫星链路预算 `sat_link_budget(link)→report`
 （JSON 进出，级表逐项风格同 core/cascade.py）+ LEO 圆轨几何三件
@@ -56,7 +56,7 @@
 f>0、slant>0、各损耗项 ≥0；bool 显式拒收、非有限数拒收（同
 core/propagation.py _num 口径）。
 
-参考：规格深案 §A-10；ITU-R S.733-2（G/T
+参考：docs/plan_deepdive_specs_20261002.md §A-10；ITU-R S.733-2（G/T
 定义级引用）；Maral & Bousquet（几何惯例）；WGS-84 GM。零外部数据
 捆绑（PV-011 无阻碍）。
 """

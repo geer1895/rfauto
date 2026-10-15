@@ -1,6 +1,6 @@
 """RP-1 复现卡 1/5：Cohn 交指（S. B. Cohn, 平行耦合线谐振器滤波器/交指口径，
 Proc. IRE 1958；精确 J↔x 关系亦见 MYJ 1964 §8.03 同口径）。RP-1 首批
-（研究扩充 round19 §一）。
+（docs/research_expansion_20261002_round19.md §一）。
 
 复现范围：Cohn 精确 J↔x 关系（仓内核=oe_templates/render_c3 的
 c3_cohn_j_from_x / c3_cohn_x_from_j 与 interdigital_design_from_order 综合

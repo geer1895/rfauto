@@ -1,7 +1,7 @@
 """sampler_pool：采样 worker 池（阶段 4.3）。
 
 openEMS 单核求解 × N 并行——L25 增广从 6h 压到 ~1h（4 核）。
-内存纪律：每个 openEMS worker 占 1-2GB，
+内存纪律（AGENTS Goal 模式）：每个 openEMS worker 占 1-2GB，
 max_workers 必须按可用内存设置（默认 1=串行，与既有纪律一致）。
 
 接口：run_sampling_pool(points, worker_fn, max_workers)。

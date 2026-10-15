@@ -1,6 +1,6 @@
 """pydantic-ai Runtime：AgentRuntime 协议的 pydantic-ai 实现（WP3.1）。
 
-方案行（docs/续跑计划.md「第 3 期」WP3.1 + TODO 〇-c）：
+方案行（延续计划「第 3 期」WP3.1 + TODO 〇-c）：
 实现协议注册 ``runtime: pydantic_ai``，与 builtin A/B token 效率后再决定是否
 切默认。选择入口已有：configs/chat_settings.yaml 的 ``runtime:`` 键
 （r3_services._llm_turn 读 raw.get("runtime", "builtin") → RuntimeRegistry.create，

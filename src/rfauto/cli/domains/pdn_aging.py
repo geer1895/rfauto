@@ -10,6 +10,7 @@ from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── pdn（F-B P2：PI/PDN AC 阻抗域 analyze/select/gate 薄壳） ─────────────────
 # 零逻辑转发 service/pdn_service（规则 4）；payload JSON 文件走 _load_json_file；
@@ -35,7 +36,7 @@ def pdn_analyze_cmd(
     try:
         result = _analyze(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(result, "PDN 分析失败", json_output=True)
 
@@ -55,7 +56,7 @@ def pdn_select_cmd(
     try:
         result = _select(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "PDN 选型失败", json_output=True)
 
 
@@ -74,7 +75,7 @@ def pdn_gate_cmd(
     try:
         result = _gate(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "PI 门检查失败", json_output=True)
 
 
@@ -103,7 +104,7 @@ def aging_simulate_cmd(
     try:
         result = _simulate(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     # VI-5 W6-B：同 pdn 三叶——缺省即信封直出，旗标为归一兼容位。
     _emit(result, "老化漂移仿真失败", json_output=True)
 
@@ -123,7 +124,7 @@ def aging_verdict_cmd(
     try:
         result = _verdict(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "EOL 判据失败", json_output=True)
 
 
@@ -142,7 +143,7 @@ def aging_report_cmd(
     try:
         result = _report(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "老化报告失败", json_output=True)
 
 
@@ -235,7 +236,8 @@ def afs_sweep_cmd(
     f_max_ghz: float = typer.Option(..., "--f-max-ghz", help="频带上端 (GHz)"),
     synthetic: str = typer.Option(
         ..., "--synthetic",
-        help="合成多谐振演示响应规格 'f0_ghz:q_pole[:q_zero][;...][;ripple=amp]'"
+        help="合成多谐振演示响应规格 'f0_ghz:q_pole:q_zero;ripple=amp'，"
+             "q_zero 段与 ripple=amp 段可选，多谐振段以分号分隔"
              "（零真机端到端演示；生产 evaluate 注入走 service.afs_service.afs_sweep）"),
     tol: float = typer.Option(1e-2, "--tol", help="中点收敛容差（线性复幅差）"),
     max_iter: int = typer.Option(12, "--max-iter", help="加密轮数上限（透传内核 max_rounds）"),

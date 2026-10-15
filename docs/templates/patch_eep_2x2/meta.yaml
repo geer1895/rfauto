@@ -25,4 +25,52 @@ nominal_params:
 topology: 2×2 EEP 贴片阵（§DP-4 P3）：栅格中心 (0,20mm)，元列 x=±dx/2、元排 y=20∓dy/2，四元同向（缺口全开 −y）；每元独立 LumpedPort 底探针（端口 1..4=行主序 x 外层 y 内层），无 corporate 馈树，元间 DC 隔离=EEP 定义性质；基板 + z-min PEC 地
 param_semantics: elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 c/(2f0√εeff)−2ΔL，fake 谐振为精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))），elem_feed_mm=插入馈深度（缺口深=探针馈点；Rin(y0)=Rin(0)cos²(πy0/L)，0.3L≈100Ω 口径），feed_w_mm=缺口内馈段/探针邻域线宽（HJ 50Ω 1.112mm），spacing_x_mm/spacing_y_mm=元列/元排中心距（均 0.484λ0=25.0172mm，同 C2 扰动域预核）
 mesh_note: 辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/探针）精确入网（#198）
-smoke_note: 未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 runs/df6_dp4p3/criteria.md（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 战役任务书；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
+smoke_note: 未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 runs/df6_dp4p3/criteria.md（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 runs/df6_dp4p3/handoff.md；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 2×2 边馈贴片阵（每元独立端口、无 corporate 馈树，四元同向）：单元
+      =Balanis 传输线/腔模型矩形贴片（W 定阻抗/带宽、L+2ΔL=λg/2 谐振，插入
+      馈深度按 cos² 抽头定匹配）；平面栅格双向间距（spacing_x/spacing_y）进
+      矩形栅格平面阵因子与元间互耦（d<λ0 无栅瓣判据）。每元独立 LumpedPort
+      行主序端口（单激励进程隔离轮转装配 4×4 S 矩阵，#208 口径）——互耦谱是
+      该族设计目的（判据 J4 预声明账见 meta smoke_note）。
+    derivations:
+    - claim: 单元尺寸设计式（同 1×4 族）：宽 W=c/(2f0)·√(2/(εr+1))；谐振长
+        L+2ΔL=c/(2f0√εeff)——数值一律内核键产出
+      formula: W = c/(2·f0)·√(2/(εr+1))；L+2ΔL = c/(2·f0·√εeff)
+      source: core/synthesis.py（synthesize_patch/patch_fringing_delta_l）+
+        calc_families/rf_match.py（patch_length 键：Balanis 闭式含边缘修正）+
+        docs/rf_template_references.md（C2 阵列族节 Ch.14 已核口径）+ Balanis,
+        Antenna Theory (4th ed.), Ch.14（微带天线传输线/腔模型）
+    - claim: 平面阵维：矩形栅格平面阵方向图=单元方向图×双向阵因子乘积
+        （AF_x·AF_y，矩形栅格口径）；间距 d<λ0 抑制栅瓣——spacing_x/
+        spacing_y 是口径/互耦维，单元谐振只由 L/W/εeff 定
+      formula: 平面阵取模 AF(θ,φ) = AF_x(θ,φ)·AF_y(θ,φ)；
+        ψx = k·dx·sinθcosφ，ψy = k·dy·sinθsinφ
+      source: docs/templates/patch_eep_2x2/meta.yaml（topology/param_semantics
+        栅格与端口口径）+ docs/rf_template_references.md（C2 阵列族节 Balanis
+        Ch.6 ULA AF/矩形栅格平面阵已核同式）+ Balanis, Antenna Theory
+        (4th ed.), Ch.6（阵列栅瓣判据）
+  sensitivity_ranking:
+  - param: elem_len_mm
+    order: 1
+    basis: 单元谐振主维（λ/2 腔恒等 |∂lnf0/∂lnL|≈1，腔模型口径）
+  - param: elem_w_mm
+    order: 2
+    basis: 经 εeff(W)/ΔL 弱进入谐振频率；主控单元阻抗/带宽（Balanis W 式语义）
+  - param: elem_feed_mm
+    order: 3
+    basis: 插入馈抽头定馈电阻抗/匹配（cos² 抽头面），不移动腔谐振频率
+  - param: spacing_x_mm
+    order: 4
+    basis: x 向阵因子/互耦维（d<λ0 无栅瓣判据；非单元谐振量）
+  - param: spacing_y_mm
+    order: 5
+    basis: y 向阵因子/互耦维（同上正交向）
+  - param: feed_w_mm
+    order: 6
+    basis: 缺口内馈段线宽（50Ω 邻域），弱敏感；本族排序为物理定性口径——
+      登记表暂无已落档（knowledge/sensitivity_rankings.yaml 未含本族，不硬凑
+      数值）
+  quiz_refs: []

@@ -1,10 +1,10 @@
-"""求解健康度体检内核（G11，续跑计划 §10.17）。
+"""求解健康度体检内核（G11，延续计划 §10.17）。
 
 把历史踩坑教训内核化为每 run 确定性体检——LLM/agent 永不产生物理数字
-，本模块全部判据为确定性数值规则，不健康 run 禁入
+（项目规则 规则 7），本模块全部判据为确定性数值规则，不健康 run 禁入
 数据集注册表（护 E1/E11 数据质量）。
 
-内核化的教训（每条含 编号）：
+内核化的教训（每条含  编号）：
 - #174 激励体积死：能量/传输曲线全零 = 激励体积死（零宽盒/盒边未进网格）
 - #195 cost 退化常数：窄带谐振器件带内 max 统计量恒定 → cost 无区分度
 - #152 CFL/网格塌缩：openEMS 时间步塌缩 6 个量级（近重合网格线）
@@ -73,11 +73,11 @@ VERDICT_HEALTHY = "healthy"
 VERDICT_UNHEALTHY = "unhealthy"
 VERDICT_SUSPECT = "suspect"
 
-# 教训编号——写进每条 factor，保证报告可回溯到踩坑原文
+# 教训编号（）——写进每条 factor，保证报告可回溯到踩坑原文
 LESSON_EXCITATION_DEAD = "#174"
 LESSON_COST_DEGENERATE = "#195"
 LESSON_TIMESTEP_COLLAPSE = "#152"
-LESSON_PROBE_SCALE = "1.0491 探针窗"
+LESSON_PROBE_SCALE = "1.0491 探针窗（ 多模态审计节）"
 LESSON_PASSIVITY = "SpecEvaluator.check_passivity（§7.5）"
 LESSON_RECIPROCITY = "SpecEvaluator.check_reciprocity（§7.5）"
 LESSON_UNPHYSICAL_GAIN = "SpecEvaluator.sanity_check 插损口径（§7.5）"
@@ -846,7 +846,11 @@ def _check_grid_convergence(**kwargs: Any) -> dict[str, Any]:
         assess_triple,
     )
 
-    warn_thr = float(kwargs.get("gci_rel_warn") or GCI_REL_WARN)
+    # A2 P1-2（#364④ 家法）：``or`` 缺省惯语禁用于数值可达 0 的面——显式
+    # 0.0 曾被静默换成缺省 0.05，且短路绕过紧随的 (0,1) 范围检查；照同函数
+    # fs 的 ``is not None`` 写法，让 0.0 落入范围检查响亮 ValueError。
+    gci_warn_raw = kwargs.get("gci_rel_warn")
+    warn_thr = float(GCI_REL_WARN if gci_warn_raw is None else gci_warn_raw)
     if not 0.0 < warn_thr < 1.0:
         raise ValueError(f"gci_rel_warn 须在 (0,1)，实得 {warn_thr}")
     fs_raw = kwargs.get("fs")

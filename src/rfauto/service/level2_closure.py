@@ -20,7 +20,9 @@ design_chain 的 record（JSON 契约），自身零数值产出（铁律 7）�
      （判据单源，不另立阈值）；其余如实 hold。
 
 写面纪律：本模块全部落盘只在 runs/level2_closure/（或调用方显式
-out_dir），不触碰 src/、knowledge/、configs/；best-effort 单步失败
+out_dir），不触碰 src/、knowledge/、configs/；全部写出经
+infra/recipe_guard 统一出口（A7 P2-3：out_dir 显式指定=explicit 档，
+临时文件走缺省档守卫）；best-effort 单步失败
 不拖垮其余两步（#105，envelope 逐步留 errors）。
 """
 
@@ -175,12 +177,17 @@ def certify_chain_design(record: Mapping[str, Any], *,
         target = Path(out_dir)
         target.mkdir(parents=True, exist_ok=True)
         tag = str(record.get("id") or built["family"])
-        samples_path = target / f"certify_samples_{tag}.json"
-        samples_path.write_text(
+        # A7 P2-3：留证落盘经 recipe_guard 统一出口；out_dir 调用方显式
+        # 指定=explicit 档合法原地写（缺省 runs/ 行为不变），覆盖受保护
+        # 原件时 overwritten 标记透传（R2-D-03）。
+        from rfauto.infra.recipe_guard import write_recipe_text
+
+        samples_path = write_recipe_text(
+            target / f"certify_samples_{tag}.json",
             json.dumps({k: built[k] for k in
                         ("samples", "bounds", "objectives")},
                        ensure_ascii=False, indent=1, default=str),
-            encoding="utf-8")
+            explicit=True)
     params_all = {str(pk): float(pv) for pk, pv in
                   (record.get("synthesis_params") or {}).items()}
     center = {k: v for k, v in params_all.items() if k in built["bounds"]}
@@ -190,25 +197,35 @@ def certify_chain_design(record: Mapping[str, Any], *,
     finally:
         if samples_path is None:
             Path(path_used).unlink(missing_ok=True)  # 临时样本集即用即清
-    return {"ok": bool(certificate.get("ok")), "step": "certify",
-            "family": built["family"], "f0_ghz": built["f0_ghz"],
-            "n_samples": len(built["samples"]),
-            "tolerance_pct": built["tolerance_pct"], "seed": built["seed"],
-            "samples_path": str(samples_path) if samples_path else None,
-            "certificate": certificate, "errors": []}
+    out: dict[str, Any] = {"ok": bool(certificate.get("ok")), "step": "certify",
+                           "family": built["family"], "f0_ghz": built["f0_ghz"],
+                           "n_samples": len(built["samples"]),
+                           "tolerance_pct": built["tolerance_pct"],
+                           "seed": built["seed"],
+                           "samples_path": str(samples_path) if samples_path else None,
+                           "certificate": certificate, "errors": []}
+    if getattr(samples_path, "overwritten", False):
+        out["overwritten"] = True  # R2-D-03：explicit 覆盖受保护原件如实标注
+    return out
 
 
 def _samples_tmp(built: Mapping[str, Any]) -> str:
-    """无 out_dir 时样本集走临时文件（certify_design 只收路径入参）。"""
+    """无 out_dir 时样本集走临时文件（certify_design 只收路径入参）。
+
+    写出经 recipe_guard 统一出口（A7 P2-3）；系统临时目录**非用户显式
+    入口**，不传 explicit——若临时目录异常落在受保护 recipes/ 下由守卫
+    默认档拦截（RecipeWriteForbidden 经链尾信封如实记账），不隐式写原件。
+    """
     import tempfile
+
+    from rfauto.infra.recipe_guard import write_recipe_text
 
     path = Path(tempfile.gettempdir()) / (
         f"rfauto_level2_certify_{id(built):x}.json")
-    path.write_text(
+    return str(write_recipe_text(
+        path,
         json.dumps({k: built[k] for k in ("samples", "bounds", "objectives")},
-                   ensure_ascii=False, default=str),
-        encoding="utf-8")
-    return str(path)
+                   ensure_ascii=False, default=str)))
 
 
 # ─── ② 锚注册回写草案 ────────────────────────────────────────────────────────
@@ -277,6 +294,7 @@ def anchor_writeback_draft(record: Mapping[str, Any], *,
         "anchors": [entry],
     }
     draft_path: str | None = None
+    draft_overwritten = False
     if out_dir is not None:
         out = Path(out_dir)
         resolved = out.resolve()
@@ -285,15 +303,22 @@ def anchor_writeback_draft(record: Mapping[str, Any], *,
             return {"ok": False, "step": "anchor_writeback",
                     "errors": [f"out_dir 不得指向锚注册表目录（{kroot}）"]}
         out.mkdir(parents=True, exist_ok=True)
-        import yaml
+        # A7 P2-3：草案落盘经 recipe_guard 统一出口；out_dir 调用方显式
+        # 指定=explicit 档合法原地写，覆盖受保护原件时标记透传（R2-D-03）。
+        from rfauto.infra.recipe_guard import write_recipe_yaml
 
         tag = str(record.get("id") or record.get("family") or "task")
-        path = out / f"anchor_writeback_{tag}.draft.yaml"
-        path.write_text(
-            yaml.safe_dump(draft, allow_unicode=True, sort_keys=True),
-            encoding="utf-8")
-        draft_path = str(path)
-    return ok_envelope(step="anchor_writeback", action="update_last_verified", draft=draft, draft_path=draft_path, errors=[])
+        written = write_recipe_yaml(
+            out / f"anchor_writeback_{tag}.draft.yaml", draft,
+            explicit=True, sort_keys=True)
+        draft_path = str(written)
+        draft_overwritten = bool(getattr(written, "overwritten", False))
+    envelope = ok_envelope(step="anchor_writeback",
+                           action="update_last_verified", draft=draft,
+                           draft_path=draft_path, errors=[])
+    if draft_overwritten:
+        envelope["overwritten"] = True
+    return envelope
 
 
 # ─── ③ 失败 replan 重路由 ────────────────────────────────────────────────────

@@ -51,7 +51,17 @@ class MockVNAInstrument:
       SCPI 表面（*IDN? / SENS<x>:CORR:STATE? / SENS<x>:FREQ:DATA? /
       CALC<x>:DATA:SDAT?），数据全部来自构造时注入的历史 skrf.Network；
     - `get_snp_network()` 回放完整 N 端口 Network（capture 的 mock 主路），
-      屏蔽该方法（置 None）即可测 raw SCPI 逃生口路径。
+      屏蔽该方法（置 None）即可测 raw SCPI 逃生口路径；
+    - 多迹线 SCPI 计算面（0bx followUp 离线半边，2026-10-11）：`write()`
+      消费 ``CALC<x>:PAR:DEF[:EXT] '<名>','S<mn>'``（Keysight PNA 风格）与
+      ``CALC<x>:PAR:SDEF '<名>','S<mn>'``（R&S ZNB 风格）注册命名迹线；
+      `query()` 补 ``CALC<x>:PAR:CAT?``/``:NAME?``（迹线目录）、
+      ``CALC<x>:PAR:SNUM? '<名>'``（1-based 迹线号）、
+      ``CALC<x>:DATA:SDAT? ['<名>']``（点名/选中迹线复数据）。定义迹线后
+      `get_snp_network()` 按迹线装配 N 端口 Network（形状 = 最高端口号）。
+      **真机协议行为留 TODO（不臆造）**：PNA CAT? 应答带测量号前缀、ZNB
+      SNUM?/SDEF 语义细节、未定义迹线查询的错误码等均须真机联调时按实测
+      校准，本 mock 表面只承诺"可解析、形状正确、离线确定"。
     """
 
     def __init__(self, network: skrf.Network, *,
@@ -61,6 +71,11 @@ class MockVNAInstrument:
         self.idn = idn
         self.calibrated = bool(calibrated)
         self.written: list[str] = []
+        # 多迹线计算面状态（0bx）：迹线名 → (rx_port, tx_port)（S<rx><tx>，
+        # skrf 列言语义 s[:, rx-1, tx-1]）；selected_trace 为 CALC:PAR:SEL
+        # 的选中迹线（DATA:SDAT? 无点名时消费）。
+        self.traces: dict[str, tuple[int, int]] = {}
+        self.selected_trace: str | None = None
 
     @classmethod
     def from_touchstone(cls, path: str | Path, **kwargs: Any) -> MockVNAInstrument:
@@ -70,6 +85,19 @@ class MockVNAInstrument:
         return cls(net, **kwargs)
 
     # ── SCPI 表面（与 _raw_measure 消费格式逐一对齐）────────────────────────
+    @staticmethod
+    def _quoted_args(raw: str) -> list[str]:
+        """提取单/双引号参数（"'tr2','S21'" → ["tr2", "S21"]）。"""
+        return [a or b for a, b in
+                re.findall(r"'([^']*)'|\"([^\"]*)\"", raw or "")]
+
+    @staticmethod
+    def _unquote(raw: str) -> str:
+        raw = (raw or "").strip()
+        if len(raw) >= 2 and raw[0] in "'\"" and raw[-1] == raw[0]:
+            return raw[1:-1]
+        return raw
+
     def query(self, command: str) -> str:
         cmd = command.strip()
         if cmd == "*IDN?":
@@ -78,21 +106,99 @@ class MockVNAInstrument:
             return "1" if self.calibrated else "0"
         if re.fullmatch(r"SENS\d+:FREQ:DATA\?", cmd):
             return ",".join(repr(float(f)) for f in self.network.f)
-        if re.fullmatch(r"CALC\d+:DATA:SDAT\?", cmd):
-            trace = self.network.s[:, 0, 0]
+        # ── 多迹线计算面（0bx；TODO(真机)：应答格式真机联调时实测校准）──
+        if re.fullmatch(r"CALC\d*:PAR:(?:CAT|NAME)(?::EXT)?\?", cmd,
+                        flags=re.IGNORECASE):
+            # TODO(真机): PNA CALC:PAR:CAT? 应答含测量号段（"no,'name',…"），
+            # ZNB CALC:PAR:NAME? 只回名字——此处 mock 用 '名','S参量' 对，
+            # 真机适配时按驱动族分派，勿按本表面写死。
             pairs: list[str] = []
-            for z in trace:
-                pairs.append(repr(float(np.real(z))))
-                pairs.append(repr(float(np.imag(z))))
+            for name, (rx, tx) in self.traces.items():
+                pairs.append(f"'{name}'")
+                pairs.append(f"'S{rx}{tx}'")
             return ",".join(pairs)
+        m = re.fullmatch(r"CALC\d*:PAR:SNUM\?\s*(.*)", cmd, flags=re.IGNORECASE)
+        if m:
+            # TODO(真机): ZNB SNUM? 对未定义迹线报 SCPI 错误码——mock 回 "0"
+            # （既有未知命令约定），真机适配层按错误通道处理。
+            name = self._unquote(m.group(1)) or self.selected_trace
+            order = list(self.traces)
+            return str(order.index(name) + 1) if name in order else "0"
+        m = re.fullmatch(r"CALC\d*:DATA:SDAT\?\s*(.*)", cmd, flags=re.IGNORECASE)
+        if m:
+            rest = m.group(1).strip()
+            name = self._unquote(rest) if rest else self.selected_trace
+            if name is None and not self.traces:
+                pass  # 无迹线无点名=历史 S11 行为（兼容钉）
+            else:
+                if name is None:
+                    name = next(iter(self.traces))  # 注册序首迹线（确定性）
+                tr = self.traces.get(name)
+                if tr is None:
+                    return "0"  # 点名未注册：不静默回退他迹线（假数据比零更糟）
+                trace = self.network.s[:, tr[0] - 1, tr[1] - 1]
+                flat: list[str] = []
+                for z in trace:
+                    flat.append(repr(float(np.real(z))))
+                    flat.append(repr(float(np.imag(z))))
+                return ",".join(flat)
+            trace = self.network.s[:, 0, 0]
+            flat = []
+            for z in trace:
+                flat.append(repr(float(np.real(z))))
+                flat.append(repr(float(np.imag(z))))
+            return ",".join(flat)
         return "0"
 
     def write(self, command: str) -> None:
         self.written.append(command)
+        cmd = command.strip()
+        m = re.fullmatch(
+            r"CALC\d*:PAR:(?:DEF(?::EXT)?|SDEF)\s*(.+)", cmd,
+            flags=re.IGNORECASE)
+        if m:
+            args = self._quoted_args(m.group(1))
+            if len(args) >= 2:
+                tm = re.fullmatch(r"S(\d+)(\d+)",
+                                  args[1].strip().upper())
+                if tm:
+                    # TODO(真机): PNA DEF:EXT 的表达式支持 'S21'/'SNP:…' 等
+                    # 扩展形与端口标量运算——mock 只收纯 S<mn>，真机适配时
+                    # 扩展表达式解析，不在此臆造。
+                    self.traces[str(args[0])] = (
+                        int(tm.group(1)), int(tm.group(2)))
+            return
+        m = re.fullmatch(r"CALC\d*:PAR:SEL\s*(.+)", cmd, flags=re.IGNORECASE)
+        if m:
+            name = self._unquote(m.group(1))
+            if name in self.traces:
+                self.selected_trace = name
+            return
 
     # ── capture 的 mock 主路 ────────────────────────────────────────────────
+    def _trace_network(self) -> skrf.Network:
+        """按已定义迹线装配 Network（0bx 多迹线采集主路）。
+
+        形状 = (n_points, P, P)，P = 迹线中最高端口号；未定义的 (rx, tx)
+        交叉项零填（迹线目录即"已测掩码"，#314 掩码纪律：凡消费方做互易/
+        对称判读必须以 self.traces 为已测面，不得把零填当测量值）。
+        """
+        p_max = max(max(rx, tx) for rx, tx in self.traces.values())
+        s = np.zeros((len(self.network.f), p_max, p_max), dtype=complex)
+        src = self.network.s
+        src_p = src.shape[1]
+        for rx, tx in self.traces.values():
+            if rx <= src_p and tx <= src_p:
+                s[:, rx - 1, tx - 1] = src[:, rx - 1, tx - 1]
+        return skrf.Network(frequency=self.network.frequency, s=s)
+
     def get_snp_network(self, ports: list[int] | None = None) -> skrf.Network:
-        """回放完整 N 端口历史网络（返回副本，防调用方污染回放源）。"""
+        """回放网络：定义过迹线时按迹线装配，否则回放完整历史 N 端口。
+
+        两条路都返回副本，防调用方污染回放源。
+        """
+        if self.traces:
+            return self._trace_network()
         return self.network.copy()
 
     def close(self) -> None:  # pragma: no cover - 无资源可释放
@@ -139,6 +245,19 @@ def _resolve_driver(model: str):
         return None
 
 
+def _skrf_conn(instrument: Any) -> Any:
+    """skrf.vi 驱动实例 → 底层 pyvisa 连接句柄（跨代际取面，best-effort）。
+
+    skrf 2.1.0 实测：VNA 基类底层资源是 ``_resource``（``.con`` 是旧代际
+    API，本机 skrf 2.1.0 不存在——A7 P1-2 报告所指 ".con 访问路径"按实测
+    修正为 ``_resource`` 优先、``con`` 兼容）。取不到返回 None。"""
+    for attr in ("_resource", "con"):
+        conn = getattr(instrument, attr, None)
+        if conn is not None:
+            return conn
+    return None
+
+
 class VNAInterface:
     """VNA capture interface (protocol: connect → capture → calibrate → close).
 
@@ -175,7 +294,21 @@ class VNAInterface:
                 if driver_cls is not None:
                     self._instrument = driver_cls(self.config.address)
                     self._skrf_driver = True
+                    # A7 P1-2（2026-10-13）：skrf.vi 驱动构造签名只收
+                    # (address, backend)（本机实测 inspect.signature），超时
+                    # 原先只在 raw pyvisa 逃生口生效——四主路（pna/fieldfox/
+                    # znb/zva）主路统一构造后补设；未生效留痕不静默
+                    # （#331 家法：配置面与生效面必须一致）。
+                    timeout_channel = self._apply_driver_timeout()
                     idn = f"skrf.vi driver: {driver_cls.__name__}"
+                    if timeout_channel:
+                        idn += (f" (timeout_ms={self.config.timeout_ms}"
+                                f" via {timeout_channel})")
+                    else:
+                        self._log(
+                            "connect_timeout_unset",
+                            "skrf 驱动超时设置未生效（无已知通道；慢 SCPI"
+                            " 查询无看门，A7 P1-2 留痕）")
                 else:
                     import pyvisa
                     rm = pyvisa.ResourceManager()
@@ -206,6 +339,34 @@ class VNAInterface:
         with contextlib.suppress(Exception):
             caps["idn"] = str(self.raw_scpi("*IDN?")).strip()
         return caps
+
+    def _apply_driver_timeout(self) -> str:
+        """skrf.vi 主路超时补设（A7 P1-2 修复，2026-10-13）。
+
+        生效通道按实测取面顺序：
+        ① 类级 ``timeout`` property 且可写——skrf 2.1.0 VNA 基类实测暴露
+        该 property（委托 ``_resource.timeout``）；
+        ② 底层连接句柄（``_skrf_conn``：2.x=``_resource``，旧代际=``con``）。
+        pyvisa 超时单位=ms，与 raw pyvisa 逃生口（``rm.open_resource`` 后
+        ``.timeout = timeout_ms``）同值同语义。返回生效通道名；全部不可用
+        返回 ""（调用方留痕，不静默假装设过）。
+        """
+        timeout_ms = self.config.timeout_ms
+        prop = getattr(type(self._instrument), "timeout", None)
+        if isinstance(prop, property) and prop.fset is not None:
+            try:
+                self._instrument.timeout = timeout_ms
+                return "instrument.timeout"
+            except Exception:
+                pass
+        conn = _skrf_conn(self._instrument)
+        if conn is not None:
+            try:
+                conn.timeout = timeout_ms
+                return "conn.timeout"
+            except Exception:
+                pass
+        return ""
 
     def calibrate(self) -> dict[str, Any]:
         """校准态查询与记录（方向 3：校准后验证 cal kit 定义一致性）。
@@ -311,17 +472,20 @@ class VNAInterface:
         """Close VNA connection."""
         if self._instrument is not None:
             import contextlib
-            with contextlib.suppress(Exception):
-                close_fn = getattr(self._instrument, "close", None)
-                if callable(close_fn):
-                    if self._mock_driver:
-                        close_fn()
-                    elif self._skrf_driver:
-                        conn = getattr(self._instrument, "con", None)
-                        if conn is not None:
-                            with contextlib.suppress(Exception):
-                                conn.close()
-                    else:
+            if self._skrf_driver:
+                # A7 P1-2 同面修正：skrf VNA 无 close 方法（skrf 2.1.0 实测
+                # hasattr(VNA,'close')=False）且 ".con" 属性不存在——原实现
+                # 在 callable(close_fn) 守卫下整分支不可达（底层 pyvisa 连接
+                # 从不关闭，孤儿资源）。经 _skrf_conn 取面关闭（best-effort，
+                # 与 _apply_driver_timeout 同一取面单源）。
+                conn = _skrf_conn(self._instrument)
+                if conn is not None:
+                    with contextlib.suppress(Exception):
+                        conn.close()
+            else:
+                with contextlib.suppress(Exception):
+                    close_fn = getattr(self._instrument, "close", None)
+                    if callable(close_fn):
                         close_fn()
         self._connected = False
         self._log("close", "session ended")

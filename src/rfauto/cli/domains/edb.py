@@ -20,6 +20,7 @@ import typer
 from rich.table import Table
 
 from rfauto.cli.domains._core import _emit as _emit
+from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 
@@ -36,14 +37,18 @@ def _coerce_param(raw: str):
         return raw
 
 
-def _parse_params(items: list[str] | None) -> dict:
-    """-p k=v（可多次）→ params dict；v 走 JSON 解析（失败保留字符串）。"""
+def _parse_params(items: list[str] | None, *,
+                  json_output: bool = False) -> dict:
+    """-p k=v（可多次）→ params dict；v 走 JSON 解析（失败保留字符串）。
+
+    非法形态经 ``_emit_usage_error``（#ge1㉙：--json 下输出 JSON 信封，
+    A5 P1-1 收编）。"""
     params: dict = {}
     for item in items or []:
         key, sep, raw = item.partition("=")
         if not sep or not key.strip():
-            console.print(f"[red]✗ --param 需要 k=v 形式: {item}[/red]")
-            raise typer.Exit(code=2)
+            _emit_usage_error(f"--param 需要 k=v 形式: {item}",
+                              json_output=json_output)
         params[key.strip()] = _coerce_param(raw.strip())
     return params
 
@@ -52,7 +57,10 @@ def _parse_params(items: list[str] | None) -> dict:
 def edb_build_cmd(
     template: str = typer.Option(
         "edb_branchline", "--template", "-t",
-        help="发射器模板键：edb_branchline 或 edb_power_divider"),
+        help="发射器模板键：支持族清单与 lange 预留键拒绝语义见 rfauto "
+             "edb status --json 信封 templates 节（与发射分派表单源同步，"
+             "此处不复列族名防漂移；人类可读表不含该节，须带 --json）；"
+             "未知键报错回显合法族名单"),
     param: list[str] = typer.Option(  # noqa: B008
         None, "--param", "-p",
         help="设计参数 k=v（可多次；v 支持 JSON 字面量，如嵌套 stackup/"
@@ -71,8 +79,8 @@ def edb_build_cmd(
     """发射 spec + EDB 建库（pyedb configuration → .aedb 工程+存证）。"""
     from rfauto.service.edb_lane_service import edb_build
 
-    result = edb_build(template, _parse_params(param), workdir=workdir,
-                       name=name, dry_run=dry_run)
+    result = edb_build(template, _parse_params(param, json_output=json_output),
+                       workdir=workdir, name=name, dry_run=dry_run)
     _emit(result, "EDB 建库失败", json_output=json_output)
     if json_output:
         return

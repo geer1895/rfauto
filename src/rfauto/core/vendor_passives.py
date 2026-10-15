@@ -16,7 +16,7 @@
   指定槽位用真实元件阻抗曲线替换理想 LCElement，递推 Zin 并产出偏差报告
   （Δmatch_depth_dB / L_eff/L_nom / SRF/f0 / 最佳匹配频点偏移）。
 
-EM-5 磁珠注记（研究扩充 round17 §四 EM-5）：
+EM-5 磁珠注记（docs/research_expansion_20261002_round17.md §四 EM-5）：
 ferrite_bead 一阶模型取**并联 RLC**——R（损耗，=额定阻抗口径）∥ L（低频
 等效电感）∥ C_par（匝间/端子寄生电容）。规格记号 "R//L+C" 落定为
 (R∥L)+C_par 三元件并联形态：R//L 是复磁导率 μ''-损耗的并联等效，C 为并联

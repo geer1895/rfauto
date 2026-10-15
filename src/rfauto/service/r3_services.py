@@ -969,7 +969,7 @@ class AgentChat:
         # 不重复占预算。键口径 knowledge_injection_service.injection_key。
         self._last_injection_key: str | None = None
         self._last_extra_system: str | None = None
-        # Pi 式会话存档（schema 版本化 JSON，runs/chat_sessions）
+        # Pi 式会话存档（schema 版本化 JSON，runs/chat_sessions/）
         self.session_id = "chat_" + _time.strftime("%Y%m%d_%H%M%S") + "_" + _uuid.uuid4().hex[:6]
         self._session_doc: dict[str, Any] | None = None
 
@@ -1624,7 +1624,7 @@ def fs_list(path: str = "") -> dict[str, Any]:
                 continue
             low = e.name.lower()
             if e.is_dir() and low in FS_SENSITIVE_DIR_NAMES:
-                continue  # 凭据目录（configs）不进暴露面
+                continue  # 凭据目录（configs/）不进暴露面
             if e.is_file() and (low.endswith(".local.yaml")
                                 or low in FS_SENSITIVE_FILE_NAMES):
                 continue  # 凭据文件（*.local.yaml / chat_settings.yaml）不进暴露面

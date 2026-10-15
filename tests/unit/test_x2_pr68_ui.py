@@ -19,10 +19,11 @@ from typer.testing import CliRunner
 from rfauto.cli.profile_app import profile_app
 from rfauto.service import profile_service as ps
 
-_PAGES_JS = (
-    Path(__file__).resolve().parents[2]
-    / "src" / "rfauto" / "ui" / "static" / "pages.js"
-).read_text(encoding="utf-8")
+_STATIC_X2 = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
+# UI-R2：入口+域模块并集读（行为断言不变）
+_PAGES_JS = "\n".join(
+    p.read_text(encoding="utf-8")
+    for p in [_STATIC_X2 / "pages.js", *sorted((_STATIC_X2 / "pages").glob("*.js"))])
 
 
 # ── PR-6 战役仪表盘页装配钉 ──────────────────────────────────────────────
@@ -39,9 +40,12 @@ class TestCampaignPageAssembly:
 
     def test_seat_status_table_markup_present(self):
         # X2 v1：座位状态表（PASS/SKIP/FAIL 分色）= 真 <table> 标记
-        # （语义化表格：无 JS 交互/读屏/复制场景仍逐格可读）
+        # （语义化表格：无 JS 交互/读屏/复制场景仍逐格可读）。
+        # aurora_d UI-R4（A6 P2-9 清偿）：表头补 scope=col（原裸字面钉随本笔
+        # 更新，与 kitTable 既有 scope 口径齐；test_w7c_ui_p2_sweep::test_p2_15
+        # 同笔解除豁免）。
         assert 'cp-seats' in _PAGES_JS
-        assert '<th>座位状态</th>' in _PAGES_JS
+        assert '<th scope="col">座位状态</th>' in _PAGES_JS
         assert 'T.badge("PASS", "ok")' in _PAGES_JS
         assert 'T.badge("SKIP", skipped ? "warn" : "muted")' in _PAGES_JS
         assert 'T.badge("FAIL", "err")' in _PAGES_JS

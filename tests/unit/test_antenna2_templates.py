@@ -1,6 +1,6 @@
 """§10.3 C1 天线族 II：单极子/PIFA/IFA/环形/螺旋/缝隙 六模板单测。
 
-方案行（docs/续跑计划.md §10.3 C1）：贴片已锚，向变形
+方案行（延续计划 §10.3 C1）：贴片已锚，向变形
 扩展。2026-09-14 合流轮起六模板正式注册（原"附加模板"边界升格）：
 - 注册态钉：ANTENNA2_META/ANTENNA2_NOMINAL 同对象入 TEMPLATE_META/
   TEMPLATE_NOMINAL（18→25，含 coupled_bpf）；注册四件套 docs/templates/<t>/

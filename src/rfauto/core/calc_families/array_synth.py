@@ -19,7 +19,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "array.bayliss_weights",
-    "RB-ALG-1 Bayliss 差波束权向量（单脉冲低副瓣差方向图四参数闭式；"
+    "Bayliss差波束权：RB-ALG-1 Bayliss 差波束权向量（单脉冲低副瓣差方向图四参数闭式；"
     "Bayliss 1968 BSTJ 47(4):623-650 原文数表，Doerry SAND-2025-07335 "
     "转载双源锚定）。2N 元偶数阵奇对称实权，PSLL 回收=声明电平；文献"
     "值回收/恒等式门见 test_w3_e_array_synth",
@@ -34,6 +34,7 @@ def array_bayliss_weights(n_elements: int, sidelobe_level_db: float,
     import numpy as np
 
     from rfauto.core.array_synthesis import (
+        _BAYLISS_PSLL_CONVERGENCE_DB,
         bayliss_weights,
         difference_pattern_psll_db,
     )
@@ -44,6 +45,22 @@ def array_bayliss_weights(n_elements: int, sidelobe_level_db: float,
     psll = difference_pattern_psll_db(w)
     half = int(n_elements) // 2
     aperture_imbalance = float(np.max(np.abs(w[:half] + w[half:][::-1])))
+    # 界饱和显式标志（ge9 审查 P2 勘误，与内核 UserWarning 同一容差单源；
+    # 内核侧已 warnings.warn，此处补 JSON 消费面可判字段，#122 不静默）
+    psll_converged = abs(psll - float(sidelobe_level_db)) \
+        <= _BAYLISS_PSLL_CONVERGENCE_DB
+    notes = [
+        "权向量=[a_N..a_1, -a_1..-a_N]（奇对称，max|w|=1）；",
+        "PSLL 为稠密网格回代口径（相对差主瓣峰）；零点位置出自 "
+        "Bayliss 数表，单一膨胀标量经确定性二分精化兑现声明电平"
+        "（内核 docstring 如实声明）",
+    ]
+    if not psll_converged:
+        notes.append(
+            f"界饱和告警：声明电平 {float(sidelobe_level_db):.2f}dB 越出"
+            f"膨胀界 [0.75,1.6] 内可达带，实测 PSLL={psll:.2f}dB（偏差>"
+            f"{_BAYLISS_PSLL_CONVERGENCE_DB}dB）——形状有效、电平声明不"
+            "成立，可增大 n_elements 或调整 nbar")
     return {
         "ok": True,
         "n_elements": int(n_elements),
@@ -52,20 +69,16 @@ def array_bayliss_weights(n_elements: int, sidelobe_level_db: float,
         "weights": [float(v) for v in w],
         "weights_sum": float(w.sum()),
         "psll_db_realized": float(psll),
+        "psll_converged": bool(psll_converged),
         "broadside_null_mag": float(abs(w.sum())),
         "antisymmetry_max_violation": aperture_imbalance,
-        "notes": [
-            "权向量=[a_N..a_1, -a_1..-a_N]（奇对称，max|w|=1）；",
-            "PSLL 为稠密网格回代口径（相对差主瓣峰）；零点位置出自 "
-            "Bayliss 数表，单一膨胀标量经确定性二分精化兑现声明电平"
-            "（内核 docstring 如实声明）",
-        ],
+        "notes": notes,
     }
 
 
 @register_calculator(
     "array.villeneuve_weights",
-    "RB-ALG-1 Villeneuve 和波束权向量（Taylor 零点的离散阵精确修正；"
+    "Villeneuve权向量：RB-ALG-1 Villeneuve 和波束权向量（Taylor 零点的离散阵精确修正；"
     "Villeneuve 1984 IEEE TAP 32(10):1089-1093）。nbar=1 退化为均匀阵；"
     "PSLL 收敛带与单调钉见 test_w3_e_array_synth",
     (("n_elements", "int 单元数（≥2 且 ≥2·nbar）"),
@@ -107,7 +120,7 @@ def array_villeneuve_weights(n_elements: int, sidelobe_level_db: float,
 
 @register_calculator(
     "array.schelkunoff_nulls",
-    "RB-ALG-1 Schelkunoff 单位圆零点置放权向量（Schelkunoff 1943 BSTJ "
+    "Schelkunoff零点权：RB-ALG-1 Schelkunoff 单位圆零点置放权向量（Schelkunoff 1943 BSTJ "
     "22:80-107）。给 n-1 个零方向（方向余弦）得阵列多项式系数=激励；"
     "全自然零点=均匀阵恒等式钉见 test_w3_e_array_synth",
     (("n_elements", "int 单元数（≥2；零方向数须=n-1）"),
@@ -145,7 +158,7 @@ def array_schelkunoff_nulls(n_elements: int, null_positions: list[float],
 
 @register_calculator(
     "array.quantized_milp",
-    "RB-ALG-2 量化约束阵列综合=MIP 精确解（scipy.milp/HiGHS，零新依赖）。"
+    "量化阵列MIP综合：RB-ALG-2 量化约束阵列综合=MIP 精确解（scipy.milp/HiGHS，零新依赖）。"
     "移相器 b-bit/衰减器离散档/阵元开关 二进制选择+方向图约束线性化；"
     "目标=线性化峰值副瓣场，主瓣相干增益损失带内；回代 PSLL=真非线性"
     "口径；码字直连 firmware beam_codeword_table/beam_backsub_audit。"
@@ -178,7 +191,7 @@ def array_quantized_milp(n_elements: int, sidelobe_level_db: float,
                          mainlobe_half_u: float | None = None,
                          n_sidelobe_points: int | None = None,
                          n_tangent: int = 16,
-                         mip_rel_gap: float = 1e-6,
+                         mip_rel_gap: float = 1e-4,
                          time_limit_s: float = 0.0) -> dict[str, Any]:
     from rfauto.core.quantized_array_milp import quantized_array_milp
 

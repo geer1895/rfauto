@@ -977,7 +977,7 @@ def _solve_read(h, ds: float, mp: int, char_imp: str, label: str,
     #145 看门狗）。v2 主判路由 char_imp=Zvi（criteria v2 §一.2）。
 
     n_modes=CharImp 声明与读数的模数（主判路由=2；半模型对照档=1——
-    其端口只有 Mode1，对 Mode2 声明会抛"缺 Mode2 props"（fail-closed）。"""
+    其端口只有 Mode1，对 Mode2 声明会抛"缺 Mode2 props"（fail-closed））。"""
     from rfauto.adapters.hfss_adapter import HfssAdapter
     from rfauto.infra.desktop_guard import run_with_watchdog
     from rfauto.service.port_gate_service import HfssPortDriver

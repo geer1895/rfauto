@@ -3,7 +3,7 @@
 覆盖：闭式 Wilkinson 教科书值、频扫解析、两族网表纯文本断言（每语句独占一行 /
 SnP 节点数 / 无 Term / 纯 ASCII 无 BOM / 确定性）、branchline 族与
 field_circuit_anchor 锚渲染器"同参数同文本"、对拍内核、service JSON 进出
-（ads_runner 注入，不依赖真机；真机数字见 runs/rm_ads_wp43）。
+（ads_runner 注入，不依赖真机；真机数字见 runs/rm_ads_wp43/）。
 """
 
 from __future__ import annotations

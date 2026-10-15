@@ -7,7 +7,7 @@ horn_synthesis，Orfanidis Ch.21 × Balanis Ch.13 双源）往返恒等（rtol 1
 + 渲染守卫（#266 阶梯步距/#174 空气域自动外推）+ 注册四件套 + docs meta.yaml
 一致性。
 
-方案锚：月度增强方案 §三 A 流 ME-7——标准增益
+方案锚：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-7——标准增益
 公式综合入 core + openEMS 全波验证（方向图/真机冒烟=Ph3 窗，本批零发射）；
 近似级别（8 段阶梯化、口径面一阶 Fresnel 模型）如实登记于
 PYRAMID_HORN_META.smoke_note 与 docs meta。
@@ -236,6 +236,54 @@ class TestNominalAndLayout:
         assert lay["dom_y_mm"] == pytest.approx(big["l_flare_mm"] + need)
         # 空气域余量成立
         assert lay["dom_y_mm"] - lay["l_flare_mm"] >= need - 1e-9
+
+    def test_air_margin_knob_default_untouched(self):
+        """口径侧余量旋钮缺省档（cps_xrefine 纪律）：缺省/显式 None 同布局，
+        l_feed 主导时域余量=60−l_flare（l12d 实证 <λ/2，历史口径不动）。"""
+        lay0 = _pyramid_horn_layout(dict(NOM), BAND, 1.2)
+        lay_none = _pyramid_horn_layout(
+            dict(NOM, _air_margin_aperture=None), BAND, 1.2)
+        assert lay0 == lay_none
+        assert lay0["dom_y_mm"] == pytest.approx(NOM["l_feed_mm"])
+        assert (lay0["dom_y_mm"] - lay0["l_flare_mm"]
+                < lay0["lambda0_mm"] / 2.0)   # 缺省档域余量不达 λ/2（如实）
+
+    def test_air_margin_knob_lambda_half_tier(self):
+        """旋钮 "lambda_half" 档：管长外推推翻 l_feed 主导，域余量=λ0/2+4mm
+        ≥λ/2 硬限（l12d verdict followup 根治档）。"""
+        lay = _pyramid_horn_layout(dict(NOM, _air_margin_aperture="lambda_half"),
+                                   BAND, 1.2)
+        need = lay["lambda0_mm"] / 2.0 + 4.0
+        assert lay["dom_y_mm"] == pytest.approx(lay["l_flare_mm"] + need)
+        assert lay["dom_y_mm"] > NOM["l_feed_mm"]   # 外推越过 l_feed
+        assert lay["dom_y_mm"] - lay["l_flare_mm"] >= need - 1e-9
+        # 锚几何零改动：喉部/口径/绑定序全同缺省档
+        lay0 = _pyramid_horn_layout(dict(NOM), BAND, 1.2)
+        assert lay["l_flare_mm"] == lay0["l_flare_mm"]
+        assert lay["port"]["a_bind_mm"] == lay0["port"]["a_bind_mm"]
+        assert len(lay["boxes"]) == len(lay0["boxes"])
+
+    def test_air_margin_knob_unknown_mode_rejected(self):
+        """未知旋钮档显式拒绝（不静默降级）。"""
+        with pytest.raises(ValueError, match="_air_margin_aperture"):
+            _pyramid_horn_layout(
+                dict(NOM, _air_margin_aperture="double"), BAND, 1.2)
+
+    def test_air_margin_knob_render_literal(self):
+        """旋钮值进渲染 summary、缺省渲染无旋钮行（逐字节面）；None 与缺省
+        同文本。"""
+        raw0 = render_script(T, dict(NOM), BAND, mesh_resolution_mm=1.2)
+        raw_none = render_script(T, dict(NOM, _air_margin_aperture=None),
+                                 BAND, mesh_resolution_mm=1.2)
+        assert raw0 == raw_none
+        assert "air_margin_aperture" not in raw0
+        raw_knob = render_script(
+            T, dict(NOM, _air_margin_aperture="lambda_half"), BAND,
+            mesh_resolution_mm=1.2)
+        assert "air_margin_aperture='lambda_half'," in raw_knob
+        lay = _pyramid_horn_layout(
+            dict(NOM, _air_margin_aperture="lambda_half"), BAND, 1.2)
+        assert f"DOM_Y = {lay['dom_y_mm'] * 1e-3!r}" in raw_knob
 
     def test_taper_sides_trapezoids(self):
         """口面→四壁梯形侧面：角点/半张角/逐段插值与闭式几何一致。"""

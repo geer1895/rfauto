@@ -396,16 +396,7 @@ class TestCliExemptCompact:
         assert "reversible" in result.output
 
     def test_cli_help_carries_new_flags(self):
-        # 湖豁免 compact --help 渲染冒烟 + 新旗标注册存在性（渲染器解耦：
-        # rich 截断位随版本/平台漂移——三代钉均被 CI rich 15 证伪，
-        # 2026-10-07 三跑实证，改查 click 参数注册树）
-        from typer.main import get_command
-
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "Usage" in result.output
-        lake_cmd = get_command(app).commands["lake"]
-        flat = str([list(p.opts) + [str(s) for s in p.secondary_opts]
-                    for p in lake_cmd.commands["compact"].params])
-        assert "--exempt-subtree" in flat
-        assert "--reversible" in flat
+        assert "--exempt-subtree" in result.output
+        assert "--reversible" in result.output

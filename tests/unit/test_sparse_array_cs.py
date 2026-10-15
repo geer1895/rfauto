@@ -491,3 +491,58 @@ def test_service_error_envelope_no_raise():
     assert isinstance(out["error"], str) and out["error"]
     assert svc.sparse_array_cs_service("not-a-dict")["ok"] is False
     assert svc.sparse_array_cs_service({"n_grid": 13, "k_sparse": 5})["ok"] is False  # 缺 target
+
+
+# ─── W2-TEST 直测补强：网格互斥守卫/taylor 目标族/target 校验三态 ─────────────
+
+
+def test_service_grid_disambiguation_guards():
+    """u_grid 与 theta_grid 同给 → 显式歧义错；theta 单独给合法（含降序 u 格）。"""
+    bad = svc.sparse_array_cs_service({
+        "n_grid": 9, "k_sparse": 4,
+        "u_grid": {"start": -1.0, "stop": 1.0, "step": 0.5},
+        "theta_grid": {"start": 0.0, "stop": 180.0, "step": 30.0},
+        "target": {"kind": "chebyshev", "sidelobe_level_db": -30.0},
+    })
+    assert bad["ok"] is False
+    assert "二选一" in bad["error"]
+    # theta 单给（升序 θ → 降序 u 格；此处无积分面，照常出解）
+    out = svc.sparse_array_cs_service({
+        "n_grid": 9, "spacing_lambda": 0.5, "k_sparse": 5,
+        "theta_grid": {"start": 0.0, "stop": 180.0, "step": 5.0},
+        "target": {"kind": "chebyshev", "sidelobe_level_db": -30.0},
+    })
+    assert out["ok"] is True
+    assert len(out["result"]["selected_indices"]) == 5
+    assert json.dumps(out)
+
+
+def test_service_taylor_target_kind():
+    """taylor 锥削包络目标经 service 走通（chebyshev 之外的第二锥削族）。"""
+    out = svc.sparse_array_cs_service({
+        "n_grid": 9, "spacing_lambda": 0.5, "k_sparse": 5,
+        "u_grid": {"start": -1.0, "stop": 1.0, "step": 0.25},
+        "target": {"kind": "taylor", "sidelobe_level_db": -25.0, "nbar": 4},
+    })
+    assert out["ok"] is True
+    result = out["result"]
+    assert result["k_sparse"] == 5
+    assert result["taper"]["within_band"] is True
+    assert json.dumps(out)
+
+
+def test_service_target_validation_guards():
+    """target 三态校验：未知 kind / explicit 坏 [re,im] 对 / k_sparse 缺失。"""
+    bad_kind = svc.sparse_array_cs_service({
+        "n_grid": 9, "k_sparse": 3, "target": {"kind": "bogus"}})
+    assert bad_kind["ok"] is False
+    assert "chebyshev/taylor/explicit" in bad_kind["error"]
+    bad_pair = svc.sparse_array_cs_service({
+        "n_grid": 2, "k_sparse": 1,
+        "target": {"kind": "explicit", "values": [[1.0, 2.0, 3.0]]}})
+    assert bad_pair["ok"] is False
+    assert "[re, im]" in bad_pair["error"]
+    no_k = svc.sparse_array_cs_service({
+        "n_grid": 9, "target": {"kind": "chebyshev", "sidelobe_level_db": -30.0}})
+    assert no_k["ok"] is False
+    assert "k_sparse" in no_k["error"]

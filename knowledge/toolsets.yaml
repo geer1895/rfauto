@@ -86,7 +86,7 @@ toolsets:
     description: 射频综合设计面——滤波器/功分器/链路预算/交调/NFC 线圈
     skill: |
       线宽与名义几何一律 skrf HJ 综合精算（core/synthesis.py），禁沿用其他模型或
-      文档的毫米数（#252 名义臂长手算捷径致谐振负偏一成）；合成
+      文档的毫米数（项目规则 规则 1c；#252 名义臂长手算捷径致谐振负偏一成）；合成
       产物先 validate_recipe 过三层 Gate 再真跑；预算/交调用 budget_analysis 与
       spur_search（ADS 侧同源核对走 compose_netlist）。
     tools_hint:
@@ -165,7 +165,8 @@ toolsets:
   - name: layout_kicad
     description: KiCad 版图面——提取/CPW 优化/远场联动
     skill: |
-      KiCad 一律子进程调用自带 Python 3.11；zone 自有多边形一律 AppendCorner 写入（#220 SWIG 归属
+      KiCad 一律子进程调用自带 Python 3.11（项目规则 规则 2，ABI 硬限制，项目 venv
+      禁 import pcbnew）；zone 自有多边形一律 AppendCorner 写入（#220 SWIG 归属
       陷阱）；层 id 禁写死数值（#210 族重排）；远场联动产物对账走 farfield_runs
       与 farfield_view。
     tools_hint:
@@ -177,7 +178,7 @@ toolsets:
   - name: remote_multihost
     description: 远程多机协同——探活/状态/队列（sim_host 通道）
     skill: |
-      服务器侧版本必须等于本机；
+      服务器侧版本必须等于本机（项目规则 规则 0，gRPC 客户端-服务端版本配对）；
       先 remote_probe_machine 探活、remote_machine_status 看队列再发射；任务毕
       必清理（杀 ansysedt 删 schtasks，remote_hfss_cleanup）；发射后存活复核，
       隐藏形态进程易被杀毒静默击杀（#157 家族）；中间文件只落服务器工作盘，

@@ -1,7 +1,7 @@
 r"""PK-10 DFM 规则引擎统一——单一 YAML 规则 schema（规则 id/IPC 条款/
 量纲/方向语义）。
 
-规格：研究扩充 round14 §五 PK-10（P2/M）：
+规格：docs/research_expansion_20261002_round14.md §五 PK-10（P2/M）：
 "五件套+fab_check 收敛单一 YAML 规则 schema（规则 id/IPC 条款/量纲/
 方向语义）；标准锚=IPC-2221/2141A。勘误（防错）：IPC-2171 不存在
 （检索仅命中印度消防标准），勿引入"。

@@ -327,7 +327,7 @@ def _rows_from_meta(run_dir: Path, campaign: str) -> tuple[list[dict[str, Any]],
 
 
 # ---------------------------------------------------------------------------
-# 目录扫描（有界三种形态：顶层 / 一层嵌套 / campaign/runs）
+# 目录扫描（有界三种形态：顶层 / 一层嵌套 / campaign/runs/）
 # ---------------------------------------------------------------------------
 
 def _iter_candidate_run_dirs(runs_dir: Path) -> list[tuple[Path, str]]:

@@ -1,6 +1,6 @@
 """EP-3 成本录入容器服务面（用户自录——零内置价格，规则 4 service 先行）。
 
-规格 研究扩充 round18 §二 EP-3。数值全在
+规格 docs/research_expansion_20261002_round18.md §二 EP-3。数值全在
 core/cost_model.py（铁律 7）；本模块是录入容器（成本账本 book 的
 增查/合计/装载）与 resolve_price 绑定面，零物理数字零内置快照价。
 

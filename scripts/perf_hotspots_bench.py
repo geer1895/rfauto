@@ -1,4 +1,4 @@
-"""性能基准三热点（F-G 兼差件，研究扩充 round4 F-G 4）。
+"""性能基准三热点（F-G 兼差件，docs/research_expansion_20260926_round4.md F-G 4）。
 
 三个仓内已知热点函数的本机基线（固定输入合成数据，确定性、零网络）：
 
@@ -13,7 +13,7 @@
 - **pytest-benchmark 不在装（venv 实测 2026-09-27：pip list 无）**——
   按任务书降级为**手计时口径**（time.perf_counter，不装新依赖），
   JSON 里 ``basis: "manual_perf_counter"`` 如实登记；
-- **不进 tests/unit 门**（性能基准不进全量门—— 纪律），本脚本
+- **不进 tests/unit 门**（性能基准不进全量门——AGENTS 纪律），本脚本
   只提供 ``--run`` 手动入口；不带 --run 时仅打印基准计划并退出；
 - 输出 JSON schema 稳定（SCHEMA_VERSION="1.0"，键集固定），落
   runs/perf_hotspots_bench/<时间戳>.json；

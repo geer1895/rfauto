@@ -524,10 +524,6 @@ class TestStage2EndToEnd:
         assert out["verdict"] == "PASS"
         assert out["G1_peak_shift"]["status"] == "PASS"
         assert out["G1_peak_shift"]["abs_dev_pt"] == pytest.approx(0.0, abs=1e-9)
-        if out["G1_peak_shift"]["pred_stored_cpass_pct"] is None:
-            # 公开分发视图：cpass 存档（runs/smoke_c3_redesign）缺席——
-            # 交叉记录字段如实 None；主门（G1 当轮判）已在本测断言
-            pytest.skip("cpass 存档缺席（公开分发视图），交叉记录如实 None")
         assert out["G1_peak_shift"]["pred_stored_cpass_pct"] == pytest.approx(0.0,
                                                                              abs=1e-9)
         assert out["G2_il_rl"]["status"] == "PASS"

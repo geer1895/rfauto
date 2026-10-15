@@ -1,6 +1,6 @@
 """G8 引擎基准扩容：ratrace/atten/via/msl_cpw 四锚判读内核（纯函数零真机）。
 
-背景（#222 对账 + 方案冻结行 docs/续跑计划.md:495
+背景（#222 对账 + 方案冻结行 延续计划:495
 「G8 引擎基准扩容…每新锚模板即入基准」）：WP1.2 mline 锚已有 harness
 范式（scripts/engine_benchmark_mline.py + core/anchor_verdict.
 mline_benchmark_verdict + tests/golden/mline_benchmark_rescan_20260913.json），
@@ -45,7 +45,7 @@ runs/*_smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺�
 
 诚实性（#122 不凑绿）：任何输入 None/NaN（无数据、收敛不可算）→
 对应门如实 FAIL 并写明「不可判」，绝不按门内放行。LLM/agent 永不
-产生物理数字：锚值与参考值全部来自确定性链路
+产生物理数字（项目规则 规则 7）：锚值与参考值全部来自确定性链路
 （openEMS CalcPort β / core/synthesis HJ 与 CPWG 闭式）。
 
 消费方：
@@ -96,7 +96,7 @@ VIA_RECIP_MAX_DB = 0.5           # 互易 |mean S11-mean S22| ≤0.5dB
 # CPW_S21_MAX_LIN 同构——无源二端口逐频 |S21|≤1 是能量守恒硬约束，纯下侧
 # mean 门对 >1 的端口提取伪象（伪波分解/时域截断/参考阻抗口径）会非物理
 # 放行；理想无源地板 1.0 + 0.02 裕量仅覆盖单位附近数值噪声，已实证伪象
-# ~3%（cba2687）刻意不吸收，超门=先审计提取口径再谈校准。
+# ~3%（cba2687）刻意不吸收，超门=先审计提取口径再谈校准（项目规则 1b）。
 # 独立常量不引用 CPW_*：门重标定按锚显式、互不牵连（#231）。
 VIA_S21_MAX_LIN = 1.0 + 0.02
 # via |S11| 门 = S11_HEALTH_DB（-10dB 绝对门）
@@ -107,7 +107,7 @@ CPW_IDEAL_S21_LIN = 1.0          # 理想级联地板（同阻异模对接，仅
 # 无源上界（上侧，带内 max 语义）：无源二端口逐频 |S21|≤1 是能量守恒硬约束，
 # 超出只能是端口提取伪象（伪波分解 / 时域截断 / 参考阻抗口径），不是器件
 # 性能。裕量 0.02 仅覆盖单位附近数值噪声；已实证伪象 ~3%（cba2687）刻意
-# 不吸收，超门=先审计提取口径再谈校准。
+# 不吸收，超门=先审计提取口径再谈校准（项目规则 1b）。
 CPW_S21_MAX_LIN = CPW_IDEAL_S21_LIN + 0.02
 # msl_cpw |S11| 门 = S11_HEALTH_DB（-10dB 保守文献地板，#195 worst-case）
 
@@ -297,7 +297,7 @@ def via_benchmark_verdict(
     R2-A-01 审查增补，与 msl_cpw 20260915b 同构）：|S21| 线性 mean
     ≥0.90 健康（下侧）**且** |S21| 带内 max ≤ VIA_S21_MAX_LIN=1.02
     无源上界（上侧），上下侧共同折入 thru_ok，另以 passive_ok 单独回传
-    上侧结果供诊断。recip_db 来源只可能是归档日志/转录
+    上侧结果供诊断。recip_db 来源只可能是归档日志/ 转录
     （sparams.csv 无 S22 列），调用方须标 source=archive_log。
 
     s21_lin_band_max 为 keyword-only 可选：旧调用（五位置参数）不抛
@@ -403,7 +403,7 @@ def msl_cpw_benchmark_verdict(
     无源上界依据：无源二端口逐频 |S21|≤1 是能量守恒硬约束；带内 max >1
     只能是端口提取伪象（伪波分解 (U+Z_ref·I)/2 对非 50Ω 模式的混叠、
     NrTS 定步截断、参考阻抗口径）而非器件性能，须先审计提取口径再谈
-    校准。首轮真跑 mean 1.0296 / max 1.290 曾在纯下侧门下
+    校准（项目规则 1b）。首轮真跑 mean 1.0296 / max 1.290 曾在纯下侧门下
     PASS——本门即为堵住该非物理放行而立。
 
     s21_lin_band_max 为 keyword-only 可选：旧调用（四位置参数）不抛

@@ -34,6 +34,7 @@ Tennant-Chambers 2004）。
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -588,3 +589,108 @@ def test_service_beam_agility_envelope():
     assert json.dumps(resp)
     # 错误入参 → ok=False 不抛
     assert tma_beam_agility_service({"n_elements": 4, "order": 0})["ok"] is False
+
+
+# ─── W2-TEST 直测补强：theta 路由等价（降序网格翻正钉）/复权与广播形态/agility 缺省 ──
+
+
+def test_service_theta_grid_route_matches_u_route():
+    from rfauto.service.tma_array_service import tma_pattern_service
+    """theta_grid 升序（0→180° 自然约定）与 u_grid=cos θ 逐位同结果。
+
+    回归钉：升序 θ 经 cos 折算后 u 降序，sll_metrics 梯形功率积分曾出负值
+    误报"全部阶功率之和为 0"——内核翻正后两路由 ok 且方向图逐位相等。
+    """
+    ths = [float(x) for x in range(0, 181, 2)]
+    req_theta = {"n_elements": 4, "tau": 0.6, "max_order": 1,
+                 "theta_grid": {"values": ths}}
+    req_u = {"n_elements": 4, "tau": 0.6, "max_order": 1,
+             "u_grid": {"values": [math.cos(math.radians(a)) for a in ths]}}
+    a = tma_pattern_service(req_theta)
+    b = tma_pattern_service(req_u)
+    assert a["ok"] is True and b["ok"] is True
+    assert a["result"]["patterns_re_im"] == b["result"]["patterns_re_im"]
+    assert a["result"]["metrics"] == b["result"]["metrics"]
+    # 峰值独立期望值（#118）：4 元等幅 τ=0.6 基波峰 = N·τ = 2.4（侧射 u=0）
+    assert a["result"]["metrics"]["fundamental_peak_abs"] == pytest.approx(2.4, rel=1e-12)
+
+
+def test_kernel_sll_metrics_descending_grid_equals_ascending():
+    """内核钉：sll_metrics 对同一格的降序/升序两形态指标逐位一致（翻正恒等式）。"""
+    u_asc = np.arange(-1.0, 1.0 + 1e-12, 0.02)
+    u_desc = u_asc[::-1].copy()
+    pos = np.arange(4, dtype=float) * 0.5
+    res_a = tma_array.harmonic_patterns(u_asc, pos, np.ones(4), np.full(4, 0.6),
+                                        max_order=1)
+    res_d = tma_array.harmonic_patterns(u_desc, pos, np.ones(4), np.full(4, 0.6),
+                                        max_order=1)
+    m_asc = tma_array.sll_metrics(res_a.patterns, res_a.orders, u_asc)
+    m_desc = tma_array.sll_metrics(res_d.patterns, res_d.orders, u_desc)
+    assert m_asc == m_desc  # dict 全等（含各阶功率逐位）
+    # 单点网格：梯形积分零宽 → 功率恒 0，如实 ValueError（占比无定义）
+    with pytest.raises(ValueError, match="功率"):
+        tma_array.sll_metrics(res_a.patterns[:, :1], res_a.orders, u_asc[:1])
+
+
+def test_service_weights_tau_wincenter_forms():
+    from rfauto.service.tma_array_service import tma_pattern_service
+    """复权 [re,im] 对/标量广播/逐元列表三种形态与长度守卫（service 面）。"""
+    # 复权（#118 手算）：权重 [1, -1]、τ=0.5 → AF(0)=τ·(1−1)=0 精确相消；
+    # 对照 [1, j]（正交权）→ |AF(0)|=τ·|1+j|=√2/2（非相消，勿混）
+    out = tma_pattern_service({
+        "n_elements": 2, "tau": 0.5, "max_order": 0,
+        "weights": [[1.0, 0.0], [-1.0, 0.0]],
+        "u_grid": {"values": [-0.5, 0.0, 0.5]},
+    })
+    assert out["ok"] is True
+    re0, im0 = out["result"]["patterns_re_im"][0][1]
+    assert complex(re0, im0) == 0.0  # 逐位零（1−1 恒等式）
+    out_q = tma_pattern_service({
+        "n_elements": 2, "tau": 0.5, "max_order": 0,
+        "weights": [[1.0, 0.0], [0.0, 1.0]],
+        "u_grid": {"values": [-0.25, 0.0, 0.25]},
+    })
+    assert out_q["ok"] is True
+    re1, im1 = out_q["result"]["patterns_re_im"][0][1]
+    assert abs(complex(re1, im1)) == pytest.approx(math.sqrt(2.0) / 2.0, rel=1e-12)
+    # 权重长度不符 → ok=False
+    bad_w = tma_pattern_service({
+        "n_elements": 2, "tau": 0.5, "weights": [[1.0, 0.0]],
+        "u_grid": {"values": [0.0, 0.5]}})
+    assert bad_w["ok"] is False and "weights" in bad_w["error"]
+    # win_center 标量广播 ≡ 逐元同值列表（逐位）
+    out_s = tma_pattern_service({
+        "n_elements": 4, "tau": 0.5, "win_center": 0.25, "max_order": 1,
+        "u_grid": {"start": -1.0, "stop": 1.0, "step": 0.25}})
+    out_l = tma_pattern_service({
+        "n_elements": 4, "tau": 0.5, "win_center": [0.25] * 4, "max_order": 1,
+        "u_grid": {"start": -1.0, "stop": 1.0, "step": 0.25}})
+    assert out_s["ok"] and out_l["ok"]
+    assert out_s["result"]["patterns_re_im"] == out_l["result"]["patterns_re_im"]
+    # tau 逐元列表合法；长度不符拒收
+    out_t = tma_pattern_service({
+        "n_elements": 4, "tau": [0.5] * 4, "max_order": 0,
+        "u_grid": {"values": [0.0, 0.5]}})
+    assert out_t["ok"] is True
+    bad_t = tma_pattern_service({
+        "n_elements": 4, "tau": [0.5] * 3, "u_grid": {"values": [0.0, 0.5]}})
+    assert bad_t["ok"] is False and "tau" in bad_t["error"]
+
+
+def test_service_beam_agility_defaults_and_explicit_diff():
+    from rfauto.service.tma_array_service import tma_beam_agility_service
+    """agility 缺省面：tau_diff 缺省=tau_sum、半周期时移构造；显式 diff 优先。"""
+    base = {"n_elements": 8, "tau_sum": 0.7,
+            "u_grid": {"start": -1.0, "stop": 1.0, "step": 0.001}}
+    out = tma_beam_agility_service(base)
+    assert out["ok"] is True
+    assert out["result"]["disclaimer"]  # 物理边界如实随载荷透出
+    # 缺省构造与显式给同值 win_center_diff 等价（差口径构造确定性）
+    out_explicit = tma_beam_agility_service(
+        {**base, "win_center_sum": 0.35, "win_center_diff": [0.35] * 4 + [0.85] * 4})
+    out_default = tma_beam_agility_service(
+        {**base, "win_center_sum": 0.35})
+    assert out_explicit["ok"] and out_default["ok"]
+    d_e = out_explicit["result"]["sideband_broadside_abs_diff"]
+    d_d = out_default["result"]["sideband_broadside_abs_diff"]
+    assert d_e == pytest.approx(d_d, rel=1e-12)

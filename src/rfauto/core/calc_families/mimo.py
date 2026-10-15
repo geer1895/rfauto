@@ -88,7 +88,7 @@ def mimo_virtual_array(
 
 @register_calculator(
     "mimo_channel_capacity",
-    "NX-10 MIMO 信道容量/分集（round14 :108，C=log₂det(I+γHH†) 与分集"
+    "MIMO容量：NX-10 MIMO 信道容量/分集（round14 :108，C=log₂det(I+γHH†) 与分集"
     "增益）：Telatar 1999 容量 + Tse-Viswanath 2005 两档功率口径——等功率"
     "（总 snr 均分 Nt：Σlog₂(1+snr·λᵢ/Nt)）与注水（pᵢ=(μ−1/λᵢ)⁺、Σpᵢ=snr，"
     "活性模闭式搜索）；规格原式 log₂det(I+snr·HH†)（γ=单流 SNR 口径）由 "

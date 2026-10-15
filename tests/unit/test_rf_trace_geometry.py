@@ -1,6 +1,6 @@
 """N14 RF 走线几何内核：面积恒等式裁判 + layout_interchange 消费证明。
 
-spec 出处：方案池 L158「N14 KiCad RF 导出增强
+spec 出处：docs/plan_expansion_pool_20260924.md L158「N14 KiCad RF 导出增强
 （taper/圆角 footprint+寄生反查闭环）」+ docs/audit/plan_gap_inventory_20260928.md
 §二 B5 行。本件=几何内核 + 寄生反查闭环 + KiCad footprint 直发（收尾全件）。
 

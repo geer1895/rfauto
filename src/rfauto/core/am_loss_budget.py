@@ -1,6 +1,6 @@
 r"""PK-8 增材制造（AM）RF 损耗预算与公差敏感性内核。
 
-规格：研究扩充 round14 §五 PK-8（P2/M）：
+规格：docs/research_expansion_20261002_round14.md §五 PK-8（P2/M）：
 "打印金属有效电导率+Ra→Hammerstad/Huray 映射（Ra≠Rq 换算声明）+波导衰减
 预算（WR 表+horn 复用）；公差敏感性走 tolerance_allocation/pce 链。验收：
 复现 MNSL 2024 WR-10 超损 4.02dB 分解量级"。

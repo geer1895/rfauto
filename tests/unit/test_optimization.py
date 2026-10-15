@@ -135,6 +135,28 @@ class TestStudyName:
         name = make_study_name(tmp_path / "nonexistent.yaml")
         assert "unknown" in name
 
+    def test_long_stem_keeps_content_hash_distinct(self, tmp_path):
+        """A7 P2-2 回归钉：stem ≥71 字符时尾截断不得切掉内容哈希。
+
+        旧契约 ``tune_{stem}_{hash}`` 在 stem ≥76 时 8 位哈希被 [:80] 整段
+        切掉——两个内容不同、stem 同前缀的配方得到同学名（静默共 study，
+        轨迹互串）。新契约哈希前置，截断只弃可读 stem 段。"""
+        import re
+
+        stem_a = "w" * 75 + "a"
+        stem_b = "w" * 75 + "b"
+        pa = tmp_path / f"{stem_a}.yaml"
+        pb = tmp_path / f"{stem_b}.yaml"
+        pa.write_text("a: 1\n", encoding="utf-8")
+        pb.write_text("a: 2\n", encoding="utf-8")
+        na = make_study_name(pa)
+        nb = make_study_name(pb)
+        assert na != nb, "异内容配方截断后共 study 名（A7 P2-2）"
+        assert len(na) <= 80 and len(nb) <= 80
+        # 哈希前置：前 13 字符必含 8 位内容哈希（截断不可及处）
+        assert re.fullmatch(r"tune_[0-9a-f]{8}_.*", na)
+        assert re.fullmatch(r"tune_[0-9a-f]{8}_.*", nb)
+
 
 class TestOptimizationLoop:
     """优化循环集成测试（FakeAdapter，秒级）。"""

@@ -28,7 +28,16 @@ REPORT_SCHEMA = "qm4/audit_deps_report/1"
 #: 逐条豁免裁决表（键 = "<PEP503 包名>:<漏洞 ID>"；漏洞 ID 为 PYSEC-*/GHSA-*/CVE-*）。
 #: 每条必须带 reason（裁决理由）与 review_date（复审到期日，ISO 8601）；
 #: 复审日期过期后豁免失效→门红并点名"豁免过期"，强制人工复审后再续期。
-#: 首表为空=首跑未发现需豁免项（2026-10-02 首跑结果见 runs/qm4）。
+#: 首表为空=首跑未发现需豁免项（2026-10-02 首跑结果见 runs/qm4/）。
+#:
+#: 与公开仓的分叉注记（2026-10-08 快赢席 W2 对齐核查，勿盲目照抄）：
+#: release/rfauto_public CI supply-chain job 带 18×PYSEC-2026 --ignore-vuln
+#: （全为 pillow 11.3.0 图像解析器面；公开锁面被 fdtdx→moviepy 的
+#: pillow>=9.2,<12 上限钉住，pillow 12.3.0 修复版进不去）。内部仓 venv 已
+#: 升 pillow 12.3.0（ge8b-dep-audit 销账批）——env 模式实测 314 依赖 0 漏洞
+#: （runs/pool_reaudit/w2_quickwin_audit_report.json），**无需任何豁免**；
+#: 本表一旦需要新条目，先核内部面是否真有同款暴露（极化差异=图像解析
+#: 路径本仓不触），再按 reason+review_date 落条。
 EXEMPT: dict[str, dict[str, str]] = {}
 
 

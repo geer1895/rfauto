@@ -1,6 +1,6 @@
 """gepa_pilot：GEPA 式离线提示词进化试点（AD-6，round15 §五；实验面）。
 
-规格：研究扩充 round15 AD-6「dspy GEPA 以
+规格：docs/research_expansion_20261002_round15.md AD-6「dspy GEPA 以
 goldset 为 metric 优化 prompt 候选，人工裁决入库（P2/L）」；no-go 行明文：
 「LangGraph/DSPy 进生产硬依赖」「GEPA 产物免审入库」。
 

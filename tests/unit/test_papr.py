@@ -1,4 +1,4 @@
-"""F-E.5 PAPR 内核单测（研究扩充 round3 F-E 表件 5 判据）。
+"""F-E.5 PAPR 内核单测（docs/research_expansion_20260926_round3.md F-E 表件 5 判据）。
 
 裁判口径（#118，先测后钉）：解析公式本身的裁判=合成 OFDM 蒙特卡洛
 （随机 QPSK/16QAM + IFFT + 固定 seed，本文件实测后钉阈值）；求逆的裁判=

@@ -24,7 +24,7 @@ from rfauto.core import fpa_antenna
 # F-13 批 2（W6-E）：载荷守卫单源化（#116 删净）。文案分歧件已声明统一：
 # 原「payload 必须为 dict」→ 单源「payload 必须是 JSON 对象，实际 X」
 # （ValueError 捕获进 errors 的 ok=False 语义逐位不变，文案变更见
-# W6-E 报告）。
+# W6-E 报告/）。
 from rfauto.service._helpers import require_payload_dict as _require_payload_dict
 from rfauto.service.envelope import error_envelope, ok_envelope
 

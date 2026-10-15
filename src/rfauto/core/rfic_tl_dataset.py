@@ -1,6 +1,6 @@
 """PB-1 RFIC-TL 公开基准数据集 loader（外部对拍基准载体，纯读取零上游代码依赖）。
 
-数据源（研究扩充 round5 §4.1 PB-1）：IMS 2024
+数据源（docs/research_expansion_20260926_round5.md §4.1 PB-1）：IMS 2024
 「Transfer Learning Assisted Fast Design Migration Over Technology Nodes」
 （arXiv:2502.18636；GitHub ChenhaoChu/RFIC-TL，Apache-2.0 含示例数据集）。
 数据 = 1:1 片上变压器匹配网络的参数化 EM 扫描：输入 = 设计参数 x（匹配

@@ -1,0 +1,90 @@
+f0_ghz: 10.0
+n_ports: 1
+template: ms_mushroom
+substrate:
+  er: 3.66
+  h_mm: 0.508
+  tan_d: 0.0037
+params:
+- gap_mm
+- period_mm
+- h_mm
+nominal_params:
+  gap_mm: 1.2753
+  period_mm: 14.9896
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；ms_patch 同族读出，
+  _WgProbePairRefl 对调 uf——footer 契约/S 列 schema 不变，_port2=_port1
+  别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提；AMC 判读=
+  |Γ|≈1（无损）的 argΓ 扫频：低频 PEC ±180° → f₀ 过 0°（PMC）→ ±90° 带边
+  ——f₀ 互证锚=core/amc_mushroom amc_resonance_hz（Sievenpiper LC 并联谐振，
+  EC 初值口径，稠密栅 gap≪period 声明域；真机带心修正归 P3）。健康判据=
+  |Γ| 线性域 ≈1（空波导标定同 ms_patch 口径）
+topology: >-
+  Sievenpiper 蘑菇 EBG/AMC 单元：接地基板（z 底 PEC 边界）+ 零厚方贴片
+  （px=py=period−gap，邻胞缝=gap 承载间隙电容 C）+ 中心过孔柱（r=0.15
+  sub-cell 阶梯化，z 0→H_SUB 接地，承载过孔电感 L=μ0·t）；单胞方形域
+  x 对壁 PEC / y 对壁 PMC（TEM 平面波）；贴片上方 λ0/4 空气区置双 E 探针
+  对（自由悬浮无源）+ 探针对上方 soft plane 激励面，域内零电阻片
+param_semantics: >-
+  gap_mm=邻胞贴片缘缝（Sievenpiper LC 模型的 C 承载，EC 初值主参数），
+  period_mm=单胞周期（方形域边长，px=py=period−gap 派生），h_mm=基板厚
+  （过孔电感 L=μ0·h 的物理承载）；er 进名义 gap 反演闭式（εeff=(1+εr)/2）
+  +基板材料，tan_d 只进材料；过孔柱 r=0.15 构造常量非声明参数
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘精确入网
+  +胞缘缝 3+ 中点入网（#311）；过孔柱=sub-cell 阶梯化（msl_cpw 过孔栅栏
+  先例，轴向两端恰在网格线）；NEAR≤胞缘缝/3 渲染期守卫（#266）；全轴最小
+  网格间距 ≥10µm
+smoke_note: >-
+  离线审计先行（#212，test_metasurface_templates）；AMC f₀/±90° 带边闭式=
+  amc_phase_band_hz（内核互证钉）；真机波导模拟器 smoke（空波导 EN 标定+
+  argΓ 过零点对拍内核 f₀）判据面归 P3 发射批
+nominal_derivation: |-
+  全闭式反演（#1c/#252，内核 core/amc_mushroom MM-8 单源消费，2026-10-08
+  TA-13 注册）：period=λ0/2=14.9896（ms_patch 阵格同口径）；
+  L=μ0·h=μ0·0.508mm（amc_via_inductance_h，Sievenpiper TAP 47(9):1509
+  过孔电感律）→ 目标 f0=10GHz 的 C_req=1/(ω₀²L) → Luukkonen eq.4
+  C=(2D/π)ε0εeff·ln(csc(πg/2D)) 解析逆：k=C_req·π/(2Dε0εeff)（=ln csc 项）
+  → sin(πg/2D)=e^−k → gap=(2D/π)·arcsin(e^−k)=1.2753（g/period=0.085 落
+  稠密栅声明域 g≪D）；px=py=period−gap=13.7143。回代自洽：amc_resonance_hz
+  (L, C(gap))=10.000GHz 逐位；±90° 带边=9.482/10.547GHz（分数带宽
+  =R=√(L/C)/η₀=0.1065，Sievenpiper 带宽律）。过孔柱 r=0.15（msl_cpw 过孔
+  栅栏同口径，构造常量）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: Sievenpiper 蘑菇 EBG/AMC：过孔接地贴片阵=并联 LC 谐振表面（L=μ0·h 过孔电感、C=缝电容），谐振处反射相位过 0°、±90° 给出带边。典型用于人工磁导体地与表面波抑制；常见误用=把
+      ±90° 带当带宽自由调——分数带宽=R=√(L/C)/η₀ 由几何锁定（名义 0.1065）。
+    derivations:
+    - claim: LC 谐振闭式反演：C_req=1/(ω0²L) 对 Luukkonen eq.4 解析逆求 gap
+      formula: f = 1/(2π√(L·C)) ; C = (2D/π)ε0εeff·ln(csc(πg/2D))
+      source: 本仓 core/amc_mushroom（amc_resonance_hz/amc_gap_capacitance_f/amc_via_inductance_h 单源；docs/templates/ms_mushroom/meta.yaml
+        nominal_derivation（回代 f0=10.000GHz 逐位；Sievenpiper TAP 47(9):1509 过孔电感律））
+    - claim: 分数带宽 Sievenpiper 律
+      formula: R = sqrt(L/C)/η0 = 0.1065（±90° 带边 9.482/10.547 GHz）
+      source: 本仓 core/amc_mushroom（反射相位带单源；docs/templates/ms_mushroom/meta.yaml nominal_derivation）
+  sensitivity_ranking:
+  - param: period_mm
+    order: 1
+    basis: 阵格进 C 的 2D/π 因子（D=period 口径）；登记表 0.7466
+  - param: h_mm
+    order: 2
+    basis: L=μ0·h 过孔电感律（dh 弹性精确 0.5）；登记表 0.5
+  - param: er
+    order: 3
+    basis: 单侧加载 εeff=(1+εr)/2 通道；登记表 0.3927
+  - param: gap_mm
+    order: 4
+    basis: 缝电容 ln csc 通道（谐振反解的自由度）；登记表 0.2466
+  - param: tan_d
+    order: 5
+    basis: LC 模型无损口径（登记表 0）
+  quiz_refs: []

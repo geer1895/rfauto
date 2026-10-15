@@ -50,7 +50,7 @@
 
 - 参数语义：series_w_mm=横臂（串联臂，1↔2 / 4↔3）35.35Ω，shunt_w_mm=竖臂（并联臂）50Ω，arm_len_mm=环边长 λ/4——2026-09-05 对照 Microwaves101/PMC 口径修正（旧版横竖阻抗反置+臂中点馈电+隔离端悬空，三处结构性错误）。名义臂注记（R2-1 审查批 2026-10-04）：arm_len_mm=20.5 为薄线极限捷径口径（HJ 精算正解 18.09mm，偏差 +11.8%，已裁定维持锚定基线不改数值）；出处：runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1 与坑#252
 - 网格：x/y 双轴有端口面 → 双轴 PML
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

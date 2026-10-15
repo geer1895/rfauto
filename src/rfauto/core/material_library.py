@@ -17,7 +17,7 @@
   PRINT_MATERIALS（core/luneburg_lens.py）先例口径：状态字段如实登记，
   数值只进 schema 不进判据。
 - **Design Dk 与 process Dk 分开登记，禁止互串**（Coonrod「Design Dk」
-  范式，研究扩充「Design Dk 锚」节）：process
+  范式，docs/research_expansion_20260926.md「Design Dk 锚」节）：process
   Dk=原材料夹持带线法（IPC-TM-650 2.5.5.5）；Design Dk=电路法差分相位
   长度，与设计链可比。两者数值可差 ~5%（RO3003 实证：process 3.00 vs
   官网工具 Design 3.1629）——同一材料"不同方法各自正确"的 Dk 方法域

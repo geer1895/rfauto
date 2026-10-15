@@ -33,6 +33,8 @@ from rfauto.service.pitfall_index_service import (
     validate_pitfall_index,
 )
 
+_项目规则 = Path(__file__).parent.parent.parent / "项目规则"
+
 
 @pytest.fixture(scope="module")
 def index() -> dict:
@@ -51,7 +53,7 @@ class TestLoadReal:
         assert index["path"] == str(DEFAULT_PITFALL_INDEX_PATH)
 
     def test_scale_floor(self, index: dict) -> None:
-        """宁 60 条真勿 300 条猜：本批抽取规模下限 60。"""
+        """宁 60 条真勿 300 条猜：本批抽取规模下限 60（项目规则 踩坑速查子集）。"""
         assert index["n_entries"] >= 60
         assert index["n_entries"] == len(index["entries"])
 
@@ -92,6 +94,41 @@ class TestRoundTrip:
 
 
 # ---------------------------------------------------------------------------
+# 行段真实性抽查钉（索引 source 行段与 项目规则 实文互证）
+# ---------------------------------------------------------------------------
+
+class TestSourceHonesty:
+    def test_line_windows_contain_claimed_content(self) -> None:
+        """抽查 6 条：行段窗口内必须真含该条教训的关键词——防索引与正文
+        静默漂移（坑账索引自身的 #97 家族钉：数字/行号实测）。"""
+        probes = [
+            ("#89", "-Encoding UTF8"),
+            ("#122", "FAIL/PARTIAL"),
+            ("#235", "trim-then-slice"),
+            ("#232", "MUR"),
+            ("A819", "登记快照过时"),
+            ("A1050", "least_squares"),
+        ]
+        text_lines = _项目规则.read_text(encoding="utf-8").splitlines()
+        loaded = load_pitfall_index()
+        assert loaded["ok"] is True
+        by_id = {entry["id"]: entry for entry in loaded["entries"]}
+        for pitfall_id, needle in probes:
+            entry = by_id[pitfall_id]
+            window = "\n".join(
+                text_lines[entry["source"]["line_start"] - 1:
+                           entry["source"]["line_end"]])
+            assert needle in window, (pitfall_id, needle)
+
+    def test_no_numbered_entries_for_known_renamed_ids(self, index: dict) -> None:
+        """勘误注记钉：#103/#119/#150/#240/#244/#256/#260 为合订前账期编号
+        （项目规则:99-102）——本批只照录 #103/#119（原文既有），不新增
+        其余纯历史号条目；若未来补录须带勘误注记。"""
+        ids = {entry["id"] for entry in index["entries"]}
+        for ghost in ("#240", "#244", "#256", "#260"):
+            assert ghost not in ids, ghost
+
+
 # ---------------------------------------------------------------------------
 # 检索钉
 # ---------------------------------------------------------------------------

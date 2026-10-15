@@ -4,7 +4,7 @@
 把 alt 口径可判点从 2 提到 4 的最廉路径（round3 后登记解锁路径，先例 ~26s/点）。
 复用先例 scripts/hfss_hairpin_anchor.py 全套几何/求解/提取函数（模块级导入，
 同 0.5/2.2 先例几何与配置，仅 gap 参数变）；旧档零改写（本脚本全部产物落
-runs/hairpin_hfss_anchor/eigen_ext）。
+runs/hairpin_hfss_anchor/eigen_ext/）。
 
 判别预声明（criteria.md，起跑前写死 #122）：
 - gap=0.8：openEMS alt 口径已双峰（k_split_alt=0.0348/pull 修正 0.0481），
@@ -13,9 +13,9 @@ runs/hairpin_hfss_anchor/eigen_ext）。
   分辨极限（k 真值=eigen 值）；HFSS 不分裂（Δf≤2MHz 地板）=合并是物理。
 
 运行（#157 分离+日志轮询；#243 绝对路径）：
-  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_eigen_ext.py" -WorkingDirectory
-    D:/rf_workspace -RedirectStandardOutput
+    D:\rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/eigen_ext/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/eigen_ext/run.err.log
 """

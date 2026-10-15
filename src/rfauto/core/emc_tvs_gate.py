@@ -1,6 +1,6 @@
 """ME-3 EMC v3：ESD/浪涌免疫门（IEC 61000-4-2/4-5 波形参数表 + TVS 选型闭式）。
 
-规格：月度增强方案 §三 A 流 ME-3。IEC 61000-4-2:2008 与
+规格：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-3。IEC 61000-4-2:2008 与
 61000-4-5:2014 标准正文收费——按项目既定 provenance 纪律走**次级源双源交叉核对固化**
 （检索 2026-09-27，出处与检索面见 IEC61000_4_2_PROVENANCE / IEC61000_4_5_PROVENANCE），
 值面钉在本模块常量表；`rfauto emc gate` 挂 fab DFM 门旁（service/CLI 接线属后续批，

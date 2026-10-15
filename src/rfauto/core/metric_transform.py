@@ -1,6 +1,6 @@
 """变换域注册表与逐域 LOO-LML 选择器（DP-15 C1，plan_deepdive_specs §15.1）。
 
-深谷判据背景（#370/#371 结论，「数据工厂一期收官两经验」）：深谐振
+深谷判据背景（#370/#371 结论，AGENTS「数据工厂一期收官两经验」）：深谐振
 谷族 S11 的 dB 表示在谷底把微小线性误差放大成几十 dB，GP 在 dB 目标上
 "看着病"、线性 |Γ| 才是消费口径——本模块把"选哪种表示"从人工裁定变成
 确定性统计量：逐域 leave-one-out 对数边缘似然（LOO-LML），argmax 者胜。
@@ -458,7 +458,7 @@ def select_metric_domain(
 
 # ------------------------------------- paired permutation + BCa bootstrap
 #
-# S-2（研究扩充 round3 §3.1）：LOO-LML 域选择
+# S-2（docs/research_expansion_20260926_round3.md §3.1）：LOO-LML 域选择
 # 补强——逐点 LOO logpdf 在同一折划分下逐域天然配对，对两域 LML 差做
 # 配对置换检验 + BCa 自助区间，把"域选择"从点估计升级为置信区间化。
 # 本节为纯增量：不改上方任何既有行为（select_metric_domain 的 meta

@@ -9,7 +9,7 @@ design_ridge_depth 4 位舍入回代）+ 内核锚（CR 对三恒等式 verdict 
 XC-P 精度域 g/b≥0.4）+ 渲染守卫（深脊拒渲染/判读带单模域/#266 特征
 分辨/阶数域/#347）+ 注册五件套 + docs meta.yaml 一致性。
 
-方案锚：研究扩充 round15 §二·2 TA-5/TA-6——
+方案锚：docs/research_expansion_20261002_round15.md §二·2 TA-5/TA-6——
 「内核就绪缺模板」件；闭式单源 core（diplexer_compose.diplexer_lpf_hpf /
 ridged_waveguide.design_ridge_depth），本模板层零数值产出（铁律 7/#1c）。
 近似级别如实登记见两 META smoke_note。

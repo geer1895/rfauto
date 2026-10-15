@@ -187,7 +187,10 @@ EDGE_PORT_TEMPLATES: frozenset[str] = frozenset({"msl_siw_taper", "sicl"})
 # 有独立金属网络（屏/贴片）。
 SHEET_PORT_TEMPLATES: frozenset[str] = frozenset({"ms_patch", "ms_cross",
                                                   "ms_jcross",
-                                                  "ms_ring_patch"})
+                                                  "ms_ring_patch",
+                                                  # ms_mushroom（TA-13）：
+                                                  # 蘑菇 EBG/AMC 反射读出族
+                                                  "ms_mushroom"})
 
 # 无端口模板（2026-09-24 df6 DP-10）：软平面照明散射体（ms_array_NxN）——
 # openEMS 无 TF/SF 平面波，用 exc_type=0 软激励平面 + nf2ff 盒替代（官方
@@ -208,6 +211,9 @@ RECT_DOMAIN_TEMPLATES: frozenset[str] = frozenset({"slotline", "slotline_lumped"
                                                    "ms_patch", "ms_cross",
                                                    "ms_jcross", "ms_array_NxN",
                                                    "ms_ring_patch",
+                                                   # ms_mushroom（TA-13）：
+                                                   # 蘑菇 EBG/AMC 单胞方形域
+                                                   "ms_mushroom",
                                                    # §COIL_NFC（df7 C10b）：线圈
                                                    # 矩形域 + FR4 类模板参数基板
                                                    "coil_nfc",
@@ -333,6 +339,10 @@ MATERIAL_VALUE_PARAMS: dict[str, frozenset[str]] = {
     # ms_ring_patch（ge5 段③）：tan_d 只进基板材料；er 进环几何闭式
     # （εeff=(1+εr)/2 → void/ring_w/ring_outer 随 er）——er 驱动导体不需豁免
     "ms_ring_patch": frozenset({"tan_d"}),
+    # ms_mushroom（TA-13）：er 只进名义 gap 反演闭式（εeff=(1+εr)/2，导入期
+    # 计算进 nominal 字面），渲染期不动导体——tan_d 只进基板材料（ms_patch
+    # 同口径）
+    "ms_mushroom": frozenset({"er", "tan_d"}),
     "ms_array_NxN": frozenset({"er", "tan_d"}),
     # §COIL_NFC（df7 C10b）：er/tan_d 只进基板材料属性（slotline/siw 同口径）；
     # h_mm 是几何驱动参数经基板盒/金属面 z 消费，不需豁免
@@ -393,7 +403,7 @@ MATERIAL_VALUE_PARAMS: dict[str, frozenset[str]] = {
 # 几何驱动面的声明）。
 DOMAIN_DRIVEN_PARAMS: dict[str, frozenset[str]] = {
     "ms_cross": frozenset({"period_mm"}),
-    # ms_patch 同口径（2026-10-01 ge5 J2 fallback 段①，runs/ge5_j2fb）：
+    # ms_patch 同口径（2026-10-01 ge5 J2 fallback 段①，runs/ge5_j2fb/）：
     # 读出修复删电阻片 bbox 后 period_mm 不再驱动导体（贴片 px/py、读出面
     # 均只随 px/λ0），单胞域 DOM_* 仍随 period——豁免+正面补偿钉
     # test_metasurface_templates.py::test_ms_patch_period_drives_domain。
@@ -422,6 +432,10 @@ EXTRA_DIELECTRICS: dict[str, frozenset[str]] = {
 # （runs/wp25_tier2_smoke/pt1_msl_cpw3，|S11| −20.0dB、β ±1%），不改近场线。
 SUBCELL_CYLINDER_PROPS: dict[str, frozenset[str]] = {
     "msl_cpw": frozenset({"msl_cpw_via"}),
+    # ms_mushroom（TA-13）：中心过孔柱 r=0.15mm（2r=0.3 < BASE 0.4，sub-cell
+    # 阶梯化口径，msl_cpw 过孔栅栏先例）——横向不要求网格线，轴向两端恰在
+    # 网格线（z=0/H_SUB）
+    "ms_mushroom": frozenset({"mushroom_via"}),
 }
 
 # meta 参数中由合成层消费、不进 render_script 几何的参数：atten_db 由
@@ -488,6 +502,12 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     # 段长 a=8.7626（抽头位越左边段守卫拒渲染——守卫是正确行为）；×0.9
     # 保域（7.33 < 8.76）且必变几何
     "xcheb_bpf4": {"tap_t_mm": (0.9, 0.0)},
+    # atten_pi/atten_t（wf:ge9-tail-srv 尾程项 10 前半，2026-10-08）：shunt_off_mm
+    # 电共位守卫 θ=β·D≤0.1rad ⇒ ≤0.83mm（render_tl._atten_d_guard，W7-A 残座批
+    # D=6mm 分布式失配定谳后立）——缺省 ×1.37+0.013=1.0405mm 越界（守卫拒渲染
+    # =正确行为）；+0.05mm 保域（0.80≤0.83）且必变几何
+    "atten_pi": {"shunt_off_mm": (1.0, 0.05)},
+    "atten_t": {"shunt_off_mm": (1.0, 0.05)},
 }
 
 

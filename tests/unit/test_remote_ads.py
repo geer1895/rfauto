@@ -271,7 +271,7 @@ def test_plan_deps_dedup_same_ref(tmp_path):
 def test_plan_deps_absolute_ref_rejected(tmp_path):
     """#276 主雷：File= 写死本机绝对路径 → 显式报错（不静默上传）。"""
     net = _write_netlist(tmp_path, (
-        'SnP:SNP1 File="C:/Users/someuser\\AppData\\Local\\Temp\\x.s2p"\n'
+        'SnP:SNP1 File="C:\\Users\\user\\AppData\\Local\\Temp\\x.s2p"\n'
     ))
     with pytest.raises(RemoteAdsError, match="绝对路径"):
         ras._plan_netlist_dependencies(net)
@@ -498,7 +498,7 @@ def test_fetch_empty_enumeration_failclosed(monkeypatch, tmp_path):
 
 
 def test_cleanup_failure_flips_verdict(monkeypatch, tmp_path):
-    """清理失败翻 FAIL（任务毕必须清理， 0b）——不静默放行。"""
+    """清理失败翻 FAIL（任务毕必须清理，项目规则 0b）——不静默放行。"""
     t = FakeTransport(None)
 
     real_run = t.run_command

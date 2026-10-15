@@ -7,7 +7,7 @@
   读取端扫频看 |S21| 深谷。文献口径（round6 池「chipless RFID 编码标签」
   条目）：Karmakar 系（R. V. Karmakar et al., "Chipless RFID tag at
   2.4/5.8 GHz", 及 chipless 35-bit 实用上限口径，docs/
-  研究扩充 round6 引用 [30]）；滤波器组零点编码
+  research_expansion_20260926_round6.md 引用 [30]）；滤波器组零点编码
   =本仓资产直接复用（S 参数零点判据统计 #195/#197 收口）。
 - 单谷闭式=传输线上并联**串联 RLC**（series-RLC shunt notch）：
   导纳 Y(f)=1/(R+j(ωL−1/(ωC)))；S21=2Y0/(2Y0+Y)（Y0=1/Z0，并联导纳

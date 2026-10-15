@@ -34,7 +34,7 @@ decision_rule 形态）+ tests/unit/test_vv_recast.py（两历史档 bespoke 重
 同款合同）、YAML 损坏 → error 条目**登记不静默跳**；批量重放对坏条目
 继续（多故障叠加报告形态，与 R5 混沌档同向）。
 
-LLM/agent 永不产生物理数字：全部数值来自调用方传入的
+LLM/agent 永不产生物理数字（AGENTS 规则 7）：全部数值来自调用方传入的
 判据声明值与产物证据字段，本模块只做确定性重算与比较。
 """
 

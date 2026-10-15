@@ -61,6 +61,37 @@ def _instance_layout(template: str, params: dict[str, Any] | None,
     return fn(dict(params or {}), band_ghz, base_m, h_m, (0.0, 0.0, False))
 
 
+def _chain_h_m(substrate_declared: dict[str, Any] | None,
+               chain: list) -> float:
+    """链级基板高（米，契约 layout h_m 入参单源）。
+
+    声明优先：payload.substrate.h_mm 显式收（``is not None`` 判缺，#117/
+    #364④ 族——显式 0 不顶缺省，交 layout 正有限守卫如实 unknown）并
+    mm→m 换算（与下方 D6 声明比对 ``*1e-3`` 同口径；审查 A3 P3-5：旧码
+    声明值不换算直传 h_m=1000× 单位偏差+``or 0.508e-3`` 顶显式 0+缺省
+    硬编码基板）。未声明缺省=首个 TEMPLATE_NOMINAL 带 h_mm 声明的实例
+    （模块 docstring"缺省取首实例契约声明"契口；无契约/无声明的实例
+    跳过——缺契约审计链仍应给 attention 行而非为基板高炸整链）；全链
+    无声明可取=KeyError fail-fast（与 mesh 缺失同口径，不静默兜底）。
+    """
+    h_mm = (substrate_declared or {}).get("h_mm")
+    if h_mm is None:
+        from rfauto.adapters.oe_templates.render_siw import TEMPLATE_NOMINAL
+
+        for item in chain:
+            if not isinstance(item, dict) or not item.get("template"):
+                continue
+            nom = TEMPLATE_NOMINAL.get(str(item["template"])) or {}
+            if nom.get("h_mm") is not None:
+                h_mm = nom["h_mm"]
+                break
+        if h_mm is None:
+            raise KeyError(
+                "基板高缺声明（payload.substrate.h_mm 未给且链上模板 "
+                "TEMPLATE_NOMINAL 均无 h_mm；不静默兜底硬编码）")
+    return float(h_mm) * 1e-3
+
+
 def compose_chain_audit(payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """级联端口兼容审计（JSON 进出薄面；程序性入参错转 ok=False）。"""
     payload = dict(payload or {})
@@ -86,14 +117,20 @@ def compose_chain_audit(payload: dict[str, Any] | None = None) -> dict[str, Any]
     instances: list[dict[str, Any]] = []
     unknown_rows: list[dict[str, Any]] = []
     substrate_declared = payload.get("substrate")
+    if substrate_declared is not None and not isinstance(
+            substrate_declared, dict):
+        return error_envelope(["substrate 必须为 dict（{h_mm, er, tan_d}）"])
+    try:
+        h_m = _chain_h_m(substrate_declared, chain)
+    except (KeyError, TypeError, ValueError) as exc:
+        return error_envelope([f"基板高解析失败: {exc}"])
     for i, item in enumerate(chain):
         if not isinstance(item, dict) or not item.get("template"):
             return error_envelope([f"chain[{i}] 缺 template 键"])
         tid = str(item["template"])
         try:
             lay = _instance_layout(tid, item.get("params"), band_t, base_m,
-                                   float((substrate_declared or {}).get(
-                                       "h_mm", 0.508e-3) or 0.508e-3))
+                                   h_m)
         except KeyError as exc:
             unknown_rows.append({"instance": tid, "reason": str(exc)})
             continue

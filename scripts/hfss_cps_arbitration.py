@@ -24,9 +24,9 @@ criteria.md 起跑前写死）。
 "! Port Impedance" 恒写 Zpi 禁作判据，Zvi=√(Zpi·Zpv) 记录）。
 
 运行（长任务分离+日志轮询 #157；stdout 落文件 #242；outdir 绝对路径 #243）：
-  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_cps_arbitration.py" -WorkingDirectory
-    D:/rf_workspace -RedirectStandardOutput runs/cps_hfss_arbitration/hfss/run.log
+    D:\rf_workspace -RedirectStandardOutput runs/cps_hfss_arbitration/hfss/run.log
     -RedirectStandardError runs/cps_hfss_arbitration/hfss/run.err.log
 产物：runs/cps_hfss_arbitration/hfss/{hfss_cps_<档>.s2p, hfss_cps_<档>_gamma.s2p,
   port_modes.json, project_<档>/}、runs/cps_hfss_arbitration/hfss_arbitration.json

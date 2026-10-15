@@ -1,4 +1,4 @@
-"""E8c 链路预算引擎（扩展方案 §E8c）。
+"""E8c 链路预算引擎（规划扩展 §E8c）。
 
 Friis 噪声级联自实现（<50行；skrf 无内置且其 NF 分析与 ADS 不符，issue #538）。
 对拍基准为 Friis 手算（可复现零 license），非 ADS GUI。
@@ -310,7 +310,7 @@ class LinkBudget:
 # 其中 Γmax = 10^(-RL_dB/20)，RL_dB 为回波损耗门限。
 #   经典算例：R=50Ω、C=1pF、VSWR≤2（|Γ|≤1/3，RL≈9.542dB）
 #   ⇒ Δf_max = 1/(2·50ps·ln3) ≈ 9.10 GHz（独立来源同口径，
-#   https://rfessentials.com/resources/rf-glossary/bode-fano-limit）。
+#   https://rfessentials.com/resources/rf-glossary/bode-fano-limit/）。
 #
 # 常数出处（V1 席 P0 裁决 2026-10-04 逐字核对；errata:
 # runs/review_ge8e/v1_bode_fano/ERRATA_C1.md）：π/τ 与

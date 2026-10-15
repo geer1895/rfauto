@@ -1,6 +1,6 @@
 """NX-8 MRI 鸟笼线圈（birdcage）集总模式闭式（P3 登记级）。
 
-规格：研究扩充 round14 §四 NX-8——"端环集总
+规格：docs/research_expansion_20261002_round14.md §四 NX-8——"端环集总
 等效+模式分解（维持 P3 不排期，仅登记）"。本模块=登记级纯闭式：
 LC 梯度网络色散关系 + 正弦/余弦模式场形 + 正交驱动圆极化面。
 
@@ -32,6 +32,17 @@ Design in MRI"（口径名，页码 UNVERIFIED，#122 如实）。互感/分布�
    口径名，页码 UNVERIFIED）。色散式为本模块自推导（Bloch-Floquet
    集总梯度），单测做网络级数值对拍（#118：独立数值路=格点导纳
    矩阵本征值）。
+
+状态（2026-10-08 快赢席 W1 落注）
+--------------------------------
+**②态登记留置=显式 archived 标注**（T1-A-03 处置）：全仓零功能
+消费者（复核口径 runs/pool_reaudit/REAUDIT_REPORT.md + 先前复核
+runs/review_ge8e/w7_orphan_kernels/ORPHAN_LEDGER.md §3 #6——
+消费面=仅本模块单测，src/cli/service/mcp_tools/scripts 零命中）。
+撤除本标注的唯一途径=NX-8 真启动接 MRI 鸟笼 service 扩面
+（ORPHAN_LEDGER 同行触发条件原文）；本行即台账所要求"显式
+archived"二选一的第二支，模块保留在 public API 门内（__all__
+四名不收缩，tests/gold/public_api.json 不动）。
 """
 from __future__ import annotations
 

@@ -24,7 +24,7 @@ DURATION_FEATURES: tuple[str, ...] = (
 
 # -- 0-P2⑱ 停机机制特征（stop-mechanism feature plane, opt-in） ----------------
 #
-# 依据：能量判据停机与 NrTS 触顶停机的时长机制完全不同——
+# 依据（ 二百六十）：能量判据停机与 NrTS 触顶停机的时长机制完全不同——
 # 能量停机的步数由物理收敛决定（实测 < 声明上限），触顶停机的步数 = 声明上限
 # （时长 ~ nrts_limit·dt，与收敛无关）；混池拟合是 ratrace LOO 地板 ~80% 的
 # 结构性原因之一。v2 特征全部 opt-in，v1 缺省拟合（DURATION_FEATURES /

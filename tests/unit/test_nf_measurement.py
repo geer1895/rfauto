@@ -1,4 +1,4 @@
-"""F-E 件 3 Y 因子噪声测量内核单测（研究扩充 round3 F-E 表件 3 判据）。
+"""F-E 件 3 Y 因子噪声测量内核单测（research_expansion round3 F-E 表件 3 判据）。
 
 裁判口径（#118：裁判=独立来源，不自证）：
 - 路径 A = (T_hot − Y·T_cold)/(Y − 1)（模块 te_from_y）；
@@ -369,3 +369,190 @@ def test_docstring_sources_pinned():
     assert "AN 57-2" in doc
     assert "290" in doc
     assert nfm.T0_K == 290.0
+
+
+# ─── 7. 冷源法内核 + 二级修正 + 失配不确定度（MS-2 余量三件）─────────────────
+
+
+def _cold_p(g_lin: float, t_src_k: float, te_dut_k: float, trx_k: float, bw_hz: float) -> float:
+    """测试本地独立测量模型 P=kB·B·[G(T_src+Te_DUT)+Trx]：与模块实现零共享。"""
+    return nfm.BOLTZMANN_J_PER_K * bw_hz * (g_lin * (t_src_k + te_dut_k) + trx_k)
+
+
+def test_cold_source_known_value_pin():
+    # 文献例手算钉（外部计算路径，不经模块公式）：F=2（Te=290 K）、
+    # G=20 dB=100、B=1 MHz、Tc=290、Trx=0
+    # → P_cold = kB·B·G·(Tc+Te) = 1.380649e-23 × 1e6 × 100 × 580 = 8.0077642e-13 W
+    res = nfm.measure_cold_source(8.0077642e-13, 100.0, 1e6, 290.0, 0.0)
+    assert res.t_e_k == pytest.approx(290.0, rel=1e-12)
+    assert res.f_linear == pytest.approx(2.0, rel=1e-12)
+    assert res.nf_db == pytest.approx(NF_F2_DB, rel=1e-12)
+    assert res.t_noise_output_k == pytest.approx(58000.0, rel=1e-12)  # G·(Tc+Te)
+    d = res.to_dict()
+    json.dumps(d)  # JSON 可序列化
+    # 往返：合成模型产功率 → 冷源法回收 T_e
+    p = _cold_p(100.0, T0, 290.0, 0.0, 1e6)
+    assert p == pytest.approx(8.0077642e-13, rel=1e-12)
+    assert nfm.te_from_cold_source(p, 100.0, 1e6, 290.0) == pytest.approx(290.0, rel=1e-12)
+
+
+def test_cold_source_receiver_subtraction():
+    # 接收机贡献二级扣除：Te_DUT = (P/(kB·B) − Trx)/G − Tc
+    g, bw, tc, trx, te_dut = 40.0, 1e6, 290.0, 450.0, 100.0
+    p = _cold_p(g, tc, te_dut, trx, bw)
+    te = nfm.te_from_cold_source(p, g, bw, tc, trx)
+    t_out = p / (nfm.BOLTZMANN_J_PER_K * bw)
+    assert te == pytest.approx((t_out - trx) / g - tc, rel=1e-12)
+    assert te == pytest.approx(te_dut, rel=1e-12)
+    # 不扣接收机（Trx=0 传入）→ 残余表观值 = Te_DUT + Trx/G（去嵌不足指纹）
+    te_nocorr = nfm.te_from_cold_source(p, g, bw, tc, 0.0)
+    assert te_nocorr == pytest.approx(te_dut + trx / g, rel=1e-12)
+
+
+def test_cold_source_vs_yfactor_cross_check_grid():
+    # #118 双源交叉对拍：同一测量模型两种反演，回收一致 rel 1e-12
+    bw, trx = 1e6, 450.0
+    for nf_db in (0.5, 1.0, 3.0, 6.0):
+        for g_db in (10.0, 20.0):
+            g = 10.0 ** (g_db / 10.0)
+            te_dut = nfm.te_from_nf(nf_db)
+            p_cold = _cold_p(g, T0, te_dut, trx, bw)
+            p_hot = _cold_p(g, T_HOT_15, te_dut, trx, bw)
+            # 冷源路径（单点直读 + 二级扣除）
+            res_c = nfm.measure_cold_source(p_cold, g, bw, T0, trx)
+            # Y 因子路径（热/冷比值 → 系统值 → remove_second_stage 去嵌）
+            y = p_hot / p_cold
+            te_sys = nfm.te_from_y(y, T_HOT_15, T0)
+            te_y = nfm.remove_second_stage(te_sys, g, trx)
+            assert res_c.t_e_k == pytest.approx(te_y, rel=1e-12), (nf_db, g_db)
+            assert res_c.t_e_k == pytest.approx(te_dut, rel=1e-12), (nf_db, g_db)
+            # Y 因子端到端 dataclass 同回收（t_e_k = 系统表观值）
+            res_y = nfm.measure_yfactor(p_hot, p_cold, T_HOT_15, T0)
+            assert res_y.t_e_k == pytest.approx(te_sys, rel=1e-12)
+            assert nfm.remove_second_stage(res_y.t_e_k, g, trx) == pytest.approx(
+                te_dut, rel=1e-12
+            )
+
+
+def test_cold_source_guards_and_negative_flag():
+    # 越域守卫：bool/0/负
+    for args in (
+        (0.0, 100.0, 1e6, 290.0),
+        (-1e-12, 100.0, 1e6, 290.0),
+        (1e-12, 0.0, 1e6, 290.0),
+        (1e-12, 100.0, 0.0, 290.0),
+        (1e-12, 100.0, 1e6, 0.0),
+        (True, 100.0, 1e6, 290.0),
+        (1e-12, 100.0, 1e6, True),
+    ):
+        with pytest.raises(ValueError):
+            nfm.te_from_cold_source(*args)
+    with pytest.raises(ValueError):  # t_receiver 负
+        nfm.te_from_cold_source(1e-12, 100.0, 1e6, 290.0, -1.0)
+    # T_e<0 不自洽标志照实返回不拦（t_out=10 K ≪ Tc）
+    p_low = nfm.BOLTZMANN_J_PER_K * 1e6 * 10.0
+    te = nfm.te_from_cold_source(p_low, 1.0, 1e6, 290.0)
+    assert te == pytest.approx(-280.0, rel=1e-12)
+    # F<=0 仅接收机项支配时可达（t_out < Trx）→ 内核照实返回、端到端拒绝
+    p_absurd = 1e-15
+    assert nfm.te_from_cold_source(p_absurd, 1.0, 1e6, 290.0, 450.0) < -T0
+    with pytest.raises(ValueError):
+        nfm.measure_cold_source(p_absurd, 1.0, 1e6, 290.0, 450.0)
+
+
+def test_second_stage_friis_crosscheck_and_roundtrip():
+    # F 域独立对照路径：F_sys = F_DUT + (F_RX−1)/G（Friis 恒等式，本地转录）
+    for nf_d, nf_r, g_db in ((1.0, 4.0, 20.0), (3.0, 6.0, 10.0), (0.5, 2.0, 15.0)):
+        g = 10.0 ** (g_db / 10.0)
+        te_d, te_r = nfm.te_from_nf(nf_d), nfm.te_from_nf(nf_r)
+        f_d, f_r = 1.0 + te_d / T0, 1.0 + te_r / T0
+        te_sys = nfm.apply_second_stage(te_d, g, te_r)
+        assert 1.0 + te_sys / T0 == pytest.approx(f_d + (f_r - 1.0) / g, rel=1e-12)
+        # 合成回收钉：正向级联 → 反向去嵌 rel 1e-12
+        assert nfm.remove_second_stage(te_sys, g, te_r) == pytest.approx(te_d, rel=1e-12)
+    # 有损 DUT（G<1）代数仍闭合（接收机项被放大，去嵌方向正确）
+    g_lossy, te_d2, te_r2 = 0.5, 50.0, 300.0
+    te_sys2 = nfm.apply_second_stage(te_d2, g_lossy, te_r2)
+    assert te_sys2 == pytest.approx(te_d2 + te_r2 / g_lossy, rel=1e-15)
+    assert nfm.remove_second_stage(te_sys2, g_lossy, te_r2) == pytest.approx(te_d2, rel=1e-12)
+    # 无接收机噪声逐位恒等
+    assert nfm.apply_second_stage(100.0, 10.0, 0.0) == 100.0
+    assert nfm.remove_second_stage(100.0, 10.0, 0.0) == 100.0
+    # T_e,DUT<0 = 接收机贡献超过实测系统值：照实返回不拦（只算不判）
+    assert nfm.remove_second_stage(10.0, 1.0, 450.0) == pytest.approx(-440.0, rel=1e-15)
+    # 守卫：bool/0/负/NaN（apply 与 remove 同参同界）
+    for args in (
+        (100.0, 0.0, 50.0),
+        (100.0, -2.0, 50.0),
+        (100.0, True, 50.0),
+        (100.0, 2.0, -1.0),
+        (True, 2.0, 50.0),
+        (100.0, 2.0, True),
+    ):
+        with pytest.raises(ValueError):
+            nfm.apply_second_stage(*args)
+        with pytest.raises(ValueError):
+            nfm.remove_second_stage(*args)
+    with pytest.raises(ValueError):
+        nfm.apply_second_stage(float("nan"), 2.0, 50.0)
+    with pytest.raises(ValueError):
+        nfm.remove_second_stage(float("nan"), 2.0, 50.0)
+
+
+def test_mismatch_uncertainty_pins_and_guards():
+    # 手算钉：|Γa|=0.5、|Γb|=0.2 → MU = 20log10(1+0.1)（外部表达式+数值双钉）
+    mu = nfm.mismatch_uncertainty_db(0.5, 0.2)
+    assert mu == pytest.approx(20.0 * math.log10(1.1), rel=1e-15)
+    assert mu == pytest.approx(0.827853703164, rel=1e-9)
+    # 任一侧匹配 → 逐位 0；全反射界 → 20log10(2)
+    assert nfm.mismatch_uncertainty_db(0.0, 0.9) == 0.0
+    assert nfm.mismatch_uncertainty_db(0.7, 0.0) == 0.0
+    assert nfm.mismatch_uncertainty_db(1.0, 1.0) == pytest.approx(
+        20.0 * math.log10(2.0), rel=1e-15
+    )
+    # 矩形分布标准不确定度 = MU/√3（本地独立折算）
+    assert nfm.mismatch_uncertainty_std_db(0.5, 0.2) == pytest.approx(
+        (20.0 * math.log10(1.1)) / math.sqrt(3.0), rel=1e-15
+    )
+    # 守卫：负/超 1/bool/NaN/inf
+    for args in (
+        (-0.1, 0.5),
+        (0.5, 1.1),
+        (True, 0.5),
+        (0.5, True),
+        (float("nan"), 0.5),
+        (0.5, float("inf")),
+    ):
+        with pytest.raises(ValueError):
+            nfm.mismatch_uncertainty_db(*args)
+        with pytest.raises(ValueError):
+            nfm.mismatch_uncertainty_std_db(*args)
+
+
+def test_rss_combine_and_total_nf_budget():
+    # 手算钉：combine(3,4)=5；单项透传；全零逐位 0
+    assert nfm.combine_nf_uncertainty_rss(3.0, 4.0) == pytest.approx(5.0, rel=1e-15)
+    assert nfm.combine_nf_uncertainty_rss(2.0) == pytest.approx(2.0, rel=1e-15)
+    assert nfm.combine_nf_uncertainty_rss(0.0, 0.0) == 0.0
+    with pytest.raises(ValueError):  # 空项
+        nfm.combine_nf_uncertainty_rss()
+    with pytest.raises(ValueError):  # 负项（0.0 合法，负数拒绝）
+        nfm.combine_nf_uncertainty_rss(1.0, -0.1)
+    # 端到端总预算形态（AN 57-2 不确定度预算）：GUM 项 + 失配项 RSS
+    uth = T0 * ENR15_LIN * math.log(10.0) / 10.0 * 0.2
+    gum = nfm.nf_uncertainty_gum(Y_F2_ENR15, T_HOT_15, T0, 0.05, uth, 0.5)
+    u_mis = nfm.mismatch_uncertainty_std_db(0.5, 0.2)
+    u_tot = nfm.combine_nf_uncertainty_rss(gum["u_nf_db"], u_mis)
+    assert u_tot == pytest.approx(math.sqrt(gum["u_nf_db"] ** 2 + u_mis**2), rel=1e-15)
+    assert u_tot > gum["u_nf_db"]  # RSS 对独立项单调
+
+
+def test_ms2_docstring_sources_pinned():
+    # MS-2 三件来源口径钉（铁律 5）：冷源/二级修正/失配来源必须在模块 docstring
+    doc = nfm.__doc__ or ""
+    assert "cold source" in doc
+    assert "Anritsu" in doc
+    assert "Pozar" in doc
+    assert "second-stage" in doc
+    assert "MU = 20" in doc
+    assert nfm.BOLTZMANN_J_PER_K == 1.380649e-23  # 2019 SI 精确值

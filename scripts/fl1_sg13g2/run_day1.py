@@ -1,6 +1,6 @@
 """F-L.1b SG13G2 Day-1 真跑链驱动：ngspice(WSL Ubuntu) + IHP PDK VBIC HBT。
 
-链路（研究扩充 round6 §二 F-L 第 1 步，Day-1
+链路（docs/research_expansion_20260926_round6.md §二 F-L 第 1 步，Day-1
 零 Verilog-A / 零新包）：HBT 偏置/gm/fT 网格（3x3）→ 单级共射 LNA 的
 S 参 + NF → Pospieszalski 闭式（core/fet_noise）互证。产出
 runs/fl1_sg13g2/day1_results.json。

@@ -148,6 +148,20 @@ class TestSolveStatus:
         assert "rc=1" in f["detail"]
         assert report["verdict"] == "FAIL"
 
+    def test_rc_bool_rejected_unknown(self, snp_ok):
+        """rc=bool 按形态非法 UNKNOWN（审查 A3 P3-6 回归钉）。
+
+        isinstance(True, int)=True 陷阱：旧码 rc=True 以 int 身份穿成
+        "退出码非零" FAIL；rc=False 穿过 rc!=0 判位（False==0），ok 键
+        缺位时更会落到 rc==0 成功路径——bool 先排一行双向闭环。"""
+        for bad_rc in (True, False):
+            result = _batch_ok(snp_ok, 2, rc=bad_rc, ok=False)
+            result.pop("ok")  # ok 键缺位形态（rc=False 旧码穿成功的路径）
+            report = check_edb_batch_health(result, spec=_spec(2))
+            f = _by_factor(report)["solve_status"]
+            assert f["status"] == "UNKNOWN", (bad_rc, f["detail"])
+            assert "bool 不收" in f["detail"]
+
     def test_rc_none_prelaunch_fails(self):
         """rc=None=前置失败（路径/exe/发射，进程未拉起）→ FAIL。"""
         result = _batch_ok(None, rc=None, ok=False)

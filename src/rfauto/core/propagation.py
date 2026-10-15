@@ -1,4 +1,4 @@
-"""AP-5 传播基础闭式包（规格深案 §A-7，2026-10-02）。
+"""AP-5 传播基础闭式包（plan_deepdive_specs_20261002.md §A-7，2026-10-02）。
 
 传播域主线首件：双径干涉/刃形绕射/菲涅尔区净空/Hata-COST231 路损四个
 传播基础闭式，全部**纯函数零 IO**、单位口径显式（SI：m/Hz/MHz/km）、
@@ -29,7 +29,7 @@
   ValueError。两段在 f=1500MHz 接缝存在模型级不连续（两套拟合常数
   +C=3 项，实测 urban=4.33dB / suburban=1.33dB，test 锚 hata_seam）。
 
-参考：规格深案 §A-7；PV-011（ITU CC
+参考：docs/plan_deepdive_specs_20261002.md §A-7；PV-011（ITU CC
 BY-NC-SA）——本件只用手算闭式与公式常数（事实性数值+出处标注），
 零 ITU 数据文件捆绑，无再分发阻碍。
 """

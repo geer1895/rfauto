@@ -34,6 +34,7 @@
       "default_league_db_path",
       "query_fidelity_shadow",
       "record_fidelity_shadow",
+      "registry_runs_query",
       "reindex_runs"
     ],
     "service/explain_run": [
@@ -2637,9 +2638,12 @@
       "CAMPAIGN_EXECUTORS",
       "CAMPAIGN_KINDS",
       "CAMPAIGN_LOG_FILE",
+      "REMOTE_STAGE_FILE",
       "STAGE_RESULT_FILE",
       "campaign_kind_of",
+      "remote_stage_gate",
       "run_campaign",
+      "stage_remote_decl",
       "wrap_campaign_plan"
     ],
     "service/campaign_queue_daemon.py": [
@@ -2913,6 +2917,20 @@
       "plate_flexural_rigidity",
       "rayleigh_quotient_frequency",
       "simply_supported_mode_frequency"
+    ],
+    "service/pool_patrol_service.py": [
+      "CommitRec",
+      "DEFAULT_GOLD_CLOSED",
+      "DEFAULT_GOLD_OPEN",
+      "IMPL_PREFIXES",
+      "PoolItem",
+      "calibrate",
+      "extract_keywords",
+      "judge_item",
+      "parse_pool_doc",
+      "pool_patrol",
+      "scan_code_evidence",
+      "scan_commit_evidence"
     ],
     "service/port_gate_service.py": [
       "FAMILY_LADDERS",

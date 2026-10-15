@@ -10,7 +10,7 @@ GHz、阻抗 Ω、衰减 dB；返回值一律 JSON 可序列化 dict。
 - 带状线：零厚度对称结构椭圆积分共形映射闭式（t=0 精确；
   参照 w/b=1、er=1 → ≈65.4Ω，AGM 可复算：
   core.calc_families.rf_line._stripline_z0(1,1,1)=65.3989 Ω（2026-10-04
-  venv 实测复算；旧"≈68Ω 文献锚"系陈旧值勘误，A-12）
+  venv 实测复算；旧"≈68Ω 文献锚"系陈旧值勘误，A-12））
 - 贴片谐振：Balanis 口径（W/εeff/ΔL/L），与 synthesis.synthesize_patch
   同公式——两者数值一致性有单测钉住
 """
@@ -137,7 +137,10 @@ from .calc_families.kqe import _ksplit_parabolic_refine as _ksplit_parabolic_ref
 from .calc_families.kqe import k_split_pair as k_split_pair
 from .calc_families.kqe import qe_group_delay as qe_group_delay
 from .calc_families.registry import C_MM_GHZ as C_MM_GHZ
+from .calc_families.registry import CALC_GROUP_ORDER as CALC_GROUP_ORDER
+from .calc_families.registry import CALC_GROUP_TABLE as CALC_GROUP_TABLE
 from .calc_families.registry import CALCULATOR_REGISTRY as CALCULATOR_REGISTRY
+from .calc_families.registry import DEFAULT_CALC_GROUP as DEFAULT_CALC_GROUP
 from .calc_families.registry import CalculatorRegistry as CalculatorRegistry
 from .calc_families.registry import CalculatorSpec as CalculatorSpec
 from .calc_families.registry import register_calculator as register_calculator
@@ -248,8 +251,14 @@ from .calc_families.thermal import resonator_thermal_drift as resonator_thermal_
 from .calc_families.thermal import thermal_resistance_stack as thermal_resistance_stack
 
 # name → (def 模块, 全部 by-value 引用方)：facade setattr 扇出清单
+# （2026-10-13 A2-P2-3 补全 5/5：凡 tests 面可能 monkeypatch 的 facade 名
+# 都必须登记，否则"patch facade + 调 CALC 键"组合会静默走未 patch 的
+# 生产路径（#116 家法）；cm_diag/cm_extract 的 by-value import 见各文件头）
 _PATCH_THROUGH = {
+    "_cm_polish": ("cm_core",),
     "_cm_poly_max_err": ("cm_core",),
+    "_cm_reduce_arrow": ("cm_core", "cm_extract", "cm_diag",),
+    "_cm_reduce_folded": ("cm_core", "cm_diag",),
     "_cm_transversal_exact": ("cm_core", "cm_extract",),
 }
 

@@ -21,7 +21,7 @@ scuff-em 为 GPL-2/3——本适配器**只**经子进程调用 ``scuff-scatter`
   调用方提供的 gmsh msh 网格——网格生成不属本适配器职责）；
 - :func:`build_scatter_command`：``scuff-scatter`` 命令行构造
   （--geometry/--freqfile/--FOM SParams，输出目录经 --cache（scuff-em
-  约定为结果目录参数，真机实录项，见下）。
+  约定为结果目录参数，真机实录项，见下））。
 
 诚实边界（#122 / #215 禁臆写）：
 - **S 参数解析器为待证档**：:func:`parse_sparam_pairs` 按"4 列空白

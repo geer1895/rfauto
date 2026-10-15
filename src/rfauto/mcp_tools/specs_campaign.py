@@ -147,7 +147,7 @@ def save_campaign_plan(plan: dict[str, Any], out_dir: str) -> dict[str, Any]:
 
     Args:
         plan: plan_campaign 返回的计划 dict
-        out_dir: 落盘目录（通常 runs/<campaign_id>）
+        out_dir: 落盘目录（通常 runs/<campaign_id>/）
 
     Returns:
         dict: {ok, path} 或 {ok: False, errors}
@@ -162,12 +162,13 @@ def save_campaign_plan(plan: dict[str, Any], out_dir: str) -> dict[str, Any]:
 
 @mcp.tool
 def get_campaign_status(plan_path: str) -> dict[str, Any]:
-    """战役状态读回（specs 域）：plan_path → verdict/各阶段 status/计数。
+    """战役状态读回（specs 域）：plan_path → 计划文件存储状态原样读回。
 
     无副作用，可安全调用；plan_path 可为 campaign.plan.json 文件或其所在
-    目录，只读不推进状态（推进走 CLI rfauto campaign 同源服务层
-    apply_event）。计划不存在/损坏 → ok=False errors 如实。只读无时序
-    约束。
+    目录。返回的 plan 是落盘 JSON 的原样反序列化（stages[].status/verdict
+    等为存储字段，不现算不推进状态——推进走 run_campaign 或 CLI
+    rfauto campaign 同源服务层 apply_event）。计划不存在/损坏 →
+    ok=False errors 如实。只读无时序约束。
 
     Args:
         plan_path: campaign.plan.json 文件路径或其父目录

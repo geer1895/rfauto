@@ -1,0 +1,97 @@
+# ═══ EDB 快车道模板元面（信息文档形态，不入 TEMPLATE_META 注册表）══════════
+# 本文件是 EDB 快车道发射族的元数据文档。edb_* 族不是
+# openems_templates.TEMPLATE_NOMINAL 注册模板：
+# tests/unit/test_template_meta_consistency.py 与
+# tests/unit/test_template_geometry_audit.py 的 EXPECTED_TEMPLATES（冻结
+# 72 项）不扫描本目录；scripts/build_docs_pages.build_templates_page 将
+# 非注册目录按信息文档排除（2026-10-08 同笔调整）。schema 单源=
+# src/rfauto/adapters/edb_templates/schema.py（KNOWN_TEMPLATES /
+# SPEC_SCHEMA_VERSION / validate_spec）。
+#
+# 门值口径：acceptance 全部是"离线发射层门"（发射自检与冒烟判读层的
+# offline gate）；真机求解产物的质量仲裁另有 health gate
+# （service/edb_health_gate，W3/W4 已落地：门常量按模板作用域分派，
+# 登记表 S11_DIP_DB_BY_TEMPLATE / S_WINDOW_DB_BY_TEMPLATE 为单源，
+# 改动门值读源码核对、禁止臆造物理数字）。
+#
+# 用户指南：docs/edb_lane_guide.md
+
+template: edb_lange
+registry_status: 规划中（EDB 发射声明不支持——LANGE_EDB_SUPPORTED=False，
+  emit_lange_spec 恒 NotImplementedError；综合单源已落地 lange_synth，与
+  注册 lange 模板 lange_design 同函数同参；template 键预留 edb_lange
+  （TEMPLATE_KEY_RESERVED），服务层对该键返回结构化拒绝信封（reason +
+  upgrade_doc 指向本文件）。升格前置条件=pyedb 0.83 提供 crossover 跨线
+  原语，或经真机仲裁的过孔跳线口径 + schema 契约层扩展
+  （KNOWN_TEMPLATES/层叠/vias 消费面）；平面性论证与裁定记录见
+  adapters/edb_templates/lange.py docstring——本文件为升格前元面）
+schema_version: 1
+edb_lane: EDB 快车道（PyEDB 声明式 spec 建库 + hfss_batch 批处理求解）
+f0_ghz: 2.5
+n_ports: 4
+units:
+  length: mm
+  frequency: GHz
+
+# 设计参数（升格后 emit 对应综合入参键面；当前可执行入口=lange_synth 同键）
+params:
+- f0_ghz          # 必填，>0
+- coupling_db     # 缺省 3.0103（3dB；lange_synth 同键——Pozar §7.6 设计式
+                  # C=1/√2 自洽回代）
+- z0_ohm          # 缺省 50.0；仅支持 50（pyedb CfgEdgePort 波端口阻抗硬编码 50Ω）
+# 非"设计参数"的发射器键：stackup（lange_synth 取 epsilon_r/thickness_mm
+# 两标量）；升格后发射器键面（feed_len/copper_thickness/board_margin/
+# sweep/adapt）随落地回填
+
+substrate:
+  name: rogers4350b_h0.508
+  er: 3.66
+  h_mm: 0.508
+  loss_tangent: 0.0037
+
+# 名义参数 @2.5GHz 缺省层叠 3dB 设计点——lange_synth 实跑核对逐值一致
+# （2026-10-08，非手抄；与注册 lange 模板 nominal_params 同综合单源
+# oe_templates/render_c4.lange_design）。相邻对 (Z0e,Z0o)=(176.216,52.609)Ω、
+# 等效两线 (Ze4,Zo4)=(120.71,20.71)Ω 精确成立。
+# ⚠ EDB 发射仍声明不支持——本表为升格后发射器的产出承诺基准
+# （综合链现成、几何发射缺位），非 EDB 发射器实测产出。
+nominal_params:
+  w_mm: 0.1672            # 单指宽（KJ 二维反解；lange_synth w_mm 同值）
+  gap_mm: 0.0386          # 指缝（边到边；lange_synth 键名 s_mm 同值）
+  finger_len_mm: 18.9712  # 指长（λ/4 @平均 εeff）
+  w_feed_mm: 1.1117       # 50Ω 馈线宽（注册模板设计链单源）
+
+synthesis_source: oe_templates/render_c4.py lange_design（Pozar §7.6
+  Lange 节设计式）——lange_synth 已接同一综合单源（同函数同参），禁手抄
+  毫米数
+topology: 展开型 Lange 电桥（3dB 正交）：四指交替并联（网络 A=指1/3、
+  B=指2/4，DC 隔离），air-bridge=抬高薄金属+竖直立柱（同端 A/B 桥错位、
+  两端分置）；外指承馈 P1/P2/P3/P4——EDB 平面族契约下跨线不可表达是
+  发射声明不支持的主因（见 registry_status 升格前置条件）
+extraction: 全 S 矩阵 4 端口（升格后 wave_port 馈线端点；批处理求解后
+  Touchstone .s4p；端口序=AEDT 端口号序，sNp 头注释存证）
+
+# 离线发射层门（规划值——升格后随发射器落地回填。health gate 对齐现状
+# （读源码核对 2026-10-08）：两登记表均无本族键——S11 回退通用 -10dB
+# 谷深门、分配窗判据缺席不判。S21/S31 属等分分配语义（健康值
+# ≈-3.0dB+损耗），窗值落定时按双边界窗语义裁定（参照 edb_power_divider
+# 2026-10-09 仲裁：单边 ≤-3.8 型字面门已证语义错位），不预改本表门值）
+acceptance:
+  s21_s31_db_at_f0: {op: "in", bound: [-3.5, -2.5],
+    label: "|S21|=|S31|=-3.01dB（S31 耦合同相 +1/√2、S21 正交 -j/√2）",
+    status: 规划值——升格后随发射器落地回填}
+  s11_s41_db_at_f0: {op: "≤", bound: -20.0,
+    label: "|S11|=|S41|（四线等效两线偶/奇模频响闭式裁判）",
+    status: 规划值——升格后随发射器落地回填}
+
+todo_note: |
+  升格前待验证（EDB 发射声明不支持，勿在缺前置条件前真跑）：
+  1. air-bridge 的 EDB spec 表达：现 spec 契约 vias 恒空（平面两层族），
+     跨指桥需立柱过孔或抬桥金属——单层平面性障碍（Jordan 曲线论证）与
+     过孔跳线近似的寄生标定前置（过孔 L/埋线 C 恰落在 3dB 正交桥耦合
+     路径上）见 adapters/edb_templates/lange.py docstring（裁定记录）；
+  2. 指缝 38.6µm 的 EDB 版图通道可表达性（注册模板 openEMS 侧 g=0.076
+     已低于 KJ 标称有效域下限 0.1——docs/templates/lange/meta.yaml
+     param_semantics 口径如实带入，本族设计与判读同口径提示）；
+  3. wave_port extent 因子与 0.1672mm 细指的自洽性（power_divider gap
+     冲突教训推广：端口物理宽 5×w=0.84mm 与相邻指/缝的干涉须守卫）。

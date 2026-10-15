@@ -15,7 +15,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "sat_link_budget",
-    "AP-9 单跳卫星链路预算（JSON 进出，级表逐项风格）：C/N0 = EIRP − "
+    "卫星链路预算：AP-9 单跳卫星链路预算（JSON 进出，级表逐项风格）：C/N0 = EIRP − "
     "(FSPL+pointing+gas+rain) + G/T + 228.599（k=SI 精确值单源）。LEO 几何 "
     "elevation_deg∈(0,90]+alt_km>0 自算斜距 d=√((Re+h)²−(Re·cosE)²)−Re·sinE "
     "与圆轨多普勒（rising/setting 反号；Re=6378km、GM=WGS-84 惯例），或 "

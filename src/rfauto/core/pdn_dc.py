@@ -1,6 +1,6 @@
 """DR-6 PDN 直流压降确定性内核（平面 DC IR-drop，五点 stencil 电导稀疏阵）。
 
-规格出处：规格深案 §C-5 DR-6（P1/M）。全套数值
+规格出处：docs/plan_deepdive_specs_20261002.md §C-5 DR-6（P1/M）。全套数值
 机制复用 core/quasistatic_fd.py 先例（sp.coo_matrix 四块组装→tocsr、Dirichlet
 自由/固定分块消元、spla.spsolve 族直解、一阶 Richardson 外推），铁律 7：
 数值只在确定性内核，本模块 = 纯 numpy/scipy 叶子，零业务依赖。

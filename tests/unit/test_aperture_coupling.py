@@ -453,6 +453,28 @@ def test_slot_cutoff_semantics():
         C0_M_S / (2.0 * 0.5), rel=1e-15)
 
 
+def test_aperture_impedance_resonance_located_at_half_wave():
+    """式(3) 谐振位置钉（任务判据"λ/2 缝长处 Robinson 式谐振零点正确"）：
+    tan(k0·l/2) 的奇点结构唯一决定缝半波谐振落在 l=λ/2——|Z_ap| 随
+    l→λ/2⁻ 严格单调爆炸（0.25λ→0.49λ），逐点与独立 tan 闭式吻合
+    （rel ≤1e-12，钉住 tan 自变量是 k0·l/2 而非 k0·l 等），且 0.4999λ
+    处 |Z_ap| 较 0.25λ 放大 >1000×（爆炸速率与 π/2 奇点一致）。"""
+    f_hz = 300.0e6
+    lam = C0_M_S / f_hz
+    w_e, b, a = 2.0e-3, 0.5, 1.0
+    z0s = coplanar_strip_impedance_approx_ohm(w_e / b)
+    fracs = (0.25, 0.40, 0.45, 0.49)
+    zs = [abs(aperture_impedance_ohm(f_hz, fr * lam, w_e, a, b))
+          for fr in fracs]
+    assert zs[0] < zs[1] < zs[2] < zs[3]
+    for fr, z_got in zip(fracs, zs, strict=True):
+        z_ref = 0.5 * (fr * lam / a) * z0s * abs(cmath.tan(
+            2.0 * math.pi * f_hz * (fr * lam) / 2.0 / C0_M_S))
+        assert z_got == pytest.approx(z_ref, rel=1e-12)
+    z_near = abs(aperture_impedance_ohm(f_hz, 0.4999 * lam, w_e, a, b))
+    assert z_near > 1000.0 * zs[0]
+
+
 def test_slot_thickness_se_db_dc_limit_and_known_value():
     """f→0 极限=20lg(e)·π·t/L（独立内联复算，t=L=0.1 → ≈27.2875dB）。"""
     slot_len = 0.1

@@ -177,10 +177,10 @@ class TestRenderLiterals:
         # 出处：wf:nrts-fix 接线后实测（全 57 模板 old-vs-new 对比 53/53 同字节；
         # 渲染口径=TEMPLATE_NOMINAL 名义参数+META 网格，战役同构）
         # wf:w6e-h01 换钉（2026-10-06）：H-01 sidecar 尾段追加，整脚本 sha
-        # 必移（csv 写出段逐字节零漂移，diff 证据 runs/w6_phase6/w6e）；
+        # 必移（csv 写出段逐字节零漂移，diff 证据 runs/w6_phase6/w6e/）；
         pins = {
             "mline": ("855c725bd08c17e1", (2.0, 3.0)),
-            # ms_patch 重钉（2026-10-01 ge5 J2 fallback 段①，runs/ge5_j2fb）：
+            # ms_patch 重钉（2026-10-01 ge5 J2 fallback 段①，runs/ge5_j2fb/）：
             # 读出修复（全口径电阻片 LumpedPort → soft plane+双 E 探针对+
             # _WgProbePairRefl 反射垫片，jcross 修法同族移植）——旧钉
             # a126c88ff0e66234 对应电阻片读出渲染（已废，audit §D/E）。

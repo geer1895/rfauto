@@ -18,17 +18,21 @@
   显式报错（不虚报旋钮，B2 版本漂移纪律）；
 - **EC 初值口径**：本通道的闭式互证锚是设计值口径（半波/EC 带），不是
   绝对精度裁判——绝对锚 = ms_cross 11.4265GHz PSSFSS 参考值（2026-10-07
-  真形重锚，哨兵形 10.152 证伪作废）与 HFSS Floquet 终裁
-  （scripts/hfss_floquet_anchor.py 通道）。
+  真形重锚，旧 10.152 系哨兵形读数证伪作废，见 MS_CROSS_PSSFSS_REF_GHZ
+  注；#300 升级路径）与 HFSS Floquet 终裁（scripts/hfss_floquet_anchor.py
+  通道，11.4199 对拍 +0.06%）。
 
 sheet 映射表（与仓内可复跑裁判 runs/dp10_j2j3/judge_pssfss.jl 逐构造参数
 同源——该驱动即 ge5/ge6 归档参考值 10.152GHz 的产生器，2026-10-01 起
 载板口径；本适配器=其 Python 面合法化，#154 同名参数语义逐对钉）：
 - ms_cross（带阻十字偶极子贴片）→ ``jerusalemcross`` all-filled 实心十字
-  （P=period, L1=2·arm_len, L2=arm_w, **A=arm_w/2**, B=arm_w, w=arm_w,
-  clas='J'）。**A 必须异于 L2**：A==L2 → xrequired 出现重复值 → 零宽
-  网格 → analyze 抛 "matrix contains Infs or NaNs"（原驱动 :75-77 同款
-  哨兵注释；2026-10-05 本席 probe 实证复现）；
+  （P=period, L1=2·arm_len, L2=arm_w, **A=L2−ε（ε=CROSS_A_REL_OFFSET·L2=
+  1e-3·L2）**, B=arm_w, w=arm_w, clas='J'）。均匀十字唯一正确映射 A==L2，
+  但 A==L2 → xrequired 重复值 → 零宽网格 → analyze 抛 "matrix contains
+  Infs or NaNs"（原驱动 :75-77 同款哨兵注释；runs/seat4_cross 实测复现
+  +504 零面积面）；旧哨兵 A=aw/2 静默改形（面积 −38.2%，W7-B 裁判链
+  几何发散根源）——2026-10-05 W7-B followUp 改 ε 偏移（几何代价 0.075%
+  面积，谷位 11.4265 ↔ HFSS Floquet 11.4199）；
 - ms_jcross（带通 JC 缝）→ ``pixels`` class='M' 孔径位图（npix 缺省 96，
   缝=0 像素；**主缝沿 x 的 90° 旋转等价器件**，(v,v)=耦合极化读出——
   judge_pssfss.jl :51-68 同款掩码 + audit §H.2 极化重钉；方胞 90° 旋转
@@ -37,7 +41,7 @@ sheet 映射表（与仓内可复跑裁判 runs/dp10_j2j3/judge_pssfss.jl 逐构
   （strata：air / patch / substrate / PEC / air；设计锚 =Hammerstad 不动点
   名义边长，量级互证口径）。
 
-Julia depot 钉 E 盘:首次 use 触发 Julia+
+Julia depot 钉 E 盘（AGENTS 硬规则 1 + 用户指令）:首次 use 触发 Julia+
 PSSFSS 自动安装编译（分钟-十分钟级）；本模块在 import pypssfss **之前**
 显式设 ``JULIA_DEPOT_PATH``（缺省 E:\\julia_depot，用户已设值时尊重不
 覆盖），不依赖 shell env。缺装环境 is_available()=False 显式报缺
@@ -87,14 +91,15 @@ _SPARAMS_CSV_HEADER = ("freq_hz", "re_S11", "im_S11", "re_S21", "im_S21")
 _JULIA_DEPOT_DEFAULT = r"E:\julia_depot"
 
 #: #300 文献回收钉（judge 口径 §3.3.2）：ms_cross 无限阵 Floquet 参考值。
-#: **真形重锚 2026-10-07（哨兵形证伪定谳）**：
+#: **真形重锚 2026-10-07（哨兵形证伪定谳，席位 4 cross_sheet_spec 两难）**：
 #: 旧值 10.152GHz（ge6 裁判链 10.150 格点值在档）产生于**哨兵形 A=aw/2**
 #: 渲染（臂带减半+端垫成方垫，面积 −38.2%，静默改形）——真形 A=L2−ε
 #: （ε=1e-3·L2）实测 PSSFSS Floquet 谷位 11.4265GHz，ε→0 收敛
 #: 11.4206–11.4265，对 HFSS Floquet 终裁 11.4199 偏差 +0.006%~+0.06%
-#: （四源包络内）。旧"两引擎一致偏高 13-15% 前提差"结论系哨兵形污染，
-#: 作废重述：wg 通道双值（11.675/11.4951）对真形 Floquet 残差仅 +0.7%~+2.2%。
-#: |Δf|≤1% 门=规格 §3.3.2 预声明不变；judge_ms_cross 消费本值。
+#: （四源包络内；证据 runs/seat4_cross/exp_candidates.json+各档原始曲线）。
+#: 旧"两引擎一致偏高 13-15% 前提差"结论系哨兵形污染，作废重述：wg 通道
+#: 双值（11.675/11.4951）对真形 Floquet 残差仅 +0.7%~+2.2%。|Δf|≤1% 门=
+#: 规格 §3.3.2 预声明不变；judge_ms_cross 消费本值。
 MS_CROSS_PSSFSS_REF_GHZ = 11.4265
 MS_CROSS_GATE_REL = 0.01
 #: ms_jcross 原判读门（render_metasurface.py:1156 原文）：Δf ≤0.3GHz 或 ≤5%。
@@ -105,6 +110,18 @@ _JUDGE_BAND_GHZ = (7.0, 12.0)
 _NFREQ_DEFAULT = 41
 _NPIX_DEFAULT = 96
 _NTRI_DEFAULT = 1500
+
+#: cross_sheet_spec 的 A 相对偏移 ε=1e-3·L2（W7-B REPORT §五-3 cross_sheet_spec
+#: 两难定谳，2026-10-05 席位实测 runs/seat4_cross/）。均匀实心十字唯一正确
+#: 映射是 A==L2（jerusalemcross is_inside allfilled 支：臂带半宽 A/2、端垫
+#: 半高 L2/2，均匀要求二者相等），但 A==L2 → make_plaid_mesh xrequired
+#: 重复值 → 零宽网格（实测 504 个零面积三角面）→ analyze 抛 "matrix
+#: contains Infs or NaNs"（W2-F 坑①+本席双实证）。旧哨兵 A=aw/2 避崩的
+#: 代价是静默改形（细十字+四臂方垫，面积 −38.2%，PSSFSS 裁判链几何发散
+#: 根源）。ε=1e-3·L2 实测：面积偏差 0.075%、谷位偏移 ≤0.06%（ε→0 极限
+#: 11.4206GHz ↔ HFSS Floquet 11.4199），ε∈[1e-4, 5e-2]mm 全档有限无源
+#: 无崩，两侧各留 ≥10× 余量；确定性结构网格可复现。
+CROSS_A_REL_OFFSET = 1e-3
 
 
 class PssfssError(ValueError):
@@ -177,8 +194,11 @@ def cross_sheet_spec(params: dict[str, Any]) -> dict[str, Any]:
     """ms_cross → jerusalemcross all-filled 实心十字构造规格（纯函数）。
 
     返回 kwargs 字典（数值 mm 口径 + clas；units 由 solve 面套 pypssfss.mm）。
-    A=arm_w/2 哨兵：A 必须异于 L2（重复值 → 零宽网格 → 引擎 Infs/NaNs，
-    judge_pssfss.jl :75-77 与本席 2026-10-05 probe 双实证）。
+    A=L2−ε 哨兵（ε=CROSS_A_REL_OFFSET·L2）：均匀实心十字要求 A==L2，但
+    A==L2 → xrequired 重复值 → 零宽网格 → 引擎 Infs/NaNs（judge_pssfss.jl
+    :75-77、W2-F 坑①与本席 runs/seat4_cross 三重实证）；旧哨兵 A=aw/2 避崩
+    的代价是静默改形（面积 −38.2%）。A=L2−ε 实测：面积偏差 0.075%、谷位
+    11.4265GHz ↔ HFSS Floquet 11.4199（W7-B 件 1 §1.4-2 修法候选①择优）。
     """
     span = 2.0 * _req_f(params, "arm_len_mm", "ms_cross")
     aw = _req_f(params, "arm_w_mm", "ms_cross")
@@ -188,9 +208,44 @@ def cross_sheet_spec(params: dict[str, Any]) -> dict[str, Any]:
             f"ms_cross: 臂总跨 {span}mm 必须 < 周期 {period}mm（不 touching）")
     if aw >= span / 2.0:
         raise PssfssError(f"ms_cross: 臂宽 {aw}mm 必须 < 总跨之半 {span / 2}mm")
-    return {"P": period, "L1": span, "L2": aw, "A": aw / 2.0, "B": aw,
-            "w": aw, "clas": "J", "ntri": int(params.get("ntri",
-                                                         _NTRI_DEFAULT))}
+    return {"P": period, "L1": span, "L2": aw,
+            "A": aw - CROSS_A_REL_OFFSET * aw,  # L2−ε 哨兵（见 docstring）
+            "B": aw, "w": aw, "clas": "J",
+            "ntri": int(params.get("ntri", _NTRI_DEFAULT))}
+
+
+def audit_sheet_geometry(sheet: Any) -> dict[str, Any]:
+    """RWG 三角网格离线形状审计（零仿真纯 numpy；W7-B cross_sheet_spec
+    修法的端到端审计面）。
+
+    ``sheet`` 须暴露 ``rho``（节点坐标序列，元素为二元向量）与 ``fv``
+    （3×nface 面顶点索引，**Julia 1-based**）——pypssfss RWGSheet 原生满足
+    （rho 是 juliacall VectorValue 向量，to_numpy 不展平，逐元素 tuple 转；
+    fv 不减 1 会出 "index N out of bounds for size N" 假崩，2026-10-05
+    实测）。返回面积/零面积面数/最小三角形高/包围盒——零面积面>0 即
+    A==L2 族网格退化指纹（Infs/NaNs 前兆）。
+    """
+    rho = np.array([tuple(r) for r in sheet.rho], dtype=float)  # (N,2)
+    fv = np.asarray(sheet.fv, dtype=np.int64) - 1               # 1-based→0
+    if rho.ndim != 2 or rho.shape[1] != 2:
+        raise PssfssError(f"rho 形态异常: {rho.shape}")
+    if fv.shape[0] != 3 or fv.min() < 0 or fv.max() >= rho.shape[0]:
+        raise PssfssError(f"fv 越界或形态异常: shape={fv.shape}, "
+                          f"范围 [{fv.min()}, {fv.max()}]，节点数 "
+                          f"{rho.shape[0]}")
+    p0, p1, p2 = rho[fv[0]], rho[fv[1]], rho[fv[2]]
+    areas = 0.5 * np.abs((p1[:, 0] - p0[:, 0]) * (p2[:, 1] - p0[:, 1])
+                         - (p2[:, 0] - p0[:, 0]) * (p1[:, 1] - p0[:, 1]))
+    lmax = np.maximum(np.linalg.norm(p1 - p0, axis=1),
+                      np.maximum(np.linalg.norm(p2 - p1, axis=1),
+                                 np.linalg.norm(p0 - p2, axis=1)))
+    hmin = float(np.min(2.0 * areas / np.maximum(lmax, 1e-300)))
+    ext = rho.max(axis=0) - rho.min(axis=0)
+    return {"n_nodes": int(rho.shape[0]), "n_faces": int(fv.shape[1]),
+            "area_mm2": float(areas.sum()),
+            "zero_area_faces": int((areas <= 1e-14).sum()),
+            "min_altitude_mm": hmin,
+            "extent_x_mm": float(ext[0]), "extent_y_mm": float(ext[1])}
 
 
 def jcross_pixel_mask(params: dict[str, Any], npix: int = _NPIX_DEFAULT,
@@ -653,6 +708,11 @@ class PssfssAdapter(EMSolverAdapter):
                 f"{float(params['period_mm']) / r['npix']:.6f}mm，边缘偏置"
                 "~d/2（judge 口径）" if template == "ms_jcross" else None),
             "ntri": (spec["ntri"] if template == "ms_cross" else None),
+            # A=L2−ε 哨兵的引擎构造规格回显（provenance：哨兵值几何承载，
+            # 必须在产物可见——W7-B cross_sheet_spec followUp）
+            "sheet_spec_mm": ({k: float(v) for k, v in spec.items()
+                               if k not in ("clas", "ntri")}
+                              if template == "ms_cross" else None),
             "polarizations": {
                 "coupling": pol_coupling,
                 "ortho": pol_ortho,

@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── chain（ME-17b 后半：有源链路 C14 service 接线薄壳）─────────────────────────
 # 零逻辑转发 service/active_chain_service（规则 4）：lna=ADS 联合+手工口径
@@ -112,9 +113,9 @@ def even_odd_cmd(
     from rfauto.service import even_odd_service
 
     if list_templates:
-        result = {"ok": True, "templates": [
+        result = ok_envelope(templates=[
             {"template": t, **even_odd_service.template_even_odd_meta(t)}
-            for t in even_odd_service.EVEN_ODD_TEMPLATES]}
+            for t in even_odd_service.EVEN_ODD_TEMPLATES])
         _emit(result, "模板列表失败", json_output=json_output)
         if not json_output:
             for ent in result["templates"]:
@@ -250,7 +251,7 @@ def study_inject_cmd(
     except _json.JSONDecodeError as e:
         if json_output:
             # VI-5 W6-B：入参非法也信封（--json 下失败路径不许非 JSON）
-            _emit({"ok": False, "errors": [f"params 不是合法 JSON: {e}"]},
+            _emit(error_envelope(f"params 不是合法 JSON: {e}"),
                   "注入失败", json_output=True)
         console.print(f"[red]params 不是合法 JSON: {e}[/red]")
         raise typer.Exit(code=1) from None
@@ -371,7 +372,7 @@ def audit_cmd(
         if json_output:
             # VI-5 W6-B：--json 信封（质量指标键集原样透传）
             console.print_json(json.dumps(
-                {"ok": True, **summary}, ensure_ascii=False, default=str))
+                ok_envelope(**summary), ensure_ascii=False, default=str))
             return
         console.print("[cyan]4b 提议质量指标[/cyan]")
         console.print(f"  总 propose 数: {summary['total_proposes']}")
@@ -391,7 +392,7 @@ def audit_cmd(
         if json_output:
             # VI-5 W6-B：空日志是合法零记录态（ok=True entries=[] 如实）
             console.print_json(json.dumps(
-                {"ok": True, "entries": [], "total": 0}, ensure_ascii=False))
+                ok_envelope(entries=[], total=0), ensure_ascii=False))
             return
         console.print("[yellow]审计日志不存在（尚无 Agent 操作记录）[/yellow]")
         return
@@ -411,7 +412,7 @@ def audit_cmd(
     if not entries:
         if json_output:
             console.print_json(json.dumps(
-                {"ok": True, "entries": [], "total": 0}, ensure_ascii=False))
+                ok_envelope(entries=[], total=0), ensure_ascii=False))
             return
         console.print("[yellow]无匹配的审计记录[/yellow]")
         return
@@ -421,7 +422,7 @@ def audit_cmd(
         recent = entries[-limit:]
         recent.reverse()
         console.print_json(json.dumps(
-            {"ok": True, "total": len(recent), "entries": recent},
+            ok_envelope(total=len(recent), entries=recent),
             ensure_ascii=False, default=str))
         return
 

@@ -31,7 +31,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    HJ @W，与 patch 谐振轴同口径，铁律 1c）。文献通式 L + W − Ws ≈ λ/4
 #    （Ollikainen 1999 / Zürcher & Gardiol）**前提是角部短路板**（电流自短路
 #    板沿贴片宽度绕行再折向开路边）；本布局短路板居中（Ws=2 于 W=8 中央），
-#    电流不绕行，有效路径≈L——两轮真机实证（
+#    电流不绕行，有效路径≈L——两轮真机实证（/项目规则
 #    antenna2 坑③）：通式标称 L=11.0785 谐振在 2.9GHz 之上 FAIL，L 路径式
 #    override 17.08 → −8.79dB@2.26GHz PASS（runs/antenna2_smoke/pifa_override）。
 #    Ws 仍是几何输入（短路板宽定馈阻抗/带宽），不进谐振式。馈针位置定匹配
@@ -47,7 +47,8 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    0.004λ0）镜像反向电流抵消辐射 → R=0.56Ω（电抗过零 2.3825GHz 对但不
 #    辐射，runs/antenna2_smoke/loop）。判据改电抗过零（f0±12%）+ 过零处
 #    R ≥ 20Ω（对照旧 0.56Ω；S11 −5dB 作次级）——一周长环馈阻抗文献口径
-#    ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振判据。
+#    ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振判据（项目规则 antenna2 坑②：
+#    判谐振看电抗过零/并联 R 峰）。
 # 5) 螺旋：法向模螺旋单极子（Balanis §9 helical antennas 法向模区）：一阶
 #    口径 = 总导线长 k_helix·λ0/4（k_helix=1.3615，2026-09-17 HFSS 同几何仲裁
 #    AGREE 定版：λ0/4 口径真机 f_x=3.31GHz（openEMS）/3.2675GHz（HFSS）≠2.4，

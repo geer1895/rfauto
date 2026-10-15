@@ -157,11 +157,6 @@ def _child_env() -> dict:
 
 # ─── 判据①：断点续跑演练（node2 中段 kill → 重跑 node1 零重执行）─────────────
 
-# 整树硬杀形态钉=#157 Windows taskkill /T 语义；POSIX 无 taskkill（等价面
-# 是进程组语义，另一套形态），诚实跳过（skip-not-fail，Linux CI 首跑实证）。
-@pytest.mark.skipif(
-    os.name != "nt",
-    reason="整树硬杀钉依赖 Windows taskkill /T（#157 形态）；POSIX 无此语义")
 def test_resume_after_mid_solve_tree_kill(tmp_path) -> None:
     run_dir = tmp_path / "run1"
     cache_dir = tmp_path / "cache"
@@ -399,3 +394,54 @@ def test_dag_leaves_registered_in_cli_tree() -> None:
     assert "dag" in commands, "顶层缺 dag 域"
     leaves = set(getattr(commands["dag"], "commands", {}) or {})
     assert {"run", "status"} <= leaves, f"dag 域叶不齐: {leaves}"
+
+
+# ─── ge9 审查批 R5 P1-2：cmd 分词方言显式随平台（Windows 反斜杠保真）─────────
+
+def test_split_cmd_platform_dialects(monkeypatch) -> None:
+    """Windows 方言保反斜杠字面+去成对包裹引号；POSIX 方言与 shlex 缺省一致。
+
+    修复前 shlex.split 缺省 posix=True 把 win32 未加引号路径静默吞字
+    （E:\foo\bar.exe → E:foobar.exe）；两端语义都以纯函数级钉住（os.name
+    monkeypatch，任一平台可跑）。
+    """
+    import shlex
+
+    import rfauto.cli.domains.dag as dag_mod
+
+    # Windows 方言（os.name='nt'）
+    monkeypatch.setattr(dag_mod.os, "name", "nt")
+    assert dag_mod._split_cmd(r'E:\foo\bar.exe --out E:\runs\x --flag') == [
+        'E:\\foo\\bar.exe', '--out', 'E:\\runs\\x', '--flag']
+    # 成对包裹引号去壳（posix=False 不剥引号的惯用补齐），路径内空格保真
+    assert dag_mod._split_cmd(r'"E:\my dir\x.exe" --flag') == [
+        'E:\\my dir\\x.exe', '--flag']
+
+    # POSIX 方言不变：与 shlex.split 缺省逐 token 一致（含反斜杠转义语义）
+    monkeypatch.setattr(dag_mod.os, "name", "posix")
+    for sample in (r'E:\foo\bar.exe --out E:\runs\x', "a 'b c' \"d e\" f"):
+        assert dag_mod._split_cmd(sample) == shlex.split(sample)
+
+
+@pytest.mark.skipif(sys.platform != "win32",
+                    reason="win32 原生反斜杠 cmd 端到端（R5 P1-2 静默错置形态）")
+def test_executor_preserves_win32_backslash_paths(tmp_path) -> None:
+    """cmd 全程 win32 未加引号形态真跑：exe 路径与中间输出参数都带反斜杠。
+
+    修复前 posix=True：argv[0] 被吞字 → 误导性 FileNotFoundError；输出参数
+    被吞字 → 产物静默写错位（盘符相对伪路径）。修复后两端保真。
+    """
+    from rfauto.cli.domains.dag import _subprocess_executor
+
+    writer = tmp_path / "writer.py"
+    writer.write_text(
+        "import sys\nfrom pathlib import Path\n"
+        "p = Path(sys.argv[1])\n"
+        "p.parent.mkdir(parents=True, exist_ok=True)\n"
+        "p.write_text('ok', encoding='utf-8')\n",
+        encoding="utf-8")
+    target = tmp_path / "out_dir" / "res.txt"
+    cmd = f"{sys.executable} {writer} {target}"  # 全程裸反斜杠路径（真实险态）
+    res = _subprocess_executor({"cmd": cmd}, {"work_dir": str(tmp_path / "wd")})
+    assert res["ok"], res.get("message")
+    assert target.read_text(encoding="utf-8") == "ok"

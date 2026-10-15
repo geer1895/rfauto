@@ -25,7 +25,18 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+
+| 名次 | 参数 | 依据 |
+|---|---|---|
+| 1 | period_mm | 阵格=光栅瓣判据主维（λ0/2 恒等式 |∂lnf_lobe/∂lnD|=1） |
+| 2 | n_x | 横向单元数（口径尺寸/增益维，离散整数控） |
+| 3 | n_y | 纵向单元数（同上） |
+| 4 | cell_map | 单元尺寸相位档（离散版图非连续几何维） |
+| 5 | er | 单元谐振填充通道（ms_patch 同族） |
+| 6 | h_mm | 板厚经 εeff 弱进入 |
+| 7 | tan_d | 损耗角不进谐振式 |
+- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
 
 ## 判据
 
@@ -44,9 +55,9 @@
 ## 已知边界
 
 - 参数语义：n_x/n_y=x/y 向胞数，period_mm=胞周期，cell_map=n_y 行 × n_x 列逐单元 参数表（每胞 px_mm/py_mm 必填、cell_id 可选仅 ms_patch），h_mm=基板厚； n 与 cell_map 行列数逐维相等（覆盖完备守卫，违反渲染抛 ValueError）； er/tan_d 走 substrate/nominal
-- 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 战役任务书
+- 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 runs/df6_dp10ms/handoff.md
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞 （#246/#261）；J2 真机轨另派
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

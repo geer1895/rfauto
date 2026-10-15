@@ -18,7 +18,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "crlh_unit_cell_report",
-    "MM-4 CRLH（复合左/右手传输线）单元点分析（round17 §五 :146，"
+    "CRLH单元分析：MM-4 CRLH（复合左/右手传输线）单元点分析（round17 §五 :146，"
     "Caloz & Itoh Wiley 2006 §3.1 口径）：T 型单元（串 L_R+C_L / 并 "
     "C_R+L_L）在单频点的谐振对 f_se=1/(2π√(L_R C_L))、f_sh=1/(2π√(L_L C_R))、"
     "ZOR（规格口径 1/√(L_L C_R)，短路边界 N=0 模；开路边径=ω_se 另提"

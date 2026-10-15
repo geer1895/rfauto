@@ -340,7 +340,9 @@ def test_open_or_create_project_remote_hfss_construct_switches(
     monkeypatch, tmp_path, fake_aedt_module,
 ):
     """review-fix1 v1 锚闭合：远程分支 Hfss 构造点包四开关 CM（第二个
-    构造窗口），构造期 remote_rpc_session=None，构造完成后 CM 恢复原值。"""
+    构造窗口），构造期 remote_rpc_session=None（ 五百四十二坑 1：
+    该开关双语义——Hfss 设计初始化按 rpyc 消费 filemanager，Desktop
+    attach 后须置 None 再构造 Hfss），构造完成后 CM 恢复原值。"""
     _patch_adapter_hfss(monkeypatch)
     _, fake_settings = fake_aedt_module
     monkeypatch.delenv("PYAEDT_USE_PRE_GRPC_ARGS", raising=False)

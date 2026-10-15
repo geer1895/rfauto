@@ -74,7 +74,7 @@ def _emit(result: dict) -> None:
 def goldset(
     trajectories: str = typer.Option(
         None, "--trajectories", "-t",
-        help="已记录轨迹 JSON（[{'id','trajectory'}]）；缺省用离线参考回放（门自洽正控）"),
+        help="已记录轨迹 JSON（对象数组，元素含键 id、trajectory）；缺省用离线参考回放（门自洽正控）"),
     goldset: str = typer.Option(
         None, "--goldset",
         help="金标集路径（缺省 tests/gold/agent_goldset.yaml）"),
@@ -116,7 +116,7 @@ def goldset(
 def agentbench(
     records: str = typer.Option(
         None, "--records", "-r",
-        help="已记录埋点 JSON（[{'id','trajectory','artifacts','numeric'}]）；"
+        help="已记录埋点 JSON（对象数组，元素含键 id、trajectory、artifacts、numeric）；"
              "缺省用离线参考回放（门自洽正控）"),
     public_set: str = typer.Option(
         None, "--public-set", help="公开集路径（缺省 tests/gold/agentbench_public.yaml）"),
@@ -165,7 +165,7 @@ def agentbench(
 def level2(
     records: str = typer.Option(
         None, "--records", "-r",
-        help="已记录设计链 JSON（[{'id','trajectory','artifacts','numeric'}]）；"
+        help="已记录设计链 JSON（对象数组，元素含键 id、trajectory、artifacts、numeric）；"
              "缺省对验收集逐句跑确定性参考链（零 LLM、零网络、fake 离线）"),
     design_set: str = typer.Option(
         None, "--set",
@@ -180,7 +180,7 @@ def level2(
              "仅对缺省自跑链生效，--records 已成记录不重跑"),
     optimize_out_dir: str = typer.Option(
         None, "--optimize-out-dir",
-        help="配合 --enable-optimize：环返回体落盘目录（缺省不落盘，不污染 runs）"),
+        help="配合 --enable-optimize：环返回体落盘目录（缺省不落盘，不污染 runs/）"),
     json_output: bool = typer.Option(False, "--json", help=_JSON_COMPAT_HELP),
 ) -> None:
     """§10.10 Level 2 端到端门：10 句 NL 设计任务成功率 ≥7/10 + 七环节覆盖矩阵。"""
@@ -224,7 +224,7 @@ def prompt_regression(
     public_set: str = typer.Option(
         None, "--public-set", help="公开集路径（缺省 tests/gold/agentbench_public.yaml）"),
     records_a: str = typer.Option(
-        None, "--records-a", help="A 臂已记录埋点 JSON（[{'id','trajectory','artifacts','numeric'}]）；"
+        None, "--records-a", help="A 臂已记录埋点 JSON（对象数组，元素含键 id、trajectory、artifacts、numeric）；"
                                   "缺省离线参考回放（门自洽正控，不消费 prompt 内容）"),
     records_b: str = typer.Option(
         None, "--records-b", help="B 臂已记录埋点 JSON；与 --records-a 成对给出"),
@@ -282,7 +282,7 @@ def prompt_regression(
 def consistency(
     trials: str = typer.Option(
         ..., "--trials", "-t",
-        help="多 trial 埋点 JSON（[{'id','trajectory','artifacts','numeric','cost'?}]；"
+        help="多 trial 埋点 JSON（对象数组，元素含键 id、trajectory、artifacts、numeric，cost 键可选；"
              "同一 id 重复出现=同一任务的多次独立尝试）"),
     k: int = typer.Option(
         3, "--k", help="pass^k 尝试数（round15 AD-4：缺省 3 进月门）"),

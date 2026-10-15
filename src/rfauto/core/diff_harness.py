@@ -1,6 +1,6 @@
 """QM-11 多引擎差分测试 harness（纯函数，core 叶子，零 IO）。
 
-规格：研究扩充 round16 QM-11（P2/M）——
+规格：docs/research_expansion_20261002_round16.md QM-11（P2/M）——
 "engine pair 矩阵自动发现 + FSV 门判 harness，DISAGREE 自动产 pointer 锚候选"。
 
 四个组成面（同一 relation(input, out_a, out_b) 断言模式贯穿）：
@@ -362,7 +362,7 @@ def discover_engine_pairs(
 
     reference=None：全部无序组合（itertools.combinations 2，字典序）；
     reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
-     规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
+    AGENTS 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
     引擎名 < 2 个 → 空矩阵（合法，无对可差分）。
     """
     seen: dict[str, None] = {}

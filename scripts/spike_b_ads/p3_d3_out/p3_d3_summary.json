@@ -1,0 +1,74 @@
+[
+  {
+    "variant": "w1_smatrixio",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 5:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" Type=\"smatrixio\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  },
+  {
+    "variant": "w2_uselib",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 6:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" Type=\"smatrixio\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  },
+  {
+    "variant": "w3_touchstone",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 5:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" Type=\"touchstone\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  },
+  {
+    "variant": "w4_no_type",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 5:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  },
+  {
+    "variant": "w5_type_snp",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 5:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" Type=\"snp\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  },
+  {
+    "variant": "w6_sourceless",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist parsing.",
+      "ADS-syntax parser error in `netlist.txt', line 3:",
+      "syntax error, unexpected PAR_ID",
+      "[stderr] hpeesofsim terminated due to an error."
+    ],
+    "netlist": "SnP:SNP1  P1 P2 NumPorts=2 File=\"demo_BP.s2p\" Type=\"smatrixio\" InterpMode=\"linear\" ExtrapMode=\"constant\" Temp=27.0 CheckPassivity=0"
+  }
+]

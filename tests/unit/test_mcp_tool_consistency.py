@@ -11,7 +11,7 @@
 - 逐工具可调用性烟测（静态）：函数体全局名引用与惰性 import 目标
   必须可解析（diagnose 死壳实证的系统性盲区，confirm_2 第 1 条）。
 
-记 18 个工具，本文件以源码/运行时实测为准。
+ 记 18 个工具，本文件以源码/运行时实测为准。
 """
 
 from __future__ import annotations
@@ -45,14 +45,14 @@ _DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(")
 _ARGS_ENTRY_RE = re.compile(r"^\s{4,}([A-Za-z_]\w*)\s*(?:\([^)]*\))?\s*:")
 _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes):\s*$")
 
-# 记录值，仅作交叉核对；实测不符时断言会直接暴露
+#  记录值，仅作交叉核对；实测不符时断言会直接暴露
 # （18→19：2026-09-13 export_report_pdf 工具入库，/090e631）
 # （19→36：2026-09-13 WP3.3 MCP 工具面全量开放 +17——模板库 2/战役 3/
-#   数据集 2/bands 10（D9 归口）；数字待主控合流轮同步）
+#   数据集 2/bands 10（D9 归口）； 数字待主控合流轮同步）
 # （36→62：2026-09-15 cli-mcp-api-shell-bundle +26——回归门 2（goldset/agentbench）
 #   /多 Agent 4 内核工具+multi_agent_run/autotune_self_verify/uq 3/farfield 2/
 #   kicad 2/electrothermal/parasitic/topology/dataset 4/vna_offline_replay/
-#   report_narrative/rationale 2；数字待主控合流轮同步）
+#   report_narrative/rationale 2；交接文档数字待主控合流轮同步）
 # （62→64：2026-09-15 F2⑥ RAG 只读检索薄壳 +2——rag_query/rag_explain，词法
 #   BM25、citation 可溯；零逻辑转发 rag_service 一步式包装）
 # （64→67：2026-09-15 审查接线层装车 +3——self_heal_run（F5 只读自愈环）/
@@ -94,34 +94,34 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 #   同名函数）
 # （116→118：2026-09-26 ge-code3 +2——afs_plan（M-3 AFS 扫频计划纯计划面
 #   薄壳，零逻辑转发 afs_service.afs_sweep_plan）+ read_hfss_touchstone_comments
-#   （ME-10' HFSS 注释块直读薄壳，零逻辑转发 interop_service 同名函数）
+#   （ME-10' HFSS 注释块直读薄壳，零逻辑转发 interop_service 同名函数））
 # （118→120：2026-09-28 remote-v0 +2——remote_probe_machine/remote_machine_status
-#   （多机协同只读探活/状态薄壳，零逻辑转发 remote_service 同名函数）
+#   （多机协同只读探活/状态薄壳，零逻辑转发 remote_service 同名函数））
 # （120→123：2026-09-28 me17b-wire +3——even_odd_report/mcts_search/
 #   inverse_prefilter（ME-17b 接线批第二组，零逻辑转发 even_odd_service/
-#   mcts_search/inverse_prefilter 同名函数；agent 原语 typed tool call）
+#   mcts_search/inverse_prefilter 同名函数；agent 原语 typed tool call））
 # （123→132：2026-10-04 x3-wiring +9——W7 台账①态零消费内核接线批：
 #   adc_interleave_spurs/jitter_budget_snr（零逻辑转发 adc_budget_service
 #   新增函数）+ emc_cispr_band_params/emc_cispr_detect/
 #   emc_ground_spacing_check/emc_cm_radiated_budget（零逻辑转发新建
 #   emc_service）+ metasurface_coding_pattern/metasurface_quant_loss_db
 #   （零逻辑转发新建 metasurface_service）+ com_pam4_run（零逻辑转发
-#   si_channel_service 新增函数，挂 si_lake 工具组）
+#   si_channel_service 新增函数，挂 si_lake 工具组））
 # （132→134：2026-10-05 W1 孤儿接线批 +2——error_hints_lookup（零逻辑转发
 #   error_hints_service，挂 explain 工具组）+ run_monitor（零逻辑转发
-#   runtime_monitor_service，挂 runs 工具组）
+#   runtime_monitor_service，挂 runs 工具组））
 # （134→137：2026-10-05 W2 Phase 2 +3——run_campaign（VI-2 战役执行器，
 #   挂 specs_campaign 组）+ recommend_templates（VI-3 推荐器同组）+
-#   uq_rare_yield（XD-11 稀有失效 IS，挂 uq 组）
+#   uq_rare_yield（XD-11 稀有失效 IS，挂 uq 组））
 # （137→145：2026-10-05 W3 Phase 3 +8——env_reliability 单文件八工具
-#   （F-10 六服务壳 MCP 面，W3-D）
+#   （F-10 六服务壳 MCP 面，W3-D））
 # （145→146：2026-10-05 W5 Phase 5 +1——get_guidelines_for（EC-6
-#   guidelines_service 三源检索薄壳，W5-D）
+#   guidelines_service 三源检索薄壳，W5-D））
 # （146→149：2026-10-06 W6 +3——start_tune/run_sweep（SN-16，W6-A）+
-#   preflight_run（D-07，W6-E）
-# （149→152：2026-10-08 EDB 快车道批 +3——edb_emit_spec/edb_build_solve/
-#   edb_status（edb 组薄壳，CLI 出口同批）
-_LEDGER_DECLARED_TOOL_COUNT = 152
+#   preflight_run（D-07，W6-E））
+# （149→152：2026-10-08 edb 快车道 +3——edb_emit_spec/edb_build_solve/
+#   edb_status（零逻辑转发新建 edb_lane_service，CLI edb 域同源））
+_DECLARED_TOOL_COUNT = 152
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:
@@ -324,7 +324,7 @@ class TestMcpToolRegistryConsistency:
     def test_source_decorator_count_matches_registered(self, source_text, mcp_tools):
         source_names = _decorated_function_names(source_text, _TOOL_DECORATOR_RE)
         assert len(source_names) == len(mcp_tools)
-        assert len(mcp_tools) == _LEDGER_DECLARED_TOOL_COUNT
+        assert len(mcp_tools) == _DECLARED_TOOL_COUNT
 
     def test_source_function_names_equal_registered_names(self, source_text, mcp_tools):
         source_names = set(_decorated_function_names(source_text, _TOOL_DECORATOR_RE))
@@ -447,9 +447,11 @@ class TestMcpResourceBodyCallability:
     """
 
     def test_function_resources_cover_current_registry(self, mcp_function_resources):
-        """守卫遍历面健全性：当前 7 个函数资源全部被 fixture 覆盖
-        （W5-D +rfauto://toolsets/definition，2026-10-05；EDB 快车道批
-        +rfauto://edb/status 与 +rfauto://edb/datasets，2026-10-08）。"""
+        """守卫遍历面健全性：当前 9 个函数资源全部被 fixture 覆盖
+        （W5-D +rfauto://toolsets/definition，2026-10-05；EDB 快车道
+        资源两件 +rfauto://edb/status 与 +rfauto://edb/datasets，
+        2026-10-08；MCP-B 席 +rfauto://calculators/index 与
+        +rfauto://datasets/index，2026-10-14）。"""
         uris = {str(r.uri) for r in mcp_function_resources}
         assert uris == {
             "rfauto://runs/index",
@@ -459,6 +461,8 @@ class TestMcpResourceBodyCallability:
             "rfauto://toolsets/definition",
             "rfauto://edb/status",
             "rfauto://edb/datasets",
+            "rfauto://calculators/index",
+            "rfauto://datasets/index",
         }
 
     def test_load_global_names_resolve_for_every_resource(self, mcp_function_resources):
@@ -486,7 +490,7 @@ class TestMcpResourceBodyCallability:
 class TestDiagnoseToolEndToEnd:
     """diagnose 修复钉：经 fastmcp call_tool 真调用（原缺陷正是调用期才炸）。
 
-    chdir 隔离到 tmp_path（#144：不触真实 runs）；run 目录手工落盘，不跑
+    chdir 隔离到 tmp_path（#144：不触真实 runs/）；run 目录手工落盘，不跑
     求解。规则引擎读 knowledge/rules.yaml（按 __file__ 定位的绝对路径，
     不受 chdir 影响），R001-R004 判定全确定性。
     """

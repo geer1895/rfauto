@@ -9,7 +9,7 @@ TEMPLATE_NOMINAL 逐键 rtol 1e-9）+ 内核闭式锚（Z0 回代/tree 阻抗级
 式）+ 渲染守卫（板内越界/#347 测量面分离/过孔网格欠分辨/n_way 域）+
 注册五件套 + docs meta.yaml 一致性。
 
-方案锚：研究扩充 round15 §二·2 TA-3/TA-4——
+方案锚：docs/research_expansion_20261002_round15.md §二·2 TA-3/TA-4——
 「内核就绪缺模板」件；闭式单源 core（sicl_line.sicl_closed_form /
 synthesize_nway_wilkinson tree 分支），本模板层零数值产出（铁律 7/#1c）。
 近似级别如实登记见两 META smoke_note。

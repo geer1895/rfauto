@@ -122,6 +122,25 @@ class TestTripleEntryAndThresholds:
             **seq, "gci_rel_warn": 0.5})
         assert report2["factors"][-1]["status"] == "PASS"
 
+    def test_gci_rel_warn_explicit_zero_raises_not_defaulted(self):
+        """A2 P1-2（#364④ 家法）：显式 gci_rel_warn=0.0 落 (0,1) 范围检查
+        响亮 ValueError——``or`` 缺省惯语曾把 0.0 静默换成缺省 0.05 按
+        PASS 判读（同函数 fs 的 ``is not None`` 写法是正确对照）。"""
+        from rfauto.core.solve_health import _check_grid_convergence
+
+        with pytest.raises(ValueError, match="gci_rel_warn"):
+            _check_grid_convergence(f_fine=1.0, f_medium=1.001,
+                                    f_coarse=1.004, r=2.0, gci_rel_warn=0.0)
+        # 经 solve_health_check 走检查项隔离（#105）：该因子 UNKNOWN
+        # （ValueError 进 detail），不静默按缺省门判 PASS
+        report = solve_health_check(grid_convergence={
+            "f_fine": 1.0, "f_medium": 1.001, "f_coarse": 1.004, "r": 2.0,
+            "gci_rel_warn": 0.0})
+        f = report["factors"][-1]
+        assert f["factor"] == "grid_convergence"
+        assert f["status"] == "UNKNOWN"
+        assert "检查异常" in f["detail"] and "gci_rel_warn" in f["detail"]
+
     def test_explicit_kwargs_beats_provenance(self):
         report = solve_health_check(
             grid_convergence=_seq_inputs(H3, F_ZERO),

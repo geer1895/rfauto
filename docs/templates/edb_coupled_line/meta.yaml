@@ -1,0 +1,147 @@
+# ═══ EDB 快车道模板元面（信息文档形态，不入 TEMPLATE_META 注册表）══════════
+# 本文件是 EDB 快车道发射族的元数据文档。edb_* 族不是
+# openems_templates.TEMPLATE_NOMINAL 注册模板：
+# tests/unit/test_template_meta_consistency.py 与
+# tests/unit/test_template_geometry_audit.py 的 EXPECTED_TEMPLATES（冻结
+# 72 项）不扫描本目录；scripts/build_docs_pages.build_templates_page 将
+# 非注册目录按信息文档排除（2026-10-08 同笔调整）。schema 单源=
+# src/rfauto/adapters/edb_templates/schema.py（KNOWN_TEMPLATES /
+# SPEC_SCHEMA_VERSION / validate_spec）。
+#
+# 门值口径：acceptance 全部是"离线发射层门"（发射自检与冒烟判读层的
+# offline gate）；真机求解产物的质量仲裁另有 health gate
+# （service/edb_health_gate，W3/W4 已落地：门常量按模板作用域分派，
+# 登记表 S11_DIP_DB_BY_TEMPLATE / S_WINDOW_DB_BY_TEMPLATE 为单源，
+# 改动门值读源码核对、禁止臆造物理数字）。
+#
+# 用户指南：docs/edb_lane_guide.md
+
+template: edb_coupled_line
+registry_status: 已落地（src/rfauto/adapters/edb_templates/coupled_line.py
+  emit_coupled_line_spec；服务层分派表已接线——schema.KNOWN_TEMPLATES
+  白名单升格 followUp，「template 非法」行由发射器侧族豁免过滤；另有连通
+  图两分量族豁免=线 A/B DC 隔离是耦合线耦合器器件物理，两处豁免由
+  tests/unit/test_edb_templates_ext.py 钉住）
+schema_version: 1
+edb_lane: EDB 快车道（PyEDB 声明式 spec 建库 + hfss_batch 批处理求解）
+f0_ghz: 2.5
+n_ports: 4
+units:
+  length: mm
+  frequency: GHz
+
+# 设计参数（emit_coupled_line_spec 入参；缺省值见发射器 docstring。
+# 原"规划参数"键面 w_mm/gap_mm/coupled_len_mm/w_feed_mm 均转为发射器
+# 产出（由 coupling_db 经综合单源闭式反解），不再是入参）
+params:
+- f0_ghz          # 必填，>0
+- coupling_db     # 缺省 10.0（电压耦合系数 C=10^(-C_dB/20)；过紧耦合超出
+                  # KJ 零厚可达域时综合链报错）
+- z0_ohm          # 缺省 50.0；仅支持 50（pyedb CfgEdgePort 波端口阻抗硬编码 50Ω）
+- feed_len_mm     # 缺省 5.0（四条 50Ω 馈线长）
+- copper_thickness_mm  # 缺省 0.035
+- board_margin_mm      # 缺省 2.0
+# 非"设计参数"的发射器键：stackup、sweep（同 edb_branchline 缺省档）、
+# adapt（max_passes=20 同 branchline；max_delta 缺省 0.02=W10 定谳回退档，
+# 见下方 adapt_max_delta_note）
+
+substrate:
+  name: rogers4350b_h0.508
+  er: 3.66
+  h_mm: 0.508
+  loss_tangent: 0.0037
+
+# 名义参数 @2.5GHz 缺省层叠 10dB 设计点——emit_coupled_line_spec 实跑产出
+# （2026-10-08 实测，非手抄；综合单源 oe_templates.render_c4
+# .cline_coupler_design + core.synthesis solve_microstrip 50Ω 馈线单源，
+# 禁手抄毫米数；KJ 整链与注册 cline_coupler 设计函数逐值一致，钉
+# tests/unit/test_edb_templates_ext.py 1e-9）
+nominal_params:
+  w_mm: 0.9243            # KJ 二维反解；(Z0e,Z0o)=(69.371,36.038)Ω，C=0.31623
+  s_mm: 0.0820            # 耦合缝（边到边，KJ 反解）
+  coupled_len_mm: 18.1469 # λ/4 @ 平均 εeff=2.7292（偶/奇模 2.9922/2.4663）
+  w_feed_mm: 1.1134       # 50Ω 馈线（本族 stackup 标量 solve_microstrip 单源；
+                          # 注册 cline_coupler 名义 1.1117 系注册设计链
+                          # tanδ=0 裸 Stackup 的 ~2e-3mm 二阶差，族内以
+                          # 单源为准——发射器 docstring 口径）
+  feed_len_mm: 5.0
+
+synthesis_source: oe_templates/render_c4.py cline_coupler_design（KJ 准静态
+  面嵌套反演在 core/synthesis；裁判闭式 coupled_line_coupler_sparams，
+  Pozar §7.6）+ core.synthesis solve_microstrip 50Ω 馈线单源——发射器已接
+  同一综合单源，禁手抄毫米数
+topology: 耦合线定向耦合器（后向波）：两条 λ/4 平行耦合线（竖直）+ 四条
+  50Ω 馈线（水平引出，全部轴对齐两点线段）；1=输入（线 A 近端）/
+  2=直通（线 A 远端）/ 3=耦合（线 B 近端，与输入同侧）/ 4=隔离（线 B
+  远端）；线 A/B DC 隔离（缝隙分布耦合、无直流通路=器件物理）；
+  馈线内端与耦合线端部按 w/2×wf/2 矩形面积重叠保证连通（flat cap 口径）
+extraction: 全 S 矩阵 4 端口（wave_port 馈线端点；批处理求解后 Touchstone
+  .s4p；端口序=AEDT 端口号序，sNp 头注释存证）
+
+# 离线发射层门（发射器已落地，门值仍为设计期规划值——待真机冒烟判读校准。
+# health gate 对齐现状（读源码核对 2026-10-08）：S_WINDOW_DB_BY_TEMPLATE /
+# S11_DIP_DB_BY_TEMPLATE 均未登记本族——S11@f0 真机判读回退通用谷深门
+# -10dB（DEFAULT_S11_DIP_DB），等分分配窗判据对本族缺席不判；本节离线门
+# 与 health gate 口径独立）
+adapt_max_delta_note: 判读档史（W8 加严 → W10 定谳回退，2026-10-09）——
+  本族发射缺省自适应档 max_delta 现为 **0.02**（=schema 假设 8 通用缺省；
+  emit_coupled_line_spec DEFAULT_ADAPT_MAX_DELTA；显式覆盖走
+  params.adapt.max_delta；branchline/power_divider/ratrace 等他族同值）。
+  W8 真机三变体仲裁（runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-1）
+  曾裁定加严 0.005（紧缝 s/h=0.161 下 ΔS=0.02 单档 S31 读数带 ~2dB 收敛档
+  伪象、HFSS ΔS 阶梯收紧回收 1.2~1.8dB）；**W10 真机定谳（
+  runs/edblane85/w10_cl_recheck/REPORT.md）：MaxDelta=0.005 在 EDB 路径
+  写入不可达**——EDB 3D Layout schema（SimSetupID=19）无 MaxDelta 键
+  （四互证维持，configuration.load/props 两通道同样写不进，spec 硬断言
+  只能行使到发射面；W9 重查 props 通道 TIGHTENING_NOT_EFFECTIVE 系同因
+  会话态表现）；且 W10 量级修正=EDB 侧档位伪象实测仅 ~0.62dB（W8 ~2dB
+  系 HFSS 侧阶梯分解），剩余 ~1.0dB 偏置=EDB-Layout 特有建模保真差。缺省
+  保留 0.005 请求档=求解器证明不可消费的档位（verify_adapt_tightening
+  每建必告警、存证误导归因、pyedb 修复后静默激活），故按坑账 122 不虚报
+  原则回退 0.02（与求解器实际准则一致）。EDB 侧唯一可达收紧通道=扁平键
+  MinConvergedPasses（求解器实消费，W9 mc2=2/W10=4）。复进条件=pyedb/
+  AEDT 暴露 MaxDelta 写入口后按 W8 依据显式重立（禁静默激活）；复进前
+  本族 EDB S31 读数不得按 0.005 档归因，判读面校准锚=W10 REPORT §3。
+  另存两条通道事实：**求解后改档不传播**（W8 §2 V3 实证：pyaedt props
+  无 AdaptiveSettings 子树，子树重建写入+update+save 后批解仍逐位回放
+  缓存解）——改档须重建；批解后 EdbAdapter.verify_adapt_tightening 核对
+  工程内 setup 实际 MaxDelta 与请求档一致（存储面断言，非求解效力断言——
+  详见 edb_adapter.py 模块 docstring「3D Layout setup 自适应档写入通道」
+  节 W10 定谳与 tests/unit/test_edb_adapter.py 文件头同注）。
+acceptance:
+  s31_db_at_f0:  {op: "≈", bound: -10.0, label: "耦合度 |S31|=C（10dB 设计点，
+    同步极限）", status: 规划值——发射器已落地，待真机冒烟判读校准}
+  s11_s41_db_at_f0: {op: "≤", bound: -20.0, label: "同步极限 |S11|/|S41|；
+    非同步残差预期 S41≈-23dB / S11≈-33dB（定向性 ≈13dB，微带耦合线固有，
+    冒烟按此判读——注册模板 cline_coupler smoke_note 同口径）",
+    status: 规划值——发射器已落地，待真机冒烟判读校准}
+  # 厚度偏置注记（W8 仲裁建议 3，2026-10-09；HFSS=对齐基准）——与发射器
+  # spec.params["thickness_bias_note"] 渲染期注记同源，不改综合数值
+  # （KJ 零厚假设经零厚全波验证无需修正，残差 0.23dB）
+  thickness_bias_note: s/t（缝/铜厚比）<4 为已知厚度偏置区——饱和锚
+    +0.8dB@s/t=2.34（方向=过耦；名义设计点 s=0.082/t=0.035 落此区），
+    冒烟判读 S31 门值按此偏置对待——允许较 -10.0 名义偏高 ~0.8dB 级
+    厚度偏置，超窗先核收敛档（见 adapt_max_delta_note）再归因物理。
+    s/t≥4 为伪象主导区划线（W8 实测 bias+2.274dB@s/t=4.29 属 ΔS 收敛档
+    伪象主导、非纯厚度，厚度效应量值未分辨）——发射器守卫仅 warning
+    不 fail（数据不足硬门，坑账 122），判读须收紧收敛档复核。W10 真机
+    补证（runs/edblane85/w10_cl_recheck §3）：名义点（s/t=2.34）方向支持
+    厚度偏置、无反证；s/t≥4 区量级仍未分辨，划线维持暂定。证据链：
+    runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-3。
+
+geometry_note: 发射器几何口径声明（二阶效应，冒烟判读按引擎偏差项对待、
+  不进闭式裁判）：flat cap 搭接使有效耦合段较 coupled_len 名义长约
+  wf/2（≈0.56mm/λ/4≈3%）；两近端馈线端面隔 d=w+s 相对（端射缝隙并联于
+  主耦合路径，fF 级）——详见发射器 docstring。
+
+todo_note: |
+  落地后待验证（发射器已落地，以下为真机冒烟前自查项）：
+  1. 细缝 82µm 在 EDB 版图通道的可表达性与 AEDT 网格自适应行为（EDB 无
+     openEMS NEAR 网格下限问题，但需真机验证）；
+  2. wave_port 水平扩展因子自洽——发射器已落地但未带 power_divider 同款
+     gap 交叠守卫（W4 守卫系功分器发射端口对口径）；静态自查=P1/P2 端口
+     对间距=coupled_len≈18.1mm、P3/P4 同理，均大于端口片宽
+     5×w_feed≈5.57mm，初判无交叠；power_divider 缺省 gap 冲突真机教训
+     （runs/edblane85/w1_smoke/REPORT.md §4.5）冒烟判读时对照，守卫推广
+     留 followUp；
+  3. 端部不连续判读口径见 geometry_note（flat cap 搭接与端射缝隙）。

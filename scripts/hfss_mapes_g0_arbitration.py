@@ -3,7 +3,7 @@
 背景（TODO 0-停止点（六轮）⑤ / followUps ②）：MAPES 装配
 Z_ALL 的全局复规范 ``g(f) = g0·exp(j·2π·f·τ)``（core/mapes.gauge_factor）互易
 原理性不可辨识；openEMS 侧直接全波腿对拍标定 g0=1.005/τ=−0.25ps 因"直接腿与
-装配腿同类探针同源偏差"被否作裁判。HFSS 是对齐基准，
+装配腿同类探针同源偏差"被否作裁判。HFSS 是对齐基准（项目规则 2026-09-08），
 本脚本在 HFSS 独立重建 Z_ALL 参考结构，仲裁 openEMS 装配列的绝对幅度。
 
 结构定义（与 openEMS 参考轮逐位同源，几何全部经 core.mapes.pixel_board_geom
@@ -206,7 +206,7 @@ def build_mapes_geometry(adapter) -> dict:
 def make_setup(adapter) -> str:
     """自适应 @3.5GHz（缺省 ΔS 0.02 / ≤12 passes）+ 1-6GHz 41 点插值扫频（同频轴）。
 
-    网格收敛自检用环境变量收紧：RFAUTO_MAPES_G0_DELTA_S /
+    网格收敛自检（项目规则 1b）用环境变量收紧：RFAUTO_MAPES_G0_DELTA_S /
     RFAUTO_MAPES_G0_MAX_PASSES；产物名后缀 RFAUTO_MAPES_G0_TAG。
     """
     import os

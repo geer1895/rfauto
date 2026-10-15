@@ -17,3 +17,36 @@ nominal_params:
   gap_mm: 0.5
   line_len_mm: 40.0
 # XC-T 锚族补挂注记: cps.eps_eff.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 共面带（CPS）：两条等宽导带共面、无地——平衡（差分）传输线，场跨中央缝
+      分布。准静态共形映射部分电容链：空气电容由保形比 r1=K(k1)/K′(k1)（k1=gap/(gap+2w)）
+      精确给出；有限厚介质超额项走 Gupta/Ghione 接地板 tanh 映射，且无地薄基板场向
+      基板外泄漏 → 等效映射板厚 h_eff=γ(εr)·h（FD 定标）；与 CPW 经 Babinet 互补对偶
+      自洽（εr=1 时 Z_CPS·Z_CPW=η0²/4 与 k 无关的恒等式）。
+    derivations:
+    - claim: 部分电容链：C = C_air + C_ε；εeff = C/C_air = 1+(εr−1)·r1/(2·r3)；有限厚超额项的 tanh 映射比 k3=tanh(πa/2h_eff)/tanh(πb/2h_eff)，γ(εr)=1+0.9014·εr^(−0.6361) 为 FD 定标单参数（C9 裁判定标，域注记随锚）
+      formula: k1 = gap/(gap+2w)；εeff = 1+(εr−1)·K(k1)K′(k3)/(K′(k1)K(k3))；h_eff = γ(εr)·h
+      source: knowledge/anchors.yaml（cps.z0_ohm/eps_eff closedform 锚——Wadell 空气线+Gupta/Ghione tanh 映射+FD 定标链全账）+ calc_families/rf_line.py（cps_analysis/cps_synthesis，_cps_ri）+ docs/rf_template_references.md（CPS 闭式出处节与互补对偶常数核实节）
+    - claim: 正确性双裁判：①Babinet 对偶恒等式——εr=1 时与仓内 CPW 式逐位满足 Z_CPS·Z_CPW=η0²/4（对 k 无关，教科书 (60π)² 系 η0 旧惯例差 0.069% 已如实注）；②Wen 半空间极限——h→∞ 时 εeff→(1+εr)/2
+      formula: Z_CPS(k)·Z_CPW(k) = η0²/4（εr=1 精确）；h→∞ ⇒ εeff→(1+εr)/2
+      source: calc_families/rf_line.py（对偶恒等式与半空间极限注记）+ docs/rf_template_references.md（互补对偶核实节）
+  sensitivity_ranking:
+  - param: gap_mm
+    order: 1
+    basis: k1=gap/(gap+2w) 直接口径——缝是场集中处，Z0/εeff 一阶强敏感
+  - param: w_mm
+    order: 2
+    basis: 经 k1 分母进入（同恒等式另一几何臂），弱于 gap 一档
+  - param: er
+    order: 3
+    basis: εeff 超额项 (εr−1)·r1/(2·r3)（经 γ(εr) 软化）
+  - param: h_mm
+    order: 4
+    basis: 有限厚超额项经 h_eff=γ(εr)·h 进入 tanh 映射（薄基板一阶）
+  - param: line_len_mm
+    order: 5
+    basis: 纯相位量（β·L）
+  quiz_refs: []

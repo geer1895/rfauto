@@ -1,0 +1,20 @@
+{
+  "scanned": 170,
+  "libs": 22,
+  "errors": 10,
+  "hits": 2,
+  "elapsed_s": 12.2,
+  "limit_hit": false,
+  "hit_list": [
+    {
+      "lcv": "Datalink_Basics_lib:output_spectrum:schematic",
+      "marker": ".xnp",
+      "n_lines": 41
+    },
+    {
+      "lcv": "ads_pelib:REMI_supply:schematic",
+      "marker": "SnP",
+      "n_lines": 9
+    }
+  ]
+}

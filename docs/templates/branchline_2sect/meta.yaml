@@ -25,3 +25,38 @@ nominal_params:
 topology: 两节分支线 3dB 正交耦合器（C4 族，Pozar 经典点）：主线 Z_a=Z0 两节 + 外支臂 (1+√2)Z0 + 中支臂 √2·Z_a²/Z0（单参数族，main_z_ratio 可调）；四角 50Ω 馈线沿 x 引出，P1 左上输入/P2 右上直通/P3 右下耦合/P4 左下隔离
 param_semantics: w_main_mm/w_out_mm/w_mid_mm=主线/外支臂/中支臂线宽（HJ 精算：50/120.71/70.71Ω），sect_len_mm=主线节长（λ/4 @εeff(Z_a)=2.8579），branch_len_mm=支臂跨度（外/中支臂 λ/4 18.7144/18.1465 的均值——两支臂 εeff 不同致 ≈±1.5% 固有二阶偏差，f0 处闭式残差 S11≈−38dB，openems_templates §C4 段首口径 2），w_feed_mm=50Ω 馈线宽
 smoke_note: 真机未跑（followUp）：预期引擎偏差项=T 结不连续性+拐角（理想闭式不含），冒烟对照 branchline 单节同门
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 两节分支线 3dB 正交耦合器：偶/奇模半电路分析下，外支臂阻抗 (1+√2)·Z0 与中支臂 √2·Z_a²/Z0 的单参数族使带宽比单节约扩 10 个百分点（±1dB 35.0%
+      vs 25.8%）。典型用于平衡放大器/移相器馈电等需宽带正交分配的场合；常见误用=沿用单节 Z0/√2 经验值填支臂——两节拓扑支臂阻抗完全不同（外支臂 120.71Ω@50Ω 系统），线宽必须按两节设计式重新综合。
+    derivations:
+    - claim: 两节对称分支导设计式（单参数族）：Z_b1=(1+√2)Z0、Z_b2=√2·Z_a²/Z0，Z_a 自由
+      formula: Z_b1 = (1+sqrt(2))*Z0 ; Z_b2 = sqrt(2)*Z_a**2/Z0
+      source: Pozar, Microwave Engineering (4th ed.), §7.5 偶/奇模推广；R. Levy & L. F. Lind, IEEE Trans. MTT-16(2)
+        1968（对称分支导综合）；docs/rf_template_references.md §13.2 已核口径（Microwaves101 同页独立印证）
+    - claim: 主线节 λ/4 电长度（名义 Pozar 经典点 Z_a=Z0 → (50,120.71,70.71)Ω）
+      formula: L = c/(4*f0*sqrt(εeff(w_main)))
+      source: 本仓 core/synthesis（forward_media 介质口径单源；docs/templates/branchline_2sect/meta.yaml param_semantics（支臂跨度=外/中支臂
+        λ/4 均值的矩形拓扑二阶折衷 ≈±1.5%））
+  sensitivity_ranking:
+  - param: sect_len_mm
+    order: 1
+    basis: 主线节 λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；登记表同值 1.0
+  - param: w_main_mm
+    order: 2
+    basis: εeff(w) 弱进入谐振+主支臂阻抗口径（R006 线宽失配坑族）；登记表 0.0406
+  - param: branch_len_mm
+    order: 3
+    basis: 支臂电长度经外/中支臂双 εeff 均值进入（无单值闭式的二阶维）
+  - param: w_out_mm
+    order: 4
+    basis: 外支臂 (1+√2)Z0=120.71Ω 线宽（HJ 综合，带宽性能的主承载档）
+  - param: w_mid_mm
+    order: 5
+    basis: 中支臂 √2·Z_a²/Z0=70.71Ω 线宽
+  - param: w_feed_mm
+    order: 6
+    basis: 50Ω 馈线匹配（弱敏感）
+  quiz_refs: []

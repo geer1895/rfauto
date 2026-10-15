@@ -1,6 +1,6 @@
 """C14 有源链路确定性内核（LNA/PA 匹配+噪声+load-pull 口径）。
 
-方案依据（续跑计划 §10.3 C14 行）:
+方案依据（延续计划 §10.3 C14 行）:
     "LNA/PA 匹配网络 EM 提取+ADS 非线性/噪声协同（场-路：EM S 参数进 ADS
     电路层）；PA 验收含 ADS 负载牵引仿真口径（谐波平衡 load-pull，无需硬件）"
 验收列: "匹配网络 EM↔ADS 联合 vs 手工口径；load-pull 等增益/等功率圈合理性"。
@@ -8,7 +8,7 @@
 本模块只放零依赖（numpy）的确定性射频内核，全部公式为教科书口径
 （Pozar《Microwave Engineering》ch.12 有源网络稳定性/增益/噪声；
 Cripps《RF Power Amplifiers for Wireless Communications》ch.3 解析
-load-pull 恒功率圈），LLM 不参与任何数值。
+load-pull 恒功率圈），LLM 不参与任何数值（项目规则 纪律 7）。
 
 口径说明:
 - 增益内核接受 2x2 S 矩阵（单频点）+ 源/负载反射系数 ΓS/ΓL；

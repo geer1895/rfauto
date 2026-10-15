@@ -2,7 +2,7 @@
 
 纯算法 numpy-only 零 IO 零外部进程（铁律 7 合规）；参照 adapters/ngsolve_modes.py
 先例不进 @register_calculator（免 #231 注册表消费者三表同步），导出函数供
-service 层直接调。规格 = 规格深案 DP-1 §2；
+service 层直接调。规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；
 判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。
 
 数学口径（推导在档，#1b 先验模型）
@@ -639,7 +639,7 @@ def _guide_list(chain: list) -> tuple[list, list]:
     返回 (elements, guides)：elements=[("J", step) | ("S", wg, L)]；
     相邻构件 guide 不衔接（缺显式 HStepJunction）显式报错。
 
-    guide 表契约（P1 缺陷根治，四一零）：按 **值语义**（frozen
+    guide 表契约（P1 缺陷根治， 四一零）：按 **值语义**（frozen
     dataclass 逐字段相等）去重与反查——链中"值相等但实例不同"的 Waveguide
     （JSON 段表逐段新造、调用方分开构造）必须命中同一 guide 序；消费端
     禁止 id() 反查（曾致 KeyError，见 solve_at_counts）。
@@ -815,8 +815,8 @@ def solve_chain(chain: list, freqs_hz, policy: ModePolicy | None = None) -> Solv
 
 # ── DP-1 风险分流④：G1 触发判定与膜片精化对照归档（df7_dp1r4） ─────────────────
 #
-# 上游终态（runs/df6_dp1p3/g1_verdict.json，四二三）：膜片绝对值
-# UNDECIDABLE→规格风险分流④（规格深案 DP-1 §5）
+# 上游终态（runs/df6_dp1p3/g1_verdict.json， 四二三）：膜片绝对值
+# UNDECIDABLE→规格风险分流④（docs/plan_deepdive_specs_20260924.md DP-1 §5）
 # 登记 followUp。本段为**最小诚实交付**（分支选择树与出处核查见
 # runs/df7_dp1r4/criteria.md §1，先写死后动工 #122）：
 # - 触发判定 helper：判据=scripts/df6_dp1p3_judge.py summarize() 逐位同式

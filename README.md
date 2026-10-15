@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-22300%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-25400%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -21,14 +21,14 @@ whole pipeline through MCP, under one hard rule:
 > deterministic kernel or solver — never by the LLM.**
 
 It drives **16 EM/EDA engines** behind one interface, ships
-**71 parameterized device templates** with built-in physics checks, and
-exposes **258 CLI commands** and **152 MCP tools** (+7 resources) — kept
-honest by **22300+ unit tests** that run without any commercial license.
+**72 parameterized device templates** with built-in physics checks, and
+exposes **269 CLI commands** and **152 MCP tools** (+9 resources) — kept
+honest by **25400+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 100 (with experimental 101)` · `TEMPLATE_META 71` ·
-`EXPECTED_TEMPLATES 71` · `ANCHORS 60` · CLI commands 258 (leaves) ·
-(152 MCP tools + 7 resources)
+`CALCULATOR_REGISTRY 204 (with experimental 205)` · `TEMPLATE_META 72` ·
+`EXPECTED_TEMPLATES 72` · `ANCHORS 75` · CLI commands 269 (leaves) ·
+(152 MCP tools + 9 resources)
 <!-- numbers-end -->
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
@@ -104,7 +104,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 152 (+7 resources) | CLI commands 258 (leaves) | CALCULATOR_REGISTRY 100 [with experimental 101] | device templates 71 | anchors 60
+**Scale numbers**: MCP tools 152 (+9 resources) | CLI commands 269 (leaves) | CALCULATOR_REGISTRY 204 [with experimental 205] | device templates 72 | anchors 75
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start
@@ -115,7 +115,7 @@ No commercial tools needed — the built-in fake solver covers the whole core.
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"          # or: uv sync --extra dev
 
-# run the test suite (~22300 tests, no EDA required)
+# run the test suite (~25400 tests, no EDA required)
 python -m pytest tests/unit -q
 
 # check which solvers/licenses are visible on your machine

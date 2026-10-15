@@ -1,6 +1,6 @@
 """EM-10 标准限值机读库统一：统一 schema + 三适配器 + 查询（事实兼容零迁移）。
 
-规格：研究扩充 round17 EM-10 段——统一 schema
+规格：docs/research_expansion_20261002_round17.md EM-10 段——统一 schema
 {standard,port,radius,detector,segments,source,retrieved}（emi_filter.segments
 事实兼容零迁移）。本模块是三个既有限值文件的**统一机读写面**：
 

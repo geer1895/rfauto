@@ -12,7 +12,7 @@ max_examples=20，控单元门预算）：
   文法（前缀计数=circuit 顺序、数值 .12g 往返、零归一 "0"）、V 源
   SIN TD 相位换算自洽（td·f0·360 = −(phase+90)）+ ngspice-45.2 实测
   独立锚（test_td_phase_conversion_ngspice_measured_anchor，证据
-  runs/spice_td_anchor_20260929）、结构行
+  runs/spice_td_anchor_20260929/）、结构行
   （.tran/.four/.meas/.end）、双次渲染逐字节幂等；
 - netlist 链输出行文法（spice_netlist.parse_ngspice_wrdata_ac）：策略生成
   wrdata 文本→解析**精确**回收（repr 全精度逐位）+ 结构负例（行列残缺/

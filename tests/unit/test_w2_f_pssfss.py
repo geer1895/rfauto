@@ -1,8 +1,11 @@
 """W2-F（EC-20 PyPSSFSS 严格快通道）域面测试。
 
-纪律（#139）：引擎面全部 monkeypatch/mock——本文件零网络零 Julia 调用；
-真编译真跑只走 scripts/pssfss_ms_judge.py 与 runs/w2_phase2/w2f/ 冒烟脚本
-（opt-in）。确定性钉面：
+纪律（#139）：引擎面全部 monkeypatch/mock——本文件缺省零网络零 Julia
+调用；真编译真跑只走 scripts/pssfss_ms_judge.py 与 runs/w2_phase2/w2f/
+冒烟脚本（opt-in）。唯一例外=TestEngineCrossGeometryAudit（W7-B
+cross_sheet_spec followUp 的端到端形状审计，双 skipif 门：pypssfss 缺装
+或 RFAUTO_PSSFSS_ENGINE_AUDIT≠1 即 skip，缺省 unit 门保持零 Julia）。
+确定性钉面：
 1. 几何映射纯函数（cross_sheet_spec/jcross_pixel_mask/patch_sheet_spec/
    strata_order/resolve_geometry）——与仓内可复跑裁判 judge_pssfss.jl 逐
    构造参数同源（#154 语义逐对）；
@@ -17,7 +20,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
+from importlib.util import find_spec
 from typing import Any
 
 import numpy as np
@@ -33,6 +38,7 @@ from rfauto.adapters.em_solver_base import (
 from rfauto.adapters.pssfss_adapter import (
     PssfssAdapter,
     PssfssError,
+    audit_sheet_geometry,
     cross_sheet_spec,
     jcross_pixel_mask,
     judge_ms_cross,
@@ -68,9 +74,12 @@ class TestRegistration:
         reg = EMSolverRegistry()
         pa.register_pssfss(reg)
         assert reg.lookup(EMSolverType.PSSFSS) is PssfssAdapter
-        # 显式实例零全局污染（观测面隔离契约）
-        assert get_global_registry().lookup(EMSolverType.PSSFSS) is not None \
-            or True  # 全局键由包导入链保证，这里只钉显式通道行为
+        # 全局键由包导入链保证（adapters/__init__ "导入即注册"清单，本文件
+        # 顶部 `from rfauto.adapters import pssfss_adapter` 已触发该链）——
+        # 原 `is not None or True` 恒真断言按真实语义改写为有牙断言
+        # （ge9 审查 R7 P2-3，坑 25 收尾；单选本测裸跑亦成立=导入链在本
+        # 模块顶部闭合）
+        assert get_global_registry().lookup(EMSolverType.PSSFSS) is not None
 
     def test_capability_table_single_source(self):
         """能力表 supported_templates 必须实测导入 adapter 单源（防手写
@@ -88,18 +97,45 @@ class TestRegistration:
 
 class TestCrossSheetSpec:
     def test_nominal_mapping_matches_archived_judge(self):
-        """名义映射与归档裁判 judge_pssfss.jl :78 逐构造参数同源
-        （P/L1/L2/A/B/w；A=aw/2 防重合哨兵）。"""
+        """名义映射与归档裁判 judge_pssfss.jl :78 逐构造参数同源（P/L1/L2/
+        B/w 零改），唯 A 按 W7-B followUp 改 **A=L2−ε** 哨兵——原归档
+        A=aw/2 是静默改形（面积 −38.2%，runs/seat4_cross 实测），语义
+        分歧是修法本体而非漂移（锚钉语义重推归主代理，REPORT §1.4-3）。"""
         spec = cross_sheet_spec(nominal_params("ms_cross"))
-        assert spec == {"P": 11.9917, "L1": 9.82, "L2": 0.982, "A": 0.491,
-                        "B": 0.982, "w": 0.982, "clas": "J", "ntri": 1500}
+        assert spec["P"] == 11.9917
+        assert spec["L1"] == 9.82
+        assert spec["L2"] == 0.982
+        assert spec["B"] == spec["w"] == 0.982
+        assert spec["clas"] == "J"
+        assert spec["ntri"] == 1500
+        # A=L2−ε 哨兵（相对偏移 CROSS_A_REL_OFFSET；runs/seat4_cross 实测
+        # 几何代价 0.075% 面积、谷位 11.4265 ↔ HFSS Floquet 11.4199）
+        assert spec["A"] == pytest.approx(
+            0.982 * (1.0 - pa.CROSS_A_REL_OFFSET), rel=1e-12)
         assert spec["A"] != spec["L2"]  # A==L2 → 引擎 Infs/NaNs（防重合）
 
     def test_overrides_flow_through(self):
         spec = cross_sheet_spec({"arm_len_mm": 5.0, "arm_w_mm": 1.0,
                                  "period_mm": 12.0, "ntri": 800})
-        assert spec == {"P": 12.0, "L1": 10.0, "L2": 1.0, "A": 0.5, "B": 1.0,
-                        "w": 1.0, "clas": "J", "ntri": 800}
+        assert spec["P"] == 12.0
+        assert spec["L1"] == 10.0
+        assert spec["L2"] == 1.0
+        assert spec["A"] == pytest.approx(
+            1.0 * (1.0 - pa.CROSS_A_REL_OFFSET), rel=1e-12)
+        assert spec["B"] == spec["w"] == 1.0
+        assert spec["clas"] == "J"
+        assert spec["ntri"] == 800
+
+    def test_cross_spec_true_shape_fidelity_pin(self):
+        """W7-B 两难修法回归钉：A 对 L2 的相对偏差=ε=1e-3（几何代价上界，
+        实测面积偏差 0.075%），且 A>0.99·L2——钉死旧哨兵 A=aw/2（臂带
+        减半、面积 −38.2% 的静默改形，W7-B REPORT §1.4-2）不得回归。"""
+        for aw in (0.982, 1.0, 0.5):
+            spec = cross_sheet_spec({"arm_len_mm": 4.91, "arm_w_mm": aw,
+                                     "period_mm": 11.9917})
+            rel = (spec["L2"] - spec["A"]) / spec["L2"]
+            assert rel == pytest.approx(pa.CROSS_A_REL_OFFSET, rel=1e-9)
+            assert spec["A"] > 0.99 * spec["L2"]
 
     def test_touching_and_wide_arm_rejected(self):
         with pytest.raises(PssfssError, match="不 touching"):
@@ -108,6 +144,100 @@ class TestCrossSheetSpec:
         with pytest.raises(PssfssError, match="总跨之半"):
             cross_sheet_spec({"arm_len_mm": 4.91, "arm_w_mm": 5.0,
                               "period_mm": 11.99})
+
+
+class _FakeSheetGeo:
+    """audit_sheet_geometry 的合成 RWGSheet 替身（rho/fv 属性即可）。"""
+
+
+class TestAuditSheetGeometry:
+    """离线形状审计纯函数（numpy 合成网格钉，零 Julia——#139 纪律）。"""
+
+    @staticmethod
+    def _square_sheet() -> Any:
+        """[0,2]² 四格三角网格（fv 按 Julia 1-based 惯例构造）。"""
+        rho = np.array([(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1),
+                        (0, 2), (1, 2), (2, 2)], dtype=float)
+        fv = np.array([[1, 1, 2, 2, 4, 4, 5, 5],
+                       [2, 5, 3, 6, 5, 8, 6, 9],
+                       [5, 4, 6, 5, 8, 7, 9, 8]], dtype=np.int64)
+        return _FakeSheetGeo(), rho, fv
+
+    def test_area_extents_and_health(self):
+        sheet, rho, fv = self._square_sheet()
+        sheet.rho, sheet.fv = [tuple(r) for r in rho], fv
+        aud = audit_sheet_geometry(sheet)
+        assert aud["n_nodes"] == 9
+        assert aud["n_faces"] == 8
+        assert aud["area_mm2"] == pytest.approx(4.0)
+        assert aud["zero_area_faces"] == 0
+        # 直角等腰三角（直角边 1）：最小高 = 2·(1/2)/√2 = 1/√2
+        assert aud["min_altitude_mm"] == pytest.approx(2 ** -0.5)
+        assert aud["extent_x_mm"] == pytest.approx(2.0)
+        assert aud["extent_y_mm"] == pytest.approx(2.0)
+
+    def test_degenerate_mesh_signature_detected(self):
+        """零面积面>0 = A==L2 族网格退化指纹（runs/seat4_cross 实测 504
+        面零面积 → Infs/NaNs）——审计必须显式报出而非静默。"""
+        sheet = _FakeSheetGeo()
+        sheet.rho = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)]  # 共线三点
+        sheet.fv = np.array([[1], [2], [3]], dtype=np.int64)
+        aud = audit_sheet_geometry(sheet)
+        assert aud["area_mm2"] == 0.0
+        assert aud["zero_area_faces"] == 1
+        assert aud["min_altitude_mm"] == 0.0
+
+    def test_out_of_range_fv_rejected(self):
+        sheet = _FakeSheetGeo()
+        sheet.rho = [(0.0, 0.0), (1.0, 0.0)]
+        sheet.fv = np.array([[1], [2], [5]], dtype=np.int64)  # 5 越界
+        with pytest.raises(PssfssError, match="越界"):
+            audit_sheet_geometry(sheet)
+
+
+_ENGINE_AUDIT_ENV = "RFAUTO_PSSFSS_ENGINE_AUDIT"
+
+
+def _pypssfss_present() -> bool:
+    """缺装判据走 find_spec（skipif 收集期求值——import 会启动 Julia，
+    违反本文件缺省零 Julia 纪律）。"""
+    return find_spec("pypssfss") is not None
+
+
+@pytest.mark.skipif(not _pypssfss_present(), reason="pypssfss 缺装")
+@pytest.mark.skipif(os.environ.get(_ENGINE_AUDIT_ENV) != "1",
+                    reason=f"opt-in 引擎审计（设 {_ENGINE_AUDIT_ENV}=1 开）")
+class TestEngineCrossGeometryAudit:
+    """端到端离线审计（W7-B followUp 步骤 4，opt-in 不进缺省 unit 门）：
+    cross_sheet_spec → 真引擎渲染（秒级零仿真）→ 形状对模板真形偏差钉。
+    本席 2026-10-05 实跑 PASS（runs/seat4_cross/targeted.log 附段）。"""
+
+    def test_cross_sheet_true_geometry_end_to_end(self):
+        pa.ensure_julia_depot_env()
+        import pypssfss as pf
+        from juliacall import convert as jl_convert
+        from pypssfss.pypssfss import jl
+
+        spec = cross_sheet_spec(nominal_params("ms_cross"))
+        kw = {k: v for k, v in spec.items() if k != "clas"}
+        clas = jl_convert(jl.Char, "J")
+        sheets = [pf.jerusalemcross(units=pf.mm, clas=clas, **kw)
+                  for _ in range(2)]
+        audits = [audit_sheet_geometry(s) for s in sheets]
+        L1, L2 = spec["L1"], spec["L2"]
+        true_area = 2.0 * L1 * L2 - L2 * L2  # 均匀实心十字面积
+        for aud in audits:
+            # A==L2 崩指纹（零面积面 504）不得复现
+            assert aud["zero_area_faces"] == 0
+            # A=L2−ε 几何代价实测 0.075%——门放宽到 0.2%（2.6× 余量）
+            assert aud["area_mm2"] == pytest.approx(true_area, rel=2e-3)
+            assert aud["extent_x_mm"] == pytest.approx(L1, abs=1e-9)
+            assert aud["extent_y_mm"] == pytest.approx(L1, abs=1e-9)
+        # 确定性：两次构造节点逐位一致（结构化网格无随机性）
+        r0 = np.array([tuple(r) for r in sheets[0].rho], dtype=float)
+        r1 = np.array([tuple(r) for r in sheets[1].rho], dtype=float)
+        assert r0.shape == r1.shape
+        assert np.array_equal(r0, r1)
 
 
 class TestJcrossPixelMask:

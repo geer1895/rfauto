@@ -14,6 +14,10 @@ cli / mcp_server / ui   →  service  →  linkage / optimization / models
 - 依赖只准自上而下，由 import-linter 在门上强制（"分层架构不可破"）。
 - 服务层 JSON 进出：新功能先写 service 函数，CLI/MCP 是薄壳——
   同一能力天然同时面向人（CLI/UI）与代理（MCP）。
+- UI 壳双 HTTP 面：人工工作台（`ui/server.py` 装配 + `ui/routes/`
+  分域路由 + `event_bus` 统一 SSE 事件流，loopback 8642）与程序化
+  REST 面（`service/rest_api.py`，`/api/v1`，8644）共用同一 service
+  层——域表与事件流见[分层架构「UI 架构」节](../explanation/layered-architecture.md)。
 - 可替换组件用"基类 + 注册表"模式（`EMSolverAdapter`/`EMSolverRegistry`、
   `CALCULATOR_REGISTRY`、模板注册表、agent runtime 注册表）。
 

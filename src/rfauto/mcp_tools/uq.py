@@ -24,7 +24,8 @@ def uq_yield_at(
 
     Args:
         samples_path: 校准样本集 samples.json
-        tolerances: 公差 σ {参数名: σ}
+        tolerances: 公差 σ {参数名: σ}（单位随参数轴：几何参数 mm、
+            频率参数 GHz）
         nominal: 名义点（须覆盖全部公差参数）
         n: 蒙特卡洛抽样数
         seed: 随机种子
@@ -62,7 +63,8 @@ def robustness_report(
         source: samples.json 路径 | 数据集名 | run id
         specs: 规范限列表 [{metric, op, value, weight?}]（op: max_below|min_above 等）
         profile: 公差剖面 dict（load_tolerance_profile schema，优先于 tolerances）
-        tolerances: 公差 σ {参数名: σ}（无 profile 时生效）
+        tolerances: 公差 σ {参数名: σ}（单位随参数轴：几何参数 mm、
+            频率参数 GHz；无 profile 时生效）
         n_mc: MC 抽样数
         seed: 随机种子
         kind: 代理类型 poly_ridge|nn
@@ -99,7 +101,8 @@ def uq_design_center(
 
     Args:
         samples_path: 校准样本集 samples.json
-        tolerances: 公差 σ {参数名: σ}
+        tolerances: 公差 σ {参数名: σ}（单位随参数轴：几何参数 mm、
+            频率参数 GHz）
         k_sigma: 容差盒半宽 = k_sigma·σ
         n_levels: 每维网格层数
         max_iter: 坐标搜索最大迭代
@@ -171,7 +174,9 @@ def uq_rare_yield(
 
     Args:
         samples_path: 校准样本集 samples.json
-        tolerances: 公差 σ（缺省 None=取样本集 meta 缺省）
+        tolerances: 必填公差 σ（{param: σ}；单位随参数轴：几何参数 mm、
+            频率参数 GHz；缺省/空即拒收：缺少 tolerances
+            error 信封，无样本集 meta 缺省回退路径）
         threshold: 失效阈（cost 语义，与样本集 cost 同参照）
         n_is: IS 抽样数
         seed: 随机种子

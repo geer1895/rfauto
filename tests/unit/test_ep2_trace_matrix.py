@@ -12,6 +12,11 @@
   status；断链注入负例必 FAIL；覆盖率棘轮只升不降（首批 gate≥80%/param
   ≥60%）。
 
+登记面时点（#325 适配注记）：登记面 I=EP-2 冻结面（50 文件/368 门行）；
+登记面 II=trace 扩面专项（2026-10-06，W7-A/W7-B 真机窗批证据入册：+4 座位
+参数完备件+W7-B 战役判据=55 文件/497 门行，gate 85.31%/param 69.42% 棘轮
+上抬）。本文件数字钉以登记面 II 为准，旧值留注见各断言旁注。
+
 真树锚（index/tests 缓存缺在时诚实 skip——本测试钉工作区资产，不伪造）。
 """
 
@@ -360,8 +365,12 @@ def test_real_matrix_four_way_keys_resolve():
             assert (_REPO_ROOT / lk["test_id"]).is_file(), lk
         n_links += 1
     assert n_links > 0
-    assert mtx["source"]["n_gate_rows"] == 368  # 登记面（50 文件/368 门行）稳定
-    assert mtx["source"]["n_files"] == 50
+    # 时点钉：登记面 I（EP-2，50 文件/368 门行）→ 登记面 II（trace 扩面专项
+    # 2026-10-06，commit 4ed2e209 后：+W7-A 参数完备四座位 siw/slotline/
+    # stripline_m1/m2 + W7-B 战役判据=55 文件/497 门行）；冻结面内容零改写，
+    # 旧值 368/50 留注不删（#325 时点收窄口径）
+    assert mtx["source"]["n_gate_rows"] == 497
+    assert mtx["source"]["n_files"] == 55
 
 
 @_need_real
@@ -381,7 +390,9 @@ def test_real_audit_status_pass_zero_dangling():
     assert audit["dangling"] == []
     assert audit["coverage_pct"] >= FIRST_BATCH_FLOORS["gate_min_pct"]
     assert audit["by_dim"]["param"]["pct"] >= FIRST_BATCH_FLOORS["param_min_pct"]
-    assert audit["universe"]["n_gates"] == 368
+    # 时点钉：368（登记面 I）→ 497（登记面 II，trace 扩面专项 2026-10-06，
+    # +W7-A 四座位参数完备件+W7-B 战役判据；棘轮同步上抬 85.31/69.42）
+    assert audit["universe"]["n_gates"] == 497
 
 
 def _synthetic_world():

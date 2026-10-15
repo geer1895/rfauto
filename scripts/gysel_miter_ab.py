@@ -30,7 +30,7 @@ YJ+G/2 间距=(W_F−G)/2−c=0.3067−c；c≥0.3 时后者塌到 6.7µm、c=0.
 历史参考 wall=pt3 6926s（并发批嫌疑，solo 预期更低）；单轮硬超时 90min、两轮
 名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**；共享锁 runs/.oe_collect.lock
 （O_CREAT|O_EXCL、30s 轮询、30min 上限 fail-closed、陈锁 pid 接管）+#261 命令
-行互斥查（自身名 gysel_miter_ab 不入模式—— #261 自锁坑）；断点 resume=
+行互斥查（自身名 gysel_miter_ab 不入模式——AGENTS #261 自锁坑）；断点 resume=
 collect_ok.json 逐变体幂等。
 
 判读（G11 掩码纪律）：gysel 9 列 CSV=部分矩阵——S11/S21/S31 出自激励 1 run、
@@ -503,7 +503,7 @@ CRITERIA_TEXT = """# criteria.md — C7 gysel mitered-jog 切角旋钮真机 A/B
   pt2=1702s；单轮硬超时 90min；两轮名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**。
 - 共享锁 runs/.oe_collect.lock（O_CREAT|O_EXCL、30s 轮询、30min 忙等上限
   fail-closed、陈锁 pid 接管）+#261 命令行互斥查（`_rfauto_runner|simulation.py|
-  render_script.py`；自身名 gysel_miter_ab 不入模式—— #261 自锁坑）。
+  render_script.py`；自身名 gysel_miter_ab 不入模式——AGENTS #261 自锁坑）。
 - 断点 resume=collect_ok.json 逐变体幂等；判据/产出零改写（判读独立于渲染
   侧产物）。
 
@@ -683,9 +683,10 @@ def release_lock(owner_pid: int) -> None:
 
 def oe_foreign_running() -> list[str]:
     """#261 互斥查：python 进程 CommandLine 含 `_rfauto_runner|simulation.py|
-    render_script.py`（渲染脚本名= #261 口径第二模式）。
+    render_script.py`（渲染脚本名=AGENTS #261 口径第二模式）。
 
-    自身名 gysel_miter_ab 不入模式。临时 .ps1 经 powershell -NoProfile
+    自身名 gysel_miter_ab 不入模式（AGENTS #261 自锁坑：互斥模式含自身名会
+    命中自身 shim+解释器对死锁）。临时 .ps1 经 powershell -NoProfile
     -ExecutionPolicy Bypass -File 执行（#289：内联 $_ 会被 shell 层展开）。
     探测失败=如实抛错（fail-closed）。
     """

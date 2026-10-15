@@ -588,3 +588,47 @@ class TestHdf5Insights:
         table = pq.read_table(r["parquet"])
         assert table.num_rows == h5["n_rows"] == 5
         assert table.column_names[:2] == ["run_id", "model"]
+
+
+class TestManifestAtomicWrite:
+    """审查 A3 P2-1 回归钉：manifest 单源原子写（tmp 同目录+os.replace）。
+
+    manifest 是数据集存在性事实源（_load_manifest None → 上层报"数据集
+    不存在"）——annotate/set_visibility 改写既有好档时 os.replace 被打断
+    （monkeypatch 抛 OSError 模拟改写中断），旧档必须原样完好不撕裂。
+    """
+
+    def test_replace_failure_leaves_old_manifest_intact(self, runs_env,
+                                                        monkeypatch):
+        from rfauto.service import dataset_service as ds_mod
+        from rfauto.service.dataset_insights import set_dataset_visibility
+
+        assert _materialize("demo")["ok"]
+        manifest_path = runs_env / "runs" / "datasets" / "demo" / \
+            "dataset_manifest.yaml"
+        old_text = manifest_path.read_text(encoding="utf-8")
+
+        real_replace = ds_mod.os.replace
+
+        def _boom(src, dst):
+            raise OSError("disk full（模拟改写中断）")
+
+        monkeypatch.setattr(ds_mod.os, "replace", _boom)
+        with pytest.raises(OSError):
+            set_dataset_visibility("demo", "public")
+        monkeypatch.setattr(ds_mod.os, "replace", real_replace)
+        # 旧档完好：仍可解析、内容逐字节未变（无撕裂半写档顶替入口）
+        assert manifest_path.read_text(encoding="utf-8") == old_text
+        assert _read_manifest(manifest_path)["visibility"] == "private"
+
+    def test_success_path_replaces_atomically_no_tmp_leftover(
+            self, runs_env):
+        from rfauto.service.dataset_insights import set_dataset_visibility
+
+        assert _materialize("demo")["ok"]
+        manifest_path = runs_env / "runs" / "datasets" / "demo" / \
+            "dataset_manifest.yaml"
+        r = set_dataset_visibility("demo", "public")
+        assert r["ok"], r.get("errors")
+        assert _read_manifest(manifest_path)["visibility"] == "public"
+        assert list(manifest_path.parent.glob("*.tmp")) == []

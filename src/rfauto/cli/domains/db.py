@@ -156,7 +156,7 @@ def db_analytics_attach_cmd(
 
 @db_app.command("league-rebuild")
 def db_league_rebuild_cmd(
-    runs_dir: str | None = typer.Option(None, "--runs-dir", help="runs 根目录（缺省仓内 runs）"),
+    runs_dir: str | None = typer.Option(None, "--runs-dir", help="runs 根目录（缺省仓内 runs/）"),
     db_path: str | None = typer.Option(None, "--db", help="league.duckdb 路径（缺省 runs/league.duckdb）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:

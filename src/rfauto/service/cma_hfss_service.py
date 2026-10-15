@@ -2,7 +2,7 @@
 
 定位（任务书口径）：CMA 离线档内核（core/characteristic_modes.py，H-M
 1971 口径）已立、HFSS 原生 CMA（HFSS ≥18.1 内置同一 Harrington–Mautz
-提法）为 **C 类仲裁锚**（研究扩充 round6
+提法）为 **C 类仲裁锚**（docs/research_expansion_20260926_round6.md
 中件包一：一阶 pyaedt 脚本驱动 HFSS 原生 CMA→λn/MSn→馈电位置定量论证；
 HFSS 原生为仲裁锚）。本模块落的是**接口面**：
 

@@ -71,7 +71,7 @@ def run_monitor(run_dir: str, cycle: bool = False,
     只读 run 产物，无副作用，可安全调用，无时序约束。
 
     Args:
-        run_dir: run 目录（--cycle 时为 runs 根目录，产物在目录本身或 fdtd）
+        run_dir: run 目录（--cycle 时为 runs 根目录，产物在目录本身或 fdtd/）
         cycle: true=周期面（对目录下全部 run 逐个体检并聚合红/黄/unknown
             名单与 snapshots）；false（缺省）=单 run 体检
         nr_ts: 引擎 NrTS 上限（给了才做触顶判据，取自 meta/config）

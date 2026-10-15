@@ -1,7 +1,7 @@
 """M-1 GWINC 式误差源分解账本（noise budget ledger，纯算法零 IO）。
 
-方案：研究扩充 §三 M-1（P1=框架+首批 3 源条目；
-条目扩容属 Ph4 GWINC 扩容批）。把散落在 坑号里的离散误差知识固化成
+方案：docs/research_expansion_20260926.md §三 M-1（P1=框架+首批 3 源条目；
+条目扩容属 Ph4 GWINC 扩容批）。把散落在  坑号里的离散误差知识固化成
 可计算账本：每源一个确定性贡献函数，实测总量叠加各源贡献，未解释残差=
 调查靶向行（GWINC 的"residual 指向下一步调查"语义）。
 
@@ -331,7 +331,7 @@ def budget_report_stacked(trace: BudgetTrace, path: str | Path) -> bool:
 class GridDiscretizationItem(BudgetItem):
     """网格离散误差项（#313 两点线性分解口径）。
 
-    物理口径（#313）：网格离散误差做两点线性分解
+    物理口径（#313，）：网格离散误差做两点线性分解
     dev = a*BASE + b——a 是一阶收敛斜率，b 是与 BASE 无关的地板项（z 向
     substrate_cells 分层是 ZL 与耦合度共同的分辨限制项，面内一阶外推会
     系统性低估残差）。电平来源三选一：
@@ -391,7 +391,7 @@ class GridDiscretizationItem(BudgetItem):
 class PortReferenceItem(BudgetItem):
     """端口基参考失配项（#280 伪反射口径）。
 
-    物理口径（#280）：CalcPort(ref=50) 在引擎自算
+    物理口径（#280，）：CalcPort(ref=50) 在引擎自算
     线阻抗 ZL != 50 时引入伪反射 Gamma=(Z-Z0)/(Z+Z0)（实测 ZL=45.7 Ohm
     即 -8.6% 偏差时 Gamma 约 -0.045），归一只能修伪反射不改耦合度。
     预算面以 |Gamma| 常数谱计入：z0_deviance = Z - Z0（引擎线阻抗对参考

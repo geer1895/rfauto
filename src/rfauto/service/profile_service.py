@@ -1,6 +1,6 @@
 """PR-8 剖析入口：py-spy 火焰图落 runs/（UI 面数据层，JSON 进出）。
 
-规格=研究扩充 round16 §四 PR-8："剖析入口：
+规格=docs/research_expansion_20261002_round16.md §四 PR-8："剖析入口：
 封装 py-spy（MIT）火焰图落 runs/"。本席按任务书收窄为 **UI 面**（不加
 CLI/MCP 新面）：Starlette ``/api/profile`` 薄路由（server.py）+ 仪表盘
 剖析卡消费本模块。

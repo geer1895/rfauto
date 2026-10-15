@@ -18,7 +18,7 @@ from .registry import _DEFAULT_SUB
 # 三者 ±0.4%），等效 εeff=3.28 超微带物理上限（εr=3.66，HJ 直线 2.72，
 # 直线 70.7Ω 模板 branchline/gysel 均达标）→ 判为网格伪象而非几何问题
 # （pt8 受控实验已否决结点/弯折加载假设；HFSS 仲裁 2.465GHz 背书
-# verdict.k_attribution=MESH_ARTIFACT，runs/ratrace_arbitration）。
+# verdict.k_attribution=MESH_ARTIFACT，runs/ratrace_arbitration/）。
 # 渲染半径 = 物理半径 / k，物理 R（synthesis 1.5λg=17.344）与 nominal
 # 不变、HFSS 通道不受影响（#219③：k 只落 adapter 渲染层）。
 _RATRACE_RING_MESH_K = 1.0975   # pt8 归档锚（0.4mm 档历史定标值，仅存证）

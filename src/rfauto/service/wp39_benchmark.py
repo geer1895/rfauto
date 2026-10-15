@@ -19,7 +19,7 @@ TODO/followUps）。
 
 铁律：本模块全部为确定性纯函数或注入式 evaluator 环——零真机即可
 单测（预算/判据/搜索环逻辑），真机只发生在 scripts/wp39_benchmark_run.py
-的 HFSS evaluator 里。数值只在确定性内核。
+的 HFSS evaluator 里。数值只在确定性内核（项目规则 规则 7）。
 """
 
 from __future__ import annotations
@@ -671,8 +671,8 @@ H1_DOMINANCE_MIN_GAIN_DB = 6.0
 #: |Γ| dB 夹底（Z 精确等于参考时 20·log10(0)=−inf，JSON 不可序列化）。
 GAMMA_DB_FLOOR = -200.0
 #: openEMS 通道线阻抗经验偏差（引擎 ZL 对 HJ 闭式，%）——**经验修正常数**，
-#: 来源：本项 W3② mline 真机三宽度×网格（runs/mline_pseudofloor）与 W2⑤ wstep
-#: pt3_s22_renorm（50Ω −4.7%/35Ω −3.7%）拟合；适用范围
+#: 来源：本项 W3② mline 真机三宽度×网格（runs/mline_pseudofloor/）与 W2⑤ wstep
+#: pt3_s22_renorm（50Ω −4.7%/35Ω −3.7%，）拟合；适用范围
 #: rogers4350b_h0.508 微带、官方口径网格（λ_sub/50 base，NEAR=base/4）、
 #: 2–3GHz。**不进 core/synthesis HJ 内核**（铁律 7：常数来自真机拟合并可由
 #: mline_pseudofloor_probe.py 复算）；调用方显式传入 `engine_z0_from_hj`。

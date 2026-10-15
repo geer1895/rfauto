@@ -1,5 +1,5 @@
 """MM-3 GSTC 面抗综合内核单测（core/gstc.py + metasurface_lut v2 通道，规格
-规格深案 §C-2）。
+docs/plan_deepdive_specs_20261002.md §C-2）。
 
 裁判 = 独立代数恒等式/经典文献锚，不是被测实现的自我推导（#118 家法）：
   * Eq.(19) 恒等式独立路径：k·χ_ee·(T+R+1) ≡ 2j(T+R−1)、

@@ -99,7 +99,7 @@ def _points_inside_mesh(points: np.ndarray, tris: np.ndarray) -> np.ndarray:
 
 @register_calculator(
     "cavity_perturbation_shift",
-    "矩形腔 TE101 腔体微扰频移（Pozar §6.7 / Slater 定理一阶）：腔尺寸+样品"
+    "腔体微扰法：矩形腔 TE101 腔体微扰频移（Pozar §6.7 / Slater 定理一阶）：腔尺寸+样品"
     "（轴对齐盒精确解析，或任意三角网格体素积分）→ f0、Δf/f0。小样品极限："
     "E 极大点介质 −2(εr−1)Vs/Vc、金属 −2Vs/Vc（下调）；H 极大区金属符号翻正",
     (("a_mm", "float mm 腔 x 边长（>0）"),

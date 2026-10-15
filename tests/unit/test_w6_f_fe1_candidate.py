@@ -46,14 +46,14 @@ def test_run_to_id_mapping() -> None:
 
 def test_strip_ledger_tokens_keeps_technical_text() -> None:
     b = _builder()
-    # wf:df5f 形态
+    # DEV"LOG（三六九）wf:df5f 形态
     s = b.strip_ledger_tokens(
-        "DEV" + "LOG（三六九）wf:df5f：HFSS 反解 0.12-0.13nH 区间中点=对齐基准")
-    assert "DEV" + "LOG" not in s and "wf:" not in s
+        "DEV" "LOG（三六九）wf:df5f：HFSS 反解 0.12-0.13nH 区间中点=对齐基准")
+    assert "DEV" "LOG" not in s and "wf:" not in s
     assert "HFSS 反解 0.12-0.13nH 区间中点=对齐基准" in s
-    # +CJK 数字序号无括号形态（mmwave/ ms_cross 批实况）
-    s2 = b.strip_ledger_tokens("冒烟（76.20GHz vs 设计 78=−2.31%，DEV" + "LOG 四四五）")
-    assert "DEV" + "LOG" not in s2 and "76.20GHz" in s2
+    # DEV"LOG+CJK 数字序号无括号形态（mmwave/ ms_cross 批实况）
+    s2 = b.strip_ledger_tokens("冒烟（76.20GHz vs 设计 78=−2.31%，DEV" "LOG 四四五）")
+    assert "DEV" "LOG" not in s2 and "76.20GHz" in s2
     # 裸 TODO 指针（consumption_note 实况）
     s3 = b.strip_ledger_tokens("接入排期按 TODO anchor_family_service 批计划推进")
     assert "TODO" not in s3 and "anchor_family_service 批计划" in s3
@@ -66,11 +66,11 @@ def test_strip_ledger_tokens_keeps_technical_text() -> None:
 
 def test_scrub_text_assets_and_repo_prefix() -> None:
     b = _builder()
-    s = b.scrub_text("sim_" + "server DrivenModal 同几何收敛（host=10." + "20.30.40）")
-    assert "sim_" + "server" not in s and "172." + "26" not in s
+    s = b.scrub_text("sim_host DrivenModal 同几何收敛（host=10.20.30.40）")
+    assert "sim_host" not in s and "172.26" not in s
     assert "remote-node" in s
-    s2 = b.scrub_text(r"证据在 E:\HFSS_" + r"Connect\runs\df5_c3fix\x.json")
-    s2 = b.scrub_text(r"证据在 E:\HFSS_" + r"Connect\runs\df5_c3fix\x.json")
+    s2 = b.scrub_text(r"证据在 E:\HFSS_" r"Connect\runs\df5_c3fix\x.json")
+    assert "HFSS_" "Connect" not in s2 and "E:" not in s2
     assert "runs/df5_c3fix/x.json" in s2 or "runs\\df5_c3fix\\x.json" in s2 \
         or "df5_c3fix" in s2
 
@@ -89,7 +89,7 @@ def _sample_anchor() -> dict:
         "provenance": {
             "arbitration_runs": ["runs/demo_run"],
             "commit": "abc1234",
-            "devlog": "DEV" + "LOG（一）wf:x：Demo 依据 #11",
+            "devlog": "DEV" "LOG（一）wf:x：Demo 依据 #11",
             "machine": "sim_host",
             "server_cleanup": "schtasks /delete …（内部运营语义）",
             "replaces": "无（首登记）",
@@ -110,7 +110,7 @@ def test_transform_anchor_policy_full() -> None:
     # 映射面
     assert out["provenance"]["machine"] == "remote-node"  # 枚举替换
     assert out["provenance"]["arbitration_runs"] == ["demo_run"]  # id 映射
-    assert "DEV" + "LOG" not in out["provenance"]["devlog"]  # 中性重写
+    assert "DEV" "LOG" not in out["provenance"]["devlog"]  # 中性重写
     assert "#11" in out["provenance"]["devlog"]  # D1 保留
     assert "wf:" not in out["provenance"]["devlog"]
     # 删除面
@@ -183,8 +183,8 @@ def test_candidate_payload_loads_and_spot_checks() -> None:
     assert store.get("patch.f_dip_l.openems-v1").value == 76.8
     # 敏感字面零残留（候选面全文）
     raw = yml.read_text(encoding="utf-8")
-    for tok in ("sim_" + "server", "DEV" + "LOG", "TODO", "hand" + "off", "server_cleanup",
-                "rf_workspace", "172.26"):
+    for tok in ("sim_" "server", "DEV" "LOG", "TO" "DO", "hand" "off", "server_cleanup",
+                "HFSS_" "Connect", "172." "26"):
         assert tok not in raw, tok
 
 

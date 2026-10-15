@@ -1,0 +1,81 @@
+# ═══ EDB 快车道模板元面（信息文档形态，不入 TEMPLATE_META 注册表）══════════
+# 本文件是 EDB 快车道发射族的元数据文档。edb_* 族不是
+# openems_templates.TEMPLATE_NOMINAL 注册模板：
+# tests/unit/test_template_meta_consistency.py 与
+# tests/unit/test_template_geometry_audit.py 的 EXPECTED_TEMPLATES（冻结
+# 72 项）不扫描本目录；scripts/build_docs_pages.build_templates_page 将
+# 非注册目录按信息文档排除（2026-10-08 同笔调整）。schema 单源=
+# src/rfauto/adapters/edb_templates/schema.py（KNOWN_TEMPLATES /
+# SPEC_SCHEMA_VERSION / validate_spec）。
+#
+# 门值口径：acceptance 全部是"离线发射层门"（发射自检与冒烟判读层的
+# offline gate）；真机求解产物的质量仲裁另有 health gate
+# （service/edb_health_gate，W3/W4 已落地：门常量按模板作用域分派，
+# 登记表 S11_DIP_DB_BY_TEMPLATE / S_WINDOW_DB_BY_TEMPLATE 为单源，
+# 改动门值读源码核对、禁止臆造物理数字）。
+#
+# 用户指南：docs/edb_lane_guide.md
+
+template: edb_branchline
+registry_status: 已落地（src/rfauto/adapters/edb_templates/branchline.py
+  emit_branchline_spec；KNOWN_TEMPLATES 成员）
+schema_version: 1
+edb_lane: EDB 快车道（PyEDB 声明式 spec 建库 + hfss_batch 批处理求解）
+f0_ghz: 2.4
+n_ports: 4
+units:
+  length: mm
+  frequency: GHz
+
+# 设计参数（emit_branchline_spec 入参；缺省值见发射器 docstring）
+params:
+- f0_ghz          # 必填，>0
+- z0_ohm          # 缺省 50.0；仅支持 50（pyedb CfgEdgePort 波端口阻抗硬编码 50Ω）
+- feed_len_mm     # 缺省 5.0（四角馈线长）
+- copper_thickness_mm  # 缺省 0.035
+- board_margin_mm      # 缺省 2.0（地板/基板相对走线足迹外扩）
+# 非"设计参数"的发射器键：stackup（层叠标量 dict）、sweep、adapt（sim_setup
+# 键，缺省 [0.7,1.3]·f0 / 401 点 interpolation；单频 f0、20 passes、ΔS=0.02）
+
+substrate:
+  name: rogers4350b_h0.508
+  er: 3.66
+  h_mm: 0.508
+  loss_tangent: 0.0037
+
+# 名义参数 @2.4GHz 缺省层叠——emit_branchline_spec 实跑产出（2026-10-08 实测，
+# 非手抄；综合单源 core.synthesis，禁手抄毫米数）
+nominal_params:
+  series_w_mm: 1.8703      # 35.355Ω 串联臂（Z0/√2）HJ 反解
+  shunt_w_mm: 1.1133       # 50Ω 并联臂/馈线 HJ 反解
+  series_len_mm: 18.0891   # λg/4 @ series 臂自身 εeff=2.9803
+  shunt_len_mm: 18.4885    # λg/4 @ shunt 臂自身 εeff=2.8530（矩形环异臂长）
+  feed_len_mm: 5.0
+  z_series_ohm: 35.3553
+
+synthesis_source: core.synthesis inverse_width/forward_media +
+  edb_templates.quarter_wave_len_mm（与 synthesize_branchline 同引擎同序；
+  单源一致性钉 tests/unit/test_edb_templates.py，舍入档容差）
+topology: 标准角馈 branchline 矩形环四臂 + 四角 50Ω 馈线，端口全部经馈线
+  引出到板内自由端（wave_port 落馈线端点；与 openEMS 渲染器
+  oe_templates/render_tl.py _branchline_lines 同一布局口径）
+port_roles: P1 输入 / P2 直通 / P3 耦合 / P4 隔离（串联臂 1-2、4-3；
+  并联臂 1-4、2-3；与 linkage.field_circuit_anchor.branchline_smatrix 一致）
+extraction: 全 S 矩阵 4 端口（批处理求解后 Touchstone .s4p，401 频点；
+  端口序=AEDT 端口号序，sNp 头 "! Port[n] = Portn" 注释存证）
+
+# 离线发射层门（W1 真机冒烟判读表；runs/edblane85/w1_smoke/REPORT.md §2.1。
+# 真机判读另有 health gate——见文件头口径注记）
+acceptance:
+  s11_db_at_f0:    {op: "<=",    bound: -15.0,      label: "|S11| 谷深"}
+  s21_db_at_f0:    {op: "in",    bound: [-3.5, -2.5], label: "3dB 直通窗"}
+  s41_db_at_f0:    {op: "<=",    bound: -20.0,      label: "隔离（S41）"}
+  sigma_max_at_f0: {op: "<=",    bound: 1.05,       label: passivity（σmax）}
+  f0_offset_pct:   {op: "abs<=", bound: 5.0,        label: "f0 偏移（S11 谷）"}
+
+# W1 真机冒烟证据注记（@2.4GHz，2026-10-09，runs/edblane85/w1_smoke/）
+w1_smoke_note: 4/5 PASS——S11 -34.22dB / S41 隔离 -33.23dB / σmax 0.9925 /
+  f_res 恰 2.400GHz 全过；S21=-3.584dB 超直通窗下沿 0.084dB 如实记 FAIL
+  （#122 不凑绿），候选归因=单频自适应 ΔS=0.02 收敛档较粗，留 HFSS 3D
+  路径对拍仲裁（runs/edblane85/w1_smoke/branchline/branchline_judgment.json）。
+  信息读数：S31=-2.87dB，S23=S32=-32.98dB（互易自洽到 1e-14）。

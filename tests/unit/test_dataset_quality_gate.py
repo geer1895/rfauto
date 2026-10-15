@@ -221,3 +221,74 @@ class TestRowsGate:
     def test_nullable_seed_skipped(self):
         r = gates_for_dataset_rows([self._row(seed=None)])
         assert r["verdict"] == GATE_PASS
+
+
+# ─── W2-TEST 直测补强：顶层守卫/别名优先级/词表补全（三态直测） ────────────────
+
+
+class TestTopLevelGuards:
+    """顶层非序列入参的早退信封（不抛、如实 FAIL）。"""
+
+    def test_curves_non_sequence_early_return(self):
+        r = curve_quality_gate("not-a-list")
+        assert r["ok"] is False
+        assert r["verdict"] == GATE_FAIL
+        assert r["n_curves"] == 0 and r["n_fail"] == 0
+        assert r["issues"] == ["curves 须为序列"]
+        assert r["schema"] == DATASET_QUALITY_SCHEMA
+        # dict 同样拒收（Mapping 不是序列）
+        assert curve_quality_gate({"freq_hz": [1e9]})["ok"] is False
+
+    def test_rows_non_sequence_early_return(self):
+        r = gates_for_dataset_rows("nope")
+        assert r["ok"] is False
+        assert r["verdict"] == GATE_FAIL
+        assert r["n_rows"] == 0
+        assert r["issues"] == ["rows 须为序列"]
+
+
+class TestAliasKeys:
+    """载荷键别名（_FREQ_KEYS/_UNIT_KEYS 优先级序）与词表补全。"""
+
+    def test_frequency_and_units_aliases_hit(self):
+        c = {"frequency_hz": [1e9, 2e9], "units": "GHz", "s11_db": [0.0, -1.0]}
+        r = curve_quality_gate([c])
+        assert r["verdict"] == GATE_PASS
+        assert r["per_curve"][0]["gates"] == {"freq": "PASS", "nan": "PASS",
+                                              "units": "PASS", "mask": "UNKNOWN"}
+
+    def test_canonical_key_wins_over_alias(self):
+        # freq_hz 与 frequency_hz 并存：canonical 优先（非单调的 canonical 触发 FAIL）
+        c = {"freq_hz": [2e9, 1e9], "frequency_hz": [1e9, 2e9],
+             "s11_db": [0.0, -1.0], "unit_freq": "Hz"}
+        r = curve_quality_gate([c])
+        assert r["verdict"] == GATE_FAIL
+        assert any("freq" in m for m in r["issues"])
+
+    def test_impedance_whitelist_full_and_case(self):
+        for u in ("ohm", "kOhm", "MOHM", "OHMS"):  # 大小写+复数词根形态
+            assert check_units(u, kind="impedance")["gate"] == GATE_PASS, u
+        assert check_units("gohm", kind="impedance")["gate"] == GATE_FAIL
+        assert check_units("siemens", kind="impedance")["gate"] == GATE_FAIL
+
+    def test_bool_in_freq_axis_rejected_as_non_numeric(self):
+        # bool 是 int 子类，必须显式排除（第 1 点非数值，索引如实）
+        r = check_frequency_axis([1e9, True])
+        assert r["gate"] == GATE_FAIL
+        assert r["issues"] == ["freq 轴第 1 点非数值"]
+        assert r["n_points"] == 2
+
+    def test_mask_mismatch_reports_n_true(self):
+        # 长度不匹配 FAIL 方向也如实带 n_true（#316 多报不放过）
+        m = check_mask([True, True, False], 2)
+        assert m["gate"] == GATE_FAIL
+        assert m["n_true"] == 2
+
+    def test_all_unknown_curve_honest_verdict(self):
+        # 只有频轴：nan/units 全 UNKNOWN → 总门 UNKNOWN 不凑 PASS（#122）
+        r = curve_quality_gate([{"freq_hz": [1e9, 2e9]}])
+        assert r["verdict"] == GATE_UNKNOWN
+        assert r["n_unknown"] == 1 and r["n_fail"] == 0
+        g = r["per_curve"][0]["gates"]
+        assert g["freq"] == "PASS" and g["nan"] == "UNKNOWN" \
+            and g["units"] == "UNKNOWN"

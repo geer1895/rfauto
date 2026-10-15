@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -142,22 +143,31 @@ def db_migrate(db_path: str | Path | None = None,
 
 
 def db_status(db_path: str | Path | None = None) -> dict[str, Any]:
-    """注册表状态盘点：文件路径、schema 版本、各表行数（文件不存在不创建）。"""
+    """注册表状态盘点：文件路径、schema 版本、各表行数（文件不存在不创建）。
+
+    非 SQLite 文件/目录路径：``exists()`` 为真即尝试打开，首次查询抛
+    ``sqlite3.DatabaseError``——按 A4 P0-2 收编为 ok=False 信封（REST 面
+    此前 500 纯文本裸崩；服务层单源，CLI/MCP 同受益）。
+    """
     path = Path(db_path) if db_path is not None else default_registry_db_path()
     base: dict[str, Any] = ok_envelope(backend="sqlite", path=str(path), exists=path.exists())
     if not path.exists():
         base.update({"schema_version": 0,
                      "tables": {t: 0 for t in REGISTRY_TABLES}})
         return base
-    db = _open_registry(path)
     try:
-        base.update({
-            "schema_version": db.current_schema_version(),
-            "tables": db.table_counts(),
-        })
-        return base
-    finally:
-        db.close()
+        db = _open_registry(path)
+        try:
+            base.update({
+                "schema_version": db.current_schema_version(),
+                "tables": db.table_counts(),
+            })
+            return base
+        finally:
+            db.close()
+    except (sqlite3.DatabaseError, OSError) as exc:
+        return error_envelope([f"注册表不可读（非 SQLite 文件或 IO 失败）: "
+                               f"{type(exc).__name__}: {exc}"])
 
 
 # ---------------------------------------------------------------------------
@@ -258,6 +268,72 @@ def db_query_safe(sql: str, params: list[Any] | tuple[Any, ...] | None = None,
         return error_envelope([f"查询被拒绝: {exc}"], sql=sql)
     except Exception as exc:  # sqlite OperationalError 等执行期错误
         return error_envelope([f"查询执行失败: {exc}"], sql=sql)
+
+
+# ---------------------------------------------------------------------------
+# registry_runs_query（runs 表只读查询单入口；R8 #7 单源地基，UI 接线后批）
+# ---------------------------------------------------------------------------
+
+_DEFAULT_RUNS_QUERY_LIMIT = 50
+
+
+def registry_runs_query(
+    *,
+    run_id: str | None = None,
+    status: str | None = None,
+    adapter: str | None = None,
+    model: str | None = None,
+    limit: int = _DEFAULT_RUNS_QUERY_LIMIT,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """runs 表只读查询（service 层单一入口，信封进出；R8-ENG1 地基件）。
+
+    过滤键（run_id/status/adapter/model）精确匹配、``?`` 绑定永不拼串
+    （标识符全部硬编码，无用户 SQL 面）；timestamp 降序。返回
+    ``{"ok", "runs", "n_rows", "truncated", "limit", "exists"}``——行形状
+    与 list_runs 契约对齐（run_id/model/adapter/status/git_sha/timestamp/
+    metrics 已解析 dict）。库文件不存在 → ok=True + exists=False + 空集
+    （与 db_status 如实口径一致，UI 空态友好）；执行失败 → ok=False 信封
+    绝不 raise（薄壳零逻辑直渲染，规则 4）。UI runs 端点消费接线归后续
+    席（R8-Top1 性能治理），本函数只立读取单源。
+    """
+    n_limit = int(limit) if limit else _DEFAULT_RUNS_QUERY_LIMIT
+    if n_limit < 1:
+        n_limit = _DEFAULT_RUNS_QUERY_LIMIT
+    truncated_requested = n_limit > _MAX_QUERY_LIMIT
+    n_limit = min(n_limit, _MAX_QUERY_LIMIT)
+    filters = {"run_id": run_id, "status": status,
+               "adapter": adapter, "model": model}
+    where = [f"{key} = ?" for key, val in filters.items() if val is not None]
+    params: list[Any] = [str(v) for v in filters.values() if v is not None]
+    sql = ("SELECT run_id, model, adapter, status, git_sha, timestamp, "
+           "metrics FROM runs")
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY timestamp DESC LIMIT ?"
+    params.append(n_limit + 1)  # 多取 1 行判截断（db_query 同款）
+    path = Path(db_path) if db_path is not None else default_registry_db_path()
+    if not path.exists():
+        return ok_envelope(runs=[], n_rows=0, truncated=False, limit=n_limit,
+                           exists=False, note=f"注册表文件不存在: {path}")
+    try:
+        db = _open_registry(path)
+        try:
+            rows = db.query(sql, tuple(params))
+        finally:
+            db.close()
+        truncated = len(rows) > n_limit or truncated_requested
+        runs = [{
+            "run_id": r[0], "model": r[1], "adapter": r[2], "status": r[3],
+            "git_sha": r[4], "timestamp": r[5],
+            "metrics": json.loads(r[6]) if r[6] else {},
+        } for r in rows[:n_limit]]
+        return ok_envelope(runs=runs, n_rows=len(runs), truncated=truncated,
+                           limit=n_limit, exists=True)
+    except (sqlite3.Error, json.JSONDecodeError, OSError) as exc:
+        return error_envelope(
+            [f"registry_runs_query 执行失败: {type(exc).__name__}: {exc}"],
+            path=str(path))
 
 
 # ---------------------------------------------------------------------------

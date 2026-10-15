@@ -291,7 +291,7 @@ def build_template(adapter, template: str) -> dict[str, Any]:
 def make_setup(adapter) -> str:
     """自适应 @2.5GHz + 2-3GHz 401 点插值扫频（同 openEMS 频轴）。
 
-    网格收敛自检用环境变量收紧：RFAUTO_C4_ARB_DELTA_S /
+    网格收敛自检（AGENTS 1b）用环境变量收紧：RFAUTO_C4_ARB_DELTA_S /
     RFAUTO_C4_ARB_MAX_PASSES；产物名后缀 RFAUTO_C4_ARB_TAG。
     """
     import os

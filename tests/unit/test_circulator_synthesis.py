@@ -1,4 +1,4 @@
-"""F-K.B 环形器综合内核单测（研究扩充 round6 §二 F-K.B）。
+"""F-K.B 环形器综合内核单测（docs/research_expansion_20260926_round6.md §二 F-K.B）。
 
 裁判口径（#118：独立来源/双路径，不自证）：
 - Polder 全式的解析极限与共振闭式按两条代数路径离线推导（环行支分解
@@ -541,7 +541,7 @@ def test_service_envelope_ok_json():
         3.0 * 2.0 * math.pi * 10.0e9 / (GYRO * MU0),
         delta_h_a_per_m=500.0, z_junction_ohm=120.0,
     )
-    assert env["ok"] is True and env["schema_version"] == "1.0"
+    assert env["ok"] is True and env["schema_version"] == "1.1"
     assert set(env["data"]) == {"polder", "mu_eff", "disk", "s_matrix", "quarter_wave", "provenance"}
     assert env["data"]["quarter_wave"]["z_t_ohm"] == pytest.approx(math.sqrt(120.0 * 50.0), rel=1e-12)
     payload = json.dumps(env)  # 不抛即通过（无 NaN/complex 泄漏）
@@ -551,11 +551,38 @@ def test_service_envelope_ok_json():
 def test_service_envelope_error_no_raise():
     """非法入参 → ok=False 显式错误信封（不抛、无部分产出）。"""
     env = svc.circulator_disk_design(10.0e9, 15.0, -1.0, 100.0)
-    assert env["ok"] is False and "ms_a_per_m" in env["error"]
+    assert env["ok"] is False and "ms_a_per_m" in env["errors"][0]
     assert env["error_type"] == "ValueError"
     env2 = svc.circulator_disk_design(10.0e9, 15.0, _MS_HALF, _HI_1GHZ, h_sat_a_per_m=1e12)
-    assert env2["ok"] is False and "未饱和" in env2["error"]
+    assert env2["ok"] is False and "未饱和" in env2["errors"][0]
     json.dumps(env)  # 错误信封同样 JSON 可序列化
+
+
+def test_service_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（1.0→1.1，2026-10-14 ENGH）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version/error_type 诊断键保留；三入口（disk_design/
+    lumped_lc/bandwidth_reference）同形。
+    """
+    from rfauto.service.circulator_synthesis_service import (
+        CIRCULATOR_SERVICE_SCHEMA_VERSION,
+    )
+
+    assert CIRCULATOR_SERVICE_SCHEMA_VERSION == "1.1"
+    env = svc.circulator_disk_design(10.0e9, 15.0, -1.0, 100.0)
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version", "error_type"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    assert env["schema_version"] == "1.1"
+    assert env["error_type"] == "ValueError"
+    env_lc = svc.circulator_lumped_lc(0.0, 5.0e-12)
+    env_bw = svc.circulator_bandwidth_reference(-1.0)
+    for e in (env_lc, env_bw):
+        assert e["ok"] is False and isinstance(e["errors"], list)
+        assert e["schema_version"] == "1.1"
+    json.dumps([env, env_lc, env_bw])
 
 
 def test_service_lumped_and_bandwidth_envelopes():
@@ -569,3 +596,60 @@ def test_service_lumped_and_bandwidth_envelopes():
     bw = svc.circulator_bandwidth_reference(3.0e9)
     assert bw["ok"] is True and bw["data"]["bandwidth_reference"]["unverified"]
     json.dumps([env, bw])
+
+
+# ─── 13. W2-TEST 直测补强：截止带回退/无部分产出/类型错误通道 ─────────────────
+
+
+def test_service_cutoff_band_falls_back_to_ideal_matrix():
+    """μ_eff 截止带（ω=5ω_h@1GHz 锚）：损耗口径不适用 → 如实回退理想 S 矩阵。
+
+    独立期望值（#118）：截止带 magnetic_loss_fraction 显式 ValueError
+    （Re(μ_eff)≤0），service 转 loss=None → ideal_junction_s_matrix——
+    total_energy=3.0（无耗三口恰满）、首行 [0,0,1] 理想环行；
+    负例对照：同参数 f=ω_h 非截止带走耗散通道（loss_frac>0、te<3）。
+    """
+    hi = 3.0 * 2.0 * math.pi * 1.0e9 / (GYRO * MU0)
+    ms = 1780.0 * circ.GAUSS_TO_A_PER_M
+    env = svc.circulator_disk_design(5.0 * _WH_1GHZ / (2.0 * math.pi), 15.0, ms, hi,
+                                     delta_h_a_per_m=500.0)
+    assert env["ok"] is True
+    assert env["data"]["mu_eff"]["cutoff"] is True
+    sm = env["data"]["s_matrix"]
+    assert sm["loss_frac"] == 0.0
+    assert sm["total_energy"] == pytest.approx(3.0, rel=1e-12)
+    assert sm["matrix"][0] == [{"re": 0.0, "im": 0.0}, {"re": 0.0, "im": 0.0},
+                               {"re": 1.0, "im": 0.0}]
+    # 负例对照：非截止带同参数 → 耗散矩阵通道（loss_frac 如实非零）
+    env2 = svc.circulator_disk_design(1.0e9, 15.0, ms, hi, delta_h_a_per_m=500.0)
+    assert env2["ok"] is True
+    assert env2["data"]["mu_eff"]["cutoff"] is False
+    assert env2["data"]["s_matrix"]["loss_frac"] > 0.0
+    assert env2["data"]["s_matrix"]["total_energy"] < 3.0
+    json.dumps([env, env2])
+
+
+def test_service_quarter_wave_invalid_no_partial_data():
+    """λ/4 段入参非法（0/bool）→ ok=False 且**无部分产出**（无 data 键）。"""
+    hi = _HI_1GHZ
+    ms = _MS_HALF
+    env = svc.circulator_disk_design(10.0e9, 15.0, ms, hi, z_junction_ohm=0.0)
+    assert env["ok"] is False
+    assert "z_junction_ohm" in env["errors"][0]
+    assert "data" not in env  # 主设计已算成也不带半截载荷（不部分产出）
+    env_bool = svc.circulator_disk_design(10.0e9, 15.0, ms, hi, z_junction_ohm=True)
+    assert env_bool["ok"] is False
+    assert "bool" in env_bool["errors"][0]
+    json.dumps([env, env_bool])
+
+
+def test_service_type_error_channel_and_bandwidth_reference_guards():
+    """f_hz=None → TypeError 通道（error_type 如实）；带宽登记面 f≤0 拒收。"""
+    env = svc.circulator_disk_design(None, 15.0, _MS_HALF, _HI_1GHZ)
+    assert env["ok"] is False
+    assert env["error_type"] == "TypeError"
+    for bad_f in (-1.0, 0):
+        bw = svc.circulator_bandwidth_reference(bad_f)
+        assert bw["ok"] is False
+        assert "必须 >0" in bw["errors"][0]
+    json.dumps(env)

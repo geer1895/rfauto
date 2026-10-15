@@ -26,6 +26,8 @@ import json
 
 import typer
 
+from rfauto.service.envelope import error_envelope
+
 fab_app = typer.Typer(help="HFSS → 可机加交付包（STEP/x_t + DXF 图 + 审计门禁，T43）")
 
 # VI-5 W2-C：归一兼容旗标（fab 九命令缺省即 JSON 信封，旗标两形态同输出）
@@ -91,8 +93,9 @@ def go_cmd(
     else:
         # VI-5 W2-C：--json 下入参缺失也走信封（退出码 2 语义保持）
         if json_output:
-            typer.echo(json.dumps({"ok": False, "errors": ["需要 --vars 或 --project"]},
-                                  ensure_ascii=False, indent=2))
+            typer.echo(json.dumps(
+                error_envelope("需要 --vars 或 --project"),
+                ensure_ascii=False, indent=2))
         else:
             typer.echo("需要 --vars 或 --project", err=True)
         raise typer.Exit(code=2)

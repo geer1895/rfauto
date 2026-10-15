@@ -8,7 +8,7 @@
 
 配对优先级（任务书 D12）：patch 同几何对 > 0.1⑤ E4 wilkinson > ratrace。
 每个候选都做**文件存在性 + 几何一致性**核查，缺失/不同几何一律如实记录，
-不做跨几何拼接。
+不做跨几何拼接（AGENTS 1b：模型不对齐的比较没有意义）。
 
 本仓实测（脚本运行时重新核查，结论落 pair_probe.json）：
 1. patch：HFSS 曲线存在（runs/wp39_probe_patch/probe.s1p）；openEMS 侧

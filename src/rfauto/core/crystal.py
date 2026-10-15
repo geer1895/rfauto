@@ -1,4 +1,4 @@
-"""石英晶体族内核（PK-3，规格深案 §A-3）。
+"""石英晶体族内核（PK-3，docs/plan_deepdive_specs_20261002.md §A-3）。
 
 纯算法零 IO 零外部进程（铁律 7 合规）；参照 core/acoustic_resonator.py
 （PK-1）与 core/baw_ladder.py（PK-2）先例**不进** @register_calculator

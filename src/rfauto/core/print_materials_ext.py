@@ -1,6 +1,6 @@
 r"""PK-9 打印介质数据集扩展（PRINT_MATERIALS 扩 DLP 树脂/尼龙）。
 
-规格：研究扩充 round14 §五 PK-9（P3/S-M）：
+规格：docs/research_expansion_20261002_round14.md §五 PK-9（P3/S-M）：
 "PRINT_MATERIALS 扩 DLP 树脂/尼龙 infill（DLR/IMEKO 公开值）"。
 
 **零值诚实登记（#118/#df6-⑨ 引用腐坏纪律）**：规格点名的 DLR/IMEKO

@@ -16,3 +16,41 @@ nominal_params:
   w1_mm: 1.1134
   w2_mm: 1.897
   line_len_mm: 40.0
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 微带宽度阶跃=两段各自综合到目标阻抗（50Ω/35Ω 档）的传输线在阶跃
+      面直连：宽窄同面共线使结区高阶模/储能是高阶小量，主反射=特性阻抗失配的
+      界面反射 |Γ|=|Z2−Z1|/(Z2+Z1)（准静态、近似与频率无关的地板）；阶跃非
+      谐振——无带内调谐自由度，两段各半 line_len 只贡献相位。模板裁判=skrf
+      两段理想 TL 级联 HJ 闭式（确定性裁判，engine_benchmark 同型）。
+    derivations:
+    - claim: 界面反射=阻抗失配地板：行波在特性阻抗 Z1→Z2 界面的反射系数只由
+        两段 Z0 之比决定；两段线宽各自 microstrip_synthesis 求逆（brentq+
+        回代），数值一律内核键产出
+      formula: Γ = (Z2−Z1)/(Z2+Z1)；wi = microstrip_synthesis(zi)；
+        Zi = microstrip_analysis(wi)
+      source: core/synthesis.py（synthesize_wstep_model 两段 inverse_width+|Γ|
+        同式单源）+ calc_families/rf_line.py（microstrip_synthesis/
+        microstrip_analysis 键）+ Pozar, Microwave Engineering (4th ed.), Ch.2
+        （传输线理论：反射系数定义）
+    - claim: 级联裁判与相位面：两段各半长的 ABCD 级联给出全结构 S 参数（理想
+        TL 级联=确定性裁判）；line_len 纯相位不进 |Γ|——登记表弹性
+        line_len=0 与该口径一致
+      formula: 级联 [ABCD] = [A1 B1; C1 D1]·[A2 B2; C2 D2]；
+        φi = βi·(line_len/2)
+      source: core/synthesis.py（synthesize_wstep_model 锚判据=skrf 级联 HJ
+        闭式）+ docs/templates/wstep/meta.yaml（extraction 锚=skrf 级联 HJ 闭式
+        裁判）+ Pozar, Microwave Engineering (4th ed.), Ch.4（ABCD 矩阵级联）
+  sensitivity_ranking:
+  - param: w2_mm
+    order: 1
+    basis: 高阻段（窄线）|∂lnZ/∂lnw| 更大——Γ 分子 Z2 通道主维；登记表
+      1.96259
+  - param: w1_mm
+    order: 2
+    basis: 低阻段 Z1 通道（同式对称、弹性略低）；登记表 1.708031
+  - param: line_len_mm
+    order: 3
+    basis: 纯相位量不进界面反射（登记表 0）
+  quiz_refs: []

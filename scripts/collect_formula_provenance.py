@@ -1,4 +1,4 @@
-"""KD-1 公式 provenance 收集器薄壳（specs 研究扩充 round16 KD-1）。
+"""KD-1 公式 provenance 收集器薄壳（specs docs/research_expansion_20261002_round16.md KD-1）。
 
 扫描/渲染/schema 单源在 src/rfauto/core/formula_provenance.py——本脚本只做
 CLI 编排：读 manual_entries（人工补录区逐字保留）→ 仓级扫描 → 渲染 → 写

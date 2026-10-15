@@ -63,7 +63,7 @@ class RecipeSandbox:
         draft = self.draft_path(recipe_path)
         if draft.exists():
             return ok_envelope(draft=str(draft), already_staged=True)
-        # copyfile 绕不过 yaml 出口，先行校验草稿目标（沙箱根禁指向 recipes）
+        # copyfile 绕不过 yaml 出口，先行校验草稿目标（沙箱根禁指向 recipes/）
         from rfauto.infra.recipe_guard import check_recipe_write_target
 
         check_recipe_write_target(draft)

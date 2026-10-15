@@ -2,22 +2,80 @@
    本文件 = 外壳（导航/工具函数/3D）；各页面逻辑在 pages.js。 */
 import * as THREE from "three";
 import { initPages, showPage, esc } from "./pages.js";
+// aurora72 A4-C（R6 审计 R-2）：parseRoute（两级 hash 解析纯函数）与
+// routeOpen（参数页 opener 注册表分发）单源在 pages.js——本壳只持策略面。
+// （独立 import 声明：上行形态被 test_ui_xss_escape 源码钉逐字，勿合并。）
+import { parseRoute, routeOpen } from "./pages.js";
 // PR-3 PlotCard：option 构造单源在 plotcard.js（buildEChartOption 与
 // 迁移前 drawEChart 逐字节等价，golden 快照钉 runs/pr34/），drawEChart
 // 与 plotCard 共用；drawLineChart/Smith/3D 自研管线不动。
 import { buildEChartOption, plotCard } from "./plotcard.js";
+// aurora72 A5-B（R6 审计 R-4）：主题判定/双档调色板单源在 theme.js——
+// body.light 现取 bodyIsLight()、CHART_COLORS 档位经 chartPalette(light)、
+// 自研 canvas 管线双档色经 themePick(light, THEME_COLORS.x)（SCENE3D 两档
+// 3D 场景色暂留本壳：test_ui_nav_focus 源码钉逐字钉住其消费位，A5-B 不动）。
+import {
+  bodyIsLight, chartPalette, themePick, THEME_COLORS,
+} from "./theme.js";
+// UI-R12（aurora_d 前端深化席）：统一 API 请求层单源在 pages/api.js——
+// 本壳 api（T.api 载体）保形消费 apiRequestInit（token/init 归一单源，
+// 无 token 无 opts 时逐字节等价），activate 消费 abortViewSignals 做
+// 切页在途请求收束（仅影响显式接 viewSignal 的迁移视图）。
+import { apiRequestInit, abortViewSignals, setApiNotifier } from "./pages/api.js";
 
 const $ = (id) => document.getElementById(id);
+/* W2-C 全局兜错（R1 审计 P1-5）：网络断/服务器 5xx 非 JSON 时 fetch 或
+   r.json() 会抛错——此前未捕获 → unhandled rejection + 页面停在"加载中"
+   静默空白。兜底形状 {ok:false, error, errors} 与 pages.js 两种消费判法
+   对齐：`if (!d.ok)` 分支读 d.error 或 (d.errors||[]).join("; ")；无 .ok
+   分支的聚合页（dashboard）用 `d.runs || []` 兜底，undefined 字段安全。
+   msg 已存在于本文件——失败必须可见，不只返回形状。 */
 export const api = async (url, opts) => {
-  const r = await fetch(url, opts);
-  return r.json();
+  try {
+    const r = await fetch(url, apiRequestInit(opts)); // UI-R12：init 归一单源（token 透传；缺省零变化）
+    return await r.json(); // await 留在 try 内：json 解析失败同样入 catch
+  } catch {
+    const m = "请求失败（网络或服务器异常）";
+    try { msg(m, false); } catch { /* msg 载体缺席（异常部署）时静默 */ }
+    return { ok: false, error: m, errors: [m] };
+  }
 };
 export const $id = $;
+/* W8-B P1-2（2026-10-12）：err 消息此前无撤销路径——一次 500 的残影横跨
+   页面滞留数分钟误导当前状态。错误 toast 8s 后自动清除（阅读时长取 ok 的
+   两倍），成功仍 4s；单定时器句柄：新消息先清旧定时器，否则 ok 的 4s
+   撤销会把后到的 err 提前清掉。 */
+let _msgTimer = null;
 export function msg(text, ok) {
   const el = $("msg");
   el.textContent = text;
   el.className = "msg " + (ok ? "ok" : "err");
-  if (ok) setTimeout(() => (el.className = "msg"), 4000);
+  if (_msgTimer) clearTimeout(_msgTimer);
+  _msgTimer = setTimeout(() => {
+    el.className = "msg";
+    _msgTimer = null;
+  }, ok ? 4000 : 8000);
+}
+
+/* W2-C 切页公告（R1 审计 P1-1）：视觉隐藏的 aria-live region（自建节点，
+   不动 index.html）。不用 #msg——页名公告是常态导航反馈，走 #msg 会闪
+   红/绿 toast。先清空再延迟写入：同页名重复切换也能触发读屏播报。
+   公告是增强面，任何异常不得阻塞切页（#105 best-effort 纪律）。 */
+let _live = null;
+function announce(text) {
+  try {
+    if (!_live) {
+      _live = document.createElement("div");
+      _live.setAttribute("role", "status");
+      _live.setAttribute("aria-live", "polite");
+      _live.style.cssText =
+        "position:absolute;width:1px;height:1px;margin:-1px;padding:0;" +
+        "border:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;";
+      document.body.appendChild(_live);
+    }
+    _live.textContent = "";
+    setTimeout(() => { _live.textContent = text; }, 30);
+  } catch { /* 读屏不可用时静默 */ }
 }
 
 /* ── 导航 ── */
@@ -25,7 +83,23 @@ const navBtns = [...document.querySelectorAll("#nav button")];
 for (const b of navBtns) {
   b.onclick = () => showPage(b.dataset.v);
 }
+/* W2-C 跳过链接行为（R1 审计 P2-4）：锚点 <a class="skip-link"> 与目标
+   id=main-content 的本体在 index.html（W2-A 席）；本壳只绑行为并把焦点
+   真正落到主内容（main 默认不可聚焦，须补 tabindex=-1）。锚点缺席时
+   静默不绑（零副作用），W2-A 落锚后即自动生效。 */
+const _skip = document.querySelector("a.skip-link");
+if (_skip) {
+  _skip.addEventListener("click", (e) => {
+    const target = document.getElementById("main-content") ||
+      document.querySelector("main");
+    if (!target) return;
+    e.preventDefault();
+    if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  });
+}
 function activate(v) {
+  abortViewSignals(); // UI-R12：切页收束上一页在途请求（仅迁移视图的 viewSignal 受影响）
   for (const b of navBtns) {
     b.classList.toggle("active", b.dataset.v === v);
     // PR-1 a11y：当前页 aria-current（读屏可知导航位置）
@@ -36,6 +110,33 @@ function activate(v) {
   }
   for (const s of document.querySelectorAll("main > section"))
     s.style.display = s.id === "view-" + v ? "" : "none";
+  /* W2-C 切页焦点管理（R1 审计 P1-1）：切页后键盘/读屏焦点随页走——新页
+     h2.page 动态补 tabindex=-1 聚焦（页标题单源在 pages.js 各渲染器，
+     本壳不维护第二份清单），并公告页名。setTimeout(0)：showPage 在
+     activate 之后才同步渲染视图 innerHTML，宏任务时标题已落在 DOM。 */
+  setTimeout(() => {
+    const h = document.querySelector('#view-' + v + ' h2.page');
+    if (!h) { _lazyFocus.pending = v; return; } // UI-R12：懒加载模块在途→渲染后补焦
+    if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+    h.focus({ preventScroll: true });
+    announce(h.textContent.replace(/\s+/g, " ").trim());
+  }, 0);
+}
+
+/* UI-R12 懒加载补焦桥：视图模块动态 import 在途时上方 setTimeout(0) 找不到
+   h2.page——挂起页键于 _lazyFocus（对象经工具集注入后与 pages.js 共享同一
+   引用），渲染完成后由 pages.js _lazyView 包装器调 pageFocusAfterRender
+   补焦+公告（与上方 timeout 同一套面板；模块缓存命中路径不触发，行为与
+   旧一致）。 */
+const _lazyFocus = { pending: null };
+function pageFocusAfterRender(v) {
+  const h = document.querySelector('#view-' + v + ' h2.page');
+  if (!h) return false;
+  if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+  h.focus({ preventScroll: true });
+  announce(h.textContent.replace(/\s+/g, " ").trim());
+  _lazyFocus.pending = null;
+  return true;
 }
 
 /* 通用小部件：徽章（text 一律 esc 转义后再插值——AU-4：badge 是 API 数据
@@ -44,13 +145,10 @@ export const badge = (text, cls) => `<span class="badge ${cls}">${esc(text)}</sp
 export const passBadge = (p) =>
   p === true ? badge("PASS", "ok") : p === false ? badge("FAIL", "err") : badge("N/A", "muted");
 
-/* PR-1 对比度：图表系列调色板按主题分档（核算见 runs/pr1_contrast/）。
-   深色档对 --plot-bg #0d1118、浅色档对白底逐色 ≥3:1（WCAG 图形）。
-   显式 s.color 仍优先——调色板只兜底缺省系列。 */
-const CHART_COLORS = {
-  dark: ["#4fc3f7", "#ffb74d", "#81c784", "#e57373", "#ba68c8"],
-  light: ["#0277bd", "#b26a00", "#276b2c", "#c62828", "#6a1b9a"],
-};
+/* PR-1 对比度：图表系列调色板按主题分档——单源已收编 theme.js（aurora72
+   A5-B，R6 审计 R-4），本壳经 chartPalette(light) 消费（dark/light 档取值、
+   ocean 共用 dark 档的已固化结论与对比度核算见 theme.js 头注与
+   runs/pr1_contrast/）。显式 s.color 仍优先——调色板只兜底缺省系列。 */
 
 /* 通用折线图（canvas，多曲线 + 主题自适应网格） */
 export function drawLineChart(canvas, series, labels) {
@@ -58,9 +156,9 @@ export function drawLineChart(canvas, series, labels) {
   canvas.width = canvas.clientWidth || 600;
   canvas.height = canvas.clientHeight || 260;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const light = document.body.classList.contains("light");
-  const gridColor = light ? "#dde3ec" : "#1c2331"; // 网格线=装饰性（读数靠刻度文字）
-  const readColor = light ? "#5f6a80" : "#7d8aa0"; // 刻度文字：双主题对底 ≥4.5:1
+  const light = bodyIsLight();
+  const gridColor = themePick(light, THEME_COLORS.grid); // 网格线=装饰性（读数靠刻度文字）
+  const readColor = themePick(light, THEME_COLORS.read); // 刻度文字：双主题对底 ≥4.5:1
   if (!series.length || !series[0].x.length) return;
   // PR-1 a11y：canvas 图像语义
   canvas.setAttribute("role", "img");
@@ -80,7 +178,7 @@ export function drawLineChart(canvas, series, labels) {
     ctx.moveTo(L, gy); ctx.lineTo(W - R, gy);
   }
   ctx.stroke();
-  const colors = CHART_COLORS[light ? "light" : "dark"];
+  const colors = chartPalette(light);
   series.forEach((s, i) => {
     ctx.strokeStyle = s.color || colors[i % colors.length];
     ctx.lineWidth = 1.6;
@@ -109,7 +207,7 @@ export function drawLineChart(canvas, series, labels) {
    与故障可见化。新调用面请用 plotCard（带导出/十字线/收敛模式）。 */
 export function drawEChart(el, series, opts = {}) {
   try {
-    const light = document.body.classList.contains("light");
+    const light = bodyIsLight();
     // PR-1 a11y：图表容器图像语义（系列名+轴标签进 aria-label；opts.ariaLabel 显式覆盖）
     el.setAttribute("role", "img");
     el.setAttribute("aria-label", opts.ariaLabel ||
@@ -120,7 +218,7 @@ export function drawEChart(el, series, opts = {}) {
     const chart = window.echarts.init(el);
     chart.setOption(buildEChartOption(series, opts, {
       light,
-      palette: CHART_COLORS[light ? "light" : "dark"],
+      palette: chartPalette(light),
     }));
     window.addEventListener("resize", () => chart.resize());
     return chart;
@@ -132,33 +230,84 @@ export function drawEChart(el, series, opts = {}) {
 }
 
 /* PR-3 PlotCard 注入：主题态在本壳现取（与 drawEChart 同一判定时机），
-   调色板单源 CHART_COLORS 传入 plotcard.js。 */
+   调色板单源 chartPalette（theme.js）传入 plotcard.js。 */
 function uiPlotCard(el, props = {}) {
-  const light = document.body.classList.contains("light");
+  const light = bodyIsLight();
   return plotCard(el, props, {
     light,
-    palette: CHART_COLORS[light ? "light" : "dark"],
+    palette: chartPalette(light),
   });
 }
 
 /* ── 灯箱 ── */
-export function lightboxContent(node, cap) {
-  $("lightbox-cap").textContent = cap || "";
+/* W2-C 弹层焦点三件套（R1 审计 P1-3）：打开时焦点入弹层、Tab 首尾回绕困
+   在弹层内、Esc/遮罩点击关闭并还焦触发元素。与 palette.js 的命令面板是
+   同一模式的两处实现（不抽共享模块：app.js 顶层跑 DOM/three 初始化，
+   palette 若 import 本文件会连带炸掉 node 行为测试的 import 链）。 */
+let _lbSavedFocus = null; // 焦点陷阱①：打开前的 activeElement
+
+function lightboxClose() {
   const lb = $("lightbox");
+  if (!lb.classList.contains("show")) return;
+  lb.classList.remove("show");
+  if (_lbSavedFocus && document.contains(_lbSavedFocus) &&
+      typeof _lbSavedFocus.focus === "function")
+    _lbSavedFocus.focus(); // 焦点陷阱③：关闭还焦
+  _lbSavedFocus = null;
+}
+
+export function lightboxContent(node, cap) {
+  const lb = $("lightbox");
+  if (!_lbSavedFocus) _lbSavedFocus = document.activeElement;
+  $("lightbox-cap").textContent = cap || "";
   lb.querySelectorAll("canvas,img").forEach((el) => el.remove());
   lb.insertBefore(node, lb.firstChild);
   lb.classList.add("show");
+  // 焦点陷阱⓪：灯箱内常无可聚焦元素（图/说明文字），焦点落弹层本体
+  if (!lb.hasAttribute("tabindex")) lb.setAttribute("tabindex", "-1");
+  lb.focus({ preventScroll: true });
 }
 export function lightboxImg(src, cap) {
   const img = document.createElement("img");
   img.src = src;
   lightboxContent(img, cap);
 }
-$("lightbox").onclick = () => $("lightbox").classList.remove("show");
+$("lightbox").onclick = () => lightboxClose();
+window.addEventListener("keydown", (e) => {
+  const lb = $("lightbox");
+  if (!lb.classList.contains("show")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    lightboxClose();
+  } else if (e.key === "Tab") {
+    // 焦点陷阱②：Tab 首尾回绕（弹层内可聚焦元素循环，不逃出模态）
+    const focusables = [...lb.querySelectorAll(
+        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")]
+      .filter((el) => el.offsetParent !== null);
+    e.preventDefault();
+    if (!focusables.length) { lb.focus({ preventScroll: true }); return; }
+    const idx = focusables.indexOf(document.activeElement);
+    const next = idx === -1
+      ? (e.shiftKey ? focusables[focusables.length - 1] : focusables[0])
+      : (e.shiftKey
+        ? focusables[(idx - 1 + focusables.length) % focusables.length]
+        : focusables[(idx + 1) % focusables.length]);
+    next.focus();
+  }
+});
 
 /* ── 3D 渲染（three.js，沿用电位配色） ── */
 const MATERIAL_COLORS = { metal: 0xc0c8d0, substrate: 0x2e7d32 };
 const BOX_COLORS = { ground: 0x556070 };
+/* W8-B P2-2（2026-10-12）：视口背景/描边/网格随 body.light 两档——此前
+   scene.background 硬编码深底，light 主题下画布近黑与页面浅底强反差。
+   light 档：浅蓝灰底 0xe8edf5，盒描边换深灰蓝 0x2a3242（近黑描边在浅底
+   上不可见），网格换 0xb9c2d0（对浅底 1.5:1，装饰性网格与 dark 档
+   0x242c3d/深底同档弱对比，读数靠盒体与描边）。dark 档保持原值逐字不变。 */
+const SCENE3D = {
+  dark: { bg: 0x0d1118, edge: 0x0a0c10, grid: 0x242c3d },
+  light: { bg: 0xe8edf5, edge: 0x2a3242, grid: 0xb9c2d0 },
+};
 
 function makeLabelSprite(text, color) {
   const c = document.createElement("canvas");
@@ -168,7 +317,7 @@ function makeLabelSprite(text, color) {
   ctx.roundRect?.(0, 0, c.width, c.height, 12);
   ctx.fill();
   ctx.font = "bold 40px sans-serif";
-  ctx.fillStyle = color || "#dce3ee";
+  ctx.fillStyle = color || THEME_COLORS.fg.dark; // 缺省标签文字=深档前景（theme.js 单源）
   ctx.textAlign = "center";
   ctx.fillText(text, c.width / 2, 62);
   const tex = new THREE.CanvasTexture(c);
@@ -177,18 +326,31 @@ function makeLabelSprite(text, color) {
   return sp;
 }
 
+/* W2-B 接口诉求落地：容器级 renderer 句柄登记——重建前完全释放旧渲染器
+   （WebGL 活跃上下文配额有限），并返回句柄供调用方后续释放。 */
+const _boxRenderers = new WeakMap();
+
 export function drawBoxes(container, spec) {
+  const _prev = _boxRenderers.get(container);
+  if (_prev) {
+    _prev.setAnimationLoop(null);
+    _prev.dispose();
+    _prev.forceContextLoss?.();
+    _boxRenderers.delete(container);
+  }
   container.innerHTML = "";
   if (!spec || !spec.ok) {
     container.innerHTML = `<span class="muted">${spec ? esc(spec.errors.join("; ")) : "无几何"}</span>`;
-    return;
+    return null;
   }
   const w = container.clientWidth || 600, h = 420;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(w, h);
   container.appendChild(renderer.domElement);
+  // 主题档在重绘时点现取（body.light 判定，与 drawLineChart/drawEChart 同一时机）
+  const th = SCENE3D[document.body.classList.contains("light") ? "light" : "dark"];
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0d1118);
+  scene.background = new THREE.Color(th.bg);
   const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
   const c = [0, 0, 0];
   for (const b of spec.boxes) for (let i = 0; i < 3; i++) c[i] += (b.start_mm[i] + b.stop_mm[i]) / 2 / spec.boxes.length;
@@ -209,7 +371,7 @@ export function drawBoxes(container, spec) {
     mesh.position.set(mid[0] - c[0], mid[2] - c[2], mid[1] - c[1]);
     mesh.add(new THREE.LineSegments(
       new THREE.EdgesGeometry(geo),
-      new THREE.LineBasicMaterial({ color: 0x0a0c10 })));
+      new THREE.LineBasicMaterial({ color: th.edge })));
     group.add(mesh);
   }
   const portNotes = [];
@@ -234,7 +396,7 @@ export function drawBoxes(container, spec) {
   const dl = new THREE.DirectionalLight(0xffffff, 0.9);
   dl.position.set(80, 120, 60);
   scene.add(dl);
-  scene.add(new THREE.GridHelper(240, 24, 0x242c3d, 0x242c3d));
+  scene.add(new THREE.GridHelper(240, 24, th.grid, th.grid));
   // 相机自动取景：按模型包围盒最大维度缩放
   const bbox = new THREE.Box3().setFromObject(group);
   const maxDim = Math.max(
@@ -257,13 +419,15 @@ export function drawBoxes(container, spec) {
     chip(0xc0c8d0, "金属") + chip(0x556070, "地面") + chip(0x2e7d32, "基板") +
     chip(0xffb74d, "端口") +
     (portNotes.length ? `<span class="muted">　端口: ${esc(portNotes.join("、"))}</span>` : "") +
-    `<div class="muted" style="margin-top:4px">器件: ${esc(deviceList)}</div>` +
+    `<div class="muted" style="margin-top:var(--space-1)">器件: ${esc(deviceList)}</div>` +
     `<div class="muted">拖动旋转 / 滚轮缩放</div>`;
   container.appendChild(legend);
   // PR-1 a11y：3D 视图图像语义（器件清单可闻；交互提示留在图例文字里）
   container.setAttribute("role", "img");
   container.setAttribute("aria-label",
     `3D 模型预览：${deviceList}${portNotes.length ? "，端口 " + portNotes.join("、") : ""}`);
+  _boxRenderers.set(container, renderer);
+  return renderer;
 }
 
 function orbitLike(camera, dom, maxDim = 120) {
@@ -287,23 +451,41 @@ function orbitLike(camera, dom, maxDim = 120) {
   dom.onwheel = (e) => { e.preventDefault(); radius *= e.deltaY > 0 ? 1.1 : 0.9; apply(); };
 }
 
-initPages({
-  activate, msg, api, badge, passBadge, drawLineChart, drawEChart, drawBoxes,
-  lightboxImg, lightboxContent, $, THREE, plotCard: uiPlotCard,
-});
-showPage("dashboard");
-
-// 深链：#/runs 形式直达页面（刷新/分享保持当前页；未知值回落 dashboard）。
-// nav 按钮 onclick 同步写 hash，前进/后退可用。
+/* ── 两级 hash 路由（aurora72 A4-C，R6 审计 R-2）── */
+// 页名权威面（nav data-v 派生，26 颗含隐藏 detail）——回落语义单源在此。
 const _VALID_PAGES = new Set(
     [...document.querySelectorAll("[data-v]")]
         .map((b) => b.dataset.v));
+/* 两级分发器（唯一策略面）：
+   - "#/page" 裸形态：旧语义零破坏——未知页名忽略（回落保持现状），有效页
+     showPage；
+   - "#/page/<arg>" 参数形态：parseRoute 解出 { page, arg }，页有效且注册表
+     有 opener → routeOpen（opener 负责激活+数据拉取+空态/错误面板，刷新/
+     前进后退/分享均经此处恢复参数态）；页有效但无 opener → 回落裸页；
+     页名未知 → 忽略（与裸形态同回落）。
+   hashchange 监听单源在 pages.js _bindToolsDeepLink（收编旧双监听），事件
+   经 initPages 注入的 routeDispatch 回调抵达这里；boot 初载由下方
+   _applyHash() 直调完成同一分发。 */
 function _applyHash() {
-  const v = (location.hash || "").replace(/^#\/?/, "");
-  if (v && _VALID_PAGES.has(v)) showPage(v);
+  const r = parseRoute(location.hash);
+  if (!r) return; // 空/非法形态 → 保持现状（boot 已落 dashboard）
+  if (!_VALID_PAGES.has(r.page)) return; // 未知页名 → 旧回落语义保持
+  if (r.arg == null) { showPage(r.page); return; } // 裸页形态（旧）
+  if (!routeOpen(r.page, r.arg)) showPage(r.page); // 无 opener 页 → 回落裸页
 }
-window.addEventListener("hashchange", _applyHash);
-_applyHash();
+
+initPages({
+  activate, msg, api, badge, passBadge, drawLineChart, drawEChart, drawBoxes,
+  lightboxImg, lightboxContent, $, THREE, plotCard: uiPlotCard,
+  // UI-R12：懒加载补焦桥（对象引用共享，pages.js _lazyView 包装器消费）
+  _lazyFocus, pageFocusAfterRender,
+  // A4-C：单源 hashchange 监听在 pages.js（旧 app.js 页级 + tools key 级
+  // 双监听收编），事件经此回调回注两级分发器。
+  routeDispatch: () => _applyHash(),
+});
+setApiNotifier(msg); // UI-R12：apiFetch 失败呈现与全局 toast 同源（aborted 形态不 toast）
+showPage("dashboard");
+_applyHash(); // boot 初载分发（两级：#/page 与 #/page/<arg> 同入口）
 document.querySelectorAll("[data-v]").forEach((b) => {
   b.addEventListener("click", () => {
     const v = b.dataset.v;

@@ -288,3 +288,19 @@ def test_calc_array_keys_reciprocal_false():
                 "array.schelkunoff_nulls", "array.quantized_milp"):
         assert CALCULATOR_REGISTRY.get(key).reciprocal is False
         assert CALCULATOR_REGISTRY.get(key).experimental is False
+
+
+def test_calc_shell_mip_rel_gap_default_matches_kernel():
+    """ge9 审查 P2 勘误钉：CALC 壳层缺省 mip_rel_gap 与内核缺省同值
+    （历史壳层 1e-6 vs 内核 1e-4 差 100×，注册描述"缺省 1e-4 与内核
+    options 同源"为假——跨入口可复现性口径受损；双侧签名内省防再漂移）。"""
+    import inspect
+
+    from rfauto.core.calc_families.array_synth import array_quantized_milp
+    from rfauto.core.quantized_array_milp import quantized_array_milp
+
+    gap_shell = inspect.signature(
+        array_quantized_milp).parameters["mip_rel_gap"].default
+    gap_kernel = inspect.signature(
+        quantized_array_milp).parameters["mip_rel_gap"].default
+    assert gap_shell == gap_kernel == 1e-4

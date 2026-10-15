@@ -464,6 +464,9 @@ class TestOptStackRoutes:
         static = Path(server_mod.__file__).parent / "static"
         html = (static / "index.html").read_text(encoding="utf-8")
         assert 'data-v="optstack"' in html and 'id="view-optstack"' in html
-        js = (static / "pages.js").read_text(encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        js = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [static / "pages.js", *sorted((static / "pages").glob("*.js"))])
         assert "optstack: pageOptStack" in js
         assert "/feasibility" in js and "/pareto" in js

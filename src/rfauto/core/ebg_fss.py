@@ -1,7 +1,7 @@
 r"""TA-13 EBG/FSS 补单元确定性内核（Jerusalem screen/方环贴片 FSS）
 （ge8b Wave B 席 B9，2026-10-03）。
 
-规格：研究扩充 round15 §二·2 TA-13「EBG 蘑菇/
+规格：docs/research_expansion_20261002_round15.md §二·2 TA-13「EBG 蘑菇/
 贴片周期单元、FSS 补单元（方环缝/双环带通）」+ 席 B9 任务书「Jerusalem
 screen/方环贴片 FSS：LC 谐振闭式+反射相位带（MM-8 AMC 面已合流可互证
 不重写）」。

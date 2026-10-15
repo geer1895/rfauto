@@ -1,4 +1,4 @@
-"""LM-3 extended hemispherical 透镜内核单测（研究扩充 round4 中件包二 LM-3）。
+"""LM-3 extended hemispherical 透镜内核单测（docs/research_expansion_20260926_round4.md 中件包二 LM-3）。
 
 裁判口径（#118 双路径，全部离线推导/原文印刷值，不自证）：
 

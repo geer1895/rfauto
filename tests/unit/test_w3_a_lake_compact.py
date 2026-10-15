@@ -148,7 +148,7 @@ def mini_lake(tmp_path: Path) -> dict[str, Path]:
     camp_b = runs / "campaign_b"
     _write_run(camp_b / "pt_old_done", status="done", h5=b"H5-B",
                et=[b"UNIQUE-ET-B" * 32])
-    # 指针源（tmp 治内，隔离真仓 knowledge）
+    # 指针源（tmp 治内，隔离真仓 knowledge/）
     knowledge = tmp_path / "knowledge"
     knowledge.mkdir()
     (knowledge / "anchors.yaml").write_text(
@@ -236,6 +236,33 @@ class TestH5Retention:
         # campaign_a 候选里最新（timestamp 字典序）的 pt_judged 被豁免
         assert "pt_judged" not in run_names
         assert "pt_analyzed" in run_names
+
+    def test_keep_recent_n_counts_run_dirs_not_h5_files(self, tmp_path):
+        """ge9 审查 P1（R3）：豁免按 run 目录占坑不按 h5 文件——同战役
+        2 run 3 h5、keep_recent_n=2 → 两 run 全豁免（实现按文件占坑时
+        run_new1 的双 h5 吃掉两坑、run_old2 被超删）。"""
+        runs = tmp_path / "runs"
+        epoch_old = 1_600_000_000.0  # 远早于 min_age_h=24 缺省线
+        for name, n_h5, ts in (("camp/run_new1", 2, "2026-09-02T00:00:00"),
+                               ("camp/run_old2", 1, "2026-09-01T00:00:00")):
+            d = runs / name
+            d.mkdir(parents=True)
+            for i in range(n_h5):
+                p = d / f"field_{i}.h5"
+                p.write_bytes(b"H5DATA")
+                os.utime(p, (epoch_old, epoch_old))
+            m = d / "meta.json"
+            m.write_text(json.dumps({"status": "done", "timestamp": ts}),
+                         encoding="utf-8")
+            os.utime(m, (epoch_old, epoch_old))
+        plan = plan_h5_retention(runs, tier="aggressive", keep_recent_n=2)
+        assert plan["ok"] is True
+        assert plan["n_delete"] == 0, \
+            [r["path"] for r in plan["delete"]]
+        # 对照：N=1 时按目录时间序恰豁免最新 run（老 run 仍可删）
+        plan1 = plan_h5_retention(runs, tier="aggressive", keep_recent_n=1)
+        assert {r["run_dir"].split("/")[-1] for r in plan1["delete"]} == \
+            {"run_old2"}
 
 
 class TestEtHtDedup:
@@ -424,18 +451,10 @@ def _pointer_norms(runs: Path, pointers) -> set[str]:
 
 class TestCliCompact:
     def test_help_true_run(self):
-        # --help 渲染冒烟 + 旗标注册存在性（渲染器解耦：rich 截断位随
-        # 版本/平台漂移——三代钉均被 CI rich 15 证伪，2026-10-07 三跑
-        # 实证，改查 click 参数注册树）
-        from typer.main import get_command
-
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "Usage" in result.output
-        lake_cmd = get_command(app).commands["lake"]
-        flat = str([list(p.opts) + [str(s) for s in p.secondary_opts]
-                    for p in lake_cmd.commands["compact"].params])
-        assert "--apply" in flat
+        assert "--apply" in result.output
+        assert "dry-run" in result.output
 
     def test_dryrun_default_zero_write(self, mini_lake):
         before = _tree_hashes(mini_lake["runs"])

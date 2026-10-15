@@ -278,7 +278,7 @@ def synthesize_pyramid_horn_ab(
         f_ghz: 工作频率（GHz）。
         a_mm/b_mm: 波导口宽/窄边（mm；f 须在 TE10 单传播模域 fc<f≤2fc——
         f=2fc 时 TE20 恰截止仍单传播模（闭边界；工程带宽建议≲1.9fc，
-        WR 版另受推荐带压束）。
+        WR 版另受推荐带压束））。
         sigma_h/sigma_e: 最优厚度 σ 档覆盖（缺省 Balanis 档）。
         require_wr_band: True 时附加推荐带检查（wr 版内部置 True；
         任意口径版缺省只查单模物理域，不做带表归堆）。

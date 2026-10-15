@@ -1,6 +1,6 @@
 """提议→沙箱→三层 Gate 链（#19）：拓扑草稿准入 + F8 LLM 模板草案 + 通过率统计。
 
-三条链，写面全部只在 runs/ 沙箱内：
+三条链，写面全部只在 runs/ 沙箱内（AGENTS 规则 6）：
 
 1. 拓扑草稿准入链（0by⑥ 接线）：propose_topology 落的 runs/recipe_sandbox
    草稿 → ``promote_topology_draft``：L1 白名单（TEMPLATE_META[model].params，

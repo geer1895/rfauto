@@ -176,3 +176,62 @@ def test_meta_yaml_sync():
     data = yaml.safe_load(p.read_text(encoding="utf-8"))
     assert data["template"] == "cpw"
     assert data["n_ports"] == TEMPLATE_META["cpw"]["n_ports"]
+
+
+# ── CFIX 2026-10-13（aurora_c cpw 席）：CPWPort exc_dir 语义两代并存自适应 ──
+# 服务器绑定停在旧代（v0.37.0-rc1-11-gd3d2a49：exc_dir=面法向/高度方向，
+# start/stop 等值检查在 exc 轴）；本机 .venv 为新代（exc_dir=缝间横向，
+# 检查在法向 z）。同一渲染字面量跨代部署必有一侧构造即炸——渲染脚本内
+# inspect 语义自检自适应选 exc_dir。以下两钉分别锁本机新代行为与旧代
+# 源码指纹分支。
+
+_CPW_NOMINAL = {"w_mm": 0.849, "gap_mm": 0.2, "line_len_mm": 40.0}
+
+
+def test_cpwport_constructs_offline_nominal():
+    """#212 离线几何审计：名义渲染→exec 几何段→CPWPort 构造不再抛（CFIX
+    P0-2 回归钉）。判据在 CSXCAD 实测对象上：双端口构造、高度方向两端
+    相等（贴金属面 z=H_SUB）、新代语义下 height=z/width=x、缝电压探针/
+    激励盒 x 跨=缝宽且贴金属面（旧代语义错位时此判据落空）。"""
+    pytest.importorskip("CSXCAD")
+    from tests.unit import _geometry_audit_helpers as gh
+
+    scope, _prims = gh.load_geometry("cpw", dict(_CPW_NOMINAL), 0.4)
+    ports = gh.port_objects(scope)
+    assert set(ports) == {1, 2}
+    for port in ports.values():
+        assert float(port.start[2]) == float(port.stop[2])
+    # 本机绑定=新代：自适应探针选 'x'（缝间横向），高度法向=z
+    assert scope["_CPW_EXC_DIR"] == "x"
+    assert int(ports[1].height_ny) == 2 and int(ports[1].width_ny) == 0
+    # 缝盒物理位置：12 电压探针盒 + port1 双激励盒，x 跨恰=缝宽、z=金属面
+    gap = _CPW_NOMINAL["gap_mm"] * 1e-3
+    boxes = gh.extract_primitives(scope["CSX"])
+    gap_boxes = [b for b in boxes
+                 if abs((b.hi[0] - b.lo[0]) - gap) < 1e-9
+                 and abs(b.lo[2] - scope["H_SUB"]) < 1e-12]
+    assert len(gap_boxes) == 14
+
+
+def test_cpwport_exc_dir_adapts_to_binding_generation(monkeypatch):
+    """两代绑定语义自适应钉：本机新代源码指纹→'x'；旧代（≤d3d2a49，服务器
+    现状）指纹→'z'。旧代构造可行性由服务器战役复跑验证（本机新代绑定下
+    'z' 语义构造必炸=期望行为，不在本机重放旧代绑定）。"""
+    import inspect
+
+    from rfauto.adapters.openems_templates import render_script
+
+    text = render_script("cpw", dict(_CPW_NOMINAL), (2.25, 2.75))
+    cut = text.index("_port1 = CPWPort")
+
+    def _probe() -> str:
+        scope: dict = {"__name__": "audit", "__file__": "audit_sim.py"}
+        exec(compile(text[:cut], "cpw_probe", "exec"), scope)
+        return scope["_CPW_EXC_DIR"]
+
+    # 新代绑定（本机现状）：CPWPort.__init__ 源含 width_ny=CheckNyDir(exc_dir)
+    assert _probe() == "x"
+    # 旧代指纹：同位置是 exc_vec/argmax 高度口径（无 width_ny=CheckNyDir 行）
+    old_src = "self.height_ny = int(np.argmax(np.abs(exc_vec)))"
+    monkeypatch.setattr(inspect, "getsource", lambda _f: old_src)
+    assert _probe() == "z"

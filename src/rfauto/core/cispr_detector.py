@@ -1,6 +1,6 @@
 """MS-4 CISPR 16-1-1 检波器闭式内核（纯算法零 IO，一阶非对称 RC 充放 + 二阶临界阻尼表头）。
 
-规格：规格深案 §D-3。参照 core/emi_filter.py 先例**不进**
+规格：docs/plan_deepdive_specs_20261002.md §D-3。参照 core/emi_filter.py 先例**不进**
 @register_calculator（免 #231 注册表消费者三表同步），导出函数供 service 层直接调；
 限值面对接只读对齐 core/emi_filter.margin_report（margin=limit−measured，正=合规，
 dict 形态 fcc_limits_part15()/cispr32_classb_radiated_limits() 可直接作其 limits 入参），
@@ -10,7 +10,7 @@ dict 形态 fcc_limits_part15()/cispr32_classb_radiated_limits() 可直接作其
 - band_params：CISPR 16-1-1 Table 1 四参数表（Band A-D，双源核对，见下）。
 - cispr_detect：单通道时域波形 → Peak/QP/Avg 三检波器读数（dBµV）+ qp_settling_ok。
 
-参数表出处（双源互证，本地归档 runs/ms4）：
+参数表出处（双源互证，本地归档 runs/ms4/）：
 - 源 1：CISPR 16-1-1:2006+A1:2006 免费镜像（iTeh standards preview PDF，已下载
   runs/ms4/CISPR-16-1-1-2006-preview.pdf）正文 Table 1 "Fundamental characteristics of
   quasi-peak receivers"（第 17 页）逐值提取：Band A 9–150 kHz / B6 0.20 kHz / 充 45 ms /

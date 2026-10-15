@@ -6,7 +6,7 @@
 式往返 + 渲染守卫（#266 缝分辨/#347 测量面分离/r_in>0）+ 注册四件套 + docs
 meta.yaml 一致性。
 
-方案锚：研究扩充 F-A §2 M3——闭式
+方案锚：docs/research_expansion_20260926.md F-A §2 M3——闭式
 f_n ≈ n·c/(2π·r_mean·√εeff)；近似级别（直微带 HJ εeff、间隙电容耦合 v1、
 无栅格化慢波补偿）如实登记于 RING_RESONATOR_META.smoke_note 与 docs meta。
 """

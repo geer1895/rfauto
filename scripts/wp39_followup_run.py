@@ -16,7 +16,7 @@ wall≤1/2 被算术锁死（#224）——本脚本补测 §10.0 两档基线与
                 Search，MaxNumIteration=预算锚点，无法硬帽评估数——
                 实际评估数按提取梯次如实记录）；
 - patch_calib   ④ openEMS patch 单点扫频谷位标定（f_dip·L 常数，
-                对照归档 HFSS 99.8 与 76.8，漂移比值定标）；
+                对照归档 HFSS 99.8 与  76.8，漂移比值定标）；
 - optislang_probe  ② optiSLang MOP 超额线可用性探测（license/链路）；
 - judge         汇总 outdir 全部 followup JSON → summary。
 
@@ -773,7 +773,7 @@ def run_patch_calib_tier(outdir: Path,
                          hfss_probe_path: Path) -> Path:
     """④ 标定：openEMS patch 名义尺寸单点扫频 → f_dip·L 常数。
 
-    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与
+    对照参考：HFSS 归档 probe.s1p 离线复核（99.8）与  #190
     23 点战役定标值（76.8）；漂移比值 = 常数(HFSS)/常数(openEMS)——
     问题定义（f0/尺寸）必须按本引擎常数定标，否则目标落空（wp39
     首轮 patch 2.0GHz 目标盒内无谷的根因）。

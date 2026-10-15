@@ -58,7 +58,10 @@ GENERATED_PAGES: tuple[str, ...] = (
 )
 # 静态资产（mkdocs 原样拷贝、不进 nav——nav 收录的是 gallery.md 壳页）
 STATIC_ASSETS: tuple[str, ...] = ("gallery/index.html",)
-GENERATED_FILES: tuple[str, ...] = GENERATED_PAGES + STATIC_ASSETS
+# 机读 JSON 产物（build_docs_pages.build_rest_schema_page；漂移钉另见
+# tests/unit/test_rest_e2e_smoke_script.py 的 live 枚举一致性口径）
+SCHEMA_ASSETS: tuple[str, ...] = ("rest_schema.json",)
+GENERATED_FILES: tuple[str, ...] = GENERATED_PAGES + STATIC_ASSETS + SCHEMA_ASSETS
 
 
 # ─── 1/2. mkdocs.yml 合法性 + nav 引用文件全存在 ──────────────────────────

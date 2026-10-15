@@ -23,7 +23,16 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+
+| 名次 | 参数 | 依据 |
+|---|---|---|
+| 1 | res_len_mm | λ/4 谐振恒等式 |∂lnf0/∂lnL|=1（精确，含缩短回代） |
+| 2 | gaps_mm | 缝耦合 k(gap) 强敏感（带宽/回损主维） |
+| 3 | w_mm | 棒宽经 εeff 与阻抗口径弱进入 |
+| 4 | feed_len_mm | 馈段布局长度（不进谐振式） |
+| 5 | order | 阶数=离散综合参数 |
+- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
 
 ## 判据
 
@@ -46,7 +55,7 @@
 - 参数语义：order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法，_c3_layout 显式报错）；w_mm=棒/馈线宽（50Ω，skrf HJ 综合 live 值 1.1117）；res_len_mm=棒物理长（λ/4(εeff=2.8578)=17.7338 − 过孔缩短 0.4431 − 开路端 Δl=0.2086，电路裁判以等效长度回代；登记⑨+R1 校准口径 tanθ_c=Z_r/(ω0L_via)，L_via=0.125nH HFSS 仲裁校准值 C3_L_VIA_CAL_H（df5-c3fix，原 Goldfarb-Pucel 0.29596nH 高估已弃），缺省渲染几何在过孔存在下谐振回 f0）；gaps_mm[j]=第 j 缝边到边（j=0 馈-棒1 … j=N 棒N-馈；fake/openEMS 两通道同索引同语义，#154）；feed_len_mm=板边到棒阵列底端的馈线段长（阵列 y 居中 ⇒ 两馈等长）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；棒/馈缘+过孔中心精确入网（#198 精确入网）
 - 冒烟现状：真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例；真机轨道留队列 openems-real-smoke-bundle 类包），本项全程离线验收
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

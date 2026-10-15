@@ -3,7 +3,8 @@
 判据（#122）：覆盖判定=具名族对模板注册表精确匹配（``*`` 通配单列不
 计入单模板）；批量计划=候选表∩零覆盖模板，anchor_id 与注册表查重；
 骨架 schema 与 anchors/v1 同构（kind=pointer、values 留空、
-status=awaiting_data、consumers=[]）；**零写注册表**。卡注记=只增注释行（幂等）。
+status=awaiting_data、consumers=[]）；**零写注册表**（AGENTS 规则 6，
+写面只经人工 commit）。卡注记=只增注释行（幂等）。
 """
 
 from __future__ import annotations
@@ -39,7 +40,17 @@ class TestCoverage:
 
     def test_first_batch_templates_all_uncovered(self):
         cov = afs.anchor_family_coverage()
+        # aurora_d SENS-ANC 批（2026-10-14，ANCHORS 60→70）注册
+        # lange.finger_len_mm/cline_coupler.coupled_len_mm closedform-v1，
+        # 候选表原 7 席中该 2 席转入覆盖态；service 表本席禁碰不撤条，
+        # 钉面按现值放行已覆盖席（须在 covered），余席仍须零覆盖
+        # （候选表不变式收窄版：零覆盖候选表只含未注册模板）。
+        _SENS_ANC_COVERED = {"lange", "cline_coupler"}
         for cand in afs.POINTER_BATCH_CANDIDATES:
+            if cand["template"] in _SENS_ANC_COVERED:
+                assert cand["template"] in cov["covered"], (
+                    f"{cand['template']} 应已由 SENS-ANC 批覆盖")
+                continue
             assert cand["template"] in cov["uncovered"], (
                 f"{cand['template']} 已有锚——候选表须只含零覆盖模板")
 

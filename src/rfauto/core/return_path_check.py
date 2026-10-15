@@ -1,6 +1,6 @@
 """HS-4 回流路径不连续几何检测器（flag 级 100% 几何，零仿真零 I/O）。
 
-法源与口径（研究扩充 round4 中件包一 HS-4 原文）：
+法源与口径（docs/research_expansion_20260926_round4.md 中件包一 HS-4 原文）：
 "回流路径不连续几何检测器：走线∩平面分割多边形=确定性求交+换层过孔-
 缝合孔距离检查；J(d)∝1/(1+(d/h)²) 文档化；flag 级 100% 几何，量化级
 NO-GO"。物理背景：高速信号换参考平面/跨分割时，回流电流被迫绕行分割缝
@@ -47,7 +47,7 @@ J(d) 文档化面（NO-GO 边界，round4 原文钉死）：回流电流密度�
 与报告 j_model 字段），**不产量化电流密度数字**——量化级（电流密度分布
 求解/积分）为 NO-GO，本模块 flag 级 100% 几何。
 
-数值只在确定性内核：纯几何闭式判定，零仿真零网络零
+数值只在确定性内核（AGENTS 规则 7）：纯几何闭式判定，零仿真零网络零
 文件 I/O；单位统一 mm（参数名带 _mm 或 checked.units 显式记录）；判缺失
 一律 ``is not None``（#364④）；数值入参显式拒收 bool（df7+⑯）。分层：
 core 叶（不 import 上层）；JSON 进出门面见
@@ -113,7 +113,7 @@ RETURN_CURRENT_MODEL_FORMULA = "J(d) ∝ 1 / (1 + (d/h)^2)"
 
 RETURN_CURRENT_MODEL_NOTE = (
     "回流电流密度分布经验式（Bogatin《Signal and Power Integrity》口径，"
-    "研究扩充 round4 HS-4 引文[23]）：d=换层过孔到"
+    "docs/research_expansion_20260926_round4.md HS-4 引文[23]）：d=换层过孔到"
     "最近回流参考（缝合孔或平面边缘）的距离，h=与叠层相关的特征距离（本模块"
     "即 via_return_distance_h_mm 门限）。NO-GO 边界（round4 原文钉死）：本模块"
     "flag 级 100% 几何，J(d) 只文档化不产量化电流密度数字；量化级"

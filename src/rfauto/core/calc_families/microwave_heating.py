@@ -29,7 +29,7 @@ def _require_all_or_none(
 
 @register_calculator(
     "multimode_cavity_heating",
-    "LT-5 多模腔模式统计+装填因子（round18 :137）：Weyl 渐近 "
+    "多模腔模式装填：LT-5 多模腔模式统计+装填因子（round18 :137）：Weyl 渐近 "
     "N=8πV(f√εr/c0)³/3（双极化，Metaxas & Meredith Ch.5 口径）+ 矩形腔"
     "精确枚举交叉对拍（复用 shield_cavity_mode.rect_cavity_modes，TE 容许"
     "集+TM 子集分开计）+ 模式密度/平均模间距；可选负载块（全给或全不给）："
@@ -103,7 +103,7 @@ def multimode_cavity_heating(
 
 @register_calculator(
     "single_mode_applicator",
-    "LT-6 单模 applicator（round18 :140）：TE10p 矩形腔谐振频率+场量归一"
+    "单模加热腔：LT-6 单模 applicator（round18 :140）：TE10p 矩形腔谐振频率+场量归一"
     "（∫|E|²=V/4、储能 W=ε0εrE0²V/8、壁损逐壁闭式→Q_c）+介质负载功率沉积"
     "链（微扰装填因子 F=4εr′V_l·s/εrV、1/Q_d=F·tanδ、耦合 β=Q_u/Q_e、"
     "谐振吸收 4β/(1+β)²、能量平衡→E0 与 P_load 双路恒等）；可选样品块"
@@ -194,7 +194,7 @@ def single_mode_applicator(
 
 @register_calculator(
     "microwave_process_window",
-    "LT-7 烘干/烧结工艺窗口+热失控（round18 :142）：Foster (R,τ) 阶跃热"
+    "工艺窗口热失控：LT-7 烘干/烧结工艺窗口+热失控（round18 :142）：Foster (R,τ) 阶跃热"
     "响应（复用 thermal_transient.step_response_zth，MP-1 零改动）→ 目标"
     "温度功率/时间窗（保持功率 ΔT/ΣR、工艺时刻所需功率 ΔT/Z_th(t)、给定"
     "功率到达时间二分反解、稳态越限旗标）；可选失控块（全给或全不给）："

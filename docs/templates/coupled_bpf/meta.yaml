@@ -24,4 +24,36 @@ nominal_params:
   feed_len_mm: 24.4893
 topology: 平行耦合（边缘耦合）带通（WP2.3 Tier1 BPF 族锚，Pozar §8.6.2）：N 个 λg/2 半波谐振器沿 y 阶梯排列（相邻平行、y 向错位 λg/4），N+1 个耦合段（馈-腔、腔-腔×(N−1)、腔-馈，段长逐端 Δl 修正）；输入/输出 50Ω 馈线在 y=∓BOARD 板边（单轴 PML）
 param_semantics: order=谐振器阶数 N（决定 widths_mm/gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=50Ω 馈线宽（skrf HJ 精算 live 值，仅进几何）；widths_mm[j]/gaps_mm[j]=第 j 个耦合段线宽/边到边缝（j=0 输入馈-腔 … j=N 腔-输出馈，fake/openEMS 两通道同索引同语义，#154）；res_len_mm=谐振器 1 物理长（λg/2 − Δl(w0) − Δl(w1)），其余谐振器按各自端宽逐端 Δl 修正（段长逐段由 _coupled_bpf_section_lengths_mm 同源派生，res2 修量 −6.465µm/−182ppm）；feed_len_mm=输入 50Ω 馈线长（阵列 y 居中 ⇒ 两馈等长）
-smoke_note: 真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读，如实 PARTIAL
+smoke_note: 真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读（），如实 PARTIAL
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 平行耦合带通：N 个 λg/2 半波谐振器阶梯错位 λg/4 排布，N+1 个耦合段同时承担级间耦合 k 与馈线外部 Q。典型用于窄带带通（Chebyshev k 矩阵综合闭环）；常见误用=只调谐振器长度不看缝——带内形状由
+      k(gap) 全谱决定，缝误差直接改带宽与回损谷分布。
+    derivations:
+    - claim: 级间耦合由双模分裂恒等式测量/校核
+      formula: k = (f2**2 - f1**2)/(f2**2 + f1**2)
+      source: J.-S. Hong & M. J. Lancaster, Microstrip Filters for RF/Microwave Applications (Wiley 2001),
+        §5 耦合谐振器测量节；M. Makimoto & S. Yamashita 耦合谐振章同口径；docs/rf_template_references.md §15 已核
+    - claim: 谐振器物理长=λg/2 − 端耦合 Δl 逐端修正
+      formula: res_len = c/(2*f0*sqrt(εeff)) - Δl(w0) - Δl(w1)
+      source: 本仓 core/synthesis（开路端 Δl 修正链；docs/templates/coupled_bpf/meta.yaml param_semantics（res2 修量
+        −6.465µm/−182ppm 同源派生））
+  sensitivity_ranking:
+  - param: res_len_mm
+    order: 1
+    basis: λg/2 谐振恒等式 |∂lnf0/∂lnL|=1（精确）
+  - param: gaps_mm
+    order: 2
+    basis: 缝耦合 k(gap) 强敏感（hairpin c(gap) 图谱同族；带宽/回损主维）
+  - param: widths_mm
+    order: 3
+    basis: 耦合段线宽经 KJ 偶/奇模进入 k 与外部 Q（弱于缝）
+  - param: w_feed_mm
+    order: 4
+    basis: 50Ω 馈线匹配
+  - param: order
+    order: 5
+    basis: 阶数=离散综合参数（g 值表驱动，非连续几何维）
+  quiz_refs: []

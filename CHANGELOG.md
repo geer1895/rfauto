@@ -5,6 +5,86 @@ All notable changes to rfauto will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+**Calculator registry expansion to 204 keys**
+- 17-group single-source taxonomy for the calculator registry (group field
+  on every key + group order in the list envelope); device template
+  library 71 → 72. Four calculator waves: loaded/switched-line, Schiffman
+  and switched-network phasers; ULA / multisource / stochastic DOA
+  Cramer-Rao bounds; multiplexer channel plans and per-channel filter
+  order prototypes; Cpk/yield conversion and series yield budgeting;
+  combline coupling-gap synthesis; reflective phase shifters;
+  rectangular-waveguide TE10 propagation; unequal-split Wilkinson,
+  Bethe-hole directional couplers, TRL standards, PA combining networks,
+  qubit readout chains, coax line / cylindrical cavity / dielectric
+  resonator closed forms, radar detection / RCS / VNA-uncertainty packs,
+  hybrid junctions / magic T, SAW IDT, Gysel, Guanella transmission-line
+  transformers, waveguide iris/window, ideal isolator & circulator (first
+  non-reciprocal registry entries), classic tapered lines, Yagi-Uda,
+  waveguide slot arrays, and more
+- `rfauto rest schema`: machine-readable REST endpoint inventory
+  (method / path / query params / envelope shape, programmatically
+  enumerated from the route table) and OpenAPI 3.0.3 spec export
+  (`--openapi --out`), plus the resident `docs_site/rest_schema.json`
+  artifact (25 endpoints, regenerated alongside the docs site)
+- `rfauto pitfalls search|get`: structured consumption of the pitfall
+  ledger (multi-word scored search, domain/number filters, `#NNN` or
+  line-anchor ids, `--json` envelope); full index of 220 entries in
+  `knowledge/pitfalls_index_full.json`
+- MCP resources 7 → 9: `rfauto://calculators/index` (registry directory
+  with units) and `rfauto://datasets/index` (dataset manifest overview)
+- End-to-end smoke harnesses: `scripts/ui_e2e_smoke.py` (boots uvicorn,
+  walks every key page incl. hash deep links, asserts zero console errors
+  via CDP) and `scripts/rest_e2e_smoke.py` (envelope-contract sweep over
+  all 25 REST endpoints)
+- Unified event stream: single-source EventBus with three SSE endpoints
+  (unified `/api/events/stream` plus tune and campaign domain streams),
+  backpressure / dedup / disconnect cleanup; campaign-tick detection
+  shared across connections
+- Remote campaign hardening verified end-to-end on a real solver server:
+  adaptive CPW port probes, coupled-line second-excitation subprocess
+  isolation, generalized probe placement (fgcpw/msl-cpw), and honest
+  `teardown_native_crash` verdict refinement
+
+### Changed
+
+**UI architecture**
+- server.py 967 → ~238 lines: routing moved into 11 `routes/` domain
+  modules plus a shared event bus and extracted CSP policy; all route
+  functions byte-identical with semantic-equivalence pins
+- `pages.js` decomposed into 33 zero-build ES modules under
+  `static/pages/` (router / sse / kit / dom / charts / sortable /
+  polling / filebrowser + view_* page modules), wired via import map —
+  no bundler; the 54-name export surface proven name-by-name equivalent
+- Envelope contract per-domain schema 1.1 for nine domains with
+  same-commit consumer pins; anchors / firmware / stats migrated to
+  `error_envelope`; bare-envelope ratchet tightened 72 → 9
+
+### Fixed
+- hfss_import orphan ansysedt desktops: pyaedt 1.4.0 has no `release()`
+  and the AttributeError was silently swallowed — single-source
+  three-level desktop fallback
+- SSE control frames omitted the id key, resetting client cursors on
+  reconnect; the hello payload now carries the cursor
+- tune dedup key built from second-granularity timestamps collapsed
+  same-second failures; a monotonic run-sequence disambiguates
+- runs_inventory collection regression after the registry-backfill
+  rewrite dropped a compatibility symbol (import-time crash); symbol
+  restored with a semantic-difference docstring
+
+### Security
+- pip-audit across the dependency tree: 0 known vulnerabilities
+- four-dimension rescan (XSS/injection, path and command injection,
+  information disclosure, credential surface) over the new surfaces
+  (routes domains, pages/ modules, pyedb preload, rest schema, MCP
+  resources): zero real defects
+
+### Stats
+- 25452 unit tests (public collect, not-real_edt selection), 269 CLI leaf commands, MCP 152 tools
+  + 9 resources, CALCULATOR_REGISTRY 204 (incl. 205 experimental), device
+  templates 72, calibration anchors 75
+
+### Added
 - **EDB layout fast lane** (planar device families): declarative spec
   emitters (`edb_branchline`, `edb_power_divider`, `edb_coupled_line`,
   `edb_ratrace`; `edb_lange` returns a structured refusal until air-bridge

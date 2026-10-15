@@ -47,7 +47,7 @@ noise_figure_db/noise_figure_circle/z_to_gamma/gamma_to_z）——本模块是
 单位口径：全部 SI（F/Ω/S/Hz/K），T0=290 K 缺省（IEEE 噪声口径），
 z0=50 Ω 缺省。数值 0.0 合法（td_k=0 拒收：Γopt 退化，见 validate）；
 判缺失一律 ``is not None``（#364④）；bool 显式拒收（df7+⑯）。
-纯函数零 IO；LLM 不参与任何数值。
+纯函数零 IO；LLM 不参与任何数值（AGENTS 纪律 7）。
 """
 
 from __future__ import annotations
@@ -658,7 +658,7 @@ def fukui_fmin(model: FetSmallSignal, f_hz: float, kf: float, *, include_ri: boo
     H. Fukui, "Design of Microwave GaAs MESFET's for Broadband Low-Noise
     Amplifiers," IEEE Trans. Microwave Theory Tech., vol. MTT-27, pp.
     643-650, July 1979（经验归并式；√R 的 R = Rg+Rs（include_ri=False，
-    三参数 kf/Rg/Rs 口径）或 Rg+Rs+Ri（含栅充电电阻变体）。
+    三参数 kf/Rg/Rs 口径）或 Rg+Rs+Ri（含栅充电电阻变体））。
 
     kf 为**单位约定相关**的经验系数：本函数取全 SI 量纲口径（f[Hz]·Cgs[F]/
     gm[S]·√R[Ω]），无内嵌魔数（#118：不可达单源精确数不虚构）——kf 由

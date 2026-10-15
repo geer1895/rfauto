@@ -65,12 +65,14 @@ def td_window_plan(payload: dict[str, Any] | None = None) -> dict[str, Any]:
                        or DEFAULT_TRUNCATION_MARGIN)
         if not margin >= 1.0:
             raise ValueError(f"margin 必须 ≥1（截断守卫语义），得到 {margin!r}")
+        # 闭式链在 try 内：内核正性守卫（f0/dt 的 ValueError，W2-TEST 补）
+        # 同样入信封——异常发生在 parsing 之后的内核守卫段，不抛穿。
+        tau = excite_duration_s(f0, fc_window,
+                                k_cycles=k_cycles or 5.0)
+        dt_eff = tau * margin  # 需要覆盖的窗长（秒）
+        nrts_needed = nrts_for_window(dt_eff, dt, mode="ceil")
     except (KeyError, TypeError, ValueError) as exc:
         return error_envelope([str(exc)], source=_SOURCE)
-    tau = excite_duration_s(f0, fc_window,
-                            k_cycles=k_cycles or 5.0)
-    dt_eff = tau * margin  # 需要覆盖的窗长（秒）
-    nrts_needed = nrts_for_window(dt_eff, dt, mode="ceil")
     return ok_envelope(
         schema=TD_SCHEMA,
         dt_s=dt,

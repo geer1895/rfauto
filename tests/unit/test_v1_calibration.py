@@ -185,6 +185,36 @@ class TestCalibrateSurrogate:
         gate = json.loads((calib / "gate.json").read_text(encoding="utf-8"))
         assert gate["verdict"] == result["verdict"]
 
+    def test_lhs_design_kind_dense(self, tmp_path):
+        """design_kind=lhs 密集化：n_samples 点数生效、kind 落档（校准闭环
+        批新增——L9 平坦场秩相关退化的采样面对策）。"""
+        from rfauto.service.calibration_service import calibrate_surrogate
+
+        result = calibrate_surrogate(
+            _recipe(tmp_path), sampler="fake", design_kind="lhs",
+            n_samples=12, n_validation=2)
+        assert result["ok"], result.get("errors")
+        assert result["n_samples"] == 12
+        assert result["design"]["kind"] == "lhs"
+
+    def test_lhs_without_n_samples_rejected(self, tmp_path):
+        from rfauto.service.calibration_service import calibrate_surrogate
+
+        with pytest.raises(ValueError, match="n_samples"):
+            calibrate_surrogate(_recipe(tmp_path), sampler="fake",
+                                design_kind="lhs")
+
+    def test_full_factorial_design_kind(self, tmp_path):
+        """design_kind=full_factorial：3 因子 3³=27 全情形（好角邻域解析）。"""
+        from rfauto.service.calibration_service import calibrate_surrogate
+
+        result = calibrate_surrogate(
+            _recipe(tmp_path), sampler="fake", design_kind="full_factorial",
+            n_validation=2)
+        assert result["ok"], result.get("errors")
+        assert result["n_samples"] == 27
+        assert result["design"]["kind"] == "full_factorial"
+
     def test_missing_recipe_rejected(self, tmp_path):
         from rfauto.service.calibration_service import calibrate_surrogate
 

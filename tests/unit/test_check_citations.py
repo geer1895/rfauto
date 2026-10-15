@@ -54,7 +54,7 @@ class TestCollectDedupe:
         assert skipped == 1  # bad.yaml 跳过如实计数
         urls = {c.url for c in cits}
         assert urls == {"https://example.com/k1", "https://example.com/d1"}
-        assert all(not c.file.startswith("docs/任务书") for c in cits)
+        assert all(not c.file.startswith("docs/handoff") for c in cits)
         by_url = dedupe(cits)
         assert len(by_url["https://example.com/d1"]) == 2  # 同 URL 两处出现面
 

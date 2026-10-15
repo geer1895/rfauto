@@ -114,7 +114,7 @@ def design_version_diff(a: dict[str, Any] | None = None,
 
 
 def render_design_diff_markdown(report: dict[str, Any]) -> str:
-    """差异报告 → 人读 markdown（逐变更行：kind path a→b（rel% 随行）。"""
+    """差异报告 → 人读 markdown（逐变更行：kind path a→b（rel% 随行））。"""
     if report.get("ok") is not True:
         errs = "；".join(str(e) for e in report.get("errors") or [])
         return f"# 设计差异报告\n\n- 不可比：{errs}\n"

@@ -1,6 +1,6 @@
 """DP-3 物理标定锚注册表——纯求值内核（零 IO）。
 
-规格：规格深案 §DP-3。锚 = (模板族 × 引擎对 ×
+规格：docs/plan_deepdive_specs_20260924.md §DP-3。锚 = (模板族 × 引擎对 ×
 域) → (常量 | 曲线 | 公式 | 指针)，描述引擎对系统偏差（PDK corner/compact
 model类比）。pointer 锚=双值分歧指针（值在模型档案不就地求值，HFSS 窗
 B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载/provenance 路径核对）
@@ -12,7 +12,7 @@ B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载
   域外/未知/非 active 一律 source=fallback（结构化回退闭式，不抛）；
 - ``AnchorSet.note_anchor_residual(anchor_id, point, observed)``：漂移检测，
   |残差| > max(3σ, 5%·|锚值|) → 内存面翻 stale + 告警字段（注册表运行时
-  只读，落盘回填走人工 commit——Agent 写面隔离， 规则 6）；
+  只读，落盘回填走人工 commit——Agent 写面隔离，项目规则 规则 6）；
 - ``find_anchors(template_family, quantity)`` / ``apply_anchor_correction(
   family, quantity, params)``（XC-A，规格 §B-2）：族×量投影查询 + 偏差面
   设计修正（三拒绝门 + 修正量包络）——与 warm_start（参数面优化起点）
@@ -20,7 +20,12 @@ B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载
 - ``register_analytic_anchor(family, quantity, value, semantics)`` /
   ``anchor_coverage(anchor_set)``（XA-10，round18）：analytic-anchor 轻条目
   注册 helper（closedform-v1 形态纯构造，零 IO——写面归注册链批次）与
-  锚覆盖按族统计面，详见节内划界声明。
+  锚覆盖按族统计面，详见节内划界声明；
+- ``uncertainty_inflow(anchor_set, anchor_id)``（XD-8 M 级残差，
+  crossdomain_transplant.md:97）：下层不确定度流入口径——锚查询结果经
+  ``resolve_anchor`` 加性键 ``vv_inflow`` 附带本验证层级+引用链下层锚的
+  一层 RSS 聚合流入（closure identity=0 直传 / pointer 取 uncertainty
+  字段），详见节内克制声明。
 
 求值安全（铁律 6/7 同源）：公式锚表达式只允许 build_library 词表能产出的
 语法（常量/已声明变量/四则/幂、sqrt/log），复用 0cz register_symbolic_formula
@@ -39,6 +44,7 @@ runs/df6_dp3anchors/criteria.md 判据 d2）。
 from __future__ import annotations
 
 import ast
+import json
 import math
 import re
 import statistics
@@ -67,7 +73,7 @@ from typing import Any
 # §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
 # 随工作点 domain 钉死；单点锚 consumers=[] 零接线如实）。
 # ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2：ring.design_dk.
-# openems-hfss-v1 pointer experimental（FA3 Design Dk 战役 六百八十
+# openems-hfss-v1 pointer experimental（FA3 Design Dk 战役  六百八十
 # 九/f0ce39a 预备稿兑现——双引擎 DISAGREE f1 互差 +2.479% 超预声明 1.5% 门，
 # 双值 {oe 3.5333, hfss 3.3425}；基准式依赖引擎几何表征=禁 constant 物理根
 # 据）+ mmwave.design_dk.ro3003-oe-v1 pointer experimental（OE 单引擎单点
@@ -173,6 +179,35 @@ EXPECTED_ANCHORS = frozenset({
     # B 口径（skrf 无地 CPW 67.44Ω）作对照注记进 semantics；证据档
     # runs/w4_phase4/w4e/cpw_ambiguity_evidence.md + runs/w6_phase6/w6f/。
     "cpw.z0_ohm.closedform-v1",
+    # aurora_d SENS-ANC 复核扩批（wf:aurora-d-sensanc，2026-10-14）+10：
+    # analytic 锚第三批（L1 锚覆盖 46/72→56/72 有锚族），X5/W4-E 同制度
+    # （constant + calibrated=closedform + closure 层 + experimental，真机
+    # 首判前如实）；#118 双源=文献恒等式/经典公式独立第二源+测试第二实现
+    # 转录回代钉（tests/unit/test_sensanc_analytic_anchors.py）；逐锚账=
+    # runs/aurora_d_sensanc/REPORT.md（候选裁决策同档）。
+    "loop.loop_side_mm.closedform-v1",
+    "slot.slot_l_mm.closedform-v1",
+    "ifa.ifa_arm_mm.closedform-v1",
+    "lange.finger_len_mm.closedform-v1",
+    "cline_coupler.coupled_len_mm.closedform-v1",
+    "branchline_2sect.sect_len_mm.closedform-v1",
+    "via.z_antipad_ohm.closedform-v1",
+    "ms_mushroom.f_amc_ghz.closedform-v1",
+    "ms_jcross.f0_ghz.closedform-v1",
+    "ms_patch.f0_ghz.closedform-v1",
+    # aurora_d ANCH-D 席 analytic 锚第四批（wf:aurora-d-anchd，2026-10-14）+5：
+    # 剩余 16 未覆盖模板逐个评估后可立 6 族（有锚族 56/72→62/72）——coax_wg
+    # backshort（TE10 λg/4 恒等）/sma r_o（同轴对数律反解）/patch_eep 双模板
+    # 单元 W+L（Balanis 闭式，多族单锚=c3.l_via_h 先例）/ms_lattice period
+    # （λ0/2 阵格，ms_patch/ms_ring_patch/ms_array_NxN 三族）；#118 双源=
+    # 文献恒等式独立第二源+测试第二实现转录回代钉
+    # （tests/unit/test_anchd_analytic_anchors.py）；逐锚账与弃选 10 族
+    # 逐族理由=runs/aurora_d_anchd/REPORT.md（SENS-ANC 报告第三节同口径复核）。
+    "coax_waveguide_transition.backshort_mm.closedform-v1",
+    "sma_launcher.r_o_mm.closedform-v1",
+    "patch_eep.elem_w_mm.closedform-v1",
+    "patch_eep.elem_len_mm.closedform-v1",
+    "ms_lattice.period_mm.closedform-v1",
 })
 EXPECTED_ANCHOR_COUNT = len(EXPECTED_ANCHORS)
 
@@ -180,6 +215,21 @@ EXPECTED_ANCHOR_COUNT = len(EXPECTED_ANCHORS)
 ANCHOR_KINDS = ("constant", "curve", "formula", "pointer")
 ANCHOR_STATUSES = ("active", "stale", "experimental", "retired",
                    "awaiting_data")
+
+#: 锚点分层声明（XD-8，V&V 层级制度化；2026-10-08 快赢席 W1 落地）：
+#: closure=闭式/解析验证层（referee ∈ closedform/fdref/lit 的代码验证锚，
+#:  对拍对象是闭式解或文献/FD 参考基准）；
+#- component=器件验证层（referee=hfss 等引擎对仲裁的单器件模板物理量）；
+#- system=系统确认层（阵列/系统级模板族：patch_array*、mmwave_series_array）。
+ANCHOR_LAYERS = ("closure", "component", "system")
+
+#: V&V 层级秩（XD-8 M 残差，2026-10-08 尾程席 XR）：closure=0（底层，无
+#: 更下层）< component=1 < system=2。"下层" 判定用严格小于（同层引用不
+#: 构成下层流入——live 注册表 6 条 prose 引用全部同层，实测口径）。
+LAYER_RANK = {"closure": 0, "component": 1, "system": 2}
+
+#: 下层不确定度流入口径 schema 标识（消费者识别键，VV_SCHEMA 同惯例）。
+ANCHOR_INFLOW_SCHEMA = "rfauto-anchor-inflow/1"
 
 #: anchor_id 形如 <族>.<量>.<引擎对|来源>-v<N>（引擎段允许连字符）。
 _ANCHOR_ID_RE = re.compile(r"^[a-z0-9_]+(?:\.[a-z0-9_][a-z0-9_\-]*)+-v\d+$")
@@ -190,7 +240,7 @@ _RESIDUAL_REL_FLOOR = 0.05
 
 _UNCERTAINTY_RELATIVE_KINDS = frozenset({"relative"})
 
-# ── XC-A 锚→设计自动修正（规格 规格深案 §B-2）──
+# ── XC-A 锚→设计自动修正（规格 docs/plan_deepdive_specs_20261002.md §B-2）──
 # 分层声明（规格原文口径，勿混层）：
 # - warm_start（optimization/warm_start.py 的 Jaccard 相似度门）= **参数面**
 #   ——历史优化样本经相似度筛选后作新战役的优化起点；
@@ -345,6 +395,9 @@ class AnchorRecord:
     #   注记显式声明该语义（两语义判定口径=消费者文件是否 import
     #   infra.anchors_store 或经 resolve_anchor 取值）。
     consumers: list[str]
+    # XD-8 分层声明（closure/component/system；缺省 None=旧条目/合成
+    # fixture 兼容——live 注册表全量声明，缺失在 infra validate 门报 issue）。
+    layer: str | None
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
     _formula_code: Any = field(default=None, repr=False)
     _curve_xs: list[float] = field(default_factory=list, repr=False)
@@ -363,6 +416,12 @@ class AnchorRecord:
         status = str(raw.get("status") or "")
         if status not in ANCHOR_STATUSES:
             raise ValueError(f"未知状态 status={status!r}（{anchor_id}）")
+        layer_raw = raw.get("layer")
+        layer = None if layer_raw is None else str(layer_raw)
+        if layer is not None and layer not in ANCHOR_LAYERS:
+            raise ValueError(
+                f"未知分层 layer={layer!r}（{anchor_id}；允许值 "
+                f"{ANCHOR_LAYERS}，XD-8 分层声明）")
         version = int(anchor_id.rsplit("-v", 1)[1])
         rec = cls(
             anchor_id=anchor_id,
@@ -385,6 +444,7 @@ class AnchorRecord:
             last_verified=raw.get("last_verified"),
             fallback=raw.get("fallback"),
             consumers=[str(c) for c in (raw.get("consumers") or [])],
+            layer=layer,
             raw=dict(raw),
         )
         rec._prepare_evaluator()
@@ -603,6 +663,10 @@ class AnchorSet:
             "version": rec.version, "status": rec.status,
             "stale": rec.status == "stale", "source": "anchor",
             "domain_ok": True, "value": None, "reason": None,
+            # XD-8 M 残差：本验证层级+下层不确定度流入口径（加性键，
+            # 既有键零破坏；closure=底层自身 σ 直传 / component·system=
+            # 引用链下层一层 RSS）。
+            "vv_inflow": uncertainty_inflow(self, str(anchor_id)),
         }
         if rec.status in ("awaiting_data", "retired"):
             out.update(hit=False, source="fallback", domain_ok=False,
@@ -881,13 +945,13 @@ def anchor_correction_provenance(correction: Mapping[str, Any]) -> dict[str, Any
 
 
 # ── XA-10 analytic-anchor（内核侧轻条目：注册 helper + 覆盖统计面）──────────
-# 划界（研究扩充 round18 XA-10；模板/内核划界见
-# 方案池 十五轮）：XC-T=模板侧锚注册，
+# 划界（docs/research_expansion_20261002_round18.md XA-10；模板/内核划界见
+# docs/plan_expansion_pool_20260924.md 十五轮）：XC-T=模板侧锚注册，
 # XA-10=内核侧 analytic-anchor 轻条目。closedform 恒等锚不开新 ANCHOR_KINDS
 # ——走既有 kind=constant + uncertainty kind=identity 形态（ge8 TA 三批先例
 # 10 锚：schiffman/qwt_multisection/sicl/nway_wilkinson/diplexer/ridged_wg
 # 六族，2026-10-02）。本节纯构造零 IO：helper 产出注册表 raw dict 供注册链
-# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，
+# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，项目规则
 # 规则 6 同源）；provenance.arbitration_runs/commit 由注册链批次回填，
 # helper 不伪造仲裁证据（#122 如实口径）。
 
@@ -1045,3 +1109,191 @@ def anchor_coverage(anchor_set: AnchorSet) -> dict[str, Any]:
         "closedform_total": sum(b["closedform"] for b in families.values()),
         "families": {k: families[k] for k in sorted(families)},
     }
+
+
+# ── XD-8 M 级残差：下层不确定度流入（V&V 20 层级传播口径）─────────────────
+# 规格：docs/research_expansion_20261004_crossdomain_transplant.md:97
+# "vv_mapping 输出'本验证层级+下层不确定度如何流入'"——本验证层级归 W1
+# （layer 字段+validator+ANCHOR_LAYERS，2026-10-08 快赢席）；本节补下层
+# 不确定度流入输出。纯函数零 IO，resolve_anchor 加性键 vv_inflow 附带。
+#
+# 克制声明（一层聚合，全链传播登记不做）：
+# - live 注册表（knowledge/anchors.yaml 60 锚，2026-10-08 实测）锚间 prose
+#   引用 6 条全部同层单跳（含 2 条子串假命中，词边界守卫排除）——零跨层
+#   多跳真实数据，全链递归属无消费者复杂度；
+# - 递归合成引入环检测与跨单位 RSS 语义问题（#121：异量纲 σ 平方和物理
+#   无意义）——待真实跨层多跳引用出现再扩，先钉口径不虚构能力。
+
+#: 引用扫描词边界守卫字符集：匹配起点前一字符命中即判"是更长 id 的尾巴"
+#: （suspended_stripline ⊃ stripline 子串假引用实证；'.' 同拦——
+#: "x.stripline.z0_ohm.closedform-v1" 对 "stripline.z0_ohm.closedform-v1"
+#: 是族段不同的另一锚，非引用）。
+_ID_BOUNDARY_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789_.")
+
+#: 全链传播不做的克制注记（随每次输出透出，登记口径）。
+_FULL_CHAIN_NOTE = (
+    "一层聚合口径：全链递归传播不做——live 注册表 prose 引用实测全部同层"
+    "单跳（零跨层多跳真实数据），递归合成引入环检测与跨单位 RSS 语义问题"
+    "（#121）；待真实跨层多跳引用出现再扩")
+
+
+def _referenced_lower_anchor_ids(anchor_set: AnchorSet,
+                                 rec: AnchorRecord) -> list[str]:
+    """引用链下层锚 id 清单（确定性排序；空表=无跨层引用边）。
+
+    两条注册表原生推导（零虚构：prose 提及≠推导边的形态一律排除）：
+    - 显式声明：raw 顶层/provenance 的 ``derived_from``/``references``
+      清单（现行 schema 无此键——读面先备，声明即生效，前向兼容）；
+    - prose 提及：本锚 raw 文本（JSON 串）中词边界完整的他锚 id，且层秩
+      严格更低（同层 replaces/互证/see-also 提及被秩过滤天然排除）。
+    """
+    own_rank = LAYER_RANK.get(rec.layer) if rec.layer is not None else None
+    if own_rank is None:
+        return []
+    explicit: list[str] = []
+    raw = rec.raw or {}
+    prov = rec.provenance or {}
+    for src in (raw, prov):
+        for key in ("derived_from", "references"):
+            val = src.get(key)
+            if isinstance(val, (list, tuple)):
+                explicit.extend(str(v) for v in val)
+    text = json.dumps(raw, ensure_ascii=False, sort_keys=True, default=str)
+    hits: list[str] = []
+    for other in anchor_set.records:
+        if other.anchor_id == rec.anchor_id:
+            continue
+        other_rank = (LAYER_RANK.get(other.layer)
+                      if other.layer is not None else None)
+        if other_rank is None or other_rank >= own_rank:
+            continue
+        if other.anchor_id in explicit:
+            hits.append(other.anchor_id)
+            continue
+        start = 0
+        while True:
+            idx = text.find(other.anchor_id, start)
+            if idx < 0:
+                break
+            if idx == 0 or text[idx - 1] not in _ID_BOUNDARY_CHARS:
+                hits.append(other.anchor_id)
+                break
+            start = idx + 1
+    return sorted(set(hits))
+
+
+def _inflow_sigma_of(rec: AnchorRecord) -> tuple[float | None, str]:
+    """单锚对上层的流入 σ 贡献与角色（XD-8 两条传播规则）。
+
+    - closure identity 不确定度=0 直传（role=identity_passthrough）；
+    - pointer 取 uncertainty 字段（role=pointer_uncertainty_field；
+      relative 折算基准=quantity.values 中位，确定性取法）；
+    - 其余取 uncertainty 字段按自身值折算（role=uncertainty_field）。
+    返回 (sigma|None, role)；缺失/不可折算 → (None, role)（不虚构）。
+    """
+    unc = rec.uncertainty or {}
+    kind = str(unc.get("kind") or "")
+    if rec.kind == "pointer":
+        expected: float | None = None
+        vals = (rec.quantity or {}).get("values")
+        if isinstance(vals, dict) and vals:
+            expected = float(statistics.median(
+                float(v) for v in vals.values()))
+        if kind in _UNCERTAINTY_RELATIVE_KINDS:
+            return (rec.uncertainty_sigma_abs(expected)
+                    if expected is not None else None,
+                    "pointer_uncertainty_field")
+        return (abs(float(unc["value"])) if unc.get("value") is not None
+                else None, "pointer_uncertainty_field")
+    if kind == "identity":
+        return (0.0 if unc.get("value") is not None else None,
+                "identity_passthrough")
+    if kind in _UNCERTAINTY_RELATIVE_KINDS:
+        # relative 需折算基准：仅 constant 锚有就地期望值，缺基准不虚构
+        if rec.kind == "constant" and rec.value is not None:
+            return rec.uncertainty_sigma_abs(float(rec.value)), \
+                "uncertainty_field"
+        return None, "uncertainty_field"
+    return (abs(float(unc["value"])) if unc.get("value") is not None
+            else None, "uncertainty_field")
+
+
+def uncertainty_inflow(anchor_set: AnchorSet,
+                       anchor_id: str) -> dict[str, Any]:
+    """下层不确定度流入口径（XD-8 M 级残差；纯函数，JSON 安全，不抛）。
+
+    输出::
+
+        {anchor_id, vv_schema, layer, layer_rank, inflow_sigma_abs,
+         aggregation: "rss_one_layer", rule, lower_refs: [...], notes}
+
+    - layer/layer_rank = 本验证层级（XD-8 W1 已落字段的只读消费）；
+    - closure 底层：无更下层，流入=自身 σ（identity=0 直传 rule=
+      identity_passthrough_bottom，其余 rule=bottom_own_sigma）；
+    - component/system：引用链下层锚（层秩严格更低的显式声明/prose 引用）
+      逐锚取流入 σ 后**一层 RSS 聚合**（GUM TSM √Σσ²，与 vv_mapping.
+      combine_uncertainty 同口径）；任一贡献不可折算 → inflow=None
+      （不虚构，#316 多报方向）；无下层引用 → rule=no_lower_refs 且
+      inflow=None（无引用≠零流入，不冒充零）；
+    - 未知锚 → rule=unknown_anchor；layer 缺失（旧条目/合成 fixture）→
+      rule=unknown_layer。
+    """
+    base: dict[str, Any] = {
+        "anchor_id": str(anchor_id), "vv_schema": ANCHOR_INFLOW_SCHEMA,
+        "layer": None, "layer_rank": None, "inflow_sigma_abs": None,
+        "aggregation": "rss_one_layer", "rule": None, "lower_refs": [],
+        "notes": [_FULL_CHAIN_NOTE],
+    }
+    rec = anchor_set.get(str(anchor_id))
+    if rec is None:
+        base["rule"] = "unknown_anchor"
+        return base
+    base["layer"] = rec.layer
+    own_rank = LAYER_RANK.get(rec.layer) if rec.layer is not None else None
+    base["layer_rank"] = own_rank
+    if own_rank is None:
+        base["rule"] = "unknown_layer"
+        return base
+    if own_rank == 0:  # closure 底层：流入=自身 σ（identity=0 直传）
+        sigma, role = _inflow_sigma_of(rec)
+        base["inflow_sigma_abs"] = sigma
+        base["rule"] = ("identity_passthrough_bottom"
+                        if role == "identity_passthrough"
+                        else "bottom_own_sigma")
+        if sigma is None:
+            base["notes"].append("底层锚 uncertainty 缺失/不可折算——流入"
+                                 "不可判（不虚构）")
+        return base
+    refs = _referenced_lower_anchor_ids(anchor_set, rec)
+    if not refs:
+        base["rule"] = "no_lower_refs"
+        base["notes"].append(
+            "无跨层引用边≠零流入（#316 多报方向）：注册表当前无本锚的"
+            "下层引用声明，流入不可判，不冒充零")
+        return base
+    parts: list[float] = []
+    unresolved: list[str] = []
+    for ref_id in refs:
+        ref = anchor_set.get(ref_id)
+        if ref is None:  # 显式声明引用了不存在的锚：如实记不可判
+            unresolved.append(ref_id)
+            continue
+        sigma, role = _inflow_sigma_of(ref)
+        base["lower_refs"].append({
+            "anchor_id": ref.anchor_id, "layer": ref.layer,
+            "kind": ref.kind, "status": ref.status,
+            "uncertainty_kind": str((ref.uncertainty or {}).get("kind")),
+            "sigma_abs": sigma, "role": role,
+        })
+        if sigma is None:
+            unresolved.append(ref_id)
+        else:
+            parts.append(float(sigma))
+    if unresolved:
+        base["notes"].append(
+            "下层贡献不可折算（缺失/relative 缺折算基准/引用不存在）: "
+            + ",".join(sorted(set(unresolved))) + "——流入不虚构为 None")
+        return base
+    base["inflow_sigma_abs"] = math.sqrt(sum(s * s for s in parts))
+    base["rule"] = "lower_refs_rss_one_layer"
+    return base

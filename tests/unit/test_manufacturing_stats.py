@@ -1,4 +1,4 @@
-"""PT-1/2/3 量产三件套锚树（规格书 规格深案 §B-5）。
+"""PT-1/2/3 量产三件套锚树（规格书 docs/plan_deepdive_specs_20261002.md §B-5）。
 
 裁判口径（#118，独立来源不自证）：
 - PT-1：PFA 数值积分回收 ≤1e-4——scipy.integrate.quad 独立积分

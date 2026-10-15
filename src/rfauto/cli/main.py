@@ -189,6 +189,10 @@ from rfauto.cli.domains.calc_vna import _coerce_param as _coerce_param
 from rfauto.cli.domains.calc_vna import calc_app as calc_app
 from rfauto.cli.domains.calc_vna import calc_list as calc_list
 from rfauto.cli.domains.calc_vna import calc_run as calc_run
+from rfauto.cli.domains.calc_vna import oracle_app as oracle_app
+from rfauto.cli.domains.calc_vna import oracle_check_all_cmd as oracle_check_all_cmd
+from rfauto.cli.domains.calc_vna import oracle_check_cmd as oracle_check_cmd
+from rfauto.cli.domains.calc_vna import oracle_list_cmd as oracle_list_cmd
 from rfauto.cli.domains.calc_vna import sparams_compare_cmd as sparams_compare_cmd
 from rfauto.cli.domains.calc_vna import vna_app as vna_app
 from rfauto.cli.domains.calc_vna import vna_calibrate_cmd as vna_calibrate_cmd
@@ -373,7 +377,7 @@ from rfauto.cli.domains.preflight import preflight_gates_cmd as preflight_gates_
 
 
 # ─── profile（PR-8 剖析入口；bench 同款子应用文件 cli/profile_app.py 零逻辑转发） ──
-# status（py-spy 可用性探测）/ run（py-spy record 封装，火焰图落 runs/profile）
+# status（py-spy 可用性探测）/ run（py-spy record 封装，火焰图落 runs/profile/）
 # 两命令薄壳转发 service/profile_service；py-spy 为可选依赖（未装 status 如实
 # available=false，run 显错退出 1）。X2 席 2026-10-04：宏图 PR-8 的 CLI 面
 # 落地（ge8b Wave B 席B2 当时收窄为 UI 面 /api/profile，CLI 为真缺口）；
@@ -435,6 +439,19 @@ from rfauto.cli.domains.few_shot import few_shot_build_cmd as few_shot_build_cmd
 
 from rfauto.cli.domains.hints import hints_app as hints_app
 from rfauto.cli.domains.hints import hints_list_cmd as hints_list_cmd
+
+
+# ─── pitfalls（aurora_d KB-B 席 2026-10-14：坑账结构化检索面两叶；hints ──
+# 同款：域内自注册 cli/domains/pitfalls.py 模块级 add_typer——此处只
+# re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
+# `pitfalls` 命令（#df6① 冲突检查 2026-10-14：全 CLI 树零撞名，grep 实测）。
+# 数据面=knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 全量
+# 解析 项目规则 踩坑速查）；索引加载/校验零逻辑转发
+# service/pitfall_index_service 只读面。
+
+from rfauto.cli.domains.pitfalls import pitfalls_app as pitfalls_app
+from rfauto.cli.domains.pitfalls import pitfalls_get_cmd as pitfalls_get_cmd
+from rfauto.cli.domains.pitfalls import pitfalls_search_cmd as pitfalls_search_cmd
 
 
 # ─── dag（VI-4/SN-1 接线，Phase2 W2-A：DAG 执行基座两叶；stats/firmware ──
@@ -509,6 +526,13 @@ from rfauto.cli.domains.sandbox import sandbox_list_cmd as sandbox_list_cmd
 from rfauto.cli.domains.sandbox import sandbox_promote_cmd as sandbox_promote_cmd
 
 
+# ─── pool-patrol（Z-11 池登记项新鲜度巡检器工具化，2026-10-08；dev 同款：
+# 域内自注册 @app.command——此处只 re-export；顶层无同名 `pool-patrol`
+# 命令（零撞名自查 2026-10-08：全 CLI 树无 pool 前缀命令）。
+
+from rfauto.cli.domains.pool_patrol import pool_patrol_cmd as pool_patrol_cmd
+
+
 # ─── edb（EDB 快车道 CLI 出口，2026-10-08：build/solve/status 三叶；
 # stats/firmware 同款域内自注册 add_typer——此处只 re-export（二次
 # add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 `edb` 域
@@ -518,6 +542,25 @@ from rfauto.cli.domains.edb import edb_app as edb_app
 from rfauto.cli.domains.edb import edb_build_cmd as edb_build_cmd
 from rfauto.cli.domains.edb import edb_solve_cmd as edb_solve_cmd
 from rfauto.cli.domains.edb import edb_status_cmd as edb_status_cmd
+
+
+# ─── recast（RECAST 判据重放 CLI 出口，2026-10-11 aurora36 W2-D：
+# status/replay 两只读叶；stats/firmware/edb 同款域内自注册 add_typer——
+# 此处只 re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无
+# 同名 `recast` 域（#df6① 冲突检查 2026-10-11：全 CLI 树零撞名）。
+
+from rfauto.cli.domains.recast import recast_app as recast_app
+from rfauto.cli.domains.recast import recast_replay_cmd as recast_replay_cmd
+from rfauto.cli.domains.recast import recast_status_cmd as recast_status_cmd
+
+
+# ─── rest（aurora_d REST-B：REST 面 schema 导出只读叶，2026-10-14；
+# recast 同款域内自注册 add_typer——此处只 re-export（二次 add_typer 会
+# 双注册打红 zero-shadow 钉）；顶层无同名 `rest` 命令（#df6① 冲突检查
+# 2026-10-14：全 CLI 树零撞名，唯一近名是 lake 的 restore 子命令）。
+
+from rfauto.cli.domains.rest import rest_app as rest_app
+from rfauto.cli.domains.rest import rest_schema_cmd as rest_schema_cmd
 
 
 if __name__ == "__main__":

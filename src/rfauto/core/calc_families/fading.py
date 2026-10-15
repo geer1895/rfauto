@@ -15,7 +15,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "fade_outage_percent",
-    "AP-7 小尺度/阴影衰落中断概率 [%]（P(接收功率 < 中值−margin_db)，"
+    "衰落中断概率：AP-7 小尺度/阴影衰落中断概率 [%]（P(接收功率 < 中值−margin_db)，"
     "功率门限相对平均功率归一）：kind='rice' 走非中心 χ² CDF"
     "（≡1−Marcum-Q1，scipy.special.chndtr 等价路径，K 线性值，K→0"
     " 退化为 Rayleigh 实测 3e-17）；'rayleigh' 闭式 1−exp(−h)；"
@@ -50,7 +50,7 @@ def fade_outage_percent(
 
 @register_calculator(
     "availability_margin",
-    "AP-7 可用性↔衰落裕量双向换算+双模型同参差异带（平均最差月）："
+    "可用度裕量换算：AP-7 可用性↔衰落裕量双向换算+双模型同参差异带（平均最差月）："
     "Vigants-Barnett 简式（Barnett 1972 BSTJ 51(2) §6.3 一手核，"
     "P=c·(f/4)·1e-5·D_mi³·10^(−F/10)，climate 四档 4/1/0.5(UNVERIFIED)"
     "/0.25）vs ITU-R P.530-18 正式式（§2.3.1 式(7) 文本层逐位核，"

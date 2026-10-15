@@ -47,3 +47,44 @@ from . import crlh  # noqa: F401  # 注册副作用（MM-4 CRLH 单元计算器�
 from . import homogenization  # noqa: F401  # 注册副作用（MM-7 均匀化通用内核四键，round17 :154，追加尾位）
 from . import reliability  # noqa: F401  # 注册副作用（XD-11 FORM 可靠度 form_beta_linear，ge XD-11 2026-10-04，追加尾位）
 from . import array_synth  # noqa: F401  # 注册副作用（RB-ALG-1 差波束三法+RB-ALG-2 MIP 量化阵列，Phase3 W3-E，追加尾位）
+from . import itu_link  # noqa: F401  # 注册副作用（AP-6 ITU 大气/雨衰三键，SD 部分件键面收口，追加尾位）
+from . import cdr_mask  # noqa: F401  # 注册副作用（DR-8 CDR 抖动容限 mask 键，SG 部分件键面收口，追加尾位）
+from . import thz_vna  # noqa: F401  # 注册副作用（TH-2 TNVNA 扩频误差模型+跨带拼接两键，SB22-TH-2，追加尾位）
+from . import power_cal  # noqa: F401  # 注册副作用（SB22-MS-1 功率校准补偿链键，MS12 储备池席，追加尾位）
+from . import wilkinson_unequal  # noqa: F401  # 注册副作用（aurora36 W3-A 不等分 Wilkinson 综合键，追加尾位）
+from . import bethe_hole  # noqa: F401  # 注册副作用（aurora36 W3-A Bethe 孔定向耦合器双向键，追加尾位）
+from . import modulation_ber  # noqa: F401  # 注册副作用（aurora36 W4-A 数字调制 BER/Eb-N0 三键，追加尾位，新增键按字母序互排）
+from . import radar_eq  # noqa: F401  # 注册副作用（aurora36 W4-A 雷达方程/检测统计三键，追加尾位，新增键按字母序互排）
+from . import combline_resonator  # noqa: F401  # 注册副作用（aurora36 W5-A combline/同轴腔谐振器三键，追加尾位，新增键按字母序互排）
+from . import doa  # noqa: F401  # 注册副作用（aurora36 W5-A DOA 子空间+MVDR 三键，追加尾位，新增键按字母序互排）
+from . import emc_immunity  # noqa: F401  # 注册副作用（aurora36 W6-A EMC 抗扰度三键，追加尾位，新增键按字母序互排）
+from . import trl_standards  # noqa: F401  # 注册副作用（aurora36 W6-A TRL 校准件设计两键，追加尾位，新增键按字母序互排）
+from . import pa_arch  # noqa: F401  # 注册副作用（aurora36 W7-A PA 平衡对+Doherty 合路网络三键，追加尾位，新增键按字母序互排）
+from . import qubit_readout  # noqa: F401  # 注册副作用（aurora36 W7-A 量子比特读出链三键，追加尾位，新增键按字母序互排）
+from . import coax_line  # noqa: F401  # 注册副作用（aurora72 A2-C 标准圆同轴传输线通用件三键，追加尾位，新增键按字母序互排）
+from . import waveguide_closed_form  # noqa: F401  # 注册副作用（aurora72 A2-C 圆柱腔任意模式闭式谱三键，追加尾位，新增键按字母序互排）
+from . import linear_antenna_zin  # noqa: F401  # 注册副作用（aurora72 A3-B 偶极/折合/小环输入阻抗三键，追加尾位，新增键按字母序互排）
+from . import stub_tuner  # noqa: F401  # 注册副作用（aurora72 A3-B 双/三支节并联调配器两键，追加尾位，新增键按字母序互排）
+from . import coupled_line_bpf  # noqa: F401  # 注册副作用（aurora72 A3-C 耦合线带通综合两键，追加尾位，新增键按字母序互排）
+from . import interdigital_bpf  # noqa: F401  # 注册副作用（aurora72 A3-C 交指杆实现族两键，追加尾位，新增键按字母序互排）
+from . import detector_device  # noqa: F401  # 注册副作用（aurora72 A4-B 检波器件两键，追加尾位，新增键按字母序互排）
+from . import pim_cascade  # noqa: F401  # 注册副作用（aurora72 A4-B PIM 多节点累计两键，追加尾位，新增键按字母序互排）
+from . import radar_detection_ext  # noqa: F401  # 注册副作用（aurora72 A4-A Swerling 1-4 检测补全两键，追加尾位，新增键按字母序互排）
+from . import rcs_targets  # noqa: F401  # 注册副作用（aurora72 A4-B 雷达目标 RCS 闭式件两键，追加尾位，新增键按字母序互排）
+from . import vna_uncertainty  # noqa: F401  # 注册副作用（aurora72 A4-A VNA 不确定度+增益定标三键，追加尾位，新增键按字母序互排）
+from . import hybrid_junction  # noqa: F401  # 注册副作用（aurora72 A5-A 混合结/魔 T 三键，追加尾位，新增键按字母序互排）
+from . import saw_idt  # noqa: F401  # 注册副作用（aurora72 A5-A 声表面波 IDT 三键，追加尾位，新增键按字母序互排）
+from . import multisection_coupler  # noqa: F401  # 注册副作用（aurora72 A6-B 多节对称定向耦合器两键，追加尾位，新增键按字母序互排）
+from . import gysel_core  # noqa: F401  # 注册副作用（aurora72 A6-B Gysel 功分器 core 电气两键，追加尾位，新增键按字母序互排）
+from . import guanella_tlt  # noqa: F401  # 注册副作用（aurora72 A7-B Guanella 传输线变压器两键，追加尾位，新增键按字母序互排）
+from . import waveguide_iris  # noqa: F401  # 注册副作用（aurora72 A7-B 矩形波导膜片/谐振窗三键，追加尾位，新增键按字母序互排）
+from . import isolator_circulator  # noqa: F401  # 注册副作用（aurora72 A8-B 隔离器/环行器理想 S 两键，追加尾位，新增键按字母序互排）
+from . import taper_classic  # noqa: F401  # 注册副作用（aurora72 A8-B 经典渐变线（线性/指数/三角，core7 原位扩展三角）两键，追加尾位，新增键按字母序互排）
+from . import dr_te01d  # noqa: F401  # 注册副作用（批 B Wave3 G9 圆柱 DR TE01δ 正解/反解两键，追加尾位）
+from . import helix_axial_reg  # noqa: F401  # 注册副作用（批 B Wave3 G17 轴向模螺旋薄注册三键，公式单源 core/helix_axial，追加尾位）
+from . import yagi_uda  # noqa: F401  # 注册副作用（批 B Wave3 G15 Yagi-Uda NBS TN688 增益/几何两键，追加尾位）
+from . import slot_array  # noqa: F401  # 注册副作用（批 B Wave3 G16 波导缝隙阵 Stevenson 正反解/谐振阵综合两键，追加尾位）
+from . import doa_crb  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 DOA 单源 CRB 下界键，追加尾位，新增键按字母序互排）
+from . import multiplexer  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 多工器信道规划键，追加尾位，新增键按字母序互排）
+from . import phase_shifter  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 加载线/开关线移相器两键，追加尾位，新增键按字母序互排）
+from . import manufacturing_yield  # noqa: F401  # 注册副作用（aurora_d W3-CORE7 制造良率换算两键，追加尾位，新增键按字母序互排）

@@ -696,7 +696,24 @@ def cross_check_all(*,
                     registry: Mapping[str, ClosedFormOracle] | None = None,
                     ) -> dict[str, Any]:
     """全注册 oracle 生成式对拍总报告（≥20 键覆盖口径）。"""
-    reg = dict(registry or CLOSED_FORM_ORACLES)
+    # registry 判别必须 is None（#117 族：{} or 缺省会把显式空表回落全库，
+    #  空集假 PASS 防御永不触发——A-11 尾项修法实证）。
+    reg = dict(CLOSED_FORM_ORACLES) if registry is None else dict(registry)
+    if not reg:
+        # 空 oracle 注册表=无证据可对拍——空集全称量词假 PASS 防御
+        # （A-11 深审尾项 2026-10-08：当前 CLOSED_FORM_ORACLES 非空不触发，
+        #  注入空 registry 的调用方/未来清库态必须炸响而非静默全绿）。
+        return {
+            "ok": False,
+            "schema": CLOSED_FORM_ORACLE_SCHEMA,
+            "n_oracles": 0,
+            "n_keys": 0,
+            "covered_keys": [],
+            "by_grade": {},
+            "flags": ["empty_registry"],
+            "rows": {},
+            "note": "空 oracle 注册表=无证据可对拍，防假 PASS 拒出 ok=True",
+        }
     rows = {k: cross_check_oracle(k, registry=reg) for k in sorted(reg)}
     covered: set[str] = set()
     for row in rows.values():

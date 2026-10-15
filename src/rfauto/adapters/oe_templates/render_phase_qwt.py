@@ -1,6 +1,6 @@
 """TA-1 Schiffman 宽带移相器 + TA-2 多节 λ/4 阻抗变换器（TA 批，2026-10-02）。
 
-方案锚：研究扩充 系列第十五轮（2026-10-02）§二·2
+方案锚：docs/research_expansion_20260902 系列第十五轮（2026-10-02）§二·2
 TA-1/TA-2——「内核就绪缺模板」件：闭式全套在 core/synthesis.py
 （synthesize_schiffman / schiffman_delta_phase / synthesize_multisection_
 quarter_wave），本模块只做几何渲染注册与名义设计链（#1c：数值全部内核

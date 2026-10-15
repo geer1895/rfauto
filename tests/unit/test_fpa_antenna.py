@@ -1,4 +1,4 @@
-"""LM-1 Fabry-Perot 谐振腔天线内核单测（研究扩充 round4 中件包二 LM-1）。
+"""LM-1 Fabry-Perot 谐振腔天线内核单测（docs/research_expansion_20260926_round4.md 中件包二 LM-1）。
 
 裁判口径（#118 双径/独立来源）：
 - 谐振恒等式：闭式解 h 回代 4πh/λ0−φ_PRS−φ_GND=2πN（规格钉 rel 1e-12；

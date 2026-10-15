@@ -27,6 +27,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import yaml
 from typer.testing import CliRunner
 
 from rfauto.cli.domains.bands_uq import campaign_app
@@ -43,7 +44,7 @@ from rfauto.service.campaign_executor import (
     campaign_kind_of,
     run_campaign,
 )
-from rfauto.service.campaign_manager import save_plan
+from rfauto.service.campaign_manager import plan_campaign, save_plan
 from rfauto.service.envelope import ok_envelope
 
 runner = CliRunner()
@@ -409,3 +410,326 @@ def test_cli_json_dual_path(tmp_path, monkeypatch) -> None:
     envelope2 = json.loads(got2.output)
     assert envelope2.get("skipped") is True
     assert not (camp_dir / DAG_STATE_FILE).exists()
+
+
+# ─── ge9 审查批修复席 B 钉（P1-1/P1-2/P2-2/P2-1；runs/review_ge9/slice_R2）────
+
+def _tolerance_stage(stages: list[dict]) -> dict:
+    """stages → tolerance 阶段条目（RUF015：next 取代单元素切片）。"""
+    return next(s for s in stages if s.get("stage") == "tolerance")
+
+
+def _ge9b_fake_recipe(tmp_path: Path, name: str = "ge9b_recipe.yaml") -> Path:
+    """wilkinson 最小配方（fake 采样器/优化器秒级；含搜索空间与标量目标）。"""
+    recipe = {
+        "model": "wilkinson_power_divider",
+        "params": {"f0_ghz": {"value": 2.4},
+                   "arm_len_mm": {"value": 20.5},
+                   "series_w_mm": {"value": 0.33},
+                   "shunt_w_mm": {"value": 1.1}},
+        "setup": {"freq_range_ghz": [2.3, 2.5], "points": 41},
+        "objectives": [
+            {"metric": "s11_db", "band": [2.3, 2.5], "op": "max_below",
+             "value": -15},
+        ],
+        "optimization": {"params": {
+            "arm_len_mm": {"low": 18.0, "high": 23.0},
+            "series_w_mm": {"low": 0.25, "high": 0.45},
+            "shunt_w_mm": {"low": 0.90, "high": 1.30},
+        }},
+    }
+    path = tmp_path / name
+    path.write_text(yaml.safe_dump(recipe), encoding="utf-8")
+    return path
+
+
+def _isolate_optuna_storage(tmp_path: Path, monkeypatch) -> Path:
+    """tmp_path 隔离 optuna.db（test_w1d_watch_detach 既有注入口径同款）。"""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("RFAUTO_CACHE", "off")
+    db_dir = tmp_path / "runs" / ".optuna"
+    db_dir.mkdir(parents=True, exist_ok=True)
+    storage = f"sqlite:///{(db_dir / 'optuna.db').as_posix()}"
+    monkeypatch.setattr(
+        "rfauto.optimization.optimizer.get_storage_path", lambda: storage)
+    return storage
+
+
+def test_two_campaigns_same_model_study_not_shared(tmp_path, monkeypatch) -> None:
+    """ge9 审查 P1-1：同模型两战役 study 名含战役实例指纹（不相等）且
+    best 互不污染——真 optuna 链（tmp 隔离库）逐战役恰好只含本役 trial，
+    tune stage_result 的 best_params 出自本役 study 的 trial 集。"""
+    import optuna
+
+    from rfauto.optimization.optimizer import get_storage_path
+    from rfauto.service.campaign_executor import _campaign_study_name
+
+    storage = _isolate_optuna_storage(tmp_path, monkeypatch)
+    recipe = _ge9b_fake_recipe(tmp_path)
+    names: list[str] = []
+    for cname in ("camp_iso_a", "camp_iso_b"):
+        plan = plan_campaign(str(recipe), mid_adapter="fake",
+                             high_adapter="none", tune_budget=2,
+                             tolerances={"arm_len_mm": 0.3})
+        assert plan["ok"], plan.get("errors")
+        camp = tmp_path / "runs" / cname
+        save_plan(plan, camp)
+        res = run_campaign(
+            str(camp), solve_lock_path=str(tmp_path / "solve.lock"),
+            cache_dir=str(tmp_path / "cache"))
+        assert res["ok"] is True, res.get("errors")
+        expected = _campaign_study_name(
+            {"campaign_model": plan["model"], "campaign_dir": str(camp),
+             "campaign_stage": "tune"}, {"node_id": "tune"})
+        study = optuna.load_study(study_name=expected,
+                                  storage=get_storage_path())
+        # 只含本战役 trial（旧名共享库形态下两役共 4 trial 挤同一 study）
+        assert len(study.trials) == 2
+        sr = json.loads(
+            (camp / "tune" / STAGE_RESULT_FILE).read_text(encoding="utf-8"))
+        # 落盘 study 名与预期指纹一致（串台面在产物里可审计）
+        assert sr["study_name"] == expected
+        assert sr["best_params"] in list(t.params for t in study.trials), (
+            f"best_params 不在本役 study trial 集（串台嫌疑）: {sr}")
+        names.append(expected)
+    assert names[0] != names[1], names
+    # 全库恰两个 campaign-* study（无共享名残留）
+    summaries = optuna.study.get_all_study_summaries(storage=storage)
+    assert sorted(s.study_name for s in summaries) == sorted(names)
+
+
+def test_real_executor_full_chain_complete_with_tolerances(
+        tmp_path, monkeypatch) -> None:
+    """ge9 审查 P1-2：tolerances 生产写面打通——真执行器链（缺省
+    CAMPAIGN_EXECUTORS，fake 通道全离线）calibrate→prefilter→tune→
+    tolerance→report 全 COMPLETE；tolerance 节点真产出良率
+    （surrogate_yield_at 消费上游校准样本+tune 名义点）。"""
+    _isolate_optuna_storage(tmp_path, monkeypatch)
+    recipe = _ge9b_fake_recipe(tmp_path)
+    plan = plan_campaign(str(recipe), mid_adapter="fake",
+                         high_adapter="none", tune_budget=3,
+                         tolerances={"arm_len_mm": 0.3, "series_w_mm": 0.02,
+                                     "shunt_w_mm": 0.05})
+    assert plan["ok"], plan.get("errors")
+    tol_stage = _tolerance_stage(plan["stages"])
+    assert tol_stage["tolerances"] == {"arm_len_mm": 0.3, "series_w_mm": 0.02,
+                                       "shunt_w_mm": 0.05}
+    camp = tmp_path / "runs" / "camp_full"
+    save_plan(plan, camp)
+    res = run_campaign(str(camp), solve_lock_path=str(tmp_path / "solve.lock"),
+                       cache_dir=str(tmp_path / "cache"))
+    assert res["ok"] is True, res.get("errors")
+    assert res["verdict"] == "COMPLETE"
+    assert res["n_dead"] == 0
+    assert {s["status"] for s in res["stage_view"]} == {"done"}
+    # tolerance 节点真产出（不是注入执行器的合成账）
+    tol_sr = json.loads(
+        (camp / "tolerance" / STAGE_RESULT_FILE).read_text(encoding="utf-8"))
+    assert tol_sr["ok"] is True
+    assert isinstance(tol_sr.get("yield_rate"), (int, float))
+    assert tol_sr["tolerances"] == {"arm_len_mm": 0.3, "series_w_mm": 0.02,
+                                    "shunt_w_mm": 0.05}
+
+
+def test_plan_campaign_without_tolerances_keeps_honest_fail(
+        tmp_path, monkeypatch) -> None:
+    """缺省（不传 tolerances）不写字段——executor "v1 不猜"如实失败口径
+    保留（修复只补生产写面，不硬造缺省剖面）。"""
+    recipe = _ge9b_fake_recipe(tmp_path)
+    plan = plan_campaign(str(recipe), mid_adapter="fake",
+                         high_adapter="none")
+    tol_stage = _tolerance_stage(plan["stages"])
+    assert "tolerances" not in tol_stage
+
+
+def test_cli_campaign_plan_tolerances_flag(tmp_path, monkeypatch) -> None:
+    """CLI --tolerances（k=v 可多次，_kv_floats 单源解析）→ 计划字段；
+    缺省不传不写字段。"""
+    monkeypatch.chdir(tmp_path)
+    recipe = _ge9b_fake_recipe(tmp_path)
+    got = runner.invoke(campaign_app, [
+        "plan", str(recipe), "--high-adapter", "none", "--mid-adapter",
+        "fake", "--tolerances", "arm_len_mm=0.05", "--tolerances",
+        "series_w_mm=0.02", "--json"])
+    assert got.exit_code == 0, got.output
+    env = json.loads(got.output)
+    tol_stage = _tolerance_stage(env["stages"])
+    assert tol_stage["tolerances"] == {"arm_len_mm": 0.05,
+                                       "series_w_mm": 0.02}
+    got2 = runner.invoke(campaign_app, [
+        "plan", str(recipe), "--high-adapter", "none", "--mid-adapter",
+        "fake", "--json"])
+    assert got2.exit_code == 0, got2.output
+    env2 = json.loads(got2.output)
+    tol2 = _tolerance_stage(env2["stages"])
+    assert "tolerances" not in tol2
+
+
+def test_rejected_run_leaves_no_phantom_running(tmp_path, monkeypatch) -> None:
+    """ge9 审查 P2-2：占锁拒绝路径不留幻影 running 行（verdict 回写还原，
+    UI 队列不再消费到无活跑的 RUNNING）。"""
+    monkeypatch.chdir(tmp_path)
+    camp_dir = _make_plan_dir(tmp_path, "camp_phantom")
+    ledger = tmp_path / "calls_phantom.json"
+    holder = acquire_lock("holder", camp_dir / DAG_RUN_LOCK_NAME,
+                          max_wait_s=0.0)
+    try:
+        res = run_campaign(str(camp_dir),
+                           executors=_counting_executors(ledger),
+                           solve_lock_path=str(tmp_path / "solve.lock"),
+                           cache_dir=str(tmp_path / "cache"))
+        assert res["ok"] is False
+        assert any("lock" in str(e) for e in res["errors"])
+        plan_after = json.loads(
+            (camp_dir / "campaign.plan.json").read_text(encoding="utf-8"))
+        assert plan_after.get("verdict") != "RUNNING"
+    finally:
+        release_lock(holder, camp_dir / DAG_RUN_LOCK_NAME)
+
+
+def test_report_and_final_verify_stage_result_persistence(
+        tmp_path, monkeypatch) -> None:
+    """ge9 审查 P2-1：作者显式要落盘的键过白名单（report_html /
+    shadow_selection / adapter_channel 不再被静默丢弃）。"""
+    import rfauto.service.v3_services as v3_mod
+    from rfauto.service.campaign_executor import (
+        _exec_final_verify,
+        _exec_report,
+    )
+
+    monkeypatch.setattr(v3_mod, "generate_enhanced_report",
+                        lambda *a, **k: str(k.get("output", "")))
+    tunedir = tmp_path / "tune_wd"
+    tunedir.mkdir()
+    (tunedir / STAGE_RESULT_FILE).write_text(json.dumps(
+        {"ok": True, "run_id": "runX", "best_params": {"a": 0.5},
+         "best_cost": 0.1}), encoding="utf-8")
+    upstream = {"tune": {"artifact_run_dir": str(tunedir)}}
+
+    wd_report = tmp_path / "wd_report"
+    _exec_report({"node_id": "report",
+                  "stage_extra": {"campaign_dir": str(tmp_path / "camp")}},
+                 {"work_dir": str(wd_report), "upstream": upstream})
+    sr_report = json.loads(
+        (wd_report / STAGE_RESULT_FILE).read_text(encoding="utf-8"))
+    assert "report_html" in sr_report
+    assert sr_report["run_id"] == "runX"
+
+    wd_fv = tmp_path / "wd_fv"
+    _exec_final_verify(
+        {"node_id": "final_verify",
+         "stage_extra": {"campaign_recipe": "r.yaml", "adapter": "fake",
+                         "shadow_points": {"n_points": 3, "top_k": 1,
+                                           "min_norm_dist": 0.3}}},
+        {"work_dir": str(wd_fv), "upstream": upstream})
+    sr_fv = json.loads(
+        (wd_fv / STAGE_RESULT_FILE).read_text(encoding="utf-8"))
+    assert "shadow_selection" in sr_fv
+    assert sr_fv["shadow_selection"]["n_selected"] >= 1
+    assert sr_fv["adapter_channel"] == "fake->fake"
+
+
+# ─── aurora_next 审查批修复席 F4 钉（P1-2 显式 0 tune 预算 + P3 falsy 位；
+# runs/review_aurora_next/A3_service_am/REPORT.md）────────────────────────────
+
+def test_plan_recipe_explicit_zero_max_trials_respected(tmp_path) -> None:
+    """A3 P1-2（配方侧）：显式 limits.max_trials: 0 尊为 0——旧
+    `limits.get("max_trials") or 30` 把显式 0 顶成 30（#364④ 同族）。"""
+    recipe = _ge9b_fake_recipe(tmp_path)
+    data = yaml.safe_load(recipe.read_text(encoding="utf-8"))
+    data["limits"] = {"max_trials": 0}
+    recipe.write_text(yaml.safe_dump(data), encoding="utf-8")
+    plan = plan_campaign(str(recipe), mid_adapter="fake",
+                         high_adapter="none")
+    by_stage = {s["stage"]: s for s in plan["stages"]}
+    assert by_stage["tune"]["budget"] == 0
+    assert by_stage["prefilter"]["budget"] == 0
+
+
+def test_explicit_zero_tune_budget_end_to_end(tmp_path, monkeypatch) -> None:
+    """A3 P1-2（端到端）：--tune-budget 0 全链落 0——plan 端 stage budget=0
+    保真 → nodes campaign_stage_budget={"stage_budget": 0} → 执行端
+    is not None 判缺（旧 `or 30` 把显式 0 再顶回 30=S2-3 修复 no-op）。"""
+    import rfauto.service.api as api_mod
+
+    recipe = _ge9b_fake_recipe(tmp_path)
+    plan = plan_campaign(str(recipe), mid_adapter="fake",
+                         high_adapter="none", tune_budget=0,
+                         tolerances={"arm_len_mm": 0.3})
+    assert plan["ok"], plan.get("errors")
+    by_stage = {s["stage"]: s for s in plan["stages"]}
+    assert by_stage["tune"]["budget"] == 0
+    camp = tmp_path / "runs" / "camp_zero"
+    save_plan(plan, camp)
+
+    captured: list[int] = []
+
+    def _fake_start_tune(recipe_path, *, adapter_name, max_trials,
+                         study_name):
+        captured.append(int(max_trials))
+        return {"ok": True, "best_params": {"arm_len_mm": 20.5},
+                "best_cost": 0.5, "run_id": "",
+                "trials_completed": 0, "study_name": study_name}
+
+    monkeypatch.setattr(api_mod, "start_tune", _fake_start_tune)
+    res = run_campaign(str(camp),
+                       solve_lock_path=str(tmp_path / "solve.lock"),
+                       cache_dir=str(tmp_path / "cache"))
+    assert res["ok"] is True, res.get("errors")
+    assert captured == [0], f"显式 0 预算被顶替: {captured}"
+
+
+def test_final_verify_explicit_zero_top_k_not_floored(
+        tmp_path, monkeypatch) -> None:
+    """A3 P3-3：shadow_points.top_k 显式 0 不再被 `or 1` 顶成 1
+    （#117 族 falsy 位 is not None 化；缺省档不传仍按缺省）。"""
+    import rfauto.service.campaign_manager as cm_mod
+    from rfauto.service.campaign_executor import _exec_final_verify
+
+    real = cm_mod.select_shadow_points
+    seen: dict = {}
+
+    def _spy(points, *, n_points, top_k, min_norm_dist):
+        seen["top_k"] = top_k
+        seen["min_norm_dist"] = min_norm_dist
+        return real(points, n_points=n_points, top_k=top_k,
+                    min_norm_dist=min_norm_dist)
+
+    monkeypatch.setattr(cm_mod, "select_shadow_points", _spy)
+    tunedir = tmp_path / "tune_wd"
+    tunedir.mkdir()
+    (tunedir / STAGE_RESULT_FILE).write_text(json.dumps(
+        {"ok": True, "run_id": "", "best_params": {"a": 0.5},
+         "best_cost": 0.1}), encoding="utf-8")
+    upstream = {"tune": {"artifact_run_dir": str(tunedir)}}
+    _exec_final_verify(
+        {"node_id": "final_verify",
+         "stage_extra": {"campaign_recipe": "r.yaml", "adapter": "fake",
+                         "shadow_points": {"n_points": 2, "top_k": 0,
+                                           "min_norm_dist": 0.3}}},
+        {"work_dir": str(tmp_path / "wd"), "upstream": upstream})
+    assert seen["top_k"] == 0
+    # 缺省档（不写 top_k）仍按缺省 1：None → 1
+    _exec_final_verify(
+        {"node_id": "final_verify",
+         "stage_extra": {"campaign_recipe": "r.yaml", "adapter": "fake",
+                         "shadow_points": {"n_points": 2}}},
+        {"work_dir": str(tmp_path / "wd2"), "upstream": upstream})
+    assert seen["top_k"] == 1
+
+
+def test_seat_payload_explicit_zero_timeout_not_floored(tmp_path) -> None:
+    """A3 P3-3：座位 timeout_s 显式 0 不再被 `or 2400.0` 顶成 2400
+    （#117 族 falsy 位 is not None 化）；未声明仍落缺省 2400。"""
+    from rfauto.service.campaign_executor import _resolve_seat_payload
+
+    node = {"node_id": "tune", "stage_extra": {"campaign_dir": str(tmp_path)}}
+    seat, err = _resolve_seat_payload(
+        {"seat": {"simulation_py": "sim.py", "timeout_s": 0}}, node,
+        {"run_dir": str(tmp_path)})
+    assert err is None
+    assert seat["timeout_s"] == 0.0
+    seat_def, _ = _resolve_seat_payload(
+        {"seat": {"simulation_py": "sim.py"}}, node,
+        {"run_dir": str(tmp_path)})
+    assert seat_def["timeout_s"] == 2400.0

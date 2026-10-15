@@ -1,6 +1,6 @@
 """B6 stage-2：KiCad PCB 提取 → CPWG 锚判据 + 确定性代理寻优环。
 
-续跑计划 §10.2 B6 stage-2「接优化环」的 service 面
+延续计划 §10.2 B6 stage-2「接优化环」的 service 面
 （JSON 进出薄编排，同 parasitic_service 口径）：extract_pcb 产物 →
 CPWG 设计事实解析 → CPWG 共形映射闭式代理（core/calculators._cpwg_ri，
 确定性内核）→ 综合寻优（core/synthesis.synthesize_cpw_model，brentq+
@@ -572,7 +572,7 @@ def board_facts_from_extract(extract: Mapping[str, Any]) -> dict[str, Any]:
 def extract_pcb_facts(pcb_path: str | Path,
                       kicad_python: str | None = None) -> dict[str, Any]:
     """.kicad_pcb → extract_pcb 产物契约（JSON 进出透传；子进程走 KiCad 自带
-    Python 3.11， 硬限制 2）。文件不存在/子进程失败 ok=False。"""
+    Python 3.11，项目规则 硬限制 2）。文件不存在/子进程失败 ok=False。"""
     from rfauto.adapters.kicad_extract import extract_pcb
 
     return extract_pcb(pcb_path, kicad_python=kicad_python)

@@ -1,7 +1,7 @@
 """LC-8 拼板闭式面：板阵列/工艺边/V-cut（V 型槽）/邮票孔（mouse bite）参数
 计算 + 面板利用率 + 全局基准标记（fiducial）布局。
 
-规格=研究扩充 round15 §四 LC-8"拼板器+基准标记
+规格=docs/research_expansion_20261002_round15.md §四 LC-8"拼板器+基准标记
 （P3/M）"；席D3 任务书口径："panelization 闭式（板阵列间距/工艺边/V-cut 或
 邮票孔参数计算+利用率）"。纯闭式几何（零 IO 零求解器），JSON 进出信封
 （规则 4；AU-2 信封构造器）。

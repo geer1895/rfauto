@@ -1,6 +1,6 @@
 """F-I P1 核心段：RF 叠层（LayerStack）schema + B2 Layout→渲染原语桥 + 斜段矩形化。
 
-方案依据：研究扩充 round5 §二 F-I 三段计划 P1——
+方案依据：docs/research_expansion_20260926_round5.md §二 F-I 三段计划 P1——
 "斜段矩形化 + Layout→渲染桥（层名→金属/介质映射+图元转换纯函数）+ RF-LayerStack
 schema（source 层选择器/zmin/thickness/material/kind/mesh_hint）"。
 

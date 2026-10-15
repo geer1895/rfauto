@@ -214,7 +214,7 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
             deltas.append(abs(sh - sl))
             s11_low.append(sl)
             s11_high.append(sh)
-    # schema 对齐 扩展方案 方向 1：fidelity_delta.json 含 S11_low/S11_high
+    # schema 对齐 规划扩展 方向 1：fidelity_delta.json 含 S11_low/S11_high
     return {"freq_ghz": freq_ghz or [], "s11_low": s11_low, "s11_high": s11_high,
             "abs_delta_db": deltas,
             "mean_abs_delta_db": float(np.mean(deltas)) if deltas else None,

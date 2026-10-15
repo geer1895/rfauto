@@ -1,7 +1,7 @@
 """AD-7 skill 自动沉淀消费侧闭环测试（skill_autopilot）。
 
 全链零 LLM/零网络（沉淀内容只来自 rationale_memory 内置条目与 record
-本身）；run_id→health 通道用 monkeypatch 钉死（不碰真实 runs）。
+本身）；run_id→health 通道用 monkeypatch 钉死（不碰真实 runs/）。
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """NX-11 WPT 效率包络 + rectenna 链闭式面。
 
-规格：研究扩充 round14 §四 NX-11——"nfc_coil
+规格：docs/research_expansion_20261002_round14.md §四 NX-11——"nfc_coil
 补 Qi2/Qi2.2 15/25W 效率包络；远场 Friis+整流效率-功率曲线（Ph5 溢出池
 rectenna 件具体化）"。纯闭式叶子，零 IO、不进 calculators。
 

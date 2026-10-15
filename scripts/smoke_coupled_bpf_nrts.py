@@ -62,7 +62,7 @@ _RE_NRTS_WARN = re.compile(
     r"Max\. number of timesteps was reached before the end-criteria of (-?[0-9.]+)dB")
 
 # pt1（runs/coupled_bpf_smoke/pt1/simulation.py 原脚本）探针实证（2026-09-16，
-# NrTS=10 十步 + NrTS=1e6 头部读取后 kill；日志留档 pt3_nrts/_probe_nrts10）：
+# NrTS=10 十步 + NrTS=1e6 头部读取后 kill；日志留档 pt3_nrts/_probe_nrts10/）：
 # 旧轮终止诊断必须用旧脚本自身的 dt——模板此后有漂移（本轮渲染 377×1203×19、
 # dt=7.58e-14s），拿新 dt 反推旧步数会误判。
 PT1_PROBE: dict[str, float | int] = {

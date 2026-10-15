@@ -9,12 +9,12 @@
 
 | 项 | 状态 |
 |---|---|
-| COMSOL 6.3.0.290 | ✅ **可用**（E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe） |
+| COMSOL 6.3.0.290 | ✅ **可用**（E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe/） |
 | COMSOL 6.4 | ❌ 禁用（license 单行 SERIAL 13-apr-2026 过期且无模块包） |
 | **版本钉扎** | **必须显式 `mph.start(version="6.3")`**——MPh 自动探测选"最新"=6.4=过期（#215） |
 | license 形态 | permanent uncounted，RF/RFBATCH/RFCSL/RFCOMPL 齐全；**每次求解占一个席位，串行使用** |
 | Python 桥 | MPh 1.4.0（venv 已装，[dataset] 同款 extras 模式） |
-| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（廿七），坑 #217 API 口径实证已回写本文 §2/§3/§5） |
+| **首案例** | ✅ 2026-09-11：`ComsolAdapter` 接入 EMSolverRegistry + 平行板 TEM 真机冒烟闭式吻合（，坑 #217 API 口径实证已回写本文 §2/§3/§5） |
 
 ## 1. 权威文档来源（按查询优先序）
 
@@ -40,7 +40,7 @@ model.study("std1").create("freq", "Frequency");                 // 频域步类
 model.study("std1").feature("freq").set("plist", "2.4");  // 属性 set
 model.study("std1").feature("freq").setIndex("geometricNonlinearity", "off", 0);
 ```
-- **#217 实证更正（2026-09-11 首案例，（廿七）**：RF 集总端口
+- **#217 实证更正（2026-09-11 首案例，）**：RF 集总端口
   建模必须用 `ElectromagneticWaves`（emw）——`ElectromagneticWavesFrequencyDomain`
   （ewfd，Wave Optics 风格）可创建但**无 LumpedPort 特征**；study 频域步
   类型串是 `Frequency` 非 `FrequencyDomain`。早期探针脚本
@@ -97,7 +97,7 @@ node.java                                # 逃逸口→裸 COMSOL Java 对象
 ## 5. RF 模块要点（S 参数仿真，详读 doc\pdf\RF_Module\）
 
 - 物理场接口：**`ElectromagneticWaves`（tag emw）**——首案例真机求解
-  通过（2026-09-11，（廿七）；`ElectromagneticWavesFrequencyDomain`
+  通过（2026-09-11，）；`ElectromagneticWavesFrequencyDomain`
   仅在早期探针中用于 license checkout 验证，无 LumpedPort，不用于建模
   （#217①）。
 - S 参数工作流：port 边界条件（LumpedPort，Uniform/Cable 型）+ study
@@ -178,7 +178,7 @@ PortSweepSettings（useSweep=1、ExportTouchstone=1）+ study 外层
 Parametric 步扫 PortName。真机步序实测 `["param","bma1","bma2","freq"]`
 （param 外层先建、bma 在 freq 前；probe-only 零席位验证，步序回读用
 `study("std1").feature().tags()`——study 本体无 tags()）。双档真跑
-PASS（runs/comsol_tail/mline_tem_parametric）：scale 1.0 → εeff 2.9172
+PASS（runs/comsol_tail/mline_tem_parametric/）：scale 1.0 → εeff 2.9172
 （Δ_gold +1.08%、Δ_HJ +2.26%、|S11|max −35.1 dB）、scale 0.7 → 2.9133
 （+0.95%/+2.13%/−37.3 dB）；收敛 0.13%<1%、无源 max|S|=0.9857、
 Touchstone 原生导出；εeff 与单激励 tem run 逐位一致（组合零口径漂移）。

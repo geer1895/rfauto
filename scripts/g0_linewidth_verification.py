@@ -1,4 +1,4 @@
-"""G0 线宽定案验证（扩展方案.md §3 G0 gate）。
+"""G0 线宽定案验证（规划扩展.md §3 G0 gate）。
 
 三个独立来源确认 rogers4350b_h0.508 上 35.35Ω 和 50Ω 的真实线宽：
 1. HJ 模型（skrf MLine, Hammerstad-Jensen）

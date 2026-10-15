@@ -16,3 +16,36 @@ nominal_params:
   w_mm: 0.9058
   b_mm: 1.016
   line_len_mm: 40.0
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 悬置带线：基板悬浮夹心（带在基板中面，上下为空气隙，腔高 b）→ 准 TEM，
+      场沿传播路径按空气/介质串联分布 → 1 < εeff < εr（介质份额由几何定）。repo 内核
+      用「平行份额 × softmin 串联饱和」FD 定标模型（288 点定标 max 3.84%/独立验证族
+      75 点 max 1.94%）；Z0=空气线 Cohn 闭式/√εeff；h→0 与 h→b 两端点精确退化回
+      空气带状线/全填充带状线闭式（对称性裁判）。
+    derivations:
+    - claim: 串联饱和 εeff 模型：介质份额按平行份额计会把串联成分高估（FD 实测 q 随 εr 单调降）——softmin 分母表达饱和；两端点修正因子在 s=h/b→0/1 处消失 → 极限精确
+      formula: εeff = 1+(Δ^(−p)+D^(−p))^(−1/p)；Δ = (εr−1)·q̃；Z0 = Z0_air(w,b,εr=1)/√εeff
+      source: knowledge/anchors.yaml（suspended_stripline.z0_ohm/eps_eff closedform 锚，SSL 常数块定标账与适用域如实注）+ calc_families/rf_line.py（suspended_stripline_analysis/synthesis，_suspended_stripline_ri）
+    - claim: 对称退化裁判（模型正确性先于使用）：εr=1 时与本仓零厚度带状线闭式逐位一致；h=b（全填充）时回 Cohn 全填充带状线精确解——两端点恒等式由内核单测钉住
+      formula: εr=1 ⇒ εeff=1 且 Z0 ≡ stripline 闭式；h=b ⇒ 全填充带状线精确极限
+      source: calc_families/rf_line.py（两端点精确极限锚注记）+ knowledge/anchors.yaml（对称退化≡_stripline_z0 逐位判据）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 空气线 Cohn 闭式对 w 强单调（同带状线机理），且经 εeff 折算间接进 Z0
+  - param: b_mm
+    order: 2
+    basis: 腔高定空气隙总厚度 → 介质串联份额（εeff 主几何旋钮）
+  - param: h_mm
+    order: 3
+    basis: s=h/b 居中填充比进入 softmin 修正族（G/D/p 全依赖 s）
+  - param: er
+    order: 4
+    basis: Δ=(εr−1)·q̃ 直接进入 εeff（经串联饱和软化，非线性打折）
+  - param: line_len_mm
+    order: 5
+    basis: 纯相位量（β·L）
+  quiz_refs: []

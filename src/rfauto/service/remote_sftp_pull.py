@@ -8,9 +8,9 @@
 
 - **远端路径来自 remote 配置**（注册表 ``hfss_project_root`` 等，按服务器
   文件系统解释）；服务器侧一切临时目录/中间文件的唯一合法根是
-  ``E:\\rfauto_remote``（远程工作根约定）——本模块不臆造缺省
+  ``E:\\rfauto_remote``（AGENTS 规则 0b，E 盘口径）——本模块不臆造缺省
   远端根，``remote_dir`` 必须由调用方从配置给出。服务器云盘
-  生产资料库（云盘同步目录）禁测试写入。
+  ``D:\\CloudDrive`` 为生产资料库，禁测试写入（服务器说明 §11.7）。
 - **依赖**：sftp 通道复用 :class:`rfauto.infra.remote_machines.SshTransport`
   （paramiko 懒加载，可选依赖 ``rfauto[remote]``）——本模块零直接
   paramiko import，未装时经 SshTransport 的明确报错转为 error 信封。
@@ -483,6 +483,10 @@ def record_pull_manifest(
     ``attempts / error``）；``bytes``/``sha256`` 缺失且本地文件在位时自动
     回填（stat + 流式 sha256）——薄接线点（如 L2 单文件回拉）只需给
     remote/local/status 三键。
+
+    ``skipped_exists`` 行（本地已存在跳过）同样回填——记录的是落盘事实，
+    代价是既有文件全量重读的 I/O（大文件多时回拉尾程变慢属既有语义非缺
+    陷；审查 A4 P2-6 注记）。
 
     Returns
     -------

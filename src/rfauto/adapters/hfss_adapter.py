@@ -277,7 +277,9 @@ class HfssAdapter(SimulatorAdapter):
             # remote_rpc_session/PYAEDT_USE_PRE_GRPC_ARGS）——connect() 的 CM
             # 在 Desktop attach 完成时已恢复缺省，本方法是**第二个构造窗口**，
             # 两窗口独立进出互不干扰。CM 内先临时置 remote_rpc_session=None
-            # 。
+            # （ 五百四十二坑 1：该开关双语义——Hfss 设计初始化按 rpyc
+            # 消费 settings.remote_rpc_session.filemanager，Desktop attach 完成
+            # 后必须置 None 再构造 Hfss；CM 退出统一恢复原值）。
             from ansys.aedt.core.generic.settings import settings as aedt_settings
 
             with remote_session_switches():
@@ -420,7 +422,7 @@ class HfssAdapter(SimulatorAdapter):
            返回 Profiles 映射，SimulationProfile.status 即求解状态）；
         2. 磁盘 .profile 兜底（``<project>.aedtresults/<design>.results/``
            下 mtime 最新的 *.profile）——``***`` 引擎诊断行只有这里全量
-           可见（求解失败先读 profile）。
+           可见（ #191：求解失败先读 profile）。
         """
         # 来源 1：活态 API（状态）
         status: str | None = None
@@ -1102,7 +1104,7 @@ class HfssAdapter(SimulatorAdapter):
 
         背景（F7 受阻登记收口）：ge8e 审查批 F7 建 core/coupled_mode_z
         单源时本适配器并发在制无法接线（审查 R4-4：换算链只活在 runs
-        任务书 文档与战役脚本、无可复用实现）；本批（ge8e W1 A2）补挂。
+        handoff 文档与战役脚本、无可复用实现）；本批（ge8e W1 A2）补挂。
 
         Args:
             zo_by_mode: 模键 → 模阻抗读数（Ω；单端口标量或多端口序列，

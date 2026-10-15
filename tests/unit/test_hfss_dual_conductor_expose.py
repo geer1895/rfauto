@@ -2,7 +2,7 @@
 
 背景：ge8e 审查批 F7 建 core/coupled_mode_z 单源（#307 换算链：共模
 Zc=Z0e/2、差模 Zd=2·Z0o，模序按 εeff 较高识别偶模）时 hfss_adapter 并发
-在制无法接线（审查 R4-4：换算链只活在 runs 任务书 文档与战役脚本）；
+在制无法接线（审查 R4-4：换算链只活在 runs handoff 文档与战役脚本）；
 本批适配器 expose 薄封装收口——零 gRPC/零 session 触碰（未连接亦可调），
 供仲裁脚本与未来消费者走单源。
 

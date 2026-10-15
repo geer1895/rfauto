@@ -23,3 +23,47 @@ nominal_params:
 topology: PIFA（§10.3 C1）：贴片 z=h（L×W）+ +x 边短路板（宽 Ws，z 0→h 触地）+ 馈针（距短路板 pin_back，y 偏 pin_y，针顶触贴片、针底触地）；LumpedPort 沿针 z 向；基板 + z-min PEC 无限大地
 param_semantics: pifa_l_mm=贴片长 L（L 路径式定版 L=λ0/(4√εeff(W))，HJ @W；居中短路板电流不绕行，文献通式 L+W−Ws 的 +W−Ws 项不适用，真机两轮实证），pifa_w_mm=贴片宽 W，pifa_ws_mm=短路板宽 Ws（≤W，几何输入不进谐振式），pin_back_mm=馈针距短路板（定匹配），pin_y_mm=馈针 y 偏置（<W）
 smoke_note: 真机 runs/antenna2_smoke/pifa（2026-09-14，旧通式标称 L=11.0785）FAIL：|S11|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，runs/antenna2_smoke/pifa_override）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: PIFA=短路板把 λ/2 贴片腔折半的 λ/4 口径天线；但文献通式
+      L+W−Ws=λg/4 的前提是角部短路板（电流绕行贴片宽 W）——本族短路板居中、
+      电流不绕行，有效路径≈L，设计式=纯 L 路径式 L=λ0/(4√εeff(W))（真机两轮
+      实证定版：旧通式标称全带无谐振=纯短路桩反应，L 路径式谷位 −5.8% 入带
+      PASS，账见 meta smoke_note）。Ws 是几何输入不进谐振式；pin_back 定并联
+      馈电抽头阻抗（R_peak 限谷深），pin_y 是正交向馈电偏置。
+    derivations:
+    - claim: 短路板折半原理与 L 路径式：λ/2 贴片腔中面（电压节点/电流腹点）插
+        PEC 短路板，腔折半谐振不变——短路板在电流路径末端时有效路径=L；
+        f0=c/(4·L·√εeff(W))，εeff HJ @W @设计频率（fake 逆同式一一对应）
+      formula: pifa_l = c/(4·f0·√εeff(W))；f0 = c/(4·pifa_l·√εeff(W))
+      source: docs/templates/pifa/meta.yaml（param_semantics L 路径式定版+
+        smoke_note 真机两轮实证账）+ core/synthesis.py（forward_media εeff
+        单源）+ adapters/fake_adapter.py（antenna2_resonance_ghz 精确逆）+
+        Balanis, Antenna Theory (4th ed.), Ch.14（微带天线短路板/PIFA 口径）
+    - claim: 通式前提辨析（教学要点）：L+W−Ws=λg/4 通式假定角部短路板（电流
+        绕行贴片宽 W−Ws）；居中短路板电流不绕行 → +W−Ws 项不适用——同名参数
+        跨布局语义可相反（#154 家族），接族先逐参数对语义
+      formula: L_path = L + W − Ws（角部短路板通式）；
+        L_path ≈ L（居中短路板，本族定版口径）
+      source: docs/templates/pifa/meta.yaml（smoke_note 旧通式 FAIL→L 路径式
+        PASS 定版账）+ adapters/fake_adapter.py（antenna2_resonance_ghz
+        docstring 设计式↔精确逆逐模板注记）
+  sensitivity_ranking:
+  - param: pifa_l_mm
+    order: 1
+    basis: L 路径式恒等 |∂lnf0/∂lnL|=1（一阶精确）；登记表 1.0
+  - param: pifa_w_mm
+    order: 2
+    basis: 贴片宽经 εeff(W) 通道弱进入谐振式（登记表 0.029987）；兼阻抗/带宽维
+  - param: pifa_ws_mm
+    order: 3
+    basis: 居中短路板不绕行——几何输入不进谐振式（登记表 0；通式辨析见
+      derivations）
+  - param: pin_back_mm
+    order: 4
+    basis: 馈电抽头距离定匹配/R_peak（谷深面），不进谐振式（登记表 0）
+  - param: pin_y_mm
+    order: 5
+    basis: 正交向馈电偏置（模式纯度/极化面），不进谐振式（登记表 0）
+  quiz_refs: []

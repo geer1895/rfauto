@@ -2,7 +2,7 @@
 
 钉住：
 1. fs_list 根围栏（cwd + RFAUTO_FS_ROOT，os.path.normcase 比较 #318）——
-   相对穿越（..）、绝对路径越根、盘符逃逸（D:\\x）一律 ok=False 且错误
+   相对穿越（../）、绝对路径越根、盘符逃逸（D:\\x）一律 ok=False 且错误
    指明允许根；RFAUTO_FS_ROOT（os.pathsep 多根）显式放行；
 2. 敏感面过滤——configs 目录项、*.local.yaml、chat_settings.yaml 不进
    entries；target 位于 configs（含就是 configs 目录）直接拒；
@@ -33,7 +33,7 @@ from rfauto.service.ui_service import recipe_view
 def _isolated(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     # 围栏根只认 cwd + 显式 RFAUTO_FS_ROOT——防本机 set 的该 env 串味
-    #（确定性测试要清空同名前缀的整个环境变量集合， 踩坑速查）
+    #（确定性测试要清空同名前缀的整个环境变量集合，AGENTS 踩坑速查）
     monkeypatch.delenv("RFAUTO_FS_ROOT", raising=False)
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
@@ -60,13 +60,6 @@ class TestFsListRootFence:
         d = fs_list(str(tmp_path.parent))
         assert d["ok"] is False and "路径越界" in d["error"]
 
-    # 盘符逃逸形态=Windows 盘符语义（POSIX 上 "D:\x" 是 cwd 内相对名，
-    # resolve 后落允许根内→走"目录不存在"分支，围栏行为本身正确）；
-    # POSIX 逃逸形态由 test_absolute_outside_root_rejected 覆盖——诚实跳过。
-    @pytest.mark.skipif(
-        os.name != "nt",
-        reason="盘符逃逸（D:\\x）为 Windows 盘符语义；POSIX 逃逸由"
-               " absolute_outside_root 用例覆盖")
     def test_drive_escape_rejected(self) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")
@@ -225,10 +218,14 @@ class TestSystemPromptAccess:
         assert prompt == r3_services._SYSTEM_PROMPT  # 同一单源，私有名保留
 
     def test_server_no_longer_touches_private_name(self) -> None:
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（server.py 装配壳 +
+        # routes/* 分域 + csp.py）：私有名任何 UI 模块都不得触碰。
         from pathlib import Path as _P
 
-        import rfauto.ui.server as server_mod
+        import rfauto.ui as ui_pkg
 
-        src = _P(server_mod.__file__).read_text(encoding="utf-8")
-        assert "_SYSTEM_PROMPT" not in src  # ui/server 只走 get_system_prompt()
-        assert "get_system_prompt" in src
+        ui_dir = _P(ui_pkg.__file__).parent
+        joined = "\n".join(
+            p.read_text(encoding="utf-8") for p in sorted(ui_dir.rglob("*.py")))
+        assert "_SYSTEM_PROMPT" not in joined  # UI 面只走 get_system_prompt()
+        assert "get_system_prompt" in joined

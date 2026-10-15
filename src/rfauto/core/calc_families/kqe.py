@@ -88,7 +88,7 @@ def _ksplit_bias_invert(k_raw: float, raw_grid: Any, true_grid: Any) -> float:
 
 @register_calculator(
     "k_split_pair",
-    "双峰模分裂耦合系数（Hong & Lancaster 精确式 k=(f2²−f1²)/(f2²+f1²)，"
+    "模分裂耦合：双峰模分裂耦合系数（Hong & Lancaster 精确式 k=(f2²−f1²)/(f2²+f1²)，"
     "df6 A1 R4）：|S21| dB 双主峰抛物线细化+KSPLIT_RULE 峰检（prominence "
     "0.5dB HFSS 锚同款+通带邻域守卫）；偏置曲线 log-log 逆映射修正；双峰不"
     "可分如实 None（#122）",
@@ -139,7 +139,7 @@ def k_split_pair(freq_hz: Any, s21: Any,
 
 @register_calculator(
     "qe_group_delay",
-    "单谐振器外部 Q 群时延法（Dishal/Hong 反射单端口径，df6 A1 R4）："
+    "群时延测Q：单谐振器外部 Q 群时延法（Dishal/Hong 反射单端口径，df6 A1 R4）："
     "τ(f)=A/(1+((f−f0)/w)²)+D 四参数 Lorentzian+基线拟合；无耗单端口 "
     "τmax=4Qe/ω0 ⇒ 缺省 c=4（合成回收 3.9972；/2 口径否决，DP-2 互证）",
     (("freq_hz", "ndarray Hz 升序扫频栅格"),

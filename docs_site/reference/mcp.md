@@ -57,7 +57,7 @@
 | `cm_extract_refine` | diagnose | 耦合矩阵提取（cm 域）：S 参数 → VF 定阶+LM 拓扑精化（+目标偏差表）。 |
 | `cm_cat_critique` | diagnose | Dishal 调谐 critique（cm 域）：τ(f) 峰数指纹+Qe/k 偏差 → typed fixes。 |
 | `correlate_measurement` | diagnose | 仿真 vs 测量相关性分析（measurement 域）：两份 .s2p → 相关性判定。 |
-| `edb_emit_spec` | edb | 发射声明式 EDB spec（edb_branchline/edb_power_divider 平面族发射器）。 |
+| `edb_emit_spec` | edb | 发射声明式 EDB spec（平面族发射器）。 |
 | `edb_build_solve` | edb | EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出一站式编排。 |
 | `edb_status` | edb | 扫描 EDB 快车道产物根目录的资产清单（只读，零求解零导入）。 |
 | `emc_cispr_band_params` | emc | CISPR 检波器参数表（emc 域）：Band A/B/C/D → 16-1-1 Table 1 四参数。 |
@@ -83,7 +83,7 @@
 | `create_run` | jobs | 提交仿真任务（jobs 域）：配方+适配器 → 同步求解并返回 run_id。 |
 | `create_run_async` | jobs | 异步提交仿真任务（jobs 域）：配方+适配器 → 立即返回 job_id。 |
 | `poll_job` | jobs | 任务状态轮询（jobs 域）：job_id → state/进度/指标快照（只读）。 |
-| `cancel_job` | jobs | 协作取消长任务（jobs 域）：job_id → 置 cancelled 协作检查点退出。 |
+| `cancel_job` | jobs | 协作取消长任务（jobs 域）：job_id → 协作检查点退出。 |
 | `wait_job` | jobs | 阻塞等待长任务终态并流式回报进度（DP-14 A1：progressToken 语义）。 |
 | `get_metrics` | jobs | 读取 run 指标（runs 域）：run_id → 指标/成本/诊断信封。 |
 | `search_knowledge` | knowledge | 知识库统一检索（QW-2）：rules/anchors/playbook/fab 剖面一键子串检索。 |
@@ -140,7 +140,7 @@
 | `recommend_templates` | specs_campaign | 模板推荐（specs 域）：f0/族/端口数/关键词 → filter+rank 推荐表。 |
 | `plan_campaign` | specs_campaign | 战役计划编制（specs 域）：配方 → 阶段队列（依赖/预算/license 门）。 |
 | `save_campaign_plan` | specs_campaign | 战役计划落盘（specs 域）：plan dict → <out_dir>/campaign.plan.json。 |
-| `get_campaign_status` | specs_campaign | 战役状态读回（specs 域）：plan_path → verdict/各阶段 status/计数。 |
+| `get_campaign_status` | specs_campaign | 战役状态读回（specs 域）：plan_path → 计划文件存储状态原样读回。 |
 | `run_campaign` | specs_campaign | 战役闭环执行（specs 域）：已落盘计划 → 逐阶段执行（VI-2 基座）。 |
 | `synthesize` | synth | 微带线综合（synth 域）：目标阻抗+叠层 → 线宽（HJ 闭式反解）。 |
 | `synthesize_bpf` | synth | BPF 耦合矩阵综合（synth 域）：N/f0/fbw/rl → Cameron N+2 矩阵。 |

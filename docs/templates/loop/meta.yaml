@@ -19,3 +19,30 @@ nominal_params:
 topology: 环形（§10.3 C1，2026-09-16 自由空间改造）：z=0 方环（中心线边 a、带宽 w，顶/左/右全跨含角）+ 底边中央断口 g（馈口位）LumpedPort 跨断口（E 沿 x，dipole 中央馈口同型）；无基板无地：底 MUR + 域 z 向下延 λ0/4（dipole 同款）
 param_semantics: loop_side_mm=方环中心线边 a（一周长 C=4a≈λ0，自由空间 a=λ0/4，εeff→1），loop_w_mm=环带宽，loop_gap_mm=底边断口宽（<a，激励向 x 跨度）
 smoke_note: 真机 v1 runs/antenna2_smoke/loop（2026-09-14，旧贴地口径 λg/4=18.5515、z=h 贴 PEC 地）FAIL：S11 −0.19dB；Zin 电抗过零 2.3825GHz（−0.7%，谐振长度口径正确）但 R=0.56Ω。归因（像理论，v2 实证）：水平环贴 PEC 地 0.508mm（0.004λ0），镜像反向电流抵消辐射 → R_rad→0。改造（2026-09-16）：自由空间口径（无板无地、底 MUR、域下延 λ0/4、环面 z=0、a=λ0/4=31.2284），判据改电抗过零 f0±12% + 过零处 R≥20Ω（S11 −5dB 次级；一周长环馈阻抗文献 ≈100-200Ω 对 50Ω 固有失配，谷深非谐振判据）。v2 真机 runs/antenna2_smoke/loop_v2（2026-09-16，solve 352s）PASS：Zin 电抗过零 2.6774GHz（+11.6%，端效应窗内）R=112.02Ω（v1 0.56Ω → 112Ω，镜像抵消归因实证；落在文献 100-200Ω 带内），S11 −8.67dB@2.64GHz（次级 −5dB 门过）；判读窗 2.0-2.8GHz 321/321 点全保留（Σ|S|² 全带 ≤0.94，无带边伪象）；谐振位 +11.6% 为细带/断口馈电端效应，设计式不预补偿（#190）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 一周长方环（C=4a≈λ0，全波环，自由空间口径）：周长谐振恒等式给 f0；
+      全波环馈阻抗固有 100-200Ω 对 50Ω 失配 → 判据用 Zin 电抗过零（+过零处 R≥20Ω），
+      S11 谷深只作次级。v1 贴地实验（h=0.004λ0）实测 R=0.56Ω——像理论归因：水平环
+      贴 PEC 地时镜像反向电流抵消辐射 → 改造自由空间口径后 v2 实测 R=112Ω 落文献带，
+      镜像抵消归因实证。
+    derivations:
+    - claim: 周长谐振恒等式：C=4a=n·λ0（基波 n=1）→ a=λ0/4 名义；一阶灵敏度 |∂lnf0/∂lnC|=1（对数恒等，精确）
+      formula: f0 ≈ c/(4·loop_side)；Δlnf0 = −Δln(loop_side)
+      source: docs/templates/loop/meta.yaml（param_semantics——一周长 C=4a≈λ0 口径）+ Balanis, Antenna Theory (3rd ed.), Ch.5（环形天线章）
+    - claim: 镜像抵消判废证据（v1→v2）：水平环贴 PEC 地 → 镜像反向电流 → R_rad→0（v1 实测 R=0.56Ω）；自由空间 v2 R=112Ω 落文献 100-200Ω 带 → 归因实证而非臆测；细带/断口馈电端效应使谐振位 +11.6%（窗内，设计式不预补偿）
+      formula: R_rad(贴地) → 0（镜像抵消）；R_rad(自由空间) ≈ 100-200Ω（全波环带）
+      source: docs/templates/loop/meta.yaml（smoke_note——v1/v2 真机实验与文献带）+ Balanis, Antenna Theory (3rd ed.), Ch.5（小环辐射电阻与环谐振口径）
+  sensitivity_ranking:
+  - param: loop_side_mm
+    order: 1
+    basis: 周长恒等式 |∂lnf0/∂lnC|=1（C=4a，一阶精确）
+  - param: loop_w_mm
+    order: 2
+    basis: 环带宽 → 电长度细调与馈阻抗面（弱于一阶恒等）
+  - param: loop_gap_mm
+    order: 3
+    basis: 断口馈电容（激励向跨度，弱敏感）
+  quiz_refs: []

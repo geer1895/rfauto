@@ -1,6 +1,6 @@
 """MA 量子探索档（登记级）：超导微波面电阻（BCS 两流体/MB 支路）+ RCSJ 结。
 
-规格：研究扩充 round17 §六 MA-11（量子探索档，
+规格：docs/research_expansion_20261002_round17.md §六 MA-11（量子探索档，
 P3，只闭式与数据）——"BCS/Mattis-Bardeen Gao 2008 工程近似；Nb/NbTiN/Al
 参数表；RCSJ 纯 ODE 闭式（IV/ωp/Stewart-McCumber）；Tq=hν/2k+色散位移
 χ/Purcell（登记级）；JPA 增益带宽（登记级）"。任务书 ge8b Wave A 席4

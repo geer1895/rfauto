@@ -62,7 +62,7 @@ class TestRegistryDiscovery:
         assert runtime.name == "pydantic_ai"
 
     def test_builtin_and_pydantic_ai_coexist(self):
-        # create 未命中时按需导入插件，两实现同表可换
+        # create 未命中时按需导入插件，两实现同表可换（AGENTS 规则 6）
         assert "builtin" in RuntimeRegistry.available()
         RuntimeRegistry.create("pydantic_ai")
         assert "pydantic_ai" in RuntimeRegistry.available()

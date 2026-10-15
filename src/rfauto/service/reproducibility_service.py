@@ -15,7 +15,7 @@
 - 校验 verify_artifact_manifest / verify_reproducibility_manifest：给定清单
   + 当前目录，报 missing / changed / extra 三态差异，顺序确定（sorted）。
 
-设计约束：环境探测（git/包版本）全部 best-effort，失败退化
+设计约束（AGENTS #105）：环境探测（git/包版本）全部 best-effort，失败退化
 为 None；但**入参非法**（类型错、空依赖集、清单缺字段）显式 ValueError，
 绝不静默产出无意义摘要。缺路径属于数据态，返回 {"ok": False, "errors": [...]}。
 

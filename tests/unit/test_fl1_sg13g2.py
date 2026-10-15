@@ -6,7 +6,7 @@
   NF 公式（3dB 衰减器 F=2）、L-match 综合回收、VBIC→Pospieszalski 映射的
   串/并导纳恒等与闭式可运行性；
 - 网表生成器含 PDK 契约（.lib cornerHBT hbt_typ、npn13G2 引脚序 c b e bn）；
-- 真跑链 opt-in（env RFAUTO_FL1_ITEST=1， 真跑纪律：缺省 unit 门零
+- 真跑链 opt-in（env RFAUTO_FL1_ITEST=1，AGENTS 真跑纪律：缺省 unit 门零
   真跑依赖），落在仓根 runs/fl1_sg13g2/。
 """
 from __future__ import annotations
@@ -374,12 +374,12 @@ def test_validate_results_provenance_paths_checked(tmp_path: Path):
     assert any("netlist 不存在" in p for p in problems)
 
 
-# ─── 真跑 opt-in（RFAUTO_FL1_ITEST=1；落仓根 runs/fl1_sg13g2）───────────────
+# ─── 真跑 opt-in（RFAUTO_FL1_ITEST=1；落仓根 runs/fl1_sg13g2/）───────────────
 
 
 @pytest.mark.skipif(
     os.environ.get("RFAUTO_FL1_ITEST") != "1",
-    reason="真跑 opt-in",
+    reason="真跑 opt-in（AGENTS 真跑纪律：缺省 unit 门零真跑依赖；需 WSL Ubuntu ngspice）",
 )
 def test_day1_real_run_chain():
     res = fl1.run_day1(fl1.DEFAULT_OUTDIR, nx=2)

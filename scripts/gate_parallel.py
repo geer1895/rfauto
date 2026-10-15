@@ -1,6 +1,6 @@
 """DP-6 并行日常门运行器（pytest-xdist）。
 
-规格：规格深案 §DP-6。日常=并行、终门=串行
+规格：docs/plan_deepdive_specs_20260924.md §DP-6。日常=并行、终门=串行
 双轨制——本运行器只服务"日常并行门 + 串行对照"，不替代终门口径
 （runs/wf_gate_full-*.log，#355 glob 口径不受影响）。
 
@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="附加 pytest 参数（冒烟/取证用，日常勿传）")
     parser.add_argument("--pytest-root", default=None,
                         help="pytest 运行根目录（冻结快照/工作树隔离用；"
-                             "缺省=本仓根。日志与 junitxml 仍落本仓 runs）")
+                             "缺省=本仓根。日志与 junitxml 仍落本仓 runs/）")
     args = parser.parse_args(argv)
 
     pytest_root = Path(args.pytest_root).resolve() if args.pytest_root else REPO_ROOT

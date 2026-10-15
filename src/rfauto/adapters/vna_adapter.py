@@ -62,7 +62,7 @@ def _vna_settings(config: EMSolverConfig) -> dict[str, Any]:
 
 # ─── 2-port shunt-through PDN 阻抗换算（F-B P3 前置件）────────────────────
 #
-# spec 出处：月度增强方案 L162「2-port shunt-
+# spec 出处：docs/monthly_enhancement_plan_20260926.md L162「2-port shunt-
 # through 换算（F-B P3 前置件，VNA 适配器加法）」；docs/audit/
 # plan_gap_inventory_20260928.md §二 B5（vna_adapter 零命中确认未做）。
 #

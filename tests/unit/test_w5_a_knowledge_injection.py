@@ -447,12 +447,94 @@ class TestCriterion10Ledger:
         assert mock_sources["calls"]["n"] == n_after_first, "同词集复用缓存"
 
 
+# ─── rag 索引 memo 新鲜度（审查 A3 P1-1 回归钉）─────────────────────────────
+
+class TestRagMemoFreshness:
+    """语料更新后 memo 必须失效重建（进程生命周期内不注入陈旧索引）。
+
+    报告探针场景转测试：临时 docs 建索引 → memo 命中复用（不重建）→
+    追加新文档 → 旧指纹失配弃缓存 → 新文档特有词可命中（修复前
+    陈旧索引 1 hit vs 重建后 2 hits 的不可见面）。
+    """
+
+    MARKER_A = "quartzmarble"
+    MARKER_B = "zirconlapis"
+
+    @pytest.fixture()
+    def docs_dir(self, tmp_path, monkeypatch):
+        from rfauto.service import knowledge_injection_service as kis
+
+        kis.clear_rag_index_cache()
+        d = tmp_path / "docs"
+        d.mkdir()
+        (d / "a.md").write_text(
+            f"# A\n{self.MARKER_A} 网格守卫教训正文。\n", encoding="utf-8")
+        yield d
+        kis.clear_rag_index_cache()
+
+    def _fetch(self, docs_dir, word):
+        from rfauto.service.knowledge_injection_service import _fetch_rag
+
+        return _fetch_rag(word, 3, docs_dir)
+
+    def test_corpus_change_invalidates_memo(self, docs_dir, monkeypatch):
+        from rfauto.service import knowledge_injection_service as kis
+        from rfauto.service import rag_service
+
+        # 门闸构建通道：语料未变期被调=重建失守；③ 起放行真重建
+        real_build = rag_service._safe_build_corpus_index
+        allow_build = {"ok": False}
+
+        def _gated(**kw):
+            if not allow_build["ok"]:
+                raise AssertionError("语料未变不应重建索引")
+            return real_build(**kw)
+
+        # ① 首次建索引：新文档特有词命中
+        hits = self._fetch(docs_dir, self.MARKER_A)
+        assert hits and hits[0]["source"] == "rag"
+        index_first = kis._memo_rag_index(docs_dir)
+        assert index_first is not None
+
+        # ② 语料未变：memo 命中复用（构建通道已闸死仍可检索=未重建）
+        monkeypatch.setattr(rag_service, "_safe_build_corpus_index", _gated)
+        assert kis._memo_rag_index(docs_dir) is index_first  # is 同一性
+        assert self._fetch(docs_dir, self.MARKER_A)  # 复用不重建
+
+        # ③ 追加新文档 → 指纹三元组（文件数/字节/mtime）变化 → 弃缓存
+        (docs_dir / "b.md").write_text(
+            f"# B\n{self.MARKER_B} 新增文档正文。\n", encoding="utf-8")
+        allow_build["ok"] = True  # 解除构建闸：失配后允许真重建
+        assert kis._memo_rag_index(docs_dir) is None, (
+            "语料已变更 memo 仍命中=新鲜度核对失守（A3 P1-1）")
+        hits_new = self._fetch(docs_dir, self.MARKER_B)
+        assert hits_new, "新文档对注入面不可见（陈旧索引未失效）"
+        # ④ 重建后的 memo 再次命中且指纹同步（连续两轮语料稳定期复用）
+        assert kis._memo_rag_index(docs_dir) is not None
+
+    def test_fingerprint_triple_reflects_corpus(self, tmp_path):
+        from rfauto.service.knowledge_injection_service import (
+            _corpus_fingerprint,
+        )
+
+        d = tmp_path / "docs"
+        assert _corpus_fingerprint(d) == (0, 0, 0.0)  # 目录不存在
+        d.mkdir()
+        assert _corpus_fingerprint(d) == (0, 0, 0.0)  # 空目录
+        f = d / "x.md"
+        f.write_text("abc", encoding="utf-8")
+        n, total, mtime = _corpus_fingerprint(d)
+        assert (n, total) == (1, 3) and mtime > 0
+        f.write_text("abcdef", encoding="utf-8")
+        assert _corpus_fingerprint(d)[:2] == (1, 6)  # 改写=字节变化入指纹
+
+
 # ─── 缺省关回归钉（#329：settings 关/缺席=逐字节不变）───────────────────────
 
 class TestDefaultOffRegression:
     def test_tracked_settings_ships_disabled(self):
         """tracked settings.yaml enabled=true（2026-10-05 W5 合流笔翻开：
-        判分门已过，两步预声明第二步执行，记 八百八十五）。"""
+        判分门已过，两步预声明第二步执行，记  八百八十五）。"""
 
         data = yaml.safe_load(
             (REPO / "configs" / "settings.yaml").read_text(encoding="utf-8"))

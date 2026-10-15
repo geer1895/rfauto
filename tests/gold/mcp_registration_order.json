@@ -154,6 +154,8 @@
   "edb_status"
  ],
  "resources": [
+  "rfauto://calculators/index",
+  "rfauto://datasets/index",
   "rfauto://edb/datasets",
   "rfauto://edb/status",
   "rfauto://knowledge/compat_matrix",

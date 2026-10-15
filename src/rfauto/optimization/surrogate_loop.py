@@ -7,7 +7,7 @@
     refit → 收敛判据（连续 tol_rounds 轮最优改善 < tol_abs 或达真跑预算）。
 
 铁律落地：
-- 数值只在确定性内核：代理预测与 cost 计算全部出自
+- 数值只在确定性内核（AGENTS 规则 7）：代理预测与 cost 计算全部出自
   surrogate_registry + SpecEvaluator 确定性闭式，LLM 不入环；
 - 谷深语义（#195/#197）：目标评估走 SpecEvaluator.evaluate_objectives，
   metric_key_candidates 的 op 序映射保证 s11_db_min 类目标不退化成

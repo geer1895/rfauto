@@ -406,7 +406,7 @@ def autotune_to_sandbox(
 
     读取 runs/<run_id>/autotune.json 的 final_params，经 RecipeSandbox
     合并进草稿；promote 走既有三层 Gate（本函数不直接改真实配方——
-    agent 写面隔离， #6）。
+    agent 写面隔离，AGENTS #6）。
     """
     from rfauto.service.agent_sandbox import RecipeSandbox
 
@@ -450,7 +450,7 @@ def orchestrate_tournament(
 
     每个变体以小预算跑一轮确定性自治环 → 按 best cost 排序出胜者。
     变体由调用方给定（LLM 只出假设参数起点——typed；数值裁决归自治环，
-     #7）；全程无人在环，HFSS 仅终验。
+    AGENTS #7）；全程无人在环，HFSS 仅终验。
     """
     import yaml as _yaml
 

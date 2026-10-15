@@ -1,8 +1,8 @@
 """PR-6 战役监控仪表盘：成本热图 + trial 表（虚拟列表数据面，JSON 进出）。
 
-规格=研究扩充 round16 §四 PR-6："SSE+成本热图+
+规格=docs/research_expansion_20261002_round16.md §四 PR-6："SSE+成本热图+
 trial 虚拟列表（1000 行 60fps）"。本模块承担**数据面**（前端只渲染，
- 坑族口径）：
+AGENTS 坑族口径）：
 
 - **成本热图**：trials 审计 → (x_param, y_param) 确定性等宽分箱
   （feasibility_heatmap 同款分箱算法，E10 姊妹面）——格内 {n, cost_mean,

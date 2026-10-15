@@ -145,13 +145,23 @@ def _steps_of(trajectory: Mapping[str, Any]) -> list[Mapping[str, Any]]:
 
 def _best_step(trajectory: Mapping[str, Any],
                steps: Sequence[Mapping[str, Any]]) -> Mapping[str, Any]:
-    """最优步：优先按 best_step 的 trial 号定位，退回 cost 最小（确定性）。"""
+    """最优步：优先按 best_step 的 trial 号定位，退回 cost 最小（确定性）。
+
+    回退选择器只认带数值 cost 的步（bool 是 int 子类，显式排除）——缺
+    cost/None 在 ``or 0.0`` 惯语下会被当成 0.0 判"最优"（#364④ falsy
+    陷阱，review_aurora_next A4 P1-2），其 params 随后被当最优 trial 写
+    进经验条目/任务集。全部无 cost → ``{}``（不编造最优）。best_step
+    显式指名的步不经此过滤（提取方显式 designate，语义不同）。
+    """
     best_trial = trajectory.get("best_step")
     for step in steps:
         if step.get("trial") == best_trial:
             return step
-    if steps:
-        return min(steps, key=lambda s: float(s.get("cost") or 0.0))
+    eligible = [s for s in steps
+                if isinstance(s.get("cost"), (int, float))
+                and not isinstance(s.get("cost"), bool)]
+    if eligible:
+        return min(eligible, key=lambda s: float(s["cost"]))
     return {}
 
 

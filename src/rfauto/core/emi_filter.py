@@ -1,6 +1,6 @@
 """ME-1 EMC v1：传导发射面确定性内核（纯算法零 IO，分立元件两口 ABCD 级联口径）。
 
-规格：月度增强方案 §三 A 流 ME-1；判据预声明=方案书
+规格：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-1；判据预声明=方案书
 （合成回收：已知网络三口径 IL vs skrf 直算逐位 + LISN 网络与 CISPR 16-1-2 元件值
 对照可达公开表）。参照 core/pdn.py 先例**不进** @register_calculator（免 #231
 注册表消费者三表同步），导出函数供 service 层直接调。

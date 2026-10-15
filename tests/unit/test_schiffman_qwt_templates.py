@@ -7,7 +7,7 @@
 （Δφ@f0=90°/ABCD 级联中心匹配恒等式）+ 渲染守卫（板内越界/路径净空/#347
 测量面分离/级联溢出）+ 注册五件套 + docs meta.yaml 一致性。
 
-方案锚：研究扩充 round15 §二·2 TA-1/TA-2——
+方案锚：docs/research_expansion_20261002_round15.md §二·2 TA-1/TA-2——
 「内核就绪缺模板」件；闭式单源 core/synthesis（synthesize_schiffman /
 schiffman_delta_phase / synthesize_multisection_quarter_wave），本模板层
 零数值产出（铁律 7/#1c）。近似级别如实登记见两 META smoke_note。

@@ -1,7 +1,7 @@
 """全仓"字面算术表达式作几何值"审计器单测（队列3-B，#218 家族）。
 
 含当前树回归门：scan_repo() 零未豁免违规——今后在被扫范围
-（src/rfauto/adapters/ + scripts）新引入字面算术几何值会让本测试红灯。
+（src/rfauto/adapters/ + scripts/）新引入字面算术几何值会让本测试红灯。
 """
 
 from __future__ import annotations

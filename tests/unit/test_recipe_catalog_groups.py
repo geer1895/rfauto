@@ -5,7 +5,7 @@ recipes/ 原件（既有消费者零改动），工作副本单列 workcopies（
 反查 + review_hint 入库提示）+ groups 计数 + 逐条 kind 字段；②recipe_view
 的 is_workcopy/source_recipe/review_hint 视图字段（相对与绝对路径双形态）；
 ③pages.js loadCatalog/pageRecipe 渲染钉（函数体断言，test_nf2ff_chain 先例）。
-全部 chdir tmp_path（#144 隔离口径，不读真 recipes/ 与 runs）。
+全部 chdir tmp_path（#144 隔离口径，不读真 recipes/ 与 runs/）。
 """
 
 from __future__ import annotations
@@ -112,8 +112,11 @@ class TestPagesRenderPin:
     """pages.js 渲染钉（函数体断言，仿 test_nf2ff_chain 先例）。"""
 
     def _page_recipe_body(self) -> str:
-        pages = (SRC / "rfauto" / "ui" / "static" / "pages.js").read_text(
-            encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（pageRecipe→pageTune 边界跨文件仍成立）
+        _s = SRC / "rfauto" / "ui" / "static"
+        pages = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [_s / "pages.js", *sorted((_s / "pages").glob("*.js"))])
         m = re.search(r"async function pageRecipe.*?async function pageTune",
                       pages, re.S)
         assert m is not None, "pageRecipe 函数体未找到"
@@ -121,8 +124,8 @@ class TestPagesRenderPin:
 
     def test_catalog_groups_original_and_workcopy(self) -> None:
         body = self._page_recipe_body()
-        assert "原件（recipes）" in body
-        assert "工作副本（runs/recipe_workcopy）" in body
+        assert "原件（recipes/）" in body
+        assert "工作副本（runs/recipe_workcopy/）" in body
         assert 'T.badge("工作副本"' in body
         # 工作副本条目给人工审阅入库提示（指向既有审批链入口名）
         assert "rfauto inbox" in body

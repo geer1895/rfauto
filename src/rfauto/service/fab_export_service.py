@@ -528,7 +528,7 @@ def _finish_package(
         + "\n",
         encoding="utf-8",
     )
-    # Build-to-print 封面（§13A.4 #5）+ 能力表附件（#6，optional）
+    # Build-to-print 封面（§13A.4 #5）+ 能力表附件（#6，optional/）
     with contextlib.suppress(Exception):
         write_btp_cover(pkg, dims, material=material)
     with contextlib.suppress(Exception):

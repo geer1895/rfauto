@@ -1,6 +1,6 @@
 """Touchstone 文法 fuzz（round3 附带三件之三；core/aaa.py 同批 E 尾件）。
 
-口径（研究扩充 §3.1 附带三件原文）：
+口径（research_expansion_20260926_round3 §3.1 附带三件原文）：
     "hypothesis 文法 fuzz（Touchstone/netlist/ffs 行文法策略生成+parse→write→parse
     幂等不变量；atheris Windows NO-GO）"
 

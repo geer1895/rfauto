@@ -1,6 +1,6 @@
 """F-J.5 过孔工艺参数面（能力表 + 背钻联动 + IPC-4761 登记 + 可制造性判定）。
 
-定位（研究扩充 round5 §三件 5）：过孔工艺能力
+定位（docs/research_expansion_20260926_round5.md §三件 5）：过孔工艺能力
 **登记面**——机械钻/激光钻带、孔铜 20–25µm（IPC-6012 Class 2/3 最小平均
 孔铜口径带）、埋盲孔叠构约束，常量+来源登记；背钻残段 → fres → 奈奎斯特
 带 verdict 为 core/fab_check.py HS-2 面（``stub_resonance_ghz``/

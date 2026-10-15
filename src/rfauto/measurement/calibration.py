@@ -1,4 +1,4 @@
-"""E9b 校准框架（扩展方案 §E9b）。
+"""E9b 校准框架（规划扩展 §E9b）。
 
 TRL/SOLT 校准支持：
 - 使用 skrf.calibration 进行标准件校准

@@ -23,7 +23,18 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=11 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | l_ref_mm | 3.000798 |
+| 2 | l_coupled_mm | 2.812535 |
+| 3 | w_mm | 0.081065 |
+| 4 | gap_mm | 0.008696 |
+| 5 | w_ref_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -45,7 +56,7 @@
 - 参数语义：w_mm=耦合段带条宽（Z0e/Z0o 经 KJ 反解联动，schiffman_design_params 单源）；gap_mm=耦合缝宽（同 KJ 反解；ρ=Z0e/Z0o 名义 2.0——低 εr 可达域上限见 nominal_derivation）；l_coupled_mm=耦合段长（θ0=ratio·90° 电长度闭式，ratio=1 经典 λ/4 耦合段）；l_ref_mm=参考段长（Δφ=90° 目标对 L_ref 线性一步反解，Schiffman 3L 惯例语义由内核解出实际值）；w_ref_mm=参考段/馈线宽（50Ω HJ 精算）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；耦合缝 0.0692mm<NEAR 按 #311 缝中点精确入网（x=0 中线+±gap/2 带缘精确 AddLine，缝内内部线 ≥1 恒成立，不设 NEAR≤gap/3 硬守卫——C4 决议口径）；耦合对四带缘/桥带缘/段两端/参考段两端/参考带缘精确入网（#198）；真机建议显式 mesh_resolution_mm≤0.3（缝邻域分辨）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）
 - 冒烟现状：未冒烟（离线审计过，#212，test_schiffman_qwt_templates）；近似级别如实登记：①准静态 εeff 逐模常数化无色散（内核 v1 声明）；②参考段 εeff 取偶/奇模相速平均口径（内核 v1）；③测量面解嵌到段端面，端面孤立线↔耦合对阶跃寄生不建模（Schiffman 原文口径）；④ρ=2.0 平坦度 ±25% 窗 max 偏差 ≈7.2°（低 εr 可达域内，不凑 ρ=3）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

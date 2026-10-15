@@ -1,6 +1,6 @@
 """M-6 直流馈电网络（bias tee / DC feed）综合与频响确定性内核。
 
-法源与口径（round1 原文 研究扩充 M-6 节；
+法源与口径（round1 原文 docs/research_expansion_20260926.md M-6 节；
 铁律 5 来源写 docstring；裁判=独立来源不自证，#118）：
 
 - 拓扑（任务书钉死口径）：三端口网络——RF 端口经隔直电容 C_block 串联

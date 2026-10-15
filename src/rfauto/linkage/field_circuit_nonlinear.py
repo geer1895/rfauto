@@ -439,7 +439,7 @@ def run_field_circuit_nonlinear_anchor(
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     summary: dict[str, Any] = {
-        "plan_ref": "续跑计划 §10.1 A3",
+        "plan_ref": "延续计划 §10.1 A3",
         "spec": asdict(spec),
         "n_harmonics": int(n_harmonics),
         "n_samples": int(n_samples),

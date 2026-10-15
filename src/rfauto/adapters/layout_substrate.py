@@ -1,6 +1,6 @@
 """F-I P2 叠层多层化：多层介质 z 序校验 + 多基板段渲染 + KiCad dielectrics 全层消费。
 
-方案依据：研究扩充 round5 §二 F-I 三段计划 P2——
+方案依据：docs/research_expansion_20260926_round5.md §二 F-I 三段计划 P2——
 "叠层多层化（render_script substrate 扩展 + KiCad dielectrics 全层消费）"；
 schema 沿 P1 ``layout_stack.RFStackup/RFRouteLayer``（多层 dielectric+导体层序
 本身已是 schema 能力，本模块补**层序语义**与**材料数值解析**，不改 P1 文件）。

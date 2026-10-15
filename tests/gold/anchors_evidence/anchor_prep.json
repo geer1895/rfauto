@@ -1,0 +1,91 @@
+{
+ "anchor_id": "ring.design_dk.openems-hfss-v1",
+ "kind": "pointer",
+ "status": "experimental",
+ "template_family": [
+  "ring_resonator"
+ ],
+ "engine_pair": {
+  "calibrated": "openems",
+  "referee": "hfss"
+ },
+ "quantity": {
+  "name": "design_dk",
+  "metric": "eps_r_from_f1_peak",
+  "unit": "dimensionless",
+  "semantics": "谐振法 Design Dk 引擎对分歧指针——verdict DISAGREE（f1 峰位互差 +2.479% 超预声明门 1.5%；f2 真峰 post-hoc 互差 +2.263% 同向超带）。双值=同一预声明提取链（R_eff=R_OUT 基准+HJ 反演，n=1 主模），OE/HFSS 各自对名义 3.66 的回收差 −3.46%/−8.68%。物理归因（假设/待证 #221⑥，证据=implied R_eff：HFSS 11.391mm≈r_mean+0.8%（平滑圆环符合设计基准）；OE 11.673mm（栅格化阶梯+粗网格慢波，#219 直角阶梯化同族）——提取基准式本身依赖引擎几何表征，故不产 constant。基准敏感度矩阵（information）：HFSS+mean-radius 设计基准回收 +1.82%（锚级），OE+R_OUT 判读基准 −3.46%。"
+ },
+ "values": {
+  "oe": 3.5332928518364177,
+  "hfss": 3.342460048981009
+ },
+ "values_context": {
+  "basis": "R_eff=R_OUT=11.856502692199102mm（两引擎同链预声明口径）",
+  "f_peak_ghz": {
+   "oe": 2.42,
+   "hfss": 2.48
+  },
+  "harmonic_pair": {
+   "oe": {
+    "f2": 4.86,
+    "eps_r": 3.5062385053509435,
+    "diff": 0.0271
+   },
+   "hfss": {
+    "f2_true": 4.97,
+    "eps_r_posthoc": 3.332637687452381,
+    "diff_f1_f2": 0.0098
+   }
+  },
+  "basis_sensitivity_matrix": {
+   "oe_r_out": {
+    "f1_ghz": 2.42,
+    "eeff": 2.76527,
+    "eps_r": 3.5333,
+    "rec_pct": -3.46
+   },
+   "oe_mean_radius": {
+    "f1_ghz": 2.42,
+    "eeff": 3.04445,
+    "eps_r": 3.937,
+    "rec_pct": 7.57
+   },
+   "hfss_r_out": {
+    "f1_ghz": 2.48,
+    "eeff": 2.63309,
+    "eps_r": 3.3425,
+    "rec_pct": -8.68
+   },
+   "hfss_mean_radius": {
+    "f1_ghz": 2.48,
+    "eeff": 2.89892,
+    "eps_r": 3.7267,
+    "rec_pct": 1.82
+   }
+  },
+  "domain": {
+   "f_ghz": 2.4,
+   "material": "rogers4350b_h0.508",
+   "extrapolate": "forbidden（#302 禁跨 εr/频段外推）"
+  }
+ },
+ "uncertainty": {
+  "value": 0.13,
+  "kind": "engine_pair_spread",
+  "note": "双值极差 0.1908 的 ~2/3（对名义 3.66≈5.2% 引擎对系统差带）；基准式依赖（R_OUT vs mean-radius）为最大单项"
+ },
+ "provenance": {
+  "arbitration_runs": [
+   "runs/ge5_fa3_dk",
+   "runs/oe_phase3/ring_tier2_gap020"
+  ],
+  "criteria": "runs/ge5_fa3_dk/criteria.md（2026-10-01 HFSS 发射前落盘）",
+  "oe_evidence": "Tier-2 A 席 verdict.json（2026-09-30 硬门全绿）+本战役 oe_recovery.json 复算逐位一致",
+  "hfss_evidence": "sim_host DrivenModal 2025.1 同几何（平滑圆环）ΔS 0.02@15pass 收敛、Discrete 401 点同栅、50Ω 重归一（hfss_side/ring_fa3.s2p+ring_fa3_conv.prof）",
+  "server_cleanup": "remote_hfss_cleanup ok：ansysedt_after=0/任务已删/本端口零残留/工作目录已删",
+  "devlog": "F-A.3 Design Dk 锚战役笔（主代理合流时记）"
+ },
+ "consumers": [],
+ "registered_at": null,
+ "registration_note": "预备稿——注册本体归锚批（EXPECTED_ANCHORS/锚表/test_anchors_store_service 三面同步为锚批交付门）"
+}

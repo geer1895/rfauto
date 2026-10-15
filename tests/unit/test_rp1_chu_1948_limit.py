@@ -2,7 +2,7 @@
 Omni-Directional Antennas", J. Appl. Phys. 1948；N=1 单模严格式
 Q_min=1/(ka)³+1/(ka) 的严格性由 McLean 1996 (IEEE Trans. AP) 澄清——
 bounds.py lineage 口径）。RP-1 首批"bounds.py 含"项的正式复现卡
-（研究扩充 round19 §一）。
+（docs/research_expansion_20261002_round19.md §一）。
 
 复现范围：chu_q_bound / bbox_to_ka（core/bounds.py；#222 反向面：实现已
 存在，本卡只做"论文数值↔内核输出"对拍）。

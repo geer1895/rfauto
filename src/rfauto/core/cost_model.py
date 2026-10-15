@@ -1,6 +1,6 @@
 """EP-3 成本模块确定性内核（用户自录容器——零内置价格，铁律 7）。
 
-规格书 研究扩充 round18 §二 EP-3：price_tier
+规格书 docs/research_expansion_20261002_round18.md §二 EP-3：price_tier
 声明式（verified-web 纪律）+ 板材利用率几何 + 批量-单价参数化容器
 （**用户自录散点，不内置厂商快照**）。
 

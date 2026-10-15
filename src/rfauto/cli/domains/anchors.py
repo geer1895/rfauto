@@ -9,6 +9,7 @@ from rich.table import Table
 
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── anchors (DP-3 物理标定锚注册表) ────────────────────────────────────────
 
@@ -16,9 +17,17 @@ anchors_app = typer.Typer(help="物理标定锚注册表（DP-3，JSON 进出薄
 app.add_typer(anchors_app, name="anchors")
 
 
+def _error_text(result: dict) -> str:
+    """失败信封错误文案（契约 §3 兼容读法：按序回退 errors → error）。"""
+    errs = result.get("errors")
+    if isinstance(errs, list) and errs:
+        return "; ".join(str(e) for e in errs)
+    return str(result.get("error") or result.get("reason") or "未知错误")
+
+
 def _anchors_emit(result: dict, json_output: bool, render) -> None:
     if not result.get("ok"):
-        console.print(f"[red]✗ {result.get('error') or '未知错误'}[/red]")
+        console.print(f"[red]✗ {_error_text(result)}[/red]")
         raise typer.Exit(code=1)
     if json_output:
         console.print_json(json.dumps(result, ensure_ascii=False))
@@ -181,7 +190,10 @@ def anchors_drift_cmd(
     anchors_service.record_anchor_drift_snapshot）。
     示例：rfauto anchors drift cps.gamma_er.fdref-v1
     """
-    from rfauto.service.anchors_service import anchor_drift_status
+    from rfauto.service.anchors_service import (
+        ANCHORS_REPORT_SCHEMA_VERSION,
+        anchor_drift_status,
+    )
 
     history = None
     if history_file is not None:
@@ -189,9 +201,10 @@ def anchors_drift_cmd(
             with open(history_file, encoding="utf-8") as handle:
                 raw = json.load(handle)
         except (OSError, ValueError) as exc:
-            _anchors_emit({"ok": False,
-                           "error": f"history_file 不可读/非 JSON: {exc}"},
-                          json_output, _render_anchors_drift)
+            _anchors_emit(error_envelope(
+                f"history_file 不可读/非 JSON: {exc}",
+                schema_version=ANCHORS_REPORT_SCHEMA_VERSION),
+                json_output, _render_anchors_drift)
             return
         if isinstance(raw, dict) and "snapshots" in raw:
             history = raw["snapshots"]
@@ -200,10 +213,11 @@ def anchors_drift_cmd(
         elif isinstance(raw, list):
             history = raw
         else:
-            _anchors_emit({"ok": False,
-                           "error": "history_file 须为序列/快照数组或 "
-                                    "{snapshots|values: [...]} 映射"},
-                          json_output, _render_anchors_drift)
+            _anchors_emit(error_envelope(
+                "history_file 须为序列/快照数组或 "
+                "{snapshots|values: [...]} 映射",
+                schema_version=ANCHORS_REPORT_SCHEMA_VERSION),
+                json_output, _render_anchors_drift)
             return
     _anchors_emit(anchor_drift_status(anchor_id, history, alpha=alpha),
                   json_output, _render_anchors_drift)
@@ -211,7 +225,7 @@ def anchors_drift_cmd(
 
 def _render_anchors_drift(r: dict) -> None:
     if not r.get("ok"):
-        console.print(f"[red]✗ {r.get('error')}[/red]")
+        console.print(f"[red]✗ {_error_text(r)}[/red]")
         return
     rep = r["report"]
     console.print(f"锚漂移预警（QW-16）: {r['anchor_id']}  "

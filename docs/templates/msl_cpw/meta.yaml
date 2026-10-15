@@ -31,3 +31,44 @@ nominal_params:
   via_offset_mm: 0.5
 topology: 微带↔接地共面波导过渡（WP2.5 Tier 2）：微带直段 → 4 段等分阶梯渐变（线宽线性内插）→ CPW 中心带 + 两侧地（延至板边）+ 双列接地过孔栅栏（地缝合底板 PEC，抑制平行板模）；过渡区居中
 param_semantics: w_msl_mm=50Ω 微带宽（HJ 反解），w_cpw_mm=50Ω CPWG 中心带宽（_cpwg_ri brentq 反解 @gap），gap_cpw_mm=CPW 缝宽，line_len_mm=总长（MSL/CPW 直段各半），trans_len_mm=渐变区长，r_via_mm/via_spacing_mm/via_offset_mm=接地过孔半径/列间距/地内缘→过孔中心
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 微带↔CPWG 过渡：微带 50Ω 经四段阶梯渐变换接到接地共面波导，两侧地过孔栅栏缝合底板抑制平行板模。典型用于探针口/表贴器件的 CPW 接口接入；常见误用=省掉过孔栅栏——无缝合的
+      CPW 地与底地间平行板谐振会把过渡变谐振腔。
+    derivations:
+    - claim: 双段 50Ω 设计（微带 HJ 反解+CPWG _cpwg_ri brentq 反解）
+      formula: w_msl = inverse_width(50, HJ) ; w_cpw = brentq(_cpwg_ri, 50)
+      source: 本仓 core/calculators（_cpwg_ri 共形映射闭式（实测 εeff/S11 双锚校验）；docs/templates/msl_cpw/meta.yaml param_semantics（synthesize_msl_cpw_model
+        同链））
+    - claim: 接地过孔栅栏缝合口径（地-底板平行板模抑制）
+      formula: r_via/via_spacing/via_offset = 0.15/2.0/0.5 mm
+      source: 本仓 core/synthesis（synthesize_msl_cpw_model 过孔栅栏链；docs/templates/msl_cpw/meta.yaml param_semantics）
+  sensitivity_ranking:
+  - param: w_cpw_mm
+    order: 1
+    basis: CPW 段线宽（CPWG Z0 主维）；登记表 0.5105
+  - param: gap_cpw_mm
+    order: 2
+    basis: CPW 缝（比值自变量另一端，Z0 主维）；登记表 0.1604
+  - param: w_msl_mm
+    order: 3
+    basis: 微带段线宽（HJ Z0 口径；不进 CPWG 段 Z0 恒等式，登记表 0）
+  - param: trans_len_mm
+    order: 4
+    basis: 渐变区长（匹配质量维，阶跃反射随段长变缓；不进 Z0 恒等式，
+      登记表 0）
+  - param: via_spacing_mm
+    order: 5
+    basis: 过孔列间距（缝合有效性/平行板模维；登记表 0）
+  - param: via_offset_mm
+    order: 6
+    basis: 过孔偏置（地内缘距离，弱维；登记表 0）
+  - param: r_via_mm
+    order: 7
+    basis: 孔径（构造弱维；登记表 0）
+  - param: line_len_mm
+    order: 8
+    basis: 总长（不进任何 Z0 恒等式；登记表 0）
+  quiz_refs: []

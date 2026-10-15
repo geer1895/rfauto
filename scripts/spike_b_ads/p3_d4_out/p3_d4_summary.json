@@ -1,0 +1,57 @@
+[
+  {
+    "variant": "x1_smatrixio",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist flattening.",
+      "File (type: smatrixio) `demo_BP.s2p' read error:  unknown smatrixio file format.",
+      "[stderr] hpeesofsim terminated due to an error."
+    ]
+  },
+  {
+    "variant": "x2_uselib",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist flattening.",
+      "File (type: smatrixio) `demo_BP.s2p' read error:  unknown smatrixio file format.",
+      "[stderr] hpeesofsim terminated due to an error."
+    ]
+  },
+  {
+    "variant": "x3_touchstone",
+    "rc": 0,
+    "ds": [
+      "netlist.txt.ds"
+    ],
+    "errors": []
+  },
+  {
+    "variant": "x4_no_type",
+    "rc": 0,
+    "ds": [
+      "netlist.txt.ds"
+    ],
+    "errors": []
+  },
+  {
+    "variant": "x5_type_snp",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist flattening.",
+      "[stderr] hpeesofsim terminated due to an error."
+    ]
+  },
+  {
+    "variant": "x6_sourceless",
+    "rc": 1,
+    "ds": [],
+    "errors": [
+      "Error detected by hpeesofsim during netlist flattening.",
+      "File (type: smatrixio) `demo_BP.s2p' read error:  unknown smatrixio file format.",
+      "[stderr] hpeesofsim terminated due to an error."
+    ]
+  }
+]

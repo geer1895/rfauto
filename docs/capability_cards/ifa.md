@@ -51,7 +51,7 @@
 - 参数语义：ifa_arm_mm=臂长（短路板起算 ≈λ0/(4√εeff)，HJ @臂宽），ifa_w_mm=臂宽，feed_off_mm=馈针-短路板间距（>1.5mm，定输入阻抗：2mm ⇒ R_peak≈100Ω，再近压向 50Ω）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；臂/短路板/针缘精确入网
 - 冒烟现状：真机 runs/antenna2_smoke/ifa（2026-09-14，去针盒 v2）PASS：S11 −8.48dB @2.44GHz（+1.7%），Zin@谷=103−24jΩ（并联型谐振，馈针 2mm 过耦合限谷深）；与 ifa_v1_pin_short（有针盒）−8.52dB@2.44 逐点一致 ⇒ 针盒无影响、谐振为真。带外 R≈0（1.9GHz −0.11+4.3j、2.9GHz 0.19+3.3j）是无耗短路桩馈结构的正常反应，首判"端口短路→PARTIAL"已证伪
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

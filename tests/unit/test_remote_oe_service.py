@@ -422,7 +422,7 @@ def test_fetch_empty_enumeration_failclosed(monkeypatch, tmp_path):
 
 
 def test_cleanup_failure_flips_verdict(monkeypatch, tmp_path):
-    """清理失败翻 FAIL（任务毕必须清理， 0b）——不静默放行。"""
+    """清理失败翻 FAIL（任务毕必须清理，AGENTS 0b）——不静默放行。"""
     t = FakeTransport(None)
 
     real_run = t.run_command

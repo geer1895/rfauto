@@ -4,7 +4,7 @@
 ③surrogate_loop ④autotune ⑤api.run_once 之后的第⑥类产物通道；W3 席 6
 立项）。既有收集器（dataset_service）只认 meta.json 形态 run 与工作目录
 曲线形态，EDB 快车道（adapters/hfss_batch + edb_adapter）的产物目录两者
-都不是——真机形态（W1 冒烟产物）为以下三类：
+都不是——真机形态见 runs/edblane85/w1_smoke/<family>/：
 
 - ``<stem>_spec.json``：模板发射面 spec（``template``=edb 族名、
   ``params``=设计参数 dict）——参数唯一来源（铁律 7：导入器不产生任何
@@ -26,7 +26,7 @@ query_dataset/list_datasets 直接可查；schema/去重/序列化/物化 helper
 E1 指纹（#322 对齐）：``model``=spec.template（edb 族名）／
 ``study_name``=批次目录**相对 runs 根的 posix 路径**（产物目录父级；一个
 批次=一个战役）——用相对路径而非裸目录名，防不同战役根下的同名批次
-目录（如各战役各自的 ``batch_smoke``）跨战役折叠同设计点；／
+目录（如各战役各自的 ``w1_smoke``）跨战役折叠同设计点；／
 ``params``=spec.params 标量规范化 JSON——去重指纹
 ``(model, study_name, seed, params canonical json)`` 与 materialize/
 import_workdir_runs 同构：**同批次内同设计点折叠一份；跨批次（批次名
@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -60,7 +61,6 @@ from rfauto.service.dataset_service import (
     DEFAULT_OUT_DIR,
     GROUND_TRUTH_POLICY,
     HDF5_NAME,
-    MANIFEST_NAME,
     PARQUET_NAME,
     SCHEMA_VERSION,
     _aggregate_bounds,
@@ -70,6 +70,7 @@ from rfauto.service.dataset_service import (
     _mtime_iso,
     _register_dataset_row,
     _resolve_registry_sync,
+    _save_manifest_atomic,
     _scalar_items,
     _validate_dataset_name,
     _write_points_hdf5,
@@ -85,7 +86,7 @@ EDB_LANE_ADAPTER = "hfss"
 #: 产物目录识别标志：``<stem>_judgment.json``（judgment 是成行主标志；
 #: spec/Touchstone 缺失走候选级跳过计数，不作目录识别条件）
 _JUDGMENT_SUFFIX = "_judgment.json"
-#: runs 根 → 产物目录递归深度上限（真机 branchline 工程实测
+#: runs 根 → 产物目录递归深度上限（edblane85/w1_smoke/branchline 实测
 #: =2 层，留一层余量）
 _MAX_DEPTH = 3
 #: 引擎内部/缓存目录不下钻（同 workdir 导入器口径）
@@ -97,6 +98,59 @@ _JSON_MAX_BYTES = 8 * 1024 * 1024
 #: judgment 顶层随行的判定元数据键（在场的才收进 metrics）
 _JUDGMENT_META_KEYS = ("ok", "all_pass", "n_ports", "n_freqs", "f0_on_grid",
                        "grid_step_ghz")
+#: manifest ``runs_root`` 可重建说明字段（随 runs_root 同笔落盘）：相对形态
+#: 解析口径 + 旧绝对路径形态的读取兼容。绝对路径/盘符永不落盘——
+#: runs/datasets 是数据集条件发布面，runs_root 绝对路径是其唯一硬敏感面
+#: （aurora36 W2-D 脱敏，铁律 8 同源）。
+RUNS_ROOT_NOTE = (
+    "runs_root 为相对本 manifest 所在数据集目录的 posix 相对路径"
+    "（解析=manifest 所在目录/runs_root，resolve_dataset_runs_root 单源）；"
+    "2026-10 起新生成 manifest 不落盘绝对路径与盘符（数据集条件发布脱敏），"
+    "读取侧对旧绝对路径形态按存在性探测回退兼容。")
+
+
+def _manifest_runs_root(root: Path, dataset_dir: Path) -> str:
+    """runs 根 → manifest ``runs_root`` 落盘形态：相对数据集目录的 posix
+    相对路径（缺省布局 ``runs`` vs ``runs/datasets/<name>`` → ``../../``）。
+
+    绝对路径/盘符不落盘；跨盘等相对化不可表达场景（Windows 异盘符）落
+    **空串**并靠 runs_root_note 说明重建口径——不回退写绝对路径（脱敏
+    优先于便利：空串时用 collect 的 ``--runs-root`` 显式重建）。
+    """
+    try:
+        rel = os.path.relpath(root, dataset_dir)
+    except ValueError:  # 跨盘：无可表达的相对路径
+        return ""
+    return Path(rel).as_posix()
+
+
+def resolve_dataset_runs_root(
+    manifest: dict[str, Any] | None,
+    manifest_path: str | Path,
+    default: str | Path = "runs",
+) -> Path:
+    """manifest ``runs_root`` → 可用 runs 根（读取侧存在性探测回退链）。
+
+    ①旧绝对路径形态（2026-10 前 manifest）在盘 → 原样认（机器搬移后失效
+    则跳过）；②相对形态（现行写出形态）相对 **manifest 所在目录** 解析，
+    在盘即认；③缺省 ``runs``（相对 cwd，collect 既有口径）在盘即认。
+    全部落空 → 返回首个候选（调用方既有 ``is_dir`` 报错面接手给出准确
+    消息，不在这里虚构目录）。
+    """
+    raw = str((manifest or {}).get("runs_root") or "").strip()
+    base = Path(manifest_path).resolve().parent
+    candidates: list[Path] = []
+    if raw:
+        p = Path(raw)
+        if p.is_absolute():
+            candidates.append(p)
+        else:
+            candidates.append(base / p)
+    candidates.append(Path(default))
+    for cand in candidates:
+        if cand.is_dir():
+            return cand.resolve()
+    return candidates[0]
 
 
 def _skip_dir(path: Path) -> bool:
@@ -382,7 +436,10 @@ def collect_edb_lane_dataset(
     """把 EDB 道产物目录（hfss_batch Touchstone + judgment/spec JSON）收集
     入库为数据集（行 schema/物化布局同 materialize_dataset：``<out_dir>/
     <name>/points.parquet`` + ``dataset_manifest.yaml``，query_dataset/
-    list_datasets 直接可查）。
+    list_datasets 直接可查）。manifest 内 ``runs_root`` 为相对本 manifest
+    所在目录的 posix 相对形态（绝对路径/盘符不落盘，数据集条件发布脱敏，
+    RUNS_ROOT_NOTE 随行说明；信封返回值里的 runs_root 仍是运行时解析的
+    本机绝对路径，只入回执不落盘）。
 
     run_ids：产物目录过滤（相对 runs_root 的 posix 路径或末段目录名，同
     名时按扫描序取首个；None=全部候选）。models：spec.template 族名过滤
@@ -542,7 +599,7 @@ def collect_edb_lane_dataset(
             "algorithm": EDB_LANE_SOURCE,
             # E1 指纹 study_name = 批次目录相对 runs 根路径（批次即战役，
             # #322）：折叠只在同一批次内发生；相对路径口径下跨战役同名
-            # 批次（campaign_a/batch_smoke vs campaign_b/batch_smoke）不折叠，
+            # 批次（campaign_a/w1_smoke vs campaign_b/w1_smoke）不折叠，
             # 各留一行
             "study_name": _rel(rec["batch_dir"]),
             "seed": None,
@@ -658,7 +715,12 @@ def collect_edb_lane_dataset(
         "points_file": points_path.name,
         "created_at": created_at,
         "importer": "edb_lane",
-        "runs_root": str(root),
+        # 脱敏（aurora36 W2-D）：runs_root 落相对本 manifest 目录的 posix
+        # 相对形态（RUNS_ROOT_NOTE 随行说明解析口径），绝对路径/盘符不落盘
+        # ——runs/datasets 数据集条件发布面唯一硬敏感面；运行时解析走
+        # resolve_dataset_runs_root（兼容旧绝对路径形态）
+        "runs_root": _manifest_runs_root(root, dataset_dir),
+        "runs_root_note": RUNS_ROOT_NOTE,
         "source_runs": run_infos,
         "n_dirs_scanned": n_scanned,
         "n_candidates": n_candidates_all,
@@ -678,12 +740,7 @@ def collect_edb_lane_dataset(
         "visibility": "private",
         "ground_truth": gt_block,
     }
-    import yaml
-
-    manifest_path = dataset_dir / MANIFEST_NAME
-    manifest_path.write_text(
-        yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
-        encoding="utf-8")
+    manifest_path = _save_manifest_atomic(dataset_dir, manifest)
 
     sync_enabled = _resolve_registry_sync(registry_sync)
     registry_synced = False

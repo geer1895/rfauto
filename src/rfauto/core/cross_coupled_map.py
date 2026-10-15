@@ -1,6 +1,6 @@
 """交叉耦合广义切比雪夫 BPF → 模板物理参数映射内核（TA-14，ge8d Wave D 席 D2）。
 
-条目（研究扩充 round15 §二·2 TA-14）：「交叉耦合
+条目（docs/research_expansion_20261002_round15.md §二·2 TA-14）：「交叉耦合
 广义 Chebyshev 模板化 | cm_core 全流程已在（见十七轮勘误）——非相邻耦合线
 映射 L 级」。十七轮勘误（round17 §二）：cm_core 936 行已覆盖广义 Chebyshev
 任意 TZ 混合 + Cameron N+2 横向留数 + folded/arrow 旋转消元（对拍

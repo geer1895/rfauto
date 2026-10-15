@@ -3,7 +3,7 @@
 消费 core/aging.py 内核（F-C.1 P1 已落地；本服务零物理公式，全部数字出自
 确定性内核，规则 7）+ knowledge/aging_laws.yaml 材料老化律注册表（P1 批，
 本服务按 laws_material 查表）。三入口（方案
-研究扩充 F-C §2 P2 段）：
+docs/research_expansion_20260926.md F-C §2 P2 段）：
 
 - :func:`aging_simulate`：模板名义几何 + 任务剖面 + 材料 → εr 漂移轨迹 +
   fake 通道名义/EOL 两点 S 参数重算 + 失谐量 detune_pct；

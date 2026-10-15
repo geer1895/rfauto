@@ -1,6 +1,6 @@
 """NX-7 组织介电常数表（Gabriel 1996 四阶 Cole-Cole）+ 植入链路闭式面。
 
-规格：研究扩充 round14 §四 NX-7——"Gabriel
+规格：docs/research_expansion_20261002_round14.md §四 NX-7——"Gabriel
 1996 四阶 Cole-Cole（Phys. Med. Biol. 41 免费文献双源）入 materials
 schema；植入天线闭式链（等效介质波长缩短+SAR 门）。IT'IS Virtual Family
 许可边界维持"。数据包形态：data/gabriel1996_table1.csv（原文 Table 1
@@ -155,7 +155,7 @@ def implant_link_chain(tissue: Any, f_hz: Any,
       色散介质下逐频求值，如实不做宽带等效）。
     - SAR = σ_eff·E_rms²/ρ（IEEE 1528 rms 场口径；10 g 平均门限
       SAR_GATE=2 W/kg 公开值——verdict 只按点值门判，不做组织内平均
-      分布（登记边界）。
+      分布（登记边界））。
     """
     cc = cole_cole_eps(tissue, f_hz, table)
     f = _finite(f_hz, "f_hz")

@@ -11,7 +11,7 @@ import pytest
 pytestmark = pytest.mark.real_edt
 
 _ADS = Path(os.environ.get("RFAUTO_HPEESOF_DIR", r"E:/ADS/ADS27"))
-_SNP = Path(r"D:/rf_workspace\scripts\spike_b_ads\p3_d5_out\wilkinson_like.s3p")
+_SNP = Path(r"D:\rf_workspace\scripts\spike_b_ads\p3_d5_out\wilkinson_like.s3p")
 
 
 @pytest.mark.skipif(not (_ADS / "bin" / "hpeesofsim.exe").exists(),

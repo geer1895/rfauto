@@ -1,6 +1,6 @@
 """EM-8 混响室（reverberation chamber, RC）闭式统计与品质因数面。
 
-规格：研究扩充 round17 §四 EM-8——"Weyl 模式数/
+规格：docs/research_expansion_20261002_round17.md §四 EM-8——"Weyl 模式数/
 Q 上界/χ² 统计/搅拌独立数（Hill/IEC 61000-4-21 Annex K 次级源双源）+RC-SAC
 换算文档"（P3 探索升主序）。模块 = 纯闭式/统计函数叶子，零 IO、不进
 calculators 注册表（同席 2/3 约定）。
@@ -43,7 +43,7 @@ calculators 注册表（同席 2/3 约定）。
 
 出处（双源纪律）
 ------------------
-1. round 文档：研究扩充 round17 §四 EM-8。
+1. round 文档：docs/research_expansion_20261002_round17.md §四 EM-8。
 2. 原文面：D. A. Hill, "Electromagnetic theory of reverberation chambers",
    NIST TN 1506 (1998)（公开 PDF，公式面口径）；IEC 61000-4-21:2023
    （标准正文收费——只作口径名引用，页码 UNVERIFIED 如实标注）。

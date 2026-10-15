@@ -1,6 +1,6 @@
 """XA-6 出处断链巡检门（KD-1 注册表健康巡检）。
 
-规格：研究扩充 round18 XA-6「出处断链巡检门
+规格：docs/research_expansion_20261002_round18.md XA-6「出处断链巡检门
 （自动对照 docstring 公式↔出处）」。巡检对象=KD-1 公式 provenance 注册表
 （knowledge/formula_provenance.yaml，schema/扫描单源在
 src/rfauto/core/formula_provenance.py）。

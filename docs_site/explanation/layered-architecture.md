@@ -28,6 +28,10 @@ linkage/ optimization/ models/    ← 领域：优化外环、跨工具联动、
 强制**（契约见仓根 `.importlinter`，依赖声明见 pyproject dev 组），反向
 import 直接红。
 
+> UI 壳的内部形态（routes 分域/事件总线/前端 ESM 模块）见下文
+> 「UI 架构」节——分层位置不变（仍是 service 之上的薄壳），只是壳内
+> 有了自己的结构。
+
 ## 为什么 service 层是"JSON 进出"
 
 CLI、MCP server、UI 三种壳共享同一业务，唯一可行的共享点是"参数进、
@@ -38,6 +42,89 @@ JSON 出"的门面函数。规则：
   `service.calculator_service.run_calculator` 的渲染器；
 - 错误语义统一：`ok=False + error` 而非异常穿透到壳——脚本消费者靠
   退出码判成败，不必解析异构输出。
+
+## UI 架构：双 HTTP 面、routes 分域与统一事件流
+
+UI 壳曾长期是 `ui/server.py` 单体（全部 handler 挤一个文件）加前端
+`pages.js` 单体。两战役（aurora_d UI-R1/R2/R3）后是"**装配薄壳 +
+分域路由 + 一条事件总线 + 零构建前端 ESM**"的形态（下列数字
+2026-10-14 树面实测）。
+
+### 双 HTTP 面（同一 service 层，两个消费方各选各的面）
+
+| 面 | 入口 | 前缀/端口 | 消费方 |
+|---|---|---|---|
+| 人工工作台 | `ui/server.py`（装配）+ `ui/routes/`（分域路由） | `/api/*`，loopback 8642 | 浏览器 |
+| 程序化 REST | `service/rest_api.py` | `/api/v1/*`（OpenAPI 3.0.3），8644 | 脚本/第三方 |
+
+两边各自独立路由表，新增能力按消费方选面，不在两边互相转发。
+`ui/server.py` 只保留 app 装配（`create_ui_app`/CSP 中间件/Mount/serve
+启动），全部 API handler 按域机械拆进 `ui/routes/`；route 表 66 条
+`/api/*` Route + `/` index + `/static`、可选 `/runs` 两个 Mount。
+参数守卫单源在 `ui/params.py`，CSP 策略单源在 `ui/csp.py`。
+
+### routes 分域表（`ui/routes/`，10 业务域 + 事件面）
+
+| 域模块 | Route 数 | 职责 |
+|---|---|---|
+| runs.py | 6 | run 清单/详情/双 run 对比/SSE 桥/run 执行/报告图片 |
+| recipes.py | 5 | 配方视图/保存/清单、模型 3D 预览、文件浏览 |
+| tune.py | 3 | 调参（后台线程启动/状态/trials；事件发布源） |
+| agent.py | 12 | LLM 对话、沙箱草稿、审批收件箱、求解器注册表 |
+| importer.py | 1 | HFSS 工程导入（.aedt → 设计规格 + 配方草稿） |
+| measurement.py | 9 | 校准工作台/跨保真/S 参数/Smith 圆图/报告中心 |
+| insight.py | 7 | 优化洞察（Pareto/可行性）/执行看板/成本时间线 |
+| fieldviz.py | 4 | 远场极坐标/场可视化（nf2ff + DumpHDF5） |
+| data.py | 6 | 数据集/标定锚/UQ |
+| tools.py | 7 | 计算器/模板画廊/代理 Playground/剖析 |
+| events.py | 3 | 统一事件流 SSE 端点（全域/tune 域/campaign 域） |
+| campaign_app.py + edb_app.py（ui/ 顶层收编） | 3 | 战役看板 + EDB 快车道状态 |
+
+分域纪律与端点清单的权威出处是 `ui/routes/__init__.py` 与各模块
+docstring（本文只给结构，不复制清单——清单会烂，指针不会）。
+
+### 统一事件流（`ui/routes/event_bus.py`）
+
+实时面曾是三套语义并存（runs 的 SSE 桥、tune 轮询、campaign 队列
+轮询）。事件总线把"进程内事件"收编为**一条**总线：统一信封
+`{seq, ts, kind, domain, payload}`——seq 单调轴兼作 SSE `id:` 帧
+（浏览器 EventSource 断线携 Last-Event-ID 即可续传）；环形缓冲
+（缺省 512 条）做背压（慢客户端不阻塞发布方）；去重窗防多客户端
+并发时重复发布；订阅数上限防连接泄漏。既有轮询端点零改动保留。
+
+```
+routes/tune.py ──状态转移/trial 探针──┐
+routes/runs.py ──events.jsonl 桥懒镜像─┤→ EventBus（环形缓冲+去重窗+seq 轴）
+routes/events.py ─campaign tick 差分──┘        │
+                                               ▼ SSE 帧 event/id/data + 控制帧 hello/resync/end
+                        前端 EventSource（pages/sse.js）→ 幂等整页刷新/增量更新
+```
+
+### 前端（`ui/static/`，零构建原生 ESM）
+
+`app.js`（外壳：导航/3D/工具函数）+ `pages.js`（薄入口：视图注册表
+组装 + 既有公开导出面 re-export）+ `pages/` **33 个模块**
+（23 个 `view_*.js` 视图 + 10 个基础设施模块）。页面代码零构建——
+原生 `<script type="module">` 相对路径 import，浏览器直跑；数据解释
+逻辑全在 service 层，前端只渲染。
+
+| pages/ 基础设施（10） | 职责 |
+|---|---|
+| context.js / router.js | 视图状态单源 / 两级 hash 路由 + VIEWS 注册表分发 |
+| polling.js / sse.js | 可见性节流轮询 / EventSource 订阅与恢复 |
+| charts.js / dom.js / kit.js | 图表导出与主题刷新 / DOM helper / 通用 UI 件 |
+| sortable.js / filebrowser.js | 可排序表格 / 文件浏览 |
+| dashboard_util.js | 总览 widget 注册表工具 |
+
+23 个 `view_*.js` 与工作台页面一一对应（dashboard/runs/detail/recipe/
+tune/campaign/queue/loopboard/optstack/timeline/calibration/sparams/
+fieldviz/gallery/tools/playground/profile/data/import/agent/reports/
+solvers/guide），逐模块职责见各自文件头注释。
+
+给贡献者的推论照旧：路由是薄壳（守卫单源 + service 调用 + 信封
+构造），新页面先 service 端点再 `view_*.js` 渲染层；程序化消费走
+`/api/v1`（`rfauto rest schema` 机读清单，25 端点实测），别往工作台
+面挂机器接口。
 
 ## 为什么数值只在确定性内核（core）
 
@@ -58,6 +145,13 @@ rfauto 的领域是射频仿真自动化，一条铁律支配整个架构：**LL
 = 模块级 `register` 调用一次即被发现（entry-points 发现口见
 docs/plugins.md），壳层与优化外环完全不感知具体求解器。这就是 fake →
 openEMS → HFSS 多保真切换只是换 `--adapter` 参数的原因。
+
+适配器目录里也住着另一类"可选能力配套件"——它们不是求解器，而是让
+真机链路更稳的 helper，一律走 **fail-soft 纪律**（观测面/增强面绝不
+阻塞业务主路径，#105）：如 `adapters/pyedb_preload.py`（import pyedb
+之前预载 AnsysEM 自带 OpenSSL DLL，规避同名 DLL 对撞硬崩——任何失败
+只落 `ok=False + reason` 信封、绝不抛异常，幂等可重入）。判别标准：
+失败的最坏后果是"该增强没生效"而非"主流程中断"，才允许进这个位置。
 
 ## 为什么判据（verdict）必须预声明
 

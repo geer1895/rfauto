@@ -1,6 +1,6 @@
 """EM-1 近场屏蔽效能（电/磁偶极源波阻抗修正闭式族）（2026-10-02，round17 EM-1）。
 
-规格：研究扩充 round17 §四 EM-1——磁场源
+规格：docs/research_expansion_20261002_round17.md §四 EM-1——磁场源
 Z_w=η0·2πr/λ、电场源 Z_w=η0·λ/(2πr)（Ott §6.4/Paul Ch.10）；验收=
 Ott 铜箔 0.1mm@1MHz 典型带。
 

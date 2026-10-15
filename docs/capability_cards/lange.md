@@ -22,7 +22,17 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=9 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | finger_len_mm | 1.0 |
+| 2 | w_mm | 0.013767 |
+| 3 | gap_mm | 0.001555 |
+| 4 | w_feed_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -43,7 +53,7 @@
 - 参数语义：w_mm=单指宽，gap_mm=指缝（边到边；3dB 于本叠层 s=0.0386mm，g=s/h=0.076 略低于 KJ 标称有效域下限 0.1，openems_templates §C4 段首口径 3 如实记录），finger_len_mm=指长（λ/4 @平均 εeff=2.4972），w_feed_mm=50Ω 馈线宽。相邻对 (Z0e,Z0o)=(176.216,52.609)Ω（Pozar 设计式 C=1/√2）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；指缝/桥/立柱盒缘精确入网（#198；air-bridge z 底/顶面入网）
 - 冒烟现状：真机未跑（followUp）：指缝 38.6µm 小于 0.4mm 审计网格（near 加密入网）；桥缝耦合寄生于理想裁判之外，冒烟按 g=0.076 提示与一阶口径判读
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

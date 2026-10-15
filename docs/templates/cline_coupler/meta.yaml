@@ -21,3 +21,32 @@ nominal_params:
 topology: 耦合线定向耦合器（后向波，C4 族）：两条 λ/4 平行耦合线（KJ (w,s) 反解）+ 四条 50Ω 馈线外推+横向搭接段（同心直连短路）；1=输入/2=直通（线 A 远端）/3=耦合（线 B 近端，与输入同侧）/4=隔离
 param_semantics: w_mm=耦合段单线宽，gap_mm=耦合缝（边到边），coupled_len_mm=耦合段物理长（λ/4 @平均 εeff），w_feed_mm=50Ω 馈线宽——fake/openEMS 两通道同名同语义。10dB 设计点：C=0.31623 → (Z0e,Z0o)=(69.371,36.038)Ω → KJ 反解 (w,s)=(0.9243,0.0820)mm，εeff_e/o=2.9922/2.4663
 smoke_note: 真机未跑（followUp）：非同步残差预期 S41≈−23dB/S11≈−33dB（定向性 ≈13dB，微带耦合线固有，openems_templates §C4 段首口径 1），冒烟按此判读；理想同步极限 |S31|=−10.000dB
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 耦合线定向耦合器（后向波）：匹配条件 Z0²=Z0e·Z0o 下偶/奇模阻抗由耦合度唯一给出，λ/4 同步 TEM 段在中心频率给出直通/耦合正交双输出。典型用于取样/监测与功率分配；常见误用=把理想同步式
+      −10.000dB 当真机预期——微带偶/奇模相速不同步，定向性固有极限 ~13dB（名义点 S41≈−23dB/S11≈−33dB 是物理不是缺陷）。
+    derivations:
+    - claim: 匹配条件下偶/奇模阻抗设计式与耦合度恒等式
+      formula: Z0e = Z0*sqrt((1+C)/(1-C)) ; Z0o = Z0*sqrt((1-C)/(1+C)) ; C = (Z0e-Z0o)/(Z0e+Z0o)
+      source: Pozar, Microwave Engineering (4th ed.), §7.6；docs/rf_template_references.md §13.1 已核（10dB
+        点 (Z0e,Z0o)=(69.371,36.038)Ω → KJ 反解 (w,s)=(0.9243,0.0820)mm）
+    - claim: λ/4 耦合段长取偶/奇模平均填充 εeff（KJ 模型）
+      formula: L = c/(4*f0*sqrt((εeff_e+εeff_o)/2))
+      source: 本仓 core/coupled_microstrip（Kirschning-Jansen 偶/奇模单源；docs/templates/cline_coupler/meta.yaml
+        param_semantics）
+  sensitivity_ranking:
+  - param: coupled_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；登记表同值 1.0
+  - param: w_mm
+    order: 2
+    basis: 线宽经 KJ 偶/奇模填充进入（阻抗口径主维）；登记表 0.0381
+  - param: gap_mm
+    order: 3
+    basis: 耦合缝定 (Z0e,Z0o) 差（耦合度主控，KJ 强敏感维）；登记表 0.0034
+  - param: w_feed_mm
+    order: 4
+    basis: 50Ω 馈线匹配（不进耦合段谐振式）
+  quiz_refs: []

@@ -19,3 +19,42 @@ nominal_params:
 topology: IFA（§10.3 C1，PIFA 窄臂退化）：短路板 x∈[−1,0]（z 0→h）+ 臂 z=h 自短路板 −x 向伸出 λ/4 + 馈针=LumpedPort x=−feed_off（顶触臂、底触地，不另画金属针盒）；基板 + z-min PEC 地
 param_semantics: ifa_arm_mm=臂长（短路板起算 ≈λ0/(4√εeff)，HJ @臂宽），ifa_w_mm=臂宽，feed_off_mm=馈针-短路板间距（>1.5mm，定输入阻抗：2mm ⇒ R_peak≈100Ω，再近压向 50Ω）
 smoke_note: 真机 runs/antenna2_smoke/ifa（2026-09-14，去针盒 v2）PASS：S11 −8.48dB @2.44GHz（+1.7%），Zin@谷=103−24jΩ（并联型谐振，馈针 2mm 过耦合限谷深）；与 ifa_v1_pin_short（有针盒）−8.52dB@2.44 逐点一致 ⇒ 针盒无影响、谐振为真。带外 R≈0（1.9GHz −0.11+4.3j、2.9GHz 0.19+3.3j）是无耗短路桩馈结构的正常反应，首判"端口短路→PARTIAL"已证伪
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 倒 F 天线=短路桩馈电的 λ/4 单极子退化：短路板把臂端接 PEC 地（电压
+      节点/电流腹点），臂电长度 λg/4；馈针在距短路板 feed_off 处顶触臂——并联
+      馈电使输入阻抗沿臂按正弦电压分布抽头（馈点越远阻抗越高），feed_off 是
+      匹配旋钮而非谐振旋钮。并联型谐振判读看阻抗峰（R_peak）且谷深受其限制；
+      带外 R≈0 是无耗短路桩的正常反应（判谐振看电抗过零/谷位，不判"端口短路"，
+      meta smoke_note 真机账）。
+    derivations:
+    - claim: 臂 λ/4 设计式（L 路径）：f0=c/(4·L·√εeff(w))，εeff 取 HJ 模型
+        在臂宽、设计频率处取值（弱色散设计频率处取值口径）；设计式不做端效应
+        预补偿（#190：引擎常数须经仲裁才进设计式）
+      formula: ifa_arm = c/(4·f0·√εeff(ifa_w))；
+        εeff 走 microstrip_lambda_g 通道
+      source: core/synthesis.py（forward_media εeff 单源）+ calc_families/
+        rf_line.py（microstrip_lambda_g 键）+ docs/templates/ifa/meta.yaml
+        （param_semantics 臂长设计式）+ adapters/fake_adapter.py
+        （antenna2_resonance_ghz 精确逆单源）
+    - claim: 并联馈电抽头阻抗：馈针-短路板段近似短路短路段，输入电抗
+        j·Za·tan(β·feed_off) 与臂谐振并联——越近短路板抽头电压越低、阻抗越
+        接近低阻口径；feed_off 定 R_peak 限谷深（真机口径值见 meta smoke_note，
+        不在此手抄）
+      formula: Z_stub = j·Za·tan(β·feed_off)（短路段输入阻抗）；
+        Rin 随抽头位置沿臂升
+      source: docs/templates/ifa/meta.yaml（param_semantics feed_off 定输入
+        阻抗+smoke_note 真机口径）+ Pozar, Microwave Engineering (4th ed.),
+        Ch.2（短路段输入阻抗与 λ/4 阻抗变换）
+  sensitivity_ranking:
+  - param: ifa_arm_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（一阶精确）；登记表 1.0
+  - param: ifa_w_mm
+    order: 2
+    basis: 臂宽经 εeff(w) 通道弱进入谐振式（登记表 0.039732）；兼臂阻抗口径
+  - param: feed_off_mm
+    order: 3
+    basis: 馈电耦合/匹配面，不进谐振式（登记表 0）
+  quiz_refs: []

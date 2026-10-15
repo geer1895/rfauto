@@ -29,13 +29,15 @@ def start_tune(
     max_trials: int = 60,
     study_name: str = "",
     sampler: str = "tpe",
-    seed: int = 0,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     """提交主优化任务（异步），立即返回 job_id。
 
-    复用 CLI ``rfauto tune`` 同源的 start_tune_async（单目标路径，Optuna
-    storage 持久化，断点自动恢复）。经 poll_job/wait_job 轮询进度与终态
+    副作用：后台优化线程+Optuna storage 持久化落盘（runs/，断点可恢复）；
+    产物 run 目录随试验推进生成。复用 CLI ``rfauto tune`` 同源的
+    start_tune_async（单目标路径）。经 poll_job/wait_job 轮询进度与终态
     （终态 result 收 best_params/best_cost/best_metrics/trials 摘要）。
+    时序：同配方重复提交前先查 poll_job；同 study 重跑秒回（缓存复用）。
 
     Args:
         recipe_path: 配方文件路径（YAML，含 optimization.params/objectives 段）
@@ -43,7 +45,9 @@ def start_tune(
         max_trials: 最大试验次数（缺省 60）
         study_name: Optuna study 名（空串=由配方自动派生）
         sampler: 采样器 "tpe"（缺省）
-        seed: 随机种子（缺省交由内核固定缺省 SAMPLER_SEED=42；显式传 0 走内核缺省语义）
+        seed: 随机种子（None=交由内核缺省 SAMPLER_SEED=42；显式 0=字面种子
+            0，与 CLI ``--seed 0`` 同义——ge9 审查批 R4 P2-2 前被 falsy 哨兵
+            折成缺省，MCP 面不可达）
 
     Returns:
         dict: {ok: bool, job_id: str, state: str, message: str}
@@ -56,7 +60,7 @@ def start_tune(
         max_trials=max_trials,
         study_name=study_name or None,
         sampler=sampler,
-        seed=seed if seed else None,
+        seed=seed,
     )
 
 
@@ -76,9 +80,11 @@ def run_sweep(
 ) -> dict[str, Any]:
     """运行参数扫描（粗扫→精调，同步返回全量信封）。
 
-    复用 CLI ``rfauto sweep`` 同源的 run_sweep；组合数受 max_combos 硬上限
-    约束（fake 通道秒级，hfss 通道请先估预算）。resume_run_id 给定时从该
-    run 的 sweep checkpoint 续扫（SN-11：命中组合不重跑，携带原结果）。
+    副作用：真机/代理逐组合求解（同步阻塞至扫描完成），产物 run 目录
+    落盘 runs/。复用 CLI ``rfauto sweep`` 同源的 run_sweep；组合数受
+    max_combos 硬上限约束（fake 通道秒级，hfss 通道请先估预算）。
+    resume_run_id 给定时从该 run 的 sweep checkpoint 续扫（SN-11：命中
+    组合不重跑，携带原结果）。
 
     Args:
         recipe_path: 配方文件路径（YAML，含 params.bounds/objectives 段）

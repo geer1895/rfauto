@@ -72,7 +72,7 @@ def main() -> int:
     yaml_text = (
         "# fake 联合校准锚（A1，自动推导：scripts/derive_fake_calibration.py）\n"
         "# 数据源：knowledge/reference/openems_nominal/（多模态审计后的正确拓扑，\n"
-        "# openEMS 0.5mm 网格真跑）；修模型 → 再校准。\n"
+        "# openEMS 0.5mm 网格真跑）；修模型 → 再校准（AGENTS 硬限 1b）。\n"
         "models:\n"
         + "".join(
             f"  {t}:\n"

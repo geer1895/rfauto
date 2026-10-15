@@ -12,9 +12,10 @@ from .registry import (
     TEMPLATE_META,
     TEMPLATE_NOMINAL,
 )
+from .wg_port_compat import WG_PROBE_REFIT_BLOCK
 
 # ═══ §ME-7 角锥喇叭 pyramid_horn（2026-09-26 ME-7 离线段，文末注册块）══════════
-# 方案锚：月度增强方案 §三 A 流 ME-7——标准增益
+# 方案锚：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-7——标准增益
 # 公式综合入 core（core/horn_synthesis.py，Orfanidis Ch.21 × Balanis Ch.13
 # 双源闭式，锚例 Ex21.5.1/21.5.2 钉）+ openEMS 全波验证（方向图/真机冒烟=
 # Ph3 窗，本批零发射）。波纹喇叭按方案降级处理（不排）。
@@ -42,8 +43,16 @@ PYRAMID_HORN_TEMPLATES: frozenset[str] = frozenset({"pyramid_horn"})
 #: 阶梯化分段数（斜壁→矩形截面链；段中截面采样，8 段对 15 dB 档阶梯
 #: ≥2.9mm ≫ 网格 NEAR，阶梯化误差由 Ph3 网格收敛研究定档）
 _PYRAMID_HORN_N_SEG = 8
-#: 侧向/口径向空气余量（mm，≈λ0/4@10GHz+4mm 的圆整档）
+#: 侧向/口径向空气余量（mm，≈λ0/4@10GHz+4mm 的圆整档）——只进 dom_x/dom_z
+#: （x/z 侧向 MUR 轴）；口径侧（+y）空气域由管长外推 air_need 消费式保证，
+#: 旋钮见 `_air_margin_aperture`（l12d 席 verdict followup：11.5 不动）。
 _PYRAMID_HORN_AIR_MARGIN_MM = 11.5
+#: 口径侧（+y）空气域余量档旋钮（params 私有键 `_air_margin_aperture`，
+#: cps_xrefine 旋钮纪律=缺省路径逐字节不变+旋钮值进渲染 summary）：
+#: None（缺省）=λ0/4+4mm 档（历史口径；l_feed 主导时口径侧实距可塌缩，
+#: l12d 实证 DOM_Y=tube=60mm 时域余量 14.52mm<λ/2 硬限）；"lambda_half"
+#: =λ0/2+4mm 档（辐射器件 λ/2 域余量根治档，≈19mm@10GHz，管长外推保证）。
+_PYRAMID_HORN_AIR_MARGIN_HALF_WAVE = "lambda_half"
 #: 馈电直管最短长（mm；渲染时实际管长=max(l_feed, l_flare+λ0/4+4mm)——
 #: 口径侧空气域余量自动保证 #174 族，单参数扰动可独立成立；60 为名义档）
 _PYRAMID_HORN_L_FEED_MM = 60.0
@@ -107,7 +116,9 @@ def _pyramid_horn_layout(
 
     守卫（渲染期显式抛错）：口径>波导口、阶梯步距 ≥4·NEAR（#266 族）；
     口径侧空气域 ≥λ0/4+4mm 由管长自动外推保证（#174 族，l_feed 语义=
-    最短长）。
+    最短长）。旋钮 `_air_margin_aperture`（私有键，不入 NOMINAL/params
+    注册面，`_nrts` 同款）：None=缺省 λ0/4+4mm 档（渲染逐字节不变）；
+    "lambda_half"=λ0/2+4mm 档（λ/2 域余量根治，l12e 席）。
     """
     nom = PYRAMID_HORN_NOMINAL
     a_mm = float(params.get("a_mm", nom["a_mm"]))
@@ -134,7 +145,18 @@ def _pyramid_horn_layout(
             f"pyramid_horn: 阶梯步距 {min(step_x, step_z):.4f}mm < "
             f"4·NEAR={4.0 * near_mm:.4f}mm（#266 族守卫）——请加密 "
             f"mesh_resolution_mm 或增减口径")
-    air_need = lambda0_mm / 4.0 + 4.0
+    # 口径侧空气余量档（旋钮 `_air_margin_aperture`，见模块头与 docstring）：
+    # 缺省 None=λ0/4+4mm 档（历史口径，渲染逐字节不变）；"lambda_half"=
+    # λ0/2+4mm 档；未知档显式拒绝不静默降级
+    air_mode = params.get("_air_margin_aperture")
+    if air_mode is None:
+        air_need = lambda0_mm / 4.0 + 4.0
+    elif air_mode == _PYRAMID_HORN_AIR_MARGIN_HALF_WAVE:
+        air_need = lambda0_mm / 2.0 + 4.0
+    else:
+        raise ValueError(
+            f"pyramid_horn: 未知 _air_margin_aperture={air_mode!r}"
+            f"（合法：None/'{_PYRAMID_HORN_AIR_MARGIN_HALF_WAVE}'）")
     # 馈电直管长：l_feed 语义=最短长——l_flare 扰动/综合变化时自动外推，
     # 保证口径侧空气域 ≥λ0/4+4mm（#174 族；单参数扰动可独立成立）
     tube_mm = max(l_feed_mm, l_flare_mm + air_need)
@@ -278,6 +300,10 @@ def pyramid_horn_render(
     dom_y = lay["dom_y_mm"] * 1e-3
     dom_z = lay["dom_z_mm"] * 1e-3
     nrts = int(params.get("_nrts", 100000) or 100000)
+    # 旋钮值进渲染 summary（cps_xrefine 纪律）；缺省 None→空插值=逐字节不变
+    _air_mode = params.get("_air_margin_aperture")
+    air_knob_lit = (f"    air_margin_aperture={_air_mode!r},\n"
+                    if _air_mode is not None else "")
 
     def m(v: float) -> float:
         return float(v) * 1e-3
@@ -299,6 +325,7 @@ def pyramid_horn_render(
     a_bind = m(p["a_bind_mm"])
     b_bind = m(p["b_bind_mm"])
     a_wr = m(lay["a_mm"])
+    refit_blk = WG_PROBE_REFIT_BLOCK
     return f'''#!/usr/bin/env python3
 """openEMS pyramid_horn script (rfauto ME-7 auto-generated).
 
@@ -376,13 +403,20 @@ wall = CSX.AddMetal("horn_wall")
 {box_lit}
 
 # ── 端口：RectWGPort 解析 TE10（Pozar 模式函数，绑定自算 kc=π/a_phys）──
+# COMPAT 簇4（上游 2026-05 端口重写 9527f81/efc90db）：安装栈探针
+# ModeOrigin 序列化错位 (x,y,z)->(0,x,y) 致探针权重与被激励模式正交
+# （uf_tot≡0、S11≡−1；复现 runs/seat1_rectwg/repro_rectwg.py），构造后
+# _wg_probe_refit 把角点偏移改回模式函数内联（根因见
+# oe_templates/wg_port_compat.py）。
 # 绑定参数序：a=第一横向轴（exc_dir=y 时=z）、b=第二横向轴（=x）；本喇叭
 # 物理宽边沿 x、E 场沿 z ⇒ 绑定 a={a_bind!r}（=b_phys）、
 # b={b_bind!r}（=a_phys）、mode="TE01"（M=0,N=1：E 沿 z、半波沿 x）。
 # Z_ref 缺省=解析波导阻抗 ZL=k·Z0/β（WaveguidePort.CalcPort）。
+{refit_blk}
 _port1 = RectWGPort(CSX, port_nr=1,
 {port_lit}    exc_dir="y", a={a_bind!r}, b={b_bind!r},
     mode_name="TE01", excite=1)
+_wg_probe_refit(_port1)
 
 # ── 求解 ──
 # RFAUTO_SKIP_RUN=1：只重跑后处理（复用既有 fdtd/ 时域产物；几何段未变时合法）
@@ -410,7 +444,7 @@ summary = dict(
     l_feed_mm={lay["l_feed_mm"]!r}, l_flare_mm={lay["l_flare_mm"]!r},
     h_sub_placeholder_mm=H_SUB, fc_te10_hz=float(_fc_te10),
     lambda_g_mm=float(_lam_g), nrts=NRTS,
-    mesh_lines=[int(len(mesh.GetLines(_a))) for _a in ("x", "y", "z")],
+{air_knob_lit}    mesh_lines=[int(len(mesh.GetLines(_a))) for _a in ("x", "y", "z")],
 )
 with open(os.path.join(SCRIPT_DIR, "pyramid_horn_meta.json"), "w",
           encoding="utf-8") as fh:

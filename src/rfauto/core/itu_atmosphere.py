@@ -1,4 +1,4 @@
-"""AP-6 ITU 大气/雨衰包（规格深案 §A-8，2026-10-02）。
+"""AP-6 ITU 大气/雨衰包（plan_deepdive_specs_20261002.md §A-8，2026-10-02）。
 
 传播域主线第二件：ITU-R P.676-13 Annex 1 逐线大气吸收 + P.838-3 雨衰
 specific attenuation + P.618 R0.01 入口占位。**纯函数零 IO**、单位显式、
@@ -9,7 +9,7 @@ specific attenuation + P.618 R0.01 入口占位。**纯函数零 IO**、单位�
 ------------------------------
 式实现已**逐式对照官方 PDF 视觉核verify**（runs/ap6/ 本地证据：
 R-REC-P.676-13.pdf 32 页 / R-REC-P.838-3.pdf 8 页 + eq*.png 渲染）。
-系数表已**逐值录入并验证**（AP-8 批，证据 runs/ap8）：P.676-13
+系数表已**逐值录入并验证**（AP-8 批，证据 runs/ap8/）：P.676-13
 Table 1 全 44 行 + Table 2 全 35 行（含 1780GHz 伪线）经 pypdf 文本层
 机械抽取 + 前席 dump 逐 token 对拍 all-equal（553 值）+ 187dpi PNG
 视觉抽检；P.838-3 Tables 1-4 四组系数另经官方 **Table 5 全量 116 频点
@@ -108,7 +108,7 @@ P.837 雨率图与 P.839-4 冻结层高度均为 ITU 数字地图数据文件（
 4. P.837 系数（R0.01 指数模型）——P.618 R0.01 入口占位待录
    （规格书无逐值来源，PV-011 数据文件不捆绑，维持占位如实）。
 
-参考：规格深案 §A-8；PV-011（ITU-R
+参考：docs/plan_deepdive_specs_20261002.md §A-8；PV-011（ITU-R
 建议书免费公开，本模块只实现公式+待录系数表结构，零 ITU 数据文件
 捆绑，runs/ 下 PDF 仅本地证据不入库）。
 """
@@ -410,7 +410,7 @@ def gamma_gasses_db_per_km(
     p_hpa **干空气**分压 [hPa]（P.676 约定，总压 ptot=p+e）；t_k 温度 [K]；
     rho_wv_g_m3 水汽密度 [g/m³]（0=干空气）。
 
-    系数表已逐值录入（AP-8 批，验证链见模块 docstring 与 runs/ap8）；
+    系数表已逐值录入（AP-8 批，验证链见模块 docstring 与 runs/ap8/）；
     量级锚 γO(60GHz,1013hPa,15℃)≈15、γW(22.235GHz,7.5g/m³)≈0.19 见测试
     （窗值先于落表钉死，#122）。
     """
@@ -671,7 +671,10 @@ def rain_attenuation_ap(
 ) -> float:
     """时间百分数换算 A0.01 → Ap（P.618-13 Step10，式(8)，p∈[0.001, 5]%）。
 
-    β 三分支按原文；p=0.01 恒等回 A0.01（(0.01/0.01)^k=1，结构锚）。
+    β 三分支按原文；p=0.01 恒等回 A0.01（(0.01/0.01)^k=1，结构锚）；
+    A001=0（无雨零分支，rain_attenuation_r001 两个原文零分支的合法输出）
+    → Ap=0 快路径（式(8) 原文 A001=0→Ap=0；ge9 审查 P2 勘误——旧实现
+    直落 math.log(0) 裸崩 math domain error）。
     """
     a001 = _num(a001_db, "a001_db")
     p = _num(p_percent, "p_percent")
@@ -681,6 +684,8 @@ def rain_attenuation_ap(
         raise ValueError(f"p_percent 有效域 [0.001, 5]%（式(8) 声明域），得 {p}")
     if a001 < 0.0:
         raise ValueError(f"a001_db 必须 >= 0，得 {a001}")
+    if a001 == 0.0:
+        return 0.0   # 无雨恒零（式(8)：0·(p/0.01)^x≡0，log(0) 无定义域）
     abs_lat = abs(lat)
     if p >= 1.0 or abs_lat >= 36.0:
         beta = 0.0

@@ -492,7 +492,7 @@ def render_card_md(card: dict[str, Any]) -> str:
     modes = card["failure_modes"]
     if modes:
         lines.append(f"- 失败模式坑账链（playbook 命中 {len(modes)} 条，"
-                     "坑号 #NNN 为 出处标记）：")
+                     "坑号 #NNN 为  出处标记）：")
         for m in modes:
             pits = "、".join(m["pit_refs"]) or "-"
             lines.append(f"  - `{m['rule_id']}`（{m['root_cause_family']}；"

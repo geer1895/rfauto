@@ -1,12 +1,38 @@
 /* rfauto 命令面板（PR-2，规格 §D-8）：零构建 vanilla ES module。
-   数据源：22 页注册表（#nav button[data-v]，DOM 单源）+ /api/runs?limit=200
+   数据源：nav 页注册表（#nav button[data-v]，DOM 单源）+ /api/runs?limit=200
    + /api/recipes（两个端点均已存在，本模块零新增 /api 面）。
+   W3-D（aurora36）：命令面扩展——`>` 命令目录抽纯函数 commandCatalog
+   （node 可测，动作面注入）：主题四态 + 页面跳转组（go-*，与 showPage 的
+   data-v 对齐，出口复用 pages.js 单源）+ 动作命令（刷新当前页/导出当前
+   页图表/面板用法提示）。行图标消费 index.html 的 SVG sprite
+   （<use href="#icon-*">，aria-hidden 装饰性，stroke=currentColor 随主题）。
    键位：Ctrl/Cmd+K 开关、Esc 关、↑↓ 选、Enter 执行；`>` 前缀命令、
    `#` 前缀 run（v1 子串匹配，大小写不敏感）；焦点陷阱：打开时存
-   activeElement、Tab 在面板内首尾回绕、关闭时还焦。 */
+   activeElement、Tab 在面板内首尾回绕、关闭时还焦。
+   W2-C：本三件套与 app.js 灯箱（lightboxClose/keydown）是同一模式的两处
+   实现——不抽共享模块：app.js 顶层跑 DOM/three 初始化，本文件若 import
+   它会连带炸掉 node 行为测试（无 DOM 环境）的 import 链。两处改动须
+   成对审视，语义保持一致（开=存焦点+焦点入层、Tab=回绕、关=Esc/点遮罩
+   +还焦）。 */
 import { showPage, openRun, setThemeMode, getThemeMode } from "./pages.js";
 
 const $ = (id) => document.getElementById(id);
+
+const _SVG_NS = "http://www.w3.org/2000/svg";
+
+/* W3-D：行装饰图标（index.html sprite 的 <use> 引用，aria-hidden 不进读屏，
+   stroke=currentColor 随行文字/选中态变色；CSS 尺寸在 index.html .pico）。 */
+function iconSvg(doc, name) {
+  const svg = doc.createElementNS(_SVG_NS, "svg");
+  svg.setAttribute("class", "pico");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  const use = doc.createElementNS(_SVG_NS, "use");
+  use.setAttribute("href", `#icon-${name}`);
+  svg.appendChild(use);
+  return svg;
+}
 
 const api = async (url, opts) => (await fetch(url, opts)).json();
 
@@ -19,7 +45,7 @@ export function modeOf(query) {
 }
 
 /* v1 子串匹配：按模式过滤 + 大小写不敏感子串（纯函数，node 可测）。
-   item 契约：{ id, mode, title, subtitle, hint, haystack, run() }。 */
+   item 契约：{ id, mode, title, subtitle, hint, haystack, icon?, run() }。 */
 export function filterItems(items, query) {
   const mode = modeOf(query);
   let needle = String(query ?? "").trim().toLowerCase();
@@ -30,21 +56,121 @@ export function filterItems(items, query) {
     String(it.haystack ?? `${it.title} ${it.subtitle ?? ""}`).toLowerCase().includes(needle));
 }
 
-/* 命令注册表（`>` 前缀）：主题三态 PR-1 的外部入口演示面。 */
-function commandItems() {
-  let cur = "";
-  try { cur = getThemeMode(); } catch { /* 模块未就绪时忽略 */ }
-  const mk = (id, title, kw, fn) => ({
+/* W3-D：视图→sprite symbol 名映射（index.html icon-* 基座的消费索引）。
+   sprite 无对应 symbol 的视图不配图（iconForView 返回 "" → 行内不渲染）。 */
+const _ICON_BY_VIEW = {
+  dashboard: "dashboard", runs: "runs", campaign: "campaign", tune: "tune",
+  recipe: "recipe", tools: "tools", gallery: "gallery", profile: "profile",
+};
+export function iconForView(v) {
+  return _ICON_BY_VIEW[v] || "";
+}
+
+/* 命令目录（W3-D，纯函数 node 可测）：`>` 前缀命令全集。
+   cur=当前主题模式（"当前"提示）；act=注入的动作面（生产=下方
+   commandItems 装配 pages.js 单源出口；node 测试=spy），本函数零 DOM。
+   命令总数 14（主题 4 + 跳转 7 + 动作 3）——总数钉在
+   tests/unit/test_ui_palette_cmds.py，增删命令须同笔同步。 */
+export function commandCatalog(cur, act) {
+  const mk = (id, title, kw, hint, icon, fn) => ({
     id, mode: "cmd", title, subtitle: "命令",
     haystack: `${title} ${kw}`,
-    hint: cur === id.slice(6) ? "当前" : "",
+    hint: hint || "",
+    icon: icon || "",
     run: fn,
   });
   return [
-    mk("theme-dark", "主题：深色", "theme dark 深色 夜间", () => setThemeMode("dark")),
-    mk("theme-light", "主题：浅色", "theme light 浅色 亮色 日间", () => setThemeMode("light")),
-    mk("theme-system", "主题：跟随系统", "theme system 跟随 自动 auto", () => setThemeMode("system")),
+    /* 主题四态（PR-1 的外部入口演示面，沿用原名原关键词） */
+    mk("theme-midnight", "主题：Midnight 深蓝", "theme midnight 深蓝 午夜 夜间 dark",
+      cur === "midnight" ? "当前" : "", "", () => act.setTheme("midnight")),
+    mk("theme-ocean", "主题：Ocean 青绿", "theme ocean 青绿 海洋",
+      cur === "ocean" ? "当前" : "", "", () => act.setTheme("ocean")),
+    mk("theme-light", "主题：浅色", "theme light 浅色 亮色 日间",
+      cur === "light" ? "当前" : "", "", () => act.setTheme("light")),
+    mk("theme-system", "主题：跟随系统", "theme system 跟随 自动 auto",
+      cur === "system" ? "当前" : "", "", () => act.setTheme("system")),
+    /* 页面跳转命令组（W3-D）：目标与 showPage 的 data-v 对齐（对齐钉
+       test_ui_palette_cmds 跨文件核对 nav data-v 全集，防死命令）。 */
+    mk("go-runs", "跳转：Run 历史", "go runs run 历史 跳转", "跳转",
+      iconForView("runs"), () => act.showPage("runs")),
+    mk("go-campaign", "跳转：战役仪表盘", "go campaign 战役 仪表盘 跳转", "跳转",
+      iconForView("campaign"), () => act.showPage("campaign")),
+    mk("go-tune", "跳转：优化调参", "go tune 调参 优化 跳转", "跳转",
+      iconForView("tune"), () => act.showPage("tune")),
+    mk("go-recipe", "跳转：配方编辑", "go recipe 配方 编辑 跳转", "跳转",
+      iconForView("recipe"), () => act.showPage("recipe")),
+    mk("go-tools", "跳转：微波工具箱", "go tools 工具箱 计算器 跳转", "跳转",
+      iconForView("tools"), () => act.showPage("tools")),
+    mk("go-gallery", "跳转：模板画廊", "go gallery 画廊 模板 跳转", "跳转",
+      iconForView("gallery"), () => act.showPage("gallery")),
+    mk("go-profile", "跳转：剖析", "go profile 剖析 性能 py-spy 跳转", "跳转",
+      iconForView("profile"), () => act.showPage("profile")),
+    /* 动作命令（W3-D；导出图表=W4-D） */
+    mk("act-refresh", "刷新当前页数据", "refresh 刷新 当前页 reload", "动作",
+      "refresh", () => act.refresh()),
+    /* 导出当前页图表（W4-D）：事件桥发射端——监听端在 pages.js 侧消费
+       （并行席在制），契约=事件名恒 rfauto:export-chart、无 payload。 */
+    mk("act-export-chart", "导出当前页图表", "export chart 导出 图表 下载", "动作",
+      "", () => act.exportChart()),
+    mk("act-palette-help", "帮助：命令面板用法", "help palette 帮助 提示 用法 快捷键",
+      "帮助", "", () => act.help()),
   ];
+}
+
+/* 当前页视图名（W3-D 动作命令的取数面）：app.js activate 写
+   aria-current="page"（PR-1），DOM 单源读取、不新增跨模块状态。 */
+function currentView() {
+  const b = document.querySelector("#nav button[aria-current='page']");
+  return b && b.dataset ? b.dataset.v : "";
+}
+
+/* 刷新当前页数据：showPage 重入即整页重拉（各页渲染器自取数）；detail 页
+   由 pages.js 内部 currentRunId 重渲染当前 run。 */
+function refreshCurrentPage() {
+  const v = currentView();
+  if (v) showPage(v);
+}
+
+/* 导出当前页图表（W4-D）：事件桥发射端。window 级 CustomEvent
+   "rfauto:export-chart"、无 payload；监听端由 pages.js 侧注册（并行席在
+   制），本文件只管发射。export 供 node 行为钉（test_ui_perf_loading）
+   直接验证守卫与事件契约。node 无 window：缺席环境静默返回（#105
+   best-effort——导出面不得成为业务主路径故障点）。 */
+export function fireExportChart() {
+  try {
+    if (typeof window === "undefined" ||
+        typeof window.dispatchEvent !== "function")
+      return;
+    window.dispatchEvent(new CustomEvent("rfauto:export-chart"));
+  } catch { /* 事件桥异常不阻主路径 */ }
+}
+
+/* 命令面板用法提示：全局 toast 单源是 app.js msg，但本文件禁 import
+   app.js（见文件头——会连带炸 node 行为测试的 import 链），故按同契约
+   最小镜像（textContent + msg ok 类 + 定时消退）；#msg 缺席时静默
+   （#105 best-effort：提示面不得成为业务主路径故障点）。 */
+function showPaletteHelp() {
+  try {
+    const el = document.getElementById("msg");
+    if (!el) return;
+    el.textContent = "命令面板：Ctrl/Cmd+K 开关 · 直接输入搜页面与配方 · # 搜 run · > 命令 · ↑↓ 选择 · Enter 执行 · Esc 关闭";
+    el.className = "msg ok";
+    setTimeout(() => { el.className = "msg"; }, 6000);
+  } catch { /* 提示面缺席不阻主路径 */ }
+}
+
+/* 命令注册表（`>` 前缀）：生产动作面装配——主题/页面出口均为 pages.js
+   单源（既有 import），刷新/导出图表/提示为本文件最小实现（见上）。 */
+function commandItems() {
+  let cur = "";
+  try { cur = getThemeMode(); } catch { /* 模块未就绪时忽略 */ }
+  return commandCatalog(cur, {
+    setTheme: setThemeMode,
+    showPage,
+    refresh: refreshCurrentPage,
+    exportChart: fireExportChart,
+    help: showPaletteHelp,
+  });
 }
 
 /* 页面项：从导航注册表派生（index.html #nav button[data-v] 单源，无第二份清单）。 */
@@ -139,6 +265,7 @@ export function initPalette(doc = document) {
       li.setAttribute("role", "option");
       li.setAttribute("aria-selected", i === sel ? "true" : "false");
       li.className = i === sel ? "sel" : "";
+      if (it.icon) li.appendChild(iconSvg(doc, it.icon));
       const t = doc.createElement("span");
       t.className = "pt";
       t.textContent = it.title;

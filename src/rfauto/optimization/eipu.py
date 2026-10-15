@@ -1,6 +1,6 @@
 """M3 EIpu 成本感知 BO（cost GP + EI/c）+ R9 敏感度先承诺排序件。
 
-月计划（月度增强方案 §D 流 M3 行）：
+月计划（docs/monthly_enhancement_plan_20260926.md §D 流 M3 行）：
 acquisition = EI(x) / ĉ(x)，ĉ = 第二支独立 GP 学仿真代价（openEMS 秒级/
 HFSS 分钟级天然多档；log-cost 域拟合稳定）——预算约束下性价比驱动采样。
 
@@ -23,7 +23,7 @@ HFSS 分钟级天然多档；log-cost 域拟合稳定）——预算约束下性
   低估代价；log 域拟合是 cost-aware BO 标准做法、对采集排序影响有限，
   该偏置如实记录不做修正项。
 
-R9 排序承诺件（方案池:225「按 Sobol S1/闭式
+R9 排序承诺件（plan_expansion_pool_20260924.md:225「按 Sobol S1/闭式
 可解析度排序模板参数，高敏感者先钉死」）：仓内已有 sensitivity.py 的
 sobol_sensitivity/morris_screening 产分数，本模块补**排序承诺**纯函数
 commitment_order（分数→高敏感先钉死的确定性排序，同名稳定平局）。
@@ -482,7 +482,7 @@ def run_eipu_loop(
 def commitment_order(scores: Mapping[str, float]) -> list[dict[str, Any]]:
     """R9 最受限先承诺参数排序（分数 → 高敏感先钉死的确定性序列）。
 
-    语义（方案池:225）：按敏感度分数（Sobol S1/
+    语义（plan_expansion_pool_20260924.md:225）：按敏感度分数（Sobol S1/
     闭式可解析度，调用方产）降序排序——高敏感者先钉死，其余参数域随后
     收缩。平局按参数名升序（稳定、可复现）。
 

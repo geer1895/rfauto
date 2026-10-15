@@ -1,6 +1,6 @@
 """WP2.5 Tier 2：SMA 边缘弹射（同轴↔微带，edge-launch 夹具口径）模板单测。
 
-方案行（docs/续跑计划.md §4 WP2.5）："SMA launcher
+方案行（延续计划 §4 WP2.5）："SMA launcher
 （放最后，验收靠文献曲线）"。2026-09-16 wp25-sma-launcher-rootcause：
 - 真机 FAIL 根治（pt2：|S11|=+5.42dB 非物理、|S21|≈−375dB、port2 表观 εeff
   2866）。scripts/diag_sma_launcher.py 精确接触图在旧几何上实证（留档

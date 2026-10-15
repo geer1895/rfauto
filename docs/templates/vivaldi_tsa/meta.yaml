@@ -30,3 +30,37 @@ mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；
 smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=指数律往返恒等+口面↔截止双向回收+单调性（core/vivaldi_tsa tests
   钉）；近似级别如实登记：低截止=二手工程准则（Yngvesson 1985 介质加载修正未回原文不入码，citation-rot），巴伦面未做（登记注记），增益/方向图全波面不在本批；真机冒烟与 HFSS
   仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: Vivaldi 端射天线：指数张口槽把槽线慢波渐变为自由空间行波，口面宽定低截止 f_low=c/(2·w_mouth)。典型用于宽带阵列单元与成像端射照明；常见误用=把低截止准则当精确式——它是二手工程准则（介质加载修正未回原文不入码，citation-rot
+      如实登记），且巴伦面未做（馈电需独立件）。
+    derivations:
+    - claim: 指数律张口与口面-截止双向回收恒等式
+      formula: w(x) = w_throat*exp(k*x) ; k = ln(w_mouth/w_throat)/L ; f_low = c/(2*w_mouth)
+      source: 本仓 core/vivaldi_tsa（vivaldi_low_cutoff_ghz/指数律往返单源（Gibson 1979 指数律口径）；docs/templates/vivaldi_tsa/meta.yaml
+        param_semantics）
+    - claim: 近似级别如实：低截止=口面半波准则（Yngvesson 1985 介质加载修正未入码）
+      formula: f_low 口径误差属工程准则级（非精确闭式）
+      source: docs/templates/vivaldi_tsa/meta.yaml smoke_note（citation-rot 如实登记）
+  sensitivity_ranking:
+  - param: w_mouth_mm
+    order: 1
+    basis: 口面宽=低截止主维（f_low∝1/w_mouth 恒等式精确 1.0）；登记表 1.0
+  - param: w_throat_mm
+    order: 2
+    basis: 喉部宽（高频端与指数律起点，准则不含——全波维）
+  - param: l_mm
+    order: 3
+    basis: 轴向长（指数率 k 与增益维，准则不含）
+  - param: feed_w_mm
+    order: 4
+    basis: 跨槽微带馈线宽（50Ω 口径，准则不含）
+  - param: er
+    order: 5
+    basis: 基板 εr 不进口面准则（登记表 0——空气侧准则；全波维非零）
+  - param: tan_d
+    order: 6
+    basis: 损耗角不进口面准则（登记表 0）
+  quiz_refs: []

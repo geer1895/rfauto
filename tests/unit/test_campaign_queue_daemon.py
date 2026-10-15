@@ -1,4 +1,4 @@
-"""campaign queue-daemon 常驻执行体单测（2026-10-08，全 fake 零真机零网络）.
+"""UX-B7 campaign queue-daemon 常驻执行体单测（2026-10-08，全 fake 零真机零网络）.
 
 覆盖（任务书判据逐条）：
 - tick 纯函数判定链：日历窗三态（blocked 不发射不记永久 skip/risk 照发
@@ -30,12 +30,17 @@ from rfauto.service.campaign_queue_daemon import (
     ITEM_EXTERNAL,
     ITEM_LAUNCH_FAILED,
     ITEM_LAUNCHED,
+    ITEM_PARTIAL,
+    ITEM_QUEUED,
     QUEUE_DAEMON_SCHEMA,
     QUEUE_STATE_FILE,
+    SURVIVOR_TTL_S_DEFAULT,
     _launch_cmd,
     default_queue_state_path,
     item_id_of,
     load_queue_state,
+    prev_items_survivors,
+    queue_status_view,
     queue_tick,
     run_queue_daemon,
     save_queue_state,
@@ -211,10 +216,13 @@ class TestTickGates:
         actions, state = queue_tick(
             None, queue_fn=lambda root: q, calendar_fn=lambda: _cal("blocked"),
             preflight_fn=lambda m: _pf("PASS"), launcher_fn=launch)
-        assert [a["action"] for a in actions] == ["scan", "calendar_blocked"]
+        assert [a["action"] for a in actions] == [
+            "scan", "enqueue", "calendar_blocked"]
         assert launch.calls == []
-        assert state["items"] == {}  # 项不记永久 skip（下 tick 重探）
-        # 窗开后照发（SKIP=inconclusive 续跑重探同源）
+        # 排队候选预登记 queued（A3 P2-2① 状态可查面）；不记永久 skip
+        # （queued 账每 tick 刷新，窗开后下 tick 重探照发）
+        assert state["items"][q[0]["item_id"]]["status"] == ITEM_QUEUED
+        # 窗开后照发（E62 SKIP=inconclusive 续跑重探同源）
         actions2, _ = queue_tick(
             state, queue_fn=lambda root: q, calendar_fn=lambda: _cal("open"),
             preflight_fn=lambda m: _pf("PASS"), launcher_fn=launch,
@@ -240,7 +248,10 @@ class TestTickGates:
             preflight_fn=lambda m: _pf("FAIL"), launcher_fn=launch)
         kinds = [a["action"] for a in actions]
         assert "license_skip" in kinds and "launch" not in kinds
-        assert launch.calls == [] and state["items"] == {}  # 重探不记账
+        assert launch.calls == []
+        # 排队候选预登记 queued（A3 P2-2①）；fail-skip 不记永久 skip，
+        # 下 tick 重探（预检转 PASS 后照发）
+        assert state["items"][q[0]["item_id"]]["status"] == ITEM_QUEUED
         # 预检转 PASS 后下 tick 照发
         actions2, _ = queue_tick(
             state, queue_fn=lambda root: q, calendar_fn=lambda: _cal("open"),
@@ -472,6 +483,32 @@ class TestRunDaemon:
         assert "另一" in " ".join(result.get("errors") or [])
         assert lock.exists()  # 他人锁不动
 
+    def test_release_holders_check_rejects_foreign_lock(self, tmp_path,
+                                                        monkeypatch):
+        """A7 P2-6：_release 走 dag_runner.release_lock 单源——锁内容 pid 与
+        acquire_lock 返回持有者不一致时 finally 不删锁（裸 unlink 无校验会
+        误删接管期/他人锁，打开双发射窗口；release_lock 删前校验 pid）。"""
+        import os
+
+        import rfauto.pipeline.dag_runner as dag_mod
+
+        foreign_pid = os.getpid() + 100000
+
+        def fake_acquire(task, lock_path, **kw):
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            lock_path.write_text(
+                json.dumps({"task": task, "pid": foreign_pid}),
+                encoding="utf-8")
+            return os.getpid()  # acquire 返回=本实例，锁内容=他者 pid
+
+        monkeypatch.setattr(dag_mod, "acquire_lock", fake_acquire)
+        sp = tmp_path / "q" / QUEUE_STATE_FILE
+        result = run_queue_daemon(once=True, state_path=sp, **self._fakes([]))
+        assert result["ok"] is True and result["ticks"] == 1
+        lock = Path(str(sp) + ".lock")
+        assert lock.exists()  # 非持有者释放被拒：锁未被误删
+        assert json.loads(lock.read_text(encoding="utf-8"))["pid"] == foreign_pid
+
     def test_stop_check_graceful_exit(self, tmp_path):
         sp = tmp_path / "q.json"
         fakes = self._fakes([])
@@ -516,17 +553,17 @@ class TestLaunchWrapper:
 
 class TestCli:
     def test_registered_in_campaign_app(self):
-        # 公开仓结构：campaign 命令面内联在 bands_uq（无独立 campaign 模块）
-        from rfauto.cli.domains import bands_uq
+        from rfauto.cli.domains import campaign as camp_mod
 
-        names = [c.name for c in bands_uq.campaign_app.registered_commands]
+        names = [c.name for c in camp_mod.campaign_app.registered_commands]
         assert "queue-daemon" in names
 
     def test_bands_uq_reexport_intact(self):
         from rfauto.cli.domains import bands_uq
+        from rfauto.cli.domains import campaign as camp_mod
 
-        assert hasattr(bands_uq, "campaign_app")
-        assert hasattr(bands_uq, "campaign_queue_daemon_cmd")
+        assert bands_uq.campaign_app is camp_mod.campaign_app
+        assert hasattr(camp_mod, "campaign_queue_daemon_cmd")
 
     def test_once_json_envelope(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)  # 空 runs 根：零候选零真机
@@ -570,9 +607,9 @@ class TestCli:
         # JSON 覆盖棘轮同款探针口径：参数名含 json 即计
         import inspect
 
-        from rfauto.cli.domains import bands_uq
+        from rfauto.cli.domains import campaign as camp_mod
 
-        sig = inspect.signature(bands_uq.campaign_queue_daemon_cmd)
+        sig = inspect.signature(camp_mod.campaign_queue_daemon_cmd)
         assert any("json" in p for p in sig.parameters)
 
 
@@ -633,3 +670,92 @@ class TestTickLineMarkupSafety:
         assert "[queue-daemon]" in out
         assert "tick=1" in out
         assert "['skip']" in out
+
+
+# ─── 排队记账 + 陈账回收（审查 A3 P2-2 回归钉）───────────────────────────────
+
+class TestQueuedBookkeepingAndGc:
+    """A3 P2-2①：排队候选预登记 ITEM_QUEUED（queue_status_view 可见）；
+    A3 P2-2②：扫描未命中的非在途陈账按账龄 TTL 回收（防状态档无界增长），
+    launched 陈账永久保留（单飞不逃逸语义不动）。"""
+
+    def test_queued_candidates_visible_in_status_view(self):
+        q = [_entry("runs/camp_a"), _entry("runs/camp_b")]
+        actions, state = queue_tick(
+            None, queue_fn=lambda root: q, calendar_fn=lambda: _cal("blocked"),
+            preflight_fn=lambda m: _pf("PASS"), launcher_fn=_Launcher(),
+            now_fn=lambda: 1.0)
+        view = queue_status_view(state)
+        assert view["n_items"] == 2
+        assert view["by_status"] == {"queued": 2}
+        assert view["in_flight"] == 0
+        assert len([a for a in actions if a["action"] == "enqueue"]) == 2
+
+    def test_queued_transitions_to_launched_and_external_and_terminal(self):
+        # tick1：单飞位被占（注入在途假象）→ 两候选都停在 queued
+        q = [_entry("runs/camp_a"), _entry("runs/camp_b")]
+        launch = _Launcher()
+        _, s1 = queue_tick(None, queue_fn=lambda root: q,
+                           calendar_fn=lambda: _cal("open"),
+                           preflight_fn=lambda m: _pf("PASS"),
+                           launcher_fn=launch, now_fn=lambda: 1.0)
+        assert launch.calls == ["runs/camp_a"]  # 第一项发射（queued→launched）
+        assert s1["items"][q[0]["item_id"]]["status"] == ITEM_LAUNCHED
+        assert s1["items"][q[1]["item_id"]]["status"] == ITEM_QUEUED
+        # tick2：b 的 verdict 翻 RUNNING（他人代跑）→ queued→external 不接管
+        qb_run = _entry("runs/camp_b", verdict="RUNNING")
+        actions2, s2 = queue_tick(s1, queue_fn=lambda root: [q[0], qb_run],
+                                  calendar_fn=lambda: _cal("open"),
+                                  preflight_fn=lambda m: _pf("PASS"),
+                                  launcher_fn=launch, now_fn=lambda: 2.0)
+        assert s2["items"][q[1]["item_id"]]["status"] == ITEM_EXTERNAL
+        assert "observe_external" in [a["action"] for a in actions2]
+        # tick3：b 翻 COMPLETE → queued 账（已转 external）权威收口 done
+        qb_done = _entry("runs/camp_b", verdict="COMPLETE")
+        actions3, s3 = queue_tick(s2, queue_fn=lambda root: [q[0], qb_done],
+                                  calendar_fn=lambda: _cal("open"),
+                                  preflight_fn=lambda m: _pf("PASS"),
+                                  launcher_fn=launch, now_fn=lambda: 3.0)
+        assert s3["items"][q[1]["item_id"]]["status"] == ITEM_DONE
+        assert "refresh_terminal" in [a["action"] for a in actions3]
+
+    def test_stale_survivors_recycled_by_ttl_launched_kept(self):
+        launched_rec = {"item_id": "aaa", "status": ITEM_LAUNCHED,
+                        "updated_at": 100.0}
+        done_rec = {"item_id": "bbb", "status": ITEM_DONE,
+                    "updated_at": 100.0}
+        queued_rec = {"item_id": "ccc", "status": ITEM_QUEUED,
+                      "updated_at": 100.0}
+        fresh_rec = {"item_id": "ddd", "status": ITEM_PARTIAL,
+                     "updated_at": 900.0}
+        bad_rec = {"item_id": "eee", "status": ITEM_ABORTED,
+                   "updated_at": "垃圾"}
+        prev = {r["item_id"]: r for r in
+                (launched_rec, done_rec, queued_rec, fresh_rec, bad_rec)}
+        survivors, recycled = prev_items_survivors(prev, [], now=1000.0,
+                                                   ttl_s=500.0)
+        # launched 永久保留（单飞语义）；账龄超 ttl 的终态/queued 回收
+        # （bbb/ccc 账龄 900 > 500 回收；ddd 账龄 100 <= 500 保留；
+        # eee updated_at 非法保守保留）
+        assert set(survivors) == {"aaa", "ddd", "eee"}
+        assert {r["item_id"] for r in recycled} == {"bbb", "ccc"}
+        assert all("age_s" in r and "status" in r for r in recycled)
+        # 缺省 ttl=7 天：1 小时前的终态陈账保留
+        keep2, recycled2 = prev_items_survivors(
+            {"bbb": done_rec}, [], now=100.0 + 3600.0)
+        assert keep2 == {"bbb": done_rec} and recycled2 == []
+        assert SURVIVOR_TTL_S_DEFAULT == 7 * 86400.0
+
+    def test_recycled_survivors_leave_audit_action(self):
+        done_rec = {"item_id": "bbb", "status": ITEM_DONE,
+                    "updated_at": 1.0, "plan_path": "runs/gone"}
+        actions, state = queue_tick(
+            {"schema": QUEUE_DAEMON_SCHEMA, "items": {"bbb": done_rec},
+             "root": "runs", "last_tick_at": None, "last_actions": [],
+             "updated_at": None, "machine": None},
+            queue_fn=lambda root: [], calendar_fn=lambda: _cal("open"),
+            preflight_fn=lambda m: _pf("PASS"), launcher_fn=_Launcher(),
+            now_fn=lambda: 10.0 * 86400.0, survivor_ttl_s=100.0)
+        rec_actions = [a for a in actions if a["action"] == "recycle_stale"]
+        assert len(rec_actions) == 1 and rec_actions[0]["item_id"] == "bbb"
+        assert state["items"] == {}  # 陈账已出清（状态档不再无界累积）

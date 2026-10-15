@@ -1,6 +1,6 @@
 """stage-2 精修环：TR-ARS 式信任域 + Bandler 输出空间映射（WP3.2 步骤 b）。
 
-方案口径（docs/续跑计划.md §10.9 薄弱项 1b / §10.18 表#5，
+方案口径（延续计划 §10.9 薄弱项 1b / §10.18 表#5，
 cjors.2025184 综述锚）：
 - Bandler ASM：粗模型（代理/解析快档，毫秒级）× 细模型（真跑）分层；
   最简输出空间映射 `Rs ≈ Rc + Δ(x)`——细跑残差修正粗模型 bias；
@@ -17,7 +17,7 @@ cjors.2025184 综述锚）：
     验证候选 → ρ 接受/拒绝 + 半径伸缩 → 收敛（半径塌缩 / 停摆 / 预算）。
 
 铁律落地（同 stage-1）：
-- 数值只在确定性内核：粗模型出自 surrogate_registry，
+- 数值只在确定性内核（项目规则 规则 7）：粗模型出自 surrogate_registry，
   映射为闭式 lstsq，cost 出自 SpecEvaluator.evaluate_objectives，LLM 不入环；
 - 零真机验证路径：evaluate_fn 注入（单测用合成解析裁判面，§4 口径）；
 - 本模块不改 surrogate_loop.py 任何行为——run_two_stage 用 evaluate_fn

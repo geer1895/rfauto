@@ -18,7 +18,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "multipactor_susceptibility_check",
-    "MP-3 multipactor 微放电击穿阈值（round15 :84，Vaughan 二次发射+20-gap "
+    "微放电阈值：MP-3 multipactor 微放电击穿阈值（round15 :84，Vaughan 二次发射+20-gap "
     "串接+N 载波等效功率语境）：施加峰值电压对平行板一阶渡越敏感带 × SEY "
     "crossover 窗口的合成裕量报告。每序 n=1..order_max 的封闭周期轨道带 "
     "V∈[K/√(4+(2n−1)²π²), K/2]（K=4π²(m_e/e)(f·d)² 相似标度）经碰撞能量 "

@@ -187,7 +187,7 @@ def main() -> int:
                         help="零席位建模序列验证后退出（不 solve）")
     parser.add_argument("--port-sweep", action="store_true",
                         help="tem 链 × 端口扫描组合腿（全 2×2 S 矩阵 + 原生 "
-                             "Touchstone；产物落 mline_tem_parametric）")
+                             "Touchstone；产物落 mline_tem_parametric/）")
     args = parser.parse_args()
 
     tan_d = args.loss_tangent if args.loss_tangent > 0 else None

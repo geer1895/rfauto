@@ -1,6 +1,6 @@
 """数值环境指纹（round3 附带三件之二：provenance 数值指纹）。
 
-口径（研究扩充 §3.1 附带三件原文）：
+口径（research_expansion_20260926_round3 §3.1 附带三件原文）：
     "provenance 数值指纹（numpy.__config__ 机读 backend/core/threads，
     best-effort #105）"
 

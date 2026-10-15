@@ -1,0 +1,33 @@
+FAIL Datalink_Basics_lib:wlan_modulation:schematic: Error generating netlist for "Datalink_Basics_lib:wlan_modulation:schematic": Failed to create netlist:
+There is no netlistable view for instance `Measurement_VARs' in the design `Datalink_Basics_lib:wlan_modulation:schematic'.
+The component `ads_datacmps:VAR' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:simple_simulation:schematic: Error generating netlist for "Datalink_Basics_lib:simple_simulation:schematic": Failed to create netlist:
+There is no netlistable view for instance `DC1' in the design `Datalink_Basics_lib:simple_simulation:schematic'.
+The component `ads_simulation:DC' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:pa_load_sweep:schematic: Error generating netlist for "Datalink_Basics_lib:pa_load_sweep:schematic": Failed to create netlist:
+There is no netlistable view for instance `BIAS' in the design `Datalink_Basics_lib:pa_load_sweep:schematic'.
+The component `ads_datacmps:VAR' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:impedance_match:schematic: Error generating netlist for "Datalink_Basics_lib:impedance_match:schematic": Failed to create netlist:
+There is no netlistable view for instance `AC1' in the design `Datalink_Basics_lib:impedance_match:schematic'.
+The component `ads_simulation:AC' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:readme:schematic: Error generating netlist for "Datalink_Basics_lib:readme:schematic": Failed to create netlist:
+The design `Datalink_Basics_lib:readme:schematic' has no instances.
+FAIL Datalink_Basics_lib:swept_s_parameter:schematic: Error generating netlist for "Datalink_Basics_lib:swept_s_parameter:schematic": Failed to create netlist:
+There is no netlistable view for instance `BIAS' in the design `Datalink_Basics_lib:swept_s_parameter:schematic'.
+The component `ads_datacmps:VAR' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:swept_simulation:schematic: Error generating netlist for "Datalink_Basics_lib:swept_simulation:schematic": Failed to create netlist:
+There is no netlistable view for instance `DC1' in the design `Datalink_Basics_lib:swept_simulation:schematic'.
+The component `ads_simulation:DC' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+FAIL Datalink_Basics_lib:output_spectrum:schematic: Error generating netlist for "Datalink_Basics_lib:output_spectrum:schematic": Failed to create netlist:
+There is no netlistable view for instance `HB1' in the design `Datalink_Basics_lib:output_spectrum:schematic'.
+The component `ads_simulation:HarmonicBalance' has no item definition
+but has no schematic, layout, or custom view from the current Hierarchy Policy.
+
+module-level generate_netlist doc:
+None

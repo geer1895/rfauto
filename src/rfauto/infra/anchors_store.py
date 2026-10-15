@@ -22,8 +22,10 @@ import yaml
 from rfauto.core import anchors as _core_anchors
 from rfauto.core.anchors import (
     ANCHOR_KINDS,
+    ANCHOR_LAYERS,
     ANCHOR_STATUSES,
     EXPECTED_ANCHORS,
+    AnchorRecord,
     AnchorSet,
 )
 
@@ -87,8 +89,9 @@ def validate_anchor_set(anchor_set: AnchorSet,
     ``{ok, count, issues, registry_path, expected_count, expected_match,
     load_errors}``。
 
-    - schema：anchor_id 格式/kind/status 枚举/active 锚 uncertainty 必填/
-      曲线锚 interp 口径（core 构造期校验之外的字段级核对）；
+    - schema：anchor_id 格式/kind/status 枚举/layer 分层枚举+必填
+      （XD-8）/active 锚 uncertainty 必填/曲线锚 interp 口径
+      （core 构造期校验之外的字段级核对）；
     - provenance（规格书判据 3）：arbitration_runs 路径存在（awaiting_data
       允许空）、commit 7-40 位 hex、registered_at 可解析、consumers 文件
       存在、referee_script/data_source/candidates 若给出则文件存在。
@@ -103,20 +106,9 @@ def validate_anchor_set(anchor_set: AnchorSet,
         except ValueError:
             reg_rel = str(registry_path)
 
-    # 公开分发视图降级（公开仓特有分歧）：runs/ 证据面不入公开仓——
-    # 若注册表引用的 runs/ 路径全部不存在，则证据路径存在性检查整体降级
-    # 跳过（登记值保留作溯源标记；内部仓 runs/ 齐备时行为逐位不变）。
-    refs = _collect_runs_refs(anchor_set.records)
-    # 降级判据用多数决（≥1/2 引用路径在位）：公开仓测试运行可能在 runs/
-    # 留下与个别引用同名的杂散目录——多数决对杂散污染稳健。
-    _n_present = sum(
-        1 for rel in refs if _resolve_repo_path(root, rel).exists())
-    evidence_present = bool(refs) and _n_present * 2 >= len(refs)
-    # （降级为静默：不计入 issues——公开分发视图的预期形态，非数据缺陷）
-
     seen: set[str] = set()
     for rec in anchor_set.records:
-        _validate_record(rec, root, issues, evidence_present=evidence_present)
+        _validate_record(rec, root, issues)
         seen.add(rec.anchor_id)
     issues.extend(f"load_error: {e}" for e in anchor_set.load_errors)
 
@@ -143,29 +135,8 @@ def _default_repo_root() -> Path:
     return Path(__file__).parent.parent.parent.parent
 
 
-def _collect_runs_refs(records: list) -> list:
-    """收集全部 provenance 路径引用（去重保序；降级判定输入）。"""
-    out: list = []
-    for rec in records:
-        prov = rec.provenance or {}
-        for rel in prov.get("arbitration_runs") or []:
-            s = str(rel)
-            if s not in out:
-                out.append(s)
-        for key in ("referee_script", "data_source"):
-            val = prov.get(key)
-            if val and str(val) not in out:
-                out.append(str(val))
-        for rel in prov.get("candidates") or []:
-            s = str(rel)
-            if s not in out:
-                out.append(s)
-    return out
-
-
-def _validate_record(rec, root: Path,
-                     issues: list, *,
-                     evidence_present: bool = True) -> None:
+def _validate_record(rec: AnchorRecord, root: Path,
+                     issues: list[str]) -> None:
     aid = rec.anchor_id
     prov = rec.provenance or {}
 
@@ -173,6 +144,13 @@ def _validate_record(rec, root: Path,
         issues.append(f"{aid}: 未知 kind {rec.kind!r}")
     if rec.status not in ANCHOR_STATUSES:
         issues.append(f"{aid}: 未知 status {rec.status!r}")
+    # XD-8 分层声明：live 注册表全量必填；缺省/越界如实报 issue
+    # （core 构造期已拦越界值，此处双检防旁路构造+缺声明显式留痕）
+    if rec.layer is None:
+        issues.append(
+            f"{aid}: layer 缺失（XD-8 分层声明必填，允许值 {ANCHOR_LAYERS}）")
+    elif rec.layer not in ANCHOR_LAYERS:
+        issues.append(f"{aid}: 未知 layer {rec.layer!r}（XD-8）")
     if rec.status == "active" and (
             not rec.uncertainty or rec.uncertainty.get("value") is None):
         issues.append(f"{aid}: active 锚 uncertainty 必填（规格书风险栏）")
@@ -185,16 +163,14 @@ def _validate_record(rec, root: Path,
     if not runs and rec.status != "awaiting_data":
         issues.append(f"{aid}: provenance.arbitration_runs 为空且非 awaiting_data")
     for rel in runs:
-        if evidence_present and not _resolve_repo_path(root, str(rel)).exists():
+        if not _resolve_repo_path(root, str(rel)).exists():
             issues.append(f"{aid}: arbitration_runs 路径不存在: {rel}")
     for key in ("referee_script", "data_source"):
         val = prov.get(key)
-        if (val and evidence_present
-                and not _resolve_repo_path(root, str(val)).exists()):
+        if val and not _resolve_repo_path(root, str(val)).exists():
             issues.append(f"{aid}: provenance.{key} 文件不存在: {val}")
     for rel in prov.get("candidates") or []:
-        if (evidence_present
-                and not _resolve_repo_path(root, str(rel)).exists()):
+        if not _resolve_repo_path(root, str(rel)).exists():
             issues.append(f"{aid}: provenance.candidates 路径不存在: {rel}")
 
     commit = prov.get("commit")

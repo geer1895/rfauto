@@ -49,15 +49,33 @@ wf/2（≈0.56mm/λ/4≈3%）；两近端馈线端面隔 d=w+s 相对（端射�
 主耦合路径，fF 级）。二者与注册 openEMS 版式（馈线外推+横向搭接段）的
 端部不连续同类，冒烟判读按引擎偏差项对待，不进闭式裁判。
 
-生产判读档声明（W8 仲裁建议 1，2026-10-09）：本族缺省自适应档
-``adapt.max_delta`` 从 schema 假设 8 通用缺省 0.02 **加严到 0.005**
-（:data:`DEFAULT_ADAPT_MAX_DELTA`；``params["adapt"]["max_delta"]`` 可
-显式覆盖）。依据=W8 真机三变体仲裁（两引擎对照+ΔS 阶梯）：名义设计点紧缝 s/h=0.161（s=0.082mm/
-h=0.508mm）下 ΔS=0.02 单档的 S31 读数带 ~2dB 收敛档伪象——HFSS 3D 与
-EDB 两引擎 0.02 档一致读 -7.2~-7.6dB，HFSS ΔS 阶梯（0.02→0.0025）收紧
-回收 1.2~1.8dB；0.02 档的窗口判据在测"网格收敛度"而非"器件物理"。
-branchline/power_divider/ratrace 等他族维持 0.02 通用缺省（假设 8），
-加严仅限本族（模板作用域分派，#274 家法）。
+生产判读档史（W8 仲裁建议 1 → W10 定谳回退，2026-10-09）：W8 真机三变体
+仲裁（runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-1）曾裁定本族缺省自
+适应档 ``adapt.max_delta`` 从 schema 假设 8 通用缺省 0.02 **加严到
+0.005**——依据=名义设计点紧缝 s/h=0.161（s=0.082mm/h=0.508mm）下
+ΔS=0.02 单档 S31 读数带 ~2dB 收敛档伪象（HFSS 3D 与 EDB 两引擎 0.02 档
+一致读 -7.2~-7.6dB，HFSS ΔS 阶梯 0.02→0.0025 收紧回收 1.2~1.8dB；0.02
+档的窗口判据在测"网格收敛度"而非"器件物理"）。
+
+**W10 定谳与本档回退（runs/edblane85/w10_cl_recheck/REPORT.md）**：
+MaxDelta=0.005 在 EDB 路径**写入不可达**——EDB 3D Layout schema
+（SimSetupID=19）无 MaxDelta 键（四互证维持：EditSetup 不存在/InsertSetup
+无任何 Delta 键名/configuration.load 的 AdaptiveSettings 子树被丢弃/两代
+工程盘面均无 MaxDelta 键），spec 硬断言只能行使到**发射面**；W9 重查
+props 通道"写入不传播"（TIGHTENING_NOT_EFFECTIVE，会话内读回确认后批解
+仍按 0.02 准则停机）系同一 schema 无键总因的会话态表现。且 W10 量级修
+正：EDB 侧档位伪象实测仅 **~0.62dB**（W8 的 ~2dB 系 HFSS 侧阶梯分解，
+不按面值转移 EDB），剩余 ~1.0dB 偏置=EDB-Layout 特有建模保真差（判读面
+校准项，非求解旋钮可及）。缺省保留 0.005"请求档"=每个 EDB 工程携带一
+个求解器证明不可消费的档位（verify_adapt_tightening 每建必告警、存证值
+误导归因、pyedb/AEDT 修复后还会静默激活 4× 加严档）——按 #122 不虚报
+原则**回退 0.02**（与本通道求解器实际准则一致）。EDB 侧唯一可达收紧通
+道=扁平键 ``MinConvergedPasses``（类路径 InsertSetup，求解器实消费：W9
+mc2=2 / W10=4 两真机点）。**复进条件**：pyedb/AEDT 暴露 MaxDelta 写入
+口后，按 W8 仲裁依据显式重立本族加严档（禁靠常量静默生效）；复进前本
+族 EDB S31 读数不得按 0.005 档归因，判读面校准锚=W10 REPORT §3（保真差
+~+1.0dB）。branchline/power_divider/ratrace 等他族维持 0.02 通用缺省
+（假设 8）不动（模板作用域分派，#274 家法）。
 
 厚度偏置声明（W8 仲裁建议 3，2026-10-09；HFSS=对齐基准）：KJ 综合
 为零厚口径——零厚全波饱和档验证 -9.772 vs KJ 预测 -10.00（残差
@@ -66,8 +84,10 @@ branchline/power_divider/ratrace 等他族维持 0.02 通用缺省（假设 8）
 点 s=0.082/t=0.035 落此区），发射器以 spec.params["thickness_bias_note"]
 渲染期注记声明、**不改综合数值**；s/t≥4 暂按「伪象主导区」划线
 （W8 实测 bias+2.274dB@s/t=4.29 属 ΔS 收敛档伪象主导、非纯厚度，
-厚度效应量值未分辨）——守卫仅 warning 不 fail（数据不足硬门，#122；
-W9 带收紧档实测后定稿）。证据链=W8 两引擎对照与 ΔS 阶梯实测。
+厚度效应量值未分辨）——守卫仅 warning 不 fail（数据不足硬门，#122）。
+W10 真机补证（runs/edblane85/w10_cl_recheck §3）：名义点（s/t=2.34）
+方向支持厚度偏置、无反证，但 s/t≥4 区量级仍未分辨（W10 未测该区），
+划线维持暂定。证据链：runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-3。
 
 纯函数：``emit_coupled_line_spec(params) -> (spec, config_json)``，无 IO
 无全局态；spec/config schema 与假设清单见 edb_templates/schema.py docstring。
@@ -105,20 +125,24 @@ DEFAULT_COUPLING_DB = 10.0
 #: 缺省馈线长度 mm（与 branchline 发射器 DEFAULT_FEED_LEN_MM 同口径）
 DEFAULT_FEED_LEN_MM = 5.0
 
-#: 紧缝族生产判读档（W8 仲裁建议 1，2026-10-09）：本族 adapt.max_delta
-#: 缺省从 schema 假设 8 通用缺省 0.02 加严到 0.005——W8 真机三变体仲裁
-#: 实证（两引擎对照+ΔS 阶梯）：紧缝 s/h=0.161 下
-#: ΔS=0.02 单档 S31 读数带 ~2dB 收敛档伪象（两引擎一致读 -7.2~-7.6，
-#: HFSS ΔS 阶梯收紧回收 1.2~1.8dB），0.02 档窗口判据测的是"网格收敛度"
-#: 而非"器件物理"。显式覆盖走 params["adapt"]["max_delta"]；他族
-#: （branchline/power_divider/ratrace）维持 0.02 不动（模板作用域分派）。
-DEFAULT_ADAPT_MAX_DELTA = 0.005
+#: 本族 adapt.max_delta 缺省=schema 假设 8 通用缺省 0.02（**W10 定谳回退**，
+#: 2026-10-09）：W8 仲裁曾加严 0.005，但 EDB 3D Layout schema 无 MaxDelta
+#: 键=写入不可达（runs/edblane85/w10_cl_recheck 四互证；W9 props 通道
+#: TIGHTENING_NOT_EFFECTIVE 系同因会话态表现），且 EDB 侧档位伪象实测仅
+#: ~0.62dB（W8 ~2dB 系 HFSS 侧阶梯分解）、剩余 ~1.0dB=EDB-Layout 建模保
+#: 真差——0.005 请求档求解器不消费，保留即每建必告警+存证误导归因，故
+#: 回退到与求解器实际准则一致的 0.02。复进条件=pyedb/AEDT 暴露 MaxDelta
+#: 写入口后按 W8 依据显式重立（禁静默激活）；EDB 侧可达收紧通道=
+#: MinConvergedPasses 扁平键（求解器实消费）。显式覆盖走
+#: params["adapt"]["max_delta"]；他族维持 0.02 不动（模板作用域分派）。
+DEFAULT_ADAPT_MAX_DELTA = 0.02
 
 #: s/t（缝/铜厚比）厚度偏置区划线（W8 仲裁建议 3 阈值，2026-10-09）：
 #: s/t<4=已知厚度偏置区（锚 +0.8dB@s/t=2.34，见 :data:`THICKNESS_BIAS_ANCHOR_DB`）；
 #: s/t≥4=「伪象主导区」暂划线（V3 实测 bias+2.274dB@s/t=4.29 属 ΔS 收敛档
 #: 伪象主导、非纯厚度，厚度效应量值未分辨）——守卫仅 warning 不 fail
-#: （数据不足硬门，#122），W9 带收紧档实测后定稿。
+#: （数据不足硬门，#122）。W10 名义点（s/t=2.34）方向支持厚度偏置、无反
+#: 证；s/t≥4 区量级仍未分辨，划线维持暂定（runs/edblane85/w10_cl_recheck）。
 THICKNESS_BIAS_ST_DIVIDER = 4.0
 
 #: 厚度偏置饱和锚点 dB（HFSS 匹配档阶梯差随收紧趋稳 +0.80@饱和；
@@ -154,9 +178,10 @@ def emit_coupled_line_spec(
             - ``sweep``：缺省 [0.7,1.3]·f0、401 点 interpolation（假设 8，
               同 branchline）。
             - ``adapt``：单频 f0 自适应、max_passes 缺省 20（假设 8）；
-              max_delta 缺省 0.005=**W8 仲裁紧缝族加严档**
-              （:data:`DEFAULT_ADAPT_MAX_DELTA`，紧缝 s/h=0.161 下 0.02 档
-              S31 读数伪象 ~2dB，见模块 docstring"生产判读档声明"），
+              max_delta 缺省 0.02=schema 通用缺省（**W10 定谳回退**——W8 曾
+              裁定本族加严 0.005，但 EDB 路径 MaxDelta 写入不可达且 EDB 侧
+              档位伪象实测仅 ~0.62dB，见 :data:`DEFAULT_ADAPT_MAX_DELTA`
+              注释与模块 docstring"生产判读档史"节），
               可显式覆盖（``adapt: {"max_delta": ...}``）。
 
     Returns:
@@ -275,8 +300,9 @@ def emit_coupled_line_spec(
         "sweep": sweep_spec,
         "adapt": {
             "max_passes": int(adapt.get("max_passes", 20)),
-            # 缺省 0.005=W8 仲裁紧缝族加严档（DEFAULT_ADAPT_MAX_DELTA 注释
-            # 带证据链）；显式覆盖原样透传
+            # 缺省 0.02=W10 定谳回退（W8 加严 0.005 因 EDB schema 无
+            # MaxDelta 键写入不可达而撤，DEFAULT_ADAPT_MAX_DELTA 注释带
+            # 证据链）；显式覆盖原样透传
             "max_delta": float(adapt.get("max_delta", DEFAULT_ADAPT_MAX_DELTA)),
         },
     }

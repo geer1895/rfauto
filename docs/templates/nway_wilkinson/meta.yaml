@@ -45,3 +45,31 @@ nominal_derivation: '全链内核精算（#1c，零手抄毫米数；nway_wilkin
   rogers4350b_h0.508 → w_arm=0.6035mm（gysel 臂同源档，forward_z0 εeff=2.72456）→ λ/4=18.1624mm；w_feed=inverse_width(50)=1.1134mm（mline/W50_MM
   同源档）。布局常量 G1=9/G2=5.5/Y_T1=−45/Y_T2=−10mm 为版图选择（非电学量；内对输出馈线
   3·h_sub 净空与 #347 分离由 _nway_layout 守卫核算）。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: N 路 Wilkinson：树形 2 级把 √2·Z0 λ/4 臂与 2Z0 隔离电阻组合推广到 N 路（本仓名义 n=4 → 2 级 6 臂 3 电阻）。典型用于多路等功分与输出隔离；常见误用=隔离电阻只算单级——树形布局中电阻网络跨臂跨级，阻值/位置由综合链给出不可手挪。
+    derivations:
+    - claim: 臂 √2·Z0、隔离 2Z0 的 N 路推广（树形拓扑 2 级）
+      formula: Z_t = sqrt(2)*Z0 ; R_iso = 2*Z0 = 100 Ω
+      source: 本仓 core/synthesis（synthesize_nway_wilkinson 单源（topology='tree' params）；docs/rf_template_references.md
+        §1（Pozar, Microwave Engineering (4th ed.), Ch.7 例 7.2 同源））
+    - claim: 臂长 λ/4（臂线宽自身 εeff，XA-3 迭代序）
+      formula: arm_len = c/(4*f0*sqrt(εeff(w_arm)))
+      source: 本仓 core/synthesis（forward_media 单源；docs/templates/nway_wilkinson/meta.yaml nominal_derivation（w_arm=0.6035
+        与 gysel 臂同源档））
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；登记表同值 1.0
+  - param: w_arm_mm
+    order: 2
+    basis: 臂宽经 εeff 弱进入+臂阻抗口径；登记表 0.0338
+  - param: iso_r_ohm
+    order: 3
+    basis: 隔离电阻=综合链给定值（不进臂谐振式，登记表 0——隔离带宽维）
+  - param: w_feed_mm
+    order: 4
+    basis: 50Ω 馈线匹配（登记表 0）
+  quiz_refs: []

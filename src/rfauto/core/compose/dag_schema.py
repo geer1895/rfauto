@@ -1,6 +1,6 @@
 """rfauto-dag-v1：配方 DAG 化的确定性 schema 内核（DP-9 P2，规格 §2）。
 
-分层：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
+分层（AGENTS #3）：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
 构造期拓扑排序+环检测、旧配方/旧计划的兼容包装全在这里；键计算与 CAS
 落盘在 infra.dag_cache，执行与断点续跑在 pipeline.dag_runner。
 

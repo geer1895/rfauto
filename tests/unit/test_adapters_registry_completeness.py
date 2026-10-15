@@ -76,11 +76,17 @@ NON_REGISTRY: dict[str, str] = {
     "ads_netlist": "ADS 独立协议（B 档主通道）",
     "em_solver_base": "注册表本体",
     "hfss_session": "HFSS 会话工具层",
+    "hfss_batch": "HFSS 一次性批处理求解（每求解一进程，无长驻会话）",
+    "ads_batch": "ADS 网表批处理求解（local/ssh 发射器可插拔）",
+    "kicad_edb_bridge": "KiCad→EDB 桥接（封装 SI/PI spike）",
+    "edb_templates/schema": "EDB 平面族 spec 契约与综合桥接",
+    "edb_templates/branchline": "EDB 平面族发射器（branchline）",
+    "edb_templates/power_divider": "EDB 平面族发射器（wilkinson 功分器）",
+    "edb_templates/coupled_line": "EDB 平面族发射器（coupled-line 耦合器，2026-10-08 扩展）",
+    "edb_templates/ratrace": "EDB 平面族发射器（ratrace 环形电桥，2026-10-08 扩展）",
+    "edb_templates/lange": "EDB 平面族 lange 综合单源（EDB 发射声明不支持，2026-10-08 扩展）",
     "hfss_builder_utils": "HFSS 建模工具层",
     "hfss_import": "HFSS 导入互操作",
-    "hfss_batch": "HFSS 一次性批处理求解（每求解一进程，无长驻会话）",
-    "edb_adapter": "EDB 快车道独立协议通道（workdir 构造、非 "
-                   "SimulatorAdapter 契约、不注册进 EMSolverRegistry）",
     "interchange": "版图互换",
     "kicad_board_render": "KiCad 渲染（子进程）",
     "kicad_drc": "KiCad DRC（子进程）",
@@ -104,6 +110,13 @@ NON_REGISTRY: dict[str, str] = {
     "touchstone_interop": "Touchstone 互操作",
     "solid_import": "实体导入",
     "ngsolve_modes": "NGSolve 模式工具",
+    # EDA 快车道底座（2026-10-08）：PyEDB 独立协议（workdir 构造、非
+    # EMSolverAdapter 契约、不注册 EMSolverRegistry；能力声明以字符串键
+    # "edb" 集中在 em_solver_base 尾部——不扩枚举，TestEnumCoverage 口径）
+    "edb_adapter": "PyEDB 建库+批处理求解请求通道（独立协议，非注册面）",
+    # aurora_d PYEDB-REG 批（2026-10-14，#373）：DotNet 通道 Ansys OpenSSL
+    # 预载 helper（纯 stdlib fail-soft 可选能力，函数级 API 零注册副作用）
+    "pyedb_preload": "PyEDB OpenSSL DLL 预载 helper（fail-soft 工具层，非注册面）",
 }
 
 #: 接受 registry 参数的注册函数所属模块（可向独立注册表实例注册）
@@ -325,8 +338,7 @@ class TestModuleInventory:
         # 存量子包层豁免（oe_templates=工具·模板层/fab_export=LC-5 面/
         # sv=可选引擎适配——历史上按目录约定不在注册面清单；gpl/ 不豁免：
         # 其 pypo/scuff 注册键泄入全局表必须显式登记，八百一十九终门实证）
-        _SUBPKG_EXEMPT = ("oe_templates/", "fab_export/", "sv/",
-                      "edb_templates/")
+        _SUBPKG_EXEMPT = ("oe_templates/", "fab_export/", "sv/")
         discovered -= {d for d in discovered if d.startswith(_SUBPKG_EXEMPT)}
         planned = _all_planned_modules()
         assert discovered == planned, (

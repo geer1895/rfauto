@@ -1,6 +1,6 @@
 """TA-3 SICL 基片集成同轴线 + TA-4 N-way Wilkinson 功分器（TA 批第二批，2026-10-02）。
 
-方案锚：研究扩充 round15 §二·2 TA-3/TA-4——
+方案锚：docs/research_expansion_20261002_round15.md §二·2 TA-3/TA-4——
 「内核就绪缺模板」件：闭式全套在 core（sicl_line.sicl_closed_form /
 synthesize_nway_wilkinson），本模块只做几何渲染注册与名义设计链（#1c：
 数值全部内核精算，零手抄毫米数；本文件零物理数字产出——铁律 7）。

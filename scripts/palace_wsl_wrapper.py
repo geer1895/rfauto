@@ -19,7 +19,7 @@ wrapper 把调用转进 WSL。
 wrapper 契约（细节见 runs/palace_spike/bridge_criteria.md §2）：
   palace.cmd [OPTIONS] CONFIG_FILE
   - CONFIG_FILE 为 Windows 侧绝对路径，helper 内 wslpath -u 转 WSL 路径；
-  - 工作目录由 wsl.exe 继承映射（mnt/<盘>/...），Palace 相对 Output 落回
+  - 工作目录由 wsl.exe 继承映射（/mnt/<盘>/...），Palace 相对 Output 落回
     同一 Windows 工作目录；
   - 调用方未传 -np/-serial/-launcher 时缺省 -serial（WSL root 下 OpenMPI
     需 --allow-run-as-root，串行是开箱即用最小路径；并行由调用方显式传
@@ -162,7 +162,7 @@ def extract_drive_letter(parts: tuple[str, ...]) -> str:
 
 
 def _wsl_helper_path() -> str:
-    """helper 的 WSL 侧绝对路径（固定安装布局：<盘>:/rf_workspace → /mnt/<盘>/...）。"""
+    """helper 的 WSL 侧绝对路径（固定安装布局：<盘>:/工作区 → /mnt/<盘>/...）。"""
     parts = BIN_DIR.parts
     drive = extract_drive_letter(parts)
     return "/mnt/" + drive + "/" + "/".join(parts[1:]) + "/palace_wsl.sh"

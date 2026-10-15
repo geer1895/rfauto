@@ -1,16 +1,17 @@
 # EDB 快车道端到端教程（walkthrough）：从设计参数到数据集
 
-> 状态：正式文档（2026-10 首版）。
+> 状态：正式文档（2026-10-09 首版）。
 > 定位：**按序执行**的 walkthrough——每步给真实命令与真实产物摘录，从
 > 一行设计参数（`f0_ghz=2.4`）走通到一行可查询的数据集记录。概念、
 > spec schema 五契约字段、门语义仲裁等**参考型**内容不在本文重复，正本
 > 在 `docs/edb_lane_guide.md`（下称"指南"）；无人值守通用纪律在
 > `docs/unattended_hfss_automation.md`（下称"无人值守指南"）。
 > 证据基线：pyedb 0.83.0 × pyaedt 1.4.0 × skrf 2.1.0 × AEDT 2025 R1
-> （v251）。文中数字凡标"实测于本机 2026-10"者全部来自真机产物：W1 冒
-> 烟战役（判读正本 `REPORT.md`）与 W5 五点战役。`#NNN` 为开发过程沉淀
-> 的坑号。runs/ 产物不入 git，本机在档可复核。
-> 命令行 help 文本逐字核自本机 2026-10 已装 CLI
+> （v251）。文中数字凡标"实测于 2026-10-08/09"者全部来自真机产物：
+> `runs/edblane85/w1_smoke/`（W1 冒烟，判读正本 `REPORT.md`）与
+> `runs/edblane85/w5_batch_campaign/`（W5 五点战役）。`#NNN` 为本仓
+>  坑号。runs/ 不入 git，本机在档可复核。
+> 命令行 help 文本逐字核自 2026-10-08 已装 CLI
 > （`src/rfauto/cli/domains/edb.py`，服务层
 > `src/rfauto/service/edb_lane_service.py`）。
 
@@ -42,9 +43,12 @@ power_divider 在排障 §8.4 出场。
 快车道的求解/导出段只消费工程文件，靠 `find_ansysedt_exe()`
 （`src/rfauto/adapters/hfss_batch.py`）发现本机 `ansysedt.exe`，
 优先级：入参 `ansysedt_exe` → 环境变量 `RFAUTO_AEDT_PATH` → 自动探测
-（Windows 注册表 + `ANSYSEM_ROOTxxx`）。本机实测（2026-10，W1
-REPORT §1，本机在档）：自动探测链命中 AEDT 2025 R1（v251）安装目录
-下的 `ansysedt.exe`。
+（Windows 注册表 + `ANSYSEM_ROOTxxx`）。本机实测（2026-10-09，W1
+REPORT §1）：
+
+```text
+ansysedt.exe = E:\ANSYSINC\ANSYS Inc\v251\AnsysEM\ansysedt.exe
+```
 
 许可面：批处理求解占一次 AEDT 许可；`-batchextract` 官方旗标口径是
 "非图形跑脚本后自动退出，不做求解 license 检查"
@@ -53,8 +57,7 @@ license 类失败按无人值守指南 §3.1 指数退避后再判死。
 
 版本钉：建库段缺省 `version="2025.1"`（对齐基准），env
 `RFAUTO_EDB_AEDT_VERSION` 可覆盖（`src/rfauto/adapters/edb_adapter.py`
-`_AEDT_VERSION_ENV`）。**服务器/远程扩展时版本必须=本机**（版本配对
-断言，无人值守指南 §6 第 7 条）。
+`_AEDT_VERSION_ENV`）。**服务器/远程扩展时版本必须=本机**（项目规则 规则 0）。
 
 ### 1.2 Python 依赖
 
@@ -64,11 +67,11 @@ pip install "pyedb[dotnet]"    # pyedb dotnet 后端硬依赖（ansys-pythonnet�
 pip install scikit-rf          # 判读/收集复读 Touchstone（或 rfauto[openems]）
 ```
 
-**本机现状（如实，实测于本机 2026-10）**：pyedb 0.83 dotnet 后端
+**本机现状（如实，实测于 2026-10-08/09）**：pyedb 0.83 dotnet 后端
 `Edb()` 在 `Database.Create` 处进程级失败（stderr
 `EVP_DecryptInit ... could not load the shared library`，exit 1，无
-Python 异常可捕获；gRPC 后端要求 AEDT 2026.1+，2025 R1 无绕行）。
-诊断链存 W1 冒烟档案（REPORT §4.2，本机在档）。**该环境件闭环前，
+Python 异常可捕获；gRPC 后端要求 AEDT 2026.1+，本机 2025 R1 无绕行）。
+诊断链存 `runs/edblane85/w1_smoke/`（REPORT §4.2）。**该环境件闭环前，
 `EdbAdapter.build()`（即 `rfauto edb build` 真跑）在本机不可用**——但
 dry-run 计划态（零 pyedb）、批解/导出/判读/入库各段只消费工程文件，
 不受影响。本机实测通路是建库段改道 pyaedt 非图形会话（§3.2），几何
@@ -79,13 +82,13 @@ dry-run 计划态（零 pyedb）、批解/导出/判读/入库各段只消费工
 不碰许可、不写盘、零 pyedb 的最小自检就是 §2 的 `--dry-run`：它能过 =
 发射器综合内核与适配器契约双检通过。注意它**不证明** pyedb 可用
 （dry-run 有意绕开 pyedb）——建库段的真机可用性只能真跑验证（本机
-现状见上）。
+现状见下）。
 
 ---
 
 ## 2. 第一步 发射 spec：先 `--dry-run` 看计划
 
-`rfauto edb` 子应用三叶（help 原文，实测于本机 2026-10）：
+`rfauto edb` 子应用三叶（help 原文，2026-10-08 实测）：
 
 ```text
 rfauto edb --help:
@@ -98,9 +101,9 @@ rfauto edb --help:
 
 设计参数从 recipe/命令行进来都是同一面：`-p k=v`（可多次，值走 JSON
 解析，嵌套 stackup/sweep dict 可直接传；`f0_ghz` 必填）。所有尺寸由
-`core.synthesis` 闭式综合产出，**禁止手抄毫米数**（指南 §2）。
+`core.synthesis` 闭式综合产出，**禁止手抄毫米数**（指南 §2，项目规则 规则 1c）。
 
-先看计划（真实命令与真实输出，实测于本机 2026-10）：
+先看计划（真实命令与真实输出，实测于 2026-10-08）：
 
 ```console
 $ rfauto edb build --template edb_branchline -p f0_ghz=2.4 --dry-run
@@ -113,7 +116,7 @@ workdir=runs/edb_lane
 dry-run = 发射器综合自检 + 适配器契约双检（`spec_to_config_json` 纯函数
 再过一遍），零写盘零 pyedb——无 license 环境的计划态冒烟。
 
-当前发射分派面（`edb_lane_service._emitters`，实测于本机 2026-10 逐一
+当前发射分派面（`edb_lane_service._emitters`，2026-10-08 实测逐一
 dry-run 验证）：
 
 | template | dry-run 摘要 | 状态 |
@@ -122,7 +125,7 @@ dry-run 验证）：
 | edb_power_divider | traces=6 ports=3 resistors=1（RISO） | 支持 |
 | edb_coupled_line | traces=6 ports=4 resistors=0 | 支持 |
 | edb_ratrace | traces=12 ports=4 resistors=0 | 支持 |
-| edb_lange | — | 声明不支持：结构化拒绝信封（pyedb 0.83 configuration 无 crossover/air-bridge 原语；升格前置条件指 lange 发射器 docstring） |
+| edb_lange | — | 声明不支持：结构化拒绝信封（pyedb 0.83 configuration 无 crossover/air-bridge 原语；升格前置条件指 `docs/templates/edb_lange/meta.yaml`） |
 
 > 注：`edb build --template` 的 help 文本现写"edb_branchline 或
 > edb_power_divider"（两落地族），分派表已扩到四族——以
@@ -142,8 +145,8 @@ $ rfauto edb build --template edb_branchline -p f0_ghz=2.4 --workdir runs/edb_la
 `<stem>_config.json` 存证（可用 `edb.configuration.load` 复现）。同名
 再次 `--dry-run` 后换 `--name bl_f0_2p4` 即得 W5 战役的产物名形态。
 
-**spec 长什么样**（真实摘录，W5 战役 f0_2p4 点 spec JSON，本机在档；
-实测于本机 2026-10，`params` 全部是综合内核产出）：
+**spec 长什么样**（真实摘录，`runs/edblane85/w5_batch_campaign/f0_2p4/
+bl_f0_2p4_spec.json`，实测于 2026-10-09；`params` 全部是综合内核产出）：
 
 ```json
 {
@@ -191,19 +194,23 @@ config JSON 存证 → 惰性导入 pyedb → 新建 `.aedb` →
 MCP 面同一语义：`edb_emit_spec` / `edb_build_solve` /
 `edb_status` 三工具（`src/rfauto/mcp_tools/edb.py`），其中
 `edb_build_solve` 是"建库+可选批解"一站式（`solve=True` 真机 opt-in）。
+recipe 优化环接的也是同一参数面：
+`service/edb_loop_launcher.py` 把 `edb_build_solve`+健康门包成
+`evaluate(params)`（缺省 cost = FAIL 判据数惩罚 + S11@f0 dB 原值），
+参数面到判读面全链与本文 §2–§5 同源——优化环用法不在本文展开。
 
 ### 3.2 本机实测通路：pyaedt 改道（W1/W5）
 
 如 §1.2，本机 pyedb dotnet 后端进程级失败，真跑 `edb build` 报
 `EDB 建库失败: ...`。W1 冒烟的改道（此后 W5 全程复用）：
 
-- 冒烟战役的建库脚本（本机在档）：**消费同一发射器产出的 spec**，用
-  pyaedt `Hfss3dLayout` 非图形会话原生建模（层叠/平面/走线/端口/
-  setup+sweep/保存），`finally` 必释放；
-- W5 战役的 point worker 逐行复用它（每点独立子进程）。
+- 建库脚本 `runs/edblane85/w1_smoke/build_pyaedt.py`：**消费同一发射器
+  产出的 spec**，用 pyaedt `Hfss3dLayout` 非图形会话原生建模（层叠/
+  平面/走线/端口/setup+sweep/保存），`finally` 必释放；
+- W5 的 `point_worker.py::_do_build` 逐行复用它（每点独立子进程）。
 
-真实建库证据（W5 战役 f0_2p4 点 `state.json` 的 `build` 节，本机在档；
-实测于本机 2026-10）：
+真实建库证据（`runs/edblane85/w5_batch_campaign/f0_2p4/state.json` 的
+`build` 节，实测于 2026-10-09）：
 
 ```json
 {"route": "pyaedt Hfss3dLayout native (W1 改道复用)",
@@ -212,9 +219,9 @@ MCP 面同一语义：`edb_emit_spec` / `edb_build_solve` /
  "elapsed_s": 21.1, "ok": true, "n_ports": 4}
 ```
 
-W1 分步时长正本（REPORT §1 表，本机在档；实测于本机 2026-10）：
-branchline 建库 21.0s / 求解 82.9s（rc=0）/ Touchstone 导出 16.3s /
-判读 0.4s；emit 两族均 <0.01s（纯函数）。
+W1 分步时长正本（REPORT §1 表，实测于 2026-10-09）：branchline 建库
+21.0s / 求解 82.9s（rc=0）/ Touchstone 导出 16.3s / 判读 0.4s；
+emit 两族均 <0.01s（纯函数）。
 
 改道只动"谁把 spec 画进工程"，不动"spec 从哪来"——③④⑤⑥ 各段
 消费的工程文件/判读 JSON/入库记录与设计入口完全同构。
@@ -233,9 +240,8 @@ $ rfauto edb solve runs/edb_lane/edb_branchline.aedb
 `--design/--setup` 限定 `-designs <design:setup>`（缺省自动枚举；该限定
 语法的具体分隔形态官方文档口径、本仓未实测——待验证，指南 §8.6）。
 
-实际发生两段短命进程（真实命令摘录，W5 战役 f0_2p4 点 `state.json`
-solve 节，本机在档；实测于本机 2026-10；工程路径在末位是硬纪律，
-见 §8.2）：
+实际发生两段短命进程（真实命令摘录，W5 `f0_2p4/state.json` solve 节，
+实测于 2026-10-09；工程路径在末位是硬纪律，见 §8.2）：
 
 ```text
 段1 求解: ansysedt.exe -ng -BatchSolve -Logfile <dir>\ansysedt_batch_<stem>.log  <stem>.aedt
@@ -246,8 +252,8 @@ solve 节，本机在档；实测于本机 2026-10；工程路径在末位是硬
 artifacts=0（REPORT §4.4），判读断链；求解成功后由 `-batchextract`
 （官方旗标：非图形跑脚本后自动退出）跑内嵌 IronPython 脚本
 `ExportNetworkData` 导出。脚本由 `hfss_batch.build_batch_extract_script`
-按字面量烘焙（14 参与 hfss_adapter 主路径逐参一致），落盘留档
-（`batch_extract_touchstone_<stem>.py`）。
+按字面量烘焙（14 参与 hfss_adapter/remote_service L2 先例逐参一致），
+落盘留档（`batch_extract_touchstone_<stem>.py`）。
 
 W5 真实 solve 段回执（`state.json` → `solve`，rc=0、elapsed_s=63.485、
 `errors` 里那条导出告警正是 §8.3 的历史 bug，修复后自动分派）：
@@ -267,8 +273,8 @@ W5 真实 solve 段回执（`state.json` → `solve`，rc=0、elapsed_s=63.485�
 导出产物名：先按占位名 `<stem>_export.s2p` 落盘，再按文件内容反推实际
 端口数改名 `.sNp`（skrf 只按扩展名推 rank，#248/#309）。W5 实测：
 `f0_2p4/bl_f0_2p4_export.s4p`（n_ports=4）。`renorm` 缺省 False=原生
-参考基（`export_touchstone_after_solve` 的 `renorm=True` 才是 50Ω 重归
-一，远程 L2 通道口径）。
+参考基（`export_touchstone_after_solve` 的 `renorm=True` 才是 50Ω 重归一，
+remote_service L2 口径）。
 
 进程治理：watchdog 到点整树击杀（psutil 两段 + taskkill 兜底）并如实记
 `timed_out=True`；本模块只杀自己 Popen 拉起的树，他人孤儿归
@@ -291,8 +297,8 @@ W5 真实 solve 段回执（`state.json` → `solve`，rc=0、elapsed_s=63.485�
 
 ### 5.1 `<stem>_judgment.json` 逐字段
 
-真实摘录（W5 战役 f0_2p4 点 judgment JSON，本机在档；实测于本机
-2026-10，下同）：
+真实摘录（`runs/edblane85/w5_batch_campaign/f0_2p4/
+bl_f0_2p4_judgment.json`，实测于 2026-10-09，下同）：
 
 ```json
 {"ok": true, "all_pass": true,
@@ -338,18 +344,19 @@ branchline 五门表（W5 @2.4GHz 实测，5/5 PASS；与 W1 门口径的差异�
 
 ### 5.2 W1 与 W5 的门口径差异（如实）
 
-W1 冒烟（实测于本机 2026-10）直通窗还是 [-3.5, -2.5]，-3.584 超窗
-0.084dB **如实记 FAIL**（#122 不凑绿）；门语义仲裁（REPORT §3.2）后
-裁定物理窗 [-3.8, -2.5]（理想等分 -3.01dB + 0.8dB 实现容差），W5 五点
-全按此窗判 PASS。两代 judgment JSON 都在档（W1/W5，本机在档），这正是
-"门改动必须带真机/仲裁出处"（#274）的活例子。
+W1 冒烟（2026-10-09）直通窗还是 [-3.5, -2.5]，-3.584 超窗 0.084dB
+**如实记 FAIL**（#122 不凑绿）；门语义仲裁（REPORT §3.2）后 W4 裁定
+物理窗 [-3.8, -2.5]（理想等分 -3.01dB + 0.8dB 实现容差），W5 五点全
+按此窗判 PASS。两代 judgment JSON 都在档（W1 `branchline/
+branchline_judgment.json` / W5 上例），这正是"门改动必须带真机/仲裁
+出处"（铁律 7/#274）的活例子。
 
 ### 5.3 `edb-health-gate-v1` 健康门（框架级七因子）
 
 第二份产物 `<stem>_health_gate.json`
-（`src/rfauto/service/edb_health_gate.check_edb_batch_health`，消费
-hfss_batch 结构化回执 + Touchstone，与任务书五门相互独立）。真实摘录
-（W5 战役 health gate JSON，本机在档）：
+（`service/edb_health_gate.check_edb_batch_health`，消费 hfss_batch
+结构化回执 + Touchstone，与任务书五门相互独立）。真实摘录（W5
+`bl_f0_2p4_health_gate.json`）：
 
 ```json
 {"schema": "edb-health-gate-v1", "verdict": "PASS",
@@ -391,11 +398,12 @@ verdict 词汇 healthy/unhealthy/suspect）——两门词汇不同，别混用�
 
 ### 6.1 循环骨架
 
-批量=每点一个子进程 + 每点看门 + 前后 ansysedt 清点。W5 战役驱动脚本
-（本机在档；实测于本机 2026-10）的骨架可直接抄：
+批量=每点一个子进程 + 每点看门 + 前后 ansysedt 清点。W5 战役
+（`runs/edblane85/w5_batch_campaign/campaign_driver.py`，实测于
+2026-10-09）的骨架可直接抄：
 
 ```python
-# 五点 f0 扫描（W5 实测骨架，节选；完整驱动脚本本机在档）
+# 五点 f0 扫描（W5 实测骨架，节选；完整版见 campaign_driver.py）
 POINT_TIMEOUT_S = 900.0                    # 预算 ~5min/点，给 2× 余量
 for f0 in (2.2, 2.3, 2.4, 2.5, 2.6):
     tag = f"f0_{str(f0).replace('.', 'p')}"
@@ -408,7 +416,7 @@ for f0 in (2.2, 2.3, 2.4, 2.5, 2.6):
         kill_matching_ansysedt(stem)           # 按工程 stem 匹配，不盲杀（#245）
 ```
 
-point worker 每点做完整单点链：emit → 建库 →
+`point_worker.py` 每点做完整单点链：emit → 建库 →
 `solve_project_batch(..., export_touchstone=True)` → 判读（退出码
 0=全绿 / 1=建库失败 / 2=求解失败 / 3=判读有 FAIL，judgment 照写）。
 发射前 `list_ansysedt()` 清点、收工后复核残留=0。
@@ -427,8 +435,8 @@ done
 
 ### 6.2 W5 实测时长与读数
 
-五点全绿（导出段经恢复路由，见 §8.3；数据实测于本机 2026-10，
-campaign summary 在档）：
+五点全绿（导出段经恢复路由，见 §8.3；数据实测于 2026-10-09，
+`campaign_summary.json`）：
 
 | 点 | 单点 wall | solve rc | S11@f0 dB | S21@f0 dB | S41@f0 dB | σmax 带内 | f0 偏移 | 判读 |
 |---|---|---|---|---|---|---|---|---|
@@ -438,9 +446,10 @@ campaign summary 在档）：
 | 2.5 GHz | 86.0s | 0 | -31.853 | -3.519 | -31.895 | 0.9945 | +0.75% | 5/5 PASS |
 | 2.6 GHz | 85.7s | 0 | -34.270 | -3.528 | -31.040 | 0.9945 | +0.60% | 5/5 PASS |
 
-总账：`total_point_s=438.7`（五点 wall 之和；含恢复导出与判读）；导出
-恢复每点 wall 5.2–5.3s；前后 ansysedt 残留均 0。单点成本拆解
-（f0_2p4）：建库 21.1s + 求解 63.5s + 导出 ~5s + 判读 <0.5s。
+总账：`total_point_s=438.7`（五点 wall 之和；战役 05:30:11 开、
+05:37:30 收，含恢复导出与判读）；导出恢复每点 wall 5.2–5.3s；前后
+ansysedt 残留均 0。单点成本拆解（f0_2p4）：建库 21.1s + 求解 63.5s +
+导出 ~5s + 判读 <0.5s。
 
 批量纪律（全部 W1–W5 实证，细则见无人值守指南 §6 十条自查）：
 驱动与 worker 一律绝对路径 + `-u`；单点超时=先杀 worker 树、再按工程
@@ -461,19 +470,20 @@ EDB 道收集器是服务层函数
 from rfauto.service.dataset_edb_lane import collect_edb_lane_dataset
 
 result = collect_edb_lane_dataset(
-    name="edb_lane_w5_sweep",
-    run_ids=["edb_w5_sweep/f0_2p2",
-             "edb_w5_sweep/f0_2p3",
-             "edb_w5_sweep/f0_2p4",
-             "edb_w5_sweep/f0_2p5",
-             "edb_w5_sweep/f0_2p6"],
+    name="edb_lane_w5_sweep_20261009",
+    run_ids=["edblane85/w5_batch_campaign/f0_2p2",
+             "edblane85/w5_batch_campaign/f0_2p3",
+             "edblane85/w5_batch_campaign/f0_2p4",
+             "edblane85/w5_batch_campaign/f0_2p5",
+             "edblane85/w5_batch_campaign/f0_2p6"],
     health_gate=True,      # G11 目录级体检，仅 unhealthy 禁入
     fmt="parquet",
 )
 print(result["n_rows"], result["ground_truth"]["n_gt_rows"])
 ```
 
-W5 实跑产物 manifest 关键行（本机在档；实测于本机 2026-10）：
+W5 实跑产物（`runs/datasets/edb_lane_w5_sweep_20261009/
+dataset_manifest.yaml`，实测于 2026-10-09）关键行：
 
 ```yaml
 importer: edb_lane
@@ -481,7 +491,7 @@ n_rows: 5
 per_model_rows: {edb_branchline: 5}
 health_gate: true
 health_verdicts:
-  f0_2p2: healthy   # 五点全 healthy
+  edblane85/w5_batch_campaign/f0_2p2: healthy   # 五点全 healthy
 n_dup: 0
 ground_truth: {n_gt_rows: 5, per_model: {edb_branchline: 5}}
 bounds: {f0_ghz: [2.2, 2.6], z0_ohm: [50.0, 50.0], ...}
@@ -490,7 +500,7 @@ dedup_fingerprint: (model, study_name, seed, params canonical json)
 
 收集语义（源码 `dataset_edb_lane.py` docstring，#251 谱系第⑥类产物
 通道）：目录识别标志=`<stem>_judgment.json`；参数唯一来源=`<stem>_spec.json`
-的 `params` 段（导入器零数值）；metrics=judgment `readings`
+的 `params` 段（导入器零数值，铁律 7）；metrics=judgment `readings`
 标量 + 判定元数据（ok/all_pass/n_ports/n_freqs/f0_on_grid/grid_step_ghz）
 + `n_gates_pass/n_gates_total`；`adapter` 恒 "hfss"（AEDT 批量求解的
 构造性事实）→ 自动命中 GT 白名单标注；`study_name`=批次目录相对 runs
@@ -499,14 +509,14 @@ dedup_fingerprint: (model, study_name, seed, params canonical json)
 
 ### 7.2 查询
 
-数据集落数据集根目录 `<name>/`（`points.parquet` + manifest）后，
+数据集落 `runs/datasets/<name>/points.parquet` + manifest 后，
 `rfauto datasets query` 直接可查（DuckDB 谓词下推）。真实输出
-（实测于本机 2026-10）：
+（实测于 2026-10-08）：
 
 ```console
-$ rfauto datasets query edb_lane_w5_sweep \
+$ rfauto datasets query edb_lane_w5_sweep_20261009 \
       --columns "run_id,params_json,metrics_json" --limit 2
-           数据集 edb_lane_w5_sweep（2 行，过滤后共 5 行）
+           数据集 edb_lane_w5_sweep_20261009（2 行，过滤后共 5 行）
 ┌────────┬───────────────────────────────┬──────────────────────────────┐
 │ run_id │ params_json                   │ metrics_json                 │
 ├────────┼───────────────────────────────┼──────────────────────────────┤
@@ -535,9 +545,9 @@ load the shared library`，exit 1（faulthandler 定位死点在
 `Database.Create`，pyedb/dotnet/edb.py:742）。只装 pyedb 本体则只有
 `RuntimeWarning: Failed to initialize Dlls.`（无行动价值提示）。
 gRPC 后端要求 AEDT 2026.1+，2025 R1 无绕行。
-（诊断链与最小复现：W1 冒烟档案 REPORT §4.2，本机在档。）
+（诊断链与最小复现：`runs/edblane85/w1_smoke/`，REPORT §4.2。）
 
-**处置**：建库段改道 pyaedt 非图形会话原生建模（§3.2），spec
+**处置**：本机建库段改道 pyaedt 非图形会话原生建模（§3.2），spec
 单一来源不变；批解/导出/判读段不受影响。**别在死点上反复重装试**
 ——W1 已逐项排除 venv shim OpenSSL shim、OPENSSL_MODULES 环境变量、
 ossl-modules/legacy.dll 安放、净 PATH、System32 LibreSSL 直接冲突等
@@ -561,16 +571,17 @@ console log 才是可靠的错误通道（无人值守指南 §3.4）。
 生成（`errors`："导出文件未生成: ...（脚本/选择器错误通常见 logfile
 尾部 [rfauto-batch-extract] 行或 IronPython traceback）"）。W5 首遍
 5/5 复现。
-**根因**（探针定谳）：HFSS 3D Layout 设计（EDB 快车道
+**根因**（探针定谳，`probe_run.log`）：HFSS 3D Layout 设计（EDB 快车道
 全部产物形态）**无 AnalysisSetup/Setup/Output/Solutions 模块**——
 `design.GetModule` 四名全 FAIL，`ExportNetworkData` 直接挂在 design
 对象上。
 **处置**：现行 `hfss_batch` 导出脚本先探针 Solutions 模块、失败自动
 回退 design 级直呼（14 参逐字一致），setup 枚举不可达时按名义名
 `setup1:sweep1` 兜底——无旗标自动适配两形态（W5 实证后修入 src）。
-历史战役用战役侧恢复脚本补导出+判读（本机在档；恢复 5/5、单点 wall
-5.2s），judgment 的 `export_route` 字段如实区分原链路失败与恢复路由
-——排查同类问题时先读这个字段。
+历史战役用的是战役侧修正脚本
+（`runs/edblane85/w5_batch_campaign/recover_export_judge.py`，恢复
+5/5、单点 wall 5.2s），judgment 的 `export_route` 字段如实区分原链路
+失败与恢复路由——排查同类问题时先读这个字段。
 另两件配套：`QuitApplication` 置于 finally（FATAL 早退也必须退出批处理
 会话，否则留孤儿桌面 #265）；被击杀树可能残留 `<project>.lock`，复跑前
 按 #157 核对进程后清理。
@@ -579,11 +590,11 @@ console log 才是可靠的错误通道（无人值守指南 §3.4）。
 
 **症状**：edb_power_divider 用旧口径 `gap_mm=2.0` 真跑，AEDT 网格生成
 失败 **rc=103**：`[error] Port#Port2 intersects mesh body:
-Port#Port3`（W1 真机实证，实测于本机 2026-10）。**根因**：EDB/3D
-Layout 的波端口物理片宽=水平扩展因子 5×线宽（50Ω 馈线约
-5.57mm@缺省层叠），两输出口中心距 2.0mm 时 P2/P3 端口片互相交叠。
+Port#Port3`（W1 真机实证，2026-10-09）。**根因**：EDB/3D Layout 的
+波端口物理片宽=水平扩展因子 5×线宽（50Ω 馈线约 5.57mm@缺省层叠），
+两输出口中心距 2.0mm 时 P2/P3 端口片互相交叠。
 **处置**：现行发射器已带渲染期守卫（#347 家法）——缺省
-`gap_mm=6.0`（与 HFSS 插件旧口径 2.0 有意分叉），`gap_mm ≤
+`gap_mm=6.0`（与 HFSS 插件口径 2.0 有意分叉），`gap_mm ≤
 因子×shunt_w` 时 fail-fast 抛 ValueError 并给建议放宽值（最小可行
 间隙 ×1.05 上取 0.5mm 网格，缺省层叠下建议值恰为 6.0）。看到该
 ValueError 不是坏消息：它替你省了一轮 rc=103 真跑。
@@ -602,9 +613,9 @@ ValueError 不是坏消息：它替你省了一轮 rc=103 真跑。
   `.aedb` 目录、`*_config.json`、`ansysedt_batch_*.log`、
   `*_export.s<N>p`），与 `edb build` 的 workdir 平铺布局配套；W5 式
   "每点一个子目录"的战役布局不在其扫描形态内（实测
-  `edb status --root <W5 战役目录>` 报"无 EDB 快车道产物"——是扫描形
-  态使然，产物本身在档）。`.aedb` 工程的日志/导出名带 `.aedb` 尾缀变
-  体，status 已折叠回裸 stem。
+  `edb status --root runs/edblane85/w5_batch_campaign` 报
+  "无 EDB 快车道产物"——是扫描形态使然，产物本身在档）。`.aedb` 工程
+  的日志/导出名带 `.aedb` 尾缀变体，status 已折叠回裸 stem。
 
 ---
 
@@ -612,15 +623,15 @@ ValueError 不是坏消息：它替你省了一轮 rc=103 真跑。
 
 | 文中内容 | 来源 |
 |---|---|
-| CLI 三叶 help/选项面/dry-run 输出 | `src/rfauto/cli/domains/edb.py`；本机 2026-10 实跑实录 |
+| CLI 三叶 help/选项面/dry-run 输出 | `src/rfauto/cli/domains/edb.py`；2026-10-08 实跑实录 |
 | edb_build/edb_solve/edb_status 信封字段、lange 结构化拒绝 | `src/rfauto/service/edb_lane_service.py` |
 | solve_project_batch/export_touchstone_after_solve 回执、二段进程、参数序纪律、导出分派 | `src/rfauto/adapters/hfss_batch.py`（模块 docstring 含 W5 实证注记） |
 | EdbAdapter.build/solve_batch/版本钉/config 存证 | `src/rfauto/adapters/edb_adapter.py` |
 | 健康门七因子/门分派/三态 verdict | `src/rfauto/service/edb_health_gate.py` |
 | 收集器语义/manifest 键面 | `src/rfauto/service/dataset_edb_lane.py` |
-| W1 分步时长/判读表/门语义仲裁/坑清单 | W1 冒烟战役 REPORT.md（§1–§4，本机在档） |
-| W5 五点时长/读数/恢复路由/数据集 | W5 五点战役产物（campaign summary、恢复摘要、f0_2p4 点 state/judgment/health gate JSON）+ 数据集 manifest（本机在档） |
-| spec schema 五契约/KNOWN_TEMPLATES/发射分派面 | 指南 §2/§3 + `src/rfauto/adapters/edb_templates/schema.py` |
+| W1 分步时长/判读表/门语义仲裁/坑清单 | `runs/edblane85/w1_smoke/REPORT.md`（§1–§4） |
+| W5 五点时长/读数/恢复路由/数据集 | `runs/edblane85/w5_batch_campaign/`（campaign_summary.json、recovery_summary.json、f0_2p4/state.json、f0_2p4/bl_f0_2p4_judgment.json、bl_f0_2p4_health_gate.json）+ `runs/datasets/edb_lane_w5_sweep_20261009/dataset_manifest.yaml` |
+| spec schema 五契约/KNOWN_TEMPLATES/模板元面 | 指南 §2/§3 + `src/rfauto/adapters/edb_templates/schema.py` + `docs/templates/edb_*/meta.yaml` |
 | 无人值守纪律（-Logfile、看门、孤儿、发射十条自查） | `docs/unattended_hfss_automation.md` |
 | MCP 出口 | `src/rfauto/mcp_tools/edb.py`（edb_emit_spec/edb_build_solve/edb_status + resource） |
 

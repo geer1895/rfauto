@@ -1,6 +1,6 @@
 """§DP-4 P3 EEP 阵列族：patch_eep_2x2 / patch_eep_1x4 单测（2026-09-24）。
 
-方案行（规格深案 DP-4 §2c/§3）：互耦档（EEP）
+方案行（docs/plan_deepdive_specs_20260924.md DP-4 §2c/§3）：互耦档（EEP）
 专用阵模板——单元平铺参数化（elem_len/w/feed_mm + spacing_x/y_mm），每元
 独立 LumpedPort 底探针（端口 1..4）、无 corporate 馈树、元间 DC 隔离=EEP
 定义性质；N 次单激励轮转（#208）逐轮产出第 n 列 S 参数与第 n 元有源方向图

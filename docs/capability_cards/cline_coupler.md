@@ -22,7 +22,17 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=9 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | coupled_len_mm | 1.0 |
+| 2 | w_mm | 0.038093 |
+| 3 | gap_mm | 0.003434 |
+| 4 | w_feed_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -43,7 +53,7 @@
 - 参数语义：w_mm=耦合段单线宽，gap_mm=耦合缝（边到边），coupled_len_mm=耦合段物理长（λ/4 @平均 εeff），w_feed_mm=50Ω 馈线宽——fake/openEMS 两通道同名同语义。10dB 设计点：C=0.31623 → (Z0e,Z0o)=(69.371,36.038)Ω → KJ 反解 (w,s)=(0.9243,0.0820)mm，εeff_e/o=2.9922/2.4663
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部盒缘精确入网（#198；_c4_layout 单源）
 - 冒烟现状：真机未跑（followUp）：非同步残差预期 S41≈−23dB/S11≈−33dB（定向性 ≈13dB，微带耦合线固有，openems_templates §C4 段首口径 1），冒烟按此判读；理想同步极限 |S31|=−10.000dB
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

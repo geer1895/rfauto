@@ -68,7 +68,7 @@ def _make_adapter(tmp_path, **extra) -> NGSolveAdapter:
 
 
 class TestRegistration:
-    """注册表/枚举接线。"""
+    """注册表/枚举接线（AGENTS 硬限 3：基类+注册表模式）。"""
 
     def test_enum_member_value(self):
         assert EMSolverType.NGSOLVE.value == "ngsolve"

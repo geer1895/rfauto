@@ -1,4 +1,4 @@
-"""声学谐振器 mBVD 内核（PK-1，规格深案 §A-1）。
+"""声学谐振器 mBVD 内核（PK-1，docs/plan_deepdive_specs_20261002.md §A-1）。
 
 纯算法零 IO 零外部进程（铁律 7 合规）；参照 core/rwg_mmt.py 先例**不进
 @register_calculator 注册表**（免 #231/#304 注册表消费者三表连动），导出

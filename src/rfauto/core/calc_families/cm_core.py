@@ -455,7 +455,7 @@ def _cm_reduce_folded(m, tol=1e-13, preserve_s21_phase=False):
 
 @register_calculator(
     "chebyshev_prototype",
-    "广义切比雪夫原型（chebyshev_g 等价形式）：阶数+回损+传输零点 → "
+    "切比雪夫原型：广义切比雪夫原型（chebyshev_g 等价形式）：阶数+回损+传输零点 → "
     "F/P/E 多项式系数与反射零点（Cameron 口径，S11=F/E, S21=P/(εE)）",
     (("order", "int - 滤波器阶数（≥1）"),
      ("rl_db", "float dB 带内回波损耗纹波（>0）"),
@@ -890,7 +890,7 @@ def chebyshev_prototype_asym(order: int, rl_db: float,
 
 @register_calculator(
     "coupling_matrix_synthesize_explicit",
-    "C13 显式 TZ 集合综合（Cameron N+2）：完整 TZ 列表（每个 Ω 单独列出；"
+    "显式TZ综合：C13 显式 TZ 集合综合（Cameron N+2）：完整 TZ 列表（每个 Ω 单独列出；"
     "±Ω 成对=实系数原型，与 coupling_matrix_synthesize_n2 同口径；非成对"
     "=复系数原型，响应 Ω→−Ω 不对称）→ (N+2)×(N+2) 横向矩阵，频响与原型"
     "逐点一致（幅度；复系数路径实测 ≤1.3e−13）。复元矩阵为复对称 M=Mᵀ，"

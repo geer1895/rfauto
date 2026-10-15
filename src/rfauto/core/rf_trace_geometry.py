@@ -1,7 +1,7 @@
 """N14 KiCad RF 导出增强——RF 走线几何内核（taper/倒角弯/圆角弯多边形）。
 
 spec 出处（盘点依据行）：
-- 方案池 L158「N14 KiCad RF 导出增强
+- docs/plan_expansion_pool_20260924.md L158「N14 KiCad RF 导出增强
   （taper/圆角 footprint+寄生反查闭环）」（远期探索池登记项）；
 - docs/audit/plan_gap_inventory_20260928.md §二 B5「N14 KiCad RF 导出增强
   （taper/圆角 footprint+寄生反查）| KiCad 子进程链」。

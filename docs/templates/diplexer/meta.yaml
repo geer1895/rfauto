@@ -42,3 +42,30 @@ nominal_derivation: '全链内核精算（#1c，零手抄毫米数；diplexer_de
   拓扑选择（如实登记）：≥2 阶 Butterworth 对复合回损有固有地板（T 结两臂阻抗状态交互，~−7dB@3/3 阶实测，
   内核 docstring 判据节；无耗互易三口不可全匹配 Pozar §7.5）——渲染取 CR 一阶对使 EM 版判读门可判读
   （|S11| 深谷全带），选择性 20dB/dec 为一阶固有。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 常阻互补对偶双工器：一阶 CR 对（串感低通+并容高通）在 T 结构成 S11≡0、|S21|²+|S31|²≡1 的精确互补对——无耗互易三口不可全匹配（Pozar §7.5），一阶常阻对是让全带
+      |S11| 深谷可判读的拓扑选择。典型用于收发分路/频段合路；常见误用=上 ≥2 阶Butterworth 就期待更好回损——T 结两臂阻抗状态交互有固有回损地板（~−7dB@3/3 阶实测）。
+    derivations:
+    - claim: 一阶 CR 对偶：L=Z0/ωc、C=1/(ωc·Z0)（交越精确 fc）
+      formula: L = Z0/(2*pi*fc) ; C = 1/(2*pi*fc*Z0)
+      source: 本仓 core/diplexer_compose（element_values 单源；docs/templates/diplexer/meta.yaml nominal_derivation（S11≡0/|S21|²+|S31|²≡1/交越
+        fc 三锚闭式精确））
+    - claim: 无耗互易三口不可全匹配（≥2 阶复合回损地板的拓扑根因）
+      formula: '|S11| > 0 恒（三口无耗互易匹配约束）'
+      source: Pozar, Microwave Engineering (4th ed.), §7.5（三口网络匹配不等式）；docs/templates/diplexer/meta.yaml
+        nominal_derivation（~−7dB@3/3 阶实测账）
+  sensitivity_ranking:
+  - param: l_lpf_nh
+    order: 1
+    basis: 低通臂截止通道（fc∝1/L 一阶 CR 恒等式）；登记表 1.0
+  - param: c_hpf_pf
+    order: 2
+    basis: 高通臂截止通道（fc∝1/C 一阶 CR 恒等式；CR 对偶 C=L/Z0² 锁定
+      同一 ωc 非独立维，登记表 0）
+  - param: w_feed_mm
+    order: 3
+    basis: 50Ω 馈线匹配（弱于 LC 双通道；不进截止式，登记表 0）
+  quiz_refs: []

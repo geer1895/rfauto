@@ -1,4 +1,4 @@
-"""AP-7 多径衰落统计包（规格深案 §A-9，2026-10-02）。
+"""AP-7 多径衰落统计包（plan_deepdive_specs_20261002.md §A-9，2026-10-02）。
 
 衰落域主线首件：小尺度衰落 CDF 族（Rice/Rayleigh/Nakagami-m/对数正态）
 + 微波视距链路多径中断双模型（Vigants-Barnett 简式 / ITU-R P.530-18 正
@@ -46,7 +46,7 @@ JSON 可序列化值。零求解器依赖（§A 包跨件裁决）、零 ITU 数
   availability_margin 返回的 diff_band 与 test_fading.py 差异带报告）。
   **不设对错门，如实记录带**（任务书口径）。
 
-参考：规格深案 §A-9；calc_families/propagation.py
+参考：docs/plan_deepdive_specs_20261002.md §A-9；calc_families/propagation.py
 注册薄壳先例；锚树 tests/unit/test_fading.py。
 """
 

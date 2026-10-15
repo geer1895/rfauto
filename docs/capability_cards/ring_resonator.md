@@ -44,7 +44,7 @@
 - 参数语义：r_mean_mm=环平均半径（谐振尺度：闭环周长 2πr_mean=n·λg；名义值由 f1 经 HJ εeff 反解 c/(2πf1√εeff)，ring_resonator_design_params 单源）；w_mm=环带 线宽（50Ω HJ 口径 1.1134mm，εeff 随之）；gap_mm=馈线-环带间隙（间隙电容 耦合 v1 口径，决定 Q_c/抽头强度）；feed_w_mm=50Ω 馈线宽（HJ 精算）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）——本 模板缺省自动档触发缝分辨守卫（NEAR=0.285mm>gap/3），须显式 mesh≤4·gap/3 （C3 族同口径）；环带基点缘/馈线带缘/馈端与缝缘精确入网 + 缝中线入网 （#198/#311）；渲染守卫：NEAR≤gap/3（#266 族缝分辨）、feed_len≥42·NEAR （#347 族 MeasPlaneShift-FeedShift 分离）、r_in>0；全轴 1µm 近重合去重 （#152）；端口面贴 PML_8 域边（#154 前节）
 - 冒烟现状：未冒烟（离线审计过，#212，test_ring_resonator_template）；近似级别如实 登记：v1 闭式未含色散/曲率修正与栅格化慢波补偿（ratrace_ring_mesh_k 两锚 定标于 70.7Ω 线宽未对本模板定标，禁止外推复用），εr 提取精度由 G2 闭环+ HFSS 仲裁另批兑现
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

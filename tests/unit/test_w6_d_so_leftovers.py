@@ -95,21 +95,31 @@ class TestHairpinBpfGenerator:
                       if len(p.points) == 4]  # U 形四点折线
         assert len(resonators) == 3
         arm = (30.0 - 3.0) / 2.0
+        margin = 2.5  # 缺省留白档
         u0 = resonators[0]
-        assert u0.points[0] == (0.0, 0.0)
-        assert u0.points[1] == (0.0, pytest.approx(arm))
+        # artwork 自 (margin, margin) 起（ge9 审查 R6 P1-2 板框包含修复：
+        # 原钉 (0,0) 起点伴随左馈起点 x=−margin 悬出板左缘、U 开路端中心线
+        # 压板底缘半宽切边——坐标钉随修复同笔重写，不固化旧几何）
+        assert u0.points[0] == (margin, margin)
+        assert u0.points[1] == (margin, pytest.approx(margin + arm))
         # 相邻谐振器间距 = arm_gap + 2w + gap（边缘到边缘缝口径）
         pitch = 3.0 + 2.0 * 1.113 + 0.5
-        assert resonators[1].points[0][0] == pytest.approx(pitch)
-        # 抽头馈线 y = tap_frac·arm，自开口端（y=0）计
+        assert resonators[1].points[0][0] == pytest.approx(margin + pitch)
+        # 抽头馈线 y = margin + tap_frac·arm（自开口端计）；输入起自板左缘
+        # x=0、输出止于板右缘 x=board_w（修复后注释语义归位）
         feeds = [p for p in paths if len(p.points) == 2]
         assert len(feeds) == 2
-        assert feeds[0].points[0][1] == pytest.approx(0.4 * arm)
-        assert feeds[1].points[1][1] == pytest.approx(0.4 * arm)
+        assert feeds[0].points[0] == (0.0, pytest.approx(margin + 0.4 * arm))
+        board_w = pitch * 2 + 3.0 + 1.113 + 2.0 * margin
+        assert feeds[1].points[1] == (pytest.approx(board_w),
+                                      pytest.approx(margin + 0.4 * arm))
 
     def test_board_covers_artwork(self) -> None:
         from rfauto.adapters.layout_generator import (
+            LayoutCircle,
+            LayoutPath,
             LayoutPolygon,
+            LayoutVia,
             generate_layout,
         )
 
@@ -122,6 +132,31 @@ class TestHairpinBpfGenerator:
         assert min(xs) == 0.0 and min(ys) == 0.0
         # 板高 = arm + 2·margin
         assert max(ys) == pytest.approx((20.0 - 2.0) / 2.0 + 2.0 * 2.5)
+        # 真包含断言（名实相符，ge9 审查 R6 P1-2：原版只查板框自身坐标、
+        # 从不查 artwork 是否在板框内，审查席实测 4 越界点）——全部
+        # artwork 顶点 ∈ 板框 bbox（含边界：馈线端点按设计贴板缘，
+        # 平头盖帽下铜箔不越缘；圆/过孔按中心±半径计）
+        tol = 1e-9
+        verts: list[tuple[float, float]] = []
+        for it in lay.items:
+            if it is board:
+                continue
+            if isinstance(it, (LayoutPath, LayoutPolygon)):
+                verts += list(it.points)
+            elif isinstance(it, LayoutCircle):
+                cx, cy = it.center
+                r = it.radius_mm
+                verts += [(cx - r, cy), (cx + r, cy),
+                          (cx, cy - r), (cx, cy + r)]
+            elif isinstance(it, LayoutVia):
+                cx, cy = it.position
+                r = it.pad_diameter_mm / 2.0
+                verts += [(cx - r, cy), (cx + r, cy),
+                          (cx, cy - r), (cx, cy + r)]
+        assert verts, "artwork 顶点集为空（板框独占？）"
+        for x, y in verts:
+            assert min(xs) - tol <= x <= max(xs) + tol, (x, y)
+            assert min(ys) - tol <= y <= max(ys) + tol, (x, y)
 
     def test_default_width_from_synthesis_single_source(self) -> None:
         from rfauto.adapters.layout_generator import generate_layout
@@ -141,6 +176,9 @@ class TestHairpinBpfGenerator:
               tap_frac=0.4, w_mm=1.0), "arm_len_mm"),
         (dict(order=1, arm_len_mm=30.0, arm_gap_mm=3.0, gap_mm=0.5,
               tap_frac=1.5, w_mm=1.0), "tap_frac"),
+        # 半宽出板缘守卫（ge9 R6 P1-2 修复配套）：margin < w/2 fail-loud
+        (dict(order=1, arm_len_mm=30.0, arm_gap_mm=3.0, gap_mm=0.5,
+              tap_frac=0.4, w_mm=6.0), "margin"),
     ])
     def test_param_guards(self, bad: dict, match: str) -> None:
         from rfauto.adapters.layout_generator import generate_layout
@@ -473,20 +511,12 @@ class TestContributingNumbers:
     """
 
     def test_count_matches_named_gate_log(self) -> None:
-        # 公开分发视图：公开 CONTRIBUTING 为独立版本，不带内部全量门日志
-        # 计数注记（runs/ 历史门日志亦不入公开仓）——本测属内部账本耦合面，
-        # 公开仓如实 skip。
-        if "runs/" not in (_REPO / "CONTRIBUTING.md").read_text(
-                encoding="utf-8"):
-            pytest.skip("公开 CONTRIBUTING 无门日志注记（分发视图分歧），如实 skip")
         text = (_REPO / "CONTRIBUTING.md").read_text(encoding="utf-8")
         m = re.search(
             r"`(runs/[^`]+\.log)`: (\d+) passed \+ (\d+) failed", text)
         assert m, "CONTRIBUTING 缺门日志计数注记"
         log_path = _REPO / m.group(1)
-        if not log_path.exists():
-            # 公开分发视图：runs/ 历史门日志不入公开仓——如实 skip
-            pytest.skip(f"点名的门日志不在公开仓（证据缺席）: {log_path}")
+        assert log_path.exists(), f"点名的门日志不存在: {log_path}"
         tail = log_path.read_text(encoding="utf-8", errors="replace")[-4000:]
         tm = re.search(
             r"TOTAL: (\d+) passed, (\d+) failed", tail)

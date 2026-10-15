@@ -481,7 +481,7 @@ class TestNominalSizingClosedForms:
         assert d["stub_len_mm"] == pytest.approx(lamg / 8, rel=1e-12)
 
     def test_sizing_deterministic(self) -> None:
-        """确定性内核：同入参两次调用逐位一致。"""
+        """确定性内核：同入参两次调用逐位一致（AGENTS 硬规则 7）。"""
         a = ms_patch_resonant_len_mm(10.0, ER, H_MM)
         b = ms_patch_resonant_len_mm(10.0, ER, H_MM)
         assert a == b

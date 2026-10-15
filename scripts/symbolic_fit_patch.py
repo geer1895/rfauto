@@ -6,7 +6,7 @@
 产物：runs/symbolic_fit/patch_f0.json（确定性、无时间戳；同输入重跑逐字节一致），
       stdout 打印复杂度-精度 Pareto 与裁判偏差。
 
-数据面（先确认真实路径存在，再归纳—— #222 规则）：
+数据面（先确认真实路径存在，再归纳——AGENTS #222 规则）：
     遍历 runs/**/simulation.py，取带 AddMetal("patch") 且同目录有 sparams.csv
     的渲染点，从脚本常量块解析 ER / H_SUB / PL / PW（脚本即真值，不回读样本
     记录），再从 sparams.csv 的 |S11| 谱提取**最低频合格局部谷**（基模 TM10

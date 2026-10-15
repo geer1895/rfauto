@@ -55,7 +55,7 @@
 
 - 参数语义：z1_width_mm=高阻段宽（HJ 96.9Ω，交替起点），z2_width_mm=低阻段宽（HJ 24.8Ω），seg_len_mm=单段长度，n_segments=段数，feed_w_mm=两端馈线宽（50Ω HJ 精算 1.1133mm，六百七十一/#1c 修复批：端口线=50Ω 使 #250 参考系分裂机制根除；缺省回退 z1=修复前口径）。旧文本 z1 低阻/z2 高阻系标签颠倒勘误
 - 网格：分段 junction 处 y 向 near 加密
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

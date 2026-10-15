@@ -1,0 +1,218 @@
+{
+ "ok": false,
+ "errors": [
+  "consumption_load: 消费指针登记面缺失：knowledge/pitfall_consumption.yaml",
+  "uncovered_solver_pitfall: solver 类坑 #154（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #149/#150/#155（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 A216（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 A220（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #208（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #212（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #215/#217（comsol）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 A304（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #232（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一",
+  "uncovered_solver_pitfall: solver 类坑 #323（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+ ],
+ "schema": "rfauto-pitfall-consumption-sla/1",
+ "n_solver_entries": 13,
+ "n_covered": 3,
+ "coverage": [
+  {
+   "id": "#154",
+   "category": "hfss",
+   "tokens": [
+    "#154"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#149/#150/#155",
+   "category": "openems",
+   "tokens": [
+    "#149",
+    "#150",
+    "#155"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#152",
+   "category": "openems",
+   "tokens": [
+    "#152"
+   ],
+   "covered_by": [
+    "playbook:pit_refs"
+   ],
+   "covered": true
+  },
+  {
+   "id": "#174",
+   "category": "openems",
+   "tokens": [
+    "#174"
+   ],
+   "covered_by": [
+    "playbook:pit_refs"
+   ],
+   "covered": true
+  },
+  {
+   "id": "A216",
+   "category": "hfss",
+   "tokens": [
+    "A216"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "A220",
+   "category": "hfss",
+   "tokens": [
+    "A220"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#208",
+   "category": "openems",
+   "tokens": [
+    "#208"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#212",
+   "category": "openems",
+   "tokens": [
+    "#212"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#215/#217",
+   "category": "comsol",
+   "tokens": [
+    "#215",
+    "#217"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "A304",
+   "category": "openems",
+   "tokens": [
+    "A304"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#232",
+   "category": "openems",
+   "tokens": [
+    "#232"
+   ],
+   "covered_by": [],
+   "covered": false
+  },
+  {
+   "id": "#233",
+   "category": "elmer",
+   "tokens": [
+    "#233"
+   ],
+   "covered_by": [
+    "playbook:pit_refs"
+   ],
+   "covered": true
+  },
+  {
+   "id": "#323",
+   "category": "openems",
+   "tokens": [
+    "#323"
+   ],
+   "covered_by": [],
+   "covered": false
+  }
+ ],
+ "faces": {
+  "index_search": {
+   "ok": true,
+   "probe": "pitfall_notes_for 首条 solver 坑标题词"
+  },
+  "premortem_note": {
+   "ok": true,
+   "probe": "premortem_service 源内 pitfall 注入接线"
+  },
+  "error_hint": {
+   "ok": true,
+   "n_rules": 17,
+   "probe": "list_hint_rules 非空规则表"
+  }
+ },
+ "violations": [
+  {
+   "kind": "consumption_load",
+   "detail": "消费指针登记面缺失：knowledge/pitfall_consumption.yaml"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#154",
+   "detail": "solver 类坑 #154（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#149/#150/#155",
+   "detail": "solver 类坑 #149/#150/#155（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "A216",
+   "detail": "solver 类坑 A216（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "A220",
+   "detail": "solver 类坑 A220（hfss）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#208",
+   "detail": "solver 类坑 #208（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#212",
+   "detail": "solver 类坑 #212（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#215/#217",
+   "detail": "solver 类坑 #215/#217（comsol）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "A304",
+   "detail": "solver 类坑 A304（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#232",
+   "detail": "solver 类坑 #232（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  },
+  {
+   "kind": "uncovered_solver_pitfall",
+   "id": "#323",
+   "detail": "solver 类坑 #323（openems）无任何消费指针——playbook pit_refs 与 consumption 行二选一"
+  }
+ ]
+}

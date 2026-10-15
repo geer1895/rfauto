@@ -26,7 +26,21 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=17 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | w_cpw_mm | 0.510468 |
+| 2 | gap_cpw_mm | 0.16042 |
+| 3 | line_len_mm | 0.0 |
+| 4 | r_via_mm | 0.0 |
+| 5 | trans_len_mm | 0.0 |
+| 6 | via_offset_mm | 0.0 |
+| 7 | via_spacing_mm | 0.0 |
+| 8 | w_msl_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -47,7 +61,7 @@
 
 - 参数语义：w_msl_mm=50Ω 微带宽（HJ 反解），w_cpw_mm=50Ω CPWG 中心带宽（_cpwg_ri brentq 反解 @gap），gap_cpw_mm=CPW 缝宽，line_len_mm=总长（MSL/CPW 直段各半），trans_len_mm=渐变区长，r_via_mm/via_spacing_mm/via_offset_mm=接地过孔半径/列间距/地内缘→过孔中心
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；微带带缘 + CPW 四条几何边（带缘/地内缘）+ 缝中线 + 渐变区两端精确入网（#198）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

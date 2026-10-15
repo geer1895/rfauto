@@ -1,4 +1,4 @@
-"""F-L 第 1 步 Pospieszalski 噪声内核单测（研究扩充 round6 §二 F-L）。
+"""F-L 第 1 步 Pospieszalski 噪声内核单测（docs/research_expansion_20260926_round6.md §二 F-L）。
 
 裁判口径（#118 双路径，先于引源逐位 #122）：
 - 路径 A（被测）= core/fet_noise.py 本征闭式 / 数值嵌入四参；
@@ -473,8 +473,31 @@ class TestServiceEnvelope:
         bad = {"model": {"cgs_f": -1.0, "ri_ohm": 2.0, "gm_s": 0.05, "gds_s": 2e-3},
                "f_hz": 10e9, "tg_k": 297.0, "td_k": 1500.0}
         out_bad = fet_noise_evaluate(bad)
-        assert out_bad["ok"] is False and "error" in out_bad
+        assert out_bad["ok"] is False and "errors" in out_bad
         assert fet_noise_evaluate("not-a-dict")["ok"] is False
+
+    def test_service_error_envelope_schema_version_1_1(self):
+        """AU-2 域升版回归钉（1.0→1.1，2026-10-14 ENGH）：失败信封单源构造器形。
+
+        单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+        schema_version 诊断键保留。
+        """
+        import json
+
+        from rfauto.service.fet_noise_service import (
+            FET_NOISE_SERVICE_SCHEMA_VERSION,
+            fet_noise_evaluate,
+        )
+
+        assert FET_NOISE_SERVICE_SCHEMA_VERSION == "1.1"
+        env = fet_noise_evaluate({"f_hz": 10e9})
+        assert env["ok"] is False
+        assert list(env) == ["ok", "errors", "schema_version"]
+        assert isinstance(env["errors"], list) and env["errors"]
+        assert all(isinstance(s, str) for s in env["errors"])
+        assert env["schema_version"] == "1.1"
+        assert "data" not in env  # 失败不带半截载荷
+        json.dumps(env)
 
     def test_service_extrinsic_and_sparams(self):
         from rfauto.service.fet_noise_service import fet_noise_evaluate

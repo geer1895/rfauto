@@ -12,7 +12,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "t_match_impedance",
-    "T-match 输入阻抗（Balanis 3ed §9.7.3，(9-48)–(9-51)）：α=acosh"
+    "T-match阻抗：T-match 输入阻抗（Balanis 3ed §9.7.3，(9-48)–(9-51)）：α=acosh"
     "((v²−u²+1)/2v)/acosh((v²+u²−1)/2uv)（u=a/a', v=s/a'）；Zt=jZ0·tan"
     "(kl'/2)、Z0=60·acosh((s²−a²−a'²)/(2aa'))；Zin=2Zt(1+α)²Za/"
     "(2Zt+(1+α)²Za)；l'≈λ/2 折合极限 Zin→(1+α)²Za（等半径 α=1→4Za）",

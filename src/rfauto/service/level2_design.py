@@ -32,7 +32,7 @@
      七环节×组件文件锚矩阵
   ④ 防污染：验收集 id 与 agentbench_public.yaml 交集非空即 FAIL
 
-铁律 7：本模块不产生任何物理数字——NL 解析只读取
+铁律 7（AGENTS 规则 7）：本模块不产生任何物理数字——NL 解析只读取
 用户"要求"的频率/阻抗/衰减（需求值，进 spec 与综合内核入参），几何
 初值只出自综合内核，S 参数只出自 fake 闭式模型，指标只出自 SpecEvaluator，
 报告数字只出自白名单。LLM 通道只负责"分类+抽取需求"，其输出经 pydantic
@@ -341,7 +341,7 @@ def synthesize_initial(family: str,
 
 
 # ---------------------------------------------------------------------------
-# ②b XC-A 锚→设计自动修正（偏差面；规格 规格深案
+# ②b XC-A 锚→设计自动修正（偏差面；规格 docs/plan_deepdive_specs_20261002.md
 #    §B-2。与 warm_start 分层：warm_start（optimization/warm_start.py 的
 #    Jaccard 相似度门）=参数面优化起点；本节=偏差面综合闭式输出修正；
 #    XC-A 产物（修正后初值/收缩 bounds）可作 warm_start 候选输入不越层——
@@ -697,10 +697,15 @@ def run_optimize_kickoff(family: str, synth: Mapping[str, Any], *,
         if out_dir is not None:
             target = Path(out_dir)
             target.mkdir(parents=True, exist_ok=True)
-            path = target / f"surrogate_kickoff_{_kickoff_tag(tag or family)}.json"
-            path.write_text(json.dumps({"kickoff": out, "loop_result": dict(result)},
-                                       ensure_ascii=False, indent=1, default=str),
-                            encoding="utf-8")
+            # A7 P2-3 同类点收口：工件落盘走 recipe_guard 统一出口
+            # （out_dir 调用方显式指定=explicit 档；缺省 runs/ 行为不变）。
+            from rfauto.infra.recipe_guard import write_recipe_text
+
+            path = write_recipe_text(
+                target / f"surrogate_kickoff_{_kickoff_tag(tag or family)}.json",
+                json.dumps({"kickoff": out, "loop_result": dict(result)},
+                           ensure_ascii=False, indent=1, default=str),
+                explicit=True)
             out["artifact_path"] = str(path)
     except Exception as exc:  # 预算耗尽/异常一律如实记录，不抛（发起≠完成）
         out["kickoff_status"] = "failed"
@@ -1091,6 +1096,8 @@ def design_kickoff(
 
     out_dir 缺省 ``runs/level2_design/<task_id 或 kickoff 时间戳>/``；传
     None 落缺省，目录创建失败不致命（#105：草稿路径照回、内容内嵌信封）。
+    落盘经 infra/recipe_guard 统一出口（A7 P2-3）：out_dir 显式指定=
+    explicit 档合法原地写，覆盖受保护原件时信封带 ``overwritten=True``。
 
     Returns:
         dict: ok 信封（family/task_id/bounds/objectives/recipe_draft/
@@ -1148,17 +1155,22 @@ def design_kickoff(
     recipe_path = record_path = None
     try:
         target.mkdir(parents=True, exist_ok=True)
-        import yaml
+        # A7 P2-3：落盘经 recipe_guard 统一出口（禁绕守卫）。out_dir 由
+        # 调用方/CLI --out 显式指定=显式保存入口（guard explicit 档合法
+        # 原地写，infra/recipe_guard docstring 口径；缺省 runs/ 路径不在
+        # 保护根下，行为不变）。覆盖受保护原件时 overwritten 标记透传
+        # 信封（R2-D-03，v3_services.hfss_import_recipe 先例）。
+        from rfauto.infra.recipe_guard import write_recipe_text, write_recipe_yaml
 
-        record_path = target / "record.json"
-        record_path.write_text(
+        record_path = write_recipe_text(
+            target / "record.json",
             json.dumps(record, ensure_ascii=False, indent=2, default=str),
-            encoding="utf-8")
-        recipe_path = target / "recipe_draft.yaml"
-        recipe_path.write_text(
-            yaml.safe_dump(recipe_draft, allow_unicode=True, sort_keys=False),
-            encoding="utf-8")
+            explicit=True)
+        recipe_path = write_recipe_yaml(target / "recipe_draft.yaml",
+                                        recipe_draft, explicit=True)
     except OSError as exc:  # #105：落盘失败不拖垮信封，路径留 None 如实
+        # （RecipeWriteForbidden 是 OSError 子类：显式目标落保护根且被
+        #   判非法时同走本降级路径，内容内嵌信封如实。）
         return ok_envelope(
             family=family, task_id=task_id,
             bounds={k: list(v) for k, v in bounds.items()},
@@ -1168,7 +1180,7 @@ def design_kickoff(
             report=record.get("report") or "",
             errors=[f"草稿落盘失败（内容内嵌信封）: {exc}"])
 
-    return ok_envelope(
+    envelope = ok_envelope(
         family=family,
         task_id=task_id,
         bounds={k: list(v) for k, v in bounds.items()},
@@ -1180,6 +1192,10 @@ def design_kickoff(
         numeric=record.get("numeric") or {},
         report=record.get("report") or "",
     )
+    if getattr(recipe_path, "overwritten", False):
+        # R2-D-03：explicit 写覆盖受保护 recipes/ 既有原件时如实标注
+        envelope["overwritten"] = True
+    return envelope
 
 
 def design_close(

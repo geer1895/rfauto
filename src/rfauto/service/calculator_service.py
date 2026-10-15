@@ -14,7 +14,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from rfauto.core.calculators import CALCULATOR_REGISTRY
+from rfauto.core.calculators import (
+    CALC_GROUP_ORDER,
+    CALCULATOR_REGISTRY,
+    DEFAULT_CALC_GROUP,
+)
 from rfauto.service.envelope import ok_envelope
 
 
@@ -39,6 +43,10 @@ def list_calculators(include_experimental: bool = True) -> dict[str, Any]:
     include_experimental=False 时清单剔除实验键（壳层 ``--no-experimental``
     透传口径），``n_experimental``/``experimental`` 仍如实报告注册表里的
     实验键数量与名单（可见可审计）。
+
+    每键条目带 ``group``（工具箱分组，注册表 CALC_GROUP_TABLE 单源解析，
+    aurora72 A2-A）；信封 ``group_order`` 为 UI optgroup 建议序（含缺省组
+    "其他"殿后），与每键 group 同源。
     """
     calculators = CALCULATOR_REGISTRY.describe(
         include_experimental=bool(include_experimental))
@@ -51,6 +59,7 @@ def list_calculators(include_experimental: bool = True) -> dict[str, Any]:
         include_experimental=bool(include_experimental),
         n_experimental=len(experimental_names),
         experimental=experimental_names,
+        group_order=[*CALC_GROUP_ORDER, DEFAULT_CALC_GROUP],
     )
 
 
@@ -88,7 +97,13 @@ def run_calculator(name: str, params: dict[str, Any] | None = None, *,
     try:
         result = spec.func(**params)
     except TypeError as exc:
-        return {"ok": False, "error": f"参数不匹配: {exc}"}
+        # A8-D 错误消息可操作化：裸 TypeError 串 → 附可接受参数名清单
+        # （键形不变，单数 error 遗留族；test_calculators 断言子串兼容）
+        accepted = [p[0] for p in spec.params]
+        return {"ok": False,
+                "error": f"参数不匹配: {exc}"
+                         f"（可接受参数: {accepted}；"
+                         f"必填: {list(spec.required)}）"}
     except (ValueError, ZeroDivisionError, OverflowError, ArithmeticError) as exc:
         return {"ok": False, "error": str(exc)}
     return ok_envelope(calculator=name, params=params, result=result, experimental=bool(spec.experimental))

@@ -167,7 +167,7 @@ def extract_gate_lines(text: str) -> list[dict[str, Any]]:
 #   c3 → combline/interdigital/sir_bpf = knowledge/anchors.yaml c3.* 锚的
 #        template_family 注册值（注册表面，非臆测）；
 #   c4 → lange/cline_coupler/branchline = c4_z_substrate 门行 lange/
-#        cline_coupler 字面 + c4 批=耦合器网格收敛批；
+#        cline_coupler 字面 + c4 批=耦合器网格收敛批（ 口径）；
 #   marchand → marchand_balun = 族名前缀（marchand_* 战役系列）。
 FAMILY_ALIAS: dict[str, tuple[str, ...]] = {
     "marchand": ("marchand_balun",),
@@ -576,10 +576,17 @@ def migrate_v2(index_doc: dict[str, Any], index_sha256: str,
         except (OSError, yaml.YAMLError):
             pass
 
+    # note 内嵌未链接 run 清单（确定性：sorted(unmatched)，同参重生成逐字节
+    # 一致；trace 扩面专项 2026-10-06 起如实进矩阵 note，不再只留迁移摘要）
+    trace_note = ("EP-2 C-7 四向追溯矩阵（机械生成；strength=mechanical 待人工"
+                  "复核，四向键=gate/param/test/anchor；审计=check_numbers trace）")
+    if unmatched:
+        trace_note += ("；未链接 run " + str(len(unmatched))
+                       + " 件（人工复核清单，无族 token 候选，如实留白不凑链）："
+                       + ", ".join(sorted(unmatched)))
     trace_doc: dict[str, Any] = {
         "schema": TRACE_SCHEMA,
-        "note": "EP-2 C-7 四向追溯矩阵（机械生成；strength=mechanical 待人工"
-                "复核，四向键=gate/param/test/anchor；审计=check_numbers trace）",
+        "note": trace_note,
         "criteria_index_sha256": index_sha256,
         "source": {
             "index": str(Path(DEFAULT_INDEX.name)),
@@ -644,7 +651,7 @@ def main(argv: list[str] | None = None) -> int:
         description="扫 runs/**/criteria.md 构建只读判据清单（DP-13 Z1）；"
                     "--migrate-v2 产 v2 骨架+四向追溯矩阵（EP-2 C-7）")
     parser.add_argument("--runs-root", default="runs",
-                        help="runs 根目录（缺省 runs）")
+                        help="runs 根目录（缺省 runs/）")
     parser.add_argument("--out", default="knowledge/criteria/index.yaml",
                         help="输出 index.yaml 路径（--migrate-v2 模式忽略）")
     parser.add_argument("--migrate-v2", action="store_true",

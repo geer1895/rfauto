@@ -19,7 +19,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "correlated_cascade_nf",
-    "MT-1 相关级联噪声系数（round17 MT-1，Hillbrand-Russer 链式噪声相关"
+    "相关级联噪声：MT-1 相关级联噪声系数（round17 MT-1，Hillbrand-Russer 链式噪声相关"
     "矩阵在匹配 z0 功率波域的显式式）：级表（gain_db/nf_db，信号流向）+ "
     "级间加性噪声相关系数 → F_tot/NF + Friis 独立假设对照 + delta_nf_db"
     "（相关−独立差，核心产出）+ 等效噪声温度 + 逐级/逐对贡献分解。"

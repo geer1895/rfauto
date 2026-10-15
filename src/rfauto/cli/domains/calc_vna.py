@@ -1,14 +1,16 @@
-"""calc 子应用（计算器注册表面）+ sparams-compare + vna 子应用（AU-1 自 cli/main.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""calc 子应用（计算器注册表面）+ sparams-compare + vna/oracle 子应用（AU-1 自 cli/main.py 机械拆分，2026-09-30；oracle 只读出口为 P3 尾程项 13 追加）。"""
 
 from __future__ import annotations
 
 import json
 
 import typer
+from rich.table import Table
 
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── calc (E4 微波计算器) ─────────────────────────────────────────────────────
 
@@ -30,7 +32,7 @@ def _coerce_param(raw: str):
 def calc_list(
     include_experimental: bool = typer.Option(
         True, "--experimental/--no-experimental",
-        help="是否列出实验性公式（experimental=True 键，默认列出并打 [实验] 标签）"),
+        help="是否列出实验性公式（experimental=True 键，默认列出并打【实验】标签）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """列出全部计算器与参数表（实验键带【实验】标签，运行需 --allow-experimental）。"""
@@ -254,7 +256,7 @@ def vna_measure_cmd(
     ref_s2p: str | None = typer.Option(None, "--ref",
                                        help="仿真参考 Touchstone（给定时附带 En 报告）"),
     runs_dir: str | None = typer.Option(None, "--runs-dir",
-                                        help="run 落盘根目录（缺省 runs）"),
+                                        help="run 落盘根目录（缺省 runs/）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """VNA 测量采集 run（真机 opt-in：无 --address 时只出 dry-run 计划信封）。
@@ -331,17 +333,17 @@ def vna_calibrate_cmd(
     from rfauto.service.vna_service import vna_calibrate_standalone
 
     if not measurements:
-        _emit({"ok": False,
-               "errors": ["--measurements 至少给一条（类型=文件，可多次）"]},
-              "缺少 --measurements", json_output=json_output)
+        _emit(error_envelope(
+            "--measurements 至少给一条（类型=文件，可多次）"),
+            "缺少 --measurements", json_output=json_output)
         raise typer.Exit(code=1)
     pairs: dict[str, str] = {}
     for item in measurements:
         key, sep, val = item.partition("=")
         if not sep or not key.strip() or not val.strip():
-            _emit({"ok": False,
-                   "errors": [f"--measurements 需 类型=文件 形式: {item}"]},
-                  "参数形式错误", json_output=json_output)
+            _emit(error_envelope(
+                f"--measurements 需 类型=文件 形式: {item}"),
+                "参数形式错误", json_output=json_output)
             raise typer.Exit(code=1)
         pairs[key.strip()] = val.strip()
     result = vna_calibrate_standalone(
@@ -355,3 +357,123 @@ def vna_calibrate_cmd(
             console.print(f"  校准网络 → [cyan]{result['written']}[/cyan]")
     if not result.get("ok"):
         raise typer.Exit(code=1)
+
+
+# ─── oracle (QM-2 闭式预言机只读出口：list/check/check-all) ──────────────────
+# A-11 深审裁定（2026-10-08）："不构成重开理由"=只做只读 CLI 出口——本节
+# 零逻辑薄壳直连 core/closed_form_oracle 既有纯函数面（registry 元数据 +
+# cross_check_oracle/cross_check_all），不加新逻辑不改内核；无状态零写盘
+# （铁律 7：数值只在确定性内核）。报告面语义=#122（测量与报告：D 级旗标
+# =人工审计入口，不自动判死——命令退出码不因旗标翻红，裁决随信封数据
+# 如实透出，脚本消费方读 ok/verdict/flags 字段而非退出码）。
+
+
+def _oracle_registry_rows() -> list[dict]:
+    """注册表只读视图（键/kind/覆盖/闭式源声明/域盒/网格点数）。
+
+    grid() 为内核确定性纯函数（域盒内参数网格），此处只求 len 不展开。"""
+    from rfauto.core.closed_form_oracle import CLOSED_FORM_ORACLES
+
+    return [{"key": oc.key, "kind": oc.kind, "covers": list(oc.covers),
+             "reference": oc.reference, "domain_box": oc.domain_box,
+             "n_grid_points": len(oc.grid())}
+            for oc in CLOSED_FORM_ORACLES.values()]
+
+
+oracle_app = typer.Typer(help="闭式预言机（QM-2 生成式对拍，只读查询面）")
+app.add_typer(oracle_app, name="oracle")
+
+
+@oracle_app.command("list")
+def oracle_list_cmd(
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """列出全部已注册闭式预言机（键/kind/覆盖键/闭式源/域盒声明）。
+
+    示例：rfauto oracle list --json
+    """
+    from rfauto.core.closed_form_oracle import CLOSED_FORM_ORACLE_SCHEMA
+
+    rows = _oracle_registry_rows()
+    result: dict = ok_envelope(schema=CLOSED_FORM_ORACLE_SCHEMA,
+                               n_oracles=len(rows), oracles=rows)
+    if json_output:
+        console.print_json(json.dumps(result, indent=2, ensure_ascii=False))
+        raise typer.Exit(code=0)
+    table = Table(title=f"闭式预言机注册表（QM-2，{len(rows)} 条）")
+    table.add_column("key")
+    table.add_column("kind")
+    table.add_column("covers")
+    table.add_column("domain_box")
+    for row in rows:
+        table.add_row(row["key"], row["kind"], ", ".join(row["covers"]),
+                      row["domain_box"])
+    console.print(table)
+    raise typer.Exit(code=0)
+
+
+@oracle_app.command("check")
+def oracle_check_cmd(
+    key: str = typer.Argument(..., help="oracle 键（rfauto oracle list 查看）"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """单键生成式对拍（注册计算器输出 vs 闭式期望，网格逐点 A/B/C/D 分级）。
+
+    示例：rfauto oracle check attenuator_pi --json
+    """
+    from rfauto.core.closed_form_oracle import CLOSED_FORM_ORACLES, cross_check_oracle
+
+    if key not in CLOSED_FORM_ORACLES:
+        # AU-2 信封契约：失败信封 errors 恒 list[str]（单数 error 键为
+        # 登记遗留族，新代码禁新增——ge8e 审查批改归正形）
+        _emit(error_envelope(
+            f"未知 oracle 键: {key}",
+            known_keys=sorted(CLOSED_FORM_ORACLES)),
+            f"未知 oracle 键: {key}（rfauto oracle list 查看全部键）",
+            json_output=json_output)
+        return
+    result = cross_check_oracle(key)
+    if json_output:
+        console.print_json(json.dumps(result, indent=2, ensure_ascii=False,
+                                      default=str))
+        raise typer.Exit(code=0)
+    console.print(f"[bold]{result['key']}[/bold]  kind={result['kind']}  "
+                  f"grade=[cyan]{result['grade']}[/cyan]  "
+                  f"verdict={result['verdict']}")
+    console.print(f"  闭式源: {result['reference']}")
+    console.print(f"  域盒: {result['domain_box']}")
+    console.print(f"  网格 {result['n_grid_points']} 点：评估 "
+                  f"{result['n_evaluated']} / 域外跳过 "
+                  f"{result['n_skipped_domain']}")
+    for q, slot in sorted(result["per_quantity"].items()):
+        console.print(f"  - {q}: worst={slot['worst_grade']}  "
+                      f"rel={slot['worst_rel_err']:.3g}")
+    for issue in result.get("issues") or []:
+        console.print(f"  [yellow]! {issue}[/yellow]")
+    raise typer.Exit(code=0)
+
+
+@oracle_app.command("check-all")
+def oracle_check_all_cmd(
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
+) -> None:
+    """全注册 oracle 生成式对拍总报告（覆盖键数 + 分级统计 + D 级旗标）。
+
+    示例：rfauto oracle check-all --json
+    """
+    from rfauto.core.closed_form_oracle import cross_check_all
+
+    result = cross_check_all()
+    if json_output:
+        console.print_json(json.dumps(result, indent=2, ensure_ascii=False,
+                                      default=str))
+        raise typer.Exit(code=0)
+    console.print(f"oracle 总报告：{result['n_oracles']} oracle 覆盖 "
+                  f"{result['n_keys']} 注册键  ok={result['ok']}")
+    for grade in sorted(result["by_grade"]):
+        console.print(f"  grade {grade}: {result['by_grade'][grade]}")
+    flags = result.get("flags") or []
+    for flag in flags:
+        console.print(f"[yellow]! D 级旗标（人工审计入口，不自动判死）: "
+                      f"{flag}[/yellow]")
+    raise typer.Exit(code=0)

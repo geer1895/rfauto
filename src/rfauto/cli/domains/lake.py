@@ -12,6 +12,7 @@ from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 from rfauto.cli.domains.surrogate import runs_app as runs_app
+from rfauto.service.envelope import error_envelope
 
 # ─── lake（df7 F3 runs 湖索引+分层压实薄壳：index/query/pack/verify/restore） ──
 # 五命令零逻辑转发 service/lake_service（规则 4，JSON 进出走 service）；
@@ -188,7 +189,7 @@ def lake_export_parquet_cmd(
     db: str = typer.Option(None, "--db",
                            help="索引库路径（缺省 runs/.lake_index.duckdb）"),
     out_dir: str = typer.Option(None, "--out-dir",
-                                help="parquet 冷层目录（缺省 <db 去后缀>.parquet）"),
+                                help="parquet 冷层目录（缺省 <db 去后缀>.parquet/）"),
     partition_by: str = typer.Option("created_date", "--partition-by",
                                      help="hive 分区列（空串=不分区）"),
     overwrite: bool = typer.Option(False, "--overwrite",
@@ -650,5 +651,5 @@ def port_gate_cmd(
     try:
         result = port_gate_from_json(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "端口门检查失败", json_output=True)

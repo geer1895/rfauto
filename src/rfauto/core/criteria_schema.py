@@ -276,7 +276,7 @@ def validate_registered_dir(criteria_dir: str | Path) -> dict[str, Any]:
                              "form": doc.decision_rule.form.value}
         else:
             msg = (f"{name}: 顶层注册面出现非 active 档"
-                   f"（status={doc.status.value}，骨架应入 skeleton）")
+                   f"（status={doc.status.value}，骨架应入 skeleton/）")
             errors.append(msg)
             by_file[name] = {"ok": False, "errors": [msg]}
 

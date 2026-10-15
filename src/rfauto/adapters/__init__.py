@@ -1,6 +1,6 @@
 """adapters 包：内置 EM 求解器注册面入口。
 
-注册表模式：新增"可替换组件" = 基类 + 注册表。
+注册表模式（项目规则 硬限 3）：新增"可替换组件" = 基类 + 注册表。
 注册表本体 = em_solver_base.EMSolverRegistry（键 = EMSolverType；观测面
 get_global_registry()）。本包 __init__ 只导入第一类通道；引擎级 SDK
 （pyaedt/MPh/meep/ngsolve/openEMS 绑定）在各模块内部惰性 import，导入
@@ -28,7 +28,11 @@ get_global_registry()）。本包 __init__ 只导入第一类通道；引擎级 
       —— optimization/service 消费点按 adapter_name 惰性 import 后直接
       实例化（optimization/optimizer.py 适配器创建分支），不走注册表；
     - ADS 通道：ads_python_api（A 档）/ ads_netlist（B 档主通道），独立
-      协议（service/adapter_kit.KNOWN_ADAPTERS contract=ads_python_api）。
+      协议（service/adapter_kit.KNOWN_ADAPTERS contract=ads_python_api）；
+    - EDB 平面族发射器（edb_templates 子包，工具·模板层）：branchline/
+      power_divider/coupled_line/ratrace/lange（2026-10-08 扩展三族；lange
+      综合单源提供、EDB 发射声明不支持）——声明式 spec 发射面，不经
+      注册表（契约正本 edb_templates/schema.py docstring）。
 
 键集完整性回归：tests/unit/test_adapters_registry_completeness.py 钉
 "导入键集 == 本清单""显式注册函数键集""重复注册幂等"与"全模块 import

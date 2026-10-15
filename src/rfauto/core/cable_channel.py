@@ -1,9 +1,9 @@
 """M-8 电缆-连接器通道组装（cable channel builder）。
 
 spec 出处（三层对齐）：
-- 月度增强方案 L164「M-8 电缆-连接器通道组装」
+- docs/monthly_enhancement_plan_20260926.md L164「M-8 电缆-连接器通道组装」
   （§C 测量与实物闭环流）；
-- 研究扩充 §M-8 规格原文：电缆段=频变 RLGC（从
+- docs/research_expansion_20260926.md §M-8 规格原文：电缆段=频变 RLGC（从
   同轴闭式或实测 S 参数提取 RLGC）级联 + 连接器 .s2p 段拼接 → 整通道
   Network；判据=同轴闭式 RLGC→S 参数→通道报告与解析插损逐位；两段电缆+
   连接器组装 vs 整体 skrf 级联逐位（级联恒等式）；
@@ -138,7 +138,7 @@ def coax_rlgc(
     sigma_s_per_m: float,
     tan_d: float,
 ) -> CableRLGC:
-    """同轴电缆闭式 RLGC（频变；规格出处 研究扩充 §M-8）。
+    """同轴电缆闭式 RLGC（频变；规格出处 docs/research_expansion_20260926.md §M-8）。
 
     - L' = μ0/(2π)·ln(b/a)、C' = 2π·ε0·εr/ln(b/a)（静态场精确闭式）；
     - R'(f) = Rs/(2π)·(1/a + 1/b)，Rs = sqrt(π f μ0 / σ)（趋肤串联电阻

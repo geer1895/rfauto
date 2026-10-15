@@ -128,7 +128,7 @@ uv pip install --python .venv\Scripts\python.exe pip setuptools wheel cython set
 scripts\build_python_bindings.cmd
 ```
 
-实测要点（详见 -86）：
+实测要点（详见  #81-86）：
 
 - Cython 3.3 产物需 C++17，绑定 setup.py 在 MSVC 下不传 `/std` → 用 `CL`
   环境变量注入，不改上游 setup.py；

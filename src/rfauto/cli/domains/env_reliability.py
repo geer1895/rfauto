@@ -21,6 +21,7 @@ from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── fault-tree（fault_tree_service 复合叶：build+MCS+mermaid 单次产出） ─────
 # z3 为可选依赖（未装 service 如实 ok=False，不静默回退）；mermaid 不单独
@@ -60,8 +61,7 @@ def fault_tree_report_cmd(
     )
 
     if out_format not in ("json", "mermaid"):
-        _emit({"ok": False,
-               "errors": [f"--format 须为 json 或 mermaid，实际 {out_format!r}"]},
+        _emit(error_envelope(f"--format 须为 json 或 mermaid，实际 {out_format!r}"),
               "故障树报告失败")
         return
     built = _build(playbook or None)
@@ -128,8 +128,7 @@ def datasheet_build_cmd(
     )
 
     if out_format not in ("md", "html"):
-        _emit({"ok": False,
-               "errors": [f"--format 须为 md 或 html，实际 {out_format!r}"]},
+        _emit(error_envelope(f"--format 须为 md 或 html，实际 {out_format!r}"),
               "datasheet 渲染失败")
         return
     report = None
@@ -139,7 +138,7 @@ def datasheet_build_cmd(
         try:
             report = _report_model(run_dir)
         except (FileNotFoundError, OSError, ValueError) as exc:
-            _emit({"ok": False, "errors": [f"run 报告模型构建失败: {exc}"]},
+            _emit(error_envelope(f"run 报告模型构建失败: {exc}"),
                   "datasheet 构建失败")
             return
     try:
@@ -151,7 +150,7 @@ def datasheet_build_cmd(
         )
         content = _render_html(model) if out_format == "html" else _render_md(model)
     except (KeyError, TypeError, ValueError) as exc:
-        _emit({"ok": False, "errors": [f"datasheet 构建失败: {exc}"]},
+        _emit(error_envelope(f"datasheet 构建失败: {exc}"),
               "datasheet 构建失败")
         return
     envelope: dict = {
@@ -212,7 +211,7 @@ def humidity_uptake_cmd(
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "吸湿估计失败", json_output=json_output)
 
 
@@ -234,7 +233,7 @@ def humidity_msl_cmd(
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "MSL 查询失败", json_output=json_output)
 
 
@@ -262,7 +261,7 @@ def weave_styles_cmd(
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"参数非法: {exc}"]}
+        result = error_envelope(f"参数非法: {exc}")
     _emit(result, "样式表查询失败", json_output=json_output)
 
 
@@ -284,7 +283,7 @@ def weave_estimate_cmd(
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "skew 估计失败", json_output=json_output)
 
 
@@ -313,5 +312,5 @@ def cryo_surface_cmd(
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
-        result = {"ok": False, "errors": [f"payload 非法: {exc}"]}
+        result = error_envelope(f"payload 非法: {exc}")
     _emit(result, "低温材料面估计失败", json_output=json_output)

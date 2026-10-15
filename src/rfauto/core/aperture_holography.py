@@ -77,7 +77,7 @@ k=2π/λ）——逐式出处见下"出处"节：
   零转复数；bool/NaN/Inf/非二维拒收；数值标量显式拒收 bool）。
 
 接线说明：本模块为 core 隔离件，array_service holography/calibrate 端点
-挂接留后续批次（规格见 研究扩充 §三 M-2）。
+挂接留后续批次（规格见 docs/research_expansion_20260926.md §三 M-2）。
 """
 
 from __future__ import annotations

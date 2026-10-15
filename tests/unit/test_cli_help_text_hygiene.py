@@ -17,6 +17,13 @@ click 渲染面**禁 `%%`**（会字面双显，仅 argparse scripts/ 面合法�
 "命令 help 文本"），探针已留档（runs/research_seats_20261004/ra_criteria/
 _probe_d06_help.py）供后续批清零（followUp 登记）。
 
+2026-10-11 aurora36 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
+profile_app×2，改写口径同上：全角【】/圆括号/描述化，语义不变），D-06
+参数级欠账闭合——新增 TestParamHelpTextHygiene 下探 cmd.params 逐
+click.Parameter.help（同一棵树同一判定面），裸 `[` 全禁棘轮（参数 help 无
+%-展开，% 面不进参数级门）。源码级归因工具=scripts/check_cli_help_bracket
+.py（AST 静态扫，merge_preflight 检查面）。
+
 E2 席一次性探针（runs/review_ge8e/e2_cli_mcp_ui/evidence/smoke_help_all.py，
 198 命令 subprocess 冒烟）转常驻的静态化版本：不逐命令起进程（秒级、零
 subprocess），同一棵树同一判定面。
@@ -109,3 +116,66 @@ class TestCliHelpTextHygiene:
         cmd = _Cmd()
         cmd.short_help = "50% 处"
         assert _help_violations([("x y", cmd)]) == {("x y", "percent")}
+
+
+class TestParamHelpTextHygiene:
+    """D-06 参数级清偿（2026-10-11 aurora36 W5-C）：参数 help 同禁裸 [。
+
+    命令级门（上方 TestCliHelpTextHygiene）只查 cmd.help/short_help；本类
+    下探 cmd.params 逐 click.Parameter.help——typer.Option/Argument 的 help
+    字面同经 rich 渲染，裸 `[` 同样吞词元（`A [exp] B`→`A  B`）或炸
+    MarkupError。清偿前残留 21 处（bench_app×5、cli/domains×14、
+    profile_app×2，2026-10-11 W5-C 清偿，改写=全角【】/圆括号/描述化），
+    清偿后全禁棘轮（零基线）。参数 help 经 click 无 %-展开，% 面不进本门。
+    源码级归因工具=scripts/check_cli_help_bracket.py（preflight 检查面）。
+    """
+
+    def test_param_tree_has_params(self, cli_nodes):
+        """健全性：参数面必须非空（防 app 构建形态变化让门空转）。"""
+        total = sum(len(getattr(cmd, "params", None) or []) for _, cmd in cli_nodes)
+        assert total > 500
+
+    @staticmethod
+    def _param_bracket_violations(
+            nodes: list[tuple[str, Any]]) -> list[tuple[str, str, str]]:
+        """全部节点 params 的 help 裸 `[` 违例清单（确定性、无渲染副作用）。"""
+        out: list[tuple[str, str, str]] = []
+        for path, cmd in nodes:
+            for param in getattr(cmd, "params", None) or []:
+                text = getattr(param, "help", None) or ""
+                if "[" in text:
+                    out.append((path, str(getattr(param, "name", "?")), text))
+        return out
+
+    def test_no_param_help_brackets(self, cli_nodes):
+        """全禁断言：全树参数 help 零裸 [（D-06 参数级 2026-10-11 清偿后收紧）。"""
+        current = self._param_bracket_violations(cli_nodes)
+        assert current == [], (
+            f"参数级 help 含裸 [ 共 {len(current)} 处: {sorted(current)}。"
+            f"{_REPO_ALL_BANNED_NOTE}"
+        )
+
+    def test_param_detector_sensitivity_negative_control(self):
+        """探测器灵敏度：参数 help 含裸 [ 必被抓；无 [ 不误报。"""
+
+        class _Cmd:  # 最小鸭子样本（walk 消费 params 属性）
+            help: str = ""
+            short_help: str = ""
+            commands: dict | None = None
+            params: list | None = None
+
+        cmd = _Cmd()
+        cmd.params = [_ParamStub('JSON 文件（键 samples，值为数值数组）')]
+        assert self._param_bracket_violations([("x y", cmd)]) == []
+        cmd.params = [_ParamStub('规范限 [metric,op,value] 格式')]
+        assert self._param_bracket_violations([("x y", cmd)]) == [
+            ("x y", "p", '规范限 [metric,op,value] 格式')
+        ]
+
+
+class _ParamStub:
+    """click.Parameter 最小鸭子替身（name/help 两属性）。"""
+
+    def __init__(self, help_text: str, name: str = "p") -> None:
+        self.help = help_text
+        self.name = name

@@ -17,6 +17,7 @@ model3d_for_params 两函数的行为契约。
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -270,9 +271,13 @@ _FORBIDDEN_UI_TOKENS = (
 
 class TestUiLayerStaticGuard:
     def test_server_source_has_no_parsing_or_computation(self):
-        import rfauto.ui.server as server_mod
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（handler 分域入 routes/，
+        # 守卫随面走：任一 UI 模块出现解析/计算即红）。
+        import rfauto.ui as ui_pkg
 
-        src = Path(server_mod.__file__).read_text(encoding="utf-8")
+        ui_dir = Path(ui_pkg.__file__).parent
+        src = "\n".join(
+            p.read_text(encoding="utf-8") for p in sorted(ui_dir.rglob("*.py")))
         hits = [t for t in _FORBIDDEN_UI_TOKENS if t in src]
         assert hits == [], (
             f"UI 层出现解析/计算，应下沉 service（#90/#92）: {hits}")
@@ -280,6 +285,44 @@ class TestUiLayerStaticGuard:
         bad = ("import yaml\n"
                "from rfauto.adapters.openems_templates import geometry_spec\n")
         assert [t for t in _FORBIDDEN_UI_TOKENS if t in bad]
+
+    def test_static_pages_no_internal_absolute_path_placeholder(self):
+        # UI-R9 P2-5（uir8 审查；上传零敏感口径 项目规则 8）：static 面 js
+        # 不出现盘符绝对路径（filebrowser 占位符曾是 D:\rf_workspace；
+        # vendor/ 排除——echarts.min.js 压缩体有 N:+ 类良性误命中）。
+        import rfauto.ui as ui_pkg
+
+        static_dir = Path(ui_pkg.__file__).parent / "static"
+        js_files = [p for p in sorted(static_dir.rglob("*.js"))
+                    if "vendor" not in p.parts]
+        pat = re.compile(r"[A-Za-z]:\\+")
+        hits = {p.name: pat.findall(p.read_text(encoding="utf-8"))
+                for p in js_files}
+        hits = {k: v for k, v in hits.items() if v}
+        assert hits == {}, f"static 面出现盘符绝对路径: {hits}"
+        # 守卫非空转：坏样本必命中（防正则笔误退化成永真）
+        assert pat.findall(r'placeholder="D:\rf_workspace 或其子目录"')
+        # 修复本体钉：filebrowser 占位符为中性文案
+        fb = (static_dir / "pages" / "filebrowser.js").read_text(
+            encoding="utf-8")
+        assert 'placeholder="工作区目录或其子目录"' in fb
+
+    def test_filebrowser_failure_branch_reads_error_envelope_compat(self):
+        # UI-R11（A6 P2-3）：filebrowser 失败分支走 errorText 兼容读法
+        # （dom.js 单源：errors 列表 join → error → reason → 兜底，
+        # cli/domains/anchors.py _error_text 同款语义）——error_envelope
+        # 只有 errors 列表，裸读 d.error 曾把 "undefined" 渲染给用户。
+        import rfauto.ui as ui_pkg
+
+        static_dir = Path(ui_pkg.__file__).parent / "static"
+        fb = (static_dir / "pages" / "filebrowser.js").read_text(
+            encoding="utf-8")
+        assert "import { errorText, esc, escAttr } from \"./dom.js\";" in fb
+        assert "el.textContent = errorText(d);" in fb
+        assert "d.error" not in fb  # 裸读零残留（注释也不提裸形态）
+        # 守卫非空转：dom.js 单源在位（行为钉在 test_ui_modules_behavior）
+        dom = (static_dir / "pages" / "dom.js").read_text(encoding="utf-8")
+        assert "export function errorText(" in dom
 class TestPageEndpointsContract:
     """三页 HTTP 薄壳：契约注记 contract_check 打通（service 契约已验证）。"""
 

@@ -1,7 +1,7 @@
 """df6 DP-2 Q 半（单腔 Q_u 三方对拍）fixture 发射驱动（T32 草案）。
 
 规格与判据预声明（先写后跑，#122）：runs/df6_dp2diag/q_half/launch_ready.md。
-三方 ground = 规格深案 §DP-2 判据 4 +
+三方 ground = docs/plan_deepdive_specs_20260924.md §DP-2 判据 4 +
 runs/df6_dp2diag/criteria.md §5：**三方 = vf / circle / skrf.qfactor.Qfactor
 （reflection），极差 ≤ 15%，不过 → FAIL 落档**。
 T36（2026-09-29）：vf 腿由 q_factor_vf（q_e 输入，存档预演 admit 全败，

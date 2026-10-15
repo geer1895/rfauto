@@ -347,18 +347,18 @@ def _near_points(template: str, params: dict[str, Any],
         ny += [-ap, ap]                   # 反焊盘方边（y）
     elif template == "atten_pi":
         w = float(params.get("w_mm", _nominal_width.W50_MM)) * 1e-3
-        d = float(params.get("shunt_off_mm", 6.0)) * 1e-3
+        d = float(params.get("shunt_off_mm", 0.75)) * 1e-3
         g = 0.5 * 1e-3                    # 串臂断口半长/元件盒半宽（mm→m）
         nx += [-w / 2, w / 2, -g / 2, g / 2]          # 带缘 + shunt 盒 x 边
         ny += [-d - g / 2, -d + g / 2, -g, g,
                d - g / 2, d + g / 2]                  # shunt 盒 y 边 + 串臂断口
     elif template == "atten_t":
         w = float(params.get("w_mm", _nominal_width.W50_MM)) * 1e-3
-        d = float(params.get("shunt_off_mm", 6.0)) * 1e-3
+        d = float(params.get("shunt_off_mm", 0.75)) * 1e-3
         g = 0.5 * 1e-3
         nx += [-w / 2, w / 2, -g / 2, g / 2]          # 带缘 + shunt 盒 x 边
-        ny += [-d - g / 2, -d + g / 2, -g, g,
-               d - g / 2, d + g / 2]                  # shunt 盒 y 边 + 串臂断口
+        ny += [-d - g / 2, -d + g / 2, -g / 2, g / 2,
+               -g, g, d - g / 2, d + g / 2]           # 串臂断口 + 中点 shunt 盒 y 边
     elif template == "ratrace":
         wf = float(params.get("w_feed_mm", _nominal_width.W50_MM)) * 1e-3
         # 渲染半径 = 物理半径 / k(BASE)（阶梯环慢波伪象补偿随网格档标度，

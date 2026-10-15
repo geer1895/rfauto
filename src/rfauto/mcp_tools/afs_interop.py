@@ -54,7 +54,7 @@ def afs_plan(
 # ─── 41. ME-10' HFSS Touchstone 注释块直读（interop_service 薄壳） ───────────
 # 零逻辑转发 service/interop_service.hfss_touchstone_comments →
 # adapters/touchstone_interop.read_hfss_touchstone_comments（KJ-P2 模态基
-# 直读抓手：! Gamma 传播常数 + ! Port Impedance（Zpi 口径，#254）。
+# 直读抓手：! Gamma 传播常数 + ! Port Impedance（Zpi 口径，#254））。
 
 
 @mcp.tool

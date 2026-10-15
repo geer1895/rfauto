@@ -299,6 +299,147 @@ def test_abort_exhausted_fails_and_downstream_aborted(tmp_path) -> None:
     assert solve_calls.count("s1") == 2
 
 
+def test_aborted_downstream_revives_after_upstream_fixed(tmp_path) -> None:
+    """A7 P1-1 回归钉：两节点链 a 失败→b aborted；修复 a 后 resume，
+    b 复位回队重跑并收敛（verdict 非 ABORTED）——修复前 b 永远 aborted，
+    resume 永远无法收官（唯一出路=手改期刊内部格式）。"""
+    run_dir = tmp_path / "run1"
+    _seed_inputs(run_dir)
+    calls: list[str] = []
+    upstream_broken = [True]
+
+    def ex(node: dict, ctx: dict) -> dict:
+        calls.append(node["node_id"])
+        if node["node_id"] == "r1" and upstream_broken[0]:
+            return {"ok": False, "outputs": [], "wall_s": 0.01,
+                    "message": "首轮渲染失败（模拟待修复缺陷）"}
+        return {"ok": True, "outputs": [_write_output(node, ctx)],
+                "wall_s": 0.01}
+
+    executors = {"render": ex, "solve": ex, "postprocess": ex, "judge": ex}
+    plan = _plan_chain([("r1", "render"), ("s1", "solve")])
+    res1 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res1["verdict"] == "ABORTED"
+    assert res1["statuses"]["r1"] == "failed"
+    assert res1["statuses"]["s1"] == "aborted"
+
+    # 上游缺陷修复 → resume：r1 重跑成功，s1 复活重跑
+    upstream_broken[0] = False
+    calls.clear()
+    res2 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res2["verdict"] == "COMPLETE"
+    assert res2["statuses"]["r1"] == "done"
+    assert res2["statuses"]["s1"] == "done"
+    assert calls == ["r1", "s1"], "复活节点未回队重跑"
+    state = json.loads((run_dir / DAG_STATE_FILE).read_text(encoding="utf-8"))
+    notes = " ".join(state["nodes"]["s1"]["notes"])
+    assert "复位回队" in notes
+    assert "上游 r1 failed" in notes, "复活面不得抹掉原 abort 归因注记"
+
+
+def test_aborted_chain_revives_cascading_after_root_fixed(tmp_path) -> None:
+    """A7 P1-1 级联钉：三节点链根失败→中/下游全 aborted；根修复后 resume
+    经 中间节点重跑成功→下游逐级复活（direct 复位传导），全链收敛。"""
+    run_dir = tmp_path / "run1"
+    _seed_inputs(run_dir)
+    calls: list[str] = []
+    root_broken = [True]
+
+    def ex(node: dict, ctx: dict) -> dict:
+        calls.append(node["node_id"])
+        if node["node_id"] == "r1" and root_broken[0]:
+            return {"ok": False, "outputs": [], "wall_s": 0.01, "message": "x"}
+        return {"ok": True, "outputs": [_write_output(node, ctx)],
+                "wall_s": 0.01}
+
+    executors = {"render": ex, "solve": ex, "postprocess": ex, "judge": ex}
+    plan = _plan_chain([("r1", "render"), ("s1", "solve"),
+                        ("r2", "render")])
+    res1 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res1["statuses"]["s1"] == "aborted"
+    assert res1["statuses"]["r2"] == "aborted"
+
+    root_broken[0] = False
+    calls.clear()
+    res2 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res2["verdict"] == "COMPLETE"
+    assert calls == ["r1", "s1", "r2"], calls
+    assert all(res2["statuses"][n] == "done" for n in ("r1", "s1", "r2"))
+
+
+def test_aborted_stays_dead_while_upstream_fails_again(tmp_path) -> None:
+    """A7 P1-1 反向钉：上游修复无效（再次失败）时，本轮失败分支重新判死
+    下游——复活面不得造成"带病下游"执行。"""
+    run_dir = tmp_path / "run1"
+    _seed_inputs(run_dir)
+    calls: list[str] = []
+
+    def ex(node: dict, ctx: dict) -> dict:
+        calls.append(node["node_id"])
+        if node["node_id"] == "r1":
+            return {"ok": False, "outputs": [], "wall_s": 0.01,
+                    "message": "持续失败"}
+        return {"ok": True, "outputs": [_write_output(node, ctx)],
+                "wall_s": 0.01}
+
+    executors = {"render": ex, "solve": ex, "postprocess": ex, "judge": ex}
+    plan = _plan_chain([("r1", "render"), ("s1", "solve")])
+    res1 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res1["statuses"]["s1"] == "aborted"
+    calls.clear()
+    res2 = run_dag(plan, run_dir, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res2["verdict"] == "ABORTED"
+    assert res2["statuses"]["s1"] == "aborted"
+    assert "s1" not in calls, "上游仍失败时 aborted 下游不得执行"
+
+
+def test_cross_run_cache_hit_preserves_partial_status(tmp_path) -> None:
+    """A7 P2-1 回归钉：源跑超预算 partial 的节点经跨 run 缓存命中复用时，
+    复用侧 journal 如实记 partial（run verdict=PARTIAL），不洗白为 done；
+    源跑注记随引用保留。"""
+    run1 = tmp_path / "run1"
+    _seed_inputs(run1)
+
+    def ex(node: dict, ctx: dict) -> dict:
+        return {"ok": True, "outputs": [_write_output(node, ctx)],
+                "wall_s": 100.0}                 # ≫ 10×1.5 预算帽
+
+    executors = {"render": ex, "solve": ex, "postprocess": ex, "judge": ex}
+    plan = _plan_chain([("r1", "render")])
+    res1 = run_dag(plan, run1, executors, cache_dir=tmp_path / "cache",
+                   engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert res1["verdict"] == "PARTIAL"
+    assert res1["statuses"]["r1"] == "partial"
+
+    run2 = tmp_path / "run2"
+    _seed_inputs(run2)
+    calls2: list[str] = []
+    res2 = run_dag(plan, run2, _chain_executors(calls2),
+                   cache_dir=tmp_path / "cache", engine_version="fake-1",
+                   solve_lock_path=tmp_path / "solve.lock")
+    assert calls2 == [], "缓存命中节点不应执行"
+    assert res2["statuses"]["r1"] == "partial", (
+        "超预算 partial 经缓存复用被静默提升为 done（A7 P2-1）")
+    assert res2["verdict"] == "PARTIAL"
+    state = json.loads((run2 / DAG_STATE_FILE).read_text(encoding="utf-8"))
+    entry = state["nodes"]["r1"]
+    assert entry["source"] == "cache"
+    assert any("超预算" in n for n in entry["notes"])
+
+
 def test_race_completed_accepts_real_result(tmp_path) -> None:
     run_dir = tmp_path / "run1"
     _seed_inputs(run_dir)

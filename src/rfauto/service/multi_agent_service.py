@@ -1,12 +1,12 @@
 """多 Agent 编排服务（WP3.8 三层栈·组装层）——评审/调优/验证分工端到端。
 
-方案口径（续跑计划 §4 WP3.8 + 扩充提案 F1）：2025-26 收敛三层栈——
+方案口径（延续计划 §4 WP3.8 + 扩充提案 F1）：2025-26 收敛三层栈——
 **LangGraph 式工作流状态机**（agent_graph，propose→verify→fix 自愈环的图
 实现）+ **MCP 工具层**（agent_mcp_layer，同 mcp_server 生态标准工具协议的
 进程内桥）+ **A2A 协议**（a2a_protocol，Agent 间互操作）——评审（reviewer）/
 调优（tuner）/验证（verifier）三个角色 Agent 分工协作。
 
-分工（数值铁律  规则 7：所有物理数字都出自确定性内核，角色只编排）：
+分工（数值铁律 项目规则 规则 7：所有物理数字都出自确定性内核，角色只编排）：
 - **调优 Agent（tuner）**：调内核 ``rf_propose_params``——初值=界中点；
   后续轮把 reviewer 的 typed fixes 落成候选参数（scale 修正 + 宽度组
   ±step 探测候选），本身不产生数字；

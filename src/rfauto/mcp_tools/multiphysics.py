@@ -34,14 +34,14 @@ def parasitic_extract_rlc(payload: dict[str, Any]) -> dict[str, Any]:
     WP4.4b（可选 Q3D 注入对比）。无副作用，纯确定性（core/parasitic +
     adapters/kicad_drc 几何规则）；闭式锚面不替代场提取器精算；payload
     形状见 service/parasitic_service 模块文档（pcb/substrate/...）。
-    未知/缺字段/DRC 不过 → {ok: False, error|stage} 显式报错。
+    未知/缺字段/DRC 不过 → {ok: False, errors} 显式报错（DRC 失败带 stage）。
     只读无时序约束。
 
     Args:
         payload: 寄生提取链输入（未知字段/缺字段显式报错）
 
     Returns:
-        dict: {ok, chain: {geometry, drc, anchor, q3d}} 或 {ok: False, error|stage}
+        dict: {ok, schema_version, chain: {geometry, drc, anchor, q3d}} 或 {ok: False, errors}
     """
     from rfauto.service.parasitic_service import extract_interconnect_rlc
     return extract_interconnect_rlc(payload)
@@ -66,7 +66,7 @@ def topology_propose(
     sandbox_name 给定时写沙箱草稿（runs/recipe_sandbox，不 promote）；
     promote=True（需 sandbox_name）时草稿继续走 L1 白名单/L2 模板离线
     试运行/L3 token 准入链迁 promoted/。不用于直接改工作区配方（走沙箱
-    三层 Gate）。spec 非法/未知提议器 → {ok: False, error} 如实。
+    三层 Gate）。spec 非法/未知提议器 → {ok: False, errors} 如实。
 
     Args:
         spec: FilterSpec 字段 {f0_ghz, fbw, rl_db, stop_rejection_db?, order_hint?, family_hint?}
@@ -78,7 +78,7 @@ def topology_propose(
         promote: 草稿继续走三层 Gate 准入链（需 sandbox_name）
 
     Returns:
-        dict: {ok, proposer, proposal, initial, campaign, sandbox, promote} 或 {ok: False, error}
+        dict: {ok, schema_version, proposer, proposal, initial, campaign, sandbox, promote} 或 {ok: False, errors}
     """
     from rfauto.service.topology_service import propose_topology
     return propose_topology(spec, proposer=proposer, campaign=campaign,

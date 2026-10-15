@@ -15,6 +15,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 SRC = Path(__file__).resolve().parents[2] / "src"
 sys.path.insert(0, str(SRC))
 
@@ -144,3 +146,50 @@ class TestChainAuditService:
             "mesh_resolution_mm": 1.0})
         assert out["ok"] is True
         assert "网格欠分辨" in out["unknown_instances"][0]["reason"]
+
+    # ── 基板高单源（审查 A3 P3-5 回归钉）───────────────────────────────
+
+    def test_declared_substrate_h_mm_unit(self):
+        # 声明 h_mm（mm）须 mm→m 换算后进 layout——旧码直传 0.508 当米
+        # （1000× 单位偏差）且与 D6 声明比对口径自相矛盾（d6 必假）
+        out = ccs.compose_chain_audit({
+            "chain": [{"template": "siw"}],
+            "band_ghz": self.BAND, "mesh_resolution_mm": 0.5,
+            "substrate": {"h_mm": 0.508, "er": 3.66}})
+        assert out["ok"] is True
+        assert out["instances"][0]["substrate"]["h_m"] == \
+            pytest.approx(0.508e-3, rel=1e-12)
+        assert out["d6_substrate_consistent"] is True
+        assert out["verdict"] == "clean"
+
+    def test_declared_h_mm_zero_not_shadowed(self):
+        # 显式 h_mm=0 不被 ``or 缺省`` 顶替——layout 正有限守卫如实报
+        # unknown 行（attention），不静默用 0.508mm 兜底
+        out = ccs.compose_chain_audit({
+            "chain": [{"template": "siw"}],
+            "band_ghz": self.BAND, "mesh_resolution_mm": 0.5,
+            "substrate": {"h_mm": 0}})
+        assert out["ok"] is True
+        assert out["verdict"] == "attention"
+        assert "h 必须为正有限" in out["unknown_instances"][0]["reason"]
+
+    def test_substrate_non_dict_ok_false(self):
+        # 程序性入参错转 ok=False（JSON 进出薄面契约；旧码 AttributeError）
+        out = ccs.compose_chain_audit({
+            "chain": [{"template": "siw"}], "band_ghz": self.BAND,
+            "mesh_resolution_mm": 0.5, "substrate": [0.508]})
+        assert out["ok"] is False
+        assert "substrate" in out["errors"][0]
+
+    def test_h_missing_declaration_fail_fast(self, monkeypatch):
+        # 全链无 h_mm 声明（无 substrate + 模板 nominal 无 h_mm）→
+        # fail-fast ok=False，不静默兜底硬编码基板（与 mesh 缺失同口径）
+        from rfauto.adapters.oe_templates import render_siw
+
+        monkeypatch.setitem(render_siw.TEMPLATE_NOMINAL, "siw",
+                            {"w_mm": 12.0})
+        out = ccs.compose_chain_audit({
+            "chain": [{"template": "siw"}],
+            "band_ghz": self.BAND, "mesh_resolution_mm": 0.5})
+        assert out["ok"] is False
+        assert "基板高" in out["errors"][0]

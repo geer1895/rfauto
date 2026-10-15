@@ -7,7 +7,8 @@ RFAutoError
 ├── AdapterError
 │   ├── ConnectFailedError    # 重试3次退避 → 硬失败
 │   ├── ModelBuildError       # 几何无效 → 自愈 R1
-│   └── SimulationFailedError # 优化器跳过该组
+│   ├── SimulationFailedError # 优化器跳过该组
+│   └── HfssSessionDeadError  # #413 会话毒化（元数据查询返 None）→ fail-fast
 ├── LicenseError              # 立即暂停任务入队等待
 ├── OptimizationDivergedError # 收缩搜索域回滚至最近 checkpoint
 └── SolveTimeoutError         # 操作超时（求解/连接等）
@@ -70,6 +71,19 @@ class SimulationFailedError(AdapterError):
     """仿真求解失败 → 优化器跳过该参数组。"""
 
     error_type = "SimulationFailedError"
+
+
+class HfssSessionDeadError(AdapterError):
+    """AEDT 会话毒化（#413）→ fail-fast，重建走 HfssSession.reconnect()。
+
+    失败的边界/端口赋值后，AEDT 设计元数据查询面（GetBoundaries/
+    GetVariables/GetSolutionType）由 [] 静默转 None，后续所有操作连环
+    失败且自动化脚本的 finally 清理路径必死（pyaedt 1.4.0 × AEDT 2025 R1
+    gRPC 实证）。检测到该签名（元数据查询返回 None）即抛；会话重建由
+    HfssSession.reconnect() 承担，业务操作不自动重试（决策留给上层）。
+    """
+
+    error_type = "HfssSessionDeadError"
 
 
 class LicenseError(RFAutoError):

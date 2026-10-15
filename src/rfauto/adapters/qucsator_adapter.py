@@ -8,7 +8,7 @@ GPL）——与 openEMS/Meep（全波 FDTD）互补：微带传输线类结构�
 （ra3xdh/qucs_s release，sha256 80025a24…b3ef1c 实测对上）自带
 ``bin/qucsator_rf.exe``（版本串 Qucsator 1.0.7 fork；模拟器源码为
 qucs_s 的 git submodule ra3xdh/qucsator_rf）。安装位置 E 盘
-：``E:\\tools\\qucsatorRF\\bin``。
+（项目规则 硬规则 1）：``E:\\tools\\qucsatorRF\\bin``。
 
 可执行解析链（同 spice_netlist.resolve_ngspice_exe 口径）：显式参数 →
 env ``RFAUTO_QUCSATOR_BIN``（exe 或目录）→ configs/solvers.yaml
@@ -82,7 +82,7 @@ logger = logging.getLogger(__name__)
 
 _C0_M_S = 299792458.0
 
-#: 工作区随带 qucsatorRF 的缺省位置。
+#: 工作区随带 qucsatorRF 的缺省位置（项目规则 硬规则 1：工具链落 E 盘工作区）。
 _WORKSPACE_QUCSATOR = Path(__file__).resolve().parents[3] / "tools" / "qucsatorRF" / "bin"
 
 #: N7 安装探测落点（任务书指定 E:\qucsatorRF 或 E:\tools\qucsatorRF；

@@ -44,12 +44,6 @@ except ImportError:  # pragma: no cover —— 无 rfauto 环境兜底
     HAVE_REPO_CORE = False
 
 REAL_DOC = REPO / "docs" / "rf_template_references.md"
-# 公开分发视图 skip：三测以内部矿源文档原文为判据语料——发布脱敏中性化了
-# 文档中的出处注记，抽取锚随之漂移（promotion 集合变化）；管线判据本体
-# 由合成语料单测覆盖（本文件其余用例）。
-REAL_DOC_SKIP_REASON = (
-    "矿源文档经发布脱敏（出处注记中性化），真档 promotion 判据漂移——"
-    "公开视图如实 skip；管线判据由合成语料用例覆盖")
 GAMMA_GRID = m.GAMMA_EPSR_GRID
 GAMMA_TRUTH = m.GAMMA_CALIB
 TOL = m.GAMMA_REL_TOL
@@ -118,9 +112,15 @@ def test_gamma_full_pipeline_recovery_md(real_report: dict) -> None:
     cid = real_report["promoted_ids"][0]
     ga = real_report["gates"]["A_backlink"][cid]
     gb = real_report["gates"]["B_numeric"][cid]
-    # §11.1 γ 定义行（原 L319；2026-10-06 §7 CPWPort 新口径补记 +5 行顺移，
-    # 行段锚家族 #325 时点钉适配）
-    assert ga["pass"] and ga["anchor"] == "L324"
+    # 锚=γ 定义行物理行号。按唯一 needle 动态定位后拼锚（ge9 审查 R7 P2-2，
+    # #325 行段锚家族：原硬钉 L324 已随 §7 CPWPort 补记 +5 行顺移断过一次，
+    # 再硬钉新行号下次 §11.1 之前插文必三断——内容断言保留，行号不硬钉；
+    # needle 唯一性=全文档仅 γ 定标式一处含 0.9014，丢失即 next() 显式炸）
+    gamma_line_no = next(
+        i for i, line in enumerate(
+            REAL_DOC.read_text(encoding="utf-8").splitlines(), start=1)
+        if "0.9014·εr^(−0.6361)" in line)
+    assert ga["pass"] and ga["anchor"] == f"L{gamma_line_no}"
     assert gb["max_rel_err"] <= TOL
     assert len(gb["per_point"]) == 8
     for point in gb["per_point"]:
@@ -209,7 +209,6 @@ def test_pdf_unavailable_md_only_fallback_honest(
 # ---------------------------------------------------------------------------
 # 判据 G2：幻觉负例三连拦截
 # ---------------------------------------------------------------------------
-@pytest.mark.skip(REAL_DOC_SKIP_REASON)
 def test_negative_wrong_constant_intercepted_by_gate_b(
     negatives: dict,
 ) -> None:
@@ -219,7 +218,6 @@ def test_negative_wrong_constant_intercepted_by_gate_b(
     assert neg["max_rel_err"] is not None and neg["max_rel_err"] > TOL
 
 
-@pytest.mark.skip(REAL_DOC_SKIP_REASON)
 def test_negative_broken_backlink_intercepted_by_gate_a(
     negatives: dict,
 ) -> None:
@@ -364,7 +362,6 @@ def test_candidate_registrable_via_repo_0cz() -> None:
 # ---------------------------------------------------------------------------
 # CLI 端到端（零网络）+ 产物契约
 # ---------------------------------------------------------------------------
-@pytest.mark.skip(REAL_DOC_SKIP_REASON)
 def test_cli_end_to_end(tmp_path: Path) -> None:
     out_dir = tmp_path / "out"
     rc = m.main(["--docs", str(REAL_DOC), "--out", str(out_dir)])

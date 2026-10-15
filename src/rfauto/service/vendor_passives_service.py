@@ -1,6 +1,6 @@
 """C15 厂商被动元件库 service（JSON 进出）: registry 盘点/匹配链偏差/条目登记。
 
-方案依据（续跑计划 §10.3 C15）: "SimSurfing/Coilcraft 接入元件
+方案依据（延续计划 §10.3 C15）: "SimSurfing/Coilcraft 接入元件
 registry（自谐振/ESR 元数据），模型按厂商条款走下载器不入 git"。
 验收列（§10.22 #24 口径）: "LNA 匹配网络真实电感 S2P vs 理想 lumped 偏差
 量化报告"。

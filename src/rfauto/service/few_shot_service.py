@@ -1,6 +1,6 @@
 """few_shot_service：成功轨迹 → few-shot 案例精选与注入面（AD-3，round15 §五）。
 
-规格：研究扩充 round15 AD-3「few-shot 自动精选：
+规格：docs/research_expansion_20261002_round15.md AD-3「few-shot 自动精选：
 成功轨迹挖 2-3 例进 prompt」（P2/M）。
 
 数据源（确定性挖掘，无 LLM、无网络）：

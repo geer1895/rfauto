@@ -1,6 +1,6 @@
 """MT-4 接收机损伤三件套（round17 规格，频域纯闭式；相噪积分消费 clock_noise）。
 
-规格：研究扩充 round17 §二 MT-4（P1/S-M）。
+规格：docs/research_expansion_20261002_round17.md §二 MT-4（P1/S-M）。
 三件（以规格为准）：
 
 1. **IQ 失衡 IRR**：增益/相位失衡 → 镜像抑制比 + EVM 贡献（3GPP 口径）。

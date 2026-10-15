@@ -23,7 +23,15 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-_PAGES = _STATIC / "pages.js"
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
+def _pages_union_text() -> str:
+    parts = [_STATIC / "pages.js"]
+    parts += sorted((_STATIC / "pages").glob("*.js"))
+    return "\n".join(p.read_text(encoding="utf-8") for p in parts)
+
+_PAGES = _pages_union_text()
+
 _APP = _STATIC / "app.js"
 
 _NODE = shutil.which("node")
@@ -149,7 +157,7 @@ class TestEscSourcePins:
     """源码钉（免 node）：单源 helper 存在 + ①类插值面逐处走转义。"""
 
     def test_helper_single_source_defined_and_exported(self):
-        src = _PAGES.read_text(encoding="utf-8")
+        src = _PAGES
         # 单源：定义在 pages.js（五字符全转），app.js 经 import 复用
         assert "export function esc(" in src
         assert "export function escAttr(" in src
@@ -164,7 +172,7 @@ class TestEscSourcePins:
         assert '${esc(text)}</span>`' in app
 
     def test_representative_interpolation_surfaces_escaped(self):
-        src = _PAGES.read_text(encoding="utf-8")
+        src = _PAGES
         pins = {
             # 文件浏览器：路径属性 + 文件名文本（文件系统数据）
             'data-p="${escAttr(d.parent)}"': "fs 上级目录路径",
@@ -189,7 +197,7 @@ class TestEscSourcePins:
 
     def test_marked_main_vector_untouched(self):
         """marked+DOMPurify 主向量（218c5c9）未被本批破坏。"""
-        src = _PAGES.read_text(encoding="utf-8")
+        src = _PAGES
         assert "window.DOMPurify" in src
         assert "mdSanitize(window.marked.parse(" in src
 
@@ -210,7 +218,7 @@ class TestEscSourcePins:
         textContent/echarts 配置/canvas）。"""
         import re
 
-        src = _PAGES.read_text(encoding="utf-8")
+        src = _PAGES
         raw = re.compile(
             r"\$\{\s*(?!escAttr\(|esc\()"
             r"(?!(?:JSON|Math|Object|S|T)\.)"
@@ -229,7 +237,7 @@ class TestEscSourcePins:
             "${d.n_trials_total", "${d.n_feasible_total", "${d.n_pareto",
             "${d.n_without_cost", "${list.length", "${orig.length",
             "${work.length", "${trials.length", "${stats.length",
-            "${r.n_draws", "${r.nearest_sample.normalized_distance",
+            "${r.n_draws",
             "${r.rho", "${si.age_days",
             "${iso.levels_db.join", "${iso.n_vertices", "${iso.n_faces",
             "${vol.shape.join", "${vol.frequency_ghz", "${vol.n_timesteps",
@@ -237,21 +245,25 @@ class TestEscSourcePins:
             "${t.z_re_ohm", "${t.z_im_ohm",
         }
         # 2) textContent / canvas / echarts 配置 / URL 语境（非 HTML sink）
+        #    A7-A ui-kit 清理（2026-10-11）：${stats.map 随 uq 指标分布表迁
+        #    kitTable(rowsHtml) 退场（map 移出模板插值面）。
         exempt |= {
             "${val.model", "${val.template_hint", "${r.engine",
             "${r.has_variance", "${r.variance_note", "${r.honest_note",
             "${d.source", "${d.template", "${d.x_param", "${d.y_param",
             "${d.constraint_names.join", "${stats.turns", "${stats.llm_calls",
             "${stats.tool_calls", "${stats.prompt_tokens",
-            "${stats.completion_tokens", "${stats.map",
+            "${stats.completion_tokens",
             "${c.name", "${t.name", "${t.file", "${x.name", "${p.seriesName",
         }
         # 3) badge 系包裹（badge 内部 esc——参数里的 API 值已被转义）
         exempt |= {"${r.clamped.join", "${si.age_days", "${d.stale_count",
                    "${d.no_date_count"}
         # 4) 分派三元（分支全是静态字面量或已 esc/badge 包裹的 API 值）
+        #    A7-A ui-kit 清理：${s.available 随求解器可用徽章迁 kitBoolBadge 退场。
         exempt |= {
-            "${d.ok", "${d.warning", "${s.available", "${item.recipe",
+            "${d.ok", "${d.warning",
+            "${item.recipe",
             "${cs.milestone", "${m.detail", "${m.eta_gate.ok", "${it.parsed",
             "${p.filters", "${p.required", "${c.experimental", "${s.result",
             "${x.gt_unlocked", "${x.has_hf", "${x.visibility",
@@ -260,7 +272,9 @@ class TestEscSourcePins:
         }
         # 5) id 查找对（模板 id 与 T.$ 查找同用原始值，转义反而失配）
         exempt |= {"${s.axis"}
-        # 6) 代码控制常量（WIDGETS 注册表标题）与 builder 中间量（sink 处已 esc）
+        # 6) 代码控制常量与 builder 中间量（sink 处已 esc）
+        #    A7-A ui-kit 复核（2026-10-11）：${w.title 所在 widget 面板头按钮在
+        #    b 元素内闭合，与 kitPanelHead 形态字节不等如实不迁——条目保留。
         exempt |= {"${w.title", "${p.bounds.join", "${val.optimization.params"}
         # 7) ge5 P2-2 反向扫描新增存量命中（26 处，2026-10-01 逐处源码归因）：
         #    7a) 数字格式化（toFixed/toPrecision/length/一元+强转）
@@ -280,12 +294,16 @@ class TestEscSourcePins:
         #    7c) esc/fmtCell 全包裹（数据表 cols.map：th=esc(c)、td=fmtCell）
         exempt |= {"${cols.map"}
         #    7d) 分派三元（两分支均为静态字面量/badge 内部转义）
-        exempt |= {"${g.verdict", "${listing.viz3d_available"}
-        #    7e) id 查找对（\W/g 清洗后的 chart 容器 id）
+        #    A7-A ui-kit 清理：${g.verdict 随校准详情 verdict 徽章迁
+        #    kitVerdictBadge 退场（kit 前缀形态不在裸插值口径内）。
+        exempt |= {"${listing.viz3d_available"}
+        #    7e) id 查找对（/\W/g 清洗后的 chart 容器 id）
         exempt |= {"${f.replace"}
         # 7f) ge8b Wave B 服务受控字段面（席B2/B3 新页：画廊/仪表盘/profile/
         #     队列）——模板卡元数据/统计计数/成本数值/时长/平台枚举，全部来自
         #     后端受控 JSON（非自由用户输入）；自由文本出口经 esc 单源（钉上）。
+        #     A7-A ui-kit 清理：${dl.map 随队列决策日志表迁 kitTable(rows=dl)
+        #     退场（map 移出模板插值面）。
         exempt |= {
             "${body.join", "${c.f0_ghz", "${c.n_stages", "${c.preview",
             "${c.remote", "${c.scheduling", "${c.topology",
@@ -293,9 +311,21 @@ class TestEscSourcePins:
             "${d.best.trial_number", "${d.cost_mean", "${d.n_campaigns",
             "${d.n_previews", "${d.n_templates", "${d.params_source",
             "${d.table_rows", "${d.table_truncated", "${dl.length",
-            "${dl.map", "${m.initial", "${m.max", "${m.min", "${m.step",
+            "${m.initial", "${m.max", "${m.min", "${m.step",
             "${r.duration_s", "${r.fmt", "${r.output_path", "${r.rate_hz",
             "${s.license_gated", "${stages.map",
+        }
+        # aurora72 合流批（2026-10-12）：tools 页 A2-B/A3-A 落地的 15 处，逐条归因——
+        # ①textContent/计数/维度数字（无法携带标签）：cals/groups/vis/nums/val.length、
+        #   mat.rows/cols、g.items.length、groups.map（map 回调只产出组名字符串进 textContent 拼接）；
+        # ②echarts 文本语境（tooltip formatter/系列名按文本渲染，载荷=服务端计算器结果的
+        #   结构键名与数值矩阵，非用户输入面）：m.key/m.raw/mat.key/sub.title；
+        # ③esc 已包裹的分派三元：r.y/r.error（真值分支均走 esc()）。
+        exempt |= {
+            "${cals.length", "${g.items.length", "${groups.length",
+            "${groups.map", "${m.key", "${m.raw", "${mat.cols",
+            "${mat.key", "${mat.rows", "${nums.length", "${r.error",
+            "${r.y", "${sub.title", "${val.length", "${vis.length",
         }
         unregistered = hits - exempt
         stale = exempt - hits

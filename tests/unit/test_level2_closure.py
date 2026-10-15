@@ -182,6 +182,81 @@ class TestAnchorWriteback:
         assert not out["ok"] and "不得指向锚注册表目录" in out["errors"][0]
 
 
+class TestRecipeGuardRouting:
+    """A7 P2-3：本模块全部落盘经 infra/recipe_guard 统一出口的钉面。
+
+    显式路径（out_dir 落受保护 recipes/ 根——chdir tmp_path 使
+    <tmp>/recipes 受保护）不再被拦：explicit 档合法原地写，且覆盖既有
+    原件时 overwritten 标记透传信封（R2-D-03）；守卫缺省档（非显式）
+    仍拦隐式写（_samples_tmp 临时文件语义）。
+    """
+
+    def test_certify_samples_explicit_path_under_recipes_not_blocked(
+            self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        from rfauto.infra.recipe_guard import is_protected_recipe_path
+
+        out_dir = tmp_path / "recipes" / "closure_artifacts"
+        out_dir.mkdir(parents=True)
+        target = out_dir / "certify_samples_c8_guard.json"
+        target.write_text("preexisting", encoding="utf-8")  # 既有原件
+        assert is_protected_recipe_path(target)
+        out = certify_chain_design(_wilkinson_record("c8_guard"),
+                                   out_dir=out_dir)
+        assert out["ok"] and out["samples_path"] == str(target)
+        assert out["overwritten"] is True  # 覆盖受保护原件标记透传
+        payload = json.loads(target.read_text(encoding="utf-8"))
+        assert {"samples", "bounds", "objectives"} <= set(payload)
+
+    def test_certify_samples_fresh_protected_file_no_marker(
+            self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        out_dir = tmp_path / "recipes" / "closure_fresh"
+        out = certify_chain_design(_wilkinson_record("c8_fresh"),
+                                   out_dir=out_dir)
+        assert out["ok"] and out["samples_path"]
+        assert "overwritten" not in out  # 新建不带键（既有信封形态）
+
+    def test_anchor_draft_explicit_path_under_recipes_not_blocked(
+            self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        record = _wilkinson_record("c8_aguard")
+        record["anchor_correction"] = {
+            "applied": True, "anchor_id": "patch.f_dip_l.openems-v1",
+            "version": 1, "value": 76.8,
+            "injection": {"key": "patch_len_mm", "mode": "constant_over_f0",
+                          "old_value": 32.0, "new_value": 32.0}}
+        out_dir = tmp_path / "recipes" / "anchor_drafts"
+        out_dir.mkdir(parents=True)
+        pre = out_dir / "anchor_writeback_c8_aguard.draft.yaml"
+        pre.write_text("draft: preexisting\n", encoding="utf-8")
+        out = anchor_writeback_draft(record, out_dir=out_dir)
+        assert out["ok"] and out["draft_path"] == str(pre)
+        assert out["overwritten"] is True
+        payload = yaml.safe_load(pre.read_text(encoding="utf-8"))
+        assert payload["schema"] == "anchors/v1"  # 真草案覆盖了占位原件
+
+    def test_tmp_samples_default_tier_still_blocked_in_protected_root(
+            self, tmp_path, monkeypatch):
+        """守卫缺省档不动（非显式仍拦）：_samples_tmp 临时文件非用户显式
+        入口——临时目录被钉进受保护 recipes/ 下时 RecipeWriteForbidden，
+        链尾信封如实记账（certify 步失败、其余步不拖垮 #105）。"""
+        monkeypatch.chdir(tmp_path)
+        import tempfile as _tempfile
+
+        protected_tmp = tmp_path / "recipes" / "tmpdir"
+        protected_tmp.mkdir(parents=True)
+        monkeypatch.setattr(_tempfile, "gettempdir",
+                            lambda: str(protected_tmp))
+        envelope = close_level2_chain(_wilkinson_record("c8_tmpblk"),
+                                      out_dir=None)
+        assert not envelope["certify"]["ok"]
+        assert any("RecipeWriteForbidden" in e
+                   for e in envelope["certify"]["errors"])
+        assert envelope["anchor_writeback"]["ok"]
+        assert envelope["replan"]["ok"]
+
+
 class TestReplanAfterChain:
     def test_chain_error_routes_rerun(self):
         record = {"id": "x", "error": "ValueError: 关键词零命中"}

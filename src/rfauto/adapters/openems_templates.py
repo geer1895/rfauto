@@ -903,6 +903,12 @@ from .oe_templates.render_metasurface import (
     MS_JCROSS_NOMINAL as MS_JCROSS_NOMINAL,
 )
 from .oe_templates.render_metasurface import (
+    MS_MUSHROOM_META as MS_MUSHROOM_META,
+)
+from .oe_templates.render_metasurface import (
+    MS_MUSHROOM_NOMINAL as MS_MUSHROOM_NOMINAL,
+)
+from .oe_templates.render_metasurface import (
     MS_PATCH_META as MS_PATCH_META,
 )
 from .oe_templates.render_metasurface import (
@@ -933,6 +939,9 @@ from .oe_templates.render_metasurface import (
     _ms_jcross_lines as _ms_jcross_lines,
 )
 from .oe_templates.render_metasurface import (
+    _ms_mushroom_lines as _ms_mushroom_lines,
+)
+from .oe_templates.render_metasurface import (
     _ms_nominal as _ms_nominal,
 )
 from .oe_templates.render_metasurface import (
@@ -952,6 +961,9 @@ from .oe_templates.render_metasurface import (
 )
 from .oe_templates.render_metasurface import (
     ms_jcross_metal_boxes as ms_jcross_metal_boxes,
+)
+from .oe_templates.render_metasurface import (
+    ms_mushroom_dims_mm as ms_mushroom_dims_mm,
 )
 from .oe_templates.render_metasurface import (
     ms_unit_layout as ms_unit_layout,

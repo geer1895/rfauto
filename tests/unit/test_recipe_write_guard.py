@@ -2,9 +2,9 @@
 
 取证背景：2026-09-17 17:18 UI「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件重序列化（注释全丢/notes 引号丢/optimization 段被表单归一化整段替换，
-diff 85 行留 runs/pollution_evidence），同刻触发 fake run_once。本文件钉住：
+diff 85 行留 runs/pollution_evidence/），同刻触发 fake run_once。本文件钉住：
 
-1. run_once（fake）本身不改配方原件字节（快照只落 runs）；
+1. run_once（fake）本身不改配方原件字节（快照只落 runs/）；
 2. 复现污染链（recipe_view → recipe_save → run_once）——原件字节不变，
    重序列化结果落 runs/recipe_workcopy/ 工作副本，运行消费副本；
 3. 守卫三档语义（缺省抛 / redirect 工作副本 / explicit 原地）与 Windows
@@ -13,7 +13,7 @@ diff 85 行留 runs/pollution_evidence），同刻触发 fake run_once。本文�
    但新建不得覆盖 recipes/ 既有原件；
 5. 沙箱/快照等旁路写点被指到 recipes/ 时拒绝。
 
-全部用例 chdir 到 tmp_path（#144：优化/run 类单测必须隔离，不污染真实 runs）。
+全部用例 chdir 到 tmp_path（#144：优化/run 类单测必须隔离，不污染真实 runs/）。
 """
 
 from __future__ import annotations
@@ -372,6 +372,8 @@ class TestWriteBackInventory:
         # AU-1 批3 拆分（2026-09-30）：cli/main.py 的 recipe_guard 写出口
         # （template_spec_draft_cmd）随域迁至 cli/domains/bands_uq.py
         "cli/domains/bands_uq.py",
+        # A7 P2-3（2026-10-13）：level2 设计链/链尾闭环落盘收口进守卫出口
+        "service/level2_design.py", "service/level2_closure.py",
     )
 
     def test_known_recipe_writers_import_guard(self):
@@ -450,6 +452,29 @@ class TestExplicitOverwriteMarker:
         assert r["recipe_path"].endswith("branchline_coupler_v1.yaml")
         assert r["overwritten"] is True
         r2 = autotune_recipe_from_extract(payload, "recipes/brand_new_k2d03.yaml")
+        assert r2["ok"] and "overwritten" not in r2
+
+    def test_level2_kickoff_envelope_passes_overwritten_marker(
+            self, branchline_copy):
+        """A7 P2-3：design_kickoff 落盘走 guard explicit 档——out_dir 落受
+        保护 recipes/ 根不再被拦（显式入口合法原地写），覆盖既有草稿时
+        overwritten 标记透传信封；新建不带键（既有信封形态）。"""
+        from rfauto.service.level2_design import design_kickoff
+
+        out_dir = Path("recipes") / "kickoff_guard"
+        out_dir.mkdir(parents=True)
+        (out_dir / "recipe_draft.yaml").write_text("model: m\n",
+                                                   encoding="utf-8")
+        r = design_kickoff("设计一个 2.4GHz Wilkinson 功分器，50 欧",
+                           out_dir=out_dir)
+        assert r["ok"], r.get("errors")
+        assert r["recipe_path"] == str(out_dir / "recipe_draft.yaml")
+        assert r["overwritten"] is True
+        draft = yaml.safe_load(
+            (out_dir / "recipe_draft.yaml").read_text(encoding="utf-8"))
+        assert draft["model"] == "wilkinson"  # 真草稿覆盖了占位原件
+        r2 = design_kickoff("设计一个 2.4GHz Wilkinson 功分器，50 欧",
+                            out_dir=Path("recipes") / "kickoff_fresh")
         assert r2["ok"] and "overwritten" not in r2
 
 
@@ -546,8 +571,20 @@ class TestDirectoryLevelWriteSurface:
        新增未接守卫的目录级写点即亮红（TestWriteBackInventory 目录级版）。"""
 
     SRC = REPO_ROOT / "src" / "rfauto"
+    # aurora_d UI-R1 拆分：UI 面含 routes/ 分域路由模块（写面守卫随面走）
+    _UI_ROUTES = SRC / "ui" / "routes"
     UI_SURFACE_MODULES = (
         SRC / "ui" / "server.py",
+        _UI_ROUTES / "agent.py",
+        _UI_ROUTES / "data.py",
+        _UI_ROUTES / "fieldviz.py",
+        _UI_ROUTES / "importer.py",
+        _UI_ROUTES / "insight.py",
+        _UI_ROUTES / "measurement.py",
+        _UI_ROUTES / "recipes.py",
+        _UI_ROUTES / "runs.py",
+        _UI_ROUTES / "tools.py",
+        _UI_ROUTES / "tune.py",
         SRC / "service" / "ui_service.py",
         SRC / "service" / "r3_services.py",
     )
@@ -559,7 +596,7 @@ class TestDirectoryLevelWriteSurface:
         # 守卫决策后目标（工作副本/非受保护路径）建父目录；临时文件与目标
         # 同目录是原子替换前提（#319）
         ("ui_service.py", "recipe_save"): {"mkdir"},
-        # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare）
+        # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare/）
         ("ui_service.py", "sparams_compare_png"): {"mkdir"},
         # configs/ 三个配置保存器的父目录创建（非 recipes/ 面）
         ("r3_services.py", "add_solver_to_config"): {"mkdir"},

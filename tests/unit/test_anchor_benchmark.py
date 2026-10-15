@@ -26,7 +26,7 @@ import pytest
 from rfauto.core import anchor_benchmark as ab
 from rfauto.core.anchor_verdict import S11_HEALTH_DB
 
-# 归档真值（本会话 scratch 复算，与 smoke 日志/逐值一致）
+# 归档真值（本会话 scratch 复算，与 smoke 日志/ 逐值一致）
 RATRACE_PT9 = dict(delta_eps_pct=0.89, s21_db=-3.11, s41_db=-3.27,
                    s31_db=-24.32, s24_db=-23.81, s11_db=-26.57,
                    recip_lin=0.0017)

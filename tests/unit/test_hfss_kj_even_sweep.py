@@ -276,7 +276,7 @@ def _synth_level(*, z0e: float, eps_e: float, z0o: float, eps_o: float,
     for pn in ("P1", "P2"):
         level["port_data"][pn] = {
             "Zo": {m: {"re": zr_by[m], "im": 0.0} for m in ("1", "2")},
-            # HFSS port Gamma 读数=该模传播常数 γ（m）＝γL/L
+            # HFSS port Gamma 读数=该模传播常数 γ（/m）＝γL/L
             "Gamma": {m: {"re": gl_by[m].real / L_M, "im": gl_by[m].imag / L_M}
                       for m in ("1", "2")},
         }

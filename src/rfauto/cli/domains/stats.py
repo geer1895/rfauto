@@ -8,6 +8,13 @@
 
 JSON 信封直出（ok=false → 退出码 1）；长列表走 --file JSON
 （{"samples": [...]} / {"failures": [...], "censored": [...]}）。
+
+信封契约（aurora_d AU-2C 域升版 2026-10-14）：响应信封一律走
+rfauto.service.envelope 构造器；失败形单数 ``error`` 键统一为
+``errors`` list[str]（error_envelope 单源，契约 §1 判读规则 2）——
+无戳域补戳 ``MANUFACTURING_STATS_SCHEMA_VERSION="1.1"``，成功/失败信封
+同笔带戳（键序 ok → schema_version → 域字段；成功面为内核结果透传的
+薄拷贝补戳，不改内核返回结构）。
 """
 
 from __future__ import annotations
@@ -17,9 +24,22 @@ import json
 import typer
 
 from rfauto.cli.domains._core import app as app
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 stats_app = typer.Typer(help="量产统计三件套（保护带/能力指数/Weibull 寿命，§B-5）")
 app.add_typer(stats_app, name="stats")
+
+#: manufacturing stats 域 schema 版本（无戳域补戳，AU-2C 2026-10-14；
+#: recipe_version 与 schema_version 语义区分，#106——本常量只描述本域 CLI
+#: 返回信封结构，不进缓存键，内核 core/manufacturing_stats 原返回零改）。
+#: 1.1=首批推广即失败形 errors 化口径，无 1.0 存档。
+MANUFACTURING_STATS_SCHEMA_VERSION = "1.1"
+
+
+def _stamped(result: dict) -> dict:
+    """内核成功结果薄拷贝补域版本戳（schema_version 紧随 ok，内核零改）。"""
+    return ok_envelope(schema_version=MANUFACTURING_STATS_SCHEMA_VERSION,
+                       **result)
 
 
 def _emit_stats(result: dict) -> None:
@@ -79,15 +99,16 @@ def stats_guardband_cmd(
     try:
         result = guardband_limits(value, u95, spec, pfa, side, k=k)
     except ValueError as exc:
-        _emit_stats({"ok": False, "error": str(exc)})
+        _emit_stats(error_envelope(
+            str(exc), schema_version=MANUFACTURING_STATS_SCHEMA_VERSION))
         return
-    _emit_stats(result)
+    _emit_stats(_stamped(result))
 
 
 @stats_app.command("cpk")
 def stats_cpk_cmd(
     samples: str = typer.Option("", "--samples", help="样本逗号串（与 --file 二选一）"),
-    file: str = typer.Option("", "--file", help="JSON 文件 {\"samples\": [...]}"),
+    file: str = typer.Option("", "--file", help="JSON 文件：键 samples，值为数值数组"),
     lsl: float = typer.Option(None, "--lsl", help="下规格限 LSL（与 --usl 至少其一）"),
     usl: float = typer.Option(None, "--usl", help="上规格限 USL（与 --lsl 至少其一）"),
     confidence: float = typer.Option(0.95, "--confidence", help="置信水平"),
@@ -103,16 +124,17 @@ def stats_cpk_cmd(
         xs = _num_list(samples, file, "samples", "samples")
         result = cpk_ci(xs, lsl, usl, confidence, ppk_method=ppk_method)
     except ValueError as exc:
-        _emit_stats({"ok": False, "error": str(exc)})
+        _emit_stats(error_envelope(
+            str(exc), schema_version=MANUFACTURING_STATS_SCHEMA_VERSION))
         return
-    _emit_stats(result)
+    _emit_stats(_stamped(result))
 
 
 @stats_app.command("weibull")
 def stats_weibull_cmd(
     failures: str = typer.Option("", "--failures", help="失效时间逗号串（与 --file 二选一）"),
     censored: str = typer.Option("", "--censored", help="右删失时间逗号串（可空）"),
-    file: str = typer.Option("", "--file", help="JSON 文件 {\"failures\": [...], \"censored\": [...]}"),
+    file: str = typer.Option("", "--file", help="JSON 文件：键 failures 与 censored，值为数值数组"),
     confidence: float = typer.Option(0.95, "--confidence", help="置信水平"),
     json_output: bool = typer.Option(
         False, "--json",
@@ -138,6 +160,7 @@ def stats_weibull_cmd(
             raise ValueError("需要 --failures 列表或 --file JSON")
         result = weibull_mle(xf, xc, confidence=confidence)
     except ValueError as exc:
-        _emit_stats({"ok": False, "error": str(exc)})
+        _emit_stats(error_envelope(
+            str(exc), schema_version=MANUFACTURING_STATS_SCHEMA_VERSION))
         return
-    _emit_stats(result)
+    _emit_stats(_stamped(result))

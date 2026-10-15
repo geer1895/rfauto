@@ -88,7 +88,7 @@ class AutotuneHistoryEntry(BaseModel):
 
 
 class AutotunePayload(_Contract):
-    """autotune_loop 返回契约（数值全部来自确定性内核， #7）。"""
+    """autotune_loop 返回契约（数值全部来自确定性内核，AGENTS #7）。"""
 
     ok: bool
     run_id: str

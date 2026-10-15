@@ -1,7 +1,7 @@
 """FDTDX 可微 FDTD 引擎薄封装 —— §10.24 A7"真引擎"CPU 接入。
 
 定位：方案 §10.18 A7 行的落地验证通道。自研小 FDTD（scripts/jax_probe.py，
-七十一）确证 jax CPU 梯度通路后，本模块接入真引擎
+ 七十一）确证 jax CPU 梯度通路后，本模块接入真引擎
 `fdtdx <https://github.com/ymahlau/fdtdx>`_（arXiv 2412.12360，JAX 原生可微
 FDTD），用于可微设计研究；**不是** S 参数求解通道，不接入 EMSolverRegistry
 （EMSolverAdapter 面向频域 S 参数抽取，与本模块的 jax.grad 可微目标不同）。

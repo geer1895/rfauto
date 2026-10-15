@@ -31,7 +31,8 @@ rfauto campaign run runs/campaigns/<name>.json
 
 按依赖拓扑序派发各阶段 entry 命令，完成即自动 `campaign event` 推
 状态机；失败短路、可续跑（重跑同一命令，已完成阶段按状态机跳过）。
-长跑纪律：真机重项用后台分离 + 日志轮询；每机互斥意识管进程（#261）。
+长跑纪律：真机重项用后台分离 + 日志轮询（AGENTS #157 watcher
+方法论）；每机互斥意识管进程（#261）。
 
 ## 3. 盯状态
 
@@ -65,10 +66,11 @@ rfauto repro-verify <包目录>              # 验证复现包
 
 - 判据统计量匹配响应形态（窄带谐振别用带内 max，#195）；
 - study 缓存同种子秒回——配对实验合法、新轨迹要换 study/seed（#158）；
-- 服务器侧任务毕必须清理（remote_hfss_cleanup； 规则 0b）。
+- 服务器侧任务毕必须清理（remote_hfss_cleanup；AGENTS 规则 0b）。
 
 ## 下一步
 
 - 单次调优（非战役）：`rfauto tune` / `rfauto autotune --self-verify`
 - 偏差判读串接：`docs/tutorials/measurement-alignment.md`
-- 多机协同：`rfauto remote probe/status`
+- 多机协同：`rfauto remote probe/status`（AGENTS 规则 0b 与
+  `docs/服务器接入与仿真资源说明.md`）

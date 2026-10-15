@@ -32,11 +32,29 @@ apply_event 语义零改动（既有 test_campaign_dag_v2 等全绿为门）。
 
 数据总线：stage 间产物经各节点工作目录的 ``stage_result.json``（基座
 artifact manifest 管辖，断点续跑 digest 复核自动覆盖）+ ctx["upstream"]。
+
+stage 级 --remote 发射路由（E62 席 2026-10-08，E-06/PR-15 拆批余件）：
+plan stage 键 ``"remote"``（或 plan 级 ``"remote"``/CLI ``--remote`` 作
+战役级缺省，stage 声明优先）→ 派发层 ``_route_remote_stage`` 路由——
+资源日历窗判定（维护窗 blocked）+ license 预检（fail-skip）+ 五步执行
+通道单源复用 remote_service/remote_oe_service（零双实现）；产物/信封/
+日志回拉落节点工作目录（座位目录）。SKIP=inconclusive（续跑重探）；
+未声明=本机路径零行为变化。recipe-loop 远跑（tune 优化循环整段上服务
+器）属 v1 未接线拆批余件（campaign_app/常驻队列/L2 sftp/ADS 远跑），
+无座位载荷的 remote 声明如实 SKIP 不假绿。
+
+stage 级 hfss_batch 双模路由缝（2026-10-08，HFSS one-shot batch）：
+plan stage 键 ``"hfss_batch"``（str=工程路径 / dict 全参声明，详见
+``stage_batch_decl``）→ 派发层 ``_route_batch_stage`` 走
+adapters/hfss_batch 一次性批处理求解（每求解一个独立短命 ansysedt
+进程，无长驻桌面会话）；未声明=既有会话路径零行为变化（路由缝整体
+旁路）。路由顺序：remote 优先 → hfss_batch 次之 → executor 注册表。
 """
 
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -59,12 +77,29 @@ CAMPAIGN_LOG_FILE = "campaign.log"
 _FAKE_CHANNEL_ADAPTERS = ("fake", "surrogate", "local")
 
 #: stage_result 白名单回写键（防大信封整包落盘；错误/警告原样保留）。
+#: ge9 审查 P2-1 对账补键：report_html（_exec_report 显式落盘意图）、
+#: shadow_selection（final_verify 影子点选择账本）、adapter_channel
+#: （模块 docstring 明文"通道映射如实记入 stage 结果"）、yield_rate
+#: （surrogate_yield_at 契约键；原白名单 yield_value 系 键名错记 的死键，
+#: 意图即是持久化良率值）。
 _STAGE_RESULT_KEYS = (
     "ok", "errors", "warning", "verdict", "run_id", "run_dir",
     "samples_path", "n_samples", "best_params", "best_cost", "best_metrics",
     "trials_completed", "rho", "selected", "n_selected", "shortfall",
-    "elapsed_s", "candidates", "yield_value",
+    "elapsed_s", "candidates", "yield_value", "yield_rate", "tolerances",
+    "study_name", "report_html", "shadow_selection", "adapter_channel",
+    # E62 席 campaign --remote 路由（2026-10-08）：stage 级 remote 声明的
+    # 发射记账键（信封瘦身落 stage_result；全量信封另落 remote_stage.json）。
+    "remote", "license_preflight", "remote_exec", "solve_success",
+    # HFSS 一次性批处理路由（one-shot batch，无长驻桌面会话）：stage 级
+    # hfss_batch 声明的求解记账键（求解信封瘦身随 stage_result 走基座
+    # manifest；声明缺席=既有会话路径零行为变化，本键恒缺席）。
+    "hfss_batch",
 )
+
+
+#: stage 级远程座位文件名（节点工作目录=座位目录；发射信封全量落档）。
+REMOTE_STAGE_FILE = "remote_stage.json"
 
 
 def campaign_kind_of(node: dict[str, Any]) -> str | None:
@@ -203,6 +238,30 @@ def _exec_prefilter(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]
                         message=f"prefilter n_candidates={n_candidates}")
 
 
+def _campaign_study_name(extra: dict[str, Any], node: dict[str, Any]) -> str:
+    """campaign tune 阶段的 Optuna study 名（战役实例指纹版，ge9 审查 P1-1）。
+
+    study 名拼战役目录指纹（run_dir 绝对路径 sha1 前 8 位）——run_dir 是
+    战役身份的天然锚（plan/run_dir 缺省同目录、resume 同参不变，指纹
+    战役内稳定）。旧名 ``campaign-{model}-{stage}`` 只含 (model, stage)
+    二元组，叠加全局单库 runs/.optuna/optuna.db + load_if_exists=True，
+    同模型两战役/同战役改配方重跑共享 trial 历史——TPE 被他役数据条件
+    化、best_params 可能出自别的战役并顺流污染 tolerance/final_verify
+    （#273 "跨实验面共享历史必须显式声明身份"同族）。
+
+    兼容注记：ge9 前的旧战役 plan 若 tune 节点未完成，resume 将按新名
+    另起新 study（旧 trial 历史不迁移，如实从零起步）；已完成 stage 由
+    基座 digest 复核零重执行，不受影响。
+    """
+    model = str(extra.get("campaign_model") or "campaign")
+    stage = str(extra.get("campaign_stage", node.get("node_id")) or "")
+    campaign_dir = str(extra.get("campaign_dir") or "")
+    digest = (
+        hashlib.sha1(str(Path(campaign_dir).resolve()).encode("utf-8"))
+        .hexdigest()[:8] if campaign_dir else "nofp")
+    return f"campaign-{model}-{stage}-{digest}"
+
+
 def _exec_tune(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     extra = _stage_extra(node)
     recipe = str(extra.get("campaign_recipe") or "")
@@ -211,12 +270,15 @@ def _exec_tune(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
             False, message="节点缺 campaign_recipe 指针（plan 注入面缺失）")
     adapter = str(extra.get("adapter") or "fake")
     channel = "hfss" if adapter == "hfss" else "fake"
+    # S2-3/#364④ 端到端收口（审查 A3 P1-2）：plan 端已按 is not None
+    # 尊显式 0（campaign_stage_budget={"stage_budget": 0}），执行端同批
+    # is not None 判缺——旧 `or 30` 把显式 0 再顶回 30=修复 no-op。
     try:
-        max_trials = int(_stage_budget(node).get("stage_budget") or 30)
+        raw_budget = _stage_budget(node).get("stage_budget")
+        max_trials = 30 if raw_budget is None else int(raw_budget)
     except (TypeError, ValueError):
         max_trials = 30
-    model = str(extra.get("campaign_model") or "campaign")
-    study = f"campaign-{model}-{extra.get('campaign_stage', node.get('node_id'))}"
+    study = _campaign_study_name(extra, node)
     from rfauto.service.api import start_tune
 
     raw = start_tune(recipe, adapter_name=channel, max_trials=max_trials,
@@ -257,7 +319,7 @@ def _exec_tolerance(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]
 
     raw = surrogate_yield_at(samples_path, tolerances, nominal)
     outputs = [_write_stage_result(node, ctx, raw)]
-    yield_value = raw.get("yield", raw.get("yield_value", "?"))
+    yield_value = raw.get("yield_rate", raw.get("yield_value", "?"))
     return _exec_result(bool(raw.get("ok")), outputs=outputs,
                         message=f"tolerance yield={yield_value}")
 
@@ -317,9 +379,12 @@ def _exec_final_verify(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, A
     if n_points > 0 and points:
         from rfauto.service.campaign_manager import select_shadow_points
 
+        # #117/#364④ 族（审查 A3 P3-3）：显式 0 是合法值，is not None 判缺
+        raw_top_k = shadow_cfg.get("top_k")
+        top_k = 1 if raw_top_k is None else int(raw_top_k)
         selection = select_shadow_points(
             points, n_points=n_points,
-            top_k=int(shadow_cfg.get("top_k") or 1),
+            top_k=top_k,
             min_norm_dist=float(shadow_cfg.get("min_norm_dist") or 0.3))
     raw: dict[str, Any] = {"ok": True, "adapter_channel": f"{adapter}->{channel}",
                            "shadow_selection": selection}
@@ -355,6 +420,362 @@ CAMPAIGN_EXECUTORS: dict[str, ExecutorFn] = {
 }
 
 
+# ─── stage 级 --remote 发射路由（E62 席 2026-10-08；E-06/PR-15 拆批余件）─────
+# 形态收敛（先例单源）：fd_oe_campaign/varactor 的座位级 --remote 路由 =
+# 「license 预检 fail-closed → remote_oe_service 五步执行通道 → 产物回拉
+# 判读」。本节把同一路由语义收敛到 campaign plan 的 stage 级声明：
+# - 预检/执行通道**单源复用既有函数**（remote_service.license_preflight +
+#   remote_oe_service.remote_oe_run——五步编排零双实现，此处只是薄包装，
+#   fd_oe_campaign._license_preflight/_remote_oe_run 同款模块级形态便于
+#   单测钉通道，#139）；
+# - 发射窗查资源日历（remote_scheduler_service.calendar_launch_view，
+#   UX-B8 机读化：维护窗 blocked=不硬打；备份窗 risk=落账放行）；
+# - 信封/日志回拉落**座位目录**（节点工作目录：remote_stage.json 全量
+#   信封 + stage_result.json 瘦身键 + campaign.log 一行）。
+# 本机路径（stage 未声明 remote）零行为变化——声明面缺失=路由面整体旁路。
+
+def _license_preflight(machine: str | None) -> dict:
+    """license 预检薄包装（remote_service 单源；模块级便于单测钉通道，#139）。"""
+    from rfauto.service.remote_service import license_preflight
+
+    return license_preflight(machine)
+
+
+def _remote_oe_run(machine: str | None, seat_spec: dict) -> dict:
+    """远程 OE 执行通道薄包装（remote_oe_service 五步单源；#139 同上）。"""
+    from rfauto.service.remote_oe_service import remote_oe_run
+
+    return remote_oe_run(machine, seat_spec)
+
+
+def _calendar_launch_view() -> dict:
+    """资源日历发射窗判定薄包装（remote_scheduler_service 单源；#139 同上）。"""
+    from rfauto.service.remote_scheduler_service import calendar_launch_view
+
+    return calendar_launch_view()
+
+
+def stage_remote_decl(node: dict[str, Any]) -> dict[str, Any] | None:
+    """dag 节点 → 归一化 stage 级远程路由声明（None=本机路径零行为变化）。
+
+    声明形态（plan stage 的 ``"remote"`` 键经 nodes_from_stages 自动收进
+    stage_extra；plan 级 ``"remote"`` 键经 _inject_plan_context 注入
+    ``campaign_remote_default`` 作战役级缺省——**stage 声明优先**）：
+
+    - ``true`` → 缺省登记机器（注册表唯一机器语义，resolve_machine None）；
+    - ``"sim_host"`` → 指名机器；
+    - ``{"machine": ..., "wait_mode": ..., "keep_remote": ..., "seat": ...}``
+      → dict 形态（machine 同上两态；seat 覆盖 stage_extra.remote_seat）；
+    - ``false``/缺省/``""`` → 本机。
+
+    座位载荷独立声明在 stage 键 ``remote_seat``（dict，形态=
+    remote_oe_run 座位内容物：template/simulation_py/criteria_md/
+    timeout_s[/campaign]——simulation_py/criteria_md 支持内联文本或相对
+    campaign 目录的文件路径，见 _resolve_seat_payload）。
+    """
+    extra = _stage_extra(node)
+    raw = extra.get("remote")
+    if raw is None:
+        raw = extra.get("campaign_remote_default")
+    if raw is None or raw is False or raw == "":
+        return None
+    if raw is True:
+        return {"machine": None}
+    if isinstance(raw, str):
+        return {"machine": raw.strip() or None}
+    if isinstance(raw, dict):
+        machine = raw.get("machine")
+        decl: dict[str, Any] = {
+            "machine": (machine.strip() or None
+                        if isinstance(machine, str) else None)}
+        if raw.get("wait_mode") is not None:
+            decl["wait_mode"] = str(raw.get("wait_mode"))
+        if raw.get("keep_remote") is not None:
+            decl["keep_remote"] = bool(raw.get("keep_remote"))
+        if raw.get("seat") is not None:
+            decl["seat"] = raw.get("seat")
+        return decl
+    return {"machine": str(raw)}
+
+
+def remote_stage_gate(
+    decl: dict[str, Any],
+    *,
+    preflight_fn: Callable[[str | None], dict],
+    calendar: dict[str, Any] | None = None,
+    execute_fn: Callable[[str | None, dict], dict] | None = None,
+    seat_spec: dict | None = None,
+) -> dict[str, Any]:
+    """stage 级远程发射门（fd_oe_campaign.remote_seat_gate 同构服务层形态，
+    fail-closed 三态如实记账）：
+
+    - 资源日历维护窗内 → SKIP（不预检不发射；备份窗=risk 只落账放行）；
+    - license 预检未过 → SKIP（fail-skip 不硬打，续跑重探——inconclusive
+      语义映射，hfss_window 波次"下波重探"先例同源）；
+    - 通道/座位载荷缺 → SKIP 如实（不假绿；recipe-loop 远跑=v1 未接线，
+      campaign_app/常驻队列/L2 sftp/ADS 远跑拆批余件）；
+    - 通道 skipped（互斥候跑/凭据缺/env 门）→ SKIP（未发射）；
+    - 通道失败（SSH/发射/回拉空/清理）→ FAIL（已发射如实记败不假绿）；
+    - 通道 ok → solve_success=(exec_rc==0) 随增量落账，产物已回拉座位目录。
+
+    返回 verdict 增量 dict（remote/license_preflight/calendar/remote_exec/
+    status[/reason][/solve_success][/verdict]）。
+    """
+    machine = decl.get("machine")
+    out: dict[str, Any] = {
+        "remote": {"machine": machine, "routed": True,
+                   "exec_channel": "remote_oe_service（campaign stage 级路由）"},
+    }
+    cal = calendar or {}
+    cal_slim = {k: cal.get(k) for k in
+                ("state", "launchable", "loaded", "windows_hit", "backup_risk")
+                if k in cal}
+    if cal_slim:
+        out["calendar"] = cal_slim
+    if cal.get("state") == "blocked":
+        out["status"] = "SKIP"
+        out["reason"] = (
+            "fail-skip：资源日历维护窗内不可发射"
+            f"（windows_hit={cal.get('windows_hit')}）——不硬打")
+        return out
+    envelope = preflight_fn(machine)
+    out["license_preflight"] = envelope
+    if envelope.get("verdict") != "PASS":
+        out["status"] = "SKIP"
+        out["reason"] = (
+            f"fail-skip：license 预检未过（verdict={envelope.get('verdict')}，"
+            f"reason={envelope.get('reason')}）——不硬打（续跑重探）")
+        return out
+    if execute_fn is None or seat_spec is None:
+        out["status"] = "SKIP"
+        out["reason"] = ("执行通道/座位载荷未提供（execute_fn/seat_spec 缺）"
+                         "——如实 SKIP 不发射不假绿；recipe-loop 远跑=v1 "
+                         "未接线（campaign_app/常驻队列/L2 sftp/ADS 远跑"
+                         "拆批余件）")
+        return out
+    result = execute_fn(machine, seat_spec)
+    out["remote_exec"] = {
+        "ok": bool(result.get("ok")),
+        "skipped": bool(result.get("skipped")),
+        "launched": bool(result.get("launched")),
+        **{k: result.get(k) for k in (
+            "machine", "batch", "task_dir_remote", "out_dir_local",
+            "exec_rc", "wait_mode", "verdict", "reason") if k in result},
+    }
+    if result.get("skipped"):
+        out["status"] = "SKIP"
+        out["reason"] = (f"远程通道未发射（候跑/前置不满足）："
+                         f"{result.get('reason')}")
+    elif not result.get("ok"):
+        out["status"] = "FAIL"
+        out["reason"] = f"远程执行通道失败：{result.get('reason')}"
+    else:
+        out["solve_success"] = result.get("exec_rc") == 0
+        out["verdict"] = result.get("verdict")
+    return out
+
+
+def _read_seat_text(value: Any, base: Path) -> str:
+    """座位载荷字段取文本：含换行=内联文本原样；否则视作路径（相对 base）
+    存在即读入；都不成立=原样返回（交通道校验面判空/判非法）。"""
+    text = str(value or "")
+    if "\n" in text or not text.strip():
+        return text
+    cand = Path(text)
+    if not cand.is_absolute():
+        cand = base / cand
+    if cand.is_file():
+        try:
+            return cand.read_text(encoding="utf-8")
+        except OSError:
+            return text
+    return text
+
+
+def _resolve_seat_payload(
+    decl: dict[str, Any], node: dict[str, Any], ctx: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    """stage 声明 → remote_oe_run 座位载荷（None=未声明或解析失败）。
+
+    键优先级：decl["seat"]（dict 形态声明内嵌）> stage_extra.remote_seat
+    （独立 stage 键）。simulation_py/criteria_md 支持「内联文本或相对
+    campaign 目录的文件路径」两态（_read_seat_text）；timeout_s 缺省
+    2400s（fd_oe_campaign 缺省档）；campaign 缺省=run 目录名（回拉镜像
+    目录名，非法字符交 remote_oe_run 校验如实失败）。
+    """
+    extra = _stage_extra(node)
+    raw = decl.get("seat")
+    if raw is None:
+        raw = extra.get("remote_seat")
+    if not isinstance(raw, dict) or not raw:
+        return None, None
+    base = Path(str(extra.get("campaign_dir")
+                     or ctx.get("run_dir") or "."))
+    seat: dict[str, Any] = dict(raw)
+    for key in ("simulation_py", "criteria_md"):
+        if key in seat:
+            seat[key] = _read_seat_text(seat.get(key), base)
+    try:
+        # #117/#364④ 族（审查 A3 P3-3）：显式 0 不顶缺省（is not None 判缺）
+        raw_timeout = seat.get("timeout_s")
+        timeout = 2400.0 if raw_timeout is None else float(raw_timeout)
+    except (TypeError, ValueError):
+        timeout = 2400.0
+    seat["timeout_s"] = timeout
+    if not str(seat.get("campaign") or "").strip():
+        seat["campaign"] = Path(str(ctx.get("run_dir") or "campaign")).name \
+            or "campaign"
+    return seat, None
+
+
+def _append_campaign_log(ctx: dict[str, Any], msg: str) -> None:
+    """执行日志追加一行（best-effort，#105：观测面不阻塞发射主路径）。"""
+    try:
+        run_dir = Path(str(ctx.get("run_dir") or ""))
+        if not run_dir.is_dir():
+            return
+        with open(run_dir / CAMPAIGN_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"{msg}\n")
+    except OSError:
+        pass
+
+
+def _route_remote_stage(node: dict[str, Any],
+                        ctx: dict[str, Any]) -> dict[str, Any] | None:
+    """stage 级 remote 声明 → 远程路由执行（None=本机路径零行为变化）。
+
+    门序：资源日历（维护窗 blocked）→ license 预检 → 通道/座位载荷。
+    结果映射（ExecutorFn 契约）：SKIP=ok+inconclusive（节点 inconclusive→
+    视图 pending，续跑重探/重试）；FAIL=ok=False（已发射记败）；通道 ok
+    随信封 ok。全量信封落座位目录 remote_stage.json（best-effort #105），
+    瘦身键随 stage_result.json 走基座 manifest，执行日志追加一行。
+    """
+    decl = stage_remote_decl(node)
+    if decl is None:
+        return None
+    kind = campaign_kind_of(node)
+    node_id = str(node.get("node_id") or "")
+    work_dir = Path(ctx.get("work_dir") or ".")
+    seat_spec, seat_err = _resolve_seat_payload(decl, node, ctx)
+    try:
+        calendar = _calendar_launch_view()
+    except Exception as exc:  # #105：日历观测面异常降级恒可发不阻塞
+        calendar = {"loaded": False, "state": "open", "launchable": True,
+                    "reason": f"日历视图异常降级恒可发: {type(exc).__name__}"}
+    gate = remote_stage_gate(
+        decl, preflight_fn=_license_preflight, calendar=calendar,
+        execute_fn=(_remote_oe_run if seat_spec is not None else None),
+        seat_spec=seat_spec)
+    if seat_err:
+        gate["seat_error"] = seat_err
+        if gate.get("status") == "SKIP" and "座位载荷" in str(gate.get("reason")):
+            gate["reason"] = f"座位载荷解析失败: {seat_err}"
+    # 全量信封落座位目录（#105 best-effort：落盘失败不翻执行结果）
+    try:
+        work_dir.mkdir(parents=True, exist_ok=True)
+        (work_dir / REMOTE_STAGE_FILE).write_text(
+            json.dumps(gate, ensure_ascii=False, indent=1, sort_keys=True,
+                       default=str),
+            encoding="utf-8")
+    except OSError:
+        pass
+    status = str(gate.get("status") or "")
+    reason = str(gate.get("reason") or "")
+    outputs = [_write_stage_result(node, ctx, {
+        "ok": status != "FAIL",
+        "remote": gate.get("remote"),
+        "license_preflight": gate.get("license_preflight"),
+        "remote_exec": gate.get("remote_exec"),
+        "solve_success": gate.get("solve_success"),
+    }), REMOTE_STAGE_FILE]
+    _append_campaign_log(
+        ctx, f"[remote] {node_id} machine={decl.get('machine')} "
+             f"status={status or 'OK'} reason={reason[:160]}")
+    if status == "SKIP":
+        return dict(ok=True, outputs=outputs, wall_s=0.0,
+                    message=f"{kind} remote SKIP: {reason}",
+                    inconclusive=True, inconclusive_reason=reason)
+    if status == "FAIL":
+        return _exec_result(False, outputs=outputs,
+                            message=f"{kind} remote FAIL: {reason}")
+    remote_exec = gate.get("remote_exec") or {}
+    return _exec_result(
+        bool(remote_exec.get("ok")), outputs=outputs,
+        message=(f"{kind} remote 完成: verdict={gate.get('verdict')} "
+                 f"exec_rc={remote_exec.get('exec_rc')} "
+                 f"solve_success={gate.get('solve_success')} "
+                 f"（machine={decl.get('machine')}，产物已回拉座位目录）"))
+
+
+# ─── stage 级 hfss_batch 一次性求解路由（one-shot batch 双模缝）───────────────
+# solver 双模路由缝（2026-10-08）：stage 声明 ``"hfss_batch"`` → 走
+# adapters/hfss_batch 一次性批处理路径（每求解一个独立短命 ansysedt 进程，
+# 无长驻桌面会话）；未声明 → 既有会话路径零行为变化（本节整体旁路）。
+# 声明形态（stage_extra["hfss_batch"]）：
+# - ``"path/to.aedt"``（str）= 工程路径（.aedt 文件优先，.aedb 目录回退）；
+# - ``{"project": 必填, "design": ..., "setup": ..., "timeout_s": ...,
+#    "logfile_dir": ..., "ansysedt_exe": ...}``（dict）= 全参声明；
+# - ``false``/缺省/``""`` → None（会话路径）。
+# 路由顺序：remote 声明优先（E62 语义不动），hfss_batch 次之，executor
+# 注册表最后——三段互斥，先命中先返回。
+
+def stage_batch_decl(node: dict[str, Any]) -> dict[str, Any] | None:
+    """dag 节点 → 归一化 stage 级 HFSS 一次性批处理声明（None=会话路径）。
+
+    归一只做形态收敛（str → {"project": str}；dict 原样透传，键语义由
+    hfss_batch.solve_project_batch 契约解释），None/False/空串=未声明。
+    """
+    raw = _stage_extra(node).get("hfss_batch")
+    if raw is None or raw is False or raw == "":
+        return None
+    if isinstance(raw, str):
+        return {"project": raw}
+    if isinstance(raw, dict):
+        return dict(raw)
+    return None
+
+
+def _route_batch_stage(node: dict[str, Any],
+                       ctx: dict[str, Any]) -> dict[str, Any] | None:
+    """stage 级 hfss_batch 声明 → 一次性批处理执行（None=本机会话路径）。
+
+    薄编排零数值面：solve_project_batch 的结构化信封原样瘦身落
+    stage_result.json（键 hfss_batch + ok），执行日志追加一行，结果映射
+    ExecutorFn 契约（ok=求解信封 ok；wall_s=elapsed_s）。求解通道异常
+    =节点失败（不吞不猜，由 _dispatch 兜底捕获）。
+    """
+    decl = stage_batch_decl(node)
+    if decl is None:
+        return None
+    from rfauto.adapters.hfss_batch import solve_project_batch
+
+    kind = campaign_kind_of(node)
+    node_id = str(node.get("node_id") or "")
+    raw = solve_project_batch(**decl)
+    outputs = [_write_stage_result(node, ctx, {
+        "ok": bool(raw.get("ok")),
+        "hfss_batch": {k: raw.get(k) for k in (
+            "ok", "rc", "timed_out", "project", "project_kind",
+            "ansysedt_exe", "logfile", "artifacts", "elapsed_s", "errors")
+            if raw.get(k) is not None},
+    })]
+    logfile = str(raw.get("logfile") or "")
+    if logfile:
+        outputs.append(logfile)
+    _append_campaign_log(
+        ctx, f"[hfss_batch] {node_id} project={raw.get('project')} "
+             f"rc={raw.get('rc')} timed_out={raw.get('timed_out')} "
+             f"ok={raw.get('ok')}")
+    status = "OK" if raw.get("ok") else "FAIL"
+    return _exec_result(
+        bool(raw.get("ok")), outputs=outputs,
+        wall_s=float(raw.get("elapsed_s") or 0.0),
+        message=(f"{kind} hfss_batch {status}: rc={raw.get('rc')} "
+                 f"timed_out={raw.get('timed_out')} "
+                 f"artifacts={len(raw.get('artifacts') or [])} "
+                 f"（one-shot batch，logfile={logfile or '无'}）"))
+
+
 # ─── DAG 派发层（campaign kind → dag kind 四类全覆盖）────────────────────────
 
 def _dag_executors(campaign_executors: dict[str, ExecutorFn]
@@ -372,6 +793,24 @@ def _dag_executors(campaign_executors: dict[str, ExecutorFn]
                                 f"{node.get('node_id')!r} cmd="
                                 f"{str(node.get('cmd') or '')!r}）——entry 是"
                                 "纸面命令串，禁 shell 出（规格 VI-2）"))
+        try:
+            # stage 级 remote 声明优先路由（None=本机路径零行为变化）
+            routed = _route_remote_stage(node, ctx)
+        except NodeAbortedError:
+            raise
+        except Exception as exc:  # 路由面异常=节点失败（不吞不猜）
+            return _exec_result(False, message=f"remote 路由异常: {exc}")
+        if routed is not None:
+            return routed
+        try:
+            # stage 级 hfss_batch 声明路由（None=既有会话路径零行为变化）
+            batch_routed = _route_batch_stage(node, ctx)
+        except NodeAbortedError:
+            raise
+        except Exception as exc:  # 求解通道异常=节点失败（不吞不猜）
+            return _exec_result(False, message=f"hfss_batch 路由异常: {exc}")
+        if batch_routed is not None:
+            return batch_routed
         try:
             return impl(node, ctx)
         except NodeAbortedError:
@@ -393,7 +832,12 @@ def _inject_plan_context(plan_v2: dict[str, Any], run_dir: Path) -> None:
     是"阶段预算"（trials/样本数）不是秒，此处显式搬移到 stage_extra.
     campaign_stage_budget 并把 timeout_s 置 None，防基座误当秒判 PARTIAL
     （仅对出自 stages 包装的节点生效：以 stage_extra 先在性判别）。
+
+    E62 席：plan 级 ``"remote"`` 旗标注入 ``campaign_remote_default``
+    （stage 级声明优先——stage 键 "remote" 在场时 stage_remote_decl 直接
+    消费 stage_extra.remote，不经本缺省键）。
     """
+    remote_default = plan_v2.get("remote")
     for node in (plan_v2.get("dag") or {}).get("nodes") or []:
         from_stages = "stage_extra" in node
         extra = node.setdefault("stage_extra", {})
@@ -401,6 +845,8 @@ def _inject_plan_context(plan_v2: dict[str, Any], run_dir: Path) -> None:
         extra.setdefault("campaign_model", str(plan_v2.get("model") or ""))
         extra.setdefault("campaign_dir", str(run_dir))
         extra.setdefault("campaign_stage", str(node.get("node_id") or ""))
+        if remote_default is not None:
+            extra.setdefault("campaign_remote_default", remote_default)
         if from_stages:
             budget = node.get("budget") or {}
             ts = budget.get("timeout_s")
@@ -466,6 +912,7 @@ def run_campaign(
     dry_run: bool = False,
     detach: bool = False,
     resume: bool = False,
+    remote: Any = None,
     executors: dict[str, ExecutorFn] | None = None,
     solve_lock_path: str | None = None,
     lock_max_wait_s: float = 0.0,
@@ -477,6 +924,10 @@ def run_campaign(
     - run_dir 缺省=计划所在目录（期刊/锁/报告/计划视图同目录；resume 天然
       稳定——同 plan 同 run_dir，断点续跑由基座 _resume_decision 承担）；
     - ``resume`` 旗标为显式意图声明（续跑语义期刊内建，重调同参即续跑）；
+    - ``remote``：plan 级 ``--remote`` 旗标（E62 席 2026-10-08；E-06/PR-15
+      拆批余件）——战役级缺省远程路由（True=缺省登记机器/机器名字符串/
+      dict 声明），stage 级 ``"remote"`` 键在场时**逐 stage 声明优先**；
+      缺省 None=本机路径零行为变化；
     - ``lock_max_wait_s=0``：同 run_dir 并发第二实例占即拒（信封 errors 含
       锁路径 lock 字样，CLI rc≠0）；
     - ``executors``：kind→ExecutorFn 整表覆盖（编排方/测试注入缝），缺省
@@ -492,7 +943,12 @@ def run_campaign(
     run_path = Path(run_dir) if run_dir else plan_file.parent
     run_path.mkdir(parents=True, exist_ok=True)
 
+    if isinstance(remote, str) and remote.strip().lower() in ("true", "1",
+                                                              "yes"):
+        remote = True
     plan_v2 = wrap_campaign_plan(plan)
+    if remote is not None and plan_v2.get("remote") is None:
+        plan_v2["remote"] = remote
     _inject_plan_context(plan_v2, run_path)
 
     if dry_run:
@@ -523,8 +979,14 @@ def run_campaign(
     from rfauto.service.campaign_manager import PLAN_FILE_NAME
 
     log_fn = log or _make_run_log(run_path)
-    # 运行前视图：verdict=RUNNING（UI 队列页对运行中战役显示 running 行）
-    if plan_v2.get("verdict") not in ("RUNNING",):
+    # 运行前视图：verdict=RUNNING（UI 队列页对运行中战役显示 running 行）。
+    # ge9 审查 P2-2：占锁拒绝/计划非法路径不得留幻影 running 行——记原
+    # verdict，run 级失败（期刊未生成=零阶段执行）时回写还原。预写不能
+    # 挪到 run_dag 之后：run_dag 是单次阻塞调用，执行期间磁盘可见
+    # RUNNING 才有"运行中"队列语义（回写还原与"锁成功后才写"的可观测
+    # 终态等价，且不新增执行循环）。
+    prev_verdict = plan_v2.get("verdict")
+    if prev_verdict != "RUNNING":
         plan_v2["verdict"] = "RUNNING"
         with contextlib.suppress(OSError):
             save_plan(plan_v2, plan_file.parent)
@@ -536,7 +998,14 @@ def run_campaign(
         lock_max_wait_s=float(lock_max_wait_s),
         log=log_fn)
     if not (run_path / DAG_STATE_FILE).is_file():
-        # run 级失败（锁被占/计划非法）：期刊未动，如实透传锁路径（含 lock 字样）
+        # run 级失败（锁被占/计划非法）：期刊未动，如实透传锁路径（含 lock 字样）；
+        # 幻影 RUNNING 回写还原（本调用未执行任何阶段，verdict 不该停留 RUNNING）
+        if prev_verdict is None:
+            plan_v2.pop("verdict", None)
+        else:
+            plan_v2["verdict"] = prev_verdict
+        with contextlib.suppress(OSError):
+            save_plan(plan_v2, plan_file.parent)
         errs = list(result.get("errors") or [])
         if not errs:
             errs = [f"DAG 期刊未生成（执行基座未落账本）: {run_path}"]
@@ -636,8 +1105,11 @@ __all__ = [
     "CAMPAIGN_EXECUTORS",
     "CAMPAIGN_KINDS",
     "CAMPAIGN_LOG_FILE",
+    "REMOTE_STAGE_FILE",
     "STAGE_RESULT_FILE",
     "campaign_kind_of",
+    "remote_stage_gate",
     "run_campaign",
+    "stage_remote_decl",
     "wrap_campaign_plan",
 ]

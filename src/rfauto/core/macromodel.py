@@ -1,6 +1,6 @@
 """D13 S 参数宏模型内核（向量拟合 + 无源性 + SPICE 导出 + FSV 保真裁判）。
 
-任务来源：续跑计划 §10.3 D13 / §10.19 第 2 条。目标是把频域 S 参数
+任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。目标是把频域 S 参数
 （Touchstone / 仿真归档）转成"电路可用宏模型"：有理极点-留数模型 + 无源性
 处理 + SPICE 子电路 + 保真判定。
 
@@ -1428,7 +1428,7 @@ def fit_macromodel(request: dict[str, Any]) -> dict[str, Any]:
     ``spice_replay``（None / 回放自检结果 / {"status": "error", ...}；仅导出
     SPICE 且未显式关闭（request["spice_replay"]=False）时执行：回放 vs 原始/
     模型的 rms_db 与 max_abs + 回放 S 矩阵；``consistent`` = 回放 vs 模型
-    max|ΔS| ≤ ``replay_consistency_tol_abs``（缺省 1e-6）/
+    max|ΔS| ≤ ``replay_consistency_tol_abs``（缺省 1e-6））/
     ``fsv``（逐响应 ADM/FDM/GDM 等级 + worst_gdm_grade + gdm_at_least_good）/
     ``ok``（最终 RMS ≤ 阈值 且 带内无源 且 SPICE 结构有效 且 FSV ≥ Good
     且（若执行了回放自检）回放 vs 模型一致）。

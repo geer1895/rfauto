@@ -78,7 +78,9 @@ def aging_report(payload: dict[str, Any]) -> dict[str, Any]:
 
     附 disclaimer 措辞钉（EOL 漂移上界估计，非认证寿命结论；多机理耦合
     UNKNOWN）；provenance 含 aging_laws.yaml 出处与 awaiting 状态；未给
-    spec 则判据节 verdict=UNKNOWN 如实不冒充。
+    spec 则判据节 verdict=UNKNOWN 如实不冒充。无副作用，可安全调用
+    （只读计算面，现场 simulate 也走 fake 内存通道零落盘）；只读无时序
+    约束。
 
     Args:
         payload: JSON 进出 payload：simulate_result（aging_simulate 结果

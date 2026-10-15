@@ -1,4 +1,4 @@
-"""AAA 有理逼近试点（round3 附带三件之一，研究扩充 §3.1）。
+"""AAA 有理逼近试点（round3 附带三件之一，research_expansion_20260926_round3 §3.1）。
 
 任务口径原文：
     "AAA 有理逼近试点（scipy.interpolate.AAA 1.15 起实测在装——标量频响
@@ -15,9 +15,9 @@
 - 本模块是"逼近器对照试点"内核，不接入 AFS 选频主循环（D13/AFS 主线改动
   须走其自身批次）；真机频响回收（mline/ring 提取）属 C 类，不在本件。
 
-数值纪律：逼近质量与极点恢复的裁判 = 合成已知有理函数的
+数值纪律（AGENTS #118）：逼近质量与极点恢复的裁判 = 合成已知有理函数的
 回收误差（tests/unit/test_aaa_pilot.py 预声明容差钉），不是自我推导；
-本模块不做任何物理断言。
+本模块不做任何物理断言（AGENTS #7）。
 
 依赖与降级：AAA 需 scipy>=1.15（pyproject 基线 scipy>=1.11）——惰性 import，
 缺 API 时 aaa_fit 抛 RuntimeError 带 reason（render_constraints z3 惰性降级

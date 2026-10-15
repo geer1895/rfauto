@@ -1,7 +1,7 @@
 """df7 T2：SI 通道一键报告 service 面（JSON 进出，规则 4；CLI/MCP 是薄壳）。
 
 纯后处理吃现成 sparams 资产（Touchstone 文件或 run 目录），零新几何模板。
-四检查段（方案池 方案池 T2）：
+四检查段（方案池 docs/plan_expansion_pool_20260924.md T2）：
 
 - **passivity 无源性**：全频段逐频 σmax(S)（numpy SVD），判据
   max σmax ≤ 1+tol（违规频点列 TOP N）；

@@ -85,7 +85,7 @@ def stage_mutation(
         seed: TopologyMutator 随机种子（确定性可复现）。
         n_mutations: 变异次数（取首个提案接线，其余仅计数）。
         mutation_types: 允许的变异类型；None = TopologyMutator.MUTATION_OPS。
-        sandbox: 沙箱实例（默认 runs/recipe_sandbox）。
+        sandbox: 沙箱实例（默认 runs/recipe_sandbox/）。
         adapter_name: promote 时 dry-run 的适配器（默认 fake）。
         promote: True 时草稿差异继续走 RecipeSandbox.promote（既有审批链）。
 

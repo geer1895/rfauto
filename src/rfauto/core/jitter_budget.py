@@ -15,7 +15,7 @@
   √2·erfc⁻¹(2·BER)：Ransom Stephens, "Jitter Analysis: The dual-Dirac
   Model, RJ/DJ Separation"（Agilent/Keysight 白皮书 5989-3206EN, 2004）
   + R. Stephens, IEEE Communications Magazine 42(2) (2004) 双核
-  （研究扩充 round3 F-E 表件 4 指定权威）。
+  （docs/research_expansion_20260926_round3.md F-E 表件 4 指定权威）。
   行业钉：BER=1e-12 时 Q=7.0344（白皮书口径引用值），2Q=14.069——即
   "峰峰抖动 ≈ 14σ_RJ @ 1e-12" 经验法则的精确出处。本内核 scipy 实测
   Q(1e-12) = 7.034483825301131（special.erfcinv 与 stats.norm.isf 两条

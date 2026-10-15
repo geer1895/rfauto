@@ -24,7 +24,7 @@ r4 证据链（2026-09-11 真机归因收口）：
   臂 port origin 字面表达式（复现核心，test_dim_audit 钉住 NON_LITERAL
   行为）外一律预计算浮点+显式 mm 后缀（#218 ①）。
 
-用法（分离进程， #157）：
+用法（分离进程，AGENTS #157）：
   Start-Process 分离运行，stdout/stderr 落 runs/mline_repro_rN_<臂>.log
 产物：runs/audit_freq_scale/hfss_mline_repro/<臂>/mline_repro.aedt
 结论打印（供归因判读）：

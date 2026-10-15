@@ -1,6 +1,6 @@
-"""CLI 集成测试—— typer CliRunner 驱动真实命令入口。
+"""CLI 集成测试（审查修复批次补充）—— typer CliRunner 驱动真实命令入口。
 
-背景：cli/main.py 曾长期零覆盖（13 个命令无任何测试），本文件覆盖
+审查发现 cli/main.py 覆盖率 0%（13 个命令无任何测试），本文件覆盖
 只读命令与关键写路径的最小集。
 """
 
@@ -140,22 +140,22 @@ class TestCommandRegistryCount:
 
     def test_leaf_command_count(self):
         # 53（09-12 基线）+1（WP4.7 export-report-pdf）= 54
-        # +37（2026-09-15 shell 工具批量：bench 2 + bands 10 +
+        # +37（2026-09-15 cli-mcp-api-shell-bundle：bench 2 + bands 10 +
         #   campaign 4 + template-spec 2 + uq 3 + farfield 2 + kicad extract/
         #   optimize 2 + electrothermal/parasitic 2 + topology 1 + datasets 4 +
         #   vna-replay 1 + report-narrative 1 + rationale 3）= 91
-        # +1（level2：bench level2 薄壳，cli/bench_app.py；此前漏同步本消费者
-        #   经合流门抓出后补计，#231 同族）= 92
-        # +3（RAG 薄壳：rag index/query/explain，rag_service 一步式包装）
+        # +1（33beec3 level2：bench level2 薄壳，cli/bench_app.py；该提交漏同步
+        #   本消费者，p2-micro-batch-a 合流门抓出后补计，#231 同族）= 92
+        # +3（F2⑥ RAG 薄壳：rag index/query/explain，rag_service 一步式包装）
         #   = 95
-        # +3（接线层装车：self-heal run / logs digest /
+        # +3（审查接线层装车：self-heal run / logs digest /
         #   materials dispersion-report，零逻辑转发 service 信封）= 98
-        # +6（2026-09-18：db init/migrate/status/reindex-runs/
-        #   query/analytics-attach，注册表薄壳零逻辑转发 db_service）= 104
-        # +5（2026-09-18：slotline analyze/synth + transitions
-        #   msl-slot/marchand-balun/marchand2，槽线与过渡薄壳零逻辑转发
+        # +6（w1a-shell-front 2026-09-18：db init/migrate/status/reindex-runs/
+        #   query/analytics-attach，W1⑫ 注册表薄壳零逻辑转发 db_service）= 104
+        # +5（w2i-shell-back 2026-09-18：slotline analyze/synth + transitions
+        #   msl-slot/marchand-balun/marchand2，W2⑨ 槽线与过渡薄壳零逻辑转发
         #   slotline_service）= 109
-        # +2（2026-09-18：datasets discover-workdir/import-workdir，
+        # +2（fix-importer 2026-09-18：datasets discover-workdir/import-workdir，
         #   工作目录形态真机产物导入器薄壳零逻辑转发 dataset_service）= 111
         # +3（df6_dp5cascade 2026-09-24：cascade budget/spur/plan，DP-5 系统级
         #   预算引擎+杂散搜索薄壳零逻辑转发 cascade_service）= 118
@@ -185,7 +185,7 @@ class TestCommandRegistryCount:
         #   port_gate_service）= 152
         # +2（qw123 2026-09-26：si mixed（QW-1 混合模 S 参数薄壳零逻辑转发
         #   si_channel_service.mixed_mode_metrics）+ anchors stale（QW-3 锚
-        #   新鲜度薄壳零逻辑转发 anchors_service.anchors_stale_report）= 154
+        #   新鲜度薄壳零逻辑转发 anchors_service.anchors_stale_report））= 154
         # +3（ge-fbp2 2026-09-26：pdn analyze/select/gate，F-B P2 PI/PDN AC
         #   阻抗域三命令薄壳零逻辑转发 pdn_service）= 157
         # +3（ge-fcp2 2026-09-26：aging simulate/verdict/report，F-C P2 器件
@@ -197,7 +197,7 @@ class TestCommandRegistryCount:
         # +4（ge-code3 2026-09-26：afs plan/sweep（M-3 AFS 自适应频扫薄壳，
         #   sweep --synthetic 合成演示零真机）+ interop ts21-write/hfss-comments
         #   （ME-10' 尾巴：TS 2.1 写出 + HFSS 注释块直读薄壳，零逻辑转发
-        #   interop_service）= 166
+        #   interop_service））= 166
         # +2（remote-v0 2026-09-28：remote probe/status，多机协同仿真资源
         #   探活/状态薄壳零逻辑转发 remote_service）= 168
         # +7（me17b-wire 2026-09-28：ME-17b 接线批后半——repro-manifest/
@@ -205,7 +205,7 @@ class TestCommandRegistryCount:
         #   reproducibility_service）+ chain lna/loadpull（C14 有源链路，
         #   零逻辑转发 active_chain_service）+ even-odd（奇偶模分解报告，
         #   零逻辑转发 even_odd_service）+ lake sweep/export-parquet
-        #   （QW-13 只读清点+P-5 冷层 COPY，零逻辑转发 lake_service）= 175
+        #   （QW-13 只读清点+P-5 冷层 COPY，零逻辑转发 lake_service））= 175
         # +9（t43-fab-absorb 2026-09-29：fab 子应用 go/pipeline/snapshot/
         #   draw/audit/pack/rules/catalog/export，HFSS→可机加交付包薄壳
         #   零逻辑转发 fab_export_service）= 184
@@ -225,7 +225,7 @@ class TestCommandRegistryCount:
         # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
         # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
         # 同名对已由 89852ba 改名 reports 闭合；df7 程序化裁定注册面=解析面
-        # =140 零 shadow（回归钉 test_zero_shadow_*，报告链批 "10 面"
+        # =140 零 shadow（回归钉 test_zero_shadow_*，"10 面"
         # 系中间稿误计数，全 git 历史仅此一对同名冲突）。
         total = len(app.registered_commands)
         for info in app.registered_groups:
@@ -249,10 +249,46 @@ class TestCommandRegistryCount:
         # +13（W6 2026-10-06：SN-3 kickoff/close 2 + SN-17 沙箱 list/diff/
         # promote 3 + dev new-template/new-calculator 2 + diagnose deviation 1
         # + kicad design-from-run 1 + SN-7/8/13/14/15/6/18 旗标伴随叶 4，
-        # +3（EDB 快车道批 2026-10-08：edb build/solve/status 三叶，
-        # cli/domains/edb.py 域内自注册 add_typer）= 257
-        # +1（远程回拉与队列批 2026-10-09：campaign queue-daemon 叶）= 258
-        assert total == 258
+        # 合流实测口径）= 254
+        # +2（E-06/PR-15 调度面 v1 2026-10-08：remote resources/queue，
+        # 多机资源可见性+队列视图薄壳零逻辑转发 remote_scheduler_service）
+        # = 256（README/交接文档/docs_site 三处 docs 数字同步=合流收口项）
+        # +1（Z-11 2026-10-08：pool-patrol，池登记项新鲜度巡检薄壳零逻辑
+        # 转发 pool_patrol_service.pool_patrol）= 257
+        # +3（P3 尾程项13 2026-10-08：oracle list/check/check-all，QM-2 闭式
+        #   预言机只读 CLI 出口——calc_vna 域内惰性 import
+        #   core/closed_form_oracle 直连既有纯函数面，A-11 裁定不构成重开
+        #   理由=只读出口，零写盘零状态）= 260（本席 delta 口径）
+        # +1（并发席在树 2026-10-08：campaign queue-daemon，队列守护薄壳）
+        # = 261（树真值口径；共享计数禁单席独钉，合流主代理以实测终裁——
+        # #247：全量计数他轨推进必互相打红，注释双席位归属可审计）
+        # +3（edb 快车道 2026-10-08：edb build/solve/status，零逻辑转发
+        #   新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解
+        #   编排全在 service+adapters 确定性内核）= 264（README/
+        #   交接文档/docs_site 三处 docs 数字随本批同步）
+        # +2（aurora36 W2-D 2026-10-11：recast status/replay，RECAST 判据
+        #   重放两只读叶——教程 docs/tutorials/recast-walkthrough.md 的
+        #   CLI 出口，零逻辑转发 service/recast_service→core/recast；R3
+        #   授权"1-2 只读叶"取两叶，任务书预估"264→265"系单叶口径）
+        #   = 266（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
+        # +1（aurora_d REST-B 2026-10-14：rest schema，REST 面 schema 导出
+        #   只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+
+        #   OpenAPI spec 落盘，零逻辑转发 service/rest_api）
+        #   = 267（README/交接文档/docs_site/CHANGELOG 数字同笔）
+        # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化
+        #   检索面两叶——索引加载/校验/id 查零逻辑转发
+        #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
+        #   数据面=knowledge/pitfalls_index_full.json）
+        #   = 269（README/交接文档/docs_site/CHANGELOG 数字同笔）
+        assert total == 269
+
+    def test_recast_commands_registered(self):
+        """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""
+        from typer.main import get_command
+
+        cmd = get_command(app)
+        recast_cmd = cmd.commands["recast"]
+        assert set(recast_cmd.commands) == {"status", "replay"}
 
     def test_pcell_commands_registered(self):
         """LC-2 pcell 子应用四命令注册面在位（PCell DSL 孤儿复活消费面）。"""
@@ -540,8 +576,7 @@ class TestExportReportPdfCommand:
         pdf_path = tmp_path / "runs" / run_id / "report.pdf"
         assert pdf_path.exists()
         assert pdf_path.stat().st_size > 0
-        assert "20260912_120000_cli_pdf_smoke" in result.output
-        assert "report.pdf" in result.output
+        assert f"runs\\{run_id}\\report.pdf" in result.output
 
     def test_export_report_pdf_output_path(self, tmp_path):
         run_id = _fake_run_metrics(tmp_path)
@@ -613,7 +648,7 @@ class TestBudgetIp3Passthrough:
 
 
 def _rag_corpus(tmp_path: Path) -> Path:
-    """rag 命令离线小语料：docs/*.md + runs/<id>/meta.json（零网络）。"""
+    """F2⑥ rag 命令离线小语料：docs/*.md + runs/<id>/meta.json（零网络）。"""
     docs = tmp_path / "docs"
     docs.mkdir()
     (docs / "note.md").write_text(
@@ -631,7 +666,7 @@ def _rag_corpus(tmp_path: Path) -> Path:
 
 
 class TestRagCommands:
-    """RAG 词法检索薄壳（rag index/query/explain，离线 tmp 语料）。"""
+    """F2⑥ RAG 词法检索薄壳（rag index/query/explain，离线 tmp 语料）。"""
 
     def test_rag_help_lists_three_commands(self):
         result = runner.invoke(app, ["rag", "--help"])
@@ -712,7 +747,7 @@ class TestRagCommands:
         assert "docs|runs|all" in result.output
 
 
-# ─── calc 实验开关透传 + db 六命令薄壳（2026-09-18）─────────────────────────
+# ─── w1a-shell-front（2026-09-18）：calc 实验开关透传 + db 六命令薄壳 ──────────
 
 _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 _EXP_PARAMS = ["-p", "l_mm=40", "-p", "w_mm=50"]
@@ -784,8 +819,9 @@ class TestCalcExperimentalPassthrough:
         assert data["experimental"] is False
 
     def test_run_json_ok_false_exits_nonzero_with_full_envelope(self):
-        """--json 下 ok=False 信封仍完整输出，但退出码非零
-        （与 _emit 口径一致；脚本消费方靠 exit code 判成败）。"""
+        """w1a followUp ①：--json 下 ok=False 信封仍完整输出，但退出码非零
+        （calc run --json 成功/失败统一走 _emit 出口；脚本消费方靠 exit code
+        判成败而非解析信封）。"""
         result = runner.invoke(app, [
             "calc", "run", _EXPERIMENTAL_KEY, *_EXP_PARAMS, "--json"])
         assert result.exit_code != 0, result.output
@@ -794,7 +830,7 @@ class TestCalcExperimentalPassthrough:
         assert "allow_experimental" in data["error"]
 
     def test_run_json_ok_true_exits_zero(self):
-        """--json 下 ok=True 退出码 0（行为不变钉）。"""
+        """w1a followUp ①：--json 下 ok=True 退出码 0（行为不变钉）。"""
         result = runner.invoke(app, [
             "calc", "run", _EXPERIMENTAL_KEY, *_EXP_PARAMS,
             "--allow-experimental", "--json"])
@@ -858,7 +894,7 @@ def _seed_registry_runs(tmp_path: Path) -> None:
 
 
 class TestDbCommands:
-    """rfauto db 六命令：零逻辑转发 db_service，--db 显式路径隔离。"""
+    """rfauto db 六命令（W1⑫）：零逻辑转发 db_service，--db 显式路径隔离。"""
 
     def test_help_lists_six_commands(self):
         result = runner.invoke(app, ["db", "--help"])
@@ -946,9 +982,9 @@ _SLOT_SUB = ["--h-mm", "1.524", "--eps-r", "3.66", "--freq-ghz", "2.5"]
 
 
 class TestSlotlineTransitionsCommands:
-    """rfauto slotline（2）/ transitions（3）薄壳：零逻辑转发 slotline_service，
+    """rfauto slotline（2）/ transitions（3）薄壳（W2⑨）：零逻辑转发 slotline_service，
     --json 直出信封；越域红字 exit 1；synth 不可达=退 0+realizable=False（D5
-    语义，同文件 :578-588 钉）。数值只出
+    语义，同文件 :578-588 钉）。数值锚同 ②③（数值只出
     内核，壳层不复算）。"""
 
     def test_help_lists_commands(self):
@@ -984,7 +1020,7 @@ class TestSlotlineTransitionsCommands:
         result = runner.invoke(app, ["slotline", "synth", "--z0-ohm", "110.92", *_SLOT_SUB, "--json"])
         assert result.exit_code == 0, result.output
         assert json.loads(result.output)["result"]["w_mm"] == pytest.approx(1.0, abs=2e-3)
-        # D5 语义对齐（与 marchand-two-section 同形）：超可达区间→
+        # D5 语义对齐（df5c，与 marchand-two-section 同形）：超可达区间→
         # ok=True + realizable=False + reason（退 0），非 ok=False 退 1。
         bad = runner.invoke(app, ["slotline", "synth", "--z0-ohm", "500", *_SLOT_SUB])
         assert bad.exit_code == 0

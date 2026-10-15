@@ -1,6 +1,6 @@
 """F-I P3 离线面：layout_sim_service——版图 → openEMS render_script 组装 + 发射面产物清单。
 
-方案依据：研究扩充 round5 §二 F-I 三段计划 P3——
+方案依据：docs/research_expansion_20260926_round5.md §二 F-I 三段计划 P3——
 "layout_sim_service+render_layout（openEMS 平行渲染器）+HFSS sheet 渲染+#212
 离线审计+论文 GDS 复现首例"；本模块承担其中**离线面**：service 组装层
 （stackup+ports+版图几何 → 完整 render_script 文本）+ 发射面（产物清单/预算
@@ -88,7 +88,7 @@ from rfauto.adapters.layout_substrate import (
 # F-13 批 2（W6-E）：载荷守卫单源化（#116 删净）。文案分歧件已声明统一：
 # 原「payload 必须为映射: X」→ 单源「payload 必须是 JSON 对象，实际 X」
 # （try/except ValueError 捕获进 errors 的 ok=False 语义逐位不变，文案
-# 变更见 W6-E 报告）。
+# 变更见 W6-E 报告/）。
 from rfauto.service._helpers import require_payload_dict as _require_payload_dict
 from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.layout_service import layout_from_payload

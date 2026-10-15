@@ -216,9 +216,9 @@ SPECS: tuple[CardSpec, ...] = (
         ),
         doc_refs=(
             DocRef(
-                path="docs/续跑计划",
-                quote="任务来源：续跑计划 §10.3 D13 / §10.19 第 2 条。",
-                tracked=False,
+                path="PROJECT_RULES.md",
+                quote="任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。",
+                tracked=True,
             ),
         ),
     ),
@@ -268,7 +268,7 @@ SPECS: tuple[CardSpec, ...] = (
                     "S22=(I−N)(I+N)⁻¹"
                 ),
                 cite=(
-                    "规格 规格深案 DP-1 §2.3"
+                    "规格 docs/plan_deepdive_specs_20260924.md DP-1 §2.3"
                     "（投影域勘误后变体）；两侧同时激励消元，纯转置无共轭"
                 ),
             ),
@@ -335,8 +335,8 @@ SPECS: tuple[CardSpec, ...] = (
         ),
         doc_refs=(
             DocRef(
-                path="规格深案",
-                quote="规格 = 规格深案 DP-1 §2；",
+                path="docs/plan_deepdive_specs_20260924.md",
+                quote="规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；",
                 tracked=False,
             ),
             DocRef(
@@ -477,7 +477,7 @@ SPECS: tuple[CardSpec, ...] = (
         ),
         doc_refs=(
             DocRef(
-                path="研究扩充",
+                path="docs/research_expansion_20260926.md",
                 quote="§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5",
                 tracked=False,
             ),
@@ -574,15 +574,15 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="Saltelli 互证 ±10%（§10.15）",
                 note=(
                     "验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 "
-                    "±10%（续跑计划 §10.15 预声明）。"
+                    "±10%（延续计划 §10.15 预声明）。"
                 ),
             ),
         ),
         doc_refs=(
             DocRef(
-                path="docs/续跑计划",
-                quote="docs/续跑计划.md §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）",
-                tracked=False,
+                path="PROJECT_RULES.md",
+                quote="延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）",
+                tracked=True,
             ),
         ),
     ),
@@ -696,8 +696,8 @@ SPECS: tuple[CardSpec, ...] = (
         ),
         doc_refs=(
             DocRef(
-                path="规格深案",
-                quote="规格：规格深案 §DP-5；判据书：",
+                path="docs/plan_deepdive_specs_20260924.md",
+                quote="规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书：",
                 tracked=False,
             ),
             DocRef(

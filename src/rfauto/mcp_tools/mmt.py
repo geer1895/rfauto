@@ -43,8 +43,9 @@ def mmt_solve(
         sigma_s_m: 顶层缺省导体电导率 S/m（None=PEC 壁）
         mode_policy: 模式数策略（n_modes_ref/n_modes_max/n_doublings_max 等）
         z0_ref: 端口参考阻抗 Ω（缺省 50）
-        freq_start_ghz: 均匀网格起点（freqs_ghz 缺省时用）
-        freq_stop_ghz: 均匀网格终点
+        freq_start_ghz: 均匀网格起点 GHz（freqs_ghz 缺省时用，与
+            freq_stop_ghz/n_freq 三件套）
+        freq_stop_ghz: 均匀网格终点 GHz（与 start 同给才生效）
         n_freq: 均匀网格点数（缺省 41）
         work_dir: 产物目录（缺省临时目录；写 sparams.csv/mmt.s2p/mmt_meta.json）
 
@@ -78,9 +79,8 @@ def mmt_solve(
 def compose_netlist(netlist: dict, out_dir: str | None = None) -> dict[str, Any]:
     """模板几何组合（mmt 域）：rfauto-netlist-v1 三段式 → simulation.py。
 
-    DP-8 布局合并路线；netlist schema 由 compose_service 模块头单源定义。
-    非法 netlist/写盘失败 → ok=False error 信封如实。时序：产物走既有
-    渲染管线消费。
+    DP-8 布局合并路线；只读 netlist 面（不用于全波验证）。
+    非法 netlist → ok=False 如实。
 
     Args:
         netlist: rfauto-netlist-v1 三段式 netlist（schema 详见

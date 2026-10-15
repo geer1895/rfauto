@@ -1,4 +1,4 @@
-"""License-aware 队列（扩展方案 方向 1 工程必要条件）。
+"""License-aware 队列（规划扩展 方向 1 工程必要条件）。
 
 探测 license server 可用性；不可用时调用方应挂起（等待重试）而非失败——
 真机 HFSS 求解 40 分钟成本，一次探测失败不应烧掉整个多保真管线。
@@ -47,6 +47,13 @@ def probe_license(server: str | None = None, *, timeout_s: float = DEFAULT_PROBE
 
     server 为空时依次尝试环境变量中的配置；全部缺失时返回 unknown（不算失败，
     本机节点锁 license 场景没有 server 可探测，由调用方决定放行）。
+
+    多候选语义（review_aurora_next A7 P2-4，2026-10-13）：候选逐个试，
+    **连接失败继续试下一候选**（主备多台场景首台宕机不再短路判死——
+    等待重试期间备台可能已恢复，与模块"挂起等待而非失败"意图一致）；
+    全部候选连接失败才返回 ``available=False``（``detail`` 带逐台失败
+    明细）。spec 解析失败仍即时 fail-open 放行（多值串/文件路径形态无法
+    TCP 探测，既有口径不变）。
     """
     candidates: list[str] = []
     if server:
@@ -60,6 +67,7 @@ def probe_license(server: str | None = None, *, timeout_s: float = DEFAULT_PROBE
     if not candidates:
         return {"available": True, "server": None, "detail": "no license server configured; assuming local/loopback license"}
 
+    failures: list[str] = []
     for spec in candidates:
         parsed = _parse_server(spec)
         if parsed is None:
@@ -72,8 +80,14 @@ def probe_license(server: str | None = None, *, timeout_s: float = DEFAULT_PROBE
                 return {"available": True, "server": spec, "detail": f"tcp {host}:{port} reachable"}
         except OSError as e:
             logger.warning("license server %s unreachable: %s", spec, e)
-            return {"available": False, "server": spec, "detail": str(e)}
-    return {"available": False, "server": None, "detail": "no candidate probed"}
+            failures.append(f"{spec}: {e}")
+    # A7 P2-4：全部候选逐个试完仍不可达才判不可用（此前首台连接失败即
+    # return 短路，备台永不尝试）；server 保留 str 形态（消费面
+    # batch_guard.assert_license_headroom 按 truthy 判"已配置"并日志回显，
+    # 多候选用分号连接与 ANSYSLMD_LICENSE_FILE 多值串惯例一致）。
+    return {"available": False,
+            "server": candidates[0] if len(candidates) == 1 else ";".join(candidates),
+            "detail": "; ".join(failures) or "no candidate probed"}
 
 
 def wait_for_license(

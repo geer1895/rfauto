@@ -1,7 +1,7 @@
 """lake_service —— runs/ 数据湖索引与分层压实 MVP（F3/df7）。
 
-能力面（规格：方案池 F3；study 元组面
-DA-1，研究扩充 round4 中件包三）：
+能力面（规格：docs/plan_expansion_pool_20260924.md F3；study 元组面
+DA-1，docs/research_expansion_20260926_round4.md 中件包三）：
 
 - 索引：``build_runs_index`` 扫 runs/（一级战役目录+二级 run 点，两层
   目录**全部入索引**，目录级元数据如实留 NULL）入 DuckDB 表
@@ -82,7 +82,7 @@ __all__ = [
 # runs/ 湖索引（DuckDB）
 # ---------------------------------------------------------------------------
 
-#: DuckDB 防御性 PRAGMA 缺省值（P-5，研究扩充 round3 §3.2）：
+#: DuckDB 防御性 PRAGMA 缺省值（P-5，research_expansion round3 §3.2）：
 #: 湖索引是低频批处理面（重建/查询各一次连接），给小内存上限+单线程即够，
 #: 防 DuckDB 缺省吃满机器内存/核数挤占在跑真机求解（#246 同源关切）。
 DEFAULT_DUCKDB_MEMORY_LIMIT = "2GB"

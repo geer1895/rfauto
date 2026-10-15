@@ -1,6 +1,6 @@
 """PT-7 产线测试数据服务面（JSON 进出薄壳，规则 4：新功能先写 service）。
 
-规格 研究扩充 round18 §四 PT-7：产线测试数据
+规格 docs/research_expansion_20261002_round18.md §四 PT-7：产线测试数据
 schema + 按测项失效率 Pareto。数值全在确定性内核 core/production_data.py
 （铁律 7），本模块只做 JSON/dict 归一面与文件装载（load_json_records），
 零计算零物理数字（阈值/实测值只透传）。

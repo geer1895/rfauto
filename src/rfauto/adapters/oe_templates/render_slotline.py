@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ══ 槽线族正式注册（2026-09-18 w1b，排空六轮 followUps ④/0df②/0dl①；审计 #12/#17）══
-# 路线 A/B 均匀槽线段（真机三门 PASS，（二百）、MSL↔slot 过渡
+# 路线 A/B 均匀槽线段（真机三门 PASS，（二百））、MSL↔slot 过渡
 # 与 Marchand 双槽臂（真机判读 ）由附加模块升格正式注册——渲染入口
 # 仍在各自模块（本段零拷贝、只做分发与元数据，#116 防本地副本）：
 #   adapters/slotline_template.render_slotline_script        （slotline，路线 A）
@@ -31,7 +31,7 @@ def _slotline_family_params(template: str, params: dict[str, Any],
     """槽线族入参归一：h_mm/er/tan_d 模板参数优先（缺省=路线 A/B 设计点），
     缺项才回退 recipe substrate。**h=1.524（RO4350B 60mil）是模板参数而非缺省
     叠层**：Janaswamy–Schaubert 闭式域要求 d/λ0≥0.006，缺省 0.508@2.5GHz 落域外
-    。"""
+    （）。"""
     p = dict(params)
     sub = substrate or _DEFAULT_SUB
     p.setdefault("h_mm", float(sub["h_mm"]))
@@ -180,7 +180,7 @@ SLOTLINE_META: dict[str, Any] = {
     "f0_ghz": 2.5, "n_ports": 2,
     "extraction": "WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）："
                   "模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口"
-                  "视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B）；"
+                  "视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，）；"
                   "S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站"
                   "自实现工程 DFT 相位斜率",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
@@ -259,7 +259,7 @@ MARCHAND_BALUN_META: dict[str, Any] = {
     "topology": "Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 "
                 "与中条精确共边；顶层微带穿两槽+共享开路支节）：**设计级结论=单支节"
                 "串接已被两引擎互证证伪**（四门 FAIL、两跨越点激励不对称、拓扑无隔离"
-                "机制）——真 Marchand=两节对称耦合段（电路级综合 "
+                "机制，）——真 Marchand=两节对称耦合段（电路级综合 "
                 "core/slotline_transitions.synthesize_marchand_two_section，名义点 "
                 "50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；"
                 "本模板保留作对照口径与判据载体，不作生产巴伦",
@@ -306,13 +306,12 @@ TEMPLATE_NOMINAL["marchand_balun"] = MARCHAND_BALUN_NOMINAL
 
 # ══ Marchand 两节对称耦合段渲染器 + 过孔对照旋钮（C12，2026-09-21）══
 # 背景：HFSS 巴伦锚全波中心（S11 零点 2.04GHz）比理想电路（2.5GHz）低 ≈18%
-# （runs/hfss_marchand_anchor，归因假设=过孔柱电感
+# （，runs/hfss_marchand_anchor，归因假设=过孔柱电感
 # ≈0.7nH+开路 fringe）；openEMS 烟测（runs/smoke_marchand_2sect）谷 ≥3.0 触
 # 扫频边截断、两引擎 DISAGREE 谐振反向（二百五十八）；同端口仲裁 ENGINE_SIDE
 # （二百七十九）+匹配线标定（二百八十二）把 openEMS 侧偏差主体定位到 Z0/端口
 # 提取（修正项 engine_z0_correction 已落地 core/slotline_transitions）。**−18%
-# 本身的登记归因对照=过孔 PEC 薄片单变量**（TODO 排空五轮段/（二百五十
-# 四）followUp ①"过孔改理想 PEC 薄片短路"）。电路级预判（core
+# 本身的登记归因对照=过孔 PEC 薄片单变量**（TODO 排空五轮段/followUp ①"过孔改理想 PEC 薄片短路"）。电路级预判（core
 # coupled_line_z_matrix + 短路口 jωL 负载约束，2026-09-21 C12 实算）：L=0.7nH
 # → 谷 2.046GHz——**−18% 主体可由过孔电感定量复现**（方向=短路副线电学变长、
 # 谐振下移：θ_副线+θ_via=90°，t_res=Z0o/(ωL)）。

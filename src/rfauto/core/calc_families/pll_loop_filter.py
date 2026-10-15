@@ -15,7 +15,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "pll_loop_filter_synthesize",
-    "MT-5 三阶 PLL 环路滤波器综合（round17 MT-5，Banerjee SNAA106C T1/T2/"
+    "PLL环路滤波：MT-5 三阶 PLL 环路滤波器综合（round17 MT-5，Banerjee SNAA106C T1/T2/"
     "T3→C1/C2/R2/C3 闭式+相位裕度迭代）：给定环路带宽 f_c（开环穿越）与相位"
     "裕度 PM → 峰值相位放置（dPM/dω|ωc=0，Gardner 二阶几何中值放置的三阶"
     "推广；极点比 r=T3/T1 为显式设计自由度，>1）反解 T1/T2/T3，总电容 A0 由 "

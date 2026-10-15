@@ -23,7 +23,9 @@ def fault_tree_report(
 ) -> dict[str, Any]:
     """故障树报告（QM-FTA 复合工具）：playbook→OR-of-AND 树+孤儿审计+最小割集；out_format 为 mermaid 时附图文本。
 
-    与 CLI ``rfauto fault-tree report`` 同源。engine 取 enumerate（缺省，
+    与 CLI ``rfauto fault-tree report`` 同源。无副作用，可安全调用（纯
+    判定/文本渲染面，mermaid 只进返回体不落盘）；只读无时序约束。
+    engine 取 enumerate（缺省，
     纯确定性恒可用）或 z3（可选依赖 rfauto[z3]；未装 ok=False 如实报缺，
     不静默回退）；z3 路径附三重形式验证（有效性/最小性/完备性）。
 
@@ -74,7 +76,8 @@ def build_datasheet(
 
     免责声明恒在（工程规格书非厂商 datasheet，数值逐条 source）；run 缺省
     =纯名义面（curves 如实 missing 不伪造）；run 目录不存在 → ok=False
-    （正常失败路径非 bug）。
+    （正常失败路径非 bug）。无副作用，可安全调用（模型与渲染全文只进
+    返回体，不落盘不发布）；只读无时序约束。
 
     Args:
         run_dir: run 目录（PR-4 报告模型数据源；空=无实测节）。
@@ -135,7 +138,9 @@ def netlist_goldset_replay(
     """网表 goldset 回放门（AI-6）：构造 qucsatorRF 真通道逐任务回放，对照 gold 值按容差打分出 PASS 率门。
 
     fail-closed：qucsator 可执行缺席/engine 未知 → ok=False 显式报缺（不
-    静默不空跑）；通道异常任务判 ERROR 与 FAIL 分列。指标约定（v1）：
+    静默不空跑）；通道异常任务判 ERROR 与 FAIL 分列。副作用：逐任务真实
+    执行 qucsatorRF 外部子进程（网表/产物写系统临时目录，TemporaryDirectory
+    自动清理，零工作区写面）；指标约定（v1）：
     n_freq/freq_min_hz/freq_max_hz/sXX_mag_min/max/sXX_db_min/max（模块
     service.netlist_sim_channels docstring 全表）；expected 外指标通道不
     产出即如实 FAIL。

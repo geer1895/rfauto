@@ -1,4 +1,4 @@
-# 器件老化律注册表（F-C.1 P1 批，研究扩充 F-C §2/§3(4)）
+# 器件老化律注册表（F-C.1 P1 批，docs/research_expansion_20260926.md F-C §2/§3(4)）
 # 消费者：src/rfauto/core/aging.py（内核只认 aging_frac_per_decade/ea_ev 数值，
 # 本文件是数值唯一来源）；P2 的 service/aging_service.py 按模板材料查表。
 #

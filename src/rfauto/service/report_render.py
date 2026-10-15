@@ -1,6 +1,6 @@
 """DP-13 U1 双输出报告链：run → 报告模型 → typst PDF ‖ plotly 自包含 HTML 同源双出。
 
-合规形态：
+合规形态（AGENTS 规则 7 + #105/#122）：
 
 1. **同源双出**：:func:`build_report_model` 产出唯一报告模型（schema
    ``rfauto-report/v1``，纯 dict、可直接 json.dumps）；:func:`render_typ` 与

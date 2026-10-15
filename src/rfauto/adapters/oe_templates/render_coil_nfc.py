@@ -266,7 +266,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         r"D:/rf_workspace\\\\vendor\\\\openEMS\\\\install\\\\bin")
+                         "D:/rf_workspace/vendor/openEMS/install/bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

@@ -1,6 +1,6 @@
 """LC-4 阻抗连续性 DRC（round15 §四 LC-4；E 流版图四件之四，2026-10-02）。
 
-规格原文（研究扩充 round15 LC-4 段）：
+规格原文（docs/research_expansion_20261002_round15.md LC-4 段）：
     折线分段 walk + rf_trace_geometry 截面 + forward_z0 段间跳变 flag +
     rf_process_corners 角点联动。验收：阶跃/锥形负例。
 

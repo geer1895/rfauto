@@ -260,14 +260,23 @@ def extract_param_ranges(recipe_data: dict[str, Any]) -> dict[str, dict[str, Any
 
 
 def make_study_name(recipe_path: str | Path) -> str:
-    """从配方路径 + 内容生成确定性 study 名称。"""
+    """从配方路径 + 内容生成确定性 study 名称。
+
+    内容哈希**前置**（A7 P2-2，2026-10-13）：stem ≥71 字符时旧尾部拼接
+    ``tune_{stem}_{hash}`` 的 8 位内容哈希被 ``[:80]`` 整段切掉——两个
+    内容不同、stem 同前缀的配方静默共 study（``load_if_exists=True`` 下
+    轨迹互串，#158 语义破）。study 名是断点续跑与缓存 provenance 的身份
+    锚，截断方向应保哈希弃可读段。注：本契约变更使既有 study 名整体
+    换代（旧 storage 中按旧名记录的 study 不再被新名续用——名字含内容
+    哈希，配方未变时重新首跑一次即重建，轨迹不丢只换键）。
+    """
     path = Path(recipe_path)
     if path.exists():
         content = path.read_bytes()
         content_hash = hashlib.sha256(content).hexdigest()[:8]
     else:
         content_hash = "unknown"
-    name = f"tune_{path.stem}_{content_hash}"
+    name = f"tune_{content_hash}_{path.stem}"
     return name[:80]
 
 

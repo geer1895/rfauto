@@ -24,6 +24,7 @@ from rfauto.pipeline.batch_guard import (
     WatchResult,
     _sanitize_pattern,
     assert_license_headroom,
+    assert_ram_headroom,
     find_batch_processes,
     find_orphan_batch_processes,
     kill_process_tree,
@@ -326,6 +327,85 @@ class TestLicenseHeadroom:
 
 
 # ---------------------------------------------------------------------------
+# RAM 余量预检（W10 事故形态；fail-skip / fail-open 双语义 + 阈值边界）
+# ---------------------------------------------------------------------------
+
+
+class TestRamHeadroom:
+    """全 fake：只 patch 双通道查询函数，绝不真查内存、绝不 spawn powershell。"""
+
+    def test_sufficient_ram_passes_confirmed(self, monkeypatch):
+        """充足：psutil 通道 62.5% >= 15% → ok=True 且 fail_open=False。"""
+        wmi_calls: list[int] = []
+
+        def _fake_wmi() -> float | None:
+            wmi_calls.append(1)
+            return 99.0
+
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil", lambda: 62.5)
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_wmi", _fake_wmi)
+        result = assert_ram_headroom(min_free_pct=15.0)
+        assert isinstance(result, GuardResult)
+        assert result.ok is True
+        assert result.fail_open is False
+        assert result.status == "sufficient"
+        assert "62.5" in result.detail
+        assert "psutil" in result.detail
+        assert wmi_calls == [], "psutil 命中后不得再触 WMI 兜底"
+
+    def test_insufficient_ram_is_fail_skip(self, monkeypatch):
+        """不足：8.3% < 15% → ok=False（fail-skip，调用方决定延后发射）。"""
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil", lambda: 8.3)
+        result = assert_ram_headroom()
+        assert result.ok is False
+        assert result.fail_open is False, "已确证的不足是硬信号非 fail-open"
+        assert result.status == "insufficient"
+        assert "8.3" in result.detail
+        assert "15" in result.detail
+
+    def test_query_failure_fails_open(self, monkeypatch):
+        """查不到：psutil 缺席 + WMI 抛异常 → ok=True+fail_open=True（#105）。"""
+
+        def _boom() -> float | None:
+            raise RuntimeError("wmi exploded")
+
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil", lambda: None)
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_wmi", _boom)
+        result = assert_ram_headroom(min_free_pct=15.0)
+        assert result.ok is True
+        assert result.fail_open is True
+        assert result.status == "error"
+        assert "wmi exploded" in result.detail
+        assert "fail-open" in result.detail
+
+    def test_threshold_boundary_exact_passes_just_below_fails(self, monkeypatch):
+        """阈值边界：恰等于阈值=达标放行（严格小于才拦）。"""
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil", lambda: 15.0)
+        result = assert_ram_headroom(min_free_pct=15.0)
+        assert result.ok is True
+        assert result.status == "sufficient"
+
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil", lambda: 14.999)
+        below = assert_ram_headroom(min_free_pct=15.0)
+        assert below.ok is False
+        assert below.status == "insufficient"
+
+    def test_nonfinite_threshold_fails_open_not_fake_confirm(self, monkeypatch):
+        """非有限阈值：NaN 侧 pct<NaN 恒 False 会产出假 confirmed
+        sufficient（fail_open=False 的诚实性破口）——按"无法确证"走
+        fail-open（ok=True+fail_open=True+status=error，#105 不抛）。"""
+        monkeypatch.setattr(batch_guard, "_query_free_ram_pct_psutil",
+                            lambda: 1.0)  # 低内存：若误比较会假 sufficient
+        for bad in (float("nan"), float("inf"), float("-inf")):
+            result = assert_ram_headroom(min_free_pct=bad)
+            assert result.ok is True, f"非有限阈值 {bad!r} 仍须放行（#105）"
+            assert result.fail_open is True, \
+                f"非有限阈值 {bad!r} 不得冒充已确证裁决"
+            assert result.status == "error"
+            assert "non-finite" in result.detail
+
+
+# ---------------------------------------------------------------------------
 # watchdog.py 门面：re-export 存在 + 既有 Watchdog 语义零变化
 # ---------------------------------------------------------------------------
 
@@ -342,6 +422,7 @@ class TestWatchdogModuleFacade:
                 is find_orphan_batch_processes)
         assert (watchdog_mod.assert_license_headroom
                 is assert_license_headroom)
+        assert (watchdog_mod.assert_ram_headroom is assert_ram_headroom)
 
     def test_watchdog_module_has_no_all_public_api_snapshot_untouched(self):
         """两文件都不得定义 __all__（public_api 金快照按 __all__ 收录）。"""

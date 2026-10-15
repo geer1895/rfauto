@@ -1,6 +1,6 @@
 """EP-5 教学模式三件服务面（物理推导节+教科书反向索引+参数化自测题库）。
 
-规格 研究扩充 round18 §二 EP-5：capability_cards
+规格 docs/research_expansion_20261002_round18.md §二 EP-5：capability_cards
 加"物理与推导"节（+敏感度数据）+教科书反向索引（Pozar/Balanis/Cameron
 章节→模块）+参数化自测题库；首批 ≥8 卡。
 

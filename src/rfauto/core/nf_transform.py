@@ -433,7 +433,7 @@ def spherical_wave_expansion(
     n_m = mode_l.size
     # 列块：Q_te → [h2·X；E 行]、Q_tm → [rh2·Z；E 行]；H 行（η 配平）
     # H|TE = (j/η)·rh2·Z、H|TM = (j/η)·h2·X（∇×E=−jωμH；rhs 已 ×η，
-    # 设计 H 行只 ×j——再乘 η 会双重计入波阻抗，残差 O(η)（实测钉）
+    # 设计 H 行只 ×j——再乘 η 会双重计入波阻抗，残差 O(η)（实测钉））
     eta = float(eta_ohm)
     if eta <= 0.0:
         raise ValueError(f"eta_ohm 必须为正，实际 {eta}")

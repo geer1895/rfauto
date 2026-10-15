@@ -15,4 +15,31 @@ substrate:
 nominal_params:
   atten_db: 10.0
   w_mm: 1.1134
-  shunt_off_mm: 6.0
+  # 0.75=shunt/串臂与断口缘齐贴电共位（W7-A 残座批 D=6mm 分布式失配定谳后的模型级修复，与 TEMPLATE_NOMINAL 同笔）
+  shunt_off_mm: 0.75
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: T 型电阻衰减器：对称三电阻网络（上下串臂 R_s，中点对地 R_sh）——匹配与
+      衰减两个条件恰好定两个独立电阻值，故可同时做到端口匹配与设定衰减。纯电阻网络
+      理论上无带宽限制（理想集总）；真机偏差来自渲染面分布式残座（W7-A 残座批定谳后
+      shunt_off 模型级修复）。与 π 型同族（对偶拓扑），内核同在 rf_match。
+    derivations:
+    - claim: 对称 T 网络闭式：设电压比 N=10^(A/20)，匹配条件（两视向 Zin=Z0）+ 分压条件（Vout/Vin=1/N）联立解两电阻——经典形态、内核键、锚表值三方一致（数值走内核键不手抄）
+      formula: R_s = Z0·(N−1)/(N+1)；R_sh = 2·Z0·N/(N²−1)；N = 10^(A/20)
+      source: calc_families/rf_match.py（attenuator_t，ABCD 级联有单测）+ knowledge/anchors.yaml（atten_t.r_series_arm_ohm/r_shunt_mid_ohm closedform 锚，#118 双源=经典表值+独立重算钉）+ Pozar, Microwave Engineering（衰减器节，anchors 转引口径）
+    - claim: 极限自洽（模型体检）：A→0 ⇒ R_s→0、R_sh→∞（直通）；A→∞ ⇒ R_s→Z0、R_sh→0（中点接地全反射吸收）——两极限行为与物理直觉一致，内核单测同款判据
+      formula: A→0 ⇒ (R_s,R_sh)→(0,∞)；A→∞ ⇒ (R_s,R_sh)→(Z0,0)
+      source: core/calculators.py（计算器注册面）转引 calc_families/rf_match.py（attenuator_t/attenuator_bridged_t 极限注记同源）
+  sensitivity_ranking:
+  - param: atten_db
+    order: 1
+    basis: N=10^(A/20) 指数直接进入两电阻闭式（唯一设计量）
+  - param: w_mm
+    order: 2
+    basis: 50Ω HJ 端口线宽——匹配口径（S11 面），不进电阻闭式
+  - param: shunt_off_mm
+    order: 3
+    basis: 分布式残座电长度（W7-A 定谳修复批：理想集总与渲染离散的偏差面）
+  quiz_refs: []

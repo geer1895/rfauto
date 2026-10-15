@@ -14,7 +14,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "two_ray_loss",
-    "AP-5 双径干涉路损（平坦地面镜反射相干和，Rappaport 2nd ed §4.6）："
+    "双径干涉路损：AP-5 双径干涉路损（平坦地面镜反射相干和，Rappaport 2nd ed §4.6）："
     "LOS+镜反射 Fresnel 反射系数 Γ_v/Γ_h（σ=0 纯介电 eps_r）相干叠加，"
     "L=FSPL(d_los)−20log10|1+Γe^{jΔφ}|；附断点距离 d_break=4·h_tx·h_rx/λ、"
     "掠射角、Γ 元数据（d>>d_break 后包络 −40dB/dec 渐近）",
@@ -51,7 +51,7 @@ def two_ray_loss(d_m: float, h_tx_m: float, h_rx_m: float, f_hz: float,
 
 @register_calculator(
     "knife_edge_loss",
-    "AP-5 刃形绕射损耗（ITU-R P.526-15 §4，Fresnel-Kirchhoff 参数 v）："
+    "刃形绕射损耗：AP-5 刃形绕射损耗（ITU-R P.526-15 §4，Fresnel-Kirchhoff 参数 v）："
     "method='exact' 走 Fresnel 积分精确值（J(0)=6.02dB 擦顶锚）；"
     "'approx' 走 P.526 闭式 6.9+20log10(√((v−0.1)²+1)+v−0.1)（v≤−0.78 "
     "记 0）；'lee' 走 Rappaport §4.11 分段式（v>2.4 档 20log(v/0.225)）。"
@@ -83,7 +83,7 @@ def knife_edge_loss(v: float, method: str = "exact") -> dict:
 
 @register_calculator(
     "hata_cost231",
-    "AP-5 Hata/COST-231 经验中值路损（Rappaport §4.10 承载，统一域盒 "
+    "Hata经验路损：AP-5 Hata/COST-231 经验中值路损（Rappaport §4.10 承载，统一域盒 "
     "150–2000MHz）：150–1500MHz 走 Okumura-Hata 原式，1500–2000MHz 走 "
     "COST-231 Hata 扩展（urban=metropolitan C=3dB）；env=suburban/open "
     "走 Hata 修正式（COST 段外推档如实标注）。域盒 f∈[150,2000]MHz/"

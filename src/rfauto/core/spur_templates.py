@@ -1,6 +1,6 @@
 """EM-6 杂散模板库：TS 138 104 V17.5.0 ACLR/ACS 数据面 + 杂散限值模板 + ACIR 合成式。
 
-规格：研究扩充 round17 §四 EM-6——"C/I 与
+规格：docs/research_expansion_20261002_round17.md §四 EM-6——"C/I 与
 IM=C/(N+I) 闭式 + ACIR 合成 + 杂散模板库（ETSI TS 38 104 免费 PDF 表数字化）"；
 PV-012 已 verified（引用口径 = TS 138 104 §6.6.3 + §7.4.1 合成）。
 
@@ -94,7 +94,7 @@ __all__ = [
 #: 数据面唯一录入版本（免测版 PDF 实测；runs/em6/ 留档）。
 STANDARD_TOKENS = ("ts138104_v17_5_0",)
 
-#: 回溯出处（检索方式/日期/证据文件——PROVENANCE["evidence"] 相对 runs/em6）。
+#: 回溯出处（检索方式/日期/证据文件——PROVENANCE["evidence"] 相对 runs/em6/）。
 PROVENANCE: dict[str, object] = {
     "standard": "ETSI TS 138 104 V17.5.0 (2022-04) = 3GPP TS 38.104 v17.5.0 Release 17",
     "retrieved": "2026-10-02",

@@ -99,7 +99,7 @@ C10D_CASE: dict[str, Any] = {
                      "v1 pointer 零改写封档）",
     "provenance": (
         "runs/ge6_anchor/verdict.json（C10d 离线复判 PASS，R0–R4 全真）+"
-        "runs/df7_c10d/smoke_nominal；几何=旧名义 "
+        "runs/df7_c10d/smoke_nominal（ 四四五真跑）；几何=旧名义 "
         "G_old 闭式链字面量"
     ),
 }

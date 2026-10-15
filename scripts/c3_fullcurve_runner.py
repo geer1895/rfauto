@@ -1454,7 +1454,7 @@ def judge_fullcurve_stage1_as_full(template: str,
 #     <root>/<template>/<node_id> ——stage 节点工作目录即现状 stage_dir
 #     （证据面只新增 dag.artifact.json / dag.state.json / stageN_decl/，零改写）。
 # 已落接口缺口注记（P2 接口零改动消费，缺口如实报告）：
-#   ① P2 normalize_node 只保 inputs.files/params——任务书 字面
+#   ① P2 normalize_node 只保 inputs.files/params——handoff 字面
 #     inputs.registration_commit_ts 会被剥除 ⇒ 注册 ts 走 decl params 成分
 #     （params_canonical_json 进 render 键，语义等价：变即键变）；
 #   ② P2 solve 键成分（render_artifact_sha256/engine_version/budget_tier）不含
@@ -1486,7 +1486,7 @@ def _dag_deps() -> tuple[Any, Any]:
 
 
 def openems_registration_ts() -> str:
-    """渲染源 openems_templates.py 末次 commit 时戳（任务书 §二.1）。
+    """渲染源 openems_templates.py 末次 commit 时戳（handoff §二.1）。
 
     best-effort（#105）：非 git 环境/未跟踪 → 空串（键退化仍确定）。"""
     _dr, dc = _dag_deps()
@@ -1494,7 +1494,7 @@ def openems_registration_ts() -> str:
 
 
 def engine_version_tag() -> str:
-    """openEMS 引擎版本指纹（任务书 §四：load_solver_versions，空串兜底）。"""
+    """openEMS 引擎版本指纹（handoff §四：load_solver_versions，空串兜底）。"""
     try:
         from rfauto.infra.run_store import load_solver_versions
         return str((load_solver_versions() or {}).get("openems", "") or "")

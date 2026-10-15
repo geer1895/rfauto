@@ -1,4 +1,4 @@
-"""G15 物理不变量属性/元变测试（续跑计划 §10.7 G15 / §10.19 第 5 条）。
+"""G15 物理不变量属性/元变测试（延续计划 §10.7 G15 / §10.19 第 5 条）。
 
 目标：给确定性内核建"零外部参考的物理预言机"——不依赖任何外部参考数值，
 只用**不变量**（自洽性/尺度律/端口对称性）判真伪。四块：
@@ -707,6 +707,393 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
         "array.quantized_milp": {"n_elements": 8,
                                  "sidelobe_level_db": -20.0,
                                  "n_bits": 2, "atten_steps": 4},
+        # ─── 快赢席 W2 键面收口（2026-10-08，#231 五钉同步）──────────────
+        # AP-6 ITU 三键名义设计点：12GHz Ku 下行气体/雨衰（γ_R 用 P.838-3
+        # Table 5 @10GHz 印刷系数双路径锚，见 test_ap6_dr8_calculator_keys）；
+        # r001 链=Ku GEO 仰角 30°/h0=3km/海平面站设计点（核心量级窗锚
+        # test_w4_c_p10_itu_p618::test_rain_chain_magnitude_window 同族）
+        "gaseous_attenuation": {"f_hz": 12e9, "p_hpa": 1013.25,
+                                "t_k": 288.15, "rho_wv_g_m3": 7.5},
+        "rain_specific_attenuation": {"f_ghz": 10.0, "rain_rate_mmh": 42.0,
+                                      "pol": "h"},
+        "rain_attenuation_r001": {"f_ghz": 12.0, "r001_mmh": 30.0,
+                                  "elevation_deg": 30.0, "h0_km": 3.0,
+                                  "h_s_km": 0.1, "lat_deg": 40.0},
+        # DR-8 CDR 容限 mask 名义设计点：一阶 fc=10MHz 三点十倍程曲线
+        # （锚 JT(fc)=√2 见 test_dr_stream_seat6）
+        "cdr_jitter_mask": {"freq_hz": [1e6, 1e7, 1e9], "fc_hz": 1e7},
+        # SB22-MS-1 功率校准链名义设计点：K_b=0.9405（η=0.95×(1−0.1²)
+        # 精确算术）+3.5dB 缆+Γs/Γl 各 0.2/0.1111（SWR 1.5/1.25 相位
+        # 30°/−45°），exact 模式+两组件 GUM 预算（锚树
+        # test_power_calibration.py：回收钉+失配界 0.19 dB 双源文献例）
+        "power_cal_chain": {
+            "p_read_dbm": -10.0, "k_cal_lin": 0.9405, "cable_loss_db": 3.5,
+            "gamma_source": [0.17320508, 0.1],
+            "gamma_load": [0.07856605, -0.07856605],
+            "mismatch_mode": "exact",
+            "u_components": [
+                {"name": "sensor_cal", "half_width_db": 0.2,
+                 "distribution": "rectangular"},
+                {"name": "repeatability", "u_db": 0.05},
+            ],
+        },
+        # SB22-TH-2 两键名义设计点（TH2 储备池席）：误差模型=WR-10 带内三点
+        # （75/90/110 GHz，带缘双源 core/rw_tables 2src-thz 行）理想误差项
+        # （Ed=0/Es=0/Er=1）恒等回收+σM/σEs/σEr 0.01/0.005/0.01 预算；
+        # 拼接=WR-10/WR-8 VDI 带缘（75–110/90–140 GHz）重叠区同栅 5 点
+        # （90–110 GHz），容差 0.05 线性域（#122 阈值调用方给入口径）
+        "tnvna_extender_error_model": {
+            "freq_hz": [75e9, 90e9, 110e9],
+            "measured": [[0.3, 0.1], [0.0, 0.0], [-0.5, 0.2]],
+            "ed": [0.0, 0.0], "es": [0.0, 0.0], "er": [1.0, 0.0],
+            "sigma_m": 0.01, "sigma_es": 0.005, "sigma_er": 0.01,
+        },
+        "tnvna_band_stitch": {
+            "band_a": {"freq_hz": [75e9 + 5e9 * i for i in range(8)],
+                       "s": [[0.1, 0.0]] * 8, "sigma": 0.01, "name": "WR-10"},
+            "band_b": {"freq_hz": [90e9 + 5e9 * i for i in range(11)],
+                       "s": [[0.1, 0.0]] * 11, "sigma": 0.02, "name": "WR-8"},
+            "tol_abs_linear": 0.05,
+        },
+        # aurora36 W3-A 两键名义设计点：不等分 K=2（P3/P2=4，端口 3 受惠
+        # ——Z02 高阻臂/Z03 低阻臂/R=125Ω/变换段 70.7/35.4Ω）；Bethe 综合
+        # 方向 WR-90 @10GHz 目标 25dB（解 d≈5.09mm，零壁厚纯 Bethe 口径，
+        # 锚树 test_w3a_unsplit_bethe.py）
+        "unequal_split_wilkinson": {"z0_ohm": 50.0, "power_ratio_k": 2.0},
+        "bethe_hole_coupler": {"wr_name": "WR-90", "freq_ghz": 10.0,
+                               "coupling_db": 25.0},
+        # aurora36 W4-A 六键名义点：BER 曲线=QPSK 三点栅格（列表路径）；
+        # 反解=BPSK 目标 1e-5（文献 9.588dB）；编码粗估=16QAM 半码率
+        # +3dB；雷达方程=dB 混合口径 X 波段名义点（60dBm/30dBi/10GHz/
+        # 5dBsm/50km/3dB/1MHz/NF3dB）；Albersheim=拟合窗内经典点
+        # （Pfa=1e-6/Pd=0.9）；CFAR=N16/Pfa=1e-4+SW1 Pd 可选路径
+        # （锚树 test_w4a_mod_radar.py）
+        "modulation_ber_curve": {"ebn0_db": [0.0, 5.0, 10.0],
+                                 "scheme": "qpsk"},
+        "required_ebn0": {"target_ber": 1e-5, "scheme": "bpsk"},
+        "coded_ber_estimate": {"scheme": "16qam", "ebn0_db": 12.0,
+                               "code_rate": 0.5, "coding_gain_db": 3.0},
+        "radar_range_equation": {"pt_dbm": 60.0, "antenna_gain_db": 30.0,
+                                 "freq_ghz": 10.0, "rcs_dbsm": 5.0,
+                                 "range_km": 50.0, "loss_db": 3.0,
+                                 "bandwidth_hz": 1e6, "noise_fig_db": 3.0},
+        "albersheim_detection_snr": {"pfa": 1e-6, "pd": 0.9},
+        "ca_cfar_threshold": {"pfa": 1e-4, "n_ref": 16, "snr_db": 10.0},
+        # aurora36 W5-A 六键名义设计点：MUSIC/ESPRIT=理想协方差双源
+        # （N=8/d=0.5λ/θ=[−20°,30°]/SNR=15dB，锚树回收 <0.01°/<1e-6°）；
+        # MVDR=厄米正定 2×2 显式协方差（[[3,1.5],[1.5,3]]，eig 1.5/4.5）
+        # 期望方向 15°；combline=Zr80Ω/C=1pF/εeff=1/f₀=2GHz 综合杆长
+        # （≈18.67mm 文献量级）；同轴腔=半波 f₀=2GHz+a/b=1/3mm（Z0=
+        # 65.916737Ω+TE11 单模域内）；无载 Q=Cu/1GHz/a=1/b=2.301mm
+        # （50Ω 口径 Qc≈5.56e2）+tanδ=1e-4 串联介质支路
+        # （锚树 test_w5a_doa_combline.py）
+        "doa_music_spectrum": {"n_elements": 8, "angles_deg": [-20.0, 30.0],
+                               "snr_db": 15.0, "grid_step_deg": 0.5},
+        "doa_esprit": {"n_elements": 8, "angles_deg": [-20.0, 30.0],
+                       "snr_db": 15.0},
+        "doa_mvdr_weights": {
+            "covariance": [[[3.0, 0.0], [1.5, 0.0]],
+                           [[1.5, 0.0], [3.0, 0.0]]],
+            "look_angle_deg": 15.0, "spacing_lambda": 0.5,
+            "probe_angles_deg": [15.0, -30.0]},
+        "combline_resonance": {"zr_ohm": 80.0, "cap_ff": 1000.0,
+                               "epsilon_r": 1.0, "f0_ghz": 2.0},
+        "coaxial_cavity_resonance": {"mode": "half", "f0_ghz": 2.0,
+                                     "a_mm": 1.0, "b_mm": 3.0},
+        "cavity_unloaded_q": {"f_ghz": 1.0, "conductivity_s_per_m": 5.8e7,
+                              "a_mm": 1.0, "b_mm": 2.301,
+                              "tan_delta": 1e-4},
+        # aurora36 W6-A 五键名义设计点：TRL 综合=WR-90 9–11GHz（带心 10GHz
+        # λg/4=9.927mm 锚 + 电长度窗内）；扫描=WR-90 X 波段 8.2–12.4 单线
+        # 41 点（覆盖率 1.0）；61000-4-3=Level 3（10 V/m）@3m G=6dBi
+        # （7.536 W/38.77dBm 锚）；61000-4-6=Level 3（10 V emf）@50Ω
+        # （0.5W/26.99dBm 锚）；ESD=4kV 接触档 0.7ns（15A/rise 锚树
+        # test_w6a_trl_emc.py）
+        "trl_standards_design": {"wr_name": "WR-90", "f1_ghz": 9.0,
+                                 "f2_ghz": 11.0},
+        "trl_line_electric_scan": {"wr_name": "WR-90",
+                                   "line_length_mm": 9.9268,
+                                   "f1_ghz": 8.2, "f2_ghz": 12.4},
+        "radiated_immunity_power": {"distance_m": 3.0, "test_level": 3,
+                                    "antenna_gain_db": 6.0},
+        "conducted_immunity_cdn": {"test_level": 3, "system_z_ohm": 50.0},
+        "esd_contact_waveform": {"charge_kv": 4.0, "rise_time_ns": 0.7},
+        # aurora36 W7-A 六键名义设计点：平衡对=A 管 0.2∠30°/20dB
+        # （同管口径 S11,bal 逐位 0 锚）；Doherty 网络=R_opt=100Ω@Z0=50
+        # （R_L=50/Z_T=100/Z_BO=200 锚）；效率曲线=缺省 41 点 10dB 轴
+        # （双拐点 π/4+凹陷 2π/9 锚树 test_w7a_pa_qubit.py）；
+        # 色散位移=g=50/Δ=200/κ=10MHz（χ≈12.49MHz resolved）；读出
+        # S21=f_r=6GHz/κ=2/κe=1（临界耦合）/χ=1.5/41 点 10MHz 跨；
+        # 读出 SNR=χ=1/κ=2/κe=1/n̄=50/f_r=6GHz/τ=1μs 量子极限缺省
+        # （n_sys=1 锚）
+        "balanced_pair_sparams": {"s11a_mag": 0.2, "s21a_db": 20.0,
+                                  "s11a_deg": 30.0, "s21a_deg": 10.0},
+        "doherty_combining_network": {"r_opt_ohm": 100.0, "z0_ohm": 50.0},
+        "doherty_efficiency_curve": {"n_points": 41, "pbo_max_db": 10.0},
+        "qubit_dispersive_shift": {"g_mhz": 50.0, "delta_mhz": 200.0,
+                                   "kappa_mhz": 10.0, "gamma1_mhz": 0.001},
+        "qubit_readout_s21": {"f_r_ghz": 6.0, "kappa_mhz": 2.0,
+                              "kappa_e_mhz": 1.0, "chi_mhz": 1.5,
+                              "span_mhz": 10.0, "n_points": 41},
+        "qubit_readout_snr": {"chi_mhz": 1.0, "kappa_mhz": 2.0,
+                              "kappa_e_mhz": 1.0, "n_bar": 50.0,
+                              "f_r_ghz": 6.0, "tau_us": 1.0},
+        # aurora72 A2-C 六键名义设计点：同轴 Z0=a=1/b=3mm 空气（65.917Ω
+        # 锚）；衰减=Cu/1GHz/a=1/b=2.301mm 空气 50Ω 口径（αc≈0.164dB/m
+        # 锚，线 Q 跨键互证）；功率容量=a=1/b=3mm 空气 E_br=3e6 V/m
+        # p_op=100W；圆柱谱=a=10/L=25mm 频段 8..16GHz（TE111 主模
+        # 10.636GHz 锚）；模式图=双模式 41 点长径比 0.4..2.5；模式 Q=
+        # TE011 Cu@a=10/L=12mm（Qc≈1.86e4，双路线 reldev<1e-9 锚）
+        "coax_line_z0": {"a_mm": 1.0, "b_mm": 3.0, "epsilon_r": 1.0},
+        "coax_line_attenuation": {"f_ghz": 1.0, "a_mm": 1.0, "b_mm": 2.301,
+                                  "conductivity_s_per_m": 5.8e7,
+                                  "epsilon_r": 1.0, "mu_r": 1.0,
+                                  "tan_delta": 0.0},
+        "coax_line_power_capacity": {"a_mm": 1.0, "b_mm": 3.0,
+                                     "epsilon_r": 1.0,
+                                     "e_br_v_per_m": 3.0e6, "p_op_w": 100.0},
+        "circular_cavity_mode_spectrum": {"radius_mm": 10.0,
+                                          "length_mm": 25.0,
+                                          "f_min_ghz": 8.0,
+                                          "f_max_ghz": 16.0,
+                                          "epsilon_r": 1.0,
+                                          "max_modes": 200},
+        "circular_cavity_mode_chart": {"modes": ["TM010", "TE111", "TM011",
+                                                 "TE011"],
+                                       "l_over_2a_min": 0.4,
+                                       "l_over_2a_max": 2.5,
+                                       "n_points": 41, "epsilon_r": 1.0},
+        "circular_cavity_mode_q": {"mode_type": "TE", "m": 0, "n": 1,
+                                   "p": 1, "radius_mm": 10.0,
+                                   "length_mm": 12.0,
+                                   "conductivity_s_per_m": 5.8e7,
+                                   "epsilon_r": 1.0, "mu_r": 1.0,
+                                   "tan_delta": 0.0},
+        # aurora72 A3-B 五键名义设计点：双支节=z_L=100+j60Ω@50Ω/λ/8 间距
+        # （g=0.368≤g_max=2 可调区锚，matched=True）；三支节=z_L=10+j10Ω
+        # （g=2.5>2 双支节禁区负载，bypass_first 路线 matched=True）；偶极
+        # =l=0.4705λ@a=0.5mm/f=2GHz 近谐振点（R≈70Ω 窗/X 微容性）；折合
+        # =同长+间距 10mm（Z_t=acosh 口径 ~359Ω，step_up 复数）；小环=
+        # b=10mm/a=1mm/N=2/Cu@1GHz（Rr≈1.523Ω、eff≈0.90、三式恒等锚）
+        "stub_tuner_double": {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                              "z0_ohm": 50.0, "spacing_deg": 45.0,
+                              "stub1_deg": 0.0, "stub_type": "open"},
+        "stub_tuner_triple": {"rl_ohm": 10.0, "xl_ohm": 10.0,
+                              "z0_ohm": 50.0, "spacing_deg": 45.0,
+                              "stub1_deg": 0.0, "stub_type": "open"},
+        "dipole_emf_zin": {"length_mm": 70.5, "f_ghz": 2.0,
+                           "wire_radius_mm": 0.5},
+        "folded_dipole_zin": {"length_mm": 70.5, "f_ghz": 2.0,
+                              "wire_radius_mm": 0.5, "spacing_mm": 10.0},
+        "small_loop_zin": {"radius_mm": 10.0, "f_ghz": 1.0,
+                           "wire_radius_mm": 1.0, "turns_n": 2.0,
+                           "conductivity_s_per_m": 5.8e7},
+        # aurora72 A3-C 四键名义设计点：耦合线综合=Pozar Example 8.7 点
+        # （N=3/0.5dB/δ=0.10，阻抗表 (70.61,39.24)/(56.64,44.77) 锚，叠层
+        # 3.66/0.254 稳健可达）；频响=同阻抗表同步 TEM 均匀 εeff 21 点
+        # （1.9..2.1GHz）；交指杆=1mm/0.3mm/板距 3mm/εr2.2（k≈0.319 锚）；
+        # 交指综合=N=3/δ=0.08/板距 2mm/εr2.2（缝回文+J 往返锚）
+        "coupled_line_bpf_synthesize": {"order": 3, "f0_ghz": 2.0,
+                                        "fbw": 0.10, "ripple_db": 0.5,
+                                        "epsilon_r": 3.66, "h_mm": 0.254},
+        "coupled_line_bpf_response": {
+            "z0e_ohm": [70.604438, 56.640627, 56.640627, 70.604438],
+            "z0o_ohm": [39.235601, 44.768781, 44.768781, 39.235601],
+            "f0_ghz": 2.0,
+            "freq_ghz": [1.9 + 0.01 * i for i in range(21)],
+            "eps_eff": 1.0},
+        "interdigital_bars_capacitance": {"w_mm": 1.0, "s_mm": 0.3,
+                                          "b_mm": 3.0, "epsilon_r": 2.2},
+        "interdigital_bpf_synthesize": {"order": 3, "f0_ghz": 2.5,
+                                        "fbw": 0.08, "ripple_db": 0.5,
+                                        "b_mm": 2.0, "epsilon_r": 2.2},
+        # aurora72 A4-B 六键名义设计点：金属球=10mm@10GHz（ρ≈2.1 Mie 区）
+        # + 峰值库=1m² 平板@10GHz（41.45dBsm 常数锚）；检波=−30dBm/
+        # 50µAV⁻²/250Ω（I_dc=12.5nA 常数锚）+ TSS=γ1000V/W/1MΩ/1MHz/290K
+        # （NEP≈−38.98dBm 锚）；PIM 合成=三节点（−110/−115/−120）+ 级联
+        # 预算=双节点 @43dBm 参考（零平移与合成键逐位互证锚）
+        "rcs_sphere_mie": {"radius_mm": 10.0, "f_ghz": 10.0},
+        "rcs_peak_canonical": {"shape": "flat_plate", "f_ghz": 10.0,
+                               "a_mm": 1000.0, "b_mm": 1000.0},
+        "diode_square_law_detect": {"p_in_dbm": -30.0, "k_uav2": 50.0,
+                                    "r_j_ohm": 250.0},
+        "detector_tss_nep": {"gamma_v_per_w": 1000.0},
+        "pim_nodes_combine": {"levels_dbm": [-110.0, -115.0, -120.0]},
+        "pim_cascade_budget": {
+            "nodes": [{"level_dbm": -110.0, "name": "joint_a"},
+                      {"level_dbm": -115.0, "name": "connector_b"}],
+            "p_carrier_dbm": 43.0, "order": 3},
+        # aurora72 A4-A 五键名义设计点：反射不确定度=20dB 负载@40dB 方向性
+        # /35dB 源匹配/±0.05dB 跟踪（经典 ±0.9dB 纹波带锚）；传输=0.9 直通
+        # @串扰−100/负载匹配−25/±0.1dB 跟踪；三天线=IL(65,70,75)dB@
+        # 10GHz/10m（Friis 正演反演逐位锚）；Swerling=SW1 N=1 经典点
+        # （21.14dB 闭式锚，closed 路径零积分）+ 积累增益 SW2 N=4（闭式
+        # 路径，锚树 test_a4a_vna_swerling.py）
+        "vna_reflection_uncertainty": {"gamma_mag": 0.1,
+                                       "directivity_db": -40.0,
+                                       "source_match_db": -35.0,
+                                       "tracking_db": 0.05},
+        "vna_transmission_uncertainty": {"s21_mag": 0.9,
+                                         "crosstalk_db": -100.0,
+                                         "load_match_db": -25.0,
+                                         "tracking_db": 0.1},
+        "three_antenna_gain": {"il12_db": 65.0, "il13_db": 70.0,
+                               "il23_db": 75.0, "f_ghz": 10.0,
+                               "range_m": 10.0},
+        "swerling_detection_factor": {"pfa": 1e-6, "pd": 0.9,
+                                      "swerling": 1},
+        "swerling_integration_gain": {"pfa": 1e-6, "pd": 0.9,
+                                      "swerling": 2, "n_pulses": 4},
+        # aurora72 A5-A 六键名义设计点：SAW 同步=pitch 正解档（ST 石英
+        # 3158m/s/30 指对/1µm → f0=3.158GHz 教科书常数锚）；频响=1GHz/N=30
+        # 四点（含峰点 1.0 与栅瓣 2.0 混叠档）；延迟线=1GHz/ST 石英/3.158mm
+        # （恰 τ=1.0µs 整点锚，α₁=0.5 损耗档）；魔 T=激励 H 臂和口；三口结
+        # =H 面并联星形档；和差=等幅同相（差口 null 锚）
+        "saw_idt_sync_design": {"v_sound_m_s": 3158.0, "n_finger_pairs": 30,
+                                "pitch_um": 1.0},
+        "saw_idt_frequency_response": {"f0_ghz": 1.0, "n_finger_pairs": 30,
+                                       "freq_ghz": [0.95, 1.0, 1.05, 2.0]},
+        "saw_delay_line": {"f0_ghz": 1.0, "v_sound_m_s": 3158.0,
+                           "idt_gap_mm": 3.158, "loss_db_per_us_1ghz": 0.5},
+        "magic_tee_s_matrix": {"excite_port": 1},
+        "waveguide_tee_s_matrix": {"tee_type": "h_plane"},
+        "hybrid_sum_difference": {"p2_dbm": 10.0, "p3_dbm": 10.0,
+                                  "phase_deg": 0.0},
+        # aurora72 A6-B 四键名义设计点：多节耦合器=3 节 10dB 二项式（精确
+        # 级联 f0 命中目标 1e-9 锚）；频响=同综合输出阻抗表 21 点（1.9..2.1
+        # 同步 TEM 均匀 εeff）；Gysel core=50Ω 标称；频响=2GHz/1.6..2.4GHz
+        # 五点（f0 理想矩阵逐位 + 耗散守恒锚）
+        "multisection_coupler_binomial": {"n_sections": 3,
+                                          "coupling_db": 10.0},
+        "multisection_coupler_response": {
+            "z0e_ohm": [51.955886451, 74.904741052, 51.955886451],
+            "z0o_ohm": [48.117743162, 33.375724486, 48.117743162],
+            "f0_ghz": 2.0,
+            "freq_ghz": [1.9 + 0.01 * i for i in range(21)]},
+        "gysel_core_synthesize": {"z0_ohm": 50.0},
+        "gysel_frequency_response": {
+            "f0_ghz": 2.0,
+            "freq_ghz": [1.6, 1.8, 2.0, 2.2, 2.4]},
+        # aurora72 A7-B 五键名义设计点：膜片电纳=WR-90@10GHz 半宽感性档
+        # （b=−(λg/a) 锚）；谐振窗=半宽感性反解容性（回代零残差锚）；单膜
+        # 片匹配=|Γ|=1/3@0°（y_L=0.5、|t|=√2 教科书解锚）；Guanella 设计
+        # =4:1（n=2、Z0=100Ω 经典数）；频响=4:1/18.737mm 五点（最优 Z0 全
+        # 频匹配定理锚，全部避开 θ=kπ）
+        "wg_iris_susceptance": {"a_mm": 22.86, "b_mm": 10.16,
+                                "f_ghz": 10.0, "iris_type": "inductive",
+                                "d_mm": 11.43},
+        "wg_resonant_window": {"a_mm": 22.86, "b_mm": 10.16,
+                               "f_ghz": 10.0, "d_ind_mm": 11.43},
+        "wg_iris_match": {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                          "gamma_mag": 0.3333333333333333,
+                          "gamma_phase_deg": 0.0},
+        "guanella_tlt_design": {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                                "f_max_ghz": 2.0, "v_f": 1.0},
+        "guanella_tlt_response": {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                                  "length_mm": 18.737028625,
+                                  "freq_ghz": [1.0, 2.0, 3.0, 5.0, 7.0]},
+        # aurora72 A8-B 四键名义设计点：渐变线频响=50→100Ω/30mm（βL=π
+        # sinc 零点锚）；综合=2GHz/ρ=0.05（指数剖面测试侧二分法独立求根
+        # 锚）；隔离器=IL0.5/Iso25/RL20dB 规格档（非互易度 24.5dB）；环
+        # 行器=cw/IL0.3/Iso22/RL18dB（sense 翻转恒等式档）
+        "classic_taper_response": {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                   "length_mm": 30.0,
+                                   "freq_ghz": [2.0, 4.996540966666667,
+                                                8.0],
+                                   "profile": "exponential"},
+        "classic_taper_synthesize": {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                     "f_min_ghz": 2.0, "rho_max": 0.05,
+                                     "profile": "exponential"},
+        "isolator_ideal_sparams": {"il_db": 0.5, "isolation_db": 25.0,
+                                   "rl_db": 20.0},
+        "circulator_ideal_sparams": {"sense": "cw", "il_db": 0.3,
+                                     "isolation_db": 22.0, "rl_db": 18.0},
+        # ─── 批 B Wave3 G9 DR TE01δ 两键（名义=D1 锚输入：D=15/L=7.5/εr=38；
+        # 设计键=f0(D1 全精度)/h=0.5 → 回代 D=15/L=7.5 roundtrip）────────────
+        "dr_te01d_cohn_f0": {"diameter_mm": 15.0, "height_mm": 7.5,
+                             "epsilon_r": 38.0},
+        "dr_te01d_design_size": {"epsilon_r": 38.0,
+                                 "f0_ghz": 3.1146824935345903,
+                                 "height_to_diameter": 0.5},
+        # ─── 批 B Wave3 G17 helical 薄注册三键（名义=Balanis §10.3.1 工作例：
+        # f0=10GHz/N=10/α=14°/C_λ=0.95；设计键同例 directivity 目标回代
+        # C_λ≈0.95）────────────────────────────────────────────────────────
+        "helix_axial_performance": {"f0_ghz": 10.0, "n_turns": 10.0,
+                                    "alpha_deg": 14.0, "c_lambda": 0.95},
+        "helix_axial_design": {"f0_ghz": 10.0, "n_turns": 10.0,
+                               "alpha_deg": 14.0, "target_metric":
+                               "directivity",
+                               "target_value": 32.0651394656508},
+        "helix_axial_bandwidth": {"f0_ghz": 10.0, "c_lambda": 0.95},
+        # ─── 批 B Wave3 G15 Yagi 两键（名义=键 1 实测档 boom=2.2λ（增益
+        # 12.3 dBd）；键 2=0.8λ 档例题频率 50.1MHz+基准 d/λ=0.0085）──────
+        "yagi_gain_nbs_tn688": {"boom_length_lambda": 2.2},
+        "yagi_geometry_nbs_tn688": {"class_lambda": 0.8, "f_ghz": 0.0501},
+        # ─── 批 B Wave3 G16 缝隙阵两键（名义=键 1 RESOLVED A6 中点
+        # f=10GHz/WR90/x=2mm（g=0.0646566）；键 2=均匀 8 缝/g_total=0.5
+        # （单缝 gn=0.0625≤g_max 守卫域内））────────────────────────────
+        "slot_stevenson_conductance": {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "offset_x_mm": 2.0},
+        "slot_array_synthesis_resonant": {"f_ghz": 10.0, "a_mm": 22.86,
+                                          "b_mm": 10.16, "n_slots": 8,
+                                          "weights": [1.0] * 8,
+                                          "g_total": 0.5},
+        # ─── 批 B Wave3 W3-CORE3 G11 余量四键（名义=锚输入：ET=PAPR
+        # 6.0206dB/f=0.1；PIN=10GHz 典型档；步进=10.5dB 量化余量档；
+        # 倍频链=×2×3×2 三级）────────────────────────────────────────
+        "envelope_tracking_efficiency": {"papr_db": 6.020599913279624,
+                                         "supply_floor_frac": 0.1},
+        "pin_diode_limiter": {"f_ghz": 10.0, "r_on_ohm": 1.0,
+                              "c_off_pf": 0.1, "z0_ohm": 50.0,
+                              "v_forward_v": 0.7},
+        "step_attenuator_design": {"attenuation_db": 10.5, "step_db": 1.0,
+                                   "n_bits": 5, "z0_ohm": 50.0},
+        "multiplier_chain_budget": {"f_in_ghz": 1.0, "factors": [2, 3, 2],
+                                    "stage_loss_db": [7.0, 7.0, 3.0],
+                                    "pin_dbm": 0.0},
+        # ─── aurora_d W3-CORE6 四键（名义=锚输入：加载线 45°@10GHz/
+        # εeff=3；开关线 90°@10GHz/εeff=3；CRB=N8/T256/15dB/0.5λ/20°；
+        # 多工器=2..8GHz 四道等分数）──────────────────────────────────
+        "loaded_line_phaser": {"f_ghz": 10.0, "ereff": 3.0,
+                               "delta_phi_deg": 45.0, "z0_ohm": 50.0},
+        "switched_line_phaser": {"f_ghz": 10.0, "ereff": 3.0,
+                                 "delta_phi_deg": 90.0, "z0_ohm": 50.0},
+        "doa_crb_ula": {"n_elements": 8, "snapshots": 256, "snr_db": 15.0,
+                        "spacing_lambda": 0.5, "angle_deg": 20.0},
+        "multiplexer_channel_plan": {"f_start_ghz": 2.0, "f_stop_ghz": 8.0,
+                                     "n_channels": 4,
+                                     "spacing": "equal_fractional"},
+        # ─── aurora_d W3-CORE7 三键（名义=锚输入：Cpk=1→单尾 1350ppm
+        # Montgomery 档；串联=[0.99,0.98,0.975] 独立乘积 0.945945；
+        # combline=k0.05/Zr70/b6/εr2.2 带域反解 g≈4.139mm）────────────
+        "cpk_yield_convert": {"cpk": 1.0},
+        "serial_yield_budget": {"yields": [0.99, 0.98, 0.975]},
+        "combline_coupling_gap": {"k_coupling": 0.05, "z_r_ohm": 70.0,
+                                  "b_mm": 6.0, "epsilon_r": 2.2},
+        # ─── aurora_d W3-CORE8 四键（名义=锚输入：多源 CRB=N8/T256/双源
+        # ±10°/15dB/ρ=0.3；反射式=90°@10GHz 设计态对；阶数原型=Chebyshev
+        # 0.5dB N=3@f0=4/B0.4 抑制 40dB@5GHz；λg=WR90@10GHz）─────────
+        "doa_crb_ula_multisource": {
+            "n_elements": 8, "snapshots": 256, "angles_deg": [-10.0, 10.0],
+            "snr_db": 15.0, "spacing_lambda": 0.5, "corr_coef": 0.3},
+        "reflective_phaser": {"f_ghz": 10.0, "delta_phi_deg": 90.0,
+                              "z0_ohm": 50.0},
+        "multiplexer_channel_prototype": {
+            "f_center_ghz": 4.0, "channel_bw_ghz": 0.4,
+            "rejection_db": 40.0, "stopband_freq_ghz": 5.0,
+            "prototype": "chebyshev", "ripple_db": 0.5},
+        "waveguide_lambda_g": {"a_mm": 22.86, "f_ghz": 10.0,
+                               "b_mm": 10.16},
+        # ─── aurora_d W3-CORE9 三键（名义=锚输入：随机 CRB=N8/T256/双源
+        # ±10°/15dB/ρ=0.3；Schiffman=经典锚 ρ=3/θ₀=90°/B=3@10GHz/εeff=3；
+        # 开关网络=90°@2GHz/50Ω/R_on=2Ω）────────────────────────────
+        "doa_crb_stochastic": {
+            "n_elements": 8, "snapshots": 256, "angles_deg": [-10.0, 10.0],
+            "snr_db": 15.0, "spacing_lambda": 0.5, "corr_coef": 0.3},
+        "schiffman_phaser": {"f_ghz": 10.0, "ereff": 3.0, "rho": 3.0,
+                             "theta0_deg": 90.0, "z0_ohm": 50.0},
+        "switched_network_phaser": {"f_ghz": 2.0, "phi_deg": 90.0,
+                                    "r_on_ohm": 2.0, "z0_ohm": 50.0},
     }
 
 
@@ -836,7 +1223,7 @@ DOMAIN_ERROR_CASES = [
     ("suspended_stripline_analysis", {
         "w_mm": 0.731, "b_mm": 1.016, "h_mm": 1.2, "epsilon_r": 3.66}),
     # 槽线（2026-09-18 w1b）：仓库缺省叠层 h=0.508@2.5GHz 因 d/λ0=0.0042<0.006
-    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推；
+    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（）；
     # 综合目标 30Ω 低于窄槽段可达下限（≈80Ω@1.524mm）→ 括号越界显式报错；
     # εr=12 高介电段（Garg–Gupta 1976）未实现 → 显式拒绝
     ("slotline_analysis", {
@@ -1036,6 +1423,995 @@ DOMAIN_ERROR_CASES = [
     # XD-11：零标准差显式拒绝（form_reliability core 守卫 σ 逐元素>0）
     ("form_beta_linear", {"coeffs": [1.0, 2.0], "offset": 3.0,
                           "mean": [0.0, 0.0], "stddev": [1.0, 0.0]}),
+    # 快赢席 W2 键面收口（2026-10-08）：AP-6 域外显式拒绝（itu_atmosphere
+    # core 守卫 f>1000GHz / 负雨率）+ DR-8 ζ 越域（cdr core 守卫 ζ∈(0,2)）
+    ("gaseous_attenuation", {"f_hz": 1200e9, "p_hpa": 1013.25,
+                             "t_k": 288.15, "rho_wv_g_m3": 7.5}),
+    ("rain_specific_attenuation", {"f_ghz": 10.0, "rain_rate_mmh": -1.0}),
+    ("rain_attenuation_r001", {"f_ghz": 12.0, "r001_mmh": 30.0,
+                               "elevation_deg": 95.0, "h0_km": 3.0,
+                               "h_s_km": 0.1, "lat_deg": 40.0}),
+    ("cdr_jitter_mask", {"freq_hz": [1e6, 1e7, 1e9], "fn_hz": 1e7,
+                         "zeta": 2.5}),
+    # SB22-MS-1：K_b>1（无源传感器口径外）与 |Γ|>=1 显式拒绝（core 守卫）
+    ("power_cal_chain", {"p_read_dbm": -10.0, "k_cal_lin": 1.5}),
+    ("power_cal_chain", {"p_read_dbm": -10.0, "k_cal_lin": 0.9405,
+                         "gamma_source": [1.0, 0.0]}),
+    # SB22-TH-2：Er 零点（tracking=0 误差箱失效）与拼接重叠区异栅格显式拒绝
+    # （core 守卫，v1 不静默插值）
+    ("tnvna_extender_error_model", {
+        "freq_hz": [75e9, 90e9, 110e9],
+        "measured": [[0.3, 0.1], [0.0, 0.0], [-0.5, 0.2]],
+        "ed": [0.0, 0.0], "es": [0.0, 0.0], "er": [0.0, 0.0]}),
+    ("tnvna_band_stitch", {
+        "band_a": {"freq_hz": [75e9 + 5e9 * i for i in range(8)],
+                   "s": [[0.1, 0.0]] * 8, "sigma": 0.01},
+        "band_b": {"freq_hz": [90e9 + 4e9 * i for i in range(6)],
+                   "s": [[0.1, 0.0]] * 6, "sigma": 0.02},
+        "tol_abs_linear": 0.05}),
+    # aurora36 W3-A：不等分 K≤0 显式拒绝（Pozar K 口径域守卫）+ Bethe
+    # 截止附近 λg 发散拒绝（f<1.05·fc10）/双向入参互斥（core 守卫）
+    ("unequal_split_wilkinson", {"z0_ohm": 50.0, "power_ratio_k": 0.0}),
+    ("unequal_split_wilkinson", {"z0_ohm": 50.0, "power_ratio_k": -2.0}),
+    ("bethe_hole_coupler", {"wr_name": "WR-90", "freq_ghz": 6.0,
+                            "coupling_db": 25.0}),
+    ("bethe_hole_coupler", {"wr_name": "WR-90", "freq_ghz": 10.0,
+                            "hole_diameter_mm": 5.0, "coupling_db": 25.0}),
+    # aurora36 W4-A：BER 目标越界（0/≥1）/制式未知名/空栅格显式拒绝 +
+    # 雷达方程双口径互斥（两功率同给）与 R≤0 拒绝 + Albersheim 超定/欠
+    # 定/Pfa 域外拒绝 + CFAR Pfa/N 越界拒绝
+    ("modulation_ber_curve", {"ebn0_db": [], "scheme": "bpsk"}),
+    ("modulation_ber_curve", {"ebn0_db": 10.0, "scheme": "nope"}),
+    ("required_ebn0", {"target_ber": 0.0, "scheme": "bpsk"}),
+    ("required_ebn0", {"target_ber": 1.0, "scheme": "bpsk"}),
+    ("coded_ber_estimate", {"scheme": "bpsk", "ebn0_db": 10.0,
+                            "code_rate": 0.0}),
+    ("radar_range_equation", {"pt_dbm": 60.0, "pt_w": 1000.0,
+                              "antenna_gain_db": 30.0, "freq_ghz": 10.0,
+                              "rcs_dbsm": 5.0, "range_km": 50.0}),
+    ("radar_range_equation", {"antenna_gain_db": 30.0, "freq_ghz": 10.0,
+                              "rcs_dbsm": 5.0, "range_km": -1.0}),
+    ("albersheim_detection_snr", {"pfa": 1e-6, "pd": 0.9,
+                                  "snr_db": 13.0}),
+    ("albersheim_detection_snr", {"pfa": 0.0, "pd": 0.9}),
+    ("ca_cfar_threshold", {"pfa": 1e-4, "n_ref": 0}),
+    ("ca_cfar_threshold", {"pfa": 1.5, "n_ref": 16}),
+    # aurora36 W5-A 六键越界拒绝族（阵元数<2/间距≤0/角越 ±90°/源数≥N/
+    # 快拍<阵元/奇异与非正定协方差/f≤0/电容与阻抗≤0/εr<1/f0 与 length
+    # 恰给其一违背/a≥b/负损耗角）
+    ("doa_music_spectrum", {"n_elements": 1, "angles_deg": [10.0]}),
+    ("doa_music_spectrum", {"n_elements": 8, "spacing_lambda": 0.0,
+                            "angles_deg": [10.0]}),
+    ("doa_music_spectrum", {"n_elements": 8, "angles_deg": [95.0]}),
+    ("doa_music_spectrum", {"n_elements": 4,
+                            "angles_deg": [10.0, 20.0, 30.0, 40.0]}),
+    ("doa_music_spectrum", {"n_elements": 2,
+                            "covariance": [[1, 0], [0, 0]],
+                            "n_sources": 1}),
+    ("doa_esprit", {"n_elements": 2, "angles_deg": [5.0, 10.0]}),
+    ("doa_esprit", {"n_elements": 8, "angles_deg": [-20.0, 30.0],
+                    "n_snapshots": 4}),
+    ("doa_mvdr_weights", {"covariance": [[1, 0], [0, 0]]}),
+    ("doa_mvdr_weights", {"covariance": [[1, 0], [1, 0]]}),
+    ("combline_resonance", {"zr_ohm": 80.0, "cap_ff": 0.0,
+                            "epsilon_r": 1.0, "f0_ghz": 2.0}),
+    ("combline_resonance", {"zr_ohm": 80.0, "cap_ff": 1000.0,
+                            "epsilon_r": 0.5, "f0_ghz": 2.0}),
+    ("combline_resonance", {"zr_ohm": 80.0, "cap_ff": 1000.0,
+                            "epsilon_r": 1.0}),
+    ("combline_resonance", {"zr_ohm": 80.0, "cap_ff": 1000.0,
+                            "epsilon_r": 1.0, "f0_ghz": 2.0,
+                            "length_mm": 18.7}),
+    ("coaxial_cavity_resonance", {"mode": "bogus", "f0_ghz": 2.0}),
+    ("coaxial_cavity_resonance", {"mode": "half", "f0_ghz": 0.0}),
+    ("coaxial_cavity_resonance", {"mode": "half", "f0_ghz": 2.0,
+                                  "a_mm": 3.0, "b_mm": 1.0}),
+    ("cavity_unloaded_q", {"f_ghz": 0.0, "conductivity_s_per_m": 5.8e7,
+                           "a_mm": 1.0, "b_mm": 2.3}),
+    ("cavity_unloaded_q", {"f_ghz": 1.0, "conductivity_s_per_m": 5.8e7,
+                           "a_mm": 2.3, "b_mm": 2.3}),
+    ("cavity_unloaded_q", {"f_ghz": 1.0, "conductivity_s_per_m": 5.8e7,
+                           "a_mm": 1.0, "b_mm": 2.3, "tan_delta": -1e-4}),
+    # aurora36 W6-A 五键越界拒绝族：TRL 双路互斥/缺一/波导截止附近/频带
+    # 顺序/反射件白名单/线长点数域；61000-4-3 等级白名单+双入口互斥+
+    # 距离白名单；61000-4-6 等级白名单+双入口互斥；ESD 档位白名单+
+    # rise 规范窗
+    ("trl_standards_design", {"wr_name": "WR-90", "z0_ohm": 50.0,
+                              "epsilon_eff": 2.2, "f1_ghz": 9.0,
+                              "f2_ghz": 11.0}),
+    ("trl_standards_design", {"z0_ohm": 50.0, "f1_ghz": 9.0,
+                              "f2_ghz": 11.0}),
+    ("trl_standards_design", {"wr_name": "WR-90", "f1_ghz": 6.8,
+                              "f2_ghz": 9.0}),
+    ("trl_standards_design", {"wr_name": "WR-90", "f1_ghz": 11.0,
+                              "f2_ghz": 9.0}),
+    ("trl_standards_design", {"wr_name": "WR-90", "f1_ghz": 9.0,
+                              "f2_ghz": 11.0, "reflect_type": "matched"}),
+    ("trl_standards_design", {"wr_name": "WR-90", "f1_ghz": 9.0,
+                              "f2_ghz": 11.0, "reflect_offset": "eighth"}),
+    ("trl_standards_design", {"wr_name": "WR-90", "f1_ghz": 9.0,
+                              "f2_ghz": 11.0, "through_length_mm": -1.0}),
+    ("trl_line_electric_scan", {"wr_name": "WR-90", "line_length_mm": 0.0,
+                                "f1_ghz": 9.0, "f2_ghz": 11.0}),
+    ("trl_line_electric_scan", {"wr_name": "WR-90", "line_length_mm": 9.93,
+                                "f1_ghz": 9.0, "f2_ghz": 11.0,
+                                "n_points": 1}),
+    ("trl_line_electric_scan", {"wr_name": "WR-90", "line_length_mm": 9.93,
+                                "f1_ghz": 6.8, "f2_ghz": 9.0}),
+    ("radiated_immunity_power", {"distance_m": 3.0, "test_level": 5}),
+    ("radiated_immunity_power", {"distance_m": 3.0, "test_level": 3,
+                                 "field_v_per_m": 10.0}),
+    ("radiated_immunity_power", {"distance_m": 3.0, "field_v_per_m": -1.0}),
+    ("radiated_immunity_power", {"distance_m": 5.0, "test_level": 3}),
+    ("radiated_immunity_power", {"distance_m": 3.0, "test_level": 3,
+                                 "antenna_gain_db": -6.0}),
+    ("radiated_immunity_power", {"distance_m": 3.0, "test_level": 3,
+                                 "cable_loss_db": -1.0}),
+    ("conducted_immunity_cdn", {"test_level": 4}),
+    ("conducted_immunity_cdn", {"test_level": 3, "emf_v": 10.0}),
+    ("conducted_immunity_cdn", {"emf_v": 0.0}),
+    ("conducted_immunity_cdn", {"test_level": 3, "system_z_ohm": 0.0}),
+    ("esd_contact_waveform", {"charge_kv": 5.0}),
+    ("esd_contact_waveform", {"charge_kv": 4.0, "rise_time_ns": 1.5}),
+    ("esd_contact_waveform", {"charge_kv": 4.0, "t_max_ns": 20.0}),
+    ("esd_contact_waveform", {"charge_kv": 4.0, "n_points": 10}),
+    # aurora36 W7-A 六键越界拒绝族：平衡对反射幅值>1/IL 负/目标回损
+    # 非正；Doherty 网络非经典回退/非正 R_opt/Z0；效率曲线点数/轴域；
+    # 色散位移简并点 Δ=0/非正 g/κ/负 Γ1；读出 S21 κe 越域/栅格守卫；
+    # 读出 SNR 零信号 χ=0/T_n=0/κe 越域
+    ("balanced_pair_sparams", {"s11a_mag": 1.5, "s21a_db": 20.0}),
+    ("balanced_pair_sparams", {"s11a_mag": 0.2, "s21a_db": 20.0,
+                               "hybrid_il_db": -1.0}),
+    ("balanced_pair_sparams", {"s11a_mag": 0.2, "s21a_db": 20.0,
+                               "target_rl_db": 0.0}),
+    ("balanced_pair_sparams", {"s11a_mag": 0.2, "s11a_deg": 400.0,
+                               "s21a_db": 20.0}),
+    ("doherty_combining_network", {"r_opt_ohm": 100.0, "backoff_db": 8.0}),
+    ("doherty_combining_network", {"r_opt_ohm": 0.0}),
+    ("doherty_combining_network", {"r_opt_ohm": 100.0, "z0_ohm": -1.0}),
+    ("doherty_efficiency_curve", {"n_points": 1}),
+    ("doherty_efficiency_curve", {"n_points": 0.5}),
+    ("doherty_efficiency_curve", {"pbo_max_db": 31.0}),
+    ("qubit_dispersive_shift", {"g_mhz": 50.0, "delta_mhz": 0.0,
+                                "kappa_mhz": 10.0}),
+    ("qubit_dispersive_shift", {"g_mhz": 0.0, "delta_mhz": 100.0,
+                                "kappa_mhz": 10.0}),
+    ("qubit_dispersive_shift", {"g_mhz": 50.0, "delta_mhz": 100.0,
+                                "kappa_mhz": -1.0}),
+    ("qubit_dispersive_shift", {"g_mhz": 50.0, "delta_mhz": 100.0,
+                                "kappa_mhz": 10.0, "gamma1_mhz": -1.0}),
+    ("qubit_readout_s21", {"f_r_ghz": 6.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 3.0}),
+    ("qubit_readout_s21", {"f_r_ghz": 6.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 0.0}),
+    ("qubit_readout_s21", {"f_r_ghz": 6.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 1.0, "n_points": 1}),
+    ("qubit_readout_snr", {"chi_mhz": 0.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 1.0, "n_bar": 50.0,
+                           "f_r_ghz": 6.0, "tau_us": 1.0}),
+    ("qubit_readout_snr", {"chi_mhz": 1.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 1.0, "n_bar": 50.0,
+                           "f_r_ghz": 6.0, "tau_us": 1.0, "t_n_k": 0.0}),
+    ("qubit_readout_snr", {"chi_mhz": 1.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 3.0, "n_bar": 50.0,
+                           "f_r_ghz": 6.0, "tau_us": 1.0}),
+    ("qubit_readout_snr", {"chi_mhz": 1.0, "kappa_mhz": 2.0,
+                           "kappa_e_mhz": 1.0, "n_bar": 0.0,
+                           "f_r_ghz": 6.0, "tau_us": 0.0}),
+    # aurora72 A2-C 六键越界拒绝族：同轴 Z0 a≥b/分析+综合互斥/全缺输入
+    # /εr<1；衰减 f≤0/σ≤0/tanδ<0/μr≤0；功率容量 a≥b/E_br≤0/p_op<0；
+    # 圆柱谱 f_min≥f_max/半径≤0/带过宽超 max_modes/εr<1；模式图 点数
+    # /长径比/非法模式名/TE p=0/重复模式；模式 Q TE p=0/n=0/负 m/σ≤0
+    # /非整 m
+    ("coax_line_z0", {"a_mm": 1.0, "b_mm": 1.0}),
+    ("coax_line_z0", {"a_mm": 1.0, "b_mm": 0.5}),
+    ("coax_line_z0", {"a_mm": 1.0, "b_mm": 3.0, "z0_ohm": 50.0}),
+    ("coax_line_z0", {"a_mm": 0.0, "b_mm": 3.0}),
+    ("coax_line_z0", {"z0_ohm": -1.0}),
+    ("coax_line_z0", {"epsilon_r": 0.5, "z0_ohm": 50.0}),
+    ("coax_line_attenuation", {"f_ghz": 0.0, "a_mm": 1.0, "b_mm": 3.0,
+                               "conductivity_s_per_m": 5.8e7}),
+    ("coax_line_attenuation", {"f_ghz": 1.0, "a_mm": 3.0, "b_mm": 3.0,
+                               "conductivity_s_per_m": 5.8e7}),
+    ("coax_line_attenuation", {"f_ghz": 1.0, "a_mm": 1.0, "b_mm": 3.0,
+                               "conductivity_s_per_m": 0.0}),
+    ("coax_line_attenuation", {"f_ghz": 1.0, "a_mm": 1.0, "b_mm": 3.0,
+                               "conductivity_s_per_m": 5.8e7,
+                               "tan_delta": -0.01}),
+    ("coax_line_attenuation", {"f_ghz": 1.0, "a_mm": 1.0, "b_mm": 3.0,
+                               "conductivity_s_per_m": 5.8e7, "mu_r": 0.0}),
+    ("coax_line_power_capacity", {"a_mm": 3.0, "b_mm": 3.0}),
+    ("coax_line_power_capacity", {"a_mm": 1.0, "b_mm": 3.0,
+                                  "e_br_v_per_m": 0.0}),
+    ("coax_line_power_capacity", {"a_mm": 1.0, "b_mm": 3.0,
+                                  "p_op_w": -1.0}),
+    ("coax_line_power_capacity", {"a_mm": 1.0, "b_mm": 3.0,
+                                  "epsilon_r": 0.9}),
+    ("circular_cavity_mode_spectrum", {"radius_mm": 10.0, "length_mm": 25.0,
+                                       "f_min_ghz": 16.0, "f_max_ghz": 16.0}),
+    ("circular_cavity_mode_spectrum", {"radius_mm": 0.0, "length_mm": 25.0,
+                                       "f_min_ghz": 8.0, "f_max_ghz": 16.0}),
+    ("circular_cavity_mode_spectrum", {"radius_mm": 10.0, "length_mm": 25.0,
+                                       "f_min_ghz": 8.0, "f_max_ghz": 16.0,
+                                       "epsilon_r": 0.5}),
+    ("circular_cavity_mode_spectrum", {"radius_mm": 10.0, "length_mm": 25.0,
+                                       "f_min_ghz": 0.5, "f_max_ghz": 60.0,
+                                       "max_modes": 10}),
+    ("circular_cavity_mode_spectrum", {"radius_mm": 10.0, "length_mm": 25.0,
+                                       "f_min_ghz": 8.0, "f_max_ghz": 16.0,
+                                       "max_modes": 0}),
+    ("circular_cavity_mode_chart", {"modes": ["TM010", "TE111"],
+                                    "n_points": 1}),
+    ("circular_cavity_mode_chart", {"modes": ["TM010", "TE111"],
+                                    "n_points": 2.5}),
+    ("circular_cavity_mode_chart", {"modes": ["TM010", "TE111"],
+                                    "l_over_2a_min": 0.5,
+                                    "l_over_2a_max": 0.5}),
+    ("circular_cavity_mode_chart", {"modes": ["TX011", "TE111"]}),
+    ("circular_cavity_mode_chart", {"modes": ["TE110", "TE111"]}),
+    ("circular_cavity_mode_chart", {"modes": ["TM010", "TM010", "TE111"]}),
+    ("circular_cavity_mode_q", {"mode_type": "TE", "m": 0, "n": 1, "p": 0,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 5.8e7}),
+    ("circular_cavity_mode_q", {"mode_type": "TE", "m": 0, "n": 0, "p": 1,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 5.8e7}),
+    ("circular_cavity_mode_q", {"mode_type": "TE", "m": -1, "n": 1, "p": 1,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 5.8e7}),
+    ("circular_cavity_mode_q", {"mode_type": "TE", "m": 0.5, "n": 1, "p": 1,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 5.8e7}),
+    ("circular_cavity_mode_q", {"mode_type": "TM", "m": 0, "n": 1, "p": 0,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 0.0}),
+    ("circular_cavity_mode_q", {"mode_type": "TE", "m": 0, "n": 1, "p": 1,
+                                "radius_mm": 10.0, "length_mm": 12.0,
+                                "conductivity_s_per_m": 5.8e7,
+                                "tan_delta": -0.01}),
+    # aurora72 A3-B 五键越界拒绝族：双/三支节 rl≤0（纯电抗退化）/z0≤0/
+    # 间距 90° tan 奇点/间距越界/stub1_deg≥180/非法 stub_type；偶极
+    # l>λ（超单瓣正弦假设域）/l≤0/f≤0/线径≤0；折合 间距≤2a（线重叠）
+    # /l>λ/线径≤0；小环 a≥b（几何非法）/N<1/σ≤0/C/λ>0.3（超电小域）
+    ("stub_tuner_double", {"rl_ohm": 0.0, "xl_ohm": 60.0}),
+    ("stub_tuner_double", {"rl_ohm": -5.0, "xl_ohm": 60.0}),
+    ("stub_tuner_double", {"rl_ohm": 100.0, "xl_ohm": 60.0, "z0_ohm": 0.0}),
+    ("stub_tuner_double", {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                           "spacing_deg": 90.0}),
+    ("stub_tuner_double", {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                           "spacing_deg": 200.0}),
+    ("stub_tuner_double", {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                           "stub1_deg": 180.0}),
+    ("stub_tuner_double", {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                           "stub_type": "quasi"}),
+    ("stub_tuner_triple", {"rl_ohm": 0.0, "xl_ohm": 10.0}),
+    ("stub_tuner_triple", {"rl_ohm": 10.0, "xl_ohm": 10.0,
+                           "spacing_deg": 90.0}),
+    ("stub_tuner_triple", {"rl_ohm": 10.0, "xl_ohm": 10.0,
+                           "z0_ohm": -50.0}),
+    ("stub_tuner_triple", {"rl_ohm": 10.0, "xl_ohm": 10.0,
+                           "stub_type": "openx"}),
+    ("dipole_emf_zin", {"length_mm": 0.0, "f_ghz": 2.0,
+                        "wire_radius_mm": 0.5}),
+    ("dipole_emf_zin", {"length_mm": 200.0, "f_ghz": 2.0,
+                        "wire_radius_mm": 0.5}),
+    ("dipole_emf_zin", {"length_mm": 70.0, "f_ghz": 0.0,
+                        "wire_radius_mm": 0.5}),
+    ("dipole_emf_zin", {"length_mm": 70.0, "f_ghz": 2.0,
+                        "wire_radius_mm": 0.0}),
+    ("folded_dipole_zin", {"length_mm": 70.0, "f_ghz": 2.0,
+                           "wire_radius_mm": 1.0, "spacing_mm": 1.5}),
+    ("folded_dipole_zin", {"length_mm": 200.0, "f_ghz": 2.0,
+                           "wire_radius_mm": 0.5, "spacing_mm": 10.0}),
+    ("folded_dipole_zin", {"length_mm": 70.0, "f_ghz": -1.0,
+                           "wire_radius_mm": 0.5, "spacing_mm": 10.0}),
+    ("small_loop_zin", {"radius_mm": 10.0, "f_ghz": 1.0,
+                        "wire_radius_mm": 10.0, "turns_n": 1.0,
+                        "conductivity_s_per_m": 5.8e7}),
+    ("small_loop_zin", {"radius_mm": 10.0, "f_ghz": 1.0,
+                        "wire_radius_mm": 1.0, "turns_n": 0.5,
+                        "conductivity_s_per_m": 5.8e7}),
+    ("small_loop_zin", {"radius_mm": 10.0, "f_ghz": 1.0,
+                        "wire_radius_mm": 1.0, "turns_n": 2.0,
+                        "conductivity_s_per_m": 0.0}),
+    ("small_loop_zin", {"radius_mm": 30.0, "f_ghz": 5.0,
+                        "wire_radius_mm": 1.0, "turns_n": 1.0,
+                        "conductivity_s_per_m": 5.8e7}),
+    # aurora72 A3-C 四键越界拒绝族：耦合线综合 阶数<2/非整数/fbw≤0/>1/
+    # 纹波≤0/εr<1/h≤0/f0≤0；频响 长度不齐/单节/Z0e≤Z0o/空频轴/负频/
+    # θ=kπ（f=2f0）/eps 标量<1/eps 列表长度不齐；交指杆 w≤0/s≤0/b≤w/
+    # εr<1；交指综合 阶数<2/fbw>1/纹波<0/板距 0/εr<1/z_r<0/f0<0
+    ("coupled_line_bpf_synthesize", {"order": 1, "f0_ghz": 2.0,
+                                     "fbw": 0.1, "ripple_db": 0.5,
+                                     "epsilon_r": 3.66, "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 2.5, "f0_ghz": 2.0,
+                                     "fbw": 0.1, "ripple_db": 0.5,
+                                     "epsilon_r": 3.66, "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": 2.0, "fbw": 0.0,
+                                     "ripple_db": 0.5, "epsilon_r": 3.66,
+                                     "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": 2.0, "fbw": 1.5,
+                                     "ripple_db": 0.5, "epsilon_r": 3.66,
+                                     "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": 2.0, "fbw": 0.1,
+                                     "ripple_db": 0.0, "epsilon_r": 3.66,
+                                     "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": 2.0, "fbw": 0.1,
+                                     "ripple_db": 0.5, "epsilon_r": 0.5,
+                                     "h_mm": 0.254}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": 2.0, "fbw": 0.1,
+                                     "ripple_db": 0.5, "epsilon_r": 3.66,
+                                     "h_mm": 0.0}),
+    ("coupled_line_bpf_synthesize", {"order": 3, "f0_ghz": -2.0,
+                                     "fbw": 0.1, "ripple_db": 0.5,
+                                     "epsilon_r": 3.66, "h_mm": 0.254}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8, 44.8],
+                                   "f0_ghz": 2.0, "freq_ghz": [2.0]}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6], "z0o_ohm": [39.2],
+                                   "f0_ghz": 2.0, "freq_ghz": [2.0]}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [39.2, 44.8],
+                                   "z0o_ohm": [70.6, 56.6],
+                                   "f0_ghz": 2.0, "freq_ghz": [2.0]}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8], "f0_ghz": 2.0,
+                                   "freq_ghz": []}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8], "f0_ghz": 2.0,
+                                   "freq_ghz": [2.0, -1.0]}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8], "f0_ghz": 2.0,
+                                   "freq_ghz": [4.0]}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8], "f0_ghz": 2.0,
+                                   "freq_ghz": [2.0], "eps_eff": 0.5}),
+    ("coupled_line_bpf_response", {"z0e_ohm": [70.6, 56.6],
+                                   "z0o_ohm": [39.2, 44.8], "f0_ghz": 2.0,
+                                   "freq_ghz": [2.0],
+                                   "eps_eff": [1.0, 1.0, 1.0]}),
+    ("interdigital_bars_capacitance", {"w_mm": 0.0, "s_mm": 0.3,
+                                       "b_mm": 3.0, "epsilon_r": 2.2}),
+    ("interdigital_bars_capacitance", {"w_mm": 1.0, "s_mm": 0.0,
+                                       "b_mm": 3.0, "epsilon_r": 2.2}),
+    ("interdigital_bars_capacitance", {"w_mm": 3.0, "s_mm": 0.3,
+                                       "b_mm": 3.0, "epsilon_r": 2.2}),
+    ("interdigital_bars_capacitance", {"w_mm": 1.0, "s_mm": 0.3,
+                                       "b_mm": 3.0, "epsilon_r": 0.5}),
+    ("interdigital_bpf_synthesize", {"order": 1, "f0_ghz": 2.5,
+                                     "fbw": 0.08, "ripple_db": 0.5,
+                                     "b_mm": 2.0, "epsilon_r": 2.2}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": 2.5,
+                                     "fbw": 1.2, "ripple_db": 0.5,
+                                     "b_mm": 2.0, "epsilon_r": 2.2}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": 2.5,
+                                     "fbw": 0.08, "ripple_db": -1.0,
+                                     "b_mm": 2.0, "epsilon_r": 2.2}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": 2.5,
+                                     "fbw": 0.08, "ripple_db": 0.5,
+                                     "b_mm": 0.0, "epsilon_r": 2.2}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": 2.5,
+                                     "fbw": 0.08, "ripple_db": 0.5,
+                                     "b_mm": 2.0, "epsilon_r": 0.5}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": 2.5,
+                                     "fbw": 0.08, "ripple_db": 0.5,
+                                     "b_mm": 2.0, "epsilon_r": 2.2,
+                                     "z_r_ohm": -1.0}),
+    ("interdigital_bpf_synthesize", {"order": 3, "f0_ghz": -2.5,
+                                     "fbw": 0.08, "ripple_db": 0.5,
+                                     "b_mm": 2.0, "epsilon_r": 2.2}),
+    # aurora72 A4-B 六键越界拒绝族：金属球 半径≤0/f≤0/ka 超级数稳定域
+    # （>200）；峰值库 非法 shape/f≤0/a≤0/缺 b/b≤0/三方角多给 b；检波
+    # 功率越平方律域双侧（>−20 缺省上沿/<−120 下沿）/k≤0/r_j≤0/r_v<0；
+    # TSS γ/R_v/B/T 非正 + snr 判据域外（0/40/−1）；PIM 合成 空列表/
+    # 非列表/非法元素；PIM 预算 order 域/类型（1/2.5/65）、空节点、节点
+    # 非 dict、缺 level_dbm、斜率 ≤0、限值非实数
+    ("rcs_sphere_mie", {"radius_mm": 0.0, "f_ghz": 10.0}),
+    ("rcs_sphere_mie", {"radius_mm": -10.0, "f_ghz": 10.0}),
+    ("rcs_sphere_mie", {"radius_mm": 10.0, "f_ghz": 0.0}),
+    ("rcs_sphere_mie", {"radius_mm": 20000.0, "f_ghz": 1.0}),
+    ("rcs_peak_canonical", {"shape": "cone_tip", "f_ghz": 10.0,
+                            "a_mm": 40.0}),
+    ("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": -1.0,
+                            "a_mm": 40.0, "b_mm": 40.0}),
+    ("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": 10.0,
+                            "a_mm": 0.0, "b_mm": 40.0}),
+    ("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": 10.0,
+                            "a_mm": 40.0}),
+    ("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": 10.0,
+                            "a_mm": 40.0, "b_mm": 0.0}),
+    ("rcs_peak_canonical", {"shape": "square_trihedral", "f_ghz": 10.0,
+                            "a_mm": 40.0, "b_mm": 10.0}),
+    ("diode_square_law_detect", {"p_in_dbm": -19.0, "k_uav2": 50.0,
+                                 "r_j_ohm": 250.0}),
+    ("diode_square_law_detect", {"p_in_dbm": -121.0, "k_uav2": 50.0,
+                                 "r_j_ohm": 250.0}),
+    ("diode_square_law_detect", {"p_in_dbm": -30.0, "k_uav2": 0.0,
+                                 "r_j_ohm": 250.0}),
+    ("diode_square_law_detect", {"p_in_dbm": -30.0, "k_uav2": 50.0,
+                                 "r_j_ohm": 0.0}),
+    ("diode_square_law_detect", {"p_in_dbm": -30.0, "k_uav2": 50.0,
+                                 "r_j_ohm": 250.0, "r_v_ohm": -1.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 0.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 1000.0, "r_v_ohm": -1.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 1000.0, "b_video_hz": 0.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 1000.0, "t_kelvin": -1.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 1000.0, "snr_tss_db": 0.0}),
+    ("detector_tss_nep", {"gamma_v_per_w": 1000.0, "snr_tss_db": 40.0}),
+    ("pim_nodes_combine", {"levels_dbm": []}),
+    ("pim_nodes_combine", {"levels_dbm": "-110"}),
+    ("pim_nodes_combine", {"levels_dbm": [-110.0, "x"]}),
+    ("pim_cascade_budget", {"nodes": [{"level_dbm": -110.0}],
+                            "p_carrier_dbm": 43.0, "order": 1}),
+    ("pim_cascade_budget", {"nodes": [{"level_dbm": -110.0}],
+                            "p_carrier_dbm": 43.0, "order": 2.5}),
+    ("pim_cascade_budget", {"nodes": [{"level_dbm": -110.0}],
+                            "p_carrier_dbm": 43.0, "order": 65}),
+    ("pim_cascade_budget", {"nodes": [], "p_carrier_dbm": 43.0}),
+    ("pim_cascade_budget", {"nodes": "x", "p_carrier_dbm": 43.0}),
+    ("pim_cascade_budget", {"nodes": [-110.0], "p_carrier_dbm": 43.0}),
+    ("pim_cascade_budget", {"nodes": [{"name": "a"}],
+                            "p_carrier_dbm": 43.0}),
+    ("pim_cascade_budget", {"nodes": [{"level_dbm": -110.0}],
+                            "p_carrier_dbm": 43.0, "slope_db_per_db": 0.0}),
+    ("pim_cascade_budget", {"nodes": [{"level_dbm": -110.0}],
+                            "p_carrier_dbm": 43.0, "slope_db_per_db": -2.0}),
+    # aurora72 A4-A 五键越界拒绝族：反射 |Γ|>1/残差 0dB 非物理/负跟踪纹波/
+    # 非法 combine；传输 负幅值/残差正 dB；三天线 缺参数组/f≤0/非法方法；
+    # Swerling SW0 指回 albersheim/非法例号/pd≤pfa 物理域/N 越界/超定/
+    # 欠定/积累增益 N 非整与缺必需参
+    ("vna_reflection_uncertainty", {"gamma_mag": 1.5,
+                                    "directivity_db": -40.0,
+                                    "source_match_db": -35.0}),
+    ("vna_reflection_uncertainty", {"gamma_mag": 0.1, "directivity_db": 0.0,
+                                    "source_match_db": -35.0}),
+    ("vna_reflection_uncertainty", {"gamma_mag": 0.1,
+                                    "directivity_db": -40.0,
+                                    "source_match_db": -35.0,
+                                    "tracking_db": -0.5}),
+    ("vna_reflection_uncertainty", {"gamma_mag": 0.1,
+                                    "directivity_db": -40.0,
+                                    "source_match_db": -35.0,
+                                    "combine": "rms"}),
+    ("vna_transmission_uncertainty", {"s21_mag": -0.5,
+                                      "crosstalk_db": -90.0,
+                                      "load_match_db": -20.0}),
+    ("vna_transmission_uncertainty", {"s21_mag": 0.9, "crosstalk_db": -90.0,
+                                      "load_match_db": 5.0}),
+    ("three_antenna_gain", {"method": "three_antenna", "il12_db": 65.0,
+                            "il13_db": 70.0}),
+    ("three_antenna_gain", {"il12_db": 65.0, "il13_db": 70.0,
+                            "il23_db": 75.0, "f_ghz": 0.0,
+                            "range_m": 10.0}),
+    ("three_antenna_gain", {"method": "bogus"}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "pd": 0.9, "swerling": 0}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "pd": 0.9, "swerling": 7}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "pd": 1e-6, "swerling": 1}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "pd": 0.9, "swerling": 1,
+                                   "n_pulses": 0}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "pd": 0.9, "snr_db": 13.0,
+                                   "swerling": 1}),
+    ("swerling_detection_factor", {"pfa": 1e-6, "swerling": 1}),
+    ("swerling_integration_gain", {"pfa": 1e-6, "pd": 0.9, "swerling": 2,
+                                   "n_pulses": 0.5}),
+    ("swerling_integration_gain", {"pfa": 1e-6, "pd": 0.9, "swerling": 2}),
+    # aurora72 A5-A 六键越界拒绝族：SAW 同步 v≤0/双向参恰给其一（双给/都不
+    # 给）/pitch·f0≤0/N 非整与 0；频响 f0≤0/频点≤0/非列表元素非法/N 非整；
+    # 延迟线 f≤0/v≤0/gap≤0/α₁<0；魔 T 激励口越域（0/5）与非整；三口结
+    # tee_type 非法档/非字符串；和差 dBm 越域双侧（>300/<−300）/非法元素
+    ("saw_idt_sync_design", {"v_sound_m_s": 0.0, "n_finger_pairs": 30,
+                             "pitch_um": 1.0}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 30}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 30,
+                             "pitch_um": 1.0, "f0_ghz": 3.158}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 30.5,
+                             "pitch_um": 1.0}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 0,
+                             "pitch_um": 1.0}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 30,
+                             "pitch_um": 0.0}),
+    ("saw_idt_sync_design", {"v_sound_m_s": 3158.0, "n_finger_pairs": 30,
+                             "f0_ghz": -1.0}),
+    ("saw_idt_frequency_response", {"f0_ghz": 0.0, "n_finger_pairs": 30,
+                                    "freq_ghz": [1.0]}),
+    ("saw_idt_frequency_response", {"f0_ghz": 1.0, "n_finger_pairs": 30,
+                                    "freq_ghz": [0.0]}),
+    ("saw_idt_frequency_response", {"f0_ghz": 1.0, "n_finger_pairs": 2.5,
+                                    "freq_ghz": [1.0]}),
+    ("saw_idt_frequency_response", {"f0_ghz": 1.0, "n_finger_pairs": 30,
+                                    "freq_ghz": [1.0, "x"]}),
+    ("saw_delay_line", {"f0_ghz": 0.0, "v_sound_m_s": 3158.0,
+                        "idt_gap_mm": 3.158}),
+    ("saw_delay_line", {"f0_ghz": 1.0, "v_sound_m_s": -1.0,
+                        "idt_gap_mm": 3.158}),
+    ("saw_delay_line", {"f0_ghz": 1.0, "v_sound_m_s": 3158.0,
+                        "idt_gap_mm": 0.0}),
+    ("saw_delay_line", {"f0_ghz": 1.0, "v_sound_m_s": 3158.0,
+                        "idt_gap_mm": 3.158, "loss_db_per_us_1ghz": -0.5}),
+    ("magic_tee_s_matrix", {"excite_port": 0}),
+    ("magic_tee_s_matrix", {"excite_port": 5}),
+    ("magic_tee_s_matrix", {"excite_port": 2.5}),
+    ("waveguide_tee_s_matrix", {"tee_type": "x_plane"}),
+    ("waveguide_tee_s_matrix", {"tee_type": 1}),
+    ("hybrid_sum_difference", {"p2_dbm": 301.0, "p3_dbm": 10.0}),
+    ("hybrid_sum_difference", {"p2_dbm": 10.0, "p3_dbm": -301.0}),
+    ("hybrid_sum_difference", {"p2_dbm": "x", "p3_dbm": 10.0}),
+    # aurora72 A6-B 四键越界拒绝族：多节综合=偶数节/非整/0 节/超上限/耦合
+    # ≤0/过耦 1dB@3 节（c≥0.99 不可实现）/z0≤0/缺耦合；频响=列表不等长/
+    # Z0e≤Z0o/f≤0/θ=kπ（f=2f0）/空列表/eps 列表不等长；Gysel core=z0 越域
+    # 双侧+非有限；Gysel 频响=f0≤0/f≤0/f=2f0（θ=kπ）/空轴/z0≤0
+    ("multisection_coupler_binomial", {"n_sections": 2, "coupling_db": 10.0}),
+    ("multisection_coupler_binomial",
+     {"n_sections": 2.5, "coupling_db": 10.0}),
+    ("multisection_coupler_binomial", {"n_sections": 0, "coupling_db": 10.0}),
+    ("multisection_coupler_binomial",
+     {"n_sections": 17, "coupling_db": 10.0}),
+    ("multisection_coupler_binomial",
+     {"n_sections": 3, "coupling_db": 0.0}),
+    ("multisection_coupler_binomial",
+     {"n_sections": 3, "coupling_db": -10.0}),
+    ("multisection_coupler_binomial",
+     {"n_sections": 3, "coupling_db": 1.0}),
+    ("multisection_coupler_binomial", {"n_sections": 3, "coupling_db": 10.0,
+                                       "z0_ohm": 0.0}),
+    ("multisection_coupler_binomial", {"n_sections": 3}),
+    ("multisection_coupler_response", {"z0e_ohm": [70.6, 56.6],
+                                       "z0o_ohm": [39.2],
+                                       "f0_ghz": 2.0, "freq_ghz": [2.0]}),
+    ("multisection_coupler_response", {"z0e_ohm": [39.2, 44.8],
+                                       "z0o_ohm": [70.6, 56.6],
+                                       "f0_ghz": 2.0, "freq_ghz": [2.0]}),
+    ("multisection_coupler_response", {"z0e_ohm": [70.6, 56.6],
+                                       "z0o_ohm": [39.2, 44.8],
+                                       "f0_ghz": 0.0, "freq_ghz": [2.0]}),
+    ("multisection_coupler_response", {"z0e_ohm": [70.6, 56.6],
+                                       "z0o_ohm": [39.2, 44.8],
+                                       "f0_ghz": 2.0, "freq_ghz": [4.0]}),
+    ("multisection_coupler_response", {"z0e_ohm": [70.6, 56.6],
+                                       "z0o_ohm": [39.2, 44.8],
+                                       "f0_ghz": 2.0, "freq_ghz": []}),
+    ("multisection_coupler_response", {"z0e_ohm": [70.6, 56.6],
+                                       "z0o_ohm": [39.2, 44.8],
+                                       "f0_ghz": 2.0, "freq_ghz": [2.0],
+                                       "eps_eff": [1.0, 1.0, 1.0]}),
+    ("gysel_core_synthesize", {"z0_ohm": 0.0}),
+    ("gysel_core_synthesize", {"z0_ohm": -50.0}),
+    ("gysel_core_synthesize", {"z0_ohm": "x"}),
+    ("gysel_frequency_response", {"f0_ghz": 0.0, "freq_ghz": [2.0]}),
+    ("gysel_frequency_response", {"f0_ghz": 2.0, "freq_ghz": [0.0]}),
+    ("gysel_frequency_response", {"f0_ghz": 2.0, "freq_ghz": [4.0]}),
+    ("gysel_frequency_response", {"f0_ghz": 2.0, "freq_ghz": []}),
+    ("gysel_frequency_response", {"f0_ghz": 2.0, "freq_ghz": [2.0],
+                                  "z0_ohm": -1.0}),
+    # aurora72 A7-B 五键越界拒绝族：膜片电纳=a≤0/b>a 非标准口径/f≤TE10
+    # 截止/开口=全边/类型白名单外/正反解双缺与双给/感性容性符号；谐振窗
+    # =开口越域双侧/小感性开口容性解指数下溢；单膜片匹配=|Γ|≥1 非物理/
+    # 负幅值/相位越 ±180/a≤0；Guanella=5:1 复合比/3:1 非平方比/阻抗非正
+    # 双侧/f_max≤0/v_f 越域双侧/线长≤0/频轴空/f≤0/z_line≤0/θ=kπ 精确奇
+    # 异频点
+    ("wg_iris_susceptance", {"a_mm": 0.0, "b_mm": 10.16, "f_ghz": 10.0,
+                             "d_mm": 5.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 30.0, "f_ghz": 10.0,
+                             "d_mm": 5.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 5.0,
+                             "d_mm": 5.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                             "d_mm": 22.86}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                             "iris_type": "x", "d_mm": 5.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                             "d_mm": 5.0, "b_norm": -1.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                             "iris_type": "inductive", "b_norm": 1.0}),
+    ("wg_iris_susceptance", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                             "iris_type": "capacitive", "b_norm": -1.0}),
+    ("wg_resonant_window", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                            "d_ind_mm": 0.0}),
+    ("wg_resonant_window", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                            "d_ind_mm": 22.86}),
+    ("wg_resonant_window", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                            "d_ind_mm": 0.5}),
+    ("wg_iris_match", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                       "gamma_mag": 1.0, "gamma_phase_deg": 0.0}),
+    ("wg_iris_match", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                       "gamma_mag": -0.2, "gamma_phase_deg": 0.0}),
+    ("wg_iris_match", {"a_mm": 22.86, "b_mm": 10.16, "f_ghz": 10.0,
+                       "gamma_mag": 0.2, "gamma_phase_deg": 200.0}),
+    ("wg_iris_match", {"a_mm": 0.0, "b_mm": 10.16, "f_ghz": 10.0,
+                       "gamma_mag": 0.2, "gamma_phase_deg": 0.0}),
+    ("guanella_tlt_design", {"r_in_ohm": 250.0, "r_out_ohm": 50.0}),
+    ("guanella_tlt_design", {"r_in_ohm": 0.0, "r_out_ohm": 50.0}),
+    ("guanella_tlt_design", {"r_in_ohm": 200.0, "r_out_ohm": -50.0}),
+    ("guanella_tlt_design", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                             "f_max_ghz": -1.0}),
+    ("guanella_tlt_design", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                             "v_f": 0.0}),
+    ("guanella_tlt_response", {"r_in_ohm": 150.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": [1.0]}),
+    ("guanella_tlt_response", {"r_in_ohm": 250.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": [1.0]}),
+    ("guanella_tlt_response", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                               "length_mm": 0.0, "freq_ghz": [1.0]}),
+    ("guanella_tlt_response", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": []}),
+    ("guanella_tlt_response", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": [0.0]}),
+    ("guanella_tlt_response", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": [1.0],
+                               "z_line_ohm": 0.0}),
+    ("guanella_tlt_response", {"r_in_ohm": 200.0, "r_out_ohm": 50.0,
+                               "length_mm": 18.737, "freq_ghz": [1.0],
+                               "v_f": 1.2}),
+    # aurora72 A8-B 四键越界拒绝族：渐变线频响=z1==z2/阻抗非正/线长≤0/
+    # 频轴空与非正/剖面白名单外/v_f 越域双侧/n_quad·n_profile 越域；渐变
+    # 线综合=ρ≥|δ|/2 阶跃极限（零长即可满足）/ρ≤0/f≤0/z1==z2/阻抗非正/
+    # 剖面白名单外/v_f 越域；隔离器=IL·Iso·RL 负值/无耗+有限回损无源性
+    # 违约（γ²+c²>1 非物理规格）；环行器=sense 白名单外与类型错/负 dB 三
+    # 元组/无耗+零隔离违约酉性（γ²+c²+i²>1）
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 50.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0]}),
+    ("classic_taper_response", {"z1_ohm": 0.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0]}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 0.0, "freq_ghz": [1.0]}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": []}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [0.0]}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0],
+                                "profile": "bogus"}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0],
+                                "v_f": 1.5}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0],
+                                "n_quad": 50}),
+    ("classic_taper_response", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                "length_mm": 30.0, "freq_ghz": [1.0],
+                                "n_profile": 3}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 2.0,
+                                  "rho_max": abs(math.log(2.0)) / 2.0}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 2.0, "rho_max": 0.0}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 0.0, "rho_max": 0.05}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 50.0,
+                                  "f_min_ghz": 2.0, "rho_max": 0.05}),
+    ("classic_taper_synthesize", {"z1_ohm": -50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 2.0, "rho_max": 0.05}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 2.0, "rho_max": 0.05,
+                                  "profile": "bogus"}),
+    ("classic_taper_synthesize", {"z1_ohm": 50.0, "z2_ohm": 100.0,
+                                  "f_min_ghz": 2.0, "rho_max": 0.05,
+                                  "v_f": 1.2}),
+    ("isolator_ideal_sparams", {"il_db": -0.5}),
+    ("isolator_ideal_sparams", {"isolation_db": -25.0}),
+    ("isolator_ideal_sparams", {"rl_db": -20.0}),
+    ("isolator_ideal_sparams", {"il_db": 0.0, "isolation_db": 40.0,
+                                "rl_db": 0.0}),
+    ("isolator_ideal_sparams", {"il_db": 0.0, "isolation_db": 0.0,
+                                "rl_db": 3.0}),
+    ("circulator_ideal_sparams", {"sense": "bogus"}),
+    ("circulator_ideal_sparams", {"sense": 1}),
+    ("circulator_ideal_sparams", {"il_db": -0.5}),
+    ("circulator_ideal_sparams", {"isolation_db": -25.0}),
+    ("circulator_ideal_sparams", {"rl_db": -20.0}),
+    ("circulator_ideal_sparams", {"sense": "cw", "il_db": 0.0,
+                                  "isolation_db": 40.0, "rl_db": 0.0}),
+    ("circulator_ideal_sparams", {"sense": "cw", "il_db": 0.0,
+                                  "isolation_db": 0.0, "rl_db": 30.0}),
+    # ─── 批 B Wave3 G9 DR TE01δ 两键（core 守卫：D/L≤0、εr<2、tanδ<0、
+    # h=2.0 恰值开区间上界拒绝、f0≤0、NaN）────────────────────────────────
+    ("dr_te01d_cohn_f0", {"diameter_mm": 0.0, "height_mm": 7.5,
+                          "epsilon_r": 38.0}),
+    ("dr_te01d_cohn_f0", {"diameter_mm": 15.0, "height_mm": -1.0,
+                          "epsilon_r": 38.0}),
+    ("dr_te01d_cohn_f0", {"diameter_mm": 15.0, "height_mm": 7.5,
+                          "epsilon_r": 1.999}),
+    ("dr_te01d_cohn_f0", {"diameter_mm": 15.0, "height_mm": 7.5,
+                          "epsilon_r": 38.0, "tan_delta": -0.001}),
+    ("dr_te01d_design_size", {"epsilon_r": 38.0, "f0_ghz": 3.0,
+                              "height_to_diameter": 2.0}),
+    ("dr_te01d_design_size", {"epsilon_r": 38.0, "f0_ghz": 0.0,
+                              "height_to_diameter": 0.4}),
+    ("dr_te01d_design_size", {"epsilon_r": 1.9, "f0_ghz": 3.0,
+                              "height_to_diameter": 0.4}),
+    # ─── 批 B Wave3 G17 helical 薄注册三键（core 守卫透传：f0≤0、N<1、
+    # α≥90、尺寸全缺、c_λ 与直径不一致、target_metric 非法、c_λ≤0）────────
+    ("helix_axial_performance", {"f0_ghz": 0.0, "n_turns": 10.0,
+                                 "alpha_deg": 14.0, "c_lambda": 0.95}),
+    ("helix_axial_performance", {"f0_ghz": 10.0, "n_turns": 0.5,
+                                 "alpha_deg": 14.0, "c_lambda": 0.95}),
+    ("helix_axial_performance", {"f0_ghz": 10.0, "n_turns": 10.0,
+                                 "alpha_deg": 90.0, "c_lambda": 0.95}),
+    ("helix_axial_performance", {"f0_ghz": 10.0, "n_turns": 10.0,
+                                 "alpha_deg": 14.0}),
+    ("helix_axial_design", {"f0_ghz": 10.0, "n_turns": 10.0,
+                            "target_metric": "bogus", "target_value": 30.0}),
+    ("helix_axial_design", {"f0_ghz": 10.0, "n_turns": 0.0}),
+    ("helix_axial_bandwidth", {"f0_ghz": 10.0, "c_lambda": 0.0}),
+    ("helix_axial_bandwidth", {"f0_ghz": -1.0, "c_lambda": 0.95}),
+    # ─── 批 B Wave3 G15 Yagi 两键（core 守卫：boom 域外不外推、class 封闭
+    # 枚举、f≤0、d/λ≤0、output 非法、NaN）─────────────────────────────────
+    ("yagi_gain_nbs_tn688", {"boom_length_lambda": 0.39}),
+    ("yagi_gain_nbs_tn688", {"boom_length_lambda": 4.21}),
+    ("yagi_gain_nbs_tn688", {"boom_length_lambda": -1.0}),
+    ("yagi_gain_nbs_tn688", {"boom_length_lambda": 2.2, "output": "bogus"}),
+    ("yagi_geometry_nbs_tn688", {"class_lambda": 1.0, "f_ghz": 0.4}),
+    ("yagi_geometry_nbs_tn688", {"class_lambda": 0.8, "f_ghz": 0.0}),
+    ("yagi_geometry_nbs_tn688", {"class_lambda": 0.8, "f_ghz": 0.4,
+                                 "element_d_lambda": 0.0}),
+    # ─── 批 B Wave3 G16 缝隙阵两键（core 守卫：g=1@10GHz 封顶拒绝（RESOLVED
+    # A7 勘误：g_max=0.877747）、x 出 [0,a/2]、route 同给/全缺、f=fc 恰值
+    # λg 发散、f≥2fc、a≤0、b≤0、b≥a、n_slots<2/>128/非整、weights 长度不
+    # 符/全零/负值、g_total≤0）────────────────────────────────────────────
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "g": 1.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "offset_x_mm": 12.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "offset_x_mm": -1.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "offset_x_mm": 2.0,
+                                    "g": 0.1}),
+    ("slot_stevenson_conductance", {"f_ghz": 6.557140376202975,
+                                    "a_mm": 22.86, "b_mm": 10.16,
+                                    "offset_x_mm": 2.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 14.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "offset_x_mm": 2.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 0.0,
+                                    "b_mm": 10.16, "offset_x_mm": 2.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 0.0, "offset_x_mm": 2.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 22.86, "offset_x_mm": 2.0}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16,
+                                    "offset_x_mm": float("nan")}),
+    ("slot_stevenson_conductance", {"f_ghz": 10.0, "a_mm": 22.86,
+                                    "b_mm": 10.16, "g": -0.1}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 1,
+                                       "weights": [1.0]}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 129,
+                                       "weights": [1.0] * 129}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 4,
+                                       "weights": [1.0, 1.0, 1.0]}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 4,
+                                       "weights": [0.0, 0.0, 0.0, 0.0]}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 4,
+                                       "weights": [1.0, -0.5, 1.0, 1.0]}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 4,
+                                       "weights": [1.0] * 4,
+                                       "g_total": 0.0}),
+    ("slot_array_synthesis_resonant", {"f_ghz": 10.0, "a_mm": 22.86,
+                                       "b_mm": 10.16, "n_slots": 4,
+                                       "weights": [1.0] * 4,
+                                       "g_total": 4.0}),
+    # ─── 批 B Wave3 W3-CORE3 G11 余量四键（core 守卫：PAPR<0/>15、
+    # f_frac 越 [0,1]、PIN 频率/电阻/电容/Z0/Vf 非正、步进超量程/
+    # LSB≤0/n_bits 非 int 越界/拓扑非法/精度负与长度错、倍频链 factors
+    # 非 int/越 [2,64]/级数越界/损耗负/列表长度错/pin 有限）──────────
+    ("envelope_tracking_efficiency", {"papr_db": -0.5}),
+    ("envelope_tracking_efficiency", {"papr_db": 15.5}),
+    ("envelope_tracking_efficiency", {"papr_db": 6.0,
+                                      "supply_floor_frac": 1.5}),
+    ("pin_diode_limiter", {"f_ghz": 0.0}),
+    ("pin_diode_limiter", {"f_ghz": 10.0, "r_on_ohm": 0.0}),
+    ("pin_diode_limiter", {"f_ghz": 10.0, "c_off_pf": -0.1}),
+    ("pin_diode_limiter", {"f_ghz": 10.0, "z0_ohm": 0.0}),
+    ("pin_diode_limiter", {"f_ghz": 10.0, "v_forward_v": 0.0}),
+    ("step_attenuator_design", {"attenuation_db": 32.0}),
+    ("step_attenuator_design", {"attenuation_db": -1.0}),
+    ("step_attenuator_design", {"attenuation_db": 5.0, "step_db": 0.0}),
+    ("step_attenuator_design", {"attenuation_db": 5.0, "n_bits": True}),
+    ("step_attenuator_design", {"attenuation_db": 5.0, "n_bits": 9}),
+    ("step_attenuator_design", {"attenuation_db": 5.0,
+                                "pad_topology": "bridged_tee"}),
+    ("step_attenuator_design", {"attenuation_db": 5.0,
+                                "per_step_accuracy_db": [0.2, -0.1,
+                                                         0.3, 0.5, 0.8]}),
+    ("step_attenuator_design", {"attenuation_db": 5.0,
+                                "per_step_accuracy_db": [0.2, 0.2, 0.3]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 0.0, "factors": [2]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [2, 1.5]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [2, 1]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [65]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [2] * 9}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [64] * 8}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [2, 3],
+                                 "stage_loss_db": [7.0]}),
+    ("multiplier_chain_budget", {"f_in_ghz": 1.0, "factors": [2, 3],
+                                 "stage_loss_db": [7.0, -1.0]}),
+    # ─── aurora_d W3-CORE6 四键（core 守卫：加载线 Δφ 恰值 0/180 拒绝/
+    # route 同给与全缺拒绝/θ=90 恰值拒绝/ereff<1；开关线 Δφ 恰值 360
+    # 与负值/Δl 非正/同给拒绝；CRB N=1、T=0、端fire 90、d/λ=1.5；
+    # 多工器倒序/相等带/f≤0/N=1/129/非法档）─────────────────────────
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                            "delta_phi_deg": 0.0}),
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                            "delta_phi_deg": 180.0}),
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 0.9,
+                            "delta_phi_deg": 45.0}),
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                            "delta_phi_deg": 45.0, "susceptance_norm": 1.0,
+                            "spacing_deg": 45.0}),
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                            "susceptance_norm": 1.0}),
+    ("loaded_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                            "susceptance_norm": 1.0, "spacing_deg": 90.0}),
+    ("switched_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                              "delta_phi_deg": 360.0}),
+    ("switched_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                              "delta_phi_deg": -90.0}),
+    ("switched_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                              "delta_phi_deg": 90.0, "delay_line_mm": 1.0}),
+    ("switched_line_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                              "delay_line_mm": -1.0}),
+    ("doa_crb_ula", {"n_elements": 1, "snapshots": 256, "snr_db": 15.0,
+                     "spacing_lambda": 0.5, "angle_deg": 0.0}),
+    ("doa_crb_ula", {"n_elements": 8, "snapshots": 0, "snr_db": 15.0,
+                     "spacing_lambda": 0.5, "angle_deg": 0.0}),
+    ("doa_crb_ula", {"n_elements": 8, "snapshots": 256, "snr_db": 15.0,
+                     "spacing_lambda": 1.5, "angle_deg": 0.0}),
+    ("doa_crb_ula", {"n_elements": 8, "snapshots": 256, "snr_db": 15.0,
+                     "spacing_lambda": 0.5, "angle_deg": 90.0}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 8.0, "f_stop_ghz": 2.0,
+                                  "n_channels": 4}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 2.0, "f_stop_ghz": 2.0,
+                                  "n_channels": 4}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 0.0, "f_stop_ghz": 8.0,
+                                  "n_channels": 4}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 2.0, "f_stop_ghz": 8.0,
+                                  "n_channels": 1}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 2.0, "f_stop_ghz": 8.0,
+                                  "n_channels": 129}),
+    ("multiplexer_channel_plan", {"f_start_ghz": 2.0, "f_stop_ghz": 8.0,
+                                  "n_channels": 4, "spacing": "geometric"}),
+    # ─── aurora_d W3-CORE7 三键（core 守卫：Cpk↔良率 route 同给/全缺/
+    # 负 Cpk/良率开区间 0 与 1/档位白名单外/边际单给与口径不一致；串联
+    # 空表/越界元素/0 元素/超 64 条/rho=1 恰值与负值/非序列；combline
+    # k 恰值 0 与 1/负 Zr/极强极弱耦合越域/cap-f0 单给）────────────────
+    ("cpk_yield_convert", {"cpk": 1.0, "yield_frac": 0.99}),
+    ("cpk_yield_convert", {}),
+    ("cpk_yield_convert", {"cpk": -0.5}),
+    ("cpk_yield_convert", {"yield_frac": 0.0}),
+    ("cpk_yield_convert", {"yield_frac": 1.0}),
+    ("cpk_yield_convert", {"yield_frac": 0.99, "spec_side": "bogus"}),
+    ("cpk_yield_convert", {"cpk": 1.0, "cpk_upper": 1.0}),
+    ("cpk_yield_convert", {"cpk": 2.0, "cpk_upper": 1.0, "cpk_lower": 1.0}),
+    ("cpk_yield_convert", {"cpk": 1.0, "cpk_lower": 1.0}),
+    ("serial_yield_budget", {"yields": []}),
+    ("serial_yield_budget", {"yields": "bad"}),
+    ("serial_yield_budget", {"yields": [0.99, 1.5]}),
+    ("serial_yield_budget", {"yields": [0.99, 0.0]}),
+    ("serial_yield_budget", {"yields": [0.5] * 65}),
+    ("serial_yield_budget", {"yields": [0.99, 0.98], "rho": 1.0}),
+    ("serial_yield_budget", {"yields": [0.99, 0.98], "rho": -0.1}),
+    ("combline_coupling_gap", {"k_coupling": 0.0, "z_r_ohm": 70.0,
+                               "b_mm": 6.0, "epsilon_r": 2.2}),
+    ("combline_coupling_gap", {"k_coupling": 1.0, "z_r_ohm": 70.0,
+                               "b_mm": 6.0, "epsilon_r": 2.2}),
+    ("combline_coupling_gap", {"k_coupling": 0.05, "z_r_ohm": -70.0,
+                               "b_mm": 6.0, "epsilon_r": 2.2}),
+    ("combline_coupling_gap", {"k_coupling": 0.05, "z_r_ohm": 0.5,
+                               "b_mm": 6.0, "epsilon_r": 2.2}),
+    ("combline_coupling_gap", {"k_coupling": 0.05, "z_r_ohm": 70.0,
+                               "b_mm": 6.0, "epsilon_r": 2.2,
+                               "cap_ff": 1000.0}),
+    ("combline_coupling_gap", {"k_coupling": 0.05, "z_r_ohm": 70.0,
+                               "b_mm": 6.0, "epsilon_r": 2.2,
+                               "f0_ghz": 2.0}),
+    # ─── aurora_d W3-CORE8 四键域错误（多源 CRB：N≤M/重合角/端fire/ρ=1/
+    # M=1 带ρ/源超限；反射式：恰值 0/360/三路线同给/同态电抗/负损耗/
+    # 半态/坏变容管；阶数原型：阻带在通带内/带边恰值/负带边/chebyshev
+    # 缺纹波/非法原型/规格过紧超阶数上限；λg：截止下/b>a/b≤0/a≤0）───
+    ("doa_crb_ula_multisource", {"n_elements": 2, "snapshots": 8,
+                                 "angles_deg": [1.0, 2.0], "snr_db": 10.0,
+                                 "spacing_lambda": 0.5}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [1.0, 1.0], "snr_db": 10.0,
+                                 "spacing_lambda": 0.5}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [90.0, 20.0], "snr_db": 10.0,
+                                 "spacing_lambda": 0.5}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [1.0, 20.0], "snr_db": 10.0,
+                                 "spacing_lambda": 0.5, "corr_coef": 1.0}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [20.0], "snr_db": 10.0,
+                                 "spacing_lambda": 0.5, "corr_coef": 0.5}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [20.0] * 17, "snr_db": 10.0,
+                                 "spacing_lambda": 0.5}),
+    ("doa_crb_ula_multisource", {"n_elements": 8, "snapshots": 8,
+                                 "angles_deg": [1.0, 20.0], "snr_db": 10.0,
+                                 "spacing_lambda": 1.5}),
+    ("reflective_phaser", {"f_ghz": 10.0, "delta_phi_deg": 0.0}),
+    ("reflective_phaser", {"f_ghz": 10.0, "delta_phi_deg": 360.0}),
+    ("reflective_phaser", {"f_ghz": 10.0, "delta_phi_deg": 90.0,
+                           "x1_norm": 1.0, "x2_norm": 2.0}),
+    ("reflective_phaser", {"f_ghz": 10.0, "x1_norm": 1.0, "x2_norm": 1.0}),
+    ("reflective_phaser", {"f_ghz": 10.0, "x1_norm": 1.0, "x2_norm": 2.0,
+                           "r_norm": -0.1}),
+    ("reflective_phaser", {"f_ghz": 10.0, "x1_norm": 1.0}),
+    ("reflective_phaser", {"f_ghz": 10.0, "c1_pf": 0.0, "c2_pf": 1.0}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 4.0, "channel_bw_ghz": 0.4, "rejection_db": 40.0,
+        "stopband_freq_ghz": 4.0, "ripple_db": 0.5}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 4.0, "channel_bw_ghz": 0.4, "rejection_db": 40.0,
+        "stopband_freq_ghz": 3.8, "ripple_db": 0.5}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 0.1, "channel_bw_ghz": 0.4, "rejection_db": 40.0,
+        "stopband_freq_ghz": 1.0, "ripple_db": 0.5}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 4.0, "channel_bw_ghz": 0.4, "rejection_db": 40.0,
+        "stopband_freq_ghz": 5.0, "prototype": "chebyshev"}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 4.0, "channel_bw_ghz": 0.4, "rejection_db": 40.0,
+        "stopband_freq_ghz": 5.0, "prototype": "bessel"}),
+    ("multiplexer_channel_prototype", {
+        "f_center_ghz": 4.0, "channel_bw_ghz": 0.001, "rejection_db": 600.0,
+        "stopband_freq_ghz": 4.002, "ripple_db": 0.01}),
+    ("waveguide_lambda_g", {"a_mm": 22.86, "f_ghz": 6.0}),
+    ("waveguide_lambda_g", {"a_mm": 22.86, "f_ghz": 10.0, "b_mm": 30.0}),
+    ("waveguide_lambda_g", {"a_mm": 22.86, "f_ghz": 10.0, "b_mm": -1.0}),
+    ("waveguide_lambda_g", {"a_mm": 0.0, "f_ghz": 10.0}),
+    # ─── aurora_d W3-CORE9 三键域错误（随机 CRB：N≤M/重合角/端fire/ρ=1/
+    # M=1 带ρ/间距越界；Schiffman：θ₀+Δφ 同给/全缺/ρ≤1/θ₀ 越界/定 ρ 目标
+    # 超峰/平坦域下界 90°/平坦域上界 300°；开关网络：φ 恰值 0/180/同给/
+    # 全缺/位数越界/负电阻）──────────────────────────────────────────
+    ("doa_crb_stochastic", {"n_elements": 2, "snapshots": 8,
+                            "angles_deg": [1.0, 2.0], "snr_db": 10.0,
+                            "spacing_lambda": 0.5}),
+    ("doa_crb_stochastic", {"n_elements": 8, "snapshots": 8,
+                            "angles_deg": [1.0, 1.0], "snr_db": 10.0,
+                            "spacing_lambda": 0.5}),
+    ("doa_crb_stochastic", {"n_elements": 8, "snapshots": 8,
+                            "angles_deg": [90.0, 20.0], "snr_db": 10.0,
+                            "spacing_lambda": 0.5}),
+    ("doa_crb_stochastic", {"n_elements": 8, "snapshots": 8,
+                            "angles_deg": [1.0, 20.0], "snr_db": 10.0,
+                            "spacing_lambda": 0.5, "corr_coef": 1.0}),
+    ("doa_crb_stochastic", {"n_elements": 8, "snapshots": 8,
+                            "angles_deg": [20.0], "snr_db": 10.0,
+                            "spacing_lambda": 0.5, "corr_coef": 0.5}),
+    ("doa_crb_stochastic", {"n_elements": 8, "snapshots": 8,
+                            "angles_deg": [1.0, 20.0], "snr_db": 10.0,
+                            "spacing_lambda": 1.5}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0, "rho": 3.0,
+                          "theta0_deg": 90.0, "delta_phi_deg": 60.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0, "rho": 1.0,
+                          "theta0_deg": 90.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0, "rho": 3.0,
+                          "theta0_deg": 200.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0, "rho": 3.0,
+                          "delta_phi_deg": 170.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                          "delta_phi_deg": 90.0}),
+    ("schiffman_phaser", {"f_ghz": 10.0, "ereff": 3.0,
+                          "delta_phi_deg": 300.0}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "phi_deg": 0.0}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "phi_deg": 180.0}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "phi_deg": 45.0,
+                                 "n_bits": 4}),
+    ("switched_network_phaser", {"f_ghz": 2.0}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "n_bits": 0}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "n_bits": 9}),
+    ("switched_network_phaser", {"f_ghz": 2.0, "phi_deg": 45.0,
+                                 "r_on_ohm": -1.0}),
 ]
 
 
@@ -1482,6 +2858,12 @@ def _superposition_violation(
 S_PLANE_CALCULATOR_KEYS = frozenset({
     "coupling_matrix_response",
     "gstc_forward", "gstc_synthesize", "gstc_lut_crosscheck",
+    # aurora72 A5-A 两键（2026-10-11）：魔 T 理想 4 口 S 矩阵 + H/E 面三口
+    # 结理想 3 口 S 矩阵（幺正+互易+对称/对偶四约束闭式，互易 S=Sᵀ 成立）
+    "magic_tee_s_matrix", "waveguide_tee_s_matrix",
+    # aurora72 A6-B 一键（2026-10-11）：Gysel core 理想 f0 三口 S 矩阵
+    # （互易 S=Sᵀ 成立；Δ1/Δ2 外置负载吸收→非无耗不幺正，如实注记）
+    "gysel_core_synthesize",
 })
 
 # 豁免清单（spec.reciprocal=False 的键）：铁氧体类非互易键注册时
@@ -1491,6 +2873,11 @@ S_PLANE_CALCULATOR_KEYS = frozenset({
 _RECIPROCITY_EXEMPT: frozenset[str] = frozenset({
     'array.bayliss_weights', 'array.villeneuve_weights',
     'array.schelkunoff_nulls', 'array.quantized_milp',
+    # aurora72 A8-B 两键（2026-10-11）：隔离器/环行器理想 S 口径——铁氧
+    # 体非互易件（registry QM-1 §D-7 豁免位设计用途的首批注册键），S≠Sᵀ
+    # 是设计本体、互易断言不适用（S 对称仅在 IL=Iso 退化档成立，由键内
+    # reciprocal_degenerate 字段自报）
+    'isolator_ideal_sparams', 'circulator_ideal_sparams',
 })
 
 # skip 清单（封闭）：注册键中不产出 S/ABCD 者（逐键字面枚举）。封闭断言
@@ -1522,9 +2909,29 @@ _NO_S_PLANE_KEYS = frozenset({
     'microwave_process_window', 'microstrip_loss_heat',
     'microstrip_synthesis', 'multimode_cavity_heating',
     'multipactor_susceptibility_check',
+    'multiplexer_channel_plan',
     'electromigration_mttf_check',
     'parallel_plate_breakdown_margin', 'patch_f0_symbolic_e13',
     'patch_length', 'phase_noise_evm',
+    # aurora_d W3-CORE6 三键（2026-10-14）：加载线/开关线移相器（S 逐元素
+    # 幅相标量展示面非矩阵结构产出，互易语义由键内格胞对称性/能量守恒
+    # 自报）+DOA 单源 CRB（方差/标准差/Fisher 信息标量面）
+    'loaded_line_phaser', 'switched_line_phaser', 'doa_crb_ula',
+    # aurora_d W3-CORE8 四键（2026-10-14）：DOA 多源 CRB（FIM 矩阵/Fisher
+    # 信息面非 S/ABCD 结构产出——FIM 是实对称信息矩阵非端口网络量）+
+    # 反射式移相器（Γ 逐态幅相标量面非矩阵结构产出，互易语义由键内
+    # |Γ|=1/能量守恒自报）+多工器逐通道阶数原型（阶数/g 值链标量面）+
+    # 波导 TE10 λg/λc/β（传播参数标量面）——均无 S 矩阵产出
+    'doa_crb_ula_multisource', 'reflective_phaser',
+    'multiplexer_channel_prototype', 'waveguide_lambda_g',
+    # aurora_d W3-CORE9 三键（2026-10-14，CORE8 遗留收口）：随机 CRB
+    # （FIM/CRB 标量面非 S/ABCD 结构产出）+Schiffman 移相器（Δφ/频带响
+    # 应/几何标量面）+开关网络式（L/C/截止/位态标量面）——均无 S 矩阵产出
+    'doa_crb_stochastic', 'schiffman_phaser', 'switched_network_phaser',
+    # aurora_d W3-CORE7 三键（2026-10-14）：Cpk↔良率换算与多工序串联良率
+    # （良率/DPMO/界标量统计面）+combline 耦合缝换算（w/gap/阻抗/耦合系数
+    # 标量几何面）——均无 S 矩阵结构产出
+    'cpk_yield_convert', 'serial_yield_budget', 'combline_coupling_gap',
     'pll_loop_filter_synthesize',
     'q_factor_circle', 'q_factor_vf', 'q_factor_vf_zero',
     'qe_group_delay', 'quarter_wave_transformer',
@@ -1543,6 +2950,116 @@ _NO_S_PLANE_KEYS = frozenset({
     # W3-E 四键（2026-10-05，阵列综合标量/权重面无 S 产出）
     'array.bayliss_weights', 'array.villeneuve_weights',
     'array.schelkunoff_nulls', 'array.quantized_milp',
+    # 快赢席 W2 键面收口（2026-10-08）：AP-6 ITU 三键（衰减标量/链路中间量
+    # dict，无 S 面）+ DR-8 CDR 容限曲线（JT 标量列，无 S 面）
+    'gaseous_attenuation', 'rain_specific_attenuation',
+    'rain_attenuation_r001', 'cdr_jitter_mask',
+    # SB22-MS-1 功率校准链（MS12 储备池席）：功率/不确定度标量 dict，无 S 面
+    'power_cal_chain',
+    # SB22-TH-2 TNVNA 两键（TH2 储备池席）：修正曲线/拼接曲线标量列，无 S 面
+    'tnvna_extender_error_model', 'tnvna_band_stitch',
+    # aurora36 W3-A 两键（2026-10-11）：不等分 Wilkinson 阻抗/电阻标量面 +
+    # Bethe 孔耦合 dB/几何 dict，均无 S 矩阵产出
+    'unequal_split_wilkinson', 'bethe_hole_coupler',
+    # aurora36 W4-A 六键（2026-10-11）：调制 BER/反解/编码粗估（概率标量
+    # 与曲线数组）+ 雷达方程功率/SNR 标量 + Albersheim 概率三量 + CFAR
+    # 门限因子，均无 S 矩阵产出
+    'modulation_ber_curve', 'required_ebn0', 'coded_ber_estimate',
+    'radar_range_equation', 'albersheim_detection_snr', 'ca_cfar_threshold',
+    # aurora36 W5-A 六键（2026-10-11）：DOA 子空间谱/波束形成（角度谱、
+    # 根与权重/响应数组，无 S 面）+ combline/同轴腔谐振器与无载 Q（频率
+    # /长度/阻抗/Q 标量面，无 S 矩阵产出）
+    'doa_music_spectrum', 'doa_esprit', 'doa_mvdr_weights',
+    'combline_resonance', 'coaxial_cavity_resonance', 'cavity_unloaded_q',
+    # aurora36 W6-A 五键（2026-10-11）：TRL 校准件设计（标准件长度/电长
+    # 度/窗判据标量与数组，无 S 矩阵产出）+ EMC 抗扰度（功率/电压/电流
+    # 标量与波形数组，无 S 矩阵产出）
+    'trl_standards_design', 'trl_line_electric_scan',
+    'radiated_immunity_power', 'conducted_immunity_cdn',
+    'esd_contact_waveform',
+    # aurora36 W7-A 六键（2026-10-11）：PA 平衡对+Doherty 合成网络
+    # （S 参数合成标量展示面/阻抗标量/效率曲线数组——balanced_pair 出
+    # 口为逐元素 dB/幅相标量面非 S 矩阵结构，Doherty 效率曲线单源消费
+    # core/pa_architectures）+ 量子比特读出链（χ/ncrit/SNR 标量+S21
+    # 双态频响曲线数组，无 S 矩阵产出）
+    'balanced_pair_sparams', 'doherty_combining_network',
+    'doherty_efficiency_curve', 'qubit_dispersive_shift',
+    'qubit_readout_s21', 'qubit_readout_snr',
+    # aurora72 A2-C 六键（2026-10-11）：标准圆同轴行波线通用件（阻抗
+    # 标量/分布参数标量/每米衰减标量/功率容量标量面）+ 圆柱腔任意模式
+    # 闭式谱（模式频率列表/模式图曲线数组/模式 Q 标量——均无 S 矩阵
+    # 产出）
+    'coax_line_z0', 'coax_line_attenuation', 'coax_line_power_capacity',
+    'circular_cavity_mode_spectrum', 'circular_cavity_mode_chart',
+    'circular_cavity_mode_q',
+    # aurora72 A3-B 五键（2026-10-11）：双/三支节调配（电纳解/支节长度/
+    # ABCD 回代标量面）+ 偶极/折合/小环输入阻抗（R/X 标量/谐振长度/
+    # 方向性/三式恒等标量面——均无 S 矩阵产出）
+    'stub_tuner_double', 'stub_tuner_triple',
+    'dipole_emf_zin', 'folded_dipole_zin', 'small_loop_zin',
+    # aurora72 A3-C 四键（2026-10-11）：耦合线 BPF 综合（g/x/(Z0e,Z0o)/
+    # mm 尺寸标量列表面）+ 同步 TEM 频响（|S11|/|S21| 幅度 dB 列表——非
+    # S 矩阵产出，互易语义不适用）+ 交指杆偶奇电容闭式（Z0/C/k/J 标量面）
+    # + 交指带通综合（J/(C_e,C_o)/mm 尺寸标量列表面——均无 S 矩阵产出）
+    'coupled_line_bpf_synthesize', 'coupled_line_bpf_response',
+    'interdigital_bars_capacitance', 'interdigital_bpf_synthesize',
+    # aurora72 A4-B 六键（2026-10-11）：金属球 Mie 三区（σ/dBsm/ka/双
+    # 极限偏差标量面）+ 峰值库（σ/dBsm/等效孔径标量面）+ 平方律检波
+    # （I_dc/V_video/β 标量面）+ TSS-NEP（噪声/灵敏度标量面）+ PIM 多
+    # 节点合成与级联预算（电平/占比/裕量标量面——均无 S 矩阵产出）
+    'rcs_sphere_mie', 'rcs_peak_canonical',
+    'diode_square_law_detect', 'detector_tss_nep',
+    'pim_nodes_combine', 'pim_cascade_budget',
+    # aurora72 A4-A 五键（2026-10-11）：VNA 反射/传输不确定度（残差项
+    # 纹波与 Type-B u 标量面）+ 三天线法/比较法增益定标（FSPL/增益标量
+    # 面）+ Swerling 检测因子三量互算与积累增益（概率/SNR/改善因子标量
+    # 面——均无 S 矩阵产出）
+    'vna_reflection_uncertainty', 'vna_transmission_uncertainty',
+    'three_antenna_gain',
+    'swerling_detection_factor', 'swerling_integration_gain',
+    # aurora72 A5-A 六键（2026-10-11）：SAW 同步设计/δ 模型频响/延迟线
+    # （频率/长度/带宽/功率标量与逐点列表面）+ 和差合成（dBm/份额标量面，
+    # S 矩阵语义由魔 T 键承载——均无 S 矩阵产出）；魔 T 与 H/E 面三口结
+    # 两键出 S 矩阵，已归 S 面白名单
+    'saw_idt_sync_design', 'saw_idt_frequency_response', 'saw_delay_line',
+    'hybrid_sum_difference',
+    # aurora72 A6-B 三键（2026-10-11）：多节耦合器综合/频响（结点权/耦合
+    # dB/阻抗与幅度·dB 列表面）+ Gysel 频响（dB 曲线与守恒残差标量面——
+    # 均无复 S 矩阵产出）；Gysel core 综合出理想 f0 三口 S 矩阵，已归
+    # S 面白名单
+    'multisection_coupler_binomial', 'multisection_coupler_response',
+    'gysel_frequency_response',
+    # aurora72 A7-B 五键（2026-10-11）：波导膜片电纳/谐振窗/单膜片匹配
+    # （电纳/开口/位置/残差标量面）+ Guanella 设计/频响（n/Z0/线长标量与
+    # s11/s21 dB 列表面——均无复 S 矩阵产出，互易语义由频响键残差字段
+    # 自报）
+    'wg_iris_susceptance', 'wg_resonant_window', 'wg_iris_match',
+    'guanella_tlt_design', 'guanella_tlt_response',
+    # aurora72 A8-B 四键（2026-10-11）：经典渐变线频响/综合（|Γ| 线性+dB
+    # 标量列与长度/电长度标量面，无 S 矩阵产出）；隔离器/环行器理想 S=
+    # 铁氧体非互易件（S≠Sᵀ 设计本体，互易断言不适用——按 W3-E 先例豁免
+    # 位+本清单归类，非互易性由键内 nonreciprocity_db/reciprocal_
+    # degenerate 字段自报，不入互易扫描白名单）
+    'classic_taper_response', 'classic_taper_synthesize',
+    'isolator_ideal_sparams', 'circulator_ideal_sparams',
+    # 批 B Wave3 五键（2026-10-13）：圆柱 DR TE01δ 正解/反解（频率/尺寸/
+    # δ 份额/Q 标量面）+ 轴向模螺旋薄注册（HPBW/D0/Zin/带边标量与嵌套
+    # verdict——均无 S 矩阵产出）
+    'dr_te01d_cohn_f0', 'dr_te01d_design_size',
+    'helix_axial_performance', 'helix_axial_design',
+    'helix_axial_bandwidth',
+    # 批 B Wave3 四键（2026-10-13）：Yagi NBS 增益阶梯/档位几何（dBd/dBi/
+    # 单元数/间距标量与米制位置面）+ 缝隙阵 Stevenson 正反解/谐振阵综合
+    # （电导/偏置/位置标量与列表面——均无 S 矩阵产出）
+    'yagi_gain_nbs_tn688', 'yagi_geometry_nbs_tn688',
+    'slot_stevenson_conductance', 'slot_array_synthesis_resonant',
+    # 批 B Wave3 W3-CORE3 四键（2026-10-13）：ET 包络跟踪效率（效率标量
+    # 与概率面）+PIN 限幅器两态（S 逐元素 dB/幅相标量展示面与功率三分
+    # 标量——非 S 矩阵结构产出，互易语义由键内 identities.reciprocal
+    # 自报）+步进衰减器（位组合/电阻/堆叠误差标量面）+倍频链预算（频率
+    # /损耗/相噪劣化标量与逐级表——均无 S 矩阵产出）
+    'envelope_tracking_efficiency', 'pin_diode_limiter',
+    'step_attenuator_design', 'multiplier_chain_budget',
 })
 
 
@@ -1757,7 +3274,7 @@ def _qm1_line_beta_models() -> dict[str, tuple[np.ndarray, float]]:
 
     β 源 = 适配器同源闭式（mline→forward_z0 εeff（HJ 准静态无色散）、
     cpw→_cpwg_ri εeff（CPWG 共形映射，#198 口径）、stripline→εr（TEM
-    精确）；被测值（S 面相位，exp 构造+angle+unwrap）与预测值（闭式 β
+    精确））；被测值（S 面相位，exp 构造+angle+unwrap）与预测值（闭式 β
     差分）是不同计算路径——防相位构造/解包/差分链路回归。微带闭式键
     （microstrip_analysis 等）输出按 4 位小数舍入，1e-10 相位容差下不可
     用作 β 源（round 误差 → 1e-5 rad 级相位噪声），故取同源未舍入口径。

@@ -24,7 +24,16 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+
+| 名次 | 参数 | 依据 |
+|---|---|---|
+| 1 | res_len_mm | λg/2 谐振恒等式 |∂lnf0/∂lnL|=1（精确） |
+| 2 | gaps_mm | 缝耦合 k(gap) 强敏感（hairpin c(gap) 图谱同族；带宽/回损主维） |
+| 3 | widths_mm | 耦合段线宽经 KJ 偶/奇模进入 k 与外部 Q（弱于缝） |
+| 4 | w_feed_mm | 50Ω 馈线匹配 |
+| 5 | order | 阶数=离散综合参数（g 值表驱动，非连续几何维） |
+- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
 
 ## 判据
 
@@ -45,8 +54,8 @@
 
 - 参数语义：order=谐振器阶数 N（决定 widths_mm/gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=50Ω 馈线宽（skrf HJ 精算 live 值，仅进几何）；widths_mm[j]/gaps_mm[j]=第 j 个耦合段线宽/边到边缝（j=0 输入馈-腔 … j=N 腔-输出馈，fake/openEMS 两通道同索引同语义，#154）；res_len_mm=谐振器 1 物理长（λg/2 − Δl(w0) − Δl(w1)），其余谐振器按各自端宽逐端 Δl 修正（段长逐段由 _coupled_bpf_section_lengths_mm 同源派生，res2 修量 −6.465µm/−182ppm）；feed_len_mm=输入 50Ω 馈线长（阵列 y 居中 ⇒ 两馈等长）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部盒缘（馈/耦合段/谐振器台阶）精确入网（#198 精确入网）
-- 冒烟现状：真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读，如实 PARTIAL
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 冒烟现状：真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读（），如实 PARTIAL
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

@@ -1,4 +1,4 @@
-"""E5 可视化模块（扩展方案 §E5）。
+"""E5 可视化模块（规划扩展 §E5）。
 
 可视化功能：
 - S 参数曲线图（幅度/相位）
@@ -214,7 +214,7 @@ def generate_html_report(
 
 # ═══ G9 场可视化 3D：openEMS DumpHDF5 → 切片/等值面 web 化（§10.7 G9 余量）═══
 #
-# 设计：
+# 设计（项目规则 铁律 7 + #105 best-effort）：
 # - 本节 = 确定性 numpy 内核：只做求解器产物的几何/代数变换（|E| 包络、
 #   轴对齐切片、等值面/等值线、dB 归一、Γ→阻抗），不发明任何物理数字；
 # - PyVista（VTK）只在 field_isosurface(engine="auto"|"pyvista") 内惰性

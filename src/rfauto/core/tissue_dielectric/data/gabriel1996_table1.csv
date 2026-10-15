@@ -5,7 +5,7 @@
 #       spectrum of tissues", Phys. Med. Biol. 41 (1996) 2271-2293，
 #       Table 1, p. 2291（免费 PDF 原文逐格读数，pypdf 提取，检索
 #       2026-10-03；原文镜像 mriquestions.com 上传件，期刊页码在档）。
-#   [B] round 文档：研究扩充 round14 §四 NX-7 /
+#   [B] round 文档：docs/research_expansion_20261002_round14.md §四 NX-7 /
 #       round17 §四（Gabriel 1996 四阶 Cole-Cole 口径引用）。
 # 模型：eps*(w) = eps_inf + SUM_i de_i/(1+(j w tau_i)^(1-a_i)) + sigma/(j w eps0)
 # 单位：tau1 [ps]、tau2 [ns]、tau3 [us]、tau4 [ms]、sigma [S/m]。

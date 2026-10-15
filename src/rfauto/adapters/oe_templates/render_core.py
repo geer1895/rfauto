@@ -94,6 +94,7 @@ from .render_metasurface import (
     _TEMPLATE_WALL_BC,
     _ms_cross_lines,
     _ms_jcross_lines,
+    _ms_mushroom_lines,
     _ms_patch_lines,
     _ms_ring_patch_lines,
     ms_array_render,
@@ -505,13 +506,18 @@ def geometry_spec(
         ]
     elif template == "atten_t":
         w = float(params.get("w_mm", _nominal_width.W50_MM))
+        # 三段带缘随名义 shunt_off_mm 推导（D±G/2；0.75mm 电共位名义档）
+        d = float(params.get("shunt_off_mm", 0.75))
         boxes += [
             {"name": "t_feed_low", "material": "metal",
-             "start_mm": [-w / 2, -60.0, ZM], "stop_mm": [w / 2, -5.75, ZM]},
+             "start_mm": [-w / 2, -60.0, ZM],
+             "stop_mm": [w / 2, -d - 0.25, ZM]},
             {"name": "t_feed_mid", "material": "metal",
-             "start_mm": [-w / 2, -5.75, ZM], "stop_mm": [w / 2, 5.75, ZM]},
+             "start_mm": [-w / 2, -d + 0.25, ZM],
+             "stop_mm": [w / 2, d - 0.25, ZM]},
             {"name": "t_feed_high", "material": "metal",
-             "start_mm": [-w / 2, 5.75, ZM], "stop_mm": [w / 2, 60.0, ZM]},
+             "start_mm": [-w / 2, d + 0.25, ZM],
+             "stop_mm": [w / 2, 60.0, ZM]},
         ]
         ports = [
             {"name": "Port1（输入）", "pos_mm": [0.0, -60.0, ZM], "dir": [0.0, -1.0, 0.0]},
@@ -1451,6 +1457,75 @@ def _debye_pole_fit(
     return float(eps_inf), float(d_eps), [float(t) for t in tau]
 
 
+# ── #208 处方 a（CFIX 2026-10-13）：3 端口 legacy 模板第二激励子进程隔离 ──
+# 主脚本用 GEOMETRY 标记圈住几何段、文末 TAIL 标记携带 stage 尾段；运行时
+# 主脚本把「文件头 + 几何段 + 尾段」重组为 _rfauto_p3exc_stage.py 交
+# subprocess 执行（全新进程全新 CSX，进程内首个且唯一一个 FDTD.Run——
+# Run(cleanup=True) 销毁 CSX C++ 对象的生命周期雷免疫；旧进程内二次 Run
+# 形态数据齐全仍 rc=3221226356 原生崩，aurora_c coupled_line 实测）。
+# 标记字符串=launcher 与离线审计（tests/unit/test_p3exc_stage.py）的唯一
+# 接口，改名须两处同笔。
+P3EXC_GEOM_BEGIN = "### RFAUTO_P3EXC_GEOMETRY_BEGIN ###"
+P3EXC_GEOM_END = "### RFAUTO_P3EXC_GEOMETRY_END ###"
+P3EXC_TAIL_BEGIN = "### RFAUTO_P3EXC_STAGE_TAIL_BEGIN ###"
+P3EXC_TAIL_END = "### RFAUTO_P3EXC_STAGE_TAIL_END ###"
+
+# stage 尾段模板（@P3XKW@ = 主 Run 同款 kwargs 占位，装配期替换）。主进程
+# 执行到此处时 env 哨兵未设=整段 no-op；stage 进程（launcher 注入
+# RFAUTO_P3EXC_STAGE=1）才真正执行第二激励体。
+_P3EXC_STAGE_TAIL = (
+    P3EXC_TAIL_BEGIN + "\n"
+    'if os.environ.get("RFAUTO_P3EXC_STAGE") == "1":\n'
+    '    # 第二激励体（#208 处方 a 子进程隔离）：全新进程全新 CSX，本进程内\n'
+    '    # 首个且唯一一个 FDTD.Run——Run(cleanup=True) 销毁 CSX C++ 对象的\n'
+    '    # 生命周期雷免疫（#208；旧进程内二次 Run 形态 rc=3221226356 原生崩、\n'
+    '    # try/except 不可见，aurora_c coupled_line 席实测）。\n'
+    '    _SIM3 = os.path.join(\n'
+    '        os.path.dirname(os.path.abspath(__file__)), "fdtd_p3exc")\n'
+    '    _f = np.linspace(F0 - FC, F0 + FC, 401)\n'
+    '    # port3 激励副本（excite=0 的端口不创建激励属性，无法就地翻转——\n'
+    '    # 2026-09-04 实测）：PortNamePrefix 隔离探针命名，几何复用 _port3。\n'
+    '    _metal3 = None\n'
+    '    for _i in range(CSX.GetQtyProperties()):\n'
+    '        _pr = CSX.GetProperty(_i)\n'
+    '        if (str(_pr.GetTypeString()) == "Metal"\n'
+    '                and str(_pr.GetName()) != "ground"):\n'
+    '            _metal3 = _pr\n'
+    '            break\n'
+    '    assert _metal3 is not None\n'
+    '    _port3e = MSLPort(CSX, port_nr=3, metal_prop=_metal3,\n'
+    '                      start=np.array(_port3.start),\n'
+    '                      stop=np.array(_port3.stop),\n'
+    '                      prop_dir=int(_port3.prop_ny),\n'
+    '                      exc_dir=int(_port3.exc_ny),\n'
+    '                      excite=1, FeedShift=10 * NEAR,\n'
+    '                      MeasPlaneShift=float(_port3.measplane_shift),\n'
+    '                      PortNamePrefix="e3_")\n'
+    '    # 第二激励轮前禁用旧激励属性：port1 excite=1 的激励属性经几何段\n'
+    '    # 重放仍在，不禁止则第二 run 双激励、S23 被同相 -3dB 直通污染\n'
+    '    # （gysel pt1 实测 S23=-3.1dB 且相位=S21=-130°）。直接操作 CSX 属性、\n'
+    '    # 不经旧 wrapper；GetTypeString()=="Excitation" 绑定实测锚定。\n'
+    '    for _i in range(CSX.GetQtyProperties()):\n'
+    '        _pr = CSX.GetProperty(_i)\n'
+    '        if (str(_pr.GetTypeString()) == "Excitation"\n'
+    '                and not str(_pr.GetName()).startswith("e3_")):\n'
+    '            _pr.SetEnabled(0)\n'
+    '    FDTD.Run(_SIM3, verbose=0, @P3XKW@cleanup=True)\n'
+    '    _port3e.CalcPort(_SIM3, _f, ref_impedance=50)\n'
+    '    _port2.CalcPort(_SIM3, _f, ref_impedance=50)\n'
+    '    _S23 = _port2.uf_ref / _port3e.uf_inc\n'
+    '    with open(os.path.join(\n'
+    '            os.path.dirname(os.path.abspath(__file__)),\n'
+    '            "sparams_p3exc.csv"), "w", newline="") as _sfh:\n'
+    '        _sw = csv.writer(_sfh)\n'
+    '        _sw.writerow(["freq_hz", "re_S23", "im_S23"])\n'
+    '        for _i, _fi in enumerate(_f):\n'
+    '            _sw.writerow([_fi, _S23[_i].real, _S23[_i].imag])\n'
+    '    print("rfauto p3exc stage done")\n'
+    + P3EXC_TAIL_END + "\n"
+)
+
+
 def render_script(
     template: str,
     params: dict[str, Any],
@@ -1527,6 +1602,28 @@ def render_script(
     #                 <NEAR 区间——显式 AddLine 恒保留）。单变量对照旋钮：
     #                 只动 x 缝区线，y/z/BASE/激励/NrTS/提取链逐项不变。
     _knob_x_refine = int(params.get("_x_refine", 0) or 0)
+    #   _sub_cells_z → stripline z 向介质细分诊断档（W7-A z0 地板碰撞 followUp；
+    #                 缺省 1=旧口径逐字节不变 #329）：N=细分倍率——z 网格
+    #                 linspace(0, 2·H_SUB) 共 8N 格（N=1 → 9 点=旧口径字面），
+    #                 介质盒每半层切 N 片同材料堆叠（共 2N 盒，界面 z=i·H/N 恰
+    #                 在网格线上）。背景：W7-A 网格阶梯 m1→m2 x/y 加密 ~2× 而
+    #                 z 恒 9 线（runs/real_machine_window/w7a/stripline.*/
+    #                 verdict.json grid=[163,315,9]→[309,613,9]）——eps_eff 已
+    #                 收敛 3.6601≈εr 而引擎 ZL 卡 44-45Ω 不随档收敛，z0 仲裁
+    #                 的 limit 项=z 向离散（#313 z 向地板项 stripline 实证），
+    #                 本旋钮给 z 向独立加密维度。只被 stripline 消费，其余模板
+    #                 忽略（_x_refine 同款作用域纪律）。CFL 注记：z 最小格
+    #                 H_SUB/(4N) 随 N 线性缩小 → dt 按 CFL 随全局最小格线性
+    #                 塌缩（0.4mm 审计档 N=3 实测网格：z 42.3µm 成为全局最小
+    #                 格，单轴线性估 dt ÷2.2；自动档基线 z 即全局最小格 127µm
+    #                 → ÷3.0）→ NrTS/wall 预算按 ÷N 上界预留（_nrts 旋钮抬
+    #                 限），防 #262/#266 截断假象。
+    _knob_sub_cells_z_raw = params.get("_sub_cells_z")
+    _sub_cells_z = (1 if _knob_sub_cells_z_raw is None
+                    else int(_knob_sub_cells_z_raw))
+    if _sub_cells_z < 1:
+        # 显式 0/负=配置错误 fail-loud（#364：`or 缺省`惯语禁用于显式非法值面）
+        raise ValueError(f"_sub_cells_z 必须 ≥1，得到 {_sub_cells_z}")
     #   _board_mm   → 板边半宽覆盖（wf:varactor-locate 囚禁模定位对照；缺省
     #                 None=60mm 字面量逐字节不变）。BOARD 是共享字面量（基板盒/
     #                 抽头馈线起点/域 x-y 边界/端口面）——单变量改一处全链一致
@@ -1652,6 +1749,10 @@ def render_script(
         "ms_cross": _ms_cross_lines,
         "ms_jcross": _ms_jcross_lines,
         "ms_ring_patch": _ms_ring_patch_lines,
+        # ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：Sievenpiper
+        # 蘑菇 EBG/AMC 单元（内核 core/amc_mushroom 单源；几何/端口/域/
+        # 近场线单源 ms_unit_layout，反射读出=ms_patch 同族）
+        "ms_mushroom": _ms_mushroom_lines,
         # §F-A M3 环形谐振器（文末 RING_RESONATOR 段，几何单源
         # _ring_resonator_layout/_ring_resonator_lines；2026-09-26）
         "ring_resonator": _ring_resonator_lines,
@@ -1833,7 +1934,7 @@ def render_script(
     if template in C3_TEMPLATES:
         # §C3 耦合缝网格守卫（#266）：NEAR ≤ 最小耦合缝/3，违反即抛错——缺省
         # mesh=0（λ_sub/50）下 NEAR 0.285mm > 外缝 0.139~0.242mm 曾致缝内零
-        # 内部线、外 Q 建模粗、峰位 −5%；不许静默粗网格
+        # 内部线、外 Q 建模粗、峰位 −5%（）；不许静默粗网格
         c3_gap_mesh_guard(template, params, near_m)
     radiator = _TEMPLATE_RADIATOR.get(template, False)
     air_top = (3e8 / f_max / 4) if radiator else 5e-3
@@ -1959,6 +2060,7 @@ def render_script(
     # 由适配器层按 excite_port=1..4 渲染 4 份脚本、进程隔离各跑一次后装配
     # （skrf .s4p 主产物）——进程内跨 Run 复用 CSX/端口包装器踩绑定对
     # 象生命周期雷（Run(cleanup=True) 销毁激励属性/CSX，pt3/pt4 实测）。
+    _p3exc_stage = False   # legacy 3 端口模板第二激励子进程隔离形态（#208 处方 a）
     if template in _FOUR_PORT_ROTATION_TEMPLATES:
         ep = max(1, min(4, int(params.get("_excite_port", 1) or 1)))
         loop_block = ""
@@ -2043,59 +2145,134 @@ def render_script(
         )
     else:
         loop_block = ""
-        s31_block = (
-            '# S31 免费（port3 探针在 port1 激励的同一 run 里已记录）；S23 需第二激励\n'
-            '# （port3 激励）——翻转激励使能后新建 FDTD 复用 CSX/网格重跑（时间 ×2，\n'
-            '# 2026-09-04）。任何一步不可用就跳过对应列，不阻塞主 S 参数输出。\n'
-            'S31 = None\n'
-            'S23 = None\n'
-            'try:\n'
-            '    _port3.CalcPort(SIM_PATH, f, ref_impedance=50)\n'
-            '    S31 = _port3.uf_ref / _port1.uf_inc\n'
-            'except Exception:\n'
-            '    S31 = None\n'
-            'if S31 is not None:\n'
-            '    try:\n'
-            '        _SIM3 = SIM_PATH + "_p3exc"\n'
-            '        # 找金属属性对象（body 里变量名随模板不同：mline/patch/filt...）\n'
-            '        _metal3 = None\n'
-            '        for _i in range(CSX.GetQtyProperties()):\n'
-            '            _pr = CSX.GetProperty(_i)\n'
-            '            if str(_pr.GetTypeString()) == "Metal" and str(_pr.GetName()) != "ground":\n'
-            '                _metal3 = _pr\n'
-            '                break\n'
-            '        assert _metal3 is not None\n'
-            '        # port3 的激励副本（excite=0 的端口不创建激励属性，无法就地翻转——\n'
-            '        # 2026-09-04 实测）：PortNamePrefix 隔离探针命名，几何复用 _port3\n'
-            '        _port3e = MSLPort(CSX, port_nr=3, metal_prop=_metal3,\n'
-            '                          start=np.array(_port3.start), stop=np.array(_port3.stop),\n'
-            '                          prop_dir=int(_port3.prop_ny), exc_dir=int(_port3.exc_ny),\n'
-            '                          excite=1, FeedShift=10 * NEAR,\n'
-            '                          MeasPlaneShift=float(_port3.measplane_shift),\n'
-            '                          PortNamePrefix="e3_")\n'
-            '        # 第二激励轮前禁用旧激励属性：port1 excite=1 的激励属性仍\n'
-            '        # 随 CSX 存活，不禁止则第二 run 双激励、S23 被同相 -3dB 直\n'
-            '        # 通污染（gysel pt1 实测 S23=-3.1dB 且相位=S21=-130°）。\n'
-            '        # 直接操作 CSX 属性、不经旧 wrapper（#208 生命周期雷）；\n'
-            '        # GetTypeString()=="Excitation" 绑定实测锚定。\n'
-            '        for _i in range(CSX.GetQtyProperties()):\n'
-            '            _pr = CSX.GetProperty(_i)\n'
-            '            if (str(_pr.GetTypeString()) == "Excitation"\n'
-            '                    and not str(_pr.GetName()).startswith("e3_")):\n'
-            '                _pr.SetEnabled(0)\n'
-            '        _FDTD3 = openEMS(NrTS=' + repr(_nrts) + ')\n'
-            '        _FDTD3.SetCSX(CSX)\n'
-            '        _FDTD3.SetGaussExcite(F0, FC)\n'
-            '        _FDTD3.SetBoundaryCond(["@BX0@", "@BX1@", "@BY0@", '
-            '"@BY1@", "@BBOT@", "@BTOP@"])\n'
-            '        _FDTD3.Run(_SIM3, verbose=0, disable_dumps=True, cleanup=True)\n'
-            '        _port3e.CalcPort(_SIM3, f, ref_impedance=50)\n'
-            '        _port2.CalcPort(_SIM3, f, ref_impedance=50)\n'
-            '        S23 = _port2.uf_ref / _port3e.uf_inc\n'
-            '    except Exception:\n'
-            '        S23 = None\n'
-            '\n'
-        )
+        if "_port3 =" in body:
+            # 3 端口 legacy 模板（coupled_line/gysel/tjunc/wilkinson）：第二激励
+            # 改 #208 处方 a 子进程隔离（CFIX 2026-10-13 aurora_c coupled_line
+            # 席实证）。**教训写死：except Exception 拦不住原生终止**——旧实现
+            # 同进程对同一 CSX 二次 FDTD.Run(cleanup=True)，首个 Run 销毁 CSX
+            # 的 C++ 对象，第二 run 与解释器 teardown 段原生崩（数据齐全、主
+            # CSV 已写、done 已打印仍 rc=3221226356=0xC0000354，Python 层全程
+            # 无异常可见）——跨 Run 复用 CSX 与崩溃面在 teardown 两者叠加，
+            # 使 try/except 防护形同虚设。新形态：主 CSV 先落盘（第二激励
+            # 发射前崩溃保护钉）→「文件头+几何段+stage 尾段」重组为
+            # _rfauto_p3exc_stage.py 子进程执行（全新进程全新 CSX）→ S23 走
+            # sparams_p3exc.csv sidecar 回传装配 13 列；子进程任何形态死亡
+            # 只如实缺 S23 列（掩码降档），不阻塞主 S 参数输出。
+            _p3exc_stage = True
+            s31_block = (
+                '# S31 免费（port3 探针在 port1 激励的同一 run 里已记录）；S23 需第二激励\n'
+                '# （port3 激励）。第二激励形态=#208 处方 a 子进程隔离（块首注释与\n'
+                '# 模块头 P3EXC 注记同源）：try/except 拦不住原生终止，禁跨 Run\n'
+                '# 复用 CSX。任何一步不可用就跳过对应列，不阻塞主 S 参数输出。\n'
+                'S31 = None\n'
+                'S23 = None\n'
+                'try:\n'
+                '    _port3.CalcPort(SIM_PATH, f, ref_impedance=50)\n'
+                '    S31 = _port3.uf_ref / _port1.uf_inc\n'
+                'except Exception:\n'
+                '    S31 = None\n'
+                '# 主 CSV 先行落盘（5 列 fallback 形态，与文末最终写同构）——第二\n'
+                '# 激励发射前的崩溃保护钉：主数据不依赖第二 run 存活；stage 成功\n'
+                '# 后由文末最终写升级 13 列。\n'
+                'with open(CSV_PATH, "w", newline="") as fh:\n'
+                '    w = csv.writer(fh)\n'
+                '    w.writerow(["freq_hz", "re_S11", "im_S11", "re_S21", "im_S21"])\n'
+                '    for i, fi in enumerate(f):\n'
+                '        w.writerow([fi, S11[i].real, S11[i].imag, S21[i].real, S21[i].imag])\n'
+                'if S31 is not None:\n'
+                '    try:\n'
+                '        import subprocess as _sp\n'
+                '        _HERE = os.path.dirname(os.path.abspath(__file__))\n'
+                '        _SELF = open(__file__, encoding="utf-8").read()\n'
+                f'        _HEAD = _SELF.split("{P3EXC_GEOM_BEGIN}", 1)[0]\n'
+                f'        _GEO = _SELF.split("{P3EXC_GEOM_BEGIN}", 1)[1].split(\n'
+                f'            "{P3EXC_GEOM_END}", 1)[0]\n'
+                '        # TAIL 用 rsplit：GEOMETRY 标记行在 launcher 之前（首个出现\n'
+                '        # 即真标记行），TAIL 标记行在文末（launcher 自身的 split 引用\n'
+                '        # 字面量是更早的出现——按首切会把 launcher 代码段当尾段）。\n'
+                f'        _TAIL = _SELF.rsplit("{P3EXC_TAIL_BEGIN}", 1)[1].rsplit(\n'
+                f'            "{P3EXC_TAIL_END}", 1)[0]\n'
+                '        _STAGE_PATH = os.path.join(_HERE, "_rfauto_p3exc_stage.py")\n'
+                '        with open(_STAGE_PATH, "w", encoding="utf-8") as _sfh:\n'
+                '            _sfh.write(_HEAD + _GEO + _TAIL)\n'
+                '        _ENV = dict(os.environ)\n'
+                '        _ENV["RFAUTO_P3EXC_STAGE"] = "1"\n'
+                '        _rc = _sp.run([__import__("sys").executable, _STAGE_PATH],\n'
+                '                      cwd=_HERE, env=_ENV).returncode\n'
+                '        _re = []\n'
+                '        _im = []\n'
+                '        with open(os.path.join(_HERE, "sparams_p3exc.csv"),\n'
+                '                  newline="") as _scf:\n'
+                '            _srd = csv.reader(_scf)\n'
+                '            next(_srd)\n'
+                '            for _row in _srd:\n'
+                '                _re.append(float(_row[1]))\n'
+                '                _im.append(float(_row[2]))\n'
+                '        if _rc == 0 and len(_re) == len(f):\n'
+                '            S23 = np.asarray(_re) + 1j * np.asarray(_im)\n'
+                '        else:\n'
+                '            print("rfauto p3exc stage rc=", _rc,\n'
+                '                  "—— S23 列如实缺（掩码降档）")\n'
+                '    except Exception as _p3e:\n'
+                '        S23 = None\n'
+                '        print("rfauto p3exc stage 失败（S23 列如实缺）:", _p3e)\n'
+                '\n'
+            )
+        else:
+            _p3exc_stage = False
+            s31_block = (
+                '# S31 免费（port3 探针在 port1 激励的同一 run 里已记录）；S23 需第二激励\n'
+                '# （port3 激励）——翻转激励使能后新建 FDTD 复用 CSX/网格重跑（时间 ×2，\n'
+                '# 2026-09-04）。任何一步不可用就跳过对应列，不阻塞主 S 参数输出。\n'
+                'S31 = None\n'
+                'S23 = None\n'
+                'try:\n'
+                '    _port3.CalcPort(SIM_PATH, f, ref_impedance=50)\n'
+                '    S31 = _port3.uf_ref / _port1.uf_inc\n'
+                'except Exception:\n'
+                '    S31 = None\n'
+                'if S31 is not None:\n'
+                '    try:\n'
+                '        _SIM3 = SIM_PATH + "_p3exc"\n'
+                '        # 找金属属性对象（body 里变量名随模板不同：mline/patch/filt...）\n'
+                '        _metal3 = None\n'
+                '        for _i in range(CSX.GetQtyProperties()):\n'
+                '            _pr = CSX.GetProperty(_i)\n'
+                '            if str(_pr.GetTypeString()) == "Metal" and str(_pr.GetName()) != "ground":\n'
+                '                _metal3 = _pr\n'
+                '                break\n'
+                '        assert _metal3 is not None\n'
+                '        # port3 的激励副本（excite=0 的端口不创建激励属性，无法就地翻转——\n'
+                '        # 2026-09-04 实测）：PortNamePrefix 隔离探针命名，几何复用 _port3\n'
+                '        _port3e = MSLPort(CSX, port_nr=3, metal_prop=_metal3,\n'
+                '                          start=np.array(_port3.start), stop=np.array(_port3.stop),\n'
+                '                          prop_dir=int(_port3.prop_ny), exc_dir=int(_port3.exc_ny),\n'
+                '                          excite=1, FeedShift=10 * NEAR,\n'
+                '                          MeasPlaneShift=float(_port3.measplane_shift),\n'
+                '                          PortNamePrefix="e3_")\n'
+                '        # 第二激励轮前禁用旧激励属性：port1 excite=1 的激励属性仍\n'
+                '        # 随 CSX 存活，不禁止则第二 run 双激励、S23 被同相 -3dB 直\n'
+                '        # 通污染（gysel pt1 实测 S23=-3.1dB 且相位=S21=-130°）。\n'
+                '        # 直接操作 CSX 属性、不经旧 wrapper（#208 生命周期雷）；\n'
+                '        # GetTypeString()=="Excitation" 绑定实测锚定。\n'
+                '        for _i in range(CSX.GetQtyProperties()):\n'
+                '            _pr = CSX.GetProperty(_i)\n'
+                '            if (str(_pr.GetTypeString()) == "Excitation"\n'
+                '                    and not str(_pr.GetName()).startswith("e3_")):\n'
+                '                _pr.SetEnabled(0)\n'
+                '        _FDTD3 = openEMS(NrTS=' + repr(_nrts) + ')\n'
+                '        _FDTD3.SetCSX(CSX)\n'
+                '        _FDTD3.SetGaussExcite(F0, FC)\n'
+                '        _FDTD3.SetBoundaryCond(["@BX0@", "@BX1@", "@BY0@", '
+                '"@BY1@", "@BBOT@", "@BTOP@"])\n'
+                '        _FDTD3.Run(_SIM3, verbose=0, disable_dumps=True, cleanup=True)\n'
+                '        _port3e.CalcPort(_SIM3, f, ref_impedance=50)\n'
+                '        _port2.CalcPort(_SIM3, f, ref_impedance=50)\n'
+                '        S23 = _port2.uf_ref / _port3e.uf_inc\n'
+                '    except Exception:\n'
+                '        S23 = None\n'
+                '\n'
+            )
         s31_block += beta_block3
     # 边界条件 token 注入（s31_block/loop_block 是普通字符串，不吃外层
     # f-string 的替换——用 @TOKEN@ 占位此处统一填入，避免双重转义）
@@ -2417,6 +2594,9 @@ def render_script(
     _sub_half_pts = max(2, _knob_sub_cells // 2 + 1)   # SSL：每半腔格数+1 点
     _cps_sub_pts = max(2, _knob_sub_cells + 1)         # CPS：整腔格数+1 点
     _sub_pts = max(2, _knob_sub_cells + 1)             # 微带/lange 等：整腔格数+1 点
+    # stripline z 细分档点数（_sub_cells_z 诊断档）：8N 格+1 点，每介质半层
+    # 4N 格；N=1 → 9 点=旧口径字面逐字节（repr(int) 无小数尾）
+    _stl_z_pts = 8 * _sub_cells_z + 1
     # §10.3 C1 antenna2 立体器件（monopole/helix）z 网格预算：布局单源
     # （馈口顶/元件面 mm → 米字面量 + 元件顶上方 AIR_TOP）
     if template in _ANTENNA2_TALL_TEMPLATES:
@@ -2450,9 +2630,13 @@ def render_script(
         "mesh.AddLine(\"z\", 2 * H_SUB + AIR_TOP)\n"
         'mesh.SmoothMeshLines("z", BASE)\n'
     ) if template == "via" else (
-        # stripline：对称板 0..2·H_SUB（带在 H_SUB 中面），半高 4 层 ×2；
+        # stripline：对称板 0..2·H_SUB（带在 H_SUB 中面），半高 4N 层 ×2
+        # （_sub_cells_z 细分档；N=1 → 9 点=旧口径逐字节。z 最小格
+        # H_SUB/(4N) 随 N 线性缩小 → dt 按 CFL 线性塌缩，NrTS/wall 预算
+        # 同档 ×N 抬限防截断假象——旋钮注册处 CFL 注记）；
         # 上边界即上地（PEC），无 AIR_TOP（场被屏蔽，域到上地为止）
-        'mesh.AddLine("z", np.linspace(0, 2 * H_SUB, 9))\n'
+        'mesh.AddLine("z", np.linspace(0, 2 * H_SUB, '
+        + repr(_stl_z_pts) + '))\n'
         'mesh.SmoothMeshLines("z", BASE)\n'
     ) if template == "stripline" else (
         # C9 suspended_stripline：腔 0..B_CAV（上下地=域 z 边界 PEC），带在中面
@@ -2595,11 +2779,38 @@ def render_script(
             "        _k, eps_delta=_sub_eps_delta, eps_relax=float(_t))\n"
         )
 
+    # stripline 介质切片堆叠（_sub_cells_z>1 细分档才生效）：2N 片同材料盒，
+    # 界面 z=i·H/N 与 z 网格 linspace(0,2·H_SUB,8N+1) 同源恰在网格线上
+    # （同材料接界面浮点 1ulp 级偏差物理无感——两侧材料相同，材料采样按
+    # 并集不变）。缺省与 via（共享本分支、不消费旋钮）=空串，走旧单盒
+    # 文本逐字节不变（#329）。
+    _stl_sub_box_txt = ""
+    if template == "stripline" and _sub_cells_z > 1:
+        _stl_slice_h = h_m / _sub_cells_z
+        # #152 fail-loud：z 最小格=片厚/4，≤脚本近重合去重阈（1µm）时细分
+        # 线被静默合并→z 地板不动、诊断失效——宁报错不假档（#316 方向）
+        if _stl_slice_h / 4.0 <= 1.2e-6:
+            raise ValueError(
+                f"_sub_cells_z={_sub_cells_z}：z 最小格 "
+                f"{_stl_slice_h / 4.0 * 1e6:.3g}µm 已触及脚本近重合去重阈"
+                "（1µm，#152）——细分档失效，请减小 N")
+        _stl_slices = []
+        for _i in range(2 * _sub_cells_z):
+            _stl_slices.append(
+                "sub.AddBox((-BOARD, -BOARD, " + repr(_i * _stl_slice_h)
+                + "), (BOARD, BOARD, " + repr((_i + 1) * _stl_slice_h)
+                + "), priority=0)   # 介质片 " + str(_i + 1) + "/"
+                + str(2 * _sub_cells_z) + "（_sub_cells_z="
+                + str(_sub_cells_z) + " 细分档）\n")
+        _stl_sub_box_txt = _sub_head + "".join(_stl_slices)
+
     substrate_block = (
         "# dipole/loop：自由空间器件，无基板无地（官方 Helical/Dipole-SAR 口径）\n"
         "# monopole/helix：理想 PEC 地面悬空导体，无介质板（像理论口径）\n"
     ) if (is_free_space or template in _ANTENNA2_TALL_TEMPLATES) else (
         # stripline：基板填满 0..2·H_SUB（上下地面之间）；无空气区
+        # （_sub_cells_z>1 细分档换切片堆叠文本；via 共享本分支不消费旋钮）
+        _stl_sub_box_txt if _stl_sub_box_txt else
         _sub_head +
         'sub.AddBox((-BOARD, -BOARD, 0), (BOARD, BOARD, 2 * H_SUB), priority=0)\n'
     ) if template in ("stripline", "via") else (
@@ -3049,6 +3260,14 @@ def render_script(
     # 不变）；置于 body 之后、FDTD.Run 之前=终网格点（body 可能补线，#311）
     _fd_nrts_block = (
         _fd_nrts_override_block(_fd_max_time_ns) if _fd_max_time_ns else "")
+    # #208 处方 a：子进程隔离第二激励的标记行/尾段（仅 legacy 3 端口模板
+    # 非空——轮转族与 2 端口 legacy 模板渲染逐字节不变，EEP/siw 等全文
+    # sha 字节钉不受扰）。_p3exc_end 不带换行：换行保留在 f-string 字面
+    # （「{...}{_p3exc_end}\n# cleanup」），关闭态逐字节还原原排版。
+    _p3exc_begin = (P3EXC_GEOM_BEGIN + "\n") if _p3exc_stage else ""
+    _p3exc_end = P3EXC_GEOM_END if _p3exc_stage else ""
+    _p3exc_tail = (_P3EXC_STAGE_TAIL.replace("@P3XKW@", _run_kwargs)
+                   if _p3exc_stage else "")
 
     return f'''#!/usr/env/python3
 """openEMS script (rfauto {template} template auto-generated, official-method mesh)."""
@@ -3085,7 +3304,7 @@ CSV_PATH = __import__("os").path.join(
     __import__("os").path.dirname(__import__("os").path.abspath(__file__)),
     CSV_NAME)
 
-# ── 仿真环境：官方 MSL_NotchFilter 教程方法学（2026-09-04 频率尺度根因
+{_p3exc_begin}# ── 仿真环境：官方 MSL_NotchFilter 教程方法学（2026-09-04 频率尺度根因
 # 实验后定稿；旧版 λ/20@空气粗网格 + 有限小板使 λ/4 谷位系统性低 30-40%
 # 且随网格漂移，证据链 runs/audit_freq_scale/ E1-E4）──
 CSX = ContinuousStructure()
@@ -3126,7 +3345,7 @@ for _ax in ("x", "y", "z"):
     mesh.SetLines(_ax, np.array(_keep))
 
 {substrate_block}{body}
-{sar_setup_block}{ff_setup_block}{field_dump_block}{_fd_nrts_block}
+{sar_setup_block}{ff_setup_block}{field_dump_block}{_fd_nrts_block}{_p3exc_end}
 # cleanup：清掉同目录旧 run 的 port/et 输出——不清理时 CalcPort 会读到
 # 上一版结构的旧信号文件，S 参数静默变 NaN（实测踩坑）
 FDTD.Run(SIM_PATH, verbose=0, {_run_kwargs}cleanup=True)
@@ -3183,4 +3402,4 @@ _LOOP_DONE = False
         import json as _mask_json
         _mask_json.dump(_mask_doc, _mask_fh, ensure_ascii=False, indent=1)
 print("rfauto openEMS simulation done")
-'''
+{_p3exc_tail}'''

@@ -33,3 +33,40 @@ param_semantics: order=谐振器阶数 N（每腔一只变容管），w_mm=谐�
 static_c_note: 静态电容口径：FDTD 无时变 C——三档偏压=三次静态 run，各档 C(V)=Cj0/√(1+V/φ) 在该档 bias_v 处为常数，调谐曲线由多点静态解组成（CSXCAD LumpedElement .pyx 口径核实）；C 字面量=C(V)−C_geo（2026-09-29 P2：盒几何寄生平行板项 ε0·εr·WF²/H_SUB=0.0788pF 单源 core/varactor.varactor_box_geo_capacitance_pf——引擎盒区背景位移电流与 lumped 并联，不扣则实感 C=C(V)+C_geo 频偏 #252 族；边缘项欠估 ≤31% 如实预声明，见该函数 docstring）
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部臂缘/弯带缘/抽头缘+变容管盒外 y 缘精确入网（#198）
 smoke_note: 真机三档偏压冒烟（V=0.5/3.6342/10.0，各档 C 为常数）未发射——本件只备妥发射面与离线审计（M-5 判据「openEMS 名义点 3 档偏压冒烟」归真机批）；离线几何审计（#212 制度化）见 tests/unit/test_varactor_bpf_template.py。2026-09-29 更新：三档冒烟已跑全 FAIL（触帽+慢振铃），规则 1b 模型审计定案 P0=抽头 τ 沿用无载廓线闭式（loaded 节点恰扫过旧设计值 0.401892）外耦失配 3-1139×——本批 P0（loaded 廓线 τ 自 C 端计，名义 0.330119）+P2（C_literal=C(V)−C_geo）修复后真机复验待 oe-queue 排期，详见 runs/varactor_smoke/model_audit_verdict.md
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 变容管调谐发夹带通：每腔开路端并联 C(V) 反偏变容管，主谐振方程 tan(βL)=−ωC·Z0 使带心随偏压连续下移——这是 hairpin 家族首个电调谐变体。典型用于可调谐前端选频；常见误用=沿用无载族的抽头位置闭式——装载后电压节点位置改变，抽头必须按
+      loaded 廓线自 C 端计（本仓真机三档冒烟全 FAIL 的 P0 根因）。
+    derivations:
+    - claim: C 装载谐振条件（工作点自无载 f 下移）
+      formula: tan(β*L) = -ω*C(V)*Z0
+      source: 本仓 core/varactor（装载谐振单源；docs/templates/varactor_bpf/meta.yaml param_semantics）
+    - claim: 突变结 C-V 律与装载臂电长联立定工作点
+      formula: C(V) = cj0 / (1 + V/phi_v)**m ; tan(β*L) = -ω*C*Z0
+      source: 本仓 core/varactor（突变结律；docs/templates/varactor_bpf/meta.yaml param_semantics（cj0/phi/bias
+        只进 C 字面量不进导体几何））
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: 无载 λg/2 主干（装载使工作点下移，臂长仍是第一几何维）
+  - param: cj0_pf
+    order: 2
+    basis: 变容零偏电容=C(V) 通道主项（调谐范围左端）
+  - param: bias_v
+    order: 3
+    basis: 反偏工作点=C(V) 通道当前值（本次 run 的调谐旋钮）
+  - param: gap_mm
+    order: 4
+    basis: 耦合缝 k(gap)（带宽/回损主维，纯 KJ 口径）
+  - param: tap_frac
+    order: 5
+    basis: 外部 Q 抽头——loaded 廓线自 C 端计（P0 修复语义，与无载族同名不同义）
+  - param: phi_v
+    order: 6
+    basis: 内建电位（C-V 律形状参数，选型常数弱敏感）
+  - param: order
+    order: 7
+    basis: 阶数=离散综合参数（每腔一只变容管）
+  quiz_refs: []

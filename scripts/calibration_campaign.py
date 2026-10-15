@@ -7,7 +7,7 @@
   .venv\\Scripts\\python.exe scripts/calibration_campaign.py \\
       --recipe recipes/wilkinson_pd_v1.yaml --mesh 0.45 --n-new 16 [--n-workers 2]
 
-内存门槛：启动前查可用内存，<4GB 不开跑
+内存门槛（项目规则 Goal 模式纪律）：启动前查可用内存，<4GB 不开跑
 （0.45mm base ≈ 1M cells ≈ 1-1.5GB/求解）；n_workers>1 时每 worker
 占 1-1.5GB，按可用内存折算（2 worker 建议门槛 5.5GB）。
 """
@@ -32,7 +32,7 @@ def _parse_free_kb(out: str) -> int:
 
 
 def free_physical_memory_kb() -> int:
-    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM
+    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（ #182）
     for cmd in (
         ["wmic", "OS", "get", "FreePhysicalMemory", "/Value"],
         ["powershell", "-NoProfile", "-Command",

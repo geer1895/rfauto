@@ -35,3 +35,34 @@ smoke_note: 离线审计先行（#212，test_ta_wave_c_templates）；内核数�
   test_ta_wave_c_templates 钉）；近似级别如实登记：准静态/零厚带/PEC 地/无色散，
   设计链=FD 裁判反演（Wadell 闭式系数不可达——core/embedded_line docstring 如实
   账）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 嵌入式微带：条带之上再压一层同 εr 覆盖层（阻焊/埋容场景的理想化），介质填充率升使 εeff 趋向 εr、同线宽阻抗显著低于普通微带。典型用于带厚阻焊/埋入式布线的阻抗预算；常见误用=按普通微带查线宽表——覆盖层让
+      50Ω 线宽从 1.1134 降到 1.0014mm，查错表即全线阻抗失配。
+    derivations:
+    - claim: FD 准静态裁判链四锚（h2→0 退化微带/厚覆盖层 εeff→εr/εr=1 精确同解/单调）
+      formula: Z0(w, h1, h2, εr)（Richardson 外推；名义 1.0014mm → 49.999Ω）
+      source: 本仓 core/embedded_line（embedded_ms_quasistatic 单源；docs/templates/embedded_ms/meta.yaml smoke_note（Wadell
+        闭式系数不可达如实账，设计链=FD 裁判反演））
+  sensitivity_ranking:
+  - param: h_mm
+    order: 1
+    basis: 主介质厚 h1（w/h 比主自变量）；登记表 0.5979
+  - param: w_mm
+    order: 2
+    basis: 线宽（比值另一端）；登记表 0.5624
+  - param: er
+    order: 3
+    basis: 填充加权（覆盖层使通道强于普通微带）；登记表 0.4701
+  - param: h2_mm
+    order: 4
+    basis: 覆盖层厚（嵌埋定义参数，弱于三主维）；登记表 0.0354
+  - param: line_len_mm
+    order: 5
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 6
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

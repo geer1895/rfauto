@@ -117,8 +117,11 @@ class TestQueuePage:
     def test_pages_js_registers_queue(self):
         from pathlib import Path
 
-        src = (Path(__file__).resolve().parents[2]
-               / "src" / "rfauto" / "ui" / "static" / "pages.js"
-               ).read_text(encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        _sq = (Path(__file__).resolve().parents[2]
+               / "src" / "rfauto" / "ui" / "static")
+        src = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [_sq / "pages.js", *sorted((_sq / "pages").glob("*.js"))])
         assert "queue: pageQueue" in src
         assert "async function pageQueue()" in src

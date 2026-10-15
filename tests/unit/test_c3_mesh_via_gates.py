@@ -30,7 +30,7 @@ from rfauto.adapters import openems_templates as ot
 
 BAND = (2.25, 2.75)
 H_MM = 0.508
-# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm
+# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm（）
 NEAR_DEFAULT_MM = 3e8 / (2.75e9 * math.sqrt(3.66)) / 50 / 4 * 1e3
 
 

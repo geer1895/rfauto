@@ -9,6 +9,7 @@ import typer
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── recipe（方向 7：配方版本管理）──────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ def repro_verify_cmd(
         errs += [f"extra: {p}" for p in art.get("extra") or []]
         env = result.get("environment") or {}
         errs += [f"environment: {e}" for e in env.get("errors") or []]
-        _emit({"ok": False, "errors": errs},
+        _emit(error_envelope(errs),
               "复现清单校验未通过", json_output=json_output)
         return
     _emit(result, "复现清单校验未通过", json_output=json_output)

@@ -1,6 +1,6 @@
 """fab 能力剖面加载 + 纯几何 DFM 门（DP-7 P1/P3）。
 
-定位（规格深案 DP-7）：制造现实接进设计链——
+定位（docs/plan_deepdive_specs_20260924.md DP-7）：制造现实接进设计链——
 fab 能力剖面 YAML（knowledge/fab_profiles/{jlcpcb,huaqiu}.yaml）→ 渲染后
 几何 DFM 门（本模块，**纯几何零仿真**：无网络、无求解器、无文件 I/O 依赖
 于校验调用点——唯一 I/O 是 load_profile 读剖面）。
@@ -489,7 +489,7 @@ def best_effort_dfm_for_design(
 
 # ── HS-2：残桩/背钻 notch 门（r4 中件包一，挂 fab DFM）────────────────
 #
-# 口径（研究扩充 round4 中件包一 HS-2）：
+# 口径（docs/research_expansion_20260926_round4.md 中件包一 HS-2）：
 # 开路四分之一波残桩谐振 fres = c/(4·L_stub·√εr_eff)（Simonovich EDN
 # RoT#17 惯例：0.5in≈12.7mm、εr≈4 → ≈2.95GHz "3GHz 残桩" 量级互证）。
 # εr_eff 用叠层该层名义值**显式传入**（FabProfile 无材料 er 字段，

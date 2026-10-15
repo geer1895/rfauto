@@ -1,6 +1,6 @@
 """G14 close-out: openEMS 历史实耗标定档案装载与覆盖面统计。
 
-任务来源：续跑计划 §10.20 补强（g14-close）。:mod:`quota_guard` 的
+任务来源：延续计划 §10.20 补强（g14-close）。:mod:`quota_guard` 的
 :class:`~rfauto.pipeline.quota_guard.RobustDurationPredictor` 是纯确定性内核；
 本模块负责唯一允许 IO 的一部分——把 runs/ 下可读的 openEMS 历史实耗数据
 装配成 :class:`~rfauto.pipeline.quota_guard.DurationSample` 标定档（family），
@@ -20,7 +20,7 @@
 scripts/cost_report.py 同一口径）；缺文件的源按 best-effort 跳过并记录在
 ``skipped``（#105：数据装配不得成为主路径故障点）。
 
-0-P2⑱另设 :func:`load_duration_sample_json`：直接装载
+0-P2⑱（ 二百六十）另设 :func:`load_duration_sample_json`：直接装载
 duration_sample 同构 schema 归档（``nr_ts_cap_declared``/``hit_nr_ts_cap``
 停机机制面 -> DurationSample 的 ``nrts_limit``/``stop_reason`` 特征字段），
 供 NrTS/stop_reason 特征就绪后的重训并入训练集。
@@ -58,7 +58,7 @@ __all__ = [
 MLINE_CONVERGENCE_REL = "benchmark/mline_mesh_convergence.json"
 #: ratrace 仲裁精算实耗（相对 runs/ 的路径）。
 RATRACE_CONVERGENCE_REL = "ratrace_arbitration/openems_convergence.json"
-#: duration_sample 同构 schema 前缀（0-P2⑱；二百六十"同构可并入训练集"）。
+#: duration_sample 同构 schema 前缀（0-P2⑱； 二百六十"同构可并入训练集"）。
 #: 实档：runs/quota_guard/ratrace_duration_samples.json（14 样本档）、
 #: runs/ratrace_03mm_sample/duration_sample.json（R10）。schema 缺省按同构宽容
 #: 装载；schema 存在且前缀不符时整文件记 skipped（不猜格式）。

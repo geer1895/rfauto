@@ -50,3 +50,44 @@ nominal_derivation: '全链内核精算（#1c，零手抄毫米数；sicl_design
   0.5540 回代 Z0=49.9976Ω（−0.0024Ω=4 位舍入固有，如实登记）；声明域复核：w/b=0.5452∈[0.3,0.9]、gap/b=0.9774≥0.5、t/b=0、均匀填充——in_referee_band=True；εeff=εr=3.66（均匀填充
   TEM）；过孔墙 d/s=0.6/1.0（siw 同源档，s/d=1.667≤2、d<λ_sub/5 复核）；h_mm=1.016=2×0.508
   RO4350B 双板（stripline 同源）。真机冒烟与 HFSS 仲裁=后续窗（本批零发射）。'
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 基片集成同轴：过孔墙围出矩形外腔、内悬置条带——准 TEM、均匀填充时 εeff=εr 无色散色散项，天然屏蔽无辐射。典型用于高密度互连与毫米波低损布线；常见误用=闭式系数当文献已核——本族闭式（Howe/Cristal-Gunston
+      矩形同轴族）UNVERIFIED-1 归属内核如实登记，FD 裁判声明域 [1.5,4]（a/b）越域即不可信。
+    derivations:
+    - claim: 矩形同轴共形闭式（k=tanh(πa/2b)·sech(πw/2b)，双精度经 AGM 恒等式无相消）
+      formula: Z0 = Z0_air(k)/sqrt(εeff) ; 名义 w=0.5540 → 49.998Ω
+      source: 本仓 core/sicl_line（sicl_z0 共形闭式单源（Howe/Cristal-Gunston 族，UNVERIFIED-1 如实登记）；docs/templates/sicl/meta.yaml
+        nominal_derivation）
+    - claim: εeff=εr（均匀填充 TEM）
+      formula: εeff = εr
+      source: 本仓 core/sicl_line（均匀填充口径 docstring；docs/templates/sicl/meta.yaml nominal_derivation（声明域复核
+        w/b∈[0.3,0.9]、gap/b≥0.5））
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 内导体宽；登记表 0.5625
+  - param: h_mm
+    order: 2
+    basis: 腔高 b（双板压合口径）；登记表 0.5568
+  - param: er
+    order: 3
+    basis: 均匀填充 TEM：Z0∝1/√εr 恒等式（精确 0.5 打折后 0.5）；登记表 0.5
+  - param: a_mm
+    order: 4
+    basis: 腔宽（外腔弱维）；登记表 0.0058
+  - param: d_mm
+    order: 5
+    basis: 过孔墙直径不进共形闭式（登记表 0）
+  - param: s_mm
+    order: 6
+    basis: 过孔心距不进共形闭式（登记表 0）
+  - param: line_len_mm
+    order: 7
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 8
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

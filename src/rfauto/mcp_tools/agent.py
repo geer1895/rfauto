@@ -145,7 +145,7 @@ def multi_agent_run(
         recipe_path: 配方文件路径（optimization.params 为搜索空间）
         max_rounds: 评审面轮次预算
         mesh_resolution_mm: openEMS 网格 base 覆盖 mm（0=自动）
-        f0_tolerance: 谷位/带中心容差
+        f0_tolerance: 谷位/带中心容差（无量纲比例；0.15=带中心 ±15%）
         rl_floor_db: 回损地板 dB
         max_step_pct: 单轮修正步长上限（比例）
 
@@ -193,7 +193,7 @@ def autotune_self_verify(
         budget_coarse: 粗网格轮数预算
         mesh_coarse_mm: 粗网格 base mm
         mesh_fine_mm: 细网格 base mm（0 或与粗相同=关闭 M4 复验）
-        f0_tolerance: 谷位/带中心容差
+        f0_tolerance: 谷位/带中心容差（无量纲比例；0.15=带中心 ±15%）
         rl_floor_db: 回损地板 dB
         max_step_pct: 单轮修正步长上限（比例）
         fine_epsilon: M4 细网格 cost 容许劣化比例

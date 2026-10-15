@@ -1,6 +1,6 @@
 """EP-6 RF 设计模式库（拓扑→模式卡：问题情境/方案/权衡/反例/关联）。
 
-规格 研究扩充 round18 §二 EP-6：
+规格 docs/research_expansion_20261002_round18.md §二 EP-6：
 ``knowledge/patterns.yaml{问题情境/方案/权衡/反例/关联}``，首批从
 R006/R008/R009 战役结论提炼。
 

@@ -27,7 +27,7 @@ runs/benchmark/<anchor>_engine_benchmark.json。
    同族单档时长预算：cpw 88s/atten_t 383s/via 623s → ≤30min。
 
 provenance 惯例：归档路径 + mesh 0.4 + 门常量 + gate_version + 旧日志
-判定与现门判定并列（引 门校准依据）；HJ/CPWG 参考值一律运行时
+判定与现门判定并列（引  门校准依据）；HJ/CPWG 参考值一律运行时
 经 core/synthesis 闭式计算，不硬编码（铁律 7）。
 """
 import argparse
@@ -238,7 +238,7 @@ def ingest_atten(anchor: str, work_rel: str, old_gate: dict) -> Path:
             "old_gate_verdict": old_gate,
             "gate_calibration":
                 "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB"
-                "口径），原 −20 门经 pt2 真机校准落地，2026-09-09"
+                "口径），原 −20 门经 pt2 真机校准落地， 2026-09-09"
                 "（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
             "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"}})
     return _write(anchor, out)
@@ -327,8 +327,7 @@ def ingest_via() -> Path:
                 "freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 "
                 ":5122 归档转录，source=archive_log",
             "gate_calibration":
-                "β1 单判（β2=real_modal_difference 不设门），（七十"
-                "六）与 2026-09-09（四）#203 pt3 定征；传输门 20260918a "
+                "β1 单判（β2=real_modal_difference 不设门），与 2026-09-09（四）#203 pt3 定征；传输门 20260918a "
                 "增补无源上界 |S21| 带内 max ≤1.02（R2-A-01 审查，与 "
                 "msl_cpw 20260915b 同构；归档 401 点带内 max 0.9503 "
                 "全部 ≤1.02，判定零翻转）",

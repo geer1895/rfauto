@@ -514,12 +514,19 @@ def plan_h5_retention(
             "_norm": norm,
         })
 
-    # recent-n 豁免（按目录计，各档通用）
+    # recent-n 豁免（按目录计，各档通用）：主循环按 h5 文件登记分组条目，
+    # 同 run 目录（多 h5）须先按 norm 去重保序（目录 sort_key=各文件键的
+    # 最大值）再取前 N——直接按条目切片会让同目录多文件重复占坑，豁免面
+    # 静默缩水→破坏性删除超删（ge9 审查 P1-1；与 :517 注释/契约一致）。
     recent_exempt: set[str] = set()
     if keep_recent_n > 0:
         for _camp, items in campaign_runs.items():
-            items.sort(reverse=True)
-            for _key, norm in items[:max(0, int(keep_recent_n))]:
+            best: dict[str, tuple[str, str]] = {}
+            for key, norm in items:
+                if norm not in best or key > best[norm][0]:
+                    best[norm] = (key, norm)
+            ordered = sorted(best.values(), reverse=True)
+            for _key, norm in ordered[:max(0, int(keep_recent_n))]:
                 recent_exempt.add(norm)
 
     final_delete: list[dict[str, Any]] = []

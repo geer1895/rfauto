@@ -49,3 +49,43 @@ nominal_derivation: '全链内核精算（#1c，零手抄毫米数；ridged_wg_d
   >4a/3，构造不变式）；判读带（真机窗）=(0.8, 1.26)·fc_ridge=(4.0, 6.3)GHz⊂（fc_feed=3.75, min(1.5·fc_ridge=7.5,
   外廓 TE10=6.557)）单模域；l_ridge=40mm→消逝衰减 ≈21.9dB@0.8fc（evanescent_attenuation_db 精算）。真机冒烟与
   HFSS 仲裁=后续窗（本批零发射）。'
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 单脊波导：脊加载电容把 TE10 截止大幅下压（同外廓 fc 约降半），单模带宽倍增——Pyle 超越方程给出 fc(a,b,s,d) 闭式链。典型用于宽带波导器件与过低频段波导化；常见误用=深脊外推——g/b<0.4
+      落深脊域，内核 kc 对独立 FEM +1.5%~+8% 的分档精度声明失效，渲染守卫拒收。
+    derivations:
+    - claim: 脊深对截止的反解（design_ridge_depth 对 fc_target brentq）
+      formula: fc_target=5.0 GHz → d=5.5434 mm（回代 |Δfc|/fc=3.8e-6）
+      source: 本仓 core/ridged_waveguide（Pyle 1966 超越方程 cutoff/design 链（Cohn 1947→Hopfer 1955→Pyle 1966
+        文献传导链 docstring）；docs/templates/ridged_wg/meta.yaml nominal_derivation）
+    - claim: 精度域声明（g/b≥0.4 浅脊域；深脊定量不可信由渲染守卫拒收）
+      formula: g/b = 0.4544 ∈ 精度域（kc 对独立 FEM +1.5%~+8% 分档）
+      source: 本仓 core/ridged_waveguide（XC-P 精度域声明 docstring；docs/templates/ridged_wg/meta.yaml nominal_derivation）
+  sensitivity_ranking:
+  - param: d_mm
+    order: 1
+    basis: 脊深=截止下压主通道（脊加载电容主控）
+  - param: s_mm
+    order: 2
+    basis: 脊宽（电容次通道）
+  - param: a_mm
+    order: 3
+    basis: 宽边（普通波导截止通道 fc∝1/a）
+  - param: b_mm
+    order: 4
+    basis: 窄边（脊间隙 g=b−d 的另一端）
+  - param: l_ridge_mm
+    order: 5
+    basis: 脊段长（不进截止式——进消逝衰减维 21.9dB@0.8fc）
+  - param: l_feed_mm
+    order: 6
+    basis: 馈段长（不进截止式）
+  - param: er
+    order: 7
+    basis: 空气填充 εr=1（截止式不含介质）
+  - param: h_mm
+    order: 8
+    basis: 无介质板 h=0（截止式不含）
+  quiz_refs: []

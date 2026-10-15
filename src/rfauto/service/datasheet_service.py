@@ -1,6 +1,6 @@
 """EP-4 Datasheet/应用笔记生成器（模板卡/run 报告 → 器件 datasheet 渲染面）。
 
-规格 研究扩充 round18 §二 EP-4：datasheet 节型
+规格 docs/research_expansion_20261002_round18.md §二 EP-4：datasheet 节型
 （电气表/S 参图/典型应用/机械尺寸）+ 强制标注"工程规格书非厂商 datasheet"。
 
 **复用而非重写（任务书纪律 3）**：

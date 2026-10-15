@@ -98,7 +98,7 @@ def _kill_desktops() -> None:
 
 def _clean_project_artifacts() -> None:
     """白名单清 AEDT 工程产物（陈旧设计重名=监控读默认值，2026-09-13 实证）。
-    只点名工程四件，不碰日志与 JSON 证据。"""
+    只点名工程四件，不碰日志与 JSON 证据（AGENTS 硬规 3）。"""
     import shutil
 
     for name in ("wp44a_e2e.aedt",

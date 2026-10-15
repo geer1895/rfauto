@@ -1,6 +1,6 @@
 """C14 real_edt: 有源链路 ADS 真机验收（ADS 2027 hpeesofsim B 档）。
 
-验收口径（续跑计划 §10.3 C14）: 匹配网络 EM↔ADS 联合 vs 手工口径。
+验收口径（延续计划 §10.3 C14）: 匹配网络 EM↔ADS 联合 vs 手工口径。
 匹配网络用 core/matching 闭式 L 型（离线回归同一数据形态; 真机 EM 数据
 接入不改下游）。需 E:/ADS/ADS27（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir）。
 

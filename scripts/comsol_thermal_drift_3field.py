@@ -13,7 +13,7 @@ EM 重解；验收 = 三场 vs stage-1 单向链**漂移量** ≤10%
   这就是"变形几何/移动网格→EM 重解"的官方实现机制；建模指令流解包实录
   runs/d14_stage2/_doc_probe/cavity_te/actions.txt；
 - 结构材料属性（Enu 组 E/nu + def 组 thermalexpansioncoefficient 9 元数组）：
-  MEMS_Module biased_resonator_3d_basic.mph（runs/d14_stage2/_doc_probe/mems3d）。
+  MEMS_Module biased_resonator_3d_basic.mph（runs/d14_stage2/_doc_probe/mems3d/）。
 
 模型（平行板介质谐振腔，选型理由=解析干净+封闭域本征秒级）：
 - 介质块 a×b×h；顶/底面（z=0,h）PEC、四侧 PMC → z 向均匀 TM 模（m=1,n=0,
@@ -65,7 +65,7 @@ DRIFT_SPEC_DEFAULTS: dict[str, float] = {
     "h_mm": 1.154,      # 厚（z；p=0 模 f 与 h 无关，一阶不敏感）
     "eps_r": 3.66,      # rogers4350b 口径（同 mline 锚 / stage-1 ）
     "tcdk_ppm_per_k": 50.0,   # 演示量级（调用方注入原则，stage-1 同口径）
-    "cte_ppm_per_k": 14.0,    # 面内 CTE 演示量级（stage-1 同值）
+    "cte_ppm_per_k": 14.0,    # 面内 CTE 演示量级（stage-1  同值）
     "youngs_gpa": 3.0,  # 各向同性演示量级（均匀应变下漂移判据不敏感，报告注明）
     "nu": 0.3,
     "t_ref_c": 25.0,
@@ -159,7 +159,7 @@ def drift_selection_boxes(spec: dict[str, float], *,
 
     三点 3-2-1 约束（官方 cavity_filter_thermal_expansion.mph disp1/2/3 同构
     ——disp1 全 3 方向、disp2 xz、disp3 yz）：单点全约束留两刚体旋转模，
-    真机实证稳态步病态不收敛（相对误差 0.57>容差，runs/d14_stage2）。
+    真机实证稳态步病态不收敛（相对误差 0.57>容差，runs/d14_stage2/）。
     底面三点锚定不抑制面内/厚度自由膨胀（z=0 平面为参考）。
     """
     a, b, h = spec["a_mm"], spec["b_mm"], spec["h_mm"]

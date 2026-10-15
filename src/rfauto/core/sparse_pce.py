@@ -1,6 +1,6 @@
 """S-5a 稀疏多项式混沌展开（自适应 LARS，Blatman-Sudret）+ Sobol 系数直读。
 
-法源与可达性（如实标注，round3 方案 研究扩充 round3
+法源与可达性（如实标注，round3 方案 docs/research_expansion_20260926_round3.md
 §3.1 S-5：core/pce 基构造 × sklearn LassoLars，Blatman-Sudret 最小自实现）
 ------------------------------------------------------------------------
 - 目标方法：Blatman & Sudret (2011), "Adaptive sparse polynomial chaos
@@ -43,7 +43,7 @@ OLS 重拟合 + 系数幅值截断 + 自适应升阶（Blatman-Sudret），Sobol
 core 叶子层：模块顶层只 import numpy 与 core.pce；sklearn（lars_path）与
 scipy（stats.qmc / stats.norm.ppf）在函数内 lazy import（同
 core/metric_transform.py 的 GP lazy import 先例）。不读 runs/、不联网、
-零文件 IO、数值只出确定性内核。
+零文件 IO、数值只出确定性内核（AGENTS 规则 7）。
 
 诚实边界
 --------

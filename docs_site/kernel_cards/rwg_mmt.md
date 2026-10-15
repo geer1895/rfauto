@@ -45,7 +45,7 @@ docstring 逐字引文（防漂移钉）："k_c=mπ/a、fc=c·m/(2a√εr)、β=
 \hat C=D_1^{-1}H^{\mathsf T}D_2,\quad M=\hat C\hat C^{\mathsf T},\quad N=\hat C^{\mathsf T}\hat C;
 ```
 
-出处：规格 规格深案 DP-1 §2.3（投影域勘误后变体）；两侧同时激励消元，纯转置无共轭。
+出处：规格 docs/plan_deepdive_specs_20260924.md DP-1 §2.3（投影域勘误后变体）；两侧同时激励消元，纯转置无共轭。
 
 docstring 逐字引文（防漂移钉）："**Ĉ=D1⁻¹·Hᵀ·D2**，H_nm=" + "S11=(M−I)(M+I)⁻¹、S21=2Ĉᵀ(I+M)⁻¹、S12=2(I+M)⁻¹Ĉ、S22=(I−N)(I+N)⁻¹"
 
@@ -135,7 +135,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `规格深案`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："规格 = 规格深案 DP-1 §2；"
+- `docs/plan_deepdive_specs_20260924.md`——引文："规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；"
 - `runs/df6_dp1mmt/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **171** 个 test 函数）：

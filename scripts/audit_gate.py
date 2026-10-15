@@ -12,7 +12,7 @@
 - 日志落盘失败 → rc=4（门不可留痕=不判绿，诚实降级，#242 同源）。
 
 周期化方式（本脚本只做门，不替操作者注册计划任务——schtasks 隐藏形态
-按  规则 0b-2 避免静默形态，注册属运维动作）：
+按 AGENTS 规则 0b-2 避免静默形态，注册属运维动作）：
 - CI：cron/GitHub schedule 步骤跑
   ``.venv/Scripts/python.exe scripts/audit_gate.py``，rc!=0 即门红；
 - 本地：任务计划程序 console 可见形态直指本脚本（避免 0b-2 隐藏形态）。

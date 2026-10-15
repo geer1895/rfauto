@@ -9,7 +9,8 @@
 Touchstone 批后导出（-batchextract 第二段，2026-10-08 补路）：脚本烘焙/
 命令行钉字面/成功按端口数改名/文件未生成/超时击杀/脚本写失败/session
 预留位/求解接线四路径（成功·失败不推翻 ok·缺省 False 零变化·求解败不导出）
-——subprocess 全程 monkeypatch 假进程/假 rc（零真机）。
+——subprocess 全程 monkeypatch 假进程/假 rc（零真机）；campaign_executor
+双模路由缝（stage 键 hfss_batch）同文件钉：声明缺席=零行为变化。
 
 导出分派（2026-10-08 W5 真机实证补测）：HFSS 3D Layout 设计无任何
 Analysis 模块（GetModule 四名全 FAIL），脚本须探针 Solutions 模块失败
@@ -27,6 +28,7 @@ RuntimeError/OSError，裸 ValueError 直达即信封契约违例；导出失败
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 from pathlib import Path
@@ -34,6 +36,7 @@ from pathlib import Path
 import pytest
 
 import rfauto.adapters.hfss_batch as hb
+import rfauto.service.campaign_executor as ce
 from rfauto.adapters.hfss_batch import (
     build_batch_command,
     build_batch_extract_command,
@@ -130,21 +133,26 @@ def test_build_batch_command_minimal():
     assert cmd == [_EXE, "-ng", "-BatchSolve", "D:\\jobs\\demo.aedt"]
 
 
-def test_build_batch_command_design_setup_logfile():
+def test_build_batch_command_logfile_project_last():
     # 参数顺序纪律（真机实证 2026-10-08）：AEDT 2025 R1 拒收 -Logfile
     # 置于工程之后（requires a filename ... last parameter，rc=1）——
     # 工程路径恒为末位。
-    cmd = build_batch_command(
-        _EXE, "demo.aedt", design="HFSSDesign1", setup="Setup1",
-        logfile="E:\\logs\\x.log")
-    assert cmd == [_EXE, "-ng", "-BatchSolve", "-designs",
-                   "HFSSDesign1:Setup1", "-Logfile",
-                   "E:\\logs\\x.log", "demo.aedt"]
+    cmd = build_batch_command(_EXE, "demo.aedt", logfile="E:\\logs\\x.log")
+    assert cmd == [_EXE, "-ng", "-BatchSolve",
+                   "-Logfile", "E:\\logs\\x.log", "demo.aedt"]
 
 
-def test_build_batch_command_design_only():
-    cmd = build_batch_command(_EXE, "demo.aedt", design="D1")
-    assert cmd == [_EXE, "-ng", "-BatchSolve", "-designs", "D1", "demo.aedt"]
+def test_build_batch_command_design_qualifier_rejected():
+    # -designs 设计限定不受 v251 支持（2026-10-13 sim_host 真机核实
+    # verdict=FAIL：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态
+    # 旗标被静默吞、值按 "Unexpected command line argument ... ignored"
+    # 丢弃、退化全设计求解 rc=0——runs/aurora_c/designs_verify/）。
+    # 带"假限定"发射=静默 solve-all 隐患，纯构造器 fail-loud 拒绝。
+    with pytest.raises(ValueError, match="-designs"):
+        build_batch_command(_EXE, "demo.aedt", design="HFSSDesign1",
+                            setup="Setup1")
+    with pytest.raises(ValueError, match="solve-all"):
+        build_batch_command(_EXE, "demo.aedt", design="D1")
 
 
 # ─── 主路径 1：成功 ──────────────────────────────────────────────────────────
@@ -156,8 +164,7 @@ def test_solve_success_command_artifacts_logfile(tmp_path, monkeypatch,
     _patch_launch(monkeypatch, recorder)
     _patch_exe(monkeypatch)
 
-    res = solve_project_batch(proj, design="HFSSDesign1", setup="Setup1",
-                              timeout_s=60.0)
+    res = solve_project_batch(proj, timeout_s=60.0)
 
     assert res["ok"] is True
     assert res["rc"] == 0
@@ -165,15 +172,16 @@ def test_solve_success_command_artifacts_logfile(tmp_path, monkeypatch,
     assert res["errors"] == []
     assert res["project_kind"] == "aedt"
     assert res["ansysedt_exe"] == _EXE
-    # 命令行钉字面（发射序 + design:setup 限定 + Logfile 前置，工程恒末位——
-    # 真机实证 AEDT 2025 R1 拒收 -Logfile 收口形态）
+    # 命令行钉字面（发射序 + Logfile 前置，工程恒末位——
+    # 真机实证 AEDT 2025 R1 拒收 -Logfile 收口形态，runs/edblane85/w1_smoke/；
+    # 无 -designs 旗标=全设计求解（AEDT 缺省语义，真机对照臂实证）
     cmd = res["command"]
     assert cmd[:3] == [_EXE, "-ng", "-BatchSolve"]
-    assert cmd[3:5] == ["-designs", "HFSSDesign1:Setup1"]
-    assert cmd[5:7] == ["-Logfile", str(proj.parent
+    assert cmd[3:5] == ["-Logfile", str(proj.parent
                                             / ("ansysedt_batch_"
                                                + proj.stem + ".log"))]
     assert cmd[-1] == str(proj)
+    assert "-designs" not in cmd
     # 发射 kwargs：console 输出重定向进 logfile（文件句柄非管道）
     assert recorder.calls[0]["stderr"] is hb.subprocess.STDOUT
     # 产物回收：touchstone + 结果白名单，非白名单不收
@@ -182,6 +190,30 @@ def test_solve_success_command_artifacts_logfile(tmp_path, monkeypatch,
     assert not any(a.endswith("mesh.txt") for a in res["artifacts"])
     assert Path(res["logfile"]).is_file()
     assert res["elapsed_s"] >= 0.0
+
+
+def test_solve_design_limit_fail_closed(tmp_path, monkeypatch, no_real_popen):
+    """design/setup 限定请求=发射前结构化 fail-closed（零进程零许可）。
+
+    真机核实（2026-10-13，runs/aurora_c/designs_verify/）：v251 -BatchSolve
+    无 -designs 选项，旗标被静默吞并退化全设计求解（rc=0）——带假限定
+    发射是静默 solve-all 隐患，故入口 fail-closed。
+    """
+    proj = _aedt_project(tmp_path, with_results=False)
+    recorder = _PopenRecorder(_FakeProc(rc=0))
+    _patch_launch(monkeypatch, recorder)
+    _patch_exe(monkeypatch)
+
+    res = solve_project_batch(proj, design="HFSSDesign1", setup="Setup1",
+                              timeout_s=60.0)
+
+    assert res["ok"] is False
+    assert res["rc"] is None  # 前置失败：进程未拉起
+    assert res["timed_out"] is False
+    assert recorder.calls == []  # 零发射（真机零浪费）
+    assert "-designs" in res["errors"][0]
+    assert "solve-all" in res["errors"][0]
+    assert res["project_kind"] == "aedt"
 
 
 def test_solve_success_appends_launcher_output_to_logfile(
@@ -623,8 +655,7 @@ def test_solve_export_true_full_pipeline(tmp_path, monkeypatch,
     calls = _patch_two_phase(monkeypatch)
     _patch_exe(monkeypatch)
 
-    res = solve_project_batch(proj, design="HFSSDesign1", setup="Setup1",
-                              timeout_s=60.0, export_touchstone=True)
+    res = solve_project_batch(proj, timeout_s=60.0, export_touchstone=True)
 
     assert res["ok"] is True
     assert res["errors"] == []
@@ -680,7 +711,7 @@ def test_solve_export_skipped_when_solve_failed(tmp_path, monkeypatch,
 
 # ─── 导出分派：3D Layout 回退 / FATAL finally / sweep 透传 ────────────────────
 #
-# W5 真机实证：HFSS 3D Layout 设计无
+# W5 真机实证（runs/edblane85/w5_batch_campaign/）：HFSS 3D Layout 设计无
 # 任何 Analysis 模块——GetModule("AnalysisSetup"/"Setup"/"Output"/
 # "Solutions") 四名全 FAIL，ExportNetworkData 挂 design 对象（pyaedt
 # analysis.py 先例：design_type "HFSS 3D Layout Design" → module=
@@ -856,8 +887,7 @@ def test_solve_passes_sweep_to_export_stage(tmp_path, monkeypatch,
     calls = _patch_two_phase(monkeypatch)
     _patch_exe(monkeypatch)
 
-    res = solve_project_batch(proj, design="HFSSDesign1", setup="Setup1",
-                              sweep="SW9", timeout_s=60.0,
+    res = solve_project_batch(proj, sweep="SW9", timeout_s=60.0,
                               export_touchstone=True)
 
     assert res["ok"] is True
@@ -1024,3 +1054,143 @@ def test_baked_script_special_chars_compile_and_value_roundtrip():
     assert project.pinned == [weird_design]
     assert design.export_calls[0][1] == [weird_setup + ":" + weird_sweep]
     assert desktop.quit_calls == 1
+
+
+# ─── campaign_executor 双模路由缝 ────────────────────────────────────────────
+
+class TestCampaignBatchSeam:
+
+    def test_decl_absent_is_none_zero_behavior(self):
+        node = {"node_id": "final_verify", "stage_extra": {}}
+        assert ce.stage_batch_decl(node) is None
+        for raw in (False, "", None):
+            node = {"node_id": "tune", "stage_extra": {"hfss_batch": raw}}
+            assert ce.stage_batch_decl(node) is None
+
+    def test_decl_str_and_dict_forms(self):
+        node = {"node_id": "tune",
+                "stage_extra": {"hfss_batch": "D:\\jobs\\demo.aedt"}}
+        assert ce.stage_batch_decl(node) == {"project": "D:\\jobs\\demo.aedt"}
+        decl = {"project": "p.aedt", "design": "D", "timeout_s": 120}
+        node["stage_extra"]["hfss_batch"] = decl
+        assert ce.stage_batch_decl(node) == decl
+
+    def test_route_runs_batch_channel(self, tmp_path, monkeypatch):
+        calls: list[dict] = []
+
+        def fake_solve(**kw):
+            calls.append(kw)
+            return {"ok": True, "rc": 0, "timed_out": False,
+                    "project": kw["project"], "project_kind": "aedt",
+                    "ansysedt_exe": _EXE, "logfile": "E:\\l\\x.log",
+                    "artifacts": ["a.s2p"], "elapsed_s": 1.5, "errors": []}
+
+        monkeypatch.setattr("rfauto.adapters.hfss_batch.solve_project_batch",
+                            fake_solve)
+        work = tmp_path / "seat"
+        run = tmp_path / "run"
+        run.mkdir()
+        node = {"node_id": "final_verify",
+                "stage_extra": {"hfss_batch": {"project": "demo.aedt"}}}
+        ctx = {"work_dir": str(work), "run_dir": str(run)}
+        out = ce._route_batch_stage(node, ctx)
+        assert out is not None and out["ok"] is True
+        assert calls == [{"project": "demo.aedt"}]
+        assert (work / ce.STAGE_RESULT_FILE).is_file()
+        slim = json.loads(
+            (work / ce.STAGE_RESULT_FILE).read_text(encoding="utf-8"))
+        assert slim["ok"] is True
+        assert slim["hfss_batch"]["rc"] == 0
+        assert slim["hfss_batch"]["logfile"] == "E:\\l\\x.log"
+
+    def test_route_fail_maps_to_node_fail(self, tmp_path, monkeypatch):
+        def fake_solve(**kw):
+            return {"ok": False, "rc": None, "timed_out": False,
+                    "project": kw["project"], "project_kind": "",
+                    "ansysedt_exe": "", "logfile": "",
+                    "artifacts": [], "elapsed_s": 0.0,
+                    "errors": ["未找到 ansysedt.exe"]}
+
+        monkeypatch.setattr("rfauto.adapters.hfss_batch.solve_project_batch",
+                            fake_solve)
+        work = tmp_path / "seat"
+        node = {"node_id": "tune",
+                "stage_extra": {"hfss_batch": "ghost.aedt"}}
+        out = ce._route_batch_stage(node, {"work_dir": str(work),
+                                           "run_dir": str(tmp_path)})
+        assert out is not None and out["ok"] is False
+        assert "hfss_batch FAIL" in out["message"]
+
+    def test_dispatch_zero_change_without_decl(self, tmp_path, monkeypatch):
+        """声明缺席：executor 注册表路径原样（零行为变化），solve 不被触达。"""
+        monkeypatch.setattr(
+            "rfauto.adapters.hfss_batch.solve_project_batch",
+            lambda **kw: (_ for _ in ()).throw(
+                AssertionError("未声明 hfss_batch 不得走一次性通道")))
+
+        def impl(node, ctx):
+            return ce._exec_result(True, message="session-path")
+
+        dispatch = ce._dag_executors({"tune": impl})
+        node = {"node_id": "tune", "cmd": "rfauto tune p.yaml",
+                "stage_extra": {}}
+        out = next(iter(dispatch.values()))(node, {"work_dir": str(tmp_path)})
+        assert out["ok"] is True and out["message"] == "session-path"
+
+    def test_dispatch_decl_routes_batch_not_impl(self, tmp_path, monkeypatch):
+        def fake_solve(**kw):
+            return {"ok": True, "rc": 0, "timed_out": False,
+                    "project": kw["project"], "project_kind": "aedt",
+                    "ansysedt_exe": _EXE, "logfile": "",
+                    "artifacts": [], "elapsed_s": 0.1, "errors": []}
+
+        monkeypatch.setattr("rfauto.adapters.hfss_batch.solve_project_batch",
+                            fake_solve)
+
+        def impl(node, ctx):
+            raise AssertionError("声明 hfss_batch 后不得再走注册表 executor")
+
+        dispatch = ce._dag_executors({"tune": impl})
+        node = {"node_id": "tune", "cmd": "rfauto tune p.yaml",
+                "stage_extra": {"hfss_batch": {"project": "demo.aedt"}}}
+        out = next(iter(dispatch.values()))(node, {"work_dir": str(tmp_path),
+                                                "run_dir": str(tmp_path)})
+        assert out["ok"] is True and "hfss_batch" in out["message"]
+
+    def test_remote_decl_takes_priority_over_batch(self, tmp_path,
+                                                   monkeypatch):
+        """路由顺序：remote 优先（E62 语义不动），batch 缝不抢先。"""
+        monkeypatch.setattr(
+            "rfauto.adapters.hfss_batch.solve_project_batch",
+            lambda **kw: (_ for _ in ()).throw(
+                AssertionError("remote 命中时 batch 缝不得发射")))
+        # 日历/预检桩（既有 remote 测试同款，#139 零网络面）
+        monkeypatch.setattr(ce, "_calendar_launch_view",
+                            lambda: {"loaded": False, "state": "open",
+                                     "launchable": True})
+        monkeypatch.setattr(ce, "_license_preflight",
+                            lambda machine: {"ok": False, "verdict": "FAIL",
+                                             "machine": machine,
+                                             "reason": "license 端口不可达"})
+        node = {"node_id": "tune", "cmd": "rfauto tune p.yaml",
+                "stage_extra": {"remote": True,
+                                "hfss_batch": {"project": "demo.aedt"}}}
+        dispatch = ce._dag_executors({"tune": lambda n, c: (_ for _ in ())
+                                      .throw(AssertionError("impl 不该跑"))})
+        out = next(iter(dispatch.values()))(node, {"work_dir": str(tmp_path),
+                                                "run_dir": str(tmp_path)})
+        assert out["ok"] is True and "remote SKIP" in out["message"]
+
+    def test_stage_result_whitelist_additive_only(self):
+        """白名单只增不改：既有键面零漂移（hfss_batch 为纯增量键）。"""
+        assert "hfss_batch" in ce._STAGE_RESULT_KEYS
+        assert "remote" in ce._STAGE_RESULT_KEYS  # 既有键原样
+        assert "solve_success" in ce._STAGE_RESULT_KEYS
+
+
+# ─── 注册表面零漂移 ──────────────────────────────────────────────────────────
+
+def test_campaign_executors_registry_untouched():
+    """双模缝不进六件注册表（执行器注册面零漂移）。"""
+    assert set(ce.CAMPAIGN_EXECUTORS) == set(ce.CAMPAIGN_KINDS)
+    assert len(ce.CAMPAIGN_EXECUTORS) == 6

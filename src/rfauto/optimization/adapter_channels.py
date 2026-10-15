@@ -164,8 +164,7 @@ def _create_openems_channel(
     adapter_kwargs: dict[str, Any] | None,
     recipe_data: dict[str, Any],
 ) -> tuple[Any | None, str]:
-    """openEMS 真评估优化通道（产物化自 e11 战役层补丁，（二百六十
-    一）：OpenEMSOptAdapter 逐评估整脚本重渲染 + OpenEMSSolver 子进程求
+    """openEMS 真评估优化通道（产物化自 e11 战役层补丁，）：OpenEMSOptAdapter 逐评估整脚本重渲染 + OpenEMSSolver 子进程求
     解，与 fake/hfss 分支同构消费优化回路。"""
     from rfauto.adapters.openems_optimizer_adapter import (
         OpenEMSOptAdapter,

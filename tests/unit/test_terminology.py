@@ -114,10 +114,38 @@ class TestTerminologyService:
     def test_get_term_unknown_negative(self, terminology_service):
         result = terminology_service.get_term("no_such_term_xyz")
         assert result["ok"] is False
-        assert "error" in result
+        assert "errors" in result
 
     def test_get_term_blank_negative(self, terminology_service):
         assert terminology_service.get_term("   ")["ok"] is False
+
+    def test_service_envelopes_schema_version_1_1(self, terminology_service):
+        """AU-2 域升版回归钉（1.0→1.1，2026-10-14 AU-2B）：失败信封单源
+        构造器形+成功信封带戳。
+
+        单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+        schema_version 诊断键保留；三入口（list/get/report_footnotes）
+        同形带戳。MCP knowledge/terminology 资源直读 YAML 不经本服务
+        （grep 实测零形状消费）。
+        """
+        import json
+
+        assert (
+            terminology_service.TERMINOLOGY_SERVICE_SCHEMA_VERSION == "1.1"
+        )
+        env = terminology_service.get_term("no_such_term_xyz")
+        assert env["ok"] is False
+        assert list(env) == ["ok", "errors", "schema_version"]
+        assert isinstance(env["errors"], list) and env["errors"]
+        assert all(isinstance(s, str) for s in env["errors"])
+        assert env["schema_version"] == "1.1"
+        for env_ok in (terminology_service.list_terms(),
+                       terminology_service.get_term("VSWR"),
+                       terminology_service.report_footnotes(["VSWR"])):
+            assert env_ok["ok"] is True
+            assert env_ok["schema_version"] == "1.1"
+            assert list(env_ok)[:2] == ["ok", "schema_version"]
+        json.dumps([env, env_ok])
 
     def test_report_footnotes_citation_order_and_dedup(self, terminology_service):
         result = terminology_service.report_footnotes(["VSWR", "dB", "VSWR", "dBm"])

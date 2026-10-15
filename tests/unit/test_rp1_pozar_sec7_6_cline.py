@@ -1,6 +1,6 @@
 """RP-1 复现卡 2/5：Pozar《Microwave Engineering》§7.6 耦合线定向耦合器
 （4th ed.；章节号以版次为准，仓内 lineage 一律记 §7.6，含 Lange 小节）。
-RP-1 首批"现散件升级为正式复现卡"（研究扩充 round19 §一）。
+RP-1 首批"现散件升级为正式复现卡"（docs/research_expansion_20261002_round19.md §一）。
 
 复现范围：C→(Z0e,Z0o) 综合式、同步 TEM 频响闭式、匹配恒等式、四指 Lange
 设计式与四线等效换算（仓内核=oe_templates/render_c4 的 coupled_line_zee_zoo /

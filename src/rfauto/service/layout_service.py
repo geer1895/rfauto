@@ -1,4 +1,4 @@
-"""B2/B5 版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳。
+"""B2/B5 版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳（AGENTS 规则 4）。
 
 CLI/MCP 若要暴露版图互操作，直接消费本模块的 *_payload 函数；
 数值与几何全部来自确定性内核（adapters/layout_generator、

@@ -142,3 +142,51 @@ class TestService:
         out = tds.td_window_plan({"f0_ghz": 2.4, "dt_s": 1e-12,
                                   "margin": 0.5})
         assert out["ok"] is False
+
+
+class TestWindowPlanDirectW2:
+    """W2-TEST 直测补强：td_window_plan 守卫三态与闭式链（#118 独立期望值）。"""
+
+    def test_dt_guards_positive_finite(self):
+        # dt_s=0/负值 → 内核正性守卫 ValueError → service ok=False（不抛穿）
+        # 回归钉（W2-TEST）：修复前闭式链在 try 块外，dt_s≤0 的 ValueError
+        # 从 service 裸抛（违约"不抛穿"信封契约）；f0≤0 同源逃逸一并钉。
+        for bad_dt in (0, 0.0, -1e-12):
+            out = tds.td_window_plan({"f0_ghz": 2.4, "dt_s": bad_dt})
+            assert out["ok"] is False, bad_dt
+            assert out["errors"]
+            assert "dt_s" in out["errors"][0]
+        # f0_ghz=0/负值 → excite_duration_s 正性守卫入信封（同源逃逸回归钉）
+        for bad_f0 in (0, -2.4):
+            out = tds.td_window_plan({"f0_ghz": bad_f0, "dt_s": 1e-12})
+            assert out["ok"] is False, bad_f0
+            assert "f0_ghz" in out["errors"][0]
+        # 非 dt 路线同样守卫：min_cell_mm=0 → CFL 闭式 ValueError
+        out = tds.td_window_plan({"f0_ghz": 2.4, "min_cell_mm": 0.0})
+        assert out["ok"] is False and out["errors"]
+
+    def test_missing_route_and_none_payload(self):
+        # dt_s 与 min_cell_mm 双缺 → 二选一必给；None payload → f0 KeyError 入信封
+        out = tds.td_window_plan({"f0_ghz": 2.4})
+        assert out["ok"] is False
+        assert any("二选一" in e for e in out["errors"])
+        out2 = tds.td_window_plan(None)
+        assert out2["ok"] is False
+        assert any("f0_ghz" in e for e in out2["errors"])
+
+    def test_k_cycles_and_margin_closed_chain(self):
+        """k_cycles/margin 透传：τ=k/fc 手算、窗=margin·τ、nrts=ceil(窗/dt)。"""
+        f0, fcw, dt = 2.4, 0.2, 1e-12
+        out = tds.td_window_plan({"f0_ghz": f0, "fc_window": fcw, "dt_s": dt,
+                                  "k_cycles": 10.0, "margin": 2.0})
+        assert out["ok"] is True
+        # 独立手算（#118）：fc=f0·fcw=0.48GHz → τ=10/0.48e9；窗=2·τ
+        tau = 10.0 / (f0 * fcw * 1e9)
+        assert out["excite_duration_s"] == pytest.approx(tau, rel=1e-12)
+        assert out["required_window_s"] == pytest.approx(2.0 * tau, rel=1e-12)
+        assert out["margin"] == 2.0
+        need = math.ceil(2.0 * tau / dt)
+        assert out["nrts_needed"] == need
+        # 恒等链：window_ns = nrts·dt·1e9（自洽，规划期零引擎依赖）
+        assert out["window_ns"] == pytest.approx(need * dt * 1e9, rel=1e-12)
+        assert out["dt_is_cfl_limit"] is False

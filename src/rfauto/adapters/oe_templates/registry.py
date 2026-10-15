@@ -243,9 +243,12 @@ TEMPLATE_META: dict[str, dict[str, Any]] = {
         "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
         "params": ["atten_db", "w_mm", "shunt_off_mm"],
         "topology": "π 型衰减器（WP2.3 Tier 1 首族：串臂 LumpedElement 桥接"
-        "中点断口，两端对地 shunt LumpedElement 经短柱接 z-min PEC 地）",
+        "中点断口，两端对地 shunt LumpedElement 经短柱接 z-min PEC 地；"
+        "元件电共位——shunt 与断口缘齐贴，E4 集总闭式裁判前提，"
+        "W7-A 残座批 D=6mm 分布式失配定谳后改 0.75mm）",
         "param_semantics": "atten_db=目标衰减（电阻值由 E4 attenuator_pi "
-        "ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=shunt 离中点距离",
+        "ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=shunt 离中点距离"
+        "（电共位守卫：θ=β·D≤0.1rad ⇒ ≤0.83mm，大 D=分布式衰减器非本裁判域）",
         "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；"
         "带缘+串臂断口+shunt 盒边精确入网（#198）",
     },
@@ -256,11 +259,14 @@ TEMPLATE_META: dict[str, dict[str, Any]] = {
         "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
         "params": ["atten_db", "w_mm", "shunt_off_mm"],
         "topology": "T 型衰减器（WP2.3 横向变体：两臂串 LumpedElement 桥接"
-        "±d 断口，中点对地 shunt LumpedElement 全带宽短柱）",
+        "±d 断口，中点对地 shunt LumpedElement 全带宽短柱；元件电共位——"
+        "串臂与中点 shunt 缘齐贴，W7-A 残座批 D=6mm 分布式失配定谳后改 "
+        "0.75mm）",
         "param_semantics": "atten_db=目标衰减（电阻值由 E4 attenuator_t "
-        "ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=串臂离中点距离",
+        "ABCD 闭式给出），w_mm=馈线宽（50Ω），shunt_off_mm=串臂离中点距离"
+        "（电共位守卫同 π 型：≤0.83mm）",
         "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；"
-        "带缘+串臂断口+shunt 盒边精确入网（#198）",
+        "带缘+串臂断口+中点 shunt 盒边精确入网（#198）",
     },
     "ratrace": {
         "f0_ghz": 2.5, "n_ports": 4,
@@ -384,10 +390,12 @@ TEMPLATE_NOMINAL: dict[str, dict[str, Any]] = {
     # via 基元：双层板过孔（反焊盘同轴口径 ≈52.5Ω，r_via=0.15）
     "via": {"w_mm": 1.1134, "antipad_mm": 0.8, "r_via_mm": 0.15},
     # atten_pi：10dB/50Ω π 型（E4 attenuator_pi 闭式；串 71.15/并 96.25）
-    "atten_pi": {"atten_db": 10.0, "w_mm": 1.1134, "shunt_off_mm": 6.0},
+    # shunt_off_mm=0.75：shunt 盒与串臂断口缘齐贴（电共位，W7-A 残座批
+    # D=6mm 分布式失配 |S11|max-11.3dB 定谳后的模型级修复，0.75→-21.9dB）
+    "atten_pi": {"atten_db": 10.0, "w_mm": 1.1134, "shunt_off_mm": 0.75},
     # atten_t 横向变体：10dB/50Ω T 型（E4 attenuator_t 闭式；
-    # 串臂 25.975×2 / 中点对地 35.136）
-    "atten_t": {"atten_db": 10.0, "w_mm": 1.1134, "shunt_off_mm": 6.0},
+    # 串臂 25.975×2 / 中点对地 35.136；电共位同 π 型，0.75→-24.8dB）
+    "atten_t": {"atten_db": 10.0, "w_mm": 1.1134, "shunt_off_mm": 0.75},
     # ratrace：环 70.7Ω（w=0.604 精算），周长 1.5λg≈109mm，R=17.35mm
     # （r_ring 入 nominal：绕过 synthesis 手写 recipe 换 f0 时半径静默
     # 错误——审查 P2-7）

@@ -1,4 +1,4 @@
-"""XC-P 精度档案（specs 规格深案 §B-3，2026-10-02）。
+"""XC-P 精度档案（specs docs/plan_deepdive_specs_20261002.md §B-3，2026-10-02）。
 
 精度声明单源 + 查询函数：kernel 级"典型偏差分档 + 有效域 + 域外行为"三要素，
 供 CALC 合成入口守卫（消费点 v1 ①，preflight 第 0 门归 XC-F 另件）与能力卡

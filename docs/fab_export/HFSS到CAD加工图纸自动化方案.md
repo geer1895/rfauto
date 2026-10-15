@@ -4,9 +4,9 @@
 
 **版本**：v3.4（细则含 ISO↔GB 对照、函数草稿、源码级格式清单）  
 **日期**：2026-09-29  
-**约束**：本轮仅调研与方案撰写；**不在 `D:/rf_workspace` 创建/修改任何文件**  
+**约束**：本轮仅调研与方案撰写；**不在 `D:\rf_workspace` 创建/修改任何文件**  
 **配套细则**：`HFSS到CAD加工_可落地细则.md`（金样数字、图框/ezdxf、RFQ、规则库、**heal 安全预设**、**开源出图引擎选型**）
-**首选厂家**：成都西夏科技发展有限公司（http://m.xixiakeji.com）  
+**首选厂家**：成都西夏科技发展有限公司（http://m.xixiakeji.com/）  
 **调研广度**：PyAEDT/OCCT 源码、开源 CAD 栈、微波机加标准、MBD/QIF/CAM、国产 CAD 自动化、特征识别/EDM、中文车间看图生态、学术自动出图、本机资产只读参考  
 
 ---
@@ -614,7 +614,7 @@ m.xixiakeji.com；PyAEDT 文档与 pyaedt-main；OCCT/ezdxf/build123d/FreeCAD Pa
 ### 23.5 本轮边界
 
 - **只调研、只写桌面文档**  
-- rf_workspace 未保留任何创建物（worktree/分支已删净）  
+- 工作区 未保留任何创建物（worktree/分支已删净）  
 - 部分 CAM 偏好/CAXA API 细节为 **[K]**，实施前向厂家/厂商文档升 verified  
 
 ---

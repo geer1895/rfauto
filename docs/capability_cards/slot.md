@@ -53,7 +53,7 @@
 - 参数语义：slot_l_mm=缝长（λ0/(2√((1+εr)/2))，Booker 对偶+半空间均值口径），slot_w_mm=缝宽，feed_w_mm=馈线宽（50Ω HJ），feed_margin_mm=板边到馈线手画段起点的馈段长（MSLPort 自画，MeasPlaneShift=margin/3）
 - 网格：辐射器件：上方/侧向/下方空气隙 λ0/4；地缘/槽缘/馈线缘精确入网
 - 冒烟现状：真机 runs/antenna2_smoke/slot 与 slot_override（2026-09-14）PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168，+11.0%，隐含 εeff 1.84）/ −21.76dB @2.6275GHz（L=46.036，隐含 εeff 1.54）；k_slot∈[0.66,0.79]·(1+εr)/2 待 HFSS 仲裁后才进设计式（#190）。Σ|S|² 带边 >1 已排查（2026-09-16，slot/sparams.csv 实测）：1.9GHz=1.212、2.9GHz=1.128，>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗（2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励 −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），归一化伪象而非 MSLPort/有限地物理错；判读口径=窗收内带 f0±0.4GHz（激励带内 80%）+ Σ|S|²>1.02 点剔除（scripts/smoke_antenna2_anchor.py 全模板通用；掩模后 307/321 点，凹位/深度不变），全局 FC 不动（f_max 进网格预算，改激励带会漂全部模板网格锚）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

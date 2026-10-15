@@ -36,7 +36,7 @@ from rfauto.service.envelope import error_envelope, ok_envelope
 #: 批后导出 Touchstone 命名形态（``<stem>_export.s<N>p``）。W5 审查修正
 #: （2026-10-08）：hfss_batch 导出链按文件内容反推端口数后**改名 .sNp**
 #: （.s2p 只是 2 端口占位——4 端口真机产物实为 ``*_export.s4p``，
-#: 五件真机实证），status 面原只认 ``.s2p``
+#: runs/edblane85/w5_batch_campaign/ 五件实证），status 面原只认 ``.s2p``
 #: 恒 miss 真实产物；大小写不敏感，stem 捕获组含 ``.aedb`` 工程名形态。
 _EXPORT_TOUCHSTONE_RE = re.compile(r"^(.+)_export\.s\d+p$", re.IGNORECASE)
 
@@ -252,7 +252,7 @@ def edb_build(
             即被拒绝——适配器零触碰）。
         params: 设计参数 dict（同上）。
         workdir: 产物根目录（.aedb 与 *_config.json 落点；缺省
-            ``runs/edb_lane``，服务端部署时工作目录须显式给定）。
+            ``runs/edb_lane``，服务端部署按 AGENTS 规则 0 磁盘纪律显式给）。
         name: 产物文件名主干（缺省=template 键；禁路径分隔符与 ``..``，
             适配器 fail-fast）。
         dry_run: True=只发射+契约双检并回显适配器 config 预览，**零写盘
@@ -317,7 +317,12 @@ def edb_solve(
         timeout_s: 每段进程的 watchdog 超时（秒；<=0 不设超时）。
         export: True=求解成功后导 Touchstone（缺省 True——快车道闭环
             主口径；只求解不判读=断链）。
-        design/setup: 限定 ``-designs <design:setup>``（None=自动枚举）。
+        design/setup: 批后导出段的**脚本内**设计选择（
+            ``SetActiveDesign`` 钉定，None=自动枚举）——只透传
+            ``export_touchstone_after_solve``；求解段 ``-BatchSolve`` 的
+            ``-designs`` 限定经 2026-10-13 真机核实不受 AEDT 2025 R1
+            支持（旗标被静默吞、退化全设计求解），hfss_batch 已改
+            fail-closed，本函数不向求解段传该参数。
 
     Returns:
         成功信封：``{ok, project, solve:{ok,rc,timed_out,logfile,

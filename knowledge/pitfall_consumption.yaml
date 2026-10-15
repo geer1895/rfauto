@@ -1,0 +1,78 @@
+# 坑账消费指针登记面（T15-B12；SPECS3 §3.3 (b) 面，W5-E 席建）
+#
+# 定位：knowledge/pitfalls_index.json 是生成产物（generated_by/generated_date
+# 在头），本文件独立登记消费指针防生成器漂移——两文件以 id 关联，SLA 门
+# （tests/unit/test_w5_e_pitfall_consumption_sla.py，经
+# service/pitfall_consumption_sla.check_pitfall_consumption_sla）校验关联
+# 完整性。索引文件零改写（#325/#326 精神）。
+#
+# surface 词表（封闭，SLA 门校验；未知面名即红）：
+#   spec 六面（UX 批 B4/EC-6 挂点落地后行翻 surface，门零改）：
+#     doctor_hint / explain_run_note / ui_pitfalls / mcp_search /
+#     rag_query / guidelines
+#   现树已接线真实面（W5-E ground 2026-10-05）：
+#     premortem_note —— service/premortem_service.py:29 _pitfall_notes
+#                       （premortem_report 尾注记，best-effort #105）
+#     error_hint     —— service/error_hints_service.py hint 规则 refs
+#                       （症状文本匹配；SLA 门逐行实证 refs 真命中）
+#     index_search   —— service/pitfall_index_service.py
+#                       pitfall_search/pitfall_notes_for（新会话/新席位
+#                       最低消费点：确定性词面检索）
+#
+# W5-E 口径：solver 四类 13 条"仅消费说明"——逐条登记检索/提示面消费
+# 方式（keywords 为 pitfall_search 词面检索的实测命中词），症状可机器
+# 观测且已有确定性指纹的（#152/#174/#233）走 playbook pit_refs（(a) 面，
+# 在 playbook.yaml 本体），无检测器支撑的不硬塞 playbook（#122 哲学）。
+schema: pitfall-consumption/v1
+updated: 2026-10-05
+rows:
+  - id: "#154"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["跨适配器", "physics_roles", "语义"]
+    note: "同名参数跨适配器语义可能相反——新适配器接入/配方接线前按坑检索消费（逐参数对语义，单通道各自看着对跨保真就是两个器件家族）"
+  - id: "#149/#150/#155"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["CSXCAD", "MSLPort", "绑定"]
+    note: "openEMS CSXCAD Python 绑定与 MATLAB 版 API 不同源——写 openEMS 渲染/端口代码前按坑检索消费（逐条对照 .pyx 源码验证）"
+  - id: "A216"
+    surface: premortem_note
+    pointer: "service/premortem_service.py premortem_report 尾注记（pitfall_notes）"
+    keywords: ["HFSS", "官方文档"]
+    note: "HFSS 仿真异常第一时间查官方文档（用户立规）——HFSS/真机开工 premortem 注入消费（task_kind/context 键名命中词面时随行）"
+  - id: "A220"
+    surface: premortem_note
+    pointer: "service/premortem_service.py premortem_report 尾注记（pitfall_notes）"
+    keywords: ["HFSS", "对齐基准"]
+    note: "HFSS 结果为对齐基准（用户立规）——跨引擎仲裁/校准开工 premortem 注入消费"
+  - id: "#208"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["跨 Run", "进程隔离", "绑定"]
+    note: "openEMS 跨 Run 绑定对象销毁——多端口全 S 矩阵/多轮装配代码前按坑检索消费（进程隔离单激励渲染）"
+  - id: "#212"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["离线审计", "模板几何", "渲染"]
+    note: "模板几何必须离线审计测试——新建/修改模板前按坑检索消费（渲染→exec 几何段→CSXCAD 实测，秒级零仿真）"
+  - id: "#215/#217"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["COMSOL", "mph", "6.3"]
+    note: "COMSOL 6.3 可用/6.4 禁用+API 口径实证——COMSOL 开发前按坑检索消费（先读 docs/comsol_references.md 与本地官方 PDF，禁止凭想象写 API）"
+  - id: "A304"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["antenna2", "LumpedPort", "短路"]
+    note: "antenna2 真机三坑（针盒不改端口结果/带外 Zin R≈0 正常/PIFA 谐振通式前提）——antenna2 族真机判读前按坑检索消费"
+  - id: "#232"
+    surface: error_hint
+    pointer: "service/error_hints_service.py hint 规则 refs（Mur 柱坐标静默退化指纹；SLA 门逐行实证 refs 命中）"
+    keywords: ["MUR", "柱坐标", "PML"]
+    note: "openEMS 柱坐标不支持 MUR（静默跳过退化 PEC）——求解日志报 Mur/cylinder-coords 类症状时 hint_for_message 错误提示面随行消费"
+  - id: "#323"
+    surface: index_search
+    pointer: "service/pitfall_index_service.py pitfall_search"
+    keywords: ["整树", "存活探针", "看门"]
+    note: "长跑看门与整树无声消失——长跑任务发射前按坑检索消费（周期存活探针必须挂，判读输入缺失如实重建元数据）"

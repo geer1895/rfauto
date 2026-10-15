@@ -32,7 +32,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 C_MM_GHZ = 299.792458
-#: 确定性链回归锚：fake 模型 eps_eff=3.28（HFSS 校准锚反推）给名义
+#:  确定性链回归锚：fake 模型 eps_eff=3.28（HFSS 校准锚反推）给名义
 #: 20.5mm 臂 f_dip=2.0904GHz——第三独立来源（引擎无关）
 FAKE_ANCHOR_F_DIP_GHZ = 2.0904
 
@@ -167,7 +167,7 @@ def judge(run: Path, f0_ghz: float, arm_len_mm: float, series_w_mm: float,
             f"{abs(hj['series_arm']['quarter_wave_mm_at_f0']-hj['shunt_arm']['quarter_wave_mm_at_f0']):.2f}mm，建议按臂宽各自综合（synthesis.py 禁改，记 followUp）",
         ],
         "evidence": [str(s4p), str(run / "_smoke_result.json"),
-                     "确定性链回归锚 branchline@2.4GHz f_dip=2.0904GHz（fake eps_eff=3.28）",
+                     " 确定性链回归锚 branchline@2.4GHz f_dip=2.0904GHz（fake eps_eff=3.28）",
                      "src/rfauto/core/synthesis.py::synthesize_branchline（w=1.0mm εeff）"],
     }
 

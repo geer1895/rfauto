@@ -51,7 +51,7 @@
 
 - 参数语义：patch_len_mm=谐振 λ/2 轴长，patch_w_mm=贴片宽度（非谐振轴，影响 εeff/匹配），feed_offset_mm=底馈探针沿谐振轴距中心偏置（渲染 _patch_lines/geometry_spec/LumpedPort 三处实读，决定馈电匹配深度；fake/schema 同名同语义）。历史漂移修正（0aq）：原声明的 feed_w_mm 为幽灵参数（无任何消费者），已替换为真实参数
 - 网格：辐射器件：上方/侧向空气隙 λ0/4（guided 模板 5mm）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

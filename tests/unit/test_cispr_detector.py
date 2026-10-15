@@ -1,4 +1,4 @@
-"""MS-4 core/cispr_detector 验收钉（规格 规格深案 §D-3）。
+"""MS-4 core/cispr_detector 验收钉（规格 docs/plan_deepdive_specs_20261002.md §D-3）。
 
 锚面三组（出处与诚实注记见 cispr_detector 模块 docstring，#122 学术诚信原则）：
 - 参数表：CISPR 16-1-1:2006+A1 Table 1（iTeh 免费镜像 preview，runs/ms4/ 归档）×

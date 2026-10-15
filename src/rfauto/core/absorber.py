@@ -1,6 +1,6 @@
-"""MM-1 吸波体族闭式内核 + Rozanov 厚度下界门（规格 规格深案 §A-4）。
+"""MM-1 吸波体族闭式内核 + Rozanov 厚度下界门（规格 docs/plan_deepdive_specs_20261002.md §A-4）。
 
-纯函数零 IO 零环境依赖。
+纯函数零 IO 零环境依赖（AGENTS 硬规则 7：物理数字只出确定性内核）。
 结构模型一律 ABCD 级联，原语 ``_abcd_tl``/``_abcd_shunt`` **逐字复用**
 metasurface_lut（只 import 不改写）：入射面电阻片 shunt(Rs) @ 介质段
 TL(η_s, β, d) @ PEC 终端（Z_L=0）→ Zin → Γ。

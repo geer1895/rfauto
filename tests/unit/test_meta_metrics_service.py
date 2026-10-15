@@ -1,6 +1,6 @@
 """MT2-1（round19 P2）meta_metrics 采集/周报/sampler 单元测试。
 
-判据预声明（全合成，tmp_path 隔离——#144 防污染真实 runs）：
+判据预声明（全合成，tmp_path 隔离——#144 防污染真实 runs/）：
 
 1. **快照算术恒等**（基准①）：test_count=passed+failed+skipped、
    pass_rate=passed/(passed+failed)（逐条可复算）；分母 0 → None 如实；

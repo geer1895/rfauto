@@ -169,7 +169,7 @@ def test_swe_hertzian_dipole_pure_tm10() -> None:
     t2, _p2 = np.meshgrid(np.deg2rad(theta), np.deg2rad(phi), indexing="ij")
     common = np.exp(-1j * kr) / r
     # Balanis E_θ 含物理 η 因子（E_θ = jηkIl/(4πr)·sinθ·(...)——漏掉 η 会使
-    # 数据 E/H≈1 违反 Maxwell（H/E=1/η），反演必不一致（实测残差 ~1.0）
+    # 数据 E/H≈1 违反 Maxwell（H/E=1/η），反演必不一致（实测残差 ~1.0））
     eta = 376.730313668
     e_th = eta * np.sin(t2) * (1.0 + 1.0 / (1j * kr) - 1.0 / kr ** 2) * common
     h_ph = np.sin(t2) * (1.0 + 1.0 / (1j * kr)) * common

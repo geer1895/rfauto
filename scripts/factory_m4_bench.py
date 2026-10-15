@@ -9,7 +9,7 @@ OE 串行 1 守卫 #261）→ G2 墙钟/cost 双门判读 → m4_verdict.json。
 
 判据内核复用 service/wp39_benchmark.py：wallclock_ratio（:69）与
 cost_degradation_pct（:55）——judge_problem_pair 同一原语族，本脚本不内联
-任何判据公式。数值只在确定性内核。
+任何判据公式。数值只在确定性内核（项目规则 规则 7）。
 
 用法（cwd=仓库根）：
   python scripts/factory_m4_bench.py --selftest  # 纯函数面+合成 GP 冒烟（零真机）
@@ -80,7 +80,7 @@ MAX_VERIFY = 5
 MIN_DIST_VERIFY = 0.02   # 归一化域 [0.5,2.0] 距离（criteria 预声明）
 GRID_STEP_MM = 0.001
 
-BASELINE_S = 1457.74     # wp39 mline pattern_search 15 评估
+BASELINE_S = 1457.74     # wp39 mline pattern_search 15 评估（）
 RATIO_GATE = 0.2         # T_factory ≤ 基线 1/5（wp39 内核取 0.2，严于主线 0.5）
 DEG_GATE_PCT = 5.0       # cost 劣化 ≤5%（wp39 同门）
 BUDGET_WALL_S = 90 * 60.0

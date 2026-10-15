@@ -1,6 +1,6 @@
 """EM-3 薄膜/涂层屏蔽 + SE 测量换算（IEEE 299/299.1）口径面。
 
-规格：研究扩充 round17 §四 EM-3（P3/S）——
+规格：docs/research_expansion_20261002_round17.md §四 EM-3（P3/S）——
 "Rs=1/(σt) 薄屏式；IEEE 299/299.1 只做口径文档"。纯闭式叶子，零 IO、
 不进 calculators（同席 2/3 约定；EM-1 近场 SE / QW-11 平面波 SE 已有，
 本模块只补薄膜/涂层支路与测量口径文档面）。

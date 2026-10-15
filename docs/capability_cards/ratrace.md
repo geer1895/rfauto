@@ -6,7 +6,7 @@
 
 - 拓扑：rat-race 环形电桥（WP2.3：环周长 1.5λg@70.7Ω，arcs λ/4×3+3λ/4；规范角位 Σ=0°/out1=60°/Δ=120°/out2=300°——out1/out2 分居 Σ 两侧 λ/4，大弧 3λ/4 扫 Δ→out2 之间（pt5 实测定版）——三端口挤 上半区，下半区是大弧；out1/Δ 径向馈+弯折竖直引出）
 - f0：2.5 GHz ｜ 端口：4 ｜ 时长 ≤30.0 ns ｜ 网格档：0.0 mm
-- 提取口径：全 S 矩阵 4×4 @ ratrace.s4p（官方激励轮转 4 run：SetEnabled 逐端口激励+匹配终端探针；skrf Touchstone 主路，CSV 降兼容）。裁判=理想 180° 混合环 S 矩阵闭式（#208 Y 矩阵推导）：Σ 均分 -3dB 同相、Δ 隔离、out1↔out2 互隔离；规范角位 Σ=0°/out1=60°/Δ=120°/out2=180°
+- 提取口径：全 S 矩阵 4×4 @ ratrace.s4p（官方激励轮转 4 run：SetEnabled 逐端口激励+匹配终端探针；skrf Touchstone 主路，CSV 降兼容）。裁判=理想 180° 混合环 S 矩阵闭式（#208 Y 矩阵推导）：Σ 均分 -3dB 同相、Δ 隔离、out1↔out2 互隔离；规范角位 Σ=0°/out1=60°/Δ=120°/out2=300°
 - 参数：w_ring_mm, w_feed_mm
 - 基板：{"er":3.66,"h_mm":0.508}
 
@@ -50,7 +50,7 @@
 
 - 参数语义：w_ring_mm=环线宽（√2·Z0=70.7Ω 口径），w_feed_mm=四端口馈线宽（50Ω）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；环带逐网格行栅格化（零 #198 台阶误差）+ 馈线带缘精确入网；渲染半径 = 物理 R / k(BASE)（ratrace_ring_mesh_k：0.2/0.4mm 两锚 1.0877/1.1654 对 (k−1) 幂律内插、域外 clamp；HFSS 仲裁 2.465GHz 背书 MESH_ARTIFACT；柱坐标 k=1 为根治首选 #219/#232）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

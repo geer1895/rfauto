@@ -69,7 +69,7 @@ mesh_note: >-
   精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）；
   全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算
   （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见
-  战役任务书
+  runs/df6_dp10ms/handoff.md
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞
   （#246/#261）；J2 真机轨另派
@@ -78,3 +78,37 @@ nominal_derivation: |-
   （cell_map 变更→贴片几何逐胞变化，test_metasurface_templates 钉）；
   period=λ0/2=14.9896 同 ms_patch 口径；h=1.524（60mil）；演示名义 3×3
   为审计快档，非设计上限（n 与 cell_map 同构放大）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: N×N 超表面阵列：λ0/2 阵格上按 cell_map 铺设不同尺寸单元——尺寸差给出相位差，实现口径相位分布（反射阵聚焦/波束偏转）。典型用于无馈相位的无源波束赋形口径；常见误用=阵格超
+      λ0/2——光栅瓣立刻进入可见区，口径相位设计整体失效。
+    derivations:
+    - claim: 阵格 λ0/2 无光栅瓣口径（cell_map 单元=ms_patch 同族）
+      formula: period = λ0/2 = 14.9896 mm（cell px∈{6,7.5,9} mm 相位档）
+      source: 本仓 core/metasurface_lut（单元/阵格口径单源；docs/templates/ms_array_NxN/meta.yaml nominal_derivation（cell_map
+        三档尺寸=相位覆盖采样））
+  sensitivity_ranking:
+  - param: period_mm
+    order: 1
+    basis: 阵格=光栅瓣判据主维（λ0/2 恒等式 |∂lnf_lobe/∂lnD|=1）
+  - param: n_x
+    order: 2
+    basis: 横向单元数（口径尺寸/增益维，离散整数控）
+  - param: n_y
+    order: 3
+    basis: 纵向单元数（同上）
+  - param: cell_map
+    order: 4
+    basis: 单元尺寸相位档（离散版图非连续几何维）
+  - param: er
+    order: 5
+    basis: 单元谐振填充通道（ms_patch 同族）
+  - param: h_mm
+    order: 6
+    basis: 板厚经 εeff 弱进入
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进谐振式
+  quiz_refs: []

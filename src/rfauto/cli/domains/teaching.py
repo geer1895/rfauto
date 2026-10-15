@@ -21,6 +21,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 teaching_app = typer.Typer(help="模板教学卡（物理推导+敏感性排序+教科书索引）")
 app.add_typer(teaching_app, name="teaching")
@@ -46,11 +47,11 @@ def teaching_show_cmd(
         teaching = load_teaching(template)
         md = render_teaching_markdown(template)
     except ValueError as exc:
-        _emit({"ok": False, "errors": [str(exc)]},
+        _emit(error_envelope(str(exc)),
               "教学卡加载失败", json_output=json_output)
         raise typer.Exit(code=1) from None
-    result: dict = {"ok": True, "template": template, "teaching": teaching,
-                    "markdown": md}
+    result: dict = ok_envelope(template=template, teaching=teaching,
+                               markdown=md)
     if markdown:
         Path(markdown).write_text(md, encoding="utf-8")
         result["markdown_path"] = markdown
@@ -83,8 +84,8 @@ def teaching_index_cmd(
         # 恒 ok 无失败分支，此处只兜 service 面语义演进，不吞错）
         _emit(result, "教科书索引查询失败", json_output=json_output)
         raise typer.Exit(code=1)
-    _emit({"ok": True, "schema": result["schema"],
-           "n_rows": result["n_rows"], "rows": result["rows"]},
+    _emit(ok_envelope(schema=result["schema"],
+                      n_rows=result["n_rows"], rows=result["rows"]),
           "教科书索引查询失败", json_output=json_output)
     if not json_output:
         table = Table(title="教科书反向索引（teaching index）")

@@ -13,7 +13,7 @@
   文献典型 8-10 壳。
 - 打印分辨率律：最小特征 = 0.7·λg（λg = λ0/√εr_eff）、最低可实现
   εr_eff ≈ 1.2 —— Chisum 组 gyroid 3D 打印 Luneburg 透镜口径
-  （研究扩充 round4 [25]/[30] 二手核对；
+  （docs/research_expansion_20260926_round4.md [25]/[30] 二手核对；
   原始 IEEE 论文本机未逐位核对 → 两常数登记 UNVERIFIED-secondary，
   消费方如需硬门请先回原文钉值）。
 - 混合模型选型（钉死一种）：线性算术（Taylor）式

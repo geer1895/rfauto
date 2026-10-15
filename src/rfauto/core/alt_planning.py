@@ -1,6 +1,6 @@
 """PT-4 ALT（Accelerated Life Testing）加速寿命试验换算面（纯函数内核）。
 
-round18 规格（研究扩充 round18 §四 PT-4）：
+round18 规格（docs/research_expansion_20261002_round18.md §四 PT-4）：
 多应力 Weibull 似然 ln η = a + b/T + 置信带；与 arrhenius_af 闭式对拍。
 本模块与 core/aging.py 互补不重复：AF 闭式只消费 aging 既有实现
 （arrhenius_af / coffin_manson / K_B_EV_PER_K / INV_K_K_PER_EV，只读），

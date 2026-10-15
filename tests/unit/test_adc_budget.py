@@ -1,4 +1,4 @@
-"""F-E.1 ADC 噪声预算内核单测（研究扩充 round3 F-E 表件 1）。
+"""F-E.1 ADC 噪声预算内核单测（docs/research_expansion_20260926_round3.md F-E 表件 1）。
 
 判据（#122 先行，任务书预声明）：①合成回收逐位；②RSS 恒等式；③ENOB
 恒等式 ENOB(6.02·12+1.76)=12.000 rel 1e-9；④数值边界（σ_j→0 → +inf 钉死、

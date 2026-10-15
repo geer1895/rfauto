@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── diagnose (DP-2 耦合矩阵诊断三件套，薄壳转发 diagnosis_service) ───────────
 
@@ -98,7 +99,7 @@ def diagnose_cm_cmd(
     fbw: float = typer.Option(None, "--fbw", help="相对带宽提示"),
     topology: str = typer.Option("folded", "--topology", help="folded|arrow"),
     target: str = typer.Option(None, "--target",
-                               help="目标耦合矩阵 JSON 文件（[re,im] 对嵌套列表）"),
+                               help="目标耦合矩阵 JSON 文件（re,im 成对列表的嵌套列表）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """CM 反向提取（VF 结构面 + LM 固定拓扑精化）+ 可选目标逐元素偏差表。
@@ -150,7 +151,7 @@ def diagnose_cat_cmd(
     params: str = typer.Option(None, "--params",
                                help="当前可调参数 JSON {name: value}"),
     bounds: str = typer.Option(None, "--bounds",
-                               help="参数界 JSON {name: [lo, hi]}"),
+                               help="参数界 JSON：键=参数名，值=lo,hi 二元列表"),
     tol: float = typer.Option(0.1, "--tol", help="相对容差"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
@@ -214,12 +215,12 @@ def correlate(
     except FileNotFoundError as e:
         if json_output:
             # VI-5 W6-B：入参缺失也信封（--json 下失败路径不许非 JSON）
-            _emit({"ok": False, "errors": [str(e)]}, "相关性分析失败", json_output=True)
+            _emit(error_envelope(str(e)), "相关性分析失败", json_output=True)
         console.print(f"[red]✗ {e}[/red]")
         raise typer.Exit(code=1) from None
     except Exception as e:
         if json_output:
-            _emit({"ok": False, "errors": [f"相关性分析失败: {e}"]},
+            _emit(error_envelope(f"相关性分析失败: {e}"),
                   "相关性分析失败", json_output=True)
         console.print(f"[red]✗ 相关性分析失败: {e}[/red]")
         raise typer.Exit(code=1) from None
@@ -330,9 +331,8 @@ def diagnose_detective_cmd(
     )
 
     if not run_dir and not ref:
-        _emit({"ok": False,
-               "errors": ["--run-dir 与 --ref 至少给一个"
-                          "（现调 explain 或直接消费既有结果）"]},
+        _emit(error_envelope("--run-dir 与 --ref 至少给一个"
+                             "（现调 explain 或直接消费既有结果）"),
               "缺少输入", json_output=json_output)
         raise typer.Exit(code=1)
     explain_result = None

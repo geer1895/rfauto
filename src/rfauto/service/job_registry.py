@@ -312,6 +312,21 @@ class JobRegistry:
                     table.setdefault(seat, []).append(job_id)
             return table
 
+    def snapshots(self, *, active_only: bool = False) -> list[dict[str, Any]]:
+        """全体在册 job 快照列表（注册序；读视图专用，零副作用）。
+
+        E-06/PR-15 调度面切片（2026-10-08）队列视图读法：与逐 job ``get``
+        同形（_snapshot 单源），只多出"列出全部"语义。``active_only=True``
+        时只留在途态（running/cancel_requested）。跨进程历史 run 不在本表
+        （进程内语义，持久化行走 ``RegistryDB.list_jobs``）。
+        """
+        with self._lock:
+            entries = list(self._jobs.values())
+        out = [self._snapshot(e) for e in entries]
+        if active_only:
+            out = [s for s in out if s["state"] in ("running", "cancel_requested")]
+        return out
+
     def get(self, job_id: str) -> dict[str, Any] | None:
         """返回 job 快照 dict；未知 job_id 返回 None。
 

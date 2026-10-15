@@ -199,6 +199,138 @@ class TestOpenApi:
             "requestBody"]["content"]["application/json"]["schema"]["$ref"]
         assert dataset_ref.endswith("/DatasetQueryRequest")
 
+    def test_endpoint_total_count_pin(self):
+        """端点总数钉（程序化枚举钉死；新端点必更新本值——aurora_d REST-B
+        2026-10-14。操作集形态由 test_expected_operations_present 另钉，
+        本钉管**计数棘轮**：加端点必须显式动数字，静默漂移即红）。"""
+        spec = rest_api.openapi_spec()
+        n_ops = sum(
+            1 for item in spec["paths"].values()
+            for method in item if method in rest_api._HTTP_METHODS)
+        assert len(rest_api._ROUTE_TABLE) == 25
+        assert n_ops == 25
+        inventory = rest_api.endpoint_inventory()
+        assert inventory["n_endpoints"] == 25
+        assert inventory["n_operations"] == 25
+
+
+class TestSchemaExport:
+    """REST-B schema 导出面：endpoint_inventory 程序化枚举（防手抄漂移）。"""
+
+    def test_inventory_envelope_and_fields(self):
+        inv = rest_api.endpoint_inventory()
+        assert inv["ok"] is True
+        assert inv["face"] == "rest"
+        assert inv["api_prefix"] == "/api/v1"
+        assert inv["openapi_version"] == rest_api.OPENAPI_VERSION
+        assert inv["n_endpoints"] == len(inv["endpoints"])
+        assert inv["n_endpoints"] >= 1
+
+    def test_inventory_matches_openapi_spec(self):
+        """清单与 openapi_spec() 同源互证（path/method/参数/请求 schema）。"""
+        spec = rest_api.openapi_spec()
+        inv = rest_api.endpoint_inventory()
+        by_op = {
+            op["operationId"]: (path, method, op)
+            for path, item in spec["paths"].items()
+            for method, op in item.items()
+            if method in rest_api._HTTP_METHODS
+        }
+        assert len(by_op) == inv["n_operations"]
+        for ep in inv["endpoints"]:
+            for method in ep["methods"]:
+                path, low, op = by_op[ep["operation_id"]]
+                assert path == ep["path"] and low == method.lower()
+                # 查询/路径参数与 spec parameters 同源
+                spec_params = op.get("parameters", [])
+                assert ep["query_params"] == [
+                    p for p in spec_params if p.get("in") == "query"]
+                assert ep["path_params"] == [
+                    p for p in spec_params if p.get("in") == "path"]
+                # 请求 schema 名与 spec requestBody $ref 同源
+                ref = (op.get("requestBody", {}).get("content", {})
+                       .get("application/json", {}).get("schema", {})
+                       .get("$ref", ""))
+                expected = (f"#/components/schemas/{ep['request_schema']}"
+                            if ep["request_schema"] else "")
+                assert ref == expected
+
+    def test_inventory_envelope_flag(self):
+        inv = rest_api.endpoint_inventory()
+        by_path = {ep["path"]: ep for ep in inv["endpoints"]}
+        # openapi.json 是唯一 raw 直出端点（spec 对象非信封包裹）
+        assert by_path[f"{rest_api.API_PREFIX}/openapi.json"]["envelope"] is False
+        assert all(ep["envelope"] for path, ep in by_path.items()
+                   if path != f"{rest_api.API_PREFIX}/openapi.json")
+
+    def test_inventory_envelope_shape_summary(self):
+        inv = rest_api.endpoint_inventory()
+        shape = inv["envelope_shape"]
+        # 形态摘要=OpenAPI components 单源派生（防再造裸信封字面）
+        schemas = rest_api._schemas()
+        assert shape["success_schema"] == schemas["SuccessEnvelope"]
+        assert shape["error_schema"] == schemas["ErrorEnvelope"]
+        assert "envelope_contract" in shape["note"]
+
+    def test_inventory_deterministic(self):
+        assert rest_api.endpoint_inventory() == rest_api.endpoint_inventory()
+
+
+class TestSchemaCliLeaf:
+    """`rfauto rest schema` CLI 叶（aurora_d REST-B；--json 信封 + --out 落盘
+    + --openapi raw spec 出口；ge1㉙ 错误路径也必须 JSON）。"""
+
+    def _invoke(self, args: list[str]):
+        from typer.testing import CliRunner
+
+        from rfauto.cli.main import app as root_app
+
+        return CliRunner().invoke(root_app, ["rest", "schema", *args])
+
+    def test_schema_json_envelope(self):
+        result = self._invoke(["--json"])
+        assert result.exit_code == 0, result.output
+        envelope = json.loads(result.output)
+        assert envelope["ok"] is True
+        assert envelope["n_endpoints"] == 25
+        first = envelope["endpoints"][0]
+        for key in ("path", "methods", "operation_id", "summary",
+                    "query_params", "path_params", "request_schema",
+                    "response_codes", "envelope"):
+            assert key in first
+
+    def test_schema_out_writes_document(self, tmp_path):
+        target = tmp_path / "rest_schema.json"
+        result = self._invoke(["--json", "--out", str(target)])
+        assert result.exit_code == 0, result.output
+        envelope = json.loads(result.output)
+        assert envelope["written"] is True and envelope["out_path"]
+        doc = json.loads(target.read_text(encoding="utf-8"))
+        assert doc["ok"] is True and doc["n_endpoints"] == envelope["n_endpoints"]
+
+    def test_schema_default_human_summary(self):
+        result = self._invoke([])
+        assert result.exit_code == 0, result.output
+        assert "25" in result.output
+
+    def test_schema_openapi_requires_out(self):
+        """ge1㉙：--json 下错误路径也必须是 JSON 信封（禁止红字裸文本）。"""
+        result = self._invoke(["--openapi", "--json"])
+        assert result.exit_code != 0
+        envelope = json.loads(result.output)
+        assert envelope["ok"] is False
+        assert envelope["errors"]
+
+    def test_schema_openapi_out_writes_raw_spec(self, tmp_path):
+        target = tmp_path / "openapi.json"
+        result = self._invoke(["--openapi", "--json", "--out", str(target)])
+        assert result.exit_code == 0, result.output
+        envelope = json.loads(result.output)
+        assert envelope["ok"] is True and envelope["format"] == "openapi"
+        spec = json.loads(target.read_text(encoding="utf-8"))
+        assert spec["openapi"].startswith("3.")
+        assert len(spec["paths"]) == 25
+
 
 # ---------------------------------------------------------------------------
 # runs
@@ -577,6 +709,27 @@ class TestDbEndpoints:
         assert body["data"]["exists"] is True
         assert body["data"]["schema_version"] >= 1
         assert body["data"]["tables"]["runs"] == 0
+
+    def test_db_status_non_sqlite_file_400_envelope(self, client, tmp_path):
+        """A4 P0-2：db_path 指向非 SQLite 文件 → 400 invalid_request 信封
+        而非 500 纯文本（sqlite3.DatabaseError 服务层收编）。"""
+        notadb = tmp_path / "notadb.txt"
+        notadb.write_text("hello, not a database", encoding="utf-8")
+        response = client.get("/api/v1/db/status",
+                              params={"db_path": str(notadb)})
+        assert response.status_code == 400
+        body = response.json()
+        assert body["ok"] is False
+        assert body["error"]["code"] == "invalid_request"
+        assert "注册表不可读" in body["error"]["message"]
+
+    def test_db_status_directory_path_400_envelope(self, client, tmp_path):
+        """A4 P0-2 目录形态：同样 400 信封不 500。"""
+        adir = tmp_path / "adir"
+        adir.mkdir()
+        response = client.get("/api/v1/db/status", params={"db_path": str(adir)})
+        assert response.status_code == 400
+        assert response.json()["ok"] is False
 
     def test_db_query_select_ok(self, client, tmp_path):
         db_path = _make_registry(tmp_path)

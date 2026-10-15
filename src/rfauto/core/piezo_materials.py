@@ -1,6 +1,6 @@
 """PK-5 压电/声学材料常数表（ge8d 席 D1；round14 §五 PK-5 扩展口径）。
 
-规格：研究扩充 round14 :142（AlN/ScAlN/LN/LT+TCD
+规格：docs/research_expansion_20261002_round14.md :142（AlN/ScAlN/LN/LT+TCD
 入 materials schema，带来源+UNVERIFIED 状态位）+ 任务书 wave_d/seat_d_all.md
 席 D1（LiNbO3/Quartz/PZT 等压电常数**双源**表；**检索不可达=零值诚实登记**，
 PK-9 print_materials_ext.py 先例）。

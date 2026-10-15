@@ -1,4 +1,4 @@
-"""PT-6 固件工件三出口锚树（规格书 规格深案 §B-6）。
+"""PT-6 固件工件三出口锚树（规格书 docs/plan_deepdive_specs_20261002.md §B-6）。
 
 裁判口径（#118，独立来源/独立路径不自证）：
 - ①波束：已知相位码字回代相位误差 ≤量化步/2（取整性质）；码字回代 ΔGain
@@ -537,7 +537,10 @@ class TestFirmwareCli:
                               "--file", str(p))
         assert result.exit_code == 1
         env = json.loads(result.output)
-        assert env["ok"] is False and "error" in env
+        # AU-2C 域升版（2026-10-14）：单数 error → errors list[str]+schema 戳
+        assert env["ok"] is False and "errors" in env
+        assert isinstance(env["errors"], list) and env["errors"]
+        assert env["schema_version"] == "1.1"
 
     def test_varactor_happy_path_with_saturation(self, tmp_path):
         csv_out = tmp_path / "var.csv"

@@ -1,7 +1,7 @@
 schema: rfauto-criteria-index-v1
 runs_root: runs
-n_files: 50
-n_gate_rows: 368
+n_files: 55
+n_gate_rows: 497
 entries:
 - path: c3_combline_cap7p8h_20260923/criteria.md
   title: c3 combline 哨预算重裁——帽 28080s（≈7.8h）单骑判据预声明（2026-09-23，先于运行落盘）
@@ -649,3 +649,157 @@ entries:
   - {raw: '- **分歧（DISAGREE）**：任一门判定方向不同，或幅度量差 >0.5dB → 列网格/过孔建模差异', threshold: 0.5}
   - {raw: '|Γ|>1 非物理（路线 A/B 模板 msl_port_len=10mm 时该距离 0.72mm=2.8 格故未暴露）。', threshold: 1.0}
   - {raw: ③ 线基分解+重归一 50Ω 降为次口径交叉核对，带 β 合理性门（|β_engine/β_HJ−1|≤10%）。, threshold: 10.0}
+- path: real_machine_window/w7a/siw/criteria.md
+  title: W7-A 真机窗·X5 批 13 条 analytic 锚首判判据（#122 判据先行，冻结于发射前）
+  status: migrate_to_v2
+  n_gates: 30
+  gates:
+  - {raw: '> runs/real_machine_window/w7a/ 下的执行产物；判读输入缺失=INCONCLUSIVE', threshold: null}
+  - {raw: '>   属 src 代码面超本席范围；local 单点墙钟分钟级（#328 SSL 族实测 113s 档），', threshold: null}
+  - {raw: 全轴网格最小间距 >1µm（#152 族）、端口激励体积非零。注入件（§5/§9）同样, threshold: 1.0}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB, threshold: 0.5}
+  - {raw: '- **带内冻结=2.0–3.0GHz**（f0=2.5 ±20%；理想网络逐频同值，EM 座按带）。', threshold: 20.0}
+  - {raw: '- 互证门：A/B |S21|dB 与 |S11|dB 互差 ≤1e-6 dB；内核 rf_match.attenuator_pi/t', threshold: 1.0}
+  - {raw: '- 门：|S21dB−(−10)|≤0.5 且 S11dB≤−20（两源各自过门）。', threshold: 0.5}
+  - {raw: （2.0–3.0GHz median）|−(−10)|≤0.5dB 且 |S11| 带内 max ≤−20dB。, threshold: 0.5}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB。, threshold: 1.0}
+  - {raw: '- 门：平衡对幅值差 ≤1dB、平衡对均值 ∈[−4.5,−2.5]dB（3dB 分裂旁证带）、', threshold: 1.0}
+  - {raw: '|S11|≤−10dB，@2.5GHz 与带内 max 各报。', threshold: null}
+  - {raw: max ≤1dB 且 |S11| 带内 max ≤−10dB；掩码语义按 sparams.mask.json（#314）。, threshold: 1.0}
+  - {raw: 窗（原文）：f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）。, threshold: 3.0}
+  - {raw: f_peak**（Argmax+三点抛物线细化），门 |f_peak−2.5|/2.5 ≤3%；隔离口 |S31|, threshold: 3.0}
+  - {raw: 窗（原文）：StripLinePort Z0 |Δ|≤2%；S21 相位斜率→εeff |Δ|≤2%（β 金标准, threshold: 2.0}
+  - {raw: 各自 |Δ|≤2%（对称线两口皆裁判）。, threshold: 2.0}
+  - {raw: =0.784mm）；m2=BASE=0.4mm 显式档。门值在两档各自报；**两档 Z0 互差 ≤1%, threshold: 1.0}
+  - {raw: 且 εeff 互差 ≤0.5% 方可判 PASS/FAIL**（互差超=离散未收敛=INCONCLUSIVE）。, threshold: 0.5}
+  - {raw: 窗（原文）：带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格, threshold: 5.0}
+  - {raw: 门：|Z0_est−110.9206|/110.9206 ≤5%。, threshold: 5.0}
+  - {raw: 可辨识量，±5% 余量口径不变。, threshold: 5.0}
+  - {raw: 窗（原文）：带内 φ(f) 拟合 fc |Δ|≤2%。带内冻结=7.0–12.0GHz（渲染带），, threshold: 2.0}
+  - {raw: '- 门：|fc_fit−6.666695|/6.666695 ≤2%；拟合残差 RMS 报告（>5° 报', threshold: 2.0}
+  - {raw: 核对（锚值自身回代，≤2% 口径即恒等式核）。, threshold: 2.0}
+  - {raw: 门 **|f_dip−2.4|/2.4 ≤15%**（端效应带内，锚语义原文；已知先例, threshold: 15.0}
+  - {raw: '- 锚窗=引擎 L 提取 ≤10%（准静态 13.56MHz）；模板注册预算 max_time_ns=60.0', threshold: 10.0}
+  - {raw: < 13.56MHz 单周期 73.75ns——记录窗结构性不足 1 周期，DFT@f0 不可收敛；, threshold: 13.56}
+  - {raw: 窗（原文）：方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗）。render_horn v1 对, threshold: 1.0}
+  - {raw: '- 门：|dmax_dbi−15.0|≤1dB（无损 PEC+空气：gain=directivity，η≈1 旁证，', threshold: 1.0}
+  - {raw: 模板上，网格阶梯留 Ph3；若门值在带缘（|Δ|>0.5dB）加注「阶梯未跑」, threshold: 0.5}
+- path: real_machine_window/w7a/slotline/criteria.md
+  title: W7-A 真机窗·X5 批 13 条 analytic 锚首判判据（#122 判据先行，冻结于发射前）
+  status: migrate_to_v2
+  n_gates: 30
+  gates:
+  - {raw: '> runs/real_machine_window/w7a/ 下的执行产物；判读输入缺失=INCONCLUSIVE', threshold: null}
+  - {raw: '>   属 src 代码面超本席范围；local 单点墙钟分钟级（#328 SSL 族实测 113s 档），', threshold: null}
+  - {raw: 全轴网格最小间距 >1µm（#152 族）、端口激励体积非零。注入件（§5/§9）同样, threshold: 1.0}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB, threshold: 0.5}
+  - {raw: '- **带内冻结=2.0–3.0GHz**（f0=2.5 ±20%；理想网络逐频同值，EM 座按带）。', threshold: 20.0}
+  - {raw: '- 互证门：A/B |S21|dB 与 |S11|dB 互差 ≤1e-6 dB；内核 rf_match.attenuator_pi/t', threshold: 1.0}
+  - {raw: '- 门：|S21dB−(−10)|≤0.5 且 S11dB≤−20（两源各自过门）。', threshold: 0.5}
+  - {raw: （2.0–3.0GHz median）|−(−10)|≤0.5dB 且 |S11| 带内 max ≤−20dB。, threshold: 0.5}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB。, threshold: 1.0}
+  - {raw: '- 门：平衡对幅值差 ≤1dB、平衡对均值 ∈[−4.5,−2.5]dB（3dB 分裂旁证带）、', threshold: 1.0}
+  - {raw: '|S11|≤−10dB，@2.5GHz 与带内 max 各报。', threshold: null}
+  - {raw: max ≤1dB 且 |S11| 带内 max ≤−10dB；掩码语义按 sparams.mask.json（#314）。, threshold: 1.0}
+  - {raw: 窗（原文）：f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）。, threshold: 3.0}
+  - {raw: f_peak**（Argmax+三点抛物线细化），门 |f_peak−2.5|/2.5 ≤3%；隔离口 |S31|, threshold: 3.0}
+  - {raw: 窗（原文）：StripLinePort Z0 |Δ|≤2%；S21 相位斜率→εeff |Δ|≤2%（β 金标准, threshold: 2.0}
+  - {raw: 各自 |Δ|≤2%（对称线两口皆裁判）。, threshold: 2.0}
+  - {raw: =0.784mm）；m2=BASE=0.4mm 显式档。门值在两档各自报；**两档 Z0 互差 ≤1%, threshold: 1.0}
+  - {raw: 且 εeff 互差 ≤0.5% 方可判 PASS/FAIL**（互差超=离散未收敛=INCONCLUSIVE）。, threshold: 0.5}
+  - {raw: 窗（原文）：带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格, threshold: 5.0}
+  - {raw: 门：|Z0_est−110.9206|/110.9206 ≤5%。, threshold: 5.0}
+  - {raw: 可辨识量，±5% 余量口径不变。, threshold: 5.0}
+  - {raw: 窗（原文）：带内 φ(f) 拟合 fc |Δ|≤2%。带内冻结=7.0–12.0GHz（渲染带），, threshold: 2.0}
+  - {raw: '- 门：|fc_fit−6.666695|/6.666695 ≤2%；拟合残差 RMS 报告（>5° 报', threshold: 2.0}
+  - {raw: 核对（锚值自身回代，≤2% 口径即恒等式核）。, threshold: 2.0}
+  - {raw: 门 **|f_dip−2.4|/2.4 ≤15%**（端效应带内，锚语义原文；已知先例, threshold: 15.0}
+  - {raw: '- 锚窗=引擎 L 提取 ≤10%（准静态 13.56MHz）；模板注册预算 max_time_ns=60.0', threshold: 10.0}
+  - {raw: < 13.56MHz 单周期 73.75ns——记录窗结构性不足 1 周期，DFT@f0 不可收敛；, threshold: 13.56}
+  - {raw: 窗（原文）：方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗）。render_horn v1 对, threshold: 1.0}
+  - {raw: '- 门：|dmax_dbi−15.0|≤1dB（无损 PEC+空气：gain=directivity，η≈1 旁证，', threshold: 1.0}
+  - {raw: 模板上，网格阶梯留 Ph3；若门值在带缘（|Δ|>0.5dB）加注「阶梯未跑」, threshold: 0.5}
+- path: real_machine_window/w7a/stripline_m1/criteria.md
+  title: W7-A 真机窗·X5 批 13 条 analytic 锚首判判据（#122 判据先行，冻结于发射前）
+  status: migrate_to_v2
+  n_gates: 30
+  gates:
+  - {raw: '> runs/real_machine_window/w7a/ 下的执行产物；判读输入缺失=INCONCLUSIVE', threshold: null}
+  - {raw: '>   属 src 代码面超本席范围；local 单点墙钟分钟级（#328 SSL 族实测 113s 档），', threshold: null}
+  - {raw: 全轴网格最小间距 >1µm（#152 族）、端口激励体积非零。注入件（§5/§9）同样, threshold: 1.0}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB, threshold: 0.5}
+  - {raw: '- **带内冻结=2.0–3.0GHz**（f0=2.5 ±20%；理想网络逐频同值，EM 座按带）。', threshold: 20.0}
+  - {raw: '- 互证门：A/B |S21|dB 与 |S11|dB 互差 ≤1e-6 dB；内核 rf_match.attenuator_pi/t', threshold: 1.0}
+  - {raw: '- 门：|S21dB−(−10)|≤0.5 且 S11dB≤−20（两源各自过门）。', threshold: 0.5}
+  - {raw: （2.0–3.0GHz median）|−(−10)|≤0.5dB 且 |S11| 带内 max ≤−20dB。, threshold: 0.5}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB。, threshold: 1.0}
+  - {raw: '- 门：平衡对幅值差 ≤1dB、平衡对均值 ∈[−4.5,−2.5]dB（3dB 分裂旁证带）、', threshold: 1.0}
+  - {raw: '|S11|≤−10dB，@2.5GHz 与带内 max 各报。', threshold: null}
+  - {raw: max ≤1dB 且 |S11| 带内 max ≤−10dB；掩码语义按 sparams.mask.json（#314）。, threshold: 1.0}
+  - {raw: 窗（原文）：f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）。, threshold: 3.0}
+  - {raw: f_peak**（Argmax+三点抛物线细化），门 |f_peak−2.5|/2.5 ≤3%；隔离口 |S31|, threshold: 3.0}
+  - {raw: 窗（原文）：StripLinePort Z0 |Δ|≤2%；S21 相位斜率→εeff |Δ|≤2%（β 金标准, threshold: 2.0}
+  - {raw: 各自 |Δ|≤2%（对称线两口皆裁判）。, threshold: 2.0}
+  - {raw: =0.784mm）；m2=BASE=0.4mm 显式档。门值在两档各自报；**两档 Z0 互差 ≤1%, threshold: 1.0}
+  - {raw: 且 εeff 互差 ≤0.5% 方可判 PASS/FAIL**（互差超=离散未收敛=INCONCLUSIVE）。, threshold: 0.5}
+  - {raw: 窗（原文）：带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格, threshold: 5.0}
+  - {raw: 门：|Z0_est−110.9206|/110.9206 ≤5%。, threshold: 5.0}
+  - {raw: 可辨识量，±5% 余量口径不变。, threshold: 5.0}
+  - {raw: 窗（原文）：带内 φ(f) 拟合 fc |Δ|≤2%。带内冻结=7.0–12.0GHz（渲染带），, threshold: 2.0}
+  - {raw: '- 门：|fc_fit−6.666695|/6.666695 ≤2%；拟合残差 RMS 报告（>5° 报', threshold: 2.0}
+  - {raw: 核对（锚值自身回代，≤2% 口径即恒等式核）。, threshold: 2.0}
+  - {raw: 门 **|f_dip−2.4|/2.4 ≤15%**（端效应带内，锚语义原文；已知先例, threshold: 15.0}
+  - {raw: '- 锚窗=引擎 L 提取 ≤10%（准静态 13.56MHz）；模板注册预算 max_time_ns=60.0', threshold: 10.0}
+  - {raw: < 13.56MHz 单周期 73.75ns——记录窗结构性不足 1 周期，DFT@f0 不可收敛；, threshold: 13.56}
+  - {raw: 窗（原文）：方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗）。render_horn v1 对, threshold: 1.0}
+  - {raw: '- 门：|dmax_dbi−15.0|≤1dB（无损 PEC+空气：gain=directivity，η≈1 旁证，', threshold: 1.0}
+  - {raw: 模板上，网格阶梯留 Ph3；若门值在带缘（|Δ|>0.5dB）加注「阶梯未跑」, threshold: 0.5}
+- path: real_machine_window/w7a/stripline_m2/criteria.md
+  title: W7-A 真机窗·X5 批 13 条 analytic 锚首判判据（#122 判据先行，冻结于发射前）
+  status: migrate_to_v2
+  n_gates: 30
+  gates:
+  - {raw: '> runs/real_machine_window/w7a/ 下的执行产物；判读输入缺失=INCONCLUSIVE', threshold: null}
+  - {raw: '>   属 src 代码面超本席范围；local 单点墙钟分钟级（#328 SSL 族实测 113s 档），', threshold: null}
+  - {raw: 全轴网格最小间距 >1µm（#152 族）、端口激励体积非零。注入件（§5/§9）同样, threshold: 1.0}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB, threshold: 0.5}
+  - {raw: '- **带内冻结=2.0–3.0GHz**（f0=2.5 ±20%；理想网络逐频同值，EM 座按带）。', threshold: 20.0}
+  - {raw: '- 互证门：A/B |S21|dB 与 |S11|dB 互差 ≤1e-6 dB；内核 rf_match.attenuator_pi/t', threshold: 1.0}
+  - {raw: '- 门：|S21dB−(−10)|≤0.5 且 S11dB≤−20（两源各自过门）。', threshold: 0.5}
+  - {raw: （2.0–3.0GHz median）|−(−10)|≤0.5dB 且 |S11| 带内 max ≤−20dB。, threshold: 0.5}
+  - {raw: 锚语义首判窗（原文）：带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB。, threshold: 1.0}
+  - {raw: '- 门：平衡对幅值差 ≤1dB、平衡对均值 ∈[−4.5,−2.5]dB（3dB 分裂旁证带）、', threshold: 1.0}
+  - {raw: '|S11|≤−10dB，@2.5GHz 与带内 max 各报。', threshold: null}
+  - {raw: max ≤1dB 且 |S11| 带内 max ≤−10dB；掩码语义按 sparams.mask.json（#314）。, threshold: 1.0}
+  - {raw: 窗（原文）：f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）。, threshold: 3.0}
+  - {raw: f_peak**（Argmax+三点抛物线细化），门 |f_peak−2.5|/2.5 ≤3%；隔离口 |S31|, threshold: 3.0}
+  - {raw: 窗（原文）：StripLinePort Z0 |Δ|≤2%；S21 相位斜率→εeff |Δ|≤2%（β 金标准, threshold: 2.0}
+  - {raw: 各自 |Δ|≤2%（对称线两口皆裁判）。, threshold: 2.0}
+  - {raw: =0.784mm）；m2=BASE=0.4mm 显式档。门值在两档各自报；**两档 Z0 互差 ≤1%, threshold: 1.0}
+  - {raw: 且 εeff 互差 ≤0.5% 方可判 PASS/FAIL**（互差超=离散未收敛=INCONCLUSIVE）。, threshold: 0.5}
+  - {raw: 窗（原文）：带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格, threshold: 5.0}
+  - {raw: 门：|Z0_est−110.9206|/110.9206 ≤5%。, threshold: 5.0}
+  - {raw: 可辨识量，±5% 余量口径不变。, threshold: 5.0}
+  - {raw: 窗（原文）：带内 φ(f) 拟合 fc |Δ|≤2%。带内冻结=7.0–12.0GHz（渲染带），, threshold: 2.0}
+  - {raw: '- 门：|fc_fit−6.666695|/6.666695 ≤2%；拟合残差 RMS 报告（>5° 报', threshold: 2.0}
+  - {raw: 核对（锚值自身回代，≤2% 口径即恒等式核）。, threshold: 2.0}
+  - {raw: 门 **|f_dip−2.4|/2.4 ≤15%**（端效应带内，锚语义原文；已知先例, threshold: 15.0}
+  - {raw: '- 锚窗=引擎 L 提取 ≤10%（准静态 13.56MHz）；模板注册预算 max_time_ns=60.0', threshold: 10.0}
+  - {raw: < 13.56MHz 单周期 73.75ns——记录窗结构性不足 1 周期，DFT@f0 不可收敛；, threshold: 13.56}
+  - {raw: 窗（原文）：方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗）。render_horn v1 对, threshold: 1.0}
+  - {raw: '- 门：|dmax_dbi−15.0|≤1dB（无损 PEC+空气：gain=directivity，η≈1 旁证，', threshold: 1.0}
+  - {raw: 模板上，网格阶梯留 Ph3；若门值在带缘（|Δ|>0.5dB）加注「阶梯未跑」, threshold: 0.5}
+- path: real_machine_window/w7b_criteria.md
+  title: W7-B 席判据（真机窗批 Wave2）：件 1 PSSFSS HFSS Floquet 终裁 + 件 2 K-5 双帽 v2
+  status: migrate_to_v2
+  n_gates: 9
+  gates:
+  - {raw: '> runs/ge7_wheeler/wall_background_v2_proposal.md（K-5 v2 草案，方案级预声明）/', threshold: null}
+  - {raw: '> runs/w2_phase2/w2f/REPORT.md（PSSFSS 10.1532 证据档）。', threshold: null}
+  - {raw: '> 先于判读 / 判读输入缺失不采信 / 任务毕 cleanup_server_orphans.py --kill。', threshold: null}
+  - {raw: '- G-VALLEY：谷点 |S21| 线性域 ≤0.3（健康带阻谷；PSSFSS −42.5dB 参考量级）', threshold: 0.3}
+  - {raw: '- **主门 G-AGREE（任务书预声明）**：|f_F − f_P| ≤ 0.3GHz **或**', threshold: 0.3}
+  - {raw: '|f_F − f_P|/f_P ≤ 5% → **AGREE**（HFSS Floquet 终裁采信 PSSFSS 谷位为无限', threshold: 5.0}
+  - {raw: wg 11.495，ge6 锚）、TM0 通道谷位（简并旁证，|Δ|≤0.05GHz 期望）、|S11| 峰, threshold: 0.05}
+  - {raw: 位（与 S21 谷重合期望 ≤0.01GHz=1 格点）。, threshold: 0.01}
+  - {raw: '- 预算：3 新座 ×（引擎面 v1 cap 实测 20-35s，R450 域增 ~27× 格预计 <15min/', threshold: 15.0}

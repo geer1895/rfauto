@@ -29,7 +29,7 @@
  "result": {
   "schema": "wp39_followup_verdict_next_summary_v1",
   "generated_at": "2026-09-16 13:55:53",
-  "outdir": "D:/rf_workspace\\runs\\wp39_factory_verdict_next",
+  "outdir": "D:\rf_workspace\\runs\\wp39_factory_verdict_next",
   "criteria": {
    "budget": 25,
    "wallclock_max_ratio": 0.5,
@@ -345,7 +345,7 @@
    "stage": "done"
   },
   "attribution": {
-   "path": "D:/rf_workspace\\runs\\wp39_factory_verdict_next\\attribution_mline_s11_pseudofloor.md",
+   "path": "D:\rf_workspace\\runs\\wp39_factory_verdict_next\\attribution_mline_s11_pseudofloor.md",
    "conclusion": "mline |S11| 地貌=MSLPort 端口级伪底（加密网格不消），β→εeff 地貌物理且随 w 单调——工厂换引擎一致指标 |εeff−target|"
   },
   "note": "overall 只计本战役两判定项；native_vs_scripted 与 optiSLang 为决策输入（④ 口径决策归主控）"

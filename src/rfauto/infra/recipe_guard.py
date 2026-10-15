@@ -1,6 +1,6 @@
 """recipes/ 原件写守卫（配方污染根修，TODO 增量②）。
 
-背景（收尾「疑似污染」/取证 runs/pollution_evidence）：
+背景（收尾「疑似污染」/取证 runs/pollution_evidence/）：
 2026-09-17 17:18 UI 配方页「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件 ``yaml.safe_dump`` 重序列化后 ``tmp.replace()`` 覆盖原件——注释全丢、
 notes 引号丢失、``optimization`` 段被表单归一化结果（``n_trials: null`` /
@@ -59,6 +59,7 @@ def _norm(path: Path) -> Path:
     安全/保护类比较显式 casefold，不依赖 :func:`os.path.normcase`——
     normcase 在 POSIX 是恒等（开源发布批⑤），仅靠它会使大小写变体
     （``/HOME/.../RECIPES/X.YAML``）在 Linux 上逃逸保护根判定。
+    （公开仓 bffe26d 同笔同步。）
     """
     return Path(os.path.normcase(str(path)).lower())
 

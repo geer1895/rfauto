@@ -1,7 +1,7 @@
 # 射频模板建模·官方例对照表（开发前必读）
 
 > 2026-09-02 多模态审计批次沉淀。给 openEMS 模板/新结构建模时的**权威对照来源**
-> 与已验证口径。修改模板前先对照本表，避免重复踩坑（详证见 多模态审计节）。
+> 与已验证口径。修改模板前先对照本表，避免重复踩坑（详证见  多模态审计节）。
 > **2026-09-04 增补（阶段 0.1 根因闭环）**：网格/边界方法学升级为官方
 > MSL_NotchFilter 基线（见 §0），旧 λ/20@空气粗网格口径作废。
 
@@ -135,10 +135,10 @@
 `web-search-prime` + 用户截图互证；图像复核 → `zai-mcp-server` 系列读图；
 参考仓库 → 先 `zread`，未索引则 clone 到工作区再本地读。
 
-## 6. 校准前验模型的审计工具链
+## 6. 校准前验模型（项目规则 硬限 1b）的审计工具链
 
 1. 文本：逐行读 render_script 生成的 simulation.py；
-2. 视觉：`scripts/gen_three_view_audit.py` 出三视图 PNG（归档 docs/audit）；
+2. 视觉：`scripts/gen_three_view_audit.py` 出三视图 PNG（归档 docs/audit/）；
 3. 文献：本表 + 官方教程；
 4. 数值：谐振点对照闭式解；端口健康检查（|S11|>1 即端口/网格错误）；
 5. 标定：以上全过后才允许 `scripts/derive_fake_calibration.py` 生成校准锚。
@@ -196,7 +196,7 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   λg 分开精算；径向馈必须真带宽栅格化（每列盒 y=线心±W/(2cosθ)，
   中心线弦画法在 FDTD 网格不导通，#212）。
 
-### 9.1 k 定版结论（ratrace-k-finalize，2026-09-16；权威数据 runs/ratrace_arbitration）
+### 9.1 k 定版结论（ratrace-k-finalize，2026-09-16；权威数据 runs/ratrace_arbitration/）
 
 - **k=1.0975 归属 MESH_ARTIFACT（HFSS 仲裁背书）**：HFSS 物理 R=17.344mm
   （无 k）balance 中心 2.465GHz / S11 谷 2.41GHz（ratrace_arbitration.json
@@ -211,7 +211,7 @@ LumpedPort 馈电全套）与 Dipole SAR 教程（wiki.openems.de
   BASE=λ_sub/50=1.1405mm → k(0.4)），禁止外推；近场线（_near_points）与几何段
   （_ratrace_lines）同 BASE 同 k。pt8 归档常数 `_RATRACE_RING_MESH_K=1.0975`
   仅存证不再消费。
-- **真机回验（Σ 单激励进程隔离 #208，runs/ratrace_arbitration/k_finalize）**：
+- **真机回验（Σ 单激励进程隔离 #208，runs/ratrace_arbitration/k_finalize/）**：
   0.4mm k=1.1654 → balance 中心 **2.5013GHz**（对 2.5 +0.05%、对 HFSS 2.465
   +1.47%）、S11 谷 2.5088、bal 0.001dB、S11 −39.3dB、S31 −35.1dB、S21/S41
   −3.17dB 全门过，k_eff=1.1631（锚差 −0.2% ≤1% → 锚保留，756.8s）——一阶
@@ -292,7 +292,7 @@ suspended_stripline_synthesis）。铁律 1c：所有常数出处如下，无拍
 **独立数值裁判（#118）统一为 `core/quasistatic_fd.py`**（张量网格变分 FD Laplace，
 网格线精确落导体缘/介质面，能量法 C=2W/V²，一阶 Richardson 外推；CLI
 `scripts/fd_laplace_tline_referee.py`）——裁判自身先过已知基准才有资格裁判闭式
-：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
+（项目规则 1b）：微带 vs Hammerstad–Jensen（skrf，4 几何含 εr=9.8）+0.1~+0.3%、
 CPS 半空间极限 (1+εr)/2 −0.1%、零厚度带状线空气 Z0 vs Cohn −0.1%、悬置带线
 h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此前两份未入库
 的临时 FD（侦察批 §11.1 旧表/§11.2 的 3.02；收尾批 postmortem 的 1.68/2.36）均
@@ -431,7 +431,7 @@ h→b 全填充 εr 精确（tests/unit/test_quasistatic_fd.py 钉住）。**此
 
 ## 12. C2 阵列族：1×4 corporate / 2×2 H-tree / 1×3 串馈贴片阵（2026-09-15 理论核验定稿）
 
-方案行：续跑计划.md §10.3 器件族表 "C2 阵列族"。本节为
+方案行：延续计划 §10.3 器件族表 "C2 阵列族"。本节为
 openems_templates.py C2 段的权威口径出处（antenna2 §同款制度）。
 
 - **权威口径（铁律 1c/1b，先理论后几何）**：
@@ -566,7 +566,7 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   `openems_rotation.solve_smatrix_openems`（3 模板 × 4 激励轮转）；判读口径
   已写入各 meta.yaml `smoke_note`（cline 非同步 −23dB、2sect T 结/拐角偏差、
   lange 桥缝寄生 + g=0.076 提示）。lange 指缝 38.6µm 使 CFL 时间步很小，
-  NrTS=100000 可能不足 30ns（coupled_bpf 冒烟 NrTS 截断同类），
+  NrTS=100000 可能不足 30ns（coupled_bpf 冒烟 NrTS 截断同类，），
   冒烟前先估 Δt。
 
 ## 14. SMA 边缘弹射 sma_launcher（WP2.5 Tier 2，2026-09-16 真机 FAIL 根治定版）
@@ -596,7 +596,7 @@ PML 边界（§3 铁律），f0=2.5GHz、rogers4350b h=0.508 er=3.66；线宽一
   30mil Rogers 4350B、41mil 线宽、12mil 缝下**仿真回损优于 22dB 至 20GHz**。
 - 厂商口径（Cinch/Amphenol RF 132413/L-com/SV Microwave end-launch 系列，
   web_search 2026-09-16）：PTFE 介质、VSWR ≤1.2–1.3 至 18–27GHz（对应回损
-  ≥17.7–20.8dB）；方案行（docs/续跑计划.md §4 WP2.5）"验收靠
+  ≥17.7–20.8dB）；方案行（延续计划 §4 WP2.5）"验收靠
   文献曲线"：**带内回损常规 15–20dB，保守地板 −10dB**（objectives 口径）。
 - 几何要点转译到 openEMS（全部由 `sma_launcher_layout` 单源给出，米）：
   针轴高 `Z_AX = r_os`（壳底切 z=0 PEC 夹具底板）；PCB 抬高 `Z_G = r_os − r_i − H_SUB`

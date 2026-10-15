@@ -1,4 +1,4 @@
-"""TF-1 LC 滤波器综合内核单测（研究扩充 round5 §4.2 TF-1 判据）。
+"""TF-1 LC 滤波器综合内核单测（docs/research_expansion_20260926_round5.md §4.2 TF-1 判据）。
 
 裁判口径（#118 双路径，路径 A=内核综合，路径 B=文献闭式/表）：
 - 路径 B1：butter g_k 闭式 2sin((2k−1)π/2N)（Wikipedia "Butterworth filter"

@@ -411,8 +411,9 @@ class TestRegistration:
         # ms_ring_patch 58、TA 批 schiffman+qwt_multisection 60、TA 批第二
         # 批 sicl+nway_wilkinson 62、TA 批第三批 diplexer+ridged_wg 64、
         # ge8b WA 席1 inverted_ms+hmsiw+fgcpw 67、WB 席B9 69、ge8d WD 席D2
-        # embedded_ms+xcheb_bpf4 71 由单源承载，字面计数退役）
-        assert len(EXPECTED_TEMPLATES) == 71
+        # embedded_ms+xcheb_bpf4 71、TA-13 ms_mushroom 72 由单源承载，
+        # 字面计数退役）
+        assert len(EXPECTED_TEMPLATES) == 72
         assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == len(EXPECTED_TEMPLATES)
 
     def test_tail_order_contract(self):

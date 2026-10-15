@@ -1,6 +1,6 @@
 """NX-5 天线罩（radome）多层透波 + 一阶瞄准线误差（BSE）闭式面。
 
-规格：研究扩充 round14 §四 NX-5——"多层介质
+规格：docs/research_expansion_20261002_round14.md §四 NX-5——"多层介质
 ABCD 堆叠 + 一阶射线 BSE；对拍 IEEE Access 09474462"。全仓 0 hit
 （grep 证，2026-10-03 #222 接地）。纯闭式叶子，零 IO、不进 calculators。
 

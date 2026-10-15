@@ -1,6 +1,6 @@
 """MP-6 HAST-ROSE 加速因子换算内核（ge8d 席 D1；round15 MP-5 后继件）。
 
-规格：研究扩充 round15 :88（"HAST/ROSE/环境试验
+规格：docs/research_expansion_20261002_round15.md :88（"HAST/ROSE/环境试验
 条件表：JESD22-A110/IPC-TM-650 2.3.25/IEC 60068-2-27——纯表+入口不产寿命
 结论"）+ 任务书 wave_d/seat_d_all.md 席 D1（"HAST-ROSE 环境表：高加速应力
 测试标准条件表（JESD22 双源）+ **加速因子换算消费 aging 面**（复用

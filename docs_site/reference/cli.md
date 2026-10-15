@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **258** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **269** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -214,6 +214,11 @@ STL 实体导入：解析+分类+CSX 载荷（B3；一切失败 ok=False 不抛�
 设计体检一次查：约束/bounds/DFM/PDN/stub 聚合面（JSON 进出薄壳）。
 
 
+## rfauto pool-patrol
+
+池登记项新鲜度巡检（Z-11）：commit-tag×代码面双判据+撞号二次消歧。
+
+
 ## rfauto models
 
 模型管理
@@ -424,6 +429,16 @@ VNA 测量闭环（DP-11：En 相关性报告 + 离线回放）
 - `rfauto vna measure` — VNA 测量采集 run（真机 opt-in：无 --address 时只出 dry-run 计划信封）。
 - `rfauto vna calibrate` — 独立软件校准/去嵌（SOLT/TRL/multiline 全方法，零硬件零连接）。
 
+## rfauto oracle
+
+闭式预言机（QM-2 生成式对拍，只读查询面）
+
+共 3 条叶子命令。
+
+- `rfauto oracle list` — 列出全部已注册闭式预言机（键/kind/覆盖键/闭式源/域盒声明）。
+- `rfauto oracle check` — 单键生成式对拍（注册计算器输出 vs 闭式期望，网格逐点 A/B/C/D 分级）。
+- `rfauto oracle check-all` — 全注册 oracle 生成式对拍总报告（覆盖键数 + 分级统计 + D 级旗标）。
+
 ## rfauto bench
 
 AgentBench/goldset 回归门（WP3.7/F6）——离线、确定性、零网络
@@ -465,7 +480,7 @@ AgentBench/goldset 回归门（WP3.7/F6）——离线、确定性、零网络
 - `rfauto campaign event` — 推进战役状态机（stage_failed 时依赖它的未完成阶段递归 aborted）并回写落盘。
 - `rfauto campaign list` — 扫 root 下全部已落盘战役计划（总览）。
 - `rfauto campaign run` — 一键闭环执行战役计划（calibrate→…→report→final_verify；断点续跑内嵌）。
-- `rfauto campaign queue-daemon` — campaign 排队常驻执行体：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。
+- `rfauto campaign queue-daemon` — campaign 排队常驻执行体（UX-B7）：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。
 
 ## rfauto template-spec
 
@@ -721,10 +736,12 @@ HFSS → 可机加交付包（STEP/x_t + DXF 图 + 审计门禁，T43）
 
 多机协同仿真资源（探活/状态；v0：HFSS gRPC 远程会话+SSH 通道）
 
-共 2 条叶子命令。
+共 4 条叶子命令。
 
 - `rfauto remote probe` — TCP 探活登记机器（SSH/许可/RDP 端口连通性+时延，零副作用零凭据）。
 - `rfauto remote status` — 探活 + SSH 认证可达性（凭据缺失如实 missing_credentials 不猜不试）。
+- `rfauto remote resources` — 并发求解面资源视图（本机 openEMS/HFSS 进程互斥态+服务器可达/在跑/磁盘）。
+- `rfauto remote queue` — 任务队列视图（job_registry 在途作业+单写锁排队+席位占用+服务器在跑态）。
 
 ## rfauto stats
 
@@ -812,6 +829,15 @@ Zenodo 元数据导出与 CITATION.cff 校验（PR-11，零网络）
 共 1 条叶子命令。
 
 - `rfauto hints list` — 列出全部错误提示规则（指纹/提示/坑号指针/级别，确定性序）。
+
+## rfauto pitfalls
+
+坑账检索面（项目规则 踩坑速查全量索引，只读）
+
+共 2 条叶子命令。
+
+- `rfauto pitfalls search` — 坑账关键词检索（确定性词面计分：头部命中 2 分/全文 1 分）。
+- `rfauto pitfalls get` — 按 id 精确查坑（未命中 → error 信封退出码 1，不抛穿）。
 
 ## rfauto dag
 
@@ -912,3 +938,20 @@ EDB 快车道（PyEDB 建库+hfss_batch 批解，平面族发射器）
 - `rfauto edb build` — 发射 spec + EDB 建库（pyedb configuration → .aedb 工程+存证）。
 - `rfauto edb solve` — 批处理求解（ansysedt -BatchSolve）+ 可选 Touchstone 批后导出。
 - `rfauto edb status` — 扫描产物根目录的快车道资产清单（工程/存证/日志/Touchstone）。
+
+## rfauto recast
+
+RECAST 判据重放（归档判读×现行判据确定性复算，只读）
+
+共 2 条叶子命令。
+
+- `rfauto recast status` — 判据注册面清单（每条 id/规则形态/装载状态；坏条目如实登记）。
+- `rfauto recast replay` — 批量重放（全部已注册判据×全部证据，三向标注 same/flip/not_judged）。
+
+## rfauto rest
+
+REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读）
+
+共 1 条叶子命令。
+
+- `rfauto rest schema` — REST 全端点机器可读清单（程序化枚举路由表单源，防手抄漂移）。

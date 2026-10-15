@@ -260,13 +260,38 @@ def _fetch_knowledge(task_text: str, limit: int) -> list[dict[str, Any]]:
     return entries
 
 
-# rag 索引进程级 memo（docs/ 全量建索引秒级~十秒级；同语料状态结果一致，
-# memo 只消重复构建成本不改判定——确定性口径见模块头"组装链"）。
-_RAG_INDEX_CACHE: dict[str, tuple[Any, list[str]]] = {}
+# rag 索引进程级 memo（docs/ 全量建索引秒级~十秒级；语料指纹不变期内
+# 结果一致，memo 只消重复构建成本不改判定——审查 A3 P1-1 起 memo 命中
+# 前核对语料新鲜度三元组（文件数/总字节/max mtime，一次 rglob 远廉于
+# 全量重建），任一变化即弃缓存重建：语料更新对注入面立即可见。
+_RAG_INDEX_CACHE: dict[str, tuple[tuple[int, int, float], Any]] = {}
 
 
 def _rag_docs_dir(docs_dir: str | Path | None) -> Path:
     return Path(docs_dir) if docs_dir is not None else DOCS_DIR
+
+
+def _corpus_fingerprint(docs_dir: str | Path | None) -> tuple[int, int, float]:
+    """语料新鲜度三元组 ``(n_md, total_bytes, max_mtime)``（一次 scandir）。
+
+    口径与 rag_service.index_documents 缺省索引范围同源（``rglob("*.md")``，
+    v1 只索引 docs/）；目录不存在/空 = (0, 0, 0.0)。stat 失败的文件跳过
+    （#105 观测面不抛）。
+    """
+    n = 0
+    total = 0
+    max_mtime = 0.0
+    d = _rag_docs_dir(docs_dir)
+    if d.is_dir():
+        for p in d.rglob("*.md"):
+            try:
+                st = p.stat()
+            except OSError:
+                continue
+            n += 1
+            total += int(st.st_size)
+            max_mtime = max(max_mtime, float(st.st_mtime))
+    return (n, total, max_mtime)
 
 
 def _build_rag_index(
@@ -278,13 +303,22 @@ def _build_rag_index(
         docs_dir=_rag_docs_dir(docs_dir), runs_dir=None,  # v1 只索引 docs/
         base_dir=None, runs_limit=None)
     if index is not None:
-        _RAG_INDEX_CACHE[str(_rag_docs_dir(docs_dir))] = (index, [])
+        d = _rag_docs_dir(docs_dir)
+        _RAG_INDEX_CACHE[str(d)] = (_corpus_fingerprint(d), index)
     return index, list(errors or [])
 
 
 def _memo_rag_index(docs_dir: str | Path | None) -> Any | None:
-    cached = _RAG_INDEX_CACHE.get(str(_rag_docs_dir(docs_dir)))
-    return cached[0] if cached else None
+    """memo 命中前先核对语料指纹（A3 P1-1）：不一致=语料已变更，弃缓存
+    返回 None（调用方重建）——修复"语料更新后进程生命周期内注入陈旧索引"。"""
+    d = _rag_docs_dir(docs_dir)
+    cached = _RAG_INDEX_CACHE.get(str(d))
+    if not cached:
+        return None
+    if cached[0] != _corpus_fingerprint(d):
+        _RAG_INDEX_CACHE.pop(str(d), None)
+        return None
+    return cached[1]
 
 
 def clear_rag_index_cache() -> None:

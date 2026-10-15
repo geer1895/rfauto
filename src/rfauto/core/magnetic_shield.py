@@ -1,6 +1,6 @@
 """MA 磁屏蔽退磁因子闭式面（椭球解析 + 圆管经验表 + mu-metal 带）。
 
-规格：研究扩充 round17 §六 MA-12（磁面，P2-3/S）
+规格：docs/research_expansion_20261002_round17.md §六 MA-12（磁面，P2-3/S）
 ——"磁屏蔽退磁因子闭式（椭球解析+圆管经验式，mu-metal datasheet 数值）
 + LLG 阻尼换算面；非线性限幅仅登记"。任务书 ge8b Wave A 席4（MA-11 磁
 屏蔽退磁因子）。纯闭式叶子，零 IO、不进 calculators。

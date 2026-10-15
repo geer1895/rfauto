@@ -14,7 +14,7 @@ object has been deleted"（pt3/pt4 实测，#208）。进程隔离同时天然�
 产物布局（work_root 下）：p1/..pN/（各含 simulation.py + sparams.csv）、
 <template>.s{N}p（装配结果）、.smatrix_cache.npz（可选缓存）。
 
-**逐轮断点缓存**（廿三）P2 残余收口）：每轮 CSV 即断点——重入时
+**逐轮断点缓存**（P2 残余收口）：每轮 CSV 即断点——重入时
 逐轮校验「simulation.py 与本次渲染逐字节一致 + sparams.csv 可解析」，
 二者齐备则跳过该轮子进程直接复用列（resume=True 默认开）；任一不满足
 即重跑该轮。脚本内容=轮次身份，杜绝换参/换 mesh 后错配陈旧产物。

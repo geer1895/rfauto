@@ -641,7 +641,7 @@ class TestOptimizeKickoffEnabled:
         assert prov["seed"] == KICKOFF_SEED and prov["algorithm"] == "surrogate_loop"
         assert prov["adapter"] == "fake" and prov["stop_reason"] == "budget"
         assert prov["real_cost_trace"] == [2.0, 1.0, 0.5]
-        assert prov["artifact_path"] is None, "缺省不落盘（不污染 runs）"
+        assert prov["artifact_path"] is None, "缺省不落盘（不污染 runs/）"
         assert "优化发起" in rec["report"] and "kickoff.best" in rec["report"]
         # 七环节数值锚不被 kickoff 触碰
         assert set(rec["numeric"]) == {"f_dip_ghz", "s11_db_min_in_band",

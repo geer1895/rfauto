@@ -1,6 +1,6 @@
 """fab 剖面 / DFM 门服务层（DP-7 P1/P3，JSON 进出）。
 
-职责：
+职责（AGENTS 硬规则 4：服务层 JSON 进出，CLI/MCP 薄壳）：
 - ``load_fab_profile``：knowledge/fab_profiles/*.yaml → JSON 视图；
 - ``check_template_dfm``：模板名义几何（``template_meta()`` 只读）+ 用户
   覆盖 → 对剖面校验（几何事实提取见 ``FAB_GEOMETRY_FACTS``——显式登记

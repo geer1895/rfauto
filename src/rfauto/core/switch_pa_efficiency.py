@@ -1,7 +1,7 @@
 """开关功放（Class A/AB/B/C + D/E/F）理想效率闭式族 + 谐波/EVM 寄生面（MT-6）。
 
 ge8d 波·席D4（runs/ge8_followup/wave_d/seat_d_all.md §席D4）；条目
-研究扩充 round17 MT-6「Raab 1977 E 类理想方程+
+docs/research_expansion_20261002_round17.md MT-6「Raab 1977 E 类理想方程+
 F 类谐波调谐表」。
 
 确定性纯函数、零 IO；数值全部落本内核（铁律 7）；dataclass+to_dict JSON

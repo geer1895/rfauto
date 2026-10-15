@@ -1,6 +1,6 @@
 """EP-7 专家经验采集框架（访谈结构 YAML → 经验条目/rules 候选 verify 分级）。
 
-规格 研究扩充 round18 §二 EP-7：访谈结构
+规格 docs/research_expansion_20261002_round18.md §二 EP-7：访谈结构
 YAML→rules 候选走 verify 分级；消费面=service/rationale_memory（F11 自
 进化经验记忆，本模块只读复用其 ExperienceEntry/recall_for，不修改）。
 

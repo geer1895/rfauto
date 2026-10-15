@@ -1,6 +1,6 @@
 """NX-6 共形阵（柱面/球面切平面）阵因子闭式面。
 
-规格：研究扩充 round14 §四 NX-6——"柱/球面
+规格：docs/research_expansion_20261002_round14.md §四 NX-6——"柱/球面
 局部切平面+模式展开（Balanis Ch.6）"。纯闭式叶子，零 IO、不进
 calculators。
 

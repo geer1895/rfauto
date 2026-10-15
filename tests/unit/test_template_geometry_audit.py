@@ -110,11 +110,11 @@ from tests.unit import _geometry_audit_helpers as gh
 # （有限地共面波导无底地，FD 反演设计链 core/fgcpw + Ghione-Naldi 交叉
 # 参考）正式注册（64→67；注册在 render_ta_wave_a 文末块，render_fns 分发
 # 路径，hmsiw layout 单源字面注入）
-# ge8b Wave B 席 B9（2026-10-03）：TA-10 isl_shielded（ISL 屏蔽悬置线，准
-# 静态闭式链 core/isl_line，layout 单源 hmsiw 同款机制）+ AP-11 vivaldi_tsa
-# （Vivaldi 端射指数张口槽线天线，闭式链 core/vivaldi_tsa，_ant2_body 同构
-# 纯函数 layout）正式注册（67→69；注册在 render_ta_wave_b 文末块，
-# render_fns 分发路径；分发接线=render_core 最小追加，席1 行零改动）
+    # ge8b Wave B 席 B9（2026-10-03）：TA-10 isl_shielded（ISL 屏蔽悬置线，准
+    # 静态闭式链 core/isl_line，layout 单源 hmsiw 同款机制）+ AP-11 vivaldi_tsa
+    # （Vivaldi 端射指数张口槽线天线，闭式链 core/vivaldi_tsa，_ant2_body 同构
+    # 纯函数 layout）正式注册（67→69；注册在 render_ta_wave_b 文末块，
+    # render_fns 分发路径；分发接线=render_core 最小追加，席1 行零改动）
 EXPECTED_TEMPLATES = frozenset({
     "wilkinson", "patch", "branchline", "dipole", "stepped_impedance",
     "coupled_line", "mline", "cpw", "stripline", "wstep", "tjunc", "bend",
@@ -134,6 +134,11 @@ EXPECTED_TEMPLATES = frozenset({
     # ms_ring_patch 双谐振方环+内贴片（DP-10 §1c 预登记 fallback，2026-10-01
     # ge5 J2 战役段③注册，57→58）
     "ms_ring_patch",
+    # ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：Sievenpiper 蘑菇
+    # EBG/AMC 单元（内核 core/amc_mushroom MM-8 单源；反射读出=ms_patch 同族，
+    # 过孔柱 sub-cell 阶梯化）正式注册（71→72；注册在 render_metasurface
+    # ms 族段内尾部追加，#247 口径）
+    "ms_mushroom",
     # §DP-4 P3 EEP 阵列族（2026-09-24 df6，文末注册块）
     "patch_eep_2x2", "patch_eep_1x4",
     # §COIL_NFC NFC/WPC 线圈族（2026-09-26 df7 C10b，文末注册块；
@@ -204,15 +209,18 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 71, (
-        "覆盖基线漂移：记 71 个模板（ge8d Wave D 席 D2 TA-11 "
-        "embedded_ms+TA-14 xcheb_bpf4 注册 69→71，render_ta_wave_c 文末"
-        "块，2026-10-03）")
+    assert len(EXPECTED_TEMPLATES) == 72, (
+        "覆盖基线漂移： 记 72 个模板（TA-13 EBG/FSS 净表注册件 "
+        "ms_mushroom 注册 71→72，render_metasurface ms 族段内尾部追加，"
+        "2026-10-08）")
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {
         p.parent.name for p in (REPO / "docs" / "templates").glob("*/meta.yaml")
     }
+    # edb_* 目录=EDB 快车道信息文档（meta.yaml 为离线发射层门+参考口径，
+    # 非注册模板；契约由 test_edb_templates* 自有测试覆盖，不入 72 锁）。
+    yaml_names -= {name for name in yaml_names if name.startswith("edb_")}
     assert yaml_names == EXPECTED_TEMPLATES
 
 

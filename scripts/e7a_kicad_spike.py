@@ -63,7 +63,7 @@ print(f"Vias: 1 (0.5mm drill)")
 
 
 if __name__ == "__main__":
-    output = "D:/rf_workspace\\parts\\test_minimal.kicad_pcb"
+    output = "D:\rf_workspace\\parts\\test_minimal.kicad_pcb"
     print("Generating minimal .kicad_pcb file...")
     result = generate_minimal_pcb(output)
     print(f"Success: {result['success']}")

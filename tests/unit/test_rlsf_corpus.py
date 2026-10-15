@@ -147,6 +147,57 @@ class TestCorpusFeed:
         assert not corpus_to_taskset({"ok": False, "errors": ["x"]})["ok"]
         assert not corpus_to_taskset({"ok": True, "trajectories": "nope"})["ok"]
 
+    def test_best_step_fallback_skips_missing_cost(self):
+        """A4 P1-2（#364④ falsy 陷阱）：回退 min 选择器里缺 cost/None 的步
+        不得当选（曾按 ``or 0.0`` 判"最优"，其 params 被当最优 trial 写进
+        经验条目）；bool cost 显式排除；全部无 cost → 不编造最优。"""
+        from rfauto.service.rlsf_corpus import _best_step
+
+        steps = [
+            {"trial": 0, "params": {"x": 1.0}},               # 缺 cost
+            {"trial": 1, "params": {"x": 2.0}, "cost": None},  # None
+            {"trial": 2, "params": {"x": 3.0}, "cost": True},  # bool 排除
+            {"trial": 3, "params": {"x": 4.0}, "cost": 1.5},
+            {"trial": 4, "params": {"x": 5.0}, "cost": 0.8},
+        ]
+        traj = {"study_name": "s", "steps": steps}
+        assert _best_step(traj, steps) == steps[4]  # 0.8 当选，非缺 cost 步
+
+        # 全部无数值 cost → {}（不编造最优）
+        no_cost = [{"trial": 0, "params": {"x": 1.0}},
+                   {"trial": 1, "params": {"x": 2.0}, "cost": None}]
+        assert _best_step({"study_name": "s"}, no_cost) == {}
+
+        # cost=0.0 是合法数值（可达 0 的面禁 or 惯语）：应为最优
+        zero = [{"trial": 0, "params": {"x": 1.0}, "cost": 3.0},
+                {"trial": 1, "params": {"x": 2.0}, "cost": 0.0}]
+        assert _best_step({"study_name": "s"}, zero)["trial"] == 1
+
+        # best_step 显式指名的步不经 cost 过滤（提取方 designate 语义）
+        assert _best_step({"best_step": 0}, steps) == steps[0]
+
+    def test_corpus_no_cost_fallback_not_best(self):
+        """端到端：手工语料（无 best_step、部分步缺 cost）→ 经验条目结论
+        引用的最优步是数值 cost 最小者，缺 cost 步不冒充。"""
+        from rfauto.service.rlsf_corpus import corpus_to_experience_entries
+
+        corpus = {
+            "ok": True,
+            "storage": "runs/.optuna/optuna.db",
+            "trajectories": [{
+                "study_name": "s_missing_cost",
+                "n_steps": 2,
+                "steps": [
+                    {"trial": 0, "params": {"x": 1.0}},
+                    {"trial": 1, "params": {"x": 2.0}, "cost": 1.25},
+                ],
+            }],
+        }
+        entries = corpus_to_experience_entries(corpus)
+        assert len(entries) == 1
+        assert "best_trial=1" in entries[0].evidence_paths[1]
+        assert "cost=1.25" in entries[0].conclusion
+
     def test_corpus_to_taskset_empty(self):
         from rfauto.service.rlsf_corpus import corpus_to_taskset
 

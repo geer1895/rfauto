@@ -1,7 +1,7 @@
 """F-E.5 PAPR service 面（JSON 进出，规则 4；CLI/MCP 是薄壳）。
 
 消费 core/papr.py 内核（全部数字出自确定性内核，规则 7；本服务零物理
-公式）。四入口（方案 研究扩充 round3 F-E 表
+公式）。四入口（方案 docs/research_expansion_20260926_round3.md F-E 表
 件 5；参照 service/aging_service.py 信封口径）：
 
 - :func:`papr_ccdf_eval`：γ_dB（标量或列表）+ N + α → 解析 CCDF；

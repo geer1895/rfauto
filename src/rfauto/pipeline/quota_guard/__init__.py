@@ -14,7 +14,7 @@ Two layers live here:
   (:data:`DURATION_FEATURES_V2`: declared NrTS step cap + measured stop reason
   one-hot/interaction) so energy-stop and NrTS-cap-stop solves can be
   separated — the stop-reason mixing that pinned the ratrace LOO floor at
-  ~80% .
+  ~80% ( 二百六十).
 
 Everything here is deterministic, pure Python (numpy is used only for the
 least-squares fit of DurationPredictor); no network, no solver calls, no

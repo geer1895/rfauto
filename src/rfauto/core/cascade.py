@@ -1,6 +1,6 @@
 """DP-5 系统级预算引擎 + 混频杂散搜索（纯函数，零 IO，微秒级确定性内核）。
 
-规格：规格深案 §DP-5；判据书：
+规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书：
 runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。
 
 公式口径（§0，含规格书勘误 1 处）：

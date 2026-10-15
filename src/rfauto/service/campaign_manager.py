@@ -5,7 +5,7 @@ AI 调度、动态重排、自动放弃死胡同分支。rfauto 翻译为"设计
 输入配方 + 目标口径，确定性拆解为 校准→粗筛→精算→公差→报告 的
 多阶段队列（现在的 p0/tune 都是单发任务，缺战役层）。
 
-首片范围（确定性内核， #7）：
+首片范围（确定性内核，AGENTS #7）：
 - plan_campaign：配方 → 类型化阶段队列（依赖/预算/通道/license 门槛）；
 - apply_event：状态机推进（stage_done/stage_failed；校准失败=死胡同
   分支自动放弃，后续阶段标 aborted）。
@@ -209,6 +209,7 @@ def plan_campaign(
     calibrate_samples: int = 9,
     tune_budget: int | None = None,
     shadow_points: int | None = None,
+    tolerances: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     """把配方战役确定性拆解为类型化阶段队列。
 
@@ -216,6 +217,14 @@ def plan_campaign(
     （多保真影子验证：中保真最优点在 HFSS 名额内复核）。缺省
     SHADOW_POINTS_DEFAULT_N=3；硬帽 = final_verify 名额（FINAL_VERIFY_
     BUDGET=5），超帽截断不越名额；0/None 语义：None→缺省 3，0→显式关闭。
+
+    ge9 审查 P1-2：``tolerances`` 为 tolerance 阶段的公差剖面生产写面
+    （键=设计参数名，须落在配方 optimization.params 键空间；值=σ），
+    经 stage 字段进 nodes_from_stages 的 stage_extra，由
+    campaign_executor._exec_tolerance 消费。None（缺省）=不写该字段
+    （executor 如实失败"v1 不猜"，不硬造缺省剖面——公差剖面是工艺
+    事实，声明口径见 _exec_tolerance）；CLI 经 ``--tolerances 参数名=σ``
+    （可多次）传入。
     """
     import yaml
 
@@ -231,9 +240,11 @@ def plan_campaign(
     limits = recipe.get("limits") or {}
     # S2-3/#364④：显式判缺 is not None——tune_budget=0 是合法显式值
     # （0=显式零预算，同 259 行 shadow_points 的 is None 写法收敛双标；
-    # 旧 `or` 惯语会把显式 0 顶替成缺省 30）
+    # 旧 `or` 惯语会把显式 0 顶替成缺省 30）。审查 A3 P1-2：配方侧回退
+    # limits.max_trials 同批收口——显式 max_trials: 0 同样尊为 0。
     budget = int(tune_budget if tune_budget is not None
-                 else (limits.get("max_trials") or 30))
+                 else (30 if limits.get("max_trials") is None
+                       else int(limits.get("max_trials"))))
 
     def _stage(name: str, kind: str, adapter: str, depends: list[str],
                budget: int | None = None, note: str = "") -> dict[str, Any]:
@@ -246,6 +257,18 @@ def plan_campaign(
             "note": note,
         }
 
+    tolerance_stage = _stage("tolerance", "tolerance", "surrogate",
+                             ["tune", "calibrate"], 1000,
+                             "公差/良率（Monte Carlo，代理免费）")
+    if tolerances:
+        # ge9 审查 P1-2：公差剖面生产写面（执行器消费形态对账：k=参数名
+        # v=σ；非数值键如实丢弃，与 _exec_tolerance 的过滤同口径）。
+        tolerance_stage["tolerances"] = {
+            str(k): float(v) for k, v in tolerances.items()
+            if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    # depends_on 带 calibrate：_exec_tolerance 经 ctx["upstream"]（直接
+    # 依赖）读校准样本 stage_result——只挂 tune 时样本面结构性不可达
+    # （ge9 审查 P1-2 全链钉实证的第二处缺口）。
     stages = [
         _stage("calibrate", "calibrate", mid_adapter, [],
                calibrate_samples,
@@ -255,8 +278,7 @@ def plan_campaign(
                "校准代理粗筛（v1 拍板：预筛通道=校准代理，fake 降级）"),
         _stage("tune", "tune", mid_adapter, ["prefilter"], budget,
                "中保真精算；HFSS 终验由 high_adapter 阶段承接"),
-        _stage("tolerance", "tolerance", "surrogate", ["tune"], 1000,
-               "公差/良率（Monte Carlo，代理免费）"),
+        tolerance_stage,
         _stage("report", "report", "local", ["tolerance"], None,
                "五要素报告 + 战役档案"),
     ]

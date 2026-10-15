@@ -1,6 +1,6 @@
 """MM-7 均匀化通用内核：三混合式+Wiener 界+SRR μ+线媒质 ωp+等效参数反演。
 
-规格（研究扩充 round17 §五 :154，B 流超材料）：
+规格（docs/research_expansion_20261002_round17.md §五 :154，B 流超材料）：
 「三混合式提升通用 core 内核+Wiener 界+Pendry 1999 SRR μ 公式+线媒质 ωp
 （Pendry 1996 PRL）」。
 

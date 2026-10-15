@@ -35,14 +35,14 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake          # fake 通道首
 
 | 维度 | 数量 |
 |---|---|
-| 全量门测试 | 22300 |
-| CLI 叶子命令 | 258 |
+| 全量门测试 | 25452 |
+| CLI 叶子命令 | 269 |
 | MCP 工具 | 152 |
-| 确定性计算器（含实验键） | 100（101） |
-| 器件模板 | 71 |
-| 标定锚注册表 | 60 |
+| 确定性计算器（含实验键） | 204（205） |
+| 器件模板 | 72 |
+| 标定锚注册表 | 75 |
 
-（tests 计数来源：README badge floor（环境无关））
+（tests 计数来源：pytest --collect-only）
 <!-- AUTO-NUMBERS:END -->
 
 ## 站点导航
@@ -50,9 +50,19 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake          # fake 通道首
 | 分区 | 内容 |
 |---|---|
 | [用户指南](tutorials/getting-started.md) | 安装、CLI 快速上手、首条链路 |
-| [锚导览](tutorials/anchor-guide.md) | 物理标定锚：是什么、为什么可信、怎么查、怎么消费 |
+| [第一次优化闭环](tutorials/first_optimization_loop.md) | syn → run → tune → refine → replay 全链走读 |
+| [UI 工作台导览](tutorials/ui_workbench_tour.md) | 人工核验看板首开：页面清单、主题、命令面板 |
+| [MCP 实战](tutorials/mcp_in_practice.md) | 把 rfauto 接进 Claude Desktop / Cursor 等 MCP 客户端 |
+| [实测对齐链路](tutorials/measurement-alignment.md) | Touchstone ↔ 仿真对齐、偏差诊断、修正提案 |
 | [真机仿真](tutorials/real-simulation.md) | 第一个 openEMS 求解点：离线审计 → 真跑 → 判读 |
 | [RECAST 走查](tutorials/recast-walkthrough.md) | 归档判读的判据重放（可复算性对照） |
+| [战役逐阶段推进](tutorials/campaign-walkthrough.md) | plan → run → status → event → final_verify 五命令手册 |
+| [compose 组合链与引擎联赛](tutorials/compose_and_league.md) | 模板链一次仿真与跨引擎 run 排名 |
+| [数据集与健康门](tutorials/datasets_and_health_gates.md) | run 沉淀成可查数据集与 G11 体检三态判读 |
+| [数据湖与查询面](tutorials/data_lake.md) | run 产物 → 数据集 → DuckDB 湖 → 查询 |
+| [UQ 与代理模型](tutorials/uncertainty_and_surrogates.md) | Sobol/Morris 灵敏度、良率收口、代理注册表 |
+| [锚导览](tutorials/anchor-guide.md) | 物理标定锚：是什么、为什么可信、怎么查、怎么消费 |
+| [远程服务器协同](tutorials/remote_server.md) | 多机通道边界与第一次接入（probe/status） |
 | [扩展 rfauto](tutorials/extending-rfauto.md) | 适配器/计算器/通道/模板四条标准路径 |
 | [参考](reference/cli.md) | CLI 命令 / MCP 工具 / 计算器注册表机读清单 |
 | [模板库](catalog/index.md) | 器件模板聚合（参数、名义值、抽取判据） |

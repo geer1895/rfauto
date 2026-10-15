@@ -295,8 +295,10 @@ def generate_hairpin_bpf(params: Mapping[str, Any]) -> Layout:
         tap_frac: 抽头位置，自开路端计（0..1）
         w_mm: 线宽（可省；缺省 nominal_width_mm(50, f0_ghz, stackup)）
         f0_ghz / stackup: 缺省线宽档所需的频点与层叠名（w_mm 给出则不消费）
-        margin_mm: 线艺到板缘留白（默认 2.5，与 microstrip 生成器同档）
-        board_width_mm / board_height_mm: 显式板框（给了则不自动外扩）
+        margin_mm: 线艺到板缘留白（默认 2.5，与 microstrip 生成器同档；
+            须 ≥ w_mm/2，否则 artwork 半宽出板缘 fail-loud）
+        board_width_mm / board_height_mm: 显式板框（给了则不自动外扩；
+            须容得下 +margin 偏移后的 artwork 域，尺寸不足属调用方责任）
         trace_layer: 默认 "F.Cu"；edge_layer: 默认 "Edge.Cuts"
     """
     order = int(params["order"])
@@ -322,6 +324,10 @@ def generate_hairpin_bpf(params: Mapping[str, Any]) -> Layout:
     if w_mm <= 0.0 or gap <= 0.0 or arm_gap <= 0.0:
         raise ValueError("w_mm/gap_mm/arm_gap_mm 必须为正")
     margin = float(params.get("margin_mm", 2.5))
+    if margin < w_mm / 2.0:
+        raise ValueError(
+            f"margin_mm 必须 ≥ w_mm/2（线艺半宽不出板缘）: "
+            f"{margin} < {w_mm}/2")
     trace_layer = str(params.get("trace_layer", "F.Cu"))
     edge_layer = str(params.get("edge_layer", "Edge.Cuts"))
 
@@ -330,31 +336,37 @@ def generate_hairpin_bpf(params: Mapping[str, Any]) -> Layout:
     # 谐振器 i 左臂中心线 x 坐标：相邻外臂中心线距 = w + gap（边缘到边缘 gap）
     pitch = arm_gap + 2.0 * w_mm + gap
     xs = [float(i) * pitch for i in range(order)]
-    # 版图坐标自 (0,0) 起（板框另加 margin），谐振器开口朝下（y=0 侧）
-    y_top = arm  # 弯折处中心线高度（开口端中心线在 y=0）
-    tap = tap_frac * arm  # 抽头点中心线高度（自开口端计）
-
-    items: list[LayoutPath | LayoutPolygon | LayoutCircle | LayoutVia] = []
-    for x in xs:
-        # U 形谐振器：左臂上行 → 顶部横臂 → 右臂下行（中心线折线）
-        items.append(LayoutPath(
-            points=((x, 0.0), (x, y_top),
-                    (x + arm_gap + w_mm, y_top),
-                    (x + arm_gap + w_mm, 0.0)),
-            width_mm=w_mm, layer=trace_layer))
-    # 抽头馈线：输入自板左缘至首谐振器左臂抽头点，输出自末谐振器右臂
-    # 抽头点至板右缘（T 形抽头，与模板口径一致）
-    items.append(LayoutPath(
-        points=((-margin, tap), (xs[0], tap)), width_mm=w_mm,
-        layer=trace_layer))
-    x_out = xs[-1] + arm_gap + w_mm
-    items.append(LayoutPath(
-        points=((x_out, tap), (x_out + margin, tap)), width_mm=w_mm,
-        layer=trace_layer))
+    # artwork 中心线域整体 +margin 偏移，板框自 (0,0) 起（ge9 审查 R6 P1-2
+    # 修复：原实现 artwork 与板框同自 (0,0) 起——左馈起点 x=−margin 悬出
+    # 板左缘、U 开路端中心线压板底缘 y=0 半宽切边，制造文件几何必废）；
+    # 谐振器开口朝下，开路端中心线 y=margin（半宽 ≤ margin 守卫在上），
+    # 馈线端点恰贴板缘（GDS path/DXF 宽多线段=平头盖帽，铜箔不越缘）
+    x_off = margin
+    y_open = margin  # U 开路端中心线高度
+    y_top = margin + arm  # 弯折处中心线高度
+    tap_y = margin + tap_frac * arm  # 抽头点中心线高度（自开口端计）
 
     board_w = float(params.get("board_width_mm", pitch * (order - 1)
                                + arm_gap + w_mm + 2.0 * margin))
     board_h = float(params.get("board_height_mm", arm + 2.0 * margin))
+
+    items: list[LayoutPath | LayoutPolygon | LayoutCircle | LayoutVia] = []
+    for x in xs:
+        # U 形谐振器：左臂上行 → 顶部横臂 → 右臂下行（中心线折线）
+        x_l = x_off + x
+        x_r = x_off + x + arm_gap + w_mm
+        items.append(LayoutPath(
+            points=((x_l, y_open), (x_l, y_top),
+                    (x_r, y_top), (x_r, y_open)),
+            width_mm=w_mm, layer=trace_layer))
+    # 抽头馈线：输入自板左缘（x=0）至首谐振器左臂抽头点，输出自末谐振器
+    # 右臂抽头点至板右缘（x=board_w；T 形抽头，与模板口径一致）
+    items.append(LayoutPath(
+        points=((0.0, tap_y), (x_off + xs[0], tap_y)), width_mm=w_mm,
+        layer=trace_layer))
+    items.append(LayoutPath(
+        points=((x_off + xs[-1] + arm_gap + w_mm, tap_y), (board_w, tap_y)),
+        width_mm=w_mm, layer=trace_layer))
     items.insert(0, LayoutPolygon(
         points=((0.0, 0.0), (board_w, 0.0), (board_w, board_h), (0.0, board_h)),
         layer=edge_layer))

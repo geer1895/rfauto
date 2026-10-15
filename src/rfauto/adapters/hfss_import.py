@@ -20,14 +20,86 @@ import threading
 from pathlib import Path
 from typing import Any
 
+# AEDT 缺省版本单源（aurora72 A7-C）：真机口径 2025 R1/v251（项目规则 规则 0
+# 勘误），与 EDB 快车道/remote_machines 注册表同源，禁再手写字面量漂移。
+# edb_adapter 模块级仅 stdlib 依赖，此处顶层 import 无重链代价。
+from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
+
 logger = logging.getLogger(__name__)
 
 
+def _remote_session_info(remote_machine: str | None,
+                         version: str) -> dict[str, Any] | None:
+    """remote_machine 注册表名 → 远程会话信息（hfss_session 同款口径）。
+
+    多机协同 v0 尾巴（B13/TODOfollowUp）：无该键=本地会话（零行为变化）。
+    带该键走 infra/remote_machines 注册表解析（未登记名 RemoteConfigError
+    fail-closed），并做版本配对交叉断言（项目规则 规则 0：pyaedt gRPC 客户端-
+    服务端版本必须配对，静默失配会走错客户端插件——显式拒绝并指引对齐）。
+
+    Returns
+    -------
+    dict | None
+        {"name", "machine", "port", "project_root", "version"}；None=本地。
+
+    TODO（多机 v1）：mTLS 三键 secure 形态（remote_session_switches(mtls=…)
+    + ANSYS_GRPC_CERTIFICATES）在本链未接线——import 链现只透传 insecure
+    的 machine/port；证书面接线随远程 import 首次真机需求补。
+    """
+    if not remote_machine:
+        return None
+    from rfauto.infra.remote_machines import resolve_machine
+
+    cfg = resolve_machine(str(remote_machine))
+    if cfg is None:  # 注册表空且未指名 → 本地语义（与 session 口径一致）
+        return None
+    local_version = str(version).strip()
+    remote_version = str(cfg.hfss_version).strip()
+    if local_version != remote_version:
+        raise ValueError(
+            f"HFSS 远程版本配对失配：import 版本 {local_version!r} 与注册表 "
+            f"{cfg.name!r}.hfss_version={remote_version!r} 不一致——pyaedt gRPC "
+            "客户端-服务端版本必须配对（项目规则 规则 0）；请对齐 version 参数与 "
+            "configs/remote_machines.yaml 的 hfss.version")
+    return {
+        "name": cfg.name,
+        "machine": cfg.host,
+        "port": cfg.hfss_grpc_port,
+        "project_root": cfg.hfss_project_root,
+        "version": cfg.hfss_version,
+    }
+
+
 def _open_hfss(project_path: str, design_name: str | None, version: str,
-               non_graphical: bool):
-    """打开工程（复用已连 Desktop 或新建），返回 Hfss 对象。调用方负责 release。"""
+               non_graphical: bool,
+               remote_info: dict[str, Any] | None = None):
+    """打开工程（复用已连 Desktop 或新建），返回 Hfss 对象。调用方负责 release。
+
+    remote_info 给定时走远程分支（多机协同 v0）：Hfss 透传
+    machine=/port=（hfss_session/hfss_adapter 同款），构造窗口包
+    remote_session_switches 四开关（远程必须走 TCP，缺省 WNUA 是本机
+    通道）；remote_rpc_session 在 Hfss 构造前置 None（ 五百四十二
+    坑 1 双语义）。project 路径按服务器侧文件系统解释（调用方负责不传
+    本地临时路径）。
+    """
     from ansys.aedt.core import Hfss
 
+    if remote_info:
+        from ansys.aedt.core.generic.settings import settings as aedt_settings
+
+        from rfauto.adapters.hfss_session import remote_session_switches
+
+        with remote_session_switches():
+            aedt_settings.remote_rpc_session = None
+            return Hfss(
+                project=project_path,
+                design=design_name,
+                version=version,
+                non_graphical=non_graphical,
+                new_desktop=False,
+                machine=remote_info["machine"],
+                port=remote_info["port"],
+            )
     return Hfss(
         project=project_path,
         design=design_name,
@@ -161,7 +233,7 @@ def _read_parametrics(hfss: Any) -> dict[str, dict[str, str]]:
 
 def _prune_ansysem_env(version: str) -> None:
     """多版本 ANSYSEM_ROOTxxx 并存会使 PyAEDT 混淆（issue #7410）——只保留
-    与目标版本匹配的环境变量（"2023.1"→ROOT231，"2026.1"→ROOT261）。"""
+    与目标版本匹配的环境变量（"2025.1"→ROOT251，"2023.1"→ROOT231）。"""
     digits = version.split(".")
     want = ("ANSYSEM_ROOT" + digits[0][-2:] + digits[1] if len(digits) >= 2
             else "ANSYSEM_ROOT" + version[-3:])
@@ -175,13 +247,22 @@ def import_project_spec(
     project_path: str,
     design_name: str | None = None,
     *,
-    version: str = "2023.1",
+    version: str = _DEFAULT_AEDT_VERSION,
     non_graphical: bool = True,
+    remote_machine: str | None = None,
 ) -> dict[str, Any]:
     """读取 HFSS 工程的设计规格（变量/扫参/Setup/端口）。
 
-    注意：默认 2023.1——PyAEDT 1.4.0 对 AEDT 2026.1 存在未修复兼容问题
-    （issue #7410，WNUA 挂死/OpenProject 失败），2023.1 实测可开 2021 老工程。
+    缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
+    R1/v251 口径，项目规则 规则 0 勘误后统一；显式传参可覆盖）。历史注：
+    早期缺省曾钉 2023.1——彼时 PyAEDT 1.4.0 对 AEDT 2026.1 存在未修复
+    兼容问题（issue #7410，WNUA 挂死/OpenProject 失败）；真机口径勘误
+    （2025 R1=对齐基准）后三处缺省钉统一走单源。
+
+    remote_machine（多机协同 v0，B13 透传）：注册表机器名——带该键走远程
+    会话（版本配对断言 + machine/port 透传，见 _remote_session_info），
+    project 路径按**服务器侧**文件系统解释（本地存在性/.lock 检查跳过，
+    同 hfss_adapter 远程分支口径）；无该键=本地会话，行为逐字节不变。
 
     Returns
     -------
@@ -189,20 +270,26 @@ def import_project_spec(
         {"ok": bool, "project":..., "design":..., "variables": {...},
          "parametrics": {...}, "setup": {...}, "ports": [...], "error"?: str}
     """
-    if not Path(project_path).exists():
-        return {"ok": False, "error": f"工程文件不存在: {project_path}"}
-    if Path(str(project_path) + ".lock").exists():
-        return {"ok": False, "error":
-                f"工程被锁定（{project_path}.lock 存在）：先关闭占用它的 AEDT"
-                " 会话；若是残留锁可手动删除该 .lock 目录"}
+    try:
+        remote_info = _remote_session_info(remote_machine, version)
+    except Exception as exc:
+        return {"ok": False, "error": f"远程会话解析失败: {exc}"}
+    if not remote_info:
+        if not Path(project_path).exists():
+            return {"ok": False, "error": f"工程文件不存在: {project_path}"}
+        if Path(str(project_path) + ".lock").exists():
+            return {"ok": False, "error":
+                    f"工程被锁定（{project_path}.lock 存在）：先关闭占用它的 AEDT"
+                    " 会话；若是残留锁可手动删除该 .lock 目录"}
     _prune_ansysem_env(version)
     try:
-        hfss = _open_hfss(project_path, design_name, version, non_graphical)
+        hfss = _open_hfss(project_path, design_name, version, non_graphical,
+                          remote_info=remote_info)
     except Exception as exc:
         return {"ok": False, "error": f"打开 HFSS 工程失败: {exc}"}
 
     try:
-        return {
+        spec = {
             "ok": True,
             "project": project_path,
             "design": getattr(hfss, "design_name", design_name),
@@ -211,9 +298,16 @@ def import_project_spec(
             "setup": _read_setup_sweep(hfss),
             "ports": _read_ports(hfss),
         }
+        if remote_info:
+            spec["remote"] = remote_info  # provenance：本规格来自远程会话
+        return spec
     finally:
-        with contextlib.suppress(Exception):
-            hfss.release()
+        # pyaedt 1.4.0 的 Hfss 没有 .release()——直接调会被 contextlib.suppress
+        # 吞掉 AttributeError=桌面从不释放（孤儿 ansysedt，#265 家族；B-27 只修
+        # 了 readonly 通道，旧通道此处漏改，review_aurora_next A5 P0-1）。
+        # 统一走本文件单源三级回退（release_desktop → close_desktop → release），
+        # 绝不保存工程。
+        _release_hfss(hfss)
 
 
 def spec_to_recipe_draft(spec: dict[str, Any], *, model_name: str = "custom_hfss",
@@ -328,7 +422,8 @@ _READONLY_TIMEOUT_S = 300.0
 
 
 def _resolve_aedt_version(version: str | None) -> str:
-    """版本串解析：显式优先 → infra 探测本机 AEDT → 兜底 2023.1。"""
+    """版本串解析：显式优先 → infra 探测本机 AEDT → 兜底单源缺省
+    （``edb_adapter._DEFAULT_AEDT_VERSION``=2025.1）。"""
     if version:
         return str(version)
     try:
@@ -339,17 +434,42 @@ def _resolve_aedt_version(version: str | None) -> str:
             return str(install["aedt_version"])
     except Exception as exc:  # best-effort：探测失败不阻塞（#105）
         logger.info("AEDT 版本探测失败，回退默认版本: %s", exc)
-    return "2023.1"
+    return _DEFAULT_AEDT_VERSION
 
 
 def _open_hfss_readonly(project_path: str, design_name: str | None, version: str,
-                        non_graphical: bool):
-    """只读打开工程副本（独立非图形会话，不附着用户桌面、不碰锁）。"""
+                        non_graphical: bool,
+                        remote_info: dict[str, Any] | None = None):
+    """只读打开工程副本（独立非图形会话，不附着用户桌面、不碰锁）。
+
+    remote_info 给定时走远程分支：透传 machine=/port=（hfss_session 同款
+    四开关构造窗口），project 路径按服务器侧文件系统解释——调用方须传
+    服务器侧路径（本地临时副本路径在服务器上无意义，远程模式调用方跳过
+    本地复制）。
+    """
     from ansys.aedt.core import Hfss
 
     # 真机实证（2026-09-12）：不要开 settings.use_multi_desktop——开了之后
     # variable_manager 读回 0 个变量（design 能开、变量全丢）；默认路径实测
     # 稳定读回 35 个变量。安全性由"只打开副本"保证，不靠会话隔离。
+    if remote_info:
+        from ansys.aedt.core.generic.settings import settings as aedt_settings
+
+        from rfauto.adapters.hfss_session import remote_session_switches
+
+        with remote_session_switches():
+            aedt_settings.remote_rpc_session = None
+            return Hfss(
+                project=project_path,
+                design=design_name,
+                version=version,
+                non_graphical=non_graphical,
+                new_desktop=True,
+                close_on_exit=False,
+                remove_lock=False,
+                machine=remote_info["machine"],
+                port=remote_info["port"],
+            )
     return Hfss(
         project=project_path,
         design=design_name,
@@ -404,6 +524,7 @@ def import_project_spec_readonly(
     version: str | None = None,
     non_graphical: bool = True,
     timeout_s: float = _READONLY_TIMEOUT_S,
+    remote_machine: str | None = None,
 ) -> dict[str, Any]:
     """只读导入 .aedt 设计规格（B-27）：先复制再打开，用户工程零风险。
 
@@ -413,27 +534,48 @@ def import_project_spec_readonly(
     3. 独立 new_desktop 会话 + remove_lock=False；
     4. timeout_s 内未返回即报超时（后台线程自行释放并清理副本）。
 
+    remote_machine（多机协同 v0，B13 透传）：注册表机器名——带该键走远程
+    会话（版本配对断言 + machine/port 透传）；此时 project 路径按**服务器
+    侧**文件系统解释，跳过本地临时副本与本地 .lock 检查（副本的本地路径
+    在服务器上无意义），只读约定由 release_desktop 不落盘承接。
+
     返回结构与 import_project_spec 一致，额外 read_only_copy=True /
-    source_locked；project 保留用户原始路径（provenance 不指向副本）。
+    source_locked；project 保留用户原始路径（provenance 不指向副本）；
+    远程模式额外带 remote 信息块（name/machine/port/project_root/version）
+    且 read_only_copy=False。
     """
     src = Path(project_path)
-    if not src.exists():
-        return {"ok": False, "error": f"工程文件不存在: {project_path}"}
     ver = _resolve_aedt_version(version)
+    try:
+        remote_info = _remote_session_info(remote_machine, ver)
+    except Exception as exc:
+        return {"ok": False, "error": f"远程会话解析失败: {exc}"}
+    # 远程语义：project 路径按服务器侧文件系统解释，本地存在性/.lock 检查跳过
+    # （同 hfss_adapter 远程分支"本地存在性不判定"口径）。
+    if remote_info is None and not src.exists():
+        return {"ok": False, "error": f"工程文件不存在: {project_path}"}
     _prune_ansysem_env(ver)
-
-    tmp_dir = tempfile.mkdtemp(prefix="rfauto_hfss_import_")
-    copy_path = Path(tmp_dir) / src.name
+    local_copy = remote_info is None
+    tmp_dir: str | None = None
+    copy_path: Path | None = None
+    if local_copy:
+        tmp_dir = tempfile.mkdtemp(prefix="rfauto_hfss_import_")
+        copy_path = Path(tmp_dir) / src.name
+    open_path = str(copy_path) if copy_path is not None else str(src)
     box: dict[str, Any] = {}
 
     def _worker() -> None:
         try:
             try:
-                shutil.copy2(src, copy_path)
-                hfss = _open_hfss_readonly(str(copy_path), design_name, ver,
-                                           non_graphical)
+                if copy_path is not None:
+                    shutil.copy2(src, copy_path)
+                hfss = _open_hfss_readonly(open_path, design_name, ver,
+                                           non_graphical,
+                                           remote_info=remote_info)
             except Exception as exc:
-                box["error"] = f"打开 HFSS 工程副本失败: {exc}"
+                box["error"] = (
+                    f"打开 HFSS 工程副本失败: {exc}" if copy_path is not None
+                    else f"打开 HFSS 工程失败: {exc}")
                 return
             try:
                 with contextlib.suppress(Exception):
@@ -442,8 +584,9 @@ def import_project_spec_readonly(
             finally:
                 _release_hfss(hfss)
         finally:
-            with contextlib.suppress(Exception):
-                shutil.rmtree(tmp_dir, ignore_errors=True)
+            if tmp_dir is not None:
+                with contextlib.suppress(Exception):
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
 
     worker = threading.Thread(target=_worker, name="hfss-import-readonly",
                               daemon=True)
@@ -462,9 +605,12 @@ def import_project_spec_readonly(
         "ok": True,
         "project": str(src),
         "design": spec.get("design") or design_name,
-        "read_only_copy": True,
-        "source_locked": Path(str(project_path) + ".lock").exists(),
+        "read_only_copy": local_copy,
+        "source_locked": (Path(str(project_path) + ".lock").exists()
+                          if local_copy else False),
     })
+    if remote_info:
+        spec["remote"] = remote_info  # provenance + 消费方按服务器侧路径解释
     return spec
 
 
@@ -616,8 +762,12 @@ def import_project_recipe(
     model_name: str = "custom_hfss",
     default_range_frac: float = 0.2,
     timeout_s: float = _READONLY_TIMEOUT_S,
+    remote_machine: str | None = None,
 ) -> dict[str, Any]:
     """端到端（B-27）：.aedt（只读副本）→ spec → 配方草案 → 渲染往返校验。
+
+    remote_machine 透传给 import_project_spec_readonly（多机协同 v0，B13；
+    见该函数 docstring 的服务器侧路径语义）。
 
     Returns
     -------
@@ -627,7 +777,8 @@ def import_project_recipe(
     """
     spec = import_project_spec_readonly(project_path, design_name, version=version,
                                         non_graphical=non_graphical,
-                                        timeout_s=timeout_s)
+                                        timeout_s=timeout_s,
+                                        remote_machine=remote_machine)
     if not spec.get("ok"):
         return {"ok": False, "error": spec.get("error", "spec 导入失败"),
                 "spec": spec, "recipe": None, "validation": None}

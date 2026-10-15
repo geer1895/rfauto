@@ -50,3 +50,37 @@ nominal_derivation: |-
   缝宽=λg/40=0.491（互联 JC 孔径电长度初值）；带心真机修正
   （openEMS LUT 一轮，fss_jcross_parallel_lc 定带心）归 P3；
   period=11.9917 同 ms_cross（0.4λ0 无光栅瓣口径）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 耶路撒冷十字 FSS：主缝 λg/4+四端枝 λg/8——端枝电容加载把等效电长度拉长、单元更小型化且带宽可调。典型用于紧凑带阻/带通FSS；常见误用=把端枝当纯版图装饰——端枝长度是等效电长度的一半自由度，与主缝联立定谐振（带心真机修正归
+      P3 待标定）。
+    derivations:
+    - claim: 主缝 λg/4+端枝 λg/8 电长度初值（Marcuvitz 网格 EC 初值口径）
+      formula: slot_len = λg/4 ; stub_len = λg/8 ; εeff = (1+εr)/2
+      source: 本仓 core/metasurface_lut（JC 单元闭式初值单源；docs/templates/ms_jcross/meta.yaml nominal_derivation（fss_jcross_parallel_lc
+        定带心归 P3 如实））
+  sensitivity_ranking:
+  - param: slot_len_mm
+    order: 1
+    basis: 主缝 λ/4 谐振恒等式（精确 1.0）；登记表 1.0
+  - param: er
+    order: 2
+    basis: 单侧加载通道（解析精确）；登记表 0.3927
+  - param: stub_len_mm
+    order: 3
+    basis: 端枝电长度（第二自由度，登记表 0——初值口径不含，全波维非零）
+  - param: slot_w_mm
+    order: 4
+    basis: 缝宽 λg/40（版图派生量，登记表 0）
+  - param: period_mm
+    order: 5
+    basis: 阵格 0.4λ0（登记表 0）
+  - param: h_mm
+    order: 6
+    basis: 板厚不进初值闭式（登记表 0）
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进谐振式（登记表 0）
+  quiz_refs: []

@@ -1,4 +1,4 @@
-"""Rotman 透镜内核单测（研究扩充 round3 §二 F-F 表件 5）。
+"""Rotman 透镜内核单测（docs/research_expansion_20260926_round3.md §二 F-F 表件 5）。
 
 裁判口径（#118 双路径，不自证）：
 - 路径 A = Rotman-Turner 1963 原文二次方程 (12)（n=1 时逐式核对原文系数，
@@ -423,3 +423,53 @@ def test_service_error_envelope_no_raise():
                                       n_ports=7, d_over_lambda=0.5)
     assert payload["ok"] is False
     assert isinstance(payload["error"], str) and payload["error"]
+
+
+# ─── 11. W2-TEST 直测补强：错误族细分与单位链（service 三态） ─────────────────
+
+
+def test_service_no_real_root_family_envelope():
+    """无实根退化族经 service 转 ok=False 信封（core 显式 ValueError 不抛穿）。"""
+    # g=1、α=30°、d/λ=F/λ=1 的无实根区（core 抛 "无实根"）
+    out = rls.rotman_lens_payload(f0_hz=10e9, alpha_deg=30.0, f_over_lambda=1.0,
+                                  n_ports=9, d_over_lambda=1.0, g=1.0)
+    assert out["ok"] is False
+    assert "无实根" in out["error"]
+    assert isinstance(json.dumps(out), str)  # 错误信封同样 JSON 可序列化
+
+
+def test_service_non_numeric_inputs_rejected_by_envelope():
+    """非数值入参（str/dict）→ ok=False，类型内嵌在错误串（不抛、不部分产出）。"""
+    out = rls.rotman_lens_design(alpha_deg=30.0, n_ports="7",
+                                 d_over_lambda=0.5, f_over_lambda=3.0)
+    assert out["ok"] is False
+    assert "n_ports" in out["error"]
+    out2 = rls.rotman_lens_design(alpha_deg={"a": 1}, n_ports=7,
+                                  d_over_lambda=0.5, f_over_lambda=3.0)
+    assert out2["ok"] is False
+    assert isinstance(out2["error"], str) and out2["error"]
+
+
+def test_service_payload_min_ports_and_refractive_unit_chain():
+    """最小端口数边界（n=3）与折射率填充的毫米/λ 双出自洽链。"""
+    out = rls.rotman_lens_design(alpha_deg=25.0, n_ports=3, d_over_lambda=0.5,
+                                 f_over_lambda=3.0, g=1.0, n_refractive=1.35)
+    assert out["ok"] is True
+    assert out["data"]["design"]["n_ports"] == 3
+
+    payload = rls.rotman_lens_payload(f0_hz=10e9, alpha_deg=30.0, f_over_lambda=3.0,
+                                      n_ports=7, d_over_lambda=0.5, n_refractive=1.35)
+    assert payload["ok"] is True
+    t = payload["data"]["table"]
+    # 独立期望值（#118）：λ_mm=c/f0 手算锚；x_mm=x/λ·λ_mm 恒等链逐行
+    lam = 299792458.0 / 10e9 * 1e3
+    assert t["lambda_mm"] == pytest.approx(lam, rel=1e-12)
+    assert t["f_mm"] == pytest.approx(3.0 * lam, rel=1e-12)
+    for row in t["ports"]:
+        assert row["x_mm"] == pytest.approx(row["x_over_lambda"] * t["lambda_mm"],
+                                            rel=1e-12)
+        assert row["line_mm"] == pytest.approx(row["line_over_f"] * t["f_mm"],
+                                               rel=1e-12)
+    assert t["equal_path"]["pass"] is True
+    assert t["beam_steering"]["pass"] is True
+    assert isinstance(json.dumps(payload), str)

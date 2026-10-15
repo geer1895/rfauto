@@ -91,11 +91,10 @@ def poll_job(job_id: str) -> dict[str, Any]:
 
 @mcp.tool
 def cancel_job(job_id: str) -> dict[str, Any]:
-    """协作取消长任务（jobs 域）：job_id → 置 cancelled 协作检查点退出。
+    """协作取消长任务（jobs 域）：job_id → 协作检查点退出。
 
-    DP-14 A1 透传 JobRegistry.cancel；硬杀求解进程不支持——运行中的仿真
-    在下一个协作检查点退出，cancel 后 poll_job 终态=cancelled。未知
-    job_id → ok=False 如实。时序：取消后勿复用同 job_id。
+    副作用：置 cancel_event（内存 JobRegistry 快照面；不杀求解进程）。
+    未知 job_id → ok=False 如实。不用于硬杀求解进程。时序：取消后勿复用同 job_id。
 
     Args:
         job_id: create_run_async 返回的任务 id

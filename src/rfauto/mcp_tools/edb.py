@@ -30,8 +30,10 @@ from rfauto.service.envelope import error_envelope
 
 @mcp.tool
 def edb_emit_spec(payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    """发射声明式 EDB spec（edb_branchline/edb_power_divider 平面族发射器）。
+    """发射声明式 EDB spec（平面族发射器）。
 
+    支持族清单与 lange 预留键拒绝语义见 ``rfauto edb status`` 信封
+    templates 节（与发射分派表单源同步，此处不复列族名防漂移）。
     尺寸全部由 core.synthesis 闭式综合产出（确定性内核，铁律 7）；本工具
     只读预览，不触 pyedb/AEDT。与 CLI ``rfauto edb build --dry-run`` 的
     发射段同源。
@@ -104,7 +106,8 @@ def edb_status(payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """扫描 EDB 快车道产物根目录的资产清单（只读，零求解零导入）。
 
     按 stem 归组清点：.aedb 工程、*_config.json 建库存证、ansysedt 批解
-    与导出日志、*_export.s2p Touchstone、*_spec.json 发射存证。目录不
+    与导出日志、*_export.s<N>p Touchstone（按端口数改名后的实际扩展名
+    同认——.s2p 只是 2 端口占位）、*_spec.json 发射存证。目录不
     存在=ok 空 表（n_projects=0，不臆造）。
 
     Args:
@@ -113,8 +116,12 @@ def edb_status(payload: dict[str, Any] | None = None) -> dict[str, Any]:
 
     Returns:
         dict: ``{ok, root, n_projects, items:[{stem, aedb, config_json,
-        solve_log, extract_log, touchstone, spec_json, solved}]}``，
-        缺项 None；不抛出。
+        solve_log, extract_log, touchstone, spec_json, solved}],
+        templates:[{template, supported, reason?, upgrade_doc?}]}``，
+        items 缺项 None；templates=发射族五族清单（branchline/
+        power_divider/coupled_line/ratrace 四支持族 + lange 声明不支持附
+        reason/upgrade_doc，与发射分派表同源——供免试错发现能力面）；
+        不抛出。
     """
     from rfauto.service.edb_lane_service import edb_status as _fn
 

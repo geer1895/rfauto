@@ -39,3 +39,37 @@ nominal_derivation: 全链内核精算（#1c，零手抄毫米数；schiffman_de
   L_c=18.19263268mm（θ0=90° 电长度，ratio=1）→ 参考段长 L_ref=54.577898041mm（Δφ=+90° 对 L_ref 线性一步反解，回代 @f0 精确）→
   w_ref=inverse_width(50Ω)@2.5GHz=1.1134（mline/gysel 同源档）。ρ 取值依据：Schiffman 原文 ρ≈3 于 εr≈9 氧化铝；KJ 零厚口径在
   RO4350B h=0.508mm 的可达域上限 ρ≈2.2（ρ=2.4 起内核显式 ValueError 不外推），名义取可达域内经典档 ρ=2.0。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: Schiffman 移相器：C 型耦合段与均匀参考线的相位差在倍频程内近似平直（标称 Δφ=+90°）——耦合段的 εeff_e/o 差是相位平坦度的全部来源。典型用于宽带相控阵馈电与正交网络；常见误用=把高介电常数板的
+      ρ≈3 经验档照搬到低 εr 板——KJ 零厚口径在 RO4350B 的可达域上限 ρ≈2.2，超域内核显式报错不外推。
+    derivations:
+    - claim: 全通匹配耦合段构造：(Z0e,Z0o)=(Z0·√ρ, Z0/√ρ)，Z0e·Z0o=Z0²
+      formula: Z0e*Z0o = Z0**2 ; (Z0e,Z0o) = (Z0*sqrt(ρ), Z0/sqrt(ρ))
+      source: 本仓 core/synthesis（synthesize_schiffman 单源；docs/templates/schiffman/meta.yaml nominal_derivation（ρ=2.0
+        可达域内经典档，ρ=2.4 起显式 ValueError））
+    - claim: 耦合段 θ0=90° 电长度 + 参考段 Δφ=+90° 线性一步反解
+      formula: L_c = c/(4*f0*sqrt(εeff_avg)) ; L_ref 由 Δφ 反解
+      source: 本仓 core/synthesis（耦合/参考段电长链；docs/templates/schiffman/meta.yaml nominal_derivation（回代 @f0
+        精确））
+  sensitivity_ranking:
+  - param: l_coupled_mm
+    order: 1
+    basis: 耦合段 λ/4 恒等式 |∂lnf0/∂lnL|=1（精确；相位斜率主控）；登记表
+      2.8125
+  - param: l_ref_mm
+    order: 2
+    basis: 参考段长=Δφ(f0) 的线性反解维（相位差第二主控；登记表 3.0008
+      ——β_ref·L_ref=Φ_c+90° 通道，幅值口径最大）
+  - param: gap_mm
+    order: 3
+    basis: 耦合缝定 εeff_e/o 差（相位平坦度主维，KJ 强敏感）；登记表 0.0087
+  - param: w_mm
+    order: 4
+    basis: 耦合段线宽（KJ 填充进入 εeff_e/o）；登记表 0.0811
+  - param: w_ref_mm
+    order: 5
+    basis: 50Ω 参考线宽（相位参考口径，弱敏感；不进相位式，登记表 0）
+  quiz_refs: []

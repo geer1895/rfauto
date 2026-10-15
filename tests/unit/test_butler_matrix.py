@@ -1,4 +1,4 @@
-"""4×4 Butler 矩阵内核单测（研究扩充 round3 §二 F-F 表件 1）。
+"""4×4 Butler 矩阵内核单测（docs/research_expansion_20260926_round3.md §二 F-F 表件 1）。
 
 裁判口径（#118 双路径，不自证）：
 - 路径 A = 闭式层级合成（混合环/交叉结/移相器酉阵·置换阵之积 + 45° 单位
@@ -329,3 +329,43 @@ def test_service_report_envelope_and_error_path():
     assert "error" in bad
     bad2 = svc.butler_matrix_report(n_points=5)
     assert bad2["ok"] is False
+
+
+# ─── 9. W2-TEST 直测补强：自定义间距双路径与守卫边界 ─────────────────────────
+
+
+def test_service_payload_custom_spacing_dual_path():
+    """d=λ 全量载荷：闭式与 skrf 双路径逐位一致 + 波束角独立期望值。"""
+    from rfauto.service import butler_matrix_service as svc
+
+    out = svc.butler_matrix_payload(spacing_lambda=1.0, n_points=2001)
+    assert out["ok"] is True
+    data = out["data"]
+    # 独立期望值（#118 手算）：sinθ_k = (k−2.5)/4 → {−0.375,−0.125,0.125,0.375}
+    assert np.allclose([a["sin_theta"] for a in data["beam_angles"]],
+                       [-0.375, -0.125, 0.125, 0.375], rtol=0, atol=1e-12)
+    assert [a["delta_deg"] for a in data["beam_angles"]] == [-135.0, -45.0, 45.0, 135.0]
+    # 双路径矩阵经 payload 折叠后逐元素一致（[re, im] 对还原）
+    s_closed = np.array(data["s_beam_to_antenna_closed"], dtype=complex)
+    s_skrf = np.array(data["s_beam_to_antenna_skrf"], dtype=complex)
+    assert np.max(np.abs(s_closed - s_skrf)) <= 1e-9
+    # 载荷自洽：report 与 payload 的报告面同值
+    rep = svc.butler_matrix_report(spacing_lambda=1.0, n_points=2001)
+    assert rep["ok"] is True
+    assert rep["data"] == data["report"]
+    assert json.dumps(out)  # 全载荷 JSON 可序列化
+
+
+def test_service_guard_boundaries_invisible_region_and_npoints():
+    """守卫边界：d=0.1 不可见区 / n_points 1000 拒 1001 收。"""
+    from rfauto.service import butler_matrix_service as svc
+
+    bad = svc.butler_matrix_payload(spacing_lambda=0.1)
+    assert bad["ok"] is False
+    assert "不可见区" in bad["error"]
+    below = svc.butler_matrix_payload(n_points=1000)
+    assert below["ok"] is False
+    assert "1001" in below["error"]
+    at = svc.butler_matrix_report(n_points=1001)
+    assert at["ok"] is True  # 边界值恰好收（≥1001）
+    assert at["data"]["all_pass"] is True

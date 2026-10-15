@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── doctor ───────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ def models_list(
         except KeyError:
             if json_output:
                 # VI-5 W6-B：未知模型也信封（--json 下失败路径不许非 JSON）
-                _emit({"ok": False, "errors": [f"未知模型: {schema}"]},
+                _emit(error_envelope(f"未知模型: {schema}"),
                       "未知模型", json_output=True)
             console.print(f"[red]未知模型: {schema}[/red]")
             raise typer.Exit(code=1) from None
@@ -150,7 +151,7 @@ def models_list(
     if json_output:
         # VI-5 W6-B：--json 信封（清单面）
         console.print_json(json.dumps(
-            {"ok": True, "models": result.get("models", [])},
+            ok_envelope(models=result.get("models", [])),
             ensure_ascii=False, default=str))
         return
     table = Table(title="已注册模型")
@@ -177,7 +178,7 @@ def models_docs(
         except KeyError:
             if json_output:
                 # VI-5 W6-B：未知模型也信封（--json 下失败路径不许非 JSON）
-                _emit({"ok": False, "errors": [f"未知模型: {model}"]},
+                _emit(error_envelope(f"未知模型: {model}"),
                       "文档生成失败", json_output=True)
             console.print(f"[red]未知模型: {model}[/red]")
             raise typer.Exit(code=1) from None
@@ -185,8 +186,8 @@ def models_docs(
         if json_output:
             # VI-5 W6-B：--json 信封（落盘副作用保持，路径/行数并入信封）
             console.print_json(json.dumps(
-                {"ok": True, "model": model, "path": str(path),
-                 "n_lines": len(doc.splitlines())},
+                ok_envelope(model=model, path=str(path),
+                            n_lines=len(doc.splitlines())),
                 ensure_ascii=False, default=str))
             return
         console.print(f"[green]✓ 文档已生成[/green]  {path}（{len(doc.splitlines())} 行）")
@@ -196,8 +197,9 @@ def models_docs(
     if json_output:
         # VI-5 W6-B：--json 信封（全量生成；单模型 Error 逐名如实透传）
         console.print_json(json.dumps(
-            {"ok": True, "out_dir": out_dir,
-             "docs": {name: str(Path(out_dir) / (name + ".md")) for name in results}},
+            ok_envelope(
+                out_dir=out_dir,
+                docs={name: str(Path(out_dir) / (name + ".md")) for name in results}),
             ensure_ascii=False, default=str))
         return
     for name, doc in results.items():

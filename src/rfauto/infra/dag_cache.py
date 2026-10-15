@@ -1,6 +1,6 @@
 """DP-9 P1：DAG 级内容寻址缓存（键 + CAS manifest + 零拷贝索引）。
 
-规格=规格深案 §DP-9 §3。核心事实（接地已钉）：
+规格=docs/plan_deepdive_specs_20260924.md §DP-9 §3。核心事实（接地已钉）：
 **runs/ 湖已是事实 CAS——本模块只建索引，零拷贝**（runs/ 证据面零改写；
 infra/result_cache.py 零 hunk——DAG 键成分名不同，白名单与理由表本地定义，
 canonical/模式语义只读复用）。
@@ -164,7 +164,7 @@ def env_fingerprint(
 
 
 def _repo_root_guess() -> Path:
-    """仓根推断（本文件位于 <root>/src/rfauto/infra）。"""
+    """仓根推断（本文件位于 <root>/src/rfauto/infra/）。"""
     return Path(__file__).resolve().parents[3]
 
 

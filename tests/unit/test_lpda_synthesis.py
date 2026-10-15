@@ -1,4 +1,4 @@
-"""LPDA Carrel 综合内核单测（B2 器件族批 2，研究扩充 round3 §二 F-F 件 4）。
+"""LPDA Carrel 综合内核单测（B2 器件族批 2，docs/research_expansion_20260926_round3.md §二 F-F 件 4）。
 
 裁判口径（#118）：全部解析常量由"独立来源印刷数字 + venv 离线复算"双路径
 钉——路径 A = SNATI 2012 论文（ISSN 1907-5022，其设计节引用 ARRL Antenna

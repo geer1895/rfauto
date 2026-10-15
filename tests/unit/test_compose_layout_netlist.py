@@ -1,6 +1,6 @@
 """DP-8 组合引擎离线审计（P1+P2；#212 制度化升级）。
 
-权威口径：规格深案 §DP-8 +
+权威口径：docs/plan_deepdive_specs_20260924.md §DP-8 +
 runs/df6_dp8compose/criteria.md（C1-C3 判据预声明；C4/C5 留 P3）。
 
 覆盖：

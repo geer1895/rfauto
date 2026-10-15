@@ -13,7 +13,7 @@ diff）收敛至此。消费侧以别名 import 保持原调用名（``_num``/``
 ``err_envelope`` 只是它的可选 schema 版本戳变体；本模块只收入参收敛与
 审计文件枚举。
 
-数字出处：本模块零物理数字——纯入参校验与文件读取。
+数字出处：本模块零物理数字（AGENTS 规则 7）——纯入参校验与文件读取。
 """
 
 from __future__ import annotations

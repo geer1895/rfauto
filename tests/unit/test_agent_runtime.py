@@ -1,7 +1,7 @@
 """AgentRuntime 薄协议 + 配方沙箱 + Pi 式会话格式 单测。
 
 运行时循环用注入的假传输层（不开网络）；沙箱用 tmp_path 根
-（不落 runs）；promote 走真 Gate（fake adapter dry-run）。
+（不落 runs/）；promote 走真 Gate（fake adapter dry-run）。
 """
 
 import json

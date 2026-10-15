@@ -20,7 +20,7 @@ solve_smatrix_openems 进程隔离激励轮转（#208）4 次单激励真跑 →
   记 fc_at_band_edge=True，偏移量不可辨识（2026-09-17 lange refix 实证 +20% 系带沿夹持）。
 verdict：PASS=G1+G2+G3/G4@f0；PARTIAL=G1+G2 过且 G3/G4@f_c 过；FAIL=其余。
 
-装配归一（#250 链，2026-09-17 refix 实证；w1d-c4-assembly-diag）：
+装配归一（#250 链，2026-09-17 refix 实证； w1d-c4-assembly-diag）：
   缺省网格下 50Ω HJ 馈线的引擎自算 ZL≈45.7Ω（−8.6%），CalcPort(ref=50) 伪波分解
   使装配矩阵非无源（lange/cline σmax 1.0275/1.0344 虚假越门）。--line-z0 engine（缺省）
   让 solve_smatrix_openems 按各轮探针复算 ZL 走线基→50Ω 归一（原始矩阵留

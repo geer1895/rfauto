@@ -1,6 +1,6 @@
 """GSTC 面抗综合族（MM-3，内核 core/gstc.py，本模块只做注册壳）。
 
-规格 规格深案 §C-2（B 流超材料，2026-10-02）；
+规格 docs/plan_deepdive_specs_20261002.md §C-2（B 流超材料，2026-10-02）；
 法源 arXiv:1408.0273v2 = IEEE TAP 63(7) 2015 逐式核到（法向入射单轴
 Huygens 面闭式 Eq.(17)/(18)/(19)）。三键：
 - gstc_forward：χ_ee/χ_mm（实数或 [re,im]）+ freq_ghz → Eq.(17)/(18)
@@ -44,7 +44,7 @@ def _freq_to_k(freq_ghz: Any) -> float:
 
 @register_calculator(
     "gstc_forward",
-    "MM-3 GSTC 正向（规格 §C-2，arXiv 1408.0273v2=IEEE TAP 63(7) 2015 "
+    "GSTC正演：MM-3 GSTC 正向（规格 §C-2，arXiv 1408.0273v2=IEEE TAP 63(7) 2015 "
     "Eq.(17)/(18) 逐式）：法向入射单轴 Huygens 面 χ_ee/χ_mm（米；实数或 "
     "[re,im] 对）→ 共极化 T/R（[re,im]）+ 能量 |R|²+|T|²、dB/相位与 2×2 "
     "S 面（互易）。无源守卫 |R|²+|T|²≤1+1e-9 违即显式报错（本式口径无耗"
@@ -81,7 +81,7 @@ def gstc_forward(chi_ee: Any, chi_mm: Any, freq_ghz: Any,
 
 @register_calculator(
     "gstc_synthesize",
-    "MM-3 GSTC 逆解（规格 §C-2，arXiv 1408.0273v2 Eq.(19) 逐式）：目标共极化 "
+    "GSTC综合：MM-3 GSTC 逆解（规格 §C-2，arXiv 1408.0273v2 Eq.(19) 逐式）：目标共极化 "
     "(T,R)（[re,im]）→ 面极化率 χ_ee/χ_mm 反演 + Eq.(19)↔Eq.(17) 往返自检"
     "（逐位 ≤1e-12，违即 RuntimeError 显式失败——代数上应精确恒等）。"
     "|T±R+1|→0 的 χ→∞ 极点域（如 T=−1 全反 Huygens 极限）显式拒绝不外推；"

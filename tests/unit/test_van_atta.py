@@ -1,4 +1,4 @@
-"""LM-2 Van Atta 回射阵内核单测（研究扩充 round4 中件包二）。
+"""LM-2 Van Atta 回射阵内核单测（docs/research_expansion_20260926_round4.md 中件包二）。
 
 裁判口径（#118 双路径，不自证）：
 - 回射恒等式：路径 A = 内核闭式推证（镜像配对相位共轭 → AF 峰在 u'=u，

@@ -47,6 +47,26 @@ PARQUET_NAME = "points.parquet"
 HDF5_NAME = "points.h5"
 MANIFEST_NAME = "dataset_manifest.yaml"
 
+
+def _save_manifest_atomic(dataset_dir: str | Path,
+                          manifest: dict[str, Any]) -> Path:
+    """manifest 原子落盘（审查 A3 P2-1，2026-10-13）：同目录 tmp +
+    ``os.replace``——manifest 是数据集存在性事实源（``_load_manifest``
+    返回 None → 上层报"数据集不存在"），改写既有档中途崩溃会把 points
+    幸存的好档入口撕掉。campaign_manager._atomic_write_text / queue
+    daemon save_queue_state 同款范式（#319 原子写家法）。返回目标路径。
+    """
+    import yaml
+
+    target = Path(dataset_dir) / MANIFEST_NAME
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.name + ".tmp")
+    tmp.write_text(
+        yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
+        encoding="utf-8")
+    os.replace(tmp, target)
+    return target
+
 # 物化格式（E1 待做列①：HF（HDF5）格式与 Parquet 并列可选）。默认
 # parquet——既有注册表资产（如 wp24_registry_*）manifest 无 format 键，
 # 读取侧回退 parquet，资产零迁移。
@@ -75,7 +95,7 @@ DATASET_SCHEMA: list[tuple[str, str]] = [
 # ground truth 判别（WP2.4 待做列：ground truth 标注，6.3 神经算子前置）
 # ---------------------------------------------------------------------------
 
-# 真机引擎白名单词根：HFSS 为对齐基准，openEMS/COMSOL 为
+# 真机引擎白名单词根：HFSS 为对齐基准（项目规则 铁律），openEMS/COMSOL 为
 # 真跑全波引擎，"meas" 覆盖实测导入通道（calibration:* 前缀按词根命中）。
 # adapter 含 "fake" 一律不标（含 mf:fake+hfss 混合保真——行级 provenance
 # 混杂廉价模型，训练数据不认）；6.3 神经算子门槛=100+ GT 点/器件族。
@@ -1093,12 +1113,7 @@ def materialize_dataset(
         "visibility": "private",
         "ground_truth": gt_block,
     }
-    import yaml
-
-    manifest_path = dataset_dir / MANIFEST_NAME
-    manifest_path.write_text(
-        yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
-        encoding="utf-8")
+    manifest_path = _save_manifest_atomic(dataset_dir, manifest)
 
     # 注册表回写（R2-D-03 ⑤，默认关零行为变化；best-effort 不阻塞物化）
     result["registry_sync"] = False
@@ -2114,12 +2129,7 @@ def import_workdir_runs(
         "visibility": "private",
         "ground_truth": gt_block,
     }
-    import yaml
-
-    manifest_path = dataset_dir / MANIFEST_NAME
-    manifest_path.write_text(
-        yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
-        encoding="utf-8")
+    manifest_path = _save_manifest_atomic(dataset_dir, manifest)
 
     # 注册表回写（R2-D-03 ⑤，默认关零行为变化；best-effort 不阻塞物化）
     sync_enabled = _resolve_registry_sync(registry_sync)

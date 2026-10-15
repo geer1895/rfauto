@@ -50,3 +50,44 @@ nominal_derivation: |-
   1/((2π·13.56MHz)²·47pF)=2.9310µH → synthesize_coil(square, n=7, w=s=0.5mm)
   二分反解 d_out=38.2988（回代相对差 1.4e-16）；47pF=标准 NP0 档外匹配电容
   （不进几何，fake 同源）；h=1.6/er=4.4/tan_d=0.02 为 FR4 类板材典型值
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: NFC/WPC 平面螺旋线圈：Mohan 电流片式电感闭式给出 L，与外接匹配电容构成 f0=1/(2π√(LC)) 谐振对——几何决定 L、电容决定工作点。典型用于 13.56MHz
+      NFC 天线与无线充电线圈；常见误用=改圈数忘了改外径——圈数与平均直径同时进入电流片式，单改其一即偏离目标 L（名义回代相对差 1.4e-16 的综合链会失配）。
+    derivations:
+    - claim: Mohan-Schneider-Chibante 电流片式电感（三表达式可交叉校核）
+      formula: L = μ0*n**2*d_avg*c1/2*(ln(c2/d)+c3*d+c4*d**2)
+      source: 本仓 core/nfc_coil（spiral_inductance 单源（IEEE JSSC 34(10) 1999 口径）；docs/templates/coil_nfc/meta.yaml
+        nominal_derivation（L_target=2.9310µH 回代相对差 1.4e-16））
+    - claim: 谐振工作点由外匹配电容给出（47pF 不进几何）
+      formula: f0 = 1/(2*pi*sqrt(L*C)) ; L_target = 1/((2π·13.56MHz)²·47pF)
+      source: 本仓 core/nfc_coil（evaluate_coil 谐振面单源；docs/templates/coil_nfc/meta.yaml nominal_derivation（47pF=标准
+        NP0 档外匹配电容））
+  sensitivity_ranking:
+  - param: d_out_mm
+    order: 1
+    basis: 外径（平均直径主项，电流片式 1.69 通道）；登记表 1.6910
+  - param: n_turns
+    order: 2
+    basis: 圈数 n² 通道被 d_avg 随 n 同变稀释（复合 1.26 非纯 2）；登记表 1.2590
+  - param: w_mm
+    order: 3
+    basis: 线宽（d_avg 填充修正通道）；登记表 0.3720
+  - param: s_mm
+    order: 4
+    basis: 匝间距（同上）；登记表 0.3189
+  - param: gap_mm
+    order: 5
+    basis: 馈隙不进电感式（登记表 0）
+  - param: h_mm
+    order: 6
+    basis: 板厚不进电流片式（登记表 0）
+  - param: er
+    order: 7
+    basis: 介电常数不进电感式（登记表 0——经自谐振频率弱进入属全波维）
+  - param: tan_d
+    order: 8
+    basis: 损耗角不进电感式（登记表 0）
+  quiz_refs: []

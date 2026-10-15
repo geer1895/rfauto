@@ -1,0 +1,111 @@
+# ═══ EDB 快车道模板元面（信息文档形态，不入 TEMPLATE_META 注册表）══════════
+# 本文件是 EDB 快车道发射族的元数据文档。edb_* 族不是
+# openems_templates.TEMPLATE_NOMINAL 注册模板：
+# tests/unit/test_template_meta_consistency.py 与
+# tests/unit/test_template_geometry_audit.py 的 EXPECTED_TEMPLATES（冻结
+# 72 项）不扫描本目录；scripts/build_docs_pages.build_templates_page 将
+# 非注册目录按信息文档排除（2026-10-08 同笔调整）。schema 单源=
+# src/rfauto/adapters/edb_templates/schema.py（KNOWN_TEMPLATES /
+# SPEC_SCHEMA_VERSION / validate_spec）。
+#
+# 门值口径：acceptance 全部是"离线发射层门"（发射自检与冒烟判读层的
+# offline gate）；真机求解产物的质量仲裁另有 health gate
+# （service/edb_health_gate，W3/W4 已落地：门常量按模板作用域分派，
+# 登记表 S11_DIP_DB_BY_TEMPLATE / S_WINDOW_DB_BY_TEMPLATE 为单源，
+# 改动门值读源码核对、禁止臆造物理数字）。
+#
+# 用户指南：docs/edb_lane_guide.md
+
+template: edb_ratrace
+registry_status: 已落地（src/rfauto/adapters/edb_templates/ratrace.py
+  emit_ratrace_spec；服务层分派表已接线——schema.KNOWN_TEMPLATES 白名单
+  升格 followUp，「template 非法」行由发射器侧族豁免过滤；环+四馈线
+  单连通，其余审计面（端点附着图/board 覆盖/端口落位）全量走
+  validate_spec 正本）
+schema_version: 1
+edb_lane: EDB 快车道（PyEDB 声明式 spec 建库 + hfss_batch 批处理求解）
+f0_ghz: 2.5
+n_ports: 4
+units:
+  length: mm
+  frequency: GHz
+
+# 设计参数（emit_ratrace_spec 入参；缺省值见发射器 docstring。
+# 原"规划参数"键面 w_ring_mm/w_feed_mm/r_ring_mm 均转为发射器产出
+# （环阻抗与周长由综合单源闭式产出），不再是入参）
+params:
+- f0_ghz          # 必填，>0
+- z0_ohm          # 缺省 50.0；仅支持 50（pyedb CfgEdgePort 波端口阻抗硬编码 50Ω）
+- feed_len_mm     # 缺省 5.0（四条 50Ω 馈线长）
+- copper_thickness_mm  # 缺省 0.035
+- board_margin_mm      # 缺省 2.0
+# 非"设计参数"的发射器键：stackup、sweep、adapt（同 edb_branchline 缺省档）
+
+substrate:
+  name: rogers4350b_h0.508
+  er: 3.66
+  h_mm: 0.508
+  loss_tangent: 0.0037
+
+# 名义参数 @2.5GHz 缺省层叠——emit_ratrace_spec 实跑产出（2026-10-08 实测，
+# 非手抄；综合单源 core.synthesis 闭式复刻 synthesize_ratrace_model 同式
+# 同序，禁手抄毫米数；一致钉 tests/unit/test_edb_templates_ext.py 舍入档）
+nominal_params:
+  w_ring_mm: 0.6035             # √2·Z0=70.711Ω 环带 HJ 反解（εeff_ring=2.7246）
+  w_feed_mm: 1.1134             # 50Ω 馈线 HJ 反解
+  perimeter_mm: 108.9741        # 中心线周长 P=1.5λg（λg=72.6494）
+  side_mm: 27.2435              # 方形环边长 S=P/4
+  r_ring_equivalent_mm: 17.3438 # 等效圆环半径 R=P/(2π)（对照口径）
+  feed_len_mm: 5.0
+
+synthesis_source: core/synthesis.py 闭式复刻（环阻抗 Z_ring=√2·Z0、周长
+  C=1.5λg、R=C/(2π)，Pozar §7.5；与注册 ratrace 模板
+  synthesize_ratrace_model 同式同序——该函数经 Stackup 读档属 IO，发射器
+  零 IO 契约下闭式复刻，一致钉 tests/unit/test_edb_templates_ext.py）——
+  禁手抄毫米数
+topology: 180° 混合环（方形环拓扑等价实现——EDB 平面族全轴对齐两点线段
+  纪律下圆环不可表示）：√2·Z0 环带、中心线周长 1.5λg 精确（电长度零
+  偏差）、边长 S=P/4；圆→方偏差只剩四个 90° 拐角不连续（未切角 miter，
+  与 branchline 矩形环同类二阶效应，冒烟判读按引擎偏差项对待、不进闭式
+  裁判）；环带在四个端口接入点分段（8 段，接入点=相邻段共享端点，分段
+  只是矩形划分，并集几何与整环逐点一致）
+port_roles: P1 Σ（和口，右边中点）/ P2 out1 / P4 out2 / P3 Δ（差口）——
+  Σ 激励 out1/out2 各 -3dB 同相、Σ↔Δ 隔离、out1↔out2 互隔离；Δ 激励
+  out1/out2 等分反相（180° 差）。弧位（发射器实现）：Σ=右边中点弧位 0、
+  out1=+λ/4、out2=−λ/4、Δ=+λ/2；与注册 openEMS ratrace 规范角位
+  （Σ=0°/out1=60°/Δ=120°/out2=300°）的对照=发射器 docstring「同弧位
+  口径」声明，逐角位一致性核对留真机冒烟判读
+extraction: 全 S 矩阵 4 端口（wave_port 馈线端点；批处理求解后 Touchstone
+  .s4p；端口序=AEDT 端口号序，sNp 头注释存证）
+
+# 离线发射层门（发射器已落地，门值仍为设计期规划值——待真机冒烟判读校准。
+# health gate 对齐现状（读源码核对 2026-10-08）：S_WINDOW_DB_BY_TEMPLATE /
+# S11_DIP_DB_BY_TEMPLATE 均未登记本族——S11@f0 真机判读回退通用谷深门
+# -10dB（DEFAULT_S11_DIP_DB），Σ 均分窗判据对本族缺席不判；Σ 均分与功分器
+# 同属等分分配语义（健康值 ≈-3.0dB+损耗），窗值落定时按双边界窗语义裁定
+# （参照 edb_power_divider 2026-10-09 仲裁：单边 ≤-3.8 型字面门已证语义
+# 错位），不预改本表门值。本节离线门与 health gate 口径独立）
+acceptance:
+  sigma_split_db_at_f0: {op: "in", bound: [-3.5, -2.5],
+    label: "Σ 口均分（两输出，同相）", status: 规划值——发射器已落地，
+    待真机冒烟判读后按窗语义裁定落定值}
+  delta_isolation_db_at_f0: {op: "≤", bound: -20.0,
+    label: "Δ 口隔离 + out1↔out2 互隔离（理想 180° 混合环 S 矩阵闭式裁判，
+    #208 Y 矩阵推导）", status: 规划值——发射器已落地，待真机冒烟判读校准}
+  s11_db_at_f0: {op: "≤", bound: -15.0, label: "|S11| 谷深（四口全匹配）",
+    status: 规划值——发射器已落地，待真机冒烟判读校准}
+
+engine_constant_note: openEMS 渲染层的 ring_mesh_k 直角阶梯化补偿引擎常数
+  （docs/templates/ratrace/meta.yaml engine_constants）属 openEMS 渲染层
+  消费面，不入 EDB 通道元面——EDB/AEDT 网格自适应下是否需要同类补偿=
+  待验证（真机冒烟项）。
+todo_note: |
+  落地后待验证（发射器已落地，以下为真机冒烟前自查项）：
+  1. 环形走线的 spec 表达已按方形环拓扑等价实现落地（8 段端点重合附着，
+     接入点=相邻段共享端点，validate_spec 端点附着图单连通审计正本消费；
+     周长精确，弦高逼近误差随方形环实现消除，残余=四拐角不连续，见
+     topology）；
+  2. 四口波端口引出方向与 extent 因子自洽——发射器已落地但未带
+     power_divider 同款交叠守卫；静态自查=P2/P3 端口对间距=λg/4≈18.2mm，
+     大于端口片宽 5×w_feed≈5.57mm，初判无交叠，真机冒烟前复核
+     （power_divider gap 冲突教训的推广自查）。

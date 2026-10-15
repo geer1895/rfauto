@@ -231,7 +231,7 @@ def run_xyce(
     """在 WSL 内运行 Xyce 网表（工作目录 = 网表所在目录，产物就地落盘）。
 
     命令形态：``wsl -d <distro> --exec bash -c "cd <dir> && <exe> [args] <name>"``。
-    网表必须在 Windows 盘符路径（mnt/<盘> 可达）；超时返回
+    网表必须在 Windows 盘符路径（/mnt/<盘> 可达）；超时返回
     ``timed_out=True`` 的结果（不抛，由调用方定夺——观测性 #105）。
     """
     netlist = Path(netlist_path)

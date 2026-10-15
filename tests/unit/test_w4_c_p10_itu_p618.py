@@ -193,6 +193,19 @@ def test_ap_domain_guards():
         rain_attenuation_ap(-1.0, 0.1, 45.0, 30.0)
 
 
+def test_ap_zero_input_returns_zero_all_branches():
+    """A001=0（无雨零分支合法输入）→ Ap=0 快路径全 β 分支（ge9 审查 P2
+    勘误钉：旧实现直落 math.log(0) 裸崩 math domain error——上游
+    rain_attenuation_r001 的 hR≤hs/R0.01=0 两零分支返回 0.0，按链路喂
+    Step10 即崩；式(8) 原文 A001=0→Ap=0 恒零）。"""
+    for lat, el in ((45.0, 30.0),   # p<1、|φ|<36、el<25 → β 含 sinθ 项
+                    (20.0, 10.0),   # el<25 深分支
+                    (50.0, 60.0),   # |φ|≥36 → β=0
+                    (20.0, 60.0)):  # el≥25 分支
+        for p in (0.01, 0.1, 1.0):
+            assert rain_attenuation_ap(0.0, p, lat, el) == 0.0
+
+
 # ─── P.453-13 承接（e_s/e/N_wet）─────────────────────────────────────────────
 
 def test_saturation_vapour_pressure_reference_points():

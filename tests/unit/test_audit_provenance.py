@@ -1,6 +1,6 @@
 """XA-6 出处断链巡检门锚树（scripts/audit_provenance.py）。
 
-规格：研究扩充 round18 XA-6。巡检对象=KD-1
+规格：docs/research_expansion_20261002_round18.md XA-6。巡检对象=KD-1
 注册表（knowledge/formula_provenance.yaml）。
 
 锚树：

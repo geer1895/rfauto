@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── solvers (方向 6g/6h: 求解器可视化+管理) ────────────────────────────────────────────────
 
@@ -275,7 +276,7 @@ def inbox_cmd(
         if not recipe:
             if json_output:
                 # VI-5 W6-B：入参缺失也信封（--json 下失败路径不许非 JSON）
-                _emit({"ok": False, "errors": ["--approve 需要 --recipe 指定配方路径"]},
+                _emit(error_envelope("--approve 需要 --recipe 指定配方路径"),
                       "批准失败", json_output=True)
             console.print("[red]✗ --approve 需要 --recipe 指定配方路径[/red]")
             raise typer.Exit(code=1)
@@ -344,8 +345,8 @@ def chat_cmd(
     if json_output:
         # VI-5 W6-B：--json 信封（text/action 原样透传，channel 并入）
         console.print_json(json.dumps(
-            {"ok": True, "text": result.get("text", ""),
-             "action": result.get("action", "?"), "channel": channel},
+            ok_envelope(text=result.get("text", ""),
+                        action=result.get("action", "?"), channel=channel),
             ensure_ascii=False, default=str))
         return
     console.print(result["text"])

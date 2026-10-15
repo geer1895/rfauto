@@ -1,4 +1,4 @@
-"""KD-1 公式 provenance 注册表锚树（specs 研究扩充 round16 KD-1）。
+"""KD-1 公式 provenance 注册表锚树（specs docs/research_expansion_20261002_round16.md KD-1）。
 
 五面锚（KD-1 载体裁决=三载体缺一即漂移）：
 1. 一致性门——YAML ↔ 仓级 AST 扫描逐条目相等：docstring 出处改动未再生=红、
@@ -201,6 +201,43 @@ def test_manual_entry_roundtrip_preserved(tmp_path):
     p2 = tmp_path / "fp2.yaml"
     p2.write_text(again, encoding="utf-8")
     assert load_formula_provenance(p2)["manual_entries"] == [manual]
+
+
+def test_minimal_manual_entry_summary_and_query_no_crash(tmp_path):
+    """A2 P1-1 端到端钉：schema 合法的**最小** manual entry（恰三必需键）
+    此前 provenance_summary 端到端 KeyError: 'kind'（loader 接受的形态，
+    第一个消费点就崩）。修后：summary 不炸且计数正确；查询面把 manual
+    并入过滤范围（两面对齐，缺省 kind=source/origin=manual 归一）。"""
+    minimal = {
+        "formula_id": "manual:min:01",
+        "claim_line": "文献：手工补录的最小条目",
+        "verified_by": "人工（最小形态）",
+    }
+    text = render_formula_provenance_yaml([], [minimal])
+    p = tmp_path / "fp_min.yaml"
+    p.write_text(text, encoding="utf-8")
+    loaded = load_formula_provenance(p)  # loader 校验通过（既有契约）
+    assert loaded["manual_entries"] == [minimal]
+
+    # 摘要面：不炸且计数正确（kind/origin 缺省归一）
+    s = provenance_summary(path=p)
+    assert s["entries"] == 1
+    assert s["manual_entries"] == 1
+    assert s["by_kind"] == {"source": 1}
+    assert s["by_access"] == {"null": 1}
+    assert s["files"] == 0 and s["modules"] == 0 and s["kernel_files"] == []
+
+    # 注入路径（entries= 手工注入 manual 形态）同不炸（此前崩在 e["origin"]）
+    s2 = provenance_summary(entries=[dict(minimal)])
+    assert s2["entries"] == 1 and s2["by_kind"] == {"source": 1}
+
+    # 查询面对齐：manual 可查；kind 过滤按归一缺省 source 命中
+    hits = formula_provenance(path=p)
+    assert [e["formula_id"] for e in hits] == ["manual:min:01"]
+    assert hits[0]["kind"] == "source" and hits[0]["origin"] == "manual"
+    assert formula_provenance(path=p, kind="source")[0]["formula_id"] == "manual:min:01"
+    assert formula_provenance(path=p, kind="pointer") == []
+    assert formula_provenance(path=p, file="nope.py") == []
 
 
 def test_path_resolution_explicit_env_canonical(tmp_path, monkeypatch):

@@ -52,3 +52,49 @@ smoke_note: 离线审计先行（#212，test_ta_wave_c_templates）；内核数�
   TZ=[±2.0] 传输零点保持（−88dB 谷映射前后一致）；χ 一阶部分长耦合与环角/开缝
   结构效应未经 EM 校准（hairpin c(gap) 同族待标定项，#122 如实登记）；真机冒烟
   与 HFSS 仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 交叉耦合四重奏 BPF：四个 λg/2 开路环 2×2 排布，第 4 条非相邻耦合缝（4-1）注入 m14 交叉耦合，在带外造出传输零点（TZ）——这是相对全极点 Chebyshev
+      的选择性增益来源。典型用于需要陡峭带缘的窄带滤波；常见误用=只看带内回损不看 TZ 位置——交叉耦合强度（g14 缝）同时改 TZ 频率与带内纹波相位。
+    derivations:
+    - claim: 非相邻耦合条目 m14 的 folded 矩阵映射（TZ 产生机制）
+      formula: M_folded[1,4] != 0 → TZ 对（本仓名义 TZ=±2.0 保持 −88dB 谷）
+      source: 本仓 core/cross_coupled_map（folded 映射与频响内核；docs/templates/xcheb_bpf4/meta.yaml param_semantics（三锚：全极点退化
+        1.2e-5/KJ 往返 7.5e-7/TZ 保持））
+    - claim: 环周长=λg/2（开路环谐振，4a 周长口径）
+      formula: 4*a = λg/2 - 2*Δl
+      source: 本仓 core/cross_coupled_map（耦合矩阵族内核；docs/templates/xcheb_bpf4/meta.yaml param_semantics（a_mm=环边段长口径））
+  sensitivity_ranking:
+  - param: a_mm
+    order: 1
+    basis: 环边段长（4a=λg/2 谐振恒等式主控）
+  - param: g14_mm
+    order: 2
+    basis: 交叉耦合缝（TZ 位置/深度主维——本模板的存在理由）
+  - param: g12_mm
+    order: 3
+    basis: 主线耦合缝（带宽/回损主维）
+  - param: g23_mm
+    order: 4
+    basis: 中线耦合缝（k 矩阵中列）
+  - param: g34_mm
+    order: 5
+    basis: 底行耦合缝
+  - param: tap_t_mm
+    order: 6
+    basis: 抽头位置（外部 Q 路径的一部分，与 g_pos 联立）
+  - param: g_open_mm
+    order: 7
+    basis: 环开缝宽（开路端与 Q_e 路径弱维）
+  - param: g_pos_mm
+    order: 8
+    basis: 开缝中心偏置（Q_e 路径的一部分）
+  - param: w_mm
+    order: 9
+    basis: 环线宽（50Ω 口径，经 εeff 弱进入谐振）
+  - param: er
+    order: 10
+    basis: εeff 填充加权（|∂lnf0/∂lnεeff|≤1/2 恒等式族）
+  quiz_refs: []

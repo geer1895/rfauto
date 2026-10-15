@@ -26,7 +26,21 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=17 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | w_mm | 0.562504 |
+| 2 | h_mm | 0.556755 |
+| 3 | er | 0.5 |
+| 4 | a_mm | 0.005772 |
+| 5 | d_mm | 0.0 |
+| 6 | line_len_mm | 0.0 |
+| 7 | s_mm | 0.0 |
+| 8 | tan_d | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -49,7 +63,7 @@
 - 参数语义：w_mm=内导体条带宽（Z0=50Ω 对 sicl_closed_form 共形闭式 brentq 反解，sicl_design_params 单源）；a_mm=两过孔列心距（外腔宽，a/b=2.5 名义）；d_mm=过孔直径、s_mm=过孔心距（SIW 经验迁移 s≤2d、d<λ_sub/5，内核 docstring 登记面；siw 同源档 0.6/1.0）；line_len_mm=条带两端间距；腔高 b=H_SUB=nominal h_mm=1.016（RO4350B 双板，stripline 同源）；er/tan_d 只进基板材料（MATERIAL_VALUE_PARAMS 豁免）——w 的 Z0 联动仅在名义设计点（sicl_design_params），渲染期 er 扰动不改导体（slotline/siw 同口径）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；条带缘/过孔墙三线对（列心±d/2、列心）/条带两端/端口面精确入网（#198）；条带中面 z=b/2 落格依赖基板 z 偶数格（_sub_cells 缺省 4，生成期断言 #283 口径）；过孔直径 ≥4·NEAR + 孔间缝>NEAR（#311 先例口径）守卫；显式近场线 10µm 地板（#349）；全轴 1µm 近重合去重（#152）
 - 冒烟现状：未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①准静态闭式无色散/零厚带/均匀填充（内核 FD 裁判 ±5% 声明域，UNVERIFIED-1 公式族归属如实登记）；②过孔墙离散化（s=1.0mm 圆柱列）对理想连续壁的等效性未经真机仲裁（SIW 经验迁移，内核 docstring 登记面）；③StripLinePort 端口段=屏蔽腔内均匀延伸无过渡（同 stripline 口径）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

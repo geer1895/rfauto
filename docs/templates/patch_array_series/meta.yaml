@@ -24,3 +24,34 @@ topology: 1×3 串馈贴片阵（§10.3 C2）：3 元共线沿 y（x=0 居中，
 param_semantics: elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 传输线模型 c/(2f0√εeff)−2ΔL，fake 谐振为其精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))，决定 εeff/ΔL 与 H 面波束），feed_w_mm=50Ω 馈线/互联宽（HJ 1.112mm），link_len_mm=互联长 λg/2=c/(2f0√εeff(feed_w))=15.2876mm（HJ），feed_margin_mm=板边到链首元的馈段长（MSLPort 自画，MeasPlaneShift=margin/3）
 mesh_note: 辐射器件：上方/侧向空气隙 λ0/4；贴片/互联/馈段盒缘精确入网（#198）
 smoke_note: 未真机冒烟（2026-09-15 注册，离线审计/闭式裁判已过）。openEMS 轨 followUp：scripts/smoke_array_anchor.py <template>，判据=S11 谷位 f0±12% 窗（谷深 ≤−6dB）+ far_field nf2ff 主瓣天顶/HPBW·Dmax 对照 core/array_synthesis 闭式 ≤20-30% + η=Prad/P_acc 合理；预算 NrTS=100000 分钟~小时级，逐模板串行单飞
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 1×3 串馈贴片阵：相邻元以 λg/2 互联接辐射边中心——λg/2 段 180°与 λ/2 贴片两边场反相 180° 相抵，串馈仍同相侧射。典型用于馈电网络最省面积的定波束阵；常见误用=互联长按自由空间
+      λ/2 手算——须按馈线自身 εeff 换算（λg/2 恒等式），错即全阵失相。
+    derivations:
+    - claim: 串馈相位账：λg/2 段 180°+贴片反相 180° ⇒ 同相侧射
+      formula: link_len = λg/2 = c/(2*f0*sqrt(εeff(feed_w))) = 15.2876 mm
+      source: docs/rf_template_references.md §12（C2 串馈相位账已核）；docs/templates/patch_array_series/meta.yaml
+        param_semantics
+    - claim: 单元谐振长（Balanis Ch.14 传输线模型，fake 谐振为其精确逆）
+      formula: L = c/(2*f0*sqrt(εeff))-2ΔL
+      source: 本仓 core/synthesis（synthesize_patch 同式单源；docs/templates/patch_array_series/meta.yaml param_semantics）
+  sensitivity_ranking:
+  - param: link_len_mm
+    order: 1
+    basis: λg/2 互联恒等式 |∂lnf0/∂lnL|=1（精确——失相主维）
+  - param: elem_len_mm
+    order: 2
+    basis: 单元 λ/2 谐振恒等式（精确）
+  - param: feed_w_mm
+    order: 3
+    basis: 互联线宽经 εeff 进入 λg/2（失相弱维）
+  - param: elem_w_mm
+    order: 4
+    basis: 单元宽（波束/弱进谐振）
+  - param: feed_margin_mm
+    order: 5
+    basis: 板边馈段（不进相位账）
+  quiz_refs: []

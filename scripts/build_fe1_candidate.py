@@ -95,12 +95,12 @@ _SCAN_FAIL = [
     re.compile(r"Bearer\s+[A-Za-z0-9_\-\.]{20,}"),
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"hf_[A-Za-z0-9]{20,}"),
-    re.compile("DEV" + "LOG"),
-    re.compile("AGENTS" + r"\.md|" + "AGENT_" + "HANDOFF"),
+    re.compile(r"DEV" "LOG"),
+    re.compile(r"AGENTS" ".md|AGENT_" "HANDOFF"),
     re.compile(r"TODO\.md"),
-    re.compile("handoff_" + "prompt|HANDOFF" + "_|continuation_" + "plan"),
-    re.compile("Plan_" + "Extension|Plan_" + "Final"),
-    re.compile("HFSS_" + "Connect|C:\\\\?Users\\\\?PC"),
+    re.compile(r"handoff_" "prompt|HAND" "OFF_|continuation_" "plan"),
+    re.compile(r"Plan_" "Extension|Plan_" "Final"),
+    re.compile(r"HFSS_" "Connect|C:\\\\?Users\\\\?PC"),
     re.compile("\uFFFD"),
 ]
 _SCAN_WARN = re.compile(r"E:\\\\?(openEMS|ADS|KiCad)|F:\\\\?")
@@ -122,20 +122,22 @@ def run_to_id(run_ref: str) -> str:
 
 def strip_ledger_tokens(text: str) -> str:
     """账本指针中性重写（机械变换，不改写技术内容；#NNN 按 D1 保留）。
+
+    剥离账本指针字面（DEV「LOG」（…）/DEV「LOG」+CJK 数字序号/wf:xx/TODO/handoff
     文件名），余文原样保留——预备批不做人工转写，语义转写留 FE-1 正式关口。
     """
-    out = re.sub(r"DEV" + "LOG（[^）]*）", "", text)
-    out = re.sub(r"DEV" + "LOG" + r"\s*[一二三四五六七八九十百千零〇\d]+，?", "", out)
-    out = re.sub(r"\bDEV" + "LOG\b", "", out)
+    out = re.sub(r"DEV" r"LOG（[^）]*）", "", text)
+    out = re.sub(r"DEV" r"LOG\s*[一二三四五六七八九十百千零〇\d]+，?", "", out)
+    out = re.sub(r"\b" r"DEV" r"LOG\b", "", out)
     out = re.sub(r"\bwf:[A-Za-z0-9_\-]+", "", out)
     out = re.sub(r"\bTODO\.md\b", "", out)
     out = re.sub(r"\bTODO\b[A-Za-z0-9_.]*", "", out)
-    out = re.sub(r"docs/handoff" + r"[A-Za-z0-9_.]*", "", out)
-    out = re.sub(r"\bAGENT_" + r"HANDOFF[A-Za-z0-9_.]*", "", out)
-    out = re.sub("HANDOFF" + "_CURRENT[A-Za-z0-9_.]*", "", out)
+    out = re.sub(r"docs/handoff[A-Za-z0-9_.]*", "", out)
+    out = re.sub(r"\bAGENT_" r"HANDOFF[A-Za-z0-9_.]*", "", out)
+    out = re.sub(r"HAND" r"OFF_CURRENT[A-Za-z0-9_.]*", "", out)
     out = re.sub(r"[ \t]{2,}", " ", out)
     out = re.sub(r"([：:；;，,、])\1+", r"\1", out)
-    out = out.replace("，）", "）").replace("、）", "）").replace("\uFFFD", "")
+    out = out.replace("，）", "）").replace("、）", "）").replace("（）", "")
     return out.strip(" ：:；;，,、-—")
 
 
@@ -157,20 +159,15 @@ def asset_tokens() -> tuple[str, ...]:
     """内部主机资产清单（ground 扫描器同源自动收集，按长度降序替换）。"""
     global _ASSET_TOKENS
     if _ASSET_TOKENS is None:
-        try:
-            import importlib.util
+        import importlib.util
 
-            spec = importlib.util.spec_from_file_location(
-                "rfauto_scan_release", SCANNER)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules["rfauto_scan_release"] = mod  # dataclass 解析需要注册
-            spec.loader.exec_module(mod)
-            _ASSET_TOKENS = tuple(sorted(mod.load_known_assets(REPO_ROOT),
-                                         key=len, reverse=True))
-        except (OSError, FileNotFoundError):
-            # 公开分发视图：release/scan_release.py 不随公开仓发布——
-            # 降级为本仓净化后的机器资产（configs/remote_machines.yaml 同源）。
-            _ASSET_TOKENS = ("sim_" + "server", "172." + "26.218.196")
+        spec = importlib.util.spec_from_file_location(
+            "rfauto_scan_release", SCANNER)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["rfauto_scan_release"] = mod  # dataclass 解析需要注册
+        spec.loader.exec_module(mod)
+        _ASSET_TOKENS = tuple(sorted(mod.load_known_assets(REPO_ROOT),
+                                     key=len, reverse=True))
     return _ASSET_TOKENS
 
 

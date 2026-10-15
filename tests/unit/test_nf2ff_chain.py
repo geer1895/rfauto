@@ -225,6 +225,22 @@ class TestServiceAndView:
         assert out["runs"][0]["run_id"] == _ff_run
         assert out["runs"][0]["has_sar"] is True
 
+    def test_farfield_runs_stat_race_skips_entry(self, _ff_run, monkeypatch):
+        """枚举与 stat 之间产物被清 → 跳过该条目不穿透（审查 A4 P2-1 钉）。
+
+        found 指向已消失的 meta 路径（模拟 runs/ 清理/归档搬移竞态）：
+        stat 抛 FileNotFoundError（OSError 子族）须被吸收，清单如实缩
+        空（#105 观测面），不得 OSError 上抛打红只读页。"""
+        from rfauto.core.farfield import FARFIELD_META_NAME
+        from rfauto.service import nf2ff_service
+
+        monkeypatch.setattr(
+            nf2ff_service, "_shallow_artifacts",
+            lambda rd: {FARFIELD_META_NAME: rd / "farfield_meta_gone.json"})
+        out = nf2ff_service.farfield_runs()
+        assert out["ok"] is True
+        assert out["runs"] == []
+
     def test_farfield_view_metrics_and_cuts(self, _ff_run):
         from rfauto.service.nf2ff_service import farfield_view
 
@@ -373,8 +389,11 @@ class TestFarfieldViewEtaGate:
         assert m["eta_gate"] is None
 
     def test_frontend_farfield_page_renders_eta_gate(self):
-        pages = (SRC / "rfauto" / "ui" / "static" / "pages.js").read_text(
-            encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        _sn = SRC / "rfauto" / "ui" / "static"
+        pages = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [_sn / "pages.js", *sorted((_sn / "pages").glob("*.js"))])
         m = re.search(r"async function pageFarfield.*?(?=\n(?:/\*|async function ))",
                       pages, re.S)
         assert m is not None

@@ -1,6 +1,6 @@
 """MT-5 三阶 PLL 环路滤波器综合内核（round17 规格，T1/T2/T3 设计面闭式+峰值相位放置迭代）。
 
-规格：研究扩充 round17 §二 MT-5（P1/S）：
+规格：docs/research_expansion_20261002_round17.md §二 MT-5（P1/S）：
 「Banerjee SNAA106C（TI 免费）T1/T2/T3→C1/C2/R2/C3 闭式+相位裕度迭代。
 验收：回代 open_loop_transfer 复现目标 f_c/PM」。
 

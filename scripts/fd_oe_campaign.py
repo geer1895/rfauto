@@ -57,10 +57,11 @@ if str(_SRC) not in sys.path:
 
 TARGETS = [
     "patch_array_1x4", "patch_array_2x2", "patch_array_series", "patch_eep_1x4",
-    "ms_array_NxN", "ms_patch", "ms_cross", "ms_jcross", "bend",
+    "ms_array_NxN", "ms_patch", "ms_ring_patch", "ms_cross", "ms_jcross", "bend",
     "branchline_2sect", "atten_pi", "atten_t", "stripline",
     "suspended_stripline", "tjunc", "monopole", "ifa",
-]
+]  # ms_ring_patch=H-07 补齐（2026-10-08 快赢席 W1；TEMPLATE_META 注册形态
+# 与 ms_patch 同构：f0_ghz/extraction/params 全，campaign 通用机直吃）
 
 # ── nrts_converged 判读门（wf:nrts-fix，#266 口径；c3 smoke_c3_filter_family
 #    同款语义收窄自包含，正则与 scripts/smoke_coupled_bpf_nrts.parse_engine_log
@@ -276,7 +277,7 @@ _SALVAGE_COVERAGE_MIN = 0.90    # S1 阈值（criteria_salvage.md §三）
 _SALVAGE_CRITERIA_REL = "runs/ms_array_nxn_rerun/salvage/criteria_salvage.md"
 _V2_DMAX_DBI_RANGE = (0.0, 40.0)     # S3b-v2 预声明：ms 族 Dmax 物理带
 _V2_EVIDENCE_FILENAME = "farfield_v2.json"   # run 目录内联 v2 证据约定名
-# 空场熔断地板（7×7 教训，六百九十三）：E_norm 全局 max=6.6e-9
+# 空场熔断地板（7×7 教训， 六百九十三）：E_norm 全局 max=6.6e-9
 # （−163.7dB）/P_up=2.17e-22W 时 argmax 仍给 25° 与 Dmax=35.19dBi（零/零
 # 比值伪象）——低于地板=空远场，判读熔断 UNKNOWN 不产 Dmax 假值。
 _V2_P_UP_ABS_FLOOR_W = 10.0 ** (-140.0 / 10.0)    # −140 dBW = 1e-14 W
@@ -858,7 +859,7 @@ def run_portless_salvage(run_dir: Path, out_dir: Path,
 
     CalcNF2FF 在**无 h5py 子进程**内执行（DLL 同名异版隔离，见
     calc_nf2ff_offline）；父进程随后做 h5py 侧证据读取（覆盖率/盒对拍）。
-    fdtd/ 零写入（结果 outfile 显式落 out_dir/farfield）。
+    fdtd/ 零写入（结果 outfile 显式落 out_dir/farfield/）。
     """
     run_dir = Path(run_dir)
     out_dir = Path(out_dir)

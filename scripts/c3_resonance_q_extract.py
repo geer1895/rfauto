@@ -469,7 +469,7 @@ def _read_sparams_csv(path: str | Path) -> tuple[np.ndarray, np.ndarray, np.ndar
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     parser.add_argument("--fdtd-dir", required=True,
-                        help="探针目录（port_ut_*/port_it_* 所在，fdtd/ 或 fdtd_partial）")
+                        help="探针目录（port_ut_*/port_it_* 所在，fdtd/ 或 fdtd_partial/）")
     parser.add_argument("--t-excite-ns", type=float, required=True,
                         help="激励时长 ns（引擎日志 excitation_s，勿从数据猜）")
     parser.add_argument("--f-lo", type=float, default=2.25, help="扫频下沿 GHz")

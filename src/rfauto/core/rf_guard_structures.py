@@ -1,6 +1,6 @@
 """LC-3 RF 保护结构生成套件（round15 §四 LC-3）。
 
-规格原文（研究扩充 round15 §四 LC 系列）：
+规格原文（docs/research_expansion_20261002_round15.md §四 LC 系列）：
 "LC-3 RF 保护结构生成套件（P1/M）：任意折线 via fence/CPW 共面地+缝合带/
 缝合网格/地板开窗 统一'生成器+return_path_check 复验'闭环。验收：生成→
 R1/R2 零违规自检用例。"
@@ -366,7 +366,12 @@ def cpw_ground_stitch(
     gnd_left = _rect_polygon(x0, y0 + edge, x0 + length, y0 + edge + gw)
     gnd_right = _rect_polygon(x0, y0 - edge - gw, x0 + length, y0 - edge)
 
-    n_straps = math.floor((length - pad) / strap_pitch + 1e-12) + 1
+    # A2 P2-4（2026-10-13）：守卫容差窗 [pad-1e-9, pad) 内旧公式
+    # floor(负微差)+1 产出 0 孔，违反 docstring "length ≥ pad（缝合带至少
+    # 放下一孔）"自声明且无告警——守卫既已按 1e-9 容差放行"恰等"，
+    # 孔数同步按恰等语义保底 1（焊盘越界 ≤1e-9 与"焊盘完整落在地内
+    # （含边界，1e-9 容差）"同款容差口径，非物理律放宽）。
+    n_straps = max(1, math.floor((length - pad) / strap_pitch + 1e-12) + 1)
     vias: list[GuardVia] = []
     for k in range(n_straps):
         sx = x0 + pad / 2.0 + k * strap_pitch

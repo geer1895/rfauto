@@ -1,6 +1,6 @@
 """DP-14 M1：PySR 锚公式自动发现（合成回收先行 → γ(εr) 8 档重发现对照）。
 
-规格书 规格深案 §14.1；判据预声明
+规格书 docs/plan_deepdive_specs_20260924.md §14.1；判据预声明
 runs/df6_dp14m1/criteria.md（开工前落盘，不事后改门）。
 
 流程：
@@ -106,7 +106,7 @@ NESTED_CONSTRAINTS = {
 
 
 # ── QW-14：PySR 2.x guesses 播种（已知锚闭式族 → initial guesses）─────────
-# 月计划（月度增强方案 §D 流 QW-14）：把 core 内
+# 月计划（monthly_enhancement_plan_20260926.md §D 流 QW-14）：把 core 内
 # 已注册闭式族作为 PySRRegressor(guesses=[...])（2.x 新 API，实测 2.5.0
 # 签名在册；fraction_replaced_guesses 配套）传入，对比有/无 guesses 的
 # 收敛表现。铁律 7 不破：播种=搜索整形 hints（锚常数可溯源），不产生
@@ -384,7 +384,7 @@ def make_synthetic(seed: int = SYNTHETIC_SEED,
     return x, y
 
 
-# ── PySR 拟合（版本自适应：parallelism（新）/procs+multithreading（旧）──
+# ── PySR 拟合（版本自适应：parallelism（新）/procs+multithreading（旧））──
 # 分阶段搜索整形（criteria.md 执行期澄清四；词表不变，纯搜索配置）：
 #   合成阶段 exp∘嵌套平台实测需 nested_constraints 破局（三轮 PASS 实证）；
 #   8 点阶段 nested 会偏移普通锚族式轨迹（四轮实证），用二轮同参

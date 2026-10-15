@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **111** 组 / **258** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **116** 组 / **269** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -64,18 +64,22 @@
 | `models` | 2 | — | 模型管理 |
 | `nfc` | 3 | — | NFC/WPC 平面螺旋线圈闭式（DP-18 C10b） |
 | `nfmeas` | 2 | `nfmeas`（6 个） | 近场测量变换与 .ffs 视图（DP-18 C10a） |
+| `oracle` | 3 | — | 闭式预言机（QM-2 生成式对拍，只读查询面） |
 | `p0` | 1 | — | 方向 1 P0 实验：多保真验证（fake 先行）。 |
 | `parasitic` | 1 | — | PCB 互连 RLC 提取链：pcell 几何 → RF-DRC 门 → 闭式锚 →（Q3D 注入对比 ≤5％ 门）。 |
 | `pcell` | 4 | — | PCell 参数化单元 DSL（LC-2 复活：库清单/定义/求值/渲染 Layout 出口） |
 | `pdn` | 3 | `pdn`（3 个） | PI/PDN AC 阻抗域分析（F-B：目标阻抗/去耦选型/平面腔模门） |
+| `pitfalls` | 2 | — | 坑账检索面（项目规则 踩坑速查全量索引，只读） |
+| `pool-patrol` | 1 | — | 池登记项新鲜度巡检（Z-11）：commit-tag×代码面双判据+撞号二次消歧。 |
 | `port-gate` | 1 | — | 端口尺寸收敛前置门（合成回放 JSON 面；防 #191/#254 浪费求解席位）。 |
 | `preflight` | 2 | `preflight`（1 个） | XC-F 开工前统一预检（极限/功率/热/加工/精度档案五门联合） |
 | `profile` | 2 | — | 剖析入口（PR-8）：py-spy 火焰图落 runs/（py-spy 为可选依赖） |
 | `rag` | 3 | — | RAG 知识库词法检索（BM25，只读、citation 可溯） |
 | `rationale` | 3 | `rationale`（4 个） | 设计理由/经验记忆（F11 typed 经验检索 + F2 runs 理由语料 TF-IDF） |
+| `recast` | 2 | — | RECAST 判据重放（归档判读×现行判据确定性复算，只读） |
 | `recipe` | 3 | — | 配方版本管理（方向 7） |
 | `refine` | 1 | — | 热启动续调：以上轮 best 为起点，继续优化。 |
-| `remote` | 2 | `remote`（2 个） | 多机协同仿真资源（探活/状态；v0：HFSS gRPC 远程会话+SSH 通道） |
+| `remote` | 4 | `remote`（2 个） | 多机协同仿真资源（探活/状态；v0：HFSS gRPC 远程会话+SSH 通道） |
 | `replay` | 1 | — | 复现：用该 run 的 recipe 快照重跑，并核对 plugin/schema 版本。 |
 | `report` | 1 | — | 按已完成的 run 重建报告（markdown / html）。 |
 | `report-narrative` | 1 | — | F9 叙述位：run 白名单 → 确定性模板叙述，或审计外来叙述（未授权数字定位；不调 LLM）。 |
@@ -83,6 +87,7 @@
 | `repro` | 1 | — | 导出可复现包（配方快照 + 求解器输入 + S 参数 + reproduce.py）。 |
 | `repro-manifest` | 1 | — | 组装复现清单（环境段+可选产物段）并落盘（reproducibility_service）。 |
 | `repro-verify` | 1 | — | 校验复现清单（产物三态差异+环境 packages/lock 差异，如实报告）。 |
+| `rest` | 1 | — | REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读） |
 | `run` | 1 | — | 单次仿真（build → solve → post → 导出）。 |
 | `runs` | 8 | `runs`（7 个） | run 历史对比 |
 | `sandbox` | 3 | — | agent 配方沙箱治理（草稿列表/差异/三层 Gate 提案） |

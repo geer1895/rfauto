@@ -20,7 +20,7 @@ def even_odd_report(template: str, params: dict[str, Any] | None = None,
     Args:
         template: 模板名（cline_coupler|branchline_2sect）
         params: 参数覆盖（mm 浮点；None=标称）
-        freq_ghz: 频率（None=模板 f0）
+        freq_ghz: 频率 GHz（正有限数；None=模板 f0）
 
     Returns:
         dict: {ok, template, axis, plane, symmetry_check, half_models,

@@ -16,7 +16,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "iq_imbalance_irr",
-    "MT-4 件 1 IQ 失衡 → 镜像抑制比 + EVM 贡献（round17 MT-4，Razavi "
+    "IQ失衡分析：MT-4 件 1 IQ 失衡 → 镜像抑制比 + EVM 贡献（round17 MT-4，Razavi "
     "式 IRR=(1+ε²+2εcosφ)/(1+ε²−2εcosφ)，ε=Q/I 增益比线性、φ=正交相位"
     "误差；ε=1 退化 cot²(φ/2)）+ 3GPP TS 38.141-1 EVM 消费口径折算"
     "（evm_rms²=镜像/信号功率=1/IRR；IRR 本身不设 3GPP 限值门——限值面"
@@ -37,7 +37,7 @@ def iq_imbalance_irr(amp_imbalance_db: float, phase_imbalance_deg: float) -> dic
 
 @register_calculator(
     "phase_noise_evm",
-    "MT-4 件 2 相噪 → 积分 EVM（round17 MT-4；σ_φ²=2∫10^(L/10)df ADI "
+    "相噪积分EVM：MT-4 件 2 相噪 → 积分 EVM（round17 MT-4；σ_φ²=2∫10^(L/10)df ADI "
     "MT-008 口径，积分复用 core/clock_noise.phase_jitter_from_l 不重复"
     "实现）→ EVM_rms=σ_φ（小角度平稳高斯口径，σ_φ>0.5 rad 打 "
     "small_angle_ok=False 不静默）+ evm_db/evm_percent + 可选 rms 抖动。"
@@ -64,7 +64,7 @@ def phase_noise_evm(
 
 @register_calculator(
     "blocking_budget",
-    "MT-4 件 3 阻塞/信道选择性预算（round17 MT-4，杂散面复用 core/cascade"
+    "阻塞预算：MT-4 件 3 阻塞/信道选择性预算（round17 MT-4，杂散面复用 core/cascade"
     ".spur_search，链路基线复用 cascade_budget——既有语义零改动）。三面："
     "①倒易混频 N_rm=P_blk@mixer+L(f_offset)+10log10(B) → desense="
     "10log10(1+10^((N_rm−N_floor)/10))（等效 NF 抬升=灵敏度恶化）；"

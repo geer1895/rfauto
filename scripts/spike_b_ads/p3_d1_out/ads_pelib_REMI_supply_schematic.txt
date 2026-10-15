@@ -1,0 +1,9 @@
+; Top Design: "ads_pelib:REMI_supply:schematic"
+; Netlisted using Hierarchy Policy: "Standard"
+
+Options ResourceUsage=yes UseNutmegFormat=no EnableOptim=no TopDesignName="ads_pelib:REMI_supply:schematic" DcopOutputNodeVoltages=yes DcopOutputPinCurrents=yes DcopOutputAllSweepPoints=no DcopOutputDcopType=0
+V_Source:SRC1  N__24 Reference Type="V_DC" Vdc=Vin SaveCurrent=1 
+#uselib "ckt" , "SnP"
+SnP:CEMI_CABLE  N__24 Reference Vin_p Vin_n NumPorts=4 File=".pi_cemi\cispr25_cable.sio" Type="smatrixio" InterpMode="linear" InterpDom="" ExtrapMode="constant" Temp=27.0 CheckPassivity=0 
+Short:Iin_p  Vin_p PowerSupplySignal Mode=0 SaveCurrent=yes 
+Short:Iin_n  Vin_n PowerSupplyReference Mode=0 SaveCurrent=yes 

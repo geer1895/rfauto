@@ -1,4 +1,4 @@
-"""D9 标准频段/法规掩模注册表（续跑计划 §10.4/§10.17）。
+"""D9 标准频段/法规掩模注册表（延续计划 §10.4/§10.17）。
 
 3GPP/Wi-Fi/UWB/ISM 频段预设 + EMC 限值线（CISPR/FCC）作为一等可查对象，
 喂 SpecEvaluator objectives 的 band 字段（[f_low, f_high] GHz，core/objectives.py）

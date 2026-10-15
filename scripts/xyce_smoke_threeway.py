@@ -74,7 +74,7 @@ CRITERIA = {
     "phase": "reported, not gated",
 }
 
-_NGSPICE_WSL_EXE = "ngspice"  # WSL PATH 解析（usr/bin/ngspice 实测）
+_NGSPICE_WSL_EXE = "ngspice"  # WSL PATH 解析（/usr/bin/ngspice 实测）
 _PAIR_TOL_REL = 1e-7
 _NGSPICE_CIR_NAME = "rlc_ngspice.cir"
 _NGSPICE_TXT_NAME = "rlc_ngspice_wrdata.txt"

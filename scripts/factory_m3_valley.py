@@ -1,7 +1,7 @@
 """数据工厂 M3 谷区定向加密采集（datafactory_phase1_plan §2.2/§5 M3 第一批）。
 
 判据/口径全部预声明 runs/datafactory_m3/criteria.md（写死再跑，2026-09-20）。
-承接 M2/M4 独立同因归因（三百零二）：S11 深谷区
+承接 M2/M4 独立同因归因（（三百零二））：S11 深谷区
 （w≈0.9055-0.9103）亚栅格锐度 → 谷区定向加密 30 点（谷区 LHS 20 + 谷芯
 均匀 10）。采集链复用 factory_m1_collect（只 import 不改源）：
 write_run_products / compute_point_metrics(port_beta_csv=) /

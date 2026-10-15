@@ -1,4 +1,4 @@
-"""F-E 件 4 抖动预算/双狄拉克 TJ 内核单测（研究扩充 round3 F-E 表件 4 判据）。
+"""F-E 件 4 抖动预算/双狄拉克 TJ 内核单测（research_expansion round3 F-E 表件 4 判据）。
 
 裁判口径（#118 双路径，不自证）：
 - 路径 A = scipy.special.erfcinv（内核同源）；路径 B = scipy.stats.norm.isf

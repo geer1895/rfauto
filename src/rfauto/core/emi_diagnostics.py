@@ -1,6 +1,6 @@
 """EMI 诊断知识库（EM-9，round17）——症状→根因→对策的确定性规则引擎。
 
-规格：研究扩充 round17 §四 EM-9——"CM/DM 分离器
+规格：docs/research_expansion_20261002_round17.md §四 EM-9——"CM/DM 分离器
 判据+近场三板斧+ESD 受扰路径分析入 playbook.yaml"。本批文件面禁写
 knowledge/**，知识库按 premortem 先例以模块结构化常量承载；条目 schema 与
 knowledge/diagnostics/playbook.yaml 的规则面同构（symptom_fingerprints 多
@@ -16,7 +16,7 @@ knowledge/diagnostics/playbook.yaml 的规则面同构（symptom_fingerprints �
   分离——探头选型与读数判读）；
 - esd_path：ESD 受扰路径分析（接触直注/缝隙场耦合/缆注入/软失效）。
 
-设计约束（与 premortem 同源， 硬规则 7）：
+设计约束（与 premortem 同源，AGENTS 硬规则 7）：
 - 诊断=确定性规则引擎：observations 特征集按静态知识库 AND 匹配，无 LLM、
   无网络、无随机数；多证并击只出候选根因列表（按特异度=触发特征数降序），
   不下黑箱结论（DP-17 playbook 同纪律）；
@@ -544,7 +544,7 @@ if len({e.entry_id for e in DIAGNOSTIC_LIBRARY}) != len(DIAGNOSTIC_LIBRARY):  # 
 
 def emi_diagnose(observations: Mapping[str, object],
                  *, categories: Sequence[str] | None = None) -> list[dict[str, object]]:
-    """观测特征集 → 候选根因条目列表（确定性规则引擎， 硬规则 7）。
+    """观测特征集 → 候选根因条目列表（确定性规则引擎，AGENTS 硬规则 7）。
 
     匹配语义：条目 trigger_features 全部在 observations 中为真即命中（AND，
     playbook 同击语义）；多证并击只出候选列表，不下黑箱结论。

@@ -28,7 +28,7 @@ r"""Aitken Δ² 平方收敛加速内核（纯函数，MP-B1）。
 - **有意不定义 ``__all__``**：公开 API 金快照只钉带 ``__all__`` 模块
   （precision_profiles/shield_cavity_mode 先例）——本模块为内部数值内核，
   入快照属显式评审动作，不在本批文件面内。
-- 消费面（MP-B1，研究扩充 round15）：设计为
+- 消费面（MP-B1，docs/research_expansion_20261002_round15.md）：设计为
   core/thermal_iteration.solve_thermal_fixed_point 定点迭代链
   （T_{n+1} = T_amb + R_th·P(T_n)，谱半径 λ = R_th·dP/dT，线性收敛）的
   **后处理加速**——对 result.steps 的温度序列做 Δ² 外推，3 个迭代点即可

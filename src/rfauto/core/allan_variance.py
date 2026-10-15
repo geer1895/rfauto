@@ -1,7 +1,7 @@
 """Allan 方差/时钟稳定度（MS-5，IEEE 1139 口径，纯函数零 IO）。
 
 出处与互补声明（只读，不改邻接件语义）：
-- 规格=round15 提案 MS-5（研究扩充 round15 :212）
+- 规格=round15 提案 MS-5（docs/research_expansion_20261002_round15.md :212）
   「重叠 Allan 三 coef 公式（IEEE 1139）与 clock_noise 幂律谱互检」；
   round16 §二 :49 将 clock_noise Leeson 接回与 Allan 合并到本件（与 DR-8
   CDR 抖动传函/容限互补——DR-8 是频域环路响应面，本件是时域稳定度统计面）。

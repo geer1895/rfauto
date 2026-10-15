@@ -35,3 +35,40 @@ smoke_note: 离线审计先行（#212，test_ta_wave_a_templates）；内核数�
   空气线 Z0=30π、h→∞ 半空间 εeff=(1+εr)/2）+G-N/skrf 第三方对拍（设计点 ≤1% 带）；G-N
   文献闭式系统偏差如实入账（名义点 εeff −6.6%/Z0 −3.6%，#302 同族，设计链以 FD 为准）；
   近似级别：准静态/零厚金属/无损；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 有限地共面波导：中心条带+两有限宽接地、无底地——与 CPWG 的本质区别在接地回流路径完全共面，50Ω 条带显著宽于 CPWG 属定义性质不是综合错误。典型用于探针台直测与贴装容差的微波
+      IC 接口；常见误用=地宽随手给——有限地定义参数须守 gnd≥2·gap+0.5·w 守卫，地效应 FD 实测名义 ≤2% 带。
+    derivations:
+    - claim: FD 准静态裁判链：两精确极限（空气线 Z0=30π、半空间 εeff=(1+εr)/2）+G-N 第三方对拍
+      formula: Z0 = Z0_air/sqrt(εeff) ; 名义 4.3466mm → 50.000Ω
+      source: 本仓 core/fgcpw（fgcpw_fd Richardson 外推单源；docs/templates/fgcpw/meta.yaml smoke_note（G-N 文献闭式系统偏差
+        εeff −6.6%/Z0 −3.6% 如实入账，设计链以 FD 为准））
+    - claim: 地宽有限性定义（gnd→∞ 退化为经典 CPW）
+      formula: 'guard: gnd >= 2*gap + 0.5*w'
+      source: 本仓 core/fgcpw（有限地结构口径 docstring；docs/templates/fgcpw/meta.yaml param_semantics）
+  sensitivity_ranking:
+  - param: er
+    order: 1
+    basis: εeff 填充加权主通道（宽条带域 w/h=8.6）；登记表 0.3006
+  - param: gap_mm
+    order: 2
+    basis: 缝几何=CPW 比值主维且绝对尺寸最小（±1% 相对扰动最敏感）；登记表 0.2518
+  - param: w_mm
+    order: 3
+    basis: 条带宽（比值自变量另一端，宽线域弹性低）；登记表 0.1399
+  - param: h_mm
+    order: 4
+    basis: 基板厚经填充比进入；登记表 0.0819
+  - param: gnd_mm
+    order: 5
+    basis: 有限地宽（地效应 ≤2% 带）；登记表 0.0300
+  - param: line_len_mm
+    order: 6
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

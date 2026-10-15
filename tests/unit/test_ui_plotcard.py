@@ -195,11 +195,12 @@ class TestIncrementBehavior:
             "throw new Error('阶梯值');\n"
             "if (o.series[0].markLine.data[0].yAxis !== 1) throw new Error('终值 markLine');\n"
             "if (!o.series[0].markPoint || "
-            "o.series[0].markPoint.data[0][1] !== 2) throw new Error('末点');\n"
+            "o.series[0].markPoint.data[0].coord[1] !== 2 || "
+            "o.series[0].markPoint.data[0].value !== 2) throw new Error('末点');\n"
             "const o2 = m.buildEChartOption("
             "[{ name: 'c', x: [5, 6, 7], y: [3, 1, 2] }], "
             "{ mode: 'convergence', xvalue: true }, theme);\n"
-            "if (o2.series[0].markPoint.data[0][0] !== 7) "
+            "if (o2.series[0].markPoint.data[0].coord[0] !== 7) "
             "throw new Error('xvalue 末点 coord 取 x 值');\n"
             "console.log('ok:convergence');\n"
         )
@@ -210,6 +211,9 @@ class TestMigrationSourcePins:
     """换壳迁移面源码钉（免 node）：调用点清点 + 声明增量点位。"""
 
     def _read(self, name: str) -> str:
+        if name == "pages.js":  # UI-R2：入口+域模块并集读（行为断言不变）
+            parts = [_STATIC / name, *sorted((_STATIC / "pages").glob("*.js"))]
+            return "\n".join(p.read_text(encoding="utf-8") for p in parts)
         return (_STATIC / name).read_text(encoding="utf-8")
 
     def test_pages_js_call_sites_fully_migrated(self):
@@ -243,8 +247,24 @@ class TestMigrationSourcePins:
             "export function toCsv",
             "export function plotCardOption",
             "export function plotCard",
-            "getDataURL",  # PNG 导出
             "plotcard error: ${esc(e.message)}",  # 故障可见化（esc 单源）
+        ):
+            assert needle in src, needle
+        # UI-R5：PNG/SVG 编码面收编 chart_export.js 统一出口（getDataURL/SSR
+        # 矢量重渲染），文件名规范 `视图_指标_时间戳` 单源在彼处
+        ce = (_STATIC / "chart_export.js").read_text(encoding="utf-8")
+        for needle in ("getDataURL", "renderToSVGString", "exportStampName"):
+            assert needle in ce, needle
+
+    def test_downsample_exports_and_default_threshold(self):
+        # UI-R5：降采样算法/阈值面导出（plotcard 单源实现）
+        src = self._read("plotcard.js")
+        for needle in (
+            "export function minmaxIndices",
+            "export function lttbIndices",
+            "export function downsamplePlotSeries",
+            "export const DEFAULT_MAX_POINTS",
+            "export function setDefaultMaxPoints",
         ):
             assert needle in src, needle
 
@@ -259,3 +279,50 @@ class TestMigrationSourcePins:
             "background:#fff",  # 强制白底
         ):
             assert needle in block, f"print 面缺 {needle}"
+
+
+@pytest.mark.skipif(_NODE is None, reason="本机无 node")
+class TestConvergenceRenderRegression:
+    """W9-A 渲染级回归钉（2026-10-12，W8-B 视觉验收 P1-1）。
+
+    convergence 模式 markPoint.data 曾用裸 ``[x, y]`` 数组项：echarts 5.6 的
+    marker 归一化（emphasis/label 拷贝）把它当"子项列表"展开，对数字基元
+    （末点索引 N）做 ``.label`` 赋值 → 严格模式 TypeError
+    "Cannot create property 'label' on number 'N'"，setOption 整体失败，
+    tune 收敛图降级为错误文案。该故障只在**渲染期**暴露——option 构造层
+    （TestIncrementBehavior 的 JSON 断言）抓不到，故本类经 vendored echarts
+    SSR（ssr:true + svg，无 DOM 依赖）跑满 setOption+布局管线。
+    修复形态 = ``{value, coord: [x, y]}``（value 显式给出：coord 项不回填
+    params.value，末点标注 formatter 会渲染 "NaN"，SSR 实测）。
+    注意：echarts SSR 在 node 里挂常驻定时器，JS 末尾必须 process.exit，
+    否则 subprocess 60s 超时（本席实测）。"""
+
+    def test_convergence_option_renders_in_echarts_ssr(self):
+        out = _run_node_js(
+            "const req = (await import('node:module')).createRequire("
+            "process.cwd() + '/plotcard.js');\n"
+            "const echarts = req('./vendor/echarts.min.js');\n"
+            "const m = await import('./plotcard.js');\n"
+            "const theme = { light: false, palette: ['#4fc3f7'] };\n"
+            "const ys = [3.9, 2.5, 2.1, 1.8, 1.7, 1.6, 1.5, 1.45, 1.4, 1.38, "
+            "1.36, 1.34, 1.33, 1.32, 1.31];\n"
+            "const o = m.buildEChartOption("
+            "[{ name: 'cost', x: [...Array(15).keys()], y: ys }], "
+            "{ mode: 'convergence', xlabel: 'trial', ylabel: 'cost' }, theme);\n"
+            "const item = o.series[0].markPoint && o.series[0].markPoint.data[0];\n"
+            "if (!item || !item.coord || item.coord[1] !== 1.31 || item.value !== 1.31) {\n"
+            "  console.log('BAD: markPoint 项形态（需 {value, coord:[x,y]}）');\n"
+            "  process.exit(0);\n"
+            "}\n"
+            "const c = echarts.init(null, null, "
+            "{ renderer: 'svg', ssr: true, width: 600, height: 220 });\n"
+            "try {\n"
+            "  c.setOption(o);\n"
+            "  const svg = c.renderToSVGString();\n"
+            "  if (svg.includes('NaN')) { console.log('BAD: svg 含 NaN 标注'); }\n"
+            "  else if (!svg.includes('1.310')) { console.log('BAD: 缺末点标注 1.310'); }\n"
+            "  else console.log('ok:ssr-convergence');\n"
+            "} catch (e) { console.log('BAD: ' + e.message); }\n"
+            "process.exit(0);\n"
+        )
+        assert out.strip().startswith("ok:"), out

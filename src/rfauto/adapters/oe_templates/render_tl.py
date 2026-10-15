@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     pass
 from . import _nominal_width  # 50Ω 标称线宽单源（XC-W，惰性：取属性才算）
+from .cpw_port_probe import exc_dir_probe_lines  # CPWPort exc_dir 自适应探针单源
 from .registry import _DEFAULT_SUB
 
 # ─── Template body render functions ──────────────────────────────────────────
@@ -47,11 +48,23 @@ for _prim in mline.GetAllPrimitives():
 def _cpw_lines(p: dict[str, Any]) -> str:
     # 均匀共面波导（WP2.1 锚族）：中心带 + 两侧地（地延伸到域边）。
     # 端口 = CPWPort（v0.37 一等支持）：start/stop 宽度=中心带宽、
-    # gap_width=缝宽、地自画；exc_dir='x'=缝间横向（openEMS 2026-10-02
-    # CPWPort exc_dir 语义重定义：旧=面法向/高度方向，新=缝间电场方向
-    # =CPW 宽度方向，高度法向改由 prop×exc 叉积自算——绑定源码逐条对照）。
+    # gap_width=缝宽、地自画；exc_dir 语义随绑定两代并存（openEMS
+    # 2026-10-02 CPWPort exc_dir 语义重定义：旧=面法向/高度方向（'z'），
+    # 新=缝间电场方向=CPW 宽度方向（'x'），高度法向改由 prop×exc 叉积
+    # 自算——绑定源码逐条对照）。两代对 start/stop 的等值检查轴互换
+    # （新代查法向 z，旧代查 exc 轴），同一渲染字面量跨代部署必有一侧
+    # 构造即炸（aurora_c cpw 席服务器实测：服务器绑定停在旧代
+    # v0.37.0-rc1-11-gd3d2a49，按新代口径 exc_dir="x" 渲染即抛
+    # "CPWPort: start/stop in height direction must be equal"——start/stop
+    # 的 z 两端本就相等（同贴金属面 H_SUB），炸点实为 exc 轴语义换位）。
+    # 处置=渲染脚本内对绑定源码语义自检（inspect），按部署侧实际语义
+    # 自适应选 exc_dir——跨代部署/服务器后续升级绑定均自愈，测试钉
+    # test_cpw_template 两支（本机新代='x' / 旧代源码指纹='z'）。
+    # 探针文本单源=oe_templates.cpw_port_probe（CPW-PROBE 推广批收编，
+    # cpw/msl_cpw/fgcpw 三发射点共用，防三处复制漂移 #116）。
     # 参数：w_mm=中心带宽（CPWG 共形映射闭式综合，50Ω@gap0.2=0.849mm，
     # #198 参照系修正）、gap_mm=缝宽、line_len_mm=两端口间线长。
+    _cpw_probe_src = exc_dir_probe_lines()
     body = f'''W = {p.get("w_mm", 0.849)!r} * 1e-3
 GAP = {p.get("gap_mm", 0.2)!r} * 1e-3
 L = {p.get("line_len_mm", 40.0)!r} * 1e-3
@@ -62,16 +75,17 @@ cpw.AddBox((-W / 2, Y0, H_SUB), (W / 2, Y1, H_SUB), priority=10)
 # 两侧地：贯穿全域（CPWPort 只补画中心带段，端口段的地须自画）
 cpw.AddBox((-BOARD, -BOARD, H_SUB), (-W / 2 - GAP, BOARD, H_SUB), priority=10)
 cpw.AddBox((W / 2 + GAP, -BOARD, H_SUB), (BOARD, BOARD, H_SUB), priority=10)
+{_cpw_probe_src}
 _port1 = CPWPort(CSX, port_nr=1, metal_prop=cpw,
                  start=np.array([W / 2, -BOARD, H_SUB]),
                  stop=np.array([-W / 2, Y0, H_SUB]),
-                 prop_dir="y", exc_dir="x", gap_width=GAP,
+                 prop_dir="y", exc_dir=_CPW_EXC_DIR, gap_width=GAP,
                  excite=1, FeedShift=10 * NEAR,
                  MeasPlaneShift=(Y0 + BOARD) / 3, priority=10)
 _port2 = CPWPort(CSX, port_nr=2, metal_prop=cpw,
                  start=np.array([-W / 2, BOARD, H_SUB]),
                  stop=np.array([W / 2, Y1, H_SUB]),
-                 prop_dir="y", exc_dir="x", gap_width=GAP,
+                 prop_dir="y", exc_dir=_CPW_EXC_DIR, gap_width=GAP,
                  excite=0, FeedShift=10 * NEAR,
                  MeasPlaneShift=(BOARD - Y1) / 3, priority=10)
 for _prim in cpw.GetAllPrimitives():
@@ -290,13 +304,41 @@ for _prim in via_strip.GetAllPrimitives():
 '''
 
 
+def _atten_d_guard(d_mm: float) -> float:
+    """atten 族 shunt_off_mm 电共位守卫（wf:ge9-tail-srv 尾程项 10 前半）。
+
+    E4 闭式裁判假设集总 π/T（元件电共位，D=0）；渲染拓扑里 shunt/串臂
+    隔开线段 D 后即成**分布式衰减器**，带内失配随 D 线性增大（θ=β·D）。
+    W7-A 残座批"寄生"定谳复判（runs/atten 模型级 A/B 诊断，2026-10-08）：
+    D=6mm 名义座 |S11|max=0.272 与"理想分布 π"级联预测 0.226 同源同号
+    （D=3/12mm 的 EM 0.153/0.526 对级联 0.105/0.499 同线）——mount 级
+    单变量（εr 保持/窄盒/caps=False）全数 Δ<0.002，非集总盒缺陷。
+    界：θ=2π·f_max·√εr·D/c ≤ 0.1 rad（f_max=3GHz、εr=3.66 本族固定）
+    ⇒ D ≤ 0.83mm；缺省 0.75mm（shunt 盒 [0.5,1.0] 与断口缘齐贴的最小
+    可实现位，θ=0.090rad）。返回 d_mm 便于 f-string 内联。
+    """
+    c0 = 299792458.0
+    theta = 2 * math.pi * 3.0e9 * math.sqrt(3.66) * d_mm * 1e-3 / c0
+    if not theta <= 0.1:
+        raise ValueError(
+            f"atten 族 shunt_off_mm={d_mm!r}mm 电共位守卫：θ=β(f_max)·D="
+            f"{theta:.3f} rad > 0.1（E4 集总闭式裁判只对元件电共位拓扑"
+            f"成立；D 大即分布式衰减器，|S21| 平坦+S11≤-20dB 判据不可达，"
+            f"W7-A 残座批 D=6mm 实证 |S11|max -11.3dB）。缺省 0.75mm；"
+            f"确需分布式变体须另立模板与裁判。")
+    return d_mm
+
+
 def _atten_pi_lines(p: dict[str, Any]) -> str:
     # π 型电阻衰减器（WP2.3 Tier 1 首族）：串臂 LumpedElement 桥接中点
     # 断口（ny=y），两端对地 shunt LumpedElement（ny=z，短柱接 z-min
     # PEC 地；wilkinson 隔离电阻同款渲染机制已验证）。
     # 电阻值=E4 attenuator_pi ABCD 闭式（确定性裁判，同源）。
+    # shunt 位置=断口缘齐贴（D=0.75mm，盒 [G, G+0.5]）：元件电共位是
+    # E4 集总闭式裁判的前提（_atten_d_guard 内 W7-A 复判证据链）。
+    d_mm = _atten_d_guard(float(p.get("shunt_off_mm", 0.75)))
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
-D = {p.get("shunt_off_mm", 6.0)!r} * 1e-3
+D = {d_mm!r} * 1e-3
 G = 0.5 * 1e-3
 R_SER = {p.get("r_series_mid_ohm", 71.151)!r}
 R_SH = {p.get("r_shunt_end_ohm", 96.248)!r}
@@ -331,8 +373,12 @@ def _atten_t_lines(p: dict[str, Any]) -> str:
     # T 型电阻衰减器（WP2.3 横向变体）：±d 断口各串 LumpedElement
     # （ny=y），中点对地全带宽 shunt LumpedElement（ny=z）。
     # 电阻值=E4 attenuator_t ABCD 闭式（确定性裁判，同源）。
+    # 串臂位置=中点 shunt 缘齐贴（D=0.75mm）：电共位守卫同 π 型
+    # （_atten_d_guard 内 W7-A 复判证据链；shunt 盒 y 边 ±G/2 入网见
+    # grid._near_points atten_t 分支）。
+    d_mm = _atten_d_guard(float(p.get("shunt_off_mm", 0.75)))
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
-D = {p.get("shunt_off_mm", 6.0)!r} * 1e-3
+D = {d_mm!r} * 1e-3
 G = 0.5 * 1e-3
 R_SER = {p.get("r_series_arm_ohm", 25.975)!r}
 R_MID = {p.get("r_shunt_mid_ohm", 35.136)!r}

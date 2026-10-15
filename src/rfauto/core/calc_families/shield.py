@@ -32,7 +32,7 @@ _SHIELD_MATERIALS: dict[str, tuple[float, float]] = {
 
 @register_calculator(
     "shielding_effectiveness",
-    "屏蔽效能（Schelkunoff 平面波三段闭式）：SE=A+R+B——吸收 "
+    "屏蔽效能速算：屏蔽效能（Schelkunoff 平面波三段闭式）：SE=A+R+B——吸收 "
     "A=20lg|e^{γt}|=8.686·t/δ（γ=(1+j)/δ 良导体）；反射 "
     "R=20lg|(Z_w+Z_s)²/(4Z_w Z_s)|（Z_s=√(jωμ/σ) 表面阻抗、"
     "Z_w=η0=376.73Ω 平面波）；多次反射修正 B=20lg|1−Γ²e^{−2γt}|"

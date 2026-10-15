@@ -10,6 +10,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 # ─── run ──────────────────────────────────────────────────────────────────────
 
@@ -262,8 +263,8 @@ def tune(
         if not single_objective:
             if json_output:
                 # VI-5 W2-C：--json 下旗标组合拒绝也走信封（失败路径同构）
-                _emit({"ok": False,
-                       "errors": ["--detach 仅支持单目标路径（多保真/多目标/代理寻优后台化另立）"]},
+                _emit(error_envelope(
+                    "--detach 仅支持单目标路径（多保真/多目标/代理寻优后台化另立）"),
                       "--detach 仅支持单目标路径", json_output=True)
                 return  # 不可达（_emit 失败必 raise Exit(1)），守卫可读性
             console.print("[red]✗ --detach 仅支持单目标路径"
@@ -545,13 +546,13 @@ def autotune(
     self_verify: bool = typer.Option(False, "--self-verify",
                                      help="WP3.5 自验证环：propose→verify→fix + 里程碑 M1..M5 + 执行看板"),
     mesh_fine: float = typer.Option(0.5, "--mesh-fine",
-                                    help="[self-verify] 细网格 base mm（M4 跨网格复验；0 或=--mesh 关闭）"),
+                                    help="自验 self-verify：细网格 base mm（M4 跨网格复验；0 或=--mesh 关闭）"),
     fine_epsilon: float = typer.Option(0.2, "--fine-epsilon",
-                                       help="[self-verify] M4 细网格 cost 容许劣化比例"),
+                                       help="自验 self-verify：M4 细网格 cost 容许劣化比例"),
     sandbox: bool = typer.Option(True, "--sandbox/--no-sandbox",
-                                 help="[self-verify] best 落沙箱草稿（M5）"),
+                                 help="自验 self-verify：best 落沙箱草稿（M5）"),
     board: bool = typer.Option(True, "--board/--no-board",
-                               help="[self-verify] 创建执行看板（UI 可暂停/接管）"),
+                               help="自验 self-verify：创建执行看板（UI 可暂停/接管）"),
     dry_run: bool = typer.Option(False, "--dry-run",
                                  help="计划面（SN-18）：配方校验+预算/旋钮预览，零执行"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),

@@ -1,6 +1,6 @@
 """A2A 协议层（WP3.8 三层栈·第 3 层）——Agent 间互操作的最小确定性实现。
 
-方案口径（续跑计划 §4 WP3.8 / 扩充提案 F1，2025-26 收敛三层栈）：
+方案口径（延续计划 §4 WP3.8 / 扩充提案 F1，2025-26 收敛三层栈）：
 A2A（Agent2Agent，Google 发起、Linux 基金会托管）负责**Agent 间**互操作——
 与 MCP（人/模型 ↔ 工具）互补。本模块落其核心数据契约的进程内子集，
 transport（HTTP/JSON-RPC、agent card 发现端点）留待后续轮次：
@@ -15,7 +15,7 @@ transport（HTTP/JSON-RPC、agent card 发现端点）留待后续轮次：
 - **A2ARegistry**：按名字注册 Agent、卡发现、消息分发；handler 异常折入
   failed Task，不向调用方抛协议外异常。
 
-数值铁律：本模块只搬 typed JSON，不产生任何物理数字。
+数值铁律（项目规则 规则 7）：本模块只搬 typed JSON，不产生任何物理数字。
 """
 
 from __future__ import annotations

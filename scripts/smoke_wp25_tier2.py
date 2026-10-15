@@ -1,6 +1,6 @@
 """WP2.5 Tier 2 过渡结构真机冒烟：MSL↔CPWG 过渡 + SMA 边缘弹射（串行）。
 
-方案行（docs/续跑计划.md §4 WP2.5）：MSL↔CPW、SMA
+方案行（延续计划 §4 WP2.5）：MSL↔CPW、SMA
 launcher（验收靠文献曲线）；MSL↔slotline（Marchand）随 slotline 端口原语
 阻塞归 C5 行，不在本件。名义点 = 附加模板 NOMINAL（综合闭式再生，测试
 test_msl_cpw/test_sma_launcher 钉）。

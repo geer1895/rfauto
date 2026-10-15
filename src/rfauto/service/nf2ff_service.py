@@ -1,6 +1,6 @@
 """nf2ff 远场/SAR 服务层（WP4.1 / §10.4 D4，openEMS 原生）。
 
-职责：
+职责（AGENTS 硬限 4：服务层 JSON 进出，UI/CLI/MCP 薄壳）：
 - 盘点 runs/ 下含远场产物的 run（模板 far_field/sar=True 真跑落盘）；
 - 单 run 远场视图：farfield_meta.json + farfield_cut.csv → 切面极坐标
   序列（θ-dB）+ 指标（Dmax/增益/效率/HPBW/前后比/功率闭合），数值
@@ -59,11 +59,17 @@ def farfield_runs(limit: int = 50) -> dict[str, Any]:
         found = _shallow_artifacts(run_dir)
         if FARFIELD_META_NAME not in found:
             continue
+        try:
+            mtime = found[FARFIELD_META_NAME].stat().st_mtime
+        except OSError:
+            # 枚举与 stat 之间产物被清（runs/ 清理/归档搬移）——跳过该
+            # 条目（#105 观测清单面不阻塞只读页，审查 A4 P2-1）
+            continue
         hits.append({
             "run_id": run_dir.name,
             "has_cut": FARFIELD_CUT_NAME in found,
             "has_sar": SAR_CSV_NAME in found,
-            "mtime": found[FARFIELD_META_NAME].stat().st_mtime,
+            "mtime": mtime,
         })
     hits.sort(key=lambda h: -h["mtime"])
     return ok_envelope(runs=hits[: max(1, int(limit))])

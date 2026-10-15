@@ -48,7 +48,10 @@
 1. **单数 `error` 键**（约 30 处）：`mcp_server.py` 异常壳（MCP 线上契约，
    `test_mcp_server.py` 多处断言钉住）、`ui_service.sandbox_diff/promote`
    （镜像 RecipeSandbox 惯例）、`diagnosis_service`（`test_dp2_diagnosis.py`
-   断言 `r["error"]`）、`anchors_service` 部分入口。
+   断言 `r["error"]`）。**2026-10-15 aurora_d 收敛批**：`anchors_service`
+   部分入口已迁 `error_envelope`（schema 1.1，消费回退链同笔）；
+   `luneburg_lens/topology/terminology/parasitic` 四域补戳升 1.1 同批；
+   `firmware/stats` CLI 失败面同批迁移（棘轮帽 18→9）。
 2. **裸 `reason` 代错误**（league_service `{"ok": False, "reason": ...}`）：
    league 域失败信封形状；本批只加 `schema_version` 戳不改键。
 3. **结构化 gate 信封**（api.py `agent_propose` L1/L2）——已于 W3fix 批
@@ -64,6 +67,9 @@
 
 > 现值冻结账（I-07，对齐 R5-05 建议）：单数 `error` 冻结 200、裸 ok 随批
 > 收敛 565→563→552（2026-10-04 ge8e W2 后现值）、本节遗留族地板 522——
+> aurora_d 收敛批（2026-10-15）：裸 ok 518→516、单数 error 171→165
+> （anchors/firmware/stats/luneburg/topology/terminology/parasitic 七域），
+> 沿革链 200→195→173→171→167→165——
 > 逐批数字与构成见 `tests/unit/test_envelope_contract.py`
 > `_FROZEN_BARE_OK_RETURNS` 行内注释（AST 全量扫描口径）。
 

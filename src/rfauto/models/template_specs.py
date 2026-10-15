@@ -1114,7 +1114,10 @@ def _register_vi3_lines() -> None:
             "fgcpw", _fg,
             "名义几何=fgcpw_design_params(50Ω, gap=0.2, gnd=4.0, h=0.508, "
             "er=3.66) FD 反演预精算值（w=4.3466 回代 50.000Ω，εeff=1.8303"
-            "；G-N 文献闭式同点偏差 εeff −6.6%/Z0 −3.6% 如实在账，#302 同族）"),
+            "；G-N 文献闭式同点偏差修后 εeff −3.99%/Z0 −1.01% 如实在账"
+            "——ge9 P1 勘误：历史账 −6.6%/−3.6% 含椭圆积分约定错份额"
+            "（已修，skrf 对拍 +0.00%/+0.05% 逐位回收），余下 #302 映射族"
+            "真实残差，双因归因见 core/fgcpw 模块头）"),
         physics_roles={"w_mm": "line_width_mm", "gap_mm": "gap_width_mm",
                        "line_len_mm": "line_length_mm"},
         render_script=partial(render_script, "fgcpw"),
@@ -2412,6 +2415,61 @@ def _register_mmwave_series_array() -> None:
     ))
 
 
+def _register_ms_mushroom() -> None:
+    """TA-13 EBG/FSS 净表注册件（2026-10-08）：ms_mushroom 蘑菇 EBG/AMC 单元。
+
+    内核 core/amc_mushroom（MM-8 已合流）单源消费；名义=ms_mushroom_dims_mm
+    闭式反演（period=λ0/2 阵格 + gap=Luukkonen eq.4 解析逆，无 brentq）。
+    判读=|Γ|≈1 的 argΓ 过 0°（PMC）点 vs amc_resonance_hz（EC 初值口径）。
+    """
+    from rfauto.adapters.openems_templates import (
+        TEMPLATE_META,
+        TEMPLATE_NOMINAL,
+        ms_mushroom_dims_mm,
+        render_script,
+    )
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_ms_mushroom_model(
+        f0_ghz: float = 10.0, er: float = 3.66, h_mm: float = 0.508,
+        **_: Any,
+    ) -> ModelSynthesisResult:
+        nominal = TEMPLATE_NOMINAL["ms_mushroom"]
+        d = ms_mushroom_dims_mm(float(f0_ghz), float(er), float(h_mm))
+        params: dict[str, Any] = {
+            "gap_mm": d["gap_mm"],
+            "period_mm": d["period_mm"],
+            "h_mm": float(h_mm),
+            "er": float(er),
+            "tan_d": float(nominal["tan_d"]),
+        }
+        assert set(params) == set(nominal)
+        return ModelSynthesisResult(
+            model="ms_mushroom",
+            goal={"f0_ghz": float(f0_ghz)},
+            params=params,
+            recipe_draft=_vi3_recipe_draft(
+                "ms_mushroom", params, float(f0_ghz),
+                _vi3_s11_objective(float(f0_ghz), -10.0, 0.98)),
+            notes=[
+                f"蘑菇名义：period=λ0/2={d['period_mm']}mm、gap=Luukkonen "
+                f"eq.4 解析逆={d['gap_mm']}mm（L=μ0·h + C_req 逆解，"
+                "g/period=0.085 稠密栅声明域；core/amc_mushroom 单源 #252）",
+                "判读=|Γ|≈1 的 argΓ 过 0°（PMC）点 vs amc_resonance_hz"
+                "（EC 初值口径，真机带心修正归 P3）",
+            ])
+
+    register_template_spec(TemplateSpec(
+        name="ms_mushroom",
+        meta=dict(TEMPLATE_META["ms_mushroom"]),
+        synthesizer=synthesize_ms_mushroom_model,
+        physics_roles={"gap_mm": "gap_width_mm"},
+        render_script=partial(render_script, "ms_mushroom"),
+        fake_model=None,
+        hfss_plugin=None,
+    ))
+
+
 def bootstrap_template_specs() -> None:
     """把现有模板 spec 登记进全局注册表（幂等，入口处调用一次）。
 
@@ -2453,6 +2511,8 @@ def bootstrap_template_specs() -> None:
         _register_vi3_lines,
         _register_vi3_waveguide,
         _register_vi3_metasurface,
+        # TA-13 EBG/FSS 净表注册件（2026-10-08，ms 族段内尾部追加）
+        _register_ms_mushroom,
         _register_vi3_filters,
     )
     used = {s for s in plan if isinstance(s, str)}

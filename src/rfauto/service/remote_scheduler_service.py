@@ -1,9 +1,10 @@
 """remote_scheduler_service —— v1 调度面拆批切片：多机资源可见性 + 队列视图。
 
-立项出处：2026-10-08 储备池评审（调度面拆批）；本模块
-= 调度面在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
+立项出处（2026-10-08 储备池立项席 S）：runs/pool_reaudit/REAUDIT_REPORT.md
+E-06（调度面拆批）与 PR-15（调度面余项 mTLS+队列页+--remote）同域；本模块
+= 两账目在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
 （零发射、零写入、零杀进程；发射侧路由/资源日历全版/campaign --remote
-仍是拆批余件，不在本切片）。
+仍是 E-06 拆批余件，不在本切片）。
 
 能力（规则 4：JSON 进出，CLI 是薄壳）：
 
@@ -12,8 +13,8 @@
   磁盘余量。
 - ``queue_view``：任务队列视图——job_registry 在途作业 + 单写锁
   （owner/FIFO 队长）+ 席位占用表 + 服务器在途态合并。
-- ``calendar_launch_view``/``calendar_view``：资源日历机读化
-  （2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
+- ``calendar_launch_view``/``calendar_view``：资源日历机读化（UX-B8，
+  E62 席 2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
   维护窗/许可席位峰谷/单机内存帽）装载 + 「当前是否可发」三态判定
   （open/risk/blocked）；缺文件=恒可发不阻塞（#105 fail-open 观测面）。
 
@@ -92,7 +93,7 @@ _HIT_LINE_RE = re.compile(r"^\d+\|")
 
 _GB = 1024.0**3
 
-# ─── 资源日历（机读化：备份窗/维护窗/许可席位峰谷转机读） ────────────────
+# ─── 资源日历（UX-B8 机读化：备份窗/维护窗/许可席位峰谷转机读） ────────────────
 #: 日历缺省文件名（``configs/resource_calendar.yaml``，仓根锚定；schema 与
 #: 窗语义见该文件头注）。
 RESOURCE_CALENDAR_FILE = "resource_calendar.yaml"
@@ -345,7 +346,7 @@ def resources_view(machine: str | None = None) -> dict[str, Any]:
         ``{"ok": True, "local": {"openems", "hfss"},
         "remote": remote_resources(...), "calendar": calendar_launch_view(...)}``
         ——子面降级不翻 ok（#105）；``calendar.launchable`` =「当前是否可发」
-        状态字段（缺省未配置日历=恒可发，机读化消费口）。
+        状态字段（缺省未配置日历=恒可发，UX-B8 机读化消费口）。
     """
     return ok_envelope(
         local={
@@ -380,7 +381,7 @@ def queue_view(machine: str | None = None) -> dict[str, Any]:
     - ``jobs``：job_registry 全体在册快照瘦形（注册序；跨进程历史 run 走
       ``jobs status``/meta.json 磁盘回落链，不在本视图）；
     - ``write_lock``：单写锁 owner + FIFO 队长（并发 hfss job 的排队面）；
-    - ``seat_occupancy``：席位 → 占用 job 列表（记账实时快照）；
+    - ``seat_occupancy``：席位 → 占用 job 列表（B-29 记账实时快照）；
     - ``remote``：:func:`remote_resources` 同源服务器在途态（unknown 降级
       原样透传）。
     """
@@ -401,7 +402,7 @@ def queue_view(machine: str | None = None) -> dict[str, Any]:
     )
 
 
-# ─── 资源日历（configs/resource_calendar.yaml 机读化） ─────────────────
+# ─── 资源日历（UX-B8：configs/resource_calendar.yaml 机读化） ─────────────────
 
 def default_resource_calendar_path() -> Path:
     """日历缺省路径：``configs/resource_calendar.yaml``（仓根锚定，

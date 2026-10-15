@@ -11,6 +11,7 @@ from rich.table import Table
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── surrogate (E3 代理模型离线分析) ─────────────────────────────────────────
 
@@ -80,7 +81,7 @@ def surrogate_uq(
         if "=" not in item:
             if json_output:
                 # VI-5 W6-B：入参非法也信封（--json 下失败路径不许非 JSON）
-                _emit({"ok": False, "errors": [f"--tol 格式应为 参数名=σ：{item}"]},
+                _emit(error_envelope(f"--tol 格式应为 参数名=σ：{item}"),
                       "UQ 失败", json_output=True)
             console.print(f"[red]✗ --tol 格式应为 参数名=σ：{item}[/red]")
             raise typer.Exit(code=1)
@@ -172,6 +173,16 @@ def runs_compare(
             table.add_row(str(row["metric"]), *cells,
                           "-" if spread is None else f"{spread:.4f}")
         console.print(table)
+        return
+
+    if len(run_ids) < 2:
+        # ge9 审查批 R5 P1-1：变参化引入的单参裸 IndexError——旧双位签名时
+        # typer 拒收（usage error 干净退出），变参后 len==1 直达下标越界。
+        # 两形态都走同批 report/validate 的 arity 干净报错（--json 失败
+        # 路径必须信封，#24 口径）。
+        _emit(error_envelope(
+            f"对比需要 ≥2 个 run_id（N-way 矩阵请给 ≥3 个）：收到 {len(run_ids)} 个"),
+            "对比失败", json_output=json_output)
         return
 
     run_id_a, run_id_b = run_ids[0], run_ids[1]
@@ -472,9 +483,9 @@ def _load_retrieval_inputs(recipe_path: str, library_path: str | None) -> dict:
     try:
         data = yaml.safe_load(Path(recipe_path).read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
-        return {"ok": False, "errors": [f"配方不可读: {exc}"]}
+        return error_envelope(f"配方不可读: {exc}")
     if not isinstance(data, dict):
-        return {"ok": False, "errors": [f"配方根节点需为映射: {recipe_path}"]}
+        return error_envelope(f"配方根节点需为映射: {recipe_path}")
     params = data.get("params") or {}
     if not isinstance(params, dict):
         params = {}
@@ -491,12 +502,12 @@ def _load_retrieval_inputs(recipe_path: str, library_path: str | None) -> dict:
         try:
             lib_data = json.loads(Path(library_path).read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            return {"ok": False, "errors": [f"历史库不可读: {exc}"]}
+            return error_envelope(f"历史库不可读: {exc}")
         if not isinstance(lib_data, list):
-            return {"ok": False,
-                    "errors": ["历史库必须是 JSON 条目数组（core meta_retrieval schema）"]}
+            return error_envelope(
+                "历史库必须是 JSON 条目数组（core meta_retrieval schema）")
         lib = lib_data
-    return {"ok": True, "query": query, "library": lib}
+    return ok_envelope(query=query, library=lib)
 
 
 # ─── datasets (数据集注册表 v2：Parquet 物化 + DuckDB 直查) ──────────────────

@@ -735,7 +735,7 @@ def test_oe_refs_marchand_constants():
 
 def test_oe_refs_closed_form_fallback_caps_agree_hfss(tmp_path, monkeypatch):
     """产物缺失 → 闭式回退 + cap=AGREE_HFSS（criteria §1b）；offline 用 tmp
-    伪造空仓根（REPO 重定向，不触真 runs）。"""
+    伪造空仓根（REPO 重定向，不触真 runs/）。"""
     monkeypatch.setattr(mod, "REPO", tmp_path)
     refs = mod.resolve_oe_refs("wilkinson")
     assert refs["cap"] == "AGREE_HFSS"

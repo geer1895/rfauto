@@ -217,7 +217,7 @@ class TestSpecTranslation:
         dotnet/database/stackup.py:97-130 源码实证；__update_stackup 同口径
         layers.pop(0) 走 add_layer_top）；官方示例 TOP,DE,BOTTOM 首项=顶层；
         docs/pyedb_distilled.md §3.1/§6-2（「adapter 翻转一次」处方）；
-        真机冒烟以 GND=elevation0
+        真机冒烟（runs/edblane85/w1_smoke/build_pyaedt.py）以 GND=elevation0
         验证的正确物理序=信号层在上。未翻转时发射族叠层整体上下颠倒
         （GND 落物理顶层=倒置微带，综合 λ/4 几何全错且无报错）。
         """
@@ -400,7 +400,7 @@ class TestBuild:
         kw = calls[0][1]
         assert kw["edbpath"] == str(result.aedb_path)
         assert kw["isreadonly"] is False
-        assert kw["version"] == "2025.1"  # AEDT 2025 R1 对齐基准
+        assert kw["version"] == "2025.1"  # AGENTS 规则 0：本机 AEDT 2025 R1 对齐基准
         # configuration.load 收到与落盘 JSON 逐字节同构的 dict + apply_file=True
         loads = [c for c in calls if c[0] == "load"]
         assert len(loads) == 1
@@ -1079,16 +1079,24 @@ class TestEmitterBuildChain:
         assert on_disk == expected
 
 
-# ─── 3D Layout setup 真收紧通道（W8 仲裁建议 2，2026-10-09）──────────────────
+# ─── 3D Layout setup 自适应档写入通道（W8 仲裁建议 2，2026-10-09）────────────
 #
-# W8 实证（真机仲裁，两通道对照）：对已解
+# W8 实证（runs/edblane85/w8_cl_arb/ARBITRATION.md §2 V3/§5-2）：对已解
 # 3D Layout 工程重载改档不传播——pyaedt props 无 AdaptiveSettings 子树，
 # 子树重建写入+update+save 后批解仍逐位回放缓存解（S31 十位小数同值
-# -9.4569、wall 26s vs 原档 ~52s）。因此真收紧唯一通道=建模期写入
-# （spec.sim_setup.adapt → configuration.load 落 setup；建议 1 的发射器
-# 加严档 0.005 即自然生效），改档须重建；配套生效断言
-# verify_adapt_tightening（批解后重开工程读回 setup max_delta 与存证请求
-# 档核对，不一致/不可核对=告警，best-effort 不抛异常）。
+# -9.4569、wall 26s vs 原档 ~52s）。因此改档走建模期写入
+# （spec.sim_setup.adapt → configuration.load 落 setup），改档须重建；
+# 配套写入一致断言 verify_adapt_tightening（批解后重开工程读回 setup
+# max_delta 与存证请求档核对，不一致/不可核对=告警，best-effort 不抛异常）。
+#
+# W9 勘误 + W10 定谳（runs/edblane85/w9_cl_recheck 与 w10_cl_recheck）：
+# 本节单测验证的是**请求值达 configuration.load 的写入面**，非"求解按
+# 新档收敛"的行为效力——W9 真机 props 建库期写入 0.005 读回确认后批解
+# 仍按 0.02 准则停机（TIGHTENING_NOT_EFFECTIVE）；W10 定谳：EDB 3D
+# Layout schema（SimSetupID=19）无 MaxDelta 键=写入不可达（四互证），
+# EDB 侧唯一可达收紧通道=MinConvergedPasses 扁平键（求解器实消费）；
+# coupled_line 缺省档已按 W10 定谳回退 0.02（史值 0.005 见发射器
+# DEFAULT_ADAPT_MAX_DELTA 注释）。
 
 
 class _AdaptEntry:
@@ -1168,16 +1176,19 @@ def _make_result(tmp_path: Path, config: dict) -> EdbBuildResult:
 
 
 class TestAdaptTighteningChannel:
-    """建议 1/2 联动：发射器加严档建模期自然生效（真收紧通道验证）+
-    verify_adapt_tightening 生效断言（match/mismatch/不可核对全谱）。"""
+    """建议 1/2 联动：发射器缺省档建模期写入（写入通道验证：值达
+    configuration.load；求解行为效力不在单测面，W9 勘误+W10 定谳见文件
+    头）+ verify_adapt_tightening 写入一致断言（match/mismatch/不可核对
+    全谱）。"""
 
-    # ── 建模期真收紧通道（建议 1 缺省档 → 建议 2 写入路径）─────────────────
+    # ── 建模期写入通道（缺省档 → 建议 2 写入路径）─────────────────────────
 
     def test_coupled_line_default_tightened_flows_through_build(
             self, tmp_path, monkeypatch):
-        """coupled_line 加严缺省档 0.005 逐级落：emit → spec_to_config_json
-        → build 注入 config（与落盘存证同构）——发射器改档即自然生效，
-        无需求解后干预（W8 建议 2 的主修法路径验证）。"""
+        """coupled_line 缺省档 0.02（W10 定谳回退值）逐级落：emit →
+        spec_to_config_json → build 注入 config（与落盘存证同构）——发射
+        器改档即随建库写入请求档，无需求解后干预（W8 建议 2 的主修法路
+        径写入面验证；W10 定谳 EDB 路径 MaxDelta 写入不可达见文件头）。"""
         calls: list = []
         _install_fake_pyedb_family(monkeypatch, calls)
         from rfauto.adapters.edb_templates import emit_coupled_line_spec
@@ -1185,38 +1196,39 @@ class TestAdaptTighteningChannel:
         spec, _ = emit_coupled_line_spec({"f0_ghz": 2.4})
         cfg = spec_to_config_json(spec)
         sol = cfg["setups"][0]["single_frequency_adaptive_solution"]
-        assert sol["max_delta"] == 0.005
+        assert sol["max_delta"] == 0.02
         result = EdbAdapter(tmp_path).build(spec)
         _, loaded, _lkwa = next(c for c in calls if c[0] == "load")
         assert loaded["setups"][0]["single_frequency_adaptive_solution"][
-            "max_delta"] == 0.005
+            "max_delta"] == 0.02
         on_disk = json.loads(result.config_json_path.read_text(encoding="utf-8"))
         assert on_disk == loaded  # 存证=注入同一 dict（请求正本可回放）
 
     def test_coupled_line_explicit_override_flows_through(
             self, tmp_path, monkeypatch):
-        """显式覆盖档原样透传建模期通道（0.02 请求 → config 0.02）。"""
+        """显式覆盖档原样透传建模期通道（0.01 请求 → config 0.01；覆盖值
+        取非缺省 0.02 的 0.01 保证透传断言有区分度）。"""
         calls: list = []
         _install_fake_pyedb_family(monkeypatch, calls)
         from rfauto.adapters.edb_templates import emit_coupled_line_spec
 
         spec, _ = emit_coupled_line_spec(
-            {"f0_ghz": 2.4, "adapt": {"max_delta": 0.02}})
+            {"f0_ghz": 2.4, "adapt": {"max_delta": 0.01}})
         assert spec_to_config_json(spec)["setups"][0][
-            "single_frequency_adaptive_solution"]["max_delta"] == 0.02
+            "single_frequency_adaptive_solution"]["max_delta"] == 0.01
         EdbAdapter(tmp_path).build(spec)
         _, loaded, _ = next(c for c in calls if c[0] == "load")
         assert loaded["setups"][0]["single_frequency_adaptive_solution"][
-            "max_delta"] == 0.02
+            "max_delta"] == 0.01
 
     def test_module_docstring_declares_rebuild_channel(self):
         """「改档须重建」声明在案（建议 2 的 docstring 落地面，W8 证据
-        链可回溯：真机仲裁实证/AdaptiveSettings/断言入口三要素）。"""
+        链可回溯：ARBITRATION/AdaptiveSettings/断言入口三要素）。"""
         doc = ea.__doc__ or ""
         assert "改档须重建" in doc
         assert "AdaptiveSettings" in doc
         assert "verify_adapt_tightening" in doc
-        assert "真机仲裁实证" in doc
+        assert "w8_cl_arb" in doc
 
     # ── 生效断言：一致/不一致/不可核对全谱 ─────────────────────────────────
 
@@ -1245,7 +1257,8 @@ class TestAdaptTighteningChannel:
 
     def test_verify_mismatch_warns_with_rebuild_hint(
             self, tmp_path, monkeypatch):
-        """读回≠请求 → 告警带双值+改档须重建指引（W8 收紧不传播实证）。"""
+        """读回≠请求 → 告警带双值+改档须重建指引（W8 收紧不传播实证），
+        并带 W10 定谳补注（EDB schema 无 MaxDelta 键、重建亦不落库）。"""
         _install_fake_pyedb_verify(
             monkeypatch, [],
             setups={"setup1": _VerifySetup([_AdaptEntry("2.4GHz", 0.02)])})
@@ -1256,6 +1269,7 @@ class TestAdaptTighteningChannel:
         assert "setup1" in msg and "不一致" in msg
         assert "0.005" in msg and "0.02" in msg
         assert "改档须重建" in msg
+        assert "W10" in msg and "不可达" in msg
 
     def test_verify_multi_freq_matches_by_frequency(
             self, tmp_path, monkeypatch):

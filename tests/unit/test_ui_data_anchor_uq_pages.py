@@ -204,7 +204,7 @@ class TestAnchorsPage:
         d = anchor_detail("test.demo.const-v1", path)
         assert d["ok"] and d["anchor"]["value"] == 1.25
         bad = anchor_detail("nope", path)
-        assert not bad["ok"] and "未知锚" in bad["error"]
+        assert not bad["ok"] and any("未知锚" in e for e in bad.get("errors", []))
 
 
 class TestUqSamplesList:
@@ -365,8 +365,11 @@ class TestThreePagesHttpEndpoints:
     def test_pages_js_registers_three_pages(self):
         import rfauto.ui as ui_pkg
 
-        src = (Path(ui_pkg.__file__).parent / "static" / "pages.js").read_text(
-            encoding="utf-8")
+        # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+        _sd = Path(ui_pkg.__file__).parent / "static"
+        src = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in [_sd / "pages.js", *sorted((_sd / "pages").glob("*.js"))])
         for needle in ("function pageDatasets", "function pageAnchors",
                        "function pageUq", "datasets: pageDatasets",
                        "anchors: pageAnchors", "uq: pageUq"):

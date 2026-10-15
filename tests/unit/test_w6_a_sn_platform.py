@@ -1,7 +1,7 @@
 """W6-A 席位定向门——SN 平台余件 13（SN-3/6/7/8/10/11/13/14/15/16/17/18/19）。
 
 全部零网络（#139：LLM/外部通道一律 monkeypatch 钉住）；真机通道零触碰；
-chdir 隔离（#144：优化循环类测试不污染真实 runs）。逐件对应 SN 席报告
+chdir 隔离（#144：优化循环类测试不污染真实 runs/）。逐件对应 SN 席报告
 §二行级规格（runs/research_seats_20261004/sn_platform_deepen/REPORT.md）。
 """
 
@@ -652,6 +652,22 @@ class TestSn7NwayCompare:
         payload = json.loads(r3.output)
         assert payload["ok"] and payload["n_runs"] == 3
 
+    def test_cli_compare_single_run_guard_both_forms(self, tmp_path, monkeypatch):
+        # ge9 审查批 R5 P1-1 回归钉：变参化后 len==1 曾直达 run_ids[1]
+        # 下标越界裸崩（--json 与 human 两形态同崩）——守卫后两形态都是
+        # 干净报错（--json=信封 exit 1；human=红字 exit 1，零 traceback）。
+        monkeypatch.chdir(tmp_path)
+        r_json = _invoke(["runs", "compare", "only_one_run", "--json"])
+        assert r_json.exit_code == 1
+        assert isinstance(r_json.exception, SystemExit)  # 干净退出非裸崩
+        payload = json.loads(r_json.output)
+        assert not payload["ok"]
+        assert any("≥2" in e for e in payload["errors"])
+        r_human = _invoke(["runs", "compare", "only_one_run"])
+        assert r_human.exit_code == 1
+        assert isinstance(r_human.exception, SystemExit)
+        assert "对比失败" in r_human.output
+
 
 # ---------------------------------------------------------------------------
 # SN-8：批量 validate/report
@@ -732,6 +748,29 @@ class TestSn16McpEntry:
         assert out["ok"] and out["job_id"] == "job_x"
         assert captured["max_trials"] == 7 and captured["seed"] == 3
         assert captured["adapter_name"] == "fake"
+
+    def test_start_tune_seed_zero_passthrough(self, monkeypatch):
+        # ge9 审查批 R4 P2-2 回归钉：seed=0 是 Optuna 合法种子（与缺省
+        # SAMPLER_SEED=42 两条轨迹）——曾被 `seed if seed else None` falsy
+        # 哨兵折成 None（MCP 面 seed=0 不可达，CLI --seed 0 可达=跨壳不对
+        # 等）。修复后签名 int|None，seed=0 直传（api.start_tune :930 对
+        # 非 None 一律 {"seed": int(seed)}，0=字面 0 轨迹）。
+        from rfauto.mcp_tools.optim import start_tune
+
+        captured: dict = {}
+
+        def fake_async(recipe_path, **kw):
+            captured.update(kw)
+            return {"ok": True, "job_id": "job_s0", "state": "running"}
+
+        import rfauto.service.api as api_mod
+
+        monkeypatch.setattr(api_mod, "start_tune_async", fake_async)
+        out = start_tune("r.yaml", seed=0)
+        assert out["ok"]
+        assert captured["seed"] == 0, "seed=0 必须字面透传（不得折成 None/42）"
+        start_tune("r.yaml")  # 缺省 None=内核缺省 42 语义不变
+        assert captured["seed"] is None
 
     def test_run_sweep_wiring(self, monkeypatch):
         import rfauto.optimization.sweep_backend as sb

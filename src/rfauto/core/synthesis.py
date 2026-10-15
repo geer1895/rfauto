@@ -1,4 +1,4 @@
-"""E6a 微带线综合引擎（扩展方案 §E6a）。
+"""E6a 微带线综合引擎（规划扩展 §E6a）。
 
 正向：skrf MLine (Hammerstad-Jensen) 计算 Z0/εeff
 反解：自写 brentq 求逆（HJ 闭式 + 扫描括号）
@@ -9,7 +9,7 @@
 - 层叠复用 configs/materials.yaml（带 source/verified_by）
 - L0 层，无 SDK 依赖（只有 skrf + numpy + scipy）
 
-验收（扩展方案）：
+验收（规划扩展）：
 ① 反解→正向回算 |ΔZ0|<0.5Ω
 ② 响应性：Z0 单调降 → W 单调升
 ③ 对拍矩阵：常规+极端 W/h + 多频点，常规 <3% 极端 <5%
@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -1125,13 +1126,15 @@ def synthesize_atten_pi_model(
     attenuation_db: float = 10.0,
     z0_ohm: float = 50.0,
     freq_ghz: float = 2.5,
-    shunt_off_mm: float = 6.0,
+    shunt_off_mm: float = 0.75,
 ) -> ModelSynthesisResult:
     """π 型衰减器综合（WP2.3 首族）：目标衰减 → 三电阻（E4 闭式）。
 
     电阻值=E4 attenuator_pi 闭式（ABCD 校验）。objectives：
     |S21| mean_within ±0.5dB（平坦衰减，均值语义匹配响应形态）
     + |S11| max_below -20dB（按设计匹配）。
+    shunt_off_mm 缺省 0.75mm=shunt 与串臂断口缘齐贴的电共位布局
+    （E4 集总闭式裁判前提；W7-A 残座批 D=6mm 分布式失配定谳后改）。
     """
     from rfauto.core.calculators import attenuator_pi
 
@@ -1173,12 +1176,14 @@ def synthesize_atten_t_model(
     attenuation_db: float = 10.0,
     z0_ohm: float = 50.0,
     freq_ghz: float = 2.5,
-    shunt_off_mm: float = 6.0,
+    shunt_off_mm: float = 0.75,
 ) -> ModelSynthesisResult:
     """T 型衰减器综合（WP2.3 横向变体）：目标衰减 → 三电阻（E4 闭式）。
 
     电阻值=E4 attenuator_t 闭式（ABCD 校验）：两臂各串 r_series_arm、
     中点对地 r_shunt_mid。objectives 同 atten_pi（平坦均值+匹配门）。
+    shunt_off_mm 缺省 0.75mm=串臂与中点 shunt 缘齐贴的电共位布局
+    （同 π 型，W7-A 残座批定谳后改）。
     """
     from rfauto.core.calculators import attenuator_t
 
@@ -1701,6 +1706,14 @@ def synthesize_sma_launcher_model(
 
 # ─── C13 带通滤波器综合（耦合矩阵口径，广义切比雪夫 → N+2 CM）─────────────────
 
+# R1-4 回代硬门容差（aurora36 W6-C 席）：主门与既有响应判据同值（1e−5）；
+# 产物门针对出版舍入（coupling_matrix 1e−12 舍入，噪声 ~1e−11 量级）留
+# 3 个量级余量（1e−8）。
+_BPF_BACKSUB_TOL_MAIN = 1e-5
+_BPF_BACKSUB_TOL_PUB = 1e-8
+_SYN_BPF_STRICT_ENV = "RFAUTO_SYN_BPF_STRICT"
+
+
 def _cm_nominal_label(a: int, b: int) -> str:
     """nominal 标签（显式无歧义口径）：单数字下标 m{a}{b}（m01/m12/m25…），
     两位数下标 m{a}_{b}（如 m1_10 = 节点 1–10 耦合）。
@@ -1720,13 +1733,16 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
                          rl_db: float,
                          transmission_zeros_ghz: list | None = None,
                          topology: str = "folded",
-                         sign_mode: str = "mainline_positive"
+                         sign_mode: str = "mainline_positive",
+                         strict: bool | None = None,
+                         tz_mode: str = "paired"
                          ) -> dict[str, Any]:
     """BPF 综合草稿（C13）：广义切比雪夫 → N+2 耦合矩阵 → 拓扑约简。
 
     闭式链路（core/calculators._gcheb_* / _cm_*）：
     - 广义切比雪夫滤波函数 F_N（cosh 和构造，带边 F_N(1)=1），
-      ε = 1/√(10^(RL/10)−1)；全极点（无 TZ）或准椭圆（±ω_z 成对 TZ）；
+      ε = 1/√(10^(RL/10)−1)；全极点（无 TZ）/准椭圆（±ω_z 成对 TZ）/
+      非对称（显式非成对 TZ，tz_mode="explicit"，复系数路径）；
     - F/P/E 多项式（E 取 Hurwitz 半边，场等价 f~²+p~²/ε²=|E(jΩ)|²）；
     - Cameron N+2 横向矩阵（Y 留数法闭式精确，stage-2；LM 幅频精化仅作
       数值病态兜底）；
@@ -1750,6 +1766,44 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
     preserve_s21_phase 只翻谐振器节点、S21 相位保持（末端 m_{N,L} 可负）。
     口径：transmission_zeros_ghz 为绝对频率（GHz），内部换算为归一化
     低通 |Ω_z| = |(f_z/f0 − f0/f_z)/fbw|（须 >1，即阻带内）。
+
+    tz_mode（C13 非对称 TZ 增量，aurora72 A5-D）：paired（缺省，既有口径）
+    ——每个绝对频率一项=隐式 ±Ω_z 对（|Ω_z| 取绝对值，对数 ≤ order//2）；
+    explicit——每个绝对频率一项=一个 TZ，符号由所在阻带侧决定
+    （f_z>f0 → +Ω_z，f_z<f0 → −Ω_z），个数 ≤ order。explicit 下若 TZ 集
+    共轭闭合（± 全给）则归并为 ± 对走既有实系数路径（输出与 paired 同
+    输入逐位一致=退化恒等）；非闭合（单个/奇数个 TZ=真非对称）走复系数
+    谱分解原型（_gcheb_prototype_explicit，推广 Feldtkeller 复 Hurwitz
+    半边；综合=Cameron 1999 §III-A complex-even/odd 实化构造，仓内核对
+    注记见 tests/unit/test_coupling_matrix.py C13 inc3 段）→ 复对称横向
+    矩阵 M=Mᵀ（|m_0k| 与 |m_kL| 无镜像关系=非对称网络本体）。
+    精度层级：闭合/成对与全极点同层（闭式残差 ~1e−9 内，超限 LM 兜底）；
+    非对称复系数闭式残差实测 N≤6 ≤1.3e−13，N=14 单 TZ 闭式 ~3e−6 → LM
+    兜底（needs_calibration 如实标注；网格公式 min(max(41,3N+2),8N+9)
+    对三种形态同款）。约简面：arrow 恒清洁（非对称推荐 arrow）；folded
+    对非对称输入交叉耦合族可落 mixed（pattern_residual 如实返回，频响
+    等价不受影响——合同旋转保证；N=3 单 TZ 实测落 anti 单族清洁）。
+    回代门（下述 strict 两层）对三种 TZ 形态同口径适用（裁判=目标模板
+    幅频）。输出新增键：tz_mode、tz_conjugate_closed（闭合/成对=True）、
+    coefficient_domain（real|complex）；transmission_zeros_norm 在非闭合
+    显式态=带符号 Ω_z 升序列表（其余形态=|Ω_z|，与旧口径一致）。
+
+    strict（R1-4 回代硬门，aurora36 W6-C）：返回前对综合产物做回代校验，
+    裁判=目标模板（广义切比雪夫原型多项式幅频，S11=F/E、S21=P/(εE)），
+    241 点 dense 网格（−1..1）最大幅偏 |ΔS21|，两层容差——
+    ① 主门（<_BPF_BACKSUB_TOL_MAIN=1e−5，与既有响应判据同源同值）：约简
+      耦合矩阵（全精度）回代响应 vs 原型；
+    ② 产物门（<_BPF_BACKSUB_TOL_PUB=1e−8）：出版形态 coupling_matrix
+      （1e−12 舍入后的 [re,im] 对）再次回代，抓出版链（舍入/篡改/序列
+      化面）退化；nominal 的 6 位小数是人读镜像，不设门。
+    任一层超容差：strict=True（缺省）→ raise ValueError（raise 型硬门，
+    拒绝静默降级，异常消息携带偏差值/容差/关闭方式）；strict=False →
+    旧形态如实 ok=False dict（主门超限返回 {"ok": False, "errors":
+    [...], "response_max_err"}，产物门超限同形——无静默通过路径）。
+    strict=None（缺省占位）→ 读环境变量 RFAUTO_SYN_BPF_STRICT：unset/
+    空=开（strict），"0/false/no/off"（大小写不敏感）=关；供不能改传参
+    的 CLI/MCP 调用方关闸。正常链（两层均在容差内）返回 dict 与门加入
+    前的旧实现逐位一致（门零足迹、零新增输出键）。
     """
     errors: list[str] = []
     if order < 1:
@@ -1763,21 +1817,59 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
     if sign_mode not in ("mainline_positive", "preserve_s21_phase"):
         errors.append(f"sign_mode={sign_mode} 须为 mainline_positive|"
                       "preserve_s21_phase")
+    if tz_mode not in ("paired", "explicit"):
+        errors.append(f"tz_mode={tz_mode} 须为 paired|explicit")
     tz_norm: list[float] = []
+    tz_signed: list[float] = []
     for fz in transmission_zeros_ghz or []:
         if fz <= 0 or abs(fz - f0_ghz) < 1e-12:
             errors.append(f"TZ 频率 {fz} GHz 非法")
             continue
-        omega_z = abs((fz / f0_ghz - f0_ghz / fz) / fbw)
-        if omega_z <= 1.0:
-            errors.append(f"TZ {fz} GHz 归一化 |Ω|={omega_z:.3f} 落在通带内")
+        omega_z = (fz / f0_ghz - f0_ghz / fz) / fbw
+        if abs(omega_z) <= 1.0:
+            errors.append(f"TZ {fz} GHz 归一化 |Ω|={abs(omega_z):.3f} 落在通带内")
+        elif tz_mode == "explicit":
+            # 显式口径：符号=所在阻带侧（f_z>f0 → +Ω_z），一项=一个 TZ。
+            tz_signed.append(round(omega_z, 9))
         else:
-            tz_norm.append(round(omega_z, 9))
-    if order >= 1 and len(tz_norm) > order // 2:
+            tz_norm.append(round(abs(omega_z), 9))
+    if order >= 1 and tz_mode == "explicit":
+        if len(tz_signed) > order:
+            errors.append(f"显式 TZ 个数 {len(tz_signed)} 超出阶数 {order} "
+                          f"允许数 {order}")
+    elif order >= 1 and len(tz_norm) > order // 2:
         errors.append(f"TZ 对数 {len(tz_norm)} 超出阶数 {order} 允许数 "
                       f"{order // 2}")
     if errors:
         return {"ok": False, "errors": errors}
+    # 显式口径路由：共轭闭合（± 成对全给）→ 归并 ± 对走既有实系数路径
+    # （与 paired 同输入逐位一致=退化恒等；显式独立谱分解与老路径差
+    # ~1e−15 非逐位，故闭合态必须归并）；非闭合（真·非对称）→ 复系数
+    # 谱分解路径，tz_norm 改载带符号 Ω_z（升序）。
+    explicit_signed: list[float] | None = None
+    tz_closed = True
+    if tz_mode == "explicit" and tz_signed:
+        unpaired: list[float] = []
+        pairs: list[float] = []
+        for z in tz_signed:
+            hit = next((k for k, y in enumerate(unpaired)
+                        if abs(y + z) <= 1e-9), None)
+            if hit is None:
+                unpaired.append(z)
+            else:
+                unpaired.pop(hit)
+                pairs.append(z if z > 0 else -z)
+        if unpaired:
+            explicit_signed = sorted(tz_signed)
+            tz_norm = list(explicit_signed)
+            tz_closed = False
+        else:
+            tz_norm = pairs
+    if strict is None:
+        # 缺省门禁：环境变量可关（CLI/MCP 等不能改传参的调用方）；
+        # unset/空=开（strict），仅显式 "0/false/no/off" 关。
+        raw = os.environ.get(_SYN_BPF_STRICT_ENV, "").strip().lower()
+        strict = raw not in ("0", "false", "no", "off")
 
     from rfauto.core.calculators import (
         _cm_folded_family,
@@ -1789,18 +1881,29 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
         _cm_s21_phase_flipped,
         _cm_transversal_exact,
         _gcheb_prototype,
+        _gcheb_prototype_explicit,
         _poly_response,
     )
 
-    proto = _gcheb_prototype(order, rl_db, tuple(tz_norm))
+    if explicit_signed is not None:
+        # 真·非对称（非闭合显式集）：复系数谱分解原型（C13 inc3 面）。
+        proto = _gcheb_prototype_explicit(order, rl_db, explicit_signed)
+    else:
+        proto = _gcheb_prototype(order, rl_db, tuple(tz_norm))
     try:
         mt = _cm_transversal_exact(order, proto)
         fit_res = _cm_poly_max_err(mt, proto)
         method = "cameron_residue"
         if fit_res > 1e-8:  # 数值病态兜底（不保 y11=y22 结构，仅极端情形）
-            mt, res = _cm_polish(order, proto, mt,
-                                 np.linspace(-0.99, 0.99,
-                                             min(41, 8 * order + 9)))
+            # 采样点数须 ≥ 3·order：LM 残差数 2n 要 ≥ 未知数 6·order，否则
+            # scipy least_squares method='lm' 直接抛 ValueError（旧固定 41
+            # 点在 N=14 即 82<84 触发，实测）。公式与
+            # cm_core.coupling_matrix_synthesize_n2 同款（c13-inc2 修法单
+            # 源）；order≤13 时 max(41, 3·order+2)=41，与旧网格逐位一致。
+            mt, res = _cm_polish(
+                order, proto, mt,
+                np.linspace(-0.99, 0.99,
+                            min(max(41, 3 * order + 2), 8 * order + 9)))
             fit_res = float(np.max(np.abs(res.fun)))
             method = "cameron_residue+lm"
     except Exception as exc:  # pragma: no cover - 数值兜底
@@ -1818,12 +1921,27 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
         cross_family = _cm_folded_family(mred)
         s21_flipped = _cm_s21_phase_flipped(mt, mred)
     dense = np.linspace(-1.0, 1.0, 241)
-    err = 0.0
-    for w_ in dense:
-        _, s21c = _cm_response_raw(mred, 1.0, 1.0, w_)
-        _, s21p = _poly_response(proto, np.array([w_]))
-        err = max(err, abs(abs(s21c) - abs(s21p[0])))
-    if not (err < 1e-5):
+
+    def _bs_s21_err(m_: Any) -> float:
+        """回代裁判：矩阵回代响应 vs 目标模板（原型幅频）最大 |ΔS21|。"""
+        e_ = 0.0
+        for w_ in dense:
+            _, s21c = _cm_response_raw(m_, 1.0, 1.0, w_)
+            _, s21p = _poly_response(proto, np.array([w_]))
+            e_ = max(e_, abs(abs(s21c) - abs(s21p[0])))
+        return e_
+
+    err = _bs_s21_err(mred)
+    if not (err < _BPF_BACKSUB_TOL_MAIN):
+        # R1-4 回代硬门（主门）：耦合矩阵回代响应超目标模板容差即红。
+        # strict（缺省）→ raise ValueError 不再静默降级返回 ok=False 草稿；
+        # strict=False 保留旧返回形态（下游判读链向后兼容）。
+        msg = (f"BPF 回代自洽失败：约简耦合矩阵回代频响偏差 {err:.2e} 超容差 "
+               f"{_BPF_BACKSUB_TOL_MAIN:.0e}（order={order}, fbw={fbw}, "
+               f"rl_db={rl_db}, TZ={tz_norm}）；可 strict=False 或 env "
+               f"{_SYN_BPF_STRICT_ENV}=0 关门取旧 ok=False 形态")
+        if strict:
+            raise ValueError(msg)
         errors.append(f"拓扑约简后频响偏差 {err:.2e} 超限（应 <1e−5）")
         return {"ok": False, "errors": errors,
                 "response_max_err": float(err)}
@@ -1843,19 +1961,43 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
         nominal_index[lab] = [a, b]
     nominal["qe_in"] = 1.0
     nominal["qe_out"] = 1.0
+    # R1-4 回代硬门（产物门）：对出版形态 coupling_matrix（1e−12 舍入后
+    # 的 [re,im] 对）再次回代，抓出版链（舍入/篡改）引入的退化——
+    # 主门查的是舍入前全精度矩阵，此处才是消费者实际拿到的工件。
+    m_pub = np.array([[c[0] + 1j * c[1] for c in row] for row in cm_list])
+    err_pub = _bs_s21_err(m_pub)
+    if not (err_pub < _BPF_BACKSUB_TOL_PUB):
+        msg = (f"BPF 回代自洽失败（产物门）：出版舍入后耦合矩阵回代频响偏差 "
+               f"{err_pub:.2e} 超容差 {_BPF_BACKSUB_TOL_PUB:.0e}"
+               f"（order={order}）；可 strict=False 或 env "
+               f"{_SYN_BPF_STRICT_ENV}=0 关门取旧 ok=False 形态")
+        if strict:
+            raise ValueError(msg)
+        errors.append(f"出版矩阵回代偏差 {err_pub:.2e} 超限（应 <1e−8）")
+        return {"ok": False, "errors": errors,
+                "response_max_err": float(err)}
     notes = [
         f"广义切比雪夫 {order} 阶，RL={rl_db}dB，fbw={fbw}，f0={f0_ghz}GHz",
-        f"TZ(归一化 |Ω|) = {tz_norm or '全极点（无穷远）'}",
+        (f"TZ(归一化 |Ω|) = {tz_norm or '全极点（无穷远）'}" if tz_closed
+         else f"TZ(归一化 Ω，显式非对称口径) = {tz_norm}"),
         f"横向矩阵 {method}：闭式残差 {fit_res:.2e}，"
         f"约简后频响最大偏差 {err:.2e}",
         "nominal 标签口径：单数字下标 m{a}{b}，两位数下标 m{a}_{b}"
         "（N≥9 出现，如 m1_10 = 节点 1–10 耦合；节点序号见 nominal_index，"
         "0=源、N+1=载）",
     ]
+    if explicit_signed is not None:
+        notes.append(
+            "非对称 TZ：复系数原型 → 复对称横向矩阵 M=Mᵀ（|m_0k| 与 "
+            "|m_kL| 无镜像关系）；folded 模式残留可非零（mixed 族如实返回，"
+            "频响等价不受影响），清洁稀疏拓扑建议 arrow")
     if topology == "folded":
         fam_desc = {"anti": "反对角 i+j=N+1", "shifted": "移位反对角 i+j=N+2"
                     "（奇数阶+偶数 TZ，如 N=5 的 2-5 四元组）",
-                    "none": "无交叉耦合（全极点）"}.get(cross_family, cross_family)
+                    "none": "无交叉耦合（全极点）",
+                    "mixed": "两族 keeper 均有残留（非对称/高阶形态，如实"
+                             "返回；频响等价不受影响）"}.get(cross_family,
+                                                           cross_family)
         notes.append(f"folded 交叉耦合族 {cross_family}：{fam_desc}")
         if pattern_residual > 1e-9:
             notes.append(f"folded 模式残留 {pattern_residual:.2e}"
@@ -1865,6 +2007,10 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
             "rl_db": rl_db, "topology": topology,
             "epsilon": round(float(proto["eps"]), 9),
             "transmission_zeros_norm": tz_norm,
+            "tz_mode": tz_mode,
+            "tz_conjugate_closed": bool(tz_closed),
+            "coefficient_domain": ("complex" if explicit_signed is not None
+                                   else "real"),
             "coupling_matrix": cm_list,
             "matrix_shape": [n2, n2],
             "external_q": [1.0, 1.0],
@@ -1888,7 +2034,7 @@ def synthesize_bpf_model(order: int, f0_ghz: float, fbw: float,
 # ─── hairpin（发夹线 BPF）综合链（WP2.3 收口 ⑦ 升格 core，2026-09-16）──────────────
 # 自 adapters/openems_templates.py WP2.3 hairpin 段原样下沉（adapters 再导出、零改动
 # 消费；#116 不留遮蔽副本）：C13 矩阵综合（本文件 synthesize_bpf_model，folded）
-# → k/Q_e 映射（Hong §5.2/§5.3：k_{i,i+1}=FBW·|M_{i,i+1}|、Q_e=1/(FBW·|M_{0,1}|²）
+# → k/Q_e 映射（Hong §5.2/§5.3：k_{i,i+1}=FBW·|M_{i,i+1}|、Q_e=1/(FBW·|M_{0,1}|²））
 # → 几何（core/coupled_microstrip：KJ 反解缝、抽头闭式 τ、λg/2 臂长）。数值只在内核。
 
 _HAIRPIN_PARAM_KEYS: tuple[str, ...] = (

@@ -49,3 +49,33 @@ nominal_derivation: |-
   period=0.4λ0=11.9917（<0.5λ0 无光栅瓣口径）；总跨=λ0/(2√εeff)、
   臂长=总跨/2=λ0/(4√εeff)=4.91，εeff=(1+εr)/2=2.33（单侧基板加载，
   Luukkonen 2008 eq.3 口径）；臂宽=总跨/10=0.982；h=0.508（20mil 板材）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 十字偶极 FSS 单元：十字总跨=介质半波谐振 λ0/(2√εeff)，εeff 取单侧基板加载 (1+εr)/2。典型用于带通 FSS 屏与极化双对称选频；常见误用=臂宽随手给——臂宽=总跨/10
+      是版图派生口径，改臂宽进入带宽/色散维而总跨才定谐振。
+    derivations:
+    - claim: 总跨谐振式（单侧基板加载 εeff=(1+εr)/2，Luukkonen eq.3 口径）
+      formula: 2*arm_len = λ0/(2*sqrt((1+εr)/2)) ; arm_len = 4.91 mm
+      source: 本仓 core/metasurface_lut（单元谐振单源；docs/templates/ms_cross/meta.yaml nominal_derivation）
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: 总跨=2·arm_len 的 λ/2 谐振恒等式（精确 1.0）；登记表 1.0
+  - param: er
+    order: 2
+    basis: 单侧加载通道（解析精确 0.5·εr/(1+εr)）；登记表 0.3927
+  - param: arm_w_mm
+    order: 3
+    basis: 臂宽=总跨/10 派生版图量（登记表 0——带宽/色散维非谐振维）
+  - param: period_mm
+    order: 4
+    basis: 阵格 0.4λ0（无光栅瓣口径，登记表 0）
+  - param: h_mm
+    order: 5
+    basis: 板厚不进加载闭式（登记表 0——全波维非零）
+  - param: tan_d
+    order: 6
+    basis: 损耗角不进谐振式（登记表 0）
+  quiz_refs: []

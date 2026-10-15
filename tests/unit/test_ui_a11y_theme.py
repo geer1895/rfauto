@@ -7,9 +7,12 @@
    键位（Ctrl/Cmd+K、Esc、↑↓、Enter、`>`/`#` 前缀、焦点陷阱三件套）。
 2. **行为钉（node 真执行，缺 node skip）**：pages.js themeIsLight 纯函数
    真值表 + palette.js modeOf/filterItems 前缀/子串匹配。
-3. **对比度钉（自含 WCAG 实现）**：从 index.html 解析 :root/body.light 变量，
-   独立重算核心对（文字 >=4.5:1 / 图形 >=3:1）——与 runs/pr1_contrast/
-   compute_contrast.py 互为独立来源（#118：裁判不得单源自证）。
+3. **对比度钉（自含 WCAG 实现）**：从 index.html 解析 :root/ocean/body.light
+   三主题变量，独立重算核心对（文字 >=4.5:1 / 图形 >=3:1）——与
+   runs/pr1_contrast/compute_contrast.py 互为独立来源（#118：裁判不得单源自证）。
+4. **W2-A（aurora36）扩钉**：--muted2 小字正文门（P0-3）、.primary 主色变体
+   完整状态面（P0-1）、静态壳错误色令牌化钉（P0-6 静态面）、guide v5 未落项
+   收账（--border-angle conic 旋转边框 / CQ / :has()，含 reduced-motion 降级）。
 
 不依赖 runs/（gitignored，干净环境可跑）；不读网络、不启动服务器。
 """
@@ -27,8 +30,16 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
+def _pages_union_text() -> str:
+    parts = [_STATIC / "pages.js"]
+    parts += sorted((_STATIC / "pages").glob("*.js"))
+    return "\n".join(p.read_text(encoding="utf-8") for p in parts)
+
 _FILES = {name: (_STATIC / name).read_text(encoding="utf-8")
-          for name in ("index.html", "app.js", "pages.js", "palette.js")}
+          for name in ("index.html", "app.js", "pages.js", "palette.js", "theme.js")}
+_FILES["pages.js"] = _pages_union_text()  # UI-R2：入口+域模块并集
 
 
 def _hit(name: str, pattern: str) -> bool:
@@ -90,13 +101,16 @@ class TestA11ySourcePins:
 
 class TestThemeTriStateSourcePins:
     def test_three_modes_and_matchmedia(self):
-        assert _hit("pages.js", r'THEME_MODES = \["dark", "light", "system"\]')
+        # aurora72 A5-B（R6 R-4）：THEME_MODES 单源迁 theme.js（pages.js re-export）
+        assert _hit("theme.js", r'THEME_MODES = \["midnight", "ocean", "light", "system"\]')  # v5.0 Aurora 四态（dark=旧存量别名）
         assert _hit("pages.js", r'matchMedia\("\(prefers-color-scheme: light\)"\)')
         assert _hit("pages.js", r'addEventListener\("change", onSysChange\)')
 
     def test_persistence_key_unchanged(self):
         # 规格纠偏：持久化已存在（localStorage rfauto-theme），键名不得改
-        assert _hit("pages.js", r'THEME_KEY = "rfauto-theme"')
+        # （A5-B：键面单源迁 theme.js，pages.js re-export；boot 读档键钉在
+        # test_ui_theme_boot 与本键互证）
+        assert _hit("theme.js", r'THEME_KEY = "rfauto-theme"')
         assert _hit("pages.js", r'localStorage\.setItem\(THEME_KEY, m\)')
 
     def test_light_matrix_has_accent2(self):
@@ -136,10 +150,11 @@ class TestPaletteSourcePins:
         assert _hit("pages.js", r"export function openRun")
 
     def test_no_new_api_endpoints_required(self):
-        # PR-2 零新增 /api 端点（server.py 路由面不变 → 端点计数钉不受扰）
+        # PR-2 零新增 /api 端点（server.py 路由面不变 → 端点计数钉不受扰；
+        # aurora_d UI-R1 拆分后 handler 引用带 <域>_routes. 命名空间前缀）
         server = (Path(_STATIC).parent / "server.py").read_text(encoding="utf-8")
-        assert 'Route("/api/runs", api_runs)' in server
-        assert 'Route("/api/recipes", api_recipes)' in server
+        assert 'Route("/api/runs", runs_routes.api_runs)' in server
+        assert 'Route("/api/recipes", recipes_routes.api_recipes)' in server
 
 
 # ────────────────────────── 2. 行为钉（node） ──────────────────────────
@@ -232,16 +247,29 @@ def _vars(block_re: str) -> dict[str, str]:
 
 
 class TestContrastPin:
-    """核心变量矩阵（自含实现，与 compute_contrast.py 独立双源）。"""
+    """核心变量矩阵（自含实现，与 compute_contrast.py 独立双源）。
 
-    def test_both_themes_text_and_graphics(self):
-        for block, theme in ((r":root\s*\{(.*?)\}", "dark"),
-                             (r"body\.light\s*\{(.*?)\}", "light")):
+    W2-A 起三主题全覆盖（ocean=html[data-theme] 块此前无钉）。
+    """
+
+    # 三主题块（v5.0 Aurora：midnight=:root、ocean=html[data-theme]、
+    # light=body.light 镜像块；html[data-theme="light"] 块与 body.light
+    # 逐字一致，解析器口径沿用 body.light（历史钉原样））。
+    _THEME_BLOCKS = (
+        (r":root\s*\{(.*?)\}", "midnight"),
+        (r'html\[data-theme="ocean"\]\s*\{(.*?)\}', "ocean"),
+        (r"body\.light\s*\{(.*?)\}", "light"),
+    )
+
+    def test_three_themes_text_and_graphics(self):
+        for block, theme in self._THEME_BLOCKS:
             v = _vars(block)
             bg, panel, panel2 = v["--bg"], v["--panel"], v["--panel2"]
             plot = v["--plot-bg"]
-            # 正文 >=4.5:1
-            for fgv in ("--fg", "--muted", "--accent", "--ok", "--warn", "--err"):
+            # 正文 >=4.5:1（--muted2 用于 10-12px 小字正文：导航分组/foot/
+            # 占位符/palette 提示——P0-3 收敛后同门槛钉死，防回退）
+            for fgv in ("--fg", "--muted", "--muted2", "--accent",
+                        "--ok", "--warn", "--err"):
                 for bgv in (bg, panel, panel2):
                     r = _ratio(v[fgv], bgv)
                     assert r >= 4.5, f"{theme} {fgv} on {bgv} = {r:.3f} < 4.5"
@@ -252,13 +280,20 @@ class TestContrastPin:
             # UI 图形 >=3:1（accent 焦点环/accent2 图表系列）
             assert _ratio(v["--accent"], panel) >= 3.0, f"{theme} accent graphic"
             assert _ratio(v["--accent2"], plot) >= 3.0, f"{theme} accent2 graphic"
-            # 主按钮渐变两停靠色的文字
-            btn_fg = "#04121c" if theme == "dark" else "#ffffff"
+            # 主按钮 .act：历史钉口径（accent/act2 停靠 × 深字/反白）
+            btn_fg = "#ffffff" if theme == "light" else "#04121c"
             assert _ratio(btn_fg, v["--accent"]) >= 4.5, f"{theme} act 起点文字"
             assert _ratio(btn_fg, v["--act2"]) >= 4.5, f"{theme} act 尾文字"
+            # 主按钮 .primary（W2-A 新增变体）：accent→accent2 停靠 ×
+            # --act-fg（单源解析，替代硬编码）
+            act_fg = v["--act-fg"]
+            assert _ratio(act_fg, v["--accent"]) >= 4.5, f"{theme} primary 起点文字"
+            assert _ratio(act_fg, v["--accent2"]) >= 4.5, f"{theme} primary 尾文字"
 
     def test_chart_palettes_vs_plot_bg(self):
-        m = re.search(r"const\s+CHART_COLORS\s*=\s*\{(.*?)\};", _FILES["app.js"], re.S)
+        # A5-B（R6 R-4）：CHART_COLORS 单源迁 theme.js（app.js/pages.js 经
+        # chartPalette 消费）——对比度钉换地址不换值
+        m = re.search(r"const\s+CHART_COLORS\s*=\s*\{(.*?)\};", _FILES["theme.js"], re.S)
         assert m, "CHART_COLORS 丢失"
         dark_vars = _vars(r":root\s*\{(.*?)\}")
         light_vars = _vars(r"body\.light\s*\{(.*?)\}")
@@ -269,6 +304,64 @@ class TestContrastPin:
             for c in colors:
                 r = _ratio(c, vars_["--plot-bg"])
                 assert r >= 3.0, f"{theme} chart {c} = {r:.3f} < 3.0"
+
+
+# ────────────────────────── 3b. W2-A 样式面钉（aurora36） ──────────────────────────
+
+class TestW2AStylePins:
+    """aurora36 W2-A（UI 样式面四项 + guide 未落两项）回归钉。
+
+    pages.js/app.js 本席禁改——P0-1 走 index.html 补 .primary 别名选择器路线
+    （审计 P0-1 给出的两路线之一）；P0-6 的 pages.js 内联三处 #e57373 属
+    JS 席位面，此处只钉静态壳零硬编码错误色 + 令牌链在位。
+    """
+
+    def test_primary_button_variant_fully_styled(self):
+        # P0-1：.primary 主色变体须有完整状态面（hover/active/focus-visible/
+        # disabled），底色走 accent 系令牌、文字走 --act-fg 单源
+        src = _FILES["index.html"]
+        m = re.search(r"button\.primary\s*\{([^}]*)\}", src)
+        assert m, "button.primary 规则缺失（P0-1 主按钮裸奔回归）"
+        assert "--accent" in m.group(1) and "--act-fg" in m.group(1)
+        for state in (":hover", ":active", ":focus-visible", ":disabled"):
+            assert re.search(rf"button\.primary{re.escape(state)}\s*\{{", src), state
+        # 浅色反白口径与 .act 同构
+        assert re.search(r"body\.light button\.primary\s*\{[^}]*#ffffff", src)
+
+    def test_no_hardcoded_error_hex_in_index_html(self):
+        # P0-6 静态面：错误色一律走 --err 系令牌；审计点名硬编码错误色家族
+        # 禁止在静态壳复活
+        for hex6 in ("#e57373", "#ef5350", "#b3261e", "#ff8a80", "#f28b82"):
+            assert hex6 not in _FILES["index.html"].lower(), hex6
+        # 令牌链在位：三主题块均定义 --err 与 --err-bg
+        for block, _theme in TestContrastPin._THEME_BLOCKS:
+            text = re.search(block, _FILES["index.html"], re.S).group(1)
+            assert "--err:" in text and "--err-bg:" in text
+
+    def test_muted2_aa_gate_all_three_themes(self):
+        # P0-3 显式钉（矩阵内亦含，此处单列便于失败定位）：--muted2 全主题
+        # 正文级 ≥4.5:1
+        for block, theme in TestContrastPin._THEME_BLOCKS:
+            v = _vars(block)
+            for bgv in ("--bg", "--panel", "--panel2"):
+                r = _ratio(v["--muted2"], v[bgv])
+                assert r >= 4.5, f"{theme} --muted2 on {bgv} = {r:.3f} < 4.5"
+
+    def test_guide_v5_features_landed(self):
+        # guide §3.9-3.11/§1.1 未落项收账（W2-A）：
+        # --border-angle 死注册 → KPI 卡 hover conic 旋转边框（@property 动画）
+        src = _FILES["index.html"]
+        assert "conic-gradient(from var(--border-angle)" in src
+        assert re.search(r"animation:\s*border-spin\b", src)
+        assert "@keyframes border-spin" in src
+        # CQ/:has() 渐进增强（不支持引擎对应块整体忽略=零劣化）
+        assert "container: sidebar / inline-size" in src
+        assert "@container sidebar" in src
+        assert re.search(r"tbody tr:has\(", src)
+        # reduced-motion 降级=静止（旋转边框不转）
+        m = re.search(r"prefers-reduced-motion: reduce\)\s*\{(.*?)\n\}", src, re.S)
+        assert m, "reduced-motion 降级块丢失"
+        assert ".card::after" in m.group(1)
 
 
 # ────────────────────────── 4. runs/ 证据面存在性（软钉） ──────────────────────────

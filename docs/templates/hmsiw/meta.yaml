@@ -41,3 +41,40 @@ smoke_note: 离线审计先行（#212，test_ta_wave_a_templates）；内核数�
   (13) 拟合 <2%（论文声明域内）、过孔藩篱离散化未经真机仲裁（siw 经验迁移）、端面 LumpedPort
   R=Z_PV 对 1/4 余弦场分布的功率-电压近似（siw v1/v2 同族近似级）；真机冒烟与 HFSS
   仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 半模 SIW：沿对称面切掉半个 SIW，开路边成磁壁——尺寸减半而截止特性近似保持，准 TE0.5 模。典型用于毫米波小型化前端；常见误用=开路边当电壁处理——磁壁是定义性质，仿真域必须给足
+      w_eff/2 余量（域 MUR 贴边会把磁壁变成辐射边界假象）。
+    derivations:
+    - claim: Lai-Fumeaux 式 (8)-(14) 链：w_eff_siw→半宽修正 δw→fc_te05
+      formula: fc(TE0.5) 由 (w, h, εr, d, s) 联立（名义 5.5829mm → 6.6667GHz）
+      source: 本仓 core/hmsiw（hmsiw_closed_form 单源（Q. Lai, C. Fumeaux, W. Hong, R. Vahldieck, IEEE Trans.
+        MTT 57(8) 2009，式号逐条 docstring）；docs/templates/hmsiw/meta.yaml param_semantics）
+    - claim: 论文图面数值锚三方互证（Fig.6/7）
+      formula: fc 4.789/20.746 GHz ; β(12GHz)=342 rad/m（论文锚）
+      source: 本仓 core/hmsiw（论文数值锚单测钉（test_ta_wave_a_templates）；docs/templates/hmsiw/meta.yaml smoke_note）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 半模宽主维（含磁壁修正 δw 通道）；登记表 0.9709
+  - param: er
+    order: 2
+    basis: 截止 εr 通道；登记表 0.4486
+  - param: d_mm
+    order: 3
+    basis: 过孔修正通道；登记表 0.0671
+  - param: h_mm
+    order: 4
+    basis: 板厚经式 (13) 拟合域进入；登记表 0.0592
+  - param: s_mm
+    order: 5
+    basis: 孔距修正通道；登记表 0.0338
+  - param: line_len_mm
+    order: 6
+    basis: 线长不进截止式（登记表 0）
+  - param: tan_d
+    order: 7
+    basis: 损耗角不进截止式（登记表 0）
+  quiz_refs: []

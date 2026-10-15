@@ -1,6 +1,6 @@
 """DR-7 PDN 瞬态纹波 + 推频相噪确定性内核（梯形负载电流谱 → V_pk-pk / L(f_m) 线谱）。
 
-规格出处：规格深案 §C-5 DR-7（P1/M，2 天含 Xyce 窗）。
+规格出处：docs/plan_deepdive_specs_20261002.md §C-5 DR-7（P1/M，2 天含 Xyce 窗）。
 铁律 7：数值只在确定性内核——全部谱/纹波/相噪数字由本模块与
 core/clock_noise.py 的确定性闭式产出；Xyce 网表渲染是纯文本面（不产数）。
 

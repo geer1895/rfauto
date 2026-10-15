@@ -35,7 +35,8 @@ REPO = Path(__file__).resolve().parents[1]
 CENSUS_CHK = REPO / "scripts" / "census_status.py"
 # venv python：Windows=Scripts/python.exe，POSIX=bin/python（venv 布局随平台）；
 # venv 缺位（CI 裸环境/系统解释器直跑）回落当前解释器——发射器自身能运行
-# 即证明该解释器可用（Linux CI 首跑 FileNotFoundError 实证，2026-10-07）。
+# 即证明该解释器可用（Linux CI 首跑 FileNotFoundError 实证，2026-10-07；
+# 公开仓 bffe26d 同笔同步）。
 _PY_VENV = (REPO / ".venv" / "Scripts" / "python.exe" if os.name == "nt"
             else REPO / ".venv" / "bin" / "python")
 PYTHON = _PY_VENV if _PY_VENV.is_file() else Path(sys.executable)

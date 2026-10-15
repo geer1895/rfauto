@@ -1,6 +1,6 @@
 """均匀化通用族（MM-7，内核 core/homogenization.py，本模块只做注册壳）。
 
-规格 研究扩充 round17 §五 :154（B 流超材料，
+规格 docs/research_expansion_20261002_round17.md §五 :154（B 流超材料，
 2026-10-02）「三混合式提升通用 core 内核+Wiener 界+Pendry 1999 SRR μ 公式
 +线媒质 ωp（Pendry 1996 PRL）」。四键：
 - homog_mix_eff：三混合式统一面（MG/Bruggeman/Looyenga，复数通用核+
@@ -65,7 +65,7 @@ def homog_mix_eff(rule: str, er_matrix: Any, er_inclusion: Any,
 
 @register_calculator(
     "srr_permeability",
-    "MM-7 Pendry 1999 SRR 阵列等效磁导率（IEEE TMTT 47(11):2075 Lorentz "
+    "SRR磁导率：MM-7 Pendry 1999 SRR 阵列等效磁导率（IEEE TMTT 47(11):2075 Lorentz "
     "形，arXiv 2006.13861 同式互证）：μ(ω)=1−F·ω²/(ω²−ω0²+iΓω)。F 填充"
     "因子与 f_mp（磁等离子频率）二选一入参（f_mp>f_res，F=1−(f_res/"
     "f_mp)²）。解析锚：μ(0)=1、μ(∞)=1−F、无损 μ(f_mp)=0、Re μ<0 带恰 "
@@ -100,7 +100,7 @@ def srr_permeability(freq_ghz: Any, f_res_ghz: Any,
 
 @register_calculator(
     "wire_media_plasma",
-    "MM-7 Pendry 1996 线媒质等离子频率（PRL 76:4773）：ωp²=2π·c0²/"
+    "线媒质等离子：MM-7 Pendry 1996 线媒质等离子频率（PRL 76:4773）：ωp²=2π·c0²/"
     "(a²·ln(a/r))，a=晶格常数、r=线半径（a/r≥2 才入稀疏口径域）；附 "
     "Drude ε(ω)=1−ωp²/(ω(ω+jν))（e^{-jωt}：ν>0 → Im ε>0 无损正性、"
     "ν=0 ω<ωp → Re ε<0、ω=ωp 精确零点）。freq_ghz 给出时附 ε 报告。"
@@ -133,7 +133,7 @@ def wire_media_plasma(lattice_mm: Any, wire_radius_mm: Any,
 
 @register_calculator(
     "retrieve_eff_params",
-    "MM-7 等效参数反演（Smith 2002 PRB 65:195104 同族口径）：单频 "
+    "等效参数反演：MM-7 等效参数反演（Smith 2002 PRB 65:195104 同族口径）：单频 "
     "(S11,S21)（[re,im] 对）法向入射对称面板厚度 d → (ε,μ,n,Z)。时间 "
     "约定 e^{-jωt}（τ=e^{+jk0·nd}，无耗 Im(n)=0、有耗 Im(n)>0）。无源 "
     "守卫：能量 |S11|²+|S21|²≤1+1e-9、|τ|≤1+1e-9、Im(n)<0 显式拒绝；"

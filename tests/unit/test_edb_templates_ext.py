@@ -391,54 +391,65 @@ def test_cl_thickness_bias_no_warning_nominal():
     assert "厚度偏置区" not in zero_spec["params"]["thickness_bias_note"]
 
 
-# ── W8 仲裁判读档（建议 1：紧缝族生产判读档加严，2026-10-09）────────────────
+# ── W8 仲裁判读档 → W10 定谳回退（建议 1 的落地史，2026-10-09）──────────────
 
 
-def test_cl_default_adapt_max_delta_tightened(cl):
-    """缺省 adapt.max_delta=0.005（W8 加严档）：spec 与 config 存证同值。
+def test_cl_default_adapt_max_delta_w10_reverted(cl):
+    """缺省 adapt.max_delta=0.02（W10 定谳回退）：spec 与 config 存证同值。
 
-    W8 真机三变体仲裁（两引擎对照+ΔS 阶梯）：
-    名义设计点紧缝 s/h=0.161 下 ΔS=0.02 单档 S31 读数带 ~2dB 收敛档伪象
-    （HFSS 3D 与 EDB 两引擎一致读 -7.2~-7.6，HFSS ΔS 阶梯 0.02→0.0025
-    收紧回收 1.2~1.8dB）——0.02 档窗口判据测的是"网格收敛度"而非"器件
-    物理"。config 侧同值=建模期写入面（3D Layout 真收紧通道，W8 建议 2）。
+    判读档史：W8 仲裁（runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-1）
+    曾裁定本族加严 0.005（紧缝 s/h=0.161 下 0.02 档 S31 读数带 ~2dB 收敛
+    档伪象）；W10 真机定谳（runs/edblane85/w10_cl_recheck/REPORT.md）
+    MaxDelta 在 EDB 路径写入不可达（EDB 3D Layout schema SimSetupID=19 无
+    该键，configuration.load/props 两通道同样写不进），且 EDB 侧档位伪象
+    实测仅 ~0.62dB（W8 ~2dB 系 HFSS 侧阶梯分解）、剩余 ~1.0dB=EDB-Layout
+    建模保真差——0.005 请求档求解器不消费，按 #122 不虚报原则回退 0.02。
+    config 侧同值=建模期写入请求面（写入通道仍有效，W8 建议 2）。
     """
     from rfauto.adapters.edb_templates.coupled_line import (
         DEFAULT_ADAPT_MAX_DELTA,
     )
 
-    assert DEFAULT_ADAPT_MAX_DELTA == 0.005
+    assert DEFAULT_ADAPT_MAX_DELTA == 0.02
     spec, config = cl
-    assert spec["sim_setup"]["adapt"]["max_delta"] == 0.005
+    assert spec["sim_setup"]["adapt"]["max_delta"] == 0.02
     (setup,) = config["setups"]
     assert setup["type"] == "hfss"
-    assert setup["single_frequency_adaptive_solution"]["max_delta"] == 0.005
-    # W8 证据在案：模块/函数 docstring 带仲裁出处（伪象量值/紧缝比可回溯）
+    assert setup["single_frequency_adaptive_solution"]["max_delta"] == 0.02
+    # W8/W10 证据在案：模块/函数 docstring 带判读档史（W8 仲裁依据 0.161、
+    # W10 定谳"写入不可达"与 0.005 史值可回溯）
     import rfauto.adapters.edb_templates.coupled_line as cl_mod
 
     doc = (cl_mod.__doc__ or "") + (cl_mod.emit_coupled_line_spec.__doc__ or "")
-    assert "W8" in doc and "0.005" in doc and "0.161" in doc
+    assert "W8" in doc and "W10" in doc
+    assert "0.005" in doc and "0.161" in doc
+    assert "写入不可达" in doc
 
 
 def test_cl_adapt_max_delta_explicit_override():
-    """加严档可显式覆盖：params.adapt.max_delta 原样透传（不静默钳位）。"""
-    spec, _ = emit_coupled_line_spec({"f0_ghz": F0, "adapt": {"max_delta": 0.02}})
-    assert spec["sim_setup"]["adapt"]["max_delta"] == 0.02
+    """缺省档可显式覆盖：params.adapt.max_delta 原样透传（不静默钳位）。
+
+    覆盖值取 0.01（非缺省 0.02）保证透传断言有区分度。"""
+    spec, _ = emit_coupled_line_spec({"f0_ghz": F0, "adapt": {"max_delta": 0.01}})
+    assert spec["sim_setup"]["adapt"]["max_delta"] == 0.01
     spec2, _ = emit_coupled_line_spec({
         "f0_ghz": F0, "adapt": {"max_passes": 30, "max_delta": 0.001}})
     assert spec2["sim_setup"]["adapt"]["max_passes"] == 30
     assert spec2["sim_setup"]["adapt"]["max_delta"] == 0.001
 
 
-def test_cl_tightened_scope_is_family_only():
-    """加严仅限 coupled_line（模板作用域分派，#274 家法）：他族仍 0.02。"""
+def test_cl_default_adapt_max_delta_family_alignment():
+    """W10 回退后四族发射缺省同值 0.02（全族对齐守卫：任何一族再单独
+    加严/放松都是显式决定，须同笔改本测试与 DEFAULT_ADAPT_MAX_DELTA 史
+    注——防常量静默漂移）。"""
     from rfauto.adapters.edb_templates import (
         emit_branchline_spec,
+        emit_coupled_line_spec,
         emit_power_divider_spec,
     )
 
     for emit in (emit_branchline_spec, emit_power_divider_spec,
-                 emit_ratrace_spec):
+                 emit_ratrace_spec, emit_coupled_line_spec):
         spec, _ = emit({"f0_ghz": F0})
         assert spec["sim_setup"]["adapt"]["max_delta"] == 0.02, emit.__name__
 

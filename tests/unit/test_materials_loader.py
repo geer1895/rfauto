@@ -63,7 +63,7 @@ class TestDefaultZeroChange:
 
     def test_default_path_matches_old_parent4_formula(self):
         # 改前公式（core/synthesis.py 内联）：parent×4 / configs / materials.yaml
-        # core/materials.py 与 core/synthesis.py 同目录（src/rfauto/core），
+        # core/materials.py 与 core/synthesis.py 同目录（src/rfauto/core/），
         # 同深度推导必须逐位相等。
         old = (Path(core_materials.__file__).resolve()
                .parent.parent.parent.parent / "configs" / "materials.yaml")

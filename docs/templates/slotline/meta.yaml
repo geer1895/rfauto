@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B）；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
+extraction: WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，）；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null
@@ -62,3 +62,35 @@ hfss_arbitration:
   verdict: AGREE
   evidence: runs/slotline_arbitration/{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段
 # XC-T 锚族补挂注记: slotline.z0_ohm.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 槽线：单面金属开缝的开放结构，主模无截止但色散强——传播常数由 Janaswamy-Schaubert 分段闭式给出且声明域 d/λ0≥0.006。典型用于均衡器/谐振耦合与混合
+      MIC 过渡；常见误用=拿微带端口惯例建HFSS 波端口——槽线/平衡线仲裁端口截面必须远大于微带惯例，小截面把两侧地短接成封闭波导、解出截止倏逝模假数据。
+    derivations:
+    - claim: JS 分段闭式 Z0/εeff（宽/中/低三段声明域，越域显式报错不外推）
+      formula: Z0(w/d, d/λ0, εr)（Janaswamy-Schaubert 式 (8)-(15) 链）
+      source: 本仓 core/slotline（R. Janaswamy & D. Schaubert, IEEE Trans. MTT-34(8) 1986 闭式单源（NASA NTRS
+        N86-30893 开放获取）；docs/templates/slotline/meta.yaml param_semantics）
+    - claim: 真机三门互证：β 闭式/NGSolve/openEMS 互差 ≤1.2%
+      formula: β = 67.227 (闭式) / 67.149 (NGSolve) / 67.937 (openEMS) rad/m
+      source: docs/templates/slotline/meta.yaml smoke_note（真机 PASS 08d63b0）；knowledge/anchors.yaml（slotline
+        家族锚在档）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 槽宽=Z0 主维（JS 闭式）；登记表 0.2538
+  - param: er
+    order: 2
+    basis: εeff/β 填充通道；登记表 0.1304
+  - param: h_mm
+    order: 3
+    basis: 基板厚（声明域自变量 d/λ0）；登记表 0.0611
+  - param: line_len_mm
+    order: 4
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 5
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

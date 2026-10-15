@@ -14,3 +14,41 @@ substrate:
 nominal_params:
   w_mm: 1.1134
   arm_len_mm: 20.0
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 微带直角弯折=平面布线最基本的不连续基元：拐角几何突变使结区金属
+      局部加宽（对角线等效）→ 集总的电容性加载，叠加电流路径折转的磁扰；低
+      GHz、50Ω 线上两项都是一阶小量，|S11| 地板由结电容一阶反射决定（未切角
+      口径文献绝对门 −15dB，切角/mitered 为后续变体）。弯折是非谐振基元——
+      无带内调谐自由度，臂长是纯相位量；设计恒等式=全臂统一 50Ω 线宽（HJ
+      综合），模板裁判=理想级联 HJ 闭式。
+    derivations:
+    - claim: 设计恒等式=全臂统一线宽：臂 Z0 由微带综合闭式给出（skrf HJ 模型，
+        brentq 求逆+回代自洽），数值一律由内核键产出（名义 w 见 meta
+        nominal_params，不手抄不手算）
+      formula: w = microstrip_synthesis(z0_ohm)；(Z0, εeff) =
+        microstrip_analysis(w)；β = 2π√εeff/λ0（microstrip_lambda_g 通道）
+      source: core/synthesis.py（synthesize_bend_model/inverse_width 全臂统一
+        线宽单源）+ calc_families/rf_line.py（microstrip_synthesis/
+        microstrip_analysis/microstrip_lambda_g 键）+ Pozar, Microwave
+        Engineering (4th ed.), Ch.3（微带线准静态综合口径）
+    - claim: 结电容一阶小反射：拐角结区等效并联电容 ΔC，小加载反射幅度约为
+        ω·ΔC·Z0/2 量级（低 GHz 一阶小量）→ 反射呈容性小地板，|S11|<−15dB
+        绝对门；arm_len 纯相位（φ=β·arm_len）不进反射地板——登记表弹性
+        arm_len=0 与该恒等式一致
+      formula: 小加载地板，取模 |Γ| ≈ ω·ΔC·Z0/2（并联加载一阶形态）；
+        φ = β·arm_len（纯相位）
+      source: docs/rf_template_references.md（§bend 口径 |S11|<−15dB 绝对门
+        已核）+ docs/templates/bend/meta.yaml（extraction 裁判=理想级联）+
+        Pozar, Microwave Engineering (4th ed.), Ch.2（反射系数定义与集总加载
+        一阶展开）
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 臂 Z0 唯一几何旋钮（|∂lnZ0/∂lnw| 弹性通道，偏离 50Ω 即失配）；
+      登记表 0.622162
+  - param: arm_len_mm
+    order: 2
+    basis: 纯相位量不进 Z0/反射地板（登记表 0——目标式只消费 w）
+  quiz_refs: []

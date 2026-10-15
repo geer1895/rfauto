@@ -35,6 +35,16 @@ numpy 依赖、返回 JSON 可序列化值。零求解器依赖。
 tests/unit/test_antenna_q.py。文献数值表（真实天线实测 Q 表值）
 在本环境未能核实（搜索后端限流）——按 #122 不虚构文献数值例，
 文献锚以解析恒等式与经典 Chu 界手算值承担。
+
+分期承诺落注（2026-10-08 快赢席 W1，T1-A-04）
+----------------------------------------------
+本模块=round17 AP-12 已落地产物（P1/S），C1-5"分期承诺"按②态
+登记留置处置：无 src 功能消费者（消费面=本模块单测 + 跨模块
+test_w4_c_p6_thal_bounds.py 对 q_reachability_band/verdict 的
+活消费；bounds.py 仅 docstring 指针）。接线触发=天线族 service
+扩面批（fpa_antenna_service/array_service 邻域，ORPHAN_LEDGER
+#7 同口径）；届时本注记撤除、补 service+MCP 薄壳。本注记即
+"分期注记"在位，未注册 CALC 属登记级边界如实（非缺陷）。
 """
 
 from __future__ import annotations

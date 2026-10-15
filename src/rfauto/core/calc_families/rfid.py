@@ -52,7 +52,7 @@ def _uhf_wavelength_m(frequency_hz: float) -> float:
 
 @register_calculator(
     "rfid_forward_link",
-    "UHF RFID 正向链路（读写器→标签激活，Friis）：P_tag=EIRP·G_tag·"
+    "RFID正向链路：UHF RFID 正向链路（读写器→标签激活，Friis）：P_tag=EIRP·G_tag·"
     "(λ/4πd)²/L_pol（Friis 1946；Balanis §2 有效口径同式）；margin="
     "P_tag−灵敏度；d_max=(λ/4π)·10^((EIRP+G_tag−L_pol−P_sens)/20)",
     (("frequency_hz", "float Hz 载波频率（UHF 860–960 MHz，域外显式拒绝）"),
@@ -104,7 +104,7 @@ def rfid_forward_link(frequency_hz: float, eirp_dbm: float, g_tag_dbi: float,
 
 @register_calculator(
     "rfid_backscatter_link",
-    "UHF RFID 反向背散射链路（标签→读写器，单站雷达方程 1/R⁴）："
+    "RFID反向链路：UHF RFID 反向背散射链路（标签→读写器，单站雷达方程 1/R⁴）："
     "P_rx=EIRP·G_rx·λ²·σm/((4π)³d⁴)（Skolnik RCS 定义+Balanis 有效口径；"
     "Nikitin-Rao 2008 doi 10.1109/RFID.2008.4519368 链路预算框架），"
     "σm=(λ²G_tag²/4π)|Γ₁−Γ₂|²（Nikitin-Rao-Martinez 2007 Electron. Lett."

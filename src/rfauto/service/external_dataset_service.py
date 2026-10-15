@@ -18,7 +18,7 @@
   显式声明；目标列不在 dataset_service.DATASET_SCHEMA =报错）；
 - ``plan_ingestion``：接入计划=许可门裁定+目标路径守卫（**默认拒绝
   仓内路径**——数据本体不入仓；显式 allow_repo_gitinished_root 才放
-  行 gitignored 根，且只认 runs）。
+  行 gitignored 根，且只认 runs/）。
 
 用法::
 

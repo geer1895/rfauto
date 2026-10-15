@@ -5,7 +5,7 @@
   （不臆测）；#320 优先级（params>calib_params>design_params 的
   template/study 字段面，嵌套优先于顶层兜底）；budget=trials 实测
   条数（含 0）否则 meta 预算字段（int 收敛拒 bool）。
-- build_runs_index 小规模合成树（tmp 目录，不碰真 runs）→
+- build_runs_index 小规模合成树（tmp 目录，不碰真 runs/）→
   query_runs_index 回读一致 → study_tuples_from_index 聚合正确
   （同 study 两 run 合并：templates 并集+最新 template 口径）。
 - 幂等：同树建两次行数一致/不重复（drop-create 重建）。

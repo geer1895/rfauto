@@ -5,7 +5,7 @@ Analysis and Feedback Amplifier Design》并联 RC 积分式；R. M. Fano 1950
 第 5 篇 Rheinfelder 1967（Design of Frequency-Selective Networks, Hayden）
 原文数值表离线不可达且仓内无内核承载 → 如实跳过，按"同段备选补位"以
 bounds.py 同文件经典（Bode 1945/Fano 1950，与 Chu 1948 同 lineage）补位
-（研究扩充 round19 §一）。
+（docs/research_expansion_20261002_round19.md §一）。
 
 复现范围：bode_fano_rc（core/bounds.py；#222 反向面：实现已存在，本卡只做
 "论文数值↔内核输出"对拍）。

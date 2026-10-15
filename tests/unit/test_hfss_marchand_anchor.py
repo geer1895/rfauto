@@ -1,6 +1,7 @@
 """hfss_marchand_anchor 判读纯函数合成回收单测（rm-hfss-anchor）。
 
-反演核必须在合成数据上精确回收设计值，合成两条独立路线：
+反演核必须在合成数据上精确回收设计值（AGENTS 1b：数值算法的裁判=独立来源
+解析值/合成回收），合成两条独立路线：
 - 模态路线：偶/奇模 TL 的 S（z_to_s 解析构造，含各自相速）拼 4×4 模态
   S（grouped 与 interleaved 两种端口序）→ coupled_anchor_from_s4 回收；
 - 标准 4 端口路线：core coupled_line_z_matrix（与 adapters Pozar (7.83)/(7.84)

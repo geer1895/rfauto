@@ -24,7 +24,7 @@ from rfauto.core.interfaces import (
     SolveReport,
 )
 
-# ─── fake 联合校准（fake ↔ openEMS， 硬限 1b：先验模型再校准）──────────
+# ─── fake 联合校准（fake ↔ openEMS，项目规则 硬限 1b：先验模型再校准）──────────
 
 _CAL_CACHE: dict[str, Any] | None = None
 
@@ -1072,7 +1072,7 @@ def _coupled_bpf_sparams(
     - w_feed_mm 只进几何（50Ω 线宽由 HJ 综合定），不进电气模型——同
       atten_pi/atten_t 的 w_mm 口径，如实标注。
     已知口径限制同裁判：宽度台阶不连续性、开路端边缘导纳残差、KJ 色散
-    不进模型（EM 冒烟实测其总量，平行耦合 BPF 段）。
+    不进模型（EM 冒烟实测其总量， 平行耦合 BPF 段）。
     """
     from rfauto.adapters.openems_templates import (
         _coupled_bpf_section_lengths_mm,
@@ -2907,7 +2907,7 @@ class FakeAdapter(SimulatorAdapter):
 # ─── 槽线族 fake 解析模型（2026-09-18 w1b 注册；数值只在 core 闭式内核，铁律 7）───
 # #154 同名同语义：变量名与 openEMS 渲染/TEMPLATE_NOMINAL 逐键一致；
 # h_mm 从模板参数取（缺省 1.524 设计点）——缺省叠层 0.508@2.5GHz 落 Janaswamy–
-# Schaubert 闭式域外，越域 ValueError 如实上抛。
+# Schaubert 闭式域外（），越域 ValueError 如实上抛。
 
 
 def _slotline_gamma(w_mm: float, h_mm: float, er: float, freq_ghz: Any,
@@ -3027,7 +3027,7 @@ def _marchand_balun_sparams(freq_ghz: Any, w_slot_mm: float = 1.0,
                             **_: Any) -> Any:
     """Marchand fake：两节对称耦合段电路级裁判（3 端口，P1 50Ω/P2P3 50Ω 单端）。
 
-    **口径如实**：模板双槽臂几何已被两引擎互证证伪，本
+    **口径如实**：模板双槽臂几何已被两引擎互证证伪（），本
     fake 与模板几何不同源——数值来自 core/slotline_transitions 两节对称耦合段
     电路级内核（synthesize_marchand_two_section + marchand_two_section_sparams，
     确定性/可复现），差分负载取 2×槽线 Z0（双槽臂输出口径）。

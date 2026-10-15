@@ -1,6 +1,6 @@
 """TA-5 Diplexer（LP+HP T 结）+ TA-6 空气脊波导（TA 批第三批，2026-10-02）。
 
-方案锚：研究扩充 round15 §二·2 TA-5/TA-6——
+方案锚：docs/research_expansion_20261002_round15.md §二·2 TA-5/TA-6——
 「内核就绪缺模板」件：闭式全套在 core（diplexer_compose.diplexer_lpf_hpf /
 ridged_waveguide 双源闭式族），本模块只做几何渲染注册与名义设计链
 （#1c：数值全部内核精算，零手抄毫米数；本文件零物理数字产出——铁律 7）。
@@ -61,6 +61,7 @@ from .registry import (
     TEMPLATE_META,
     TEMPLATE_NOMINAL,
 )
+from .wg_port_compat import WG_PROBE_REFIT_BLOCK
 
 #: 板边半宽——与 render_script 共享字面量 BOARD=60mm 同源（禁改共享字面量，
 #: 布局守卫按此值核算；_board_mm 旋钮渲染期单变量覆盖时不经本模块）
@@ -670,6 +671,7 @@ for _sgn in (-1.0, 1.0):
         f"{m(p['start2_mm'][1])!r}, {m(p['start2_mm'][2])!r}]),\n"
         f"    stop=np.array([{m(p['stop2_mm'][0])!r}, "
         f"{m(p['stop2_mm'][1])!r}, {m(p['stop2_mm'][2])!r}]),\n")
+    refit_blk = WG_PROBE_REFIT_BLOCK
     return f'''#!/usr/bin/env python3
 """openEMS ridged_wg script (rfauto round15 TA-6 auto-generated).
 
@@ -746,15 +748,21 @@ for _ax in ("x", "y", "z"):
 wall = CSX.AddMetal("ridged_wg_wall")
 {box_txt}
 # ── 端口：双 RectWGPort 解析 TE10 打在加宽馈段（pyramid_horn 同法）──
+# COMPAT 簇4：构造后 _wg_probe_refit 把探针角点偏移改内联（安装栈探针
+# ModeOrigin 序列化错位致 uf_tot≡0/S11≡−1；根因见
+# oe_templates/wg_port_compat.py，复现 runs/seat1_rectwg/repro_rectwg.py）。
 # 绑定参数序：a=第一横向轴（exc_dir=y 时=z）=b、b=第二横向轴（=x）=
 # a_feed、mode="TE01"（M=0,N=1：E 沿 z、半波沿 x）。Z_ref 缺省=解析波导
 # 阻抗 ZL=k·Z0/β（WaveguidePort.CalcPort 填）。
+{refit_blk}
 _port1 = RectWGPort(CSX, port_nr=1,
 {port_lit}    exc_dir="y", a={a_bind!r}, b={b_bind!r},
     mode_name="TE01", excite=1)
+_wg_probe_refit(_port1)
 _port2 = RectWGPort(CSX, port_nr=2,
 {port2_lit}    exc_dir="y", a={a_bind!r}, b={b_bind!r},
     mode_name="TE01", excite=0)
+_wg_probe_refit(_port2)
 
 # ── 求解 ──
 # RFAUTO_SKIP_RUN=1：只重跑后处理（复用既有 fdtd/ 时域产物；几何段未变时合法）

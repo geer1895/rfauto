@@ -16,3 +16,30 @@ nominal_params:
   w_feed_mm: 1.1134
   through_len_mm: 25.0
   branch_len_mm: 20.0
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 对称微带 T 结（三口全 50Ω 线）：三端口定理——无耗、互易、匹配三者不可
+      兼得，故理想无损 T 必不匹配（S11≠0）但可对称均分 |S21|=|S31|=1/√2，且两口间
+      直通 S23=1/2；Wilkinson/Gysel 以隔离电阻/外置负载换「非无耗」解除矛盾。实际
+      微带 T 结叠加结面不连续（结电纳）→ 反射偏离理想结点，对称性保证均分与
+      |S22|=|S33|；模板裁判=skrf 理想三端口结点+HJ 线。
+    derivations:
+    - claim: 三端口定理（幺正+对称+零对角矛盾）：匹配+互易+无耗的 3×3 S 矩阵不存在——列正交约束在对称均分 |S21|=|S31|=1/√2 下给出 S23=S32=1/2，与零对角矛盾 → 理想无损 T 的口间直通与不匹配同时出现（隔离只能靠电阻性网络）
+      formula: 理想无损 T：|S21| = |S31| = 1/√2；S23 = S32 = 1/2
+      source: Pozar, Microwave Engineering (4th ed.), Ch.7（三端口网络基本性质定理）+ core/calculators.py（计算器注册面）转引 calc_families/rf_line.py（microstrip_synthesis 定 50Ω 馈线宽）
+    - claim: 结电纳不连续面：三线交汇的结面电容/电感使各口反射偏离理想结点模型；对称性给出 S21=S31（均分）与 S22=S33（反射对称），匹配深度取决于结尺寸；模板提取口径=对称 T 结均分+隔离对 skrf 理想结点（meta extraction）
+      formula: S21 = S31（对称均分）；S22 = S33（对称反射）
+      source: docs/templates/tjunc/meta.yaml（extraction——skrf 理想三端口结点+HJ 线裁判口径）
+  sensitivity_ranking:
+  - param: branch_len_mm
+    order: 1
+    basis: 支路臂相位/加载（结电纳响应的主电长度）
+  - param: through_len_mm
+    order: 2
+    basis: 直通臂相位（S21/S23 相位面）
+  - param: w_feed_mm
+    order: 3
+    basis: 三口 50Ω 线宽（匹配口径，结尺寸效应随之）
+  quiz_refs: []

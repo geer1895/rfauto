@@ -1,6 +1,6 @@
 """NX-3 近场 beamfocusing + OAM 环阵综合闭式面。
 
-规格：研究扩充 round14 §四 NX-3——"聚焦相位
+规格：docs/research_expansion_20261002_round14.md §四 NX-3——"聚焦相位
 φₙ=−k·rₙ、Rayleigh 距离判据、环阵 OAM 激励 exp(jlφₙ)；aperture_holography
 谱变换对拍"。来源 6G Near-field White Paper 2.0 / arXiv:2607.09479（口径
 名，页码 UNVERIFIED 如实，#122）。纯闭式叶子，零 IO、不进 calculators。

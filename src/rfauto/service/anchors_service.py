@@ -1,6 +1,7 @@
 """DP-3 锚注册表 JSON 薄面（服务层，规则 4：JSON 进出，CLI/MCP 是薄壳）。
 
-一切返回 dict 且 JSON 可序列化；ok=False 时带 error 字段。消费接线
+一切返回 dict 且 JSON 可序列化；ok=False 时带 ``errors`` list[str] 字段
+（schema 1.1 起，error_envelope 单源，aurora_d AU-2C 域升版）。消费接线
 （synthesize_*/渲染链 resolve_anchor 接入）为 DP-3 第二批——本批只开
 数据面（list/inspect/validate/resolve 四个只读入口）。
 """
@@ -27,15 +28,23 @@ from rfauto.infra.anchors_store import (
     load_anchors,
     validate_anchor_set,
 )
+from rfauto.service.envelope import error_envelope
 
 _SUMMARY_FIELDS = ("anchor_id", "kind", "status", "version",
                    "template_family", "engine_pair", "quantity", "value",
-                   "uncertainty", "domain", "fallback")
+                   "uncertainty", "domain", "fallback",
+                   "layer")  # layer=XD-8 分层声明（加性键，行面零破坏）
 
 #: anchors 报告域 schema 版本（AU-2③ 按域推广，PDN 惯例；旧档案无键照
 #: 读=消费面向后兼容。与快照库 payload 的 ``schema`` 键（_SNAPSHOT_SCHEMA）
 #: 语义区分：后者是库文件格式标识，本常量只进 service 返回信封）。
-ANCHORS_REPORT_SCHEMA_VERSION = "1.0"
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2C 席）：失败信封单数
+#: ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——契约
+#: §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；本域 CLI 面
+#: （cli/domains/anchors.py drift --history-file 两处）与 MCP 壳
+#: （mcp_tools/anchors.py 两处）同笔迁移；消费面渲染按序回退
+#: errors → error（兼容读法）。1.0=首批推广口径。
+ANCHORS_REPORT_SCHEMA_VERSION = "1.1"
 
 
 def _stamped(envelope: dict[str, Any]) -> dict[str, Any]:
@@ -67,8 +76,8 @@ def inspect_anchor(anchor_id: str, path: str | None = None) -> dict[str, Any]:
     anchor_set = load_anchors(path)
     rec = anchor_set.get(str(anchor_id))
     if rec is None:
-        return _stamped({"ok": False,
-                         "error": f"未知锚: {anchor_id}（已知: {anchor_set.anchor_ids}）"})
+        return _stamped(error_envelope(
+            f"未知锚: {anchor_id}（已知: {anchor_set.anchor_ids}）"))
     return _stamped({"ok": True, "anchor": rec.to_dict()})
 
 
@@ -214,8 +223,8 @@ def anchors_stale_report(
         负阈值 → ok=False。
     """
     if threshold_days < 0:
-        return _stamped({"ok": False,
-                         "error": f"threshold_days 须 ≥0，实际 {threshold_days}"})
+        return _stamped(error_envelope(
+            f"threshold_days 须 ≥0，实际 {threshold_days}"))
     now_dt = now or datetime.datetime.now(datetime.timezone.utc)
     anchor_set = load_anchors(path)
     rows: list[dict[str, Any]] = []
@@ -302,16 +311,16 @@ def record_anchor_drift_snapshot(
 
     Returns:
         {ok, anchor_id, snapshot_index, n_values, fingerprint, store_path}；
-        values 空/非法 → ok=False（error 字段）。
+        values 空/非法 → ok=False（errors 列表字段，schema 1.1）。
     """
     try:
         clean = [float(v) for v in values]
     except (TypeError, ValueError) as exc:
-        return _stamped({"ok": False, "error": f"values 含非数值: {exc}",
-                         "anchor_id": str(anchor_id)})
+        return _stamped(error_envelope(f"values 含非数值: {exc}",
+                                       anchor_id=str(anchor_id)))
     if not clean:
-        return _stamped({"ok": False, "error": "values 为空（至少 1 个残差）",
-                         "anchor_id": str(anchor_id)})
+        return _stamped(error_envelope("values 为空（至少 1 个残差）",
+                                       anchor_id=str(anchor_id)))
     fingerprint = drift_fingerprint(clean)
     store = _resolve_store(store_path)
     snaps = _read_store(store)
@@ -374,8 +383,8 @@ def anchor_drift_status(
     anchor_set = load_anchors(path)
     rec = anchor_set.get(str(anchor_id))
     if rec is None:
-        return _stamped({"ok": False,
-                         "error": f"未知锚: {anchor_id}（已知: {anchor_set.anchor_ids}）"})
+        return _stamped(error_envelope(
+            f"未知锚: {anchor_id}（已知: {anchor_set.anchor_ids}）"))
     lv_at: Any = None
     lv_residual: Any = None
     if isinstance(rec.last_verified, dict):

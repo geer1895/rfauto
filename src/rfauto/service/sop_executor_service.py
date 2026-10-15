@@ -1,11 +1,11 @@
 """EP-8 SOP 执行器化（检查单→可执行步骤；文档即代码，dry-run 面）。
 
-规格 研究扩充 round18 §二 EP-8：playbook 条目
+规格 docs/research_expansion_20261002_round18.md §二 EP-8：playbook 条目
 加 ``commands`` 字段→CLI 序列+dry-run（文档即代码）；通用 SOP 五段式模板。
 
 **安全语义（本模块永不执行命令）**：``dry_run`` 只做解析与校验——shlex
 分词、allowlist 前缀核对、危险令牌扫描、缺省输出计划（plan）。执行面
-留 CLI 归属批次（本席禁改 cli）；"执行器化"落点是**文档即代码的校验链**：
+留 CLI 归属批次（本席禁改 cli/）；"执行器化"落点是**文档即代码的校验链**：
 SOP 文本里的每条命令可机检（可解析/在 allowlist 内/无危险令牌），离开
 allowlist 的命令如实标 blocked 而非静默放行（#316 多报不放过）。
 

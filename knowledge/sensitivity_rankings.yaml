@@ -1,17 +1,19 @@
 schema: sensitivity_rankings/v1
-batch_id: x7_sens_data_20261004
+batch_id: aurora_d_sensanc_20261014
 generated_by: scripts/sensitivity_rankings_build.py
-notes: 敏感性排序登记表（X7 数据面填充批；W8 桥消费端）。逐模板 score=|Δln y/Δln x| 中心差分弹性：连续参数 ±1%、整数参数 ±1 单位步；目标量 y=模板核心闭式输出（逐模板
-  target_quantity 与 scripts/sensitivity_rankings_build.py _target_* docstring）。全确定性零随机零仿真（seed=null）；运行时只读、写入只经人工
-  commit（anchors.yaml 家法）。teaching 面已覆盖的 9 模板不入表（test_w6_sensitivity_face_non_regression 钉前提+teaching
-  另含 er/h 基板敏感性）。
+notes: '敏感性排序登记表（X7 数据面批 + aurora72 A3-D 扩批 + R8-KN 扩批+ aurora_d SENS-ANC 复核扩批；W8 桥消费端）。逐模板 score=|Δln
+  y/Δln x| 中心差分弹性：连续参数 ±1%、整数参数 ±1 单位步；目标量 y=模板核心闭式输出（逐模板 target_quantity 与 scripts/sensitivity_rankings_build.py
+  _target_* docstring）。全确定性零随机零仿真（seed=null）；运行时只读、写入只经人工 commit（anchors.yaml 家法）。首批 9 模板（wilkinson/branchline/cpw/dipole/hairpin/mline/patch/pyramid_horn/ratrace）不入表（卡面字节钉前提）；aurora72
+  批起其余模板可 teaching 卡+登记表双源并存——W8 消费优先级 computed>teaching，两源口径不同不混写。R8-KN 扩批（2026-10-13）+4（diplexer/schiffman/msl_cpw/msl_siw_taper，段参数/内核相位单点闭式，marchand/msl_slot_transition
+  先例同类）；SENS-ANC 复核扩批（2026-10-14）+2（varactor_bpf/xcheb_bpf4——装载谐振/开路环周长纯闭式链，R8-KN「缺推导锚」组 #222 树面复核勘误，名义回代
+  2.49999/2.49999）；其余族不可扩判定与原因见模块 docstring「可算集判定」。'
 templates:
   atten_pi:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=π 型中串电阻 r_series_mid=E4 闭式(atten_db, Z0(w))
     ranking:
     - param: atten_db
@@ -25,7 +27,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=T 型串臂电阻 r_series_arm=E4 闭式(atten_db, Z0(w))
     ranking:
     - param: atten_db
@@ -39,19 +41,79 @@ templates:
     n_samples: 5
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=臂 Z0（未切角弯折基元设计恒等式，synthesize_bend_model 同源）。
     ranking:
     - param: w_mm
       score: 0.622162
     - param: arm_len_mm
       score: 0.0
+  branchline_2sect:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=主线节 λ/4 谐振 f0=c/(4·sect_len·√εeff(w_main))（Pozar 经典点
+    ranking:
+    - param: sect_len_mm
+      score: 1.0
+    - param: w_main_mm
+      score: 0.040577
+    - param: branch_len_mm
+      score: 0.0
+    - param: w_feed_mm
+      score: 0.0
+    - param: w_mid_mm
+      score: 0.0
+    - param: w_out_mm
+      score: 0.0
+  cline_coupler:
+    method: central_finite_difference_elasticity
+    n_samples: 9
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=耦合段 λ/4 谐振 f0=c/(4·L·√εeff_avg)，εeff_avg=(εe+εo)/2（KJ 偶/
+    ranking:
+    - param: coupled_len_mm
+      score: 1.0
+    - param: w_mm
+      score: 0.038093
+    - param: gap_mm
+      score: 0.003434
+    - param: w_feed_mm
+      score: 0.0
+  coil_nfc:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=L（Mohan 电流片式平面螺旋电感 spiral_inductance 单源，µH 级；
+    ranking:
+    - param: d_out_mm
+      score: 1.691007
+    - param: n_turns
+      score: 1.258959
+    - param: w_mm
+      score: 0.372048
+    - param: s_mm
+      score: 0.318898
+    - param: er
+      score: 0.0
+    - param: gap_mm
+      score: 0.0
+    - param: h_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
   coupled_line:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=耦合段 λ/4 谐振 f0=c/(4·L·√εeff_avg)，εeff_avg=(εe+εo)/2
     ranking:
     - param: coupled_len_mm
@@ -65,7 +127,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=Z0（Wadell 均匀线+板映射+FD 定标，_cps_ri 单源）。
     ranking:
     - param: gap_mm
@@ -74,12 +136,68 @@ templates:
       score: 0.187624
     - param: line_len_mm
       score: 0.0
+  diplexer:
+    method: central_finite_difference_elasticity
+    n_samples: 7
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=交越（截止）fc_GHz=Z0/(2π·L_lpf_nH)（一阶常阻互补对偶 CR 臂定标
+    ranking:
+    - param: l_lpf_nh
+      score: 1.0
+    - param: c_hpf_pf
+      score: 0.0
+    - param: w_feed_mm
+      score: 0.0
+  embedded_ms:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（嵌埋微带 FD 准静态 embedded_ms_quasistatic 单源，Richardson
+    ranking:
+    - param: h_mm
+      score: 0.597867
+    - param: w_mm
+      score: 0.56244
+    - param: er
+      score: 0.470089
+    - param: h2_mm
+      score: 0.035412
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  fgcpw:
+    method: central_finite_difference_elasticity
+    n_samples: 15
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（FGCPW FD 准静态裁判链 fgcpw_fd 单源：Richardson 外推零厚准静态）。
+    ranking:
+    - param: er
+      score: 0.300599
+    - param: gap_mm
+      score: 0.251808
+    - param: w_mm
+      score: 0.139888
+    - param: h_mm
+      score: 0.081883
+    - param: gnd_mm
+      score: 0.030043
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
   gysel:
     method: central_finite_difference_elasticity
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(w_arm))（XA-3 迭代序：臂线宽
     ranking:
     - param: arm_len_mm
@@ -95,7 +213,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=总线长设计式精确逆 f=K_HELIX·c/(4·(4dN+Np))（k_helix=1.3615
     ranking:
     - param: helix_turns
@@ -108,12 +226,34 @@ templates:
       score: 0.0
     - param: helix_w_mm
       score: 0.0
+  hmsiw:
+    method: central_finite_difference_elasticity
+    n_samples: 15
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=准 TE0.5 截止 fc（Lai-Fumeaux 2009 式 (8)-(14) 链 hmsiw_closed_form
+    ranking:
+    - param: w_mm
+      score: 0.970862
+    - param: er
+      score: 0.448597
+    - param: d_mm
+      score: 0.067069
+    - param: h_mm
+      score: 0.059171
+    - param: s_mm
+      score: 0.033818
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
   ifa:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=臂 λ/4 设计式精确逆 f=c/(4·L·√εeff(w))（HJ @臂宽）。
     ranking:
     - param: ifa_arm_mm
@@ -122,12 +262,74 @@ templates:
       score: 0.039732
     - param: feed_off_mm
       score: 0.0
+  inverted_ms:
+    method: central_finite_difference_elasticity
+    n_samples: 15
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（倒置微带 FD inverted_ms_fd 单源：空气隙高填充率）。符号：
+    ranking:
+    - param: h_air_mm
+      score: 0.672226
+    - param: w_mm
+      score: 0.620954
+    - param: er
+      score: 0.104442
+    - param: h_sub_mm
+      score: 0.051249
+    - param: h_mm
+      score: 0.0
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  isl_shielded:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（ISL 悬置准静态 suspended_ms_qs 单源；er 取名义参数、h_sub 取
+    ranking:
+    - param: w_mm
+      score: 0.73477
+    - param: h_top_mm
+      score: 0.326616
+    - param: g_air_mm
+      score: 0.291283
+    - param: er
+      score: 0.065562
+    - param: d_mm
+      score: 0.0
+    - param: line_len_mm
+      score: 0.0
+    - param: s_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  lange:
+    method: central_finite_difference_elasticity
+    n_samples: 9
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=指长 λ/4 谐振 f0=c/(4·finger_len·√εeff_avg)（相邻对 KJ 偶/奇模平均
+    ranking:
+    - param: finger_len_mm
+      score: 1.0
+    - param: w_mm
+      score: 0.013767
+    - param: gap_mm
+      score: 0.001555
+    - param: w_feed_mm
+      score: 0.0
   loop:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=自由空间环设计式精确逆 f=c/(4a)（一周长 C=4a≈λ0，2026-09-16
     ranking:
     - param: loop_side_mm
@@ -136,12 +338,32 @@ templates:
       score: 0.0
     - param: loop_w_mm
       score: 0.0
+  marchand_balun:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=槽臂 Z0（Janaswamy–Schaubert slotline_z0 单源 @槽宽 w_slot；双槽臂
+    ranking:
+    - param: w_slot_mm
+      score: 0.253751
+    - param: f0_ghz
+      score: 0.192639
+    - param: er
+      score: 0.130377
+    - param: h_mm
+      score: 0.061111
+    - param: tan_d
+      score: 0.0
+    - param: x_port_mm
+      score: 0.0
   monopole:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=λ0/4 设计式精确逆 f=c/(4·L)（antenna2_resonance_ghz 同式）。
     ranking:
     - param: mon_len_mm
@@ -150,12 +372,194 @@ templates:
       score: 0.0
     - param: mon_w_mm
       score: 0.0
+  ms_cross:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=单元谐振 f0=c/(2·(2·arm_len)·√((1+εr)/2))（十字臂总跨=λ0/(2√εeff)、
+    ranking:
+    - param: arm_len_mm
+      score: 1.0
+    - param: er
+      score: 0.392699
+    - param: arm_w_mm
+      score: 0.0
+    - param: h_mm
+      score: 0.0
+    - param: period_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  ms_jcross:
+    method: central_finite_difference_elasticity
+    n_samples: 15
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=主缝谐振 f0=c/(4·slot_len·√((1+εr)/2))（主缝=λg/4、εeff=(1+εr)/2
+    ranking:
+    - param: slot_len_mm
+      score: 1.0
+    - param: er
+      score: 0.392699
+    - param: h_mm
+      score: 0.0
+    - param: period_mm
+      score: 0.0
+    - param: slot_w_mm
+      score: 0.0
+    - param: stub_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  ms_mushroom:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=AMC 谐振 f=1/(2π√(L·C))（Sievenpiper LC 模型：L=μ0·h
+    ranking:
+    - param: period_mm
+      score: 0.746598
+    - param: h_mm
+      score: 0.5
+    - param: er
+      score: 0.392699
+    - param: gap_mm
+      score: 0.246586
+    - param: tan_d
+      score: 0.0
+  ms_patch:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=单元谐振 f0=c/(2·px·√εeff(px))（Balanis 腔模型方贴片、HJ εeff
+    ranking:
+    - param: px_mm
+      score: 1.042412
+    - param: er
+      score: 0.462928
+    - param: h_mm
+      score: 0.042412
+    - param: period_mm
+      score: 0.0
+    - param: py_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  ms_ring_patch:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=内贴片谐振 f0=c/(2·patch_px·√εeff(patch_px))（复用 ms_patch 口径；
+    ranking:
+    - param: patch_px_mm
+      score: 1.042412
+    - param: er
+      score: 0.462928
+    - param: h_mm
+      score: 0.042412
+    - param: period_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  msl_cpw:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=CPWG 段 Z0（core/calc_families/rf_line._cpwg_ri 准静态共形映射
+    ranking:
+    - param: w_cpw_mm
+      score: 0.510468
+    - param: gap_cpw_mm
+      score: 0.16042
+    - param: line_len_mm
+      score: 0.0
+    - param: r_via_mm
+      score: 0.0
+    - param: trans_len_mm
+      score: 0.0
+    - param: via_offset_mm
+      score: 0.0
+    - param: via_spacing_mm
+      score: 0.0
+    - param: w_msl_mm
+      score: 0.0
+  msl_siw_taper:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=SIW 段 TE10 截止 fc=c/(2·w_eff·√εr)，w_eff=w−d²/(0.95·s)
+    ranking:
+    - param: w_mm
+      score: 1.032246
+    - param: er
+      score: 0.5
+    - param: d_mm
+      score: 0.064485
+    - param: s_mm
+      score: 0.032246
+    - param: h_mm
+      score: 0.0
+    - param: siw_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+    - param: taper_len_mm
+      score: 0.0
+  msl_slot_transition:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=槽线臂 Z0（slotline_z0 单源 @w_slot；Roberts/Knorr 过渡的槽线段
+    ranking:
+    - param: w_slot_mm
+      score: 0.253751
+    - param: f0_ghz
+      score: 0.192639
+    - param: er
+      score: 0.130377
+    - param: h_mm
+      score: 0.061111
+    - param: tan_d
+      score: 0.0
+    - param: x_port_mm
+      score: 0.0
+  nway_wilkinson:
+    method: central_finite_difference_elasticity
+    n_samples: 9
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(w_arm))（XA-3 迭代序：臂线宽自身
+    ranking:
+    - param: arm_len_mm
+      score: 1.0
+    - param: w_arm_mm
+      score: 0.033755
+    - param: iso_r_ohm
+      score: 0.0
+    - param: w_feed_mm
+      score: 0.0
   pifa:
     method: central_finite_difference_elasticity
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=L 路径式精确逆 f=c/(4·L·√εeff(W))（HJ @W；居中短路板不绕行，
     ranking:
     - param: pifa_l_mm
@@ -168,12 +572,76 @@ templates:
       score: 0.0
     - param: pin_y_mm
       score: 0.0
+  schiffman:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=差分相移 Δφ(f0)（度）（core/synthesis.schiffman_delta_phase 单源：
+    ranking:
+    - param: l_ref_mm
+      score: 3.000798
+    - param: l_coupled_mm
+      score: 2.812535
+    - param: w_mm
+      score: 0.081065
+    - param: gap_mm
+      score: 0.008696
+    - param: w_ref_mm
+      score: 0.0
+  sicl:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（SICL 矩形同轴共形闭式 sicl_z0 单源，k=tanh(πa/2b)·sech(πw/2b)，
+    ranking:
+    - param: w_mm
+      score: 0.562504
+    - param: h_mm
+      score: 0.556755
+    - param: er
+      score: 0.5
+    - param: a_mm
+      score: 0.005772
+    - param: d_mm
+      score: 0.0
+    - param: line_len_mm
+      score: 0.0
+    - param: s_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  siw:
+    method: central_finite_difference_elasticity
+    n_samples: 15
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=TE10 截止 fc=c/(2·w_eff·√εr)，w_eff=w−d²/(0.95·s)（Cassivi 2002
+    ranking:
+    - param: w_mm
+      score: 1.032246
+    - param: er
+      score: 0.5
+    - param: d_mm
+      score: 0.064485
+    - param: s_mm
+      score: 0.032246
+    - param: h_mm
+      score: 0.0
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
   slot:
     method: central_finite_difference_elasticity
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=Booker 对偶+半空间均值设计式精确逆 f=c/(2·L·√((1+εr)/2))
     ranking:
     - param: slot_l_mm
@@ -184,12 +652,48 @@ templates:
       score: 0.0
     - param: slot_w_mm
       score: 0.0
+  slotline:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（Janaswamy–Schaubert 分段闭式 slotline_z0 单源；声明域 d/λ0≥0.006，
+    ranking:
+    - param: w_mm
+      score: 0.253751
+    - param: er
+      score: 0.130377
+    - param: h_mm
+      score: 0.061111
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+  slotline_lumped:
+    method: central_finite_difference_elasticity
+    n_samples: 11
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=Z0（同 slotline：JS 闭式 slotline_z0 单源；LumpedPort 路线 B 与
+    ranking:
+    - param: w_mm
+      score: 0.253751
+    - param: er
+      score: 0.130377
+    - param: h_mm
+      score: 0.061111
+    - param: line_len_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
   stepped_impedance:
     method: central_finite_difference_elasticity
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=SIR 基模 f0：θ_total(f0)=π（λ/2 谐振），段链奇偶交替
     ranking:
     - param: n_segments
@@ -207,7 +711,7 @@ templates:
     n_samples: 5
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=Z0（零厚度对称共形映射 _stripline_z0，TEM εeff=εr）。
     ranking:
     - param: w_mm
@@ -219,7 +723,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=Z0（悬置带线 FD 重定标闭式 _suspended_stripline_ri）。
     ranking:
     - param: b_mm
@@ -233,7 +737,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=全臂 Z0（对称均分口径的设计恒等式，synthesize_tjunc_model 同源：
     ranking:
     - param: w_feed_mm
@@ -242,12 +746,38 @@ templates:
       score: 0.0
     - param: through_len_mm
       score: 0.0
+  varactor_bpf:
+    method: central_finite_difference_elasticity
+    n_samples: 19
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=装载臂谐振 f0（varactor_bpf_design 主谐振方程正解单源：
+    ranking:
+    - param: arm_len_mm
+      score: 0.899974
+    - param: cj0_pf
+      score: 0.100019
+    - param: bias_v
+      score: 0.040084
+    - param: phi_v
+      score: 0.040084
+    - param: w_mm
+      score: 0.036557
+    - param: arm_gap_mm
+      score: 0.0
+    - param: gap_mm
+      score: 0.0
+    - param: order
+      score: 0.0
+    - param: tap_frac
+      score: 0.0
   via:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=反焊盘同轴口径 Z_via=(60/√εr)·ln(r_pad/r_via)
     ranking:
     - param: antipad_mm
@@ -256,12 +786,32 @@ templates:
       score: 0.597369
     - param: w_mm
       score: 0.0
+  vivaldi_tsa:
+    method: central_finite_difference_elasticity
+    n_samples: 13
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=低截止 f_low=c/(2·w_mouth)（口面半波准则 vivaldi_low_cutoff_ghz
+    ranking:
+    - param: w_mouth_mm
+      score: 1.0
+    - param: er
+      score: 0.0
+    - param: feed_w_mm
+      score: 0.0
+    - param: l_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+    - param: w_throat_mm
+      score: 0.0
   wstep:
     method: central_finite_difference_elasticity
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-04'
+    registered_at: '2026-10-14'
     target_quantity: y=阶跃反射 |Γ|=|Z2−Z1|/(Z2+Z1)（synthesize_wstep_model 同式）。
     ranking:
     - param: w2_mm
@@ -269,4 +819,36 @@ templates:
     - param: w1_mm
       score: 1.708031
     - param: line_len_mm
+      score: 0.0
+  xcheb_bpf4:
+    method: central_finite_difference_elasticity
+    n_samples: 25
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-14'
+    target_quantity: y=开路环谐振 f0=c/(2·(4·a+2Δl)·√εeff(w))（cross_coupled_bpf_design
+    ranking:
+    - param: a_mm
+      score: 0.988235
+    - param: er
+      score: 0.441697
+    - param: w_mm
+      score: 0.042317
+    - param: h_mm
+      score: 0.030554
+    - param: g12_mm
+      score: 0.0
+    - param: g14_mm
+      score: 0.0
+    - param: g23_mm
+      score: 0.0
+    - param: g34_mm
+      score: 0.0
+    - param: g_open_mm
+      score: 0.0
+    - param: g_pos_mm
+      score: 0.0
+    - param: tan_d
+      score: 0.0
+    - param: tap_t_mm
       score: 0.0

@@ -1,4 +1,4 @@
-"""DP-10 超表面/FSS 离线内核（P1：纯函数零 IO，规格 规格深案 §DP-10）。
+"""DP-10 超表面/FSS 离线内核（P1：纯函数零 IO，规格 docs/plan_deepdive_specs_20260924.md §DP-10）。
 
 四个子面（判据预声明 runs/df6_dp10ms/criteria.md，实现前冻结）：
 
@@ -6,7 +6,7 @@
    JSON（元数据+数组）+ CSV（长表）双载体互转；interp=pchip；
    run_dir provenance（#320 口径：真机行必须带产物目录指针，合成 LUT
    置空串并标 origin="synthetic"）。
-2. 布局综合闭式（确定性内核， 硬规则 7——物理数字只出在这里）：
+2. 布局综合闭式（确定性内核，AGENTS 硬规则 7——物理数字只出在这里）：
    - 反射阵（点馈）：φ_mn = k0·(R_mn − r_mn·û_beam) mod 2π
      （Huang-Encinar《Reflectarray Antennas》空间相位延迟式；
      R_mn=馈相心到单元距离）；
@@ -43,7 +43,7 @@ from scipy.interpolate import PchipInterpolator
 
 #: LUT schema 版本（recipe_version/schema_version 双版本语义先例 #106：
 #: 这是 LUT 载体版本，不是插件参数版本）。v2（MM-3，2026-10-02，规格
-#: 规格深案 §C-2）：追加 s21_db/s21_phase_deg
+#: docs/plan_deepdive_specs_20261002.md §C-2）：追加 s21_db/s21_phase_deg
 #: 透射载体（GSTC 对拍通道）；from_dict/from_csv 兼容读 v1 旧载体
 #: （s21=None），只追加不改既有字段语义。
 LUT_SCHEMA = "metasurface_lut/v2"
@@ -426,7 +426,7 @@ def quantize_phase_deg(target_phase_deg: float, bits: int) -> float:
     return round(target_phase_deg / step) * step
 
 
-# ─── 布局综合闭式（确定性内核， 硬规则 7）──────────────────────────────
+# ─── 布局综合闭式（确定性内核，AGENTS 硬规则 7）──────────────────────────────
 
 
 def _k0_rad_m(f0_ghz: float) -> float:

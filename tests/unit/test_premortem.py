@@ -433,3 +433,74 @@ class TestCampaignKickoffHook:
         loaded = load_plan(out_dir)
         assert loaded["ok"]
         assert loaded["plan"]["premortem"] == plan["premortem"]
+
+
+class TestPremortemServiceDirectW2:
+    """W2-TEST 直测补强：top_k 透传/坑账正向通道钉（#139）/缺省战役面。"""
+
+    def test_report_top_k_limits_modes(self):
+        """top_k 透传内核：1→1 条、5→5 条，缺省=DEFAULT_TOP_K；同输入逐位一致。"""
+        # real_solve 库 10 条（EXPECTED_KIND_COUNTS 钉）≥ DEFAULT_TOP_K：截断全量可见
+        r1 = premortem_report("real_solve", {}, top_k=1)
+        r5 = premortem_report("real_solve", {}, top_k=5)
+        assert r1["ok"] and r5["ok"]
+        assert len(r1["failure_modes"]) == 1
+        assert len(r5["failure_modes"]) == 5
+        r_default = premortem_report("real_solve", {})
+        assert len(r_default["failure_modes"]) == DEFAULT_TOP_K
+        # top_k=1 是 top_k=5 的前缀（同一排序截断，非不同排序）
+        assert [m["mode_id"] for m in r1["failure_modes"]] == \
+            [m["mode_id"] for m in r5["failure_modes"][:1]]
+
+    def test_pitfall_notes_positive_channel_pinned(self, monkeypatch):
+        """#139 钉通道（正向）：坑账索引命中注记经 monkeypatch 假索引回收。"""
+        import rfauto.service.pitfall_index_service as pis
+
+        def _fake_load():
+            return {"ok": True, "entries": [{"id": "X1"}]}
+
+        captured: dict = {}
+
+        def _fake_notes(index, keywords):
+            captured["keywords"] = list(keywords)
+            return ["X1: 坑账命中注记（假索引回收）"]
+
+        monkeypatch.setattr(pis, "load_pitfall_index", _fake_load)
+        monkeypatch.setattr(pis, "pitfall_notes_for", _fake_notes)
+        r = premortem_report("real_solve", {"background_launch": True})
+        assert r["ok"] is True
+        assert r["pitfall_notes"] == ["X1: 坑账命中注记（假索引回收）"]
+        # keywords 确定性=task_kind + context 键名（best-effort 注记的检索面）
+        assert captured["keywords"][0] == "real_solve"
+        assert "background_launch" in captured["keywords"]
+        # 索引面 ok=False → 注记静默缺席（不凑空串占位）
+        monkeypatch.setattr(pis, "load_pitfall_index", lambda: {"ok": False})
+        r2 = premortem_report("real_solve", {"background_launch": True})
+        assert r2["ok"] is True and "pitfall_notes" not in r2
+
+    def test_campaign_block_default_context_honest_open_probes(self):
+        """缺省（无 model/recipe 声明）→ 探针如实报 open（防线清单不假装闭合）。"""
+        blk = campaign_premortem_block()
+        assert blk["ok"] and blk["task_kind"] == "param_sweep"
+        assert set(blk) == {"ok", "task_kind", "task_kind_label", "n_modes_total",
+                            "top_modes", "checklist", "open_probes", "n_open_probes"}
+        assert len(blk["top_modes"]) == 10
+        assert blk["open_probes"] and blk["n_open_probes"] == len(blk["open_probes"])
+        # 与显式声明面的 top 模式同源（差异只在探针在案性）
+        blk2 = campaign_premortem_block(model="wilkinson", recipe="r.yaml")
+        assert [m["mode_id"] for m in blk["top_modes"]] == \
+            [m["mode_id"] for m in blk2["top_modes"]]
+
+    def test_save_report_accepts_str_path(self, tmp_path):
+        """save 落盘面接受 str 路径（str|Path 契约）；字节稳定（sort_keys）。"""
+        r = premortem_report("real_solve", {})
+        target = tmp_path / "deep" / "nested" / "pm.json"
+        saved = save_premortem_report(r, str(target))
+        assert saved["ok"] is True
+        assert saved["path"] == str(target)
+        back = json.loads(target.read_text(encoding="utf-8"))
+        assert back == r
+        # 两次落盘逐字节一致（观测面确定性）
+        target2 = tmp_path / "deep" / "nested" / "pm2.json"
+        save_premortem_report(r, str(target2))
+        assert target.read_bytes() == target2.read_bytes()

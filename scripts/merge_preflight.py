@@ -1,10 +1,10 @@
-"""合流预检（门口径 v2 ③）：席位返回前必跑，~2 分钟。
+"""合流预检（门口径 v2 ③，2026-10-05 用户令采纳）：席位返回前必跑，~2 分钟。
 
-把"漂移类失败"（计数锚/金快照/再生差异/信封契约/help 卫生）从全量门
-**前移到席位并行消化**——这类失败占门失败相当比例，且全部可以在席位
-返回前自证自愈。
+把"漂移类失败"（计数锚/金快照/再生差异/信封契约/help 卫生）从 52 分钟
+全量门**前移到席位并行消化**——W1/W2/W3 三批实证：这类失败占门失败
+相当比例，且全部可以在席位返回前自证自愈。
 
-检查面（与上游仓 16 面形态的移植判定，2026-10-13 CI-PREP 席逐面核）：
+检查面（=三批门实红谱系）：
   1. check_numbers 全链一致（tests/CLI/MCP/CALC 数字锚）
   2. public_api 金快照 --check
   3. docs_site 再生差异（test_docs_site）
@@ -14,35 +14,51 @@
   7. help 卫生（test_cli_help_text_hygiene）
   8. count_cli vs 台账互证（test_check_numbers+test_cli 叶计数）
   9. MCP 计数/名单/一致性（test_mcp_server+test_mcp_tool_consistency）
-  10. pip-audit 依赖漏洞快审——**不移植**：本仓 CI 已有专 supply-chain
-      job（pip-audit 钉版 + SBOM + 带哈希 requirements，逐 push/PR 跑），
-      覆盖更强；上游 audit_gate 的 runs/ 留痕语义依赖内部工作区。
-  11. sleep-AST 常驻守卫（scripts/audit_test_sleeps.py，tests 树 AST 扫
-      time.sleep(N>10)——纯 stdlib 只读，零仓外语境；违例 rc=1 红，
-      新增长睡只有 --allow 豁免一条路且须带理由注记）
-  12. CLI 参数级 help 字符卫生——**脚本已同步、暂不挂门**：本仓 cli 树
-      尚含 21 处参数 help 裸 ``[`` 残留（上游 2026-10-11 清偿批未随仓
-      同步，两代际 cli 文件差异大不宜整文件搬）——挂门必红；待下轮
-      cli 代际同步清偿后接线（脚本 check_cli_help_bracket.py 就位，
-      树面判定地面=tests/unit/test_cli_help_text_hygiene.py 命令级已钉）。
-  13. 几何 API 字面算术审计（scripts/audit_literal_arithmetic_geometry.py，
-      adapters/scripts 树 AST 扫几何 API 字面算术按 SI 米求值=违规；
-      #218 家族；豁免走脚本 ALLOWLIST 带理由注记，违例 rc=1 红）
-  14. 锚 freshness 审计——**脚本已同步、暂不挂门**：本仓
-      knowledge/anchors.yaml 属前代际（缺验证锚 37 > 棘轮 35，2026-10-13
-      实测；上游 HEAD 同日 35=35 绿）——挂门必红且"棘轮只收不放"不允许
-      为代际差上调；待 anchors.yaml 代际同步后按同值复核接线
-      （脚本 audit_anchor_freshness.py 就位）。
-  15. 模板 meta 健康度审计（scripts/audit_template_meta.py，docs/templates/
-      */meta.yaml 只读 5 维审计——schema/nominal/占位符/teaching/仓内
-      链接；runs/ 前缀=证据面报告不打红，其余断链=红；豁免走脚本
-      EXEMPTIONS 带理由；templates 根不可读=rc2 SKIP 诚实降级）
-  16. runs 湖 registry 落后度审计——**不移植**：runs 湖=上游工作区语境
-      （新落 run 未入索引的落后度语义无对象），本仓 runs/ 仅样例证据面。
+  10. pip-audit 依赖漏洞快审（QM-4 周期化，2026-10-08 快赢席 W2 挂入：
+      经 scripts/audit_gate.py 调 audit_deps env 模式，门日志+报告 JSON
+      落 runs/audit_gate/；rc 语义 0=绿 / 1,4=红（未豁免漏洞/门不可留痕）
+      / 2,3,超时=SKIP（审计跑不起来/pip-audit 缺席/未完成——如实降级不判
+      绿也不判红，环境类按 #122 三分法），网络面超时 300s 封顶）
+  11. sleep-AST 常驻守卫（门口径 v2 ④ followUp 清偿，2026-10-11 W2-D：
+      scripts/audit_test_sleeps.py 对 tests 树 AST 扫 time.sleep(N>10)
+      常驻慢测试；违例 rc=1 红非 SKIP——新增长睡只有 --allow 豁免一条路
+      且须带理由注记；配对面=wf_gate_full_v2 durations 分层报告）
+  12. CLI 参数级 help 字符卫生（D-06 参数级清偿常驻化，2026-10-11 W5-C：
+      scripts/check_cli_help_bracket.py 源码 AST 扫 cli 树 help= 字面裸 `[`
+      ——rich markup 吞词元/炸 --help；参数级 21 处残留清偿后零基线棘轮；
+      树面判定地面=tests/unit/test_cli_help_text_hygiene.py::
+      TestParamHelpTextHygiene，双机制同口径）
+  13. 几何 API 字面算术审计（#218 家族常驻化，2026-10-11 W5-C：
+      scripts/audit_literal_arithmetic_geometry.py 对 adapters/scripts 树
+      AST 扫 create_* 几何 API 的 origin/sizes/radius/height 实参，字面
+      算术按 SI 米求值=违规；豁免走脚本 ALLOWLIST（带理由+背书注记），
+      违例 rc=1 红）
+  14. 锚 freshness 审计（aurora72 R8 #6 常驻化，2026-10-11 A7-D：
+      scripts/audit_anchor_freshness.py 对 knowledge/anchors.yaml 做只读
+      时效审计——非 retired/awaiting_data 锚缺 last_verified 超棘轮
+      （现值 35 冻结，只收不放）=红，新增锚必须带验证回填；时效超龄
+      （experimental>30d/active>90d）=报告面永不红，时间推移不打红
+      无关席位；注册表不可读=rc2 SKIP 诚实降级）
+  15. 模板 meta 健康度审计（aurora72 R8 面 3 常驻化，2026-10-11 A8-C：
+      scripts/audit_template_meta.py 对 docs/templates/*/meta.yaml 只读
+      5 维审计——schema 必备键/标量 sane、nominal 数值语义粗守卫、
+      占位符残留、teaching schema（rfauto-teaching/v1）、仓内链接存在性
+      （runs/=证据面报告不打红，其余前缀断链=红）；修复=meta.yaml 最小
+      修（不动物理值），误报合法形态走脚本 EXEMPTIONS 带理由（只收不放，
+      挂面时清单为空）；rc2=templates 根不可读 SKIP 诚实降级）
+  16. runs 湖 registry 落后度审计（aurora72 R8 #7 常驻化，2026-10-13
+      R8-ENG1：scripts/registry_backfill.py --check 只读盘点 registry
+      行数 vs 盘面 run 点数（meta 口径 #144 + 无 meta 真跑目录双层判真，
+      helper/空壳豁免如实计数）——would_insert>0=落后 rc1 红（新落 run
+      未入索引，回填一条命令自愈：``.venv/Scripts/python.exe
+      scripts/registry_backfill.py``）；rc2=runs/ 树不可读 SKIP 诚实降级
+      （CI/无湖环境）；幂等红线：回填重跑零增量行）
 
-席位/贡献者纪律：仓根执行 ``python scripts/merge_preflight.py``——
-全绿才算交付；红=自己改完再返回（计数面漂移属预期红的除外——共享
-计数面归合流集中更新的项，如实报告预期红清单）。
+席位任务书纪律（自本批起写入"返回前必跑"）：
+  仓根执行 ``.venv/Scripts/python.exe scripts/merge_preflight.py``
+  ——全绿才算交付；红=自己改完再返回（计数面漂移属预期红的除外——
+  五钉共享计数面归主代理合流集中更新的项，席位如实报告预期红清单，
+  预检输出会提示哪些是"合流集中项"）。
 
 退出码：0=全绿；1=有红（逐项列出；合流集中项不计入本席返工，但需在
 席位报告登记）。
@@ -79,21 +95,11 @@ def main(argv: list[str] | None = None) -> int:
     print("== merge_preflight（合流预检；红=席位返回前自证自愈）==", flush=True)
 
     # 1) check_numbers 全链
-    # timeout=900：无 gate 日志的仓（CI/冷检出）走 pytest --collect-only
-    # 兜底，2 万+用例冷收集在 2 核 runner 上可达 3-5min——180s 实测必超
-    # （TimeoutExpired 未捕获=裸 traceback 退出，CI 实证）。
-    try:
-        r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
-                           capture_output=True, text=True, timeout=900)
-    except subprocess.TimeoutExpired:
-        print("[FAIL] check_numbers 全链一致（>900s 超时；collect fallback "
-              "过慢——检查 runner 负载或固化 gate 日志口径）")
-        failures.append("check_numbers")
-        r = None
-    ok = r is not None and "All numbers consistent" in (r.stdout + r.stderr)
-    if r is not None:
-        print(f"[{'PASS' if ok else 'FAIL'}] check_numbers 全链一致")
-    if r is not None and not ok:
+    r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
+                       capture_output=True, text=True, timeout=180)
+    ok = "All numbers consistent" in (r.stdout + r.stderr)
+    print(f"[{'PASS' if ok else 'FAIL'}] check_numbers 全链一致")
+    if not ok:
         failures.append("check_numbers")
         print((r.stdout + r.stderr)[-1200:])
 
@@ -108,25 +114,42 @@ def main(argv: list[str] | None = None) -> int:
         print(r.stdout[-800:])
 
     # 3-9) pytest 漂移面
-    try:
-        r = subprocess.run(
-            [PY, "-m", "pytest", *PYTEST_TARGETS, "-q", "--tb=line",
-             "-p", "no:cacheprovider"],
-            cwd=str(REPO_ROOT), timeout=600)
-    except subprocess.TimeoutExpired:
-        print("[FAIL] pytest 漂移面（>600s 超时）")
-        failures.append("pytest-drift面（超时）")
-        r = None
-    ok = r is not None and r.returncode == 0
+    r = subprocess.run(
+        [PY, "-m", "pytest", *PYTEST_TARGETS, "-q", "--tb=line",
+         "-p", "no:cacheprovider"],
+        cwd=str(REPO_ROOT), timeout=600)
+    ok = r.returncode == 0
     print(f"[{'PASS' if ok else 'FAIL'}] pytest 漂移面 "
           f"（{len(PYTEST_TARGETS)} 文件）")
     if not ok:
         failures.append("pytest-drift面（细看上方 FAILED 行；计数断言类="
-                        "共享计数面归合流集中项，登记即可）")
+                        "五钉共享面归主代理合流集中项，登记即可）")
 
-    # 10) pip-audit 快审——不挂（本仓 supply-chain job 承担，见 docstring）
+    # 10) pip-audit 依赖漏洞快审（QM-4 周期化；audit_gate 落日志+rc 透传）
+    try:
+        r = subprocess.run([PY, str(REPO_ROOT / "scripts" / "audit_gate.py")],
+                           cwd=str(REPO_ROOT), capture_output=True, text=True,
+                           timeout=300)
+        rc = r.returncode
+    except subprocess.TimeoutExpired:
+        rc = 2
+    if rc == 0:
+        print("[PASS] pip-audit 依赖漏洞快审（audit_gate 绿）")
+    elif rc in (2, 3):
+        print(f"[SKIP] pip-audit 快审（rc={rc}="
+              + ("网络/审计本体不可用" if rc == 2 else "pip-audit 未安装")
+              + "——如实降级，环境类非门红；红=真漏洞另报）")
+    else:
+        print(f"[FAIL] pip-audit 依赖漏洞快审（rc={rc}；报告+日志见 "
+              "runs/audit_gate/ 最新文件——豁免走 audit_deps.EXEMPT 表"
+              "带理由+复审日期，不降级 continue-on-error）")
+        tail = ""
+        if rc != 2:
+            tail = (r.stdout + r.stderr)[-800:]
+        print(tail)
+        failures.append("pip-audit（未豁免漏洞/门不可留痕）")
 
-    # 11) sleep-AST 常驻守卫
+    # 11) sleep-AST 常驻守卫（门口径 v2 ④ followUp 清偿，2026-10-11 W2-D）
     r = subprocess.run([PY, str(REPO_ROOT / "scripts" / "audit_test_sleeps.py")],
                        cwd=str(REPO_ROOT), capture_output=True, text=True,
                        timeout=120)
@@ -137,10 +160,19 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("sleep-AST（sleep(N>10) 常驻慢测试）")
 
-    # 12) CLI 参数级 help 字符卫生——暂不挂（cli 树 21 处清偿未随仓同步，
-    #     挂门必红；脚本已就位，见 docstring）
+    # 12) CLI 参数级 help 字符卫生（D-06 参数级清偿常驻化，2026-10-11 W5-C）
+    r = subprocess.run([PY, str(REPO_ROOT / "scripts" / "check_cli_help_bracket.py")],
+                       cwd=str(REPO_ROOT), capture_output=True, text=True,
+                       timeout=60)
+    if r.returncode == 0:
+        print("[PASS] CLI 参数级 help 字符卫生（cli 树 help= 零裸 [）")
+    else:
+        print("[FAIL] CLI 参数级 help 字符卫生（参数 help 裸 [ 回归；"
+              "file:line 逐条见上）")
+        print((r.stdout + r.stderr)[-800:])
+        failures.append("CLI 参数级 help 字符卫生（D-06，裸 [ 炸 rich 渲染）")
 
-    # 13) 几何 API 字面算术审计
+    # 13) 几何 API 字面算术审计（#218 家族常驻化，2026-10-11 W5-C）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "audit_literal_arithmetic_geometry.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=120)
@@ -153,10 +185,23 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("几何字面算术（#218 家族 SI 米陷阱）")
 
-    # 14) 锚 freshness 审计——暂不挂（anchors.yaml 前代际 37>棘轮 35，
-    #     待代际同步后接线；脚本已就位，见 docstring）
+    # 14) 锚 freshness 审计（aurora72 R8 #6 常驻化，2026-10-11 A7-D）
+    r = subprocess.run(
+        [PY, str(REPO_ROOT / "scripts" / "audit_anchor_freshness.py")],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
+    if r.returncode == 0:
+        print("[PASS] 锚 freshness 审计（缺验证锚 ≤ 棘轮；超龄=报告面）")
+    elif r.returncode == 2:
+        print("[SKIP] 锚 freshness 审计（注册表不可读/空集——诚实降级，"
+              "环境类非门红）")
+    else:
+        print("[FAIL] 锚 freshness 审计（缺验证锚超棘轮——新锚必须带 "
+              "last_verified 回填；棘轮只收不放，上调须战役台账给理由，"
+              "口径见 scripts/audit_anchor_freshness.py 头注）")
+        print((r.stdout + r.stderr)[-800:])
+        failures.append("锚 freshness（R8 #6：缺验证锚超棘轮）")
 
-    # 15) 模板 meta 健康度审计（只读 5 维；rc2=templates 根不可读 SKIP）
+    # 15) 模板 meta 健康度审计（aurora72 R8 面 3 常驻化，2026-10-11 A8-C）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "audit_template_meta.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
@@ -171,9 +216,26 @@ def main(argv: list[str] | None = None) -> int:
               "最小修不动物理值，断链改指实存文件，占位符清偿；误报合法"
               "形态走 audit_template_meta.EXEMPTIONS 带理由注记）")
         print((r.stdout + r.stderr)[-800:])
-        failures.append("模板 meta 健康度（5 维审计违例）")
+        failures.append("模板 meta 健康度（R8 面 3：5 维审计违例）")
 
-    # 16) runs 湖 registry 落后度——不挂（内部工作区语境，见 docstring）
+    # 16) runs 湖 registry 落后度审计（aurora72 R8 #7 常驻化，2026-10-13
+    # R8-ENG1）——只读 --check，落后 rc1 / runs 树不可读 rc2 SKIP
+    r = subprocess.run(
+        [PY, str(REPO_ROOT / "scripts" / "registry_backfill.py"), "--check"],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=120)
+    if r.returncode == 0:
+        print("[PASS] runs 湖 registry 落后度（registry 覆盖全部盘面 run 点，"
+              "幂等零缺口）")
+    elif r.returncode == 2:
+        print("[SKIP] runs 湖 registry 落后度（runs/ 树不可读/无湖——诚实"
+              "降级，环境类非门红）")
+    else:
+        print("[FAIL] runs 湖 registry 落后度（盘面有 run 点未入索引——"
+              "would_insert 明细见上；回填自愈="
+              ".venv/Scripts/python.exe scripts/registry_backfill.py，"
+              "幂等可重跑）")
+        print((r.stdout + r.stderr)[-800:])
+        failures.append("runs 湖 registry 落后度（R8 #7：新 run 未入索引）")
 
     wall = time.monotonic() - t0
     print(f"== preflight {'PASS' if not failures else 'FAIL'} "

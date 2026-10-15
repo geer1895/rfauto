@@ -1,4 +1,4 @@
-"""PB-2 coupling_gradient 单测（round5 §4.1 PB-2；研究扩充 round5）。
+"""PB-2 coupling_gradient 单测（round5 §4.1 PB-2；docs/research_expansion_20260926_round5.md）。
 
 裁判口径（#118：双路径+独立来源解析值，不自证）：
 - 路径 A = 复步长主路径（h=1e-20，零减法消去）：
@@ -450,3 +450,51 @@ def test_service_error_envelope_never_raises():
     bad4 = cgs.gradient_check_service(_matrix_2res(), np.array([0.1]), t[:1])
     assert bad4["ok"] is False
     assert bad4["errors"]
+
+
+# ─── 19. W2-TEST 直测补强：步长/容差透传回显、x0_full 显式路由、错误串格式 ────
+
+
+def test_service_gradient_check_step_tol_echo():
+    """fd_h/tol 透传内核并回显：缺省 h_cs=1e-20/h_fd=1e-6；粗步长触发判负门。"""
+    t = cg.s21_response(_matrix_2res(), OM2)
+    out = cgs.gradient_check_service(_matrix_2res(), OM2, t)
+    assert out["ok"] is True
+    assert out["h_cs"] == 1e-20 and out["h_fd"] == 1e-6  # 缺省步长回显
+    # 判负路径：fd_h 过粗（1e-5）+ 门收紧（tol=1e-7）→ max_rel 不达标
+    # 信封照常回发（判负≠异常：errors 缺席，数字如实透出）
+    bad = cgs.gradient_check_service(_matrix_2res(), OM2, t, fd_h=1e-5, tol=1e-7)
+    assert bad["ok"] is False
+    assert "errors" not in bad
+    assert bad["tol"] == 1e-7
+    assert bad["max_rel"] > 1e-7
+    json.dumps([out, bad])
+
+
+def test_service_two_stage_x0_full_explicit_route():
+    """x0_full 显式全矩阵初值路由：长度契约 (n+2)(n+3)/2=10；结果实对称 4×4。"""
+    full = np.zeros((4, 4))
+    full[0, 1] = full[1, 0] = MS
+    full[1, 2] = full[2, 1] = KK
+    full[2, 3] = full[3, 2] = ML
+    x0_full = [float(v) for v in cg.pack_upper(full)]
+    assert len(x0_full) == 10
+    out = cgs.two_stage_synthesis_service(
+        target_poles=[-KK, KK], omega_norm=OM2,
+        s21_target=cg.s21_response(_matrix_2res(), OM2), n_order=2,
+        x0_full=x0_full, max_iter_stage1=20, max_iter_stage2=20)
+    assert out["ok"] is True
+    assert out["n_order"] == 2
+    m = np.array(out["matrix"], dtype=float)
+    assert m.shape == (4, 4)
+    # 终矩阵实对称（互易参数化，文件头口径）
+    assert np.max(np.abs(m - m.T)) <= 1e-12
+    # 长度错误显式入错误信封（ValueError: 前缀格式）
+    bad_len = cgs.two_stage_synthesis_service(
+        target_poles=[-KK, KK], omega_norm=OM2,
+        s21_target=cg.s21_response(_matrix_2res(), OM2), n_order=2,
+        x0_full=[0.0] * 9, max_iter_stage1=2, max_iter_stage2=2)
+    assert bad_len["ok"] is False
+    assert bad_len["errors"][0].startswith("ValueError:")
+    assert "x0_full" in bad_len["errors"][0]
+    assert bad_len["schema_version"] == cgs.COUPLING_GRADIENT_SCHEMA_VERSION

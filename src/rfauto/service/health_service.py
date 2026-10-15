@@ -1,6 +1,6 @@
 """run 健康度体检服务层（G11）——runs/<run_id>/ 产物读取 + core 内核组装。
 
-职责切分：run 产物发现/解析/JSON 编排在 service，确定性
+职责切分（AGENTS 规则 4）：run 产物发现/解析/JSON 编排在 service，确定性
 判据全部在 core/solve_health.py。本模块 best-effort（#105）：run 目录不
 存在/全空 → ok=False + errors 说明，不抛异常；单类产物解析失败记入
 errors 后继续，缺失因子由内核标 UNKNOWN。

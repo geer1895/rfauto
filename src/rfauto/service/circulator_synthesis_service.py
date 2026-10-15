@@ -20,10 +20,15 @@ import math
 from typing import Any
 
 from rfauto.core import circulator_synthesis as circ
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 
-#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）
-CIRCULATOR_SERVICE_SCHEMA_VERSION = "1.0"
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d ENGH 席）：失败信封单数 ``error``
+#: 键统一为 ``errors`` list[str]（error_envelope 单源；error_type 诊断键
+#: 保留）——契约 §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；
+#: 消费面（tests/unit/test_circulator_synthesis.py）同笔迁移，无
+#: CLI/MCP/UI 消费者（grep 实测）。1.0=首批推广口径。
+CIRCULATOR_SERVICE_SCHEMA_VERSION = "1.1"
 
 
 def _envelope_ok(data: dict) -> dict:
@@ -31,12 +36,11 @@ def _envelope_ok(data: dict) -> dict:
 
 
 def _envelope_err(exc: Exception) -> dict:
-    return {
-        "ok": False,
-        "schema_version": CIRCULATOR_SERVICE_SCHEMA_VERSION,
-        "error": str(exc),
-        "error_type": type(exc).__name__,
-    }
+    return error_envelope(
+        str(exc),
+        schema_version=CIRCULATOR_SERVICE_SCHEMA_VERSION,
+        error_type=type(exc).__name__,
+    )
 
 
 def _positive(value: float, name: str) -> float:

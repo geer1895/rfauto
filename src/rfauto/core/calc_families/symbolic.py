@@ -23,7 +23,7 @@ from .registry import CALCULATOR_REGISTRY, CalculatorRegistry, CalculatorSpec
 # 本机制不提供自动晋级。
 # 求值安全（铁律 6/7 同源）：项字符串只允许 build_library 词表能产出的语法
 # （常量/已声明变量/+-*/、幂、sqrt/log），ast 白名单校验后才 eval——拒绝任何
-# 经 term 字符串进入的任意代码；系数只来自记录产物（runs）或确定性重拟合。
+# 经 term 字符串进入的任意代码；系数只来自记录产物（runs/）或确定性重拟合。
 
 _ALLOWED_SYMBOLIC_BINOPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow)
 _ALLOWED_SYMBOLIC_FUNCS = frozenset({"sqrt", "log"})
@@ -171,7 +171,7 @@ def register_symbolic_formula(
     return key
 
 
-# E13 patch 基模谐振候选公式（2026-09-12；系数与误差逐位
+# E13 patch 基模谐振候选公式（，2026-09-12；系数与误差逐位
 # 取自产物 runs/symbolic_fit/patch_f0.json 的 induced.best）：
 #   f0 = 0.0261448 + 75.1834/L + 0.0162789·L/W  （GHz；L/W 单位 mm）
 # 51 真实 openEMS patch 点（L∈[35,45]、W∈[40,60]、er=3.66、h=0.508 恒定），
@@ -200,7 +200,7 @@ def _register_e13_patch_f0() -> str:
         param_names=("l_mm", "w_mm"),
         output_key="f0_ghz",
         provenance=(
-            "E13（runs/symbolic_fit/patch_f0.json）：数据集 "
+            "E13（/runs/symbolic_fit/patch_f0.json）：数据集 "
             "patch_antenna_openems_campaign，51 真实 openEMS 点"
             "（L∈[35,45]mm、W∈[40,60]mm、er=3.66、h=0.508），基模=[1.3,2.7]GHz"
             " 最低频 ≥3dB 局部谷；holdout 每 5 留 1，rmse_holdout=0.001773GHz、"

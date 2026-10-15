@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
 from rfauto.service._helpers import load_run_trials
 from rfauto.service.envelope import error_envelope, ok_envelope
 
@@ -663,11 +664,16 @@ def generate_enhanced_report(run_id, *, output=None):
     return ok_envelope(report_text=report_text, run_id=run_id)
 
 
-def hfss_import_recipe(project_path, design_name=None, *, version="2026.1",
+def hfss_import_recipe(project_path, design_name=None, *,
+                       version=_DEFAULT_AEDT_VERSION,
                        non_graphical=True, out=None):
     """HFSS 工程导入器（2026-09-02 用户需求）：读取 .aedt 的设计变量 /
     Optimetrics 扫参范围 / Setup-Sweep / 端口，生成配方草稿（hfss_var_map +
-    参数范围），供 UI 展示与 agent 提案-审批链路继续调优。"""
+    参数范围），供 UI 展示与 agent 提案-审批链路继续调优。
+
+    缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
+    R1/v251 口径；aurora72 A7-C 前此处误钉 "2026.1"——本机并无 2026.1，
+    系"HFSS 2026"口径笔误年代的残留）。"""
     from rfauto.adapters.hfss_import import import_project_spec, spec_to_recipe_draft
     from rfauto.infra.recipe_guard import write_recipe_yaml
 

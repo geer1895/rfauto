@@ -1,4 +1,4 @@
-"""KD-1 公式 provenance 注册表（specs 研究扩充 round16 KD-1）。
+"""KD-1 公式 provenance 注册表（specs docs/research_expansion_20261002_round16.md KD-1）。
 
 把 core 树 docstring 里的自由文本公式出处（铁律 5「来源写 docstring」惯例）
 结构化成机读注册表 knowledge/formula_provenance.yaml，供 preflight/能力卡/
@@ -138,11 +138,11 @@ _PRECISION_MIRROR_SUBSTR = "精度档案"
 
 # ─── 文献标识抽取 ──────────────────────────────────────────────────────────
 
-_PUNCT_TAIL = "，。；）)”』」>.,;:：！？"
+_PUNCT_TAIL = "，。；、）)”』」>.,;:：！？"
 
 #: DOI（DOI: 前缀或 doi.org 链接；尾随标点剔除）。
 _DOI_RE = re.compile(
-    r"(?:DOI\s*[:：]?\s*|doi\.org/)(10\.\d{4,9}/[^\s，。；、)”\"'』」<>]+)",
+    r"(?:DOI\s*[:：]?\s*|doi\.org/)(10\.\d{4,9}/[^\s，。；、（）)”\"'』」<>]+)",
     re.IGNORECASE,
 )
 
@@ -161,7 +161,7 @@ _STANDARD_RE = re.compile(
 )
 
 #: URL（尾随标点剔除）。
-_URL_RE = re.compile(r"https?://[^\s，。；、)”\"'』」<>]+")
+_URL_RE = re.compile(r"https?://[^\s，。；、（）)”\"'』」<>]+")
 
 #: 式号/章节锚（§x.y、式(n)、Eq. n、Table n、表 n）。
 _EQ_NO_RE = re.compile(
@@ -547,7 +547,7 @@ def load_formula_provenance(path: str | Path | None = None) -> dict[str, Any]:
 # ─── 再生渲染（确定性；无时间戳类字段——幂等契约的前提）──────────────────────
 
 _YAML_HEADER = """\
-# KD-1 公式 provenance 注册表（specs 研究扩充 round16 KD-1）。
+# KD-1 公式 provenance 注册表（specs docs/research_expansion_20261002_round16.md KD-1）。
 #
 # 定位：core 树 docstring 出处行（铁律 5）的结构化机读面。schema/扫描/查询单源在
 #   src/rfauto/core/formula_provenance.py；本文件除 manual_entries 外全部收集器
@@ -602,6 +602,24 @@ def _as_data(
     return load_formula_provenance(path)
 
 
+def _consumable_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    """查询/摘要共用条目归一（review_aurora_next A2 P1-1）。
+
+    manual 补录条目按 ``_MANUAL_REQUIRED_KEYS`` 只必需
+    formula_id/claim_line/verified_by——kind/origin 可缺席（loader
+    ``_validate_manual_entry`` 校验即放行），而摘要面曾对缺 ``kind`` 的
+    最小 manual entry 直接 ``e["kind"]`` KeyError（注册表自身 loader 接受
+    的形态第一个消费点就崩）。消费面统一在此归一：kind 缺省 ``"source"``
+    （人工补录是直接来源声明；kind 词表 source|pointer 不引入第三值）、
+    origin 缺省 ``"manual"``（与 _validate_manual_entry 的 origin 校验
+    一致）。扫描条目键齐全，setdefault 零变化。
+    """
+    out = dict(entry)
+    out.setdefault("kind", "source")
+    out.setdefault("origin", "manual")
+    return out
+
+
 def formula_provenance(
     symbol: str | None = None,
     file: str | None = None,
@@ -623,20 +641,24 @@ def formula_provenance(
         path: YAML 路径覆盖（entries 未注入时生效）。
 
     Returns:
-        匹配条目列表（注册表序）。
+        匹配条目列表（注册表序；``entries`` 段在前、manual_entries 段在后
+        ——A2 P1-1 两面对齐：summary 统计 manual、查询面同样可查 manual，
+        manual 条目缺省键经 :func:`_consumable_entry` 归一）。
     """
     data = _as_data(entries, path)
     out: list[dict[str, Any]] = []
-    for e in data["entries"]:
-        if symbol is not None and e["symbol"] != symbol:
+    for raw in list(data["entries"]) + list(data["manual_entries"]):
+        e = _consumable_entry(raw)
+        if symbol is not None and e.get("symbol") != symbol:
             continue
         if file is not None:
-            kf = e["kernel_file"]
-            if kf != file and not kf.endswith("/" + file.lstrip("/")):
+            kf = e.get("kernel_file")
+            if kf is None or (kf != file
+                              and not kf.endswith("/" + file.lstrip("/"))):
                 continue
-        if module is not None and e["module"] != module:
+        if module is not None and e.get("module") != module:
             continue
-        if kind is not None and e["kind"] != kind:
+        if kind is not None and e.get("kind") != kind:
             continue
         out.append(e)
     return out
@@ -647,9 +669,14 @@ def provenance_summary(
     entries: list[dict[str, Any]] | None = None,
     path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """注册表覆盖摘要（如实口径：注释/内联引文不在收集面，宁缺毋滥）。"""
+    """注册表覆盖摘要（如实口径：注释/内联引文不在收集面，宁缺毋滥）。
+
+    manual 补录条目参与统计（与查询面同一 :func:`_consumable_entry`
+    归一——缺 kind/origin 的最小 manual entry 不再 KeyError，A2 P1-1）。
+    """
     data = _as_data(entries, path)
-    all_entries: list[dict[str, Any]] = list(data["entries"]) + list(data["manual_entries"])
+    all_entries = [_consumable_entry(e)
+                   for e in list(data["entries"]) + list(data["manual_entries"])]
     by_kind: dict[str, int] = {}
     by_access: dict[str, int] = {}
     for e in all_entries:

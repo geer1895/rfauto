@@ -359,6 +359,78 @@ def test_cleanup_zero_grpcsrv_match_honest_zero_kill(monkeypatch):
     assert out["steps"]["ansysedt_after"] == 1
 
 
+def test_cleanup_fingerprint_query_g5_zero_double_quotes(monkeypatch):
+    """W7-B §1.5-1 回归钉：指纹查询命令全程零双引号（G5）且复用互斥
+    单源形态。根因=SSH exec 通道 argv 层吃双引号→PS 分词拼裸 WQL
+    ``Name=ansysedt.exe``（值失引号）→「无效查询」静默零杀——证据
+    runs/seat5_ssh/（exec qdemo_Name=x_end vs 交互 qdemo_Name='x'_end）。"""
+    monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
+    _one_machine(monkeypatch)
+    commands: list[str] = []
+
+    class FakeTransport:
+        def __init__(self, cfg):
+            pass
+
+        def connect(self):
+            pass
+
+        def run_command(self, cmd, timeout_s=60.0):
+            commands.append(cmd)
+            if "Win32_Process" in cmd:
+                return 0, "", ""
+            return 0, "0\n", ""
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(rs, "SshTransport", FakeTransport)
+    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    fp_cmds = [c for c in commands if "Win32_Process" in c]
+    assert len(fp_cmds) == 1
+    cmd = fp_cmds[0]
+    assert '"' not in cmd                            # G5 零双引号（修复主钉）
+    assert "$_.Name -eq 'ansysedt.exe'" in cmd       # 互斥单源进程域
+    assert "$_.CommandLine -match 'grpcsrv'" in cmd  # grpcsrv 预筛
+    assert cmd == rs.remote_mutex_command("ansysedt.exe", "grpcsrv")
+    assert out["ok"] is True
+    assert out["steps"]["fingerprint_query_rc"] == 0  # rc 落 steps 不静默
+
+
+def test_cleanup_fingerprint_query_rc_failure_recorded_best_effort(monkeypatch):
+    """W7-B §1.5-1 非静默钉：查询 rc≠0（如旧形态的「无效查询」）→
+    rc/stderr 头落 steps、零杀如实——按 #105 best-effort 不阻塞清理
+    主路径（信封仍 ok=True），但传输层失真在信封可见。"""
+    monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
+    _one_machine(monkeypatch)
+    commands: list[str] = []
+
+    class FakeTransport:
+        def __init__(self, cfg):
+            pass
+
+        def connect(self):
+            pass
+
+        def run_command(self, cmd, timeout_s=60.0):
+            commands.append(cmd)
+            if "Win32_Process" in cmd:
+                return 1, "", "Get-CimInstance : 无效查询"
+            return 0, "0\n", ""
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(rs, "SshTransport", FakeTransport)
+    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    assert out["ok"] is True
+    steps = out["steps"]
+    assert steps["fingerprint_query_rc"] == 1
+    assert "无效查询" in steps["fingerprint_query_stderr_head"]
+    assert steps["ansysedt_grpcsrv_pids"] == []
+    assert not any(c.startswith("taskkill") for c in commands)
+
+
 def test_cleanup_deletes_recorded_task_name_only(monkeypatch):
     """P2-2：task_name 给定时只删该唯一名，不走清扫查询（并发冒烟不互踩）。"""
     monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
@@ -385,9 +457,51 @@ def test_cleanup_deletes_recorded_task_name_only(monkeypatch):
                                  grpc_match=":50051:")
     assert out["ok"] is True
     deletes = [c for c in commands if "schtasks /delete" in c]
-    assert deletes == [f'schtasks /delete /f /tn "{name}"']
+    assert deletes == [f"schtasks /delete /f /tn '{name}'"]
     assert not any("Select-String" in c for c in commands)  # 无清扫查询
     assert out["steps"]["deleted_tasks"] == [name]
+    assert all('"' not in c for c in commands)  # A7 P2-5：G5 零双引号形态钉
+
+
+def test_cleanup_sweep_single_quote_form_zero_double_quotes(monkeypatch):
+    """A7 P2-5：清扫路径（task_name=None）逐名删除走单引号形态；全部远端
+    命令（互斥探针/复数/查询/删除）零双引号（G5 单源形态，与
+    remote_mutex_command 同规——双引号在部分传输路径被 argv 层消费）。"""
+    monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
+    _one_machine(monkeypatch)
+    commands: list[str] = []
+
+    class FakeTransport:
+        def __init__(self, cfg):
+            pass
+
+        def connect(self):
+            pass
+
+        def run_command(self, cmd, timeout_s=60.0):
+            commands.append(cmd)
+            if "Win32_Process" in cmd:
+                return 0, "", ""
+            if "Select-String" in cmd:
+                return 0, (
+                    '"RFAuto\\grpcsrv_smoke_aa11","2026-10-13 00:00:00"\n'
+                    '"RFAuto\\grpcsrv_smoke_bb22","2026-10-13 00:00:00"\n'), ""
+            return 0, "0\n", ""
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(rs, "SshTransport", FakeTransport)
+    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    assert out["ok"] is True
+    assert out["steps"]["deleted_tasks"] == [
+        "RFAuto\\grpcsrv_smoke_aa11", "RFAuto\\grpcsrv_smoke_bb22"]
+    deletes = [c for c in commands if "schtasks /delete" in c]
+    assert deletes == [
+        "schtasks /delete /f /tn 'RFAuto\\grpcsrv_smoke_aa11'",
+        "schtasks /delete /f /tn 'RFAuto\\grpcsrv_smoke_bb22'",
+    ]
+    assert all('"' not in c for c in commands)  # G5 零双引号（含查询命令）
 
 
 # ─── #261 互斥预检共享单源 + HFSS 通道接线（X4 批推广，全 mock） ───────────
@@ -856,13 +970,19 @@ def test_preflight_fail_closed_when_port_down(monkeypatch):
 
 
 def test_preflight_fail_closed_without_license_ports(monkeypatch):
-    """未登记 license 探活端口 → FAIL（fail-closed，不静默放行）。"""
+    """未登记 license 探活端口 → FAIL（fail-closed，不静默放行）。
+
+    A4 P1-1 对齐钉：机读键 gate.all_open 与 verdict 对齐——空端口表时
+    ``not closed`` 恒 True 曾与 FAIL 自相矛盾（调度面按 all_open 消费会
+    误放行）；诚实口径=探过端口且全开。"""
     _preflight_machine(monkeypatch, probe_ports={"rdp": 3389})
     monkeypatch.setattr(rs, "probe_port",
                         lambda host, port, timeout_s=3.0: (True, 1.0))
     out = rs.license_preflight("sim_host")
     assert out["verdict"] == "FAIL"
     assert "未登记 license" in out["reason"]
+    assert out["gate"]["all_open"] is False
+    assert out["gate"]["closed"] == []
 
 
 def test_preflight_no_machines_skip(monkeypatch):

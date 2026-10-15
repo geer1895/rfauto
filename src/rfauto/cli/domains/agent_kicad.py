@@ -10,6 +10,7 @@ import typer
 from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope, ok_envelope
 
 # ─── agent (E4b 提案/执行编排) ────────────────────────────────────────────────
 
@@ -21,15 +22,17 @@ app.add_typer(agent_app, name="agent")
 def hfss_import_cmd(
     project: str = typer.Argument(..., help="HFSS 工程文件路径（.aedt）"),
     design: str = typer.Option(None, "--design", "-d", help="设计名（缺省取第一个）"),
-    version: str = typer.Option("2023.1", "--version", help="AEDT 版本（2026.1 受 PyAEDT issue #7410 阻塞，暂用 2023.1）"),
+    version: str = typer.Option(None, "--version", help="AEDT 版本（缺省 2025.1 实装口径单源；2026.1 受 PyAEDT issue #7410 阻塞）"),
     out: str = typer.Option(None, "--out", "-o", help="配方草稿输出路径（YAML）"),
     json_output: bool = typer.Option(False, "--json",
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """HFSS 工程导入器：读变量/扫参范围/Setup-Sweep/端口 → 设计规格 + 配方草稿。"""
+    from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
     from rfauto.service.v3_services import hfss_import_recipe
 
-    result = hfss_import_recipe(project, design, version=version, out=out)
+    result = hfss_import_recipe(
+        project, design, version=version or _DEFAULT_AEDT_VERSION, out=out)
     if json_output:
         # VI-5 W6-B：--json 信封（成功+失败同构）；缺省 rich 路径逐字节不动
         _emit(result, "导入失败", json_output=True)
@@ -71,7 +74,7 @@ def agent_propose_cmd(
         if not meta_path.exists():
             if json_output:
                 # VI-5 W6-B：入参缺失也信封（--json 下失败路径不许非 JSON）
-                _emit({"ok": False, "errors": [f"未找到 run 指标: {from_diagnosis}"]},
+                _emit(error_envelope(f"未找到 run 指标: {from_diagnosis}"),
                       "提案生成失败", json_output=True)
             console.print(f"[red]未找到 run 指标: {from_diagnosis}[/red]")
             raise typer.Exit(code=1)
@@ -81,8 +84,8 @@ def agent_propose_cmd(
             if json_output:
                 # 无诊断触发是合法零提案态（ok=True 如实，退出码 0 语义保持）
                 console.print_json(json.dumps(
-                    {"ok": True, "proposed": False,
-                     "note": "该 run 无诊断触发（所有规则通过）"},
+                    ok_envelope(proposed=False,
+                                note="该 run 无诊断触发（所有规则通过）"),
                     ensure_ascii=False))
                 raise typer.Exit(code=0)
             console.print("[yellow]该 run 无诊断触发（所有规则通过）[/yellow]")
@@ -102,7 +105,7 @@ def agent_propose_cmd(
         params_override = json.loads(params)
     except json.JSONDecodeError as e:
         if json_output:
-            _emit({"ok": False, "errors": [f"--params 不是合法 JSON: {e}"]},
+            _emit(error_envelope(f"--params 不是合法 JSON: {e}"),
                   "提案参数非法", json_output=True)
         console.print(f"[red]✗ --params 不是合法 JSON: {e}[/red]")
         raise typer.Exit(code=1) from None
@@ -146,7 +149,7 @@ def agent_apply_cmd(
     except json.JSONDecodeError as e:
         if json_output:
             # VI-5 W6-B：入参非法也信封（--json 下失败路径不许非 JSON）
-            _emit({"ok": False, "errors": [f"--params 不是合法 JSON: {e}"]},
+            _emit(error_envelope(f"--params 不是合法 JSON: {e}"),
                   "执行失败", json_output=True)
         console.print(f"[red]✗ --params 不是合法 JSON: {e}[/red]")
         raise typer.Exit(code=1) from None
@@ -217,7 +220,7 @@ def kicad_pcb(
 
     JSON 按 PCBDesign schema，最小示例（微带功分板）：board_size 为
     宽/高二元组（如 50×30 mm）；traces 列表各含 name/layer/width_mm
-    与 points 折线点列（如 tl1：F.Cu、0.33mm、从（10,15）到（30,15）。
+    与 points 折线点列（如 tl1：F.Cu、0.33mm、从（10,15）到（30,15））。
     """
     from rfauto.adapters.kicad_pcell import PCBDesign, generate_pcb
 

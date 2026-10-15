@@ -1,4 +1,4 @@
-"""介质参数提取内核（F-A P1 离线段，研究扩充 F-A §2/§4）。
+"""介质参数提取内核（F-A P1 离线段，docs/research_expansion_20260926.md F-A §2/§4）。
 
 纯算法零 IO 零外部进程（铁律 7 合规）；参照 core/rwg_mmt.py 先例**不进
 @register_calculator 注册表**（免 #231/#304 注册表消费者三表连动），导出

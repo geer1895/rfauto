@@ -1,0 +1,26 @@
+workspace: D:\rf_workspace\scripts\spike_b_ads\sample_wrk27\Datalink_Basics_wrk
+ads version: 650
+FAIL netlist Datalink_Basics_lib:readme:schematic: RuntimeError: Error generating netlist for "Datalink_Basics_lib:readme:schematic": Failed to create netlist:
+The design `Datalink_Basics_lib:readme:schematic' has no instances.
+HIT  .xnp            Datalink_Basics_lib:output_spectrum:schematic
+FAIL netlist ads_schematic_ports_ic:gnd:schematic: RuntimeError: Error generating netlist for "ads_schematic_ports_ic:gnd:schematic": Failed to create netlist:
+The design `ads_schematic_ports_ic:gnd:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_MIXD1_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_MIXD1_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_MIXD1_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_BJT_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_BJT_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_BJT_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_AMP_4Port:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_AMP_4Port:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_AMP_4Port:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_MIX_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_MIX_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_MIX_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_P2P_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_P2P_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_P2P_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_FET_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_FET_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_FET_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_P4P_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_P4P_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_P4P_SIM1:schematic' has no instances.
+FAIL netlist ads_common_cmps:SS_MOS_SIM1:schematic: RuntimeError: Error generating netlist for "ads_common_cmps:SS_MOS_SIM1:schematic": Failed to create netlist:
+The design `ads_common_cmps:SS_MOS_SIM1:schematic' has no instances.
+HIT  SnP             ads_pelib:REMI_supply:schematic
+
+=== scanned=170 libs=22 errors=10 hits=2 elapsed=12 limit=False ===

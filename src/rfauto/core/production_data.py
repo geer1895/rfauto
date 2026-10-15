@@ -1,6 +1,6 @@
 """PT-7 产线测试数据 schema 与失效率 Pareto 确定性内核。
 
-规格书 研究扩充 round18 §四 PT-7：DUT/批次/测项/
+规格书 docs/research_expansion_20261002_round18.md §四 PT-7：DUT/批次/测项/
 限值/判定 schema + 按测项失效率 Pareto（vendor_passives 批次键在本模块以
 vendor_part/batch 字段承接；vendor_passives.py 本体接线留归属面批次批，
 本席文件面只新增——如实登记，不臆改既有模块）。

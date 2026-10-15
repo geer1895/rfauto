@@ -1,6 +1,6 @@
 """ME-22 阵列误差注入测试床：逐元幅相误差注入 → 方向图退化生成器 + 校准闭环对拍。
 
-定位（月度增强方案 §三 J 流 ME-22）
+定位（docs/monthly_enhancement_plan_20260926.md §三 J 流 ME-22）
 ========
 M-2 在线校准（:mod:`rfauto.core.array_calib`，firstcal/logcal/lincal 已落地）
 的**确定性测试床**：注入已知逐元幅相误差 → 生成退化方向图 / 构造观测可见度

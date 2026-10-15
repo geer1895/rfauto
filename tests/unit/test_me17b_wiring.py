@@ -222,7 +222,7 @@ class TestMcpB1Tools:
              "n_simulations": 30, "seed": 42})))
         assert result["ok"] is True
         assert result["best_cost_pred"] <= result["root_cost_pred"]
-        # 种子确定性
+        # 种子确定性（AGENTS #7：typed tool call 可复现）
         again = _extract_result(asyncio.run(mcp.call_tool(
             "mcts_search",
             {"samples_path": str(tmp_path / "samples.json"),

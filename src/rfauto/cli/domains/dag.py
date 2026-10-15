@@ -44,6 +44,24 @@ app.add_typer(dag_app, name="dag")
 _DEFAULT_LOCK_WAIT_S = 0.0
 
 
+def _split_cmd(cmd: str) -> list[str]:
+    """声明性命令串 → argv（分词方言显式随平台，#142 家法）。
+
+    ge9 审查批 R5 P1-2：shlex.split 缺省 posix=True，反斜杠在引号外是
+    转义符——Windows 下 ``E:\\foo\\bar.exe --out E:\\runs\\x`` 被静默吞成
+    ``E:foobar.exe --out E:runsx``：argv[0] 吞字走 FileNotFoundError（响亮
+    但误导），中间参数吞字=产物静默写错位（无声数据错置）。Windows 改走
+    posix=False 保反斜杠字面，并对 token 去成对包裹引号（posix=False 不剥
+    引号的 Windows 惯用补齐）；POSIX 平台维持缺省方言逐字节不变。
+    """
+    if os.name != "nt":
+        return shlex.split(cmd)
+    argv = shlex.split(cmd, posix=False)
+    return [tok[1:-1]
+            if len(tok) >= 2 and tok[0] == tok[-1] and tok[0] in "\"'" else tok
+            for tok in argv]
+
+
 # ─── v1 内建 subprocess 执行器（规格 VI-4）───────────────────────────────────
 
 def _subprocess_executor(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
@@ -86,7 +104,7 @@ def _subprocess_executor(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str,
         timeout_s = float(raw_timeout) if raw_timeout is not None else 0.0
     except (TypeError, ValueError):
         timeout_s = 0.0
-    argv = shlex.split(cmd)
+    argv = _split_cmd(cmd)
     t0 = time.monotonic()
     try:
         proc = subprocess.Popen(

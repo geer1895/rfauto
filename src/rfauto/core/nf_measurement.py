@@ -7,7 +7,7 @@
   Y = P_hot/P_cold（线性功率比）；T_e = (T_hot − Y·T_cold)/(Y − 1)；
   T_cold = T0 时 F = ENR_lin/(Y − 1)（第二路径，AN 57-2 原文式）；
   NF 不确定度主导项 ∂NF/∂ENR、∂NF/∂Y。原文 PDF 已于调研批核对
-  （研究扩充 round3 F-E 表件 3："5952-0255.pdf
+  （docs/research_expansion_20260926_round3.md F-E 表件 3："5952-0255.pdf
   已核"）。
 - IEEE 噪声温度基准 T0 = 290 K；NF_dB = 10·log10(1 + T_e/T0)。与
   core/budget.py 的 Friis 正向级联同口径（budget=设计正向合成，本模块
@@ -29,6 +29,24 @@
   ENR 参数化（T_cold=T0 契约，AN 57-2 主导项）：∂F/∂ENR = 1/(Y−1)、
   ∂F/∂Y = −ENR_lin/(Y−1)²；dB 域分解恒等式
   NF_dB = ENR_dB − 10·log10(Y−1)（T_cold=T0，故 ∂NF/∂ENR_dB = 1 精确）。
+- 冷源法（cold source，Anritsu《Procedure for a Higher Accuracy Receiver
+  Calibration》冷源接收机校准 + Pozar《Microwave Engineering》噪声章）：
+  源端接匹配冷负载（物理温度 T_cold≈T0），DUT 增益 G 由 VNA S 参数
+  已知，功率定标接收机单点直读——P_cold = kB·B·[G·(T_cold+T_e,DUT)
+  +T_e,RX]（P 参考 DUT 输出面），反解 T_e,DUT = P_cold/(kB·B·G) −
+  T_cold − T_e,RX/G。与 Y 因子法是同一线性测量模型的两种反演
+  （Y 因子=热/冷比值、免绝对功率定标；冷源=单点直读、免热态源），
+  共用冷/热态数据时交叉对拍 rel 1e-12（#118 双源，单测钉）。
+- 二级修正（second-stage correction，Anritsu 同文；Friis 逐项推导到
+  一般符号，#341 纪律）：接收机（T_e,RX）串在 DUT 之后——正向
+  T_e,sys = T_e,DUT + T_e,RX/G_DUT；反演（去嵌）T_e,DUT = T_e,sys −
+  T_e,RX/G_DUT。F 域独立对照路径：F_sys = F_DUT + (F_RX−1)/G_DUT。
+  与源端损耗（下述 apply_input_loss，损耗在 DUT 之前、F_sys=L·F_DUT）
+  方向相反，两种串入不可混。
+- 失配不确定度（mismatch uncertainty，AN 57-2 失配项口径）：接口两侧
+  反射模 |Γa|、|Γb| 的最坏情况 MU = 20·log10(1+|Γa|·|Γb|)（dB 半幅，
+  驻波相位未知极值带的 + 支）；矩形分布标准不确定度 u = MU/√3
+  （JCGM 100 矩形分布），经 combine_nf_uncertainty_rss 与 GUM 项合成。
 - 蒙特卡洛对照（JCGM 101 思想）：固定 seed 抽样 ±u 输入，输出分布 std
   对照闭式 u_c——预声明阈值 rel <= 0.10（一阶泰勒域；有效样本占比
   <99% 即判 u 相对奇点距离过大，如实拒绝不硬算）。
@@ -55,6 +73,9 @@ import numpy as np
 
 # IEEE 噪声温度基准（K）：AN 57-2 / IEEE 口径；与 budget.py 的 NF 换算同口径
 T0_K = 290.0
+
+# 玻尔兹曼常数（J/K）：2019 SI 严格定义值（exact，非测量值）
+BOLTZMANN_J_PER_K = 1.380649e-23
 
 # 10/ln10 ≈ 4.342945：无量纲比值 ↔ dB 的斜率换算常数（dB = (10/ln10)·ln(x)）
 _DB_PER_LOGE = 10.0 / math.log(10.0)
@@ -251,6 +272,71 @@ def remove_input_loss(t_e_referred_k: float, loss_lin: float, t0_k: float = T0_K
     return (te - (loss - 1.0) * t0) / loss
 
 
+# ─── 冷源法（cold source）内核：单点直读 + 接收机噪声扣除 ────────────────────
+
+
+def te_from_cold_source(
+    p_cold_w: float,
+    gain_dut_lin: float,
+    bandwidth_hz: float,
+    t_cold_k: float,
+    t_receiver_k: float = 0.0,
+) -> float:
+    """冷源法直接式：T_e,DUT = P_cold/(kB·B·G) − T_cold − T_e,RX/G（K）。
+
+    测量模型（Anritsu 冷源接收机校准口径，P 参考 DUT 输出面，接收机
+    功率定标吸收 G_RX·kB·B 因子）：
+        P_cold = kB·B·[G_DUT·(T_cold + T_e,DUT) + T_e,RX]
+    反解即闭式。p_cold_w：冷负载（物理温度 t_cold_k）入射下的实测输出
+    噪声功率（W）；gain_dut_lin：VNA S 参数已知的 DUT 增益（线性，>0，
+    无源/有耗 DUT 可 <1）；bandwidth_hz：积分带宽（Hz，>0）；
+    t_receiver_k：接收机等效输入噪声温度（K，>=0，参考 DUT 输出面；
+    0.0 = 已去嵌或可忽略）。T_e < 0 = 实测功率与冷态温度不自洽的标志，
+    照实返回不拦（只算不判，同 te_from_y 约定）。
+    """
+    p = _positive(p_cold_w, "p_cold_w")
+    g = _positive(gain_dut_lin, "gain_dut_lin")
+    b = _positive(bandwidth_hz, "bandwidth_hz")
+    tc = _positive(t_cold_k, "t_cold_k")
+    trx = _nonneg(t_receiver_k, "t_receiver_k")
+    t_out = p / (BOLTZMANN_J_PER_K * b)
+    return (t_out - trx) / g - tc
+
+
+def apply_second_stage(
+    t_e_dut_k: float, g_dut_lin: float, t_receiver_k: float
+) -> float:
+    """Friis 正向（接收机串在 DUT 之后）：T_e,sys = T_e,DUT + T_e,RX/G_DUT。
+
+    推导（Friis 逐项到一般符号，#341）：两级级联（1=DUT 增益 G，2=接收机）
+    T_e,sys = T_1 + T_2/G_1。F 域独立对照路径（单测钉，损耗在 T0 代数）：
+    F_sys = 1+T_e,sys/T0 = F_DUT + (F_RX−1)/G_DUT（F_RX = 1+T_e,RX/T0
+    代入即恒等）。t_e_dut_k：DUT 自身等效输入温度（K）；g_dut_lin：DUT
+    增益（线性，>0，可 <1）；t_receiver_k：接收机等效输入噪声温度
+    （K，>=0，参考接收机输入面）。
+    """
+    te = _finite(t_e_dut_k, "t_e_dut_k")
+    g = _positive(g_dut_lin, "g_dut_lin")
+    trx = _nonneg(t_receiver_k, "t_receiver_k")
+    return te + trx / g
+
+
+def remove_second_stage(
+    t_e_sys_k: float, g_dut_lin: float, t_receiver_k: float
+) -> float:
+    """二级修正（apply_second_stage 的代数逆）：去嵌接收机自身噪声贡献。
+
+    T_e,DUT = T_e,sys − T_e,RX/G_DUT。t_e_sys_k：实测系统表观等效输入
+    温度（参考 DUT 输入面，K；Y 因子链=te_from_y 输出，冷源链=冷源
+    直读+冷态扣除）；往返恒等式单测钉 rel 1e-12。T_e,DUT < 0 = 接收机
+    贡献大于实测系统值的不自洽标志，照实返回不拦（只算不判）。
+    """
+    te = _finite(t_e_sys_k, "t_e_sys_k")
+    g = _positive(g_dut_lin, "g_dut_lin")
+    trx = _nonneg(t_receiver_k, "t_receiver_k")
+    return te - trx / g
+
+
 # ─── 不确定度：Y 的测量不确定度 + GUM 传播 + MC 对照 ─────────────────────────
 
 
@@ -413,6 +499,49 @@ def mc_nf_std(
     }
 
 
+# ─── 失配不确定度（AN 57-2 失配项 + RSS 合成）────────────────────────────────
+
+
+def mismatch_uncertainty_db(gamma_a: float, gamma_b: float) -> float:
+    """最坏情况失配不确定度半幅（dB）：MU = 20·log10(1 + |Γa|·|Γb|)。
+
+    AN 57-2 失配项口径：接口两侧反射系数模 |Γa|、|Γb|（驻波相位未知）
+    使传输失配因子在 20log10(1±|Γa||Γb|) 内摆动，取 + 支为半幅。
+    gamma_a/gamma_b：反射系数模（无源端口 0<=|Γ|<=1，标量幅值口径）；
+    任一侧为 0 → MU=0（逐位）。适用于任意接口（噪声源-DUT 或
+    DUT-接收机；冷源法语境常取 Γ_DUT/Γ_RX 面）。
+    """
+    ga = _finite(gamma_a, "gamma_a")
+    gb = _finite(gamma_b, "gamma_b")
+    for name, gv in (("gamma_a", ga), ("gamma_b", gb)):
+        if not 0.0 <= gv <= 1.0:
+            raise ValueError(f"{name} 必须在 [0,1]（反射系数模），收到 {gv}")
+    return 20.0 * math.log10(1.0 + ga * gb)
+
+
+def mismatch_uncertainty_std_db(gamma_a: float, gamma_b: float) -> float:
+    """失配项标准不确定度（dB，1σ）：u_MU = MU/√3（矩形分布，JCGM 100）。
+
+    相位 [0,2π) 等概先验下极值带按矩形分布折算标准不确定度（半幅除
+    √3）；与 GUM 项（nf_uncertainty_gum*）独立，经
+    combine_nf_uncertainty_rss 合成进 NF 总预算。
+    """
+    return mismatch_uncertainty_db(gamma_a, gamma_b) / math.sqrt(3.0)
+
+
+def combine_nf_uncertainty_rss(*u_terms_db: float) -> float:
+    """NF 不确定度独立项 RSS 合成：u_c = sqrt(Σ uᵢ²)（dB 域，JCGM 100）。
+
+    全部项同域同量（NF_dB 标准不确定度，1σ）；至少 1 项；各项 >=0
+    （0.0 合法，#364④）。典型组合：GUM 闭式 u_nf_db + 失配项
+    mismatch_uncertainty_std_db。
+    """
+    if not u_terms_db:
+        raise ValueError("至少一项不确定度（空 RSS 合成无定义）")
+    vals = [_nonneg(u, f"u_terms_db[{i}]") for i, u in enumerate(u_terms_db)]
+    return math.sqrt(sum(v * v for v in vals))
+
+
 # ─── 端到端单次测量评估 ──────────────────────────────────────────────────────
 
 
@@ -516,4 +645,83 @@ def measure_yfactor(
         input_loss_lin=loss,
         t_e_corrected_k=te_corr,
         nf_corrected_db=nf_corr,
+    )
+
+
+@dataclass
+class ColdSourceResult:
+    """冷源法单点测量端到端评估结果（全部字段 JSON 可序列化）。
+
+    t_noise_output_k = P_cold/(kB·B)：DUT 输出面等效噪声温度
+    （=G_DUT·(T_cold+T_e,DUT)+T_e,RX 的直读量）；t_e_k 已含接收机二级
+    扣除（t_receiver_k>0 时，remove_second_stage 语义）。
+    """
+
+    p_cold_w: float
+    bandwidth_hz: float
+    gain_dut_lin: float
+    t_cold_k: float
+    t_receiver_k: float
+    t0_k: float
+    t_noise_output_k: float
+    t_e_k: float
+    f_linear: float
+    nf_db: float
+
+    def to_dict(self) -> dict[str, float]:
+        """JSON 可序列化扁平字典（全精度 float，不做显示舍入）。"""
+        return {
+            "p_cold_w": self.p_cold_w,
+            "bandwidth_hz": self.bandwidth_hz,
+            "gain_dut_lin": self.gain_dut_lin,
+            "t_cold_k": self.t_cold_k,
+            "t_receiver_k": self.t_receiver_k,
+            "t0_k": self.t0_k,
+            "t_noise_output_k": self.t_noise_output_k,
+            "t_e_k": self.t_e_k,
+            "f_linear": self.f_linear,
+            "nf_db": self.nf_db,
+        }
+
+
+def measure_cold_source(
+    p_cold_w: float,
+    gain_dut_lin: float,
+    bandwidth_hz: float,
+    t_cold_k: float,
+    t_receiver_k: float = 0.0,
+    t0_k: float = T0_K,
+) -> ColdSourceResult:
+    """冷源法端到端：直读功率 → 输出面噪声温度 → 二级扣除 → T_e → F/NF。
+
+    与 measure_yfactor 平行的端到端入口；接收机贡献按 remove_second_stage
+    语义扣除（t_receiver_k>0 时）。F<=0（实测功率低到 NF 定义域外，
+    仅接收机项支配时可达）→ ValueError（端到端层拒绝，同 measure_yfactor
+    发散拒绝口径）。
+    """
+    p = _positive(p_cold_w, "p_cold_w")
+    g = _positive(gain_dut_lin, "gain_dut_lin")
+    b = _positive(bandwidth_hz, "bandwidth_hz")
+    tc = _positive(t_cold_k, "t_cold_k")
+    trx = _nonneg(t_receiver_k, "t_receiver_k")
+    t0 = _positive(t0_k, "t0_k")
+
+    te = te_from_cold_source(p, g, b, tc, trx)
+    if not te > -t0:
+        raise ValueError(
+            f"T_e = {te} <= −t0_k（F = 1+T_e/T0 <= 0，实测与冷态不自洽"
+            "超出 NF 定义域，端到端层拒绝）"
+        )
+    t_out = p / (BOLTZMANN_J_PER_K * b)
+    return ColdSourceResult(
+        p_cold_w=p,
+        bandwidth_hz=b,
+        gain_dut_lin=g,
+        t_cold_k=tc,
+        t_receiver_k=trx,
+        t0_k=t0,
+        t_noise_output_k=t_out,
+        t_e_k=te,
+        f_linear=1.0 + te / t0,
+        nf_db=nf_from_te(te, t0),
     )

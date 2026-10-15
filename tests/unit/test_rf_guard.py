@@ -134,6 +134,20 @@ def test_cpw_strap_count_scales_with_length() -> None:
         assert len(st.vias) == 2 * n_expect, length
 
 
+def test_cpw_strap_tolerance_window_yields_at_least_one_strap() -> None:
+    """A2 P2-4 回归钉：length ∈ [pad-1e-9, pad) 容差窗内（守卫放行的
+    "恰等"）旧公式 floor(负微差)+1 产出 0 孔，违反 "缝合带至少放下一孔"
+    自声明且无告警——修后恰等语义保底 1 strap（每侧 1 孔）；窗外真不足
+    （length < pad-1e-9）仍显式报错（fail-loud 语义不变）。"""
+    st = cpw_ground_stitch(0.6 - 5e-10, 0.8, 0.3, 2.0, 2.0, 0.6, 0.3)
+    assert len(st.vias) >= 2, "容差窗内产出 0 孔（A2 P2-4）"
+    assert len(st.vias) == 2            # 恰等 → 恰 1 strap × 上下两侧
+    st2 = cpw_ground_stitch(0.6, 0.8, 0.3, 2.0, 2.0, 0.6, 0.3)
+    assert len(st2.vias) == 2           # 恰等 length=pad：孔数不变
+    with pytest.raises(ValueError, match="至少放下一孔"):
+        cpw_ground_stitch(0.59, 0.8, 0.3, 2.0, 2.0, 0.6, 0.3)
+
+
 # ─── CPW 共面地+缝合带几何 ────────────────────────────────────────────────────
 
 

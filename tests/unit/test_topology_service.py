@@ -255,3 +255,37 @@ def test_stage_design_to_sandbox_writes_draft_only(tmp_path):
     assert "coupled_bpf" in text and "res_len_mm" in text
     # 沙箱内草稿，工作区配方面零写入
     assert RecipeSandbox(root=tmp_path).list_drafts()["ok"]
+
+
+# ─── JSON 进出入口信封（AU-2 域升版 1.1 回归钉，2026-10-14 AU-2B）─────────────
+
+def test_propose_topology_json_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（1.0→1.1）：失败信封单源构造器形+成功信封带戳。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键保留；CLI（scattered.topology）/MCP
+    （multiphysics.topology_propose）薄壳透传零键消费（grep 实测）。
+    """
+    from rfauto.service.topology_service import (
+        TOPOLOGY_SERVICE_SCHEMA_VERSION,
+        propose_topology,
+    )
+
+    assert TOPOLOGY_SERVICE_SCHEMA_VERSION == "1.1"
+    # 失败路：未知提议器（KeyError 折信封）+ spec 非法字段（schema 拒绝）
+    env = propose_topology({"f0_ghz": 2.45, "fbw": 0.08, "rl_db": 20.0},
+                           proposer="no_such_proposer")
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    assert env["schema_version"] == "1.1"
+    env2 = propose_topology({"f0_ghz": 2.45, "fbw": 0.08, "rl_db": 20.0,
+                             "nope": 1})
+    assert env2["ok"] is False and env2["schema_version"] == "1.1"
+    # 成功路（离线秒级，无 campaign）：ok 信封带戳
+    env_ok = propose_topology({"f0_ghz": 2.45, "fbw": 0.08, "rl_db": 20.0})
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    json.dumps([env, env2, env_ok])

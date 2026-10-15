@@ -2,7 +2,7 @@
 
 KiCad ``.kicad_pcb`` → Gerber X2（铜层/阻焊/丝印/板框 + ``.gbrjob`` 作业
 文件）+ Excellon 钻孔。规格出处
-``研究扩充 round15`` LC-1（gerbonara 路线，
+``docs/research_expansion_20261002_round15.md`` LC-1（gerbonara 路线，
 X2 属性→层角色映射；本模块落地其导出向，读回向的往返裁判是后续件）。
 
 与 fab-export（T43 机加交付包，ezdxf/QIF3/gcode/STEP/glTF）的关系：

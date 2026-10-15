@@ -1,4 +1,4 @@
-"""recipe-loop 远跑执行面单测（多机协同尾程项 11 末件；全 fake 零真机零网络）。
+"""recipe-loop 远跑执行面单测（交接书尾程项 11 末件；全 fake 零真机零网络）。
 
 覆盖口径（任务书四场景+契约面）：
 - 正常批次：launcher 调用序列=发射序列，逐点落账（trial_id/params_hash/

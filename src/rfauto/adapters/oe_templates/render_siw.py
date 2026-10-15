@@ -621,7 +621,7 @@ MSL_SIW_TAPER_META: dict[str, Any] = {
     "smoke_note": "离线审计先行（#212，test_msl_siw_taper_template）；OE 锚"
                   "发射面备妥（驱动 scripts/siw_anchor_smoke.py --template "
                   "msl_siw_taper，发射前置=A1 队列清空+.oe_collect.lock 空，"
-                  "见 战役任务书）；预声明门与预算见 "
+                  "见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见 "
                   "runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw "
                   "v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——"
                   "匹配由锥形几何承担，Z_PV 只进锥末宽度设计式（如实收档，v2 "

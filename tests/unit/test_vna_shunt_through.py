@@ -1,6 +1,6 @@
 """2-port shunt-through PDN 阻抗换算：闭式回收钉（零硬件，spec 判据）。
 
-spec 出处：月度增强方案 L162（F-B P3 前置件，
+spec 出处：docs/monthly_enhancement_plan_20260926.md L162（F-B P3 前置件，
 VNA 适配器加法）+ docs/audit/plan_gap_inventory_20260928.md §二 B5。
 
 独立裁判口径（#118）：

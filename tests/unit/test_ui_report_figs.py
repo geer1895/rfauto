@@ -41,7 +41,7 @@ def _make_fig_run(tmp_path: Path, run_id: str = RUN_A) -> Path:
     (figs / "s11_curve.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"x" * 16)
     (figs / "s21_curve.svg").write_text("<svg/>", encoding="utf-8")
     (figs / "notes.txt").write_text("not an image", encoding="utf-8")
-    # 同 run 下 figs 之外的图：必须被白名单拒绝（只放 results/figs）
+    # 同 run 下 figs 之外的图：必须被白名单拒绝（只放 results/figs/）
     (run_dir / "results" / "secret.png").write_bytes(b"png")
     (run_dir / "report.md").write_text(
         "# report\n\n![S11 Curve](results/figs/s11_curve.png)\n\n"
@@ -252,10 +252,19 @@ class TestParetoRuns:
 class TestServerThinShellGuardStillHolds:
     def test_new_routes_add_no_parsing(self):
         """新增两路由不得把解析/计算带进 UI 层（沿用 test_ui_pages 守卫口径）。"""
-        import rfauto.ui.server as server_mod
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py；归属钉按拆分后单源
+        # （api_run_fig→routes/runs.py，api_pareto_runs→routes/insight.py，
+        # route 表仍在 server.py 装配壳）。
+        import rfauto.ui as ui_pkg
+        from rfauto.ui.routes import insight as insight_routes
+        from rfauto.ui.routes import runs as runs_routes
 
-        src = Path(server_mod.__file__).read_text(encoding="utf-8")
+        ui_dir = Path(ui_pkg.__file__).parent
+        src = "\n".join(
+            p.read_text(encoding="utf-8") for p in sorted(ui_dir.rglob("*.py")))
         for tok in ("json.loads", "import yaml", "geometry_spec", "import numpy"):
             assert tok not in src
-        assert "run_fig_file" in src and "pareto_runs" in src
+        runs_src = Path(runs_routes.__file__).read_text(encoding="utf-8")
+        insight_src = Path(insight_routes.__file__).read_text(encoding="utf-8")
+        assert "run_fig_file" in runs_src and "pareto_runs" in insight_src
         assert '/api/runs/{run_id}/figs/{name:path}' in src

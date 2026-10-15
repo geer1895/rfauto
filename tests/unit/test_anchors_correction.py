@@ -1,4 +1,4 @@
-"""XC-A 锚→设计自动修正闭环测试（规格 规格深案
+"""XC-A 锚→设计自动修正闭环测试（规格 docs/plan_deepdive_specs_20261002.md
 §B-2，预声明于任务书）：
 
 - find_anchors：family+quantity 投影查询（active 过滤 / engine 去歧义 /

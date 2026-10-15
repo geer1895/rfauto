@@ -23,9 +23,9 @@ criteria.md 起跑前写死（#122）。
 marchand 既有配方）。
 
 运行（#157 分离+日志轮询；#242 stdout 落文件；#243 绝对路径）：
-  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_anchor.py" -WorkingDirectory
-    D:/rf_workspace -RedirectStandardOutput
+    D:\rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/hfss/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/hfss/run.err.log
 """

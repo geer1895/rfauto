@@ -25,6 +25,7 @@ from rfauto.cli.domains._core import _kv_floats as _kv_floats
 from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import error_envelope
 
 layout_app = typer.Typer(
     help="版图家族（生成与互操作、装配、diff、LVS、拼板、仿真组装、钢网、STEP）")
@@ -33,7 +34,7 @@ app.add_typer(layout_app, name="layout")
 
 def _fail(message: str) -> dict:
     """程序性错误 → 失败信封（与 service envelope 同构，_emit 出口统一）。"""
-    return {"ok": False, "errors": [message]}
+    return error_envelope(message)
 
 
 def _fmt_choices() -> tuple[str, ...]:

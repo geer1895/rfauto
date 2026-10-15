@@ -184,15 +184,23 @@ def test_inverted_ms_nominal_fd_single_eval_band():
 # ═══ TA-9 fgcpw：精确极限 + skrf 第三方 + G-N 偏差账 ════════════════════════
 
 def test_fgcpw_gn_halvespace_limit():
-    """G-N 闭式 h→∞ 半空间极限 εeff → (1+εr)/2（文献解析回收锚）。"""
+    """G-N 闭式 h→∞ 半空间极限 εeff → (1+εr)/2（文献解析回收锚）。
+
+    z_air 解析锚用 mpmath 高精度独立实现重算（ge9 审查 P1 勘误：旧钉用
+    与内核同源的错约定内联自证——scipy ellipk 参数是 m=k²，把模数 k 直传
+    实算 K(√k)/K(√k')；#118 族裁判同源案例）。mpmath ellipk 同为参数 m
+    约定、实现独立（AGM 级高精度），k=0.6 处与 scipy 正确约定逐位一致。
+    """
     r = fgcpw_gn_closed_form(0.6, 0.2, 50.0, 3.66)
     assert r["eps_eff"] == pytest.approx((1.0 + 3.66) / 2.0, rel=1e-3)
-    # Z0 半空间 = 空气线 Z0/√εeff
+    # Z0 半空间 = 空气线 Z0/√εeff；Z0_air = η0/(4 q1)，q1=K(k)/K'(k)（模数制）
+    # = ellipk(m=k²)/ellipk(m=1−k²)（scipy/mpmath 参数制）
     k = 0.6 / 1.0
-    from scipy.special import ellipk
+    from mpmath import ellipk as mp_ellipk
 
     eta0 = 376.730313668
-    z_air = eta0 / 4.0 / float(ellipk(k)) * float(ellipk(math.sqrt(1 - k * k)))
+    z_air = eta0 / 4.0 * (float(mp_ellipk(1 - k * k))
+                          / float(mp_ellipk(k * k)))
     assert r["z0_ohm"] == pytest.approx(z_air / math.sqrt(r["eps_eff"]), rel=1e-9)
 
 
@@ -209,8 +217,10 @@ def test_fgcpw_fd_exact_limits():
 
 def test_fgcpw_gn_vs_skrf_third_party():
     """G-N 精确实现 vs skrf CPW（同文献独立实现；设计点 k≈0.85-0.95 在
-    Hilberg ellipa 高精度带）：εeff/Z0 互差 ≤1%（skrf ellipa 近似误差带
-    内；非同源自证——两实现独立）。"""
+    Hilberg ellipa 高精度带）：εeff/Z0 互差 ≤0.5%（ge9 审查 P1 修后重钉
+    ——旧 3.5% 带是吸收内核约定错的假带宽：ellipa 在 k≈0.92 与精确 K/K'
+    一致到 5 位小数，实测互差 εeff +0.00%/Z0 +0.05%；非同源自证——两
+    实现独立）。"""
     pytest.importorskip("skrf")
     from skrf.frequency import Frequency
     from skrf.media import CPW
@@ -223,25 +233,28 @@ def test_fgcpw_gn_vs_skrf_third_party():
             t=None)
     ee_sk = float(np.real(m.ep_reff).ravel()[0])
     z_sk = float(np.real(m.z0).ravel()[0])
-    # 3.5% 带=skrf ellipa（Hilberg 近似）在 k≈0.9 处对精确 K/K' 的偏差
-    # （q1 −3.6% → εeff +2.8%）——两侧为同文献独立实现，偏差源=近似而非公式
-    assert gn["eps_eff"] == pytest.approx(ee_sk, rel=3.5e-2)
-    assert gn["z0_ohm"] == pytest.approx(z_sk, rel=3.5e-2)
+    # ge9 P1 勘误：旧注释把 2.7% 差归因"skrf ellipa 近似误差"不成立——
+    # 真因=本仓 q 把模数 k 直传 scipy ellipk（参数 m=k²）的约定错（已修，
+    # mpmath 高精度双源仲裁）；修后两侧残差 <0.05%。
+    assert gn["eps_eff"] == pytest.approx(ee_sk, rel=5e-3)
+    assert gn["z0_ohm"] == pytest.approx(z_sk, rel=5e-3)
 
 
 def test_fgcpw_gn_deviation_vs_fd_registered():
-    """G-N 文献闭式在名义点对 FD 裁判的系统偏差（εeff −6.6%/Z0 −3.6%）
-    实测复现并钉住——#302 同族有限厚开线闭式低估的诚实账（偏差方向与
-    幅度漂移即红，防内核静默改变）。"""
+    """G-N 文献闭式在名义点对 FD 裁判的系统偏差（修后 εeff −3.99%/
+    Z0 −1.01%）实测复现并钉住——#302 族有限厚开线闭式低估的诚实账
+    （ge9 审查 P1 勘误：历史账 −6.57%/−3.62% 含椭圆积分约定错份额
+    εeff 四成/Z0 七成，非全部 #302 映射族；双因归因见模块头。偏差
+    方向与幅度漂移即红，防内核静默改变）。"""
     nom = TEMPLATE_NOMINAL["fgcpw"]
     r = fgcpw_fd(nom["w_mm"], nom["gap_mm"], nom["h_mm"], nom["er"],
                  gnd_mm=nom["gnd_mm"])
     gn = fgcpw_gn_closed_form(nom["w_mm"], nom["gap_mm"], nom["h_mm"],
                               nom["er"])
-    assert 100.0 * (gn["eps_eff"] / r.eps_eff - 1.0) == pytest.approx(-6.57,
-                                                                     abs=0.6)
-    assert 100.0 * (gn["z0_ohm"] / r.z0_ohm - 1.0) == pytest.approx(-3.62,
-                                                                   abs=0.6)
+    assert 100.0 * (gn["eps_eff"] / r.eps_eff - 1.0) == pytest.approx(-3.99,
+                                                                     abs=0.3)
+    assert 100.0 * (gn["z0_ohm"] / r.z0_ohm - 1.0) == pytest.approx(-1.01,
+                                                                   abs=0.3)
 
 
 def test_fgcpw_nominal_fd_single_eval_band():
@@ -342,3 +355,24 @@ def test_ta_wave_a_meta_yaml_nominal_h_substrate_consistency():
                 encoding="utf-8"))
         assert data["substrate"]["h_mm"] == data["nominal_params"]["h_mm"]
         assert data["substrate"]["er"] == data["nominal_params"]["er"]
+
+
+def test_fgcpw_cpwport_exc_dir_adaptive_probe():
+    """CPW-PROBE 推广批（2026-10-13）：fgcpw 双 CPWPort exc_dir 绑定两代
+    自适应探针钉（单源 oe_templates.cpw_port_probe，cpw/msl_cpw 同款——
+    同渲染字面量旧代绑定构造即炸，全发射点单源消费钉在
+    test_cpw_port_probe.py，此处钉本模板渲染形态与 exec 落位）。"""
+    nom = TEMPLATE_NOMINAL["fgcpw"]
+    script = render_script("fgcpw", dict(nom), (2.25, 2.75),
+                           mesh_resolution_mm=0.4)
+    assert script.count("exc_dir=_CPW_EXC_DIR") == 2
+    assert 'exc_dir="x"' not in script
+    # 探针块在首个 CPWPort 构造之前（单源文本含指纹行与两分支）
+    probe = script.index("import inspect as _insp")
+    assert probe < script.index("_port1 = CPWPort")
+    assert 'if "self.width_ny = CheckNyDir(exc_dir)" in _cpw_src:' in script
+    # exec 前缀（至首个端口构造）：探针按本机新代绑定落 'x'
+    cut = script.index("_port1 = CPWPort")
+    scope: dict = {"__name__": "audit", "__file__": "fgcpw_audit_sim.py"}
+    exec(compile(script[:cut], "fgcpw_probe", "exec"), scope)
+    assert scope["_CPW_EXC_DIR"] == "x"

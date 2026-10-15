@@ -8,7 +8,7 @@ acosh 闭式/cm_core 复用闭环/裕量报告）；本模块只做 JSON 进出�
 #231 五钉消费者（新 CALC 键落地即同步）：
 tests/unit/test_calculators.py EXPECTED + test_physics_invariants
 _calculator_inputs + test_model_docs（注册表自动覆盖）+ test_check_numbers
-（README/ 计数链）+ 本文件注册单点。
+（README/交接文档 计数链）+ 本文件注册单点。
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ _MASK_PARAM = ("mask", "dict - 遮罩规格（MaskSpec.to_dict() 形态；内置
 
 @register_calculator(
     "mask_min_order",
-    "发射遮罩→切比雪夫滤波器最小阶（经典 acosh 闭式，多段逐段取最大）："
+    "遮罩最小阶数：发射遮罩→切比雪夫滤波器最小阶（经典 acosh 闭式，多段逐段取最大）："
     "N=ceil(acosh(√((10^(A/10)−1)·K))/acosh(Ωs))，K=10^(RL/10)−1；Ωs 为段"
     "约束点（内缘裁剪到通带边缘+guard_offset_ghz 调制滚降信用区）经几何"
     "映射 Ω=(f/f0−f0/f)/fbw 的归一化频（fbw=u(2+u)/(1+u) 精确反解，使 "

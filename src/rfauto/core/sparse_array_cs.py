@@ -2,7 +2,7 @@
 
 纯确定性优化内核（零全波、零求解器、零 IO、零新依赖，纯 numpy——
 最小二乘回代用 np.linalg.lstsq），round3 方案
-研究扩充 round3 §二 F-F 表件 8
+docs/research_expansion_20260926_round3.md §二 F-F 表件 8
 （"合成方向图 vs 密度锥削参考 + PSLL/栅瓣门"）。
 
 口径与法源（铁律 5：法源写 docstring；裁判=独立路径，#118）

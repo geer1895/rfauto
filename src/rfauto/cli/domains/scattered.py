@@ -11,6 +11,7 @@ from rfauto.cli.domains._core import _kv_floats as _kv_floats
 from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
+from rfauto.service.envelope import ok_envelope
 
 # ─── electrothermal / parasitic（WP4.4a/4.4b 链路；0br④/0bv③） ───────────────
 
@@ -533,7 +534,7 @@ def pcell_list_cmd(
         })
     if json_output:
         console.print_json(json.dumps(
-            {"ok": True, "data": {"n_cells": len(cells), "cells": cells}},
+            ok_envelope(data={"n_cells": len(cells), "cells": cells}),
             ensure_ascii=False))
         return
     console.print(f"PCell 库共 {len(cells)} 个单元：")
@@ -560,7 +561,7 @@ def pcell_show_cmd(
         raise typer.Exit(code=2) from None
     if json_output:
         console.print_json(json.dumps(
-            {"ok": True, "data": {"definition": def_to_dict(defn)}},
+            ok_envelope(data={"definition": def_to_dict(defn)}),
             ensure_ascii=False))
         return
     console.print(def_to_yaml(defn))
@@ -575,10 +576,10 @@ def pcell_eval_cmd(
 ) -> None:
     """求值 PCell：参数点 → 原语几何（JSON 进出；数值全出确定性内核）。"""
     geo = _pcell_eval_or_exit(name, param, context)
-    payload = {"ok": True,
-               "data": {"pcell": geo.pcell, "params": geo.params,
-                        "n_primitives": len(geo.to_dicts()),
-                        "primitives": geo.to_dicts()}}
+    payload = ok_envelope(
+        data={"pcell": geo.pcell, "params": geo.params,
+              "n_primitives": len(geo.to_dicts()),
+              "primitives": geo.to_dicts()})
     if json_output:
         console.print_json(json.dumps(payload, ensure_ascii=False))
         return
@@ -610,11 +611,11 @@ def pcell_render_cmd(
         except (ValueError, ImportError) as exc:
             console.print(f"[red]✗ Layout 导出失败: {exc}[/red]")
             raise typer.Exit(code=2) from None
-    payload = {"ok": True,
-               "data": {"pcell": geo.pcell, "params": geo.params,
-                        "n_items": len(layout.items),
-                        "layers": layout.layer_names(),
-                        "name": layout.name, "fmt": fmt, "out": out_path}}
+    payload = ok_envelope(
+        data={"pcell": geo.pcell, "params": geo.params,
+              "n_items": len(layout.items),
+              "layers": layout.layer_names(),
+              "name": layout.name, "fmt": fmt, "out": out_path})
     if json_output:
         console.print_json(json.dumps(payload, ensure_ascii=False))
         return

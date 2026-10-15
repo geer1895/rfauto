@@ -1,6 +1,6 @@
 f0_ghz: 2.5
 n_ports: 2
-extraction: P1 MSLPort（微带线基：CalcPort 自算 Z_ref(f)/β(f)）激励，S11=uf_ref/uf_inc；P2 LumpedPort 跨槽 R=槽线 Z0（并联抽头拓扑（#250），S21 判据按 tap_receive_factor_db 修正、原始值并列如实；β_slot 双行波拟合对照闭式（信息门 ≤5%）
+extraction: P1 MSLPort（微带线基：CalcPort 自算 Z_ref(f)/β(f)）激励，S11=uf_ref/uf_inc；P2 LumpedPort 跨槽 R=槽线 Z0（并联抽头拓扑（#250）），S21 判据按 tap_receive_factor_db 修正、原始值并列如实；β_slot 双行波拟合对照闭式（信息门 ≤5%）
 max_time_ns: 30.0
 mesh_resolution_mm: 0.0
 n_segments: null
@@ -23,3 +23,37 @@ topology: Roberts/Knorr 过渡（双层板）：底层地板开槽（槽开口�
 param_semantics: w_slot_mm=槽宽，x_port_mm=P2 端口距跨越点（输出臂长），h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；封口 SEAM 搭接（×NEAR 不关槽方向）、全部盒缘入网
 smoke_note: 真机（a8abe8d）：openEMS |S11|@f0 −19.9/带内 max −10.43dB（匹配门 PASS）、超额损耗 1.05dB 贴门；HFSS β=66.55 对闭式 −1.0%、带内 −9.55dB 贴门、IL 1.37dB FAIL——判 PASS 需结区优化（渐变槽/径向短路盘），复跑按 TRANSITION_GATES 预声明门判读
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 微带-槽线过渡（Roberts/Knorr）：底层地板开槽封 λg'/4 短路臂、顶层微带跨槽接 λg_m/4−Δl 开路支节——跨越点处两臂分别虚短路/虚开路完成平衡-不平衡变换。典型用于混合平衡电路馈电；常见误用=端效应方向搞反——物理长是缩短不是加长（Pozar
+      eq.4.23 惯例，仓内 C6 符号修正实录）。
+    derivations:
+    - claim: 虚短路/虚开路机理与双 λg/4 臂口径
+      formula: 槽臂 λg'/4 短路 + 微带臂 λg_m/4 - Δl 开路
+      source: docs/templates/msl_slot_transition/meta.yaml topology（Knorr 1974/Schuppert 1988 口径，C6 符号修正实录）；Pozar,
+        Microwave Engineering (4th ed.), eq.4.23（开路端 Δl）
+    - claim: 槽臂本体 Z0 口径（JS 闭式）
+      formula: Z0_slot(w_slot, h, εr, f0)
+      source: 本仓 core/slotline（slotline_z0 单源；docs/templates/msl_slot_transition/meta.yaml param_semantics）
+  sensitivity_ranking:
+  - param: w_slot_mm
+    order: 1
+    basis: 槽臂 Z0 主维；登记表 0.2538
+  - param: f0_ghz
+    order: 2
+    basis: JS 闭式频率自变量；登记表 0.1926
+  - param: er
+    order: 3
+    basis: 填充通道（双臂 λg 均受）；登记表 0.1304
+  - param: h_mm
+    order: 4
+    basis: 基板厚；登记表 0.0611
+  - param: x_port_mm
+    order: 5
+    basis: 端口位置（输出臂版图量，登记表 0）
+  - param: tan_d
+    order: 6
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

@@ -1,7 +1,7 @@
 """EM-2 孔缝泄漏 SE 族（Bethe 小孔极化率/传输截面 + Robinson 电路类比全链
 + 矩形缝波导截止穿透）（2026-10-02，round17 EM-2）。
 
-规格：研究扩充 round17 §四 EM-2——Bethe 小孔
+规格：docs/research_expansion_20261002_round17.md §四 EM-2——Bethe 小孔
 极化系数（αe=2a³/3、αm=4a³/3）+孔阵列+矩形缝波导截止穿透项+Robinson
 电路类比全链。验收=Robinson 1998 图锚+孔径-波长幂律 −60dB/dec 恒等。
 

@@ -1,6 +1,6 @@
 """F-I P2 定向门：叠层多层化（多层介质+KiCad dielectrics 全层消费）+ 端口三来源。
 
-判据映射（研究扩充 round5 §二 F-I P2 + 任务书交付骨架）：
+判据映射（docs/research_expansion_20260926_round5.md §二 F-I P2 + 任务书交付骨架）：
 
 - **单层退化恒等式（字节钉）**：render_substrate_block 单介质层 + 旧路径符号
   约定 → 与 openems_templates guided 分支基板块逐字节相同；金色文本的无换行

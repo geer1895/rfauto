@@ -5,7 +5,7 @@
 （Edge.Cuts 矩形）+ 四角 M3 安装孔。输出 KiCad 10 ``.kicad_pcb``。
 
 上游参考（机制借镜，零文件拷贝）：ZiadHatab/SMA-PCB-mTRL-kit（BSD），
-[A5] 出处见 研究扩充 F-A §3。
+[A5] 出处见 docs/research_expansion_20260926.md F-A §3。
 
 确定性设计链（LLM/脚本永不手写射频毫米数，#1c）：
 - 50Ω 线宽 = ``core.synthesis.inverse_width``（skrf MLine
@@ -37,7 +37,9 @@
 
 运行方式：项目 venv 下独立运行（``.venv/Scripts/python.exe
 scripts/mtrl_kit_kicad.py …``）；KiCad 面一律子进程调用 KiCad 自带
-Python 3.11。
+Python 3.11（AGENTS 规则 2；KiCad 10.0.6 pcbnew API 已探针实测：
+板框走 Edge.Cuts PCB_SHAPE 矩形——``BOARD.BoardOutline()`` 在 10.x
+返回裸 SwigPyObject 不可用；PCB_VIA 用 SetPosition/SetDrill/SetWidth）。
 
 DFM 挂点：``--dfm`` 调 service ``check_design_dfm``（jlcpcb 剖面默认）
 查线宽/钻孔/板厚，core ``check_gaps`` 同剖面补检缝宽（间距），
@@ -445,7 +447,7 @@ def build_ops(design: dict[str, Any]) -> list[dict[str, Any]]:
     return ops
 
 
-# ─── KiCad 子进程生成（KiCad 自带 Python 3.11， 规则 2）────────────────
+# ─── KiCad 子进程生成（KiCad 自带 Python 3.11，AGENTS 规则 2）────────────────
 
 # 生成器脚本在 KiCad Python 下运行：只依赖 pcbnew/json/sys，纯 ASCII
 # （规避跨版本/跨区域编码面）；几何全部经 JSON 传入。

@@ -3,10 +3,10 @@
 判据（runs/w1_phase1/criteria.md §W1-E）：
 - 头部断言：create_ui_app 全响应（HTML/静态 JS/API JSON）带 CSP 头，
   值含 ``script-src 'self'``；不出现 'unsafe-inline'/'unsafe-eval' 豁免；
-- 内联脚本兼容性自证：index.html 全部内联 <script>（现况唯一=importmap，
-  外链化不可行——外部 importmap 浏览器不支持）逐个 sha256 哈希钉进 CSP
-  值——任何人改 importmap 内容，本测试立刻红并提示同步更新
-  server.py:_IMPORTMAP_SHA256（防哈希静默失配把页面打残）；
+- 内联脚本兼容性自证：index.html 全部内联 <script>（现况 2 个=主题防闪 boot
+  + importmap，外链化不可行——外部 importmap 浏览器不支持）逐个 sha256 哈希
+  钉进 CSP 值——任何人改内联脚本内容，本测试立刻红并提示同步更新
+  server.py:CSP_VALUE（防哈希静默失配把页面打残）；
 - UI 冒烟：/ 与 /static/*.js 真返回 200（CSP 头不破坏静态资源服务）。
 """
 
@@ -69,17 +69,19 @@ class TestCspHeaderPresent:
 
 class TestInlineScriptHashPins:
     def test_importmap_hash_pinned_exactly(self):
-        """接地现状：唯一内联 script=importmap，其 sha256 必须钉在 CSP 值。"""
+        """接地现状：2 个内联 script=主题防闪 boot（head，guide §13.1，W2-A）
+        + importmap（body 末）——全部逐个 sha256 哈希钉进 CSP 值
+        （server.py:_IMPORTMAP_SHA256 + _THEME_BOOT_SHA256）。"""
         inlines = _inline_scripts()
-        assert len(inlines) == 1, (
+        assert len(inlines) == 2, (
             f"index.html 内联 script 数量变化（{len(inlines)} 个）——"
-            "新增内联脚本必须同步哈希钉进 server.py:_IMPORTMAP_SHA256/"
-            "CSP_VALUE，或改外链")
-        digest = base64.b64encode(
-            hashlib.sha256(inlines[0].encode("utf-8")).digest()).decode()
-        assert f"'sha256-{digest}'" in _csp_hashes(), (
-            "importmap 内容与 CSP 哈希钉失配——同步更新 "
-            "server.py:_IMPORTMAP_SHA256（内容变了浏览器会拒载）")
+            "新增内联脚本必须同步哈希钉进 server.py:CSP_VALUE，或改外链")
+        for body in inlines:
+            digest = base64.b64encode(
+                hashlib.sha256(body.encode("utf-8")).digest()).decode()
+            assert f"'sha256-{digest}'" in _csp_hashes(), (
+                "内联脚本内容与 CSP 哈希钉失配——同步更新 "
+                "server.py CSP_VALUE 常量（内容变了浏览器会拒载）")
 
     def test_external_scripts_unaffected_by_hash_only_policy(self):
         """外链 5 件（3 vendor + 2 module）在 'self' 下照常放行（同源）。"""

@@ -11,7 +11,7 @@
 设计
 ----
 - 数据面（缺省源集，可用 --source 追加）：
-  ① knowledge/*.yaml；② docs/*.md（顶层，不含 任务书/history 账本）；
+  ① knowledge/*.yaml；② docs/*.md（顶层，不含 handoff/history 账本）；
   ③ docs/pending_verifications.yaml 单列（verify_method.target 语义敏感）。
 - 管线：extract_urls（行号保留）→ 去重（URL→出现面清单）→ report 落档；
   --check 时逐 URL HEAD（fallback GET）记录状态码/错误，超时 10s/URL。
@@ -45,8 +45,8 @@ DEFAULT_SOURCE_GLOBS = (
     "docs/*.yaml",  # pending_verifications 等 docs 下机读簿
 )
 
-# 顶层 docs 中的内部账本类（巡检无意义且量大）：任务书/交接词缀。
-_DOC_EXCLUDE_RE = re.compile("hand" + "off|HAND" + "OFF")
+# 顶层 docs 中的内部账本类（巡检无意义且量大）：handoff/交接词缀。
+_DOC_EXCLUDE_RE = re.compile(r"handoff|HANDOFF")
 
 USER_AGENT = "rfauto-citation-checker/1.0 (+offline repo tool)"
 

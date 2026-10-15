@@ -33,7 +33,7 @@ from rfauto.optimization.optimizer import _create_adapter, run_optimization
 
 @pytest.fixture(autouse=True)
 def _sandbox(tmp_path, monkeypatch):
-    """chdir 沙箱 + 临时 optuna storage（#144：优化循环类单测禁污染真实 runs）。"""
+    """chdir 沙箱 + 临时 optuna storage（#144：优化循环类单测禁污染真实 runs/）。"""
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("RFAUTO_CACHE", "off")
     db_dir = tmp_path / "runs" / ".optuna"

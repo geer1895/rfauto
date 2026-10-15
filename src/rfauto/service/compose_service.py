@@ -1,6 +1,6 @@
 """DP-8 compose service：模板几何组合的 YAML 进出编排（JSON 进出薄服务）。
 
-分层：cli/mcp_server → 本模块 → core.compose.
+分层（AGENTS #3/.importlinter）：cli/mcp_server → 本模块 → core.compose.
 layout_netlist（纯确定性引擎）+ adapters.openems_templates（组合契约注册表
 COMPOSE_CONTRACTS + TEMPLATE_META port_pins schema）。本模块职责：
 1. 组合契约/schema 注入（唯一 adapters 依赖点；core 零反向依赖由此保证）；

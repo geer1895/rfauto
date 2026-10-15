@@ -89,11 +89,11 @@ def _load_manifest(dataset_dir: Path) -> dict[str, Any] | None:
 
 
 def _save_manifest(dataset_dir: Path, manifest: dict[str, Any]) -> None:
-    import yaml
+    # 审查 A3 P2-1：delegate 单源原子写（annotate/set_visibility 改写既有
+    # 好档——直写撕裂即"数据集不存在"误报，manifest 是入口事实源）。
+    from rfauto.service.dataset_service import _save_manifest_atomic
 
-    (dataset_dir / MANIFEST_NAME).write_text(
-        yaml.safe_dump(manifest, allow_unicode=True, sort_keys=False),
-        encoding="utf-8")
+    _save_manifest_atomic(dataset_dir, manifest)
 
 
 def _resolve_dataset(name: str, out_dir: str | Path) -> tuple[Path, dict[str, Any]]:
@@ -629,7 +629,7 @@ def load_dataset_sets(
     """公开/私有双集装载 + 防污染检查（对齐 WP3.7 agent_bench.load_bench_sets）。
 
     - 公开集 = ``<out_dir>/public_set.yaml`` 注册表条目（状态 loaded /
-      not_configured（缺文件，合法空集）/ invalid（结构非法=硬错误）；
+      not_configured（缺文件，合法空集）/ invalid（结构非法=硬错误））；
     - 私有集 = 本地 manifest visibility=private 的数据集（manifest 派生，
       永远可装载）；
     - **两集 id 交集非空即 FAIL**（ok=False + overlap_ids）：公开集条目

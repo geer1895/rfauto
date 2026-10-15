@@ -47,3 +47,38 @@ campaign_unlock_criteria:
   - 比值门：c=k_EM/k_KJ 每点 ∈ [0.6, 1.2]（下限=同向真机比值上限 ≈0.30 的 2×；上限=KJ 对 NGSolve 独立源 1.003-1.049 加 3D 余量）
   - 设计 k=0.0515 落在实测 k_EM 覆盖区间内（可达性，名义定版前提）
   unlock_rule: offline 两条 + real_machine 三条全过 → campaign_capable=true（并同步 topology_service.FILTER_FAMILY_REGISTRY 与 fake 派发口径）；任一不过维持 false 并列原因
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 交替取向发夹带通：奇数序谐振器上下翻转，相邻臂开路端交替——电/磁耦合从反号相消变为同号叠加，k_EM 恢复单调。这是同向拓扑「k 上限远小于 KJ 预测」问题的根修变体（真机
+      c(gap) 图谱实证）；常见误用=同向经验值直接平移到交替拓扑——交替取向的 y 网格逐腔轮替加密使 dt 减半，同 NrTS 时窗减半、缺省 NrTS 触顶出截断假象。
+    derivations:
+    - claim: 电/磁耦合叠加符号机制（同向相消→交替相加）
+      formula: k_total = k_E + k_M（交替取向同号叠加）
+      source: docs/templates/hairpin/meta.yaml campaign_capable_reasons（真机 c(gap) 图谱同源登记）与 docs/templates/hairpin_alt/meta.yaml
+        topology（TODO 0dk/0cv 根修口径）
+    - claim: λg/2 半波谐振器+抽头外部 Q（与 hairpin 族同链）
+      formula: L_arm = λg/2 ; Q_e 由 tap_frac 群时延法综合
+      source: 本仓 core/synthesis（synthesize_hairpin_model 单源；docs/rf_template_references.md §15（Hong &
+        Lancaster 外部 Q 群时延法口径；M. Makimoto & S. Yamashita 同源））
+  sensitivity_ranking:
+  - param: arm_len_mm
+    order: 1
+    basis: λg/2 谐振恒等式（精确 1.0 通道）
+  - param: gap_mm
+    order: 2
+    basis: 耦合缝 k(gap) 强敏感（带宽/回损主维；交替拓扑 c(gap) 待标定）
+  - param: tap_frac
+    order: 3
+    basis: 外部 Q 抽头（群时延法综合维）
+  - param: w_mm
+    order: 4
+    basis: 谐振器线宽（εeff 口径弱维）
+  - param: arm_gap_mm
+    order: 5
+    basis: U 内两臂缝（版图维，不进耦合主通道）
+  - param: order
+    order: 6
+    basis: 阶数=离散综合参数
+  quiz_refs: []

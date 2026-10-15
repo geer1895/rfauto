@@ -24,7 +24,19 @@
 
 ## 敏感性排序（R9 先承诺）
 
--（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`，设计见 `runs/qw5_b32_capability_cards/design_note.md`；数据落档后重跑导出器自动上卡，不硬凑）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
+
+- 方法 central_finite_difference_elasticity ｜ n=13 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
+|---|---|---|
+| 1 | px_mm | 1.042412 |
+| 2 | er | 0.462928 |
+| 3 | h_mm | 0.042412 |
+| 4 | period_mm | 0.0 |
+| 5 | py_mm | 0.0 |
+| 6 | tan_d | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -44,8 +56,8 @@
 
 - 参数语义：px_mm=E 向（x）谐振边长（LUT 扫描变量），py_mm=非谐振宽（y）， period_mm=单胞周期（方形域边长），h_mm=基板厚；er/tan_d 走 substrate/nominal（材料属性不改导体）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘精确入网 +胞缘缝 3+ 中点入网（#311）；NEAR≤最小胞缘缝/3 渲染期守卫（#266）； 全轴最小网格间距 ≥10µm
-- 冒烟现状：离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役 （粗 21+细 41 点）发射面见 战役任务书；读出修复后重扫 见 runs/ge5_j2fb/（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与 J4 HFSS Floquet 锚属真机轨
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 出处标记）：
+- 冒烟现状：离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役 （粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；读出修复后重扫 见 runs/ge5_j2fb/（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与 J4 HFSS Floquet 锚属真机轨
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

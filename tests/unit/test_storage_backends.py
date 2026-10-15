@@ -2,7 +2,7 @@
 
 optuna 5.0.0 Journal API 全部 venv 实测（2026-10-03）：Windows 无 symlink
 特权时缺省 SymlinkLock 抛 WinError 1314（本机实测复现）——本仓 Windows 档
-改 OpenLock。journal 文件一律落 tmp_path（#144：禁污染真实 runs）。
+改 OpenLock。journal 文件一律落 tmp_path（#144：禁污染真实 runs/）。
 """
 
 from __future__ import annotations

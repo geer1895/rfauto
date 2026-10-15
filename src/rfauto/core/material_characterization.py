@@ -1,4 +1,4 @@
-"""材料表征内核（MA-1/MA-2/MA-3 + MA-4 登记级，研究扩充 round17 §六）。
+"""材料表征内核（MA-1/MA-2/MA-3 + MA-4 登记级，docs/research_expansion_20261002_round17.md §六）。
 
 纯算法零 IO 零外部进程（铁律 7 合规）；参照同域先例 core/dielectric_extract.py
 **不进 @register_calculator 注册表**（免 #231/#304 注册表消费者三表连动），
@@ -1088,7 +1088,7 @@ def free_space_extract_network(
 
 # ═══ MA-4：FPOR 分裂柱谐振器（薄样品微扰闭式，登记级；ge8b Wave B 席 B9）═══
 #
-# 规格：研究扩充 round17 §六 :186「MA-4 FPOR
+# 规格：docs/research_expansion_20261002_round17.md §六 :186「MA-4 FPOR
 # （P3/登记）：confocal 高斯束公式面；真机 no-go」+ 席 B9 任务书「分裂柱
 # 谐振器微扰闭式+登记边界声明（真机面 no-go 维持）」。
 #

@@ -198,33 +198,35 @@ class TestExtractChain:
 class TestInvalidInputs:
     def test_unknown_payload_field(self):
         out = extract_interconnect_rlc({**BASE_PAYLOAD, "extra": 1})
-        assert out == {"ok": False, "error": "payload 含未知字段: ['extra']"}
+        assert out == {"ok": False,
+                       "errors": ["payload 含未知字段: ['extra']"],
+                       "schema_version": "1.1"}
 
     def test_missing_substrate(self):
         out = extract_interconnect_rlc({"pcb": BASE_PAYLOAD["pcb"]})
         assert out["ok"] is False
-        assert "substrate" in out["error"]
+        assert "substrate" in out["errors"][0]
 
     def test_unknown_substrate_field(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
         payload["substrate"]["nope"] = 1
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "substrate" in out["error"]
+        assert "substrate" in out["errors"][0]
 
     def test_unknown_q3d_field(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
         payload["q3d"] = {"l_total_nh": 1.0, "c_total_pf": 1.0, "wat": 1}
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "q3d" in out["error"]
+        assert "q3d" in out["errors"][0]
 
     def test_no_traces(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
         payload["pcb"] = {"traces": []}
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "F.Cu" in out["error"]
+        assert "F.Cu" in out["errors"][0]
 
     def test_b_layer_traces_ignored(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
@@ -232,21 +234,21 @@ class TestInvalidInputs:
             {"start": [0, 0], "end": [10, 0], "width": 1.0, "layer": "B.Cu"}]
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "F.Cu" in out["error"]
+        assert "F.Cu" in out["errors"][0]
 
     def test_epsr_below_one_rejected(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
         payload["substrate"]["eps_r"] = 0.5
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "eps_r" in out["error"]
+        assert "eps_r" in out["errors"][0]
 
     def test_non_numeric_rejected(self):
         payload = copy.deepcopy(BASE_PAYLOAD)
         payload["trace_t_mm"] = "thick"
         out = extract_interconnect_rlc(payload)
         assert out["ok"] is False
-        assert "实数" in out["error"]
+        assert "实数" in out["errors"][0]
 
 
 def test_gate_tolerance_constant_matches_adapter():
@@ -254,3 +256,42 @@ def test_gate_tolerance_constant_matches_adapter():
     from rfauto.adapters.q3d_adapter import ANCHOR_TOLERANCE as ADAPTER_TOL
 
     assert ANCHOR_TOLERANCE == ADAPTER_TOL == 0.05
+
+
+def test_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（1.0→1.1，2026-10-14 AU-2B）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键保留；DRC 门不过的 stage 失败形同笔统一进
+    errors（stage/drc 诊断键保留，``stage=="drc"`` 消费判据不变——CLI
+    scattered 薄壳+MCP 薄壳透传 grep 实测）。
+    """
+    import json
+
+    from rfauto.service.parasitic_service import (
+        PARASITIC_SERVICE_SCHEMA_VERSION,
+    )
+
+    assert PARASITIC_SERVICE_SCHEMA_VERSION == "1.1"
+    env = extract_interconnect_rlc({**BASE_PAYLOAD, "extra": 1})
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    assert env["schema_version"] == "1.1"
+    # DRC 门失败：errors+stage+drc 并存，诊断键位在戳之后
+    payload = copy.deepcopy(BASE_PAYLOAD)
+    payload["pcb"]["traces"] = [
+        {"start": [0, 0], "end": [10, 0], "width": 0.05}]
+    drc_env = extract_interconnect_rlc(payload)
+    assert drc_env["ok"] is False
+    assert drc_env["stage"] == "drc"
+    assert drc_env["schema_version"] == "1.1"
+    assert list(drc_env)[:3] == ["ok", "errors", "schema_version"]
+    assert drc_env["drc"]["passed"] is False
+    # 成功信封带戳
+    env_ok = extract_interconnect_rlc(BASE_PAYLOAD)
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    json.dumps([env, drc_env, env_ok])

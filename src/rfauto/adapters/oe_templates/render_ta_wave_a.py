@@ -7,7 +7,8 @@ hmsiw 走 layout 单源字面注入，siw 同款机制）。
   如实登记，见该模块 docstring）；
 - hmsiw → core/hmsiw.py（Lai-Fumeaux 2009 T-MTT 式 (8)-(14)，文献数值锚）；
 - fgcpw → core/fgcpw.py（Ghione-Naldi 1984 交叉参考 + FD 裁判反演设计链，
-  文献闭式系统偏差如实入账 #302 同族）。
+  文献闭式系统偏差如实入账——ge9 P1 勘误：双因归因，约定错份额已修，
+  余下 #302 映射族残差，见 core/fgcpw 模块头）。
 
 注册清单（同对象注册钉死单一事实源；render_fns 分发 + registry 轴/辐射器
 面 + grid 近场线 + render_core z 网格/基板/底界/β 块/DOM 注入 + 审计
@@ -22,6 +23,7 @@ from typing import Any
 
 from rfauto.core.hmsiw import hmsiw_closed_form
 
+from .cpw_port_probe import exc_dir_probe_lines  # CPWPort exc_dir 自适应探针单源
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 _MESH_FLOOR_M = 10e-6   # 显式近场线最小间距地板（#349，siw/lange 同值）
@@ -323,10 +325,13 @@ HMSIW_NOMINAL: dict[str, Any] = {
 def _fgcpw_lines(p: dict[str, Any]) -> str:
     # 均匀有限地 CPW 段：中心带+两有限宽地（全长度，端口段地已含——cpw
     # "端口段的地须自画"口径由全长度地盒满足）。端口=CPWPort（板边，
-    # gap_width 口径，cpw 同款绑定源码口径）。
+    # gap_width 口径，cpw 同款绑定源码口径；exc_dir 走绑定两代自适应探针
+    # 单源 oe_templates.cpw_port_probe——CPW-PROBE 推广批 2026-10-13，
+    # 同字面量旧代绑定构造即炸，口径见该模块 docstring）。
     # 参数：w_mm=中心带宽（FD 反演 50Ω 名义 4.3466mm@gap0.2/gnd4.0）、
     # gap_mm=缝宽、gnd_mm=单侧地宽（有限地 FGCPW 定义参数）、
     # line_len_mm=两端口间线长。
+    _cpw_probe_src = exc_dir_probe_lines()
     return f'''W = {p.get("w_mm", 4.3466)!r} * 1e-3
 GAP = {p.get("gap_mm", 0.2)!r} * 1e-3
 GND = {p.get("gnd_mm", 4.0)!r} * 1e-3
@@ -341,16 +346,16 @@ fgcpw.AddBox((-(W / 2 + GAP + GND), Y0, H_SUB), (-(W / 2 + GAP), Y1, H_SUB),
              priority=10)
 fgcpw.AddBox((W / 2 + GAP, Y0, H_SUB), (W / 2 + GAP + GND, Y1, H_SUB),
              priority=10)
-_port1 = CPWPort(CSX, port_nr=1, metal_prop=fgcpw,
+{_cpw_probe_src}_port1 = CPWPort(CSX, port_nr=1, metal_prop=fgcpw,
                  start=np.array([W / 2, -BOARD, H_SUB]),
                  stop=np.array([-W / 2, Y0, H_SUB]),
-                 prop_dir="y", exc_dir="x", gap_width=GAP,
+                 prop_dir="y", exc_dir=_CPW_EXC_DIR, gap_width=GAP,
                  excite=1, FeedShift=10 * NEAR,
                  MeasPlaneShift=(Y0 + BOARD) / 3, priority=10)
 _port2 = CPWPort(CSX, port_nr=2, metal_prop=fgcpw,
                  start=np.array([-W / 2, BOARD, H_SUB]),
                  stop=np.array([W / 2, Y1, H_SUB]),
-                 prop_dir="y", exc_dir="x", gap_width=GAP,
+                 prop_dir="y", exc_dir=_CPW_EXC_DIR, gap_width=GAP,
                  excite=0, FeedShift=10 * NEAR,
                  MeasPlaneShift=(BOARD - Y1) / 3, priority=10)
 for _prim in fgcpw.GetAllPrimitives():
@@ -382,17 +387,20 @@ FGCPW_META: dict[str, Any] = {
                  "槽下场族 G3 分档）",
     "smoke_note": "离线审计先行（#212，test_ta_wave_a_templates）；内核数字裁判="
                   "FD 裁判两精确极限（k=1/√2 空气线 Z0=30π、h→∞ 半空间 "
-                  "εeff=(1+εr)/2）+G-N/skrf 第三方对拍（设计点 ≤1% 带）；G-N 文"
-                  "献闭式系统偏差如实入账（名义点 εeff −6.6%/Z0 −3.6%，#302 同"
-                  "族，设计链以 FD 为准）；近似级别：准静态/零厚金属/无损；真机"
-                  "冒烟与 HFSS 仲裁属后续批次（本批零发射）",
+                  "εeff=(1+εr)/2）+G-N/skrf 第三方对拍（设计点 ≤0.5% 带）；G-N 文"
+                  "献闭式系统偏差如实入账（双因归因：椭圆积分约定错份额已修——"
+                  "ge9 P1 勘误，修后对 skrf +0.00%/+0.05%、对 FD 仍余 εeff "
+                  "−3.99%/Z0 −1.01% 属 #302 映射族残差，设计链以 FD 为准）；近似"
+                  "级别：准静态/零厚金属/无损；真机冒烟与 HFSS 仲裁属后续批次"
+                  "（本批零发射）",
 }
 
 FGCPW_NOMINAL: dict[str, Any] = {
     # 全链内核精算（#1c）：fgcpw_design_params(50Ω, gap=0.2, gnd=4.0,
     # h=0.508, er=3.66) FD 反演 → w=4.3466（回代 50.000Ω，εeff=1.8303）。
-    # G-N 文献闭式交叉参考在同点偏差 εeff −6.6%/Z0 −3.6%（系统低估，#302
-    # 同族；设计链以 FD 为准，core/fgcpw docstring 如实账）。
+    # G-N 文献闭式交叉参考在同点偏差修后 εeff −3.99%/Z0 −1.01%（#302
+    # 映射族残差；历史账 −6.6%/−3.6% 含椭圆积分约定错份额，ge9 P1 已修
+    # ——双因归因见 core/fgcpw docstring；设计链以 FD 为准）。
     # test 单点 FD 带内钉（设计链整链复算 ~25s 超门预算，不整链复算——
     # 名义点守卫 |Z0_fd(w_nom)−50|≤0.5Ω 单点即可，#122 口径如实登记）。
     "w_mm": 4.3466, "gap_mm": 0.2, "gnd_mm": 4.0, "line_len_mm": 40.0,

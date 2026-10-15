@@ -24,3 +24,35 @@ topology: 交指带通（§C3 滤波器族 II，Cohn 交指口径）：N 根 λ/
 param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法，_c3_layout 显式报错）；w_mm=棒/馈线宽（50Ω，skrf HJ 综合 live 值 1.1117）；res_len_mm=棒物理长（λ/4(εeff=2.8578)=17.7338 − 过孔缩短 0.4431 − 开路端 Δl=0.2086，电路裁判以等效长度回代；登记⑨+R1 校准口径 tanθ_c=Z_r/(ω0L_via)，L_via=0.125nH HFSS 仲裁校准值 C3_L_VIA_CAL_H（df5-c3fix，原 Goldfarb-Pucel 0.29596nH 高估已弃），缺省渲染几何在过孔存在下谐振回 f0）；gaps_mm[j]=第 j 缝边到边（j=0 馈-棒1 … j=N 棒N-馈；fake/openEMS 两通道同索引同语义，#154）；feed_len_mm=板边到棒阵列底端的馈线段长（阵列 y 居中 ⇒ 两馈等长）
 design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；MYJ 斜率 b=π/(4Z_r)=0.015708 S（λ/4 短路棒）→ J=[4.290e-3, 8.09e-4, 8.09e-4, 4.290e-3] S → Cohn 精确 x=[0.22603, 0.04053, 0.04053, 0.22603] → KJ 1984 一维反解缝；登记⑨+R1 过孔补偿（设计链 l_via_h=None）：tanθ_c=Z_r/(ω0L) → θ_c=1.53155 rad，棒电长缩短 0.4431mm，Y(f0) 过孔端接自证 |Y|=2.12e-18 S，斜率 b 经由孔二阶（数值 −0.034%）；邻耦合近似（非邻耦合/棒端寄生由 EM 冒烟实测）
 smoke_note: 真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例；真机轨道留队列 openems-real-smoke-bundle 类包），本项全程离线验收
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 交指带通：N 根 λ/4 谐振棒接地端交替（奇底偶顶），相邻棒全长缝耦合——λ/4 棒比 λ/2 平行耦合结构省一半长度。典型用于紧凑窄带带通；常见误用=把开路端 Δl 与过孔缩短效应当可忽略——本仓实测过孔电感缩短
+      0.4431mm，需按 HFSS 仲裁校准的 L_via 回代才在真几何下谐振回 f0。
+    derivations:
+    - claim: λ/4 棒谐振+过孔缩短的等效长度回代（登记⑨+R1 校准口径）
+      formula: res_len = λ/4(εeff) - 0.4431 - Δl ; tanθ_c = Z_r/(ω0*L_via)
+      source: docs/templates/interdigital/meta.yaml param_semantics（L_via=0.125nH HFSS 仲裁校准值 C3_L_VIA_CAL_H，原
+        Goldfarb-Pucel 0.29596nH 高估已弃）；docs/rf_template_references.md §15 c3 耦合/馈耦合标定锚
+    - claim: 缝耦合 k 由双模分裂恒等式校核（Cohn 交指口径）
+      formula: k = (f2**2 - f1**2)/(f2**2 + f1**2)
+      source: docs/rf_template_references.md §15（M. Makimoto & S. Yamashita 耦合谐振章口径；权威源头 M. Dishal, Proc.
+        IRE 37(9) 1949）；docs/templates/interdigital/meta.yaml topology（Cohn 交指口径）
+  sensitivity_ranking:
+  - param: res_len_mm
+    order: 1
+    basis: λ/4 谐振恒等式 |∂lnf0/∂lnL|=1（精确，含缩短回代）
+  - param: gaps_mm
+    order: 2
+    basis: 缝耦合 k(gap) 强敏感（带宽/回损主维）
+  - param: w_mm
+    order: 3
+    basis: 棒宽经 εeff 与阻抗口径弱进入
+  - param: feed_len_mm
+    order: 4
+    basis: 馈段布局长度（不进谐振式）
+  - param: order
+    order: 5
+    basis: 阶数=离散综合参数
+  quiz_refs: []

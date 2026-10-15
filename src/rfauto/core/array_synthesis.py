@@ -1,4 +1,4 @@
-"""d5-array: 阵列综合内核（单元方向图 × 阵列因子，续跑计划 §10.4 D5）。
+"""d5-array: 阵列综合内核（单元方向图 × 阵列因子，延续计划 §10.4 D5）。
 
 权威口径
 ========
@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import cmath
 import math
+import warnings
 from dataclasses import dataclass
 from math import comb
 
@@ -890,6 +891,11 @@ _BAYLISS_PARAM_POLY: dict[str, tuple[float, float, float, float, float]] = {
 （见测试常量）。p0（峰位参数）不参与权向量构造，故不转录。
 """
 
+#: 膨胀二分收敛带（dB）：实测 PSLL 与声明电平之差超过该值即视为界饱和
+#: （bayliss_weights 终值复核 UserWarning + CALC 壳层 psll_converged 字段，
+#: ge9 审查 P2 勘误；单源供内核与壳层两处消费）。
+_BAYLISS_PSLL_CONVERGENCE_DB = 0.05
+
 
 def _bayliss_parameter(name: str, sidelobe_db_positive: float) -> float:
     c = _BAYLISS_PARAM_POLY[name]
@@ -996,6 +1002,14 @@ def bayliss_weights(
     一维单调求根，无随机性），使离散方向图实测 PSLL=声明值（±0.05dB 收敛
     带）；零点位置的 Bayliss 数表出处与相对形状不变。
 
+    **可达带界饱和告警（ge9 审查 P2 勘误，#105 观测面语义：告警不抛
+    异常）**：二分膨胀界固定 [0.75, 1.6]；声明电平越出该 nbar/n 组合在
+    界内的可达带时，二分收敛到界端、实测 PSLL≠声明值（偏差 >
+    ``_BAYLISS_PSLL_CONVERGENCE_DB``），此时发 UserWarning（含参数回显与
+    "增大 n_elements/调整 nbar"指引）后照常返回界端权向量（形状有效、
+    电平声明不成立）——不静默、不抛异常；CALC 壳层（array.bayliss_weights）
+    另附 ``psll_converged`` 字段供 JSON 消费面识别。
+
     参数
     ----
     n_elements : 偶数（≥8）；差波束要求奇对称、中心无单元。
@@ -1041,6 +1055,20 @@ def bayliss_weights(
             lo = scale
         else:                   # 偏深 -> 零点回拉
             hi = scale
+    # 终值复核（ge9 审查 P2 勘误；#105 观测面语义：告警不抛异常）——
+    # realized 即末轮 scale 处实测 PSLL（build 确定性，与下方返回同权）。
+    # 声明电平越出固定界可达带 → 二分收敛到界端，静默返回会违反 docstring
+    # "PSLL=声明值（±0.05dB 收敛带）"承诺，此处显式告警留痕。
+    if abs(realized - sll) > _BAYLISS_PSLL_CONVERGENCE_DB:
+        warnings.warn(
+            f"bayliss_weights(n_elements={n}, sidelobe_level_db={sll}, "
+            f"nbar={big_n}): 声明电平 {sll:.2f}dB 越出膨胀界 [0.75, 1.6] 内"
+            f"该 nbar/n 组合的可达带，二分收敛到界端实测 PSLL={realized:.2f}"
+            f"dB（|偏差|={abs(realized - sll):.2f}dB > "
+            f"{_BAYLISS_PSLL_CONVERGENCE_DB}dB 收敛带）——返回界端权向量"
+            "（方向图形状有效、电平声明不成立）；可尝试增大 n_elements 或"
+            "调整 nbar",
+            stacklevel=2)
     return build(scale)
 
 

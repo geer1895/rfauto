@@ -1,7 +1,7 @@
 """F-ME.28 器件族批 1：TMA 时间调制阵列（Time-Modulated Array）Fourier 方向图内核。
 
 纯确定性后处理（零全波、零求解器、零 IO），round3 方案
-研究扩充 round3 §二 F-F 表件 3
+docs/research_expansion_20260926_round3.md §二 F-F 表件 3
 （"合成开关序列→基波/谐波方向图 vs 逐项 Fourier 系数"）。
 
 口径与公式来源（铁律 5：法源写 docstring；裁判=独立路径，#118）：
@@ -378,6 +378,12 @@ def sll_metrics(patterns, orders, u_grid) -> dict[str, Any]:
     u = np.asarray(u_grid, dtype=float)
     if u.ndim != 1 or u.size != p.shape[1]:
         raise ValueError(f"u_grid 须为一维且长度={p.shape[1]}，收到 shape={u.shape}")
+    # 降序网格翻正：theta_grid 升序（0→180° 自然约定）经 cos 折算后 u 降序，
+    # 梯形功率积分出负值会误触"全部阶功率之和为 0"。峰值 argmax 与功率
+    # 积分均与列序无关，翻正后指标与升序网格逐位一致。
+    if u.size > 1 and u[0] > u[-1]:
+        u = u[::-1]
+        p = p[:, ::-1]
     fund_idx = order_list.index(0)
     fund_peak = float(np.abs(p[fund_idx]).max())
     if fund_peak <= 0.0:

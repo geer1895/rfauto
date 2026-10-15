@@ -1,6 +1,7 @@
 """remote_ads_service —— ADS 网表远跑通道（多机协同 v1）。
 
-hpeesofsim 网表远跑四步+互斥预检：⓪发射前互斥预检（#261，
+hpeesofsim 网表远跑四步+互斥预检（ 五百三十三 v1 路线登记；
+playbook §6.1 缺口条目；互斥=X4 批推广补齐）：⓪发射前互斥预检（#261，
 共享单源 remote_mutex_precheck，命中=候跑 SKIP）→ ①sftp 上传网表+依赖
 （自包含化检查，#276）→ ②服务器侧
 hpeesofsim 执行（env 形态=#272 同款）→ ③数据集 sftp 逐文件回拉+服务器
@@ -27,7 +28,7 @@ hpeesofsim 执行（env 形态=#272 同款）→ ③数据集 sftp 逐文件回�
   DLL 同根因，服务器侧 ADS 根=注册表 ``ads.hpeesof_dir``，本机实测
   形态见 ads_netlist._build_ads_env）。
 
-服务器侧约束（远程资源说明 §10/ 0b）：工作根=注册表
+服务器侧约束（服务器说明 §10/项目规则 0b）：工作根=注册表
 ``hfss.project_root``（E:\\rfauto_remote 语义，**禁 D:\\CloudDrive**），
 批次子目录 ``ads_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 每机互斥，X4 批推广，共享单源
@@ -111,7 +112,7 @@ def _plan_netlist_dependencies(netlist_path: Path) -> list[dict[str, str]]:
     -------
     list[dict]
         ``[{"ref": 原文, "local": 本地绝对路径, "remote_rel": 相对网表目录
-        的远端布局（ 分隔）}]``。无 File= 引用 → 空表（自包含）。
+        的远端布局（/ 分隔）}]``。无 File= 引用 → 空表（自包含）。
     """
     text = netlist_path.read_text(encoding="utf-8", errors="replace")
     netlist_dir = netlist_path.resolve().parent
@@ -270,7 +271,7 @@ def remote_ads_run(
         同步执行等待上限（run_command 通道超时；超时=链路异常 fail-closed）。
     keep_remote :
         True=跳过服务器侧清理（调试留档；steps.cleanup 如实 skipped，任务
-        毕须人工清理—— 0b 清理铁律不豁免只展期）。
+        毕须人工清理——项目规则 0b 清理铁律不豁免只展期）。
 
     Returns
     -------
@@ -361,7 +362,7 @@ def remote_ads_run(
     batch = batch_name or f"ads_{uuid.uuid4().hex[:8]}"
     # hpeesofsim 数据集命名 = 网表文件全名（含扩展名）+ ".ds"——先例
     # cascade_netlist.txt → cascade_netlist.txt.ds（runs/branchline_real_anchor/
-    # anchor）；真机首跑实证 <stem>.ds 推导 Test-Path=False 假阴性。
+    # anchor/）；真机首跑实证 <stem>.ds 推导 Test-Path=False 假阴性。
     # 显式 dataset_stem 仍最高优先（DATASET_EXPORT 指名时用）。
     ds_name = (
         f"{Path(dataset_stem).name}.ds" if dataset_stem else f"{netlist.name}.ds"
@@ -579,7 +580,7 @@ def remote_ads_run(
         )
         return envelope
     finally:
-        # 任务毕必须清理：keep_remote 显式留档如实记；清理
+        # 任务毕必须清理（项目规则 0b）：keep_remote 显式留档如实记；清理
         # 失败翻 FAIL（数据已回拉仍不许留远端垃圾）。cleanup 失败不阻塞
         # transport 关闭（best-effort 观测性纪律，#105 同源）。
         try:
@@ -605,7 +606,7 @@ def remote_ads_run(
             envelope["ok"] = False
             envelope["verdict"] = "FAIL"
             envelope["reason"] = (
-                "服务器侧工作目录清理未通过（任务毕必须清理， 0b）"
+                "服务器侧工作目录清理未通过（任务毕必须清理，项目规则 0b）"
             )
         envelope["criteria"]["c3_workdir_cleaned"] = bool(
             cleanup.get("skipped") or cleanup.get("verified_gone")

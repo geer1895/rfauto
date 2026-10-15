@@ -1,6 +1,6 @@
 """PK-6 wirebond/ribbon 寄生内核（ge8d 席 D1；round14 §五 PK-6）。
 
-规格：研究扩充 round14 :144："自由空间 L、地平面
+规格：docs/research_expansion_20261002_round14.md :144："自由空间 L、地平面
 镜像 L=(μ0l/2π)ln(2h/r)、多线并联、趋肤损耗（复用 conductor_loss）、π 模型
 SPICE 导出（复用 macromodel 格式）"。
 

@@ -358,7 +358,7 @@ def test_v2_quality_sidecars_recorded_not_blocking(driver, tmp_path):
     assert "future_key" not in q
 
 
-# ─── 空场熔断（ge6 followUp，7×7 教训 六百九十三） ─────────────────
+# ─── 空场熔断（ge6 followUp，7×7 教训  六百九十三） ─────────────────
 
 
 def test_v2_empty_field_fuse_unknown_not_dmax_pass(driver, tmp_path):

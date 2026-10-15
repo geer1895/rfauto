@@ -497,7 +497,7 @@ def kgap_curve(gaps_mm: list[float], c_vals: list[float]) -> dict:
 
 
 # ── hairpin_alt k(gap) 图谱判读门（2026-09-18 w2g；先于真机写死，#122 不凑绿）────
-# 背景（TODO 0dk）：同向 hairpin 真机 k_EM(gap) 非单调、极大
+# 背景（TODO 0dk/）：同向 hairpin 真机 k_EM(gap) 非单调、极大
 # 0.0155@0.65 ≪ k_KJ 0.0515，比值 c=k_EM/k_KJ∈[0.12,0.26]、设计点比值 ≈0.29——相邻臂
 # 开路端对齐的电/磁相消签名。交替取向变体（hairpin_alt）的预声明期望：
 #   ① 单调：k_EM 随 gap 严格递减（与 KJ 平行线闭式同向；非单调=相消未消除）；

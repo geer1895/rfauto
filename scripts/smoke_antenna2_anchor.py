@@ -3,11 +3,11 @@
 用法（同一时刻全机只此一个 openEMS 真跑，COMMON 纪律；逐模板串行）：
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py monopole
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py slot \
-        --override slot_l_mm=46.036   # 引擎拟合 k_slot 复核跑（→ slot_override）
+        --override slot_l_mm=46.036   # 引擎拟合 k_slot 复核跑（→ slot_override/）
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py loop --tag v2
         # 自由空间改造复跑（→ runs/antenna2_smoke/loop_v2/，旧产物不覆盖）
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py helix \
-        --band 1.5,4.5 --tag wide   # 扩带定电抗过零 f_x（→ helix_wide）
+        --band 1.5,4.5 --tag wide   # 扩带定电抗过零 f_x（→ helix_wide/）
 
 判据（段首理论核验口径；设计式不做端效应预补偿，实测偏差如实记录，
 #190 范式：引擎常数未仲裁前不进设计公式）：
@@ -18,7 +18,7 @@
 - loop（2026-09-16 自由空间改造）：Zin=Z0(1+S11)/(1−S11) 电抗过零点位于
   f0±12% 窗且过零处 R ≥ 20Ω（对照旧贴地口径 R=0.56Ω 镜像抵消）；S11 ≤ −5dB
   只作次级（一周长环馈阻抗文献 ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振
-  判据—— antenna2 坑②：判谐振看电抗过零/并联 R 峰）。
+  判据——AGENTS antenna2 坑②：判谐振看电抗过零/并联 R 峰）。
 - helix：电抗过零 f_x（容性→感性首个上穿）报告值；S11 深度门不适用（R≈2-6Ω
   电小失配）。f_x 落在扫频带内即 FOUND（供 HFSS 同几何仲裁
   scripts/hfss_helix_arbitration.py 对照，k_helix 不在本脚本进设计式）。
@@ -61,7 +61,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("template", choices=sorted(ANTENNA2_NOMINAL))
     ap.add_argument("--override", default=None,
-                    help="key=value（单参数覆盖，产物落 <template>_override）")
+                    help="key=value（单参数覆盖，产物落 <template>_override/）")
     ap.add_argument("--band", default=None,
                     help="lo,hi GHz（扩带扫频；缺省 f0±0.5）")
     ap.add_argument("--tag", default=None,

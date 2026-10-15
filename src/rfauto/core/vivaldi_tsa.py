@@ -1,7 +1,7 @@
 r"""AP-11 Vivaldi/TSA（指数张口槽线天线）确定性内核（ge8b Wave B 席 B9，
 2026-10-03）。
 
-规格：研究扩充 round17 §三 :78「AP-11 Vivaldi/
+规格：docs/research_expansion_20261002_round17.md §三 :78「AP-11 Vivaldi/
 TSA 模板（P2/M）：Yngvesson 1985 准则+巴伦注记」。
 
 规格边界（#122 如实）

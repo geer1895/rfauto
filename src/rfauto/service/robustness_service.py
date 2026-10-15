@@ -1,6 +1,6 @@
 """robustness_service：DP-15 C3 稳健性报告（良率/FORM/worst-case/Cpk）。
 
-规格书 规格深案 §15.3 第二片，service 层
+规格书 docs/plan_deepdive_specs_20260924.md §15.3 第二片，service 层
 JSON 进出（分层铁律 #4；数值只在确定性内核 #7——FORM/搜索全部吃代理
 确定性求值，本模块无随机决策）：
 
@@ -11,7 +11,7 @@ JSON 进出（分层铁律 #4；数值只在确定性内核 #7——FORM/搜索�
 - ``form_pf``：FORM 服务面（XD-11 换基：HL-RF 迭代收敛 core.form_beta
   单源内核 ``core/form_reliability.py``，本模块只保留多起点播种/选点与
   JSON 信封；失效面 g(x) = threshold − cost(x)（threshold 缺省 0 = 代理
-  加权违约 cost ≥ 0 判失效）；openturns/uqpy 可选库存在则对照、缺失
+  加权违约 cost ≥ 0 判失效））；openturns/uqpy 可选库存在则对照、缺失
   回退内核自实现（惰性 import，``form_engine`` 显式标注引擎来源）。
 - ``surrogate_worst_case``：代理面上优化违约角点（复用 core/pce 的
   ``_pattern_search`` 内核——多起点=中心+2^d 角点，不重写搜索）。

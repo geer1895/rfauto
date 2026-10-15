@@ -1,6 +1,6 @@
 """DP-4 P2：阵列两档方向图服务层（快速档编排；互耦档接口预留）。
 
-职责（ 硬限 4：服务层 JSON 进出，CLI/MCP 薄壳；铁律 7：数值只在
+职责（AGENTS 硬限 4：服务层 JSON 进出，CLI/MCP 薄壳；铁律 7：数值只在
 确定性内核——全部物理数字来自 core/array_synthesis.py（零改动复用）与
 core/array_scan.py 纯函数，本模块只做参数校验、布局/激励构建与结果装配）：
 
@@ -459,7 +459,7 @@ def _dmax_elem_dbi(elem_info: dict[str, Any],
             if v is None:
                 return None, f"meta {cand} 无 dmax_dbi 字段"
             return float(v), None
-    return None, f"未找到伴生 {FARFIELD_META_NAME}（{base} 及 fdtd）"
+    return None, f"未找到伴生 {FARFIELD_META_NAME}（{base} 及 fdtd/）"
 
 
 # ─── 门 ──────────────────────────────────────────────────────────────────────

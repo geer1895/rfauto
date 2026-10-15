@@ -68,7 +68,7 @@ class TestWritePathWhitelist:
 
     def test_outside_path_rejected(self, tmp_path):
         result = check_write_paths(
-            ["runs/ok.yaml", str(tmp_path.parent / "evil_outside.yaml")],
+            ["runs/ok.yaml", "C:/Windows/system32/evil.yaml"],
             _recipe(tmp_path),
         )
         assert not result["ok"]

@@ -11,6 +11,44 @@ G11 目录体检会"无可识别体检产物"全空 suspect。本模块消费批
 dict + Touchstone 文件（skrf 读，health_service._load_touchstone 同款
 懒加载惯例），产出独立三态质量门。
 
+数值门边界纪律（项目规则 #376 家法，2026-10-08/09 W5 回取复核席实证）：
+本门全部闭边界 verdict 判据一律留 1e-9 家法余量（与
+core/trl_solt._LINE_PASSIVE_MARGIN 同源）——健康门闭区间语义（实测
+≤ 门 / σmax ≤ 1+容差 / 窗双边闭）在恰等边界读数上字面比较会被量化
+噪声系统性误 FAIL，噪声是门实现侧必须吸收的、不是数据侧缺陷。三
+常量统一表（字段=常量名/门/噪声源/量级论证）：
+
+- ``_S11_DIP_DB_EPS`` = 1e-9 dB。门=``s11_dip`` 谷深（实测 ≤ 门为过；
+  单谷 @f0 与多谷最深谷两分支同一比较式）。噪声源=门值恰等的物理
+  幅值 |Γ|=10^(门/20) 经 double 域 20·log10 往返量化（门值域扫描
+  [-40,-1] 0.1dB 步长实测 30/391 个门值落违约侧，如 -7.2dB 读
+  -7.199999999999999）。量级论证=比门粒度（通用惯例 1dB）低 9 个
+  量级，不掩盖真违约。
+- ``_SPLIT_WINDOW_DB_EPS`` = 1e-9 dB。门=``s_split_window`` 等分分配
+  窗（[-3.8,-2.5] 双边闭；出窗判据上下界各留余量）。噪声源=同款
+  dB 往返量化（-2.5dB 恰等上界腿实测读 -2.4999999999999996）。量级
+  论证=比窗粒度（0.1dB）低 8 个量级。
+- ``_PASSIVITY_LINEAR_EPS`` = 1e-9（线性域）。门=``passivity`` σmax ≤
+  1+容差（1.01，带缘闭）。噪声源=容差 1.01 的 double 表示+SVD 舍入
+  （实测 114/201 组合读 1.0100000000000002，偏差 +2.2e-16）。量级
+  论证=比容差粒度（0.01）低 14 个量级；无 dB 换算，噪声源不同于前
+  两者而暴露面同型。
+
+恰等边界回归钉必配（构造恰等例断言不翻 verdict）——tests/unit/
+test_edb_health_gate.py 三钉与三常量一一对应。
+
+第四处核查结论（2026-10-09 逐判据审计：全收口）——本模块其余数值
+比较均非 #376 类闭边界门：``reciprocity`` 的 ``worst >=
+RECIPROCITY_TOLERANCE``（FAIL 侧）门义即边界=违约（非恰等=过语义），
+且 |Sij−Sji| 与容差同在线性域直读、无门值↔量测表示变换（30/391、
+114/201 类门值构造越界机制在此不存在），健康不对称读数距容差多个
+量级、无自然恰等构造面，并与 core/solve_health G11 同式跨门一致；
+f0 扫频跨度 ``f_min ≤ f0 ≤ f_max`` 为成员性前置（出跨度 → UNKNOWN
+不判，无误 FAIL 面）；多谷检测的局部极小/间距归并为同源网格内部
+逻辑（平手=链式归并保持既有单谷路径，谷锚的门比较另有
+``_S11_DIP_DB_EPS`` 保护）；其余为整型形态/契约比较与已带
+rtol=1e-6 容差的 ``np.isclose``（f0 落格兜底）。
+
 判据族（七因子+条件性 f0_offset 谷位标记，全部确定性数值规则——铁律
 7：LLM/agent 永不产生物理数字，本门只消费求解器实测与批处理结构化
 回执，门常量为判据非产物；``s_split_window`` 为模板作用域判据未登记
@@ -55,7 +93,7 @@ dict + Touchstone 文件（skrf 读，health_service._load_touchstone 同款
   ``S_WINDOW_DB_BY_TEMPLATE`` 登记表；**无通用缺省窗**——等分分配窗是
   功分器族专属物理语义，未登记且无显式窗的族不设本判据（criteria 键
   缺席=不判，不硬套他族门，也不冒充 PASS）。登记出处=W1 冒烟门语义
-  仲裁（2026-10-09 真机）：理想等分
+  仲裁（2026-10-09，runs/edblane85/w1_smoke REPORT §3.2）：理想等分
   分配损耗 -3.01dB，健康实测 -3.19/-3.26；冒烟任务书字面门"各
   ≤-3.8dB"是单边下界语义错位，会误杀任何健康功分器——裁定物理窗
   [-3.8, -2.5]dB（下界=3dB 分配+0.8dB 实现容差，上界排除异常增益/
@@ -126,7 +164,7 @@ _SPLIT_WINDOW_DB_EPS = 1e-9
 FACTOR_RECIPROCITY = "reciprocity"
 FACTOR_F0_OFFSET = "f0_offset"
 
-# 教训编号——写进每条判据，保证报告可回溯到踩坑原文
+# 教训编号（）——写进每条判据，保证报告可回溯到踩坑原文
 LESSON_SOLVE_STATUS = "#157（watchdog 整树击杀，击杀后残留产物不可信）"
 LESSON_TOUCHSTONE = "#316（证据损坏多报方向）+ 2026-10-08 -BatchSolve 不产网络参数断链"
 LESSON_PORT_COUNT = "#248/#309（Touchstone 端口数契约：skrf 按扩展名推 rank/多模改名）"
@@ -177,16 +215,30 @@ _PASSIVITY_LINEAR_EPS = 1e-9
 #: S11@f0 谷深通用缺省门（dB，实测 ≤ 门为过）＝回波损耗 ≥10 dB 的通用
 #: 射频匹配惯例（|Γ|≤0.316）。模板族专属门须带出处登记进
 #: ``S11_DIP_DB_BY_TEMPLATE``，禁止臆造物理数字（铁律 7/#274）。
+#:
+#: W10 0.02 档回退后通用门充分性核验（2026-10-09 ge8e 审查席，与
+#: adapters/edb_templates/coupled_line.py ``DEFAULT_ADAPT_MAX_DELTA``
+#: W10 定谳回退贯通；2026-10-09 回取复核席修订噪声归属）：0.02 档健康
+#: coupled_line S11@f0 实测 -16.31~-18.83 dB，档位伪象对本门主判的
+#: S11 自身 0.02 档→紧档移动 ~2.5 dB（-16.31→-18.83，W6→mc2→W10 链；
+#: W10 REPORT §3）——通用门到最近健康读数（0.02 档最浅 -16.31）裕度
+#: ~6.3 dB ≥ 2.5×S11 档位敏感（REPORT §2 的 ~0.62 dB 系 S31 口径伪象
+#: 回收，勿移用到 S11），通用缺省门在 0.02 档仍充分；且伪象方向=读数
+#: 偏浅（欠匹配方向），0.02 档只可能误杀不误放，false-PASS 风险≈0。
+#: eps 家法余量（``_S11_DIP_DB_EPS``，1e-9）只吸收恰等量化噪声、不承担
+#: 物理档位噪声（无此必要），本族亦无需登记专属门。后续新族接入仍按
+#: #274 先扫健康读数分布与档位噪声量级再定门口径。
 DEFAULT_S11_DIP_DB = -10.0
 
 #: 模板作用域门登记表（#274 家法：键=spec.template 名；值=S11@f0 谷深门
-#: dB 或 None）。登记须带出处（踩坑编号/官方口径）；值 None=该族显式
+#: dB 或 None）。登记须带出处（ 坑号/官方口径）；值 None=该族显式
 #: 不设谷深门（如实 UNKNOWN，不硬套通用缺省门）。未登记的模板名回退
 #: :data:`DEFAULT_S11_DIP_DB`。
 S11_DIP_DB_BY_TEMPLATE: dict[str, float | None] = {}
 
 #: Wilkinson 功分器族 |S21|/|S31|@f0 等分分配窗（dB，双边界闭区间，
-#: 两腿各自落窗内才算过）＝W1 冒烟门语义仲裁裁定值（2026-10-09 真机）：理想等分分配损耗 -3.01dB，
+#: 两腿各自落窗内才算过）＝W1 冒烟门语义仲裁裁定值（2026-10-09，
+#: runs/edblane85/w1_smoke REPORT §3.2）：理想等分分配损耗 -3.01dB，
 #: 下界 -3.8 = 3dB 分配 + 0.8dB 实现容差（健康实测 -3.19/-3.26 有余量），
 #: 上界 -2.5 排除异常增益（分配损耗显著小于 3dB = 提取/接线伪象）。
 #: 禁止臆造物理数字（铁律 7）：改动此窗须带真机/仲裁出处。
@@ -408,10 +460,14 @@ def _solve_status_factor(batch_result: dict[str, Any] | None) -> dict[str, Any]:
             "前置失败未拉起求解进程（rc=None：路径/exe/日志目录/发射）"
             "，零产物可判",
             LESSON_SOLVE_STATUS, evidence=evidence)
-    if not isinstance(rc, int):
+    # bool 是 int 子类（isinstance(True, int)=True，审查 A3 P3-6）：rc=True
+    # 旧码会以 int 身份穿成"退出码非零"FAIL，rc=False 更会穿成 rc==0 成功
+    # 路径——bool 先排一行闭环，契约=int|None 如实 UNKNOWN（#122 不冒充）。
+    if isinstance(rc, bool) or not isinstance(rc, int):
         return _unknown(
             FACTOR_SOLVE_STATUS,
-            f"回执 rc 形态非法: {rc!r}（契约=int|None），求解态不可证实",
+            f"回执 rc 形态非法: {rc!r}（契约=int|None，bool 不收），"
+            "求解态不可证实",
             LESSON_SOLVE_STATUS, evidence=evidence)
     if rc != 0:
         return _factor(

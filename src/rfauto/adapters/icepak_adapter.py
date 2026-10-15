@@ -1,6 +1,6 @@
 """Icepak 热通道适配器 —— WP4.4a（Icepak 电-热首案例，AEDT/pyaedt）。
 
-定位（docs/续跑计划.md §4 WP4.4a）：
+定位（延续计划 §4 WP4.4a）：
 - **AEDT 热通道**：Wilkinson 隔离电阻损耗 → Icepak 温度场 →（经
   core/electrothermal + core/thermal_iteration）材料温漂 → S 参数失谐；
 - 首轮落地**最小传导首案例**（发热块 + 基板 1-D 传导锚 ≤2%）；本轮

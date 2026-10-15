@@ -52,31 +52,61 @@ hfss_session 工具层口径），能力声明见 em_solver_base 尾部 "edb" �
   版图金属（trace/via 端点）重合，端子悬空属 spec 几何错误——由上游
   edb_templates.validate_spec 端点附着审计负责，本层不重复仲裁。
 
-3D Layout setup 真收紧通道（W8 仲裁建议 2，2026-10-09；#333 族旋钮效力）
+3D Layout setup 自适应档写入通道（W8 仲裁建议 2，2026-10-09；#333 族旋钮
+效力；W10 定谳更名——原题「真收紧通道」的"真"字被 W10 真机证伪）
 ------------------------------------------------
-EDB/HFSS 3D Layout 工程的自适应档（``max_delta``/``max_passes``）**唯一
-可靠写入通道=建模期**：``spec.sim_setup.adapt`` → config
+EDB/HFSS 3D Layout 工程的自适应档（``max_delta``/``max_passes``）的
+**建模期写入通道**：``spec.sim_setup.adapt`` → config
 ``setups[0].single_frequency_adaptive_solution`` →
 ``configuration.load(apply_file=True)`` 随建库一次性落 setup——发射器
-（如 coupled_line 的 W8 加严档 0.005）改档即自然生效，无需任何求解后
-干预。
+改档即随建库写入**请求档**。
+
+**W10 定谳（runs/edblane85/w10_cl_recheck/REPORT.md，2026-10-09）：EDB
+3D Layout 路径 MaxDelta 写入不可达**。EDB 3D Layout schema（SimSetupID=19）
+无 MaxDelta 键——四互证维持（AEDT 2025.1 SolveSetups 模块无 EditSetup/
+InsertSetup 无任何 Delta 键名/configuration.load 的 AdaptiveSettings 子树
+被丢弃/两代工程盘面均无 MaxDelta 键），``configuration.load`` 通道与
+pyaedt props 通道同样写不进；spec 硬断言只能行使到**发射面**（config
+存证带请求值，求解器永不消费）。EDB 侧唯一可达收紧通道=扁平键
+``MinConvergedPasses``（类路径 InsertSetup 写入，W9 mc2=2 与 W10=4 两
+真机点均被求解器实消费）；EDB 侧档位伪象实测仅 ~0.62dB（W8 §3 的 ~2dB
+系 HFSS 侧阶梯分解，不按面值转移 EDB），剩余 ~1.0dB 偏置=EDB-Layout 特
+有建模保真差（判读面校准项，非求解旋钮可及）。**判读纪律：本通道 EDB
+S31 读数不得按 max_delta 请求档归因**（W9 勘误先声，W10 定谳坐实）。
+
+W9 勘误存档（同日真机重查，runs/edblane85/w9_cl_recheck）："写入即生效"
+此前只在单测面验证（请求值达 configuration.load 调用——假 pyedb 替身）；
+props 建库期写入 MaxDelta=0.005（会话内读回确认）批解仍按 0.02 准则停机
+（verdict=TIGHTENING_NOT_EFFECTIVE）——该形态后被 W10 定谳收编为"schema
+无键"的总因（props 会话内读回属会话态，不落盘不传播）。
 
 **求解后改档不可达（W8 真机实证）——改档须重建**：对已解 3D Layout
 工程重开会话后经 pyaedt ``setup.props`` 改档**不传播**——重载 props
 顶层无 ``AdaptiveSettings`` 子树（新建会话才有），子树重建写入+
 ``update()``+save 后批解仍**逐位回放缓存解**（S31 十位小数同值
--9.4569、批解 wall 26s vs 原档 ~52s；真机仲裁实证）。因此任何"收紧判读档"需求一律改 spec
+-9.4569、批解 wall 26s vs 原档 ~52s；runs/edblane85/w8_cl_arb/
+ARBITRATION.md §2 V3 / §5-2）。因此任何"收紧判读档"需求一律改 spec
 重走 :meth:`EdbAdapter.build`（新 .aedb），禁止对已建工程做求解后改档。
+（W10 定谳边界：对 **EDB 路径的 max_delta**，重建也不落库——schema 无键，
+见上文定谳段；本段"改档须重建"是通用纪律——HFSS 3D 侧通道与一切求解后
+修改面均适用，且是 W10 之前唯一已证通道。）
 
-配套收紧生效断言（#333 族：旋钮效力断言）：:meth:`EdbAdapter.
-verify_adapt_tightening` 在批解后重开工程读回 setup 实际 max_delta
-（pyedb ``edb.setups[name].adaptive_settings.
+配套写入一致断言（#333 族；**断言面=存储请求档，非求解效力**）：
+:meth:`EdbAdapter.verify_adapt_tightening` 在批解后重开工程读回 setup
+实际 max_delta（pyedb ``edb.setups[name].adaptive_settings.
 adaptive_frequency_data_list`` 只读面，0.83 源码核验：
-dotnet/edb.py:3221 + utilities/hfss_simulation_setup.py:176 +
-sim_setup_data/data/settings.py:52 + adaptive_frequency_data.py:71），
-与 config 存证（请求档）逐 setup 核对——不一致/不可核对=告警字符串
-（best-effort，#105：断言故障不阻塞判读主路径；不可证实如实告警，
-#122 不冒充）。
+dotnet/edb.py:3221 + dotnet/database/utilities/
+hfss_simulation_setup.py:176 + dotnet/database/sim_setup_data/data/
+settings.py:52 + dotnet/database/sim_setup_data/data/
+adaptive_frequency_data.py:24/46），与 config 存证（请求档）逐 setup
+核对——不一致/不可核对=告警字符串（best-effort，#105：断言故障不阻塞
+判读主路径；不可证实如实告警，#122 不冒充）。**存储档一致≠求解按档
+收敛**（W9 重查实证"写入不传播"形态存在，此时读回仍可与请求一致）——
+求解效力须另做新解 vs 旧解读数/mtime 差异对比（W8 建议 2 原文口径）。
+W10 定谳补注：``configuration.load`` 通道的请求可能**根本不落库**
+（EDB 3D Layout schema 无 MaxDelta 键）——此形态本断言如实告警（"请求
+档未落库"类）；而"已落库但求解不消费"形态（W9 props 会话内读回）本
+断言**原理上不可检出**——这正是断言面=存储面的语义边界。
 
 spec dict 完整 schema（v1 统一契约，2026-10-08 与 edb_templates 发射器实测
 产出对齐——正本=emit_branchline_spec/emit_power_divider_spec 实跑样例；
@@ -125,7 +155,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              TOP,DE,BOTTOM 首项=顶层同口径；
                              docs/pyedb_distilled.md §3.1/§6-2 处方
                              「adapter 翻转一次」；真机冒烟
-                             以 GND=elevation0
+                             runs/edblane85/w1_smoke 以 GND=elevation0
                              验证的物理序=信号层在上）
           {"name": str       必填，全表唯一，
            "type": str       必填，"signal" | "dielectric"，
@@ -246,11 +276,22 @@ from typing import Any
 # 只登记带 __all__ 的模块，无 __all__ 文件记私有零快照变化（新模块出生
 # 不触发 --generate 评审动作）。
 
-#: AEDT 版本缺省钉（HFSS/AEDT 2025 R1（v251）为对齐基准；PyAEDT/
-#: pyedb 版本串口径 2025 R1 → "2025.1"）。env 可覆盖（远程/异版本
-#: 机联调），换机部署须与服务器侧版本对齐同步。
+#: AEDT 版本缺省钉（AGENTS 规则 0：本机 HFSS/AEDT 2025 R1（v251）为对齐
+#: 基准；PyAEDT/pyedb 版本串口径 2025 R1 → "2025.1"）。env 可覆盖
+#: （远程/异版本机联调），换机部署须与服务器侧版本对齐规则 0 同步。
 _DEFAULT_AEDT_VERSION = "2025.1"
 _AEDT_VERSION_ENV = "RFAUTO_EDB_AEDT_VERSION"
+
+#: pyedb DotNet 通道 Ansys OpenSSL **预载 feature-flag**（#373 回归实验，
+#: 2026-10-14；配方=runs/pyedb_pr2599_test/REPORT.md R5：import pyedb 前
+#: ctypes.WinDLL 绝对路径预载 AnsysEM 的 libcrypto/libssl-3-x64.dll）。
+#: env ``RFAUTO_PYEDB_PRELOAD``（1/true/yes/on 大小写不敏感）或构造参数
+#: ``enable_preload`` 显式开启；**缺省关闭=零行为变化**（不触预载路径）。
+#: 显式参数优先于 env（三态：None=读 env）；开启后预载 fail-soft
+#: （pyedb_preload 信封 ok=False 不阻断——后续 import pyedb 自会暴露真实
+#: 问题，#105 观测面不阻塞主路径）。
+_PYEDB_PRELOAD_ENV = "RFAUTO_PYEDB_PRELOAD"
+_PYEDB_PRELOAD_TRUTHY = frozenset({"1", "true", "yes", "on"})
 
 #: 毫米 → 米（pyedb configuration 官方文档口径：path 点单位为米，见模块
 #: docstring「单位纪律」节出处标注）
@@ -1150,8 +1191,8 @@ def _verify_one_setup_adapt(
 ) -> list[str]:
     """单个 setup 的请求档 vs 工程读回核对（告警清单，空=一致）。
 
-    读回面（pyedb 0.83 只读集合，源码核验见模块 docstring「真收紧通道」
-    节）：``setups[name].adaptive_settings.adaptive_frequency_data_list``
+    读回面（pyedb 0.83 只读集合，源码核验见模块 docstring「自适应档写入
+    通道」节）：``setups[name].adaptive_settings.adaptive_frequency_data_list``
     → 条目 ``adaptive_frequency``/``max_delta``。单频点条目直接对档（频点
     字符串随附存证）；多频点按 adaptive_frequency 忽略大小写匹配，无命中
     不猜（#122 如实告警）。max_delta 比较留 rel_tol=1e-9（与
@@ -1215,7 +1256,10 @@ def _verify_one_setup_adapt(
             f"收紧生效断言[{name}]：max_delta 不一致——请求 "
             f"{requested['max_delta']:.6g} vs 工程实测 {observed_delta:.6g}"
             f"（@{obs_freq}）。W8 实证 3D Layout 求解后改档不传播（回放"
-            "缓存解）——改档须重建工程（见模块 docstring「真收紧通道」节）"
+            "缓存解）——改档须重建工程；W10 定谳（runs/edblane85/"
+            "w10_cl_recheck）：EDB 3D Layout schema 无 MaxDelta 键（写入"
+            "不可达），EDB 路径重建亦不落库——收紧判读走判读面校准或 "
+            "HFSS 仲裁（见模块 docstring「自适应档写入通道」节）"
         ]
     return []
 
@@ -1333,17 +1377,38 @@ class EdbAdapter:
     pyedb 全程惰性导入（import 在函数内）：未安装时 RuntimeError 指明
     ``pip install rfauto[edb]``；AEDT 版本缺省钉 2025 R1（对齐基准，
     env ``RFAUTO_EDB_AEDT_VERSION`` 可覆盖）。
+
+    预载 feature-flag（#373 回归实验，缺省关闭=零行为变化）：构造参数
+    ``enable_preload=True`` 或 env ``RFAUTO_PYEDB_PRELOAD``（truthy：
+    1/true/yes/on）开启后，import pyedb 前先经
+    ``rfauto.adapters.pyedb_preload.preload_ansys_openssl`` 预载 AnsysEM
+    的 OpenSSL 副本（python-build-standalone venv 上 DotNet 后端同名
+    DLL 对撞硬崩的最小可用配方，R5 实证）；参数 None=读 env，显式
+    False 优先于 env。root 解析/fail-soft/幂等语义见 pyedb_preload 模块。
     """
 
-    def __init__(self, workdir: Path):
+    def __init__(self, workdir: Path, enable_preload: bool | None = None):
         self._workdir = Path(workdir)  # #140：入参一律先 Path() 收敛
         self._aedt_version = os.environ.get(_AEDT_VERSION_ENV, _DEFAULT_AEDT_VERSION)
+        self._enable_preload = enable_preload  # None=读 env（缺省关）
 
     # ── 惰性依赖装载 ──────────────────────────────────────────────────────
 
     @staticmethod
-    def _load_pyedb_cls() -> type:
-        """惰性导入 pyedb 并返回 Edb 类（缺装显式报错指路 extra）。"""
+    def _load_pyedb_cls(enable_preload: bool | None = None) -> type:
+        """惰性导入 pyedb 并返回 Edb 类（缺装显式报错指路 extra）。
+
+        ``enable_preload`` 三态：None=读 env ``RFAUTO_PYEDB_PRELOAD``
+        （缺省关）；True/False=显式覆盖 env。开启时 import 前先预载
+        （#373 R5 配方；fail-soft 信封，失败不阻断——#105）。
+        """
+        if enable_preload is None:
+            raw = os.environ.get(_PYEDB_PRELOAD_ENV, "")
+            enable_preload = raw.strip().lower() in _PYEDB_PRELOAD_TRUTHY
+        if enable_preload:
+            from rfauto.adapters.pyedb_preload import preload_ansys_openssl
+
+            preload_ansys_openssl()  # fail-soft 信封；失败不阻断（#105）
         try:
             import pyedb
         except ImportError as exc:  # pragma: no cover - 分支由假包注入测试覆盖
@@ -1383,9 +1448,11 @@ class EdbAdapter:
         数字后缀顺移不覆盖。
 
         自适应档（sim_setup.adapt.max_delta/max_passes）随 configuration.load
-        **建模期写入**——3D Layout setup 的唯一真收紧通道（求解后改档不
-        传播，W8 实证改档须重建，见模块 docstring「3D Layout setup 真收紧
-        通道」节）；批解后可用 :meth:`verify_adapt_tightening` 核对生效。
+        **建模期写入请求档**——3D Layout setup 的建模期写入通道（求解后改档
+        不传播，W8 实证改档须重建，见模块 docstring「3D Layout setup 自适应
+        档写入通道」节及其 W10 定谳：EDB 3D Layout schema 无 MaxDelta 键，
+        请求档在 EDB 路径写入不可达、重建亦不落库）；批解后可用
+        :meth:`verify_adapt_tightening` 核对存储请求档一致（写入面）。
         """
         config = spec_to_config_json(spec)  # fail-fast：先校验后落盘
         # 电阻归一清单（纯函数幂等重取；结构合法性已由上面校验保证）
@@ -1401,7 +1468,7 @@ class EdbAdapter:
         # edb.configuration.load 该文件复现，export() 侧互证）
         config_json_path.write_text(
             json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
-        edb_cls = self._load_pyedb_cls()
+        edb_cls = self._load_pyedb_cls(self._enable_preload)
         edb = edb_cls(edbpath=str(aedb_path), isreadonly=False,
                       version=self._aedt_version)
         try:
@@ -1557,14 +1624,23 @@ class EdbAdapter:
     def verify_adapt_tightening(self, build_result: EdbBuildResult) -> list[str]:
         """核对工程内 setup 实际自适应档与请求档一致（不一致/不可核对=告警）。
 
-        W8 仲裁建议 2（#333 族旋钮效力断言）：EDB 3D Layout 的真收紧通道
-        =建模期（configuration.load 随建库写入，发射器改档即自然生效）；
-        求解后改档不传播（重载走缓存解，W8 真机实证）。本断言在**批解后**
-        调用：重开建库工程（只读）读回 setup 实际 max_delta，与 config
-        存证（``build_result.config_json_path``，即建模期注入的请求正本）
-        逐 setup 核对——任一 setup 的 max_delta 与请求不一致，或读回链路
-        不可用，都以告警字符串返回（best-effort，#105：断言不抛异常、
-        不阻塞判读主路径；不可证实如实告警不冒充通过，#122）。
+        W8 仲裁建议 2（#333 族）：EDB 3D Layout 的建模期写入通道
+        =configuration.load 随建库写入；求解后改档不传播（重载走缓存解，
+        W8 真机实证）。本断言在**批解后**调用：重开建库工程（只读）读回
+        setup 实际 max_delta，与 config 存证（``build_result.
+        config_json_path``，即建模期注入的请求正本）逐 setup 核对——任一
+        setup 的 max_delta 与请求不一致，或读回链路不可用，都以告警字符
+        串返回（best-effort，#105：断言不抛异常、不阻塞判读主路径；不可
+        证实如实告警不冒充通过，#122）。
+
+        断言语义边界（W9 勘误落口径，W10 定谳补全，runs/edblane85/
+        w9_cl_recheck 与 w10_cl_recheck）：本断言核的是**存储请求档=读回档**
+        （写入面一致），**不是**"求解按新档收敛"的行为效力——W9 重查实证
+        props 建库期写入读回一致后批解仍按 0.02 准则停机
+        （TIGHTENING_NOT_EFFECTIVE）；W10 进一步定谳 configuration.load 通道
+        的请求可能根本不落库（EDB 3D Layout schema 无 MaxDelta 键）——该
+        "未落库"形态由本断言告警暴露，"已落库但不消费"形态本断言原理上
+        不可检出；求解效力须另做读数/mtime 差异对比。
 
         Args:
             build_result: :meth:`build` 产物（aedb 路径 + config 存证路径
@@ -1592,7 +1668,7 @@ class EdbAdapter:
         if not requested:
             return []  # 存证无 hfss 单频自适应请求——无可核对项
         try:
-            edb_cls = self._load_pyedb_cls()
+            edb_cls = self._load_pyedb_cls(self._enable_preload)
         except RuntimeError as exc:
             return [
                 f"收紧生效断言不可核对：pyedb 不可用（{exc}）——"

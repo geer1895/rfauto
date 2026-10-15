@@ -78,7 +78,7 @@ from .render_hairpin import coupled_microstrip_even_odd_ohm
 #    HFSS interdigital 仲裁反解 0.12–0.13nH（audit2 证据）⇒ G-P 对"连续 PEC
 #    地面粗短过孔"高估 2.2–2.5×（SC verdict 次根因：补偿过缩短，峰 +4.1%）；
 #    auto（l_via_h=None）改取校准值 C3_L_VIA_CAL_H=0.125nH（HFSS 区间中点，
-#     09-08 对齐基准立规）；G-P 闭式保留为 via_inductance_h/c3_via_
+#    项目规则 09-08 对齐基准立规）；G-P 闭式保留为 via_inductance_h/c3_via_
 #    inductance_h 文献公式（离线判别消费者不变）；OE 反解 ≈0.20nH 与 HFSS 差
 #    异=跨引擎发现（OE 哨预期承载）。
 #    λ/4 短路棒并联谐振条件由 tanθ=∞ 变为 tanθ=Z_r/(ωL_via)（谐振下移）；
@@ -123,7 +123,7 @@ _MU0_H_PER_M = 4.0e-7 * math.pi  # 真空磁导率（Goldfarb-Pucel 系数 μ0/2
 # 过孔电感校准值（R1，2026-09-22 df5-c3fix）：l_via_h=None（auto）的解析结果。
 # 依据 HFSS interdigital 仲裁反解 0.12–0.13nH（runs/hfss_interdigital_check/
 # _audit2/audit2_evidence.json：θ(2.60)=1.5350、ωL=1.953Ω@2.60GHz）取区间中点
-# 0.125nH—— 2026-09-08 立规"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
+# 0.125nH——项目规则 2026-09-08 立规"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
 # （c3_via_inductance_h，0.29596nH）对"连续 PEC 地面上粗短过孔"高估 2.2–2.5×
 # （SC runs/df5_c3_mapping/verdict.json 次根因），降级为文献公式保留；OE 反解
 # ≈0.20nH 与 HFSS 的差异如实登记为跨引擎发现（OE 哨预期承载，不进定值）。

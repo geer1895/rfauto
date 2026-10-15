@@ -24,7 +24,7 @@ from rfauto.service.ui_service import (
 def _isolated(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("RFAUTO_CACHE", "off")
-    # 审批收件箱读路径接 RegistryDB 后，清掉注册表 DB 路径 env，
+    # R2-D-02：审批收件箱读路径接 RegistryDB 后，清掉注册表 DB 路径 env，
     # 防止本机 set 的 RFAUTO_REGISTRY_DB 把测试写入写到 tmp 之外（#144）
     monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
     yield
@@ -84,6 +84,42 @@ class TestRecipeViewSave:
     def test_save_unknown_field_rejected(self, tmp_path):
         r = recipe_save(_recipe(tmp_path), {"model": "patch_antenna"})
         assert not r["ok"]
+
+    def test_view_bad_yaml_error_envelope_not_raise(self, tmp_path):
+        """A4 P0-1：坏 YAML 裸抛 ParserError 曾穿透 → GET /api/recipe 500；
+        服务层按函数自述契约走 error_envelope（ok=False 信封而非抛）。"""
+        bad = tmp_path / "broken.yaml"
+        bad.write_text("params: {a: [unclosed", encoding="utf-8")
+        v = recipe_view(bad)
+        assert v["ok"] is False and v["errors"]
+        assert "YAML 解析失败" in v["errors"][0]
+
+    def test_save_bad_yaml_error_envelope_not_raise(self, tmp_path):
+        bad = tmp_path / "broken.yaml"
+        bad.write_text("params: {a: [unclosed", encoding="utf-8")
+        r = recipe_save(bad, {"params": {"x": 1.0}})
+        assert r["ok"] is False and r["errors"]
+        assert "YAML 解析失败" in r["errors"][0]
+
+    def test_view_non_mapping_yaml_error_envelope(self, tmp_path):
+        """顶层 list/标量此前 data.get AttributeError 同族 500（A4 P0-1
+        子项）；空文件维持既有空表单语义。"""
+        lst = tmp_path / "list.yaml"
+        lst.write_text("- a\n- b\n", encoding="utf-8")
+        v = recipe_view(lst)
+        assert v["ok"] is False and "映射" in v["errors"][0]
+        empty = tmp_path / "empty.yaml"
+        empty.write_text("", encoding="utf-8")
+        assert recipe_view(empty)["ok"] is True
+
+    def test_create_non_dict_payload_rejected(self, tmp_path):
+        """recipe_create 收非 dict payload 照写后 view 即炸（A4 P0-1 子项）
+        ——入口显式守卫。"""
+        from rfauto.service.ui_service import recipe_create
+
+        r = recipe_create(tmp_path / "new_recipe.yaml", ["not", "a", "dict"])
+        assert r["ok"] is False and r["errors"]
+        assert not (tmp_path / "new_recipe.yaml").exists()
 
 
 class TestRunDetail:
@@ -272,6 +308,51 @@ class TestHttpEndpoints:
         assert client.get("/api/recipe", params={"path": "recipe.yaml"}).json()[
             "params"][0]["value"] == 19.0
 
+    def test_recipe_get_empty_path_400_not_500(self, client):
+        # W8-B P2-1（2026-10-12）：空 path 此前 Path("")→cwd 目录，
+        # open('.') 抛 PermissionError 未捕获直冒 500（前端红 toast）
+        r = client.get("/api/recipe", params={"path": ""})
+        assert r.status_code == 400
+        v = r.json()
+        assert v["ok"] is False and v["errors"], "须 error 信封（单源构造器）"
+
+    def test_recipe_get_directory_path_400_envelope(self, client):
+        # 目录路径同样不可作配方打开：'.' 过 fs_read_fence（cwd 在允许根内）
+        # 后 open(cwd) 在 Windows=PermissionError / POSIX=IsADirectoryError
+        # ——同属 OSError，路由层包 400 信封不冒 500
+        r = client.get("/api/recipe", params={"path": "."})
+        assert r.status_code == 400
+        assert r.json()["ok"] is False
+
+    def test_recipe_and_model3d_bad_yaml_envelope_not_500(self, client):
+        """A4 P0-1 端到端钉：坏配方点开（配方页/3D 预览）返回 ok=False
+        信封而非 500 纯文本。"""
+        Path("broken.yaml").write_text("params: {a: [unclosed",
+                                       encoding="utf-8")
+        r = client.get("/api/recipe", params={"path": "broken.yaml"})
+        assert r.status_code != 500
+        v = r.json()
+        assert v["ok"] is False and v["errors"]
+        r2 = client.get("/api/model3d", params={"path": "broken.yaml"})
+        assert r2.status_code != 500
+        assert r2.json()["ok"] is False
+
+    def test_recipe_save_bad_yaml_envelope_not_500(self, client):
+        Path("broken.yaml").write_text("params: {a: [unclosed",
+                                       encoding="utf-8")
+        r = client.post("/api/recipe", json={
+            "path": "broken.yaml", "updates": {"params": {"x": 1.0}}})
+        assert r.status_code != 500
+        v = r.json()
+        assert v["ok"] is False and v["errors"]
+
+    def test_recipe_create_non_dict_payload_envelope_not_500(self, client):
+        r = client.post("/api/recipe", json={
+            "path": "new_recipe.yaml", "create": ["not", "a", "dict"]})
+        assert r.status_code != 500
+        v = r.json()
+        assert v["ok"] is False and v["errors"]
+
     def test_model3d_get_and_post(self, client):
         g = client.get("/api/model3d", params={"path": "recipe.yaml"}).json()
         assert g["ok"] and g["template"] == "wilkinson"
@@ -420,20 +501,11 @@ class TestCalculatorEndpoints:
         assert not r["ok"] and "未注册" in r["error"]
 
 
-# 示例 Touchstone（scripts/spike_b_ads/.../demo_BP.s2p）为二进制 .s2p，
-# 不随 git 分发；缺文件时依赖它的用例 skip（合成输入的报错分支照常测）。
-_DEMO_TOUCHSTONE = (Path(__file__).resolve().parents[2] / "scripts"
-                    / "spike_b_ads" / "p3_d2_out" / "demo_BP.s2p")
-_requires_demo_touchstone = pytest.mark.skipif(
-    not _DEMO_TOUCHSTONE.exists(),
-    reason="sample Touchstone fixture not distributed in this repo")
-
-
-@_requires_demo_touchstone
 class TestSparamsExternal:
-    """Touchstone 导入对比：service + endpoint + PNG 渲染。"""
+    """WP0.3/E8 Touchstone 导入对比：service + endpoint + PNG 渲染。"""
 
-    DEMO = _DEMO_TOUCHSTONE
+    DEMO = (Path(__file__).resolve().parents[2] / "scripts" / "spike_b_ads"
+            / "p3_d2_out" / "demo_BP.s2p")
 
     def test_external_sparams_db_and_deg(self, tmp_path, monkeypatch):
         from rfauto.service.ui_service import external_sparams
@@ -487,7 +559,7 @@ class TestSparamsExternal:
 
 
 class TestRunsMountGating:
-    """开源默认安全：runs/ 静态挂载三态裁决。"""
+    """R2-B-05 开源默认安全：runs/ 静态挂载三态裁决（2026-09-19 用户裁决落实现）。"""
 
     def test_default_app_keeps_runs_mount(self, tmp_path, monkeypatch):
         # 向后兼容钉：create_ui_app() 缺省（回环/测试路径）仍挂 /runs
@@ -528,13 +600,26 @@ class TestRunsMountGating:
         from rfauto.cli.main import app as cli_app
 
         runner = CliRunner()
-        # 固定宽度：Linux CI 无 tty 时 rich 按 80 列换行会把选项名拆断
-        result = runner.invoke(cli_app, ["ui", "--help"],
-                               env={"COLUMNS": "200"})
+        result = runner.invoke(cli_app, ["ui", "--help"])
         if result.exit_code != 0:
             pytest.fail(f"ui --help 失败: {result.output}")
-        import re as _re
-        plain = _re.sub(r"\[[0-9;]*m", "", result.output)
-        flat = _re.sub(r"\s+", "", plain)
-        assert "--expose-runs" in flat
-        assert "--no-expose-runs" in flat
+        assert "--expose-runs" in result.output
+        assert "--no-expose-runs" in result.output
+
+
+def test_cross_fidelity_p0_threshold_single_source(tmp_path, monkeypatch):
+    """R3-3 回归钉：p0_native verdict 重推阈值与 p0_gate_service 单源
+    （monkeypatch 单源常量必须改变 UI 判读——两处字面量即此钉红）。"""
+    from rfauto.service import p0_gate_service, ui_service
+
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    (runs / "p0_single_source_result.json").write_text(json.dumps({
+        "spearman_rho": 0.6, "top5_recall": 0.9, "n_evaluated": 10,
+    }), encoding="utf-8")
+    monkeypatch.setattr(p0_gate_service, "THRESHOLD_RHO", 0.5)
+    r = ui_service.cross_fidelity_view()
+    assert r["ok"], r
+    entry = next(e for e in r["cross_evolution"]
+                 if e["run_id"] == "p0_single_source_result")
+    assert entry["verdict"] == "PASS"  # 0.6 ≥ 同源阈值 0.5 → 单源生效

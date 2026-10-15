@@ -46,7 +46,7 @@ def main() -> int:
     parser.add_argument("--machine", default=None,
                         help="注册表机器名（缺省=唯一登记机器）")
     parser.add_argument("--out-dir", default=None,
-                        help="回拉产物目录（缺省 runs/remote_ads/<YYYYMMDD>）")
+                        help="回拉产物目录（缺省 runs/remote_ads/<YYYYMMDD>/）")
     parser.add_argument("--batch-name", default=None,
                         help="批次目录名（缺省 ads_<uuid8> 唯一化）")
     parser.add_argument("--dataset-stem", default=None,

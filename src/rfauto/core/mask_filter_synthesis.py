@@ -1,7 +1,7 @@
 """mask→滤波器规格综合闭环（ge6 Wave1 / Ph5 池「开源空白旗舰件」）。
 
-来源（先接地）：方案池 第十二轮 +
-研究扩充 round6 中件包二——「FCC/ETSI/3GPP 免费
+来源（先接地）：docs/plan_expansion_pool_20260924.md 第十二轮 +
+docs/research_expansion_20260926_round6.md 中件包二——「FCC/ETSI/3GPP 免费
 遮罩库→Chebyshev 阶数闭式→优化环」；开源空白（无生产级 Python 库做
 遮罩→最小阶→耦合矩阵闭环），本仓现成资产 cm_core（C13 广义切比雪夫原型
 →Cameron N+2 综合）直接复用，不重写综合内核。

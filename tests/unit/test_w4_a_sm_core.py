@@ -268,10 +268,15 @@ def test_cohn_loaded_vs_independent_fem(d_mm: float,
 # ─── P4：CPW/FGCPW 有限厚修正档 ──────────────────────────────────────────────
 
 def test_fgcpw_thickness_continuity_to_zero_t() -> None:
-    """t→0⁺ 与零厚 G-N 闭式逐位衔接（d→0、k_e→k₁、εeff_t→εeff₀）。"""
+    """t→0⁺ 与零厚 G-N 闭式逐位衔接（d→0、k_e→k₁、εeff_t→εeff₀）。
+
+    ge9 P1 修后重钉：εeff_t 的 0.7 项是 O(t/gap) 一阶扰动（t=1e-6 时
+    相对 ~1.05e-6，恰超 rel=1e-6 钉——旧钉在错约定 q1 基线上以 ~0.96e-6
+    侥幸过带），t 取 1e-9 回到真极限语义（扰动 ~1e-9）。
+    """
     w, g, h, er = 4.3466, 0.2, 0.508, 3.66
     gn0 = fgcpw_gn_closed_form(w, g, h, er)
-    gt = fgcpw_gn_closed_form_thickness(w, g, h, er, 1e-6)
+    gt = fgcpw_gn_closed_form_thickness(w, g, h, er, 1e-9)
     assert gt["eps_eff"] == pytest.approx(gn0["eps_eff"], rel=1e-6)
     assert gt["z0_ohm"] == pytest.approx(gn0["z0_ohm"], rel=1e-5)
     assert gt["eps_eff_zero_t"] == pytest.approx(gn0["eps_eff"], rel=1e-12)
@@ -279,7 +284,9 @@ def test_fgcpw_thickness_continuity_to_zero_t() -> None:
 
 def test_fgcpw_thickness_direction_and_response_band() -> None:
     """方向钉：εeff/Z0 随 t 降（与 FD 裁判方向一致，见模块 docstring 构成
-    裁判）；响应带登记钉（t/gap≈1.75% 时 |响应比| ≤2.5×，docstring 带）。"""
+    裁判）；响应带登记钉（ge9 审查 P1 修后重标：t/gap≈1.75% 时闭式/FD
+    响应比 z0 ≈2.23×/εeff ≈1.30×——旧带 1.25×/2.5× 在错约定基线上标定，
+    修后实测重登记；#122 不静默）。"""
     w, g, h, er, t = 5.0, 1.0, 0.508, 3.66, 0.0175   # t/gap=1.75%
     gn0 = fgcpw_gn_closed_form(w, g, h, er)
     gnt = fgcpw_gn_closed_form_thickness(w, g, h, er, t)
@@ -289,7 +296,11 @@ def test_fgcpw_thickness_direction_and_response_band() -> None:
     fdt = cpw_finite_thickness_quasistatic(w, g, t, h, er, gnd_mm=4.0)
     resp_closed = gnt["z0_ohm"] / gn0["z0_ohm"] - 1.0
     resp_fd = fdt.z0_ohm / fd0.z0_ohm - 1.0
-    assert abs(resp_closed / resp_fd) < 3.0   # 实测 ≈2.5×（docstring 带）
+    ratio_z0 = resp_closed / resp_fd
+    assert ratio_z0 == pytest.approx(2.23, abs=0.5)   # 修后实测 2.227×
+    resp_closed_ee = gnt["eps_eff"] / gn0["eps_eff"] - 1.0
+    resp_fd_ee = fdt.eps_eff / fd0.eps_eff - 1.0
+    assert (resp_closed_ee / resp_fd_ee) == pytest.approx(1.30, abs=0.4)
     with pytest.raises(ValueError, match="吃光"):
         fgcpw_gn_closed_form_thickness(0.5, 0.02, h, er, 0.0175)
 

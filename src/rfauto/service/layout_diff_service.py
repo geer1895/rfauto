@@ -1,6 +1,6 @@
 """LC-6 版图 diff/版本化：层/图元/端口三面语义 diff（纯确定性，JSON 进出）。
 
-规格=研究扩充 round15 §四 LC-6："层/图元/端口
+规格=docs/research_expansion_20261002_round15.md §四 LC-6："层/图元/端口
 三面语义 diff（借 gdsfactory 快照机制不抄依赖）"。本模块不引入 gdsfactory，
 diff 语义自实现：
 

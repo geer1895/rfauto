@@ -19,3 +19,30 @@ nominal_params:
 topology: 单极子（§10.3 C1 天线族 II）：竖直零厚细带（x 向宽 mon_w，y=0 面）自馈口顶 z=feed_gap 起立 λ0/4；馈口=地面 z=0 → 细带底缘 LumpedPort（patch 底馈探针同型）；无介质板（像理论口径）
 param_semantics: mon_len_mm=细带长（一阶谐振 λ0/4=c/(4f0)，像理论），mon_w_mm=细带宽，feed_gap_mm=馈口高（地面到细带底缘，LumpedPort 激励向 z 跨度）
 smoke_note: 真机 runs/antenna2_smoke/monopole（2026-09-14）PASS：S11 −17.39dB @2.135GHz（设计 2.4，−11.0% 端效应）；Zin 电抗过零 2.110GHz R=37.3Ω（Balanis 36.5Ω 口径吻合）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: PEC 地面上 λ0/4 竖直细带单极子（无介质板，像理论口径）：像理论等效为
+      全长 2h 的中心馈电对称振子取上半空间——辐射场倍增、输入阻抗减半，λ/4 单极子
+      谐振输入电阻 36.5Ω（73Ω 偶极子之半）；有限宽细带的边缘电容端效应使实际谐振
+      谷位低于设计值（仓内首判 −10.92%，与先例 −11.0% 同向），设计式不预补偿、
+      判读窗按端效应带放宽。
+    derivations:
+    - claim: 像理论：PEC 地面上高 h 的单极子 ≡ 高 2h 的中心馈电偶极子（下半空间场为零、上半空间场倍增）→ 一阶谐振 h=λ0/4=c/(4f0)，谐振输入电阻为 λ/2 偶极子 73Ω 之半
+      formula: mon_len = c/(4·f0)；Rin(谐振) = 36.5Ω
+      source: knowledge/anchors.yaml（monopole.mon_len_mm.closedform-v1 锚——Balanis 4ed Ch.9 像理论口径+真机首判回填账）+ Balanis, Antenna Theory (4th ed.), Ch.9（单极子与像理论）
+    - claim: 端效应修正面：细带顶/底边缘电容使有效电长度 > 物理长度 → 谐振频率下偏；仓内判据=谷位对设计偏 ≤15%（端效应带内）+ 谷对 λ0/4 关系核走 εeff=1 假设
+      formula: f_res ≈ c/(4·mon_len)·(1−δ_end)；δ_end ≈ 0.11（仓内实测带）
+      source: knowledge/anchors.yaml（monopole 锚 devlog 真机首判 −10.92%/先例 −11.0%）+ docs/templates/monopole/meta.yaml（param_semantics 与 smoke_note）
+  sensitivity_ranking:
+  - param: mon_len_mm
+    order: 1
+    basis: λ0/4 恒等式 |∂lnf0/∂lnL|=1（一阶精确，εeff=1 口径）
+  - param: mon_w_mm
+    order: 2
+    basis: 细带宽定边缘电容 → 端效应幅度（谐振下偏的一阶修正量）
+  - param: feed_gap_mm
+    order: 3
+    basis: 馈口激励向跨度（LumpedPort 串联电感/间隙电容面，弱敏感）
+  quiz_refs: []

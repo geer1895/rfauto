@@ -1,4 +1,4 @@
-"""F-H 件 3 振动/冲击 SRS 内核单测（研究扩充 round4 F-H 件 3）。
+"""F-H 件 3 振动/冲击 SRS 内核单测（docs/research_expansion_20260926_round4.md F-H 件 3）。
 
 裁判口径（#118，独立来源/独立推导，不自证）：
 - Miles：解析钉值 sqrt(5π)=3.9633272976060（venv 实测复核）+ PSD 频响

@@ -31,7 +31,6 @@ test_check_numbers（五钉清单批纪律），本文件只自证资源体接�
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import ClassVar
 
@@ -500,18 +499,13 @@ class TestCliHelpHygiene:
     """
 
     @pytest.mark.parametrize("leaf", ["build", "solve", "status"])
-    def test_help_clean_and_json_flag(self, leaf, monkeypatch):
-        # Linux CI 上 rich 以 ANSI+80 列渲染 help，'--json' 可能被面板截断——
-        # 钉宽列+无色环境，并剥 ANSI 后断言（跨平台等价）。
-        monkeypatch.setenv("COLUMNS", "200")
-        monkeypatch.setenv("NO_COLOR", "1")
+    def test_help_clean_and_json_flag(self, leaf):
         from rfauto.cli.domains.edb import edb_app
 
         r = runner.invoke(root_app, ["edb", leaf, "--help"])
         assert r.exit_code == 0, r.output
-        out = re.sub(r"\[[0-9;]*[A-Za-z]", "", r.output)
-        assert "%" not in out
-        assert "--json" in out
+        assert "%" not in r.output
+        assert "--json" in r.output
         # 自写 help 文本面（app 描述+该叶 docstring）零裸 % 零方括号
         info = edb_app.info.help or ""
         assert "%" not in info and "[" not in info
@@ -522,6 +516,20 @@ class TestCliHelpHygiene:
 
 
 class TestCliBuild:
+    def test_bad_param_format_json_envelope(self):
+        """A5 P1-1：--json 下 --param 解析失败输出 JSON 信封（#ge1㉙ 错误
+        路径禁红字裸文本；exit 2=usage 惯例保留）。"""
+        r = runner.invoke(root_app, ["edb", "build", "--json", "-p", "badfmt"])
+        assert r.exit_code == 2, r.output
+        data = json.loads(r.output)
+        assert data["ok"] is False
+        assert "--param" in data["errors"][0] and "badfmt" in data["errors"][0]
+
+    def test_bad_param_format_human_red_text(self):
+        r = runner.invoke(root_app, ["edb", "build", "-p", "badfmt"])
+        assert r.exit_code == 2, r.output
+        assert "k=v" in r.output
+
     def test_dry_run_json_envelope(self):
         r = runner.invoke(root_app, [
             "edb", "build", "-t", "edb_branchline", "-p", "f0_ghz=2.4",

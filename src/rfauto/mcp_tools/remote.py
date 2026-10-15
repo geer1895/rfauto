@@ -41,7 +41,8 @@ def remote_machine_status(machine: str | None = None) -> dict[str, Any]:
 
     在探活基础上判 SSH 认证状态：凭据缺失如实 ``missing_credentials``
     （不猜不试密码，附 env/配置提示）；凭据在则真连一次按命令回执判
-    ``ok/failed``。SSH 凭据只来自 RFAUTO_REMOTE_SSH_USER/PASSWORD 环境变量
+    ``ok/failed``。零写副作用（纯探测面：网络连接不落盘、不改机器与
+    注册表状态）；SSH 凭据只来自 RFAUTO_REMOTE_SSH_USER/PASSWORD 环境变量
     或 remote_machines.local.yaml（gitignore），永不出现在返回值；不用于
     远程求解执行。探活/SSH 异常 → ok=False 信封如实。时序：真连一次，
     慢网下耗时秒级。

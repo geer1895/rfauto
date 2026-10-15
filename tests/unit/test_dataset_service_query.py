@@ -186,7 +186,7 @@ class TestPerf:
     def test_million_rows_materialize_query_budget(self, tmp_path, monkeypatch):
         """100 万行合成集走 materialize/query 主路径计时（E1/薄弱项 4 判据载体）。
 
-        判据口径（续跑计划 §E1/薄弱项 4）：百万行 SQL 查询 <1s——
+        判据口径（延续计划 §E1/薄弱项 4）：百万行 SQL 查询 <1s——
         round2 审查（R2-B-08 A 类①）确证此前零测试零产物（最大注册集仅
         582 行）。
 

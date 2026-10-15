@@ -1,0 +1,41 @@
+; Top Design: "Datalink_Basics_lib:output_spectrum:schematic"
+; Netlisted using Hierarchy Policy: "Standard"
+
+Options ResourceUsage=yes UseNutmegFormat=no EnableOptim=no TopDesignName="Datalink_Basics_lib:output_spectrum:schematic" DcopOutputNodeVoltages=yes DcopOutputPinCurrents=yes DcopOutputAllSweepPoints=no DcopOutputDcopType=0
+HB:HB1 MaxOrder=4 Freq[1]=2.45 GHz Order[1]=5 StatusLevel=2 HBSS_WSP=0 SweepVar="Pin" SweepPlan="HB1_stim" OutputPlan="HB1_Output" 
+
+SweepPlan: HB1_stim Start=-40 Stop=10 Step=1 
+
+OutputPlan:HB1_Output \
+      Type="Output" \
+      UseNodeNestLevel=yes \
+      NodeNestLevel=2 \
+      UseEquationNestLevel=yes \
+      EquationNestLevel=2 \
+      UseSavedEquationNestLevel=yes \
+      SavedEquationNestLevel=2 \
+      UseDeviceCurrentNestLevel=no \
+      DeviceCurrentNestLevel=0 \
+      DeviceCurrentDeviceType="All" \
+      DeviceCurrentSymSyntax=yes \
+      UseCurrentNestLevel=yes \
+      CurrentNestLevel=999 \
+      UseDeviceVoltageNestLevel=no \
+      DeviceVoltageNestLevel=0 \
+      DeviceVoltageDeviceType="All"
+
+Tran:HB1_tran HB_Sol=1 SteadyState=1 StatusLevel=3 \
+Freq[1]=2.45 GHz Order[1]=5 
+
+Component:tahb_HB1 Module="ATAHB" Type="ModelExtractor" \ 
+ Tran_Analysis="HB1_tran" HB_Analysis="HB1" 
+
+
+Xport:XNP1  N__0 0 Vout 0 File="WLAN_PA.xnp" Type="gmdif" InterpMode="linear" ExtrapMode="constant" EnableNormalization=yes InterpDom="ma" ModelReductionLevel=0 SaveReducedModel=no
+Port:PORT1  N__0 0 Num=1 Z=50 Ohm P[1]=polar(dbmtow(Pin),0) Freq[1]=2.45 GHz    Noise=yes Pac=polar(dbmtow(0),0) 
+Port:Term2  Vout 0 Num=2 Z=50 Ohm Noise=yes 
+
+Pin=0
+aele Project_Directory=getcwd();slash=(identify_value(on_PC)=="TRUE")?"\\":"/";Modulation_Dataset=strcat(Project_Directory,slash,"wlan_modulation.ds");
+aele F=Output_Spectrum[0,::];Output_Spec_pin1=wtodbm(Output_Spectrum[1,::])-max(wtodbm(Output_Spectrum[1,::]));Output_Spec_pin2=wtodbm(Output_Spectrum[2,::])-max(wtodbm(Output_Spectrum[2,::]));Output_Spec_pin3=wtodbm(Output_Spectrum[3,::])-max(wtodbm(Output_Spectrum[3,::]));Output_Spec_pin4=wtodbm(Output_Spectrum[4,::])-max(wtodbm(Output_Spectrum[4,::]));Output_Spec_pin5=wtodbm(Output_Spectrum[5,::])-max(wtodbm(Output_Spectrum[5,::]));Output_Spec_pin6=wtodbm(Output_Spectrum[6,::])-max(wtodbm(Output_Spectrum[6,::]));
+aele Pin_Analysis=[-20,-10,-5,0,5,10];Output_Spectrum=real(dl_python("outputSpectrum.py",Modulation_Dataset, Pin,Vout[::,1],Pin_Analysis));

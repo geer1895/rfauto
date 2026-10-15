@@ -11,7 +11,7 @@ Z0 = sqrt(L/C)，L·C_air = μ0ε0（洛伦兹恒等），Z0 = Z0_air/sqrt(εeff
 - Gatti, Bozzi, Perregrini, Wu, Bosisio, "A Novel Substrate Integrated Coaxial
   Line (SICL) for Wide-Band Applications," 36th EuMC 2006, pp. 1614–1617
   （SICL 开山论文）。**可达性**：IEEE/RG 均付费墙（2026-09-27 实测仅摘要），
-  本模块**不抄该文常数**。勘误登记：研究扩充 round3
+  本模块**不抄该文常数**。勘误登记：docs/research_expansion_20260926_round3.md
   §二写"Gatti 2010"——2010 EuMC 的 Gatti/Bozzi 是 SICL Butler matrix 应用论文，
   闭式相关的 canonical 开山篇为上述 2006 论文。
 - 闭式选型（矩形同轴 = 屏蔽带状线工程闭式族；Howe《Stripline Circuit Design》

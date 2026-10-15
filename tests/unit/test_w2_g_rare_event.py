@@ -95,9 +95,13 @@ class TestA2QuadraticVsSorm:
         assert fr.converged
         sorm = sorm_beta_correction(ls, np.zeros(d), np.ones(d),
                                     fr.design_point_u)
-        # Breitung 适用域 1+β·κ>0 双向核查（β·0.05=0.15 ≪1）
-        assert all(1.0 + abs(fr.beta) * kappa * np.sign(kappa) > 0
-                   or True for _ in [0])  # 域内（弱曲率）
+        # Breitung 适用域 1+β·κ>0 双向核查（β·0.05=0.15 ≪1）。原
+        # `... or True` 恒真断言把域核查掩埋（ge9 审查 R7 P2-3 去除）——
+        # κ 越域即红，防"SORM 对照超适用域仍绿"的方法论违规；且原表达式
+        # abs(β)·κ·sign(κ)≡abs(β)·|κ| 与原文 1+β·κ 语义已漂，按原文恢复
+        assert 1.0 + fr.beta * kappa > 0, (
+            f"Breitung 域外：1+β·κ={1.0 + fr.beta * kappa:.4f} ≤ 0 "
+            f"（κ={kappa}, β={fr.beta}），SORM 对照超适用域")
         med = _median_log10_err(
             float(sorm.pf_sorm), range(10),
             limit_state=g, mean=[0.0] * d, stddev=[1.0] * d,

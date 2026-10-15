@@ -3,7 +3,7 @@
 Jev 本体专有不可引入（无开源权重）；本模块引入的是**范式通道**：
 typed-question（choice/score）→ typed-answer（枚举选择/排序索引），
 provider 可插拔，**缺省确定性零网络**。调研账=
-研究扩充_jev_systemone.md。
+docs/research_expansion_20261005_jev_systemone.md。
 
 工程护栏（逐条对照项目硬规则）：
 - **铁律 7（数值只在确定性内核）**：通道输出只允许枚举选择/排序索引/
@@ -313,10 +313,10 @@ _REDACTED_FMT = "<redacted:{rule}>"
 
 # 路径/主机类字符类：空白、引号、尖括号、管道、ASCII 括号方括号花括号与
 # 全角闭合标点处截断（防把句尾标点吃进占位符）
-_PATH_STOP = r"[^\s\"'<>|()\[\]{}，。；、【】《》「」]"
+_PATH_STOP = r"[^\s\"'<>|()\[\]{}，。；、（）【】《》「」]"
 
 _SANITIZE_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
-    # Windows 盘符绝对路径：D:/rf_workspace\runs\xxx、C:/Users/pc/...
+    # Windows 盘符绝对路径：D:\rf_workspace\runs\xxx、C:/Users/pc/...
     ("win_drive_path",
      re.compile(r"(?i)\b[a-z]:[\\/]" + _PATH_STOP + r"{0,200}")),
     # POSIX 用户/系统绝对路径：/home/u、/Users/u、/root、/mnt、/srv、/opt

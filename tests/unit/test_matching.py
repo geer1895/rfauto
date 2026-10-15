@@ -1,6 +1,6 @@
 """E6b 匹配网络与滤波器综合单元测试。
 
-验收标准（扩展方案 §E6b）：
+验收标准（规划扩展 §E6b）：
 ① L-section 闭式解正确性
 ② Chebyshev g 值对拍
 ③ Commensurate line 结构完整性
@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import math
 
 import numpy as np
@@ -16,6 +17,7 @@ import pytest
 
 from rfauto.core.matching import (
     LCElement,
+    LSectionResult,
     MatchNetworkResult,
     chebyshev_g_values,
     synthesize_chebyshev_filter,
@@ -143,6 +145,33 @@ class TestLSectionLegacyLabel0bf:
         # 新代码的正确口径：synthesize_l_match 的 response 显式且语义无歧义
         ref = synthesize_l_match(50.0, 200.0, 2.4, response="low_pass")
         assert ref.elements[0].kind == "C" and ref.elements[1].kind == "L"
+
+    def test_annotation_text_is_pinned(self):
+        """注记文字面钉（C2 followUp，2026-10-11 aurora36 W5-C）：docstring 与
+        标签字段注记（TOPOLOGY_NOTE）含澄清字样——防歧义注记被后续批静默
+        删除后，只剩行为钉在场而文字面失传（串/并联位置随分支而异的说明显
+        在必查项）。零行为口径：三类标签字符串同时逐字回归。"""
+        fn_doc = synthesize_l_section.__doc__ or ""
+        # 标签歧义澄清：历史工况记号（非响应型）双分支标签都在文
+        assert "工况" in fn_doc
+        assert "high_pass" in fn_doc and "low_pass" in fn_doc
+        # 串联在源侧还是负载侧：两分支排布均有明示（跨负载 / 跨源）
+        assert "跨负载" in fn_doc
+        assert "跨源" in fn_doc
+        # 返回标签字段注记：类文档 + TOPOLOGY_NOTE（运行时可断言的注记面）
+        cls_doc = LSectionResult.__doc__ or ""
+        assert "工况标签" in cls_doc
+        note = LSectionResult.TOPOLOGY_NOTE
+        assert "工况标签" in note and "响应型" in note
+        assert "源侧" in note and "负载侧" in note
+        # 零行为改动：三类标签字符串逐字节不变（消费方=上方各行为钉）
+        assert synthesize_l_section(50.0, 200.0, 2.4).topology == "high_pass"
+        assert synthesize_l_section(50.0, 25.0, 2.4).topology == "low_pass"
+        assert synthesize_l_section(50.0, 50.0, 2.4).topology == "bypass"
+        # TOPOLOGY_NOTE 是 ClassVar 注记不是数据字段（不进 __init__/to_dict）
+        assert "topology_note" not in {f.name for f in
+                                       dataclasses.fields(LSectionResult)}
+        assert "topology_note" not in synthesize_l_section(50, 100, 2.4).to_dict()
 
 
 class TestChebyshevFilter:

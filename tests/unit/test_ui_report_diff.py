@@ -5,13 +5,13 @@
    list 整体比较、datetime JSON 化）、metrics Δ、口径判定与 verdict_hints
    （跨模型"口径不同"显式提示；S11 方向只按仓内既有 UI 口径「越低越好」）。
 2. **endpoint 钉**：GET /api/runs/diff?a&b——ok 形状、缺参/缺 run 错误信封、
-   **路由序**（api/runs/diff 必须先于 /api/runs/{run_id}，否则 "diff" 被
+   **路由序**（/api/runs/diff 必须先于 /api/runs/{run_id}，否则 "diff" 被
    参数路由吃掉——test_compare_endpoint_route_order 同款坑）、路由计数
    （58→59，docs 侧「58 路由」钉由主代理回填，本测试为代码侧事实钉）。
 3. **UI 源码钉**：报告页 TOC（h2/h3 稳定 id + >3 节左侧栏 + scrollspy）、
    双 run 对比面板（双 select + 两栏 diff 表 + 单 PlotCard 叠图 + 口径警示）。
 4. **runs/ 证据面（软钉）**：runs/pr34/ 本批 harness 在档时校验 golden
-   与内嵌快照一致（缺席跳过——干净环境不依赖 runs）。
+   与内嵌快照一致（缺席跳过——干净环境不依赖 runs/）。
 """
 
 from __future__ import annotations
@@ -191,8 +191,14 @@ class TestRunsDiffEndpoint:
         assert paths.index("/api/runs/diff") < \
             paths.index("/api/runs/{run_id}")
         # 端点计数事实钉：58（PR-4 前）→ 59（+diff）→ 63（ge8b Wave B：画廊/仪表盘/profile/队列四页，席B2/B3）
+        # → 64（edblane-w7：+edb_status EDB 状态页，e6306cc4）
+        # → 67（aurora_d UI-R3：+统一事件流三端点 /api/events/stream、
+        #    /api/tune/events/stream、/api/campaign_queue/events/stream。
+        #    溯源登记（UI-R8 审查 P2-1，UI-R10 补注）：此计数 hunk 随
+        #    UI-R2 commit de729bae 入库——有意同笔搭乘、非误捎带；端点
+        #    业务归属 UI-R3 ebd32005）
         n_routes = sum(1 for r in app.routes if isinstance(r, Route))
-        assert n_routes == 63, n_routes
+        assert n_routes == 67, n_routes
 
     def test_server_route_order_source_pin(self):
         src = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui"
@@ -204,8 +210,10 @@ class TestRunsDiffEndpoint:
 class TestReportPageUiPins:
     """TOC + 双 run 对比面板源码钉（免 node）。"""
 
-    _PAGES = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui"
-              / "static" / "pages.js").read_text(encoding="utf-8")
+    # UI-R2：入口+pages/ 域模块并集读（行为断言不变）
+    _static_dir = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
+    _PAGES = "\n".join(p.read_text(encoding="utf-8") for p in
+                        [_static_dir / "pages.js", *sorted((_static_dir / "pages").glob("*.js"))])
 
     def test_toc_stable_ids_and_scrollspy(self):
         src = self._PAGES

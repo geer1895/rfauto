@@ -2,8 +2,8 @@
 """tests 面 time.sleep(N>10) AST 常驻守卫（门口径 v2 ④ followUp 清偿，2026-10-11 W2-D）。
 
 门口径 v2 采纳批遗留 followUp："--durations top-20 分层
-+ sleep(N>10) AST 扫描常驻"——本脚本补齐后半（前半=全量门 durations
-分层报告，同批清偿）。
++ sleep(N>10) AST 扫描常驻"——本脚本补齐后半（前半=wf_gate_full_v2.py
+durations 分层报告，同批清偿）。
 
 扫描形态（AST 结构判定，非正则——字符串模板里的 sleep 不误报）：
 

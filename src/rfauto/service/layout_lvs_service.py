@@ -1,6 +1,6 @@
 """LC-7 LVS 最小面：shapely 连通分量 → 几何网表 vs 参考连接表对照（flag 级）。
 
-规格=研究扩充 round15 §四 LC-7："shapely 连通
+规格=docs/research_expansion_20261002_round15.md §四 LC-7："shapely 连通
 分量→网表 vs compose layout_netlist 对照 flag 级"。本模块是**最小面**：
 
 - 几何侧：单导电层图元（path=线宽/2 buffer、polygon/circle=本体）做

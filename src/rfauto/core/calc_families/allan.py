@@ -15,7 +15,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "allan_deviation",
-    "MS-5 Allan 偏差（时钟稳定度，IEEE 1139/952 口径）：分数频率 y 序列"
+    "Allan偏差分析：MS-5 Allan 偏差（时钟稳定度，IEEE 1139/952 口径）：分数频率 y 序列"
     "（kind='freq'）或相位时间误差 x 序列秒（kind='phase'，y=Δx/τ0）"
     "→ 重叠（缺省）/非重叠 Allan 偏差序列 {tau_s, adev, adev_error, "
     "n_terms}（tau 缺省倍频程网格；越界 tau 裁剪）。label=全段 log-log "

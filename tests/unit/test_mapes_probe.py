@@ -451,7 +451,7 @@ def test_load_raw_ui_reuses_cache_and_rejects_shape_mismatch(tmp_path):
 
 
 def test_reassemble_and_drift_subcommand_report_cross_round_drift(tmp_path, monkeypatch):
-    """q=150 合成轮不变档（缓存直读，不触任何 rounds）：reassemble 报告含
+    """q=150 合成轮不变档（缓存直读，不触任何 rounds/）：reassemble 报告含
     cross_round_drift（≈0）且四阶段仍在；drift 子命令落 drift_report.json 含逐类汇总。"""
     mod = _stage2_module()
     layout = mod.build_layout()

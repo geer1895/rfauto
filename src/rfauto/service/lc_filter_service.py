@@ -1,7 +1,7 @@
 """TF-1 LC 滤波器综合 service 面（JSON 进出，规则 4；CLI/MCP 是薄壳）。
 
 消费 core/lc_filter.py 内核（零物理公式在本层，全部数字出自确定性内核，
-规则 7）。四入口（研究扩充 round5 §4.2 TF-1）：
+规则 7）。四入口（docs/research_expansion_20260926_round5.md §4.2 TF-1）：
 
 - :func:`lc_prototype`：原型面（极零 / |H|² / PLR 曲线）；
 - :func:`lc_cauer_ladder`：Cauer I 梯形 g_k（归一化或去归一化物理值）+

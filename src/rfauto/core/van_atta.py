@@ -5,7 +5,7 @@
 - 拓扑与回射原理：E. D. Sharp & M. A. Diab, "Van Atta Reflector Array",
   IRE Transactions on Antennas and Propagation, vol. 8, no. 4, pp. 436-438
   (July 1960), DOI 10.1109/TAP.1960.1144877（2026-09-27 检索多源互证，
-  引用链见 研究扩充 round4 [28]）；原始专利
+  引用链见 docs/research_expansion_20260926_round4.md [28]）；原始专利
   L. C. Van Atta, "Electromagnetic Reflector", US 2,908,002 (1959)。
   回射阵（retrodirective array）教科书口径：单元成对等长传输线互连，
   重辐射波前自动共轭、峰指回来波方向。

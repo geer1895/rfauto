@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+from pathlib import Path
 from typing import Any, ClassVar
 
 import pytest
@@ -55,6 +57,11 @@ class _Parametric:
 
 
 class _FakeHfss:
+    """按实装 pyaedt 1.4.0 真实形态建模的替身：**无 .release() 属性**
+    （review_aurora_next A5 P0-2——替身多出 release() 会把生产码
+    hfss.release() 的 AttributeError 在单测面永久假绿遮蔽）。
+    释放面=release_desktop/close_desktop，调用记录在 self.released 供断言。"""
+
     design_name = "Design1"
     variable_manager = _VarManager()
     setups: ClassVar[list] = [_Setup()]
@@ -62,13 +69,30 @@ class _FakeHfss:
                                   _Boundary("PerfE1", "Perfect E")]
     parametrics: ClassVar[list] = [_Parametric()]
 
-    def release(self):
-        pass
+    def __init__(self):
+        self.released: list = []
+
+    def release_desktop(self, close_projects=True, close_desktop=True):
+        self.released.append(("release_desktop", close_projects, close_desktop))
+        return True
 
 
 @pytest.fixture()
 def mock_open(monkeypatch):
-    monkeypatch.setattr(hfss_import, "_open_hfss", lambda *a, **kw: _FakeHfss())
+    spy: dict = {}
+
+    def _open(*a, **kw):
+        spy["hfss"] = _FakeHfss()
+        return spy["hfss"]
+
+    monkeypatch.setattr(hfss_import, "_open_hfss", _open)
+    return spy
+
+
+def test_fake_hfss_models_real_pyaedt_no_release_attr():
+    """A5 P0-2 防再犯钉：替身必须无 .release()（实装 pyaedt 1.4.0 Hfss
+    MRO 全链无此属性，hasattr=False——替身多出即遮蔽生产码释放缺陷）。"""
+    assert not hasattr(_FakeHfss(), "release")
 
 
 def test_import_spec_reads_all_sections(mock_open, tmp_path):
@@ -84,6 +108,9 @@ def test_import_spec_reads_all_sections(mock_open, tmp_path):
     assert spec["setup"]["setup_name"] == "Setup1"
     assert spec["setup"]["sweeps"][0]["range_start"] == "1.5GHz"
     assert {p["name"] for p in spec["ports"]} == {"Port1", "PerfE1"}
+    # A5 P0-1 释放钉：finally 走单源 _release_hfss（真 pyaedt 1.4.0 无
+    # .release()，替身也必须无）→ release_desktop(False, True) 绝不保存
+    assert mock_open["hfss"].released == [("release_desktop", False, True)]
 
 
 def test_recipe_draft_uses_parametrics_ranges(mock_open, tmp_path):
@@ -138,11 +165,12 @@ def mock_readonly(monkeypatch):
     """钉住只读打开通道，记录实际打开的路径/版本/会话参数。"""
     spy = {}
 
-    def _open(path, design, version, non_graphical):
+    def _open(path, design, version, non_graphical, **kwargs):
         spy["path"] = path
         spy["design"] = design
         spy["version"] = version
         spy["non_graphical"] = non_graphical
+        spy["kwargs"] = kwargs
         spy["hfss"] = _ReadonlySpyHfss()
         return spy["hfss"]
 
@@ -384,3 +412,230 @@ def test_import_project_recipe_excludes_derived_variables(monkeypatch, tmp_path)
     assert set(result["recipe"]["params"]) == {"hsub1", "hmetal"}
     assert "h1" not in result["recipe"]["hfss_var_map"]
     assert any("派生变量" in w for w in result["validation"]["warnings"])
+
+
+# ─── 多机协同 v0（B13）：hfss_import remote_machine 透传（mock，#139 钉通道）──
+
+
+class _RemoteCfg:
+    """infra.remote_machines.RemoteMachineConfig 的 duck（免真实注册表）。"""
+
+    name = "sim_host"
+    host = "10.20.30.40"
+    hfss_grpc_port = 15555
+    hfss_project_root = "E:/rfauto_remote"
+    hfss_version = "2025.1"
+    hfss_ca_cert = None
+    hfss_client_cert = None
+    hfss_client_key = None
+
+
+@pytest.fixture()
+def remote_registry(monkeypatch):
+    """钉住注册表解析通道（#139：单测不读 configs，不真连）。"""
+    from rfauto.infra import remote_machines as rm
+
+    monkeypatch.setattr(rm, "resolve_machine",
+                        lambda name=None, machines=None: _RemoteCfg())
+
+
+@pytest.fixture()
+def remote_open_spy(monkeypatch):
+    """钉住远程打开通道：记录 machine/port 与远程四开关构造窗内的 settings 态。"""
+    from ansys.aedt.core.generic.settings import settings as aedt_settings
+
+    from rfauto.adapters import hfss_session
+
+    seen: dict = {}
+    grpc_before = aedt_settings.grpc_local
+    rpc_before = aedt_settings.remote_rpc_session
+
+    class _FakeHfssRemote:
+        design_name = "Design1"
+        variable_manager = _VarManager()
+        setups: ClassVar[list] = []
+        boundaries: ClassVar[list] = []
+        parametrics: ClassVar[list] = []
+
+        def __init__(self, **kwargs):
+            seen["ctor"] = kwargs
+            # 构造窗内：远程四开关生效（grpc_local=False）+ Hfss 前置
+            # remote_rpc_session=None（ 五百四十二坑 1）。
+            seen["grpc_local_in_window"] = aedt_settings.grpc_local
+            seen["rpc_in_window"] = aedt_settings.remote_rpc_session
+
+        def autosave_disable(self):
+            return None
+
+        def release_desktop(self, **kwargs):
+            return True
+
+    monkeypatch.setattr(hfss_session, "remote_session_switches",
+                        hfss_session.remote_session_switches)  # 走真 CM
+    import ansys.aedt.core as aedt_core
+
+    monkeypatch.setattr(aedt_core, "Hfss", _FakeHfssRemote)
+    seen["grpc_before"] = grpc_before
+    seen["rpc_before"] = rpc_before
+    seen["aedt_settings"] = aedt_settings
+    return seen
+
+
+def test_import_spec_remote_machine_passthrough(tmp_path, remote_registry,
+                                                remote_open_spy):
+    """remote_machine=注册表名 → Hfss(machine=,port=) 透传 + 服务器侧路径语义。"""
+    remote_path = "E:/rfauto_remote/proj/remote.aedt"  # 本地不存在=服务器侧路径
+    spec = hfss_import.import_project_spec(remote_path, version="2025.1",
+                                           remote_machine="sim_host")
+
+    assert spec["ok"], spec.get("error")
+    assert remote_open_spy["ctor"]["machine"] == "10.20.30.40"
+    assert remote_open_spy["ctor"]["port"] == 15555
+    # 服务器侧路径语义：本地不存在不被拒（本地存在性检查跳过）
+    assert spec["project"] == remote_path
+    assert spec["remote"]["name"] == "sim_host"
+    assert spec["remote"]["port"] == 15555
+    # 构造窗四开关（hfss_session 同款）与 Hfss 前置 None
+    assert remote_open_spy["grpc_local_in_window"] is False
+    assert remote_open_spy["rpc_in_window"] is None
+    # CM 退出恢复原值
+    s = remote_open_spy["aedt_settings"]
+    assert s.grpc_local == remote_open_spy["grpc_before"]
+    assert s.remote_rpc_session == remote_open_spy["rpc_before"]
+
+
+def test_import_spec_remote_version_mismatch_fails_closed(monkeypatch, tmp_path,
+                                                          remote_registry):
+    """版本配对断言（项目规则 规则 0）：settings 与注册表失配显式拒绝，不打开。"""
+    opened: list = []
+    monkeypatch.setattr(hfss_import, "_open_hfss",
+                        lambda *a, **kw: opened.append(1) or _FakeHfss())
+
+    spec = hfss_import.import_project_spec("E:/x/whatever.aedt",
+                                           version="2023.1",
+                                           remote_machine="sim_host")
+
+    assert spec["ok"] is False
+    assert "版本配对失配" in spec["error"]
+    assert "2025.1" in spec["error"] and "2023.1" in spec["error"]
+    assert not opened  # fail-closed：拒绝发生在任何 AEDT 构造之前
+
+
+def test_import_spec_unknown_machine_fails_cleanly(monkeypatch):
+    """未登记机器名：RemoteConfigError → ok=False 信封（不裸抛）。"""
+    from rfauto.infra.remote_machines import RemoteConfigError
+
+    def _raise(name=None, machines=None):
+        raise RemoteConfigError(f"远程机器 {name!r} 未登记", details={})
+
+    from rfauto.infra import remote_machines as rm
+
+    monkeypatch.setattr(rm, "resolve_machine", _raise)
+    spec = hfss_import.import_project_spec("E:/x/nope.aedt", version="2025.1",
+                                           remote_machine="ghost")
+    assert spec["ok"] is False
+    assert "远程会话解析失败" in spec["error"]
+
+
+def test_import_spec_without_remote_key_local_unchanged(mock_open, tmp_path):
+    """无 remote_machine 键=本地会话：本地存在性检查仍在、无 machine/port。"""
+    project = tmp_path / "fake.aedt"
+    project.write_text("", encoding="utf-8")
+    spec = hfss_import.import_project_spec(str(project))
+    assert spec["ok"] and "remote" not in spec
+    missing = hfss_import.import_project_spec("Z:/no_such.aedt")
+    assert missing["ok"] is False and "不存在" in missing["error"]
+
+
+def test_readonly_remote_skips_local_copy(tmp_path, remote_registry,
+                                          remote_open_spy):
+    """只读链远程分支：不做本地临时副本（服务器侧路径直通）、带 remote 块。"""
+    remote_path = "E:/rfauto_remote/proj/remote2.aedt"
+    spec = hfss_import.import_project_spec_readonly(
+        remote_path, version="2025.1", timeout_s=10.0,
+        remote_machine="sim_host")
+
+    assert spec["ok"], spec.get("error")
+    assert spec["project"] == str(Path(remote_path))
+    assert spec["read_only_copy"] is False  # 无本地副本（服务器侧路径语义）
+    assert spec["source_locked"] is False   # 本地 .lock 检查跳过
+    assert spec["remote"]["machine"] == "10.20.30.40"
+    # 打开的是原路径直通（不是本地 temp 副本）
+    assert remote_open_spy["ctor"]["machine"] == "10.20.30.40"
+    assert str(remote_open_spy["ctor"].get("project")) == str(Path(remote_path))
+    assert "rfauto_hfss_import_" not in str(remote_open_spy["ctor"]["project"])
+
+
+def test_readonly_local_mode_keeps_copy_semantics(mock_readonly, tmp_path):
+    """本地模式回归钉：仍走临时副本 + read_only_copy=True（零行为变化）。"""
+    project = tmp_path / "local.aedt"
+    project.write_text("", encoding="utf-8")
+    spec = hfss_import.import_project_spec_readonly(str(project),
+                                                    version="2025.1")
+    assert spec["ok"] and spec["read_only_copy"] is True
+    assert "remote" not in spec
+    assert mock_readonly["path"] != str(project)  # 副本
+
+
+def test_import_recipe_remote_passthrough(tmp_path, remote_registry,
+                                          remote_open_spy):
+    """端到端链：import_project_recipe 把 remote_machine 传进只读导入。"""
+    result = hfss_import.import_project_recipe(
+        "E:/rfauto_remote/proj/remote3.aedt", version="2025.1",
+        remote_machine="sim_host")
+
+    assert result["ok"], result.get("error")
+    assert result["spec"]["remote"]["name"] == "sim_host"
+    assert remote_open_spy["ctor"]["port"] == 15555
+
+
+def test_open_hfss_local_window_has_no_remote_kwargs(monkeypatch):
+    """本地构造窗：_open_hfss 不带 machine/port（Desktop 本地口径零变化）。"""
+    import ansys.aedt.core as aedt_core
+
+    seen: dict = {}
+
+    class _FakeLocal:
+        def __init__(self, **kwargs):
+            seen["ctor"] = kwargs
+
+    monkeypatch.setattr(aedt_core, "Hfss", _FakeLocal)
+    hfss_import._open_hfss("p.aedt", None, "2023.1", True)
+    assert "machine" not in seen["ctor"] and "port" not in seen["ctor"]
+
+
+# ─── aurora72 A7-C：AEDT 缺省版本钉单源统一（edb_adapter._DEFAULT_AEDT_VERSION）─
+# 真机口径 2025 R1/v251（项目规则 规则 0 勘误）；改前 hfss_import 缺省误钉
+# "2023.1"、v3_services.hfss_import_recipe 误钉 "2026.1"——统一引用单源后
+# 此处钉"缺省值==单源常量==2025.1"同值断言，防四处字面量再漂移。
+
+class TestAedtVersionDefaultPins:
+    def test_single_source_constant_is_real_machine_version(self):
+        from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
+
+        assert _DEFAULT_AEDT_VERSION == "2025.1"
+
+    def test_import_spec_default_references_single_source(self):
+        from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
+
+        default = inspect.signature(
+            hfss_import.import_project_spec).parameters["version"].default
+        assert default == _DEFAULT_AEDT_VERSION
+
+    def test_v3_recipe_default_references_single_source(self):
+        from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
+        from rfauto.service.v3_services import hfss_import_recipe
+
+        default = inspect.signature(
+            hfss_import_recipe).parameters["version"].default
+        assert default == _DEFAULT_AEDT_VERSION
+
+    def test_resolve_fallback_uses_single_source(self, monkeypatch):
+        # 探测失败兜底=单源缺省（禁回退硬编码旧值 2023.1）
+        from rfauto.infra import version_probe
+
+        def _boom():
+            raise RuntimeError("probe disabled (A7-C pin)")
+
+        monkeypatch.setattr(version_probe, "resolve_aedt_install", _boom)
+        assert hfss_import._resolve_aedt_version(None) == "2025.1"

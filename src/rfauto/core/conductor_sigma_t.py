@@ -1,6 +1,6 @@
 """MA 导体补强：σ(T) 通用化（RRR→任意金属）+ 表面处理定量下界面。
 
-规格：研究扩充 round17 §六 MA-10（导体补强，
+规格：docs/research_expansion_20261002_round17.md §六 MA-10（导体补强，
 P2/S）——"σ(T) 通用化（RRR→任意金属）+OSP/ImAg 定量下界+方向 SR 分离；
 MVDT 名称未确认（待证登记）"。任务书 ge8b Wave A 席4 MA-12（规格为准=
 本件）。与 core/cryo_materials.copper_resistivity（Cu 专用 Matthiessen）

@@ -23,3 +23,37 @@ nominal_params:
   # 非 50Ω 是 #250 参考系分裂机制，修复后端口线=50Ω、重归一链退化恒等；
   # z1/z2=阶梯设计段不动）
   feed_w_mm: 1.1133
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 阶梯阻抗 ladder：高/低阻抗微带段交替（n_segments=5）——电长短的均匀线
+      近似集总：高 Z 段 ≈ 串联电感、低 Z 段 ≈ 并联电容（无耗滤波器实现路线，Richards
+      变换的紧凑化）；带边/谷位由 LC 级联联合定。仓内仲裁状态如实注记：f_dip 引擎对
+      DISAGREE（pointer 锚，修复前几何归档）——修复机制=旧 feed 0.3mm 系 96.9Ω 非
+      50Ω（参考面分裂），feed_w=1.1133mm（50Ω HJ 精算）后重归一链退化恒等；z1/z2
+      阶梯设计段不变。
+    derivations:
+    - claim: 短线 LC 等效：电长 θ≪π/2 的均匀线 ABCD 展开到一阶——高 Z 短段的串联阻抗 Z·θ 主导（等效 L）、低 Z 短段的并联导纳 θ/Z 主导（等效 C）；n 段交替即 ladder 原型的紧凑实现（段宽由微带综合定，数值走内核键）
+      formula: L_i ≈ Z_high·θ_i/ω；C_j ≈ θ_j/(ω·Z_low)；w(z) = microstrip_synthesis(Z)
+      source: Pozar, Microwave Engineering (4th ed.), Ch.8（微波滤波器：阶梯阻抗低通与短线等效）+ core/calculators.py（计算器注册面）转引 calc_families/rf_line.py（microstrip_synthesis，HJ 正向模型 brentq 求逆）
+    - claim: 参考系分裂机制（#250 族教学案例）：旧名义 feed=0.3mm 实为 96.9Ω 端口线 → S 参数参考面分裂、引擎对判读不可比（DISAGREE 归因主体）；修复批后端口线 50Ω、重归一链退化恒等——教学语义=端口参考阻抗必须与设计口径一致，锚不改写（归档证据面）
+      formula: w(feed) = microstrip_synthesis(50Ω) = 1.1133mm（meta nominal，HJ 精算）
+      source: knowledge/anchors.yaml（stepped_impedance.f_pass pointer 锚——修复注记与 DISAGREE 状态全账）+ docs/templates/stepped_impedance/meta.yaml（feed_w 修复批注记）
+  sensitivity_ranking:
+  - param: z2_width_mm
+    order: 1
+    basis: 低阻段 C ∝ 1/Z2（并联电容主旋钮，带边一阶敏感）
+  - param: z1_width_mm
+    order: 2
+    basis: 高阻段 L ∝ Z1（串联电感旋钮）
+  - param: seg_len_mm
+    order: 3
+    basis: θ 线性同时进入 L 与 C（|∂lnL/∂lnθ|=|∂lnC/∂lnθ|=1）
+  - param: n_segments
+    order: 4
+    basis: 阶数=级联节数（带边陡度面，整数旋钮）
+  - param: feed_w_mm
+    order: 5
+    basis: 端口匹配口径（50Ω HJ，不进阶梯设计）
+  quiz_refs: []

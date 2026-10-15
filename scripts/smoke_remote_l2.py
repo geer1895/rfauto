@@ -49,7 +49,7 @@ def main() -> int:
     parser.add_argument("--grpc-wait-s", type=float, default=90.0,
                         help="gRPC 端口轮询超时秒数（缺省 90）")
     parser.add_argument("--out-dir", default=None,
-                        help="产物目录（缺省 runs/remote_l2/<YYYYMMDD>）")
+                        help="产物目录（缺省 runs/remote_l2/<YYYYMMDD>/）")
     args = parser.parse_args()
 
     local_before = count_local_ansysedt()

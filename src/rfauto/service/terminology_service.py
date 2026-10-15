@@ -1,4 +1,4 @@
-"""术语卡服务（QW-6；服务层 JSON 进出， 硬限 4）。
+"""术语卡服务（QW-6；服务层 JSON 进出，AGENTS 硬限 4）。
 
 数据单一事实源：knowledge/terminology.yaml（首版 50 条，schema 见该文件
 头注：term/definition 必填，unit/scope/see_also 可选）。三条主入口全部
@@ -21,7 +21,16 @@ from typing import Any
 
 import yaml
 
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：get_term 失败信封单数
+#: ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——契约
+#: §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；成功信封同笔带戳。
+#: 消费面（tests/unit/test_terminology.py）同笔迁移；MCP knowledge/
+#: terminology 资源直读 YAML 不经本服务（grep 实测零形状消费）。
+#: 1.0=首批推广口径。
+TERMINOLOGY_SERVICE_SCHEMA_VERSION = "1.1"
 
 __all__ = ["get_term", "list_terms", "report_footnotes"]
 
@@ -60,7 +69,8 @@ def list_terms(scope: str | None = None) -> dict[str, Any]:
     scopes = sorted({str(t.get("scope", "general")) for t in terms})
     if scope is not None:
         terms = [t for t in terms if str(t.get("scope", "general")) == scope]
-    return ok_envelope(count=len(terms), scopes=scopes, terms=terms)
+    return ok_envelope(schema_version=TERMINOLOGY_SERVICE_SCHEMA_VERSION,
+                       count=len(terms), scopes=scopes, terms=terms)
 
 
 def get_term(term: str) -> dict[str, Any]:
@@ -68,11 +78,12 @@ def get_term(term: str) -> dict[str, Any]:
     key = str(term).strip().lower()
     for t in _terms_raw():
         if str(t.get("term", "")).strip().lower() == key:
-            return ok_envelope(term=t)
-    return {
-        "ok": False,
-        "error": f"unknown term: {term!r}（见 list_terms 的可用清单）",
-    }
+            return ok_envelope(schema_version=TERMINOLOGY_SERVICE_SCHEMA_VERSION,
+                               term=t)
+    return error_envelope(
+        f"unknown term: {term!r}（见 list_terms 的可用清单）",
+        schema_version=TERMINOLOGY_SERVICE_SCHEMA_VERSION,
+    )
 
 
 def report_footnotes(terms: list[str]) -> dict[str, Any]:
@@ -110,4 +121,6 @@ def report_footnotes(terms: list[str]) -> dict[str, Any]:
             note["see_also"] = src["see_also"]
         footnotes.append(note)
 
-    return ok_envelope(count=len(footnotes), footnotes=footnotes, unknown=unknown)
+    return ok_envelope(schema_version=TERMINOLOGY_SERVICE_SCHEMA_VERSION,
+                       count=len(footnotes), footnotes=footnotes,
+                       unknown=unknown)

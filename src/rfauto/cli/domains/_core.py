@@ -10,6 +10,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+from rfauto.service.envelope import error_envelope
+
 app = typer.Typer(
     name="rfauto",
     help=(
@@ -131,6 +133,22 @@ def _emit(result: dict, fail_msg: str, *, json_output: bool = True) -> None:
         raise typer.Exit(code=1)
     if json_output:
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+
+
+def _emit_usage_error(msg: str, *, json_output: bool = False) -> None:
+    """参数解析失败（usage 类错误）统一出口（review_aurora_next A5 P1-1 收编）。
+
+    #ge1㉙ 契约：``--json`` 下失败路径必须输出 JSON 信封，禁止红字裸文本
+    （edb ``_parse_params``/recast ``_parse_evidence_paths`` 同族新犯，
+    ge9-R5-P2-② 家族）。exit 2 保留 typer usage 惯例（与 service 信封失败
+    的 exit 1 区分）；人类分支红字一行形态与既有各叶一致。
+    """
+    if json_output:
+        console.print_json(json.dumps(
+            error_envelope(msg), ensure_ascii=False))
+    else:
+        console.print(f"[red]✗ {msg}[/red]")
+    raise typer.Exit(code=2)
 
 
 def _load_json_file(path: str, what: str) -> dict:

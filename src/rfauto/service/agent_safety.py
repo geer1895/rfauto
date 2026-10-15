@@ -480,7 +480,7 @@ def neutralize_prompt_injection(text: str) -> dict[str, Any]:
 def extract_external_numbers(text: str) -> dict[str, Any]:
     """外部内容数值的清洗/标注接口：白名单为空，一律不得进入内核。
 
-     规则 7：物理数字只由确定性内核（求解器/综合引擎/评判器）产出。
+    AGENTS 规则 7：物理数字只由确定性内核（求解器/综合引擎/评判器）产出。
     外部内容里的数值**只作参考数据**，本函数提取并标注 kernel_eligible=False，
     供调用方剥离或送内核复核；不臆断单位、量纲与是否可用。
 
@@ -507,7 +507,7 @@ def extract_external_numbers(text: str) -> dict[str, Any]:
         "kernel_eligible": [],  # 外部来源白名单恒为空
         "note": (
             "外部数值一律 untrusted/kernel_eligible=False；物理数字只能由"
-            "确定性内核产出，须由内核重新计算或核对。"
+            "确定性内核产出（AGENTS 规则 7），须由内核重新计算或核对。"
         ),
     }
 

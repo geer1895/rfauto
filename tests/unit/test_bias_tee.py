@@ -1,4 +1,4 @@
-"""M-6 bias tee 直流馈电网络内核单测（研究扩充 M-6 判据）。
+"""M-6 bias tee 直流馈电网络内核单测（docs/research_expansion_20260926.md M-6 判据）。
 
 裁判口径（#118 双路径）：S 面裁判 = 测试内独立 ABCD 级联路径（与内核的
 节点导纳 stamping 完全不同代码路径），恒等式 |S21(f_corner)| = 1/√2 由

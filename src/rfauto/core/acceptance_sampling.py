@@ -1,6 +1,6 @@
 """PT-5 验收抽样确定性内核（OC 曲线 + AQL/LTPD 反查 + 属性 SPRT）。
 
-规格书 研究扩充 round18 §四 PT-5：二项/超几何
+规格书 docs/research_expansion_20261002_round18.md §四 PT-5：二项/超几何
 精确 OC + AQL/LTPD 反查 + sprt 补 Bernoulli LLR 成属性序贯验收。
 
 口径与公式来源（铁律 5：来源写 docstring；裁判=独立来源不自证，#118）：
@@ -42,6 +42,15 @@
 接口纪律：全部确定性（纯 scipy/numpy 定量、无随机、无网络、无 IO、无
 全局状态，铁律 7）；dict 进出 JSON 可序列化；bool 显式拒收（df7+⑯）、
 缺失判 is not None（#364④）、输入非法 ValueError；数值 0.0 合法。
+
+分期承诺落注（2026-10-08 快赢席 W1，T1-A-04）
+----------------------------------------------
+C1-5"分期承诺"按②态登记留置处置：无 src 功能消费者（消费面=
+本模块单测专用；production_data.py 仅 docstring 接口纪律引用，
+非 import 消费）。接线触发=production_service 扩面批（ORPHAN_
+LEDGER #8 同口径——同接口纪律兄弟件 production_data 已活接线，
+挂点近现成）；届时本注记撤除、补 service+MCP 薄壳。未注册 CALC
+属登记级边界如实（非缺陷）。
 """
 
 from __future__ import annotations

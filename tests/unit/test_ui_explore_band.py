@@ -20,7 +20,10 @@ import pytest
 _UI = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 
 
-def _read(name: str) -> str:
+def _read(name: str) -> str:  # UI-R2：pages.js 走入口+域模块并集
+    if name == "pages.js":
+        parts = [_UI / name, *sorted((_UI / "pages").glob("*.js"))]
+        return "\n".join(p.read_text(encoding="utf-8") for p in parts)
     return (_UI / name).read_text(encoding="utf-8")
 
 

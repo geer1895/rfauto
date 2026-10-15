@@ -28,7 +28,7 @@
 # 用 design_chain 逐句重测钉值：series_w 0.603/shunt_w 1.113（与 TEMPLATE_META
 # 名义 0.604/1.113 对齐）；f_dip 随 eps_eff_series（fake 谐振反演 εeff）上移、
 # s21@dip 随 |S11| 谷深经 passivity 行归一化抬升。
-# 2026-10-03 ge8b fake 3 端口无源门修复（能量守恒幅度构造，七百七十五）：
+# 2026-10-03 ge8b fake 3 端口无源门修复（能量守恒幅度构造， 七百七十五）：
 # 谷深类锚 s11_db_min/s21@dip 全批重钉（−18.924→−18.446/−3.518→−3.253）——
 # 上次（3.54 位置锚批）"谷深类不变"的前提是仅频率缩放；本次改的是幅度
 # 构造（行归一伪象→物理守恒），谷深物理值本身变化，重钉属行为修正跟进。
@@ -58,7 +58,7 @@ tasks:
         - metric: f_dip_ghz
           value: 2.148
           tol_pct: 2.0
-          source: 链路回归锚（arm_len=λ/4 综合 → fake λ/4 反推 f0，eps_eff 取 70.7Ω series 臂 HJ εeff；W1① #154 内核修后重钉 2026-09-15，旧 2.3928，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 2.4468，runs/fake_anchor_354）；物理口径 docs/rf_template_references.md#L27 Wilkinson 谷位收敛证据
+          source: 链路回归锚（arm_len=λ/4 综合 → fake λ/4 反推 f0，eps_eff 取 70.7Ω series 臂 HJ εeff；W1① #154 内核修后重钉 2026-09-15，旧 2.3928，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 2.4468，runs/fake_anchor_354/）；物理口径 docs/rf_template_references.md#L27 Wilkinson 谷位收敛证据
         - metric: s11_db_min_in_band
           value: -18.924
           tol_pct: 15.0
@@ -86,7 +86,7 @@ tasks:
         - metric: f_dip_ghz
           value: 3.1325
           tol_pct: 2.0
-          source: 链路回归锚（同 l2d001 机制；W1① #154 内核修后重钉 2026-09-15，旧 3.4843，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 3.5683，runs/fake_anchor_354）；物理口径 docs/rf_template_references.md#L27
+          source: 链路回归锚（同 l2d001 机制；W1① #154 内核修后重钉 2026-09-15，旧 3.4843，commit 0ec531d；2026-09-23 fake 位置锚 3.54 落配置乘法缩放 K=3.54/2.725 同批重钉，旧 3.5683，runs/fake_anchor_354/）；物理口径 docs/rf_template_references.md#L27
         - metric: s21_db_at_dip
           value: -3.253
           tol_pct: 5.0

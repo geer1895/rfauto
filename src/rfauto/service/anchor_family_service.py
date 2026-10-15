@@ -2,7 +2,8 @@
 
 round15 口径：「锚族」批量挂法 + **每模板至少 1 pointer 锚** + 每新增
 2 模板配 1 锚族。本模块只做**计划面**（盘点+骨架生成），不写锚注册表——
-knowledge/anchors.yaml 运行时只读、写入只经人工 commit；骨架锚 status=awaiting_data（DP-3 预声明扩展：骨架
+knowledge/anchors.yaml 运行时只读、写入只经人工 commit（AGENTS 规则 6
+Agent 写面隔离）；骨架锚 status=awaiting_data（DP-3 预声明扩展：骨架
 如实登记、仲裁数据回填后翻 active/experimental）。
 
 覆盖判定口径：
@@ -212,7 +213,7 @@ def pointer_anchor_batch_plan(batch_size: int = _BATCH_DEFAULT,
         plan=plan,
         skipped_collisions=skipped_collisions,
         write_policy="本面只产骨架文本；anchors.yaml 写入只经人工 commit"
-                        "+ 同步 EXPECTED_ANCHORS 单源",
+                        "（AGENTS 规则 6）+ 同步 EXPECTED_ANCHORS 单源",
         source=_SOURCE,
     )
 

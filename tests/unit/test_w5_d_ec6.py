@@ -61,7 +61,7 @@ def test_resource_function_is_service_same_source() -> None:
 def test_toolsets_resource_uri_registered() -> None:
     uris = {str(r.uri) for r in asyncio.run(get_mcp_server().list_resources())}
     assert TOOLSETS_RESOURCE_URI in uris
-    # 本仓 scheme 一致性裁决：全 URI 均为 rfauto:// scheme（不用官方 toolsets:/）
+    # 本仓 scheme 一致性裁决：全 URI 均为 rfauto:// scheme（不用官方 toolsets://）
     assert all(u.startswith("rfauto://") for u in uris)
 
 
@@ -167,7 +167,7 @@ def test_guidelines_openems_recovery() -> None:
             or "openems" in hit["text"].lower()
         )
         assert relevant, hit
-        # 可溯源：ref 非空 + anchor 非空（#NNN 是 出处标记/ 行锚）
+        # 可溯源：ref 非空 + anchor 非空（#NNN 是  出处标记/项目规则 行锚）
         assert hit["ref"].strip()
         assert hit["anchor"].strip()
 

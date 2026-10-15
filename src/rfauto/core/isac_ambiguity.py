@@ -1,6 +1,6 @@
 """NX-2 雷达/ISAC 指标闭式面：距离/多普勒分辨率 + 模糊函数（Woodward 口径）。
 
-规格：研究扩充 round14 §四 NX-2——"ΔR=c/2B、
+规格：docs/research_expansion_20261002_round14.md §四 NX-2——"ΔR=c/2B、
 Δv=λ/2T、LFM/码片模糊函数（Woodward 性质对拍）；ISAC 只做指标口径不做
 处理链（尊重 L819-821 no-go）"。来源 TR 38.768（V19.2.0 免费）/
 arXiv:2512.03506（口径名，页码 UNVERIFIED 如实）。

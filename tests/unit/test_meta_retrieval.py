@@ -1,4 +1,4 @@
-"""DA-2 检索式元学习内核单测（研究扩充 round4 DA-2 判据）。
+"""DA-2 检索式元学习内核单测（docs/research_expansion_20260926_round4.md DA-2 判据）。
 
 判据映射（任务书预声明）：
 - 检索恒等式：同元特征查询 → 同 top-k 逐位（test_retrieval_identity_*）；

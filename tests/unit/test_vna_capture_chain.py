@@ -136,3 +136,105 @@ class TestFullChain:
         assert result is not None
         assert isinstance(result.is_correlated, bool)
         assert result.metrics.n_freq_points == 11
+
+
+# ─── A7 P1-2：skrf.vi 主路 timeout_ms 必须真实生效 ────────────────────────────
+
+class _FakeConn:
+    """pyvisa 连接替身：记录 timeout（ms）与 close。"""
+
+    def __init__(self):
+        self.timeout = None
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+
+class TestDriverTimeout:
+    """A7 P1-2（2026-10-13）：skrf.vi 驱动构造签名只收 (address, backend)
+    （skrf 2.1.0 实测），timeout_ms 原先只在 raw pyvisa 逃生口生效——主路
+    四型号（pna/fieldfox/znb/zva）构造后必须真实补设超时，未生效留痕。
+    """
+
+    def _connect(self, monkeypatch, model, driver_cls, timeout_ms):
+        from rfauto.measurement import vna_capture
+        monkeypatch.setattr(vna_capture, "_resolve_driver",
+                            lambda m: driver_cls)
+        cfg = vna_capture.VNAConfig(
+            address="TCPIP0::192.0.2.1::inst0::INSTR", model=model,
+            timeout_ms=timeout_ms)
+        v = vna_capture.VNAInterface(cfg)
+        assert v.connect() is True
+        return v
+
+    def test_timeout_property_channel_all_four_models(self, monkeypatch):
+        """四主路经 timeout property 通道生效（skrf 2.1.0 VNA 基类实测
+        取面），会话日志带生效通道注记（配置面=生效面）。"""
+
+        made: list = []
+
+        class _Driver:
+            def __init__(self, address, backend="@py"):
+                self._resource = _FakeConn()
+                made.append(self)
+
+            @property
+            def timeout(self):
+                return self._resource.timeout
+
+            @timeout.setter
+            def timeout(self, value):
+                self._resource.timeout = value
+
+        for model in ("pna", "fieldfox", "znb", "zva"):
+            v = self._connect(monkeypatch, model, _Driver, 4321)
+            assert made[-1]._resource.timeout == 4321, model
+            connect_entries = [e for e in v._session_log
+                               if e.command == "connect"]
+            assert any("timeout_ms=4321 via instrument.timeout" in e.response
+                       for e in connect_entries), model
+
+    def test_timeout_fallback_to_resource_handle(self, monkeypatch):
+        """无 timeout property 的驱动代际 → 经 _resource 句柄设超时
+        （skrf 2.x 底层资源实测取面）。"""
+
+        class _Driver:
+            def __init__(self, address, backend="@py"):
+                self._resource = _FakeConn()
+
+        v = self._connect(monkeypatch, "pna", _Driver, 2500)
+        assert v._instrument._resource.timeout == 2500
+
+    def test_timeout_fallback_to_legacy_con_handle(self, monkeypatch):
+        """旧代际 ``.con`` 句柄兼容取面（A7 P1-2 报告所指访问路径）。"""
+
+        class _Driver:
+            def __init__(self, address, backend="@py"):
+                self.con = _FakeConn()
+
+        v = self._connect(monkeypatch, "znb", _Driver, 1111)
+        assert v._instrument.con.timeout == 1111
+
+    def test_timeout_unset_logged_not_silent(self, monkeypatch):
+        """无任何已知通道时留痕不静默（#331 家法：配置面与生效面一致）。"""
+
+        class _Driver:
+            def __init__(self, address, backend="@py"):
+                pass
+
+        v = self._connect(monkeypatch, "pna", _Driver, 1000)
+        assert any(e.command == "connect_timeout_unset"
+                   for e in v._session_log)
+
+    def test_close_uses_resolved_connection(self, monkeypatch):
+        """close() 经同一取面助手关闭底层连接（原 ".con" 直取在 skrf
+        2.1.0 是静默 no-op，同面修正）。"""
+
+        class _Driver:
+            def __init__(self, address, backend="@py"):
+                self._resource = _FakeConn()
+
+        v = self._connect(monkeypatch, "pna", _Driver, 1000)
+        v.close()
+        assert v._instrument._resource.closed is True

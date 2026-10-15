@@ -1,8 +1,9 @@
 """EDB 平面族模板 spec 契约：schema 校验 + 综合桥接 + PyEDB configuration 组装底座。
 
 本模块是 edb_templates 包的共享底座（schema 校验/文档化、微带综合桥接、
-spec→PyEDB configuration 组装），branchline / power_divider 两族发射器
-只做各自的拓扑几何。全部函数纯计算零 IO、零 pyedb 依赖（pyedb 属
+spec→PyEDB configuration 组装），branchline / power_divider / coupled_line
+/ ratrace 四族发射器只做各自的拓扑几何（lange 预留键声明不支持，见
+lange.py docstring）。全部函数纯计算零 IO、零 pyedb 依赖（pyedb 属
 edb_adapter 消费层；本层只产 dict）。
 
 spec dict 契约（schema_version=1，与 edb_adapter 席共同遵守；五契约字段

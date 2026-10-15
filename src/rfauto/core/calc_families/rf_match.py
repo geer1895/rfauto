@@ -141,7 +141,7 @@ def vswr_convert(vswr: float | None = None,
 
 @register_calculator(
     "patch_length",
-    "矩形贴片谐振长度（Balanis 闭式含边缘修正）：f0+er+h → W/εeff/L",
+    "贴片长度速算：矩形贴片谐振长度（Balanis 闭式含边缘修正）：f0+er+h → W/εeff/L",
     (("f0_ghz", "float GHz 谐振频率"),
      ("epsilon_r", "float - 基板相对介电常数"),
      ("h_mm", "float mm 基板厚度")),
@@ -164,7 +164,7 @@ def patch_length(f0_ghz: float, epsilon_r: float, h_mm: float) -> dict:
                + (epsilon_r - 1.0) / 2.0 * (1.0 + 12.0 * h_mm / w_mm) ** -0.5)
     # d_l = 两边缘合计（2×0.412 每边缘，Hammerstad 单源 patch_fringing_delta_l；
     # 数值上=旧 0.824h(…) 常数），L 再 ×2 ⇒ 总扣 4ΔL——XA-1/PV-016 仲裁
-    # INCONCLUSIVE 维持现行口径（2026-10-02，runs/xa1_arbitration）。
+    # INCONCLUSIVE 维持现行口径（2026-10-02，runs/xa1_arbitration/）。
     d_l = 2.0 * patch_fringing_delta_l(w_mm * 1e-3, h_mm * 1e-3, eps_eff) * 1e3
     l_mm = C_MM_GHZ / (2.0 * f0_ghz * math.sqrt(eps_eff)) - 2.0 * d_l
     return {"patch_w_mm": round(w_mm, 4), "eps_eff": round(eps_eff, 4),

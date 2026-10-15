@@ -431,12 +431,17 @@ def calibrate_surrogate(
     rho_threshold: float = 0.8,
     mesh_resolution_mm: float = 0.5,
     n_workers: int = 1,
+    design_kind: str = "taguchi",
+    n_samples: int | None = None,
     derived_from: list[str] | None = None,
 ) -> dict[str, Any]:
     """校准代理并自动验收；返回 JSON 友好 dict（service 层契约）。
 
     n_workers>1 走进程池并行采样（4.3 worker 池）；默认 1=串行
     （openEMS 内存纪律：每 worker 1-2GB，按可用内存设置）。
+
+    design_kind（2026-10-07）：taguchi（缺省，L9）/lhs（n_samples 点密集化）/
+    full_factorial（3 因子 3³=27 全情形）。n_samples 仅 lhs 消费。
 
     derived_from（XD-1 W3-B，可选）：上游 run id 列表（边来源=调用方
     上下文，不做目录名猜测），落 meta.json derived_from 边，
@@ -476,9 +481,34 @@ def calibrate_surrogate(
     run_fn = _make_sampler(sampler, template, freq_range, objectives, work_root,
                            mesh_resolution_mm=mesh_resolution_mm)
 
-    # ① Taguchi 主采样（n_workers>1 走进程池，4.3 worker 池）
+    # ① 主采样（n_workers>1 走进程池，4.3 worker 池）。
+    # design_kind（2026-10-07 校准闭环批）：taguchi 缺省不变（L9 上限致平坦
+    # 场秩相关退化——20260903_235147 openEMS 通道 ρ=0.383 FAIL 诊断）；lhs
+    # 密集化（n_samples 点，好角邻域解析）；full_factorial=3 因子全情形 3³。
     t0 = time.time()
-    design = taguchi_points(bounds, n_levels=n_levels)
+    if design_kind == "lhs":
+        if not n_samples or n_samples < 5:
+            raise ValueError(
+                f"design_kind=lhs 需 n_samples≥5，收到 {n_samples!r}")
+        _lv = lhs_points(bounds, int(n_samples), seed=seed)
+        design = {"points": _lv["points"], "design": _lv["design"]}
+    elif design_kind == "full_factorial":
+        if len(bounds) != 3:
+            raise ValueError(
+                f"design_kind=full_factorial 现仅支持 3 因子，收到 "
+                f"{len(bounds)}")
+        _names = sorted(bounds)
+        _levels = {n: [bounds[n][0] + (bounds[n][1] - bounds[n][0]) * i / 2
+                       for i in range(3)] for n in _names}
+        _pts = [{_names[0]: _levels[_names[0]][i],
+                 _names[1]: _levels[_names[1]][j],
+                 _names[2]: _levels[_names[2]][k]}
+                for i in range(3) for j in range(3) for k in range(3)]
+        design = {"points": _pts,
+                  "design": {"kind": "full_factorial", "n_levels": 3,
+                             "array_rows": len(_pts), "truncated": []}}
+    else:
+        design = taguchi_points(bounds, n_levels=n_levels)
     samples: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     if n_workers > 1:

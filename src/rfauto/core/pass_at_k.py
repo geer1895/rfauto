@@ -1,6 +1,6 @@
 """pass_at_k：pass@k / pass^k 无偏估计纯函数内核（AD-4 接线批，round15 规格）。
 
-规格出处：研究扩充 round15 AD-4「evaluate_agentbench_
+规格出处：research_expansion_20261002_round15.md AD-4「evaluate_agentbench_
 consistency CLI/MCP 暴露，k=3 进月门」（round14 AI 补强条同口径「agent_bench
 pass^k 接线（与 AD-4 合并）」）。service/agent_bench.py 的
 pass_hat_k/evaluate_agentbench_consistency 是既有纯内核（零接线），本模块为

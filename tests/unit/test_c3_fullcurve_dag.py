@@ -164,7 +164,7 @@ def test_build_stage_dag_plan_structure_and_parse():
 
 
 def test_openems_registration_ts_nonempty_in_repo():
-    """任务书 §四：registration_commit_ts 对 openems_templates.py 实测非空。"""
+    """handoff §四：registration_commit_ts 对 openems_templates.py 实测非空。"""
     if not (REPO / ".git").exists():
         pytest.skip("非 git 工作区")
     ts = runner.openems_registration_ts()

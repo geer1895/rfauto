@@ -45,7 +45,7 @@ mesh_note: >-
   全轴最小网格间距 ≥10µm
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役
-  （粗 21+细 41 点）发射面见 战役任务书；读出修复后重扫
+  （粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；读出修复后重扫
   见 runs/ge5_j2fb/（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与
   J4 HFSS Floquet 锚属真机轨
 nominal_derivation: |-
@@ -54,3 +54,38 @@ nominal_derivation: |-
   λ0/(2√εeff(w)) 不动点（Hammerstad εeff，w=边长自洽迭代），
   er=3.66/h=1.524 → px=8.5406；h=1.524（60mil 板材数据，X 波段反射阵
   常用厚度→单贴片相位覆盖宽，J1c fallback=双谐振预登记）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 超表面方贴片单元：贴片边长=介质上 λg/2 谐振（λ0/(2√εeff) 自洽不动点），阵格取 λ0/2 抑制光栅瓣——单元尺寸是反射相位的主要旋钮。典型用于反射阵/超表面口径设计；常见误用=按普通贴片天线口径算单元——单元无馈、靠散射相位工作，尺寸扫描才是相位覆盖设计（60mil
+      厚板单贴片相位覆盖宽）。
+    derivations:
+    - claim: 方贴片谐振边长不动点（Hammerstad εeff，w=边长自洽迭代）
+      formula: px = c/(2*f0*sqrt(εeff(px)))
+      source: 本仓 core/metasurface_lut（ms_patch_resonant_len_mm 不动点单源；docs/templates/ms_patch/meta.yaml
+        nominal_derivation（er=3.66/h=1.524 → px=8.5406mm））
+    - claim: 阵格 λ0/2 无光栅瓣口径
+      formula: period = λ0/2 = 14.9896 mm
+      source: 本仓 core/metasurface_lut（阵格口径；docs/templates/ms_patch/meta.yaml nominal_derivation（Balanis,
+        Antenna Theory (3rd ed.) Ch.6 阵列栅瓣判据同族））
+  sensitivity_ranking:
+  - param: px_mm
+    order: 1
+    basis: 单元谐振主维（εeff(px) 通道使弹性>1）；登记表 1.0424
+  - param: er
+    order: 2
+    basis: 填充加权（贴片谐振通道）；登记表 0.4629
+  - param: h_mm
+    order: 3
+    basis: 板厚经 εeff 弱进入；登记表 0.0424
+  - param: py_mm
+    order: 4
+    basis: 正交轴对称（方贴片与 px 等效，登记表 0——目标式只消费 px）
+  - param: period_mm
+    order: 5
+    basis: 阵格不进单元谐振式（登记表 0——光栅瓣维）
+  - param: tan_d
+    order: 6
+    basis: 损耗角不进谐振式（登记表 0）
+  quiz_refs: []

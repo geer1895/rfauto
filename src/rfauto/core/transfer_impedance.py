@@ -1,6 +1,6 @@
 """EM-4 电缆转移阻抗 Zt（实体屏蔽 Vance 式闭式族）（2026-10-02，round17 EM-4）。
 
-规格：研究扩充 round17 §四 EM-4——实体屏蔽
+规格：docs/research_expansion_20261002_round17.md §四 EM-4——实体屏蔽
 Vance 式（dc 极限解析锚+高频 √f 恒等；Kley 编织暂缓）；IEC 62153-4-3
 三同轴口径文档面。
 

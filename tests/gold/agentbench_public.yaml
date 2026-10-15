@@ -99,7 +99,7 @@ tasks:
         - {tool: p0, args: {high_adapter: openems}}
       artifacts: [gate_report]
       invariant: 吸收边界一律 PML_8（#232）；参数修改必须走沙箱草稿 propose→apply
-        三层 Gate，验证链=validate→dry_run→跨保真门
+        三层 Gate（AGENTS 规则 6），验证链=validate→dry_run→跨保真门
 
   - id: ab202_fix_wave_port_size
     family: port_fix
@@ -157,7 +157,7 @@ tasks:
         - {tool: "agent propose", args: {}}
         - {tool: "agent apply", args: {}}
       artifacts: [gate_report]
-      invariant: 禁止直接写真实配方——必须走 propose(沙箱)→apply(Gate)
+      invariant: 禁止直接写真实配方——必须走 propose(沙箱)→apply(Gate)（AGENTS 规则 6，g202 同款守卫）
 
 scoring:
   abstraction: (TSA + FCA) / 2 —— 方法与工具选择是否正确（goldset 子序列/子集语义）

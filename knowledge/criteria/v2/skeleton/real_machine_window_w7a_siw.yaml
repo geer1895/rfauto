@@ -1,0 +1,86 @@
+schema: criteria/v2
+criteria_id: real_machine_window_w7a_siw
+title: W7-A 真机窗·X5 批 13 条 analytic 锚首判判据（#122 判据先行，冻结于发射前）
+status: skeleton_v2
+runner_binding: unmigrated
+claim: {quantity: undeclared_skeleton, template: siw, f_ghz: null}
+migration:
+  tier: A
+  source_index: index.yaml
+  source_md: runs/real_machine_window/w7a/siw/criteria.md
+  families: [siw]
+  n_gates: 30
+evidence_fields: [real_machine_window_w7a_siw#1, real_machine_window_w7a_siw#2, real_machine_window_w7a_siw#3,
+  real_machine_window_w7a_siw#4, real_machine_window_w7a_siw#5, real_machine_window_w7a_siw#6, real_machine_window_w7a_siw#7,
+  real_machine_window_w7a_siw#8, real_machine_window_w7a_siw#9, real_machine_window_w7a_siw#10, real_machine_window_w7a_siw#11,
+  real_machine_window_w7a_siw#12, real_machine_window_w7a_siw#13, real_machine_window_w7a_siw#14, real_machine_window_w7a_siw#15,
+  real_machine_window_w7a_siw#16, real_machine_window_w7a_siw#17, real_machine_window_w7a_siw#18, real_machine_window_w7a_siw#19,
+  real_machine_window_w7a_siw#20, real_machine_window_w7a_siw#21, real_machine_window_w7a_siw#22, real_machine_window_w7a_siw#23,
+  real_machine_window_w7a_siw#24, real_machine_window_w7a_siw#25, real_machine_window_w7a_siw#26, real_machine_window_w7a_siw#27,
+  real_machine_window_w7a_siw#28, real_machine_window_w7a_siw#29, real_machine_window_w7a_siw#30]
+u_val:
+  u_num: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构（EP-2 C-7 预声明；待人工复核后按 criteria/v2
+      契约回填）}
+  u_input: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+  u_D: {source: none_declared, rule: 骨架缺省 none_declared——不确定度分量不虚构。}
+decision_rule:
+  form: unmigrated_skeleton
+  gates:
+  - {gate_id: real_machine_window_w7a_siw#1, tier: A, raw: '> runs/real_machine_window/w7a/ 下的执行产物；判读输入缺失=INCONCLUSIVE',
+    threshold: null}
+  - {gate_id: real_machine_window_w7a_siw#2, tier: A, raw: '>   属 src 代码面超本席范围；local 单点墙钟分钟级（#328 SSL
+      族实测 113s 档），', threshold: null}
+  - {gate_id: real_machine_window_w7a_siw#3, tier: A, raw: 全轴网格最小间距 >1µm（#152 族）、端口激励体积非零。注入件（§5/§9）同样,
+    threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#4, tier: A, raw: 锚语义首判窗（原文）：带内 |S21|−(−10dB)|≤0.5dB 且 |S11|≤−20dB,
+    threshold: 0.5}
+  - {gate_id: real_machine_window_w7a_siw#5, tier: A, raw: '- **带内冻结=2.0–3.0GHz**（f0=2.5 ±20%；理想网络逐频同值，EM
+      座按带）。', threshold: 20.0}
+  - {gate_id: real_machine_window_w7a_siw#6, tier: A, raw: '- 互证门：A/B |S21|dB 与 |S11|dB 互差 ≤1e-6 dB；内核
+      rf_match.attenuator_pi/t', threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#7, tier: A, raw: '- 门：|S21dB−(−10)|≤0.5 且 S11dB≤−20（两源各自过门）。',
+    threshold: 0.5}
+  - {gate_id: real_machine_window_w7a_siw#8, tier: A, raw: （2.0–3.0GHz median）|−(−10)|≤0.5dB 且 |S11| 带内
+      max ≤−20dB。, threshold: 0.5}
+  - {gate_id: real_machine_window_w7a_siw#9, tier: A, raw: 锚语义首判窗（原文）：带内 |S21|/|S31| 平衡差 ≤1dB 且 |S11|≤−10dB。,
+    threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#10, tier: A, raw: '- 门：平衡对幅值差 ≤1dB、平衡对均值 ∈[−4.5,−2.5]dB（3dB
+      分裂旁证带）、', threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#11, tier: A, raw: '|S11|≤−10dB，@2.5GHz 与带内 max 各报。', threshold: null}
+  - {gate_id: real_machine_window_w7a_siw#12, tier: A, raw: max ≤1dB 且 |S11| 带内 max ≤−10dB；掩码语义按 sparams.mask.json（#314）。,
+    threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#13, tier: A, raw: 窗（原文）：f0 形态判据（带内 |S21| 峰/谷位对 2.5GHz 偏 ≤3%）。,
+    threshold: 3.0}
+  - {gate_id: real_machine_window_w7a_siw#14, tier: A, raw: f_peak**（Argmax+三点抛物线细化），门 |f_peak−2.5|/2.5
+      ≤3%；隔离口 |S31|, threshold: 3.0}
+  - {gate_id: real_machine_window_w7a_siw#15, tier: A, raw: 窗（原文）：StripLinePort Z0 |Δ|≤2%；S21 相位斜率→εeff
+      |Δ|≤2%（β 金标准, threshold: 2.0}
+  - {gate_id: real_machine_window_w7a_siw#16, tier: A, raw: 各自 |Δ|≤2%（对称线两口皆裁判）。, threshold: 2.0}
+  - {gate_id: real_machine_window_w7a_siw#17, tier: A, raw: =0.784mm）；m2=BASE=0.4mm 显式档。门值在两档各自报；**两档
+      Z0 互差 ≤1%, threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#18, tier: A, raw: 且 εeff 互差 ≤0.5% 方可判 PASS/FAIL**（互差超=离散未收敛=INCONCLUSIVE）。,
+    threshold: 0.5}
+  - {gate_id: real_machine_window_w7a_siw#19, tier: A, raw: 窗（原文）：带内端口匹配 |S11| 谷对闭式 ±5%（文献内禀带 2.7% 之上留网格,
+    threshold: 5.0}
+  - {gate_id: real_machine_window_w7a_siw#20, tier: A, raw: 门：|Z0_est−110.9206|/110.9206 ≤5%。, threshold: 5.0}
+  - {gate_id: real_machine_window_w7a_siw#21, tier: A, raw: 可辨识量，±5% 余量口径不变。, threshold: 5.0}
+  - {gate_id: real_machine_window_w7a_siw#22, tier: A, raw: 窗（原文）：带内 φ(f) 拟合 fc |Δ|≤2%。带内冻结=7.0–12.0GHz（渲染带），,
+    threshold: 2.0}
+  - {gate_id: real_machine_window_w7a_siw#23, tier: A, raw: '- 门：|fc_fit−6.666695|/6.666695 ≤2%；拟合残差 RMS
+      报告（>5° 报', threshold: 2.0}
+  - {gate_id: real_machine_window_w7a_siw#24, tier: A, raw: 核对（锚值自身回代，≤2% 口径即恒等式核）。, threshold: 2.0}
+  - {gate_id: real_machine_window_w7a_siw#25, tier: A, raw: 门 **|f_dip−2.4|/2.4 ≤15%**（端效应带内，锚语义原文；已知先例,
+    threshold: 15.0}
+  - {gate_id: real_machine_window_w7a_siw#26, tier: A, raw: '- 锚窗=引擎 L 提取 ≤10%（准静态 13.56MHz）；模板注册预算 max_time_ns=60.0',
+    threshold: 10.0}
+  - {gate_id: real_machine_window_w7a_siw#27, tier: A, raw: < 13.56MHz 单周期 73.75ns——记录窗结构性不足 1 周期，DFT@f0
+      不可收敛；, threshold: 13.56}
+  - {gate_id: real_machine_window_w7a_siw#28, tier: A, raw: 窗（原文）：方向图/nf2ff 增益 |Δ|≤1dB（Ph3 真机窗）。render_horn
+      v1 对, threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#29, tier: A, raw: '- 门：|dmax_dbi−15.0|≤1dB（无损 PEC+空气：gain=directivity，η≈1
+      旁证，', threshold: 1.0}
+  - {gate_id: real_machine_window_w7a_siw#30, tier: A, raw: 模板上，网格阶梯留 Ph3；若门值在带缘（|Δ|>0.5dB）加注「阶梯未跑」, threshold: 0.5}
+  overall: 骨架未判读——门值待人工复核冻结（预声明）后方可消费；本文件不是机器判据源（status=skeleton_v2 非 active_v2）
+verdict_map: {}
+provenance: {commit: 8a8cefea, devlog: EP-2 C-7 三档机械化迁移骨架（strength=mechanical 同源；三禁不写账本，账目由主代理补记）, referee_run: runs/real_machine_window,
+  gate_db_legacy: 'knowledge/criteria/index.yaml#real_machine_window/w7a/siw/criteria.md gates[1..30]'}

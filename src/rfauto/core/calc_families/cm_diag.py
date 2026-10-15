@@ -18,7 +18,7 @@ from .cm_core import (
 from .cm_extract import _cm_as_complex, _cm_band_edges, _cm_extract_from_fit, _cm_fit_rms, _cm_rational_fit
 from .registry import register_calculator
 
-# ─── DP-2 耦合矩阵诊断三件套（2026-09-24，规格 规格深案
+# ─── DP-2 耦合矩阵诊断三件套（2026-09-24，规格 docs/plan_deepdive_specs_20260924.md
 #     §DP-2；判据预声明 runs/df6_dp2diag/criteria.md 先写后跑）────────────────────
 # 定位：既有 6 个 coupling_matrix 键（Cauchy 反提 coupling_matrix_extract 等）
 # 保留为初值/独立裁判不删改（#315），本段是互补镜像面（VF+LM 固定拓扑诊断 +
@@ -384,7 +384,7 @@ def q_factor_circle(freq_ghz: list, s11: list) -> dict:
 
 @register_calculator(
     "q_factor_vf_zero",
-    "单腔 Q 零点法（VF 极点+零点求和口径，免 q_e）：反射 S11 → VF 有理拟合"
+    "Q零点法：单腔 Q 零点法（VF 极点+零点求和口径，免 q_e）：反射 S11 → VF 有理拟合"
     " Γ=N/D（复极点对数从 1 起扫、取首个 fit_rms≤1e-2 的最小阶——更高阶会"
     " 出极点-零点双联伪对，和式翻倍）→ 带内衰减极点对 p 与频距最近的 Γ 零点"
     "对 z（Γ 自身零点，过耦时在右半平面，不判衰减性）→ "
@@ -530,7 +530,7 @@ def q_factor_vf_zero(freq_ghz: list, s11: list,
 
 @register_calculator(
     "cat_critique",
-    "Dishal 顺序调谐确定性 critique（与 autotune_service.critique_point 同型 "
+    "顺序调谐判读：Dishal 顺序调谐确定性 critique（与 autotune_service.critique_point 同型 "
     "issues+typed fixes，无 LLM，数值只在内核 #7）：τ(f) 峰数=指纹（1 峰=单腔"
     "接入步→Qe；2 峰=相邻耦合步→k 拆分精确式 k=(f₂²−f₁²)/(f₂²+f₁²)）；峰位"
     "偏=失谐方向。C 系数钉死（合成回收裁决，模块头注释）：S21 透射泄漏 C=2、"

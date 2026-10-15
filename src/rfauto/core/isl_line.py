@@ -1,6 +1,6 @@
 r"""TA-10 ISL/SISL 集成悬置线确定性内核（ge8b Wave B 席 B9，2026-10-03）。
 
-规格：研究扩充 round15 §二·2 TA-10「ISL/SISL 集成
+规格：docs/research_expansion_20261002_round15.md §二·2 TA-10「ISL/SISL 集成
 悬置线（用户点名）：suspended_stripline+siw 过孔墙；Shu-Qi 屏蔽悬置式（IET
 明示无可频变闭式→**准静态口径如实**）」+ ge8b 席 B9 任务书「闭式内核（悬置/
 倒置微带 εeff 准静态近似）」。

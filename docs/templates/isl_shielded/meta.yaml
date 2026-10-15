@@ -34,3 +34,40 @@ mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；
 smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（round15
   IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(|h1−h2|/D)（模型 wide-limit 与逐径混合差异，h1=h2
   点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: ISL 屏蔽悬置线：基板悬浮在空气隙与屏蔽腔之间、两列过孔藩篱闭合底地与顶板——空气份额高使 εeff=1.285 远低于同叠层微带，过孔墙抑制腔模。典型用于高隔离悬置布线与滤波器小型化；常见误用=预期频变闭式——文献（IET）明示无频变闭式，本仓以准静态口径如实（非对称半腔一阶误差
+      O(|h1−h2|/D)）。
+    derivations:
+    - claim: 准静态裁判链三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确）
+      formula: Z0(w, g_air, h_sub, εr, h_top)（名义 2.4818mm → 49.999Ω, εeff=1.2854）
+      source: 本仓 core/isl_line（suspended_ms_qs 单源；docs/templates/isl_shielded/meta.yaml smoke_note（round15
+        IET 口径：频变闭式不可达如实账））
+  sensitivity_ranking:
+  - param: w_mm
+    order: 1
+    basis: 线宽；登记表 0.7348
+  - param: h_top_mm
+    order: 2
+    basis: 顶板腔高（腔电容摊薄通道）；登记表 0.3266
+  - param: g_air_mm
+    order: 3
+    basis: 空气隙（悬置定义参数）；登记表 0.2913
+  - param: er
+    order: 4
+    basis: 填充加权（空气份额高故弱）；登记表 0.0656
+  - param: d_mm
+    order: 5
+    basis: 过孔藩篱直径不进准静态 Z0（登记表 0——腔模/漏耦属全波维）
+  - param: s_mm
+    order: 6
+    basis: 过孔心距不进准静态 Z0（登记表 0）
+  - param: line_len_mm
+    order: 7
+    basis: 线长不进 Z0 恒等式（登记表 0）
+  - param: tan_d
+    order: 8
+    basis: 损耗角不进无损 Z0（登记表 0）
+  quiz_refs: []

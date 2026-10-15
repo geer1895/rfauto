@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ from .grid import _fd_nrts_defaults, _fd_nrts_override_block
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ─── §MS_METASURFACE 超表面/FSS 族（2026-09-24 df6 DP-10，文末注册块）─────────
-# 规格与判据：规格深案 §DP-10 +
+# 规格与判据：docs/plan_deepdive_specs_20260924.md §DP-10 +
 # runs/df6_dp10ms/criteria.md（预声明冻结）。离线内核=core/metasurface_lut.py
 # （名义尺寸闭式单源 #252/#1c：本段只消费不重复实现）。
 #
@@ -31,7 +32,10 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 # 极化前提双处注明（meta extraction + 渲染脚本注释）；斜入射与无限阵
 # 仲裁走 HFSS Floquet（J4，真机轨）。
 MS_UNIT_TEMPLATES: tuple[str, ...] = (
-    "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch")
+    "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
+    # ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：Sievenpiper 蘑菇
+    # EBG/AMC 单元——反射读出族（ms_patch 同款），族内尾部追加（#247 口径）
+    "ms_mushroom")
 METASURFACE_TEMPLATES: tuple[str, ...] = (*MS_UNIT_TEMPLATES, "ms_array_NxN")
 #: 无端口模板（软平面照明散射体，audit ②/③ 独立分支）：
 PORTLESS_TEMPLATES: tuple[str, ...] = ("ms_array_NxN",)
@@ -41,6 +45,7 @@ _TEMPLATE_WALL_BC: dict[str, tuple[str, str, str, str]] = {
     "ms_cross": ("PEC", "PEC", "PMC", "PMC"),
     "ms_jcross": ("PEC", "PEC", "PMC", "PMC"),
     "ms_ring_patch": ("PEC", "PEC", "PMC", "PMC"),
+    "ms_mushroom": ("PEC", "PEC", "PMC", "PMC"),
 }
 
 
@@ -377,6 +382,45 @@ def ms_unit_layout(template: str, params: dict[str, Any],
                 "r_port": ETA0_OHM * period / period,
                 "slot_len": slot_len, "slot_w": slot_w, "stub_len": stub_len}
 
+    if template == "ms_mushroom":
+        # Sievenpiper 蘑菇 EBG/AMC 单元（TA-13 净表注册件，2026-10-08；
+        # 内核=core/amc_mushroom MM-8 单源）：接地基板（z 底 PEC 边界）+
+        # 零厚方贴片（px=py=period−gap）+ 中心过孔柱（r=via_r，z 0→H_SUB，
+        # 接 z 底 PEC 地）。反射读出=ms_patch 同族（_ms_refl_z 单源）；
+        # AMC 判读=|Γ|≈1（无损）的 argΓ 扫频：低频 PEC ±180° → f0 过 0°
+        # （PMC）→ ±90° 带边——f0 互证锚=amc_resonance_hz（EC 初值口径，
+        # 稠密栅域 gap≪period 声明域；真机带心修正归 P3）。
+        period = float(params.get("period_mm", _MS_MUSH_NOM_PERIOD)) * 1e-3
+        gap = float(params.get("gap_mm", _MS_MUSH_NOM_GAP)) * 1e-3
+        via_r = _MS_MUSH_VIA_R_MM * 1e-3
+        if not 0 < gap < period:
+            raise ValueError(
+                f"ms_mushroom: 要求 0<gap<period，得 {gap * 1e3:.4f}/"
+                f"{period * 1e3:.4f}mm")
+        if 4 * via_r >= period - gap:
+            raise ValueError(
+                f"ms_mushroom: 过孔柱 4r={4 * via_r * 1e3:.3f}mm 须 ≪ 贴片边 "
+                f"px={period - gap:.4f}m（柱完全在贴片内）")
+        _gap_guard(gap, "邻胞缘缝")
+        px = period - gap
+        z = _ms_refl_z(h_m, lam0_m)
+        # 反射族最近吸收边界=顶 MUR：激励面→顶 MUR 内缩=λ0/8（#253 守卫）
+        assert_excitation_inset(z["z_top"] - z["z_src"], base_m,
+                                label=f"{template} 激励面→顶 MUR 内缩")
+        near_x = [-px / 2, px / 2]
+        near_y = [-px / 2, px / 2]
+        near_x += _gap_mid([(-period / 2, -px / 2), (px / 2, period / 2)])
+        near_y += _gap_mid([(-period / 2, -px / 2), (px / 2, period / 2)])
+        # 过孔柱=sub-cell 阶梯化口径（msl_cpw 过孔栅栏先例，r≪BASE 不加
+        # 横向线——SUBCELL_CYLINDER_PROPS 登记，轴向两端恰在网格线）
+        return {"period": period, "dom_x": period / 2, "dom_y": period / 2,
+                "z_lines": z["z_lines"], "z_feed": z["z_feed"],
+                "z_src": z["z_src"], "z_1a": z["z_1a"], "z_1b": z["z_1b"],
+                "z_top": z["z_top"], "near_x": near_x, "near_y": near_y,
+                "min_gap_m": gap,
+                "r_port": ETA0_OHM * period / period,
+                "px": px, "gap": gap, "via_r": via_r}
+
     raise ValueError(f"ms_unit_layout: 未知单元模板 {template!r}")
 
 
@@ -385,7 +429,8 @@ def _ms_patch_lines(p: dict[str, Any]) -> str:
 
     读出（2026-10-01 ge5 ms_patch 读出修复，runs/ge5_msjcross/audit.md §D/E
     定性：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载（能量预算破损），
-    反射相位为片负载 Möbius 像——jcross/cross 修法
+    反射相位为片负载 Möbius 像（ 六百八十七：fine 弧 100.90° 去嵌后
+    物理 133.98°、coarse 19/21 点反演负阻不可修复）——jcross/cross 修法
     同族移植：soft plane 激励 + 双 E 探针对（_WgProbePairRefl 对调 uf）。
     """
     lay = p["_ms_layout"]
@@ -451,6 +496,35 @@ patch.AddBox((-PX / 2, -PX / 2, H_SUB), (PX / 2, PX / 2, H_SUB), priority=10)
 for _prim in ring.GetAllPrimitives():
     if _prim.GetPriority() < 10:
         _prim.SetPriority(10)
+
+# 读出（ge5 反射口径，ms_patch 同族）：soft plane 激励 + 双 E 探针对反射分解
+# ——域内零电阻片（段①同款，_WgProbePairRefl 对调 uf 使 S11=Γ）
+{_wg_readout_block(lay, reflection=True)}'''
+
+
+def _ms_mushroom_lines(p: dict[str, Any]) -> str:
+    """Sievenpiper 蘑菇 EBG/AMC 单元（TA-13）：接地基板+方贴片+中心过孔柱。
+
+    几何（内核 core/amc_mushroom 单源初值）：贴片 px=py=period−gap（邻胞
+    缝=gap 即 Sievenpiper LC 模型的间隙电容承载），过孔柱 z 0→H_SUB 接 z 底
+    PEC 边界地（过孔电流路径电感 L=μ0·t 承载）。读出=ms_patch 同族反射
+    口径（soft plane+双 E 探针对+_WgProbePairRefl 对调 uf，段①移植自
+    jcross 修法）；判读=|Γ|≈1 的 argΓ 过 0°（PMC）点 vs amc_resonance_hz。
+    """
+    lay = p["_ms_layout"]
+    return f'''# ms_mushroom 波导模拟器单元（E∥x 极化前提；y 极化需互换 PEC/PMC 对壁）
+# Sievenpiper 蘑菇 EBG/AMC（TA-13；LC 初值=core/amc_mushroom 单源：间隙电容
+# C=Luukkonen eq.4、过孔电感 L=μ0·t，f0=1/(2π√LC) 并联谐振 PMC 点）
+PX = {lay["px"]!r}
+VIA_R = {lay["via_r"]!r}
+mushroom_patch = CSX.AddMetal("mushroom_patch")
+mushroom_patch.AddBox((-PX / 2, -PX / 2, H_SUB), (PX / 2, PX / 2, H_SUB), priority=10)
+mushroom_via = CSX.AddMetal("mushroom_via")
+mushroom_via.AddCylinder([0.0, 0.0, 0.0], [0.0, 0.0, H_SUB], VIA_R, priority=10)
+for _prop in (mushroom_patch, mushroom_via):
+    for _prim in _prop.GetAllPrimitives():
+        if _prim.GetPriority() < 10:
+            _prim.SetPriority(10)
 
 # 读出（ge5 反射口径，ms_patch 同族）：soft plane 激励 + 双 E 探针对反射分解
 # ——域内零电阻片（段①同款，_WgProbePairRefl 对调 uf 使 S11=Γ）
@@ -612,7 +686,7 @@ def ms_array_layout(params: dict[str, Any],
         raise ValueError(
             f"ms_array_NxN: cell_map 覆盖不完备（需 {n_y} 行 × {n_x} 列）")
     lam0_m = 299792458.0 / ((freq_range_ghz[0] + freq_range_ghz[1]) / 2 * 1e9)
-    # ms_ring_patch 阵胞（ge5 段③，runs/ge5_j2fb）：环几何=core 闭式派生
+    # ms_ring_patch 阵胞（ge5 段③，runs/ge5_j2fb/）：环几何=core 闭式派生
     # （全阵同环，贴片逐胞变），导体 extent=ring_outer 非贴片边长
     from rfauto.core.metasurface_lut import ms_ring_patch_dims_mm
 
@@ -943,6 +1017,30 @@ def ms_geometry_spec(template: str, params: dict[str, Any],
             ports = [{"name": "Port1（探针对反射读出 Γ，_WgProbePairRefl）",
                       "pos_mm": [0.0, 0.0, lay["z_1a"] * 1e3],
                       "dir": [0.0, 0.0, -1.0]}]
+        if template == "ms_mushroom":
+            boxes = [
+                {"name": "substrate", "material": "substrate",
+                 "start_mm": [-period_mm / 2, -period_mm / 2, 0.0],
+                 "stop_mm": [period_mm / 2, period_mm / 2, h_m * 1e3]},
+                {"name": "mushroom_patch", "material": "metal",
+                 "start_mm": [-lay["px"] * 1e3 / 2, -lay["px"] * 1e3 / 2,
+                              h_m * 1e3],
+                 "stop_mm": [lay["px"] * 1e3 / 2, lay["px"] * 1e3 / 2,
+                             h_m * 1e3]},
+                # 过孔柱 UI 预览=外接方盒近似（真渲染=CSPrimCylinder r=via_r）
+                {"name": "mushroom_via（柱 r=via_r 的外接盒近似）",
+                 "material": "metal",
+                 "start_mm": [-lay["via_r"] * 1e3, -lay["via_r"] * 1e3, 0.0],
+                 "stop_mm": [lay["via_r"] * 1e3, lay["via_r"] * 1e3,
+                             h_m * 1e3]},
+                {"name": "soft_exc_plane（soft plane 激励面）", "material": "metal",
+                 "start_mm": [-period_mm / 2, -period_mm / 2,
+                              lay["z_src"] * 1e3],
+                 "stop_mm": [period_mm / 2, period_mm / 2, lay["z_src"] * 1e3]},
+            ]
+            ports = [{"name": "Port1（探针对反射读出 Γ，_WgProbePairRefl）",
+                      "pos_mm": [0.0, 0.0, lay["z_1a"] * 1e3],
+                      "dir": [0.0, 0.0, -1.0]}]
         if template == "ms_ring_patch":
             boxes = [
                 {"name": "substrate", "material": "substrate",
@@ -1060,7 +1158,7 @@ def ms_geometry_spec(template: str, params: dict[str, Any],
 # - ms_jcross：period=12.0；主缝=λg/4、端枝=λg/8、缝宽=λg/40
 #   （λg=λ0/√εeff；Marcuvitz 网格 EC 初值口径，带心真机修正归 P3）。
 # - ms_array_NxN：演示名义务 3×3（真机 15×15 战役走参数注入，预算见
-#   任务书）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
+#   handoff.md）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
 def _ms_nominal() -> tuple[float, float, float]:
     """闭式 nominal 计算（core 单源导入收口在函数内，scipy 链惰性）。"""
     from rfauto.core.metasurface_lut import ms_cross_arm_len_mm, ms_jcross_slot_dims_mm, ms_patch_resonant_len_mm
@@ -1088,7 +1186,7 @@ MS_PATCH_META: dict[str, Any] = {
                   "波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出"
                   "判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 "
                   "LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 "
-                  "Möbius 像，runs/ge5_msjcross/audit.md §D/E + 六百八十"
+                  "Möbius 像，runs/ge5_msjcross/audit.md §D/E +  六百八十"
                   "七）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["px_mm", "py_mm", "period_mm", "h_mm"],
@@ -1102,7 +1200,7 @@ MS_PATCH_META: dict[str, Any] = {
     "mesh_note": "0=自动 λ_sub/50@F_MAX；贴片缘精确入网+胞缘缝 3+ 中点入网（#311）；"
                  "NEAR≤最小胞缘缝/3 渲染期守卫（#266）；全轴 ≥10µm",
     "smoke_note": "离线审计先行（#212，test_metasurface_templates）；波导模拟器扫"
-                  "描战役（粗 21+细 41 点）发射面见 战役任务书；"
+                  "描战役（粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；"
                   "读出修复后重扫见 runs/ge5_j2fb/（J2 fallback 战役段②）",
 }
 _MS_PATCH_NOM_PERIOD = round(_MS_LAM0_MM / 2, 4)   # λ0/2（#252 闭式非手抄）
@@ -1213,7 +1311,7 @@ MS_ARRAY_META: dict[str, Any] = {
     "mesh_note": "0=自动 λ_sub/50@F_MAX；全部贴片缘精确入网；胞缘/邻胞缝 ≥2·NEAR"
                  " 渲染期守卫；1µm 近重合去重（#152）；全轴 ≥10µm；演示名义 3×3，"
                  "真机 15×15 预算（~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测"
-                 "口径）见 战役任务书",
+                 "口径）见 runs/df6_dp10ms/handoff.md",
     "smoke_note": "离线审计先行（#212）；真机 solo 单飞（#246/#261）",
 }
 MS_ARRAY_NOMINAL: dict[str, Any] = {
@@ -1231,7 +1329,7 @@ TEMPLATE_META["ms_jcross"] = MS_JCROSS_META
 TEMPLATE_NOMINAL["ms_jcross"] = MS_JCROSS_NOMINAL
 
 # ── ms_ring_patch（双谐振方环+内贴片，DP-10 §1c 预登记 fallback；ge5 J2
-#    战役段③注册，runs/ge5_j2fb）：名义全部闭式精算（#1c/#252，core 单源），
+#    战役段③注册，runs/ge5_j2fb/）：名义全部闭式精算（#1c/#252，core 单源），
 #    环几何 ms_ring_patch_dims_mm（void=0.4λ0、ring_w=λg/40、ring_outer=
 #    void+2·ring_w——ms_cross/jcross 0.4λ0 屏周期与 JC 缝宽口径族内同源），
 #    内贴片=ms_patch_resonant_len_mm 不动点（复用不重复实现）。LUT 扫描变量
@@ -1274,6 +1372,97 @@ MS_RING_PATCH_NOMINAL: dict[str, Any] = {
 }
 TEMPLATE_META["ms_ring_patch"] = MS_RING_PATCH_META
 TEMPLATE_NOMINAL["ms_ring_patch"] = MS_RING_PATCH_NOMINAL
+
+# ── ms_mushroom（Sievenpiper 蘑菇 EBG/AMC 单元，TA-13 EBG/FSS 净表注册件，
+#    2026-10-08）：内核=core/amc_mushroom（MM-8 已合流，消费不重写 #1c/#252）。
+#    名义全闭式反演（导入期计算非手抄）：period=λ0/2 阵格（ms_patch 同口径）；
+#    gap=Luukkonen eq.4 解析逆（目标 f0 → C_req=1/(ω₀²L)、L=μ0·t
+#    amc_via_inductance_h）——g/period=0.085 落稠密栅声明域（g≪D）。
+#    过孔柱 r=0.15（msl_cpw 过孔栅栏/via 基元同口径，sub-cell 阶梯化）。
+#    loop-FSS（方环透射屏，core/ebg_fss 另半内核）经核算**不注册**：λ0 尺度
+#    栅格下其名义 gap/period≈0.25-0.6 恒出稠密栅声明域（尺度不变量，任何 f0
+#    同病）——名义值落在内核声明域外即违 #122 如实纪律，留 P3 真机定标面。
+def ms_mushroom_dims_mm(f0_ghz: float, er: float, h_mm: float) -> dict[str, float]:
+    """蘑菇单元名义尺寸闭式（period=λ0/2 阵格 + gap=eq.4 解析逆，无 brentq）。
+
+    链（#1c/#252：内核 core/amc_mushroom 单源消费）：
+    L=μ0·h（amc_via_inductance_h，Sievenpiper TAP 47(9):1509 过孔电感律）
+    → 目标 f0 的 C_req=1/(ω₀²L) → Luukkonen eq.4
+    C=(2D/π)ε0εeff·ln(csc(πg/2D)) 反解：记 k=C_req·π/(2Dε0εeff)（即 ln csc 项）
+    → sin(πg/2D)=e^{−k} → g=(2D/π)·arcsin(e^{−k})。
+    εeff=(1+εr)/2（eq.3 单侧基板加载，_MS_EPS_EFF_SCREEN 同源）。
+    """
+    from rfauto.core.amc_mushroom import amc_via_inductance_h
+    from rfauto.core.metasurface_lut import EPS0_F_M
+
+    f0_hz = float(f0_ghz) * 1e9
+    period_m = 299792458.0 / f0_hz * 1e3 / 2.0 * 1e-3   # λ0/2 阵格（米）
+    l_via = amc_via_inductance_h(float(h_mm) * 1e-3)
+    c_req = 1.0 / (2.0 * math.pi * f0_hz) ** 2 / l_via
+    eps_eff = (1.0 + float(er)) / 2.0
+    k = c_req * math.pi / (2.0 * period_m * EPS0_F_M * eps_eff)
+    if k <= 0.0:
+        raise ValueError(f"ms_mushroom_dims_mm: 逆解非法 k={k!r}（C_req≤0）")
+    arg = math.exp(-k)
+    if arg >= 1.0:
+        raise ValueError(
+            f"ms_mushroom_dims_mm: 名义逆解出稠密栅域外（e^−k={arg}≥1，"
+            "gap≥period/2——目标 f0 与 h/period 组合无稠密栅解）")
+    gap_m = 2.0 * period_m / math.pi * math.asin(arg)
+    return {"period_mm": round(period_m * 1e3, 4),
+            "gap_mm": round(gap_m * 1e3, 4),
+            "px_mm": round((period_m - gap_m) * 1e3, 4)}
+
+
+def _ms_mush_nominal() -> tuple[float, float]:
+    """导入期名义（core 单源；10GHz/rogers4350b/h=0.508 设计点）。"""
+    d = ms_mushroom_dims_mm(10.0, 3.66, 0.508)
+    return d["period_mm"], d["gap_mm"]
+
+
+_MS_MUSH_NOM_PERIOD, _MS_MUSH_NOM_GAP = _ms_mush_nominal()
+#: 过孔柱半径（mm）——msl_cpw 过孔栅栏/via 基元 r=0.15 同口径（sub-cell
+#: 阶梯化，构造常量非声明参数）
+_MS_MUSH_VIA_R_MM = 0.15
+
+MS_MUSHROOM_META: dict[str, Any] = {
+    "f0_ghz": 10.0, "n_ports": 1,
+    "extraction": "S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；ms_patch"
+                  " 同族读出，_WgProbePairRefl 对调 uf——footer 契约/sparams.csv "
+                  "5 列 schema 不变，_port2=_port1 别名 S21 列≡S11）。波导模拟器"
+                  "≡无限阵@θ=0，E∥x 极化前提；AMC 判读=|Γ|≈1（无损）的 argΓ 扫"
+                  "频：低频 PEC ±180° → f₀ 过 0°（PMC）→ ±90° 带边——f₀ 互证锚="
+                  "core/amc_mushroom amc_resonance_hz（Sievenpiper LC 并联谐振，"
+                  "EC 初值口径，稠密栅 gap≪period 声明域；真机带心修正归 P3）。"
+                  "健康判据=|Γ| 线性域 ≈1（空波导标定同 ms_patch 口径）",
+    "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
+    "params": ["gap_mm", "period_mm", "h_mm"],
+    "topology": "Sievenpiper 蘑菇 EBG/AMC 单元：接地基板（z 底 PEC 边界）+ 零厚"
+                "方贴片（px=py=period−gap，邻胞缝=gap 承载间隙电容 C）+ 中心过"
+                "孔柱（r=0.15 sub-cell 阶梯化，z 0→H_SUB 接地，承载过孔电感 "
+                "L=μ0·t）；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波）；贴"
+                "片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 "
+                "soft plane 激励面，域内零电阻片",
+    "param_semantics": "gap_mm=邻胞贴片缘缝（Sievenpiper LC 模型的 C 承载，EC "
+                       "初值主参数），period_mm=单胞周期（方形域边长，px=py="
+                       "period−gap 派生），h_mm=基板厚（过孔电感 L=μ0·h 的物理承"
+                       "载）；er 进名义 gap 反演闭式（εeff=(1+εr)/2）+基板材料，"
+                       "tan_d 只进材料；过孔柱 r=0.15 构造常量非声明参数",
+    "mesh_note": "0=自动 λ_sub/50@F_MAX；贴片缘精确入网+胞缘缝 3+ 中点入网（#311）；"
+                 "过孔柱=sub-cell 阶梯化（msl_cpw 过孔栅栏先例，轴向两端恰在网格"
+                 "线）；NEAR≤胞缘缝/3 渲染期守卫（#266）；全轴 ≥10µm",
+    "smoke_note": "离线审计先行（#212，test_metasurface_templates）；AMC f₀/±90° "
+                  "带边闭式=amc_phase_band_hz（内核互证钉）；真机波导模拟器 "
+                  "smoke（空波导 EN 标定+argΓ 过零点对拍内核 f₀）判据面归 P3 "
+                  "发射批",
+}
+MS_MUSHROOM_NOMINAL: dict[str, Any] = {
+    "gap_mm": _MS_MUSH_NOM_GAP, "period_mm": _MS_MUSH_NOM_PERIOD,
+    "h_mm": 0.508,
+    "er": 3.66, "tan_d": 0.0037,
+}
+TEMPLATE_META["ms_mushroom"] = MS_MUSHROOM_META
+TEMPLATE_NOMINAL["ms_mushroom"] = MS_MUSHROOM_NOMINAL
 
 TEMPLATE_META["ms_array_NxN"] = MS_ARRAY_META
 TEMPLATE_NOMINAL["ms_array_NxN"] = MS_ARRAY_NOMINAL

@@ -1,4 +1,4 @@
-"""M-7 cost-aware 公差分配优化器单测（研究扩充 M-7 判据）。
+"""M-7 cost-aware 公差分配优化器单测（docs/research_expansion_20260926.md M-7 判据）。
 
 裁判口径（#118，非推导自证）：
 - 闭式裁判 = 测试内独立推导的 KKT 闭式（μ = 2(Σ(aᵢSᵢ)^(2/3)/C)³、
@@ -381,3 +381,78 @@ def test_tolerance_service_envelope_errors():
     ):
         env = tolerance_allocate(bad)
         assert env["ok"] is False and env["errors"], f"应 ok=False: {bad!r}"
+
+
+# ─── 8. W2-TEST 直测补强：spec 校验/对照法分派/budget_t 钳位语义 ─────────────
+
+
+def test_service_spec_validation_errors():
+    """spec 面：usl 缺失与 yield_target 越界均 ok=False（不抛、不部分产出）。"""
+    from rfauto.service.tolerance_allocation_service import tolerance_allocate
+
+    base = {"sensitivities": {"a": 1.0}, "cost_coeffs": {"a": 1.0}, "budget_c": 1.0}
+    out = tolerance_allocate({**base, "spec": {"yield_target": 0.9, "margin": 2.0}})
+    assert out["ok"] is False
+    assert any("spec.usl" in e for e in out["errors"])
+    out2 = tolerance_allocate(
+        {**base, "spec": {"usl": 10.0, "yield_target": 1.5, "margin": 2.0}})
+    assert out2["ok"] is False
+    assert any("yield_target" in e for e in out2["errors"])
+    # 良率边界值 1.0 同样越界（yield ∈ (0,1) 开区间）
+    out3 = tolerance_allocate(
+        {**base, "spec": {"usl": 10.0, "yield_target": 1.0, "margin": 2.0}})
+    assert out3["ok"] is False
+
+
+def test_service_compare_dispatch_and_payload_guards():
+    """compare 只在 cost_budget 生效（budget_t 不带对照面）；非 dict/bool 拒收。"""
+    from rfauto.service.tolerance_allocation_service import tolerance_allocate
+
+    out = tolerance_allocate({
+        "sensitivities": SENS, "cost_coeffs": COEFFS,
+        "mode": "budget_t", "total_tol_t": 0.03, "compare": True,
+    })
+    assert out["ok"] is True
+    assert "comparison" not in out  # 对照法仅在 cost_budget 模式分派
+    out_list = tolerance_allocate([1, 2])
+    assert out_list["ok"] is False
+    assert any("payload 必须是 JSON 对象" in e and "list" in e
+               for e in out_list["errors"])
+    out_bool = tolerance_allocate(
+        {"sensitivities": {"a": True}, "cost_coeffs": {"a": 1.0}})
+    assert out_bool["ok"] is False
+    assert any("bool" in e for e in out_bool["errors"])
+
+
+def test_service_budget_t_clamp_semantics():
+    """budget_t：预算花满（δ∝1/S² 手算闭式）；tol_max 钳位不足 → 显式不可行。"""
+    from rfauto.service.tolerance_allocation_service import tolerance_allocate
+
+    sens = {"a": 1.0, "b": 2.0}
+    coeffs = {"a": 1.0, "b": 1.0}
+    out = tolerance_allocate({
+        "sensitivities": sens, "cost_coeffs": coeffs,
+        "mode": "budget_t", "total_tol_t": 0.03,
+    })
+    assert out["ok"] is True
+    # 独立手算（#118）：min (S_aδ_a)²+(S_bδ_b)² s.t. Σδ=T → δ_i∝1/S_i²，
+    # δ_a=T·S_b²/(S_a²+S_b²)=0.024、δ_b=0.006，且预算恰好花满 Σδ=T
+    tols = out["allocation"]["tols"]
+    assert tols["a"] == pytest.approx(0.024, rel=1e-9)
+    assert tols["b"] == pytest.approx(0.006, rel=1e-9)
+    assert sum(tols.values()) == pytest.approx(0.03, rel=1e-9)
+    # 可行钳位：T=0.004、tol_max=0.005（未触顶）→ 花满且逐参数 ≤ tol_max
+    out2 = tolerance_allocate({
+        "sensitivities": sens, "cost_coeffs": coeffs,
+        "mode": "budget_t", "total_tol_t": 0.004, "tol_max": 0.005,
+    })
+    assert out2["ok"] is True
+    assert out2["allocation"]["tols"]["a"] == pytest.approx(0.0032, rel=1e-9)
+    assert all(v <= 0.005 + 1e-12 for v in out2["allocation"]["tols"].values())
+    # 不可行：Σδ 上限（2×0.005=0.01）< T=0.03 → 显式错误信封（不抛）
+    out3 = tolerance_allocate({
+        "sensitivities": sens, "cost_coeffs": coeffs,
+        "mode": "budget_t", "total_tol_t": 0.03, "tol_max": 0.005,
+    })
+    assert out3["ok"] is False
+    assert any("不可行" in e for e in out3["errors"])

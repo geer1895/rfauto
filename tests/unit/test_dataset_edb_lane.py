@@ -1,6 +1,6 @@
 """数据工厂 EDB 道收集器测试（dataset_edb_lane）。
 
-覆盖面（对应真机产物形态的合成等价物）：
+覆盖面（对应 runs/edblane85/w1_smoke 真机产物形态的合成等价物）：
 - TestEdbLaneDiscover：judgment 标志目录发现（只读、路径/族名/批次名）；
 - TestEdbLaneCollect：branchline+功分器两族收集 → 行 schema 逐键断言
   （DATASET_SCHEMA 对齐）、E1 指纹三键（model=spec.template /
@@ -23,6 +23,8 @@ chdir 隔离零污染（#144）；依赖 duckdb/pyarrow（dataset extra）与 sk
 from __future__ import annotations
 
 import json
+import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -40,12 +42,13 @@ from rfauto.service.dataset_edb_lane import (
     EDB_LANE_SOURCE,
     collect_edb_lane_dataset,
     discover_edb_lane_candidates,
+    resolve_dataset_runs_root,
 )
 from rfauto.service.dataset_service import query_dataset
 from tests.unit._dataset_service_helpers import _write_touchstone
 
 # ---------------------------------------------------------------------------
-# 合成产物工厂（真机产物形态的迷你等价物）
+# 合成产物工厂（真机 runs/edblane85/w1_smoke/<family>/ 形态的迷你等价物）
 # ---------------------------------------------------------------------------
 
 _BRANCHLINE_PARAMS: dict[str, Any] = {
@@ -379,16 +382,16 @@ class TestEdbLaneCrossBatch:
                                                           monkeypatch):
         """E1 指纹碰撞面修复钉（W5 审查批）：study_name=批次**相对 runs
         根路径**而非裸目录名——不同战役根下同名批次目录（各战役各自的
-        ``batch_smoke`` 是常态命名）不折叠，各留一行。
+        ``w1_smoke`` 是常态命名）不折叠，各留一行。
 
         旧口径（裸批次名）实证：两战役同 design 点 → 同指纹
-        (model, "batch_smoke", None, params_json) → 静默折叠 n_dup=1，
+        (model, "w1_smoke", None, params_json) → 静默折叠 n_dup=1，
         第二战役的实测曲线丢失（仅 provenance.batch_dir 留痕）。
         """
         monkeypatch.chdir(tmp_path)
         root = tmp_path / "runs"
         for camp in ("campaign_a", "campaign_b"):
-            _edb_product(root, f"{camp}/batch_smoke", "branchline",
+            _edb_product(root, f"{camp}/w1_smoke", "branchline",
                          template="edb_branchline",
                          params=_BRANCHLINE_PARAMS, n_ports=4)
         r = collect_edb_lane_dataset(name="edb_ds", runs_root=root,
@@ -402,10 +405,10 @@ class TestEdbLaneCrossBatch:
                           out_dir=tmp_path / "datasets", limit=10,
                           order_by="study_name", order="asc")
         assert [row["study_name"] for row in q["rows"]] == [
-            "campaign_a/batch_smoke", "campaign_b/batch_smoke"]
+            "campaign_a/w1_smoke", "campaign_b/w1_smoke"]
         provs = [json.loads(row["provenance_json"]) for row in q["rows"]]
         assert [p["batch_dir"] for p in provs] == [
-            "campaign_a/batch_smoke", "campaign_b/batch_smoke"]
+            "campaign_a/w1_smoke", "campaign_b/w1_smoke"]
 
     def test_product_directly_under_runs_root_self_batch(self, tmp_path,
                                                           monkeypatch):
@@ -507,3 +510,80 @@ class TestEdbLaneHealthGate:
         assert len(r["health_verdicts"]) == 2
         assert all(v != "unhealthy" for v in r["health_verdicts"].values())
         assert r["n_rows"] == 2
+
+
+# ---------------------------------------------------------------------------
+# manifest runs_root 脱敏（aurora36 W2-D，SUMMARY §5.4 清偿）：绝对路径/
+# 盘符不落盘——runs/datasets 数据集条件发布面唯一硬敏感面
+# ---------------------------------------------------------------------------
+
+_DRIVE_RE = re.compile(r"[A-Za-z]:[\\/]")
+
+
+class TestEdbLaneManifestRunsRoot:
+    def test_new_manifest_is_relative_and_drive_free(self, edb_env):
+        """新生成 manifest 不含盘符与绝对路径（本席立钉）；runs_root=相对
+        本 manifest 所在目录的 posix 形态（缺省布局 ``../../``），且可经
+        resolve_dataset_runs_root 单源解析回真实 runs 根。"""
+        root, out = edb_env
+        r = collect_edb_lane_dataset(name="edb_ds", runs_root=root,
+                                     out_dir=out, health_gate=False)
+        assert r["ok"] is True, r.get("errors")
+        manifest_path = out / "edb_ds" / "dataset_manifest.yaml"
+        text = manifest_path.read_text(encoding="utf-8")
+        # 全文零盘符/绝对路径（盘符正则 + \w:\ 反斜杠形态双查）
+        assert _DRIVE_RE.search(text) is None, text
+        import yaml
+
+        doc = yaml.safe_load(text)
+        # fixture 布局：runs_root=<tmp>/runs，manifest 在 <tmp>/datasets/
+        # edb_ds/ → 相对形态 = ../../runs（真机布局 runs/datasets/<name>
+        # 则为 ../../，同一算法）
+        assert doc["runs_root"] == "../../runs"
+        assert "盘符" in doc["runs_root_note"]  # 可重建说明字段随行
+        # 读取侧单源：相对形态解析回真实 runs 根（存在性探测链②）
+        resolved = resolve_dataset_runs_root(doc, manifest_path)
+        assert resolved == root.resolve()
+
+    def test_resolve_legacy_absolute_manifest(self, edb_env):
+        """旧绝对路径形态兼容（读取侧存在性探测链①）：在盘即认。"""
+        root, out = edb_env
+        assert collect_edb_lane_dataset(
+            name="edb_ds", runs_root=root, out_dir=out,
+            health_gate=False)["ok"] is True
+        manifest_path = out / "edb_ds" / "dataset_manifest.yaml"
+        import yaml
+
+        doc = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        doc["runs_root"] = str(root.resolve())  # 模拟 2026-10 前旧 manifest
+        resolved = resolve_dataset_runs_root(doc, manifest_path)
+        assert resolved == root.resolve()
+
+    def test_resolve_fallback_chain(self, tmp_path, monkeypatch):
+        """存在性探测链③与全落空形态：缺省 runs 在盘即认；全不在盘返回
+        首个候选（不虚构目录，调用方 is_dir 报错面接手）。"""
+        monkeypatch.chdir(tmp_path)
+        runs = tmp_path / "runs"
+        runs.mkdir()
+        manifest_path = tmp_path / "datasets" / "ds" / "dataset_manifest.yaml"
+        manifest_path.parent.mkdir(parents=True)
+        # ③：runs_root 键缺失 → 缺省 runs（相对 cwd）在盘即认
+        assert resolve_dataset_runs_root({}, manifest_path) == runs.resolve()
+        # ② 在盘优先于 ③：相对形态指向的目录存在即认
+        alt = tmp_path / "datasets" / "ds" / "alt_runs"
+        alt.mkdir()
+        assert resolve_dataset_runs_root(
+            {"runs_root": "alt_runs"}, manifest_path) == alt.resolve()
+        # 全落空（缺省也不在盘）：返回首个候选（相对解析形态），不虚构
+        resolved = resolve_dataset_runs_root(
+            {"runs_root": "ghost"}, tmp_path / "nowhere.yaml",
+            default=tmp_path / "ghost_runs")
+        assert resolved == (tmp_path / "ghost")
+
+    @pytest.mark.skipif(os.name != "nt", reason="跨盘 ValueError 为 Windows 形态")
+    def test_manifest_runs_root_cross_drive_falls_empty(self):
+        """跨盘（Windows 异盘符）相对化不可表达 → 落空串不回退写绝对路径
+        （脱敏优先；note 字段说明重建口径）。"""
+        from rfauto.service.dataset_edb_lane import _manifest_runs_root
+        assert _manifest_runs_root(Path("Q:/elsewhere/runs"),
+                                   Path("C:/somewhere/datasets/x")) == ""

@@ -24,6 +24,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _PAGES_JS = _REPO_ROOT / "src" / "rfauto" / "ui" / "static" / "pages.js"
+# UI-R2：入口+pages/ 域模块并集（mjs 驱动仍走 pages.js facade；源码钉读并集）
+_PAGES_JS_UNION = "\n".join(
+    p.read_text(encoding="utf-8")
+    for p in [_PAGES_JS, *sorted((_PAGES_JS.parent / "pages").glob("*.js"))])
 _INDEX_HTML = _REPO_ROOT / "src" / "rfauto" / "ui" / "static" / "index.html"
 _NODE_TEST = _REPO_ROOT / "tests" / "unit" / "js" / "w1e_d05_mdsanitize.test.mjs"
 
@@ -59,17 +63,17 @@ class TestCallSiteDiscipline:
 
     def test_weak_script_strip_fallback_removed(self):
         """旧弱降级（裸 <script> 剥离）必须已删除——它挡不住 img onerror。"""
-        src = _PAGES_JS.read_text(encoding="utf-8")
+        src = _PAGES_JS_UNION
         assert "<script[\\s\\S]*?<\\/script>" not in src
 
     def test_no_direct_innerHTML_assignment_of_mdSanitize(self):
         """任何调用点不得把 mdSanitize 结果直塞 innerHTML（null 注入面）。"""
-        src = _PAGES_JS.read_text(encoding="utf-8")
+        src = _PAGES_JS_UNION
         assert ".innerHTML = mdSanitize" not in src
 
     def test_template_sites_guarded_by_mdReady(self):
         """两处模板拼接语境必须 mdReady() 先行分流（不可用时走 esc 分支）。"""
-        src = _PAGES_JS.read_text(encoding="utf-8")
+        src = _PAGES_JS_UNION
         n = len(re.findall(r"mdReady\(\)\s*\?\s*mdSanitize\(", src,
                            re.S))
         assert n == 2, (
@@ -78,7 +82,7 @@ class TestCallSiteDiscipline:
 
     def test_renderMarkdown_is_single_entry_for_direct_render(self):
         """直渲染语境单点走 renderMarkdown（textContent 兜底封装）。"""
-        src = _PAGES_JS.read_text(encoding="utf-8")
+        src = _PAGES_JS_UNION
         assert "renderMarkdown(el," in src
         assert "export function renderMarkdown" in src
 

@@ -1,7 +1,7 @@
 """维护者脚手架（SO-审查 §7 P5 / E4 mini，2026-10-05）。
 
 `rfauto dev new-template / new-calculator` 的 service 面：生成骨架文件
-+ 消费钉清单（把 /考古知识固化成工具）。adapter_kit.
++ 消费钉清单（把 项目规则/ 考古知识固化成工具）。adapter_kit.
 scaffold_adapter 同款纪律：骨架落盘前 compile() 自检、不覆盖既有文件、
 名字非法显式报错。
 

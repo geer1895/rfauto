@@ -3,7 +3,7 @@
 薄壳（分层铁律 3/4）：数值只在确定性内核 core/luneburg_lens（Peeler
 1958 分壳离散 + Chisum 打印分辨率律 + 双路径射线追踪，#118 互证）；
 本模块不产生物理数字，只做契约适配与异常到 JSON 信封的翻译。信封契约
-（与 rotman_lens_service 同族）：ok=False + error 字符串绝不抛出。
+（与 rotman_lens_service 同族）：ok=False + errors 文案列表，绝不抛出。
 
 - :func:`luneburg_lens_design`：单入口——分壳离散 +（可选）打印可行性
   +（可选）束聚误差（路径 A）+（可选）连续路径参照（路径 B）。
@@ -13,7 +13,15 @@
 from __future__ import annotations
 
 from rfauto.core import luneburg_lens as ll
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：失败信封单数 ``error``
+#: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读
+#: 规则 2 口径的破坏性形状变更，按 §2 规则升位；消费面
+#: （tests/unit/test_luneburg_lens.py）同笔迁移，无 CLI/MCP/UI 消费者
+#: （grep 实测）。1.0=首批推广口径。
+LUNEBURG_LENS_SERVICE_SCHEMA_VERSION = "1.1"
 
 #: 数值内核期可预期的异常族（进信封，不外抛）
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError, ArithmeticError)
@@ -34,7 +42,7 @@ def luneburg_lens_design(
 
     f0_hz 与 er_base 同时给出（均 ``is not None``）才跑打印可行性；
     b_over_r_list 给出才跑步聚误差；include_continuous=True 才跑连续
-    路径参照（逐射线 RK4，较慢）。失败时 ``{"ok": False, "error": str}``
+    路径参照（逐射线 RK4，较慢）。失败时 ``{"ok": False, "errors": [str]}``
     不抛出。
     """
     try:
@@ -58,6 +66,8 @@ def luneburg_lens_design(
                 "ds_over_r": ds_over_r,
                 "per_ray": cont,
             }
-        return ok_envelope(data=data)
+        return ok_envelope(
+            schema_version=LUNEBURG_LENS_SERVICE_SCHEMA_VERSION, data=data)
     except _JSON_ERRORS as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=LUNEBURG_LENS_SERVICE_SCHEMA_VERSION)

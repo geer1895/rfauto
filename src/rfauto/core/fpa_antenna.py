@@ -1,7 +1,7 @@
 """LM-1 Fabry-Perot 谐振腔天线（FPA/RCA）闭式综合内核（纯函数零 IO）。
 
-规格来源（研究扩充 round4 中件包二 LM-1）；
-物理数字只出在本内核。口径与公式来源（铁律 5：来源写
+规格来源（docs/research_expansion_20260926_round4.md 中件包二 LM-1）；
+物理数字只出在本内核（AGENTS 硬规则 7）。口径与公式来源（铁律 5：来源写
 docstring；裁判=独立来源，不自证，#118）：
 
 - G. von Trentini, "Partially Reflecting Sheet Arrays," IRE Trans. Antennas

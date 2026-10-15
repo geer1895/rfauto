@@ -1,6 +1,6 @@
 """嵌入式微带 / 非对称三层带线 / 双层悬置变体确定性内核（TA-11，ge8d Wave D 席 D2）。
 
-条目（研究扩充 round15 §二·2 TA-11）：
+条目（docs/research_expansion_20261002_round15.md §二·2 TA-11）：
 「嵌入式微带/双层悬置变体/非对称三层带线 | Wadell/Edwards&Steer | S-M/P2-P3」。
 
 **内核形态如实登记（#122，inverted_ms/fgcpw 同制度）**：Wadell《Transmission

@@ -10,7 +10,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 from .render_hairpin import _hairpin_layout
 
 # ── §M-5 varactor_bpf：变容二极管调谐 BPF（首个半有源模板，2026-09-27）──────
-# 研究扩充 M-5：hairpin 族增量——谐振臂开路端对地
+# docs/research_expansion_20260926.md M-5：hairpin 族增量——谐振臂开路端对地
 # 并联 lumped C(V)（突变结闭式 C=Cj0/√(1+V/φ)，core/varactor.py 单源），布局
 # 单源 _hairpin_layout（与 hairpin 同族增量口径），调谐=偏置 V 改 C 改 f0。
 #

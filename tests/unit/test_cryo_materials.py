@@ -1,4 +1,4 @@
-"""F-H.4 低温材料面内核+service 单测（研究扩充 round4 F-H 件 4）。
+"""F-H.4 低温材料面内核+service 单测（docs/research_expansion_20260926_round4.md F-H 件 4）。
 
 裁判口径（#118/#122 先行）：解析锚点由测试侧独立常量与独立代数路径离线
 推导——Cu Rs 双路径 √(πfμ₀ρ) vs √(ωμ₀ρ/2)；RRR 恒等式 ρ(T_ref)/ρ(0)=RRR

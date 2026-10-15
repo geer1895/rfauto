@@ -13,10 +13,11 @@ from .registry import (
     TEMPLATE_META,
     TEMPLATE_NOMINAL,
 )
+from .wg_port_compat import WG_PROBE_REFIT_BLOCK
 
 # ═══ §ME-6 波导-同轴过渡 coax_waveguide_transition（2026-09-26 ME-6 离线段，
 # ═══ 文末注册块）════════════════════════════════════════════════════════════
-# 方案锚：月度增强方案 §三 A 流 ME-6——openEMS
+# 方案锚：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-6——openEMS
 # 官方 Coax-to-Waveguide 教程参数化直抄起手 + HFSS 仲裁；复用 sma_launcher
 # 经验链。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。
 # 教程出处（#1c 直抄起手，双源）：
@@ -387,6 +388,7 @@ def coax_wg_render(
     a_wr = m(lay["a_mm"])
     exc1 = 1 if int(excite_port) == 1 else 0
     exc2 = 0 if int(excite_port) == 1 else 1
+    refit_blk = WG_PROBE_REFIT_BLOCK
     return f'''#!/usr/bin/env python3
 """openEMS coax_waveguide_transition script (rfauto ME-6 auto-generated).
 
@@ -473,12 +475,17 @@ _port1 = FDTD.AddLumpedPort(1, {p1['r_ohm']!r},
 {p1_lit}    p_dir="{p1['p_dir']}", excite={exc1}, priority=5)
 
 # ── 端口 2：RectWGPort 解析 TE10（Pozar 模式函数，绑定自算 kc=π/a）──
+# COMPAT 簇4：构造后 _wg_probe_refit 把探针角点偏移改内联（安装栈探针
+# ModeOrigin 序列化错位致 uf_tot≡0/S11≡−1；根因见
+# oe_templates/wg_port_compat.py，复现 runs/seat1_rectwg/repro_rectwg.py）。
 # 绑定参数序（exc_dir=z）：ny_P=x、ny_PP=y——a 绑宽边 x、b 绑窄边 y，
 # mode="TE10"（M=1,N=0：E 沿 y、半波沿 x，与探针轴平行=耦合口径）。
 # Z_ref 缺省=解析波导阻抗 ZL=k·Z0/β（WaveguidePort.CalcPort 填）。
+{refit_blk}
 _port2 = RectWGPort(CSX, port_nr=2,
 {p2_lit}    exc_dir="z", a={m(p2['a_bind_mm'])!r}, b={m(p2['b_bind_mm'])!r},
     mode_name="{p2['mode']}", excite={exc2})
+_wg_probe_refit(_port2)
 
 # ── 求解 ──
 # RFAUTO_SKIP_RUN=1：只重跑后处理（复用既有 fdtd/ 时域产物；几何段未变时合法）

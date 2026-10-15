@@ -69,3 +69,50 @@ nominal_derivation: |-
   存在但不用（仓内 sma_launcher pt2 真机判废先例 β=4166 vs TEM 闭式 68 +
   官方讨论 #437 尺寸上限病态），采纳探针柱+LumpedPort 集总桥（官方 Python
   教程口径）。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 波导-同轴探针过渡：探针柱自波导宽边伸入、背短路板置于探针后 λg/4 处——λg/4 短路面在探针处呈现开路使探针电流最大激励 TE10。典型用于实验室波导馈电链路；常见误用=用
+      CoaxialPort 绑定端口——仓内真机判废先例（β=4166 vs TEM 闭式 68），须探针柱+LumpedPort 集总桥。
+    derivations:
+    - claim: WR-90 表口径与 λg/4 背短路（官方 wiki Coax-to-Waveguide Adapter 教程结构）
+      formula: fc10 = c/(2*a) = 6.5571 GHz ; backshort = λg/4 = 9.9268 mm
+      source: 本仓 core/rw_tables（wr_lookup 三源口径表单源；docs/rf_template_references.md §18 ME-6（openEMS 官方 wiki
+        +官方 Python 教程口径，探针参数直抄））
+    - claim: 导波波长与截止恒等式（fc10 与表值恒等已被审计测试钉）
+      formula: λg = λ0/sqrt(1-(fc10/f0)**2) = 39.7071 mm
+      source: 本仓 core/rw_tables（fc10=c/(2a) 全表主自洽判据 rtol 1e-9；docs/templates/coax_waveguide_transition/meta.yaml
+        nominal_derivation）
+  sensitivity_ranking:
+  - param: backshort_mm
+    order: 1
+    basis: λg/4 背短路恒等式（匹配主维，|∂lnf/∂lnL|=1）
+  - param: pin_len_mm
+    order: 2
+    basis: 探针长度=阻抗匹配主维（0.55·b 官方「tune for best match」档）
+  - param: a_mm
+    order: 3
+    basis: 宽边=截止/λg 主维（fc10=c/(2a)）
+  - param: b_mm
+    order: 4
+    basis: 窄边（TE10 场分布与探针阻抗弱维）
+  - param: pin_r_mm
+    order: 5
+    basis: 探针半径（≈SMA 内导体，弱维）
+  - param: l_wg_mm
+    order: 6
+    basis: 波导段长（不进背短路谐振式）
+  - param: wg_t_mm
+    order: 7
+    basis: 壁厚（构造常量）
+  - param: port_h_mm
+    order: 8
+    basis: 端口桥高（官方教程口径构造常量）
+  - param: er
+    order: 9
+    basis: 空气填充 εr=1（设计恒等式不含）
+  - param: h_mm
+    order: 10
+    basis: 无介质板 h=0（设计恒等式不含）
+  quiz_refs: []

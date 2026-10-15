@@ -6,7 +6,7 @@ HFSS 设计实际 1 端口，``export_touchstone`` 原条件 ``n_ports >= 2`` �
 ``skrf.Network(.s2p)`` 按 2x2 reshape 抛 "cannot reshape array of size N
 into shape (4,newaxis)"。
 
-全部 mock PyAEDT 通道（单测禁真打 HFSS， 硬规则）；Touchstone 样例用
+全部 mock PyAEDT 通道（单测禁真打 HFSS，项目规则 硬规则）；Touchstone 样例用
 skrf 合成（1/2/3/4/5 端口往返）+ 内嵌 HFSS ExportNetworkData 导出格式片段
 （2025.1 真机 .s1p 头部原样摘录，数值截短），不读 runs/。
 """

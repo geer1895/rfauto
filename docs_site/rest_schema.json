@@ -1,0 +1,627 @@
+{
+  "_provenance": {
+    "artifact": "docs_site/rest_schema.json",
+    "generator": "scripts/build_docs_pages.py",
+    "source": "rfauto.service.rest_api.endpoint_inventory()（_ROUTE_TABLE 程序化枚举单源，禁手抄）",
+    "regenerate": "python scripts/build_docs_pages.py",
+    "drift_pins": "tests/unit/test_rest_e2e_smoke_script.py + scripts/build_docs_pages.py --check",
+    "note": "机读产物勿手改；线上同源 GET /api/v1/openapi.json"
+  },
+  "ok": true,
+  "face": "rest",
+  "api_prefix": "/api/v1",
+  "openapi_version": "3.0.3",
+  "openapi_endpoint": "/api/v1/openapi.json",
+  "n_endpoints": 25,
+  "n_operations": 25,
+  "endpoints": [
+    {
+      "path": "/api/v1/health",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "getHealth",
+      "summary": "系统健康：包版本 + 已注册模型",
+      "tags": [
+        "system"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/openapi.json",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "getOpenApi",
+      "summary": "OpenAPI 3.0.3 规范",
+      "tags": [
+        "system"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200"
+      ],
+      "envelope": false
+    },
+    {
+      "path": "/api/v1/runs",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "listRuns",
+      "summary": "run 列表",
+      "tags": [
+        "runs"
+      ],
+      "query_params": [
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 50
+          },
+          "description": "返回条数上限"
+        }
+      ],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/runs/{run_id}",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "getRun",
+      "summary": "单次 run 全量中间产物",
+      "tags": [
+        "runs"
+      ],
+      "query_params": [],
+      "path_params": [
+        {
+          "name": "run_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_codes": [
+        "200",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/calculators",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "listCalculators",
+      "summary": "计算器清单（含参数自描述；实验键带 experimental 标签）",
+      "tags": [
+        "calculators"
+      ],
+      "query_params": [
+        {
+          "name": "include_experimental",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": true
+          },
+          "description": "false 时剔除实验性公式（n_experimental/experimental 名单仍报告）"
+        }
+      ],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/calculators/{name}/run",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "runCalculator",
+      "summary": "执行一个确定性计算器",
+      "tags": [
+        "calculators"
+      ],
+      "query_params": [],
+      "path_params": [
+        {
+          "name": "name",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "request_schema": "CalculatorRunRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/query",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "queryDataset",
+      "summary": "数据集直查（谓词下推；parquet/hdf5 同管线）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetQueryRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "listDatasets",
+      "summary": "数据集注册表总览（点数/GT 标注/可见性/格式/HF 导出态）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [
+        {
+          "name": "visibility",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "description": "按可见性过滤（缺省不过滤）"
+        }
+      ],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/coverage",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "datasetCoverage",
+      "summary": "点数分布 + 参数空间覆盖度统计",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetCoverageRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/ground-truth/annotate",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "annotateGroundTruth",
+      "summary": "ground truth 标注回写 manifest（幂等重标）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetThresholdRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/neural-operator-readiness",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "neuralOperatorReadiness",
+      "summary": "6.3 神经算子解锁进度（器件族级门槛）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetThresholdRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/visibility",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "setDatasetVisibility",
+      "summary": "公开/私有可见性切换",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetVisibilityRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/export-hf",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "exportHfDataset",
+      "summary": "HuggingFace datasets 布局导出（private 默认拒绝）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetExportHfRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/public/register",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "registerPublicDataset",
+      "summary": "公开集注册路径（私有 id 默认拒绝，promote 显式转公开）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DatasetPublicRegisterRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "409"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/sets",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "loadDatasetSets",
+      "summary": "公开/私有双集装载 + 防污染检查",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200",
+        "400",
+        "409"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/db/status",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "dbStatus",
+      "summary": "注册表状态盘点（路径/存在性/schema 版本/各表行数，只读不建库）",
+      "tags": [
+        "db"
+      ],
+      "query_params": [
+        {
+          "name": "db_path",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "注册表 SQLite 路径（缺省 env RFAUTO_REGISTRY_DB 或 runs/registry.sqlite）"
+        }
+      ],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/db/query",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "dbQuery",
+      "summary": "只读查询注册表（SELECT 白名单 + ? 占位符参数绑定）",
+      "tags": [
+        "db"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "DbQueryRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/rag/query",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "ragQuery",
+      "summary": "RAG 词法检索（BM25，只读、citation 可溯）",
+      "tags": [
+        "rag"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "RagQueryRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/rag/explain",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "ragExplain",
+      "summary": "RAG 检索 + 逐词 BM25 分数明细（打分可溯）",
+      "tags": [
+        "rag"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "RagQueryRequest",
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/datasets/discover-workdir",
+      "methods": [
+        "GET"
+      ],
+      "operation_id": "discoverWorkdir",
+      "summary": "工作目录形态真机产物发现（无 meta.json 的 runs 子目录，只读）",
+      "tags": [
+        "datasets"
+      ],
+      "query_params": [
+        {
+          "name": "runs_root",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "runs"
+          },
+          "description": "runs 根目录"
+        },
+        {
+          "name": "models",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "逗号分隔器件族过滤（slotline/hairpin/marchand/mline/helix）"
+        }
+      ],
+      "path_params": [],
+      "request_schema": null,
+      "response_codes": [
+        "200",
+        "400",
+        "404"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/slotline/analyze",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "slotlineAnalysis",
+      "summary": "槽线闭式分析（Janaswamy–Schaubert：λ'/λ0、εeff、β、Z0）",
+      "tags": [
+        "slotline"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "SlotlineAnalysisRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/slotline/synth",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "slotlineSynthesis",
+      "summary": "槽线综合：目标 Z0 → 槽宽（brentq 反解 + 回代自洽）",
+      "tags": [
+        "slotline"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "SlotlineSynthesisRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/transitions/msl-slot",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "mslSlotTransitionDesign",
+      "summary": "Roberts/Knorr MSL↔槽线过渡设计参数（微带 HJ 综合 + 槽线闭式）",
+      "tags": [
+        "transitions"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "TransitionDesignRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/transitions/marchand-balun",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "marchandBalunDesign",
+      "summary": "双槽臂 Marchand 巴伦（最小族）设计参数（对照几何）",
+      "tags": [
+        "transitions"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "TransitionDesignRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    },
+    {
+      "path": "/api/v1/transitions/marchand-two-section",
+      "methods": [
+        "POST"
+      ],
+      "operation_id": "marchandTwoSectionSynthesis",
+      "summary": "两节对称 Marchand 电路级综合（realizable=False 是合法结果）",
+      "tags": [
+        "transitions"
+      ],
+      "query_params": [],
+      "path_params": [],
+      "request_schema": "MarchandTwoSectionRequest",
+      "response_codes": [
+        "200",
+        "400"
+      ],
+      "envelope": true
+    }
+  ],
+  "envelope_shape": {
+    "success_schema": {
+      "type": "object",
+      "required": [
+        "ok",
+        "data"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "enum": [
+            true
+          ]
+        },
+        "data": {
+          "type": "object"
+        }
+      }
+    },
+    "error_schema": {
+      "type": "object",
+      "required": [
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "enum": [
+            false
+          ]
+        },
+        "error": {
+          "$ref": "#/components/schemas/ErrorInfo"
+        }
+      }
+    },
+    "note": "REST 传输面信封（对象形 error），与 service 层 errors 列表契约不同形；见 docs/envelope_contract.md"
+  }
+}

@@ -4,7 +4,7 @@
 measurement/librevna.py 单源模式——命令常量、语义注释、应答解析全部
 集中本模块；driver 只消费本模块表面。
 
-**硬件门裁决**：设备未购、命令集原文未在装
+**硬件门裁决（AGENTS 裁决点②，未裁）**：设备未购、命令集原文未在装
 环境逐条核verify——本批只交付：
 - mock 数据面（确定性合成频谱：噪声地板+可配 tone 表，固定 seed 逐位
   可复现）；
@@ -239,7 +239,7 @@ class SerialTransport:
             raise HardwareGateLocked(
                 f"tinySA 真机通道被硬件门锁定（allow_real={allow_real}, "
                 f"env {ENV_ALLOW_REAL}={os.environ.get(ENV_ALLOW_REAL)!r}）—"
-                "门未裁决，真机通道禁触发")
+                "门未裁决（AGENTS 裁决点②），真机通道禁触发")
         self._serial: Any = None
 
     def _ensure_open(self) -> None:

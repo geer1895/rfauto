@@ -1,8 +1,8 @@
 """CMA（Characteristic Mode Analysis，特征模分析）离线档内核：广义阻抗矩阵
 Z = R + jX 的 R-加权特征模分解（ge6 Wave1，Ph5 池第十二轮 CMA 条目的
 离线档；HFSS 原生 CMA 为 C 类仲裁登记，见
-方案池 第十二轮与
-研究扩充 round6 中件包一）。
+docs/plan_expansion_pool_20260924.md 第十二轮与
+docs/research_expansion_20260926_round6.md 中件包一）。
 
 数学口径（Harrington–Mautz 1971，"Computation of characteristic modes for
 conducting bodies of arbitrary shape"；综述口径 Cabedo-Fabrés et al. 2007，

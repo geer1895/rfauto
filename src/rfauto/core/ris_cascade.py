@@ -1,4 +1,4 @@
-"""NX-4 RIS 级联闭式表征包（研究扩充 round14 §四 :96-97）。
+"""NX-4 RIS 级联闭式表征包（research_expansion_20261002_round14.md §四 :96-97）。
 
 BS-RIS-UE 三段几何级联 + 无源波束指向角谱验证 + 挂 metasurface_lut 相位
 量化损失，全部**纯函数零 IO**（numpy/math），单位口径 SI（m/Hz），返回值
@@ -48,7 +48,7 @@ JSON 可序列化（报告函数逐键 cast float）。零求解器依赖。
 远场适用性按 Fraunhofer 2D²/λ 逐段标注（不 hard-fail——精确和在场时
 近场本就是合法输入，闭式 N² 律越界使用才需要诚实标注）。
 
-参考：研究扩充 round14 §四 :96-97；邻接
+参考：docs/research_expansion_20261002_round14.md §四 :96-97；邻接
 core/propagation.py（FSPL 4πd/λ 同口径）、core/array_synthesis.py
 （阵因子口径）、core/metasurface_lut.py（量化损失）。
 """

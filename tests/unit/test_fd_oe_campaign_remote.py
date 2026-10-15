@@ -128,7 +128,7 @@ def test_remote_seat_gate_channel_fail_is_seat_fail():
     """通道失败（SSH/回拉/清理）→ 座位 FAIL（已发射如实记败不假绿）。"""
     def _run(m, s):
         return _ok_envelope(ok=False, verdict="FAIL", exec_rc=None,
-                            reason="服务器侧任务目录清理未通过")
+                            reason="服务器侧任务目录清理未通过（AGENTS 0b）")
 
     out = mod.remote_seat_gate(
         "sim_host", lambda m: {"verdict": "PASS", "reason": None},
@@ -208,7 +208,7 @@ def test_resolve_remote_machine_errors(monkeypatch):
     assert raised
 
 
-# ─── main 接线（chdir 隔离，#144：绝不污染真实 runs） ─────────────────────
+# ─── main 接线（chdir 隔离，#144：绝不污染真实 runs/） ─────────────────────
 
 def test_main_remote_gate_end_to_end(tmp_path, monkeypatch):
     """--remote 接线：注册模板在 G1 渲染之后被预检门 SKIP（fail-closed），

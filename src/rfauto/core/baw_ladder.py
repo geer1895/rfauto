@@ -1,4 +1,4 @@
-"""BAW 梯形/格型滤波器综合内核（PK-2，规格深案 §A-2）。
+"""BAW 梯形/格型滤波器综合内核（PK-2，docs/plan_deepdive_specs_20261002.md §A-2）。
 
 纯函数零 IO 零外部进程（铁律 7 合规）；参照 core/rwg_mmt.py 与
 core/acoustic_resonator.py（PK-1）先例**不进** @register_calculator 注册表

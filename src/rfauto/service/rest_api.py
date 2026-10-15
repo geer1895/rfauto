@@ -1,13 +1,13 @@
 """G1 REST API（§10.7）：service 层能力的 OpenAPI 化薄壳。
 
-设计红线：路由是薄壳——参数校验 / HTTP 状态映射 /
+设计红线（AGENTS 硬限制 4）：路由是薄壳——参数校验 / HTTP 状态映射 /
 OpenAPI 文档在本模块，业务语义全部仍在 service 层（health / run 查询 /
 calculator 调用 / dataset 查询 / db·rag 只读查询 / slotline·transitions
 确定性计算）；本模块不含任何物理数值计算（铁律 7）。
 
 双 HTTP 面职责边界（A-2，code_audit_slice6）：本模块是**程序化 REST 面**
-（api/v1/*，OpenAPI 化，传输壳禁业务逻辑，serve() 默认 8644）；人工
-工作台面在 ui/server.py（api/*，浏览器交互，loopback 8642）——两边各自
+（/api/v1/*，OpenAPI 化，传输壳禁业务逻辑，serve() 默认 8644）；人工
+工作台面在 ui/server.py（/api/*，浏览器交互，loopback 8642）——两边各自
 独立路由表，新增能力按消费方选面，不在两边互相转发。
 
 - 进出信封：成功 {"ok": true, "data": <service 结果>}；失败
@@ -54,7 +54,8 @@ class BadRequestError(Exception):
 # ---------------------------------------------------------------------------
 
 def _ok(data: Any) -> JSONResponse:
-    return JSONResponse({"ok": True, "data": data})
+    """成功信封出口（构造器单源收编，aurora_d REST-B；线形逐字节不变）。"""
+    return JSONResponse(ok_envelope(data=data))
 
 
 def _error(status_code: int, code: str, message: str) -> JSONResponse:
@@ -403,10 +404,16 @@ async def api_dataset_sets(request: Request) -> JSONResponse:
 # 五入口全是确定性计算（数值只出内核，铁律 7）。
 
 async def api_db_status(request: Request) -> JSONResponse:
-    """注册表状态盘点（db_service.db_status 薄壳，只读不建库）。"""
+    """注册表状态盘点（db_service.db_status 薄壳，只读不建库）。
+
+    A4 P0-2：非 SQLite 文件/目录路径的服务层失败信封 → 400（同模块
+    ``_failure`` 收口惯例，不再 500 纯文本裸崩）。"""
     from rfauto.service.db_service import db_status
 
-    return _ok(db_status(request.query_params.get("db_path") or None))
+    result = db_status(request.query_params.get("db_path") or None)
+    if not result.get("ok"):
+        return _failure(result)
+    return _ok(result)
 
 
 async def api_db_query(request: Request) -> JSONResponse:
@@ -1329,6 +1336,61 @@ def validate_openapi_spec(spec: Any) -> dict[str, Any]:
     if errors:
         return error_envelope(errors)
     return ok_envelope(errors=errors)
+
+
+def _entry_uses_envelope(entry: dict[str, Any]) -> bool:
+    """端点全部响应是否都走 Envelope $ref（False=raw 直出，如 openapi.json）。"""
+    envelope_ref = _schema_ref("Envelope")["$ref"]
+    for response in entry["responses"].values():
+        schema = (response.get("content", {}).get("application/json", {})
+                  or {}).get("schema", {})
+        if schema.get("$ref") != envelope_ref:
+            return False
+    return True
+
+
+def endpoint_inventory() -> dict[str, Any]:
+    """全端点机器可读清单（程序化枚举 _ROUTE_TABLE 单源，防手抄漂移）。
+
+    REST-B schema 导出面（openapi_spec() 同源派生）：逐端点给方法/路径/
+    查询参数/请求 schema/响应码/信封形态摘要；完整 OpenAPI 3.0.3 spec 另见
+    ``openapi_spec()``（线上 GET /api/v1/openapi.json）。返回 ok 信封
+    （service 层 errors 契约形；REST 传输线形见 envelope_shape 摘要）。
+    """
+    endpoints: list[dict[str, Any]] = []
+    n_operations = 0
+    for entry in _ROUTE_TABLE:
+        params = entry.get("parameters", [])
+        n_operations += len(entry["methods"])
+        endpoints.append({
+            "path": entry["path"],
+            "methods": list(entry["methods"]),
+            "operation_id": entry["operation_id"],
+            "summary": entry["summary"],
+            "tags": list(entry["tags"]),
+            "query_params": [p for p in params if p.get("in") == "query"],
+            "path_params": [p for p in params if p.get("in") == "path"],
+            "request_schema": entry.get("request_schema"),
+            "response_codes": sorted(entry["responses"]),
+            "envelope": _entry_uses_envelope(entry),
+        })
+    return ok_envelope(
+        face="rest",
+        api_prefix=API_PREFIX,
+        openapi_version=OPENAPI_VERSION,
+        openapi_endpoint=f"{API_PREFIX}/openapi.json",
+        n_endpoints=len(endpoints),
+        n_operations=n_operations,
+        endpoints=endpoints,
+        # 信封形态摘要=OpenAPI components 单源派生（schema 形态；具体示例见
+        # 本模块 docstring 头注——棘轮面禁再造裸信封字面，REST-B 2026-10-14）
+        envelope_shape={
+            "success_schema": _schemas()["SuccessEnvelope"],
+            "error_schema": _schemas()["ErrorEnvelope"],
+            "note": "REST 传输面信封（对象形 error），与 service 层 "
+                    "errors 列表契约不同形；见 docs/envelope_contract.md",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

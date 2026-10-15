@@ -82,8 +82,9 @@ def certify_design(
 ) -> dict[str, Any]:
     """公差盒 → 指标区间证书（三值门面：逐目标 PASS/FAIL/UNKNOWN + 总 verdict）。
 
-    确定性内核：代理模型拟合样本集后按 Lipschitz 有限差分
+    确定性内核（AGENTS #7）：代理模型拟合样本集后按 Lipschitz 有限差分
     保守界外推中心点指标区间；UNKNOWN=证据不足，如实不证明。
+    无副作用，可安全调用（只读样本集纯计算面）；只读无时序约束。
 
     Args:
         samples_path: 公差盒样本集 JSON（bounds/objectives/samples 同款
@@ -113,6 +114,7 @@ def port_gate(payload: dict[str, Any]) -> dict[str, Any]:
     端口阶梯（微带 3/5/8×w、槽线 ±60/∓30mm 官方口径等）先于真机求解
     逐档换尺寸判敛，防 #191/#254 类端口尺寸错误浪费求解席位；真机发射
     走脚本对象注入面，JSON 面 hfss 驱动如实 UNKNOWN 拒发。
+    无副作用，可安全调用（synthetic 回放零写零发射）；只读无时序约束。
 
     Args:
         payload: JSON 进出 payload。driver="synthetic"（缺省）：合成序列

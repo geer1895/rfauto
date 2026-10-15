@@ -84,7 +84,7 @@ docstring 逐字引文（防漂移钉）："OMP（正交匹配追踪，确定性
   - docstring 逐字引文："本模块不读 runs/、不联网、不依赖 scipy/optuna（core 零依赖叶子约束）"
 - worst-case 两口径：角点穷举（确定性）与 PCE 上多起点 确定性 pattern search（可命中内部极值）。
   - docstring 逐字引文："corner_worst_case 穷举容差角点（均匀=low/high，正态=mean±kσ）；"
-- 验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 ±10%（续跑计划 §10.15 预声明）。
+- 验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 ±10%（延续计划 §10.15 预声明）。
   - docstring 逐字引文："Saltelli 互证 ±10%（§10.15）"
 
 ## 代码入口
@@ -121,16 +121,16 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `docs/续跑计划`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："docs/续跑计划.md §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）"
+- `延续计划`——引文："延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）"
 
-测试面（tests/unit 引用扫描，机读；合计 **115** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **116** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_pce.py` | 24 |
 | `tests/unit/test_pcell_cli.py` | 15 |
 | `tests/unit/test_pcell_dsl.py` | 26 |
-| `tests/unit/test_rf_guard.py` | 29 |
+| `tests/unit/test_rf_guard.py` | 30 |
 | `tests/unit/test_sparse_pce.py` | 21 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

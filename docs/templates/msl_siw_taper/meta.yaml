@@ -49,7 +49,7 @@ mesh_note: >-
 smoke_note: >-
   离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动
   scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空
-  +.oe_collect.lock 空，见 战役任务书）；预声明门与预算见
+  +.oe_collect.lock 空，见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见
   runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md
   §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进
   锥末宽度设计式（如实收档，v2 历史档不删）
@@ -62,3 +62,41 @@ nominal_derivation: |-
   siw_len=round(3λg,4)=63.0724（与 siw line_len 同链同值）；w50=1.1198/
   w_end=3.361（inverse_width @Z_PV=2b·Z_TE/w_eff=22.8393Ω，渲染期同参精算
   非手数）；设计规则复核：s/d=1.667≤2 ✔、d=0.6<λ_sub/5=3.134 ✔
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 微带-SIW 渐变过渡：微带 50Ω 经阶梯渐变升到 SIW 的 Z_PV≈22.8Ω 口径，锥长缺省取 λg/2。典型用于 SIW 电路的板内馈入；常见误用=把锥长减半求紧凑——对称双锥
+      λg/4 变体确定性级联实测带内 |S11| max −7.8dB 达不到 15dB 预声明门（两轮勘误账如实收档）。
+    derivations:
+    - claim: SIW 段同链口径（w/d/s=TEMPLATE_NOMINAL[siw] 沿用、λg=21.0241mm）
+      formula: fc10 = f0/1.5 ; λg = 2π/β (β=298.856 rad/m)
+      source: 本仓 core/synthesis（synthesize_siw_model/siw 闭式同源；docs/templates/msl_siw_taper/meta.yaml nominal_derivation）
+    - claim: 锥长口径与变体勘误账（λg/2 缺省；λg/4 变体不达标）
+      formula: taper_len = λg/2 = 10.5121 mm（缺省档）
+      source: docs/templates/msl_siw_taper/meta.yaml nominal_derivation（runs/df6_a2siwmsl/criteria.md
+        §1.1 两轮勘误账如实收档）
+  sensitivity_ranking:
+  - param: siw_len_mm
+    order: 1
+    basis: SIW 段 λg 口径（3λg 恒等式 |∂lnf0/∂lnL|=1；不进截止式目标，
+      登记表 0）
+  - param: taper_len_mm
+    order: 2
+    basis: 渐变匹配维（λg/4 变体不达标实证——匹配质量主通道；登记表 0）
+  - param: w_mm
+    order: 3
+    basis: SIW 腔宽（截止/λg 主维，siw 同链）；登记表 1.0322
+  - param: d_mm
+    order: 4
+    basis: 孔径经 w_eff 修正弱进入；登记表 0.0645
+  - param: s_mm
+    order: 5
+    basis: 孔距经 w_eff 修正弱进入；登记表 0.0322
+  - param: h_mm
+    order: 6
+    basis: 板厚不进截止式（进 Z_PV 口径；登记表 0）
+  - param: er
+    order: 7
+    basis: 截止 εr 通道（siw 同链 0.5）；登记表 0.5
+  quiz_refs: []

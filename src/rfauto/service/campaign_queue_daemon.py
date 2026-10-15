@@ -1,6 +1,6 @@
-"""campaign_queue_daemon：campaign 排队执行的后台常驻进程面（2026-10-08）。
+"""campaign_queue_daemon：campaign 排队执行的后台常驻进程面（UX-B7，2026-10-08）。
 
-登记语义（多机协同尾程项 11，排队执行第三块）：**发射后不等**——
+登记语义（交接书尾程项 11，UX-B6/E62 之上的第三块）：**发射后不等**——
 常驻轮询队列、按资源日历窗与许可预检逐项发射、状态可查。本模块承担：
 
 - **tick 单步纯函数**（:func:`queue_tick`）：读队列→日历窗判定→license
@@ -17,29 +17,35 @@
   生效，本面不重复实现任何 stage 路由）。被发射的是**真注册 CLI 命令**
   ``campaign run``，非 plan stage 的纸面 entry——executor"禁 shell 出
   entry"红线（其 kind 无对应 CLI 命令）不适用；
-- **判定门序**（逐项发射、不硬打）：
+- **判定门序**（E62 同款语义，逐项发射、不硬打）：
   1. 日历窗（remote_scheduler_service.calendar_launch_view 三态
      open/risk/blocked）：blocked=本 tick 不发射（fail-skip，下 tick 重探，
-     项**不**记永久 skip——SKIP=inconclusive 续跑重探同源）；risk=
+     项**不**记永久 skip——E62 SKIP=inconclusive 续跑重探同源）；risk=
      照发但风险落账（overnight 队列合法用例）；
   2. license 预检（remote_service.license_preflight）：仅对声明了
      license 消耗面（stage ``license_gated``/``adapter=="hfss"``）的计划
      咨询——verdict=PASS 照发；SKIP（无登记机器=本地求解世界，守卫自身
      契约"本地路径不受影响"）照发 fail-open；其余（FAIL=license 端口
-     不通）本 tick 不发射下 tick 重探（fail-skip 同款）；
+     不通）本 tick 不发射下 tick 重探（E62 fail-skip 同款）；
   3. 单飞约束：同刻至多一个本守护发射的在途战役（#261 机器互斥意识，
      v1 不做并发名额面）——在途未收尾则本 tick 只观察不发射。
 
 **幂等与崩溃续跑**：状态 JSON 原子落盘（:func:`save_queue_state`，同目录
 临时文件+os.replace，半写崩溃态不落正式档；:func:`default_queue_state_path`，
-runs 双根收敛惯例）；item 按 id 记账，status ∈ launched/终态**永不重发**；
-已发射项的终态回读自 campaign.plan.json verdict（COMPLETE/PARTIAL/
-ABORTED 词表与 campaign_manager.apply_event 同源）。Popen→落账之间崩溃
-的极小窗口可能重发同一战役——run_campaign 的 run 实例锁（同 run_dir
-占即拒）兜底第二实例，v1 如实注记不做事务化。**单飞不逃逸**：在途
-（launched）账目的计划文件瞬时不可读/被移走时，该陈账照常阻塞本 tick
-发射（否则在途项隐身一瞬第二项上位=双战役并发；保守代价=计划永久消失
-时单飞停摆，状态档可见人工处置）。
+runs 双根收敛惯例）；item 按 id 记账，status ∈ queued/launched/终态**永不
+重发**（queued=排队候选预登记，审查 A3 P2-2①：状态可查面看得见排队项，
+``queue_status_view.by_status`` 含 queued）；已发射项的终态回读自
+campaign.plan.json verdict（COMPLETE/PARTIAL/ABORTED 词表与
+campaign_manager.apply_event 同源）。Popen→落账之间崩溃的极小窗口可能重发
+同一战役——run_campaign 的 run 实例锁（同 run_dir 占即拒）兜底第二实例，
+v1 如实注记不做事务化。**单飞不逃逸**：在途（launched）账目的计划文件瞬时
+不可读/被移走时，该陈账照常阻塞本 tick 发射（否则在途项隐身一瞬第二项上位
+=双战役并发；保守代价=计划永久消失时单飞停摆，状态档可见人工处置）。
+
+**陈账生命周期**（审查 A3 P2-2②）：扫描未命中的陈账（计划目录被人工删除/
+移走）按态分派——launched 无条件保留（单飞阻塞语义，人工处置面）；其余态
+（external/queued/终态）按账龄 TTL 回收（:data:`SURVIVOR_TTL_S_DEFAULT`），
+防常驻月级运行状态档无界增长；回收经 ``recycle_stale`` 动作留痕不静默。
 
 诚实边界（#122 家法）：verdict=RUNNING 但非本守护发射的战役记
 ``external_running`` 只观察不接管（人工在跑的面不劫持）；子进程死亡而
@@ -90,8 +96,14 @@ QUEUE_STATE_FILE = "queue_state.json"
 #: 常驻轮询缺省间隔（秒）。
 DEFAULT_INTERVAL_S = 60.0
 
-#: item 记账态（词表）。launched=本守护已发射在途；external_running=他人
-#: 在跑（只观察不接管）；done/partial/aborted/launch_failed=终态不重发。
+#: 扫描未命中陈账（计划目录被移走）的回收账龄缺省（秒，7 天）。仅作用于
+#: 非 launched 态（external/queued/终态）；launched 陈账永久保留（单飞
+#: 阻塞语义+人工处置面，见模块 docstring"陈账生命周期"）。
+SURVIVOR_TTL_S_DEFAULT = 7 * 86400.0
+
+#: item 记账态（词表）。queued=排队候选（已登记待发射）；launched=本守护
+#: 已发射在途；external_running=他人在跑（只观察不接管）；
+#: done/partial/aborted/launch_failed=终态不重发。
 ITEM_QUEUED = "queued"
 ITEM_LAUNCHED = "launched"
 ITEM_EXTERNAL = "external_running"
@@ -312,6 +324,7 @@ def queue_tick(
     license_gate: bool | None = None,
     root: str = "runs",
     machine: str | None = None,
+    survivor_ttl_s: float | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """tick 单步：读队列→日历窗→license 预检→发射→状态回写（纯函数）。
 
@@ -322,10 +335,10 @@ def queue_tick(
     Returns
     -------
     (actions, new_state)
-    actions=本 tick 动作清单（词表：scan/launch/launch_failed/
+    actions=本 tick 动作清单（词表：scan/enqueue/launch/launch_failed/
     in_flight_wait/calendar_blocked/calendar_risk/license_pass/
     license_skip_open/license_skip/record_terminal/observe_external/
-    refresh_terminal/tick_error/state_save_error）；
+    refresh_terminal/recycle_stale/tick_error/state_save_error）；
     new_state=回写后的完整状态档（同 :func:`default_state` 形态）。
     """
     now = float((now_fn or time.time)())
@@ -363,9 +376,43 @@ def queue_tick(
                 actions.append({"action": "observe_external", "item_id": iid,
                                 "plan": entry.get("plan_path")})
             else:
-                candidates.append(entry)  # 未记账无终态=排队候选
+                # 排队候选预登记 ITEM_QUEUED（审查 A3 P2-2①：状态可查面
+                # 看得见排队项——此前只在 launch/launch_failed 时才落账，
+                # by_status 恒无 queued；词表死常量就此接上）
+                candidates.append(entry)
+                items[iid] = _new_record(entry, ITEM_QUEUED, now,
+                                         reason="排队候选（待单飞位/日历/许可门）")
+                actions.append({"action": "enqueue", "item_id": iid,
+                                "plan": entry.get("plan_path")})
             continue
         prev = dict(prev if isinstance(prev, dict) else {})
+        if prev.get("status") == ITEM_QUEUED:
+            if terminal_status is not None:
+                # 排队期被他人跑完——plan verdict 权威收口（不发射，#122）
+                prev["status"] = terminal_status
+                prev["verdict_seen"] = verdict
+                prev["reason"] = f"verdict={verdict}（排队期权威收口）"
+                prev["updated_at"] = now
+                items[iid] = prev
+                actions.append({"action": "refresh_terminal", "item_id": iid,
+                                "status": terminal_status,
+                                "plan": entry.get("plan_path")})
+                continue
+            if verdict == "RUNNING":
+                prev["status"] = ITEM_EXTERNAL
+                prev["verdict_seen"] = verdict
+                prev["reason"] = "verdict=RUNNING 但非本守护发射（只观察不接管）"
+                prev["updated_at"] = now
+                items[iid] = prev
+                actions.append({"action": "observe_external", "item_id": iid,
+                                "plan": entry.get("plan_path")})
+                continue
+            # 仍在排队：刷新账目继续参队（单飞位/门未过，下 tick 重探）
+            prev["verdict_seen"] = verdict
+            prev["updated_at"] = now
+            items[iid] = prev
+            candidates.append(entry)
+            continue
         if prev.get("status") == ITEM_LAUNCHED:
             if terminal_status is not None:
                 prev["status"] = terminal_status
@@ -403,7 +450,10 @@ def queue_tick(
     # 发射（否则在途项隐身的一瞬第二项上位=双战役并发）。保守代价：计划
     # 永久消失时单飞停摆（不发射新项），v1 认为比双发射安全（陈账可见
     # 于状态档，人工处置面）。
-    survivors = prev_items_survivors(prev_items, entries)
+    survivors, recycled = prev_items_survivors(
+        prev_items, entries, now=now, ttl_s=survivor_ttl_s)
+    for info in recycled:  # 回收留痕不静默（审查 A3 P2-2②）
+        actions.append({"action": "recycle_stale", **info})
     if in_flight is None:
         for rec_s in survivors.values():
             if isinstance(rec_s, dict) and rec_s.get("status") == ITEM_LAUNCHED:
@@ -422,7 +472,7 @@ def queue_tick(
     elif candidates:
         entry = candidates[0]
         # 门 1：资源日历窗（blocked=本 tick 不发射，项不记永久 skip——
-        # SKIP=inconclusive 续跑重探同源；risk=照发风险落账）
+        # E62 SKIP=inconclusive 续跑重探同源；risk=照发风险落账）
         try:
             calendar = cal_fn()
         except Exception as exc:  # #105：日历观测面异常降级恒可发不阻塞
@@ -442,7 +492,7 @@ def queue_tick(
                                 "reason": str(calendar.get("reason") or "")})
             # 门 2：license 预检（仅 license 消耗面计划咨询，或显式
             # license_gate=True 强制；PASS 照发 / SKIP fail-open 照发 /
-            # FAIL fail-skip 下 tick 重探——同款不硬打）
+            # FAIL fail-skip 下 tick 重探——E62 同款不硬打）
             gate_open = True
             applicable = (license_gate if license_gate is not None
                           else bool(entry.get("license_gated")))
@@ -498,12 +548,50 @@ def queue_tick(
     return actions, new_state
 
 
-def prev_items_survivors(prev_items: dict[str, Any],
-                         entries: list[dict[str, Any]]) -> dict[str, Any]:
-    """本 tick 扫描未命中（计划目录被移走）的陈账保留（零伪造零删除）。"""
+def prev_items_survivors(
+    prev_items: dict[str, Any],
+    entries: list[dict[str, Any]],
+    *,
+    now: float | None = None,
+    ttl_s: float | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """本 tick 扫描未命中（计划目录被移走）的陈账处置 + 回收清单。
+
+    - 在途（launched）陈账**无条件保留**——单飞不逃逸（#261）依赖它阻塞
+      发射；计划永久消失时单飞停摆、状态档可见人工处置（docstring 口径）；
+    - 其余态（external/queued/终态）陈账按账龄回收：``updated_at`` 距今
+      超过 ``ttl_s``（缺省 :data:`SURVIVOR_TTL_S_DEFAULT`=7 天）即进回收
+      清单（调用方以 recycle_stale 动作留痕），防常驻月级运行状态档无界
+      增长（审查 A3 P2-2②）。
+
+    Returns
+    -------
+    (survivors, recycled)
+    survivors=保留的陈账（并入新状态档 items）；recycled=[{item_id,
+    status, age_s}]（updated_at 缺失按最老计回收，非法值保守保留）。
+    """
     seen = {str(e.get("item_id") or "") for e in entries}
-    return {iid: rec for iid, rec in prev_items.items()
-            if iid not in seen and isinstance(rec, dict)}
+    ts = time.time() if now is None else float(now)
+    ttl = SURVIVOR_TTL_S_DEFAULT if ttl_s is None else float(ttl_s)
+    keep: dict[str, Any] = {}
+    recycled: list[dict[str, Any]] = []
+    for iid, rec in prev_items.items():
+        if not isinstance(rec, dict) or iid in seen:
+            continue
+        if rec.get("status") == ITEM_LAUNCHED:
+            keep[iid] = rec
+            continue
+        try:
+            age = ts - float(rec.get("updated_at") or 0.0)
+        except (TypeError, ValueError):
+            keep[iid] = rec  # 账面损坏保守保留（零伪造零误删）
+            continue
+        if age > ttl:
+            recycled.append({"item_id": iid, "status": rec.get("status"),
+                             "age_s": round(age, 3)})
+        else:
+            keep[iid] = rec
+    return keep, recycled
 
 
 # ─── 常驻执行体（CLI 拉起面；tick 落盘/单例锁/优雅退出在此）───────────────────
@@ -533,12 +621,14 @@ def run_queue_daemon(
     - ``once=True``：单步模式（测试/cron），一 tick 即返；
     - 单例锁：状态路径旁 ``.lock``（dag_runner.acquire_lock O_CREAT|O_EXCL
       +陈锁接管式样，max_wait_s=0 占即拒）——第二实例如实 error 信封；
+      释放同走 dag_runner.release_lock 单源（删前校验 pid=自身，A7 P2-6
+      防误释他人/接管期锁）；
     - 优雅退出：SIGTERM 处理器置停旗（注册失败平台 best-effort #105）+
       KeyboardInterrupt 捕获——当前 tick 完成并落账后退出；
     - 注入缝同 :func:`queue_tick`（sleep_fn/stop_check 供测试免真睡）。
     """
     sp = Path(state_path) if state_path is not None else default_queue_state_path()
-    from rfauto.pipeline.dag_runner import acquire_lock
+    from rfauto.pipeline.dag_runner import acquire_lock, release_lock
 
     lock_path = sp.parent / (sp.name + _DAEMON_LOCK_SUFFIX)
     holder = acquire_lock("campaign_queue_daemon", lock_path, max_wait_s=0)
@@ -549,11 +639,14 @@ def run_queue_daemon(
     released = False
 
     def _release() -> None:
+        # A7 P2-6：释放复用 dag_runner.release_lock 单源（删前读锁内容
+        # 校验 pid=自身持有者）——裸 unlink 无持有者校验，误删接管期/
+        # 他实例的锁会打开双发射窗口。release_lock 自身 best-effort
+        # （#105：读不到/已消失一律静默放过）。
         nonlocal released
         if not released:
             released = True
-            with contextlib.suppress(OSError):
-                lock_path.unlink()
+            release_lock(holder, lock_path)
 
     stop = {"requested": False}
 
@@ -591,7 +684,7 @@ def run_queue_daemon(
                        "status": queue_status_view(state),
                        "state_path": str(sp)}
             if log is not None:
-                # 结构化 tick 流（dict 载荷：渲染归调用方——前端只
+                # 结构化 tick 流（dict 载荷：渲染归调用方——AGENTS 前端只
                 # 渲染口径；log 抛异常不拆循环，#105 观测面不阻塞主路径）
                 with contextlib.suppress(Exception):
                     log(dict(emitted))

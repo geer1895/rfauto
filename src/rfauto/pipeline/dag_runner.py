@@ -1,6 +1,6 @@
 """DP-9 P2：DAG 执行器（状态期刊 + 断点续跑 + #145/#261 接线）。
 
-规格=规格深案 §DP-9 §4。语义：
+规格=docs/plan_deepdive_specs_20260924.md §DP-9 §4。语义：
 
 - 状态期刊 ``<run_dir>/dag.state.json``：原子写（tmp+os.replace）+ 运行级
   文件锁（照抄 scripts/c3_fullcurve_runner.py acquire_lock/release_lock
@@ -44,7 +44,8 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
   不在其列——再给一次判定的机会）。
 - ``failure_policy``（节点失败后的下游处置，OpenTAP 语义三分，缺省
   abort=现行为逐字节不变）：
-  * abort（缺省）：下游递归标 aborted（算失败）——现行为；
+  * abort（缺省）：下游递归标 aborted（算失败）——现行为（aborted 的
+    断点续跑复活面见下方 A7 P1-1 段）；
   * continue：不标死下游照常执行；下游节点若上游 failed 时在执行，
     其注记追加"上游 failed 但 failure_policy=continue（按策略继续；
     下游失败归因策略而非上游）"；
@@ -60,8 +61,21 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
   远 RUNNING/ok=False 的计数缺口）——无 fail/aborted 且 n_skipped>0 →
   PARTIAL；期刊新增 ``skipped_count``（与 inconclusive_count 同源同
   语义：按当前期刊节点状态重算，非跨 run 累计）。
+- abort 下游断点续跑复活面（2026-10-13 A7 P1-1 修复，与 skip wart 同型
+  缺口同风格补法）：aborted 下游此前"已判死分支不复活"，上游失败被
+  修复后 resume 永远 ABORTED（campaign_executor 直读期刊无重置面，
+  唯一出路=手改 dag.state.json 内部格式或重建战役）。现补复活面：
+  上游节点本轮**实际执行**（重跑或跨 run 缓存命中）转 done/partial/
+  inconclusive 时，direct 下游中 status=aborted 的条目复位为 pending
+  回队（清 key，走 _resume_decision 正常重算路径——键传导使下游递归
+  复活自动发生）。多上游守卫：direct 下游存在 failed 且其
+  failure_policy≠continue 的上游时不复位（该失败者本轮会重跑——成功
+  则由其触发复活、再败则失败分支重新判死，复活面不与判死竞争）；
+  failure_policy=continue 的上游失败不阻塞复活（continue 语义本就
+  不判死下游）。skip 策略的 skipped 不复活语义不变（PARTIAL 注记不
+  冒充 COMPLETE）；失败分支本轮新标的 aborted 仍由主循环守卫挡住。
 
-分层：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
+分层（AGENTS #3）：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
 schema/拓扑在 core.compose.dag_schema。
 """
 
@@ -569,7 +583,7 @@ class DagRunner:
                      if node["kind"] == "solve" else None)
             try:
                 # max_wait_s 透传 lock_max_wait_s（S-1 C-01 2026-10-04，runs/
-                # research_seats_20261004/s1_wave1）：此前缺省 -1（无限等）
+                # research_seats_20261004/s1_wave1/）：此前缺省 -1（无限等）
                 # 使 acquire 永不返回 False——"#261 获取失败"分支不可达死码；
                 # 透传后缺省行为逐字节不变（-1 仍无限等=缺省串行），仅当
                 # 调用方声明有界等待（0=单次尝试 / >0=限期）时分支可达。
@@ -665,16 +679,65 @@ class DagRunner:
         manifest = hit.get("manifest") or {}
         files = [f.get("path") for f in (manifest.get("files") or [])
                  if isinstance(f, dict)]
+        # A7 P2-1（2026-10-13）：源跑状态如实回读，不把超预算 partial
+        # 洗白成 done——"入库但超帽"是预算审计的关键注记，复用侧 journal
+        # 记 partial（verdict 计数如实），源 manifest 的 extra.status 在档
+        # 可溯；旧档无 status 字段/未知值 → done（不猜不漂）。
+        src_status = str(manifest.get("status") or "done")
+        if src_status not in ("done", "partial"):
+            src_status = "done"
+        notes = ["跨 run 缓存命中（零拷贝引用原 run_dir）"]
+        if src_status == "partial":
+            notes.append("源跑超预算 PARTIAL（manifest status=partial 随"
+                         "引用回读，复用侧不提升为 done——A7 P2-1）")
         entry = {
-            "status": "done", "key": key, "outputs": files,
+            "status": src_status, "key": key, "outputs": files,
             "artifact_run_dir": hit.get("run_dir"),
             "has_manifest": bool(files),
-            "source": "cache", "notes": ["跨 run 缓存命中（零拷贝引用原 run_dir）"],
+            "source": "cache", "notes": notes,
         }
         self.state["nodes"][node_id] = entry
+        revived = self._revive_aborted_downstream(node_id, src_status)
         self._write_state()
         self.log(f"[cache-hit] {node_id}: 复用 {hit.get('run_dir')}")
+        for d in revived:
+            self.log(f"[revive] {d}: 上游 {node_id} 缓存命中转 "
+                     f"{src_status}，aborted 复位回队（断点续跑复活）")
         return entry
+
+    # ---- abort 下游断点续跑复活面（A7 P1-1）──────────────────────────────
+
+    def _revive_aborted_downstream(self, node_id: str,
+                                   new_status: str) -> list[str]:
+        """上游本轮实际执行转 done/partial/inconclusive 后，把 direct 下游
+        中 status=aborted 的条目复位为 pending 回队（清 key，走
+        _resume_decision 正常重算路径；语义与映射口径见模块注释 A7 P1-1 段）。
+
+        返回复活节点清单（调用方记日志）。多上游守卫与 continue 豁免
+        见模块注释——失败分支本轮新标的 aborted 不在此竞争复活。"""
+        revived: list[str] = []
+        for d in self.order:
+            if node_id not in self.deps.get(d, []):
+                continue                  # d 不是 node_id 的 direct 下游
+            entry = self.state["nodes"].get(d) or {}
+            if entry.get("status") != "aborted":
+                continue
+            blockers = [
+                u for u in self.deps.get(d, [])
+                if (self.state["nodes"].get(u) or {}).get("status") == "failed"
+                and str(self.nodes.get(u, {}).get("failure_policy")
+                        or DEFAULT_FAILURE_POLICY) != "continue"]
+            if blockers:
+                continue
+            prev_notes = [str(n) for n in (entry.get("notes") or [])]
+            self.state["nodes"][d] = {
+                "status": "pending", "key": "",
+                "notes": [*prev_notes,
+                          f"上游 {node_id} 本轮转 {new_status}，aborted "
+                          "复位回队（断点续跑复活，A7 P1-1）"],
+            }
+            revived.append(d)
+        return revived
 
     # ---- 主循环 ──────────────────────────────────────────────────────────
 
@@ -697,7 +760,12 @@ class DagRunner:
                 prev_status = (self.state["nodes"].get(node_id) or {}).get(
                     "status", "")
                 if prev_status in ("aborted", "skipped"):
-                    continue              # 已判死分支不复活（campaign 同语义）
+                    # 已判死分支不在本轮复活：aborted 只经上游转 done/
+                    # partial/inconclusive 时的复位面复活（_
+                    # revive_aborted_downstream，A7 P1-1）——含失败分支
+                    # 本轮新标的 aborted（不与判死竞争）；skipped 不复活
+                    # （skip wart 语义，PARTIAL 注记不冒充 COMPLETE）。
+                    continue
                 node = self.nodes[node_id]
                 key = compute_node_effective_key(self, node)
                 action, reason = self._resume_decision(node_id, key)
@@ -715,6 +783,7 @@ class DagRunner:
                     self._accept_cache_hit(node_id, key, cached)
                     continue
                 n_recompute += 1
+                prev_entry = self.state["nodes"].get(node_id) or {}
                 self.state["nodes"][node_id] = {
                     "status": "running", "key": key, "attempt": 0}
                 self._write_state()
@@ -735,12 +804,29 @@ class DagRunner:
                         f"上游 {','.join(cont_ups)} failed 但 "
                         "failure_policy=continue（按策略继续执行；本节点"
                         "失败时归因策略而非上游）")
+                if str(prev_entry.get("status")) == "pending":
+                    # A7 P1-1：复活节点重跑的审计溯源——原 aborted 归因注记
+                    # 随 pending 条目带入本轮执行注记（否则被覆盖丢失）。
+                    notes.insert(0, "aborted 复位回队后重跑（断点续跑复活，"
+                                 "A7 P1-1；原注记: " + " | ".join(
+                                     str(n) for n in (
+                                         prev_entry.get("notes") or []))
+                                 + ")")
                 self.state["nodes"][node_id] = {
                     "status": status, "key": key, "outputs": outputs,
                     "artifact_run_dir": str(work_dir),
                     "has_manifest": has_manifest, "notes": notes}
+                # A7 P1-1：本轮实际执行转 done/partial/inconclusive 的节点
+                # 触发 direct 下游 aborted 复位回队（failed 不触发——其
+                # 失败分支随后按 failure_policy 处置下游）。
+                revived: list[str] = []
+                if status in ("done", "partial", "inconclusive"):
+                    revived = self._revive_aborted_downstream(node_id, status)
                 self._write_state()
                 self.log(f"[exec] {node_id}: {status}（{reason}）")
+                for d in revived:
+                    self.log(f"[revive] {d}: 上游 {node_id} 本轮转 "
+                             f"{status}，aborted 复位回队（断点续跑复活）")
                 if status == "failed":
                     policy = str(self.nodes[node_id].get("failure_policy")
                                  or DEFAULT_FAILURE_POLICY)

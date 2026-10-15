@@ -35,7 +35,7 @@ poll 档 rc 判读用）。判据/健康门/nrts 门全在回拉后本地消费�
 镜像本地 ``runs/<campaign>/<template>/`` 布局（说明书 §5.5），判读器
 零改动直读。
 
-服务器侧约束（说明书 §六红线/ 0b）：工作根=注册表
+服务器侧约束（说明书 §六红线/AGENTS 0b）：工作根=注册表
 ``hfss.project_root``（E:\\rfauto_remote 语义，禁 D:\\CloudDrive）；任务
 目录 ``tasks\\oe_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 服务器侧进程指纹直查=权威判据 + §5.4 第 3 步 run_server_probe.ps1
@@ -483,7 +483,7 @@ def _cleanup_census(transport: SshTransport, work_root: str) -> dict[str, Any]:
 def _cleanup_remote_taskdir(
     transport: SshTransport, task_dir: str,
 ) -> dict[str, Any]:
-    """删除服务器侧任务目录并 Test-Path 复核（任务毕必须清理， 0b）。"""
+    """删除服务器侧任务目录并 Test-Path 复核（任务毕必须清理，AGENTS 0b）。"""
     rc, _out, err = transport.run_command(
         f"Remove-Item -LiteralPath '{task_dir}' -Recurse -Force "
         "-ErrorAction SilentlyContinue",
@@ -643,11 +643,12 @@ def remote_oe_run(
     try:
         work_root = _check_remote_safe("hfss.project_root", cfg.hfss_project_root)
         # 纵深防御（ge5 审查 F5）：登记正确性之外显式拒绝生产云盘前缀
-        #
+        # （AGENTS 规则 0b：中间文件只落服务器本机盘，禁写 D:\CloudDrive；
+        # 显式 .lower()——normcase 在 POSIX 恒等，#304）
         if work_root.replace("/", "\\").lower().startswith("d:\\clouddrive"):
             raise RemoteOeError(
                 "hfss.project_root 禁写生产云盘 D:\\CloudDrive"
-                "（中间文件只落服务器本机工作根， 规则 0b）",
+                "（中间文件只落服务器本机工作根，AGENTS 规则 0b）",
                 details={"work_root": work_root[:80]},
             )
         env_bat = _check_remote_safe(
@@ -888,7 +889,7 @@ def remote_oe_run(
         )
         return envelope
     finally:
-        # 任务毕必须清理：census 旁证（只列不杀）→ Remove-Item
+        # 任务毕必须清理（AGENTS 0b）：census 旁证（只列不杀）→ Remove-Item
         # + Test-Path 复核；清理失败翻 FAIL（数据已回拉仍不许留远端垃圾）。
         try:
             if keep_remote:
@@ -915,7 +916,7 @@ def remote_oe_run(
             envelope["ok"] = False
             envelope["verdict"] = "FAIL"
             envelope["reason"] = (
-                "服务器侧任务目录清理未通过（任务毕必须清理， 0b）"
+                "服务器侧任务目录清理未通过（任务毕必须清理，AGENTS 0b）"
             )
         envelope["criteria"]["c3_workdir_cleaned"] = bool(
             cleanup.get("skipped") or cleanup.get("verified_gone")

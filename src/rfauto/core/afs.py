@@ -1,15 +1,15 @@
 """补强⑩+SV-5 AFS 自适应频扫（伪误差自适应频扫）确定性内核。
 
-历史口径（续跑计划 §10.20 补强清单第 10 行）：
+历史口径（延续计划 §10.20 补强清单第 10 行）：
     "AFS 自适应频扫：向量拟合（D13）驱动选频点，收敛即停——每频点一次
     FEM 求解、每次占席位，省席位-小时。HFSS 插值扫频同思路；skrf VF。
     验收：平行板/mline 案例频点数减半且 vs 全扫 FSV >= VG。"
 
-SV-5 升级（规格深案 §C-4；算法逐式核到
+SV-5 升级（docs/plan_deepdive_specs_20261002.md §C-4；算法逐式核到
 arXiv 2504.09942v1 "Fully-Adaptive and Semi-Adaptive Frequency Sweep
 Algorithm Exploiting Loewner-State Model for EM Simulation of Multiport
 Systems"（Shilpa T. N. & Rakesh Sinha，IEEE TMTT 2025，
-DOI 10.1109/TMTT.2025.3557208）——六步算法（原文式号随注）：
+DOI 10.1109/TMTT.2025.3557208））——六步算法（原文式号随注）：
 
     ① 初始点（半自适应，Eq.13/14）：n0 = ceil(15*l*f_max/(p*c))
        （l=走线总长 m、p=端口数、c=3e8 m/s），频点按

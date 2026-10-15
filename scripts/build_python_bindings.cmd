@@ -11,7 +11,7 @@ set "CL=/std:c++17"
 set "CSXCAD_INSTALL_PATH=E:\openEMS\install"
 set "OPENEMS_INSTALL_PATH=E:\openEMS\install"
 set "PATH=E:\openEMS\install\bin;%PATH%"
-set "PY=D:/rf_workspace\.venv\Scripts\python.exe"
+set "PY=D:\rf_workspace\.venv\Scripts\python.exe"
 
 echo === building CSXCAD binding ===
 pushd E:\openEMS\openEMS-Project-git\CSXCAD\python

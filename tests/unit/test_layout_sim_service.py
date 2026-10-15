@@ -1,6 +1,6 @@
 """F-I P3 离线面定向门：layout_sim_service 组装层 + 发射面（零求解）。
 
-判据映射（研究扩充 round5 §二 F-I P3 + 任务书交付骨架）：
+判据映射（docs/research_expansion_20260926_round5.md §二 F-I P3 + 任务书交付骨架）：
 
 - **组装往返（P2 字节钉组件进来不变）**：render_substrate_block /
   render_substrate_mesh_block 产物**逐字节包含**在组装脚本里（#329 纪律：

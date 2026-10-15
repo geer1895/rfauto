@@ -40,3 +40,31 @@ nominal_derivation: 全链内核精算（#1c，零手抄毫米数；qwt_multisec
   节）：结点对数增量 δ_i=ln(2)·C(3,i)/8 → 节阻抗 (54.5254, 70.7107, 91.7004)Ω（谱系恒等式 Z_i·Z_{4−i}=5000 对称、N 奇中节=√5000）→
   各节 HJ inverse_width/εeff → 物理 λ/4 长 (17.851, 18.162, 18.462)mm；feed_w=inverse_width(50Ω)=1.1134。中心频率精确匹配（|S11(f0)|≈0）为内核
   ABCD 级联恒等式（单测钉）。真机冒烟与 HFSS 仲裁=Ph3 窗（本批零发射）。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 多节 λ/4 阻抗变换器：一阶小反射理论给出节阻抗谱系（二项式加权 δ_i=ln2·C(3,i)/8），N 节把匹配带宽从单节的窄带扩到设计余量 Γm 控制的宽带。典型用于 50Ω↔100Ω
+      等实阻抗宽带匹配；常见误用=节长取几何平均 λ/4——各节 εeff 随各自线宽不同，物理长须逐节按自身 εeff 换算（本仓名义三节长互异）。
+    derivations:
+    - claim: 二项式小反射节阻抗谱系与对称恒等式
+      formula: δ_i = ln(2)*C(3,i)/8 ; Z_i * Z_{4-i} = Z0*ZL = 5000
+      source: Pozar, Microwave Engineering (4th ed.), Ch.5 Binomial Multisection Matching Transformer
+        节；docs/templates/qwt_multisection/meta.yaml nominal_derivation 已核（谱系恒等式+N 奇中节=√5000）
+    - claim: 各节物理 λ/4 长（逐节自身 εeff）与 f0 精确匹配恒等式
+      formula: L_i = c/(4*f0*sqrt(εeff(w_i)))
+      source: 本仓 core/synthesis（synthesize_multisection_quarter_wave 单源；ABCD 级联 |S11(f0)|≈0 为内核恒等式（单测钉））
+  sensitivity_ranking:
+  - param: lengths_mm
+    order: 1
+    basis: 各节 λ/4 恒等式 |∂lnf0/∂lnL|=1（精确，逐节）
+  - param: widths_mm
+    order: 2
+    basis: 节宽经各自 εeff 进入节电长度+节阻抗谱系（宽带形状维）
+  - param: z_load_ohm
+    order: 3
+    basis: 负载阻抗=谱系恒等式的另一端（Z_i·Z_{4−i}=Z0·ZL）
+  - param: feed_w_mm
+    order: 4
+    basis: 50Ω 馈线匹配（不进节谐振式）
+  quiz_refs: []

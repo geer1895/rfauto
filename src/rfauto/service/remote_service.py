@@ -26,7 +26,7 @@
   分（OE=python runner 家族 / ADS=hpeesofsim / HFSS=本机注册端口 grpcsrv）。
 
 通道拓扑：HFSS gRPC 本机客户端→服务器 ``ansysedt -grpcsrv``；文件走
-SSH sftp（服务器云盘 SMB 为生产资料库，禁测试写入——远程资源说明 §11.7）。
+SSH sftp（服务器云盘 SMB 为生产资料库，禁测试写入——服务器说明 §11.7）。
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ LICENSE_PREFLIGHT_SEAT_QUERY = (
 
 # ─── L2 求解冒烟常量（几何单一事实源=docs/templates/mline/meta.yaml；
 #     材料单一事实源=configs/materials.yaml rogers4350b_h0.508；
-#     线宽/εeff 为 skrf HJ 精算（core/synthesis.py，#1c 禁沿用毫米数） ───
+#     线宽/εeff 为 skrf HJ 精算（core/synthesis.py，#1c 禁沿用毫米数）） ───
 L2_W_MM = 1.113            # nominal_params.w_mm（HJ 50Ω@2.5GHz 精算 1.1134）
 L2_LEN_MM = 40.0           # nominal_params.line_len_mm（=S21 参考面跨度，见判据④）
 L2_ER = 3.66               # substrate.er
@@ -355,7 +355,11 @@ def license_preflight(
         "machine": cfg.name,
         "host": cfg.host,
         "reason": reason,
-        "gate": {"kind": "tcp_license_ports", "all_open": not closed,
+        # A4 P1-1：all_open 与 verdict 对齐——空 license 端口表（fail-closed
+        # FAIL）时 ``not closed`` 恒 True 曾与 verdict 自相矛盾（机读键会误
+        # 放行）；诚实口径=探过端口且全开。
+        "gate": {"kind": "tcp_license_ports",
+                 "all_open": bool(lic_ports) and not closed,
                  "closed": closed},
         "seat_level_query": LICENSE_PREFLIGHT_SEAT_QUERY,
         "steps": steps,
@@ -369,7 +373,7 @@ def hfss_remote_session_config(machine: str | None = None) -> dict[str, Any]:
     状态——调用方（v1 调度面）负责把 ``remote`` 值合并进
     ``HfssSession.connect(settings)`` 的 settings（session 消费的是
     ``settings["remote_machine"]`` 键）；生产链当前无注入点（v1 接线，
-    五百三十三已如实声明）。
+     五百三十三已如实声明）。
 
     Returns
     -------
@@ -618,7 +622,7 @@ def remote_hfss_cleanup(
 
     精确化口径（审查分片 1 P2-2，共享机不误杀）：
 
-    - 进程杀：先 Query ``Win32_Process`` 取 ansysedt 的 ``ProcessId +
+    - 进程杀：先查 ``Win32_Process`` 取 ansysedt 的 ``ProcessId +
       CommandLine``，只杀命令行含 ``-grpcsrv`` 且（``grpc_match`` 给定时）
       含 ``grpc_match``（launch 的端口指纹 ``":<port>:"``，唯一标识本次
       拉起的实例——#261 自排除同源）的进程；无匹配=0 杀如实上报。
@@ -628,6 +632,24 @@ def remote_hfss_cleanup(
     - 任务删：``task_name`` 给定时只删该唯一名（launch 侧 uuid4 后缀，
       并发冒烟不互踩）；``task_name=None``（独立运维调用）清扫
       ``grpcsrv_smoke`` 残留任务（元数据级，不影响并发冒烟的进程面）。
+    - 引号契约（A7 P2-5）：本函数全部远端命令构造**零双引号**（G5 单源
+      形态，``remote_mutex_command`` 同规——双引号在部分传输路径被
+      CommandLineToArgvW 当 argv 分组符消费，单引号不经 argv 层存活；
+      schtasks 任务名无空白，双/单引号形态语义等价、实为一致性收敛，
+      证据链见 W7-B §1.5-1）。
+
+    W7-B §1.5-1 复诊（2026-10-07，复现证据 ``runs/seat5_ssh/``）：旧实现
+    用 ``Get-CimInstance -Filter "Name='ansysedt.exe'"`` 查指纹，经 SSH
+    exec 通道**静默失效**（killed=[] 而进程活着）。根因（字节级实证）：
+    Win32-OpenSSH 把命令串拼进 CreateProcess 命令行 → 双引号被
+    CommandLineToArgvW 当 argv 分组符消费 → PowerShell 收到裸 token
+    ``Name='ansysedt.exe'``，参数模式分词把中段单引号当字符串起始拼接 →
+    WQL 实得 ``Name=ansysedt.exe``（值失引号）→ CimException「无效查询」
+    （rc=1+空 stdout；同命令交互通道引号存活=正常，W7-B 席位侧手敲
+    核归属因此能用）。修法：查询复用 :func:`remote_mutex_command` 单源
+    形态（G5 全程单引号零双引号——单引号不经 argv 层）；查询 rc/stderr
+    落 steps（``fingerprint_query_rc`` 等）不再静默——按 #105 仍不阻塞
+    清理主路径（best-effort），但任何传输层失真在信封可见。
 
     env 门同 remote_hfss_smoke（RFAUTO_REMOTE_SMOKE=1）。
     """
@@ -643,11 +665,14 @@ def remote_hfss_cleanup(
     try:
         transport.connect()
         # 1) 按命令行精确识别目标实例（PID + CommandLine，管道分隔逐行解析）
-        _rc, out, _err = transport.run_command(
-            "Get-CimInstance Win32_Process -Filter \"Name='ansysedt.exe'\" | "
-            "ForEach-Object { '{0}|{1}' -f $_.ProcessId, $_.CommandLine }",
-            timeout_s=30.0,
-        )
+        #    W7-B §1.5-1 修复：复用互斥单源命令形态（全程单引号零双引号，
+        #    根因与证据链见函数 docstring）——PS 侧预筛 Name+grpcsrv，本侧
+        #    grpc_match 精筛+协议行解析（防御纵深，循环内 grpcsrv 判据保留）。
+        fp_cmd = remote_mutex_command("ansysedt.exe", "grpcsrv")
+        fp_rc, out, fp_err = transport.run_command(fp_cmd, timeout_s=30.0)
+        steps["fingerprint_query_rc"] = fp_rc
+        if fp_rc != 0:
+            steps["fingerprint_query_stderr_head"] = fp_err[:160]
         target_pids: list[str] = []
         for line in out.splitlines():
             line = line.strip()
@@ -677,15 +702,17 @@ def remote_hfss_cleanup(
         )
         steps["ansysedt_after"] = int(out_after.strip() or 0)
         # 3) schtasks 清理：有名删名（精确），无名清扫 grpcsrv_smoke* 残留
+        #    （A7 P2-5：命令构造单引号形态，本函数零双引号——docstring
+        #    引号契约；任务名无空白，形态收敛不改变远端语义）
         if task_name:
             transport.run_command(
-                f"schtasks /delete /f /tn \"{task_name}\"", timeout_s=20.0,
+                f"schtasks /delete /f /tn '{task_name}'", timeout_s=20.0,
             )
             steps["deleted_tasks"] = [task_name]
         else:
             _rc, task_out, _err = transport.run_command(
                 "schtasks /query /fo csv /nh | Select-String -SimpleMatch "
-                "\"grpcsrv_smoke\"", timeout_s=30.0,
+                "'grpcsrv_smoke'", timeout_s=30.0,
             )
             names: list[str] = []
             for line in task_out.splitlines():
@@ -696,7 +723,7 @@ def remote_hfss_cleanup(
                     names.append(name)
             for name in names:
                 transport.run_command(
-                    f"schtasks /delete /f /tn \"{name}\"", timeout_s=20.0,
+                    f"schtasks /delete /f /tn '{name}'", timeout_s=20.0,
                 )
             steps["deleted_tasks"] = names
         return ok_envelope(steps=steps)

@@ -28,3 +28,41 @@ topology: 1×4 直线贴片阵（§10.3 C2）：4 元沿 x 等距 spacing、行�
 param_semantics: elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 传输线模型 c/(2f0√εeff)−2ΔL，fake 谐振为其精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))，决定 εeff/ΔL 与 H 面波束），spacing_mm=单元中心距 d（0.484λ0=25.0172mm，略缩 λ0/2 以满足审计扰动域 3d+W≤120mm；栅瓣判据 d<λ0），feed_w_mm=50Ω 线宽（主干/透明连线/缺口内馈段；HJ 1.112mm），q_w_mm=70.7Ω λ/4 变换段宽（HJ 0.6025mm），q_len_mm=变换段长 λ/4=c/(4f0√εeff(q_w))=7.8217mm（J0→J1± 与各元入缺口最后一段共用），elem_feed_mm=插入馈深度 y0（缺口深=馈线终点=馈点；Rin(y0)=Rin(0)cos²(πy0/L)，0.3L≈100Ω 口径）
 mesh_note: 辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/树/探针）精确入网（#198）
 smoke_note: 未真机冒烟（2026-09-15 注册，离线审计/闭式裁判已过）。openEMS 轨 followUp：scripts/smoke_array_anchor.py <template>，判据=S11 谷位 f0±12% 窗（谷深 ≤−6dB）+ far_field nf2ff 主瓣天顶/HPBW·Dmax 对照 core/array_synthesis 闭式 ≤20-30% + η=Prad/P_acc 合理；预算 NrTS=100000 分钟~小时级，逐模板串行单飞
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 1×4 corporate 贴片阵：λ/4 70.7Ω 变换树把四单元同相合成，ULA 阵因子给出侧射波束（N=4 HPBW 精确 26.32°）。典型用于固定波束定向链路；常见误用=把单元间距拉满
+      λ0/2 求增益——本仓 0.484λ0 略缩是为装进 120mm 板的审计域，间距再大先查栅瓣。
+    derivations:
+    - claim: ULA 阵因子闭式与方向图积定理（单元×AF）
+      formula: AF = |sin(Nψ/2)/(N sin(ψ/2))| ; HPBW(N=4)=26.32°（精确）
+      source: C.A. Balanis, Antenna Theory (3rd ed.), Ch.6 Arrays（ULA AF §6.3）；docs/rf_template_references.md
+        §12 已核（渐近式 25.38° 偏 3.7% 不冒充精确值）
+    - claim: 单元谐振长/宽与插入馈阻抗口径
+      formula: L = c/(2*f0*sqrt(εeff))-2ΔL ; Rin(y0) = Rin(0)*cos²(π*y0/L)
+      source: 本仓 core/synthesis（synthesize_patch 同式单源；docs/rf_template_references.md §12（Balanis Ch.14
+        口径；5.8GHz Rin(0.3L)≈144.9Ω 常数出处注记））
+  sensitivity_ranking:
+  - param: elem_len_mm
+    order: 1
+    basis: 单元 λ/2 谐振恒等式 |∂lnf0/∂lnL|≈1（精确）
+  - param: spacing_mm
+    order: 2
+    basis: 阵因子主维（波束宽/栅瓣判据 d<λ0）
+  - param: q_len_mm
+    order: 3
+    basis: λ/4 变换段恒等式（馈电树同相分配主维）
+  - param: elem_w_mm
+    order: 4
+    basis: 单元宽（H 面波束+εeff/ΔL 弱进谐振）
+  - param: elem_feed_mm
+    order: 5
+    basis: 插入馈深度（Rin(y0)=Rin(0)cos²(πy0/L) 匹配维）
+  - param: q_w_mm
+    order: 6
+    basis: 70.7Ω 变换段线宽（阻抗口径维）
+  - param: feed_w_mm
+    order: 7
+    basis: 50Ω 馈线宽（匹配弱维）
+  quiz_refs: []

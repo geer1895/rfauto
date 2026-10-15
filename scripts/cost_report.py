@@ -62,7 +62,7 @@ def parse_devlog_batch(devlog_path: Path) -> dict[str, Any]:
             start = index
             break
     if start is None:
-        raise SystemExit(f"未找到（三十一）小节: {devlog_path}")
+        raise SystemExit(f" 未找到（三十一）小节: {devlog_path}")
     end = len(lines)
     for index in range(start + 1, len(lines)):
         if lines[index].startswith("## "):
@@ -263,7 +263,7 @@ def evaluate_offset_power(samples: list[DurationSample], mesh_power: float) -> d
 def main() -> int:
     if not _PATH.is_file():
         raise SystemExit(f"缺少 : {_PATH}")
-    batch = parse_devlog_batch
+    batch = parse_devlog_batch(_PATH)
     controlled, provenance = load_controlled_samples()
     smoke = load_smoke_samples(controlled)
 

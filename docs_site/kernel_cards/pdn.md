@@ -103,7 +103,7 @@ docstring 逐字引文（防漂移钉）："f_mn=c/(2√εr)·√((m/a)²+(n/b)�
 
 | formula_id | symbol | kind | source_doi | refs |
 |---|---|---|---|---|
-| pdn:<module>:01 | <module> | source | 10.1109/6040.784476 | 10.1109/6040.784476；no. 3, pp. 284-291, Aug. 1999（doi 10.1109/6040.784476）；频率依赖目标；designers-guide.org/design/bypassing.pdf（2006）——C+ESR+ESL 三件模型、；"Inductance Calculations," 1946——L'=μ0/π·arcosh(s/2r)）按 Archambeault；Control, Kluwer，2011 印次：安装电感=过孔贡献+焊盘/扩张贡献）组装；Artech House 2007：L_spread=μ0·h_d/(2π)·ln(r2/r1)）。两者均为工程简化；- VRM 四元件模型：Sandler《Power Integrity》McGraw-Hill 2014 与 Smith 1999 |
+| pdn:<module>:01 | <module> | source | 10.1109/6040.784476 | 10.1109/6040.784476；no. 3, pp. 284-291, Aug. 1999（doi 10.1109/6040.784476）；频率依赖目标；designers-guide.org/design/bypassing.pdf（2006）——C+ESR+ESL 三件模型；"Inductance Calculations," 1946——L'=μ0/π·arcosh(s/2r)）按 Archambeault；Control, Kluwer，2011 印次：安装电感=过孔贡献+焊盘/扩张贡献）组装；Artech House 2007：L_spread=μ0·h_d/(2π)·ln(r2/r1)）。两者均为工程简化；- VRM 四元件模型：Sandler《Power Integrity》McGraw-Hill 2014 与 Smith 1999 |
 | pdn:target_impedance_freq:01 | target_impedance_freq | pointer | — | — |
 | pdn:vrm_model:01 | vrm_model | source | — | 出处：Sandler《Power Integrity》2014 / Smith 1999 的 VRM 宏模型谱系 |
 
@@ -163,9 +163,9 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `研究扩充`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
+- `docs/research_expansion_20260926.md`——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
 
-测试面（tests/unit 引用扫描，机读；合计 **249** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **259** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -175,6 +175,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 | `tests/unit/test_pdn_dc.py` | 19 |
 | `tests/unit/test_pdn_service.py` | 36 |
 | `tests/unit/test_pdn_tran.py` | 26 |
+| `tests/unit/test_pk2_vertical_lit_and_wiring.py` | 10 |
 | `tests/unit/test_shield_cavity_mode.py` | 14 |
 | `tests/unit/test_sso_ground_bounce.py` | 14 |
 | `tests/unit/test_w4_d_pdn_vertical.py` | 15 |

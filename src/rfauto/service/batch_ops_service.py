@@ -17,6 +17,18 @@ from typing import Any
 
 from rfauto.service.envelope import error_envelope, ok_envelope
 
+
+def _resolve_runs_dir(rel: str | Path) -> Path:
+    """runs 面路径双根收敛薄口（ge9 审查 P2-3，F-6 家族同域单源）。
+
+    转发 infra/runs_paths.resolve_runs_dir（cwd 根优先/仓内子目录 chdir
+    收敛回仓库 runs/；绝对入参原样透传）。惰性导入：infra 面在 service
+    之下，保持本模块 import 面最小（模块内既有局部导入惯例同）。
+    """
+    from rfauto.infra.runs_paths import resolve_runs_dir
+
+    return resolve_runs_dir(rel)
+
 # ---------------------------------------------------------------------------
 # SN-7：N-way runs compare（delta 矩阵 N×N + 逐键并集统计）
 # ---------------------------------------------------------------------------
@@ -178,7 +190,8 @@ def report_runs_batch(
     if not ids:
         return error_envelope(["未给定 run_id（批量 report 至少 1 个）"])
 
-    index_dir = Path(out_dir) if out_dir is not None else Path("runs") / "report_batch"
+    index_dir = Path(out_dir) if out_dir is not None \
+        else _resolve_runs_dir("runs") / "report_batch"
     index_dir.mkdir(parents=True, exist_ok=True)
 
     entries: list[dict[str, Any]] = []
@@ -230,8 +243,12 @@ def discover_run_ids(
 
     供 ``report --dir`` / 批量 report 的"不给清单"形态使用：按 mtime 倒序
     取最近 ``limit`` 个；``status`` 过滤 meta.json 的 status 键（可空=不过滤）。
+
+    ge9 审查 P2-3：缺省 ``runs`` 走 infra/runs_paths 双根收敛（cwd 根优先
+    /仓内子目录 chdir 收敛回仓库 runs/，#295 族；与 agent_safety/
+    campaign_dashboard 等五处收敛先例同源）——绝对路径入参原样透传。
     """
-    root = Path(runs_dir)
+    root = _resolve_runs_dir(runs_dir)
     if not root.is_dir():
         return error_envelope([f"runs 目录不存在: {root}"])
     items: list[tuple[float, str, str]] = []

@@ -1,6 +1,6 @@
 """FORM 可靠度注册壳（XD-11，内核 core/form_reliability.py，本模块只做注册壳）。
 
-规格 研究扩充_crossdomain_transplant.md XD-11（池
+规格 docs/research_expansion_20261004_crossdomain_transplant.md XD-11（池
 第二十轮，2026-10-04）：uq_service 良率全走代理蒙特卡洛，稀有良率
 （Pf<1e-3）MC 样本爆炸——FORM 在已校准代理/闭式极限状态面上是几十次
 迭代的纯 numpy。一键：
@@ -23,7 +23,7 @@ from .registry import register_calculator
 
 @register_calculator(
     "form_beta_linear",
-    "XD-11 FORM 一阶可靠度·线性极限状态面便捷键：g(x)=offset−Σcoeff_i·x_i"
+    "FORM可靠度：XD-11 FORM 一阶可靠度·线性极限状态面便捷键：g(x)=offset−Σcoeff_i·x_i"
     "<0 失效（Hasofer-Lind 1974 β 几何定义 / Rackwitz-Fiessler 1978 "
     "HL-RF 迭代；OpenTURNS FORM 例题族方法学参照）。线性面 HL-RF 一步"
     "到解且与闭式 β=(offset−aᵀμ)/||a·σ|| 逐位一致（双路径互证字段 "

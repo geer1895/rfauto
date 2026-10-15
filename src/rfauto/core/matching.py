@@ -1,4 +1,4 @@
-"""E6b 匹配网络与滤波器综合（扩展方案 §E6b）。
+"""E6b 匹配网络与滤波器综合（规划扩展 §E6b）。
 
 匹配网络综合（L/π/T，L-section 闭式）
 滤波器综合（commensurate-line，Richard 变换）
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 # ─── L-section 匹配网络 ───────────────────────────────────────────────────────
 
@@ -24,6 +24,16 @@ class LSectionResult:
     synthesize_l_section 文档说明。元件语义以各 property 为准。
     """
 
+    # C2 歧义注记（2026-10-11 aurora36 W5-C，加性不改行为）：topology 的
+    # 值域与"串联元件在源侧还是负载侧"的分支排布，见 TOPOLOGY_NOTE。
+    TOPOLOGY_NOTE: ClassVar[str] = (
+        "topology 是历史工况标签不是滤波响应型：RL>Rs 记 'high_pass' 实为低通"
+        "梯形（串联电感 z1 + 并联电容 z2，并联跨负载侧/大电阻侧）；RL<Rs 记 "
+        "'low_pass' 实为高通梯形（串联电容 z2 靠负载侧 + 并联电感 z1，并联跨"
+        "源侧）——串联元件在源侧还是负载侧随分支而异，画网络以 synthesize_"
+        "l_section docstring 的分支排布为准，勿按标签字面猜响应型；新代码用 "
+        "synthesize_l_match（response 显式声明响应型）。"
+    )
     topology: str  # 遗留工况标签: "high_pass"(RL>Rs) | "low_pass"(RL<Rs) | "bypass"
     z1: float      # 串联支路电抗模值 (ohm)
     z2: float      # 并联支路电抗模值 (ohm)

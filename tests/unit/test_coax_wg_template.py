@@ -6,7 +6,7 @@
 名义参数回显 + 渲染守卫（探针体/触顶壁/不进腔/伸入校准段）+ 注册四件套
 + docs meta.yaml 一致性。
 
-方案锚：月度增强方案 §三 A 流 ME-6——openEMS
+方案锚：docs/monthly_enhancement_plan_20260926.md §三 A 流 ME-6——openEMS
 官方 Coax-to-Waveguide 教程参数化直抄起手（wiki Matlab 教程结构 + 官方
 Python "Horn Antenna with Coaxial Pin Feed" 教程 pin/集总桥参数）+ HFSS
 仲裁（Ph3 窗，本批零发射）；端口口径决定：CoaxialPort 不用（仓内

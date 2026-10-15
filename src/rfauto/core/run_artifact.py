@@ -1,4 +1,4 @@
-"""E5d RunArtifact 数据契约（扩展方案 §E5d）。
+"""E5d RunArtifact 数据契约（规划扩展 §E5d）。
 
 RunArtifact：每次仿真运行的标准化数据契约。
 设计决策：

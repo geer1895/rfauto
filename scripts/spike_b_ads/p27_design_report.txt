@@ -1,0 +1,43 @@
+keysight.ads.de._pde.db.DesignMode members: ['APPEND', 'READ_ONLY', 'WRITE', 'name', 'str', 'value']
+ws.design OK via keysight.ads.de._pde.db.DesignMode
+NETLIST OK
+; Top Design: "Datalink_Basics_lib:swept_s_parameter:schematic"
+; Netlisted using Hierarchy Policy: "Standard"
+
+Options ResourceUsage=yes UseNutmegFormat=no EnableOptim=no TopDesignName="Datalink_Basics_lib:swept_s_parameter:schematic" DcopOutputNodeVoltages=yes DcopOutputPinCurrents=yes DcopOutputAllSweepPoints=no DcopOutputDcopType=0
+
+Vdd=5.8
+Vgg = 2.0
+cells=28
+Pavs=20
+S_Param:SP1 CalcS=yes CalcY=no CalcZ=no GroupDelayAperture=1e-4 FreqConversion=no FreqConversionPort=1 StatusLevel=2 CalcNoise=no SortNoise=0 BandwidthForNoise=1.0 Hz DevOpPtLevel=0 SPSS_WSP=yes \
+SweepVar="freq" SweepPlan="SP1_stim" OutputPlan="SP1_Output" 
+
+SweepPlan: SP1_stim Start=10 MHz Stop=3 GHz Lin=30 
+
+OutputPlan:SP1_Output \
+      Type="Output" \
+      UseEquationNestLevel=yes \
+      EquationNestLevel=2 \
+      UseSavedEquationNestLevel=yes \
+      SavedEquationNestLevel=2
+
+#load "python","LinearCollapse"
+Component Module="LinearCollapse" Type="ModelExtractor" NetworkRepresentation=2
+L:L3  N__6 0 L=0.5 nH Noise=yes  
+ParamSweep:SweepX SimInstanceName[1]="SP1" StatusLevel=2 SweepVar="Vdd" SweepPlan="SweepX_stim" 
+
+SweepPlan: SweepX_stim Start=0.1 Stop=5.1 Step=.25 
+
+Port:Term2  N__1 0 Num=2 Z=10 Ohm Noise=yes 
+model hpmos HP_MOSFET File="motorola_mosfet_h" 
+L:L2  N__7 N__4 L=100 uH Noise=yes  
+L:L1  N__2 Vd L=100 uH Noise=yes  
+C:C2  Vd N__1 C=1.0 mF 
+C:C1  N__11 N__4 C=1.0 mF 
+V_Source:SRC3  N__7 0 Type="V_DC" Vdc=Vgg SaveCurrent=1 
+V_Source:SRC1  N__2 0 Type="V_DC" Vdc=Vdd SaveCurrent=1 
+aele plots = dl_python_bg("surface_multiple.py", dB(S11), dB(S12), dB(S21), dB(S22));
+"hpmos":HPMOS1  Vd N__4 N__6 Wtot=(704e-6)*cells N=8*cells 
+Port:PORT2  N__11 0 Num=1 Z=4+j*6 P[1]=dbmtow(Pavs) Freq[1]=900 MHz    Noise=yes Pac=dbmtow(0) 
+
