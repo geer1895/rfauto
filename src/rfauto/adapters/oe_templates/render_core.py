@@ -1573,7 +1573,7 @@ def render_script(
     #                 使 NEAR=0.114mm ≤ w/6=0.1218mm）
     #   _sub_cells  → 基板 z 向格数（G3 2026-09-22 缺省分档：CPW/槽下场族
     #                 msl_cpw/cpw 缺省 8——zconv 定案 GRID_UNDERRES+SATURATED_
-    #                 RESIDUAL（runs/msl_cpw_zconv，网格份额 78%，sub8 回 ±2%
+    #                 RESIDUAL（内部证据档，网格份额 78%，sub8 回 ±2%
     #                 锚门内；_SUB_CELLS_8_TEMPLATES 见模块头）；其余模板缺省
     #                 4=官方 substrate_cells=4 旧口径逐字节不变；#313 z 向
     #                 地板项；微带/lange 等 z 块同消费，SSL/CPS 各自点数换算
@@ -1589,7 +1589,7 @@ def render_script(
     _nrts = int(params.get("_nrts", 100000) or 100000)
     #   _end_criteria → 显式 EndCriteria（如 1e-8=−80dB；cps_xrefine addendum：
     #                 缺省 −60dB 能量判据在长脉冲激励末 ~95% 处提前自停，
-    #                 port_ut 时窗不覆盖激励全程触发 V1 截断门，runs/cps_xrefine/
+    #                 port_ut 时窗不覆盖激励全程触发 V1 截断门，内部证据档
     #                 run1 实证）——缺省 None 不加参逐字节不变（官方口径）
     _knob_end_criteria = params.get("_end_criteria")
     _end_criteria_repr = (
@@ -1607,7 +1607,7 @@ def render_script(
     #                 linspace(0, 2·H_SUB) 共 8N 格（N=1 → 9 点=旧口径字面），
     #                 介质盒每半层切 N 片同材料堆叠（共 2N 盒，界面 z=i·H/N 恰
     #                 在网格线上）。背景：W7-A 网格阶梯 m1→m2 x/y 加密 ~2× 而
-    #                 z 恒 9 线（runs/real_machine_window/w7a/stripline.*/
+    #                 z 恒 9 线（内部证据档*/
     #                 verdict.json grid=[163,315,9]→[309,613,9]）——eps_eff 已
     #                 收敛 3.6601≈εr 而引擎 ZL 卡 44-45Ω 不随档收敛，z0 仲裁
     #                 的 limit 项=z 向离散（#313 z 向地板项 stripline 实证），
@@ -1957,7 +1957,7 @@ def render_script(
         # cps 缝区 x 向加密（wf:cps-xrefine，单变量对照）：缝 [−gap/2, gap/2]
         # 等分 2N 格，内部线（含缝中线 x=0 去重）精确入网。CPS 奇模场集中于
         # 缝区——引擎 εeff +13.3% 归因候选①"缝 0.5mm 仅 2 格"的收敛性验证档
-        # （runs/cps_xrefine/criteria.md 预声明；c9 复跑遗留 TODO）。
+        # （内部证据档 预声明；c9 复跑遗留 TODO）。
         _gap_half_m = float(params.get("gap_mm", 0.5)) * 1e-3 / 2.0
         near_x.extend(_xv for _xv in (
             _gap_half_m * (_i / _knob_x_refine - 1.0)
@@ -2607,7 +2607,7 @@ def render_script(
         _ant2_z_list, _ant2_z_top = "", 0.0
     # §C4 lange：air-bridge 抬高薄金属的 z 底/顶面精确入网（布局单源，米）。
     # 去桥变体（_bridge=0）z_lines 为空 → 哨兵 "H_SUB"：CSRectGrid.AddLine
-    # 拒绝空数组（assert len>0，runs/c4_debridge/audit_nobridge.py exec 实证），
+    # 拒绝空数组（assert len>0，内部证据档 exec 实证），
     # H_SUB 与基板 linspace 末点重合、脚本内 1µm 去重守卫随后移除重复线——
     # 最终 z 网格与"桥面线不再入网"等价。
     if template == "lange":
@@ -3277,7 +3277,7 @@ import os
 # CSXCAD/openEMS 扩展模块的依赖 DLL 不在 Python 3.8+ 的 PATH 搜索里，
 # 必须 add_dll_directory（仅 os.environ PATH 会 ImportError: DLL load
 # failed——2026-09-03 审计实测）。目录可用 RFAUTO_OPENEMS_BIN 覆盖。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"E:\\openEMS\\install\\bin")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
@@ -3306,7 +3306,7 @@ CSV_PATH = __import__("os").path.join(
 
 {_p3exc_begin}# ── 仿真环境：官方 MSL_NotchFilter 教程方法学（2026-09-04 频率尺度根因
 # 实验后定稿；旧版 λ/20@空气粗网格 + 有限小板使 λ/4 谷位系统性低 30-40%
-# 且随网格漂移，证据链 runs/audit_freq_scale/ E1-E4）──
+# 且随网格漂移，证据链 内部证据档 E1-E4）──
 CSX = ContinuousStructure()
 FDTD = openEMS(NrTS={_nrts!r}{_end_criteria_src}{', CellConstantMaterial=1' if sar else ''})   # 官方口径：不设 EndCriteria，默认能量判据停机{'；EndCriteria=显式停机判据（_end_criteria 旋钮）' if _end_criteria_src else ''}{'；CellConstantMaterial=1 = 官方 SAR 要求（每 Yee 元单值材料）' if sar else ''}
 FDTD.SetCSX(CSX)

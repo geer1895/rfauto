@@ -671,7 +671,7 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
   producing desired exact amplitude-frequency characteristics", Proc. IRE,
   vol.37, no.9, pp.968-983, Sept. 1949（谐振器耦合网络测量口径）；
   群时延法外部 Q：Hong & Lancaster 同书外部 Q 测量节（τmax 法）。
-- **C 常数裁决（本仓合成回收钉死，runs/df6_a1_r4/selftest_result.json；
+- **C 常数裁决（本仓合成回收钉死（自测产物档）；
   DP-2 轨独立互证一致）**：反射单载口径 S11 τmax=4·Qe/ω0 ⇒ Qe=ω0·τmax/**4**
   （C=4；实测钉 3.9972）；"/2"口径被否决。对称双馈 S21 口径
   τmax=2·Q_L/ω0（对称时 =Qe/ω0，C=1）。群时延四参数 Lorentzian+基线拟合

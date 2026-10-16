@@ -28,7 +28,7 @@ machines:
     hfss:
       version: "2025.1"          # 服务器实测 ansysedt.exe 文件版本=本机安装
       grpc_port: 50051           # ansysedt -grpcsrv 监听端口（SSH 拉起后本机 attach）
-      project_root: 'E:\rfauto_remote'   # 服务器侧项目工作根（远程会话 project 路径语义）
-      ansysedt_exe: 'E:\ANSYS Inc\v251\AnsysEM\ansysedt.exe'
+      project_root: '<drive>:\rfauto_remote'   # 服务器侧项目工作根（远程会话 project 路径语义）
+      ansysedt_exe: '<drive>:\ANSYS Inc\v251\AnsysEM\ansysedt.exe'
     ads:
-      hpeesof_dir: 'E:\ADS'    # 服务器侧 ADS 根（hpeesofsim 远跑 HPEESOF_DIR 前置）
+      hpeesof_dir: '<drive>:\ADS'    # 服务器侧 ADS 根（hpeesofsim 远跑 HPEESOF_DIR 前置）

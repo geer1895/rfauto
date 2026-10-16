@@ -64,9 +64,13 @@ def readme_text() -> str:
 
 
 def _drift(text: str, counts: dict[str, int]) -> str:
-    """构造漂移副本：内联 MCP tools+resources 数字改错 + 数字条整块手改污染。"""
+    """构造漂移副本：内联 MCP tools+resources 数字改错 + 数字条整块手改污染。
+
+    漂移载体保持英文版式（README.md 本脚本管区 2026-10-07 英文化勘误），
+    只改数字——修复力钉的是"错数字被同值重写"，不是格式重建。
+    """
     d = re.sub(gen.CARRIER_MCP,
-               f"（{counts['mcp'] + 1} 个工具 + {counts['resources'] + 1} 个 resources）",
+               f"({counts['mcp'] + 1} MCP tools + {counts['resources'] + 1} resources)",
                text)
     d = re.sub(r"CALCULATOR_REGISTRY \d+，含实验键 \d+",
                "CALCULATOR_REGISTRY 1，含实验键 2", d)
@@ -134,8 +138,8 @@ def test_missing_carriers_fail_closed(counts: dict[str, int],
     broken = re.sub(gen.CARRIER_MCP, "（工具若干）", readme_text)
     with pytest.raises(ValueError, match="MCP 载体行"):
         gen.sync_text(broken, counts)
-    broken2 = re.sub(r"CALCULATOR_REGISTRY \d+，含实验键 \d+", "计算器若干",
-                     readme_text)
+    broken2 = re.sub(r"CALCULATOR_REGISTRY \d+ \(with experimental \d+\)",
+                     "CALCULATOR_REGISTRY ?", readme_text)
     with pytest.raises(ValueError, match="CALC 载体行"):
         gen.sync_text(broken2, counts)
 

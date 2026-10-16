@@ -1,14 +1,13 @@
-"""坑账结构化索引回归钉（ge8e X6 批；knowledge/pitfalls_index.json + loader）。
+"""坑账结构化索引 loader 契约钉（公开分发视图不带索引数据）。
 
-锚点面：
-- 真索引加载钉：缺省路径可加载、schema 匹配、n_entries>=60（宁 60 条真）；
-- 结构往返钉：load → dumps_canonical 两次逐字节一致；json 重解析再校验
-  零错误零警告；
-- 行段真实性抽查钉：抽查条目的 source 行段与 项目规则 实文对得上
-  （行号区间内含该条关键词——防「索引说 A、正文说 B」的静默漂移）；
-- 检索钉：by_id 命中/未命中、category 过滤、关键词计分确定性；
-- best-effort 注入面钉：pitfall_notes_for 任何失败路径返回空列表不抛穿；
-- 坏账拒收钉：schema 错/缺键/重复 id/行段倒挂/坏 JSON/缺文件 → ok=False。
+公开树口径：knowledge/pitfalls_index.json 属内部账本衍生数据，不随公开
+分发视图携带。本文件钉的是 **服务契约在"数据缺席"形态下的诚实行为**：
+
+- 缺省路径缺数据 → load ok=False + errors 显式报（不静默回退空账，
+  #316 同方向：坏账/缺席如实报，不假装无坑）；
+- 结构往返钉 / 检索钉 / 坏账拒收钉 / best-effort 注入面钉：全部以合成
+  索引样本驱动（tmp_path，零外部数据依赖）；
+- premortem 注入面（pitfall_notes_for）任何失败路径返回空列表不抛穿。
 """
 
 from __future__ import annotations
@@ -33,38 +32,58 @@ from rfauto.service.pitfall_index_service import (
     validate_pitfall_index,
 )
 
-_项目规则 = Path(__file__).parent.parent.parent / "项目规则"
+# ---------------------------------------------------------------------------
+# 缺省路径（公开分发视图）：数据缺席 → 诚实 error 信封
+# ---------------------------------------------------------------------------
+
+class TestDefaultPathHonestMissing:
+    def test_default_path_missing_reports_error(self) -> None:
+        """公开分发视图不随附索引数据：缺省路径读取失败 → ok=False。"""
+        if DEFAULT_PITFALL_INDEX_PATH.is_file():
+            pytest.skip("本机存在索引数据（开发视图），缺席钉不适用")
+        result = load_pitfall_index()
+        assert result["ok"] is False
+        assert result["errors"]
+        assert "读取失败" in result["errors"][0]
+
+    def test_notes_for_default_path_degrades_to_empty(self) -> None:
+        """premortem 注入面对缺席数据 best-effort 空返回（#105 不抛穿）。"""
+        if DEFAULT_PITFALL_INDEX_PATH.is_file():
+            pytest.skip("本机存在索引数据（开发视图），缺席钉不适用")
+        assert pitfall_notes_for(load_pitfall_index(), ["any"]) == []
+
+
+# ---------------------------------------------------------------------------
+# 合成索引样本（检索/往返/校验钉的公共夹具）
+# ---------------------------------------------------------------------------
+
+def _sample_entry(idx: str = "#7", category: str = "testing") -> dict:
+    return {"id": idx, "title": f"title {idx}", "category": category,
+            "lesson_one_line": f"lesson {idx}",
+            "source": {"file": "internal-ledger", "line_start": 1,
+                       "line_end": 2}}
+
+
+def _sample_index() -> dict:
+    return {
+        "schema_version": PITFALL_INDEX_SCHEMA,
+        "category_vocab": ["testing", "openems"],
+        "entries": [
+            _sample_entry("#7"),
+            _sample_entry("#9", category="openems"),
+            _sample_entry("A12"),
+        ],
+    }
 
 
 @pytest.fixture(scope="module")
-def index() -> dict:
-    result = load_pitfall_index()
+def index(tmp_path_factory: pytest.TempPathFactory) -> dict:
+    path = tmp_path_factory.mktemp("idx") / "sample.json"
+    path.write_text(json.dumps(_sample_index(), ensure_ascii=False),
+                    encoding="utf-8")
+    result = load_pitfall_index(path)
     assert result["ok"] is True, result.get("errors")
     return result
-
-
-# ---------------------------------------------------------------------------
-# 真索引加载与规模钉
-# ---------------------------------------------------------------------------
-
-class TestLoadReal:
-    def test_default_path_loads(self, index: dict) -> None:
-        assert index["schema_version"] == PITFALL_INDEX_SCHEMA
-        assert index["path"] == str(DEFAULT_PITFALL_INDEX_PATH)
-
-    def test_scale_floor(self, index: dict) -> None:
-        """宁 60 条真勿 300 条猜：本批抽取规模下限 60（项目规则 踩坑速查子集）。"""
-        assert index["n_entries"] >= 60
-        assert index["n_entries"] == len(index["entries"])
-
-    def test_ids_unique(self, index: dict) -> None:
-        ids = [entry["id"] for entry in index["entries"]]
-        assert len(ids) == len(set(ids))
-
-    def test_categories_in_vocab(self, index: dict) -> None:
-        for entry in index["entries"]:
-            assert entry["category"] in index["categories"], entry["id"]
-        assert sum(index["categories"].values()) == index["n_entries"]
 
 
 # ---------------------------------------------------------------------------
@@ -94,50 +113,14 @@ class TestRoundTrip:
 
 
 # ---------------------------------------------------------------------------
-# 行段真实性抽查钉（索引 source 行段与 项目规则 实文互证）
-# ---------------------------------------------------------------------------
-
-class TestSourceHonesty:
-    def test_line_windows_contain_claimed_content(self) -> None:
-        """抽查 6 条：行段窗口内必须真含该条教训的关键词——防索引与正文
-        静默漂移（坑账索引自身的 #97 家族钉：数字/行号实测）。"""
-        probes = [
-            ("#89", "-Encoding UTF8"),
-            ("#122", "FAIL/PARTIAL"),
-            ("#235", "trim-then-slice"),
-            ("#232", "MUR"),
-            ("A819", "登记快照过时"),
-            ("A1050", "least_squares"),
-        ]
-        text_lines = _项目规则.read_text(encoding="utf-8").splitlines()
-        loaded = load_pitfall_index()
-        assert loaded["ok"] is True
-        by_id = {entry["id"]: entry for entry in loaded["entries"]}
-        for pitfall_id, needle in probes:
-            entry = by_id[pitfall_id]
-            window = "\n".join(
-                text_lines[entry["source"]["line_start"] - 1:
-                           entry["source"]["line_end"]])
-            assert needle in window, (pitfall_id, needle)
-
-    def test_no_numbered_entries_for_known_renamed_ids(self, index: dict) -> None:
-        """勘误注记钉：#103/#119/#150/#240/#244/#256/#260 为合订前账期编号
-        （项目规则:99-102）——本批只照录 #103/#119（原文既有），不新增
-        其余纯历史号条目；若未来补录须带勘误注记。"""
-        ids = {entry["id"] for entry in index["entries"]}
-        for ghost in ("#240", "#244", "#256", "#260"):
-            assert ghost not in ids, ghost
-
-
-# ---------------------------------------------------------------------------
-# 检索钉
+# 检索钉（合成样本）
 # ---------------------------------------------------------------------------
 
 class TestRetrieval:
     def test_by_id_hit_and_miss(self, index: dict) -> None:
-        hit = pitfall_by_id(index, "#122")
+        hit = pitfall_by_id(index, "#7")
         assert hit["ok"] is True
-        assert hit["entry"]["title"] == "如实记 FAIL/PARTIAL 不凑绿"
+        assert hit["entry"]["title"] == "title #7"
         miss = pitfall_by_id(index, "#99999")
         assert miss["ok"] is False
         assert miss["errors"]
@@ -145,16 +128,17 @@ class TestRetrieval:
     def test_by_category(self, index: dict) -> None:
         result = pitfall_by_category(index, "openems")
         assert result["ok"] is True
-        assert result["n_hits"] >= 5
+        assert result["n_hits"] == 1
         assert all(entry["category"] == "openems"
                    for entry in result["entries"])
 
     def test_search_scoring_deterministic(self, index: dict) -> None:
-        r1 = pitfall_search(index, ["PowerShell", "编码"])
-        r2 = pitfall_search(index, ["PowerShell", "编码"])
+        r1 = pitfall_search(index, ["title", "lesson"])
+        r2 = pitfall_search(index, ["title", "lesson"])
         assert json.dumps(r1, sort_keys=True) == json.dumps(r2, sort_keys=True)
-        assert r1["n_hits"] >= 2  # #89 与 #113 双双命中 PowerShell 族
-        assert r1["entries"][0]["id"] == "#113"  # 双词命中（PowerShell+编码）排前
+        # #7 双词命中（title+lesson 同现于 title/lesson 字段）排前
+        assert r1["n_hits"] >= 2
+        assert r1["entries"][0]["id"] == "#7"
 
     def test_search_limit_and_empty(self, index: dict) -> None:
         result = pitfall_search(index, ["不存在词 xyzzy"], limit=3)
@@ -165,17 +149,18 @@ class TestRetrieval:
         assert bad["ok"] is False
 
     def test_notes_for_renders_lines(self, index: dict) -> None:
-        notes = pitfall_notes_for(index, ["掩码"], limit=2)
+        notes = pitfall_notes_for(index, ["title"], limit=2)
         assert notes
-        assert all(note.split()[0].startswith("#") or note.split()[0].startswith("A")
+        assert all(note.split()[0].startswith("#")
+                   or note.split()[0].startswith("A")
                    for note in notes)
 
     def test_notes_for_best_effort_never_raises(self) -> None:
         """best-effort 钉（#105）：未加载索引/畸形入参 → 空列表不抛穿。"""
         broken = {"ok": False, "errors": ["x"]}
         assert pitfall_notes_for(broken, ["any"]) == []
-        loaded = load_pitfall_index()
-        assert pitfall_notes_for(loaded, ["", None, 3]) == []  # type: ignore[list-item]
+        assert pitfall_notes_for({"ok": True, "entries": []},
+                                 ["", None, 3]) == []  # type: ignore[list-item]
 
 
 # ---------------------------------------------------------------------------
@@ -205,14 +190,16 @@ class TestRejection:
         result = self._write(tmp_path, {"schema_version": "v0", "entries": [
             {"id": "#1", "title": "t", "category": "testing",
              "lesson_one_line": "l",
-             "source": {"file": "项目规则", "line_start": 1, "line_end": 1}}]})
+             "source": {"file": "internal-ledger", "line_start": 1,
+                        "line_end": 1}}]})
         assert result["ok"] is False
         assert any("schema_version" in e for e in result["errors"])
 
     def _good_entry(self, idx: str = "#1") -> dict:
         return {"id": idx, "title": "t", "category": "testing",
                 "lesson_one_line": "l",
-                "source": {"file": "项目规则", "line_start": 1, "line_end": 2}}
+                "source": {"file": "internal-ledger", "line_start": 1,
+                           "line_end": 2}}
 
     def test_missing_required_key(self, tmp_path: Path) -> None:
         entry = self._good_entry()

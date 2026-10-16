@@ -67,7 +67,7 @@ port_roles: P1 输入 / P2 右出 / P3 左出（等分 -3dB，RISO=2·Z0 隔离�
 extraction: 全 S 矩阵 3 端口（批处理求解后 Touchstone .s3p，401 频点；
   端口序=AEDT 端口号序，sNp 头注释存证）
 
-# 离线发射层门（W1 真机冒烟判读表；runs/edblane85/w1_smoke/REPORT.md §2.2。
+# 离线发射层门（W1 真机冒烟判读表；W1 判读报告 §2.2。
 # 真机判读另有 health gate——S21/S31 窗已按裁定登记其单源，见各 status）
 acceptance:
   s11_db_at_f0:        {op: "<=", bound: -15.0, label: "|S11| 谷深"}
@@ -82,19 +82,18 @@ acceptance:
 
 gate_semantics_note: W1 任务书字面门"各 ≤-3.8dB"与物理健康语义错位——
   无阻/有阻 Wilkinson 的健康输出分配都是 ≈-3.0dB（理想 -3.01dB + 损耗），
-  字面单边门会误杀任何健康功分器；冒烟席按坑#122 口径如实记字面 FAIL 不凑
+  字面单边门会误杀任何健康功分器；冒烟判读按（#122）口径如实记字面 FAIL 不凑
   绿，双读数存档 power_divider_judgment.json。门语义已裁定（2026-10-09
-  门语义仲裁，runs/edblane85/w1_smoke REPORT §3.2）：等分分配窗
+  门语义仲裁，W1 判读报告 §3.2）：等分分配窗
   [-3.8,-2.5]dB 双边界闭区间——下界=3dB 分配+0.8dB 实现容差（健康实测
   -3.19/-3.26 落窗内有余量），上界排除异常增益/提取伪象；单源登记于
   service/edb_health_gate.S_WINDOW_DB_BY_TEMPLATE（同窗覆盖 "wilkinson"
-  插件族；改动窗值须带真机/仲裁出处，铁律 7）。W1 冒烟两读数按裁定窗
+  插件族；改动窗值须带真机/仲裁出处）。W1 冒烟两读数按裁定窗
   语义即健康 PASS（非物理 FAIL），字面 FAIL 记录留档不改。
 gap_note: 缺省 gap 已由 2.0mm（HFSS 插件同口径）改为 6.0mm（DEFAULT_GAP_MM，
   有意分叉）——wave_port 水平扩展因子 5 下端口物理片宽 5×shunt_w≈5.57mm >
   两输出口中心距 2.0mm，P2/P3 端口片互相交叠，AEDT 网格生成失败 rc=103
-  （"Port#Port2 intersects mesh body"，gap=2.0 真跑实证，
-  runs/edblane85/w1_smoke/power_divider/ansysedt_batch_power_divider.log）；
+  （"Port#Port2 intersects mesh body"，gap=2.0 真跑实证，W1 冒烟求解日志在档）；
   冒烟取 gap=6.0mm 通过（臂长/线宽综合不变）。交叠守卫已落地（W4，#347
   家法）：发射期 gap_mm ≤ 因子×shunt_w 即 fail-fast 抛 ValueError（因子读
   发射端口自带 horizontal_extent_factor，与 schema.make_wave_port 单源；

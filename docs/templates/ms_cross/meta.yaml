@@ -26,7 +26,7 @@ extraction: >-
   波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl
   Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=|S11|²+|S21|²∈[0.90,1.02]（单模子带
   f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片=
-  测量面并联 Z0 负载，能量预算破损（runs/ge5_msjcross/audit.md §E）
+  测量面并联 Z0 负载，能量预算破损（内部证据档 §E）
 topology: >-
   FSS 带阻十字偶极子单元：基板顶零厚正交双十字臂（x 臂=受激臂，y 臂=
   正交极化对偶臂；金属偶极子 E∥臂耦合，无需槽缝族的方向旋转）；单胞
@@ -43,7 +43,7 @@ mesh_note: >-
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证
   （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导
-  EN 标定+真屏带阻谷+裁判对拍）判据 runs/ge5_msfam/criteria.md §2
+  EN 标定+真屏带阻谷+裁判对拍）判据 内部证据档 §2
 nominal_derivation: |-
   全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1d）：
   period=0.4λ0=11.9917（<0.5λ0 无光栅瓣口径）；总跨=λ0/(2√εeff)、

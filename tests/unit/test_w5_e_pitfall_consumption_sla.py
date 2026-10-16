@@ -1,26 +1,25 @@
-"""T15-B12 坑账消费 SLA 门（常驻门；SPECS3 §3.3）。
+"""坑账消费 SLA 门（门逻辑双向钉；公开分发视图不带坑账索引数据）。
 
-门语义（预声明）：solver 四类（openems/hfss/comsol/elmer）13 条坑账
-（knowledge/pitfalls_index.json）每条必须在二消费面之一有指针——
+门语义（预声明）：solver 四类（openems/hfss/comsol/elmer）坑账条目每条
+必须在二消费面之一有指针——
 (a) playbook.yaml pit_refs（症状可机器观测族，只收确定性指纹）；
-(b) knowledge/pitfall_consumption.yaml 消费指针行（W5-E 口径=13 条仅
-    消费说明，不为凑门硬塞 playbook，#122 哲学）。
+(b) knowledge/pitfall_consumption.yaml 消费指针行（仅消费说明登记，
+    不为凑门硬塞 playbook）。
 
-判据（spec ①-④）：
+判据：
 
-- ① 双态钉：回填前红（10 缺，证据 tests/gold/pitfall_sla/
-  sla_red_before_backfill.json——原档 runs/w5_phase5/w5e/ 同名件
-  gitignored，ge9 审查 R7 P1-1 迁 gold 入库【本机绝对路径净化】，
-  runs/ 原件留痕不删）→回填后绿（本文件 real-tree 用例）；
-  合成目录重演回填前态；
+- ① 真树数据缺席双态钉：公开分发视图不随附 knowledge/pitfalls_index.json
+  （内部账本衍生数据）→ 真树调用 index_load 违例如实报（不静默回退空账，
+  #316 方向）；回填前红态证据=tests/gold/pitfall_sla/ 入库 gold 快照；
 - ② 新增 solver 类坑不登记 → 红（合成样本）；
-- ③ 指针有效性：playbook pit_refs 坑号必须能在坑账全集体（index∪
-  项目规则 速查）反查（防 typo 空指针）；(b) 面 surface 枚举封闭；
+- ③ 指针有效性：playbook pit_refs 坑号必须能在坑账全集体（index∪可选
+  速查人读面，后者经 agents_path 注入）反查（防 typo 空指针）；
+  (b) 面 surface 枚举封闭；
 - ④ consumption 登记坑账全集不存在的坑 → 红（多报不放过 #316）。
 
-另钉（seat 指令"最低消费点检查"）：三已接线消费面（index 检索/
-premortem 注入/error_hint 规则表）活体探针全绿；error_hint 行逐行
-refs 实证。
+另钉（最低消费点检查）：三已接线消费面（index 检索/premortem 注入/
+error_hint 规则表）活体探针；error_hint 行逐行 refs 实证。
+门逻辑用例全部经路径注入（synthetic 目录）驱动——不依赖真树账本数据。
 """
 
 from __future__ import annotations
@@ -30,35 +29,22 @@ import sys
 from pathlib import Path
 
 import pytest
-
-#: 项目规则速查腿（内部账本人读面）缺席的环境（公开树）下，依赖
-#: "反查全集含该腿"的用例如实 skip——service 降级语义=#316 方向
-#: （缺席时 index 外 ref 按 dangling 多报），跳过不代表门被拆除。
-_HAS_LEDGER_DOC = (Path(__file__).resolve().parents[1] / 'PROJECT_RULES.md').exists()
-_LEDGER_SKIP = pytest.mark.skipif(
-    not _HAS_LEDGER_DOC,
-    reason='ledger quick-ref doc (PROJECT_RULES.md) absent in this tree',
-)
-
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from rfauto.service.pitfall_consumption_sla import (
     CONSUMPTION_SCHEMA,
-    SOLVER_CATEGORIES,
     check_pitfall_consumption_sla,
     id_tokens,
 )
 
 REPO = Path(__file__).resolve().parents[2]
-# 红态证据=入库 gold 快照（ge9 审查 R7 P1-1：原 runs/ 路径 gitignored，
-# 干净检出必红；gold 件为 runs/ 原件的净化拷贝——本机绝对路径→仓内相对，
-# 其余逐值一致；runs/ 原件留痕不删）
+# 红态证据=入库 gold 快照（干净检出可复跑的结构化违例记录）
 RED_EVIDENCE = (REPO / "tests" / "gold" / "pitfall_sla"
                 / "sla_red_before_backfill.json")
 
-#: spec §3.3 点名的回填前 10 缺（顺序=spec 原文列举）。
+#: 回填前 10 缺（顺序=登记面原口径列举）。
 SPEC_MISSING_10 = {"#154", "#149/#150/#155", "#208", "#212", "#232",
                    "#323", "A216", "A220", "#215/#217", "A304"}
 
@@ -67,15 +53,13 @@ def _mk_entry(eid: str, category: str, title: str) -> dict:
     return {
         "id": eid, "title": title, "category": category,
         "lesson_one_line": f"{title} 的教训行",
-        "source": {"file": "项目规则", "line_start": 1, "line_end": 2},
+        "source": {"file": "internal-ledger", "line_start": 1, "line_end": 2},
     }
 
 
 def _mk_index(entries: list[dict]) -> dict:
     return {
         "schema_version": "rfauto-pitfalls-index-v1",
-        "generated_by": "w5e-sla-test",
-        "generated_date": "2026-10-05",
         "category_vocab": ["openems", "hfss", "comsol", "elmer", "python"],
         "entries": entries,
     }
@@ -89,24 +73,17 @@ def _write_yaml(path: Path, data: dict) -> Path:
 
 
 class TestRealTreeGate:
-    @_LEDGER_SKIP
-    def test_solver_thirteen_all_covered_and_faces_alive(self):
-        """门绿路径：13/13 有指针；三最低消费点活体探针全绿。"""
+    def test_real_tree_missing_index_reports_honest(self):
+        """公开分发视图不带坑账索引数据：真树调用 → index_load 违例如实报。"""
+        if (REPO / "knowledge" / "pitfalls_index.json").is_file():
+            pytest.skip("本机存在索引数据（开发视图），缺席钉不适用")
         rep = check_pitfall_consumption_sla()
-        assert rep["ok"], f"SLA 门红：{rep['violations']}"
-        assert rep["n_solver_entries"] == 13
-        assert rep["n_covered"] == 13
-        assert rep["violations"] == []
-        assert set(rep["faces"]) == {"index_search", "premortem_note",
-                                     "error_hint"}
-        for name, face in rep["faces"].items():
-            assert face["ok"], f"消费面 {name} 探针失败"
-        for c in rep["coverage"]:
-            assert c["category"] in SOLVER_CATEGORIES
-            assert c["covered"], f"{c['id']} 无消费指针"
+        assert rep["ok"] is False
+        kinds = {v["kind"] for v in rep["violations"]}
+        assert "index_load" in kinds
 
     def test_backfilled_rows_are_real_faces(self):
-        """回填 10 行 surface 全部指向真实面（spec 六面为预登记不用）。"""
+        """登记面 10 行 surface 全部指向真实面（spec 六面为预登记不用）。"""
         cp = yaml.safe_load(
             (REPO / "knowledge" / "pitfall_consumption.yaml")
             .read_text(encoding="utf-8"))
@@ -208,80 +185,102 @@ class TestSyntheticDoubleState:
 class TestPointerValidity:
     def test_dangling_pit_ref_red(self, tmp_path):
         """判据③：pit_refs 坑号在坑账全集体反查不到（typo）→ 红。"""
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
         playbook = _write_yaml(
             tmp_path / "playbook.yaml",
             {"schema": "rfauto-diag-playbook-v1",
              "rules": [{"id": "typo_rule", "pit_refs": ["#99999"]}]})
-        rep = check_pitfall_consumption_sla(playbook_path=playbook)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], playbook_path=playbook)
         kinds = [v["kind"] for v in rep["violations"]]
         assert "dangling_pit_ref" in kinds
         assert any("#99999" in v["detail"] for v in rep["violations"])
 
-    @_LEDGER_SKIP
     def test_index_out_of_subset_refs_are_legal(self, tmp_path):
-        """index 结构化子集外的真坑 ref（如 #262）不红——反查全集含
-        项目规则 速查（坑账=index+项目规则 速查，seat 口径）。"""
+        """index 结构化子集外的真坑 ref 不红——反查全集含速查人读面腿
+        （agents_path 注入；公开分发视图该腿缺省缺席，提供即参与反查）。"""
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
+        ledger_doc = tmp_path / "quickref.md"
+        ledger_doc.write_text("#262 窄 FC 窗截断；#84 脉冲截断族",
+                              encoding="utf-8")
         playbook = _write_yaml(
             tmp_path / "playbook.yaml",
             {"schema": "rfauto-diag-playbook-v1",
              "rules": [{"id": "real_rule", "pit_refs": ["#262", "#84"]}]})
-        rep = check_pitfall_consumption_sla(playbook_path=playbook)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], playbook_path=playbook,
+            agents_path=ledger_doc)
         assert not any(v["kind"] == "dangling_pit_ref"
                        for v in rep["violations"])
 
     def test_unknown_surface_red(self, tmp_path):
         """判据③：未知 surface → 红（面名漂移防）。"""
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
         consumption = _write_yaml(
             tmp_path / "consumption.yaml",
             {"schema": CONSUMPTION_SCHEMA, "rows": [
-                {"id": "#232", "surface": "ghost_face",
+                {"id": "#900", "surface": "ghost_face",
                  "pointer": "somewhere", "note": "面名漂移样本"}]})
-        rep = check_pitfall_consumption_sla(consumption_path=consumption)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], consumption_path=consumption)
         assert any(v["kind"] == "unknown_surface"
                    for v in rep["violations"])
 
     def test_unknown_row_id_red(self, tmp_path):
         """判据④：登记坑账全集不存在的坑 → 红（多报不放过 #316）。"""
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
         consumption = _write_yaml(
             tmp_path / "consumption.yaml",
             {"schema": CONSUMPTION_SCHEMA, "rows": [
                 {"id": "#88888", "surface": "index_search",
                  "pointer": "service/pitfall_index_service.py",
                  "keywords": ["x"], "note": "幽灵坑样本"}]})
-        rep = check_pitfall_consumption_sla(consumption_path=consumption)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], consumption_path=consumption)
         assert any(v["kind"] == "unknown_row_id"
                    for v in rep["violations"])
 
     def test_error_hint_row_pointer_must_be_true(self, tmp_path):
         """error_hint 行逐行实证：refs 无其坑号 → row_pointer_false。"""
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
         consumption = _write_yaml(
             tmp_path / "consumption.yaml",
             {"schema": CONSUMPTION_SCHEMA, "rows": [
                 {"id": "#154", "surface": "error_hint",
                  "pointer": "fabricated",
                  "keywords": ["x"], "note": "#154 不在 hint refs"}]})
-        rep = check_pitfall_consumption_sla(consumption_path=consumption)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], consumption_path=consumption)
         assert any(v["kind"] == "row_pointer_false"
                    for v in rep["violations"])
 
     def test_empty_pointer_red(self, tmp_path):
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
         consumption = _write_yaml(
             tmp_path / "consumption.yaml",
             {"schema": CONSUMPTION_SCHEMA, "rows": [
-                {"id": "#232", "surface": "index_search",
+                {"id": "#900", "surface": "index_search",
                  "pointer": "", "keywords": ["x"], "note": "空指针"}]})
-        rep = check_pitfall_consumption_sla(consumption_path=consumption)
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], consumption_path=consumption)
         assert any(v["kind"] == "empty_pointer" for v in rep["violations"])
 
 
 class TestFacesAlive:
-    def test_hint_face_down_red(self, monkeypatch):
-        """最低消费点检查：hint 规则表不可达 → dead_face 红。"""
+    def test_hint_face_down_red(self, tmp_path, monkeypatch):
+        """最低消费点检查：hint 规则表不可达 → dead_face 红（全路径注入）。"""
         def _boom():
             raise RuntimeError("hint face down")
         monkeypatch.setattr(
             "rfauto.service.error_hints_service.list_hint_rules", _boom)
-        rep = check_pitfall_consumption_sla()
+        setup = TestSyntheticDoubleState._synthetic_setup(self, tmp_path)
+        playbook = _write_yaml(tmp_path / "playbook.yaml",
+                               {"schema": "x", "rules": []})
+        consumption = _write_yaml(tmp_path / "consumption.yaml",
+                                  {"schema": CONSUMPTION_SCHEMA, "rows": []})
+        rep = check_pitfall_consumption_sla(
+            index_path=setup["index"], playbook_path=playbook,
+            consumption_path=consumption)
         assert not rep["ok"]
         assert rep["faces"]["error_hint"]["ok"] is False
         assert any(v["kind"] == "dead_face" for v in rep["violations"])

@@ -166,22 +166,36 @@ entries:
   claim_block: "出处等级（如实标注）：\n- **Robinson 1998 全链式(1)-(12)**：M.P. Robinson, T.M. Benson,\n  C. Christopoulos,\
     \ J.F. Dawson, M.D. Ganley, A.C. Marvin, S.J. Porter,\n  D.W.P. Thomas, \"Analytical formulation for\
     \ the shielding effectiveness\n  of enclosures with apertures\", IEEE Trans. EMC 40(3):240-248, Aug.\
-    \ 1998。\n  本机留档 runs/em2/robinson1998_postprint.pdf（White Rose 免费后印本，\n  eprints.whiterose.ac.uk/id/eprint/90051），式(1)-(12)\
-    \ 于 2026-10-02\n  PDF 渲染放大逐式抄录（原文式回收，非转引）。图锚=Fig.6/7（300×120×300\n  mm 黄铜腔 t=1.5mm + 100×5mm 缝，p=150mm：谐振\
-    \ ~700MHz 负屏蔽、\n  SE_E(200MHz)≈45dB、SE 随观察距离 p 增大、TE10 截止 500MHz——均由\n  单测钉住，限值带按图读数放宽）。\n- **Bethe\
-    \ 极化率**：圆孔 αe=2r³/3、αmx=αmy=4r³/3（规格原文式；Bethe\n  1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table\
-    \ 4.1\n  （etheses.whiterose.ac.uk/id/eprint/24535，其引用 Bethe[39]/Junqua\n  [42]）回收：矩形 αe=A^{3/2}/(3√π·E(e))·(w/l)、\n\
-    \  αmx=A^{3/2}e²(l/w)^{3/2}/(3√π[K(e)−E(e)])、\n  αmy=A^{3/2}e²(w/l)^{1/2}/(3√π[K−E])（A=lw，e=√(1−(w/l)²)）。\n\
-    \  原表 αmy 分母印作 [E(e)−K(e)]：按 K≥E（0≤e≤1）判为排版负号，量级取\n  [K−E]（σ_t 为平方和不受符号影响；方孔极限与窄缝渐近均复核自洽）。\n- **传输截面**\
-    \ σ_t=(2k⁴/9π)(αe²+αmx²+αmy²)：同论文式(4.28)（Junqua\n  口径：随机极化等概率+半空间积分两 ½ 因子已折入）。\n- **孔径-波长幂律 −60dB/dec\
-    \ 恒等**：圆孔 α∝a³ ⇒ σ_t∝k⁴a⁶ ⇒\n  σ_t/λ²=(2(2π)⁴/9π)·(a/λ)⁶——对 (a/λ) 严格 6 次幂（SE 视角\n  −60dB/dec，任意十年期逐位恒等，无小量近似；规格验收恒等式由本律\n\
-    \  承担，test 钉 1e-9）。同域 Robinson 腔链的孔径斜率实测 ≈−47dB/dec\n  （孔阻抗 Z_ap∝(l/a)·Z0s(w_e/b)·k0·l，Z0s 随 w_e/b\
-    \ 对数缓增），与\n  Bethe 截面律非同一定义（腔内场比 vs 随机入射截面），两口径并陈。\n- **矩形缝截止穿透**：f_c=c/(2L)（半波缝谐振/截止，规格原文语义）；\n \
-    \ 低于截止衰减 SE=20lg(e)·t·√((π/L)²−k0²)（矩形波导消失模衰减常数，\n  f→0 极限=27.289·t/L dB，即\"波导低于截止\"经验律的闭式来源）。"
+    \ 1998。"
   refs:
   - '- **Robinson 1998 全链式(1)-(12)**：M.P. Robinson, T.M. Benson'
   - of enclosures with apertures", IEEE Trans. EMC 40(3):240-248, Aug. 1998
-  - 本机留档 runs/em2/robinson1998_postprint.pdf（White Rose 免费后印本
+  source_doi: null
+  eq_no: 式(1)
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: aperture_coupling:<module>:02
+  kernel_file: src/rfauto/core/aperture_coupling.py
+  module: rfauto.core.aperture_coupling
+  symbol: <module>
+  kind: source
+  marker: 文献：
+  claim_line: 文献：White Rose 免费后印本（
+  claim_block: "  文献：White Rose 免费后印本（\n  eprints.whiterose.ac.uk/id/eprint/90051），式(1)-(12) 于 2026-10-02\n\
+    \  PDF 渲染放大逐式抄录（原文式回收，非转引）。图锚=Fig.6/7（300×120×300\n  mm 黄铜腔 t=1.5mm + 100×5mm 缝，p=150mm：谐振 ~700MHz\
+    \ 负屏蔽、\n  SE_E(200MHz)≈45dB、SE 随观察距离 p 增大、TE10 截止 500MHz——均由\n  单测钉住，限值带按图读数放宽）。\n- **Bethe 极化率**：圆孔\
+    \ αe=2r³/3、αmx=αmy=4r³/3（规格原文式；Bethe\n  1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table 4.1\n  （etheses.whiterose.ac.uk/id/eprint/24535，其引用\
+    \ Bethe[39]/Junqua\n  [42]）回收：矩形 αe=A^{3/2}/(3√π·E(e))·(w/l)、\n  αmx=A^{3/2}e²(l/w)^{3/2}/(3√π[K(e)−E(e)])、\n\
+    \  αmy=A^{3/2}e²(w/l)^{1/2}/(3√π[K−E])（A=lw，e=√(1−(w/l)²)）。\n  原表 αmy 分母印作 [E(e)−K(e)]：按 K≥E（0≤e≤1）判为排版负号，量级取\n\
+    \  [K−E]（σ_t 为平方和不受符号影响；方孔极限与窄缝渐近均复核自洽）。\n- **传输截面** σ_t=(2k⁴/9π)(αe²+αmx²+αmy²)：同论文式(4.28)（Junqua\n\
+    \  口径：随机极化等概率+半空间积分两 ½ 因子已折入）。\n- **孔径-波长幂律 −60dB/dec 恒等**：圆孔 α∝a³ ⇒ σ_t∝k⁴a⁶ ⇒\n  σ_t/λ²=(2(2π)⁴/9π)·(a/λ)⁶——对\
+    \ (a/λ) 严格 6 次幂（SE 视角\n  −60dB/dec，任意十年期逐位恒等，无小量近似；规格验收恒等式由本律\n  承担，test 钉 1e-9）。同域 Robinson 腔链的孔径斜率实测\
+    \ ≈−47dB/dec\n  （孔阻抗 Z_ap∝(l/a)·Z0s(w_e/b)·k0·l，Z0s 随 w_e/b 对数缓增），与\n  Bethe 截面律非同一定义（腔内场比 vs 随机入射截面），两口径并陈。\n\
+    - **矩形缝截止穿透**：f_c=c/(2L)（半波缝谐振/截止，规格原文语义）；\n  低于截止衰减 SE=20lg(e)·t·√((π/L)²−k0²)（矩形波导消失模衰减常数，\n  f→0\
+    \ 极限=27.289·t/L dB，即\"波导低于截止\"经验律的闭式来源）。\n  t→0 精确退化为薄屏（Bethe 口径，SE→0）。"
+  refs:
   - 1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table 4.1
   source_doi: null
   eq_no: 式(1)
@@ -448,20 +462,19 @@ entries:
   symbol: <module>
   kind: source
   marker: 出处（
-  claim_line: '出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:'
-  claim_block: "        出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:\n        runs/review_ge8e/v1_bode_fano/）：Fano\
-    \ 1948 MIT RLE TR-41 §1\n        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及\
-    \ p.16 \"parallel RC ⇒ A₁=2/RC\"（×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2\
-    \ 并联 RC 行（p.262, 3rd ed.\n        §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1\
-    \ 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个 2 因子，\n        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington\
-    \ Q 界\n        Chu 1948（J. Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE\
-    \ Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n        Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界）。\n    Cohn 插损下限\n\
-    \        Cohn 1959（Proc. IRE，多耦合谐振器滤波器的耗散损耗）；\n        IL_dB ≥ 4.343·(f0/BW)·Σgᵢ/Qu（4.343 = 10/ln10\
-    \ 的教材常用舍入；\n        MYJ《Microstrip Filters...》/Pozar 同口径）。窄带（f0/BW≫1）近似。\n    方向性界\n        口径面 D\
-    \ ≤ 4πA/λ²（均匀口径达到，一般口径为上界，Harrington）；\n        球包络 D ≤ (ka)² + 2ka（Harrington 1960，J. Res. NBS）；\n\
-    \        MIMO 自由度 ≤ min(Nt, Nr)（自由度口径）。"
+  claim_line: 出处（V1 审查裁决 2026-10-04 逐字核对，errata 归档在案）：
+  claim_block: "        出处（V1 审查裁决 2026-10-04 逐字核对，errata 归档在案）：\n        Fano 1948 MIT RLE TR-41 §1\n\
+    \        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及 p.16 \"parallel RC ⇒ A₁=2/RC\"\
+    （×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2 并联 RC 行（p.262, 3rd ed.\n     \
+    \   §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个 2 因子，\n\
+    \        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington Q 界\n        Chu 1948（J. Appl.\
+    \ Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n\
+    \        Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界）。\n    Cohn 插损下限\n        Cohn 1959（Proc. IRE，多耦合谐振器滤波器的耗散损耗）；\n\
+    \        IL_dB ≥ 4.343·(f0/BW)·Σgᵢ/Qu（4.343 = 10/ln10 的教材常用舍入；\n        MYJ《Microstrip Filters...》/Pozar\
+    \ 同口径）。窄带（f0/BW≫1）近似。\n    方向性界\n        口径面 D ≤ 4πA/λ²（均匀口径达到，一般口径为上界，Harrington）；\n        球包络 D\
+    \ ≤ (ka)² + 2ka（Harrington 1960，J. Res. NBS）；\n        MIMO 自由度 ≤ min(Nt, Nr)（自由度口径）。"
   refs:
-  - runs/review_ge8e/v1_bode_fano/）：Fano 1948 MIT RLE TR-41 §1
+  - Fano 1948 MIT RLE TR-41 §1
   - Chu 1948（J. Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为
   - McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半
   - Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界
@@ -574,9 +587,7 @@ entries:
 
     引）；投影二次型 ULA 闭式（Σm/Σm² 代入）与多源 FIM Schur 消元推导
 
-    =本仓代数推导（实现前独立复算 runs/aurora_d/_core9_verify_derivation
-
-    .py：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
+    =本仓代数推导（实现前独立复算（内部验证档）：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
 
     +比值恒等式 1+1/(pN)；celebrated 闭式对角 Q 全参数 Schur rel≤2.0e-15、
 
@@ -635,7 +646,7 @@ entries:
   claim_block: "  出处（剖面电容：Getsinger, IRE Trans. MTT-10(1) 1962 薄条极限——\n  combline 与交指截面几何恒同；k_ij↔J_ij\
     \ 与归一化耦合口径：Matthaei–\n  Young–Jones ch.8 combline / ch.10 倒置器综合，章节级转引；装载斜率\n  b_s=[cotθ₀+θ₀csc²θ₀]/(2Z_r)\
     \ 为本仓 MYJ ch.8 等效电路第一性推导，实现\n  前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参\n  内节 (w,s) 与 interdigital_bpf_synthesize\
-    \ 逐位）、θ₀→90° 退化=π/(4Z_r)\n  恒等，轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树\n  tests/unit/test_aurora_d_core7.py）。"
+    \ 逐位）、θ₀→90° 退化=π/(4Z_r)\n  恒等，独立验证轨迹（内部档），锚树\n  tests/unit/test_aurora_d_core7.py）。"
   refs:
   - 出处（剖面电容：Getsinger, IRE Trans. MTT-10(1) 1962 薄条极限——
   source_doi: null
@@ -692,7 +703,7 @@ entries:
 
     Gauss–Hermite 双数值路线（ρ=0 退化乘积逐位、ρ→1 退化 min(y) 双极限锚），
 
-    轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树
+    独立验证轨迹（内部档），锚树
 
     tests/unit/test_aurora_d_core7.py。）'
   refs:
@@ -775,7 +786,7 @@ entries:
 
     带宽和恒等三锚）；阶数闭式 vs 整数扫描、cosh 闭式 vs T_n 递推、Ω 边缘
 
-    恒等=本仓双路线复算（runs/aurora_d/_core8_verify_derivation.py：
+    恒等=本仓双路线复算（内部验证档：
 
     rel≤3.4e-16，锚树 tests/unit/test_aurora_d_core8.py）。'
   refs:
@@ -1086,10 +1097,9 @@ entries:
   claim_line: '- 法源：Stevenson 1948, J. Appl. Phys. 19, 24-38, DOI 10.1063/1.1697868'
   claim_block: "- 法源：Stevenson 1948, J. Appl. Phys. 19, 24-38, DOI 10.1063/1.1697868\n  （原文 closed，Unpaywall\
     \ 2026-10-13 实测不可达；**式号不可考——禁编造\n  原文字号/式号**；式形态经四路独立二手源逐字互证 + WR90 数值逐位复算，\n  四路出处/锚勘误表/置信度声明见\n\
-    \  runs/aurora_c/batch_b_wave3_specs/G16_slot_array_stevenson_RESOLVED.md\n  §2/§4/§6；裁决式含 (a/b) 与\
-    \ cos²(πλ0/2λg) 两因子，规格包式 S1 已证伪；\n  access_status=verified_secondary_4source）。\n- λg/fc 教科书式：Pozar\
-    \ *Microwave Engineering* §3.3（任意波导教本同式）。\n- 锚（#118 双路径）：RESOLVED §4 勘误表 A1-A7 替代锚 + 新增 N1-N4（实现席\n\
-    \  2026-10-13 全部独立复算逐位确认）+ S1 源（arXiv:2608.21231）Table II\n  跨源钉 g(2.3814mm)@9.375GHz=0.127649（原文\
+    \  内部规格档（Stevenson 阵综合）\n  §2/§4/§6；裁决式含 (a/b) 与 cos²(πλ0/2λg) 两因子，规格包式 S1 已证伪；\n  access_status=verified_secondary_4source）。\n\
+    - λg/fc 教科书式：Pozar *Microwave Engineering* §3.3（任意波导教本同式）。\n- 锚（#118 双路径）：RESOLVED §4 勘误表 A1-A7 替代锚\
+    \ + 新增 N1-N4（实现席\n  2026-10-13 全部独立复算逐位确认）+ S1 源（arXiv:2608.21231）Table II\n  跨源钉 g(2.3814mm)@9.375GHz=0.127649（原文\
     \ 0.12765）+ 测试面 sin² 半角\n  恒等式第二路线（锚树 tests/unit/test_b_wave3_yagi_slot.py）。"
   refs:
   - 10.1063/1.1697868
@@ -1133,7 +1143,7 @@ entries:
 
     本仓推导，实现前独立复算：闭式 vs 剖面核 Simpson 积分 ≤1.3e-16、首零
 
-    βL=2π 精确、F(½)=½ 几何中点，轨迹 runs/aurora_d/_core7_verify_derivation.py；
+    βL=2π 精确、F(½)=½ 几何中点，独立验证轨迹（内部档）；
 
     锚树 tests/unit/test_aurora_d_core7.py 第二路线）；两路互证锚与包络恒等式
 
@@ -1476,12 +1486,11 @@ entries:
   symbol: <module>
   kind: source
   marker: 出处链（
-  claim_line: 出处链（回归钉证据，runs 归档零改写只读）：
-  claim_block: "出处链（回归钉证据，runs 归档零改写只读）：\n- 换算式与识别规则：runs/df6_dp14y1/handoff.md §路线 C（\"换算 Z0e=2·Zc、\n\
-    \  Z0o=Zd/2；模序按 εeff 较高识别偶模\"）；\n- 数值证据：runs/hairpin_hfss_anchor/hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
-    \ 每模 Zo 读数 + 换算后\n  z0e_ohm/z0o_ohm）与 runs/hairpin_hfss_anchor/criteria.md §表\n  （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200:\
-    \ 54.31/52.70）；\n- 审查条目：runs/review_ge8e/r4_adapters/REPORT.md R4-4（换算链此前只在\n  runs handoff 文档与战役脚本中，无\
-    \ core/service 可复用实现）。"
+  claim_line: 出处链（回归钉证据，真机判读归档零改写只读）：
+  claim_block: "出处链（回归钉证据，真机判读归档零改写只读）：\n- 换算式与识别规则：判读交接档 §路线 C（\"换算 Z0e=2·Zc、\n  Z0o=Zd/2；模序按 εeff 较高识别偶模\"\
+    ）；\n- 数值证据：HFSS hairpin 锚归档 hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
+    \ 每模 Zo 读数 + 换算后\n  z0e_ohm/z0o_ohm）与锚判读 criteria 档 §表\n  （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200:\
+    \ 54.31/52.70）；\n- 审查条目：适配器审查批 R4-4（换算链此前只在\n  真机交接文档与战役脚本中，无 core/service 可复用实现）。"
   refs: []
   source_doi: null
   eq_no: null
@@ -1556,16 +1565,16 @@ entries:
   symbol: discover_engine_pairs
   kind: source
   marker: reference=ref：
-  claim_line: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
-  claim_block: 'reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
+  claim_line: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例——
+  claim_block: 'reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例——
 
-    AGENTS 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
+    HFSS 结果为对齐基准）。exclude 命中的引擎不参与配对。
 
     引擎名 < 2 个 → 空矩阵（合法，无对可差分）。'
   refs: []
   source_doi: null
   eq_no: null
-  expr: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
+  expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
@@ -2198,22 +2207,21 @@ entries:
   symbol: <module>
   kind: source
   marker: 权威口径（
-  claim_line: 权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf）：
-  claim_block: "权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf）：\nQ. Lai, C. Fumeaux,\
-    \ W. Hong, R. Vahldieck, \"Characterization of the Propagation\nProperties of the Half-Mode Substrate\
-    \ Integrated Waveguide,\" IEEE Trans.\nMicrow. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug.\
-    \ 2009,\nDOI 10.1109/TMTT.2009.2025429。\n\n- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形\n\
-    \  波导宽 w_eff,SIW = 2w − 1.08·d²/s + 0.1·d²/(2w)（d=过孔直径、s=孔心距）。\n  与本仓 siw 族在用 Cassivi 式 w−d²/(0.95·s)（core/calculators.\n\
-    \  siw_effective_width_mm）是同一物理的两家发表拟合，互差 <2%（单测钉）。\n- 式 (9)(10)：w'_eff = w_eff,SIW/2；w_eff,HMSIW\
-    \ = w'_eff + Δw（Δw=开路边\n  边缘场附加宽度）。\n- 式 (13)：Δw/h = (0.05 + 0.30/εr)·ln(0.79·w'²/h³ + (104·w'−261)/h²\
-    \ +\n  38/h + 2.77)——非线性最小二乘拟合式，**mm 量纲约定**（各显式常数按 mm\n  计）。声明域：εr∈(2.2,15)、h∈(0.254,2.54)mm、w∈(2.5,10)mm（论文\
-    \ §II.B\n  明文，覆盖 2–60GHz；拟合误差 <2%）。域外显式 ValueError 拒算（越界不\n  外推，#1c/#122）。\n- 式 (11)：fc,TE0.5,0 =\
-    \ c/(4·√εr·w_eff,HMSIW)。\n- 式 (12)：k_z = √(k0²εr − (π/(2·w_eff,HMSIW))²)（f<fc 时倏逝，返回 NaN，\n  siw_beta_rad_m\
-    \ 同契约）。\n- 式 (14)：fc,TE1.5,0 = 3·c/(4·√εr·w_eff,HMSIW)（单模工作带上界，论文 §II.B\n  末：HMSIW 单模带宽 ≈ 同截半宽 SIW\
-    \ 的 2 倍——TE1.5 对应整腔 TE10 二阶）。"
+  claim_line: 权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条）：
+  claim_block: "权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条）：\nQ. Lai, C. Fumeaux, W. Hong, R. Vahldieck, \"Characterization\
+    \ of the Propagation\nProperties of the Half-Mode Substrate Integrated Waveguide,\" IEEE Trans.\n\
+    Microw. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug. 2009,\nDOI 10.1109/TMTT.2009.2025429。\n\
+    \n- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形\n  波导宽 w_eff,SIW = 2w − 1.08·d²/s + 0.1·d²/(2w)（d=过孔直径、s=孔心距）。\n\
+    \  与本仓 siw 族在用 Cassivi 式 w−d²/(0.95·s)（core/calculators.\n  siw_effective_width_mm）是同一物理的两家发表拟合，互差\
+    \ <2%（单测钉）。\n- 式 (9)(10)：w'_eff = w_eff,SIW/2；w_eff,HMSIW = w'_eff + Δw（Δw=开路边\n  边缘场附加宽度）。\n- 式 (13)：Δw/h\
+    \ = (0.05 + 0.30/εr)·ln(0.79·w'²/h³ + (104·w'−261)/h² +\n  38/h + 2.77)——非线性最小二乘拟合式，**mm 量纲约定**（各显式常数按\
+    \ mm\n  计）。声明域：εr∈(2.2,15)、h∈(0.254,2.54)mm、w∈(2.5,10)mm（论文 §II.B\n  明文，覆盖 2–60GHz；拟合误差 <2%）。域外显式\
+    \ ValueError 拒算（越界不\n  外推，#1c/#122）。\n- 式 (11)：fc,TE0.5,0 = c/(4·√εr·w_eff,HMSIW)。\n- 式 (12)：k_z =\
+    \ √(k0²εr − (π/(2·w_eff,HMSIW))²)（f<fc 时倏逝，返回 NaN，\n  siw_beta_rad_m 同契约）。\n- 式 (14)：fc,TE1.5,0 =\
+    \ 3·c/(4·√εr·w_eff,HMSIW)（单模工作带上界，论文 §II.B\n  末：HMSIW 单模带宽 ≈ 同截半宽 SIW 的 2 倍——TE1.5 对应整腔 TE10 二阶）。"
   refs:
   - 10.1109/TMTT.2009.2025429
-  - 权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf
+  - 权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条
   - Microw. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug. 2009
   - DOI 10.1109/TMTT.2009.2025429
   - '- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形'

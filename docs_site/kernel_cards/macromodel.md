@@ -124,10 +124,6 @@ src/rfauto/core/macromodel.py 公开符号 **11** 个（AST 机读）：
 
 analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双路径互证内核登记 analytic-anchor 轻条目」的延伸项——登记后重跑本生成器）。
 
-判据书/规格指针（docstring 逐字引文钉）：
-
-- `延续计划`——引文："任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。"
-
 测试面（tests/unit 引用扫描，机读；合计 **87** 个 test 函数）：
 
 | 测试文件 | test 函数数 |

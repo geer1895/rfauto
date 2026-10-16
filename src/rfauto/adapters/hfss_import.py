@@ -20,8 +20,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
-# AEDT 缺省版本单源（aurora72 A7-C）：真机口径 2025 R1/v251（项目规则 规则 0
-# 勘误），与 EDB 快车道/remote_machines 注册表同源，禁再手写字面量漂移。
+# AEDT 缺省版本单源：真机口径 2025 R1/v251（版本对齐纪律勘误），
+# 与 EDB 快车道/remote_machines 注册表同源，禁再手写字面量漂移。
 # edb_adapter 模块级仅 stdlib 依赖，此处顶层 import 无重链代价。
 from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
 
@@ -34,7 +34,7 @@ def _remote_session_info(remote_machine: str | None,
 
     多机协同 v0 尾巴（B13/TODOfollowUp）：无该键=本地会话（零行为变化）。
     带该键走 infra/remote_machines 注册表解析（未登记名 RemoteConfigError
-    fail-closed），并做版本配对交叉断言（项目规则 规则 0：pyaedt gRPC 客户端-
+    fail-closed），并做版本配对交叉断言（版本对齐纪律：pyaedt gRPC 客户端-
     服务端版本必须配对，静默失配会走错客户端插件——显式拒绝并指引对齐）。
 
     Returns
@@ -59,7 +59,7 @@ def _remote_session_info(remote_machine: str | None,
         raise ValueError(
             f"HFSS 远程版本配对失配：import 版本 {local_version!r} 与注册表 "
             f"{cfg.name!r}.hfss_version={remote_version!r} 不一致——pyaedt gRPC "
-            "客户端-服务端版本必须配对（项目规则 规则 0）；请对齐 version 参数与 "
+            "客户端-服务端版本必须配对（版本对齐纪律）；请对齐 version 参数与 "
             "configs/remote_machines.yaml 的 hfss.version")
     return {
         "name": cfg.name,
@@ -254,7 +254,7 @@ def import_project_spec(
     """读取 HFSS 工程的设计规格（变量/扫参/Setup/端口）。
 
     缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
-    R1/v251 口径，项目规则 规则 0 勘误后统一；显式传参可覆盖）。历史注：
+    R1/v251 口径，版本对齐纪律勘误后统一；显式传参可覆盖）。历史注：
     早期缺省曾钉 2023.1——彼时 PyAEDT 1.4.0 对 AEDT 2026.1 存在未修复
     兼容问题（issue #7410，WNUA 挂死/OpenProject 失败）；真机口径勘误
     （2025 R1=对齐基准）后三处缺省钉统一走单源。

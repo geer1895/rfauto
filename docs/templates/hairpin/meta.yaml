@@ -21,11 +21,11 @@ nominal_params:
   # 按 scripts/hairpin_calib design_params 同规则舍入（名义 = 设计链 = 标定脚本逐位同源）；
   # arm_gap 1.0→3.0（k_self(3.0)=0.0115 < 互耦 0.0515 < k_self(1.0)=0.0602，防同臂自耦反超互耦）
   w_mm: 1.1117
-  # 闭式 λg/2=35.4676 × 真机谐振修正 c_f0=1.0370（B2 runs/hairpin_calib/pt4_ag30_plane3mm：通带中心 2.5925）
+  # 闭式 λg/2=35.4676 × 真机谐振修正 c_f0=1.0370（B2 内部证据档：通带中心 2.5925）
   arm_len_mm: 36.7799
   arm_gap_mm: 3.0
   gap_mm: 1.1328
-  # B1 真机标定 c(τ)=1.37437−0.75218·τ（runs/hairpin_q_extract/summary.json）重解：Q_e_EM=c(τ)·Q_e_closed=17.0689
+  # B1 真机标定 c(τ)=1.37437−0.75218·τ（内部证据档）重解：Q_e_EM=c(τ)·Q_e_closed=17.0689
   tap_frac: 0.398159
 topology: 发夹线带通（WP2.3 Tier1 滤波器族）：N 个 λg/2 半波谐振器折成 U 形沿 x 并排，相邻外臂平行耦合（缝 gap_mm）；输入/输出为 50Ω 抽头馈线（T 形，板边 x=∓BOARD 至首/末谐振器外臂，抽头位置 tap_frac 自开路端计）
 # ── 战役精算能力（topology_service.FILTER_FAMILY_REGISTRY 口径）────────────────────────

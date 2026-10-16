@@ -37,7 +37,7 @@ from .registry import (
 # 线宽=skrf HJ inverse_width 50Ω、βg=k0·√εeff(HJ @feed_w)、s=倾斜式反解。
 # 基板 RO3003 类（er=3.0/h=0.127/tan_d=0.001，模板参数基板——ms 族「er/tan_d
 # 走 substrate/nominal」同口径；0.508 缺省板在 78GHz 非物理厚）。
-# 真机面：预算预声明 runs/df7_c10d/criteria.md §d（~3.6e7 cells/dt~4.8e-14s/
+# 真机面：预算预声明 内部证据档 §d（~3.6e7 cells/dt~4.8e-14s/
 # NrTS~2.5e4/墙钟数小时～半天每点），本批零发射。
 MMWAVE_SERIES_TEMPLATES: frozenset[str] = frozenset({"mmwave_series_array"})
 _MMWAVE_DOM_MM = 20.0            # 方域半宽（40×40mm 板，criteria §d 域）
@@ -151,7 +151,7 @@ MMWAVE_SERIES_META: dict[str, Any] = {
                  "（#347）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边"
                  "（#154 前节）",
     "smoke_note": "未冒烟（离线审计过，#212，test_mmwave_series_array_"
-                  "template）；真机发射面=预算预声明 runs/df7_c10d/criteria."
+                  "template）；真机发射面=预算预声明 内部证据档"
                   "md §d（0.1mm 格 ~3.6e7 cells、dt~4.8e-14s、NrTS~2.5e4、"
                   "墙钟数小时～半天/点，发射前以 exec 实测为准），本批零发射",
 }
@@ -404,7 +404,7 @@ def mmwave_series_render(
 几何/端口/网格口径见 src/rfauto/adapters/openems_templates.py 文末
 MMWAVE_SERIES_ARRAY 段。行波串馈（βg·s 渐进相位递推，波束倾斜 u0=
 {lay["u0_pred"]:.4f} 闭式 core/array_synthesis）+ 链末匹配集总负载到地；
-真机预算预声明 runs/df7_c10d/criteria.md §d（本批零发射）。
+真机预算预声明 内部证据档 §d（本批零发射）。
 """
 import csv
 import json

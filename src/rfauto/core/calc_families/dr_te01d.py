@@ -69,8 +69,7 @@ vs 本族式 D2=4.0830 GHz，径向条件不同源，见规格文件勘误注记
 - 端板贴面极限（式 D2）：出处见 rfauto.core.material_characterization
   .courtney_f0_of_er docstring（同形闭式；注意其径向条件为 J1 零点
   confined 口径，见上"口径边界"节——同仓互证=方向锚+常数同根，非逐位）。
-- 锚值（#118 双路径）：规格包 runs/aurora_c/batch_b_wave3_specs/
-  G9_dr_te01d.md 独立复算（D1-D6，本席 2026-10-13 全部复算确认）+
+- 锚值（#118 双路径）：内部规格档独立复算（D1-D6 全部复算确认）+
   测试面独立二分求根第二路线。
 
 守卫：diameter_mm>0、height_mm>0、epsilon_r ≥2（<2 拒绝——εr→1 时模式

@@ -6,7 +6,7 @@
 
 - 拓扑：MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 → 线性锥（w50→ w_end=Z_PV 微带当宽的阻抗变换器+锥末-SIW 台阶不连续）→ SIW 直段（顶壁显式板 +两列过孔藩篱止于板缘=siw v2 口径+底壁板）；基板填满矩形域，z=0 PEC 底界， 顶界 MUR（MSL 区微带环境）；端口=双 MSLPort（面贴域界 PML_8、端口段=均匀 50Ω 线）
 - f0：10.0 GHz ｜ 端口：2 ｜ 时长 ≤45.0 ns ｜ 网格档：0.0 mm
-- 提取口径：S11/S21 @ MSLPort 1-2（线基：CalcPort ref=50 主口径；port_beta.csv 落双端口 β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判 =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟， 预声明 runs/df6_a2siwmsl/criteria.md §4）
+- 提取口径：S11/S21 @ MSLPort 1-2（线基：CalcPort ref=50 主口径；port_beta.csv 落双端口 β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判 =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟， 预声明 内部证据档 §4）
 - 参数：w_mm, d_mm, s_mm, taper_len_mm, siw_len_mm
 - 基板：{"er":3.66,"h_mm":0.508,"tan_d":0.0037}
 
@@ -50,18 +50,18 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
-- `siw.w_eff.lit-v1`（formula/active；闭式/文献锚（无引擎对））：siw_w_eff_mm expr = w_mm - d_mm**2/(0.95*s_mm)（变量：w_mm、d_mm、s_mm）；±0.02（relative）；证据：runs/siw_family
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
+- `siw.w_eff.lit-v1`（formula/active；闭式/文献锚（无引擎对））：siw_w_eff_mm expr = w_mm - d_mm**2/(0.95*s_mm)（变量：w_mm、d_mm、s_mm）；±0.02（relative）
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
 
 - 参数语义：w_mm=两过孔列心距（=TEMPLATE_NOMINAL['siw'] 同名同义）、d_mm=过孔直径、 s_mm=过孔心距、taper_len_mm=锥形段长（缺省 λg/2@f0，criteria §1.1 一阶互证 收档）、siw_len_mm=SIW 直段长（顶板缘间距，缺省 3λg）；w50/w_end= inverse_width 渲染期同参精算（非参数，#1c）；h/er/tan_d 走 substrate/nominal （er/h 进锥宽设计链）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4； 过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线（#311）、显式近场线 10µm 地板（#349）、 锥缘/板缘/端口边落格断言（#283）、FeedShift/MeasPlaneShift 间距 ≥3.9·NEAR （#347）；基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
-- 冒烟现状：离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动 scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空 +.oe_collect.lock 空，见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见 runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进 锥末宽度设计式（如实收档，v2 历史档不删）
+- 冒烟现状：离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动 scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空 +.oe_collect.lock 空，见 内部证据档）；预声明门与预算见 内部证据档 §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进 锥末宽度设计式（如实收档，v2 历史档不删）
 - 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑

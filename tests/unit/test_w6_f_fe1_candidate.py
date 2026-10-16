@@ -19,6 +19,9 @@ import pytest
 _REPO = Path(__file__).resolve().parents[2]
 _BUILDER = _REPO / "scripts" / "build_fe1_candidate.py"
 _CANDIDATE = _REPO / "release" / "fe1_candidate"
+#: scrub/transform 面经 asset_tokens() 惰性加载 ground 扫描器（主机资产
+#: 清单单源）——本 checkout 未随仓分发该文件时这两个用例诚实 skip
+_SCANNER = _REPO / "release" / "scan_release.py"
 
 
 def _builder():
@@ -64,6 +67,9 @@ def test_strip_ledger_tokens_keeps_technical_text() -> None:
 
 # ── 3. 主机资产清洗 + 仓路径剥离（SI §2.3 sanctioned 机械脱敏）──────────────
 
+@pytest.mark.skipif(not _SCANNER.is_file(),
+                    reason="release/scan_release.py (host asset inventory "
+                           "source) not shipped in this checkout")
 def test_scrub_text_assets_and_repo_prefix() -> None:
     b = _builder()
     s = b.scrub_text("sim_host DrivenModal 同几何收敛（host=10.20.30.40）")
@@ -100,6 +106,9 @@ def _sample_anchor() -> dict:
     }
 
 
+@pytest.mark.skipif(not _SCANNER.is_file(),
+                    reason="release/scan_release.py (host asset inventory "
+                           "source) not shipped in this checkout")
 def test_transform_anchor_policy_full() -> None:
     b = _builder()
     ids = {"demo_run"}

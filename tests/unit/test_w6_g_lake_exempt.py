@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -32,6 +33,16 @@ from rfauto.service.lake_compact_service import (
     purge_blobs_from_manifest,
     restore_h5_from_manifest,
 )
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（本地 Windows 无色也等价通过）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def _flag_in_help(output: str, *needles: str) -> bool:
+    plain = _ANSI_CSI.sub("", output)
+    compact = re.sub(r"\s+", "", plain)
+    return all(n in compact for n in needles)
 from rfauto.service.sim_ci_service import BASELINE_SCHEMA
 
 runner = CliRunner()
@@ -395,8 +406,10 @@ class TestCliExemptCompact:
         assert result.exit_code == 2
         assert "reversible" in result.output
 
-    def test_cli_help_carries_new_flags(self):
+    def test_cli_help_carries_new_flags(self, monkeypatch):
+        # Linux rich 带 ANSI/窄端换行——去转义+去空白口径匹配
+        monkeypatch.setenv("COLUMNS", "200")
+        monkeypatch.setenv("NO_COLOR", "1")
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "--exempt-subtree" in result.output
-        assert "--reversible" in result.output
+        assert _flag_in_help(result.output, "--exempt-subtree", "--reversible")

@@ -78,7 +78,7 @@ from .render_hairpin import coupled_microstrip_even_odd_ohm
 #    HFSS interdigital 仲裁反解 0.12–0.13nH（audit2 证据）⇒ G-P 对"连续 PEC
 #    地面粗短过孔"高估 2.2–2.5×（SC verdict 次根因：补偿过缩短，峰 +4.1%）；
 #    auto（l_via_h=None）改取校准值 C3_L_VIA_CAL_H=0.125nH（HFSS 区间中点，
-#    项目规则 09-08 对齐基准立规）；G-P 闭式保留为 via_inductance_h/c3_via_
+#    内核立规注记 09-08 对齐基准立规）；G-P 闭式保留为 via_inductance_h/c3_via_
 #    inductance_h 文献公式（离线判别消费者不变）；OE 反解 ≈0.20nH 与 HFSS 差
 #    异=跨引擎发现（OE 哨预期承载）。
 #    λ/4 短路棒并联谐振条件由 tanθ=∞ 变为 tanθ=Z_r/(ωL_via)（谐振下移）；
@@ -121,11 +121,11 @@ _C3_COHN_X_MAX = 0.65            # j(x)=x/(Z0(1+x²+x⁴)) 单调区上界（驻
 _C3_GAP_CELLS_MIN = 3.0          # 耦合缝内最少 NEAR 格数（守卫 NEAR ≤ 缝/3，#266）
 _MU0_H_PER_M = 4.0e-7 * math.pi  # 真空磁导率（Goldfarb-Pucel 系数 μ0/2π=2e-7）
 # 过孔电感校准值（R1，2026-09-22 df5-c3fix）：l_via_h=None（auto）的解析结果。
-# 依据 HFSS interdigital 仲裁反解 0.12–0.13nH（runs/hfss_interdigital_check/
+# 依据 HFSS interdigital 仲裁反解 0.12–0.13nH（内部证据档
 # _audit2/audit2_evidence.json：θ(2.60)=1.5350、ωL=1.953Ω@2.60GHz）取区间中点
-# 0.125nH——项目规则 2026-09-08 立规"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
+# 0.125nH——内核立规注记 2026-09-08 立规"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
 # （c3_via_inductance_h，0.29596nH）对"连续 PEC 地面上粗短过孔"高估 2.2–2.5×
-# （SC runs/df5_c3_mapping/verdict.json 次根因），降级为文献公式保留；OE 反解
+# （SC 内部证据档 次根因），降级为文献公式保留；OE 反解
 # ≈0.20nH 与 HFSS 的差异如实登记为跨引擎发现（OE 哨预期承载，不进定值）。
 C3_L_VIA_CAL_H = 0.125e-9
 C3_TEMPLATES: tuple[str, ...] = ("interdigital", "combline", "sir_bpf")
@@ -1180,7 +1180,7 @@ def _c3_body(template: str, p: dict[str, Any]) -> str:
         # 全隙（棒面 z=H_SUB→地 z=0），端帽 PEC 板落在 z=0/z=H_SUB 既有 PEC
         # 面（无新增短路墙），EC_C 只改 z 边（棒 y 边金属不被切断）——与
         # c_load_pf 的集总对地电容 KCL 语义一致。SC"ny=2 全高盒非 shunt 惯
-        # 用法"指控系把参数名误读为 y 方向（runs/df5_c3fix/r3_verdict.json）。
+        # 用法"指控系把参数名误读为 y 方向（内部证据档）。
         for k_i, (x0, y0, x1, y1) in enumerate(lay["caps"], start=1):
             lines.append(f'_c_load{k_i} = CSX.AddLumpedElement('
                          f'"c_load{k_i}", ny=2, caps=True, C={c_f!r})')

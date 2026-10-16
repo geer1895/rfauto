@@ -576,7 +576,10 @@ class TestExportReportPdfCommand:
         pdf_path = tmp_path / "runs" / run_id / "report.pdf"
         assert pdf_path.exists()
         assert pdf_path.stat().st_size > 0
-        assert f"runs\\{run_id}\\report.pdf" in result.output
+        # 路径分隔符平台无关（POSIX 输出正斜杠、Windows 反斜杠——统一到
+        # 正斜杠后比较相对路径形态）
+        out_rel = result.output.replace("\\", "/")
+        assert f"runs/{run_id}/report.pdf" in out_rel
 
     def test_export_report_pdf_output_path(self, tmp_path):
         run_id = _fake_run_metrics(tmp_path)

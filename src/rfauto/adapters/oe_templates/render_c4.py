@@ -510,7 +510,7 @@ def _c4_layout(template: str, p: dict[str, Any]) -> dict[str, Any]:
         # 字节不变（render_base_lange.py 快照自证）。关位 0 是合法值，禁用
         # `or` 缺省惯语（#117 falsy 陷阱）。去桥后指 2/3 无馈无桥=悬浮 PEC
         # （FDTD 良定：PEC 感应电流合法、无需 DC 通路）；连通性/网格逐条审计
-        # 归档 runs/c4_debridge/。
+        # 归档 内部证据档。
         _bridge_on = bool(p.get("_bridge", 1))
         gb = _C4_LANGE_BRIDGE_GAP_MM * 1e-3
         tb = _C4_LANGE_BRIDGE_T_MM * 1e-3
@@ -625,7 +625,7 @@ def _lange_lines(p: dict[str, Any]) -> str:
     # 展开型 Lange 电桥（§C4 口径 3）：四指交替并联（网络 A=指1/3、B=指2/4），
     # 桥=抬高薄金属+竖直立柱（同端 A/B 桥错位、两端分置——#212 bbox 审计
     # 判两组 DC 隔离）；外指承馈 P1/P2/P3/P4。params["_bridge"]=0 → 去桥
-    # 对照变体（单变量，判据 runs/c4_debridge/criteria.md）。
+    # 对照变体（单变量，判据 内部证据档）。
     return _c4_body_lines("lange", p)
 
 

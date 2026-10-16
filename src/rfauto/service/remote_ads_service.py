@@ -28,8 +28,8 @@ hpeesofsim 执行（env 形态=#272 同款）→ ③数据集 sftp 逐文件回�
   DLL 同根因，服务器侧 ADS 根=注册表 ``ads.hpeesof_dir``，本机实测
   形态见 ads_netlist._build_ads_env）。
 
-服务器侧约束（服务器说明 §10/项目规则 0b）：工作根=注册表
-``hfss.project_root``（E:\\rfauto_remote 语义，**禁 D:\\CloudDrive**），
+服务器侧约束（服务器运维约定）：工作根=注册表
+``hfss.project_root``（远程工作根语义，**禁写生产云盘**），
 批次子目录 ``ads_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 每机互斥，X4 批推广，共享单源
 ``remote_service.remote_mutex_precheck``：hpeesofsim 进程指纹直查=权威
@@ -153,8 +153,8 @@ def _check_remote_safe(label: str, value: str) -> str:
     """远端命令注入面守卫：路径禁单引号与空白。
 
     远端命令形态=PS 原生单引号（G5 零双引号纪律），含单引号/空白的路径
-    无法安全引用——fail-closed 显式拒绝（E:\\rfauto_remote /
-    E:\\ADS27\\ADS2027 等登记路径均天然满足）。
+    无法安全引用——fail-closed 显式拒绝（登记表内的标准安装/工作根
+    路径均天然满足）。
     """
     v = value.replace("/", "\\")
     if "'" in v or any(ch.isspace() for ch in v):
@@ -271,7 +271,7 @@ def remote_ads_run(
         同步执行等待上限（run_command 通道超时；超时=链路异常 fail-closed）。
     keep_remote :
         True=跳过服务器侧清理（调试留档；steps.cleanup 如实 skipped，任务
-        毕须人工清理——项目规则 0b 清理铁律不豁免只展期）。
+        毕须人工清理——清理铁律不豁免只展期）。
 
     Returns
     -------
@@ -324,7 +324,7 @@ def remote_ads_run(
     if not cfg.hfss_project_root:
         return skipped_envelope(
             "机器未登记 hfss.project_root（服务器侧工作根，"
-            "禁 D:\\CloudDrive 语义靠此钉）",
+            "禁写生产云盘语义靠此钉）",
             ok=False, steps=steps,
         )
 
@@ -580,7 +580,7 @@ def remote_ads_run(
         )
         return envelope
     finally:
-        # 任务毕必须清理（项目规则 0b）：keep_remote 显式留档如实记；清理
+        # 任务毕必须清理（清理铁律）：keep_remote 显式留档如实记；清理
         # 失败翻 FAIL（数据已回拉仍不许留远端垃圾）。cleanup 失败不阻塞
         # transport 关闭（best-effort 观测性纪律，#105 同源）。
         try:
@@ -606,7 +606,7 @@ def remote_ads_run(
             envelope["ok"] = False
             envelope["verdict"] = "FAIL"
             envelope["reason"] = (
-                "服务器侧工作目录清理未通过（任务毕必须清理，项目规则 0b）"
+                "服务器侧工作目录清理未通过（任务毕必须清理）"
             )
         envelope["criteria"]["c3_workdir_cleaned"] = bool(
             cleanup.get("skipped") or cleanup.get("verified_gone")

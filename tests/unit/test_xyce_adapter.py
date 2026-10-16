@@ -148,9 +148,18 @@ class TestVerifyReachable:
         )
 
 
+# windows_to_wsl_path/run_xyce 只收 Windows 盘符绝对路径（POSIX tmp_path
+# 在桥函数里显式 ValueError）——下列用例钉 Windows→WSL 桥语义，非 Windows
+# 诚实 skip；其余（解析/渲染/注册面）平台无关照常运行。
+_win_bridge = pytest.mark.skipif(
+    not sys.platform.startswith("win"),
+    reason="Windows-only behavior: the WSL bridge consumes Windows drive "
+           "paths and rejects POSIX paths by design")
+
 # ── WSL 桥工具 ────────────────────────────────────────────────────────────────
 
 class TestBridgeUtils:
+    @_win_bridge
     def test_windows_to_wsl_path(self):
         assert windows_to_wsl_path("E:\\a\\b.cir") == "/mnt/e/a/b.cir"
         assert windows_to_wsl_path("E:/") == "/mnt/e"
@@ -173,6 +182,7 @@ class TestBridgeUtils:
 
 
 class TestRunXyce:
+    @_win_bridge
     def test_command_shape_and_quoting(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b"* t\n.end\n")
@@ -196,6 +206,7 @@ class TestRunXyce:
         with pytest.raises(XyceError, match="网表不存在"):
             run_xyce(tmp_path / "nope.cir", runner=lambda a, t: _proc(0))
 
+    @_win_bridge
     def test_timeout_returns_flagged_result(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")
@@ -206,6 +217,7 @@ class TestRunXyce:
         res = run_xyce(cir, runner=slow_runner)
         assert res.timed_out and res.rc == -1
 
+    @_win_bridge
     def test_utf16_output_decoded(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")

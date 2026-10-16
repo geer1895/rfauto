@@ -31,7 +31,7 @@
 | M4 optimization | Surrogate-driven optimization (querying the inventory) vs the HFSS-baseline wall-clock account | `factory_m4_bench.py` | `runs/datafactory_m4/` |
 
 Two iron disciplines run through the whole chain (violate them and the work
-is redone, per 项目规则 house rules):
+is redone, per house rules):
 
 1. **Criteria are pre-declared (write before compute)**: each batch's
    criteria/readouts are written into `runs/<batch>/criteria.md` (fixed in
@@ -139,7 +139,7 @@ value"):
 
 ```bash
 .venv/Scripts/python.exe scripts/factory_m2_mfk_rejudge.py --judge \
-    --out runs/aurora_d/tut/mfk_verdict.json
+    --out runs/demo/mfk_verdict.json
 ```
 
 Measured output (~49s, excerpt):

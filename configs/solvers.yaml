@@ -6,14 +6,14 @@ solvers:
   openems:
     solver_type: openems
     # 2026-09-06 可移植化：路径走 RFAUTO_OPENEMS_BIN（每台机器自设——
-    # 旧机 E:\openEMS\install\bin；单工作区方案 B 则是
+    # 旧机 <drive>:\openEMS\install\bin；单工作区方案 B 则是
     # D:/rf_workspace\vendor\openEMS\install\bin，见 docs/migration_guide.md）
     exe_path: "${RFAUTO_OPENEMS_BIN}\\openEMS.exe"
     working_dir: "runs/openems"
     freq_range_ghz: [1.0, 5.0]
     # 2026-09-05 官方方法学语义：mesh_resolution_mm = 网格 base 覆盖（mm）；
     # 0 = 自动 λ_sub/50（官方 MSL_NotchFilter 基线，近走线区自动 /4）。
-    # 0.5 ≈ λ_sub/100 已收敛校准档（runs/audit_freq_scale E4-fine 实证：
+    # 0.5 ≈ λ_sub/100 已收敛校准档（网格收敛扫描实证：
     # base 减半谷位漂 -2.5%，收敛）。
     mesh_resolution_mm: 0.5
     boundary_condition: "PML_8"
@@ -24,7 +24,7 @@ solvers:
       # num_threads: 8   # 【注释键，2026-09-26 登记，尚未接线】FDTD 线程数旋钮
       #   （绑定层消费点=openEMS.pyx 的 FDTD.Run(..., numThreads=N) kwarg，
       #   非构造参数；本机构建 boost::thread 无 OpenMP，OMP_NUM_THREADS
-      #   无效——df7 经验④）。E5 实证（runs/df7_e5）：钉 8 线程 146.8 MC/s
+      #   无效——批次经验④）。线程实测（归档在案）：钉 8 线程 146.8 MC/s
       #   比 auto 快 20%+，且结果逐位=线程数敏感（并行求和序）——逐位可
       #   复现场景钉 8。当前渲染层各模板 FDTD.Run 为硬编码 render 串、
       #   extra_params 无 →Run kwargs 透传点，接线需模板面逐处开洞
@@ -41,7 +41,7 @@ solvers:
     extra_params:
       comsol_version: "6.3"
       cores: 2
-      # comsol_root: 默认 E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics，
+      # comsol_root: 默认 <drive>:\COMSOL\COMSOL_63\COMSOL63\Multiphysics，
       # 可用 RFAUTO_COMSOL_ROOT 覆盖（非默认安装位时在此显式给路径）。
       # save_mph: true   # 保留 .mph 模型文件（调试用）
   elmer:
@@ -63,8 +63,8 @@ solvers:
 
 
   ngspice:
-    # 电路级 SPICE 参考通道（0ca A3：HB 结果对拍真 ngspice-47 瞬态/.AC xval；
-    # 版本锚 ngspice-47，runs/a3_field_circuit_nonlinear 真机标定）。
+    # 电路级 SPICE 参考通道（HB 结果对拍真 ngspice-47 瞬态/.AC xval；
+    # 版本锚 ngspice-47，真机标定归档）。
     # 6h 管理页探测记录（0ca followUp④）：非 EM 求解器——无
     # EMSolverAdapter、不进 EMSolverRegistry；EM 专属字段
     # （freq_range_ghz/mesh_resolution_mm/boundary_condition）保持
@@ -76,11 +76,11 @@ solvers:
     solver_type: ngspice
   xyce:
     # Xyce 电路级 SPICE 通道（F-L.2，2026-09-29 起 WSL 真机可用）：Xyce 7.11
-    # 装在 WSL 默认发行版 Ubuntu（wf:xyce-build），驱动链 adapters/
+    # 装在 WSL 默认发行版 Ubuntu，驱动链 adapters/
     # xyce_adapter.py——resolve_xyce_exe：RFAUTO_XYCE_EXE（WSL 侧路径）>
-    # 缺省 /home/pc/apps/xyce/bin/Xyce；不可达时按 tools/xyce_stack_build.sh
+    # 缺省 /home/<user>/apps/xyce/bin/Xyce；不可达时按 tools/xyce_stack_build.sh
     # 构建指引。v0 面向 DC/.tran/.ac 三基本分析（rlc_lowpass 锚），
-    # .HB 分析面登记未实现（master plan F-L.2 HB 后续批次）。
+    # .HB 分析面登记未实现（HB 后续批次）。
     # 注意与 spice_netlist.resolve_xyce_exe（Windows 原生 Xyce.exe 探测钩子，
     # env RFAUTO_XYCE_BIN）是两条独立链，勿混用。
     # 此处不写 exe_path（解析在 WSL 侧 env/缺省链，elmer exe 同款口径）。

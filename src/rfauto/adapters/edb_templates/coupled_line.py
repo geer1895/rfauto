@@ -50,14 +50,14 @@ wf/2（≈0.56mm/λ/4≈3%）；两近端馈线端面隔 d=w+s 相对（端射�
 端部不连续同类，冒烟判读按引擎偏差项对待，不进闭式裁判。
 
 生产判读档史（W8 仲裁建议 1 → W10 定谳回退，2026-10-09）：W8 真机三变体
-仲裁（runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-1）曾裁定本族缺省自
+仲裁（W8 仲裁档 §3/§5-1）曾裁定本族缺省自
 适应档 ``adapt.max_delta`` 从 schema 假设 8 通用缺省 0.02 **加严到
 0.005**——依据=名义设计点紧缝 s/h=0.161（s=0.082mm/h=0.508mm）下
 ΔS=0.02 单档 S31 读数带 ~2dB 收敛档伪象（HFSS 3D 与 EDB 两引擎 0.02 档
 一致读 -7.2~-7.6dB，HFSS ΔS 阶梯 0.02→0.0025 收紧回收 1.2~1.8dB；0.02
 档的窗口判据在测"网格收敛度"而非"器件物理"）。
 
-**W10 定谳与本档回退（runs/edblane85/w10_cl_recheck/REPORT.md）**：
+**W10 定谳与本档回退（真机战役判读报告）**：
 MaxDelta=0.005 在 EDB 路径**写入不可达**——EDB 3D Layout schema
 （SimSetupID=19）无 MaxDelta 键（四互证维持：EditSetup 不存在/InsertSetup
 无任何 Delta 键名/configuration.load 的 AdaptiveSettings 子树被丢弃/两代
@@ -85,9 +85,9 @@ mc2=2 / W10=4 两真机点）。**复进条件**：pyedb/AEDT 暴露 MaxDelta �
 渲染期注记声明、**不改综合数值**；s/t≥4 暂按「伪象主导区」划线
 （W8 实测 bias+2.274dB@s/t=4.29 属 ΔS 收敛档伪象主导、非纯厚度，
 厚度效应量值未分辨）——守卫仅 warning 不 fail（数据不足硬门，#122）。
-W10 真机补证（runs/edblane85/w10_cl_recheck §3）：名义点（s/t=2.34）
+W10 真机补证（W10 判读报告 §3）：名义点（s/t=2.34）
 方向支持厚度偏置、无反证，但 s/t≥4 区量级仍未分辨（W10 未测该区），
-划线维持暂定。证据链：runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-3。
+划线维持暂定。证据链：W8 仲裁档 §3/§5-3。
 
 纯函数：``emit_coupled_line_spec(params) -> (spec, config_json)``，无 IO
 无全局态；spec/config schema 与假设清单见 edb_templates/schema.py docstring。
@@ -127,7 +127,7 @@ DEFAULT_FEED_LEN_MM = 5.0
 
 #: 本族 adapt.max_delta 缺省=schema 假设 8 通用缺省 0.02（**W10 定谳回退**，
 #: 2026-10-09）：W8 仲裁曾加严 0.005，但 EDB 3D Layout schema 无 MaxDelta
-#: 键=写入不可达（runs/edblane85/w10_cl_recheck 四互证；W9 props 通道
+#: 键=写入不可达（W10 真机四互证；W9 props 通道
 #: TIGHTENING_NOT_EFFECTIVE 系同因会话态表现），且 EDB 侧档位伪象实测仅
 #: ~0.62dB（W8 ~2dB 系 HFSS 侧阶梯分解）、剩余 ~1.0dB=EDB-Layout 建模保
 #: 真差——0.005 请求档求解器不消费，保留即每建必告警+存证误导归因，故
@@ -142,7 +142,7 @@ DEFAULT_ADAPT_MAX_DELTA = 0.02
 #: s/t≥4=「伪象主导区」暂划线（V3 实测 bias+2.274dB@s/t=4.29 属 ΔS 收敛档
 #: 伪象主导、非纯厚度，厚度效应量值未分辨）——守卫仅 warning 不 fail
 #: （数据不足硬门，#122）。W10 名义点（s/t=2.34）方向支持厚度偏置、无反
-#: 证；s/t≥4 区量级仍未分辨，划线维持暂定（runs/edblane85/w10_cl_recheck）。
+#: 证；s/t≥4 区量级仍未分辨，划线维持暂定（W10 真机复验）。
 THICKNESS_BIAS_ST_DIVIDER = 4.0
 
 #: 厚度偏置饱和锚点 dB（HFSS 匹配档阶梯差随收紧趋稳 +0.80@饱和；

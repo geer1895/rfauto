@@ -1228,7 +1228,7 @@ class TestAdaptTighteningChannel:
         assert "改档须重建" in doc
         assert "AdaptiveSettings" in doc
         assert "verify_adapt_tightening" in doc
-        assert "w8_cl_arb" in doc
+        assert "W8 仲裁档" in doc
 
     # ── 生效断言：一致/不一致/不可核对全谱 ─────────────────────────────────
 

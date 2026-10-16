@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -38,6 +39,16 @@ from rfauto.service.lake_compact_service import (
     sparams_summary,
 )
 from rfauto.service.sim_ci_service import BASELINE_SCHEMA
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（本地 Windows 无色也等价通过）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def _flag_in_help(output: str, *needles: str) -> bool:
+    plain = _ANSI_CSI.sub("", output)
+    compact = re.sub(r"\s+", "", plain)
+    return all(n in compact for n in needles)
 
 runner = CliRunner()
 
@@ -450,11 +461,13 @@ def _pointer_norms(runs: Path, pointers) -> set[str]:
 
 
 class TestCliCompact:
-    def test_help_true_run(self):
+    def test_help_true_run(self, monkeypatch):
+        # Linux rich 带 ANSI/窄端换行——去转义+去空白口径匹配
+        monkeypatch.setenv("COLUMNS", "200")
+        monkeypatch.setenv("NO_COLOR", "1")
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "--apply" in result.output
-        assert "dry-run" in result.output
+        assert _flag_in_help(result.output, "--apply", "dry-run")
 
     def test_dryrun_default_zero_write(self, mini_lake):
         before = _tree_hashes(mini_lake["runs"])

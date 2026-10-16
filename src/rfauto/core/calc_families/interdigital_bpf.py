@@ -103,7 +103,7 @@ g_ij 换算——k_ij→J=b_s·k_ij→(C_e,C_o) 目标→(w,s) 带域边界二�
   b_s=[cotθ₀+θ₀csc²θ₀]/(2Z_r) 为本仓 MYJ ch.8 等效电路第一性推导，实现
   前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参
   内节 (w,s) 与 interdigital_bpf_synthesize 逐位）、θ₀→90° 退化=π/(4Z_r)
-  恒等，轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树
+  恒等，独立验证轨迹（内部档），锚树
   tests/unit/test_aurora_d_core7.py）。
 
 数值锚（#118 独立来源；锚树 tests/unit/test_a3c_coupled_interdigital.py 与
@@ -150,7 +150,7 @@ _SOURCES = {
                  "combline_resonance 同解自洽，θ₀→90° 退化=π/(4Z_r) 恒"
                  "等；实现前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆"
                  "恒等式、跨键结构锚，轨迹 "
-                 "runs/aurora_d/_core7_verify_derivation.py，锚树 "
+                 "独立验证轨迹（内部档），锚树 "
                  "tests/unit/test_aurora_d_core7.py）"),
 }
 

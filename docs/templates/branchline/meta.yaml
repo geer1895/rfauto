@@ -19,8 +19,8 @@ nominal_params:
 
 # 名义臂注记（R2-1 审查批 2026-10-04）：arm_len_mm=20.5 为薄线极限捷径口径
 # （HJ 精算正解 18.09mm，偏差 +11.8%，已裁定维持锚定基线不改数值——锚历史，
-# 坑#252 定性）；出处：runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1
-nominal_note: 名义臂=薄线极限口径（HJ 精算 18.09，偏差 +11.8% 已裁定维持锚定基线，见 runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1 与坑#252）
+# 坑#252 定性）；出处：内部证据档 R2-1
+nominal_note: 名义臂=薄线极限口径（HJ 精算 18.09，偏差 +11.8% 已裁定维持锚定基线，见 内部证据档 R2-1 与坑#252）
 
 teaching:
   schema: rfauto-teaching/v1

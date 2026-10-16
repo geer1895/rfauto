@@ -18,7 +18,7 @@
 > **所有物理数字（频率、损耗、几何尺寸）都由确定性公式内核或求解器产生，
 > 永远不由大语言模型编造。**
 
-它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **72 个参数化器件模板**和
+它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **77 个参数化器件模板**和
 配套的物理验收判据，提供 **269 条 CLI 命令**和 **152 个 MCP 工具**（+9 个
 resources），并靠 **25400+ 条单元测试**保持诚实——这些测试不需要任何商业许可
 就能跑。
@@ -136,7 +136,7 @@ rfauto replay <run_id>                                     # 复现历史 run
 
 ```bash
 pip install -e ".[mcp]"
-python -m rfauto.mcp_server        # stdio 传输；80 个工具
+python -m rfauto.mcp_server        # stdio 传输；152 个工具
 ```
 
 在 MCP 客户端里注册（Claude Desktop 示例）：
@@ -218,7 +218,7 @@ Linux/Docker 支持。
 
 ## 参与贡献
 
-欢迎 issue 和 PR——快速上手、项目规则、代码注释里 `#NNN` 标记的含义见
+欢迎 issue 和 PR——快速上手、贡献约定、代码注释里 `#NNN` 标记的含义见
 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 引用

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ══ 槽线族正式注册（2026-09-18 w1b，排空六轮 followUps ④/0df②/0dl①；审计 #12/#17）══
-# 路线 A/B 均匀槽线段（真机三门 PASS，（二百））、MSL↔slot 过渡
+# 路线 A/B 均匀槽线段（真机三门 PASS）、MSL↔slot 过渡
 # 与 Marchand 双槽臂（真机判读 ）由附加模块升格正式注册——渲染入口
 # 仍在各自模块（本段零拷贝、只做分发与元数据，#116 防本地副本）：
 #   adapters/slotline_template.render_slotline_script        （slotline，路线 A）
@@ -306,16 +306,16 @@ TEMPLATE_NOMINAL["marchand_balun"] = MARCHAND_BALUN_NOMINAL
 
 # ══ Marchand 两节对称耦合段渲染器 + 过孔对照旋钮（C12，2026-09-21）══
 # 背景：HFSS 巴伦锚全波中心（S11 零点 2.04GHz）比理想电路（2.5GHz）低 ≈18%
-# （，runs/hfss_marchand_anchor，归因假设=过孔柱电感
-# ≈0.7nH+开路 fringe）；openEMS 烟测（runs/smoke_marchand_2sect）谷 ≥3.0 触
-# 扫频边截断、两引擎 DISAGREE 谐振反向（二百五十八）；同端口仲裁 ENGINE_SIDE
-# （二百七十九）+匹配线标定（二百八十二）把 openEMS 侧偏差主体定位到 Z0/端口
+# （，内部证据档，归因假设=过孔柱电感
+# ≈0.7nH+开路 fringe）；openEMS 烟测（内部证据档）谷 ≥3.0 触
+# 扫频边截断、两引擎 DISAGREE 谐振反向；同端口仲裁 ENGINE_SIDE
+# +匹配线标定把 openEMS 侧偏差主体定位到 Z0/端口
 # 提取（修正项 engine_z0_correction 已落地 core/slotline_transitions）。**−18%
 # 本身的登记归因对照=过孔 PEC 薄片单变量**（TODO 排空五轮段/followUp ①"过孔改理想 PEC 薄片短路"）。电路级预判（core
 # coupled_line_z_matrix + 短路口 jωL 负载约束，2026-09-21 C12 实算）：L=0.7nH
 # → 谷 2.046GHz——**−18% 主体可由过孔电感定量复现**（方向=短路副线电学变长、
 # 谐振下移：θ_副线+θ_via=90°，t_res=Z0o/(ωL)）。
-# 本渲染器把 runs/smoke_marchand_2sect/render_run.py 单源化（rod 缺省=烟测
+# 本渲染器把 内部证据档 单源化（rod 缺省=烟测
 # 几何逐字节口径）并加 _via_mode 对照（opt-in，缺省不变）：
 #   rod   = 0.25mm 方柱贯通 z∈[0,H]（现状/HFSS 锚 VIA_SIDE_MM 同款，有限电感）
 #   sheet = 理想 PEC 薄片短路墙（零 x 厚 yz 面、全臂宽贯通 z∈[0,H]，无收束电感）
@@ -356,7 +356,7 @@ def render_marchand2_script(
         base_anchor_f_hi_hz: float = 3.0e9) -> str:
     """两节对称 Marchand openEMS 整脚本渲染（C12 过孔对照单源；自包含可执行）。
 
-    几何/网格/端口/审计=runs/smoke_marchand_2sect/render_run.py 逐行单源
+    几何/网格/端口/审计=内部证据档 逐行单源
     （rod 缺省）；扫频窗可扩（A/B 用 (2.0,4.2)GHz：rod 谷在烟测 3.0 边被截断、
     sheet 预期更高）；**网格锚 base_anchor_f_hi_hz=3.0e9 与烟测逐字节一致**
     （单变量：扩窗不改网格）。名义几何零手抄（core marchand_two_section_nominal
@@ -406,10 +406,10 @@ def render_marchand2_script(
 """C12 过孔 PEC 薄片单变量对照：Marchand 两节对称 openEMS 渲染+求解（自动生成）。
 
 单源：adapters/openems_templates.render_marchand2_script（rod 缺省=
-runs/smoke_marchand_2sect/render_run.py 逐行口径；勿手改本文件——再渲染）。
+内部证据档 逐行口径；勿手改本文件——再渲染）。
 变体：VIA_MODE ∈ {{"rod"（0.25mm 方柱，有限过孔电感）/ "sheet"（理想 PEC 薄片
 短路墙）}}，两变体网格/端口/域/激励逐字节一致，唯一差异=过孔金属原语。
-判据：runs/marchand_via_ab/criteria.md（A/B 预声明）+ core MARCHAND2_GATES。
+判据：内部证据档（A/B 预声明）+ core MARCHAND2_GATES。
 用法：
   RFAUTO_SKIP_RUN=1 python render_script.py   # 仅离线审计（构建 CSX+守卫，零仿真）
   python render_script.py                     # 审计通过后真跑+后处理
@@ -420,7 +420,7 @@ import math
 import os
 import sys
 
-# rfauto 不可导入时按 __file__ 向上找仓库 src/（runs/<实验>/<变体>/ 布局自举）
+# rfauto 不可导入时按 __file__ 向上找仓库 src/（隔离工作树布局自举）
 if __import__("importlib.util", fromlist=["x"]).find_spec("rfauto") is None:
     _ROOTS = [p for p in __import__("pathlib").Path(__file__).resolve().parents
               if (p / "src" / "rfauto").is_dir()]

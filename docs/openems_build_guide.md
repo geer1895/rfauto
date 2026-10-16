@@ -66,17 +66,17 @@ vcpkg install tinyxml hdf5 cgal vtk --triplet x64-windows
 ## Step 3: Clone openEMS-Project
 
 ```bash
-git clone --recursive https://github.com/thliebig/openEMS-Project.git E:\openEMS\openEMS-Project
+git clone --recursive https://github.com/thliebig/openEMS-Project.git <drive>:\openEMS\openEMS-Project
 ```
 
 ## Step 4: Build openEMS（推荐配置：跳过 GUI）
 
 ```bash
-cd E:\openEMS\openEMS-Project
+cd <drive>:\openEMS\openEMS-Project
 mkdir build && cd build
 cmake .. -G "Visual Studio 16 2019" -A x64 ^
   -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
-  -DCMAKE_INSTALL_PREFIX=E:\openEMS\install ^
+  -DCMAKE_INSTALL_PREFIX=<drive>:\openEMS\install ^
   -DBUILD_APPCSXCAD=NO
 cmake --build . --config Release
 cmake --install .
@@ -89,7 +89,7 @@ cmake --install .
 
 ```bash
 # Check executable
-E:\openEMS\install\bin\openEMS.exe --version
+<drive>:\openEMS\install\bin\openEMS.exe --version
 ```
 
 Python 绑定（CSXCAD/openEMS 包）随编译安装；rfauto 模板生成的
@@ -132,7 +132,7 @@ scripts\build_python_bindings.cmd
 
 - Cython 3.3 产物需 C++17，绑定 setup.py 在 MSVC 下不传 `/std` → 用 `CL`
   环境变量注入，不改上游 setup.py；
-- 运行时 import 需 `os.add_dll_directory(E:\openEMS\install\bin)`——单加
+- 运行时 import 需 `os.add_dll_directory(<drive>:\openEMS\install\bin)`——单加
   PATH 不保证 .pyd 的 DLL 依赖解析；rfauto 的 OpenEMSSolver.solve 已用
   `_rfauto_runner.py` 引导脚本自动注入；
 - 绑定走 openEMS.dll **进程内**求解，solvers.yaml 的 exe_path 只用于
@@ -140,7 +140,7 @@ scripts\build_python_bindings.cmd
 - **线程数旋钮 numThreads**（E5 微项 B，2026-09-26 登记）：绑定消费点是
   `FDTD.Run(..., numThreads=N)` kwarg（openEMS.pyx `Run`，缺省 0=auto），
   非构造参数；本机构建是 boost::thread 无 OpenMP，`OMP_NUM_THREADS`
-  无效（df7 经验④）。E5 实测（runs/df7_e5）：钉 8 线程 146.8 MC/s 比
+  无效（df7 经验④）。实测（内部基准档）：钉 8 线程 146.8 MC/s 比
   auto 快 20%+，且 FDTD 结果逐位=线程数敏感（并行求和序）——逐位可复现
   场景钉 8。当前 `configs/solvers.yaml` 的 `num_threads` 为注释键（渲染
   层各模板 `FDTD.Run` 硬编码、extra_params 尚无 →Run kwargs 透传点，

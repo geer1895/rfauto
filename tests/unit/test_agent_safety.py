@@ -67,8 +67,11 @@ class TestWritePathWhitelist:
         assert result["ok"], result["violations"]
 
     def test_outside_path_rejected(self, tmp_path):
+        # 白名单外的绝对路径用 tmp_path 兄弟目录构造（平台无关）——盘符形
+        # 绝对路径在 POSIX 下是相对路径（首段是普通文件名），resolve() 后
+        # 反而落进 recipe 白名单根内，不构成白名单外语义
         result = check_write_paths(
-            ["runs/ok.yaml", "C:/Windows/system32/evil.yaml"],
+            ["runs/ok.yaml", str(tmp_path.parent / "evil.yaml")],
             _recipe(tmp_path),
         )
         assert not result["ok"]

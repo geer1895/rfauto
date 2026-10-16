@@ -35,8 +35,8 @@ poll 档 rc 判读用）。判据/健康门/nrts 门全在回拉后本地消费�
 镜像本地 ``runs/<campaign>/<template>/`` 布局（说明书 §5.5），判读器
 零改动直读。
 
-服务器侧约束（说明书 §六红线/AGENTS 0b）：工作根=注册表
-``hfss.project_root``（E:\\rfauto_remote 语义，禁 D:\\CloudDrive）；任务
+服务器侧约束（服务器运维约定）：工作根=注册表
+``hfss.project_root``（远程工作根语义，禁写生产云盘）；任务
 目录 ``tasks\\oe_<uuid8>`` 唯一化（并发批次不互踩）；发射前互斥预检
 （#261 服务器侧进程指纹直查=权威判据 + §5.4 第 3 步 run_server_probe.ps1
 mutex 行=旁证；非零命中=候跑 SKIP，rc≠0=验不了不发射 fail-closed，
@@ -98,7 +98,7 @@ _SURVIVAL_SAMPLE_DELAYS_S = (60.0, 120.0)
 _DEATH_CONFIRMATIONS = 2
 #: 轮询档超时附加余量（座位 timeout 之外，§5.4 bat 收尾/清理余量）。
 _POLL_GRACE_S = 600.0
-#: 02:50–05:35 服务器备份窗（说明书 §六.3）——分钟数闭区间。
+#: 服务器备份窗（内建缺省 02:50–05:35，服务器运维约定）——分钟数闭区间。
 _BACKUP_WINDOW_MIN = (2 * 60 + 50, 5 * 60 + 35)
 #: #261 互斥指纹（服务器侧 OE 家族 python 命令行；宁枉勿纵=候跑 SKIP）。
 _MUTEX_FINGERPRINT = "_rfauto_runner|simulation\\.py|driver\\.py|fd_oe_campaign"
@@ -253,9 +253,9 @@ def build_mutex_command(fingerprint: str = _MUTEX_FINGERPRINT) -> str:
 
 
 def _in_backup_window(tm: time.struct_time) -> bool:
-    """发射时刻是否落在 02:50–05:35 服务器备份窗（说明书 §六.3）。
+    """发射时刻是否落在 02:50–05:35 服务器备份窗（服务器运维约定）。
 
-    时钟归属假设（ge5 审查 F6 登记）：入参取本机 ``time.localtime()``，
+    时钟归属假设（审查登记项）：入参取本机 ``time.localtime()``，
     语义归属服务器侧时钟——同 lab 同 TZ 假设下无实害；跨 TZ 部署时
     调用方应改喂服务器侧时间。
     """
@@ -483,7 +483,7 @@ def _cleanup_census(transport: SshTransport, work_root: str) -> dict[str, Any]:
 def _cleanup_remote_taskdir(
     transport: SshTransport, task_dir: str,
 ) -> dict[str, Any]:
-    """删除服务器侧任务目录并 Test-Path 复核（任务毕必须清理，AGENTS 0b）。"""
+    """删除服务器侧任务目录并 Test-Path 复核（任务毕必须清理）。"""
     rc, _out, err = transport.run_command(
         f"Remove-Item -LiteralPath '{task_dir}' -Recurse -Force "
         "-ErrorAction SilentlyContinue",
@@ -637,18 +637,18 @@ def remote_oe_run(
     if not cfg.hfss_project_root:
         return skipped_envelope(
             "机器未登记 hfss.project_root（服务器侧工作根，"
-            "禁 D:\\CloudDrive 语义靠此钉）",
+            "禁写生产云盘语义靠此钉）",
             ok=False, steps=steps,
         )
     try:
         work_root = _check_remote_safe("hfss.project_root", cfg.hfss_project_root)
-        # 纵深防御（ge5 审查 F5）：登记正确性之外显式拒绝生产云盘前缀
-        # （AGENTS 规则 0b：中间文件只落服务器本机盘，禁写 D:\CloudDrive；
+        # 纵深防御（登记正确性之外）：显式拒绝生产云盘前缀
+        # （中间文件只落服务器本机盘，禁写生产云盘；
         # 显式 .lower()——normcase 在 POSIX 恒等，#304）
         if work_root.replace("/", "\\").lower().startswith("d:\\clouddrive"):
             raise RemoteOeError(
                 "hfss.project_root 禁写生产云盘 D:\\CloudDrive"
-                "（中间文件只落服务器本机工作根，AGENTS 规则 0b）",
+                "（中间文件只落服务器本机工作根）",
                 details={"work_root": work_root[:80]},
             )
         env_bat = _check_remote_safe(
@@ -889,7 +889,7 @@ def remote_oe_run(
         )
         return envelope
     finally:
-        # 任务毕必须清理（AGENTS 0b）：census 旁证（只列不杀）→ Remove-Item
+        # 任务毕必须清理（清理铁律）：census 旁证（只列不杀）→ Remove-Item
         # + Test-Path 复核；清理失败翻 FAIL（数据已回拉仍不许留远端垃圾）。
         try:
             if keep_remote:
@@ -916,7 +916,7 @@ def remote_oe_run(
             envelope["ok"] = False
             envelope["verdict"] = "FAIL"
             envelope["reason"] = (
-                "服务器侧任务目录清理未通过（任务毕必须清理，AGENTS 0b）"
+                "服务器侧任务目录清理未通过（任务毕必须清理）"
             )
         envelope["criteria"]["c3_workdir_cleaned"] = bool(
             cleanup.get("skipped") or cleanup.get("verified_gone")

@@ -1,6 +1,6 @@
 """Cripps load-pull 等效率圆闭式（MT-7；线性简化口径）。
 
-ge8d 波·席D4（runs/ge8_followup/wave_d/seat_d_all.md §席D4）；条目
+审查批条目来源（内部审查档）；条目
 docs/research_expansion_20261002_round17.md MT-7「等效率 load-pull 圆」。
 
 定位（#222 接地先行）：core/active_chain.py 已有 Cripps **等功率**面

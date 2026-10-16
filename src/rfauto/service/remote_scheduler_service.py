@@ -1,10 +1,10 @@
 """remote_scheduler_service —— v1 调度面拆批切片：多机资源可见性 + 队列视图。
 
-立项出处（2026-10-08 储备池立项席 S）：runs/pool_reaudit/REAUDIT_REPORT.md
-E-06（调度面拆批）与 PR-15（调度面余项 mTLS+队列页+--remote）同域；本模块
-= 两账目在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
+立项出处（2026-10-08 储备池立项评审）：调度面拆批项与调度面余项
+（mTLS+队列页+--remote）同域；本模块
+= 两项在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
 （零发射、零写入、零杀进程；发射侧路由/资源日历全版/campaign --remote
-仍是 E-06 拆批余件，不在本切片）。
+仍是拆批余件，不在本切片）。
 
 能力（规则 4：JSON 进出，CLI 是薄壳）：
 
@@ -14,7 +14,7 @@ E-06（调度面拆批）与 PR-15（调度面余项 mTLS+队列页+--remote）�
 - ``queue_view``：任务队列视图——job_registry 在途作业 + 单写锁
   （owner/FIFO 队长）+ 席位占用表 + 服务器在途态合并。
 - ``calendar_launch_view``/``calendar_view``：资源日历机读化（UX-B8，
-  E62 席 2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
+  2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
   维护窗/许可席位峰谷/单机内存帽）装载 + 「当前是否可发」三态判定
   （open/risk/blocked）；缺文件=恒可发不阻塞（#105 fail-open 观测面）。
 
@@ -76,7 +76,7 @@ __all__ = [
 # ─── #261 通道互斥指纹（视图侧常量） ─────────────────────────────────────────
 # OE 语义同源 remote_oe_service._MUTEX_FINGERPRINT（进程内 FDTD.Run 的
 # python 家族；#261：本仓 openEMS 非 openEMS.exe，进程域钉 python.exe）——
-# 视图侧独立常量，避免跨席共享文件 hunk 耦合；命令构造单源复用
+# 视图侧独立常量，避免共享文件改动耦合；命令构造单源复用
 # remote_service.remote_mutex_command（G5 全程单引号零双引号）。
 #: 语义自排除（#261 自锁红线）：指纹词元均非本 CLI 调用链命令行词元
 #（``rfauto remote resources`` 不含 _rfauto_runner/simulation.py/…）。
@@ -171,7 +171,7 @@ def local_hfss_view() -> dict[str, Any]:
 # ─── 登记机器资源面（可达性/在跑进程数/磁盘余量） ─────────────────────────────
 
 def _drive_letter_of(work_root: str) -> str | None:
-    """服务器侧工作根 → 盘符（``E:\\rfauto_remote`` → ``E:``；无盘符 None）。"""
+    """服务器侧工作根 → 盘符（``<drive>:\\work_root`` → ``<drive>:``；无盘符 None）。"""
     m = re.match(r"^([A-Za-z]):", str(work_root or ""))
     return m.group(1).upper() + ":" if m else None
 
@@ -381,7 +381,7 @@ def queue_view(machine: str | None = None) -> dict[str, Any]:
     - ``jobs``：job_registry 全体在册快照瘦形（注册序；跨进程历史 run 走
       ``jobs status``/meta.json 磁盘回落链，不在本视图）；
     - ``write_lock``：单写锁 owner + FIFO 队长（并发 hfss job 的排队面）；
-    - ``seat_occupancy``：席位 → 占用 job 列表（B-29 记账实时快照）；
+    - ``seat_occupancy``：席位 → 占用 job 列表（记账实时快照）；
     - ``remote``：:func:`remote_resources` 同源服务器在途态（unknown 降级
       原样透传）。
     """

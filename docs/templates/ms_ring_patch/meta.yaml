@@ -23,7 +23,7 @@ extraction: >-
   2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl
   对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变，
   _port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读出，空波导标定
-  EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/stage2/wg_sim/smoke_report.json）。
+  EN≈1.0+闭式相位 0.19° 实证 内部证据档）。
   波导模拟器≡无限阵@θ=0，E∥x 极化前提；|S11|≈1 的 argΓ 逐 patch_px 入反射
   相位 LUT；健康判据=|Γ| 线性域 ≈1
 topology: >-
@@ -42,7 +42,7 @@ mesh_note: >-
   守卫（#266）；全轴最小网格间距 ≥10µm
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；段④ J1c 扫描（粗 21 点档
-  +圆周覆盖门 ≥300°）发射面=runs/ge5_j2fb/stage2/campaign_j2fb.py
+  +圆周覆盖门 ≥300°）发射面=内部证据档
   --template ms_ring_patch
 nominal_derivation: |-
   全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1c 预登记

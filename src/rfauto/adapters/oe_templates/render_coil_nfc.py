@@ -17,7 +17,7 @@ from .registry import TEMPLATE_META, TEMPLATE_NOMINAL
 # L_target = 1/((2π·f0)²·C_tune)（f0=13.56MHz、C_tune=47pF 标准 NP0 档）→
 # core/nfc_coil.synthesize_coil 二分反解 d_out（导入期计算非手抄）。
 # 真机面：13.56MHz 全波 FDTD 预算 ~小时-天/点（MQS 频段无 MQS 求解器，
-# 见 runs/df7_nfc/criteria.md §e），本批仅离线审计不发射。
+# 见 内部证据档 §e），本批仅离线审计不发射。
 def _coil_nfc_nominal_dout() -> float:
     """名义外径闭式合成（mm，导入期；core 单源，零手抄毫米数）。"""
 
@@ -53,7 +53,7 @@ COIL_NFC_META: dict[str, Any] = {
                  "1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、边全入网"
                  "（#174/#283）",
     "smoke_note": "未冒烟（离线审计过，#212，test_coil_nfc_template）；真机"
-                  "发射面=13.56MHz FDTD 预算审计（runs/df7_nfc/criteria.md "
+                  "发射面=13.56MHz FDTD 预算审计（内部证据档 "
                   "§e：小时-天/点量级，建议几何等比缩放阶梯研究后由主代理"
                   "决定），本批零发射",
 }
@@ -259,7 +259,7 @@ def coil_nfc_render(template: str, params: dict[str, Any],
 
 几何/端口/网格口径见 src/rfauto/adapters/openems_templates.py 文末 COIL_NFC 段。
 13.56MHz MQS 频段：几何驱动网格（禁 λ 口径），真机预算见
-runs/df7_nfc/criteria.md §e。
+内部证据档 §e。
 """
 import csv
 import json

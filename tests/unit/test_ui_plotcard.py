@@ -37,6 +37,9 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
+#: SSR 回归钉经 vendored echarts（static/vendor 不随仓分发）——
+#: 缺文件时诚实 skip（node 本身在位也不可跑）
+_ECHARTS = (_STATIC / "vendor" / "echarts.min.js").is_file()
 
 # 迁移前 option 快照（runs/pr34/golden_option_harness.mjs 产出，2026-10-02；
 # valueFormatter 等函数 JSON.stringify 不含——等价断言即 JSON 逐字节口径）。
@@ -281,7 +284,8 @@ class TestMigrationSourcePins:
             assert needle in block, f"print 面缺 {needle}"
 
 
-@pytest.mark.skipif(_NODE is None, reason="本机无 node")
+@pytest.mark.skipif(_NODE is None or not _ECHARTS,
+                    reason="node 或 vendored echarts.min.js 缺失（static/vendor 不随仓分发）")
 class TestConvergenceRenderRegression:
     """W9-A 渲染级回归钉（2026-10-12，W8-B 视觉验收 P1-1）。
 

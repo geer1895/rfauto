@@ -25,15 +25,15 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    半偶极子）⇒ 一阶谐振长 λ0/4：L = c/(4·f0)。细带端效应使真机谷位低于
 #    设计频率（同 dipole 58mm 口径）——设计式不做预补偿，冒烟实测偏差如实
 #    记录（#190 范式：引擎常数须经仲裁才能进设计公式）。
-#    真机实测（runs/antenna2_smoke/monopole，2026-09-14）：谷 −17.39dB @
+#    真机实测（内部证据档，2026-09-14）：谷 −17.39dB @
 #    2.135GHz，端效应偏移 −11.0%（设计点 2.4GHz），窗 ±12% 内 PASS。
 # 2) PIFA：**L 路径式定版（2026-09-16）** L = λ0/(4·√εeff(W))（εeff 取 skrf
 #    HJ @W，与 patch 谐振轴同口径，铁律 1c）。文献通式 L + W − Ws ≈ λ/4
 #    （Ollikainen 1999 / Zürcher & Gardiol）**前提是角部短路板**（电流自短路
 #    板沿贴片宽度绕行再折向开路边）；本布局短路板居中（Ws=2 于 W=8 中央），
-#    电流不绕行，有效路径≈L——两轮真机实证（/项目规则
+#    电流不绕行，有效路径≈L——两轮真机实证（/内核立规注记
 #    antenna2 坑③）：通式标称 L=11.0785 谐振在 2.9GHz 之上 FAIL，L 路径式
-#    override 17.08 → −8.79dB@2.26GHz PASS（runs/antenna2_smoke/pifa_override）。
+#    override 17.08 → −8.79dB@2.26GHz PASS（内部证据档）。
 #    Ws 仍是几何输入（短路板宽定馈阻抗/带宽），不进谐振式。馈针位置定匹配
 #    （近短路板低阻、远离升高）：标称 pin_back=2mm、pin_y=W/4。
 # 3) IFA：PIFA 通式的窄臂退化（W→臂宽）：臂长（自短路板起算）≈ λ0/(4·√εeff)
@@ -45,9 +45,9 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    环面 z=0）；馈口 = 底边中央断口 LumpedPort（dipole 中央馈口同型）。
 #    改造动因（像理论，真机实证）：旧贴地口径（z=h 环贴 PEC 地 0.508mm=
 #    0.004λ0）镜像反向电流抵消辐射 → R=0.56Ω（电抗过零 2.3825GHz 对但不
-#    辐射，runs/antenna2_smoke/loop）。判据改电抗过零（f0±12%）+ 过零处
+#    辐射，内部证据档）。判据改电抗过零（f0±12%）+ 过零处
 #    R ≥ 20Ω（对照旧 0.56Ω；S11 −5dB 作次级）——一周长环馈阻抗文献口径
-#    ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振判据（项目规则 antenna2 坑②：
+#    ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振判据（内核立规注记 antenna2 坑②：
 #    判谐振看电抗过零/并联 R 峰）。
 # 5) 螺旋：法向模螺旋单极子（Balanis §9 helical antennas 法向模区）：一阶
 #    口径 = 总导线长 k_helix·λ0/4（k_helix=1.3615，2026-09-17 HFSS 同几何仲裁
@@ -58,7 +58,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #    p = (k_helix·λ0/4 − 4·d·N)/N ≥ 1mm 守卫（d 太大则设计非法，显式报错不静默）。
 # 6) 缝隙：地面谐振缝 L = λ0/(2·√εeff_slot)（Balanis §14 slot antennas；
 #    Booker 互补原理：缝↔偶极子对偶）；介质单侧加载有效 ε 一阶取半空间
-#    均值 (1+εr)/2。真机标定（runs/antenna2_smoke/slot[_override]，
+#    均值 (1+εr)/2。真机标定（内部证据档[_override]，
 #    2026-09-14，两点）：L=40.9168mm→S21 辐射凹 −16.4dB@2.70GHz
 #    （隐含 εeff 1.84）；L=46.036mm→−21.8dB@2.6275GHz（隐含 εeff 1.54，
 #    窗内 PASS）——辐射凹指标与缝长非线性，k_slot ∈ [0.66, 0.79]·(1+εr)/2
@@ -137,7 +137,7 @@ def loop_side_mm(f0_ghz: float, w_mm: float = 1.0,
 #: λ0/4 总线长口径的真机电抗过零 f_x=3.2675GHz（HFSS，真实三维盒/unite/0.3mm）
 #: vs 3.3146GHz（openEMS，自动/0.35mm 网格、16.7/50mm 域三重稳健）偏差 1.44% ≤5%
 #: ⇒ AGREE；k_helix=f_x(HFSS)/f0=3.2675/2.4（openEMS 基 1.3811 同在门内）。总线长
-#: 设计式 = k_helix·λ0/4（谐振随线长一阶反比）。证据链 runs/helix_arbitration/。
+#: 设计式 = k_helix·λ0/4（谐振随线长一阶反比）。证据链 内部证据档。
 K_HELIX = 1.3615
 
 
@@ -200,7 +200,7 @@ ANTENNA2_NOMINAL: dict[str, dict[str, Any]] = {
 
 # 各模板元数据（TEMPLATE_META 公约字段；f0=2.4GHz 设计点；单端口集总馈
 # n_ports=1、slot 双 MSLPort n_ports=2）。
-# ── 真机冒烟判读（runs/antenna2_smoke/<t>/sparams.csv，2026-09-14，扫频
+# ── 真机冒烟判读（内部证据档<t>/sparams.csv，2026-09-14，扫频
 #    1.9-2.9GHz，判据 scripts/smoke_antenna2_anchor.py：谷深门 + f0±12% 窗）──
 #   monopole PASS：S11 −17.39dB @2.135GHz（−11.0%，端效应）；Zin 电抗过零
 #     2.110GHz R=37.3Ω（Balanis 单极子 36.5Ω 口径吻合）。
@@ -217,14 +217,14 @@ ANTENNA2_NOMINAL: dict[str, dict[str, Any]] = {
 #     布局短路板居中（Ws=2 于 W=8 中央）电流不绕行，有效路径≈L。
 #     **定版（2026-09-16）**：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，
 #     标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据
-#     直接沿用，runs/antenna2_smoke/pifa_override），fake 逆/单测/meta 同步。
+#     直接沿用，内部证据档），fake 逆/单测/meta 同步。
 #   loop 旧贴地口径（λg/4=18.5515，z=h 贴 PEC 地）FAIL：S11 −0.19dB；Zin 电抗
 #     过零 2.3825GHz（−0.7%，谐振长度口径正确）但 R=0.56Ω。**归因（像理论）**：
 #     水平环贴 PEC 地 0.508mm（0.004λ0），镜像反向电流抵消辐射 → R_rad→0。
 #     **改造（2026-09-16）**：自由空间口径（无板无地、底 MUR、域下延 λ0/4、
 #     环面 z=0、a=λ0/4=31.2284），判据改电抗过零 f0±12% + 过零处 R≥20Ω；
 #     v2 真机结果见 docs/templates/loop/meta.yaml smoke_note
-#     （runs/antenna2_smoke/loop_v2）。
+#     （内部证据档）。
 #   helix FAIL：S11 ≤−1.22dB；Zin 全带容性 X∈[−156,−44]Ω 且随 f 单调升
 #     → 谐振在 2.9GHz 之上（与段首"慢波使谐振更低"预期相反：λ0/4 总线长
 #     口径高估电长度）；R=1.8~6.2Ω 与电小天线 395(h/λ)²≈2Ω 一致——即便谐振
@@ -232,7 +232,7 @@ ANTENNA2_NOMINAL: dict[str, dict[str, Any]] = {
 #     docs/templates/helix/meta.yaml smoke_note（scripts/hfss_helix_arbitration.py）。
 #   slot PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168）/ −21.76dB @
 #     2.6275GHz（L=46.036 override）。Σ|S|² 带边 >1 **已排查（2026-09-16，
-#     runs/antenna2_smoke/slot/sparams.csv 实测）**：1.9GHz=1.212、2.9GHz=
+#     内部证据档 实测）**：1.9GHz=1.212、2.9GHz=
 #     1.128；>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗
 #     （2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励
 #     −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），是

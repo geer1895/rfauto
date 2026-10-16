@@ -108,7 +108,7 @@ def _near_points(template: str, params: dict[str, Any],
         nx += edges(-cl_w - cl_gap / 2, cl_gap / 2 + cl_w, 1e-3)
         ny += edges(-cl_len / 2, cl_len / 2, 1e-3)
         if params.get("_gap_midline"):
-            # X1 缝场网格加密旋钮（ge8 K-3 机制分离批，runs/ge8_k3mech/
+            # X1 缝场网格加密旋钮（ge8 K-3 机制分离批，内部证据档
             # criteria.md 预声明；缺省 False=不进本分支，近点集与渲染
             # 逐字节不变——缺省恒等由单测钉）：缝区 [-gap/2, +gap/2] 等分
             # 10 格（0.5mm 缝 → 0.05mm 格），内部线精确入网（#311 缝中点
@@ -597,7 +597,7 @@ def _near_points(template: str, params: dict[str, Any],
 
 
 # ── F-D NrTS/EndCriteria 接线（wf:nrts-fix，#262 截断族修复面）──────────────
-# 根因缺口（runs/fd_rerun_20260927/seat2_truncation_verdict 判读）：TEMPLATE_
+# 根因缺口（内部证据档 判读）：TEMPLATE_
 # META.max_time_ns 早已声明（墙钟上界语义，#328）但渲染链从未消费——四 F-D
 # 模板缺省 NrTS=100000/不设 EndCriteria，patch_array_series 在 11.5ns 窗内
 # 4.88GHz 长寿命储能只衰减到幅值 14%（尾/峰 0.1414）即被切，max|S|=5.65 非物理。

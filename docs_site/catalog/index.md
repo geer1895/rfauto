@@ -142,7 +142,7 @@
 - **参数**：`n_turns`、`d_out_mm`、`w_mm`、`s_mm`、`gap_mm`、`h_mm`
 - **名义参数**：`n_turns`=7，`d_out_mm`=38.2988，`w_mm`=0.5，`s_mm`=0.5，`gap_mm`=0.4，`h_mm`=1.6，`er`=4.4，`tan_d`=0.02
 - **拓扑**：NFC/WPC 平面线圈：FR4 类基板（无地平面）+ 阶梯方螺旋（外圈馈隙=端口位）+ 中跳线桥（抬高 z 越过螺旋，lange air-bridge 同法）把内端引出到外端端口 对侧——单导体通路，端口跨馈隙；全域 MUR（无地，辐射口径；13.56MHz 电小， 近场主导）
-- **冒烟注记**：未冒烟（离线审计过，#212，test_coil_nfc_template）；真机发射面=13.56MHz FDTD 预算审计（runs/df7_nfc/criteria.md §e：小时-天/点量级，建议几何等比 缩放阶梯研究后由主代理决定），本批零发射
+- **冒烟注记**：未冒烟（离线审计过，#212，test_coil_nfc_template）；真机发射面=13.56MHz FDTD 预算审计（内部证据档 §e：小时-天/点量级，建议几何等比 缩放阶梯研究后由主代理决定），本批零发射
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 max(w,s,gap)/4（MQS 频段几何驱动 网格，禁 λ_sub/50 口径——13.56MHz 下 λ_sub/50≈250mm 装不下线圈）；螺旋缘/ 馈隙缘/桥面/过孔棱精确入网（#198）；NEAR≤min(s,gap)/3 渲染期守卫（#266）； 全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、边全入网（#174/#283）
 
 ## combline
@@ -161,7 +161,7 @@
 - **参数**：`order`、`w_feed_mm`、`widths_mm`、`gaps_mm`、`res_len_mm`、`feed_len_mm`
 - **名义参数**：`order`=3，`w_feed_mm`=1.1117，`widths_mm`=[0.8952, 1.0956, 1.0956, 0.8952]，`gaps_mm`=[0.1286, 0.7794, 0.7794, 0.1286]，`res_len_mm`=35.5107，`feed_len_mm`=24.4893
 - **拓扑**：平行耦合（边缘耦合）带通（WP2.3 Tier1 BPF 族锚，Pozar §8.6.2）：N 个 λg/2 半波谐振器沿 y 阶梯排列（相邻平行、y 向错位 λg/4），N+1 个耦合段（馈-腔、腔-腔×(N−1)、腔-馈，段长逐端 Δl 修正）；输入/输出 50Ω 馈线在 y=∓BOARD 板边（单轴 PML）
-- **冒烟注记**：真机 runs/coupled_bpf_smoke/（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读（），如实 PARTIAL
+- **冒烟注记**：真机 内部证据档（2026-09-12）：β 金标准 PASS，响应受 NrTS 截断不可判读（），如实 PARTIAL
 
 ## coupled_line
 
@@ -255,7 +255,7 @@
 - **参数**：`helix_d_mm`、`helix_turns`、`helix_pitch_mm`、`helix_w_mm`、`feed_gap_mm`
 - **名义参数**：`helix_d_mm`=3.0，`helix_turns`=2，`helix_pitch_mm`=9.2587，`helix_w_mm`=0.6，`feed_gap_mm`=2.0
 - **拓扑**：螺旋（§10.3 C1）：单导线 staircase 方螺旋（每圈 4 直段各 1/4 螺距上升 + 角部竖板，无双并联回路），首圈 A 段即馈口顶，总线长 4·d·N + N·p = k_helix·λ0/4（k_helix=1.3615 HFSS 仲裁）；馈口=地面 z=0 → 角 A 柱底 LumpedPort；无介质板（PEC 地面悬空导体）
-- **冒烟注记**：真机 runs/antenna2_smoke/helix（2026-09-14）FAIL：S11 ≤−1.22dB；Zin 全带容性 X∈[−156,−44]Ω 且随 f 单调升 → 谐振在 2.9GHz 之上（与段首"慢波使谐振更低"预期相反，λ0/4 总线长口径高估电长度）；R=1.8~6.2Ω 与电小天线 395(h/λ)²≈2Ω 一致——即便谐振也对 50Ω 失配，S11 谷深判据不适用，应改判电抗过零。扩带（2026-09-16，runs/antenna2_smoke/helix_wide，1.5-4.5GHz，solve 173s）FOUND：f_x=3.3146GHz R=9.47Ω（首个容性→感性上穿）。**HFSS 同几何仲裁（2026-09-17 收尾批，scripts/hfss_helix_arbitration.py，runs/helix_arbitration/）AGREE**：真实三维盒几何（t*_d 段为 0.6×3.0×0.9 金属块，前六轮 sheet 映射把它压成薄板断了 C→D→A 电流路径 → 全带容性 UNDECIDABLE，几何修复后）f_x_hfss=3.2675GHz R=8.74Ω vs openEMS 3.3146（自动/0.35mm 网格、16.7/50mm 域三重稳健 3.29–3.32）偏差 1.44% ≤5% ⇒ k_helix=f_x(HFSS)/2.4=1.3615 进设计式（K_HELIX 单源），helix_pitch_mm 3.6142→9.2587（element_top 9.23→20.52mm）；新名义真机验证 runs/antenna2_smoke/helix_knew（openEMS 1.9–2.9GHz）FOUND f_x=2.2039GHz R=17.51Ω、S11 min −6.74dB@2.275——落 f0±12% 窗内但偏低 −8.2%：单点 k 修正隐含 f∝1/wire，螺距 3.6→9.3mm 改变慢波因子致一阶外推过冲；割线二次迭代（两点 (31.23mm,3.3146)/(42.52mm,2.2039) → wire≈40.5mm、k≈1.30、pitch≈8.26）须再经 HFSS 仲裁方可进设计式（#190，followUp）。
+- **冒烟注记**：真机 内部证据档（2026-09-14）FAIL：S11 ≤−1.22dB；Zin 全带容性 X∈[−156,−44]Ω 且随 f 单调升 → 谐振在 2.9GHz 之上（与段首"慢波使谐振更低"预期相反，λ0/4 总线长口径高估电长度）；R=1.8~6.2Ω 与电小天线 395(h/λ)²≈2Ω 一致——即便谐振也对 50Ω 失配，S11 谷深判据不适用，应改判电抗过零。扩带（2026-09-16，内部证据档，1.5-4.5GHz，solve 173s）FOUND：f_x=3.3146GHz R=9.47Ω（首个容性→感性上穿）。**HFSS 同几何仲裁（2026-09-17 收尾批，scripts/hfss_helix_arbitration.py，内部证据档）AGREE**：真实三维盒几何（t*_d 段为 0.6×3.0×0.9 金属块，前六轮 sheet 映射把它压成薄板断了 C→D→A 电流路径 → 全带容性 UNDECIDABLE，几何修复后）f_x_hfss=3.2675GHz R=8.74Ω vs openEMS 3.3146（自动/0.35mm 网格、16.7/50mm 域三重稳健 3.29–3.32）偏差 1.44% ≤5% ⇒ k_helix=f_x(HFSS)/2.4=1.3615 进设计式（K_HELIX 单源），helix_pitch_mm 3.6142→9.2587（element_top 9.23→20.52mm）；新名义真机验证 内部证据档（openEMS 1.9–2.9GHz）FOUND f_x=2.2039GHz R=17.51Ω、S11 min −6.74dB@2.275——落 f0±12% 窗内但偏低 −8.2%：单点 k 修正隐含 f∝1/wire，螺距 3.6→9.3mm 改变慢波因子致一阶外推过冲；割线二次迭代（两点 (31.23mm,3.3146)/(42.52mm,2.2039) → wire≈40.5mm、k≈1.30、pitch≈8.26）须再经 HFSS 仲裁方可进设计式（#190，followUp）。
 
 ## hmsiw
 
@@ -274,7 +274,7 @@
 - **参数**：`ifa_arm_mm`、`ifa_w_mm`、`feed_off_mm`
 - **名义参数**：`ifa_arm_mm`=18.5515，`ifa_w_mm`=1.0，`feed_off_mm`=2.0
 - **拓扑**：IFA（§10.3 C1，PIFA 窄臂退化）：短路板 x∈[−1,0]（z 0→h）+ 臂 z=h 自短路板 −x 向伸出 λ/4 + 馈针=LumpedPort x=−feed_off（顶触臂、底触地，不另画金属针盒）；基板 + z-min PEC 地
-- **冒烟注记**：真机 runs/antenna2_smoke/ifa（2026-09-14，去针盒 v2）PASS：S11 −8.48dB @2.44GHz（+1.7%），Zin@谷=103−24jΩ（并联型谐振，馈针 2mm 过耦合限谷深）；与 ifa_v1_pin_short（有针盒）−8.52dB@2.44 逐点一致 ⇒ 针盒无影响、谐振为真。带外 R≈0（1.9GHz −0.11+4.3j、2.9GHz 0.19+3.3j）是无耗短路桩馈结构的正常反应，首判"端口短路→PARTIAL"已证伪
+- **冒烟注记**：真机 内部证据档（2026-09-14，去针盒 v2）PASS：S11 −8.48dB @2.44GHz（+1.7%），Zin@谷=103−24jΩ（并联型谐振，馈针 2mm 过耦合限谷深）；与 ifa_v1_pin_short（有针盒）−8.52dB@2.44 逐点一致 ⇒ 针盒无影响、谐振为真。带外 R≈0（1.9GHz −0.11+4.3j、2.9GHz 0.19+3.3j）是无耗短路桩馈结构的正常反应，首判"端口短路→PARTIAL"已证伪
 
 ## interdigital
 
@@ -321,7 +321,7 @@
 - **参数**：`loop_side_mm`、`loop_w_mm`、`loop_gap_mm`
 - **名义参数**：`loop_side_mm`=31.2284，`loop_w_mm`=1.0，`loop_gap_mm`=1.0
 - **拓扑**：环形（§10.3 C1，2026-09-16 自由空间改造）：z=0 方环（中心线边 a、带宽 w，顶/左/右全跨含角）+ 底边中央断口 g（馈口位）LumpedPort 跨断口（E 沿 x，dipole 中央馈口同型）；无基板无地：底 MUR + 域 z 向下延 λ0/4（dipole 同款）
-- **冒烟注记**：真机 v1 runs/antenna2_smoke/loop（2026-09-14，旧贴地口径 λg/4=18.5515、z=h 贴 PEC 地）FAIL：S11 −0.19dB；Zin 电抗过零 2.3825GHz（−0.7%，谐振长度口径正确）但 R=0.56Ω。归因（像理论，v2 实证）：水平环贴 PEC 地 0.508mm（0.004λ0），镜像反向电流抵消辐射 → R_rad→0。改造（2026-09-16）：自由空间口径（无板无地、底 MUR、域下延 λ0/4、环面 z=0、a=λ0/4=31.2284），判据改电抗过零 f0±12% + 过零处 R≥20Ω（S11 −5dB 次级；一周长环馈阻抗文献 ≈100-200Ω 对 50Ω 固有失配，谷深非谐振判据）。v2 真机 runs/antenna2_smoke/loop_v2（2026-09-16，solve 352s）PASS：Zin 电抗过零 2.6774GHz（+11.6%，端效应窗内）R=112.02Ω（v1 0.56Ω → 112Ω，镜像抵消归因实证；落在文献 100-200Ω 带内），S11 −8.67dB@2.64GHz（次级 −5dB 门过）；判读窗 2.0-2.8GHz 321/321 点全保留（Σ\|S\|² 全带 ≤0.94，无带边伪象）；谐振位 +11.6% 为细带/断口馈电端效应，设计式不预补偿（#190）
+- **冒烟注记**：真机 v1 内部证据档（2026-09-14，旧贴地口径 λg/4=18.5515、z=h 贴 PEC 地）FAIL：S11 −0.19dB；Zin 电抗过零 2.3825GHz（−0.7%，谐振长度口径正确）但 R=0.56Ω。归因（像理论，v2 实证）：水平环贴 PEC 地 0.508mm（0.004λ0），镜像反向电流抵消辐射 → R_rad→0。改造（2026-09-16）：自由空间口径（无板无地、底 MUR、域下延 λ0/4、环面 z=0、a=λ0/4=31.2284），判据改电抗过零 f0±12% + 过零处 R≥20Ω（S11 −5dB 次级；一周长环馈阻抗文献 ≈100-200Ω 对 50Ω 固有失配，谷深非谐振判据）。v2 真机 内部证据档（2026-09-16，solve 352s）PASS：Zin 电抗过零 2.6774GHz（+11.6%，端效应窗内）R=112.02Ω（v1 0.56Ω → 112Ω，镜像抵消归因实证；落在文献 100-200Ω 带内），S11 −8.67dB@2.64GHz（次级 −5dB 门过）；判读窗 2.0-2.8GHz 321/321 点全保留（Σ\|S\|² 全带 ≤0.94，无带边伪象）；谐振位 +11.6% 为细带/断口馈电端效应，设计式不预补偿（#190）
 
 ## marchand_balun
 
@@ -347,7 +347,7 @@
 - **参数**：`n_elem`、`elem_len_mm`、`elem_w_mm`、`link_len_mm`、`feed_w_mm`、`feed_margin_mm`、`h_mm`
 - **名义参数**：`n_elem`=4，`elem_len_mm`=0.9271，`elem_w_mm`=1.3589，`link_len_mm`=1.7482，`feed_w_mm`=0.3259，`feed_margin_mm`=3.0，`load_r_ohm`=50.0，`h_mm`=0.127，`er`=3.0，`tan_d`=0.001
 - **拓扑**：1×N 串馈毫米波阵（§18.3d C10d）：N 元共线沿 y（x=0 居中，L 沿 y/W 沿 x）， 相邻元以互联线接辐射边中心（互联长 s=自由设计参数，行波渐进相位 βg·s）； MSLPort 自 y=−DOM 入、自画馈段至链首元（feed_margin）；链末 stub+匹配集总 负载到地（R=线 Z0 一阶）——行波阵口径，与 C2 patch_array_series（λg/2 谐振式、链末开路）分族；基板 + z-min PEC 地，y 轴 PML_8
-- **冒烟注记**：未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面= 预算预声明 runs/df7_c10d/criteria.md §d（0.1mm 格 ~3.6e7 cells、 dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准）， 本批零发射
+- **冒烟注记**：未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面= 预算预声明 内部证据档 §d（0.1mm 格 ~3.6e7 cells、 dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准）， 本批零发射
 - **网格注记**：辐射器件：上方空气隙 λ0/4+、侧向至域界（MUR）；贴片/互联/stub/负载盒缘 精确入网（#198）；渲染守卫：NEAR≤feed_w/3（#266 族，线宽分辨）、 \|MeasPlaneShift−FeedShift\|≥3.9·NEAR（#347）；全轴 1µm 近重合去重（#152）； 端口面贴 PML_8 域边（#154 前节）
 
 ## monopole
@@ -357,26 +357,26 @@
 - **参数**：`mon_len_mm`、`mon_w_mm`、`feed_gap_mm`
 - **名义参数**：`mon_len_mm`=31.2284，`mon_w_mm`=1.0，`feed_gap_mm`=2.0
 - **拓扑**：单极子（§10.3 C1 天线族 II）：竖直零厚细带（x 向宽 mon_w，y=0 面）自馈口顶 z=feed_gap 起立 λ0/4；馈口=地面 z=0 → 细带底缘 LumpedPort（patch 底馈探针同型）；无介质板（像理论口径）
-- **冒烟注记**：真机 runs/antenna2_smoke/monopole（2026-09-14）PASS：S11 −17.39dB @2.135GHz（设计 2.4，−11.0% 端效应）；Zin 电抗过零 2.110GHz R=37.3Ω（Balanis 36.5Ω 口径吻合）
+- **冒烟注记**：真机 内部证据档（2026-09-14）PASS：S11 −17.39dB @2.135GHz（设计 2.4，−11.0% 端效应）；Zin 电抗过零 2.110GHz R=37.3Ω（Balanis 36.5Ω 口径吻合）
 
 ## ms_array_NxN
 
-- **抽取判据**：无端口（软平面照明散射体）：产物=farfield_cut.csv/farfield3d.csv/ farfield_meta.json/array_meta.json；J2 峰值方向 vs 闭式 φ_mn 指向 ≤3° （真机轨，runs/df6_dp10ms/criteria.md §3）；farfield=总出射场 （镜面反射+赋形波束，判读面在 J2 分解）
+- **抽取判据**：无端口（软平面照明散射体）：产物=farfield_cut.csv/farfield3d.csv/ farfield_meta.json/array_meta.json；J2 峰值方向 vs 闭式 φ_mn 指向 ≤3° （真机轨，内部证据档 §3）；farfield=总出射场 （镜面反射+赋形波束，判读面在 J2 分解）
 - **基板**：er=3.66，h_mm=1.524
 - **参数**：`n_x`、`n_y`、`period_mm`、`cell_map`、`h_mm`
 - **名义参数**：`n_x`=3，`n_y`=3，`period_mm`=14.9896，`cell_map`=[[{'cell_id': 'ms_patch', 'px_mm': 6.0, 'py_mm': 6.0}, {'cell_id': 'ms_patch', 'px_mm': 7.5, 'py_mm': 7.5}, {'cell_id': 'ms_patch', 'px_mm': 9.0, 'py_mm': 9.0}], [{'cell_id': 'ms_patch', 'px_mm': 7.5, 'py_mm': 7.5}, {'cell_id': 'ms_patch', 'px_mm': 9.0, 'py_mm': 9.0}, {'cell_id': 'ms_patch', 'px_mm': 6.0, 'py_mm': 6.0}], [{'cell_id': 'ms_patch', 'px_mm': 9.0, 'py_mm': 9.0}, {'cell_id': 'ms_patch', 'px_mm': 6.0, 'py_mm': 6.0}, {'cell_id': 'ms_patch', 'px_mm': 7.5, 'py_mm': 7.5}]]，`h_mm`=1.524，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：有限 N×N 反射阵（ms_patch 单元平铺）：接地基板（z 底 PEC 边界，地连续 由边界构造性保证）+ cell_map 逐单元贴片表；上方 λ0/4 空气隙软激励平面 照明（exc_type=0 全口径，官方 PPW 教程口径，法向入射 E∥x 极化前提）； 侧向 MUR（有限口径，无 PEC/PMC 对壁——那是单胞无限阵技巧）
 - **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞 （#246/#261）；J2 真机轨另派
-- **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 runs/df6_dp10ms/handoff.md
+- **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 内部证据档
 
 ## ms_cross
 
-- **抽取判据**：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=\|S11\|²+\|S21\|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（runs/ge5_msjcross/audit.md §E）
+- **抽取判据**：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=\|S11\|²+\|S21\|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（内部证据档 §E）
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`arm_len_mm`、`arm_w_mm`、`period_mm`、`h_mm`
 - **名义参数**：`arm_len_mm`=4.91，`arm_w_mm`=0.982，`period_mm`=11.9917，`h_mm`=0.508，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：FSS 带阻十字偶极子单元：基板顶零厚正交双十字臂（x 臂=受激臂，y 臂= 正交极化对偶臂；金属偶极子 E∥臂耦合，无需槽缝族的方向旋转）；单胞 PEC/PMC 对壁域（x 对壁 PEC / y 对壁 PMC，TEM 平面波）；屏两侧 λ0/4 空气区各置双 E 探针对（自由悬浮无源）+ z 底 MUR 上方 soft plane 激励面
-- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证 （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）判据 runs/ge5_msfam/criteria.md §2
+- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证 （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）判据 内部证据档 §2
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；臂缘精确入网 +邻臂尖缝 3+ 中点入网（#311）；NEAR≤邻臂尖缝/3 渲染期守卫（#266）； 全轴最小网格间距 ≥10µm
 
 ## ms_jcross
@@ -401,22 +401,22 @@
 
 ## ms_patch
 
-- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提； \|S11\|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）； 健康判据=\|Γ\| 线性域 ≈1（空波导标定 EN=\|Γ\|²≈1.0 平坦）。无耗接地结构幅度 读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像， runs/ge5_msjcross/audit.md §D/E）
+- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提； \|S11\|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）； 健康判据=\|Γ\| 线性域 ≈1（空波导标定 EN=\|Γ\|²≈1.0 平坦）。无耗接地结构幅度 读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像， 内部证据档 §D/E）
 - **基板**：er=3.66，h_mm=1.524
 - **参数**：`px_mm`、`py_mm`、`period_mm`、`h_mm`
 - **名义参数**：`px_mm`=8.5406，`py_mm`=8.5406，`period_mm`=14.9896，`h_mm`=1.524，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波，官方 Parallel Plate Waveguide 教程 口径）；贴片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 soft plane 激励面，域内零电阻片
-- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役 （粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；读出修复后重扫 见 runs/ge5_j2fb/（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与 J4 HFSS Floquet 锚属真机轨
+- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役 （粗 21+细 41 点）发射面见 内部证据档；读出修复后重扫 见 内部证据档（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与 J4 HFSS Floquet 锚属真机轨
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘精确入网 +胞缘缝 3+ 中点入网（#311）；NEAR≤最小胞缘缝/3 渲染期守卫（#266）； 全轴最小网格间距 ≥10µm
 
 ## ms_ring_patch
 
-- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读出，空波导标定 EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/stage2/wg_sim/smoke_report.json）。 波导模拟器≡无限阵@θ=0，E∥x 极化前提；\|S11\|≈1 的 argΓ 逐 patch_px 入反射 相位 LUT；健康判据=\|Γ\| 线性域 ≈1
+- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读出，空波导标定 EN≈1.0+闭式相位 0.19° 实证 内部证据档）。 波导模拟器≡无限阵@θ=0，E∥x 极化前提；\|S11\|≈1 的 argΓ 逐 patch_px 入反射 相位 LUT；健康判据=\|Γ\| 线性域 ≈1
 - **基板**：er=3.66，h_mm=1.524
 - **参数**：`patch_px_mm`、`period_mm`、`h_mm`
 - **名义参数**：`patch_px_mm`=8.5406，`period_mm`=14.9896，`h_mm`=1.524，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：双谐振反射阵单元：接地基板（z 底 PEC 边界）+ 零厚方环（外边 ring_outer=void+2·ring_w，内空腔 void=0.4λ0，环宽 λg/40）+ 环心方贴片 （边长=LUT 扫描变量）；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波）； 贴片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 soft plane 激励面，域内零电阻片
-- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；段④ J1c 扫描（粗 21 点档 +圆周覆盖门 ≥300°）发射面=runs/ge5_j2fb/stage2/campaign_j2fb.py --template ms_ring_patch
+- **冒烟注记**：离线审计先行（#212，test_metasurface_templates）；段④ J1c 扫描（粗 21 点档 +圆周覆盖门 ≥300°）发射面=内部证据档 --template ms_ring_patch
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘/环内外缘 精确入网+环-贴片缝与环-胞缝 3+ 中点入网（#311）；NEAR≤最小缝/3 渲染期 守卫（#266）；全轴最小网格间距 ≥10µm
 
 ## msl_cpw
@@ -429,12 +429,12 @@
 
 ## msl_siw_taper
 
-- **抽取判据**：S11/S21 @ MSLPort 1-2（线基：CalcPort ref=50 主口径；port_beta.csv 落双端口 β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判 =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟， 预声明 runs/df6_a2siwmsl/criteria.md §4）
+- **抽取判据**：S11/S21 @ MSLPort 1-2（线基：CalcPort ref=50 主口径；port_beta.csv 落双端口 β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判 =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟， 预声明 内部证据档 §4）
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`w_mm`、`d_mm`、`s_mm`、`taper_len_mm`、`siw_len_mm`
 - **名义参数**：`w_mm`=12.1317，`d_mm`=0.6，`s_mm`=1.0，`taper_len_mm`=10.5121，`siw_len_mm`=63.0724，`h_mm`=0.508，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 → 线性锥（w50→ w_end=Z_PV 微带当宽的阻抗变换器+锥末-SIW 台阶不连续）→ SIW 直段（顶壁显式板 +两列过孔藩篱止于板缘=siw v2 口径+底壁板）；基板填满矩形域，z=0 PEC 底界， 顶界 MUR（MSL 区微带环境）；端口=双 MSLPort（面贴域界 PML_8、端口段=均匀 50Ω 线）
-- **冒烟注记**：离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动 scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空 +.oe_collect.lock 空，见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见 runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进 锥末宽度设计式（如实收档，v2 历史档不删）
+- **冒烟注记**：离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动 scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空 +.oe_collect.lock 空，见 内部证据档）；预声明门与预算见 内部证据档 §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进 锥末宽度设计式（如实收档，v2 历史档不删）
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4； 过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线（#311）、显式近场线 10µm 地板（#349）、 锥缘/板缘/端口边落格断言（#283）、FeedShift/MeasPlaneShift 间距 ≥3.9·NEAR （#347）；基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
 
 ## msl_slot_transition
@@ -497,22 +497,22 @@
 
 ## patch_eep_1x4
 
-- **抽取判据**：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 runs/df6_dp4p3/criteria.md
+- **抽取判据**：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 内部证据档
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`elem_len_mm`、`elem_w_mm`、`elem_feed_mm`、`spacing_x_mm`、`feed_w_mm`
 - **名义参数**：`elem_len_mm`=12.9058，`elem_w_mm`=16.9311，`elem_feed_mm`=3.8717，`spacing_x_mm`=25.0172，`feed_w_mm`=1.112
 - **拓扑**：1×4 EEP 贴片阵（§DP-4 P3）：4 元沿 x 等距 spacing（行中心 y=20mm），缺口全开 −y；每元独立 LumpedPort 底探针（端口 1..4 =x 升序），无 corporate 馈树，元间 DC 隔离=EEP 定义性质；基板 + z-min PEC 地
-- **冒烟注记**：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 runs/df6_dp4p3/criteria.md（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 runs/df6_dp4p3/handoff.md；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
+- **冒烟注记**：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 内部证据档（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 内部证据档；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
 - **网格注记**：辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/探针）精确入网（#198）
 
 ## patch_eep_2x2
 
-- **抽取判据**：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 runs/df6_dp4p3/criteria.md
+- **抽取判据**：整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档判据 J4 见 内部证据档
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`elem_len_mm`、`elem_w_mm`、`elem_feed_mm`、`spacing_x_mm`、`spacing_y_mm`、`feed_w_mm`
 - **名义参数**：`elem_len_mm`=12.9058，`elem_w_mm`=16.9311，`elem_feed_mm`=3.8717，`spacing_x_mm`=25.0172，`spacing_y_mm`=25.0172，`feed_w_mm`=1.112
 - **拓扑**：2×2 EEP 贴片阵（§DP-4 P3）：栅格中心 (0,20mm)，元列 x=±dx/2、元排 y=20∓dy/2，四元同向（缺口全开 −y）；每元独立 LumpedPort 底探针（端口 1..4=行主序 x 外层 y 内层），无 corporate 馈树，元间 DC 隔离=EEP 定义性质；基板 + z-min PEC 地
-- **冒烟注记**：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 runs/df6_dp4p3/criteria.md（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 runs/df6_dp4p3/handoff.md；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
+- **冒烟注记**：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 内部证据档（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 内部证据档；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
 - **网格注记**：辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/探针）精确入网（#198）
 
 ## pifa
@@ -522,7 +522,7 @@
 - **参数**：`pifa_l_mm`、`pifa_w_mm`、`pifa_ws_mm`、`pin_back_mm`、`pin_y_mm`
 - **名义参数**：`pifa_l_mm`=17.0785，`pifa_w_mm`=8.0，`pifa_ws_mm`=2.0，`pin_back_mm`=2.0，`pin_y_mm`=2.0
 - **拓扑**：PIFA（§10.3 C1）：贴片 z=h（L×W）+ +x 边短路板（宽 Ws，z 0→h 触地）+ 馈针（距短路板 pin_back，y 偏 pin_y，针顶触贴片、针底触地）；LumpedPort 沿针 z 向；基板 + z-min PEC 无限大地
-- **冒烟注记**：真机 runs/antenna2_smoke/pifa（2026-09-14，旧通式标称 L=11.0785）FAIL：\|S11\|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，runs/antenna2_smoke/pifa_override）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）
+- **冒烟注记**：真机 内部证据档（2026-09-14，旧通式标称 L=11.0785）FAIL：\|S11\|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，内部证据档）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）
 
 ## pyramid_horn
 
@@ -602,12 +602,12 @@
 
 ## siw
 
-- **抽取判据**：LumpedPort z 桥×2（R=闭式 Z_PV=2b·Z_TE/w_eff，CalcPort 同参考）： 原始 S=带载比值（#250 口径，slotline_lumped 同）；β/εeff 主判=S21 解缠 相位斜率÷port_beta.csv 实测 plane_dist（cps 同契约，LumpedPort 无 β 属性）；fc10 由带内 φ(f)=−β(f；fc)·L+φ0 单参数拟合（OE 锚 G1，预声明 runs/siw_family/criteria.md §6）
+- **抽取判据**：LumpedPort z 桥×2（R=闭式 Z_PV=2b·Z_TE/w_eff，CalcPort 同参考）： 原始 S=带载比值（#250 口径，slotline_lumped 同）；β/εeff 主判=S21 解缠 相位斜率÷port_beta.csv 实测 plane_dist（cps 同契约，LumpedPort 无 β 属性）；fc10 由带内 φ(f)=−β(f；fc)·L+φ0 单参数拟合（OE 锚 G1，预声明 内部证据档 §6）
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`w_mm`、`d_mm`、`s_mm`、`line_len_mm`
 - **名义参数**：`w_mm`=12.1317，`d_mm`=0.6，`s_mm`=1.0，`line_len_mm`=63.0724，`h_mm`=0.508，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：直 SIW 传输线段：基板 z∈[0,h] 上下显式零厚金属板（贴 z 边界 PEC）+ 两列 金属化过孔 PEC 圆柱（x=±w/2、心距 s、全域精确栅格、藩篱直入 PML=匹配 端接）；端口=两端 LumpedPort z 桥（中线、跨全高、盒边入网、16·BASE 出 PML_8）；域 x 半宽=w/2+w_eff/2（侧界 MUR 吸收泄漏）、y 半宽=line_len/2+ 16·BASE（PML_8）——矩形域，BOARD=60e-3 不适用（机制层 DOM_X/DOM_Y 字面注入）
-- **冒烟注记**：离线审计先行（#212，test_siw_template）；真机锚已落判（df4f：G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，runs/siw_family/，驱动 scripts/siw_anchor_smoke.py）；预声明门与预算见 runs/siw_family/criteria.md §6
+- **冒烟注记**：离线审计先行（#212，test_siw_template）；真机锚已落判（df4f：G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，内部证据档，驱动 scripts/siw_anchor_smoke.py）；预声明门与预算见 内部证据档 §6
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4 （SmoothMesh 全轴均匀化实测）；过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线 （#311 类比）、显式近场线 10µm 地板（#349）、端口盒 ≥2 格且中线落格 （#283，生成期断言）、基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
 
 ## slot
@@ -617,7 +617,7 @@
 - **参数**：`slot_l_mm`、`slot_w_mm`、`feed_w_mm`、`feed_margin_mm`
 - **名义参数**：`slot_l_mm`=40.9168，`slot_w_mm`=2.0，`feed_w_mm`=1.1134，`feed_margin_mm`=12.0
 - **拓扑**：缝隙（§10.3 C1）：z=0 有限金属地（4 盒拼合、槽 L×Ws 留空）+ z=h 50Ω 微带馈线 y 向垂直跨槽居中 + 双 MSLPort 板边端接（y=∓BOARD，单轴 PML）；底 MUR + z 向下延 λ0/4（槽向下半空间也辐射，PEC 底会短路槽）
-- **冒烟注记**：真机 runs/antenna2_smoke/slot 与 slot_override（2026-09-14）PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168，+11.0%，隐含 εeff 1.84）/ −21.76dB @2.6275GHz（L=46.036，隐含 εeff 1.54）；k_slot∈[0.66,0.79]·(1+εr)/2 待 HFSS 仲裁后才进设计式（#190）。Σ\|S\|² 带边 >1 已排查（2026-09-16，slot/sparams.csv 实测）：1.9GHz=1.212、2.9GHz=1.128，>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗（2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励 −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），归一化伪象而非 MSLPort/有限地物理错；判读口径=窗收内带 f0±0.4GHz（激励带内 80%）+ Σ\|S\|²>1.02 点剔除（scripts/smoke_antenna2_anchor.py 全模板通用；掩模后 307/321 点，凹位/深度不变），全局 FC 不动（f_max 进网格预算，改激励带会漂全部模板网格锚）
+- **冒烟注记**：真机 内部证据档 与 slot_override（2026-09-14）PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168，+11.0%，隐含 εeff 1.84）/ −21.76dB @2.6275GHz（L=46.036，隐含 εeff 1.54）；k_slot∈[0.66,0.79]·(1+εr)/2 待 HFSS 仲裁后才进设计式（#190）。Σ\|S\|² 带边 >1 已排查（2026-09-16，slot/sparams.csv 实测）：1.9GHz=1.212、2.9GHz=1.128，>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗（2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励 −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），归一化伪象而非 MSLPort/有限地物理错；判读口径=窗收内带 f0±0.4GHz（激励带内 80%）+ Σ\|S\|²>1.02 点剔除（scripts/smoke_antenna2_anchor.py 全模板通用；掩模后 307/321 点，凹位/深度不变），全局 FC 不动（f_max 进网格预算，改激励带会漂全部模板网格锚）
 
 ## slotline
 
@@ -682,7 +682,7 @@
 - **参数**：`order`、`w_mm`、`arm_len_mm`、`arm_gap_mm`、`gap_mm`、`tap_frac`、`cj0_pf`、`phi_v`、`bias_v`
 - **名义参数**：`order`=3，`w_mm`=1.1117，`arm_len_mm`=31.6675，`arm_gap_mm`=3.0，`gap_mm`=1.1328，`tap_frac`=0.330119，`cj0_pf`=1.0，`phi_v`=0.9，`bias_v`=3.6342
 - **拓扑**：变容管调谐发夹线带通（M-5 首个半有源模板，hairpin 族增量）：N 个 λg/2 级 U 形谐振器沿 x 并排、相邻外臂平行耦合（缝 gap_mm），每 U 左臂开路端对地并联一只 lumped C(V)（CSXCAD LumpedElement，ny=2 全隙盒）；输入/输出 50Ω 抽头馈线（T 形，板边 x=∓BOARD；单轴 x PML）
-- **冒烟注记**：真机三档偏压冒烟（V=0.5/3.6342/10.0，各档 C 为常数）未发射——本件只备妥发射面与离线审计（M-5 判据「openEMS 名义点 3 档偏压冒烟」归真机批）；离线几何审计（#212 制度化）见 tests/unit/test_varactor_bpf_template.py。2026-09-29 更新：三档冒烟已跑全 FAIL（触帽+慢振铃），规则 1b 模型审计定案 P0=抽头 τ 沿用无载廓线闭式（loaded 节点恰扫过旧设计值 0.401892）外耦失配 3-1139×——本批 P0（loaded 廓线 τ 自 C 端计，名义 0.330119）+P2（C_literal=C(V)−C_geo）修复后真机复验待 oe-queue 排期，详见 runs/varactor_smoke/model_audit_verdict.md
+- **冒烟注记**：真机三档偏压冒烟（V=0.5/3.6342/10.0，各档 C 为常数）未发射——本件只备妥发射面与离线审计（M-5 判据「openEMS 名义点 3 档偏压冒烟」归真机批）；离线几何审计（#212 制度化）见 tests/unit/test_varactor_bpf_template.py。2026-09-29 更新：三档冒烟已跑全 FAIL（触帽+慢振铃），规则 1b 模型审计定案 P0=抽头 τ 沿用无载廓线闭式（loaded 节点恰扫过旧设计值 0.401892）外耦失配 3-1139×——本批 P0（loaded 廓线 τ 自 C 端计，名义 0.330119）+P2（C_literal=C(V)−C_geo）修复后真机复验待 oe-queue 排期，详见 内部证据档
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部臂缘/弯带缘/抽头缘+变容管盒外 y 缘精确入网（#198）
 
 ## via

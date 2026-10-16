@@ -309,7 +309,7 @@ def _atten_d_guard(d_mm: float) -> float:
 
     E4 闭式裁判假设集总 π/T（元件电共位，D=0）；渲染拓扑里 shunt/串臂
     隔开线段 D 后即成**分布式衰减器**，带内失配随 D 线性增大（θ=β·D）。
-    W7-A 残座批"寄生"定谳复判（runs/atten 模型级 A/B 诊断，2026-10-08）：
+    W7-A 残座批"寄生"定谳复判（内部证据档 模型级 A/B 诊断，2026-10-08）：
     D=6mm 名义座 |S11|max=0.272 与"理想分布 π"级联预测 0.226 同源同号
     （D=3/12mm 的 EM 0.153/0.526 对级联 0.105/0.499 同线）——mount 级
     单变量（εr 保持/窄盒/caps=False）全数 Δ<0.002，非集总盒缺陷。
@@ -661,7 +661,7 @@ def _patch_lines(p: dict[str, Any]) -> str:
     #   (0,-feed_offset) 谐振轴、综合 off=(L/π)·arcsin√(Rin_t/Rin_edge)
     #   四面同基——原"fake/HFSS 自边 cos²"异语义分裂已收口）。
     # 旧边缘微带馈（MSLPort）两处结构性错误（冒烟证据
-    # runs/audit_freq_scale/smoke_patch_auto/ 谷位 3.08GHz、s11@2.4=+0.4dB
+    # 内部证据档 谷位 3.08GHz、s11@2.4=+0.4dB
     # 非物理）：①辐射器件 AIR_SIDE 把域扩到 ±(BOARD+λ0/4)，而端口面仍贴
     # ±BOARD——馈线止于域中，违反"端口面贴 PML 边界"铁律，入射/反射分解
     # 失效；②馈点 x=0 是 patch_len 谐振模的场节点，谐振根本激励不起来。

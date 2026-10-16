@@ -57,7 +57,7 @@ sinc 闭式与 βL→0 阶跃极限；线性剖面 Ei 闭式与三角剖面 sinc
 一小反射积分的代换/三角核积分手续（Collin《Foundations for Microwave
 Engineering》2nd ed. 渐变线节同式；三角核 FT=卷积矩形核 sinc² 恒等式为
 本仓推导，实现前独立复算：闭式 vs 剖面核 Simpson 积分 ≤1.3e-16、首零
-βL=2π 精确、F(½)=½ 几何中点，轨迹 runs/aurora_d/_core7_verify_derivation.py；
+βL=2π 精确、F(½)=½ 几何中点，独立验证轨迹（内部档）；
 锚树 tests/unit/test_aurora_d_core7.py 第二路线）；两路互证锚与包络恒等式
 为测试侧独立重解）。
 

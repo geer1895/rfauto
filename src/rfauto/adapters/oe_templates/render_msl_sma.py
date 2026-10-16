@@ -25,7 +25,7 @@ from .registry import TEMPLATE_META, TEMPLATE_NOMINAL
 # 锚判据口径（Tier 2 无谐振，wstep/via 族同型）：
 # - msl_cpw：双端口 β 金标准（port1→HJ εeff、port2→CPWG 共形映射闭式）+
 #   skrf 两段理想 TL 级联裁判（渐变/地缘/过孔栅栏寄生=引擎-理想偏差）。
-#   真机 PASS 留档 runs/wp25_tier2_smoke/pt1_msl_cpw3（|S11|@2.5G −20.0dB、
+#   真机 PASS 留档 内部证据档（|S11|@2.5G −20.0dB、
 #   β +0.37%/−1.04%，1076s@0.4mm）——几何冻结勿动。
 # - sma_launcher：port2 β→HJ（port1 集总桥无 β 属性）；|S11| 文献曲线门
 #   （edge-launch SMA 带内回损常规 15-20dB、保守地板 -10dB，方案行口径
@@ -193,7 +193,7 @@ for _prim in mslcpw_via.GetAllPrimitives():
 def _sma_launcher_lines(p: dict[str, Any]) -> str:
     # SMA 边缘弹射（WP2.5 Tier 2，2026-09-16 根治重构，edge-launch 夹具口径）：
     # 真机 FAIL 根因（scripts/diag_sma_launcher.py 精确接触图实证，legacy 留档
-    # runs/wp25_tier2_smoke/pt3_sma_launcher_diag/legacy_contacts.json）：
+    # 内部证据档）：
     #   H2 引脚柱盒与壳底壁实交叠——信号链对接地壳短路（|S21|≈−375dB）；
     #   H1 地侧针与壳/墙/底板零接触——串馈集总口基准端悬空；
     #   H4 port1 距 y-min 边界 0.5mm 整体落在 PML_8 内；H5 壳顶距域顶 0.25mm。

@@ -15,10 +15,10 @@
   （#274：非适用族 gate 如实不判——现役仅 patch 效率窗，常量 live import
   ui_service.PATCH_ETA_GATE 防数字腐化）。
 
-B3-2 两增量节（数据源挂接设计定稿见
-runs/qw5_b32_capability_cards/design_note.md）：
-- 敏感性排序（R9 先承诺）：统一消费源 resolve_sensitivity（W8 桥接，
-  review_ge8e F1 处置②收口）——三态优先级：①计算数据面
+B3-2 两增量节（数据源挂接契约见
+`knowledge/sensitivity_rankings.yaml` 头注）：
+- 敏感性排序（R9 先承诺）：统一消费源 resolve_sensitivity（W8 桥接）
+  ——三态优先级：①计算数据面
   knowledge/sensitivity_rankings.yaml（幅值分数，数据落档批创建；有则
   provenance=computed+数据指针）→ ②meta.yaml teaching 兜底
   teaching.sensitivity_ranking（EP-5 口径：order 名次 + basis 依据，
@@ -58,10 +58,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT_DIR = REPO_ROOT / "docs" / "capability_cards"
 META_ROOT = REPO_ROOT / "docs" / "templates"
 PLAYBOOK_PATH = REPO_ROOT / "knowledge" / "diagnostics" / "playbook.yaml"
-# B3-2 敏感性排序节设计源（契约见 runs/qw5_b32_capability_cards/
-# design_note.md；文件由数据落档批创建——缺省缺失时如实回退，不硬凑）
+# B3-2 敏感性排序节挂接契约（缺省缺失时如实回退，不硬凑）
 SENSITIVITY_PATH = REPO_ROOT / "knowledge" / "sensitivity_rankings.yaml"
-SENSITIVITY_DESIGN_NOTE_REL = "runs/qw5_b32_capability_cards/design_note.md"
 # W8 桥接：统一消费源的数据指针（卡面 provenance 注记用仓库相对路径）
 SENSITIVITY_REGISTRY_REL = "knowledge/sensitivity_rankings.yaml"
 
@@ -153,7 +151,7 @@ def match_anchor_ids(template: str, anchor_records: list[Any]) -> list[str]:
 
 
 def pick_precision_anchor(record: Any) -> dict[str, Any]:
-    """仲裁锚 → 精度卡字段（逐键挑取零计算；长文 semantics/devlog 不上卡）。"""
+    """仲裁锚 → 精度卡字段（逐键挑取零计算；长文 semantics 不上卡）。"""
     provenance = getattr(record, "provenance", None) or {}
     quantity = getattr(record, "quantity", None) or {}
     axis = getattr(record, "axis", None) or {}
@@ -179,7 +177,6 @@ def pick_precision_anchor(record: Any) -> dict[str, Any]:
         "axis_param": axis.get("param"),
         "uncertainty": getattr(record, "uncertainty", None),
         "verdict_state": provenance.get("verdict_state"),
-        "arbitration_runs": provenance.get("arbitration_runs"),
     }
 
 
@@ -187,9 +184,8 @@ def load_sensitivity_rankings(
         path: str | Path | None = None) -> dict[str, dict[str, Any]]:
     """读敏感性排序登记表（B3-2 设计源；缺文件/坏结构 → 空映射如实）。
 
-    契约（runs/qw5_b32_capability_cards/design_note.md）：schema
-    sensitivity_rankings/v1，templates.<名>.ranking=[{param, score}]；
-    运行时只读、写入只经人工 commit（anchors.yaml 家法）。
+    契约：schema sensitivity_rankings/v1，templates.<名>.ranking=
+    [{param, score}]；运行时只读、写入只经人工 commit（anchors.yaml 家法）。
     """
     p = Path(path) if path else SENSITIVITY_PATH
     if not p.is_file():
@@ -597,10 +593,10 @@ def _render_sensitivity_lines(card: dict[str, Any]) -> list[str]:
         lines.append("- 排序=R9 commitment_order（optimization/eipu；"
                      "高敏感先钉死，平局按参数名升序）")
     else:
-        lines.append(f"-（暂无已落档敏感度排序——挂接契约："
-                     f"`knowledge/sensitivity_rankings.yaml`，设计见 "
-                     f"`{SENSITIVITY_DESIGN_NOTE_REL}`；数据落档后重跑"
-                     f"导出器自动上卡，不硬凑）")
+        lines.append("-（暂无已落档敏感度排序——挂接契约："
+                     "`knowledge/sensitivity_rankings.yaml`（头注=挂接"
+                     "契约口径）；数据落档后重跑"
+                     "导出器自动上卡，不硬凑）")
     lines.append("")
     return lines
 
@@ -622,9 +618,6 @@ def _render_precision_lines(card: dict[str, Any]) -> list[str]:
                 parts.append(unc)
             if a.get("verdict_state") is not None:
                 parts.append(f"verdict {_fmt(a['verdict_state'])}")
-            runs = a.get("arbitration_runs")
-            if isinstance(runs, list) and runs:
-                parts.append(f"证据：{'、'.join(str(r) for r in runs)}")
             lines.append(f"- {parts[0]}：{parts[1]}"
                          + ("".join(f"；{p}" for p in parts[2:])))
     else:

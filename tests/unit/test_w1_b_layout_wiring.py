@@ -526,8 +526,13 @@ class TestStencil:
 
 
 class TestStep:
-    def test_missing_board_failure_envelope(self, tmp_path):
-        """板缺失在子进程发射前拦截（hermetic，不依赖 KiCad 是否在装）。"""
+    def test_missing_board_failure_envelope(self, tmp_path, monkeypatch):
+        """板缺失在子进程发射前拦截（hermetic——CLI 探测钉桩，不依赖
+        KiCad 是否在装；service 语义=CLI 缺席时 skipped 信封优先于板检查）。"""
+        import rfauto.service.layout_step_service as svc
+
+        monkeypatch.setattr(svc, "resolve_kicad_cli",
+                            lambda *a, **k: "kicad-cli-stub")
         result, payload = _invoke_json([
             "layout", "step", str(tmp_path / "nope.kicad_pcb"), "--json"])
         assert result.exit_code == 1

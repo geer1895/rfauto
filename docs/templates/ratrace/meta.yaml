@@ -27,7 +27,7 @@ engine_constants:
     valid_domain_mm: [0.2, 0.4]
     out_of_domain: "夹到最近锚并在渲染脚本写'未定标档 clamp'注释行（默认自动档 BASE=λ_sub/50=1.1405mm → k(0.4)=1.1654），禁止外推"
     source: "src/rfauto/adapters/openems_templates.py ratrace_ring_mesh_k / ratrace_ring_mesh_k_clamped"
-    calibration: "2026-09-12 两点一阶标度 k_needed=k_cur×F0/f_center_avg（runs/ratrace_arbitration/openems_convergence.json）；2026-09-16 真机回验两锚闭合：0.4mm balance 中心 2.5013GHz（k_eff 1.1631，锚差 −0.2%）、0.2mm 2.525GHz（k_eff 1.0915，锚差 +0.35%），门全过（runs/ratrace_arbitration/k_finalize/、rf_template_references.md §9.1）"
+    calibration: "2026-09-12 两点一阶标度 k_needed=k_cur×F0/f_center_avg（内部证据档）；2026-09-16 真机回验两锚闭合：0.4mm balance 中心 2.5013GHz（k_eff 1.1631，锚差 −0.2%）、0.2mm 2.525GHz（k_eff 1.0915，锚差 +0.35%），门全过（内部证据档、rf_template_references.md §9.1）"
     archived_pt8_k: "1.0975（0.4mm 档历史定标 _RATRACE_RING_MESH_K，仅存证不再消费）"
   preferred_root_fix: "柱坐标渲染 render_ratrace_cylindrical：无阶梯化 k=1（#219/#232，0.4mm 2.470GHz / 0.2mm 2.4875GHz 对 HFSS 2.465GHz）"
   cap_row_criterion: "保留原判据（|行中心|>R_OUT 跳行，仲裁决议）；k(0.4) 下 0.4mm 档候选判据为无操作（顶行上缘 15.2921>R_OUT 15.1842，覆盖 100%），默认自动档每侧 1 行 cap sliver 0.0651mm=0.057·BASE（覆盖 98.84%）"

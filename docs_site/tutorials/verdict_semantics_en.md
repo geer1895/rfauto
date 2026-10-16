@@ -131,7 +131,7 @@ command (four criterion classes: progress / truncation suspicion / NrTS
 ceiling / energy stagnation):
 
 ```bash
-rfauto runs monitor runs/aurora_c_oe --cycle
+rfauto runs monitor runs/demo_oe_campaign --cycle
 ```
 
 Measured output (excerpt):
@@ -146,7 +146,7 @@ Measured output (excerpt):
 For the one entry on the yellow list, query it alone:
 
 ```bash
-rfauto runs monitor runs/aurora_c_oe/pifa
+rfauto runs monitor runs/demo_oe_campaign/pifa
 ```
 
 ```
@@ -189,7 +189,7 @@ override > template registry > generic default; a registered None = this
 family explicitly has no gate (honestly UNKNOWN; the generic default is not
 forced onto it).)
 
-A real arbitration case (`runs/edblane85/w1_smoke/REPORT.md` §3.2): a
+A real arbitration case (`真机判读报告（内部档）` §3.2): a
 Wilkinson power divider smoke test measured |S21|@f0=-3.192dB and
 |S31|@f0=-3.261dB; the literal gate (≤-3.8dB) judged FAIL — the semantic
 arbitration pointed out that the ideal value of an equal-split assignment

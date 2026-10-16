@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,16 @@ from rfauto.service.ui_service import (
     sandbox_promote,
     tune_trials,
 )
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（本地 Windows 无色也等价通过）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def _flag_in_help(output: str, *needles: str) -> bool:
+    plain = _ANSI_CSI.sub("", output)
+    compact = re.sub(r"\s+", "", plain)
+    return all(n in compact for n in needles)
 
 
 @pytest.fixture(autouse=True)
@@ -507,6 +518,23 @@ class TestSparamsExternal:
     DEMO = (Path(__file__).resolve().parents[2] / "scripts" / "spike_b_ads"
             / "p3_d2_out" / "demo_BP.s2p")
 
+    @classmethod
+    def _write_min_s2p(cls, path: Path) -> Path:
+        """最小合法 2 端口 Touchstone（RI 形，12 点）——路由/信封级测试
+        的自给夹具（不依赖本仓不分发的演示数据）。"""
+        lines = ["# ghz s ri r 50.0"]
+        for i in range(12):
+            f = 2.0 + i * 0.05
+            lines.append(
+                f"{f:.6f} 1 0 0.5 0 0.5 0 1 0")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return path
+
+    @pytest.mark.skipif(
+        not (Path(__file__).resolve().parents[2] / "scripts" / "spike_b_ads"
+             / "p3_d2_out" / "demo_BP.s2p").is_file(),
+        reason="demo Touchstone fixture (scripts/spike_b_ads/p3_d2_out) "
+               "not shipped in this checkout")
     def test_external_sparams_db_and_deg(self, tmp_path, monkeypatch):
         from rfauto.service.ui_service import external_sparams
 
@@ -528,6 +556,11 @@ class TestSparamsExternal:
         r = external_sparams(str(bad))
         assert not r["ok"] and "非 Touchstone" in r["errors"][0]
 
+    @pytest.mark.skipif(
+        not (Path(__file__).resolve().parents[2] / "scripts" / "spike_b_ads"
+             / "p3_d2_out" / "demo_BP.s2p").is_file(),
+        reason="demo Touchstone fixture (scripts/spike_b_ads/p3_d2_out) "
+               "not shipped in this checkout")
     def test_compare_png_renders(self, tmp_path, monkeypatch):
         import shutil
 
@@ -545,16 +578,18 @@ class TestSparamsExternal:
 
     def test_compare_endpoint_route_order(self, tmp_path, monkeypatch):
         # 具体路由 /api/sparams/external 必须先于 /{run_id}，否则 POST 被
-        # 参数路由部分匹配吃掉（405）
+        # 参数路由部分匹配吃掉（405）。自给最小 Touchstone 夹具——本测
+        # 只钉路由分派序，不依赖演示数据。
         from starlette.testclient import TestClient
 
         from rfauto.ui.server import create_ui_app
 
         monkeypatch.chdir(tmp_path)
         (tmp_path / "runs").mkdir()
+        demo = self._write_min_s2p(tmp_path / "mini_route_probe.s2p")
         client = TestClient(create_ui_app())
         r = client.post("/api/sparams/external",
-                        json={"path": str(self.DEMO), "mode": "db"}).json()
+                        json={"path": str(demo), "mode": "db"}).json()
         assert r["ok"] and r["curves"]
 
 
@@ -592,19 +627,22 @@ class TestRunsMountGating:
         assert resolve_runs_mount("0.0.0.0", True) is True
         assert resolve_runs_mount("127.0.0.1", False) is False
 
-    def test_cli_help_exposes_flag(self):
-        # #305 族：新选项必须能过 --help（typer 注解/格式炸在构建期抓出）
+    def test_cli_help_exposes_flag(self, monkeypatch):
+        # #305 族：新选项必须能过 --help（typer 注解/格式炸在构建期抓出）；
+        # Linux rich 带 ANSI/窄端换行——去转义+去空白口径匹配
         import pytest
         from typer.testing import CliRunner
 
         from rfauto.cli.main import app as cli_app
 
+        monkeypatch.setenv("COLUMNS", "200")
+        monkeypatch.setenv("NO_COLOR", "1")
         runner = CliRunner()
         result = runner.invoke(cli_app, ["ui", "--help"])
         if result.exit_code != 0:
             pytest.fail(f"ui --help 失败: {result.output}")
-        assert "--expose-runs" in result.output
-        assert "--no-expose-runs" in result.output
+        assert _flag_in_help(result.output, "--expose-runs",
+                             "--no-expose-runs")
 
 
 def test_cross_fidelity_p0_threshold_single_source(tmp_path, monkeypatch):

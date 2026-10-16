@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -60,6 +61,9 @@ class TestFsListRootFence:
         d = fs_list(str(tmp_path.parent))
         assert d["ok"] is False and "路径越界" in d["error"]
 
+    @pytest.mark.skipif(not sys.platform.startswith("win"),
+                        reason="Windows-only behavior: drive-escape fence "
+                               "rejects a Windows drive prefix")
     def test_drive_escape_rejected(self) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")

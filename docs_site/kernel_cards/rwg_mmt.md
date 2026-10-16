@@ -135,8 +135,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `docs/plan_deepdive_specs_20260924.md`——引文："规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；"
-- `runs/df6_dp1mmt/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。"
+- `docs/plan_deepdive_specs_20260924.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；"
 
 测试面（tests/unit 引用扫描，机读；合计 **171** 个 test 函数）：
 

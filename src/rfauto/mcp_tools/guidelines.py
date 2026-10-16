@@ -15,8 +15,9 @@ def get_guidelines_for(topic: str) -> dict[str, Any]:
 
     EC-6。只读零副作用零 LLM 零网络（类别映射+大小写不敏感关键词，纯
     确定性，同输入逐位一致）；数据源=knowledge/pitfalls_index.json +
-    knowledge/diagnostics/playbook.yaml + knowledge/rules.yaml；每条带
-    source/ref/anchor 可溯源（坑号 #NNN 为  出处标记）。与
+    knowledge/diagnostics/playbook.yaml + knowledge/rules.yaml（坑账索引
+    属内部账本衍生数据，公开分发视图不随附——源缺失如实报 error 信封）；
+    每条带 source/ref/anchor 可溯源（坑号 #NNN 为数字出处标记）。与
     search_knowledge 的差异：本工具按主题做跨源归类检索并附取证命令，
     search_knowledge 按域做子串全文检索。未知名 topic 或数据源缺失 →
     ok=False errors 非空（附已知类别词表，不凑结果）。只读无时序约束。

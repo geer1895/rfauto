@@ -1,10 +1,10 @@
-"""DP-3 锚注册表装载/服务/CLI 接线测试（判据 a2 + b + d，预声明
-runs/df6_dp3anchors/criteria.md）。
+"""DP-3 锚注册表装载/服务/CLI 接线测试（判据 a2 + b + d）。
 
 - a2：f_dip·L 双锚值与 scripts/wp39_followup_run.py 硬编码字面值逐位相等
   （regex 只读提取，scripts 非包不入 import 面）；
-- b：provenance 单测——真实注册表 validate 全过（runs 路径存在/commit 可
-  解析/时戳可解析/consumers 文件存在/referee_script 存在）；
+- b：provenance 单测——真实注册表 validate 全过（commit 可解析/时戳可
+  解析/consumers 文件存在/referee_script 若给出则存在；公开分发视图不
+  随附内部仲裁证据档，arbitration_runs 字段可缺省）；
 - d：装载集合 == EXPECTED_ANCHORS 单源；
 - store best-effort：缺文件/坏 YAML → 空集 + warning（#105）；
 - service JSON 面四入口 + CLI/MCP 挂载最小接线。
@@ -47,7 +47,7 @@ def test_b_validate_registry_full_pass() -> None:
     report = validate_anchor_set(_live_anchor_set(),
                                  registry_path=_REGISTRY_PATH)
     assert report["ok"], f"provenance/schema issues: {report['issues']}"
-    assert report["expected_match"] and report["count"] == 60  # ge8e X5 批 36→49
+    assert report["expected_match"] and report["count"] == 75
 
 
 def test_b_each_active_anchor_provenance_fields_resolvable() -> None:
@@ -57,7 +57,8 @@ def test_b_each_active_anchor_provenance_fields_resolvable() -> None:
     for rec in anchor_set.records:
         if rec.status == "awaiting_data":
             continue
-        assert rec.provenance.get("arbitration_runs"), rec.anchor_id
+        # 公开分发视图不随附内部仲裁证据档：arbitration_runs 字段可缺省
+        # （若给出则路径须存在，由 validate 门核对）
         assert re.fullmatch(r"[0-9a-f]{7,40}",
                             str(rec.provenance["commit"]).lower())
         datetime.fromisoformat(str(rec.registered_at))
@@ -82,13 +83,13 @@ def test_a2_f_dip_l_bit_exact_against_script_literals() -> None:
 
 
 def test_a2_patch_oe_last_verified_backfilled() -> None:
-    """A1 回填钉（ge8e W1 席）：patch.f_dip_l.openems-v1 last_verified 非空。
+    """patch.f_dip_l.openems-v1 last_verified 非空（复测回填钉）。
 
-    归档复测证据=runs/wp39_mvp_followup/patch_calib.json（openEMS 真机
-    1.5-2.5GHz 401 点单点扫频，f_dip=1.94455GHz×L=40mm → 常数 77.78）：
-    77.78 相对锚值 76.8 偏 1.28% 带内——沿 ge8b patch 名义 MISMATCH 同款
-    保守裁决，锚值 76.8 维持（断锚历史零改写），仅回填 last_verified
-    （at=复测落档时点，residual=相对偏差 0.0128）；复测注记随 provenance。
+    归档复测证据=内部证据档（公开分发视图不随附）：openEMS 真机
+    1.5-2.5GHz 401 点单点扫频，f_dip=1.94455GHz×L=40mm → 常数 77.78：
+    77.78 相对锚值 76.8 偏 1.28% 带内——保守裁决锚值 76.8 维持
+    （断锚历史零改写），仅回填 last_verified
+    （at=复测落档时点，residual=相对偏差 0.0128）。
     """
     from datetime import datetime
 
@@ -99,17 +100,13 @@ def test_a2_patch_oe_last_verified_backfilled() -> None:
     assert lv_at == datetime.fromisoformat("2026-09-13T15:34:23+08:00")
     assert rec.last_verified["residual"] == pytest.approx(0.0128)
     assert rec.value == 76.8  # 锚值维持（保守裁决，不随复测改锚）
-    assert "复测回填" in str(rec.provenance.get("devlog"))  # 注记随锚落档
-    # 兄弟席 hfss-v1（99.8）：W1 批时点为 null（零触碰钉）；2026-10-04
-    # G1 G-14 批按 一百二十三 ④+runs/wp39_mvp_followup/patch_calib.
-    # json hfss 块（probe.s1p 离线复核 99.79，相对锚值残差 1.0e-4）回填
-    # ——时点收窄改钉回填值（#353① 口径：历史时点钉随新批次重标定收窄）
+    # 兄弟席 hfss-v1（99.8）：按同批离线复核（probe.s1p 复核 99.79，
+    # 相对锚值残差 1.0e-4）回填——时点收窄改钉回填值
     hfss_rec = anchor_set.get("patch.f_dip_l.hfss-v1")
     assert hfss_rec is not None and hfss_rec.last_verified is not None
     assert hfss_rec.last_verified["at"] == "2026-09-13T15:34:23+08:00"
     assert hfss_rec.last_verified["residual"] == pytest.approx(0.0001)
     assert hfss_rec.value == 99.8  # 锚值维持（复核带内，不随复测改锚）
-    assert "last_verified 回填" in str(hfss_rec.provenance.get("devlog"))
 
 
 # ── store best-effort（#105）与缓存 ────────────────────────────────────────
@@ -125,11 +122,10 @@ def test_store_missing_file_best_effort_empty_warning(
 
 
 def test_store_corrupt_yaml_best_effort_empty(
-        caplog: pytest.LogCaptureFixture) -> None:
+        caplog: pytest.LogCaptureFixture, tmp_path: Path) -> None:
     from rfauto.infra.anchors_store import load_anchors
 
-    bad = _REPO_ROOT / "runs" / "df6_dp3anchors" / "_bad_anchors.yaml"
-    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad = tmp_path / "_bad_anchors.yaml"
     bad.write_text("anchors: [ {anchor_id: broken\n  :::\n", encoding="utf-8")
     try:
         with caplog.at_level(logging.WARNING,
@@ -150,7 +146,7 @@ def test_store_bad_anchor_does_not_sink_whole_table() -> None:
                             "status": "active"})
     merged = AnchorSet(data["anchors"])
     assert len(merged.load_errors) == 1
-    assert len(merged) == 60  # ge8e X5 批 36→49
+    assert len(merged) == 75
     assert load_anchors(_REGISTRY_PATH) is not None
 
 
@@ -168,14 +164,14 @@ def test_service_list_inspect_validate_resolve_json_roundtrip() -> None:
     from rfauto.service import anchors_service as svc
 
     listed = svc.list_anchors()
-    assert listed["ok"] and listed["count"] == 60  # ge8e X5 批 36→49
+    assert listed["ok"] and listed["count"] == 75
     assert json.dumps(listed, ensure_ascii=False)  # JSON 可序列化
 
     inspected = svc.inspect_anchor("c3.l_via_h.openems-hfss-v1")
     assert inspected["ok"] and inspected["anchor"]["value"] == 0.125e-9
 
     miss = svc.inspect_anchor("no.such-v1")
-    assert miss["ok"] is False and "未知锚" in miss["error"]
+    assert miss["ok"] is False and "未知锚" in miss["errors"][0]
 
     report = svc.validate_registry()
     assert report["ok"] and report["expected_match"]
@@ -212,14 +208,14 @@ def test_service_registry_yaml_shape_honest() -> None:
     （ms_cross.wg_resonance 双值 {oe 11.675, hfss 11.4951}，ge6 席 2
     HFSS 仲裁分支 A 收敛判读——wg 模拟器谷位两引擎 AGREE，偏离 Floquet
     属前提差禁产 constant）。
-    全表 active=13、experimental=36（ge8e X5 批 +13 全 experimental）。
+    全表 active=19、experimental=56（锚批序列累计，随批更新）。
     """
     data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
     assert data["schema"] == "anchors/v1"
     statuses = {a["anchor_id"]: a["status"] for a in data["anchors"]}
     assert statuses["c3.k_of_g.openems-hfss-v1"] == "active"
-    assert sum(s == "active" for s in statuses.values()) == 17  # ge8 K-4 v2 constant active  # W7-A G-13 首判回填 +4（ratrace.ring_z/r_ring、siw.fc_te10、monopole.mon_len PASS→active，evolve_anchors 原地翻转）
-    assert sum(s == "experimental" for s in statuses.values()) == 43  # W7-A G-13 回填 -4（X5 四席 PASS→active） # W6-F cpw +1（核验裁决 A=CPWG/50Ω，experimental） # W4-E 锚二批+UX-B1 档① +10（全 experimental：cps×2/suspended_stripline×2/cheb_g×5/xcheb_bpf4/msl_cpw.s11）  # ge8e X5 批 +13（…；W7-A 首判回填后 13 席=active4+experimental9，见 anchors.yaml 各席 devlog 首判注记）  # ge8 TA 批三 +4  # ge8 TA 批二 +4  # ge8 TA 批 +2 内核恒等锚 experimental  # ge8b WA 席1 +3  # ge8b WB 席B9 +2
+    assert sum(s == "active" for s in statuses.values()) == 19  # 锚批序列累计（锚注册/锚演进/首判回填各批，随批更新）
+    assert sum(s == "experimental" for s in statuses.values()) == 56  # 锚批序列累计（analytic 恒等锚各批全 experimental，随批更新）
     for aid in ("wilkinson.f_match.openems-hfss-v1",
                 "gysel.s32_iso.openems-hfss-v1",
                 "patch_array_1x4.f_res.openems-hfss-v1",
@@ -260,7 +256,8 @@ def test_service_registry_yaml_shape_honest() -> None:
                 if a["anchor_id"] == "c3.k_of_g.openems-hfss-v1")
     assert len(kofg["points"]) == 6
     assert kofg["uncertainty"] is not None
-    assert kofg["provenance"]["arbitration_runs"] == ["runs/df6_a1_r4"]
+    # 公开分发视图不随附内部仲裁证据档：arbitration_runs 字段缺省
+    assert kofg["provenance"].get("arbitration_runs") is None
 
 
 # ── CLI 挂载最小接线（#305：--help 真构建；list/validate JSON 出）──────────
@@ -286,7 +283,7 @@ def test_cli_anchors_list_json() -> None:
     result = CliRunner().invoke(app, ["anchors", "list", "--json"])
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
-    assert payload["count"] == 60  # ge8e X5 批 36→49
+    assert payload["count"] == 75
 
 
 def test_cli_anchors_inspect_json() -> None:
@@ -342,7 +339,7 @@ def test_service_anchor_drift_status_unknown_anchor() -> None:
 
     status = anchor_drift_status("no.such.anchor-v1")
     assert status["ok"] is False
-    assert "未知锚" in status["error"]
+    assert "未知锚" in status["errors"][0]
 
 
 def test_snapshot_record_load_status_roundtrip(tmp_path: Path) -> None:
@@ -424,6 +421,6 @@ def test_mcp_tools_registered_and_callable() -> None:
     tools = {t.name: t for t in asyncio.run(mcp.list_tools())}
     assert {"anchors_list", "anchors_inspect"} <= set(tools)
     listed = tools["anchors_list"].fn()
-    assert listed["ok"] and listed["count"] == 60  # ge8e X5 批 36→49
+    assert listed["ok"] and listed["count"] == 75
     inspected = tools["anchors_inspect"].fn("c3.l_via_h.openems-hfss-v1")
     assert inspected["ok"] and inspected["anchor"]["version"] == 1

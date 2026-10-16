@@ -1,7 +1,7 @@
 """DP-8 组合引擎离线审计（P1+P2；#212 制度化升级）。
 
-权威口径：docs/plan_deepdive_specs_20260924.md §DP-8 +
-runs/df6_dp8compose/criteria.md（C1-C3 判据预声明；C4/C5 留 P3）。
+权威口径：组合引擎设计规格 §DP-8 +
+预声明判据档（C1-C3 判据预声明；C4/C5 留 P3）。
 
 覆盖：
   C1 golden 门：首例「MSL 过渡+SIW 直段+MSL 过渡」组合输出与
@@ -61,7 +61,7 @@ SUB = {"h_mm": 0.508, "er": 3.66, "tan_d": 0.0037}
 # runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
 # 随尾段追加必移，port_pins 契约断言（本文件其余）保留不变。
 _V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
-_TAPER_RENDER_SHA256 = "0dfef4dddcf82de7b700fb3090733975382e42d6ad5379a38151a2e974130c83"
+_TAPER_RENDER_SHA256 = "3b5e27e43bb175c0915a834bf7b632fdd0276915825d4a7fd5dff8c30e67dbfb"
 _SIW_V2_RENDER_SHA256 = "3a45ca9a50e5474fa38b74c9190284b66326ad28f51060ae995a908deeda7796"
 
 _GOLDEN = REPO / "tests" / "golden" / "compose_siw_chain_simulation.py"
@@ -123,7 +123,7 @@ def test_c1_golden_byte_identical():
     golden = _GOLDEN.read_bytes()
     assert text.encode("utf-8") == golden, (
         "C1 字节同失败：组合输出与 goldfile 漂移——有意改动必须换钉并留 "
-        "unified diff 证据（runs/df6_dp8compose/criteria.md §2 C1）")
+        "unified diff 证据（预声明判据档 §2 C1）")
     assert hashlib.sha256(text.encode("utf-8")).hexdigest() == (
         meta["render_sha256"])
 

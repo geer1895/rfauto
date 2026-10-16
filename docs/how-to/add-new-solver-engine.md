@@ -49,5 +49,4 @@
 ## 参考
 
 - 契约与骨架长版：`docs/tutorials/extending-rfauto.md`
-- 远程接入与资源约束：`docs/服务器接入与仿真资源说明.md`
 - 官方口径集中页：`docs/rf_template_references.md`

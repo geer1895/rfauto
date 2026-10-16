@@ -9,7 +9,7 @@ from typing import Any
 C_MM_GHZ = 299.792458  # mm·GHz（光速，f[GHz]×λ[mm]=此值）
 
 
-# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案=runs/aurora72/
+# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案档（内部）=
 # R5_tools_audit.md §② 程序验证零漏零重版）────────────────────────────────
 # 键 → 组名。describe() 每键输出 group（CalculatorSpec.group 显式声明优先，
 # 未声明键查本表，表外键落 DEFAULT_CALC_GROUP="其他"——新键注册未同步本表

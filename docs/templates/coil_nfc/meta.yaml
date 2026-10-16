@@ -43,7 +43,7 @@ mesh_note: >-
   全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、边全入网（#174/#283）
 smoke_note: >-
   未冒烟（离线审计过，#212，test_coil_nfc_template）；真机发射面=13.56MHz
-  FDTD 预算审计（runs/df7_nfc/criteria.md §e：小时-天/点量级，建议几何等比
+  FDTD 预算审计（内部证据档 §e：小时-天/点量级，建议几何等比
   缩放阶梯研究后由主代理决定），本批零发射
 nominal_derivation: |-
   全闭式精算（#1c/#252，core/nfc_coil 单源，criteria §1）：L_target=

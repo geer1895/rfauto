@@ -8,9 +8,9 @@
 > `docs/unattended_hfss_automation.md`（下称"无人值守指南"）。
 > 证据基线：pyedb 0.83.0 × pyaedt 1.4.0 × skrf 2.1.0 × AEDT 2025 R1
 > （v251）。文中数字凡标"实测于 2026-10-08/09"者全部来自真机产物：
-> `runs/edblane85/w1_smoke/`（W1 冒烟，判读正本 `REPORT.md`）与
-> `runs/edblane85/w5_batch_campaign/`（W5 五点战役）。`#NNN` 为本仓
->  坑号。runs/ 不入 git，本机在档可复核。
+> W1 冒烟（判读正本 `REPORT.md`）与
+> W5 五点战役（归档在案）。`#NNN` 为本仓
+> 坑号。真机产物不入 git，本机在档可复核。
 > 命令行 help 文本逐字核自 2026-10-08 已装 CLI
 > （`src/rfauto/cli/domains/edb.py`，服务层
 > `src/rfauto/service/edb_lane_service.py`）。
@@ -47,7 +47,7 @@ power_divider 在排障 §8.4 出场。
 REPORT §1）：
 
 ```text
-ansysedt.exe = E:\ANSYSINC\ANSYS Inc\v251\AnsysEM\ansysedt.exe
+ansysedt.exe = <AEDT 安装目录>\AnsysEM\ansysedt.exe（自动探测所得）
 ```
 
 许可面：批处理求解占一次 AEDT 许可；`-batchextract` 官方旗标口径是
@@ -57,7 +57,7 @@ license 类失败按无人值守指南 §3.1 指数退避后再判死。
 
 版本钉：建库段缺省 `version="2025.1"`（对齐基准），env
 `RFAUTO_EDB_AEDT_VERSION` 可覆盖（`src/rfauto/adapters/edb_adapter.py`
-`_AEDT_VERSION_ENV`）。**服务器/远程扩展时版本必须=本机**（项目规则 规则 0）。
+`_AEDT_VERSION_ENV`）。**服务器/远程扩展时版本必须=本机**（版本对齐纪律）。
 
 ### 1.2 Python 依赖
 
@@ -71,7 +71,7 @@ pip install scikit-rf          # 判读/收集复读 Touchstone（或 rfauto[ope
 `Edb()` 在 `Database.Create` 处进程级失败（stderr
 `EVP_DecryptInit ... could not load the shared library`，exit 1，无
 Python 异常可捕获；gRPC 后端要求 AEDT 2026.1+，本机 2025 R1 无绕行）。
-诊断链存 `runs/edblane85/w1_smoke/`（REPORT §4.2）。**该环境件闭环前，
+诊断链存 W1 冒烟归档（REPORT §4.2）。**该环境件闭环前，
 `EdbAdapter.build()`（即 `rfauto edb build` 真跑）在本机不可用**——但
 dry-run 计划态（零 pyedb）、批解/导出/判读/入库各段只消费工程文件，
 不受影响。本机实测通路是建库段改道 pyaedt 非图形会话（§3.2），几何
@@ -101,7 +101,7 @@ rfauto edb --help:
 
 设计参数从 recipe/命令行进来都是同一面：`-p k=v`（可多次，值走 JSON
 解析，嵌套 stackup/sweep dict 可直接传；`f0_ghz` 必填）。所有尺寸由
-`core.synthesis` 闭式综合产出，**禁止手抄毫米数**（指南 §2，项目规则 规则 1c）。
+`core.synthesis` 闭式综合产出，**禁止手抄毫米数**（指南 §2，闭式综合纪律）。
 
 先看计划（真实命令与真实输出，实测于 2026-10-08）：
 
@@ -145,8 +145,8 @@ $ rfauto edb build --template edb_branchline -p f0_ghz=2.4 --workdir runs/edb_la
 `<stem>_config.json` 存证（可用 `edb.configuration.load` 复现）。同名
 再次 `--dry-run` 后换 `--name bl_f0_2p4` 即得 W5 战役的产物名形态。
 
-**spec 长什么样**（真实摘录，`runs/edblane85/w5_batch_campaign/f0_2p4/
-bl_f0_2p4_spec.json`，实测于 2026-10-09；`params` 全部是综合内核产出）：
+**spec 长什么样**（真实摘录，W5 战役 f0_2p4 点的
+`bl_f0_2p4_spec.json`，实测于 2026-10-09；`params` 全部是综合内核产出）：
 
 ```json
 {
@@ -204,12 +204,12 @@ recipe 优化环接的也是同一参数面：
 如 §1.2，本机 pyedb dotnet 后端进程级失败，真跑 `edb build` 报
 `EDB 建库失败: ...`。W1 冒烟的改道（此后 W5 全程复用）：
 
-- 建库脚本 `runs/edblane85/w1_smoke/build_pyaedt.py`：**消费同一发射器
+- 建库脚本（W1 冒烟 `build_pyaedt.py`）：**消费同一发射器
   产出的 spec**，用 pyaedt `Hfss3dLayout` 非图形会话原生建模（层叠/
   平面/走线/端口/setup+sweep/保存），`finally` 必释放；
 - W5 的 `point_worker.py::_do_build` 逐行复用它（每点独立子进程）。
 
-真实建库证据（`runs/edblane85/w5_batch_campaign/f0_2p4/state.json` 的
+真实建库证据（W5 战役 `f0_2p4/state.json` 的
 `build` 节，实测于 2026-10-09）：
 
 ```json
@@ -297,8 +297,8 @@ remote_service L2 口径）。
 
 ### 5.1 `<stem>_judgment.json` 逐字段
 
-真实摘录（`runs/edblane85/w5_batch_campaign/f0_2p4/
-bl_f0_2p4_judgment.json`，实测于 2026-10-09，下同）：
+真实摘录（W5 战役 f0_2p4 点的
+`bl_f0_2p4_judgment.json`，实测于 2026-10-09，下同）：
 
 ```json
 {"ok": true, "all_pass": true,
@@ -349,7 +349,7 @@ W1 冒烟（2026-10-09）直通窗还是 [-3.5, -2.5]，-3.584 超窗 0.084dB
 物理窗 [-3.8, -2.5]（理想等分 -3.01dB + 0.8dB 实现容差），W5 五点全
 按此窗判 PASS。两代 judgment JSON 都在档（W1 `branchline/
 branchline_judgment.json` / W5 上例），这正是"门改动必须带真机/仲裁
-出处"（铁律 7/#274）的活例子。
+出处"（#274 家法）的活例子。
 
 ### 5.3 `edb-health-gate-v1` 健康门（框架级七因子）
 
@@ -399,7 +399,7 @@ verdict 词汇 healthy/unhealthy/suspect）——两门词汇不同，别混用�
 ### 6.1 循环骨架
 
 批量=每点一个子进程 + 每点看门 + 前后 ansysedt 清点。W5 战役
-（`runs/edblane85/w5_batch_campaign/campaign_driver.py`，实测于
+（战役驱动脚本 `campaign_driver.py`，实测于
 2026-10-09）的骨架可直接抄：
 
 ```python
@@ -471,11 +471,11 @@ from rfauto.service.dataset_edb_lane import collect_edb_lane_dataset
 
 result = collect_edb_lane_dataset(
     name="edb_lane_w5_sweep_20261009",
-    run_ids=["edblane85/w5_batch_campaign/f0_2p2",
-             "edblane85/w5_batch_campaign/f0_2p3",
-             "edblane85/w5_batch_campaign/f0_2p4",
-             "edblane85/w5_batch_campaign/f0_2p5",
-             "edblane85/w5_batch_campaign/f0_2p6"],
+    run_ids=["w5_batch_campaign/f0_2p2",
+             "w5_batch_campaign/f0_2p3",
+             "w5_batch_campaign/f0_2p4",
+             "w5_batch_campaign/f0_2p5",
+             "w5_batch_campaign/f0_2p6"],
     health_gate=True,      # G11 目录级体检，仅 unhealthy 禁入
     fmt="parquet",
 )
@@ -491,7 +491,7 @@ n_rows: 5
 per_model_rows: {edb_branchline: 5}
 health_gate: true
 health_verdicts:
-  edblane85/w5_batch_campaign/f0_2p2: healthy   # 五点全 healthy
+  w5_batch_campaign/f0_2p2: healthy   # 五点全 healthy
 n_dup: 0
 ground_truth: {n_gt_rows: 5, per_model: {edb_branchline: 5}}
 bounds: {f0_ghz: [2.2, 2.6], z0_ohm: [50.0, 50.0], ...}
@@ -545,7 +545,7 @@ load the shared library`，exit 1（faulthandler 定位死点在
 `Database.Create`，pyedb/dotnet/edb.py:742）。只装 pyedb 本体则只有
 `RuntimeWarning: Failed to initialize Dlls.`（无行动价值提示）。
 gRPC 后端要求 AEDT 2026.1+，2025 R1 无绕行。
-（诊断链与最小复现：`runs/edblane85/w1_smoke/`，REPORT §4.2。）
+（诊断链与最小复现：W1 冒烟归档，REPORT §4.2。）
 
 **处置**：本机建库段改道 pyaedt 非图形会话原生建模（§3.2），spec
 单一来源不变；批解/导出/判读段不受影响。**别在死点上反复重装试**
@@ -579,7 +579,7 @@ console log 才是可靠的错误通道（无人值守指南 §3.4）。
 回退 design 级直呼（14 参逐字一致），setup 枚举不可达时按名义名
 `setup1:sweep1` 兜底——无旗标自动适配两形态（W5 实证后修入 src）。
 历史战役用的是战役侧修正脚本
-（`runs/edblane85/w5_batch_campaign/recover_export_judge.py`，恢复
+（`recover_export_judge.py`，恢复
 5/5、单点 wall 5.2s），judgment 的 `export_route` 字段如实区分原链路
 失败与恢复路由——排查同类问题时先读这个字段。
 另两件配套：`QuitApplication` 置于 finally（FATAL 早退也必须退出批处理
@@ -613,7 +613,7 @@ ValueError 不是坏消息：它替你省了一轮 rc=103 真跑。
   `.aedb` 目录、`*_config.json`、`ansysedt_batch_*.log`、
   `*_export.s<N>p`），与 `edb build` 的 workdir 平铺布局配套；W5 式
   "每点一个子目录"的战役布局不在其扫描形态内（实测
-  `edb status --root runs/edblane85/w5_batch_campaign` 报
+  `edb status --root runs/w5_batch_campaign` 报
   "无 EDB 快车道产物"——是扫描形态使然，产物本身在档）。`.aedb` 工程
   的日志/导出名带 `.aedb` 尾缀变体，status 已折叠回裸 stem。
 
@@ -629,8 +629,8 @@ ValueError 不是坏消息：它替你省了一轮 rc=103 真跑。
 | EdbAdapter.build/solve_batch/版本钉/config 存证 | `src/rfauto/adapters/edb_adapter.py` |
 | 健康门七因子/门分派/三态 verdict | `src/rfauto/service/edb_health_gate.py` |
 | 收集器语义/manifest 键面 | `src/rfauto/service/dataset_edb_lane.py` |
-| W1 分步时长/判读表/门语义仲裁/坑清单 | `runs/edblane85/w1_smoke/REPORT.md`（§1–§4） |
-| W5 五点时长/读数/恢复路由/数据集 | `runs/edblane85/w5_batch_campaign/`（campaign_summary.json、recovery_summary.json、f0_2p4/state.json、f0_2p4/bl_f0_2p4_judgment.json、bl_f0_2p4_health_gate.json）+ `runs/datasets/edb_lane_w5_sweep_20261009/dataset_manifest.yaml` |
+| W1 分步时长/判读表/门语义仲裁/坑清单 | W1 判读报告 REPORT.md（§1–§4） |
+| W5 五点时长/读数/恢复路由/数据集 | W5 战役归档（campaign_summary.json、recovery_summary.json、f0_2p4/state.json、f0_2p4/bl_f0_2p4_judgment.json、bl_f0_2p4_health_gate.json）+ 数据集 manifest（edb_lane_w5_sweep_20261009） |
 | spec schema 五契约/KNOWN_TEMPLATES/模板元面 | 指南 §2/§3 + `src/rfauto/adapters/edb_templates/schema.py` + `docs/templates/edb_*/meta.yaml` |
 | 无人值守纪律（-Logfile、看门、孤儿、发射十条自查） | `docs/unattended_hfss_automation.md` |
 | MCP 出口 | `src/rfauto/mcp_tools/edb.py`（edb_emit_spec/edb_build_solve/edb_status + resource） |

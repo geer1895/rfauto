@@ -72,5 +72,4 @@ rfauto repro-verify <包目录>              # 验证复现包
 
 - 单次调优（非战役）：`rfauto tune` / `rfauto autotune --self-verify`
 - 偏差判读串接：`docs/tutorials/measurement-alignment.md`
-- 多机协同：`rfauto remote probe/status`（AGENTS 规则 0b 与
-  `docs/服务器接入与仿真资源说明.md`）
+- 多机协同：`rfauto remote probe/status`（远程连通性探测/状态查询 CLI 两叶）

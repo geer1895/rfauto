@@ -499,9 +499,18 @@ class TestStage2EndToEnd:
         _make_plan(root)
         _declare_stage1(root)
 
-    def test_declare_launch_judge_pass_and_resume(self, tmp_path):
+    def test_declare_launch_judge_pass_and_resume(self, tmp_path,
+                                                  monkeypatch):
         root = tmp_path / "runs"
         self._prepare(root)
+        # cpass 存档钉临时档（runs/ 下的存档不随仓分发——干净 checkout
+        # 缺文件时判读面 pred_stored=None，本测钉"存档与当轮一致=drift 0"）
+        cpass = tmp_path / "cpass_verdict.json"
+        cpass.write_text(json.dumps(
+            {"templates": {T: {"pred_shift": {
+                "pred_shift_new_vs_f0_pct": 0.0}}}}),
+            encoding="utf-8")
+        monkeypatch.setattr(runner, "CPASS_PATH", cpass)
         calls: list[dict] = []
 
         def fake_launch(cmd, work=None, template=None, timeout_s=None,

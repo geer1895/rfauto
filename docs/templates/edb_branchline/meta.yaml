@@ -64,7 +64,7 @@ port_roles: P1 输入 / P2 直通 / P3 耦合 / P4 隔离（串联臂 1-2、4-3�
 extraction: 全 S 矩阵 4 端口（批处理求解后 Touchstone .s4p，401 频点；
   端口序=AEDT 端口号序，sNp 头 "! Port[n] = Portn" 注释存证）
 
-# 离线发射层门（W1 真机冒烟判读表；runs/edblane85/w1_smoke/REPORT.md §2.1。
+# 离线发射层门（W1 真机冒烟判读表；W1 判读报告 §2.1。
 # 真机判读另有 health gate——见文件头口径注记）
 acceptance:
   s11_db_at_f0:    {op: "<=",    bound: -15.0,      label: "|S11| 谷深"}
@@ -73,9 +73,9 @@ acceptance:
   sigma_max_at_f0: {op: "<=",    bound: 1.05,       label: passivity（σmax）}
   f0_offset_pct:   {op: "abs<=", bound: 5.0,        label: "f0 偏移（S11 谷）"}
 
-# W1 真机冒烟证据注记（@2.4GHz，2026-10-09，runs/edblane85/w1_smoke/）
+# W1 真机冒烟证据注记（@2.4GHz，2026-10-09，W1 冒烟归档）
 w1_smoke_note: 4/5 PASS——S11 -34.22dB / S41 隔离 -33.23dB / σmax 0.9925 /
   f_res 恰 2.400GHz 全过；S21=-3.584dB 超直通窗下沿 0.084dB 如实记 FAIL
   （#122 不凑绿），候选归因=单频自适应 ΔS=0.02 收敛档较粗，留 HFSS 3D
-  路径对拍仲裁（runs/edblane85/w1_smoke/branchline/branchline_judgment.json）。
+  路径对拍仲裁（branchline_judgment.json 判读存证）。
   信息读数：S31=-2.87dB，S23=S32=-32.98dB（互易自洽到 1e-14）。

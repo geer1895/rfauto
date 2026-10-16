@@ -34,7 +34,7 @@ schema（`rfauto-dag-v1`）的权威定义在 `core/compose/dag_schema.py`，规
 
 节点只有四种 `kind`：`render | solve | postprocess | judge`（执行基座对
 solve 类节点强制 #261 机器互斥）。最小计划=三个文件写入节点（演示用，
-零真机）——存为 `runs/aurora_d/tut/dag_demo_plan.json`：
+零真机）——存为 `runs/demo/dag_tutorial/plan.json`：
 
 ```json
 {
@@ -82,9 +82,9 @@ Windows 反斜杠路径安全，#142 家法）；`outputs` 是产物契约（相
 ## 3. 动手：执行、期刊与断点续跑
 
 ```bash
-rfauto dag run runs/aurora_d/tut/dag_demo_plan.json \
-    --run-dir runs/aurora_d/tut/dag_demo_run \
-    --solve-lock runs/aurora_d/tut/dag_demo_run/.solve.lock
+rfauto dag run runs/demo/dag_tutorial/plan.json \
+    --run-dir runs/demo/dag_tutorial/run \
+    --solve-lock runs/demo/dag_tutorial/run/.solve.lock
 ```
 
 实测输出：
@@ -111,13 +111,13 @@ rfauto dag run runs/aurora_d/tut/dag_demo_plan.json \
 代价只是"还没跑完的节点"。期刊是唯一事实源，随时读：
 
 ```bash
-rfauto dag status runs/aurora_d/tut/dag_demo_run
+rfauto dag status runs/demo/dag_tutorial/run
 ```
 
 实测输出：
 
 ```
-runs/aurora_d/tut/dag_demo_run  verdict=COMPLETE  hit=3  recompute=3
+runs/demo/dag_tutorial/run  verdict=COMPLETE  hit=3  recompute=3
              DAG 节点态摘要（dag.state.json）
 ┌─────────┬────────┬──────────────┬─────────────┬────────┐
 │ node_id │ status │ key          │ outputs     │ source │

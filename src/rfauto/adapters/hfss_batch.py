@@ -89,7 +89,7 @@ _TOUCHSTONE_RE = re.compile(r"\.s(\d{1,2})p$", re.IGNORECASE)
 _RESULT_EXTS = (".prof", ".csv", ".mesh", ".sol")
 
 #: ``-designs`` 设计限定在 AEDT 2025 R1 (v251) ``-BatchSolve`` **不受支持**
-#: （2026-10-13 sim_host 真机核实 verdict=FAIL，runs/aurora_c/designs_verify/
+#: （2026-10-13 sim_host 真机核实 verdict=FAIL，设计核验档）
 #: ：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态旗标被静默吞掉，
 #: 值按 ``Unexpected command line argument 'DesignB' ignored.`` 丢弃并
 #: **退化为全设计求解（rc=0）**；desktop.dll 命令行选项表无 -designs）。
@@ -99,7 +99,7 @@ _DESIGNS_UNSUPPORTED_MSG = (
     "-designs 设计限定不受 AEDT 2025 R1 (v251) -BatchSolve 支持"
     "（2026-10-13 真机核实：旗标被忽略并退化为全设计求解，console log"
     " 'Unexpected command line argument ... ignored'，证据"
-    " runs/aurora_c/designs_verify/）——为避免静默 solve-all 本模块拒绝"
+    " 设计核验档））——为避免静默 solve-all 本模块拒绝"
     "发射；限定了设计的需求请按设计拆分工程（每工程单设计）后批解，或走"
     " hfss_session 会话通道指定设计分析")
 
@@ -593,7 +593,9 @@ def build_batch_extract_script(
     for token, value in (
         ("<<OUT_FILE>>",
          _bake_string_literal(
-             Path(out_file).as_posix() if str(out_file) else "")),
+             # 宿主无关规范形：显式反斜杠→正斜杠（Path.as_posix 依赖宿主
+             # OS 分隔符语义——POSIX 宿主下反斜杠是普通字符不归一）
+             str(out_file).replace("\\", "/") if str(out_file) else "")),
         ("<<DESIGN_NAME>>", _bake_string_literal(design or "")),
         ("<<SETUP_NAME>>", _bake_string_literal(setup or "")),
         ("<<SWEEP_NAME>>", _bake_string_literal(sweep or "")),
@@ -916,7 +918,7 @@ def solve_project_batch(
     - ``design``/``setup``：历史形态为 ``-designs <design:setup>`` 限定；
       **2026-10-13 真机核实 AEDT 2025 R1 (v251) ``-BatchSolve`` 不支持该
       旗标**（静默退化为全设计求解，证据 :data:`_DESIGNS_UNSUPPORTED_MSG`
-      与 runs/aurora_c/designs_verify/）——传非 None 时**发射前结构化
+      与 设计核验档））——传非 None 时**发射前结构化
       fail-closed**（``ok=False``/``rc=None``/零进程零许可消耗），绝不带
       假限定发射；``None``=工程内全部设计求解（AEDT 缺省语义，真机对照
       臂实证）。

@@ -142,9 +142,9 @@ run_campaign 等）本文只讲不调**——它们会真起仿真/真写盘。
 {"ok": true, "checks": [
   {"name": "Python", "status": "ok", "detail": "3.12.14"},
   {"name": "AEDT", "status": "ok",
-   "detail": "E:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
+   "detail": "<hfss-install-dir>（版本 2025.1，best_effort）"},
   {"name": "ADS", "status": "ok",
-   "detail": "E:\\ADS\\ADS27（版本 2027，verified）"},
+   "detail": "<ads-install-dir>（版本 2027，verified）"},
   {"name": "缓存模式", "status": "ok", "detail": "readwrite"}]}
 ```
 

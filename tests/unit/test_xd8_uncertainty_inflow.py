@@ -84,7 +84,7 @@ def test_component_identity_ref_zero_contribution() -> None:
         _rec("kern.q.closedform-v1", uncertainty=dict(_IDENTITY)),
         _rec("dev.x.openems-hfss-v1", layer="component",
              uncertainty={"value": 0.5, "kind": "arbitration_interval"},
-             extra={"provenance": {"devlog":
+             extra={"provenance": {"note":
                                    "回代基准同 kern.q.closedform-v1 已核双源"}}),
     ])
     got = uncertainty_inflow(aset, "dev.x.openems-hfss-v1")
@@ -124,7 +124,7 @@ def test_component_rss_two_refs_bit_exact() -> None:
              uncertainty={"value": 0.04, "kind": "fd_referee_band"}),
         _rec("dev.z.openems-hfss-v1", layer="component",
              uncertainty={"value": 0.1, "kind": "arbitration_interval"},
-             extra={"provenance": {"devlog":
+             extra={"provenance": {"note":
                                    "链 A=kern.a.closedform-v1；"
                                    "链 B=kern.b.closedform-v1；"
                                    "链 C=kern.c.closedform-v1"}}),
@@ -147,7 +147,7 @@ def test_component_unresolvable_ref_inflow_none_not_zero() -> None:
                     "uncertainty": {"value": 0.05, "kind": "relative"}}),
         _rec("dev.w.openems-hfss-v1", layer="component",
              uncertainty={"value": 0.1, "kind": "arbitration_interval"},
-             extra={"provenance": {"devlog":
+             extra={"provenance": {"note":
                                    "基准 kern.rel.closedform-v1"}}),
     ])
     got = uncertainty_inflow(aset, "dev.w.openems-hfss-v1")
@@ -174,7 +174,7 @@ def test_same_layer_prose_mention_not_lower_ref() -> None:
              uncertainty={"value": 0.2, "kind": "arbitration_interval"}),
         _rec("dev.q.openems-hfss-v1", layer="component",
              uncertainty={"value": 0.1, "kind": "arbitration_interval"},
-             extra={"provenance": {"devlog":
+             extra={"provenance": {"note":
                                    "与 dev.p.openems-hfss-v1 跨案例同向互证"}}),
     ])
     got = uncertainty_inflow(aset, "dev.q.openems-hfss-v1")
@@ -190,7 +190,7 @@ def test_substring_false_reference_blocked_by_boundary_guard() -> None:
              uncertainty={"value": 0.02, "kind": "rounding_band"}),
         _rec("dev.fake.openems-hfss-v1", layer="component",
              uncertainty={"value": 0.1, "kind": "arbitration_interval"},
-             extra={"provenance": {"devlog":
+             extra={"provenance": {"note":
                                    "见 susp.stripline.z0_ohm.closedform-v1"}}),
     ])
     got = uncertainty_inflow(aset, "dev.fake.openems-hfss-v1")

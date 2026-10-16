@@ -1,6 +1,6 @@
 """PIM 阶数/功率经验换算面（NX-12 星载 PIM：PIM3 幅值经验式+登记边界）。
 
-ge8d 波·席D4（runs/ge8_followup/wave_d/seat_d_all.md §席D4）；条目
+审查批条目来源（内部审查档）；条目
 docs/research_expansion_20261002_round14.md NX-12「星载 PIM 多载波扩展：
 pim_products 双载波→列表载波+下行带落入扫描+微放电裕度口径」及其一致性
 审计注记「N 载波扩展子件与 EM-6 同件，以 EM-6 为唯一产核；本件保留星载

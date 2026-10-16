@@ -750,7 +750,7 @@ wall = CSX.AddMetal("ridged_wg_wall")
 # ── 端口：双 RectWGPort 解析 TE10 打在加宽馈段（pyramid_horn 同法）──
 # COMPAT 簇4：构造后 _wg_probe_refit 把探针角点偏移改内联（安装栈探针
 # ModeOrigin 序列化错位致 uf_tot≡0/S11≡−1；根因见
-# oe_templates/wg_port_compat.py，复现 runs/seat1_rectwg/repro_rectwg.py）。
+# oe_templates/wg_port_compat.py，复现 内部证据档）。
 # 绑定参数序：a=第一横向轴（exc_dir=y 时=z）=b、b=第二横向轴（=x）=
 # a_feed、mode="TE01"（M=0,N=1：E 沿 z、半波沿 x）。Z_ref 缺省=解析波导
 # 阻抗 ZL=k·Z0/β（WaveguidePort.CalcPort 填）。

@@ -94,19 +94,21 @@ def main(argv: list[str] | None = None) -> int:
     failures: list[str] = []
     print("== merge_preflight（合流预检；红=席位返回前自证自愈）==", flush=True)
 
-    # 1) check_numbers 全链
+    # 1) check_numbers 全链（含 pytest --collect-only 兜底口径：2 核 CI runner
+    # 上 2.5 万级测试收集实测 >180s（run 38839481077 TimeoutExpired 实证），
+    # 上限 900s 对齐 ci.yml preflight 预算注释）
     r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
-                       capture_output=True, text=True, timeout=180)
+                       capture_output=True, text=True, timeout=900)
     ok = "All numbers consistent" in (r.stdout + r.stderr)
     print(f"[{'PASS' if ok else 'FAIL'}] check_numbers 全链一致")
     if not ok:
         failures.append("check_numbers")
         print((r.stdout + r.stderr)[-1200:])
 
-    # 2) public_api 金快照
+    # 2) public_api 金快照（同上 import+collect 面，2 核 runner 同余量）
     r = subprocess.run(
         [PY, "scripts/check_public_api.py", "--check", "tests/gold/public_api.json"],
-        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=180)
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=600)
     ok = r.returncode == 0
     print(f"[{'PASS' if ok else 'FAIL'}] public_api 金快照")
     if not ok:

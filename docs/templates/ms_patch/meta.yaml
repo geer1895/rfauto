@@ -29,7 +29,7 @@ extraction: >-
   健康判据=|Γ| 线性域 ≈1（空波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度
   读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径
   LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像，
-  runs/ge5_msjcross/audit.md §D/E）
+  内部证据档 §D/E）
 topology: >-
   反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形域
   x 对壁 PEC / y 对壁 PMC（TEM 平面波，官方 Parallel Plate Waveguide 教程
@@ -45,8 +45,8 @@ mesh_note: >-
   全轴最小网格间距 ≥10µm
 smoke_note: >-
   离线审计先行（#212，test_metasurface_templates）；波导模拟器扫描战役
-  （粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；读出修复后重扫
-  见 runs/ge5_j2fb/（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与
+  （粗 21+细 41 点）发射面见 内部证据档；读出修复后重扫
+  见 内部证据档（J2 fallback 战役段②）；J1c 相位覆盖 ≥300° 与
   J4 HFSS Floquet 锚属真机轨
 nominal_derivation: |-
   全闭式精算（#1c/#252，core/metasurface_lut 单源，criteria.md §1d）：

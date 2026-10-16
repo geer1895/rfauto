@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -94,6 +95,9 @@ class TestKicadCliInfo:
         assert r["available"] is False
         assert r["env_hint"] == ENV_KICAD_CLI
 
+    @pytest.mark.skipif(not sys.platform.startswith("win"),
+                        reason="Windows-only behavior: version probe runs "
+                               "a .cmd stub via the shell")
     def test_version_probe_stub(self, tmp_path, monkeypatch):
         cli = tmp_path / "stub" / "kicad-cli.cmd"
         cli.parent.mkdir(parents=True)

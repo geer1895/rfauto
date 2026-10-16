@@ -6,7 +6,7 @@
 
 - 拓扑：FSS 带阻十字偶极子单元：基板顶零厚正交双十字臂（x 臂=受激臂，y 臂= 正交极化对偶臂；金属偶极子 E∥臂耦合，无需槽缝族的方向旋转）；单胞 PEC/PMC 对壁域（x 对壁 PEC / y 对壁 PMC，TEM 平面波）；屏两侧 λ0/4 空气区各置双 E 探针对（自由悬浮无源）+ z 底 MUR 上方 soft plane 激励面
 - f0：10.0 GHz ｜ 端口：2 ｜ 时长 ≤30.0 ns ｜ 网格档：0.0 mm
-- 提取口径：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=|S11|²+|S21|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（runs/ge5_msjcross/audit.md §E）
+- 提取口径：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=|S11|²+|S21|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（内部证据档 §E）
 - 参数：arm_len_mm, arm_w_mm, period_mm, h_mm
 - 基板：{"er":3.66,"h_mm":0.508,"tan_d":0.0037}
 
@@ -46,18 +46,18 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
-- `ms_cross.wg_resonance.openems-hfss-v1`（pointer/experimental；引擎对 openems（hfss 仲裁））：ms_cross_wg_resonance_ghz 双值 hfss=11.495129657775005 / openems=11.675 GHz（不取平均，#122）；±0.3（arbitration_interval）；verdict BRANCH_A_OPENEMS_ENGINE_FAITHFUL（收敛仲裁 AGREE：G-branch 0.180≤0.30GHz 过；G-conv trusted（ΔS 三档 8/0.01621→9/0.00969→11/0.00244 末档达标未触顶，#335 合法判读）；G-passive 6.8e-14；G-health 谷位 0.99998/通带 0.899）；证据：runs/ge6_hfsswin/seat2_mscross
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
+- `ms_cross.wg_resonance.openems-hfss-v1`（pointer/experimental；引擎对 openems（hfss 仲裁））：ms_cross_wg_resonance_ghz 双值 hfss=11.495129657775005 / openems=11.675 GHz（不取平均，#122）；±0.3（arbitration_interval）；verdict BRANCH_A_OPENEMS_ENGINE_FAITHFUL（收敛仲裁 AGREE：G-branch 0.180≤0.30GHz 过；G-conv trusted（ΔS 三档 8/0.01621→9/0.00969→11/0.00244 末档达标未触顶，#335 合法判读）；G-passive 6.8e-14；G-health 谷位 0.99998/通带 0.899）
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
 
 - 参数语义：arm_len_mm=臂长（中心→尖端，总跨=2·arm 半波谐振），arm_w_mm=臂宽， period_mm=单胞周期，h_mm=基板厚；er/tan_d 走 substrate/nominal （材料属性不改导体）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；臂缘精确入网 +邻臂尖缝 3+ 中点入网（#311）；NEAR≤邻臂尖缝/3 渲染期守卫（#266）； 全轴最小网格间距 ≥10µm
-- 冒烟现状：离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证 （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）判据 runs/ge5_msfam/criteria.md §2
+- 冒烟现状：离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证 （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）判据 内部证据档 §2
 - 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑

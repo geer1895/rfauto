@@ -23,6 +23,16 @@ from rfauto.adapters.pyedb_preload import preload_ansys_openssl
 
 _DLLS = ("libcrypto-3-x64.dll", "libssl-3-x64.dll")
 
+#: 预载 helper 是 Windows-only 特性（ctypes.WinDLL）；非 Windows 平台在
+#: helper 入口即 fail-soft 短路（"非 Windows 平台"信封），下列用例断言的
+#: 解析/加载/幂等路径在该短路下不可达——非 Windows 诚实 skip（CI 纪律：
+#: 只对整文件级 Windows-only 才走整文件 skip，本文件 TestFeatureFlag 面
+#: 平台无关照常运行）。
+_win_preload = pytest.mark.skipif(
+    not sys.platform.startswith("win"),
+    reason="Windows-only behavior: preload helper gates on ctypes.WinDLL "
+           "and short-circuits on other platforms")
+
 #: 真函数存根（autouse fixture 替换模块属性前抓原装——best-effort 用例
 #: 要测真实现而非替身）
 _REAL_FILE_VERSION = pp._file_version
@@ -60,6 +70,7 @@ def _isolate(monkeypatch: pytest.MonkeyPatch):
 
 
 class TestPreloadHelper:
+    @_win_preload
     def test_ok_explicit_root_envelope(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path)
         calls: list[str] = []
@@ -77,6 +88,7 @@ class TestPreloadHelper:
         assert calls == [str(root / d) for d in _DLLS]
         assert all(os.path.isabs(p) for p in calls)
 
+    @_win_preload
     def test_idempotent_second_call_no_reload(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path)
         calls: list[str] = []
@@ -90,6 +102,7 @@ class TestPreloadHelper:
         assert all(not d["loaded"] for d in second["dlls"])
         assert len(calls) == 2  # 幂等：二次调用零新加载
 
+    @_win_preload
     def test_env_resolution(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path)
         monkeypatch.setenv("ANSYSEM_ROOT251", str(root))
@@ -97,6 +110,7 @@ class TestPreloadHelper:
         assert env["ok"] is True and env["source"] == "env"
         assert env["root"] == str(root)
 
+    @_win_preload
     def test_configs_fallback(self, tmp_path, monkeypatch):
         parent = tmp_path / "v251"
         root = _make_root(parent, layout="ansys")  # parent/AnsysEM/DLLs
@@ -105,6 +119,7 @@ class TestPreloadHelper:
         assert env["ok"] is True and env["source"] == "configs"
         assert env["root"] == str(root)
 
+    @_win_preload
     def test_win64_layout_variant(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path, layout="win64")
         env = preload_ansys_openssl(tmp_path / "root")
@@ -117,6 +132,7 @@ class TestPreloadHelper:
         assert env["reason"]
         assert env["root"] is None and env["source"] == ""
 
+    @_win_preload
     def test_dll_missing_fail_soft(self, tmp_path):
         lonely = tmp_path / "root"
         lonely.mkdir()
@@ -126,6 +142,7 @@ class TestPreloadHelper:
         assert env["root"] is None
         assert env["tried"]  # 诊断面：尝试过的候选在档
 
+    @_win_preload
     def test_windll_oserror_fail_soft(self, tmp_path, monkeypatch):
         root = _make_root(tmp_path)
 
@@ -138,11 +155,14 @@ class TestPreloadHelper:
         assert "OSError" in env["reason"] and "boom" in env["reason"]
 
     def test_non_windows_fail_soft(self, monkeypatch):
-        monkeypatch.delattr(pp.ctypes, "WinDLL")
+        # 非 Windows 真跑（Linux 上 WinDLL 本就缺席，raising=False 兼容）：
+        # 平台门 fail-soft 信封如实落地
+        monkeypatch.delattr(pp.ctypes, "WinDLL", raising=False)
         env = preload_ansys_openssl("E:/nowhere")
         assert env["ok"] is False
         assert "Windows" in env["reason"]
 
+    @_win_preload
     def test_relative_explicit_resolves_absolute(self, tmp_path,
                                                  monkeypatch):
         _make_root(tmp_path)
@@ -159,6 +179,7 @@ class TestPreloadHelper:
         f.write_bytes(b"x")
         assert _REAL_FILE_VERSION(str(f)) == ""
 
+    @_win_preload
     def test_last_result_stub(self, tmp_path, monkeypatch):
         monkeypatch.setattr(pp, "_win_dll", lambda p: object())
         preload_ansys_openssl(_make_root(tmp_path))

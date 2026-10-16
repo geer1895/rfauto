@@ -213,8 +213,7 @@ export function toCsv(series) {
      任何局部极值必是所在桶的桶极值，桶极值全数入选。这是保形默认档
      （Grafana/M3 同款选型）；高 Q 窄谷（宽于 1 样本、窄于桶宽）恰是 S 参数
      最关心的特征，感知类算法（LTTB）按三角形面积选点会整桶错过次深谷
-     （实测 20001 点三谷曲线 LTTB 把 −25/−31dB 谷抹平成 −3dB 级，见
-     runs/aurora_d/uir5/ 证据），故不做默认。
+     （实测 20001 点三谷曲线 LTTB 把 −25/−31dB 谷抹平成 −3dB 级，内部证据档），故不做默认。
    - lttbIndices(ys, n)：LTTB（Largest-Triangle-Three-Buckets）感知保形选点
      备选档（平滑曲线视觉等价性更好；不保证极值保留，导出供调用方自选）。
    - downsamplePlotSeries(series, cap)：共享 x 网分组——同图多迹线（同文件

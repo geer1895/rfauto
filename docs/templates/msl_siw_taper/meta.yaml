@@ -28,7 +28,7 @@ extraction: >-
   β+引擎自算 ZL（ReadUIData 重读，wstep/mline W3② 法）+测量面间距 plane_dist_m
   ——line_z0='engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；fc10 主判
   =G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)（线性项吸收馈线/锥群延迟，
-  预声明 runs/df6_a2siwmsl/criteria.md §4）
+  预声明 内部证据档 §4）
 topology: >-
   MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 → 线性锥（w50→
   w_end=Z_PV 微带当宽的阻抗变换器+锥末-SIW 台阶不连续）→ SIW 直段（顶壁显式板
@@ -49,12 +49,12 @@ mesh_note: >-
 smoke_note: >-
   离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动
   scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空
-  +.oe_collect.lock 空，见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见
-  runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md
+  +.oe_collect.lock 空，见 内部证据档）；预声明门与预算见
+  内部证据档 §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md
   §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进
   锥末宽度设计式（如实收档，v2 历史档不删）
 nominal_derivation: |-
-  全闭式精算（#1c，runs/df6_a2siwmsl/criteria.md §1/§1.1）：w/d/s=
+  全闭式精算（#1c，内部证据档 §1/§1.1）：w/d/s=
   TEMPLATE_NOMINAL["siw"] 同源沿用（fc10=6.6667GHz=f0/1.5 设计点，Cassivi
   2002 反解）；λg=21.0241mm（β=298.856 rad/m 闭式）→ taper_len=round(λg/2,4)
   =10.5121（缺省锥长；λg/4=5.256 只作旋钮变体——对称双锥确定性级联实测带内
@@ -74,7 +74,7 @@ teaching:
       source: 本仓 core/synthesis（synthesize_siw_model/siw 闭式同源；docs/templates/msl_siw_taper/meta.yaml nominal_derivation）
     - claim: 锥长口径与变体勘误账（λg/2 缺省；λg/4 变体不达标）
       formula: taper_len = λg/2 = 10.5121 mm（缺省档）
-      source: docs/templates/msl_siw_taper/meta.yaml nominal_derivation（runs/df6_a2siwmsl/criteria.md
+      source: docs/templates/msl_siw_taper/meta.yaml nominal_derivation（内部证据档
         §1.1 两轮勘误账如实收档）
   sensitivity_ranking:
   - param: siw_len_mm

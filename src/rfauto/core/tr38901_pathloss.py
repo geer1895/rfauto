@@ -10,7 +10,7 @@ UMa 有效环境高度 hE 的随机抽取、O2I σP、d2D-in 均匀分布）以
 ------------------------------------
 - **主源**：3GPP TS 38.901 V21.0.0 (2024-09) 官方 docx
   （ftp.3gpp.org/Specs/archive/38_series/38.901/38901-j50.zip，
-  runs/ge8_followup/wave_c/_c3_refs/ 存档）——Table 7.4.1-1（路损）、
+  3GPP 规范文本存档）——Table 7.4.1-1（路损）、
   Table 7.4.3-1/2/3（O2I 材料/模型/legacy）、Table 7.7.2-1..5（TDL）、
   NOTE 1/2/5（断点/频域）逐条转录。
 - **第二源 1（正式版本载体）**：ETSI TR 138 901 V19.2.0 官方 PDF

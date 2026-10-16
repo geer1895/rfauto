@@ -36,23 +36,24 @@
 
 ## 判据
 
-- 锚覆盖 4：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1（core/anchors；通配 + 专属）
+- 锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1、slot.slot_l_mm.closedform-v1（core/anchors；通配 + 专属）
 - 健康门：无模板作用域专属健康门（gate 如实不判，#274 口径）
 - 通用体检：求解健康度体检 G11 九因子（core/solve_health；service/health_service.health_check_run 按 run 装载产物判定）
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
+- `slot.slot_l_mm.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：slot_slot_l_mm = 40.9168 mm；±5e-05（rounding_band）
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
 
 - 参数语义：slot_l_mm=缝长（λ0/(2√((1+εr)/2))，Booker 对偶+半空间均值口径），slot_w_mm=缝宽，feed_w_mm=馈线宽（50Ω HJ），feed_margin_mm=板边到馈线手画段起点的馈段长（MSLPort 自画，MeasPlaneShift=margin/3）
 - 网格：辐射器件：上方/侧向/下方空气隙 λ0/4；地缘/槽缘/馈线缘精确入网
-- 冒烟现状：真机 runs/antenna2_smoke/slot 与 slot_override（2026-09-14）PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168，+11.0%，隐含 εeff 1.84）/ −21.76dB @2.6275GHz（L=46.036，隐含 εeff 1.54）；k_slot∈[0.66,0.79]·(1+εr)/2 待 HFSS 仲裁后才进设计式（#190）。Σ|S|² 带边 >1 已排查（2026-09-16，slot/sparams.csv 实测）：1.9GHz=1.212、2.9GHz=1.128，>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗（2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励 −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），归一化伪象而非 MSLPort/有限地物理错；判读口径=窗收内带 f0±0.4GHz（激励带内 80%）+ Σ|S|²>1.02 点剔除（scripts/smoke_antenna2_anchor.py 全模板通用；掩模后 307/321 点，凹位/深度不变），全局 FC 不动（f_max 进网格预算，改激励带会漂全部模板网格锚）
+- 冒烟现状：真机 内部证据档 与 slot_override（2026-09-14）PASS×2：S21 辐射凹 −16.41dB @2.665GHz（L=40.9168，+11.0%，隐含 εeff 1.84）/ −21.76dB @2.6275GHz（L=46.036，隐含 εeff 1.54）；k_slot∈[0.66,0.79]·(1+εr)/2 待 HFSS 仲裁后才进设计式（#190）。Σ|S|² 带边 >1 已排查（2026-09-16，slot/sparams.csv 实测）：1.9GHz=1.212、2.9GHz=1.128，>1.02 的点全部落在 1.9-2.08 与 2.82-2.9 两侧，f0±12% 判读窗（2.112-2.688GHz）内 ≤1.008——越限恰在 SetGaussExcite(F0,FC) 高斯激励 −20dB 带边（评估带=激励带，uf_inc 归一化分母趋零放大数值噪声），归一化伪象而非 MSLPort/有限地物理错；判读口径=窗收内带 f0±0.4GHz（激励带内 80%）+ Σ|S|²>1.02 点剔除（scripts/smoke_antenna2_anchor.py 全模板通用；掩模后 307/321 点，凹位/深度不变），全局 FC 不动（f_max 进网格预算，改激励带会漂全部模板网格锚）
 - 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑

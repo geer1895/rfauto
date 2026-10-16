@@ -119,10 +119,6 @@ src/rfauto/core/sparse_pce.py 公开符号 **7** 个（AST 机读）：
 
 analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双路径互证内核登记 analytic-anchor 轻条目」的延伸项——登记后重跑本生成器）。
 
-判据书/规格指针（docstring 逐字引文钉）：
-
-- `延续计划`——引文："延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）"
-
 测试面（tests/unit 引用扫描，机读；合计 **116** 个 test 函数）：
 
 | 测试文件 | test 函数数 |

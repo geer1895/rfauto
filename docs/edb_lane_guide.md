@@ -1,9 +1,8 @@
 # EDB 快车道用户指南：五族发射器 → 批处理求解 → Touchstone 判读
 
-> 状态：正式文档（2026-10-08 首版，W3 文档席；2026-10-09 判读章扩写——
-> 健康门判读语义演化史/判读终表/已知语义边界，W12 裁判面文档席；同日
-> §2 族表落地态回填——发射器签名/缺省/名义实跑值与 lange 拒绝语义行，
-> W12 判读席移交）。
+> 状态：正式文档（2026-10-08 首版；2026-10-09 判读章扩写——
+> 健康门判读语义演化史/判读终表/已知语义边界；同日
+> §2 族表落地态回填——发射器签名/缺省/名义实跑值与 lange 拒绝语义行）。
 > 定位：EDB 快车道的工程师操作面——平面族器件如何经**声明式 spec 发射 →
 > PyEDB/hfss_batch 建库 → `ansysedt` 批处理求解 → Touchstone 判读**批量
 > 生成数据集。会话污染/进程治理/看门狗等通用无人值守纪律的权威口径在
@@ -11,8 +10,8 @@
 > 术事实的权威口径在 `docs/pyedb_distilled.md`（对照 0.83 实装源码逐条核
 > 验版），本文 API 名逐字以源码为准。
 > 证据基线：pyedb 0.83.0 × pyaedt 1.4.0 × skrf 2.1.0 × AEDT 2025 R1
-> （v251），W1 真机冒烟 `runs/edblane85/w1_smoke/`（`REPORT.md` 为判读
-> 正本）。`#NNN` 为本仓  坑号。未经本机实测的口径标"待验证"。
+> （v251），W1 真机冒烟已归档（判读报告为判读
+> 正本）。`#NNN` 为本仓坑号。未经本机实测的口径标"待验证"。
 
 ---
 
@@ -52,7 +51,7 @@ EDB（Ansys Electronics Database）是**文件夹型分层版图数据库**。Py
 发射器全部是**纯函数**（零 IO 零 pyedb 依赖，pyedb 属 adapter 消费层），
 `params dict → (spec dict, config_json dict)`。全部尺寸由
 `core.synthesis` 闭式综合产出（`inverse_width` HJ 反解 + `forward_media`
-εeff + λg/4 闭式）——**禁止手抄毫米数**（项目规则 规则 1c/#252）。
+εeff + λg/4 闭式）——**禁止手抄毫米数**（闭式综合纪律，#252）。
 
 | 族 | 状态 | 端口 | 拓扑 | 源码入口 |
 |---|---|---|---|---|
@@ -156,7 +155,7 @@ spec"到不了 adapter（#212 离线审计制度化）。
 `assemble_config` 与 adapter `spec_to_config_json` 产出的 config 逐键一
 致（唯一豁免 setups[0].name 命名差异）——契约测试
 `tests/unit/test_edb_adapter.py::TestEmitterSpecContract` 双向钉住。这是
-2026-10-08 W2 席清偿"两席并行开发 schema 互不兼容"blocker 后的持久守卫
+2026-10-08 清偿"并行开发 schema 互不兼容"blocker 后的持久守卫
 （W1 冒烟 §4.1 实录）。
 
 ---
@@ -190,7 +189,7 @@ solved = adapter.solve_batch(result.aedb_path, timeout_s=3600.0)
 **环境实况（2026-10-08 真机，如实）**：本机 pyedb 0.83 dotnet 后端
 `Edb()` 在 `Database.Create` 处**进程级失败**（stderr
 `EVP_DecryptInit ... could not load the shared library`，exit 1，无
-Python 异常可捕获；诊断链与最小复现存 `runs/edblane85/w1_smoke/`，issue
+Python 异常可捕获；诊断链与最小复现存真机冒烟归档，issue
 原料）。gRPC 后端要求 AEDT 2026.1+（本机 2025 R1 无绕行）。**因此 W1 冒
 烟的建库段实际改道 pyaedt 非图形会话原生建模**（几何单一来源不变，仍由
 `edb_templates` 发射器产出 spec）。该环境件闭环前，`EdbAdapter.build()`
@@ -207,7 +206,7 @@ Python 异常可捕获；诊断链与最小复现存 `runs/edblane85/w1_smoke/`�
 from rfauto.adapters.hfss_batch import solve_project_batch
 
 raw = solve_project_batch(
-    r"E:\runs\edb_demo\edb_demo.aedb",   # .aedt 文件或 .aedb 目录
+    r"<drive>:\runs\edb_demo\edb_demo.aedb",   # .aedt 文件或 .aedb 目录
     timeout_s=3600.0,
     export_touchstone=True,              # 求解成功后二段导出（§5.2）
 )
@@ -263,7 +262,7 @@ out = export_touchstone_after_solve(project_path, renorm=False)
 **口径声明**：本节门值分**两层**，读数前先分层——①**离线发射层门**
 （offline gate，§6.1/§6.2 门表）：发射自检与数据集冒烟判读层，记录于
 `docs/templates/edb_*/meta.yaml` 的 acceptance 键；②**health gate**
-（真机批处理产物质量仲裁，W3 席位项「EDB 路径质量门适配」已落地）：
+（真机批处理产物质量仲裁，「EDB 路径质量门适配」已落地）：
 `src/rfauto/service/edb_health_gate.py::check_edb_batch_health`（schema
 `edb-health-gate-v1`），其语义演化史/判读终表/已知语义边界见
 §6.4–§6.6。两层门值不同（如 S11 离线门 -15dB vs 健康门通用缺省 -10dB）
@@ -285,7 +284,7 @@ out = export_touchstone_after_solve(project_path, renorm=False)
 | f0 偏移（S11 谷） | \|Δ\| ≤ 5% | **0.0%**（f_res 恰 2.400GHz） | PASS |
 
 S21 超窗如实记 FAIL（#122 不凑绿）；候选归因=单频自适应 ΔS=0.02 收敛档
-较粗，留 HFSS 3D 路径对拍仲裁（W2 席位账）。S11 -34dB + 隔离 -33dB 表明
+较粗，留 HFSS 3D 路径对拍仲裁（后续对拍判读）。S11 -34dB + 隔离 -33dB 表明
 器件本身是合格的定向耦合器。
 
 ### 6.2 edb_power_divider 门表（@f0）与门语义仲裁注记
@@ -298,14 +297,13 @@ S21 超窗如实记 FAIL（#122 不凑绿）；候选归因=单频自适应 ΔS=
 
 **门语义仲裁（已裁定，W4 落定）**：W1 任务书字面门"各 ≤-3.8dB"会让
 **任何**健康功分器 FAIL（理想等分分配就是 -3.01dB + 损耗；W1 健康实测
--3.19/-3.26）。冒烟席按字面记 FAIL 不凑绿、双读数存档
-`power_divider_judgment.json` 并发起仲裁（runs/edblane85/w1_smoke/
-REPORT.md §3.2）；W4 功分器门席裁定物理窗 **[-3.8, -2.5] dB（双边闭）**
+-3.19/-3.26）。冒烟判读按字面记 FAIL 不凑绿、双读数存档
+`power_divider_judgment.json` 并发起仲裁（W1 判读报告 §3.2）；W4 门语义裁定物理窗 **[-3.8, -2.5] dB（双边闭）**
 并以健康门第七判据 `s_split_window` 落地（单源=
 `edb_health_gate.S_WINDOW_DB_BY_TEMPLATE`，演化史见 §6.4-2）。无阻版
 特征性劣化（S22≈-6.7dB、S32 隔离仅 -5.62dB）只记读数不判门——隔离电
 阻判读须待有阻版真跑（RLC 脚本落地通道 W8 十一轮探针定谳失败待上游，
-runs/edblane85/w8_gap_sweep/）。
+W8 gap 扫描归档）。
 
 ### 6.3 判读纪律
 
@@ -313,7 +311,7 @@ runs/edblane85/w8_gap_sweep/）。
   `f0_on_grid` 存证）；不在格点时取最近格点读数并记偏差。
 - passivity σmax 与互易性自洽（branchline S23=S32 到 1e-14）是判读有效
   性的廉价旁证。
-- 判读逻辑属确定性内核（数值只在内核，项目规则 规则 7）——离线门值进
+- 判读逻辑属确定性内核（数值只在内核）——离线门值进
   meta.yaml，健康门判读函数已落地 `src/rfauto/service/edb_health_gate.py`
   （64 测，`tests/unit/test_edb_health_gate.py`），LLM/脚本不现场发明门。
 
@@ -324,9 +322,8 @@ runs/edblane85/w8_gap_sweep/）。
 裁的具体读数驱动，且全部遵循两条既定纪律：判据 FAIL 如实不凑绿（#122）、
 门常量按模板作用域分派（#274）。本节记"为什么改+证据出处"；当前终态见
 §6.5（单源=源码，本节文字与源码冲突时以源码为准）。冒烟批 2 =
-coupled_line/ratrace 两新族首跑（`runs/edblane85/w6_smoke2/`，报告自署
-W6.2 席）；W10 定谳重跑 = `runs/edblane85/w10_cl_recheck/`；W10 两新族
-批量 = `runs/edblane85/w10_families_batch/`。
+coupled_line/ratrace 两新族首跑（判读报告自署
+W6.2 批次）；W10 定谳重跑与 W10 两新族批量均有真机判读归档。
 
 **（1）v1 六因子（W3）**。动机：仓内既有体检 G11 消费 `runs/<run_id>/`
 目录形态，EDB 批处理产物=结构化回执 dict + Touchstone，既无 run 目录也
@@ -341,31 +338,30 @@ W6.2 席）；W10 定谳重跑 = `runs/edblane85/w10_cl_recheck/`；W10 两新�
 
 **（2）W4：第七因子 `s_split_window`（功分器门语义仲裁落定）**。动机：
 W1 冒烟任务书字面门"各 ≤-3.8dB"是单边下界语义错位——理想等分分配损耗
-就是 -3.01dB，字面门会让任何健康功分器 FAIL；冒烟席按字面记 FAIL 不凑
-绿、双读数存证并发起仲裁（runs/edblane85/w1_smoke/REPORT.md §3.2，健
+就是 -3.01dB，字面门会让任何健康功分器 FAIL；冒烟判读按字面记 FAIL 不凑
+绿、双读数存证并发起仲裁（W1 判读报告 §3.2，健
 康实测 -3.19/-3.26）。W4 裁定物理窗 **[-3.8, -2.5] dB 双边闭**（下界=
 3dB 分配 + 0.8dB 实现容差；上界排除异常增益/提取伪象），双腿各自落窗
 内才算过。作用域两条家法：**无通用缺省窗**（等分分配是功分器族专属物
 理语义，与有通用缺省 -10dB 的 S11 门不同）——未登记且无显式窗的族
 criteria 键缺席=不判，不硬套他族门也不冒充 UNKNOWN（#274）。
 
-**（3）W5→W6→W11：闭边界 eps 三连（项目规则 #376 家法）**。动机：健康
+**（3）W5→W6→W11：闭边界 eps 三连（数值门边界家法）**。动机：健康
 门闭区间语义（实测 ≤ 门为过 / 窗双边闭 / σmax ≤ 1+容差）在**恰等边界
 读数**上会被浮点量化噪声系统性误 FAIL——噪声是门实现侧必须吸收的，不
 是数据侧缺陷。三步：
-- **W5 回取复核席**抓第七判据自身缺陷：恰 10^(-2.5/20) 的腿经 double
+- **W5 回取复核**抓第七判据自身缺陷：恰 10^(-2.5/20) 的腿经 double
   域 dB 往返实测读 -2.4999999999999996（越上界 4.4e-16dB）→
   `_SPLIT_WINDOW_DB_EPS=1e-9` + 恰等边界回归钉（家法源头，与
   `core/trl_solt._LINE_PASSIVE_MARGIN` 同源）；
-- **W6 健康门边界席**全暴露面盘点：`s11_dip` 门值域扫描
+- **W6 健康门边界盘点**全暴露面盘点：`s11_dip` 门值域扫描
   [-40,-1]×0.1dB 实测 **30/391** 个门值落违约侧（如 -7.2dB 读
   -7.199999999999999）；`passivity` 容差带缘 **114/201** 组合读
   1.0100000000000002（+2.2e-16，double 表示 + SVD 舍入；线性域无 dB
   换算、噪声源不同暴露面同型）→ 两门各加 1e-9 eps + 恰等回归钉；
   `reciprocity` 门义即边界=违约（FAIL 侧）、无暴露面；
-- **W11 三 eps 席**收口：三常量统一表（常量名/门/噪声源/量级论证
-  9/8/14 个量级）落模块 docstring「数值门边界纪律」节并转正 项目规则
-  #376；第四处逐判据核查全收口（reciprocity `worst >= 容差` 线性域直
+- **W11 三 eps 收口**：三常量统一表（常量名/门/噪声源/量级论证
+  9/8/14 个量级）落模块 docstring「数值门边界纪律」节；第四处逐判据核查全收口（reciprocity `worst >= 容差` 线性域直
   读、无门值↔量测表示变换，非 #376 类）。
 
 **（4）W8：f0 多谷语义（`s11_dip` 锚最深谷 + `f0_offset` UNKNOWN）**。
@@ -378,16 +374,15 @@ criteria 键缺席=不判，不硬套他族门也不冒充 UNKNOWN（#274）。
 追加条件性因子 `f0_offset`：恒 UNKNOWN + detail 标 `multi_dip_near_f0`
 （#122 不冒充）。单谷/无谷/既有 UNKNOWN 路径零变化（回归钉
 `test_single_dip_behavior_unchanged` 等）。侧证：W8 功分器 gap 扫描
-f_res 单调下移多谷加剧（runs/edblane85/w8_gap_sweep/）——多谷形态在真
+f_res 单调下移多谷加剧（W8 gap 扫描）——多谷形态在真
 实参数族上并不罕见。
 
 **（5）W8→W9→W10→W11：紧缝族生产判读档 0.02→0.005→回退 0.02（判
 读校准锚确立）**。全链最重的一段演化，主角是 coupled_line 紧缝族
 （s=0.082mm / 铜 0.035mm，s/h=0.161，s/t=2.34）：
 - **W6/W7 冒烟**：S31@f0=-7.16dB 表观过耦 +2.84dB 超窗 [-11,-9]，如实
-  FAIL 不调参（runs/edblane85/w6_smoke2/REPORT.md §2.1）；
-- **W8 三变体仲裁**（HFSS 3D 同参数对拍，runs/edblane85/w8_cl_arb/
-  ARBITRATION.md）：表观过耦二分=真厚度效应 ≈+0.8~0.9dB@s/t=2.34
+  FAIL 不调参（冒烟批 2 判读报告 §2.1）；
+- **W8 三变体仲裁**（HFSS 3D 同参数对拍，W8 仲裁档）：表观过耦二分=真厚度效应 ≈+0.8~0.9dB@s/t=2.34
   （HFSS 匹配档阶梯随收紧趋稳 +0.80）+ **ΔS=0.02 收敛档读数伪象
   ≈+2.0dB**（HFSS 侧阶梯分解；两引擎 0.02 档一致读 -7.2~-7.6——0.02
   档的窗口判据在测"网格收敛度"而非"器件物理"）；零厚全波饱和 -9.772
@@ -399,17 +394,15 @@ f_res 单调下移多谷加剧（runs/edblane85/w8_gap_sweep/）——多谷形�
   +0.8dB@s/t=2.34、s/t≥4 伪象主导区划线仅 warning）；同日 W9 审查
   （W10 落定）P0 抓出"建模期写入即生效"声明被真机反证（0.005 写入不
   传播，S31 与 0.02 档逐位同值 2.4e-13）；
-- **W10 定谳**（真机单点全链，runs/edblane85/w10_cl_recheck/
-  REPORT.md）：① MaxDelta=0.005 在 EDB 3D Layout schema
+- **W10 定谳**（真机单点全链判读报告）：① MaxDelta=0.005 在 EDB 3D Layout schema
   （SimSetupID=19）**无键、写入不可达**（四互证）；唯一可达收紧通道=
   扁平键 `MinConvergedPasses`（W9 mc2=2 / W10=4 两真机点被求解器实消
   费）；② **量级修正**：EDB 侧档位伪象实测仅 **~0.62dB**（W8 的 ~2dB
   系 HFSS 侧阶梯分解，不按面值转移 EDB），剩余 **~1.0dB=EDB-Layout 特
   有建模保真差**（引擎间隙随收紧变宽 0.406→0.623dB="不同收敛极限"而
-  非"同一极限的滞后"）；③ 两新族批量 6 点旁证（runs/edblane85/
-  w10_families_batch/）：0.005 真档不可达下**回收天花板 ≈0.5dB**，S31
+  非"同一极限的滞后"）；③ 两新族批量 6 点旁证（W10 批量判读归档）：0.005 真档不可达下**回收天花板 ≈0.5dB**，S31
   三点 -7.49~-7.69 仍超窗，缺口 2.1~2.3dB=剩余伪象+厚度偏置构成；
-- **W11 裁决**（ 九百十三，W10 审查席 P2-1）：**回退 0.02**——
+- **W11 裁决**（后续真机复验定谳）：**回退 0.02**——
   写入口不可达定谳 + EDB 侧伪象 0.62dB 量级不支撑 4× 加严 + 保留
   0.005"请求档"=每建必告警噪声 + 存证值误导归因（#122 不虚报）。
   **复进条件**写死：pyedb/AEDT 暴露 MaxDelta 写入口后按 W8 依据显式重
@@ -421,15 +414,15 @@ f_res 单调下移多谷加剧（runs/edblane85/w8_gap_sweep/）——多谷形�
 0.084dB（W1）：W5 HFSS 3D 仲裁 **AGREE_EDB**——两引擎同向超窗=模型级
 特征（矩形环未 miter），非 EDB 伪象；收敛阶梯 d02→d01 S21 移动
 +0.108dB ≥0.05 阈值 → 单点超窗含收敛档噪声成分
-（runs/edblane85/w5_hfss_arb/ARBITRATION.md）。② coupled_line W6 门表
+（W5 仲裁档）。② coupled_line W6 门表
 S21∈[-11,-9] 属直通口物理口径错位——直通口理想读数
 -10·log10(1-C²)≈-0.46dB（10dB 耦合器），同现象在 S31 重复计门；判读
-面修正为功率残差口径（runs/edblane85/w8_cl_arb/ARBITRATION.md §1.2
+面修正为功率残差口径（W8 仲裁档 §1.2
 注）。
 
 ### 6.5 当前判读终表（2026-10-09，单源=src/rfauto/service/edb_health_gate.py）
 
-七因子 + 条件性 `f0_offset`（全部确定性数值规则；铁律 7：LLM/agent 永
+七因子 + 条件性 `f0_offset`（全部确定性数值规则；LLM/agent 永
 不产生物理数字，本门只消费求解器实测与批处理结构化回执）。门分派优先
 级：调用方显式覆盖 > 模板登记表（值可 None=该族显式不设门）> 通用缺省
 （仅 S11 有缺省；分配窗无缺省）。
@@ -462,8 +455,7 @@ verdict 聚合（#122）：任一 FAIL → FAIL；否则任一 UNKNOWN → UNKNO
 - 与 §6.1/§6.2 离线门的关系：离线门（meta.yaml acceptance，如 S11
   ≤-15dB）与健康门（-10dB 通用缺省）是**两层门**，值不同是分层设计
   （离线门=冒烟判读口径，健康门=真机产物通用质量门），非漂移；改动任
-  一层门值一律先读对应单源（meta.yaml / 本模块），禁止臆造物理数字
-  （铁律 7）。
+  一层门值一律先读对应单源（meta.yaml / 本模块），禁止臆造物理数字。
 - 附：coupled_line 生产判读档单源=`adapters/edb_templates/
   coupled_line.py::DEFAULT_ADAPT_MAX_DELTA = 0.02`（W11 回退终态，
   全史见 §6.4-5）。
@@ -477,15 +469,14 @@ verdict 聚合（#122）：任一 FAIL → FAIL；否则任一 UNKNOWN → UNKNO
 调走低）的响应，"带内谷位"标记被钳到扫频带缘报出常数级大偏移：
 coupled_line 三点批量 +30%×3（f_res=3.12GHz=上带缘，W10 批量定型）。
 f0 处实测匹配本身健康（-16.3dB）——该标记 FAIL 只说明"非谷型响应"，
-不说明匹配差。出处：runs/edblane85/w6_smoke2/REPORT.md §2.1（冒烟批 2
-首证）、runs/edblane85/w10_families_batch/。
+不说明匹配差。出处：冒烟批 2 判读报告 §2.1（首证）、W10 批量判读归档。
 
 **（2）双谷夹持——多模闭合环族的 f0 标记伪象**。ratrace 带内双谷
 （1.9716/2.6664GHz）夹持设计点，f0=2.4 居中本身 -18.42dB 健康，单标记
 谷位报 -17.85%（冒烟批 2），三点 -17%×3 复现定型（W10 批量）。健康门
 W8 起对该形态如实 UNKNOWN（`multi_dip_near_f0`）不再硬判；冒烟批 2 离
 线判读表的 f0 偏移门按单谷语义记 FAIL——两层门口径差如实保留。出处：
-runs/edblane85/w6_smoke2/REPORT.md §2.2/§4-2。
+冒烟批 2 判读报告 §2.2/§4-2。
 
 **（3）多模族 f0 标记退化（语义总注）**。（1）（2）的共同根因：
 `f0_offset` 的语义域=单谷响应，非谷型/多谷型上该标记退化。修语义（带
@@ -502,9 +493,8 @@ runs/edblane85/w6_smoke2/REPORT.md §2.2/§4-2。
 无键），唯一可达收紧通道=扁平键 `MinConvergedPasses`。**紧缝族 S31 窗
 口判据 FAIL 时，先核对求解档位与上述三重量的构成，再下"器件过耦"结
 论**——0.02 档的窗口判据测的是"网格收敛度+保真差+厚度"而非纯器件物理
-（W8 仲裁判词）。出处：runs/edblane85/w8_cl_arb/ARBITRATION.md §3、
-runs/edblane85/w10_cl_recheck/REPORT.md §3、runs/edblane85/
-w10_families_batch/。
+（W8 仲裁判词）。出处：W8 仲裁档 §3、
+W10 判读报告 §3、W10 批量判读归档。
 
 **（5）通用收敛档噪声底（各族适用）**。W5 branchline 仲裁口径：ΔS 档
 位阶梯上关键指标移动 ≥0.05dB 即视为"0.02 档读数含收敛档噪声"（d02→
@@ -519,7 +509,7 @@ d01 S21 移动 +0.108dB 实证）；单点超窗量级与该噪声底相当时�
 - **数据工厂 EDB 道**（dataset collector 消费 batch+Touchstone 形态）：
   已落地（W3）——`service/dataset_edb_lane.py`（#251 谱系第⑥类产物通
   道）：以 `<stem>_judgment.json` 为目录识别主标志，读 `<stem>_spec.json`
-  （参数唯一来源，铁律 7）+ `state.json` + Touchstone 产物；行 schema 与
+  （参数唯一来源）+ `state.json` + Touchstone 产物；行 schema 与
   `dataset_service` 逐键对齐（同布局 points.parquet/points.h5+manifest），
   `query_dataset`/`list_datasets` 直接可查；#320–#322 导入纪律在行
   schema 与 E1 指纹面同构适用（study_name=批次相对 runs 根 posix 路径，
@@ -530,9 +520,9 @@ d01 S21 移动 +0.108dB 实证）；单点超窗量级与该噪声底相当时�
   （`mcp_tools/edb.py`）+ resources 两件 `rfauto://edb/status`、
   `rfauto://edb/datasets`（不计入工具数）。
 - **服务器/远程**：多机协同通道（`rfauto remote`，sim_host）当前锚
-  HFSS gRPC 链路；EDB 批处理进程的远程化（含服务器侧 E 盘临时目录/任务
+  HFSS gRPC 链路；EDB 批处理进程的远程化（含服务器侧工作盘临时目录/任务
   毕清理规则）尚未排期（真实未来项），远程服务器 AEDT 版本必须=本机
-  （项目规则 规则 0）。
+  （版本对齐纪律）。
 
 ---
 
@@ -569,11 +559,11 @@ d01 S21 移动 +0.108dB 实证）；单点超窗量级与该噪声底相当时�
 | spec 契约/假设清单 1–8/KNOWN_TEMPLATES/validate_spec | `src/rfauto/adapters/edb_templates/schema.py` docstring |
 | 四族发射器拓扑/端口语义/综合链 | `src/rfauto/adapters/edb_templates/branchline.py`、`power_divider.py`、`coupled_line.py`、`ratrace.py`（docstring）；单源一致性钉 `tests/unit/test_edb_templates.py` 与 `tests/unit/test_edb_templates_ext.py`；lange 拒绝语义与升格前置 `lange.py` docstring |
 | EdbAdapter.build/solve_batch/EdbBuildResult/BatchSolveResult、resistors RLC 处方、版本钉 | `src/rfauto/adapters/edb_adapter.py`（含 docstring 逐条出处） |
-| solve_project_batch/build_batch_command/export_touchstone_after_solve、参数序纪律、find_ansysedt_exe 链 | `src/rfauto/adapters/hfss_batch.py`；真机实证 `runs/edblane85/w1_smoke/REPORT.md` §4.3 |
-| W1 判读门表/读数/门语义仲裁/端口序存证 | `runs/edblane85/w1_smoke/REPORT.md` §2–§3 + 两族 `*_judgment.json` |
-| 健康门七因子/三 eps/门登记表（§6.5 判读终表单源） | `src/rfauto/service/edb_health_gate.py`（docstring「数值门边界纪律」=项目规则 #376 家法）+ `tests/unit/test_edb_health_gate.py`（64 测，含恰等边界钉/多谷钉） |
-| 判读语义演化证据链（§6.4：W1 冒烟/冒烟批 2/W5 仲裁/W8 仲裁/W10 定谳与批量） | `runs/edblane85/w1_smoke/REPORT.md`、`runs/edblane85/w6_smoke2/REPORT.md`、`runs/edblane85/w5_hfss_arb/ARBITRATION.md`、`runs/edblane85/w8_cl_arb/ARBITRATION.md`、`runs/edblane85/w10_cl_recheck/REPORT.md`、`runs/edblane85/w10_families_batch/` |
-| coupled_line 生产判读档 0.02 回退单源（W11 裁决， 九百十三） | `src/rfauto/adapters/edb_templates/coupled_line.py::DEFAULT_ADAPT_MAX_DELTA`（模块 docstring「生产判读档史」节带 W8→W9→W10 全史与复进条件） |
+| solve_project_batch/build_batch_command/export_touchstone_after_solve、参数序纪律、find_ansysedt_exe 链 | `src/rfauto/adapters/hfss_batch.py`；真机实证 W1 判读报告 §4.3 |
+| W1 判读门表/读数/门语义仲裁/端口序存证 | W1 判读报告 §2–§3 + 两族 `*_judgment.json` |
+| 健康门七因子/三 eps/门登记表（§6.5 判读终表单源） | `src/rfauto/service/edb_health_gate.py`（docstring「数值门边界纪律」=数值门边界家法）+ `tests/unit/test_edb_health_gate.py`（64 测，含恰等边界钉/多谷钉） |
+| 判读语义演化证据链（§6.4：W1 冒烟/冒烟批 2/W5 仲裁/W8 仲裁/W10 定谳与批量） | W1 判读报告、冒烟批 2 判读报告、W5 仲裁档、W8 仲裁档、W10 判读报告与 W10 批量判读归档 |
+| coupled_line 生产判读档 0.02 回退单源（W11 裁决） | `src/rfauto/adapters/edb_templates/coupled_line.py::DEFAULT_ADAPT_MAX_DELTA`（模块 docstring「生产判读档史」节带 W8→W9→W10 全史与复进条件） |
 | campaign stage hfss_batch 路由缝 | `src/rfauto/service/campaign_executor.py::stage_batch_decl`/`_route_batch_stage` |
 | pyedb API 名（Edb/configuration.load/run/export、CfgEdgePort 50Ω 硬编码、层序、sweep 词表） | `docs/pyedb_distilled.md`（0.83 实装源码逐条核验） |
 | 无人值守纪律（-Logfile、看门、孤儿、进程隔离哲学） | `docs/unattended_hfss_automation.md` §1/§3/§5 |

@@ -21,7 +21,7 @@ env/
 *~
 
 # ===== 运行产物（整体不入 git，SQLite 是唯一运行索引）=====
-runs/
+runs/*
 
 # ===== 场文件（AEDT/ADS 生成）=====
 *.aedt
@@ -111,3 +111,7 @@ configs/remote_machines.local.yaml
 third_party/
 outputs/
 .mutmut-cache
+
+# ===== 公开仓全量单元门记录（CONTRIBUTING 计数注记点名件；随门刷新同笔更新；
+# ===== 置于 *.log 规则之后使否定生效）=====
+!runs/unit_gate_public.log

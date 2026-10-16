@@ -5,7 +5,7 @@
    ② 初始化——initPages（工具集注入 + 轮询/SSE/导出桥/tools 深链四监听装配）
      与主题四态控制（setThemeMode/getThemeMode）；
    ③ 既有公开导出面全量 re-export（app.js/palette.js 的 import 路径
-     "./pages.js" 不变；导出面 54 名逐名等价见 runs/aurora_d/uir2/）。
+     "./pages.js" 不变；导出面 54 名逐名等价（内部重构档）。
    拆分域：context/dom/sortable/charts/polling/sse/kit/router/dashboard_util/
    filebrowser + view_*（按页面域，见各模块 docstring）。行为零变化纪律：
    页面代码逐字节搬移（含注释），仅 import 接线与跨模块状态访问器

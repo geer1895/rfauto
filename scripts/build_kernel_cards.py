@@ -214,13 +214,7 @@ SPECS: tuple[CardSpec, ...] = (
                 note="极窄违规带可能被漏检；skrf 半尺寸测试的解析频段边界同时给出。",
             ),
         ),
-        doc_refs=(
-            DocRef(
-                path="PROJECT_RULES.md",
-                quote="任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。",
-                tracked=True,
-            ),
-        ),
+        doc_refs=(),
     ),
     CardSpec(
         kernel_id="rwg_mmt",
@@ -337,11 +331,6 @@ SPECS: tuple[CardSpec, ...] = (
             DocRef(
                 path="docs/plan_deepdive_specs_20260924.md",
                 quote="规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；",
-                tracked=False,
-            ),
-            DocRef(
-                path="runs/df6_dp1mmt/criteria.md",
-                quote="判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。",
                 tracked=False,
             ),
         ),
@@ -578,13 +567,7 @@ SPECS: tuple[CardSpec, ...] = (
                 ),
             ),
         ),
-        doc_refs=(
-            DocRef(
-                path="PROJECT_RULES.md",
-                quote="延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）",
-                tracked=True,
-            ),
-        ),
+        doc_refs=(),
     ),
     CardSpec(
         kernel_id="cascade",
@@ -698,11 +681,6 @@ SPECS: tuple[CardSpec, ...] = (
             DocRef(
                 path="docs/plan_deepdive_specs_20260924.md",
                 quote="规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书：",
-                tracked=False,
-            ),
-            DocRef(
-                path="runs/df6_dp5cascade/criteria.md",
-                quote="runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。",
                 tracked=False,
             ),
         ),

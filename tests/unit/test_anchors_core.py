@@ -1,4 +1,4 @@
-"""DP-3 锚注册表纯内核测试（判据 a 核心 + c，预声明 runs/df6_dp3anchors/criteria.md）。
+"""DP-3 锚注册表纯内核测试（判据 a 核心 + c，）。
 
 - a1：c3.l_via_h 锚值与 openems_templates.C3_L_VIA_CAL_H 逐位相等；
 - a3：cps.gamma_er 锚公式（AST 白名单求值）与 calculators.
@@ -47,7 +47,7 @@ def test_expected_anchors_single_source_shape() -> None:
     # + ge8e X5 解析档锚批（wf:review-ge8e-x5，2026-10-04）：首批 analytic
     # 锚扩面 13 席（atten_pi/atten_t/ratrace/stripline/slotline/siw/
     # monopole/coil_nfc/pyramid_horn 九族闭式恒等锚）13 = 48
-    assert len(EXPECTED_ANCHORS) == 60  # ge8e X5 批 +13  # ge8 K-4 锚演进 +1  # ge8 TA 批三 +4  # ge8 TA 批二 +4  # ge8 TA 批 20→22  # ge8b WA 席1 +3
+    assert len(EXPECTED_ANCHORS) == 75  # 锚批序列累计（X5 解析档/TA 恒等锚/aurora_d 两批等，随批更新）
     assert all(a.count(".") >= 2 and "-v" in a for a in EXPECTED_ANCHORS)
 
 
@@ -252,7 +252,7 @@ def test_c6_residual_beyond_threshold_stale_alarm() -> None:
     assert rec is not None and rec.status == "stale"  # 仅内存面；YAML 零改写
 
 
-# ── HFSS 窗 B→A 批（wf:anchor-register，2026-09-29）：锚值与 verdict 互证 ──
+# ── HFSS 窗 B→A 批（2026-09-29）：锚值与 verdict 互证 ──
 # 三层互证：yaml 装载 → core resolve → verdict.json 实测门值逐位（只读证据，
 # runs/ 归档零改写）。
 
@@ -360,10 +360,10 @@ def test_b2a_window_anchors_stale_age_semantics() -> None:
         assert row[aid]["stale"] is True, aid  # 过线即 stale
 
 
-# ── P-KJ-EVEN P3 批（wf:goal-t5，2026-09-30）：KJ even 闭式适用域盒锚───────
+# ── P-KJ-EVEN P3 批（2026-09-30）：KJ even 闭式适用域盒锚───────
 # 域盒语义钉：入盒 hit+域内基准逐位；越域消费点（P1 §4/§8.6 清单）结构化
 # fallback=out_of_domain（越域告警语义，不抛）；两条域缘 MARGINAL 注记随
-# provenance 落档。证据链：runs/df7_kjeven p1_audit §8.5/§8.6 → p2 判读
+# provenance 落档。证据链=内部证据档（公开分发视图不随附），判读口径
 # §4/§6 → elmer_recheck §5（T3 核验 0795b2a 解锁）。
 
 _KJ_DOMAIN_AID = "coupled_microstrip.kj_even_domain.lit-v1"
@@ -415,13 +415,12 @@ def test_kj_even_domain_edge_notes_registered() -> None:
     assert "u=10/g=0.1" in note and "1.5" in note and "MARGINAL" in note
     # 注记 2：even u=10 对空气盒顶高敏感（10h 顶 +1.07%）
     assert "10h" in note and "1.07" in note
-    # 域内基准出处可回溯（Elmer 复核摘要+J1 门）
-    assert rec.provenance.get("referee_script") == \
-        "runs/df7_kjeven/elmer_recheck/elmer_recheck.py"
+    # 出处档位公开分发视图不随附（内部证据档，字段可缺省）
+    assert rec.provenance.get("referee_script") is None
     assert rec.uncertainty is not None and rec.uncertainty["value"] == 1.0
 
 
-# ── ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）：Dk 指针锚互证 ─────────
+# ── ge6 Wave1 锚注册批（2026-10-01）：Dk 指针锚互证 ─────────
 # 三层互证：yaml 装载 → core resolve → runs/ 证据档实测值逐位（只读证据，
 # runs/ 归档零改写；B2A verdict 同口径——证据档仓本机在档）。
 

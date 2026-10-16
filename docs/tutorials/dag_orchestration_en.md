@@ -42,7 +42,7 @@ docs/plan_deepdive_specs_20260924.md §DP-9.
 Nodes have only four `kind` values: `render | solve | postprocess | judge`
 (the execution base enforces the #261 machine mutex on solve-kind nodes).
 The minimal plan is three file-writing nodes (for demo purposes, zero real
-engine) — save as `runs/aurora_d/tut/dag_demo_plan.json`:
+engine) — save as `runs/demo/dag_tutorial/plan.json`:
 
 ```json
 {
@@ -94,9 +94,9 @@ downstream reads files) — the base does not move data.
 ## 3. Hands-on: execution, the journal, and resume
 
 ```bash
-rfauto dag run runs/aurora_d/tut/dag_demo_plan.json \
-    --run-dir runs/aurora_d/tut/dag_demo_run \
-    --solve-lock runs/aurora_d/tut/dag_demo_run/.solve.lock
+rfauto dag run runs/demo/dag_tutorial/plan.json \
+    --run-dir runs/demo/dag_tutorial/run \
+    --solve-lock runs/demo/dag_tutorial/run/.solve.lock
 ```
 
 Measured output:
@@ -126,13 +126,13 @@ outright) — the cost of restart-after-kill is only "the nodes that had not
 finished". The journal is the single source of truth; read it any time:
 
 ```bash
-rfauto dag status runs/aurora_d/tut/dag_demo_run
+rfauto dag status runs/demo/dag_tutorial/run
 ```
 
 Measured output:
 
 ```
-runs/aurora_d/tut/dag_demo_run  verdict=COMPLETE  hit=3  recompute=3
+runs/demo/dag_tutorial/run  verdict=COMPLETE  hit=3  recompute=3
              DAG 节点态摘要（dag.state.json）
 ┌─────────┬────────┬──────────────┬─────────────┬────────┐
 │ node_id │ status │ key          │ outputs     │ source │

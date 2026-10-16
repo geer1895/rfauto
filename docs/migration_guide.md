@@ -24,7 +24,7 @@
 - `F:\HFSS`（AEDT 2023.1+2026）、`F:\ADS`（2027）、`F:\KiCad`（10）——
   商用软件官方包重装+换机授权（license 常绑机器，提前找供应商确认）。
   未装好前 fake/openEMS 通道开发不受影响，仅真机档不可用。
-  KiCad 重装到 `E:\KiCad` 同路径（src 里 kicad_drc/pcell 有三处该路径）。
+  KiCad 重装到安装盘符路径（如 `<drive>:\KiCad`）同路径（src 里 kicad_drc/pcell 有三处该路径引用）。
 - ZCode 本体及其 MCP 工具 key（web_reader/zai 等）——新机自行安装配置。
   项目内 `configs/chat_settings.yaml`（LLM key）与
   `configs/settings.local.yaml`（EDA 路径）都在 .gitignore，整目录拷贝
@@ -53,7 +53,7 @@
    setx PIP_CACHE_DIR "D:\rf_workspace\.cache\pip"
    setx UV_CACHE_DIR "D:\rf_workspace\.cache\uv"
    ```
-   （`RFAUTO_AEDT_PATH=E:\HFSS\v231` 等 HFSS 装好后再设。）
+   （`RFAUTO_AEDT_PATH=<drive>:\HFSS\v231` 等 HFSS 装好后再设。）
 6. 重装 HFSS 2023.1 / ADS 2027 / KiCad 10（官方包+授权），核对
    `configs/settings.local.yaml`。
 
@@ -69,8 +69,8 @@
 .venv\Scripts\rfauto.exe ui --port 8643                    :: UI 起得来（含 S参数/成本/报告三页）
 ```
 
-**验收后按 `交接文档` 继续开发——patch 校准战役
-是当前关键路径**（新机内存 ≥5.5GB 可 workers=2，≥4GB 串行）。
+**验收后按项目交接说明继续后续开发**
+（新机内存 ≥5.5GB 可 workers=2，≥4GB 串行）。
 
 ## 4. 给 Agent 的自动迁移提示词（新机 Zcode 里直接粘贴）
 
@@ -110,16 +110,16 @@
 >    任何一条不过就停下报告，不要跳过。
 > 8. HFSS/ADS/KiCad 重装与 ZCode 的 MCP 工具配置我没有授权你操作，
 >    跳过并在最后提醒我补做。
-> 9. 验收全过后：读 交接文档 并按它继续开发
->    （patch 校准战役是关键路径；新机内存 ≥5.5GB 可 workers=2）。
+> 9. 验收全过后：按项目交接说明继续后续开发
+>    （新机内存 ≥5.5GB 可 workers=2）。
 >    最后写迁移报告（拷贝量/耗时/验收结果/遗留项）到 runs\ 下。
 
 ## 5. 已知坑
 
 - **盘符/路径硬要求**：项目必须落 `D:\rf_workspace`（单根）。openEMS 已
   可移植化（走 RFAUTO_OPENEMS_BIN），但 KiCad 源码引用仍是
-  `E:\KiCad`（重装同路径即闭合）。若新机 E: 被占用，给别的盘换盘符，
-  不要改项目内路径。
+  安装盘符路径（如 `<drive>:\KiCad`，重装同路径即闭合）。若该盘符被占用，
+  给别的盘换盘符，
 - **vendor/ 与 .cache/ 永不入库**：openEMS 二进制是 GPL 且体积大，已
   gitignore（2026-09-06 提交）——开源发布前 grep 确认无泄漏。
 - **torch 别裸装**：不带 `--index-url .../whl/cpu` 会拉 CUDA 版。
@@ -158,12 +158,12 @@
    解析链：`load_solvers_config()` 展开 `${RFAUTO_OPENEMS_BIN}` 后
    openEMS.exe 存在且指向 vendor 路径（实测过）。
 4. **本机 EDA 实况（2026-09-07）**：AEDT **2025.1** 在
-   `E:\ANSYSINC\ANSYS Inc\v251`（ANSYSEM_ROOT251 自动发现，
+   AEDT 安装目录（如 `<drive>:\ANSYSINC\ANSYS Inc\v251`，ANSYSEM_ROOT251 自动发现，
    RFAUTO_AEDT_PATH 已 setx 钉住）；ADS **2027** 在
-   `E:\ADS\ADS27`（settings.local.yaml hpeesof_dir；2026-09-18 治理：旧口径 E:\ads2026\ADS_2026 / E:\Ads2027 均失效，env RFAUTO_HPEESOF_DIR 优先；license=EEsof FlexNet License Server 服务 27009@localhost，C:\Program Files\Keysight\EEsof_License_Tools）。
+   ADS 安装目录（如 `<drive>:\ADS\ADS27`；settings.local.yaml hpeesof_dir；env RFAUTO_HPEESOF_DIR 优先；license=EEsof FlexNet License Server 服务）。
    与已测组合（HFSS 2023.1/2026 + ADS 2027）有版本漂移，均 best_effort
    档，真机档跑前先冒烟。KiCad 仍未装（kicad_drc/pcell 通道不可用，
-   装到 `E:\KiCad` 同路径即闭合）。
+   装到 `<drive>:\KiCad` 同路径即闭合）。
 5. **实测体量/耗时**：工作区净荷 2.391G/21553 文件（du 4.9G 是移动盘
    大簇分配虚高）、openEMS install 116.5M/565 文件、cache 13.56G/27212
    文件；USB 读约 85-135MB/s，三项合计约 11 分钟；新 venv（3.12.14，

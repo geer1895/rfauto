@@ -21,7 +21,7 @@
 | M2 判读 | 数据集 → GP/MFK 代理 → 三门/双口径判读 | `factory_m2_mfk_rejudge.py` | `runs/datafactory_m2/` |
 | M4 寻优 | 代理寻优（查库存）vs HFSS 基线墙钟账 | `factory_m4_bench.py` | `runs/datafactory_m4/` |
 
-两条铁纪律贯穿全链（违反即返工，项目规则 立规）：
+两条铁纪律贯穿全链（违反即返工）：
 
 1. **判据预声明（先写后算）**：每个批次的判据/口径先写进
    `runs/<批次>/criteria.md`（写死再跑），判读脚本只消费它——事后改门
@@ -107,7 +107,7 @@ M2 判读的 MFK 腿：低保真库存（150 行数据集）+ 高保真 HFSS 锚
 
 ```bash
 .venv/Scripts/python.exe scripts/factory_m2_mfk_rejudge.py --judge \
-    --out runs/aurora_d/tut/mfk_verdict.json
+    --out runs/demo/mfk_verdict.json
 ```
 
 实测输出（约 49s，节选）：

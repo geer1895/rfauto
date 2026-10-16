@@ -21,7 +21,7 @@ _DEFAULT_SUB = {"er": 3.66, "h_mm": 0.508, "tan_d": 0.0037}
 
 # 基板 z 向格数缺省（render_script `_sub_cells` 旋钮的缺省档，G3 2026-09-22）：
 # 非族模板维持官方 substrate_cells=4（旧口径逐字节不变）；CPW/槽下场族生产
-# 缺省抬到 8——依据 msl_cpw zconv 定案实验（runs/msl_cpw_zconv，2026-09-20
+# 缺省抬到 8——依据 msl_cpw zconv 定案实验（内部证据档，2026-09-20
 # 预声明判据先写后跑）：β2 偏差 dev −2.151→−0.971→−0.474pp（sub4→8→16），
 # verdict=GRID_UNDERRES(份额归网格, 78%)+SATURATED_RESIDUAL，sub8 即回
 # msl_cpw_benchmark_verdict ±2% 锚门内（kernel PASS 五门全过）——z 向基板
@@ -81,7 +81,7 @@ TEMPLATE_META: dict[str, dict[str, Any]] = {
         "臂中点馈电+隔离端悬空，三处结构性错误）。名义臂注记（R2-1 审查批"
         " 2026-10-04）：arm_len_mm=20.5 为薄线极限捷径口径（HJ 精算正解 "
         "18.09mm，偏差 +11.8%，已裁定维持锚定基线不改数值）；出处："
-        "runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1 "
+        "内部证据档 R2-1 "
         "与坑#252",
     },
     "dipole": {
@@ -351,7 +351,7 @@ TEMPLATE_NOMINAL: dict[str, dict[str, Any]] = {
     "patch": {"patch_len_mm": 34.9, "patch_w_mm": 50.0, "feed_offset_mm": 10.0},
     # branchline 名义臂注记（R2-1 审查批 2026-10-04）：arm_len_mm=20.5 为
     # 薄线极限捷径口径（HJ 精算正解 18.09mm，偏差 +11.8%，已裁定维持锚定
-    # 基线不改数值——锚历史，#252 定性）；出处 runs/review_ge8e/
+    # 基线不改数值——锚历史，#252 定性）；出处 内部证据档
     # r2_synthesis_templates_anchors/REPORT.md R2-1
     "branchline": {"arm_len_mm": 20.5, "series_w_mm": 1.87, "shunt_w_mm": 1.11},
     "dipole": {"dipole_len_mm": 58.0, "dipole_w_mm": 2.0, "gap_mm": 2.0},

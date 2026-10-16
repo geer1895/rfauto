@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ══ SIW 族首族：直 SIW 传输线段（2026-09-22 siw-family 立项）══════════════════
-# 权威口径：runs/siw_family/criteria.md（文献双源/闭式/激励方案利弊/预声明门全账）。
+# 权威口径：SIW 族判读 criteria 档（文献双源/闭式/激励方案利弊/预声明门全账）。
 # 结构：基板 z∈[0,h]（上下显式零厚金属板贴 z 边界 PEC——与边界等电势冗余，使
 # 桥-板-过孔连通图物理化）+ 两列金属化过孔 PEC 圆柱（x=±w/2，心距 s，贯通
 # 全域直入 PML——slotline_lumped"匹配端接"口径，端口背后无开路 stub/短路面）。
@@ -25,7 +25,7 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 # β 判读：LumpedPort 无 beta 属性（cps 同坑）→ port_beta.csv 落端口元 y 坐标
 # + plane_dist_m（cps 契约复用）；WaveguidePort 解析 β=闭式自证不可作判据
 # （criteria.md §3 弃用理由 2，#118 不自证）。
-# 端口方案 v2（2026-09-23 df5-SE，runs/siw_family/v2_criteria.md）：opt-in
+# 端口方案 v2（2026-09-23 df5-SE，v2_criteria 判读档）：opt-in
 # 旋钮 params["_port_mode"]="v2"=藩篱止于端口面+端面口径 LumpedPort（跨介质
 # 孔径 ±W/2、R=Z_PV 不变）——按原 G3 门重裁的 §R2 路线；缺省 v1 渲染逐字节
 # 不变（字节钉 test_siw_v1_default_render_byte_pin）。
@@ -108,7 +108,7 @@ def siw_layout(params: dict[str, Any], freq_range_ghz: tuple[float, float],
             "网格线（#311 先例口径：SmoothMesh 不细分 ≤NEAR 区间），藩篱"
             f"泄漏建模粗；收紧 mesh_resolution_mm ≤ "
             f"{4.0 * via_gap * 1e3:.4g}mm 或加大 s−d（设计规则域内）")
-    # 端口方案旋钮（runs/siw_family/v2_criteria.md §1/§2，2026-09-23 df5-SE
+    # 端口方案旋钮（v2_criteria 判读档 §1/§2，2026-09-23 df5-SE
     # 批；criteria.md §R2 归因裁定后用户选 v2 路线）：
     #   v1（缺省）=z 桥探针悬在贯通 PML 的连续 SIW 中间——端面三支路节点分光，
     #     fixture 汇 ≥0.385，理想探针天花板 −3.10dB（§R2 构造性证明）；
@@ -284,7 +284,7 @@ SIW_META: dict[str, Any] = {
                   "原始 S=带载比值（#250 口径，slotline_lumped 同）；β/εeff 主判="
                   "S21 解缠相位斜率÷port_beta.csv 实测 plane_dist（cps 同契约，"
                   "LumpedPort 无 β 属性）；fc10 由带内 φ(f)=−β(f；fc)·L+φ0 单参数"
-                  "拟合（OE 锚 G1，预声明 runs/siw_family/criteria.md §6）",
+                  "拟合（OE 锚 G1，预声明 criteria 档 §6）",
     "max_time_ns": 45.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["w_mm", "d_mm", "s_mm", "line_len_mm"],
     "topology": "直 SIW 传输线段：基板 z∈[0,h] 上下显式零厚金属板（贴 z 边界 "
@@ -304,9 +304,9 @@ SIW_META: dict[str, Any] = {
                  "地板（#349）、端口盒 ≥2 格且中线落格（#283，生成期断言）、"
                  "基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）",
     "smoke_note": "离线审计先行（#212，test_siw_template）；真机锚已落判"
-                  "（df4f：G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，"
-                  "runs/siw_family/，驱动 scripts/siw_anchor_smoke.py）；"
-                  "预声明门与预算见 runs/siw_family/criteria.md §6",
+                  "（G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，"
+                  "真机锚判读归档，驱动 scripts/siw_anchor_smoke.py）；"
+                  "预声明门与预算见 criteria 档 §6",
 }
 
 SIW_NOMINAL: dict[str, Any] = {
@@ -330,7 +330,7 @@ TEMPLATE_META["siw"] = SIW_META
 TEMPLATE_NOMINAL["siw"] = SIW_NOMINAL
 
 # ══ SIW 族第二成员：MSL 锥形过渡 + SIW 直段（2026-09-24 df6 A2 立项）══════════
-# 权威口径：runs/df6_a2siwmsl/criteria.md（Deslandes-Wu 两段论/文献互证账/
+# 权威口径：A2 判读 criteria 档（Deslandes-Wu 两段论/文献互证账/
 # G3' 预声明门/预算）。结构：基板填满矩形域（z=0 PEC 底界=MSL 地+SIW 底壁
 # 共用+SIW 区显式零厚底板；顶界 MUR 开放——MSL 区是微带环境），顶层金属单
 # 属性 msl_top 三段（50Ω 馈线 → 线性锥 AddPolygon 梯形 → SIW 顶壁显式板，
@@ -502,7 +502,7 @@ def _msl_siw_taper_lines(p: dict[str, Any]) -> str:
             "msl_siw_taper 几何段缺 _msl_siw_taper_layout：必须经 render_script "
             "渲染（布局单源注入）")
     via_y = list(lay["via_y"])
-    return f'''# ── msl_siw_taper 几何（layout 单源字面量，米；runs/df6_a2siwmsl/criteria.md §1/§3）──
+    return f'''# ── msl_siw_taper 几何（layout 单源字面量，米；A2 criteria 档 §1/§3）──
 # Deslandes-Wu 两段论：50Ω MSL 馈线 → 线性锥（W50→W_END=Z_PV 阻抗变换器）
 # → 锥末-SIW 台阶 → SIW 直段（顶壁板+两列过孔藩篱止于板缘=siw v2 口径）
 W = {lay["w"]!r}              # 两过孔列心距（=siw 名义，Cassivi w_eff 输入）
@@ -598,8 +598,7 @@ MSL_SIW_TAPER_META: dict[str, Any] = {
                   "wstep/mline W3② 法）+测量面间距 plane_dist_m——line_z0="
                   "'engine' 线基反演+renormalize 判读旋钮消费，#250/#280）；"
                   "fc10 主判=G1' 带内相位拟合 φ=−β_siw(f;fc)·L_siw+(a+b·f)"
-                  "（线性项吸收馈线/锥群延迟，预声明 "
-                  "runs/df6_a2siwmsl/criteria.md §4）",
+                  "（线性项吸收馈线/锥群延迟，预声明 A2 criteria 档 §4）",
     "max_time_ns": 45.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["w_mm", "d_mm", "s_mm", "taper_len_mm", "siw_len_mm"],
     "topology": "MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 "
@@ -621,8 +620,8 @@ MSL_SIW_TAPER_META: dict[str, Any] = {
     "smoke_note": "离线审计先行（#212，test_msl_siw_taper_template）；OE 锚"
                   "发射面备妥（驱动 scripts/siw_anchor_smoke.py --template "
                   "msl_siw_taper，发射前置=A1 队列清空+.oe_collect.lock 空，"
-                  "见 runs/df6_a2siwmsl/handoff.md）；预声明门与预算见 "
-                  "runs/df6_a2siwmsl/criteria.md §4/§6；R*=14.5402Ω 旋钮（siw "
+                  "见 A2 真机交接档）；预声明门与预算见 "
+                  "A2 criteria 档 §4/§6；R*=14.5402Ω 旋钮（siw "
                   "v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——"
                   "匹配由锥形几何承担，Z_PV 只进锥末宽度设计式（如实收档，v2 "
                   "历史档不删）",
@@ -632,7 +631,7 @@ MSL_SIW_TAPER_NOMINAL: dict[str, Any] = {
     "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0,
     "taper_len_mm": 10.5121, "siw_len_mm": 63.0724,
     "h_mm": 0.508, "er": 3.66, "tan_d": 0.0037,
-    # 全闭式精算（#1c，runs/df6_a2siwmsl/criteria.md §1/§1.1）：w/d/s=
+    # 全闭式精算（#1c，A2 criteria 档 §1/§1.1）：w/d/s=
     # TEMPLATE_NOMINAL["siw"] 同源沿用（fc10=6.6667GHz=f0/1.5 设计点）；
     # λg=21.0241mm（β=298.856 rad/m 闭式）→ taper_len=round(λg/2,4)=10.5121
     # （缺省锥长；λg/4=5.256 只作旋钮变体——对称双锥确定性级联实测带内
@@ -650,7 +649,7 @@ TEMPLATE_NOMINAL["msl_siw_taper"] = MSL_SIW_TAPER_NOMINAL
 
 # ══ DP-8：模板 pin 契约 + 几何组合契约（2026-09-24 df6；openems_templates.py
 #    唯一增量面=port_pins 注册 + layout 契约，缺省渲染零变化——字节钉复验为门，
-#    runs/df6_dp8compose/criteria.md §0/§3）════════════════════════════════════
+#    DP-8 判读 criteria 档 §0/§3）════════════════════════════════════════════
 # 契约形态（图元化，非文本拼接）：compose_layout(params, band, base, h, frame)
 # → {pins, dom/bbox, primitives, plates_top, bottom_plate, bc_compat,
 #    face_on_boundary, clearance_m, span_m, substrate, guards_text}；

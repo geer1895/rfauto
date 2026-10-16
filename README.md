@@ -21,7 +21,7 @@ whole pipeline through MCP, under one hard rule:
 > deterministic kernel or solver — never by the LLM.**
 
 It drives **16 EM/EDA engines** behind one interface, ships
-**72 parameterized device templates** with built-in physics checks, and
+**77 parameterized device templates** with built-in physics checks, and
 exposes **269 CLI commands** and **152 MCP tools** (+9 resources) — kept
 honest by **25400+ unit tests** that run without any commercial license.
 

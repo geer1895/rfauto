@@ -184,7 +184,7 @@ EXPECTED_ANCHORS = frozenset({
     # （constant + calibrated=closedform + closure 层 + experimental，真机
     # 首判前如实）；#118 双源=文献恒等式/经典公式独立第二源+测试第二实现
     # 转录回代钉（tests/unit/test_sensanc_analytic_anchors.py）；逐锚账=
-    # runs/aurora_d_sensanc/REPORT.md（候选裁决策同档）。
+    # 候选裁决档（内部）。。
     "loop.loop_side_mm.closedform-v1",
     "slot.slot_l_mm.closedform-v1",
     "ifa.ifa_arm_mm.closedform-v1",
@@ -202,7 +202,7 @@ EXPECTED_ANCHORS = frozenset({
     # （λ0/2 阵格，ms_patch/ms_ring_patch/ms_array_NxN 三族）；#118 双源=
     # 文献恒等式独立第二源+测试第二实现转录回代钉
     # （tests/unit/test_anchd_analytic_anchors.py）；逐锚账与弃选 10 族
-    # 逐族理由=runs/aurora_d_anchd/REPORT.md（SENS-ANC 报告第三节同口径复核）。
+    # 逐族理由=内部候选裁决档。。
     "coax_waveguide_transition.backshort_mm.closedform-v1",
     "sma_launcher.r_o_mm.closedform-v1",
     "patch_eep.elem_w_mm.closedform-v1",

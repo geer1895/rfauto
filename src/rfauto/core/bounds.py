@@ -13,8 +13,8 @@
         并联 RC 负载：∫₀^∞ ln(1/|Γ(ω)|) dω ≤ π/(RC)；
         矩形带版（带内常数 |Γ|=Γm、带外 |Γ|=1 的教材近似，Pozar 同口径）：
         Δω·ln(1/Γm) ≤ π/(RC)。
-        出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:
-        runs/review_ge8e/v1_bode_fano/）：Fano 1948 MIT RLE TR-41 §1
+        出处（V1 审查裁决 2026-10-04 逐字核对，errata 归档在案）：
+        Fano 1948 MIT RLE TR-41 §1
         Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）
         及 p.16 "parallel RC ⇒ A₁=2/RC"（×π/2 积分恰=π/(RC)）；Kerr
         NRAO EDM-295 §II 同式；Pozar Table 5.2 并联 RC 行（p.262, 3rd ed.

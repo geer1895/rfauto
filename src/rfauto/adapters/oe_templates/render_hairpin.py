@@ -187,7 +187,7 @@ HAIRPIN_NOMINAL: dict[str, Any] = {
     # C13 N=3/RL=20dB/FBW=0.05 → k=0.051514 → KJ 反解 s=1.132829mm
     "gap_mm": 1.1328,
     # Q_e=17.0689（=g0·g1/FBW 同源）；B1 真机标定 c(τ)=1.37437−0.75218·τ（τ=0.40/0.43
-    # 两点，runs/hairpin_q_extract/summary.json）→ τ*=0.398159 重解（0.401892 闭式；
+    # 两点，内部证据档）→ τ*=0.398159 重解（0.401892 闭式；
     # B3 终验轮 pt5 用单点解 0.398227，Δτ=6.8e-5≈2.5µm≪0.4mm 网格），消费端
     # hairpin_qe_from_tap_frac(τ)×c(τ) 见 fake_adapter._HAIRPIN_QE_CORR
     "tap_frac": 0.398159,

@@ -485,8 +485,8 @@ def waveguide_lambda_g(
         "source": (
             "TE10 传播参数闭式（Pozar Microwave Engineering §3.x 矩形波"
             "导主模口径，章节级转引，式号不落键面）；抽键=R7-PREP G16 "
-            "可选件（runs/aurora_c/batch_b_wave3_specs/INDEX.md）；单源"
-            "=本族 _frequency helper；实现前独立复算 runs/aurora_d/"
+            "可选件（内部规格索引档）；单源"
+            "=本族 _frequency helper；实现前独立复算（内部验证档）"
             "_core8_verify_derivation.py（fc/f、λ0/2a、k_z 三形态互证 "
             "rel≤5.1e-15），锚树 tests/unit/test_aurora_d_core8.py"),
     }

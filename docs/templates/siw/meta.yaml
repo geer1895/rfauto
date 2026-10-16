@@ -26,7 +26,7 @@ extraction: >-
   原始 S=带载比值（#250 口径，slotline_lumped 同）；β/εeff 主判=S21 解缠
   相位斜率÷port_beta.csv 实测 plane_dist（cps 同契约，LumpedPort 无 β
   属性）；fc10 由带内 φ(f)=−β(f；fc)·L+φ0 单参数拟合（OE 锚 G1，预声明
-  runs/siw_family/criteria.md §6）
+  内部证据档 §6）
 topology: >-
   直 SIW 传输线段：基板 z∈[0,h] 上下显式零厚金属板（贴 z 边界 PEC）+ 两列
   金属化过孔 PEC 圆柱（x=±w/2、心距 s、全域精确栅格、藩篱直入 PML=匹配
@@ -46,9 +46,9 @@ mesh_note: >-
   （#283，生成期断言）、基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
 smoke_note: >-
   离线审计先行（#212，test_siw_template）；真机锚已落判（df4f：G1 勘误
-  PASS/G2 PASS/G3 口径裁定/G4 PASS，runs/siw_family/，驱动
+  PASS/G2 PASS/G3 口径裁定/G4 PASS，内部证据档，驱动
   scripts/siw_anchor_smoke.py）；预声明门与预算见
-  runs/siw_family/criteria.md §6
+  内部证据档 §6
 nominal_derivation: |-
   全闭式精算（#1c，criteria.md §2）：fc10 目标=f0/1.5=6.6667GHz（f0=10GHz
   预声明设计点）→ w_eff=c/(2·fc·√3.66)=11.7528 → w=w_eff+d²/(0.95·s)=12.1317

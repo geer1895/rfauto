@@ -60,7 +60,7 @@ hfss_arbitration:
     s21_vs_gamma_pct: 1.69
     verdict_record: "两路自洽门 FAIL（+1.69%>1%）如实记录：S21 相位路含端接失配残差，主口径取 Gamma 路（预声明门错/红不事后改门 #122）"
   verdict: AGREE
-  evidence: runs/slotline_arbitration/{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段
+  evidence: 内部证据档{hfss_arbitration.json, compare.json}；scripts/hfss_slotline_arbitration.py（真机段）+ compare_slotline_routes.py（四方汇总）；判据预声明 --plan 段
 # XC-T 锚族补挂注记: slotline.z0_ohm.openems-hfss-v1（pointer 骨架，待仲裁数据回填；2026-10-03 席B5）
 
 teaching:
