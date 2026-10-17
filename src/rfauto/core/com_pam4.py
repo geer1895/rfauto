@@ -8,12 +8,15 @@ L=4 PAM4 电平语义、fb/抽头 sweep。规格钉的子集（round16 DR-1）�
 + 结果 schema 化**，外加不依赖可选包的纯闭式分项（电平/RLM/符号方差/分项
 噪声→COM 换算），供锚定与负例。
 
-实测口径（pychopmarg 3.1.2，本机 venv，预声明 provenance）
+实测口径（pychopmarg 3.1–3.3 跨版兼容，预声明 provenance）
 ----------------------------------------------------------
-- COMParams dataclass 43 字段（fb…z_pB）；**包内 preset（ieee_8023by/dj）与
-  消费面错位**（df7⑥ 家族新形态）：C_d/L_s 数据类注解与 preset 都是平铺
-  list[float]，但 sDie 消费 ``C_d[ix]``/``L_s[ix]`` 的**每端列表**（float 无
-  len() → TypeError 实测）——本模块照消费面重建为 Tx/Rx 两行嵌套；
+- COMParams dataclass 43 字段（fb…z_pB）；**片上寄生参数 schema 随版
+  漂移**（df7⑥ 家族新形态的跨版续章）：C_d/L_s 在 3.1/3.2 是平铺
+  list[float]，3.3 起 dj preset 改按端嵌套 list[list[float]]（同版 by
+  preset 仍平铺）；而 sDie 消费 ``C_d[ix]``/``L_s[ix]`` 恒按**每端列表**
+  索引（平铺直喂在 3.3 消费面被误读成"每端一值"；嵌套值再包一层得
+  (2,2,n)，端行广播即炸——CI Linux 实证 ValueError shapes (16001,) (3,)
+  → 8 连红）——本模块按来源形态归一为 Tx/Rx 两行（``_as_end_rows``）；
 - R_d 须 Tx/Rx 两元（gamma1_Tx/gamma1_Rx 索引 _gamma1[0]/[1]）；
 - M ∈ [32, 256]（构造期 check_range；M=16 ValueError 实测）；
 - Tx FFE 组合 = arange(min, max+step, step) 直积，恒先验插入零向量组合，再过
@@ -70,7 +73,8 @@ UNVERIFIED_VS_802COM = "unverified_vs_802com_vectors"
 #: 源通道带宽下限系数：f_max ≥ fb×该值才受理（否则采样率不足，显式拒绝）
 MIN_COVERAGE_FACTOR = 1.0
 
-#: 随包发布的 preset 名（3.1.2 实测只有这两个；802.3ck 未随包 → 不注册）
+#: 随包发布的 preset 名（3.1/3.2 实测这两个；3.3 另有 dj_d3p3 变体未入
+#: 消费面验证 → 注册表不扩；802.3ck 未随包 → 不注册，不凭记忆造数值）
 AVAILABLE_PRESETS: tuple[str, ...] = ("8023by", "8023dj")
 
 #: PAM4 Gray 编码映射：电平序号（升序 0..3）→ 2 bit 码字 (MSB, LSB)。
@@ -169,7 +173,7 @@ def com_db_from_terms(as_v: float, var_tx: float, var_isi: float, var_j: float,
 
 
 # ---------------------------------------------------------------------------
-# 预设参数化（pychopmarg 3.1.2 schema 安全重建；可选依赖惰性 import）
+# 预设参数化（pychopmarg 3.1–3.3 跨版 schema 兼容重建；可选依赖惰性 import）
 # ---------------------------------------------------------------------------
 
 def pychopmarg_version() -> str | None:
@@ -189,6 +193,30 @@ def _load_preset(preset: str) -> Any:
     return getattr(mod, f"IEEE_{preset}")
 
 
+def _as_end_rows(values: Any, name: str) -> np.ndarray:
+    """片上寄生参数归一到 Tx/Rx 两行（shape (2, n_segment) float）。
+
+    preset schema 随版本漂移：3.1/3.2 平铺 list[float]（n 段），3.3 起 dj
+    preset 已按端嵌套 list[list[float]]（同版 3.3 的 by preset 仍平铺——
+    两种形态必须同版共存兼容）。sDie 消费面恒按 ``C_d[ix]/L_s[ix]``
+    （ix=0/1 端序号）取整行段表，平铺值直接喂会在 3.3 消费面被误读成
+    "每端一值"；反之嵌套值再包一层得 (2, 2, n)，sDie 端行广播即炸
+    （CI 实证 ValueError shapes (16001,) (3,)）。故按来源形态归一：
+    平铺→两端复制；单行 (1, n)（两端同值惯例）→复制两行；已嵌套 (2, n)
+    →原样。其余 shape 显式拒绝（宁可契约错误不产 silently-wrong）。
+    """
+    arr = np.asarray(values, dtype=float)
+    if arr.ndim == 1:
+        return np.array([arr, arr])
+    if arr.ndim == 2 and arr.shape[0] == 1:
+        return np.repeat(arr, 2, axis=0)
+    if arr.ndim == 2 and arr.shape[0] == 2:
+        return arr
+    raise ValueError(
+        f"{name} 须为平铺 (n,) 或按端嵌套 (2, n)（单行 (1, n) 亦受理），"
+        f"得 shape {arr.shape}")
+
+
 def pam4_com_params(
     preset: str = "8023dj",
     *,
@@ -198,7 +226,7 @@ def pam4_com_params(
     tx_taps_step: float | None = None,
     pinned_taps: tuple[float, ...] | None = None,
 ) -> tuple[Any, str]:
-    """按随包 preset 值重建 COMParams（照 3.1.2 **消费面**嵌套格式），附 provenance。
+    """按随包 preset 值重建 COMParams（片上寄生归一 Tx/Rx 两行消费格式），附 provenance。
 
     旋钮（粗档，df7⑥：全档直积扫描分钟级不可用）：
     - fb_gbaud：覆盖波特率（sweep 用）；
@@ -244,18 +272,19 @@ def pam4_com_params(
         updates["tx_taps_max"] = list(pins)
         updates["tx_taps_step"] = [0.1] * n_taps
         updates["c0_min"] = 0.0
-    # 平铺 → Tx/Rx 嵌套（sDie 消费面要求：C_d[ix]/L_s[ix] 须可 len() 且可
-    # /1e9 → 二维 numpy 数组；preset 平铺值两端复制，provenance 留痕）
-    updates["C_d"] = np.array([list(src.C_d), list(src.C_d)], dtype=float)
-    updates["L_s"] = np.array([list(src.L_s), list(src.L_s)], dtype=float)
+    # 归一到 Tx/Rx 两行（sDie 消费面：C_d[ix]/L_s[ix] 按端取段表）——
+    # 形态感知（3.1/3.2 平铺复制、3.3+ 已嵌套原样），见 _as_end_rows
+    updates["C_d"] = _as_end_rows(src.C_d, "C_d")
+    updates["L_s"] = _as_end_rows(src.L_s, "L_s")
     updates["C_b"] = [src.C_b[0], src.C_b[0]]
     updates["C_p"] = [src.C_p[0], src.C_p[0]]
     r_d = np.asarray(src.R_d, dtype=float).ravel()
     updates["R_d"] = np.array([r_d[0], r_d[-1]])
     params = dataclasses.replace(src, **updates)
     note = (
-        f"preset={preset}（随包值重建；C_d/L_s 平铺→Tx/Rx 嵌套两端复制，"
-        f"C_b/C_p/R_d 同法两元）；knobs(fb={fb_gbaud}, g_dc_stride={g_dc_stride},"
+        f"preset={preset}（随包值重建；C_d/L_s 归一 Tx/Rx 两行——3.1/3.2 "
+        f"平铺→两端复制、3.3+ 已嵌套→原样，C_b/C_p/R_d 同法两元）；"
+        f"knobs(fb={fb_gbaud}, g_dc_stride={g_dc_stride},"
         f" g_dc2_stride={g_dc2_stride}, tx_taps_step={tx_taps_step},"
         f" pinned_taps={pinned_taps})；pychopmarg={pychopmarg_version()}；"
         f"{UNVERIFIED_VS_802COM}")

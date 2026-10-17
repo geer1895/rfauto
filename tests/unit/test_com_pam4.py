@@ -245,6 +245,27 @@ class TestPam4ComParams:
         assert params.c0_min == 0.0  # 钉组合须过 (1-|v|.sum())≥c0_min 滤波
         assert all(s > 0 for s in params.tx_taps_step)  # step=0 → 恒 [0.0] 陷阱
 
+    def test_end_rows_normalizer_schema_forms(self) -> None:
+        """C_d/L_s 归一器跨 preset schema 双形态钉（CI 8 连红回归锚）。
+
+        pychopmarg 3.1/3.2 preset 平铺、3.3 起 dj 嵌套（同版 by 仍平铺）
+        ——归一器必须双形态同版共存兼容，嵌套值不得再包一层（(2,2,n)
+        会炸 sDie 端行广播）。纯函数，不依赖 pychopmarg 装机版本。
+        """
+        from rfauto.core.com_pam4 import _as_end_rows
+        flat = np.array([1.0, 2.0, 3.0])
+        rows = _as_end_rows(flat, "C_d")  # 平铺 → 两端复制
+        assert rows.shape == (2, 3)
+        assert np.array_equal(rows[0], flat) and np.array_equal(rows[1], flat)
+        single = np.array([[1.0, 2.0, 3.0]])
+        rows1 = _as_end_rows(single, "L_s")  # 单行（两端同值）→ 复制两行
+        assert rows1.shape == (2, 3) and np.array_equal(rows1[0], rows1[1])
+        nested = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        rows2 = _as_end_rows(nested, "C_d")  # 已嵌套 → 原样（不得再包一层）
+        assert rows2.shape == (2, 3) and np.array_equal(rows2, nested)
+        with pytest.raises(ValueError, match="C_d"):  # 三行（非两端）显式拒绝
+            _as_end_rows(np.zeros((3, 2)), "C_d")
+
 
 # ---------------------------------------------------------------------------
 # 判据 5：端到端（pychopmarg 权威；~2s/点，单独类便于定向挑选）
