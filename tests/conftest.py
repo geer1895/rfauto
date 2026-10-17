@@ -177,6 +177,14 @@ def pytest_collection_modifyitems(config, items):
         # 压过 1e-8 级阈值——Linux CI 诚实跳过，Windows 基线照常真跑）
         ("test_synthesis_bpf_polish_backsub.py",
          "test_bpf_n15_two_tz_unconverged_gate_two_sided"),
+        # 同上族（run 39043312813 实证）：n13 边界档定级在 Linux BLAS 下
+        # 翻到相邻档（'mixed' vs 'shifted'），决策边界量级 1e-7
+        ("test_synthesis_bpf_polish_backsub.py",
+         "test_bpf_n13_boundary_smoke_both_families"),
+        # SLL 指标升降序网格相等性对归约序敏感（字典值第 7 位小数漂移，
+        # run 39043312813 实证）——网格方向不变性语义由 Windows 基线承载
+        ("test_tma_array.py",
+         "test_kernel_sll_metrics_descending_grid_equals_ascending"),
     })
     for item in items:
         name = Path(str(item.fspath)).name
