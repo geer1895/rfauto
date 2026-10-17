@@ -18,6 +18,11 @@ ruff check src/ tests/ scripts/            # must stay at 0 findings
 On Windows, `uv sync --extra dev` creates `.venv\Scripts\python.exe`; use that
 interpreter for pytest if you have multiple Pythons around.
 
+Latest recorded unit gate: `runs/unit_gate_public.log`: 23177 passed + 5 failed
+(4 of the 5 are Windows-xdist worker native crashes, each verified green
+standalone — see the log header; regenerate this record in the same commit
+whenever the suite changes).
+
 ## Architecture in one line
 
 ```

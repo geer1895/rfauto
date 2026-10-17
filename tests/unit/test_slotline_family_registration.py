@@ -161,7 +161,8 @@ class TestSlotlineFamilyRegistration:
     def test_hfss_arbitration_backfill(self):
         """TODO 0df followUp③：真机三方对拔回填 hfss_arbitration 字段（0dh
         e35a517 收口数）。钉字段结构+预声明门+verdict AGREE+自洽门 FAIL 如实
-        记录（#122 不凑绿）；数字与 runs/slotline_arbitration/ 仲裁产物一致。"""
+        记录（#122 不凑绿）；证据面钉仓内随附仲裁脚本（内部 runs/ 证据档原始
+        产物不随公开分发视图，meta.yaml evidence 已脱敏为证据档描述）。"""
         data = _meta_yaml("slotline")
         ha = data.get("hfss_arbitration")
         assert isinstance(ha, dict), "slotline meta.yaml 缺 hfss_arbitration 回填"
@@ -180,7 +181,12 @@ class TestSlotlineFamilyRegistration:
         assert float(amp["delta_db"]) <= 0.5                  # #350 幅度门
         assert ha["consistency_gate_fail_record"]["s21_vs_gamma_pct"] > 1.0
         assert ha["verdict"] == "AGREE"
-        assert "runs/slotline_arbitration" in ha["evidence"]
+        # 证据面（公开树口径）：仲裁脚本随附在树可核对
+        ev = ha["evidence"]
+        assert "hfss_slotline_arbitration.py" in ev
+        assert "compare_slotline_routes.py" in ev
+        assert (REPO / "scripts" / "hfss_slotline_arbitration.py").is_file()
+        assert (REPO / "scripts" / "compare_slotline_routes.py").is_file()
 
 
 class TestSlotlineFamilyFakeDispatch:

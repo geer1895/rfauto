@@ -1,7 +1,8 @@
 """资源日历机读化单测（UX-B8/E62 席 2026-10-08）。
 
-全离线零网络：窗判定是纯函数（固定钟注入），文件装载走 tmp_path 与
-仓内 configs/resource_calendar.yaml（schema 钉）。
+全离线零网络：窗判定是纯函数（固定钟注入），文件装载走 tmp_path 合成
+日历（不依赖仓内 configs/resource_calendar.yaml——部署方可自配运维窗，
+公开树不含任何真实时刻表，缺省缺文件走 fail-open 恒可发）。
 覆盖：HH:MM 解析/跨午夜环绕窗判定、装载 fail-open（缺文件/非法 YAML/
 顶层非映射=恒可发降级）、非法条目跳过记 warning 不整文件拒载、
 calendar_launch_view 三态（open/risk/blocked——维护窗优先于备份窗、
@@ -103,13 +104,25 @@ def test_load_top_level_not_mapping_fails_open(tmp_path):
     assert cal["loaded"] is False and cal["ok"] is True
 
 
-def test_load_repo_calendar_schema_and_windows():
-    cal = load_resource_calendar()  # 仓内缺省 configs/resource_calendar.yaml
+def test_load_full_calendar_schema_and_windows(tmp_path):
+    """全特性合成日历装载钉（schema/窗解析/峰谷/资源帽/零 warning）。"""
+    p = _write_calendar(tmp_path, f"""schema: {CALENDAR_SCHEMA}
+backup_windows:
+  - {{start: "23:00", end: "23:59"}}
+maintenance_windows: []
+license_seats:
+  hfss:
+    peak: "20:00-22:00"
+machine_caps:
+  demo_host:
+    memory_gb: 64
+""")
+    cal = load_resource_calendar(p)
     assert cal["loaded"] is True
     assert cal["schema"] == CALENDAR_SCHEMA
-    assert cal["backup_windows"] == [(170, 335)]  # 02:50-05:35 机读化单源
-    assert cal["license_peaks"]["hfss"] == (600, 720)
-    assert cal["machine_caps"]["sim_host"]["memory_gb"] == 80
+    assert cal["backup_windows"] == [(1380, 1439)]  # 23:00-23:59 合成示例窗
+    assert cal["license_peaks"]["hfss"] == (1200, 1320)
+    assert cal["machine_caps"]["demo_host"]["memory_gb"] == 64
     assert cal["warnings"] == []
 
 
@@ -208,9 +221,14 @@ license_seats:
 
 
 def test_launch_view_injected_calendar_reuse(tmp_path):
-    cal = load_resource_calendar()
-    v = calendar_launch_view(now_fn=_clock(3, 0), calendar=cal)
-    assert v["state"] == "risk"  # 仓内日历备份窗命中（复用装载零二次读盘）
+    p = _write_calendar(tmp_path, f"""schema: {CALENDAR_SCHEMA}
+backup_windows:
+  - {{start: "23:00", end: "23:59"}}
+""")
+    cal = load_resource_calendar(p)
+    v = calendar_launch_view(now_fn=_clock(23, 30), calendar=cal)
+    assert v["state"] == "risk"  # 合成日历备份窗命中（复用装载零二次读盘）
+    assert v["calendar_path"] == str(p)  # 注入产物被复用，未回落缺省路径
 
 
 # ─── 信封与消费面 ────────────────────────────────────────────────────────────
@@ -221,13 +239,25 @@ def test_calendar_view_envelope_contract(tmp_path):
     assert next(iter(env)) == "ok" and env["ok"] is True  # 缺文件不翻 ok
     assert env["launch"]["state"] == "open"
     assert env["calendar"]["loaded"] is False
-    env2 = calendar_view(now_fn=_clock(3, 0))
+    p = _write_calendar(tmp_path, f"""schema: {CALENDAR_SCHEMA}
+backup_windows:
+  - {{start: "23:00", end: "23:59"}}
+license_seats:
+  hfss:
+    peak: "20:00-22:00"
+machine_caps:
+  demo_host:
+    memory_gb: 64
+""")
+    env2 = calendar_view(now_fn=_clock(23, 30), path=p)
     assert env2["ok"] is True
+    assert env2["launch"]["state"] == "risk"
+    assert env2["calendar"]["loaded"] is True
     assert env2["calendar"]["backup_windows"] == [
-        {"start": "02:50", "end": "05:35"}]
+        {"start": "23:00", "end": "23:59"}]
     assert env2["calendar"]["license_peaks"]["hfss"] == {
-        "start": "10:00", "end": "12:00"}
-    assert env2["calendar"]["machine_caps"]["sim_host"] == {"memory_gb": 80}
+        "start": "20:00", "end": "22:00"}
+    assert env2["calendar"]["machine_caps"]["demo_host"] == {"memory_gb": 64}
 
 
 def test_resources_view_carries_calendar(monkeypatch):

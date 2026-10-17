@@ -54,7 +54,13 @@ hfss = ["pyaedt>=1.4.0,<2"]  # 开发基线 1.4.0：API 参数名与旧版差异
 # pymoo 多目标优化 —— P2 起按需；cmaes 为 optuna CmaEsSampler 的后端（缺口 5）
 multiobj = ["pymoo>=0.6.0", "cmaes>=0.13.0"]
 # MCP Server —— P4 起按需
-mcp = ["fastmcp>=3.0,<4"]  # 4.x 严格 JSON 把 inf 序列化为 null（MCP 工具回执 NaN/Inf 面，实测 2026-10）
+mcp = [
+    "fastmcp>=3.0,<4",  # 4.x 严格 JSON 把 inf 序列化为 null（MCP 工具回执 NaN/Inf 面，实测 2026-10）
+    # mcp<2：2.x 大版本对 server API 有破坏性变更（本仓 152 工具面实测
+    # 7 failed+106 collection errors，2026-10-17）；1.30 为 CVE-2026-59951
+    # 修复下限（pip-audit 门）。上迁 2.x 须先过全量 MCP 面回归。
+    "mcp>=1.30,<2",
+]
 # UI（人工核验台 rfauto ui）—— starlette 路由 + uvicorn 服务
 #（#178 教训：旧 venv 手动装过、声明缺失，换机即断——WP0.1 收编）
 # sse-starlette = 战役进度 SSE 桥（ui/server.py 事件流端点；缺装时

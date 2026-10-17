@@ -224,6 +224,14 @@ def _scan_lake(runs_root: Path) -> tuple[dict[str, dict], dict[str, int], int]:
 
 
 def _db_existing_ids(con) -> set[str]:
+    # 空库/未迁移容错：connect 对不存在文件自动建空库（无 schema），直接
+    # SELECT 会 OperationalError 崩成 rc1 而非 rc2 诚实 SKIP（公开仓 fresh
+    # checkout + runs/ 仅门日志时实测）——查 sqlite_master 无 runs 表=空集。
+    has = con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    ).fetchall()
+    if not has:
+        return set()
     return {r[0] for r in con.execute("SELECT run_id FROM runs").fetchall()}
 
 

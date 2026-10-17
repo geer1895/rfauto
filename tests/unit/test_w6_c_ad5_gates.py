@@ -537,6 +537,12 @@ def _returns_top_level_keys(doc: str) -> list[str]:
 class TestZ10aReturnsKeyRuntime:
     #: 转发型只读试点（tool → (service 模块, 函数, kwargs)）；全部本地确定性
     #: 通道（零 LLM 零网络零真机，#139 纪律）；批 2 ≥5 + 批 3 ≥5。
+    #: 依赖 knowledge 数据面的试点（tool → 相对仓根的数据文件）——公开分发
+    #: 视图不随附内部账本衍生数据（guidelines_service 模块 docstring 契约），
+    #: 缺源时如实 skip（error 信封形态由 guidelines 服务自身单测覆盖）。
+    PILOT_DATA_FACE: typing.ClassVar[dict[str, str]] = {
+        "get_guidelines_for": "knowledge/pitfalls_index.json",
+    }
     PILOT_B2: typing.ClassVar[dict[str, tuple[str, str, dict]]] = {
         "bands_list": ("rfauto.service.bands_service", "bands_list", {}),
         "bands_spec_bounds": ("rfauto.service.bands_service",
@@ -576,6 +582,12 @@ class TestZ10aReturnsKeyRuntime:
 
     def _assert_subset(self, name: str, mod_name: str, fn_name: str,
                        kwargs: dict, tmp_path: Path) -> None:
+        data_face = self.PILOT_DATA_FACE.get(name)
+        if data_face is not None and not (REPO / data_face).is_file():
+            pytest.skip(
+                f"{name}: knowledge 数据面 {data_face} 不随公开分发视图"
+                "（内部账本衍生数据，guidelines_service 契约口径）——本 "
+                "checkout 无源可试点，Returns 键对拍以内部仓为准")
         kwargs = {k: (str(tmp_path / Path(v).name)
                       if v == "__TMP__/w6c_probe.sqlite" else v)
                   for k, v in kwargs.items()}
