@@ -42,7 +42,7 @@ dependencies = [
     # 少数优化器轨迹敏感测试（trust_region/topology 等），公开仓独立门实测
     "numpy>=1.24.0,<2.5",
     "scipy>=1.11.0",
-    "scikit-rf>=2.0,<3",
+    "scikit-rf>=2.0,<2.2",  # 2.2.0 上架（2026-10-18 CI 实证）改变 MNA/拟合数值行为连锁 23 红——钉 2.1 行为基线，升版需专项评审
     "matplotlib>=3.8.0",
     "pandas>=2.1.0",
     "optuna>=5.0.0,<6.0",  # 5.0 升级实测无破坏面后抬底；锁 <6.0（set_constraint 新 API 为 5.0 引入面）

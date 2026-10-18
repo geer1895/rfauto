@@ -226,6 +226,11 @@ class TestExportUnification:
         payload = json.loads(out.strip())
         assert payload["ok"] is True, payload
 
+    # vendored echarts 不随 git 分发（.gitignore vendor/）——CI/干净 clone
+    # 无 vendor 时 SSR 件诚实跳过（exportStampName 纯函数件照常真跑）
+    _VENDOR = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static" / "vendor" / "echarts.min.js"
+
+    @pytest.mark.skipif(not _VENDOR.exists(), reason="vendored echarts 未放置（vendor/ 不随 git 分发）")
     def test_chart_to_svg_text_is_vector_via_ssr(self):
         out = _run_node_js(
             "const req = (await import('node:module')).createRequire("

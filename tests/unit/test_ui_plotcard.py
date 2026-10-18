@@ -355,6 +355,11 @@ class TestConvergenceRenderRegression:
     注意：echarts SSR 在 node 里挂常驻定时器，JS 末尾必须 process.exit，
     否则 subprocess 60s 超时（本席实测）。"""
 
+    # vendored echarts 不随 git 分发（.gitignore vendor/，本地放置）——
+    # CI 与干净 clone 无 vendor 时诚实跳过（渲染语义由本地基线承载）
+    _VENDOR = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static" / "vendor" / "echarts.min.js"
+
+    @pytest.mark.skipif(not _VENDOR.exists(), reason="vendored echarts 未放置（vendor/ 不随 git 分发）")
     def test_convergence_option_renders_in_echarts_ssr(self):
         out = _run_node_js(
             "const req = (await import('node:module')).createRequire("
