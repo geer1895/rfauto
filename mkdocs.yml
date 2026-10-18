@@ -56,6 +56,33 @@ nav:
       - CLI 快速上手: guide/cli-quickstart.md
       - 实测对齐链路: tutorials/measurement-alignment.md
       - 战役逐阶段推进: tutorials/campaign-walkthrough.md
+  - 教程:
+      - 入门与链路:
+          - 第一次优化闭环: tutorials/first_optimization_loop.md
+          - 真机仿真: tutorials/real-simulation.md
+          - compose 组合链与引擎联赛: tutorials/compose_and_league.md
+          - DAG 战役编排: tutorials/dag_orchestration.md
+          - RECAST 走查: tutorials/recast-walkthrough.md
+      - 数据与判读:
+          - 数据集与健康门: tutorials/datasets_and_health_gates.md
+          - 数据工厂: tutorials/data_factory.md
+          - 数据湖与查询面: tutorials/data_lake.md
+          - UQ 与代理模型: tutorials/uncertainty_and_surrogates.md
+          - 锚导览: tutorials/anchor-guide.md
+          - 判读语义: tutorials/verdict_semantics.md
+      - 平台与扩展:
+          - UI 工作台导览: tutorials/ui_workbench_tour.md
+          - MCP 实战: tutorials/mcp_in_practice.md
+          - 远程仿真服务器协同: tutorials/remote_server.md
+          - 扩展 rfauto: tutorials/extending-rfauto.md
+      - English Tutorials:
+          - Getting Started: tutorials/getting-started_en.md
+          - Real Simulation: tutorials/real-simulation_en.md
+          - Campaign Walkthrough: tutorials/campaign-walkthrough_en.md
+          - DAG Campaign Orchestration: tutorials/dag_orchestration_en.md
+          - Data Factory: tutorials/data_factory_en.md
+          - Anchor Guide: tutorials/anchor-guide_en.md
+          - Verdict Semantics: tutorials/verdict_semantics_en.md
   - 参考:
       - 能力目录: reference/capabilities.md
       - CLI 命令参考: reference/cli.md
@@ -67,10 +94,42 @@ nav:
       - pdn: kernel_cards/pdn.md
       - pce: kernel_cards/pce.md
       - cascade: kernel_cards/cascade.md
+      - mline: kernel_cards/mline.md
+      - wilkinson: kernel_cards/wilkinson.md
+      - branchline: kernel_cards/branchline.md
+      - ratrace: kernel_cards/ratrace.md
+      - patch: kernel_cards/patch.md
+      - hairpin: kernel_cards/hairpin.md
+      - cpw: kernel_cards/cpw.md
+      - slotline: kernel_cards/slotline.md
+      - coupled_microstrip: kernel_cards/coupled_microstrip.md
+      - finline: kernel_cards/finline.md
+      - wilkinson_unequal: kernel_cards/wilkinson_unequal.md
+      - atten_pi: kernel_cards/atten_pi.md
+      - atten_t: kernel_cards/atten_t.md
+      - qwt_multisection: kernel_cards/qwt_multisection.md
+      - nway_wilkinson: kernel_cards/nway_wilkinson.md
+      - schiffman: kernel_cards/schiffman.md
+      - bethe_hole_coupler: kernel_cards/bethe_hole_coupler.md
+      - gysel_core: kernel_cards/gysel_core.md
+      - coupled_line_bpf: kernel_cards/coupled_line_bpf.md
   - 模板库: catalog/index.md
   - 架构与方法论:
       - 分层架构: explanation/layered-architecture.md
+      - 数值只在确定性内核: explanation/deterministic-kernel.md
+      - 锚与判据体系: explanation/anchor-and-verdict.md
+      - 信封契约与 API 演进: explanation/envelope-and-api-evolution.md
       - 架构与方法论: architecture/methodology.md
+  - How-to:
+      - 使用计算器: how-to/use-calculators.md
+      - 读取 verdict 门: how-to/read-verdict-gates.md
+      - openEMS 冒烟: how-to/run-openems-smoke.md
+      - 新增求解器引擎: how-to/add-new-solver-engine.md
+      - 级联预算与杂散: how-to/cascade-budget-and-spur.md
+      - 新页面清单: how-to/new-surface-checklist.md
+      - 新增 CALC 键五钉: how-to/add-new-calc-key.md
+      - golden 几何回归仓: how-to/golden-geometry-regression.md
+      - campaign 远程路由: how-to/campaign-remote-routing.md
   - 画廊: gallery.md
 
 copyright: "MIT License · rfauto contributors"

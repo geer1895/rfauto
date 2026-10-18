@@ -445,8 +445,8 @@ from rfauto.cli.domains.hints import hints_list_cmd as hints_list_cmd
 # 同款：域内自注册 cli/domains/pitfalls.py 模块级 add_typer——此处只
 # re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
 # `pitfalls` 命令（#df6① 冲突检查 2026-10-14：全 CLI 树零撞名，grep 实测）。
-# 数据面=knowledge/pitfalls_index*.json（内部账本衍生索引，公开分发视图
-# 不随附——缺席时两叶如实报缺）；索引加载/校验零逻辑转发
+# 数据面=knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 全量
+# 解析的坑账速查全量节）；索引加载/校验零逻辑转发
 # service/pitfall_index_service 只读面。
 
 from rfauto.cli.domains.pitfalls import pitfalls_app as pitfalls_app
@@ -561,6 +561,16 @@ from rfauto.cli.domains.recast import recast_status_cmd as recast_status_cmd
 
 from rfauto.cli.domains.rest import rest_app as rest_app
 from rfauto.cli.domains.rest import rest_schema_cmd as rest_schema_cmd
+
+
+# ─── templates（EC-8 模板 golden 几何回归仓 CLI 出口，2026-10-18 aurora_e
+# W2-S8：golden-diff 单叶；rest 同款域内自注册 add_typer——此处只 re-export
+# （二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 `templates` 域
+# （#df6① 冲突检查 2026-10-18：全 CLI 树零撞名，唯一近名 `template-spec`
+# 是 bands 域 TemplateSpec 注册表子应用，语义不同）。
+
+from rfauto.cli.domains.templates import templates_app as templates_app
+from rfauto.cli.domains.templates import templates_golden_diff_cmd as templates_golden_diff_cmd
 
 
 if __name__ == "__main__":

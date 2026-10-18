@@ -280,7 +280,10 @@ class TestCommandRegistryCount:
         #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
         #   数据面=knowledge/pitfalls_index_full.json）
         #   = 269（README/交接文档/docs_site/CHANGELOG 数字同笔）
-        assert total == 269
+        # +1（公开仓同步批：golden-diff 单叶 templates 域内自注册，
+        #   src/rfauto/cli/domains/templates.py——公开分发视图实测口径）
+        #   = 270（公开仓实测；check_numbers.count_cli()=270 同值互证）
+        assert total == 270
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""

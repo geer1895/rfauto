@@ -1,8 +1,11 @@
-"""检波/功率测量器件族（aurora72 A4-B 席域 2，R7 第二梯队 T10=G13）。
+"""检波/功率测量器件族（aurora72 A4-B 席域 2，R7 第二梯队 T10=G13；
+aurora_e W1-S2 补齐任务书"热偶/测辐射热计功率计换算"子项）。
 
-两键：diode_square_law_detect（二极管平方律检波：小信号 i∝v² →
+三键：diode_square_law_detect（二极管平方律检波：小信号 i∝v² →
 I_dc=k·R_j·P_in 恒等 + 视频电压输出） / detector_tss_nep（切向灵敏度
-TSS/噪声等效功率 NEP：视频热噪声链 + 8dB 切向判据口径写死）。
+TSS/噪声等效功率 NEP：视频热噪声链 + 8dB 切向判据口径写死） /
+thermal_power_sensor_detect（热偶/测辐射热计功率换算：热链 ΔT=η·R_th·P
+→ Seebeck EMF/平衡电桥小信号输出，W1-S2）。
 
 与既有测量面的边界（语义防撞，R7 §② G13 三重搜索证据）
 --------------------------------------------------------
@@ -228,4 +231,183 @@ def detector_tss_nep(gamma_v_per_w: float, r_v_ohm: float = 1.0e6,
             "视频放大器 NF 与匹配损耗未计入（如实注记，实测 TSS 恶化量="
             "各项 dB 叠加）；γ 折算含视频负载口径（γ=V_video/P_in）"),
         "source": _SOURCES["tss"],
+    }
+
+
+# ─── 键 3：热偶/测辐射热计功率计换算（aurora_e W1-S2 补齐 T10 子项）─────────
+# 口径（热式功率传感器器件级传递，教科书热链模型；docstring 写死）：
+#   热链（准静态）：吸收功率 η·P_in → 热阻温升 ΔT = η·R_th·P_in；
+#   热时间常数 τ = R_th·C_th、3dB 视频带宽 f_3dB = 1/(2πτ)。
+#   热偶（thermocouple）：塞贝克效应 V_out = S·ΔT = S·η·R_th·P_in，
+#     γ ≡ S·η·R_th（V/W，与功率无关——线性恒等锚）。
+#   测辐射热计（bolometer）：ΔR = R0·TCR·ΔT，平衡惠斯通电桥小信号
+#     V_out = (V_b/4)·(ΔR/R0) = (V_b/4)·TCR·η·R_th·P_in——电桥小信号
+#     输出与 R0 绝对值无关（恒等锚，R0 只进报告面）；TCR 符号如实
+#     保留（热敏负/金属膜正），γ 带符号输出。
+#   最小可检功率（可选噪声底）：P_min = v_noise/|γ|（输出 SNR=1 口径，
+#     与 detector_tss_nep 的 NEP 同构——此处器件级、彼处含判据）。
+#   锚（#118）：功率→电压→功率往返回收逐位；P×2→V×2 线性；γ 测试侧
+#   独立重算；同 γ 跨类型等价（热偶 S 与电桥参数凑同 γ → 输出逐位
+#   一致=热链单源结构恒等）；τ=R_th·C_th 恒等。
+
+_THERMAL_P_DBM_MIN = -120.0
+_THERMAL_P_DBM_MAX = 30.0
+
+_SENSOR_TYPES = ("thermocouple", "bolometer")
+
+
+@register_calculator(
+    "thermal_power_sensor_detect",
+    "热偶/测辐射热计功率换算：吸收 η·P_in → 热阻温升 ΔT=η·R_th·P_in →"
+    "热偶 Seebeck V_out=S·ΔT / 测辐射热计平衡电桥小信号 V_out=(V_b/4)·"
+    "TCR·ΔT（γ=V_out/P 与功率无关=线性恒等锚；电桥输出与 R0 绝对值无关"
+    "恒等锚；TCR 符号如实保留）；τ=R_th·C_th、f_3dB=1/(2πτ)、最小可检"
+    "功率=v_noise/|γ|。锚：功率→电压→功率往返回收逐位；P×2→V×2；同 γ "
+    "跨类型输出逐位一致（热链单源结构恒等）",
+    (("sensor_type", "str 'thermocouple'|'bolometer'（封闭集合）"),
+     ("p_in_dbm", "float dBm 入射射频功率（∈[−120,30]，域外显式拒绝）"),
+     ("r_th_k_per_w", "float K/W 热阻（>0；吸收体→环境热链）"),
+     ("c_th_j_per_k", "float J/K 热容（>0；τ=R_th·C_th 输入）"),
+     ("eta_abs", "float 吸收效率（∈(0,1]，缺省 1.0；实际器件 0.8~0.95 "
+      "量级以厂家为准）"),
+     ("seebeck_v_per_k", "float V/K 热偶塞贝克系数（thermocouple 必给>0；"
+      "热偶堆 1e-5~1e-2 量级）"),
+     ("tcr_per_k", "float 1/K 测辐射热计电阻温度系数（bolometer 必给≠0；"
+      "符号如实保留：热敏负/金属膜正）"),
+     ("r0_ohm", "float Ω 测辐射热计冷态电阻（bolometer 可给>0；只进报告"
+      "面——电桥小信号输出与 R0 绝对值无关）"),
+     ("v_bridge_v", "float V 电桥偏置（bolometer 必给>0）"),
+     ("v_noise_rms_v", "float rms V 输出噪声底（≥0，缺省 0=不报最小可检"
+      "功率）")),
+    required=("sensor_type", "p_in_dbm", "r_th_k_per_w", "c_th_j_per_k"),
+)
+def thermal_power_sensor_detect(sensor_type: str, p_in_dbm: float,
+                                r_th_k_per_w: float, c_th_j_per_k: float,
+                                eta_abs: float = 1.0,
+                                seebeck_v_per_k: float | None = None,
+                                tcr_per_k: float | None = None,
+                                r0_ohm: float | None = None,
+                                v_bridge_v: float | None = None,
+                                v_noise_rms_v: float = 0.0
+                                ) -> dict[str, Any]:
+    stype = str(sensor_type).strip().lower()
+    if stype not in _SENSOR_TYPES:
+        raise ValueError(
+            f"thermal_power_sensor_detect: sensor_type 须 "
+            f"{'|'.join(_SENSOR_TYPES)}，得到 {sensor_type!r}")
+    p_dbm = _finite(p_in_dbm, "p_in_dbm")
+    r_th = _finite(r_th_k_per_w, "r_th_k_per_w")
+    c_th = _finite(c_th_j_per_k, "c_th_j_per_k")
+    eta = _finite(eta_abs, "eta_abs")
+    v_noise = _finite(v_noise_rms_v, "v_noise_rms_v")
+    if not _THERMAL_P_DBM_MIN <= p_dbm <= _THERMAL_P_DBM_MAX:
+        raise ValueError(
+            f"thermal_power_sensor_detect: p_in_dbm={p_dbm!r} 超出器件域 "
+            f"[{_THERMAL_P_DBM_MIN},{_THERMAL_P_DBM_MAX}]dBm（下缘以下噪声"
+            "主导非器件传递、上缘以上超典型功率计 destruct 上限量级，本键"
+            "不外推），显式拒绝")
+    if r_th <= 0.0:
+        raise ValueError(
+            f"thermal_power_sensor_detect: r_th_k_per_w 必须 >0，得到 "
+            f"{r_th_k_per_w!r}")
+    if c_th <= 0.0:
+        raise ValueError(
+            f"thermal_power_sensor_detect: c_th_j_per_k 必须 >0，得到 "
+            f"{c_th_j_per_k!r}")
+    if not 0.0 < eta <= 1.0:
+        raise ValueError(
+            f"thermal_power_sensor_detect: eta_abs 须 ∈(0,1]，得到 "
+            f"{eta_abs!r}")
+    if v_noise < 0.0:
+        raise ValueError(
+            f"thermal_power_sensor_detect: v_noise_rms_v 必须 ≥0，得到 "
+            f"{v_noise_rms_v!r}")
+
+    seebeck: float | None = None
+    tcr: float | None = None
+    r0: float | None = None
+    v_bridge: float | None = None
+    if stype == "thermocouple":
+        if seebeck_v_per_k is None:
+            raise ValueError(
+                "thermal_power_sensor_detect: sensor_type=thermocouple "
+                "需要 seebeck_v_per_k（塞贝克系数 >0）")
+        seebeck = _finite(seebeck_v_per_k, "seebeck_v_per_k")
+        if seebeck <= 0.0:
+            raise ValueError(
+                "thermal_power_sensor_detect: seebeck_v_per_k 必须 >0，"
+                f"得到 {seebeck_v_per_k!r}")
+        for name, val in (("tcr_per_k", tcr_per_k), ("v_bridge_v",
+                                                     v_bridge_v)):
+            if val is not None:
+                raise ValueError(
+                    "thermal_power_sensor_detect: "
+                    f"{name} 仅 sensor_type=bolometer 接受（同给显式拒绝），"
+                    f"得到 {val!r}")
+        gamma = seebeck * eta * r_th
+        transducer = "seebeck_emf"
+    else:
+        if tcr_per_k is None:
+            raise ValueError(
+                "thermal_power_sensor_detect: sensor_type=bolometer 需要 "
+                "tcr_per_k（电阻温度系数 ≠0）")
+        if v_bridge_v is None:
+            raise ValueError(
+                "thermal_power_sensor_detect: sensor_type=bolometer 需要 "
+                "v_bridge_v（电桥偏置 >0）")
+        tcr = _finite(tcr_per_k, "tcr_per_k")
+        v_bridge = _finite(v_bridge_v, "v_bridge_v")
+        if tcr == 0.0:
+            raise ValueError(
+                "thermal_power_sensor_detect: tcr_per_k 必须 ≠0（零温度"
+                "系数无换算），显式拒绝")
+        if v_bridge <= 0.0:
+            raise ValueError(
+                "thermal_power_sensor_detect: v_bridge_v 必须 >0，得到 "
+                f"{v_bridge_v!r}")
+        if r0_ohm is not None:
+            r0 = _finite(r0_ohm, "r0_ohm")
+            if r0 <= 0.0:
+                raise ValueError(
+                    "thermal_power_sensor_detect: r0_ohm 必须 >0，得到 "
+                    f"{r0_ohm!r}")
+        gamma = v_bridge / 4.0 * tcr * eta * r_th
+        transducer = "wheatstone_bridge_small_signal"
+
+    p_w = 10.0 ** (p_dbm / 10.0) * 1e-3
+    d_t_k = eta * r_th * p_w
+    v_out = gamma * p_w
+    tau_s = r_th * c_th
+    f3db_hz = 1.0 / (2.0 * math.pi * tau_s)
+    p_min_w = None if v_noise <= 0.0 else v_noise / abs(gamma)
+    return {
+        "sensor_type": stype,
+        "transducer": transducer,
+        "p_in_dbm": p_dbm,
+        "p_in_w": round(p_w, 18),
+        "eta_abs": eta,
+        "r_th_k_per_w": r_th,
+        "c_th_j_per_k": c_th,
+        "seebeck_v_per_k": seebeck,
+        "tcr_per_k": tcr,
+        "r0_ohm": r0,
+        "v_bridge_v": v_bridge,
+        "delta_t_k": round(d_t_k, 18),
+        "gamma_v_per_w": round(gamma, 18),
+        "v_out_v": round(v_out, 18),
+        "tau_s": round(tau_s, 15),
+        "f3db_hz": round(f3db_hz, 12),
+        "p_min_w": None if p_min_w is None else round(p_min_w, 18),
+        "p_min_dbm": (None if p_min_w is None
+                      else round(10.0 * math.log10(p_min_w) + 30.0, 12)),
+        "note": (
+            "热链准静态口径（P_min=f_3dB 频内；调制/脉冲测量按 τ 与脉宽"
+            "配套判读）；γ 与功率无关=热式传感器线性区恒等（超出线性区/"
+            "烧毁上限以厂家曲线为准，如实注记）；bolometer 电桥小信号"
+            "输出与 R0 绝对值无关（R0 只进报告面）；只含输出噪声底——"
+            "热链温度涨落噪声/放大器 NF 未计入（如实注记）"),
+        "source": (
+            "热式功率计器件级传递（热偶 Seebeck / 测辐射热计平衡电桥"
+            "小信号；教科书热链模型 ΔT=η·R_th·P，γ 口径为本席独立"
+            "推导落地；器件参数典型量级以厂家手册为准）"),
     }

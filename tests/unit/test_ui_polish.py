@@ -130,8 +130,10 @@ class TestEmptyStatePins:
         assert 'kitEmptyState("无匹配 run——调整筛选条件试试"' in runs
         assert 'id: "runs-empty-clear"' in runs
         assert "rc.onclick = () => fc.click();" in runs
-        # tune trials 空：动作转触既有「启动调参」钮
-        tune = _body(r"async function pageTune\(\)")
+        # tune trials 空：动作转触既有「启动调参」钮（aurora_e W2-S7 起
+        # tuneRefresh 提升模块级，kitEmptyState 装配随迁 view_tune.js 模块层
+        # ——钉语义不变，作用域从 pageTune 函数体放宽到 view_tune.js 全文）
+        tune = (_STATIC / "pages" / "view_tune.js").read_text(encoding="utf-8")
         assert 'kitEmptyState("暂无 trial 数据（启动调参后这里实时出点）"' in tune
         assert 'id: "tune-empty-go"' in tune
         assert "teg.onclick = () => tgo.click();" in tune

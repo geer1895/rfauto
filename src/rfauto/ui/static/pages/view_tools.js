@@ -738,3 +738,11 @@ export async function pageTools() {
     }
   };
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 toolsCtx ═════════════
+   refresh=计算器注册表目录重拉（pageTools 幂等——壳判 innerHTML 已在即跳过；
+   重拉后选项表重建=与重进同语义，深链/hash 待选键优先恢复）。无轮询面，
+   leave 不需要。 */
+export const toolsCtx = {
+  refresh: () => pageTools(),
+};

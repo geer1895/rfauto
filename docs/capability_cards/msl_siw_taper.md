@@ -62,7 +62,7 @@
 - 参数语义：w_mm=两过孔列心距（=TEMPLATE_NOMINAL['siw'] 同名同义）、d_mm=过孔直径、 s_mm=过孔心距、taper_len_mm=锥形段长（缺省 λg/2@f0，criteria §1.1 一阶互证 收档）、siw_len_mm=SIW 直段长（顶板缘间距，缺省 3λg）；w50/w_end= inverse_width 渲染期同参精算（非参数，#1c）；h/er/tan_d 走 substrate/nominal （er/h 进锥宽设计链）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4； 过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线（#311）、显式近场线 10µm 地板（#349）、 锥缘/板缘/端口边落格断言（#283）、FeedShift/MeasPlaneShift 间距 ≥3.9·NEAR （#347）；基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
 - 冒烟现状：离线审计先行（#212，test_msl_siw_taper_template）；OE 锚发射面备妥（驱动 scripts/siw_anchor_smoke.py --template msl_siw_taper，发射前置=A1 队列清空 +.oe_collect.lock 空，见 内部证据档）；预声明门与预算见 内部证据档 §4/§6；R*=14.5402Ω 旋钮（siw v2_criteria.md §2 条件触发项）在 MSL 线基端口下语义废弃——匹配由锥形几何承担，Z_PV 只进 锥末宽度设计式（如实收档，v2 历史档不删）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

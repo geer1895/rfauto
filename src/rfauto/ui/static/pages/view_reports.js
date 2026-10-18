@@ -208,3 +208,11 @@ export async function pageReports() {
     T.$("rd-a").value = S.currentRunId;
   T.$("rd-go").onclick = () => renderRunDiff();
 }
+
+/* ═══ R-1（aurora_e W2-S7）：PageContext 增量钩子 reportsCtx ═══════════
+   refresh=报告清单重拉（pageReports 幂等——壳判 innerHTML 已在即跳过、
+   清单/对比面板 run 下拉重填、行绑定 bindClickRows 覆盖式幂等）。无轮询/
+   定时器面，leave 不需要。 */
+export const reportsCtx = {
+  refresh: () => pageReports(),
+};

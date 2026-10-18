@@ -1,0 +1,66 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_patch
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  px_mm: 8.5406
+  py_mm: 8.5406
+  period_mm: 14.9896
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 0f4f25783a7e816862931c9092fe7707bf52d247accaea5f7fb9008ab3eaa179
+csx:
+  n_primitives: 5
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: patch
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: wg_exc
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: u1a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u1b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: b8bcb5535ab9335b52b6b512d578343c3fdce4464e3a1d6075f4dfd692f25531
+  bbox_m:
+  - -0.0074948
+  - -0.0074948
+  - 0.0
+  - 0.0074948
+  - 0.0074948
+  - 0.011829366
+mesh:
+  lines:
+    x:
+      n: 189
+      min_gap_m: 7.3e-05
+    y:
+      n: 189
+      min_gap_m: 7.3e-05
+    z:
+      n: 58
+      min_gap_m: 0.000152
+  lines_sha256: cd2b1d7201851944f2992af856bbe5fdb7b3f1b61b31f79ae62a130e81e4679d
+ports:
+- 1

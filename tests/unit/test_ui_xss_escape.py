@@ -285,11 +285,15 @@ class TestEscSourcePins:
             "${ymin.toPrecision",
         }
         #    7b) textContent / canvas / echarts 配置 / T.msg 语境（非 HTML sink；
-        #        T.msg 实现为 el.textContent，app.js L12-17）
+        #        T.msg 实现为 el.textContent，app.js L12-17）。
+        #        W3-S12（P-5）：${slice.axis/${slice.position_mm 为场切片
+        #        aria-label 插值——经 plotCard 壳 setAttribute("aria-label")
+        #        赋值语境（属性赋值不解析 HTML，同 canvas/echarts 文本口径）。
         exempt |= {
             "${e.rho", "${e.run_id", "${e.verdict", "${names.slice",
             "${o.file", "${rows.length", "${run.cost", "${seg.level_db",
             "${slice.u_axis", "${slice.v_axis",
+            "${slice.axis", "${slice.position_mm",
         }
         #    7c) esc/fmtCell 全包裹（数据表 cols.map：th=esc(c)、td=fmtCell）
         exempt |= {"${cols.map"}

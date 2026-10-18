@@ -1,0 +1,63 @@
+schema: rfauto-template-geometry-golden/v1
+template: pyramid_horn
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  a_mm: 22.86
+  b_mm: 10.16
+  a1_mm: 76.40094536120978
+  b1_mm: 57.54769444861163
+  l_feed_mm: 60.0
+  l_flare_mm: 45.48234099926676
+  er: 1.0
+  h_mm: 0.0
+status: ok
+script_sha256: 9296eaf826401f198c7bbca197f7e6847845f7a355f54edd9f956a87bee7266d
+csx:
+  n_primitives: 71
+  props:
+  - name: horn_wall
+    kind: Metal
+    n: 68
+    types:
+      '1': 68
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: e535e540f654b8baac54c957cd41d4fe328e5eb96c720e14f1f84e447c4b10df
+  bbox_m:
+  - -0.036527318
+  - -0.06
+  - -0.027292982
+  - 0.036527318
+  - 0.045482341
+  - 0.027292982
+mesh:
+  lines:
+    x:
+      n: 552
+      min_gap_m: 0.000139
+    y:
+      n: 763
+      min_gap_m: 7.3e-05
+    z:
+      n: 435
+      min_gap_m: 0.000135
+  lines_sha256: cadf134a08edc4a0c7436096d763a9eaa966b4bd7cfca84047a77381e6a07763
+ports:
+- 1

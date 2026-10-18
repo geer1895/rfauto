@@ -289,9 +289,14 @@ def test_peak_trihedral_effective_aperture_flat_plate_route():
 
 
 def test_peak_guards():
-    """守卫族：非法 shape/缺 b/b≤0/a≤0/f≤0/三方角多给 b。"""
+    """守卫族：非法 shape/cone_tip 多给 a/缺 b/b≤0/a≤0/f≤0/三方角多给 b。
+
+    （cone_tip 于 aurora_e W1-S2 从"非法 shape"转正为封闭集合成员——
+    原"cone_tip 拒绝"守卫语义改为"cone_tip 拒绝尺寸入参"；正值路径见
+    tests/unit/test_w1s2_tier2_residual.py。）
+    """
     _reject("rcs_peak_canonical", {"shape": "cone_tip", "f_ghz": 10.0,
-                                   "a_mm": 40.0}, "shape")
+                                   "a_mm": 40.0}, "a_mm")
     _reject("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": 10.0,
                                    "a_mm": 40.0}, "b_mm")
     _reject("rcs_peak_canonical", {"shape": "flat_plate", "f_ghz": 10.0,

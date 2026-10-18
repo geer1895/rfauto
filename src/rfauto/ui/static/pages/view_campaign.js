@@ -1,12 +1,22 @@
 /* rfauto 战役仪表盘页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移，
    PR-6）：座位状态 + 成本热图 + trial 虚拟列表；进度刷新=SSE 订阅
-   （A6-A）。 */
+   （A6-A）。R-1（aurora_e W2-S7）：PageContext 增量钩子 campaignCtx
+   （refresh=当前所选 run 立即拉一次看板；leave 不需要——SSE 收束由
+   router._sseLeavePage 单源管，无轮询定时器面）。 */
 
-import { THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
+import {
+  CANVAS_FONT, CANVAS_FONT_SMALL, CANVAS_HEAT_LAYOUT, THEME_COLORS, bodyIsLight, themePick,
+} from "../theme.js";
 import { S, T } from "./context.js";
 import { esc, escAttr, fmtNum, help } from "./dom.js";
 import { _syncRouteHash, consumeCampaignPendingId } from "./router.js";
 import { _sseSubscribe } from "./sse.js";
+
+/* R-1（W2-S7）：当前看板加载器引用——loadDash 是 pageCampaign 闭包
+   （依赖 sel/heatEl），模块级存"最近一次进页的加载器"供 ctx.refresh 调；
+   换页重进覆盖式更新，未进过页为 null（palette 刷新对未进页不可达，
+   仍按 #105 守卫静默）。 */
+let _campaignReload = null;
 
 /* ═══ PR-6 战役仪表盘（ge8b Wave B 席B2）：成本热图 + trial 虚拟列表 ═══
    热图=确定性分箱快照（service 端）；进度刷新=选中 run 后订阅 SSE 流
@@ -98,9 +108,17 @@ export async function pageCampaign() {
   sel.onchange = () => { syncCampaignHash(); loadDash(); }; // A4-C：选择即深链（replaceState 不触 hashchange）
   T.$("cp-reload").onclick = loadDash;
   T.$("cp-x").onchange = loadDash; T.$("cp-y").onchange = loadDash; T.$("cp-n").onchange = loadDash;
+  _campaignReload = loadDash; // R-1：登记当前加载器（campaignCtx.refresh 消费）
   await loadDash();
   syncCampaignHash(); // A4-C：初载/深链消费后 hash 对齐（刷新/分享保持所选 run）
 }
+
+/* R-1（W2-S7）PageContext：refresh=当前所选 run 立即拉一次看板（与「刷新」
+   钮同一 loadDash，palette 刷新不再整页重进）；leave 不需要（无轮询定时器；
+   SSE 连接收束由 router._sseLeavePage 单源处理）。 */
+export const campaignCtx = {
+  refresh: () => { const f = _campaignReload; if (f) f(); },
+};
 
 /* 成本热图（canvas，feasibility 网格姊妹面）：格色=格内平均 cost 相对
    [cost_min, cost_max] 的位置（绿低红高）；空格灰。 */
@@ -112,7 +130,8 @@ function drawCostHeat(el, d) {
   canvas.style.width = "100%"; canvas.style.height = "340px";
   el.appendChild(canvas);
   const W = canvas.width = canvas.clientWidth || 700, H = canvas.height = 340;
-  const L = 60, R = 90, Tp = 12, B = 40;
+  // W3-S12（P-5）：边距常量收 theme.js 单源（值冻结 60/90/12/40，渲染不变）
+  const { left: L, right: R, top: Tp, bottom: B } = CANVAS_HEAT_LAYOUT;
   const ctx = canvas.getContext("2d");
   const xe = d.x_edges, ye = d.y_edges, n = d.grid_n;
   const xmin = xe[0], xmax = xe[xe.length - 1], ymin = ye[0], ymax = ye[ye.length - 1];
@@ -135,11 +154,11 @@ function drawCostHeat(el, d) {
       const x0 = px(xe[i]), x1 = px(xe[i + 1]), y0 = py(ye[j + 1]), y1 = py(ye[j]);
       ctx.fillRect(x0, y0, Math.max(1, x1 - x0 - 0.5), Math.max(1, y1 - y0 - 0.5));
       if (c) {
-        ctx.fillStyle = fg; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
+        ctx.fillStyle = fg; ctx.font = CANVAS_FONT_SMALL; ctx.textAlign = "center";
         ctx.fillText(String(c.n), (x0 + x1) / 2, (y0 + y1) / 2 + 3);
       }
     }
-  ctx.fillStyle = fg; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+  ctx.fillStyle = fg; ctx.font = CANVAS_FONT; ctx.textAlign = "center";
   ctx.fillText(`${d.x_param}  [${xmin.toPrecision(4)} … ${xmax.toPrecision(4)}]`, (L + W - R) / 2, H - 10);
   ctx.save(); ctx.translate(14, (Tp + H - B) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText(`${d.y_param}  [${ymin.toPrecision(4)} … ${ymax.toPrecision(4)}]`, 0, 0); ctx.restore();

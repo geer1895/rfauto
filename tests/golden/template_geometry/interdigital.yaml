@@ -1,0 +1,19 @@
+schema: rfauto-template-geometry-golden/v1
+template: interdigital
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  order: 3
+  w_mm: 1.1117
+  res_len_mm: 17.082
+  gaps_mm:
+  - 0.2263
+  - 1.3567
+  - 1.3567
+  - 0.2263
+  feed_len_mm: 51.459
+status: guard_blocked
+guard_error: C3 interdigital 耦合缝网格守卫（#266）：NEAR=0.2851mm > 最小耦合缝 0.2263mm/3=0.0754mm（缝内不足 3 格 ⇒ 缝内零内部线、外 Q 建模粗、峰位 −5%）；请显式传 mesh_resolution_mm ≤ 0.3017（NEAR=base/4）

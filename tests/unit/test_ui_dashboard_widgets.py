@@ -16,9 +16,11 @@
    - 甜甜圈：echarts pie ring 形态走 W2-B 缓存基建（echartsInitCached +
      bindChartResize）+ W3-B chartExportTools 导出面（refEl=null append，
      不扰动既有四挂接点跨席计数钉）；空态文案；
-   - 事件桥：window 级 "rfauto:export-chart" 监听唯一一处，chartExportTools
-     工厂内登记"最近装配"（_lastChartExport），监听装配在 initPages 且幂等
-     守卫（typeof window 钉零顶层 DOM 依赖）；
+   - 事件桥：window 级 "rfauto:export-chart" 监听唯一一处；W4-S17（W3-S12
+     建议①）桥登记面迁 plotCard 壳——plotcard.js registerRecentChartExport/
+     fireRecentChartExport 共享注册表（WeakRef 弱可达语义随迁），
+     chartExportTools（甜甜圈）与 plotCard 首绘/复用渲染同喂一表；监听装配
+     在 initPages 且幂等守卫（typeof window 钉零顶层 DOM 依赖）；
    - 跨席计数钉复述（本席改动最易打破的面，先红=本席文件面被误改，先于
      52 分钟门暴露）。
 2. **行为钉（node 在才跑，否则诚实 skip）**：relTime/freshnessTier/
@@ -229,18 +231,33 @@ console.log(JSON.stringify({ afterLive, afterDetach: clicked }));
     def test_factory_registers_last_assembly(self):
         body = _body(r"function chartExportTools\(host, refEl, opts\)")
         assert "const pngBtn = mk(\"PNG\"" in body  # PNG 钮捕获
-        # UI-R11（uir8 P2-5）：登记改 WeakRef 弱可达——闭包不强持工具条 DOM
-        # （原强引用把最后一次装配的工具条滞留到下次装配覆盖为止）；触发时
-        # 按钮已离场（document.contains=false）→ 解除登记
-        assert "const pngRef = new WeakRef(pngBtn);" in body
-        assert "_lastChartExport = () => {" in body  # 最近装配登记（解引用触发）
-        assert "document.contains(b)" in body  # 离场探针 → else 分支清登记
+        # W4-S17（W3-S12 建议①登记面收窄）：自有 WeakRef 闭包退役，PNG 钮
+        # 装配后委托 plotcard.js 共享登记面（WeakRef 弱可达语义随迁，
+        # 触发面/离场解除钉迁 test_plotcard_registry_face）
+        assert "registerRecentChartExport(pngBtn);" in body
+        assert "new WeakRef" not in body  # 旧自有登记闭包零残留
+        assert "_lastChartExport" not in _SRC  # 旧登记名全仓退役
+
+    def test_plotcard_registry_face(self):
+        # W4-S17：登记面单源在 plotcard.js——首绘装配与复用换代两路径都
+        # 登记（桥目标=最近渲染的 plotCard 壳），触发/解除闭包同模块。
+        pc = (_STATIC / "plotcard.js").read_text(encoding="utf-8")
+        assert "export function registerRecentChartExport(btn)" in pc
+        assert "export function fireRecentChartExport()" in pc
+        assert "new WeakRef(btn)" in pc  # 弱可达登记（UI-R11 uir8 P2-5 语义随迁）
+        assert "document.contains(b)" in pc  # 离场探针 → else 分支清登记
+        m = re.search(r"export function plotCard\(el, props = \{\}, ctx = \{\}\) \{(.*?)\n\}",
+                      pc, re.S)
+        assert m, "plotCard 函数体缺失"
+        body = m.group(1)
+        assert 'button[data-export-kind="png"]' in body  # 壳工具条 PNG 钮定位
+        assert body.count("registerRecentChartExport(") == 2  # 首绘+复用两路径
 
     def test_binding_guarded_and_idempotent_in_initpages(self):
         body = _body(r"function _bindExportChartEvent\(\)")
         assert "typeof window === \"undefined\"" in body  # node import 零 DOM 依赖
         assert "_exportEvtBound" in body  # 幂等守卫（装配一次）
-        assert "if (_lastChartExport) _lastChartExport();" in body
+        assert "fireRecentChartExport();" in body  # W4-S17：消费共享登记面
         # 监听在 initPages 装配（与 W2-B 轮询监听同一浏览器侧装配点）
         assert "_bindExportChartEvent(); // aurora36 W4-C" in _SRC
 
@@ -249,6 +266,8 @@ console.log(JSON.stringify({ afterLive, afterDetach: clicked }));
         # UI-R11（uir8 P2-5）行为钉：桥派发→最近装配的 PNG 钮 click 一次；
         # 工具条随页换血离场（document.contains=false）后派发不再 click 且
         # 登记解除（旧强引用形态会对离场钮继续 click：afterDetach=2）。
+        # W4-S17：链路改为 chartExportTools→plotcard.js 共享登记面→
+        # fireRecentChartExport 触发，外部行为与本钉逐字节同。
         r = subprocess.run(
             [_NODE, "--input-type=module", "-e", self._GLUE],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -258,6 +277,46 @@ console.log(JSON.stringify({ afterLive, afterDetach: clicked }));
         assert payload == {"afterLive": 1, "afterDetach": 1}, (
             "离场后必须停点且解除登记（旧强引用形态 afterDetach=2）")
 
+    _REGISTRY = r"""
+const p = await import('./plotcard.js');
+let clicked = 0;
+const btn = { dataset: {}, click() { clicked += 1; } };
+// 未登记：fire 零动作零抛
+p.fireRecentChartExport();
+// WeakRef 缺席环境（桩掉 WeakRef）：登记降级 null，fire 零动作
+const RealWR = globalThis.WeakRef;
+globalThis.WeakRef = undefined;
+p.registerRecentChartExport(btn);
+p.fireRecentChartExport();
+globalThis.WeakRef = RealWR;
+// 正常登记：document.contains=true → 代点一次
+let contains = true;
+globalThis.document = { contains: () => contains };
+p.registerRecentChartExport(btn);
+p.fireRecentChartExport();
+const afterLive = clicked;
+// 离场：不 click + 解除登记；再 fire=已清零动作
+contains = false;
+p.fireRecentChartExport();
+const afterDetach = clicked;
+p.fireRecentChartExport();
+const afterCleared = clicked;
+delete globalThis.document;
+console.log(JSON.stringify({ afterLive, afterDetach, afterCleared }));
+"""
+
+    @pytest.mark.skipif(_NODE is None, reason="本机无 node")
+    def test_plotcard_registry_fire_and_weakref_deref(self):
+        # W4-S17 行为钉（plotcard.js 共享登记面）：fire=解引用代点在场钮一次；
+        # 离场→停点+解除登记；WeakRef 缺席→登记降级零动作（#105 best-effort）。
+        r = subprocess.run(
+            [_NODE, "--input-type=module", "-e", self._REGISTRY],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=60, cwd=str(_STATIC))
+        assert r.returncode == 0, r.stderr[-2000:]
+        payload = json.loads(r.stdout.strip().splitlines()[-1])
+        assert payload == {"afterLive": 1, "afterDetach": 1, "afterCleared": 1}
+
 
 class TestCrossSeatPinsHold:
     """跨席计数钉复述（本席改动最易打破的面；先红=pages.js 生命周期/导出
@@ -265,17 +324,65 @@ class TestCrossSeatPinsHold:
     同源复述）。"""
 
     def test_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 12
+        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
-        assert _SRC.count("bindChartResize(el); // P0-5") == 4  # 本席新增用 W4-C 注释
+        # W3-S12：四管线（polar/Smith/场切片/远场3D）已迁 plotCard 逃生舱，
+        # el 形态挂接清零；本席 null 形态（甜甜圈 refEl=null append）保留
+        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0
+        assert _SRC.count("chartExportTools(el.parentElement, null, {") == 1
+        assert _SRC.count("bindChartResize(el); // P0-5") == 0  # 四管线随壳内建去重
         assert _SRC.count("disposeChartsIn(") == 4
 
     def test_pure_helpers_exported(self):
         for fn in ("relTime", "freshnessTier", "freshnessRingSvg", "statusBucket"):
             assert f"export function {fn}(" in _SRC, fn
+
+
+# ────────── R-1 dashboard 局部刷新试点（aurora72 W1-S3 席位钉） ──────────
+
+def _view_src(name: str) -> str:
+    """单视图模块源码（R-1 席位钉：文件面收敛读，并集钉归并集口径）。"""
+    return (_STATIC / "pages" / name).read_text(encoding="utf-8")
+
+
+class TestLocalRefreshPilot:
+    """R-1（aurora72 W1-S3，R6 审计 R-1）：widget 增删/拖拽局部刷新。
+
+    此前增删/拖拽任一变更递归整页渲染函数=全量 refetch /api/runs?limit=200
+    + /api/solvers（R6 审计旧单体 pages.js:696/724/746 三处）；现收敛到
+    refreshDashboard → renderDashboardGrid（数据面零 fetch）。"""
+
+    def test_view_file_split_and_wiring(self):
+        dash = _view_src("view_dashboard.js")
+        assert "export async function refreshDashboard()" in dash
+        assert "async function renderDashboardGrid()" in dash
+        assert "export const dashboardCtx = { refresh: () => refreshDashboard() };" in dash
+
+    def test_mutations_use_local_refresh_not_full_reentry(self):
+        dash = _view_src("view_dashboard.js")
+        # 三处变更点（添加菜单 chip/组件 close/拖拽 drop）全走局部刷新——
+        # W5-S23（同笔改针）：chip/close 改经 refreshGridKeepingFocus
+        # （内部 await refreshDashboard() 完成后还焦=焦点保持批次），
+        # drop 保持直呼；字面消费面=直呼 1 + 包装器内 1 = 2。
+        assert dash.count("refreshDashboard();") == 2
+        assert dash.count("refreshGridKeepingFocus(") == 3  # 定义 1 + chip/close 消费 2
+        assert "persistWidgets(); pageDashboard();" not in dash  # 全量重拉递归退场
+        # 旧全量路径调用点仅剩 refreshDashboard 的无壳回退一处（另一处=定义行）
+        assert dash.count("return pageDashboard();") == 1
+
+    def test_refresh_path_is_fetch_free(self):
+        body = _body(r"export async function refreshDashboard\(\)")
+        assert "apiFetch" not in body and "T.api(" not in body  # 数据面零 fetch
+        assert "S.dashData" in body  # 复用进页已拉取数据
+        assert "renderDashboardGrid()" in body
+        assert "return pageDashboard();" in body  # 壳未就绪回退全量路径
+
+    def test_enter_path_keeps_full_fetch(self):
+        body = _body(r"async function pageDashboard\(\)")
+        assert "/api/runs?limit=200" in body and "/api/solvers" in body  # 进页全量拉取不变
+        assert "renderDashboardGrid()" in body  # 渲染面收敛单源
 
 
 # ────────────────────────── 2. 行为钉（node 在才跑） ──────────────────────────

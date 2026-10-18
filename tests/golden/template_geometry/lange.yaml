@@ -1,0 +1,157 @@
+schema: rfauto-template-geometry-golden/v1
+template: lange
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 0.1672
+  gap_mm: 0.0386
+  finger_len_mm: 18.9712
+  w_feed_mm: 1.1117
+status: ok
+script_sha256: 0df68f313901f57ccdd217015effb8685d078fb2addb4809daa2fec14519dc81
+csx:
+  n_primitives: 50
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: lange
+    kind: Metal
+    n: 28
+    types:
+      '1': 28
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_4A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_4B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 85ecab4798c769023d0bc0b50f16f6b1e7734de10d949bf8c143c46f0148500a
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000658
+mesh:
+  lines:
+    x:
+      n: 141
+      min_gap_m: 1.9e-05
+    y:
+      n: 433
+      min_gap_m: 0.0001
+    z:
+      n: 17
+      min_gap_m: 5.0e-05
+  lines_sha256: fcc86b0f1205f8a487380df9479c34180ffb8a31e381cb3364a94235dbde58f9
+ports:
+- 1
+- 2
+- 3
+- 4

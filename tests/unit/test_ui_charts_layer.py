@@ -38,8 +38,6 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-#: SSR 矢量导出钉经 vendored echarts（static/vendor 不随仓分发）
-_ECHARTS = (_STATIC / "vendor" / "echarts.min.js").is_file()
 
 
 def _read(name: str) -> str:
@@ -228,8 +226,6 @@ class TestExportUnification:
         payload = json.loads(out.strip())
         assert payload["ok"] is True, payload
 
-    @pytest.mark.skipif(_NODE is None or not _ECHARTS,
-                         reason="node 或 vendored echarts.min.js 缺失（static/vendor 不随仓分发）")
     def test_chart_to_svg_text_is_vector_via_ssr(self):
         out = _run_node_js(
             "const req = (await import('node:module')).createRequire("
@@ -398,7 +394,8 @@ class TestCallSiteUnification:
 
     def test_cross_seat_counts_hold(self):
         src = _read("pages.js")
-        assert src.count("T.plotCard(") == 12
+        # 12（W2 收口）+ 4（W3-S12 四管线逃生舱迁移）= 16
+        assert src.count("T.plotCard(") == 16
         assert src.count("T.drawEChart(") == 0
         assert src.count('mode: "convergence"') == 2
         # crosshair: view_detail(0, 收编工厂) + sparams 2 + reports 1 + 工厂 1

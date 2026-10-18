@@ -104,11 +104,11 @@ def test_cli_leaf_paths_registration_order():
     """叶命令深度优先注册序逐位=金快照（E2-8：失败消息改动态 len 防再陈旧）。"""
     gold = json.loads(_GOLD_CLI.read_text(encoding="utf-8"))
     snap = _cli_tree_snapshot()
-    assert snap["n_leaves"] == 269, (
-        f"叶命令数漂移: {snap['n_leaves']} != 269（check_numbers CLI 口径；"
-        "aurora_d KB-B 2026-10-14 pitfalls search/get +2 重钉——坑账结构化"
-        "检索面两叶，零逻辑转发 service/pitfall_index_service 只读面；"
-        "上锚=aurora_d REST-B 2026-10-14 rest schema +1）")
+    assert snap["n_leaves"] == 270, (
+        f"叶命令数漂移: {snap['n_leaves']} != 270（check_numbers CLI 口径；"
+        "aurora_e W2-S8 2026-10-18 templates golden-diff +1 重钉——EC-8 全"
+        "模板 golden 几何回归仓叶，零逻辑转发 service/template_golden_service"
+        "；上锚=aurora_d KB-B 2026-10-14 pitfalls search/get +2）")
     assert snap["leaf_paths"] == gold["leaf_paths"], (
         "CLI 叶命令注册序漂移（同族段内次序是 AU-1B4 钉的镜像面）")
 

@@ -1,0 +1,84 @@
+schema: rfauto-template-geometry-golden/v1
+template: cps
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 2.95
+  gap_mm: 0.5
+  line_len_mm: 40.0
+status: ok
+script_sha256: 64a99644bba2ddea72ca3bc32a7c2b6afe4e2001f3c7ad76c0487668fd785098
+csx:
+  n_primitives: 10
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: cps
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 3dac7e6ac9695eae3d143dea206e36d7014833030fa4e64ac1f60891b9bc1c87
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 129
+      min_gap_m: 0.00025
+    y:
+      n: 221
+      min_gap_m: 0.00025
+    z:
+      n: 21
+      min_gap_m: 0.000127
+  lines_sha256: 5c2a127d643e0107a40a1cebb450bcd9f8ea8604fe2c378df8f659ef4498ca64
+ports:
+- 1
+- 2

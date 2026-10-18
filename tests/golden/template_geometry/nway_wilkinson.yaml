@@ -1,0 +1,198 @@
+schema: rfauto-template-geometry-golden/v1
+template: nway_wilkinson
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_arm_mm: 0.6035
+  w_feed_mm: 1.1134
+  arm_len_mm: 18.1624
+  iso_r_ohm: 100.0
+status: ok
+script_sha256: 62679b3c2de60dfa056412bc035d0e59240f88d5e54cd1a4b667fd1dc8d79115
+csx:
+  n_primitives: 46
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: nway_wilkinson
+    kind: Metal
+    n: 16
+    types:
+      '1': 16
+  - name: res1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: res2_u
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: res2_d
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_4A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_4B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_5A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_5B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_5C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_5A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_5B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: bddc06d7f77c57e3cb5ab5c6692de5af62b1b0b9d84565919065c600253034fb
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 163
+      min_gap_m: 0.000201
+    y:
+      n: 260
+      min_gap_m: 0.000121
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: 08dfe1460813e5bf95e769fd464ad00434ae31c06d296f1315b464e6bed9beb0
+ports:
+- 1
+- 2
+- 3
+- 4
+- 5

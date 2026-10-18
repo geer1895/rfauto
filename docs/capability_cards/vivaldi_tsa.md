@@ -58,7 +58,7 @@
 - 参数语义：w_throat_mm=喉部槽宽（Gibson 1979 指数律 w(x)=w_throat·exp(kx)）、w_mouth_mm=口面槽宽（低截止f_low=c/(2·w_mouth) 口面半波准则，名义 24.9827mm↔6GHz）、l_mm=喉→口面轴向长（k=ln(w_mouth/w_throat)/L，板缘 MUR 净距 ≥5mm 守卫）、feed_w_mm=跨槽微带馈线宽（50Ω HJ 1.1134）；er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；阶梯化站缘 x 向 + 馈线缘精确入网（#198）；底 MUR+域 z 下延（slot 同款：槽向下半空间辐射）；显式近场线 10µm 地板（#349）
 - 冒烟现状：离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=指数律往返恒等+口面↔截止双向回收+单调性（core/vivaldi_tsa tests 钉）；近似级别如实登记：低截止=二手工程准则（Yngvesson 1985 介质加载修正未回原文不入码，citation-rot），巴伦面未做（登记注记），增益/方向图全波面不在本批；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

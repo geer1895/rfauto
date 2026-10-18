@@ -1,15 +1,14 @@
 /* rfauto 场/远场可视化页族（aurora_d UI-R2 自 pages.js 拆出，逐字节
    搬移）：远场极坐标（nf2ff）+ Smith 圆图（G9，S 参数页复用）+ 场切片
-   热图/等值面/远场 3D（DumpHDF5）。自研管线（polar/Smith/custom/
-   heatmap 不在 plotcard builder 能力面），仅补 plotCard 级导出面。 */
+   热图/等值面/远场 3D（DumpHDF5）。W3-S12（R6 审计 P-5）：polar/Smith/
+   custom/heatmap 四管线不在 plotcard builder 能力面，经 plotCard
+   props.option 逃生舱接入壳（导出/复用/主题联动单源），option 构造保留
+   自研；等值面 three.js 管线不动。 */
 
-import { HEAT_BAND, ISO_BAND, THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
+import { HEAT_BAND, ISO_BAND, THEME_COLORS, themePick } from "../theme.js";
 import {
   _isoRenderers,
-  bindChartResize,
-  chartExportTools,
   disposeChartsIn,
-  echartsInitCached,
   releaseWebGLIn,
   smithChartTheme, // UI-R5：Smith 网格/轨迹色对走 charts 层选项工厂
 } from "./charts.js";
@@ -18,6 +17,8 @@ import { esc, escAttr, help } from "./dom.js";
 import { showPage } from "./router.js";
 
 /* ── 远场极坐标页（WP4.1/D4：nf2ff 方向图 + 增益/效率/SAR）───────────── */
+let _fieldReload = null; // R-1：refresh 局部刷新转发登记（fieldCtx 消费，pageField 内赋值）
+
 export async function pageFarfield() {
   const v = T.$("view-farfield");
   if (!v.innerHTML)
@@ -77,41 +78,39 @@ export async function pageFarfield() {
       `<div id='ff-pol-${i}'></div></div>`).join("");
     (d.cuts || []).forEach((c, i) => {
       try {
-        const light = bodyIsLight();
-        const fg = themePick(light, THEME_COLORS.fg);
-        const axisLine = themePick(light, THEME_COLORS.fieldAxisLine); // UI-R12 任务3：单源收编
         const el = T.$(`ff-pol-${i}`);
-        el.style.height = "360px";
-        const chart = echartsInitCached(el); // P0-5：实例缓存守卫（存活即复用）
-        chart.setOption({
-          backgroundColor: "transparent",
-          tooltip: {},
-          angleAxis: {
-            type: "value", min: -180, max: 180, startAngle: 90,
-            axisLine: { lineStyle: { color: axisLine } }, // UI-R12：THEME_COLORS 单源（原内联 #55607a 冻结迁移）
-            axisLabel: { color: fg }, splitLine: { show: true },
-          },
-          radiusAxis: {
-            min: -40, max: 0,
-            axisLine: { lineStyle: { color: axisLine } }, // UI-R12：同上
-            axisLabel: { color: fg }, splitLine: { show: true },
-          },
-          polar: {},
-          series: [{
-            type: "line", coordinateSystem: "polar", showSymbol: false,
-            data: c.theta_deg.map((t, j) => [c.pattern_db[j], t]),
-            lineStyle: { width: 1.8,
-              color: themePick(bodyIsLight(), THEME_COLORS.seriesBlue) },
-          }],
-        }, true); // notMerge：复用路径整体替换旧 option
-        bindChartResize(el); // P0-5：resize 去重（WeakSet 标记，一容器一监听）
-        // W3-B：plotCard 级导出面——polar 坐标系不在 plotcard builder 能力面
-        //（仅笛卡尔 line/scatter/band），渲染管线保留自研，仅补导出（共用工厂）
-        chartExportTools(el.parentElement, el, {
-          name: "farfield-polar-phi" + c.phi_deg,
-          getChart: () => chart,
-          getCsvSeries: () => [{ name: `φ=${c.phi_deg}° pattern_db（x=θ°）`,
-                                 x: c.theta_deg, y: c.pattern_db }],
+        // W3-S12（R6 审计 P-5）：plotCard 逃生舱迁移——原 echartsInitCached
+        // 直调 + bindChartResize + chartExportTools 补丁面整体收编进壳
+        // （CSV/PNG/SVG 导出钮+同容器复用+主题联动重放随壳内建；函数形态
+        // option 在主题换档时以新档 ctx 现取，深浅配色一拍跟上）。
+        // series=CSV 数据面（x=θ°，y=pattern_db，与旧 getCsvSeries 同构）。
+        T.plotCard(el, {
+          option: ({ light }) => ({
+            backgroundColor: "transparent",
+            tooltip: {},
+            angleAxis: {
+              type: "value", min: -180, max: 180, startAngle: 90,
+              axisLine: { lineStyle: { color: themePick(light, THEME_COLORS.fieldAxisLine) } }, // UI-R12：THEME_COLORS 单源（原内联 #55607a 冻结迁移）
+              axisLabel: { color: themePick(light, THEME_COLORS.fg) }, splitLine: { show: true },
+            },
+            radiusAxis: {
+              min: -40, max: 0,
+              axisLine: { lineStyle: { color: themePick(light, THEME_COLORS.fieldAxisLine) } }, // UI-R12：同上
+              axisLabel: { color: themePick(light, THEME_COLORS.fg) }, splitLine: { show: true },
+            },
+            polar: {},
+            series: [{
+              type: "line", coordinateSystem: "polar", showSymbol: false,
+              data: c.theta_deg.map((t, j) => [c.pattern_db[j], t]),
+              lineStyle: { width: 1.8,
+                color: themePick(light, THEME_COLORS.seriesBlue) },
+            }],
+          }),
+          series: [{ name: `φ=${c.phi_deg}° pattern_db（x=θ°）`,
+                     x: c.theta_deg, y: c.pattern_db }],
+          height: "360px",
+          exportName: "farfield-polar-phi" + c.phi_deg,
+          ariaLabel: `图表：φ=${c.phi_deg}° 远场方向图切面（θ −180..180°，dB 相对峰值归一，HPBW ${c.hpbw_deg === null ? "N/A" : c.hpbw_deg.toFixed(1) + "°"}）`,
         });
       } catch (e) {
         T.$(`ff-pol-${i}`).innerHTML = `<span style="color:var(--err)">polar error: ${esc(e.message)}</span>`;
@@ -128,83 +127,89 @@ export async function pageFarfield() {
   await load();
 }
 
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 farfieldCtx ══════════
+   refresh=当前 run 方向图/指标重拉（pageFarfield 幂等——壳判 innerHTML 已在
+   即跳过，S.ffRunId 选择态保留；plotCard 壳同容器复用换数据）。无轮询面，
+   leave 不需要。 */
+export const farfieldCtx = {
+  refresh: () => pageFarfield(),
+};
+
 /* ── Smith 圆图（G9，S 参数页增强）：网格几何+轨迹全部来自服务层 JSON ── */
 export function drawSmith(el, traces, grid, z0) {
   try {
-    const light = bodyIsLight();
-    const fg = themePick(light, THEME_COLORS.fg);
-    // UI-R5：网格/轨迹色对走 charts 层 smithChartTheme 工厂（色值单源仍在
-    // theme.js smithPalette/smithGrid——工厂只做一对一次取齐）
-    const { grid: gridColor, palette: colors } = smithChartTheme(light);
     const size = Math.min(el.clientWidth || 560, 560);
-    const chart = echartsInitCached(el); // P0-5：实例缓存守卫（清容器移入新建路径）
-    el.style.height = `${size}px`;
-    el.style.width = `${size}px`;
-    const gline = (pts, dashed) => ({
-      type: "line", data: pts, showSymbol: false, silent: true, animation: false,
-      lineStyle: { color: gridColor, width: dashed ? 0.8 : 1, type: dashed ? "dashed" : "solid" },
-      tooltip: { show: false },
+    // W3-S12（R6 审计 P-5）：plotCard 逃生舱迁移——隐藏轴等比坐标 + 网格几何
+    // 系列仍自研（不在 builder 能力面），但渲染/导出/主题联动全收进壳：
+    // 函数形态 option 按档现取（smithChartTheme 工厂色对），width=height=方图
+    // 等比（plotCard width 面新增）；series=CSV 数据面（每轨迹 Γ 实/虚部长表）。
+    const csvSeries = traces.flatMap((t) => {
+      const nm = t.label || t.name;
+      return [
+        { name: nm + " Re(Γ)", x: t.freq_ghz, y: t.re },
+        { name: nm + " Im(Γ)", x: t.freq_ghz, y: t.im },
+      ];
     });
-    const series = [];
-    if (grid) {
-      series.push(gline(grid.unit_circle, false));
-      for (const c of grid.r_circles) series.push(gline(c.points, false));
-      for (const a of grid.x_arcs) series.push(gline(a.points, true));
-      series.push(gline([[-1, 0], [1, 0]], false));
-    }
-    // 轨迹色=smithChartTheme.palette（theme.js smithPalette 单源经工厂取齐）
-    traces.forEach((t, i) => series.push({
-      name: t.label || t.name, type: "line", showSymbol: true, symbolSize: 3,
-      data: t.re.map((re, k) => [re, t.im[k]]),
-      lineStyle: { width: 1.6, color: colors[i % colors.length] },
-      itemStyle: { color: colors[i % colors.length] },
-      _trace: t,
-    }));
-    chart.setOption({
-      backgroundColor: "transparent",
-      legend: { top: 0, textStyle: { color: fg }, type: "scroll",
-                data: traces.map((t) => t.label || t.name) },
-      grid: { left: 10, right: 10, top: 28, bottom: 10, containLabel: false },
-      xAxis: { type: "value", min: -1.12, max: 1.12, show: false },
-      yAxis: { type: "value", min: -1.12, max: 1.12, show: false },
-      tooltip: {
-        trigger: "item",
-        formatter: (p) => {
-          // 轨迹系列排在网格系列之后：seriesIndex − 网格系列数 = 轨迹下标
-          const t = traces[p.seriesIndex - (series.length - traces.length)];
-          if (!t) return "";
-          const k = p.dataIndex;
-          const z = t.z_re_ohm[k] === null ? "N/A（|Γ|→1）"
-            : `${t.z_re_ohm[k].toFixed(2)} ${t.z_im_ohm[k] >= 0 ? "+" : "−"} j${Math.abs(t.z_im_ohm[k]).toFixed(2)} Ω`;
-          return `${p.seriesName}<br>f = ${t.freq_ghz[k]} GHz<br>Γ = ${t.re[k].toFixed(4)} ${t.im[k] >= 0 ? "+" : "−"} j${Math.abs(t.im[k]).toFixed(4)}（|Γ| ${t.mag[k].toFixed(4)}）<br>Z = ${z}`;
-        },
+    const chart = T.plotCard(el, {
+      option: ({ light }) => {
+        const fg = themePick(light, THEME_COLORS.fg);
+        // UI-R5：网格/轨迹色对走 charts 层 smithChartTheme 工厂（色值单源仍在
+        // theme.js smithPalette/smithGrid——工厂只做一对一次取齐）
+        const { grid: gridColor, palette: colors } = smithChartTheme(light);
+        const gline = (pts, dashed) => ({
+          type: "line", data: pts, showSymbol: false, silent: true, animation: false,
+          lineStyle: { color: gridColor, width: dashed ? 0.8 : 1, type: dashed ? "dashed" : "solid" },
+          tooltip: { show: false },
+        });
+        const series = [];
+        if (grid) {
+          series.push(gline(grid.unit_circle, false));
+          for (const c of grid.r_circles) series.push(gline(c.points, false));
+          for (const a of grid.x_arcs) series.push(gline(a.points, true));
+          series.push(gline([[-1, 0], [1, 0]], false));
+        }
+        // 轨迹色=smithChartTheme.palette（theme.js smithPalette 单源经工厂取齐）
+        traces.forEach((t, i) => series.push({
+          name: t.label || t.name, type: "line", showSymbol: true, symbolSize: 3,
+          data: t.re.map((re, k) => [re, t.im[k]]),
+          lineStyle: { width: 1.6, color: colors[i % colors.length] },
+          itemStyle: { color: colors[i % colors.length] },
+          _trace: t,
+        }));
+        return {
+          backgroundColor: "transparent",
+          legend: { top: 0, textStyle: { color: fg }, type: "scroll",
+                    data: traces.map((t) => t.label || t.name) },
+          grid: { left: 10, right: 10, top: 28, bottom: 10, containLabel: false },
+          xAxis: { type: "value", min: -1.12, max: 1.12, show: false },
+          yAxis: { type: "value", min: -1.12, max: 1.12, show: false },
+          tooltip: {
+            trigger: "item",
+            formatter: (p) => {
+              // 轨迹系列排在网格系列之后：seriesIndex − 网格系列数 = 轨迹下标
+              const t = traces[p.seriesIndex - (series.length - traces.length)];
+              if (!t) return "";
+              const k = p.dataIndex;
+              const z = t.z_re_ohm[k] === null ? "N/A（|Γ|→1）"
+                : `${t.z_re_ohm[k].toFixed(2)} ${t.z_im_ohm[k] >= 0 ? "+" : "−"} j${Math.abs(t.z_im_ohm[k]).toFixed(2)} Ω`;
+              return `${p.seriesName}<br>f = ${t.freq_ghz[k]} GHz<br>Γ = ${t.re[k].toFixed(4)} ${t.im[k] >= 0 ? "+" : "−"} j${Math.abs(t.im[k]).toFixed(4)}（|Γ| ${t.mag[k].toFixed(4)}）<br>Z = ${z}`;
+            },
+          },
+          series,
+        };
       },
-      series,
-    }, true); // notMerge：复用路径整体替换旧 option
-    // PR-1 a11y：图表容器图像语义（轨迹名 + Z0 进 aria-label，读屏可闻）
-    el.setAttribute("role", "img");
-    el.setAttribute("aria-label",
-      `Smith 圆图：${(traces.map((t) => t.label || t.name)).join("、") || "无轨迹"}（Z0=${z0 ?? 50}Ω）`);
+      series: csvSeries,
+      width: `${size}px`, height: `${size}px`, // 方图等比（原 el 双向 style 同语义）
+      exportName: "smith-chart",
+      // PR-1 a11y：图像语义（轨迹名 + Z0 进 aria-label，读屏可闻；plotCard
+      // 壳把 role=img/aria-label 落在图表容器 chartDiv 上）
+      ariaLabel: `Smith 圆图：${(traces.map((t) => t.label || t.name)).join("、") || "无轨迹"}（Z0=${z0 ?? 50}Ω）`,
+    });
     const note = document.createElement("div");
     note.className = "muted";
     note.style.marginTop = "4px";
     note.textContent = `Z0 = ${z0 ?? 50} Ω · 网格 r=${(grid ? grid.r_circles.map((c) => c.r) : []).join("/")}、±x 同档 · 轨迹点 = 各频点 Γ（起点=首频）`;
     el.parentElement.appendChild(note);
-    bindChartResize(el); // P0-5：resize 去重（WeakSet 标记）
-    // W3-B：plotCard 级导出面——Smith 隐藏轴等比坐标 + 网格几何系列不在
-    // plotcard builder 能力面，渲染管线保留自研，仅补导出（共用工厂）；
-    // CSV=每轨迹 Γ 实/虚部两条长表系列（x=freq_ghz）
-    chartExportTools(el.parentElement, el, {
-      name: "smith-chart",
-      getChart: () => chart,
-      getCsvSeries: () => traces.flatMap((t) => {
-        const nm = t.label || t.name;
-        return [
-          { name: nm + " Re(Γ)", x: t.freq_ghz, y: t.re },
-          { name: nm + " Im(Γ)", x: t.freq_ghz, y: t.im },
-        ];
-      }),
-    });
     return chart;
   } catch (e) {
     el.innerHTML = `<span style="color:var(--err)">smith error: ${esc(e.message)}</span>`;
@@ -218,8 +223,6 @@ export function drawSmith(el, traces, grid, z0) {
    category 热图会拉伸格子），等值线以 mm 坐标叠加在同一值轴上。 */
 function drawFieldSlice(el, slice, contours, vmin) {
   try {
-    const light = bodyIsLight();
-    const fg = themePick(light, THEME_COLORS.fg);
     const u = slice.u_mm, v = slice.v_mm, vals = slice.values;
     const edges = (a) => {
       if (a.length === 1) return [a[0] - 0.5, a[0] + 0.5];
@@ -232,53 +235,54 @@ function drawFieldSlice(el, slice, contours, vmin) {
     const cells = [];
     for (let j = 0; j < v.length; j++)
       for (let i = 0; i < u.length; i++) cells.push([ue[i], ve[j], ue[i + 1], ve[j + 1], vals[j][i]]);
-    const chart = echartsInitCached(el); // P0-5：实例缓存守卫（清容器移入新建路径）
-    el.style.height = "300px";
-    const series = [{
-      type: "custom", name: "|E| dB", data: cells, animation: false,
-      renderItem: (params, api) => {
-        const p0 = api.coord([api.value(0), api.value(1)]);
-        const p1 = api.coord([api.value(2), api.value(3)]);
-        return { type: "rect",
-          shape: { x: Math.min(p0[0], p1[0]), y: Math.min(p0[1], p1[1]),
-                   width: Math.abs(p1[0] - p0[0]) + 0.5, height: Math.abs(p1[1] - p0[1]) + 0.5 },
-          style: { fill: api.visual("color") } };
-      },
-      encode: { x: [0, 2], y: [1, 3], tooltip: 4 },
-    }];
+    // W3-S12（R6 审计 P-5）：plotCard 逃生舱迁移——custom 矩形系列 + visualMap
+    // 仍自研（不在 builder 能力面），导出/复用/主题联动收进壳（函数形态
+    // option 按档现取）；series=CSV 数据面（宽表：x=u_mm，每行 v_mm 一列）。
     const levelColors = ISO_BAND; // UI-R12 任务3：等值线分档色单源（theme.js，冻结现值）
-    for (const seg of contours || []) {
-      const li = (seg._levelIndex ?? 0) % levelColors.length;
-      series.push({ type: "line", data: seg.points, showSymbol: false, silent: true, animation: false,
-                    name: `iso ${seg.level_db ?? ""} dB`,
-                    lineStyle: { width: 1.2, color: levelColors[li] }, tooltip: { show: false } });
-    }
-    chart.setOption({
-      backgroundColor: "transparent",
-      tooltip: { trigger: "item", formatter: (p) => p.seriesType === "custom"
-        ? `${slice.u_axis}∈[${p.value[0].toFixed(2)},${p.value[2].toFixed(2)}] mm · ${slice.v_axis}∈[${p.value[1].toFixed(2)},${p.value[3].toFixed(2)}] mm<br>|E| = ${p.value[4].toFixed(2)} dB` : "" },
-      grid: { left: 52, right: 70, top: 10, bottom: 34 },
-      xAxis: { type: "value", min: ue[0], max: ue[ue.length - 1], name: `${slice.u_axis} (mm)`,
-               nameTextStyle: { color: fg }, axisLabel: { color: fg }, splitLine: { show: false } },
-      yAxis: { type: "value", min: ve[0], max: ve[ve.length - 1], name: `${slice.v_axis} (mm)`,
-               nameTextStyle: { color: fg }, axisLabel: { color: fg }, splitLine: { show: false } },
-      visualMap: { type: "continuous", min: vmin ?? -40, max: 0, dimension: 4, seriesIndex: 0,
-                   right: 4, top: "middle", calculable: true, text: ["0 dB", `${vmin ?? -40} dB`],
-                   textStyle: { color: fg },
-                   inRange: { color: HEAT_BAND } },
-      series,
-    }, true); // notMerge：复用路径整体替换旧 option
-    bindChartResize(el); // P0-5：resize 去重（WeakSet 标记）
-    // W3-B：plotCard 级导出面——custom 矩形系列 + visualMap 不在 plotcard
-    // builder 能力面，渲染管线保留自研，仅补导出（共用工厂）；
-    // CSV=宽表（x=u_mm，每行 v_mm 一列）——热图网格的自然 2D 矩阵形态
-    chartExportTools(el.parentElement, el, {
-      name: "field-slice-" + slice.axis + slice.index,
-      getChart: () => chart,
-      getCsvSeries: () => slice.values.map((row, j) => ({
+    const chart = T.plotCard(el, {
+      option: ({ light }) => {
+        const fg = themePick(light, THEME_COLORS.fg);
+        const series = [{
+          type: "custom", name: "|E| dB", data: cells, animation: false,
+          renderItem: (params, api) => {
+            const p0 = api.coord([api.value(0), api.value(1)]);
+            const p1 = api.coord([api.value(2), api.value(3)]);
+            return { type: "rect",
+              shape: { x: Math.min(p0[0], p1[0]), y: Math.min(p0[1], p1[1]),
+                       width: Math.abs(p1[0] - p0[0]) + 0.5, height: Math.abs(p1[1] - p0[1]) + 0.5 },
+              style: { fill: api.visual("color") } };
+          },
+          encode: { x: [0, 2], y: [1, 3], tooltip: 4 },
+        }];
+        for (const seg of contours || []) {
+          const li = (seg._levelIndex ?? 0) % levelColors.length;
+          series.push({ type: "line", data: seg.points, showSymbol: false, silent: true, animation: false,
+                        name: `iso ${seg.level_db ?? ""} dB`,
+                        lineStyle: { width: 1.2, color: levelColors[li] }, tooltip: { show: false } });
+        }
+        return {
+          backgroundColor: "transparent",
+          tooltip: { trigger: "item", formatter: (p) => p.seriesType === "custom"
+            ? `${slice.u_axis}∈[${p.value[0].toFixed(2)},${p.value[2].toFixed(2)}] mm · ${slice.v_axis}∈[${p.value[1].toFixed(2)},${p.value[3].toFixed(2)}] mm<br>|E| = ${p.value[4].toFixed(2)} dB` : "" },
+          grid: { left: 52, right: 70, top: 10, bottom: 34 },
+          xAxis: { type: "value", min: ue[0], max: ue[ue.length - 1], name: `${slice.u_axis} (mm)`,
+                   nameTextStyle: { color: fg }, axisLabel: { color: fg }, splitLine: { show: false } },
+          yAxis: { type: "value", min: ve[0], max: ve[ve.length - 1], name: `${slice.v_axis} (mm)`,
+                   nameTextStyle: { color: fg }, axisLabel: { color: fg }, splitLine: { show: false } },
+          visualMap: { type: "continuous", min: vmin ?? -40, max: 0, dimension: 4, seriesIndex: 0,
+                       right: 4, top: "middle", calculable: true, text: ["0 dB", `${vmin ?? -40} dB`],
+                       textStyle: { color: fg },
+                       inRange: { color: HEAT_BAND } },
+          series,
+        };
+      },
+      series: vals.map((row, j) => ({
         name: slice.v_axis + "=" + slice.v_mm[j] + "mm",
         x: slice.u_mm, y: row,
       })),
+      height: "300px",
+      exportName: "field-slice-" + slice.axis + slice.index,
+      ariaLabel: `图表：${slice.axis}=${slice.position_mm}mm 场切片热图（${slice.u_axis}×${slice.v_axis}，|E| dB 相对体峰值）`,
     });
     return chart;
   } catch (e) {
@@ -362,34 +366,33 @@ function drawIsoMesh(container, iso) {
 /* 远场 3D 方向图（farfield_3d.h5）：θ×φ 热图（D4 联动，极坐标切面在「远场方向图」页） */
 function drawPattern3d(el, p) {
   try {
-    const light = bodyIsLight();
-    const fg = themePick(light, THEME_COLORS.fg);
     const data = [];
     p.db.forEach((row, ti) => row.forEach((v, pi) => data.push([pi, ti, v])));
-    const chart = echartsInitCached(el); // P0-5：实例缓存守卫（清容器移入新建路径）
-    el.style.height = "300px";
-    chart.setOption({
-      backgroundColor: "transparent",
-      tooltip: { formatter: (q) => `θ=${p.theta_deg[q.value[1]]}° φ=${p.phi_deg[q.value[0]]}°<br>${q.value[2].toFixed(2)} dB` },
-      grid: { left: 52, right: 70, top: 10, bottom: 34 },
-      xAxis: { type: "category", data: p.phi_deg, name: "φ (deg)", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
-      yAxis: { type: "category", data: p.theta_deg, name: "θ (deg)", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
-      visualMap: { type: "continuous", min: -40, max: 0, right: 4, top: "middle", calculable: true,
-                   textStyle: { color: fg },
-                   inRange: { color: HEAT_BAND } },
-      series: [{ type: "heatmap", data, animation: false, progressive: 2000 }],
-    }, true); // notMerge：复用路径整体替换旧 option
-    bindChartResize(el); // P0-5：resize 去重（WeakSet 标记）
-    // W3-B：plotCard 级导出面——heatmap + visualMap 不在 plotcard builder
-    // 能力面，渲染管线保留自研，仅补导出（共用工厂）；
-    // CSV=宽表（x=φ°，每行 θ° 一列）
-    chartExportTools(el.parentElement, el, {
-      name: "farfield-3d-heatmap",
-      getChart: () => chart,
-      getCsvSeries: () => p.db.map((row, ti) => ({
+    // W3-S12（R6 审计 P-5）：plotCard 逃生舱迁移——heatmap + visualMap 仍自研
+    //（不在 builder 能力面），导出/复用/主题联动收进壳；series=CSV 数据面
+    //（宽表：x=φ°，每行 θ° 一列）。
+    T.plotCard(el, {
+      option: ({ light }) => {
+        const fg = themePick(light, THEME_COLORS.fg);
+        return {
+          backgroundColor: "transparent",
+          tooltip: { formatter: (q) => `θ=${p.theta_deg[q.value[1]]}° φ=${p.phi_deg[q.value[0]]}°<br>${q.value[2].toFixed(2)} dB` },
+          grid: { left: 52, right: 70, top: 10, bottom: 34 },
+          xAxis: { type: "category", data: p.phi_deg, name: "φ (deg)", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
+          yAxis: { type: "category", data: p.theta_deg, name: "θ (deg)", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
+          visualMap: { type: "continuous", min: -40, max: 0, right: 4, top: "middle", calculable: true,
+                       textStyle: { color: fg },
+                       inRange: { color: HEAT_BAND } },
+          series: [{ type: "heatmap", data, animation: false, progressive: 2000 }],
+        };
+      },
+      series: p.db.map((row, ti) => ({
         name: "θ=" + p.theta_deg[ti] + "°（x=φ°）",
         x: p.phi_deg, y: row,
       })),
+      height: "300px",
+      exportName: "farfield-3d-heatmap",
+      ariaLabel: "图表：远场 3D 方向图 θ×φ 热图（dB 相对峰值）",
     });
   } catch (e) {
     el.innerHTML = `<span style="color:var(--err)">pattern error: ${esc(e.message)}</span>`;
@@ -507,5 +510,15 @@ export async function pageField() {
   dsel.onchange = () => { Object.keys(sliceIdx).forEach((k) => delete sliceIdx[k]); load(); };
   T.$("fv-reload").onclick = load;
   T.$("fv-polar").onclick = () => { S.ffRunId = sel.value; showPage("farfield"); };
+  _fieldReload = load; // R-1：refresh 局部刷新转发登记（fieldCtx 消费）
   await load();
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 fieldCtx ═════════════
+   refresh=当前 run/dump 的切片/等值面/远场 3D 重拉——load 闭包经模块级引用
+   转发（sparams/campaign 同款模式）+ 未进页 null 守卫；走 load 而非
+   pageField 整体重进=切片滑条索引（sliceIdx）与 dump/run 选择态保留。
+   无轮询面，leave 不需要。 */
+export const fieldCtx = {
+  refresh: async () => { const f = _fieldReload; if (f) f(); },
+};

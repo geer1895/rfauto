@@ -1,0 +1,14 @@
+schema: rfauto-template-geometry-golden/v1
+template: ring_resonator
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  r_mean_mm: 11.299802692199101
+  w_mm: 1.1134
+  gap_mm: 0.4
+  feed_w_mm: 1.1134
+status: guard_blocked
+guard_error: 'ring_resonator: NEAR=0.2851mm > gap/3=0.1333mm（#266 缝分辨守卫）——请加密 mesh_resolution_mm ≤ 0.5333mm 或加大 gap'

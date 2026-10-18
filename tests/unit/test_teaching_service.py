@@ -115,9 +115,16 @@ class TestTeachingCards:
         assert "敏感性排序" in md
         assert "例 7.2" in md
 
-    def test_missing_block_and_bad_template(self):
+    def test_missing_block_and_bad_template(self, tmp_path, monkeypatch):
+        # 缺块见证不再指向真实模板（teaching 卡已扩到全注册族）——用 tmp
+        # 模板目录构造缺块/不存在两错误路径（monkeypatch TEMPLATES_DIR）
+        nblock = tmp_path / "nblock"
+        nblock.mkdir()
+        (nblock / "meta.yaml").write_text(
+            "template: nblock\nparams: []\n", encoding="utf-8")
+        monkeypatch.setattr(ts, "TEMPLATES_DIR", tmp_path)
         with pytest.raises(ValueError, match="无 teaching 块"):
-            ts.load_teaching("atten_pi")
+            ts.load_teaching("nblock")
         with pytest.raises(ValueError, match="模板卡不存在"):
             ts.load_teaching("no_such_template")
 

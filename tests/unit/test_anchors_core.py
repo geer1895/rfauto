@@ -47,7 +47,7 @@ def test_expected_anchors_single_source_shape() -> None:
     # + ge8e X5 解析档锚批（wf:review-ge8e-x5，2026-10-04）：首批 analytic
     # 锚扩面 13 席（atten_pi/atten_t/ratrace/stripline/slotline/siw/
     # monopole/coil_nfc/pyramid_horn 九族闭式恒等锚）13 = 48
-    assert len(EXPECTED_ANCHORS) == 75  # 锚批序列累计（X5 解析档/TA 恒等锚/aurora_d 两批等，随批更新）
+    assert len(EXPECTED_ANCHORS) == 79  # 解析锚续批 +4（ms_lattice.period v2 接替/tjunc s11+s21/mline.z0；v1 retired 留册）；锚批序列累计（X5 解析档/TA 恒等锚/aurora_d 两批等，随批更新）
     assert all(a.count(".") >= 2 and "-v" in a for a in EXPECTED_ANCHORS)
 
 

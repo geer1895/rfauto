@@ -61,10 +61,13 @@ class TestA11ySourcePins:
         assert _hit("pages.js", r'setAttribute\("aria-modal", "true"\)')
 
     def test_chart_containers_image_semantics(self):
-        # drawEChart / drawLineChart / drawSmith 三类图表容器 role=img + aria-label
+        # drawEChart / drawLineChart（app.js 壳）+ plotCard 图表容器
+        # （W3-S12 起 Smith 等四管线经 plotCard 壳单源——role=img/aria-label
+        # 落在壳内 chartDiv 上，页面侧 el 级钉随之收敛）
         assert _hit("app.js", r'el\.setAttribute\("role", "img"\)')
         assert _hit("app.js", r'canvas\.setAttribute\("role", "img"\)')
-        assert _hit("pages.js", r'el\.setAttribute\("role", "img"\)')
+        assert re.search(r'chartDiv\.setAttribute\("role", "img"\)',
+                         (_STATIC / "plotcard.js").read_text(encoding="utf-8"))
         assert _hit("app.js", r'setAttribute\("aria-label", opts\.ariaLabel')
         assert _hit("pages.js", r"Smith 圆图：")
 

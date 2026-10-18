@@ -59,7 +59,7 @@
 - 参数语义：order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径 7.1055mm − 登记⑨+R1 校准过孔缩短 0.3237mm = 6.7818mm）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；棒/馈/台阶缘+过孔中心精确入网（#198 精确入网）
 - 冒烟现状：真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

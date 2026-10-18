@@ -1446,6 +1446,7 @@ def pack_campaign(
     out_path: str | Path,
     *,
     manifest_path: str | Path | None = None,
+    include_crate_metadata: bool = False,
 ) -> dict[str, Any]:
     """战役目录 → tar.zst + 偏移清单（只读原目录，零改动）。
 
@@ -1454,11 +1455,16 @@ def pack_campaign(
       逐位一致；
     - 偏移清单 JSON：每文件 {path, offset(tar 流内数据起始字节),
       size, sha256} + 整包 pack_sha256（内容寻址锚，verify 快速路径）；
+    - XD-16 crate 化（opt-in）：``include_crate_metadata=True`` 时另写
+      ``<out>.crate-metadata.json`` 侧车（RO-Crate 1.1 JSON-LD 自描述
+      层，复用 reproducibility_service.build_crate_metadata，引用
+      #pack 实体=本包投影；缺省 False=零行为变化，信封无新键）；
     - 原目录只读；写面仅 out_path 与 manifest（缺省
-      ``<out>.manifest.json``）。
+      ``<out>.manifest.json``）与 opt-in 侧车。
 
     返回 {"ok", "pack_path", "manifest_path", "n_files", "total_bytes",
-    "pack_sha256", "pack_size_bytes"}；目录不存在/无文件/缺 zstandard →
+    "pack_sha256", "pack_size_bytes"}（opt-in 时附加
+    "crate_metadata_path"）；目录不存在/无文件/缺 zstandard →
     ok=False 如实。
     """
     src = Path(campaign_dir)
@@ -1539,15 +1545,31 @@ def pack_campaign(
         manifest_path_obj.write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2),
             encoding="utf-8")
-        return ok_envelope(
-                   **{
-                   "n_files": len(files),
-                   "total_bytes": total,
-                   "pack_sha256": pack_sha,
-                   "pack_size_bytes": out.stat().st_size,
-                   **base,
-                   },
-               )
+        crate_path: str | None = None
+        if include_crate_metadata:
+            # XD-16：crate 自描述侧车（懒导入，共享服务面零环依赖）；
+            # 失败=opt-in 交付物缺席，如实报错（pack tar 本身已落盘，
+            # 重跑幂等——确定性打包 pack_sha256 逐位一致）。
+            from rfauto.service.reproducibility_service import build_crate_metadata
+            crate = build_crate_metadata(src, pack_manifest=manifest)
+            if not crate.get("ok"):
+                return error_envelope(
+                    [f"crate 元数据构建失败: {crate.get('errors')}"], **base)
+            crate_path_obj = Path(str(out) + ".crate-metadata.json")
+            crate_path_obj.write_text(
+                json.dumps(crate, ensure_ascii=False, indent=2),
+                encoding="utf-8")
+            crate_path = str(crate_path_obj)
+        fields = {
+            "n_files": len(files),
+            "total_bytes": total,
+            "pack_sha256": pack_sha,
+            "pack_size_bytes": out.stat().st_size,
+            **base,
+        }
+        if crate_path is not None:
+            fields["crate_metadata_path"] = crate_path
+        return ok_envelope(**fields)
     except Exception as exc:
         return error_envelope([f"打包失败: {exc}"], **base)
     finally:

@@ -462,7 +462,7 @@ class TestCssAuditSource:
 
 class TestCrossSeatPinsHold:
     def test_pages_union_counts_untouched(self):
-        assert _UNION.count("T.plotCard(") == 12
+        assert _UNION.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
         assert _UNION.count('window.addEventListener("hashchange"') == 1
         assert _UNION.count("bindClickRows(") == 13
         assert _UNION.count("color: HEAT_BAND") == 3

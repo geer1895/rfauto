@@ -57,7 +57,7 @@
 - 参数语义：w_mm=条带宽（设计链 core/embedded_line.embedded_ms_design_params：50Ω FD 裁判反演，名义 1.0014mm@h1=H_SUB=0.508/h2=0.254/εr=3.66）、h2_mm=覆盖层厚 （嵌埋定义参数，效应=介质填充率升→εeff 升至 εr、同 w 阻抗降）、line_len_mm=两 端口间线长；h1/er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘 x 向 + 线两端 y 向精确入网（#198）；z 网格=基板 _sub_cells 层+覆盖层 _sub_cells 层 +AIR_TOP（条带 z 面恰在网格线，#212 审计①）
 - 冒烟现状：离线审计先行（#212，test_ta_wave_c_templates）；内核数字裁判=FD 四锚 （h2→0 退化微带跨族互检/thick overlay εeff→εr/εr=1 精确同解/括号单调， test_ta_wave_c_templates 钉）；近似级别如实登记：准静态/零厚带/PEC 地/无色散， 设计链=FD 裁判反演（Wadell 闭式系数不可达——core/embedded_line docstring 如实 账）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

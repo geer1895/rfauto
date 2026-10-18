@@ -20,18 +20,19 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=5 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | w_mm | Z0 对 w/h 最敏感（HJ 单调主依赖；repo 验收② Z0 单调降→W 单调升） |
-| 2 | er | εeff 直接进入 Z0 与 β（部分填充加权，薄线极限 |S|=1/2） |
-| 3 | h_mm | w/h 比第二自变量（与 w 等比缩放可互消——比值主导） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | w_mm | 0.622096 |
+| 2 | line_len_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
-- 锚覆盖 4：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1（core/anchors；通配 + 专属）
+- 锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mline.z0_ohm.closedform-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1（core/anchors；通配 + 专属）
 - 健康门：无模板作用域专属健康门（gate 如实不判，#274 口径）
 - 通用体检：求解健康度体检 G11 九因子（core/solve_health；service/health_service.health_check_run 按 run 装载产物判定）
 
@@ -39,6 +40,7 @@
 
 - `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
 - `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
+- `mline.z0_ohm.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：mline_z0_ohm = 50.0 ohm；±0.05（rounding_band）
 - `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
 - `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
@@ -47,7 +49,7 @@
 
 - 参数语义：w_mm=线宽（Z0 由 skrf HJ 综合定：50Ω@rogers4350b=1.113mm），line_len_mm=两端口间线长
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；线缘 x 向 + 端口 junction y 向 near 加密
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

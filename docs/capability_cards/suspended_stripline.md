@@ -52,7 +52,7 @@
 
 - 参数语义：w_mm=中心带宽（悬置闭式综合：50Ω@rogers4350b h=0.508 b=1.016 → w=0.9058mm，εeff=2.001；FD 重定标批 2026-09-18，旧 q 式口径 w=0.731/εeff=2.641 撤），b_mm=两地面间距/腔高（基板厚恒=H_SUB 0.508，b>1.37·H_SUB 保扰动域），line_len_mm=两端口间线长
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；带缘 x 向 + 基板两面/中面/壳边 z 向精确入网（#198）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

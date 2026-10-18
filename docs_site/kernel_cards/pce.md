@@ -84,7 +84,7 @@ docstring 逐字引文（防漂移钉）："OMP（正交匹配追踪，确定性
   - docstring 逐字引文："本模块不读 runs/、不联网、不依赖 scipy/optuna（core 零依赖叶子约束）"
 - worst-case 两口径：角点穷举（确定性）与 PCE 上多起点 确定性 pattern search（可命中内部极值）。
   - docstring 逐字引文："corner_worst_case 穷举容差角点（均匀=low/high，正态=mean±kσ）；"
-- 验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 ±10%（延续计划 §10.15 预声明）。
+- 验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 ±10%（规划档 §10.15 预声明）。
   - docstring 逐字引文："Saltelli 互证 ±10%（§10.15）"
 
 ## 代码入口
@@ -119,6 +119,10 @@ src/rfauto/core/sparse_pce.py 公开符号 **7** 个（AST 机读）：
 
 analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双路径互证内核登记 analytic-anchor 轻条目」的延伸项——登记后重跑本生成器）。
 
+判据书/规格指针（docstring 逐字引文钉）：
+
+- `延续计划（仓内规划档，不随公开分发）`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）"
+
 测试面（tests/unit 引用扫描，机读；合计 **116** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
@@ -136,5 +140,5 @@ XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_
 - [架构与方法论（锚体系/判据先行）](../architecture/methodology.md)
 - [分层架构](../explanation/layered-architecture.md)
 - [计算器注册表](../reference/calculators.md)——本内核的注册状态见元数据表
-- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[cascade](cascade.md)
+- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[hairpin](hairpin.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[gysel_core](gysel_core.md)、[coupled_line_bpf](coupled_line_bpf.md)
 

@@ -101,3 +101,11 @@ export async function pageQueue() {
   T.$("q-machine").onchange = load;
   await load();
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 queueCtx ═════════════
+   refresh=表数据重拉（runs 同模板——pageQueue 幂等：壳判 innerHTML 已在即
+   跳过，campaign_queue 按当前 runs 根/机器输入重拉；决策日志详情随表整清）。
+   无轮询面，leave 不需要。 */
+export const queueCtx = {
+  refresh: () => pageQueue(),
+};

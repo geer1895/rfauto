@@ -31,7 +31,11 @@ QW-7 扩展字段（schema 向后兼容：旧声明零字段=缺省行为，归�
 - ``inconclusive_when``：节点"跑完但证据不可判"的声明判据（映射口径
   预声明见 pipeline.dag_runner 模块注释）——``message_contains``（执行
   成功且 message 含该子串 → inconclusive）、``outputs_missing_any``
-  （重试穷尽后仍缺这些声明产物 → inconclusive 而非 failed）。
+  （重试穷尽后仍缺这些声明产物 → inconclusive 而非 failed）、
+  ``outputs_sanity``（XD-10 ensure() 式输出健全性声明，2026-10-18：
+  每项 ``{path, min_bytes?/sha256?/pattern?}``——产物在盘但内容判据
+  不满足（过小/哈希不符/正则未命中）→ inconclusive；文件缺席不归它
+  管（存在性归 ``outputs_missing_any``），声明了零判据即 schema 拒绝）。
 
 边=depends_on（节点字段）。旧 recipes/ YAML 无 ``dag`` 键 → 线性链降级；
 campaign plan v1/v1.1 的 stages → 节点映射（STAGE_KIND_MAP 确定性表）。
@@ -62,8 +66,16 @@ DEFAULT_FAILURE_POLICY = "abort"
 
 #: inconclusive_when 合法判据键（声明形态与 escalation/budget 同风格：dict）。
 INCONCLUSIVE_WHEN_KEYS: frozenset[str] = frozenset({
-    "message_contains", "outputs_missing_any",
+    "message_contains", "outputs_missing_any", "outputs_sanity",
 })
+
+#: outputs_sanity 单项合法判据键（XD-10：path 必填 + 至少一项内容判据）。
+OUTPUTS_SANITY_KEYS: frozenset[str] = frozenset({
+    "path", "min_bytes", "sha256", "pattern",
+})
+
+#: sha256 声明的形态守卫（64 位小写十六进制）。
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 #: rerun-triggers 分级（规格 §4：code/params/env/budget；缺省全开；
 #: mtime 类不可靠触发器不采用——#325/#329 实证 mtime 语义不可靠）。
@@ -115,6 +127,59 @@ _KNOWN_NODE_FIELDS: frozenset[str] = frozenset({
     "retries", "escalation", "rerun_triggers",
     "failure_policy", "inconclusive_when",
 })
+
+
+def _validate_outputs_sanity(sanity: Any, where: str) -> list[dict[str, Any]]:
+    """outputs_sanity 声明校验（XD-10，构造期拒绝）。
+
+    形态：非空 list[dict]；每项 path 必填（非空 str）+ min_bytes/sha256/
+    pattern 至少一项内容判据（全部给出则 AND——全过才不算命中）；
+    min_bytes 为 >=1 的整数值（bool 显式拒收）；sha256 为 64 位小写
+    十六进制；pattern 必须可编译（re.compile，失败即构造期报错——
+    正则错误在构造期炸而不是跑到一半炸）。归一化输出保留声明原文
+    （JSON 可序列化，正则串不预编译进节点）。
+    """
+    if not isinstance(sanity, list) or not sanity:
+        raise DagSchemaError(
+            f"{where}: inconclusive_when.outputs_sanity 必须是非空列表")
+    out: list[dict[str, Any]] = []
+    for i, item in enumerate(sanity):
+        tag = f"{where}: inconclusive_when.outputs_sanity[{i}]"
+        if not isinstance(item, dict):
+            raise DagSchemaError(f"{tag} 必须是 dict")
+        unknown = sorted(set(item) - OUTPUTS_SANITY_KEYS)
+        if unknown:
+            raise DagSchemaError(
+                f"{tag} 未知判据键 {unknown}，可选 {sorted(OUTPUTS_SANITY_KEYS)}")
+        path = item.get("path")
+        if not isinstance(path, str) or not path:
+            raise DagSchemaError(f"{tag}.path 必须是非空字符串")
+        spec: dict[str, Any] = {"path": path}
+        if "min_bytes" in item:
+            mb = item["min_bytes"]
+            if isinstance(mb, bool) or not isinstance(mb, int) or mb < 1:
+                raise DagSchemaError(f"{tag}.min_bytes 必须 >=1 的整数")
+            spec["min_bytes"] = mb
+        if "sha256" in item:
+            sha = item["sha256"]
+            if not isinstance(sha, str) or not SHA256_RE.fullmatch(sha):
+                raise DagSchemaError(
+                    f"{tag}.sha256 必须为 64 位小写十六进制")
+            spec["sha256"] = sha
+        if "pattern" in item:
+            pat = item["pattern"]
+            if not isinstance(pat, str) or not pat:
+                raise DagSchemaError(f"{tag}.pattern 必须是非空字符串")
+            try:
+                re.compile(pat)
+            except re.error as exc:
+                raise DagSchemaError(f"{tag}.pattern 不可编译: {exc}") from exc
+            spec["pattern"] = pat
+        if len(spec) == 1:
+            raise DagSchemaError(
+                f"{tag} 缺内容判据（min_bytes/sha256/pattern 至少一项）")
+        out.append(spec)
+    return out
 
 
 def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
@@ -217,6 +282,10 @@ def normalize_node(raw: Any, *, index: int = 0) -> dict[str, Any]:
                     f"{where}: inconclusive_when.outputs_missing_any "
                     "必须是非空字符串列表")
             inc_when["outputs_missing_any"] = list(soft)
+        sanity = raw_inc.get("outputs_sanity")
+        if sanity is not None:
+            inc_when["outputs_sanity"] = _validate_outputs_sanity(
+                sanity, where)
         if not inc_when:
             raise DagSchemaError(
                 f"{where}: inconclusive_when 不能是空判据"

@@ -62,7 +62,7 @@
 - 参数语义：n_turns=匝数（渲染取整），d_out_mm=外圈外缘宽（跨面宽口径），w_mm=线宽， s_mm=匝间距，gap_mm=外圈馈隙长（端口 y 向跨距），h_mm=基板厚；er/tan_d 走 substrate/nominal（FR4 类）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 max(w,s,gap)/4（MQS 频段几何驱动 网格，禁 λ_sub/50 口径——13.56MHz 下 λ_sub/50≈250mm 装不下线圈）；螺旋缘/ 馈隙缘/桥面/过孔棱精确入网（#198）；NEAR≤min(s,gap)/3 渲染期守卫（#266）； 全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、边全入网（#174/#283）
 - 冒烟现状：未冒烟（离线审计过，#212，test_coil_nfc_template）；真机发射面=13.56MHz FDTD 预算审计（内部证据档 §e：小时-天/点量级，建议几何等比 缩放阶梯研究后由主代理决定），本批零发射
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

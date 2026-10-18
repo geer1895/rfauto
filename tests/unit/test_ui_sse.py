@@ -237,15 +237,15 @@ class TestCrossSeatPinsHold:
     先红=本批扰动生命周期/图表不变量）。"""
 
     def test_pages_js_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 12
+        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
-        assert _SRC.count("bindChartResize(el); // P0-5") == 4
+        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
+        assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
         assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1
         assert _SRC.count("disposeChartsIn(") == 4
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处（SSE 让位走回调守卫，不加定时器）
-        assert _SRC.count("echartsInitCached(el)") == 6
+        assert _SRC.count("echartsInitCached(el)") == 2  # 定义 + tools 页（W3-S12 四管线入壳后）
         assert _SRC.count("plotCardCached(") == 3
         assert _SRC.count('window.addEventListener("hashchange"') == 1  # pages.js 单源（A4-C 口径）
 

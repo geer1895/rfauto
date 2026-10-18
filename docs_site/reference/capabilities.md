@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **116** 组 / **269** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **117** 组 / **270** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -108,6 +108,7 @@
 | `syn` | 5 | — | 微带线综合（E6a） |
 | `teaching` | 2 | — | 模板教学卡（物理推导+敏感性排序+教科书索引） |
 | `template-spec` | 3 | — | 模板库 TemplateSpec 注册表（E2：清单 + 综合草稿） |
+| `templates` | 1 | — | 模板 golden 几何回归仓（EC-8：渲染哈希+CSX 摘要逐族对比） |
 | `tolerance` | 1 | — | 公差/良率分析（Monte Carlo，规格取自 objectives）。 |
 | `tolerance-allocate` | 1 | — | cost-aware 公差分配（敏感度×成本系数 → 逐参数公差建议 + 对照法 + Cpk）。 |
 | `topology` | 1 | — | 滤波器拓扑提议（typed，禁数值字段）→ 综合初值 →（--campaign）小战役精算。 |

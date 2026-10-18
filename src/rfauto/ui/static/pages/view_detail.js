@@ -106,3 +106,11 @@ export async function showRun(runId) {
   releaseWebGLIn(T.$("detail-3d")); // P0-4 防御式：弃置上一代 WebGL 上下文（接口诉求见 releaseWebGLIn）
   T.drawBoxes(T.$("detail-3d"), d.model3d || { ok: false, errors: ["该 run 无可渲染的 3D 模板"] });
 }
+
+/* ═══ R-1（aurora_e W2-S7）：PageContext 增量钩子 detailCtx ════════════
+   refresh=当前 run 重渲（showRun 幂等整页刷新——骨架屏→数据替换同链路；
+   S.currentRunId 为空时走未指定 run 空态引导，与 showPage 回退行为一致）；
+   无轮询/无定时器面，leave 不需要（SSE 收束由 router._sseLeavePage 单源）。 */
+export const detailCtx = {
+  refresh: () => showRun(S.currentRunId),
+};

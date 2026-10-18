@@ -9,8 +9,8 @@ from typing import Any
 C_MM_GHZ = 299.792458  # mm·GHz（光速，f[GHz]×λ[mm]=此值）
 
 
-# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案档（内部）=
-# R5_tools_audit.md §② 程序验证零漏零重版）────────────────────────────────
+# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案=工具箱审计归档
+# §② 程序验证零漏零重版）────────────────────────────────
 # 键 → 组名。describe() 每键输出 group（CalculatorSpec.group 显式声明优先，
 # 未声明键查本表，表外键落 DEFAULT_CALC_GROUP="其他"——新键注册未同步本表
 # 不报错但落"其他"，test_calculators 的组完备性钉会点名，注册须同步）。
@@ -40,7 +40,7 @@ CALC_GROUP_ORDER: tuple[str, ...] = (
 )
 
 CALC_GROUP_TABLE: dict[str, str] = {
-    # ── 传输线正反解（20）──
+    # ── 传输线正反解（22）──
     "microstrip_analysis": "传输线正反解",
     "microstrip_synthesis": "传输线正反解",
     "microstrip_lambda_g": "传输线正反解",
@@ -68,6 +68,13 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "coax_line_z0": "传输线正反解",
     "coax_line_attenuation": "传输线正反解",
     "coax_line_power_capacity": "传输线正反解",
+    # W8-S37 池件批 3 顺手件：截止式衰减器（同轴行波线族第四键）
+    "coax_line_cutoff_attenuator": "传输线正反解",
+    # aurora_e W1-S2 圆波导 TE/TM_mn 传播解一键（R7 T2"圆波导截止/衰减/
+    # 波导波长/功率容量"子项——bethe_hole 内部截止常数=孔耦合口径、
+    # waveguide_lambda_g=矩形 TE10 面不撞，边界见 waveguide_closed_form.py
+    # 模块 docstring）
+    "circular_waveguide_mode_prop": "传输线正反解",
     # ── 匹配·功分·衰减·耦合（26）──
     "attenuator_pi": "匹配·功分·衰减·耦合",
     "attenuator_t": "匹配·功分·衰减·耦合",
@@ -120,6 +127,10 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "circulator_ideal_sparams": "匹配·功分·衰减·耦合",
     "classic_taper_response": "匹配·功分·衰减·耦合",
     "classic_taper_synthesize": "匹配·功分·衰减·耦合",
+    # aurora_e W2-S9 鳍线渐变过渡两键（K2 渐变过渡面，波导 TE10 导波 β 档；
+    # 基模等效 Meier/Sharma-Hoefer 经验档未落地如实放弃——finline.py 范围声明）
+    "finline_taper_response": "匹配·功分·衰减·耦合",
+    "finline_taper_length": "匹配·功分·衰减·耦合",
     # 批 B Wave3 W3-CORE3 两键（2026-10-13，pa_arch 原位扩展 G11 余量：
     # PIN 限幅器=并联 PIN 二极管两态线性口径、步进衰减器=二进制位组合+
     # 逐位 π/T 节综合（单源消费 attenuator_pi/t）；attenuator_pi/t=
@@ -196,7 +207,7 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # 频率/Q 级、render_c3 combline_design_from_order=模板级全滤波器设计
     # 不并入，边界见 interdigital_bpf.py 模块 docstring）
     "combline_coupling_gap": "滤波器与耦合矩阵",
-    # ── 谐振器与腔体（8）──
+    # ── 谐振器与腔体（12）──
     "coaxial_cavity_resonance": "谐振器与腔体",
     "combline_resonance": "谐振器与腔体",
     "cavity_perturbation_shift": "谐振器与腔体",
@@ -206,6 +217,11 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "circular_cavity_mode_spectrum": "谐振器与腔体",
     "circular_cavity_mode_chart": "谐振器与腔体",
     "circular_cavity_mode_q": "谐振器与腔体",
+    # aurora_e W1-S2 矩形腔 TE/TM_mnp 谱+Q 两键（R7 T2"矩形腔留续作"子项
+    # 收口——cavity_perturbation_shift=微扰测量面、TE101 f0 同仓双源互证，
+    # 边界见 waveguide_closed_form.py 模块 docstring）
+    "rectangular_cavity_mode_spectrum": "谐振器与腔体",
+    "rectangular_cavity_mode_q": "谐振器与腔体",
     # 批 B Wave3 G9 圆柱 DR TE01δ 正解/反解两键（Cohn 1968 磁壁超越方程；
     # material_characterization courtney_*=提取面（J1 零点 confined 口径）
     # 不并入，口径边界见 dr_te01d.py 模块 docstring）
@@ -239,6 +255,13 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # slot_array.py 模块 docstring）
     "slot_stevenson_conductance": "天线与阵列",
     "slot_array_synthesis_resonant": "天线与阵列",
+    # aurora_e W4-S18 EC-21 极化传输面度量三键（§4.4 极化态数学面接 CALC：
+    # 任意两分量极化态口径；helix_axial_performance 的 axial_ratio=Kraus
+    # 螺旋经验式轴上值不并入，farfield 服务消费面不受影响，边界见
+    # polarization_reg.py 模块 docstring）
+    "pol_axial_ratio": "天线与阵列",
+    "pol_delta_ipd_il": "天线与阵列",
+    "pol_group_delay_diff": "天线与阵列",
     # ── DOA 与波束形成（4）──
     "doa_esprit": "DOA 与波束形成",
     "doa_music_spectrum": "DOA 与波束形成",
@@ -344,18 +367,25 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # manufacturing_yield.py 模块 docstring）
     "cpk_yield_convert": "热·功率·可靠性",
     "serial_yield_budget": "热·功率·可靠性",
-    # ── 测量与校准（6）──
+    # ── 测量与校准（12）──
     "power_cal_chain": "测量与校准",
     "trl_standards_design": "测量与校准",
     "trl_line_electric_scan": "测量与校准",
     "tnvna_extender_error_model": "测量与校准",
     "tnvna_band_stitch": "测量与校准",
     "allan_deviation": "测量与校准",
+    # aurora_e W2-S9 EC-2 multiline TRL εr/tan_d 不确定度传播键（GUM 双通道
+    # +MC 对照；锚 gate 消费面）
+    "mtrl_er_tand_uncertainty": "测量与校准",
     # aurora72 A4-B 检波器件两键（R7 T10=G13——power_cal_chain=校准链/
     # cispr_detector=EMC 检波算法不并入，边界见 detector_device.py 模块
     # docstring）
     "diode_square_law_detect": "测量与校准",
     "detector_tss_nep": "测量与校准",
+    # aurora_e W1-S2 热偶/测辐射热计功率换算一键（R7 T10"热偶/测辐射热计
+    # 功率计换算"子项——power_calibration=校准链、detector_tss_nep=灵敏度
+    # 极限面不撞，边界见 detector_device.py 模块 docstring）
+    "thermal_power_sensor_detect": "测量与校准",
     # aurora72 A4-A VNA 不确定度+增益定标三键（R7 T7=G19——tnvna=THz 扩
     # 频链/trl=校准件设计/power_cal=功率链/nf_measurement=Y 因子均不并
     # 入，边界见 vna_uncertainty.py 模块 docstring）

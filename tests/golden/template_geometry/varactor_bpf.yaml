@@ -1,0 +1,125 @@
+schema: rfauto-template-geometry-golden/v1
+template: varactor_bpf
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  order: 3
+  w_mm: 1.1117
+  arm_len_mm: 31.6675
+  arm_gap_mm: 3.0
+  gap_mm: 1.1328
+  tap_frac: 0.330119
+  cj0_pf: 1.0
+  phi_v: 0.9
+  bias_v: 3.6342
+status: ok
+script_sha256: 746ab82337762f4b1bf7c4138455afefc1387db2fa5b34d31bde2aa95aa2dab5
+csx:
+  n_primitives: 28
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: varactor_bpf
+    kind: Metal
+    n: 13
+    types:
+      '1': 13
+  - name: varactor_c1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: varactor_c2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: varactor_c3
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: d2f8e8ad43cdd10ffccf504a529aa6ad605f8818adcdf749702e670b1a0a5aba
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 161
+      min_gap_m: 0.00025
+    y:
+      n: 149
+      min_gap_m: 0.000277
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: 394b53d723746cab6d7aa43beb8173b088386355e45410c1e7475f9985a7781d
+ports:
+- 1
+- 2

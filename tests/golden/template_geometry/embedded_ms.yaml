@@ -1,0 +1,107 @@
+schema: rfauto-template-geometry-golden/v1
+template: embedded_ms
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.0014
+  h2_mm: 0.254
+  line_len_mm: 40.0
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 80f05824438cfeee25cec244901a54d5faed64f85ddc0d6f74f14a03ece8b320
+csx:
+  n_primitives: 15
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: emb_ms
+    kind: Metal
+    n: 3
+    types:
+      '1': 3
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 18a62855c739ce8c66eeebfca816ec0beb9f597ba8057087c09a67d359d4a56c
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000762
+mesh:
+  lines:
+    x:
+      n: 113
+      min_gap_m: 0.00025
+    y:
+      n: 219
+      min_gap_m: 0.000285
+    z:
+      n: 19
+      min_gap_m: 6.3e-05
+  lines_sha256: 989aee1a02bc120d3e464d9ec74d362809c8429d058fafd97a11838fda09077e
+ports:
+- 1
+- 2

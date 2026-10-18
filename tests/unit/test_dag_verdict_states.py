@@ -11,6 +11,9 @@ inconclusive 标志）时生效。全合成回调零真机零网络。
   产物集 → inconclusive（不判 failed）；含软产物之外的缺失 → 照旧 failed；
 - 途径③ inconclusive_when.message_contains：成功完成的 message 命中 →
   inconclusive（覆盖 done/partial，注记并存）；
+- 途径④ inconclusive_when.outputs_sanity（XD-10）：产物在盘但内容判据
+  （min_bytes/sha256/pattern，AND）不满足 → 命中即 inconclusive 终态
+  （缺席文件不归它管，存在性归途径②）；
 - failure_policy：continue=下游照常执行+归因注记；skip=下游标 skipped
   （不算失败，续跑不复活）；run 级不引入新 verdict 态，有 inconclusive
   且无 fail/aborted → PARTIAL（COMPLETE 收紧）+ state inconclusive_count。
@@ -425,3 +428,105 @@ def test_schema_rejects_invalid_new_fields() -> None:
     with pytest.raises(DagSchemaError, match="message_contains"):
         normalize_node({"node_id": "n", "kind": "solve",
                         "inconclusive_when": {"message_contains": ""}})
+
+
+# ─── inconclusive_when.outputs_sanity（途径④，XD-10 ensure 声明器）──────────
+
+
+def test_outputs_sanity_min_bytes_hit_inconclusive(tmp_path) -> None:
+    """产物在盘但字节数 < min_bytes → 命中即 inconclusive 终态。
+
+    命中判定面：执行成功族不判 failed、产物留盘、不写 manifest/
+    不入索引（与途径①②③同处置口径）；run 级 verdict=PARTIAL
+    （inconclusive_count 收紧 COMPLETE 的预声明映射）。"""
+    calls: list = []
+    plan = _two_node_plan(b_kw={
+        "inconclusive_when": {"outputs_sanity": [
+            {"path": "b.sparams.csv", "min_bytes": 1000}]}})
+    res = _run(plan, tmp_path / "run1",
+               _exec_registry(calls, wall_s=0.01), tmp_path)
+    assert res["ok"] is True and res["verdict"] == "PARTIAL"
+    assert res["statuses"] == {"a": "done", "b": "inconclusive"}
+    assert res["inconclusive_count"] == 1
+    state = _state(tmp_path / "run1")
+    entry = state["nodes"]["b"]
+    assert any("outputs_sanity 命中" in n for n in entry["notes"])
+    assert "min_bytes" in " ".join(entry["notes"])
+    assert entry["status"] == "inconclusive"
+    # 产物留盘供人工检视（不删不改）
+    assert (tmp_path / "run1" / "b" / "b.sparams.csv").exists()
+
+
+def test_outputs_sanity_sha256_pattern_pass_and_hit(tmp_path) -> None:
+    """sha256/pattern 判据：全过 → done 零变化；pattern 未命中 →
+    inconclusive（多判据 AND 语义：sha256 对而 pattern 未命中即命中）。"""
+    import hashlib
+    import os
+
+    calls: list = []
+    # 执行器 write_text 走文本模式（Windows \n→\r\n），期望摘要按同
+    # 字节面构造（os.linesep 归一，跨平台确定）。
+    raw = "OUT:b:b.sparams.csv\n".replace("\n", os.linesep)
+    good = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    plan_ok = _two_node_plan(b_kw={
+        "inconclusive_when": {"outputs_sanity": [
+            {"path": "b.sparams.csv", "sha256": good,
+             "pattern": r"OUT:b:b\.sparams\.csv"}]}})
+    res = _run(plan_ok, tmp_path / "run_ok",
+               _exec_registry(calls), tmp_path)
+    assert res["verdict"] == "COMPLETE"
+    assert res["statuses"] == {"a": "done", "b": "done"}
+    assert res["inconclusive_count"] == 0
+
+    plan_bad = _two_node_plan(b_kw={
+        "inconclusive_when": {"outputs_sanity": [
+            {"path": "b.sparams.csv", "pattern": r"NEVER_MATCH_XYZ"}]}})
+    res2 = _run(plan_bad, tmp_path / "run_bad",
+                _exec_registry(calls), tmp_path, cache_name="cache2")
+    assert res2["statuses"] == {"a": "done", "b": "inconclusive"}
+    state = _state(tmp_path / "run_bad")
+    assert any("pattern 未命中" in n
+               for n in state["nodes"]["b"]["notes"])
+
+
+def test_outputs_sanity_absent_file_skipped_and_schema_rejects(tmp_path) -> None:
+    """缺席文件不归内容判据管（存在性归途径②）+ schema 构造期拒绝面。"""
+    from rfauto.core.compose.dag_schema import DagSchemaError, normalize_node
+
+    calls: list = []
+    plan = _two_node_plan(b_kw={
+        "inconclusive_when": {"outputs_sanity": [
+            {"path": "extra/notes.txt", "pattern": "x"}]}})
+    res = _run(plan, tmp_path / "run1", _exec_registry(calls), tmp_path)
+    assert res["verdict"] == "COMPLETE"
+    assert res["statuses"] == {"a": "done", "b": "done"}
+
+    def _node(sanity):
+        return normalize_node({
+            "node_id": "r", "kind": "render", "depends_on": [],
+            "inputs": {"files": [], "params": {}}, "outputs": [],
+            "cmd": "render", "budget": {"timeout_s": 5},
+            "inconclusive_when": {"outputs_sanity": sanity}})
+
+    with pytest.raises(DagSchemaError):
+        _node([])                                            # 空列表
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt"}])                           # 零判据
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt", "min_bytes": 0}])           # min_bytes<1
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt", "min_bytes": True}])        # bool 拒收
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt", "sha256": "ABC"}])          # 非法 sha256
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt", "pattern": "(unclosed"}])   # 正则不可编译
+    with pytest.raises(DagSchemaError):
+        _node([{"path": "a.txt", "bogus": 1}])               # 未知判据键
+    with pytest.raises(DagSchemaError):
+        _node([{"min_bytes": 10}])                           # 缺 path
+    # 合法声明归一化保留原文（JSON 可序列化）
+    node = _node([{"path": "a.txt", "min_bytes": 10,
+                   "sha256": "a" * 64, "pattern": "ok.*true"}])
+    assert node["inconclusive_when"]["outputs_sanity"] == [
+        {"path": "a.txt", "min_bytes": 10,
+         "sha256": "a" * 64, "pattern": "ok.*true"}]

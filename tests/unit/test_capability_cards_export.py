@@ -17,7 +17,8 @@
   teaching）+ 双缺如实回退（挂接契约路径在卡面）+ 注入条目按 R9
   commitment_order 排序渲染 + 登记表装载缺/坏如实空 + 坏分数拒收 + 坏
   computed 如实降级 + teaching 坏块（名次不连续/缺 basis/bool order）拒收；
-  W6 面不回归钉（teaching 卡/62 张回退卡敏感性节逐字节不变）+ computed
+  W6 面不回归钉（W4-S19 全覆盖批升级后：原 teaching 代表 wilkinson 与原
+  回退代表 ring_resonator 的 computed 幅值卡面逐字节冻结）+ computed
   上卡面 provenance 行钉；
 - 确定性：两次生成逐字节一致；escape 注入；
 - --template 过滤 + 未知名 exit。
@@ -441,47 +442,57 @@ def _sens_section(md: str) -> str:
     return md[md.index("## 敏感性排序"):md.index("## 判据")]
 
 
-_W6_TEACHING_SECTION = (
+# W4-S19 全覆盖批（2026-10-18）起敏感性登记表 70/72 全覆盖：首批 9 teaching
+# 模板与 ring_resonator 回退代表全部升级 computed——W6 钉改为冻结升级后的
+# computed 幅值卡面（旧 teaching/回退钉字节见 git 历史；登记表再变动即红）。
+_W6_COMPUTED_SECTION_WILKINSON = (
     "## 敏感性排序（R9 先承诺）\n"
     "\n"
-    "- 出处=teaching（`docs/templates/<模板名>/meta.yaml` "
-    "teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis "
-    "依据，来自可复核闭式恒等式而非幅值——幅值分数待 "
-    "`knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑"
-    "导出器上卡）\n"
+    "- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；"
+    "证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）\n"
     "\n"
-    "| 名次 | 参数 | 依据 |\n"
+    "- 方法 central_finite_difference_elasticity ｜ n=7 ｜ 证据："
+    "scripts/sensitivity_rankings_build.py\n"
+    "\n"
+    "| rank | 参数 | 分数 |\n"
     "|---|---|---|\n"
-    "| 1 | arm_len_mm | λ/4 恒等式 |∂lnf0/∂lnL|=1（精确）；"
-    "名义臂长=synthesize_wilkinson 综合链 |\n"
-    "| 2 | er | f0 ∝ 1/sqrt(εeff)，|∂lnf0/∂lnεeff|=1/2 恒等式"
-    "（er 经 εeff(w) 打折） |\n"
-    "| 3 | series_w_mm | 臂宽经 εeff(w) 二阶进入臂长，并直接定臂阻抗口径"
-    "（R006 线宽失配坑族） |\n"
-    "| 4 | shunt_w_mm | 50Ω 馈线宽：只影响馈线匹配，λ/4 恒等式不含此项"
-    "（弱敏感） |\n"
-    "- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，"
-    "引用锚文本由 test_teaching_service 对 grounding 文件核验）\n"
+    "| 1 | arm_len_mm | 1.0 |\n"
+    "| 2 | series_w_mm | 0.033767 |\n"
+    "| 3 | shunt_w_mm | 0.0 |\n"
+    "- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，"
+    "平局按参数名升序）\n"
     "\n"
 )
 
-_W6_FALLBACK_SECTION = (
+_W6_COMPUTED_SECTION_RING = (
     "## 敏感性排序（R9 先承诺）\n"
     "\n"
-    "-（暂无已落档敏感度排序——挂接契约：`knowledge/sensitivity_rankings.yaml`"
-    "（头注=挂接契约口径）；数据落档后重跑"
-    "导出器自动上卡，不硬凑）\n"
+    "- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；"
+    "证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）\n"
+    "\n"
+    "- 方法 central_finite_difference_elasticity ｜ n=9 ｜ 证据："
+    "scripts/sensitivity_rankings_build.py\n"
+    "\n"
+    "| rank | 参数 | 分数 |\n"
+    "|---|---|---|\n"
+    "| 1 | r_mean_mm | 1.0 |\n"
+    "| 2 | w_mm | 0.040588 |\n"
+    "| 3 | feed_w_mm | 0.0 |\n"
+    "| 4 | gap_mm | 0.0 |\n"
+    "- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，"
+    "平局按参数名升序）\n"
     "\n"
 )
 
 
 def test_w6_sensitivity_face_non_regression():
-    """W6 面不回归钉：teaching 卡（wilkinson 真数据）与 62 张回退卡敏感性节
-    逐字节不变（W8 桥接只动 computed 分支；teaching/None 分支零改动）。"""
+    """W6 面不回归钉（W4-S19 全覆盖批升级后口径）：原 teaching 代表
+    （wilkinson）与原回退代表（ring_resonator）的敏感性节=冻结的 computed
+    幅值卡面（登记表 70/72 全覆盖批同批重生成；登记表再变动即红）。"""
     md = cce.render_card_md(cce.collect_card("wilkinson"))
-    assert _sens_section(md) == _W6_TEACHING_SECTION
+    assert _sens_section(md) == _W6_COMPUTED_SECTION_WILKINSON
     md62 = cce.render_card_md(cce.collect_card("ring_resonator"))
-    assert _sens_section(md62) == _W6_FALLBACK_SECTION
+    assert _sens_section(md62) == _W6_COMPUTED_SECTION_RING
 
 
 def test_sensitivity_computed_face_renders_provenance():

@@ -1,0 +1,103 @@
+schema: rfauto-template-geometry-golden/v1
+template: mline
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.113
+  line_len_mm: 40.0
+status: ok
+script_sha256: 84c9c44c6316102dc2c8f8cd1b7ea24c055db6eca441a7e94ca3eae9a1095d17
+csx:
+  n_primitives: 15
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: microstrip
+    kind: Metal
+    n: 3
+    types:
+      '1': 3
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 71736c5ef95698140a8d7a36b88cdba211203567b41d3b57f154ff22d43f150e
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 113
+      min_gap_m: 0.000278
+    y:
+      n: 219
+      min_gap_m: 0.000285
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: 4d52fd237e10fb02cfd1a9fbdf6420dc9234bdba768cdf2b1690d7933cc75b81
+ports:
+- 1
+- 2

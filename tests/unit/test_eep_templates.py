@@ -53,13 +53,15 @@ C_MM_GHZ = 299.792458
 #: 路径新增 EndCriteria=1e-06+Run 前 NrTS 终网格 CFL 折算块（#262 截断族
 #: 修复面，tests/unit/test_nrts_wiring.py 同钉）；patch_eep_2x2 非 F-D 席位
 #: 逐字节不变（旧钉保留实测通过）。
+# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释字节漂移（几何段 exec
+# 审计逐键同值；换钉留 diff 证据纪律同上）。
 EEP_BASE_RENDER_SHA256 = {
-    "patch_eep_2x2": "862bd5ee6747f9f5760dda4269c091beb9c22c6d83eebe5ff078994b7ae17a95",
-    "patch_eep_1x4": "78106deb872b3e52774932d5f6a96c4d5d88f427d222ba7f6573baf6156ecb49",
+    "patch_eep_2x2": "5cb04518208d0beba6113c1223fd565d0b4c8e26d70a4665321834455d5563db",
+    "patch_eep_1x4": "b2e72402470da0067e54ba980433d9079bb0e7508a71f3f85b7512519c8a36f4",
 }
 EEP_FF_RENDER_SHA256 = {
-    "patch_eep_2x2": "9d5a5035d12e281639e993ab8a323f010b9117f345afe809bcc0f74f6911b271",
-    "patch_eep_1x4": "cd255b51fb00afc1dbdba7b46d6cdda65f93606984eee35c437312d89fc0126f",
+    "patch_eep_2x2": "fbf82e8793463a0eb3af81bf595e68574b944d8096f292c87f6d0aa3ae0e1344",
+    "patch_eep_1x4": "bd60bdad2892c0429b61410159a1f93cc2e51b1c6557b06d85e0a617b6c2b576",
 }
 
 

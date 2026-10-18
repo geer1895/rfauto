@@ -24,7 +24,7 @@ export async function pageRuns() {
         <button class='minor' id='f-clear'>清除</button>
         <span id='f-count' class='muted'></span>
       </div>
-      <table id='runs-table' data-sortable><thead>
+      <table id='runs-table' data-sortable><caption class="sr-only">Run 历史：点行打开详情，点表头排序，上方筛选条即时过滤</caption><thead>
         <tr><th scope="col">run_id</th><th scope="col">时间</th><th scope="col">adapter</th><th scope="col">带内 S11</th><th scope="col">状态</th><th scope="col">best 指标</th></tr>
       </thead><tbody></tbody></table></div>`;
   // A8-A（R6 审计 P-2）：首拉骨架屏——表体占位行（shimmer 条，reduced-motion
@@ -89,3 +89,11 @@ export async function pageRuns() {
   };
   render();
 }
+
+/* ═══ R-1（aurora_e W2-S7）：PageContext 增量钩子 runsCtx ══════════════
+   refresh=数据重拉（pageRuns 幂等——壳判 innerHTML 已在即跳过、筛选控件
+   值保留、表体经骨架屏→render() 替换；apiFetch 带 viewSignal("runs") 切页
+   取消语义随行）。无轮询/定时器面，leave 不需要。 */
+export const runsCtx = {
+  refresh: () => pageRuns(),
+};

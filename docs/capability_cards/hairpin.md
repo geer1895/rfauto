@@ -24,15 +24,19 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=13 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | gap_mm | 耦合缝 k(gap) 强敏感（repo 真机图谱单调陡降：gap 0.65 处 k 极大 0.0155，名义 k=0.0515 所需缝更小） |
-| 2 | arm_len_mm | λg/2 谐振 |S|≈1（恒等式；名义含真机修正 c_f0=1.0370） |
-| 3 | tap_frac | 外部 Q 抽头敏感（repo B1 标定 c(τ)=1.37437−0.75218·τ 链） |
-| 4 | order | 阶数=离散综合参数（Chebyshev g 值表驱动，非连续几何维） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | arm_len_mm | 1.0 |
+| 2 | w_mm | 0.040577 |
+| 3 | arm_gap_mm | 0.0 |
+| 4 | gap_mm | 0.0 |
+| 5 | order | 0.0 |
+| 6 | tap_frac | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -53,7 +57,7 @@
 
 - 参数语义：order=谐振器阶数 N，w_mm=谐振器/馈线宽（50Ω，skrf HJ 综合），arm_len_mm=展开中心线总长 λg/2（2·臂长+臂间距），arm_gap_mm=U 内两臂缝（边缘到边缘；须 ≳3×线宽量级，名义 3.0mm：同臂自耦 k_self(3.0)=0.0115 ≪ 互耦 0.0515，旧 1.0 的 k_self=0.0602 反超互耦致四轮真机 FAIL，2026-09-16 定版），gap_mm=相邻谐振器耦合缝（锚=等缝口径；非等 k 逐缝变体走 gaps_mm 列表，不进本 meta；**同向拓扑 gap→k 须经结构修正 c(gap)**：k_EM=c(gap)·k_KJ，c=0.12-0.26 且非单调、k_EM 上限 ~0.0155≪ KJ 名义 0.0515——相邻臂开路端对齐致电/磁耦合反号相消，core.coupled_microstrip.HAIRPIN_KGAP_TABLE_MM 真机表，2026-09-17 W4④；根修见 hairpin_alt 交替取向变体），tap_frac=抽头位置比例 τ=t/L_tot
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部臂缘/弯带缘/抽头缘精确入网（#198 精确入网）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

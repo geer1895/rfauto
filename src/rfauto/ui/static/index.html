@@ -562,13 +562,21 @@ pre {
   border-radius: var(--radius-sm); font-size: 12px; border: 1px solid var(--border-2);
 }
 canvas.plot { background: var(--plot-bg); width: 100%; height: 260px; border-radius: var(--radius-sm); }
-/* W2-C 跳过链接（a11y）：默认视觉隐藏，键盘聚焦时置顶可见 */
+/* W2-C 跳过链接（a11y）：默认视觉隐藏，键盘聚焦时置顶可见。
+   W5-S23：color 原引"--text"（未定义变量名，只有 --text-xs 等字号族），
+   靠 unset→继承侥幸可读的潜伏破面修正为 --fg 单源。 */
 .skip-link {
   position: absolute; left: -9999px; top: 0; z-index: var(--z-overlay);
-  background: var(--panel); color: var(--text); padding: 8px 14px;
+  background: var(--panel); color: var(--fg); padding: 8px 14px;
   border-radius: var(--radius-md); border: 1px solid var(--accent);
 }
 .skip-link:focus-visible { left: 12px; top: 12px; outline: 2px solid var(--accent); }
+/* W5-S23（深审 b 面）：视觉隐藏工具类（读屏可及、视觉零占位）——
+   表格 caption/补充说明的读屏命名通道（kitTable caption 参数消费）。 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
 .muted { color: var(--muted); }
 
 /* ── 消息 Toast（#msg；固定右上滑入，4s 自动消退由 msg() 驱动）── */

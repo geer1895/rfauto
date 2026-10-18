@@ -1,0 +1,78 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_jcross
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  slot_len_mm: 4.91
+  slot_w_mm: 0.491
+  stub_len_mm: 2.455
+  period_mm: 11.9917
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 8dc00ce6fdf77ce48e273722d90fa6171bd7c600fafd27c64a4ee1ba211238cd
+csx:
+  n_primitives: 16
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: jc_screen
+    kind: Metal
+    n: 10
+    types:
+      '1': 10
+  - name: wg_exc
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: u1a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u1b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u2a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u2b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: da5a3051d5fae661ecbae4677d397fc32986f752bd7d80acd8acf4bf1d5f0dba
+  bbox_m:
+  - -0.00599585
+  - -0.00599585
+  - -0.009368514
+  - 0.00599585
+  - 0.00599585
+  - 0.00706596
+mesh:
+  lines:
+    x:
+      n: 151
+      min_gap_m: 6.1e-05
+    y:
+      n: 149
+      min_gap_m: 7.0e-05
+    z:
+      n: 86
+      min_gap_m: 0.000127
+  lines_sha256: cc42415672b97bf4d47322ddd29599abb828fbf8240c7a632a6d620c4f5db8ce
+ports:
+- 1
+- 2

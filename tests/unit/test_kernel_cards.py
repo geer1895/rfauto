@@ -1,16 +1,19 @@
-"""XA-8 内核文档卡锚树测试（round18 规格 XA-8；#97/#122/#222 纪律）。
+"""内核文档卡锚树测试（round18 规格 XA-8 首批 5 张 + W3-S13 扩容批一 11 张
++ W4-S19 扩容批二 8 张，共 24 张；#97/#122/#222 纪律）。
 
 钉六件事（全 live 对 live，零硬编码数字——#247 口径；选题集合除外，
-它是 round18 规格的显式裁决不是计数）：
-1. 五卡与三源重渲染逐字节一致——XC-P/KD-1/docstring/AST/anchors/测试面
+它是规格与战役批次的显式裁决不是计数）：
+1. 廿四卡与三源重渲染逐字节一致——XC-P/KD-1/docstring/AST/anchors/测试面
    任一源变动未重跑生成器即红（修复动作见断言消息）；
-2. 选题锁定 round18 规格 XA-8 五内核（macromodel/rwg_mmt/pdn/pce/cascade）；
+2. 选题锁定 XA-8 首批五内核 + W3-S13 批一十一族 + W4-S19 批二八族
+   （「CALC 键+teaching 块+锚覆盖」数据源完备性选族；ring_resonator 批二
+   留缺=无专属综合内核，理由见生成器 docstring）；
 3. 入口 file:symbol 真实存在（AST 顶层 def/class）；
 4. 手写段引文钉：公式 LaTeX/使用边界/规格指针的 docstring 逐字引文确在
    模块源文件（转写漂移即红）；
-5. XC-P 诚实未收录语义：五内核均不在 XC-P 首批建档键集，卡内键清单与
-   precision_profiles.yaml 实测逐键一致（建档后卡须重生成）；
-6. 站点接入：mkdocs.yml nav 收录五卡且引用文件全部真实存在（#89）。
+5. XC-P 收录状态与档案实测一致：未收录卡显式 UNVERIFIED 且逐键列键清单；
+   已建档卡（coupled_microstrip）走「已建档」分档表渲染支路；
+6. 站点接入：mkdocs.yml nav 收录全部卡且引用文件全部真实存在（#89）。
 """
 
 from __future__ import annotations
@@ -27,8 +30,22 @@ _REPO = Path(__file__).resolve().parents[2]
 _MKDOCS_YML = _REPO / "mkdocs.yml"
 _CARDS_DIR = _REPO / "docs_site" / "kernel_cards"
 
-# round18 规格 XA-8 选题（显式裁决面，非计数断言）
-XA8_KERNELS = frozenset({"macromodel", "rwg_mmt", "pdn", "pce", "cascade"})
+# 选题集合（显式裁决面，非计数断言）：XA-8 首批五内核 + W3-S13 批一十一族
+# + W4-S19 批二八族
+CARD_KERNELS = frozenset({
+    # round18 规格 XA-8 首批
+    "macromodel", "rwg_mmt", "pdn", "pce", "cascade",
+    # aurora_e W3-S13 知识面批 扩容批一
+    "mline", "wilkinson", "branchline", "ratrace", "patch",
+    "hairpin", "cpw", "slotline", "coupled_microstrip",
+    "finline", "wilkinson_unequal",
+    # aurora_e W4-S19 知识面批 扩容批二
+    "atten_pi", "atten_t", "qwt_multisection", "nway_wilkinson",
+    "schiffman", "bethe_hole_coupler", "gysel_core", "coupled_line_bpf",
+})
+
+#: 已入 XC-P 精度档案的卡（渲染走「已建档」分档表支路）
+XCP_COLLECTED = frozenset({"coupled_microstrip"})
 
 
 def _load_module(name: str, path: Path):
@@ -60,8 +77,8 @@ def test_cards_round_trip_with_sources(tmp_path: Path) -> None:
         "`python scripts/build_kernel_cards.py`，产物随本轮改动同笔提交"
         "（#97 文档与代码同 commit）"
     )
-    assert set(rendered_kernels()) == XA8_KERNELS
-    for kernel_id in sorted(XA8_KERNELS):
+    assert set(rendered_kernels()) == CARD_KERNELS
+    for kernel_id in sorted(CARD_KERNELS):
         committed = _CARDS_DIR / f"{kernel_id}.md"
         assert committed.is_file(), f"缺少已提交卡 {committed}；{remedy}"
         fresh = (tmp_path / f"{kernel_id}.md").read_bytes()
@@ -72,11 +89,11 @@ def rendered_kernels() -> set[str]:
     return {spec.kernel_id for spec in gen.SPECS}
 
 
-# ─── 2. 选题锁定 round18 规格 XA-8 ──────────────────────────────────────────
+# ─── 2. 选题锁定（XA-8 首批 + W3-S13 批一）──────────────────────────────────
 
-def test_selection_is_round18_xa8() -> None:
-    assert rendered_kernels() == set(XA8_KERNELS), (
-        "XA-8 选题须为规格五内核 macromodel/rwg_mmt/pdn/pce/cascade；"
+def test_selection_is_xa8_plus_w3s13_batch1() -> None:
+    assert rendered_kernels() == set(CARD_KERNELS), (
+        "内核卡选题须为 XA-8 五内核 + W3-S13 批一十一族 + W4-S19 批二八族；"
         "扩卡须同步更新本集合与本测试文件 docstring")
 
 
@@ -118,22 +135,33 @@ def test_tracked_doc_refs_exist() -> None:
                     f"{spec.kernel_id}: tracked 指针不存在 {ref.path}（#89）")
 
 
-# ─── 5. XC-P 诚实未收录语义（键清单 live 对 live） ──────────────────────────
+# ─── 5. XC-P 收录状态与档案实测一致（键清单 live 对 live） ──────────────────
 
-def test_xcp_uncollected_honesty() -> None:
+def test_xcp_status_matches_archive() -> None:
     kernels = gen.xcp_kernels()
     for spec in gen.SPECS:
-        assert spec.kernel_id not in kernels, (
-            f"{spec.kernel_id} 已入 XC-P——重跑生成器展开分档表，并把本测试"
-            "的「未收录」断言随批收窄")
         card = gen.render_card(spec)
-        # 未收录分支逐键列出 XC-P 现有键——卡内键清单与 YAML 实测一致
-        for key in sorted(kernels):
-            assert key in card, (
-                f"{spec.kernel_id} 卡缺 XC-P 键清单项 {key}——生成器渲染或"
-                "建档状态变化，重跑生成器")
-        assert "**UNVERIFIED**" in card, (
-            f"{spec.kernel_id} 卡缺未收录分档诚实标注（铁律 7）")
+        if spec.kernel_id in kernels:
+            # 已建档支路：分档表渲染（behavior/last_verified/typical_deviation）
+            assert "XC-P 已建档" in card, (
+                f"{spec.kernel_id} 已入 XC-P——重跑生成器展开分档表")
+            profile = kernels[spec.kernel_id]
+            assert str(profile.get("out_of_domain_behavior")) in card, (
+                f"{spec.kernel_id} 卡缺 out_of_domain_behavior——重跑生成器")
+            assert str(profile.get("last_verified")) in card, (
+                f"{spec.kernel_id} 卡缺 last_verified——重跑生成器")
+            for dev in profile.get("typical_deviation", []):
+                assert str(dev.get("quantity")) in card, (
+                    f"{spec.kernel_id} 卡缺分档行 {dev.get('quantity')}——"
+                    "重跑生成器")
+        else:
+            # 未收录分支逐键列出 XC-P 现有键——卡内键清单与 YAML 实测一致
+            for key in sorted(kernels):
+                assert key in card, (
+                    f"{spec.kernel_id} 卡缺 XC-P 键清单项 {key}——生成器渲染或"
+                    "建档状态变化，重跑生成器")
+            assert "**UNVERIFIED**" in card, (
+                f"{spec.kernel_id} 卡缺未收录分档诚实标注（铁律 7）")
 
 
 # ─── 6. KD-1/锚/测试面 计数与卡内一致（live 对 live，#97） ──────────────────
@@ -166,11 +194,8 @@ def test_anchor_section_matches_yaml() -> None:
 
 def test_test_face_counts_live() -> None:
     for spec in gen.SPECS:
-        seen: list[tuple[str, int]] = []
-        for m in spec.modules:
-            for name, count in gen.referencing_tests(m):
-                if (name, count) not in seen:
-                    seen.append((name, count))
+        # 单源：与生成器同一 test_face_rows（含 CALC 键名附加命中串）
+        seen = gen.test_face_rows(spec)
         card = gen.render_card(spec)
         total = sum(c for _, c in seen)
         assert f"合计 **{total}** 个 test 函数" in card, (
@@ -191,7 +216,7 @@ def test_public_symbol_count_live() -> None:
                 "——重跑生成器")
 
 
-# ─── 7. 站点接入：mkdocs nav 收录五卡且文件真实存在（#89） ──────────────────
+# ─── 7. 站点接入：mkdocs nav 收录全部卡且文件真实存在（#89） ────────────────
 
 def _iter_nav_nodes(node: Any) -> Any:
     if isinstance(node, dict):
@@ -215,8 +240,9 @@ def test_mkdocs_nav_contains_kernel_cards() -> None:
     for item in section:
         assert isinstance(item, dict) and len(item) == 1, f"nav 条目形态异常: {item}"
         entries.update(item)
-    assert set(entries) == set(XA8_KERNELS), (
-        f"nav 内核文档卡条目须恰为 XA-8 五内核，实测 {sorted(entries)}")
+    assert set(entries) == set(CARD_KERNELS), (
+        f"nav 内核文档卡条目须恰为选题集合（XA-8 五内核 + W3-S13 批一），"
+        f"实测 {sorted(entries)}")
     for kernel_id, rel in entries.items():
         assert rel == f"kernel_cards/{kernel_id}.md", f"nav 路径异常: {rel}"
         assert (_CARDS_DIR / f"{kernel_id}.md").is_file(), (

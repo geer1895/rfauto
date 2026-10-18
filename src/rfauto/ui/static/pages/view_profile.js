@@ -60,3 +60,10 @@ export async function pageProfile() {
     el.textContent = `✓ 产物：${r.output_path}（${r.fmt} · ${r.duration_s}s @ ${r.rate_hz}Hz）——runs/ 静态挂载开启时可直接在浏览器打开`;
   };
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 profileCtx ═══════════
+   refresh=py-spy 可用性状态重拉（pageProfile 幂等——壳判 innerHTML 已在即
+   跳过，采样表单态保留；无轮询面，leave 不需要）。 */
+export const profileCtx = {
+  refresh: () => pageProfile(),
+};

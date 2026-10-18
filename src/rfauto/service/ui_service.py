@@ -1,6 +1,6 @@
 """人工核验 UI 服务层（rfauto ui 后端）。
 
-原则（项目规则 硬限制）：服务层 JSON 进出；cli/mcp 是薄壳；写操作只经
+原则（AGENTS 硬限制）：服务层 JSON 进出；cli/mcp 是薄壳；写操作只经
 本模块落盘（配方保存走 validate_recipe 校验 + 单写锁由 run 链路负责）。
 
 页面数据：
@@ -679,6 +679,64 @@ def read_run_events(run_id: str, offset: int = 0) -> dict[str, Any]:
                        offset=new_offset, terminal=terminal)
 
 
+def append_run_event(
+    run_id: str,
+    event_type: str | Any,
+    message: str = "",
+    data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """生产写入单条 run 事件到 runs/<run_id>/events.jsonl（U4 SSE 生产写入方）。
+
+    背景（W0_recon §1.3 U4 定谳，2026-10）：events.jsonl 此前**只读不写**
+    ——读侧 :func:`read_run_events`（P-1 SSE 桥 + runs 镜像流）的生产行
+    写入方缺位：core.events.EventBus 的 set_jsonl_sink 零生产调用方，
+    orchestration_wiring/agent_graph 的 emit 全部落空（无 sink 不落盘）。
+    本函数补最小写入面：构造 core.events.Event（schema rfauto-event/1
+    统一信封，与读侧/校验面同源）追加一行 JSONL——调参/战役终态经此落
+    事件后，「写入→SSE 端点可读」端到端真实发生（terminal 事件触发 runs
+    镜像流收束 end 帧）。
+
+    不走 core 全局单例总线（进程级单 sink 会把多 run 事件互写错目录），
+    直写目标 run 的文件——与读侧同一路径解析、同一路径段守卫。**不建目录**
+    （run 目录由 run 链路负责创建，与读侧零副作用对称；目录缺席=run_id
+    失真，open 追加抛 OSError → error 信封如实回传，不虚构 run 目录）。
+
+    Args:
+        run_id: run 目录名（``runs/<run_id>/events.jsonl``；路径段守卫
+            与读侧 read_run_events 同款，穿越/分隔符一律拒）。
+        event_type: EventType 枚举或其字符串值（未识别 → error 信封）。
+        message: 人读语义一行（写侧不截断，调用方自律）。
+        data: 结构化载荷（必须 JSON 安全映射；调用方负责可序列化值）。
+
+    Returns:
+        dict: ok 信封 ``{run_id, event_type, event_id, path}`` 或 error
+        信封。写面 OSError 不抛（error 信封回传；观测面故障不得影响业务
+        主路径，#105——调用方接线处再加 best-effort 兜底）。
+    """
+    from rfauto.core.events import Event, EventType
+
+    run_id_clean = str(run_id).strip()
+    if not run_id_clean or "/" in run_id_clean or "\\" in run_id_clean or \
+            "\x00" in run_id_clean or run_id_clean in (".", ".."):
+        return error_envelope([f"非法 run_id: {run_id!r}"])
+    et_val = str(getattr(event_type, "value", event_type) or "")
+    try:
+        et = EventType(et_val)
+    except ValueError:
+        return error_envelope(
+            [f"未识别 event_type: {et_val!r}（值域见 core.events.EventType）"])
+    ev = Event(event_type=et, run_id=run_id_clean,
+               message=str(message or ""), data=dict(data or {}))
+    path = RUNS_DIR / run_id_clean / "events.jsonl"
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(ev.to_jsonl() + "\n")
+    except OSError as exc:
+        return error_envelope([f"events 写入失败: {exc}"])
+    return ok_envelope(run_id=run_id_clean, event_type=et_val,
+                       event_id=ev.event_id, path=str(path))
+
+
 def run_detail(run_id: str) -> dict[str, Any]:
     """单次 run 的全部中间产物（人工核验主页面数据）。
 
@@ -884,7 +942,7 @@ def recipe_save(
     updates 允许的键：params（{name: value} 平铺，逐项带 bounds 校验）、
     setup、objectives、optimization（整段替换）。
 
-    写面守卫（配方污染根修，处置账 「fix-recipe-pollution」条）：
+    写面守卫（配方污染根修，处置账见仓内账本「fix-recipe-pollution」条）：
     整文档 ``yaml.safe_dump`` 会丢注释/
     引号并把表单归一化的 optimization 段整段写回——2026-09-17 17:18 正是此链把
     recipes/branchline_coupler_v1.yaml 重序列化（diff 85 行）。recipes/ 原件
@@ -1724,7 +1782,7 @@ def _viz3d_available() -> bool:
     return viz3d_available()
 
 
-# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，followUp ⑤）──
+# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，仓内账本（二百零五）followUp ⑤）──
 #
 # 数字依据链（坑 #118：裁判 = 收敛真跑实测 + 独立来源解析式，不是自己的推导）：
 # * 解析式（Balanis 单腔损耗分解，PEC 导体 Q_c→∞）：η = Q_d/(Q_d+Q_rad)，
@@ -2004,7 +2062,7 @@ def _run_dir_or_error(run_id: str) -> tuple[Path | None, dict[str, Any] | None]:
 def pareto_view(run_id: str) -> dict[str, Any]:
     """E9 Pareto 前沿视图（优化洞察页，只读）。
 
-    双源（登记的"optimizer 有 pareto_points 但未接 UI"）：
+    双源（仓内账本（六十四）登记的"optimizer 有 pareto_points 但未接 UI"）：
     - results/pareto_front.json 存在（nsga2 run，E9 起落盘）→ 直读；
     - 缺产物（旧 run / TPE run）→ 从 trials/*.json 现算约束 Pareto：
       目标向量 = 逐 objective 违约量（与 run_multi_optimization 同口径，

@@ -1,0 +1,120 @@
+schema: rfauto-template-geometry-golden/v1
+template: msl_siw_taper
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  w_mm: 12.1317
+  d_mm: 0.6
+  s_mm: 1.0
+  taper_len_mm: 10.5121
+  siw_len_mm: 63.0724
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 9b11b014c6e9a7f9be64e842eb1b023c32bf740c3ce7c6a31517142da77281f6
+csx:
+  n_primitives: 146
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: msl_top
+    kind: Metal
+    n: 7
+    types:
+      '1': 5
+      '7': 2
+  - name: siw_bot
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: siw_via
+    kind: Metal
+    n: 126
+    types:
+      '5': 126
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: a2817a136ff11054fce2cb8aaac5985399757e42cfd1b7fda7103861a00e3df7
+  bbox_m:
+  - -0.011942226
+  - -0.046331959
+  - 0.0
+  - 0.011942226
+  - 0.046331959
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 211
+      min_gap_m: 7.0e-05
+    y:
+      n: 1275
+      min_gap_m: 5.9e-05
+    z:
+      n: 23
+      min_gap_m: 0.000127
+  lines_sha256: 43c32b24080cc2d1d761843b071c8b16bc94c42b9c9c69bcf8f4a48bd58f529c
+ports:
+- 1
+- 2

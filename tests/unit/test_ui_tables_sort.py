@@ -4,10 +4,10 @@
 
 三层：
 1. **源码钉（免 node）**：
-   - 导出工具条小工厂 chartExportTools 单点定义、4 处自研管线（远场极坐标/
-     Smith/场切片热图/远场 3D 热图）逐处挂接且共用同一工厂（不重复装配）；
-     按钮类名与 plotCard 同款（minor plotcard-btn）、PNG=getDataURL 2x、
-     CSV=toCsv 单源转义；
+   - 导出工具条小工厂 chartExportTools 单点定义（W3-S12 起四管线已迁
+     plotCard props.option 逃生舱=导出随壳内建；工厂现存消费者=dashboard
+     甜甜圈 refEl=null append 形态）、按钮类名与 plotCard 同款
+     （minor plotcard-btn）、PNG=getDataURL 2x、CSV=toCsv 单源转义；
    - 可排序表格：columnIsNumeric/sortCellKey/sortCellCompare/makeSortable
      导出面 + 三个挂载点（runs-table / cal-table / queue 战役表
      data-sortable 约定）；行引用重排（appendChild，无 innerHTML 重建——
@@ -54,12 +54,15 @@ def _body(func_sig: str) -> str:
 # ────────────────────────── 1. 源码钉 ──────────────────────────
 
 class TestChartExportFactory:
-    """R1 §③：4 处直呼 echarts.init 面（W2-B 已收编实例/resize）补 plotCard 级导出。"""
+    """R1 §③：4 处直呼 echarts.init 面（W2-B 已收编实例/resize）补 plotCard 级导出。
+    W3-S12（R6 审计 P-5）演进：四管线已整体迁 plotCard props.option 逃生舱
+    （导出随壳内建），本工厂现存消费者=dashboard 甜甜圈（refEl=null）。"""
 
     def test_factory_single_definition_shared(self):
-        # 工厂单点定义 + 4 处管线逐处共用（不重复装配代码）
+        # 工厂单点定义保留（dashboard 甜甜圈/后续自研管线消费）；
+        # el 形态挂接清零（W3-S12 四管线入壳）
         assert _SRC.count("function chartExportTools(host, refEl, opts)") == 1
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
+        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0
 
     def test_factory_matches_plotcard_ui_and_exports(self):
         body = _body(r"function chartExportTools\(host, refEl, opts\)")
@@ -77,17 +80,21 @@ class TestChartExportFactory:
         assert "backgroundColor: themePick(bodyIsLight()" in ce  # 主题底色（theme.js 单源，A5-B/R-4）
 
     def test_four_pipelines_keep_self_built_with_export(self):
-        # 逐处"迁/留"结论落码：管线保留自研（polar/Smith/custom/heatmap 不在
-        # plotcard builder 能力面），各处仅补导出（挂接点唯一证据=工厂调用 + 命名）
-        assert 'name: "farfield-polar-phi" + c.phi_deg' in _SRC  # 远场极坐标
-        assert 'name: "smith-chart"' in _SRC  # Smith 圆图
-        assert 'name: "field-slice-" + slice.axis + slice.index' in _SRC  # 场切片热图
-        assert 'name: "farfield-3d-heatmap"' in _SRC  # 远场 3D 热图
-        # 四处均为"工具条插在图表容器之前"（plotCard 壳同构：工具条在上）
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
+        # 逐处"迁/留"结论落码（W3-S12 演进）：渲染管线仍自研（polar/Smith/
+        # custom/heatmap 不在 plotcard builder 能力面），但整体经 plotCard
+        # props.option 逃生舱接入壳——导出/同容器复用/主题联动随壳单源；
+        # 各处证据=option 函数形态 + exportName 命名（与 W3-B 工厂期同值）
+        assert 'option: ({ light })' in _SRC  # 逃生舱函数形态（按档现取）
+        assert 'exportName: "farfield-polar-phi" + c.phi_deg' in _SRC  # 远场极坐标
+        assert 'exportName: "smith-chart"' in _SRC  # Smith 圆图
+        assert 'exportName: "field-slice-" + slice.axis + slice.index' in _SRC  # 场切片热图
+        assert 'exportName: "farfield-3d-heatmap"' in _SRC  # 远场 3D 热图
+        # 四处均为 plotCard 壳内构（工具条在卡片顶部=plotCard 壳同构：工具条在上）
+        assert _SRC.count("T.plotCard(el, {") >= 3  # fieldviz 三处直呼 + Smith 复用赋值形态
 
     def test_no_new_echarts_init_entries(self):
-        # 导出面零新 init：4 处仍走 W2-B 的 echartsInitCached（跨席钉复述）
+        # 导出面零新 init：四管线 W3-S12 起走 plotCard 壳（echartsInitCached
+        # 仍为 union 唯一直呼 init 入口）
         assert _SRC.count("window.echarts.init(") == 1
 
 

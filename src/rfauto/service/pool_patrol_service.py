@@ -602,13 +602,21 @@ def _load_impl_face(repo_root: Path) -> dict[str, str]:
 #: - RP-1：账面开放按件级交付判据（anchors.yaml 复现锚+规格卡产物缺），
 #:   工具双判据只见 commit(wf:ge8-rp1)+test_rp1_* 文件 → 判 closed——
 #:   工具判据粒度粗于审计员判据的已知局限例（工具假阳清单承载人工复核）。
+#: 金标随池演进的正当迁移（aurora_e 战役 2026-10-18，非篡改校准）：
+#: - EC-16（HEBO input warping）→ closed：optimization/surrogate/
+#:   warped_kriging.py+saas_gp.py+gp_det.py 落地（W5-S22，战役账 九百七十七）；
+#: - EC-2（multiline TRL 不确定度传播）→ closed：core/calc_families/
+#:   mtrl_uncertainty.py GUM+JCGM101 双通道落地（W2-S9，战役账 九百七十四）。
+#:   两件均「双判据齐」且人工核实=真实实现笔，金标 open→closed 迁移随
+#:   实现同笔（金标口径 10-07 快照与活树的账后漂移按 XD-8 先例如实注记）。
 DEFAULT_GOLD_CLOSED = (
     "Z-16", "XD-1", "XD-5", "XD-9", "XD-11", "EC-20", "EC-6", "FE-2",
     "D-07", "I-04", "H-01", "RB-WN-1", "RB-ML-1",
     "SB22-MS-3", "SB22-PK-2", "SB22-TH-1",
+    "EC-16", "EC-2",
 )
 DEFAULT_GOLD_OPEN = (
-    "FE-5", "FE-6", "FE-7", "EC-16", "EC-2", "SB22-MP-1",
+    "FE-5", "FE-6", "FE-7", "SB22-MP-1",
 )
 
 _ALIAS_PREFIX_RE = re.compile(r"^([A-Z]{2,}\d+)-([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*)$")

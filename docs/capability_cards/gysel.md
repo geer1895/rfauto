@@ -53,7 +53,7 @@
 
 - 参数语义：w_arm_mm=70.7Ω 臂宽（√2·Z0，skrf HJ 精算 0.6035mm），w_feed_mm=50Ω 馈线/隔离线/桥带宽（1.1134mm），arm_len_mm=臂 λ/4（εeff=2.7246 → 18.162mm@2.5GHz），iso_len_mm=隔离线 λ/4（50Ω εeff=2.8527 → 17.750mm）。派生量（不入参数表）：jog=|arm_len−iso_len|=0.412mm、YJ=iso_len−jog=17.338mm、Δ 节点 x=±iso_len → 桥带跨度=2·iso_len=35.500mm=50Ω λ/2 精确（L-jog 变体口径，电路级 @f0 S32/S11 ≤-88dB 装配实测）。历史事实：矩形旧版桥带继承 2·arm_len=36.324mm，对 λ/2 有 +2.32% 二阶偏差（矩形环 2 个自由边长不能同时满足三个 λ/4 约束；#211 真跑 S32=-32.6dB PASS 实证为二阶效应；P2⑪ 离线审计电路级归因：该偏差把 @f0 S32/S11 封顶 -34.8dB，为主因，junction 台阶/双臂对称性为二阶），本变体消除之。守卫：YJ>0（arm_len<2·iso_len）否则渲染 ValueError
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；三带缘+jog 顶边带缘+Δ 节点负载盒边精确入网（#198）；jog 横移 0.412mm ≈1 网格胞（0.4mm 档），Δ 缘与竖边带缘最小间距=jog≫1µm（#152 守卫）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

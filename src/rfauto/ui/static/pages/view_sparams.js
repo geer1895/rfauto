@@ -30,10 +30,25 @@ export async function pageSparams() {
        <div id='sp-charts'></div>
      </div>`;
   let mode = S.spMode || "db";
-  const runs = (await T.api("/api/runs")).runs || [];
+  // W7-S35 走查 P2-1：run 下拉此前裸调 /api/runs——服务端缺省 limit=50
+  // 只回最近 50 条，带 Touchstone 的较老 run 无法经下拉到达（绕道外部
+  // 导入）。显式取大 limit（服务端无上限封顶；500 与全库规模同量级的
+  // 安全值，dashboard/palette 的 200 同族口径）。
+  const runs = (await T.api("/api/runs?limit=500")).runs || [];
   const sel = T.$("sp-run");
   sel.innerHTML = runs.map((r) =>
     `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.model || "?")} · ${esc(r.adapter || "?")}）</option>`).join("");
+  // 同走查 P2-1 后半：深链 run 不在选项集时 sel.value 赋值静默失败回退
+  // 首项——缺项先注入占位选项再赋值，选中态恢复恒可达。
+  const hasOpt = (id) => Array.from(sel.options).some((o) => o.value === id);
+  for (const want of [S.currentRunId, S.spRunId]) {
+    if (want && !hasOpt(want)) {
+      const o = document.createElement("option");
+      o.value = want;
+      o.textContent = `${want}（深链 run，不在最近清单内）`;
+      sel.appendChild(o);
+    }
+  }
   if (S.currentRunId) sel.value = S.currentRunId;
   if (S.spRunId) sel.value = S.spRunId;
 
@@ -141,5 +156,15 @@ export async function pageSparams() {
   });
   T.$("sp-clear-ext").onclick = () => { S.spOverlay = []; load(); };
   sel.onchange = load;
+  _sparamsReload = load; // R-1：refresh 局部刷新转发登记（sparamsCtx 消费）
   await load();
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 sparamsCtx ═══════════
+   refresh=免全页重建直刷曲线——load() 闭包经模块级引用转发（campaignCtx
+   同款模式）：只重拉当前 run 的曲线/Smith 数据并整换图区（壳/模式钮/run
+   下拉不动，叠加清单与模式在 S 单源保持）。无轮询面，leave 不需要。 */
+let _sparamsReload = null;
+export const sparamsCtx = {
+  refresh: () => { const f = _sparamsReload; if (f) f(); },
+};

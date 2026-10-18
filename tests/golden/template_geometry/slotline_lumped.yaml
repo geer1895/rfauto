@@ -1,0 +1,131 @@
+schema: rfauto-template-geometry-golden/v1
+template: slotline_lumped
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.0
+  line_len_mm: 93.4624
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 6a01182eee331e909d6d35d7a7ef3b871b5c7b5f0bd228920fc81ca3a2eefd6e
+csx:
+  n_primitives: 19
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: slot_metal
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_00
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_01
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_02
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_03
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_04
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_05
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_06
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_07
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_08
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 5bfe2b195898087d971fab09c4f94dba9a07f3e8812a323fd99c64e94f086de1
+  bbox_m:
+  - -0.064965851
+  - -0.06
+  - 0.0
+  - 0.064965851
+  - 0.06
+  - 0.001666458
+mesh:
+  lines:
+    x:
+      n: 375
+      min_gap_m: 0.000142
+    y:
+      n: 113
+      min_gap_m: 0.00025
+    z:
+      n: 221
+      min_gap_m: 0.000112
+  lines_sha256: 705e690c6f902dfc79886cb99e50c191c3628d7d56f96d6de85b5d5b9eedb161
+ports:
+- 1
+- 2

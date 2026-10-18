@@ -6,6 +6,7 @@
 > → 真跑一个点 → 读结果。以 openEMS 为主通道（开源、无 license 门槛），
 > 全程代码实测过。前置：docs/tutorials/getting-started.md（已用 fake
 > 适配器走通过全链路）。
+> 英文版（English version）：docs/tutorials/real-simulation_en.md。
 
 ## 1. 入口地图（先读，防撞墙）
 
@@ -50,8 +51,9 @@ from rfauto.adapters.openems_solver import OpenEMSSolver
 from rfauto.adapters.em_solver_base import EMSolverConfig
 
 print(resolve_openems_exe())
-# → vendor/openEMS/install/bin/openEMS.exe（仓库相对路径；
-#   解析顺序 configs/solvers.yaml → RFAUTO_OPENEMS_BIN 环境变量 → 兜底）
+# → E:\openEMS\install\bin\openEMS.exe（本机 2026-10-18 实测；路径按机而
+#   异——解析顺序 configs/solvers.yaml（${VAR} 展开）→ RFAUTO_OPENEMS_BIN
+#   环境变量 → 字面量兜底）
 
 assert OpenEMSSolver(EMSolverConfig(
     solver_type="openems",

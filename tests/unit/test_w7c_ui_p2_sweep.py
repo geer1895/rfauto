@@ -258,12 +258,12 @@ class TestMsgAndNumberConsistencyHonest:
 
 class TestCrossSeatPinSelfCheck:
     def test_pages_js_count_pins(self):
-        assert _PAGES.count("T.plotCard(") == 12
+        assert _PAGES.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
         assert _PAGES.count("window.echarts.init(") == 1
         assert _PAGES.count('window.addEventListener("resize"') == 1
         assert _PAGES.count("setInterval(") == 2
-        assert _PAGES.count("chartExportTools(el.parentElement, el, {") == 4
-        assert _PAGES.count("bindChartResize(el); // P0-5") == 4
+        assert _PAGES.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
+        assert _PAGES.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
         assert _PAGES.count("disposeChartsIn(") == 4
 
     def test_index_html_count_pins(self):

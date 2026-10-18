@@ -59,3 +59,11 @@ export async function pageTimeline() {
   else
     T.$("tl-tune").innerHTML = "<span class='muted'>暂无调参 run（到「优化调参」页启动一次）</span>";
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 timelineCtx ══════════
+   refresh=图表数据重拉（pageTimeline 幂等：壳判 innerHTML 已在即跳过，
+   cost_timeline 重拉后 T.plotCard 同容器 setOption 复用刷新两张图）。
+   无轮询面，leave 不需要。 */
+export const timelineCtx = {
+  refresh: () => pageTimeline(),
+};

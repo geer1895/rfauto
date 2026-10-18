@@ -34,13 +34,17 @@ from rfauto.infra.anchors_store import load_anchors
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-#: ANCH-D 批 5 锚 id（与 EXPECTED_ANCHORS 批注同步维护）
+#: ANCH-D 批 5 锚 id（与 EXPECTED_ANCHORS 批注同步维护）。
+#: ms_lattice.period v1 因 template_family=[ms_lattice]（非 TEMPLATE_META
+#: 族、按名解析零命中）注册缺陷由 W3-S15 批 v2 接替（retired+superseded_by，
+#: 值/域零改动）——本表随锚演进换 v2 id（test_w3s15_analytic_anchors.py
+#: 持演进钉）。
 _ANCHD_ANCHOR_IDS = (
     "coax_waveguide_transition.backshort_mm.closedform-v1",
     "sma_launcher.r_o_mm.closedform-v1",
     "patch_eep.elem_w_mm.closedform-v1",
     "patch_eep.elem_len_mm.closedform-v1",
-    "ms_lattice.period_mm.closedform-v1",
+    "ms_lattice.period_mm.closedform-v2",
 )
 
 _C_MM_GHZ = 299.792458
@@ -193,9 +197,11 @@ def test_patch_eep_elem_len_cavity_chain(tpl: str) -> None:
 
 
 # ── 5. ms_lattice：λ0/2 阵格（ms_patch/ms_ring_patch/ms_array_NxN 三族）──────
+# v1 族名注册缺陷（[ms_lattice] 非 TEMPLATE_META 族）由 W3-S15 批 v2 接替
+# ——本测试随锚演进钉 v2（v1 retired 演进钉在 test_w3s15_analytic_anchors.py）。
 
 def test_ms_lattice_halfwave_period_identity() -> None:
-    aid = "ms_lattice.period_mm.closedform-v1"
+    aid = "ms_lattice.period_mm.closedform-v2"
     rec = _live().get(aid)
     assert rec is not None
     assert rec.template_family == ["ms_patch", "ms_ring_patch",
@@ -241,7 +247,10 @@ def test_anchd_anchor_registry_shape(aid: str) -> None:
 def test_anchd_batch_count_and_expected_source_sync() -> None:
     # 单源对账（#231）：整册与 EXPECTED_ANCHORS 一致由
     # test_anchors_store_service 钉；此处钉 ANCH-D 批 5 席全在册+
-    # 有锚族覆盖 56/72→62/72（X5 批口径：TEMPLATE_META 族集内计数）
+    # 有锚族覆盖（X5 批口径：TEMPLATE_META 族集内计数）。批成立时点
+    # 56/72→62/72；v1 族名缺陷（[ms_lattice] 不解析）使树面实况 60，
+    # W3-S15 批 v2 接替+新锚后为 64——本断言随册演进由 W3-S15 批维护
+    # （当前口径见 test_w3s15_analytic_anchors.py 批注）。
     live = _live()
     for aid in _ANCHD_ANCHOR_IDS:
         assert aid in live, aid
@@ -249,7 +258,9 @@ def test_anchd_batch_count_and_expected_source_sync() -> None:
 
     assert len(_ANCHD_ANCHOR_IDS) == 5
     assert all(a in EXPECTED_ANCHORS for a in _ANCHD_ANCHOR_IDS)
-    from rfauto.adapters.openems_templates import TEMPLATE_META
+    # 注意：TEMPLATE_META 只在 registry 子模块（oe_templates facade 无此
+    # re-export；旧写法 from oe_templates import 依赖他测先行注入=次序耦合）
+    from rfauto.adapters.oe_templates.registry import TEMPLATE_META
 
     reg = yaml.safe_load(
         (_REPO_ROOT / "knowledge" / "anchors.yaml").read_text(
@@ -260,7 +271,7 @@ def test_anchd_batch_count_and_expected_source_sync() -> None:
         for fam in (entry.get("template_family") or [])
         if fam in TEMPLATE_META
     }
-    assert len(covered) == 62  # ANCH-D 批 56→62（+6 族）
+    assert len(covered) == 64  # W3-S15 批接替后实覆盖 64/72（v2+4 族）
     for fam in ("coax_waveguide_transition", "sma_launcher",
                 "patch_eep_1x4", "patch_eep_2x2", "ms_ring_patch",
                 "ms_array_NxN"):

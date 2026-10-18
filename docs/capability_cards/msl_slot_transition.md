@@ -57,7 +57,7 @@
 - 参数语义：w_slot_mm=槽宽，x_port_mm=P2 端口距跨越点（输出臂长），h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；封口 SEAM 搭接（×NEAR 不关槽方向）、全部盒缘入网
 - 冒烟现状：真机（a8abe8d）：openEMS |S11|@f0 −19.9/带内 max −10.43dB（匹配门 PASS）、超额损耗 1.05dB 贴门；HFSS β=66.55 对闭式 −1.0%、带内 −9.55dB 贴门、IL 1.37dB FAIL——判 PASS 需结区优化（渐变槽/径向短路盘），复跑按 TRANSITION_GATES 预声明门判读
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

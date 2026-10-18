@@ -1,0 +1,70 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_ring_patch
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  patch_px_mm: 8.5406
+  period_mm: 14.9896
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 9cad942bcb2abcdad1740c08e64a689875b447ef2d2c0ebd0111c62ab73d8e56
+csx:
+  n_primitives: 9
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: ring
+    kind: Metal
+    n: 4
+    types:
+      '1': 4
+  - name: patch
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: wg_exc
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: u1a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u1b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: a89a6e098de30b1d031c7c037386a988b179470a2fbdf6cc974ed85d26d9cc38
+  bbox_m:
+  - -0.0074948
+  - -0.0074948
+  - 0.0
+  - 0.0074948
+  - 0.0074948
+  - 0.011829366
+mesh:
+  lines:
+    x:
+      n: 201
+      min_gap_m: 6.3e-05
+    y:
+      n: 201
+      min_gap_m: 6.3e-05
+    z:
+      n: 58
+      min_gap_m: 0.000152
+  lines_sha256: 4d3f348a45a1974b7cadfb2339a15319a1b5178bbf522703bdda739f7fe10f98
+ports:
+- 1

@@ -84,3 +84,11 @@ export async function pageGallery() {
   }
   render();
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 galleryCtx ═══════════
+   refresh=模板卡数据重拉（pageGallery 幂等：壳判 innerHTML 已在即跳过，
+   /api/gallery 重拉后按当前过滤词重铺网格；过滤输入值与已打开的闭式预览
+   面保持）。无轮询面，leave 不需要。 */
+export const galleryCtx = {
+  refresh: () => pageGallery(),
+};

@@ -8,6 +8,10 @@
   端点在 routes/events.py；本模块是 tune 域的**发布源**——状态转移经
   _publish_tune_event 进统一总线，观测面 best-effort #105）
 
+U4 生产写入方（aurora_e W2-S7）：调参完成态经 _write_tune_terminal_event
+写一条 run_completed/run_failed 事件到该 run 的 events.jsonl（有 run_id
+才写）——runs 镜像 SSE 流自此有真实生产事件可读（此前只读不写）。
+
 _TUNE_STATE 是进程内任务槽（单任务语义）：测试经
 ``monkeypatch.setitem(server_mod._TUNE_STATE, ...)`` 就地置位（同一 dict
 对象经 server.py 薄 re-export 透传，is 同一性）。``run_seq`` 是进程内单调
@@ -38,6 +42,36 @@ def _publish_tune_event(kind: str, payload: dict[str, Any],
         from rfauto.ui.routes.event_bus import try_publish
 
         try_publish(kind, "tune", payload, dedupe_key=dedupe_key)
+    except Exception:
+        pass
+
+
+def _write_tune_terminal_event(result: Any) -> None:
+    """U4 SSE 生产写入方：tune 终态事件落 runs/<run_id>/events.jsonl。
+
+    此前生产侧对 events.jsonl 零写入（core EventBus set_jsonl_sink 无生产
+    调用方，W0_recon §1.3 U4 定谳）——runs 镜像 SSE 流恒空。本接线在调参
+    完成态写一条 run_completed/run_failed 终态事件：读侧（read_run_events
+    →SSE runs 镜像）见到 terminal 事件即推末帧并以 end 帧收束——「写入→
+    SSE 端点可读」端到端自此真实发生。有 run_id 才写（结果信封未带 run_id
+    如 multi/旧形态——如实零写入，不猜目录）；观测面 best-effort（#105）：
+    任何异常吞掉不抛，调参主路径零感知。
+    """
+    try:
+        if not isinstance(result, dict):
+            return
+        rid = str(result.get("run_id") or "").strip()
+        if not rid:
+            return
+        from rfauto.service.ui_service import append_run_event
+
+        ok = bool(result.get("ok"))
+        append_run_event(
+            rid, "run_completed" if ok else "run_failed",
+            message="调参完成" if ok else "调参失败",
+            data={"ok": ok,
+                  "best_cost": result.get("best_cost"),
+                  "trials_completed": result.get("trials_completed")})
     except Exception:
         pass
 
@@ -90,6 +124,7 @@ async def api_tune_start(request: Request) -> JSONResponse:
                     sampler=body.get("sampler", "tpe"),
                     on_trial=_tune_trial_probe)
             _TUNE_STATE["result"] = result
+            _write_tune_terminal_event(result)  # U4：终态事件落 events.jsonl（生产写入方，best-effort）
             _publish_tune_event(
                 "tune_completed",
                 {"started_at": _TUNE_STATE["started_at"],

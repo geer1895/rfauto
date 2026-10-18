@@ -88,3 +88,6 @@ from . import doa_crb  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 DOA �
 from . import multiplexer  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 多工器信道规划键，追加尾位，新增键按字母序互排）
 from . import phase_shifter  # noqa: F401  # 注册副作用（aurora_d W3-CORE6 加载线/开关线移相器两键，追加尾位，新增键按字母序互排）
 from . import manufacturing_yield  # noqa: F401  # 注册副作用（aurora_d W3-CORE7 制造良率换算两键，追加尾位，新增键按字母序互排）
+from . import finline  # noqa: F401  # 注册副作用（aurora_e W2-S9 鳍线-波导渐变过渡两键，K2 渐变过渡面，追加尾位）
+from . import mtrl_uncertainty  # noqa: F401  # 注册副作用（aurora_e W2-S9 EC-2 multiline TRL 不确定度传播键，追加尾位）
+from . import polarization_reg  # noqa: F401  # 注册副作用（aurora_e W4-S18 EC-21 极化传输面度量三键，薄注册公式单源 core/polarization，追加尾位）

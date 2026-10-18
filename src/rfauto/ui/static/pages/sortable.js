@@ -54,7 +54,15 @@ export function makeSortable(table) {
   const ths = Array.from(table.tHead.rows[0] ? table.tHead.rows[0].cells : []);
   for (const th of ths) {
     th.style.cursor = "pointer";
-    th.title = "点击排序（升 → 降 → 还原）";
+    th.title = "排序（升 → 降 → 还原；Enter 或空格）";
+    // W5-S23 键盘可达（深审 a 面）：th 只绑 click 时键盘用户无法排序——
+    // 补 tabindex=0 + Enter/Space 触发同一 onThClick（与 kit bindClickRows
+    // 同一激活语义）；焦点环走全局 :focus-visible（零新 CSS）。aria-sort
+    // 同步面不变（下方 sortBy/还原路径既有）。
+    th.setAttribute("tabindex", "0");
+    th.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onThClick(th); }
+    });
   }
   const clearAria = (keep) => ths.forEach((th) => {
     if (th !== keep) th.removeAttribute("aria-sort");

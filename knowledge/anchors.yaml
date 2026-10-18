@@ -1886,7 +1886,7 @@ anchors:
   - anchor_id: ms_lattice.period_mm.closedform-v1
     kind: constant
     layer: closure
-    template_family: [ms_patch, ms_ring_patch, ms_array_NxN]
+    template_family: [ms_lattice]
     engine_pair: {calibrated: closedform, referee: null}
     quantity:
       name: ms_lattice_period_mm
@@ -1898,8 +1898,97 @@ anchors:
     provenance:
       commit: a38929b4
       replaces: "无（首登记）"
+      superseded_by: ms_lattice.period_mm.closedform-v2
+      retire_note: "本版 template_family=[ms_lattice] 系注册缺陷——ms_lattice 非 TEMPLATE_META 族（universe 外），按本名解析零模板命中且与本批自身测试钉（三族）矛盾，按册头演进规则由 ms_lattice.period_mm.closedform-v2 接替（值/域/不确定度零改动，仅族表换真名三族）"
     registered_at: "2026-10-14T16:00:00+08:00"
     last_verified: null
     fallback: closed_form
-    status: experimental
+    status: retired
     consumers: []
+  - anchor_id: ms_lattice.period_mm.closedform-v2
+    kind: constant
+    layer: closure
+    template_family: [ms_patch, ms_ring_patch, ms_array_NxN]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: ms_lattice_period_mm
+      unit: mm
+      semantics: "超表面反射族 λ0/2 阵格周期 @10GHz：period=λ0/2=c/(2·f0)=14.9896229（_MS_PATCH_NOM_PERIOD 单源 #252 闭式非手抄）；设计惯例=正入射反射阵 d≤λ0/2 无栅瓣临界裕量（Balanis Ch.6 阵列栅瓣判据口径）；#118 双源=λ0/2 纯算术测试转录+三族名义逐位钉；ms_mushroom period 数值同 4 位但来源=LC 逆解（amc_mushroom_dims_mm 设计式）非本规则，不入族表；真机首判窗=波导模拟器单元散射相位周期性（θ=0 前提，波导模拟器扫描战役面）；本版=v1 族名注册缺陷接替（值/域/不确定度零改动，仅族表换真名三族）"
+    value: 14.9896
+    uncertainty: {value: 5.0e-5, kind: rounding_band, note: "周期 4 位舍入；全精度 14.9896229"}
+    domain: {f0_ghz: [10.0, 10.0]}
+    provenance:
+      commit: a38929b4
+      replaces: "ms_lattice.period_mm.closedform-v1（族名注册缺陷：ms_lattice 非 TEMPLATE_META 族；v1 原文随 retired 态保留于仓内历史）"
+    registered_at: "2026-10-18T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/render_metasurface.py
+  - anchor_id: tjunc.s11_db.closedform-v1
+    kind: constant
+    layer: closure
+    template_family: [tjunc]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: tjunc_s11_db
+      unit: dB
+      semantics: "微带 T 接头理想结点 |S11|（等臂无损对称三端口）：全臂同 Z0 并联结点输入 Z0/2 → S11=−1/3=−9.542425dB（阻抗无关网络恒等式，Z0 在比值算术中相消）；无损互易三端口不可能全匹配（Pozar Ch.7 功分器章口径）即 wilkinson 隔离电阻存在之物理因；内核裁判同型=fake_adapter._tjunc_sparams node 矩阵 /3+渲染端锚判据头注（render_tl._tjunc_lines：S=(1/3)[[-1,2,2],[2,-1,2],[2,2,-1]]）；#118 双源=测试纯算术转录 20·log10(1/3)（不 import 内核）+ 幺正功率账 |S11|²+2|S21|²=1 恒等钉；先前两轮评审弃选理由只针对 HJ 宽度/Z0 恒等面（'第二源即 HJ 本身'），结点 S 面阻抗无关系独立新面故立锚；真机首判窗=引擎 |S11|@f0 对理想结点一阶偏差（微带结点不连续电纳窗，预期 ±1dB 级，如实判读不凑）"
+    value: -9.542425
+    uncertainty: {value: 5.0e-7, kind: rounding_band, note: "6 位舍入；全精度 20·log10(1/3)=−9.542425094393248"}
+    domain: null
+    provenance:
+      commit: f9fb7735
+      replaces: "无（首登记）"
+    registered_at: "2026-10-18T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/fake_adapter.py
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: tjunc.s21_db.closedform-v1
+    kind: constant
+    layer: closure
+    template_family: [tjunc]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: tjunc_s21_db
+      unit: dB
+      semantics: "微带 T 接头理想结点 |S21|（等臂无损对称三端口）：结点电压 (1+Γ)V=2V/3 均分两出臂 → |S21|=2/3=−3.521825dB；互易对称 S21=S31=S23（全非对角元同值）；功率账 |S11|²+2|S21|²=1/9+8/9=1 幺正恒等（无损性自证）；内核裁判同型与 #118 双源同 tjunc.s11_db.closedform-v1（测试纯算术转录 20·log10(2/3)）；真机首判窗=引擎 |S21|@f0 对理想均分一阶偏差（与 |S11| 窗联判，功率账和≠1 即结点损耗/辐射如实记）"
+    value: -3.521825
+    uncertainty: {value: 5.0e-7, kind: rounding_band, note: "6 位舍入；全精度 20·log10(2/3)=−3.521825181113625"}
+    domain: null
+    provenance:
+      commit: f9fb7735
+      replaces: "无（首登记）"
+    registered_at: "2026-10-18T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/fake_adapter.py
+      - src/rfauto/adapters/oe_templates/render_tl.py
+  - anchor_id: mline.z0_ohm.closedform-v1
+    kind: constant
+    layer: closure
+    template_family: [mline]
+    engine_pair: {calibrated: closedform, referee: null}
+    quantity:
+      name: mline_z0_ohm
+      unit: ohm
+      semantics: "mline 标称 50Ω 恒等锚：W=nominal_width_mm(50,2.5GHz,rogers4350b_h0.508)=1.1134mm（XC-W 渲染层单源）处 HJ 正向 Z0=50.0000（内核 skrf 链回代 49.99999，inverse→forward 自洽恒等）；#118 双源=Hammerstad-Jensen 1980 系数原文核验转录第二实现（a(u)=1+ln[(u⁴+(u/52)²)/(u⁴+0.432)]/49+ln[1+(u/18.1)³]/18.7、b(εr)=0.564[(εr−0.9)/(εr+3)]^0.053、f(u)=6+(2π−6)exp[−(30.666/u)^0.7528]、Z0=(η0/2π)ln[f(u)/u+√(1+(2/u)²)]/√εeff(a·b)——系数双源=原文引述+skrf mline 源码逐位一致，2026-10-18 核验在档；准静态第二实现@u=2.19173 得 49.9668，与 skrf 变体差 0.033Ω 在 0.05Ω 包络内）；先前审查批'mline HJ 系数无仓内已核原文'citation-rot 缓登记项就此清偿；真机首判窗=mline 锚模板 S11 谷深/谷位窗（50Ω 线伪反射 Γ≤−40dB 预期）"
+    value: 50.0
+    uncertainty: {value: 0.05, kind: rounding_band, note: "4 位线宽舍入回代带 ±0.002Ω 与 HJ 准静态第二源变体差 0.033Ω 之包络"}
+    domain: null
+    provenance:
+      commit: 70159e01
+      replaces: "无（首登记；先前审查批缓登记账就此销账）"
+    registered_at: "2026-10-18T12:00:00+08:00"
+    last_verified: null
+    fallback: closed_form
+    status: experimental
+    consumers:
+      - src/rfauto/adapters/oe_templates/_nominal_width.py
+      - src/rfauto/core/synthesis.py

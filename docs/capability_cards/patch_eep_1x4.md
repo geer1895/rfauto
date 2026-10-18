@@ -23,16 +23,18 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=11 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | elem_len_mm | 单元谐振主维（λ/2 腔恒等 |∂lnf0/∂lnL|≈1，腔模型口径） |
-| 2 | elem_w_mm | 经 εeff(W)/ΔL 弱进入谐振频率；主控单元阻抗/带宽（Balanis W 式语义） |
-| 3 | elem_feed_mm | 插入馈抽头定馈电阻抗/匹配（cos² 抽头面），不移动腔谐振频率 |
-| 4 | spacing_x_mm | 阵因子/互耦维（d<λ0 无栅瓣判据；非单元谐振量） |
-| 5 | feed_w_mm | 缺口内馈段线宽（50Ω 邻域），弱敏感；本族排序为物理定性口径—— 登记表暂无已落档（knowledge/sensitivity_rankings.yaml 未含本族，不硬凑 数值） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | elem_len_mm | 0.93028 |
+| 2 | elem_w_mm | 0.022351 |
+| 3 | elem_feed_mm | 0.0 |
+| 4 | feed_w_mm | 0.0 |
+| 5 | spacing_x_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -55,7 +57,7 @@
 - 参数语义：elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 c/(2f0√εeff)−2ΔL，fake 谐振为精确逆），elem_w_mm=单元宽 W（沿 x；c/(2f0)√(2/(εr+1))），elem_feed_mm=插入馈深度（缺口深=探针馈点；Rin(y0)=Rin(0)cos²(πy0/L)，0.3L≈100Ω 口径），feed_w_mm=缺口内馈段/探针邻域线宽（HJ 50Ω 1.112mm），spacing_x_mm=单元中心距 d（0.484λ0=25.0172mm；栅瓣判据 d<λ0，1×4 跨度 3d+W 扰动域与 C2 同款预核 ≤120mm 板）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；全部盒缘（贴片/缺口/探针）精确入网（#198）
 - 冒烟现状：未真机冒烟（2026-09-24 注册，离线审计已过）。真机 J4 门预声明于 内部证据档（4 轮装配 σmax≤1.005 硬门 + 全阵 vs 快档带内报告 + Γ_act(0°) vs HFSS Floquet）；发射命令/预算/判读见 内部证据档；openEMS 串行 solo（#246/#261），发射前 CSXCAD 离线 exec 实测 dt/NrTS 预算（#328/#349）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

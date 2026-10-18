@@ -38,9 +38,27 @@ class TestSolverVisualization:
         assert isinstance(result["solvers"], list)
 
     def test_visualizations_filter_by_solver(self):
+        # W8-S36（审查波 2 P2-2 回归钉）：原条件表达式优先级 bug 使任何
+        # 带名过滤恒返回空表（全部 continue）——钉"过滤非空+字段==过滤值"。
         from rfauto.service.r3_services import list_solver_visualizations
-        result = list_solver_visualizations("fake")
+        result = list_solver_visualizations("mmt")
         assert result["ok"]
+        assert result["solvers"], "带名过滤不得返回空表"
+        assert all(s["solver"] == "mmt" for s in result["solvers"])
+        assert any(s.get("visualizations") for s in result["solvers"])
+
+    def test_visualizations_no_filter_includes_str_keys(self):
+        # W8-S36（审查波 2 P2-2 回归钉）：gpl 子包 str 键求解器（pypo/scuff）
+        # 此前在无过滤时也恒被 continue 排除——钉"无过滤可见 str 键"。
+        import rfauto.adapters.gpl  # noqa: F401 - str 键注册副作用
+        from rfauto.service.r3_services import list_solver_visualizations
+        result = list_solver_visualizations()
+        assert result["ok"]
+        names = {s["solver"] for s in result["solvers"]}
+        assert {"pypo", "scuff"} <= names
+        # 带名过滤 str 键同样命中（双形态归一后同一路径）
+        by_name = list_solver_visualizations("pypo")
+        assert [s["solver"] for s in by_name["solvers"]] == ["pypo"]
 
 
 class TestSolverManagement:

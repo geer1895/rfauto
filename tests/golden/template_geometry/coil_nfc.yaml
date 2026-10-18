@@ -1,0 +1,78 @@
+schema: rfauto-template-geometry-golden/v1
+template: coil_nfc
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- -0.23644
+- 0.26356
+params:
+  n_turns: 7
+  d_out_mm: 38.2988
+  w_mm: 0.5
+  s_mm: 0.5
+  gap_mm: 0.4
+  h_mm: 1.6
+  er: 4.4
+  tan_d: 0.02
+status: ok
+script_sha256: cc469b9a06894b87a88ba9b644ed1b7ebd18de7daf7a9303efb4bb382523762e
+csx:
+  n_primitives: 38
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: coil
+    kind: Metal
+    n: 31
+    types:
+      '1': 31
+  - name: bridge
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 72b34dcc5f29936e575394e2abb5f0a00e9c2b52fb47607843523972d1e78f5b
+  bbox_m:
+  - -0.0211494
+  - -0.0220494
+  - 0.0
+  - 0.0211494
+  - 0.0220494
+  - 0.001725
+mesh:
+  lines:
+    x:
+      n: 1293
+      min_gap_m: 1.2e-05
+    y:
+      n: 1331
+      min_gap_m: 1.2e-05
+    z:
+      n: 54
+      min_gap_m: 1.6e-05
+  lines_sha256: c850a3f3ccaabaf59940916ffad49dbb51859a0e7d1bb3e2ed1e87b41afdf6e7
+ports:
+- 1

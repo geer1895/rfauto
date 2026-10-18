@@ -1,4 +1,4 @@
-"""G15 物理不变量属性/元变测试（延续计划 §10.7 G15 / §10.19 第 5 条）。
+"""G15 物理不变量属性/元变测试（规划档 §10.7 G15 / §10.19 第 5 条）。
 
 目标：给确定性内核建"零外部参考的物理预言机"——不依赖任何外部参考数值，
 只用**不变量**（自洽性/尺度律/端口对称性）判真伪。四块：
@@ -852,6 +852,10 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
         "coax_line_power_capacity": {"a_mm": 1.0, "b_mm": 3.0,
                                      "epsilon_r": 1.0,
                                      "e_br_v_per_m": 3.0e6, "p_op_w": 100.0},
+        # W8-S37 池件批 3：截止式衰减器=a=1/b=3mm 空气 L=10mm 深截止渐近
+        # （f_c=23.8567GHz 锚，每 (a+b) 17.372dB 恒等式）
+        "coax_line_cutoff_attenuator": {"a_mm": 1.0, "b_mm": 3.0,
+                                        "length_mm": 10.0, "epsilon_r": 1.0},
         "circular_cavity_mode_spectrum": {"radius_mm": 10.0,
                                           "length_mm": 25.0,
                                           "f_min_ghz": 8.0,
@@ -1094,6 +1098,54 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
                              "theta0_deg": 90.0, "z0_ohm": 50.0},
         "switched_network_phaser": {"f_ghz": 2.0, "phi_deg": 90.0,
                                     "r_on_ohm": 2.0, "z0_ohm": 50.0},
+        # ─── aurora_e W1-S2 四键（名义=锚输入：圆波导=TE11 a=10mm/10GHz
+        # Cu（fc=8.7849GHz 锚，α≈0.1498dB/m）；矩形腔谱=30/20/60mm 4..8GHz
+        # （TE101=5.5863GHz 与 cavity_perturbation_shift 双源）；矩形腔 Q=
+        # TE101 Cu（≈1.03e4 铜腔合理带）；热偶=200µV/K/500K/W/−20dBm
+        # （γ=0.1V/W 锚））────────────────────────────────────────────
+        "circular_waveguide_mode_prop": {
+            "mode_type": "TE", "m": 1, "n": 1, "radius_mm": 10.0,
+            "f_ghz": 10.0, "conductivity_s_per_m": 5.8e7,
+            "epsilon_r": 1.0, "mu_r": 1.0, "tan_delta": 0.0,
+            "e_br_v_per_m": 3.0e6},
+        "rectangular_cavity_mode_spectrum": {
+            "a_mm": 30.0, "b_mm": 20.0, "d_mm": 60.0,
+            "f_min_ghz": 4.0, "f_max_ghz": 8.0, "epsilon_r": 1.0,
+            "mu_r": 1.0, "max_modes": 200},
+        "rectangular_cavity_mode_q": {
+            "mode_type": "TE", "m": 1, "n": 0, "p": 1, "a_mm": 30.0,
+            "b_mm": 20.0, "d_mm": 60.0, "conductivity_s_per_m": 5.8e7,
+            "epsilon_r": 1.0, "mu_r": 1.0, "tan_delta": 0.0},
+        "thermal_power_sensor_detect": {
+            "sensor_type": "thermocouple", "p_in_dbm": -20.0,
+            "r_th_k_per_w": 500.0, "c_th_j_per_k": 1e-3,
+            "seebeck_v_per_k": 2.0e-4},
+        # aurora_e W2-S9 三键（2026-10-18）：鳍线-波导渐变过渡响应/长度
+        # （WR-28 26.5-40GHz，150→50Ω 指数剖面）+ EC-2 mTRL 不确定度
+        # （GUM only n_mc=0——MC 对照走本席专测文件，G15 只裁确定性核）
+        "finline_taper_response": {
+            "z1_ohm": 150.0, "z2_ohm": 50.0, "length_mm": 12.0,
+            "freq_ghz": [26.5, 30.0, 40.0], "wr_name": "WR-28",
+            "profile": "exponential"},
+        "finline_taper_length": {
+            "z1_ohm": 150.0, "z2_ohm": 50.0, "f_min_ghz": 26.5,
+            "rho_max": 0.05, "wr_name": "WR-28",
+            "profile": "exponential"},
+        "mtrl_er_tand_uncertainty": {
+            "freq_ghz": [2.0, 5.0, 10.0], "w_mm": 0.6, "h_mm": 0.254,
+            "er": 4.4, "tan_d": 0.02,
+            "line_lengths_m": [0.005, 0.045],
+            "u_lengths_m": 5.0e-5, "sigma_s": 1e-3, "n_mc": 0},
+        # aurora_e W4-S18 EC-21 三键（2026-10-18）：等幅 ±90° 圆极化态
+        # （AR=1/0dB 主锚）/ΔIPD=90°+ΔIL=0 转换面对偶/线性相位 τ 差分
+        # （f=10→10.01GHz、f1 相位归零、f2 相位推进 −360·Δf·τ（τ_x=20ps
+        # → −0.072°、τ_y=50ps → −0.18°，字面量 10 位有效直算非手抄）
+        "pol_axial_ratio": {"e1": 1.0, "e2": 1.0, "delta_phase_deg": -90.0},
+        "pol_delta_ipd_il": {"t_x": [1.0, 0.0], "t_y": [0.0, 1.0]},
+        "pol_group_delay_diff": {
+            "f1_ghz": 10.0, "f2_ghz": 10.01,
+            "t_x_f1": [1.0, 0.0], "t_x_f2": [0.9999992104, -0.0012566367],
+            "t_y_f1": [1.0, 0.0], "t_y_f2": [0.9999950652, -0.0031415875]},
     }
 
 
@@ -1223,7 +1275,7 @@ DOMAIN_ERROR_CASES = [
     ("suspended_stripline_analysis", {
         "w_mm": 0.731, "b_mm": 1.016, "h_mm": 1.2, "epsilon_r": 3.66}),
     # 槽线（2026-09-18 w1b）：仓库缺省叠层 h=0.508@2.5GHz 因 d/λ0=0.0042<0.006
-    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（）；
+    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（仓内账本（一百九十八））；
     # 综合目标 30Ω 低于窄槽段可达下限（≈80Ω@1.524mm）→ 括号越界显式报错；
     # εr=12 高介电段（Garg–Gupta 1976）未实现 → 显式拒绝
     ("slotline_analysis", {
@@ -1627,6 +1679,17 @@ DOMAIN_ERROR_CASES = [
                                   "p_op_w": -1.0}),
     ("coax_line_power_capacity", {"a_mm": 1.0, "b_mm": 3.0,
                                   "epsilon_r": 0.9}),
+    # W8-S37 池件批 3：截止衰减器 a≥b/L≤0/εr<1/f≤0/f≥f_c（行波区拒绝）
+    ("coax_line_cutoff_attenuator", {"a_mm": 3.0, "b_mm": 3.0,
+                                     "length_mm": 10.0}),
+    ("coax_line_cutoff_attenuator", {"a_mm": 1.0, "b_mm": 3.0,
+                                     "length_mm": 0.0}),
+    ("coax_line_cutoff_attenuator", {"a_mm": 1.0, "b_mm": 3.0,
+                                     "length_mm": 10.0, "epsilon_r": 0.5}),
+    ("coax_line_cutoff_attenuator", {"a_mm": 1.0, "b_mm": 3.0,
+                                     "length_mm": 10.0, "f_ghz": 0.0}),
+    ("coax_line_cutoff_attenuator", {"a_mm": 1.0, "b_mm": 3.0,
+                                     "length_mm": 10.0, "f_ghz": 30.0}),
     ("circular_cavity_mode_spectrum", {"radius_mm": 10.0, "length_mm": 25.0,
                                        "f_min_ghz": 16.0, "f_max_ghz": 16.0}),
     ("circular_cavity_mode_spectrum", {"radius_mm": 0.0, "length_mm": 25.0,
@@ -2412,6 +2475,64 @@ DOMAIN_ERROR_CASES = [
     ("switched_network_phaser", {"f_ghz": 2.0, "n_bits": 9}),
     ("switched_network_phaser", {"f_ghz": 2.0, "phi_deg": 45.0,
                                  "r_on_ohm": -1.0}),
+    # aurora_e W1-S2 四键（截止拒绝/模式规则/尺寸域/跨类型参数互斥）
+    ("circular_waveguide_mode_prop", {"mode_type": "TE", "m": 1, "n": 1,
+                                      "radius_mm": 10.0, "f_ghz": 5.0,
+                                      "conductivity_s_per_m": 5.8e7}),
+    ("circular_waveguide_mode_prop", {"mode_type": "TE", "m": 1, "n": 0,
+                                      "radius_mm": 10.0, "f_ghz": 10.0,
+                                      "conductivity_s_per_m": 5.8e7}),
+    ("circular_waveguide_mode_prop", {"mode_type": "TEM", "m": 1, "n": 1,
+                                      "radius_mm": 10.0, "f_ghz": 10.0,
+                                      "conductivity_s_per_m": 5.8e7}),
+    ("rectangular_cavity_mode_spectrum", {"a_mm": 30.0, "b_mm": 20.0,
+                                          "d_mm": 60.0, "f_min_ghz": 8.0,
+                                          "f_max_ghz": 4.0}),
+    ("rectangular_cavity_mode_q", {"mode_type": "TE", "m": 0, "n": 0, "p": 1,
+                                   "a_mm": 30.0, "b_mm": 20.0, "d_mm": 60.0,
+                                   "conductivity_s_per_m": 5.8e7}),
+    ("rectangular_cavity_mode_q", {"mode_type": "TE", "m": 1, "n": 0, "p": 0,
+                                   "a_mm": 30.0, "b_mm": 20.0, "d_mm": 60.0,
+                                   "conductivity_s_per_m": 5.8e7}),
+    ("rectangular_cavity_mode_q", {"mode_type": "TM", "m": 0, "n": 1, "p": 0,
+                                   "a_mm": 30.0, "b_mm": 20.0, "d_mm": 60.0,
+                                   "conductivity_s_per_m": 5.8e7}),
+    ("thermal_power_sensor_detect", {"sensor_type": "thermistor",
+                                     "p_in_dbm": -20.0,
+                                     "r_th_k_per_w": 500.0,
+                                     "c_th_j_per_k": 1e-3}),
+    ("thermal_power_sensor_detect", {"sensor_type": "thermocouple",
+                                     "p_in_dbm": -20.0,
+                                     "r_th_k_per_w": 500.0,
+                                     "c_th_j_per_k": 1e-3}),
+    ("thermal_power_sensor_detect", {"sensor_type": "bolometer",
+                                     "p_in_dbm": -20.0,
+                                     "r_th_k_per_w": 500.0,
+                                     "c_th_j_per_k": 1e-3,
+                                     "tcr_per_k": 4e-3}),
+    ("thermal_power_sensor_detect", {"sensor_type": "bolometer",
+                                     "p_in_dbm": -20.0,
+                                     "r_th_k_per_w": 500.0,
+                                     "c_th_j_per_k": 1e-3,
+                                     "tcr_per_k": 0.0, "v_bridge_v": 8.0}),
+    ("thermal_power_sensor_detect", {"sensor_type": "thermocouple",
+                                     "p_in_dbm": 31.0,
+                                     "r_th_k_per_w": 500.0,
+                                     "c_th_j_per_k": 1e-3,
+                                     "seebeck_v_per_k": 2e-4}),
+    # ─── aurora_e W4-S18 EC-21 三键（core 守卫透传：幅度负值/全零、零分量
+    # 相位无定义、f2<=f1、bool 拒收）────────────────────────────────────
+    ("pol_axial_ratio", {"e1": -1.0, "e2": 1.0, "delta_phase_deg": 0.0}),
+    ("pol_axial_ratio", {"e1": 0.0, "e2": 0.0, "delta_phase_deg": 45.0}),
+    ("pol_axial_ratio", {"e1": 1.0, "e2": 1.0, "delta_phase_deg": True}),
+    ("pol_delta_ipd_il", {"t_x": [0.0, 0.0], "t_y": [0.0, 1.0]}),
+    ("pol_delta_ipd_il", {"t_x": [1.0, 0.0], "t_y": [0.0, 0.0]}),
+    ("pol_group_delay_diff", {"f1_ghz": 10.0, "f2_ghz": 10.0,
+                              "t_x_f1": [1.0, 0.0], "t_x_f2": [1.0, 0.0],
+                              "t_y_f1": [1.0, 0.0], "t_y_f2": [1.0, 0.0]}),
+    ("pol_group_delay_diff", {"f1_ghz": 10.0, "f2_ghz": 11.0,
+                              "t_x_f1": [0.0, 0.0], "t_x_f2": [1.0, 0.0],
+                              "t_y_f1": [1.0, 0.0], "t_y_f2": [1.0, 0.0]}),
 ]
 
 
@@ -2928,6 +3049,20 @@ _NO_S_PLANE_KEYS = frozenset({
     # （FIM/CRB 标量面非 S/ABCD 结构产出）+Schiffman 移相器（Δφ/频带响
     # 应/几何标量面）+开关网络式（L/C/截止/位态标量面）——均无 S 矩阵产出
     'doa_crb_stochastic', 'schiffman_phaser', 'switched_network_phaser',
+    # aurora_e W1-S2 四键（2026-10-18）：圆波导传播解（fc/λg/α/Z/功率
+    # 容量标量面）+矩形腔谱（模式频率/主模标量与列表面）+矩形腔模式 Q
+    # （Q/Ue 标量面）+热偶/测辐射热计换算（γ/V_out/τ 标量面）——均无
+    # S 矩阵结构产出
+    'circular_waveguide_mode_prop', 'rectangular_cavity_mode_spectrum',
+    'rectangular_cavity_mode_q', 'thermal_power_sensor_detect',
+    # aurora_e W2-S9 三键（2026-10-18）：鳍线渐变过渡响应/长度（|Γ|/λg/
+    # L 标量面）+EC-2 mTRL 不确定度（u_εr/u_tanδ 带区间标量面）——均无
+    # S 矩阵结构产出
+    'finline_taper_response', 'finline_taper_length',
+    'mtrl_er_tand_uncertainty',
+    # aurora_e W4-S18 EC-21 三键（2026-10-18）：极化传输面度量（AR/ΔIPD/
+    # ΔIL 标量面+群延迟差 ps 标量面）——均无 S 矩阵结构产出
+    'pol_axial_ratio', 'pol_delta_ipd_il', 'pol_group_delay_diff',
     # aurora_d W3-CORE7 三键（2026-10-14）：Cpk↔良率换算与多工序串联良率
     # （良率/DPMO/界标量统计面）+combline 耦合缝换算（w/gap/阻抗/耦合系数
     # 标量几何面）——均无 S 矩阵结构产出
@@ -2990,6 +3125,7 @@ _NO_S_PLANE_KEYS = frozenset({
     # 闭式谱（模式频率列表/模式图曲线数组/模式 Q 标量——均无 S 矩阵
     # 产出）
     'coax_line_z0', 'coax_line_attenuation', 'coax_line_power_capacity',
+    'coax_line_cutoff_attenuator',
     'circular_cavity_mode_spectrum', 'circular_cavity_mode_chart',
     'circular_cavity_mode_q',
     # aurora72 A3-B 五键（2026-10-11）：双/三支节调配（电纳解/支节长度/

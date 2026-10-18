@@ -1,0 +1,123 @@
+schema: rfauto-template-geometry-golden/v1
+template: patch_eep_1x4
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 5.55
+- 6.05
+params:
+  elem_len_mm: 12.9058
+  elem_w_mm: 16.9311
+  elem_feed_mm: 3.8717
+  spacing_x_mm: 25.0172
+  feed_w_mm: 1.112
+status: ok
+script_sha256: 96b38f1bd1b6dc698bacdce3d70a51eea58af8147637b5069ac80f2921be6b37
+csx:
+  n_primitives: 30
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: patch_eep_1x4_patch
+    kind: Metal
+    n: 12
+    types:
+      '1': 12
+  - name: patch_eep_1x4_line
+    kind: Metal
+    n: 4
+    types:
+      '1': 4
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_3
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_4
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_4
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_4
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 1bad6ed93b66f2048097a2bc1cf9cb6fabebf883a2e59f6f8b92baaa82402452
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 833
+      min_gap_m: 0.0001
+    y:
+      n: 440
+      min_gap_m: 0.000125
+    z:
+      n: 31
+      min_gap_m: 0.000127
+  lines_sha256: 86bce2020f89212b6d68be5657cd570a1a6cc21cf66d65ebcbc9a37cff8f7033
+ports:
+- 1
+- 2
+- 3
+- 4

@@ -24,3 +24,10 @@ export async function pageSolvers() {
     }) +
     `<pre>${esc(JSON.stringify(viz, null, 2))}</pre>`;
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 solversCtx ═══════════
+   refresh=注册状态表重拉（pageSolvers 幂等——整页重建，无交互态/无轮询面，
+   leave 不需要）。 */
+export const solversCtx = {
+  refresh: () => pageSolvers(),
+};

@@ -71,6 +71,26 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: alt_planning:<module>:01
+  kernel_file: src/rfauto/core/alt_planning.py
+  module: rfauto.core.alt_planning
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Meeker & Escobar (1998) ch.18（加速模型族：Arrhenius §18.2 同上、
+  claim_block: "  出处：Meeker & Escobar (1998) ch.18（加速模型族：Arrhenius §18.2 同上、\n  Eyring/温度-非温度/湿度族同章）；Peck\
+    \ (1986)（温湿度幂律）；竞争风险\n  序列系统似然 = Meeker & Escobar (1998) ch.3 多失效模式口径（各模式\n  似然独立分解，标注已知时总 NLL = Σ\
+    \ 模式 NLL，恒等式单测钉）。"
+  refs:
+  - 出处：Meeker & Escobar (1998) ch.18（加速模型族：Arrhenius §18.2 同上
+  - Eyring/温度-非温度/湿度族同章）；Peck (1986)（温湿度幂律）；竞争风险
+  - 序列系统似然 = Meeker & Escobar (1998) ch.3 多失效模式口径（各模式
+  source_doi: null
+  eq_no: §18.2
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: am_loss_budget:gaussian_rq_over_ra:01
   kernel_file: src/rfauto/core/am_loss_budget.py
   module: rfauto.core.am_loss_budget
@@ -403,6 +423,30 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: array_coupling:<module>:01
+  kernel_file: src/rfauto/core/array_coupling.py
+  module: rfauto.core.array_coupling
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：互耦一阶传播=W. R. Stone/H. Steyskal 一阶散射展开与 Mailloux
+  claim_block: '出处：互耦一阶传播=W. R. Stone/H. Steyskal 一阶散射展开与 Mailloux
+
+    《Phased Array Antenna Handbook》互耦章的标准一阶口径；近邻耦合指数衰减
+
+    形态=印刷阵元近场耦合的经验包络（本仓默认参数非任何器件标定值，拟合面
+
+    fit_exponential_coupling 从实测 S 提取）；EC-24 条目=docs/
+
+    research_expansion_20261004_ecosystem_benchmark.md §二。'
+  refs:
+  - research_expansion_20261004_ecosystem_benchmark.md §二
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: array_scan:<module>:01
   kernel_file: src/rfauto/core/array_scan.py
   module: rfauto.core.array_scan
@@ -615,6 +659,25 @@ entries:
   claim_line: '- 端板贴面极限（式 D2）：出处见 rfauto.core.material_characterization'
   claim_block: '- 端板贴面极限（式 D2）：出处见 rfauto.core.material_characterization'
   refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/finline:<module>:01
+  kernel_file: src/rfauto/core/calc_families/finline.py
+  module: rfauto.core.calc_families.finline
+  symbol: <module>
+  kind: source
+  marker: 文献引用与图例（
+  claim_line: 文献引用与图例（OUADI 2007 MoL 全波、Yassin 2008 过渡设计），系数原文
+  claim_block: "  文献引用与图例（OUADI 2007 MoL 全波、Yassin 2008 过渡设计），系数原文\n  非公开可达——硬编码记忆系数即伪造（#122 如实原则），该档如实放弃，\n\
+    \  留待拿到原文系数表再立键。\n- 本族落的是 K2 的**渐变过渡面**（任务口径\"鳍线-波导过渡的渐变段长度\n  估算（指数/线性渐变）\"）：鳍线渐变段是**波导内 E 面结构**，波以导波\n\
+    \  β 传播——既有渐变线族 classic_taper_response/synthesize（TEM/微带口径，\n  v_f∈(0,1] 守卫）与 klopfenstein_taper（微带宽度实现面）在结构上排除\n\
+    \  v_p>c 的波导档，本族补齐。"
+  refs:
+  - 文献引用与图例（OUADI 2007 MoL 全波、Yassin 2008 过渡设计），系数原文
   source_doi: null
   eq_no: null
   expr: null
@@ -936,6 +999,21 @@ entries:
   - '*Microwave Solid State Circuit Design*, 2nd ed., Wiley 2003（移相器章'
   source_doi: null
   eq_no: 式（Pozar §2.x 口径）
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/polarization_reg:<module>:01
+  kernel_file: src/rfauto/core/calc_families/polarization_reg.py
+  module: rfauto.core.calc_families.polarization_reg
+  symbol: <module>
+  kind: pointer
+  marker: 出处见
+  claim_line: '- 出处见 rfauto.core.polarization 模块 docstring（Balanis 4th §4.4 极化'
+  claim_block: '- 出处见 rfauto.core.polarization 模块 docstring（Balanis 4th §4.4 极化'
+  refs: []
+  source_doi: null
+  eq_no: §4.4
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -1540,6 +1618,25 @@ entries:
   refs: []
   source_doi: null
   eq_no: §A-3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: derivatives:<module>:01
+  kernel_file: src/rfauto/core/derivatives.py
+  module: rfauto.core.derivatives
+  symbol: <module>
+  kind: source
+  marker: 法源：
+  claim_line: 法源：
+  claim_block: "法源：\n- 复步长：Martins-Sturdza-Alonso, \"The Complex-Step Derivative\n  Approximation\", AIAA\
+    \ Journal 41(9), 2003——**适用前提 = 实点处中间值\n  全实且复解析**；复中间链（复 LU 等）必然失效，本仓实证见\n  core/coupling_gradient.py\
+    \ 头注（np.abs 等非解析算子同理失效——专测\n  钉住，门槛据此能抓出\"CS 误用\"）；\n- FD：中心差分 O(h²) 截断 vs 舍入的经典权衡（Sauer, Numerical\n\
+    \  Analysis §5.6 口径），缺省 h=1e-6 适配 O(1) 尺度目标。"
+  refs:
+  - Approximation", AIAA Journal 41(9), 2003——**适用前提 = 实点处中间值
+  source_doi: null
+  eq_no: §5.6
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -2963,6 +3060,22 @@ entries:
   eq_no: null
   expr: null
   access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: probability_paper:benard_median_ranks:01
+  kernel_file: src/rfauto/core/probability_paper.py
+  module: rfauto.core.probability_paper
+  symbol: benard_median_ranks
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Benard & Bos-Levenbach 1953；NIST e-Handbook §8.2.2.3。
+  claim_block: 出处：Benard & Bos-Levenbach 1953；NIST e-Handbook §8.2.2.3。
+  refs:
+  - 出处：Benard & Bos-Levenbach 1953；NIST e-Handbook §8.2.2.3
+  source_doi: null
+  eq_no: §8.2.2.3
+  expr: null
+  access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
 - formula_id: propagation:<module>:01

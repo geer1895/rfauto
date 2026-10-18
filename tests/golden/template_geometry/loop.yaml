@@ -1,0 +1,83 @@
+schema: rfauto-template-geometry-golden/v1
+template: loop
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.15
+- 2.65
+params:
+  loop_side_mm: 31.2284
+  loop_w_mm: 1.0
+  loop_gap_mm: 1.0
+status: ok
+script_sha256: 85c3367180c29730b0090ecadf716be02b7b990c8357d9a3d1c20d16aa673492
+csx:
+  n_primitives: 9
+  props:
+  - name: loop_top
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: loop_left
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: loop_right
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: loop_bot_l
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: loop_bot_r
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 0aa268c2bf72b79c1059c3892bbc9009cde46becf7871102ebe5933052ffec6e
+  bbox_m:
+  - -0.0161142
+  - -0.0161142
+  - 0.0
+  - 0.0161142
+  - 0.0161142
+  - 0.0
+mesh:
+  lines:
+    x:
+      n: 239
+      min_gap_m: 0.00025
+    y:
+      n: 239
+      min_gap_m: 0.00025
+    z:
+      n: 49
+      min_gap_m: 0.001179
+  lines_sha256: 6f350d10a34365aed56618d75d790c11724253e2bb580889eee116edff44e1c1
+ports:
+- 1

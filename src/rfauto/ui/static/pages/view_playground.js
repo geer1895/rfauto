@@ -162,3 +162,10 @@ export async function pagePlayground() {
   if (runs.length) await predict({});
   else T.$("pg-result").textContent = "暂无有校准产物的 run（先跑校准战役）";
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 playgroundCtx ════════
+   refresh=run 清单+缺省预测重拉（pagePlayground 幂等——壳判 innerHTML 已在
+   即跳过；滑条随 lastRun 闭包重建=与重进同语义）。无轮询面，leave 不需要。 */
+export const playgroundCtx = {
+  refresh: () => pagePlayground(),
+};

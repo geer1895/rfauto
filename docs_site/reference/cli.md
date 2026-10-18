@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **269** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **270** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -955,3 +955,11 @@ REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读）
 共 1 条叶子命令。
 
 - `rfauto rest schema` — REST 全端点机器可读清单（程序化枚举路由表单源，防手抄漂移）。
+
+## rfauto templates
+
+模板 golden 几何回归仓（EC-8：渲染哈希+CSX 摘要逐族对比）
+
+共 1 条叶子命令。
+
+- `rfauto templates golden-diff` — 模板渲染产物 vs golden 快照逐族对比（脚本 sha256+CSX 几何摘要+网格）。

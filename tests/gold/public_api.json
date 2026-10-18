@@ -251,7 +251,14 @@
       "equivalent_use_time",
       "eta_at_temperature",
       "eta_ci_at_temperature",
+      "eyring_af",
       "fit_arrhenius_weibull",
+      "fit_eyring_weibull",
+      "fit_inverse_power_weibull",
+      "fit_loglinear_weibull",
+      "fit_peck_weibull",
+      "fit_temperature_nonthermal_weibull",
+      "fit_weibull_competing_risks",
       "min_samples_for_demo",
       "plan_alt_demo",
       "slope_from_ea"
@@ -322,6 +329,16 @@
       "lincal_gain_solve",
       "logcal_gain_solve",
       "redundant_group_degeneracy"
+    ],
+    "core/array_coupling.py": [
+      "C_M_S",
+      "CouplingFit",
+      "coupled_array_pattern",
+      "coupling_matrix_from_positions",
+      "effective_excitations",
+      "exponential_coupling",
+      "fit_exponential_coupling",
+      "tabulated_coupling"
     ],
     "core/array_error_injection.py": [
       "array_factor_with_errors",
@@ -636,6 +653,15 @@
       "load_tandelta_points",
       "sigma_cu_ofhc",
       "tandelta_band"
+    ],
+    "core/derivatives.py": [
+      "DerivativeComponent",
+      "FunctionComponent",
+      "PARTIAL_MODES",
+      "chain_jacobian",
+      "check_partials",
+      "cs_jacobian",
+      "fd_jacobian"
     ],
     "core/design_space_projection.py": [
       "PROJECTION_SCHEMA",
@@ -1793,6 +1819,12 @@
       "predistortion_weights",
       "tikhonov_sweep"
     ],
+    "core/probability_paper.py": [
+      "benard_median_ranks",
+      "fit_weibull_paper",
+      "normal_paper_xy",
+      "weibull_paper_xy"
+    ],
     "core/production_data.py": [
       "PRODUCTION_SCHEMA_VERSION",
       "failure_pareto",
@@ -2555,9 +2587,12 @@
       "ResponseSurfaceModel",
       "SMTKrigingSurrogate",
       "SMTMultiFidelitySurrogate",
+      "SaasArdSurrogate",
       "SurrogateModel",
       "SurrogatePrescreener",
       "SurrogateRegistry",
+      "WarpedKrigingSurrogate",
+      "kumaraswamy_warp",
       "loocv_rho",
       "pod_basis",
       "surrogate_registry"
@@ -2566,6 +2601,16 @@
       "SurrogateModel",
       "SurrogateRegistry",
       "surrogate_registry"
+    ],
+    "optimization/surrogate/gp_det.py": [
+      "DetGaussianProcess",
+      "KERNEL_KINDS",
+      "fit_map",
+      "fit_mle",
+      "gp_nll",
+      "gp_posterior",
+      "matern52_ard_kernel",
+      "se_ard_kernel"
     ],
     "optimization/surrogate/huber_ridge.py": [
       "HuberRidgeSurrogate"
@@ -2577,9 +2622,24 @@
       "PODROMSurrogate",
       "pod_basis"
     ],
+    "optimization/surrogate/saas_gp.py": [
+      "DEFAULT_ACTIVE_THRESHOLD",
+      "DEFAULT_TAU_SQ",
+      "SaasArdSurrogate"
+    ],
+    "optimization/surrogate/warped_kriging.py": [
+      "WarpedKrigingSurrogate",
+      "kumaraswamy_warp",
+      "kumaraswamy_warp_inverse"
+    ],
     "optimization/trust_region.py": [
       "refine_trust_region",
       "run_two_stage"
+    ],
+    "optimization/turbo.py": [
+      "DEFAULT_LENGTH_INIT",
+      "DEFAULT_LENGTH_MIN",
+      "run_turbo"
     ],
     "optimization/uncertainty.py": [
       "gp_cost_sigma"
@@ -2622,6 +2682,19 @@
       "optional_num",
       "parse_num",
       "require_payload_dict"
+    ],
+    "service/agent_trace.py": [
+      "ARGS_SUMMARY_MAX_CHARS",
+      "AgentTracer",
+      "TRACE_ENV_OFF",
+      "TRACE_SCHEMA",
+      "args_summary",
+      "trace_enabled"
+    ],
+    "service/array_coupling_service.py": [
+      "coupling_sweep",
+      "fit_coupling_model_from_s_matrix",
+      "unit_cell_coupling_pipeline"
     ],
     "service/array_service.py": [
       "NotImplementedPhase",
@@ -2720,6 +2793,10 @@
       "LintCheckRegistry",
       "design_lint"
     ],
+    "service/domain_survey_service.py": [
+      "SCHEMA",
+      "domain_survey"
+    ],
     "service/envelope.py": [
       "ENVELOPE_SCHEMA_VERSION",
       "error_envelope",
@@ -2794,6 +2871,7 @@
       "DELTA_CONVENTION",
       "DELTA_CONVENTION_SINCE",
       "KOHCalibrator",
+      "KOHMCMCPosterior",
       "Z95",
       "estimate_rho",
       "fit_discrepancy"
@@ -3109,6 +3187,17 @@
       "render_quiz",
       "render_teaching_markdown",
       "textbook_index"
+    ],
+    "service/template_golden_service.py": [
+      "DIGEST_VERSION",
+      "GOLDEN_SCHEMA_VERSION",
+      "accept_template_golden",
+      "build_template_golden",
+      "compute_template_digest",
+      "diff_template_golden",
+      "golden_dir",
+      "golden_path",
+      "template_band"
     ],
     "service/terminology_service.py": [
       "get_term",

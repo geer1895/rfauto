@@ -17,3 +17,44 @@ nominal_params:
   w_mm: 1.1134
   # 0.75=shunt/串臂与断口缘齐贴电共位（W7-A 残座批 D=6mm 分布式失配定谳后的模型级修复，与 TEMPLATE_NOMINAL 同笔）
   shunt_off_mm: 0.75
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: >-
+      π 型电阻衰减器：中点串臂电阻接输入-输出之间，两端各一个对地并联电阻，
+      三电阻全由目标衰减量与系统阻抗的闭式给出（匹配与分压两条件解出，
+      ABCD 级联校验）——电阻网络与频率无关，带内平坦衰减；微带实现只剩
+      50Ω 馈线宽与 shunt 电阻贴装位置两个几何量。
+    derivations:
+    - claim: 三电阻闭式（N=电压比=10^(A/20)，匹配+分压两条件解出）
+      formula: >-
+        R_series = Z0·(N²−1)/(2N)（中点串臂）；R_shunt = Z0·(N+1)/(N−1)（两端各对地）
+      source: >-
+        core/calculators.attenuator_pi（现 calc_families/rf_match 同函数，
+        ABCD 校验单测钉；经典 3dB 锚=中串 17.612Ω/端并 292.48Ω）+
+        core/synthesis.synthesize_atten_pi_model（WP2.3 综合入口，E4 同源）
+    - claim: 50Ω 馈线宽走 HJ 反解单源（不沿用文档毫米数，铁律 1c）
+      formula: w_mm = nominal_width_mm(50, f0, stackup)，inverse_width 反解回代自洽
+      source: >-
+        core/synthesis.nominal_width_mm（XC-W 权威源）与
+        docs/rf_template_references.md 线宽综合精算口径
+    - claim: shunt 电阻贴装位置=与串臂断口缘齐贴（电共位布局）
+      formula: shunt_off_mm = 0.75mm（缺省档，E4 集总闭式裁判前提）
+      source: >-
+        core/synthesis.synthesize_atten_pi_model docstring（W7-A 残座批
+        分布式失配定谳后的模型级修复，与 TEMPLATE_NOMINAL 同笔）
+  sensitivity_ranking:
+  - param: atten_db
+    order: 1
+    basis: 衰减量直接进 N=10^(A/20) 定三电阻——设计目标量，一阶强敏感
+  - param: shunt_off_mm
+    order: 2
+    basis: 贴装位置偏离电共位即破坏集总闭式前提（W7-A 分布式失配定谳，模型级敏感）
+  - param: w_mm
+    order: 3
+    basis: 50Ω 馈线宽只影响馈线匹配，电阻闭式不含此项（弱敏感）
+  - param: er
+    order: 4
+    basis: 经 εeff(w) 二阶进入线宽反解（HJ 正向）
+  quiz_refs: []

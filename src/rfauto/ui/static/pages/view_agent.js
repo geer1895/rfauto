@@ -5,6 +5,8 @@ import { S, T } from "./context.js";
 import { esc, escAttr, help, renderMarkdown } from "./dom.js";
 import { kitPanelHead, kitTable } from "./kit.js";
 
+let _agentReload = null; // R-1：refresh 局部刷新转发登记（agentCtx 消费，pageAgent 内赋值）
+
 /* ═══ Agent 助手（设置 + 收件箱 diff + 浮动可拖拽对话卡片）═══ */
 export async function pageAgent() {
   const v = T.$("view-agent");
@@ -334,4 +336,22 @@ export async function pageAgent() {
     await updateStats();
     if (r.action && r.action !== "chat" && r.action !== "unknown") loadInbox();
   }
+
+  /* R-1（aurora_e W4-S17）：refresh 局部刷新转发登记（agentCtx 消费）——
+     数据面板（模型设置徽章/审批收件箱/沙箱草稿/用量统计）重拉；对话浮窗与
+     气泡历史不动（appendBubble 非幂等，整页重跑会重复追加气泡）。内置提示词
+     为静态系统 prompt（进页拉取一次即可），刷新不重拉。 */
+  _agentReload = async () => {
+    await loadCfgBadge();
+    await loadInbox();
+    await loadSandbox();
+    await updateStats();
+  };
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 agentCtx ═════════════
+   refresh=数据面板重拉——闭包经模块级引用转发（sparams/campaign 同款模式）
+   + 未进页 null 守卫。无轮询面，leave 不需要。 */
+export const agentCtx = {
+  refresh: async () => { const f = _agentReload; if (f) f(); },
+};

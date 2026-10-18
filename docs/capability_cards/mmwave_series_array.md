@@ -28,18 +28,23 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=21 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | link_len_mm | 倾斜互联长=相位补偿主维（设计式分母 βg−u0·k0 通道） |
-| 2 | elem_len_mm | 单元 λ/2 谐振恒等式（精确 1.0 通道，设计式分子 k0·L） |
-| 3 | feed_w_mm | 馈线宽经 εeff→βg 进入设计式（相位账弱维） |
-| 4 | elem_w_mm | 单元宽（波束/弱进谐振） |
-| 5 | n_elem | 单元数（离散整数维，增益/口径长） |
-| 6 | load_r_ohm | 链末负载（=线 Z0 一阶口径，不进相位账） |
-| 7 | feed_margin_mm | 板边馈段守卫余量（不进相位账） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | elem_len_mm | 0.790701 |
+| 2 | er | 0.430094 |
+| 3 | h_mm | 0.168911 |
+| 4 | elem_w_mm | 0.040372 |
+| 5 | feed_margin_mm | 0.0 |
+| 6 | feed_w_mm | 0.0 |
+| 7 | link_len_mm | 0.0 |
+| 8 | load_r_ohm | 0.0 |
+| 9 | n_elem | 0.0 |
+| 10 | tan_d | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -62,7 +67,7 @@
 - 参数语义：n_elem=单元数（≥2），elem_len_mm=单元谐振长 L（沿 y；Balanis Ch.14 c/(2f0√εeff)−2ΔL，fake 谷位为其精确逆），elem_w_mm=单元宽 W （c/(2f0)√(2/(εr+1))），link_len_mm=互联线长 s（行波渐进相位自由度： u0=(π+βg·s−2π)/(k0·d)，d=L+s；s=λg/2 退化为 C2 同相侧射），feed_w_mm=50Ω 馈线/互联宽（HJ 0.3259mm @78GHz），feed_margin_mm=板边到链首元馈段长 （MSLPort 自画，MeasPlaneShift=margin/3），h_mm=基板厚（毫米波板 0.127）； er/tan_d 走 substrate/nominal（RO3003 类）
 - 网格：辐射器件：上方空气隙 λ0/4+、侧向至域界（MUR）；贴片/互联/stub/负载盒缘 精确入网（#198）；渲染守卫：NEAR≤feed_w/3（#266 族，线宽分辨）、 |MeasPlaneShift−FeedShift|≥3.9·NEAR（#347）；全轴 1µm 近重合去重（#152）； 端口面贴 PML_8 域边（#154 前节）
 - 冒烟现状：未冒烟（离线审计过，#212，test_mmwave_series_array_template）；真机发射面= 预算预声明 内部证据档 §d（0.1mm 格 ~3.6e7 cells、 dt~4.8e-14s、NrTS~2.5e4、墙钟数小时～半天/点，发射前以 exec 实测为准）， 本批零发射
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

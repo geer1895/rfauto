@@ -311,7 +311,9 @@ def test_siw_layout_rule_guard_rejects_rule_violation():
 # sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
 # runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
 # 随尾段追加必移（旋钮语义断言：显式 v1==缺省 逐字节，保留不变）。
-_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
+# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释与 _OE_BIN 缺省值中性化
+# （机器路径改 env-only），脚本字节随 diff 移动——几何段 exec 审计逐键同值。
+_V1_RENDER_SHA256 = "ff60ee37dcf6b0ca6b31ae92da12ec29f5cdc394ce3e1d1efc633666ae672376"
 
 
 def test_siw_v1_default_render_byte_pin():

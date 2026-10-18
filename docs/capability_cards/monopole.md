@@ -52,7 +52,7 @@
 - 参数语义：mon_len_mm=细带长（一阶谐振 λ0/4=c/(4f0)，像理论），mon_w_mm=细带宽，feed_gap_mm=馈口高（地面到细带底缘，LumpedPort 激励向 z 跨度）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；z 网格专项（馈口顶/元件顶精确入网，_ANTENNA2_TALL_TEMPLATES）
 - 冒烟现状：真机 内部证据档（2026-09-14）PASS：S11 −17.39dB @2.135GHz（设计 2.4，−11.0% 端效应）；Zin 电抗过零 2.110GHz R=37.3Ω（Balanis 36.5Ω 口径吻合）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

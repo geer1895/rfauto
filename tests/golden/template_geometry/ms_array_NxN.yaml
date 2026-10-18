@@ -1,0 +1,93 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_array_NxN
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  n_x: 3
+  n_y: 3
+  period_mm: 14.9896
+  cell_map:
+  - - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+    - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+    - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+  - - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+    - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+    - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+  - - cell_id: ms_patch
+      px_mm: 9.0
+      py_mm: 9.0
+    - cell_id: ms_patch
+      px_mm: 6.0
+      py_mm: 6.0
+    - cell_id: ms_patch
+      px_mm: 7.5
+      py_mm: 7.5
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 24783952934b50b07ffa1c7e0803735f2df56c98236951d25f12b0645b469ad8
+csx:
+  n_primitives: 21
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: patches
+    kind: Metal
+    n: 9
+    types:
+      '1': 9
+  - name: inc_plane
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: nf2ff_E
+    kind: DumpBox
+    n: 5
+    types:
+      '1': 5
+  - name: nf2ff_H
+    kind: DumpBox
+    n: 5
+    types:
+      '1': 5
+  primitives_sha256: 466cda844bec1e6b8c5a04f94c4fcc04830c46db97d3a11583c5a1d2e2fe3ec2
+  bbox_m:
+  - -0.029979211
+  - -0.029979211
+  - 0.0
+  - 0.029979211
+  - 0.029979211
+  - 0.009018811
+mesh:
+  lines:
+    x:
+      n: 792
+      min_gap_m: 7.5e-05
+    y:
+      n: 792
+      min_gap_m: 7.5e-05
+    z:
+      n: 47
+      min_gap_m: 0.000152
+  lines_sha256: 98836697df666a2358f7a63ce3b269e98149b1968109f6c59ac443eba8ef9422
+ports: []

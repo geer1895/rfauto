@@ -1,0 +1,143 @@
+schema: rfauto-template-geometry-golden/v1
+template: fgcpw
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 4.3466
+  gap_mm: 0.2
+  gnd_mm: 4.0
+  line_len_mm: 40.0
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 3b5fe975da903574681d5e05e222d28b9dfb28409d7e740f4ce958b7a56288ca
+csx:
+  n_primitives: 24
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: fgcpw
+    kind: Metal
+    n: 5
+    types:
+      '1': 5
+  - name: port_ut_1A1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1A2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_2_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: ba8498da4a2be00203aa308a8c25d6c8e0fcda67de2a6500fac9d1fcd0b2339b
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000642083
+mesh:
+  lines:
+    x:
+      n: 151
+      min_gap_m: 0.0001
+    y:
+      n: 219
+      min_gap_m: 0.000285
+    z:
+      n: 27
+      min_gap_m: 6.3e-05
+  lines_sha256: ef15d164e32e0f19cb392fcab62cee29d8730068679648b91bc49d0846260bb5
+ports:
+- 1
+- 2

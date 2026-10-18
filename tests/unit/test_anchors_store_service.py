@@ -47,7 +47,7 @@ def test_b_validate_registry_full_pass() -> None:
     report = validate_anchor_set(_live_anchor_set(),
                                  registry_path=_REGISTRY_PATH)
     assert report["ok"], f"provenance/schema issues: {report['issues']}"
-    assert report["expected_match"] and report["count"] == 75
+    assert report["expected_match"] and report["count"] == 79  # 解析锚续批 75→79（+4：ms_lattice v2/tjunc×2/mline）
 
 
 def test_b_each_active_anchor_provenance_fields_resolvable() -> None:
@@ -146,7 +146,7 @@ def test_store_bad_anchor_does_not_sink_whole_table() -> None:
                             "status": "active"})
     merged = AnchorSet(data["anchors"])
     assert len(merged.load_errors) == 1
-    assert len(merged) == 75
+    assert len(merged) == 79  # 解析锚续批 75→79（+4：ms_lattice v2/tjunc×2/mline）
     assert load_anchors(_REGISTRY_PATH) is not None
 
 
@@ -164,7 +164,7 @@ def test_service_list_inspect_validate_resolve_json_roundtrip() -> None:
     from rfauto.service import anchors_service as svc
 
     listed = svc.list_anchors()
-    assert listed["ok"] and listed["count"] == 75
+    assert listed["ok"] and listed["count"] == 79  # 解析锚续批 75→79（+4：ms_lattice v2/tjunc×2/mline）
     assert json.dumps(listed, ensure_ascii=False)  # JSON 可序列化
 
     inspected = svc.inspect_anchor("c3.l_via_h.openems-hfss-v1")
@@ -208,14 +208,14 @@ def test_service_registry_yaml_shape_honest() -> None:
     （ms_cross.wg_resonance 双值 {oe 11.675, hfss 11.4951}，ge6 席 2
     HFSS 仲裁分支 A 收敛判读——wg 模拟器谷位两引擎 AGREE，偏离 Floquet
     属前提差禁产 constant）。
-    全表 active=19、experimental=56（锚批序列累计，随批更新）。
+    全表 active=19、experimental=59、retired=1（解析锚续批 +4 后 ms_lattice v1 转 retired；锚批序列累计，随批更新）。
     """
     data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
     assert data["schema"] == "anchors/v1"
     statuses = {a["anchor_id"]: a["status"] for a in data["anchors"]}
     assert statuses["c3.k_of_g.openems-hfss-v1"] == "active"
     assert sum(s == "active" for s in statuses.values()) == 19  # 锚批序列累计（锚注册/锚演进/首判回填各批，随批更新）
-    assert sum(s == "experimental" for s in statuses.values()) == 56  # 锚批序列累计（analytic 恒等锚各批全 experimental，随批更新）
+    assert sum(s == "experimental" for s in statuses.values()) == 59  # 解析锚续批 +4（ms_lattice v2/tjunc×2/mline 全 experimental）−1（ms_lattice v1 experimental→retired）；锚批序列累计（analytic 恒等锚各批全 experimental，随批更新）
     for aid in ("wilkinson.f_match.openems-hfss-v1",
                 "gysel.s32_iso.openems-hfss-v1",
                 "patch_array_1x4.f_res.openems-hfss-v1",
@@ -283,7 +283,7 @@ def test_cli_anchors_list_json() -> None:
     result = CliRunner().invoke(app, ["anchors", "list", "--json"])
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
-    assert payload["count"] == 75
+    assert payload["count"] == 79  # 解析锚续批 75→79（+4：ms_lattice v2/tjunc×2/mline）
 
 
 def test_cli_anchors_inspect_json() -> None:
@@ -421,6 +421,6 @@ def test_mcp_tools_registered_and_callable() -> None:
     tools = {t.name: t for t in asyncio.run(mcp.list_tools())}
     assert {"anchors_list", "anchors_inspect"} <= set(tools)
     listed = tools["anchors_list"].fn()
-    assert listed["ok"] and listed["count"] == 75
+    assert listed["ok"] and listed["count"] == 79  # 解析锚续批 75→79（+4：ms_lattice v2/tjunc×2/mline）
     inspected = tools["anchors_inspect"].fn("c3.l_via_h.openems-hfss-v1")
     assert inspected["ok"] and inspected["anchor"]["version"] == 1

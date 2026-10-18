@@ -1,0 +1,93 @@
+schema: rfauto-template-geometry-golden/v1
+template: siw
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  w_mm: 12.1317
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 63.0724
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: a7dcca378c861e2868f7481aa379fba93a45fbfec9c0ad576a11df9f7aace1ac
+csx:
+  n_primitives: 160
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: siw_plates
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: siw_via
+    kind: Metal
+    n: 150
+    types:
+      '5': 150
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 195338ab5300c064209d62df2ec8b37a689988d760b2f315c738d3b730ab1a90
+  bbox_m:
+  - -0.011942226
+  - -0.0373
+  - 0.0
+  - 0.011942226
+  - 0.0373
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 209
+      min_gap_m: 7.5e-05
+    y:
+      n: 1053
+      min_gap_m: 3.1e-05
+    z:
+      n: 5
+      min_gap_m: 0.000127
+  lines_sha256: 683dde28fd663884f61cd563b5715ba0338a4c05e42f44c48d3775a694850f54
+ports:
+- 1
+- 2

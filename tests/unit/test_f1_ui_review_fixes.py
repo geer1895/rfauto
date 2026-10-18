@@ -255,7 +255,7 @@ class TestPlotCardLifecycle:
     def test_call_sites_untouched(self):
         # 座位约束：不改 12 个调用点（与 test_ui_plotcard/test_ui_lifecycle
         # 计数钉同源复述；本钉先红=包装入口被误改）
-        assert _PAGES.count("T.plotCard(") == 12
+        assert _PAGES.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
 
 
 # ────────────────── P1-F：Mount(/runs) 非仓根 cwd 冒烟 ──────────────────

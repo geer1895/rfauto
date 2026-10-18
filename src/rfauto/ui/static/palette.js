@@ -14,7 +14,7 @@
    它会连带炸掉 node 行为测试（无 DOM 环境）的 import 链。两处改动须
    成对审视，语义保持一致（开=存焦点+焦点入层、Tab=回绕、关=Esc/点遮罩
    +还焦）。 */
-import { showPage, openRun, setThemeMode, getThemeMode } from "./pages.js";
+import { showPage, openRun, setThemeMode, getThemeMode, pageContextFor } from "./pages.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -124,11 +124,16 @@ function currentView() {
   return b && b.dataset ? b.dataset.v : "";
 }
 
-/* 刷新当前页数据：showPage 重入即整页重拉（各页渲染器自取数）；detail 页
-   由 pages.js 内部 currentRunId 重渲染当前 run。 */
+/* 刷新当前页数据（R-1 aurora72 W1-S3）：登记了 PageContext.refresh 的页走
+   局部刷新（数据拉取与壳渲染分离——dashboard 重铺组件面不重拉 /api/runs、
+   loopboard 立即拉一次看板）；未登记页回退 showPage 整页重进（旧行为），
+   回退路径 detail 页由 pages.js 内部 currentRunId 重渲染当前 run。 */
 function refreshCurrentPage() {
   const v = currentView();
-  if (v) showPage(v);
+  if (!v) return;
+  const ctx = pageContextFor(v);
+  if (ctx && typeof ctx.refresh === "function") { ctx.refresh(); return; }
+  showPage(v);
 }
 
 /* 导出当前页图表（W4-D）：事件桥发射端。window 级 CustomEvent

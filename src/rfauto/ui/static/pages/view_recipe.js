@@ -237,3 +237,11 @@ export async function pageRecipe() {
     }
   }
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 recipeCtx ════════════
+   refresh=配方目录重拉（pageRecipe 幂等——壳判 innerHTML 已在即跳过；已加载
+   配方/参数表/3D 预览不受扰——loadRecipe 只在点选/加载时触发）。无轮询面，
+   leave 不需要。 */
+export const recipeCtx = {
+  refresh: () => pageRecipe(),
+};

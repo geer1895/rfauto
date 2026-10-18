@@ -4,7 +4,7 @@ p0 A/B 实证"标量锚不改善排序"——因为 fake 与 openEMS 的差异�
 失配（discrepancy）而非参数错。KOH（Kennedy-O'Hagan, JRSS-B 2001）的
 正解是把差异建成高斯过程 δ(x)。
 
-两级能力（确定性内核，无 MCMC、无新依赖，AGENTS 铁律 7）：
+三级能力（确定性内核、零新依赖，AGENTS 铁律 7）：
 
 1. fit_discrepancy（首片，返回契约保持不变）：δ(x) ≈ GP 拟合的
    (openEMS metrics − fake metrics)(x)（real−fake，KOH 口径，与
@@ -21,7 +21,14 @@ p0 A/B 实证"标量锚不改善排序"——因为 fake 与 openEMS 的差异�
      gp_fitted=False（不假装有强证据）；
    - ε：观测噪声方差 noise_var（默认 0 = 确定性假设）；
    - 95% 区间：mean ± Z95·sqrt(δ 后验方差 + noise_var)，interval_coverage
-     给出区间覆盖率指标。
+     给出区间覆盖率指标。注意其区间是"GP 点估计 + 距离膨胀项"的建模
+     选择，不是贝叶斯后验——真后验见第 3 档。
+3. KOHMCMCPosterior（XD-12，全贝叶斯档）：模型同上，但对标定参数
+   θ=(ρ, log a, log ℓ₁..ℓ_d) 做固定 seed 的 Metropolis-Hastings 后验
+   采样（r=y−ρη 对 δ-GP 先验解析边缘化，KOH 2001 §2.2 口径），预测点
+   出后验混合 predictive 的 u95 区间——替换档 2 的"距离膨胀"近似。
+   MCMC 是经验近似（accept_rate 如实透出），seed 固定同输入逐位可复现
+   （C4）。
 
 真实数据应用见 scripts/koh_calibrate.py（产物 runs/koh_calibration/）。
 """
@@ -38,7 +45,7 @@ import numpy as np
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 __all__ = ["DELTA_CONVENTION", "DELTA_CONVENTION_SINCE", "Z95", "KOHCalibrator",
-           "estimate_rho", "fit_discrepancy"]
+           "KOHMCMCPosterior", "estimate_rho", "fit_discrepancy"]
 
 #: 95% 正态分位（确定性常量；不额外引入 scipy 依赖）
 Z95 = 1.959963984540054
@@ -398,3 +405,250 @@ def fit_discrepancy(
                 "fake−real 翻转为 real−fake（早于该时点的本分支产物需反号"
                 "解读）；KOHCalibrator 分支 δ=y−ρ·η 一直同口径不受影响",
     }
+
+
+# --------------------------------------------------------------------------- #
+# XD-12 全贝叶斯档：固定 seed MH 采样 (ρ, δ-GP 超参) 后验（aurora_e W5-S22）
+# --------------------------------------------------------------------------- #
+
+_MCMC_JITTER = 1e-10
+#: 预测混合采样的最大使用条数（striding 降采样，防 O(n_samples·n²·n*) 爆炸）
+_MAX_PRED_SAMPLES = 200
+
+
+def _clean_observations(
+    observations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """(params, eta, y) 观测清洗（与 KOHCalibrator.fit 同约定：非有限/
+    缺字段条目忽略——真机失败 trial 的既有口径）。"""
+    obs: list[dict[str, Any]] = []
+    for item in observations or []:
+        if not isinstance(item, dict) or not isinstance(item.get("params"), dict):
+            continue
+        try:
+            eta = float(item["eta"])
+            y = float(item["y"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not (np.isfinite(eta) and np.isfinite(y)):
+            continue
+        obs.append({"params": dict(item["params"]), "eta": eta, "y": y})
+    return obs
+
+
+class KOHMCMCPosterior:
+    """XD-12：KOH 全贝叶斯档——固定 seed MH 后验采样（koh_service 扩展）。
+
+    模型（z = ρ·η + δ + ε，δ ~ a²·SE-GP(ℓ)，ε ~ N(0, noise_var)）：
+
+        r_i = y_i − ρ·η(x_i) ~ N(0, K_θ + (noise_var + jitter)·I)
+
+    δ 对 GP 先验**解析边缘化**（KOH 2001 口径），MH 只在
+    θ = (ρ, log a, log ℓ₁..ℓ_d) 上游走：
+
+    - 先验：ρ ~ U(rho_box)（宽盒平坦）；log a、log ℓ_i ~ N(m, s²) 弱信息
+      （缺省 m=0、s=3，ℓ 在单元空间约 1 附近散开）；
+    - 提议：对称高斯步长（缺省按数据尺度自动定标，可 override）；
+    - 输入单元归一化（与 KOHCalibrator 同基准，bounds 必填）。
+
+    返回/预测（JSON 友好）：
+    - fit → ok_envelope：accept_rate、rho 后验 {mean,lo95,hi95}、采样
+      存档（n_samples 条）、empirical 戳（MCMC=经验近似，如实标注）；
+    - predict(params, eta?) → {mean, lo95, hi95, sigma, u95, eta, rho}：
+      后验混合 predictive（law of total variance 矩匹配），u95=[lo95,hi95]
+      即 XC-U 消费面区间。
+
+    确定性：seed 固定 + 同观测 → 链逐位可复现（C4）。诚实边界：MH 是
+    经验近似档（无 ESS/R̂ 收敛诊断面板，accept_rate 是唯一健康探针，
+    过低/过高时消费方应调 proposal_scales 重跑）。
+    """
+
+    KIND = "koh_mcmc"
+
+    def __init__(
+        self,
+        *,
+        bounds: dict[str, tuple[float, float]],
+        eta_fn: Callable[[dict[str, float]], float] | None = None,
+        noise_var: float = 0.0,
+        seed: int = 20261018,
+        n_samples: int = 400,
+        burn: int = 200,
+        thin: int = 2,
+        rho_box: tuple[float, float] = (-10.0, 10.0),
+        prior_loc: float = 0.0,
+        prior_scale: float = 3.0,
+        proposal_scales: list[float] | None = None,
+        max_pred_samples: int = _MAX_PRED_SAMPLES,
+    ) -> None:
+        self.bounds = {k: (float(v[0]), float(v[1])) for k, v in bounds.items()}
+        if not self.bounds:
+            raise ValueError("bounds 不能为空（δ-GP 需归一化基准）")
+        self.names = sorted(self.bounds)
+        self.eta_fn = eta_fn
+        self.noise_var = max(float(noise_var), 0.0)
+        self.seed = int(seed)
+        self.n_samples = int(n_samples)
+        self.burn = int(burn)
+        self.thin = max(int(thin), 1)
+        self.rho_box = (float(rho_box[0]), float(rho_box[1]))
+        self.prior_loc = float(prior_loc)
+        self.prior_scale = max(float(prior_scale), 1e-9)
+        self.proposal_scales = (None if proposal_scales is None
+                                else [float(s) for s in proposal_scales])
+        self.max_pred_samples = int(max_pred_samples)
+        self.fitted = False
+        self._train_units: np.ndarray | None = None
+        self._eta_arr: np.ndarray | None = None
+        self._y_arr: np.ndarray | None = None
+        self.samples_: np.ndarray | None = None  # (n_samples, 2+d) 采样存档
+        self.accept_rate: float | None = None
+
+    # ------------------------------------------------------------------ 内部
+    def _unit(self, params: dict[str, float]) -> np.ndarray:
+        return np.array([
+            np.clip((float(params.get(n, lo)) - lo) / max(hi - lo, 1e-12),
+                    0.0, 1.0)
+            for n, (lo, hi) in ((n, self.bounds[n]) for n in self.names)])
+
+    def _kmat(self, u: np.ndarray, log_a: float,
+              log_ell: np.ndarray) -> np.ndarray:
+        from rfauto.optimization.surrogate.gp_det import se_ard_kernel
+
+        k = se_ard_kernel(u, u, np.exp(log_ell), float(np.exp(log_a)))
+        k[np.diag_indices(u.shape[0])] += self.noise_var + _MCMC_JITTER
+        return k
+
+    def _log_posterior(self, theta: np.ndarray) -> float:
+        rho, log_a = float(theta[0]), theta[1]
+        log_ell = np.asarray(theta[2:], dtype=float)
+        if not (self.rho_box[0] <= rho <= self.rho_box[1]):
+            return -np.inf
+        assert self._eta_arr is not None and self._y_arr is not None
+        r = self._y_arr - rho * self._eta_arr
+        k = self._kmat(self._train_units, log_a, log_ell)
+        try:
+            chol = np.linalg.cholesky(k)
+        except np.linalg.LinAlgError:
+            return -np.inf
+        alpha = np.linalg.solve(chol.T, np.linalg.solve(chol, r))
+        loglik = (-0.5 * float(r @ alpha)
+                  - float(np.log(np.diag(chol)).sum())
+                  - 0.5 * r.size * np.log(2.0 * np.pi))
+        s2 = self.prior_scale ** 2
+        logprior = (
+            -0.5 * float(((theta[1:] - self.prior_loc) ** 2).sum()) / s2)
+        return loglik + logprior
+
+    # ------------------------------------------------------------------ 拟合
+    def fit(self, observations: list[dict[str, Any]]) -> dict[str, Any]:
+        """MH 采样后验；observations 契约同 KOHCalibrator.fit。"""
+        obs = _clean_observations(observations)
+        if len(obs) < 2:
+            return error_envelope(
+                ["KOH MCMC 标定需 ≥2 个 (params, eta, y) 有效观测"])
+        self._eta_arr = np.array([o["eta"] for o in obs], dtype=float)
+        self._y_arr = np.array([o["y"] for o in obs], dtype=float)
+        self._train_units = np.array([self._unit(o["params"]) for o in obs])
+        d = len(self.names)
+        y_sd = float(np.std(self._y_arr)) or 1.0
+        theta = np.concatenate([
+            [float(estimate_rho(self._eta_arr, self._y_arr))],
+            [float(np.log(max(
+                float(np.std(self._y_arr - np.mean(self._y_arr))), 1e-3)))],
+            np.full(d, float(np.log(0.5)))])
+        scales = (np.array(self.proposal_scales, dtype=float)
+                  if self.proposal_scales is not None else
+                  np.concatenate([[0.1 * y_sd, 0.3], np.full(d, 0.3)]))
+        if scales.size != theta.size:
+            return error_envelope(
+                [f"proposal_scales 长度需 = {theta.size}"
+                 f"（ρ+log a+log ℓ×{d}）"])
+        rng = np.random.default_rng(self.seed)
+        lp = self._log_posterior(theta)
+        total = self.burn + self.n_samples * self.thin
+        kept: list[np.ndarray] = []
+        n_accept = 0
+        for it in range(total):
+            prop = theta + scales * rng.standard_normal(theta.size)
+            lp_prop = self._log_posterior(prop)
+            if np.isfinite(lp_prop) and (
+                    lp_prop >= lp or np.log(rng.random()) < lp_prop - lp):
+                theta, lp = prop, lp_prop
+                n_accept += 1
+            if it >= self.burn and (it - self.burn) % self.thin == 0:
+                kept.append(theta.copy())
+        self.samples_ = np.array(kept)
+        self.accept_rate = n_accept / max(total, 1)
+        self.fitted = True
+        rho_s = self.samples_[:, 0]
+        return ok_envelope(
+            kind=self.KIND,
+            n_obs=len(obs),
+            seed=self.seed,
+            n_samples=int(self.samples_.shape[0]),
+            burn=self.burn,
+            thin=self.thin,
+            accept_rate=float(self.accept_rate),
+            rho={"mean": float(rho_s.mean()),
+                 "lo95": float(np.percentile(rho_s, 2.5)),
+                 "hi95": float(np.percentile(rho_s, 97.5))},
+            empirical=True,
+            note="固定 seed MH 后验（经验近似档，accept_rate 为健康探针）；"
+                 "r=y−ρη 对 δ-GP 解析边缘化（KOH 2001）",
+        )
+
+    # ------------------------------------------------------------------ 预测
+    def predict(
+        self, params: dict[str, float], eta: float | None = None,
+    ) -> dict[str, float]:
+        """后验混合 predictive：u95 区间（XC-U 消费面）+ 与 KOHCalibrator
+        同构的 mean/lo95/hi95/sigma 键（delta/rho 为后验均值口径）。"""
+        if not self.fitted or self.samples_ is None:
+            raise RuntimeError("KOHMCMCPosterior 未拟合，先调用 fit()")
+        if eta is None:
+            if self.eta_fn is None:
+                raise ValueError("predict 需要 eta，或构造时提供 eta_fn")
+            eta = float(self.eta_fn(params))
+        eta = float(eta)
+        u = self._unit(params)[None, :]
+        n_s = self.samples_.shape[0]
+        idx = np.linspace(0, n_s - 1,
+                          min(n_s, self.max_pred_samples)).astype(int)
+        from rfauto.optimization.surrogate.gp_det import se_ard_kernel
+
+        means: list[float] = []
+        variances: list[float] = []
+        assert self._eta_arr is not None and self._y_arr is not None
+        for th in self.samples_[idx]:
+            rho, log_a = float(th[0]), th[1]
+            log_ell = th[2:]
+            r = self._y_arr - rho * self._eta_arr
+            k = self._kmat(self._train_units, log_a, log_ell)
+            chol = np.linalg.cholesky(k)
+            alpha = np.linalg.solve(chol.T, np.linalg.solve(chol, r))
+            k_st = se_ard_kernel(u, self._train_units, np.exp(log_ell),
+                                 float(np.exp(log_a)))
+            k_ss = float(se_ard_kernel(u, u, np.exp(log_ell),
+                                       float(np.exp(log_a)))[0, 0])
+            v = np.linalg.solve(chol, k_st.T)
+            m = rho * eta + float((k_st @ alpha)[0])
+            var = k_ss - float((v * v).sum(axis=0)[0]) + self.noise_var
+            means.append(m)
+            variances.append(max(var, 0.0))
+        mean = float(np.mean(means))
+        var = float(np.mean(variances)) + float(np.var(means))
+        sigma = float(np.sqrt(max(var, 0.0)))
+        lo = float(mean - Z95 * sigma)
+        hi = float(mean + Z95 * sigma)
+        rho_s = self.samples_[:, 0]
+        return {
+            "mean": mean,
+            "lo95": lo,
+            "hi95": hi,
+            "sigma": sigma,
+            "u95": [lo, hi],
+            "eta": eta,
+            "delta": float(mean - rho_s.mean() * eta),
+            "rho": float(rho_s.mean()),
+        }

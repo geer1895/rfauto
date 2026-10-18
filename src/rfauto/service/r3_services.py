@@ -11,6 +11,7 @@ Imported by api.py via: from rfauto.service.r3_services import *
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -38,7 +39,13 @@ def list_solver_visualizations(solver_name: str | None = None) -> dict[str, Any]
 
     results = []
     for stype, solver_cls in registry._solvers.items():
-        if solver_name and stype.value if hasattr(stype, "value") else str(stype) != solver_name:
+        # W8-S36（审查波 2 P2-2）：原式 `solver_name and stype.value if
+        # hasattr(...) else str(stype) != solver_name` 按条件表达式优先级
+        # 解析为 `(solver_name and stype.value) if hasattr(...) else (...)`
+        # ——带名过滤恒 continue（空表）、str 键无过滤恒排除。归一为
+        # label 后"名称给出 AND 不匹配"两条件同层（照抄 ：94 双形态防御）。
+        label = stype.value if hasattr(stype, "value") else str(stype)
+        if solver_name and label != solver_name:
             continue
         # Instantiate with minimal config to query visualizations
         try:
@@ -972,6 +979,25 @@ class AgentChat:
         # Pi 式会话存档（schema 版本化 JSON，runs/chat_sessions/）
         self.session_id = "chat_" + _time.strftime("%Y%m%d_%H%M%S") + "_" + _uuid.uuid4().hex[:6]
         self._session_doc: dict[str, Any] | None = None
+        # EC-23 结构化追踪（W2-S10 E1）：三级 span 自记 JSONL，懒建于首轮
+        # （agent_trace.AgentTracer，落 runs/chat_sessions/<session_id>.
+        # trace.jsonl；缺省开、RFAUTO_AGENT_TRACE=off 关；全程 best-effort
+        # #105——trace 任何故障不阻塞对话）。_turn_traced 标记 LLM 路径
+        # 是否已在 _llm_turn 发过 turn_end（回退/关键词路由路径由 chat()
+        # 补发，一条 turn 恰一条 turn_end）。
+        self._tracer: Any = None
+        self._turn_traced: bool = False
+        self._trace_session_opened: bool = False
+
+    def _trace(self) -> Any:
+        """会话追踪器懒建（best-effort，建失败返回 None 不阻塞 #105）。"""
+        if self._tracer is None:
+            try:
+                from rfauto.service.agent_trace import AgentTracer
+                self._tracer = AgentTracer(self.session_id)
+            except Exception:
+                return None
+        return self._tracer
 
     def chat(self, message: str) -> dict[str, Any]:
         """Process a user message and return response.
@@ -981,6 +1007,21 @@ class AgentChat:
         """
         self.history.append({"role": "user", "content": message})
         self.stats["turns"] += 1
+
+        # EC-23 trace：session_start（首次）+ turn_start（每轮，含消息长度；
+        # best-effort，tracer 故障不影响后续对话 #105）
+        turn_no = int(self.stats["turns"])
+        self._turn_traced = False
+        tracer = None
+        try:
+            tracer = self._trace()
+            if tracer is not None:
+                if not getattr(self, "_trace_session_opened", False):
+                    tracer.session("session_start", model=self.model)
+                    self._trace_session_opened = True
+                tracer.turn(turn_no, "turn_start", message_chars=len(message))
+        except Exception:
+            tracer = None  # trace 装配失败=本轮无追踪，对话照常（#105）
 
         cfg = get_chat_settings()
         if cfg.get("configured"):
@@ -1002,6 +1043,12 @@ class AgentChat:
         self.history.append({"role": "assistant", "content": response["text"]})
         response["stats"] = dict(self.stats)
         self._persist_session()
+        # EC-23 trace：turn_end（LLM 路径已在 _llm_turn 发过——带 LLM 遥测；
+        # 回退/关键词路由路径此处补发，一条 turn 恰一条 turn_end）
+        if tracer is not None and not self._turn_traced:
+            with contextlib.suppress(Exception):
+                tracer.turn(turn_no, "turn_end", path="fallback",
+                            action=str(response.get("action") or ""))
         return response
 
     def reset(self) -> dict[str, Any]:
@@ -1018,6 +1065,16 @@ class AgentChat:
         self._last_injection_key = None
         self._last_extra_system = None
         self._session_doc = None
+        # EC-23 trace：旧会话收尾 span + 追踪器重置（新 session_id 首轮
+        # 懒建新 trace 文件，不跨会话串行号）
+        try:
+            if self._tracer is not None:
+                self._tracer.session("session_end", reason="reset")
+        except Exception:
+            pass
+        self._tracer = None
+        self._turn_traced = False
+        self._trace_session_opened = False
         self.cost_ledger = CostLedger()
         for key in self.stats:
             self.stats[key] = 0 if not isinstance(self.stats[key], float) else 0.0
@@ -1171,6 +1228,18 @@ class AgentChat:
                 result = {"error": str(exc)}
             self.stats["tool_calls"] += 1
             self.stats["tool_elapsed_s"] += _time.perf_counter() - t1
+            # EC-23 trace：tool 级 span（tool 名/参数摘要/耗时/ok；ok 口径=
+            # 结果无顶层 error 键——异常兜底回传形态，信封内层 ok 不在此判）
+            if self._tracer is not None:
+                try:
+                    from rfauto.service.agent_trace import args_summary
+                    self._tracer.tool(
+                        int(self.stats["turns"]), name,
+                        elapsed_s=_time.perf_counter() - t1,
+                        ok="error" not in result,
+                        args=args_summary(args))
+                except Exception:  # 观测面故障不阻塞工具执行（#105）
+                    pass
             # DS-2 留痕：工具结果正文摘要随 tool_calls 落会话档（与运行时
             # 注入消息同渲染单源 agent_runtime.tool_context_content）——
             # "LLM 可见即留痕"的写入侧；比对侧见 _llm_turn 尾部挂点。
@@ -1195,6 +1264,22 @@ class AgentChat:
         self.stats["prompt_tokens"] += out.usage.prompt_tokens
         self.stats["completion_tokens"] += out.usage.completion_tokens
         self.stats["cached_tokens"] += out.usage.cached_tokens
+        # EC-23 trace：turn_end（LLM 路径带遥测聚合；先发后置标记，chat()
+        # 看到标记即不补发 fallback turn_end——一条 turn 恰一条 turn_end）
+        if self._tracer is not None:
+            try:
+                self._tracer.turn(
+                    int(self.stats["turns"]), "turn_end", path="llm",
+                    runtime=runtime_name, model=model_name,
+                    finish_reason=str(out.finish_reason),
+                    llm_calls=int(out.usage.llm_calls),
+                    llm_elapsed_s=round(float(out.usage.llm_elapsed_s), 6),
+                    prompt_tokens=int(out.usage.prompt_tokens),
+                    completion_tokens=int(out.usage.completion_tokens),
+                    tools_used=list(out.tools_used))
+                self._turn_traced = True
+            except Exception:  # 观测面故障不阻塞对话主路径（#105）
+                pass
         # G14：RuntimeUsage → CostLedger token 记账（batch=session_id，
         # actor=模型名；薄适配与字段口径见 agent_runtime.usage_to_cost_ledger）
         usage_to_cost_ledger(out.usage, self.cost_ledger,

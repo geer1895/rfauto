@@ -215,11 +215,11 @@ class TestCrossSeatPinsHold:
     归他席文件）——按 pages.js 实测口径钉。"""
 
     def test_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 12
+        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
-        assert _SRC.count("bindChartResize(el); // P0-5") == 4
+        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
+        assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
         assert _SRC.count("disposeChartsIn(") == 4
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处（本席零新增）
         assert _SRC.count('mode: "convergence"') == 2  # 口径勘准见类 docstring
@@ -431,16 +431,16 @@ class TestA3ACrossSeatPinsHold:
     """A3-A 增量后的跨席计数钉复述（新画图全部走缓存基建，钉不红）。"""
 
     def test_counts_untouched_after_a3a(self):
-        assert _SRC.count("T.plotCard(") == 12  # 扫参图走 plotCardCached 包装
+        assert _SRC.count("T.plotCard(") == 16  # 扫参图走 plotCardCached 包装（12+W3-S12 四管线）
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
-        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 4
-        assert _SRC.count("bindChartResize(el); // P0-5") == 4  # 既有 4 面不动
+        assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
+        assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
         assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1  # 本席 1 面
         assert _SRC.count("disposeChartsIn(") == 4  # 本席零新增（_toolResultCharts 自持）
         assert _SRC.count("setInterval(") == 2  # 扫参逐点 await，零新定时器
         assert _SRC.count("color:var(--err)'>✗") == 6  # 本席错误标记用「跳过：」不用 ✗
-        assert _SRC.count("echartsInitCached(el)") == 6  # 定义+既有 4+本席 draw()
+        assert _SRC.count("echartsInitCached(el)") == 2  # 定义+本席 draw()（W3-S12 四管线入壳后）
         assert _SRC.count("plotCardCached(") == 3  # 定义+tune+本席扫参
 
 

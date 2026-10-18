@@ -326,7 +326,7 @@ def test_service_report_envelope_and_error_path():
     # 非法入参 → ok=False 信封，绝不抛出
     bad = svc.butler_matrix_report(spacing_lambda=0.0)
     assert bad["ok"] is False
-    assert "error" in bad
+    assert "errors" in bad
     bad2 = svc.butler_matrix_report(n_points=5)
     assert bad2["ok"] is False
 
@@ -362,10 +362,34 @@ def test_service_guard_boundaries_invisible_region_and_npoints():
 
     bad = svc.butler_matrix_payload(spacing_lambda=0.1)
     assert bad["ok"] is False
-    assert "不可见区" in bad["error"]
+    assert "不可见区" in bad["errors"][0]
     below = svc.butler_matrix_payload(n_points=1000)
     assert below["ok"] is False
-    assert "1001" in below["error"]
+    assert "1001" in below["errors"][0]
     at = svc.butler_matrix_report(n_points=1001)
     assert at["ok"] is True  # 边界值恰好收（≥1001）
     assert at["data"]["all_pass"] is True
+
+
+def test_service_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（无戳补戳 1.1，2026-10-18 W4-S20）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键补戳；成功信封同笔带戳（键序钉）。
+    """
+    from rfauto.service import butler_matrix_service as svc
+    from rfauto.service.butler_matrix_service import (
+        BUTLER_MATRIX_SERVICE_SCHEMA_VERSION,
+    )
+
+    assert BUTLER_MATRIX_SERVICE_SCHEMA_VERSION == "1.1"
+    env = svc.butler_matrix_payload(n_points=1000)
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    env_ok = svc.butler_matrix_report(n_points=1001)
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    assert json.dumps([env, env_ok])

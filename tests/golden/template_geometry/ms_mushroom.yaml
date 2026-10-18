@@ -1,0 +1,70 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_mushroom
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  gap_mm: 1.2753
+  period_mm: 14.9896
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 3d1362f01b09c8acd3324e03c2ec21fc9c084e9d331a4e2f53518d35724c292e
+csx:
+  n_primitives: 6
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: mushroom_patch
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: mushroom_via
+    kind: Metal
+    n: 1
+    types:
+      '5': 1
+  - name: wg_exc
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: u1a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u1b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 78c3f1165b2eae64f834583565b58a1f8768776b2fab5b715e791b8af6390418
+  bbox_m:
+  - -0.0074948
+  - -0.0074948
+  - 0.0
+  - 0.0074948
+  - 0.0074948
+  - 0.010813366
+mesh:
+  lines:
+    x:
+      n: 201
+      min_gap_m: 5.3e-05
+    y:
+      n: 201
+      min_gap_m: 5.3e-05
+    z:
+      n: 55
+      min_gap_m: 0.000127
+  lines_sha256: 046c9dd5fd7ac70eb8e71e31d1d144aac6d9c5e00335b2ad426f85b419216639
+ports:
+- 1

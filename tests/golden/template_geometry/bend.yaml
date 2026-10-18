@@ -1,0 +1,103 @@
+schema: rfauto-template-geometry-golden/v1
+template: bend
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.1134
+  arm_len_mm: 20.0
+status: ok
+script_sha256: e532e670cbbf610be6097592591a1ea5b73eeab202f6a78adf472c8372783373
+csx:
+  n_primitives: 16
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: bend
+    kind: Metal
+    n: 4
+    types:
+      '1': 4
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: f6f3668203265c7539ac49a83777abda71422e07b3b56eba571c992dab4df2a3
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 165
+      min_gap_m: 0.000278
+    y:
+      n: 165
+      min_gap_m: 0.000278
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: ab8adb6a2d23efc317dc5adb4c76c88ca4c553abade60ce285b1a34dfa7d2b16
+ports:
+- 1
+- 2

@@ -1,7 +1,9 @@
 /* rfauto 优化洞察页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    Pareto 前沿 + 可行性热图（E9/E10，数据解释全在 service，前端只渲染）。 */
 
-import { THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
+import {
+  CANVAS_FONT, CANVAS_FONT_SMALL, CANVAS_HEAT_LAYOUT, THEME_COLORS, bodyIsLight, themePick,
+} from "../theme.js";
 import { S, T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
 
@@ -20,7 +22,8 @@ function drawFeasibilityGrid(el, d) {
   info.className = "muted"; info.style.marginTop = "6px";
   el.appendChild(info);
   const W = canvas.width = canvas.clientWidth || 700, H = canvas.height = 340;
-  const L = 60, R = 90, Tp = 12, B = 40;
+  // W3-S12（P-5）：边距常量收 theme.js 单源（值冻结 60/90/12/40，渲染不变）
+  const { left: L, right: R, top: Tp, bottom: B } = CANVAS_HEAT_LAYOUT;
   const ctx = canvas.getContext("2d");
   const xe = d.x_edges, ye = d.y_edges, n = d.grid_n;
   const xmin = xe[0], xmax = xe[xe.length - 1], ymin = ye[0], ymax = ye[ye.length - 1];
@@ -41,12 +44,12 @@ function drawFeasibilityGrid(el, d) {
       const x0 = px(xe[i]), x1 = px(xe[i + 1]), y0 = py(ye[j + 1]), y1 = py(ye[j]);
       ctx.fillRect(x0, y0, Math.max(1, x1 - x0 - 0.5), Math.max(1, y1 - y0 - 0.5));
       if (c) {
-        ctx.fillStyle = fg; ctx.font = "10px sans-serif"; ctx.textAlign = "center";
+        ctx.fillStyle = fg; ctx.font = CANVAS_FONT_SMALL; ctx.textAlign = "center";
         ctx.fillText(String(c.n), (x0 + x1) / 2, (y0 + y1) / 2 + 3);
       }
     }
   // 轴与色标
-  ctx.fillStyle = fg; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+  ctx.fillStyle = fg; ctx.font = CANVAS_FONT; ctx.textAlign = "center";
   ctx.fillText(`${d.x_param}  [${xmin.toPrecision(4)} … ${xmax.toPrecision(4)}]`, (L + W - R) / 2, H - 10);
   ctx.save(); ctx.translate(14, (Tp + H - B) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText(`${d.y_param}  [${ymin.toPrecision(4)} … ${ymax.toPrecision(4)}]`, 0, 0); ctx.restore();
@@ -199,3 +202,11 @@ export async function pageOptStack() {
   T.$("os-heat-btn").onclick = loadHeat;
   await loadPareto();
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 optstackCtx ══════════
+   refresh=图表数据重拉（pageOptStack 幂等：壳判 innerHTML 已在即跳过，
+   pareto_runs 清单与当前 run 的前沿图重拉重渲——plotCard 壳 setOption
+   复用零重建；可行性热图按需点钮重算不随刷新）。无轮询面，leave 不需要。 */
+export const optstackCtx = {
+  refresh: () => pageOptStack(),
+};

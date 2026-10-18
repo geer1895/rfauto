@@ -12,7 +12,7 @@ B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载
   域外/未知/非 active 一律 source=fallback（结构化回退闭式，不抛）；
 - ``AnchorSet.note_anchor_residual(anchor_id, point, observed)``：漂移检测，
   |残差| > max(3σ, 5%·|锚值|) → 内存面翻 stale + 告警字段（注册表运行时
-  只读，落盘回填走人工 commit——Agent 写面隔离，项目规则 规则 6）；
+  只读，落盘回填走人工 commit——Agent 写面隔离，AGENTS 规则 6）；
 - ``find_anchors(template_family, quantity)`` / ``apply_anchor_correction(
   family, quantity, params)``（XC-A，规格 §B-2）：族×量投影查询 + 偏差面
   设计修正（三拒绝门 + 修正量包络）——与 warm_start（参数面优化起点）
@@ -69,11 +69,10 @@ from typing import Any
 # domain 字段表达 schema 零扩展；0795b2a T3 核验解锁，P1 §8.5 主路线兑现）。
 # Goal 批 T14（wf:goal-t14，2026-09-30）+2：mmt.inductive_post_b.hfss-v1 /
 # mmt.resonant_window_fres.hfss-v1 constant active——ME-5 MMT 销钉/谐振窗
-# HFSS 仲裁锚（sim_host 远程仲裁，runs/mmt_anchor_20260930/criteria.md
-# §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
+# HFSS 仲裁锚（远程仲裁归档 §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
 # 随工作点 domain 钉死；单点锚 consumers=[] 零接线如实）。
 # ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2：ring.design_dk.
-# openems-hfss-v1 pointer experimental（FA3 Design Dk 战役  六百八十
+# openems-hfss-v1 pointer experimental（FA3 Design Dk 战役账 六百八十
 # 九/f0ce39a 预备稿兑现——双引擎 DISAGREE f1 互差 +2.479% 超预声明 1.5% 门，
 # 双值 {oe 3.5333, hfss 3.3425}；基准式依赖引擎几何表征=禁 constant 物理根
 # 据）+ mmwave.design_dk.ro3003-oe-v1 pointer experimental（OE 单引擎单点
@@ -184,7 +183,7 @@ EXPECTED_ANCHORS = frozenset({
     # （constant + calibrated=closedform + closure 层 + experimental，真机
     # 首判前如实）；#118 双源=文献恒等式/经典公式独立第二源+测试第二实现
     # 转录回代钉（tests/unit/test_sensanc_analytic_anchors.py）；逐锚账=
-    # 候选裁决档（内部）。。
+    # 判读报告归档（候选裁决策同档）。
     "loop.loop_side_mm.closedform-v1",
     "slot.slot_l_mm.closedform-v1",
     "ifa.ifa_arm_mm.closedform-v1",
@@ -202,12 +201,22 @@ EXPECTED_ANCHORS = frozenset({
     # （λ0/2 阵格，ms_patch/ms_ring_patch/ms_array_NxN 三族）；#118 双源=
     # 文献恒等式独立第二源+测试第二实现转录回代钉
     # （tests/unit/test_anchd_analytic_anchors.py）；逐锚账与弃选 10 族
-    # 逐族理由=内部候选裁决档。。
+    # 逐族理由=判读报告归档（SENS-ANC 报告第三节同口径复核）。
     "coax_waveguide_transition.backshort_mm.closedform-v1",
     "sma_launcher.r_o_mm.closedform-v1",
     "patch_eep.elem_w_mm.closedform-v1",
     "patch_eep.elem_len_mm.closedform-v1",
     "ms_lattice.period_mm.closedform-v1",
+    # aurora_e W3-S15 analytic 锚续批（2026-10-18）+4：ms_lattice.period v2
+    # （v1 族名注册缺陷 retire 接替，族表=[ms_patch,ms_ring_patch,
+    # ms_array_NxN] 真名三族）/tjunc.s11_db+tjunc.s21_db（等臂无损三端口
+    # 结点恒等式，阻抗无关网络理论独立面——前两轮弃选只针对 HJ 宽度面）/
+    # mline.z0_ohm（HJ 系数原文核验清偿 X5/W4-E citation-rot 缓登记项）。
+    # 逐锚 #118 双源与独立重算钉=tests/unit/test_w3s15_analytic_anchors.py。
+    "ms_lattice.period_mm.closedform-v2",
+    "tjunc.s11_db.closedform-v1",
+    "tjunc.s21_db.closedform-v1",
+    "mline.z0_ohm.closedform-v1",
 })
 EXPECTED_ANCHOR_COUNT = len(EXPECTED_ANCHORS)
 
@@ -951,7 +960,7 @@ def anchor_correction_provenance(correction: Mapping[str, Any]) -> dict[str, Any
 # ——走既有 kind=constant + uncertainty kind=identity 形态（ge8 TA 三批先例
 # 10 锚：schiffman/qwt_multisection/sicl/nway_wilkinson/diplexer/ridged_wg
 # 六族，2026-10-02）。本节纯构造零 IO：helper 产出注册表 raw dict 供注册链
-# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，项目规则
+# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，AGENTS
 # 规则 6 同源）；provenance.arbitration_runs/commit 由注册链批次回填，
 # helper 不伪造仲裁证据（#122 如实口径）。
 

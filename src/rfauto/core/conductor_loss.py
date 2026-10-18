@@ -746,3 +746,127 @@ def finish_qualitative_note(finish: str, freq_hz: float) -> str:
             "厚度不均破坏阻抗控制——毫米波不推荐。" + tail
         )
     raise ValueError(f"未知表面处理 {finish!r}，支持 {FINISH_NOTE_KEYS}")
+
+
+# ─── skrf 第三来源裁判（EC-3，aurora_e W2-S9 2026-10-18）──────────────────────
+
+#: 光滑叠层裁判阈值（硬门）：rfauto layered_surface_impedance（良导体近似
+#: gamma=(1+j)/delta + ch/sh 级联）vs skrf tlineFunctions.surface_impedance
+#: （逐段良导体精确 mu/eps 公式 + 粗糙度 CDF 渐变离散 + Magnus 4 阶 +
+#: Richardson 外推，rtol=1e-6 收敛）——两条**独立实现**的物理同源（分层
+#: TL 级联），分歧只来自良导体近似与 skrf 离散残差。ENIG 缺省叠层
+#: 1/10 GHz 实测 rel_dev 1.7e-8 / 4.5e-8，阈值 1e-6 留 ~20× 裕量。
+_SKRF_CROSSCHECK_REL_TOL = 1e-6
+
+
+def skrf_surface_impedance_crosscheck(
+    freq_hz: float,
+    layers: list[dict],
+    sigma_cu: float = 5.8e7,
+    rms_roughness_m: float = 0.0,
+) -> dict:
+    """skrf ``surface_impedance`` 作第三来源对拍裁判（EC-3，#118 家族）。
+
+    动机：粗糙度/镀层传导面的既有两源 = ① Huray/Hammerstad 经验因子
+    （:func:`conductor_surface_resistance` 组合面）与 ② 平面分层闭式
+    （:func:`layered_surface_impedance`）——同仓推导链有共同 upstream，缺
+    独立第三方。skrf 2.1.0 ``tlineFunctions.surface_impedance``（Tegowski
+    粗糙度 CDF 渐变 + 传输线段阻抗递推；独立代码基）构成第三裁判：
+    光滑极限下两条分层 TL 级联必须重合（硬门），粗糙档物理模型不同
+    （CDF 渐变 vs 经验雪球/atan 因子）只给比值诊断不设门（#122 如实：
+    不同模型间只报差，不冒充同源验证）。
+
+    口径与守卫（docstring 写死）：
+
+    - 叠层语义与 :func:`layered_surface_impedance` 完全一致（顶面→基底序；
+      末层半无限）；skrf 侧材料栈 = ``[{}, 顶…基底]``（外侧真空显式首元，
+      skrf 约定）、``boundary_loc=[0, t1, t1+t2, …]``（K=len(layers) 个界面）。
+    - 双侧统一 mu_r=1（铁磁镍微波 mu_r 取值不定，本口径不覆盖，skrf 侧
+      docstring 的 Ni mu_r=20 例属不同物理档，勿混用）。
+    - rms_roughness_m=0（缺省）跑纯光滑裁判；>0 时附加粗糙诊断（skrf 粗
+      糙 Zs / 光滑 Zs 增益 vs Hammerstad K_H(Rq, delta_Cu, RF=2)，后者用
+      基底铜趋肤深度，信息性比值）。
+    - skrf 惰性导入（dielectric_extract.py 先例，core 零强依赖）；skrf 的
+      收敛告警照常透传不静默（#105）。
+
+    Returns:
+        dict: {freq_hz, rfauto_z_in, skrf_zs_smooth, rel_dev_smooth,
+        referee_pass（rel_dev_smooth <= 1e-6）, rms_roughness_m,
+        skrf_zs_rough（粗糙档，无则 None）, rough_gain_skrf,
+        hammerstad_K_H, rough_gain_ratio（skrf 增益/Hammerstad，信息性）,
+        note, source}。
+
+    Raises:
+        ValueError: freq/layers/sigma_cu 非法（透传 layered_surface_impedance
+            校验）；rms_roughness_m < 0 或非有限。
+    """
+    import skrf
+    from skrf.tlineFunctions import surface_impedance as skrf_surface_impedance
+
+    freq = _positive("freq_hz", freq_hz)
+    if isinstance(rms_roughness_m, bool) or not math.isfinite(rms_roughness_m) \
+            or rms_roughness_m < 0.0:
+        raise ValueError(
+            f"rms_roughness_m 必须为 >=0 有限数，收到 {rms_roughness_m!r}")
+    rfauto = layered_surface_impedance(freq, layers, sigma_cu=sigma_cu)
+    z_in = complex(rfauto["z_in_complex"])
+
+    # skrf 材料栈：外侧真空显式首元 + 逐层 sigma（顶→基底序，与 rfauto 同序）
+    mats: list[dict] = [{}]
+    boundary_loc = [0.0]
+    depth = 0.0
+    # 逐层解析（_parse_layer_spec 与 layered_surface_impedance 同一口径）
+    n_layers = len(layers)
+    specs = [
+        _parse_layer_spec(i, raw, is_substrate=(i == n_layers - 1),
+                          sigma_cu=_positive("sigma_cu", sigma_cu))
+        for i, raw in enumerate(layers)
+    ]
+    for _material, thickness, sigma_i in specs:
+        mats.append({"sigma": float(sigma_i)})
+        if thickness is not None and thickness > 0.0:
+            depth += float(thickness)
+            boundary_loc.append(depth)
+    zs_smooth = complex(skrf_surface_impedance(
+        freq, mats, boundary_loc=boundary_loc))
+    rel_dev = abs(z_in - zs_smooth) / abs(z_in)
+
+    out: dict = {
+        "freq_hz": freq,
+        "rfauto_z_in": z_in,
+        "skrf_zs_smooth": zs_smooth,
+        "rel_dev_smooth": float(rel_dev),
+        "referee_pass": bool(rel_dev <= _SKRF_CROSSCHECK_REL_TOL),
+        "rel_tol": _SKRF_CROSSCHECK_REL_TOL,
+        "rms_roughness_m": float(rms_roughness_m),
+        "skrf_zs_rough": None,
+        "rough_gain_skrf": None,
+        "hammerstad_K_H": None,
+        "rough_gain_ratio": None,
+        "note": (
+            "光滑叠层=两条独立分层 TL 级联实现的硬裁判（良导体近似 vs "
+            "skrf 精确 mu/eps+Magnus 离散）；粗糙档=skrf CDF 渐变 vs "
+            "Hammerstad 经验因子的信息性比值（物理模型不同，不设门"
+            "——#122 如实）；双侧 mu_r=1（铁磁镍不覆盖，skrf 文档 Ni "
+            "mu_r=20 例属另一物理档）"),
+        "source": (
+            f"skrf {skrf.__version__} tlineFunctions.surface_impedance"
+            "（Tegowski 粗糙度 "
+            "CDF 渐变 + 传输线段阻抗递推 + Magnus 4 阶/Richardson 外推）"
+            "作第三来源；rfauto 侧 layered_surface_impedance（F-J.1）与 "
+            "Hammerstad-Jensen 1980（hammerstad_roughness_factor）"),
+    }
+    if rms_roughness_m > 0.0:
+        zs_rough = complex(skrf_surface_impedance(
+            freq, mats, rms_roughness=float(rms_roughness_m),
+            boundary_loc=boundary_loc))
+        gain_skrf = abs(zs_rough) / abs(zs_smooth)
+        delta_cu = skin_depth(freq, _positive("sigma_cu", sigma_cu))
+        k_h = hammerstad_roughness_factor(rms_roughness_m, delta_cu, 2.0)
+        out.update({
+            "skrf_zs_rough": zs_rough,
+            "rough_gain_skrf": float(gain_skrf),
+            "hammerstad_K_H": float(k_h),
+            "rough_gain_ratio": float(gain_skrf / k_h),
+        })
+    return out

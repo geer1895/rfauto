@@ -55,7 +55,7 @@
 - 参数语义：pifa_l_mm=贴片长 L（L 路径式定版 L=λ0/(4√εeff(W))，HJ @W；居中短路板电流不绕行，文献通式 L+W−Ws 的 +W−Ws 项不适用，真机两轮实证），pifa_w_mm=贴片宽 W，pifa_ws_mm=短路板宽 Ws（≤W，几何输入不进谐振式），pin_back_mm=馈针距短路板（定匹配），pin_y_mm=馈针 y 偏置（<W）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；贴片/短路板/针缘精确入网
 - 冒烟现状：真机 内部证据档（2026-09-14，旧通式标称 L=11.0785）FAIL：|S11|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，内部证据档）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

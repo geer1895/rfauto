@@ -229,7 +229,7 @@ def test_coverage_live_registry_single_source_and_closedform_family() -> None:
     cov = anchor_coverage(_live_anchor_set())
     assert cov["total_anchors"] == EXPECTED_ANCHOR_COUNT  # 单源对账（#231）
     # ge8 TA 三批恒等锚：closedform_total=25，族分席在档（后随批次更新）
-    assert cov["closedform_total"] == 56  # aurora_d GATE-FINAL 对账（52 锚记录 +2 双族席 patch_eep×2 +1 三族席 ms_lattice×3 = 56 席）# 前值 54=52 锚记录 +2 双族席 patch_eep×2（2026-10-14）# 前值 47=aurora_d SENS-ANC 批 +10（analytic 锚第三批，2026-10-14）# Phase 6 W6-F +1（cpw 二义核验裁 A）# 历史：ge8e X5 批 +13（atten×4/ratrace×2/stripline×2/slotline/siw/monopole/coil_nfc/pyramid_horn）→ Phase 4 W4-E 批 +10（cps×2/suspended_stripline×2/cheb_g×5/msl_cpw）
+    assert cov["closedform_total"] == 60  # W3-S15 批 +6 席（tjunc×2/mline 各 1+ms_lattice v2 三族席；ANCH-D 54）  # aurora_d GATE-FINAL 对账（52 锚记录 +2 双族席 patch_eep×2 = 54 席，2026-10-14）# 前值 47=aurora_d SENS-ANC 批 +10（analytic 锚第三批，2026-10-14）# Phase 6 W6-F +1（cpw 二义核验裁 A）# 历史：ge8e X5 批 +13（atten×4/ratrace×2/stripline×2/slotline/siw/monopole/coil_nfc/pyramid_horn）→ Phase 4 W4-E 批 +10（cps×2/suspended_stripline×2/cheb_g×5/msl_cpw）
     fams = cov["families"]
     for fam, n in (("schiffman", 1), ("qwt_multisection", 1), ("sicl", 2),
                    ("nway_wilkinson", 2), ("diplexer", 2), ("ridged_wg", 2)):
@@ -246,7 +246,7 @@ def test_coverage_live_registry_single_source_and_closedform_family() -> None:
 def test_live_closedform_anchors_conform_to_helper_canonical_form() -> None:
     live = _live_anchor_set()
     closed = [r for r in live.records if ".closedform-v" in r.anchor_id]
-    assert len(closed) == 52  # aurora_d GATE-FINAL 对账（实测 52 条 .closedform-v 记录，2026-10-14）# 前值 47=aurora_d SENS-ANC 批 +10（loop/slot/ifa/lange/cline/branchline_2sect/via/ms_mushroom/ms_jcross/ms_patch）# Phase 6 W6-F +1（cpw.z0_ohm 二义核验裁 A=CPWG/50Ω）# 上一行历史：ge8 TA 三批（schiffman/qwt/sicl×2/nway×2/diplexer×2/ridged×2）+ ge8b WA 席1（hmsiw.fc_ghz）+ ge8b WB 席B9（isl_shielded.eps_eff+vivaldi_tsa.f_low）+ ge8e X5 批 +13 → Phase 4 W4-E 批 +10（cps×2/suspended_stripline×2/cheb_g×5/msl_cpw）
+    assert len(closed) == 56  # W3-S15 批 +4 记录（tjunc×2/mline/ms_lattice v2；ANCH-D 52）  # aurora_d GATE-FINAL 对账（实测 52 条 .closedform-v 记录，2026-10-14）# 前值 47=aurora_d SENS-ANC 批 +10（loop/slot/ifa/lange/cline/branchline_2sect/via/ms_mushroom/ms_jcross/ms_patch）# Phase 6 W6-F +1（cpw.z0_ohm 二义核验裁 A=CPWG/50Ω）# 上一行历史：ge8 TA 三批（schiffman/qwt/sicl×2/nway×2/diplexer×2/ridged×2）+ ge8b WA 席1（hmsiw.fc_ghz）+ ge8b WB 席B9（isl_shielded.eps_eff+vivaldi_tsa.f_low）+ ge8e X5 批 +13 → Phase 4 W4-E 批 +10（cps×2/suspended_stripline×2/cheb_g×5/msl_cpw）
     for rec in closed:
         segs = rec.anchor_id.split(".")
         fam, qty = segs[0], segs[1]
@@ -258,6 +258,7 @@ def test_live_closedform_anchors_conform_to_helper_canonical_form() -> None:
             status=rec.status,
             consumers=rec.consumers,
             domain=rec.raw["domain"],  # X5 批起 closedform 锚可带域盒
+            version=rec.version,  # W3-S15 批 v2 接替版：helper 带 version 形
         )
         for key in ("anchor_id", "kind", "engine_pair",
                     "value", "status", "fallback", "domain", "uncertainty"):
@@ -267,17 +268,17 @@ def test_live_closedform_anchors_conform_to_helper_canonical_form() -> None:
             assert rebuilt["template_family"] == rec.raw["template_family"], \
                 (rec.anchor_id, "template_family")
         else:
-            # 多族锚两种合法形态：①前缀扩席（aurora_d ANCH-D 席双模板注册
-            # patch_eep_1x4/2x2，79425584）——helper 规范形只有 id 段单席，
-            # live 合法扩展为多族共享同一闭式量，钉住扩展面（各族=公共前缀）；
-            # ②共享量注册（ms_lattice.period_mm，λ0/2 阵格闭式）——id 段=
-            # 规范族名，template_family=共享消费族清单（ms_patch/
-            # ms_ring_patch/ms_array_NxN），与 id 段无前缀关系。两种形态
+            # 多族锚（aurora_d ANCH-D 席双模板注册 patch_eep_1x4/2x2，
+            # 79425584）：helper 规范形只有 id 段单席，live 合法扩展为
+            # 多族共享同一闭式量——钉住扩展面（id 段=各族公共前缀），
             # 其余键照常逐键对拍。
             assert rebuilt["template_family"] == [fam]
-            shared_quantity = not all(f.startswith(fam)
-                                      for f in rec.raw["template_family"])
-            if not shared_quantity:
-                assert all(f.startswith(fam)
-                           for f in rec.raw["template_family"]), \
-                    (rec.anchor_id, rec.raw["template_family"])
+            fams_live = rec.raw["template_family"]
+            from rfauto.adapters.oe_templates.registry import TEMPLATE_META
+
+            # 两种合法多族形：①id 段前缀扩展（patch_eep.elem_w）；
+            # ②首段=规则名、族表=真名模板集（c3.l_via_h/ms_lattice
+            # v2 先例——v1 族名注册缺陷接替后族表换真名，W3-S15 批）
+            assert (all(f.startswith(fam) for f in fams_live)
+                    or all(f in TEMPLATE_META for f in fams_live)), \
+                (rec.anchor_id, fams_live)

@@ -139,3 +139,14 @@ export const HEAT_BAND = [
    冻结现值零改值——白/黄/橙三档按等值级数取模循环，重定标须复核热图
    底色可辨识度）。 */
 export const ISO_BAND = ["#ffffff", "#ffeb3b", "#ff5722"];
+
+/* ═══ 图表布局/字号常量单源（aurora_e W3-S12，R6 审计 P-5）════════════
+   plotCard builder grid 与自研 canvas 管线（drawLineChart/drawCostHeat/
+   drawFeasibilityGrid）的边距、canvas 字号此前各自为政（硬编码字面量散置
+   四处）——常量收编本层。数值冻结：迁移零改值（渲染不变铁律），重定标须
+   逐消费者复核可读性。 */
+export const CHART_GRID = { left: 52, right: 20, top: 34, bottom: 44 };      // plotCard builder grid
+export const CANVAS_LINE_LAYOUT = { left: 46, right: 14, top: 14, bottom: 26 }; // drawLineChart（app.js）
+export const CANVAS_HEAT_LAYOUT = { left: 60, right: 90, top: 12, bottom: 40 }; // costHeat/可行性网格（含右色标位）
+export const CANVAS_FONT = "11px sans-serif";        // canvas 轴题/刻度字号
+export const CANVAS_FONT_SMALL = "10px sans-serif";  // canvas 格内计数小字号

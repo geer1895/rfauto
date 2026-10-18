@@ -44,6 +44,7 @@ TEMPLATES_DOCS = REPO_ROOT / "docs" / "templates"
 SYNC_DIRS: tuple[tuple[str, str], ...] = (
     ("docs/tutorials", "tutorials"),
     ("docs/explanation", "explanation"),
+    ("docs/how-to", "how-to"),
 )
 SYNC_STATIC: tuple[tuple[str, str], ...] = (
     ("docs/gallery/index.html", "gallery/index.html"),
@@ -513,24 +514,8 @@ def build_rest_schema_page() -> tuple[str, int]:
 
 # ─── 首页数字条（AUTO-NUMBERS 标记块回填）────────────────────────────────
 
-def _gate_log_test_total() -> tuple[int | None, str]:
-    """入库门日志优先（#355 家法）：collect 数随平台/环境收集面浮动
-    （本地含 vendor CSXCAD 与 CI Linux 差 ~10 条），门日志 TOTAL 行是
-    入库工件确定性来源；无日志/无 TOTAL 行时回退 collect。"""
-    candidate = REPO_ROOT / "runs" / "unit_gate_public.log"
-    if candidate.exists():
-        tail = candidate.read_text(encoding="utf-8", errors="replace")[-4000:]
-        m = re.search(r"TOTAL: (\d+) passed, (\d+) failed", tail)
-        if m:
-            total = int(m.group(1)) + int(m.group(2))
-            return total, f"gate log {candidate.name}"
-    return None, "pytest --collect-only"
-
-
 def numbers_strip(checknum) -> str:
-    tests_n, tests_src = _gate_log_test_total()
-    if tests_n is None:
-        tests_n, tests_src = checknum.count_tests()
+    tests_n, tests_src = checknum.count_tests()
     cli_n = checknum.count_cli()
     mcp_n = checknum.count_mcp()
     calc_n = checknum.count_calculators()
@@ -660,12 +645,6 @@ def build_all(out_dir: Path, index_src: Path | None = None) -> dict[str, int]:
         src_index = index_src if index_src is not None else DOCS_SITE_DEFAULT
         shutil.copyfile(src_index / "index.md", out_dir / "index.md")
 
-    # tests 计数单源（数字条与 manifest 同源）：入库门日志 TOTAL 行优先
-    # （#355 家法，跨平台稳定），无日志回退 collect。
-    tests_n, _tests_src = _gate_log_test_total()
-    if tests_n is None:
-        tests_n = checknum.count_tests()[0]
-
     cli_md, cli_n = build_cli_page(checknum)
     mcp_md, mcp_n = build_mcp_page(checknum)
     calc_md, calc_n, _calc_all = build_calculators_page(checknum)
@@ -690,7 +669,7 @@ def build_all(out_dir: Path, index_src: Path | None = None) -> dict[str, int]:
         "calculators": calc_n,
         "templates": tmpl_n,
         "rest_endpoints": rest_n,
-        "tests": tests_n,
+        "tests": checknum.count_tests()[0],
         "anchors": checknum.count_anchors(),
     }
 

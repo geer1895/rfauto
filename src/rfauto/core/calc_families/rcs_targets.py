@@ -42,8 +42,11 @@
       圆柱（侧向正交）    σ = 2πL²r/λ            （λ⁻¹ 标度，与板族
                             λ⁻² 标度不同=结构钉）
 
-  dBsm 换算恒等：dBsm = 10·log10(σ/m²)。三角三方角/圆锥尖顶/圆盘
-  斜入射姿态项不在 v1 口径（常数源无法双源钉死，如实不做）。
+  dBsm 换算恒等：dBsm = 10·log10(σ/m²)。圆锥（轴向入射尖端绕射）
+  σ = λ²tan⁴(α)/(16π)（α=半角，Skolnik 教科书表；单闭式源+λ²/tan⁴ 标度
+  恒等式锚，尺寸无关=尖端绕射口径，aurora_e W1-S2 补齐任务书"圆锥"
+  子项——前席 v1 如实不做）。三角三方角/圆盘斜入射姿态项不在口径
+  （常数源无法双源钉死，如实不做）。
 
 验证（in-output xcheck + 测试侧独立重算，#118 不自证）
 ------------------------------------------------------
@@ -56,7 +59,8 @@
 
 守卫：radius_mm>0、f_ghz>0、ka∈[1e-3,200]（级数数值稳定域，越域显式
 拒绝）；shape ∈ 封闭集合；各尺寸 >0（平板/二面角 a,b 同给，三方角只
-a，圆柱 a=半径 b=长）；越界一律显式拒绝。
+a，圆柱 a=半径 b=长；cone_tip 尺寸无关=不给 a/b、必给 half_angle_deg
+∈(0,90)，其他形状同给 half_angle_deg 显式拒绝）；越界一律显式拒绝。
 """
 
 from __future__ import annotations
@@ -81,7 +85,7 @@ _SOURCES = {
 }
 
 _PEAK_SHAPES = ("flat_plate", "dihedral", "square_trihedral",
-                "cylinder_broadside")
+                "cylinder_broadside", "cone_tip")
 
 
 def _sigma_sphere(rho: float) -> tuple[float, int]:
@@ -195,20 +199,24 @@ def rcs_sphere_mie(radius_mm: float, f_ghz: float) -> dict[str, Any]:
     "典型目标峰值 RCS 库：平板法向 σ=4πA²/λ²（A=a·b）/二面角 90° "
     "σ=8πa²b²/λ²（双跳变等效孔径 √2·ab）/方形三方"
     "角 σ=4πa⁴/(3λ²)（等效孔径 a²/√3）/圆柱侧向 σ=2πL²r/λ（λ⁻¹ 标度）"
+    "/圆锥轴向 σ=λ²tan⁴α/(16π)（α=半角，尖端绕射尺寸无关）"
     "——姿态=峰值口径（各形状最大方向），不建姿态方向图。锚：全闭式测试"
-    "侧独立重算；板族 λ⁻² 与圆柱 λ⁻¹ 双标度钉；二面角(a=b)=2×同单面平板、"
-    "三方角按 a²/√3 回代平板式两结构恒等；1m² 平板@10GHz=41.45dBsm 常数",
+    "侧独立重算；板族 λ⁻²/圆柱 λ⁻¹/圆锥 λ² 三标度钉；二面角(a=b)=2×同单面"
+    "平板、三方角按 a²/√3 回代平板式两结构恒等；1m² 平板@10GHz=41.45dBsm 常数",
     (("shape", "str 形状 'flat_plate'|'dihedral'|'square_trihedral'|"
-      "'cylinder_broadside'（封闭集合）"),
+      "'cylinder_broadside'|'cone_tip'（封闭集合）"),
      ("f_ghz", "float GHz 雷达频率（>0）"),
      ("a_mm", "float mm 主尺寸：平板/二面角=边 a；三方角=边长；圆柱=半径 r"
-      "（>0）"),
-     ("b_mm", "float mm 次尺寸：平板/二面角=边 b；圆柱=长度 L（>0；三方角"
-      "不给）")),
-    required=("shape", "f_ghz", "a_mm"),
+      "（>0；cone_tip 不给）"),
+     ("b_mm", "float mm 次尺寸：平板/二面角=边 b；圆柱=长度 L（>0；三方角/"
+      "cone_tip 不给）"),
+     ("half_angle_deg", "float deg 圆锥半角 α（∈(0,90)；仅 cone_tip 必给，"
+      "其他形状同给显式拒绝）")),
+    required=("shape", "f_ghz"),
 )
-def rcs_peak_canonical(shape: str, f_ghz: float, a_mm: float,
-                       b_mm: float | None = None) -> dict[str, Any]:
+def rcs_peak_canonical(shape: str, f_ghz: float, a_mm: float | None = None,
+                       b_mm: float | None = None,
+                       half_angle_deg: float | None = None) -> dict[str, Any]:
     if shape not in _PEAK_SHAPES:
         raise ValueError(
             f"rcs_peak_canonical: shape 须 {'|'.join(_PEAK_SHAPES)}，"
@@ -216,10 +224,34 @@ def rcs_peak_canonical(shape: str, f_ghz: float, a_mm: float,
     f = _finite(f_ghz, "f_ghz")
     if f <= 0.0:
         raise ValueError(f"rcs_peak_canonical: f_ghz 必须 >0，得到 {f_ghz!r}")
-    a = _finite(a_mm, "a_mm")
-    if a <= 0.0:
-        raise ValueError(f"rcs_peak_canonical: a_mm 必须 >0，得到 {a_mm!r}")
-    a_m = a * 1e-3
+    if shape == "cone_tip":
+        if a_mm is not None:
+            raise ValueError(
+                "rcs_peak_canonical: cone_tip=尖端绕射尺寸无关口径，不接受 "
+                f"a_mm/b_mm（同给显式拒绝），得到 a_mm={a_mm!r}")
+        a = None
+        if half_angle_deg is None:
+            raise ValueError(
+                "rcs_peak_canonical: shape=cone_tip 需要 half_angle_deg"
+                "（圆锥半角 α，∈(0,90)）")
+        half_angle = _finite(half_angle_deg, "half_angle_deg")
+        if not 0.0 < half_angle < 90.0:
+            raise ValueError(
+                f"rcs_peak_canonical: half_angle_deg 须 ∈(0,90)，得到 "
+                f"{half_angle_deg!r}")
+    else:
+        if half_angle_deg is not None:
+            raise ValueError(
+                "rcs_peak_canonical: half_angle_deg 仅 shape=cone_tip 接受，"
+                f"其他形状同给显式拒绝，得到 {half_angle_deg!r}")
+        if a_mm is None:
+            raise ValueError(
+                f"rcs_peak_canonical: shape={shape} 需要 a_mm（主尺寸）")
+        a = _finite(a_mm, "a_mm")
+        if a <= 0.0:
+            raise ValueError(
+                f"rcs_peak_canonical: a_mm 必须 >0，得到 {a_mm!r}")
+    a_m = None if a is None else a * 1e-3
     wavelength_m = (C_MM_GHZ / f) * 1e-3
     b_val: float | None = None
     if shape in ("flat_plate", "dihedral", "cylinder_broadside"):
@@ -234,7 +266,7 @@ def rcs_peak_canonical(shape: str, f_ghz: float, a_mm: float,
     else:
         if b_mm is not None:
             raise ValueError(
-                "rcs_peak_canonical: square_trihedral 只取边长 a_mm，不接受 "
+                "rcs_peak_canonical: square_trihedral/cone_tip 不接受 "
                 f"b_mm（同给显式拒绝），得到 {b_mm!r}")
         b_m = None
 
@@ -254,20 +286,29 @@ def rcs_peak_canonical(shape: str, f_ghz: float, a_mm: float,
         area_eff_m2 = a_m * a_m / math.sqrt(3.0)
         sigma_m2 = 4.0 * math.pi * a_m ** 4 / (3.0 * wavelength_m ** 2)
         formula = "σ=4πa⁴/(3λ²)（方形三方角，等效孔径 a²/√3）"
-    else:  # cylinder_broadside
+    elif shape == "cylinder_broadside":
         sigma_m2 = 2.0 * math.pi * b_m ** 2 * a_m / wavelength_m
         formula = "σ=2πL²r/λ（圆柱侧向正交，L=b_mm、r=a_mm）"
+    else:  # cone_tip
+        alpha_rad = math.radians(half_angle)
+        # 尖端绕射：σ=λ²tan⁴α/(16π)（轴向入射，尺寸无关）
+        sigma_m2 = (wavelength_m ** 2 * math.tan(alpha_rad) ** 4
+                    / (16.0 * math.pi))
+        formula = "σ=λ²tan⁴α/(16π)（圆锥轴向尖端绕射，α=半角）"
     sigma_dbsm = 10.0 * math.log10(sigma_m2)
     note = (
         "峰值口径（各形状最大散射方向的单频点截面），不建姿态方向图；"
         "二面角=棱垂直极化的经典峰值（双跳变路），三方角=对称轴入射；"
-        "三角三方角/圆锥尖顶/有限厚度与边缘绕射修正如实不在 v1 口径")
+        "cone_tip=轴向入射尖端绕射闭式（Skolnik 教科书表单闭式源，λ²/"
+        "tan⁴α 标度恒等式锚；光滑尖端近似，球头钝化与姿态项如实不在"
+        "口径）；三角三方角/圆盘斜入射姿态项如实不做")
     return {
         "shape": shape,
         "f_ghz": f,
         "wavelength_mm": round(C_MM_GHZ / f, 12),
         "a_mm": a,
         "b_mm": b_val,
+        "half_angle_deg": half_angle_deg,
         "sigma_m2": float(sigma_m2),
         "sigma_dbsm": round(sigma_dbsm, 12),
         "effective_aperture_m2": (

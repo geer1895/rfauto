@@ -1,0 +1,86 @@
+schema: rfauto-template-geometry-golden/v1
+template: coax_waveguide_transition
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  a_mm: 22.86
+  b_mm: 10.16
+  l_wg_mm: 30.0
+  wg_t_mm: 2.0
+  pin_len_mm: 5.588000000000001
+  pin_r_mm: 0.5
+  port_h_mm: 1.0
+  backshort_mm: 9.926779802778025
+  er: 1.0
+  h_mm: 0.0
+status: ok
+script_sha256: 8445ed10cc2461b0c74fc5c5b2975d1a0130f1701a737835f73161f2f085598b
+csx:
+  n_primitives: 12
+  props:
+  - name: wg_wall
+    kind: Metal
+    n: 5
+    types:
+      '1': 5
+  - name: wg_pin
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: cb05dcfb0972dd42316522de7c67fbb3fc988ce9c1bfcdd1b7c0fba51fa409d6
+  bbox_m:
+  - -0.01343
+  - -0.00708
+  - -0.002
+  - 0.01343
+  - 0.00708
+  - 0.03
+mesh:
+  lines:
+    x:
+      n: 270
+      min_gap_m: 0.000143
+    y:
+      n: 184
+      min_gap_m: 0.000143
+    z:
+      n: 287
+      min_gap_m: 5.8e-05
+  lines_sha256: 37a29d5a5e397eb0ebc83a3e2a0f695b17134cbbd66c308d0ca288da8c737f2c
+ports:
+- 1
+- 2

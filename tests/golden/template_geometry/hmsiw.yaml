@@ -1,0 +1,93 @@
+schema: rfauto-template-geometry-golden/v1
+template: hmsiw
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  w_mm: 5.5829
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 63.0721
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 9cbfb89a9fe7c799dc33b695cfcf88fea86024a4d8d9d64fd196f6a69bc83053
+csx:
+  n_primitives: 72
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: hmsiw_plates
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: hmsiw_via
+    kind: Metal
+    n: 63
+    types:
+      '5': 63
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: b6c02f17132cc617385472ccf115e909deda59d4bdcc2e57194602e4d7594674
+  bbox_m:
+  - -0.005729652
+  - -0.03643166
+  - 0.0
+  - 0.005729652
+  - 0.03643166
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 102
+      min_gap_m: 7.5e-05
+    y:
+      n: 931
+      min_gap_m: 3.1e-05
+    z:
+      n: 23
+      min_gap_m: 0.000127
+  lines_sha256: 3d131e52f3cb399f4b1b1ea64c64a8670c555c7ca50126b82922d2381523fe49
+ports:
+- 1
+- 2

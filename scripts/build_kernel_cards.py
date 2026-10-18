@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""XA-8 内核域文档卡生成器（round18 规格 XA-8：内核域文档卡首批 5 张）。
+"""XA-8 内核域文档卡生成器（round18 规格 XA-8 首批 5 张 + aurora_e W3-S13
+知识面批扩容批一 11 张 + aurora_e W4-S19 知识面批扩容批二 8 张，共 24 张）。
 
 从三源机读聚合生成 docs_site/kernel_cards/<kernel_id>.md（人读聚合面）：
   1. XC-P 精度档案  knowledge/precision_profiles.yaml（首批 10 内核）；
@@ -14,12 +15,22 @@
 - 手写段仅两处——公式 LaTeX 转写与使用边界注记，每条必须携带 docstring
   **逐字引文**（quote），构建时断言引文在模块源文件中存在（防漂移钉）；
   引文是机器核对载体，LaTeX 与注记是其人读转写；
-- XA-8 首批 5 内核（macromodel/rwg_mmt/pdn/pce/cascade）均不在 XC-P
-  首批 10 内核——精度域节如实呈现「未收录 + UNVERIFIED + 建档入口」，
-  不编造分档数字。
+- 批一 11 卡（W3-S13）按「CALC 键+teaching 块+锚覆盖」数据源完备性选族：
+  同源 synthesis.py 七族（mline/wilkinson/branchline/ratrace/patch/hairpin/
+  cpw，共享机械节如实重复渲染）+ 专用模块四卡（slotline/coupled_microstrip/
+  calc_families.finline/calc_families.wilkinson_unequal，子包 stem 以
+  「calc_families/名」形态书写，卡内模块路径/引用扫描自动归一）；
+  coupled_microstrip 已入 XC-P——精度域节走「已建档」完整渲染支路（首批
+  5 内核仍走「未收录 + UNVERIFIED + 建档入口」支路，不编造分档数字）。
+- 批二 8 卡（W4-S19）按任务书点名优先序取「专属 CALC 键或 synthesis 面」
+  完备族：atten_pi/atten_t/qwt_multisection/nway_wilkinson/schiffman
+  （synthesis.py 同源面+rf_match CALC 键）+ bethe_hole_coupler/gysel_core/
+  coupled_line_bpf（calc_families 注册计算器三族）；ring_resonator 留缺
+  （无专属综合内核——meta 恒等式+dielectric_extract M3 反方向提取面，
+  与 lange/stepped_impedance 批一留缺理由同族）。
 
 用法（venv 内、仓根执行）：
-    python scripts/build_kernel_cards.py           # 原地重建 5 张卡
+    python scripts/build_kernel_cards.py           # 原地重建全部卡
     python scripts/build_kernel_cards.py --check   # 漂移检查（退出码 1=需重建）
 
 产物确定性：不写时间戳/环境相关内容；键序、遍历序全部显式排序，
@@ -98,14 +109,17 @@ class DocRef:
 class CardSpec:
     kernel_id: str
     tagline: str  # 人工一句物理语义（不含数字）
-    modules: tuple[str, ...]  # core 模块 stem（首个=主模块）
+    modules: tuple[str, ...]  # core 模块 stem（首个=主模块；子包用 calc_families/名）
     primary_entries: tuple[tuple[str, str], ...]  # (module_stem, symbol)
     formulas: tuple[Formula, ...]
     boundaries: tuple[Boundary, ...]
     doc_refs: tuple[DocRef, ...]
+    #: 测试面引用扫描的附加命中串（如 CALC 键名——经 run_calculator 间接
+    #: 消费、无 import 面的子包内核用；缺省空=纯 import 面扫描）。
+    test_face_needles: tuple[str, ...] = ()
 
 
-# ─── 五张卡的选题（round18 规格 XA-8：macromodel/rwg_mmt/pdn/pce/cascade） ──
+# ─── 首批五卡选题（round18 规格 XA-8：macromodel/rwg_mmt/pdn/pce/cascade） ──
 
 SPECS: tuple[CardSpec, ...] = (
     CardSpec(
@@ -214,7 +228,13 @@ SPECS: tuple[CardSpec, ...] = (
                 note="极窄违规带可能被漏检；skrf 半尺寸测试的解析频段边界同时给出。",
             ),
         ),
-        doc_refs=(),
+        doc_refs=(
+            DocRef(
+                path="延续计划（仓内规划档，不随公开分发）",
+                quote="任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。",
+                tracked=False,
+            ),
+        ),
     ),
     CardSpec(
         kernel_id="rwg_mmt",
@@ -331,6 +351,11 @@ SPECS: tuple[CardSpec, ...] = (
             DocRef(
                 path="docs/plan_deepdive_specs_20260924.md",
                 quote="规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；",
+                tracked=False,
+            ),
+            DocRef(
+                path="runs/df6_dp1mmt/criteria.md",
+                quote="判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。",
                 tracked=False,
             ),
         ),
@@ -563,11 +588,17 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="Saltelli 互证 ±10%（§10.15）",
                 note=(
                     "验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 "
-                    "±10%（延续计划 §10.15 预声明）。"
+                    "±10%（规划档 §10.15 预声明）。"
                 ),
             ),
         ),
-        doc_refs=(),
+        doc_refs=(
+            DocRef(
+                path="延续计划（仓内规划档，不随公开分发）",
+                quote="延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）",
+                tracked=False,
+            ),
+        ),
     ),
     CardSpec(
         kernel_id="cascade",
@@ -683,6 +714,1470 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书：",
                 tracked=False,
             ),
+            DocRef(
+                path="runs/df6_dp5cascade/criteria.md",
+                quote="runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。",
+                tracked=False,
+            ),
+        ),
+    ),
+    # ─── aurora_e W3-S13 知识面批 扩容批一（11 张；按「CALC 键+teaching 块+
+    # 锚覆盖」数据源完备性选族；公式与边界全部 quote 钉在模块源文件） ──────
+    CardSpec(
+        kernel_id="mline",
+        tagline=(
+            "微带线综合主干：skrf Hammerstad-Jensen 正向算 Z0/εeff，brentq 反解"
+            "线宽并回代自洽——全仓 50Ω 标称线宽与各族 λ/4 臂长的唯一计算源"
+            "（XC-W 单源），εeff 通道来源与回退显式标记。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_mline"),
+            ("synthesis", "inverse_width"),
+            ("synthesis", "forward_media"),
+            ("synthesis", "forward_z0"),
+            ("synthesis", "nominal_width_mm"),
+            ("synthesis", "lossless_width_mm"),
+            ("synthesis", "synthesize_mline_model"),
+        ),
+        formulas=(
+            Formula(
+                title="正向 HJ 模型（skrf MLine，hammerstadjensen 锁死）",
+                latex=(
+                    "(Z_0,\\ \\varepsilon_{\\mathrm{eff}})"
+                    "=\\mathrm{MLine}_{\\mathrm{HJ}}"
+                    "\\bigl(w,h,\\varepsilon_r,\\tan\\delta,\\rho,"
+                    "\\mathrm{rough}\\bigr)"
+                ),
+                quote="使用 skrf MLine (Hammerstad-Jensen) 模型（与 G0 验证一致）",
+                cite=(
+                    "core/synthesis.py 模块头「设计决策」节（正向锁死 "
+                    "model='hammerstadjensen'）；XC-P 精度档案 "
+                    "synthesis.forward_z0 已建档（行为=WARN）"
+                ),
+            ),
+            Formula(
+                title="反解（brentq 求逆 + 回代自洽断言）",
+                latex=(
+                    "w^{*}=\\operatorname{brentq}_{w}\\,"
+                    "\\bigl[Z_0(w)-Z_{0,\\mathrm{target}}\\bigr],\\quad"
+                    "\\bigl|Z_0(w^{*})-Z_{0,\\mathrm{target}}\\bigr|<0.5\\,"
+                    "\\Omega"
+                ),
+                quote="使用 brentq 求逆，反解结果回代正向做自洽断言。",
+                cite=(
+                    "core/synthesis.inverse_width docstring；自洽阈与三态状态机"
+                    "（ok/er_eff_fallback/needs_calibration）见模块头「验收」节"
+                ),
+            ),
+            Formula(
+                title="λ/4 臂长恒等式（各臂自身 εeff 口径，XA-3 迭代序）",
+                latex=(
+                    "L_{\\lambda/4}=\\frac{c}{4 f_0"
+                    "\\sqrt{\\varepsilon_{\\mathrm{eff}}(w_{\\mathrm{arm}})}}"
+                ),
+                quote="arm_len = lambda/4 = c / (4 * f0 * sqrt(epsilon_eff))",
+                cite=(
+                    "synthesize_wilkinson docstring「闭式公式」节；XA-3 迭代序="
+                    "εeff 取臂线宽自身（inverse_width→forward_z0 链），旧近似"
+                    "偏差量化同节在档"
+                ),
+            ),
+            Formula(
+                title="锚模板三重身份（mline 锚链）",
+                latex=(
+                    "\\text{校准件}\\;+\\;"
+                    "\\text{引擎仲裁探针}\\;+\\;\\text{数据工厂}"
+                ),
+                quote="锚模板三重身份：校准件 + 引擎仲裁探针（S21 相位斜率→εeff，β 金",
+                cite=(
+                    "synthesize_mline_model docstring（β 金标准 #162；线宽绝不"
+                    "沿用文档毫米数，铁律 1c）"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="④ 超限标 needs_calibration 而非静默通过",
+                note=(
+                    "状态机三态（ok/er_eff_fallback/needs_calibration）全部显式"
+                    "下泄给消费面——回代失败与 εeff 回退两真并存时保留更严重的"
+                    "前者。"
+                ),
+            ),
+            Boundary(
+                quote="``.z0/.er_eff/.source`` 属性。εeff 回退体介电常数的通道显式见",
+                note=(
+                    "εeff 回退体介电常数时长度系设计不可信——来源标记"
+                    "（.source）随量下泄，不静默（#316 多报方向）。"
+                ),
+            ),
+            Boundary(
+                quote="「50Ω 馈线宽」缺省档的唯一计算点：inverse_width(50)@各 (εr,h,f) 即权威",
+                note=(
+                    "XC-W 单源：历史五档 50Ω 宽字面量副本已收敛到本计算点，"
+                    "归档字面量只做逐位一致性钉扎（tests/unit/"
+                    "test_width_single_source.py）。"
+                ),
+            ),
+            Boundary(
+                quote="是参数系不同，非同参漂移，一致性测试分系钉住）。",
+                note=(
+                    "yaml 层叠档与无耗裸层叠档两系并存是参数系不同"
+                    "（tanδ 是否进正向），不是同参漂移——跨档缺省有守卫。"
+                ),
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="configs/materials.yaml",
+                quote="层叠复用 configs/materials.yaml（带 source/verified_by）",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="wilkinson",
+        tagline=(
+            "等分 Wilkinson 功分器综合：两臂 λ/4、臂阻抗 √2·Z0，臂长按臂线宽"
+            "自身 εeff 精算（XA-3 迭代序），隔离电阻是集总件不进线宽链——"
+            "series/shunt 口径与注册表/fake 单源对齐（#154）。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_wilkinson"),
+        ),
+        formulas=(
+            Formula(
+                title="两臂 λ/4 与臂阻抗 √2·Z0",
+                latex=(
+                    "Z_t=\\sqrt{2}\\,Z_0,\\qquad "
+                    "L_{\\mathrm{arm}}=\\frac{c}{4 f_0"
+                    "\\sqrt{\\varepsilon_{\\mathrm{eff}}(w_{\\mathrm{arm}})}}"
+                ),
+                quote="arm_len = lambda/4 = c / (4 * f0 * sqrt(epsilon_eff))",
+                quote2=(
+                    "series_w: Z0*sqrt(2) ≈ 70.7Ω λ/4 臂线宽（标准 Wilkinson 两臂，比馈线窄；"
+                ),
+                cite=(
+                    "synthesize_wilkinson docstring「闭式公式」节；隔离电阻 "
+                    "2Z0 接两臂末端（集总件，不是线宽）"
+                ),
+            ),
+            Formula(
+                title="XA-3 迭代序（臂长 εeff 取臂线宽自身）",
+                latex=(
+                    "\\mathrm{inverse\\_width}(\\sqrt{2}Z_0)\\to"
+                    "\\mathrm{forward\\_z0}(w_{\\mathrm{arm}})\\to"
+                    "\\varepsilon_{\\mathrm{eff}}(w_{\\mathrm{arm}})\\to"
+                    "\\lambda/4"
+                ),
+                quote="inverse_width(70.7Ω)→forward_z0(w_series)→εeff(w_series)→λ/4；旧口径",
+                cite=(
+                    "synthesize_wilkinson docstring「XA-3 迭代序修正」节；旧口径"
+                    "εeff@w=1mm 近似的名义点偏差量化与 XA-5 数值锚同节在档"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+            Formula(
+                title="#154 语义对齐（series/shunt 单源口径）",
+                latex=(
+                    "w_{\\mathrm{series}}:\\ \\sqrt{2}Z_0"
+                    "\\ \\text{臂（窄）},\\qquad "
+                    "w_{\\mathrm{shunt}}:\\ Z_0\\ \\text{馈线（宽）}"
+                ),
+                quote="#154 语义对齐：series/shunt 口径与 TEMPLATE_META.param_semantics、",
+                quote2="（series=70.7Ω 臂窄、shunt=50Ω 馈线宽，2026-09-04 统一口径）。",
+                cite=(
+                    "synthesize_wilkinson docstring #154 节——同名参数跨通道"
+                    "（注册表/模型/fake）单源语义，防同键异义家族分裂"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="隔离电阻 2*Z0=100Ω 接两臂末端，不是线宽）",
+                note="隔离电阻是集总件，不参与线宽综合——线宽链只有两臂与馈线。",
+            ),
+            Boundary(
+                quote="arm_len 的 εeff 必须取臂线宽自身——",
+                note=(
+                    "旧 εeff@w=1mm 近似已被 XA-3 迭代序替换；名义点偏差量化与"
+                    "数值锚（tests/unit/test_synthesis_patch_anchor.py）在档。"
+                ),
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="tests/unit/test_synthesis_patch_anchor.py",
+                quote="tests/unit/test_synthesis_patch_anchor.py）。",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="branchline",
+        tagline=(
+            "分支线耦合器综合：Z0/√2 串联臂与 Z0 并联臂各按自身线宽 εeff 取 "
+            "λ/4（XA-3 迭代序）——两臂 εeff 差数个百分点，不可共用同一臂长；"
+            "旧 arm_len 键保留为弃用别名（#315 兼容）。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_branchline"),
+        ),
+        formulas=(
+            Formula(
+                title="两臂各自 λ/4（自身 εeff）",
+                latex=(
+                    "L_{s}=\\frac{c}{4f_0\\sqrt{\\varepsilon_{\\mathrm{eff}}(w_s)}},"
+                    "\\; w_s:\\ Z_0/\\sqrt{2};\\qquad "
+                    "L_{h}=\\frac{c}{4f_0\\sqrt{\\varepsilon_{\\mathrm{eff}}(w_h)}},"
+                    "\\; w_h:\\ Z_0"
+                ),
+                quote="series_len = λ/4 @ εeff(inverse_width(Z0/√2))——35.35Ω series 臂按自身",
+                quote2="series_w: 35.35Ω (Z0/sqrt(2)) line width for series arms",
+                cite=(
+                    "synthesize_branchline docstring「闭式公式（XA-3 迭代序修正）」节；"
+                    "shunt 臂同式按自身 εeff"
+                ),
+            ),
+            Formula(
+                title="两臂 εeff 差异（不可共用臂长）",
+                latex=(
+                    "\\varepsilon_{\\mathrm{eff}}(w_s)\\ne"
+                    "\\varepsilon_{\\mathrm{eff}}(w_h)\\;\\Rightarrow\\;"
+                    "L_s\\ne L_h"
+                ),
+                quote="两臂 εeff 差数个百分点，不可再共用同一臂长（旧口径",
+                cite=(
+                    "synthesize_branchline docstring——旧口径 "
+                    "arm_len=λ/4@εeff(w=1mm) 对两臂都是双重近似"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+            Formula(
+                title="#315 弃用别名",
+                latex=(
+                    "\\texttt{arm\\_len\\_mm}\\equiv"
+                    "\\texttt{series\\_len\\_mm}"
+                    "\\ \\text{（弃用别名）}"
+                ),
+                quote="#315 兼容：arm_len_mm 保留为弃用别名（=series_len_mm），旧消费方",
+                cite="synthesize_branchline docstring #315 节",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="透传双键，属渲染层改动不在本批（报告主代理）。",
+                note=(
+                    "series/shunt 严格设计（方环变矩形环）需渲染透传双键——"
+                    "综合内核已双键齐备，渲染层改动另行立项。"
+                ),
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="ratrace",
+        tagline=(
+            "环形电桥（rat-race）综合：环阻抗 √2·Z0、周长 1.5λg（环线自身 "
+            "εeff）闭式定环半径，环线宽 inverse_width 精算——与 Wilkinson 臂"
+            "同手法的多来源确证口径。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_ratrace_model"),
+        ),
+        formulas=(
+            Formula(
+                title="环阻抗 / 周长 / 半径闭式",
+                latex=(
+                    "Z_{\\mathrm{ring}}=\\sqrt{2}\\,Z_0,\\qquad "
+                    "C_{\\mathrm{ring}}=1.5\\,\\lambda_g,\\qquad "
+                    "R_{\\mathrm{ring}}=\\frac{C_{\\mathrm{ring}}}{2\\pi}"
+                ),
+                quote="环阻抗 = √2·Z0（70.7Ω@50Ω，多来源确证），周长 = 1.5λg(环线)，",
+                quote2="R = 周长/(2π)。环线宽 inverse_width 精算（同 wilkinson 臂手法）。",
+                cite="synthesize_ratrace_model docstring（WP2.3）；环线 λg 用环线宽自身 εeff（forward_z0）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="环阻抗 = √2·Z0（70.7Ω@50Ω，多来源确证），周长 = 1.5λg(环线)，",
+                note=(
+                    "环线宽/半径全走 inverse_width/forward_z0 精算链——无手抄"
+                    "毫米数（铁律 1c）；同名环形几何在 ring_resonator 模板按 "
+                    "#198 同法栅格化。"
+                ),
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="patch",
+        tagline=(
+            "矩形贴片天线综合（Hammerstad 模型）：宽/长闭式 + 边缘馈电阻抗的 "
+            "sin² 腔体驻波变换定馈点，附带 Balanis 腔模读数面板（Q 分解/分数"
+            "带宽/方向性/辐射效率）——ΔL 与 Rin_edge 全仓单源。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_patch"),
+            ("synthesis", "patch_fringing_delta_l"),
+            ("synthesis", "patch_rin_edge_balanis"),
+            ("synthesis", "patch_cavity_metrics"),
+        ),
+        formulas=(
+            Formula(
+                title="贴片宽/长（Hammerstad 口径）",
+                latex=(
+                    "W=\\frac{c}{2f_0}\\sqrt{\\frac{2}{\\varepsilon_r+1}},"
+                    "\\qquad "
+                    "L=\\frac{c}{2f_0\\sqrt{\\varepsilon_{\\mathrm{eff}}}}-2\\,dL"
+                ),
+                quote="W = c / (2*f0) * sqrt(2/(er+1))",
+                quote2="L = c/(2*f0*sqrt(er_eff)) - 2*dL   [总扣口径=4ΔL（三副本一致，历史",
+                cite=(
+                    "synthesize_patch docstring「闭式公式」节；总扣语义仲裁 "
+                    "INCONCLUSIVE 在档，语义终裁挂 L5 v2 批"
+                ),
+            ),
+            Formula(
+                title="边缘等效伸长 ΔL（Hammerstad 1975 原式，全仓单源）",
+                latex=(
+                    "\\frac{\\Delta L}{h}=\\frac{0.412\\,"
+                    "(\\varepsilon_{\\mathrm{eff}}+0.3)(w/h+0.264)}"
+                    "{(\\varepsilon_{\\mathrm{eff}}-0.258)(w/h+0.8)}"
+                ),
+                quote="ΔL/h = 0.412·(εeff+0.3)(w/h+0.264) / [(εeff−0.258)(w/h+0.8)]",
+                cite=(
+                    "patch_fringing_delta_l docstring（Hammerstad 1975；Pozar "
+                    "eq.4.23 同口径）；XA-1/PV-016 三副本收敛，本函数是全仓唯一 "
+                    "ΔL 算术单源"
+                ),
+            ),
+            Formula(
+                title="馈点位置（腔体驻波 sin² 变换，XA-2 闭式）",
+                latex=(
+                    "R_{\\mathrm{in}}(\\mathrm{off})=R_{\\mathrm{in,edge}}"
+                    "\\sin^2\\!\\Bigl(\\frac{\\pi\\,\\mathrm{off}}{L}\\Bigr),"
+                    "\\qquad \\mathrm{off}=\\frac{L}{\\pi}\\arcsin"
+                    "\\sqrt{\\frac{R_{\\mathrm{in,t}}}{R_{\\mathrm{in,edge}}}}"
+                ),
+                quote="Rin(off) = Rin_edge·sin²(π·off/L)      （腔体驻波，off 自中心）",
+                quote2="off = (L/π)·arcsin√(Rin_t/Rin_edge)    ≡ L/2 − y0",
+                cite=(
+                    "synthesize_patch docstring XA-2 节；Rin_edge 由 "
+                    "patch_rin_edge_balanis 闭式（Balanis 4th §14-8 口径）；"
+                    "输出口径=自贴片中心沿谐振轴偏移（#154 单源化）"
+                ),
+            ),
+            Formula(
+                title="腔模读数面板（Balanis 4th Ch.14 式链）",
+                latex=(
+                    "\\frac{1}{Q_t}=\\frac{1}{Q_{\\mathrm{rad}}}+"
+                    "\\frac{1}{Q_c}+\\frac{1}{Q_d},\\qquad "
+                    "\\mathrm{BW}=\\frac{\\mathrm{VSWR}-1}{Q_t\\sqrt{\\mathrm{VSWR}}},"
+                    "\\qquad e_{\\mathrm{cds}}=\\frac{Q_t}{Q_{\\mathrm{rad}}}"
+                ),
+                quote="1/Qt = 1/Qrad + 1/Qc + 1/Qd",
+                quote2="- 分数带宽（式 14-88a）：BW = (VSWR−1)/(Qt·√VSWR)；",
+                cite=(
+                    "patch_cavity_metrics docstring（#1c 原文核对：Balanis 4th "
+                    "ed. Ch.14 原文页 852-854 + Table 14.2 逐式核对）；方向性 "
+                    "D0 式 14-55 经 Jacobi-Anger 降维一维确定性求积"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="物理有效域 0 < Rin_t ≤ Rin_edge（馈点只能从中心向边缘提阻；",
+                note=(
+                    "越域显式 ValueError 不外推（=Rin_edge 退化边缘馈 "
+                    "off=L/2）；off∈(0, L/2] 由 arcsin 值域自动保证。"
+                ),
+            ),
+            Boundary(
+                quote="原文逐位核对，引用该出处前必须回原文核验，不冒充已核）。",
+                note=(
+                    "Rin_edge 出处页码/式号 UNVERIFIED 待核——章节级引用可用，"
+                    "页码级声称必须先回原文（#122）。"
+                ),
+            ),
+            Boundary(
+                quote="离线锚仲裁判 INCONCLUSIVE：两语义",
+                note=(
+                    "ΔL 总扣语义（2ΔL vs 4ΔL）离线锚仲裁 INCONCLUSIVE——现行"
+                    "口径零行为维持，不凑裁决；语义翻转需联动多面另批。"
+                ),
+            ),
+            Boundary(
+                quote="适用域：k0·h ≪ 1（守卫同 patch_rin_edge_balanis <0.3，腔模口径）。",
+                note="腔模口径是薄基板假设——厚基板越域显式报错不外推。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="runs/xa1_arbitration/l5_sweep/criteria.md",
+                quote="仲裁 INCONCLUSIVE 在档 runs/xa1_arbitration/；语义终裁挂 L5 v2 批，",
+                tracked=False,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="hairpin",
+        tagline=(
+            "Hairpin 滤波器综合：C13 耦合矩阵 → 逐缝 KJ 反解（可选 hairpin "
+            "结构经验修正 c(gap)，opt-in）+ 抽头 τ 闭式——矩阵综合与几何映射"
+            "分层，闭式零经验常数、经验常数真机溯源。"
+        ),
+        modules=("synthesis", "coupled_microstrip"),
+        primary_entries=(
+            ("synthesis", "hairpin_design_from_order"),
+            ("synthesis", "synthesize_hairpin_model"),
+            ("coupled_microstrip", "hairpin_gap_mm_from_k"),
+            ("coupled_microstrip", "hairpin_arm_len_mm"),
+            ("coupled_microstrip", "hairpin_tap_frac_from_qe"),
+        ),
+        formulas=(
+            Formula(
+                title="耦合系数与外部 Q（Hong §5.2/§5.3）",
+                latex=(
+                    "k_{i,i+1}=\\mathrm{FBW}\\,|M_{i,i+1}|,\\qquad "
+                    "Q_e=\\frac{1}{\\mathrm{FBW}\\,|M_{0,1}|^2}"
+                ),
+                quote="k_{i,i+1}=FBW·|M_{i,i+1}|、Q_e=1/(FBW·|M_{0,1}|²)（Hong §5.2/§5.3），",
+                cite="hairpin_design_from_order docstring；再经 KJ 反解得缝、经抽头闭式得 τ",
+            ),
+            Formula(
+                title="臂长 λg/2 与抽头 τ",
+                latex=(
+                    "L_{\\mathrm{arm}}=\\frac{c}{2f_0"
+                    "\\sqrt{\\varepsilon_{\\mathrm{eff}}}},\\qquad "
+                    "Q_e=\\frac{\\pi}{2}\\frac{Z_0}{Z_r}\\sec^2(\\pi\\tau)"
+                ),
+                quote="展开半波长臂长 λg/2=c/(2·f0·√εeff)（Pozar；与 core/thermo_mech 同式）。",
+                quote2="- 抽头外部 Q：Q_e=(π/2)(Z0/Z_r)sec²(πτ)（本仓派生，单测以精确分布参数 Y_res(ω)",
+                cite=(
+                    "coupled_microstrip 模块 docstring（hairpin 收口 ⑦ 升格面）；"
+                    "Q_e 闭式以精确分布参数 Y_res(ω) 数值微分独立校核（#118）"
+                ),
+            ),
+            Formula(
+                title="hairpin 结构经验修正 c(gap)（opt-in，W4④）",
+                latex="c(s)\\,k_{\\mathrm{KJ}}(s)=k_{\\mathrm{EM}}",
+                quote="kgap_corrected=True（W4④，2026-09-17）：缝反解改用 hairpin 结构经验修正映射",
+                quote2="c(gap)·k_KJ(gap)=k（core/coupled_microstrip.hairpin_gap_mm_from_k structural_",
+                cite=(
+                    "hairpin_design_from_order docstring W4④ 节；常数全部出自"
+                    "本战役 openEMS N=2 弱抽头双谐振器真机（铁律 7），并附 "
+                    "gaps_mm_kj 纯 KJ 反解供对照"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="order=1（单谐振器双抽头探针，B1 Q 标定）无耦合缝：k_list=[]、gaps_mm=[]、",
+                note="order=1 无耦合缝（gap_mm=None 不进 params）——不再 IndexError。",
+            ),
+            Boundary(
+                quote="自耦远小于互耦，旧默认 1.0 反超是四轮 FAIL 的结构性根因，pt1 实证）。",
+                note="arm_gap_mm 名义定版=同臂自耦须远小于互耦——结构性根因有真机实证。",
+            ),
+            Boundary(
+                quote="域外/不可达如实 ValueError），并附 gaps_mm_kj（纯 KJ 反解）供对照。",
+                note=(
+                    "k_EM 非单调——修正反解只搜单调设计支，k 超支内可达范围"
+                    "显式报可达上/下限不外推（拓扑能力问题如实报错）。"
+                ),
+            ),
+            Boundary(
+                quote="默认 False 保持名义链（HAIRPIN_NOMINAL 冻结口径）逐位不变。",
+                note="结构修正显式 opt-in——名义链缺省口径零漂移。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="src/rfauto/adapters/openems_templates.py",
+                quote="再经 KJ 反解得缝、经抽头闭式得 τ（口径见 adapters/openems_templates 文末",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="cpw",
+        tagline=(
+            "共面波导综合（底接地 CPWG 口径）：共形映射闭式 εeff/Z0 + brentq "
+            "反解线宽——合成参照系必须与真实结构同口径（#193 参照系错位教训）。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_cpw_model"),
+        ),
+        formulas=(
+            Formula(
+                title="CPWG 共形映射闭式（_cpwg_ri 单源）",
+                latex=(
+                    "\\bigl(\\varepsilon_{\\mathrm{eff}},\\ Z_0\\bigr)"
+                    "=f_{\\mathrm{CPWG}}"
+                    "\\bigl(w,\\mathrm{gap},h,\\varepsilon_r\\bigr),"
+                    "\\qquad w=\\operatorname{brentq}_{w}"
+                    "\\bigl[Z_0(w)-Z_{0,\\mathrm{target}}\\bigr]"
+                ),
+                quote="core/calculators._cpwg_ri（实测 εeff/S11 双锚校验，#198）。",
+                cite=(
+                    "synthesize_cpw_model docstring；共形映射闭式在 "
+                    "core/calculators._cpwg_ri，Z0 随 w 单调递减反解后回代自洽；"
+                    "CALC 键 cpw_synthesis/cpw_analysis（calc_families/rf_line）"
+                    "同族面"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+            Formula(
+                title="#193 参照系错位教训",
+                latex=(
+                    "Z_0^{\\mathrm{CPW_{open}}}\\ne Z_0^{\\mathrm{CPWG}}"
+                    "\\;\\Rightarrow\\;"
+                    "\\text{无地口径合成线在真实接地结构中失配}"
+                ),
+                quote="必须同口径（#193 参照系错位教训：skrf CPW 无地口径合成的 50Ω 线",
+                cite="synthesize_cpw_model docstring #193 节（在真实结构里失配的具体量化同节）",
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="Z0 随 w 单调递减；brentq 反解后回代自洽。gap 为固定参数",
+                note="gap 固定参与反解存在性——越界显式报错，不做静默延拓。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="src/rfauto/core/calculators.py",
+                quote="在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="slotline",
+        tagline=(
+            "槽线闭式裁判面：Janaswamy–Schaubert 1986 曲线拟合式分段落地"
+            "（常数三源逐位互证），段界外显式 ValueError 不外推——转录未闭环"
+            "的分段如实登记不解锁，禁止凭记忆补常数。"
+        ),
+        modules=("slotline",),
+        primary_entries=(
+            ("slotline", "slotline_closed_form"),
+            ("slotline", "slotline_segment"),
+            ("slotline", "slotline_wide_low"),
+            ("slotline", "slotline_z0"),
+            ("slotline", "slotline_beta"),
+            ("slotline", "slotline_eps_eff"),
+        ),
+        formulas=(
+            Formula(
+                title="窄槽段 λ'/λ0（式 (8)，低 εr 段）",
+                latex=(
+                    "\\frac{\\lambda'}{\\lambda_0}=1.045-0.365\\ln\\varepsilon_r"
+                    "+\\frac{6.3\\,(W/d)\\,\\varepsilon_r^{0.945}}"
+                    "{238.64+100\\,W/d}"
+                    "-\\Bigl[0.148-\\frac{8.81(\\varepsilon_r+0.95)}"
+                    "{100\\,\\varepsilon_r}\\Bigr]\\ln\\frac{d}{\\lambda_0}"
+                ),
+                quote="λ'/λ0 = 1.045 − 0.365 ln εr + 6.3 (W/d) εr^0.945 / (238.64 + 100 W/d)",
+                quote2="− [0.148 − 8.81 (εr + 0.95) / (100 εr)] ln(d/λ0)",
+                cite=(
+                    "_lambda_ratio_low docstring（Janaswamy–Schaubert MTT-34(8):"
+                    "900-902 式 (8)；原文拟合误差 Av 0.37% / Max 2.2% 同节照录）"
+                ),
+            ),
+            Formula(
+                title="窄槽段 Z0（式 (9)，低 εr 段）",
+                latex=(
+                    "Z_0=60+3.69\\sin\\frac{(\\varepsilon_r-2.22)\\pi}{2.36}"
+                    "+133.5\\ln(10\\,\\varepsilon_r)\\sqrt{W/\\lambda_0}+\\cdots"
+                ),
+                quote="Z0 = 60 + 3.69 sin[(εr − 2.22)π/2.36] + 133.5 ln(10 εr) √(W/λ0)",
+                cite=(
+                    "_z0_low docstring（式 (9)；常数三源核对——NTRS OCR/"
+                    "Majumdar-Verma/NJIT FORTRAN 逐位闭合，见模块头）"
+                ),
+            ),
+            Formula(
+                title="εeff / β / Z0 口径（功率-电压定义）",
+                latex=(
+                    "\\varepsilon_{\\mathrm{eff}}=\\Bigl("
+                    "\\frac{\\lambda_0}{\\lambda'}\\Bigr)^{\\!2},\\quad "
+                    "\\beta=k_0\\sqrt{\\varepsilon_{\\mathrm{eff}}},\\quad "
+                    "Z_0=\\frac{|V_0|^2}{2P}"
+                ),
+                quote="输出：λ'/λ0（槽波长比）、εeff=(λ0/λ')²、β=k0·√εeff、Z0（功率-电压定义",
+                quote2="Z0=|V0|²/(2P)，Janaswamy 式 (1)，与 NGSolve 模场后处理口径一致）。",
+                cite="模块 docstring「几何/记号」节",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="- 0.006 ≤ d/λ0 ≤ 0.06（全部式子共同前提）",
+                note="有效域三条件（d/λ0、W/λ0 段、εr 段）同时满足，任一越界 ValueError 不外推。",
+            ),
+            Boundary(
+                quote="系数未取得可双源核对的文本，禁止凭记忆写常数；2026-10-05 W4-B 复查：O'Reilly/",
+                note="高 εr 段（Garg–Gupta 1976 式）未实现——各通道不可达即维持显式拒绝（#122）。",
+            ),
+            Boundary(
+                quote="证据状态记档不凭记忆补常数（#122 如实）。",
+                note=(
+                    "宽槽 Z0 式 (11)/(14)/(15) 三个独立转录源互相冲突、段界"
+                    "连续性裁判无法闭环——如实未实现，不凑闭环。"
+                ),
+            ),
+            Boundary(
+                quote="式 (10)（2.22 ≤ εr ≤ 3.8 宽槽 λ'/λ0）**已实现**（`slotline_wide_low`）。",
+                note=(
+                    "宽槽低 εr 档已落地：系数三源逐位一致 + 与窄槽式 (8) 段界"
+                    "对拍的独立判据（#118）在档。"
+                ),
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="tests/unit/test_w4_b_p3_slotline_wide.py",
+                quote="tests/unit/test_w4_b_p3_slotline_wide.py 钉）。",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="coupled_microstrip",
+        tagline=(
+            "耦合微带闭式内核：Kirschning-Jansen 1984 准静态偶/奇模阻抗与"
+            "频变 εeff 色散层（Getsinger 型）+ hairpin 结构经验修正 c(gap)"
+            "（显式 opt-in）——闭式部分零经验常数，经验常数真机溯源、域外"
+            "不外推。"
+        ),
+        modules=("coupled_microstrip",),
+        primary_entries=(
+            ("coupled_microstrip", "coupled_microstrip_even_odd_ohm"),
+            ("coupled_microstrip", "coupled_microstrip_eps_disp"),
+            ("coupled_microstrip", "hairpin_gap_mm_from_k"),
+            ("coupled_microstrip", "hairpin_kgap_correction"),
+            ("coupled_microstrip", "hairpin_arm_len_mm"),
+            ("coupled_microstrip", "hairpin_tap_frac_from_qe"),
+        ),
+        formulas=(
+            Formula(
+                title="KJ 1984 准静态偶/奇模阻抗",
+                latex=(
+                    "Z_{0e},\\,Z_{0o}=f_{\\mathrm{KJ}}(u,g,\\varepsilon_r),"
+                    "\\qquad u=\\frac{w}{h},\\; g=\\frac{s}{h}"
+                ),
+                quote="耦合微带准静态偶/奇模阻抗（Kirschning-Jansen 1984 闭式；零厚/无盖）。",
+                cite=(
+                    "coupled_microstrip_even_odd_ohm docstring；单线量取 skrf "
+                    "HJ 正向（core/synthesis.forward_z0），与 Qucs/transcalc "
+                    "c_microstrip.cpp 零厚无盖分支逐式对应"
+                ),
+            ),
+            Formula(
+                title="频变偶/奇 εeff（Getsinger 型色散层，W4-A/P1）",
+                latex=(
+                    "\\varepsilon_{\\mathrm{eff},e/o}(f)=\\varepsilon_r-"
+                    "\\frac{\\varepsilon_r-\\varepsilon_{\\mathrm{eff},e/o}(0)}"
+                    "{1+F_{e/o}}"
+                ),
+                quote="Getsinger 型 εeff,e/o(f)=εr−(εr−εeff,e/o(0))/(1+F_e/o)、P1-P15 色散系数），",
+                cite=(
+                    "模块 docstring W4-A/P1 节（KJ 1984 论文式 (2)-(7)）；式面"
+                    "与三独立源逐式核对（Wcalc/Qucs 技术文档/qucs-core），P1 "
+                    "加式形态以论文原文影印定谳"
+                ),
+            ),
+            Formula(
+                title="耦合系数与缝反解",
+                latex=(
+                    "k=\\frac{Z_{0e}-Z_{0o}}{Z_{0e}+Z_{0o}}"
+                    "\\;\\xrightarrow[\\;\\mathrm{brentq}\\;]{}\\; s"
+                ),
+                quote="- 平行耦合半波谐振器耦合系数 k=(Z0e−Z0o)/(Z0e+Z0o)（Hong §5.4）及 brentq 反解；",
+                cite="模块 docstring；hairpin_gap_mm_from_k 单调性单测钉住，xtol=1e-12mm",
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+            Formula(
+                title="抽头外部 Q（本仓派生，独立校核）",
+                latex=(
+                    "Q_e=\\frac{\\pi}{2}\\frac{Z_0}{Z_r}\\sec^2(\\pi\\tau),"
+                    "\\qquad \\tau=\\frac{1}{\\pi}\\arccos"
+                    "\\sqrt{\\frac{(\\pi/2)(Z_0/Z_r)}{Q_e}}"
+                ),
+                quote="- 抽头外部 Q：Q_e=(π/2)(Z0/Z_r)sec²(πτ)（本仓派生，单测以精确分布参数 Y_res(ω)",
+                cite="模块 docstring（#118 独立校核：单测以精确分布参数 Y_res(ω) 数值微分对拍）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="阻抗色散（论文式 (10)/(11)）**不实现**——",
+                note=(
+                    "wcalc 与 qucs-core 在 Q18 常数上互斥且原文不可达——"
+                    "#1c/#122 如实登记不解锁。"
+                ),
+            ),
+            Boundary(
+                quote="有效域（论文式 (1)+p.85，域外显式 ValueError 不外推）：0.1≤u≤10、",
+                note="KJ 域盒（u/g/εr/fn）域外显式拒绝——论文精度声明仅覆盖域内。",
+            ),
+            Boundary(
+                quote="故修正只作用于 hairpin 通道、显式 opt-in",
+                note=(
+                    "c(gap) 结构修正是 hairpin 专属经验层——闭式本体已由 "
+                    "NGSolve 2D 独立核实（k_NG/k_KJ 比值在档），修正不污染"
+                    "平行线口径。"
+                ),
+            ),
+            Boundary(
+                quote="适用域见 HAIRPIN_KGAP_CALIB，域外不外推（设计反解 raise；fake 前向可显式 clamp）。",
+                note="经验修正域外两通道不同语义显式分道：设计反解 raise、fake 前向显式 clamp。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="runs/hairpin_kgap/offline_kj_vs_ngsolve.json",
+                quote="偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，runs/hairpin_kgap/",
+                tracked=False,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="finline",
+        tagline=(
+            "鳍线渐变过渡（波导内 E 面结构）：TE10 导波 β 口径（声明近似档）"
+            "+ 小反射剖面反射闭式（指数 sinc/线性 Ei，与 taper_classic 单源"
+            "共享）——基模等效经验档因系数原文不可达如实放弃。"
+        ),
+        modules=("calc_families/finline",),
+        primary_entries=(
+            ("calc_families/finline", "finline_taper_response"),
+            ("calc_families/finline", "finline_taper_length"),
+        ),
+        test_face_needles=("finline_taper_response", "finline_taper_length"),
+        formulas=(
+            Formula(
+                title="导波相位常数（TE10 截止口径，声明近似档）",
+                latex=(
+                    "\\beta=k_0\\sqrt{\\varepsilon_{\\mathrm{eff}}}"
+                    "\\,\\sqrt{1-\\bigl(f_{c10}/f\\bigr)^2},"
+                    "\\qquad f_{c10}=\\frac{c_0}{2a}"
+                ),
+                quote="β = k0·sqrt(εeff)·",
+                quote2="sqrt(1−(fc10/f)²)，fc10 = c0/(2a)（TE10 截止恒等式，与 core/rwg_mmt",
+                cite=(
+                    "模块 docstring「物理口径」节（empirical 级近似如实声明；"
+                    "εeff 缺省 1.0=未加载 TE10 导波口径，调用方可传精化）"
+                ),
+            ),
+            Formula(
+                title="小反射剖面反射闭式（精确，共享单源）",
+                latex=(
+                    "\\Gamma=\\frac{1}{2}\\int\\frac{d(\\ln Z)}{dx}"
+                    "\\,e^{-2j\\beta x}\\,dx"
+                ),
+                quote="Γ = ∫½·d(lnZ)/dx·e^(−2jβx)dx（Pozar 4th ed §5.9）——指数剖面 sinc 闭",
+                cite=(
+                    "模块 docstring；_gamma_closed/_gamma_quadrature 经 "
+                    "taper_classic 单源复用不复制公式（闭式 vs 剖面核数值积分"
+                    "双路线残差 1e-15 量级）"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="f/fc10 < 1.05 显式拒绝（截止附近 β→0、λg 发散，bethe_hole_coupler 同",
+                note="近截止病态带显式拒绝——与 rwg_mmt 近截止降级同哲学。",
+            ),
+            Boundary(
+                quote="非公开可达——硬编码记忆系数即伪造（#122 如实原则），该档如实放弃，",
+                note=(
+                    "Meier 1974/Sharma-Hoefer 1983 基模等效档未落地——系数原文"
+                    "非公开可达，留待拿到原文系数表再立键。"
+                ),
+            ),
+            Boundary(
+                quote="——该参数属半经验输入，empirical 性质如实声明。",
+                note="epsilon_eff 精化参数是半经验输入，不是闭式输出——性质显式声明。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="src/rfauto/core/calc_families/taper_classic.py",
+                quote="式 / 线性剖面 Ei 指数积分闭式，经 core/calc_families/taper_classic 的",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="wilkinson_unequal",
+        tagline=(
+            "二路不等分 Wilkinson 综合（Pozar K 口径）：功分比 K → 两臂 λ/4 "
+            "特性阻抗 + 隔离电阻（含臂端电阻分配）+ 几何均值输出变换段——"
+            "闭式与节点导纳网络解算互为独立裁判（#118）。"
+        ),
+        modules=("calc_families/wilkinson_unequal",),
+        primary_entries=(
+            ("calc_families/wilkinson_unequal", "unequal_split_wilkinson"),
+        ),
+        test_face_needles=("unequal_split_wilkinson",),
+        formulas=(
+            Formula(
+                title="功分比与两臂 λ/4 特性阻抗",
+                latex=(
+                    "K^2=\\frac{P_3}{P_2},\\qquad "
+                    "Z_{02}=Z_0\\sqrt{K(1+K^2)},\\qquad "
+                    "Z_{03}=Z_0\\sqrt{\\frac{1+K^2}{K^3}}=\\frac{Z_{02}}{K^2}"
+                ),
+                quote="Z02 = Z0·√(K(1+K²))",
+                quote2="Z03 = Z0·√((1+K²)/K³) = Z02/K²（端口 3 臂）",
+                cite=(
+                    "模块 docstring「公式口径」节（Pozar 4th ed. §7.3 不等分节；"
+                    "受惠端=低阻臂，由 λ/4 臂功率流与隔离等压条件直接导出）"
+                ),
+            ),
+            Formula(
+                title="隔离电阻与臂端分配（Parad–Moynihan）",
+                latex=(
+                    "R=Z_0\\frac{1+K^2}{K},\\qquad "
+                    "R_2=\\frac{Z_0}{K},\\qquad R_3=K\\,Z_0,"
+                    "\\qquad R_2+R_3=R"
+                ),
+                quote="R  = Z0(1+K²)/K",
+                quote2="R2 = Z0/K（端口 2 臂端）、R3 = K·Z0（端口 3 臂端），R2+R3=R",
+                cite=(
+                    "模块 docstring（两端电阻分配取 Parad–Moynihan 原文约定："
+                    "受惠臂端=低阻端；中心频率 S 矩阵只依赖总串联 R）"
+                ),
+            ),
+            Formula(
+                title="输出变换段（几何均值选型）",
+                latex=(
+                    "Z_{04}=Z_0\\sqrt{K},\\qquad "
+                    "Z_{05}=\\frac{Z_0}{\\sqrt{K}},\\qquad "
+                    "Z_{04}\\,Z_{05}=Z_0^2"
+                ),
+                quote="Z04 = Z0·√K （端口 2 侧）、Z05 = Z0/√K （端口 3 侧）",
+                cite="模块 docstring（Parad–Moynihan 几何均值选型，带宽最优化）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="结果字段 practical_split=False 如实标注，不拒绝）。",
+                note=(
+                    "K 无上限——超大 K 的臂/电阻比超常规微带可实现域时 "
+                    "practical_split=False 如实标注，不拒绝不外推。"
+                ),
+            ),
+            Boundary(
+                quote="独立重算全 S 矩阵作裁判（#118：网络解算器与设计闭式互为独立来源）。",
+                note="闭式之外以通用节点导纳分析（λ/4 线 j/Z 倒纳网络）独立重算全 S 矩阵作裁判。",
+            ),
+            Boundary(
+                quote="K=1 退化锚 = 经典等分 Wilkinson：两臂 √2·Z0、R=2·Z0、变换段=Z0（同书",
+                note="K=1 精确退化到经典等分 Wilkinson——退化锚与文献锚（Microwaves101）都在档。",
+            ),
+            Boundary(
+                quote="带宽内隔离/回损按臂电长度 90° 设计点随频退化（本键只出 f0 闭式）。",
+                note="只出中心频率理论量（说明字段）——带内频率响应不在本键声明域。",
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="tests/unit/test_w3a_unsplit_bethe.py",
+                quote="50Ω、P2/P3=2（K=1/√2）→ ZA=51.5Ω、ZB=103Ω、R=106.07Ω、变换段",
+                tracked=True,
+            ),
+        ),
+    ),
+    # ─── aurora_e W4-S19 知识面批 扩容批二（8 张；优先任务书点名的
+    # 「专属 CALC 键或 synthesis 面」完备族；引文全部钉在模块源文件） ────
+    CardSpec(
+        kernel_id="atten_pi",
+        tagline=(
+            "π 型电阻衰减器综合：目标衰减+系统阻抗 → 中串/两端对地三电阻 "
+            "E4 闭式（匹配+分压两条件导出），线宽走 XC-W 单源、shunt 布局"
+            "电共位口径——集总闭式裁判与分布式失配的族界在档。"
+        ),
+        modules=("synthesis", "calc_families/rf_match"),
+        primary_entries=(
+            ("synthesis", "synthesize_atten_pi_model"),
+            ("calc_families/rf_match", "attenuator_pi"),
+        ),
+        test_face_needles=("attenuator_pi",),
+        formulas=(
+            Formula(
+                title="π 型三电阻 E4 闭式（匹配+分压两条件）",
+                latex=(
+                    "N=10^{A/20},\\quad "
+                    "R_{\\mathrm{ser}}=Z_0\\frac{N^2-1}{2N},\\quad "
+                    "R_{\\mathrm{sh}}=Z_0\\frac{N+1}{N-1}"
+                ),
+                quote="N=电压比=10^(A/20)，推导自匹配+分压两条件",
+                quote2="（3dB 锚，经典值：中串 17.612Ω/端并 292.48Ω）",
+                cite=(
+                    "calc_families/rf_match.attenuator_pi docstring（AU-1 自 "
+                    "core/calculators 机械拆分；ABCD 校验有单测）"
+                ),
+            ),
+            Formula(
+                title="线宽单源（XC-W，随频率精算）",
+                latex="w_{50\\Omega}=\\mathrm{inverse\\_width}(Z_0@f_0)",
+                quote=(
+                    "w_mm 单源（XC-W）：随 freq_ghz 精算（缺省 2.5GHz 档逐位"
+                    "=旧字面量 1.1134）"
+                ),
+                cite=(
+                    "synthesize_atten_pi_model docstring——50Ω 馈线宽唯一计算"
+                    "点（test_width_single_source 普查守卫）"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="|S21| mean_within ±0.5dB（平坦衰减，均值语义匹配响应形态）",
+                note=(
+                    "判据统计量匹配响应形态（#195）：平坦衰减用均值语义、"
+                    "窄带谐振器件禁用带内 max（常数陷阱族）。"
+                ),
+            ),
+            Boundary(
+                quote="shunt_off_mm 缺省 0.75mm=shunt 与串臂断口缘齐贴的电共位布局",
+                note=(
+                    "集总闭式裁判前提=电共位布局；W7-A 残座批 D=6mm 分布式"
+                    "失配定谳——布局偏离共位即出集总模型声明域。"
+                ),
+            ),
+            Boundary(
+                quote="衰减量必须 >0 dB",
+                note="非正衰减显式拒绝（E4 闭式 N→1 除零域），不静默夹逼。",
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="atten_t",
+        tagline=(
+            "T 型电阻衰减器综合：π 型的横向变体——两臂串阻+中点对地并阻，"
+            "同一 E4 电压比闭式族（3dB 经典锚在档），判据与布局口径与 π 型"
+            "同源共享。"
+        ),
+        modules=("synthesis", "calc_families/rf_match"),
+        primary_entries=(
+            ("synthesis", "synthesize_atten_t_model"),
+            ("calc_families/rf_match", "attenuator_t"),
+        ),
+        test_face_needles=("attenuator_t",),
+        formulas=(
+            Formula(
+                title="T 型三电阻 E4 闭式",
+                latex=(
+                    "N=10^{A/20},\\quad "
+                    "R_{\\mathrm{arm}}=Z_0\\frac{N-1}{N+1},\\quad "
+                    "R_{\\mathrm{mid}}=\\frac{2Z_0 N}{N^2-1}"
+                ),
+                quote="N=电压比=10^(A/20)（经典 3dB 锚：串臂 8.550Ω/中并 141.93Ω）",
+                quote2="T 型：上下臂各串 r_series_arm，中点对地 r_shunt_mid",
+                cite="calc_families/rf_match.attenuator_t docstring（ABCD 校验有单测）",
+            ),
+            Formula(
+                title="与 π 型的族界（同一电压比 N，电阻分配不同）",
+                latex=(
+                    "\\pi:\\ R_{\\mathrm{ser}}\\propto\\frac{N^2-1}{2N}"
+                    "\\;\\leftrightarrow\\;"
+                    "T:\\ R_{\\mathrm{arm}}\\propto\\frac{N-1}{N+1}"
+                ),
+                quote="T 型衰减器综合（WP2.3 横向变体）：目标衰减 → 三电阻（E4 闭式）。",
+                cite=(
+                    "synthesize_atten_t_model docstring——objectives 同 atten_pi"
+                    "（平坦均值+匹配门）"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="电阻值=E4 attenuator_t 闭式（ABCD 校验）：两臂各串 r_series_arm、",
+                note="中点对地 r_shunt_mid——电阻值全部出自闭式，零手抄。",
+            ),
+            Boundary(
+                quote="shunt_off_mm 缺省 0.75mm=串臂与中点 shunt 缘齐贴的电共位布局",
+                note="同 π 型：集总闭式裁判前提=电共位布局（W7-A 定谳后改）。",
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="qwt_multisection",
+        tagline=(
+            "多节 λ/4 阻抗变换器综合（binomial/chebyshev 表驱动）：一阶小反射"
+            "对数域结点增量累积出节阻抗谱系（对称恒等式+中心精确匹配），"
+            "f0 给出时走 HJ 链产线宽/物理长度，缺省诚实留空。"
+        ),
+        modules=("synthesis", "calc_families/rf_match"),
+        primary_entries=(
+            ("synthesis", "synthesize_multisection_quarter_wave"),
+            ("calc_families/rf_match", "quarter_wave_transformer"),
+        ),
+        test_face_needles=("quarter_wave_transformer",),
+        formulas=(
+            Formula(
+                title="binomial 结点对数增量（一阶小反射表驱动）",
+                latex=(
+                    "\\delta_i=\\ln\\frac{Z_L}{Z_0}\\cdot"
+                    "\\frac{\\binom{N}{i}}{2^N},\\qquad "
+                    "Z_i=Z_0\\exp\\Bigl(\\ln\\tfrac{Z_L}{Z_0}"
+                    "\\sum_{k<i}\\delta_k\\Bigr)"
+                ),
+                quote="binomial: δ_i = ln(ZL/Z0)·C(N,i)/2^N（Pozar 4ed binomial 节，N=2 锚",
+                quote2="50→100 → 59.4604/84.0896Ω）",
+                cite=(
+                    "synthesize_multisection_quarter_wave docstring「闭式公式」"
+                    "节；chebyshev 走 T_N(secθ0·cosθ) 展开结点权重表"
+                ),
+            ),
+            Formula(
+                title="谱系恒等式与中心匹配",
+                latex=(
+                    "Z_i\\,Z_{N+1-i}=Z_0 Z_L,\\qquad "
+                    "Z_{\\mathrm{mid}}=\\sqrt{Z_0 Z_L}\\ "
+                    "(N\\ \\text{奇}),\\qquad |S_{11}(f_0)|\\approx 0"
+                ),
+                quote="谱系恒等式（表构造保证）：Z_i·Z_{N+1-i}=Z0·ZL（对称）；N 奇时中节=√(Z0·ZL)；",
+                cite=(
+                    "docstring 同节（中心频率精确匹配：全节 λ/4 级联 ABCD；"
+                    "chebyshev 偶 N 中心为纹波峰 |S11(f0)|≈Γm 如实声明）"
+                ),
+            ),
+            Formula(
+                title="单节 λ/4 变换（rf_match CALC 键）",
+                latex="z_{0,\\mathrm{sect}}=\\sqrt{Z_s Z_l},\\quad "
+                      "L=\\lambda_g/4",
+                quote="λ/4 阻抗变换器：段特性阻抗 z0=sqrt(Zs·Zl)；给 εeff/频率时附物理长度",
+                cite="calc_families/rf_match.quarter_wave_transformer 注册描述",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="缺省 None → 长度留 None（禁虚构 εeff，#1c）",
+                note=(
+                    "f0_ghz 未给时只出阻抗级（长度诚实留空）——不虚构介质"
+                    "通道（铁律 1c）。"
+                ),
+            ),
+            Boundary(
+                quote="chebyshev 权重表仅内嵌 N≤4（表驱动范围），got N=",
+                note=(
+                    "chebyshev N>4 属精确综合（Riblet/Ozaki-Ishii 数值迭代，"
+                    "TF-5 标注可选）——未实现显式 ValueError，不硬凑。"
+                ),
+            ),
+            Boundary(
+                quote="无需/无法综合该变换器",
+                note=(
+                    "ripple 电平不低于原始失配 Γδ 时显式拒绝（无需/无法综合"
+                    "的边界显式，不静默返回恒等变换）。"
+                ),
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="nway_wilkinson",
+        tagline=(
+            "N-way Wilkinson 功分器阻抗级综合：star（Pon 1961 星形，臂 "
+            "√N·Z0）与 tree（2^k 树形，每级经典 2-way 单元）双拓扑闭式——"
+            "端口口径等价而臂/隔离电阻不同，N≥3 星形隔离近似级别如实声明。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_nway_wilkinson"),
+        ),
+        formulas=(
+            Formula(
+                title="star 星形（Pon 1961）",
+                latex=(
+                    "Z_{\\mathrm{arm}}=\\sqrt{N}\\,Z_0,\\qquad "
+                    "R_{\\mathrm{iso}}=Z_0\\ (\\text{每支，星形公共浮点节点})"
+                ),
+                quote="star（Pon 1961 星形）：N 支 λ/4 臂各 Z_arm=√N·Z0（N 臂并联于输入结=Z0 闭式",
+                quote2="匹配）；N 支隔离电阻各 R=Z0，星形接各输出口与公共浮点节点。N=2 退化为经典",
+                cite="synthesize_nway_wilkinson docstring「闭式公式」节",
+            ),
+            Formula(
+                title="tree 树形（2^k）",
+                latex=(
+                    "n=2^k,\\quad k=\\log_2 n,\\quad "
+                    "\\text{每级}=\\sqrt{2}Z_0\\ \\text{臂}+2Z_0\\ "
+                    "\\text{隔离}"
+                ),
+                quote="tree（树形）：仅 n=2^k；每级为既有 2-way 单元（臂 √2·Z0、隔离 R=2·Z0，与",
+                quote2="synthesize_wilkinson 同口径），共 k=log2(n) 级、2n-2 支臂、n-1 支隔离电阻。",
+                cite="synthesize_nway_wilkinson docstring「闭式公式」节",
+            ),
+            Formula(
+                title="N=2 退化锚（与经典 Wilkinson 同解）",
+                latex=(
+                    "N=2:\\ Z_{\\mathrm{arm}}=\\sqrt{2}Z_0,\\quad "
+                    "R_{\\mathrm{iso}}=2Z_0"
+                ),
+                quote="N=2 退化为经典 2-way：两支 Z0 串联=隔离 2·Z0=",
+                cite=(
+                    "synthesize_nway_wilkinson notes——与 synthesize_wilkinson"
+                    "（70.7Ω 臂 + 100Ω 隔离）同解"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="但 N>2 时臂阻抗与隔离电阻不同（star N=4：臂 2·Z0=100Ω + R=Z0×4；tree N=4：",
+                note=(
+                    "两拓扑端口阻抗口径等价、臂/隔离电阻不同——消费方必读"
+                    "口径差异（docstring「口径差异」节）。"
+                ),
+            ),
+            Boundary(
+                quote="且 N≥3 星形隔离为经典近似（Pon 1961 口径，",
+                note=(
+                    "N≥3 星形非理想两两隔离、随 N 退化——需理想两两隔离用 "
+                    "topology='tree'（近似级别如实声明）。"
+                ),
+            ),
+            Boundary(
+                quote="tree 拓扑要求 n 为 2 的幂（2^k），got n=",
+                note="非 2 幂显式拒绝并指引 star——不静默取整。",
+            ),
+            Boundary(
+                quote="阻抗级设计，无 f0 不产线宽/臂长",
+                note=(
+                    "本键只出阻抗级设计——物理尺寸需 f0_ghz+层叠另行精算"
+                    "（与 λ/4 臂长链的分界显式）。"
+                ),
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="schiffman",
+        tagline=(
+            "Schiffman 90° 定差移相器闭式综合：耦合 U 形全通段与参考直通段的"
+            "差分相移恒等式 Δφ=β_ref·L_ref−Φ_c 对 L_ref 线性、一步精确反解——"
+            "KJ 反演几何与带宽窗平坦度分析同键产出。"
+        ),
+        modules=("synthesis",),
+        primary_entries=(
+            ("synthesis", "synthesize_schiffman"),
+        ),
+        formulas=(
+            Formula(
+                title="参考段一步精确反解",
+                latex=(
+                    "\\Delta\\varphi=\\beta_{\\mathrm{ref}}L_{\\mathrm{ref}}"
+                    "-\\Phi_c(f_0),\\qquad "
+                    "L_{\\mathrm{ref}}=\\frac{\\Phi_c(f_0)+\\delta_{"
+                    "\\mathrm{rad}}}{\\beta_{\\mathrm{ref}}(f_0)}"
+                ),
+                quote="L_ref = (Φ_c(f0) + δ_rad)/β_ref(f0)。",
+                cite=(
+                    "synthesize_schiffman docstring（Δφ 对 L_ref 线性、一步"
+                    "精确反解；schiffman_delta_phase 同源注释）"
+                ),
+            ),
+            Formula(
+                title="耦合段电长度口径",
+                latex="\\theta_0=\\mathrm{ratio}\\cdot 90^\\circ",
+                quote="耦合段长度取耦合长度比语义：f0 处偶/奇模",
+                quote2="平均电长度 θ0 = coupling_length_ratio·90°（1.0 = 经典 λ/4 耦合段）；",
+                cite="synthesize_schiffman docstring（模型：耦合段=平行耦合 U 形全通段，Schiffman 1958 口径）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="- 准静态 εeff 逐模常数化（KJ 反演联动，不含色散）；",
+                note="v1 闭式口径显式声明：不含色散/近场/宽度渐变修正。",
+            ),
+            Boundary(
+                quote="参考段 εeff 取模平均相速口径；近场/色散/宽度渐变修正不做。",
+                note="参考段 εeff=偶/奇模平均相速口径——与内核 v1 同一假设面。",
+            ),
+            Boundary(
+                quote="Z0e 须大于 Z0o（耦合线偶/奇模阻抗物理序）",
+                note="偶/奇模物理序守卫（反序显式拒绝，不外推）。",
+            ),
+            Boundary(
+                quote="coupling_length_ratio 须在 (0, 2]（θ0=ratio·90°，越域不外推），got ",
+                note="耦合长度比越域显式拒绝（(0,2] 值域）。",
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="bethe_hole_coupler",
+        tagline=(
+            "Bethe 孔定向耦合器（矩形波导共宽壁中心圆孔）：小孔极化率偶/奇"
+            "支路 E+M/E−M 结构给出耦合/隔离/方向性闭式，综合方向 c∝d³ 反解"
+            "三次式——Cohn 有限壁厚修正 opt-in、近似层级与守卫逐条声明。"
+        ),
+        modules=("calc_families/bethe_hole",),
+        primary_entries=(
+            ("calc_families/bethe_hole", "bethe_hole_coupler"),
+        ),
+        test_face_needles=("bethe_hole_coupler",),
+        formulas=(
+            Formula(
+                title="Bethe 小孔极化率（零厚无限屏）",
+                latex="\\alpha_e=\\tfrac{2r^3}{3},\\qquad \\alpha_m=\\tfrac{4r^3}{3}",
+                quote="αe=2r³/3、αm=4r³/3（H. A. Bethe,",
+                quote2='"Theory of Diffraction by Small Holes", Phys. Rev. 66:66, 1944；',
+                cite=(
+                    "模块 docstring「物理口径」节（与 "
+                    "core/aperture_coupling.bethe_polarizability_circle 同源"
+                    "单源消费）"
+                ),
+            ),
+            Formula(
+                title="耦合/隔离幅值（E、M 支路同相相加/反相相消）",
+                latex=(
+                    "|c_{\\mathrm{coup}}|=\\tfrac{2\\omega}{ab}"
+                    "\\bigl(\\varepsilon_0\\alpha_e Z_{10}"
+                    "+\\mu_0\\alpha_m/Z_{10}\\bigr),\\quad "
+                    "|c_{\\mathrm{iso}}|=\\tfrac{2\\omega}{ab}"
+                    "\\bigl|\\varepsilon_0\\alpha_e Z_{10}"
+                    "-\\mu_0\\alpha_m/Z_{10}\\bigr|"
+                ),
+                quote="|c_耦合| = (2ω/(ab))·(ε0αe·Z10 + μ0αm/Z10)    （E、M 同相相加）",
+                quote2="|c_隔离| = (2ω/(ab))·|ε0αe·Z10 − μ0αm/Z10|    （反相相消）",
+                cite=(
+                    "模块 docstring（功率归一化模反应式；两项同量纲、乘积"
+                    "无量纲幅值比已核实）"
+                ),
+            ),
+            Formula(
+                title="方向性极值（设计频率 E/M 平衡）",
+                latex=(
+                    "\\frac{M}{E}=2\\Bigl(\\frac{\\beta}{k_0}\\Bigr)^{\\!2},"
+                    "\\quad f=\\frac{c_0}{\\sqrt{2}\\,a}\\Rightarrow "
+                    "D\\to\\infty"
+                ),
+                quote="M/E 比 = (αm/αe)·(η0/Z10)² = 2(β/k0)²：f = c0/(√2·a)（λg=2a）时隔离",
+                cite=(
+                    "模块 docstring（隔离向严格相消→单孔方向性无究大；偏离"
+                    "设计频率 D=20lg[(E+M)/|E−M|] 退化，窄带单孔特性）"
+                ),
+            ),
+            Formula(
+                title="Cohn 有限壁厚修正（opt-in）",
+                latex="R=\\frac{1}{1-(f/f_{\\mathrm{res}})^2},\\quad "
+                      "e^{-\\alpha_{\\mathrm{cut}}t}",
+                quote="①孔口共振增强因子 R=1/(1−(f/f_res)²)，f_res 取对应圆波导截止常数",
+                cite=(
+                    "模块 docstring（f_res,m=c0/(1.706d) TE11 型、f_res,e="
+                    "c0/(1.305d) TM01 型；孔颈截止衰减 Collin 截止波导节；"
+                    "近似层级如实声明）"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="- f ≤ fc10 或 f/fc < 1.05（截止附近 λg 发散，Bethe 场系数失真）；",
+                note="近截止病态带显式拒绝（finline/rwg_mmt 同哲学）。",
+            ),
+            Boundary(
+                quote="d>λ0/3（小孔假设 d≪λ0）；",
+                note="一阶小孔假设域守卫（d>0.8·b 窄边比例上限同守卫族）。",
+            ),
+            Boundary(
+                quote="Cohn 域 f≥0.9·f_res,m 显式拒绝（共振因子发散）；",
+                note="修正因子发散域显式拒绝——不外推共振奇点。",
+            ),
+            Boundary(
+                quote="（|c|≪1，不迭代加载修正）、无孔间互耦（多孔阵口径只给 λg/4 间距）。",
+                note="弱耦合单孔口径：不迭代加载修正、多孔阵只给间距口径。",
+            ),
+        ),
+        doc_refs=(),
+    ),
+    CardSpec(
+        kernel_id="gysel_core",
+        tagline=(
+            "Gysel 功分器 core 电气闭式族：六 λ/4 电气段拓扑（桥带 λ/2 中点="
+            "对称面真实节点）+偶/奇模半电路验证+五线六节点导纳网络精确频响"
+            "——隔离负载外置可独立散热，是与内嵌电阻 Wilkinson 的族界。"
+        ),
+        modules=("calc_families/gysel_core",),
+        primary_entries=(
+            ("calc_families/gysel_core", "gysel_core_synthesize"),
+            ("calc_families/gysel_core", "gysel_frequency_response"),
+        ),
+        test_face_needles=("gysel_core_synthesize", "gysel_frequency_response"),
+        formulas=(
+            Formula(
+                title="六 λ/4 电气段拓扑（#206 定版）",
+                latex=(
+                    "P_1\\xrightarrow{\\sqrt{2}Z_0}P_{2/3},\\quad "
+                    "P_{2/3}\\xrightarrow{Z_0}\\Delta_{1/2},\\quad "
+                    "\\Delta_1\\xrightarrow{Z_0\\,\\lambda/2}\\\\\\Delta_2"
+                ),
+                quote="拓扑（六 λ/4 电气段）：P1—[√2·Z0 臂]—P2 与 P1—[√2·Z0 臂]—P3；",
+                quote2="P2—[Z0 隔离线]—Δ1 与 P3—[Z0 隔离线]—Δ2；Δ1—[Z0 λ/2 桥带，中点 M]—",
+                cite="模块 docstring「物理口径」节（Δ1/Δ2 各端接 Z0 负载，可独立散热=大功率口径）",
+            ),
+            Formula(
+                title="偶/奇模半电路验证（Γe=Γo=0）",
+                latex="\\Gamma_e=\\Gamma_o=0,\\quad S_{22}=S_{32}=0",
+                quote="偶模：臂 λ/4 把 2Z0 变换为 Z0（Γe=0）；桥带半段 λ/4 端接虚开路→短",
+                quote2="奇模：P1/M=虚地，臂与桥带半段 λ/4 变开路；输出只见 λ/4 隔离线端接",
+                cite="模块 docstring（对称面虚开路/虚地；f0 精确匹配+隔离闭式）",
+            ),
+            Formula(
+                title="理想 f0 三口 S 矩阵",
+                latex="S_{21}=S_{31}=-\\tfrac{j}{\\sqrt{2}},\\quad "
+                      "S_{32}=0",
+                quote="理想 f0 三口 S 矩阵：S21=S31=−j/√2（臂 −90°+均分 3.0103dB）、全对角",
+                quote2="与 S32=0（互易 S=Sᵀ；内负载吸收→非无耗不幺正，如实注记）。",
+                cite="模块 docstring（−3.0103dB 恒等；互易非幺正如实注记）",
+            ),
+            Formula(
+                title="五线六节点导纳网络精确频响",
+                latex="Y_{\\mathrm{self}}=-j\\frac{\\cot\\theta}{Z_c},"
+                      "\\quad Y_{\\mathrm{mutual}}=\\frac{j}{Z_c\\sin\\theta}",
+                quote="Y_self=−j·cotθ/Zc、Y_mutual=j/(Zc·sinθ)（λ/4 反解 Z_in=Zc²/ZL 由该",
+                cite=(
+                    "模块 docstring（内节点消元得 3 口 Y_red；耗散守恒 "
+                    "|a1|²=Σ|b_k|²+|V_Δ1|²/Z0+|V_Δ2|²/Z0 残差字段构造恒成立）"
+                ),
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="判废锚（#206）：无桥带朴素拓扑带心 S21≈−6.5dB——λ/2 桥带",
+                note="λ/2 桥带是隔离的必要环节（判废对照字段在键，#206 同口径）。",
+            ),
+            Boundary(
+                quote="守卫：z0_ohm>0；freq_ghz/f0_ghz>0 且避开线节 θ=kπ 奇异点（f=2k·f0 显",
+                note="频域奇异守卫：f=2k·f0 线节 θ=kπ 显式拒绝（桥带按 M 拆两段规避 f0 奇异）。",
+            ),
+            Boundary(
+                quote="（纯电气闭式，无叠层依赖；频响键补全 f0 以外的带宽行为，模板/裁判均",
+                note=(
+                    "族界三层：模板级（synthesize_gysel_model 出几何）/裁判级"
+                    "（fake 理想 S）/本族=core 注册计算器级（纯电气+频响带宽面）。"
+                ),
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="tests/unit/test_a6b_multisection_gysel.py",
+                quote="tests/unit/test_a6b_multisection_gysel.py",
+                tracked=True,
+            ),
+        ),
+    ),
+    CardSpec(
+        kernel_id="coupled_line_bpf",
+        tagline=(
+            "平行耦合线带通滤波器实现族：全极点切比雪夫 g 值→J 倒置器→逐节 "
+            "(Z0e,Z0o)→KJ 二维反解微带 (w,s)——耦合矩阵级（C13）之下的"
+            "器件实现尺寸级，Pozar Example 8.7 阻抗表逐位锚。"
+        ),
+        modules=("calc_families/coupled_line_bpf",),
+        primary_entries=(
+            ("calc_families/coupled_line_bpf", "coupled_line_bpf_synthesize"),
+            ("calc_families/coupled_line_bpf", "coupled_line_bpf_response"),
+        ),
+        test_face_needles=(
+            "coupled_line_bpf_synthesize",
+            "coupled_line_bpf_response",
+        ),
+        formulas=(
+            Formula(
+                title="J 倒置器（Pozar §8.6，MYJ ch.8 同源）",
+                latex=(
+                    "x_{01}=\\sqrt{\\frac{\\pi\\delta}{2g_0g_1}},\\quad "
+                    "x_j=\\frac{\\pi\\delta/2}{\\sqrt{g_jg_{j+1}}},\\quad "
+                    "x_n=\\sqrt{\\frac{\\pi\\delta}{2g_ng_{n+1}}}"
+                ),
+                quote="x_01 = J_01/Z0 = sqrt(π·δ/(2·g_0·g_1))          （端节）",
+                quote2="x_j  = J_j,j+1/Z0 = (π·δ/2)/sqrt(g_j·g_{j+1})   （内节，j=1..n−1）",
+                cite=(
+                    "模块 docstring「物理口径」节（g 值走 "
+                    "core/matching.chebyshev_g_values，Pozar 表 8.4 递推）"
+                ),
+            ),
+            Formula(
+                title="逐节奇偶模阻抗（Pozar 式 8.13x 精确形）",
+                latex="Z_{0e}=Z_0(1+x+x^2),\\qquad "
+                      "Z_{0o}=Z_0(1-x+x^2)",
+                quote="Z0e = Z0·(1 + x + x²)，  Z0o = Z0·(1 − x + x²)",
+                cite=(
+                    "模块 docstring（反解恒等式 x=(Z0e−Z0o)/(2Z0) 测试钉；"
+                    "同步 TEM 极限下中心频率精确）"
+                ),
+            ),
+            Formula(
+                title="段长/谐振器长（KJ 正向回代+开路端修正）",
+                latex="L=\\frac{\\lambda_0}{4}\\sqrt{\\frac{2}{\\varepsilon_e"
+                      "+\\varepsilon_o}},\\quad "
+                      "L_{\\mathrm{res}}=\\lambda_g/2-2\\Delta l",
+                quote="正向回代出 εeff_e/εeff_o → 段长 = λ0/4·sqrt(2/(εe+εo))；谐振器 =",
+                quote2="λg/2（两邻段平均 εeff）− 2×Δl（Hammerstad 开路端修正，core",
+                cite=(
+                    "模块 docstring（(Z0e,Z0o)→(w,s) 稳健二维数值反解，正向="
+                    "coupled_microstrip_even_odd_ohm KJ 1984 闭式）"
+                ),
+            ),
+            Formula(
+                title="频响（偶/奇模叠加 4 端口+交叉口压缩）",
+                latex="S^{(4\\square)}=\\tfrac{1}{2}(S^e+S^o)"
+                      "\\xrightarrow{\\Gamma=+1}S^{(2\\square)}"
+                      "\\xrightarrow{\\mathrm{ABCD}}S",
+                quote="每节 = 偶/奇模各自 2 端口线 S 叠加构造 4 端口 S（构造恒满足无耗/互易），",
+                cite=(
+                    "模块 docstring「频响键口径」节（交叉口 Γ=+1 开路端接压缩"
+                    "2 端口，S→ABCD 按 Pozar Table 4.2）"
+                ),
+                kind="口径示意（非 docstring 原式，读代码为准）",
+            ),
+        ),
+        boundaries=(
+            Boundary(
+                quote="f0=2 GHz、δ=10%、Z0=50 → (Z0e,Z0o) = (70.61,39.24)/(56.64,44.77)/",
+                note=(
+                    "Pozar Example 8.7（p.435 4th ed）文献例逐位复现锚"
+                    "（εr/h 无关）；g 值 vs 教科书表 1.5963/1.0967。"
+                ),
+            ),
+            Boundary(
+                quote="（带缘倒置器频率依赖的二阶偏差，实测 ~0.28 dB）；带心 |S21|=0 dB、带内",
+                note="倒置器 λ/4 实现的二阶修正是带内偏差来源——如实锚定 ~0.28dB。",
+            ),
+            Boundary(
+                quote="order 为 ≥2 整数；0<fbw≤1；ripple_db>0；z0_ohm>0；epsilon_r≥1；",
+                note="规格域守卫族；KJ 反解越域（极宽/极窄带不可实现）显式拒绝并附节序号。",
+            ),
+            Boundary(
+                quote="（Mathaei-Pollard-Feit ch.8 / Pozar §8.6.2 口径）。",
+                note=(
+                    "族界：C13=耦合矩阵级（无物理尺寸）、模板渲染级=KJ 反解链"
+                    "绑定渲染管线——本族=core 注册键面的器件实现尺寸级"
+                    "（无 TZ、无折叠/箭头拓扑）。"
+                ),
+            ),
+        ),
+        doc_refs=(
+            DocRef(
+                path="tests/unit/test_a3c_coupled_interdigital.py",
+                quote="tests/unit/test_a3c_coupled_interdigital.py",
+                tracked=True,
+            ),
         ),
     ),
 )
@@ -743,20 +2238,53 @@ def has_calculator_decorator(stem: str) -> bool:
 
 
 def _references_module(text: str, stem: str) -> bool:
-    if f"rfauto.core.{stem}" in text:
+    # 子包 stem（calc_families/名）归一为点分模块路径后匹配；顶层 stem
+    # 行为与历史逐字节一致（dot_stem==stem）。
+    dot_stem = stem.replace("/", ".")
+    if f"rfauto.core.{dot_stem}" in text:
         return True
-    pat = rf"from rfauto\.core import [^\n]*\b{stem}\b"
+    parent, _, tail = dot_stem.rpartition(".")
+    if parent:
+        pat = (
+            rf"from rfauto\.core\.{re.escape(parent)} import "
+            rf"[^\n]*\b{re.escape(tail)}\b"
+        )
+    else:
+        pat = rf"from rfauto\.core import [^\n]*\b{re.escape(stem)}\b"
     return re.search(pat, text) is not None
 
 
-def referencing_tests(stem: str) -> list[tuple[str, int]]:
-    """tests/unit 下引用本模块的测试文件（排序）+ def test_ 计数。"""
+def referencing_tests(
+    stem: str, extra_needles: tuple[str, ...] = ()
+) -> list[tuple[str, int]]:
+    """tests/unit 下引用本模块的测试文件（排序）+ def test_ 计数。
+
+    extra_needles：CALC 键名等附加命中串——经 run_calculator 间接消费、
+    无 import 面的子包内核（如 finline/wilkinson_unequal）的测试面靠它
+    显式收录；命中串是显式声明面，不做任何猜测式扩展。
+
+    test_kernel_cards.py 自身排除（#330 自录行教训同族）：保鲜门测试的
+    CARD_KERNELS 选题集含卡 id 字面量——当卡 id 恰为 CALC 键名（如
+    bethe_hole_coupler）时会把「本生成器的选题裁决」误计成消费面。
+    """
     out: list[tuple[str, int]] = []
     for path in sorted(TESTS_UNIT_DIR.glob("test_*.py")):
+        if path.name == "test_kernel_cards.py":
+            continue
         text = path.read_text(encoding="utf-8")
-        if _references_module(text, stem):
+        if _references_module(text, stem) or any(n in text for n in extra_needles):
             out.append((path.name, len(re.findall(r"def (test_\w+)", text))))
     return out
+
+
+def test_face_rows(spec: CardSpec) -> list[tuple[str, int]]:
+    """卡测试面单源（render_card 与保鲜门测试共用，防双实现漂移）。"""
+    seen: list[tuple[str, int]] = []
+    for mod_stem in spec.modules:
+        for name, count in referencing_tests(mod_stem, spec.test_face_needles):
+            if (name, count) not in seen:
+                seen.append((name, count))
+    return seen
 
 
 def consumers(stem: str) -> list[tuple[str, str]]:
@@ -923,7 +2451,8 @@ def render_card(spec: CardSpec) -> str:
         "| 字段 | 值 |",
         "|---|---|",
         f"| 内核 ID | `{spec.kernel_id}` |",
-        f"| 主模块 | `src/rfauto/core/{main_mod}.py`（`rfauto.core.{main_mod}`） |",
+        f"| 主模块 | `src/rfauto/core/{main_mod}.py`"
+        f"（`rfauto.core.{main_mod.replace('/', '.')}`） |",
     ]
     if extra_mods:
         lines.append(f"| 同族模块 | {extra_mods} |")
@@ -1029,14 +2558,10 @@ def render_card(spec: CardSpec) -> str:
     if spec.doc_refs:
         lines += ["判据书/规格指针（docstring 逐字引文钉）：", ""]
         for ref in spec.doc_refs:
-            exist_note = "" if ref.tracked else "（runs/ 证据面，gitignored，存在性不作测试断言）"
+            exist_note = "" if ref.tracked else "（仓内档，公开分发视图不随附，存在性不作测试断言）"
             lines.append(f"- `{ref.path}`{exist_note}——引文：\"{_md_text(ref.quote)}\"")
         lines.append("")
-    all_tests: list[tuple[str, int]] = []
-    for mod_stem in spec.modules:
-        for name, count in referencing_tests(mod_stem):
-            if (name, count) not in all_tests:
-                all_tests.append((name, count))
+    all_tests = test_face_rows(spec)
     total = sum(c for _, c in all_tests)
     lines += [
         f"测试面（tests/unit 引用扫描，机读；合计 **{total}** 个 test 函数）：",
@@ -1140,7 +2665,8 @@ def build(target_dir: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="XA-8 内核域文档卡生成器（首批 5 张）")
+    parser = argparse.ArgumentParser(
+        description="XA-8 内核域文档卡生成器（首批 5 张 + W3-S13 批一 11 张 + W4-S19 批二 8 张）")
     parser.add_argument(
         "--check", action="store_true",
         help="漂移检查：重渲染与已提交卡逐字节比对，漂移即退出码 1（不写文件）",

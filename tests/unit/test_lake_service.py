@@ -444,3 +444,49 @@ class TestExceptNarrowingPins:
         packed_env["pack"].write_bytes(bytes(data))
         r = verify_campaign(packed_env["pack"], packed_env["manifest"])
         assert r["ok"] is False
+
+
+class TestPackCrateMetadata:
+    """XD-16：pack_campaign crate 侧车 opt-in（缺省零行为变化钉）。"""
+
+    def test_default_no_sidecar(self, packed_env, tmp_path):
+        """缺省调用：无 crate 侧车、信封无 crate_metadata_path 键
+        （零缺省行为变化硬门）。"""
+        r = packed_env["result"]
+        assert "crate_metadata_path" not in r
+        assert not Path(str(packed_env["pack"])
+                        + ".crate-metadata.json").exists()
+
+    def test_opt_in_sidecar_references_pack(self, packed_env, tmp_path):
+        """opt-in：侧车落盘 + #pack 实体 pack_sha256 与信封一致 +
+        信封附 crate_metadata_path；重打包同内容侧车确定性一致
+        （除 pack_file 文件名差异面）。"""
+        campaign = packed_env["campaign"]
+        pack2 = tmp_path / "packs" / "campaign_x_crate.tar.zst"
+        r = pack_campaign(campaign, pack2, include_crate_metadata=True)
+        assert r["ok"], r.get("errors")
+        side = Path(r["crate_metadata_path"])
+        assert side.name == "campaign_x_crate.tar.zst.crate-metadata.json"
+        assert side.exists()
+        crate = json.loads(side.read_text(encoding="utf-8"))
+        assert crate["ok"] is True
+        pack_entity = next(e for e in crate["@graph"]
+                            if e["@id"] == "#pack")
+        assert pack_entity["pack_sha256"] == r["pack_sha256"]
+        assert pack_entity["offset_manifest"] == (
+            pack2.name + ".manifest.json")
+        # 根 Dataset hasPart 覆盖战役目录全文件（6 文件）
+        root = next(e for e in crate["@graph"] if e["@id"] == "./")
+        assert len(root["hasPart"]) == r["n_files"] == 6
+        # 重打包（另一 pack 名）：除文件名面外逐键一致（确定性投影）
+        pack3 = tmp_path / "packs" / "campaign_x_crate2.tar.zst"
+        r3 = pack_campaign(campaign, pack3, include_crate_metadata=True)
+        assert r3["ok"]
+        crate3 = json.loads(Path(r3["crate_metadata_path"]).read_text(
+            encoding="utf-8"))
+        e2 = next(e for e in crate["@graph"] if e["@id"] == "#pack")
+        e3 = next(e for e in crate3["@graph"] if e["@id"] == "#pack")
+        e2.pop("pack_file"), e3.pop("pack_file")
+        e2.pop("offset_manifest"), e3.pop("offset_manifest")
+        assert e2 == e3
+        assert json.dumps(crate) == json.dumps(crate3)

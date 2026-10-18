@@ -5,7 +5,7 @@
    ② 初始化——initPages（工具集注入 + 轮询/SSE/导出桥/tools 深链四监听装配）
      与主题四态控制（setThemeMode/getThemeMode）；
    ③ 既有公开导出面全量 re-export（app.js/palette.js 的 import 路径
-     "./pages.js" 不变；导出面 54 名逐名等价（内部重构档）。
+     "./pages.js" 不变；导出面 54 名逐名等价见等价性审计归档）。
    拆分域：context/dom/sortable/charts/polling/sse/kit/router/dashboard_util/
    filebrowser + view_*（按页面域，见各模块 docstring）。行为零变化纪律：
    页面代码逐字节搬移（含注释），仅 import 接线与跨模块状态访问器
@@ -35,9 +35,9 @@ import { _bindExportChartEvent, _bindThemeRefresh } from "./pages/charts.js";
 // 等价——showPage("dashboard") 同步渲染，setTimeout(0) 补焦时标题已在
 // DOM）。其余 21 个视图模块改原生 ESM 动态 import() 按需加载。
 import { _bindToolsDeepLink, pageTools } from "./pages/view_tools.js";
-import { pageDashboard } from "./pages/view_dashboard.js";
-// 路由分发（VIEWS 注册表 + showPage 单源）
-import { VIEWS } from "./pages/router.js";
+import { pageDashboard, dashboardCtx } from "./pages/view_dashboard.js";
+// 路由分发（VIEWS 注册表 + showPage 单源）+ R-1 PageContext 注册表
+import { PAGE_CTX, VIEWS } from "./pages/router.js";
 // esc 本模块内直接消费（懒加载失败面板转义）；dom.js 本就随门面 re-export
 // 在静态依赖图内，此处补具名绑定（re-export 语法不产生本地绑定）。
 import { esc } from "./pages/dom.js";
@@ -81,6 +81,29 @@ function _lazyView(key, file, name) {
   };
 }
 
+/* ═══ R-1（aurora72 W1-S3）：懒加载页的 PageContext 包装器 ═════════
+   懒加载视图的钩子面：进过页后模块已在缓存，refresh/leave 动态 import
+   命中缓存零网络；leave 仅在离页触发（此前必已进页）=恒缓存命中。未加载
+   （页面从未进入）时理论不可达，仍按 #105 best-effort 静默兜底。 */
+function _lazyCtx(file, name) {
+  return {
+    refresh: async () => {
+      try {
+        const m = await import("./pages/" + file);
+        const c = m[name];
+        if (c && typeof c.refresh === "function") await c.refresh();
+      } catch { /* 刷新失败不抛未处理 rejection */ }
+    },
+    leave: async () => {
+      try {
+        const m = await import("./pages/" + file);
+        const c = m[name];
+        if (c && typeof c.leave === "function") await c.leave();
+      } catch { /* 离页收束失败静默 */ }
+    },
+  };
+}
+
 /* 懒加载别名（键名=渲染函数历史绑定名，与拆分前 import 面逐字一致）。 */
 const pageImport = _lazyView("import", "view_import.js", "pageImport");
 const pageRecipe = _lazyView("recipe", "view_recipe.js", "pageRecipe");
@@ -121,6 +144,66 @@ Object.assign(VIEWS, {
   gallery: pageGallery, campaign: pageCampaign, profile: pageProfile,
   /* PR-9 调度队列页（ge8b Wave B 席B3）：战役队列+G13 决策日志 */
   queue: pageQueue,
+});
+
+/* R-1 PageContext 注册（aurora72 W1-S3 协议在 router.js PAGE_CTX；
+   aurora_e W2-S7 波2 余页迁移 + W3-S12 波3 第二组 6 页 + W4-S17 波4 收尾）：
+   - dashboard=静态导入直登记（widget 增删/拖拽/palette 刷新走局部重铺，
+     view_dashboard.js refreshDashboard）；
+   - 懒加载页经 _lazyCtx 包装：
+     · loopboard：refresh=立即拉看板、leave=_pollStop 离页停表（W1 试点）
+     · tune：refresh=立即拉状态+trials、leave=_pollStop 非终态停表
+       （终态停仍走 tuneRefresh 内 _pollStop(name,true) 语义不变）
+     · detail：refresh=当前 run 重渲（无轮询面，leave 不需要）
+     · runs：refresh=run 清单重拉（壳与筛选态复用）
+     · campaign：refresh=当前所选 run 立即拉看板（loadDash 闭包经模块级
+       引用转发；SSE 收束由 router._sseLeavePage 单源管）
+     · reports：refresh=报告清单重拉（行绑定覆盖式幂等）
+     · sparams（W3-S12）：refresh=免全页重建直刷曲线（load 闭包经模块级
+       引用转发——只重拉当前 run 曲线/Smith 数据换图区）
+     · calibration：refresh=表数据重拉（runs 同模板，行点击详情区不整清）
+     · queue：refresh=战役计划表重拉（runs 同模板）
+     · gallery：refresh=模板卡数据重拉（过滤词与已开预览面保持）
+     · optstack：refresh=Pareto 前沿图重拉（plotCard 壳 setOption 复用）
+     · timeline：refresh=成本时间线两图重拉（同上 setOption 复用）
+     · W4-S17 波4 收尾十一页（全 refresh-only，无轮询面=无 leave 需求）：
+       solvers/profile/datasets/anchors/uq/playground/farfield/recipe/tools
+       八页 refresh=各自 page 函数整体重拉（幂等：壳判 innerHTML 已在即跳过
+       或整页重建无交互态；profile/recipe/playground/farfield/tools 编辑/
+       选择态随壳保留）；field=load 闭包经模块级引用转发（sparams 同款——
+       切片滑条索引与 run/dump 选择态保留）；agent=数据面板重拉闭包转发
+       （对话浮窗与气泡历史不动——appendBubble 非幂等，整页重跑会重复追加）。
+   其余 2 页未登记（渐进迁移收口，跳过理由）：
+     · guide=纯静态说明书壳（零数据拉取/零轮询/零交互态）；
+     · import=纯交互表单页（/api/hfss/import 等均为用户点击触发，无进页
+       数据面——refresh 语义空，重进反而丢表单编辑态）。 */
+Object.assign(PAGE_CTX, {
+  dashboard: dashboardCtx,
+  loopboard: _lazyCtx("view_loopboard.js", "loopboardCtx"),
+  tune: _lazyCtx("view_tune.js", "tuneCtx"),
+  detail: _lazyCtx("view_detail.js", "detailCtx"),
+  runs: _lazyCtx("view_runs.js", "runsCtx"),
+  campaign: _lazyCtx("view_campaign.js", "campaignCtx"),
+  reports: _lazyCtx("view_reports.js", "reportsCtx"),
+  /* W3-S12 波3 第二组（六页，全 refresh-only 无轮询面） */
+  sparams: _lazyCtx("view_sparams.js", "sparamsCtx"),
+  calibration: _lazyCtx("view_calibration.js", "calibrationCtx"),
+  queue: _lazyCtx("view_queue.js", "queueCtx"),
+  gallery: _lazyCtx("view_gallery.js", "galleryCtx"),
+  optstack: _lazyCtx("view_optstack.js", "optstackCtx"),
+  timeline: _lazyCtx("view_timeline.js", "timelineCtx"),
+  /* W4-S17 波4 收尾（十一页，全 refresh-only 无轮询面） */
+  solvers: _lazyCtx("view_solvers.js", "solversCtx"),
+  profile: _lazyCtx("view_profile.js", "profileCtx"),
+  datasets: _lazyCtx("view_data.js", "datasetsCtx"),
+  anchors: _lazyCtx("view_data.js", "anchorsCtx"),
+  uq: _lazyCtx("view_data.js", "uqCtx"),
+  playground: _lazyCtx("view_playground.js", "playgroundCtx"),
+  farfield: _lazyCtx("view_fieldviz.js", "farfieldCtx"),
+  field: _lazyCtx("view_fieldviz.js", "fieldCtx"),
+  agent: _lazyCtx("view_agent.js", "agentCtx"),
+  recipe: _lazyCtx("view_recipe.js", "recipeCtx"),
+  tools: _lazyCtx("view_tools.js", "toolsCtx"),
 });
 
 /* PR-1 主题 → v5.0 Aurora 四态（midnight|ocean|light|system）：localStorage
@@ -218,6 +301,7 @@ export {
 } from "./pages/kit.js";
 export {
   parseRoute, routeOpenerFor, routeOpen, openRun, openCampaign, showPage,
+  pageContextFor,
 } from "./pages/router.js";
 export {
   calcGroup, groupCalcList, toolFilterMatch, toolsDeepLinkKey, toolsSelectKey,

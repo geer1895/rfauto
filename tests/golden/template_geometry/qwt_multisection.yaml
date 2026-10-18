@@ -1,0 +1,90 @@
+schema: rfauto-template-geometry-golden/v1
+template: qwt_multisection
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  widths_mm:
+  - 0.966
+  - 0.603
+  - 0.344
+  lengths_mm:
+  - 17.851
+  - 18.162
+  - 18.462
+  feed_w_mm: 1.1134
+  z_load_ohm: 100.0
+status: ok
+script_sha256: e1bad62cf9c946084ce7075dea37916fc88dc09973ac927e9f1b3ca7558cbc7e
+csx:
+  n_primitives: 13
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: qwt_multisection
+    kind: Metal
+    n: 5
+    types:
+      '1': 5
+  - name: qwt_load
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 8cafa62218f322eb539b4bc0f89c47c1bc8a00f4a932260467f05232d1cffe9f
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 123
+      min_gap_m: 7.4e-05
+    y:
+      n: 256
+      min_gap_m: 0.00025
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: 89a10156b828cd208d7b52c5c848878aef49cb054bd4ee32545d175e85d01889
+ports:
+- 1

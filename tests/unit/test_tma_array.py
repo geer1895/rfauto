@@ -567,7 +567,7 @@ def test_service_error_envelope_no_raise():
     for bad in bad_inputs:
         resp = tma_pattern_service(bad)
         assert resp["ok"] is False
-        assert isinstance(resp["error"], str) and resp["error"]
+        assert isinstance(resp["errors"][0], str) and resp["errors"][0]
 
 
 def test_service_beam_agility_envelope():
@@ -657,7 +657,7 @@ def test_service_weights_tau_wincenter_forms():
     bad_w = tma_pattern_service({
         "n_elements": 2, "tau": 0.5, "weights": [[1.0, 0.0]],
         "u_grid": {"values": [0.0, 0.5]}})
-    assert bad_w["ok"] is False and "weights" in bad_w["error"]
+    assert bad_w["ok"] is False and "weights" in bad_w["errors"][0]
     # win_center 标量广播 ≡ 逐元同值列表（逐位）
     out_s = tma_pattern_service({
         "n_elements": 4, "tau": 0.5, "win_center": 0.25, "max_order": 1,
@@ -674,7 +674,35 @@ def test_service_weights_tau_wincenter_forms():
     assert out_t["ok"] is True
     bad_t = tma_pattern_service({
         "n_elements": 4, "tau": [0.5] * 3, "u_grid": {"values": [0.0, 0.5]}})
-    assert bad_t["ok"] is False and "tau" in bad_t["error"]
+    assert bad_t["ok"] is False and "tau" in bad_t["errors"][0]
+
+
+def test_service_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（1.0→1.1，2026-10-18 W4-S20）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键保留；成功信封同笔带戳（键序钉）。
+    """
+    import json as _json
+
+    from rfauto.service.tma_array_service import (
+        TMA_SERVICE_SCHEMA_VERSION,
+        tma_pattern_service,
+    )
+
+    assert TMA_SERVICE_SCHEMA_VERSION == "1.1"
+    env = tma_pattern_service({"n_elements": 4})  # 缺必填 tau → 失败信封
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    assert env["schema_version"] == "1.1"
+    env_ok = tma_pattern_service(
+        {"n_elements": 4, "tau": 0.5, "u_grid": {"values": [0.0, 0.5]}})
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    assert _json.dumps([env, env_ok])
 
 
 def test_service_beam_agility_defaults_and_explicit_diff():

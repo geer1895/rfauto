@@ -3,7 +3,7 @@
 薄壳（分层铁律 3/4）：数值只在确定性内核 core/rotman_lens（Rotman-Turner
 三焦点闭式 + 等光程/指向双路径验证，#118 互证）；本模块不产生物理数字，
 只做契约适配与异常到 JSON 信封的翻译。信封契约（与 butler_matrix_service
-同族）：ok=False + error 字符串绝不抛出。
+同族）：ok=False + errors 文案列表，绝不抛出。
 
 - :func:`rotman_lens_design`：轻量面——综合 + 等光程/指向验证摘要。
 - :func:`rotman_lens_payload`：全量面——设计 + 验证 + 全端口表（λ/毫米双出）。
@@ -12,7 +12,15 @@
 from __future__ import annotations
 
 from rfauto.core import rotman_lens as rl
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-18 AU-2 域升版，aurora_e W4-S20 席）：无戳域补戳 + 失败信封
+#: 单数 ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——
+#: 契约 §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；消费面
+#: （tests/unit/test_rotman_lens.py）同笔迁移，无 CLI/MCP/UI 消费者
+#: （grep 实测）。首批口径无版本戳。
+ROTMAN_LENS_SERVICE_SCHEMA_VERSION = "1.1"
 
 #: 数值内核期可预期的异常族（进信封，不外抛）
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError, ArithmeticError)
@@ -29,7 +37,7 @@ def rotman_lens_design(
     """综合 + 验证摘要（轻量面）。
 
     Returns:
-        JSON 可序列化 dict；失败时 ``{"ok": False, "error": str}`` 不抛出。
+        JSON 可序列化 dict；失败时 ``{"ok": False, "errors": [str]}`` 不抛出。
     """
     try:
         design = rl.design_rotman_lens(
@@ -43,6 +51,7 @@ def rotman_lens_design(
         equal_path = rl.verify_equal_path(design)
         steering = rl.verify_beam_steering(design)
         return ok_envelope(
+            schema_version=ROTMAN_LENS_SERVICE_SCHEMA_VERSION,
             data={
                 "design": design.to_dict(),
                 "equal_path": {
@@ -58,7 +67,8 @@ def rotman_lens_design(
             },
         )
     except _JSON_ERRORS as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=ROTMAN_LENS_SERVICE_SCHEMA_VERSION)
 
 
 def rotman_lens_payload(
@@ -73,7 +83,7 @@ def rotman_lens_payload(
     """全端口设计表载荷（λ/毫米双出 + 验证摘要，UI/CLI 渲染面直接消费）。
 
     Returns:
-        JSON 可序列化 dict；失败时 ``{"ok": False, "error": str}`` 不抛出。
+        JSON 可序列化 dict；失败时 ``{"ok": False, "errors": [str]}`` 不抛出。
     """
     try:
         table = rl.design_table(
@@ -85,6 +95,9 @@ def rotman_lens_payload(
             g=g,
             n_refractive=n_refractive,
         )
-        return ok_envelope(data={"table": table})
+        return ok_envelope(
+            schema_version=ROTMAN_LENS_SERVICE_SCHEMA_VERSION,
+            data={"table": table})
     except _JSON_ERRORS as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=ROTMAN_LENS_SERVICE_SCHEMA_VERSION)

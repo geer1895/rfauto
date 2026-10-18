@@ -28,7 +28,7 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
 - 节点 verdict 三态：done（含 partial 超预算入库）/failed（执行失败，
   含 crash——执行族）/inconclusive（跑完但证据不可判——判定族）。
   #225 纪律：裁决不可判 ≠ 执行失败，两族分别记录不混淆。
-- inconclusive 产生途径（三选一，显式声明/显式返回才生效，缺省零变化）：
+- inconclusive 产生途径（四选一，显式声明/显式返回才生效，缺省零变化）：
   ① executor 返回 ok=True 且 ``inconclusive`` 真值（可选
   ``inconclusive_reason`` 进注记）→ 终态不重试（执行器已认定本轮证据
   不可判，重试由续跑/计划层决定）；
@@ -37,7 +37,12 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
   → inconclusive（不判 failed）；缺失集含软产物之外的产物 → 照旧 failed；
   ③ 节点声明 ``inconclusive_when.message_contains``：执行成功（done 或
   超预算 partial）且 message 命中子串 → inconclusive（覆盖 done/partial，
-  两类注记并存如实保留——证据不可判优先于超预算 partial 的"可用"语义）。
+  两类注记并存如实保留——证据不可判优先于超预算 partial 的"可用"语义）；
+  ④ 节点声明 ``inconclusive_when.outputs_sanity=[{path, min_bytes?/
+  sha256?/pattern?}]``（XD-10 ensure() 式输出健全性声明，2026-10-18）：
+  产物在盘但内容判据不满足（字节数过小/sha256 不符/正则未命中，多项
+  AND）→ 命中即 inconclusive 终态（与③同口径不重试）；文件缺席不归
+  它管（存在性归②），正则在 schema 构造期已校验可编译。
 - inconclusive 节点处置：产物原样留盘供人工检视；不写 artifact manifest、
   不入 CAS 索引（不采信为可复用产物）；不判死下游（下游照常执行）；
   断点续跑重执行（``_resume_decision`` 只认 done/partial，inconclusive
@@ -84,6 +89,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import subprocess
 import time
 from collections.abc import Callable
@@ -216,6 +222,36 @@ def release_lock(owner_pid: int, lock_path: Path) -> None:
 #: "wall_s": float, "message": str}；超时判废抛 NodeAbortedError，
 #: 竞态完成抛 RaceCompleted(result)。outputs 为 ctx["work_dir"] 相对路径。
 ExecutorFn = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
+
+
+def _outputs_sanity_hits(work_dir: Path,
+                         specs: list[dict[str, Any]]) -> list[str]:
+    """XD-10 途径④判定：返回命中描述串列表（空=全部判据满足）。
+
+    每项声明 {path, min_bytes?/sha256?/pattern?} 逐条 AND：文件在盘才
+    判（缺席=存在性判据管辖，不越权）；min_bytes 过小/sha256 不符/
+    pattern 未命中即命中。判读面只读产物字节（零改写）。
+    """
+    hits: list[str] = []
+    for spec in specs:
+        rel = str(spec["path"])
+        p = work_dir / rel
+        if not p.is_file():
+            continue
+        if "min_bytes" in spec and p.stat().st_size < int(spec["min_bytes"]):
+            hits.append(f"{rel}: size {p.stat().st_size} < "
+                        f"min_bytes {spec['min_bytes']}")
+            continue
+        if "sha256" in spec:
+            digest = file_sha256(p)
+            if digest != spec["sha256"]:
+                hits.append(f"{rel}: sha256 不匹配")
+                continue
+        if "pattern" in spec:
+            text = p.read_text(encoding="utf-8", errors="replace")
+            if not spec["_pattern_re"].search(text):
+                hits.append(f"{rel}: pattern 未命中")
+    return hits
 
 
 def _normalize_executor_result(raw: Any) -> dict[str, Any]:
@@ -571,6 +607,14 @@ class DagRunner:
         soft_missing = {str(r) for r in (inc_when.get("outputs_missing_any")
                                          or [])}
         msg_needle = str(inc_when.get("message_contains", "") or "")
+        # XD-10 途径④：健全性声明预编译（正则已在 schema 构造期校验，
+        # 此处兜底编译失败显式炸=声明 bug 早暴露）。
+        sanity_specs: list[dict[str, Any]] = []
+        for spec in (inc_when.get("outputs_sanity") or []):
+            compiled = dict(spec)
+            if "pattern" in spec:
+                compiled["_pattern_re"] = re.compile(spec["pattern"])
+            sanity_specs.append(compiled)
         for attempt in range(retries + 1):
             budget = escalated_budget(node, attempt)
             timeout_s = float(budget.get("timeout_s") or 0)
@@ -643,6 +687,21 @@ class DagRunner:
                     return "inconclusive", existing, notes, False
                 notes.append(f"attempt{attempt}: 声明产物缺失 {missing[:3]}")
                 continue
+
+            # QW-7 途径④（XD-10）：产物在盘但健全性声明不满足 → 证据不可判
+            # （命中即终态不重试，与途径③同口径；文件缺席不归它管——存在性
+            # 归途径②，内容面只对在盘产物下结论）。
+            if sanity_specs:
+                sanity_hits = _outputs_sanity_hits(work_dir, sanity_specs)
+                if sanity_hits:
+                    notes.append(
+                        f"attempt{attempt}: "
+                        f"inconclusive_when.outputs_sanity 命中"
+                        f"（{'; '.join(sanity_hits[:3])}）→ 节点态 "
+                        "inconclusive（产物在盘但内容判据不满足——跑完但"
+                        "证据不可判，不判 failed；产物留盘不写 manifest/"
+                        "不入索引）")
+                    return "inconclusive", list(outputs), notes, False
 
             wall = float(result.get("wall_s") or 0.0)
             status = "done"

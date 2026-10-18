@@ -34,7 +34,7 @@ EXPECTED = {
     "cps_analysis", "cps_synthesis",
     "suspended_stripline_analysis", "suspended_stripline_synthesis",
     # 槽线（2026-09-18 w1b 注册，#231 三表同步）：Janaswamy–Schaubert 闭式
-    # core/slotline（路线 A 裁判面，），越域显式拒绝不外推
+    # core/slotline（路线 A 裁判面，仓内账本（一百九十八）），越域显式拒绝不外推
     "slotline_analysis", "slotline_synthesis",
     # SIW（2026-09-22 siw-family 立项，#231 三表同步）：Cassivi 2002 等效宽度
     # + RWG TE10 等效（双源出处 runs/siw_family/criteria.md §1；WR-90/RWG
@@ -474,6 +474,14 @@ EXPECTED = {
     # 模式图交叉 r 逐位+跨键一致/Q 双路线 <1e-9+Ue/Um=1+TM010 清洁式/
     # Qc∝1/√σ/守卫）
     "coax_line_z0", "coax_line_attenuation", "coax_line_power_capacity",
+    # W8-S37 池件批 3 顺手件（2026-10-18，#231 五钉同步）：截止式衰减器
+    # （TE11 倏逝衰减 α=k_c·√(1−(f/f_c)²)，深截止 α=k_c 频率无关几何决定
+    # 论；锚=每 (a+b) 长度 8.686·2=17.372 dB 恒等式+圆波导 32 dB/直径 EMC
+    # 经典值测试侧验证；f≥f_c 显式拒绝）。同轴阶梯不连续电容同批立项但
+    # 如实放弃（#122）：文献只有模匹配曲线/数值表（Whinnery-Jamieson-
+    # Robbins 1944、Somlo 1967），无可达闭式经验式，朴素准静态估算对 NBS
+    # TN 657 公开锚值偏差量级级。
+    "coax_line_cutoff_attenuator",
     "circular_cavity_mode_spectrum", "circular_cavity_mode_chart",
     "circular_cavity_mode_q",
     # aurora72 A3-B 内核第二梯队批 2 五键（2026-10-11，#231 五钉同步；
@@ -900,13 +908,71 @@ EXPECTED = {
     # tests/unit/test_aurora_d_core9.py（naive N×N Slepian-Bangs/模态
     # S21/ABCD 数值级联三族第二路线+退化回归钉+域拒绝）
     "doa_crb_stochastic", "schiffman_phaser", "switched_network_phaser",
+    # aurora_e W1-S2 内核第二梯队余量收口四键（2026-10-18，#231 五钉同步；
+    # R7_core_tier2 T2/T4/T9/T10 四族核心键已由 aurora72 A2/A3/A4 落地
+    # （#222 开工核实），本席收口任务书内明确列出的四处余量子项——
+    # ① circular_waveguide_mode_prop（圆波导 TE/TM_mn 单频传播解——
+    # R7 T2"圆波导截止/衰减/波导波长/功率容量"子项，bethe_hole 内部截止
+    # 常数/waveguide_lambda_g=矩形 TE10 不撞）：fc=x·c0/(2πa√(εrμr))（TE11
+    # 主模 0.293c0/a 锚）+λg/vp·vg=c0²/(εrμr) 恒等+Z_TE·Z_TM=η²（TE01/
+    # TM11 同根 3.8317 简并恒等）+α_c 闭式（TE 用 D=1−m²/x'²、TM 用
+    # J'/J_{m+1} 恒等式）vs 场表达式曲面积分双路线互证 +σ×4→α×½ 精确
+    # 标度+TE01<TE11 经典低损性质+功率容量（E_max 横截面栅格+局部精修，
+    # TE11 轴线 E_max/H0=ωμ/(2kc) 闭式锚；f≤fc 截止显式拒绝）。
+    # ② rectangular_cavity_mode_spectrum+rectangular_cavity_mode_q（矩形腔
+    # TE/TM_mnp 谱+Q——waveguide_closed_form 模块 docstring 自证"矩形腔
+    # 留续作"的收口；TE_mnp: (m,n)≠(0,0)/p≥1，TM_mnp: m,n≥1/p≥0）：谱=
+    # (c0/(2√(εrμr)))·√((m/a)²+(n/b)²+(p/d)²)（TE101 与 cavity_perturbation_
+    # shift 空腔 f0 同仓双源 ≤1e-12；εr 全谱 ÷√εr 逐位；主模计算判读）；
+    # Q=ωU/P_c 六壁可分离因子闭式 vs scipy.quad 数值因子双路线 <1e-12
+    # +Ue/Um≈1 谐振定理（TE101 ≈1.03e4 铜腔合理带）+介质串联
+    # 1/Qu=1/Qc+1/Qd。
+    # ③ rcs_peak_canonical 原位扩 cone_tip（R7 T9 任务书"圆锥"子项——前席
+    # v1 如实不做，本席补齐）：σ=λ²tan⁴α/(16π) 轴向尖端绕射教科书闭式
+    # （Skolnik 表单闭式源如实注记；λ²/tan⁴α 标度恒等式锚；尺寸无关=
+    # 不给 a/b、必给 half_angle_deg∈(0,90)，其他形状同给显式拒绝；
+    # required 收窄为 shape+f_ghz，A4-B 守卫行语义同步）。
+    # ④ thermal_power_sensor_detect（热偶/测辐射热计功率换算——R7 T10
+    # "热偶/测辐射热计功率计换算"子项全仓零命中）：热链 ΔT=η·R_th·P →
+    # 热偶 Seebeck V=S·ΔT / 测辐射热计平衡电桥小信号 V=(V_b/4)·TCR·ΔT
+    # （γ=V/P 线性恒等锚；电桥输出与 R0 绝对值无关恒等锚；TCR 符号如实
+    # 保留）；τ=R_th·C_th、f_3dB=1/(2πτ)、P_min=v_noise/|γ|；同 γ 跨类型
+    # 输出逐位一致（热链单源结构恒等）；功率→电压→功率往返回收。
+    # 薄壳物理自含 calc_families/waveguide_closed_form.py、rcs_targets.py
+    # 与 detector_device.py 原位扩展。共同锚树
+    # tests/unit/test_w1s2_tier2_residual.py（fc TE11 8.7849GHz 窗/简并
+    # Z_TE·Z_TM=η²/α 双路线<1e-12/σ×4→α×½/TE01<TE11/E_max 闭式锚 1e-4/
+    # e_br×2→P×4/截止拒绝/TE101 同仓双源 ≤1e-12/εr 全谱减半/Q 双路线+
+    # Ue/Um=1+σ×4→Q×2+跨键 f 互证/模式规则拒绝/cone 独立重算+λ²·tan⁴
+    # 标度/thermal 往返回收+跨类型恒等+τ 恒等/守卫族）
+    "circular_waveguide_mode_prop",
+    "rectangular_cavity_mode_spectrum", "rectangular_cavity_mode_q",
+    "thermal_power_sensor_detect",
+    # aurora_e W2-S9（2026-10-18）三键：① 鳍线-波导渐变过渡两键（K2 渐变
+    # 过渡面——指数/线性剖面在波导 TE10 导波 β 下的响应/长度综合；基模
+    # 等效 Meier/Sharma-Hoefer 经验档系数非公开可达、如实放弃未注册，
+    # finline.py 范围声明）；② EC-2 multiline TRL εr/tan_d 不确定度传播
+    # （GUM 尺寸公差+测量噪声双通道 + JCGM 101 MC 对照，锚 gate 消费面）。
+    # 锚树 tests/unit/test_aurora_e_s9_finline.py 与
+    # tests/unit/test_aurora_e_s9_mtrl_uc.py
+    "finline_taper_response", "finline_taper_length",
+    "mtrl_er_tand_uncertainty",
+    # aurora_e W4-S18（2026-10-18）EC-21 三键：极化传输面度量面（随 EC-20
+    # PSSFSS/ms_cross 极化转换面消费线）——①pol_axial_ratio（Balanis 4th
+    # §4.4 轴比闭式+时域第三法对照 dB+#118 cot 恒等锚）；②pol_delta_ipd_il
+    # （ΔIPD 主值/ΔIL 幅度差+§4.4 极化态链单源透传——线-圆转换面设计判据
+    # ΔIPD→±90° ∧ ΔIL→0 ⟺ AR→1）；③pol_group_delay_diff（微分群延迟差
+    # 二点差分，τ 回收锚/等延迟纯转换零差/主值包裹多周期不可分辨诚实边界）。
+    # 薄注册：物理单源 core/polarization（AP-1 在库+EC-21 新增纯函数），
+    # 锚树 tests/unit/test_polarization_reg.py（薄度逐位+单源性+回收锚）
+    "pol_axial_ratio", "pol_delta_ipd_il", "pol_group_delay_diff",
 }
 
 # W1⑨（2026-09-16 用户口径）：实验态计算器分表——自动归纳（符号回归）公式
 # 一律 experimental=True 入库但默认关。EXPECTED 断言 names() **默认排除**；
 # include_experimental=True 才含本表（默认列/默认跑都不过这道开关）。
 EXPERIMENTAL_EXPECTED = {
-    # E13 patch 基模谐振候选公式（，51 点归纳，vs HJ 0.765%）
+    # E13 patch 基模谐振候选公式（符号回归实验态归档，51 点归纳，vs HJ 0.765%）
     "patch_f0_symbolic_e13",
 }
 

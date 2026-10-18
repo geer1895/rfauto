@@ -29,6 +29,14 @@ round18 规格（docs/research_expansion_20261002_round18.md §四 PT-4）：
   零失效验收惯例（与 aging.py 同源出处）。
 - 置信带：MLE 渐近正态 + δ 法（对数尺度区间，天然恒正），观测 Fisher
   信息（NLL 数值 Hessian，中心差分），Meeker & Escobar (1998) App. B。
+- XD-14 ALT 模型族补全（2026-10-18，池 P3 圈定件）：广义 log-linear
+  Weibull 引擎 ln η = c0 + Σ_j c_j·z_j（列变换=链接函数，统一 Arrhenius/
+  逆幂律/Eyring/Peck/温度-非温度五族）+ 严格 Eyring AF 闭式 +
+  标注竞争风险（多失效模式序列系统，逐模式 2 参 Weibull MLE）。
+  出处：Meeker & Escobar (1998) ch.18（加速模型族：Arrhenius §18.2 同上、
+  Eyring/温度-非温度/湿度族同章）；Peck (1986)（温湿度幂律）；竞争风险
+  序列系统似然 = Meeker & Escobar (1998) ch.3 多失效模式口径（各模式
+  似然独立分解，标注已知时总 NLL = Σ 模式 NLL，恒等式单测钉）。
 
 诚实边界（沿 aging.py 纪律）：竞争失效/机理耦合项 UNKNOWN、不做认证级
 寿命结论——计划面工具。全部返回 JSON 可序列化 float/dict（ndarray 已
@@ -66,7 +74,14 @@ __all__ = [
     "equivalent_use_time",
     "eta_at_temperature",
     "eta_ci_at_temperature",
+    "eyring_af",
     "fit_arrhenius_weibull",
+    "fit_eyring_weibull",
+    "fit_inverse_power_weibull",
+    "fit_loglinear_weibull",
+    "fit_peck_weibull",
+    "fit_temperature_nonthermal_weibull",
+    "fit_weibull_competing_risks",
     "min_samples_for_demo",
     "plan_alt_demo",
     "slope_from_ea",
@@ -580,4 +595,369 @@ def min_samples_for_demo(
         "n_min": n_min,
         "r_lower_achieved": achieved["r_lower"],
         "test_time_at_n_min_h": planned["test_time_stress_h"],
+    }
+
+
+# ─── XD-14：广义 log-linear Weibull 引擎（链接函数=列变换）──────────────────
+#
+# 统一形态 ln η = c0 + Σ_j c_j·z_j（z=应力变换列），五族换列不换引擎：
+#   Arrhenius  z=[1000/T]；逆幂律 z=[ln V]；Peck z=[1000/T, ln RH]；
+#   温度-非温度 z=[1000/T, ln V]；广义 Eyring z=[1000/T, ln T]。
+# 温度列沿用本模块既有度量约定（u=1000/T，规避 b~Ea/k~5800 病态度量，
+# b_per_k=(1000/T 列系数)·1000）；其余列经引擎内部逐列缩放
+# s_j=max(1, max|z_j|) 条件化，返回系数/协方差换算回传入列原度量。
+
+
+def _nll_loglin(theta: np.ndarray, z: np.ndarray, t: np.ndarray,
+                failed: np.ndarray) -> float:
+    """广义负对数似然：theta = (c0…cp, ln β)，ln η = c0 + z·c[1:]。
+
+    z 形状 (n, p)，p=0 时退化为两参 Weibull（截距即 ln η）。似然项与
+    _nll_alt 同构（失效 ln f / 右删失 ln S）；非有限 → +inf 让优化器
+    回退。
+    """
+    c = np.asarray(theta[:-1], dtype=float)
+    log_beta = float(theta[-1])
+    beta = math.exp(log_beta)
+    log_eta = c[0] + z @ c[1:]
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        zeta = np.exp(beta * (np.log(t) - log_eta))
+        ll_failed = log_beta + (beta - 1.0) * np.log(t) - beta * log_eta - zeta
+        ll_cens = -zeta
+    ll = np.where(failed, ll_failed, ll_cens)
+    if not bool(np.all(np.isfinite(ll))):
+        return math.inf
+    return -float(np.sum(ll))
+
+
+def _obs_arrays(t_obs_h: Any, status: Any) -> tuple[np.ndarray, np.ndarray]:
+    """观测时间/删失标记收敛（与 fit_arrhenius_weibull 同守卫口径）。"""
+    tobs = np.asarray(t_obs_h, dtype=float)
+    if tobs.ndim != 1 or tobs.size == 0:
+        raise ValueError("t_obs_h 必须为一维非空序列")
+    if not bool(np.all(np.isfinite(tobs))) or float(np.min(tobs)) <= 0.0:
+        raise ValueError("t_obs_h 必须全为有限正数")
+    if status is None:
+        failed = np.ones(tobs.size, dtype=bool)
+    else:
+        st = np.asarray(status)
+        if st.shape != tobs.shape:
+            raise ValueError("status 与 t_obs_h 形状必须一致")
+        stf = st.astype(float)
+        if not bool(np.all(np.isin(stf, (0.0, 1.0)))):
+            raise ValueError("status 只允许 0（右删失）/1（失效）")
+        failed = stf == 1.0
+    return tobs, failed
+
+
+def _fit_loglin_core(z: np.ndarray, tobs: np.ndarray, failed: np.ndarray,
+                     conf: float) -> dict[str, Any]:
+    """广义 log-linear Weibull MLE 核心（确定性 Nelder-Mead + 数值 Hessian）。
+
+    逐列缩放 s_j=max(1,max|z_j|) 条件化（zs=z/s）；OLS 起步；返回的
+    coefficients=**传入列原度量**的系数（c_j = c'_j/s_j，与
+    fit_arrhenius_weibull"报告 1/T 基系数"口径对齐），协方差经
+    Σ = D⁻¹Σ'D⁻¹（D=diag(1,s…,1)）换算回原度量。数值病态（Hessian
+    非正定）→ cov=None 如实降级。
+    """
+    n, p = z.shape
+    scale = np.array([
+        max(1.0, float(np.max(np.abs(z[:, j]))))
+        for j in range(p)
+    ])
+    zs = z / scale[None, :]
+    y = np.log(tobs[failed])
+    design = np.concatenate(
+        [np.ones((int(np.sum(failed)), 1)), zs[failed]], axis=1)
+    coef0 = np.linalg.lstsq(design, y, rcond=None)[0]
+    x0 = np.concatenate([coef0, [math.log(2.0)]])
+    res = minimize(
+        _nll_loglin,
+        x0,
+        args=(zs, tobs, failed),
+        method="Nelder-Mead",
+        options={"maxiter": 20000, "maxfev": 20000, "xatol": 1e-8,
+                 "fatol": 1e-10},
+    )
+    if not bool(res.success):
+        raise ValueError(f"MLE 未收敛（Nelder-Mead）：{res.message}")
+    x_hat = np.asarray(res.x, dtype=float)
+    cov_scaled = _cov_from_nll_loglin(x_hat, zs, tobs, failed)
+    cov_out: list[list[float]] | None = None
+    if cov_scaled is not None:
+        inv_s = np.concatenate([[1.0], 1.0 / scale, [1.0]])
+        cov_out = [
+            [float(inv_s[i] * cov_scaled[i, j] * inv_s[j])
+             for j in range(p + 2)]
+            for i in range(p + 2)
+        ]
+    coefficients = [float(v) for v in x_hat[:-1]]
+    coefficients[1:] = [c / float(s)
+                        for c, s in zip(coefficients[1:], scale, strict=True)]
+    return {
+        "coefficients": coefficients,
+        "beta": math.exp(float(x_hat[-1])),
+        "nll": float(res.fun),
+        "n_obs": int(n),
+        "n_failures": int(np.sum(failed)),
+        "n_censored": int(n - np.sum(failed)),
+        "cov": cov_out,
+        "confidence": conf,
+    }
+
+
+def _cov_from_nll_loglin(x_hat: np.ndarray, zs: np.ndarray, t: np.ndarray,
+                         failed: np.ndarray) -> np.ndarray | None:
+    """广义引擎的观测信息协方差（数值病态 → None 如实降级）。"""
+    steps = np.array([_HESS_REL * max(1.0, abs(v)) for v in x_hat])
+    hess = _hessian_fd(lambda q: _nll_loglin(q, zs, t, failed), x_hat, steps)
+    try:
+        cov = np.linalg.inv(hess)
+    except np.linalg.LinAlgError:
+        return None
+    if not bool(np.all(np.isfinite(cov))):
+        return None
+    if float(np.min(np.linalg.eigvalsh(0.5 * (cov + cov.T)))) <= 0.0:
+        return None
+    return cov
+
+
+def fit_loglinear_weibull(
+    design: Any,
+    t_obs_h: Any,
+    status: Any = None,
+    confidence: float = 0.9,
+    term_names: Any = None,
+) -> dict[str, Any]:
+    """广义 log-linear Weibull MLE：ln η = c0 + Σ_j c_j·z_j（XD-14 引擎）。
+
+    design：(n, p) 已变换应力列（p=0 合法=两参 Weibull 截距拟合；列
+    变换即链接函数——Arrhenius [1000/T]、逆幂律 [ln V]、Peck
+    [1000/T, ln RH] 等，包装函数族见同节）；t_obs_h/status：同
+    fit_arrhenius_weibull 口径（>=2 失效，>=4 观测）；term_names：p 个
+    列名（缺省 z1…zp）。
+
+    返回 dict（全 JSON 可序列化）：coefficients=[c0,c1…cp]、term_names、
+    beta、nll、n_obs/n_failures/n_censored、cov((p+2)² 嵌套 list，序
+    (c0,c1…cp,ln β)，已换算回原度量)、cov_labels、confidence。数值病态
+    → cov=None 如实降级。近似共线列 → Hessian 奇异同路降级（不猜）。
+    """
+    conf = _open01(confidence, "confidence")
+    zs = np.asarray(design, dtype=float)
+    if zs.ndim != 2:
+        raise ValueError("design 必须为二维 (n, p)（p=0 合法）")
+    if not bool(np.all(np.isfinite(zs))):
+        raise ValueError("design 必须全为有限数")
+    tobs, failed = _obs_arrays(t_obs_h, status)
+    if tobs.size != zs.shape[0]:
+        raise ValueError("design 行数必须与 t_obs_h 等长")
+    if tobs.size < 4:
+        raise ValueError("观测数须 >=4（MLE 最低样本下限）")
+    if int(np.sum(failed)) < 2:
+        raise ValueError("至少 2 个失效观测（β 不可辨识）")
+    p = zs.shape[1]
+    if term_names is None:
+        names = [f"z{j + 1}" for j in range(p)]
+    else:
+        names = [str(v) for v in term_names]
+        if len(names) != p:
+            raise ValueError("term_names 长度必须与 design 列数一致")
+    core = _fit_loglin_core(zs, tobs, failed, conf)
+    core["term_names"] = names
+    core["cov_labels"] = ["const", *names, "log_beta"]
+    return core
+
+
+# ─── XD-14 包装族：链接函数=列变换（出处见模块头注 XD-14 条）────────────────
+
+
+def fit_inverse_power_weibull(
+    v: Any,
+    t_obs_h: Any,
+    status: Any = None,
+    confidence: float = 0.9,
+) -> dict[str, Any]:
+    """逆幂律 Weibull MLE：η = exp(a + exponent·ln V)（XD-14）。
+
+    v：非热应力（电压/功率/电流等，>0）；exponent = ln V 列系数，
+    **<0 为期望退化方向**（应力升寿命降）；>0 = 寿命随应力上升，非
+    单调退化，参数如实返回由调用方裁决（与 fit_arrhenius_weibull
+    b<0 同纪律）。出处：Meeker & Escobar (1998) ch.18 逆幂律。
+    """
+    vv = np.asarray(v, dtype=float)
+    if vv.ndim != 1 or not bool(np.all(np.isfinite(vv))) or float(np.min(vv)) <= 0.0:
+        raise ValueError("v 必须为一维有限正数序列")
+    out = fit_loglinear_weibull(
+        np.log(vv)[:, None], t_obs_h, status, confidence,
+        term_names=["ln_v"])
+    out["a"] = out["coefficients"][0]
+    out["exponent"] = out["coefficients"][1]
+    out["model"] = "inverse_power"
+    return out
+
+
+def fit_peck_weibull(
+    t_k: Any,
+    rh: Any,
+    t_obs_h: Any,
+    status: Any = None,
+    confidence: float = 0.9,
+) -> dict[str, Any]:
+    """Peck 温湿度 Weibull MLE：ln η = a + b/T + c_rh·ln RH（XD-14）。
+
+    rh：相对湿度（0<RH<=1）；c_rh（humidity_exponent）期望 <0（湿度升
+    寿命降），>0 如实返回由调用方裁决。出处：Peck (1986)（温湿度
+    幂律；Meeker & Escobar (1998) ch.18 同章表述）。
+    """
+    tt, rhv = np.asarray(t_k, dtype=float), np.asarray(rh, dtype=float)
+    for name, arr in (("t_k", tt), ("rh", rhv)):
+        if arr.ndim != 1 or not bool(np.all(np.isfinite(arr))):
+            raise ValueError(f"{name} 必须为一维有限序列")
+        if float(np.min(arr)) <= 0.0:
+            raise ValueError(f"{name} 必须 >0")
+    if float(np.max(rhv)) > 1.0:
+        raise ValueError("rh 为相对湿度（0<RH<=1）")
+    z = np.stack([_B_SCALE / tt, np.log(rhv)], axis=1)
+    out = fit_loglinear_weibull(z, t_obs_h, status, confidence,
+                                term_names=["inv_t_1000", "ln_rh"])
+    out["a"] = out["coefficients"][0]
+    out["b_per_k"] = out["coefficients"][1] * _B_SCALE
+    out["ea_ev"] = (ea_from_slope(out["b_per_k"])
+                    if out["b_per_k"] >= 0.0 else None)
+    out["humidity_exponent"] = out["coefficients"][2]
+    out["model"] = "peck"
+    return out
+
+
+def fit_temperature_nonthermal_weibull(
+    t_k: Any,
+    v: Any,
+    t_obs_h: Any,
+    status: Any = None,
+    confidence: float = 0.9,
+) -> dict[str, Any]:
+    """温度-非温度双应力 Weibull MLE：ln η = a + b/T + c_v·ln V（XD-14）。
+
+    v：非热应力（电压等，>0）；c_v（voltage_exponent）期望 <0，>0 如实
+    返回由调用方裁决。出处：Meeker & Escobar (1998) ch.18
+    temperature-nonthermal 关系。
+    """
+    tt, vv = np.asarray(t_k, dtype=float), np.asarray(v, dtype=float)
+    for name, arr in (("t_k", tt), ("v", vv)):
+        if arr.ndim != 1 or not bool(np.all(np.isfinite(arr))):
+            raise ValueError(f"{name} 必须为一维有限序列")
+        if float(np.min(arr)) <= 0.0:
+            raise ValueError(f"{name} 必须 >0")
+    z = np.stack([_B_SCALE / tt, np.log(vv)], axis=1)
+    out = fit_loglinear_weibull(z, t_obs_h, status, confidence,
+                                term_names=["inv_t_1000", "ln_v"])
+    out["a"] = out["coefficients"][0]
+    out["b_per_k"] = out["coefficients"][1] * _B_SCALE
+    out["ea_ev"] = (ea_from_slope(out["b_per_k"])
+                    if out["b_per_k"] >= 0.0 else None)
+    out["voltage_exponent"] = out["coefficients"][2]
+    out["model"] = "temperature_nonthermal"
+    return out
+
+
+def fit_eyring_weibull(
+    t_k: Any,
+    t_obs_h: Any,
+    status: Any = None,
+    confidence: float = 0.9,
+) -> dict[str, Any]:
+    """广义 Eyring Weibull MLE：ln η = a + b/T + c_t·ln T（XD-14）。
+
+    广义形态两系数皆拟合（出处：Meeker & Escobar (1998) ch.18 Eyring
+    模型族）；c_t（ln_t_coefficient）无预设符号。**严格** Eyring
+    （ln T 系数固定 −1）的加速因子闭式 = eyring_af（消费
+    aging.arrhenius_af，恒等式单测钉）。
+    """
+    tt = np.asarray(t_k, dtype=float)
+    if tt.ndim != 1 or not bool(np.all(np.isfinite(tt))) or float(np.min(tt)) <= 0.0:
+        raise ValueError("t_k 必须为一维有限正数序列")
+    z = np.stack([_B_SCALE / tt, np.log(tt)], axis=1)
+    out = fit_loglinear_weibull(z, t_obs_h, status, confidence,
+                                term_names=["inv_t_1000", "ln_t"])
+    out["a"] = out["coefficients"][0]
+    out["b_per_k"] = out["coefficients"][1] * _B_SCALE
+    out["ea_ev"] = (ea_from_slope(out["b_per_k"])
+                    if out["b_per_k"] >= 0.0 else None)
+    out["ln_t_coefficient"] = out["coefficients"][2]
+    out["model"] = "eyring_generalized"
+    return out
+
+
+def eyring_af(ea_ev: float, t_use_k: float, t_stress_k: float) -> float:
+    """严格 Eyring 加速因子 AF = (T_s/T_u)·exp[(Ea/k)(1/T_u − 1/T_s)]。
+
+    由 η ∝ (1/T)·exp(Ea/kT) 的比值恒等式导出（1/T 前置项相除得
+    T_s/T_u，指数项=aging.arrhenius_af）——消费既有闭式不重复实现
+    （本模块 coffin_manson_af 同范式）。T_stress==T_use 或 Ea==0 时
+    AF=(T_s/T_u)≠1（Eyring 的 1/T 前置项贡献，如实非单位）。
+    """
+    ea = _num(ea_ev, "ea_ev")
+    if ea < 0.0:
+        raise ValueError("ea_ev 必须 >=0")
+    tu = _pos(t_use_k, "t_use_k")
+    ts = _pos(t_stress_k, "t_stress_k")
+    return (ts / tu) * arrhenius_af(ea, tu, ts)
+
+
+def fit_weibull_competing_risks(
+    t_obs_h: Any,
+    status: Any,
+    mode_labels: Any,
+    confidence: float = 0.9,
+) -> dict[str, Any]:
+    """标注竞争风险（多失效模式序列系统）逐模式 Weibull MLE（XD-14）。
+
+    模式标注已知（物理定位/检查归类）时序列系统似然逐模式独立分解：
+    模式 m 的失效点贡献 ln f_m，**其余全部观测**（他模式失效+右删失）
+    对 m 贡献 ln S_m——总 NLL = Σ_m NLL_m（构造恒等式，单测钉）。
+    每模式 = 截距 log-linear 两参 Weibull MLE（共享 _fit_loglin_core，
+    单模式退化 ≡ fit_loglinear_weibull(design (n,0))，恒等式单测钉）。
+
+    mode_labels：逐观测失效模式标注（str/int）；右删失点的标注不参与
+    似然失效项但仍须给出（同长度校验）。要求每模式 >=2 个失效（β 可
+    辨识，同本模块全局口径）。
+
+    返回 {modes: {label: {a, eta, beta, nll, n_failures}},
+    total_nll, n_obs, n_failures, confidence}（全 JSON 可序列化）。
+    诚实边界：模式未标注/机理耦合 = UNKNOWN，不做认证级寿命结论
+    （模块头注同口径）。
+    """
+    conf = _open01(confidence, "confidence")
+    tobs, failed = _obs_arrays(t_obs_h, status)
+    labels_raw = np.asarray(mode_labels)
+    if labels_raw.shape != tobs.shape:
+        raise ValueError("mode_labels 与 t_obs_h 形状必须一致")
+    labels = [str(v) for v in labels_raw.tolist()]
+    modes_out: dict[str, dict[str, Any]] = {}
+    total_nll = 0.0
+    n_fail_total = 0
+    for label in sorted(set(labels)):
+        fail_m = failed & np.array([v == label for v in labels])
+        n_fail_m = int(np.sum(fail_m))
+        if n_fail_m < 2:
+            raise ValueError(
+                f"模式 {label!r} 失效数 {n_fail_m} <2（β 不可辨识）")
+        core = _fit_loglin_core(
+            np.zeros((tobs.size, 0), dtype=float), tobs, fail_m, conf)
+        a_m = core["coefficients"][0]
+        modes_out[label] = {
+            "a": a_m,
+            "eta": math.exp(a_m),
+            "beta": core["beta"],
+            "nll": core["nll"],
+            "n_failures": n_fail_m,
+        }
+        total_nll += core["nll"]
+        n_fail_total += n_fail_m
+    return {
+        "modes": modes_out,
+        "total_nll": total_nll,
+        "n_obs": int(tobs.size),
+        "n_failures": n_fail_total,
+        "confidence": conf,
     }

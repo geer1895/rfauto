@@ -19,22 +19,26 @@ import { showPage } from "./router.js";
 /* ── ① 数据表构建器 ─────────────────────────────────────────────────────
    columns=列头文本数组（kit 内部 esc——动态列名安全；传 null 为无表头
    键值表形态 <table><tbody>…</tbody></table>）；
-   rows+rowHtml=行数据与行渲染器（rowHtml(row, i) 返回 <tr>…</tr> 原样
-   串，单元格转义责任在调用方——与既有行内模板同责）；
+   caption=表格读屏命名（W5-S23，深审 b 面：caption 全站为零的收账起步）——
+   经 esc 出 <caption class="sr-only">（视觉隐藏 .sr-only，index.html），
+   缺省不产出=既有消费点字节等价钉零扰动；rows+rowHtml=行数据与行渲染器
+   （rowHtml(row, i) 返回 <tr>…</tr> 原样串，单元格转义责任在调用方——
+   与既有行内模板同责）；
    rowsHtml=预构建行串（迁移存量拼装行用，与 rows/rowHtml 二选一）；
    empty=行集为空时的整行原样串（缺省给统一空态行"暂无数据"；显式传 ""
    保持空 tbody——存量无空态表逐字节等价迁移用；覆盖串引号形态按消费点
    原样保留，如 colspan='4' 单引号点）；
    sortable=true 挂 data-sortable（配合 makeSortable/mountSortableTables）。 */
-export function kitTable({ columns, rows, rowHtml, rowsHtml, empty, sortable }) {
+export function kitTable({ columns, rows, rowHtml, rowsHtml, empty, sortable, caption }) {
   const body = rowsHtml != null ? rowsHtml
     : (rows || []).map(rowHtml || (() => "")).join("");
   if (!columns) return "<table><tbody>" + body + "</tbody></table>";
+  const cap = caption ? `<caption class="sr-only">${esc(caption)}</caption>` : "";
   const ths = columns.map((c) => `<th scope="col">${esc(c)}</th>`).join("");
   const nCols = columns.length;
   const emptyRow = empty != null ? empty
     : `<tr><td colspan="${nCols}" class="muted">暂无数据</td></tr>`;
-  return `<table${sortable ? " data-sortable" : ""}><thead><tr>${ths}</tr></thead><tbody>` +
+  return `<table${sortable ? " data-sortable" : ""}>${cap}<thead><tr>${ths}</tr></thead><tbody>` +
     (body || emptyRow) + "</tbody></table>";
 }
 

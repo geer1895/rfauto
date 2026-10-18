@@ -1,0 +1,74 @@
+schema: rfauto-template-geometry-golden/v1
+template: ridged_wg
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 4.95
+- 5.45
+params:
+  a_mm: 22.86
+  b_mm: 10.16
+  s_mm: 9.144
+  d_mm: 5.5434
+  l_ridge_mm: 40.0
+  l_feed_mm: 25.0
+  er: 1.0
+  h_mm: 0.0
+status: ok
+script_sha256: 38160ea527e3566979315947df23b1958ab379d9682de7e173f6f9a4713f951c
+csx:
+  n_primitives: 22
+  props:
+  - name: ridged_wg_wall
+    kind: Metal
+    n: 17
+    types:
+      '1': 17
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 097ee557347565e528b394cd73cbac14b42b8eb5f9f8cab91d012dcd3120c4ef
+  bbox_m:
+  - -0.019986239
+  - -0.059605609
+  - -0.00508
+  - 0.019986239
+  - 0.059605609
+  - 0.00508
+mesh:
+  lines:
+    x:
+      n: 175
+      min_gap_m: 0.000267
+    y:
+      n: 497
+      min_gap_m: 0.00011
+    z:
+      n: 65
+      min_gap_m: 0.000264
+  lines_sha256: eb594b27b22f4f448d2f1a5964a81989ff14b073f291edf1206b6894b5536bbc
+ports:
+- 1
+- 2

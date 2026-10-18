@@ -1,5 +1,5 @@
-"""aurora72 A2-C 席锚树：coax_line 三键（同轴 Z0 双向/行波衰减分解/功率
-容量）+ waveguide_closed_form 三键（圆柱腔模式谱/模式图/模式无载 Q）。
+"""aurora72 A2-C 席锚树：coax_line 四键（同轴 Z0 双向/行波衰减分解/功率
+容量/截止式衰减器）+ waveguide_closed_form 三键（圆柱腔模式谱/模式图/模式无载 Q）。
 
 数值断言口径（#118 不自证——恒等式/独立常数/双路线/跨键互证，不用自身
 推导互证）：
@@ -17,6 +17,11 @@
   rel_dev≤1e-12+测试侧独立重算）；V²/(2Z0) 回代恒等；εr×4→P×2
   （√εr 标度）；p_op=P_max/4 → 余量=10log10(4)=6.0206dB；p_op>P_max →
   负余量如实报告；a_opt=b/√e、Z0_opt=30Ω 常数锚。
+- 截止衰减器（W8-S37）：深截止每 (a+b) 长度 8.686·2=17.372dB 定义恒等
+  式（k_c(a+b)=2）；√(1−(f/f_c)²) 标度（f_c 测试侧独立重算）；L 线性
+  逐位；εr 分离标度（f_c÷√εr、k_c 不变）；f_c 与 z0 键跨键同值；EMC
+  经典锚=精确圆波导 TE11（k_c=x'_11/b）32.0 dB/直径+λ_c=1.706D 测试侧
+  独立常数验证；f≥f_c/a≥b/L≤0/εr<1 显式拒绝。
 - 圆柱谱：TM010 f=x_01·c₀/(2πa)（x_01=2.4048255577 测试侧独立常数）；
   主模判据 l<2a→TM010 / l>2a→TE111 双腔复现；TE011/TM111 简并同频
   ≤1e-12；TE011 与 material_characterization._sc_empty_f0 同仓双源
@@ -307,6 +312,88 @@ def test_coax_pwr_optimum_diameter_and_rejections():
             {"a_mm": 1.0, "b_mm": 3.0, "p_op_w": -1.0})
     _reject("coax_line_power_capacity",
             {"a_mm": 1.0, "b_mm": 3.0, "epsilon_r": 0.9})
+
+
+# ─── coax_line_cutoff_attenuator：深截止恒等 / f 标度 / 跨键 / EMC 锚 ───────
+# （W8-S37 池件批 3；#118 口径——恒等式/独立常数/跨键互证，不自证）
+
+
+def test_coax_cutoff_deep_limit_identity():
+    """深截止渐近：每 (a+b) 长度衰减=8.686·2 dB 定义恒等式；α 与频率无关。"""
+    a, b = 1.0, 3.0
+    r = _run("coax_line_cutoff_attenuator",
+             {"a_mm": a, "b_mm": b, "length_mm": a + b})
+    # k_c·(a+b)=2（保角映射定义）→ 深截止每 (a+b) 恰 8.686·2 Np→dB
+    assert r["attenuation_per_ab_db"] == pytest.approx(8.686 * 2.0, abs=1e-9)
+    assert r["attenuation_db"] == pytest.approx(8.686 * 2.0, abs=1e-9)
+    assert r["alpha_np_per_m"] == pytest.approx(500.0, rel=1e-12)
+    assert r["deep_cutoff"] is True
+    assert r["evanescent_factor"] == 1.0
+    # 截止波长 λ_c=π(a+b)（介质无关几何量，测试侧独立式）
+    assert r["lambda_c_mm"] == pytest.approx(math.pi * (a + b), rel=1e-12)
+    # 深截止频率无关：f=1e-4·f_c（测试侧独立重算 f_c）与缺省渐近 α 逐位同
+    fc = C_MM_GHZ / (math.pi * (a + b))
+    r4 = _run("coax_line_cutoff_attenuator",
+              {"a_mm": a, "b_mm": b, "length_mm": 10.0,
+               "f_ghz": 1e-4 * fc})
+    assert r4["alpha_np_per_m"] == pytest.approx(500.0, rel=1e-7)
+    assert r4["deep_cutoff"] is True
+
+
+def test_coax_cutoff_finite_f_scaling_and_cross_key():
+    """√(1−(f/f_c)²) 标度（f_c 测试侧独立重算）；L 线性；与 z0 键 f_c 互证。"""
+    a, b = 1.0, 3.0
+    fc = C_MM_GHZ / (math.pi * (a + b))   # 独立重算 =23.8567 GHz
+    half = _run("coax_line_cutoff_attenuator",
+                {"a_mm": a, "b_mm": b, "length_mm": 10.0,
+                 "f_ghz": 0.5 * fc})
+    assert half["evanescent_factor"] == pytest.approx(math.sqrt(0.75),
+                                                      rel=1e-12)
+    assert half["alpha_db_per_m"] == pytest.approx(
+        8.686 * 500.0 * math.sqrt(0.75), rel=1e-12)
+    assert half["deep_cutoff"] is False
+    # 长度线性：2L 恰两倍（逐位）
+    r1 = _run("coax_line_cutoff_attenuator",
+              {"a_mm": a, "b_mm": b, "length_mm": 10.0, "f_ghz": 0.5 * fc})
+    r2 = _run("coax_line_cutoff_attenuator",
+              {"a_mm": a, "b_mm": b, "length_mm": 20.0, "f_ghz": 0.5 * fc})
+    assert r2["attenuation_db"] == pytest.approx(2.0 * r1["attenuation_db"],
+                                                 rel=1e-12)
+    # εr：f_c 准确 ÷√εr、k_c/深截止衰减不变（几何量 vs 介质标度分离）
+    r_er = _run("coax_line_cutoff_attenuator",
+                {"a_mm": a, "b_mm": b, "length_mm": 10.0, "epsilon_r": 2.25})
+    assert r_er["te11_cutoff_ghz"] == pytest.approx(fc / 1.5, abs=5e-9)
+    assert r_er["kc_per_m"] == pytest.approx(500.0, rel=1e-12)
+    # 跨键：f_c 与 coax_line_z0 同式同值（同几何，独立消费路线）
+    z0 = _run("coax_line_z0", {"a_mm": a, "b_mm": b})
+    assert r1["te11_cutoff_ghz"] == z0["te11_cutoff_ghz"]
+
+
+def test_coax_cutoff_emc_anchor_and_rejections():
+    """EMC 经典锚：精确圆波导 TE11 深截止 32 dB/直径（测试侧独立常数）；越界拒绝。"""
+    # 外部文献锚独立验证公式族（α=k_c 深截止）：圆波导 TE11 k_c=x'_11/b
+    # → 每直径 D=2b 衰减 8.686·k_c·D ≈ 32.0 dB（Ott/learnEMC 工程口径）
+    kc_exact = X11P / 1.0                       # b=1 m 归一
+    per_diameter_db = 8.686 * kc_exact * 2.0
+    assert per_diameter_db == pytest.approx(32.0, abs=0.05)
+    # 同口径下截止波长 λ_c=2π/k_c=3.4126b=1.706·D（D=2b 直径，测试侧独立式）
+    assert (2.0 * math.pi / kc_exact) / 2.0 == pytest.approx(1.706, rel=1e-3)
+    # 本键保角映射 k_c≈2/(a+b) 的近似偏差如实存在（a→0 极限 34.76 dB/D，
+    # 偏高 8.6%——键内 note 注记，不冒充精确圆波导值）
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 3.0, "b_mm": 3.0, "length_mm": 10.0})
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 1.0, "b_mm": 3.0, "length_mm": -1.0})
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 1.0, "b_mm": 3.0, "length_mm": 10.0, "epsilon_r": 0.9})
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 1.0, "b_mm": 3.0, "length_mm": 10.0, "f_ghz": 0.0})
+    fc = C_MM_GHZ / (math.pi * 4.0)
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 1.0, "b_mm": 3.0, "length_mm": 10.0, "f_ghz": fc})
+    _reject("coax_line_cutoff_attenuator",
+            {"a_mm": 1.0, "b_mm": 3.0, "length_mm": 10.0, "f_ghz": 2.0 * fc},
+            needle="行波区无倏逝衰减")
 
 
 # ─── circular_cavity_mode_spectrum：独立常数 / 主模判据 / 双源 / 暴力闭合 ───

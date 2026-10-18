@@ -76,7 +76,9 @@ def _num(value: Any, name: str) -> float:
 
 
 def _cplx(value: Any, name: str) -> complex:
-    """复数收敛（接受 complex/数值/长度 2 序列）。"""
+    """复数收敛（仅收 complex/数值标量——长度 2 序列不在本收敛器，勘误
+    2026-10-18：docstring 曾写"接受长度 2 序列"与实现不符，complex() 不收
+    序列；序列口径见本文件 _cplx_pair（EC-21 节）。）"""
     if isinstance(value, bool):
         raise ValueError(f"{name} 必须为复数（不接受 bool）")
     try:
@@ -330,3 +332,163 @@ def polarization_grids(e_theta: Any, e_phi: Any) -> dict[str, Any]:
                      np.where(np.abs(imag_cross) <= tiny, 0,
                               np.where(imag_cross < 0.0, SENSE_RH, SENSE_LH)))
     return {"ar_db": ar_db, "tilt_deg": tilt, "sense_code": sense}
+
+
+# ─── EC-21 传输面度量：ΔIPD/ΔIL 与微分群延迟差（aurora_e W4-S18）─────────────
+#
+# 口径与出处（铁律 5：来源写 docstring；#118 双源/回收钉在
+# tests/unit/test_polarization_reg.py）：
+# - ΔIPD（inserted phase difference，插入相位差）：两正交线极化透射系数
+#   的相位差 wrap 到主值 (−180°, 180°]——FSS/极化转换面文献惯例口径
+#   （线-圆极化转换面设计判据：ΔIPD→±90° 且 ΔIL→0 dB，Balanis 4th §4.4
+#   圆极化条件 δ=±90°、E1=E2 的传输面对偶）。
+# - ΔIL（differential insertion loss）：20·log10(|t_y|/|t_x|)（dB），
+#   幅度平衡判据（→0 dB）。
+# - 轴比链：两分量取 (E1,E2,δ)=(|t_x|,|t_y|,ΔIPD) 后与 §4.4 闭式
+#   （axial_ratio/tilt_angle_deg/sense_code）单源同径——极化椭圆数学
+#   与基选取无关（正交线极化对 (x̂,ŷ) 与球坐标 (θ̂,φ̂) 同构）。
+# - 微分群延迟差：τ_g = −(1/2π)·dφ/dω = −(1/360)·dφ_deg/df（φ 以度、
+#   f 以 Hz；线性相位网络 φ=−360·f·τ 代入即 τ）。两点差分实现：
+#   τ_g ≈ −(1/360)·Δφ_deg/Δf，Δφ 取主值包裹——**诚实边界（预声明）**：
+#   两点差分只能测 [f1,f2] 内每路相位推进 |Δφ|<180° 的情形（多周期
+#   推进与主值不可分辨），频带须窄到单周期内；这是二点群延迟的固有
+#   限制，不是实现缺陷。极化转换面语境 ΔIPD(f) 慢变，Δτ_g 由
+#   ΔIPD 扫频斜率承载（delta_ipd_sweep_deg=两频点主值 ΔIPD 之差再
+#   wrap），等延迟纯转换（ΔIPD 常数）时 delta_tau_g=0（锚）。
+#
+# 服务 JSON 复数约定：[re, im] 长度 2 序列（core/polarization._cplx 只收
+# 标量——本节自备 _cplx_pair 收敛器，复杂度零复制）。
+
+
+def _cplx_pair(value: Any, name: str) -> complex:
+    """复数收敛（complex 标量或 [re, im] 长度 2 序列；bool/NaN/inf 拒收）。"""
+    if isinstance(value, bool):
+        raise ValueError(f"{name} 不接受 bool")
+    if isinstance(value, (list, tuple)):
+        if len(value) != 2:
+            raise ValueError(f"{name} 序列须长度 2 [re, im]，收到长度 {len(value)}")
+        re, im = (float(_num(v, f"{name}[{i}]")) for i, v in enumerate(value))
+        out = complex(re, im)
+    else:
+        try:
+            out = complex(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{name} 须为复数标量或 [re, im]，收到 {value!r}") from exc
+        if isinstance(value, str):
+            raise ValueError(f"{name} 不接受字符串（复数面无字符串口径）")
+    if not (math.isfinite(out.real) and math.isfinite(out.imag)):
+        raise ValueError(f"{name} 必须为有限复数")
+    return out
+
+
+def _wrap180_deg(angle_deg: float) -> float:
+    """角度主值包裹到 (−180°, 180°]（半开区间，+180 归 +180、−180 归 +180）。
+
+    区间内快路径原样返回（无模运算 ulp 漂移——单源性逐位钉依赖此）。
+    """
+    if -180.0 < angle_deg <= 180.0:
+        return angle_deg
+    w = (angle_deg + 180.0) % 360.0 - 180.0
+    return 180.0 if w == -180.0 else w
+
+
+def delta_ipd_il(t_x: Any, t_y: Any) -> dict[str, Any]:
+    """两正交线极化透射系数的 ΔIPD/ΔIL + 极化态（EC-21 传输面度量主键内核）。
+
+    t_x/t_y：x/y 线极化透射系数（复数标量或 [re, im]，同一频率、同一
+    参考阻抗基；服务 JSON 复数约定）。返回 dict：
+
+    - delta_ipd_deg：主值 (−180°, 180°] 的 phase(t_y)−phase(t_x)；
+    - delta_il_db：20·log10(|t_y|/|t_x|)；
+    - ar_linear/ar_db/tilt_deg/sense_code/sense：以 (|t_x|,|t_y|,ΔIPD) 走
+      §4.4 闭式链（axial_ratio/tilt_angle_deg/sense_code 单源透传）；
+    - regime：classify_cp(ar_db) 三段（circular/elliptical/linear，工程
+      惯例 3/20 dB 门，门值非标准强约束同 core 侧 docstring 如实）。
+
+    边界（预声明）：任一分量恰为 0 → ValueError（ΔIPD 相位无定义；
+    幅度单边为零的半定义态不猜——线-圆转换面在谐振吸收点会出现，调用方
+    换频点）；两分量全零同理。线极化态 ar_db 按 AR_LINEAR_DB_CAP 封顶
+    （100 dB，真值发散，同 axial_ratio 口径）。
+    """
+    a = _cplx_pair(t_x, "t_x")
+    b = _cplx_pair(t_y, "t_y")
+    if abs(a) <= 0.0 or abs(b) <= 0.0:
+        raise ValueError(
+            "t_x/t_y 任一分量为 0 时 ΔIPD 相位无定义（谐振吸收点请换频点；"
+            f"收到 |t_x|={abs(a):.3e}, |t_y|={abs(b):.3e}）")
+    # 链路用原始 δ（弧度，无 roundtrip）——与 polarization_state 单源逐位；
+    # 报告面用主值包裹（wrap 仅整周期平移，2δ 平移 4π，三角恒等不变）。
+    delta_rad = math.atan2(b.imag, b.real) - math.atan2(a.imag, a.real)
+    ipd_deg = _wrap180_deg(math.degrees(delta_rad))
+    il_db = 20.0 * math.log10(abs(b) / abs(a))
+    ar = axial_ratio(abs(a), abs(b), delta_rad)
+    code = sense_code(a, b)
+    ar_dB = 20.0 * math.log10(ar)
+    return {
+        "delta_ipd_deg": ipd_deg,
+        "delta_il_db": il_db,
+        "ar_linear": ar,
+        "ar_db": ar_dB,
+        "tilt_deg": tilt_angle_deg(abs(a), abs(b), delta_rad),
+        "sense_code": code,
+        "sense": {SENSE_RH: "RH", SENSE_LH: "LH", SENSE_LINEAR: "linear"}[code],
+        "regime": classify_cp(ar_dB),
+    }
+
+
+def group_delay_diff_ps(
+    f1_ghz: float,
+    f2_ghz: float,
+    t_x_f1: Any, t_x_f2: Any,
+    t_y_f1: Any, t_y_f2: Any,
+) -> dict[str, float]:
+    """两正交极化透射链的微分群延迟差（二点差分，EC-21 配套键内核）。
+
+    τ_g ≈ −(1/360)·Δφ_deg/Δf（线性相位网络 τ 恒等精确，弯相位为区间
+    平均）。f1_ghz/f2_ghz：两频点（GHz，f2>f1）；t_*_f1/t_*_f2：各频点
+    x/y 极化透射系数（复数标量或 [re, im]）。返回 ps 域：
+
+    - tau_g_x_ps / tau_g_y_ps：各路群延迟（Δφ 主值包裹后的差分）；
+    - delta_tau_g_ps：τ_g_y − τ_g_x（极化转换面的微分群延迟差主判据）；
+    - delta_ipd_deg_f1/f2：两频点的 ΔIPD 主值（delta_ipd_il 同口径）；
+    - delta_ipd_sweep_deg：ΔIPD 扫频变化量（(ΔIPD_f2−ΔIPD_f1) 主值）；
+    - phase_advance_x_deg/y：各路 [f1,f2] 相位推进（主值包裹）。
+
+    诚实边界（预声明）：主值包裹使 |Δφ|>180° 的多周期推进不可分辨
+    （Δτ_g 假归零族）——频带须窄到各路单周期推进内（极化转换面窄带
+    惯例可达；宽带给定须调用方自行去包裹后再两点直差，不在本键）。
+    f2<=f1 / 任一系数为 0 / 非有限 → ValueError。
+    """
+    f1 = _num(f1_ghz, "f1_ghz")
+    f2 = _num(f2_ghz, "f2_ghz")
+    if not f2 > f1:
+        raise ValueError(f"f2_ghz ({f2}) 必须 > f1_ghz ({f1})")
+    df_hz = (f2 - f1) * 1e9
+    ax1 = _cplx_pair(t_x_f1, "t_x_f1")
+    ax2 = _cplx_pair(t_x_f2, "t_x_f2")
+    ay1 = _cplx_pair(t_y_f1, "t_y_f1")
+    ay2 = _cplx_pair(t_y_f2, "t_y_f2")
+    for nm, v in (("t_x_f1", ax1), ("t_x_f2", ax2),
+                  ("t_y_f1", ay1), ("t_y_f2", ay2)):
+        if abs(v) <= 0.0:
+            raise ValueError(f"{nm} 为 0：相位无定义（同 delta_ipd_il 口径）")
+
+    def _phase_deg(v: complex) -> float:
+        return math.degrees(math.atan2(v.imag, v.real))
+
+    adv_x = _wrap180_deg(_phase_deg(ax2) - _phase_deg(ax1))
+    adv_y = _wrap180_deg(_phase_deg(ay2) - _phase_deg(ay1))
+    tau_x_ps = -(adv_x / 360.0) / df_hz * 1e12
+    tau_y_ps = -(adv_y / 360.0) / df_hz * 1e12
+    ipd1 = _wrap180_deg(_phase_deg(ay1) - _phase_deg(ax1))
+    ipd2 = _wrap180_deg(_phase_deg(ay2) - _phase_deg(ax2))
+    return {
+        "tau_g_x_ps": tau_x_ps,
+        "tau_g_y_ps": tau_y_ps,
+        "delta_tau_g_ps": tau_y_ps - tau_x_ps,
+        "delta_ipd_deg_f1": ipd1,
+        "delta_ipd_deg_f2": ipd2,
+        "delta_ipd_sweep_deg": _wrap180_deg(ipd2 - ipd1),
+        "phase_advance_x_deg": adv_x,
+        "phase_advance_y_deg": adv_y,
+    }

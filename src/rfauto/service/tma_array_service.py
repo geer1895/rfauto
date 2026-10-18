@@ -28,7 +28,7 @@
         和/差开关）；显式给 win_center_diff 时本键忽略。
 
 信封：``{"ok": True, "schema_version": ..., "result": {...}}`` /
-``{"ok": False, "error": str, "schema_version": ...}``——任何入参错误不抛
+``{"ok": False, "errors": [str], "schema_version": ...}``——任何入参错误不抛
 （json.dumps 兼容：非有限 float → None）。物理边界如实登记（基波对计时
 免疫、差方向图只出现在边带）见 core/tma_array.py 模块 docstring。
 """
@@ -41,10 +41,14 @@ import numpy as np
 
 from rfauto.core import tma_array
 from rfauto.core.array_synthesis import direction_cosine
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 
-#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）
-TMA_SERVICE_SCHEMA_VERSION = "1.0"
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-18 AU-2 域升版，aurora_e W4-S20 席）：失败信封单数 ``error``
+#: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读规则 2
+#: 口径的破坏性形状变更，按 §2 规则升位；消费面（tests/unit/test_tma_array.py）
+#: 同笔迁移，无 CLI/MCP/UI 消费者（grep 实测）。1.0=首批推广口径。
+TMA_SERVICE_SCHEMA_VERSION = "1.1"
 
 _DEFAULT_U_STEP = 0.02
 _DEFAULT_U_STEP_AGILITY = 0.001
@@ -174,7 +178,7 @@ def tma_pattern_service(request: Any) -> dict[str, Any]:
         payload["n_elements"] = int(n)
         return ok_envelope(schema_version=TMA_SERVICE_SCHEMA_VERSION, result=payload)
     except Exception as exc:  # 信封边界：入参错误一律 ok=False 不抛
-        return {"ok": False, "error": str(exc), "schema_version": TMA_SERVICE_SCHEMA_VERSION}
+        return error_envelope(str(exc), schema_version=TMA_SERVICE_SCHEMA_VERSION)
 
 
 def tma_beam_agility_service(request: Any) -> dict[str, Any]:
@@ -222,4 +226,4 @@ def tma_beam_agility_service(request: Any) -> dict[str, Any]:
         )
         return ok_envelope(schema_version=TMA_SERVICE_SCHEMA_VERSION, result=payload)
     except Exception as exc:  # 信封边界：入参错误一律 ok=False 不抛
-        return {"ok": False, "error": str(exc), "schema_version": TMA_SERVICE_SCHEMA_VERSION}
+        return error_envelope(str(exc), schema_version=TMA_SERVICE_SCHEMA_VERSION)

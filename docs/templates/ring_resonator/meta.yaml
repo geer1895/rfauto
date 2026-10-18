@@ -53,3 +53,45 @@ nominal_derivation: |-
   test_ring_resonator_template 综合反解自洽测试钉住（rtol 1e-9）。
   近似级别（v1，如实登记）：εeff 取直微带 HJ 值未含曲率/色散修正；间隙耦合
   按间隙电容口径。
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: >-
+      微带环形谐振器：闭环环带周长取 n·λg 时形成系列驻波谐振（基模 n=1），
+      径向对置 180° 双间隙耦合馈线对各次模均为场腹、全模可激励——S21 谐振
+      指纹的峰位反演 εeff、谷宽做 Q 分解提 tanδ（材料提取 fixture，F-A M3
+      口径；提取内核属后续批次）。
+    derivations:
+    - claim: 谐振恒等式与环半径反解（基模 n=1，闭环周长=λg）
+      formula: >-
+        2π·r_mean = n·λg = n·c/(f·√εeff) → r_mean = c/(2π·f1·√εeff(w))
+      source: >-
+        core/synthesis.forward_z0（HJ εeff 单源）与 docs/templates/ring_resonator/meta.yaml
+        本卡 nominal_derivation（综合反解自洽 rtol 1e-9 由
+        test_ring_resonator_template 钉）
+    - claim: 50Ω 馈线宽与环带宽走 HJ 精算单源（铁律 1c）
+      formula: w = inverse_width(50, f1, stackup)（回代自洽；环带 εeff 随线宽走）
+      source: >-
+        core/synthesis.inverse_width 与 core/synthesis.nominal_width_mm
+        （XC-W 单源，mline/gysel 同源口径；docs/rf_template_references.md
+        线宽综合精算口径）
+    - claim: 间隙耦合与 Q 分解口径（v1 近似级别如实登记）
+      formula: 1/Q_L = 1/Q_d + 1/Q_c + 1/Q_r（介质/导体/辐射+耦合）；gap 定耦合强度（间隙电容口径 v1）
+      source: >-
+        docs/templates/ring_resonator/meta.yaml 本卡 extraction 与 smoke_note
+        字段（未含色散/曲率修正与栅格化慢波补偿，ratrace 锚定标禁止外推复用）
+  sensitivity_ranking:
+  - param: r_mean_mm
+    order: 1
+    basis: 谐振恒等式 |∂lnf/∂lnr|=1（精确）——环平均半径是谐振尺度
+  - param: er
+    order: 2
+    basis: f ∝ 1/sqrt(εeff)，|∂lnf/∂lnεeff|=1/2 恒等式（er 经 εeff(w) 打折）
+  - param: gap_mm
+    order: 3
+    basis: 间隙电容耦合定 Q_c/抽头强度（v1 间隙电容口径，弱于谐振尺度项）
+  - param: w_mm
+    order: 4
+    basis: 环带宽经 εeff(w) 二阶进入谐振恒等式，并直接定 50Ω 口径
+  quiz_refs: []

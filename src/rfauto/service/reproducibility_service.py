@@ -464,3 +464,144 @@ def read_manifest(path: str | Path) -> dict[str, Any]:
     if not isinstance(data, Mapping):
         return error_envelope(["清单根节点需要 JSON 对象"])
     return ok_envelope(manifest=dict(data))
+
+
+# ─── XD-16 战役 crate 自描述元数据（RO-Crate 1.1 JSON-LD 口径）────────────────
+
+#: RO-Crate 规范锚（机器可读自描述包；schema.org JSON-LD 载体）。
+RO_CRATE_CONTEXT = "https://w3id.org/ro/crate/1.1/context"
+RO_CRATE_CONFORMS = "https://w3id.org/ro/crate/1.1"
+
+#: 引用分类的命名启发式（best-effort：命中才收，缺席类=键缺席不编造）。
+_RECIPE_SUFFIXES = (".yaml", ".yml", ".json")
+
+
+def _classify_campaign_references(rel_files: list[str],
+                                  base: Path) -> dict[str, Any]:
+    """战役目录引用分类（只读；解析失败逐文件跳过，#105 best-effort）。"""
+    recipes = sorted(
+        rel for rel in rel_files
+        if Path(rel).name.lower().startswith("recipe")
+        and Path(rel).suffix.lower() in _RECIPE_SUFFIXES)
+    anchors = sorted(
+        rel for rel in rel_files if "anchor" in Path(rel).name.lower())
+    studies: list[dict[str, str]] = []
+    run_dirs: set[str] = set()
+    for rel in rel_files:
+        if Path(rel).name != "meta.json":
+            continue
+        parent = str(Path(rel).parent.as_posix())
+        if parent and parent != ".":
+            run_dirs.add(parent)
+        try:
+            data = json.loads((base / rel).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(data, Mapping):
+            study = data.get("study_name") or data.get("study")
+            if study is not None:
+                studies.append({"path": rel, "study_name": str(study)})
+    studies.sort(key=lambda item: item["path"])
+    return {
+        "recipes": recipes,
+        "studies": studies,
+        "runs": sorted(run_dirs),
+        "anchors": anchors,
+    }
+
+
+def build_crate_metadata(
+    campaign_dir: str | Path,
+    *,
+    pack_manifest: Any = None,
+    dependencies: Any = None,
+    include_git: bool = True,
+    git_repo: str | Path | None = None,
+) -> dict[str, Any]:
+    """XD-16 战役 crate 自描述元数据（RO-Crate 1.1 JSON-LD）。
+
+    把 lake ``pack_campaign`` 的哈希清单升级为**机器可读自描述描述层**
+    （配方/study/runs/锚点/软件版本全引用；zenodo 与 runs 交接消费同一
+    层）：@context + @graph（元数据描述符 + 根 Dataset（hasPart=全文件
+    逐个 sha256/contentSize）+ #software 实体（环境清单，消费
+    collect_environment_manifest）+ 可选 #pack 实体（pack_manifest 投影，
+    只取确定性字段不含 created_at））。
+
+    引用分类（rfauto_references）：命名启发式 best-effort——recipe*/
+    *anchor* 文件名、meta.json 的 study_name/study 键、含 meta.json 的
+    子目录=run；命中才收，缺席类=键缺席（不编造）；meta.json 解析失败
+    逐文件跳过（#105：观测性面不阻塞主路径）。
+
+    确定性：全排序、零时间戳（同输入两次调用逐字节一致——单测钉）。
+    campaign_dir 不存在/非目录 → {"ok": False, "errors": [...]}（数据态，
+    与 build_artifact_manifest 同口径）。
+    """
+    base = _resolve_target(campaign_dir)
+    if not base.is_dir():
+        return error_envelope([f"战役目录不存在或非目录: {base}"])
+    files: list[dict[str, Any]] = []
+    rels: list[str] = []
+    for rel, path in _iter_files(base):
+        try:
+            # RO-Crate sha256 属性口径=裸十六进制（_sha256 带 "sha256:"
+            # 前缀是本模块 lock-digest 语义，剥前缀落 crate）。
+            digest = _sha256(path.read_bytes()).split(":", 1)[-1]
+        except OSError as exc:
+            return error_envelope([f"读取失败: {rel}: {exc}"])
+        rels.append(rel)
+        files.append({"@id": f"./{rel}", "@type": "File",
+                      "sha256": digest,
+                      "contentSize": path.stat().st_size})
+    files.sort(key=lambda item: item["@id"])
+    references = _classify_campaign_references(sorted(rels), base)
+
+    env = collect_environment_manifest(
+        dependencies=dependencies, include_git=include_git, git_repo=git_repo)
+    root: dict[str, Any] = {
+        "@id": "./",
+        "@type": "Dataset",
+        "name": base.name,
+        "hasPart": [{"@id": item["@id"]} for item in files],
+        "rfauto_references": references,
+    }
+    graph: list[dict[str, Any]] = [
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "about": {"@id": "./"},
+            "conformsTo": {"@id": RO_CRATE_CONFORMS},
+            "generatedBy": "rfauto.service.reproducibility_service",
+        },
+        root,
+        *files,
+        {
+            "@id": "#software",
+            "@type": "SoftwareApplication",
+            "name": "rfauto",
+            "environment": {
+                "python": env.get("python"),
+                "platform": env.get("platform"),
+                "packages": env.get("packages"),
+                "lock_digest": env.get("lock_digest"),
+                "git": env.get("git"),
+            },
+        },
+    ]
+    if isinstance(pack_manifest, Mapping):
+        graph.append({
+            "@id": "#pack",
+            "@type": "MediaObject",
+            "encodingFormat": "application/zstd",
+            "pack_file": pack_manifest.get("pack_file"),
+            "offset_manifest": (
+                f"{pack_manifest.get('pack_file')}.manifest.json"
+                if pack_manifest.get("pack_file") else None),
+            "pack_sha256": pack_manifest.get("pack_sha256"),
+            "pack_size_bytes": pack_manifest.get("pack_size_bytes"),
+            "n_files": pack_manifest.get("n_files"),
+            "total_bytes": pack_manifest.get("total_bytes"),
+            "format": pack_manifest.get("format"),
+        })
+    # 信封契约 §4（AST 裸 ok 守卫）：新面一律走构造器（键序 ok 在前，
+    # 与裸 dict 形态逐字节同值）。
+    return ok_envelope(**{"@context": RO_CRATE_CONTEXT, "@graph": graph})

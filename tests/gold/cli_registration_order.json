@@ -115,7 +115,8 @@
   "sandbox",
   "edb",
   "recast",
-  "rest"
+  "rest",
+  "templates"
  ],
  "leaf_paths": [
   "rfauto doctor",
@@ -386,8 +387,9 @@
   "rfauto edb status",
   "rfauto recast status",
   "rfauto recast replay",
-  "rfauto rest schema"
+  "rfauto rest schema",
+  "rfauto templates golden-diff"
  ],
- "n_leaves": 269,
- "n_top": 116
+ "n_leaves": 270,
+ "n_top": 117
 }

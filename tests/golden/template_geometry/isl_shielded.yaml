@@ -1,0 +1,18 @@
+schema: rfauto-template-geometry-golden/v1
+template: isl_shielded
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 2.4818
+  g_air_mm: 0.508
+  h_top_mm: 1.016
+  d_mm: 0.6
+  s_mm: 1.0
+  line_len_mm: 40.0
+  er: 3.66
+  tan_d: 0.0037
+status: guard_blocked
+guard_error: 'isl_layout: 网格欠分辨——过孔直径 d=0.6mm < 4·NEAR=1.14mm（BASE=1.14mm；收紧 mesh_resolution_mm，hmsiw 同口径）'

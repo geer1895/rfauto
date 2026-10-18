@@ -23,6 +23,9 @@
   探索（band）/ L1794 成本时间线 / L1805 调参收敛（convergence）/
   L2562 Pareto 前沿。base 路径 option 与迁移前逐字节等价（金钉）；
   convergence(2)/crosshair(3+叠图 1) 为规格声明的增量。
+  W3-S12（aurora_e，R6 审计 P-5）+4：远场极坐标/Smith/场切片/远场 3D 热图
+  四管线经 props.option 逃生舱接入壳（TestOptionEscapeHatch 钉 gated 语义：
+  直通/ctx 现取/base 逐字节不变），全站调用点 12→16。
 """
 
 from __future__ import annotations
@@ -37,9 +40,6 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-#: SSR 回归钉经 vendored echarts（static/vendor 不随仓分发）——
-#: 缺文件时诚实 skip（node 本身在位也不可跑）
-_ECHARTS = (_STATIC / "vendor" / "echarts.min.js").is_file()
 
 # 迁移前 option 快照（runs/pr34/golden_option_harness.mjs 产出，2026-10-02；
 # valueFormatter 等函数 JSON.stringify 不含——等价断言即 JSON 逐字节口径）。
@@ -210,6 +210,60 @@ class TestIncrementBehavior:
         assert "ok:convergence" in out
 
 
+@pytest.mark.skipif(_NODE is None, reason="本机无 node")
+class TestOptionEscapeHatch:
+    """W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）。
+
+    非笛卡尔管线（polar/Smith/custom/heatmap）自带完整 option 直通接入
+    plotCard 壳；不传 option 的调用路径逐字节不变（base 金钉不受扰）。"""
+
+    def test_option_passthrough_object_and_function(self):
+        out = _run_node_js(
+            "const m = await import('./plotcard.js');\n"
+            "const theme = { light: false, palette: ['#4fc3f7'] };\n"
+            "const custom = { backgroundColor: 'transparent', polar: {}, series: [{ type: 'line', coordinateSystem: 'polar' }] };\n"
+            "const a = m.plotCardOption({ option: custom }, theme);\n"
+            "if (a !== custom) throw new Error('对象形态须同引用直通');\n"
+            "let seen = null;\n"
+            "const fn = (ctx) => { seen = ctx; return custom; };\n"
+            "const b = m.plotCardOption({ option: fn }, theme);\n"
+            "if (b !== custom || seen !== theme) throw new Error('函数形态须以 ctx 现取');\n"
+            "console.log('ok:option-passthrough');\n"
+        )
+        assert "ok:option-passthrough" in out
+
+    def test_option_mode_skips_series_consumption(self):
+        # option 直通优先：series 缺席/畸形不进降采样与 base 构造（CSV 数据面
+        # 与渲染 option 解耦——四管线 series 只喂 toCsv）
+        out = _run_node_js(
+            "const m = await import('./plotcard.js');\n"
+            "const theme = { light: false, palette: [] };\n"
+            "const o = m.plotCardOption({ option: { series: [{ type: 'heatmap' }] } }, theme);\n"
+            "if (o.series[0].type !== 'heatmap') throw new Error('直通被改写');\n"
+            "console.log('ok:option-no-series');\n"
+        )
+        assert "ok:option-no-series" in out
+
+    def test_base_path_byte_identical_when_option_absent(self):
+        # 不传 option：plotCardOption 走 base 单源构造，输出与迁移前 golden
+        # 快照逐字节相等（逃生舱 gated 纯增量的直接证据）
+        out = _run_node_js(
+            "Math.random = () => 0.42;\n"
+            "const m = await import('./plotcard.js');\n"
+            "const theme = { light: false, "
+            "palette: ['#4fc3f7', '#ffb74d', '#81c784', '#e57373', '#ba68c8'] };\n"
+            + _CASES_JS +
+            "const out = {};\n"
+            "for (const [k, c] of Object.entries(cases)) {\n"
+            "  const p = Object.assign({}, c.opts, { series: c.series });\n"
+            "  out[k] = JSON.stringify(m.plotCardOption(p, theme));\n"
+            "}\n"
+            "console.log(JSON.stringify(out));\n"
+        )
+        got = json.loads(out.strip())
+        assert got == _GOLDEN
+
+
 class TestMigrationSourcePins:
     """换壳迁移面源码钉（免 node）：调用点清点 + 声明增量点位。"""
 
@@ -223,8 +277,9 @@ class TestMigrationSourcePins:
         src = self._read("pages.js")
         assert src.count("T.drawEChart(") == 0, "仍有未迁移的 drawEChart 调用点"
         # 11 处迁移（规格写 12 系含定义/导出行的历史口径）+ 1 处新增
-        # （run 对比叠图 renderRunDiff）= 12
-        assert src.count("T.plotCard(") == 12, src.count("T.plotCard(")
+        # （run 对比叠图 renderRunDiff）+ 4 处 W3-S12 逃生舱迁移（远场极坐标/
+        # Smith/场切片/远场 3D 热图，props.option 直通）= 16
+        assert src.count("T.plotCard(") == 16, src.count("T.plotCard(")
 
     def test_declared_option_deltas_pinned(self):
         src = self._read("pages.js")
@@ -284,8 +339,7 @@ class TestMigrationSourcePins:
             assert needle in block, f"print 面缺 {needle}"
 
 
-@pytest.mark.skipif(_NODE is None or not _ECHARTS,
-                    reason="node 或 vendored echarts.min.js 缺失（static/vendor 不随仓分发）")
+@pytest.mark.skipif(_NODE is None, reason="本机无 node")
 class TestConvergenceRenderRegression:
     """W9-A 渲染级回归钉（2026-10-12，W8-B 视觉验收 P1-1）。
 

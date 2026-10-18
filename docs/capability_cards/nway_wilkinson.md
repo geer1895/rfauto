@@ -55,7 +55,7 @@
 - 参数语义：w_arm_mm=λ/4 臂宽（√2·Z0=70.7107Ω HJ 精算，gysel 同源档）；w_feed_mm=50Ω 馈线/支线/输出线宽（1.1134，mline 同源档）；arm_len_mm=臂 λ/4 长（εeff=2.72456 精算 18.1624mm@2.5GHz）；iso_r_ohm=隔离电阻值（=2·Z0，LumpedElement R 值——进元件值不进导体几何，qwt z_load_ohm 同口径豁免）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；全部盒缘（叉臂带缘/T 条缘/电阻盒边/支线与输出馈线缘）+ 端口 junction 精确入网（#198）；显式近场线 10µm 地板（#349）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）
 - 冒烟现状：未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①λ/4 臂窄带理想口径——T 叉/臂端电阻位结点寄生不进闭式裁判（gysel/branchline 同口径，离线裁判=skrf 理想 2-way 单元级联装配）；②隔离电阻 LumpedElement 零厚度集总（qwt 端接同法，寄生 L/C 未建模）；③star 分支单层不可布为渲染面拓扑约束（非内核语义变更）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

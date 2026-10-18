@@ -55,7 +55,7 @@
 - 参数语义：w_mm=槽宽，line_len_mm=两端口间距，h_mm=基板厚（模板参数，理由同 slotline）；r_port_ohm 缺省=闭式 Z0（可注入 HFSS Zpv 档）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；端口盒/槽缘/基板界面精确入网、#152 守卫
 - 冒烟现状：真机 β_B 68.40 vs HFSS-wide +2.44%（门 3% PASS，e35a517）。原始 |S11|/|S21| 为"PML 匹配线上并联抽头"拓扑解析必然（βL=2π 时 S11=−1/2/S21=+1/2）：β 生产口径可用，S 参数 D 级需 tap_network_sparams 换算（#250）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

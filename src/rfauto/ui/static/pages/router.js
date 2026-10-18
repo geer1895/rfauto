@@ -7,7 +7,7 @@
    只在函数体内消费对方绑定、零顶层执行——与拆分前 pages.js↔plotcard.js
    环同款安全性）。 */
 
-import { S, T, setActiveView } from "./context.js";
+import { S, T, getActiveView, setActiveView } from "./context.js";
 import { _sseLeavePage } from "./sse.js";
 import { toolsSelectKey } from "./view_tools.js";
 
@@ -15,7 +15,33 @@ import { toolsSelectKey } from "./view_tools.js";
    路由→视图→路由整环）；键集与拆分前 showPage 内联 views 表逐键一致。 */
 export const VIEWS = {};
 
+/* ═══ R-1 页面生命周期协议（aurora72 W1-S3，R6 审计 R-1）══════════════
+   PageContext 增量钩子注册表：VIEWS 键→渲染函数（=enter 面，既有
+   `(S.currentRunId)` 签名兼容零变化）不动；本表只登记生命周期钩子增量——
+   - refresh()：palette「刷新当前页数据」的局部刷新入口（数据拉取与壳渲染
+     分离——dashboard 重铺组件面不重拉 /api/runs?limit=200、loopboard 立即
+     拉一次看板）；未登记页回退 showPage 整页重进=旧行为。
+   - leave()：离页收束（现 _pollStop 并入——loopboard 离页停表；未登记页
+     零动作，_pollVisible 双守卫语义保留）。
+   渐进迁移：页面实现钩子后在 PAGE_CTX 登记一行（懒加载页经 pages.js
+   _lazyCtx 包装），其余页保持现状签名零迁移（全量迁移=后续波次）。 */
+export const PAGE_CTX = {};
+
+/* 注册表查询（未登记页返回 null，node 结构钉可测）：palette 刷新与
+   showPage 离页收束共用同一查询面。 */
+export function pageContextFor(v) {
+  return Object.prototype.hasOwnProperty.call(PAGE_CTX, v) ? PAGE_CTX[v] : null;
+}
+
 export function showPage(v) {
+  const prev = getActiveView();
+  if (prev !== v) {
+    const prevCtx = pageContextFor(prev);
+    if (prevCtx && typeof prevCtx.leave === "function") {
+      // 离页收束先于激活（#105 best-effort：leave 异常不阻切页）
+      try { prevCtx.leave(); } catch { /* 收束失败静默 */ }
+    }
+  }
   setActiveView(v); // aurora36 W2-B：页面可见语义单源（写入经 context.js 访问器）
   _sseLeavePage(v); // aurora72 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）
   T.activate(v);

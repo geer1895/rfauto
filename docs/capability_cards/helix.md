@@ -55,7 +55,7 @@
 - 参数语义：helix_d_mm=方截面中心线边 d，helix_turns=圈数 N（整数，int() 截断），helix_pitch_mm=螺距 p（=(k_helix·λ0/4−4dN)/N 反解，守卫 ≥1mm），helix_w_mm=导带宽，feed_gap_mm=馈口高
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；z 网格专项（各圈 1/4 螺距面全部入网，_ANTENNA2_TALL_TEMPLATES）
 - 冒烟现状：真机 内部证据档（2026-09-14）FAIL：S11 ≤−1.22dB；Zin 全带容性 X∈[−156,−44]Ω 且随 f 单调升 → 谐振在 2.9GHz 之上（与段首"慢波使谐振更低"预期相反，λ0/4 总线长口径高估电长度）；R=1.8~6.2Ω 与电小天线 395(h/λ)²≈2Ω 一致——即便谐振也对 50Ω 失配，S11 谷深判据不适用，应改判电抗过零。扩带（2026-09-16，内部证据档，1.5-4.5GHz，solve 173s）FOUND：f_x=3.3146GHz R=9.47Ω（首个容性→感性上穿）。**HFSS 同几何仲裁（2026-09-17 收尾批，scripts/hfss_helix_arbitration.py，内部证据档）AGREE**：真实三维盒几何（t*_d 段为 0.6×3.0×0.9 金属块，前六轮 sheet 映射把它压成薄板断了 C→D→A 电流路径 → 全带容性 UNDECIDABLE，几何修复后）f_x_hfss=3.2675GHz R=8.74Ω vs openEMS 3.3146（自动/0.35mm 网格、16.7/50mm 域三重稳健 3.29–3.32）偏差 1.44% ≤5% ⇒ k_helix=f_x(HFSS)/2.4=1.3615 进设计式（K_HELIX 单源），helix_pitch_mm 3.6142→9.2587（element_top 9.23→20.52mm）；新名义真机验证 内部证据档（openEMS 1.9–2.9GHz）FOUND f_x=2.2039GHz R=17.51Ω、S11 min −6.74dB@2.275——落 f0±12% 窗内但偏低 −8.2%：单点 k 修正隐含 f∝1/wire，螺距 3.6→9.3mm 改变慢波因子致一阶外推过冲；割线二次迭代（两点 (31.23mm,3.3146)/(42.52mm,2.2039) → wire≈40.5mm、k≈1.30、pitch≈8.26）须再经 HFSS 仲裁方可进设计式（#190，followUp）。
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

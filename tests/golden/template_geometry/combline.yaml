@@ -1,0 +1,20 @@
+schema: rfauto-template-geometry-golden/v1
+template: combline
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  order: 3
+  w_mm: 1.1117
+  res_len_mm: 8.4238
+  gaps_mm:
+  - 0.1393
+  - 0.9291
+  - 0.9291
+  - 0.1393
+  feed_len_mm: 55.7881
+  c_load_pf: 1.2732
+status: guard_blocked
+guard_error: C3 combline 耦合缝网格守卫（#266）：NEAR=0.2851mm > 最小耦合缝 0.1393mm/3=0.0464mm（缝内不足 3 格 ⇒ 缝内零内部线、外 Q 建模粗、峰位 −5%）；请显式传 mesh_resolution_mm ≤ 0.1857（NEAR=base/4）

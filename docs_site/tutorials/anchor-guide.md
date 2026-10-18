@@ -6,6 +6,7 @@
 > → 怎么查 → 怎么消费 → 怎么维护，五问一页走完。全部命令与代码都在
 > 开发环境实测过（退出码 0），示例输出为实测摘录。前置：已读
 > docs/tutorials/getting-started.md（安装与 CLI 基本面）。
+> 英文版（English version）：docs/tutorials/anchor-guide_en.md。
 
 ## 1. 锚是什么
 
@@ -18,14 +19,16 @@
 这个差值不是 bug，而是每个引擎的系统性偏差——把它测出来、登记成
 锚，后续综合与判读就有了跨引擎的"换算基准"。
 
-当前注册表共 60 条锚（`rfauto anchors validate` 实测），分型分布：
+当前注册表共 79 条锚（`rfauto anchors validate` 实测，2026-10-18；
+注册表随战役逐批增长，实时计数以 validate 输出为准），分型分布：
 
 | 维度 | 分布 |
 |---|---|
-| kind | constant 49 / pointer 8 / formula 2 / curve 1 |
-| status | experimental 41 / active 19 |
-| engine_pair | closedform→∅ 37 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / 无 3 |
-| 模板族 | 47 族（c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
+| kind | constant 68 / pointer 8 / formula 2 / curve 1 |
+| status | experimental 59 / active 19 / retired 1 |
+| engine_pair | closedform→∅ 56 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / 无 3 |
+| layer（XD-8 V&V 层级） | closure 61 / component 14 / system 4 |
+| 模板族 | 66 族（template_family 并集：c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
 
 **pointer（双值指针锚）值得单说**：openEMS 与 HFSS 各登记一个值，
 **不合并成单一常数、也不就地求值**。设计意图是"双值并存、比对消费"，
@@ -49,7 +52,7 @@ c3.l_via_h.openems-hfss-v1（v1，constant，active）
   uncertainty: {'value': 2e-11, 'kind': 'arbitration_interval'}
   domain: None
   engine_pair: {'calibrated': 'openems', 'referee': 'hfss'}  fallback: closed_form
-  provenance: runs=['runs/demo_c3fix'] commit=caa79b5
+  provenance: runs=['仓内归档'] commit=caa79b5
   consumers: ['src/rfauto/adapters/openems_templates.py',
               'src/rfauto/adapters/fake_adapter.py']
 ```
@@ -98,17 +101,17 @@ rfauto anchors validate      # schema + provenance + 单源计数校验
 rfauto anchors stale --threshold 30   # 新鲜度盘点
 ```
 
-实测 `validate` 输出：
+实测 `validate` 输出（2026-10-18 时点快照）：
 
 ```
-锚注册表校验（DP-3）：60 条（单源期望 60，匹配=True），registry=None
+锚注册表校验（DP-3）：79 条（单源期望 79，匹配=True），registry=None
 ✓ schema + provenance 全过
 ```
 
 实测 `stale` 输出头（`no_date` 是"从未复验、如实不算 stale"）：
 
 ```
-锚新鲜度（QW-3，阈值 30.0 天，stale 0/no_date 35/60 条）
+锚新鲜度（QW-3，阈值 30.0 天，stale 2/no_date 54/79 条）
 ```
 
 另有 `rfauto anchors drift <anchor_id>`：Mann-Kendall 趋势 + 分布
@@ -132,8 +135,9 @@ find_anchors_request("patch", "f_dip_L", engine="openems")
 from rfauto.service.knowledge_service import search_knowledge
 
 search_knowledge("l_via_h", scope="anchors")
-# → {'ok': True, 'n_hits': 1, 'scanned': {'rules': 10, 'anchors': 60,
-#    'playbook': 17, 'fab': 2}}
+# → {'ok': True, 'hits': [c3.l_via_h.openems-hfss-v1, …],
+#    'counts': {'anchors': 2, 'total': 2},
+#    'scanned': {'rules': 10, 'anchors': 79, 'playbook': 17, 'fab': 2}}
 ```
 
 MCP 面（`anchors_list` / `anchors_inspect`）与 service 同源，供

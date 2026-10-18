@@ -1,0 +1,63 @@
+schema: rfauto-template-geometry-golden/v1
+template: monopole
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.15
+- 2.65
+params:
+  mon_len_mm: 31.2284
+  mon_w_mm: 1.0
+  feed_gap_mm: 2.0
+status: ok
+script_sha256: 047b5d11363e6daa236bd9b46789a414fcc868b2a0f791adf85069646cd04f96
+csx:
+  n_primitives: 5
+  props:
+  - name: monopole_strip
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 391545a341636add917ffa31e9a734c7700e5896b1b6c87b91ff8329282bf65a
+  bbox_m:
+  - -0.0005
+  - -0.0005
+  - 0.0
+  - 0.0005
+  - 0.0005
+  - 0.0332284
+mesh:
+  lines:
+    x:
+      n: 157
+      min_gap_m: 0.00025
+    y:
+      n: 157
+      min_gap_m: 0.00025
+    z:
+      n: 54
+      min_gap_m: 0.001
+  lines_sha256: 70e7b422180cd48c3e8839949836eab3b6656e1e03fd559f99f771da6b03a202
+ports:
+- 1

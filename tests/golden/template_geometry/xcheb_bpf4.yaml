@@ -1,0 +1,22 @@
+schema: rfauto-template-geometry-golden/v1
+template: xcheb_bpf4
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.1117
+  a_mm: 8.7626
+  g12_mm: 0.3581
+  g23_mm: 0.4253
+  g34_mm: 0.2885
+  g14_mm: 1.6526
+  g_open_mm: 0.3
+  g_pos_mm: 6.1338
+  tap_t_mm: 8.1454
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: guard_blocked
+guard_error: 'xcheb_bpf4: 网格欠分辨——NEAR=0.2851mm > 缝_min/3=0.09617mm（BASE=1.14mm；收紧 mesh_resolution_mm，#266 C3 族同口径守卫）'

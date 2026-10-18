@@ -1,8 +1,10 @@
 /* rfauto 工作台图表生命周期单源（aurora_d UI-R2 自 pages.js 拆出，
    逐字节搬移）：aurora36 W2-B echarts 实例缓存/resize 去重/子树释放；
    W3-B chartExportTools 导出工具条工厂；W4-C palette act-export-chart
-   事件桥（监听装配走 initPages）；P0-4 WebGL 防御式释放（_isoRenderers
-   与 view_fieldviz drawIsoMesh 共享同一 WeakMap 注册表）。
+   事件桥（监听装配走 initPages；W4-S17 起触发消费 plotcard.js 共享登记面
+   ——桥登记面迁 plotCard 壳，本模块 chartExportTools 委托同一注册表）；
+   P0-4 WebGL 防御式释放（_isoRenderers 与 view_fieldviz drawIsoMesh 共享
+   同一 WeakMap 注册表）。
    ═══ aurora_d UI-R5：图表能力统一深化 ═══
    - 调用面归一：plotCard 内建同容器复用落地（plotcard.js，W2-B 接口诉求
      闭合）——plotCardCached 降级为零破坏薄委托（tune/tools 两调用点不动），
@@ -18,8 +20,9 @@
      +轴/文字色，setOption notMerge）；midnight↔ocean 共用深档不重放。 */
 
 import {
-  downsamplePlotSeries, getDefaultMaxPoints, lttbIndices, minmaxIndices,
-  plotCardOption, plotCardShellEntries, setDefaultMaxPoints, toCsv,
+  downsamplePlotSeries, fireRecentChartExport, getDefaultMaxPoints,
+  lttbIndices, minmaxIndices, plotCardOption, plotCardShellEntries,
+  registerRecentChartExport, setDefaultMaxPoints, toCsv,
   DEFAULT_MAX_POINTS,
 } from "../plotcard.js";
 import {
@@ -72,12 +75,20 @@ export function bindChartResize(el) {
 }
 
 /* 容器子树重建（innerHTML 换血）前：释放挂在旧子树容器上的 echarts 实例
-   （缓存键随元素走；不显式 dispose 则旧实例连同 canvas/zrender 滞留堆中）。 */
+   （缓存键随元素走；不显式 dispose 则旧实例连同 canvas/zrender 滞留堆中）。
+   W3-S12（P-5）：plotCard 壳登记面同口径释放——四管线逃生舱迁移后场/远场
+   三处容器换血的旧实例经 _plotShells（WeakMap 直查不可及）登记，走
+   WeakRef 遍历面补清；isDisposed 守卫幂等（与上方旧管线双覆盖无害），
+   同容器重建路径（plotCard 内建）随后摘除其 resize 监听。 */
 export function disposeChartsIn(root) {
   if (!root || !root.querySelectorAll) return;
   for (const el of [root, ...root.querySelectorAll("*")]) {
     const c = _liveCharts.get(el);
     if (c && !c.isDisposed()) c.dispose();
+  }
+  for (const { el, shell } of plotCardShellEntries()) {
+    if (!root.contains(el)) continue;
+    if (shell.chart && !shell.chart.isDisposed()) shell.chart.dispose();
   }
 }
 /* P0-5（tune 3s 轮询）→ UI-R5 归一收编：plotCard 已内建"同容器存活壳
@@ -170,12 +181,17 @@ export function heatColormap() {
 }
 /* ═══ aurora36 W3-B：自研管线图表导出 + 可排序表格（R1 §③ / P1-7）═════════ */
 
-/* 导出工具条小工厂（4 处自研管线共用，不重复装配代码）：与 plotCard 工具条
-   同款 UI/类名（.plotcard-tools > button.minor.plotcard-btn）。
-   逐处评估结论（详见 W3-B 席位报告）：plotcard.js builder 能力面 = 笛卡尔
-   line/scatter/band——极坐标 polar / Smith 隐藏轴等比坐标 / 场切片
-   custom+visualMap / 远场 θ×φ heatmap 均不在其上，四处渲染管线保留自研，
-   仅补齐 plotCard 级导出面。UI-R5 收编：CSV/PNG/SVG 编码与文件名走
+/* 导出工具条小工厂（不重复装配代码）：与 plotCard 工具条同款 UI/类名
+   （.plotcard-tools > button.minor.plotcard-btn）。
+   逐处评估结论（W3-B 席位报告；W4-S17 更新）：plotcard.js builder 能力面 =
+   笛卡尔 line/scatter/band——polar / Smith 隐藏轴等比坐标 / 场切片
+   custom+visualMap / 远场 θ×φ heatmap 均不在其上，四管线已于 W3-S12（R6
+   审计 P-5）经 plotCard props.option 逃生舱整接入壳（导出随壳内建），
+   chartExportTools 现存消费者=dashboard 甜甜圈（refEl=null append 形态）。
+   W4-S17（W3-S12 建议①登记面收窄）：桥"最近装配"登记迁 plotCard 壳
+   （plotcard.js registerRecentChartExport 单源）——本工厂退役自有 WeakRef
+   闭包，PNG 钮装配后委托同一登记面（甜甜圈与 plotCard 壳喂同一注册表，
+   触发面见下方事件桥注释）。UI-R5 收编：CSV/PNG/SVG 编码与文件名走
    chart_export.js 统一出口（`视图_指标_时间戳`），本工厂补 SVG 档；
    实例缺失或已 dispose 时点导出静默跳过（统一出口内置同口径守卫）。 */
 export function chartExportTools(host, refEl, opts) {
@@ -201,37 +217,25 @@ export function chartExportTools(host, refEl, opts) {
   const svgBtn = mk("SVG", "导出图片（SVG，矢量）", "导出图表图片 SVG", () =>
     exportChartFile("svg", { base: name, getChart }));
   svgBtn.dataset.exportKind = "svg";
-  const pngRef = new WeakRef(pngBtn); // UI-R11（uir8 P2-5）：弱可达登记
-  _lastChartExport = () => { // W4-C：登记"最近装配"（事件桥消费）。
-    // UI-R11（uir8 P2-5）：WeakRef 弱可达——闭包不再强持 PNG 钮，页面换血
-    // 后旧工具条子树可回收（原强引用把最后一次装配的工具条滞留到下次装配
-    // 覆盖为止）；触发时按钮已离场（document.contains=false，node 无
-    // document 同口径）→ 解除登记，与导出出口的 isDisposed 静默守卫同口径。
-    const b = pngRef.deref();
-    if (b && typeof document !== "undefined" && document.contains &&
-        document.contains(b)) b.click();
-    else _lastChartExport = null;
-  };
+  registerRecentChartExport(pngBtn); // W4-S17：登记面迁 plotCard 壳（同一注册表）
   host.insertBefore(tools, refEl);
   return tools;
 }
-/* palette act-export-chart 事件桥（跨席契约，palette 侧由并行席位落）：
-   chartExportTools 每装配一次导出工具条，即把该图表的 PNG 导出动作登记为
-   全站"最近装配"（UI-R11/uir8 P2-5 起经 WeakRef 弱可达——工具条 DOM 不被
-   本登记滞留）；palette 侧 dispatch window 级
-   CustomEvent("rfauto:export-chart")（**契约：event 名固定、无 payload**）
-   → 此处触发最近一次登记的导出。图表已弃置/工具条已随页换血离场时，
-   PNG onclick 内的 isDisposed 守卫与登记侧 document.contains 探针各自
-   静默跳过（统一出口内置，不弹错）。
+/* palette act-export-chart 事件桥（跨席契约，palette 侧发射端固定）：
+   监听 window 级 CustomEvent("rfauto:export-chart")（**契约：event 名固定、
+   无 payload**）→ plotcard.js fireRecentChartExport() 触发"最近渲染"图表的
+   PNG 导出（W4-S17 起登记面=plotCard 壳首绘/复用 + chartExportTools 甜甜圈
+   委托，同一注册表；此前=chartExportTools 装配面独占——四管线入壳后只剩
+   甜甜圈一个喂食点，非甜甜圈页桥恒空转）。图表已弃置/工具条已随页换血
+   离场时，PNG onclick 内的 isDisposed 守卫与登记侧 document.contains 探针
+   各自静默跳过（统一出口内置，不弹错）。
    监听装配走 initPages（本模块顶层零 DOM 依赖，node 行为钉 import 可跑）。 */
-let _lastChartExport = null;
-
 let _exportEvtBound = false;
 export function _bindExportChartEvent() {
   if (_exportEvtBound || typeof window === "undefined" || !window.addEventListener) return;
   _exportEvtBound = true;
   window.addEventListener("rfauto:export-chart", () => {
-    if (_lastChartExport) _lastChartExport();
+    fireRecentChartExport();
   });
 }
 /* ═══ aurora36 W4-C 块结束 ═══ */

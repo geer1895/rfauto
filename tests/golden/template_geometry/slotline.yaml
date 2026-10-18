@@ -1,0 +1,121 @@
+schema: rfauto-template-geometry-golden/v1
+template: slotline
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.0
+  line_len_mm: 93.4624
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 50616798b0dca40ee56b94f17448aa8eb3c14619751b8d7ae98789d80444d01e
+csx:
+  n_primitives: 17
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: slot_metal
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_00
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_01
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_02
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_03
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_04
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_05
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_06
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_07
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_08
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: df14a0bb07637e051921b5d60de7d9189687ea1097ccf029977c07ae14832dc0
+  bbox_m:
+  - -0.067815015
+  - -0.06
+  - -0.027720669
+  - 0.067815015
+  - 0.06
+  - 0.029244669
+mesh:
+  lines:
+    x:
+      n: 395
+      min_gap_m: 0.000142
+    y:
+      n: 121
+      min_gap_m: 0.000125
+    z:
+      n: 219
+      min_gap_m: 0.000254
+  lines_sha256: 1947862e807f0121e56b82526005895258948d34381210fd0ed17fbb1626d8a5
+ports:
+- 1
+- 2

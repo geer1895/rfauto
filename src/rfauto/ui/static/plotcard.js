@@ -26,6 +26,7 @@
      `视图_指标_时间戳`），本文件私有 downloadFile 删除。 */
 import { esc } from "./pages/dom.js"; // UI-R2：esc 单源直连（拆分前自 pages.js，与入口循环引用消除）
 import { mkExportButtons } from "./chart_export.js"; // UI-R5：导出统一出口（CSV/PNG/SVG+时间戳命名）
+import { CHART_GRID } from "./theme.js"; // W3-S12（P-5）：grid 常量单源（值冻结，golden 不受扰）
 
 /* 主题分档调色板由 app.js 传入（CHART_COLORS 单源在 app.js，对比度钉在彼处）。 */
 
@@ -56,7 +57,7 @@ export function buildEChartOption(series, opts = {}, theme) {
         valueFormatter: (v) => (+v).toFixed(2) },
       opts.crosshair ? { axisPointer: { type: "cross", label: { backgroundColor: "#6a7385" } } } : {}),
     legend: { top: 0, textStyle: { color: fg }, type: "scroll" },
-    grid: { left: 52, right: 20, top: 34, bottom: 44 },
+    grid: { ...CHART_GRID }, // W3-S12：常量单源（theme.js，值冻结=52/20/34/44 逐键同值）
     xAxis: Object.assign(
       opts.xvalue
         ? { type: "value", scale: true }
@@ -213,7 +214,8 @@ export function toCsv(series) {
      任何局部极值必是所在桶的桶极值，桶极值全数入选。这是保形默认档
      （Grafana/M3 同款选型）；高 Q 窄谷（宽于 1 样本、窄于桶宽）恰是 S 参数
      最关心的特征，感知类算法（LTTB）按三角形面积选点会整桶错过次深谷
-     （实测 20001 点三谷曲线 LTTB 把 −25/−31dB 谷抹平成 −3dB 级，内部证据档），故不做默认。
+     （实测 20001 点三谷曲线 LTTB 把 −25/−31dB 谷抹平成 −3dB 级，见
+     对比实验归档证据），故不做默认。
    - lttbIndices(ys, n)：LTTB（Largest-Triangle-Three-Buckets）感知保形选点
      备选档（平滑曲线视觉等价性更好；不保证极值保留，导出供调用方自选）。
    - downsamplePlotSeries(series, cap)：共享 x 网分组——同图多迹线（同文件
@@ -371,8 +373,18 @@ export function downsamplePlotSeries(series, cap) {
 
 /* PlotCard 的 option（props 与 drawEChart opts 同形 + mode/crosshair/y2 增量；
    UI-R5：接缝处套降采样——buildEChartOption 保持纯构造（golden 钉不受扰），
-   convergence 整跳、props.maxPoints 显式覆盖优先）。 */
+   convergence 整跳、props.maxPoints 显式覆盖优先。
+   ═══ aurora_e W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
+   props.option 非空 → 调用方自带完整 option 直通，跳过 base 单源构造与
+   降采样（非笛卡尔管线——polar/Smith/custom/heatmap 不在 builder 能力面——
+   由此接入 plotCard 壳，获得 CSV/PNG/SVG 导出+同容器复用+主题联动）：
+   - 对象形态：原样直通（调用方自管主题）；
+   - 函数形态 (ctx) => option：渲染/复用/主题重放三条路径各现取一次
+     （ctx={light, palette}——refreshThemeCharts 换档重放时函数收到新档）。
+   不传 option 的调用路径此后逐字节不变（本函数其余分支不动，金钉保形）。 */
 export function plotCardOption(props, theme) {
+  if (props && props.option != null)
+    return typeof props.option === "function" ? props.option(theme) : props.option;
   const raw = props.series || [];
   let cap;
   if (props.maxPoints != null) cap = Math.floor(+props.maxPoints);
@@ -383,9 +395,12 @@ export function plotCardOption(props, theme) {
 
 /* PlotCard：图表卡片壳（工具条 CSV/PNG/SVG 导出 + 图表容器）。
    props={series, xlabel, ylabel, y2?, markline, band, xvalue, zoom, height,
-          title?, mode?:"line"|"convergence", crosshair?, exportCsv?, exportPng?,
-          exportName?, maxPoints?, ariaLabel?}；
+          width?, title?, mode?:"line"|"convergence", crosshair?, exportCsv?, exportPng?,
+          exportName?, maxPoints?, ariaLabel?, option?}；
    ctx={light:boolean, palette:string[]}（app.js 按 body.light 现取注入）。
+   W3-S12（P-5）：option? 为逃生舱（语义见 plotCardOption 头注——非笛卡尔
+   管线自携 option 直通，series 仅作 CSV 数据面）；width? 设图表容器宽
+   （Smith 方图等比管线用；不传="" 与既有 DOM 逐字节同）。
    返回 echarts 实例（失败返 null 并把错误写进容器——不静默吞错，#135）。
 
    A6 P1-3（review_aurora_next 审查，2026-10-13）图表生命周期：T.plotCard 共
@@ -457,6 +472,10 @@ export function plotCard(el, props = {}, ctx = {}) {
       prevShell.ctx = shell.ctx;
       prevShell.chart.setOption(plotCardOption(props, shell.ctx), true);
       prevShell.chart.getDom().setAttribute("aria-label", _ariaLabel(props));
+      // W4-S17：复用换代=一次"最近渲染"（桥目标随最后一次渲染走；工具条
+      // DOM 原地保留，钮仍存活——登记刷新零新增 DOM 面）
+      const rp = el.querySelector && el.querySelector('button[data-export-kind="png"]');
+      if (rp) registerRecentChartExport(rp);
       return prevShell.chart;
     }
     if (prevShell) { // 同容器重建：旧实例先释放+旧监听先摘除（防泄漏累积）
@@ -489,12 +508,19 @@ export function plotCard(el, props = {}, ctx = {}) {
       getChart: () => shell.chart,
       getCsv: () => "\ufeff" + toCsv(shell.props.series),
     }, kinds)) tools.appendChild(b);
+    // W4-S17（aurora_e，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
+    // 全站"最近渲染"（palette act-export-chart 事件桥消费面）。querySelector
+    // 守卫=node 行为钉假元素环境静默跳过（#105 best-effort）。
+    const pngBtn = tools.querySelector
+      ? tools.querySelector('button[data-export-kind="png"]') : null;
+    if (pngBtn) registerRecentChartExport(pngBtn);
     const chartDiv = document.createElement("div");
     chartDiv.className = "plotcard-chart";
     // PR-1 a11y：图表容器图像语义（与 app.js drawEChart 同构）
     chartDiv.setAttribute("role", "img");
     chartDiv.setAttribute("aria-label", _ariaLabel(props));
     chartDiv.style.height = props.height || "280px";
+    chartDiv.style.width = props.width || ""; // W3-S12：Smith 方图等比（缺省=""=零变化）
     el.appendChild(tools);
     el.appendChild(chartDiv);
     const chart = window.echarts.init(chartDiv);
@@ -512,4 +538,31 @@ export function plotCard(el, props = {}, ctx = {}) {
     el.innerHTML = `<span style="color:var(--err)">plotcard error: ${esc(e.message)}</span>`;
     return null;
   }
+}
+
+/* ═══ W4-S17（aurora_e，W3-S12 建议①）：palette act-export-chart 桥登记面 ═══
+   四管线（polar/Smith/custom/heatmap）W3-S12 退场 chartExportTools 后，桥的
+   "最近装配"登记只剩 dashboard 甜甜圈一个消费者——登记面由此迁 plotCard 壳：
+   plotCard 每次渲染（首绘装配/复用换代）都把该壳工具条 PNG 钮登记为全站
+   "最近渲染"（WeakRef 弱可达语义随迁——登记不滞留工具条 DOM）；chartExportTools
+   （甜甜圈）经同一登记面喂同一注册表（pages/charts.js 委托调用）。
+   触发面在 pages/charts.js _bindExportChartEvent（监听装配一次，事件契约
+   rfauto:export-chart 无 payload 不变）：解引用→按钮已随页换血离场
+   （document.contains=false，node 无 document 同口径）→ 解除登记，与导出
+   出口的 isDisposed 静默守卫同口径（#105 best-effort，node 行为钉可测）。 */
+let _recentPngRef = null;
+
+/* 登记/刷新"最近渲染"目标（WeakRef 不可用的环境降级为无桥目标=零动作）。 */
+export function registerRecentChartExport(btn) {
+  _recentPngRef = (typeof WeakRef === "function" && btn) ? new WeakRef(btn) : null;
+}
+
+/* 桥触发：解引用→在场则代点 PNG 钮（handlers 读 shell 现取=导出永最新
+   数据）；离场/已清→解除登记零动作零抛。 */
+export function fireRecentChartExport() {
+  const b = _recentPngRef && typeof _recentPngRef.deref === "function"
+    ? _recentPngRef.deref() : null;
+  if (b && typeof document !== "undefined" && document.contains &&
+      document.contains(b)) b.click();
+  else _recentPngRef = null;
 }

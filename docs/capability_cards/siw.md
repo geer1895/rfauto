@@ -60,7 +60,7 @@
 - 参数语义：w_mm=两过孔列心距（物理宽度，Cassivi 等效宽度 w_eff=w−d²/(0.95s) 的输入）、 d_mm=过孔直径、s_mm=过孔心距（渲染按全域 k·s 精确栅格）、line_len_mm= 两端口测量面间距（名义 3λg@f0 闭式精算）；h/er/tan_d 走 substrate/nominal （TE10 截止与 β 与 h 无关，Microwaves101 SIW 条目）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全域 NEAR=base/4 （SmoothMesh 全轴均匀化实测）；过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线 （#311 类比）、显式近场线 10µm 地板（#349）、端口盒 ≥2 格且中线落格 （#283，生成期断言）、基板 z 4 层（TE10 的 E_z 沿 z 均匀，z 分辨非限制项）
 - 冒烟现状：离线审计先行（#212，test_siw_template）；真机锚已落判（df4f：G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，内部证据档，驱动 scripts/siw_anchor_smoke.py）；预声明门与预算见 内部证据档 §6
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

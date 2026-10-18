@@ -26,15 +26,21 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=17 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | l_flare_mm | 轴向长经 σ=√(a1(a1−a)/(2λl)) 直接进入口径效率/增益（Orfanidis 21.4.3 链） |
-| 2 | a1_mm | 口径宽边=口径面积主项（G∝e·A）+ 设计方程联立自洽 |
-| 3 | b1_mm | 口径窄边（E 面同链 δ_E=λ/4） |
-| 4 | a_mm | WR-90 波导口径（TE10 馈电边界条件，非自由综合维） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | l_flare_mm | 0.903324 |
+| 2 | a_mm | 0.192466 |
+| 3 | b_mm | 0.096989 |
+| 4 | a1_mm | 0.094109 |
+| 5 | b1_mm | 0.001872 |
+| 6 | er | 0.0 |
+| 7 | h_mm | 0.0 |
+| 8 | l_feed_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -56,7 +62,7 @@
 - 参数语义：a_mm=波导口宽边（H 面，x 向，WR 口径）；b_mm=波导口窄边（E 面，z 向）； a1_mm=口径宽边（H 面，综合目标增益下 Orfanidis(21.5.1)+Balanis δ_H=3λ/8 设计方程解）；b1_mm=口径窄边（E 面，δ_E=λ/4 同链）；l_feed_mm=馈电直管 最短长（实际管长=max(l_feed, l_flare+λ0/4+4mm) 口径侧空气域自动保证）； l_flare_mm=喇叭轴向长（同设计链）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，官方 base 级）；NEAR=base/4；全部壁面站线（波导口缘/逐段截面缘/阶梯框/口径面/端口面） 显式入网（#198）+ 全轴 1µm 近重合去重（#152）；渲染守卫：阶梯步距 ≥4·NEAR （#266 族）、a1>a 且 b1>b；口径侧空气域 ≥λ0/4+4mm 由管长自动外推保证 （#174 族）
 - 冒烟现状：未冒烟（离线审计过，#212，test_pyramid_horn_template）；近似级别如实登记： ①斜壁 8 段阶梯化（矩形截面链，段中截面采样）；②闭式口径面模型不含壁损耗/ 口面反射/边缘绕射；③方向图/nf2ff 与真机冒烟=Ph3 窗（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

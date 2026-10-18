@@ -300,3 +300,77 @@ class TestAgentQuality:
         result = runner.invoke(app, ["audit", "--quality"])
         assert result.exit_code == 0, result.output
         assert "接受率" in result.output
+
+
+class TestDeltaMomentSensitivity:
+    """XD-13：Borgonovo delta 矩独立指数（binned 经验 + 置换对照校正）。
+
+    门判纪律（模块 docstring 预声明）：绝对值有偏置残差，门只用
+    分离比/排序/对称性，不赌绝对值；基准数字为 seed=42 实测值。
+    """
+
+    def test_separates_deterministic_from_irrelevant(self):
+        from rfauto.optimization.sensitivity import delta_moment_sensitivity
+
+        ranges = {"x1": {"low": 0.0, "high": 1.0}, "x2": {"low": 0.0, "high": 1.0}}
+        r = delta_moment_sensitivity(ranges, lambda p: p["x1"], n_samples=400)
+        assert r["ok"] is True and r["method"] == "delta_moment"
+        d1 = r["sensitivity"]["x1"]["delta"]
+        d2 = r["sensitivity"]["x2"]["delta"]
+        # f=x1：x1 完全决定输出分布（置换校正后 δ≈0.62）；x2 无关
+        # （对照差归零侧，δ≈0.03）。分离比 >5 预声明门（seed=42 实测 19×）。
+        assert d1 > 0.4, d1
+        assert d2 < 0.10, d2
+        assert d1 / max(d2, 1e-12) > 5.0
+        # 结构面：键集/口径与 sobol 同约定
+        assert set(r["sensitivity"]) == {"x1", "x2"}
+        assert r["k"] == 40 and r["n_bins"] == 20
+
+    def test_symmetric_inputs_equal_delta(self):
+        from rfauto.optimization.sensitivity import delta_moment_sensitivity
+
+        ranges = {"x1": {"low": 0.0, "high": 1.0}, "x2": {"low": 0.0, "high": 1.0}}
+        r = delta_moment_sensitivity(ranges, lambda p: p["x1"] + p["x2"],
+                                     n_samples=400)
+        d1 = r["sensitivity"]["x1"]["delta"]
+        d2 = r["sensitivity"]["x2"]["delta"]
+        # 对称模型 → 两输入 delta 应几乎相等（同分布互换不变量）
+        assert abs(d1 - d2) < 0.05, (d1, d2)
+
+    def test_constant_objective_degenerate_zero_path(self):
+        from rfauto.optimization.sensitivity import delta_moment_sensitivity
+
+        ranges = {"x1": {"low": 0.0, "high": 1.0}, "x2": {"low": 0.0, "high": 1.0}}
+        r = delta_moment_sensitivity(ranges, lambda p: 3.14, n_samples=200)
+        assert r["ok"] is True
+        assert all(v["delta"] == 0.0 for v in r["sensitivity"].values())
+        # 零维参数域：空敏感性如实（与 sobol 同口径）
+        r0 = delta_moment_sensitivity({}, lambda p: 1.0)
+        assert r0["ok"] is True and r0["sensitivity"] == {}
+
+    def test_ranking_agrees_with_sobol_and_deterministic(self):
+        from rfauto.optimization.sensitivity import (
+            delta_moment_sensitivity,
+            sobol_sensitivity,
+        )
+
+        ranges = {"x1": {"low": 0.0, "high": 1.0}, "x2": {"low": 0.0, "high": 1.0}}
+        obj = lambda p: 10.0 * p["x1"] + 0.5 * p["x2"]  # noqa: E731
+        r = delta_moment_sensitivity(ranges, obj, n_samples=400)
+        s = sobol_sensitivity(ranges, obj, n_samples=200)
+        # 双源互证（#118 惯例）：两方法对主导/次要排序一致
+        assert (r["sensitivity"]["x1"]["delta"]
+                > r["sensitivity"]["x2"]["delta"])
+        assert (s["sensitivity"]["x1"]["S1"]
+                > s["sensitivity"]["x2"]["S1"])
+        # 零系数输入：对照差 ≤0 被 clip 到恰 0（预声明性质）
+        ranges3 = {"a": {"low": 0, "high": 1}, "b": {"low": 0, "high": 1},
+                   "c": {"low": 0, "high": 1}}
+        r3 = delta_moment_sensitivity(
+            ranges3, lambda p: p["a"] + 0.1 * p["b"] + 0.0 * p["c"],
+            n_samples=500)
+        d = {k: v["delta"] for k, v in r3["sensitivity"].items()}
+        assert d["a"] > d["b"] > d["c"] and d["c"] == 0.0
+        # 同 seed 确定性 + JSON 可序列化
+        assert delta_moment_sensitivity(ranges, obj, n_samples=400) == r
+        json.dumps(r)

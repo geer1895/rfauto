@@ -21,7 +21,7 @@ export async function pageCalibration() {
      <div style='display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap'>
        <div class='panel' style='flex:1;min-width:340px'><div class='toolbar'><b>校准 run</b>
          <span id='cal-count' class='muted'></span></div>
-         <table id='cal-table' data-sortable><thead><tr><th scope="col">run_id</th><th scope="col">模型</th><th scope="col">判定</th><th scope="col">ρ</th><th scope="col">样本</th><th scope="col">mesh</th><th scope="col">代理</th></tr></thead><tbody></tbody></table></div>
+         <table id='cal-table' data-sortable><caption class="sr-only">校准 run 清单：点行打开校准详情，点表头排序</caption><thead><tr><th scope="col">run_id</th><th scope="col">模型</th><th scope="col">判定</th><th scope="col">ρ</th><th scope="col">样本</th><th scope="col">mesh</th><th scope="col">代理</th></tr></thead><tbody></tbody></table></div>
        <div class='panel' style='flex:1;min-width:380px'><b>ρ 演化（样本量 ↔ 代理/跨保真 gate）</b>
          <div id='cal-evolution'></div>
          <div id='cal-gates' class='muted' style='margin-top:6px'></div></div>
@@ -133,3 +133,11 @@ async function loadCalibration(runId) {
     exportName: "cal-scatter", exportCsv: false,
   });
 }
+
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 calibrationCtx ═══════
+   refresh=表数据重拉（runs 同模板——pageCalibration 幂等：壳判 innerHTML
+   已在即跳过、清单/ρ 演化图重渲染，行点击详情区不整清）；apiFetch 带
+   viewSignal("calibration") 切页取消语义随行。无轮询面，leave 不需要。 */
+export const calibrationCtx = {
+  refresh: () => pageCalibration(),
+};

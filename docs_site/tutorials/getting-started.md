@@ -2,9 +2,10 @@
 
 # 入门：30 分钟跑通第一条链路
 
-> 本文每条命令都在开发环境实测过（退出码 0）。你将完成：安装 → 认识
+> 本文每条命令都在开发环境实测过（退出码 0，2026-10-18 复测）。你将完成：安装 → 认识
 > CLI → 综合第一条微带线 → 用闭式计算器交叉核对 → 跑一次 fake 仿真 →
 > 读结果与健康度体检。全程不需要 HFSS/ADS 许可证（fake 适配器离线近似）。
+> 英文版（English version）：docs/tutorials/getting-started_en.md。
 
 ## 0. 前置
 
@@ -49,7 +50,7 @@ rfauto syn mline 35.35 --freq 2.4
   目标阻抗: 35.35 Ω
   线宽:     1.8707 mm
   实际阻抗: 35.35 Ω
-  εeff:     2.9804
+  εeff:     2.9804（来源 ep_reff，skrf 2.1.0）
   ΔZ0:      0.0000 Ω
   状态:     ok
 ```
@@ -74,7 +75,9 @@ rfauto syn mline 50.0 --freq 2.4 --json
   "z0_actual": 50.0,
   "epsilon_eff": 2.853,
   "status": "ok",
-  "delta_z0": 0.0
+  "delta_z0": 0.0,
+  "er_eff_source": "ep_reff",
+  "skrf_version": "2.1.0"
 }
 ```
 
@@ -113,7 +116,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 
 ```
 ✓ 仿真完成  run_id: 20260925_062950_1a6365e9
-  run 目录: D:\rf_workspace\runs\20260925_062950_1a6365e9
+  run 目录: <workspace>\runs\20260925_062950_1a6365e9
   cost: 7.424965102246688
   指标:
     s11_db_max_in_band: -8.0835
@@ -154,12 +157,17 @@ rfauto runs health 20260925_062950_1a6365e9
 判读要点：`verdict` 取 healthy / suspect / unhealthy，退出码与之一致
 （healthy=0），可直接进 CI 门禁；`--json` 出原始 JSON。状态为 UNKNOWN
 的检查项是"证据不足、如实不判"（比如 fake run 没有场 dump 就不评功率
-守恒），不是通过也不是失败。逐项含义与历史教训编号见
-`rfauto runs health --help` 与 docs/reference.md 指针。
+守恒），不是通过也不是失败。注意：现行 fake 通道只落指标不落 S 参数
+产物（新跑的 run `results/` 下无 `params.s3p`），所以新 run 的证据类
+检查项（excitation/passivity/gain 等）如实报 UNKNOWN、rollup 仍
+healthy——UNKNOWN 既非 PASS 也非 FAIL；历史档案 run（带 s3p 产物，如
+上例 run_id）才会出现 PASS 判行。逐项含义与历史教训编号见
+`rfauto runs health --help` 与 docs/reference.md 指针；判读语义深读
+（掩码/门口径/两族 FAIL）见 docs/tutorials/verdict_semantics.md。
 
 ## 7. 下一步
 
-四篇进阶教程（都假设你已走完本文）：
+核心进阶链四篇（都假设你已走完本文）：
 
 - 想查、读懂并消费物理标定锚（跨引擎系统偏差的"换算基准"）：
   docs/tutorials/anchor-guide.md
@@ -170,7 +178,22 @@ rfauto runs health 20260925_062950_1a6365e9
 - 想给 rfauto 加适配器/计算器/通道/模板（基类+注册表四条标准路径）：
   docs/tutorials/extending-rfauto.md
 
-专题手册：
+全教程地图（docs/tutorials/ 共 18 篇中文；带 `*_en.md` 姊妹篇的有
+英文版）：
+
+- 优化闭环与战役：first_optimization_loop（第一次优化闭环）、
+  campaign-walkthrough（战役推进）、recast-walkthrough（判据重放）、
+  uncertainty_and_surrogates（不确定度与代理）
+- 真机与对齐：real-simulation（openEMS 真跑）、
+  measurement-alignment（实测对齐）、remote_server（远程协同）、
+  anchor-guide（锚）、verdict_semantics（判读语义）
+- 数据与湖：datasets_and_health_gates（数据集与健康门）、
+  data_factory（数据工厂）、data_lake（数据湖）
+- 平台与扩展：extending-rfauto（扩展开发）、mcp_in_practice（MCP
+  实战）、compose_and_league（组合与评测）、dag_orchestration（DAG
+  编排）、ui_workbench_tour（UI 工作台导览）
+
+专题手册（docs/how-to/）：
 
 - 想跑真实 openEMS 冒烟：docs/how-to/run-openems-smoke.md
 - 想做链路预算/混频杂散规划：docs/how-to/cascade-budget-and-spur.md

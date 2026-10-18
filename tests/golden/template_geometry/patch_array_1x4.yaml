@@ -1,0 +1,82 @@
+schema: rfauto-template-geometry-golden/v1
+template: patch_array_1x4
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 5.55
+- 6.05
+params:
+  elem_len_mm: 12.9058
+  elem_w_mm: 16.9311
+  elem_feed_mm: 3.8717
+  spacing_mm: 25.0172
+  feed_w_mm: 1.112
+  q_w_mm: 0.6025
+  q_len_mm: 7.8217
+status: ok
+script_sha256: a0554af44b24cce280efebde32495bf47f46ca7530bcc85e03043c1642300455
+csx:
+  n_primitives: 36
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: patch_array_1x4_line
+    kind: Metal
+    n: 13
+    types:
+      '1': 13
+  - name: patch_array_1x4_qline
+    kind: Metal
+    n: 6
+    types:
+      '1': 6
+  - name: patch_array_1x4_patch
+    kind: Metal
+    n: 12
+    types:
+      '1': 12
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: cda52ca49a37eccdb9016b0da7e69fb62b8472543823467eb4b9e66511e712a5
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 835
+      min_gap_m: 0.0001
+    y:
+      n: 518
+      min_gap_m: 0.0001
+    z:
+      n: 31
+      min_gap_m: 0.000127
+  lines_sha256: eb61c9ae009bdb031bd644c2df1fd2bb082ba063dfb976536d77d7ae8d2ec1ec
+ports:
+- 1

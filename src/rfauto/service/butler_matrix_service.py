@@ -3,7 +3,7 @@
 薄壳（分层铁律 3/4）：数值只在确定性内核 core/butler_matrix（闭式 + skrf
 双路径，#118 互证）；本模块不产生物理数字，只做契约适配与异常到 JSON
 信封的翻译。信封契约（与 afs_service/calculator_service 同族）：ok=False +
-error 字符串绝不抛出。
+errors 文案列表，绝不抛出。
 
 - :func:`butler_matrix_payload`：一次调用返回波束指向验证报告、连线表与
   双路径 S 矩阵（复数折 [re, im] 对），供 UI/CLI 渲染面直接消费。
@@ -17,7 +17,15 @@ from typing import Any
 import numpy as np
 
 from rfauto.core import butler_matrix as bm
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
+
+#: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
+#: 1.1（2026-10-18 AU-2 域升版，aurora_e W4-S20 席）：无戳域补戳 + 失败信封
+#: 单数 ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——
+#: 契约 §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；消费面
+#: （tests/unit/test_butler_matrix.py）同笔迁移，无 CLI/MCP/UI 消费者
+#: （grep 实测）。首批口径无版本戳。
+BUTLER_MATRIX_SERVICE_SCHEMA_VERSION = "1.1"
 
 #: 数值内核期可预期的异常族（进信封，不外抛）
 _JSON_ERRORS = (TypeError, ValueError, ZeroDivisionError, OverflowError, ArithmeticError)
@@ -33,11 +41,12 @@ def butler_matrix_payload(spacing_lambda: float = 0.5, n_points: int = 3601) -> 
     """Butler 4×4 全量载荷：验证报告 + 连线表 + 双路径 S 矩阵。
 
     Returns:
-        JSON 可序列化 dict；失败时 ``{"ok": False, "error": str}`` 不抛出。
+        JSON 可序列化 dict；失败时 ``{"ok": False, "errors": [str]}`` 不抛出。
     """
     try:
         rep = bm.verify_beam_steering(spacing_lambda=spacing_lambda, n_points=n_points)
         return ok_envelope(
+            schema_version=BUTLER_MATRIX_SERVICE_SCHEMA_VERSION,
             data={
                 "report": rep.to_dict(),
                 "wiring_table": bm.butler_wiring_table(),
@@ -47,18 +56,22 @@ def butler_matrix_payload(spacing_lambda: float = 0.5, n_points: int = 3601) -> 
             },
         )
     except _JSON_ERRORS as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=BUTLER_MATRIX_SERVICE_SCHEMA_VERSION)
 
 
 def butler_matrix_report(spacing_lambda: float = 0.5, n_points: int = 3601) -> dict:
     """仅波束指向验证报告（轻量面）。
 
     Returns:
-        JSON 可序列化 dict；失败时 ``{"ok": False, "error": str}`` 不抛出。
+        JSON 可序列化 dict；失败时 ``{"ok": False, "errors": [str]}`` 不抛出。
     """
     try:
         rep = bm.verify_beam_steering(spacing_lambda=spacing_lambda, n_points=n_points)
-        return ok_envelope(data=rep.to_dict())
+        return ok_envelope(
+            schema_version=BUTLER_MATRIX_SERVICE_SCHEMA_VERSION,
+            data=rep.to_dict())
     except _JSON_ERRORS as exc:
-        return {"ok": False, "error": str(exc)}
+        return error_envelope(
+            str(exc), schema_version=BUTLER_MATRIX_SERVICE_SCHEMA_VERSION)
 

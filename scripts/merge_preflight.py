@@ -53,6 +53,12 @@
       未入索引，回填一条命令自愈：``.venv/Scripts/python.exe
       scripts/registry_backfill.py``）；rc2=runs/ 树不可读 SKIP 诚实降级
       （CI/无湖环境）；幂等红线：回填重跑零增量行）
+  17. MCP 描述单源门（Z-10 常驻化，aurora_e W2-S10 E2：
+      scripts/check_mcp_desc.py 五维硬门——工具描述非空/必填参数入
+      docstring Args/schema 参数描述全覆盖/schema 描述与 docstring 逐字
+      单源一致/幽灵参数；docstring Args=参数描述唯一真源，MCP-B 普查
+      升级为门；零违例基线冻结 152 工具/514 参数，豁免走脚本 EXEMPTIONS
+      带理由只收不放；rc2=fastmcp 缺席 SKIP 诚实降级）
 
 席位任务书纪律（自本批起写入"返回前必跑"）：
   仓根执行 ``.venv/Scripts/python.exe scripts/merge_preflight.py``
@@ -95,8 +101,8 @@ def main(argv: list[str] | None = None) -> int:
     print("== merge_preflight（合流预检；红=席位返回前自证自愈）==", flush=True)
 
     # 1) check_numbers 全链（含 pytest --collect-only 兜底口径：2 核 CI runner
-    # 上 2.5 万级测试收集实测 >180s（run 38839481077 TimeoutExpired 实证），
-    # 上限 900s 对齐 ci.yml preflight 预算注释）
+    # 上 2.5 万级测试收集实测 >180s（公开仓 run 38839481077 TimeoutExpired
+    # 实证），上限 900s 对齐 ci.yml preflight 预算注释）
     r = subprocess.run([PY, "scripts/check_numbers.py"], cwd=str(REPO_ROOT),
                        capture_output=True, text=True, timeout=900)
     ok = "All numbers consistent" in (r.stdout + r.stderr)
@@ -238,6 +244,24 @@ def main(argv: list[str] | None = None) -> int:
               "幂等可重跑）")
         print((r.stdout + r.stderr)[-800:])
         failures.append("runs 湖 registry 落后度（R8 #7：新 run 未入索引）")
+
+    # 17) MCP 描述单源门（Z-10 常驻化，aurora_e W2-S10 E2）
+    r = subprocess.run(
+        [PY, str(REPO_ROOT / "scripts" / "check_mcp_desc.py")],
+        cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=120)
+    if r.returncode == 0:
+        print("[PASS] MCP 描述单源门（docstring Args=参数描述唯一真源，"
+              "五维零违例）")
+    elif r.returncode == 2:
+        print("[SKIP] MCP 描述单源门（fastmcp 缺席/注册面不可用——诚实"
+              "降级，环境类非门红）")
+    else:
+        print("[FAIL] MCP 描述单源门（新工具/新参数描述违例逐条见上；"
+              "修复=补 docstring Args 条目使与 schema 一致——Args 是唯一"
+              "真源，fastmcp 自动渲染进 schema description；豁免走 "
+              "check_mcp_desc.EXEMPTIONS 带理由）")
+        print((r.stdout + r.stderr)[-800:])
+        failures.append("MCP 描述单源门（Z-10：五维描述违例）")
 
     wall = time.monotonic() - t0
     print(f"== preflight {'PASS' if not failures else 'FAIL'} "

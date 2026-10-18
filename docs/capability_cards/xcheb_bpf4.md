@@ -70,7 +70,7 @@
 - 参数语义：w_mm=环线宽（50Ω HJ 单源）、a_mm=环边段长（周长=4a=λg/2−2Δl）、 g12/g23/g34_mm=主线耦合缝（1-2/2-3/3-4，KJ 反解 k/χ）、g14_mm=**交叉耦合缝** （4-1，非相邻矩阵条目 m14 映射——本模板的存在理由）、g_open_mm=环开缝宽（开路 端）、g_pos_mm=环 1/4 开缝中心自自由边角偏置（Q_e 路径的一部分）、tap_t_mm=抽头 自角距离（Q_e 闭式 τ·周长−g_pos）；er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；#266 耦合缝 守卫 NEAR≤缝_min/3（layout 抛错拒渲染）；全部环边/开缝缘/馈线缘精确入网（#198） +四耦合缝中线入网（#311）；审计档 TEMPLATE_MESH_MM=0.35（NEAR=0.0875 ≤ 0.2885/3 过守卫）
 - 冒烟现状：离线审计先行（#212，test_ta_wave_c_templates）；内核数字裁判三锚 （test_cross_coupled_map）：①全极点退化对 classical g 值闭式（独立综合路径， max rel dev 1.2e-5）②KJ 往返+矩阵频响一致性（max|ΔS|≤1e-6 实测 7.5e-7）③ TZ=[±2.0] 传输零点保持（−88dB 谷映射前后一致）；χ 一阶部分长耦合与环角/开缝 结构效应未经 EM 校准（hairpin c(gap) 同族待标定项，#122 如实登记）；真机冒烟 与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

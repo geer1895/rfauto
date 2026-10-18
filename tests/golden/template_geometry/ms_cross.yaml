@@ -1,0 +1,77 @@
+schema: rfauto-template-geometry-golden/v1
+template: ms_cross
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  arm_len_mm: 4.91
+  arm_w_mm: 0.982
+  period_mm: 11.9917
+  h_mm: 0.508
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 10e9520c9a96dbbe5ae27f24982dd28e7161e734d907f01e6e8542829a7dd3b9
+csx:
+  n_primitives: 8
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: cross
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: wg_exc
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: u1a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u1b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u2a
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: u2b
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: d450ae28e4d41a2a9d112f536706baf60d6805256b736026808bb5d6a70ba7fe
+  bbox_m:
+  - -0.00599585
+  - -0.00599585
+  - -0.009368514
+  - 0.00599585
+  - 0.00599585
+  - 0.00706596
+mesh:
+  lines:
+    x:
+      n: 157
+      min_gap_m: 6.8e-05
+    y:
+      n: 157
+      min_gap_m: 6.8e-05
+    z:
+      n: 86
+      min_gap_m: 0.000127
+  lines_sha256: 4c48ecc52313f8a63f5676ade272d211ce9c9228e37f3149fe6c2efe0f807cd7
+ports:
+- 1
+- 2

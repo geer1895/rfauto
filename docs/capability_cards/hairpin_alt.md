@@ -24,17 +24,19 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=13 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | arm_len_mm | λg/2 谐振恒等式（精确 1.0 通道） |
-| 2 | gap_mm | 耦合缝 k(gap) 强敏感（带宽/回损主维；交替拓扑 c(gap) 待标定） |
-| 3 | tap_frac | 外部 Q 抽头（群时延法综合维） |
-| 4 | w_mm | 谐振器线宽（εeff 口径弱维） |
-| 5 | arm_gap_mm | U 内两臂缝（版图维，不进耦合主通道） |
-| 6 | order | 阶数=离散综合参数 |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | arm_len_mm | 1.0 |
+| 2 | w_mm | 0.040577 |
+| 3 | arm_gap_mm | 0.0 |
+| 4 | gap_mm | 0.0 |
+| 5 | order | 0.0 |
+| 6 | tap_frac | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -55,7 +57,7 @@
 
 - 参数语义：order=谐振器阶数 N，w_mm=谐振器/馈线宽（50Ω，skrf HJ 综合），arm_len_mm=展开中心线总长 λg/2（2·臂长+臂间距）×c_f0（U 弯/开路端等效缩短先验 1.0370），arm_gap_mm=U 内两臂缝（名义 3.0：k_self(3.0)=0.0115 ≪ 互耦 0.0515），gap_mm=相邻谐振器耦合缝——**纯 KJ 口径** k=(Z0e−Z0o)/(Z0e+Z0o)，不乘同向结构修正 c(gap)（预声明 c_alt∈[0.6,1.2]，真机 k(gap) 图谱判读门 hairpin_alt_kgap_gate 未过前 campaign_capable=False），tap_frac=抽头位置比例 τ=t/L_tot（各自开路端计）；可选布局选项 orientation=alternating|same（缺省 alternating，same=同网格同向对照，不进 params）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；全部臂缘/逐腔弯带缘/开路端/两抽头缘精确入网（#198），网格配方与 hairpin 同源（A/B 只隔离取向）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

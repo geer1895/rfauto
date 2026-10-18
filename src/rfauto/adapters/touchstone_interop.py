@@ -1,7 +1,7 @@
 """Touchstone 扩展互操作：TS 2.1 写出 + HFSS 注释块读取（ME-10）。
 
 与 :mod:`rfauto.adapters.interchange` 的 G16 互操作矩阵（1.0/2.0/MDIF/CITI）
-互补，提供两件能力：
+互补，提供三件能力：
 
 - :func:`write_touchstone_v2`：Touchstone 2.1 格式写出。skrf 2.1.0 的
   ``Network.write_touchstone`` 已原生支持 ``version="2.1"``（写出
@@ -13,6 +13,11 @@
   （Zpi 口径端口阻抗），KJ-P2 测量面修复的模态基直读抓手：HFSS 2025.1
   Modal Solution Data 不再暴露 Zpi/Zpv/Zvi 类别（df6⑪）时，注释块是
   这些模态量的唯一直读来源。
+- :func:`attach_port_names` / :func:`resolve_port_key` /
+  :func:`connect_by_name` / :func:`reorder_ports_by_name`：skrf v2.1
+  port-name 网络运算采纳（EC-1，2026-10-18 aurora_e W2-S9）——按名
+  级联/装配/重排，校验式端口名设置（唯一性/换行注入防御），#314 掩码
+  族的上游防线：端口身份按名锚定，单激励掩码不再依赖裸索引次序。
 
 破环面回归口径：skrf 2.0 移除惰性加载与 ``setup_pylab``，本模块只用
 显式导入的 ``skrf`` 顶层与公开 IO 面，不触碰任何 v2.0 已移除符号。
@@ -298,6 +303,151 @@ def read_hfss_touchstone_comments(path: str | Path) -> dict[str, Any]:
         "header": header,
         "raw": raw,
     }
+
+
+# ---------------------------------------------------------------------------
+# 件 3：skrf v2.1 port-name 网络运算采纳（EC-1，按名级联/装配/重排）
+# ---------------------------------------------------------------------------
+
+#: 端口名禁用字符：换行会把 ``! Port[k] = 名`` 注释行折成裸数据行（与
+#: _provenance_lines 的注入防御同族）；前导 ``!`` 会把名字吞成注释。
+_PORT_NAME_FORBIDDEN = ("\n", "\r")
+
+
+def attach_port_names(
+    network: skrf.Network, names: Sequence[str]
+) -> skrf.Network:
+    """校验式设置网络端口名（skrf v2.1 ``port_names`` 采纳面，EC-1）。
+
+    skrf v2.1 的 :class:`~skrf.Network` 原生携带 ``port_names``（TS 文件经
+    ``! Port[k] = 名`` 注释行读写，实测 1.0/2.1 两档均可回读），但原生
+    setter **不查重**（实测 ``['X','X',...]`` 可静默写入）——重名端口在
+    按名运算时是静默错配源（#314 掩码族上游防线）。本函数补齐校验：
+
+    - 长度必须 = nports；
+    - 逐项非空 str；
+    - 网络内唯一；
+    - 禁换行/回车与前导 ``!``（TS 文件注释行注入防御）。
+
+    就地设置并返回同一网络对象（便于链式）。
+    """
+    name_list = [str(v) for v in names]
+    if len(name_list) != network.nports:
+        raise ValueError(
+            f"端口名数量 {len(name_list)} 与网络端口数 {network.nports} 不一致"
+        )
+    seen: set[str] = set()
+    for idx, name in enumerate(name_list):
+        if not name.strip():
+            raise ValueError(f"端口名 port[{idx}] 不能为空/纯空白")
+        for ch in _PORT_NAME_FORBIDDEN:
+            if ch in name:
+                raise ValueError(
+                    f"端口名 port[{idx}]={name!r} 含换行/回车——会把 TS 文件的"
+                    " ! Port[k] 注释行折成裸数据行（注入防御，同 provenance 行）"
+                )
+        if name.startswith("!"):
+            raise ValueError(
+                f"端口名 port[{idx}]={name!r} 以前导 '!' 开头——写出后整段"
+                "被当注释吞掉"
+            )
+        if name in seen:
+            raise ValueError(
+                f"端口名重复：{name!r}（skrf 原生 setter 不查重，按名运算"
+                "会静默错配）"
+            )
+        seen.add(name)
+    network.port_names = name_list
+    return network
+
+
+def resolve_port_key(network: skrf.Network, key: int | str) -> int:
+    """把 int/str 端口键解析成端口索引（按名运算的解析底座）。
+
+    - int：范围守卫后原样返回（skrf 0-based 端口序）；
+    - str：在 ``port_names`` 中**唯一**命中才返回索引——未命名网络、未知
+      名、重名（理论上有 :func:`attach_port_names` 守卫，但容忍外部直接
+      setter 的既有面）均显式 ValueError，不静默取第一个。
+    """
+    if isinstance(key, bool):
+        raise ValueError("端口键不能为 bool（int(True)=1 静默错端口）")
+    if isinstance(key, (int, np.integer)):
+        idx = int(key)
+        if not 0 <= idx < network.nports:
+            raise ValueError(
+                f"端口索引 {idx} 越界（nports={network.nports}）"
+            )
+        return idx
+    if isinstance(key, str):
+        names = network.port_names
+        if names is None:
+            raise ValueError(
+                f"网络未命名端口，无法按名解析 {key!r}——先用"
+                " attach_port_names 设置端口名"
+            )
+        hits = [i for i, name in enumerate(names) if name == key]
+        if len(hits) == 1:
+            return hits[0]
+        if not hits:
+            raise ValueError(
+                f"端口名 {key!r} 不存在；现有端口名 {list(names)!r}"
+            )
+        raise ValueError(f"端口名 {key!r} 重名（索引 {hits}），按名解析拒绝")
+    raise ValueError(f"端口键类型须为 int|str，得到 {type(key).__name__}")
+
+
+def connect_by_name(
+    ntwk_a: skrf.Network,
+    port_a: int | str,
+    ntwk_b: skrf.Network,
+    port_b: int | str,
+    num: int = 1,
+) -> skrf.Network:
+    """按名（或索引）级联两网络——skrf v2.1 ``connect`` 的名字解析薄封装。
+
+    skrf v2.1 的 :func:`skrf.network.connect` 原生接受 ``k/l`` 为 str（按
+    ``port_names`` 索引；实测名字跨网络传播：被连接端口消费后其余名字按序
+    保留）。本封装先经 :func:`resolve_port_key` 做严格解析（未命名/未知/
+    重名显式报错），再透传 skrf。
+
+    Returns
+    -------
+    skrf.Network
+        级联结果（skrf 返回新网络；port_names 由 skrf 按剩余端口传播）。
+    """
+    import skrf as _skrf
+
+    k = resolve_port_key(ntwk_a, port_a)
+    l_idx = resolve_port_key(ntwk_b, port_b)
+    return _skrf.network.connect(ntwk_a, k, ntwk_b, l_idx, num=num)
+
+
+def reorder_ports_by_name(
+    network: skrf.Network, ordered_names: Sequence[str]
+) -> skrf.Network:
+    """按目标名字序重排网络端口（装配面按名对齐，EC-1 重排件）。
+
+    ``ordered_names`` 必须是现有 ``port_names`` 的一个**置换**（不多不少）
+    ——经 :func:`resolve_port_key` 逐名解析后做 S 矩阵/z0 轴置换并同步
+    port_names。置换是纯坐标变换：S 参数值集合不变（锚树钉「置换-复原
+    roundtrip 逐位恒等」）。未命名网络显式报错。
+
+    就地修改并返回同一网络对象。
+    """
+    targets = [resolve_port_key(network, v) for v in ordered_names]
+    if sorted(targets) != list(range(network.nports)):
+        raise ValueError(
+            f"目标端口序 {ordered_names!r} 不是现有端口的置换（解析索引 "
+            f"{targets!r}，nports={network.nports}）"
+        )
+    s = np.asarray(network.s)
+    network.s = s[:, targets, :][:, :, targets]
+    z0 = np.asarray(network.z0)
+    network.z0 = z0[:, targets]
+    if network.port_names is not None:
+        names = list(network.port_names)
+        network.port_names = [names[i] for i in targets]
+    return network
 
 
 def _parse_comment_pairs(rest: str, path: Path, label: str) -> np.ndarray:

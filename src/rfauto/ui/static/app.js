@@ -15,7 +15,7 @@ import { buildEChartOption, plotCard } from "./plotcard.js";
 // 自研 canvas 管线双档色经 themePick(light, THEME_COLORS.x)（SCENE3D 两档
 // 3D 场景色暂留本壳：test_ui_nav_focus 源码钉逐字钉住其消费位，A5-B 不动）。
 import {
-  bodyIsLight, chartPalette, themePick, THEME_COLORS,
+  bodyIsLight, CANVAS_FONT, CANVAS_LINE_LAYOUT, chartPalette, themePick, THEME_COLORS,
 } from "./theme.js";
 // UI-R12（aurora_d 前端深化席）：统一 API 请求层单源在 pages/api.js——
 // 本壳 api（T.api 载体）保形消费 apiRequestInit（token/init 归一单源，
@@ -60,9 +60,11 @@ export function msg(text, ok) {
 /* W2-C 切页公告（R1 审计 P1-1）：视觉隐藏的 aria-live region（自建节点，
    不动 index.html）。不用 #msg——页名公告是常态导航反馈，走 #msg 会闪
    红/绿 toast。先清空再延迟写入：同页名重复切换也能触发读屏播报。
-   公告是增强面，任何异常不得阻塞切页（#105 best-effort 纪律）。 */
+   公告是增强面，任何异常不得阻塞切页（#105 best-effort 纪律）。
+   W5-S23：升格导出单源（轮询终态/状态变迁公告消费——view_tune/loopboard
+   经 initPages 工具集 T.announce 调用；本文件仍是 live region 唯一属主）。 */
 let _live = null;
-function announce(text) {
+export function announce(text) {
   try {
     if (!_live) {
       _live = document.createElement("div");
@@ -164,7 +166,9 @@ export function drawLineChart(canvas, series, labels) {
   canvas.setAttribute("role", "img");
   canvas.setAttribute("aria-label",
     `折线图：${series.map((s) => s.name).filter(Boolean).join("、") || "数据系列"}`);
-  const W = canvas.width, H = canvas.height, L = 46, R = 14, T = 14, B = 26;
+  // W3-S12（P-5）：边距/字号常量收 theme.js 单源（值冻结 46/14/14/26，渲染不变）
+  const { left: L, right: R, top: T, bottom: B } = CANVAS_LINE_LAYOUT;
+  const W = canvas.width, H = canvas.height;
   const xs = series.flatMap((s) => s.x), ys = series.flatMap((s) => s.y);
   const xmin = Math.min(...xs), xmax = Math.max(...xs);
   const ymin = Math.min(...ys), ymax = Math.max(...ys);
@@ -187,7 +191,7 @@ export function drawLineChart(canvas, series, labels) {
     ctx.stroke();
   });
   ctx.fillStyle = readColor;
-  ctx.font = "11px sans-serif";
+  ctx.font = CANVAS_FONT; // W3-S12：字号单源（值冻结 "11px sans-serif"）
   ctx.fillText(xmin.toFixed(2), L, H - 8);
   ctx.fillText(xmax.toFixed(2), W - R - 40, H - 8);
   ctx.fillText(ymax.toFixed(1), 4, T + 8);
@@ -477,6 +481,8 @@ function _applyHash() {
 initPages({
   activate, msg, api, badge, passBadge, drawLineChart, drawEChart, drawBoxes,
   lightboxImg, lightboxContent, $, THREE, plotCard: uiPlotCard,
+  // W5-S23：读屏公告单源出口（轮询终态/状态变迁——view_tune/loopboard 消费）
+  announce,
   // UI-R12：懒加载补焦桥（对象引用共享，pages.js _lazyView 包装器消费）
   _lazyFocus, pageFocusAfterRender,
   // A4-C：单源 hashchange 监听在 pages.js（旧 app.js 页级 + tools key 级

@@ -1,0 +1,63 @@
+schema: rfauto-template-geometry-golden/v1
+template: dipole
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.15
+- 2.65
+params:
+  dipole_len_mm: 58.0
+  dipole_w_mm: 2.0
+  gap_mm: 2.0
+status: ok
+script_sha256: 25dd5884644f99fa2f3ae3756db8e2623de6bbc5c66d053e3258c46fdb679f6e
+csx:
+  n_primitives: 6
+  props:
+  - name: dipole
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: bffb5b304bbe7c92bbaa299ef19237f895f131220bdec48521a602cc9102f552
+  bbox_m:
+  - -0.029
+  - -0.001
+  - 0.0
+  - 0.029
+  - 0.001
+  - 0.0
+mesh:
+  lines:
+    x:
+      n: 307
+      min_gap_m: 0.00025
+    y:
+      n: 163
+      min_gap_m: 0.00025
+    z:
+      n: 49
+      min_gap_m: 0.001179
+  lines_sha256: 7ea809769c8fa1ed3cd8ce76c7fca91a3f2ddf6116a6a8e4bef83e6f9865e7dd
+ports:
+- 1

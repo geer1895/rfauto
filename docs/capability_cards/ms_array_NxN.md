@@ -40,7 +40,7 @@
 
 ## 判据
 
-- 锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1、ms_lattice.period_mm.closedform-v1（core/anchors；通配 + 专属）
+- 锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1、ms_lattice.period_mm.closedform-v2（core/anchors；通配 + 专属）
 - 健康门：无模板作用域专属健康门（gate 如实不判，#274 口径）
 - 通用体检：求解健康度体检 G11 九因子（core/solve_health；service/health_service.health_check_run 按 run 装载产物判定）
 
@@ -50,7 +50,7 @@
 - `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
 - `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
 - `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `ms_lattice.period_mm.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：ms_lattice_period_mm = 14.9896 mm；±5e-05（rounding_band）
+- `ms_lattice.period_mm.closedform-v2`（constant/experimental；引擎对 closedform（None 仲裁））：ms_lattice_period_mm = 14.9896 mm；±5e-05（rounding_band）
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -58,7 +58,7 @@
 - 参数语义：n_x/n_y=x/y 向胞数，period_mm=胞周期，cell_map=n_y 行 × n_x 列逐单元 参数表（每胞 px_mm/py_mm 必填、cell_id 可选仅 ms_patch），h_mm=基板厚； n 与 cell_map 行列数逐维相等（覆盖完备守卫，违反渲染抛 ValueError）； er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；全部贴片缘 精确入网；胞缘/邻胞缝 ≥2·NEAR 渲染期守卫；1µm 近重合去重（#152）； 全轴最小网格间距 ≥10µm；演示名义 3×3（审计快档），真机 15×15 预算 （~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测口径）见 内部证据档
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；真机 solo 单飞 （#246/#261）；J2 真机轨另派
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

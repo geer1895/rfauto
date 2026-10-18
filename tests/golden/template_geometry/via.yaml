@@ -1,0 +1,114 @@
+schema: rfauto-template-geometry-golden/v1
+template: via
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_mm: 1.1134
+  antipad_mm: 0.8
+  r_via_mm: 0.15
+status: ok
+script_sha256: df3b0b95f7ec9ecd7b5c7224731bb88891159383ed19da217cf91d36dbd76db4
+csx:
+  n_primitives: 21
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: via_gnd
+    kind: Metal
+    n: 4
+    types:
+      '1': 4
+  - name: via_strip
+    kind: Metal
+    n: 4
+    types:
+      '1': 4
+  - name: via_barrel
+    kind: Metal
+    n: 1
+    types:
+      '5': 1
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 5c37584a8fa8b96404e7076147ce5092d08cbab3acd84a2807bc696ece26e66b
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.001016
+mesh:
+  lines:
+    x:
+      n: 115
+      min_gap_m: 0.000243
+    y:
+      n: 115
+      min_gap_m: 0.000267
+    z:
+      n: 25
+      min_gap_m: 0.000127
+  lines_sha256: 20978963f1492351e925922a6ebe3055f1c8d58081a07432ed3bb2f937796f89
+ports:
+- 1
+- 2

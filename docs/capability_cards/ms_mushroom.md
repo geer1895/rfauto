@@ -56,7 +56,7 @@
 - 参数语义：gap_mm=邻胞贴片缘缝（Sievenpiper LC 模型的 C 承载，EC 初值主参数）， period_mm=单胞周期（方形域边长，px=py=period−gap 派生），h_mm=基板厚 （过孔电感 L=μ0·h 的物理承载）；er 进名义 gap 反演闭式（εeff=(1+εr)/2） +基板材料，tan_d 只进材料；过孔柱 r=0.15 构造常量非声明参数
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；贴片缘精确入网 +胞缘缝 3+ 中点入网（#311）；过孔柱=sub-cell 阶梯化（msl_cpw 过孔栅栏 先例，轴向两端恰在网格线）；NEAR≤胞缘缝/3 渲染期守卫（#266）；全轴最小 网格间距 ≥10µm
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；AMC f₀/±90° 带边闭式= amc_phase_band_hz（内核互证钉）；真机波导模拟器 smoke（空波导 EN 标定+ argΓ 过零点对拍内核 f₀）判据面归 P3 发射批
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

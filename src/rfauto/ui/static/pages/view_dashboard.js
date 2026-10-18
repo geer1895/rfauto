@@ -73,6 +73,94 @@ export async function pageDashboard() {
   ]);
   if (runs.aborted || solvers.aborted) return; // UI-R12：切页取消——不写隐藏区
   S.dashData = { runs: runs.runs || [], solvers: solvers.solvers || [] };
+  await renderDashboardGrid();
+}
+
+/* ═══ R-1 局部刷新试点（aurora72 W1-S3，R6 审计 R-1）══════════════════
+   refreshDashboard：widget 增删/拖拽与 palette「刷新当前页数据」走本入口
+   ——只重铺组件面（renderDashboardGrid），不再全量 refetch /api/runs?limit=200
+   + /api/solvers（复用进页时已拉取的 S.dashData）。壳或数据未就绪（直调
+   无壳/首拉在途）回退 pageDashboard 全量路径=旧行为。 */
+export async function refreshDashboard() {
+  if (!S.dashData || !T.$("widget-grid")) return pageDashboard();
+  await renderDashboardGrid();
+}
+
+/* R-1 PageContext（增量钩子，注册在 pages.js → router.js PAGE_CTX）：
+   refresh=palette 局部刷新入口。enter 面即 pageDashboard（VIEWS 既有渲染
+   函数，签名兼容零迁移）；本页无常驻轮询，leave 无需登记。 */
+export const dashboardCtx = { refresh: () => refreshDashboard() };
+
+/* ═══ W5-S23（深审 c 面真机实证）：组件增删后焦点保持 ═════════════════
+   「移除组件」/添加菜单 chipbtn 触发 refreshDashboard() 整格重建——触发钮
+   随旧 DOM 销毁，键盘/读屏焦点坠落到 body（真机实测 BODY(lost)）。
+   本助手在刷新完成后把焦点还到目标面板首个 wclose 钮：删除=退到同位次
+   面板（调用方传入删前位次；无余面板退到添加菜单容器），添加=新面板本体。
+   目标缺席静默（#105 best-effort：还焦面不阻业务主路径）。 */
+async function refreshGridKeepingFocus(widgetId, action, prevIdx) {
+  await refreshDashboard();
+  try {
+    const grid = T.$("widget-grid");
+    if (!grid) return;
+    const panels = [...grid.querySelectorAll(".widget[data-id]")];
+    let target = null;
+    if (action === "add") target = panels.find((p) => p.dataset.id === widgetId);
+    else target = panels[Math.max(0, Math.min(prevIdx, panels.length - 1))];
+    const btn = target && target.querySelector(".wclose");
+    if (btn) { btn.focus({ preventScroll: true }); return; }
+    const add = T.$("w-add");
+    if (add && add.firstChild && typeof add.firstChild.focus === "function")
+      add.firstChild.focus({ preventScroll: true });
+  } catch { /* 还焦失败静默 */ }
+}
+
+/* ═══ W5-S23（深审 e 面，W6 P-6 遗留清偿）：KPI 数字滚动 count-up ══════
+   rAF 300ms easeOutCubic 补间；prefers-reduced-motion（或环境无 rAF）直出
+   终值。easeOutCubic/countUpText 纯函数导出（node 行为钉可测）；DOM 驱动
+   animateKpiValue 的 env 参数注入 reduced/raf/now（node 桩可测，缺省取
+   浏览器全局）。首绘从 0 起、局部刷新从上一拍值起（S.kpiPrev 记忆）。 */
+export function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+export function countUpText(from, to, t01, fmt) {
+  const k = easeOutCubic(Math.max(0, Math.min(1, Number(t01) || 0)));
+  return fmt(from + (to - from) * k);
+}
+export function animateKpiValue(el, from, to, fmt, env) {
+  if (!el) return;
+  const e = env || {};
+  const reduced = typeof e.reduced === "boolean" ? e.reduced : _prefersReducedMotion();
+  const raf = e.raf || (typeof requestAnimationFrame === "function"
+    ? requestAnimationFrame : null);
+  if (reduced || !raf || !Number.isFinite(from) || !Number.isFinite(to) || from === to) {
+    el.textContent = fmt(to); // 直出终值（reduced-motion 纪律）
+    return;
+  }
+  // 时基单源：帧戳（rAF 回调参数）与 performance.now() 同一原点——不得混
+  // Date.now()（墙钟），否则 t01 恒负钳零=数字钉 0 + rAF 死循环（真机复验
+  // 实证后修正）；node 测试经 env.now 注入。
+  const nowFn = e.now || (() => performance.now());
+  const t0 = nowFn();
+  const DUR = 300;
+  const step = () => {
+    const t01 = Math.min(1, (nowFn() - t0) / DUR);
+    el.textContent = countUpText(from, to, t01, fmt);
+    if (t01 < 1) raf(step);
+  };
+  raf(step);
+}
+function _prefersReducedMotion() {
+  try {
+    return !!(window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  } catch { return false; }
+}
+
+/* 组件面渲染单源：添加菜单 + widget 网格（enter 全量路径与局部刷新共用）。
+   增删/拖拽三类变更就地 persistWidgets 后重铺本面——此前三类变更点各自
+   递归整页渲染函数（连壳带数据全量重拉，R6 审计旧单体 pages.js:696/724/746
+   三处），现收敛到本函数（数据面零 fetch）。 */
+async function renderDashboardGrid() {
   const saved = JSON.parse(localStorage.getItem("rfauto-widgets") || "null") || WIDGET_DEFAULTS;
   S.widgetSet = new Set(saved.filter((k) => WIDGETS[k]));
   // 添加组件菜单
@@ -84,7 +172,8 @@ export async function pageDashboard() {
       const b = document.createElement("button");
       b.className = "chipbtn";
       b.textContent = "＋ " + w.title;
-      b.onclick = () => { S.widgetSet.add(id); persistWidgets(); pageDashboard(); };
+      // W5-S23：添加后焦点保持（chip 随 renderAddMenu 重建销毁——还焦新面板）
+      b.onclick = () => { S.widgetSet.add(id); persistWidgets(); refreshGridKeepingFocus(id, "add"); };
       addEl.appendChild(b);
     }
     if (!addEl.children.length)
@@ -111,11 +200,16 @@ export async function pageDashboard() {
     // A7-A ui-kit 试点如实不迁：按钮在 <b class='title'> 元素内闭合（title 与
     // 控件同在 b 内），与 kitPanelHead 的 "</b>" 后置 actions 形态字节不等——
     // 保持原内联（迁移纪律：结构不变才能迁，差异记录见席位报告）。
+    // W5-S23：两 wclose 补 aria-label（icon 字符 ⤢/× 不进读屏可达名——
+    // title 只悬浮不播报；深审 b 面缺口清偿）。
     panel.innerHTML = `<div class='panel' style='height:100%'><b class='title'>${w.title}` +
-      `<button class='wclose' title="加宽/收窄" data-act="span" style="margin-right:6px">⤢</button>` +
-      `<button class='wclose' title="移除组件" data-act="close">×</button></b><div class='wbody'></div></div>`;
+      `<button class='wclose' title="加宽/收窄" aria-label="加宽/收窄组件：${esc(w.title)}" data-act="span" style="margin-right:6px">⤢</button>` +
+      `<button class='wclose' title="移除组件" aria-label="移除组件：${esc(w.title)}" data-act="close">×</button></b><div class='wbody'></div></div>`;
+    // W5-S23：删除/添加后焦点保持（refreshGridKeepingFocus——删传删前位次，
+    // 增传 "add" 找新面板）；拖拽 drop 为指针驱动不还焦。
     panel.querySelector('[data-act="close"]').onclick = () => {
-      S.widgetSet.delete(id); persistWidgets(); pageDashboard();
+      const prevIdx = [...grid.querySelectorAll(".widget[data-id]")].indexOf(panel);
+      S.widgetSet.delete(id); persistWidgets(); refreshGridKeepingFocus(id, "remove", prevIdx);
     };
     panel.querySelector('[data-act="span"]').onclick = () => {
       const seq = [4, 6, 12];
@@ -137,7 +231,7 @@ export async function pageDashboard() {
       arr.splice(arr.indexOf(id), 0, src);
       S.widgetSet = new Set(arr);
       persistWidgets();
-      pageDashboard();
+      refreshDashboard();
     };
     grid.appendChild(panel);
     await renderers[id](panel.querySelector(".wbody"));
@@ -155,11 +249,24 @@ export async function pageDashboard() {
     // aurora36 W4-C：数据新鲜度环挂首卡右上角（runs=新→旧序，list[0] 即最近
     // run 的 timestamp；零定时器，随本 widget 渲染重绘——进页/增删组件/拖拽）。
     const ring = freshnessRingSvg(list.length ? list[0].timestamp : null, Date.now());
+    // W5-S23 count-up（W6 P-6）：初值占位，下方 animateKpiValue 同步补间/
+    // 直出（reduced-motion 纪律）；无 JS 数字渲染路径不存在（本应用=JS 壳）。
     el.innerHTML = `<div class='cards' style="margin:0">` +
-      `<div class='card' style="position:relative"><div class='k'>Run 总数</div><div class='v'>${list.length}</div>` +
+      `<div class='card' style="position:relative"><div class='k'>Run 总数</div><div class='v'>0</div>` +
       `<span style="position:absolute;top:8px;right:10px">${ring}</span></div>` +
-      `<div class='card'><div class='k'>带内 S11 最优</div><div class='v ${best != null ? "ok" : ""}'>${best == null ? "-" : best.toFixed(2) + " dB"}</div></div>` +
-      `<div class='card'><div class='k'>使用过的通道</div><div class='v'>${adapters}</div></div></div>`;
+      `<div class='card'><div class='k'>带内 S11 最优</div><div class='v ${best != null ? "ok" : ""}'>-</div></div>` +
+      `<div class='card'><div class='k'>使用过的通道</div><div class='v'>0</div></div></div>`;
+    // 补间面：首绘自 0 起、局部刷新自上一拍值起（S.kpiPrev 记忆）；
+    // best 首拍无前值=直出（0→负 dB 反向滚动反直觉，不做）。
+    const prev = S.kpiPrev || { runs: 0, best: null, adapters: 0 };
+    const vs = el.querySelectorAll(".v");
+    animateKpiValue(vs[0], prev.runs || 0, list.length, (n) => String(Math.round(n)));
+    if (best != null)
+      animateKpiValue(vs[1], prev.best == null ? best : prev.best, best,
+        (n) => n.toFixed(2) + " dB");
+    else vs[1].textContent = "-";
+    animateKpiValue(vs[2], prev.adapters || 0, adapters, (n) => String(Math.round(n)));
+    S.kpiPrev = { runs: list.length, best, adapters };
   }
   async function wActivity(el) {
     // aurora36 W4-C（R1 §1.3 活动日志）：数据源=本页已拉取的 /api/runs
@@ -252,6 +359,9 @@ export async function pageDashboard() {
     // empty:"" 显式保持空 tbody——与原实现逐字节等价。
     el.innerHTML = kitTable({
       columns: ["run_id", "adapter", "带内 S11"], rows: list, empty: "",
+      // W5-S23：表格读屏命名（caption 全站为零的收账起步——kitTable 可选
+      // caption 参数，sr-only 视觉隐藏）
+      caption: "最近 Run 表：点行打开 run 详情，点表头排序",
       rowHtml: (r) => {
         const m11 = r.metrics?.s11_db_max_in_band;
         return `<tr class="clickable" data-id="${escAttr(r.run_id)}" ${kitClickRowAttrs({ role: null, label: "打开 run 详情：" + (r.run_id || "") })}><td>${esc(r.run_id || "")}</td><td>${esc(r.adapter || "")}</td><td>${esc(typeof m11 === "number" ? m11.toFixed(2) + " dB" : "-")}</td></tr>`;

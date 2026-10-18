@@ -1,0 +1,65 @@
+schema: rfauto-template-geometry-golden/v1
+template: helix
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.15
+- 2.65
+params:
+  helix_d_mm: 3.0
+  helix_turns: 2
+  helix_pitch_mm: 9.2587
+  helix_w_mm: 0.6
+  feed_gap_mm: 2.0
+status: ok
+script_sha256: 6cc5d899556bdcf4670c208389d1898d0ee5fa42a15f7ba8e9d4dba0ab4c2da1
+csx:
+  n_primitives: 18
+  props:
+  - name: helix
+    kind: Metal
+    n: 14
+    types:
+      '1': 14
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 8e022586a65b04951f9ef9e0c185b95cd055d152113abff9d2b30bfcc7604cc6
+  bbox_m:
+  - -0.0018
+  - -0.0018
+  - 0.0
+  - 0.0018
+  - 0.0018
+  - 0.0205174
+mesh:
+  lines:
+    x:
+      n: 173
+      min_gap_m: 0.00012
+    y:
+      n: 173
+      min_gap_m: 0.00012
+    z:
+      n: 43
+      min_gap_m: 0.001
+  lines_sha256: 912d33a980247b3b8169d4bd10ec55d6bbd8b82ce2e5855f7ade43d91869afcc
+ports:
+- 1

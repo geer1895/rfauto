@@ -1,12 +1,19 @@
 """A3 real_edt：场-路协同（非线性/谐波平衡）真机验收——对照真 ngspice。
 
-验收口径（延续计划 §10.1 A3 验收列）："对照 ngspice 参考解"。
+**opt-in 双门（aurora_e W4-S18 起，xyce/palace 先例同款；df7⑥：机器状态
+skipif 不够，真跑集成必须 env 显式意图门，缺省门零真跑依赖 #139）**：
+1. 意图门：env ``RFAUTO_NGSPICE_IT=1`` 显式启用；
+2. 机器状态门：``spice_netlist.ngspice_available()``（缺席 skip 不红）。
+
+验收口径（规划档 §10.1 A3 验收列）："对照 ngspice 参考解"。
 链路：闭式 L 截面 EM 替身 .s2p → s_to_y 逐谐波 → HB 二极管检波器求解 →
 同一物理 RLC 的 ngspice 瞬态+傅里叶参考（ngspice-47 批处理，2026-09-14
 本机实测可用，工作区 tools/ngspice/Spice64/bin）→ 逐量互差判定。
 
-ngspice 缺席时 skip（非 fail）；其余失败如实 fail。
+其余失败如实 fail。
 """
+
+import os
 
 import pytest
 
@@ -14,7 +21,12 @@ from rfauto.adapters import spice_netlist
 
 pytestmark = pytest.mark.real_edt
 
+_INTENT_ENV = "RFAUTO_NGSPICE_IT"
 
+
+@pytest.mark.skipif(os.environ.get(_INTENT_ENV) != "1",
+                    reason=f"真跑集成测试 opt-in：设 {_INTENT_ENV}=1 启用"
+                           "（真跑不进缺省门，#139/df7⑥）")
 @pytest.mark.skipif(not spice_netlist.ngspice_available(),
                     reason="ngspice 未安装（RFAUTO_NGSPICE_BIN / tools/ngspice）")
 def test_real_hb_vs_ngspice_detector(tmp_path):

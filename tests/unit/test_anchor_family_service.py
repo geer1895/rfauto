@@ -45,7 +45,9 @@ class TestCoverage:
         # 候选表原 7 席中该 2 席转入覆盖态；service 表本席禁碰不撤条，
         # 钉面按现值放行已覆盖席（须在 covered），余席仍须零覆盖
         # （候选表不变式收窄版：零覆盖候选表只含未注册模板）。
-        _SENS_ANC_COVERED = {"lange", "cline_coupler"}
+        # W3-S15 批（2026-10-18）mline.z0_ohm.closedform-v1 落册：候选表
+        # mline 席同款转覆盖态放行（钉面按现值，表不撤）
+        _SENS_ANC_COVERED = {"lange", "cline_coupler", "mline"}
         for cand in afs.POINTER_BATCH_CANDIDATES:
             if cand["template"] in _SENS_ANC_COVERED:
                 assert cand["template"] in cov["covered"], (

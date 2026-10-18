@@ -58,7 +58,7 @@
 - 参数语义：w_slot_mm=槽宽，x_port_mm=P2/P3 距跨越区中心，h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；槽内缘/中条/封口桥共边网格线已钉（PEC 共棱连通）
 - 冒烟现状：真机（a8abe8d）四门 FAIL 两引擎一致：不平衡 2.76/2.64dB、RL −7.4/−5.6、|S21| −4.05/−3.93、隔离 −0.55/−5.42、相位 −97°/−31°；幅度三量两引擎差 ≤0.2dB 互证=设计级结论成立。复跑冒烟只作回归对照，验收看两节新设计（followUp 立项）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

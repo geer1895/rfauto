@@ -1,0 +1,22 @@
+schema: rfauto-template-geometry-golden/v1
+template: sir_bpf
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  order: 3
+  w_feed_mm: 1.1117
+  w_low_mm: 1.8944
+  w_high_mm: 0.6144
+  l_low_mm: 6.5719
+  l_high_mm: 6.7818
+  gaps_mm:
+  - 0.2417
+  - 1.5189
+  - 1.5189
+  - 0.2417
+  feed_len_mm: 53.3232
+status: guard_blocked
+guard_error: C3 sir_bpf 耦合缝网格守卫（#266）：NEAR=0.2851mm > 最小耦合缝 0.2417mm/3=0.0806mm（缝内不足 3 格 ⇒ 缝内零内部线、外 Q 建模粗、峰位 −5%）；请显式传 mesh_resolution_mm ≤ 0.3223（NEAR=base/4）

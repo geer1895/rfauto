@@ -84,6 +84,9 @@ _SOURCES = {
     "z0": "Pozar Microwave Engineering §2.2 同轴线（TEM 精确闭式）；TE11 截止保角映射 kc≈2/(a+b)",
     "att": "Pozar §2.7 传输线损耗（导体 Rs 趋肤口径 + 介质 β·tanδ/2）；线 Q=β/(2α)",
     "pwr": "TEM 场分布 E(ρ)=V/(ρ·ln(b/a))；最优比 30Ω/76.7Ω 经典口径（b 固定）",
+    "cut": ("Pozar §3 波导一般理论（f<f_c 倏逝模 e^{−αz}，α=k_c·√(1−(f/f_c)²)）；"
+            "截止式衰减器几何决定论（衰减率只由 k_c 几何给出）；EMC 经典锚：圆波导 "
+            "TE11 深截止 ≈32 dB/直径（k_c=1.8412/b 精确值，Ott/learnEMC 口径）"),
 }
 
 
@@ -432,4 +435,107 @@ def coax_line_power_capacity(a_mm: float, b_mm: float,
         "over_drive": over_drive,
         "note": note,
         "source": _SOURCES["pwr"],
+    }
+
+
+# ─── 键 4：截止式衰减器（TE11 倏逝衰减，W8-S37 池件批 3）────────────────────
+
+@register_calculator(
+    "coax_line_cutoff_attenuator",
+    "同轴线截止式衰减器：TE11 高阶模截止以下工作（f<f_c 倏逝模 e^{−αz}，"
+    "α=k_c·√(1−(f/f_c)²) Np/m，k_c≈2/(a+b) 保角映射与 z0 键同口径）→ 每"
+    "米/给定长度衰减 dB；深截止（f≪f_c）渐近 α→k_c 与频率无关——衰减率只"
+    "由几何给出（截止衰减器精密衰减原理）；截止波长 λ_c=π(a+b)（介质无关"
+    "几何量）与 f_c=c₀/(π(a+b)√εr) 同步输出。锚：深截止每 (a+b) 长度衰减 "
+    "=8.686·2=17.372 dB（k_c(a+b)=2 定义恒等式）；圆波导 TE11 精确 k_c="
+    "1.8412/b → 32.0 dB/直径 EMC 经典值（测试侧独立常数验证公式族）；"
+    "f≥f_c 显式拒绝（行波区无倏逝衰减）",
+    (("a_mm", "float mm 内导体半径（>0）"),
+     ("b_mm", "float mm 外导体内半径（>a_mm）"),
+     ("length_mm", "float mm 倏逝段长度（>0，截止衰减器滑动段）"),
+     ("f_ghz", "float GHz 工作频率（可选——缺省=深截止渐近 α=k_c；给定则须 "
+      "<f_c）"),
+     ("epsilon_r", "float 填充介质相对介电常数（≥1，缺省 1=空气）")),
+    required=("a_mm", "b_mm", "length_mm"),
+)
+def coax_line_cutoff_attenuator(a_mm: float, b_mm: float, length_mm: float,
+                                f_ghz: float | None = None,
+                                epsilon_r: float = 1.0) -> dict[str, Any]:
+    a = _finite(a_mm, "a_mm")
+    b = _finite(b_mm, "b_mm")
+    length = _finite(length_mm, "length_mm")
+    eps_r = _finite(epsilon_r, "epsilon_r")
+    if a <= 0.0:
+        raise ValueError(
+            f"coax_line_cutoff_attenuator: a_mm 必须 >0，得到 {a_mm!r}")
+    if b <= a:
+        raise ValueError(
+            f"coax_line_cutoff_attenuator: 须 0 < a_mm < b_mm，得到 "
+            f"a={a_mm!r}, b={b_mm!r}（a≥b 非物理，显式拒绝）")
+    if length <= 0.0:
+        raise ValueError(
+            f"coax_line_cutoff_attenuator: length_mm 必须 >0，得到 "
+            f"{length_mm!r}")
+    if eps_r < 1.0:
+        raise ValueError(
+            f"coax_line_cutoff_attenuator: epsilon_r 必须 ≥1，得到 "
+            f"{epsilon_r!r}")
+
+    sqrt_er = math.sqrt(eps_r)
+    kc_per_m = 2.0 / ((a + b) * 1e-3)                 # 1/m（保角映射）
+    fc_ghz = C_MM_GHZ / (math.pi * (a + b) * sqrt_er)
+    lambda_c_mm = math.pi * (a + b)                   # 截止波长（介质无关）
+    if f_ghz is None:
+        f_over_fc = 0.0
+    else:
+        f = _finite(f_ghz, "f_ghz")
+        if f <= 0.0:
+            raise ValueError(
+                f"coax_line_cutoff_attenuator: f_ghz 必须 >0，得到 "
+                f"{f_ghz!r}")
+        f_over_fc = f / fc_ghz
+        if f_over_fc >= 1.0:
+            raise ValueError(
+                f"coax_line_cutoff_attenuator: f_ghz={f!r} GHz ≥ TE11 截止 "
+                f"{fc_ghz:.9g} GHz——行波区无倏逝衰减，本键不适用（显式拒绝）")
+    # 倏逝衰减：α = k_c·√(1−(f/f_c)²)（深截止 f≪f_c → α→k_c，频率无关）
+    evanescent_factor = math.sqrt(max(0.0, 1.0 - f_over_fc * f_over_fc))
+    alpha_np_per_m = kc_per_m * evanescent_factor
+    alpha_db_per_m = 8.686 * alpha_np_per_m
+    attenuation_db = alpha_db_per_m * (length * 1e-3)
+    attenuation_np = alpha_np_per_m * (length * 1e-3)
+    # 每 (a+b) 长度衰减：k_c·(a+b)=2 定义恒等式 → 8.686·2·factor dB
+    attenuation_per_ab_db = 8.686 * kc_per_m * (a + b) * 1e-3 \
+        * evanescent_factor
+    deep_cutoff = bool(f_ghz is None or f_over_fc <= 0.1)
+    note = (
+        "截止式衰减器口径（TE11 倏逝段）：深截止 α=k_c 只由几何决定（精密"
+        "衰减原理，频率无关）；k_c≈2/(a+b) 为保角映射近似（与 z0 键 TE11 "
+        "截止同口径）——a→0 圆波导极限给 34.76 dB/直径，对精确值 "
+        "k_c=1.8412/b 的 32.0 dB/直径偏高 8.6%，如实注记；f/f_c 趋近 1 时"
+        "衰减率按 √(1−(f/f_c)²) 下降且强色散，工程截止衰减器工作在深截止"
+        "区；本键为标量传输面（无 S 矩阵产出）")
+    if deep_cutoff:
+        note += "；当前工作点=深截止区（f/f_c≤0.1 或缺省渐近）"
+    else:
+        note += "；当前工作点偏离深截止（f/f_c>0.1），衰减率明显低于 k_c"
+    return {
+        "a_mm": a,
+        "b_mm": b,
+        "epsilon_r": eps_r,
+        "length_mm": length,
+        "f_ghz": f_ghz,
+        "te11_cutoff_ghz": round(fc_ghz, 9),
+        "f_over_fc": round(f_over_fc, 12),
+        "evanescent_factor": round(evanescent_factor, 12),
+        "deep_cutoff": deep_cutoff,
+        "kc_per_m": round(kc_per_m, 12),
+        "lambda_c_mm": round(lambda_c_mm, 12),
+        "alpha_np_per_m": round(alpha_np_per_m, 12),
+        "alpha_db_per_m": round(alpha_db_per_m, 12),
+        "attenuation_db": round(attenuation_db, 12),
+        "attenuation_np": round(attenuation_np, 12),
+        "attenuation_per_ab_db": round(attenuation_per_ab_db, 12),
+        "note": note,
+        "source": _SOURCES["cut"],
     }

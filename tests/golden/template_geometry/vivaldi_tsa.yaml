@@ -1,0 +1,112 @@
+schema: rfauto-template-geometry-golden/v1
+template: vivaldi_tsa
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 9.75
+- 10.25
+params:
+  w_throat_mm: 0.3
+  w_mouth_mm: 24.982705
+  l_mm: 80.0
+  feed_w_mm: 1.1134
+  er: 3.66
+  tan_d: 0.0037
+status: ok
+script_sha256: 69c60cbfbbb5838815c3a47f19ab3e869895f8ac0152fc6ec7182cf9b7656b4e
+csx:
+  n_primitives: 64
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: vivaldi_gnd
+    kind: Metal
+    n: 49
+    types:
+      '1': 49
+  - name: vivaldi_feed
+    kind: Metal
+    n: 3
+    types:
+      '1': 3
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: b9a86f98b06575b6b0218b0609355bf7164ae2017b0fd4ffb8be06bddafc1f9d
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 693
+      min_gap_m: 6.8e-05
+    y:
+      n: 1239
+      min_gap_m: 7.6e-05
+    z:
+      n: 55
+      min_gap_m: 0.000127
+  lines_sha256: 0b2f35b9e158b5ab2845a1abf19a5fe88a3298e091ddcd67d28b4d7bee9a0147
+ports:
+- 1
+- 2

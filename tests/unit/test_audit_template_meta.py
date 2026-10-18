@@ -306,13 +306,13 @@ class TestTreeAndMain:
     def test_real_tree_green(self):
         rep = mod.audit_tree(REPO / "docs" / "templates", REPO)
         assert rep["green"] is True, rep["violations"]
-        # teaching=70：aurora_d TEACH-B2 席（2026-10-14）63→70——任务书名义 12
-        # 族，实际缺 teaching 的非排除族仅 7（bend/ifa/patch_eep_1x4/
-        # patch_eep_2x2/pifa/via/wstep；其余 14 缺口=edb_* 5 域外+atten_pi/
-        # ring_resonator 测试钉死反例+63 已有），全部落地后如实按 7 计数
-        # （#122 不凑绿；候选池清单系登记快照过时，#222 核实现状后定案）。
+        # teaching=72：aurora_d TEACH-B2 席（2026-10-14）63→70，aurora_e
+        # W3-S13 知识面批（2026-10-18）补 atten_pi/ring_resonator 两族到 72
+        # ——非排除注册族（72）teaching 全覆盖；edb_* 5 族系域外信息文档面
+        # 不入注册表、无 teaching（#122 如实；历史缺清单 bend/ifa/
+        # patch_eep_*/pifa/via/wstep 已由中间批次闭合）。
         assert rep["counts"] == {"dirs": 77, "edb": 5, "registered": 72,
-                                 "teaching": 70}
+                                 "teaching": 72}
         assert rep["violations"] == []
         assert rep["evidence_links_missing"] == []
         assert mod.verdict(rep) == 0

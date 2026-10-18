@@ -272,3 +272,17 @@ export async function pageUq() {
     T.msg("UQ 完成（确定性内核）", true);
   }
 }
+
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子（数据资产三页）════════
+   refresh=各自 page 函数整体重拉（三页均只读数据面；datasets/anchors 与页内
+   「刷新」钮同语义，uq 与重进同语义——σ 表单态随重建清空，palette 旧回退
+   路径本就如此，无行为增量）。无轮询面，leave 不需要。 */
+export const datasetsCtx = {
+  refresh: () => pageDatasets(),
+};
+export const anchorsCtx = {
+  refresh: () => pageAnchors(),
+};
+export const uqCtx = {
+  refresh: () => pageUq(),
+};

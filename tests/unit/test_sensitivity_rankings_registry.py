@@ -4,21 +4,23 @@
 - 登记表过 W8 消费链：capability_cards_export.load_sensitivity_rankings
   （真实路径装载）+ normalize_sensitivity_entry 逐条 PASS + 三态
   resolve_sensitivity computed 胜出（provenance 数据指针）；
-- 入表集=COMPUTABLE_TEMPLATES（46 = X7 首批 18 + aurora72 A3-D 扩批 22 +
+- 入表集=COMPUTABLE_TEMPLATES（70 = X7 首批 18 + aurora72 A3-D 扩批 22 +
   R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + aurora_d
-  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4；
-  teaching 首批 9 模板不入表=test_w6_sensitivity_face_non_regression 的钉
-  前提 + 回退卡代表（ring_resonator）维持无条目；aurora72 批起新 teaching
-  卡与登记表双源并存，W8 消费优先级 computed>teaching）；
+  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4 + aurora_e W4-S19 全覆盖批
+  24：teaching 首批 9 模板全部入表转双源并存 + 15 补族；留缺 2 族
+  sir_bpf/ms_array_NxN 如实不入表——builder docstring「W4-S19 全覆盖批」
+  节⑤；W6 卡面字节钉前提按全覆盖批任务书解除并同批重生成）；
 - schema 面：ranking 参数集==模板注册名义参数（TEMPLATE_NOMINAL 单源）、
   分数有限非负、R9 序（-score, param）、n_samples=1+2·n_params、
   method/source_run/registered_at 在场；
-- 生成器面：弹性管线已知值（线性=1/平方=2）、整数参数 ±1 单位步、
-  非正目标量显式拒收（禁 emit 坏数据）、build_all 两次逐位一致且与
-  落档文件逐字节一致（生成器↔登记表一致性钉）；
+- 生成器面：弹性管线已知值（线性=1/平方=2）、整数参数 ±1 单位步、列表
+  参数整体 ±1% 等比缩放（W4-S19 批）、非正目标量显式拒收（禁 emit 坏
+  数据）、build_all 两次逐位一致且与落档文件逐字节一致（生成器↔登记表
+  一致性钉）；
 - 微波物理 sanity 钉（每钉旁注物理依据，与文献直觉冲突即停下核公式）：
   谐振长度族弹性=1、基元线宽 Z0 弹性 HJ 域 ~0.6、via 对数比值弹性
-  =1/ln(r_pad/r_via)、atten E4 通道与 Z0 通道分解、SIR/悬置带线族序。
+  =1/ln(r_pad/r_via)、atten E4 通道与 Z0 通道分解、SIR/悬置带线族序、
+  W4-S19 批新面（零值参数 0 分、列表通道、对数比值族、增益恒等式）。
 """
 
 from __future__ import annotations
@@ -43,12 +45,18 @@ def _load() -> dict:
 # ── 入表集与 W8 消费链 ───────────────────────────────────────────────────────
 
 def test_registry_exists_and_matches_computable_set():
-    """登记表在场、模板集==生成器可算集（46=X7 首批 18+A3-D 扩批 22
-    +R8-KN 扩批 4+SENS-ANC 复核扩批 2，2026-10-14 计数钉按新值更新）。"""
+    """登记表在场、模板集==生成器可算集（70=X7 首批 18+A3-D 扩批 22
+    +R8-KN 扩批 4+SENS-ANC 复核扩批 2+W4-S19 全覆盖批 24，2026-10-18
+    计数钉按新值更新；留缺 2 族 sir_bpf/ms_array_NxN 不在集）。"""
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
     reg = _load()
     assert set(reg) == set(srb.COMPUTABLE_TEMPLATES)
-    assert len(reg) == 46
-    assert 35 <= len(reg) <= 50  # 任务书目标带（R8-KN 扩批后）
+    assert len(reg) == 70
+    # 留缺 2 族如实不在表（builder docstring「W4-S19 全覆盖批」节⑤）
+    assert "sir_bpf" not in reg and "ms_array_NxN" not in reg
+    # 注册面 72 分母：70 + 留缺 2 = 全部 TEMPLATE_NOMINAL
+    assert set(reg) | {"sir_bpf", "ms_array_NxN"} == set(TEMPLATE_NOMINAL)
 
 
 def test_registry_entries_pass_w8_normalize():
@@ -79,14 +87,16 @@ def test_resolve_sensitivity_computed_wins_for_all_entries():
         assert out["provenance"]["source_run"] == srb.SOURCE_RUN
 
 
-def test_teaching_templates_excluded_from_registry():
-    """teaching 9 模板不入表（W6 面不回归钉的前提钉）：wilkinson 走真实
-    装载链仍出 teaching；回退卡代表 ring_resonator 仍无条目。"""
+def test_teaching_templates_dual_source_computed_wins():
+    """W4-S19 全覆盖批：teaching 9 模板全部入表（双源并存）——W8 消费
+    三态① computed 胜出（原 teaching 代表 wilkinson 出 computed+数据指针）；
+    原 W6 回退代表 ring_resonator 同批入表。teaching EP-5 名次保留在
+    meta teaching CLI 面（两源口径不同不混写）。"""
     reg = _load()
-    assert not (set(reg) & srb.TEACHING_TEMPLATES)
+    assert set(reg) >= srb.TEACHING_TEMPLATES
     wil = cce.collect_card("wilkinson")
-    assert wil["sensitivity"]["source"] == "teaching"
-    assert "ring_resonator" not in reg
+    assert wil["sensitivity"]["source"] == "computed"
+    assert "ring_resonator" in reg
 
 
 def test_ranking_params_match_template_nominal():
@@ -126,6 +136,32 @@ def test_elasticity_integer_param_unit_step():
     assert srb.elasticity(lambda p: p["n"], {"n": 5}, "n") == 1.0
 
 
+def test_elasticity_list_param_uniform_scaling():
+    """列表参数整体 ±1% 等比缩放（W4-S19 批）：y=首元 → 弹性仍 1；
+    非数值列表元素显式拒收（禁 emit 坏数据）。"""
+    import pytest
+
+    lin = srb.elasticity(lambda p: p["xs"][0], {"xs": [2.0, 4.0, 8.0]}, "xs")
+    assert abs(lin - 1.0) < 1e-9
+    with pytest.raises(TypeError, match="非数值"):
+        srb.elasticity(lambda p: 1.0, {"xs": [1.0, "a"]}, "xs")
+
+
+def test_non_perturbable_zero_params_score_zero():
+    """零值名义参数（h_mm=0/tan_d_fill=0）走 NON_PERTURBABLE=0 分显式
+    陈述（正域守卫不可扰动——非缺失非编造，schema 收 0 分）。"""
+    reg = _load()
+    for tpl, zero_param in (("pyramid_horn", "h_mm"),
+                            ("coax_waveguide_transition", "h_mm"),
+                            ("ridged_wg", "h_mm"),
+                            ("sma_launcher", "tan_d_fill")):
+        entry = reg[tpl]
+        assert zero_param in {r["param"] for r in entry["ranking"]}
+        assert dict((r["param"], r["score"])
+                    for r in entry["ranking"])[zero_param] == 0.0
+        assert zero_param in srb.NON_PERTURBABLE[tpl]
+
+
 def test_elasticity_rejects_bad_domain():
     """非正目标量/非数值参数显式拒收（禁 emit 坏数据，#316 多报方向）。"""
     import pytest
@@ -145,6 +181,33 @@ def test_build_all_deterministic_and_matches_file():
     second = srb.build_all()
     assert first == second
     assert srb.render_yaml(first) == REGISTRY_PATH.read_text(encoding="utf-8")
+
+
+def test_target_quantity_first_sentence_not_first_physical_line():
+    """W8-S36（审查波 3 P2-1 回归钉）：target_quantity 取完整首句
+    （到『。』为止），不得按折行 docstring 首物理行截断——51/70 族
+    括号不配对/句子中断的历史形态不得复发。"""
+    # 折行 docstring（首句跨两物理行）→ 完整首句
+    doc = ("y=反焊盘同轴口径 Z_via=(60/sqrt(er))*ln(r_pad/r_via)\n"
+           "（synthesize_via_model 设计规则同式）。符号：dantipad→Z 升。")
+    assert srb._first_sentence(doc) == (
+        "y=反焊盘同轴口径 Z_via=(60/sqrt(er))*ln(r_pad/r_via) "
+        "（synthesize_via_model 设计规则同式）。")
+    # 无句号 → 取到首个空行
+    assert srb._first_sentence("y=Z0\n\n符号：…") == "y=Z0"
+    # 空 docstring → 空串
+    assert srb._first_sentence(None) == ""
+    # 落档登记表全族句子完整性（截断信号=句子未以句号收束）
+    import yaml
+    reg = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
+    for name, entry in reg["templates"].items():
+        tq = entry["target_quantity"]
+        assert tq.endswith("。"), f"{name}: target_quantity 未以句号收束: {tq!r}"
+    # 审查报告三取证族：完整首句且括号配对（截断形态的逐字反例钉）
+    for name in ("wilkinson", "branchline", "combline", "via"):
+        tq = reg["templates"][name]["target_quantity"]
+        assert tq.count("（") == tq.count("）") and tq.count("(") == tq.count(")"), \
+            f"{name}: target_quantity 括号不配对（截断复发）: {tq!r}"
 
 
 # ── 微波物理 sanity 钉（分数=|Δln y/Δln x|，无量纲弹性）────────────────────
@@ -355,3 +418,52 @@ def test_sanity_zero_elasticity_is_explicit_identity_statement():
     assert scores["slot_w_mm"] == 0.0
     assert scores["feed_w_mm"] == 0.0
     assert scores["feed_margin_mm"] == 0.0
+
+
+def test_sanity_w4s19_full_coverage_batch():
+    """W4-S19 全覆盖批 +24 闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。
+    - 谐振长度族：wilkinson/branchline/ratrace/ring/hairpin(×c_f0)/dipole
+      λ 恒等式 |∂lnf0/∂lnL|=1 精确；
+    - hairpin 修正常数通道：c_f0 与 arm 反比相消（弹性仍=1，c_f0 为常数）；
+    - ridged_wg：TE10 截止 fc=c0·kc/(2π)——a 通道 ~0.92（截止下移稀释，
+      无脊极限=1）、er 不进空气填充口径=0；
+    - sma_launcher：对数比值族 1/ln(r_o/r_i)≈0.828 同向（via 同族）；
+    - coax_waveguide_transition：TE10 fc10=c0/(2a√εr)——a=1 精确、er=1/2
+      恒等式、b 不进截止式=0；
+    - pyramid_horn：G=(4π/λ²)ABe 增益恒等式（15dB 设计锚）——l_flare 经
+      几何 σ 主通道 <1、a/b 经效率二阶、er/h 不进空气口径=0；
+    - coupled_bpf：λ/2 谐振 res_len 通道 <1（Δl+εeff_gm 稀释）、gaps 列表
+      弱通道在场（KJ 偶/奇模填充）、w_feed/order=0；
+    - 列表缩放通道：qwt lengths_mm 弹性=1（首元代表=整表同缩）。"""
+    reg = _load()
+    for tpl, length_param in (
+            ("wilkinson", "arm_len_mm"), ("branchline", "arm_len_mm"),
+            ("ratrace", "r_ring_mm"), ("ring_resonator", "r_mean_mm"),
+            ("hairpin", "arm_len_mm"), ("hairpin_alt", "arm_len_mm"),
+            ("dipole", "dipole_len_mm"), ("qwt_multisection", "lengths_mm")):
+        assert _scores(reg, tpl)[length_param] == 1.0, tpl
+    s_ridged = _scores(reg, "ridged_wg")
+    assert 0.85 < s_ridged["a_mm"] < 1.0  # 截止下移稀释（无脊极限=1）
+    assert s_ridged["er"] == 0.0 and s_ridged["h_mm"] == 0.0
+    s_sma = _scores(reg, "sma_launcher")
+    import math as _m
+
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
+    nom_sma = TEMPLATE_NOMINAL["sma_launcher"]
+    expected_sma = 1.0 / _m.log(nom_sma["r_o_mm"] / nom_sma["r_i_mm"])
+    assert abs(s_sma["r_o_mm"] - expected_sma) < 1e-3
+    assert abs(s_sma["r_i_mm"] - expected_sma) < 1e-3
+    assert abs(s_sma["er_fill"] - 0.5) < 1e-6
+    s_coax = _scores(reg, "coax_waveguide_transition")
+    assert s_coax["a_mm"] == 1.0
+    assert abs(s_coax["er"] - 0.5) < 1e-6
+    assert s_coax["b_mm"] == 0.0  # TE10 截止不含窄边
+    s_horn = _scores(reg, "pyramid_horn")
+    assert 0.5 < s_horn["l_flare_mm"] < 1.0
+    assert s_horn["er"] == 0.0 and s_horn["h_mm"] == 0.0
+    assert s_horn["l_feed_mm"] == 0.0
+    s_cbpf = _scores(reg, "coupled_bpf")
+    assert 0.9 < s_cbpf["res_len_mm"] < 1.0
+    assert s_cbpf["gaps_mm"] > 0.0  # KJ 偶/奇模填充弱通道在场
+    assert s_cbpf["w_feed_mm"] == 0.0 and s_cbpf["order"] == 0.0

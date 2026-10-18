@@ -1,6 +1,13 @@
 """D13 real_edt：第三方 SPICE 交叉验证真机门——ngspice-47 .AC 对拍。
 
-验收口径（方案冻结行 延续计划 D13 验收列）：
+**opt-in 双门（aurora_e W4-S18 起，xyce/palace/comsol 先例同款；df7⑥：
+机器状态 skipif 不够——终门实证套件内 PATH 泄漏可致真机假红，真跑集成
+必须 env 显式意图门，缺省门零真跑依赖 #139）**：
+1. 意图门：env ``RFAUTO_NGSPICE_IT=1`` 显式启用；
+2. 机器状态门：``spice_netlist.ngspice_available()``（RFAUTO_NGSPICE_BIN /
+   PATH / tools/ngspice，缺席 skip 不红）。
+
+验收口径（方案冻结行 规划档 D13 验收列）：
 "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。
 
 链路：闭式合成网络（原始 S 由闭式解析式给出，与拟合器/ngspice 无共享代码
@@ -8,9 +15,11 @@
 1V 激励真跑（工作区 tools/ngspice/Spice64/bin，AC 秒级/案例，无真机 EM 预算）
 → wrdata 复数重建 S → vs 原始 S 的 FSV GDM 评级 + max|ΔS|。
 
-ngspice 缺席时 skip（非 fail）；其余失败如实 fail。真机标定与离线编排
+其余失败如实 fail。真机标定与离线编排
 测试分别见 adapters/spice_netlist.py docstring 与 tests/unit/test_macromodel_xval.py。
 """
+
+import os
 
 import numpy as np
 import pytest
@@ -20,6 +29,8 @@ from rfauto.core.fsv import grade_index_of
 from rfauto.core.macromodel import fit_macromodel
 
 pytestmark = pytest.mark.real_edt
+
+_INTENT_ENV = "RFAUTO_NGSPICE_IT"
 
 Z0 = 50.0
 
@@ -37,6 +48,9 @@ def _fit_export(tmp_path, freq, s_orig, *, z0, name, subckt_name):
     return tmp_path / name, fit
 
 
+@pytest.mark.skipif(os.environ.get(_INTENT_ENV) != "1",
+                    reason=f"真跑集成测试 opt-in：设 {_INTENT_ENV}=1 启用"
+                           "（真跑不进缺省门，#139/df7⑥）")
 @pytest.mark.skipif(not sn.ngspice_available(),
                     reason="ngspice 未安装（RFAUTO_NGSPICE_BIN / tools/ngspice）")
 def test_real_xval_series_rl_two_port(tmp_path):
@@ -67,6 +81,9 @@ def test_real_xval_series_rl_two_port(tmp_path):
                            x["tool"]["version"]))
 
 
+@pytest.mark.skipif(os.environ.get(_INTENT_ENV) != "1",
+                    reason=f"真跑集成测试 opt-in：设 {_INTENT_ENV}=1 启用"
+                           "（真跑不进缺省门，#139/df7⑥）")
 @pytest.mark.skipif(not sn.ngspice_available(),
                     reason="ngspice 未安装（RFAUTO_NGSPICE_BIN / tools/ngspice）")
 def test_real_xval_series_rlc_one_port_with_subfloor_rewrite(tmp_path):

@@ -53,7 +53,7 @@
 - 参数语义：w_feed_mm=全臂 50Ω 馈线/连接线宽（nominal_width_mm 单源）；l_lpf_nh=LPF 臂串联电感（=Z0/ωc， 内核 element_values 单源，LumpedElement L 值——进元件值不进导体几何，qwt z_load_ohm 同口径豁免）； c_hpf_pf=HPF 臂串联电容（=1/(ωc·Z0)，对偶值同口径豁免）。f0=交越频率 fc（meta f0_ghz）；元件位置/断口长为版图常量（近端 4mm/断口 0.4mm，电小寄生段口径）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；全盒缘（馈线/T 条/臂带缘/元件断口缘）+ 端口 junction 精确入网（#198）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）；#347 输入段测量面-激励分离守卫
 - 冒烟现状：未冒烟（离线审计过，#212，test_diplexer_ridged_templates）；近似级别如实登记：①理想集总 LumpedElement（无寄生 L/C/自谐振——2.5GHz 下 nH/pF 级元件自谐振 ≫fc，PCB 集总现实口径如实登记）； ②元件间 50Ω 连接线/馈线 stub 电长度寄生不进闭式裁判（qwt 节间阶梯同口径，元件紧凑排布使寄生段电小）； ③≥2 阶对固有回损地板使其判读门不可判读——v1 取一阶 CR 对（20dB/dec 选择性为一阶固有）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

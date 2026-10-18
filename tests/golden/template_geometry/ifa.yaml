@@ -1,0 +1,73 @@
+schema: rfauto-template-geometry-golden/v1
+template: ifa
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.15
+- 2.65
+params:
+  ifa_arm_mm: 18.5515
+  ifa_w_mm: 1.0
+  feed_off_mm: 2.0
+status: ok
+script_sha256: 7594b021140243358f55f461b2bc72cd2a676202e3fb47715e7f7898daaebbdc
+csx:
+  n_primitives: 7
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: ifa_short
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: ifa_arm
+    kind: Metal
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 5c914373664a73be52bc19c47c500e0d01ad0ebff776cff5983d04e57655094b
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 204
+      min_gap_m: 0.00025
+    y:
+      n: 157
+      min_gap_m: 0.00025
+    z:
+      n: 33
+      min_gap_m: 0.000127
+  lines_sha256: 515ff839c051c7ff31b5202aeb5efce588ca146154aaa1ad411d922258e1b7c4
+ports:
+- 1

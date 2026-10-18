@@ -1,0 +1,140 @@
+schema: rfauto-template-geometry-golden/v1
+template: diplexer
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_feed_mm: 1.1134
+  l_lpf_nh: 3.1831
+  c_hpf_pf: 1.2732
+status: ok
+script_sha256: 0b219e23859a75b996ac2dd284790b4cf9d737b42c38834d439298852bd48160
+csx:
+  n_primitives: 27
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: diplexer
+    kind: Metal
+    n: 8
+    types:
+      '1': 8
+  - name: lpf_l
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: hpf_c
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 79e12cf953cda8cde4c5614528b6036d28103d96236223812f692a4332852e7b
+  bbox_m:
+  - -0.06
+  - -0.06
+  - 0.0
+  - 0.06
+  - 0.06
+  - 0.000508
+mesh:
+  lines:
+    x:
+      n: 137
+      min_gap_m: 0.0002
+    y:
+      n: 113
+      min_gap_m: 0.000278
+    z:
+      n: 13
+      min_gap_m: 0.000127
+  lines_sha256: 7d3d961df484606bd2aa4c33304fc89b8bebd568260350c32c6a96fc8a9867c1
+ports:
+- 1
+- 2
+- 3

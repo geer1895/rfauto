@@ -933,7 +933,7 @@ _exc.AddBox((-DOM_X, -DOM_Y, Z_EXC), (DOM_X, DOM_Y, Z_EXC), priority=0)
 # 修法=直构 nf2ff 类记闭合 6 面 + 全零镜像（严格等效原理：闭合面零镜像，
 # 入射场贡献经 extinct 定理自消）。**ge8b 批起底面剔除（K-6 立项销账）**：
 # directions 底面（z start）=False——①K-6 五面口径 vs ge6 六面 cpp 重放
-# 逐点全对齐（rel_diff≈4e-6，内部证据档），
+# 逐点全对齐（rel_diff≈4e-6，k6_ff_forensic 交叉复核归档），
 # 底面通量对上半球判读指标零贡献；②省底面记录 ~91GB/档（E 盘曾差 1.2GB
 # 零余量）；③ge8 踩坑10（nf2ff C++ 法向启发式 center 缺省出盒）的失真源
 # 头消除。面文件序随此为五面：E_1..E_4=侧+顶、无 E_5 底（判读消费 z 顶面

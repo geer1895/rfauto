@@ -109,12 +109,8 @@ def test_generator_pages_embed_live_counts(tmp_path: Path) -> None:
     assert manifest["calculators"] == check_numbers.count_calculators()
     assert manifest["templates"] == check_numbers.count_template_meta()
     assert manifest["anchors"] == check_numbers.count_anchors()
-    # tests 计数与生成器同源（门日志优先，#355 家法；无日志回退 collect）
-    log_total, _ = build_docs_pages._gate_log_test_total()
-    if log_total is not None:
-        assert manifest["tests"] == log_total
-    else:
-        assert manifest["tests"] == check_numbers.count_tests()[0]
+    # tests 计数与生成器同源（公开分发视图=collect 口径单源，无门日志依赖）
+    assert manifest["tests"] == check_numbers.count_tests()[0]
 
     cli_md = (tmp_path / "reference" / "cli.md").read_text(encoding="utf-8")
     assert f"共 **{manifest['cli']}** 条" in cli_md

@@ -60,7 +60,7 @@
 - 参数语义：slot_len_mm=主缝全长（x 向），slot_w_mm=缝宽（主缝与端枝同宽）， stub_len_mm=端枝长（±y 向，与主缝共边互联=单孔径），period_mm=单胞 周期，h_mm=基板厚；er/tan_d 走 substrate/nominal
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；缝缘精确入网 +屏缘缝 3+ 中点入网（#311）；NEAR≤最小屏缝/3 渲染期守卫（#266）； 孔洞补集盒逐面入网（#174 激励体积铁律）；全轴最小网格间距 ≥10µm
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；EC 自洽钉（shunt 并联 LC 峰=f0，shunt 串联 LC=f0 谷即拓扑反接）在 test_metasurface_lut； 真机带心修正（openEMS LUT 一轮）归 P3
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

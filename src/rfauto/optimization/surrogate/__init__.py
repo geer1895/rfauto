@@ -30,9 +30,14 @@ from rfauto.optimization.surrogate.prescreener import (
     ResponseSurfaceModel,
     SurrogatePrescreener,
 )
+from rfauto.optimization.surrogate.saas_gp import SaasArdSurrogate
 from rfauto.optimization.surrogate.sk_gbdt import GBDTSurrogate
 from rfauto.optimization.surrogate.smt_kriging import SMTKrigingSurrogate
 from rfauto.optimization.surrogate.smt_mfk import SMTMultiFidelitySurrogate
+from rfauto.optimization.surrogate.warped_kriging import (
+    WarpedKrigingSurrogate,
+    kumaraswamy_warp,
+)
 
 __all__ = [
     "PHYSICS_AUGMENTERS",
@@ -48,9 +53,12 @@ __all__ = [
     "ResponseSurfaceModel",
     "SMTKrigingSurrogate",
     "SMTMultiFidelitySurrogate",
+    "SaasArdSurrogate",
     "SurrogateModel",
     "SurrogatePrescreener",
     "SurrogateRegistry",
+    "WarpedKrigingSurrogate",
+    "kumaraswamy_warp",
     "loocv_rho",
     "pod_basis",
     "surrogate_registry",

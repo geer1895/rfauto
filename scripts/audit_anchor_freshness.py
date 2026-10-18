@@ -5,9 +5,10 @@ last_verified、陈旧锚无审计面——本脚本把"锚时效健康度"制�
 
 - 结构性缺验证=硬门（棘轮）：非 retired 且非 awaiting_data 的锚缺
   last_verified（或 last_verified.at 缺失/不可解析）计数超过
-  FRESH_RATCHET_MISSING（现值基线 50，2026-10-14 SENS-ANC 批 +10 顺移 45、
-  同日 ANCH-D 批 +5 顺移 50；上调理由=新锚真机首判前 last_verified 如实空，
-  runs/aurora_d_anchd/REPORT.md §三）→ rc=1。
+  FRESH_RATCHET_MISSING（现值基线 54，2026-10-14 SENS-ANC 批 +10 顺移 45、
+  同日 ANCH-D 批 +5 顺移 50；2026-10-18 aurora_e W3-S15 批 +4 顺移 54
+  （ms_lattice v2/tjunc×2/mline，新锚真机首判前 last_verified 如实空）；
+  判读报告归档 §二）→ rc=1。
   判定面是静态的：只随 anchors.yaml 增删而变，时间推移不触发——挂
   merge_preflight 常驻面不会因时间流逝打红无关席位。棘轮只收不放：
   计数下降（补验证/retire）后人工下调；上调=新锚不带验证入库，须在
@@ -54,7 +55,7 @@ REPORT_SCHEMA = "r8/anchor_freshness/1"
 #: 结构性缺验证棘轮（2026-10-11 现值基线实测冻结=35；2026-10-14 SENS-ANC 批
 #: +10 实测顺移=45；同日 ANCH-D 批 +5 实测顺移=50——新锚真机首判前 last_verified
 #: 如实空，验证随首判回填后人工下调；只收不放，见模块 docstring）。
-FRESH_RATCHET_MISSING = 50
+FRESH_RATCHET_MISSING = 54
 
 #: experimental 锚超龄报告阈值（天）——R8 #6 原文口径（"如 >30 天"）。
 EXPERIMENTAL_OVER_AGE_DAYS = 30

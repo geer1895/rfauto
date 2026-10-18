@@ -19,7 +19,8 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     n_samples = 1 + 2·n_params（名义点 + 每参数 ± 两点）。
 
 可算集判定（首批 18 + aurora72 A3-D 扩批 +22 + R8-KN 扩批 +4
-    + aurora_d SENS-ANC 复核扩批 +2 = 46）：
+    + aurora_d SENS-ANC 复核扩批 +2 = 46；aurora_e W4-S19 全覆盖批 +24
+    = 70/72，余 2 族如实留缺，见「W4-S19 全覆盖批」节）：
     首批 X7（2026-10-04）：25 个模板有确定性闭式目标量可扰动（19
     TEMPLATE_NOMINAL 原生 + 6 antenna2 设计式精确逆）；其中 9 个已有
     meta.yaml teaching.sensitivity_ranking（wilkinson/branchline/cpw/dipole/
@@ -74,6 +75,39 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     段头「alt 真机复标后可改」）且 campaign_capable=False（kgap 门未过），
     非稳定闭式恒等。
 
+    aurora_e W4-S19 全覆盖批（2026-10-18）：+24（teaching 首批 9 模板全部
+    入表转双源并存 + coax_waveguide_transition/ridged_wg/sma_launcher/
+    ring_resonator/qwt_multisection/coupled_bpf/combline/interdigital/
+    hairpin/hairpin_alt/pyramid_horn + 6 阵列族 patch_array_1x4/2x2/
+    series、patch_eep_1x4/2x2、mmwave_series_array），登记表 46→70/72。
+    ① **首批 9 teaching 模板入表**：W6 卡面字节钉前提按本批任务书裁决
+    解除（钉测试同批重生成——computed 幅值面上卡、teaching EP-5 名次保留
+    teaching CLI 面，W8 消费优先级 computed>teaching 不变）。
+    ② **hairpin/hairpin_alt 入表勘误（SENS-ANC 留缺判定复核）**：fake
+    裁判谐振式 _HAIRPIN_F0_CORR=1.0370（B2 pt4 真机标定常数，fake_adapter
+    单源，K_HELIX 同性质）本就是恒等式一部分——y=c_f0·c/(2·arm·√εeff)
+    名义回代 2.502/2.502（+0.1% 带内），「非稳定闭式」判定按 #222 树面
+    复核勘误。
+    ③ **列表参数管线扩展**：gaps_mm/widths_mm/lengths_mm 等正数值列表
+    按整体 ±1% 等比缩放扰动（弹性分母=ln(1.01)−ln(0.99)，与连续参数
+    相对步长同语义）；非数值列表（ms_array_NxN cell_map）不可扰动。
+    ④ **零值名义参数**（h_mm=0/tan_d_fill=0）：正域守卫不可扰动，登记
+    0 分并在 NON_PERTURBABLE 声明缘由（显式「不进恒等式」陈述，非缺失）。
+    ⑤ **如实留缺 2 族**：(a) sir_bpf——现行综合链
+    （render_c3.sir_bpf_design_from_order）l_high=7.1055 vs 注册名义
+    6.7818（旧链遗留档），单点谐振恒等式 tanθ1·tanθ2=Z_lo/Z_hi 名义回代
+    ~4.5GHz（+79%，远超舍入/口径漂移档）——登记前提「名义↔恒等式自洽」
+    失效，留缺待名义重注册后扩批；(b) ms_array_NxN——单元几何全部埋在
+    cell_map 非数值结构（list[list[dict]]），无标量几何自由度可扰动，
+    阵列级（n_x/n_y/period）无单点闭式目标量，全零登记无信息量，留缺。
+    ⑥ **名义档代际偏移（如实登记，不改名义）**：branchline arm_len 系
+    #252 诊断的 (εr+1)/2 薄线极限捷径遗留档（回代 2.116 vs meta 2.4，恒
+    等式取综合内核 XA-3 HJ 口径）；dipole 58mm 系 #194 冒烟板遗留（回代
+    2.584）；patch (34.9/50) 系注册期设计点（现行 synthesize_patch 缺省
+    设计点 32.08/40.92，回代 2.240）；interdigital/combline res_len 名义
+    早于现行 Δl 口径（回代 2.564/2.63）——弹性分数刻画的是恒等式局部
+    敏感性，名义档龄不改变分数有效性，逐模板 docstring 记录回代值。
+
 写入契约（runs/qw5_b32_capability_cards/design_note.md）：schema
 sensitivity_rankings/v1；运行时只读、写入只经人工 commit（anchors.yaml 家法）。
 本脚本只负责确定性重生成；source_run 指针指向本脚本（可重跑证据面）。
@@ -89,6 +123,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+import textwrap
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -97,8 +132,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = REPO_ROOT / "knowledge" / "sensitivity_rankings.yaml"
 
 SCHEMA = "sensitivity_rankings/v1"
-BATCH_ID = "aurora_d_sensanc_20261014"
-BATCH_DATE = "2026-10-14"
+BATCH_ID = "aurora_e_w4s19_fullcov_20261018"
+BATCH_DATE = "2026-10-18"
 METHOD = "central_finite_difference_elasticity"
 SOURCE_RUN = "scripts/sensitivity_rankings_build.py"
 REL_STEP = 0.01  # 连续参数相对步长 ±1%
@@ -108,13 +143,34 @@ DEFAULT_STACKUP = "rogers4350b_h0.508"
 # 常量出处同源：两块 0.508mm 板压合）
 STRIPLINE_B_MM = 1.016
 
-# teaching 面首批 9 模板（不入表；理由见模块 docstring「可算集判定」①-③：
-# 卡面字节钉冻结 + teaching 名次含 er/h。aurora72 批起新 teaching 卡与登记表
-# 双源并存——W8 消费优先级 computed > teaching，见 docstring「双源并存政策」）
+# teaching 卡并存集合（W4-S19 全覆盖批起这 9 模板同时持有 teaching EP-5
+# 名次卡与登记表幅值条目——W8 消费优先级 computed>teaching，teaching 名次
+# 保留 teaching CLI 面；不再作为入表排除面，历史排除语义见模块 docstring
+# 「aurora_e W4-S19 全覆盖批」节①）
 TEACHING_TEMPLATES = frozenset({
     "wilkinson", "branchline", "cpw", "dipole", "hairpin", "mline",
     "patch", "pyramid_horn", "ratrace",
 })
+
+# 零值名义参数（正域守卫不可扰动）：登记 0 分（「不进目标恒等式」显式
+# 陈述——schema 只收非负分数，0 分语义见 test 钉），缘由逐条声明
+NON_PERTURBABLE: dict[str, dict[str, str]] = {
+    "pyramid_horn": {
+        "h_mm": "h_mm 名义 0.0（空气填充无介质板，meta nominal_derivation）——"
+                "零值不可中心差分；er=1.0 可扰动但增益内核（horn_gain_direct）"
+                "不消费介质通道，弹性自然为 0",
+    },
+    "coax_waveguide_transition": {
+        "h_mm": "h_mm 名义 0.0（波导段无介质板）——零值不可中心差分",
+    },
+    "ridged_wg": {
+        "h_mm": "h_mm 名义 0.0（空气填充脊波导，内核=空气 PEC 壁口径）——"
+                "零值不可中心差分",
+    },
+    "sma_launcher": {
+        "tan_d_fill": "tan_d_fill 名义 0.0（无耗填充口径）——零值不可中心差分",
+    },
+}
 
 
 # ── 目标量定义（逐模板闭式恒等式；全部 live import 仓内内核）────────────────
@@ -765,10 +821,375 @@ def _t_xcheb_bpf4(p: dict[str, Any]) -> float:
     return C_MM_GHZ / (2.0 * perimeter * math.sqrt(ee))
 
 
+# ── aurora_e W4-S19 全覆盖批目标量（+24；teaching 9 全入表 + 15 补族；
+#    列表参数=整体 ±1% 等比缩放，零值参数走 NON_PERTURBABLE=0 分声明）────
+
+
+def _hairpin_f0_corr() -> float:
+    """hairpin 真机谐振修正 c_f0（fake_adapter 单源，K_HELIX 同性质常数）。"""
+    from rfauto.adapters.fake_adapter import _HAIRPIN_F0_CORR
+
+    return float(_HAIRPIN_F0_CORR)
+
+
+@_target("wilkinson")
+def _t_wilkinson(p: dict[str, Any]) -> float:
+    """y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(series_w))（XA-3 迭代序：臂线宽
+    自身 εeff，forward_media 单源；gysel/nway 同式——synthesize_wilkinson
+    综合链精确逆）。符号：darm_len→f0 降（−1）、dseries_w→εeff 升→f0 降
+    （负小量）；shunt_w（50Ω 馈线宽）不进臂谐振式（0）。名义回代
+    2.5062（+0.25%，round4 名义档带内）。"""
+    from rfauto.core.synthesis import forward_media
+
+    media = forward_media(p["series_w_mm"], _f0("wilkinson"), _stackup())
+    return C_MM_GHZ / (4.0 * p["arm_len_mm"] * math.sqrt(media.er_eff))
+
+
+@_target("branchline")
+def _t_branchline(p: dict[str, Any]) -> float:
+    """y=串联臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(series_w))（XA-3 迭代序 HJ
+    口径，synthesize_branchline 综合链同源；并臂 Z0 同构恒等式取串联臂
+    代表）。符号：darm_len→f0 降（−1）、dseries_w→负小量；shunt_w 不进
+    串联臂谐振式（0）。名义回代 2.1158（arm_len 名义系 #252 诊断的
+    (εr+1)/2 薄线极限捷径遗留档，meta 2.4——恒等式本身 HJ 单源）。"""
+    from rfauto.core.synthesis import forward_media
+
+    media = forward_media(p["series_w_mm"], _f0("branchline"), _stackup())
+    return C_MM_GHZ / (4.0 * p["arm_len_mm"] * math.sqrt(media.er_eff))
+
+
+@_target("cpw")
+def _t_cpw(p: dict[str, Any]) -> float:
+    """y=CPWG 段 Z0（底接地共形映射 _cpwg_ri 单源——synthesize_cpw_model
+    #193 同口径参照系）。符号：dw→Z0 降、dgap→Z0 升、der/dh（substrate）
+    经接地介质板映射进入；line_len 不进 Z0 恒等式（0）。名义回代
+    Z0=50.000（mline/cpw 名义 round4 带内）。"""
+    from rfauto.core.calc_families.rf_line import _cpwg_ri
+
+    er, h = _substrate("cpw")
+    return float(_cpwg_ri(p["w_mm"], p["gap_mm"], h, er)[1])
+
+
+@_target("mline")
+def _t_mline(p: dict[str, Any]) -> float:
+    """y=微带 Z0（skrf HJ 正向 forward_z0 单源——XC-W 唯一线宽计算源）。
+    符号：dw→Z0 降（HJ 域弹性 ~0.6）、der/dh（substrate）正向通道；
+    line_len 不进 Z0 恒等式（0）。名义回代 Z0=49.963（round4 带内）。"""
+    return float(_z0_of(p["w_mm"], _f0("mline"))[0])
+
+
+@_target("dipole")
+def _t_dipole(p: dict[str, Any]) -> float:
+    """y=半波振子设计式精确逆 f=c/(2·L)（自由空间 λ/2 闭式，
+    synthesize_dipole_model 同式）。符号：dL→f 降（−1）；
+    dipole_w/gap 不进 λ/2 恒等式（0）。名义回代 2.5844（58mm 系 #194
+    冒烟板遗留名义档，meta 2.4——恒等式本身精确）。"""
+    return C_MM_GHZ / (2.0 * float(p["dipole_len_mm"]))
+
+
+@_target("hairpin")
+def _t_hairpin(p: dict[str, Any]) -> float:
+    """y=臂 λg/2 谐振×真机修正 f0=c_f0·c/(2·arm_len·√εeff(w))
+    （hairpin_arm_len_mm 的精确逆×_HAIRPIN_F0_CORR=1.0370——B2 pt4 真机
+    标定常数单源，fake 裁判谐振式同链；U 弯+开路端等效缩短 +3.7%）。
+    符号：darm_len→f0 降（−1）、dw→εeff 通道；order/arm_gap/gap/tap_frac
+    不进单臂谐振式（0——耦合缝/抽头属 C13+KJ 链）。名义回代 2.502
+    （+0.1% round4 带内）。"""
+    eps = _eps_eff_of(p["w_mm"], _f0("hairpin"))
+    return _hairpin_f0_corr() * C_MM_GHZ / (
+        2.0 * p["arm_len_mm"] * math.sqrt(eps))
+
+
+@_target("hairpin_alt")
+def _t_hairpin_alt(p: dict[str, Any]) -> float:
+    """y=臂 λg/2 谐振×真机修正（同 hairpin：c_f0·c/(2·arm·√εeff)；alt
+    与 v1 共享同一臂谐振恒等式与 c_f0 常数——SENS-ANC「非稳定闭式」留缺
+    判定按 #222 树面复核勘误：c_f0=1.0370 已是真机标定单源常数）。
+    符号语义同 hairpin。名义回代 2.502（+0.1% 带内）。"""
+    eps = _eps_eff_of(p["w_mm"], _f0("hairpin_alt"))
+    return _hairpin_f0_corr() * C_MM_GHZ / (
+        2.0 * p["arm_len_mm"] * math.sqrt(eps))
+
+
+@_target("patch")
+def _t_patch(p: dict[str, Any]) -> float:
+    """y=贴片腔模谐振 f0=c/(2·(L+2ΔL)·√εeff(W))（synthesize_patch 设计式
+    L=c/(2f0√εeff)−2ΔL 的精确逆；ΔL=patch_fringing_delta_l、εeff=HJ，
+    弱色散 @meta f0 取值）。符号：dL→f0 降（<1，ΔL 稀释）、dW 经
+    εeff+ΔL 双通道、der/dh（substrate）经 εeff；feed_offset 不进谐振式
+    （0——馈点属阻抗匹配面）。名义回代 2.240（名义 (34.9/50) 系注册期
+    设计点，现行 synthesize_patch 缺省设计点 32.08/40.92——恒等式同链）。"""
+    er, h = _substrate("patch")
+    from rfauto.core.synthesis import Stackup, forward_z0, patch_fringing_delta_l
+
+    f0m = _f0("patch")
+    _z, eps = forward_z0(float(p["patch_w_mm"]), f0m,
+                         Stackup("patch_sens", float(er), float(h)))
+    dl = patch_fringing_delta_l(
+        float(p["patch_w_mm"]) * 1e-3, float(h) * 1e-3, float(eps)) * 1e3
+    return C_MM_GHZ / (2.0 * (float(p["patch_len_mm"]) + 2.0 * dl)
+                       * math.sqrt(float(eps)))
+
+
+@_target("ratrace")
+def _t_ratrace(p: dict[str, Any]) -> float:
+    """y=环谐振 f0=1.5·c/(2π·r_ring·√εeff(w_ring))（synthesize_ratrace
+    周长恒等式 C=1.5λg、R=C/(2π) 的精确逆；环线宽自身 εeff）。
+    符号：dr_ring→f0 降（−1）、dw_ring→负小量；w_feed 不进环谐振式
+    （0）。名义回代 2.4976（round4 带内）。"""
+    eps = _eps_eff_of(p["w_ring_mm"], _f0("ratrace"))
+    return 1.5 * C_MM_GHZ / (2.0 * math.pi * float(p["r_ring_mm"])
+                             * math.sqrt(eps))
+
+
+@_target("pyramid_horn")
+def _t_pyramid_horn(p: dict[str, Any]) -> float:
+    """y=喇叭增益线性 G=(4π/λ²)·A·B·e（Orfanidis (21.4.2)/(21.4.3)，
+    horn_gain_direct 单源正算 @meta f0=10GHz——综合目标 15dB 恒等）。
+    符号：da1/db1（口径）主通道、da/db 经 σa=a1/a/σb=b1/b 进效率 e、
+    dl_flare 经几何 σ 关系；l_feed 不进增益式（0）；er 可扰动但内核
+    空气填充口径不消费（0）；h_mm 零值不可扰动（NON_PERTURBABLE=0 分）。
+    名义回代 G=31.6228（15.000dB 逐位）。"""
+    from rfauto.core.horn_synthesis import horn_gain_direct
+
+    out = horn_gain_direct(
+        float(p["a_mm"]), float(p["b_mm"]), float(p["a1_mm"]),
+        float(p["b1_mm"]), float(p["l_flare_mm"]), _f0("pyramid_horn"))
+    return float(out["gain_linear"])
+
+
+@_target("coax_waveguide_transition")
+def _t_coax_waveguide_transition(p: dict[str, Any]) -> float:
+    """y=波导段 TE10 截止 fc10=c0/(2·a·√εr)（meta nominal_derivation 同式：
+    fc10=c0/2a=6.557140GHz 审计钉；er 名义 1.0 空气，扰动展示介质通道）。
+    符号：da→fc 降（−1）、der→−1/2；l_wg/wg_t/pin_*/port_h/backshort
+    （探针/背短路段版图量）不进截止式（0）；h_mm 零值
+    （NON_PERTURBABLE=0 分）。名义回代 6.5571 逐位。"""
+    return C_MM_GHZ / (2.0 * float(p["a_mm"])
+                       * math.sqrt(float(p["er"])))
+
+
+@_target("ridged_wg")
+def _t_ridged_wg(p: dict[str, Any]) -> float:
+    """y=脊波导 TE10 主模截止 fc=c0·k_c/(2π)（core/ridged_waveguide.
+    cutoff_kc 单源：谐振函数 tan(k·s/2)·tan(k·l_side)=R 二分求根——
+    ridged_wg_design_params 反解链正向，名义回代 fc=4.99998GHz 逐位）。
+    符号：da/db/ds/dd 经横截面谐振条件进入（dd→fc 降主通道）；l_ridge/
+    l_feed 不进截止式（0）；er 空气填充口径不消费（0）；h_mm 零值
+    （NON_PERTURBABLE=0 分）。"""
+    from rfauto.core.ridged_waveguide import RidgedWaveguide, cutoff_kc
+
+    wg = RidgedWaveguide(
+        float(p["a_mm"]) * 1e-3, float(p["b_mm"]) * 1e-3,
+        float(p["s_mm"]) * 1e-3, float(p["d_mm"]) * 1e-3, double=False)
+    return 299792458.0 * float(cutoff_kc(wg)) / (2.0 * math.pi) / 1e9
+
+
+@_target("sma_launcher")
+def _t_sma_launcher(p: dict[str, Any]) -> float:
+    """y=同轴段 Z=(60/√εr_fill)·ln(r_o/r_i)（反焊盘同轴口径同式——
+    via 族设计规则；名义回代 Z=50.014 逐位口径）。符号：dr_o/dr_i 对数
+    比值通道（弹性=1/ln(r_o/r_i)≈4.81 同向）、der_fill→−1/2；
+    w_msl（微带段独立维）/shell_*/pin_lay/line_len/port_len 不进同轴
+    恒等式（0）；tan_d_fill 零值（NON_PERTURBABLE=0 分）。"""
+    return 60.0 / math.sqrt(float(p["er_fill"])) * math.log(
+        float(p["r_o_mm"]) / float(p["r_i_mm"]))
+
+
+@_target("ring_resonator")
+def _t_ring_resonator(p: dict[str, Any]) -> float:
+    """y=环基模谐振 f0=c/(2π·r_mean·√εeff(w))（闭环周长=λg 恒等式，
+    meta nominal_derivation/test_ring_resonator_template 同式——W8 回退卡
+    字节钉前提按本批任务书解除，钉测试同批重生成）。符号：dr_mean→f0 降
+    （−1）、dw→εeff 通道；gap/feed_w 不进环谐振式（0）。名义回代 2.4976
+    （round4 带内；W6 回退卡面升级为 computed 同批）。"""
+    eps = _eps_eff_of(p["w_mm"], _f0("ring_resonator"))
+    return C_MM_GHZ / (2.0 * math.pi * float(p["r_mean_mm"]) * math.sqrt(eps))
+
+
+@_target("qwt_multisection")
+def _t_qwt_multisection(p: dict[str, Any]) -> float:
+    """y=首节 λ/4 谐振 f0=c/(4·L_1·√εeff(w_1))（synthesize_multisection_
+    quarter_wave 各节 λ/4 恒等式取首节代表——各节同构恒等式逐一在档，
+    branchline_2sect 主线节先例同类；widths_mm/lengths_mm 列表按整体
+    ±1% 等比缩放扰动，首元弹性=整表同缩口径）。符号：dlengths→f0 降
+    （−1）、dwidths→εeff 负小量；feed_w 不进节谐振式（0）、z_load 不进
+    谐振式（0——变换比属阻抗面）。名义回代 2.4976（round4 带内）。"""
+    eps = _eps_eff_of(float(p["widths_mm"][0]), _f0("qwt_multisection"))
+    return C_MM_GHZ / (4.0 * float(p["lengths_mm"][0]) * math.sqrt(eps))
+
+
+@_target("coupled_bpf")
+def _t_coupled_bpf(p: dict[str, Any]) -> float:
+    """y=谐振器 λ/2 谐振 f0=c/(2·(res_len+Δl_end+Δl_mid)·√εeff_gm)
+    （coupled_bpf_design_from_order 同链精确逆：εeff_gm=全节 KJ 偶/奇模
+    平均 εeff 的均值、Δl=开路端修正 @端/中节宽；widths_mm/gaps_mm 列表
+    整体 ±1% 等比缩放）。符号：dres_len→f0 降（≈−1 族）、dwidths/dgaps
+    经 εeff_gm+Δl 通道；order/w_feed/feed_len 不进谐振式（0）。名义回代
+    2.4997（res_len 名义=现行链 round4 逐位）。"""
+    from rfauto.adapters.oe_templates.render_c3 import _open_end_delta_mm
+    from rfauto.core.coupled_microstrip import coupled_microstrip_even_odd_ohm
+
+    er, h = _substrate("coupled_bpf")
+    f0m = _f0("coupled_bpf")
+    widths = [float(v) for v in p["widths_mm"]]
+    gaps = [float(v) for v in p["gaps_mm"]]
+    aves = []
+    for w_i, g_i in zip(widths, gaps, strict=True):
+        _ze, _zo, e_e, e_o = coupled_microstrip_even_odd_ohm(
+            w_i, g_i, f0m, er, h)
+        aves.append(0.5 * (e_e + e_o))
+    ere_gm = sum(aves) / len(aves)
+    dl_e = _open_end_delta_mm(widths[0], f0m, er, h)
+    dl_m = _open_end_delta_mm(widths[1], f0m, er, h)
+    return C_MM_GHZ / (2.0 * (float(p["res_len_mm"]) + dl_e + dl_m)
+                       * math.sqrt(ere_gm))
+
+
+@_target("combline")
+def _t_combline(p: dict[str, Any]) -> float:
+    """y=梳状谐振器谐振 f0（render_c3.combline_design_from_order 谐振条件
+    cot θr=ω0·C·Z_r 与 θr=ω0·res_len·√εeff/c 联立的唯一正根，εeff/Z_r
+    弱色散 @meta f0 固定、brentq 型二分求根；C 装载电容缩短恒等式单源）。
+    符号：dres_len→f0 降（反比主通道）、dc_load→f0 降（装载越强谐振越
+    高的电长度通道）、dw→εeff/Z_r 通道；order/gaps/feed_len 不进单棒
+    谐振式（0）。名义回代 2.63（res_len 名义早于现行 Δl 口径档，C 名义
+    round4 逐位）。"""
+    from rfauto.adapters.oe_templates.render_c3 import _c3_single_line
+
+    er, h = _substrate("combline")
+    f0m = _f0("combline")
+    z_r, ere = _c3_single_line(float(p["w_mm"]), f0m, er, h)
+    c_f = float(p["c_load_pf"]) * 1e-12
+    res_len = float(p["res_len_mm"])
+
+    def _g(f_ghz: float) -> float:
+        theta = 2.0 * math.pi * f_ghz * res_len * math.sqrt(ere) / C_MM_GHZ
+        return (1.0 / math.tan(theta)
+                - 2.0 * math.pi * f_ghz * 1e9 * c_f * z_r)
+
+    return _bisect_root(_g, 0.3, 0.9 * C_MM_GHZ
+                        / (4.0 * res_len * math.sqrt(ere)))
+
+
+def _bisect_root(fn: Callable[[float], float], lo: float, hi: float,
+                 iters: int = 200) -> float:
+    """确定性二分求根（目标量级联专用；fn 必须在 (lo,hi) 恰一变号根）。"""
+    f_lo, f_hi = fn(lo), fn(hi)
+    if not (f_lo * f_hi < 0.0):
+        raise ValueError(f"二分括号无变号根：f({lo})={f_lo}, f({hi})={f_hi}")
+    for _ in range(iters):
+        mid = 0.5 * (lo + hi)
+        f_mid = fn(mid)
+        if f_lo * f_mid <= 0.0:
+            hi = mid
+        else:
+            lo, f_lo = mid, f_mid
+    return 0.5 * (lo + hi)
+
+
+@_target("interdigital")
+def _t_interdigital(p: dict[str, Any]) -> float:
+    """y=交指棒 λ/4 谐振 f0=c/(4·(res_len+Δl)·√εeff(w))（render_c3.
+    interdigital_design_from_order 同式精确逆：λ/4 短路棒电长−开路端 Δl，
+    棒=50Ω 单线 HJ）。符号：dres_len→f0 降（≈−1 族）、dw 经 εeff+Δl
+    通道；order/gaps/feed_len 不进单棒谐振式（0）。名义回代 2.564
+    （res_len 名义早于现行 Δl 口径档，gaps 名义现行链 round4 逐位）。"""
+    from rfauto.adapters.oe_templates.render_c3 import (
+        _c3_single_line,
+        _open_end_delta_mm,
+    )
+
+    er, h = _substrate("interdigital")
+    f0m = _f0("interdigital")
+    _z_r, ere = _c3_single_line(float(p["w_mm"]), f0m, er, h)
+    dl = _open_end_delta_mm(float(p["w_mm"]), f0m, er, h)
+    return C_MM_GHZ / (4.0 * (float(p["res_len_mm"]) + dl) * math.sqrt(ere))
+
+
+@_target("patch_array_1x4")
+def _t_patch_array_1x4(p: dict[str, Any]) -> float:
+    """y=单元谐振（array_resonance_ghz 精确逆：Balanis Ch.14 传输线模型
+    f0=c/(2(L+2ΔL)√εeff(W))，准静态 εeff/ΔL 无频率项故逆式闭合；C2 三
+    模板单元同型、互联/馈电变换树不改一阶谐振——ms_ring_patch 单元级
+    口径先例同类）。符号：delem_len→f0 降（<1，ΔL 稀释）、delem_w 经
+    εeff+ΔL 通道；elem_feed/spacing/feed_w/q_w/q_len（阵列版图量）不进
+    单元谐振式（0）。"""
+    from rfauto.adapters.fake_adapter import array_resonance_ghz
+
+    er, h = _substrate("patch_array_1x4")
+    return float(array_resonance_ghz("patch_array_1x4", p, er=er, h_mm=h))
+
+
+@_target("patch_array_2x2")
+def _t_patch_array_2x2(p: dict[str, Any]) -> float:
+    """y=单元谐振（同 patch_array_1x4：array_resonance_ghz 精确逆，单元
+    同型）。符号语义同 patch_array_1x4（spacing_x/spacing_y 为阵列版图
+    量=0）。"""
+    from rfauto.adapters.fake_adapter import array_resonance_ghz
+
+    er, h = _substrate("patch_array_2x2")
+    return float(array_resonance_ghz("patch_array_2x2", p, er=er, h_mm=h))
+
+
+@_target("patch_array_series")
+def _t_patch_array_series(p: dict[str, Any]) -> float:
+    """y=单元谐振（同 patch_array_1x4：array_resonance_ghz 精确逆；串馈
+    互联 link_len 不改一阶单元谐振=0）。符号语义同 patch_array_1x4。"""
+    from rfauto.adapters.fake_adapter import array_resonance_ghz
+
+    er, h = _substrate("patch_array_series")
+    return float(array_resonance_ghz("patch_array_series", p, er=er, h_mm=h))
+
+
+@_target("patch_eep_1x4")
+def _t_patch_eep_1x4(p: dict[str, Any]) -> float:
+    """y=单元谐振 f0=c/(2(L+2·dl)·√εeff)（array_elem_len_mm 设计式精确逆，
+    ee/dl 走 _array_patch_eps_dl 准静态单源——EEP 单元与 C2 阵列单元同型
+    同链，fake _EEP_TEMPLATES 通道不含 array_resonance_ghz 成员门故直调
+    同源算术）。符号：delem_len→f0 降（<1，ΔL 稀释）、delem_w 经 εeff+ΔL
+    通道；elem_feed/spacing/feed_w（EEP 版图量）不进单元谐振式（0）。"""
+    from rfauto.adapters.oe_templates.closedform import _array_patch_eps_dl
+
+    er, h = _substrate("patch_eep_1x4")
+    ee, dl = _array_patch_eps_dl(float(p["elem_w_mm"]), er, h)
+    return C_MM_GHZ / (2.0 * (float(p["elem_len_mm"]) + 2.0 * dl)
+                       * math.sqrt(ee))
+
+
+@_target("patch_eep_2x2")
+def _t_patch_eep_2x2(p: dict[str, Any]) -> float:
+    """y=单元谐振（同 patch_eep_1x4：array_elem_len_mm 精确逆、
+    _array_patch_eps_dl 单源；EEP 2x2 单元同型）。符号语义同
+    patch_eep_1x4（spacing_x/spacing_y 为版图量=0）。"""
+    from rfauto.adapters.oe_templates.closedform import _array_patch_eps_dl
+
+    er, h = _substrate("patch_eep_2x2")
+    ee, dl = _array_patch_eps_dl(float(p["elem_w_mm"]), er, h)
+    return C_MM_GHZ / (2.0 * (float(p["elem_len_mm"]) + 2.0 * dl)
+                       * math.sqrt(ee))
+
+
+@_target("mmwave_series_array")
+def _t_mmwave_series_array(p: dict[str, Any]) -> float:
+    """y=单元谐振 f0=patch_resonance_hj_ghz(L,W,er,h)（C10d 串馈阵 fake
+    裁判 _mmwave_series_sparams 同源：Hammerstad 准静态式逆式闭合；er/h
+    为名义参数——毫米波板，禁用全局 stackup 缺省 #154 同名同语义）。
+    符号：delem_len→f0 降（<1，ΔL 稀释）、delem_w/der/dh 经 εeff+ΔL
+    通道；n_elem/link_len/feed_w/feed_margin/load_r（阵列/互联版图量）
+    不进单元谐振式（0）；tan_d 不进准静态谐振式（0）。"""
+    from rfauto.core.symbolic_fit import patch_resonance_hj_ghz
+
+    return float(patch_resonance_hj_ghz(
+        float(p["elem_len_mm"]), float(p["elem_w_mm"]),
+        float(p["er"]), float(p["h_mm"])))
+
+
 # 可算集（字母序）：首批 18 + aurora72 A3-D 扩批 22 + R8-KN 扩批 4
-# + SENS-ANC 复核扩批 2 = 46（模块 docstring 判定）
-COMPUTABLE_TEMPLATES: tuple[str, ...] = tuple(sorted(
-    name for name in _TARGETS if name not in TEACHING_TEMPLATES))
+# + SENS-ANC 复核扩批 2 + W4-S19 全覆盖批 24 = 70/72（模块 docstring 判定；
+# W4-S19 起 teaching 集合不再排除入表、注册=全部 _TARGETS；
+# 留缺 2 族=sir_bpf/ms_array_NxN，缘由见 docstring「W4-S19 全覆盖批」节⑤）
+COMPUTABLE_TEMPLATES: tuple[str, ...] = tuple(sorted(_TARGETS))
 
 
 # ── 有限差分弹性管线 ─────────────────────────────────────────────────────────
@@ -776,17 +1197,33 @@ COMPUTABLE_TEMPLATES: tuple[str, ...] = tuple(sorted(
 def elasticity(target: Callable[[dict[str, Any]], float],
                params: dict[str, Any], param: str,
                rel: float = REL_STEP) -> float:
-    """单参数归一化弹性 |Δln y/Δln x|（中心差分；整数参数 ±1 单位步）。"""
+    """单参数归一化弹性 |Δln y/Δln x|（中心差分；整数参数 ±1 单位步；
+    正数列表参数整体 ±rel 等比缩放——弹性分母=ln(1+rel)−ln(1−rel)，
+    与连续参数相对步长同语义，W4-S19 批扩展）。"""
     x = params[param]
-    if isinstance(x, bool) or not isinstance(x, (int, float)):
+    if isinstance(x, bool) or not isinstance(x, (int, float, list)):
         raise TypeError(f"参数 {param}={x!r} 非数值，不可扰动")
-    is_int = isinstance(x, int)
-    x_lo = x - 1 if is_int else x * (1.0 - rel)
-    x_hi = x + 1 if is_int else x * (1.0 + rel)
-    if x_lo <= 0.0 or x_hi <= 0.0:
-        raise ValueError(f"参数 {param} 扰动越正域：{x_lo}..{x_hi}")
-    p_lo = dict(params, **{param: x_lo})
-    p_hi = dict(params, **{param: x_hi})
+    if isinstance(x, list):
+        vals = []
+        for v in x:
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                raise TypeError(f"参数 {param} 含非数值元素 {v!r}，不可扰动")
+            if not (float(v) > 0.0):
+                raise ValueError(f"参数 {param} 含非正元素 {v!r}，越正域")
+            vals.append(float(v))
+        scale_lo, scale_hi = 1.0 - rel, 1.0 + rel
+        p_lo = dict(params, **{param: [v * scale_lo for v in vals]})
+        p_hi = dict(params, **{param: [v * scale_hi for v in vals]})
+        denom = math.log(scale_hi) - math.log(scale_lo)
+    else:
+        is_int = isinstance(x, int)
+        x_lo = x - 1 if is_int else x * (1.0 - rel)
+        x_hi = x + 1 if is_int else x * (1.0 + rel)
+        if x_lo <= 0.0 or x_hi <= 0.0:
+            raise ValueError(f"参数 {param} 扰动越正域：{x_lo}..{x_hi}")
+        p_lo = dict(params, **{param: x_lo})
+        p_hi = dict(params, **{param: x_hi})
+        denom = math.log(x_hi) - math.log(x_lo)
     y_lo = float(target(p_lo))
     y_hi = float(target(p_hi))
     for y in (y_lo, y_hi):
@@ -794,18 +1231,42 @@ def elasticity(target: Callable[[dict[str, Any]], float],
             raise ValueError(
                 f"目标量越正域（{param}: y_lo={y_lo}, y_hi={y_hi}）——"
                 "禁emit坏数据，先核目标量定义")
-    return abs((math.log(y_hi) - math.log(y_lo))
-               / (math.log(x_hi) - math.log(x_lo)))
+    return abs((math.log(y_hi) - math.log(y_lo)) / denom)
+
+
+def _first_sentence(doc: str | None) -> str:
+    """docstring → 首个语义句（W8-S36，审查波 3 P2-1 截断修复）。
+
+    源 _target_* docstring 按行宽折行，原 ``splitlines()[0]`` 只取首
+    物理行，把跨行首句拦腰截断（70 族实测 51 族 target_quantity 括号
+    不配对/句子中断，后半句丢失）。语义单元判定：dedent 归一缩进后
+    取到第一个『。』（含）为止；无『。』取到首个空行；再无则整段。
+    句内折行换行一律归一为单空格（登记表单行值，确定性逐位可复现）。
+    """
+    if not doc:
+        return ""
+    text = textwrap.dedent(doc).strip()
+    for i, ch in enumerate(text):
+        if ch == "。":
+            return " ".join(text[:i + 1].split())
+    head = text.split("\n\n", 1)[0]
+    return " ".join(head.split())
 
 
 def build_entry(template: str) -> dict[str, Any]:
     """单模板登记条目（method/n_samples/source_run/registered_at+ranking）。"""
     target = _TARGETS[template]
     params = _params(template)
-    ranking = [
-        {"param": name, "score": round(elasticity(target, params, name), 6)}
-        for name in sorted(params)
-    ]
+    skipped = NON_PERTURBABLE.get(template, {})
+    ranking = []
+    for name in sorted(params):
+        if name in skipped:
+            # 零值名义参数：正域守卫不可扰动——0 分=「不进目标恒等式」
+            # 显式陈述（NON_PERTURBABLE 带缘由），非缺失非编造
+            ranking.append({"param": name, "score": 0.0})
+            continue
+        ranking.append({"param": name,
+                        "score": round(elasticity(target, params, name), 6)})
     # 登记表内按 R9 同款键序预排（-score, param）——人读序=normalize 后序
     ranking.sort(key=lambda item: (-item["score"], item["param"]))
     return {
@@ -815,8 +1276,7 @@ def build_entry(template: str) -> dict[str, Any]:
         "seed": None,
         "source_run": SOURCE_RUN,
         "registered_at": BATCH_DATE,
-        "target_quantity": target.__doc__.strip().splitlines()[0]
-        if target.__doc__ else "",
+        "target_quantity": _first_sentence(target.__doc__),
         "ranking": ranking,
     }
 
@@ -836,21 +1296,25 @@ def render_yaml(data: dict[str, dict[str, Any]]) -> str:
         "generated_by": SOURCE_RUN,
         "notes": (
             "敏感性排序登记表（X7 数据面批 + aurora72 A3-D 扩批 + R8-KN 扩批"
-            "+ aurora_d SENS-ANC 复核扩批；W8 桥消费端）。逐模板 "
-            "score=|Δln y/Δln x| 中心差分弹性：连续参数 ±1%、整数参数 ±1 "
-            "单位步；目标量 y=模板核心闭式输出（逐模板 target_quantity 与 "
-            "scripts/sensitivity_rankings_build.py _target_* docstring）。"
-            "全确定性零随机零仿真（seed=null）；运行时只读、写入只经人工 "
-            "commit（anchors.yaml 家法）。首批 9 模板（wilkinson/branchline/"
-            "cpw/dipole/hairpin/mline/patch/pyramid_horn/ratrace）不入表"
-            "（卡面字节钉前提）；aurora72 批起其余模板可 teaching 卡+登记表"
-            "双源并存——W8 消费优先级 computed>teaching，两源口径不同不混写。"
-            "R8-KN 扩批（2026-10-13）+4（diplexer/schiffman/msl_cpw/"
-            "msl_siw_taper，段参数/内核相位单点闭式，marchand/"
-            "msl_slot_transition 先例同类）；SENS-ANC 复核扩批（2026-10-14）"
-            "+2（varactor_bpf/xcheb_bpf4——装载谐振/开路环周长纯闭式链，"
-            "R8-KN「缺推导锚」组 #222 树面复核勘误，名义回代 2.49999/"
-            "2.49999）；其余族不可扩判定与原因见模块 docstring「可算集判定」。"
+            "+ aurora_d SENS-ANC 复核扩批 + aurora_e W4-S19 全覆盖批；W8 桥"
+            "消费端）。逐模板 score=|Δln y/Δln x| 中心差分弹性：连续参数 "
+            "±1%、整数参数 ±1 单位步、正数列表参数（gaps/widths/lengths）"
+            "整体 ±1% 等比缩放；目标量 y=模板核心闭式输出（逐模板 "
+            "target_quantity 与 scripts/sensitivity_rankings_build.py "
+            "_target_* docstring）。全确定性零随机零仿真（seed=null）；"
+            "运行时只读、写入只经人工 commit（anchors.yaml 家法）。"
+            "W4-S19 全覆盖批（2026-10-18）+24=70/72：teaching 首批 9 模板"
+            "全部入表转双源并存（W8 消费优先级 computed>teaching，teaching "
+            "EP-5 名次保留 teaching CLI 面；W6 卡面字节钉同批解除重生成）；"
+            "hairpin/hairpin_alt 入表（c_f0=1.0370 真机标定常数系恒等式一"
+            "部分，SENS-ANC 留缺判定 #222 复核勘误）；列表参数管线扩展+"
+            "零值名义参数 NON_PERTURBABLE 0 分声明。如实留缺 2 族：sir_bpf"
+            "（l_high 名义=旧综合链遗留档，现行链恒等式名义回代 +79% 失"
+            "自洽，留缺待名义重注册）、ms_array_NxN（单元几何埋在 cell_map"
+            " 非数值结构、无标量几何自由度）。名义档代际偏移逐模板 "
+            "docstring 如实登记（branchline/dipole/patch/interdigital/"
+            "combline——弹性分数刻画恒等式局部敏感性，名义档龄不改分数"
+            "有效性）。其余历史批判定与原因见模块 docstring「可算集判定」。"
         ),
         "templates": data,
     }

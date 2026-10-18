@@ -21,14 +21,16 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=7 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | r_ring_mm | 1.5λg 恒等式 |∂lnf0/∂lnR|=1（精确） |
-| 2 | er | f0 ∝ 1/sqrt(εeff) 恒等式 |
-| 3 | w_ring_mm | 环宽经 εeff(w_ring) 进入周长（repo 综合链：λg 取环线宽自身 εeff） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | r_ring_mm | 1.0 |
+| 2 | w_ring_mm | 0.033767 |
+| 3 | w_feed_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -50,7 +52,7 @@
 
 - 参数语义：w_ring_mm=环线宽（√2·Z0=70.7Ω 口径），w_feed_mm=四端口馈线宽（50Ω）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；环带逐网格行栅格化（零 #198 台阶误差）+ 馈线带缘精确入网；渲染半径 = 物理 R / k(BASE)（ratrace_ring_mesh_k：0.2/0.4mm 两锚 1.0877/1.1654 对 (k−1) 幂律内插、域外 clamp；HFSS 仲裁 2.465GHz 背书 MESH_ARTIFACT；柱坐标 k=1 为根治首选 #219/#232）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

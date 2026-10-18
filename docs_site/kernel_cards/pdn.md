@@ -163,7 +163,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `docs/research_expansion_20260926.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
+- `docs/research_expansion_20260926.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
 
 测试面（tests/unit 引用扫描，机读；合计 **259** 个 test 函数）：
 
@@ -187,5 +187,5 @@ XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_
 - [架构与方法论（锚体系/判据先行）](../architecture/methodology.md)
 - [分层架构](../explanation/layered-architecture.md)
 - [计算器注册表](../reference/calculators.md)——本内核的注册状态见元数据表
-- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pce](pce.md)、[cascade](cascade.md)
+- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pce](pce.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[hairpin](hairpin.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[gysel_core](gysel_core.md)、[coupled_line_bpf](coupled_line_bpf.md)
 

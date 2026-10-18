@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -32,11 +33,17 @@ def _live_anchor_set():
     return load_anchors()
 
 
+_CLOSURE_SOURCES = ("closedform", "fdref", "lit")
+
+
 def _classify(anchor_id: str, template_family: list[str]) -> str:
     if any(str(f).startswith(_SYSTEM_FAMILIES) for f in template_family):
         return "system"
-    if any(anchor_id.endswith(f".{src}-v1")
-           for src in ("closedform", "fdref", "lit")):
+    # 来源段判别（与版本无关：W3-S15 批 ms_lattice.period v2 接替版实证
+    # 旧 endswith("-v1") 写法把 -vN+1 analytic 锚误判 component——规则
+    # 本意是"来源段 closedform/fdref/lit→closure"，段级正则修正）
+    if any(re.search(rf"\.{src}-v\d+$", anchor_id)
+           for src in _CLOSURE_SOURCES):
         return "closure"
     return "component"
 
@@ -46,7 +53,7 @@ def test_live_registry_all_anchors_have_valid_layer() -> None:
 
     anchor_set = _live_anchor_set()
     assert len(anchor_set.load_errors) == 0
-    assert len(anchor_set) == 75  # ANCH-D 批 70→75（SENS-ANC 60→70 沿革，store test 同钉）
+    assert len(anchor_set) == 79  # W3-S15 批 75→79（ANCH-D 70→75 沿革，store test 同钉）
     for rec in anchor_set.records:
         assert rec.layer in ANCHOR_LAYERS, (
             f"{rec.anchor_id}: layer={rec.layer!r} 越界/缺失")
@@ -62,8 +69,8 @@ def test_layer_classification_rule_and_non_degenerate() -> None:
         assert rec.layer == expect, (
             f"{rec.anchor_id}: layer={rec.layer!r} != 规则期望 {expect!r}")
         got[expect].append(rec.anchor_id)
-    # 三档均非空（分类不退化；ANCH-D 批后口径：closure 57 / component 14 / system 4）
-    assert len(got["closure"]) == 57  # ANCH-D 批 +5 全 closure（56→62 有锚族）
+    # 三档均非空（分类不退化；W3-S15 批后口径：closure 61 / component 14 / system 4）
+    assert len(got["closure"]) == 61  # W3-S15 批 +4 全 closure（ANCH-D 57 + tjunc×2/mline/v2）
     assert len(got["component"]) == 14
     assert len(got["system"]) == 4
     assert set(got["system"]) == {
@@ -101,7 +108,7 @@ def test_validate_live_registry_clean_of_layer_issues() -> None:
     report = validate_anchor_set(_live_anchor_set(),
                                  registry_path=_REGISTRY_PATH)
     assert report["ok"], f"issues: {report['issues']}"
-    assert report["expected_match"] and report["count"] == 75
+    assert report["expected_match"] and report["count"] == 79
     assert not any("layer" in i for i in report["issues"])
 
 
@@ -124,7 +131,7 @@ def test_service_summary_rows_carry_layer_key() -> None:
     from rfauto.service.anchors_service import list_anchors
 
     listed = list_anchors()
-    assert listed["ok"] and listed["count"] == 75
+    assert listed["ok"] and listed["count"] == 79
     legacy_keys = ("anchor_id", "kind", "status", "value", "uncertainty")
     for row in listed["anchors"]:
         assert "layer" in row, row.get("anchor_id")

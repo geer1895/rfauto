@@ -6,7 +6,7 @@ All notable changes to rfauto will be documented in this file.
 
 ### Added
 
-**Calculator registry expansion to 204 keys**
+**Calculator registry expansion to 215 keys**
 - 17-group single-source taxonomy for the calculator registry (group field
   on every key + group order in the list envelope); device template
   library 71 → 72. Four calculator waves: loaded/switched-line, Schiffman
@@ -80,9 +80,9 @@ All notable changes to rfauto will be documented in this file.
   resources): zero real defects
 
 ### Stats
-- 25452 unit tests (public collect, not-real_edt selection), 269 CLI leaf commands, MCP 152 tools
-  + 9 resources, CALCULATOR_REGISTRY 204 (incl. 205 experimental), device
-  templates 72, calibration anchors 75
+- 25792 unit tests (public collect, not-real_edt selection), 270 CLI leaf commands, MCP 152 tools
+  + 9 resources, CALCULATOR_REGISTRY 215 (incl. 216 experimental), device
+  templates 72, calibration anchors 79
 
 ### Added
 - **EDB layout fast lane** (planar device families): declarative spec

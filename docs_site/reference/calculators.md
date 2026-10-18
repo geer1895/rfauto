@@ -1,6 +1,6 @@
 # 计算器注册表参考
 
-> `CALCULATOR_REGISTRY` 实注册 **204** 个（含实验键共 **205** 个；实验键默认不列、需显式开关）。与 `scripts/check_numbers.py` 的 `count_calculators()`/`count_calculators_all()` 构建时逐位互证。运行入口 `rfauto calc list` / `rfauto calc run <名> -p k=v`。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> `CALCULATOR_REGISTRY` 实注册 **215** 个（含实验键共 **216** 个；实验键默认不列、需显式开关）。与 `scripts/check_numbers.py` 的 `count_calculators()`/`count_calculators_all()` 构建时逐位互证。运行入口 `rfauto calc list` / `rfauto calc run <名> -p k=v`。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 数值只在确定性内核（LLM/agent 永不产生物理数字）；每键的输入表由 `tests/unit/test_physics_invariants.py` 物理不变量门逐键消费。
 
@@ -368,6 +368,23 @@ chipless RFID 实测谐振频点→码字：每频点映最近槽位（容差=to
 | `epsilon_r` | float 腔内均匀填充相对介电常数（≥1，缺省 1） | 否 |
 | `max_modes` | int 带内模式数上限（1..500，缺省 200；超限显式拒绝要求收窄频段） | 否 |
 
+## circular_waveguide_mode_prop
+
+圆波导模式传播解：TE/TM_mn 单频点截止/波导波长/波阻抗/导体+介质衰减/功率容量（fc=x·c0/(2πa√(εrμr))，TE11 主模 0.293c0/a 口径；λg=2π/β、vp·vg=c0²/(εrμr) 恒等；α_c 闭式（TE 用 D=1−m²/x'²、TM 用 J'/J_{m+1} 恒等式）vs 场表达式曲面积分双路线互证；E_max 横截面栅格+局部精修，TE11 轴线 ωμ/(2kc) 闭式锚；f≤fc 截止显式拒绝）。锚：TE01/TM11 同根 3.8317 简并 Z_TE·Z_TM=η²；σ×4→α×½；TE01 导体衰减低于 TE11 经典性质
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `mode_type` | str 'TE' 或 'TM' | 是 |
+| `m` | int 方位序号（≥0） | 是 |
+| `n` | int 径向序号（≥1） | 是 |
+| `radius_mm` | float mm 波导半径 a（>0） | 是 |
+| `f_ghz` | float GHz 工作频率（须>截止频率，截止以下显式拒绝） | 是 |
+| `conductivity_s_per_m` | float S/m 壁导体电导率（>0；Cu=5.8e7） | 是 |
+| `epsilon_r` | float 填充相对介电常数（≥1，缺省 1） | 否 |
+| `mu_r` | float 填充相对磁导率（>0，缺省 1） | 否 |
+| `tan_delta` | float 填充损耗角正切（≥0，缺省 0） | 否 |
+| `e_br_v_per_m` | float V/m 击穿场强（>0，缺省 3e6 干燥空气工程常数） | 否 |
+
 ## circulator_ideal_sparams
 
 环行器理想 3 口 S 口径：非互易铁氧体件（reciprocal=False 豁免位）sense=cw|ccw 环行方向参数化——环行项 10^(−IL/20)、隔离项 10^(−Iso/20)（None=理想）、对角 10^(−RL/20)（None=理想匹配）；每口无源性一致性守卫（γ²+c²+i²≤1）违约显式拒绝；sense 翻转恒等式 S_ccw=S_cwᵀ；理想极限档回置换矩阵（与 circulator_synthesis SENSE_FORWARD 同布局）
@@ -466,6 +483,18 @@ CMA 特征模分解（ge6 Wave1 离线档）：广义阻抗矩阵 Z=R+jX 的 R-�
 | `epsilon_r` | float 填充介质相对介电常数（≥1，缺省 1） | 否 |
 | `mu_r` | float 相对磁导率（>0，缺省 1 非磁性） | 否 |
 | `tan_delta` | float 介质损耗角正切（≥0，缺省 0=无耗） | 否 |
+
+## coax_line_cutoff_attenuator
+
+同轴线截止式衰减器：TE11 高阶模截止以下工作（f<f_c 倏逝模 e^{−αz}，α=k_c·√(1−(f/f_c)²) Np/m，k_c≈2/(a+b) 保角映射与 z0 键同口径）→ 每米/给定长度衰减 dB；深截止（f≪f_c）渐近 α→k_c 与频率无关——衰减率只由几何给出（截止衰减器精密衰减原理）；截止波长 λ_c=π(a+b)（介质无关几何量）与 f_c=c₀/(π(a+b)√εr) 同步输出。锚：深截止每 (a+b) 长度衰减 =8.686·2=17.372 dB（k_c(a+b)=2 定义恒等式）；圆波导 TE11 精确 k_c=1.8412/b → 32.0 dB/直径 EMC 经典值（测试侧独立常数验证公式族）；f≥f_c 显式拒绝（行波区无倏逝衰减）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `a_mm` | float mm 内导体半径（>0） | 是 |
+| `b_mm` | float mm 外导体内半径（>a_mm） | 是 |
+| `length_mm` | float mm 倏逝段长度（>0，截止衰减器滑动段） | 是 |
+| `f_ghz` | float GHz 工作频率（可选——缺省=深截止渐近 α=k_c；给定则须 <f_c） | 否 |
+| `epsilon_r` | float 填充介质相对介电常数（≥1，缺省 1=空气） | 否 |
 
 ## coax_line_power_capacity
 
@@ -1018,6 +1047,39 @@ RF 暴露 MPE/参考水平查表：FCC 47 CFR §1.1310(e)(1) Table 1（fcc_occup
 | `m` | float Nakagami-m（≥0.5，默认 1.0；仅 nakagami 用） | 否 |
 | `sigma_db` | float 对数正态阴影标准差 dB（>0，默认 8.0；仅 lognormal 用） | 否 |
 
+## finline_taper_length
+
+鳍线-波导过渡渐变段长度综合（K2 渐变过渡面）：给定 ρ_max@f_min 反解最短长度——|Γ(βL)|=rho_max 在 βL∈(0,6π] 首个变号括根+brentq 精化（β 为波导 TE10 导波口径，同 finline_taper_response 声明近似档）；ρ≥|δ|/2 阶跃极限显式拒绝；指数剖面 (0,π) 单调零点 βL=π
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `wr_name` | str - WR 波导型号（与 a_mm/b_mm 二选一） | 否 |
+| `a_mm` | float mm 波导宽边内尺寸（须与 b_mm 同给） | 否 |
+| `b_mm` | float mm 波导窄边内尺寸 | 否 |
+| `z1_ohm` | float Ω 渐变段波导端阻抗（>0） | 是 |
+| `z2_ohm` | float Ω 渐变段平面端阻抗（>0 且 ≠z1） | 是 |
+| `f_min_ghz` | float GHz 通带下限频率（>1.05·fc10；综合点） | 是 |
+| `rho_max` | float 通带内允许 \|Γ\| 上限（>0 且 <\|ln(z2/z1)\|/2） | 是 |
+| `profile` | str 剖面白名单 exponential\|linear（缺省 exponential） | 否 |
+| `epsilon_eff` | float - 鳍线有效介电常数精化（>=1，缺省 1.0） | 否 |
+
+## finline_taper_response
+
+鳍线-波导过渡渐变段频响（K2 渐变过渡面）：指数/线性阻抗剖面在**波导 TE10 导波 β** 下的小反射理论响应——β=k0·sqrt(εeff)·sqrt(1−(fc/f)²)（声明近似档：εeff 缺省 1=未加载 TE10，可传 epsilon_eff 精化；鳍线基模等效 Meier/Sharma-Hoefer 经验档系数非公开可达未落地、如实放弃）；剖面闭式（指数 sinc/线性 Ei）与剖面核数值积分交叉互证残差；βL→0 阶跃极限 |δ|/2 包络。与 classic_taper_*（TEM/微带口径 v_f≤1）的分界=波导 v_p>c 档
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `wr_name` | str - WR 波导型号（如 'WR-28'，rw_tables 单源；与 a_mm/b_mm 二选一） | 否 |
+| `a_mm` | float mm 波导宽边内尺寸（显式口径，须与 b_mm 同给） | 否 |
+| `b_mm` | float mm 波导窄边内尺寸 | 否 |
+| `z1_ohm` | float Ω 渐变段波导端阻抗（鳍线隙缝端，>0） | 是 |
+| `z2_ohm` | float Ω 渐变段平面端阻抗（如 50Ω，>0 且 ≠z1） | 是 |
+| `length_mm` | float mm 渐变段物理长度（>0） | 是 |
+| `freq_ghz` | array GHz 频率轴（>0 且 >1.05·fc10） | 是 |
+| `profile` | str 剖面白名单 exponential\|linear（缺省 exponential） | 否 |
+| `epsilon_eff` | float - 鳍线有效介电常数精化（>=1，缺省 1.0=未加载 TE10；半经验输入，empirical 如实声明） | 否 |
+| `n_quad` | int 交叉互证数值积分点数 101..200001（缺省 20001） | 否 |
+
 ## folded_dipole_zin
 
 折合偶极输入阻抗（等线径，传输线法两模分解）：天线模=等效偶极阻抗 Z_d（dipole_emf_zin 路线复用）与传输线模=短路线 l/2 输入阻抗 2jZ_t·tan(kl/2)（Z_t=(η/π)·acosh(s/2a) 空气双线）在馈点并联——Z_in=4Z_d·Z_tl/(4Z_d+Z_tl)；谐振 l=λ/2 处 tan→∞ → Z_in=4Z_d（等粗 4×：73.1Ω→292Ω≈300Ω 教科书口径，线径/间距谐振点约去=恒等锚）；l=mλ 处 Z_in=0 短路边定性钉；step_up=Z_in/Z_d 复数输出。不等线径 Mushiake 步升比与包络等效半径修正不在本键口径（如实不做）
@@ -1476,6 +1538,24 @@ NX-1 MIMO 虚拟阵（round14 :88，TX×RX Kronecker 展开虚拟阵/等效孔�
 | `ebn0_db` | float\|list dB Eb/N0（比特能量口径，标量或非空列表，逐点有限校验） | 是 |
 | `scheme` | str 'bpsk'/'qpsk'/'16qam'/'64qam'（大小写不敏感） | 是 |
 
+## mtrl_er_tand_uncertainty
+
+mTRL εr/tanδ 不确定度传播：EC-2 尺寸公差+测量噪声双通道 GUM 一阶线性传播（u(εeff)/εeff=2u_β/β 精确恒等；主对模型如实声明）+ 蒙特卡洛对照（JCGM 101，k=2 区间覆盖率门 ≥95% 预声明，固定 seed）；输出逐频 u_er/u_tand 带区间+通道分解+支配通道——锚 gate 消费面
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `freq_ghz` | array GHz 频率轴（非空，>0） | 是 |
+| `w_mm` | float mm 微带导带宽度（>0） | 是 |
+| `h_mm` | float mm 基板厚度（>0） | 是 |
+| `er` | float 名义相对介电常数（>0，正向与锚点） | 是 |
+| `tan_d` | float 名义损耗正切（>0） | 是 |
+| `line_lengths_m` | array m mTRL 线长（≥2 根互异，>0） | 是 |
+| `u_lengths_m` | float\|array m 逐线长度标准不确定度（标量广播或逐线） | 是 |
+| `sigma_s` | float S 参数加性复高斯逐分量 std（>=0；0=纯公差通道） | 是 |
+| `n_mc` | int MC 抽样数 0=关（GUM only）/2..2000（缺省 120） | 否 |
+| `seed` | int MC 种子（缺省 20261018，完全可复现） | 否 |
+| `er_est` | float - γ 根选择 εeff 先验（缺省=er 名义值） | 否 |
+
 ## multimode_cavity_heating
 
 多模腔模式装填：LT-5 多模腔模式统计+装填因子（round18 :137）：Weyl 渐近 N=8πV(f√εr/c0)³/3（双极化，Metaxas & Meredith Ch.5 口径）+ 矩形腔精确枚举交叉对拍（复用 shield_cavity_mode.rect_cavity_modes，TE 容许集+TM 子集分开计）+ 模式密度/平均模间距；可选负载块（全给或全不给）：均匀场装填因子 F=εr′V_l/(εr′V_l+V_c−V_l)、Q_d=1/(F·tanδ)、效率 η=Q_L/Q_d 与负载吸收功率（匹配源口径）；1kW 水负载经典量级锚见锚树
@@ -1586,7 +1666,7 @@ NX-1 MIMO 虚拟阵（round14 :88，TX×RX Kronecker 展开虚拟阵/等效孔�
 
 ## patch_f0_symbolic_e13（实验）
 
-符号回归归纳公式（实验态，默认关闭）：f0_ghz = 0.0261448 + 75.1834*1/L_mm + 0.0162789*L_mm/W_mm。E13（/runs/symbolic_fit/patch_f0.json）：数据集 patch_antenna_openems_campaign，51 真实 openEMS 点（L∈[35,45]mm、W∈[40,60]mm、er=3.66、h=0.508），基模=[1.3,2.7]GHz 最低频 ≥3dB 局部谷；holdout 每 5 留 1，rmse_holdout=0.001773GHz、r2_train=0.999889；独立裁判 vs Hammerstad/HJ mean −0.699%、max|dev|=0.765%≤2% PASS
+符号回归归纳公式（实验态，默认关闭）：f0_ghz = 0.0261448 + 75.1834*1/L_mm + 0.0162789*L_mm/W_mm。E13（符号回归实验态归档）：数据集 patch_antenna_openems_campaign，51 真实 openEMS 点（L∈[35,45]mm、W∈[40,60]mm、er=3.66、h=0.508），基模=[1.3,2.7]GHz 最低频 ≥3dB 局部谷；holdout 每 5 留 1，rmse_holdout=0.001773GHz、r2_train=0.999889；独立裁判 vs Hammerstad/HJ mean −0.699%、max|dev|=0.765%≤2% PASS
 
 | 参数 | 说明 | 必填 |
 |---|---|---|
@@ -1661,6 +1741,38 @@ PLL环路滤波：MT-5 三阶 PLL 环路滤波器综合（round17 MT-5，Banerje
 | `t3_t1_ratio` | float 极点比 r=T3/T1（>1，缺省 3.0；设计自由度） | 否 |
 | `c3_frac` | float C3=A0×此份额（0<c≤0.5，缺省 0.1；r3_ohm 未给时生效） | 否 |
 | `r3_ohm` | float 显式第三极点电阻 Ω（>0；给定时 C3=T3/R3 覆盖 c3_frac） | 否 |
+
+## pol_axial_ratio
+
+极化椭圆轴比闭式（EC-21）：两正交线极化分量幅度 E1/E2 与相位差 delta_phase_deg → AR=√[(S+√D)/(S−√D)]（Balanis 4th §4.4，S=E1²+E2²、D=E1⁴+E2⁴+2E1²E2²cos2δ）线性+dB、倾角 τ=½·atan2(2E1E2cosδ, E1²−E2²)、旋向（IEEE Std 145-1983：δ=−90°=RH 主锚）+ 时域椭圆第三法对照 dB （#118 双源，闭式 vs 数值 ~1e-10 一致）。线极化 AR 真值发散，按 AR_LINEAR_DB_CAP=100 dB 封顶如实返回。锚：圆极化 E1=E2,δ=±90° → AR=1（0 dB）；等幅 δ=45° → AR=1+√2（cot 22.5° 恒等）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `e1` | float 第一正交分量幅度（≥0；θ̂ 或 x̂ 口径，两分量不全零） | 是 |
+| `e2` | float 第二正交分量幅度（≥0） | 是 |
+| `delta_phase_deg` | float ° 相位差 phase(E2)−phase(E1)（任意实数，闭式按 2δ 周期自然处理） | 是 |
+
+## pol_delta_ipd_il
+
+极化传输面 ΔIPD/ΔIL 度量：两正交线极化透射系数 t_x/t_y（[re,im] 服务复数约定）→ ΔIPD=phase(t_y)−phase(t_x)（主值 (−180°,180°]）、ΔIL=20log10(|t_y|/|t_x|)（dB）+ §4.4 极化态链（AR/倾角/旋向/regime 三段）。EC-21 主键（随 EC-20 PSSFSS/ms_cross 极化转换面消费）——线-圆转换面设计判据：ΔIPD→±90° 且 ΔIL→0 dB ⟺ AR→1（0 dB 圆极化，Balanis §4.4 圆极化条件的传输面对偶）。任一分量为 0 → ValueError（相位无定义不猜）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `t_x` | float\|[re,im] x 极化透射系数（复数；同频同参考基） | 是 |
+| `t_y` | float\|[re,im] y 极化透射系数（复数） | 是 |
+
+## pol_group_delay_diff
+
+极化微分群延迟差（EC-21）：两频点各极化透射系数 → τ_g=−(1/360)·Δφ_deg/Δf（ps）逐路 + delta_tau_g=τ_gy−τ_gx + 两频点 ΔIPD 与扫频变化量（二点差分）。诚实边界：主值包裹使各路 [f1,f2] 相位推进 |Δφ|>180° 的多周期不可分辨（Δτ_g 假归零族）——频带须窄到单周期推进内（宽带给定须调用方自行去包裹）。锚：线性相位网络 φ=−360·f·τ 回收 τ 精确；等延迟纯转换（ΔIPD 常数 ±90°）→ delta_tau_g=0
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `f1_ghz` | float GHz 频点 1（>0） | 是 |
+| `f2_ghz` | float GHz 频点 2（>f1_ghz） | 是 |
+| `t_x_f1` | float\|[re,im] f1 频点 x 极化透射系数 | 是 |
+| `t_x_f2` | float\|[re,im] f2 频点 x 极化透射系数 | 是 |
+| `t_y_f1` | float\|[re,im] f1 频点 y 极化透射系数 | 是 |
+| `t_y_f2` | float\|[re,im] f2 频点 y 极化透射系数 | 是 |
 
 ## power_cal_chain
 
@@ -1830,14 +1942,15 @@ Q零点法：单腔 Q 零点法（VF 极点+零点求和口径，免 q_e）：�
 
 ## rcs_peak_canonical
 
-典型目标峰值 RCS 库：平板法向 σ=4πA²/λ²（A=a·b）/二面角 90° σ=8πa²b²/λ²（双跳变等效孔径 √2·ab）/方形三方角 σ=4πa⁴/(3λ²)（等效孔径 a²/√3）/圆柱侧向 σ=2πL²r/λ（λ⁻¹ 标度）——姿态=峰值口径（各形状最大方向），不建姿态方向图。锚：全闭式测试侧独立重算；板族 λ⁻² 与圆柱 λ⁻¹ 双标度钉；二面角(a=b)=2×同单面平板、三方角按 a²/√3 回代平板式两结构恒等；1m² 平板@10GHz=41.45dBsm 常数
+典型目标峰值 RCS 库：平板法向 σ=4πA²/λ²（A=a·b）/二面角 90° σ=8πa²b²/λ²（双跳变等效孔径 √2·ab）/方形三方角 σ=4πa⁴/(3λ²)（等效孔径 a²/√3）/圆柱侧向 σ=2πL²r/λ（λ⁻¹ 标度）/圆锥轴向 σ=λ²tan⁴α/(16π)（α=半角，尖端绕射尺寸无关）——姿态=峰值口径（各形状最大方向），不建姿态方向图。锚：全闭式测试侧独立重算；板族 λ⁻²/圆柱 λ⁻¹/圆锥 λ² 三标度钉；二面角(a=b)=2×同单面平板、三方角按 a²/√3 回代平板式两结构恒等；1m² 平板@10GHz=41.45dBsm 常数
 
 | 参数 | 说明 | 必填 |
 |---|---|---|
-| `shape` | str 形状 'flat_plate'\|'dihedral'\|'square_trihedral'\|'cylinder_broadside'（封闭集合） | 是 |
+| `shape` | str 形状 'flat_plate'\|'dihedral'\|'square_trihedral'\|'cylinder_broadside'\|'cone_tip'（封闭集合） | 是 |
 | `f_ghz` | float GHz 雷达频率（>0） | 是 |
-| `a_mm` | float mm 主尺寸：平板/二面角=边 a；三方角=边长；圆柱=半径 r（>0） | 是 |
-| `b_mm` | float mm 次尺寸：平板/二面角=边 b；圆柱=长度 L（>0；三方角不给） | 否 |
+| `a_mm` | float mm 主尺寸：平板/二面角=边 a；三方角=边长；圆柱=半径 r（>0；cone_tip 不给） | 否 |
+| `b_mm` | float mm 次尺寸：平板/二面角=边 b；圆柱=长度 L（>0；三方角/cone_tip 不给） | 否 |
+| `half_angle_deg` | float deg 圆锥半角 α（∈(0,90)；仅 cone_tip 必给，其他形状同给显式拒绝） | 否 |
 
 ## rcs_sphere_mie
 
@@ -1847,6 +1960,39 @@ Q零点法：单腔 Q 零点法（VF 极点+零点求和口径，免 q_e）：�
 |---|---|---|
 | `radius_mm` | float mm 金属球半径 a（>0） | 是 |
 | `f_ghz` | float GHz 雷达频率（>0；ka=2πa/λ 决定三区归属） | 是 |
+
+## rectangular_cavity_mode_q
+
+矩形腔任意 TE/TM_mnp 模式无载 Q：导体微扰 Q=ω(U_e+U_m)/P_c（六壁切向H 面积分；场分量可分离 → 1-D 因子闭式（Cx=a/2(m≥1)/a(m=0)、Sx=a/2/0 同规则、Cz=d/2(p≥1)/d(p=0)）+ 同场表达式 scipy.quad 数值因子双路线互证（rel_dev<1e-12，推导失配即红）+ Ue/Um≈1 谐振定理自检；介质 Q=1/tanδ（0 返 null），1/Qu=1/Qc+1/Qd。锚：σ×4→Qc×2；f 与谱键 TE101 同仓双源跨键互证；与 cavity_perturbation_shift 口径互补
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `mode_type` | str 'TE' 或 'TM' | 是 |
+| `m` | int x 向序号（TE≥0；TM≥1） | 是 |
+| `n` | int y 向序号（TE≥0；TM≥1；(m,n)=(0,0) TE 显式拒绝） | 是 |
+| `p` | int z 向序号（TE ≥1；TM ≥0） | 是 |
+| `a_mm` | float mm 腔 x 边长（>0） | 是 |
+| `b_mm` | float mm 腔 y 边长（>0） | 是 |
+| `d_mm` | float mm 腔 z 边长（>0） | 是 |
+| `conductivity_s_per_m` | float S/m 壁导体电导率（>0；Cu=5.8e7） | 是 |
+| `epsilon_r` | float 填充相对介电常数（≥1，缺省 1） | 否 |
+| `mu_r` | float 填充相对磁导率（>0，缺省 1） | 否 |
+| `tan_delta` | float 介质损耗角正切（≥0，缺省 0=无耗） | 否 |
+
+## rectangular_cavity_mode_spectrum
+
+矩形腔多模谐振谱：TE/TM_mnp 分离变量闭式 f=(c0/(2√(εrμr)))·√((m/a)²+(n/b)²+(p/d)²)（TE_mnp: (m,n)≠(0,0) 且 p≥1；TM_mnp: m,n≥1 且 p≥0，Pozar §6.3），给腔尺寸/频段 → 带内模式频率列表（排序）+全谱主模标识（计算判读非假定）+TE10 波导截止参考 c0/(2a√(εrμr))。锚：TE101 与 cavity_perturbation_shift 空腔 f0=(c0/2)√(1/a²+1/d²) 同仓双源；εr 标度全谱 ÷√εr
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `a_mm` | float mm 腔 x 边长（>0） | 是 |
+| `b_mm` | float mm 腔 y 边长（>0） | 是 |
+| `d_mm` | float mm 腔 z 边长（>0） | 是 |
+| `f_min_ghz` | float GHz 频段下缘（>0，<f_max_ghz） | 是 |
+| `f_max_ghz` | float GHz 频段上缘（>f_min_ghz） | 是 |
+| `epsilon_r` | float 填充相对介电常数（≥1，缺省 1） | 否 |
+| `mu_r` | float 填充相对磁导率（>0，缺省 1） | 否 |
+| `max_modes` | int 带内模式数上限（1..500，缺省 200；超限显式拒绝要求收窄频段） | 否 |
 
 ## reflective_phaser
 
@@ -2314,6 +2460,23 @@ T-match阻抗：T-match 输入阻抗（Balanis 3ed §9.7.3，(9-48)–(9-51)）�
 | `dipole_length_m` | float m 主偶极子长度（≥l'，T-match 定义） | 是 |
 | `za_re_ohm` | float Ω 无 T-match 天线中心阻抗实部（默认 73=半波锚） | 否 |
 | `za_im_ohm` | float Ω 同上虚部（默认 42.5=半波锚） | 否 |
+
+## thermal_power_sensor_detect
+
+热偶/测辐射热计功率换算：吸收 η·P_in → 热阻温升 ΔT=η·R_th·P_in →热偶 Seebeck V_out=S·ΔT / 测辐射热计平衡电桥小信号 V_out=(V_b/4)·TCR·ΔT（γ=V_out/P 与功率无关=线性恒等锚；电桥输出与 R0 绝对值无关恒等锚；TCR 符号如实保留）；τ=R_th·C_th、f_3dB=1/(2πτ)、最小可检功率=v_noise/|γ|。锚：功率→电压→功率往返回收逐位；P×2→V×2；同 γ 跨类型输出逐位一致（热链单源结构恒等）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `sensor_type` | str 'thermocouple'\|'bolometer'（封闭集合） | 是 |
+| `p_in_dbm` | float dBm 入射射频功率（∈[−120,30]，域外显式拒绝） | 是 |
+| `r_th_k_per_w` | float K/W 热阻（>0；吸收体→环境热链） | 是 |
+| `c_th_j_per_k` | float J/K 热容（>0；τ=R_th·C_th 输入） | 是 |
+| `eta_abs` | float 吸收效率（∈(0,1]，缺省 1.0；实际器件 0.8~0.95 量级以厂家为准） | 否 |
+| `seebeck_v_per_k` | float V/K 热偶塞贝克系数（thermocouple 必给>0；热偶堆 1e-5~1e-2 量级） | 否 |
+| `tcr_per_k` | float 1/K 测辐射热计电阻温度系数（bolometer 必给≠0；符号如实保留：热敏负/金属膜正） | 否 |
+| `r0_ohm` | float Ω 测辐射热计冷态电阻（bolometer 可给>0；只进报告面——电桥小信号输出与 R0 绝对值无关） | 否 |
+| `v_bridge_v` | float V 电桥偏置（bolometer 必给>0） | 否 |
+| `v_noise_rms_v` | float rms V 输出噪声底（≥0，缺省 0=不报最小可检功率） | 否 |
 
 ## thermal_resistance_stack
 

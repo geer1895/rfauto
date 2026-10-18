@@ -3,7 +3,9 @@
 # 战役逐阶段推进：从 plan 到 final_verify
 
 > 多保真优化战役的完整推进手册（SO 走查任务 C 的 C3 断点收口）。
-> 五条命令 + 一键执行器，全部对 `rfauto campaign --help` 实测口径。
+> 战役面六条子命令（plan/run/status/event/list/queue-daemon），全部
+> 对 `rfauto campaign --help` 实测口径。
+> 英文版（English version）：docs/tutorials/campaign-walkthrough_en.md。
 
 ## 战役生命周期
 
@@ -12,6 +14,10 @@ campaign plan ──► campaign run ──► campaign status ──► 判读/
       │                │（断点续跑内嵌）
       └── campaign event（手工推进/修正状态机）──► campaign list（总览）
 ```
+
+全子命令面共六条：`plan`/`run`/`status`/`event`/`list`，外加
+`queue-daemon`（排队常驻执行体：轮询队列→日历窗→license 预检→逐项
+发射，发射后不等）。
 
 ## 1. 生成计划（确定性阶段队列）
 
@@ -72,4 +78,5 @@ rfauto repro-verify <包目录>              # 验证复现包
 
 - 单次调优（非战役）：`rfauto tune` / `rfauto autotune --self-verify`
 - 偏差判读串接：`docs/tutorials/measurement-alignment.md`
-- 多机协同：`rfauto remote probe/status`（远程连通性探测/状态查询 CLI 两叶）
+- 多机协同：`rfauto remote probe/status`（多机资源与版本配对约束见
+  仓内接入说明；公开分发视图不随附）

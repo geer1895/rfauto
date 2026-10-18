@@ -320,3 +320,87 @@ class TestIntegratedManifest:
         result = rs.read_manifest(bad)
         assert result["ok"] is False
         assert result["errors"]
+
+
+class TestBuildCrateMetadata:
+    """XD-16：战役 crate 自描述元数据（RO-Crate 1.1 JSON-LD）。"""
+
+    @staticmethod
+    def _campaign(tmp_path):
+        camp = tmp_path / "campaign_x"
+        (camp / "runs" / "pt1").mkdir(parents=True)
+        # write_bytes：哈希对照面需要跨平台确定的磁盘字节（text 模式
+        # 在 Windows 会 LF→CRLF，digest 随平台漂移）
+        (camp / "recipe.yaml").write_bytes(b"model: mline\n")
+        (camp / "meta.json").write_text(
+            '{"study_name": "stu_1"}', encoding="utf-8")
+        (camp / "runs" / "pt1" / "meta.json").write_text(
+            '{"ok": true}', encoding="utf-8")
+        (camp / "anchors.yaml").write_text("anchors: []\n", encoding="utf-8")
+        return camp
+
+    def test_structure_determinism_and_pack_entity(self, tmp_path):
+        camp = self._campaign(tmp_path)
+        crate = rs.build_crate_metadata(camp)
+        assert crate["ok"] is True
+        assert crate["@context"] == rs.RO_CRATE_CONTEXT
+        graph = crate["@graph"]
+        ids = [e["@id"] for e in graph]
+        # 描述符 + 根 + 4 文件 + #software（hasPart 与文件实体一致；
+        # 根 @id "./" 本身以 "./" 开头，计数 5=根+4 文件）
+        assert ids[0] == "ro-crate-metadata.json" and ids[1] == "./"
+        assert ids[-1] == "#software"
+        assert len([i for i in ids
+                    if i.startswith("./") and i != "./"]) == 4
+        root = graph[1]
+        assert root["@type"] == "Dataset" and root["name"] == "campaign_x"
+        assert len(root["hasPart"]) == 4
+        refs = root["rfauto_references"]
+        assert refs["recipes"] == ["recipe.yaml"]
+        assert refs["anchors"] == ["anchors.yaml"]
+        assert refs["runs"] == ["runs/pt1"]
+        assert refs["studies"] == [{"path": "meta.json",
+                                    "study_name": "stu_1"}]
+        # 文件实体 sha256 与 build_artifact_manifest 同源一致（双面对照）
+        import hashlib
+        f_recipe = next(e for e in graph
+                        if e["@id"] == "./recipe.yaml")
+        assert f_recipe["sha256"] == hashlib.sha256(
+            b"model: mline\n").hexdigest()
+        assert f_recipe["contentSize"] == 13
+        # #pack 实体：确定性投影（created_at 不进 crate）
+        pm = {"pack_file": "x.tar.zst", "pack_sha256": "ab" * 32,
+              "pack_size_bytes": 10, "n_files": 4, "total_bytes": 40,
+              "format": "rfauto-campaign-pack-v1",
+              "created_at": "2099-01-01T00:00:00+00:00"}
+        crate_p = rs.build_crate_metadata(camp, pack_manifest=pm)
+        pack = next(e for e in crate_p["@graph"]
+                    if e["@id"] == "#pack")
+        assert pack["pack_sha256"] == "ab" * 32
+        assert pack["offset_manifest"] == "x.tar.zst.manifest.json"
+        assert "created_at" not in pack
+        # 确定性：同输入两次逐字节一致（含 env 段——清单无时间戳口径）
+        assert json.dumps(crate_p) == json.dumps(
+            rs.build_crate_metadata(camp, pack_manifest=pm))
+        # JSON 可序列化（信封契约面）
+        json.dumps(crate)
+
+    def test_absent_classes_omitted_and_bad_paths(self, tmp_path):
+        # 空目录：hasPart 空 + 分类键全空（不编造），结构仍合法
+        empty = tmp_path / "empty_camp"
+        empty.mkdir()
+        crate = rs.build_crate_metadata(empty)
+        assert crate["ok"] is True
+        root = crate["@graph"][1]
+        assert root["hasPart"] == []
+        assert root["rfauto_references"] == {
+            "recipes": [], "studies": [], "runs": [], "anchors": []}
+        # 坏 meta.json 逐文件跳过（#105），studies 缺席如实
+        broken = tmp_path / "broken_camp"
+        broken.mkdir()
+        (broken / "meta.json").write_text("{not json", encoding="utf-8")
+        crate_b = rs.build_crate_metadata(broken)
+        assert crate_b["@graph"][1]["rfauto_references"]["studies"] == []
+        # 数据态：目录不存在 → error 信封
+        bad = rs.build_crate_metadata(tmp_path / "nope")
+        assert bad["ok"] is False and bad["errors"]

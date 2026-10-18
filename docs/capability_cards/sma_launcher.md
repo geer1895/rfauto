@@ -28,21 +28,23 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=21 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | r_o_mm | 外导体半径（对数比分子，同轴 Z0 主维） |
-| 2 | r_i_mm | 针半径（对数比分母） |
-| 3 | er_fill | PTFE εr（Z0∝1/√εr_fill 通道） |
-| 4 | w_msl_mm | 微带段 50Ω 口径（同轴↔微带过渡弱维） |
-| 5 | shell_len_mm | 同轴段长（不进 Z0 恒等式） |
-| 6 | pin_lay_mm | 针搭焊外伸（不进 Z0 恒等式） |
-| 7 | line_len_mm | 微带带长（不进 Z0 恒等式） |
-| 8 | shell_t_mm | 壳壁厚（r_os 派生量，不进 Z0 恒等式） |
-| 9 | port_len_mm | 集总桥厚度（构造常量） |
-| 10 | tan_d_fill | PTFE 损耗（名义 0 无耗，不进 Z0 恒等式） |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | r_o_mm | 0.828128 |
+| 2 | r_i_mm | 0.82806 |
+| 3 | er_fill | 0.5 |
+| 4 | line_len_mm | 0.0 |
+| 5 | pin_lay_mm | 0.0 |
+| 6 | port_len_mm | 0.0 |
+| 7 | shell_len_mm | 0.0 |
+| 8 | shell_t_mm | 0.0 |
+| 9 | tan_d_fill | 0.0 |
+| 10 | w_msl_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -63,7 +65,7 @@
 
 - 参数语义：w_msl_mm=50Ω 微带宽（HJ），r_i_mm=针半径，r_o_mm=PTFE 外径/壳内径（50Ω 闭式），shell_t_mm=外导体壁厚（r_os=r_o+t 派生），er_fill=PTFE εr（材料参数，不驱动导体几何），shell_len_mm=同轴段长（port1 面→板边），pin_lay_mm=针搭焊外伸长，line_len_mm=微带体带长，port_len_mm=集总桥 y 向厚，tan_d_fill=PTFE tanδ（材料参数→kappa，名义 0 无耗）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；同轴三半径 x/z 向柱面界 + 桥盒边 + 板边/针端/带端 y 面精确入网；port1 面距 y-min 边界 12 cells（越过 PML_8）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

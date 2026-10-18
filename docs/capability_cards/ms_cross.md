@@ -58,7 +58,7 @@
 - 参数语义：arm_len_mm=臂长（中心→尖端，总跨=2·arm 半波谐振），arm_w_mm=臂宽， period_mm=单胞周期，h_mm=基板厚；er/tan_d 走 substrate/nominal （材料属性不改导体）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；臂缘精确入网 +邻臂尖缝 3+ 中点入网（#311）；NEAR≤邻臂尖缝/3 渲染期守卫（#266）； 全轴最小网格间距 ≥10µm
 - 冒烟现状：离线审计先行（#212，test_metasurface_templates）；带阻谐振闭式互证 （λ0/2√εeff 口径，test_metasurface_lut）；真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）判据 内部证据档 §2
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为  出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

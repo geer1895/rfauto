@@ -60,9 +60,11 @@ SUB = {"h_mm": 0.508, "er": 3.66, "tan_d": 0.0037}
 # sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
 # runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
 # 随尾段追加必移，port_pins 契约断言（本文件其余）保留不变。
-_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
-_TAPER_RENDER_SHA256 = "3b5e27e43bb175c0915a834bf7b632fdd0276915825d4a7fd5dff8c30e67dbfb"
-_SIW_V2_RENDER_SHA256 = "3a45ca9a50e5474fa38b74c9190284b66326ad28f51060ae995a908deeda7796"
+# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释字节漂移（几何段 exec
+# 审计逐键同值；换钉留 diff 证据纪律同 test_siw_template）。
+_V1_RENDER_SHA256 = "ff60ee37dcf6b0ca6b31ae92da12ec29f5cdc394ce3e1d1efc633666ae672376"
+_TAPER_RENDER_SHA256 = "59a8b3a6ee522afdfde9e68e006b105641f0588f54877fd0ced26a318c7022f0"
+_SIW_V2_RENDER_SHA256 = "8f937055433bba19cf9c7e3902930543a74af5901a7b58af79d983d30e2c5af1"
 
 _GOLDEN = REPO / "tests" / "golden" / "compose_siw_chain_simulation.py"
 

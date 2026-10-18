@@ -1,0 +1,188 @@
+schema: rfauto-template-geometry-golden/v1
+template: marchand_balun
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 2.25
+- 2.75
+params:
+  w_slot_mm: 1.0
+  x_port_mm: 40.0
+  h_mm: 1.524
+  er: 3.66
+  tan_d: 0.0037
+  f0_ghz: 2.5
+status: ok
+script_sha256: ca754e3c51e7f9cc73d28b23c75951ba4f7f920de5430efa4fb01adfe83fd187
+csx:
+  n_primitives: 34
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: gnd_slot
+    kind: Metal
+    n: 5
+    types:
+      '1': 5
+  - name: msl_top
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_ut_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1C
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1A
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1B
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_2
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_2
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_resist_3
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_3
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_3
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_00
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_01
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_02
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_03
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_04
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_05
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_a_06
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_00
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_01
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_02
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_03
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_04
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_05
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: vslot_b_06
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 11e08886d7e5e035e8eb9ea2e858f1298c7664178ffbc4a0436fd931b6e0f1d9
+  bbox_m:
+  - -0.058234651
+  - -0.05
+  - -0.000142458
+  - 0.058234651
+  - 0.05
+  - 0.001524
+mesh:
+  lines:
+    x:
+      n: 329
+      min_gap_m: 0.000142
+    y:
+      n: 238
+      min_gap_m: 0.00025
+    z:
+      n: 187
+      min_gap_m: 3.1e-05
+  lines_sha256: a3f02ec67b46791f6bc12be0c33cf24f732b10eb23859ce5e754c16fa085b7ac
+ports:
+- 1
+- 2
+- 3

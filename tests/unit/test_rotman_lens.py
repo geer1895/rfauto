@@ -414,15 +414,15 @@ def test_service_design_and_payload_envelopes():
 
 
 def test_service_error_envelope_no_raise():
-    # 非法输入 → ok=False + error 字符串，绝不抛出
+    # 非法输入 → ok=False + errors 文案列表，绝不抛出（AU-2 域升版 1.1）
     out = rls.rotman_lens_design(alpha_deg=30.0, n_ports=2,
                                  d_over_lambda=0.5, f_over_lambda=3.0)
     assert out["ok"] is False
-    assert isinstance(out["error"], str) and out["error"]
+    assert isinstance(out["errors"][0], str) and out["errors"][0]
     payload = rls.rotman_lens_payload(f0_hz=10e9, alpha_deg=95.0, f_over_lambda=3.0,
                                       n_ports=7, d_over_lambda=0.5)
     assert payload["ok"] is False
-    assert isinstance(payload["error"], str) and payload["error"]
+    assert isinstance(payload["errors"][0], str) and payload["errors"][0]
 
 
 # ─── 11. W2-TEST 直测补强：错误族细分与单位链（service 三态） ─────────────────
@@ -434,7 +434,7 @@ def test_service_no_real_root_family_envelope():
     out = rls.rotman_lens_payload(f0_hz=10e9, alpha_deg=30.0, f_over_lambda=1.0,
                                   n_ports=9, d_over_lambda=1.0, g=1.0)
     assert out["ok"] is False
-    assert "无实根" in out["error"]
+    assert "无实根" in out["errors"][0]
     assert isinstance(json.dumps(out), str)  # 错误信封同样 JSON 可序列化
 
 
@@ -443,11 +443,36 @@ def test_service_non_numeric_inputs_rejected_by_envelope():
     out = rls.rotman_lens_design(alpha_deg=30.0, n_ports="7",
                                  d_over_lambda=0.5, f_over_lambda=3.0)
     assert out["ok"] is False
-    assert "n_ports" in out["error"]
+    assert "n_ports" in out["errors"][0]
     out2 = rls.rotman_lens_design(alpha_deg={"a": 1}, n_ports=7,
                                   d_over_lambda=0.5, f_over_lambda=3.0)
     assert out2["ok"] is False
-    assert isinstance(out2["error"], str) and out2["error"]
+    assert isinstance(out2["errors"][0], str) and out2["errors"][0]
+
+
+def test_service_error_envelope_schema_version_1_1():
+    """AU-2 域升版回归钉（无戳补戳 1.1，2026-10-18 W4-S20）：失败信封单源构造器形。
+
+    单数 ``error`` 键统一为 ``errors`` list[str]（契约 §1 判读规则 2），
+    schema_version 诊断键补戳；成功信封同笔带戳（键序钉）。
+    """
+    from rfauto.service.rotman_lens_service import (
+        ROTMAN_LENS_SERVICE_SCHEMA_VERSION,
+    )
+
+    assert ROTMAN_LENS_SERVICE_SCHEMA_VERSION == "1.1"
+    env = rls.rotman_lens_design(alpha_deg=30.0, n_ports=2,
+                                 d_over_lambda=0.5, f_over_lambda=3.0)
+    assert env["ok"] is False
+    assert list(env) == ["ok", "errors", "schema_version"]
+    assert isinstance(env["errors"], list) and env["errors"]
+    assert all(isinstance(s, str) for s in env["errors"])
+    env_ok = rls.rotman_lens_design(
+        alpha_deg=30.0, n_ports=9, d_over_lambda=0.5, f_over_lambda=3.0, g=1.137)
+    assert env_ok["ok"] is True
+    assert env_ok["schema_version"] == "1.1"
+    assert list(env_ok)[:2] == ["ok", "schema_version"]
+    assert json.dumps([env, env_ok])
 
 
 def test_service_payload_min_ports_and_refractive_unit_chain():

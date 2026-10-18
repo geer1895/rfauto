@@ -1,16 +1,22 @@
-"""圆柱腔任意模式闭式谱族（aurora72 A2-C 席域 2，R7 第二梯队 T2）。
+"""波导/腔体任意模式闭式谱族（aurora72 A2-C 席域 2，R7 第二梯队 T2；
+aurora_e W1-S2 续作收口任务书内"圆波导/矩形腔"两子项）。
 
-三键：circular_cavity_mode_spectrum（TE/TM_mnp 谐振谱：给半径/长度/频段
+六键：circular_cavity_mode_spectrum（TE/TM_mnp 谐振谱：给半径/长度/频段
 → 模式频率列表+主模标识+TE11 波导截止参考） / circular_cavity_mode_chart
 （模式图数据：归一化频率-长径比曲线+主模切换交叉点） /
 circular_cavity_mode_q（任意 TE/TM_mnp 模式无载 Q：导体闭式+数值积分
-路线互证+介质串联合成）。
+路线互证+介质串联合成） / circular_waveguide_mode_prop（圆波导 TE/TM_mn
+单频传播解：截止/波导波长/波阻抗/导体+介质衰减/功率容量，W1-S2） /
+rectangular_cavity_mode_spectrum（矩形腔 TE/TM_mnp 谐振谱，W1-S2） /
+rectangular_cavity_mode_q（矩形腔任意模式无载 Q，W1-S2）。
 
 与既有面的边界（语义防撞，R7 §③ T2 三重搜索证据）
 --------------------------------------------------------
 - rw_tables = EIA 商品矩形波导表；rwg_mmt = 矩形波导模基 GSM 数值；
-  ridged_waveguide = 脊形波导；本族只做**圆柱腔任意模式闭式谱**
-  （矩形腔不在本席键面，R7 T2 的矩形腔子项留续作）。
+  ridged_waveguide = 脊形波导；waveguide_iris/waveguide_lambda_g = 矩形
+  TE10 膜片/传播参数面；bethe_hole 内部圆波导截止常数=孔耦合口径——
+  本族做**任意模式闭式谱与传播解**（圆波导+圆柱腔+矩形腔；矩形腔为
+  R7 T2"留续作"子项，aurora_e W1-S2 收口）。
 - cavity.py/cavity_perturbation_shift = 腔体微扰**测量**面；
   material_characterization = 分裂腔/Courtney **材料提取**面——本族是
   它们的**上游模式谱供给**（先定模式再提取）；TE011 空腔频率与
@@ -642,4 +648,595 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
             "Ue/Um≈1 为谐振腔储能定理自检（数值精度级）；介质满充均匀"
             "假定；串联合成 1/Qu=1/Qc+1/Qd"),
         "source": _SOURCES["q"],
+    }
+
+
+# ─── 键 4：圆波导 TE/TM_mn 传播解（aurora_e W1-S2 补齐 R7 T2 圆波导子项）───
+# 口径（Pozar《Microwave Engineering》§3.4 圆波导/Collin；docstring 写死）：
+#   截止：TE_mn fc=x'_mn·c0/(2πa√(εrμr))（x'=J_m' 零点）、TM_mn fc=x_mn·…
+#   （TE11 主模 x'_11=1.8412 → fc=0.293·c0/a 经典口径）；工作频率须>fc
+#   （截止以下倏逝场不传播，显式拒绝）。
+#   β=√(k²−kc²)、λg=2π/β、vp·vg=c0²/(εrμr)（恒等式测试钉）；
+#   Z_TE=kη/β、Z_TM=βη/k——TE01/TM11 同根 3.8317 简并 → Z_TE·Z_TM=η²
+#   （测试跨调用恒等锚）。
+#   导体衰减（微扰 α_c=P_l/(2P)，本席从场表达式独立推导，数值积分双
+#   路线互证）：
+#     TE_mn: α_c = Rs·kc²·[1+β²m²/(kc⁴a²)] / (kηβaD)，D=1−m²/x'²
+#       （Green 恒等式 ∫|∇_tH_z|²=kc²∫|H_z|² + TE 根 J'_m(x')=0 消
+#       ∫J'²ρdρ=(a²/2)J_m²(x')D；m=0 退化 α_c=Rs·kc²/(kηβa)——f≫fc
+#       渐近 α∝f^(−3/2) 经典 TE0n 低损性质）。
+#     TM_mn: α_c = Rs·ωε·J'_m(x)² / (aβ·J_{m+1}(x)²)
+#       （Dirichlet 恒等式 ∫J_m²ρdρ=(a²/2)J_{m+1}²(x)）。
+#   数值路线：P=½Z·∫|H_t|²dA（E_t=Z·(ẑ×H_t) 波阻抗精确关系）、
+#   P_l=(Rs/2)∮|H_t|²dl 侧壁——径向积分 scipy.quad 直积场表达式（复用
+#   _radial_integrals，不消费任何 Bessel 恒等式），alpha_c_xcheck_rel_dev
+#   应为 quad 精度级。
+#   介质衰减 α_d=k²tanδ/(2β)（低损耗均匀填充经典式）。
+#   功率容量：P_max=(P/coef²)·(E_br/E_max_per_coef)²；E_max 走横截面
+#   2001×361 确定性栅格+两轮交替黄金分割局部精修（TE11 轴线闭式
+#   E_max/H0=ωμ/(2kc)——J'_1 与 J_1/z 均在 0 处取极大 ½——测试锚）；
+#   E_br 缺省 3e6 V/m 干燥空气工程常数（实际随气压/湿度/表面状态漂移，
+#   如实注记非通用常数）。
+
+@register_calculator(
+    "circular_waveguide_mode_prop",
+    "圆波导模式传播解：TE/TM_mn 单频点截止/波导波长/波阻抗/导体+介质衰减"
+    "/功率容量（fc=x·c0/(2πa√(εrμr))，TE11 主模 0.293c0/a 口径；λg=2π/β、"
+    "vp·vg=c0²/(εrμr) 恒等；α_c 闭式（TE 用 D=1−m²/x'²、TM 用 J'/J_{m+1} "
+    "恒等式）vs 场表达式曲面积分双路线互证；E_max 横截面栅格+局部精修，"
+    "TE11 轴线 ωμ/(2kc) 闭式锚；f≤fc 截止显式拒绝）。锚：TE01/TM11 同根 "
+    "3.8317 简并 Z_TE·Z_TM=η²；σ×4→α×½；TE01 导体衰减低于 TE11 经典性质",
+    (("mode_type", "str 'TE' 或 'TM'"),
+     ("m", "int 方位序号（≥0）"),
+     ("n", "int 径向序号（≥1）"),
+     ("radius_mm", "float mm 波导半径 a（>0）"),
+     ("f_ghz", "float GHz 工作频率（须>截止频率，截止以下显式拒绝）"),
+     ("conductivity_s_per_m", "float S/m 壁导体电导率（>0；Cu=5.8e7）"),
+     ("epsilon_r", "float 填充相对介电常数（≥1，缺省 1）"),
+     ("mu_r", "float 填充相对磁导率（>0，缺省 1）"),
+     ("tan_delta", "float 填充损耗角正切（≥0，缺省 0）"),
+     ("e_br_v_per_m", "float V/m 击穿场强（>0，缺省 3e6 干燥空气工程常数）")),
+    required=("mode_type", "m", "n", "radius_mm", "f_ghz",
+              "conductivity_s_per_m"),
+)
+def circular_waveguide_mode_prop(mode_type: str, m: int, n: int,
+                                 radius_mm: float, f_ghz: float,
+                                 conductivity_s_per_m: float,
+                                 epsilon_r: float = 1.0, mu_r: float = 1.0,
+                                 tan_delta: float = 0.0,
+                                 e_br_v_per_m: float = 3.0e6
+                                 ) -> dict[str, Any]:
+    import numpy as np
+    from scipy.optimize import minimize_scalar
+    from scipy.special import jv, jvp
+
+    mtype = str(mode_type).strip().upper()
+    if mtype not in ("TE", "TM"):
+        raise ValueError(
+            f"circular_waveguide_mode_prop: mode_type 须为 'TE'/'TM'，得到 "
+            f"{mode_type!r}")
+    mm = _as_int(m, "m", 0)
+    nn = _as_int(n, "n", 1)
+    a = _finite(radius_mm, "radius_mm")
+    freq = _finite(f_ghz, "f_ghz")
+    sigma = _finite(conductivity_s_per_m, "conductivity_s_per_m")
+    eps_r = _finite(epsilon_r, "epsilon_r")
+    mur = _finite(mu_r, "mu_r")
+    tand = _finite(tan_delta, "tan_delta")
+    e_br = _finite(e_br_v_per_m, "e_br_v_per_m")
+    if a <= 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: radius_mm 必须 >0，得到 "
+            f"{radius_mm!r}")
+    if freq <= 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: f_ghz 必须 >0，得到 {f_ghz!r}")
+    if sigma <= 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: conductivity_s_per_m 必须 >0，"
+            f"得到 {conductivity_s_per_m!r}")
+    if eps_r < 1.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: epsilon_r 必须 ≥1，得到 "
+            f"{epsilon_r!r}")
+    if mur <= 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: mu_r 必须 >0，得到 {mu_r!r}")
+    if tand < 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: tan_delta 必须 ≥0，得到 "
+            f"{tan_delta!r}")
+    if e_br <= 0.0:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: e_br_v_per_m 必须 >0，得到 "
+            f"{e_br_v_per_m!r}")
+
+    a_m = a * 1e-3
+    mu = _MU0 * mur
+    eps = _EPS0 * eps_r
+    eta = math.sqrt(mu / eps)
+    x_root = _te_root(mm, nn) if mtype == "TE" else _tm_root(mm, nn)
+    kc = x_root / a_m
+    c_med = _C0 / math.sqrt(eps_r * mur)
+    fc_ghz = C_MM_GHZ * x_root / (2.0 * math.pi * a * math.sqrt(eps_r * mur))
+    if freq <= fc_ghz:
+        raise ValueError(
+            f"circular_waveguide_mode_prop: f_ghz={freq!r} ≤截止频率 "
+            f"fc={fc_ghz:.9g} GHz（{mtype}{mm}{nn} 模截止以下倏逝场不传播，"
+            "显式拒绝——调高频率或减小半径）")
+    f_hz = freq * 1e9
+    omega = 2.0 * math.pi * f_hz
+    k = omega / c_med
+    beta = math.sqrt(k * k - kc * kc)
+    lam0_mm = C_MM_GHZ / freq
+    lam_g_mm = 2.0 * math.pi / beta * 1e3
+    vp = omega / beta
+    vg = c_med * c_med * beta / omega
+    z_mode = k * eta / beta if mtype == "TE" else beta * eta / k
+    rs = math.sqrt(math.pi * f_hz * mu / sigma)
+    alpha_d = k * k * tand / (2.0 * beta)
+
+    a_phi = math.pi if mm >= 1 else 2.0 * math.pi
+    _r2m, r2p, r1m = _radial_integrals(mtype, mm, nn, a_m)
+    r1m_eff = 0.0 if r1m is None else r1m
+    jm = float(jv(mm, x_root))
+    if mtype == "TE":
+        d_fac = 1.0 - mm * mm / (x_root * x_root)
+        alpha_c = rs * kc * kc * (
+            1.0 + beta * beta * mm * mm / (kc ** 4 * a_m * a_m)
+        ) / (k * eta * beta * a_m * d_fac)
+        # 数值路线：P=½Z·∫|H_t|²dA + 侧壁 P_l（quad 直积场表达式）
+        p_flow = 0.5 * (k * eta / beta) * a_phi * (
+            (beta / kc) ** 2 * r2p
+            + (beta * mm / (kc * kc)) ** 2 * r1m_eff)
+        p_loss = 0.5 * rs * a_m * jm * jm * a_phi * (
+            1.0 + (beta * mm / (kc * kc * a_m)) ** 2)
+    else:
+        jp = float(jvp(mm, x_root))
+        jn1 = float(jv(mm + 1, x_root))
+        alpha_c = rs * omega * eps * jp * jp / (beta * a_m * jn1 * jn1)
+        p_flow = 0.5 * (beta * eta / k) * a_phi * (omega * eps) ** 2 * (
+            r2p / (kc * kc) + mm * mm * r1m_eff / (kc ** 4))
+        p_loss = 0.5 * rs * a_m * (omega * eps / kc) ** 2 * jp * jp * a_phi
+    alpha_num = p_loss / (2.0 * p_flow)
+    rel_dev = abs(alpha_c - alpha_num) / alpha_c
+
+    # E_max 横截面确定性栅格 + 两轮交替黄金分割精修（per 场系数）
+    u_grid = np.linspace(1e-9, 1.0, 2001)
+    ph_grid = np.linspace(0.0, 2.0 * math.pi, 361)
+    xu = x_root * u_grid
+
+    def _e2(pv: float, uv: float) -> float:
+        s2 = math.sin(mm * pv) ** 2
+        c2 = math.cos(mm * pv) ** 2
+        if mtype == "TE":
+            t_r = (mm * float(jv(mm, uv)) / uv) ** 2
+            t_p = float(jvp(mm, uv)) ** 2
+            return (omega * mu / kc) ** 2 * (t_r * s2 + t_p * c2)
+        t_z = float(jv(mm, uv)) ** 2
+        t_r = float(jvp(mm, uv)) ** 2
+        t_p = (mm * float(jv(mm, uv)) / uv) ** 2
+        return t_z * c2 + (beta / kc) ** 2 * (t_r * c2 + t_p * s2)
+
+    if mtype == "TE":
+        e2_grid = (omega * mu / kc) ** 2 * (
+            (mm * jv(mm, xu) / xu) ** 2
+            * np.sin(mm * ph_grid)[:, None] ** 2
+            + jvp(mm, xu) ** 2 * np.cos(mm * ph_grid)[:, None] ** 2)
+    else:
+        e2_grid = (
+            jv(mm, xu) ** 2 * np.cos(mm * ph_grid)[:, None] ** 2
+            + (beta / kc) ** 2 * (
+                jvp(mm, xu) ** 2 * np.cos(mm * ph_grid)[:, None] ** 2
+                + (mm * jv(mm, xu) / xu) ** 2
+                * np.sin(mm * ph_grid)[:, None] ** 2))
+    i_ph, i_u = (int(v) for v in np.unravel_index(
+        np.argmax(e2_grid), e2_grid.shape))
+    pv, uv = float(ph_grid[i_ph]), float(u_grid[i_u])
+    du = float(u_grid[1] - u_grid[0])
+    dp = float(ph_grid[1] - ph_grid[0])
+    for _ in range(2):
+        pv_fix = pv
+        uv_fix = uv
+        res = minimize_scalar(
+            lambda t, p0=pv_fix: -_e2(p0, t),
+            bounds=(max(1e-9, uv_fix - du), min(1.0, uv_fix + du)),
+            method="bounded", options={"xatol": 1e-12})
+        uv = float(res.x)
+        res = minimize_scalar(
+            lambda t, u0=uv: -_e2(t, u0), bounds=(pv - dp, pv + dp),
+            method="bounded", options={"xatol": 1e-12})
+        pv = float(res.x)
+    e_max = math.sqrt(max(_e2(pv, uv), 0.0))
+    p_max = p_flow * (e_br / e_max) ** 2
+
+    return {
+        "mode": f"{mtype}{mm}{nn}",
+        "mode_type": mtype,
+        "m": mm,
+        "n": nn,
+        "x_root": round(x_root, 12),
+        "radius_mm": a,
+        "f_ghz": freq,
+        "epsilon_r": eps_r,
+        "mu_r": mur,
+        "tan_delta": tand,
+        "fc_ghz": round(fc_ghz, 9),
+        "f_over_fc": round(freq / fc_ghz, 12),
+        "kc_rad_per_m": round(kc, 12),
+        "beta_rad_per_m": round(beta, 12),
+        "lambda_0_mm": round(lam0_mm, 9),
+        "lambda_g_mm": round(lam_g_mm, 9),
+        "lambda_g_check_mm": round(
+            lam0_mm / math.sqrt(eps_r * mur)
+            / math.sqrt(1.0 - (fc_ghz / freq) ** 2), 9),
+        "vp_m_per_s": round(vp, 9),
+        "vg_m_per_s": round(vg, 9),
+        "vp_vg_identity": round(vp * vg / (c_med * c_med), 15),
+        "eta_ohm": round(eta, 12),
+        "z_mode_ohm": round(z_mode, 9),
+        "rs_ohm_per_sq": round(rs, 15),
+        "alpha_c_np_per_m": float(alpha_c),
+        "alpha_c_db_per_m": round(alpha_c * 8.685889638065035, 12),
+        "alpha_c_numeric_np_per_m": float(alpha_num),
+        "alpha_c_xcheck_rel_dev": round(rel_dev, 15),
+        "alpha_d_np_per_m": float(alpha_d),
+        "alpha_total_db_per_m": round(
+            (alpha_c + alpha_d) * 8.685889638065035, 12),
+        "e_br_v_per_m": e_br,
+        "e_max_per_coef_v_per_m": round(e_max, 9),
+        "p_flow_per_coef_sq_w": float(p_flow),
+        "p_max_w": float(p_max),
+        "note": (
+            "α_c 闭式（Bessel 恒等式化简）与场表达式曲面积分双路线互证"
+            "（alpha_c_xcheck_rel_dev 应为 quad 精度级）；Z=波阻抗口径 "
+            "Z_TE=kη/β、Z_TM=βη/k；功率容量=场极大处达 E_br 的口径，"
+            "E_br=3e6 V/m 为干燥空气工程常数（实际随气压/湿度/内表面"
+            "状态漂移，如实注记）；衰减微扰假定壁损耗≪传输功率"),
+        "source": (
+            "Pozar Microwave Engineering §3.4 圆波导（Bessel 零点闭式："
+            "截止/β/λg/Z_TE/Z_TM/α_c 微扰式）；Collin；α_c 双路线互证与 "
+            "E_max 栅格精修为本席独立推导落地"),
+    }
+
+
+# ─── 键 5/6：矩形腔 TE/TM_mnp 谱 + 任意模式 Q（aurora_e W1-S2 补齐 R7 T2
+# ─── "矩形腔留续作"子项）────────────────────────────────────────────────────
+# 口径（Pozar《Microwave Engineering》§6.3 矩形腔；docstring 写死）：
+#   谐振频率（腔 a×b×d mm，均匀填充 εr/μr，分离变量闭式）：
+#     f_mnp = (c0/(2√(εrμr)))·√((mπ/a)²+(nπ/b)²+(pπ/d)²)/(π)
+#           = (c0/(2√(εrμr)))·√((m/a)²+(n/b)²+(p/d)²)
+#     TE_mnp: (m,n)≠(0,0) 且 p≥1（m=n=0 时全部场≡0 非物理，显式拒绝）；
+#     TM_mnp: m,n≥1 且 p≥0（p=0 允许——E_z 对端壁法向）。
+#   TE101 空腔 f=(c0/2)√(1/a²+1/d²) 与 cavity_perturbation_shift 的空腔
+#   f0 同式（同仓双源，测试互证 ≤1e-12）。
+#   无载 Q（导体微扰 Q=ω(U_e+U_m)/P_c；六壁切向 H 面积分；场分量可分离
+#   → 1-D 因子闭式：Cx=a/2(m≥1)/a(m=0)、Sx=a/2(m≥1)/0(m=0)（sin(0)≡0），
+#   y 同规则；Cz=d/2(p≥1)/d(p=0)、Sz=d/2/0）：
+#     TE：|E|²=(ωμ/kc²)²·H0²·[ky²cos²(mx)sin²(ny)+kx²sin²(mx)cos²(ny)]
+#          ·sin²(pz)；|H|²=H0²·[(kzkx/kc²)²sin·cos·cos+(kzky/kc²)²cos·
+#          sin·cos+cos²·cos²·sin²]（各按 x,y,z 分量重组）
+#     TM：E_z=E0·sin(mx)sin(ny)cos(pz)，E_t∝kz∇_t、H_t∝ωε(ẑ×∇_t)
+#     Ue/Um≈1 谐振腔储能定理 in-output 自检（任何分量系数写错即破坏）。
+#   数值路线：同样 1-D 因子改 scipy.quad 直积 sin²/cos²（不走 a/2 闭式
+#   短路），q_xcheck_rel_dev 应 <1e-12。介质 Q=1/tanδ（0 如实返 null）、
+#   串联合成 1/Qu=1/Qc+1/Qd（同 circular_cavity_mode_q 口径）。
+
+_RECT_ENUM_MAX_CANDIDATES = 30000
+
+
+@register_calculator(
+    "rectangular_cavity_mode_spectrum",
+    "矩形腔多模谐振谱：TE/TM_mnp 分离变量闭式 f=(c0/(2√(εrμr)))·√((m/a)²+"
+    "(n/b)²+(p/d)²)（TE_mnp: (m,n)≠(0,0) 且 p≥1；TM_mnp: m,n≥1 且 p≥0，"
+    "Pozar §6.3），给腔尺寸/频段 → 带内模式频率列表（排序）+全谱主模标识"
+    "（计算判读非假定）+TE10 波导截止参考 c0/(2a√(εrμr))。锚：TE101 与 "
+    "cavity_perturbation_shift 空腔 f0=(c0/2)√(1/a²+1/d²) 同仓双源；εr "
+    "标度全谱 ÷√εr",
+    (("a_mm", "float mm 腔 x 边长（>0）"),
+     ("b_mm", "float mm 腔 y 边长（>0）"),
+     ("d_mm", "float mm 腔 z 边长（>0）"),
+     ("f_min_ghz", "float GHz 频段下缘（>0，<f_max_ghz）"),
+     ("f_max_ghz", "float GHz 频段上缘（>f_min_ghz）"),
+     ("epsilon_r", "float 填充相对介电常数（≥1，缺省 1）"),
+     ("mu_r", "float 填充相对磁导率（>0，缺省 1）"),
+     ("max_modes", "int 带内模式数上限（1..500，缺省 200；超限显式拒绝"
+      "要求收窄频段）")),
+    required=("a_mm", "b_mm", "d_mm", "f_min_ghz", "f_max_ghz"),
+)
+def rectangular_cavity_mode_spectrum(a_mm: float, b_mm: float, d_mm: float,
+                                     f_min_ghz: float, f_max_ghz: float,
+                                     epsilon_r: float = 1.0,
+                                     mu_r: float = 1.0,
+                                     max_modes: int = 200
+                                     ) -> dict[str, Any]:
+    aa = _finite(a_mm, "a_mm")
+    bb = _finite(b_mm, "b_mm")
+    dd = _finite(d_mm, "d_mm")
+    f_lo = _finite(f_min_ghz, "f_min_ghz")
+    f_hi = _finite(f_max_ghz, "f_max_ghz")
+    eps_r = _finite(epsilon_r, "epsilon_r")
+    mur = _finite(mu_r, "mu_r")
+    n_cap = _as_int(max_modes, "max_modes", 1)
+    if aa <= 0.0 or bb <= 0.0 or dd <= 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: 腔尺寸 a/b/d 必须 >0，得到 "
+            f"{a_mm!r}/{b_mm!r}/{d_mm!r}")
+    if n_cap > 500:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: max_modes 必须 ≤500，得到 "
+            f"{max_modes!r}（超宽谱请收窄频段，非提高上限）")
+    if f_lo <= 0.0 or f_hi <= f_lo:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: 须 0 < f_min_ghz < "
+            f"f_max_ghz，得到 {f_min_ghz!r}/{f_max_ghz!r}")
+    if eps_r < 1.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: epsilon_r 必须 ≥1，得到 "
+            f"{epsilon_r!r}")
+    if mur <= 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: mu_r 必须 >0，得到 {mu_r!r}")
+
+    v_fac = math.sqrt(eps_r * mur)
+    # k_total ≤ 2π f √(εrμr)/c0 → √((m/a)²+…) ≤ 2 f v_fac/C_MM_GHZ [1/mm]
+    ksum_max = 2.0 * f_hi * v_fac / C_MM_GHZ
+    m_cap = math.floor(ksum_max * aa) + 1
+    n_cap_ax = math.floor(ksum_max * bb) + 1
+
+    candidates: list[tuple[float, str]] = []
+    for mm in range(0, m_cap + 1):
+        for nn in range(0, n_cap_ax + 1):
+            lat = (mm / aa) ** 2 + (nn / bb) ** 2
+            if mm == 0 and nn == 0:
+                continue
+            # TE_mnp（p≥1）；p 上限由 √((m/a)²+(n/b)²+(p/d)²)≤ksum_max 直接
+            # 给出（ksum_max 与 (m/a) 同量纲，无 π 因子）
+            p_hi_te = math.floor(dd * math.sqrt(
+                max(0.0, ksum_max * ksum_max - lat)))
+            for pp in range(1, p_hi_te + 1):
+                f_ghz = C_MM_GHZ / (2.0 * v_fac) * math.sqrt(
+                    lat + (pp / dd) ** 2)
+                if f_lo <= f_ghz <= f_hi:
+                    candidates.append((f_ghz, f"TE{mm}{nn}{pp}"))
+            # TM_mnp（m,n≥1，p≥0）
+            if mm >= 1 and nn >= 1:
+                for pp in range(0, p_hi_te + 1):
+                    f_ghz = C_MM_GHZ / (2.0 * v_fac) * math.sqrt(
+                        lat + (pp / dd) ** 2)
+                    if f_lo <= f_ghz <= f_hi:
+                        candidates.append((f_ghz, f"TM{mm}{nn}{pp}"))
+            if len(candidates) > _RECT_ENUM_MAX_CANDIDATES:
+                raise ValueError(
+                    "rectangular_cavity_mode_spectrum: 候选模式组合爆炸"
+                    "（>30000）——频段过宽，请收窄 f_max_ghz")
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    if len(candidates) > n_cap:
+        raise ValueError(
+            f"rectangular_cavity_mode_spectrum: 带内模式数 {len(candidates)} "
+            f"> max_modes={n_cap}——频段过宽，请收窄 f_min_ghz/f_max_ghz")
+    dominant = candidates[0] if candidates else None
+    te10_cutoff = C_MM_GHZ / (2.0 * aa * v_fac)
+    return {
+        "a_mm": aa,
+        "b_mm": bb,
+        "d_mm": dd,
+        "f_min_ghz": f_lo,
+        "f_max_ghz": f_hi,
+        "epsilon_r": eps_r,
+        "mu_r": mur,
+        "n_modes_in_band": len(candidates),
+        "modes": [{"mode": name, "f_ghz": round(f_ghz, 9)}
+                  for f_ghz, name in candidates],
+        "dominant_mode": None if dominant is None else dominant[1],
+        "dominant_f_ghz": (None if dominant is None
+                           else round(dominant[0], 9)),
+        "te10_waveguide_cutoff_ghz": round(te10_cutoff, 9),
+        "dominant_criterion_note": (
+            "主模=全谱最低频模式（计算判读）；经典口径 a<d 时 TE101 主模"
+            "（本键按全谱计算判读，不按口径假定）"),
+        "note": (
+            "分离变量闭式谱；p≥1 的 TE 与 p≥0 的 TM 均按口径枚举；TE101 "
+            "空腔频率与 cavity_perturbation_shift 空腔 f0 同式（同仓双源）"),
+        "source": (
+            "Pozar Microwave Engineering §6.3 矩形腔（分离变量闭式谐振"
+            "谱；TE/TM 指标规则）"),
+    }
+
+
+def _rect_mode_validations(mtype: str, mm: int, nn: int, pp: int,
+                           where: str) -> None:
+    """矩形腔模式指标合法性（TE/TM 规则不同，显式拒绝）。"""
+    if mtype == "TE":
+        if mm == 0 and nn == 0:
+            raise ValueError(
+                f"{where}: TE_mnp 的 (m,n) 不可同时为 0（全部场≡0 非物理，"
+                "显式拒绝）")
+        if pp < 1:
+            raise ValueError(
+                f"{where}: TE_mnp 的 p≥1（p=0 时 E≡0 非物理，显式拒绝）")
+    else:
+        if mm < 1 or nn < 1:
+            raise ValueError(
+                f"{where}: TM_mnp 的 m,n ≥1（E_z=sin(mx)sin(ny) 要求，"
+                f"得到 m={mm},n={nn} 显式拒绝）")
+        if pp < 0:
+            raise ValueError(f"{where}: TM_mnp 的 p≥0，得到 {pp!r}")
+
+
+@register_calculator(
+    "rectangular_cavity_mode_q",
+    "矩形腔任意 TE/TM_mnp 模式无载 Q：导体微扰 Q=ω(U_e+U_m)/P_c（六壁切向"
+    "H 面积分；场分量可分离 → 1-D 因子闭式（Cx=a/2(m≥1)/a(m=0)、Sx=a/2/"
+    "0 同规则、Cz=d/2(p≥1)/d(p=0)）+ 同场表达式 scipy.quad 数值因子双路线"
+    "互证（rel_dev<1e-12，推导失配即红）+ Ue/Um≈1 谐振定理自检；介质 "
+    "Q=1/tanδ（0 返 null），1/Qu=1/Qc+1/Qd。锚：σ×4→Qc×2；f 与谱键 "
+    "TE101 同仓双源跨键互证；与 cavity_perturbation_shift 口径互补",
+    (("mode_type", "str 'TE' 或 'TM'"),
+     ("m", "int x 向序号（TE≥0；TM≥1）"),
+     ("n", "int y 向序号（TE≥0；TM≥1；(m,n)=(0,0) TE 显式拒绝）"),
+     ("p", "int z 向序号（TE ≥1；TM ≥0）"),
+     ("a_mm", "float mm 腔 x 边长（>0）"),
+     ("b_mm", "float mm 腔 y 边长（>0）"),
+     ("d_mm", "float mm 腔 z 边长（>0）"),
+     ("conductivity_s_per_m", "float S/m 壁导体电导率（>0；Cu=5.8e7）"),
+     ("epsilon_r", "float 填充相对介电常数（≥1，缺省 1）"),
+     ("mu_r", "float 填充相对磁导率（>0，缺省 1）"),
+     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）")),
+    required=("mode_type", "m", "n", "p", "a_mm", "b_mm", "d_mm",
+              "conductivity_s_per_m"),
+)
+def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
+                              a_mm: float, b_mm: float, d_mm: float,
+                              conductivity_s_per_m: float,
+                              epsilon_r: float = 1.0, mu_r: float = 1.0,
+                              tan_delta: float = 0.0) -> dict[str, Any]:
+    from scipy.integrate import quad
+
+    mtype = str(mode_type).strip().upper()
+    if mtype not in ("TE", "TM"):
+        raise ValueError(
+            f"rectangular_cavity_mode_q: mode_type 须为 'TE'/'TM'，得到 "
+            f"{mode_type!r}")
+    mm = _as_int(m, "m", 0)
+    nn = _as_int(n, "n", 0)
+    pp = _as_int(p, "p", 0)
+    _rect_mode_validations(mtype, mm, nn, pp, "rectangular_cavity_mode_q")
+    aa = _finite(a_mm, "a_mm")
+    bb = _finite(b_mm, "b_mm")
+    dd = _finite(d_mm, "d_mm")
+    sigma = _finite(conductivity_s_per_m, "conductivity_s_per_m")
+    eps_r = _finite(epsilon_r, "epsilon_r")
+    mur = _finite(mu_r, "mu_r")
+    tand = _finite(tan_delta, "tan_delta")
+    if aa <= 0.0 or bb <= 0.0 or dd <= 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_q: 腔尺寸 a/b/d 必须 >0，得到 "
+            f"{a_mm!r}/{b_mm!r}/{d_mm!r}")
+    if sigma <= 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_q: conductivity_s_per_m 必须 >0，"
+            f"得到 {conductivity_s_per_m!r}")
+    if eps_r < 1.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_q: epsilon_r 必须 ≥1，得到 "
+            f"{epsilon_r!r}")
+    if mur <= 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_q: mu_r 必须 >0，得到 {mu_r!r}")
+    if tand < 0.0:
+        raise ValueError(
+            f"rectangular_cavity_mode_q: tan_delta 必须 ≥0，得到 "
+            f"{tan_delta!r}")
+
+    # 全 SI 组装（ω 为 SI rad/s、k/长度/因子一律 m——混 mm 会差 1e6；
+    # 频率出口按 mm·GHz 常数换算）
+    a_si, b_si, d_si = aa * 1e-3, bb * 1e-3, dd * 1e-3
+    kx = mm * math.pi / a_si
+    ky = nn * math.pi / b_si
+    kz = pp * math.pi / d_si
+    kc2 = kx * kx + ky * ky
+    k_total = math.sqrt(kc2 + kz * kz)
+    f_hz = _C0 * k_total / (2.0 * math.pi * math.sqrt(eps_r * mur))
+    f_ghz = f_hz / 1e9
+    omega = 2.0 * math.pi * f_hz
+    mu = _MU0 * mur
+    eps = _EPS0 * eps_r
+    rs = math.sqrt(math.pi * f_hz * mu / sigma)
+
+    def _c(idx: int, length: float) -> float:
+        return length / 2.0 if idx >= 1 else length
+
+    def _s(idx: int, length: float) -> float:
+        return length / 2.0 if idx >= 1 else 0.0
+
+    cx, cy, cz = _c(mm, a_si), _c(nn, b_si), _c(pp, d_si)
+    sx, sy, sz = _s(mm, a_si), _s(nn, b_si), _s(pp, d_si)
+
+    def _assemble(sfx: tuple[float, ...], cfx: tuple[float, ...]
+                  ) -> tuple[float, float, float, float, float]:
+        """按场分量因子（sx,sy,sz）/（cx,cy,cz）组装 (Ue,Um,Px,Py,Pz)。"""
+        nsx, nsy, nsz = sfx
+        ncx, ncy, ncz = cfx
+        if mtype == "TE":
+            ue = eps / 4.0 * (omega * mu / kc2) ** 2 * (
+                ky * ky * ncx * nsy * nsz + kx * kx * nsx * ncy * nsz)
+            um = mu / 4.0 * (
+                (kz * kx / kc2) ** 2 * nsx * ncy * ncz
+                + (kz * ky / kc2) ** 2 * ncx * nsy * ncz
+                + ncx * ncy * nsz)
+            # 六壁损耗：可分离因子已是 ∫dy·∫dz 面积分（勿再加面积前缀）
+            px = 2.0 * (rs / 2.0) * (
+                (kz * ky / kc2) ** 2 * nsy * ncz + ncy * ncz)
+            py = 2.0 * (rs / 2.0) * (
+                (kz * kx / kc2) ** 2 * nsx * ncz + ncx * ncz)
+            pz = 2.0 * (rs / 2.0) * (
+                (kz * kx / kc2) ** 2 * nsx * ncy
+                + (kz * ky / kc2) ** 2 * ncx * nsy)
+        else:
+            ue = eps / 4.0 * (
+                nsx * nsy * ncz
+                + (kz * kx / kc2) ** 2 * ncx * nsy * nsz
+                + (kz * ky / kc2) ** 2 * nsx * ncy * nsz)
+            um = mu / 4.0 * (omega * eps / kc2) ** 2 * (
+                ky * ky * nsx * ncy * ncz + kx * kx * ncx * nsy * ncz)
+            px = 2.0 * (rs / 2.0) * (
+                omega * eps * kx / kc2) ** 2 * nsy * ncz
+            py = 2.0 * (rs / 2.0) * (
+                omega * eps * ky / kc2) ** 2 * nsx * ncz
+            pz = 2.0 * (rs / 2.0) * (omega * eps / kc2) ** 2 * (
+                ky * ky * nsx * ncy + kx * kx * ncx * nsy)
+        return ue, um, px, py, pz
+
+    we, wm, px_c, py_c, pz_c = _assemble((sx, sy, sz), (cx, cy, cz))
+
+    def _q_fac(idx: int, length: float, kind: str) -> float:
+        def integrand(t: float) -> float:
+            arg = idx * math.pi * t / length
+            return (math.sin(arg) ** 2 if kind == "s"
+                    else math.cos(arg) ** 2)
+
+        val, _err = quad(integrand, 0.0, length, epsrel=1e-12, limit=200)
+        return val
+
+    qsx, qcx = _q_fac(mm, a_si, "s"), _q_fac(mm, a_si, "c")
+    qsy, qcy = _q_fac(nn, b_si, "s"), _q_fac(nn, b_si, "c")
+    qsz, qcz = _q_fac(pp, d_si, "s"), _q_fac(pp, d_si, "c")
+    we_n, wm_n, px_n, py_n, pz_n = _assemble(
+        (qsx, qsy, qsz), (qcx, qcy, qcz))
+
+    q_closed = omega * (we + wm) / (px_c + py_c + pz_c)
+    q_numeric = omega * (we_n + wm_n) / (px_n + py_n + pz_n)
+    rel_dev = abs(q_closed - q_numeric) / q_closed
+    ue_over_um = None if wm <= 0.0 else we / wm
+    q_d: float | None = None if tand == 0.0 else 1.0 / tand
+    q_u = q_closed if q_d is None else q_closed * q_d / (q_closed + q_d)
+    return {
+        "mode": f"{mtype}{mm}{nn}{pp}",
+        "mode_type": mtype,
+        "m": mm,
+        "n": nn,
+        "p": pp,
+        "a_mm": aa,
+        "b_mm": bb,
+        "d_mm": dd,
+        "conductivity_s_per_m": sigma,
+        "epsilon_r": eps_r,
+        "mu_r": mur,
+        "tan_delta": tand,
+        "f_ghz": round(f_ghz, 9),
+        "rs_ohm_per_sq": round(rs, 15),
+        "q_conductor": round(q_closed, 9),
+        "q_conductor_numeric": round(q_numeric, 9),
+        "q_xcheck_rel_dev": round(rel_dev, 15),
+        "ue_over_um": None if ue_over_um is None else round(ue_over_um, 12),
+        "q_dielectric": None if q_d is None else round(q_d, 9),
+        "q_unloaded": round(q_u, 9),
+        "note": (
+            "导体 Q 闭式（1-D 因子解析）与 quad 数值因子双路线互证；"
+            "Ue/Um≈1 为谐振腔储能定理自检；介质满充均匀假定；串联合成 "
+            "1/Qu=1/Qc+1/Qd；微扰假定壁损耗≪储能"),
+        "source": (
+            "Pozar Microwave Engineering §6.3 矩形腔（微扰 Q=ωU/P_c 六壁"
+            "积分；分离变量因子闭式）；数值因子路线为本席独立落地"),
     }
