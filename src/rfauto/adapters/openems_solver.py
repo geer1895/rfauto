@@ -482,7 +482,7 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
 
 
 # 注册到全局注册表
-def register_openems():
+def register_openems() -> None:
     """注册 openEMS 求解器到全局注册表。"""
     registry = get_global_registry()
     registry.register(EMSolverType.OPENEMS, OpenEMSSolver)

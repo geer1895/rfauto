@@ -3,8 +3,10 @@
 **场景**：你要给确定性内核加一个闭式计算器（公式 → 数字），从写函数
 到合流预检全绿要动哪些文件、按什么顺序。装饰器形态的速查版在
 docs/tutorials/extending-rfauto.md 第 2 节——本文是**全程实操**，
-含每一步背后的守卫为什么存在。全部命令实测（2026-10-18，
-CALCULATOR_REGISTRY=214 含实验键 215）。
+含每一步背后的守卫为什么存在。全部命令实测（2026-10-19 复核；
+CALCULATOR_REGISTRY 计数随内核扩批滚动——本文示例以落笔时点
+245/246 为锚，**现行值一律以 `python scripts/check_numbers.py`
+实测行为准**，勿沿用本文数字）。
 
 ## 0. 前置：落位与形态
 
@@ -32,6 +34,32 @@ def my_formula(freq_ghz: float, w_mm: float = 1.0) -> dict:
 - 参考实现：`core/calc_families/cm_core.py`（切比雪夫族，
   `chebyshev_prototype` 是最小完整样例）。
 
+### 0b. 脚手架入口（推荐）：new_calc_key 生成骨架与五钉模板
+
+手写之前先用生成器（架构批 W8-S3 落件、W15-S3 增强）把骨架与逐钉
+可粘贴模板一次产出——**只生成不改**：绝不自动编辑消费者文件，模板
+落盘后由人对照锚点粘贴（消费者文件是并行合流热区）：
+
+```bash
+# ① 骨架打印到 stdout（--out 落盘则拒绝覆盖已存在文件）
+.venv/Scripts/python.exe scripts/new_calc_key.py my_new_key \
+    --module my_family --description "一行物理语义（含口径与出处）" \
+    --group 传输线 --param "freq_ghz:float GHz - 频率" --required freq_ghz
+
+# ② 五钉消费者补丁模板逐钉落盘（01→05：锚点+代码块+自证命令；
+#    会话一次性产物按工作区纪律落 runs/）
+.venv/Scripts/python.exe scripts/new_calc_key.py my_new_key \
+    --module my_family --description "…" \
+    --emit-templates runs/new_calc_key_templates_my_new_key
+```
+
+模板 05 会提醒两类特殊面：**模板类键**（键名随新模板族伴生）加跑
+test_template_meta_consistency + test_template_geometry_audit；
+test_model_docs / test_experimental_calculators 是注册表驱动的自动
+覆盖面，零改动跑绿即可。退出码：0=生成成功，2=用法/校验错误
+（键名非法、--out 已存在、--emit-templates 越界落 src/tests）。
+骨架自带"零物理数字"纪律注记（铁律 7）：常数出处由实现者填入。
+
 ## 1. 五钉清单（漏一钉=定向绿、合流全量门红，#231 实证）
 
 | 钉 | 文件 | 动作 |
@@ -46,7 +74,7 @@ def my_formula(freq_ghz: float, w_mm: float = 1.0) -> dict:
 
 ## 2. 文档与计数再生（钉 5 展开）
 
-新键改变计数锚（214→215），三处再生面必须同笔：
+新键改变计数锚（示例：246→247），三处再生面必须同笔：
 
 ```bash
 # ① docs_site/reference/calculators.md（键清单+计数，机读生成）
@@ -59,6 +87,11 @@ def my_formula(freq_ghz: float, w_mm: float = 1.0) -> dict:
 # ③ 内核卡（仅当你的族有专属卡；--check 退出码 1=需重建）
 .venv/Scripts/python.exe scripts/build_kernel_cards.py --check
 ```
+
+若你的实现带出处声明（docstring 行首"出处："标记，铁律 5 惯例），
+还要第四处：KD-1 注册表再生——`scripts/collect_formula_provenance.py`
+（漂移门 `--check`；声明写法见 docs/how-to/formula-provenance.md），
+漏跑的指纹是 test_formula_provenance 三连红。
 
 自证：`scripts/check_numbers.py` 全链对账（输出 All numbers
 consistent 才算齐）；若你的键带新族 kernel card，卡内计数由 builder

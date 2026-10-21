@@ -1,4 +1,14 @@
-"""雷达方程与检测统计族（aurora36 W4-A 席，R2 空白域 G1）。
+"""雷达方程与检测统计族（架构批 W4-A 席，R2 空白域 G1）。
+
+出处（教科书经典口径二级转引，详见下节公式口径）：
+- radar_range_equation：基本雷达方程（Skolnik, Introduction to Radar
+  Systems 3rd ed. ch.2 / Richards, Fundamentals of Radar Signal
+  Processing 2nd ed. ch.1 通用口径）。
+- albersheim_detection_snr：Albersheim 经验式（W. J. Albersheim,
+  "A graphical approach to linear detector SNR", IEEE Trans. AES, 1981；
+  转引口径 Skolnik 3ed ch.2 / Richards FRSP；√(N+0.44) 原式形态）。
+- ca_cfar_threshold：CA-CFAR 门限因子闭式（Richards FRSP ch.6
+  CA-CFAR 节标准结果）。
 
 三键：radar_range_equation（基本雷达方程，SI 线性/dB 混合双口径）/
 albersheim_detection_snr（Pfa-Pd-SNR 三量互算经验式）/

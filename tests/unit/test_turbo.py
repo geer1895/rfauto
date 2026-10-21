@@ -85,6 +85,36 @@ class TestTurbo:
         assert r["n_attempts"] == 16
         assert r["n_real_used"] == 13
 
+    def test_symmetric_counter_no_early_expansion(self):
+        """成功/失败计数互清零（对称口径，W6-P3-1 官方源核对钉）。
+
+        官方 TuRBO-1 _adjust_length（uber-research/TuRBO turbo_1.py，
+        2026-10-18 原文核对）成功分支清零失败计数、失败分支清零成功
+        计数=双方互清零。本钉以受控 improve/fail 交替序列（不连续 3 成功）
+        钉死"失败清零成功计数"——若未来改成 review_w6 曾误记的非对称
+        （成功累计不被失败清零），交替序列下 succcount 会累积达 3 触发
+        扩边，length_trace 越过 length_init，本钉即红。
+        """
+        n_init, n_iter = 2, 6
+        state = {"calls": 0}
+
+        def scripted(params: dict[str, float]) -> dict[str, float]:
+            k = state["calls"]
+            state["calls"] += 1
+            if k < n_init:
+                return {"f": 1.5}  # LHS 预热：incumbent=1.5
+            j = k - n_init
+            if j % 2 == 0:  # 交替：偶数迭代改进、奇数迭代失败
+                return {"f": 1.0 - 0.1 * (j // 2)}  # 1.0/0.9/0.8 严格改进
+            return {"f": 2.0}  # 高于 incumbent=失败
+
+        r = run_turbo(BOUNDS, OBJECTIVES, scripted, n_init=n_init,
+                      n_iter=n_iter, seed=42)
+        assert r["ok"] is True
+        assert [t["improved"] for t in r["trace"]] == [True, False] * 3
+        # 对称口径：成功计数被失败清零→连续计数永远到不了 3→全程不扩边
+        assert r["length_trace"] == [turbo_mod.DEFAULT_LENGTH_INIT] * n_iter
+
     def test_zero_touch_existing_trust_region_surface(self):
         """零破坏：trust_region 既有公开面原样可用（平行模块不寄生）。"""
         for name in ("refine_trust_region", "run_two_stage"):

@@ -12,10 +12,10 @@
 | 快速上手样例 | README「快速开始」「CLI 命令一览」节 |
 | 逐命令教程 | docs/tutorials/getting-started.md；docs/how-to/ 各篇 |
 
-当前规模（2026-10-18 实测，与 `scripts/check_numbers.py` 同源）：CLI 270 个
-叶子命令（non-bench 264 + bench 6）；单元测试 25534（check_numbers 口径
+当前规模（2026-10-19 实测，与 `scripts/check_numbers.py` 同源）：CLI 273 个
+叶子命令（non-bench 267 + bench 6）；单元测试 27261（check_numbers 口径
 =全量门日志 passed+failed）。规模数字以该脚本实跑为准，此处快照仅作
-量级参考。
+量级参考（上游全量门口径；公开仓 CI 收集数见 README 徽章）。
 
 机读出口（架构面，防手抄漂移）：`rfauto rest schema --json`（REST
 `/api/v1` 全端点清单，25 端点实测）；`rfauto pitfalls search <关键词>`
@@ -29,10 +29,11 @@
 | 执行单键 | `rfauto calc run <键> -p 参数=值 …`（`-p` 可重复；示例见 `rfauto calc run --help`） |
 | UI 交互面 | 看板「微波工具箱」页（`#/tools`）：按组下拉+搜索、结果自动画图/热图、扫参模式（2–101 点）、`#/tools/<键名>` 深链直达——与 CLI/MCP 同一内核 |
 
-规模快照（2026-10-18 实测，与 `scripts/check_numbers.py` 同源）：
-`CALCULATOR_REGISTRY` 214（含实验键 215，16 业务组+实验组）。键数与
-分组**以 `rfauto calc list` 实时输出为准**——本页不钉死数字，注册表
-扩键后此处无需跟改。
+规模快照（2026-10-19 实测复核，与 `scripts/check_numbers.py` 同源）：
+`CALCULATOR_REGISTRY` 323（含实验键 324，16 业务组+实验组；2026-10
+架构批期间自 248 净增 49 键）。
+键数与分组**以 `rfauto calc list` 实时输出为准**——本页不钉死数字，
+注册表扩键后此处无需跟改。
 
 ## Python API（模块 docstring = 单一事实源）
 

@@ -410,7 +410,7 @@ def sll_metrics(patterns, orders, u_grid) -> dict[str, Any]:
     }
 
 
-def parseval_residual(tau, win_center=None, *, max_order: int, chunk_size: int = 1 << 19):
+def parseval_residual(tau, win_center=None, *, max_order: int, chunk_size: int = 1 << 19) -> np.ndarray:
     """Parseval 恒等式残差：|Σ_{|m|≤M'}|c_nm|² − τ_n| / τ_n（逐元）。
 
     τ_n == 0 元恒返 0.0（系数全零，残差按绝对差定义自然为 0）。

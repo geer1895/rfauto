@@ -1,0 +1,3909 @@
+{
+ "categories": {
+  "ads": 3,
+  "comsol": 1,
+  "docs": 24,
+  "elmer": 1,
+  "encoding": 2,
+  "git": 24,
+  "hfss": 12,
+  "kicad": 2,
+  "numerics": 38,
+  "openems": 14,
+  "process": 19,
+  "python": 27,
+  "shell": 31,
+  "testing": 19,
+  "workflow": 8
+ },
+ "category_vocab": [
+  "shell",
+  "encoding",
+  "docs",
+  "python",
+  "testing",
+  "numerics",
+  "process",
+  "hfss",
+  "openems",
+  "kicad",
+  "comsol",
+  "elmer",
+  "git",
+  "workflow",
+  "ads"
+ ],
+ "consumption": {
+  "n_matched_rows": 10,
+  "n_rows": 10,
+  "unmatched_ids": []
+ },
+ "description": "坑账全量结构化索引（架构批 KB-B/KB-B2 席，scripts/pitfall_index.py 机器解析）——项目规约.md 踩坑速查节全量条目+runs/ SESSION_PITFALLS 散档条目+pitfall_consumption.yaml 消费指针并入。AGENTS 条目 id=条目首个坑号组（检索键非权威登记，权威=；正文引用号先现时随首命中，全量候选见 numbers），无坑号条目=A<行号> 行锚合成 id（随 项目规约.md 行移动重锚）；散档条目 id=#<TOKEN>-<文档序号>（文件局部空间，与全局坑号隔离，devlog_ref 如实 None）。与 pitfalls_index.json（ge8e X6 人工精选 66 条 v1）并存互补，本文件可随源演进重导：python scripts/pitfall_index.py",
+ "entries": [
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A189",
+   "lesson_one_line": "断点前已落工作树但未 commit 的修复，断点重启后只剩最后编辑的一处幸存（本例 registry分组头注 AST 同步消失、仅 api/__init__.py 留存）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 194,
+    "line_start": 189
+   },
+   "text": "- 会话断点丢未提交修复（2026-10-20 架构批 终门实证）：断点前已落工作树但未 commit 的修复，断点重启后只剩最后编辑的一处幸存（本例 registry分组头注 AST 同步消失、仅 api/__init__.py 留存）——症状=\"上一轮门绿过的测试这轮必红且 git log 无对应提交\"。立规：重启/断点前工作树必须commit（含 WIP 保全笔），门后再生批必须在断点前落账；重开后`git log -3`+`git status` 先盘点再动手。",
+   "title": "会话断点丢未提交修复"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": "#144",
+   "id": "#144",
+   "lesson_one_line": "service 层 run 目录/会话档一律 cwd 相对解析（create_run_dir(Path(\".\"))/SESSIONS_DIR=Path(\"runs\")）",
+   "numbers": [
+    144
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 204,
+    "line_start": 195
+   },
+   "text": "- #144 家族终门污染新形态（2026-10-20 定谳）：service 层 run 目录/会话档一律 cwd 相对解析（create_run_dir(Path(\".\"))/SESSIONS_DIR=Path(\"runs\")）——测试配方落 tmp 但不 chdir 时，每 gate 向真实 runs/ 湖落假数据（本例 24 假 calibration:fake run+23 假会话档，跨四日每一终门）；会话档进 runs/chat_sessions 会被 few-shot 当案例源消费=数据完整性风险。破案手法：run 目录 mtime 与 seg 窗口互证+report.md 直指pytest tmp 路径+会话档指纹（1 轮/fallback/action/消息长）。清偿姿势：测试加 monkeypatch.chdir(tmp_path)（run 目录解析在调用时取 cwd，chdir即重定向）+指纹白名单点名删除（点名目录不用通配，规则 3）。",
+   "title": "#144 家族终门污染新形态"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": null,
+   "id": "A205",
+   "lesson_one_line": "用户级env `OPENEMS_INSTALL_PATH`/`RFAUTO_OPENEMS_BIN` 指向工作区vendor\\openEMS\\install（旧代际、带完整 vtk 依赖树），CSXCAD 包`__init__` 优先按它 `add_dll_directory`；新构建 E:\\openEMS\\inst…",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 217,
+    "line_start": 205
+   },
+   "text": "- DLL 双 install 遮蔽坑（2026-10-08 ge9 开工日实证，簇5 定谳）：用户级env `OPENEMS_INSTALL_PATH`/`RFAUTO_OPENEMS_BIN` 指向工作区vendor\\openEMS\\install（旧代际、带完整 vtk 依赖树），CSXCAD 包`__init__` 优先按它 `add_dll_directory`；新构建 E:\\openEMS\\install 缺vtk 依赖树→加载失败静默回退 vendor→python 侧 XML 写出/引擎子进程全走旧 C++（簇5 DumpBox 属性塌缩本体；\"引擎与绑定同 commit 重建\"处方不解加载错配）。诊断三板斧：①绑定写 XML 查属性原文（etree iter DumpBox）②C++ 独立小程序链 install 库当地面真相 ③psapi.EnumProcessModulesEx 枚举进程实际加载 DLL 路径（GetCurrentProcess伪句柄必须 restype=c_void_p，否则 error 6 空列表=误判静态链接）。修复=依赖树补齐（vcpkg_installed bin→install/bin）+翻 env 键。凡\"重建后行为不变\"类环境件，先枚举进程加载面再动手编译。",
+   "title": "DLL 双 install 遮蔽坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#152",
+   "id": "#152",
+   "lesson_one_line": "① 新 CSXCAD 0.7.0绑定 GetLines() 实际按插入序返回（docstring \"sorted and unique\" 失实，最小三线插入实测证伪）",
+   "numbers": [
+    152,
+    331,
+    350,
+    364,
+    355
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 236,
+    "line_start": 218
+   },
+   "text": "- 收官批五坑（2026-10-06 适配批+EC-12 终判实证）：① 新 CSXCAD 0.7.0绑定 GetLines() 实际按插入序返回（docstring \"sorted and unique\" 失实，最小三线插入实测证伪）——网格守卫（#152 近重合去重族）遍历前必须`np.sort`，coil_nfc 负向域界线被静默丢弃实证（每轴恰丢一条）；全仓 8 处同款守卫靠\"末次 SmoothMeshLines 排序兜底\"属休眠隐患（审计 dump 必须打印实际顺序，#331 族：观察工具自身失真）；② 共模偏差归因纪律（#350 姊妹条）：引擎单腿 vs 闭式异常时先查其他腿是否同样异常——EC-12 kappa 腿同超 1.86× 是破案关键，单腿视角会误归因\"Debye 参数未标定\"而错误重标；③ S21 对照长度=参考面跨度非名义线长（#364-② 驱动级再犯）：MSLPort测量面在馈线内部，跨度=(4·BOARD+L)/3（mline 93.33mm vs 名义 40mm，β积分独立互证）——对照公式中的几何长度一律从发射脚本几何常数解析推导+β 实测双证；④ 终门运行期 docs_site/gallery 再生钉必红（门自指伪象，#355 家族四犯）：数字条读\"末次 \\*gate\\*full\\*.log\"，门自身的launcher/seg 日志滚动作废数字源——v2 seg 日志命名含 full 是撞名面，处置=收官批门后再生同笔提交，根治=followUp 改 seg 日志命名；⑤ gssv malloc fail=环境类新形态（scipy SuperLU `malloc fails for local dworkptr[]`+exit code 负巨值）——seg 尾段内存压力的 WinError 8 之外的第三形态，隔离复跑双绿定性，勿当数值回归排查。",
+   "title": "收官批五坑"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "A237",
+   "lesson_one_line": "①环境类（占 ~72%）=串行门 35-52min 单进程内存累积致末段 subprocess spawn 被系统拒（WinError 8）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 248,
+    "line_start": 237
+   },
+   "text": "- 全量门失败定性三分法（2026-10-05 三批 25 红实证，先定性再动手——勿反复重跑烧时间）：①环境类（占 ~72%）=串行门 35-52min 单进程内存累积致末段 subprocess spawn 被系统拒（WinError 8）——判据三件套：报错OSError WinError 8+隔离复跑绿+失败簇全在 subprocess 密集测试；处置=直接用门口径 v2（scripts/wf_gate_full_v2.py 分段独立进程+尾段自动重试，勿再人工\"清理内存后整跑一遍\"烧 52min）；②基础设施类=xdist挂死（W/X 批登记的 8w 挂死族，进程表 idle 但无进度）——处置=杀掉转 v2串行；③真红=漂移类（计数锚/金快照/再生差异/信封契约/help 卫生）与席位代码缺陷——合流预检 scripts/merge_preflight.py（~2min）前移到席位返回前自证，门只兜底。另两细则：长跑门勿与重型构建（vcpkg/引擎编译）并行（内存竞争放大①）；测试竞速类 kill 时机等\"副作用落盘\"（如helper 的 marker 文件）而非状态字段轮询（W2-A dag 测试两轮门实证）。",
+   "title": "全量门失败定性三分法"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#105",
+   "id": "#105",
+   "lesson_one_line": "①新 CLI 叶必须带 `--json` 旗标（test_w2_c_json_coverage 棘轮门 WITHOUT_JSON上限只收不放，W3 门实证 +5 叶漏旗标即红）；②新 CALC 键 → kernel_cards 与docs_site 双再生同笔（`build_kernel_cards.py`+`bui…",
+   "numbers": [
+    105
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 259,
+    "line_start": 249
+   },
+   "text": "- 合流期\"新面必红清单\"（W1-W3 三批门实红谱系，新席交付前对照自证）：①新 CLI 叶必须带 `--json` 旗标（test_w2_c_json_coverage 棘轮门 WITHOUT_JSON上限只收不放，W3 门实证 +5 叶漏旗标即红）；②新 CALC 键 → kernel_cards 与docs_site 双再生同笔（`build_kernel_cards.py`+`build_docs_pages.py`，W3 门实证 macromodel 卡漂移）；③信封修复类改动（#105 兜底分支/错误路径）同样走 ok_envelope/error_envelope 构造器——裸 `{\"ok\": False, \"error\": ...}`手感顺手必触契约门（合流者本人 W2 实证两红）；④金快照三类重生成清单=public_api（新模块 `__all__` 纯增量后 --generate+评审）+注册序（test_cli_registration_order --write-gold）+capability_cards/gallery；⑤50Ω 宽/名义值字面量禁手抄（test_width_single_source 普查守卫，走synthesis.nominal_width_mm 单源或 None 哨兵惰性求值）。",
+   "title": "合流期\"新面必红清单\""
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "A260",
+   "lesson_one_line": ".cmd 可见窗（Start-Process Normal）在独立窗口不在 ZCode 终端面板",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 263,
+    "line_start": 260
+   },
+   "text": "- 长跑门运行姿势：.cmd 可见窗（Start-Process Normal）在独立窗口不在 ZCode 终端面板——轮询用 `grep GATE_RC runs/<name>.log` 后台循环（sleep 占终端=用户看到\"没动静\"），勿反复前台等待；门日志尾部 mtime+ `.\\....log` 行数增长即活证据（W3 会话用户问询实证）。",
+   "title": "长跑门运行姿势"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "A264",
+   "lesson_one_line": "vcpkg/GitHub 断流用重试循环自愈；大文件可手动断点下载到 `C:\\vcpkg\\downloads\\`（哈希对上即被复用）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 265,
+    "line_start": 264
+   },
+   "text": "- 网络经代理不稳：vcpkg/GitHub 断流用重试循环自愈；大文件可手动断点下载到 `C:\\vcpkg\\downloads\\`（哈希对上即被复用）。",
+   "title": "网络经代理不稳"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "A266",
+   "lesson_one_line": "确定性测试要清空同名前缀的整个环境变量集合，不是只清自己 set 的那个。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 266,
+    "line_start": 266
+   },
+   "text": "- 确定性测试要清空同名前缀的整个环境变量集合，不是只清自己 set 的那个。",
+   "title": "确定性测试要清空同名前缀的整个环境变量集合，不是只清自己 set 的那个"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A267",
+   "lesson_one_line": "文档串引用的配置文件必须真实存在（要么实现要么删话）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 267,
+    "line_start": 267
+   },
+   "text": "- 文档串引用的配置文件必须真实存在（要么实现要么删话）。",
+   "title": "文档串引用的配置文件必须真实存在（要么实现要么删话）"
+  },
+  {
+   "category": "encoding",
+   "devlog_ref": "#89",
+   "id": "#89",
+   "lesson_one_line": "PowerShell 改文本文件必须显式 `-Encoding UTF8`（读写两端都要），否则中文静默变乱码且纯代码照常运行",
+   "numbers": [
+    89
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 269,
+    "line_start": 268
+   },
+   "text": "- PowerShell 改文本文件必须显式 `-Encoding UTF8`（读写两端都要），否则中文静默变乱码且纯代码照常运行——改完抽查中文内容（#89）。",
+   "title": "PowerShell 改文本文件必须显式 `-Encoding UTF8`（读写两端都要），否则中文静默变乱码且纯代码照常运行——改完抽查中文内容（#89）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#90/#92",
+   "id": "#90/#92",
+   "lesson_one_line": "前端数据解释逻辑（YAML/CSV 解析）放服务层，前端只渲染；删代码后核对入口调用仍在（#90/#92）。",
+   "numbers": [
+    90,
+    92
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 271,
+    "line_start": 270
+   },
+   "text": "- 前端数据解释逻辑（YAML/CSV 解析）放服务层，前端只渲染；删代码后核对入口调用仍在（#90/#92）。",
+   "title": "前端数据解释逻辑（YAML/CSV 解析）放服务层，前端只渲染"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#96",
+   "id": "#96",
+   "lesson_one_line": "cmd 惯语（`> nul`、`del \"$null\"`）带进 git-bash 会生成实体垃圾文件；bash 用 `/dev/null`，操作后 `git status` 抽查根目录（#96）。",
+   "numbers": [
+    96
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 273,
+    "line_start": 272
+   },
+   "text": "- Shell 混用陷阱：cmd 惯语（`> nul`、`del \"$null\"`）带进 git-bash 会生成实体垃圾文件；bash 用 `/dev/null`，操作后 `git status` 抽查根目录（#96）。",
+   "title": "Shell 混用陷阱"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#97",
+   "id": "#97",
+   "lesson_one_line": "文档里的统计数字（测试数/CLI 数/MCP 数）必须代码实测（grep 装饰器），不沿用上一份文档；文档与代码改动同 commit（#97）。",
+   "numbers": [
+    97
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 275,
+    "line_start": 274
+   },
+   "text": "- 文档里的统计数字（测试数/CLI 数/MCP 数）必须代码实测（grep 装饰器），不沿用上一份文档；文档与代码改动同 commit（#97）。",
+   "title": "文档里的统计数字（测试数/CLI 数/MCP 数）必须代码实测（grep 装饰器），不沿用上一份文档"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#98",
+   "id": "#98",
+   "lesson_one_line": "移动文档用 `git mv`，移动后全仓 grep 旧路径修活引用；根目录只放当前有效文件，历史进 `docs/history/`（plans/ handoffs/ plan-reviews-*）（#98）。",
+   "numbers": [
+    98
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 277,
+    "line_start": 276
+   },
+   "text": "- 移动文档用 `git mv`，移动后全仓 grep 旧路径修活引用；根目录只放当前有效文件，历史进 `docs/history/`（plans/ handoffs/ plan-reviews-*）（#98）。",
+   "title": "移动文档用 `git mv`，移动后全仓 grep 旧路径修活引用"
+  },
+  {
+   "category": "process",
+   "devlog_ref": "#102",
+   "id": "#102",
+   "lesson_one_line": "edit 工具对含三引号的 old_string 不可靠（抛 TypeError），大块重构直接用write 完整替换文件（#102）。",
+   "numbers": [
+    102
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 279,
+    "line_start": 278
+   },
+   "text": "- edit 工具对含三引号的 old_string 不可靠（抛 TypeError），大块重构直接用write 完整替换文件（#102）。",
+   "title": "edit 工具对含三引号的 old_string 不可靠（抛 TypeError），大块重构直接用write 完整替换文件（#102）"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": "#103",
+   "id": "#103",
+   "lesson_one_line": "write 工具在有 __pycache__/.pytest_cache 的目录下可能 EISDIR，改用pwsh Base64+File.WriteAllText 绕过（#103）。",
+   "numbers": [
+    103
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 281,
+    "line_start": 280
+   },
+   "text": "- write 工具在有 __pycache__/.pytest_cache 的目录下可能 EISDIR，改用pwsh Base64+File.WriteAllText 绕过（#103）。",
+   "title": "write 工具在有 __pycache__/.pytest_cache 的目录下可能 EISDIR，改用pwsh Base64+File.WriteAllText 绕过（#103）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#104",
+   "id": "#104",
+   "lesson_one_line": "新文件写完先 `ruff check` 再提交；import 组间空行是 I001 高频触发点（#104）。",
+   "numbers": [
+    104
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 282,
+    "line_start": 282
+   },
+   "text": "- 新文件写完先 `ruff check` 再提交；import 组间空行是 I001 高频触发点（#104）。",
+   "title": "新文件写完先 `ruff check` 再提交"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "A283",
+   "lesson_one_line": "观测性代码（provenance/日志/审计）必须 best-effort，不得成为业务主路径的故障点",
+   "numbers": [
+    105
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 284,
+    "line_start": 283
+   },
+   "text": "- 观测性代码（provenance/日志/审计）必须 best-effort，不得成为业务主路径的故障点——宁可 unknown 也不能阻塞真机求解（#105）。",
+   "title": "观测性代码（provenance/日志/审计）必须 best-effort，不得成为业务主路径的故障点——宁可 unknown 也不能阻塞真机求解（#105）"
+  },
+  {
+   "category": "process",
+   "devlog_ref": "#106",
+   "id": "#106",
+   "lesson_one_line": "recipe_version（配方 schema 版本）vs schema_version（插件参数版本）语义不同，混淆会导致缓存失效策略错误（#106）。",
+   "numbers": [
+    106
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 286,
+    "line_start": 285
+   },
+   "text": "- recipe_version（配方 schema 版本）vs schema_version（插件参数版本）语义不同，混淆会导致缓存失效策略错误（#106）。",
+   "title": "recipe_version（配方 schema 版本）vs schema_version（插件参数版本）语义不同，混淆会导致缓存失效策略错误（#106）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#108",
+   "id": "#108",
+   "lesson_one_line": "大块代码 append 超 50 行后，先 grep 验证目标函数确实存在于文件中再提交",
+   "numbers": [
+    108
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 288,
+    "line_start": 287
+   },
+   "text": "- 大块代码 append 超 50 行后，先 grep 验证目标函数确实存在于文件中再提交——长 f-string 含特殊字符时 write 可能静默截断（#108）。",
+   "title": "大块代码 append 超 50 行后，先 grep 验证目标函数确实存在于文件中再提交——长 f-string 含特殊字符时 write 可能静默截断（#108）"
+  },
+  {
+   "category": "process",
+   "devlog_ref": "#112",
+   "id": "#112",
+   "lesson_one_line": "大型 api.py 的 v3 新函数拆到独立模块（v3_services.py），api.py 仅做 re-export",
+   "numbers": [
+    112
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 290,
+    "line_start": 289
+   },
+   "text": "- 大型 api.py 的 v3 新函数拆到独立模块（v3_services.py），api.py 仅做 re-export——比反复丢失函数更安全（#112）。",
+   "title": "大型 api.py 的 v3 新函数拆到独立模块（v3_services.py），api.py 仅做 re-export——比反复丢失函数更安全（#112）"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#113",
+   "id": "#113",
+   "lesson_one_line": "永远不要用 PowerShell 管道编辑含中文的 Python 文件",
+   "numbers": [
+    113
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 292,
+    "line_start": 291
+   },
+   "text": "- 永远不要用 PowerShell 管道编辑含中文的 Python 文件——管道编码默认 UTF-16 会把中文变 mojibake；用 edit 工具或 pwsh Base64+File.WriteAllText（#113）。",
+   "title": "永远不要用 PowerShell 管道编辑含中文的 Python 文件——管道编码默认 UTF-16 会把中文变 mojibake"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "A293",
+   "lesson_one_line": "大文件尾部的本地同名 def 会遮蔽 re-export",
+   "numbers": [
+    112,
+    116
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 294,
+    "line_start": 293
+   },
+   "text": "- \"修了不生效\"先查名字绑定：大文件尾部的本地同名 def 会遮蔽 re-export——治理拆分（#112）后必须删净旧副本，否则新实现是死代码（#116）。",
+   "title": "\"修了不生效\"先查名字绑定"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#117",
+   "id": "#117",
+   "lesson_one_line": "空 dict 为 falsy，or 返回脱离父容器的新 dict，写入静默丢失（#117）。",
+   "numbers": [
+    117
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 296,
+    "line_start": 295
+   },
+   "text": "- `d.setdefault(k, {}) or {}` 是游离字典陷阱：空 dict 为 falsy，or 返回脱离父容器的新 dict，写入静默丢失（#117）。",
+   "title": "`d.setdefault(k, {}) or {}` 是游离字典陷阱"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#118",
+   "id": "#118",
+   "lesson_one_line": "数值算法（估计量/拟合）的裁判是\"小步长收敛数值 + 独立来源解析值\"，不是自己的推导",
+   "numbers": [
+    118
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 298,
+    "line_start": 297
+   },
+   "text": "- 数值算法（估计量/拟合）的裁判是\"小步长收敛数值 + 独立来源解析值\"，不是自己的推导——推导和解析期望都可能算错（#118）。",
+   "title": "数值算法（估计量/拟合）的裁判是\"小步长收敛数值 + 独立来源解析值\"，不是自己的推导——推导和解析期望都可能算错（#118）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#119",
+   "id": "#119",
+   "lesson_one_line": ".4f if x else 'N/A'}` 语法合法、运行即炸；lint 范围必须覆盖 scripts/，不留盲区（#119）。",
+   "numbers": [
+    119
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 300,
+    "line_start": 299
+   },
+   "text": "- f-string 条件格式符 `{x:.4f if x else 'N/A'}` 语法合法、运行即炸；lint 范围必须覆盖 scripts/，不留盲区（#119）。",
+   "title": "f-string 条件格式符 `{x"
+  },
+  {
+   "category": "process",
+   "devlog_ref": "#121",
+   "id": "#121",
+   "lesson_one_line": "跨适配器比较数据先统一单位并显式归一",
+   "numbers": [
+    121
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 301,
+    "line_start": 301
+   },
+   "text": "- 跨适配器比较数据先统一单位并显式归一——空交集会静默通过而非报错（#121）。",
+   "title": "跨适配器比较数据先统一单位并显式归一——空交集会静默通过而非报错（#121）"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#122",
+   "id": "#122",
+   "lesson_one_line": "校准目标冲突（fake 对 HFSS vs 对 openEMS）如实记 FAIL/PARTIAL，不凑绿；学术诚信原则优先于验收表全勾（#122）。",
+   "numbers": [
+    122
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 303,
+    "line_start": 302
+   },
+   "text": "- 校准目标冲突（fake 对 HFSS vs 对 openEMS）如实记 FAIL/PARTIAL，不凑绿；学术诚信原则优先于验收表全勾（#122）。",
+   "title": "校准目标冲突（fake 对 HFSS vs 对 openEMS）如实记 FAIL/PARTIAL，不凑绿"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#123",
+   "id": "#123",
+   "lesson_one_line": "注入后回查 user_attrs 标记的 WAITING trial 号，不依赖返回值（#123）。",
+   "numbers": [
+    123
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 305,
+    "line_start": 304
+   },
+   "text": "- Optuna enqueue_trial 返回值随版本可能是 None：注入后回查 user_attrs 标记的 WAITING trial 号，不依赖返回值（#123）。",
+   "title": "Optuna enqueue_trial 返回值随版本可能是 None"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A306",
+   "lesson_one_line": "web_reader读受反爬文档（走用户代理）、web-search-prime 搜借鉴案例、zai-mcp-server 系列做多模态图像审计、zread 读热门仓库（小众 RF仓库未索引，fallback git clone 到 E 盘工作区）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 310,
+    "line_start": 306
+   },
+   "text": "- 官方文档被反爬拦截（Ansys Optics 等 403/超时）时，用用户配置的 MCP 工具箱（2026-09-02 实测，详见 docs/rf_template_references.md 5b）：web_reader读受反爬文档（走用户代理）、web-search-prime 搜借鉴案例、zai-mcp-server 系列做多模态图像审计、zread 读热门仓库（小众 RF仓库未索引，fallback git clone 到 E 盘工作区）。",
+   "title": "官方文档被反爬拦截（Ansys Optics 等 403/超时）时，用用户配置的 MCP 工具箱"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": "#139",
+   "id": "#139",
+   "lesson_one_line": "配了 API key 后，\"存在配置则走外部服务\"的分支会让单测真打外网（实测22s/次、断言随模型回复漂移、网络抖动时又假绿变快）",
+   "numbers": [
+    139
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 313,
+    "line_start": 311
+   },
+   "text": "- 配了 API key 后，\"存在配置则走外部服务\"的分支会让单测真打外网（实测22s/次、断言随模型回复漂移、网络抖动时又假绿变快）——此类单测必须monkeypatch 钉住通道（#139）。",
+   "title": "配了 API key 后，\"存在配置则走外部服务\"的分支会让单测真打外网（实测22s/次、断言随模型回复漂移、网络抖动时又假绿变快）——此类单测必须monkeypatch 钉住通道（#139）"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#140",
+   "id": "#140",
+   "lesson_one_line": "PathLike 接口函数（守卫/路径计算）第一行先 `Path()` 收敛入参，注解写了Path 不代表调用方传的是 Path（#140）。",
+   "numbers": [
+    140
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 315,
+    "line_start": 314
+   },
+   "text": "- PathLike 接口函数（守卫/路径计算）第一行先 `Path()` 收敛入参，注解写了Path 不代表调用方传的是 Path（#140）。",
+   "title": "PathLike 接口函数（守卫/路径计算）第一行先 `Path()` 收敛入参，注解写了Path 不代表调用方传的是 Path（#140）"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A316",
+   "lesson_one_line": "含 API key 的配置文件（configs/chat_settings.yaml）必须进 .gitignore，新增配置文件时 git status 抽查是否被跟踪（2026-09-02 差点误提交）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 317,
+    "line_start": 316
+   },
+   "text": "- 含 API key 的配置文件（configs/chat_settings.yaml）必须进 .gitignore，新增配置文件时 git status 抽查是否被跟踪（2026-09-02 差点误提交）。",
+   "title": "含 API key 的配置文件（configs/chat_settings.yaml）必须进 .gitignore，新增配置文件时 git status 抽查是否被跟踪（2026-09-02 差点误提交）"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#142",
+   "id": "#142",
+   "lesson_one_line": "多行逻辑写临时 .py 跑完即删；heredoc 不可用；命令链用 `&&` 不用 `;`（#142）。",
+   "numbers": [
+    142
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 319,
+    "line_start": 318
+   },
+   "text": "- cmd 里内联多行 python -c 静默失败（无输出无报错看似成功）：多行逻辑写临时 .py 跑完即删；heredoc 不可用；命令链用 `&&` 不用 `;`（#142）。",
+   "title": "cmd 里内联多行 python -c 静默失败（无输出无报错看似成功）"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#146",
+   "id": "#146",
+   "lesson_one_line": "文档编辑后grep 全部标题完整性再提交（#146）。",
+   "numbers": [
+    146
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 321,
+    "line_start": 320
+   },
+   "text": "- Edit 工具整段替换文档时 new_string 忘带章节标题=静默吞标题：文档编辑后grep 全部标题完整性再提交（#146）。",
+   "title": "Edit 工具整段替换文档时 new_string 忘带章节标题=静默吞标题"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": null,
+   "id": "A322",
+   "lesson_one_line": "判别 run 真伪看 meta.json 的 adapter/study 字段；在跑的 run 是\"有 trials/无 meta\"（meta 结束才落盘）。优化循环类单测必须 chdir 隔离，否则污染真实runs/（#144）；watchdog 超时只在 Abort 真打断求解时判废，竞态完成要接受真实结果，超时…",
+   "numbers": [
+    144,
+    145
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 325,
+    "line_start": 322
+   },
+   "text": "- 判别 run 真伪看 meta.json 的 adapter/study 字段；在跑的 run 是\"有 trials/无 meta\"（meta 结束才落盘）。优化循环类单测必须 chdir 隔离，否则污染真实runs/（#144）；watchdog 超时只在 Abort 真打断求解时判废，竞态完成要接受真实结果，超时走 RFAUTO_HFSS_SOLVE_TIMEOUT_S（#145）。",
+   "title": "判别 run 真伪看 meta.json 的 adapter/study 字段"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#143",
+   "id": "#143",
+   "lesson_one_line": "新端点 404 先想旧实例，验证用备用端口`rfauto ui --port 8643`（#143）。",
+   "numbers": [
+    143
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 327,
+    "line_start": 326
+   },
+   "text": "- 常驻旧进程会占端口/带旧代码：新端点 404 先想旧实例，验证用备用端口`rfauto ui --port 8643`（#143）。",
+   "title": "常驻旧进程会占端口/带旧代码"
+  },
+  {
+   "category": "openems",
+   "consumption": [
+    {
+     "keywords": [
+      "跨适配器",
+      "physics_roles",
+      "语义"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#154",
+   "id": "#154",
+   "lesson_one_line": "recipe/HFSS/fake/openEMS 各通道消费同名几何参数，接入新适配器必须逐参数对语义（走 physics_roles），单通道各自\"看着对\"跨保真就是两个器件家族（#154，wilkinson series/shunt 实例）。",
+   "numbers": [
+    154
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 330,
+    "line_start": 328
+   },
+   "text": "- 同名参数跨适配器语义可能相反：recipe/HFSS/fake/openEMS 各通道消费同名几何参数，接入新适配器必须逐参数对语义（走 physics_roles），单通道各自\"看着对\"跨保真就是两个器件家族（#154，wilkinson series/shunt 实例）。",
+   "title": "同名参数跨适配器语义可能相反"
+  },
+  {
+   "category": "openems",
+   "consumption": [
+    {
+     "keywords": [
+      "CSXCAD",
+      "MSLPort",
+      "绑定"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#149/#150/#155",
+   "id": "#149/#150/#155",
+   "lesson_one_line": "AddMetal 不收priority 关键字（AddBox 原语级收）、SetPriority 在原语不在属性、取原语用GetAllPrimitives()；MSLPort 的 start 必须=边界侧+金属面 z，excite=0 的端口不创建激励属性（#149/#150/#155，逐条对照 .pyx 源码验证）。",
+   "numbers": [
+    149,
+    150,
+    155
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 334,
+    "line_start": 331
+   },
+   "text": "- openEMS CSXCAD Python 绑定与 MATLAB 版 API 不同源：AddMetal 不收priority 关键字（AddBox 原语级收）、SetPriority 在原语不在属性、取原语用GetAllPrimitives()；MSLPort 的 start 必须=边界侧+金属面 z，excite=0 的端口不创建激励属性（#149/#150/#155，逐条对照 .pyx 源码验证）。",
+   "title": "openEMS CSXCAD Python 绑定与 MATLAB 版 API 不同源"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "跨适配器",
+      "physics_roles",
+      "语义"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": null,
+   "id": "A335",
+   "lesson_one_line": "openEMS 网格构建末尾必须做最小间距守卫（AddEdges2Grid 边缘线与浮点误差线撞出 nm 级近重合线 → CFL 时间步塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错，#152）；端口面必须贴 PML_8 边界（#154 前节）。",
+   "numbers": [
+    152,
+    154
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 337,
+    "line_start": 335
+   },
+   "text": "- openEMS 网格构建末尾必须做最小间距守卫（AddEdges2Grid 边缘线与浮点误差线撞出 nm 级近重合线 → CFL 时间步塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错，#152）；端口面必须贴 PML_8 边界（#154 前节）。",
+   "title": "openEMS 网格构建末尾必须做最小间距守卫（AddEdges2Grid 边缘线与浮点误差线撞出 nm 级近重合线 → CFL 时间步塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错，#152）"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#157",
+   "id": "#157",
+   "lesson_one_line": "后台长任务（>10min）必须 Start-Process 分离进程+日志文件轮询；清重复进程先 wmic 看命令行再动手，taskkill /T 会整树连坐 shim 嵌套的合法进程（#157）；study 复用+缓存让同种子重跑秒回",
+   "numbers": [
+    157,
+    158
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 341,
+    "line_start": 338
+   },
+   "text": "- 后台长任务（>10min）必须 Start-Process 分离进程+日志文件轮询；清重复进程先 wmic 看命令行再动手，taskkill /T 会整树连坐 shim 嵌套的合法进程（#157）；study 复用+缓存让同种子重跑秒回——配对实验合法、新轨迹要换study/seed（#158）。",
+   "title": "后台长任务（>10min）必须 Start-Process 分离进程+日志文件轮询"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "HFSS",
+      "官方文档"
+     ],
+     "pointer": "service/premortem_service.py premortem_report 尾注记（pitfall_notes）",
+     "surface": "premortem_note"
+    }
+   ],
+   "devlog_ref": "#174",
+   "id": "#174",
+   "lesson_one_line": "辐射器件模板改空气隙（域扩）时端口面/馈线终点必须随域走，否则馈线止于域中=开路 stub，|S11|>1 非物理；馈点位置先验算谐振模场图（馈在场节点=结构对也激励不起来）；\"实测不耦合\"先排查激励体积是否为零（零宽盒/盒边未进网格），历史失败结论只有物理定位后才可否决权威文档（#174，patch 两轮冒烟+官方…",
+   "numbers": [
+    174
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 346,
+    "line_start": 342
+   },
+   "text": "- 辐射器件模板改空气隙（域扩）时端口面/馈线终点必须随域走，否则馈线止于域中=开路 stub，|S11|>1 非物理；馈点位置先验算谐振模场图（馈在场节点=结构对也激励不起来）；\"实测不耦合\"先排查激励体积是否为零（零宽盒/盒边未进网格），历史失败结论只有物理定位后才可否决权威文档（#174，patch 两轮冒烟+官方口径重构）。",
+   "title": "辐射器件模板改空气隙（域扩）时端口面/馈线终点必须随域走，否则馈线止于域中=开路 stub，|S11|>1 非物理"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "HFSS",
+      "对齐基准"
+     ],
+     "pointer": "service/premortem_service.py premortem_report 尾注记（pitfall_notes）",
+     "surface": "premortem_note"
+    }
+   ],
+   "devlog_ref": "#175",
+   "id": "#175",
+   "lesson_one_line": "pydantic 枚举字段别用 ==字符串比较（恒 False，用str(getattr(op,\"value\",op))）；v2 宽松模式能把 \"yes\" 强转 bool（违约用例用 dict 构造）；浮点 repr 有长尾（对计算函数数值断言，别匹配渲染文本）；ridge 收缩使中心预测偏差数 dB（判定边界测试用…",
+   "numbers": [
+    175
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 351,
+    "line_start": 347
+   },
+   "text": "- 测试书写：pydantic 枚举字段别用 ==字符串比较（恒 False，用str(getattr(op,\"value\",op))）；v2 宽松模式能把 \"yes\" 强转 bool（违约用例用 dict 构造）；浮点 repr 有长尾（对计算函数数值断言，别匹配渲染文本）；ridge 收缩使中心预测偏差数 dB（判定边界测试用线性语料+扫描法，不赌个别点拟合精度）（#175）。",
+   "title": "测试书写"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "A352",
+   "lesson_one_line": "`;` 不是分隔符（会当参数传给前命令）、括号块内 echo带逗号/括号直接语法错",
+   "numbers": [
+    142,
+    176
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 354,
+    "line_start": 352
+   },
+   "text": "- cmd shell 补充：`;` 不是分隔符（会当参数传给前命令）、括号块内 echo带逗号/括号直接语法错——多行临时脚本一律写文件再执行（#142 完整版，#176）。",
+   "title": "cmd shell 补充"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#177",
+   "id": "#177",
+   "lesson_one_line": "不压内置门、不空等",
+   "numbers": [
+    177
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 358,
+    "line_start": 355
+   },
+   "text": "- 长跑任务遇内存/许可不足：不压内置门、不空等——挂周期探测的wait-launcher 门开即射（scripts/campaign_wait_launch.py 双门降级模式，与任务内置门双保险）；守望进程随会话关闭而死，新会话先查它死前是否已发射过任务再决定重挂（#177）。",
+   "title": "长跑任务遇内存/许可不足"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#195",
+   "id": "#195",
+   "lesson_one_line": "窄带谐振器件带内 max是常数陷阱（两轮战役 47 样本代价）",
+   "numbers": [
+    195,
+    197
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 363,
+    "line_start": 359
+   },
+   "text": "- 判据统计量（max/mean/min）必须匹配响应形态：窄带谐振器件带内 max是常数陷阱（两轮战役 47 样本代价）——谷深语义走显式指标名s11_db_min（#195，内核已收口 #197）；新器件族接校准前先离线小样本验证 cost 分布非退化常数。",
+   "title": "判据统计量（max/mean/min）必须匹配响应形态"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A364",
+   "lesson_one_line": "① shell cwd 会在cd 出工作区后被框架重置回仓根",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 375,
+    "line_start": 364
+   },
+   "text": "- 开源发布与跨平台 CI 批（2026-09-21，）：① shell cwd 会在cd 出工作区后被框架重置回仓根——跨仓/跨目录操作一律绝对路径+批量前 pwd 自检（假\"文件被回退\"与改错仓皆此根因）；② bash heredoc 超 ~10KB 静默截断——大脚本走 Write；③ 可选依赖必须声明进 extras（内部环境\"恰好装过\"掩盖）；④ venv 混装uv/pip 后缺包用 python -m pip 回补（pip.exe 绑定可能失效）；⑤ normcase 在 POSIX是恒等——安全/保护类比较显式 .lower()；⑥ BLAS/CPU 数值轨迹测试跨平台漂移——诚实 skip（conftest linux_numeric 清单维护）；⑦ 模式扫描抓不住\"不属于你的内容\"——按文件问产物归属；⑧ GitHub 渲染正确而用户端乱序=浏览器插件，抓渲染 HTML核对；⑨ 质量门安装必须带核心依赖（--no-deps 漏 typer）；⑩ matplotlib CJK 缺字形只出豆腐块——中文图逐张目检；⑪ [project.urls] 表不能插在 [project] 中间（吞 requires-python/dependencies，tomllib 验证）；⑫ FancyArrowPatch 右→左rad 正=向上弯。",
+   "title": "开源发布与跨平台 CI 批"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#191",
+   "id": "#191",
+   "lesson_one_line": "HFSS 是射频领域认可度最高的 EDA，同模型仿真异常几乎必然是我方建模错误（#191 波端口尺寸实证）；修正路径=官方文档（Ansys Help/ web_reader 可达）→ 官方例惯例 → 健康判据（谷深/等分）达标后再采信。",
+   "numbers": [
+    191
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 379,
+    "line_start": 376
+   },
+   "text": "- HFSS 仿真异常 → 第一时间查官方文档（2026-09-08 用户立规）：HFSS 是射频领域认可度最高的 EDA，同模型仿真异常几乎必然是我方建模错误（#191 波端口尺寸实证）；修正路径=官方文档（Ansys Help/ web_reader 可达）→ 官方例惯例 → 健康判据（谷深/等分）达标后再采信。",
+   "title": "HFSS 仿真异常 → 第一时间查官方文档"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#190",
+   "id": "#190",
+   "lesson_one_line": "其他引擎/设计值向HFSS 对齐；经 HFSS 仲裁背书的引擎经验常数（如 openEMS f_dip·L≈76.8）可作为配方 band×bounds 设计依据（#190 patch 重设计范式）。",
+   "numbers": [
+    190
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 382,
+    "line_start": 380
+   },
+   "text": "- HFSS 结果为对齐基准（2026-09-08 用户立规）：其他引擎/设计值向HFSS 对齐；经 HFSS 仲裁背书的引擎经验常数（如 openEMS f_dip·L≈76.8）可作为配方 band×bounds 设计依据（#190 patch 重设计范式）。",
+   "title": "HFSS 结果为对齐基准"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": null,
+   "id": "A383",
+   "lesson_one_line": "任务书必须显式\"文件面+禁改清单\"；子代理三禁（不 commit/不写 ·TODO·docs/不跑全量）；共享文件命令做惰性导入；实现类长任务并发 ≤3-4（6 并发触发账户速率限制）；报告\"全绿\"后主代理独立复跑再验收。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 386,
+    "line_start": 383
+   },
+   "text": "- 子代理并发编排（2026-09-09 实证）：任务书必须显式\"文件面+禁改清单\"；子代理三禁（不 commit/不写 ·TODO·docs/不跑全量）；共享文件命令做惰性导入；实现类长任务并发 ≤3-4（6 并发触发账户速率限制）；报告\"全绿\"后主代理独立复跑再验收。",
+   "title": "子代理并发编排"
+  },
+  {
+   "category": "shell",
+   "consumption": [
+    {
+     "keywords": [
+      "跨 Run",
+      "进程隔离",
+      "绑定"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#208",
+   "id": "#208",
+   "lesson_one_line": "Run(cleanup=True) 销毁激励属性乃至 CSX 的 C++ 对象",
+   "numbers": [
+    208
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 390,
+    "line_start": 387
+   },
+   "text": "- openEMS 跨 Run 绑定对象雷（#208）：Run(cleanup=True) 销毁激励属性乃至 CSX 的 C++ 对象——多端口全 S 矩阵用进程隔离单激励渲染（excite_port 参数化 ×N 子进程，openems_rotation.py），禁用进程内SetEnabled/包装器复用路线。",
+   "title": "openEMS 跨 Run 绑定对象雷"
+  },
+  {
+   "category": "kicad",
+   "devlog_ref": "#210/#214/#220",
+   "id": "#210/#214/#220",
+   "lesson_one_line": "SaveBoard 间歇段错误真根因已根治（ZONE::SetOutline 裸指针接管 Python 持有的SHAPE_POLY_SET→悬空指针；一律 AppendCorner 写 zone 自有 m_Poly，子进程重试仅兜底；SWIG 归属陷阱通用教训 #220）；ZONE_FILLER 单参Fill/同会话…",
+   "numbers": [
+    210,
+    214,
+    220
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 397,
+    "line_start": 391
+   },
+   "text": "- KiCad 10 pcbnew 坑族（#210/#214/#220）：SaveBoard 间歇段错误真根因已根治（ZONE::SetOutline 裸指针接管 Python 持有的SHAPE_POLY_SET→悬空指针；一律 AppendCorner 写 zone 自有 m_Poly，子进程重试仅兜底；SWIG 归属陷阱通用教训 #220）；ZONE_FILLER 单参Fill/同会话 Fill 段错误；PCB_VIA.GetWidth() 无参 assert 挂死；GetStackupDescriptor 裸 SwigPyObject（叠层 er 走 .kicad_pcb 文本解析）；层 id 重排禁写死 B_Cu=31。",
+   "title": "KiCad 10 pcbnew 坑族"
+  },
+  {
+   "category": "openems",
+   "consumption": [
+    {
+     "keywords": [
+      "离线审计",
+      "模板几何",
+      "渲染"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#212",
+   "id": "#212",
+   "lesson_one_line": "字符串存在性+compile() 抓不住画法错误（径向馈\"中心线弦\"盒厚=设计 1/13 且不导通，pt5/pt6 三端口全死）",
+   "numbers": [
+    212
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 401,
+    "line_start": 398
+   },
+   "text": "- 模板几何必须离线审计测试（#212）：字符串存在性+compile() 抓不住画法错误（径向馈\"中心线弦\"盒厚=设计 1/13 且不导通，pt5/pt6 三端口全死）——渲染→exec 几何段→CSXCAD 实测带宽/连通性（秒级零仿真，test_ratrace_template.py 已制度化）。",
+   "title": "模板几何必须离线审计测试"
+  },
+  {
+   "category": "comsol",
+   "consumption": [
+    {
+     "keywords": [
+      "COMSOL",
+      "mph",
+      "6.3"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#215",
+   "id": "#215",
+   "lesson_one_line": "MPh 桥实测 RF 模块 license PASS；6.4 license 已过期。COMSOL 开发先读 docs/comsol_references.md 与本地官方 PDF（禁止凭想象写API）；mph.start 必须显式 version=\"6.3\"（MPh 自动选最新=6.4过期版）；每次求解占 lice…",
+   "numbers": [
+    215,
+    217
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 410,
+    "line_start": 402
+   },
+   "text": "- COMSOL 6.3 可用/6.4 禁用（2026-09-10 探测，#215）：MPh 桥实测 RF 模块 license PASS；6.4 license 已过期。COMSOL 开发先读 docs/comsol_references.md 与本地官方 PDF（禁止凭想象写API）；mph.start 必须显式 version=\"6.3\"（MPh 自动选最新=6.4过期版）；每次求解占 license 席位，串行。API 口径实证（#217）：RF 接口类型串 `ElectromagneticWaves`（emw）而非 `...FrequencyDomain`（可建但无 LumpedPort）、study 步 `Frequency`、Java 建的 study 用`study(tag).run()`、JPype 整数属性传字符串；参考实现adapters/comsol_adapter.py。",
+   "title": "COMSOL 6.3 可用/6.4 禁用"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#207",
+   "id": "#207",
+   "lesson_one_line": "优化缩减率裁判用合成函数（方案 §4 原文），fake 原生模型病态不可用（patch=0.1mm 针尖脊/wilkinson=平底碗）；目标阈值低于极值下限（无零平台），否则随机搜索有种子彩票。",
+   "numbers": [
+    207
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 413,
+    "line_start": 411
+   },
+   "text": "- 裁判面选型（#207）：优化缩减率裁判用合成函数（方案 §4 原文），fake 原生模型病态不可用（patch=0.1mm 针尖脊/wilkinson=平底碗）；目标阈值低于极值下限（无零平台），否则随机搜索有种子彩票。",
+   "title": "裁判面选型"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A414",
+   "lesson_one_line": " 用 Edit 以标题行做 old_string 会吞标题（new_string 必须回带标题，一年内犯 4 次）；pytest -q | tail -N 吞失败明细（排查落完整输出到文件）；optuna 4.9 Study 无waiting_trials()（用 get_trials(states=(W…",
+   "numbers": [
+    123
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 417,
+    "line_start": 414
+   },
+   "text": "- 文档/工具杂项： 用 Edit 以标题行做 old_string 会吞标题（new_string 必须回带标题，一年内犯 4 次）；pytest -q | tail -N 吞失败明细（排查落完整输出到文件）；optuna 4.9 Study 无waiting_trials()（用 get_trials(states=(WAITING,)) 差集，#123）。",
+   "title": "文档/工具杂项"
+  },
+  {
+   "category": "git",
+   "consumption": [
+    {
+     "keywords": [
+      "antenna2",
+      "LumpedPort",
+      "短路"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#221",
+   "id": "#221",
+   "lesson_one_line": "① commit 步必须\"路径存在性校验+`git add` 退出码断言+`git diff--cached --name-only` 非空守卫+失败落 manifest 原文\"",
+   "numbers": [
+    221,
+    220,
+    219
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 435,
+    "line_start": 418
+   },
+   "text": "- 动态工作流（CreateWorkflow）编排五轨批次（2026-09-11 首用实证，#221，复盘见 与 docs/history/workflow_run_20260911_*.md）：① commit 步必须\"路径存在性校验+`git add` 退出码断言+`git diff--cached --name-only` 非空守卫+失败落 manifest 原文\"——ratrace 批次commit 零暂存（\"nothing to commit\"）而 manifest 未留存；实测 git 2.52：清单含不存在路径→exit 128 全不暂存、空清单→exit 0 零暂存，而混入 .gitignore 路径只警告不阻断其余暂存（`check-ignore` 仅降噪）；② 共享文件整文件暂存会把后完成批次的 hunk 捎进先提交批次（C13 的 cli/main.py hunk 随 E11 commit 入库）——先完成先合流（前置批一完成就验收+commit，再放接力批开工），别等全部收尾；③ 基线/收口修复轮必须返回改动清单并独立 commit（kicad 根因修复#220 静默留树，合流阶段 diff 盘点才发现）；④ 运行快照 API 会冻结数小时（updated_at/spent_tokens/log_tail 不推进），真进度看进程表（Get-CimInstance 查 python/openems/hfss 命令行）、git status、runs/ mtime；⑤ 规模参考：5 增量 5h46m/62 节点/~6240 万 token，4 实现子代理并发未触限速，单次 ask 稳定跑 1-2h 真跑；⑥ 交接文档的归因一律标\"假设/待证\"——\"弯折非对称加载\"被子代理掩模审计证伪，任务书强制\"先离线审计再真跑\"是防盲跑的保险（#219① 同源）。",
+   "title": "动态工作流（CreateWorkflow）编排五轨批次"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#222",
+   "id": "#222",
+   "lesson_one_line": "方案按提案写就时未对照已落的 service/linkage/measurement/pipeline/infra 面，29 处已实现能力被标\"未开始\"、2 个 WP 被误立为\"全新\"（D10 KOH/G14 成本门均有骨架）。规则：方案增补/立项前先 grep 代码面（模块名+行数+API 名），能力存在性与统计数…",
+   "numbers": [
+    222,
+    97
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 441,
+    "line_start": 436
+   },
+   "text": "- 方案表系统性落后于代码（2026-09-11 两轮对账，#222）：方案按提案写就时未对照已落的 service/linkage/measurement/pipeline/infra 面，29 处已实现能力被标\"未开始\"、2 个 WP 被误立为\"全新\"（D10 KOH/G14 成本门均有骨架）。规则：方案增补/立项前先 grep 代码面（模块名+行数+API 名），能力存在性与统计数字（#97）同为实测项；归属不明的模块不臆断归入。",
+   "title": "方案表系统性落后于代码"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": "#225-#229",
+   "id": "#225-#229",
+   "lesson_one_line": "① 裁决 FAIL（已提交的判定）≠执行失败",
+   "numbers": [
+    225,
+    226,
+    227,
+    228,
+    229
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 452,
+    "line_start": 442
+   },
+   "text": "- 动态工作流排空循环五坑（2026-09-12 三轮实证，#225-#229，全账见docs/history/workflow_run_20260912_drain_loop.md 与 ）：① 裁决 FAIL（已提交的判定）≠执行失败——把前者重排会二次创建同名 actor直接终止整个 run，且真机项整项重跑纯浪费（#225）；② 子代理filesToCommit 清单不可信（会漏列自己新建的测试文件）——提交守卫须配\"每轮留树清点+文档无条件兜底\"（#226）；③ resume 缓存按\"actor 名+ask序列+指令逐字节\"匹配，带修复轮的项续跑必 miss——续跑脚本须把已完成项预置 status=done（#227）；④ 验收门用全量 ruff/全树面会被并发他轨半成品误伤——门作用域限本项文件，门红先查他轨在制（#228）；⑤\"actor turn 执行失败\"批量出现=运行时层故障，如实记失败待 resume 重放，不烧重试（#229）。",
+   "title": "动态工作流排空循环五坑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#235",
+   "id": "#235",
+   "lesson_one_line": "`status --porcelain` 行格式为\"两字符状态码+空格+路径\"，先 `line.trim()` 再 `slice(3)` 会把 \" M path\" 砍成乱码",
+   "numbers": [
+    235,
+    226
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 459,
+    "line_start": 453
+   },
+   "text": "- git porcelain 解析禁 trim-then-slice（2026-09-12 排空二轮实证，#235，#226 真根因）：`status --porcelain` 行格式为\"两字符状态码+空格+路径\"，先 `line.trim()` 再 `slice(3)` 会把 \" M path\" 砍成乱码——已跟踪文件修改永远匹配不上 manifest，提交守卫整天报\"manifest 全部不存在\"，只有新增文件（\"??\"）恰好解析对。修法：保留原始行直接 `slice(3)`。凡手写porcelain 解析（提交守卫/留树清点/还原）一律照此；写完拿一个已跟踪文件的修改实测一遍再上线。",
+   "title": "git porcelain 解析禁 trim-then-slice"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#236",
+   "id": "#236",
+   "lesson_one_line": "新文件位于新目录时 porcelain 只显示 `?? dir/`，按文件路径写的manifest 全部匹配失败（七 meta.yaml 实证）。对策：路径位于未跟踪目录时改目录式 `git add dir/`；manifest 校验须容忍目录粒度。",
+   "numbers": [
+    236
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 463,
+    "line_start": 460
+   },
+   "text": "- porcelain 目录级未跟踪路径变体（2026-09-14 排空三轮实证，#236）：新文件位于新目录时 porcelain 只显示 `?? dir/`，按文件路径写的manifest 全部匹配失败（七 meta.yaml 实证）。对策：路径位于未跟踪目录时改目录式 `git add dir/`；manifest 校验须容忍目录粒度。",
+   "title": "porcelain 目录级未跟踪路径变体"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "A464",
+   "lesson_one_line": "① 金属针盒与 LumpedPort 同体积共存不改端口结果",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 468,
+    "line_start": 464
+   },
+   "text": "- antenna2 真机三坑（2026-09-14 天线族 II 六模板实证，）：① 金属针盒与 LumpedPort 同体积共存不改端口结果——\"针盒priority 短路端口体元\"假设被 v1/v2 逐点一致证伪；② 无耗短路桩馈谐振器带外 Zin R≈0 是正常反应，判短路须看电抗过零/并联 R 峰；③ PIFA 的L+W−Ws 谐振通式前提=角部短路板，居中短路板不适用（override 实证）。",
+   "title": "antenna2 真机三坑"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": "#230",
+   "id": "#230",
+   "lesson_one_line": "多轨/动态工作流各轨只按\"门限本项文件\"（#228）跑定向门，合流后无人跑全量",
+   "numbers": [
+    230,
+    228
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 474,
+    "line_start": 469
+   },
+   "text": "- 并行轨合并后必须复跑全量门（2026-09-12 新会话开工实证，#230）：多轨/动态工作流各轨只按\"门限本项文件\"（#228）跑定向门，合流后无人跑全量——跨轨契约（B7 维度审计器 × WP3.9 运行器 `f\"{BOARD!r}mm-{RVAR}\"`、re-export ×调用方、meta.yaml × 渲染脚本）恰是全量门才覆盖，本次开工实测基线1625 passed/2 failed 才发现。对策：批次合流后主代理独立复跑全量pytest+ruff+lint，作为该批最终验收门；轨内定向门不得替代合流门。",
+   "title": "并行轨合并后必须复跑全量门"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "MUR",
+      "柱坐标",
+      "PML"
+     ],
+     "pointer": "service/error_hints_service.py hint 规则 refs（Mur 柱坐标静默退化指纹；SLA 门逐行实证 refs 命中）",
+     "surface": "error_hint"
+    }
+   ],
+   "devlog_ref": "#232",
+   "id": "#232",
+   "lesson_one_line": "`CoordSystem=1`下 MUR 吸收边界被引擎静默跳过并退化为 PEC（日志 `Mur ABC Extension is not compatible with cylinder-coords!! skipping`）",
+   "numbers": [
+    232,
+    219
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 481,
+    "line_start": 475
+   },
+   "text": "- openEMS 柱坐标不支持 MUR（2026-09-12 cyl-grid 真机实证，#232）：`CoordSystem=1`下 MUR 吸收边界被引擎静默跳过并退化为 PEC（日志 `Mur ABC Extension is not compatible with cylinder-coords!! skipping`）——症状 = z 向成 PEC 盖板腔、传输崩（1mm 冒烟 S21=−9.6dB）。柱坐标一律用 PML_8；另：全 2π 用`mesh.a=linspace(-pi,pi,N)`（闭合网格自动周期化，a 向 BC 不参与），环域 r_min>0，`AddMSLPort(prop_dir='r', exc_dir='z')` 真机可用。柱坐标 k=1 即回 HFSS 仲裁中心（2.470GHz vs HFSS 2.465GHz），直角阶梯化伪象 k=1.0975 就此关闭（#219）。",
+   "title": "openEMS 柱坐标不支持 MUR"
+  },
+  {
+   "category": "elmer",
+   "devlog_ref": "#233",
+   "id": "#233",
+   "lesson_one_line": "Elmer 26.1 的HeatSolver 忽略 SIF 里的 `Heat Source` 项（实测给 q 仍得常数 T=环境温度=恒温陷阱），必须用 `Volumetric Heat Source`；另 Solver 编号必须连续（缺号 → `LoadInputFile:` `Entry missing for:…",
+   "numbers": [
+    233
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 486,
+    "line_start": 482
+   },
+   "text": "- Elmer HeatSolver 不消费 'Heat Source'（2026-09-12 A4 真机实证，#233）：Elmer 26.1 的HeatSolver 忽略 SIF 里的 `Heat Source` 项（实测给 q 仍得常数 T=环境温度=恒温陷阱），必须用 `Volumetric Heat Source`；另 Solver 编号必须连续（缺号 → `LoadInputFile:` `Entry missing for: Solver N`）；网格走 Gmsh v2.2 → `ElmerGrid 14 2`。1-D 热传导平板与闭式对照 max|ΔT|=0.0K。",
+   "title": "Elmer HeatSolver 不消费 'Heat Source'"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#234",
+   "id": "#234",
+   "lesson_one_line": "`S1=mean(y_A(y_C−y_B))/V` 在目标均值远大于带内标准差时被抵消误差吞掉（patch f0 均值4.48GHz、带内 std~0.5%：未居中 S1_l=0.0139 vs 真值 ~0.81）。对策：先对目标做常数居中（Sobol 指数对加性常数平移不变，仅数值估计条件化）",
+   "numbers": [
+    234
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 491,
+    "line_start": 487
+   },
+   "text": "- Saltelli 一阶估计量在 E[f]≫std(f) 时大数相减失效（2026-09-12 D8 实证，#234）：`S1=mean(y_A(y_C−y_B))/V` 在目标均值远大于带内标准差时被抵消误差吞掉（patch f0 均值4.48GHz、带内 std~0.5%：未居中 S1_l=0.0139 vs 真值 ~0.81）。对策：先对目标做常数居中（Sobol 指数对加性常数平移不变，仅数值估计条件化）——居中后 0.8153。`sensitivity.py` 未改，边界已入 `test_pce` 的 `test_saltelli_total_order_is_mean_invariant`。",
+   "title": "Saltelli 一阶估计量在 E[f]≫std(f) 时大数相减失效"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": "#231",
+   "id": "#231",
+   "lesson_one_line": "core/calculators 用 @register_calculator 新增键后，`tests/unit/test_calculators.py::test_registry_has_expected_calculators` 的 EXPECTED与 `tests/unit/test_physics_inva…",
+   "numbers": [
+    231,
+    230
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 498,
+    "line_start": 492
+   },
+   "text": "- 新注册计算器必须同步注册表覆盖类测试（2026-09-12 C13 第二增量实证，#231，#230 的具体实例）：core/calculators 用 @register_calculator 新增键后，`tests/unit/test_calculators.py::test_registry_has_expected_calculators` 的 EXPECTED与 `tests/unit/test_physics_invariants.py` 的每键输入表（双向一致性测试）必须同步补键，否则只跑本项定向测试绿灯、合流全量门必红（本次 c13-inc2 注册 2 键漏补 →全量门 4 红）。对策：任务书显式列出「注册表消费者」清单（test_calculators +test_physics_invariants + test_model_docs），新键落地即跑这三个文件。",
+   "title": "新注册计算器必须同步注册表覆盖类测试"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#237-#241",
+   "id": "#237-#241",
+   "lesson_one_line": "① 看板 artifact 的\"N items\" 是 report 条数不是队列卡片数（53 条=38 队列+15 状态更新），停止点数字以 log「盘点产出 N 项」/去重 id 为准，初版三份文档误写 53/47（#237）；②\"触共享文件项独占轮\"规则两个副作用",
+   "numbers": [
+    237,
+    238,
+    239,
+    240,
+    241,
+    230
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 515,
+    "line_start": 499
+   },
+   "text": "- 排空四轮五坑（2026-09-14/15 dwfrun-9c22b549 实证，#237-#241，全账docs/history/workflow_run_20260914_drain4.md 与 （一百五十二）；脚本原稿 docs/history/workflow_drain4_20260914.dwf.ts）：① 看板 artifact 的\"N items\" 是 report 条数不是队列卡片数（53 条=38 队列+15 状态更新），停止点数字以 log「盘点产出 N 项」/去重 id 为准，初版三份文档误写 53/47（#237）；②\"触共享文件项独占轮\"规则两个副作用——多项都改 pyproject.toml 登记 extras 时被串成 1 项/轮，且 `pending.find(exclusive)` 让独占项插队跳过优先级；对策=pyproject依赖登记拆为前置小项、独占项只在到达队头时单飞不抢占（#238）；③ 实现 ask Turn-failed 时链路直接 return，清点师抢救入库的代码无人写逐项 /TODO（b5eef6e 实证）——清点师抢救提交后须补触发文档同步，人工批次下主代理接管记录（#239）；④ 用户停止后 run 快照仍显示 running（updated_at 停在最后活动时刻），收尾前必须 TaskStop 停干净再动树，否则文档同步师可能并发提交（#240）；⑤CreateWorkflow 缓存按 ask 逐字节匹配、不可跨脚本——重建脚本走 resume_from 必全 miss，正确做法是新队列只含剩余项（本轮 5 项零重复实证），同一 run 续跑用ResumeWorkflowRun 无需脚本（#241）。正向模式保留：共享文档同步师 FIFO 串行链（4/4 条目 house style、编号连续、零冲突）、提交 Promise 互斥（5 次守卫提交零交错）、类型化 ask+JSDoc（零 JSON 解析失败）、开工全量门（抓出三轮遗留两处红，#230 再实证）。",
+   "title": "排空四轮五坑"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#242-#247",
+   "id": "#242-#247",
+   "lesson_one_line": "① world.run/子进程门 stdout 256KB cap",
+   "numbers": [
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    218,
+    157,
+    226,
+    236,
+    239
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 536,
+    "line_start": 516
+   },
+   "text": "- 排空五轮六坑（2026-09-15/16 dwfrun-919613e8 实证，#242-#247，总账 与 TODO「0-停止点（五轮）」）：① world.run/子进程门 stdout 256KB cap——裸 `pytest <files> -q` 全输出仍可达 2MB（c3/c9 实证 1.9/2.0MB），触 cap 是链路异常直接抛出而非门红，门命令必须落日志文件再读摘要（或 `-q --tb=line -p no:warnings`收窄）（#242）；② Hfss() 相对 -outdir 构造期 Project.Rename 挂起 ~6min 后GrpcApiError（3/3 复现），outdir 一律绝对路径即秒过（#243）；③ Icepak 五坑：Region 自动生成/面监控两坑/Include Gravity=GRAVITY_DIR=2/多设计状态快照/表达式字面量必须带单位（#218 复踩：裸数字 5/8 被按米求值致空气盒 5m×8m，均已修复+回归钉）（#244）；④ #157 家族再实证：wp25 pt3 首跑与 gysel pt3 后台求解整树无声消失（同机他轨求解存活→定向硬杀，来源不可证），真机一律 harness 后台分离+日志轮询重跑成功；另 git-bash下 `taskkill /PID` 的 `/PID` 被 MSYS 路径转换吃成 `C:/Program Files/Git/PID` 静默不杀，用 `//PID` 或 PowerShell `Stop-Process -Id`，杀前先看命令行（#245）；⑤ 硬件轨串行 1 ≠ 机器空闲：4 openEMS+HFSS 并发实测求解 2.7–8× 变慢（openems bundle wall≈8h 超预算 4–6h、wp25 真跑 2270s 超任务书 18–25min），计时敏感/真机重项一律标 solo单飞（#246）；⑥ 文件级锁编排一坑一律：锁谓词漏写实现槽上限（`implUsed<MAX` 未进implFree）→ 并发峰值 7 超设计 4——信号量条件与锁条件必须写在同一谓词里；EXPECTED_TEMPLATES 类全量计数禁轨内自钉（他轨推进 30→36→38 必互相打红，单源锁定）；子代理 manifest 漏列的目录级新文件靠收口清点师归组入库（c3/c9 五目录，#226/#236再实证）（#247）。正向模式保留：事件驱动流水线+文件级共享锁替代整轮独占（33 项32h 无轮屏障、实现槽常满、纯项全程并行）、记录员按项新建+串行链（33 条  编号连续零冲突）、清点抢救/记录兜底成败都记（2 中断项均有 FAIL 记录+归组入库，#239 闭合）。",
+   "title": "排空五轮六坑"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": "#248-#252",
+   "id": "#248-#252",
+   "lesson_one_line": "① skrf 只按 .sNp 扩展名推断 rank",
+   "numbers": [
+    248,
+    249,
+    250,
+    251,
+    252,
+    1,
+    239
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 556,
+    "line_start": 537
+   },
+   "text": "- 排空六轮实证五坑（2026-09-16 人工批次并发 4，#248-#252，逐项 -（一百九十五））：① skrf 只按 .sNp 扩展名推断 rank——1 端口数据写成 .s2p 即报`cannot reshape array of size N into shape (4,newaxis)`（N 是 skrf token 计数非频点数）；HFSS 导出按插件契约 n_ports 命名是错源（patch 契约 2 vs 单馈实际 1），端口数修正条件禁写`>= 2`，首行值数推断 `(n-1)//2` 对 2 端口误判为 4，Touchstone 1.0 须按块结构消歧（#248）；② openEMS nf2ff 遇 PEC 地做镜像时 Prad 双计——CreateNF2FFBox 对 PEC 面 mirror=1，AddMirrorPlane 给每个积分面追加镜像通量→Prad=2× 物理、Dmax −3.01dB、η 可 >1；判 η>1 先查镜像（真机 h5 下/上半球积分比≡1.0000 即铁证），后处理按盒 z_start==0 修正且 raw 留痕（#249）；③ openEMS 单激励 uf_ref/uf_inc 是带载比值——非激励端在 50Ω 基下被Γ=(Z−50)/(Z+50) 端接，凡端口线 ≠50Ω 的模板其单激励 'S11' 与 50Ω 双端接裁判本非同一量，整矩阵 renormalize 是错路（合成误差=|Γ_step|）；正确链=按列 u/i 反演到线自身 Z0 基（≡CalcPort(ref=Z_k)）→线基去嵌→skrf renormalize 到 50Ω；引擎自算 ZL 比 HJ 低 4.7%/3.7%系统偏差待 HFSS 仲裁（#250）；④ api.run_once 单次 run 在数据集里贡献零点——收集器只认 trials/校准/surrogate_loop/autotune 产物，GT 战役 36 点全被 skipped（n_gt 纹丝不动）；已补第⑤分支，新战役先跑 1 点 ingest 核对成行再放量（#251）；⑤ 模板名义几何值必须全部 HJ 精算（#1c 扩到臂长）——branchline 名义臂 20.5mm 系按 εeff=(εr+1)/2 薄线极限手算捷径，致名义谐振 −10.8%（引擎 vs 闭式仅 −0.25%），\"引擎频率尺度差\"是误归因（#252）。接力纪律再实证：子代理最终回复被截断（#239 类）时，抢救接力保留前任落树文件不重写，先读 progress/日志/诊断产物再定位（WP3.4 战役接力 1 小时内闭合）；并发 4 的人工批次里主代理每项独立复跑定向门+守卫提交（只暂存 manifest）+即时 /TODO，8 项零交错。",
+   "title": "排空六轮实证五坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#253-#260",
+   "id": "#253-#260",
+   "lesson_one_line": "① openEMS 激励盒跨满吸收边界截面→\"Excitation inside Mur-ABC\"延迟开启瞬态激起零模DC 漂移（15ns 内涨到信号 10 倍）",
+   "numbers": [
+    253,
+    254,
+    255,
+    256,
+    257,
+    258,
+    259,
+    260
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 575,
+    "line_start": 557
+   },
+   "text": "- 排空六轮二批八坑（2026-09-17，#253-#260，逐项 -（二百零一））：① openEMS 激励盒跨满吸收边界截面→\"Excitation inside Mur-ABC\"延迟开启瞬态激起零模DC 漂移（15ns 内涨到信号 10 倍）——激励盒内缩 ≥2·BASE（#253）；② openEMS WaveguidePort文件模式端口的 U（Yee 边）/I（Yee 面）度量对奇异场有常数比 γ（槽线缝缘 γ=2.714，S11=(γ−1)/(γ+1) 伪反射）——用交叉参考阻抗处置；另 openEMS DFT 为 e^{−jωt} 口径且 UI_data 斜率偏 ~14%，β 自实现工程 DFT（#253）；③ HFSS 波端口做槽线/平衡线仲裁端口截面必须远大于微带惯例（≥±60/∓30mm 量级）——默认外框 Perfect E 把槽两侧地短接成 fin-line 封闭波导，微带尺寸端口得截止倏逝模假数据（γ=201 Np/m、fc≈10GHz），β 随截面单调收敛才是真解（#254）；④ HFSS ExportNetworkData 的 \"! Port Impedance\" 两列恒写 Zpi 不按 CharImp——功率-电压阻抗取 Modal Solution Data Zo(Port)；槽线 Z0 禁用 Zpi（准 TE 电流定义物理低 30%）与touchstone 阻抗注释（#254）；⑤ 驻波下线参数提取禁用线性相位斜率法（|Γ_load|≈0.3 偏+10.7%）——双行波拟合 V=Ae^{−jβx}+Be^{+jβx}；A/B 重复间 std 恰为 0=划分未变的可靠信号（#255）；⑥ LumpedPort 跨槽的 S 参数是\"并联抽头拓扑\"（βL=2π 时 S11=−1/2/S21=+1/2），不是线 S 参数——β 可用、S 需抽头网络换算或改端接拓扑（#256）；⑦ openEMS LumpedPort 探针盒 <2 格时 u 探针吸附盒角=单棱积分、i 探针面吸附到 PEC 边界=对偶环大面积（多轮装配跨轮偏差中位 1.9%）——端口盒 ≥2 格+中心硬线；装配矩阵类先做跨轮漂移诊断；相似变换不能修此类偏差（特征值不变）（#257）；⑧ OpenBLAS 多线程小矩阵批量复 solve 反而慢 85×（9.7s vs 0.113s）——密集线代脚本限 OPENBLAS_NUM_THREADS=1 或 threadpoolctl（#258）。另：主代理 Edit写长中文段曾混入 U+FFFD 替换字符——提交前 `grep $'\\xEF\\xBF\\xBD'` 抽查（#259）。",
+   "title": "排空六轮二批八坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#261-#262",
+   "id": "#261-#262",
+   "lesson_one_line": "① 本仓 openEMS 是python 进程内 FDTD.Run（非 openEMS.exe）",
+   "numbers": [
+    261,
+    262,
+    84
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 582,
+    "line_start": 576
+   },
+   "text": "- 排空六轮三批（2026-09-17，#261-#262，）：① 本仓 openEMS 是python 进程内 FDTD.Run（非 openEMS.exe）——`tasklist|findstr openEMS` 串行守卫对其无效（实测他轨并发拖慢 3069s vs 900-1000s）；真机互斥查 python 命令行是否含`_rfauto_runner`/渲染脚本名（#261）；② 窄 FC 窗 + NrTS 截断脉冲→|S11|>1 假象（窄窗长脉冲被截断，同 #84 族）——FC 窗要覆盖脉冲全程，max|S11|>1 先查截断再怀疑物理（#262）。另：同向 hairpin 相邻臂开路端对齐→电/磁耦合反号相消，k_EM 非单调且上限 ≪KJ——hairpin类结构必须交替取向（物理结论记 TODO 0dk/0cv）。",
+   "title": "排空六轮三批"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#269-#271",
+   "id": "#269-#271",
+   "lesson_one_line": "① typer 选项注解`Path` 触 B008、`str` 不报",
+   "numbers": [
+    269,
+    270,
+    271
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 590,
+    "line_start": 583
+   },
+   "text": "- 审查修复批三坑（2026-09-17，#269-#271，）：① typer 选项注解`Path` 触 B008、`str` 不报——CLI 默认路径参数用 `str` 注解（service 层 str|Path 全收）（#269）；② MCP/服务一致性测试必须含\"逐工具可调用性静态双检\"（dis 逐指令 LOAD_GLOBAL对 globals∪builtins 解析抓 NameError 隐患 + AST 函数体 ImportFrom/Import 目标 hasattr 抓死壳；单用 co_names 既误报属性名又漏报局部绑定；\"最小参数探测调用\"对 mutating 工具不安全）——`diagnose` 死壳 62 工具存活多轮全绿即此盲区（#270）；③ git-bash 管道渲染中文假象两处（sed/cut 按字节切断多字节字符显 mojibake、部分命令输出整段乱码）——判定文件/提交信息编码一律 `python -c` 读回或 `od -An -tx1` 看原始字节，勿信管道显示（#271）。",
+   "title": "审查修复批三坑"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#263-#268",
+   "id": "#263-#268",
+   "lesson_one_line": "① pyaedt `lumped_port` 传 int 面 id 被当对象名（AEDT \"geometry selection required\"）",
+   "numbers": [
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    157,
+    261
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 605,
+    "line_start": 591
+   },
+   "text": "- 排空六轮四批（2026-09-17 冒烟收尾批+收口，#263-#268，）：① pyaedt `lumped_port` 传 int 面 id 被当对象名（AEDT \"geometry selection required\"）——传 sheet名（#263）；② HFSS sheet 映射把三维金属块压成薄板会断电流路径（helix t*_d 0.6×3.0×0.9mm 块被压薄→只驱动 ¾ 圈、全带容性、缺 ~7nH，四轮网格/馈盖/连通排查互差 <3% 却全部UNDECIDABLE）——同几何仲裁必须按真实三维尺寸重建+unite（#264）；③ pyaedt 脚本退出未release_desktop 会留孤儿 ansysedt（父进程死、无客户端，占 HFSS 轨 5h 让两条真机链空等）——HFSS 脚本 finally 必 release；开工先查父进程已死的 ansysedt，#157 核对命令行后只杀该 PID（#265）；④ 模板缺省 mesh=0 下 NEAR=BASE/4 可能大于耦合缝（c3 三滤波器缝0.14–0.24mm < NEAR 0.285→缝内零内部线、外 Q 建模粗、峰位 −5%）——耦合结构 NEAR ≤ 缝/3为渲染守卫，且 NrTS 触顶（能量仅 −29~−46dB）即判未收敛（#266）；⑤ `grep -c` 计数为 0时退出码 1 会截断 `&&` 链（主代理一次 docs 提交静默未发生，下一命令复查 git status 才发现）——守卫链里的计数用 `grep -c ... || true` 或改 python 断言（#267）；⑥ openEMS 长跑et 文件 mtime 停止≠卡死（stdio 缓冲伪象，et 10 万行 NrTS）——真实进度看 port_ut_* 末行时间轴或能量日志（#268）。跨轨纪律再实证：#261 进程内 openEMS 守卫盲区（三方并发）——队列 runner 改按命令行 `_rfauto_runner.py|simulation.py` 匹配、60s 轮询。",
+   "title": "排空六轮四批"
+  },
+  {
+   "category": "ads",
+   "devlog_ref": "#272-#274",
+   "id": "#272-#274",
+   "lesson_one_line": "① hpeesofsim 裸调 exe 在 Windows 静默无输出（exit 0、无产物、无报错）",
+   "numbers": [
+    272,
+    273,
+    274,
+    118
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 619,
+    "line_start": 606
+   },
+   "text": "- 补票批 Goal 会话一批（2026-09-18，#272-#274，（二百一十四）（二百一十五））：① hpeesofsim 裸调 exe 在 Windows 静默无输出（exit 0、无产物、无报错）——必须设HPEESOF_DIR=E:\\ADS\\ADS27 并前置 PATH（bin/adsptolemy/lib.win32_64/tools python）再调用，项目正规入口=adapters/ads_python_api.py run_simulation 的 env 构造；configs/settings.local.yaml 的 hpeesof_dir 曾指向不存在的 E:\\Ads2027，ADS 项开工先核对该行（#272）；② warm-start历史集上界剔除阈值必须=判据同款 target（逐配对冷臂末代 best 或显式 target），只剔历史集自身最小值不充分——介于最优点与 target 之间的历史点注入后 warm 首 trial 仍平推达标（历史{2.0,1.5}、target 2.0 反例）；E11 e11c_main 95.5% 即 fake 通道+含最优点构造上界的假红利，verdict 必带 channel 字段。另：冷/热两臂 run 放同一 with 块后再检查 ok，冷臂失败时热臂已白跑——检查须紧跟各自调用（#273）；③ 同源数字互证是同义反复（#118 族）——把两轮 η 之比定义为\"Prad 偏置\"再用它验证修正后两轮一致必逐位相等，谁可信只能由第三方门裁定（两口径Dmax 差/盒余量/能量截顶），偏置值只当守卫带幅度；模板族物理合理窗必须按 template 作用域分派（patch η 窗 [0.55,0.79] 不加作用域会把 dipole 全包盒 η=0.99 误判 FAIL）——门常量旁写死适用族，服务层按 meta.template 分派，非适用族 gate=None 如实不判（#274）。",
+   "title": "补票批 Goal 会话一批"
+  },
+  {
+   "category": "ads",
+   "devlog_ref": "#275-#276",
+   "id": "#275-#276",
+   "lesson_one_line": "① 真机用例硬编码安装路径与 configs 治理脱节",
+   "numbers": [
+    275,
+    276
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 627,
+    "line_start": 620
+   },
+   "text": "- ADS 环境治理两坑（2026-09-18 rm-ads-env，#275-#276，）：① 真机用例硬编码安装路径与 configs 治理脱节——tests/real_edt 三个 ADS 用例各写死互不一致的死路径（E:/Ads2027、E:/ADS/ads2027 并存），settings.local.yaml 修对它们照样 skipif 恒 skip，\"转真\"从未发生；统一模式=env `RFAUTO_HPEESOF_DIR` 优先+真实安装回退，且 ADS/HFSS 路径治理收尾必 `grep -rn 'Ads2027|ads2027'` 全仓清点（scripts/spike_b_ads/*、multiphysics_probe.py仍有残留）（#275）；② 复用历史网表先查 `SnP File=` 是否写死绝对临时路径——C14 冒烟网表指向已清空的 Temp 目录，直接复跑报缺文件而非明确报错；跨会话复用网表用自包含副本并重写File= 到现目录，原证据目录零改动（#276）。",
+   "title": "ADS 环境治理两坑"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#277-#278",
+   "id": "#277-#278",
+   "lesson_one_line": "① typer 三态开关陷阱",
+   "numbers": [
+    277,
+    278,
+    231,
+    247
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 637,
+    "line_start": 628
+   },
+   "text": "- 壳层批两坑（2026-09-18 w1a，#277-#278，）：① typer 三态开关陷阱——\"缺省读配置/env\"语义的布尔开关必须 `bool | None = typer.Option(None, \"--x/--no-x\")`，普通 `bool=False` flag 会把缺省当显式 False 透传给 service，静默压掉配置/env 放行（service口径显式 False 优先于配置）；用 env=1 + 无 flag 的用例钉住（#277）；② `[project.scripts]`新条目不会自动生成 `.venv/Scripts/<name>.exe`（entry point 安装时才写），验证 console script 要么 `pip install -e . --no-deps` 重装、要么 `python -m <module>` 同源路径实测；MCP stdio 传输把 stdout 当 JSON-RPC 信道，console script main() 必须零 stdout 打印，`python -m rfauto.mcp_server < /dev/null` 测 stdout 字节数=0 作回归钉（#278）。另：注册表消费者不止 #231 三表——test_experimental_calculators.py 硬编码计数是第四处，改单源`len(EXPECTED)`（#247 口径）后不再随键数打红。",
+   "title": "壳层批两坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#279-#281",
+   "id": "#279-#281",
+   "lesson_one_line": "① 冒烟脚本多模板共用 --root 时 p1..p4/port_beta.csv/_smoke_result.json 被后跑模板整轮覆盖（cline 原始探针被 lange 轮覆盖丢失）",
+   "numbers": [
+    279,
+    280,
+    281,
+    268,
+    250
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 650,
+    "line_start": 638
+   },
+   "text": "- C4 装配诊断三坑（2026-09-18 w1d，#279-#281，）：① 冒烟脚本多模板共用 --root 时 p1..p4/port_beta.csv/_smoke_result.json 被后跑模板整轮覆盖（cline 原始探针被 lange 轮覆盖丢失）——产物根目录必须分模板（resolve_root 守卫：显式 --root 末段≠模板名自动追加子目录）；另 et/ht 文件是激励信号时间序列不是能量衰减曲线（不同模板逐字节相同），判截断/收敛只能看 port_ut_* 末段时间轴与末窗幅度（#268 具体化）（#279）；② 缺省网格下50Ω HJ 馈线的引擎自算 ZL=45.7Ω（−8.6%，金属边正落网格线）→ CalcPort(ref=50) 每端口伪反射Γ≈−0.045，装配矩阵非无源 σmax≈1.03——\"4 端口馈线=50Ω 时 #250 反演退化为恒等\"只在 HJ设计值成立；MSLPort 引擎 ZL=sqrt(Et·dEt/(Ht·dHt)) 与负载无关但随驻波形态漂移 ~0.5%、孤立端低信噪离群（47.3Ω），须跨轮取中位；修法=按列反演线基→renormalize 50Ω（openems_rotation line_z0=\"engine\"），归一只能修伪反射、不改耦合度（#280）；③ 宽带 10dB 耦合器 |S31| 峰0.1dB 平台宽 ~0.5GHz，argmax 式 f_c 随微小归一化漂移 +1%→+10%（同在平台内，非物理）——f_c 偏移必须与平台宽一并报告；3dB 族持续过耦合时 f_c 落带沿=不可辨识（+20% 是夹持伪象，不是频移）（#281）。",
+   "title": "C4 装配诊断三坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#282-#284",
+   "id": "#282-#284",
+   "lesson_one_line": "① 跨轮 Z_ui漂移统计混两族样本",
+   "numbers": [
+    282,
+    283,
+    284,
+    152,
+    262
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 663,
+    "line_start": 651
+   },
+   "text": "- mapes 探针装配三坑（2026-09-18 w2h，#282-#284，）：① 跨轮 Z_ui漂移统计混两族样本——弱耦合远端激励轮（|if| 低于该口跨轮中位 1% 时桶中位 18.8%/最大 17.5）的比值噪声与探针几何拾取底（≥10× 桶中位 1.09%/最大 0.19）；按原始 max 验收重提取会把噪声误归因给探针几何，一律看固定桶边 SNR 分桶表/rel_floor 门后统计与逐轮频中位的跨轮最大（#282）；② openEMS LumpedPort 探针只在盒中线落网格线时才逐位落位（u 探针=横断面中心零宽线、i 探针=激励轴中面），盒边是结构线≠探针有位可落（6×6 板 450 条中线里 360 条不在结构线集上）；\"≥2 格\"守卫只能定义在终网格线集上（start/mid/stop 三线齐备），阈值比较必须与渲染端 #152 去重口径同为严格 `>`（`>=` 在边界过守卫却被去重吞掉静默失效），中线邻距要对最近邻线而不只对自身盒边（结构线集已有 1.7e-15m ULP 级近重合）；加密中线把盒内局部格0.2→0.1mm → dt 约减半、同 NrTS 时窗减半（#262 家族），必须同步暴露 `--nr-ts` 并把生效值写进 meta（#283）；③ numpy nanmedian 全 NaN 切片的 RuntimeWarning 是 warnings.warn 不是errstate——`np.errstate(all='ignore')` 压不住，用 warnings.catch_warnings 包裹；`python -W error` 跑一遍内核能抓出这类泄漏（#284）。",
+   "title": "mapes 探针装配三坑"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#285-#289",
+   "id": "#285-#289",
+   "lesson_one_line": "① pyaedt `modeler.unite(names)` 保留首对象名，后续 PerfectE/subtract 引用臆造名报 \"Objects or Faces selected do not exist\"",
+   "numbers": [
+    285,
+    286,
+    287,
+    288,
+    289,
+    122
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 680,
+    "line_start": 664
+   },
+   "text": "- HFSS 仲裁+ADS 真机批五坑（2026-09-18 rm-hfss-mapes-g0/rm-ads-wp43，#285-#289，（二百二十一））：① pyaedt `modeler.unite(names)` 保留首对象名，后续 PerfectE/subtract 引用臆造名报 \"Objects or Faces selected do not exist\"——unite 后一律引用 names[0]；`get_face_center`返回模型单位（mm），几何常量米制时面过滤全部落空，`assign_radiation_boundary_to_faces([])`不报空选择而在 create_boundary 抛 \"list index out of range\"——面过滤统一到模型单位并加非空守卫（#285）；② 宏模型定阶断言禁用 n_poles_total——它是 skrf 存储极点数（共轭对只存一个），vector_fit 重定位可把 2 实极点并成 1 共轭对（存储 6→5）而有效阶 n_real+2·n_cmplx 不变；定阶门比较 order.used 或有效阶；预声明门错了也如实记 FAIL 不事后改门（#122）（#286）；③ Touchstone dB 形式写出/读回频率带 ~1e-7 Hz 浮点噪声，与显式频扫端点差一个 ulp 即触发 scipy interp1d bounds ValueError——对拍前同栅（rtol 1e-9）直接换频轴，异栅 bounds_error=False 允许端点微量外推（#287）；④ version_probe ADS 目录正则只认 4 位年份，现役目录名 ADS27 解析 None →select_ads_channel 静默降级 [b,c]/version null 且 ok 仍 True（errors 在成功路径被清空）——新装环境先跑 detect_ads_version(真实路径) 核对（#288）；⑤ git-bash 内联`powershell -Command \"... $_.CommandLine ...\"` 的 `$_` 被 bash 先展开报 PowerShell 语法错，单引号也过不了引号嵌套——进程/服务探测写临时 .ps1 再 `powershell -File`；另 \"grep 归零\"类验收会撞求解器历史日志（ADS/HFSS 输出含旧安装路径），日志不可改（伪造证据），零残留只能`git mv` 到 docs/history/，立验收 grep 前先 `grep -rl` 分清代码面与证据面（#289）。",
+   "title": "HFSS 仲裁+ADS 真机批五坑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#290-#292",
+   "id": "#290-#292",
+   "lesson_one_line": "① Z 矩阵开路激励端口消元在内部 λ/4 谐振（θ=π/2 短路/开路副线）处线性系统奇异，求得的 S 错到 S11=−18dB假象",
+   "numbers": [
+    290,
+    291,
+    292,
+    221
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 690,
+    "line_start": 681
+   },
+   "text": "- 槽线族/Marchand 综合三坑（2026-09-18 w1b，#290-#292，）：① Z 矩阵开路激励端口消元在内部 λ/4 谐振（θ=π/2 短路/开路副线）处线性系统奇异，求得的 S 错到 S11=−18dB假象——S 参数网络消元必须用端接口径（V+ZI=2√Z·a 逐端口单位入射波，reduce_to_s_matrix），开路口径（reduce_z_network）只用于非谐振 θ 的 Z 参数对照（#290）；② `scope.get(\"DOM_HI\",scope[\"BOARD\"])` 的默认参数是急切求值：无论 DOM_HI 在否 `scope[\"BOARD\"]` 都被求值，缺键脚本直接 KeyError——多键域兼容访问必须 if/elif 逐键判存在（#291）；③ 3 端口 fake 走`skrf.Network(z0=标量 50)` 管道时平衡侧 S 必须以 50Ω 单端口径产出（混合参考 Z1=50/Z2=Z_s的 ABCD→S 后先 renormalize_s 到 [50,50]），否则网络 z0 与 S 基不一致（#292）。另（并发合流）：共享文件被两轨同时改时按 hunk 归属暂存——`git diff` 拆 hunk、按标识符过滤、`git apply --cached --recount`，#221② 从\"整文件捎带\"精确到 hunk 级。",
+   "title": "槽线族/Marchand 综合三坑"
+  },
+  {
+   "category": "ads",
+   "devlog_ref": "#293-#295",
+   "id": "#293-#295",
+   "lesson_one_line": "① hpeesofsim 网表复数端口阻抗语法 `Z=[re Ohm + im Ohm*im]` 报 `syntax error, unexpected '['`",
+   "numbers": [
+    293,
+    294,
+    295,
+    287
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 703,
+    "line_start": 691
+   },
+   "text": "- ADS 有源链三坑（2026-09-18 rm-ads-c14，#293-#295，）：① hpeesofsim 网表复数端口阻抗语法 `Z=[re Ohm + im Ohm*im]` 报 `syntax error, unexpected '['`——官方 Term/P_1Tone口径 \"use 1+j*0 for complex\"，写 `Z=re+j*(im)`，负虚部必须带括号 `j*(-x)`；原理图件名≠网表模型名（`P_1Tone:SRC ... Power=` 报 `undefined model P_1Tone`，网表模型是 `Port`，功率/频率带谐波索引 `P[1]=dbmtow(x) Freq[1]=f`，P_1Tone 自带源阻抗不得再并联 Term；HB 控制器 `Freq[1]=/Order[1]=`；测量方程 `aele name=expr;` 成块 `aele_N.HB1.HB`）——查 oalibs/rf/<lib>/%Cell/itemdef.ael create_item第 10 参 netlistData 比试错快（#293）；② 对拍器频轴对齐禁用 np.searchsorted——ADS 数据集频率比 skrf 网格低恰 1 ulp（2.38e-7 Hz@2 GHz，41 点中 22 点）即越位一格，把逐频 1e-16 dB 的 0 差报成斜率×步长（S21 0.0236 dB 假差）；用 argmin|Δf| 真最近邻 + 公共频段边界 ulp 容差（#287 家族）（#294）；③ `adapters.ads_netlist._resolve_ads_dir` 经 load_settings 读相对 cwd 的configs/settings.local.yaml——驱动脚本从 runs/ 子目录 cd 执行会静默回退到不存在的默认`C:\\Program Files\\Keysight\\ADS2027` 报 FileNotFoundError；真机脚本一律从仓根执行或显式设RFAUTO_HPEESOF_DIR（#295）。",
+   "title": "ADS 有源链三坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#296-#299",
+   "id": "#296-#299",
+   "lesson_one_line": "① 把后处理修正前移到产出源（渲染脚本内联 PEC 镜像修正）时，仍在下游套用同一修正的消费者（nf2ff_service/ui_service的 correct_pec_mirror）会二次套用",
+   "numbers": [
+    296,
+    297,
+    298,
+    299
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 715,
+    "line_start": 704
+   },
+   "text": "- c3 网格/裁判四坑（2026-09-18 w2e，#296-#299，）：① 把后处理修正前移到产出源（渲染脚本内联 PEC 镜像修正）时，仍在下游套用同一修正的消费者（nf2ff_service/ui_service的 correct_pec_mirror）会二次套用——内核必须以产出源写入的标记键（pec_mirror_factor）做幂等直通，单测端到端钉「原值 meta 与已修正 meta 经同一服务路径逐键同值」，只钉内核公式抓不住双计（#296）；② render_script 级硬守卫（NEAR≤缝/3 抛错）会级联到所有按固定审计档渲染的离线消费者——三模板单测 MESH_MM=0.4 与审计 helper DEFAULT_MESH_MM=0.4 全部越界即红；引入守卫前先 grep 全部render_script/load_geometry 调用点，审计 helper 要有按模板的网格查表（TEMPLATE_MESH_MM）而非单一常量（#297）；③ N=3 切比雪夫的 argmax 峰位是纹波峰歧义量（带缘峰与带心峰同为 0dB，微小畸变即在 ±2.5% 间跳变；argmax 报 −7.6% 而 −3dB 带心 −5.58%）——峰位/频偏的报告与门口径取 −3dB带心或单谐振器 |Y| 极小，argmax 只在两侧同口径时可用（#298）；④ 谐振区导纳对端接电感极敏感（|Y|≈1e-3 S 时 L=1e-15H 已使 rel 变化 5e-6）——闭式「L→0 退化为理想短路」的连续性测试必须把 L取到远低于灵敏度尺度（1e-18H），否则 1e-6 相对门在 1e-15H 就红（#299）。",
+   "title": "c3 网格/裁判四坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#300-#303",
+   "id": "#300-#303",
+   "lesson_one_line": "① 裁判自身必须先过已知基准才有资格裁判闭式",
+   "numbers": [
+    300,
+    301,
+    302,
+    303
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 731,
+    "line_start": 716
+   },
+   "text": "- C9 裁判/定标四坑（2026-09-18 w2f，#300-#303，）：① 裁判自身必须先过已知基准才有资格裁判闭式——C9 两份未入库临时 FD（侦察批 3.02 系列、收尾批 2.36 系列）互相矛盾且均未对拍任何解析/闭式基准，refs 连续两次写错方向（q 式被判\"偏低 −10%\"实为\"高估 +26%\"）；裁判数字进文档前必须有仓内可复跑实现+基准单测（微带 HJ/Cohn/半空间极限/解析平行板）（#300）；② \"匹配线 S11 深谷隐含 εeff\"推理有隐含前提：它假设引擎空气阻抗=闭式精确值；粗网格下引擎L'（=Z·β/ω）可比零厚度闭式低 12%（0.731mm 带只有 2.6 个 NEAR 格），S11 只标定\"引擎线 vs 参考阻抗\"匹配度，不能反推 εeff——εeff 用 β（端口三点差分或 S21 相位斜率互证），Z 用引擎 ZL 落盘（#301）；③ CPS 无地薄基板的 Gupta/Ghione tanh 部分电容映射系统性低估 εeff（a/h 越大越低，−3~−12%；sinh 变体更差）——有效厚度 γ(εr)=1+0.9014·εr^−0.6361 单参数即可族内 ≤1.4%，γ 随 εr递减（εr→∞→1），定标常数必须逐 εr 拟合，单 εr 定标外推到 εr≥6 会 +3~6%（#302）；④ CPS 空气电容 FD 外边界必须 ≥20·b（偶极场衰减慢）：8mm/3b 域 C_air 截断 −3%（Z0_air +3%）而 εeff 比值不受影响（≤0.1%）——裁判 Z0 与 εeff 的域敏感度不同，Z0 口径以共形闭式空气值/√εeff_FD 为准（#303）。另（合流纪律）：共享文件未在子代理 files 中声明的 hunk 会被他轨按\"非 c4 即本项\"过滤规则捎带入库（w2f 两注释 hunk 随 w2e 入库）——hunk 过滤要按正向标识（本项标记/函数名）保留，不按反向排除；他轨在制致工作树门红时用 `git worktree add HEAD` + apply 索引 patch +PYTHONPATH 覆盖 editable 安装做隔离索引态门。",
+   "title": "C9 裁判/定标四坑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#304-#306",
+   "id": "#304-#306",
+   "lesson_one_line": "① 模板注册表第五消费者：tests/unit/test_template_meta_consistency.py",
+   "numbers": [
+    304,
+    305,
+    306,
+    247
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 744,
+    "line_start": 732
+   },
+   "text": "- hairpin_alt 注册三坑（2026-09-18 w2g，#304-#306，）：① 模板注册表第五消费者：tests/unit/test_template_meta_consistency.py——TEMPLATE_NOMINAL 键集与值必须与docs/templates/<t>/meta.yaml nominal_params 一致（w1b 四模板 NOMINAL 含 er/tan_d/f0_ghz 而 meta无，交付门 24 文件未含该测试→HEAD 既有红被 w2g 抓出）；注册新模板的交付门必含test_template_meta_consistency + test_template_geometry_audit（EXPECTED_TEMPLATES）+ 三处 `==N`字面计数（antenna2×2/coupled_bpf/slotline_family_registration×2，#247 followUp 改`len(TEMPLATE_META)`）（#304）；② argparse help 字符串含 `%`（如 `FBW5% N=3`）会让 `--help` 在_expand_help 抛 `unsupported format character`——help 里百分号写 `%%`，CLI 接线单测真构建 parser跑 --help 可抓（#305）；③ FakeAdapter 无显式变量时 f0 直接取 self.f0_ghz、不走几何→f0 反演，名义 vs 解析参考只能到 ~1e-4；要 ≤1e-9 逐位比对必须显式 set_variables 全部几何量（#306）。另（合流）：hunk 正向过滤按标识符会漏掉\"新增行无标识字面\"的 hunk（`_hairpin_layout` 内增orientation 键）——正向过滤后再按 hunk 头上下文（`@@ ... def <本项函数>`）补检，两轮都零命中的才判他轨。",
+   "title": "hairpin_alt 注册三坑"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#307-#310",
+   "id": "#307-#310",
+   "lesson_one_line": "① HFSS Driven Modal 双导体（耦合线对）端口的模阻抗基准=共模 Z0e/2 与差模 2·Z0o，不是单线偶/奇模阻抗",
+   "numbers": [
+    307,
+    308,
+    309,
+    310,
+    248,
+    289
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 760,
+    "line_start": 745
+   },
+   "text": "- HFSS Marchand 锚四坑（2026-09-18 rm-hfss-anchor，#307-#310，）：① HFSS Driven Modal 双导体（耦合线对）端口的模阻抗基准=共模 Z0e/2 与差模 2·Z0o，不是单线偶/奇模阻抗——按 Z0 大小识别偶模在此基准下反转（共模<差模），须按 εeff 较高识别；50Ω 归一 S 反演得到的是共模/差模阻抗，换算 Z0e=2·Zc、Z0o=Zd/2（首判 DISAGREE −22%/+29% 即此，Modal Solution Data Zo独立确认）（#307）；② pyaedt 多模 wave_port 的 integration_line 格式=[起点列表(每模一个),终点列表(每模一个)]，传 [线1,线2] 被解析成模 1 起点=终点→\"length of port lines must be greater than zero\"；且该失败后 gRPC 通道损坏，finally 里 release_desktop 静默失败留孤儿ansysedt（父死、-grpcsrv -ng），按 PID 核对命令行后 Stop-Process（#308）；③ HfssAdapter.export_touchstone 按端口边界数命名：2 个 2 模波端口的 4×4 模态数据被写成 .s2p，skrf 按扩展名推 rank 抛 IndexError（#248 反向）——多模端口按 Σ模数改名 .s4p（#309）；④ HFSS 建模三坑：仅共边（无面积重叠）的共面薄片 unite 报 \"executed\" 但不合并、不在 PEC 表→馈线不导电（|S11|≈−0.2dB 全反射），薄片面积重叠再 unite 并校验 object_names；矩形 Width/Height 按法向轴循环映射（轴 X→(Y,Z)、Y→(Z,X)、Z→(X,Y)），create_rectangle 的 sizes 直通不重排，orientation='XZ' 竖片须sizes=[h(→Z), w(→X)]；主线两侧镜像副线坐标须关于主线中心（y=w/2）镜像而非 y=0（写错间隙变w+s 几乎不耦合→A/B 臂伪失衡）——端口片/耦合间隙建完必 bounding_box 自审（#310）。#289 补充：`powershell -File` 临时 .ps1 受执行策略拦截，须 `-NoProfile -ExecutionPolicy Bypass -File`。",
+   "title": "HFSS Marchand 锚四坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#311-#313",
+   "id": "#311-#313",
+   "lesson_one_line": "① 全局 BASE 加密救不了<NEAR 的缝",
+   "numbers": [
+    311,
+    312,
+    313,
+    262
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 772,
+    "line_start": 761
+   },
+   "text": "- C4 网格收敛三坑（2026-09-18 rm-oe-c4，#311-#313，）：① 全局 BASE 加密救不了<NEAR 的缝——NEAR=base/4 的 SmoothMeshLines 只细分 >NEAR 的区间，指缝/耦合缝 <NEAR 时恒为单格（lange 38.6µm 指缝在缺省与 0.4 档均 0 内线，起跑审计门实证拦下无效起跑）；有效手段=缝中点精确入网（cpw\"缝中线加密\"同口径，`_c4_gap_midlines`），可执行判据：缝内内部线 ≥1（缝缘线不算），渲染后exec 网格段实测秒级零仿真（#311）；② 加密档 openEMS dt 必须以 et 首两行实测而非 Var1-CFL 估（实测/估计比 0.93–1.07 漂）：mesh 0.4 lange dt=50.6fs → NrTS=100000 上限 5.06ns 落在 5.73ns 激励脉冲内（#262 族再实证，缺省档也仅余 6%）；rotation 流程零-src 接入点=进程内包openems_templates.render_script + rewrite_nrts（pt3_nrts 先例），脚本哈希含改写文本缓存不串味（#312）；③ \"网格收敛性\"实验必须报与 BASE 无关的地板项——ZL 离散误差两点线性分解 dev=a·BASE+b给出 z 向地板 −2.9%/−1.8%（基板官方 substrate_cells=4 即 127µm 层不随 BASE 加密，是 ZL 与耦合度共同的分辨限制项），面内一阶外推系统性低估残差；格数估算须计 z 向随 BASE 平滑加密（实测 ×9.7 vs 面内估 ×6.8）（#313）。",
+   "title": "C4 网格收敛三坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#314-#316",
+   "id": "#314-#316",
+   "lesson_one_line": "① 派生元素与已测元素混入同一矩阵且不带掩码流转，下游任何\"全矩阵\"判据都会把补齐值当测量值",
+   "numbers": [
+    314,
+    315,
+    316,
+    122
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 782,
+    "line_start": 773
+   },
+   "text": "- 健康门掩码三坑（2026-09-18 fix-g11，#314-#316，）：① 派生元素与已测元素混入同一矩阵且不带掩码流转，下游任何\"全矩阵\"判据都会把补齐值当测量值——openEMS 单激励sparams.csv 解析时 S12/S13 置零、S32:=S23 互易补齐、S22:=S11 对称补齐，互易因子按全矩阵比|S12−S21|=|0−S21|≈|S21| 判 FAIL，拦掉 6 个真机校准 run（max_asym 0.65–0.72 恰是 −3dB 传输幅值指纹）；规则：凡按对称/互易补齐的矩阵必须随矩阵给出已测掩码，判据只对两向独立已测对下结论，无对如实 UNKNOWN 不凑 PASS 也不冒充 FAIL（#122 同族）（#314）；② 改公共解析器返回元组长度前先grep 全仓解包点——`_parse_sparams_csv` 被他人按 `freq_hz, s = parsed` 2 元组解包，直接改 3 元组打红他人文件；保留旧名薄包装+新名带掩码版本，零跨轨改动（#315）；③ 形状不符/非法掩码的兜底方向选\"多报\"不选\"放过\"——shape 不符回退 None=全矩阵已测（最多多一条 FAIL 让人看），回退成全 False 会把真互易破坏静默判 UNKNOWN 放进数据集（#316）。",
+   "title": "健康门掩码三坑"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": "#317-#319",
+   "id": "#317-#319",
+   "lesson_one_line": "① UI 表单「保存并运行」整文档 yaml.safe_dump 回写是 recipes/ 污染源，run_once 无辜",
+   "numbers": [
+    317,
+    318,
+    319,
+    222,
+    219
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 796,
+    "line_start": 783
+   },
+   "text": "- 配方写守卫三坑（2026-09-18 fix-recipe-pollution，#317-#319，）：① UI 表单「保存并运行」整文档 yaml.safe_dump 回写是 recipes/ 污染源，run_once 无辜——判定\"同刻 run 与配方改写\"归因时，先比对被改写文件的结构指纹（多出的默认键 n_trials:null/sampler:tpe 正是recipe_view 读面归一化的产物、注释/引号丢=整文档 dump），而不是盯 run 链找 save-back；任务书假设（迁移路径）需先证伪再动手（#222/#219① 同源）（#317）；② 路径守卫在 Windows 必须os.path.normcase 比较（大小写/分隔符），受保护根须同时含 cwd/recipes 与由 __file__ 推导的仓库recipes（进程 chdir 后仍护，测试 chdir tmp 时两根共存）；重定向副本路径要从 normcase 后的相对分段回取原大小写尾段，否则工作副本文件名被小写化（#318）；③ 只包 yaml.dump 出口守不住全部写面：shutil.copyfile（沙箱 stage）、OmegaConf.save（run 快照）、tmp.replace（UI 原子替换）都绕过序列化器——非序列化写点用先行校验函数兜住，且原子替换的临时文件必须与守卫决策后的目标同目录，否则临时文件本身仍落 recipes/（#319）。另两条附记：长跑真机超预声明预算的处置=预算点记port_ut 末行时间轴快照并判 PARTIAL(超预算) 落档、续跑取全矩阵双记不删数据（rm-oe-c4 lange 3.18h）；5 列 2 端口 csv 是 S12:=S21 自比的假 PASS、9 列 3 端口 csv 是假 FAIL——症状相反均不构成互易证据，\"5 列全 healthy\"不能当互易检查有效的证据（fix-g11）。",
+   "title": "配方写守卫三坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#320-#322",
+   "id": "#320-#322",
+   "lesson_one_line": "① 同一 JSON 里多个参数段语义相反：hairpin calib.json 的 design_params 是校准前设计值、calib_params 才是该目录实跑几何（kgap2_g0500 ↔ calib_params.gap_mm=0.5），泛化提取若按 design_params 优先会静默张冠李戴",
+   "numbers": [
+    320,
+    321,
+    322
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 809,
+    "line_start": 797
+   },
+   "text": "- 工作目录产物导入三坑（2026-09-18 fix-importer，#320-#322，）：① 同一 JSON 里多个参数段语义相反：hairpin calib.json 的 design_params 是校准前设计值、calib_params 才是该目录实跑几何（kgap2_g0500 ↔ calib_params.gap_mm=0.5），泛化提取若按 design_params 优先会静默张冠李戴——键路径优先级必须 params>calib_params>design_params 且用真机构成的样本钉住（#320）；② 多曲线目录（helix 根 7 s1p、marchand 根 5 sNp、slotline_arbitration/hfss 8 s2p）共用根级 JSON，按文件序取上下文必误归属——须用显式引用（JSON 字符串值以曲线相对该 JSON 目录的路径结尾；只比文件名会让 pt1 的引用漏给 pt2，两者都以 /sparams.csv 结尾）或同名 stem 归属，否则跳过如实（真机 26/54曲线被如实跳过而非猜参数）（#321）；③ E1 指纹 (model, study_name, seed, params) 对导入行若study_name 置空会跨战役折叠同设计点——置 study_name=工作目录名后折叠只在同战役内（真机 5 个dup 全是共用同一 design JSON 的变体），跨战役真机复跑各留一行（#322）。附记：openEMS sparams.csv不一定在点目录直下（p0_cross_fidelity 形态落 fdtd/ 子目录 11 个），曲线扫描不能把 fdtd/ 当引擎内部目录剪掉；health_check_run 以 runs_dir=点目录父级调用即可对无 meta.json 目录体检（G11 门可复用到目录粒度，真机 hairpin_calib 13 点拦 7），但 verdict 只能归属单曲线目录。",
+   "title": "工作目录产物导入三坑"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "整树",
+      "存活探针",
+      "看门"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#323",
+   "id": "#323",
+   "lesson_one_line": "#157 家族第三例",
+   "numbers": [
+    323,
+    157
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 817,
+    "line_start": 810
+   },
+   "text": "- 长跑看门与整树消失（2026-09-18 rm-oe-c3，#323，）：#157 家族第三例——interdigital 合规网格真跑 5h59m/77.6 万步/−37.5dB 时整树（4 进程）无 traceback 退出（既未达 −60dB 也未触NrTS 顶；系统事件日志无崩溃/重启/资源记录），死因不明。watcher 方法论：长跑必挂周期存活探针（PowerShell后台循环，每 120s 按命令行匹配列存活 PID 落日志），把无声死亡窗口从\"半天后才发现\"钉到 2 分钟内，且退出后自动接预置判读链（本次部分提取零人工介入完成）；判读输入缺失时如实重建元数据——只填 convergence（规则④\"终止信息缺失不采信\"）与 params，观测值进 note 不进判读字段，metrics/gates 留空不伪造。另：实测带尾衰减−0.28dB/ns vs 设计有载 Q 外推 −3.41dB/ns 差 12×（候选=openEMS 能量判据含耦合无源储能），窄带高 Q 模板（c3 族 bw<1%）到 −60dB 需 ~10h+/模板——收敛判据/预算须按实测衰减率重排，不沿用设计 Q 外推（#323）。",
+   "title": "长跑看门与整树消失"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#324-#327",
+   "id": "#324-#327",
+   "lesson_one_line": "① YAML plain scalar 内 '#' 前若是半角空格会截断成注释",
+   "numbers": [
+    324,
+    325,
+    326,
+    327,
+    122
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 826,
+    "line_start": 818
+   },
+   "text": "- round2 修复批三坑（2026-09-18 F-R2-2/F-R2-5/F-R2-4，#324-#327，（二百四十））：① YAML plain scalar 内 '#' 前若是半角空格会截断成注释——行内引注坑编号（如 #122）用全角逗号/括号包裹写法（hairpin meta reasons 先例）（#324）；② 钉历史时点\"门旗键不存在\"的断言在后续重标定给该锚补键后自然失效——按时点收窄作用域（哪些锚仍属旧时点），不能整行删除也不能放任假红；golden/归档是证据零改写，重标定走 golden provenance 块+回放测试离线复判，严禁 --ingest 重写归档（#325/#326）；③ 方案性能口径要分面：\"百万行 <1s\" 只对查询面成立（判据原文语境是 SQL 查询），物化主路径 1e6 行实测 ~15.9s——分面写死（query<1.0s 方案口径、materialize<48s 实测×3 并 docstring注明无方案口径）；1e6 合成点用单 samples.json 承载（97MB 单文件）而非百万 trial 文件（仅 I/O 即>100s），samples 列表逐点物化与 trial 同走 materialize 主路径无绕行失真（#327）。",
+   "title": "round2 修复批三坑"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": "#328-#329",
+   "id": "#328-#329",
+   "lesson_one_line": "① 传输线族预算外推规律：openEMS −60dB 停机步数≈激励结束时刻（SSL/CPS 三真机 run 全停在 t_end=et 时长），预算外推用 步数≈t_excite/dt、dt 按最小格线性缩放、网格用 CSXCAD 离线 exec 实测（秒级零仿真），2× 余量足够（预估 ≤20min vs 实测 1…",
+   "numbers": [
+    328,
+    329
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 833,
+    "line_start": 827
+   },
+   "text": "- C9 复跑两坑（2026-09-18 rm-oe-c9，#328-#329，）：① 传输线族预算外推规律：openEMS −60dB 停机步数≈激励结束时刻（SSL/CPS 三真机 run 全停在 t_end=et 时长），预算外推用 步数≈t_excite/dt、dt 按最小格线性缩放、网格用 CSXCAD 离线 exec 实测（秒级零仿真），2× 余量足够（预估 ≤20min vs 实测 113/104/346s）（#328）；② 渲染器加旋钮安全纪律：先验证缺省路径 unified diff 为空（逐字节不变）再上真机，旋钮值写进 criteria.md 预声明、生成脚本自带旋钮注释保持证据链自描述，单变量对照用 _boundary 六元覆盖；port_ut 头 start-coordinates 是端口面实际落格坐标的免费证据（判定\"端口元线长/落格\"类假设的直接测量，比渲染字面量可信）（#329）。",
+   "title": "C9 复跑两坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#347-#350",
+   "id": "#347-#350",
+   "lesson_one_line": "① MSLPort的 MeasPlaneShift（缺省段长之半，模板惯例 L_PORT/3）与 FeedShift=10·NEAR 接近时，u/i 三站探针落激励盒近场（0.056mm=0.2 格 → β 偏 10×/Z_ref≈9Ω/|Γ|>1）",
+   "numbers": [
+    347,
+    348,
+    349,
+    350,
+    152
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 844,
+    "line_start": 834
+   },
+   "text": "- Marchand 冒烟四坑（2026-09-19 rm-oe-marchand，#347-#350，）：① MSLPort的 MeasPlaneShift（缺省段长之半，模板惯例 L_PORT/3）与 FeedShift=10·NEAR 接近时，u/i 三站探针落激励盒近场（0.056mm=0.2 格 → β 偏 10×/Z_ref≈9Ω/|Γ|>1）——渲染器守卫断言|MeasPlaneShift−FeedShift|≥4·NEAR（留浮点余量 ≥3.9×，恰等会炸）+β 闭环合理性门|β_engine/β_HJ−1|≤10%（#347）；② 深驻波（|Γ|≳0.5）下 MSLPort 一阶线基提取即退化（4 格间距仍β_dev+22.9%）——单激励冒烟 S 参数判读主口径必须用驻波免疫估计器（S11=Γ50(Zin) 线性恒等式、功率比、集总口相对相位）+@f0 能量守恒旁证，线基重归一降为次口径（#348）；③ #152 族新实例：NEAR=base/4 的 z 附加线与基板分层线近重合 7.2µm → dt 塌缩 ~36×——基板分层线密度与 NEAR 同量级时不要叠加 ±NEAR 线，起跑前全轴最小线距守卫 ≥10µm（#349）；④ 两引擎对同一设计的谐振偏移可以方向相反（HFSS 低 18% vs openEMS 高 ≥20%）——\"引擎实测中心偏低=过孔电感\"的单引擎归因不可外推，预声明对照判据（幅度差 ≤0.5dB 且方向一致才 AGREE）在 DISAGREE 时阻止了单侧误采信（#350）。",
+   "title": "Marchand 冒烟四坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#335-#336",
+   "id": "#335-#336",
+   "lesson_one_line": "①预声明仲裁门必须先验收敛",
+   "numbers": [
+    335,
+    336,
+    145,
+    310
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 851,
+    "line_start": 845
+   },
+   "text": "- HFSS 仲裁收敛两坑（2026-09-19 rm-hfss-c4-arbitration，#335-#336，）：①预声明仲裁门必须先验收敛——ΔS 目标达标≠关键标量已收敛（lange S31@f0 随 ΔS 0.02→0.01→0.005移动 −2.31→−2.81→−3.105 共 0.8dB，第一轮触 max_passes 未收敛的解足以把 ±0.5dB 判向门从AGREE_JUDGE 翻成 AGREE_OPENEMS 误证\"裁判错\"；#145 竞态同源）——判读前核 passes/final_delta_s是按判据收敛还是触顶，关键指标做 ≥3 级 ΔS 阶梯看单调饱和（#335）；② openEMS 盒缘相接的薄片网络（feed/jog/line 共享边）在 HFSS 不连通——jog 端向垫 0.02mm 面积重叠后 unite+object_names 校验，构建前用纯函数对真实 layout 做断链审计（#310 具体化）（#336）。",
+   "title": "HFSS 仲裁收敛两坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#337-#339",
+   "id": "#337-#339",
+   "lesson_one_line": "① irfft 出的是实带通信号，|·| 是 |A·cos(ωt+φ)|（2 倍载频纹波）不是包络",
+   "numbers": [
+    337,
+    338,
+    339
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 860,
+    "line_start": 852
+   },
+   "text": "- 衰减率提取与端口链复算三坑（2026-09-19 fix-c3-q-extract，#337-#339，）：① irfft 出的是实带通信号，|·| 是 |A·cos(ωt+φ)|（2 倍载频纹波）不是包络——FFT-mask 隔离后必须hilbert 解析化取模；直接用 |irfft| 做 ln 包络拟合 α 系统偏 −9~−17%（合成单模对照实测），多起点/延迟都救不回（#337）；② FFT 频域 mask 滤波的时域核宽 ~1/(2·hw) 对 τ≈20ns 高 Q 模是重度平滑（包络斜率偏 −14% 且随 delay 反常恶化）——窄带高 Q 模式的衰减率提取直接在时域样本上做模型拟合（variable projection：固定 α/ω 时幅相线性消去），不经任何包络/滤波中间量（#338）；③ 复算openEMS 端口链必须逐方法核对其 python 源（MSLPort.ReadUIData 覆盖基类：uf_tot 只取 U 文件序 [1]而非三行求和、if_tot=0.5(if_A+if_B)），且 sparams 对拍验证门在 dB 域 ≤0.05dB 而非复数 allclose（大失谐频点 uf±Z·if 灾难性消去天然 ~1e-3 复差）（#339）。",
+   "title": "衰减率提取与端口链复算三坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#340-#342",
+   "id": "#340-#342",
+   "lesson_one_line": "① \"拟合斜率→物理量\"换算必须用合成已知量回收钉（delay_model_delta 首版把 LS 斜率再除 2π，τ 低估6.3×，合成注入→回收单测当场抓出；#118 同族）（#340）；② 模型恒等式推导必须逐项展开验证到一般符号",
+   "numbers": [
+    340,
+    341,
+    342,
+    118
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 867,
+    "line_start": 861
+   },
+   "text": "- S 矩阵修正与物理量回收三坑（2026-09-19 fix-mapes-sref-recal，#340-#342，）：① \"拟合斜率→物理量\"换算必须用合成已知量回收钉（delay_model_delta 首版把 LS 斜率再除 2π，τ 低估6.3×，合成注入→回收单测当场抓出；#118 同族）（#340）；② 模型恒等式推导必须逐项展开验证到一般符号——对角元 Γ̂ 反演捷径 ch+Ŝ·sh=C 的代数证明只在 Γ=±1 成立（一般式含 O(Δ²(1−Γ²))），正确式Γ̂=(Ŝ·ch−sh)/(ch−Ŝ·sh) 被一阶捷径顶掉（#341）；③ S 矩阵修正的行/列/对角作用域必须逐一对照误差模型条目来源——行因子只作用于非对角条目（对角 S_kk 分子是波分解，误差消去），乘到对角会注入O(Δ) 伪差（#342）。",
+   "title": "S 矩阵修正与物理量回收三坑"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "整树",
+      "存活探针",
+      "看门"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#343-#345",
+   "id": "#343-#345",
+   "lesson_one_line": "① 交替取向y 网格逐腔轮替加密使 dt 减半（最小格 ~0.055mm、dt≈105fs vs 同向 194fs）",
+   "numbers": [
+    343,
+    344,
+    345,
+    262,
+    266,
+    323
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 875,
+    "line_start": 868
+   },
+   "text": "- hairpin_alt 真机三坑（2026-09-19 rm-oe-hairpin，#343-#345，）：① 交替取向y 网格逐腔轮替加密使 dt 减半（最小格 ~0.055mm、dt≈105fs vs 同向 194fs）——同 NrTS 时窗减半，缺省NrTS 触顶出 |S11|>1 截断假象（#262/#266 族）；跨取向比较时窗必须按 dt 实测折算（#343）；② 交替拓扑存在近被困模：port_ut 尾段衰减 ~0.3dB/ns≈Q_u 材料限（8.686·π·f0/Q_u），−60dB 需 ~85ns≈1.8h/点——强耦段衰减率（4.3dB/ns）外推全窗完全失真，#323「先实测后外推」再实证；EndCriteria 提前停点可作formal 收敛档判据（#344）；③ 提取门 FAIL 先分清\"数据坏\"与\"模型类不覆盖\"——同步有耗 2 极模型对交替拓扑强耦响应系统性失配（单峰+不对称裙边，峰区 ±0.2dB 吻合而裙边 rms 2.24-4.35dB；free-Qe 复拟排除先验错因）——后者换口径（不对称 2 极/极点分裂）而非重跑（#345）。",
+   "title": "hairpin_alt 真机三坑"
+  },
+  {
+   "category": "kicad",
+   "devlog_ref": "#331-#332",
+   "id": "#331-#332",
+   "lesson_one_line": "① 审计 dump自造标签名会掩盖真实 tag（KiCad IPC-2581 DictionaryStandard 子元素实为 EntryStandard，打印手写\"Entry:\" 字面使 findall({*}Entry) 空结果被误判\"字典没找\"）",
+   "numbers": [
+    331,
+    332,
+    118
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 881,
+    "line_start": 876
+   },
+   "text": "- 真实文件对拍两坑（2026-09-19 fix-ipc2581，#331-#332，）：① 审计 dump自造标签名会掩盖真实 tag（KiCad IPC-2581 DictionaryStandard 子元素实为 EntryStandard，打印手写\"Entry:\" 字面使 findall({*}Entry) 空结果被误判\"字典没找\"）——审计 dump 必须打印 tag 原文不得人工美化（#118 家族：观察工具本身失真）（#331）；② ElementTree 的 iter() 不支持 {*} 命名空间通配（find/findall 3.8+ 支持），iter(\"{*}Set\") 静默返回零匹配不报错——命名空间无关遍历一律findall(\".//{*}Tag\")（#332）。",
+   "title": "真实文件对拍两坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#333-#334",
+   "id": "#333-#334",
+   "lesson_one_line": "① 悬置带线类εeff 的 εr 依赖是 softmin 型串联饱和（FD 实测 q_fd 随 εr 单调降，2.2↔12.9 差 2.5×）",
+   "numbers": [
+    333,
+    334
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 889,
+    "line_start": 882
+   },
+   "text": "- 闭式重定标两坑（2026-09-19 fix-w2f-rescale，#333-#334，）：① 悬置带线类εeff 的 εr 依赖是 softmin 型串联饱和（FD 实测 q_fd 随 εr 单调降，2.2↔12.9 差 2.5×）——平行份额式1+(εr−1)q 的定标必须在 (几何×εr) 全族上做，单 εr 平面定标高 εr 外推 +82%；经验闭式重定标先做per-point 形状族对比再定结构（全局单指数广义均值拟不出 max 6.8%，softmin 每点 0.4%——形状选错再加参数白费）（#333）；② 双精度 tanh(x≳19) 饱和为 1.0 使 K/K′ 比值死区（q 恒 0）——k′=sech(x)直取+AGM 恒等式无相消；r_h=inf 分支必须回 q=0（写回 q=1 会让端点/单调性检查全炸）（#334）。另 KiCad 10 ODB++ 导出口径：块式 matrix（NAME 大写↔层目录小写）、$idx 符号表尺寸数字=µm（与同板 IPC 导出互证）、无钻孔焊盘钻孔子组写 P 0、odb 导出默认 zip 需--compression none 才是目录形态。",
+   "title": "闭式重定标两坑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#330",
+   "id": "#330",
+   "lesson_one_line": "必须全仓`git grep -w`（除 runs/ 历史证据）而非仅枚举文档面",
+   "numbers": [
+    330
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 893,
+    "line_start": 890
+   },
+   "text": "- 孤儿脚本判定 grep 面（2026-09-18 fix-r2b06，#330，）：必须全仓`git grep -w`（除 runs/ 历史证据）而非仅枚举文档面——configs（verified_by 出处字段）/knowledge/ pyproject（ruff per-file-ignores）/scripts 交叉引用是盲区（B2 名单 27 件复核 5 件假孤儿）；且审查报告自身的名单行会让逐名零引用门永远打红（自录行=历史证据口径，门排除须显式声明）。",
+   "title": "孤儿脚本判定 grep 面"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#351-#353",
+   "id": "#351-#353",
+   "lesson_one_line": "① 锚定式 Edit 回写被证伪（round3 F-03：47 笔 commit 中补记 8 笔=17%，全部是\"折行锚未匹配\"或  漏带，且全部发生在\"回写挂批尾\"立规之后）",
+   "numbers": [
+    351,
+    352,
+    353,
+    5,
+    221,
+    235,
+    239
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 905,
+    "line_start": 894
+   },
+   "text": "- round3 修复批规程三坑（2026-09-19，#351-#353，）：① 锚定式 Edit 回写被证伪（round3 F-03：47 笔 commit 中补记 8 笔=17%，全部是\"折行锚未匹配\"或  漏带，且全部发生在\"回写挂批尾\"立规之后）——文档回写一律整节重写（Read 定位节边界→整段替换），不再用折行锚点逐句补丁；代码 commit 必须同笔带  条目（漏带即违 #5），主代理提交前`git show --stat` 与  条目互查。② 目录级 `git add <dir>` 捎带二次复发（#221② 家族，round3 F-02 实证 orphan 清理笔捎带 hairpin 司机 hunk）——凡 `git add` 带目录前必须 `git status--porcelain` 逐文件核对归属再点名暂存（porcelain 解析保留原始行 slice(3)，#235）；manifest校验容忍目录粒度但暂存必须文件点名。③ 子代理并发上限是动态节流不是固定数（2026-09-19 两轮实证：首轮 5 启 3 拒稳定 2；二轮瞬时放行 7 个后收缩回收，把运行中 4 个杀掉（含跑 35min 的 b1），幸存=最早 2 个）——启动即拒零副作用直接重发；运行中被杀（数秒到数十分钟不等）会留树：先 `git status` 查（落树可能全绿——b1 实证 33 passed 直接 #239 抢救收编；也可能干净——via-comp 实证零损失），稳妥节奏=在飞 2-3 + 完成通知驱动补发，不一次排满探顶。",
+   "title": "round3 修复批规程三坑"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A906",
+   "lesson_one_line": "纯 docs/账本类 commit（/TODO/审查报告/交接文档，无 src/tests/scripts/runs 产物改动）可免 `wf:` 标记；含代码或 runs 产物的 commit 一律带 `wf:<id>`（round3 实测 46/47，唯一缺标记者即纯 docs 笔）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 908,
+    "line_start": 906
+   },
+   "text": "- commit message 豁免口径（F-05 成文）：纯 docs/账本类 commit（/TODO/审查报告/交接文档，无 src/tests/scripts/runs 产物改动）可免 `wf:` 标记；含代码或 runs 产物的 commit 一律带 `wf:<id>`（round3 实测 46/47，唯一缺标记者即纯 docs 笔）。",
+   "title": "commit message 豁免口径（F-05 成文）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#354",
+   "id": "#354",
+   "lesson_one_line": "typer 内嵌 vendored click（typer._click），子应用组是 TyperGroup 而非 standalone click.Group",
+   "numbers": [
+    354
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 912,
+    "line_start": 909
+   },
+   "text": "- typer 内嵌 click 的 isinstance 陷阱（2026-09-19 fr3-check-numbers，#354，）：typer 内嵌 vendored click（typer._click），子应用组是 TyperGroup 而非 standalone click.Group——`isinstance(sub, click.Group)` 对全部子组漏判（实测 groups=0）。鸭子判别 `hasattr(sub,\"commands\")`才稳；typer 升级/混装 click 版本时先跑实注册计数对拍。",
+   "title": "typer 内嵌 click 的 isinstance 陷阱"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": "#355",
+   "id": "#355",
+   "lesson_one_line": "终门之后任何新加测试都会让 collect-only 超过文档钉的数字（7556 vs 7550），check_numbers 类\"文档数字一致性门\"用 collect 口径会误红只读文档",
+   "numbers": [
+    355
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 916,
+    "line_start": 913
+   },
+   "text": "- tests 计数：全量门日志优先于 collect-only（2026-09-19 fr3-check-numbers，#355，）：终门之后任何新加测试都会让 collect-only 超过文档钉的数字（7556 vs 7550），check_numbers 类\"文档数字一致性门\"用 collect 口径会误红只读文档——glob `*gate*full*.log` 取末次全量汇总（定向门 `wf_gate_<task>.log` 显式排除，其 passed 是子集），来源随行打印，collect 仅兜底。",
+   "title": "tests 计数：全量门日志优先于 collect-only"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#356-#361",
+   "id": "#356-#361",
+   "lesson_one_line": "① 零厚度盒 `material=\"pec\"` 在 HFSS 不导电（端口解出空框 TE10/TE20 倏逝模为证）",
+   "numbers": [
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    307
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 926,
+    "line_start": 917
+   },
+   "text": "- HFSS hairpin 锚点六坑（2026-09-19 ，#356-#361，）：① 零厚度盒 `material=\"pec\"` 在 HFSS 不导电（端口解出空框 TE10/TE20 倏逝模为证）——薄片导电必须 `assign_perfecte_to_sheets`（CPS/Marchand 配方同源）；② HFSSEigen setup 必须建在`solution_type=\"Eigenmode\"` 的 design，否则 analyze 零 CPU 挂起；③ eigen design 不支持 radiation边界（377Ω 阻抗片壳替代），零宽 CreateBox 仅零 z 尺寸可用（零 x/y 直接 gRPC 报错）；④ eigen 频率提取唯一可用路由=`post.reports_by_category.eigenmode()`（Modal Solution Data 全套查询在 eigen design 挂起、GetMessages 非图形恒空）；⑤ HFSS 波端口端子分组随模而变（偶模等电位端子合并→Zvi=Z0e/2、奇模分立→Zvi=Z0o；Zvi=√(Zpi·Zpv) 恒等式可实测自校）——#307 换算链的端子级落地；⑥ 弱耦点 k_Z（阻抗差值口径）是 SNL 支配量（±0.5Ω 噪声→±30% 不确定度）——k 标尺主判用本征分裂 k_split=eigen 口径，阻抗差值口径只作旁证不作门。",
+   "title": "HFSS hairpin 锚点六坑"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#362",
+   "id": "#362",
+   "lesson_one_line": "`[project.entry-points.*]` 新增条目后importlib.metadata 读的是安装时 dist-info 快照",
+   "numbers": [
+    362
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 932,
+    "line_start": 927
+   },
+   "text": "- pyproject entry-point 变更必须重装 editable + reload 注册表=全量序静默缺插件（2026-09-19门预跑 6 红实证，#362，）：`[project.entry-points.*]` 新增条目后importlib.metadata 读的是安装时 dist-info 快照——不 `pip install -e . --no-deps` 重装则新插件对发现层不存在；叠加 test 里 `importlib.reload(registry)`（清空 _registry 且缓存插件模块不重执行 @register 装饰器、发现层从陈旧元数据只补回旧插件）=单跑绿、全量红、缺谁取决于元数据龄。修法=①entry 变更即重装 ②reload 类测试必须 `reg.__dict__` 快照 finally 还原。",
+   "title": "pyproject entry-point 变更必须重装 editable + reload 注册表=全量序静默缺插件"
+  },
+  {
+   "category": "workflow",
+   "consumption": [
+    {
+     "keywords": [
+      "整树",
+      "存活探针",
+      "看门"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#363",
+   "id": "#363",
+   "lesson_one_line": "单会话内 4 次运行中子代理被同款基础设施故障杀死（27/33/42/50min 工龄，超时 10s→120s 恶化），与并发节流（#353）是两种故障",
+   "numbers": [
+    363,
+    353,
+    157,
+    323
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 939,
+    "line_start": 933
+   },
+   "text": "- 子代理基建故障 \"Captcha instance timed out\" 连环杀（2026-09-19 A-D 批实证，#363，）：单会话内 4 次运行中子代理被同款基础设施故障杀死（27/33/42/50min 工龄，超时 10s→120s 恶化），与并发节流（#353）是两种故障——被杀零 commit 零副作用，但树面留半成品（落树可能接近完整：marchand-correction 第二任 +153 行主代理接力收编）。对策=①每次被杀先`git status` 盘点半成品再决定接力/自做；②大实现类任务连续两杀改主代理自做（docs-low/ marchand-correction 先例）；③分离求解存活者不杀、守望接力（#157/#323）；④守卫提交+逐项小步提交使任何一次被杀的损失上限=当前项未提交增量。",
+   "title": "子代理基建故障 \"Captcha instance timed out\" 连环杀"
+  },
+  {
+   "category": "git",
+   "devlog_ref": "#364-#367",
+   "id": "#364-#367",
+   "lesson_one_line": "① hunk 级暂存被后续整文件 git add 覆盖（共享文件多轨并行收口时）",
+   "numbers": [
+    364,
+    365,
+    366,
+    367,
+    221,
+    329,
+    301,
+    117
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 953,
+    "line_start": 940
+   },
+   "text": "- round4 审查批四坑（2026-09-20，#364-#367，）：① hunk 级暂存被后续整文件 git add 覆盖（共享文件多轨并行收口时）——`git apply --cached` 分组暂存后同一文件的 `git add <path>` 会静默重暂存全部改动（#221② 新形态）；对策=hunk 暂存后禁对该文件再 git add，提交前必须 `git diff --cached --stat` 与预期行数比对（本轮 63 行误暂存被--stat 核验当场抓回，soft reset+重建补丁恢复）。② S21 相位斜率提 εeff 的 L 必须取\"参考面跨度\"不是几何参数线长——模板参考面在板缘端口面（port_ut 头 start-coordinates是免费证据，#329），S21 斜率含馈段总电长度（mline 名义 40mm 线实测跨度 ~93.2mm，L=40语义下 εeff 虚大 ~5.4×）；参考面无关口径=引擎 CalcPort β（(β·c/ω)²，#301），port_beta.csv随 eval 产物在档可零仿真重导。③ 单变量网格对照每档必须核对引擎 dt/输出随档变化——网格对象（exec 段）验证过 ≠ 引擎吃到（cps_xrefine x1 档渲染含加密线但引擎 dt/轨迹与BASE 逐字节相同，两轮复现；x2 档正常）——吞线档不进判读轨迹（预声明 r 用 x0/x2 免疫），机制定位留 followUp。④ #117 falsy 陷阱判据版复发：`float(cost or 1e9)` 把合法的0.0（达标）顶替成缺失判 FAIL（E11-40 G0 probe 首跑误红）——判据布尔化必须`is not None` 显式判缺，`or` 缺省惯语禁用于数值可达 0 的面。",
+   "title": "round4 审查批四坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#368",
+   "id": "#368",
+   "lesson_one_line": "旋钮/对照实验的\"效力断言\"必须在与求解同参渲染的最终网格上做，且审计路径与求解路径必须同 mesh 等参数",
+   "numbers": [
+    368
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 961,
+    "line_start": 954
+   },
+   "text": "- 对照/审计与求解路径参数漂移一坑（2026-09-20，#368，）：旋钮/对照实验的\"效力断言\"必须在与求解同参渲染的最终网格上做，且审计路径与求解路径必须同 mesh 等参数——cps_xrefine x1\"吞线\"实为假象：审计路径漏传 mesh_resolution_mm 走自动档（NEAR=285µm），实跑走 EMSolverConfig 缺省 0.5mm（NEAR=0.125mm，SmoothMesh 自动把 250µm 缝格对半分恰好插入旋钮线）→x1 旋钮线与基线自落网格完全重合（引擎 debugCSX 三轴逐位相等），\"python 网格在档 vs 引擎无此线\"的对照是拿错配方审计对对配方引擎。正确姿势：①效力断言=同参最终网格上`新线集−基线线集≠∅`；②渲染期加静态守卫（如 gap/(2N)<NEAR 拒绝冗余档）；③引擎侧终验用debug_CSX=True 落盘网格逐位对比（NrTS≤100 微跑秒级）。",
+   "title": "对照/审计与求解路径参数漂移一坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#369-#370",
+   "id": "#369-#370",
+   "lesson_one_line": "①query_dataset 的 n_rows=limit 截断后行数不是全量计数",
+   "numbers": [
+    369,
+    370
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 969,
+    "line_start": 962
+   },
+   "text": "- 数据工厂 M2/M4 批两坑（2026-09-20，#369-#370，（三百零二））：①query_dataset 的 n_rows=limit 截断后行数不是全量计数——`limit=1` 时 n_rows=1，拿它当\"数据集总行数\"会判 G1 全红假 FAIL（m1 --judge 首跑实证）；全量计数用大 limit（或 manifest stats），凡\"总数语义\"一律实测一次返回语义再消费。② 深谐振谷结构的双重门损与线性域诊断法——S11 深谷（−52dB，4.8µm 内 4.45dB）使 dB 域 GP 预测与验证粒度双双病态（M2 S11门 FAIL 与 M4 cost 门 FAIL 独立同归因）；诊断法=线性域 |Γ| 头替换 dB 头（mean 1.41→0.55dB，LOO 最差点线性误差仅 0.019）分离\"表示问题\"与\"数据密度问题\"——深谷族判据要么线性域 |Γ|（消费面）要么谷区定向加密（数据面），两独立任务同归因时必须交叉验证归因再定出路。",
+   "title": "数据工厂 M2/M4 批两坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#371-#372",
+   "id": "#371-#372",
+   "lesson_one_line": "①深谐振谷族的 dB 验收门属误定口径（#370 升格为判据结论）",
+   "numbers": [
+    371,
+    372,
+    370
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 978,
+    "line_start": 970
+   },
+   "text": "- 数据工厂一期收官两经验（2026-09-20，#371-#372，+重启暂停点）：①深谐振谷族的 dB 验收门属误定口径（#370 升格为判据结论）——150 点谷区加密批实证：密度增益（5.21→2.22µm）使线性域 |ΔΓ| 稳定 PASS（0.0159），但谷随加密更深（−83.7dB）致 dB 域误差反向爆炸（5.10→30.38dB，argmax 线性误差仅 0.0199）——加密救不了 dB 门，dB 门对深谷族写 ≤1dB 级阈值本身就是误定；正确姿势=方案精度门写\"或 εeff\"双分支（线性域 |ΔΓ| 作消费口径、εeff 作精度锚），新族接入前先扫谷深再定门口径。② 分离进程判读类任务的\"重启暂停续跑\"模式——长跑判读（GP LOO 等）分离进程执行时，重启只丢计算不丢资产：暂停前把驱动/测试/数据集 WIP 保全提交（命名 WIP 保全）+续跑一条命令写进 TODO 暂停点，重启后 --judge幂等重跑即可（本轮 150 点复判实证零损失续跑）。",
+   "title": "数据工厂一期收官两经验"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A979",
+   "lesson_one_line": "任务书/TODO登记行只作线索不作现状",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 984,
+    "line_start": 979
+   },
+   "text": "- 登记快照过时系统性模式（2026-09-22 二期批 #222 家族十例，升格立规）：任务书/TODO登记行只作线索不作现状——本会话 10/30+ 项\"待做\"开工查实已闭合或前提不成立（A2D 双键机制、C17 透传、0cx 三条、C23、C3 SSL 级联、slotline 注册①②、C1a、C9、ratrace n=4证伪、fake 锚 3.54）。立规：登记未排期项开工前必须先 grep 处置面（代码现状+TODO处置注记+runs/ 归档），子代理任务书第一节强制\"语境钉死\"；查实已闭合的零改动交付同样是有价值产出（附证据链判\"无需做\"）。",
+   "title": "登记快照过时系统性模式"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": null,
+   "id": "A985",
+   "lesson_one_line": "迁 `ansys.aedt.core`（模块文件改名modeler_3d.py；Modeler3D 失去 get_object_bounding_box→per-object `Object3d.bounding_box` property）；.venv 可残留旧 pyaedt dist-info 而实体包是 ans…",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 988,
+    "line_start": 985
+   },
+   "text": "- pyaedt 1.x 新命名空间（2026-09-22 B2 实证）：迁 `ansys.aedt.core`（模块文件改名modeler_3d.py；Modeler3D 失去 get_object_bounding_box→per-object `Object3d.bounding_box` property）；.venv 可残留旧 pyaedt dist-info 而实体包是 ansys-aedt-core——\"pip show 有/ import 无\"先 ls site-packages 分辨，勿按包名臆断。",
+   "title": "pyaedt 1.x 新命名空间"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#261",
+   "id": "#261",
+   "lesson_one_line": "互斥模式新增标记若含驱动自身名→自身shim+解释器对被命中无限自等。互斥模式扩展必须自排除（自身求解期真互斥由子进程名在他侧检查承担即可）。",
+   "numbers": [
+    261
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 991,
+    "line_start": 989
+   },
+   "text": "- #261 互斥自锁（2026-09-22 G3 锚实证）：互斥模式新增标记若含驱动自身名→自身shim+解释器对被命中无限自等。互斥模式扩展必须自排除（自身求解期真互斥由子进程名在他侧检查承担即可）。",
+   "title": "#261 互斥自锁"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A992",
+   "lesson_one_line": "step name 值含\": \"即 YAML 解析错，GitHub 报 completed failure 且 jobs 为空（startup failure 无从看日志）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 994,
+    "line_start": 992
+   },
+   "text": "- workflow YAML 裸冒号（2026-09-22 公开仓实证）：step name 值含\": \"即 YAML 解析错，GitHub 报 completed failure 且 jobs 为空（startup failure 无从看日志）——workflow文件推送前必须本地 yaml.safe_load 预验证。",
+   "title": "workflow YAML 裸冒号"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "A995",
+   "lesson_one_line": "框架只重置工作区外的cd",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 998,
+    "line_start": 995
+   },
+   "text": "- cwd 子目录 cd 持续生效（2026-09-22 公开仓操作段实证）：框架只重置工作区外的cd——cd 进工作区内子目录（如 release/rfauto_public）后跨调用持续，后续相对路径全打到子仓；跨目录操作一律绝对路径+批量前 pwd 自检（对既有坑①的补充：不只跨仓，工作区内子目录同样危险）。",
+   "title": "cwd 子目录 cd 持续生效"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A999",
+   "lesson_one_line": "整文件暂存把并发轨在制 hunk带入中间 commit，若其调用的函数定义在后继 commit 才落地→该窗口内调用必炸",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1001,
+    "line_start": 999
+   },
+   "text": "- 合流窗口 bisect 断（2026-09-22 IM1 审查 MEDIUM）：整文件暂存把并发轨在制 hunk带入中间 commit，若其调用的函数定义在后继 commit 才落地→该窗口内调用必炸——参数定义与调用点必须同 commit 或定义在前；hunk 级暂存后 HEAD 复验双改并存。",
+   "title": "合流窗口 bisect 断"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "A1002",
+   "lesson_one_line": "（2026-09-22 IC1 简写名致首次定向落空；另：分离进程长任务 python 输出加 -u，否则重定向日志缓冲迟迟不落地）。",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1003,
+    "line_start": 1002
+   },
+   "text": "- 子代理报告的测试名/文件必须 ls 核实再跑（2026-09-22 IC1 简写名致首次定向落空；另：分离进程长任务 python 输出加 -u，否则重定向日志缓冲迟迟不落地）。",
+   "title": "子代理报告的测试名/文件必须 ls 核实再跑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A1004",
+   "lesson_one_line": "按\"时点快照搬文件\"漏搬 d5feafc（transition 符号修复+C7 旋钮）且当时 commit message 声称的内容与实际 diff 不符",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1007,
+    "line_start": 1004
+   },
+   "text": "- 公开仓同步按 commit 范围对账（2026-09-22 cde93a1 实证）：按\"时点快照搬文件\"漏搬 d5feafc（transition 符号修复+C7 旋钮）且当时 commit message 声称的内容与实际 diff 不符——同步必须 git log range→文件映射逐笔 git show --stat 对账，message 声称与 diff 互证；发现漏搬立即补搬+全门验证+回填下轮捎带清单。",
+   "title": "公开仓同步按 commit 范围对账"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "A1008",
+   "lesson_one_line": "CI 里 ruff>=0.1.0 浮动latest 新增 I001 排布检查（本地 0.16.4 过/CI 红，OS 无关纯版本漂移）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1011,
+    "line_start": 1008
+   },
+   "text": "- CI 浮动工具版本钉版（2026-09-22 公开仓两连红实证）：CI 里 ruff>=0.1.0 浮动latest 新增 I001 排布检查（本地 0.16.4 过/CI 红，OS 无关纯版本漂移）——CI 质量门工具一律钉版与本地门一致（公开仓已钉 ruff==0.16.4）；新测试文件落公开仓须同步进 conftest CSXCAD skip 清单（漏加=ModuleNotFoundError 红）。",
+   "title": "CI 浮动工具版本钉版"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#314",
+   "id": "#314",
+   "lesson_one_line": "① 单激励 Touchstone 是零填充部分矩阵",
+   "numbers": [
+    314,
+    316,
+    118,
+    328
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1031,
+    "line_start": 1012
+   },
+   "text": "- df4 批七坑（2026-09-23，Palace WSL2+拍板项 7 条+round5 审查批，-（三五八））：① 单激励 Touchstone 是零填充部分矩阵——run 目录同时有掩码 sparams.csv 与Touchstone 时，体检/物化消费必须掩码载体优先（Touchstone 全对查互易=|S21| 假阳性指纹，#314 族收口 df3a）；corrupt csv=证据损坏留痕不回退 Touchstone（#316 方向）；② \"备妥未跑\"驱动交付门=最小 dry-call 钉（siw 锚 render_script 签名冲突首跑即崩）——且预声明公式动工前先与同文档钉值互洽校验，合成回收参考实现必须独立于被测实现（siw §6 公式漏 εr、回收与实现同源自证通过=#118 族新形态）；③ plan 化驱动的探针/部分运行必须带与放量一致的全参数——否则 plan 冻结缺省点数，放量撞不可变校验（c10 实证：探针不带 --n-points 冻结 34 点）；④ shell 双坑：bash heredoc 折叠 `\\`→`\\`（引号定界也折叠——含反斜杠字面量补丁一律 Write 落盘）；`if` 分支尾赋值吃退出码（`then push; mode=x; fi; rc=$?`捕获的是赋值的 0——rc 分支内直取）；⑤ conftest skip 清单判据须含传递依赖（测试文件自身 grep 零命中不够——经scripts/ 助手的惰性 import 亦算，e80d12a 教训内部面同型复发）；⑥ 真跑集成测试不进缺省 unit 门——opt-in 必须用 env 显式意图门（机器状态skipif 不够：终门实证套件内 PATH 泄漏致 wsl.exe 9009 假红，tests/real_edt env 门先例）；#328 补充：预算外推 dt 必须按终网格最小格 CFL 实算（SIW 锚预估错2.2×）；⑦ 环境族：git-bash /tmp 实际映射 AppData/Local/Temp（字面 C:\\tmp 静默失败）；.venv python.exe 是 shim（同命令行双 PID——进程匹配按链计、杀前按整树核命令行）。",
+   "title": "df4 批七坑"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#331",
+   "id": "#331",
+   "lesson_one_line": "① HFSS eigen 探针禁对共面薄片+实体强制同网格加密",
+   "numbers": [
+    331
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1045,
+    "line_start": 1032
+   },
+   "text": "- df5 批三坑（2026-09-24，真机深调查+方向选择+round6 审查批，-（三七一））：① HFSS eigen 探针禁对共面薄片+实体强制同网格加密——Sub/Gnd/bar 强制同网格会静默脱键（单棒探针谱出 λ/2 悬空模而无 λ/4 导通模，伪\"悬空\"结论；全模型缺省网格键合正常）——探针谱判读前先跑全模型 bars_only 对照（悬空簇~5.2GHz 缺席=键合正常）；另：共面薄片-实体穿片伸出修复路线会被 HFSS 交叉校验拒绝（Error in Solving Setup），键合问题要走 ACIS 键合面而非几何穿透；② CSXCAD LumpedElement 方向 kwarg 参数名叫 `ny` 但值=方向索引（CheckNyDir 0/1/2=x/y/z）——`ny=2` 是 z 轴 shunt 对地惯用法，按参数名误读为\"y 方向\"会得出错误的非惯用法指控（审计 dump 必须打印属性原文+值域语义，#331 族）；③ 名义重注册后的 A/B 必须验证渲染字面量真进了渲染——\"补偿名义先注册后采集\"会让新旧对照=同一几何仿两次（no-op，simulation.py逐字节同）；对策三件套=`render_input_sha256` 产物落痕+`crosscheck_run_literal`归档几何段逐字节裁决+`registration_freshness`（mtime≥名义注册 commit），发射前先读渲染字面量（c3 三模板实证）。",
+   "title": "df5 批三坑"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A1046",
+   "lesson_one_line": "① 合并基线有\"代际\"二态：公开仓部分文件冻结在内部旧缩进/脱敏时代（fake_adapter/openems_templates/health_service/rest_api 四件）",
+   "numbers": [
+    230
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1060,
+    "line_start": 1046
+   },
+   "text": "- 公开仓大批次同步四坑（2026-09-24，df5 捎带批 8fd8d55 实证）：① 合并基线有\"代际\"二态：公开仓部分文件冻结在内部旧缩进/脱敏时代（fake_adapter/openems_templates/health_service/rest_api 四件）——必须用折半缩进后的 base/theirs 做 3-way merge，判别法=两个方向 diff 计数取小者；其余文件用原 base；② 字节钉类测试跨仓不可移植：钉的是\"本仓渲染管线\"字节，公开仓骨架+脱敏合法地产生不同哈希——重钉为本仓实测值+保留旋钮语义断言（显式 v1==缺省）才是该钉本义；③ 跨仓脚本 io 路径必须锚绝对路径（#230 家族新形态：不只读操作也会跨仓污染——脱敏脚本相对路径 io.open 一次调用把 33 个写落到内部仓工作树，靠 git checkout 全量还原+os.chdir(REPO) 闭环；共享临时文件名复用让 merge 结果覆盖 51 文件——merge 与 install 同迭代单遍完成）；④ 删除\"孤儿\"前先跑定向收集门（内部同名 import 结构与公开仓布局不同，judge_refix 初判孤儿删除后消费者立即炸收集）；README/badge 数字诚实口径=用公开仓实测 collect 数而非内部终门数（两仓套件不同，虚标不违check_numbers 地板语义靠自律）。",
+   "title": "公开仓大批次同步四坑"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1061",
+   "lesson_one_line": "①CLI 双口径并存（test_cli=typer 注册面同名各计 / check_numbers.count_cli=click 解析去重同名覆盖取一）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1076,
+    "line_start": 1061
+   },
+   "text": "- df6 收口补录经验（2026-09-25 收口批转正，8 条）：①CLI 双口径并存（test_cli=typer 注册面同名各计 / check_numbers.count_cli=click 解析去重同名覆盖取一）——文档数字以 check_numbers 为权威；且 add_typer 子应用与既有顶层命令同名会静默遮蔽旧命令（U1 report 事故）——新增子应用/命令前先grep 顶层同名；②新增 CLI 命令/MCP 工具/计算器键的消费者五钉清单=test_cli 注册面+test_check_numbers 权威+test_mcp_server 计数与名单集+test_mcp_tool_consistency 常量+docs 三处——本批 4 次漏钉全靠合流门抓出，任务书直接点名此清单；③函数加新 kwarg 并无条件透传会打断全部 stub/旧调用方（rotation 15 红）——条件透传（仅非缺省值传参）或全量 stub 同步；④定向门日志命名禁含 full（check_numbers glob *gate*full*.log 误拾，三犯）；⑤ruff 显式传入非 .py 文件会当 Python 解析报 invalid-syntax（假红——门命令只列 .py）；⑥pytest9 的 collect_file 按目录子树作用域分派（tests/conftest 对 src/ 零触发）——opt-in 收集开关必须落仓库根conftest；⑦装新 extras 后先前诚实 skip 的用例会转正执行——装完必须复跑 skip 集合；⑧终门验证的是工作树——最后一批尾随文件（消费者钉/ docs 回填）必须入库使 HEAD=验证态，收口前 git status 清零。",
+   "title": "df6 收口补录经验"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#370",
+   "id": "#370",
+   "lesson_one_line": "⑨LOO-GP 必须加相对 nugget（插值 GP 的LOO 后验 σ 塌缩到 0 使 logpdf 爆 ±1e12）；⑩GP 域判别的前提=采样密度（20 点稀疏选 re_im、150 点全量才翻 gamma_linear，#370 互证）；⑪HFSS 2025.1 Modal Solution Data 无 Z…",
+   "numbers": [
+    370
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1086,
+    "line_start": 1077
+   },
+   "text": "- df6 领域经验（随手记转正）：⑨LOO-GP 必须加相对 nugget（插值 GP 的LOO 后验 σ 塌缩到 0 使 logpdf 爆 ±1e12）；⑩GP 域判别的前提=采样密度（20 点稀疏选 re_im、150 点全量才翻 gamma_linear，#370 互证）；⑪HFSS 2025.1 Modal Solution Data 无 Zpi/Zpv/Zvi 类别且 renormalize=True 时Port Zo 恒读 50——CharImp 三定义子解；Gravity.ZPos 自动积分线会穿导带金属（Zpv/Zvi 电压路径无效）——积分线显式 (z=0)→导带上缘；⑫多进程战役驱动死后 mp spawn 池继续拉点（孤儿 worker）——清场回溯父链至根；⑬citation rot 实证：NFC 线圈凭记忆的 gmd/lmd/mmd 三式与 Mohan 原文不符——闭式系数一律回原文 PDF 逐位目检；⑭Mohan Table IV 原文\"误差列\"可作实现回放的对拍锚（|Δ|≤0.2pp 级）。",
+   "title": "df6 领域经验（随手记转正）"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1087",
+   "lesson_one_line": "①gitignore 大资产目录（tools/uv、runs/、hfss_projects/）无 git 可恢复性",
+   "numbers": [
+    261
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1096,
+    "line_start": 1087
+   },
+   "text": "- df6 环境事故坑（2026-09-25，tools/ 整删实录）：①gitignore 大资产目录（tools/uv、runs/、hfss_projects/）无 git 可恢复性——目录级 rm 不可溯源（git clean 不删 tracked，tracked 同灭=rm 类删除）；uv trampoline venv的 .venv/Scripts/python.exe 只是转发器，恢复=装回 uv→UV_PYTHON_INSTALL_DIR指回原路径 `uv python install 3.12`（勿重建 venv——site-packages 完好）；②事故中在跑真机进程可能幸存（Windows 在用 exe 删除语义）——恢复队列前先 #261 互斥查存活名单（不代杀），续跑用幂等 --queue+waiter；③事故期对在飞子代理的通报三件套=停测试/勿动 .venv/纯文件编辑继续——零误操作实践有效；④环境事故连文字写入都吞（heredoc 即 venv python）——恢复后先对账哪笔/TODO 未落（本次四零四写入未遂，提交信息先于内容存在的反例）。",
+   "title": "df6 环境事故坑"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "A1097",
+   "lesson_one_line": "① 质量门管道 `| tail` 吃退出码=门失效（ruff 249 errors 被 `2>&1 | tail -1`掩盖后链路继续提交）",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1107,
+    "line_start": 1097
+   },
+   "text": "- df6 批首批三坑（2026-09-24/25，DP 批合流实证）：① 质量门管道 `| tail` 吃退出码=门失效（ruff 249 errors 被 `2>&1 | tail -1`掩盖后链路继续提交）——门命令一律先落日志文件再 `echo rc=$?`（或pipefail），禁止裸管道取\"最后一行\"；② 并发在飞轨下 lint/门读文件会撞写中间态（同一命令集复跑 rc=0 全绿，249 瞬态不可复现）——异常读数先复跑再定性，别急着回滚；③ 配对门实验（并行 vs 串行）在并发批窗口必须用冻结 worktree 快照（主树被并行轨持续改写：收集数 8327→8436 漂移、失败全落他轨在制文件、内容哈希 H0≠H1 直接否决\"主树先后各跑一轮\"）——快照法注意：gitignored 资产（runs/tools/calkit/settings.local.yaml 等）要逐项补齐、editable 安装=compat .pth 用探针确认 rfauto 解析到快照自身src、palace wrapper 类内嵌 REPO 绝对路径的产物要在快照内本地重生成。",
+   "title": "df6 批首批三坑"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A1108",
+   "lesson_one_line": "① 长文档连续追加时每次 Edit 后立即 `grep -c \"^## \"` 数标题",
+   "numbers": [
+    146,
+    222
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1123,
+    "line_start": 1108
+   },
+   "text": "- 调研/方案深挖批经验（2026-09-24，三七三~三七九，纯 docs 批实证）：① 长文档连续追加时每次 Edit 后立即 `grep -c \"^## \"` 数标题——本批两次吞章节标题（#146 族复发，第二次靠\"old_string 恰为孤儿正文首行\"自救），整段替换的 new_string 必须回带下一节标题；② 调研结论必须先派接地代理核对代码现状再写进方案——本批 12+ 处接地勘误/对账（Cassivi w_eff 单源非 Xu-Wu/Pyle-Mathews 证伪/array_synthesis 702 行已在/measurement 栈已在/IEEEP370 真名/Optuna constant_liar 缺省 False/ Klopfenstein 已内置/_mc_yield 循环/U3 半成品/Ansys 官方 8h×10w/ EMSolverRegistry 无发现口/WCD 内核已在），多处直接改写工作量估算，#222\"登记快照过时\"在调研侧同样致命；③ 组合批规格（一个 DP 打包5-6 个零真机小件，逐件迷你规格）效率高，真机件保持单项方案书；④ 子代理并行调研 3-4 路安全（单批 4 路实测无节流）；⑤ 依赖版本/库能力类断言必须 venv 实测（Optuna constant_liar 缺省值/skrf API 名两处靠实测纠正）；⑥ 用户口径变更（如硬件待定）当轮回写方案书正文，不只留裁决账。",
+   "title": "调研/方案深挖批经验"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A1124",
+   "lesson_one_line": "①发射器/waiter 类冒烟必须使门不可达（如 --workers 9999）",
+   "numbers": [
+    177,
+    222,
+    351
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1150,
+    "line_start": 1124
+   },
+   "text": "- df7 批经验（2026-09-25，Goal 开工批）：①发射器/waiter 类冒烟必须使门不可达（如 --workers 9999）——两次冒烟误走真实发射路径（内存门开即射战役），整树停止+空壳清理后才零损失；凡\"门开即射\"语义的脚本，冒烟前先构造必不满足的门条件。②wait-launcher 心跳自尽范式已入scripts/campaign_wait_launch.py（自身心跳原子写+心跳写失败 exit 3+父心跳超时 exit 4+单实例 exit 5，退出码表 2/3/4/5）——新守望类脚本照此模板，新会话清点无主守望进程读心跳文件（#177 消费面）。③CLI 同名shadow 类 followUp 销账前先程序化枚举实证（typer→click 树 walk+注册面集合比对）——\"10 面\"登记为中间稿误计数，git log -S 取证唯一真实对已修（#222 家族第 11 例）。④openEMS 引擎变体类登记先实测绑定二进制（PE 导入表 boost_thread/--engine multithreaded/run 日志引擎行）再写方案——\"进程内单线程\"前提证伪，登记文案的 OMP 口径同错（本机构建是boost::thread 无 OpenMP，OMP_NUM_THREADS 无效）。⑤loky 可复用池worker 的 cwd 冻结在 spawn 时刻——同会话先建池后在其他 cwd 提交任务，相对路径在 worker 内解析到旧 cwd（症状=全体\"缺文件\"假跳过）——任务入参一律先 resolve() 绝对路径（infra/par_exec.py docstring 契约）。⑥pychopmarg包内 preset 与新版 COMParams schema 可能错位（3.1.2 实证 TypeError）——COM 类用法照当前安装版 schema 关键字重建，勿抄 preset 旧形态；g_DC 全档扫描分钟级不可用，先裁档再粗网格验证。⑦帽停自动展延=引擎从头重跑（非断点续跑）——墙钟=已耗+重跑全程（qe_g02263 实测 450k 帽停后展延900k，总墙钟 5.5h≈2.3×单程），预算外推按\"展延即双倍\"计；展延判定在队列 runner 内自动（EXTEND_ENERGY_MAX_DB 阈值），盯长跑时 wall 突然回退=展延重跑信号非异常。⑧主代理分轨提交时  漏 add 复发两次（本批 a8aee91/7145637 笔，靠 amend/随笔补入挽回）——多轨批量提交节奏下\"代码 commit 必同笔带 \"（#351）的执行面=提交命令里  与代码文件同一个 git add，禁止\"先提代码稍后补账\"。",
+   "title": "df7 批经验"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#335",
+   "id": "#335",
+   "lesson_one_line": "①Start-Process -ArgumentList 传 `-c \"<含空格代码>\"` 按空格撕裂（SyntaxError: from）",
+   "numbers": [
+    335,
+    245
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1153,
+    "line_start": 1151
+   },
+   "text": "- df7+ 续批经验（2026-09-26，真机队列 6 项+第三层转执行批）：①Start-Process -ArgumentList 传 `-c \"<含空格代码>\"` 按空格撕裂（SyntaxError: from）——分离发射一律写临时 .py；②写整文件脚本里句柄与内容变量复用（`f=open(p,\"w\"); f.write(open(p).read())`）先截断后读空—— 曾被截断 1.3 万行靠 git show 恢复；重写整文件先读后写、变量名不复用；③MSLPort+显式馈线模板的 \"Unused primitive ×2\"=MSLPort 自动馈线盒与显式馈线盒同位重复（良性，勿当缺金属缺陷信号——离线探针数原语定位）；④探针诊断必须与被检产物同参同网格（全网格收敛判据下短频探针\"收敛值\"差可达 33%，#335 族）；⑤OE 求解被并发 pytest 争用拖慢 2.3×——真机预算按独占机速率计，PowerShell PriorityClass='High' 提权可恢复；⑥.venv shim 双 PID 下 taskkill /T 对 shim PID \"not found\" 杀不到真进程——按命令行匹配枚举全链 Stop-Process（#245 补充）；⑦探针级 run 生命周期秒级，杀树窗口按产物现场（engine.log 有/声明产物无）判断；⑧注册类尾序契约（[-N:] 槽位钉）消费面必须全量 grep（注册批漏他文件尾序钉——NFC 批漏 2 条由 C10d 批抓出）；⑨SmoothMeshLines 只细分已存在区间：域界线补入顺序（先特征 NEAR→域界→BASE）决定分区，空气区粗化不放宽 CFL；⑩既有 array_factor 权面实数化丢虚部——复权激励走复权 AF 函数；⑪round(1.5) 银行家舍入：递推分支锚点避开半整浮点边界（用 π/βg 类精确锚）；⑫Neumann 数值积分三坑：互易对计两次（漏 ×2 自感 −33%）、GL 权重折半除 2、Mohan 多边形口径=across-flats；⑬render_script 顶层 substrate 缺省重绑先于模板早分发钩子——自带板材模板从 params/NOMINAL 读 er/tan_d；⑭z3 迭代去核：取核后剩余规则 SAT 会覆盖整体 status——冲突组出现后判据不翻转、witness 仅首轮采集；⑮`# noqa: XXX` 码值后紧跟中文报 invalid noqa；⑯数值入参显式拒收 bool（float(True)=1.0 静默污染统计）；⑰z3-solver 装入共享 venv 后既有诚实 skip 集合需复跑（df6⑦ 同族）；⑱级联基线单件锚的 S 参考基逐个核对（Z_PV 基锚按 50Ω 级联=混基需 renormalize），全器件锚≠组合实例（去嵌半实例基线才同构——compose C4 归因链）；⑲HFSS 宽端口 CharImp 三定义重建 Z0 天然分散 ~2.5%（准 TEM 截面电压/电流路径真实分歧）——三定义互差 ≤1% 门在此几何类不可达，测量面架构需改模态 Zo 提取（KJ-P2 UNKNOWN 归因）。",
+   "title": "df7+ 续批经验"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "A1154",
+   "lesson_one_line": "①渲染字面量核对按\"折入结果\"而非原始字面（taper_len=8.6767 折入 Y_FEED_IN 后 grep 8.6767 不中≠未生效",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1156,
+    "line_start": 1154
+   },
+   "text": "- df7+ 收尾批经验（2026-09-26，真机尾巴清零+二轮审查+公开仓 push 批）：①渲染字面量核对按\"折入结果\"而非原始字面（taper_len=8.6767 折入 Y_FEED_IN 后 grep 8.6767 不中≠未生效——核对派生量数值差）；②criteria 墙钟外推必须用独占机实测速率（按保守手册速率折算 1.8-7h 实测 7min=40× 偏差，错排程真机队列）；③公开仓同步给 skip/门控表加条目时，内部仓的孪生表必须同批补登记（跨仓对拍门双仓在盘才触发，触发即双向失配——首战即捕 5 条）；④干净环境验证脚本要显式安装 pytest（测试工具不随核心 pip install 落地，\"核心测试可跑\"的门需要它）；⑤跨 CalcPort 参考基合并双激励全矩阵=电压波→功率波 Kurokawa 换算 S^P_ji=S_raw·√(Z_src/Z_dest)——同基端口间端到端 telescoping 恒等（不换不影响端到端 S21），但中间矩阵与互易残差必须换算后才有物理语义；⑥Elmer 准静电+板宽阶梯外推（末两档差门）=分钟级廉价闭式仲裁器，可区分\"公式错/有限板效应/提取面问题\"三类归因（紧缝区 KJ ≤0.59% 实证）；⑦边缘门卡死全战役（0.537% vs 0.5% 阈）应在 criteria 首版就预声明\"双条件放松路径\"（如步进单调递减+末档放宽值），防事后改门或全役 UNKNOWN；⑧大段同步执行中内部 HEAD 会前移——同步器每轮重取基线并追平新提交（本轮追平 2 笔），收尾后跑增量 diff 核查。",
+   "title": "df7+ 收尾批经验"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1157",
+   "lesson_one_line": "①ruff F811 新形态：基类\"ClassVar 注解赋值+同名 @property\"即重定义",
+   "numbers": [
+    118,
+    347
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1160,
+    "line_start": 1157
+   },
+   "text": "- ge1 批经验（2026-09-26，Goal 执行会话 Ph1 离线地基批）：①ruff F811 新形态：基类\"ClassVar 注解赋值+同名 @property\"即重定义——需要实例覆写点的基类字段不要带值 ClassVar，用\"子类类级属性+实例属性 shadow\"方案；②逐位断言的期望值必须与实现同源运算表达式构造——`+x` 再 `−x` 的浮点往返不回字面值（#118\"期望工具自身失真\"的测试书写面实例）；③恰等例浮点翻界：构造 margin=0 的达界例经 exp/log 往返带 1 ulp 残差即把贴界 verdict 翻 unreachable——判定接口分派在相对域留容差（~1e-9·limit，#347\"恰等会炸\"新形态）；④裕度比 vs 占用比混写：两量互补（和=1），断言/报告必须点名口径并双断言互检；⑤贪心选型必须维护已选集合（selected_set）——\"同一 spec 重复出现=多颗\"与\"槽位只选一次\"语义混淆会让不可行测试选出同一 index 99 次（\"不可行如实 infeasible\"判据测试当场抓出）；⑥scipy `stats.dunnett` 缺省非确定（QMC 积分，无 rng 两次调用 p 漂移 ~1e-5）——凡进逐字节比对产物（md 双出/幂等键）的统计量必须固定 rng=0，否则打红确定性门；⑦DunnettResult 属性是 `.pvalue`（非 `.pvalues`——\"不臆测 API 先 introspect\"再命中）；⑧BH 校正方向=反向 cummin（从最大端取 min），正向 cummax 是 Holm——手算对照先定方向再对位；⑨`_emit` 薄壳契约要求 result[\"ok\"]，monkeypatch service 函数时 fake 回程必须带 ok=True，否则 CLI 冒烟假红。⑩BCa 自助（scipy stats.bootstrap）对重结（两点分布）数据返回 NaN 区间而非报错（DegenerateDataWarning 静默——消费者一律 isfinite 守卫，不能只防\"全同差\"）；⑪\"≥95% 覆盖率\"类统计门在连续数据上只能靠固定种子+固定 scipy 版本的确定性保稳——想靠离散化/制造结做保守区间会先触发 BCa 退化，此路不通。",
+   "title": "ge1 批经验"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#245",
+   "id": "#245",
+   "lesson_one_line": "①`wsl -d D -e bash /mnt/e/x.sh` 的裸路径必被 MSYS 转成 `C:/Program Files/Git/mnt/e/...`（#245 `//PID` 同族扩展）",
+   "numbers": [
+    245,
+    261,
+    268
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1163,
+    "line_start": 1161
+   },
+   "text": "- ge2 批坑（2026-09-28，Goal 执行批二会话+真机批收尾）：①`wsl -d D -e bash /mnt/e/x.sh` 的裸路径必被 MSYS 转成 `C:/Program Files/Git/mnt/e/...`（#245 `//PID` 同族扩展）——wsl 传 WSL 侧路径一律 `-c \"...\"` 引号包裹；②后台长任务经 `| tail -N` 发射会把脚本执行 trace 头部丢掉只剩尾部——自愈诊断时看不到 clone/下载失败痕迹，脚本内 `exec > 日志文件 2>&1` 全量落盘才可复盘；③#261 自锁二例：按命令行匹配杀进程时，发出清理命令的 shell 自身命令行若含匹配串会被一并命中（后台任务的 bash -c 长命令含 'fd_oe_campaign' 字样被自家清理杀掉报 exit -1）——清理/探活一律走文件式 .ps1（其进程命令行不含模式串），且杀前枚举核对父子链；④GitHub tag 归档顶层目录名=`<repo>-<tag 原文>`（trilinos-release-14-4-0.tar.gz 解出 Trilinos-trilinos-release-14-4-0 非 Trilinos-14.4.0）——解包后 glob+mv 兜底；Trilinos release tag 形态=trilinos-release-X-Y-Z（裸版本号 404）；⑤partial clone（--filter/--sparse）的 sparse-checkout 三式（cone/非 cone/reapply）在同一 Windows/WSL 挂载盘上均不落树——大仓取子目录用 GitHub contents API 按目录列举+逐文件 raw 下载（文件级 size 校验），全量 depth-1 克隆仅当仓库确知不大；⑥席位级驱动（fd_oe_campaign 类）每席位只在完结时 print——driver.log 长时间空≠卡死，真进度看 fdtd/et 的 mtime/size+runner 子进程 PID 链；⑦curl 落 Git Bash /tmp 的文件 venv python 读不到（/tmp 映射 AppData 临时而 python 按字面找 /tmp，#df4⑦ 变体）——跨 shell 交接文件用仓内相对路径。⑧判活看进程 CPU 增量不看产物 mtime（#268 缓冲伪象变体：et mtime 可停滞 1h+ 而 8 线程满载正常求解）；⑨\"跑到某判据就杀\"的条件停机=文件式 .ps1 守望（轮询判据文件 mtime→Stop-Process 全链→日志留痕），命令行内联轮询/清理会被 #261 自锁命中自身；⑩WSL 源码构建三件套前置=build-essential cmake ninja-build（cmake -GNinja 缺后者的报错是 \"unable to find a build program\"，不指名缺哪个包）。",
+   "title": "ge2 批坑"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": "#246",
+   "id": "#246",
+   "lesson_one_line": "①`git grep` 中文文件名默认 core.quotepath=true 转义为 `\"æ...\"` 八进制串",
+   "numbers": [
+    246,
+    142
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1166,
+    "line_start": 1164
+   },
+   "text": "- ge3 批坑（2026-09-28，Goal 执行三会话+多机协同批）：①`git grep` 中文文件名默认 core.quotepath=true 转义为 `\"æ...\"` 八进制串——按文件名/路径过滤的敏感扫描会静默漏检中文文件（服务器接入文档从 IP 扫描中消失）；涉及中文路径的 grep 一律 `git -c core.quotepath=false grep ...` 并抽查命中数。②Xyce 7.11 Trilinos 依赖必须用官方 initial-cache（`cmake/trilinos/trilinos-MPI-base.cmake`）——手拼参数包缺 Amesos+KLU/AztecOO 等必需件；③GCC 15 新增 -Wtemplate-body 急切诊断会打红旧版头文件死代码（GCC≤14 静默）——全局 `-Wno-template-body` 官方兼容开关；④Xyce+MPI 版 Trilinos 时 Xyce 侧必须改 mpicc/mpicxx 配置（裸 g++ 找不到多架构 OpenMPI 头 `/usr/lib/x86_64-linux-gnu/openmpi/include`），`-D Xyce_ENABLE_MPI` 在 7.11 是死变量；⑤WSL 编译一律走原生 ext4（/mnt/e 9p 慢 3-10×），构建发行版先 `wsl -l -v` 核实在位（vhdx 可丢）。；⑥服务器并行度按服务器规格评估，勿沿用本机 solo 纪律（2026-09-29 用户指令：课题组服务器 32C/128G 跑 4-6 个 HFSS 小模型实例无压力——solo 是本机多轨争用教训 #246，上服务器后资源面重新算：许可席位/CPU/内存/每实例独立 -grpcsrv 端口/per-seat 项目目录五约束逐项核，驱动 --parallel N 缺省 1 零变化）；2026-09-29 用户二次上调：并行 8+ 实测无压力（原建议 4 保守——HFSS 小模型实例资源占用低，求解期可波内错峰）；黑框积累根因=schtasks 跑 .bat 的 cmd 宿主窗可见+ansysedt 控制台窗——静默化=VBScript 包装（WScript.Shell.Run cmd, 0, False 完全无窗）替换 .bat，schtasks /tr 指 wscript.exe；⑦变异验证窗与并发复跑竞态——变异「回滚→跑红→恢复」期间工作树短暂故意破坏态，并发复跑会看到真实红误判回归：变异窗压最短+立即全绿复跑留档，更稳用 `git worktree add` 隔离主树永不进破坏态；⑧「全绿仍漏」的根源是断言面不在几何产物上——mock 测试绿≠几何产物对（edge_y 端口 YZ 竖条 P0 实证）：几何产物必须有独立推导的 bbox 断言+变异验证（回滚必红记录）。⑨收尾双份后台任务必须互相记账唤醒停止（2026-09-29 月终门实跑两轮：正式轮+对拍轮各有所用，但正式轮全绿后对拍轮即冗余——孤儿 pytest 挂 20min 被用户发现「为什么有终端在运行」）；收口清点必须含自己起的全部后台 bash/agent，非仅求解进程；⑩check_doc 历史段 pattern 必须断开：check_numbers 的 DOC_PATTERNS 对 read_head 前 60 行内所有匹配逐个比对 expected——同文件多时点门数字并存（新 ge5 行+ge3 历史行 12701）时任一新 expected 必判红，修法=历史段正则断开（插字「（ge4 时点口径）」）数字保留；历次未遇因旧门数字恰被前滚覆盖；⑪git commit --amend 前必须核 staged 与 message 一致（实案：amend 把无关 staged 文件混入且 message 未覆盖，靠 show --stat 发现后二次 amend 纠正）；⑫ 追加固定 Write 临时 .py 重放形态——bash heredoc 内联 python 连环 5 次 SyntaxError/断言失败（#142 终形态），行定位法（splitlines 按标题索引插入）最稳；⑬审查者「先推后读」方法论二次实证（slice10 独立推导精确分布式模型 Qe_exact 与实现数值裁判逐位互证——先推再对照实现，双向纠错）。",
+   "title": "ge3 批坑"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "离线审计",
+      "模板几何",
+      "渲染"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": null,
+   "id": "A1167",
+   "lesson_one_line": "①DAG 同 cache_dir 下第二个 run 同计划会跨 run 零拷贝命中 done",
+   "numbers": [
+    212,
+    269
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1171,
+    "line_start": 1167
+   },
+   "text": "- ge1 批经验·续（2026-09-27，Ph1/Ph2 拉前大批二批）：①DAG 同 cache_dir 下第二个 run 同计划会跨 run 零拷贝命中 done——测 verdict 映射必须换 cache 目录，否则 executor 根本不被调用、断言假绿/假红；②`check_public_api.py --check` 需要 GOLD 路径参数（裸 `--check` rc=2=usage 错，勿误判快照红）；③GP LOO 均值漏乘 y_train 的静默退化（μ=k*ᵀ(K+λI)⁻¹k* 是方差型量，症状=LOO-MSE 恰≈var(y) 看似\"没学到但不炸\"）——独立口径暴力对拍定位，回归钉「loocv_mse<var(y)」可捕获；④GP 参考元锚定因子必须投影单位模长（否则每步撤销幅值修正复利发散）；GN 残差实形须解 J·δ=+ρ（负号=沿最陡升残）——双符号 bug 在无噪路径互相抵消（残差恒定假象），合成测试须无噪/带噪双路；⑤任务书推导数字须独立复算再钉窗（ENIG 抬升\"3-6×\"闭式实为 1.7-2.0×）；位置类守卫（层序颠倒）先于内容类守卫（报错语义不误导）；⑥互易对称网络三口径失配退化逐位相同（镜像映射）——失配演示必须不对称拓扑；⑦skrf media 元件 ABCD 带 ~1e-9 浮点噪声且级联乘积按元素量级放大——\"逐位\"断言落 IL/标量域而非原始矩阵；⑧手算锚入测试前先与独立路径互证再钉（20mH@1MHz 误写 125.7Ω 差 1000×；WR-90 fc 第 6 位手误被 f_res 恒等式锚抓；mm·GHz 单位滑码 ×10 两次）——常数取公开表值有效位并声明精度归属；⑨skrf 2.1 write_touchstone(return_string=True) 仍强制要 filename/name；slotline 窄缝 β/f 带内变化 1.61——色散守卫按族放宽勿一刀切；⑩dead 元零行检测并集陷阱（单条零基线只说明两端之一 g=0——按元聚合\"有无非零基线\"才充要）；⑪均匀阵闭式对照先核归一化约定（未归一 AF 峰值=N vs 归一 1 差 N 倍假红）；跨 N 对数律写区间不写死带；⑫service 层可选字段不能直喂 _num(None) 类收敛助手（无条件记缺失——先 is not None 判存在再收敛）；⑬fastmcp 此版 @mcp.tool 保留原函数可直调（无 .fn 属性——与 tool_consistency 的 tool.fn 是两条访问路径）；⑭f-string 模板物理量与几何量共用长度换算 helper 会单位串位（R=50Ω→0.05Ω，纯渲染不报错仅 #212 exec 实测抓）——非长度端口参数字面量直插；⑮生成脚本位置参数跟在关键字后=SyntaxError——绑定调用全关键字化；⑯Rich 表格渲染自由文本必须 rich.markup.escape（detail 含 `[/xxx]` 方括号被当闭合标签抛 MarkupError exit 1）；⑰KiCad 10.0.6 pcbnew API 漂移：BOARD.GetBoardOutline 已删（BoardOutline() 返回裸 SwigPyObject）、PCB_VIA.SetCenter→SetPosition——e7a spike 惯例失效；⑱skrf MLine ep_reff（准静态）与 β 相速口径（ep_reff_f）在同设计点差 ~3.9%——设计端与提取链须同口径（β 直取）+一致性钉守护分叉；⑲typer 注册面枚举：app.registered_commands 只含顶层叶命令，子应用名在 registered_groups（含 None 占位需过滤）；⑳ruff B008 的 noqa 必须与 typer.Option( 起始行同行（折行时 noqa 在续行尾报 RUF100 且 B008 仍钉）；㉑pytest-cov+xdist 下 dynamic_context 配置触发 DistCovError——用 CLI --cov-context=test 代替；㉒perf 预算类测试在 xdist+coverage 争用下假红——隔离串行复判再定性；㉓optuna 大版本升级改 TPE 轨迹——首案例数字锚随库版本漂移属已知类，语义断言（方向/约束/确定性）不变才是门，量级重钉须显式评审注释。㉔WaveguidePort 的模式匹配探针面在 stop 面（激励盒在 start 面，openEMS ports.py L427-534），PML_8 占域内首/末 8 胞（非域外追加）——两面均须内移 ≥16·BASE 出 PML；「端口面贴 PML_8 域边」口径仅对 MSLPort 成立（其探针在 feed_len/3 深处）。stop 面在 PML 内时波分解 S_meas=Γ·A²路径不对称（S11 呈深负 dB 假值）。㉕商法则求导 (N/D)'=(N'D−ND')/D²——第二项必须乘未除分母的分子 N；误用已除分母的商 N/D 时牛顿不动点仍收敛正确根（F=0 与导数无关）但收敛退化线性，且解析导数被当敏感度消费即带系统偏差——解析导数入码前必须对中心差分对撞钉（往返恒等测试对此盲区）。㉖MIT 许可全文正文无 \"MIT\" 字样——许可族匹配不能纯子串（\"limitation\" 撞 \"mit\" 属偶然命中），需全文签名（\"permission is hereby granted\"）+词边界双轨。㉗审计/渲染的产物抽查按「折入结果」核对之外，凡模板含数值参数链须抽一个名义文件逐值核（F-D 驱动器名义参数从未传入、ms 族在 h=1/3 名义基板上跑出全绿 PASS——「引擎可跑+数值健康」与「名义点判据」是两层语义，驱动器交付必须自证喂的是名义值）。㉘ruff B008 只对可变类型注解（list[str]/list[float] 等）的 typer.Option 缺省触发——标量（bool/str/float）同写法不报；list 型 typer 选项照仓例行尾 `# noqa: B008`（#269 精细化）。㉙CLI `--json` 模式下错误路径也必须走 print_json（错误走 rich 红字会使 CliRunner 解析错误路径 JSON 的测试/脚本不一致）——service 信封函数的 JSON 输出契约含失败分支。",
+   "title": "ge1 批经验·续"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1172",
+   "lesson_one_line": "①check_numbers 的 check_doc 对文档头部 60 行逐命中比对期望值",
+   "numbers": [
+    157,
+    261,
+    347
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1187,
+    "line_start": 1172
+   },
+   "text": "- ge4 批经验（2026-09-29/30，审查修复批+Goal 执行批）：①check_numbers 的 check_doc 对文档头部 60 行逐命中比对期望值——历史门数字行带裸数字（\"pytest tests/unit N passed\"）会被算作第二命中打红，历史行必须用「（geN 时点口径）」隔断正则；且 test_check_numbers 只钉「模式有匹配」不钉值等值，测试绿≠主链绿（值等值只在 check_numbers main()）。②分离进程（Start-Process）跑 pytest/长任务必带 `-u`——否则重定向日志块缓冲，收集期+执行大半程 0 字节无法轮询（#157 家族再实证）；杀前按命令行核对，.venv shim 双 PID 同命令行一并处理。③hpeesofsim 数据集命名=网表文件全名含扩展名+\".ds\"（cascade_netlist.txt.ds 先例；<stem>.ds 推导=假阴性）；数据集双形态（.ds 目录含 Master.ai_datadb / .ds 单文件）——单文件时 Get-ChildItem -Recurse -File 返回数据集路径自身，路径前缀守卫须放行等值条目。④mutmut 3.8 类方法变异体名走 `xǁClassǁmethod__mutmut_N` 形态——grep 函数级枚举漏计数（147≠165）；权威枚举=import mutants 树遍历 MutantDict。精度饱和近等价（相对扰动 1e-9 被 :.6f 显示精度吞掉）属真等价可入豁免清单。⑤sim_server 材质库未加载：material=\"pec\" 被 pyaedt 静默回退 vacuum=无壁波导（passes=0 假收敛）——修=add_material 自定义名+材质回读守卫+passes>0 才算 converged；G12 定案补全：ansysedt 绑口≠请求口（50065 请求实听 50052），实际口以 console log 公告为准，attach 前实扫。⑥周期量（相位）的覆盖度量与插值必须圆周化：unwrap 沿扫描轴（相邻差 wrap [−180,180) 累积）+覆盖=360°−最大圆周间隙（arc，含首尾 wrap 隙）——逐行频轴解缠+max−min 口径对含 ±360° 分支切割的数据产生伪 PASS（J1c 实证：归档 358.09\"PASS\" 实为 100.90 FAIL）；圆周间隙口径对离散采样保守低估=对下限门 fail-closed 安全。⑦「注册面清单制测试」实战首咬合：新增 adapters 模块未登记→inventory 测试红拦下（跨批合流遗漏的机械防线），新模块进仓先做注册面三通道决策再同步清单。⑧钉「输出格式」的既有测试在契约升级批是必改面（5 条缺陷钉按新契约更新+service 真实文案断言保留）——契约升级前先 grep 输出格式断言。⑨defs 手工变异杀伤验证可替代 mutmut 跑不动的场景（4 类代表变异逐一施于 src→逐一红→逐一还原→git status 确认干净），但分数数字仍须 mutmut 实跑确认（推断≠实测，98.8%→97.58% 实证）。⑩llm/脚本生成的一步式 patch 对含反斜杠路径的替换不可靠（sed 单引号内 \\≠文件单 \\）——路径类改写用 python io 精确 replace+assert 前置。⑪子代理真机求解任务书必须含三件套（T47 消融跑×T46 链 V1 并发重叠坐实，）：发射前 #261 互斥自检（python 命令行匹配 _rfauto_runner|fd_oe_campaign|simulation|varactor_smoke|launch_tier2）+wait-launcher 候跑（禁 fire-and-forget）+任务毕双端清点；双 FDTD 并发+子代理重 I/O=外杀崩溃诱因，三连外杀不可再归「瞬态」。⑫链式 runner 的席位标记只写不读=无断点续跑，真实续跑层在各驱动缓存（战役 checkpoint/study 点缓存秒回；单次 FDTD 腿无中途检查点=强停即弃）；空 ExitCode 有两源（外部击杀/驱动内部 --timeout 到点自退出）——进程退出形态分类≠数据全损（V1/V3 空 rc 退出前 oe_result 已落盘且判读成功消费），判读以产物在盘为准；强停顺序=launcher 先杀（防续发下一席）→守望→驱动链 shim+真身双 PID；守望「launcher 死→诚实 exit 1 不自重挂」为正确设计（）。⑭CAD/DXF 导出经验吸收（2026-09-30 调研稿六百六十三，普遍面六条）：①AEDT 原生 DXF=Z=0 展平边不能当加工图——正确链=AEDT→STEP/X_T→OCC 提轮廓/孔→DXF；②B-rep 边环折线必须 BRepTools_WireExplorer 顺序遍历+TopAbs_REVERSED 反转点列（无序拼线=自相交 X 线 3098 条实测）——「B-rep 投影」followUp 实现规范；③最大闭合外轮廓≠零件外形（外框冒充外形=高度/孔位全错）——先认设计图层否则取非最大内轮廓+人工复核；④源实体类型全覆盖（圆孔常是 CIRCLE 实体，只提折线静默漏孔）；⑤中文路径 AEDT 写 STEP 失败——先落 ASCII 临时目录再拷回；⑥真值对照三归一（INSERT 展开/重复线段去重/Y 原点差常数）——否则「误差」是对照器伪象。复合层组板/无依托孔过滤/TRL 拼接参数=特定工艺约定选择性登记（），不进普遍面。⑮工具产物与环境四坑（2026-09-30 ge4 尾批补录，/六十一/六十二）：①Write 工具产的 .bat 是 LF-only——cmd.exe 按 CR 分行，LF-only 把多行粘成一行、rem 残体当命令执行，症状=满屏 \"'xxx' is not recognized\" 且 exit 0 假成功；凡产 .bat 交付物必须字节级验证 CRLF（.ps1 对 LF 宽容，.bat 不宽容）。②GitHub 断流重试循环也全挂时（直连/gitclone/WebFetch 全不通），ghfast.top 等镜像前缀法 curl 可通：`https://ghfast.top/https://github.com/<owner>/<repo>/archive/<commit>.tar.gz`。③离线轮子集两个坑：`pip download --platform/--python-version` 过滤会漏掉无轮包（antlr4 4.9 仅 sdist），按当前解释器下载即可；离线安装 sdist 包需 setuptools+wheel 轮子进 find-links 供构建隔离环境；uv 便携 python 带 Lib\\EXTERNALLY-MANAGED 标记会拒 pip，捆绑运行时语义下删标记。④MSLPort 端口盒 start/stop 对角必须横跨线宽（y:+W/2→−W/2、z:H_SUB→0）且 MeasPlaneShift−FeedShift≥4·NEAR（#347）——盒写零宽或探针同位=S11/S21 双 ≈0dB 非物理假象（全反射+全透射同假），openEMS 自检脚本=正确样例（rfauto_server_sim_kit 06_tools）。",
+   "title": "ge4 批经验"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "A1188",
+   "lesson_one_line": "①包拆分 parents[N] 锚漂：模块从浅层移入深层包后 `__file__` 相对锚 `parents[N]` 静默漂移（mcp_server→mcp_tools 三层深，resources.py 锚漂到 src/knowledge",
+   "numbers": [
+    118,
+    157
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1190,
+    "line_start": 1188
+   },
+   "text": "- ge6/ge7 批经验（2026-10-01/02，方案全集清偿波+收官波， fourteen 条）：①包拆分 parents[N] 锚漂：模块从浅层移入深层包后 `__file__` 相对锚 `parents[N]` 静默漂移（mcp_server→mcp_tools 三层深，resources.py 锚漂到 src/knowledge——真产品 bug）——拆分/搬移模块必 grep `parents[` 全仓并随层修正；②pyaedt 1.4 三坑：`GetSetups` gRPC 恒炸（唯一通路=新建会话直呼 `create_setup(name)`，5 连实证）/`setup.props` 死键 `MaximumDeltaS` 静默缺省（生效键=`MaxDeltaS`，PROF 权威回读核）/材质读侧返回 MatProperty 包装（须 `.value`，写侧直收 float）；③hpeesofsim 网表二例：二极管实例行=`<模型名>:<实例名> <节点>`（冒号前是模型名；写 `Diode:D1…Model=x` 报 undefined model，定位靠 oalibs itemdef.ael netlistData 串）；HB 节点相量=峰值口径（功率平衡 `0.5Re{V·I*}` 实证，RMS 约定下 Zin 实部负值=违无源性即暴露）；④锚/行序字典序位次钉：新锚合法首注册按 anchor_id 字典序可插 rows[0]（cou<cps）——位次断言按 anchor_id 取行，不按 rows[0]；⑤验证钉必须覆盖触发分支输入（FFDBG numpy 积分器 r̂_x 系数笔误被合成闭式解对拍暴露——验证输入不含该分支=假绿，与本仓 #118 同构）；⑥跨席实例 attach=并发违规（A22 教训：attach 他席 grpcsrv 会话求解应候跑不共享——数值确定性未损但流程违规，双侧留痕）；⑦门下并发在制轨瞬态红（三现）：全量门红先单跑复现定性再修（df6② 同族），并发席半成品 NameError 也算他轨；⑧批量暂存漏 staged（三现）：多文件批的测试文件/包 `__init__` 导出面随批点名清点（`git diff --cached --stat` 行数核对）；⑨冷直导循环+幽灵 __all__：新模块 `__all__` 列未定义名/模块级回导成环（import * 必炸/冷直导 ImportError）——函数级延迟导入对齐姊妹壳+`--generate` 前先实测冷直导；⑩nrts/截断判读双形态：引擎实文带句点 `Max. number`，判读子串手写缺点号=截断门失明——src 正则一律 `Max\\.\\s*number` 且判读子串与 src 同源单源；⑪SSH→PS 三坑：`-File` 路径反斜杠被吃（正斜杠通）/`Get-CimInstance` 双引号 Filter 恒 ParserError（零双引号 Where-Object 或 sftp 写 .ps1 文件执行）/复杂 `$()` 插值被吞（数值探针裸数字本地格式化）；⑫WMI Win32_Process.Create 直指分离发射=抗外杀形态实证（Start-Process 树 2.3M 档整树消失 vs 本形态零消失——#157 家族防线补强）；⑬服务器 SHA256 门前提=EOL 归一化后比对（CRLF/LF 内容同物）；⑭长寿命 SSH 传输重复同命令疑似缓存（存活复核换新连接）。",
+   "title": "ge6/ge7 批经验"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": null,
+   "id": "A1191",
+   "lesson_one_line": "①调研子代理任务书模板实证 31 次有效：项目背景一段+接地三档（已在/部分在/缺+grep 证据）+来源纪律（论文/标准/仓库带许可与免费可达性）+三禁（零写入/零 commit/零全量测试）+报告结构（现状盘点/前沿要点/提案表 T 系编号/既有补强/no-go/来源清单）",
+   "numbers": [
+    177
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1199,
+    "line_start": 1191
+   },
+   "text": "- 调研扩充阶段经验（2026-10-02，31 子代理调研战役转正，八条）：①调研子代理任务书模板实证 31 次有效：项目背景一段+接地三档（已在/部分在/缺+grep 证据）+来源纪律（论文/标准/仓库带许可与免费可达性）+三禁（零写入/零 commit/零全量测试）+报告结构（现状盘点/前沿要点/提案表 T 系编号/既有补强/no-go/来源清单）——报告经最终回复回收，零文件冲突； Explore 只读型即够（WebSearch/WebFetch 自带）。②调研断言必须过\"实读关\"：round 级\"缺 X/无 Y\"结论在规格级（带行号实读）被推翻 3 处（UI 主题持久化已在 pages.js:31-43/MultilineTRL 是 TRL 别名/MCP 工具 125 vs 钉 123）——立项前规格包必须实读挂点，行号级规格会挖出调研层看不见的实证（0.824 三副本两语义/calibration 三连静默死路）。③多代理批量产出的交叉一致性审计是必备闸：24 独立调研代理 ~260 条提案，审计代理抓出 9 项问题（漏编队 P1×3/池登记断链/ID 撞名/排期依赖倒挂/条数口径）+5 处划界（并 ID/互指注记）——批量登记前先审计再入库。④待证断言登记簿化：散落在文档里的\"待证\"标记会随时间蒸发——knowledge 级 YAML 登记簿（claim/source/verify_method/blocks/status），A 档（阻排期项）立项前先证；主代理提示词自造示例（HiFinC）被子代理 grep 证伪——给子代理的示例必须真实存在或显式标\"虚构\"。⑤深度调研产出的常数表直接落规格书：P.676-13 全部谱线常数从免费 PDF 逐值录进规格（立项时零文献成本）；出处勘误随规格落库（Larson mBVD 实为 2000 IEEE Ultrasonics Symp. DOI 10.1109/ULTSYM.2000.922679，\"UFFC 2000\"系流传误引）。⑥模式转折类用户提问先澄清再动手：用户\"为什么不进行补强？\"在登记制语境下=「补强计划是否已列入方案」而非「立即执行」——本会话误读为执行令起了基线门又刹停（零代码改动，半截日志即清）；调研/执行模式切换必须以用户明示为准。⑦多轮自我加压推演的产出曲线是饱和度信号：整域空白→跨功能横切→机制级→元层，单件价值递减即收口；每轮换视角轴（空间轴域覆盖→过程轴纪律→元层债务）。⑧跨会话分离长跑进程开工先查：ge7 发射的 farfield 98GB 重跑（PID 20036）跨会话存续 16+CPU 小时仍在跑——新会话第一件事查产物现场再决定收割/等待，勿重复发射（#177 消费面）。",
+   "title": "调研扩充阶段经验"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "A1200",
+   "lesson_one_line": "wait-launcher 经 `Win32_Process.Create` 挂 `powershell -File x.ps1` 两次RC=0/PID 在册却秒级消失（零输出零心跳），脚本前台直跑正常；同机WMI+`python.exe -u` 直指形态存活正常（ge7 patch2x2 3h+farfield 1…",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1205,
+    "line_start": 1200
+   },
+   "text": "- WMI+`powershell -File` 形态秒失（2026-10-02 ge8 开工波，待证两样本）：wait-launcher 经 `Win32_Process.Create` 挂 `powershell -File x.ps1` 两次RC=0/PID 在册却秒级消失（零输出零心跳），脚本前台直跑正常；同机WMI+`python.exe -u` 直指形态存活正常（ge7 patch2x2 3h+farfield 16h+双实证）——嫌疑 AV 对 WMI 生成的 powershell -File 静默击杀（0b-2 家族新形态）。守望/轮询类逻辑宁可主代理自轮询，长跑发射用 WMI+python 直指。",
+   "title": "WMI+`powershell -File` 形态秒失"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A1206",
+   "lesson_one_line": "未锚定grep 会把注释/docstring 里的 `@mcp.tool` 提法计入（两处即 +2 假漂移）",
+   "numbers": [
+    97
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1209,
+    "line_start": 1206
+   },
+   "text": "- 工具计数漂移判定先查口径（2026-10-02 MCP 125 vs 123 定性）：未锚定grep 会把注释/docstring 里的 `@mcp.tool` 提法计入（两处即 +2 假漂移）——凡\"计数漂移\"先跑权威锚定口径（行首 `^@mcp.tool` 正则）再定性，非锚定grep 计数不得当漂移证据（#97 家族口径面）。",
+   "title": "工具计数漂移判定先查口径"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1210",
+   "lesson_one_line": "入口 `make_strictly_feasible` 以绝对 1e-10 距离判活跃界",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1215,
+    "line_start": 1210
+   },
+   "text": "- scipy 1.18.1 least_squares 小量纲参数地雷（2026-10-02 PK-1 实证）：入口 `make_strictly_feasible` 以绝对 1e-10 距离判活跃界——SI 小量纲参数（C0~1e-12/Cm~1e-15 配正下界）在首次求值前即被强行重定位（实测C0→1e-10、整场拟合崩坏且 success=True 假绿）。小量纲参数拟合一律log10 空间参数化（等效正值箱约束+条件数改善）。",
+   "title": "scipy 1.18.1 least_squares 小量纲参数地雷"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A1216",
+   "lesson_one_line": "MM-4 commit 895a71f 的整文件暂存把并发 MM-7 的三处共享 hunk 捎带入库，而 MM-7 的三新文件仍未跟踪",
+   "numbers": [
+    221
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1220,
+    "line_start": 1216
+   },
+   "text": "- ge8 批合并窗口断态（2026-10-02 #221② 方向相反形态）：MM-4 commit 895a71f 的整文件暂存把并发 MM-7 的三处共享 hunk 捎带入库，而 MM-7 的三新文件仍未跟踪——HEAD 单独 checkout 会 ImportError。发现后立即提交三新文件闭合窗口。教训：合流窗口内发现捎带应立即闭合新文件，不能只记清单等\"合流时一起\"。",
+   "title": "ge8 批合并窗口断态"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "A1221",
+   "lesson_one_line": "子代理发射器（如 launch_seat.py 轮询循环）以前台 Bash 运行时，主代理的SendMessage/豁免令全部排队，直到该 Bash 返回才可见",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1225,
+    "line_start": 1221
+   },
+   "text": "- subagent 阻塞在同步 Bash 调用中收不到消息（2026-10-02）：子代理发射器（如 launch_seat.py 轮询循环）以前台 Bash 运行时，主代理的SendMessage/豁免令全部排队，直到该 Bash 返回才可见——长轮询发射器必须以 `run_in_background` 或分离进程运行，否则紧急指令无法送达。K-3 席三次豁免令因此全部失效，最终以杀 launcher 进程+消息队列唤醒。",
+   "title": "subagent 阻塞在同步 Bash 调用中收不到消息"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "A1226",
+   "lesson_one_line": "TA-3/4 起 render_core 的 excite_port越域处理从静默钳位改为显式 ValueError",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1229,
+    "line_start": 1226
+   },
+   "text": "- excite_port 钳位→拒绝契约切换：TA-3/4 起 render_core 的 excite_port越域处理从静默钳位改为显式 ValueError——既有钳位测试（test_eep_templates钉 0→1/7→4）须同步更新为拒绝断言。静默钳位会偷偷换激励口=实验语义漂移，新代码一律显式拒绝不钳位。",
+   "title": "excite_port 钳位→拒绝契约切换"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "A1230",
+   "lesson_one_line": "当任务书引用的 round 段与规格书正文矛盾时，先 grep round 文档原文确认最新口径",
+   "numbers": [],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1234,
+    "line_start": 1230
+   },
+   "text": "- 规格勘误\"冲突以规格为准\"限制：当任务书引用的 round 段与规格书正文矛盾时，先 grep round 文档原文确认最新口径——ge8 批 8 处规格勘误中6 处为 round 文档与规格书不一致（如 A-1 Chen&Wang/A-7 J(0) 值/A-8 Gauss 和式路径等），单看规格书不改 round 原文会漏勘误。",
+   "title": "规格勘误\"冲突以规格为准\"限制"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "A1235",
+   "lesson_one_line": "①#222 登记快照过时系统性升级：五波实证 ~25 例（任务书/宏图/审查报告/聚类表/deepdive/主代理自身引用皆可过时）",
+   "numbers": [
+    222,
+    108
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1236,
+    "line_start": 1235
+   },
+   "text": "- rx 调研/补强批经验（2026-10-04，六波 20+ 席；全文 20 条=runs/rx_followup/SESSION_PITFALLS_RX.md，此处承重 8 条）：①#222 登记快照过时系统性升级：五波实证 ~25 例（任务书/宏图/审查报告/聚类表/deepdive/主代理自身引用皆可过时）——任何登记面只是线索；Z-11 巡检首要判据=commit message 任务 ID 扫描（池 ID 与 commit tag 同源），但跨轮 ID 撞号是头号误判源（SB22 复用 MS/MP/PK 前缀致 14 行 9 行 tag 假阳）→\"ID→登记轮→语义关键词\"二次消歧+排除纯 docs commit+双判据缺一不可；②调研/实现阶段语义必须在每批开场显式确认（\"增强补充为主\"曾被误读为实现授权，13 笔落地后被纠偏）——立规即时落交接书横幅而非只落 ；③heredoc/python 替换写入后必须 grep -c 验证命中（#108 家族：替换串静默未中）——替换类一律 Edit 工具；④regex 字符类内全角字符会被写入链路静默转义（全角右括号变 `\\]` 类提前闭合）——字符类一律 re.escape 动态构造；⑤注册键\"第六消费者\"现象：五钉清单之外仍有计划外消费者（S-plane 归类断言等），钉清单是下限——新键后全量门必抓；⑥派生资产（public_api 金快照/画廊/docs_site）合流后统一再生再终门；⑦\"接上用户\"是加强最大来源：全仓 200 service 模块 36% 无运行时入口（SO 走查）——周期性 wiring sweep（孤儿接线批）清偿\"有功能无入口\"类欠账；⑧全仓净表已定稿（530 行双判据：开放 ~250 件当量，开发权威=runs/research_seats_20261004/{sd_freshness,sg_reserve_sweep}），宏图 v3.2=编队入口。",
+   "title": "rx 调研/补强批经验"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#373",
+   "id": "#373",
+   "lesson_one_line": "uv（python-build-standalone CPython 3.12.14）venv 里 pyedb 0.83 DotNet 后端首个原生调用（`Database.Create`）整个进程硬 abort（stderr `legacy Provider loading failed`/`EVP_Decrypt…",
+   "numbers": [
+    373
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1255,
+    "line_start": 1237
+   },
+   "text": "- pyedb DotNet 后端 DLL 同名对撞（#373，2026-10-08/09 edblane85 批 W1 冒烟+W3 定谳）：uv（python-build-standalone CPython 3.12.14）venv 里 pyedb 0.83 DotNet 后端首个原生调用（`Database.Create`）整个进程硬 abort（stderr `legacy Provider loading failed`/`EVP_DecryptInit`、fatal exception 0xc0000139，无任何 Python 异常）；绕开对撞后第二形态=Create 静默返回 null db（exit 0、零诊断、目标目录空）——正是pyedb 上游 `Failed to initialize Dlls.` 无因报错的底层病源。机理：python-build-standalone 自带 libssl-3-x64/libcrypto-3-x64（OpenSSL 3.5.8）与 AEDT v251 同名DLL（OpenSSL 3.0.14）同名不同版；`Edb(...)` 构造即经 import 链（→grpc→asyncio→ssl）在模块导入期拉入 CPython OpenSSL 副本→Ansys 副本再也加载不进。诊断三板斧=import-hook 抓自发 import 链+psapi EnumProcessModulesEx 枚举进程加载面+faulthandler 钉 abort 点（pyedb/dotnet/edb.py:739）——手段同 openEMS\"DLL 双install 遮蔽坑\"（诊断同款，病根/引擎/修法均不同）。修法：AEDT 2025 R1 自动化管线改道 pyaedt 非图形会话建模+`ansysedt -ng -BatchSolve` 批求解（本仓真机已验证通路）；换标准 `python -m venv` 是官方 troubleshooting 口径（本机未端到端验证，如实）；按绝对路径预载 Ansys 副本不是解（对撞翻转为 import _ssl ImportError）；gRPC EDB 需 AEDT 2026.1+（2025.2 无回退）。证据：docs/upstream_issue_draft_pyedb_ dotnet_backend.md（全链+最小复现）；runs/edblane85/w3_pyedb_issue_a/、w1_smoke；。",
+   "title": "pyedb DotNet 后端 DLL 同名对撞"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": "#374",
+   "id": "#374",
+   "lesson_one_line": "①AEDT 2025 R1 拒收 `-Logfile` 置于工程路径之后（`requires a filename ... last parameter`，rc=1）",
+   "numbers": [
+    374,
+    265,
+    105
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1269,
+    "line_start": 1256
+   },
+   "text": "- AEDT 批处理 CLI 参数序与 Touchstone 导出断链（#374，2026-10-08/09 edblane85 批W1/W5/W6）：①AEDT 2025 R1 拒收 `-Logfile` 置于工程路径之后（`requires a filename ... last parameter`，rc=1）——工程路径是 CLI 解析的\"末位占位者\"；②`-BatchSolve` 只求解不产 Touchstone（真机冒烟 artifacts=0 断链指纹），导出须第二段 `-batchextract`；③HFSS 3D Layout 设计无 AnalysisSetup/Solutions 模块（GetModule 四名全 FAIL），ExportNetworkData 挂 setup 级 5/5 全败，须 design 级调用才通（战役修正脚本 5/5 恢复实证）——导出 COM API 调用目标层级随设计类型分派，非权限/版本问题；④-batchextract FATAL 早退留孤儿 ansysedt（QuitApplication 应入finally，#265 家法）。修法：工程路径恒末位（build_batch_command 顺序纪律+两测试钉字面）；导出走 -batchextract 第二段（IronPython2 脚本模板烘焙）；导出失败不推翻求解 ok（#105 观测面），fail-safe 落 _export_fail_result。证据：src/rfauto/adapters/hfss_batch.py build_batch_command docstring+导出分派段；runs/edblane85/w1_smoke/、w5_batch_campaign/、w6_smoke2/；。",
+   "title": "AEDT 批处理 CLI 参数序与 Touchstone 导出断链"
+  },
+  {
+   "category": "numerics",
+   "consumption": [
+    {
+     "keywords": [
+      "离线审计",
+      "模板几何",
+      "渲染"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": "#375",
+   "id": "#375",
+   "lesson_one_line": "层表按 EDB 社区常见\"自底向上\"直觉写 `[GND,SUB,TOP]`，落库后整叠层序物理颠倒（GND 落物理顶层=倒置微带）且零报错",
+   "numbers": [
+    375,
+    212
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1282,
+    "line_start": 1270
+   },
+   "text": "- PyEDB configuration 层序首项落物理顶层（#375，2026-10-09 edblane85 批 W4 审查席P0）：层表按 EDB 社区常见\"自底向上\"直觉写 `[GND,SUB,TOP]`，落库后整叠层序物理颠倒（GND 落物理顶层=倒置微带）且零报错——W1 真机冒烟未暴露纯因 dotnet 建库未跑通（离线侧通过，铁律 1b 面）。机理：pyedb 0.83 `__create_stackup` 按 config列表序逐层 `AddLayerBottom`（每次插到全栈最底→列表首项落物理顶层），即 config层序=自顶向下；源码实证 configuration.py:863-868+dotnet/database/stackup.py:97-130；官方示例首项=顶层同口径，API 名（AddLayerBottom）极易诱导误读。修法：spec 层序显式声明自底向上（index0=物理底层）写进 schema docstring，adapter落库前翻转一次为 config 自顶向下；层序钉测试（地板层落物理底层）+真机首跑必以`edb.stackup.layers` 实测落位复核（#212 家法的 EDB 版）。证据：src/rfauto/adapters/edb_adapter.py 模块 docstring「layers」键注+翻转段；W4 审查席A P0（）；docs/pyedb_distilled.md §3.1/§6-2。",
+   "title": "PyEDB configuration 层序首项落物理顶层"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#376",
+   "id": "#376",
+   "lesson_one_line": "健康门闭区间语义（实测 ≤ 门 / σmax ≤ 1+容差 / 窗 [-3.8,-2.5] 双边闭）在恰等边界读数上字面比较系统性误 FAIL：①dB 往返不可逆量化",
+   "numbers": [
+    376,
+    347
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1298,
+    "line_start": 1283
+   },
+   "text": "- 健康门闭边界浮点 eps 家法（#376，2026-10-08/09 edblane85 批 W5 回取复核席）：健康门闭区间语义（实测 ≤ 门 / σmax ≤ 1+容差 / 窗 [-3.8,-2.5] 双边闭）在恰等边界读数上字面比较系统性误 FAIL：①dB 往返不可逆量化——|Γ|=10^(门/20) 经 double 域20·log10 回读带 ~1e-15dB 噪声，门值域扫描 [-40,-1] 0.1dB 步长实测 30/391 个门值落违约侧（-7.2dB 读 -7.199999999999999）；s_split_window -2.5dB 恰等腿读-2.4999999999999996；②SVD 舍入——十进制 d+o=1.01 的 double 表示+奇异值计算使σmax 读 1.0100000000000002（114/201 组合落违约侧）。机理：两类量化噪声源不同、暴露面同型，幅度比门粒度（0.1~1dB）低 8~14 个量级但对\"恰等\"构造必非零——噪声是门实现侧必须吸收的，不是数据侧缺陷。修法：闭边界比较一律 +eps 家法余量1e-9（service/edb_health_gate.py 三常量 _S11_DIP_DB_EPS/_SPLIT_WINDOW_DB_EPS/ _PASSIVITY_LINEAR_EPS，与 core/trl_solt._LINE_PASSIVE_MARGIN 同源；比门粒度低8~9 个量级，不掩盖真违约）；恰等边界回归钉必配（构造恰等例断言不翻 verdict）。证据：edb_health_gate.py 三常量 docstring（扫描计数/读数原文全录）；+W6 复核席观察项转正。（#347 渲染守卫侧先证\"恰等会炸\"测试面形态，本条为其门实现侧推广——单向溯源，#347 成文在先不含反向指涉）",
+   "title": "健康门闭边界浮点 eps 家法"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": "#377",
+   "id": "#377",
+   "lesson_one_line": "atten 族 shunt 元件离断口 D=6mm（名义座）时，闭式电阻值+集总 π 裁判判出|S11|max=0.272（-11.3dB）的\"寄生\"假象；mount 级单变量（εr 保持/窄盒/caps=False）全数 Δ<0.002、W7-A 服务器批网格离散单变量排除（加密后 |Δ|<0.7dB 符号不稳）",
+   "numbers": [
+    377
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1314,
+    "line_start": 1299
+   },
+   "text": "- 集总元件离断口=分布式拓扑失配（#377，2026-10-08 ge9 W7-A 溯源+edblane85 批 W1.4修复）：atten 族 shunt 元件离断口 D=6mm（名义座）时，闭式电阻值+集总 π 裁判判出|S11|max=0.272（-11.3dB）的\"寄生\"假象；mount 级单变量（εr 保持/窄盒/caps=False）全数 Δ<0.002、W7-A 服务器批网格离散单变量排除（加密后 |Δ|<0.7dB 符号不稳）——两轮排查均非真因；模型级 A/B 定谳：|S11|max=0.272 与\"理想分布 π\"级联预测 0.226同源同号。机理：E4 集总 π/T 闭式裁判假设元件电共位（D=0）；渲染拓扑里隔开线段 D 后即成分布式衰减器，带内失配随 D 线性增长（θ=β(f_max)·D，D=6mm 实测θ=0.722rad≈41°，以代码守卫同式实算为准）——\"寄生\"是拓扑语义不是元件缺陷（铁律1b 再证）。修法：电共位判据守卫 θ=2π·f_max·√εr·D/c ≤ 0.1rad（本族 f_max=3GHz、εr=3.66 ⇒ D ≤ 0.83mm），渲染期 fail-fast ValueError 带证据链文案；缺省 0.75mm（θ=0.090rad）；修复后 |S11|max -11.3→-21.9dB 过门；确需分布式变体须另立模板与裁判（π/T 闭式不越界套用）。证据：src/rfauto/adapters/oe_templates/render_tl.py `_atten_d_guard` docstring；runs/atten（模型级 A/B）+runs/real_machine_window/ w7a/residual_srv*；runs/edblane85/PLAN.md W1 结果行。",
+   "title": "集总元件离断口=分布式拓扑失配"
+  },
+  {
+   "category": "python",
+   "devlog_ref": "#267",
+   "id": "#267",
+   "lesson_one_line": "① runner 默认 `bash -e` 腰斩诊断序列",
+   "numbers": [
+    267,
+    230,
+    235
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1336,
+    "line_start": 1315
+   },
+   "text": "- 公开仓 CI 调试六坑（2026-10-13 首次代理 push，CI run 32-40 九轮实证）：① runner 默认 `bash -e` 腰斩诊断序列——step 里 `set -o pipefail` 后 pytest 非零退出码=管线失败=`-e` 当场中止：rc 捕获/FAILED 注解/summary/兜底全成死代码（症状=job 红+日志只有汇总行+零注解+summary 空）。诊断/清理序列必须 `set +e` 自管 rc（`PIPESTATUS[0]` 不依赖 pipefail）。② `Path.as_posix()` 在 POSIX 宿主不分解反斜杠——`Path(\"E:\\a\\b\").as_posix()`原样返回反斜杠串；跨平台宿主烘焙进 Windows 目标脚本的路径一律`str(x).replace(\"\\\\\", \"/\")`（hfss_batch 实证：Linux 生成的 AEDT 脚本烘焙反斜杠字面量）。③ pytest-xdist「零 failed 却 exit 1」异常态——`-n auto`/`-n 2` 各现一次，全绿汇总+退出码打穿，同树重跑可绿；CI 门判据读日志汇总内容（`N failed`/`= ERRORS =`）而非退出码，异常时响亮标注放行并记录 numpy/scipy/sklearn 版本指纹；真实失败照常红。④ GitHub 匿名 API 限额 60/h 按 IP 计（代理出口=共享 IP 更易尽）——轮询/日志下载用 `git credential fill` 静默取本机 PAT 走认证 API（job 日志下载需 admin 权限，匿名 403 \"Must have admin rights\"）；令牌零回显。⑤ push 通道三态互备：全局 insteadOf 把 github.com 重写 ghfast.top（TLS 握手易挂）→ `.git/config http.proxy=127.0.0.1:7890` → `:443` 直连（`:443` 显式端口形态顺便绕过 insteadOf 前缀匹配）；一条挂换下一条，重试循环用 `rc=$?` 判定（`| tail`管道掩蔽退出码假绿，#267 家族）。⑥ MSYS `/e/` 路径 Windows python 不可见（open('/e/..') FileNotFoundError）——python 文件操作一律 `E:/` 形态；bash↔python 混用期双仓 cd 漂移禁用相对路径编辑（#230/#235 家族；本次 set +e 编辑曾因 assert 拦下而零损害——断言即保险丝）。",
+   "title": "公开仓 CI 调试六坑"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "A1337",
+   "lesson_one_line": "① CI 新红先查\"昨日至今新上架版本\"（三案同族：pip-licenses 5.5.5 起读PEP 639 SPDX 字段把自包扫进弱 copyleft、mcp 2.x API 破坏、pychopmarg 3.3 schema 漂移）",
+   "numbers": [
+    105,
+    355
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1384,
+    "line_start": 1337
+   },
+   "text": "- 公开仓 CI 二轮 debugging 十坑（2026-10-17，runs 39038465383→39043312813→39046274982 三轮到全绿实证；五笔 push 68dc778/5397791/4b3fff0 等）：① CI 新红先查\"昨日至今新上架版本\"（三案同族：pip-licenses 5.5.5 起读PEP 639 SPDX 字段把自包扫进弱 copyleft、mcp 2.x API 破坏、pychopmarg 3.3 schema 漂移）——诊断第一步=diff 两日 CI 日志的 Successfully installed 清单。② pychopmarg 3.3 preset schema 跨版漂移（浮动 pin+上游 minor 版改数据结构+同版内 preset 间形态不一三重叠加）：dj preset C_d/L_s 平铺list[float]→按端嵌套 list[list[float]]（同版 by 仍平铺），消费面再包一层得 (2,2,n) 广播炸被 #105 降级 degraded——8 红一个根因。处方=消费面形态感知归一器（平铺→两端复制/单行→repeat/(2,n)→原样/其余显式 ValueError，宁契约错误不产 silently-wrong）+注入复现法（本机 pip download 解包指定版本+PYTHONPATH 注入，逐位复现 CI 失败再验证转绿——平台/BLAS/顺序假说一锤全排除）。③ mcp 2.x 大版本 API 破坏（fresh install 即拉 2.3.0；152 工具面实测7 failed+106 collection errors）——处方=pyproject 显式上限钉`mcp>=1.30,<2`（1.30=CVE-2026-59951 修复下限，pip-audit 门同笔满足）；上迁 2.x 前必须全量 MCP 面回归。依赖升级触发 pip-audit 红时逐包升到修复版（pyjwt/urllib3/uv/virtualenv 同批）而非豁免。④ 无 tty 环境 push 凭据不可达（credential manager 走 /dev/tty prompt script 失败；全局 insteadOf 重写使显式直推 URL 也被改写）——处置=暂摘insteadOf→PAT 直推 URL（`git credential fill` 取 token，零回显）→立即还原重写；现成脚本 runs/ci_logs_38839481077/push_with_pat.py。⑤ builder/文档嵌 collect 数跨平台漂移（vendor CSXCAD+条件收集使本地与 CI collect 差 ~10 条）——入库工件数字一律取入库门日志 TOTAL 行（#355 家法公开仓落地：runs/unit_gate_public.log 入库+builder 门日志优先+CONTRIBUTING 注记自洽钉），活体 collect 只作徽章下限（>=）。⑥ registry_backfill 空库崩（sqlite connect 对不存在文件自动建空库无 schema，SELECT 即 OperationalError 崩成 rc1 而非 rc2 诚实 SKIP）——处方=sqlite_master 查表容错空集；runs/ 非空但无湖语义的环境（如公开仓只有门日志）必踩。⑦ Bash cwd 跨 turn/后台任务漂移（cwd 在 turn 边界重置回主工作区根+后台任务继承启动时刻 cwd）——跨仓/跨目录操作每次显式 cd+pwd 自检；本会话两次中招：一次把公开仓门跑成内部树（靠 rootdir/套件规模 23703≠25364 才识破，伪红污染诊断三小时），一次元测试读错树。日志/产物落盘点与进程命令行（Get-CimInstance 查 .venv 路径）是识破铁证。⑧ pytest-randomly 随机序使 CI 失败集合逐日漂移（CI 装 dev extras 即装它；同模块昨日 1 红今日 8 红、本地钉序全绿≠CI 绿）——CI 诊断先取当日失败清单对照本地门，勿以本地绿推 CI 绿；顺序依赖类在 CI 呈现随机子集。⑨ xdist worker 原生崩死（Windows access violation）（大内存测试 gssv+tasklist 子进程并发处高发，每 worker 一次崩点随机）——worker 崩死连带其队列剩余测试全失（全量门 23177≪collect 的原因）；known_flaky marker只保护可捕获失败，崩死类根治=串行/分段（门口径 v2）。⑩ 官方敏感扫描 clean ≠ 无泄漏（扫描器不含\"内部账本语义\"类）——runs/ 证据指针、项目规则引用、坑账衍生物（pitfalls_index JSON 每条带内部席名/devlog 引用）需自建宽变体模式组加扫（盘符+账本字样+runs/ 战役路径+服务器 IP+备份窗+AGENTS 引用等 7-10 组）；同步批带入的 knowledge/数据文件逐文件三问，500+ 命中的账本衍生件整件不送。",
+   "title": "公开仓 CI 二轮 debugging 十坑"
+  },
+  {
+   "category": "shell",
+   "consumption": [
+    {
+     "keywords": [
+      "整树",
+      "存活探针",
+      "看门"
+     ],
+     "pointer": "service/pitfall_index_service.py pitfall_search",
+     "surface": "index_search"
+    }
+   ],
+   "devlog_ref": null,
+   "id": "A1385",
+   "lesson_one_line": "① 服务器发射形态三档口径（G7 适用域定谳）：Start-Process 分离形态=经 Win32-OpenSSH 整树无声死亡（8/8 两轮复现）；阻塞 SSH `cmd /c` 与schtasks once+/run 直指 bat 两档存活",
+   "numbers": [
+    363,
+    323,
+    328,
+    118,
+    331,
+    289,
+    270
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1411,
+    "line_start": 1385
+   },
+   "text": "- 架构批 战役七坑（2026-10-18 转正；全账 内部证据目录 +内部证据目录，36 席实证）：① 服务器发射形态三档口径（G7 适用域定谳）：Start-Process 分离形态=经 Win32-OpenSSH 整树无声死亡（8/8 两轮复现）；阻塞 SSH `cmd /c` 与schtasks once+/run 直指 bat 两档存活——阻塞形态 SSH 断开后进程孤儿化继续求解是合法完成路径；schtasks `/tr` 内嵌 `\"cmd /c\"` 引号被 SSH 层剥毁报 Invalid argument——`/tr` 一律直指 bat 文件本体；完成判据用三证（driver.log 尾行 rc+sparams 在档+进程离场）——launch_rc 单证在死 SSH管道竞争下可全服务器无踪。② 等待型席位禁令：含\"等待轮询\"步骤的席位任务书 600s inactive 被基础设施强杀（三案，死前改动常已完整）——服务器收割/发射/判读一律拆短平快席或主代理亲跑收割器；死席遗产先`git status` 盘点再收编（#363 家法延伸）。③ schtasks once 注册残留武装：收割器只清任务目录不清 once 注册——触发器仍会再发射，每席收割毕 `/Delete` 补刀+query 校验。④ 帽停席预算重排程序（#323/#328实战胜形态）：重跑前三独立衰减率估计夹预算（三估计夹住 24 万步档）；衰减率=−dB/步，\"到 −60dB 距离\"是减法——符号写反即预算翻倍级错误（#118 家族）；\"跑满帽也帽停\"的席不重跑；判读器正则没吃 \"(− 0.00dB)\"空格形态=min_energy_db 假缺（#331 族）。⑤ SSH 远程命令引号剥毁族（#289 的 SSH 变体）：wmic 嵌套引号/Get-Date 引号过 SSH 层全被剥——远程探测用 `tasklist|findstr` 与无引号形态，复杂命令落远端 .ps1/.bat。⑥ 弱测试把 bug 制度化：r3_services solver 过滤 `(solver_name and stype.value)` 运算符优先级真 bug 两代未觉（CLI+UI 三面受影响），只因测试只断言 ok——布尔组合过滤表达式一律加括号显式化+行为级钉断言具体输出（#270 静态双检抓不到行为错）。⑦ 前端动画时基单源：Date.now（墙钟）与 requestAnimationFrame（帧节拍）混用做增量动画=浏览器切后台时间跳变引发死循环——动画时基一律 performance.now 单源。",
+   "title": "架构批 战役七坑"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": null,
+   "id": "A1412",
+   "lesson_one_line": "① 等待型席位禁令·复发第四案（W4-S16 亡故零落树）：任务书含\"等待轮询/until 完成\"步骤即复发",
+   "numbers": [
+    118,
+    222,
+    228
+   ],
+   "source": {
+    "file": "项目规约.md",
+    "line_end": 1439,
+    "line_start": 1412
+   },
+   "text": "- 架构批 战役坑账（2026-10-19 转正；全账 内部证据目录 +内部证据目录，36 席实证）：① 等待型席位禁令·复发第四案（W4-S16 亡故零落树）：任务书含\"等待轮询/until 完成\"步骤即复发——任务书发射前审查扫\"等待\"字样拆短平快席；战役收口清点必含亡故席盘点（git log 无席笔+runs/ 无席文件+任务书三证对齐才可记\"亡故零落树\"）。② schtasks once 触发时刻过境覆写：长跑席队跨 /st 触发时刻时，已完成未收割席被再发射整目录重跑（MultipleInstancesPolicy=IgnoreNew 只护在飞不护已完成）——触发时刻前全量摘除注册（在飞席 /Delete 不杀实例，摘除前后 CPU 双采样自证）。③ 长跑 ETA 用区间+帽预算记账：争用期 s/TS 漂移 +15% 量级（vivaldi单点估时 23:33 实际 03:44 帽），按\"区间+距帽余量%\"记账、按帽时刻复扫而非估时。④ async def 直调同步冷扫阻塞事件循环（service 面真新）：api_solvers 冷扫 8.3s 把 uvicorn 事件循环整个停摆（tune_status 在扫完前不被服务）——同步 IO 一律 run_in_threadpool（两行根治 8.3s→99ms 首绘）。⑤ 字节级对拍钉防\"凭记忆写锚\"（#118 的代码搬运分支）：重构提升前先捕获全精度基线落 runs/，字面量入测试逐位 ==——lange/ring 双案当场抓出\"凭记忆写的 6dB 档值/基线值\"错误。⑥ \"官方声明缺口\"立域前五重核（#222 审计面形态）：R2 判 outphasing 空白系审计误判（fe-batch1 0560e228五百一十九笔已落盘）——空白判据须五重 grep+commit 时间线+函数面三证。⑦ 两席并行同文件锚定编辑零冲突（正向模式首例）：同轮两席各 +4/+6 键同改五钉共享件零冲突——锚定编辑（只追加自身块不动他席行）+树面共存声明+合流单笔归并；W2-S8 预检假红经查为并行席时窗（#228 族），复跑即愈。⑧ 撞号池项的纯英文单词关键词不作代码证据（pool_patrol FE-6 误判partial 实证）：FE-6 单词 tool-result 撞 UI DOM id——撞号且未 qual 消解项的③路径关键词过滤纯英文字母词（中文长 run/带数字混写词保留）。⑨ check_numbers 扫描面覆盖面：DOC_PATTERNS 漏 CHANGELOG/CONTRIBUTING致单键漏滚恒绿不可见（W8-S34 门盲区实锤）——五文件全扫已补；新增数字面文件须同步登记 DOC_PATTERNS。",
+   "title": "架构批 战役坑账"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#FINAL-1",
+   "lesson_one_line": "（ge8b 开工即立）：heredoc 与 python -c 写文件时，仓库名/脚本名/模块名系统性错拼（假目录两次、模块名 remote_boxes、waiteer/waitee 等六例）；且 E 盘工作区路径为 junction，错拼路径静默落地同一棵树不报错。对策：大文件一律 Write 工具+写后终审脚本逐…",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 9,
+    "line_start": 9
+   },
+   "text": "1. 本会话输出层拼写系统性歧义（ge8b 开工即立）：heredoc 与 python -c 写文件时，仓库名/脚本名/模块名系统性错拼（假目录两次、模块名 remote_boxes、waiteer/waitee 等六例）；且 E 盘工作区路径为 junction，错拼路径静默落地同一棵树不报错。对策：大文件一律 Write 工具+写后终审脚本逐引用实测存在性（AST/ls/git 实测），不信显示层。",
+   "title": "本会话输出层拼写系统性歧义"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": null,
+   "id": "#FINAL-2",
+   "lesson_one_line": "remote_oe_service._MUTEX_FINGERPRINT（窄，仅 OE python 家族）vs 服务器 kit run_server_probe.ps1 census 段[6]（宽，含 ansysedt）",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 10,
+    "line_start": 10
+   },
+   "text": "2. census 宽窄双轨判定错位：remote_oe_service._MUTEX_FINGERPRINT（窄，仅 OE python 家族）vs 服务器 kit run_server_probe.ps1 census 段[6]（宽，含 ansysedt）——守望器判定必须与被守望驱动内部门同源（用 census_status.py 宽匹配），否则守望早发或漏发。",
+   "title": "census 宽窄双轨判定错位"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#FINAL-3",
+   "lesson_one_line": "HFSS 驱动 finally cleanup 报 killed=[] ok=True 是假象",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 11,
+    "line_start": 11
+   },
+   "text": "3. 服务器孤儿三连（PID 4612/20156/19444）：HFSS 驱动 finally cleanup 报 killed=[] ok=True 是假象——服务器侧 ansysedt 不随父进程退出（Windows 会话分离）。端口级 netstat 探测比进程 census 更早发现孤儿；已固化 scripts/cleanup_server_orphans.py（白名单点杀+K 队列在飞保护+dry-run/kill 双模）；每席真机退出即跑 --kill（用户反馈整改 SOP）。",
+   "title": "服务器孤儿三连"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": null,
+   "id": "#FINAL-4",
+   "lesson_one_line": "（间歇性）：vendor MPI 启动失败导致 HFSS solver failed to start",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 12,
+    "line_start": 12
+   },
+   "text": "4. 服务器 K-2 MPI 管道故障（间歇性）：vendor MPI 启动失败导致 HFSS solver failed to start——同档此前成功证明脚本健康；先查服务器 console（aedt_console.log）再定性；临时残留自清后可自愈；服务级复位留运维裁决。",
+   "title": "服务器 K-2 MPI 管道故障"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#FINAL-5",
+   "lesson_one_line": "（D5 大迁移提交后遗留 43 分钟）：锁龄超过 10 分钟且无 git 进程=stale，直接删；大迁移席提交窗口期间主代理勿并发 git 写操作。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 13,
+    "line_start": 13
+   },
+   "text": "5. git index.lock stale（D5 大迁移提交后遗留 43 分钟）：锁龄超过 10 分钟且无 git 进程=stale，直接删；大迁移席提交窗口期间主代理勿并发 git 写操作。",
+   "title": "git index.lock stale"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#FINAL-6",
+   "lesson_one_line": "多轮全量门同批文件复红=顺序依赖污染指纹（gpl str 键注册案，26→15→4→1），勿以\"单跑隔离绿\"结案",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 14,
+    "line_start": 14
+   },
+   "text": "6. 终门轮次收敛指纹：多轮全量门同批文件复红=顺序依赖污染指纹（gpl str 键注册案，26→15→4→1），勿以\"单跑隔离绿\"结案——必须根因修复或根因登记。",
+   "title": "终门轮次收敛指纹"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#FINAL-7",
+   "lesson_one_line": "gpl 子包用 str 字面键、其余用枚举键",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 18,
+    "line_start": 18
+   },
+   "text": "7. 注册键类型混用=顺序依赖地雷：gpl 子包用 str 字面键、其余用枚举键——全模块 import 冒烟测试触发 import-time 注册副作用后，消费 .value 的清单函数顺序炸。新注册通道键类型必须与既有面一致（枚举或 str 全仓统一）+消费面双形态防御。",
+   "title": "注册键类型混用=顺序依赖地雷"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#FINAL-8",
+   "lesson_one_line": "改 fake/闭式内核物理值后，goldset/verbatim 窄钉红是行为修正跟进非回归",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 19,
+    "line_start": 19
+   },
+   "text": "8. 连带重钉判别法：改 fake/闭式内核物理值后，goldset/verbatim 窄钉红是行为修正跟进非回归——重钉必带 provenance 链（哪次修复导致+新旧值+实测方法）；\"上次重钉时不变的锚\"这次可能变（前提变化：频率缩放 vs 幅度构造）。",
+   "title": "连带重钉判别法"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#FINAL-9",
+   "lesson_one_line": "反斜杠+大写字母开头的 Windows 路径在 python -c 与 heredoc 内必触发 UnicodeError",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 20,
+    "line_start": 20
+   },
+   "text": "9. f-string 反斜杠转义：反斜杠+大写字母开头的 Windows 路径在 python -c 与 heredoc 内必触发 UnicodeError——路径一律正斜杠或 raw 字符串；Write 工具不受影响。",
+   "title": "f-string 反斜杠转义"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#FINAL-10",
+   "lesson_one_line": "——AST 级 codemod 必须按字节面切片；混合 unpack 字面量的\"后者覆盖\"不等于调用 kwarg 冲突语义（需包 {...} 重建）。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 21,
+    "line_start": 21
+   },
+   "text": "10. AST col_offset=字节偏移非字符偏移（D5 大迁移实证：全角字符行切片错位 32 站 TypeError）——AST 级 codemod 必须按字节面切片；混合 unpack 字面量的\"后者覆盖\"不等于调用 kwarg 冲突语义（需包 {...} 重建）。",
+   "title": "AST col_offset=字节偏移非字符偏移"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#FINAL-11",
+   "lesson_one_line": "匹配口径 |Γ|²=1/2 等价 |X|=2R，得 Q=2·f0/BW；电流衰落口径 Q=f0/BW",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 25,
+    "line_start": 25
+   },
+   "text": "11. Q 恒等式双口径（席C5 实测抓回）：匹配口径 |Γ|²=1/2 等价 |X|=2R，得 Q=2·f0/BW；电流衰落口径 Q=f0/BW——两口径勿混（差 2 倍因子）。",
+   "title": "Q 恒等式双口径"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#FINAL-12",
+   "lesson_one_line": "离散条件按点序轮转与 Sobol 首坐标（radical inverse=点序）结构性相关，分层覆盖塌到 0.556",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 26,
+    "line_start": 26
+   },
+   "text": "12. Sobol 与点序相关伪象（席C5 实测）：离散条件按点序轮转与 Sobol 首坐标（radical inverse=点序）结构性相关，分层覆盖塌到 0.556——离散维度用独立 qmc 坐标赋值。",
+   "title": "Sobol 与点序相关伪象"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": null,
+   "id": "#FINAL-13",
+   "lesson_one_line": "（K-6 销账）：五面与六面 C++ 重放逐点全对齐（rel 4e-6）+省 91GB/档+法向启发式失真源头消除",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 27,
+    "line_start": 27
+   },
+   "text": "13. nf2ff 底面剔除三重依据（K-6 销账）：五面与六面 C++ 重放逐点全对齐（rel 4e-6）+省 91GB/档+法向启发式失真源头消除——降维判据必须有逐点对拍证据才能动渲染面。",
+   "title": "nf2ff 底面剔除三重依据"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#FINAL-14",
+   "lesson_one_line": "本会话再现 13 例（MCP 三工具\"未做\"实为已做、任务书候选 8 文件 5 个零命中、RA.769 表值、\"52 真红\"实为 81 漏洞、pdn 13 错实为 0）",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 31,
+    "line_start": 31
+   },
+   "text": "- #222 登记快照过时本会话再现 13 例（MCP 三工具\"未做\"实为已做、任务书候选 8 文件 5 个零命中、RA.769 表值、\"52 真红\"实为 81 漏洞、pdn 13 错实为 0）——任何登记行开工前必 grep 处置面。",
+   "title": "#222 登记快照过时"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#FINAL-15",
+   "lesson_one_line": "（#df6-⑨）本会话兑现场景：Wadell/Bahl-Trivedi 倒置微带系数不可达，改用 FD 裁判反演替代（席1）；DLP/PA12 介电数值不可达，零值诚实登记（PK-9）；Lai 2009 式(13) 二手转写 10w′，原文 400dpi 校对为 104w′（席1）。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 32,
+    "line_start": 32
+   },
+   "text": "- 引用腐坏纪律（#df6-⑨）本会话兑现场景：Wadell/Bahl-Trivedi 倒置微带系数不可达，改用 FD 裁判反演替代（席1）；DLP/PA12 介电数值不可达，零值诚实登记（PK-9）；Lai 2009 式(13) 二手转写 10w′，原文 400dpi 校对为 104w′（席1）。",
+   "title": "引用腐坏纪律"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#FINAL-16",
+   "lesson_one_line": "范式级落地：Gabriel 1996 原文 Table 1 p.2291 逐格、MIL-STD-464C 当日实取 165 页 PDF 逐格、3GPP 38.901 官方 docx 与 Sionna JSON 逐位一致。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "line_end": 33,
+    "line_start": 33
+   },
+   "text": "- 双源逐格范式级落地：Gabriel 1996 原文 Table 1 p.2291 逐格、MIL-STD-464C 当日实取 165 页 PDF 逐格、3GPP 38.901 官方 docx 与 Sionna JSON 逐位一致。",
+   "title": "双源逐格"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#GE8E-1",
+   "lesson_one_line": "xdist 并行收集 MemoryError→4w 重试 59min 收集挂死→系统管理面楔死级联（注册表读/WMI/taskkill/pip 网络全挂，faulthandler.dump_traceback_later 抓栈铁证=pytest_benchmark get_machine_id→platform.wi…",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 12,
+    "line_start": 8
+   },
+   "text": "1. 静默窗口/杀软击杀假说采纳（用户令，最高优先）：xdist 并行收集 MemoryError→4w 重试 59min 收集挂死→系统管理面楔死级联（注册表读/WMI/taskkill/pip 网络全挂，faulthandler.dump_traceback_later 抓栈铁证=pytest_benchmark get_machine_id→platform.win32_ver:450 注册表读）。本机长门/并行门一律可见窗直指形态（.cmd CRLF+Start-Process WindowStyle Normal）；重启清除，shim 绕行见 8。",
+   "title": "静默窗口/杀软击杀假说采纳"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#GE8E-2",
+   "lesson_one_line": "platform.uname/win32_ver 注册表读楔死时，PYTHONPATH 前置 sitecustomize 预填 uname 缓存+win32_ver 替身（sys.getwindowsversion 快速系统调用）",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 16,
+    "line_start": 13
+   },
+   "text": "2. 楔死期 platform 绕行 shim：platform.uname/win32_ver 注册表读楔死时，PYTHONPATH 前置 sitecustomize 预填 uname 缓存+win32_ver 替身（sys.getwindowsversion 快速系统调用）——只服务门进程，机器恢复后删（runs/_gate_env_shim 范式，已删）。",
+   "title": "楔死期 platform 绕行 shim"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#GE8E-3",
+   "lesson_one_line": "挂起进程无法 py-spy（安装也被网络拖）时，同构复现命令+`faulthandler.dump_traceback_later(N, exit=True)` 12s 即得真实挂起栈",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 19,
+    "line_start": 17
+   },
+   "text": "3. faulthandler 现场抓栈范式：挂起进程无法 py-spy（安装也被网络拖）时，同构复现命令+`faulthandler.dump_traceback_later(N, exit=True)` 12s 即得真实挂起栈——本轮借此一击锁定 pytest_benchmark→win32_ver。",
+   "title": "faulthandler 现场抓栈范式"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#GE8E-4",
+   "lesson_one_line": "长会话后机器收集期 MemoryError 两连败（8w/4w）；串行同树健康。守卫轮补跑等机器空闲窗+可见窗。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 21,
+    "line_start": 20
+   },
+   "text": "4. xdist 并行收集对机器态敏感：长会话后机器收集期 MemoryError 两连败（8w/4w）；串行同树健康。守卫轮补跑等机器空闲窗+可见窗。",
+   "title": "xdist 并行收集对机器态敏感"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#GE8E-5",
+   "lesson_one_line": "FAIL 类夹具（假 API key 字面量）会触发 gitleaks generic-api-key",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 24,
+    "line_start": 22
+   },
+   "text": "5. gitignored release/ 目录的扫描器测试钉防 gitleaks 自触发：FAIL 类夹具（假 API key 字面量）会触发 gitleaks generic-api-key——夹具拼接构造（\"sk-\" + \"...\"）字节不变绕门。",
+   "title": "gitignored release/ 目录的扫描器测试钉防 gitleaks 自触发"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#GE8E-6",
+   "lesson_one_line": "（census_status.py 案例）：稳定版收编 scripts/ 入仓+纯函数解析器单测。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 26,
+    "line_start": 25
+   },
+   "text": "6. gitignored runs/ 里养稳定版脚本=单源失控面（census_status.py 案例）：稳定版收编 scripts/ 入仓+纯函数解析器单测。",
+   "title": "gitignored runs/ 里养稳定版脚本=单源失控面"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#GE8E-7",
+   "lesson_one_line": "修复批改了 docstring/锚/meta 后，\"注册表 vs 再生扫描\"类测试（formula_provenance/docs_site/gallery）必红",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 29,
+    "line_start": 27
+   },
+   "text": "7. KD-1/gallery 类派生资产陈旧红：修复批改了 docstring/锚/meta 后，\"注册表 vs 再生扫描\"类测试（formula_provenance/docs_site/gallery）必红——prescribed 再生命令就在断言文本里，修复批后必须再生派生资产再终门。",
+   "title": "KD-1/gallery 类派生资产陈旧红"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#GE8E-8",
+   "lesson_one_line": "隔离复绿即可定性环境类，勿当回归修。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 31,
+    "line_start": 30
+   },
+   "text": "8. KiCad 子进程类测试在全量门内偶发环境抖动（串行门 5 红隔离复绿）：隔离复绿即可定性环境类，勿当回归修。",
+   "title": "KiCad 子进程类测试在全量门内偶发环境抖动"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#GE8E-9",
+   "lesson_one_line": "（\\r→CR/\\t→TAB）：raw 字符串或正斜杠；git-bash 内嵌 powershell 的 $_ 被吃→临时 .ps1 文件（#289 再证+bash 启动脚本连 ==== 分隔符都会吃的新变体）。",
+   "numbers": [
+    289
+   ],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 34,
+    "line_start": 32
+   },
+   "text": "9. SSH 命令行反斜杠路径被传输层吃成控制符（\\r→CR/\\t→TAB）：raw 字符串或正斜杠；git-bash 内嵌 powershell 的 $_ 被吃→临时 .ps1 文件（#289 再证+bash 启动脚本连 ==== 分隔符都会吃的新变体）。",
+   "title": "SSH 命令行反斜杠路径被传输层吃成控制符"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#GE8E-10",
+   "lesson_one_line": "（V1 裁决范式）：Bode-Fano π/(2RC)系搜索摘要编造，Fano 1948 原文逐字=π/(RC)+独立推导+数值最优匹配反证（已验证无损设计击穿 2RC 界）四路交叉才定案",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 42,
+    "line_start": 38
+   },
+   "text": "10. AI 搜索摘要编造文献常数且互相矛盾（V1 裁决范式）：Bode-Fano π/(2RC)系搜索摘要编造，Fano 1948 原文逐字=π/(RC)+独立推导+数值最优匹配反证（已验证无损设计击穿 2RC 界）四路交叉才定案——文献裁决必须原文 PDF逐字，禁信任何二手转述；审查席自己也可能误报，裁决席四路交叉+主代理亲验是 P0 指控的标准处置。",
+   "title": "AI 搜索摘要编造文献常数且互相矛盾"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#GE8E-11",
+   "lesson_one_line": "（W5 教训）：超表面五键 import 期注入，静态 grep registry.py 查不到≠未注册",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 48,
+    "line_start": 43
+   },
+   "text": "11. 注册面\"静态可见性\"≠注册事实（W5 教训）：超表面五键 import 期注入，静态 grep registry.py 查不到≠未注册——接地必须活体 facade（len(TEMPLATE_META)/分派实测）。同型：宏图\"TA-1..6 缺注册\"实为全落地、\"PR-6/8 未做\"实为 ge8b 已落、\"KD-3 未做\"实为 dataset_quality_service 即落地体——#222 登记快照过时在宏图/池子/审查报告三侧同型，圈定前必活体实测，已落地项零改动交付同样合格。",
+   "title": "注册面\"静态可见性\"≠注册事实"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#GE8E-12",
+   "lesson_one_line": "（W7 反向纠错）：零消费清单里 allan_variance/ baw_ladder 实有功能 import（grep 漏 `from rfauto.core.<m> import` 形态）",
+   "numbers": [
+    330
+   ],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 51,
+    "line_start": 49
+   },
+   "text": "12. 审查报告自身名单也会过时（W7 反向纠错）：零消费清单里 allan_variance/ baw_ladder 实有功能 import（grep 漏 `from rfauto.core.<m> import` 形态）——#330 假孤儿判定必须双口径 grep+反向验证。",
+   "title": "审查报告自身名单也会过时"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#GE8E-13",
+   "lesson_one_line": "public_api 金快照在多席合流后必须幂等再生成一次（F8 预告→终门 6 红中 1 实红即此）",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 54,
+    "line_start": 52
+   },
+   "text": "13. 派生资产再生时效：public_api 金快照在多席合流后必须幂等再生成一次（F8 预告→终门 6 红中 1 实红即此）——快照类交付（gold/注册表/画廊）在每波合流后统一再生成一遍再终门。",
+   "title": "派生资产再生时效"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#GE8E-14",
+   "lesson_one_line": "（X3 mcp_tools 四件实现漏 add，注册/测试已入库=不一致窗口）：按席报告 manifest 逐文件对账暂存，或`git status --porcelain` 双段（M+??）都过一遍；提交后`git diff --stat HEAD~1` 复核文件数。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 58,
+    "line_start": 55
+   },
+   "text": "14. git add 手抄清单漏 \"??\" 新文件段（X3 mcp_tools 四件实现漏 add，注册/测试已入库=不一致窗口）：按席报告 manifest 逐文件对账暂存，或`git status --porcelain` 双段（M+??）都过一遍；提交后`git diff --stat HEAD~1` 复核文件数。",
+   "title": "git add 手抄清单漏 \"??\" 新文件段"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#GE8E-15",
+   "lesson_one_line": "公开仓 resources=3、内部仓=4（各自实现数不同），盲同步制造漂移",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 60,
+    "line_start": 59
+   },
+   "text": "15. 双仓数字同步前必须独立核对各自代码面：公开仓 resources=3、内部仓=4（各自实现数不同），盲同步制造漂移——F1 反证案例转正纪律。",
+   "title": "双仓数字同步前必须独立核对各自代码面"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#GE8E-16",
+   "lesson_one_line": "docs_site/gallery 保鲜测试对比\"committed vs再生\"，终门跑在文档重建前必红 1",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 62,
+    "line_start": 61
+   },
+   "text": "16. 收尾门自引用红是正常形态：docs_site/gallery 保鲜测试对比\"committed vs再生\"，终门跑在文档重建前必红 1——重建后隔离绿+下轮门即净，勿当回归。",
+   "title": "收尾门自引用红是正常形态"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#GE8E-17",
+   "lesson_one_line": "`sleep 120` 会撞 bash 2min cap；轮询循环`for+sleep 30+grep 标记`+timeout 600000 参数；管道 tail 会吃退出码（#df4④ 三犯）",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 65,
+    "line_start": 63
+   },
+   "text": "17. 长跑轮询防呆：`sleep 120` 会撞 bash 2min cap；轮询循环`for+sleep 30+grep 标记`+timeout 600000 参数；管道 tail 会吃退出码（#df4④ 三犯）——直取 `$?` 或落文件再读。",
+   "title": "长跑轮询防呆"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#GE8E-18",
+   "lesson_one_line": "——sanity 钉 12 条落测试。",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 70,
+    "line_start": 69
+   },
+   "text": "18. Q 敏感性符号/量级与文献直觉冲突时停下核实公式（X7 实证：atten_pi手推漏 (A/20)·ln10 因子，FD 值 1.4068 正确）——sanity 钉 12 条落测试。",
+   "title": "Q 敏感性符号/量级与文献直觉冲突时停下核实公式"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#GE8E-19",
+   "lesson_one_line": "串联拓扑/Hz 口径差 2",
+   "numbers": [],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 73,
+    "line_start": 71
+   },
+   "text": "19. Bode-Fano 并联 RC=π/(RC)（rad/s 全带宽口径）：串联拓扑/Hz 口径差 2——bounds.py/budget.py docstring 已附防再犯注记+出处（Fano 1948 TR-41§1 Eqs.(3)(4)）。",
+   "title": "Bode-Fano 并联 RC=π/(RC)（rad/s 全带宽口径）"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": null,
+   "id": "#GE8E-20",
+   "lesson_one_line": "固定 NrTS 预算未随座位 dt/f0 缩放=全座触顶（能量门+无源性截断假象 #262 族座位级表现）",
+   "numbers": [
+    262,
+    344
+   ],
+   "source": {
+    "file": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "line_end": 77,
+    "line_start": 74
+   },
+   "text": "20. L5 教训（真机窗纪律）：固定 NrTS 预算未随座位 dt/f0 缩放=全座触顶（能量门+无源性截断假象 #262 族座位级表现）——v2 判据=座位级预算公式+GOLD/FORMAL 双档+G3' 截断守卫（criteria_v2_draft.md）；回升座纯衰减外推无效（K-7 #344 同型）。",
+   "title": "L5 教训（真机窗纪律）"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#RX-1",
+   "lesson_one_line": "（本会话）：任务书登记行、宏图 ○ 项、审查席报告、SC 聚类表、deepdive 规格、甚至主代理自己的引用（引 W8 时点\"敏感性 0/71\"被 X7 波超越）",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 13,
+    "line_start": 8
+   },
+   "text": "1. #222\"登记快照过时\"是系统性现象，五波共实证 ~25 例（本会话）：任务书登记行、宏图 ○ 项、审查席报告、SC 聚类表、deepdive 规格、甚至主代理自己的引用（引 W8 时点\"敏感性 0/71\"被 X7 波超越）——任何登记面都只是线索。深挖到底的形态：SC 聚类表对 ge8 四波（179 笔 commit）系统性失明→主序 123 行实净 55-63 件当量；deepdive 32 件 78% 已闭合；R14-R19 六轮 194/211 已闭合。",
+   "title": "#222\"登记快照过时\"是系统性现象，五波共实证 ~25 例"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#RX-2",
+   "lesson_one_line": "。但头号误判源=跨轮 ID 撞号（SB22 轮复用 MS/MP/PK 前缀语义全新，14 行 9 行 tag 命中全假阳）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 20,
+    "line_start": 14
+   },
+   "text": "2. 池 ID 与 commit tag 同源是 rfauto 特有优势——Z-11 巡检首要判据=commit message 任务 ID 扫描（SD/SG 实证：过半闭合首证来自 commit tag，比代码 grep 更快更准）。但头号误判源=跨轮 ID 撞号（SB22 轮复用 MS/MP/PK 前缀语义全新，14 行 9 行 tag 命中全假阳）——必须\"ID→登记轮→语义关键词\"二次消歧+排除纯 docs commit（登记笔本身提及池 ID 会自触发）+tag 扫描与代码 grep 双判据缺一不可（9% 闭合仅代码面取证、5% tag 命中为假阳）。",
+   "title": "池 ID 与 commit tag 同源是 rfauto 特有优势——Z-11 巡检首要判据=commit message 任务 ID 扫描"
+  },
+  {
+   "category": "workflow",
+   "devlog_ref": null,
+   "id": "#RX-3",
+   "lesson_one_line": "任务书\"已登记未做\"6 条中 4 条已闭合；给子代理的任务书第一节强制\"语境钉死\"（活体grep 现状再动手）",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 24,
+    "line_start": 21
+   },
+   "text": "3. #222 在调研任务书侧同样致命（round20 实证）：任务书\"已登记未做\"6 条中 4 条已闭合；给子代理的任务书第一节强制\"语境钉死\"（活体grep 现状再动手）——本会话 S1/S2/S3 席各自抓到任务书行号漂移/指错文件并如实勘误，是任务书钉死的正面回报。",
+   "title": "#222 在调研任务书侧同样致命"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-4",
+   "lesson_one_line": "五波 ~20 席，主代理对关键论断独立复核12+ 项全部成立（含一次主代理自我勘误被 G1 拦截",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 27,
+    "line_start": 25
+   },
+   "text": "4. 调研席交叉复核制度有效：五波 ~20 席，主代理对关键论断独立复核12+ 项全部成立（含一次主代理自我勘误被 G1 拦截——引用 W8 时点数据未察觉 WX 波推进）。主代理引用席报告数字前先一手复核关键项。",
+   "title": "调研席交叉复核制度有效"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-5",
+   "lesson_one_line": "防重复立项靠的是把\"不做什么\"写清楚。",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 29,
+    "line_start": 28
+   },
+   "text": "5. \"已有/超配\"反证清单与提案同价值（R2 席 11 项/trust_region=Dakota SMF 等）：防重复立项靠的是把\"不做什么\"写清楚。",
+   "title": "\"已有/超配\"反证清单与提案同价值"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#RX-6",
+   "lesson_one_line": "被误读为实现授权，落地 13 笔后才被用户纠偏（\"依旧不实现，等我指令\"）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 36,
+    "line_start": 33
+   },
+   "text": "6. \"增强补充为主\"语义歧义事故：被误读为实现授权，落地 13 笔后才被用户纠偏（\"依旧不实现，等我指令\"）——阶段语义（调研 vs 实现）必须在每个批次开场显式确认，交接书横幅要覆盖旧文旧语义（rx2_close交接书事后补横幅的教训：横幅应随立规即时落，不能只落在 ）。",
+   "title": "\"增强补充为主\"语义歧义事故"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#RX-7",
+   "lesson_one_line": "python 源码经 heredoc replace 后 grep -c \"关键词\"=0（替换串与原文存在不可见差异）",
+   "numbers": [
+    108
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 40,
+    "line_start": 37
+   },
+   "text": "7. heredoc/管道写入无校验=静默未中（#108 家族新形态）：python 源码经 heredoc replace 后 grep -c \"关键词\"=0（替换串与原文存在不可见差异）——Edit 工具+立即 grep 验证是唯一可靠组合；heredoc 只用于追加（append）类操作，替换类一律 Edit。",
+   "title": "heredoc/管道写入无校验=静默未中"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-8",
+   "lesson_one_line": "`[^\\)…]` 里的全角右括号写成 `\\]` 使类提前闭合、URL 吞入中文尾注",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 43,
+    "line_start": 41
+   },
+   "text": "8. regex 字符类内全角字符会被写入链路静默转义：`[^\\)…]` 里的全角右括号写成 `\\]` 使类提前闭合、URL 吞入中文尾注——字符类一律re.escape 动态构造（check_citations.py 注记在案）。",
+   "title": "regex 字符类内全角字符会被写入链路静默转义"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#RX-9",
+   "lesson_one_line": "五钉清单（EXPECTED/physics_ invariants/model_docs/experimental/check_numbers）之外仍有 S-plane归类封闭断言等计划外消费者",
+   "numbers": [
+    231
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 47,
+    "line_start": 44
+   },
+   "text": "9. 注册键计数链的\"第六消费者\"现象：五钉清单（EXPECTED/physics_ invariants/model_docs/experimental/check_numbers）之外仍有 S-plane归类封闭断言等计划外消费者——新键落地后全量门必抓，钉清单是下限不是上限（#231 精神再证）。",
+   "title": "注册键计数链的\"第六消费者\"现象"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#RX-10",
+   "lesson_one_line": "public_api 金快照在多席合流后必须幂等再生一次（ge8e 教训复现）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 50,
+    "line_start": 48
+   },
+   "text": "10. 派生资产再生时点：public_api 金快照在多席合流后必须幂等再生一次（ge8e 教训复现）——金快照/画廊/docs_site 类\"committed vs 再生\"比对测试，合流后统一再生再终门。",
+   "title": "派生资产再生时点"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#RX-11",
+   "lesson_one_line": "实红（public_api陈旧→再生即愈）与环境类（rag 跨进程哈希，隔离复绿 #8 口径）分开定性，各按其法；门慢（44min vs 30min 基线）与并发批在制相关",
+   "numbers": [
+    8
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 54,
+    "line_start": 51
+   },
+   "text": "11. 全量门两红的分类处置纪律（rx2 门 19782/2）：实红（public_api陈旧→再生即愈）与环境类（rag 跨进程哈希，隔离复绿 #8 口径）分开定性，各按其法；门慢（44min vs 30min 基线）与并发批在制相关——终门须净树跑。",
+   "title": "全量门两红的分类处置纪律"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-12",
+   "lesson_one_line": "（本会话定型）：主序净表（新鲜度巡检）+规格包（到开工深度：判据含门值/file:line/五钉/计数链）+聚类容量标定（实测吞吐：单日 S 件 64-80）+影响力/内容稿",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 61,
+    "line_start": 58
+   },
+   "text": "12. 调研阶段产出四层面结构（本会话定型）：主序净表（新鲜度巡检）+规格包（到开工深度：判据含门值/file:line/五钉/计数链）+聚类容量标定（实测吞吐：单日 S 件 64-80）+影响力/内容稿——授权即用的完整度=四层面齐备。",
+   "title": "调研阶段产出四层面结构"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-13",
+   "lesson_one_line": "（RA/SA/SE/SH/SK 五包 3600+ 行定型）：\"目标/判据预声明含门值/文件面 file:line/依赖前置/风险与分流/工作量/计数链五钉/验收门\"八字段；规格里给\"裁决材料不给结论\"（cpw 二义两候选证据并列）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 65,
+    "line_start": 62
+   },
+   "text": "13. 规格包口径（RA/SA/SE/SH/SK 五包 3600+ 行定型）：\"目标/判据预声明含门值/文件面 file:line/依赖前置/风险与分流/工作量/计数链五钉/验收门\"八字段；规格里给\"裁决材料不给结论\"（cpw 二义两候选证据并列）——裁决权留用户。",
+   "title": "规格包口径"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#RX-14",
+   "lesson_one_line": "（SN）：typer/FastMCP 注册面python 内省+名字规范化+同义人工校正→CLI-only 80/MCP-only 29/UI独有 12 族",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 68,
+    "line_start": 66
+   },
+   "text": "14. 三壳对等差集是平台审查的快刀（SN）：typer/FastMCP 注册面python 内省+名字规范化+同义人工校正→CLI-only 80/MCP-only 29/UI独有 12 族——一个下午量级的扫描照亮全部可达性欠账。",
+   "title": "三壳对等差集是平台审查的快刀"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-15",
+   "lesson_one_line": "（SO 五任务）与静态审查互补：72/200 模块无运行时入口的发现只能从\"用户任务逐步骤走\"视角得出",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 71,
+    "line_start": 69
+   },
+   "text": "15. 端到端角色扮演走查（SO 五任务）与静态审查互补：72/200 模块无运行时入口的发现只能从\"用户任务逐步骤走\"视角得出——静态差集（SN）+动态走查（SO）双法并用。",
+   "title": "端到端角色扮演走查"
+  },
+  {
+   "category": "numerics",
+   "devlog_ref": null,
+   "id": "#RX-16",
+   "lesson_one_line": "（SO）：孤儿接线批 15 件零新数值面一次消 52% 断点",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 74,
+    "line_start": 72
+   },
+   "text": "16. \"接上用户\"是加强的最大来源（SO）：孤儿接线批 15 件零新数值面一次消 52% 断点——\"内核先行、接线后置\"节奏的结构性欠账要靠周期性 wiring sweep 清偿。",
+   "title": "\"接上用户\"是加强的最大来源"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#RX-17",
+   "lesson_one_line": "（六波零楔死）：.cmd CRLF+Start-Process WindowStyle Normal+GATE_RC 标记+后台轮询",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 77,
+    "line_start": 75
+   },
+   "text": "17. 长跑门可见窗直指形态全程有效（六波零楔死）：.cmd CRLF+Start-Process WindowStyle Normal+GATE_RC 标记+后台轮询——静默窗口禁令执行范式已成熟，沿例 runs/gate_rx_batch2.cmd。",
+   "title": "长跑门可见窗直指形态全程有效"
+  },
+  {
+   "category": "python",
+   "devlog_ref": null,
+   "id": "#RX-18",
+   "lesson_one_line": "`open(..., \"w\", newline=\"\\r\\n\")`会在尾行后再补 CRLF（\\r\\r\\n）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 80,
+    "line_start": 78
+   },
+   "text": "18. python 写文件的 newline 坑：`open(..., \"w\", newline=\"\\r\\n\")`会在尾行后再补 CRLF（\\r\\r\\n）——CRLF 文件用 newline=\"\\r\\n\" 写时内容 join 用 \"\\n\"（让写入层统一转换），写完 od -c 抽查尾部。",
+   "title": "python 写文件的 newline 坑"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#RX-19",
+   "lesson_one_line": "席位报告/探针/门日志全留本地可追溯但不可恢复",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 84,
+    "line_start": 81
+   },
+   "text": "19. runs/ 为 gitignored 的双刃：席位报告/探针/门日志全留本地可追溯但不可恢复——交接书引用 runs/ 路径时要意识到新机器/新 clone 不可见；跨会话要保留的结论必须进 docs/（本会话 round20-25 报告均按此双层落盘：docs 面交付版+runs 全账）。",
+   "title": "runs/ 为 gitignored 的双刃"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#RX-20",
+   "lesson_one_line": "（rx2 实战零事故验证）：任务书逐文件点名+主代理提交前 git diff 共享文件逐 hunk 归属核对（test_ calculators.py 被 S2/S6 两席先后改",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 89,
+    "line_start": 85
+   },
+   "text": "20. 多席并发写共享文件的守卫（rx2 实战零事故验证）：任务书逐文件点名+主代理提交前 git diff 共享文件逐 hunk 归属核对（test_ calculators.py 被 S2/S6 两席先后改——hunk 全带 XD-11/席位标记归属清晰）+先完成先合流。hunk 标记写入任务书模板（改动处注释带席位/批号）是零冲突的关键。",
+   "title": "多席并发写共享文件的守卫"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#RX-21",
+   "lesson_one_line": "环境类 72%（单进程长跑内存累积WinError 8，分段独立进程根治）+漂移类（preflight 前移席位自愈）+真红。勿反复重跑烧时间",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 97,
+    "line_start": 94
+   },
+   "text": "21. 门口径 v2 三分法（25 个门失败定性）：环境类 72%（单进程长跑内存累积WinError 8，分段独立进程根治）+漂移类（preflight 前移席位自愈）+真红。勿反复重跑烧时间——直接 v2。v2 驱动 stdout 勿落 \\*gate\\*full\\*.log撞名（\"4435 failed\" 被当门源污染数字链——v2 脚本注记在案）。",
+   "title": "门口径 v2 三分法"
+  },
+  {
+   "category": "encoding",
+   "devlog_ref": null,
+   "id": "#RX-22",
+   "lesson_one_line": "项目规约.md 插文后 pitfalls_index 行窗位移，内容模糊检索（lesson 前 24 字符）把 #122 错锚到 #108 邻域",
+   "numbers": [
+    122,
+    108
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 100,
+    "line_start": 98
+   },
+   "text": "22. 行窗重锚必须按唯一 needle：项目规约.md 插文后 pitfalls_index 行窗位移，内容模糊检索（lesson 前 24 字符）把 #122 错锚到 #108 邻域——唯一 needle（如 \"-Encoding UTF8\"）逐条检索才可靠；插文后必跑 pitfall 测试。",
+   "title": "行窗重锚必须按唯一 needle"
+  },
+  {
+   "category": "docs",
+   "devlog_ref": null,
+   "id": "#RX-23",
+   "lesson_one_line": "v2 聚合日志的段行曾用 \"N passed\" 字样，build_docs_pages 数字源解析串味（4436 vs 21172）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 104,
+    "line_start": 101
+   },
+   "text": "23. 聚合日志格式即下游契约：v2 聚合日志的段行曾用 \"N passed\" 字样，build_docs_pages 数字源解析串味（4436 vs 21172）——段行改 passed=N 形态，唯一 \"N passed, M failed\" 留给 TOTAL 行（check_numbers [-1] 与build_docs_pages 首匹配两口径同时兼容）。",
+   "title": "聚合日志格式即下游契约"
+  },
+  {
+   "category": "process",
+   "devlog_ref": null,
+   "id": "#RX-24",
+   "lesson_one_line": "修审查问题时手写 `{\"ok\": False, \"error\":...}`兜底两次触信封契约门（裸 return+单数 error 双红）",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 107,
+    "line_start": 105
+   },
+   "text": "24. 修复类改动同样过契约门：修审查问题时手写 `{\"ok\": False, \"error\":...}`兜底两次触信封契约门（裸 return+单数 error 双红）——任何新信封走ok_envelope/error_envelope 构造器，无例外。",
+   "title": "修复类改动同样过契约门"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#RX-25",
+   "lesson_one_line": "W5-E paired_stats 的 sd=0 非零差assertable 断言（MDE 门旁路）+原恒真断言族",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 110,
+    "line_start": 108
+   },
+   "text": "25. 席位测试会把 bug 行为固化成钉：W5-E paired_stats 的 sd=0 非零差assertable 断言（MDE 门旁路）+原恒真断言族——审查席\"测试质量抽查\"必查；修 bug 时同步重写其固化钉。",
+   "title": "席位测试会把 bug 行为固化成钉"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#RX-26",
+   "lesson_one_line": "装新 pytest 插件/新 extras/新`__all__` 模块后的 collect/金快照漂移",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 113,
+    "line_start": 111
+   },
+   "text": "26. PC 席位测试需跑 merge_preflight：装新 pytest 插件/新 extras/新`__all__` 模块后的 collect/金快照漂移——席位返回前必跑（v2③ 纪律），装新插件后 rich 版本必查（pypssfss 曾降 rich 14 打红 import-linter）。",
+   "title": "PC 席位测试需跑 merge_preflight"
+  },
+  {
+   "category": "hfss",
+   "devlog_ref": null,
+   "id": "#RX-27",
+   "lesson_one_line": "PyAEDT settings.num_cores 只喂LSF 启动命令，直连求解唯一生效入口=analyze_setup(cores=)",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 116,
+    "line_start": 114
+   },
+   "text": "27. spec 技术断言也须实测（#222 家族）：PyAEDT settings.num_cores 只喂LSF 启动命令，直连求解唯一生效入口=analyze_setup(cores=)——HPC 旋钮生效面以引擎日志为准；pypssfss PyPI 实测只有 0.1.0（规格 >=0.3 勘误）。",
+   "title": "spec 技术断言也须实测"
+  },
+  {
+   "category": "shell",
+   "devlog_ref": null,
+   "id": "#RX-28",
+   "lesson_one_line": "W2-E 报 vcpkg \"114/157 在编\"实为 fmt FATAL 已停",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 118,
+    "line_start": 117
+   },
+   "text": "28. \"在飞\"声明要与日志尾部核对：W2-E 报 vcpkg \"114/157 在编\"实为 fmt FATAL 已停——在飞状态以进程表+日志尾部为准，勿信转述。",
+   "title": "\"在飞\"声明要与日志尾部核对"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#RX-29",
+   "lesson_one_line": "subprocess.run→Popen 改造时 FileNotFoundError/超时树杀/异常路径三面逐一保真（W2-A dag P1 实证：漏 FileNotFoundError分支+未树杀孙进程）；测试的 kill 时机等\"副作用落盘\"（marker）而非状态字段轮询（竞速 600s 长睡拖门 2 倍 wa…",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 122,
+    "line_start": 119
+   },
+   "text": "29. Popen 重写守恒检查：subprocess.run→Popen 改造时 FileNotFoundError/超时树杀/异常路径三面逐一保真（W2-A dag P1 实证：漏 FileNotFoundError分支+未树杀孙进程）；测试的 kill 时机等\"副作用落盘\"（marker）而非状态字段轮询（竞速 600s 长睡拖门 2 倍 wall）。",
+   "title": "Popen 重写守恒检查"
+  },
+  {
+   "category": "git",
+   "devlog_ref": null,
+   "id": "#RX-30",
+   "lesson_one_line": "G1 表 55 件预期开放→实开放 10（W3）+F 域 14 件7 件已闭合（W5）",
+   "numbers": [
+    222
+   ],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 124,
+    "line_start": 123
+   },
+   "text": "30. 登记快照过时终账：G1 表 55 件预期开放→实开放 10（W3）+F 域 14 件7 件已闭合（W5）——#222 双判据（git log -S+代码 grep）仍是开工第一动作。",
+   "title": "登记快照过时终账"
+  },
+  {
+   "category": "openems",
+   "devlog_ref": null,
+   "id": "#RX-31",
+   "lesson_one_line": "用户级 env `OPENEMS_INSTALL_PATH`/`RFAUTO_OPENEMS_BIN`指向工作区 vendor\\openEMS\\install（9-01 旧代际 rc1，带完整 vtk 依赖树），CSXCAD 包 `__init__` 优先 `add_dll_directory` 注册它；新构建E:\\…",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 140,
+    "line_start": 128
+   },
+   "text": "31. DLL 双 install 遮蔽=簇5 真根因（\"引擎与绑定同 commit 重建\"处方的实质缺口）：用户级 env `OPENEMS_INSTALL_PATH`/`RFAUTO_OPENEMS_BIN`指向工作区 vendor\\openEMS\\install（9-01 旧代际 rc1，带完整 vtk 依赖树），CSXCAD 包 `__init__` 优先 `add_dll_directory` 注册它；新构建E:\\openEMS\\install（10-06 rc3）因缺 vtk 依赖树加载失败静默回退vendor→python 侧 XML 写出全走旧 C++（DumpBox DumpType/FileType/DumpMode塌缩）。诊断三板斧：①绑定写 XML 属性原文（etree iter DumpBox）②C++ 独立小程序链 install 库当地面真相 ③psapi.EnumProcessModulesEx枚举进程实际加载的 DLL 路径（注意 GetCurrentProcess 伪句柄必须restype=c_void_p，否则 error 6 枚举空=误判\"静态链接\"）。修复=补 vtk依赖树（vcpkg_installed bin→install/bin）+翻两 env 键（已落）+微诊断三站复验；教训=\"重建引擎\"不解与运行时 env/依赖树有关的加载错配，引擎横幅版本串+进程模块枚举是加载面的免费铁证。",
+   "title": "DLL 双 install 遮蔽=簇5 真根因（\"引擎与绑定同 commit 重建\"处方的实质缺口）"
+  },
+  {
+   "category": "testing",
+   "devlog_ref": null,
+   "id": "#RX-32",
+   "lesson_one_line": "交接书\"在飞未出结果\"落笔时刻的快照会过时",
+   "numbers": [],
+   "source": {
+    "file": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "line_end": 143,
+    "line_start": 141
+   },
+   "text": "32. CI 结论查证勿信转述快照：交接书\"在飞未出结果\"落笔时刻的快照会过时——gh 不可用时 curl api.github.com check-runs+runs 端点双查（conclusion+job 级），updated_at 与当前 UTC 对表判断真在飞还是挂死。",
+   "title": "CI 结论查证勿信转述快照"
+  }
+ ],
+ "generated_by": "架构批 KB-B/KB-B2 席（scripts/pitfall_index.py）",
+ "generated_date": "2026-10-14",
+ "n_entries": 225,
+ "n_parse_failures": 0,
+ "parse_failures": [],
+ "scattered_docs": {
+  "description": "runs/ SESSION_PITFALLS 会话坑账手稿（gitignored 工作区资产；显式登记非目录扫描=确定性；条目 text 内嵌全文故产物自包含，missing 只影响 source 指针可达性）",
+  "docs": [
+   {
+    "missing": false,
+    "n_entries": 16,
+    "n_failures": 0,
+    "path": "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+    "title": "本会话踩坑经验集中固化（2026-10-03，交接前置·附录源稿）"
+   },
+   {
+    "missing": false,
+    "n_entries": 20,
+    "n_failures": 0,
+    "path": "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+    "title": "ge8e 全项目审查+精进批踩坑经验集中固化（2026-10-04，交接前置·~八百六十九源稿）"
+   },
+   {
+    "missing": false,
+    "n_entries": 32,
+    "n_failures": 0,
+    "path": "runs/rx_followup/SESSION_PITFALLS_RX.md",
+    "title": "rx 调研/补强批次踩坑经验集中固化（2026-10-04，六波全账·~八百七十九源稿）"
+   }
+  ],
+  "id_scheme": "#<TOKEN>-<文档序号>（TOKEN=文件名词干去 SESSION_PITFALLS_ 前缀；序号=档内物理顺序，与 项目规约.md 全局坑号空间隔离）",
+  "n_agents_entries": 157,
+  "n_docs": 3,
+  "n_entries": 68,
+  "n_missing": 0,
+  "registry": [
+   "runs/ge8_followup/SESSION_PITFALLS_FINAL.md",
+   "runs/ge8_followup/SESSION_PITFALLS_GE8E.md",
+   "runs/rx_followup/SESSION_PITFALLS_RX.md"
+  ]
+ },
+ "schema_version": "rfauto-pitfalls-index-v1",
+ "skipped_lines": {
+  "blank": 2,
+  "blockquote": 4,
+  "orphan": [],
+  "rule": 0
+ },
+ "source": {
+  "consumption_yaml": "knowledge\\pitfall_consumption.yaml",
+  "file": "项目规约.md",
+  "line_end": 1439,
+  "line_start": 183,
+  "section": "## 踩坑速查"
+ }
+}

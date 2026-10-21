@@ -1,6 +1,6 @@
 """EC-18 TuRBO-1 式信任域贝叶斯优化（trust_region 旁的 batch-GP 路径）。
 
-池 P3 圈定件（aurora_e W5-S22；ecosystem §二 EC-18）。法源：
+池 P3 圈定件（架构批 W5-S22；ecosystem §二 EC-18）。法源：
 - TuRBO（D. Eriksson, M. Pearce, J. Gardner, R. Turner, M. Poloczek,
   "Scalable Global Optimization via Local Bayesian Optimization",
   NeurIPS 2019）：TuRBO-1 = 单信任域循环——域内局部 GP + Thompson
@@ -8,6 +8,18 @@
   后以 incumbent 为中心重开；
   成功/失败计数伸缩信任域边长（×2 / ×0.5），域塌缩后以 incumbent 为
   中心重开；
+- **官方计数器对称性核对结论（架构批 W2-S8，W6-P3-1 清偿；review_w6
+  曾凭记忆记"官方非对称=成功不清零"系误记，按 #122 以官方源为准）**：
+  官方仓 uber-research/TuRBO（NeurIPS 2019 配套代码，master 分支
+  turbo/turbo_1.py ``_adjust_length``，2026-10-18 原文取回逐行核对）——
+  成功分支 ``succcount += 1; failcount = 0``、失败分支
+  ``succcount = 0; failcount += 1``：**双方互清零=官方即对称口径**，
+  与本实现一致；触发判据官方 ``==`` 容差且触发即清零 vs 本实现 ``>=``
+  且触发即清零（计数每步至多达容差，两写法等价）；官方成功判据含小幅
+  松弛 ``f < fmin − 1e-3·|fmin|``（噪声免费设定下的数值防抖）vs 本实现
+  严格 ``cost < best``（无松弛，如实声明差异）；failtol 官方
+  ``ceil(max(4/batch, d/batch))``、batch=1 时=max(4, d) 与本实现缺省
+  一致；succtol=3、length_min=0.5**7、扩边 ×2 封顶、缩边 ÷2 全一致；
 - 与既有 optimization/trust_region.py 的关系：那件是 TR-ARS+ Bandler
   输出空间映射（代理校正语义，surrogate_registry 全局模型 + TPE 虚拟
   寻优）；本模块是 TuRBO-1 原义（局部 GP + Thompson 采样，无输出映射

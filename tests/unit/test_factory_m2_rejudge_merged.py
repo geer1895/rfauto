@@ -145,6 +145,7 @@ def test_split_150_rederivation():
     assert np.array_equal(ho, order[rj.SEED % 5::5])
 
 
+@pytest.mark.slow  # 终门 DURATIONS >60s 慢件（61s，双链 LOO 合成小样本）
 def test_sampled_loo_both_chains_synthetic_small():
     # 小样本快路径接线：两链同折索引、训练集保持 n−1 全量、结构完整
     rows = m2.synthetic_line_rows(12, SMALL_FREQS)

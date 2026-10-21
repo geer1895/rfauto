@@ -77,12 +77,21 @@ nav:
           - 扩展 rfauto: tutorials/extending-rfauto.md
       - English Tutorials:
           - Getting Started: tutorials/getting-started_en.md
+          - First Optimization Loop: tutorials/first_optimization_loop_en.md
           - Real Simulation: tutorials/real-simulation_en.md
           - Campaign Walkthrough: tutorials/campaign-walkthrough_en.md
           - DAG Campaign Orchestration: tutorials/dag_orchestration_en.md
           - Data Factory: tutorials/data_factory_en.md
           - Anchor Guide: tutorials/anchor-guide_en.md
           - Verdict Semantics: tutorials/verdict_semantics_en.md
+          - Datasets and Health Gates: tutorials/datasets_and_health_gates_en.md
+          - MCP in Practice: tutorials/mcp_in_practice_en.md
+          - Measurement Alignment: tutorials/measurement-alignment_en.md
+          - Remote Server Collaboration: tutorials/remote_server_en.md
+          - Extending rfauto: tutorials/extending-rfauto_en.md
+          - RECAST Walkthrough: tutorials/recast-walkthrough_en.md
+          - UQ and Surrogates: tutorials/uncertainty_and_surrogates_en.md
+          - UI Workbench Tour: tutorials/ui_workbench_tour_en.md
   - 参考:
       - 能力目录: reference/capabilities.md
       - CLI 命令参考: reference/cli.md
@@ -113,11 +122,68 @@ nav:
       - bethe_hole_coupler: kernel_cards/bethe_hole_coupler.md
       - gysel_core: kernel_cards/gysel_core.md
       - coupled_line_bpf: kernel_cards/coupled_line_bpf.md
+      - lange: kernel_cards/lange.md
+      - stepped_impedance: kernel_cards/stepped_impedance.md
+      - ring_resonator: kernel_cards/ring_resonator.md
+      - mixer_conversion: kernel_cards/mixer_conversion.md
+      - ruthroff_balun: kernel_cards/ruthroff_balun.md
+      - gd_equalizer: kernel_cards/gd_equalizer.md
+      - measurement_drift: kernel_cards/measurement_drift.md
+      - agc_loop: kernel_cards/agc_loop.md
+      - cal_kit_verify: kernel_cards/cal_kit_verify.md
+      - six_port: kernel_cards/six_port.md
+      - iss_on_wafer: kernel_cards/iss_on_wafer.md
+      - source_power_cal: kernel_cards/source_power_cal.md
+      - combline: kernel_cards/combline.md
+      - cps: kernel_cards/cps.md
+      - interdigital: kernel_cards/interdigital.md
+      - siw: kernel_cards/siw.md
+      - slot: kernel_cards/slot.md
+      - stripline: kernel_cards/stripline.md
+      - suspended_stripline: kernel_cards/suspended_stripline.md
+      - dipole: kernel_cards/dipole.md
+      - helix: kernel_cards/helix.md
+      - link_limits: kernel_cards/link_limits.md
+      - fec_codes: kernel_cards/fec_codes.md
+      - directional_bridge: kernel_cards/directional_bridge.md
+      - rf_switch: kernel_cards/rf_switch.md
+      - kuroda_identities: kernel_cards/kuroda_identities.md
+      - pll_lock_time: kernel_cards/pll_lock_time.md
+      - multisection_coupler: kernel_cards/multisection_coupler.md
+      - itu_link: kernel_cards/itu_link.md
+      - link: kernel_cards/link.md
+      - dgs: kernel_cards/dgs.md
+      - if_digitizer: kernel_cards/if_digitizer.md
+      - wg_dielectric_window: kernel_cards/wg_dielectric_window.md
+      - waveguide_closed_form: kernel_cards/waveguide_closed_form.md
+      - waveguide_iris: kernel_cards/waveguide_iris.md
+      - hybrid_junction: kernel_cards/hybrid_junction.md
+      - radar_eq: kernel_cards/radar_eq.md
+      - modulation_ber: kernel_cards/modulation_ber.md
+      - coax_line: kernel_cards/coax_line.md
+      - analog_modulation: kernel_cards/analog_modulation.md
+      - si_ctle: kernel_cards/si_ctle.md
+      - propagation: kernel_cards/propagation.md
+      - hf_skywave: kernel_cards/hf_skywave.md
+      - fmcw_radar: kernel_cards/fmcw_radar.md
+      - sar_geometry: kernel_cards/sar_geometry.md
+      - gnss_geometry: kernel_cards/gnss_geometry.md
+      - radar_clutter: kernel_cards/radar_clutter.md
+      - microstrip_disc: kernel_cards/microstrip_disc.md
+      - open_wire_line: kernel_cards/open_wire_line.md
+      - wg_cavity_bpf: kernel_cards/wg_cavity_bpf.md
   - 模板库: catalog/index.md
   - 架构与方法论:
       - 分层架构: explanation/layered-architecture.md
       - 数值只在确定性内核: explanation/deterministic-kernel.md
       - 锚与判据体系: explanation/anchor-and-verdict.md
+      - recipe/study/run/seed 生命周期与缓存: explanation/recipe-study-run-lifecycle.md
+      - tool-result 生命周期与对账摘要: explanation/tool-result-lifecycle.md
+      - lazy import 形态与标注约定: explanation/lazy-import-conventions.md
+      - 架构健康度与分层契约: explanation/architecture-health.md
+      - 多保真引擎阶梯与 HFSS 仲裁: explanation/engine-ladder-and-arbitration.md
+      - 模板参数语义: explanation/template-param-semantics.md
+      - 公式出处注册表体系: explanation/formula-provenance-system.md
       - 信封契约与 API 演进: explanation/envelope-and-api-evolution.md
       - 架构与方法论: architecture/methodology.md
   - How-to:
@@ -128,8 +194,14 @@ nav:
       - 级联预算与杂散: how-to/cascade-budget-and-spur.md
       - 新页面清单: how-to/new-surface-checklist.md
       - 新增 CALC 键五钉: how-to/add-new-calc-key.md
+      - 公式出处声明与再生: how-to/formula-provenance.md
       - golden 几何回归仓: how-to/golden-geometry-regression.md
       - campaign 远程路由: how-to/campaign-remote-routing.md
+      - UI 性能与契约门: how-to/ui-performance-and-contract-gate.md
+      - i18n 键管理: how-to/i18n-keys.md
+      - RegistryKit 注册表脚手架: how-to/registry-kit.md
+      - 数据湖与数据集消费: how-to/lake-data-guide.md
+      - 内核文档卡再生: how-to/kernel-cards.md
   - 画廊: gallery.md
 
 copyright: "MIT License · rfauto contributors"

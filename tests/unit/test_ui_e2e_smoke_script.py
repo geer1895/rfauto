@@ -1,9 +1,9 @@
-"""scripts/ui_e2e_smoke.py 的定向钉子测试（aurora_d UI-R7 席）。
+"""scripts/ui_e2e_smoke.py 的定向钉子测试（架构批 UI-R7 席）。
 
 只钉离线确定性面（#139：单测禁网络）——脚本注册面（argparse 契约）、
 verdict 组装 rc 语义、就绪探针超时/进程早死路径（getter 注入 mock）、
 视图路由程序化枚举、路由模板正则、CDP 事件归桶、杀树命令形态。
-真机起服+浏览器巡检不在单测面（runs/aurora_d/uir7/ 留档口径）。
+真机起服+浏览器巡检不在单测面（内部证据目录 留档口径）。
 """
 
 import importlib.util

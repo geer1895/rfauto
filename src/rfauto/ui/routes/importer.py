@@ -23,7 +23,7 @@ async def api_hfss_import(request: Request) -> JSONResponse:
     from rfauto.service.v3_services import hfss_import_recipe
     body: dict[str, Any] = await _json_body(request)
     project = str(body.get("project") or "")
-    # A8-D（aurora72 抽查实证）：空路径此前直通 adapter——实测会真启动
+    # A8-D（架构批 抽查实证）：空路径此前直通 adapter——实测会真启动
     # AEDT 空工程（~30s+license 席位）并回 ok=True 空规格，误读为导入
     # 成功。路由层快速 400：单数 error 与本端点既有失败面同形（前端
     # pages.js 读 importSpec.error 渲染），不走 error_envelope 的 errors 列表。
@@ -40,7 +40,7 @@ async def api_hfss_import(request: Request) -> JSONResponse:
         hfss_import_recipe,
         project,
         body.get("design") or None,
-        # A6-D（aurora72 R6 F-3，2026-10-12）：缺省版本钉对齐仓库真机口径
+        # A6-D（架构批 R6 F-3，2026-10-12）：缺省版本钉对齐仓库真机口径
         # "2025.1"（AGENTS 规则 0 勘误：AEDT 2025 R1/v251；同口径先例
         # adapters/edb_adapter.py _DEFAULT_AEDT_VERSION 与
         # configs/remote_machines.yaml hfss.version）——旧钉停留"已验证

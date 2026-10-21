@@ -1,4 +1,13 @@
-"""EMC 抗扰度族（aurora36 W6-A 席，R2 空白域 G4——抗扰半边补口）。
+"""EMC 抗扰度族（架构批 W6-A 席，R2 空白域 G4——抗扰半边补口）。
+
+出处（IEC 抗扰度标准事实口径，正文物理口径节转录）：
+- radiated_immunity_power：IEC 61000-4-3 严酷度等级与远场换算
+  （E=√(30PG)/R；二级转引 Ott, Electromagnetic Compatibility
+  Engineering ch.5）。
+- conducted_immunity_cdn：IEC 61000-4-6 CDN 耦合 emf 口径换算
+  （0dBm≡107 dBµV/113 dBµV emf，50Ω 恒等式）。
+- esd_contact_waveform：IEC 61000-4-2 接触放电双指数波形表
+  （150pF/330Ω 发生器校准口径；保守双指数参数化为任务书口径）。
 
 三键：radiated_immunity_power（IEC 61000-4-3 射频辐射抗扰场强/功率
 换算）/ conducted_immunity_cdn（IEC 61000-4-6 射频传导抗扰 CDN 耦合

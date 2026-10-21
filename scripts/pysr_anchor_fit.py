@@ -106,7 +106,7 @@ NESTED_CONSTRAINTS = {
 
 
 # ── QW-14：PySR 2.x guesses 播种（已知锚闭式族 → initial guesses）─────────
-# 月计划（monthly_enhancement_plan_20260926.md §D 流 QW-14）：把 core 内
+# 月计划（docs/history/plans/monthly_enhancement_plan_20260926.md §D 流 QW-14）：把 core 内
 # 已注册闭式族作为 PySRRegressor(guesses=[...])（2.x 新 API，实测 2.5.0
 # 签名在册；fraction_replaced_guesses 配套）传入，对比有/无 guesses 的
 # 收敛表现。铁律 7 不破：播种=搜索整形 hints（锚常数可溯源），不产生

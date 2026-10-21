@@ -1,5 +1,11 @@
 """FORM 可靠度注册壳（XD-11，内核 core/form_reliability.py，本模块只做注册壳）。
 
+出处（FORM 可靠度方法经典文献，正文规格节转录）：
+- form_beta_linear：线性极限状态面可靠度指标 β 闭式与 HL-RF 迭代
+  双路径（FORM/H-L 方法：A. M. Hasofer & N. C. Lind, "Exact and
+  invariant second-moment code format", J. Eng. Mech. Div. ASCE
+  100(EM1), 1974）。
+
 规格 docs/research_expansion_20261004_crossdomain_transplant.md XD-11（池
 第二十轮，2026-10-04）：uq_service 良率全走代理蒙特卡洛，稀有良率
 （Pf<1e-3）MC 样本爆炸——FORM 在已校准代理/闭式极限状态面上是几十次

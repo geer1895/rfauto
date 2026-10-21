@@ -41,11 +41,11 @@ class TestCampaignPageAssembly:
     def test_seat_status_table_markup_present(self):
         # X2 v1：座位状态表（PASS/SKIP/FAIL 分色）= 真 <table> 标记
         # （语义化表格：无 JS 交互/读屏/复制场景仍逐格可读）。
-        # aurora_d UI-R4（A6 P2-9 清偿）：表头补 scope=col（原裸字面钉随本笔
+        # 架构批 UI-R4（A6 P2-9 清偿）：表头补 scope=col（原裸字面钉随本笔
         # 更新，与 kitTable 既有 scope 口径齐；test_w7c_ui_p2_sweep::test_p2_15
         # 同笔解除豁免）。
         assert 'cp-seats' in _PAGES_JS
-        assert '<th scope="col">座位状态</th>' in _PAGES_JS
+        assert '<th scope="col">${t("campaign.th_seat")}</th>' in _PAGES_JS
         assert 'T.badge("PASS", "ok")' in _PAGES_JS
         assert 'T.badge("SKIP", skipped ? "warn" : "muted")' in _PAGES_JS
         assert 'T.badge("FAIL", "err")' in _PAGES_JS

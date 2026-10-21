@@ -4,6 +4,9 @@
 > 四条标准路径的入口、脚手架与交付清单，全部命令实测过。前置：
 > docs/explanation/layered-architecture.md（分层架构——你加的东西落在
 > 哪一层决定它能 import 什么）。
+> 英文版（English version）：docs/tutorials/extending-rfauto_en.md
+> （2026-10-19 全量复测同笔：六适配器/72 模板/通道三元组均与本文一致；
+> 脚手架返回值现含 `module` 键，见 §1 注记）。
 
 ## 0. 两条通用约束
 
@@ -32,7 +35,11 @@ scaffold_adapter("my_solver")        # 不覆盖既有文件，落盘前先编�
 ```
 
 骨架自带六方法占位、`param_semantics` 语义清单位和 `register_my_
-solver()` 注册入口。实现完两类检查兜底：
+solver()` 注册入口（**2026-10-19 复测注记**：返回 dict 现含 `module`
+键——`{'ok': True, 'path': …, 'class_name': …, 'module':
+'my_solver_adapter', 'register_fn': …, 'contract_methods': […]}`，
+且支持 `output_dir` 参数改落盘目录；测试/练习请显式传 `output_dir`
+指到 runs/ 一次性目录，勿落 src/ 包树）。实现完两类检查兜底：
 
 ```python
 from rfauto.service.adapter_kit import check_adapter_contract, check_known_adapters
@@ -155,4 +162,8 @@ sys.modules 钉死测试。
 - 模板离线审计实操：docs/tutorials/real-simulation.md
 - 新适配器的引擎偏差如何变成锚（跨引擎换算基准的登记与消费）：
   docs/tutorials/anchor-guide.md
+- 同名参数跨通道语义（跨保真对不上号的第一嫌疑面，#154 族）：
+  docs/explanation/template-param-semantics.md
+- 引擎阶梯与 HFSS 仲裁（你的新引擎挂在哪层、跟谁构成引擎对）：
+  docs/explanation/engine-ladder-and-arbitration.md
 - 命令/模块权威出处：docs/reference.md

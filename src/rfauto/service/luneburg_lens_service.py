@@ -16,7 +16,7 @@ from rfauto.core import luneburg_lens as ll
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
-#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：失败信封单数 ``error``
+#: 1.1（2026-10-14 AU-2 域升版，架构批 AU-2B 席）：失败信封单数 ``error``
 #: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读
 #: 规则 2 口径的破坏性形状变更，按 §2 规则升位；消费面
 #: （tests/unit/test_luneburg_lens.py）同笔迁移，无 CLI/MCP/UI 消费者

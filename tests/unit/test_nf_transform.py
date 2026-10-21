@@ -120,6 +120,25 @@ class TestHertzianDipoleRecovery:
         spread_db = 20.0 * np.log10(max(peaks) / min(peaks))
         assert spread_db <= 0.3, f"窗族峰值互差 {spread_db:.3f} dB"
 
+    def test_default_theta_path_no_guard_crash(self):
+        """F-1 冒烟钉（W12-S1 终审）：不显式传 theta_deg 的缺省路径必须可用。
+
+        曾因缺省轴写 ``arange(0, 85+0.5)`` 末值 85.0 撞自家 ``>=85°`` 守卫，
+        任何缺省调用恒 ValueError；全部既有测试因显式传 theta 全绿（默认
+        路径零覆盖）。修后缺省轴 = 0..84，末值 < 85 正常返回。
+        """
+        f_hz = 2.4e9
+        x = np.arange(-40e-3, 40.1e-3, 10e-3)
+        ex, ey = _hertzian_dipole_plane_field(f_hz, 1e-3, x, x, 0.005)
+        grid = NearFieldGrid(x_m=x, y_m=x, freq_hz=f_hz, ex=ex, ey=ey,
+                             z0_m=0.005)
+        out = planar_nf_to_farfield(grid)  # theta_deg/phi_deg 全缺省
+        th = np.asarray(out["theta_deg"])
+        assert float(th.max()) == 84.0
+        assert float(th.max()) < float(out["validity_max_deg"])
+        assert np.asarray(out["phi_deg"]).tolist() == [0.0, 90.0, 180.0, 270.0]
+        assert np.isfinite(np.asarray(out["pattern_db"])).any()
+
     def test_validity_guard_and_bad_args(self):
         f_hz = 2.4e9
         x = np.arange(-40e-3, 40.1e-3, 10e-3)
@@ -257,3 +276,34 @@ class TestServiceEnvelope:
         assert info["frequencies_hz"] == [1.0e9, 2.0e9]
         miss = ffs_info(str(tmp_path / "nope.ffs"))
         assert miss["ok"] is False and "不存在" in miss["error"]
+
+    def test_nf2ff_npz_default_path_and_cli(self, tmp_path):
+        """F-1 冒烟钉（CLI 单源缺省路径）：``nfmeas nf2ff`` → service
+        planar_nf2ff_from_npz（无 theta 形参）→ core 缺省 theta 轴，全链
+        必须正常返回。修复前任何调用必 ValueError（缺省轴末值 85.0 撞
+        自家 >=85° 守卫），本测试即堵默认路径零覆盖。"""
+        import json
+
+        from rfauto.service.nf_measurement_service import planar_nf2ff_from_npz
+
+        x = np.arange(-50e-3, 50.1e-3, 10e-3)
+        ex, ey = _hertzian_dipole_plane_field(2.4e9, 1e-3, x, x, 0.005)
+        npz = tmp_path / "grid.npz"
+        np.savez(npz, x_m=x, y_m=x, freq_hz=2.4e9, ex=ex, ey=ey, z0_m=0.005)
+
+        out = planar_nf2ff_from_npz(str(npz))
+        th = out["theta_deg"]
+        assert th[0] == 0.0 and th[-1] == 84.0
+        assert out["validity_max_deg"] == 85.0
+        assert len(out["pattern_db"]) == len(th)  # (n_theta, n_phi) 行主序
+        assert any(v is not None for row in out["pattern_db"] for v in row)
+
+        from typer.testing import CliRunner
+
+        from rfauto.cli.main import app
+        result = CliRunner().invoke(app, ["nfmeas", "nf2ff", str(npz)])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["theta_deg"][-1] == 84.0
+        assert payload["window"] == "kaiser"
+        assert payload["validity_max_deg"] == 85.0

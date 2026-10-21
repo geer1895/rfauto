@@ -20,9 +20,11 @@ runner = CliRunner()
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    # 强制 KiCad Python 不存在，走确定性失败分支（CI 无 KiCad 也能测）
+def _isolated(isolated, monkeypatch, tmp_path):
+    """隔离体收编 tests/conftest.py::isolated（T5 批5 单源化）
+    + 专用增量（强制 KiCad Python 不存在，走确定性失败分支——
+    CI 无 KiCad 也能测）。
+    """
     import rfauto.adapters.kicad_pcell as kp
 
     monkeypatch.setattr(kp, "KICAD_PYTHON", str(tmp_path / "no_kicad" / "python.exe"))

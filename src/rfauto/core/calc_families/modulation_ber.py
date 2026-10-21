@@ -1,4 +1,13 @@
-"""数字调制理论 BER/Eb-N0 族（aurora36 W4-A 席，R2 空白域 G3）。
+"""数字调制理论 BER/Eb-N0 族（架构批 W4-A 席，R2 空白域 G3）。
+
+出处（教科书经典闭式二级转引，详见下节公式口径）：
+- modulation_ber_curve：BPSK/QPSK Pb=Q(√(2γb)) 与 square M-QAM Gray
+  精确和式（Proakis, Digital Communications 5th ed. ch.4/QAM 节；
+  Cho & Kim, IEEE Comm. Lett. 2005 square-QAM 同形逐项式）。
+- required_ebn0：目标 BER→Eb/N0 反解（同上闭式；域内严格单调降
+  二分反解，物理出处同曲线键）。
+- coded_ber_estimate：码率能量扩张+固定净编码增益一阶粗估（工程
+  惯例口径，如实标注粗估不冒充精确，G 取目标 BER 点净增益）。
 
 三键：modulation_ber_curve（理论 BER 曲线）/ required_ebn0（目标 BER→
 所需 Eb/N0 反解）/ coded_ber_estimate（级联编码一阶粗估）。

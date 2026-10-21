@@ -1,4 +1,4 @@
-"""aurora_e W2-S9：EC-2 multiline TRL εr/tan_d 不确定度传播单测。
+"""架构批 W2-S9：EC-2 multiline TRL εr/tan_d 不确定度传播单测。
 
 mtrl_er_tand_uncertainty（calc_families/mtrl_uncertainty.py）。
 

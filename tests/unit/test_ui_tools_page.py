@@ -1,4 +1,4 @@
-"""aurora72 A2-B 席位回归钉：微波工具箱分组+搜索选择器与 #/tools/<key> 深链。
+"""架构批 A2-B 席位回归钉：微波工具箱分组+搜索选择器与 #/tools/<key> 深链。
 
 对象：src/rfauto/ui/static/pages.js 工具箱页（pageTools 及其纯函数助手）。
 app.js / index.html / palette.js / plotcard.js 归他席——本文件只读，不动。
@@ -36,7 +36,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -73,7 +73,8 @@ class TestGroupedSearchSelector:
         tools = _tools()
         assert "<optgroup label=" in tools  # 按组装配（平铺 innerHTML 退场）
         assert "groupCalcList(vis)" in tools  # 过滤后再分组
-        assert "escAttr(g.group)" in tools  # optgroup label 属性语境转义
+        # W2-S1 批 4：组名显示经 grpDisp（协议标识符保持中文单源，t() 翻译）
+        assert "escAttr(grpDisp(g.group))" in tools  # optgroup label 属性语境转义
         assert "escAttr(c.name)" in tools and "esc(calcZhName(c))" in tools
 
     def test_three_field_filter_single_source(self):
@@ -88,10 +89,11 @@ class TestGroupedSearchSelector:
     def test_group_badge_in_desc_panel(self):
         tools = _tools()
         # 详情面板组徽章消费 calcGroup（A2-A group 字段经回退链归一后的展示面）
-        assert "T.badge(calcGroup(cal), \"muted\")" in tools
-        # 实验态徽章保持
-        assert "实验态（默认不放行）" in tools
-        assert 'c.experimental ? " [实验]"' in tools  # 选项内标记保持
+        # W2-S1 批 4：组名/实验态徽章文案迁词表（grpDisp 显示层翻译）
+        assert "T.badge(grpDisp(calcGroup(cal)), \"muted\")" in tools
+        assert 'T.badge(t("tools.badge_experimental"), "warn")' in tools
+        assert "实验态（默认不放行）" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
+        assert 'c.experimental ? t("tools.opt_experimental")' in tools  # 选项内标记保持
 
 
 class TestGroupFieldContractFallback:
@@ -130,7 +132,7 @@ class TestToolsDeepLink:
     def test_entry_point_exported_and_wired(self):
         assert "export function toolsSelectKey(key)" in _SRC
         # 装配点在 initPages（幂等 + node import 零 DOM 依赖守卫同 W4-C 惯例）
-        assert "_bindToolsDeepLink(); // aurora72 A2-B" in _SRC
+        assert "_bindToolsDeepLink(); // 架构批 A2-B" in _SRC
         body = re.search(r"function _bindToolsDeepLink\(\) \{(.*?)\n\}", _SRC, re.S)
         assert body, "_bindToolsDeepLink 函数体缺失"
         b = body.group(1)
@@ -167,8 +169,9 @@ class TestHelpTextRefreshed:
     def test_group_summary_generated_from_api(self):
         tools = _tools()
         assert "id='tool-help-groups'" in tools  # 数据驱动挂载点
-        assert "groups.map((g) => g.group).join" in tools  # 组清单实时生成
-        assert "键 · ${groups.length} 组" in tools
+        # W2-S1 批 4：组清单实时生成 + 组名 grpDisp 显示层翻译 + 模板句迁词表
+        assert "groups.map((g) => grpDisp(g.group)).join" in tools  # 组清单实时生成
+        assert 't("tools.help_groups_tpl"' in tools
 
     def test_three_shell_sentence_kept(self):
         # 三壳同源说明保留（CLI rfauto calc / MCP run_calculator / 本 UI）
@@ -185,7 +188,8 @@ class TestMicroInteractions:
     def test_run_button_disabled_loading_with_finally_restore(self):
         tools = _tools()
         assert "runBtn.disabled = true" in tools
-        assert "runBtn.textContent = \"计算中...\"" in tools
+        # W2-S1 批 4：loading 文案迁词表（tools.computing，zh 值同笔）
+        assert "runBtn.textContent = t(\"tools.computing\")" in tools
         assert "finally" in tools
         assert "runBtn.disabled = false" in tools  # 请求异常也得恢复
         assert "runBtn.textContent = runLabel" in tools
@@ -301,7 +305,7 @@ class TestNodeBehavioral:
         assert r.returncode == 0, r.stderr[-2000:]
 
 
-# ═══════════════ 4. aurora72 A3-A：结果可视化 + 扫参 + 公式面板 ═══════════════
+# ═══════════════ 4. 架构批 A3-A：结果可视化 + 扫参 + 公式面板 ═══════════════
 # 对象：pages.js 工具箱页 A3-A 增量（R5 审计 §③§④§⑤ 落地面）。沿用本文件
 # 三层惯例：源码钉（免 node）→ 跨席计数钉复述 → node 行为钉（合成数据实测）。
 
@@ -324,7 +328,7 @@ class TestResultVisualizationPins:
         assert body, "resultChart 函数体缺失"
         b = body.group(1)
         assert "echartsInitCached(el)" in b
-        assert "bindChartResize(el); // aurora72 A3-A" in b  # 独立注释尾，不扰 P0-5 计数钉
+        assert "bindChartResize(el); // 架构批 A3-A" in b  # 独立注释尾，不扰 P0-5 计数钉
         assert "window.echarts.init(" not in b
         # 实例自持句柄：innerHTML 换血前自释放（不新增 disposeChartsIn 装配点）
         assert "_toolResultCharts" in b
@@ -372,10 +376,12 @@ class TestSweepPins:
         assert "toolPickSweepMetric(r.result, pName)" in tools  # 指标提取单源
         body = re.search(r"const runSweep = async \(cal\) => \{(.*?)\n  \};", _SRC, re.S)
         assert body, "runSweep 函数体缺失"
-        assert "await T.api" in body.group(1)  # 循环体内 await（串行非并发）
-        # 失败点如实跳过标记（不静默丢弃）
-        assert "跳过：" in tools
-        assert "color:var(--err)'>跳过：" in tools
+        # W4-S13（P8-9 收口）同笔：T.api→apiFetch（循环体内 await 串行非并发
+        # 语义不变；动作面 POST 无 signal）
+        assert "await apiFetch" in body.group(1)  # 循环体内 await（串行非并发）
+        # 失败点如实跳过标记（不静默丢弃）；W2-S1 批 4：文案迁词表
+        # （tools.skipped_prefix，zh 值「跳过：」同笔迁 i18n.js）
+        assert "color:var(--err)'>${t(\"tools.skipped_prefix\")}" in tools
 
     def test_no_metric_downgrades_to_table_only(self):
         # 探测不到响应指标就不出曲线只出表格（如实降级不硬猜）
@@ -409,7 +415,10 @@ class TestFormulaPanelPins:
         assert 'const descFull = String(cal.description || "")' in tools
         assert "toolDescHasFormula(descFull)" in tools  # 特征探测单源
         assert "<details class='tool-formula'>" in tools
-        assert "公式与出处" in tools
+        # W1-S2（架构批 i18n 试点）：summary 文案单源迁词表 t() 渲染期烘焙
+        # （动态容器不挂 data-i18n——重扫会覆写）——zh 字面同笔迁 pages/i18n.js
+        assert '${t("tools.formula_summary")}</summary>' in tools
+        assert "公式与出处" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert "<pre>${esc(descFull)}</pre>" in tools  # 全文 + esc（XSS 反向扫描口径）
 
     def test_formula_probe_pure_exported(self):
@@ -436,10 +445,10 @@ class TestA3ACrossSeatPinsHold:
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
         assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
-        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1  # 本席 1 面
+        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1  # 本席 1 面
         assert _SRC.count("disposeChartsIn(") == 4  # 本席零新增（_toolResultCharts 自持）
         assert _SRC.count("setInterval(") == 2  # 扫参逐点 await，零新定时器
-        assert _SRC.count("color:var(--err)'>✗") == 6  # 本席错误标记用「跳过：」不用 ✗
+        assert _SRC.count("color:var(--err)'>✗") == 1  # 本席错误标记用「跳过：」不用 ✗；架构批 W2-S5 gallery ✗ 迁 kitErrorPanel（R1 #8 批1）6→5；架构批 W14-S2 tools 计算失败点迁 kitErrorPanel（R2 Top10 #4）5→1（余 1=queue 豁免点）
         assert _SRC.count("echartsInitCached(el)") == 2  # 定义+本席 draw()（W3-S12 四管线入壳后）
         assert _SRC.count("plotCardCached(") == 3  # 定义+tune+本席扫参
 

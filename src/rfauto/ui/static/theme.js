@@ -1,4 +1,4 @@
-/* rfauto UI 主题单源（aurora72 A5-B，R6 审计 R-4）：主题判定与双档调色板
+/* rfauto UI 主题单源（架构批 A5-B，R6 审计 R-4）：主题判定与双档调色板
    的唯一出处。此前 pages.js 22 处 body.light 判定 + 30 处 `light ? … : …`
    双档三元、app.js CHART_COLORS 表与 pages.js timeline 整档镜像、热图色带
    三份字面量各自为政——镜像纪律是"本层不可 import"的被迫产物（旧注释
@@ -117,7 +117,7 @@ export const THEME_COLORS = {
   seriesTeal: { light: "#0e8f74", dark: "#22d3a5" },    // 显式系列色·青绿
   seriesRed: { light: "#b3261e", dark: "#ef5350" },     // 显式系列色·红（不可行点）
   emptyCell: { light: "#e5e9f0", dark: "#1a2130" },     // 热图空格灰（feasibility/costHeat）
-  /* UI-R12（aurora_d 前端深化席）任务3 CSS 审计收编：以下两键为"冻结现值"
+  /* UI-R12（架构批 前端深化席）任务3 CSS 审计收编：以下两键为"冻结现值"
      单源迁移（迁移零改值铁律——原视图内联字面量对双主题同值，故两档同值；
      重定标须先复核对比度账本 runs/pr1_contrast/ 与消费页渲染）。 */
   fieldAxisLine: { light: "#55607a", dark: "#55607a" }, // 场/远场极坐标轴线（view_fieldviz）
@@ -140,7 +140,7 @@ export const HEAT_BAND = [
    底色可辨识度）。 */
 export const ISO_BAND = ["#ffffff", "#ffeb3b", "#ff5722"];
 
-/* ═══ 图表布局/字号常量单源（aurora_e W3-S12，R6 审计 P-5）════════════
+/* ═══ 图表布局/字号常量单源（架构批 W3-S12，R6 审计 P-5）════════════
    plotCard builder grid 与自研 canvas 管线（drawLineChart/drawCostHeat/
    drawFeasibilityGrid）的边距、canvas 字号此前各自为政（硬编码字面量散置
    四处）——常量收编本层。数值冻结：迁移零改值（渲染不变铁律），重定标须

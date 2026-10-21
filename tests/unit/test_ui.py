@@ -32,9 +32,7 @@ def _flag_in_help(output: str, *needles: str) -> bool:
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(monkeypatch, isolated_cache_off):
     # R2-D-02：审批收件箱读路径接 RegistryDB 后，清掉注册表 DB 路径 env，
     # 防止本机 set 的 RFAUTO_REGISTRY_DB 把测试写入写到 tmp 之外（#144）
     monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
@@ -218,8 +216,13 @@ class TestTuneTrials:
         assert len(d["trials"]) == 3
 
     def test_empty_when_no_runs(self, tmp_path):
+        """空判定+非空对照（R3 弱测试 #3 加固）：空 hits 与"解析层哑火"
+        的假绿分离——注入 trials 后同一读面必须看到 3 行。"""
         d = tune_trials()
         assert d["ok"] and d["trials"] == []
+        _make_trials(tmp_path)
+        d2 = tune_trials("20260101_000000_test")
+        assert d2["ok"] and len(d2["trials"]) == 3
 
 
 class TestSandboxUi:
@@ -294,8 +297,24 @@ class TestHttpEndpoints:
         return TestClient(create_ui_app())
 
     def test_runs_endpoint(self, client):
+        """契约面行为级（R3 弱测试 #1 加固）：注入注册表行 → 断言行形状
+        （run_id/timestamp 键集）与注入行回收——前身只断言 ok，"端点活着"
+        拦不住"返回错的行"。"""
+        from rfauto.infra.run_store import record_run
+
+        assert record_run(record={
+            "run_id": "20260101_000000_test",
+            "model": "wilkinson_power_divider",
+            "adapter": "fake", "status": "done",
+        })
         r = client.get("/api/runs").json()
-        assert r["ok"]
+        assert r["ok"], r.get("errors")
+        runs = r["runs"]
+        assert isinstance(runs, list) and len(runs) >= 1
+        for key in ("run_id", "model", "adapter", "status", "timestamp",
+                    "metrics"):
+            assert key in runs[0], f"缺契约键 {key}"
+        assert any(row["run_id"] == "20260101_000000_test" for row in runs)
 
     def test_runs_endpoint_carries_contract_check(self, client):
         """4.2 全量接线：服务点返回体带 best-effort 契约注记。"""
@@ -306,8 +325,18 @@ class TestHttpEndpoints:
         assert cc["schema_version"] >= 2
 
     def test_run_detail_endpoint(self, client):
+        """契约面行为级（R3 弱测试 #2 加固）：metrics 数值锚之外补产物
+        清单（files 键集+指定文件在册）与配方快照——单值锚拦不住清单面
+        整体缺失。"""
         r = client.get("/api/runs/20260101_000000_test").json()
-        assert r["ok"] and r["metrics"]["s11_db"] == -15.2
+        assert r["ok"] and r["run_id"] == "20260101_000000_test"
+        assert r["metrics"]["s11_db"] == -15.2
+        assert r["metrics"]["params"] == {"arm_len_mm": 20.5}
+        files = {f["path"]: f["size_bytes"] for f in r["files"]}
+        assert "results/metrics.json" in files
+        assert "results/figs/s11_curve.png" in files
+        assert files["results/metrics.json"] > 0
+        assert "arm_len_mm" in r["recipe_snapshot"]
 
     def test_recipe_get_save_post(self, client):
         v = client.get("/api/recipe", params={"path": "recipe.yaml"}).json()
@@ -530,6 +559,7 @@ class TestSparamsExternal:
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return path
 
+
     @pytest.mark.skipif(
         not (Path(__file__).resolve().parents[2] / "scripts" / "spike_b_ads"
              / "p3_d2_out" / "demo_BP.s2p").is_file(),
@@ -588,9 +618,22 @@ class TestSparamsExternal:
         (tmp_path / "runs").mkdir()
         demo = self._write_min_s2p(tmp_path / "mini_route_probe.s2p")
         client = TestClient(create_ui_app())
+        # R3 弱测试 #4 加固：路由序表内容直接断言（顺序坑的根因面），
+        # 不只靠 POST 巧合通过
+        paths = [getattr(rt, "path", "") for rt in client.app.routes]
+        assert paths.index("/api/runs/diff") \
+            < paths.index("/api/runs/{run_id}")
+        assert paths.index("/api/sparams/external") \
+            < paths.index("/api/sparams/{run_id}")
         r = client.post("/api/sparams/external",
                         json={"path": str(demo), "mode": "db"}).json()
         assert r["ok"] and r["curves"]
+        curve = r["curves"][0]
+        assert curve["name"] in ("S11", "S12", "S21", "S22")
+        # 夹具 12 频点、对角项 |S|=1（0 dB）——载荷数值语义而非仅非空
+        assert len(curve["y"]) == 12 and len(curve["freq_ghz"]) == 12
+        if curve["name"] in ("S11", "S22"):
+            assert curve["y"] == [0.0] * 12
 
 
 class TestRunsMountGating:

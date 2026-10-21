@@ -1,4 +1,4 @@
-"""aurora_d UI-R3 席位回归钉：统一实时事件流（event_bus + events + 接入钩子）。
+"""架构批 UI-R3 席位回归钉：统一实时事件流（event_bus + events + 接入钩子）。
 
 对象（本席新增/改动面）：
 1. src/rfauto/ui/routes/event_bus.py——统一事件信封

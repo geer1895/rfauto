@@ -30,10 +30,8 @@ if src_dir.exists() and str(src_dir) not in sys.path:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_runs(tmp_path, monkeypatch):
+def _isolated_runs(tmp_path, monkeypatch, isolated_cache_off):
     """chdir + 临时 optuna storage（#144：优化循环类测试必须 chdir 隔离）。"""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
     db_dir = tmp_path / "runs" / ".optuna"
     db_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(
@@ -248,7 +246,7 @@ class TestTuneCliWatchDetach:
         """--watch：非终端出口逐 trial 播报行（trial#/cost/Δ/best）可捕获。"""
         seen: dict = {}
 
-        def fake_start_tune(recipe, *, on_trial=None, **kw):
+        def fake_start_tune(recipe_path, *, on_trial=None, **kw):
             seen["on_trial"] = on_trial
             self._fake_trials_payload(on_trial)
             return {"ok": True, "study_name": "s", "run_id": "run-x",
@@ -270,7 +268,7 @@ class TestTuneCliWatchDetach:
         """无 --watch：不传 on_trial（缺省路径行为不变）。"""
         seen: dict = {}
 
-        def fake_start_tune(recipe, *, on_trial=None, **kw):
+        def fake_start_tune(recipe_path, *, on_trial=None, **kw):
             seen["on_trial"] = on_trial
             return {"ok": True}
 
@@ -285,7 +283,7 @@ class TestTuneCliWatchDetach:
         from rfauto.service.api import poll_job
         from rfauto.service.job_registry import get_job_registry
 
-        def fake_start_tune(recipe, **kw):
+        def fake_start_tune(recipe_path, **kw):
             time.sleep(0.05)
             return {"ok": True, "run_id": "run-detach-1", "study_name": "s",
                     "best_cost": 0.5, "best_params": {"arm_len_mm": 21.0},

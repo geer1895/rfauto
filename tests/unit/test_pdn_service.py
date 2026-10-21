@@ -160,6 +160,16 @@ class TestPdnAnalyze:
         freqs = np.geomspace(1.0e6, 1.0e8, 7)
         expected = pdn_impedance_profile(None, None, [overridden], freqs)
         np.testing.assert_array_equal(r["z_re_ohm"], expected.real)  # 逐位
+        # 已知输入→已知安装 L 值（R3 弱测试 #7，#118 数值裁判）：测试内
+        # 独立闭式复算（Kundert 口径 Z=ESR+j(ω(L_esl+L_mount)−1/ωC)，
+        # vrm=None 单支路 → 整网 Z≈支路 Z），非同源函数拼期望；支路明细
+        # 回显 mount_l_h 恰为覆盖值
+        assert r["branch_details"]["decaps"][0]["mount_l_h"] == 2.0e-9
+        l_tot = base.esl_h + 2.0e-9
+        w = 2.0 * np.pi * freqs
+        want = base.esr_ohm + 1j * (w * l_tot - 1.0 / (w * base.c_f))
+        np.testing.assert_allclose(r["z_re_ohm"], want.real, rtol=1e-12)
+        np.testing.assert_allclose(r["z_im_ohm"], want.imag, rtol=1e-12)
 
     def test_v_bias_derating_passthrough_bitwise(self) -> None:
         # gen_0402_10u_x5r 曲线 5V 端点夹持 → 4.8e-6（core 判据 4 已钉曲线；

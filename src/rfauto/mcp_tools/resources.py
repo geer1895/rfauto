@@ -1,4 +1,4 @@
-"""@mcp.resource 只读资源七件（runs 索引/materials/compat/terminology/toolsets/calculators 目录/datasets 目录）——不计入工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正 parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D EC-6 +1 toolsets 工具集目录资源；2026-10-14 aurora_d MCP-B 席 +2 calculators/datasets 目录资源——Agent 发现面，与同名工具同源 service 单点）。"""
+"""@mcp.resource 只读资源七件（runs 索引/materials/compat/terminology/toolsets/calculators 目录/datasets 目录）——不计入工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正 parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D EC-6 +1 toolsets 工具集目录资源；2026-10-14 架构批 MCP-B 席 +2 calculators/datasets 目录资源——Agent 发现面，与同名工具同源 service 单点）。"""
 
 from __future__ import annotations
 

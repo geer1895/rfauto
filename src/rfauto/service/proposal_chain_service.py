@@ -320,13 +320,13 @@ def promote_topology_draft(draft_path: str | Path, *, root: Any = None,
     - L2 = template_dry_run（render + CSXCAD 审计，离线秒级）；
     - L3 = check_l3 token（L1/L2+params 哈希）；
     - apply = 草稿迁 runs/recipe_sandbox/promoted/（写面只 runs/，
-      recipes/ 逐字节不动），audit 落 agent_safety.append_audit_log。
+      recipes/ 逐字节不动），audit 落 agent_audit.append_audit_log（T1 叶化后消费面）。
     """
     import yaml
 
     from rfauto.adapters.openems_templates import TEMPLATE_META
+    from rfauto.service.agent_audit import append_audit_log, token_hash
     from rfauto.service.agent_gate import AgentGate, GateResult
-    from rfauto.service.agent_safety import append_audit_log, token_hash
     from rfauto.service.agent_sandbox import RecipeSandbox, SandboxViolation
 
     sb = RecipeSandbox(root)
@@ -851,7 +851,7 @@ def generate_template_draft(request: dict[str, Any], llm_call: Callable[[str], s
     for text_field in (req["notes"], req["family"], req["variant"]):
         inj = detect_prompt_injection(text_field or "")
         if inj.get("flagged"):
-            from rfauto.service.agent_safety import append_audit_log
+            from rfauto.service.agent_audit import append_audit_log
             append_audit_log({"event": "template_draft", "ok": False,
                               "stage": "injection",
                               "template_name": req["template_name"],
@@ -870,7 +870,7 @@ def generate_template_draft(request: dict[str, Any], llm_call: Callable[[str], s
     staged = sb.write_draft(req["template_name"], code)
     import hashlib
 
-    from rfauto.service.agent_safety import append_audit_log
+    from rfauto.service.agent_audit import append_audit_log
     append_audit_log({"event": "template_draft", "ok": True,
                       "stage": "staged",
                       "template_name": req["template_name"],
@@ -986,8 +986,8 @@ def promote_template_draft(draft_path: str | Path, *, params: dict[str, Any] | N
                            z0_ohm: float = Z0_DEFAULT_OHM, root: Any = None,
                            write_audit: bool = True) -> dict[str, Any]:
     """F8 草案 promote：验证器 → AgentGate 三层 → 迁沙箱 promoted/ + audit。"""
+    from rfauto.service.agent_audit import append_audit_log, token_hash
     from rfauto.service.agent_gate import AgentGate, GateResult
-    from rfauto.service.agent_safety import append_audit_log, token_hash
     from rfauto.service.agent_sandbox import TemplateDraftSandbox
 
     sb = TemplateDraftSandbox(root)

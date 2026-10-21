@@ -1,5 +1,11 @@
 """噪声相关级联族（MT-1，内核在 core/noise_correlation.py，本模块只做注册壳）。
 
+出处（噪声相关级联经典文献，正文规格节转录）：
+- correlated_cascade_nf：ABCD 噪声描述符链式级联（H. Hillbrand &
+  P. Russer, "An efficient method for computer aided noise analysis of
+  linear amplifier networks", IEEE Trans. CAS 23(4), 1976；Friis 仅
+  匹配单通道成立的对照声明同文）。
+
 round17 §二 MT-1 规格「Hillbrand-Russer 1976 ABCD 噪声描述符链式级联——
 Friis 仅匹配单通道成立，失配/多端口需相关矩阵」（2026-10-02）。单键
 correlated_cascade_nf（级表 + 级间噪声相关系数 → F/NF + 相关−独立差）；

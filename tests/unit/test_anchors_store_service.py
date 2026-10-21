@@ -189,22 +189,22 @@ def test_service_list_inspect_validate_resolve_json_roundtrip() -> None:
 def test_service_registry_yaml_shape_honest() -> None:
     """schema: anchors/v1 头与全注册表 status 如实登记。
 
-    HFSS 窗 B→A 批（wf:anchor-register，2026-09-29）：+6 窗锚——constant 2
+    HFSS 窗 B→A 批（，2026-09-29）：+6 窗锚——constant 2
     席 active（wilkinson.f_match/gysel.s32_iso）+ pointer 4 席 experimental
     （stepped/coupled_line/marchand/branchline 双值指针）；补批
-    （wf:anchor-register-p1x4，2026-09-29）+1 constant active
-    （patch_array_1x4.f_res）；指针补批（wf:anchor-pointer-register，
+    （，2026-09-29）+1 constant active
+    （patch_array_1x4.f_res）；指针补批（，
     2026-09-29）+1 pointer experimental（patch_array.f_res 族级双值，
-    席 8 2x2 重跑 DISAGREE）；P-KJ-EVEN P3 批（wf:goal-t5，2026-09-30）
+    席 8 2x2 重跑 DISAGREE）；P-KJ-EVEN P3 批（，2026-09-30）
     +1 constant active（coupled_microstrip.kj_even_domain.lit-v1，KJ even
     闭式适用域盒锚：域盒 u/g/er=[0.1,10]²×[1,18]+域内基准 0.66%+两条域缘
-    MARGINAL 注记）；Goal 批 T14（wf:goal-t14，2026-09-30）+2 constant active
+    MARGINAL 注记）；Goal 批 T14（，2026-09-30）+2 constant active
     （mmt.inductive_post_b.hfss-v1 / mmt.resonant_window_fres.hfss-v1，ME-5
     MMT 销钉/谐振窗 HFSS 仲裁偏差常量）；ge6 Wave1 锚注册批
-    （wf:ge6-anchor，2026-10-01）+2 pointer experimental（ring.design_dk
+    （，2026-10-01）+2 pointer experimental（ring.design_dk
     双引擎 DISAGREE 双值 {oe 3.5333, hfss 3.3425}+mmwave.design_dk.ro3003-
     oe-v1 OE 单引擎封档 {oe 3.1434}，constant 待 78GHz HFSS 仲裁腿）；
-    ge6 A22 批（wf:ge6-a22，2026-10-01）+1 pointer experimental
+    ge6 A22 批（，2026-10-01）+1 pointer experimental
     （ms_cross.wg_resonance 双值 {oe 11.675, hfss 11.4951}，ge6 席 2
     HFSS 仲裁分支 A 收敛判读——wg 模拟器谷位两引擎 AGREE，偏离 Floquet
     属前提差禁产 constant）。
@@ -389,8 +389,22 @@ def test_cli_anchors_drift_json_and_history_file(tmp_path: Path) -> None:
     assert payload["history_source"] == "caller"
     assert payload["report"]["verdict"] == "drifted"
 
-    empty = CliRunner().invoke(
+    # 回退链 3（2026-10-19 架构批 W3-S4 活体代码验证回填起）：cps.gamma_er
+    # 有 last_verified.residual 单点 → source="registry.last_verified"、n=1
+    # 如实判 insufficient（非 no_data；回填前本断言钉 empty_series=True，
+    # 数据态演进随回填更新）
+    single = CliRunner().invoke(
         app, ["anchors", "drift", "cps.gamma_er.fdref-v1", "--json"])
+    assert single.exit_code == 0, single.output
+    payload_single = json.loads(single.output)
+    assert payload_single["ok"] is True
+    assert payload_single["history_source"] == "registry.last_verified"
+    assert payload_single["report"]["verdict"] == "insufficient"
+
+    # 回退链 4（全无）：retired 锚无 last_verified 无快照 → 空序列如实
+    empty = CliRunner().invoke(
+        app, ["anchors", "drift", "ms_lattice.period_mm.closedform-v1",
+              "--json"])
     assert empty.exit_code == 0, empty.output
     payload_empty = json.loads(empty.output)
     assert payload_empty["ok"] is True

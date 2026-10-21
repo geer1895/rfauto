@@ -1,4 +1,9 @@
-"""E13 符号归纳公式登记（实验态默认关；import 期注册 patch_f0_symbolic_e13）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""E13 符号归纳公式登记（实验态默认关；import 期注册 patch_f0_symbolic_e13）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（实验键非文献闭式——符号归纳产物如实登记）：
+- patch_f0_symbolic_e13：符号回归归纳公式（E13 机制，系数只来自
+  runs/ 记录产物或确定性重拟合；非文献闭式、experimental 默认关，
+  人工审核晋级另行显式动作——#122 零物理背书声明）。"""
 
 from __future__ import annotations
 

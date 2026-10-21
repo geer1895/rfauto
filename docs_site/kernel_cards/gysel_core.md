@@ -6,14 +6,14 @@
 
 # 内核文档卡：gysel_core
 
-> Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
+> Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
 
 | 字段 | 值 |
 |---|---|
 | 内核 ID | `gysel_core` |
 | 主模块 | `src/rfauto/core/calc_families/gysel_core.py`（`rfauto.core.calc_families.gysel_core`） |
 | 计算器注册表 | 已注册 @register_calculator |
-| KD-1 出处注册 | 0 条（kernel_file=src/rfauto/core/calc_families/gysel_core.py） |
+| KD-1 出处注册 | 1 条（kernel_file=src/rfauto/core/calc_families/gysel_core.py） |
 | XC-P 精度档案 | 见下方「精度域」节（机读判定） |
 | 数据来源 | XC-P + KD-1 + 模块 docstring/AST + anchors.yaml + tests/service 扫描 |
 
@@ -21,7 +21,7 @@
 
 Gysel 功分器 core 电气闭式族：六 λ/4 电气段拓扑（桥带 λ/2 中点=对称面真实节点）+偶/奇模半电路验证+五线六节点导纳网络精确频响——隔离负载外置可独立散热，是与内嵌电阻 Wilkinson 的族界。
 
-模块自述（docstring 首行，机读）：Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
+模块自述（docstring 首行，机读）：Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
 
 ## 公式与口径
 
@@ -75,7 +75,11 @@ docstring 逐字引文（防漂移钉）："Y_self=−j·cotθ/Zc、Y_mutual=j/(
 
 ### KD-1 出处注册（`src/rfauto/core/calc_families/gysel_core.py`，knowledge/formula_provenance.yaml 过滤）
 
-命中 **0 条**——该模块 docstring 无「出处见/出处（」收集标记命中或未逐式登记。出处以模块 docstring 为单源（上方公式引文即逐字出自 docstring）；登记缺口如实呈现，属 XA-6 出处断链巡检门的巡检范围，不在本卡掩饰。
+命中 **1** 条：
+
+| formula_id | symbol | kind | source_doi | refs |
+|---|---|---|---|---|
+| calc_families/gysel_core:<module>:01 | <module> | source | — | — |
 
 ## 精度域（XC-P 精度档案）
 
@@ -115,13 +119,12 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a6b_multisection_gysel.py`——引文："tests/unit/test_a6b_multisection_gysel.py"
 
-测试面（tests/unit 引用扫描，机读；合计 **98** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **70** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a6b_multisection_gysel.py` | 21 |
-| `tests/unit/test_calculators.py` | 50 |
-| `tests/unit/test_physics_invariants.py` | 27 |
+| `tests/unit/test_calculators.py` | 49 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。
 
@@ -130,5 +133,5 @@ XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_
 - [架构与方法论（锚体系/判据先行）](../architecture/methodology.md)
 - [分层架构](../explanation/layered-architecture.md)
 - [计算器注册表](../reference/calculators.md)——本内核的注册状态见元数据表
-- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[pce](pce.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[hairpin](hairpin.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[coupled_line_bpf](coupled_line_bpf.md)
+- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[pce](pce.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[hairpin](hairpin.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[coupled_line_bpf](coupled_line_bpf.md)、[lange](lange.md)、[stepped_impedance](stepped_impedance.md)、[ring_resonator](ring_resonator.md)、[mixer_conversion](mixer_conversion.md)、[ruthroff_balun](ruthroff_balun.md)、[gd_equalizer](gd_equalizer.md)、[measurement_drift](measurement_drift.md)、[agc_loop](agc_loop.md)、[cal_kit_verify](cal_kit_verify.md)、[six_port](six_port.md)、[iss_on_wafer](iss_on_wafer.md)、[source_power_cal](source_power_cal.md)、[combline](combline.md)、[cps](cps.md)、[interdigital](interdigital.md)、[siw](siw.md)、[slot](slot.md)、[stripline](stripline.md)、[suspended_stripline](suspended_stripline.md)、[dipole](dipole.md)、[helix](helix.md)、[link_limits](link_limits.md)、[fec_codes](fec_codes.md)、[directional_bridge](directional_bridge.md)、[rf_switch](rf_switch.md)、[kuroda_identities](kuroda_identities.md)、[pll_lock_time](pll_lock_time.md)、[multisection_coupler](multisection_coupler.md)、[itu_link](itu_link.md)、[link](link.md)、[dgs](dgs.md)、[if_digitizer](if_digitizer.md)、[wg_dielectric_window](wg_dielectric_window.md)、[waveguide_closed_form](waveguide_closed_form.md)、[waveguide_iris](waveguide_iris.md)、[hybrid_junction](hybrid_junction.md)、[radar_eq](radar_eq.md)、[modulation_ber](modulation_ber.md)、[coax_line](coax_line.md)、[analog_modulation](analog_modulation.md)、[si_ctle](si_ctle.md)、[propagation](propagation.md)、[hf_skywave](hf_skywave.md)、[fmcw_radar](fmcw_radar.md)、[sar_geometry](sar_geometry.md)、[gnss_geometry](gnss_geometry.md)、[radar_clutter](radar_clutter.md)、[microstrip_disc](microstrip_disc.md)、[open_wire_line](open_wire_line.md)、[wg_cavity_bpf](wg_cavity_bpf.md)
 

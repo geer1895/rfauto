@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -78,7 +78,7 @@ class AdsMcpBackend:
 
     # ─── 会话生命周期 ────────────────────────────────────────────────────────
 
-    def session(self):
+    def session(self) -> AbstractAsyncContextManager[Any]:
         """异步上下文管理器：启动 headless 会话，yield execute(code) 协程函数，
         退出时 disconnect（失败不阻塞）。
 

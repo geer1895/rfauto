@@ -1,4 +1,4 @@
-"""varactor OE 三档 FAIL 归因判读工具（wf:varactor-oe-judge，纯离线判读）。
+"""varactor OE 三档 FAIL 归因判读工具（，纯离线判读）。
 
 对 runs/varactor_smoke/ 三档偏压 OE 真机档（v0.5 / v3.6342 / v10，全部 FAIL：
 缺省 NrTS=100000 触帽、能量远未达 -60dB）做谐振定位归因。读既有产物
@@ -815,7 +815,7 @@ def _write_md(r: dict, path: Path) -> None:
     attrs = r["attribution_per_tier"]
     overall = r["overall_primary"]
     lines = [
-        "# varactor_bpf 三档 OE FAIL 谐振定位归因判读（wf:varactor-oe-judge）",
+        "# varactor_bpf 三档 OE FAIL 谐振定位归因判读（）",
         "",
         f"- 产物根：`{r['root']}`（生成 {r['generated']}，纯离线：只读 port dump/"
         "引擎日志/sparams/oe_result，零求解）",

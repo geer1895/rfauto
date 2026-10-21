@@ -25,7 +25,9 @@ def _print_explain_summary(run_dir: str | None) -> None:
     if not run_dir:
         return
     try:
-        from rfauto.service.explain_run import explain_run
+        from rfauto.service.explain_run import (
+            explain_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         report = explain_run(run_dir)
     except Exception as exc:  # #105：观测性面故障不阻塞原错误输出
         console.print(f"  [dim]根因候选摘要不可用（{type(exc).__name__}: {exc}）[/dim]")
@@ -50,7 +52,9 @@ def run(
 ) -> None:
     """单次仿真（build → solve → post → 导出）。"""
     if dry_run:
-        from rfauto.service.api import dry_run as _dry_run
+        from rfauto.service.api import (
+            dry_run as _dry_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = _dry_run(recipe, adapter_name=adapter)
         if json_output:
             _emit(result, "dry-run 校验失败", json_output=True)
@@ -65,7 +69,9 @@ def run(
         return
 
     if detach:
-        from rfauto.service.api import run_once_async
+        from rfauto.service.api import (
+            run_once_async,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = run_once_async(recipe, adapter_name=adapter)
         if json_output:
             _emit(result, "后台启动失败", json_output=True)
@@ -74,7 +80,9 @@ def run(
         console.print(f"  轮询: rfauto jobs status {result['job_id']}")
         return
 
-    from rfauto.service.api import run_once
+    from rfauto.service.api import (
+        run_once,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
     result = run_once(recipe, adapter_name=adapter)
 
     if json_output:
@@ -225,7 +233,9 @@ def tune(
                 dry_run_note = note
             else:
                 console.print(f"[yellow]注：{note}[/yellow]")
-        from rfauto.service.api import dry_run as _dry_run
+        from rfauto.service.api import (
+            dry_run as _dry_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = _dry_run(recipe, adapter_name=adapter)
         if json_output:
             if watch or detach:
@@ -270,7 +280,9 @@ def tune(
             console.print("[red]✗ --detach 仅支持单目标路径"
                           "（多保真/多目标/代理寻优后台化另立）[/red]")
             raise typer.Exit(code=1)
-        from rfauto.service.api import start_tune_async
+        from rfauto.service.api import (
+            start_tune_async,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = start_tune_async(
             recipe, adapter_name=adapter, max_trials=max_trials,
             study_name=study_name, max_wall_s=max_wall_s,
@@ -292,7 +304,9 @@ def tune(
             watch_reporter = _TrialWatchReporter(console)
 
     if fidelity == "auto":
-        from rfauto.service.api import run_multifidelity_tune
+        from rfauto.service.api import (
+            run_multifidelity_tune,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = run_multifidelity_tune(recipe, adapter_low=adapter_low, adapter_high=adapter_high)
         if json_output:
             _emit(result, "多保真优化失败", json_output=True)
@@ -314,7 +328,9 @@ def tune(
         return
 
     if multi:
-        from rfauto.service.api import start_tune_multi
+        from rfauto.service.api import (
+            start_tune_multi,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
         result = start_tune_multi(
             recipe,
             adapter_name=adapter,
@@ -341,7 +357,9 @@ def tune(
         return
 
     if sampler == "sbo":
-        from rfauto.service.surrogate_optimize_service import surrogate_optimize
+        from rfauto.service.surrogate_optimize_service import (
+            surrogate_optimize,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         result = surrogate_optimize(
             recipe,
@@ -373,10 +391,12 @@ def tune(
             raise typer.Exit(code=1)
         return
 
-    from rfauto.service.api import start_tune
+    from rfauto.service.api import (
+        start_tune,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     tune_kw: dict = dict(
-        recipe=recipe,
+        recipe_path=recipe,
         adapter_name=adapter,
         max_trials=max_trials,
         study_name=study_name,
@@ -451,7 +471,9 @@ def sweep(
     SN-18：--dry-run 计划预览。
     """
     if dry_run:
-        from rfauto.optimization.sweep_backend import plan_sweep
+        from rfauto.optimization.sweep_backend import (
+            plan_sweep,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         result = plan_sweep(recipe, method=method, coarse_samples=coarse,
                             max_combos=max_combos)
@@ -471,7 +493,9 @@ def sweep(
             console.print(f"    {k}: [{v[0]:g}, {v[1]:g}]", markup=False)
         return
 
-    from rfauto.optimization.sweep_backend import run_sweep
+    from rfauto.optimization.sweep_backend import (
+        run_sweep,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
     if not json_output:
         console.print(f"[cyan]开始扫描: {recipe}[/cyan]")
         console.print(f"  方法: {method}, 粗扫: {coarse}, 适配器: {adapter}, 上限: {max_combos}"
@@ -566,7 +590,9 @@ def autotune(
         # SN-18：dry-run=配方全链前置校验（api.dry_run）+ 预算/旋钮回显。
         # 修正预算语义：自治环实跑每 budget 轮各一次求解，成本≈budget 次
         # run——如实换算，不臆造其它数字。
-        from rfauto.service.api import dry_run as _api_dry_run
+        from rfauto.service.api import (
+            dry_run as _api_dry_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         result = _api_dry_run(recipe, adapter_name="fake")
         plan = {
@@ -600,8 +626,12 @@ def autotune(
         console.print(f"  旋钮: {plan['knobs']}")
         return
     if self_verify:
-        from rfauto.service.autotune_service import self_verify_loop
-        from rfauto.service.contracts import annotate_contract
+        from rfauto.service.autotune_service import (
+            self_verify_loop,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
+        from rfauto.service.contracts import (
+            annotate_contract,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         coarse_mm = mesh if mesh > 0 else 1.0
         console.print(f"[cyan]自验证环: {recipe}（budget_coarse={budget}，"
@@ -638,7 +668,9 @@ def autotune(
             console.print(f"  [yellow]! 契约注记: {cc.get('errors')}[/yellow]")
         raise typer.Exit(code=0 if sv["verdict"] == "PASS" else 1)
 
-    from rfauto.service.autotune_service import autotune_loop
+    from rfauto.service.autotune_service import (
+        autotune_loop,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     console.print(f"[cyan]自治调优环: {recipe}（budget={budget}）[/cyan]")
     result = autotune_loop(
@@ -682,7 +714,9 @@ def tolerance(
 ) -> None:
     """公差/良率分析（Monte Carlo，规格取自 objectives）。"""
     if dry_run:
-        from rfauto.optimization.optimizer import plan_tolerance
+        from rfauto.optimization.optimizer import (
+            plan_tolerance,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         result = plan_tolerance(recipe, n_samples=samples)
         if json_output:
@@ -699,7 +733,9 @@ def tolerance(
             console.print(f"    {k}: ±{v:g}", markup=False)
         return
 
-    from rfauto.service.api import run_tolerance
+    from rfauto.service.api import (
+        run_tolerance,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     if not json_output:
         console.print(f"[cyan]公差分析: {recipe}[/cyan]")
@@ -748,7 +784,9 @@ def refine(
     使用相同的 study_name + SQLite storage，Optuna 自动加载已有 trial，
     从已有结果继续采样（TPE 利用历史数据）。
     """
-    from rfauto.optimization.optimizer import run_refine
+    from rfauto.optimization.optimizer import (
+        run_refine,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
     if not json_output:
         console.print(f"[cyan]续调 run_id: {run_id}[/cyan]")
 

@@ -42,7 +42,7 @@ _VERDICT_RANK = {"drifted": 4, "warning": 3, "insufficient": 2,
 
 def _registry_surrogate_param_schema(kind: str) -> list[dict[str, Any]] | None:
     """代理工厂签名 → params_schema（拿不到如实 None，不臆造）。"""
-    factories = getattr(surrogate_registry, "_factories", {})
+    factories = surrogate_registry.snapshot()
     factory = factories.get(kind)
     if factory is None:
         return None

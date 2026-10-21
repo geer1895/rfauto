@@ -7,6 +7,8 @@
 > 文中旗标、退出语义、样本格式、真实工件（含一个 ρ=0.38 的 FAIL 校准）
 > 均为当前工作区实测；执行类命令给读法不代跑，读完你可以在 fake 通道
 > 零 license 复制整条链。
+> 英文版（English version）：docs/tutorials/uncertainty_and_surrogates_en.md
+> （W9-S3 译，2026-10-19 全旗标复测同笔）。
 
 ## 0. 前置
 
@@ -184,20 +186,24 @@ build_yield_context 实测：5 点玩具样本 + 手写 objective 正常出名�
 `tolerance.tolerances` 段）对适配器**真跑** MC——代理收口的数字可信度
 存疑时，用它小样本抽验代理结论；`--dry-run` 先看计划面零执行。
 
-## 5. 代理模型注册表：12 种内置 + 自定义接入
+## 5. 代理模型注册表：14 种内置 + 自定义接入
 
-注册表实测清单（`surrogate_registry.available()`，2026-10-11）：
+注册表实测清单（装饰器注册全集，2026-10-19 W9-S3 复核；`available()`
+反映已 import 模块——裸 `available()` 为 13 种，`gnn_geom` 经模块
+import 触发注册后 14 种全貌；saas_gp/warped_kriging 为 2026-10-18
+架构批 W5-S22 新入）：
 
 ```
 ['deeponet', 'fno', 'fno_lite', 'gbdt', 'gnn_geom', 'huber_ridge',
- 'mapes_pixel_analytic', 'nn', 'pod_rom', 'poly_ridge', 'smt_kriging',
- 'smt_mfk']
+ 'mapes_pixel_analytic', 'nn', 'pod_rom', 'poly_ridge', 'saas_gp',
+ 'smt_kriging', 'smt_mfk', 'warped_kriging']
 ```
 
 - **poly_ridge** 是校准链缺省（二阶多项式 + ridge，样本需求最小、
   LOOCV 门就是为它定的口径）；**nn** 是小 MLP（`--kind nn` 切换）。
   其余面向进阶用途（算子学习 deeponet/fno、POD-ROM、SMT kriging/多保
-  真、GBDT、huber ridge、几何输入 GNN gnn_geom 等），实现见
+  真、GBDT、huber ridge、几何输入 GNN gnn_geom、SAAS 稀疏 ARD 高维
+  saas_gp、HEBO 式输入 warping warped_kriging 等），实现见
   `optimization/surrogate/` 子包，
   每个模块头自带适用域说明。
 - **第三方代理接入** = 实现三方法 + 装饰器注册（base.py 契约原文）：
@@ -336,7 +342,7 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
 | 校准链六步/design_kind 三态/lhs 需 n_samples≥5/LOOCV ρ≥0.8/FAIL=正常返回 | `service/calibration_service.py` 模块头+calibrate_surrogate 实读 | 过 |
 | 校准产物四件套与 meta 登记（algorithm=surrogate_calibration） | calibration_service 落盘段实读 | 过 |
 | 真实 FAIL 工件（ρ=0.3833/9 折/L9/taguchi） | `runs/20260903_235147_cb982df7/calibration/{gate,samples}.json` 实读 | 过 |
-| 注册表 12 种 kind 清单 | `surrogate_registry.available()` 实调 | 过 |
+| 注册表 14 种 kind 清单（裸 available()=13，gnn_geom 模块 import 后 14） | `surrogate_registry.available()` 实调+装饰器注册面 grep | 过 |
 | 第三方注册三方法契约 | `optimization/surrogate/base.py` docstring 实读 | 过 |
 | uq --kind 收全注册表（帮助文本仅写 poly_ridge\|nn） | `calibration_service._make_model` 经 uq_service 调用链实读 | 过 |
 | 注册表服务面 v1 零 CLI/MCP 接线（tune 三态开关除外） | `surrogate_registry_service.py` 模块头实读 + cli/mcp_tools grep | 过 |

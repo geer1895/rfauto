@@ -27,6 +27,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from rfauto.infra.registry_kit import RegistryKit
+
 __all__ = ["SurrogateModel", "SurrogateRegistry", "surrogate_registry"]
 
 
@@ -84,34 +86,31 @@ class SurrogateModel(ABC):
         return {"kind": self.KIND, "n_samples": n_samples}
 
 
-class SurrogateRegistry:
-    """代理模型注册表（基类+注册表模式，同 EMSolverRegistry）。"""
+class SurrogateRegistry(RegistryKit[Callable[..., SurrogateModel]]):
+    """代理模型注册表（基类+注册表模式，同 EMSolverRegistry）。
+
+    T6 试点（R1 审计 §面5/T6）：dict+装饰器样板由 infra.registry_kit.
+    RegistryKit 承载——历史语义逐项保真：重名**静默覆盖**
+    （allow_overwrite=True）、缺名 KeyError 文案逐字节不变、
+    available()=keys() 别名。
+    """
 
     def __init__(self) -> None:
-        self._factories: dict[str, Callable[..., SurrogateModel]] = {}
+        super().__init__(
+            label="代理类型",
+            allow_overwrite=True,
+            missing_fmt="未注册的{label}: {key}，可用: {keys}")
 
     def register(
         self, kind: str, factory: Callable[..., SurrogateModel] | None = None,
     ) -> Callable:
         """注册代理工厂（可作装饰器：@registry.register("my_nn")）。"""
-
-        def _wrap(cls: Callable[..., SurrogateModel]) -> Callable[..., SurrogateModel]:
-            self._factories[kind] = cls
-            return cls
-
         if factory is not None:
-            _wrap(factory)
-            return factory
-        return _wrap
-
-    def create(self, kind: str, **kwargs: Any) -> SurrogateModel:
-        if kind not in self._factories:
-            raise KeyError(
-                f"未注册的代理类型: {kind}，可用: {sorted(self._factories)}")
-        return self._factories[kind](**kwargs)
+            return super().register(kind, factory)
+        return super().register(kind)
 
     def available(self) -> list[str]:
-        return sorted(self._factories)
+        return self.keys()
 
 
 surrogate_registry = SurrogateRegistry()

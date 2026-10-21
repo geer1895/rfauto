@@ -1,6 +1,13 @@
 """MIMO 虚拟阵/信道容量族（NX-1+NX-10，内核分别在 core/mimo_virtual_array.py
 与 core/mimo_capacity.py，本模块只做注册壳）。
 
+出处（MIMO 容量与虚拟阵经典口径，正文规格节转录）：
+- mimo_channel_capacity：等功率/注水容量 C=log₂det(I+γHH†)
+  （G. J. Foschini & M. J. Gans, Wireless Pers. Commun. 6(3), 1998；
+  I. E. Telatar, Eur. Trans. Telecommun. 10(6), 1999 二级转引）。
+- mimo_virtual_array：TX×RX Kronecker 虚拟阵与角分辨率闭式
+  （验收复现 EuRAD 2023 12×6 案例口径；正文锚树同源）。
+
 round14 §四 :88「NX-1 MIMO 虚拟阵综合内核（TX×RX Kronecker 展开虚拟阵/
 等效孔径/角分辨率闭式，接 sparse_array_cs；验收复现 EuRAD 2023 12×6 案例）」
 与 :108「NX-10 MIMO 容量/DGCC 补全（C=log₂det(I+γHH†) 与分集增益，S 参法

@@ -1,13 +1,12 @@
 """W5-D 件 2 EC-6 测试：toolsets 目录资源+guidelines 上下文工具（零网络全确定性）。
 
-判据（spec 预声明门值）：
+判据（spec §2.3 预声明门值，runs/research_seats_20261004/se_specs3/SPECS.md）：
 1. 单一真源对拍：枚举名单==live list_tools 名单（逐位）；
 2. skill 文本质量：非空且含坑号或命令名；缺 → errors 显式；
-3. guidelines 检索：合成知识根回收例 openems ≥5 条且可溯源；真树数据
-   缺席（公开分发视图不带坑账索引）→ 诚实 error 信封双态钉；
+3. guidelines 回收例：openems ≥5 条且可溯源；未知 topic ok=False（双态钉）；
 4. 确定性钉：同输入两次调用逐位一致（零网络零随机）。
 共享计数面（test_mcp_server 计数/名单、test_mcp_tool_consistency 台账数、
-check_numbers 声明数、docs 三处）归主代理合流集中更新。
+check_numbers 声明数、docs 三处）归主代理合流集中更新——本席只登记预期红。
 """
 
 from __future__ import annotations
@@ -152,67 +151,12 @@ def test_schema_version_mismatch_rejected(tmp_path: Path) -> None:
     assert any("schema" in e for e in payload["errors"])
 
 
-# ── 判据 3：guidelines 检索（合成知识根全链 + 真树数据缺席双态钉） ─────────────
-# 公开分发视图不随附坑账索引数据（内部账本衍生）：真树调用 → 诚实 error
-# 信封；检索链行为（回收例/别名/类别/未知 topic）以合成知识根全链钉。
+# ── 判据 3：guidelines 回收例（真实数据源，双态钉） ───────────────────────────
 
 
-def _write_guidelines_root(tmp_path: Path) -> Path:
-    """合成知识根：pitfalls 索引 + playbook 指纹规则 + rules 三源齐备。"""
-    root = tmp_path / "knowledge"
-    root.mkdir()
-    entries = (
-        [{"id": f"#90{i}", "title": f"openEMS 坑{i}", "category": "openems",
-          "lesson_one_line": f"openems lesson {i}",
-          "source": {"file": "internal-ledger", "line_start": i + 1,
-                     "line_end": i + 2}}
-         for i in range(5)]
-        + [{"id": f"#95{i}", "title": f"HFSS 坑{i}", "category": "hfss",
-            "lesson_one_line": f"hfss lesson {i}",
-            "source": {"file": "internal-ledger", "line_start": i + 1,
-                       "line_end": i + 2}}
-           for i in range(3)]
-    )
-    (root / "pitfalls_index.json").write_text(
-        json.dumps({"schema_version": "rfauto-pitfalls-index-v1",
-                    "category_vocab": ["openems", "hfss"],
-                    "entries": entries}, ensure_ascii=False),
-        encoding="utf-8")
-    (root / "diagnostics").mkdir()
-    (root / "diagnostics" / "playbook.yaml").write_text(
-        yaml.safe_dump(
-            {"schema": "rfauto-diag-playbook-v1", "rules": [
-                {"id": "fdtd_truncation_artifact",
-                 "root_cause_family": "openems",
-                 "notes": "fdtd 截断伪象指纹（openems 窄 FC 窗）",
-                 "pit_refs": ["#901"], "forensic_commands": []},
-                {"id": "hfss_port_face", "root_cause_family": "hfss",
-                 "notes": "hfss 波端口尺寸指纹", "pit_refs": ["#951"],
-                 "forensic_commands": []}]},
-            allow_unicode=True),
-        encoding="utf-8")
-    (root / "rules.yaml").write_text(
-        yaml.safe_dump(
-            {"rules": [{"id": "openems_mesh_guard", "category": "openems",
-                        "description": "openems 网格最小间距守卫"}]},
-            allow_unicode=True),
-        encoding="utf-8")
-    return root
-
-
-def test_guidelines_real_tree_without_ledger_data_fails_honest() -> None:
-    """真树（无坑账索引数据）：调用 → 诚实 error 信封（数据缺席不崩）。"""
+def test_guidelines_openems_recovery() -> None:
     payload = get_guidelines_for("openems")
-    assert payload["ok"] is False
-    assert payload["errors"]
-    assert any("加载失败" in e or "不存在" in e for e in payload["errors"])
-
-
-def test_guidelines_openems_recovery_synthetic_root(tmp_path: Path) -> None:
-    """回收例（合成知识根）：openems ≥5 条且可溯源。"""
-    payload = get_guidelines_for(
-        "openems", knowledge_root=_write_guidelines_root(tmp_path))
-    assert payload["ok"] is True, payload.get("errors")
+    assert payload["ok"] is True
     hits = payload["hits"]
     assert len(hits) >= 5
     for hit in hits:
@@ -223,14 +167,13 @@ def test_guidelines_openems_recovery_synthetic_root(tmp_path: Path) -> None:
             or "openems" in hit["text"].lower()
         )
         assert relevant, hit
-        # 可溯源：ref 非空 + anchor 非空（坑号/行锚为数字出处标记）
+        # 可溯源：ref 非空 + anchor 非空（#NNN 是  出处标记/AGENTS 行锚）
         assert hit["ref"].strip()
         assert hit["anchor"].strip()
 
 
-def test_guidelines_unknown_topic_fails_explicit(tmp_path: Path) -> None:
-    payload = get_guidelines_for(
-        "绝不存在主题xyz", knowledge_root=_write_guidelines_root(tmp_path))
+def test_guidelines_unknown_topic_fails_explicit() -> None:
+    payload = get_guidelines_for("绝不存在主题xyz")
     assert payload["ok"] is False
     assert payload["errors"]
     assert any("词表" in e for e in payload["errors"])
@@ -241,19 +184,16 @@ def test_guidelines_empty_topic_fails() -> None:
     assert get_guidelines_for("")["ok"] is False
 
 
-def test_guidelines_fdtd_alias_maps_to_openems_with_playbook(
-        tmp_path: Path) -> None:
-    payload = get_guidelines_for(
-        "fdtd", knowledge_root=_write_guidelines_root(tmp_path))
+def test_guidelines_fdtd_alias_maps_to_openems_with_playbook() -> None:
+    payload = get_guidelines_for("fdtd")
     assert payload["ok"] is True
     cats = {h["category"] for h in payload["hits"]}
     assert "openems" in cats
     assert payload["counts"]["playbook"] >= 1  # fdtd_truncation_artifact 指纹规则
 
 
-def test_guidelines_hfss_category(tmp_path: Path) -> None:
-    payload = get_guidelines_for(
-        "hfss", knowledge_root=_write_guidelines_root(tmp_path))
+def test_guidelines_hfss_category() -> None:
+    payload = get_guidelines_for("hfss")
     assert payload["ok"] is True
     assert payload["counts"]["total"] >= 3
     for hit in payload["hits"]:
@@ -273,10 +213,9 @@ def test_guidelines_missing_source_fails_gracefully(tmp_path: Path) -> None:
 # ── 判据 4：确定性（零网络零随机，两次调用逐位一致） ──────────────────────────
 
 
-def test_guidelines_deterministic_bitwise(tmp_path: Path) -> None:
-    root = _write_guidelines_root(tmp_path)
-    a = get_guidelines_for("openems", knowledge_root=root)
-    b = get_guidelines_for("openems", knowledge_root=root)
+def test_guidelines_deterministic_bitwise() -> None:
+    a = get_guidelines_for("openems")
+    b = get_guidelines_for("openems")
     assert json.dumps(a, ensure_ascii=False, sort_keys=True) == json.dumps(
         b, ensure_ascii=False, sort_keys=True
     )

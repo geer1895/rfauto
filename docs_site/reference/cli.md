@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **270** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **273** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -179,6 +179,11 @@ mock 仪表采集→校准→相关全链回放（零硬件；硬件阻塞下的
 F9 叙述位：run 白名单 → 确定性模板叙述，或审计外来叙述（未授权数字定位；不调 LLM）。
 
 
+## rfauto verdict-summary
+
+verdict.json → 人读摘要（总判定+门清单+关键指标，确定性零 LLM）。
+
+
 ## rfauto explain-run
 
 失败指纹解释（DP-17 W2：确定性指纹匹配→候选根因族+取证命令+坑号链，无 LLM）。
@@ -323,11 +328,12 @@ STL 实体导入：解析+分类+CSX 载荷（B3；一切失败 ok=False 不抛�
 
 run 历史对比
 
-共 8 条叶子命令。
+共 9 条叶子命令。
 
 - `rfauto runs compare` — 对比多次 run 的指标与 cost。--provenance 输出环境指纹复现块。
 - `rfauto runs health` — 对单次 run 做求解健康度体检（G11：历史踩坑教训内核化）。
 - `rfauto runs diff` — 双 run 深度只读对比（配置递归 diff+指标 Δ+S 曲线+判读提示）。
+- `rfauto runs compare-batch` — 多 run 并排对账表（战役收官快速对账，W8-S4）。
 - `rfauto runs watch` — 跟踪 run 至终态（SN-19 --watch 泛化：CLI 轮询打点，零写入）。
 - `rfauto runs monitor` — run 目录周期体检（进度/截断嫌疑/NrTS 触顶/能量停滞四类时序判据）。
 - `rfauto runs retrieve-similar` — 检索式 warm-start 先验（DA-2 k-NN 元特征相似检索，确定性零学习）。
@@ -338,10 +344,11 @@ run 历史对比
 
 数据集注册表 v2（runs 点级数据 → Parquet + SQL 查询）
 
-共 8 条叶子命令。
+共 9 条叶子命令。
 
 - `rfauto datasets materialize` — 把 runs/ 点级数据物化为 Parquet 数据集（指纹去重 + manifest 落盘）。
 - `rfauto datasets query` — DuckDB 直查 Parquet 数据集（谓词下推/列裁剪，where 经白名单校验）。
+- `rfauto datasets profile` — 数据集一键画像（audit 席快速画像，W8-S4）。
 - `rfauto datasets discover-workdir` — 发现工作目录形态真机产物（无 meta.json 的 runs 子目录，只读）。
 - `rfauto datasets import-workdir` — 工作目录形态真机产物导入数据集注册表（无 meta.json 的漏数口）。
 - `rfauto datasets coverage` — 数据集覆盖度：点数分布 + 参数空间逐维占用率/最弱维（WP2.4①）。

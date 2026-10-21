@@ -108,6 +108,12 @@ _ENV_VAR_CATALOG: tuple[EnvVarSpec, ...] = (
     EnvVarSpec("RFAUTO_GITLEAKS_STRICT", "flag", "tooling", "gitleaks 缺失即 fail（缺省警告放行）"),
     EnvVarSpec("RFAUTO_GITLEAKS_PY", "path", "tooling", "钩子 launcher 内 python 定位（install_git_hooks 生成）"),
     EnvVarSpec("RFAUTO_KICAD_PYTHON", "path", "tooling", "KiCad 自带 Python 定位（mTRL/kicad_extract/kicad_drc/kicad_pcell 子进程面统一口径）"),
+    # ── UI 工作台（架构批 W6-S2，R2 审计 §面5.4 写端点鉴权）───────────
+    EnvVarSpec(
+        "RFAUTO_UI_TOKEN", "knob", "ui",
+        "UI 写端点 Bearer 令牌（设置即启用：写端点要求 Authorization: Bearer、"
+        "读端点豁免；未设=零鉴权零行为变化；值经 index meta 注入前端，不回显）",
+    ),
 )
 
 #: 只读掩码清单：值可能含凭据，报告面永不回显原文。

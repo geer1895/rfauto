@@ -1,4 +1,4 @@
-"""ME-17b 接线批后半 + 批 B1 平台薄壳单测（wf:batch-b1-wiring，2026-09-28）。
+"""ME-17b 接线批后半 + 批 B1 平台薄壳单测（，2026-09-28）。
 
 覆盖面（方案 gap 盘点 §二批 B1 五件，2026-09-28）：
 - ME-17b 后半接线：repro-manifest/repro-verify（CLI）、chain lna/loadpull
@@ -382,9 +382,36 @@ class TestDuckDBDefensiveConfig:
         out = tmp_path / "cold"
         first = lake_service.export_index_parquet(tmp_path / "i.duckdb", out)
         assert first["ok"] is True
+        assert first["n_rows"] == 5
+        # 覆盖语义兑现（R3 弱测试 #6）：索引内容变化后 overwrite=True 重导
+        # 出，落盘 parquet 反映新索引（行数 6、新增 template 在档），
+        # 不是旧档残留
+        (runs / "camp" / "run_ok2").mkdir()
+        (runs / "camp" / "run_ok2" / "meta.json").write_text(
+            json.dumps({"model": "patch_antenna", "adapter": "fake"}),
+            encoding="utf-8")
+        rebuilt = lake_service.build_runs_index(runs,
+                                                db_path=tmp_path / "i.duckdb")
+        assert rebuilt["ok"] is True and rebuilt["n_rows"] == 6
         again = lake_service.export_index_parquet(tmp_path / "i.duckdb", out,
                                                   overwrite=True)
         assert again["ok"] is True, again.get("errors")
+        assert again["n_rows"] == 6
+        assert again["files"], again
+        # 读回落盘 parquet：行数=新索引 6 行，且新点 template 可查（内容已变）
+        duckdb = lake_service._import_duckdb()
+        con = duckdb.connect()
+        try:
+            rows = con.execute(
+                "SELECT template, count(*) FROM read_parquet("
+                f"'{(out / '**').as_posix()}/*.parquet') "
+                "GROUP BY template").fetchall()
+        finally:
+            con.close()
+        by_template = dict(rows)
+        assert sum(by_template.values()) == 6
+        assert by_template.get("patch_antenna") == 1
+        assert by_template.get("wilkinson_power_divider") == 1
 
     def test_export_existing_dir_without_overwrite_fails(self, tmp_path,
                                                          monkeypatch):

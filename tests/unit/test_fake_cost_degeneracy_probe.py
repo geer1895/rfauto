@@ -22,9 +22,8 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    """探针不落盘，但统一 chdir 隔离（#144 惯例）。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd(isolated):
+    """探针不落盘，但统一 chdir 隔离（#144 惯例；T5 批 6 单源适配）。"""
     yield
 
 

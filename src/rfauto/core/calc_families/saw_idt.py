@@ -1,4 +1,4 @@
-"""声表面波（SAW）IDT 换能器设计族（aurora72 A5-A 席域 1，R7 第二梯队 T12=G14）。
+"""声表面波（SAW）IDT 换能器设计族（架构批 A5-A 席域 1，R7 第二梯队 T12=G14）。
 
 三键：saw_idt_sync_design（IDT 同步设计双向：指对周期 pitch↔同步频率 f0=v/λ0，
 λ0=pitch 口径写死） / saw_idt_frequency_response（δ 函数模型频响：Dirichlet 核

@@ -9,6 +9,7 @@ import typer
 from rich.table import Table
 
 from rfauto.cli.domains._core import _emit as _emit
+from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 from rfauto.service.envelope import error_envelope, ok_envelope
@@ -350,6 +351,99 @@ def runs_diff_cmd(
         console.print(f"  [cyan]*[/cyan] {h}", markup=False)
 
 
+@runs_app.command("compare-batch")
+def runs_compare_batch(
+    run_ids: list[str] = typer.Argument(..., help="run_id 清单（runs 根下相对形态，战役/子目录亦可）"),  # noqa: B008
+    top_k: int = typer.Option(5, "--top-k", help="指标偏差排行上限（缺省 5，上限封顶 5）"),
+    fmt: str = typer.Option("table", "--format", "-f",
+                            help="输出形态 table | md"),
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """多 run 并排对账表（战役收官快速对账，W8-S4）。
+
+    compare_runs_nway 的收官姊妹面：逐 run 判定（verdict.json status
+    优先，回落 meta.status）+ 耗时 + cost 并排，缺产物降级 missing 行
+    不传染；跨 run 数值指标极差排行 top-K。service=batch_ops_service.
+    compare_runs_batch（唯一事实源）；只读零写入。``--format md`` 渲染
+    Markdown 对账表（审计/收官对账直读，verdict --format md 同管道范式，
+    service=batch_ops_service.compare_runs_batch_md）。
+    """
+    from rfauto.service.batch_ops_service import compare_runs_batch
+
+    fmt_n = (fmt or "table").strip().lower()
+    if fmt_n not in ("table", "md"):
+        _emit_usage_error(f"--format 只允许 table|md，收到 {fmt!r}",
+                          json_output=json_output)
+        return
+    result = compare_runs_batch(list(run_ids), top_k=top_k)
+    if fmt_n == "md" and result.get("ok"):
+        from rfauto.service.batch_ops_service import (
+            compare_runs_batch_md,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
+
+        md = compare_runs_batch_md(list(run_ids), top_k=top_k)
+        if json_output:
+            # 信封=结构化对账 + markdown 键（verdict --format md 同范式）
+            result["markdown"] = md
+        else:
+            console.print(md, markup=False)
+            if result.get("errors"):
+                raise typer.Exit(code=1)
+            return
+    if json_output:
+        _emit(result, "批量对账失败", json_output=True)
+        return
+    if not result.get("ok"):
+        console.print("[red]✗ 批量对账失败[/red]")
+        for err in result.get("errors", []):
+            console.print(f"  [red]- {err}[/red]")
+        raise typer.Exit(code=1)
+    status_color = {"PASS": "green", "DONE": "green", "COMPLETE": "green",
+                    "CONFIRMED": "green", "PARTIAL": "yellow",
+                    "FAIL": "red", "missing": "dim"}
+    table = Table(title=f"run 批量对账（{result.get('n_runs')} 个）")
+    table.add_column("run_id", style="cyan", overflow="fold")
+    table.add_column("判定")
+    table.add_column("model")
+    table.add_column("耗时 s", justify="right")
+    table.add_column("cost", justify="right")
+    table.add_column("指标数", justify="right")
+    for row in result.get("runs") or []:
+        st = str(row.get("status") or "unknown")
+        color = status_color.get(st, "white")
+        dur = row.get("duration_s")
+        cost = row.get("cost")
+        table.add_row(
+            row.get("run_id"), f"[{color}]{st}[/{color}]",
+            str(row.get("model") or "-"),
+            "-" if dur is None else f"{float(dur):.1f}",
+            "-" if cost is None else f"{float(cost):.4f}",
+            str(row.get("n_metrics") or 0))
+    console.print(table)
+    devs = result.get("deviations") or []
+    if devs:
+        dtable = Table(title="跨 run 指标偏差 top（相对极差降序）")
+        dtable.add_column("指标", style="cyan", overflow="fold")
+        dtable.add_column("极差", justify="right")
+        dtable.add_column("相对极差", justify="right")
+        dtable.add_column("逐 run 值", overflow="fold")
+        for d in devs:
+            vals = "  ".join(
+                f"{rid}={_fmt_num(v)}"
+                for rid, v in sorted((d.get("values") or {}).items()))
+            rel = d.get("rel_spread")
+            dtable.add_row(d.get("metric"), _fmt_num(d.get("spread")),
+                           "-" if rel is None else f"{rel:.4f}", vals)
+        console.print(dtable)
+    for err in result.get("errors") or []:
+        console.print(f"  - {err}", markup=False)
+    for note in result.get("notes") or []:
+        console.print(f"  * {note}", markup=False)
+    if result.get("errors"):
+        raise typer.Exit(code=1)
+
+
 @runs_app.command("watch")
 def runs_watch_cmd(
     run_id: str = typer.Argument(..., help="run_id（runs/ 目录名；job_id 亦可）"),
@@ -627,6 +721,102 @@ def datasets_query(
             ("" if row.get(c) is None else str(row.get(c))) for c in result["columns"]
         ))
     console.print(table)
+
+
+@datasets_app.command("profile")
+def datasets_profile(
+    name: str = typer.Argument(..., help="数据集名（materialize 生成的目录名）"),
+    out_dir: Path = typer.Option(Path("runs/datasets"), "--out-dir", help="数据集根目录"),  # noqa: B008
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """数据集一键画像（audit 席快速画像，W8-S4）。
+
+    规模/逐模型计数/参数范围/数值指标分布与 >3σ 异常值/门通过率
+    （manifest 健康门 + GT 行占比），全部确定性描述统计。
+    service=dataset_service.dataset_profile（唯一事实源）；只读零写入。
+    """
+    from rfauto.service.dataset_service import dataset_profile
+
+    result = dataset_profile(name, out_dir=out_dir)
+    if json_output:
+        _emit(result, "画像失败", json_output=True)
+        return
+    if not result.get("ok"):
+        console.print("[red]✗ 画像失败[/red]")
+        for err in result.get("errors", []):
+            console.print(f"  [red]- {err}[/red]")
+        raise typer.Exit(code=1)
+    gates = result.get("gates") or {}
+    console.print(
+        f"[green]✓ {result.get('dataset')}[/green]  格式 {result.get('format')}"
+        f"  {result.get('n_rows')} 行 × {result.get('n_columns')} 列"
+        f"  {result.get('n_runs')} 个 run")
+    models = result.get("models") or {}
+    if models:
+        console.print("  模型: " + "  ".join(
+            f"{m}×{n}" for m, n in models.items()))
+    ranges = result.get("param_ranges") or {}
+    if ranges:
+        table = Table(title="参数范围（params_json 展开）")
+        table.add_column("参数", style="cyan")
+        table.add_column("类型")
+        table.add_column("范围/取值数", justify="right")
+        for key, stat in ranges.items():
+            if stat.get("kind") == "numeric":
+                table.add_row(key, "numeric",
+                              f"[{stat['min']:.6g}, {stat['max']:.6g}]"
+                              f"（{stat['n']}）")
+            else:
+                table.add_row(key, "categorical",
+                              f"{stat.get('n_distinct')} 个取值")
+        console.print(table)
+    stats = result.get("metric_stats") or {}
+    if stats:
+        mtable = Table(title="指标分布（>3σ 异常值计数）")
+        mtable.add_column("指标", style="cyan", overflow="fold")
+        mtable.add_column("n", justify="right")
+        mtable.add_column("mean", justify="right")
+        mtable.add_column("std", justify="right")
+        mtable.add_column("min", justify="right")
+        mtable.add_column("max", justify="right")
+        mtable.add_column(">3σ", justify="right")
+        for key, stat in stats.items():
+            mtable.add_row(key, str(stat.get("n", 0)),
+                           _fmt_num(stat.get("mean")), _fmt_num(stat.get("std")),
+                           _fmt_num(stat.get("min")), _fmt_num(stat.get("max")),
+                           str(stat.get("n_outliers", 0)))
+        console.print(mtable)
+    cost = result.get("cost_stats") or {}
+    if cost.get("n"):
+        console.print(
+            f"  cost: n={cost['n']}  mean={_fmt_num(cost.get('mean'))}"
+            f"  std={_fmt_num(cost.get('std'))}"
+            f"  [{_fmt_num(cost.get('min'))}, {_fmt_num(cost.get('max'))}]"
+            f"  >3σ 异常 {cost.get('n_outliers', 0)} 例")
+    if gates:
+        healthy = (gates.get("health_verdicts") or {}).get("healthy", 0)
+        judged = gates.get("n_runs_judged") or 0
+        rate = gates.get("healthy_rate")
+        rate_s = f"{rate:.1%}" if isinstance(rate, float) else "-"
+        gt_rate = gates.get("gt_row_rate")
+        gt_s = (f"（{gt_rate:.1%}）" if isinstance(gt_rate, float) else "")
+        console.print(
+            f"  健康门: healthy {healthy}/{judged}（{rate_s}）"
+            f"  GT 行 {gates.get('n_gt_rows')}{gt_s}")
+    if result.get("n_bad_json_rows"):
+        console.print(
+            f"  [yellow]坏 JSON 行 {result['n_bad_json_rows']}"
+            f"（如实计数，未参与统计）[/yellow]")
+
+
+def _fmt_num(v) -> str:
+    """对账/画像表数值显示（None→'-'；浮点 .6g 显示层，不改值）。"""
+    if v is None:
+        return "-"
+    if isinstance(v, float):
+        return f"{v:.6g}"
+    return str(v)
 
 
 def _datasets_json(result: dict, fail_msg: str,

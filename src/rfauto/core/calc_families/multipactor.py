@@ -1,6 +1,12 @@
 """multipactor 微放电击穿阈值族（MP-3，内核在 core/multipactor.py，
 本模块只做注册壳）。
 
+出处（微放电敏感带经典口径，正文规格节转录）：
+- multipactor_susceptibility_check：平行板一阶渡越敏感带 × SEY
+  crossover 窗口（Vaughan 二次发射模型；20-gap 串接+N 载波等效功率
+  口径）；工程仲裁面=ECSS f·d 实验包络（ECSS-E-ST-10-04C 语境，
+  high_power.ecss_multipactor_fd 单源，本族不与其语义重叠）。
+
 round15 §三 :84 规格「Vaughan 二次发射+20-gap 串接+N 载波等效功率
 （IEEE 10904461 2025）」（2026-10-02）。单键 multipactor_susceptibility_check
 （施加峰值电压对平行板一阶渡越敏感带 × SEY crossover 窗口的合成裕量

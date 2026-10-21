@@ -165,5 +165,5 @@ def write_geometry_summary_json(
 class FileGeometryPort:
     name = "file"
 
-    def summarize(self, path):
+    def summarize(self, path) -> GeometrySummary | None:
         return geometry_from_brep_file(path)

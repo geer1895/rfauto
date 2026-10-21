@@ -26,11 +26,13 @@ SRC = REPO / "src" / "rfauto"
 
 # ─── 钉 1：prompt 写入面白名单（2026-10-05 AST 实测 9 位点冻结）────────────
 # 位点=(模块名, 函数链)；豁免理由见行尾。AD-2 接线零扩白名单——extra_system
-# 走 agent_runtime.submit 既有插入点，r3_services._llm_turn 本就在名单内。
+# 走 agent_runtime.submit 既有插入点。键=文件 stem：r3_services 平铺模块经
+# T2 巨石拆分改包 r3_services/chat.py 后，_llm_turn 位点名随 stem 迁移
+# （2026-10-19 架构批 终门三审定谳：同一位点改名，非新注入面）。
 SYSTEM_MESSAGE_WHITELIST: set[tuple[str, str]] = {
     ("agent_runtime", "submit"),                       # extra_system 注入点本体
     ("pydantic_ai_runtime", "pai_messages_to_openai"),  # 消息格式转换面
-    ("r3_services", "_llm_turn"),                      # chat 主 system（配方菜单）
+    ("chat", "_llm_turn"),                             # chat 主 system（配方菜单；原 r3_services 平铺期键）
     ("robust_rewrite", "build_rewrite_table"),         # 重写面（独立 prompt）
     ("runtime_ab", "live_runtime_ab"),                 # A/B 对照实验面（两臂同基线）
     ("runtime_ab", "compare_runtime_token_efficiency"),
@@ -131,7 +133,8 @@ def _imported_modules(tree: ast.AST) -> set[str]:
 
 class TestNail2ComposerSinglePoint:
     def test_compose_fn_called_only_from_llm_turn(self):
-        """compose_knowledge_injection 的 src 消费面唯一（=r3_services._llm_turn）。"""
+        """compose_knowledge_injection 的 src 消费面唯一（=chat._llm_turn；
+        原 r3_services 平铺模块 T2 拆包后 stem=chat，同一位点非新消费面）。"""
         consumers: set[str] = set()
         pattern = re.compile(r"\b" + COMPOSE_FN + r"\b")
         for path in _iter_src_py():
@@ -140,7 +143,7 @@ class TestNail2ComposerSinglePoint:
             text = path.read_text(encoding="utf-8")
             if pattern.search(text):
                 consumers.add(path.stem)
-        assert consumers == {"r3_services"}, (
+        assert consumers == {"chat"}, (
             f"{COMPOSE_FN} 出现了第二消费面 {sorted(consumers)}——注入组装"
             f"必须单点（SK-V §1.4 钉 2①；新消费面走分流裁决后再扩）")
 

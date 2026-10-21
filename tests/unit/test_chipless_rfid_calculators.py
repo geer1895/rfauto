@@ -257,4 +257,19 @@ def test_service_results_json_serializable():
     ):
         out = run_calculator(key, params)
         assert out["ok"], (key, out)
-        json.dumps(out, ensure_ascii=False, allow_nan=False)
+        text = json.dumps(out, ensure_ascii=False, allow_nan=False)
+        assert text and json.loads(text)["result"] == out["result"]
+        # result 业务键内容非空（R3 弱测试 #2：谐振频率/Q 等真实产出，
+        # 非空壳 ok——空 result/空 resonators 一律可见地红）
+        res = out["result"]
+        if key == "chipless_tag_plan":
+            # 谐振器只落 bit=1 槽（_CODE 恰 3 个 1：槽 0/2/6，#118 锚链）
+            assert [r["slot_index"] for r in res["resonators"]] == [0, 2, 6]
+            for r in res["resonators"]:
+                assert _BAND[0] < r["freq_hz"] < _BAND[1]
+                assert r["q_unloaded"] == pytest.approx(_Q, rel=1e-11)
+        elif key == "chipless_tag_encode":
+            assert res["code"] == [1, 0, 1, 0, 0, 0, 0, 0]  # 两格中心→bit0/bit2
+        elif key == "chipless_tag_decode":
+            # 合成谱即 _CODE 的谱：解码须逐位复原（内容级，非仅"能跑"）
+            assert res["code"] == _CODE

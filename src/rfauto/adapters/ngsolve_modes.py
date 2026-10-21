@@ -38,6 +38,10 @@ z∈[0,h]（IfPos 逐点 εr）、上下空气域、外框 PEC（屏蔽槽线口
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ngsolve import Mesh
 import math
 from dataclasses import dataclass, field
 
@@ -108,7 +112,7 @@ class TransverseMode:
 
 def build_slotline_mesh(sec: SlotlineSection, maxh_mm: float = 3.0,
                         slot_near_mm: float | None = None,
-                        dense_halfwidth_mm: float | None = None):
+                        dense_halfwidth_mm: float | None = None) -> Mesh:
     """槽线截面 2D 分级网格（netgen.geom2d）。
 
     - 金属线 z=h 分五段：远 PEC | 近 PEC | 缝（自然）| 近 PEC | 远 PEC；
@@ -171,13 +175,13 @@ def build_slotline_mesh(sec: SlotlineSection, maxh_mm: float = 3.0,
     return mesh_of(geo, maxh)
 
 
-def mesh_of(geo, maxh: float):
+def mesh_of(geo, maxh: float) -> Mesh:
     from ngsolve import Mesh
 
     return Mesh(geo.GenerateMesh(maxh=maxh))
 
 
-def build_rect_waveguide_mesh(a_mm: float, b_mm: float, maxh_mm: float):
+def build_rect_waveguide_mesh(a_mm: float, b_mm: float, maxh_mm: float) -> Mesh:
     """全 PEC 矩形截面（TE10 硬门；坐标 (u,v) 即波导 (a,b) 平面）。"""
     if not ngsolve_installed():
         raise RuntimeError("ngsolve 未安装")

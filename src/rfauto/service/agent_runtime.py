@@ -12,7 +12,9 @@ DS-1 工具执行瀑布（W5-B，2026-10-05）：RuntimeRequest.waterfall 非 No
 时，工具调用走 agent_safety.ToolWaterfall 五段事件级瀑布（pre-execute→
 guards→approval→execute→post-execute + additionalContexts FIFO）；缺省
 None 时与直执行路径逐字节相同（缺省路径零变化）。瀑布任何段故障只
-降级、不阻塞工具主路径（#105）。
+降级、不阻塞工具主路径（#105）。瀑布类型/驱动器定义体在
+agent_waterfall_types 叶（T1 终章解环；agent_safety 同名再导出），
+默认 LLM 传输层在 llm_transport 叶（本模块同名再导出）。
 
 沙箱约定见 agent_sandbox.py：agent 自主改配方只能改沙箱草稿，
 生效必须走既有三层 Gate（propose→收件箱批准→apply）。
@@ -28,11 +30,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from rfauto.infra.registry_kit import RegistryKit
 from rfauto.service.envelope import error_envelope
+from rfauto.service.llm_transport import (  # T1 终章解环：传输层叶化（定义体在 llm_transport；同名再导出保模块面与 monkeypatch 缝零变化）
+    openai_chat_completion as openai_chat_completion,
+)
 
 if TYPE_CHECKING:
     from rfauto.pipeline.quota_guard import CostLedger
-    from rfauto.service.agent_safety import ToolEvent, ToolWaterfall
+
+    # T1 终章解环（架构批 W1-S1）：类型改读瀑布叶，静态图不再出现
+    # agent_runtime→agent_safety 边（三角环第一条边断）
+    from rfauto.service.agent_waterfall_types import ToolEvent, ToolWaterfall
 
 # 工具执行器：名字+参数 → 结果 dict（异常由运行时兜底回传模型）
 ToolExecutor = Callable[[str, dict[str, Any]], dict[str, Any]]
@@ -200,26 +209,31 @@ def usage_to_cost_ledger(
 
 
 class RuntimeRegistry:
-    """运行时注册表（基类+注册表模式，同 EMSolverRegistry）。"""
+    """运行时注册表（基类+注册表模式，同 EMSolverRegistry）。
 
-    _runtimes: ClassVar[dict[str, type[AgentRuntime]]] = {}
+    T6 扩面二批（R1 审计 §面5/T6，W10-S3）：classmethod 门面 + RegistryKit
+    单例承载（hierarchical_scheduler.EngineRegistry 同款）——重名静默覆盖
+    （allow_overwrite=True 历史语义）、缺名 KeyError 文案逐字节不变、
+    available()=keys()；可选插件按需导入仍由本面显式执行（#362 口径：
+    Kit 纯数据容器不做发现，未命中先补载再判缺的行为不变）。
+    """
+
+    _kit: ClassVar[RegistryKit[type[AgentRuntime]]] = RegistryKit(
+        label="运行时", allow_overwrite=True)
 
     @classmethod
     def register(cls, runtime_cls: type[AgentRuntime]) -> type[AgentRuntime]:
-        cls._runtimes[runtime_cls.name] = runtime_cls
-        return runtime_cls
+        return cls._kit.bare_register(runtime_cls)
 
     @classmethod
     def create(cls, name: str, **kwargs: Any) -> AgentRuntime:
-        if name not in cls._runtimes:
+        if name not in cls._kit:
             _load_optional_plugins()  # 未命中时先尝试可选插件（pydantic_ai 等）
-        if name not in cls._runtimes:
-            raise KeyError(f"未注册的运行时: {name}（可用: {cls.available()}）")
-        return cls._runtimes[name](**kwargs)
+        return cls._kit.create(name, **kwargs)
 
     @classmethod
     def available(cls) -> list[str]:
-        return sorted(cls._runtimes)
+        return cls._kit.keys()
 
 
 @RuntimeRegistry.register
@@ -322,22 +336,9 @@ class BuiltinOpenAIRuntime(AgentRuntime):
             usage=usage, tool_events=tool_events)
 
 
-def openai_chat_completion(
-        messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
-    """默认传输层：OpenAI 兼容 /chat/completions（configs/chat_settings.yaml）。"""
-    import urllib.request
-
-    from rfauto.service.r3_services import get_chat_settings_raw
-    cfg = get_chat_settings_raw()
-    base = (cfg.get("base_url") or "").rstrip("/")
-    url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
-    body = json.dumps({"model": cfg.get("model", ""), "messages": messages,
-                       "tools": tools, "temperature": 0.3}).encode("utf-8")
-    req = urllib.request.Request(url, data=body, method="POST", headers={
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + (cfg.get("api_key") or "")})
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+# openai_chat_completion 定义体已叶化至 service/llm_transport.py（T1 终章
+# 解环，架构批 W1-S1）：本模块经文件头同名再导出保名，消费面与测试
+# monkeypatch 缝零变化（见 llm_transport 叶 docstring 的保真声明）。
 
 
 def default_tool_specs() -> list[ToolSpec]:

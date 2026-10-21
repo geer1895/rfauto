@@ -42,9 +42,7 @@ _OBJECTIVES = [
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(tmp_path, isolated_cache_off):
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
 
@@ -271,7 +269,7 @@ _FORBIDDEN_UI_TOKENS = (
 
 class TestUiLayerStaticGuard:
     def test_server_source_has_no_parsing_or_computation(self):
-        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（handler 分域入 routes/，
+        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py（handler 分域入 routes/，
         # 守卫随面走：任一 UI 模块出现解析/计算即红）。
         import rfauto.ui as ui_pkg
 

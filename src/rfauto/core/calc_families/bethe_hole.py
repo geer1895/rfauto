@@ -1,4 +1,12 @@
-"""Bethe 孔定向耦合器（矩形波导公共宽壁中心圆孔，aurora36 W3-A 席，R2 空白域 G5）。
+"""Bethe 孔定向耦合器（矩形波导公共宽壁中心圆孔，架构批 W3-A 席，R2 空白域 G5）。
+
+出处（原文口径+教科书二级转引，详见下节物理口径）：
+- bethe_hole_coupler：Bethe 小孔极化率 αe=2r³/3、αm=4r³/3（H. A.
+  Bethe 零厚无限屏原文口径）；耦合/方向性闭式与 M/E 比=2(β/k0)²
+  （Pozar, Microwave Engineering §7.9 同族二级转引/结构锚 USPAS
+  Nassiri 2003、Microwaves101 directional couplers 条目）；Cohn 有限
+  壁厚修正（孔口共振增强+截止波导衰减，Collin, Foundations for
+  Microwave Engineering 截止波导节）。
 
 单键 bethe_hole_coupler 双向口径（分析/综合由入参自动分派）：
 - 分析：给孔径 → 耦合度/方向性/隔离；

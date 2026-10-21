@@ -79,6 +79,7 @@ _DB_PER_NAPIER = 20.0 * math.log10(math.e)  # 8.685889638... dB/Np
 __all__ = [
     "SPEED_OF_LIGHT_M_PER_S",
     "_DB_PER_NAPIER",
+    "crlh_balanced_synthesis",
     "crlh_beta",
     "crlh_bloch_impedance",
     "crlh_image_impedance_t",
@@ -661,3 +662,77 @@ def lh_rh_balance_frequency_hz(
     l_l_h, c_l_f, l_r_h, c_r_f = _require_lc(l_l_h, c_l_f, l_r_h, c_r_f)
     w0 = math.sqrt(n_lh / n_rh) / (l_l_h * c_l_f * l_r_h * c_r_f) ** 0.25
     return w0 / (2.0 * math.pi)
+
+
+# ── 8) 平衡单元综合（架构批 W2-S2 席域 C5，R2_core_tier4 §③ Top8）──────
+#
+# 分析面（本模块 §1-6 + crlh_unit_cell_report）自 round17 起齐备，综合面
+# （(f0, Z0)→四元 LC）此前全仓零（R2 判据 `crlh.*synth|crlh.*design` 全
+# 零）。平衡 CRLH 单元的闭式综合：三条件定四参数，留一个工程种子自由度
+# （串联支路 L_R 或 C_L 给其一——物理实现里 C_L=交指电容/L_R=接地电感，
+# 常由工艺约束先定其一）：
+#
+#     平衡条件   ω_se = ω_sh = ω0 ⇔ L_R·C_L = L_L·C_R = 1/ω0²
+#     转移点阻抗 Z_CRLH = √(L_R/C_R) = Z0（平衡单元与频率无关，
+#                Caloz-Itoh 经典结果，§4 同式）
+#
+# 联立解（种子 C_L 给定档；种子 L_R 档代数对称）：
+#     L_R = 1/(ω0²·C_L)
+#     C_R = L_R/Z0²
+#     L_L = 1/(ω0²·C_R) = Z0²/(ω0²·L_R)
+#     C_L = 1/(ω0²·L_R)（回代档）
+# 恒等自检：L_R·C_L·ω0² = L_L·C_R·ω0² = 1（平衡）、√(L_R/C_R) = Z0
+# （阻抗）——三条残差随输出透出（构造级 ~机器精度）。
+
+def crlh_balanced_synthesis(
+    f0_hz: float,
+    z0_ohm: float,
+    c_l_f: float | None = None,
+    l_r_h: float | None = None,
+) -> dict[str, Any]:
+    """平衡 CRLH 单元四元 LC 综合（SI 单位；JSON 可序列化 dict）。
+
+    (f0, Z0, C_L|L_R 恰给其一) → (L_R, C_L, L_L, C_R)：平衡点 f0=转移
+    频率（f_se=f_sh=f0、β(f0)=0、Z_CRLH≡Z0）。三残差（平衡×2+阻抗）
+    构造级 ~机器精度随输出透出。回判面=crlh_unit_cell_report（δ=0、
+    band=transition、Z(f0)=Z0，锚树 test_w2s2_core_tier4.py 同文件双
+    路径消费，#118）。
+    """
+    f0_hz = _require_positive("f0_hz", f0_hz)
+    z0_ohm = _require_positive("z0_ohm", z0_ohm)
+    if (c_l_f is None) == (l_r_h is None):
+        raise ValueError(
+            "crlh_balanced_synthesis: c_l_f 与 l_r_h 必须恰给其一"
+            "（综合种子自由度；双给=超定歧义，全缺=欠定）")
+    w0 = 2.0 * math.pi * f0_hz
+    if c_l_f is not None:
+        c_l_f = _require_positive("c_l_f", c_l_f)
+        l_r_h = 1.0 / (w0 * w0 * c_l_f)
+    else:
+        l_r_h = _require_positive("l_r_h", l_r_h)
+        c_l_f = 1.0 / (w0 * w0 * l_r_h)
+    c_r_f = l_r_h / (z0_ohm * z0_ohm)
+    l_l_h = 1.0 / (w0 * w0 * c_r_f)
+    resid_balance_se = abs(l_r_h * c_l_f * w0 * w0 - 1.0)
+    resid_balance_sh = abs(l_l_h * c_r_f * w0 * w0 - 1.0)
+    resid_z = abs(math.sqrt(l_r_h / c_r_f) - z0_ohm)
+    return {
+        "f0_hz": f0_hz,
+        "z0_ohm": z0_ohm,
+        "l_r_h": l_r_h,
+        "c_l_f": c_l_f,
+        "l_l_h": l_l_h,
+        "c_r_f": c_r_f,
+        "resid_balance_se": resid_balance_se,
+        "resid_balance_sh": resid_balance_sh,
+        "resid_z_ohm": resid_z,
+        "note": (
+            "平衡条件 L_R·C_L=L_L·C_R=1/ω0² + 转移点阻抗 "
+            "Z_CRLH=√(L_R/C_R)=Z0 联立闭式（Caloz-Itoh Wiley 2006 §3 "
+            "同源文献，零新引源）；种子自由度=串联支路 C_L 或 L_R 恰给"
+            "其一；f0 即转移频率（f_se=f_sh=f0、β(f0)=0、阻带闭合）"),
+        "source": (
+            "Caloz & Itoh, Electromagnetic Metamaterials, Wiley 2006 §3"
+            "（平衡条件/Z_CRLH 同源既有键口径）；第一性联立消元见模块 "
+            "docstring §8"),
+    }

@@ -1,4 +1,4 @@
-"""aurora_e W2-S9：鳍线-波导渐变过渡两键单测（K2 渐变过渡面）。
+"""架构批 W2-S9：鳍线-波导渐变过渡两键单测（K2 渐变过渡面）。
 
 finline_taper_response / finline_taper_length（calc_families/finline.py）。
 
@@ -18,6 +18,7 @@ finline_taper_response / finline_taper_length（calc_families/finline.py）。
 
 from __future__ import annotations
 
+import itertools
 import math
 import sys
 from pathlib import Path
@@ -151,6 +152,50 @@ class TestProfileResponse:
                   profile="linear")
         assert r["closed_vs_quadrature_max_dev"] <= 1e-9
         assert 0.0 < r["gamma_mag"][0] < abs(math.log(Z2 / Z1)) / 2.0
+
+    def test_linear_profile_monotone_on_zero_pi(self) -> None:
+        """线性剖面 |Γ(βL)| 在 (0,π] 严格单调递减且 π 非零点（W5-P3-2 钉）。
+
+        综合键 band_edge=π 的通带保证域 [x*,π) 对线性剖面的单调性依据：
+        指数剖面有解析 sinc 零点；线性剖面（Ei 核）π 处非零点，"实测
+        单调"此前只是代码注释——本钉以网格数值实证（单源闭式逐点 +
+        独立 Simpson 第二路线三点互证）。
+        """
+        from rfauto.core.calc_families.taper_classic import _gamma_closed
+
+        def _gamma_lin_simpson(x_bl: float, n: int = 200001) -> complex:
+            """线性剖面核独立 Simpson（与键内 _gamma_quadrature 无共享）。"""
+            u = np.linspace(0.0, 1.0, n)
+            kernel = 0.5 * (Z2 - Z1) / (Z1 + (Z2 - Z1) * u)
+            f_vals = kernel * np.exp(-2j * x_bl * u)
+            h = 1.0 / (n - 1)
+            total = f_vals[0] + f_vals[-1] + 4.0 * f_vals[1:-1:2].sum() \
+                + 2.0 * f_vals[2:-1:2].sum()
+            return complex(total * h / 3.0)
+
+        xs = np.linspace(1e-3, math.pi, 2001)
+        mags = [abs(_gamma_closed(float(x), Z1, Z2, "linear")) for x in xs]
+        assert all(b < a for a, b in itertools.pairwise(mags))
+        # 独立 Simpson 第二路线互证（单调扫描两端+中点）
+        for x_pt, mag in ((float(xs[0]), mags[0]),
+                          (float(xs[-1]), mags[-1])):
+            assert mag == pytest.approx(abs(_gamma_lin_simpson(x_pt)),
+                                        rel=1e-9)
+        mid_mag = abs(_gamma_closed(math.pi / 2.0, Z1, Z2, "linear"))
+        assert mid_mag == pytest.approx(abs(_gamma_lin_simpson(math.pi / 2.0)),
+                                        rel=1e-9)
+        # π 处 |Γ| 非零（Ei 剖面无解析零点）且低于阶跃极限（带缘旁瓣锚）
+        delta_half = abs(math.log(Z2 / Z1)) / 2.0
+        assert 0.0 < mags[-1] < delta_half
+
+    def test_linear_profile_note_declares_per_profile(self) -> None:
+        """note 分剖面声明通带保证域依据（W5-P3-2 后半：note 未分剖面）。"""
+        for profile in ("exponential", "linear"):
+            s = _synth(z1_ohm=Z1, z2_ohm=Z2, f_min_ghz=26.5, rho_max=0.12,
+                       profile=profile)
+            assert "线性剖面" in s["note"]
+            assert "单调" in s["note"]
+            assert "指数剖面" in s["note"]
 
 
 class TestSynthesize:

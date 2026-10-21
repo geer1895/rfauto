@@ -40,13 +40,20 @@ FBW = 0.05
 RL_DB = 20.0
 NOMINAL = dict(ot.SIR_BPF_NOMINAL)
 DESIGN = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB)
-# 登记⑨ 过孔补偿口径：NOMINAL=带过孔设计链 4 位舍入；IDEAL_NOMINAL=补偿前
-# （理想短路）冻结常数——设计链缺省 l_via_h=0.0 逐位复现口径的对拍参照。
+# 名义重注册（架构批 W6-S4，R3 审计处方）后口径：NOMINAL=设计链缺省
+# l_via_h=0.0（理想短路）4 位舍入=恒等式 tanθ1·tanθ2=Z_lo/Z_hi 的名义设计点；
+# IDEAL_NOMINAL=同一口径的冻结常数（防注册表回翻）；VIA_NOMINAL=过孔补偿链
+# （l_via_h=None 自动取 R1 校准 0.125nH）冻结常数——补偿是 render 通道
+# c3.l_via_h 锚的运行时行为（draft 配方口径），不是名义档。
 DESIGN_VIA = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB, l_via_h=None)
 IDEAL_NOMINAL = {"order": 3, "w_feed_mm": 1.1117, "w_low_mm": 1.8944,
                  "w_high_mm": 0.6144, "l_low_mm": 6.5719, "l_high_mm": 7.1055,
                  "gaps_mm": [0.2417, 1.5189, 1.5189, 0.2417],
                  "feed_len_mm": 53.1613}
+VIA_NOMINAL = {"order": 3, "w_feed_mm": 1.1117, "w_low_mm": 1.8944,
+               "w_high_mm": 0.6144, "l_low_mm": 6.5719, "l_high_mm": 6.7818,
+               "gaps_mm": [0.2417, 1.5189, 1.5189, 0.2417],
+               "feed_len_mm": 53.3232}
 
 
 def _load(params: dict | None = None, mesh_mm: float = MESH_MM):
@@ -67,11 +74,13 @@ def freqs() -> np.ndarray:
 # ─── 设计链 ───────────────────────────────────────────────────────────────────
 
 def test_design_matches_nominal_constants():
-    """NOMINAL 常数 = design(3, 2.5, 0.05, 20, l_via_h=None) 的 4 位舍入（再生
-    守卫，登记⑨ 过孔补偿口径）；缺省 l_via_h=0.0（理想短路）逐位复现补偿前
-    IDEAL_NOMINAL（渲染/设计链 byte-identical 对拍钉）。"""
+    """NOMINAL 常数 = design(3, 2.5, 0.05, 20) 缺省链（理想短路）4 位舍入
+    （再生守卫，W6-S4 名义重注册口径：名义=恒等式设计点，与 IDEAL_NOMINAL
+    冻结常数逐位一致防回翻）；补偿链（l_via_h=None 自动 0.125nH）逐位复现
+    VIA_NOMINAL（render 通道运行时行为，draft 配方口径）。"""
     assert DESIGN["order"] == 3
-    for ref, want_map in ((DESIGN_VIA, NOMINAL), (DESIGN, IDEAL_NOMINAL)):
+    assert NOMINAL == IDEAL_NOMINAL   # 注册表=理想短路重注册档（防回翻）
+    for ref, want_map in ((DESIGN, NOMINAL), (DESIGN_VIA, VIA_NOMINAL)):
         for key, want in want_map.items():
             got = ref[key]
             if isinstance(want, list):
@@ -84,8 +93,8 @@ def test_design_matches_nominal_constants():
     # R1（df5-c3fix）：auto 校准值 0.125nH（HFSS 仲裁），非 G-P 几何值
     assert DESIGN_VIA["l_via_h"] == pytest.approx(ot.C3_L_VIA_CAL_H, rel=1e-12)
     assert DESIGN_VIA["via_delta_mm"] == pytest.approx(
-        IDEAL_NOMINAL["l_high_mm"] - NOMINAL["l_high_mm"], abs=5e-4)
-    assert NOMINAL["l_low_mm"] == IDEAL_NOMINAL["l_low_mm"]   # 低阻段不变
+        NOMINAL["l_high_mm"] - VIA_NOMINAL["l_high_mm"], abs=5e-4)
+    assert NOMINAL["l_low_mm"] == VIA_NOMINAL["l_low_mm"]   # 低阻段不变
 
 
 def test_prototype_mapping_matches_g_values():
@@ -346,7 +355,12 @@ def test_registered_and_surface_complete():
     assert spec.physics_roles["l_low_mm"] == "resonator_length_mm"
     assert spec.physics_roles["w_low_mm"] == "impedance_line_width_mm"
     draft = TEMPLATE_SPECS.draft_recipe(T, order=3, f0_ghz=F0, fbw=FBW, rl_db=RL_DB)
-    assert {k: v["value"] for k, v in draft["params"].items()} == NOMINAL
+    got_draft = {k: v["value"] for k, v in draft["params"].items()}
+    # draft=补偿链口径（template_specs 合成器 l_via_h=None，render 运行时行为）；
+    # 名义档=理想短路恒等式设计点（W6-S4 重注册）——两者差=过孔缩短量。
+    assert got_draft == VIA_NOMINAL
+    assert (NOMINAL["l_high_mm"] - got_draft["l_high_mm"]
+            == pytest.approx(DESIGN_VIA["via_delta_mm"], abs=5e-4))
 
 
 # ─── 渲染与 #212 离线几何审计 ────────────────────────────────────────────────

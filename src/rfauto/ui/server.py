@@ -9,7 +9,7 @@
 service/rest_api.py（/api/v1/*，传输壳禁业务逻辑，8644）——两边各自独立
 路由表，新增能力按消费方选面，不在两边互相转发。
 
-aurora_d UI-R1（2026-10-14）：API handler 按域机械迁 rfauto/ui/routes/
+架构批 UI-R1（2026-10-14）：API handler 按域机械迁 rfauto/ui/routes/
 （函数体逐字节不变，域清单见各模块 docstring）；CSP 策略（哈希钉常量+
 中间件）迁 rfauto/ui/csp.py。本模块只保留 app 装配（create_ui_app/
 exception_handlers/CSP 中间件接线/Mount/serve 启动逻辑）与既有引用路径
@@ -20,14 +20,20 @@ test_w1e_ui_csp；其余 handler 消费方直走 rfauto.ui.routes.<域>）。
 
 from __future__ import annotations
 
+import hmac
+import html
 import json
+import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from starlette.applications import Starlette
+from starlette.datastructures import Headers, MutableHeaders
 from starlette.middleware import Middleware
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -48,7 +54,7 @@ from rfauto.ui.params import ParamError as ParamError
 from rfauto.ui.params import _int_param as _int_param
 from rfauto.ui.params import _json_body as _json_body
 
-# aurora_d UI-R1：分域模块按命名空间收编（route 表引用 <域>_routes.<handler>
+# 架构批 UI-R1：分域模块按命名空间收编（route 表引用 <域>_routes.<handler>
 # ——同一对象透传，注册序零漂移）；既有消费面保持薄 re-export（test_fs_fence
 # 直 import api_fs_list、test_a8d/test_f1 经 server_mod._TUNE_STATE setitem
 # 就地置位——同一 dict 对象透传；#116 教训：只经 import 名字透传）。
@@ -69,11 +75,154 @@ from rfauto.ui.routes.tune import _TUNE_STATE as _TUNE_STATE
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
-async def index(request: Request) -> FileResponse:
-    return FileResponse(_STATIC_DIR / "index.html")
+async def index(request: Request) -> Any:
+    return _index_html_response()
+
+
+# ── 写端点 Bearer 鉴权（架构批 W6-S2，R2 审计 §面5.4 / Top10 #5）────────
+#
+# R2 审计定谳：前端 api.js setApiToken Bearer 通道建成零消费、服务端零鉴权
+# ——非回环绑定（AGENTS 规则 0b 远程部署方向）下写端点（POST /api/run、
+# /api/sandbox/promote、/api/chat 等）无凭据可调，是安全纵深唯一缺层。
+# 最小可行面（零新依赖，env+Bearer）：
+#   - env ``RFAUTO_UI_TOKEN`` **未设=零行为变化**（本机回环部署缺省安全，
+#     逐请求读 env——测试经 monkeypatch.setenv 即插即用，无装配期快照）；
+#   - 设定时**写端点**（POST/PUT/DELETE/PATCH）要求
+#     ``Authorization: Bearer <token>``（hmac.compare_digest 常量时间比对），
+#     失败归一 401 error 信封（与既有 _param_error_handler 同形）；
+#   - **读端点豁免**（GET/HEAD/OPTIONS/SSE 流直通）——页面壳与只读数据面
+#     不设闸（人工核验工作台的浏览语义不受扰）。
+# 前端接线（同 env 源）：token 设定时 index 响应注入
+# ``<meta name="rfauto-ui-token">``（pages/api.js 模块装配期读取一次 →
+# setApiToken → apiFetch 全部请求自动附头）。浏览器进程读不到服务端 env，
+# meta 注入是"同 env 源"的最小中继；安全语义=单操作者部署语境（页面可达
+# 者即持令者）——门面价值在**非浏览器通道**（脚本/curl/跨机自动化）写端点
+# 被拒；逐用户登录态不在本批（R1 #5 明示"登录态/token 注入入口最小面"）。
+_AUTH_ENV = "RFAUTO_UI_TOKEN"
+#: 写端点方法集（路由表全部写面=POST；PUT/DELETE/PATCH 前瞻收编，零成本）
+_WRITE_METHODS = frozenset({"POST", "PUT", "DELETE", "PATCH"})
+_AUTH_HEADER = "Authorization"
+_BEARER_PREFIX = "Bearer "
+
+
+def ui_auth_token() -> str | None:
+    """UI 写端点鉴权令牌（env 单源；空串视同未设=零行为变化）。"""
+    value = os.environ.get(_AUTH_ENV)
+    return value if value else None
+
+
+class BearerAuthMiddleware:
+    """纯 ASGI 中间件：RFAUTO_UI_TOKEN 设定时写端点校验 Bearer（P9-8→W6-S2）。
+
+    与 CacheControlMiddleware 同构形态（#105 零故障面纪律）：非 http scope
+    原样直通；token 未设直通；读方法直通；校验只做头部前缀+常量时间比对，
+    无任何可抛路径落业务侧。401 走 service error 信封（消费方 errorText()
+    回退链兼容），响应出站仍经外层 CSP/Cache-Control/GZip 中间件（安全头
+    批对 401 同样附加——响应面一致性不因拒绝路径豁免）。
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        token = ui_auth_token()
+        if token is None:
+            await self.app(scope, receive, send)
+            return
+        method = str(scope.get("method") or "GET").upper()
+        if method not in _WRITE_METHODS:
+            await self.app(scope, receive, send)
+            return
+        headers = Headers(scope=scope)
+        presented = headers.get(_AUTH_HEADER, "")
+        expected = _BEARER_PREFIX + token
+        if hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8")):
+            await self.app(scope, receive, send)
+            return
+        from rfauto.service.envelope import error_envelope
+
+        msg = ("unauthorized: 写端点需要 Bearer 令牌"
+               "（服务端 RFAUTO_UI_TOKEN 已启用鉴权）")
+        resp = JSONResponse(error_envelope([msg]), status_code=401)
+        await resp(scope, receive, send)
+
+
+def _index_html_response() -> Any:
+    """index 响应（token 未设=FileResponse 原路径逐字节不变；设定时注入
+    token meta——供前端 api.js 装配期读取，CSP 哈希钉不受扰：meta 非内联
+    脚本，test_w1e_ui_csp 双哈希门不触）。"""
+    token = ui_auth_token()
+    if token is None:
+        return FileResponse(_STATIC_DIR / "index.html")
+    text = (_STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    meta = (f'<meta name="rfauto-ui-token" content="{html.escape(token, quote=True)}">'
+            "\n")
+    marker = "<head>"
+    # head 缺席=结构守卫（#105 best-effort）：前置注入不阻断页面
+    text = text.replace(marker, marker + "\n" + meta, 1) if marker in text \
+        else meta + text
+    return HTMLResponse(text)
 
 
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]", "0:0:0:0:0:0:0:1"}
+
+
+# ── Cache-Control 分域（架构批 W1-S1，R1 审计 P9-1 v9 Top3）────────────
+#
+# R1 实证：真机 curl /static/vendor/echarts.min.js 有 etag/last-modified
+# 但 cache-control 缺席——W7 走查首屏 26 请求每次导航全量条件重验证
+# （RTT 串行排队），远程部署面放大。分域（按 scope.path 前缀，挂载拓扑
+# 单源在本装配壳）：
+#   /static/*（vendor/js/css 等 UI 自有资产）→ public, max-age=86400
+#     （一日窗：无内容哈希不取 immutable/长窗，模块有版本演进，ETag 兜
+#     过期后重验证）；
+#   /runs/*（run 产物静态服务）→ public, max-age=300（审计口径短窗：
+#     run 结束后产物不变，但实验中同名 fig 会改写——防陈旧误缓存）；
+#   其余（/ 与 /api/*）→ no-cache 显式化（HTML 是 import 图入口必须每
+#     导航重验证；API 动态面禁缓存；既有 ETag 链不受扰）；
+#   **SSE 端点（路径含 /events/stream）零缓存头**（审计钉面：流式响应
+#     不得挂任何缓存语义）。
+_CACHE_STATIC_PREFIX_VALUE = "public, max-age=86400"
+_CACHE_RUNS_PREFIX_VALUE = "public, max-age=300"
+_CACHE_DEFAULT_VALUE = "no-cache"
+_SSE_PATH_MARK = "/events/stream"
+_CACHE_CONTROL_HEADER = "Cache-Control"
+
+
+class CacheControlMiddleware:
+    """纯 ASGI 中间件：按路径分域附加 Cache-Control（P9-1，SSE 豁免直通）。
+
+    setitem 覆写语义单头不叠；非 http scope 原样直通（#105 同纪律：
+    加固面零故障面——头写入不抛，scope.path 缺席按缺省域处理）。
+    """
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        path = str(scope.get("path") or "")
+        if _SSE_PATH_MARK in path:
+            await self.app(scope, receive, send)
+            return
+        if path.startswith("/runs"):
+            value = _CACHE_RUNS_PREFIX_VALUE
+        elif path.startswith("/static"):
+            value = _CACHE_STATIC_PREFIX_VALUE
+        else:
+            value = _CACHE_DEFAULT_VALUE
+
+        async def send_with_cache_control(message: Any) -> None:
+            if message["type"] == "http.response.start":
+                MutableHeaders(scope=message)[_CACHE_CONTROL_HEADER] = value
+            await send(message)
+
+        await self.app(scope, receive, send_with_cache_control)
 
 
 def _is_loopback(host: str) -> bool:
@@ -108,7 +257,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         Route("/api/tune/start", tune_routes.api_tune_start, methods=["POST"]),
         Route("/api/tune/status", tune_routes.api_tune_status),
         Route("/api/tune/trials", tune_routes.api_tune_trials),
-        # UI-R3 统一实时事件流（aurora_d）：tune/campaign 接入 SSE——统一信封
+        # UI-R3 统一实时事件流（架构批）：tune/campaign 接入 SSE——统一信封
         # {seq,ts,kind,domain,payload}（单源 helper 在 routes/event_bus.py）；
         # 既有轮询端点（/api/tune/status、/api/campaign_queue）与 runs SSE 桥
         # 保留不动=兼容层，前端消费适配留后续席。
@@ -193,12 +342,34 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
                 file=sys.stderr,
             )
     # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
+    # P8-1（架构批 R1 审计 Top1）：全站 GZip 压缩——静态首载 2.61MB 线传
+    # 压至 ~715KB（three.module.js 1.27MB→~350KB 级），远程/服务器部署
+    # 线传 ×3.6（AGENTS 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
+    # （Starlette 列表首项为最外层）：响应出站先经内层 CSP 附加头、再经
+    # GZip 压缩体——CSP 头与 Content-Encoding 并存（test_w1e_ui_csp 头值
+    # 断言不破）。minimum_size=1024 小响应不压；starlette 1.6 缺省
+    # exclude_content_types 已含 text/event-stream（SSE 帧不被 gzip 缓冲）
+    # 与 image/png 等已压格式，真机 SSE 冒烟同笔复核。
     # A8-D：ParamError → 400 error 信封（非法查询/请求参数的失败面补齐）
     # A4 P0-3 保险环：未来新增调用点若漏过 _json_body 守卫直接裸
     # request.json()，JSON 解码错误仍归一 400 信封（非 500 纯文本）。
+    # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
+    # P9-14（架构批 W1-S1）：同一中间件单点附加安全头批
+    # （X-Content-Type-Options/Referrer-Policy，csp.py 单源）。
+    # P9-1（架构批 W1-S1）：Cache-Control 分域中间件挂最内层（响应出站
+    # 先经本层加分域头，再经 CSP/安全头批、最后 GZip 压缩体）——SSE 路径
+    # 在该层直通零缓存头，gzip 对 text/event-stream 的既有豁免不交互。
+    # Bearer 鉴权（W6-S2）与 CacheControl 同层（最内）：401 拒绝响应出站
+    # 仍经外层 CSP/安全头/GZip——响应面一致性不因拒绝路径豁免；env 未设
+    # 时逐请求直通零开销。
     return Starlette(
         routes=routes,
-        middleware=[Middleware(csp_routes.ContentSecurityPolicyMiddleware)],
+        middleware=[
+            Middleware(GZipMiddleware, minimum_size=1024),
+            Middleware(csp_routes.ContentSecurityPolicyMiddleware),
+            Middleware(CacheControlMiddleware),
+            Middleware(BearerAuthMiddleware),
+        ],
         exception_handlers={
             ParamError: _param_error_handler,
             json.JSONDecodeError: _param_error_handler,
@@ -230,6 +401,15 @@ def serve(
             print(
                 "[rfauto ui] /runs 静态服务已随非回环绑定默认关闭"
                 "（--expose-runs 可显式开启）。",
+                file=sys.stderr,
+            )
+        # W6-S2（R2 审计 §面5.4）：非回环绑定提示写端点鉴权闸（env 未设=
+        # 写端点无凭据可调——远程部署唯一缺层的启动期可见化）。
+        if ui_auth_token() is None:
+            print(
+                "[rfauto ui] 提示：非回环绑定且 RFAUTO_UI_TOKEN 未设——写端点"
+                "（POST/PUT/DELETE）无鉴权可调；设 env RFAUTO_UI_TOKEN=<令牌> "
+                "启用 Bearer 写闸（读端点豁免，前端随页面自动接线）。",
                 file=sys.stderr,
             )
     uvicorn.run(

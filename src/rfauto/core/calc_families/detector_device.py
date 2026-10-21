@@ -1,5 +1,14 @@
-"""检波/功率测量器件族（aurora72 A4-B 席域 2，R7 第二梯队 T10=G13；
-aurora_e W1-S2 补齐任务书"热偶/测辐射热计功率计换算"子项）。
+"""检波/功率测量器件族（架构批 A4-B 席域 2，R7 第二梯队 T10=G13；
+架构批 W1-S2 补齐任务书"热偶/测辐射热计功率计换算"子项）。
+
+出处（第一性传递恒等式+工程判据惯例，正文物理口径节转录）：
+- diode_square_law_detect：小信号平方律检波 I_dc=k·R_j·P_in（零偏
+  Schottky 二极管伏安特性小信号泰勒展开，第一性；平方律域上沿工程
+  惯例量级 docstring 写死）。
+- detector_tss_nep：视频约翰逊-奈奎斯特噪声链 NEP=v_n/γ（第一性）
+  + 8dB 切向灵敏度判据（EW 接收机工程量化惯例，二级转引口径）。
+- thermal_power_sensor_detect：热链 ΔT=η·R_th·P 与 Seebeck EMF
+  （热电效应第一性；热偶/测辐射热计功率计工程惯例）。
 
 三键：diode_square_law_detect（二极管平方律检波：小信号 i∝v² →
 I_dc=k·R_j·P_in 恒等 + 视频电压输出） / detector_tss_nep（切向灵敏度
@@ -234,7 +243,7 @@ def detector_tss_nep(gamma_v_per_w: float, r_v_ohm: float = 1.0e6,
     }
 
 
-# ─── 键 3：热偶/测辐射热计功率计换算（aurora_e W1-S2 补齐 T10 子项）─────────
+# ─── 键 3：热偶/测辐射热计功率计换算（架构批 W1-S2 补齐 T10 子项）─────────
 # 口径（热式功率传感器器件级传递，教科书热链模型；docstring 写死）：
 #   热链（准静态）：吸收功率 η·P_in → 热阻温升 ΔT = η·R_th·P_in；
 #   热时间常数 τ = R_th·C_th、3dB 视频带宽 f_3dB = 1/(2πτ)。

@@ -1,4 +1,4 @@
-"""aurora72 A3-C 席锚树：coupled_line_bpf 两键（耦合线带通综合/同步 TEM 频
+"""架构批 A3-C 席锚树：coupled_line_bpf 两键（耦合线带通综合/同步 TEM 频
 响）+ interdigital_bpf 两键（交指杆偶奇电容闭式/交指带通综合）。
 
 数值断言口径（#118 不自证——文献例引文/恒等式回代/独立闭式/跨键互证，
@@ -385,7 +385,7 @@ NEW_KEYS = (
 
 
 def test_new_keys_description_first_line_format():
-    """aurora72 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
+    """架构批 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
     for key in NEW_KEYS:
         desc = CALCULATOR_REGISTRY.get(key).description
         first_line = desc.split("\n", 1)[0]

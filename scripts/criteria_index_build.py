@@ -35,9 +35,36 @@ EP-2 四向追溯矩阵（specs §C-7，--migrate-v2 模式）：
 - 审计 CLI=scripts/check_numbers.py trace（coverage_pct/by_dim/dangling
   编辑距离 top-3/status），本脚本只产不审。
 
+冻结测试宇宙覆盖层（EP-2 扩面二批 2026-10，结构性幂等修复）：test_id 扫面
+输入 runs/ep2/test_universe.txt 是 gitignored 缓存、随各战役新增测试模块自然
+增长——shipped 矩阵一旦不随缓存刷新重出货，真树幂等锚必红（架构批 定谳、
+跨 架构批/g 持续）。修复=把"扫面宇宙"从 runs/ 缓存剥离为再生器所有的
+committed curated 层 knowledge/criteria/trace_test_universe.yaml（schema
+trace-test-universe/v1，整表 sorted 去重）；migrate_v2 的 test_modules 解析
+优先级（确定性，逐级回退）：
+
+    1. 显式 test_modules 入参（tmp 树/单测注入）；
+    2. 冻结覆盖层 DEFAULT_TEST_UNIVERSE（真树再生治理面）；
+    3. runs/ep2/test_universe.txt 缓存；
+    4. 只读 pytest --collect-only。
+
+覆盖层在场即整表接管（替换语义，不与缓存合并——单一治理源）；缓存增长
+不进入再生，须显式 ``--refresh-test-universe`` 整表重写覆盖层（新增测试
+模块随刷新自然入扫，扫面增长不破坏幂等）。**刷新前置条件（架构批 实证
+补充）**：新入扫模块须已有 criteria links（runs/ 判据面）——无 links 的
+纯新增测试模块入宇宙会稀释覆盖率击穿 batch 棘轮 floor（实测 41 模块无
+links 刷新 → gate 71.9%<85.31%/param 48.6%<76.86% 双红）；故刷新时点=
+新键战役的 runs 判据面落库后，或随 floor 重审批同笔。calc/anchor 候选面来自
+CALCULATOR_REGISTRY 与 knowledge/anchors.yaml——两者 commit 内确定性，
+其漂移只随代码/锚资产变更发生，按 kernel_cards 同笔再生纪律在变更战役
+同 commit 重出货即可，不入覆盖层。
+
 用法：
     python scripts/criteria_index_build.py --runs-root runs --out knowledge/criteria/index.yaml
     python scripts/criteria_index_build.py --migrate-v2 --quiet
+    python scripts/criteria_index_build.py --migrate-v2 --refresh-test-universe --quiet
+      （刷新冻结宇宙覆盖层并重出货；--head-commit 显式钉生成输入 commit，
+        缺省取当前 git HEAD——commit 戳=生成输入的一部分，诚实出处语义）
 """
 
 from __future__ import annotations
@@ -62,6 +89,11 @@ DEFAULT_V2_DIR = REPO_ROOT / "knowledge" / "criteria" / "v2"
 DEFAULT_SKELETON_DIR = DEFAULT_V2_DIR / "skeleton"
 DEFAULT_TRACE_OUT = REPO_ROOT / "knowledge" / "trace_matrix.yaml"
 DEFAULT_TESTS_CACHE = REPO_ROOT / "runs" / "ep2" / "test_universe.txt"
+# 冻结测试宇宙覆盖层（committed curated 层，migrate_v2 的 test_id 扫面
+# 治理面——语义见模块 docstring"冻结测试宇宙覆盖层"节）
+DEFAULT_TEST_UNIVERSE = (REPO_ROOT / "knowledge" / "criteria"
+                         / "trace_test_universe.yaml")
+TEST_UNIVERSE_SCHEMA = "trace-test-universe/v1"
 
 # 覆盖率棘轮首批 floor（specs §C-7：gate≥80%/param≥60%，只升不降）
 FIRST_BATCH_FLOORS = {"gate_min_pct": 80.0, "param_min_pct": 60.0}
@@ -490,7 +522,12 @@ def migrate_v2(index_doc: dict[str, Any], index_sha256: str,
     - 附加不替代：只写 skeleton_dir/*.yaml 与 trace_out；
     - curated v2（v2_dir 顶层）按 referee_run 识别跳过骨架（零改写）；
     - 覆盖率棘轮：trace_out 已存在时 floor 取 max(既有, 首批)——重生成
-      不降棘轮。
+      不降棘轮；
+    - test_modules 解析优先级（确定性，逐级回退，语义见模块 docstring
+      "冻结测试宇宙覆盖层"节）：显式入参 > 冻结覆盖层 DEFAULT_TEST_
+      UNIVERSE（在场即整表接管，替换语义不与缓存合并）> runs 缓存 >
+      只读 collect。覆盖层在场时 source.n_test_modules=len(覆盖层)——
+      runs/ 缓存增长不进入再生，扫面增长不破坏幂等。
     """
     runs = Path(runs_root) if runs_root is not None else None
     skel_dir = Path(skeleton_dir)
@@ -499,10 +536,14 @@ def migrate_v2(index_doc: dict[str, Any], index_sha256: str,
     apairs = anchor_pairs if anchor_pairs is not None else _anchor_pairs()
     if test_modules is not None:
         mods: tuple[str, ...] = tuple(test_modules)
-    elif DEFAULT_TESTS_CACHE.exists():
-        mods = tuple(_read_tests_cache(DEFAULT_TESTS_CACHE))
     else:
-        mods = tuple(collect_test_modules())
+        frozen = read_test_universe()
+        if frozen:
+            mods = tuple(frozen)
+        elif DEFAULT_TESTS_CACHE.exists():
+            mods = tuple(_read_tests_cache(DEFAULT_TESTS_CACHE))
+        else:
+            mods = tuple(collect_test_modules())
     commit = head_commit if head_commit is not None else _git_head()
 
     curated_keys = curated_v2_run_keys(curated_v2_dir) if curated_v2_dir else []
@@ -631,6 +672,60 @@ def _read_tests_cache(path: str | Path) -> list[str]:
             if ln.strip()]
 
 
+def read_test_universe(path: str | Path = DEFAULT_TEST_UNIVERSE) -> list[str]:
+    """读冻结测试宇宙覆盖层（curated 治理面）。
+
+    确定性语义：只收 tests/ 前缀字符串、去重、sorted 归一——覆盖层文件
+    本身按 sorted 落盘，此处归一是防御性双保险（手改文件乱序不破坏再生）。
+    文件缺失/格式坏 → 返回 []（调用方按解析优先级回退，不抛）。"""
+    p = Path(path)
+    if not p.is_file():
+        return []
+    try:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return []
+    mods = doc.get("modules") if isinstance(doc, dict) else None
+    if not isinstance(mods, list):
+        return []
+    return sorted({m for m in mods
+                   if isinstance(m, str) and m.startswith("tests/")})
+
+
+def refresh_test_universe(path: str | Path = DEFAULT_TEST_UNIVERSE,
+                          cache_path: str | Path = DEFAULT_TESTS_CACHE,
+                          collect_fallback: bool = True) -> tuple[list[str], str]:
+    """整表重写冻结测试宇宙覆盖层（--refresh-test-universe 旋钮）。
+
+    来源优先级：runs/ep2/test_universe.txt 缓存在场读缓存；缺失且
+    collect_fallback 时只读 pytest --collect-only（零执行）。写盘确定性：
+    sorted 去重 + _dump_yaml 固定键序，同源重写逐字节一致。返回
+    (modules, 来源说明)——来源说明随行打印/落 note，证据链自描述（#329）。"""
+    if Path(cache_path).is_file():
+        mods = sorted({m for m in _read_tests_cache(cache_path)
+                       if m.startswith("tests/")})
+        source = f"cache:{Path(cache_path).name}"
+    elif collect_fallback:
+        mods = sorted(set(collect_test_modules()))
+        source = "collect:pytest --collect-only"
+    else:
+        raise FileNotFoundError(f"tests 缓存缺失且禁用 collect: {cache_path}")
+    doc: dict[str, Any] = {
+        "schema": TEST_UNIVERSE_SCHEMA,
+        "note": ("EP-2 trace 矩阵冻结测试宇宙（curated 覆盖层，再生器所有；"
+                 "migrate_v2 test_id 扫面治理面——语义见 criteria_index_build.py"
+                 " docstring）。刷新旋钮：python scripts/criteria_index_build.py"
+                 " --migrate-v2 --refresh-test-universe（整表重写，sorted 去重；"
+                 "新增测试模块随刷新自然入扫，扫面增长不破坏再生幂等）"),
+        "generated_by": f"criteria_index_build.refresh_test_universe from {source}",
+        "modules": mods,
+    }
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(_dump_yaml(doc), encoding="utf-8")
+    return mods, source
+
+
 def _sha256_of_index(index_path: str | Path) -> str:
     return hashlib.sha256(Path(index_path).read_bytes()).hexdigest()
 
@@ -666,11 +761,24 @@ def main(argv: list[str] | None = None) -> int:
                         help="人工 curated v2 目录（顶层文件识别跳过，零改写）")
     parser.add_argument("--tests-cache", default=str(DEFAULT_TESTS_CACHE),
                         help="pytest nodeid 模块路径缓存（缺失则只读 collect）")
+    parser.add_argument("--refresh-test-universe", action="store_true",
+                        help="迁移前整表重写冻结测试宇宙覆盖层 "
+                             f"（{DEFAULT_TEST_UNIVERSE}；来源=tests 缓存，"
+                             "缺失则只读 collect）——新增测试模块显式入扫旋钮")
+    parser.add_argument("--head-commit", default=None,
+                        help="骨架 provenance.commit 生成输入（缺省当前 git "
+                             "HEAD；重出货最小差场景可显式钉既有值）")
     parser.add_argument("--quiet", action="store_true",
                         help="只打一行摘要")
     args = parser.parse_args(argv)
 
     if args.migrate_v2:
+        universe_source = None
+        if args.refresh_test_universe:
+            mods, universe_source = refresh_test_universe()
+            if args.quiet:
+                print(f"test-universe refreshed: {len(mods)} modules "
+                      f"from {universe_source}")
         summary = migrate_v2(
             index_doc=load_index_or_build(args.index, args.runs_root),
             index_sha256=(_sha256_of_index(args.index)
@@ -679,6 +787,7 @@ def main(argv: list[str] | None = None) -> int:
             skeleton_dir=args.skeleton_dir,
             trace_out=args.trace_out,
             curated_v2_dir=args.v2_dir,
+            head_commit=args.head_commit,
         )
         if not summary.get("ok"):
             for err in summary.get("errors", ["未知错误"]):
@@ -699,6 +808,8 @@ def main(argv: list[str] | None = None) -> int:
             if summary["unmatched_paths"]:
                 print(f"未链接 run（人工复核清单）："
                       f"{len(summary['unmatched_paths'])} 件（见矩阵 note）")
+            if universe_source is not None:
+                print(f"冻结测试宇宙覆盖层已刷新：来源 {universe_source}")
         return 0
 
     index = build_index(args.runs_root)

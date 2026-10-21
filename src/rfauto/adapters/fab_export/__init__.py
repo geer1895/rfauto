@@ -5,6 +5,10 @@ pyaedt / ezdxf / matplotlib / OCP 全部惰性 import（函数体内），
 import 本包不需要任何可选依赖。
 """
 
+from ._wiring import (
+    ensure_builtin_plugins,
+    register_builtin_plugins,
+)
 from .artifact_io import (
     load_critical_chars,
     load_dims,
@@ -25,10 +29,8 @@ from .base import (
     GeometryReadPort,
     PackPort,
     PluginInfo,
-    ensure_builtin_plugins,
     get_registry,
     load_entry_point_plugins,
-    register_builtin_plugins,
 )
 from .composite_dxf import read_composite_dxf, write_composite_dxf
 from .dxf_truth import compare_dxf_to_truth

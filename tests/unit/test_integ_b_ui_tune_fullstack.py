@@ -1,4 +1,4 @@
-"""INTEG-B 席跨模块集成测试：UI 调参全栈链（aurora_d INTEG-B，2026-10-14）.
+"""INTEG-B 席跨模块集成测试：UI 调参全栈链（架构批 INTEG-B，2026-10-14）.
 
 与既有单测的分工（test_ui_event_stream 钉帧形态/钩子语义、test_sampler_cmaes
 钉服务层采样通路，均对 start_tune 打桩或缺 UI 面）：本文件把**全链真跑**——

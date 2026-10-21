@@ -1,4 +1,13 @@
-"""combline/同轴腔谐振器物理实现族（aurora36 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
+"""combline/同轴腔谐振器物理实现族（架构批 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
+
+出处（教科书经典闭式二级转引，详见下节公式口径）：
+- combline_resonance：Matthaei–Young–Jones, Microwave Filters,
+  Impedance-Matching Networks, and Coupling Structures ch.8 combline
+  等效电路口径。
+- coaxial_cavity_resonance：同轴腔 TEM 谐振+Z0 闭式（Pozar, Microwave
+  Engineering §6.6 同轴线谐振器；TE11 截止 kc≈2/(a+b) 保角映射近似）。
+- cavity_unloaded_q：趋肤电阻口径导体 Q+介质 Q 串联合成（Pozar §6.6
+  谐振器 Q；场积分法与 β/(2α) 衰减关系两路线同解自洽）。
 
 三键：combline_resonance（梳状线短路线+集总电容加载，双向：f0↔杆长）/
 coaxial_cavity_resonance（同轴腔 TEM 谐振 λ/2 或 λ/4，双向：f0↔腔长，
@@ -63,6 +72,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from .coax_line import _roughness_gain_tier
 from .registry import C_MM_GHZ, register_calculator
 from .thermal import _finite
 
@@ -317,13 +327,28 @@ def coaxial_cavity_resonance(mode: str,
      ("b_mm", "float mm 外导体内半径（>a_mm）"),
      ("epsilon_r", "float 腔内介质相对介电常数（≥1，缺省 1；满充均匀假定）"),
      ("mu_r", "float 导体/介质相对磁导率（>0，缺省 1 非磁性）"),
-     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗，Qd 返 null）")),
+     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗，Qd 返 null）"),
+     ("roughness_model", "str 粗糙度档（W5-K）：smooth（缺省，K_R=1 缺省路径"
+      "逐位不变）/hammerstad/huray——conductor_loss.roughness_gain 单源，"
+      "Qc'=Qc/K_R（1/Qu 合成链不变）"),
+     ("roughness_rms_um", "float µm 导体 RMS 粗糙度 Rq（≥0；hammerstad 档"
+      "必给，0→K_R=1 逐位退化）"),
+     ("roughness_factor", "float Hammerstad 最大增益 RF（≥1，缺省 2 经典"
+      "口径）"),
+     ("nodule_radius_um", "float µm Hall-Huray 铜瘤半径（huray 档必给）"),
+     ("nodules_per_cell", "float 单位元铜瘤数 N（≥0；huray 档必给）"),
+     ("cell_area_um2", "float µm² 单位元面积 A_flat（>0；huray 档必给）")),
     required=("f_ghz", "conductivity_s_per_m", "a_mm", "b_mm"),
 )
 def cavity_unloaded_q(f_ghz: float, conductivity_s_per_m: float,
                       a_mm: float, b_mm: float, epsilon_r: float = 1.0,
-                      mu_r: float = 1.0,
-                      tan_delta: float = 0.0) -> dict[str, Any]:
+                      mu_r: float = 1.0, tan_delta: float = 0.0,
+                      roughness_model: str = "smooth",
+                      roughness_rms_um: float | None = None,
+                      roughness_factor: float = 2.0,
+                      nodule_radius_um: float | None = None,
+                      nodules_per_cell: float | None = None,
+                      cell_area_um2: float | None = None) -> dict[str, Any]:
     f = _finite(f_ghz, "f_ghz")
     sigma = _finite(conductivity_s_per_m, "conductivity_s_per_m")
     a = _finite(a_mm, "a_mm")
@@ -357,18 +382,39 @@ def cavity_unloaded_q(f_ghz: float, conductivity_s_per_m: float,
     a_m, b_m = a * 1e-3, b * 1e-3
     mu = _MU0 * mur
     omega = 2.0 * math.pi * f_hz
+    # 粗糙度档（W5-K）：K_R 乘 Rs → Qc'=Qc/K_R（Q∝1/Rs，同场分布口径；
+    # conductor_loss.roughness_gain 单源，β/(2α) 互证路线同步含 K_R 使
+    # rel_dev 恒等保持机器精度级）。smooth 缺省 K_R=1.0 乘法逐位不变。
+    from rfauto.core import conductor_loss
+
+    delta_m = conductor_loss.skin_depth(f_hz, sigma, mur)
+    k_rough, rough_receipt = _roughness_gain_tier(
+        "cavity_unloaded_q", roughness_model, roughness_rms_um,
+        roughness_factor, nodule_radius_um, nodules_per_cell,
+        cell_area_um2, delta_m=delta_m)
     rs = math.sqrt(math.pi * f_hz * mu / sigma)          # Ω/□（趋肤）
-    q_c = omega * mu * math.log(b_m / a_m) / (rs * (1.0 / a_m + 1.0 / b_m))
+    rs_eff = rs * k_rough                                # 粗糙度实效 Rs
+    q_c = omega * mu * math.log(b_m / a_m) / (rs_eff * (1.0 / a_m + 1.0 / b_m))
     q_d: float | None = None if tand == 0.0 else 1.0 / tand
     q_u = q_c if q_d is None else q_c * q_d / (q_c + q_d)
     # β/(2α) 独立路线互证（同 Rs 源、不同推导路线：α_c=Rs(1/a+1/b)/(4π·Z0)，
     # Z0=(η/2π)·ln(b/a)，η=√(μ/ε)→ Q=β/(2α_c) 与场积分法同解）
     eta = math.sqrt(mu / (8.8541878128e-12 * eps_r))
     z0_si = eta / (2.0 * math.pi) * math.log(b_m / a_m)
-    alpha_c = rs * (1.0 / a_m + 1.0 / b_m) / (4.0 * math.pi * z0_si)
+    alpha_c = rs_eff * (1.0 / a_m + 1.0 / b_m) / (4.0 * math.pi * z0_si)
     beta = 2.0 * math.pi * f_hz * math.sqrt(mu * 8.8541878128e-12 * eps_r)
     q_c_xcheck = beta / (2.0 * alpha_c)
     rel_dev = abs(q_c_xcheck - q_c) / q_c
+    note = (
+        "Qc 口径=TEM 场积分闭式（β/(2α) 衰减关系独立路线互证，"
+        "q_xcheck_rel_dev 应为机器精度级）；Qd=1/tanδ 满充均匀介质"
+        "假定；串联合成 1/Qu=1/Qc+1/Qd")
+    source = _SOURCES["q"]
+    if k_rough != 1.0:
+        note += (f"；粗糙度档 K_R={k_rough:.6g}"
+                 f"（{rough_receipt['model']}，Qc=Qc_smooth/K_R）")
+        source += ("；粗糙度增益 core/conductor_loss.roughness_gain 单源"
+                   "（W5-K 升级核 ②）")
     return {
         "f_ghz": f,
         "conductivity_s_per_m": sigma,
@@ -377,16 +423,16 @@ def cavity_unloaded_q(f_ghz: float, conductivity_s_per_m: float,
         "epsilon_r": eps_r,
         "mu_r": mur,
         "tan_delta": tand,
-        "rs_ohm_per_sq": round(rs, 15),
+        "roughness_model": rough_receipt["model"],
+        "roughness_gain_k": round(k_rough, 15),
+        "roughness": rough_receipt,
+        "rs_ohm_per_sq": round(rs_eff, 15),
         "q_conductor": round(q_c, 9),
         "q_dielectric": None if q_d is None else round(q_d, 9),
         "q_unloaded": round(q_u, 9),
         "q_xcheck_beta_over_2alpha": round(q_c_xcheck, 9),
         "q_xcheck_rel_dev": round(rel_dev, 15),
         "z0_ohm": round(z0_si, 9),
-        "note": (
-            "Qc 口径=TEM 场积分闭式（β/(2α) 衰减关系独立路线互证，"
-            "q_xcheck_rel_dev 应为机器精度级）；Qd=1/tanδ 满充均匀介质"
-            "假定；串联合成 1/Qu=1/Qc+1/Qd"),
-        "source": _SOURCES["q"],
+        "note": note,
+        "source": source,
     }

@@ -3,9 +3,11 @@
 > RECAST（判据重放）回答一个问题："当年那个判读，用今天登记的机器
 > 判据再算一遍，结论还一样吗？"本文从判据格式讲到动手重放，全部代码
 > 实测过。前置：docs/how-to/read-verdict-gates.md（判据与门的基本
-> 读法）。CLI 出口已闭合：aurora36 W2-D（2026-10-11）起有 `rfauto
+> 读法）。CLI 出口已闭合：架构批 W2-D（2026-10-11）起有 `rfauto
 > recast status/replay` 两只读薄壳（MCP 面仍无，见第 5 节）；本文
 > 1-4 节讲 Python API 的语义细节，CLI 与 Python 共用同一确定性内核。
+> 英文版（English version）：docs/tutorials/recast-walkthrough_en.md
+> （W9-S3 译，2026-10-19 全命令复测同笔）。
 
 ## 1. 概念：判据先行 + 归档零改写
 

@@ -38,9 +38,8 @@ def _sha256(path: Path) -> str:
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 三批单源化）。"""
     yield
 
 
@@ -365,13 +364,21 @@ class TestWriteBackInventory:
     """新增裸 yaml.safe_dump→recipes 写点时此测试亮红，提醒接守卫（#230 同源）。"""
 
     SRC = REPO_ROOT / "src" / "rfauto"
+    # W7-S1 T2 包化（2026-10-19）：ui_service 实现随域迁子模块（配方写面
+    # 守卫出口在 runs_recipes.py），盘点随实现走（AU-1 测试面映射工艺）
     GUARDED_MODULES = (
-        "service/ui_service.py", "service/api.py", "service/autotune_service.py",
+        "service/ui_service/runs_recipes.py",
+        # W7-S1 T2 包化（2026-10-19）：api 配方写出口随域迁两子模块
+        # （agent_apply→run_core.py、recipe_migrate→reporting.py）
+        "service/api/run_core.py", "service/api/reporting.py",
+        "service/autotune_service.py",
         "service/agent_sandbox.py", "service/v3_services.py",
         "service/kicad_em_service.py", "infra/run_store.py",
         # AU-1 批3 拆分（2026-09-30）：cli/main.py 的 recipe_guard 写出口
-        # （template_spec_draft_cmd）随域迁至 cli/domains/bands_uq.py
-        "cli/domains/bands_uq.py",
+        # （template_spec_draft_cmd）随域迁至 cli/domains/bands_uq.py；
+        # W11-S3 T8 越级收口（2026-10-19）：bands_uq 落盘面再上移
+        # template_spec_service.save_recipe_draft（守卫出口随单源走）
+        "service/template_spec_service.py",
         # A7 P2-3（2026-10-13）：level2 设计链/链尾闭环落盘收口进守卫出口
         "service/level2_design.py", "service/level2_closure.py",
     )
@@ -382,7 +389,8 @@ class TestWriteBackInventory:
             assert "rfauto.infra.recipe_guard" in text, rel
 
     def test_ui_recipe_save_has_no_direct_replace_to_source(self):
-        text = (self.SRC / "service" / "ui_service.py").read_text(encoding="utf-8")
+        text = (self.SRC / "service" / "ui_service"
+                / "runs_recipes.py").read_text(encoding="utf-8")
         assert "tmp.replace(path)" not in text
         assert "tmp.replace(target)" in text
 
@@ -571,7 +579,7 @@ class TestDirectoryLevelWriteSurface:
        新增未接守卫的目录级写点即亮红（TestWriteBackInventory 目录级版）。"""
 
     SRC = REPO_ROOT / "src" / "rfauto"
-    # aurora_d UI-R1 拆分：UI 面含 routes/ 分域路由模块（写面守卫随面走）
+    # 架构批 UI-R1 拆分：UI 面含 routes/ 分域路由模块（写面守卫随面走）
     _UI_ROUTES = SRC / "ui" / "routes"
     UI_SURFACE_MODULES = (
         SRC / "ui" / "server.py",
@@ -585,8 +593,10 @@ class TestDirectoryLevelWriteSurface:
         _UI_ROUTES / "runs.py",
         _UI_ROUTES / "tools.py",
         _UI_ROUTES / "tune.py",
-        SRC / "service" / "ui_service.py",
-        SRC / "service" / "r3_services.py",
+        # W7-S1 T2 包化（2026-10-19）：ui_service 实现随域迁子模块，
+        # 目录级写面盘点随实现走（AU-1 测试面映射工艺）
+        *(SRC / "service" / "ui_service").glob("*.py"),
+        *(SRC / "service" / "r3_services").glob("*.py"),
     )
     DIRECTORY_PRIMITIVES: ClassVar[set[str]] = {
         "mkdir", "makedirs", "copytree", "copy2", "copyfile", "move",
@@ -595,13 +605,15 @@ class TestDirectoryLevelWriteSurface:
     ALLOWED_SITES: ClassVar[dict[tuple[str, str], set[str]]] = {
         # 守卫决策后目标（工作副本/非受保护路径）建父目录；临时文件与目标
         # 同目录是原子替换前提（#319）
-        ("ui_service.py", "recipe_save"): {"mkdir"},
+        # （W7-S1 T2：键随 ui_service 包化后的承载文件名走）
+        ("runs_recipes.py", "recipe_save"): {"mkdir"},
         # CLI 专用渲染入口（--out 显式路径，缺省 runs/sparams_compare/）
-        ("ui_service.py", "sparams_compare_png"): {"mkdir"},
+        ("views.py", "sparams_compare_png"): {"mkdir"},
         # configs/ 三个配置保存器的父目录创建（非 recipes/ 面）
-        ("r3_services.py", "add_solver_to_config"): {"mkdir"},
-        ("r3_services.py", "_apply_resource_capacity"): {"mkdir"},
-        ("r3_services.py", "save_chat_settings"): {"mkdir"},
+        # （W7-S1 T2：键随 r3_services 包化后的承载文件名走）
+        ("solvers.py", "add_solver_to_config"): {"mkdir"},
+        ("governance.py", "_apply_resource_capacity"): {"mkdir"},
+        ("chat.py", "save_chat_settings"): {"mkdir"},
     }
 
     def test_ui_surface_directory_primitives_match_inventory(self):

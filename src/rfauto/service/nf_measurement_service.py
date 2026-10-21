@@ -85,6 +85,35 @@ def nf_to_farfield(
     )
 
 
+def planar_nf2ff_from_npz(
+    grid_npz: str, window: str = "kaiser", kaiser_beta: float = 3.0,
+) -> dict[str, Any]:
+    """平面近场栅格 .npz → 远场方向图 JSON 面（``nfmeas nf2ff`` CLI 单源）。
+
+    栅格装载（x_m/y_m/freq_hz/ex/ey/z0_m 键）与方向图序列化组装自
+    cli.domains.report_mmt 原位上移（W11-S3 T8 收口）：输出键集
+    ``{theta_deg, phi_deg, pattern_db, window, validity_max_deg}`` 与
+    dB 取整口径逐字节不变，θ≥85°/谱支撑外如实 null。物理数字全部出自
+    core/nf_transform（铁律 7）。
+    """
+    import numpy as np
+
+    from rfauto.core.nf_transform import NearFieldGrid, planar_nf_to_farfield
+
+    d = np.load(grid_npz)
+    out = planar_nf_to_farfield(
+        NearFieldGrid(x_m=d["x_m"], y_m=d["y_m"], freq_hz=float(d["freq_hz"]),
+                      ex=d["ex"], ey=d["ey"], z0_m=float(d.get("z0_m", 0.0))),
+        window=window, kaiser_beta=kaiser_beta)
+    return {
+        "theta_deg": out["theta_deg"].tolist(),
+        "phi_deg": out["phi_deg"].tolist(),
+        "pattern_db": [[None if v != v else round(float(v), 4) for v in row]
+                       for row in out["pattern_db"]],
+        "window": out["window"], "validity_max_deg": out["validity_max_deg"],
+    }
+
+
 def ffs_info(path: str) -> dict[str, Any]:
     """.ffs 文件头视图（频率/三功率/网格规模/轴），不落全量复矩阵。"""
     from rfauto.core.nf_transform import read_ffs

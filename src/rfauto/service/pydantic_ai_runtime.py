@@ -434,7 +434,7 @@ def run_pai_agent(bundle: PaiAgentBundle, inp: PaiRunInput) -> PaiRunResult:
 def default_pydantic_ai_runner(inp: PaiRunInput) -> PaiRunResult:
     """真实现：configs/chat_settings.yaml 通道 → build_pai_agent → run_pai_agent。"""
     _import_pai()  # 先验依赖（缺失时不读配置直接报 PydanticAINotInstalled）
-    from rfauto.service.r3_services import get_chat_settings_raw
+    from rfauto.service.chat_settings_io import get_chat_settings_raw
 
     cfg = get_chat_settings_raw()
     bundle = build_pai_agent(inp, model_name=str(cfg.get("model") or ""),

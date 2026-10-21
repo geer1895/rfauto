@@ -15,6 +15,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from rfauto.infra.registry_kit import RegistryKit
+
 
 class TemplateComponentMissing(LookupError):
     """spec 未实现被请求的组件。"""
@@ -45,24 +47,28 @@ class TemplateSpec:
     hfss_plugin: str | None = None
 
 
-class TemplateSpecRegistry:
-    """模板 spec 注册表（基类+注册表模式，同 EMSolverRegistry）。"""
+class TemplateSpecRegistry(RegistryKit[TemplateSpec]):
+    """模板 spec 注册表（基类+注册表模式，同 EMSolverRegistry）。
+
+    T6 扩面三批（R1 审计 §面5/T6，W15-S3）：dict+手写样板由
+    infra.registry_kit.RegistryKit 承载——对外行为保真：重名 ValueError
+    文案（"模板 spec 重名注册: X"）经 dup_fmt 逐字节不变、缺名 KeyError
+    文案经 missing_fmt 保真、names()=keys() 别名；Kit 纯数据容器不做
+    import 副作用（#362 口径：注册仍由 register_template_spec 调用方
+    显式执行，reload 语义与迁移前相同）。
+    """
 
     def __init__(self) -> None:
-        self._specs: dict[str, TemplateSpec] = {}
+        super().__init__(
+            label="模板 spec",
+            missing_fmt="未注册的模板 spec: {key}（可用: {keys}）",
+            dup_fmt="模板 spec 重名注册: {key}")
 
     def register(self, spec: TemplateSpec) -> None:
-        if spec.name in self._specs:
-            raise ValueError(f"模板 spec 重名注册: {spec.name}")
-        self._specs[spec.name] = spec
-
-    def get(self, name: str) -> TemplateSpec:
-        if name not in self._specs:
-            raise KeyError(f"未注册的模板 spec: {name}（可用: {self.names()}）")
-        return self._specs[name]
+        self.insert(spec.name, spec)
 
     def names(self) -> list[str]:
-        return sorted(self._specs)
+        return self.keys()
 
     def component(self, name: str, component: str) -> Callable[..., Any]:
         """取可调用组件；未实现抛 TemplateComponentMissing（不静默）。"""
@@ -82,8 +88,8 @@ class TemplateSpecRegistry:
     def describe(self) -> list[dict[str, Any]]:
         """JSON 友好的全量清单（组件齐备性一目了然）。"""
         out: list[dict[str, Any]] = []
-        for key in sorted(self._specs):
-            spec = self._specs[key]
+        for key in self.keys():
+            spec = self.get(key)
             out.append({
                 "name": spec.name,
                 "components": {

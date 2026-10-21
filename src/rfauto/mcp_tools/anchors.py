@@ -1,6 +1,6 @@
 """anchors_list/anchors_inspect（DP-3 物理标定锚注册表）（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动）。
 
-异常壳信封走 error_envelope 单源（aurora_d AU-2C 域升版 2026-10-14：
+异常壳信封走 error_envelope 单源（架构批 AU-2C 域升版 2026-10-14：
 服务面失败形统一 ``errors`` list[str]，anchors 域 schema 1.1）。
 """
 

@@ -436,3 +436,35 @@ def close_level2_chain(record: Mapping[str, Any], *,
         (envelope[s] or {}).get("ok", False)
         for s, enabled, _ in steps if enabled)
     return envelope
+
+
+def design_close(
+    record_path: str | Path,
+    *,
+    out_dir: str | Path | None = None,
+    certify: bool = True,
+    anchor_writeback: bool = True,
+    replan: bool = True,
+) -> dict[str, Any]:
+    """设计链 record → 三步闭环（certify→锚回写草稿→replan）shell 面。
+
+    record 从 ``design_kickoff`` 落盘的 ``record.json`` 读取（或任意同
+    schema JSON）；闭环本体 = :func:`level2_closure.close_level2_chain`
+    （单步失败不拖垮其余，envelope 逐步留 errors，永不抛）。
+    """
+    import json
+
+    from rfauto.service.level2_closure import close_level2_chain
+
+    p = Path(record_path)
+    if not p.is_file():
+        return error_envelope([f"record 文件不存在: {p}"])
+    try:
+        record = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return error_envelope([f"record 不可读: {exc}"])
+    if not isinstance(record, dict):
+        return error_envelope([f"record 必须是 JSON 对象: {p}"])
+    return close_level2_chain(
+        record, out_dir=out_dir, certify=certify,
+        anchor_writeback=anchor_writeback, replan=replan)

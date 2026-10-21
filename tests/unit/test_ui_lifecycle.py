@@ -1,4 +1,4 @@
-"""aurora36 W2-B 席位回归钉：UI 前端资源生命周期（R1 审计 P0-4/P0-5/P2-13/P0-6）。
+"""架构批 W2-B 席位回归钉：UI 前端资源生命周期（R1 审计 P0-4/P0-5/P2-13/P0-6）。
 
 对象：src/rfauto/ui/static/pages.js（app.js/plotcard.js 归 W2-C，本文件只读）。
 
@@ -39,7 +39,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -81,7 +81,7 @@ class TestChartInstanceCache:
         # 已整体迁 plotCard 逃生舱（壳内建 resize 去重）——绑定调用清零，
         # 存量消费=tools 页 A3-A 一处
         assert _SRC.count("bindChartResize(el); // P0-5") == 0
-        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1
+        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1
 
     def test_subtree_regen_disposes_charts_first(self):
         # 容器 innerHTML 换血前必须先释放旧实例（缓存键随元素走）
@@ -168,10 +168,10 @@ class TestPollingLifecycle:
         assert "setInterval(p.fn, p.intervalMs)" in body  # 恢复：重启定时器
         assert "p.fn(); // 恢复可见：立即拉一次" in body  # 恢复立即拉一次
         # 监听在 initPages 装配（模块顶层零 DOM 依赖，node 行为钉可 import）
-        assert "_bindVisibilityPolling(); // aurora36 W2-B" in _SRC
+        assert "_bindVisibilityPolling(); // 架构批 W2-B" in _SRC
         # 页面激活态由 showPage 单源写入
         assert 'let _activeView = "dashboard";' in _SRC
-        assert "_activeView = v; // aurora36 W2-B" in _SRC
+        assert "_activeView = v; // 架构批 W2-B" in _SRC
 
 
 class TestWebGLDefensiveRelease:
@@ -218,9 +218,14 @@ class TestErrorColorToken:
 
     def test_no_inline_hardcoded_error_hex(self):
         assert "color:#e57373" not in _SRC
-        # 6 处 ✗ 错误提示全令牌化（本席改 3 + 既有 3；图表深色调色板数组的
-        # #e57373 属系列色主题分档，归 a11y 钉口径，不在本钉范围）
-        assert _SRC.count("color:var(--err)'>✗") == 6
+        # ✗ 错误提示全令牌化（图表深色调色板数组的 #e57373 属系列色主题
+        # 分档，归 a11y 钉口径，不在本钉范围）。
+        # 架构批 W2-S5：gallery 闭式计算失败点迁 kitErrorPanel（R1 #8
+        # 三态批1），✗ 余量 6→5 同笔。
+        # 架构批 W14-S2：playground×2/profile/tools 内联 ✗ span 迁
+        # kitErrorPanel（R2 Top10 #4 归一波），✗ 余量 5→1 同笔
+        #（余 1=queue 豁免点，跨席注释在档）。
+        assert _SRC.count("color:var(--err)'>✗") == 1
 
 
 class TestCrossSeatCountPins:
@@ -272,18 +277,18 @@ def test_drawboxes_returns_renderer_handle():
     assert "return renderer;" in js, "drawBoxes 未返回句柄"
 
 
-# ────────── R-1 页面生命周期协议 + F-4 降噪（aurora72 W1-S3 席位钉） ──────────
+# ────────── R-1 页面生命周期协议 + F-4 降噪（架构批 W1-S3 席位钉） ──────────
 
 class TestPageLifecycleProtocol:
-    """R-1（aurora72 W1-S3，R6 审计 R-1）：PageContext 增量钩子协议。
+    """R-1（架构批 W1-S3，R6 审计 R-1）：PageContext 增量钩子协议。
 
     形态：VIEWS 键→渲染函数（=enter 面）不动；router.js PAGE_CTX 只登记
     { refresh?, leave? } 增量——palette 刷新走 ctx.refresh（未登记页回退
     showPage 整页重进）、showPage 离页调 prev.leave（先于激活，best-effort）。
     试点批（W1-S3）=dashboard（静态）+loopboard（懒加载 _lazyCtx）；波2
-    （aurora_e W2-S7）=tune/detail/runs/campaign/reports 五页（懒加载
-    _lazyCtx）；波3 第二组（aurora_e W3-S12）=sparams/calibration/queue/
-    gallery/optstack/timeline 六页（全 refresh-only）；波4 收尾（aurora_e
+    （架构批 W2-S7）=tune/detail/runs/campaign/reports 五页（懒加载
+    _lazyCtx）；波3 第二组（架构批 W3-S12）=sparams/calibration/queue/
+    gallery/optstack/timeline 六页（全 refresh-only）；波4 收尾（架构批
     W4-S17）=solvers/profile/datasets/anchors/uq/playground/farfield/field/
     agent/recipe/tools 十一页（全 refresh-only；guide/import 两页按"有数据面
     才迁"原则跳过——纯静态壳/无进页数据面）。_POLLS 托管语义保留
@@ -325,7 +330,7 @@ class TestPageLifecycleProtocol:
 
 
 class TestLoopboardRenderDedup:
-    """F-4（aurora72 W1-S3，R6 审计 F-4=R1 P1-11 清偿）：2s 全量重绘降噪。
+    """F-4（架构批 W1-S3，R6 审计 F-4=R1 P1-11 清偿）：2s 全量重绘降噪。
 
     pollBoard 以 payload 序列化串为键比对，无变化跳过全部 DOM 写面——
     此前每 tick 重建里程碑+步骤两表（文本选区打断+闪烁根因）。"""
@@ -361,7 +366,7 @@ class TestLoopboardRenderDedup:
 
 
 class TestPageLifecycleWave2:
-    """R-1 波2（aurora_e W2-S7，R6 审计 R-1 余页迁移）：tune/detail/runs/
+    """R-1 波2（架构批 W2-S7，R6 审计 R-1 余页迁移）：tune/detail/runs/
     campaign/reports 五页 PageContext 登记。形态同 W1 试点——懒加载页经
     pages.js _lazyCtx 包装，钩子实体在各 view_*.js 导出的 xxCtx。"""
 
@@ -400,7 +405,7 @@ class TestPageLifecycleWave2:
         assert "refresh: () => showRun(S.currentRunId)" in m.group(1)
 
     def test_wave3_six_pages_registered_in_pages_js(self):
-        # R-1 波3 第二组（aurora_e W3-S12）：sparams/calibration/queue/
+        # R-1 波3 第二组（架构批 W3-S12）：sparams/calibration/queue/
         # gallery/optstack/timeline 六页登记（全 refresh-only，无轮询面
         # =无 leave 需求；_lazyCtx 包装形态与波2 同构）。
         pages = (_STATIC / "pages.js").read_text(encoding="utf-8")
@@ -427,9 +432,12 @@ class TestPageLifecycleWave2:
         # W7-S35 走查 P2-1 回归钉：run 下拉此前裸调 /api/runs（服务端缺省
         # limit=50 截断，较老带 Touchstone run 不可达）；且深链 run 不在
         # 选项集时 sel.value 赋值静默失败回退首项。
+        # W4-S13（P8-9 收口）同笔：T.api→apiFetch 统一请求层，limit=500
+        # 语义钉原样保留（字面随调用形态同笔更新）。
         sp = (_STATIC / "pages" / "view_sparams.js").read_text(encoding="utf-8")
-        assert 'T.api("/api/runs?limit=500")' in sp,             "sparams run 下拉必须显式带大 limit（缺省 50 截断面）"
-        assert "不在最近清单内" in sp and "hasOpt" in sp,             "sparams 深链 run 缺项必须注入占位选项（禁静默回退首项）"
+        assert 'apiFetch("/api/runs?limit=500"' in sp,             "sparams run 下拉必须显式带大 limit（缺省 50 截断面）"
+        # W6-S21 i18n 扩面：占位文案=原始 id 前缀+词表后缀段（t 烘焙）
+        assert 't("sparams.deeplink_suffix")' in sp and "hasOpt" in sp,             "sparams 深链 run 缺项必须注入占位选项（禁静默回退首项）"
 
     def test_campaign_ctx_uses_reload_ref_with_guard(self):
         camp = (_STATIC / "pages" / "view_campaign.js").read_text(encoding="utf-8")
@@ -449,7 +457,7 @@ class TestPageLifecycleWave2:
         assert m and "refresh: () => pageReports()" in m.group(1)
 
     def test_wave4_eleven_pages_registered_in_pages_js(self):
-        # R-1 波4 收尾（aurora_e W4-S17）：solvers/profile/datasets/anchors/
+        # R-1 波4 收尾（架构批 W4-S17）：solvers/profile/datasets/anchors/
         # uq/playground/farfield/field/agent/recipe/tools 十一页登记（全
         # refresh-only，无轮询面=无 leave 需求；_lazyCtx 包装形态与波2/3 同构；
         # view_data/view_fieldviz 两模块文件各承载两个键）。

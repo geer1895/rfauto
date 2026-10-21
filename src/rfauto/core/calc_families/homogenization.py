@@ -1,5 +1,16 @@
 """均匀化通用族（MM-7，内核 core/homogenization.py，本模块只做注册壳）。
 
+出处（原文公式逐字转写，键内描述同源）：
+- homog_mix_eff：maxwell_garnett（Garnett 1904 球夹杂稀疏极限）/
+  bruggeman（Bruggeman 1935 对称有效介质）/looyenga（Looyenga 1965
+  立方根加权）三混合式+Wiener 双界。
+- srr_permeability：Pendry 1999 IEEE TMTT 47(11):2075 SRR Lorentz
+  μ(ω)（arXiv 2006.13861 同式互证）。
+- wire_media_plasma：Pendry 1996 PRL 76:4773 线媒质等离子频率
+  ωp²=2π·c0²/(a²ln(a/r))+Drude ε(ω)。
+- retrieve_eff_params：单频 (S11,S21) 对称面板反演（Smith 2002 PRB
+  65:195104 同族口径）。
+
 规格 docs/research_expansion_20261002_round17.md §五 :154（B 流超材料，
 2026-10-02）「三混合式提升通用 core 内核+Wiener 界+Pendry 1999 SRR μ 公式
 +线媒质 ωp（Pendry 1996 PRL）」。四键：

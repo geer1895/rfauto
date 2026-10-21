@@ -8,7 +8,7 @@
   端点在 routes/events.py；本模块是 tune 域的**发布源**——状态转移经
   _publish_tune_event 进统一总线，观测面 best-effort #105）
 
-U4 生产写入方（aurora_e W2-S7）：调参完成态经 _write_tune_terminal_event
+U4 生产写入方（架构批 W2-S7）：调参完成态经 _write_tune_terminal_event
 写一条 run_completed/run_failed 事件到该 run 的 events.jsonl（有 run_id
 才写）——runs 镜像 SSE 流自此有真实生产事件可读（此前只读不写）。
 
@@ -101,13 +101,22 @@ async def api_tune_start(request: Request) -> JSONResponse:
     if _TUNE_STATE["running"]:
         # 单数 error 遗留族（envelope 契约 §3：按域升版才统一，前端读 .error）
         return JSONResponse({"ok": False, "error": "已有调参任务在运行"})
-    body: dict[str, Any] = await _json_body(request)
-    # A6 P0-2 同族收编（review_aurora_next 审查）：n_gen/pop_size/max_trials
-    # 此前 int() 在后台线程内裸解析（坏值=任务槽已占+error 态假启动）——
-    # 提前到路由层 _int_param 守卫，坏参数 400 信封、不占任务槽。
-    n_gen = _int_param(body.get("n_gen"), 20, "n_gen")
-    pop_size = _int_param(body.get("pop_size"), 12, "pop_size")
-    max_trials = _int_param(body.get("max_trials"), 30, "max_trials")
+    # W6-P3-6 TOCTOU 收口（架构批 W1-S4）：任务槽置位提前到任何 await
+    # 之前——旧序（检查→await body→置位）留并发窗口，双 POST 可双双通过
+    # 检查各自起后台线程。置位后 body/参数解析失败必须释放槽（A6 P0-2
+    # "坏参数不占任务槽"行为保持；ParamError 由既有 400 信封面接手）。
+    _TUNE_STATE["running"] = True
+    try:
+        body: dict[str, Any] = await _json_body(request)
+        # A6 P0-2 同族收编（review_aurora_next 审查）：n_gen/pop_size/max_trials
+        # 此前 int() 在后台线程内裸解析（坏值=任务槽已占+error 态假启动）——
+        # 提前到路由层 _int_param 守卫，坏参数 400 信封、不占任务槽。
+        n_gen = _int_param(body.get("n_gen"), 20, "n_gen")
+        pop_size = _int_param(body.get("pop_size"), 12, "pop_size")
+        max_trials = _int_param(body.get("max_trials"), 30, "max_trials")
+    except Exception:
+        _TUNE_STATE["running"] = False
+        raise
 
     def _run() -> None:
         try:

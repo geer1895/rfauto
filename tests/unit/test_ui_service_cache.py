@@ -1,4 +1,4 @@
-"""aurora72 A2-D：ui_service runs/ 扫描端点缓存行为单测。
+"""架构批 A2-D：ui_service runs/ 扫描端点缓存行为单测。
 
 覆盖面：
 - 缓存原语（_UiScanCache）：TTL 内零重扫（producer 计数桩）/签名变化
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from rfauto.service import p0_gate_service, ui_service
+from rfauto.service import p0_gate_service, ui_scan_cache, ui_service
 from rfauto.service.ui_service import (
     _ui_cache_enabled,
     _ui_cache_stats,
@@ -32,8 +32,7 @@ h5py = pytest.importorskip("h5py")
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(monkeypatch, isolated):
     monkeypatch.delenv("RFAUTO_UI_CACHE", raising=False)
     # R8-ENG2：本套件钉的是 A2-D 扫描缓存原语自身的 TTL/签名语义，与
     # registry 接线层无关——恒走 legacy 全扫路径，隔离自愈回填后台线程
@@ -181,7 +180,7 @@ class TestEndpointCacheBehavior:
     def test_new_run_dir_visible_immediately(self, monkeypatch):
         # 顶层结构变化（新 run 目录）→ 指纹条目名集合变化 → 立即可见
         #（枚举反映当前条目，不依赖目录 mtime，NTFS 懒更新不影响此路径）
-        monkeypatch.setattr(ui_service, "_UI_SCAN_TTL_S", 99999.0)
+        monkeypatch.setattr(ui_scan_cache, "_UI_SCAN_TTL_S", 99999.0)  # T1 解环：常量随定义体迁 ui_scan_cache
         assert ui_service.calibration_runs()["runs"] == []
         _write_gate(Path("runs") / "20260101_000000_a")
         rows = ui_service.calibration_runs()["runs"]
@@ -252,7 +251,7 @@ class TestEndpointCacheBehavior:
 
     def test_field_runs_new_run_instant(self, monkeypatch):
         # 顶层结构变化：新 run 目录带场 dump → 立即可见（不依赖 mtime）
-        monkeypatch.setattr(ui_service, "_UI_SCAN_TTL_S", 99999.0)
+        monkeypatch.setattr(ui_scan_cache, "_UI_SCAN_TTL_S", 99999.0)  # T1 解环：常量随定义体迁 ui_scan_cache
         assert ui_service.field_runs()["runs"] == []
         _write_dump(Path("runs") / "20260101_000000_a" / "SAR_raw.h5")
         out = ui_service.field_runs()

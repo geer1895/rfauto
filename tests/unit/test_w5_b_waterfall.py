@@ -552,7 +552,9 @@ class TestRegistriesAndEvent:
             GuardRegistry.register(_TmpGuard)
             assert isinstance(GuardRegistry.create("_tmp_guard_w5b"), _TmpGuard)
         finally:
-            GuardRegistry._items.pop("_tmp_guard_w5b", None)
+            # T6 扩面三批（W15-S3）：注册面迁移 RegistryKit 后清理走
+            # unregister（与 dict.pop(k, None) 同语义：缺名静默 no-op）
+            GuardRegistry._kit.unregister("_tmp_guard_w5b")
 
     def test_event_seq_monotonic_fifo(self):
         wf = ToolWaterfall()

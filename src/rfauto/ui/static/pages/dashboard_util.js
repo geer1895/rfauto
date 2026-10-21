@@ -1,11 +1,11 @@
-/* rfauto 总览组件纯函数（aurora_d UI-R2 自 pages.js 拆出，aurora36
+/* rfauto 总览组件纯函数（架构批 UI-R2 自 pages.js 拆出，架构批
    W4-C 块逐字节搬移）：relTime 相对时间 / freshnessTier+
    freshnessRingSvg 数据新鲜度环 / statusBucket run 状态分桶（甜甜圈/
    活动徽章共用单源）。node 行为钉可测（test_ui_dashboard_widgets）。 */
 
 import { esc, escAttr } from "./dom.js";
 
-/* ═══ aurora36 W4-C：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/甜甜圈）
+/* ═══ 架构批 W4-C：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/甜甜圈）
    + palette act-export-chart 事件桥。纯函数三件 + 分桶一件（node 行为钉可测），
    DOM/SVG 装配面在 pageDashboard 的 widget 渲染器内。 ═══ */
 

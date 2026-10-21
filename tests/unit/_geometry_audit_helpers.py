@@ -502,7 +502,7 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     # 段长 a=8.7626（抽头位越左边段守卫拒渲染——守卫是正确行为）；×0.9
     # 保域（7.33 < 8.76）且必变几何
     "xcheb_bpf4": {"tap_t_mm": (0.9, 0.0)},
-    # atten_pi/atten_t（wf:ge9-tail-srv 尾程项 10 前半，2026-10-08）：shunt_off_mm
+    # atten_pi/atten_t（ 尾程项 10 前半，2026-10-08）：shunt_off_mm
     # 电共位守卫 θ=β·D≤0.1rad ⇒ ≤0.83mm（render_tl._atten_d_guard，W7-A 残座批
     # D=6mm 分布式失配定谳后立）——缺省 ×1.37+0.013=1.0405mm 越界（守卫拒渲染
     # =正确行为）；+0.05mm 保域（0.80≤0.83）且必变几何

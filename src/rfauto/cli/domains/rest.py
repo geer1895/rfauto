@@ -1,4 +1,4 @@
-"""rest 子应用——REST 面 schema 导出叶（aurora_d REST-B 席，2026-10-14）。
+"""rest 子应用——REST 面 schema 导出叶（架构批 REST-B 席，2026-10-14）。
 
 零逻辑转发 service/rest_api（规则 4 薄壳；端点清单程序化枚举
 ``rest_api._ROUTE_TABLE`` 单源，禁手抄清单——防漂移）：

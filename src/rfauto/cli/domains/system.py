@@ -136,17 +136,18 @@ def models_list(
     result = _list_models()
 
     if schema:
-        from rfauto.models.registry import export_schema
-        try:
-            s = export_schema(schema)
-        except KeyError:
+        # T8 越级收口（架构批 W11-S3）：schema 导出经 service 单源
+        # （template_spec_service.export_model_schema，KeyError→失败信封
+        # 同构翻译）；cli 零逻辑直渲染，输出逐字节不变。
+        from rfauto.service.template_spec_service import export_model_schema
+        result_schema = export_model_schema(schema)
+        if not result_schema.get("ok"):
             if json_output:
                 # VI-5 W6-B：未知模型也信封（--json 下失败路径不许非 JSON）
-                _emit(error_envelope(f"未知模型: {schema}"),
-                      "未知模型", json_output=True)
+                _emit(result_schema, "未知模型", json_output=True)
             console.print(f"[red]未知模型: {schema}[/red]")
             raise typer.Exit(code=1) from None
-        console.print_json(json.dumps(s, indent=2, ensure_ascii=False))
+        console.print_json(json.dumps(result_schema["schema"], indent=2, ensure_ascii=False))
         return
     if json_output:
         # VI-5 W6-B：--json 信封（清单面）

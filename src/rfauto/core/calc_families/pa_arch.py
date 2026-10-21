@@ -1,4 +1,4 @@
-"""PA/控制件族（R2 空白域 G11；aurora36 W7-A 席首批三键+批 B Wave3
+"""PA/控制件族（R2 空白域 G11；架构批 W7-A 席首批三键+批 B Wave3
 W3-CORE3 席原位扩展四键，2026-10-13）。
 
 七键：balanced_pair_sparams（90° 混合器平衡放大器对 S 参数合成）/
@@ -1098,4 +1098,62 @@ def multiplier_chain_budget(
     if p_in_dbm is not None:
         out["pin_dbm"] = round(p_in_dbm, 9)
         out["pout_dbm"] = round(p_in_dbm - total_loss_db, 9)
+    return out
+
+
+# ─── 键 8/9：N-way Doherty（架构批 W4-S4，R2 边际池顺延件）─────────────────
+
+_SOURCE_DOHERTY_NWAY = (
+    "理想 N-way Doherty 区域效率=第一性推导（理想 B 类电流簿记+顺序开通"
+    "剖面，core/pa_architectures.doherty_nway_efficiency docstring 推导"
+    "链）；独立裁判=N=2 逐位回归 Cripps ARMMS 2008 两区域闭式（既有 "
+    "doherty_efficiency）+断点回峰 η(σ=m/N)=π/4 恒等式族+凹陷闭式 "
+    "πr(r−1)/(2r−1)²（r=2 → 2π/9 与既有 DOHERTY_ETA_DIP_MIN 逐位）；"
+    "20·log10(N) 满回退=N-way Doherty 文献标准语义")
+
+
+@register_calculator(
+    "doherty_nway_efficiency",
+    "N-way Doherty效率：理想 N-way（N 支路顺序开通）区域效率闭式：η=(π/4)"
+    "·σ²·N/S_N(σ)（区域 r：N·σ²/[σ(2r−1)−r(r−1)/N]，σ=√(P/P_max)）。恒"
+    "等式：η(σ=m/N)=π/4 断点回峰族/η(1)=π/4/全域 η∈[0,π/4]/区域 1=(π/4)"
+    "·N·σ。N=2 逐位回归既有 2-way Cripps 闭式（同仓双源裁判）。输出效率+"
+    "区域+归一化器件电流剖面+断点判读",
+    (("n_way", "int - Doherty 支路数 N（整数 ∈[2,8]，2=经典 2-way）"),
+     ("sigma", "float - 归一化电压摆幅 σ=√(P/P_max)（[0,1]）")),
+    required=("n_way", "sigma"),
+)
+def doherty_nway_efficiency(n_way: int, sigma: float) -> dict[str, Any]:
+    from rfauto.core.pa_architectures import (
+        ETA_CLASS_B_PEAK,
+        doherty_nway_point,
+    )
+
+    n = int(n_way)
+    if n != n_way or isinstance(n_way, bool) or n < 2 or n > 8:
+        raise ValueError(f"n_way 必须为整数 ∈[2,8]，得 {n_way!r}")
+    point = doherty_nway_point(n, sigma)
+    point["eta_peak"] = ETA_CLASS_B_PEAK
+    point["source"] = _SOURCE_DOHERTY_NWAY
+    return point
+
+
+@register_calculator(
+    "doherty_nway_breakpoints",
+    "N-way Doherty断点表：断点/回峰/凹陷全表（σ=m/N，PBO=20log10(N/m)dB，"
+    "m=1..N——m=1 档=经典 N-way 满回退 20log10(N)dB）；区域 r 凹陷闭式 "
+    "σ*_r=2r(r−1)/(N(2r−1))、η_min=π·r(r−1)/(2r−1)²（只依赖区域号与 N "
+    "无关；r=2 → 2π/9 与既有 2-way DOHERTY_ETA_DIP_MIN 逐位）。效率点值"
+    "面归 doherty_nway_efficiency 不重复",
+    (("n_way", "int - Doherty 支路数 N（整数 ∈[2,8]，2=经典 2-way）"),),
+    required=("n_way",),
+)
+def doherty_nway_breakpoints(n_way: int) -> dict[str, Any]:
+    from rfauto.core.pa_architectures import doherty_nway_breakpoints as _bp
+
+    n = int(n_way)
+    if n != n_way or isinstance(n_way, bool) or n < 2 or n > 8:
+        raise ValueError(f"n_way 必须为整数 ∈[2,8]，得 {n_way!r}")
+    out = _bp(n)
+    out["source"] = _SOURCE_DOHERTY_NWAY
     return out

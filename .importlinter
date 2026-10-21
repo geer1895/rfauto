@@ -1,18 +1,139 @@
 [importlinter]
 root_package = rfauto
 
+# 分层契约（2026-10-19 扩展）：
+#   - rfauto.mcp_tools（42 文件）入层：MCP 工具实现层，消费 service 及以下，
+#     仅被 rfauto.mcp_server facade 引用——列于 mcp_server 之下、service 之上。
+#   - rfauto.measurement（9 文件）入层：测量数据确定性处理域（校准/去嵌/2x-thru/
+#     相关分析），仅消费 core——其消费面 service(8)+adapters(3: vna_adapter) +
+#     mcp_tools(2) 全在其上方，故列于 adapters 之下（归入 service 层会使
+#     adapters→measurement 3 条既有 lazy 边反向变红，零移动原则弃用该方案）。
+#   契约覆盖自此 100%（无 UNLAYERED 地带）。
 [importlinter:contract]
 name = Layered architecture; core is a stable dependency-free leaf
 type = layers
 layers =
     rfauto.cli
     rfauto.mcp_server
+    rfauto.mcp_tools
     rfauto.ui
     rfauto.service
     rfauto.linkage
     rfauto.optimization
     rfauto.models
     rfauto.adapters
+    rfauto.measurement
     rfauto.pipeline
     rfauto.infra
     rfauto.core
+
+# calc_families 聚合面收缩契约（2026-10-19）：
+#   rfauto.core.calc_families 包 __init__ 是"注册副作用聚合面"（import 即完成
+#   全部计算器注册，出度 106 全库第一），架构审计实测其包面反向消费为 0——业务层一律经
+#   rfauto.core.calculators facade 消费计算器键，禁止直插 calc_families
+#   包/子模块取键。core 层内部（facade 本体与同层姊妹模块的公式单源复用）
+#   不在禁令内；下方两条 ignore_imports 白名单= adapters 渲染链对非键内部
+#   helper（lange/ring_resonator 公式单源，facade 未 re-export）的既有复用，
+#   棘轮只收不放。
+[importlinter:contract:calc-families-no-direct-consumption]
+name = calc_families aggregation face is registration-only; business layers consume calculator keys via rfauto.core.calculators facade
+type = forbidden
+allow_indirect_imports = true
+source_modules =
+    rfauto.cli
+    rfauto.mcp_server
+    rfauto.mcp_tools
+    rfauto.ui
+    rfauto.service
+    rfauto.linkage
+    rfauto.optimization
+    rfauto.models
+    rfauto.adapters
+    rfauto.measurement
+    rfauto.pipeline
+    rfauto.infra
+forbidden_modules =
+    rfauto.core.calc_families
+ignore_imports =
+    rfauto.adapters.oe_templates.render_c4 -> rfauto.core.calc_families.lange
+    rfauto.adapters.oe_templates.render_ring -> rfauto.core.calc_families.ring_resonator
+
+# 壳层 below-service 禁入棘轮契约（2026-10-19）：
+#   cli/mcp_tools 是壳层/工具面，业务消费一律走 service（分层架构规则）。
+#   本契约禁 cli/mcp_tools 直连 service 以下各层（allow_indirect_imports=
+#   true：经 service 中转的链不算违例，只抓直连）。下方 ignore_imports
+#   白名单=存量直连边（实测收口后余 24 条），**只收
+#   不放**——新增直连即红；删除白名单行必须同笔改
+#   tests/unit/test_shell_below_service_ratchet.py 的 FROZEN_WHITELIST
+#   （该测试同时钉本契约形态与 AST 实测边集，三者的并集即棘轮）。
+#   白名单条目分两类：①「待包 service」=展示/编排面，service 收口席
+#   补面后逐条删除；②「显式豁免」=壳层管线职责（日志引导/注册暖机/
+#   纯常量/只读资源直读），长期保留。
+[importlinter:contract:shell-below-service-no-direct-imports]
+name = cli and mcp_tools consume below-service layers only via the shrinking whitelist (ratchet)
+type = forbidden
+allow_indirect_imports = true
+source_modules =
+    rfauto.cli
+    rfauto.mcp_tools
+forbidden_modules =
+    rfauto.linkage
+    rfauto.optimization
+    rfauto.models
+    rfauto.adapters
+    rfauto.measurement
+    rfauto.pipeline
+    rfauto.infra
+    rfauto.core
+ignore_imports =
+    # ── cli（15 条）──
+    # 壳层管线豁免：RFAUTO_LOG_LEVEL loguru 引导（命令回调装配，service 无对应面）
+    rfauto.cli.domains._core -> rfauto.infra.logging
+    # 待包 service：KiCad PCB 生成/DRC 门禁展示命令（fab_service 仅 DFM/公差面）
+    rfauto.cli.domains.agent_kicad -> rfauto.adapters.kicad_pcell
+    rfauto.cli.domains.agent_kicad -> rfauto.adapters.kicad_drc
+    # 待包 service：oracle 注册表只读视图+离线交叉核验展示
+    rfauto.cli.domains.calc_vna -> rfauto.core.closed_form_oracle
+    # 显式豁免：NODE_KINDS 纯常量
+    rfauto.cli.domains.dag -> rfauto.core.compose.dag_schema
+    # 显式豁免：cli v1 通用 DAG 执行器直用基座（自带 subprocess ExecutorFn；
+    # campaign_executor 战役面语义不同，非同功能）
+    rfauto.cli.domains.dag -> rfauto.pipeline.dag_runner
+    # 待包 service：firmware 表格导出展示面
+    rfauto.cli.domains.firmware -> rfauto.core.firmware_export
+    # 待包 service：PDF 导出（service generate_report_for_run 仅 md/html）
+    rfauto.cli.domains.jobs -> rfauto.infra.report
+    # 待包 service：pcell 库检视/渲染展示面
+    rfauto.cli.domains.scattered -> rfauto.core.pcell_dsl
+    # 待包 service：产线统计展示（uncertainty_ledger_service 仅单键异形态）
+    rfauto.cli.domains.stats -> rfauto.core.manufacturing_stats
+    # 待包 service：综合计算器展示面（synthesize_* 闭式设计值直算）
+    rfauto.cli.domains.synth -> rfauto.core.synthesis
+    # 显式豁免：DeviceCatalog/LinkBudget 纯数据表类
+    rfauto.cli.domains.synth -> rfauto.core.block_spec
+    rfauto.cli.domains.synth -> rfauto.core.budget
+    # 待下沉 service：编排面（dry-run plan_sweep/执行 run_sweep；
+    # 同文件 tolerance 非 dry 路径已走 service.run_tolerance 为先例）
+    rfauto.cli.domains.workflow -> rfauto.optimization.sweep_backend
+    rfauto.cli.domains.workflow -> rfauto.optimization.optimizer
+    # ── mcp_tools（9 条）──
+    # 显式豁免：lifespan 预导入暖机（注册副作用 flush；service.api 覆盖
+    # objectives/parameters 但不含本模块，_core.py 行注实测注记）
+    rfauto.mcp_tools._core -> rfauto.models.registry
+    # 待下沉 service：sweep 执行面（与 cli workflow 同源）
+    rfauto.mcp_tools.optim -> rfauto.optimization.sweep_backend
+    # 待包 service：PDF 导出展示面（同 cli jobs）
+    rfauto.mcp_tools.report_bench -> rfauto.infra.report
+    # 显式豁免：只读资源直读注册表（ui_service.list_runs 同源但返回
+    # 信封形态，MCP 资源契约不动）
+    rfauto.mcp_tools.resources -> rfauto.infra.run_store
+    # 显式豁免：只读知识资源 AU-5 单点发现
+    rfauto.mcp_tools.resources -> rfauto.core.materials
+    # 待包 service：metrics 知识诊断（diagnosis_service 是 Q/CM 域不同面，
+    # run_core 内嵌诊断非独立入口）
+    rfauto.mcp_tools.runs -> rfauto.infra.diagnosis
+    # 待包 service：综合计算器工具面（与 cli synth 同源）
+    rfauto.mcp_tools.synth -> rfauto.core.synthesis
+    # 显式豁免：DeviceCatalog/LinkBudget 纯数据表类
+    rfauto.mcp_tools.synth -> rfauto.core.block_spec
+    rfauto.mcp_tools.synth -> rfauto.core.budget

@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -228,17 +228,43 @@ class TestEscSourcePins:
         exempt = set()
         # 1) 数字/布尔格式化（toFixed/length/count/坐标/统计量，无法携带标签）
         exempt |= {
-            "${c.i", "${c.j", "${c.n", "${c.n_feasible",
-            "${c.mean_total_violation.toFixed", "${c.phi_deg", "${c.hpbw_deg",
+            "${c.i", "${c.j",
+            #    S2 发布令批：${c.n}/${c.n_feasible}/${c.mean_total_violation.toFixed}
+            #    随 optstack 热图悬停行迁 t() params 退场（数值走 params 插值）
+            #    ——豁免条目同笔删除（清偿闭环）。
+            "${c.phi_deg", "${c.hpbw_deg",
             "${c.front_to_back_db", "${p.phi_deg", "${p.theta_deg", "${p.value",
             "${d.points.length", "${d.seed_sample_count", "${d.mesh_resolution_mm",
-            "${d.count", "${d.expected_count", "${d.stale_count",
-            "${d.no_date_count", "${d.cells.length", "${d.n_trials_used",
-            "${d.n_trials_total", "${d.n_feasible_total", "${d.n_pareto",
-            "${d.n_without_cost", "${list.length", "${orig.length",
-            "${work.length", "${trials.length", "${stats.length",
+            #    发布令 i18n 批新增豁免（S1/S2/S4 迁移面，逐条归因）：
+            #    ${r.has_sar}/${r.has_farfield_h5}=布尔条件字面量选择（" ·SAR"/
+            #    t() 键），${rows.length}=textContent 赋值（非 HTML 模板），
+            #    ${seg.level_db}=图表 series 名（非 DOM），${o.file}=series
+            #    label 前缀（chart 数据面，非 DOM）——五处均非 HTML 注入位。
+            "${r.has_sar", "${r.has_farfield_h5", "${rows.length",
+            "${seg.level_db", "${o.file",
+            #    W2-S1 批 4：${d.expected_count}/${d.no_date_count} 随锚 KPI/
+            #    无日期徽章迁 t() params 退场（${d.stale_count} 余 1 处=stale
+            #    徽章，纯计数未迁）——同笔删除（清偿闭环）。
+            "${d.count", "${d.stale_count",
+            #    S2 发布令批：${d.cells.length}/${d.n_feasible_total}/
+            #    ${d.n_pareto} 随 optstack 热图信息行/来源行迁 t() params 退场
+            #    ——同笔删除；${d.n_trials_used/total} 余量=campaign 进度行（S3）。
+            "${d.n_trials_used",
+            "${d.n_trials_total",
+            "${list.length", "${orig.length",
+            #    架构批 W8-S32 i18n 批 3：${d.n_without_cost 随 timeline 状态
+            #    行迁词表 t() {n} 占位退场（计数=开发侧数值走 params 插值，
+            #    不经模板裸插值面）——豁免条目同笔删除（本钉设计的清偿闭环）。
+            #    架构批 W2-S1 批 4：${d.expected_count}/${d.no_date_count}/
+            #    ${si.age_days}/${stats.length} 随 anchors KPI/新鲜度徽章与
+            #    uq 卡片计数迁 t() params 插值退场（同笔删除，清偿闭环同源）。
+            "${work.length", "${trials.length",
+            #    W6-S2 S 状态收编：run 总数计数插值原走 S.allRuns（S 根名
+            #    在扫描排除集）——键降级模块级改名 _allRuns 后进扫描面，
+            #    同笔迁入本清单（textContent 语境数字计数，语义不变）。
+            "${_allRuns.length",
             "${r.n_draws",
-            "${r.rho", "${si.age_days",
+            "${r.rho",
             "${iso.levels_db.join", "${iso.n_vertices", "${iso.n_faces",
             "${vol.shape.join", "${vol.frequency_ghz", "${vol.n_timesteps",
             "${t.freq_ghz", "${t.re", "${t.im", "${t.mag",
@@ -247,40 +273,54 @@ class TestEscSourcePins:
         # 2) textContent / canvas / echarts 配置 / URL 语境（非 HTML sink）
         #    A7-A ui-kit 清理（2026-10-11）：${stats.map 随 uq 指标分布表迁
         #    kitTable(rowsHtml) 退场（map 移出模板插值面）。
+        #    架构批 W4-S1：${stats.* 五项随 agent 统计条迁 t() params 退场
+        #    （t() 产出后仍走 textContent 单点，sink 语境不变）。
         exempt |= {
             "${val.model", "${val.template_hint", "${r.engine",
             "${r.has_variance", "${r.variance_note", "${r.honest_note",
-            "${d.source", "${d.template", "${d.x_param", "${d.y_param",
-            "${d.constraint_names.join", "${stats.turns", "${stats.llm_calls",
-            "${stats.tool_calls", "${stats.prompt_tokens",
-            "${stats.completion_tokens",
+            "${d.template", "${d.x_param", "${d.y_param",
+            #    S2 发布令批：${d.source} 随 optstack 来源行迁 lead/计数
+            #    params 拼接退场——同笔删除（${d.x_param/y_param} 余量=悬停
+            #    行与 campaign 热图 aria 既有插值）。
+            #    S2 发布令批：${d.constraint_names.join} 随 optstack 约束后缀
+            #    迁 lead 词表段拼接退场——同笔删除。
             "${c.name", "${t.name", "${t.file", "${x.name", "${p.seriesName",
         }
         # 3) badge 系包裹（badge 内部 esc——参数里的 API 值已被转义）
-        exempt |= {"${r.clamped.join", "${si.age_days", "${d.stale_count",
-                   "${d.no_date_count"}
+        #    W2-S1 批 4：${si.age_days}/${d.no_date_count} 随锚新鲜度徽章迁
+        #    t() params 退场（同笔删除）；余量=runs 湖 clamped 表+stale 徽章。
+        #    S2 发布令批：${r.clamped.join} 随 playground 越界徽章迁 lead
+        #    词表段拼接退场——同笔删除；${d.stale_count} 余量不变。
+        exempt |= {"${d.stale_count"}
         # 4) 分派三元（分支全是静态字面量或已 esc/badge 包裹的 API 值）
         #    A7-A ui-kit 清理：${s.available 随求解器可用徽章迁 kitBoolBadge 退场。
+        #    架构批 W2-S5（R1 #8 三态批1）：${d.ok 随 sparams Smith 无产物
+        #    分支拆 kitEmptyState/kitErrorPanel 退场——豁免条目同笔删除
+        #   （本钉设计的清偿闭环，P8-11 钉面注记）。
         exempt |= {
-            "${d.ok", "${d.warning",
             "${item.recipe",
             "${cs.milestone", "${m.detail", "${m.eta_gate.ok", "${it.parsed",
             "${p.filters", "${p.required", "${c.experimental", "${s.result",
             "${x.gt_unlocked", "${x.has_hf", "${x.visibility",
-            "${r.has_sar", "${r.has_farfield_h5", "${r.recipe_path",
             "${a.engine_pair",
         }
         # 5) id 查找对（模板 id 与 T.$ 查找同用原始值，转义反而失配）
         exempt |= {"${s.axis"}
         # 6) 代码控制常量与 builder 中间量（sink 处已 esc）
-        #    A7-A ui-kit 复核（2026-10-11）：${w.title 所在 widget 面板头按钮在
-        #    b 元素内闭合，与 kitPanelHead 形态字节不等如实不迁——条目保留。
-        exempt |= {"${w.title", "${p.bounds.join", "${val.optimization.params"}
+        #    架构批 W6-S21（2026-10-18）：${w.title 随 dashboard widget 标题
+        #    迁注册表 tk 字段 t() 渲染期烘焙退场（t() 产出=开发侧可信文本，
+        #    i18n.js 纪律头注在档；t( 前缀形态不在裸插值扫描口径内）——
+        #    豁免条目同笔删除（本钉设计的清偿闭环）。
+        exempt |= {"${p.bounds.join", "${val.optimization.params"}
         # 7) ge5 P2-2 反向扫描新增存量命中（26 处，2026-10-01 逐处源码归因）：
         #    7a) 数字格式化（toFixed/toPrecision/length/一元+强转）
         exempt |= {
-            "${dv.toFixed", "${h.length", "${infeas.length", "${loocv.rho",
-            "${names.length", "${pts.length", "${q.value", "${s2.toFixed",
+            "${dv.toFixed", "${loocv.rho",
+            #    S2 发布令批：${h.length}/${infeas.length} 随 optstack 超体积
+            #    收敛行迁 t() params/前沿分系退场——同笔删除。
+            # W8-S32 i18n 批 3：${pts.length 随 timeline 状态行迁词表 t() {n}
+            # 占位退场（同笔删除，d.n_without_cost 条目注记同源）。
+            "${names.length", "${q.value", "${s2.toFixed",
             "${xmax.toPrecision", "${xmin.toPrecision", "${ymax.toPrecision",
             "${ymin.toPrecision",
         }
@@ -290,8 +330,9 @@ class TestEscSourcePins:
         #        aria-label 插值——经 plotCard 壳 setAttribute("aria-label")
         #        赋值语境（属性赋值不解析 HTML，同 canvas/echarts 文本口径）。
         exempt |= {
-            "${e.rho", "${e.run_id", "${e.verdict", "${names.slice",
-            "${o.file", "${rows.length", "${run.cost", "${seg.level_db",
+            "${e.rho", "${e.run_id", "${e.verdict",
+            #    S2 发布令批：${names.slice} 随 optstack hv 维数提示迁 lead/tail
+            #    拼接退场（API 串照旧模板外拼）——同笔删除。
             "${slice.u_axis", "${slice.v_axis",
             "${slice.axis", "${slice.position_mm",
         }
@@ -312,24 +353,32 @@ class TestEscSourcePins:
             "${body.join", "${c.f0_ghz", "${c.n_stages", "${c.preview",
             "${c.remote", "${c.scheduling", "${c.topology",
             "${cmax.toPrecision", "${cmin.toPrecision", "${d.best.cost",
-            "${d.best.trial_number", "${d.cost_mean", "${d.n_campaigns",
-            "${d.n_previews", "${d.n_templates", "${d.params_source",
+            "${d.best.trial_number", "${d.cost_mean",
+            "${d.params_source",
             "${d.table_rows", "${d.table_truncated", "${dl.length",
             "${m.initial", "${m.max", "${m.min", "${m.step",
             "${r.duration_s", "${r.fmt", "${r.output_path", "${r.rate_hz",
             "${s.license_gated", "${stages.map",
         }
-        # aurora72 合流批（2026-10-12）：tools 页 A2-B/A3-A 落地的 15 处，逐条归因——
+        # 架构批 W1-S2（2026-10-18）：${d.n_campaigns}/${d.n_templates}/
+        # ${d.n_previews} 三条随 i18n 试点迁 t(key, params) 渲染期烘焙
+        # （view_queue info 行 / view_gallery 计数行）退场——豁免条目同笔
+        # 删除（本钉设计的清偿闭环）。
+        # 架构批 合流批（2026-10-12）：tools 页 A2-B/A3-A 落地的 15 处，逐条归因——
         # ①textContent/计数/维度数字（无法携带标签）：cals/groups/vis/nums/val.length、
         #   mat.rows/cols、g.items.length、groups.map（map 回调只产出组名字符串进 textContent 拼接）；
         # ②echarts 文本语境（tooltip formatter/系列名按文本渲染，载荷=服务端计算器结果的
         #   结构键名与数值矩阵，非用户输入面）：m.key/m.raw/mat.key/sub.title；
         # ③esc 已包裹的分派三元：r.y/r.error（真值分支均走 esc()）。
+        #    架构批 W2-S1 批 4：${groups.length}/${groups.map}/${mat.rows}/
+        #    ${mat.cols}/${mat.key}/${val.length} 随帮助组清单/热图标签/结果
+        #    单元格迁 t() params 退场（同笔删除）；${cals.length} 余 1 处=
+        #    tool-count 计数行（纯数字，未迁）。
         exempt |= {
-            "${cals.length", "${g.items.length", "${groups.length",
-            "${groups.map", "${m.key", "${m.raw", "${mat.cols",
-            "${mat.key", "${mat.rows", "${nums.length", "${r.error",
-            "${r.y", "${sub.title", "${val.length", "${vis.length",
+            "${cals.length", "${g.items.length",
+            "${m.key", "${m.raw",
+            "${nums.length", "${r.error",
+            "${r.y", "${sub.title", "${vis.length",
         }
         unregistered = hits - exempt
         stale = exempt - hits

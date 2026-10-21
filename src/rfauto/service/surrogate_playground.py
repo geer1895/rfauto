@@ -17,20 +17,30 @@ predict_with_std/uncertainty）时透出，否则 std=null 如实标注——
 
 from __future__ import annotations
 
+import copy
 import json
 import math
+import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from rfauto.service._helpers import safe_run_id
 from rfauto.service.envelope import ok_envelope
+from rfauto.service.ui_service import _SNAPSHOT_CACHE, _runs_fingerprint
 
 RUNS_DIR = Path("runs")
 
 
 def _load_artifacts(run_id: str) -> dict[str, Any]:
-    base = RUNS_DIR / run_id / "calibration"
+    # P1-1（架构批 W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
+    # （第 9 处拼接点）——"../docs" 相对穿越/NUL 字节直通 → 读 samples/
+    # surrogate/campaign 定名 JSON+存在性 oracle，与 P9-13 已修 8 处同类。
+    run_id_clean = safe_run_id(run_id)
+    if run_id_clean is None:
+        raise ValueError(f"非法 run_id: {run_id!r}（必须是单段目录名）")
+    base = RUNS_DIR / run_id_clean / "calibration"
     out: dict[str, Any] = {}
     for name in ("samples.json", "surrogate.json", "campaign.json"):
         p = base / name
@@ -40,26 +50,45 @@ def _load_artifacts(run_id: str) -> dict[str, Any]:
 
 
 def playground_runs() -> dict[str, Any]:
-    """有校准产物的 run 清单（供 Playground 下拉选择）。"""
-    runs: list[dict[str, Any]] = []
-    if RUNS_DIR.is_dir():
-        for d in sorted(RUNS_DIR.iterdir()):
-            if not (d / "calibration" / "samples.json").is_file():
-                continue
-            info: dict[str, Any] = {"run_id": d.name}
-            camp = d / "calibration" / "campaign.json"
-            if camp.is_file():
-                try:
-                    c = json.loads(camp.read_text(encoding="utf-8"))
-                    info["best_surrogate"] = c.get("best_surrogate")
-                    info["rho"] = c.get("augment_rho")
-                    info["verdict"] = c.get("augment_verdict")
-                    info["n_samples"] = c.get("n_samples")
-                    info["recipe"] = c.get("recipe")
-                except (OSError, ValueError):
-                    pass
-            runs.append(info)
-    return ok_envelope(runs=runs)
+    """有校准产物的 run 清单（供 Playground 下拉选择）。
+
+    缓存（架构批 W1-S4，R3 Top1-a）：接 ui_service 端点快照缓存基建
+    （架构批 A2-D 同款，R3 判"五端点族在兄弟模块回潮"的收口）——
+    runs/ 指纹（顶层条目名集+目录 mtime，单次 scandir ~ms 级）+TTL
+    键控，每请求全表扫（R3 实测 193ms 级）降为命中 sub-ms。失效语义：
+    run 目录新增/删除/改名即刻失效；既有 run 内新落校准产物由该 run
+    目录 mtime（NTFS 懒更新 racy）+TTL 兜底（宁多扫不多旧）；
+    RFAUTO_UI_CACHE=0 直通（每请求实时原行为）。签名键用本模块
+    RUNS_DIR（chdir/monkeypatch 隔离），指纹与五端点同源语义。
+    返回 deepcopy——调用方可自由变换不污染缓存。
+    """
+
+    def _produce() -> dict[str, Any]:
+        runs: list[dict[str, Any]] = []
+        if RUNS_DIR.is_dir():
+            for d in sorted(RUNS_DIR.iterdir()):
+                if not (d / "calibration" / "samples.json").is_file():
+                    continue
+                info: dict[str, Any] = {"run_id": d.name}
+                camp = d / "calibration" / "campaign.json"
+                if camp.is_file():
+                    try:
+                        c = json.loads(camp.read_text(encoding="utf-8"))
+                        info["best_surrogate"] = c.get("best_surrogate")
+                        info["rho"] = c.get("augment_rho")
+                        info["verdict"] = c.get("augment_verdict")
+                        info["n_samples"] = c.get("n_samples")
+                        info["recipe"] = c.get("recipe")
+                    except (OSError, ValueError):
+                        pass
+                runs.append(info)
+        return ok_envelope(runs=runs)
+
+    root = Path(RUNS_DIR)
+    cached = _SNAPSHOT_CACHE.get(
+        (os.path.normcase(str(root.absolute())), "playground_runs"),
+        _runs_fingerprint(root), _produce)
+    return copy.deepcopy(cached)
 
 
 def _prepare_run_model(
@@ -70,7 +99,11 @@ def _prepare_run_model(
     返回 {"error": str} 或含 samples/bounds/clean/clamped/kind/model 的
     准备好的上下文（playground_predict 与 explore 共用）。
     """
-    data = _load_artifacts(run_id)
+    try:
+        data = _load_artifacts(run_id)
+    except ValueError as exc:
+        # 守卫拒绝（P1-1）走 {"error"} 契约——两入口同链呈现 error 信封
+        return {"error": str(exc)}
     samples_doc = data["samples.json"]
     if not samples_doc:
         return {"error": f"该 run 无校准产物: {run_id}"}

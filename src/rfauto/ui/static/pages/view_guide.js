@@ -1,43 +1,48 @@
-/* rfauto 使用指南页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）。 */
+/* rfauto 使用指南页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）。
+   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：纯静态页整页分段 t() 迁入
+   （guide.* 41 键，zh 与旧字面逐字节同、en 新增）——本页零 API 数据、
+   零动态容器，结构（<li>/<b>/<table>/guide-flow）留模板、纯文本段进词表
+   （view_dashboard help 块分段先例）；值内 &lt;/&gt; 为渲染保真的字符实体
+   （深链示例/S11<-15dB），非标签。 */
 
 import { T } from "./context.js";
 import { help } from "./dom.js";
+import { t, applyI18nRoot } from "./i18n.js";
 
 /* ═══ 使用指南 ═══ */
 export function pageGuide() {
   const v = T.$("view-guide");
   v.innerHTML = help(`
-    <li>本页 = 内置说明书。第一次用？按下面 4 步走一遍 fake 演示即可上手。</li>
-    <li>随时可以回「总览」点「＋ 添加组件」定制你想盯的面板。</li>`) +
-    `<h2 class='page'>使用指南 <small>写给第一次接触 rfauto 的你</small></h2>
-    <div class='panel'><b class='title'>rfauto 是做什么的</b>
-      <p>HFSS/ADS 这类电磁仿真很慢，直接在真机上反复试参数代价很高。rfauto 的思路是：
-      <b>用快速代理（fake/openEMS）先粗筛参数 → 再用 HFSS/ADS 精算少数候选</b>，
-      并用 P0 门禁（排序一致性 recall≥80%）保证"粗筛挑出来的确实靠谱"。</p></div>
-    <div class='panel'><b class='title'>5 分钟上手路线</b>
+    <li>${t("guide.help_1")}</li>
+    <li>${t("guide.help_2")}</li>`) +
+    `<h2 class='page'>${t("guide.title")} <small>${t("guide.subtitle")}</small></h2>
+    <div class='panel'><b class='title'>${t("guide.what_title")}</b>
+      <p>${t("guide.what_lead")}<b>${t("guide.what_core")}</b>${t("guide.what_tail")}</p></div>
+    <div class='panel'><b class='title'>${t("guide.steps_title")}</b>
       <div class='guide-flow'>
-        <div class='guide-step'><span class='n'>1</span><b>工程导入</b><div>读入你的 HFSS 工程（.aedt），勾选要调的变量。</div></div>
-        <div class='guide-step'><span class='n'>2</span><b>配方编辑</b><div>补 objectives（什么算"好"，如带内 S11&lt;-15dB），确认优化范围。</div></div>
-        <div class='guide-step'><span class='n'>3</span><b>优化调参</b><div>先用 fake adapter 跑通流程（秒级），再切 hfss 真机精算。</div></div>
-        <div class='guide-step'><span class='n'>4</span><b>Run 历史</b><div>看 S 参数曲线与指标，best_params 就是推荐工作点。</div></div>
+        <div class='guide-step'><span class='n'>1</span><b>${t("guide.step1_t")}</b><div>${t("guide.step1_d")}</div></div>
+        <div class='guide-step'><span class='n'>2</span><b>${t("guide.step2_t")}</b><div>${t("guide.step2_d")}</div></div>
+        <div class='guide-step'><span class='n'>3</span><b>${t("guide.step3_t")}</b><div>${t("guide.step3_d")}</div></div>
+        <div class='guide-step'><span class='n'>4</span><b>${t("guide.step4_t")}</b><div>${t("guide.step4_d")}</div></div>
       </div></div>
-    <div class='panel'><b class='title'>概念速查</b>
+    <div class='panel'><b class='title'>${t("guide.gl_title")}</b>
       <table class="glossary"><tbody>
-        <tr><td>配方 (recipe)</td><td>一次仿真的完整定义：模型 + 参数 + 扫频 + 目标 + 优化设置（YAML 文件）。</td></tr>
-        <tr><td>Run</td><td>配方的一次实际执行；每个 run 有 id、指标、S 参数曲线和产物存档。</td></tr>
-        <tr><td>adapter</td><td>执行仿真的通道：fake（秒级解析演示）/ openEMS（免费 FDTD）/ HFSS（商业真机）。</td></tr>
-        <tr><td>objectives</td><td>"什么算好"的裁判，如「带内 S11 最大值低于 -15dB」。优化器按它打分。</td></tr>
-        <tr><td>多保真</td><td>fake 粗筛 + 高保真精算的两阶段流程；靠 P0 gate 保证排序一致性。</td></tr>
-        <tr><td>P0 gate</td><td>可信度验收：fake 与高保真对同一批参数的排名 Spearman ρ≥0.8 且 top-5 命中≥80%。</td></tr>
-        <tr><td>Agent 三层 Gate</td><td>LLM 提参数 → L1/L2 自动校验 → 生成 token → 你在收件箱批准才执行。</td></tr>
+        <tr><td>${t("guide.gl_recipe_t")}</td><td>${t("guide.gl_recipe_d")}</td></tr>
+        <tr><td>Run</td><td>${t("guide.gl_run_d")}</td></tr>
+        <tr><td>adapter</td><td>${t("guide.gl_adapter_d")}</td></tr>
+        <tr><td>objectives</td><td>${t("guide.gl_obj_d")}</td></tr>
+        <tr><td>${t("guide.gl_mf_t")}</td><td>${t("guide.gl_mf_d")}</td></tr>
+        <tr><td>P0 gate</td><td>${t("guide.gl_p0_d")}</td></tr>
+        <tr><td>${t("guide.gl_gate_t")}</td><td>${t("guide.gl_gate_d")}</td></tr>
       </tbody></table></div>
-    <div class='panel'><b class='title'>常见问题</b>
-      <li><b>为什么第一次都建议跑 fake？</b> fake 秒级返回，先确认配方的目标/范围写得对，再上真机不浪费 license 时间。</li>
-      <li><b>调参结果 plateau 在 -6dB？</b> 通常是结构级失配（线宽/端口归一化），纯几何调参到顶了——先审模型再调参。</li>
-      <li><b>HFSS 用哪个版本？</b> 以实装版本为准（本机实测 2025 R1/v251）；工程导入页版本留空即跟随服务端缺省，无需手选。</li>
-      <li><b>openEMS 第一次跑很慢？</b> 真实谐振结构要跑满能量衰减（旧参考里 280s 是坏模型的假快）。结果会缓存，同配置秒回。</li>
+    <div class='panel'><b class='title'>${t("guide.faq_title")}</b>
+      <li><b>${t("guide.faq1_q")}</b>${t("guide.faq1_a")}</li>
+      <li><b>${t("guide.faq2_q")}</b>${t("guide.faq2_a")}</li>
+      <li><b>${t("guide.faq3_q")}</b>${t("guide.faq3_a")}</li>
+      <li><b>${t("guide.faq4_q")}</b>${t("guide.faq4_a")}</li>
       </div>
-    <div class='panel'><b class='title'>下一步去哪</b>
-      <li>深入口径与踩坑：仓库 <span class="muted">docs/rf_template_references.md</span> 与 。</li>
-      <li>想看某个页面怎么用：每个页面顶部都有「❓ 本页说明」。</li></div>`;
+    <div class='panel'><b class='title'>${t("guide.next_title")}</b>
+      <li>${t("guide.next_1_lead")}<span class="muted">docs/rf_template_references.md</span>${t("guide.next_1_tail")}</li>
+      <li>${t("guide.next_2")}</li></div>`;
+  applyI18nRoot(v); // 壳首扫（本页全 t() 烘焙零 data-i18n；幂等空扫，接线口径与九页一致）
 }

@@ -34,7 +34,9 @@ def bands_list_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """列出标准频段注册表（3GPP/Wi-Fi/UWB/ISM/EMC 等，自动生成清单）。"""
-    from rfauto.service.bands_service import bands_list
+    from rfauto.service.bands_service import (
+        bands_list,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = bands_list(standard=standard, kind=kind, region=region)
     _emit(result, "频段查询失败", json_output=json_output)
@@ -57,7 +59,9 @@ def bands_get_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """按 key 取单条频段详情（边界/出处/区域）。"""
-    from rfauto.service.bands_service import bands_get
+    from rfauto.service.bands_service import (
+        bands_get,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W2-C：D9 面自始 _emit 信封直出（json_output 缺省 True）；归一旗标
     # 接受但两形态同输出——缺省路径逐字节不变铁纪律优先于纯切换形态。
@@ -72,7 +76,9 @@ def bands_find_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """查包含给定频率的全部频段条目。"""
-    from rfauto.service.bands_service import bands_find
+    from rfauto.service.bands_service import (
+        bands_find,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_find(freq_ghz), "频率查询失败", json_output=True)
 
@@ -85,7 +91,9 @@ def bands_spec_bounds_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """频段键 → SpecEvaluator band 结构（f_low/f_high 二元组，喂 objectives）。"""
-    from rfauto.service.bands_service import bands_spec_bounds
+    from rfauto.service.bands_service import (
+        bands_spec_bounds,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_spec_bounds(key), f"未知频段 {key}", json_output=True)
 
@@ -99,7 +107,9 @@ def bands_env_list_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """列出环境包络注册表（工业/AEC-Q100/ECSS/IEC 60068 温区等级）。"""
-    from rfauto.service.bands_service import bands_env_list
+    from rfauto.service.bands_service import (
+        bands_env_list,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_list(standard=standard, kind=kind), "环境包络查询失败",
           json_output=True)
@@ -113,7 +123,9 @@ def bands_env_get_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """按 key 取单条环境包络详情（温区/等级/出处）。"""
-    from rfauto.service.bands_service import bands_env_get
+    from rfauto.service.bands_service import (
+        bands_env_get,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_get(key), f"未知环境包络 {key}", json_output=True)
 
@@ -126,7 +138,9 @@ def bands_env_find_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """查温区覆盖给定温度的全部环境包络。"""
-    from rfauto.service.bands_service import bands_env_find
+    from rfauto.service.bands_service import (
+        bands_env_find,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_find(t_c), "温度查询失败", json_output=True)
 
@@ -140,7 +154,9 @@ def bands_env_delta_t_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """环境包络 → ΔT 上下限（D3 温区扫描 / D8 UQ / WP4.2 良率消费）。"""
-    from rfauto.service.bands_service import bands_env_delta_t
+    from rfauto.service.bands_service import (
+        bands_env_delta_t,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_delta_t(key, t_ref_c), f"未知环境包络 {key}", json_output=True)
 
@@ -155,7 +171,9 @@ def bands_env_uq_axis_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """环境包络 → UQ/良率温度轴（名义点 + σ + ΔT 上下限）。"""
-    from rfauto.service.bands_service import bands_env_uq_axis
+    from rfauto.service.bands_service import (
+        bands_env_uq_axis,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_uq_axis(key, t_ref_c, k_sigma), f"未知环境包络 {key}",
           json_output=True)
@@ -170,7 +188,9 @@ def bands_env_points_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """环境包络温区等距采样点（供 D3 温区扫描）。"""
-    from rfauto.service.bands_service import bands_env_points
+    from rfauto.service.bands_service import (
+        bands_env_points,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(bands_env_points(key, n), f"未知环境包络 {key}", json_output=True)
 
@@ -192,7 +212,9 @@ def template_spec_list_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """列出全部模板 spec（组件齐备性 render_script/synthesizer/fake_model/hfss_plugin）。"""
-    from rfauto.service.template_spec_service import list_template_specs
+    from rfauto.service.template_spec_service import (
+        list_template_specs,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = list_template_specs()
     _emit(result, "模板库查询失败", json_output=json_output)
@@ -222,7 +244,9 @@ def template_spec_draft_cmd(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """按模板 spec 的综合入口产出配方草稿（零求解、零 license；线宽等由综合内核精算）。"""
-    from rfauto.service.template_spec_service import draft_recipe_from_spec
+    from rfauto.service.template_spec_service import (
+        draft_recipe_from_spec,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     params: dict = {}
     for item in param or []:
@@ -237,9 +261,14 @@ def template_spec_draft_cmd(
         _emit(result, f"模板 {name} 草稿生成失败")
     if output:
         # --output 由用户显式指定 → 显式保存入口；序列化/落盘走守卫统一出口
-        from rfauto.infra.recipe_guard import write_recipe_yaml
+        # T8 越级收口（架构批 W11-S3）：落盘经 service 单源
+        # （template_spec_service.save_recipe_draft，recipe_guard 守卫
+        # explicit=True 原样转发），返回 Path 含 overwritten 属性语义不变。
+        from rfauto.service.template_spec_service import (
+            save_recipe_draft,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
-        written = write_recipe_yaml(output, result["recipe_draft"], explicit=True)
+        written = save_recipe_draft(output, result["recipe_draft"])
         if json_output:
             # VI-5 W6-B：--json 信封（落盘副作用保持，路径/覆盖审计并入信封）
             console.print_json(json.dumps(
@@ -275,7 +304,9 @@ def template_spec_recommend_cmd(
     rank 主键 f0 贴近度、次键 param_semantics 覆盖数、三键闭式预览通道命中、
     并列模板名字典序（全序确定性）。
     """
-    from rfauto.service.gallery_service import recommend_templates
+    from rfauto.service.gallery_service import (
+        recommend_templates,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = recommend_templates(
         f0_ghz=f0_ghz, topology=topology, n_ports=n_ports,
@@ -329,7 +360,9 @@ def uq_yield_at_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """显式名义点的代理蒙特卡洛良率（良率目标函数点值形式）。"""
-    from rfauto.service.uq_service import surrogate_yield_at
+    from rfauto.service.uq_service import (
+        surrogate_yield_at,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(surrogate_yield_at(samples, _kv_floats(tol, "--tol"), _kv_floats(at, "--at"),
@@ -351,8 +384,12 @@ def uq_design_center_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """良率目标函数 + 设计中心化（容差盒网格违约 cost≤0 良率，坐标搜索；MC 只做前后认证）。"""
-    from rfauto.service.contracts import annotate_contract
-    from rfauto.service.uq_service import yield_design_center
+    from rfauto.service.contracts import (
+        annotate_contract,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
+    from rfauto.service.uq_service import (
+        yield_design_center,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("yield_design_center", yield_design_center(
@@ -376,8 +413,12 @@ def uq_temp_zone_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """温区良率（D9 环境包络 → 温度轴 σ 并入 MC + 温区两端角点确定性评估，FAIL 如实）。"""
-    from rfauto.service.contracts import annotate_contract
-    from rfauto.service.uq_service import temperature_zone_yield
+    from rfauto.service.contracts import (
+        annotate_contract,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
+    from rfauto.service.uq_service import (
+        temperature_zone_yield,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("temperature_zone_yield", temperature_zone_yield(
@@ -404,8 +445,12 @@ def uq_robustness_cmd(
     """稳健性报告：良率 MC（向量化）+FORM Pf+worst-case 角点+逐规范 Cpk（DP-15 C3）。"""
     import json as _json
 
-    from rfauto.service.contracts import annotate_contract
-    from rfauto.service.robustness_service import robustness_report
+    from rfauto.service.contracts import (
+        annotate_contract,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
+    from rfauto.service.robustness_service import (
+        robustness_report,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     specs = []
     for raw in spec:
@@ -443,7 +488,9 @@ def farfield_list_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """含远场/SAR 产物的 run 清单。"""
-    from rfauto.service.nf2ff_service import farfield_runs
+    from rfauto.service.nf2ff_service import (
+        farfield_runs,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(farfield_runs(limit=limit), "远场 run 清单失败", json_output=True)
@@ -457,6 +504,8 @@ def farfield_view_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """单 run 远场视图：φ 切面 θ-dB 序列 + Dmax/效率/HPBW/F/B + SAR（core/farfield 确定性解析）。"""
-    from rfauto.service.nf2ff_service import farfield_view
+    from rfauto.service.nf2ff_service import (
+        farfield_view,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(farfield_view(run_id), f"远场视图失败 {run_id}", json_output=True)

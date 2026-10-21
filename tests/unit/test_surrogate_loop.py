@@ -74,10 +74,8 @@ def _random_reference() -> float:
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
+def _isolated_cwd(isolated_cache_off):
     """环本身不落盘，但服务/CLI 测试会写 runs/——统一 chdir 隔离。"""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
     yield
 
 
@@ -403,7 +401,7 @@ class TestReviewHardening:
                                      virtual_trials=60, seed=42,
                                      surrogate_kind="flaky")
         finally:
-            surrogate_registry._factories.pop("flaky", None)
+            surrogate_registry.unregister("flaky")
         assert res["ok"]
 
 

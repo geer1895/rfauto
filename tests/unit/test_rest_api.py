@@ -25,9 +25,7 @@ _RUN_ID = "20260101_000000_rest"
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(tmp_path, isolated_cache_off):
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
 
@@ -126,8 +124,13 @@ class TestOpenApi:
         assert spec["components"]["schemas"]
 
     def test_openapi_self_validation_passes(self):
-        result = rest_api.validate_openapi_spec(rest_api.openapi_spec())
+        """契约面行为级（R3 弱测试 #7 加固）：干净判定+规模计数锚——
+        spec 面静默萎缩（路径/模式大面积消失）不再无感通过。"""
+        spec = rest_api.openapi_spec()
+        result = rest_api.validate_openapi_spec(spec)
         assert result["ok"] is True, result["errors"]
+        assert len(spec["paths"]) >= 20, "路径数锚：spec 面不得静默萎缩"
+        assert len(spec["components"]["schemas"]) >= 10, "模式数锚同上"
 
     def test_openapi_validation_detects_missing_info(self):
         spec = rest_api.openapi_spec()
@@ -200,7 +203,7 @@ class TestOpenApi:
         assert dataset_ref.endswith("/DatasetQueryRequest")
 
     def test_endpoint_total_count_pin(self):
-        """端点总数钉（程序化枚举钉死；新端点必更新本值——aurora_d REST-B
+        """端点总数钉（程序化枚举钉死；新端点必更新本值——架构批 REST-B
         2026-10-14。操作集形态由 test_expected_operations_present 另钉，
         本钉管**计数棘轮**：加端点必须显式动数字，静默漂移即红）。"""
         spec = rest_api.openapi_spec()
@@ -277,7 +280,7 @@ class TestSchemaExport:
 
 
 class TestSchemaCliLeaf:
-    """`rfauto rest schema` CLI 叶（aurora_d REST-B；--json 信封 + --out 落盘
+    """`rfauto rest schema` CLI 叶（架构批 REST-B；--json 信封 + --out 落盘
     + --openapi raw spec 出口；ge1㉙ 错误路径也必须 JSON）。"""
 
     def _invoke(self, args: list[str]):
@@ -909,9 +912,22 @@ class TestSlotlineTransitionsEndpoints:
         assert body["data"]["gates"]
 
     def test_msl_slot_transition_optional_tan_d(self, client):
+        """契约面行为级（R3 弱测试 #8 加固）：可选 tan_d 真被消费——
+        与缺省档对比，损耗敏感设计值必须漂移（拦"参数被静默吞掉仍
+        ok=True"的假绿）。"""
         body = client.post("/api/v1/transitions/msl-slot",
                            json={**self._MSL, "tan_d": 0.002}).json()
         assert body["ok"] is True
+        assert body["data"]["design"]["l_stub_mm"] > 0
+        assert body["data"]["gates"]
+        base = client.post("/api/v1/transitions/msl-slot",
+                           json=self._MSL).json()
+        assert base["ok"] is True
+        # tan_d 0.0037→0.002：微带侧线宽/εeff 闭式精算值必须可测漂移
+        assert body["data"]["design"]["w_msl_mm"] \
+            != base["data"]["design"]["w_msl_mm"]
+        assert body["data"]["design"]["eps_eff_msl"] \
+            != base["data"]["design"]["eps_eff_msl"]
 
     def test_marchand_balun_ok(self, client):
         body = client.post("/api/v1/transitions/marchand-balun",
@@ -962,9 +978,14 @@ class TestSdkReadOnlyPassthrough:
         assert explained["hits"][0]["score_breakdown"]
 
     def test_sdk_rag_null_sources_skip(self):
+        """契约面行为级（R3 弱测试 #9 加固）：双 None 源=空索引语义逐键
+        （n_indexed=0 + 空索引 note），不是静默假命中。"""
         data = sdk.RfautoClient().rag_query(
             "任意词条", docs_dir=None, runs_dir=None)
         assert data["ok"] is True and data["n_hits"] == 0
+        assert data["n_indexed"] == 0
+        assert data["hits"] == []
+        assert any("索引为空" in n for n in data.get("notes", []))
 
     def test_sdk_discover_workdir(self):
         client = sdk.RfautoClient()
@@ -1135,9 +1156,14 @@ class TestSdk:
 
 class TestLayerGuard:
     def test_rest_modules_do_not_reference_higher_layers(self):
-        for name in ("rest_api.py", "sdk.py"):
-            source = (
-                _REPO / "src" / "rfauto" / "service" / name
-            ).read_text(encoding="utf-8")
+        """W3-S2 T2 包化（2026-10-19）：REST 传输壳=rest_api/ 包，面枚举
+        包内全部子模块 + sdk.py（原双文件口径的随域迁移）。"""
+        service_dir = _REPO / "src" / "rfauto" / "service"
+        names = sorted(
+            (p.relative_to(service_dir).as_posix())
+            for p in (service_dir / "rest_api").glob("*.py"))
+        names.append("sdk.py")
+        for name in names:
+            source = (service_dir / name).read_text(encoding="utf-8")
             assert "rfauto.cli" not in source
             assert "rfauto.mcp_server" not in source

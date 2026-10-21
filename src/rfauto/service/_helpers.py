@@ -31,6 +31,7 @@ __all__ = [
     "optional_num",
     "parse_num",
     "require_payload_dict",
+    "safe_run_id",
 ]
 
 
@@ -60,6 +61,38 @@ def require_payload_dict(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"payload 必须是 JSON 对象，实际 {type(payload).__name__}")
     return payload
+
+
+def safe_run_id(run_id: Any) -> str | None:
+    """run_id 路径段守卫单源（架构批 W1-S1，R1 审计 P9-13 v9 Top1）。
+
+    背景（内部证据目录 §面6）：同一 UI service 面内
+    ``RUNS_DIR / run_id`` 拼接 10 处仅 read_run_events/append_run_event/
+    run_fig_file 3 处设防，run_detail/tune_trials/calibration_view/
+    sparams_series/field_view/smith_view/_run_dir_or_error（pareto/
+    feasibility 链）+ nf2ff_service.farfield_view 8 处零清洗——真机实证
+    ``curl --path-as-is /api/runs/..`` 直通仓根触发全仓 rglob 枚举
+    （worker 阻塞 >12s + 目录结构泄漏；非回环绑定+--expose-runs 升级）。
+
+    判据=既有三守卫并集（append_run_event 的 W6-S26 P2-2 NUL 模式 +
+    run_fig_file 的 ``..`` 子串口径）：
+      空串 / 含 ``/`` / 含 ``\\\\`` / 含 NUL（``\\x00``）/ 等于 ``.`` 或
+      ``..`` / **含** ``..`` 子串（拒 ``..x``/``a..b`` 变体，对齐
+      run_fig_file 既有白名单口径）。
+
+    Returns:
+        str | None: 合法单段目录名（strip 后）原样返回；非法返回 None
+        ——失败面（error 信封 / 404）由调用方按各自契约构造，本函数
+        零信封零抛错（纯入参判定，与 parse_num 同纪律）。
+
+    合法 run_id 全是单段目录名（日期前缀 run 目录），``..`` 子串口径
+    零误伤面（审计 §面6 P9-13 结论）。
+    """
+    s = str(run_id).strip()
+    if (not s or "/" in s or "\\" in s or "\x00" in s
+            or s in (".", "..") or ".." in s):
+        return None
+    return s
 
 
 def parse_num(

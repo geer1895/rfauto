@@ -357,6 +357,7 @@ class TestNumericReferenceGates:
         m_rev = loop_pair_mutual_numeric(vb, va, dz_m=dz, max_sub=8)
         assert m_rev == pytest.approx(m_num, rel=1e-12)
 
+    @pytest.mark.slow  # 终门 DURATIONS >60s 慢件（126s，椭圆精确式×GL 求积数值重件）
     def test_gate_b_coil_level_elliptic_sum_cross_check(self):
         """判据 (b) 线圈级互证：ΣΣ 椭圆精确式（圆匝）vs 多边形求积 ≤1%
         （circle 几何同口径——两条独立数学路径：特殊函数 vs GL 求积）。

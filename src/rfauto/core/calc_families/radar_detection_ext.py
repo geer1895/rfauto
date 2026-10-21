@@ -1,4 +1,4 @@
-"""Swerling 起伏目标检测补全族（aurora72 A4-A 席域 2，R7 第二梯队 T8）。
+"""Swerling 起伏目标检测补全族（架构批 A4-A 席域 2，R7 第二梯队 T8）。
 
 两键：swerling_detection_factor（SW1-4 检测因子：Pfa/Pd/SNR 三给二解一，
 N 脉冲非相干积累）/ swerling_integration_gain（非相干积累改善因子与积

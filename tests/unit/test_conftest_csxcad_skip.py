@@ -69,6 +69,7 @@ _EXEC_CSXCAD_MODULES = (
     "test_ta_wave_b_templates.py",
     "test_ta_wave_c_templates.py",
     "test_template_geometry_audit.py",
+    "test_template_golden.py",
     "test_varactor_bpf_template.py",
     "test_w2_d_z16.py",
 )

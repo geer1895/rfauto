@@ -1,8 +1,12 @@
-/* rfauto 工作台 DOM 工具单源（aurora_d UI-R2 自 pages.js 拆出）：
+/* rfauto 工作台 DOM 工具单源（架构批 UI-R2 自 pages.js 拆出）：
    esc/escAttr HTML 转义单源（AU-4 五字符集，62 sink 纪律的地基）、
    fmtNum 数值展示单源、markdown 净化单点（D-05 硬错化：DOMPurify
    缺失即拒绝 innerHTML）、help 本页说明壳、downloadTextFile Blob 下载
-   （plotCard 复用包装/导出工具条共用）。零顶层 DOM 执行（node 可 import）。 */
+   （plotCard 复用包装/导出工具条共用）。零顶层 DOM 执行（node 可 import）。
+   W8-S32 i18n 批 3：help() summary 壳文案单源迁词表 t() 渲染期烘焙
+   （26 个调用点一次收口；块内富 HTML=各页后续波次，分段 t() 先例见
+   view_dashboard help 块——词表值零 HTML 纪律不变）。 */
+import { t } from "./i18n.js";
 
 /* AU-4 XSS 清扫批：HTML 转义单源。API/用户数据插值进 innerHTML 模板时，
    文本语境用 esc()、属性语境用 escAttr()（引号内属性值）。二者转义同一
@@ -18,7 +22,7 @@ export function escAttr(v) {
   return esc(v);
 }
 
-/* aurora36 W3-B（R1 P1-10 数字口径）：数值展示单源——null/undefined/NaN →
+/* 架构批 W3-B（R1 P1-10 数字口径）：数值展示单源——null/undefined/NaN →
    "-"，其余 toFixed(d)。约定沿用既有逐处口径（cost=4dp、S11=2dB、ρ=3dp），
    只在明显不一致处替换（campaign 表 cost 原用 8 位有效数字的 toPrecision
    是全仓唯一离群点，反直觉）；既有一致口径逐处不动（最小替换原则）。 */
@@ -73,9 +77,12 @@ export function renderMarkdown(el, rawHtml) {
   el.innerHTML = clean;
   return true;
 }
-/* 本页说明组件（每页顶部可折叠帮助，降低上手门槛） */
+/* 本页说明组件（每页顶部可折叠帮助，降低上手门槛）。
+   W8-S32 i18n 批 3：summary 经 t() 烘焙（node 无 DOM 环境 getLocale→zh，
+   既有行为钉字节不变）；text 形参=各页富 HTML 正文（调用方模板串，后续
+   波次按分段 t() 方案迁移）。 */
 export function help(text) {
-  return `<details class="help"><summary>❓ 本页说明（点开查看）</summary>${text}</details>`;
+  return `<details class="help"><summary>${t("common.help_summary")}</summary>${text}</details>`;
 }
 /* 与 plotcard.js downloadFile 同构（彼处未导出；W2-C 接口诉求落地后删除）。 */
 export function downloadTextFile(name, content, mime) {

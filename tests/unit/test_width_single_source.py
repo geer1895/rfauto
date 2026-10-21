@@ -278,9 +278,16 @@ _ALLOWED_CENSUS: dict[str, dict[float, int]] = {
     "rfauto/adapters/oe_templates/render_phase_qwt.py": {1.1134: 2},
     "rfauto/adapters/oe_templates/render_ring.py": {1.1134: 3},
     "rfauto/adapters/oe_templates/render_varactor.py": {1.1117: 1},
+    # 架构批 F3（2026-10-19）：ring_resonator 综合核提升（render_ring 设计链
+    # 逐字节下沉）——模块常数 RING_RESONATOR_W_MM 与 render_ring 同值同源，
+    # core 不 import adapters 故双侧各自落常量（测试互证钉 test_w3s11）
+    "rfauto/core/calc_families/ring_resonator.py": {1.1134: 1},
     # 出界面（本批文件面外；收敛 followUp 见普查报告）
     "rfauto/adapters/comsol_adapter.py": {1.113: 1},
-    "rfauto/adapters/fake_adapter.py": {1.113: 1, 1.1134: 6},
+    # 架构批 W4-S2（2026-10-19）：fake_adapter T2 拆包——巨石迁入
+    # adapters/fake_adapter/ 包，solve() 缺省字面区随类落 adapter 子模块
+    # （路径随迁，值×个数不变）
+    "rfauto/adapters/fake_adapter/adapter.py": {1.113: 1, 1.1134: 6},
     "rfauto/adapters/meep_adapter.py": {1.113: 1},
     "rfauto/adapters/qucsator_adapter.py": {1.113: 1},
     "rfauto/core/coupled_microstrip.py": {1.1134: 1, 1.1117: 1},
@@ -290,7 +297,10 @@ _ALLOWED_CENSUS: dict[str, dict[float, int]] = {
     "rfauto/core/pcell_dsl.py": {1.113: 5, 1.1134: 1},
     "rfauto/models/mline/schema.py": {1.113: 1},
     "rfauto/service/qucsator_service.py": {1.113: 1},
-    "rfauto/service/remote_service.py": {1.113: 1},
+    # 架构批 W3-S3（2026-10-19）：remote_service T2 拆包——巨石迁入
+    # service/remote_service/ 包，L2_W_MM 常量区落 hfss_smoke 子模块
+    # （路径随迁，值×个数不变）
+    "rfauto/service/remote_service/hfss_smoke.py": {1.113: 1},
 }
 
 

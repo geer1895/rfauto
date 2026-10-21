@@ -186,7 +186,7 @@ def pytest_collection_modifyitems(config, items):
         # run 39043312813 实证）——网格方向不变性语义由 Windows 基线承载
         ("test_tma_array.py",
          "test_kernel_sll_metrics_descending_grid_equals_ascending"),
-        # ── 以下 run 39116947186 实证（aurora_e 同步批 4b3fff0..c4ef2d3）──
+        # ── 以下 run 39116947186 实证（架构批 同步批 4b3fff0..c4ef2d3）──
         # GUM 温度通道一阶灵敏度双源断言 tolerance 4.7e-10 被 Linux BLAS
         # 归约序差压穿（Windows 基线 0.0004735723… 稳定）
         ("test_nf_measurement.py",
@@ -336,3 +336,52 @@ def tmp_run_dir(tmp_path):
     """提供临时 run 目录。"""
     from rfauto.infra.run_store import create_run_dir
     return create_run_dir(tmp_path, "test_run_00000000_00000000")
+
+
+# ── T5 conftest fixture 库（架构批 W8-S3 首批）───────────────────────────
+# 背景：`_isolated` 同名复制 55 份（R1 审计 §面4：conftest fixture 9 vs
+# 本地散装 446）——同一套"chdir 落 tmp"模板手工复制，任何一份修 bug 都
+# 不会同步到其余副本。本节把最高频两种形态收口为单源；迁移文件保留一行
+# autouse 适配器（``def _isolated(isolated): yield``）——autouse 语义与
+# 测试函数签名零变化，隔离实现单源化。
+# 棘轮：tests/unit/test_conftest_fixture_hygiene.py AST 扫描禁止本地重写
+# 隔离体；剩余未迁移文件在该测试 ALLOWLIST 只可删不可加。
+# 分批口径：首批 top-10（7 份纯 chdir + 3 份 chdir+cache_off）；
+# 二批 next-10（W9-S4：6 份纯 chdir + 3 份 chdir+cache_off + 1 份
+# 专用超集 isolated+mkdir runs）；三批 next-10（W10-S3：6 份纯 chdir +
+# 3 份 chdir+cache_off + 1 份专用超集 isolated+job 注册表重置）；
+# 四批 next-10（W14-S1）；五批 next-10（W15-S3：4 份纯 chdir +
+# 4 份 chdir+cache_off（2 份带 RFAUTO_REGISTRY_DB 清位增量）+ 2 份
+# 专用超集 isolated+KiCad 钉 / isolated+env 集合清位）；
+# 六批（架构批 W2-S4，2026-10-19）：余量 28 份全部收编为单源适配器
+# （纯 chdir / chdir+cache_off 一行委托；kicad/sim_ci/rest/optuna 等
+# 专用超集 = 依赖公共 fixture 后保留专用增量），棘轮 ALLOWLIST 清零——
+# tests/unit/test_conftest_fixture_hygiene.py 三个方向全绿为收编门。
+
+
+@pytest.fixture
+def isolated(tmp_path, monkeypatch):
+    """cwd 隔离单源（形态①：仅 chdir，原 30 份本地 `_isolated` 的公共体）。
+
+    用法（迁移文件）：保留本地 autouse 适配器一行，体委托本 fixture::
+
+        @pytest.fixture(autouse=True)
+        def _isolated(isolated):
+            yield
+
+    新写测试可直接参数注入 ``def test_xxx(isolated):``。
+    """
+    monkeypatch.chdir(tmp_path)
+    return tmp_path
+
+
+@pytest.fixture
+def isolated_cache_off(tmp_path, monkeypatch):
+    """cwd 隔离+结果缓存关闭单源（形态②：chdir+RFAUTO_CACHE=off，原 ~20 份）。
+
+    RFAUTO_CACHE=off 语义：被测链路禁读/禁写结果缓存（run 复用类测试
+    需要真实执行路径，见 #158 口径的反向面）。
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("RFAUTO_CACHE", "off")
+    return tmp_path

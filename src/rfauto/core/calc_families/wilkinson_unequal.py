@@ -1,4 +1,4 @@
-"""Wilkinson 不等分功分器综合（aurora36 W3-A 席，R2 空白域 G6）。
+"""Wilkinson 不等分功分器综合（架构批 W3-A 席，R2 空白域 G6）。
 
 单键 unequal_split_wilkinson：二路不等分 Wilkinson（Pozar K 口径）闭式
 综合——功分比 → 两臂 λ/4 特性阻抗 + 隔离电阻（含两臂端电阻分配）+ 两输出

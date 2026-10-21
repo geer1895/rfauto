@@ -196,7 +196,7 @@ def _validate_target(target, n_u: int) -> np.ndarray:
 # ─── 基本算子 ──────────────────────────────────────────────────────────────────
 
 
-def soft_threshold(z, threshold):
+def soft_threshold(z, threshold) -> np.ndarray:
     """复软阈值算子 S_t(z) = z·max(0, 1 − t/|z|)（幅值收缩、相位保持）。
 
     - |z| ≤ t → 0（含 z=0：无 nan 路径，显式分支）；

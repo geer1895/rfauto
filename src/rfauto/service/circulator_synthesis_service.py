@@ -23,7 +23,7 @@ from rfauto.core import circulator_synthesis as circ
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
-#: 1.1（2026-10-14 AU-2 域升版，aurora_d ENGH 席）：失败信封单数 ``error``
+#: 1.1（2026-10-14 AU-2 域升版，架构批 ENGH 席）：失败信封单数 ``error``
 #: 键统一为 ``errors`` list[str]（error_envelope 单源；error_type 诊断键
 #: 保留）——契约 §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；
 #: 消费面（tests/unit/test_circulator_synthesis.py）同笔迁移，无

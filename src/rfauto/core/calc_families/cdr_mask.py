@@ -1,5 +1,10 @@
 """cdr_mask 族（DR-8 CDR 抖动传函/容限 mask 键面，SG 部分件残差收口）。
 
+出处（第一性线性系统闭式，#118 双锚内证）：
+- cdr_jitter_mask：一阶/二阶 CDR 环路线性相位抖动传函 JT(ω) 与容限
+  闭式（单/双极点环路传函恒等式推导，无外部文献依赖；mask 点列由
+  调用方按所引标准给入，本核不 ship 标准门限——#122 同纪律）。
+
 内核在 core/cdr_jitter_mask.py（闭式线性相位模型，#118 双锚内证：
 JT(fc)=√2、高频平台→1、低频 −20dB/dec、peaking 闭式；测试钉
 tests/unit/test_dr_stream_seat6.py），本模块只做注册薄壳（同

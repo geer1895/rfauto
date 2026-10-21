@@ -1,4 +1,4 @@
-"""aurora72 A5-D 席（C13 非对称 TZ 支持；R3_followups §② #11 / R8_other_optimizations 面 1）：
+"""架构批 A5-D 席（C13 非对称 TZ 支持；R3_followups §② #11 / R8_other_optimizations 面 1）：
 synthesize_bpf_model 显式非对称 TZ 端到端（tz_mode="explicit"）+ W6-C 回代门不破。
 
 #222 核实口径（本批实测）：

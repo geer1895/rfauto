@@ -1,6 +1,6 @@
-"""模板 meta.yaml 健康度审计门（aurora72 R8 面 3 常驻化，2026-10-11 A8-C 席）。
+"""模板 meta.yaml 健康度审计门（架构批 R8 面 3 常驻化，2026-10-11 A8-C 席）。
 
-R8 侦察（runs/aurora72/R8_other_optimizations.md 面 3）：docs/templates 77 目录
+R8 侦察（runs/架构批/R8_other_optimizations.md 面 3）：docs/templates 77 目录
 =注册 72 + edb_* 5 族独立通道，meta.yaml 全量解析 nominal/链接面健康，但当时
 teaching 仅 9/77——此后 teaching 已扩到 51 族。本脚本把 meta 健康度制度化
 （只读审计，零写面）：

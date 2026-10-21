@@ -528,7 +528,8 @@ class TestSn3DesignChain:
 
     def test_close_on_record(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        from rfauto.service.level2_design import design_close, design_kickoff
+        from rfauto.service.level2_closure import design_close  # T1 解环：壳面随闭环域
+        from rfauto.service.level2_design import design_kickoff
 
         k = design_kickoff("设计一个 2.4GHz Wilkinson 功分器，50 欧")
         assert k["ok"]

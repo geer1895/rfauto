@@ -10,7 +10,7 @@
 3. **对比度钉（自含 WCAG 实现）**：从 index.html 解析 :root/ocean/body.light
    三主题变量，独立重算核心对（文字 >=4.5:1 / 图形 >=3:1）——与
    runs/pr1_contrast/compute_contrast.py 互为独立来源（#118：裁判不得单源自证）。
-4. **W2-A（aurora36）扩钉**：--muted2 小字正文门（P0-3）、.primary 主色变体
+4. **W2-A（架构批）扩钉**：--muted2 小字正文门（P0-3）、.primary 主色变体
    完整状态面（P0-1）、静态壳错误色令牌化钉（P0-6 静态面）、guide v5 未落项
    收账（--border-angle conic 旋转边框 / CQ / :has()，含 reduced-motion 降级）。
 
@@ -30,7 +30,7 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -104,7 +104,7 @@ class TestA11ySourcePins:
 
 class TestThemeTriStateSourcePins:
     def test_three_modes_and_matchmedia(self):
-        # aurora72 A5-B（R6 R-4）：THEME_MODES 单源迁 theme.js（pages.js re-export）
+        # 架构批 A5-B（R6 R-4）：THEME_MODES 单源迁 theme.js（pages.js re-export）
         assert _hit("theme.js", r'THEME_MODES = \["midnight", "ocean", "light", "system"\]')  # v5.0 Aurora 四态（dark=旧存量别名）
         assert _hit("pages.js", r'matchMedia\("\(prefers-color-scheme: light\)"\)')
         assert _hit("pages.js", r'addEventListener\("change", onSysChange\)')
@@ -154,7 +154,7 @@ class TestPaletteSourcePins:
 
     def test_no_new_api_endpoints_required(self):
         # PR-2 零新增 /api 端点（server.py 路由面不变 → 端点计数钉不受扰；
-        # aurora_d UI-R1 拆分后 handler 引用带 <域>_routes. 命名空间前缀）
+        # 架构批 UI-R1 拆分后 handler 引用带 <域>_routes. 命名空间前缀）
         server = (Path(_STATIC).parent / "server.py").read_text(encoding="utf-8")
         assert 'Route("/api/runs", runs_routes.api_runs)' in server
         assert 'Route("/api/recipes", recipes_routes.api_recipes)' in server
@@ -309,10 +309,10 @@ class TestContrastPin:
                 assert r >= 3.0, f"{theme} chart {c} = {r:.3f} < 3.0"
 
 
-# ────────────────────────── 3b. W2-A 样式面钉（aurora36） ──────────────────────────
+# ────────────────────────── 3b. W2-A 样式面钉（架构批） ──────────────────────────
 
 class TestW2AStylePins:
-    """aurora36 W2-A（UI 样式面四项 + guide 未落两项）回归钉。
+    """架构批 W2-A（UI 样式面四项 + guide 未落两项）回归钉。
 
     pages.js/app.js 本席禁改——P0-1 走 index.html 补 .primary 别名选择器路线
     （审计 P0-1 给出的两路线之一）；P0-6 的 pages.js 内联三处 #e57373 属

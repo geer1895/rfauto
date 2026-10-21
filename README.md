@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-25500%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-27000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -22,12 +22,12 @@ whole pipeline through MCP, under one hard rule:
 
 It drives **16 EM/EDA engines** behind one interface, ships
 **77 parameterized device templates** with built-in physics checks, and
-exposes **270 CLI commands** and **152 MCP tools** (+9 resources) — kept
+exposes **273 CLI commands** and **152 MCP tools** (+9 resources) — kept
 honest by **25400+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 215 (with experimental 216)` · `TEMPLATE_META 72` ·
-`EXPECTED_TEMPLATES 72` · `ANCHORS 79` · CLI commands 270 (leaves) ·
+`CALCULATOR_REGISTRY 323 (with experimental 324)` · `TEMPLATE_META 72` ·
+`EXPECTED_TEMPLATES 72` · `ANCHORS 79` · CLI commands 273 (leaves) ·
 (152 MCP tools + 9 resources)
 <!-- numbers-end -->
 
@@ -104,7 +104,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 152 (+9 resources) | CLI commands 270 (leaves) | CALCULATOR_REGISTRY 215 [with experimental 216] | device templates 72 | anchors 79
+**Scale numbers**: MCP tools 152 (+9 resources) | CLI commands 273 (leaves) | CALCULATOR_REGISTRY 323 [with experimental 324] | device templates 72 | anchors 79
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start

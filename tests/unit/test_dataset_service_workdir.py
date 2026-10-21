@@ -568,8 +568,7 @@ class TestRegistrySync:
     """
 
     @pytest.fixture(autouse=True)
-    def _isolated_env(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)
+    def _isolated_env(self, monkeypatch, isolated):
         monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
         monkeypatch.delenv("RFAUTO_JOB_REGISTRY_DB", raising=False)
         yield

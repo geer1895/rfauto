@@ -29,8 +29,7 @@ runner = CliRunner()
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(monkeypatch, isolated):
     # write_meta 的 pip freeze / git sha 子进程与本项无关——钉住保快且确定
     monkeypatch.setattr("rfauto.infra.run_store._pip_freeze_sha", lambda: "test")
     monkeypatch.setattr("rfauto.infra.run_store._git_sha", lambda: "test")

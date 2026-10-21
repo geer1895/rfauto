@@ -43,6 +43,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from rfauto.infra.registry_kit import RegistryKit
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 __all__ = [
@@ -227,29 +228,37 @@ class SystemOneProvider(ABC):
         return {"provider": self.name, "available": True, "detail": ""}
 
 
-class SystemOneRegistry:
-    """provider 注册表：name → 工厂（类或零参 callable）。"""
+class SystemOneRegistry(RegistryKit[Callable[[], SystemOneProvider]]):
+    """provider 注册表：name → 工厂（类或零参 callable）。
+
+    T6 扩面二批（R1 审计 §面5/T6，W10-S3）：dict 样板由 infra.registry_kit.
+    RegistryKit 承载——历史语义逐项保真：同名覆盖=换实现
+    （allow_overwrite=True）、缺名 ProviderUnavailableError 文案逐字节
+    不变（自定义异常非 KeyError，create 前置 is_registered 显式判缺）、
+    list_providers()=keys()。
+    """
 
     def __init__(self) -> None:
-        self._factories: dict[str, Callable[[], SystemOneProvider]] = {}
+        super().__init__(label="System One provider",
+                         allow_overwrite=True)
 
     def register(
         self, name: str, factory: Callable[[], SystemOneProvider]
     ) -> None:
         """注册 provider 工厂（同名覆盖=换实现，注册表模式惯例）。"""
-        self._factories[name] = factory
+        self.insert(name, factory)
 
     def create(self, name: str) -> SystemOneProvider:
-        if name not in self._factories:
+        if not self.is_registered(name):
             raise ProviderUnavailableError(
                 f"未注册的 System One provider: {name}（在册={self.list_providers()}）")
-        return self._factories[name]()
+        return self.get(name)()
 
     def list_providers(self) -> list[str]:
-        return sorted(self._factories)
+        return self.keys()
 
     def is_registered(self, name: str) -> bool:
-        return name in self._factories
+        return name in self
 
 
 _REGISTRY = SystemOneRegistry()
@@ -295,7 +304,7 @@ class DeterministicProvider(SystemOneProvider):
 
 def _chat_raw() -> dict[str, Any]:
     """既有 chat 通道原始配置（含 api_key；惰性导入防环）。"""
-    from rfauto.service.r3_services import get_chat_settings_raw
+    from rfauto.service.chat_settings_io import get_chat_settings_raw
 
     return get_chat_settings_raw() or {}
 
@@ -388,11 +397,13 @@ def sanitize_outbound(payload: Any) -> tuple[Any, list[dict[str, Any]]]:
 
 
 def _default_chat_transport(messages: list[dict[str, Any]]) -> dict[str, Any]:
-    """OpenAI 兼容单次 chat 调用（复用 agent_runtime 既有传输层与配置）。
+    """OpenAI 兼容单次 chat 调用（复用 llm_transport 叶传输层与既有配置）。
 
     测试 monkeypatch 点（#139）：钉住本函数即钉住全部外呼。
     """
-    from rfauto.service.agent_runtime import openai_chat_completion
+    # T1 终章解环（架构批 W1-S1）：传输层改读 llm_transport 叶，
+    # 静态图不再出现 systemone→agent_runtime 边（三角环回边断）。
+    from rfauto.service.llm_transport import openai_chat_completion
 
     return openai_chat_completion(messages, [])
 
@@ -409,9 +420,10 @@ class OpenAICompatibleProvider(SystemOneProvider):
     """Jev 范式适配器：把 choice/score 渲染成单次 chat 调用+结构化解析。
 
     复用既有 chat 通道配置（configs/chat_settings.yaml 的 base_url/model/
-    api_key——经 agent_runtime.openai_chat_completion 既有传输层，模型/
-    鉴权/URL 映射零重写）。配置缺失 → 注册但在册 health=unavailable，
-    ask() 抛 ProviderUnavailableError（#139 绝不隐式回退读网）。
+    api_key——经 llm_transport.openai_chat_completion 既有传输层（
+    agent_runtime 同名再导出），模型/鉴权/URL 映射零重写）。配置缺失 →
+    注册但在册 health=unavailable，ask() 抛 ProviderUnavailableError
+    （#139 绝不隐式回退读网）。
 
     外发前对渲染负载整体 ``sanitize_outbound``（规则 8 精神外发面）。
     """
@@ -660,7 +672,8 @@ def systemone_status() -> dict[str, Any]:
 
 def hint_question_for_message(message: str) -> dict[str, Any]:
     """构造"错误消息→hint 规则选择"choice 问题（error_hints 第二档用）。"""
-    from rfauto.service.error_hints_service import list_hint_rules
+    # T1 解环：规则表改读 hint_rules 叶（systemone→error_hints 环边断）
+    from rfauto.service.hint_rules import list_hint_rules
 
     rules = list_hint_rules().get("rules") or []
     options = [str(r.get("pattern", "")) for r in rules]

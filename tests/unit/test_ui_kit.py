@@ -1,4 +1,4 @@
-"""aurora72 A7-A（R6 审计 R-3 试点）UI-KIT 三件行为钉 + 逐字节等价钉。
+"""架构批 A7-A（R6 审计 R-3 试点）UI-KIT 三件行为钉 + 逐字节等价钉。
 
 两层钉（同 test_ui_xss_escape 口径）：
 1. **行为钉（node 真执行）**：动态 import pages.js，对 kitTable/kitPanelHead/
@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -409,62 +409,147 @@ class TestKitSourcePins:
     def test_migrated_table_consumers_present(self):
         src = _PAGES
         # 8 面 9 调用（runDiff 两表）+ 1 定义解构签名 = 10 处 kitTable({
+        # W8-S32 i18n 批 3：dashboard 最近 Run 表列头/caption 迁词表 t()
+        # （列头复用 runs.th_inband_s11 既有键，zh 值同笔）
+        # W2-S1 批 4：tools 扫参表列头 响应/状态 迁词表 t()
+        # （tools.th_response/th_status 新键，zh 值同笔）
+        # 架构批 W4-S1：agent 提案表列头 参数/当前值/提案值 迁词表 t()
+        # （agent.th_param/th_current/th_proposed 新键，zh 值同笔）
         assert src.count("kitTable({") == 10
         for needle in (
-            'columns: ["run_id", "adapter", "带内 S11"], rows: list, empty: ""',
-            'columns: ["类型", "类", "可用", "可视化"], rows: d.solvers || [], empty: ""',
-            'columns: [pName, "响应", "状态"], rows, empty: ""',
-            'columns: ["参数", "当前值", "提案值"], rowsHtml: rows, empty: ""',
-            'columns: ["#", "决策"], rows: dl, empty: ""',
-            'columns: ["指标", "a", "b", "Δ"], rowsHtml: mrows',
-            'columns: ["路径", "类型", "a", "b"], rowsHtml: prows',
-            'columns: ["指标", "mean", "std", "q05", "q95"]',
+            'columns: ["run_id", "adapter", t("runs.th_inband_s11")], rows: list, empty: ""',
+            # S2 发布令批：solvers 注册表列头迁词表（solvers.th_* 新键，zh 值同笔）
+            'columns: [t("solvers.th_type"), t("solvers.th_class"), '
+            't("solvers.th_available"), t("solvers.th_viz")],',
+            'columns: [pName, t("tools.th_response"), t("tools.th_status")], rows, empty: ""',
+            'columns: [t("agent.th_param"), t("agent.th_current"), '
+            't("agent.th_proposed")], rowsHtml: rows, empty: ""',
+            # S2 发布令批：queue 决策日志表列头迁词表（queue.th_decision 新键，zh 值同笔）
+            'columns: ["#", t("queue.th_decision")], rows: dl, empty: ""',
+            # S3 发布令批：reports 对比表列头迁词表（reports.col_metric/col_path）
+            'columns: [t("reports.col_metric"), "a", "b", "Δ"], rowsHtml: mrows',
+            'columns: [t("reports.col_path"), t("reports.col_kind"), "a", "b"], rowsHtml: prows',
+            # W2-S1 批 4：uq 指标分布表首列 迁词表 t()（uq.th_metric 新键）
+            'columns: [t("uq.th_metric"), "mean", "std", "q05", "q95"]',
         ):
             assert needle in src, needle
 
     def test_migrated_panel_head_and_badge_consumers_present(self):
         src = _PAGES
         # 8 消费点 + 1 定义 = 9 处 kitPanelHead(
+        # 架构批 W4-S1：tune 结果/reports 双 run 对比/loopboard 里程碑
+        # 三处面板题迁词表 t()（tune.result_title/reports.diff_title/
+        # loopboard.ms_title 新键，zh 值同笔）
         assert src.count("kitPanelHead(") == 9
         for needle in (
-            'kitPanelHead("结果", "", "id=\'tune-result\' style=\'display:none\'")',
-            'kitPanelHead("审批收件箱（提案以参数 diff 展示）")',
-            'kitPanelHead("双 run 对比（只读 diff + S 参数叠图）", "", '
+            'kitPanelHead(t("tune.result_title"), "", '
+            '"id=\'tune-result\' style=\'display:none\'")',
+            'kitPanelHead(t("agent.inbox_title"))',
+            'kitPanelHead(t("reports.diff_title"), "", '
             '"style=\'margin-top:14px\'")',
-            'kitPanelHead("里程碑（由易到难，逐项验收）")',
-            'kitPanelHead("注册状态")',
+            'kitPanelHead(t("loopboard.ms_title"))',
+            'kitPanelHead(t("solvers.reg_title"))',  # S2 发布令批：面板题迁词表
             # 徽章族消费点
             "kitVerdictBadge(r.verdict)",  # 校准表
             "kitVerdictBadge(g.verdict)",  # 校准详情
-            'kitBoolBadge(s.available, "可用", "不可用")',  # wSolvers+pageSolvers ×2
+            # W8-S32 i18n 批 3：wSolvers（dashboard）侧迁词表 t() 形态（下方
+            # 计数钉同步 2→1，余 1 处=pageSolvers 直写字面）
+            'kitBoolBadge(s.available, t("dashboard.solvers_available"), '
+            't("dashboard.solvers_unavailable"))',
+            # S2 发布令批：pageSolvers 直写字面同笔迁词表（solvers.badge_* 新键，
+            # zh 值同笔；下方计数钉随迁）
+            'kitBoolBadge(s.available, t("solvers.badge_available"), '
+            't("solvers.badge_unavailable"))',  # pageSolvers ×1
             "kitBadge(s || \"N/A\", s)",  # loopboard boardBadge
             "kitBadge(st || \"UNKNOWN\", st)",  # anchors stBadge
             "kitBadgeCls(b)",  # wActivity statusBucket 三元
             "kitBadgeCls(c.verdict)",  # queue verdict
         ):
             assert needle in src, needle
-        assert src.count('kitBoolBadge(s.available, "可用", "不可用")') == 2
+        # W8-S32 i18n 批 3：直写字面形态 2→1（dashboard 侧已迁词表）
+        # S2 发布令批：pageSolvers 侧同笔迁词表——直写字面形态 1→0
+        assert src.count('kitBoolBadge(s.available, "可用", "不可用")') == 0
 
     def test_honest_non_migration_pins_untouched(self):
         """如实不迁点原样在位（字节不等/语义差异，逐条注记原因）。"""
         src = _PAGES
-        # ① runs 表：行点击路由钉（test_ui_routing）——UI-R4（aurora_d，A6
+        # ① runs 表：行点击路由钉（test_ui_routing）——UI-R4（架构批，A6
         #    P1-5 清偿）随 kit bindClickRows 单源收编更新本钉（键盘可达同笔；
         #    openRun 单入口深链语义不变）；状态列恒 muted（语义=次要信息非
         #    状态灯，与 KIT_STATUS_CLS.done:ok 不同）+ w7c 悬停钉不动
         assert 'bindClickRows(tb, (tr) => openRun(tr.dataset.id), "tr.clickable");' in src
         assert 'T.badge(r.status || "done", "muted")' in src
         # ② 战役座位状态表：UI-R4 清偿 A6 P2-9——原 X2 席裸字面钉 2 处挂
-        #    scope=col（test_x2_pr68_ui / test_w7c_ui_p2_sweep 同笔更新）
-        assert src.count('<th scope="col">座位状态</th>') == 2
+        #    scope=col（test_x2_pr68_ui / test_w7c_ui_p2_sweep 同笔更新）；
+        #    发布令 i18n 批：列头迁词表 campaign.th_seat（zh 同值）
+        assert src.count(
+            '<th scope="col">${t("campaign.th_seat")}</th>') == 2
         # ③ queue 阶段徽章：done/pending 之外一律 err（running 含内——与
         #    KIT_STATUS_CLS.running:muted 冲突，语义不同不迁）
         assert 's.status === "done" ? "ok" : (s.status === "pending" ? "muted" : "err")' in src
         # ④ dashboard widget 面板头：按钮在 b 元素内闭合（title 与控件同在
-        #    b 内），与 kitPanelHead "</b>" 后置 actions 形态字节不等
-        assert "<b class='title'>${w.title}" in src
+        #    b 内），与 kitPanelHead "</b>" 后置 actions 形态字节不等。
+        #    W6-S21 i18n 扩面：标题经注册表 tk 字段 t() 渲染期烘焙（结构不变）
+        assert "<b class='title'>${t(w.tk)}" in src
         # ⑤ 数据集/锚/UQ 样本集清单表：列头 scope='col' 单引号形态，kitTable
-        #    双引号规范形与其字节不等（候补下一批，不硬迁）
-        assert "<th scope='col'>名称</th>" in src  # datasets
+        #    双引号规范形与其字节不等（候补下一批，不硬迁）。
+        #    W2-S1 批 4：列头文案迁词表 t()（datasets.th_name/uq.th_file 新键，
+        #    zh 值同笔；单引号结构形态不变）
+        assert "<th scope='col'>${t(\"datasets.th_name\")}</th>" in src  # datasets
         assert "<th scope='col'>anchor_id</th>" in src  # anchors
-        assert "<th scope='col'>文件</th>" in src  # uq assets
+        assert "<th scope='col'>${t(\"uq.th_file\")}</th>" in src  # uq assets
+
+
+class TestKitConfirm:
+    """W6-S2（R1 P9-8 / R2 Top10 #6）：kitConfirm 破坏性动作确认模态。
+
+    行为钉（node 真执行）：kitConfirmHtml 纯串结构/危险档/缺省钮面（词表
+    common.confirm·cancel）/覆盖钮面/esc 出口；kitConfirm 无 document 守卫。
+    接线点源码钉：view_agent 清空对话 / view_loopboard 接管（onOk 前置）。"""
+
+    def test_html_structure_and_default_labels(self):
+        out = json.loads(_kit_call(
+            "JSON.stringify({ h: (await import('./pages/kit.js')).kitConfirmHtml("
+            "{ title: '清空对话', body: '不可恢复' }),"
+            " zh: (await import('./pages/i18n.js')).t('common.confirm') })"))
+        h = out["h"]
+        assert out["zh"] == "确认"  # zh 缺省档词表值（kit 钮面单源）
+        assert 'data-act="cancel"' in h and 'data-act="ok"' in h
+        assert ">取消</button>" in h and ">确认</button>" in h
+        assert "清空对话" in h and "不可恢复" in h
+        assert 'class="act" data-act="ok"' in h  # 非 danger=无红档内联
+        assert "background:var(--err)" not in h
+
+    def test_html_danger_and_label_overrides(self):
+        out = json.loads(_kit_call(
+            "JSON.stringify((await import('./pages/kit.js')).kitConfirmHtml("
+            "{ title: 'T', body: 'B', danger: true,"
+            " okLabel: '删', cancelLabel: '留' }))"))
+        assert ">删</button>" in out and ">留</button>" in out
+        assert 'style="background:var(--err);border-color:var(--err)" data-act="ok"' in out
+
+    def test_html_escapes_button_labels(self):
+        out = _kit_call(
+            "(await import('./pages/kit.js')).kitConfirmHtml("
+            "{ title: 'T', body: 'B', okLabel: '<img src=x>' })")
+        assert "<img" not in out and "&lt;img" in out
+
+    def test_kit_confirm_guard_no_document(self):
+        """node 裸环境（无 document）：kitConfirm 静默返回 null 零副作用。"""
+        out = json.loads(_kit_call(
+            "JSON.stringify((await import('./pages/kit.js')).kitConfirm("
+            "{ title: 'x', body: 'y', onOk: () => 1 }))"))
+        assert out is None
+
+    def test_wire_points_confirmed(self):
+        """两破坏点接线源码钉（清空对话/接管——R1 P9-8 实证痛点双点）。"""
+        agent = (_STATIC / "pages" / "view_agent.js").read_text(encoding="utf-8")
+        loop = (_STATIC / "pages" / "view_loopboard.js").read_text(encoding="utf-8")
+        assert "kitConfirm({" in agent and "kitConfirm({" in loop
+        assert 't("agent.clear_chat_body")' in agent
+        assert 't("loopboard.takeover_body")' in loop
+        # 原单击即发形态不回潮：chat-clear/lb-takeover 的 onclick 必须经确认闸
+        assert 'T.$("chat-clear").onclick = async () => {' not in agent
+        assert 'T.$("lb-takeover").onclick = () => sendControl("takeover");' not in loop
+        # onOk 在确认回调内（danger 档语义）
+        assert "onOk:" in agent and "onOk:" in loop

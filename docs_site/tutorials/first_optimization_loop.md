@@ -6,11 +6,18 @@
 > fake 仿真、看一次体检」，本文把剩下的一半补上：**调参（tune）→ 热启动
 > 续调（refine）→ 复现（replay）** 的最小闭环。全程 fake 适配器（秒级解析
 > 近似，零 license），约 10 个 trial 的量级。
+> 英文版（English version）：docs/tutorials/first_optimization_loop_en.md。
 >
 > 诚信口径：本文每条命令的旗标都经 `--help` 逐项核对；两条瞬时命令
 > （`syn wilkinson` 综合、`validate` 校验）为实跑记录；**run/tune/refine/
 > replay 的执行输出留给读者自己跑**——数字因机器与代码版本而异，本文只
 > 教读法，不贴虚构输出。
+> **勘误注记（2026-10-19 复测）**：§4 tune 的执行路径在当前 HEAD 实测
+> 失败（CLI 以 `recipe=` 关键字调 `service/api.py::start_tune`，而形参
+> 名为 `recipe_path`，TypeError 退出码 1）；`--dry-run` 与本文其余命令
+> 全部通过，MCP 侧 `start_tune`（走 `start_tune_async` 位置传参）不受
+> 影响。修复为 workflow.py 一行形参名改动，落地前 tune 执行面请走
+> --dry-run/MCP 通道。
 
 ## 0. 你将完成
 

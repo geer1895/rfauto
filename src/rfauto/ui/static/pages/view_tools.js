@@ -1,64 +1,91 @@
-/* rfauto 微波工具箱页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 微波工具箱页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
    计算器分组/搜索/深链（A2-B）+ 结果可视化/扫参/公式面板（A3-A）。
-   数值只在确定性内核（规则 7）：本模块零物理数字产生。 */
+   数值只在确定性内核（规则 7）：本模块零物理数字产生。
+   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：chrome 文案余量全迁词表
+   （tools.* 键域，zh 与旧字面逐字节同、en 新增）——help 块分段 t()；
+   组名=展示层翻译（协议标识符仍以中文单源对齐 API c.group，显示经
+   GROUP_I18N 映射、服务端未知组回退原文）；计算器中文名/用途兜底表
+   词表化（tools.cn_ 键/cp_ 键，键尾=注册表 name；calcZhName locale 感知，
+   en 档兜底显示英文名——API description 中文前缀仍优先，数据面照旧）；
+   随数据重建的容器零 data-i18n（头注纪律），API 数据照旧走 esc/escAttr。
+   架构批 W4-S1 半程收尾：壳模板兜底字面改 t() 烘焙（data.js 先例，
+   zh 档渲染逐字节不变）、扫参选择器 aria 迁词表、组序表改回退表下标
+   引用（协议名单源化，序表不再复写中文字面）——本文件残余 CJK 字面量
+   仅剩组协议标识符（TOOL_GROUP_FALLBACK 组名 + 实验/其他两常量，与
+   core/calc_families/registry.py CALC_GROUP_TABLE 字节对齐的协议单源，
+   i18n 棘轮账本"刻意保留"口径，非文案）。 */
 
 import { HEAT_BAND, THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
 import { _isoRenderers, bindChartResize, echartsInitCached, plotCardCached } from "./charts.js";
 import { T, getActiveView } from "./context.js";
-import { esc, escAttr, help } from "./dom.js";
-import { kitTable } from "./kit.js";
+import { esc, escAttr, errorText, help } from "./dom.js";
+// i18n（架构批 W1-S2 试点页 1；批 4 余量全迁）：壳静态标签 data-i18n+首扫；
+// 随数据重建的容器（#tool-desc/#tool-params/#tool-result）文案一律 t() 渲染
+// 期烘焙——data-i18n 重扫会覆写动态状态（i18n.js 头注纪律）。
+import { t, applyI18nRoot } from "./i18n.js";
+import { kitErrorPanel, kitTable } from "./kit.js";
 import { showPage } from "./router.js";
+// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// 数据面（计算器清单）接 viewSignal("tools") 切页收束 + aborted 短路；动作面
+// （计算/扫参 POST，扫参逐点串行 await）保持无 signal（用户动作不被切页取消）。
+// 信封消费形态逐键不变。
+import { apiFetch, viewSignal } from "./api.js";
 
 /* ═══ 微波工具箱（E4 计算器：数值只在确定性内核）═══ */
 
-/* 计算器中文名兜底表（项 5 双语面板）：describe() 的 description 本身以
-   "中文名：用途" 开头，正常从冒号前提取；此表只在 description 缺中文时兜底，
-   并给下拉 "key（中文名）" 稳定展示。键=注册表 name，值=[中文名, 用途一句]。 */
-const CALC_ZH = {
-  attenuator_bridged_t: ["桥式 T 型衰减器", "给定衰减量/Z0 → 桥式 T 网络电阻值"],
-  attenuator_pi: ["π 型衰减器", "给定衰减量/Z0 → π 网络电阻值"],
-  attenuator_t: ["T 型衰减器", "给定衰减量/Z0 → T 网络电阻值"],
-  cavity_perturbation_shift: ["腔体微扰谐振频移", "小样品/形变引起的谐振频率偏移估算"],
-  chebyshev_prototype: ["Chebyshev 低通原型", "阶数/纹波 → 归一化 g 元件值"],
-  chebyshev_prototype_asym: ["Chebyshev 非对称原型", "非对称端接的低通原型元件值"],
-  chebyshev_refl_fn: ["Chebyshev 反射函数", "等纹波反射特性函数取值"],
-  coupling_matrix_arrow: ["箭头拓扑耦合矩阵", "N+2 耦合矩阵折到箭头形拓扑"],
-  coupling_matrix_extract: ["耦合矩阵提取", "从响应/多项式反推耦合矩阵"],
-  coupling_matrix_folded: ["折叠拓扑耦合矩阵", "N+2 耦合矩阵折到折叠形拓扑"],
-  coupling_matrix_response: ["耦合矩阵响应", "给定耦合矩阵 → S11/S21 频响"],
-  coupling_matrix_synthesize_explicit: ["耦合矩阵综合（显式）", "由指定多项式显式综合耦合矩阵"],
-  coupling_matrix_synthesize_n2: ["耦合矩阵综合（N+2）", "滤波器规格 → N+2 横向耦合矩阵"],
-  cps_analysis: ["共面带状线 CPS 分析", "几何 → Z0/εeff"],
-  cps_synthesis: ["共面带状线 CPS 综合", "目标 Z0 → 几何尺寸"],
-  cpw_analysis: ["共面波导 CPW 分析", "中心导带宽/缝宽 → Z0/εeff"],
-  cpw_synthesis: ["共面波导 CPW 综合", "目标 Z0 → 中心导带宽/缝宽"],
-  cpwg_analysis: ["接地共面波导 CPWG 分析", "带底地 CPW 几何 → Z0/εeff"],
-  cpwg_synthesis: ["接地共面波导 CPWG 综合", "目标 Z0 → 带底地 CPW 几何"],
-  ecss_multipactor_fd: ["ECSS 微放电频域判据", "间隙×频率 → 微放电击穿裕度（ECSS 口径）"],
-  ipc2152_trace_temp_rise: ["IPC-2152 走线温升", "电流/线宽/铜厚 → 走线温升估算"],
-  microstrip_analysis: ["微带线分析", "线宽 → Z0/εeff（skrf Hammerstad-Jensen）"],
-  microstrip_lambda_g: ["微带导波波长 λg", "几何/频率 → εeff、λ0、λg"],
-  microstrip_loss_heat: ["微带损耗与发热", "导体/介质损耗 → 单位长度耗散功率"],
-  microstrip_synthesis: ["微带线综合", "目标 Z0 → 线宽（求逆+自洽回代）"],
-  parallel_plate_breakdown_margin: ["平行板击穿裕度", "间隙/电压 → 击穿场强裕度"],
-  patch_f0_symbolic_e13: ["贴片谐振频率（符号回归，实验）", "自动归纳经验式，默认不放行"],
-  patch_length: ["贴片谐振长度", "目标频率/基板 → 贴片长度（Balanis 闭式）"],
-  quarter_wave_transformer: ["λ/4 阻抗变换器", "两端阻抗 → 变换段 Z0 与长度"],
-  resonator_thermal_drift: ["谐振器热漂移", "温度变化 → 谐振频率漂移"],
-  stripline_analysis: ["带状线分析", "线宽/介质厚 → Z0"],
-  stripline_synthesis: ["带状线综合", "目标 Z0 → 线宽"],
-  suspended_stripline_analysis: ["悬置带状线分析", "悬置结构几何 → Z0/εeff"],
-  suspended_stripline_synthesis: ["悬置带状线综合", "目标 Z0 → 悬置结构几何"],
-  thermal_resistance_stack: ["叠层热阻", "多层材料/厚度 → 总热阻与温升"],
-  vswr_convert: ["驻波/反射换算", "VSWR ↔ |Γ| ↔ 回波损耗 dB 互换"],
+/* 计算器中文名/用途兜底表 → 词表化（批 4；原 CALC_ZH 字面同笔迁
+   pages/i18n.js 的 tools.cn_ 键/tools.cp_ 键，zh 值逐字节不变）：describe() 的
+   description 正常以 "中文名：用途" 开头（API 数据面，不经词表），此表只在
+   description 缺中文/用途段时经 t() 兜底；en 档显示英文名。键=注册表 name，
+   值=[名键, 用途键]。 */
+const CALC_KEYS = {
+  attenuator_bridged_t: ["tools.cn_attenuator_bridged_t", "tools.cp_attenuator_bridged_t"],
+  attenuator_pi: ["tools.cn_attenuator_pi", "tools.cp_attenuator_pi"],
+  attenuator_t: ["tools.cn_attenuator_t", "tools.cp_attenuator_t"],
+  cavity_perturbation_shift: ["tools.cn_cavity_perturbation_shift", "tools.cp_cavity_perturbation_shift"],
+  chebyshev_prototype: ["tools.cn_chebyshev_prototype", "tools.cp_chebyshev_prototype"],
+  chebyshev_prototype_asym: ["tools.cn_chebyshev_prototype_asym", "tools.cp_chebyshev_prototype_asym"],
+  chebyshev_refl_fn: ["tools.cn_chebyshev_refl_fn", "tools.cp_chebyshev_refl_fn"],
+  coupling_matrix_arrow: ["tools.cn_coupling_matrix_arrow", "tools.cp_coupling_matrix_arrow"],
+  coupling_matrix_extract: ["tools.cn_coupling_matrix_extract", "tools.cp_coupling_matrix_extract"],
+  coupling_matrix_folded: ["tools.cn_coupling_matrix_folded", "tools.cp_coupling_matrix_folded"],
+  coupling_matrix_response: ["tools.cn_coupling_matrix_response", "tools.cp_coupling_matrix_response"],
+  coupling_matrix_synthesize_explicit: ["tools.cn_coupling_matrix_synthesize_explicit", "tools.cp_coupling_matrix_synthesize_explicit"],
+  coupling_matrix_synthesize_n2: ["tools.cn_coupling_matrix_synthesize_n2", "tools.cp_coupling_matrix_synthesize_n2"],
+  cps_analysis: ["tools.cn_cps_analysis", "tools.cp_cps_analysis"],
+  cps_synthesis: ["tools.cn_cps_synthesis", "tools.cp_cps_synthesis"],
+  cpw_analysis: ["tools.cn_cpw_analysis", "tools.cp_cpw_analysis"],
+  cpw_synthesis: ["tools.cn_cpw_synthesis", "tools.cp_cpw_synthesis"],
+  cpwg_analysis: ["tools.cn_cpwg_analysis", "tools.cp_cpwg_analysis"],
+  cpwg_synthesis: ["tools.cn_cpwg_synthesis", "tools.cp_cpwg_synthesis"],
+  ecss_multipactor_fd: ["tools.cn_ecss_multipactor_fd", "tools.cp_ecss_multipactor_fd"],
+  ipc2152_trace_temp_rise: ["tools.cn_ipc2152_trace_temp_rise", "tools.cp_ipc2152_trace_temp_rise"],
+  microstrip_analysis: ["tools.cn_microstrip_analysis", "tools.cp_microstrip_analysis"],
+  microstrip_lambda_g: ["tools.cn_microstrip_lambda_g", "tools.cp_microstrip_lambda_g"],
+  microstrip_loss_heat: ["tools.cn_microstrip_loss_heat", "tools.cp_microstrip_loss_heat"],
+  microstrip_synthesis: ["tools.cn_microstrip_synthesis", "tools.cp_microstrip_synthesis"],
+  parallel_plate_breakdown_margin: ["tools.cn_parallel_plate_breakdown_margin", "tools.cp_parallel_plate_breakdown_margin"],
+  patch_f0_symbolic_e13: ["tools.cn_patch_f0_symbolic_e13", "tools.cp_patch_f0_symbolic_e13"],
+  patch_length: ["tools.cn_patch_length", "tools.cp_patch_length"],
+  quarter_wave_transformer: ["tools.cn_quarter_wave_transformer", "tools.cp_quarter_wave_transformer"],
+  resonator_thermal_drift: ["tools.cn_resonator_thermal_drift", "tools.cp_resonator_thermal_drift"],
+  stripline_analysis: ["tools.cn_stripline_analysis", "tools.cp_stripline_analysis"],
+  stripline_synthesis: ["tools.cn_stripline_synthesis", "tools.cp_stripline_synthesis"],
+  suspended_stripline_analysis: ["tools.cn_suspended_stripline_analysis", "tools.cp_suspended_stripline_analysis"],
+  suspended_stripline_synthesis: ["tools.cn_suspended_stripline_synthesis", "tools.cp_suspended_stripline_synthesis"],
+  thermal_resistance_stack: ["tools.cn_thermal_resistance_stack", "tools.cp_thermal_resistance_stack"],
+  vswr_convert: ["tools.cn_vswr_convert", "tools.cp_vswr_convert"],
 };
 const _HAS_CJK = /[\u4e00-\u9fff]/;
 
-/* 计算器中文名：优先 description 冒号前缀（注册表自带中文），否则查兜底表，再退 key */
+/* 计算器名：优先 description 冒号前缀（注册表自带中文，API 数据面两档同
+   显示）；否则经 t() 查词表兜底（zh=旧 CALC_ZH 名逐字节同，en=英文名），
+   再退 key */
 function calcZhName(c) {
   const head = String(c.description || "").split(/[：:]/)[0].trim();
   if (head && _HAS_CJK.test(head) && head.length <= 24) return head;
-  return (CALC_ZH[c.name] || [])[0] || c.name;
+  const keys = CALC_KEYS[c.name];
+  return keys ? t(keys[0]) : c.name;
 }
 /* 参数说明 "类型 单位 中文说明" → {unit, text}；单位 "-" 视为无量纲 */
 function parseParamDesc(desc) {
@@ -69,38 +96,47 @@ function parseParamDesc(desc) {
   return { unit: "", text: String(desc || "") };
 }
 
-/* ── aurora72 A2-B：工具箱分组+搜索选择器与 #/tools/<key> 深链（R5 审计 §②§⑤§⑥）──
+/* ── 架构批 A2-B：工具箱分组+搜索选择器与 #/tools/<key> 深链（R5 审计 §②§⑤§⑥）──
    契约：/api/calculators 每键带 group 字段（A2-A 席并行落地）——本席只消费
    c.group；字段缺席时回退"实验态→键名前缀粗映射→其他"，页面不炸。回退表刻意
-   粗粒度（键名前缀，不复刻 133 键全表）——group 字段落地后回退仅剩兜底义。 */
+   粗粒度（键名前缀，不复刻 133 键全表）——group 字段落地后回退仅剩兜底义。
+   组名=协议标识符（中文单源，与 API c.group 对齐）；行元素 2=展示层翻译键
+   （tools.group_*，批 4），显示经 grpDisp()（未知组名回退原文）。 */
 const TOOL_GROUP_FALLBACK = [
-  ["EMC·安规·放电", /^(conducted_|radiated_|esd_|exposure_|shielding_|corona_|multipactor_|ecss_)/],
-  ["热·功率·可靠性", /^(thermal_|ipc2152_|microstrip_loss_heat|resonator_thermal_|electromigration_|parallel_plate_|microwave_process_|multimode_cavity_|single_mode_|form_beta_)/],
-  ["测量与校准", /^(power_cal_|trl_|tnvna_|allan_)/],
-  ["超材料·超表面", /^(homog_|retrieve_|srr_|wire_media_|crlh_|gstc_)/],
-  ["量子读出", /^qubit_/],
-  ["调制与数字链路", /^(modulation_|required_ebn0|coded_ber_|cdr_)/],
-  ["天线与阵列", /^(array\.|cma_)/],
-  ["DOA 与波束形成", /^doa_/],
-  ["MIMO 与 RIS", /^(mimo_|ris_)/],
-  ["雷达", /^(radar_|albersheim_|ca_cfar_)/],
-  ["链路与传播", /^(sat_|gt_ratio|rfid_|chipless_|hata_|two_ray_|knife_edge_|rain_|gaseous_|availability_|fade_)/],
-  ["收发链路·频综", /^(cascade_budget|correlated_cascade_|blocking_|spur_|if_plan_|iq_|phase_noise_|pll_|doherty_)/],
-  ["滤波器与耦合矩阵", /^(chebyshev_|coupling_matrix_|cm_|q_factor_|qe_|mask_|cat_|k_split)/],
-  ["谐振器与腔体", /^(coaxial_cavity_|combline_|cavity_|patch_length)/],
-  ["匹配·功分·衰减·耦合", /^(attenuator_|quarter_wave_|t_match_|klopfenstein_|vswr_|unequal_split_|bethe_|balanced_pair_)/],
-  ["传输线正反解", /^(microstrip|cpw|cpwg|cps|stripline|suspended_stripline|slotline|siw)_/],
+  ["EMC·安规·放电", "tools.group_emc", /^(conducted_|radiated_|esd_|exposure_|shielding_|corona_|multipactor_|ecss_)/],
+  ["热·功率·可靠性", "tools.group_thermal", /^(thermal_|ipc2152_|microstrip_loss_heat|resonator_thermal_|electromigration_|parallel_plate_|microwave_process_|multimode_cavity_|single_mode_|form_beta_)/],
+  ["测量与校准", "tools.group_metrol", /^(power_cal_|trl_|tnvna_|allan_)/],
+  ["超材料·超表面", "tools.group_metam", /^(homog_|retrieve_|srr_|wire_media_|crlh_|gstc_)/],
+  ["量子读出", "tools.group_quantum", /^qubit_/],
+  ["调制与数字链路", "tools.group_mod", /^(modulation_|required_ebn0|coded_ber_|cdr_)/],
+  ["天线与阵列", "tools.group_antenna", /^(array\.|cma_)/],
+  ["DOA 与波束形成", "tools.group_doa", /^doa_/],
+  ["MIMO 与 RIS", "tools.group_mimo", /^(mimo_|ris_)/],
+  ["雷达", "tools.group_radar", /^(radar_|albersheim_|ca_cfar_)/],
+  ["链路与传播", "tools.group_link", /^(sat_|gt_ratio|rfid_|chipless_|hata_|two_ray_|knife_edge_|rain_|gaseous_|availability_|fade_)/],
+  ["收发链路·频综", "tools.group_xcvr", /^(cascade_budget|correlated_cascade_|blocking_|spur_|if_plan_|iq_|phase_noise_|pll_|doherty_)/],
+  ["滤波器与耦合矩阵", "tools.group_filter", /^(chebyshev_|coupling_matrix_|cm_|q_factor_|qe_|mask_|cat_|k_split)/],
+  ["谐振器与腔体", "tools.group_resonator", /^(coaxial_cavity_|combline_|cavity_|patch_length)/],
+  ["匹配·功分·衰减·耦合", "tools.group_match", /^(attenuator_|quarter_wave_|t_match_|klopfenstein_|vswr_|unequal_split_|bethe_|balanced_pair_)/],
+  ["传输线正反解", "tools.group_txlines", /^(microstrip|cpw|cpwg|cps|stripline|suspended_stripline|slotline|siw)_/],
 ];
 /* 组序（R5 §② 建议）：常用在前；实验/其他恒殿后；未知组名（服务端新增组）
-   按 zh 序排在已知组之后、殿后组之前。 */
-const TOOL_GROUP_ORDER = [
-  "传输线正反解", "匹配·功分·衰减·耦合", "滤波器与耦合矩阵", "谐振器与腔体",
-  "天线与阵列", "DOA 与波束形成", "MIMO 与 RIS", "雷达", "链路与传播",
-  "收发链路·频综", "调制与数字链路", "EMC·安规·放电", "热·功率·可靠性",
-  "测量与校准", "超材料·超表面", "量子读出",
-];
+   按 zh 序排在已知组之后、殿后组之前。组序表按回退表下标引用（W4-S1 i18n
+   半程收尾：协议名单源=TOOL_GROUP_FALLBACK，序表不再复写中文字面——两表
+   字节漂移在构造上不可能）。 */
+const TOOL_GROUP_ORDER_IDX = [15, 14, 12, 13, 6, 7, 8, 9, 10, 11, 5, 0, 1, 2, 3, 4];
+const TOOL_GROUP_ORDER = TOOL_GROUP_ORDER_IDX.map((i) => TOOL_GROUP_FALLBACK[i][0]);
 const TOOL_GROUP_EXPERIMENTAL = "实验";
 const TOOL_GROUP_OTHER = "其他";
+/* 组名→词表键映射（批 4）：回退表折叠 + 实验/其他两常量；grpDisp 为组名
+   唯一显示口（optgroup 标签/徽章/帮助组清单三处）。 */
+const GROUP_I18N = Object.fromEntries(TOOL_GROUP_FALLBACK.map(([g, k]) => [g, k]));
+GROUP_I18N[TOOL_GROUP_EXPERIMENTAL] = "tools.group_experimental";
+GROUP_I18N[TOOL_GROUP_OTHER] = "tools.group_other";
+function grpDisp(g) {
+  const k = GROUP_I18N[g];
+  return k ? t(k) : g;
+}
 
 /* 组归属单源（纯函数，node 行为钉可测）：API group 字段优先；缺字段/空值
    回退 实验态→前缀粗映射→"其他"。 */
@@ -108,7 +144,7 @@ export function calcGroup(c) {
   if (c && typeof c.group === "string" && c.group.trim()) return c.group.trim();
   if (c && c.experimental) return TOOL_GROUP_EXPERIMENTAL;
   const name = String((c && c.name) || "");
-  for (const [g, re] of TOOL_GROUP_FALLBACK) if (re.test(name)) return g;
+  for (const [g, , re] of TOOL_GROUP_FALLBACK) if (re.test(name)) return g;
   return TOOL_GROUP_OTHER;
 }
 
@@ -167,7 +203,7 @@ export function toolsSelectKey(key) {
 }
 
 /* hashchange 单源监听（initPages 装配一次，幂等 + node import 零 DOM 依赖）：
-   aurora72 A4-C 起收编为全站唯一 hashchange 监听——旧 app.js 页级 _applyHash
+   架构批 A4-C 起收编为全站唯一 hashchange 监听——旧 app.js 页级 _applyHash
    监听与本席 tools key 级自查双监听并存，两级路由落地后归一：事件经宿主注入
    的 T.routeDispatch（app.js 两级分发器，页级+参数级都在其上）回注；宿主
    缺席（独立加载）时回退本席 tools 自查（旧行为保全）。 */
@@ -191,7 +227,7 @@ export function _bindToolsDeepLink() {
 }
 
 /* 工具箱页局部样式（页自注入，不动 index.html——席位文件面隔离）：
-   参数表淡入 + 尊重系统"减少动态效果"设置 + aurora72 A3-A 公式面板/扫参
+   参数表淡入 + 尊重系统"减少动态效果"设置 + 架构批 A3-A 公式面板/扫参
    面样式。幂等：按 id 只注入一次。 */
 function _ensureToolsStyle() {
   if (document.getElementById("tools-page-style")) return;
@@ -211,7 +247,7 @@ function _ensureToolsStyle() {
   document.head.appendChild(st);
 }
 
-/* ═══ aurora72 A3-A：工具箱结果可视化 + 扫参 + 公式面板（R5 审计 §③§④§⑤）═══
+/* ═══ 架构批 A3-A：工具箱结果可视化 + 扫参 + 公式面板（R5 审计 §③§④§⑤）═══
    通用启发式（零 service 改动，数值语义全由注册表键名自述）：
    - x-y 曲线：结果 dict 中"轴名键的 num_list"判 x（R5 §③ 命名清单），
      其余等长非轴 num_list 判 y 系列；嵌套值对象 {x:[...],y:[...]} 形态
@@ -251,7 +287,7 @@ export function toolDetectCurves(result) {
         toolIsNumList(v) && v.length === xEnt[1].length)
       .map(([k, v]) => ({ name: k, y: v }));
     if (series.length) {
-      out.push({ title: `曲线（x=${xKey}）`, xKey, x: xEnt[1], series: series.slice(0, _TOOL_SERIES_CAP) });
+      out.push({ title: t("tools.curve_title_tpl", { x: xKey }), xKey, x: xEnt[1], series: series.slice(0, _TOOL_SERIES_CAP) });
     } else {
       // ③ 系列族：dict_list 每项含与 x 等长的 num_list（如圆柱腔模式图
       //   series[].f_norm；系列名取项内字符串字段 mode/name/key）
@@ -270,7 +306,7 @@ export function toolDetectCurves(result) {
         if (fam.length) break; // 只展开第一个可展开的 dict_list（不硬猜多族）
       }
       if (fam.length)
-        out.push({ title: `曲线族（x=${xKey}）`, xKey, x: xEnt[1], series: fam.slice(0, _TOOL_SERIES_CAP) });
+        out.push({ title: t("tools.curvefam_title_tpl", { x: xKey }), xKey, x: xEnt[1], series: fam.slice(0, _TOOL_SERIES_CAP) });
     }
   }
   // ② 嵌套值对象 {x:[...], y:[...]} 形态：递归一层，标题带父键名
@@ -347,10 +383,11 @@ export function toolResultCellText(val) {
     if (val.length && val.every((r) => Array.isArray(r))) {
       const cols = val[0].length;
       return val.every((r) => r.length === cols)
-        ? `[${val.length}×${cols} 矩阵]` : `[嵌套数组 ${val.length} 行]`;
+        ? t("tools.cell_matrix_tpl", { r: val.length, c: cols })
+        : t("tools.cell_nested_tpl", { n: val.length });
     }
     if (val.length > 12)
-      return val.slice(0, 12).join(", ") + ` …（共 ${val.length} 项）`;
+      return val.slice(0, 12).join(", ") + t("tools.cell_truncated_tpl", { n: val.length });
     return val.join(", ");
   }
   if (typeof val === "object") return JSON.stringify(val);
@@ -410,8 +447,8 @@ function _toolHeatmapOption(m) {
       ? `${m.key}[${q.value[1]}][${q.value[0]}] = ${m.raw[q.value[1]][q.value[0]][0]} + ${m.raw[q.value[1]][q.value[0]][1]}j（|·|=${fmt(q.value[2])}）`
       : `${m.key}[${q.value[1]}][${q.value[0]}] = ${fmt(q.value[2])}` },
     grid: { left: 52, right: 70, top: 10, bottom: 34 },
-    xAxis: { type: "category", data: cols, name: "列", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
-    yAxis: { type: "category", data: rws, name: "行", nameTextStyle: { color: fg }, axisLabel: { color: fg } },
+    xAxis: { type: "category", data: cols, name: t("tools.col"), nameTextStyle: { color: fg }, axisLabel: { color: fg } },
+    yAxis: { type: "category", data: rws, name: t("tools.row"), nameTextStyle: { color: fg }, axisLabel: { color: fg } },
     visualMap: {
       type: "continuous", min: Math.min(...vals), max: Math.max(...vals),
       right: 4, top: "middle", calculable: true, textStyle: { color: fg },
@@ -445,7 +482,7 @@ function resultChart(host, result) {
     host.appendChild(el);
     const chart = echartsInitCached(el); // P0-5 同源守卫（唯一 init 入口）
     chart.setOption(option, true); // notMerge：复用路径整体替换
-    bindChartResize(el); // aurora72 A3-A：resize 去重（WeakSet 单源）
+    bindChartResize(el); // 架构批 A3-A：resize 去重（WeakSet 单源）
     _toolResultCharts.push(chart);
     n++;
   };
@@ -458,8 +495,9 @@ function resultChart(host, result) {
     }
   }
   if (mat) {
-    const label = mat.complex ? `${mat.key} 热图（复数取模 |·|，${mat.rows}×${mat.cols}）`
-      : `${mat.key} 热图（${mat.rows}×${mat.cols}）`;
+    const label = mat.complex
+      ? t("tools.heat_complex_tpl", { key: mat.key, rows: mat.rows, cols: mat.cols })
+      : t("tools.heat_tpl", { key: mat.key, rows: mat.rows, cols: mat.cols });
     try {
       draw(label, _toolHeatmapOption(mat));
     } catch (e) {
@@ -474,22 +512,22 @@ export async function pageTools() {
   const v = T.$("view-tools");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li>闭式微波计算器 <span id='tool-help-groups'>清单加载中…</span>——组清单由注册表实时生成，不手工维护。顶部搜索框支持键名／中文名／用途实时过滤；下拉按组浏览。</li>
-      <li>与综合引擎同口径（skrf Hammerstad-Jensen / Balanis 闭式）；必填参数标 *，留空的可选参数不传。</li>
-      <li>同一 service 也开放在 CLI（rfauto calc）与 MCP（run_calculator）——三壳一个内核；深链 <code>#/tools/&lt;键名&gt;</code> 可直达并分享某计算器。</li>`) +
-    `<h2 class='page'>微波工具箱</h2>
+      <li>${t("tools.help_1_lead")}<span id='tool-help-groups'>${t("tools.help_groups_loading")}</span>${t("tools.help_1_tail")}</li>
+      <li>${t("tools.help_2")}</li>
+      <li>${t("tools.help_3_lead")}<code>${t("tools.help_3_code")}</code>${t("tools.help_3_tail")}</li>`) +
+    `<h2 class='page' data-i18n='tools.title'>${t("tools.title")}</h2>
      <div style='display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap'>
        <div class='panel' style='flex:1;min-width:380px'>
-         <div class='toolbar'><b>搜索</b>
-           <input id='tool-search' type='search' placeholder='键名 / 中文名 / 用途' style='flex:1;min-width:140px' aria-label='搜索计算器（键名、中文名、用途）'></div>
-         <div class='toolbar'><b>计算器</b>
-           <select id='tool-name' style='flex:1' aria-label='选择计算器（按组）'></select>
+         <div class='toolbar'><b data-i18n='tools.search_label'>${t("tools.search_label")}</b>
+           <input id='tool-search' type='search' placeholder='${t("tools.search_placeholder")}' style='flex:1;min-width:140px' aria-label='${t("tools.search_aria")}' data-i18n-ph='tools.search_placeholder' data-i18n-aria='tools.search_aria'></div>
+         <div class='toolbar'><b data-i18n='tools.calculators_label'>${t("tools.calculators_label")}</b>
+           <select id='tool-name' style='flex:1' aria-label='${t("tools.select_aria")}'></select>
            <span id='tool-count' class='muted'></span></div>
          <div id='tool-desc' class='muted' style='margin:var(--space-2) 0;padding:var(--space-2);border:1px solid var(--border);border-radius:var(--radius-xs)'></div>
          <div id='tool-params'></div>
          <div id='tool-sweep' style='margin:var(--space-2) 0'></div>
          <div class='toolbar' style='margin-top:10px'>
-           <button id='tool-run' class='primary'>计算</button>
+           <button id='tool-run' class='primary'>${t("tools.run")}</button>
            <span id='tool-msg' class='muted'></span></div>
          <div id='tool-sweep-out' style='display:none'>
            <div id='tool-sweep-note' class='muted' style='padding:var(--space-1) 0'></div>
@@ -497,38 +535,44 @@ export async function pageTools() {
            <div id='tool-sweep-table' style='max-height:260px;overflow:auto'></div>
          </div>
        </div>
-       <div class='panel' style='flex:1;min-width:320px'><b class='title'>结果</b>
-         <div id='tool-result' class='muted'>选择计算器，填参数后点「计算」</div></div>
+       <div class='panel' style='flex:1;min-width:320px'><b class='title' data-i18n='tools.result_title'>${t("tools.result_title")}</b>
+         <div id='tool-result' class='muted'>${t("tools.result_hint")}</div></div>
      </div>`;
+  applyI18nRoot(v); // 壳静态标签首扫（语言档切到非 zh 时接管字面；W1-S2）
   _ensureToolsStyle();
-  const d = await T.api("/api/calculators");
+  const d = await apiFetch("/api/calculators", { signal: viewSignal("tools") });
+  if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   const cals = d.calculators || [];
   _toolsUI.cals = cals;
   const sel = T.$("tool-name");
   _toolsUI.sel = sel;
   const search = T.$("tool-search");
-  // 帮助文案单源化（R5 §⑥：组清单由 API 数据自动生成，杜绝再犯陈旧）
+  // 帮助文案单源化（R5 §⑥：组清单由 API 数据自动生成，杜绝再犯陈旧；
+  // 组名显示经 grpDisp——协议标识符保持中文单源）
   const groups = groupCalcList(cals);
   const gh = T.$("tool-help-groups");
   if (gh) gh.textContent = cals.length
-    ? `共 ${cals.length} 键 · ${groups.length} 组：${groups.map((g) => g.group).join("／")}`
-    : "清单不可用（服务未就绪？刷新重试）";
+    ? t("tools.help_groups_tpl", {
+        n: cals.length, m: groups.length,
+        list: groups.map((g) => grpDisp(g.group)).join("／"),
+      })
+    : t("tools.help_groups_unavailable");
   const renderParams = () => {
     const cal = cals.find((c) => c.name === sel.value) || { params: [] };
     // 双语说明面板（项 5）：中文名 + 用途（description 透传）+ 组徽章 + 实验态 + 英文 key
     const zh = calcZhName(cal);
     const purpose = String(cal.description || "").replace(/^[^：:]*[：:]\s*/, "")
-      || (CALC_ZH[cal.name] || [])[1] || "";
+      || (CALC_KEYS[cal.name] ? t(CALC_KEYS[cal.name][1]) : "");
     // A3-A 公式面板：description 全文含 "="、"：" 特征才出 details（等宽 pre，
     // 公式/出处原文可读可复制）；无特征不显示（不硬凑）。
     const descFull = String(cal.description || "");
     T.$("tool-desc").innerHTML =
       `<b style='color:var(--fg)'>${esc(zh)}</b> <code class='muted'>${esc(cal.name || "")}</code>` +
-      (cal.name ? " " + T.badge(calcGroup(cal), "muted") : "") +
-      (cal.experimental ? " " + T.badge("实验态（默认不放行）", "warn") : "") +
+      (cal.name ? " " + T.badge(grpDisp(calcGroup(cal)), "muted") : "") +
+      (cal.experimental ? " " + T.badge(t("tools.badge_experimental"), "warn") : "") +
       (purpose ? `<div style='margin-top:var(--space-1)'>${esc(purpose)}</div>` : "") +
       (toolDescHasFormula(descFull)
-        ? `<details class='tool-formula'><summary>公式与出处（description 全文）</summary><pre>${esc(descFull)}</pre></details>`
+        ? `<details class='tool-formula'><summary>${t("tools.formula_summary")}</summary><pre>${esc(descFull)}</pre></details>`
         : "");
     const tp = T.$("tool-params");
     tp.innerHTML = cal.params
@@ -537,7 +581,7 @@ export async function pageTools() {
         return `<label class='muted' style='display:block;margin:var(--space-2) 0 2px'><b style='color:var(--fg)'>${esc(p.name)}</b>${p.required ? " <span style='color:var(--warn)'>*</span>" : ""}` +
           (unit ? ` <span class='badge muted'>${esc(unit)}</span>` : "") +
           ` <small>${esc(text)}</small>
-        <input id='tool-p-${escAttr(p.name)}' style='width:100%' placeholder='${escAttr((p.required ? "必填" : "可选，留空不传") + (unit ? "（" + unit + "）" : ""))}'></label>`;
+        <input id='tool-p-${escAttr(p.name)}' style='width:100%' placeholder='${escAttr((p.required ? t("tools.ph_required") : t("tools.ph_optional")) + (unit ? "（" + unit + "）" : ""))}'></label>`;
       })
       .join("");
     // 微交互：参数表淡入（移除→强制重排→再加回，重复渲染可重触发；
@@ -561,19 +605,19 @@ export async function pageTools() {
       `<label style='display:inline-flex;gap:6px;align-items:center;cursor:pointer'>` +
       `<input id='tool-sweep-on' type='checkbox'${prevOn ? " checked" : ""}` +
       `${nums.length ? "" : " disabled"}>` +
-      `<b style='color:var(--fg)'>扫参模式</b>` +
-      `<span class='muted'>（逐点串行调 /api/calculators/run，点数 ≤101）</span></label>` +
+      `<b style='color:var(--fg)'>${t("tools.sweep_label")}</b>` +
+      `<span class='muted'>${t("tools.sweep_note")}</span></label>` +
       (prevOn ? (nums.length
         ? `<div id='tool-sweep-controls' class='toolbar' style='flex-wrap:wrap;gap:var(--space-2);margin-top:6px'>` +
-          `<select id='tool-sweep-param' aria-label='选择扫参（数值参数）' style='max-width:200px'>` +
+          `<select id='tool-sweep-param' aria-label='${t("tools.sweep_select_aria")}' style='max-width:200px'>` +
           nums.map((p) => `<option value="${escAttr(p.name)}">${esc(p.name)}</option>`).join("") +
           `</select>` +
-          `<label class='muted'>起点 <input id='tool-sweep-start' type='number' style='width:90px'></label>` +
-          `<label class='muted'>终点 <input id='tool-sweep-stop' type='number' style='width:90px'></label>` +
-          `<label class='muted'>点数 <input id='tool-sweep-points' type='number' value='21' min='2' max='101' style='width:70px'></label>` +
-          `<button id='tool-sweep-go' class='minor'>扫描</button>` +
+          `<label class='muted'>${t("tools.sweep_start")}<input id='tool-sweep-start' type='number' style='width:90px'></label>` +
+          `<label class='muted'>${t("tools.sweep_stop")}<input id='tool-sweep-stop' type='number' style='width:90px'></label>` +
+          `<label class='muted'>${t("tools.sweep_points")}<input id='tool-sweep-points' type='number' value='21' min='2' max='101' style='width:70px'></label>` +
+          `<button id='tool-sweep-go' class='minor'>${t("tools.sweep_go")}</button>` +
           `<span id='tool-sweep-msg' class='muted'></span></div>`
-        : `<div class='muted' style='margin-top:var(--space-1)'>该计算器没有 float/int 数值参数，扫参不可用</div>`) : "");
+        : `<div class='muted' style='margin-top:var(--space-1)'>${t("tools.sweep_unavailable")}</div>`) : "");
     T.$("tool-sweep-out").style.display = "none"; // 换计算器：上一轮扫参产物收起（容器保留供复用）
     if (prevOn && nums.length) T.$("tool-sweep-go").onclick = () => runSweep(cal);
   };
@@ -582,18 +626,18 @@ export async function pageTools() {
     const pName = T.$("tool-sweep-param") ? T.$("tool-sweep-param").value : "";
     if (!pName || !T.$("tool-sweep-start") || !T.$("tool-sweep-stop") ||
         !T.$("tool-sweep-points")) {
-      msg.textContent = "扫参控件未就绪（请重选计算器）";
+      msg.textContent = t("tools.sweep_not_ready");
       return;
     }
     const start = Number(T.$("tool-sweep-start").value);
     const stop = Number(T.$("tool-sweep-stop").value);
     const nPts = Number(T.$("tool-sweep-points").value);
     if (!Number.isFinite(start) || !Number.isFinite(stop)) {
-      msg.textContent = "起点/终点须为数值";
+      msg.textContent = t("tools.sweep_need_num");
       return;
     }
     if (!Number.isInteger(nPts) || nPts < 2 || nPts > 101) {
-      msg.textContent = "点数须为 2–101 的整数（上限 101 防滥用）";
+      msg.textContent = t("tools.sweep_points_range");
       return;
     }
     const go = T.$("tool-sweep-go");
@@ -603,19 +647,20 @@ export async function pageTools() {
       const rows = [];
       for (let i = 0; i < nPts; i++) {
         const xv = start + (stop - start) * i / (nPts - 1);
-        msg.textContent = `扫描中 ${i + 1}/${nPts}（${pName}=${xv}）`;
+        msg.textContent = t("tools.sweep_progress_tpl", { i: i + 1, n: nPts, p: pName, x: xv });
         const params = collectParams(cal);
         params[pName] = xv;
-        const r = await T.api("/api/calculators/run", {
+        const r = await apiFetch("/api/calculators/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: sel.value, params }),
+          timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：逐点扫描累计分钟级
         });
         if (r.ok) {
           const m = toolPickSweepMetric(r.result, pName);
           rows.push({ x: xv, y: m ? m.value : null, key: m ? m.key : null, error: null });
         } else {
-          rows.push({ x: xv, y: null, key: null, error: r.error || "未知错误" });
+          rows.push({ x: xv, y: null, key: null, error: r.error || t("tools.unknown_error") });
         }
       }
       renderSweepResult(pName, rows);
@@ -636,12 +681,12 @@ export async function pageTools() {
     // A7-A ui-kit 试点：表壳单源（kitTable；动态首列名由 kit 内 esc——与原
     // esc(pName) 同串）；rows 恒非空（点数 ≥2），empty:"" 保持空 tbody 等价
     tableBox.innerHTML = kitTable({
-      columns: [pName, "响应", "状态"], rows, empty: "",
+      columns: [pName, t("tools.th_response"), t("tools.th_status")], rows, empty: "",
       rowHtml: (r) =>
         `<tr><td class='muted'>${esc(r.x)}</td><td>${r.y == null ? "-" : "<b>" + esc(r.y) + "</b>"}</td>` +
         `<td>${r.error
-          ? `<span style='color:var(--err)'>跳过：${esc(r.error)}</span>`
-          : (r.y == null ? "<span class='muted'>无标量响应指标</span>" : "OK")}</td></tr>`,
+          ? `<span style='color:var(--err)'>${t("tools.skipped_prefix")}${esc(r.error)}</span>`
+          : (r.y == null ? `<span class='muted'>${t("tools.no_metric")}</span>` : "OK")}</td></tr>`,
     });
     out.style.display = "";
     if (seriesRows.length >= 2) {
@@ -653,7 +698,7 @@ export async function pageTools() {
       });
     } else {
       // 响应指标探测不到（或有效点 <2）——不出曲线只出表格（如实降级）
-      note.textContent = "响应指标探测不到（或有效点 <2）——不出曲线只出表格";
+      note.textContent = t("tools.sweep_no_curve");
     }
   };
   _toolsUI.renderParams = renderParams;
@@ -674,9 +719,9 @@ export async function pageTools() {
   const rebuildOptions = () => {
     const vis = cals.filter((c) => toolFilterMatch(c, search.value));
     sel.innerHTML = groupCalcList(vis)
-      .map((g) => `<optgroup label="${escAttr(g.group)}（${g.items.length}）">` +
+      .map((g) => `<optgroup label="${escAttr(grpDisp(g.group))}（${g.items.length}）">` +
         g.items.map((c) =>
-          `<option value="${escAttr(c.name)}">${esc(c.name)}（${esc(calcZhName(c))}）${c.experimental ? " [实验]" : ""}</option>`)
+          `<option value="${escAttr(c.name)}">${esc(c.name)}（${esc(calcZhName(c))}）${c.experimental ? t("tools.opt_experimental") : ""}</option>`)
           .join("") + `</optgroup>`)
       .join("");
     T.$("tool-count").textContent = `${vis.length}/${cals.length}`;
@@ -709,21 +754,24 @@ export async function pageTools() {
     // 微交互：loading 态（disabled + 文案）；finally 恢复——请求异常不得卡死按钮
     runBtn.disabled = true;
     const runLabel = runBtn.textContent;
-    runBtn.textContent = "计算中...";
-    T.$("tool-msg").textContent = "计算中...";
+    runBtn.textContent = t("tools.computing");
+    T.$("tool-msg").textContent = t("tools.computing");
     try {
-      const r = await T.api("/api/calculators/run", {
+      const r = await apiFetch("/api/calculators/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: sel.value, params }),
+        timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：计算器真算时长不定
       });
       const box = T.$("tool-result");
       if (!r.ok) {
         T.$("tool-msg").textContent = "";
-        box.innerHTML = `<span style='color:var(--err)'>✗ ${esc(r.error)}</span>`;
+        // W14-S2 错误呈现归一（R2 Top10 #4）：内联 ✗ span → kitErrorPanel 单源
+        //（errorText 信封回退链；计算失败修复参数后重按「计算」，无重试钮）。
+        box.innerHTML = kitErrorPanel(errorText(r));
         return;
       }
-      T.$("tool-msg").textContent = "完成";
+      T.$("tool-msg").textContent = t("tools.done");
       // A3-A 结果可视化：数组/曲线形态自动画图（识别不了的形态如实降级），
       // JSON 键值表并列保留（数据诚实；长数组展示级折叠，不臆造数值）
       box.innerHTML = "";
@@ -739,7 +787,7 @@ export async function pageTools() {
   };
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 toolsCtx ═════════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 toolsCtx ═════════════
    refresh=计算器注册表目录重拉（pageTools 幂等——壳判 innerHTML 已在即跳过；
    重拉后选项表重建=与重进同语义，深链/hash 待选键优先恢复）。无轮询面，
    leave 不需要。 */

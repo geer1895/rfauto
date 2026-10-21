@@ -136,6 +136,33 @@ class Settings(BaseModel):
 # Loader
 # ---------------------------------------------------------------------------
 
+#: load_settings 会话缓存（架构批 W1-S4 Top6，仿 anchors_store mtime 键控）：
+#: 双 YAML 读+OmegaConf+pydantic（R3 实测 3.1ms/次、11 调用点）→ 签名命中
+#: 零 IO。签名=（_ENV_MAP 全部 env 现值, 双 YAML (mtime_ns,size)）——env 与
+#: 文件任一变化即刻失效（确定性签名，无需 TTL 兜底）；stat 失败按缺失计
+#: （与 .exists() 语义同向，#105：缓存面故障不阻塞主路径——任何异常回落
+#: 直算）。值存 Settings 实例、返回 model_copy——调用方改动不污染缓存。
+#: 已知盲窗（与 ui_service (mtime,size) 签名族同一暴露面，如实登记）：
+#: 同一次 NTFS 时间戳刻度内且**等字节数**的就地改写签名不变（罕见，人机
+#: 尺度配置编辑不受影响；测试重写用例一律变字节数，test_ui_service_cache
+#: json 重写钉同款处理）。
+_SETTINGS_CACHE: dict[tuple[Any, ...], Settings] = {}
+
+
+def _settings_signature(yaml_path: Path) -> tuple[Any, ...]:
+    def _fsig(p: Path) -> tuple[int, int] | None:
+        try:
+            st = p.stat()
+        except OSError:
+            return None
+        return (st.st_mtime_ns, st.st_size)
+
+    env = tuple(sorted((var, os.environ.get(var))
+                       for var in _ENV_MAP.values()))
+    return (env, _fsig(yaml_path),
+            _fsig(yaml_path.with_name("settings.local.yaml")))
+
+
 def load_settings(yaml_path: str | Path = _DEFAULT_YAML) -> Settings:
     """Load settings with 3-tier priority.
 
@@ -144,7 +171,25 @@ def load_settings(yaml_path: str | Path = _DEFAULT_YAML) -> Settings:
     2. YAML config file (``configs/settings.yaml``)，同目录
        ``settings.local.yaml``（gitignore 的本机路径覆盖）存在时后加载覆盖
     3. Code defaults
+
+    会话缓存（架构批 W1-S4）：签名=env 现值+双 YAML (mtime,size)——env
+    monkeypatch/文件改写即刻失效，命中时零文件 IO（同入参两次调用结果
+    逐字段一致）；返回深度拷贝，调用方可自由改动返回值。
     """
+    yaml_path = Path(yaml_path)
+    sig = (os.path.normcase(str(yaml_path.absolute())),
+           _settings_signature(yaml_path))
+    cached = _SETTINGS_CACHE.get(sig)
+    if cached is None:
+        cached = _load_settings_uncached(yaml_path)
+        try:
+            _SETTINGS_CACHE[sig] = cached
+        except TypeError:  # 签名不可哈希（理论不可达）——直算直返，不缓存
+            return cached
+    return cached.model_copy(deep=True)
+
+
+def _load_settings_uncached(yaml_path: Path) -> Settings:
     # Tier 3: code defaults
     merged = dict(_DEFAULT_SETTINGS)
 

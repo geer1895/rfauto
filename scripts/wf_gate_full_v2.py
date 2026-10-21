@@ -45,6 +45,7 @@ gate_parts/<name>.seg<i>.log/.xml + gate_parts/<name>.retry.log/.xml
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -156,10 +157,26 @@ def _collect_files() -> list[str]:
     return files
 
 
+def _slow_mode_args() -> list[str]:
+    """慢件分层三态（架构批 R3 #2，RFAUTO_GATE_SLOW_MODE）。
+
+    缺省/未知值=空（无差别全量，终门口径与数字链零影响）；
+    ``day``=-m "not slow"（日常轮跳过 slow 件）；``night``=-m slow
+    （只跑慢件夜档）。收官终门按约定不带 env 全量跑（#122：分层只是
+    日常轮省时，slow 件照常进终门，物理红永不隔离语义不变）。
+    """
+    mode = os.environ.get("RFAUTO_GATE_SLOW_MODE", "").strip().lower()
+    if mode == "day":
+        return ["-m", "not slow"]
+    if mode == "night":
+        return ["-m", "slow"]
+    return []
+
+
 def _run_segment(files: list[str], log_path: Path, xml_path: Path) -> dict:
     cmd = [PY, "-m", "pytest", *files, "-q", "--tb=line",
            "-p", "no:cacheprovider", f"--durations={DURATIONS_TOP}",
-           f"--junitxml={xml_path}"]
+           f"--junitxml={xml_path}", *_slow_mode_args()]
     with open(log_path, "w", encoding="utf-8", errors="replace") as fh:
         proc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
                               cwd=str(REPO_ROOT))
@@ -195,8 +212,10 @@ def main(argv: list[str] | None = None) -> int:
             chunks.append(files[start:end])
         start = end
 
+    slow_mode = os.environ.get("RFAUTO_GATE_SLOW_MODE", "").strip().lower()
     lines: list[str] = [
-        f"GATE_START v2 segments={len(chunks)} files={len(files)}",
+        f"GATE_START v2 segments={len(chunks)} files={len(files)}"
+        + (f" slow_mode={slow_mode}" if slow_mode in ("day", "night") else ""),
         "# 分段独立进程串行（内存随进程退出归还；#122 红线见脚本 docstring）",
     ]
     total_p = total_f = total_s = 0

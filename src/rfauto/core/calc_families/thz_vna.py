@@ -1,5 +1,13 @@
 """thz_vna 族（TH-2 TNVNA 扩频误差模型+跨带拼接键面，SB22-TH-2）。
 
+出处（经典 VNA 误差模型口径，内核 core/thz_vna.py 转录）：
+- tnvna_extender_error_model：一端口三项误差模型闭式反演+一阶
+  灵敏度 RSS 预算（经典 VNA 一端口误差模型，与 Pozar 一端口校准
+  同款；不确定度合成=NIST Microwave Uncertainty Framework 一阶
+  灵敏度 RSS 口径；带级标定随带失效 Hesler ISSTT 2010 语义）。
+- tnvna_band_stitch：相邻带重叠区线性权重拼接与一致性判据
+  （本仓确定性实现，阈值不 ship 标准门限——#122）。
+
 内核在 core/thz_vna.py（经典一端口三项误差模型闭式反演 + 一阶灵敏度
 RSS 预算 + 两带重叠线性权重拼接器；文献口径与守卫见该模块 docstring），
 本模块只做注册薄壳（同 cdr_mask/rx_impairments 惯例）。两键：

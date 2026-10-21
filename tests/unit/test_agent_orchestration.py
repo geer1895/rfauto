@@ -32,9 +32,8 @@ def _recipe(tmp_path: Path) -> Path:
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 首批单源化）。"""
     yield
 
 

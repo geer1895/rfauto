@@ -69,7 +69,18 @@ REGISTRY_EXPLICIT: dict[str, tuple[str, frozenset[str]]] = {
 #: 仅登记存在性，不得向 EMSolverRegistry 贡献键
 NON_REGISTRY: dict[str, str] = {
     "gpl/license_gate": "gpl/ 子包许可 fail-closed 双门（ge8c 席5，无注册副作用）",
-    "fake_adapter": "SimulatorAdapter 家族（optimization 消费点直连实例化）",
+    # 架构批 W4-S2（R1#8）：fake_adapter 拆包 8 子模块（T2 范式/AU-1 工艺，
+    # 门面保名 re-export；SimulatorAdapter 家族无注册副作用。包 __init__ 被
+    # 发现枚举排除（stem 过滤），键面=8 个子模块相对 posix 路径；
+    # NOT_EMSOLVER_CLASSES 的 "fake_adapter" 键照旧指包门面）
+    "fake_adapter/adapter": "fake_adapter 拆包子模块（FakeAdapter 主类）",
+    "fake_adapter/antenna_family": "fake_adapter 拆包子模块（天线/阵列族）",
+    "fake_adapter/calibration": "fake_adapter 拆包子模块（联合校准锚）",
+    "fake_adapter/coupler_family": "fake_adapter 拆包子模块（功分器/耦合器族）",
+    "fake_adapter/fault": "fake_adapter 拆包子模块（故障注入）",
+    "fake_adapter/filter_family": "fake_adapter 拆包子模块（滤波器族）",
+    "fake_adapter/slotline_family": "fake_adapter 拆包子模块（槽线/线圈族）",
+    "fake_adapter/tl_family": "fake_adapter 拆包子模块（传输线/基元族）",
     "hfss_adapter": "SimulatorAdapter 家族",
     "openems_optimizer_adapter": "SimulatorAdapter 家族（openems 优化评估通道）",
     "ads_python_api": "ADS 独立协议（A 档）",
@@ -114,7 +125,7 @@ NON_REGISTRY: dict[str, str] = {
     # EMSolverAdapter 契约、不注册 EMSolverRegistry；能力声明以字符串键
     # "edb" 集中在 em_solver_base 尾部——不扩枚举，TestEnumCoverage 口径）
     "edb_adapter": "PyEDB 建库+批处理求解请求通道（独立协议，非注册面）",
-    # aurora_d PYEDB-REG 批（2026-10-14，#373）：DotNet 通道 Ansys OpenSSL
+    # 架构批 PYEDB-REG 批（2026-10-14，#373）：DotNet 通道 Ansys OpenSSL
     # 预载 helper（纯 stdlib fail-soft 可选能力，函数级 API 零注册副作用）
     "pyedb_preload": "PyEDB OpenSSL DLL 预载 helper（fail-soft 工具层，非注册面）",
 }

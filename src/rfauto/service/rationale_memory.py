@@ -17,8 +17,10 @@ F11 增量（自进化经验记忆，§10.6 F11 / §10.18 第 8 条，与 F2/F3 
 from __future__ import annotations
 
 import contextlib
+import copy
 import json
 import math
+import os
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -27,6 +29,9 @@ from typing import Any
 
 from rfauto.service.envelope import error_envelope, ok_envelope
 
+# T1 解环：缓存原语改读 ui_scan_cache 叶（rationale→ui strict 环边断）
+from rfauto.service.ui_scan_cache import _UiScanCache
+
 _TOKEN = re.compile(r"[A-Za-z0-9_\u4e00-\u9fff]+")
 
 
@@ -34,52 +39,105 @@ def _tokenize(text: str) -> list[str]:
     return [t.lower() for t in _TOKEN.findall(text or "")]
 
 
+#: 语料快照缓存（架构批 W1-S4，R3 Top1-c）：runs/ 全表 meta/autotune/
+#: report 逐读（R3 实测 1803+ 次、~0.4s 级）→ 指纹键控进程内快照。
+#: 复用 ui_service._UiScanCache（RFAUTO_UI_CACHE=0 直通 + TTL 兜底 +
+#: 命中观测同源）；键=normcase(abs runs_dir)（build_index 任意 runs_dir
+#: 入参与 chdir 隔离）。
+_DOCS_CACHE = _UiScanCache("rationale_docs")
+
+
+def _corpus_signature(runs_dir: Path) -> tuple[Any, ...] | None:
+    """语料变化指纹（单次 scandir，Windows DirEntry 元数据零额外系统调用）。
+
+    = 顶层 mtime + 逐 run 目录 (name, mtime_ns) + agent_proposals 条目
+    (name, mtime_ns)。run 目录新增/删除/改名即刻失效；既有 run 内新落
+    语料文件（meta/autotune/report 落盘会改其所在 run 目录 mtime）随
+    目录 mtime 失效（NTFS 懒更新 racy）——就地改写既有语料文件由 TTL
+    兜底（宁多扫不多旧，与 ui_service 五端点族同一保守口径）。
+    扫描失败 → None（直通不缓存）。
+    """
+    try:
+        top = runs_dir.stat().st_mtime_ns
+        with os.scandir(runs_dir) as it:
+            dirs = [(e.name, e.stat(follow_symlinks=False).st_mtime_ns)
+                    for e in it if e.is_dir(follow_symlinks=False)]
+        props = runs_dir / "agent_proposals"
+        pfs: list[tuple[str, int]] = []
+        if props.is_dir():
+            with os.scandir(props) as it:
+                pfs = [(e.name, e.stat(follow_symlinks=False).st_mtime_ns)
+                       for e in it]
+    except OSError:
+        return None
+    dirs.sort()
+    pfs.sort()
+    return (top, tuple(dirs), tuple(pfs))
+
+
 def _collect_docs(runs_dir: Path) -> list[dict[str, str]]:
-    """扫描 runs/ 产物，收集 (doc_id, text) 理由语料。"""
-    docs: list[dict[str, str]] = []
-    for run in sorted(runs_dir.iterdir()):
-        if not run.is_dir() or run.name.startswith(("agent_proposals", ".")):
-            continue
-        meta = run / "meta.json"
-        if meta.exists():
-            try:
-                m = json.loads(meta.read_text(encoding="utf-8"))
-                docs.append({"id": f"{run.name}/meta",
-                             "text": json.dumps(m.get("metrics", {})
-                                                | {"algorithm": m.get("algorithm", ""),
-                                                   "adapter": m.get("adapter", ""),
-                                                   "model": m.get("model", "")},
-                                               ensure_ascii=False)})
-            except Exception:
-                pass
-        autotune = run / "autotune.json"
-        if autotune.exists():
-            try:
-                a = json.loads(autotune.read_text(encoding="utf-8"))
-                reasons = []
-                for h in a.get("history", []):
-                    for i in h.get("issues", []):
-                        reasons.append(json.dumps(i, ensure_ascii=False))
-                    for fx in h.get("fixes", []):
-                        reasons.append(f"{fx.get('kind')} {fx.get('param')} "
-                                       f"{fx.get('reason')}")
-                if reasons:
-                    docs.append({"id": f"{run.name}/autotune",
-                                 "text": " ".join(reasons)})
-            except Exception:
-                pass
-        report = run / "calibration" / "report.md"
-        if report.exists():
-            with contextlib.suppress(Exception):
-                docs.append({"id": f"{run.name}/calibration",
-                             "text": report.read_text(encoding="utf-8")})
-    proposals = runs_dir / "agent_proposals"
-    if proposals.exists():
-        for pf in sorted(proposals.glob("*.json")):
-            with contextlib.suppress(Exception):
-                docs.append({"id": f"agent_proposals/{pf.name}",
-                             "text": pf.read_text(encoding="utf-8")})
-    return docs
+    """扫描 runs/ 产物，收集 (doc_id, text) 理由语料。
+
+    缓存（架构批 W1-S4）：指纹命中时零文件读，返回缓存列表的 deepcopy
+    结构隔离（对齐 ui_service run_detail/_endpoint_snapshot 先例——浅拷贝
+    +约定只读在调用方写 `d[...]` 时会跨请求污染缓存，审查波 2 P3-2 收账；
+    语料条目小，deepcopy 代价可忽）。
+    """
+
+    def _produce() -> list[dict[str, str]]:
+        docs: list[dict[str, str]] = []
+        for run in sorted(runs_dir.iterdir()):
+            if not run.is_dir() or run.name.startswith(
+                    ("agent_proposals", ".")):
+                continue
+            meta = run / "meta.json"
+            if meta.exists():
+                try:
+                    m = json.loads(meta.read_text(encoding="utf-8"))
+                    docs.append({"id": f"{run.name}/meta",
+                                 "text": json.dumps(
+                                     m.get("metrics", {})
+                                     | {"algorithm": m.get("algorithm", ""),
+                                        "adapter": m.get("adapter", ""),
+                                        "model": m.get("model", "")},
+                                     ensure_ascii=False)})
+                except Exception:
+                    pass
+            autotune = run / "autotune.json"
+            if autotune.exists():
+                try:
+                    a = json.loads(autotune.read_text(encoding="utf-8"))
+                    reasons = []
+                    for h in a.get("history", []):
+                        for i in h.get("issues", []):
+                            reasons.append(json.dumps(i, ensure_ascii=False))
+                        for fx in h.get("fixes", []):
+                            reasons.append(f"{fx.get('kind')} "
+                                           f"{fx.get('param')} "
+                                           f"{fx.get('reason')}")
+                    if reasons:
+                        docs.append({"id": f"{run.name}/autotune",
+                                     "text": " ".join(reasons)})
+                except Exception:
+                    pass
+            report = run / "calibration" / "report.md"
+            if report.exists():
+                with contextlib.suppress(Exception):
+                    docs.append({"id": f"{run.name}/calibration",
+                                 "text": report.read_text(encoding="utf-8")})
+        proposals = runs_dir / "agent_proposals"
+        if proposals.exists():
+            for pf in sorted(proposals.glob("*.json")):
+                with contextlib.suppress(Exception):
+                    docs.append({"id": f"agent_proposals/{pf.name}",
+                                 "text": pf.read_text(encoding="utf-8")})
+        return docs
+
+    runs_dir = Path(runs_dir)
+    docs = _DOCS_CACHE.get(
+        (os.path.normcase(str(runs_dir.absolute())), "corpus"),
+        _corpus_signature(runs_dir), _produce)
+    return copy.deepcopy(docs)
 
 
 def build_index(runs_dir: str | Path = "runs") -> dict[str, Any]:

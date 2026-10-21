@@ -1,4 +1,10 @@
-"""UI 响应 CSP 策略单源（哈希钉常量 + 纯 ASGI 中间件）——自 ui/server.py 逐字节搬家。
+"""UI 响应安全头单源（CSP 哈希钉常量 + 安全头批 + 纯 ASGI 中间件）。
+
+自 ui/server.py 逐字节搬家（D-04）起步；架构批 W1-S1（R1 审计 P9-14
+v9 Top2）扩为安全头批单源：中间件在 CSP 之外同点附加
+``X-Content-Type-Options: nosniff``（/runs 挂载服务任意 run 产物
+svg/html，防 MIME 嗅探）与 ``Referrer-Policy:
+strict-origin-when-cross-origin``（guide 页外链点击不泄内部全路径）。
 
 装配面（middleware=[Middleware(ContentSecurityPolicyMiddleware)]）仍在
 ui/server.py create_ui_app；server.py 薄 re-export CSP_HEADER/CSP_VALUE/
@@ -15,7 +21,7 @@ from starlette.datastructures import MutableHeaders
 # 内容哈希钉。接地（index.html 现状）：7 个 <script> 中 5 个外链
 # （3 vendor + 2 module），2 个内联：<script type="importmap">（外部
 # importmap 浏览器不支持，改外链不可行）与主题防闪 boot（head，guide
-# §13.1，aurora36 W2-A）；'unsafe-inline' 又会豁免全部
+# §13.1，架构批 W2-A）；'unsafe-inline' 又会豁免全部
 # 内联脚本，故按 CSP3 对内联脚本内容逐个做 sha256 哈希钉：任何内联内容
 # 改动都会被浏览器拒绝加载，tests/unit/test_w1e_ui_csp.py 会同步抓出
 # 哈希失配。只下 script-src 单指令、不下 default-src（index.html 有内联
@@ -24,16 +30,30 @@ from starlette.datastructures import MutableHeaders
 # on* 属性），不受 script-src 影响；vendor/echarts.min.js 里的 new Function
 # 是 JSON.parse 守卫后的死回退分支（实测运行路径不触），无需 unsafe-eval。
 _IMPORTMAP_SHA256 = "sha256-IpwqAkJYJf7czCtp9NzVZDetH2T3BlxA1lkI/4V7auk="
-# aurora36 W2-A（2026-10-11）：第二个内联脚本=主题防闪 boot（index.html head，
+# 架构批 W2-A（2026-10-11）：第二个内联脚本=主题防闪 boot（index.html head，
 # guide §13.1 FOUC）——同规则 sha256 哈希钉；改 boot 内容必须同步本常量
 # （tests/unit/test_w1e_ui_csp.py 与 tests/unit/test_ui_theme_boot.py 双门抓失配）。
 _THEME_BOOT_SHA256 = "sha256-F/hJthl5Fxg/BFdnyqcIIpWA0NcaJN8FAJ+NNYiFrpk="
 CSP_HEADER = "Content-Security-Policy"
-CSP_VALUE = f"script-src 'self' '{_IMPORTMAP_SHA256}' '{_THEME_BOOT_SHA256}'"
+# 架构批 W1-S1（R1 审计 P9-14，v9 Top2）：追加四道加固指令——零破坏实证
+# （index.html `<iframe|<form` 计数=0，UI 无外发 POST 表单；哈希双门
+# （内联脚本）不触）。改值即新基线（test_w1e_ui_csp 头值==本常量单源比对）。
+_CSP_HARDENING = ("; frame-ancestors 'none'; base-uri 'self'; "
+                  "form-action 'self'; object-src 'none'")
+CSP_VALUE = (f"script-src 'self' '{_IMPORTMAP_SHA256}' '{_THEME_BOOT_SHA256}'"
+             f"{_CSP_HARDENING}")
+
+# ── 安全头批（P9-14 同笔；同一中间件单点附加，全响应统一）──────────────
+#: 防 MIME 嗅探（/runs 挂载服务任意 run 产物，svg/html 防嗅探有实际意义）
+NOSNIFF_HEADER = "X-Content-Type-Options"
+NOSNIFF_VALUE = "nosniff"
+#: 外链点击只发 origin（跨域不泄内部全路径；同域完整 referrer 保留）
+REFERRER_POLICY_HEADER = "Referrer-Policy"
+REFERRER_POLICY_VALUE = "strict-origin-when-cross-origin"
 
 
 class ContentSecurityPolicyMiddleware:
-    """纯 ASGI 中间件：全部 HTTP 响应附加 CSP 头（D-04）。
+    """纯 ASGI 中间件：全部 HTTP 响应附加 CSP 头 + 安全头批（D-04/P9-14）。
 
     setitem 覆写语义保证重复包裹/上游已有同名头时单头不叠；非 http scope
     （websocket/lifespan，如 SSE 由 http 起步不受影响）原样直通（#105：
@@ -53,6 +73,8 @@ class ContentSecurityPolicyMiddleware:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
                 headers[CSP_HEADER] = CSP_VALUE
+                headers[NOSNIFF_HEADER] = NOSNIFF_VALUE
+                headers[REFERRER_POLICY_HEADER] = REFERRER_POLICY_VALUE
             await send(message)
 
         await self.app(scope, receive, send_with_csp)

@@ -176,7 +176,7 @@ class TestRepoArtifactsAndNoNetwork:
             ri["identifier"] == "https://github.com/geer1895/rfauto"
             for ri in m["related_identifiers"])
         blob = json.dumps(m, ensure_ascii=False)
-        for needle in ("E:\\", "E:/", "DEV" + "LOG", "AGENT_" + "HANDOFF", "任务书"):
+        for needle in ("E:\\", "E:/", "DEV" + "LOG", "TO" + "DO.md", "handoff"):
             assert needle not in blob, f"敏感串 {needle!r} 泄入发布元数据"
 
     def test_module_has_zero_network_surface(self):

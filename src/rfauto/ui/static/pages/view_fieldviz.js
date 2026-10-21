@@ -1,9 +1,15 @@
-/* rfauto 场/远场可视化页族（aurora_d UI-R2 自 pages.js 拆出，逐字节
+/* rfauto 场/远场可视化页族（架构批 UI-R2 自 pages.js 拆出，逐字节
    搬移）：远场极坐标（nf2ff）+ Smith 圆图（G9，S 参数页复用）+ 场切片
    热图/等值面/远场 3D（DumpHDF5）。W3-S12（R6 审计 P-5）：polar/Smith/
    custom/heatmap 四管线不在 plotcard builder 能力面，经 plotCard
    props.option 逃生舱接入壳（导出/复用/主题联动单源），option 构造保留
-   自研；等值面 three.js 管线不动。 */
+   自研；等值面 three.js 管线不动。
+   i18n（发布前置软编码批 S1 全清）：壳/help 块分段 t()、指标行/切片头/
+   等值面状态/aria 全迁词表（fieldviz.* 键域，zh 与旧字面逐字节同、en
+   新增）——拼接数据段（run_id/模板名/引擎名/警告串）照旧 esc 后拼模板，
+   词表值零 HTML；壳静态标签 data-i18n+applyI18nRoot 首扫（farfield/field
+   两页各自 v 根）。series 名（φ=… pattern_db（x=θ°）等纯 ASCII/希腊记号）
+   与图表错误前缀（polar error: 等协议形态）保留原文。 */
 
 import { HEAT_BAND, ISO_BAND, THEME_COLORS, themePick } from "../theme.js";
 import {
@@ -12,22 +18,36 @@ import {
   releaseWebGLIn,
   smithChartTheme, // UI-R5：Smith 网格/轨迹色对走 charts 层选项工厂
 } from "./charts.js";
-import { S, T } from "./context.js";
+import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
+// i18n（S1 全清）：壳静态标签 data-i18n+首扫；动态容器文案 t() 渲染期烘焙。
+import { t, applyI18nRoot } from "./i18n.js";
 import { showPage } from "./router.js";
+// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本文件 4 点，
+// 双视图键）——farfield 页数据面接 viewSignal("farfield")、field 页数据面接
+// viewSignal("field")，切页收束 + aborted 短路（在途拉取不再写隐藏区）。
+// 信封消费形态逐键不变。
+import { apiFetch, viewSignal } from "./api.js";
 
 /* ── 远场极坐标页（WP4.1/D4：nf2ff 方向图 + 增益/效率/SAR）───────────── */
 let _fieldReload = null; // R-1：refresh 局部刷新转发登记（fieldCtx 消费，pageField 内赋值）
+
+/* 页私有选中记忆（W6-S2 S 状态收编：原 S.ffRunId/S.fvRunId/S.fvDump 单模块
+   私有键降级模块级——属主=本模块双页共壳，契约表见 context.js；_ffRunId
+   跨页带值语义（fv-polar→farfield）不变）。 */
+let _ffRunId = null;
+let _fvRunId = null;
+let _fvDump = null;
 
 export async function pageFarfield() {
   const v = T.$("view-farfield");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li>数据源 = openEMS 真跑 run 的 nf2ff 产物（模板 far_field/sar=True 渲染：farfield_cut/3d.csv + farfield_meta.json + sar.csv）。</li>
-      <li>极坐标切面：φ=0°（xz 面）与 φ=90°（yz 面），θ −180..180°，dB 相对峰值归一。</li>
-      <li>指标口径（官方 nf2ff 教程）：Dmax=方向性（dBi），η=Prad/P_acc（辐射效率），G=η·D；HPBW=半功率波瓣宽度；功率闭合=|P_acc−Prad|/P_acc（SAR 注入时 P_acc−Prad=组织吸收）。</li>
-      <li>SAR（官方 Dipole SAR 教程）：IEEE_62704 1g 平均，含 1W 接受功率归一值。</li>`) +
-    `<h2 class='page'>远场方向图<small>nf2ff · 方向图/增益/效率 · SAR</small></h2>
+      <li>${t("fieldviz.ff_help_1")}</li>
+      <li>${t("fieldviz.ff_help_2")}</li>
+      <li>${t("fieldviz.ff_help_3")}</li>
+      <li>${t("fieldviz.ff_help_4")}</li>`) +
+    `<h2 class='page'><span data-i18n='fieldviz.ff_title'>${t("fieldviz.ff_title")}</span><small data-i18n='fieldviz.ff_subtitle'>${t("fieldviz.ff_subtitle")}</small></h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b>
          <select id='ff-run' style='max-width:340px'></select>
@@ -36,45 +56,50 @@ export async function pageFarfield() {
        <div id='ff-polar'></div>
        <div id='ff-sar'></div>
      </div>`;
-  const runs = (await T.api("/api/farfield")).runs || [];
+  applyI18nRoot(v); // 壳静态标签首扫（S1 全清；幂等，动态容器走 t() 烘焙）
+  const runsResp = await apiFetch("/api/farfield",
+    { signal: viewSignal("farfield") });
+  if (runsResp.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
+  const runs = runsResp.runs || [];
   const sel = T.$("ff-run");
   if (!runs.length) {
-    sel.innerHTML = "<option>（无远场产物 run）</option>";
-    T.$("ff-info").textContent =
-      "先用 openEMS 通道以 far_field=True 渲染并真跑 patch/dipole 模板";
+    sel.innerHTML = "<option>" + t("fieldviz.ff_empty_opt") + "</option>";
+    T.$("ff-info").textContent = t("fieldviz.ff_empty_info");
     return;
   }
   sel.innerHTML = runs.map((r) =>
     `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}${r.has_sar ? " ·SAR" : ""}</option>`).join("");
-  if (S.ffRunId) sel.value = S.ffRunId;
+  if (_ffRunId) sel.value = _ffRunId;
 
   async function load() {
-    S.ffRunId = sel.value;
-    const d = await T.api("/api/farfield/" + encodeURIComponent(sel.value));
+    _ffRunId = sel.value;
+    const d = await apiFetch("/api/farfield/" + encodeURIComponent(sel.value),
+      { signal: viewSignal("farfield") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     if (!d.ok) { T.$("ff-info").textContent = (d.errors || []).join("; "); return; }
-    T.$("ff-info").textContent = `模板 ${d.template || "?"} · f_res=${(d.metrics.f_res_ghz ?? 0).toFixed(3)} GHz`;
+    T.$("ff-info").textContent = t("fieldviz.tpl_label") + `${d.template || "?"} · f_res=${(d.metrics.f_res_ghz ?? 0).toFixed(3)} GHz`;
     const m = d.metrics || {};
     const fmt = (x, unit, digits = 2) => (x === null || x === undefined || Number.isNaN(+x))
       ? "N/A" : `${(+x).toFixed(digits)}${unit}`;
     T.$("ff-metrics").innerHTML = [
-      `方向性 <b>${fmt(m.dmax_dbi, " dBi")}</b>`,
-      `峰值增益 <b>${fmt(m.gain_max_dbi, " dBi")}</b>`,
-      `辐射效率 <b>${fmt(m.efficiency !== null && m.efficiency !== undefined ? m.efficiency * 100 : null, "%", 1)}</b>`,
-      `功率闭合 <b>${fmt(m.power_budget_closure === null || m.power_budget_closure === undefined ? null : m.power_budget_closure * 100, "%", 2)}</b>`,
+      t("fieldviz.m_dmax") + `<b>${fmt(m.dmax_dbi, " dBi")}</b>`,
+      t("fieldviz.m_gain") + `<b>${fmt(m.gain_max_dbi, " dBi")}</b>`,
+      t("fieldviz.m_eff") + `<b>${fmt(m.efficiency !== null && m.efficiency !== undefined ? m.efficiency * 100 : null, "%", 1)}</b>`,
+      t("fieldviz.m_closure") + `<b>${fmt(m.power_budget_closure === null || m.power_budget_closure === undefined ? null : m.power_budget_closure * 100, "%", 2)}</b>`,
     ].concat(m.eta_gate ? [
       // patch 族 η 门（服务层 farfield_view 复用 patch_eta_gate 判读，此处只渲染，与场页同口径）
-      `η 门 <b style='color:var(${m.eta_gate.ok === null ? "--muted" : m.eta_gate.ok ? "--ok" : "--err"})'>${m.eta_gate.ok === null ? "N/A" : m.eta_gate.ok ? "PASS" : "FAIL"}</b> [${esc(m.eta_gate.gate.join(", "))}]`,
+      t("fieldviz.m_eta_gate") + `<b style='color:var(${m.eta_gate.ok === null ? "--muted" : m.eta_gate.ok ? "--ok" : "--err"})'>${m.eta_gate.ok === null ? "N/A" : m.eta_gate.ok ? "PASS" : "FAIL"}</b> [${esc(m.eta_gate.gate.join(", "))}]`,
     ] : []).concat((m.sar && m.sar.ok !== false) ? [
-      `SAR(1g) <b>${fmt(m.sar.sar_max_w_per_kg_per_1w_acc, " W/kg/W", 3)}</b> @1W接受`,
-      `吸收占比 <b>${fmt(m.sar.absorbed_fraction === null || m.sar.absorbed_fraction === undefined ? null : m.sar.absorbed_fraction * 100, "%", 1)}</b>`,
+      `SAR(1g) <b>${fmt(m.sar.sar_max_w_per_kg_per_1w_acc, " W/kg/W", 3)}</b>` + t("fieldviz.m_sar_acc"),
+      t("fieldviz.m_absorbed") + `<b>${fmt(m.sar.absorbed_fraction === null || m.sar.absorbed_fraction === undefined ? null : m.sar.absorbed_fraction * 100, "%", 1)}</b>`,
     ] : []).map((s) => `<span>${s}</span>`).join("");
     // 极坐标切面（echarts polar：angleAxis=θ，radiusAxis=dB）
     const box = T.$("ff-polar");
     disposeChartsIn(box); // P0-5：子树重建前释放旧切面图实例（缓存键随元素走）
     box.innerHTML = (d.cuts || []).map((c, i) =>
-      `<div style='margin-bottom:var(--space-2)'><b class='muted'>φ=${c.phi_deg}° 切面` +
-      `（HPBW ${c.hpbw_deg === null ? "N/A" : c.hpbw_deg.toFixed(1) + "°"} · ` +
-      `F/B ${c.front_to_back_db === null ? "N/A" : c.front_to_back_db.toFixed(1) + " dB"}）</b>` +
+      `<div style='margin-bottom:var(--space-2)'><b class='muted'>φ=${c.phi_deg}°` + t("fieldviz.cut_label") +
+      t("fieldviz.cut_hpbw_pre") + `${c.hpbw_deg === null ? "N/A" : c.hpbw_deg.toFixed(1) + "°"} · ` +
+      `F/B ${c.front_to_back_db === null ? "N/A" : c.front_to_back_db.toFixed(1) + " dB"}` + t("fieldviz.paren_close") + `</b>` +
       `<div id='ff-pol-${i}'></div></div>`).join("");
     (d.cuts || []).forEach((c, i) => {
       try {
@@ -110,7 +135,8 @@ export async function pageFarfield() {
                      x: c.theta_deg, y: c.pattern_db }],
           height: "360px",
           exportName: "farfield-polar-phi" + c.phi_deg,
-          ariaLabel: `图表：φ=${c.phi_deg}° 远场方向图切面（θ −180..180°，dB 相对峰值归一，HPBW ${c.hpbw_deg === null ? "N/A" : c.hpbw_deg.toFixed(1) + "°"}）`,
+          ariaLabel: t("fieldviz.aria_chart") + `φ=${c.phi_deg}°` + t("fieldviz.polar_aria_mid") +
+            `${c.hpbw_deg === null ? "N/A" : c.hpbw_deg.toFixed(1) + "°"}` + t("fieldviz.paren_close"),
         });
       } catch (e) {
         T.$(`ff-pol-${i}`).innerHTML = `<span style="color:var(--err)">polar error: ${esc(e.message)}</span>`;
@@ -118,18 +144,18 @@ export async function pageFarfield() {
     });
     // SAR 块（有产物才渲染）
     T.$("ff-sar").innerHTML = (m.sar && m.sar.ok !== false)
-      ? `<div class='muted' style='margin-top:6px'>SAR：IEEE_62704 1g 平均` +
-        `（f_res=${(m.f_res_ghz ?? 0).toFixed(3)} GHz · ` +
-        `原始值 ${fmt(m.sar.sar_max_w_per_kg, " W/kg", 3)}；归一值按 1W 端口接受功率折算）</div>`
+      ? `<div class='muted' style='margin-top:6px'>` + t("fieldviz.sar_note_lead") +
+        t("fieldviz.sar_f_pre") + `${(m.f_res_ghz ?? 0).toFixed(3)} GHz · ` +
+        t("fieldviz.sar_note_raw_lead") + `${fmt(m.sar.sar_max_w_per_kg, " W/kg", 3)}` + t("fieldviz.sar_note_tail") + `</div>`
       : "";
   }
   sel.onchange = load;
   await load();
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 farfieldCtx ══════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 farfieldCtx ══════════
    refresh=当前 run 方向图/指标重拉（pageFarfield 幂等——壳判 innerHTML 已在
-   即跳过，S.ffRunId 选择态保留；plotCard 壳同容器复用换数据）。无轮询面，
+   即跳过，_ffRunId 选择态保留；plotCard 壳同容器复用换数据）。无轮询面，
    leave 不需要。 */
 export const farfieldCtx = {
   refresh: () => pageFarfield(),
@@ -203,12 +229,15 @@ export function drawSmith(el, traces, grid, z0) {
       exportName: "smith-chart",
       // PR-1 a11y：图像语义（轨迹名 + Z0 进 aria-label，读屏可闻；plotCard
       // 壳把 role=img/aria-label 落在图表容器 chartDiv 上）
-      ariaLabel: `Smith 圆图：${(traces.map((t) => t.label || t.name)).join("、") || "无轨迹"}（Z0=${z0 ?? 50}Ω）`,
+      ariaLabel: t("fieldviz.smith_aria_lead") +
+        `${(traces.map((tr) => tr.label || tr.name)).join("、") || t("fieldviz.smith_aria_none")}（Z0=${z0 ?? 50}Ω）`,
     });
     const note = document.createElement("div");
     note.className = "muted";
     note.style.marginTop = "4px";
-    note.textContent = `Z0 = ${z0 ?? 50} Ω · 网格 r=${(grid ? grid.r_circles.map((c) => c.r) : []).join("/")}、±x 同档 · 轨迹点 = 各频点 Γ（起点=首频）`;
+    note.textContent = `Z0 = ${z0 ?? 50} Ω · ` + t("fieldviz.smith_note_grid") +
+      `${(grid ? grid.r_circles.map((c) => c.r) : []).join("/")}` + t("fieldviz.smith_note_mid") +
+      t("fieldviz.smith_note_trace");
     el.parentElement.appendChild(note);
     return chart;
   } catch (e) {
@@ -282,7 +311,8 @@ function drawFieldSlice(el, slice, contours, vmin) {
       })),
       height: "300px",
       exportName: "field-slice-" + slice.axis + slice.index,
-      ariaLabel: `图表：${slice.axis}=${slice.position_mm}mm 场切片热图（${slice.u_axis}×${slice.v_axis}，|E| dB 相对体峰值）`,
+      ariaLabel: t("fieldviz.aria_chart") + `${slice.axis}=${slice.position_mm}mm` +
+        t("fieldviz.slice_aria_mid") + `${slice.u_axis}×${slice.v_axis}` + t("fieldviz.slice_aria_tail"),
     });
     return chart;
   } catch (e) {
@@ -291,9 +321,13 @@ function drawFieldSlice(el, slice, contours, vmin) {
   }
 }
 
-/* PyVista 等值面三角网 → three.js（顶点按 dB 着色；无 PyVista 时服务层不给此块） */
-function drawIsoMesh(container, iso) {
-  const THREE = T.THREE;
+/* PyVista 等值面三角网 → three.js（顶点按 dB 着色；无 PyVista 时服务层不给此块）
+   P8-2（架构批 W3-S9，R1 §面1 重审）：T.THREE 同步取改调用点
+   `await import("three")` 惰性取（app.js 顶层静态 import 与工具包 THREE 键
+   已同批移除）——本函数改 async，唯一调用点（pageField.load 等值面分支）
+   fire-and-forget 不消费返回值，行为等价；模块缓存命中后 await 立即返回。 */
+async function drawIsoMesh(container, iso) {
+  const THREE = await import("three");
   // P0-4：本管线 renderer 自登记（_isoRenderers）——重建前完全释放上一代
   // （停动画循环 → dispose → forceContextLoss）；容器被 pageField 换血的
   // 场景由 load() 里的 releaseWebGLIn(isoEl) 兜底。
@@ -359,7 +393,9 @@ function drawIsoMesh(container, iso) {
   renderer.setAnimationLoop(() => renderer.render(scene, camera));
   const legend = document.createElement("div");
   legend.className = "legend3d";
-  legend.innerHTML = `<span class='muted'>等值面 ${iso.levels_db.join("/")} dB（相对峰值）· ${iso.n_vertices} 顶点 / ${iso.n_faces} 三角 · 顶点色=dB（蓝低→红高）· 拖动旋转 / 滚轮缩放</span>`;
+  legend.innerHTML = `<span class='muted'>` + t("fieldviz.iso_legend_lead") + `${iso.levels_db.join("/")}` +
+    t("fieldviz.iso_legend_mid") + `${iso.n_vertices}` + t("fieldviz.iso_legend_verts") + `${iso.n_faces}` +
+    t("fieldviz.iso_legend_faces") + `</span>`;
   container.appendChild(legend);
 }
 
@@ -392,7 +428,7 @@ function drawPattern3d(el, p) {
       })),
       height: "300px",
       exportName: "farfield-3d-heatmap",
-      ariaLabel: "图表：远场 3D 方向图 θ×φ 热图（dB 相对峰值）",
+      ariaLabel: t("fieldviz.pattern_aria"),
     });
   } catch (e) {
     el.innerHTML = `<span style="color:var(--err)">pattern error: ${esc(e.message)}</span>`;
@@ -403,66 +439,72 @@ export async function pageField() {
   const v = T.$("view-field");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li>数据源 = openEMS 真跑 run 的 DumpHDF5 产物：nf2ff 盒六面 nf2ff_E_*.h5（时域包络 max|E(t)|）、SAR_raw.h5（频域 |E(f0)|）、SAR_1g.h5（标量 SAR 体）。</li>
-      <li>切片：三轴中面 |E| 热图（dB 相对体峰值，单元格按真实 mm 网格绘制），拖滑块改切片索引；等值线 −3/−10/−20 dB 叠加（可改）。</li>
-      <li>等值面：安装 extras <code>rfauto[viz3d]</code>（PyVista/VTK）后为三角网 3D（three.js 渲染）；未安装时诚实降级为切片等值线（engine 标签可见）。</li>
-      <li>远场 3D 图（farfield_3d.h5，θ×φ 热图）与 D4 指标（farfield_meta.json）联动；「→ 远场极坐标页」跳到同一 run 的极坐标切面。</li>`) +
-    `<h2 class='page'>场可视化 3D<small>DumpHDF5 切片 / 等值面 / 远场 3D</small></h2>
+      <li>${t("fieldviz.help_1")}</li>
+      <li>${t("fieldviz.help_2")}</li>
+      <li>${t("fieldviz.help_3_lead")}<code>rfauto[viz3d]</code>${t("fieldviz.help_3_tail")}</li>
+      <li>${t("fieldviz.help_4")}</li>`) +
+    `<h2 class='page'><span data-i18n='fieldviz.title'>${t("fieldviz.title")}</span><small data-i18n='fieldviz.subtitle'>${t("fieldviz.subtitle")}</small></h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b>
          <select id='fv-run' style='max-width:300px'></select>
          <b>dump</b><select id='fv-dump' style='max-width:220px'></select>
-         <b>等值线 dB</b><input id='fv-levels' value='-3,-10,-20' style='width:110px'>
-         <button class='minor' id='fv-reload'>刷新</button>
-         <button class='minor' id='fv-polar'>→ 远场极坐标页</button>
+         <b data-i18n='fieldviz.levels_label'>${t("fieldviz.levels_label")}</b><input id='fv-levels' value='-3,-10,-20' style='width:110px'>
+         <button class='minor' id='fv-reload' data-i18n='fieldviz.reload'>${t("fieldviz.reload")}</button>
+         <button class='minor' id='fv-polar' data-i18n='fieldviz.goto_polar'>${t("fieldviz.goto_polar")}</button>
          <span id='fv-info' class='muted'></span></div>
        <div id='fv-metrics' class='toolbar' style='flex-wrap:wrap;gap:14px'></div>
        <div id='fv-slices'></div>
        <div id='fv-iso'></div>
        <div id='fv-pattern'></div>
      </div>`;
-  const listing = await T.api("/api/field");
+  applyI18nRoot(v); // 壳静态标签首扫（S1 全清；幂等，动态容器走 t() 烘焙）
+  const listing = await apiFetch("/api/field", { signal: viewSignal("field") });
+  if (listing.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   const runs = listing.runs || [];
   const sel = T.$("fv-run"), dsel = T.$("fv-dump");
   if (!runs.length) {
-    sel.innerHTML = "<option>（无场 dump run）</option>";
-    T.$("fv-info").textContent = "先用 openEMS 通道以 far_field=True / sar=True 真跑 patch/dipole 模板（nf2ff 盒面 dump 即可）";
+    sel.innerHTML = "<option>" + t("fieldviz.empty_opt") + "</option>";
+    T.$("fv-info").textContent = t("fieldviz.empty_info");
     return;
   }
   sel.innerHTML = runs.map((r) =>
-    `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.n_dumps)} dump${r.has_farfield_h5 ? " · 远场3D" : ""}）</option>`).join("");
-  if (S.fvRunId) sel.value = S.fvRunId;
+    `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}` + t("fieldviz.opt_pre") +
+    `${esc(r.n_dumps)} dump${r.has_farfield_h5 ? t("fieldviz.opt_farfield") : ""}` +
+    t("fieldviz.paren_close") + `</option>`).join("");
+  if (_fvRunId) sel.value = _fvRunId;
   const fillDumps = () => {
     const r = runs.find((x) => x.run_id === sel.value) || runs[0];
     dsel.innerHTML = r.dumps.map((d) => `<option value='${escAttr(d)}'>${esc(d)}</option>`).join("");
-    if (S.fvDump && r.dumps.includes(S.fvDump)) dsel.value = S.fvDump;
+    if (_fvDump && r.dumps.includes(_fvDump)) dsel.value = _fvDump;
   };
   fillDumps();
   const sliceIdx = {};
 
   async function load() {
-    S.fvRunId = sel.value; S.fvDump = dsel.value;
+    _fvRunId = sel.value; _fvDump = dsel.value;
     const q = new URLSearchParams({ dump: dsel.value, levels: T.$("fv-levels").value });
     for (const [ax, i] of Object.entries(sliceIdx)) q.set(`s${ax}`, i);
-    const d = await T.api(`/api/field/${encodeURIComponent(sel.value)}?${q}`);
+    const d = await apiFetch(`/api/field/${encodeURIComponent(sel.value)}?${q}`,
+      { signal: viewSignal("field") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const info = T.$("fv-info");
     if (!d.ok) { info.textContent = (d.errors || []).join("; "); return; }
     const vol = d.volume;
     info.innerHTML = `${vol.shape.join("×")} · ${esc(vol.domain)}${vol.frequency_ghz ? " · f=" + vol.frequency_ghz.toFixed(4) + " GHz" : ""}` +
-      `${vol.n_timesteps ? " · " + vol.n_timesteps + " 步包络" : ""} · 峰值 ${Number(vol.peak).toExponential(3)} · ` +
-      `引擎 <b>${esc(d.engine)}</b>${listing.viz3d_available ? "" : "（PyVista 未装，等值面降级为等值线）"}` +
+      `${vol.n_timesteps ? " · " + vol.n_timesteps + t("fieldviz.info_steps") : ""}` + t("fieldviz.info_peak") + `${Number(vol.peak).toExponential(3)} · ` +
+      t("fieldviz.info_engine") + `<b>${esc(d.engine)}</b>${listing.viz3d_available ? "" : t("fieldviz.info_noviz3d")}` +
       (d.warnings.length ? `<br><span style='color:var(--err)'>${esc(d.warnings.join("；"))}</span>` : "");
     // D4 指标联动
     const m = d.farfield_metrics;
     const fmt = (x, unit, digits = 2) => (x === null || x === undefined || Number.isNaN(+x)) ? "N/A" : `${(+x).toFixed(digits)}${unit}`;
     T.$("fv-metrics").innerHTML = m ? [
-      `模板 <b>${esc(m.template || "?")}</b>`, `f_res <b>${fmt(m.f_res_ghz, " GHz", 3)}</b>`,
-      `方向性 <b>${fmt(m.dmax_dbi, " dBi")}</b>`, `峰值增益 <b>${fmt(m.gain_max_dbi, " dBi")}</b>`,
-      `辐射效率 <b>${fmt(m.efficiency === null || m.efficiency === undefined ? null : m.efficiency * 100, "%", 1)}</b>`,
+      t("fieldviz.tpl_label") + `<b>${esc(m.template || "?")}</b>`, `f_res <b>${fmt(m.f_res_ghz, " GHz", 3)}</b>`,
+      t("fieldviz.m_dmax") + `<b>${fmt(m.dmax_dbi, " dBi")}</b>`, t("fieldviz.m_gain") + `<b>${fmt(m.gain_max_dbi, " dBi")}</b>`,
+      t("fieldviz.m_eff") + `<b>${fmt(m.efficiency === null || m.efficiency === undefined ? null : m.efficiency * 100, "%", 1)}</b>`,
       // PEC 地镜像修正因子 + patch 族 η 门（服务层 correct_pec_mirror/patch_eta_gate 判读，此处只渲染）
-      ...(m.pec_mirror_factor && m.pec_mirror_factor !== 1 ? [`镜像修正 <b>Prad÷${esc(m.pec_mirror_factor)}</b>`] : []),
-      ...(m.eta_gate ? [`η 门 <b style='color:var(${m.eta_gate.ok === null ? "--muted" : m.eta_gate.ok ? "--ok" : "--err"})'>${m.eta_gate.ok === null ? "N/A" : m.eta_gate.ok ? "PASS" : "FAIL"}</b> [${esc(m.eta_gate.gate.join(", "))}]`] : []),
-    ].map((s) => `<span>${s}</span>`).join("") : `<span class='muted'>（无 farfield_meta.json：D4 指标不可用）</span>`;
+      ...(m.pec_mirror_factor && m.pec_mirror_factor !== 1 ? [t("fieldviz.m_mirror") + `<b>Prad÷${esc(m.pec_mirror_factor)}</b>`] : []),
+      ...(m.eta_gate ? [t("fieldviz.m_eta_gate") + `<b style='color:var(${m.eta_gate.ok === null ? "--muted" : m.eta_gate.ok ? "--ok" : "--err"})'>${m.eta_gate.ok === null ? "N/A" : m.eta_gate.ok ? "PASS" : "FAIL"}</b> [${esc(m.eta_gate.gate.join(", "))}]`] : []),
+    ].map((s) => `<span>${s}</span>`).join("") : `<span class='muted'>${t("fieldviz.no_farfield_meta")}</span>`;
     // 切片 + 等值线叠加（降级引擎给每个中面的线段；索引改变后重新取）
     const iso = d.isosurface || {};
     const byAxis = {};
@@ -474,7 +516,8 @@ export async function pageField() {
     const box = T.$("fv-slices");
     disposeChartsIn(box); // P0-5：子树重建前释放挂在旧切片容器上的 echarts 实例
     box.innerHTML = d.slices.map((s) =>
-      `<div style='margin-bottom:var(--space-2)'><b class='muted'>${esc(s.axis)} = ${esc(s.position_mm)} mm 切面（${esc(s.u_axis)}×${esc(s.v_axis)}，索引 ${esc(s.index)}/${esc(s.n - 1)}）</b>
+      `<div style='margin-bottom:var(--space-2)'><b class='muted'>${esc(s.axis)} = ${esc(s.position_mm)} mm` + t("fieldviz.slice_head_mid") +
+      `${esc(s.u_axis)}×${esc(s.v_axis)}` + t("fieldviz.slice_head_idx") + `${esc(s.index)}/${esc(s.n - 1)}` + t("fieldviz.paren_close") + `</b>
          <input type='range' id='fv-s-${escAttr(s.axis)}' min='0' max='${escAttr(s.n - 1)}' value='${escAttr(s.index)}' data-ax='${escAttr(s.axis)}' style='width:220px;vertical-align:middle'>
          <div id='fv-sl-${s.axis}'></div></div>`).join("");
     let vmin = -20;
@@ -491,30 +534,34 @@ export async function pageField() {
     const isoEl = T.$("fv-iso");
     releaseWebGLIn(isoEl); // P0-4：等值面容器换血前释放旧 renderer/上下文
     if (iso.ok && iso.engine === "pyvista" && iso.n_faces > 0) {
-      isoEl.innerHTML = `<b class='muted'>等值面（PyVista/VTK 移动立方体）</b><div id='fv-iso-3d'></div>`;
+      isoEl.innerHTML = `<b class='muted'>${t("fieldviz.iso_head")}</b><div id='fv-iso-3d'></div>`;
       drawIsoMesh(T.$("fv-iso-3d"), iso);
     } else if (iso.ok) {
-      isoEl.innerHTML = `<div class='muted' style='margin:6px 0'>等值面引擎 ${esc(iso.engine)}：电平 ${esc(iso.levels_db.join("/"))} dB 已作为等值线叠加在切片热图上（白/黄/橙 = 低→高电平）。安装 <code>rfauto[viz3d]</code> 可得三角网 3D 等值面。</div>`;
+      isoEl.innerHTML = `<div class='muted' style='margin:6px 0'>` + t("fieldviz.iso_degrade_engine") + `${esc(iso.engine)}` +
+        t("fieldviz.iso_degrade_levels") + `${esc(iso.levels_db.join("/"))} dB` + t("fieldviz.iso_degrade_body") +
+        `<code>rfauto[viz3d]</code>` + t("fieldviz.iso_degrade_tail") + `</div>`;
     } else {
-      isoEl.innerHTML = `<div style='color:var(--err);margin:6px 0'>等值面失败：${esc((iso.errors || []).join("; "))}</div>`;
+      isoEl.innerHTML = `<div style='color:var(--err);margin:6px 0'>` + t("fieldviz.iso_fail") + `${esc((iso.errors || []).join("; "))}</div>`;
     }
     // 远场 3D 图（D4 联动）
     const pEl = T.$("fv-pattern");
     disposeChartsIn(pEl); // P0-5：远场 3D 图容器换血前释放旧实例
     if (d.pattern3d) {
-      pEl.innerHTML = `<b class='muted'>远场 3D 方向图（${esc(d.pattern3d.source.split(/[\\/]/).pop())} · Dmax ${fmt(d.pattern3d.dmax_dbi, " dBi")} · f=${fmt(d.pattern3d.frequency_ghz, " GHz", 4)}）</b><div id='fv-pat'></div>`;
+      pEl.innerHTML = `<b class='muted'>` + t("fieldviz.pattern_head_lead") +
+        `${esc(d.pattern3d.source.split(/[\\/]/).pop())} · Dmax ${fmt(d.pattern3d.dmax_dbi, " dBi")} · f=${fmt(d.pattern3d.frequency_ghz, " GHz", 4)}` +
+        t("fieldviz.paren_close") + `</b><div id='fv-pat'></div>`;
       drawPattern3d(T.$("fv-pat"), d.pattern3d);
-    } else pEl.innerHTML = "<div class='muted'>（无 farfield_3d.h5/nf2ff.h5：远场 3D 图不可用）</div>";
+    } else pEl.innerHTML = "<div class='muted'>" + t("fieldviz.no_pattern") + "</div>";
   }
   sel.onchange = () => { fillDumps(); Object.keys(sliceIdx).forEach((k) => delete sliceIdx[k]); load(); };
   dsel.onchange = () => { Object.keys(sliceIdx).forEach((k) => delete sliceIdx[k]); load(); };
   T.$("fv-reload").onclick = load;
-  T.$("fv-polar").onclick = () => { S.ffRunId = sel.value; showPage("farfield"); };
+  T.$("fv-polar").onclick = () => { _ffRunId = sel.value; showPage("farfield"); };
   _fieldReload = load; // R-1：refresh 局部刷新转发登记（fieldCtx 消费）
   await load();
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 fieldCtx ═════════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 fieldCtx ═════════════
    refresh=当前 run/dump 的切片/等值面/远场 3D 重拉——load 闭包经模块级引用
    转发（sparams/campaign 同款模式）+ 未进页 null 守卫；走 load 而非
    pageField 整体重进=切片滑条索引（sliceIdx）与 dump/run 选择态保留。

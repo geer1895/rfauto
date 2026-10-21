@@ -106,9 +106,9 @@ src/rfauto/core/synthesis.py 公开符号 **43** 个（AST 机读）：
 
 `Stackup`、`ForwardMedia`、`forward_media`、`forward_z0`、`inverse_width`、`nominal_width_mm`、`lossless_width_mm`、`SynthesisResult`、`synthesize_mline`、`synthesize_batch`、`ModelSynthesisResult`、`synthesize_wilkinson`、`synthesize_branchline`、`patch_fringing_delta_l`、`patch_rin_edge_balanis`、`patch_cavity_metrics`、`synthesize_patch`、`synthesize_mline_model`、`synthesize_cpw_model`、`synthesize_dipole_model`、`synthesize_wstep_model`、`synthesize_tjunc_model`、`synthesize_bend_model`、`synthesize_via_model`、`synthesize_atten_pi_model`、`synthesize_atten_t_model`、`synthesize_ratrace_model`、`synthesize_gysel_model`、`synthesize_stripline_model`、`synthesize_cps_model`、`synthesize_suspended_stripline_model`、`synthesize_msl_cpw_model`、`synthesize_siw_model`、`synthesize_msl_siw_taper_model`、`synthesize_sma_launcher_model`、`synthesize_bpf_model`、`hairpin_design_from_order`、`synthesize_hairpin_model`、`chebyshev_lpf_g_values`、`synthesize_multisection_quarter_wave`、`synthesize_nway_wilkinson`、`schiffman_delta_phase`、`synthesize_schiffman`
 
-src/rfauto/core/coupled_microstrip.py 公开符号 **10** 个（AST 机读）：
+src/rfauto/core/coupled_microstrip.py 公开符号 **11** 个（AST 机读）：
 
-`hairpin_kgap_domain_mm`、`hairpin_kgap_correction`、`hairpin_arm_len_mm`、`coupled_microstrip_even_odd_ohm`、`coupled_microstrip_eps_disp`、`hairpin_kgap_design_branch_mm`、`hairpin_k_from_gap_mm`、`hairpin_gap_mm_from_k`、`hairpin_qe_from_tap_frac`、`hairpin_tap_frac_from_qe`
+`hairpin_kgap_domain_mm`、`hairpin_kgap_correction`、`hairpin_arm_len_mm`、`coupled_microstrip_even_odd_ohm`、`coupled_microstrip_eps_disp`、`hairpin_kgap_design_branch_mm`、`hairpin_k_from_gap_mm`、`hairpin_gap_mm_from_k`、`hairpin_qe_from_tap_frac`、`hairpin_tap_frac_from_qe`、`coupled_bpf_width_gap_from_zee_zoo`
 
 消费面（service/adapters 引用扫描，机读）：
 
@@ -123,7 +123,11 @@ src/rfauto/core/coupled_microstrip.py 公开符号 **10** 个（AST 机读）：
 - service：`src/rfauto/service/unit_convert_service.py`
 - adapters：`src/rfauto/adapters/comsol_adapter.py`
 - adapters：`src/rfauto/adapters/edb_templates/schema.py`
-- adapters：`src/rfauto/adapters/fake_adapter.py`
+- adapters：`src/rfauto/adapters/fake_adapter/adapter.py`
+- adapters：`src/rfauto/adapters/fake_adapter/antenna_family.py`
+- adapters：`src/rfauto/adapters/fake_adapter/coupler_family.py`
+- adapters：`src/rfauto/adapters/fake_adapter/filter_family.py`
+- adapters：`src/rfauto/adapters/fake_adapter/tl_family.py`
 - adapters：`src/rfauto/adapters/layout_generator.py`
 - adapters：`src/rfauto/adapters/meep_adapter.py`
 - adapters：`src/rfauto/adapters/oe_templates/_nominal_width.py`
@@ -134,14 +138,14 @@ src/rfauto/core/coupled_microstrip.py 公开符号 **10** 个（AST 机读）：
 - adapters：`src/rfauto/adapters/oe_templates/render_diplexer_ridged.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_hairpin.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_phase_qwt.py`
-- adapters：`src/rfauto/adapters/oe_templates/render_ring.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_sicl_nway.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_siw.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_ta_wave_c.py`
 - adapters：`src/rfauto/adapters/qucsator_adapter.py`
 - service：`src/rfauto/service/anchor_family_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
-- adapters：`src/rfauto/adapters/fake_adapter.py`
+- adapters：`src/rfauto/adapters/fake_adapter/adapter.py`
+- adapters：`src/rfauto/adapters/oe_templates/closedform.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_hairpin.py`
 - adapters：`src/rfauto/adapters/oe_templates/render_ta_wave_b.py`
 
@@ -160,7 +164,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `src/rfauto/adapters/openems_templates.py`——引文："再经 KJ 反解得缝、经抽头闭式得 τ（口径见 adapters/openems_templates 文末"
 
-测试面（tests/unit 引用扫描，机读；合计 **1515** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -173,7 +177,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_atten_t_template.py` | 9 |
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_bend_template.py` | 7 |
-| `tests/unit/test_calculators.py` | 50 |
+| `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_coupled_bpf_template.py` | 34 |
 | `tests/unit/test_coupling_matrix.py` | 52 |
 | `tests/unit/test_cps_template.py` | 20 |
@@ -203,7 +207,6 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_oe_phase3_driver.py` | 42 |
 | `tests/unit/test_package_chain.py` | 37 |
 | `tests/unit/test_patch_feed_offset_unification.py` | 6 |
-| `tests/unit/test_physics_invariants.py` | 27 |
 | `tests/unit/test_pk2_vertical_lit_and_wiring.py` | 10 |
 | `tests/unit/test_port_renormalize.py` | 14 |
 | `tests/unit/test_qucsator_adapter.py` | 35 |
@@ -215,6 +218,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_rules_verify.py` | 6 |
 | `tests/unit/test_schiffman_qwt_templates.py` | 26 |
 | `tests/unit/test_sensanc_analytic_anchors.py` | 11 |
+| `tests/unit/test_shell_below_service_ratchet.py` | 3 |
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
@@ -232,6 +236,8 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_varactor.py` | 26 |
 | `tests/unit/test_varactor_bpf_template.py` | 12 |
 | `tests/unit/test_via_template.py` | 7 |
+| `tests/unit/test_w1s3_lange_stepped.py` | 11 |
+| `tests/unit/test_w3s11_ring.py` | 12 |
 | `tests/unit/test_w3s15_analytic_anchors.py` | 7 |
 | `tests/unit/test_w4_a_sm_core.py` | 21 |
 | `tests/unit/test_w4_w4e_anchors.py` | 10 |
@@ -250,5 +256,5 @@ XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_
 - [架构与方法论（锚体系/判据先行）](../architecture/methodology.md)
 - [分层架构](../explanation/layered-architecture.md)
 - [计算器注册表](../reference/calculators.md)——本内核的注册状态见元数据表
-- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[pce](pce.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[gysel_core](gysel_core.md)、[coupled_line_bpf](coupled_line_bpf.md)
+- 同批内核卡：[macromodel](macromodel.md)、[rwg_mmt](rwg_mmt.md)、[pdn](pdn.md)、[pce](pce.md)、[cascade](cascade.md)、[mline](mline.md)、[wilkinson](wilkinson.md)、[branchline](branchline.md)、[ratrace](ratrace.md)、[patch](patch.md)、[cpw](cpw.md)、[slotline](slotline.md)、[coupled_microstrip](coupled_microstrip.md)、[finline](finline.md)、[wilkinson_unequal](wilkinson_unequal.md)、[atten_pi](atten_pi.md)、[atten_t](atten_t.md)、[qwt_multisection](qwt_multisection.md)、[nway_wilkinson](nway_wilkinson.md)、[schiffman](schiffman.md)、[bethe_hole_coupler](bethe_hole_coupler.md)、[gysel_core](gysel_core.md)、[coupled_line_bpf](coupled_line_bpf.md)、[lange](lange.md)、[stepped_impedance](stepped_impedance.md)、[ring_resonator](ring_resonator.md)、[mixer_conversion](mixer_conversion.md)、[ruthroff_balun](ruthroff_balun.md)、[gd_equalizer](gd_equalizer.md)、[measurement_drift](measurement_drift.md)、[agc_loop](agc_loop.md)、[cal_kit_verify](cal_kit_verify.md)、[six_port](six_port.md)、[iss_on_wafer](iss_on_wafer.md)、[source_power_cal](source_power_cal.md)、[combline](combline.md)、[cps](cps.md)、[interdigital](interdigital.md)、[siw](siw.md)、[slot](slot.md)、[stripline](stripline.md)、[suspended_stripline](suspended_stripline.md)、[dipole](dipole.md)、[helix](helix.md)、[link_limits](link_limits.md)、[fec_codes](fec_codes.md)、[directional_bridge](directional_bridge.md)、[rf_switch](rf_switch.md)、[kuroda_identities](kuroda_identities.md)、[pll_lock_time](pll_lock_time.md)、[multisection_coupler](multisection_coupler.md)、[itu_link](itu_link.md)、[link](link.md)、[dgs](dgs.md)、[if_digitizer](if_digitizer.md)、[wg_dielectric_window](wg_dielectric_window.md)、[waveguide_closed_form](waveguide_closed_form.md)、[waveguide_iris](waveguide_iris.md)、[hybrid_junction](hybrid_junction.md)、[radar_eq](radar_eq.md)、[modulation_ber](modulation_ber.md)、[coax_line](coax_line.md)、[analog_modulation](analog_modulation.md)、[si_ctle](si_ctle.md)、[propagation](propagation.md)、[hf_skywave](hf_skywave.md)、[fmcw_radar](fmcw_radar.md)、[sar_geometry](sar_geometry.md)、[gnss_geometry](gnss_geometry.md)、[radar_clutter](radar_clutter.md)、[microstrip_disc](microstrip_disc.md)、[open_wire_line](open_wire_line.md)、[wg_cavity_bpf](wg_cavity_bpf.md)
 

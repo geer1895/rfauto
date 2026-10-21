@@ -172,6 +172,47 @@ def import_export_path(layout: Layout, path: str, fmt: str) -> Path:
     return export_layout(layout, Path(path), fmt)
 
 
+def pcell_geometry_to_layout(geo: Any, name: str | None = None) -> Layout:
+    """渲染桥（LC-2）：PCellGeometry → layout_interchange.Layout（求值产物直产）。
+
+    盒→xy 外接多边形、路径→LayoutPath、多边形→LayoutPolygon、过孔→
+    LayoutVia；层号 assign_gds_layers 确定性分配；坐标域=毫米（LC-2 新
+    单元口径）零换算直出——迁移的 3 个米制模板（mline/cpw/wstep）须由
+    调用方自行换算单位后求值，本桥不做隐式单位改写。
+
+    （W11-S3 T8 收口：自 cli.domains.scattered._pcell_geometry_to_layout
+    原位上移，实现逐行未动——cli 侧保留同名薄委托保既有测试导入面。）
+    """
+    from rfauto.adapters.layout_interchange import assign_gds_layers
+
+    items: list = []
+    for b in geo.boxes:
+        (x0, y0, _), (x1, y1, _) = b.lo, b.hi
+        items.append(LayoutPolygon(
+            points=((x0, y0), (x1, y0), (x1, y1), (x0, y1)), layer=b.layer))
+    for p in geo.paths:
+        items.append(LayoutPath(
+            points=tuple(p.points), width_mm=p.width, layer=p.layer))
+    for p in geo.polygons:
+        items.append(LayoutPolygon(points=tuple(p.points), layer=p.layer))
+    for v in geo.vias:
+        items.append(LayoutVia(
+            position=v.position, pad_diameter_mm=v.pad_diameter,
+            drill_diameter_mm=v.drill_diameter, pad_layer=v.pad_layer))
+    layer_names: list[str] = []
+    for it in items:
+        lname = it.pad_layer if isinstance(it, LayoutVia) else it.layer
+        if lname not in layer_names:
+            layer_names.append(lname)
+    return Layout(
+        name=name or geo.pcell,
+        layers=assign_gds_layers(layer_names),
+        items=tuple(items),
+        annotations={"source": "pcell_dsl", "pcell": geo.pcell,
+                     "params_json": json.dumps(geo.params, sort_keys=True)},
+    )
+
+
 def laymap_conflicts(mapping: Mapping[Any, Any]) -> list[str]:
     """laymap 冲突盘点（告警级校验内核，P2⑳ 批登记 followUp）——不 raise、只描述。
 

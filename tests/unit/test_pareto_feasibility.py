@@ -45,10 +45,8 @@ from rfauto.optimization.pareto_tools import (
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    """优化入口/服务会写 runs/，统一 chdir 隔离（#144）。"""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated_cwd(isolated_cache_off):
+    """优化入口/服务会写 runs/，统一 chdir 隔离（#144；T5 批 6 单源适配）。"""
     yield
 
 

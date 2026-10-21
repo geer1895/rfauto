@@ -1,6 +1,6 @@
-"""aurora_d SENS-ANC analytic 锚第三批回归钉（10 锚十族；#118 独立重算）。
+"""架构批 SENS-ANC analytic 锚第三批回归钉（10 锚十族；#118 独立重算）。
 
-锚册：knowledge/anchors.yaml aurora_d SENS-ANC 复核扩批（2026-10-14，
+锚册：knowledge/anchors.yaml 架构批 SENS-ANC 复核扩批（2026-10-14，
 46→56 有锚族）——loop/slot/ifa/lange/cline_coupler/branchline_2sect/via/
 ms_mushroom/ms_jcross/ms_patch 十族闭式恒等锚（verdict 语义=闭式推导档，
 真机首判窗随各卡 semantics）。
@@ -13,7 +13,7 @@ ms_mushroom/ms_jcross/ms_patch 十族闭式恒等锚（verdict 语义=闭式推�
    calibrated="closedform"（与引擎档可区分，#122）。
 
 候选裁决策（dipole/pifa/helix/mline/ms_ring_patch/wstep/tjunc/bend/
-slotline_lumped 不立锚的理由）见 runs/aurora_d_sensanc/REPORT.md 第三节。
+slotline_lumped 不立锚的理由）见 内部证据目录 第三节。
 """
 
 from __future__ import annotations

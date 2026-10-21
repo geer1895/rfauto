@@ -1,13 +1,14 @@
 schema: sensitivity_rankings/v1
-batch_id: aurora_e_w4s19_fullcov_20261018
+batch_id: 架构批
 generated_by: scripts/sensitivity_rankings_build.py
-notes: '敏感性排序登记表（X7 数据面批 + aurora72 A3-D 扩批 + R8-KN 扩批+ aurora_d SENS-ANC 复核扩批 + aurora_e W4-S19 全覆盖批；W8
-  桥消费端）。逐模板 score=|Δln y/Δln x| 中心差分弹性：连续参数 ±1%、整数参数 ±1 单位步、正数列表参数（gaps/widths/lengths）整体 ±1% 等比缩放；目标量
-  y=模板核心闭式输出（逐模板 target_quantity 与 scripts/sensitivity_rankings_build.py _target_* docstring）。全确定性零随机零仿真（seed=null）；运行时只读、写入只经人工
-  commit（anchors.yaml 家法）。W4-S19 全覆盖批（2026-10-18）+24=70/72：teaching 首批 9 模板全部入表转双源并存（W8 消费优先级 computed>teaching，teaching
-  EP-5 名次保留 teaching CLI 面；W6 卡面字节钉同批解除重生成）；hairpin/hairpin_alt 入表（c_f0=1.0370 真机标定常数系恒等式一部分，SENS-ANC
-  留缺判定 #222 复核勘误）；列表参数管线扩展+零值名义参数 NON_PERTURBABLE 0 分声明。如实留缺 2 族：sir_bpf（l_high 名义=旧综合链遗留档，现行链恒等式名义回代
-  +79% 失自洽，留缺待名义重注册）、ms_array_NxN（单元几何埋在 cell_map 非数值结构、无标量几何自由度）。名义档代际偏移逐模板 docstring 如实登记（branchline/dipole/patch/interdigital/combline——弹性分数刻画恒等式局部敏感性，名义档龄不改分数有效性）。其余历史批判定与原因见模块
+notes: '敏感性排序登记表（X7 数据面批 + 架构批 A3-D 扩批 + R8-KN 扩批+ 架构批 SENS-ANC 复核扩批 + 架构批 W4-S19 全覆盖批；W8 桥消费端）。逐模板 score=|Δln
+  y/Δln x| 中心差分弹性：连续参数 ±1%、整数参数 ±1 单位步、正数列表参数（gaps/widths/lengths）整体 ±1% 等比缩放；目标量 y=模板核心闭式输出（逐模板 target_quantity
+  与 scripts/sensitivity_rankings_build.py _target_* docstring）。全确定性零随机零仿真（seed=null）；运行时只读、写入只经人工 commit（anchors.yaml
+  家法）。W4-S19 全覆盖批（2026-10-18）+24=70/72：teaching 首批 9 模板全部入表转双源并存（W8 消费优先级 computed>teaching，teaching EP-5
+  名次保留 teaching CLI 面；W6 卡面字节钉同批解除重生成）；hairpin/hairpin_alt 入表（c_f0=1.0370 真机标定常数系恒等式一部分，SENS-ANC 留缺判定
+  #222 复核勘误）；列表参数管线扩展+零值名义参数 NON_PERTURBABLE 0 分声明。架构批 W6-S4 解锁批（2026-10-19）+1=71/72：sir_bpf 名义重注册（l_high
+  6.7818 旧档含 R1 校准过孔缩短致恒等式名义回代 2.5586GHz 失自洽，重注册为 理想短路缺省链输出 7.1055 后名义回代 2.5000 带内——R3 审计处方；过孔补偿留 render
+  通道 l_via_h 锚）。如实留缺 1 族：ms_array_NxN（单元几何埋在 cell_map 非数值结构、无标量几何自由度）。名义档代际偏移逐模板 docstring 如实登记（branchline/dipole/patch/interdigital/combline——弹性分数刻画恒等式局部敏感性，名义档龄不改分数有效性）。其余历史批判定与原因见模块
   docstring「可算集判定」。'
 templates:
   atten_pi:
@@ -15,7 +16,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=π 型中串电阻 r_series_mid=E4 闭式(atten_db, Z0(w)) （synthesize_atten_pi_model 主输出）。
     ranking:
     - param: atten_db
@@ -29,7 +30,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=T 型串臂电阻 r_series_arm=E4 闭式(atten_db, Z0(w)) （synthesize_atten_t_model 主输出）。
     ranking:
     - param: atten_db
@@ -43,7 +44,7 @@ templates:
     n_samples: 5
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 Z0（未切角弯折基元设计恒等式，synthesize_bend_model 同源）。
     ranking:
     - param: w_mm
@@ -55,7 +56,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=串联臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(series_w))（XA-3 迭代序 HJ 口径，synthesize_branchline
       综合链同源；并臂 Z0 同构恒等式取串联臂 代表）。
     ranking:
@@ -70,7 +71,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=主线节 λ/4 谐振 f0=c/(4·sect_len·√εeff(w_main))（Pozar 经典点 Z_a=Z0 主线节电长度 θ=90°；forward_media
       单源）。
     ranking:
@@ -91,7 +92,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=耦合段 λ/4 谐振 f0=c/(4·L·√εeff_avg)，εeff_avg=(εe+εo)/2（KJ 偶/ 奇模填充因子，coupled_microstrip_even_odd_ohm
       单源；§13.1 名义 λ/4 @平均 εeff 同口径）。
     ranking:
@@ -108,7 +109,7 @@ templates:
     n_samples: 21
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=波导段 TE10 截止 fc10=c0/(2·a·√εr)（meta nominal_derivation 同式： fc10=c0/2a=6.557140GHz
       审计钉；er 名义 1.0 空气，扰动展示介质通道）。
     ranking:
@@ -137,7 +138,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=L（Mohan 电流片式平面螺旋电感 spiral_inductance 单源，µH 级； 名义 2.9310µH 回代相对差 1.4e-16）。
     ranking:
     - param: d_out_mm
@@ -161,7 +162,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=梳状谐振器谐振 f0（render_c3.combline_design_from_order 谐振条件 cot θr=ω0·C·Z_r 与 θr=ω0·res_len·√εeff/c
       联立的唯一正根，εeff/Z_r 弱色散 @meta f0 固定、brentq 型二分求根；C 装载电容缩短恒等式单源）。
     ranking:
@@ -182,7 +183,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=谐振器 λ/2 谐振 f0=c/(2·(res_len+Δl_end+Δl_mid)·√εeff_gm) （coupled_bpf_design_from_order
       同链精确逆：εeff_gm=全节 KJ 偶/奇模 平均 εeff 的均值、Δl=开路端修正 @端/中节宽；widths_mm/gaps_mm 列表 整体 ±1% 等比缩放）。
     ranking:
@@ -203,7 +204,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=耦合段 λ/4 谐振 f0=c/(4·L·√εeff_avg)，εeff_avg=(εe+εo)/2 （KJ 偶/奇模填充因子，coupled_microstrip_even_odd_ohm
       单源；λ/4 耦合 节拍口径）。
     ranking:
@@ -218,7 +219,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（Wadell 均匀线+板映射+FD 定标，_cps_ri 单源）。
     ranking:
     - param: gap_mm
@@ -232,7 +233,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: 'y=CPWG 段 Z0（底接地共形映射 _cpwg_ri 单源——synthesize_cpw_model #193 同口径参照系）。'
     ranking:
     - param: w_mm
@@ -246,7 +247,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=交越（截止）fc_GHz=Z0/(2π·L_lpf_nH)（一阶常阻互补对偶 CR 臂定标 L=Z0/ωc，core/diplexer_compose.diplexer_lpf_hpf
       element_values 单源； 交越锁定 fc 三锚闭式精确，名义回代 fc=2.5000/2.5001 GHz 双通道同点）。
     ranking:
@@ -261,7 +262,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=半波振子设计式精确逆 f=c/(2·L)（自由空间 λ/2 闭式， synthesize_dipole_model 同式）。
     ranking:
     - param: dipole_len_mm
@@ -275,7 +276,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（嵌埋微带 FD 准静态 embedded_ms_quasistatic 单源，Richardson 外推；h1=名义 h_mm）。
     ranking:
     - param: h_mm
@@ -295,7 +296,7 @@ templates:
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（FGCPW FD 准静态裁判链 fgcpw_fd 单源：Richardson 外推零厚准静态）。
     ranking:
     - param: er
@@ -317,7 +318,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(w_arm))（XA-3 迭代序：臂线宽 自身 εeff，forward_media 单源）。
     ranking:
     - param: arm_len_mm
@@ -333,7 +334,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 λg/2 谐振×真机修正 f0=c_f0·c/(2·arm_len·√εeff(w)) （hairpin_arm_len_mm 的精确逆×_HAIRPIN_F0_CORR=1.0370——B2
       pt4 真机 标定常数单源，fake 裁判谐振式同链；U 弯+开路端等效缩短 +3.7%）。
     ranking:
@@ -354,7 +355,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: 'y=臂 λg/2 谐振×真机修正（同 hairpin：c_f0·c/(2·arm·√εeff)；alt 与 v1 共享同一臂谐振恒等式与 c_f0 常数——SENS-ANC「非稳定闭式」留缺
       判定按 #222 树面复核勘误：c_f0=1.0370 已是真机标定单源常数）。'
     ranking:
@@ -375,7 +376,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=总线长设计式精确逆 f=K_HELIX·c/(4·(4dN+Np))（k_helix=1.3615 HFSS 仲裁单源）。
     ranking:
     - param: helix_turns
@@ -393,7 +394,7 @@ templates:
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=准 TE0.5 截止 fc（Lai-Fumeaux 2009 式 (8)-(14) 链 hmsiw_closed_form 单源：w_eff_siw→半宽修正→fc_te05）。
     ranking:
     - param: w_mm
@@ -415,7 +416,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 λ/4 设计式精确逆 f=c/(4·L·√εeff(w))（HJ @臂宽）。
     ranking:
     - param: ifa_arm_mm
@@ -429,7 +430,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=交指棒 λ/4 谐振 f0=c/(4·(res_len+Δl)·√εeff(w))（render_c3. interdigital_design_from_order
       同式精确逆：λ/4 短路棒电长−开路端 Δl， 棒=50Ω 单线 HJ）。
     ranking:
@@ -448,7 +449,7 @@ templates:
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（倒置微带 FD inverted_ms_fd 单源：空气隙高填充率）。
     ranking:
     - param: h_air_mm
@@ -470,7 +471,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（ISL 悬置准静态 suspended_ms_qs 单源；er 取名义参数、h_sub 取 meta substrate——名义参数面无 h_sub 键）。
     ranking:
     - param: w_mm
@@ -494,7 +495,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=指长 λ/4 谐振 f0=c/(4·finger_len·√εeff_avg)（相邻对 KJ 偶/奇模平均 填充；§13.3 名义指长 λ/4 @平均 εeff=2.4972
       同口径）。
     ranking:
@@ -511,7 +512,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=自由空间环设计式精确逆 f=c/(4a)（一周长 C=4a≈λ0，2026-09-16 v2 定版口径）。
     ranking:
     - param: loop_side_mm
@@ -525,7 +526,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=槽臂 Z0（Janaswamy–Schaubert slotline_z0 单源 @槽宽 w_slot；双槽臂 Marchand 耦合段的槽线本体口径——设计级两节综合见
       core/slotline_transitions.synthesize_marchand_two_section，本目标取槽臂 单点闭式）。
     ranking:
@@ -546,7 +547,7 @@ templates:
     n_samples: 5
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=微带 Z0（skrf HJ 正向 forward_z0 单源——XC-W 唯一线宽计算源）。
     ranking:
     - param: w_mm
@@ -558,7 +559,7 @@ templates:
     n_samples: 21
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: 'y=单元谐振 f0=patch_resonance_hj_ghz(L,W,er,h)（C10d 串馈阵 fake 裁判 _mmwave_series_sparams
       同源：Hammerstad 准静态式逆式闭合；er/h 为名义参数——毫米波板，禁用全局 stackup 缺省 #154 同名同语义）。'
     ranking:
@@ -587,7 +588,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=λ0/4 设计式精确逆 f=c/(4·L)（antenna2_resonance_ghz 同式）。
     ranking:
     - param: mon_len_mm
@@ -601,7 +602,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振 f0=c/(2·(2·arm_len)·√((1+εr)/2))（十字臂总跨=λ0/(2√εeff)、 单侧基板加载 εeff=(1+εr)/2（Luukkonen
       eq.3），meta nominal_derivation 同式）。
     ranking:
@@ -622,7 +623,7 @@ templates:
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=主缝谐振 f0=c/(4·slot_len·√((1+εr)/2))（主缝=λg/4、εeff=(1+εr)/2 同 ms_cross；Marcuvitz 网格
       EC 初值口径，meta nominal_derivation 同式）。
     ranking:
@@ -645,7 +646,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=AMC 谐振 f=1/(2π√(L·C))（Sievenpiper LC 模型：L=μ0·h amc_via_inductance_h 单源、C=Luukkonen
       eq.4 amc_gap_capacitance_f （εeff=(1+εr)/2）、amc_resonance_hz 单源；单位 mm→m 换算）。
     ranking:
@@ -664,7 +665,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振 f0=c/(2·px·√εeff(px))（Balanis 腔模型方贴片、HJ εeff @w=边长——ms_patch_resonant_len_mm
       不动点式的精确逆，metasurface_lut 同口径）。
     ranking:
@@ -685,7 +686,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=内贴片谐振 f0=c/(2·patch_px·√εeff(patch_px))（复用 ms_patch 口径； 环/槽环境第二谐振为双谐振宽摆幅机理，不入单点目标）。
     ranking:
     - param: patch_px_mm
@@ -703,7 +704,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=CPWG 段 Z0（core/calc_families/rf_line._cpwg_ri 准静态共形映射 单源——meta nominal_derivation
       同链：w_cpw=brentq(_cpwg_ri, 50) 反解， 名义回代 Z0=50.000）。
     ranking:
@@ -728,7 +729,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=SIW 段 TE10 截止 fc=c/(2·w_eff·√εr)，w_eff=w−d²/(0.95·s) （Cassivi 2002 正向；_t_siw 同式同链——meta
       nominal_derivation 自证 w/d/s=TEMPLATE_NOMINAL["siw"] 同源沿用、fc10=6.6667GHz=f0/1.5 设计点， 名义回代 6.6667
       逐位一致）。
@@ -754,7 +755,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=槽线臂 Z0（slotline_z0 单源 @w_slot；Roberts/Knorr 过渡的槽线段 本体口径，λg'/4 短路臂设计依赖此值）。
     ranking:
     - param: w_slot_mm
@@ -774,7 +775,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(w_arm))（XA-3 迭代序：臂线宽自身 εeff，forward_media 单源；gysel
       同式）。
     ranking:
@@ -791,7 +792,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=贴片腔模谐振 f0=c/(2·(L+2ΔL)·√εeff(W))（synthesize_patch 设计式 L=c/(2f0√εeff)−2ΔL 的精确逆；ΔL=patch_fringing_delta_l、εeff=HJ，
       弱色散 @meta f0 取值）。
     ranking:
@@ -806,7 +807,7 @@ templates:
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振（array_resonance_ghz 精确逆：Balanis Ch.14 传输线模型 f0=c/(2(L+2ΔL)√εeff(W))，准静态 εeff/ΔL
       无频率项故逆式闭合；C2 三 模板单元同型、互联/馈电变换树不改一阶谐振——ms_ring_patch 单元级 口径先例同类）。
     ranking:
@@ -829,7 +830,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振（同 patch_array_1x4：array_resonance_ghz 精确逆，单元 同型）。
     ranking:
     - param: elem_len_mm
@@ -853,7 +854,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振（同 patch_array_1x4：array_resonance_ghz 精确逆；串馈 互联 link_len 不改一阶单元谐振=0）。
     ranking:
     - param: elem_len_mm
@@ -871,7 +872,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振 f0=c/(2(L+2·dl)·√εeff)（array_elem_len_mm 设计式精确逆， ee/dl 走 _array_patch_eps_dl
       准静态单源——EEP 单元与 C2 阵列单元同型 同链，fake _EEP_TEMPLATES 通道不含 array_resonance_ghz 成员门故直调 同源算术）。
     ranking:
@@ -890,7 +891,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=单元谐振（同 patch_eep_1x4：array_elem_len_mm 精确逆、 _array_patch_eps_dl 单源；EEP 2x2 单元同型）。
     ranking:
     - param: elem_len_mm
@@ -910,7 +911,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=L 路径式精确逆 f=c/(4·L·√εeff(W))（HJ @W；居中短路板不绕行， 真机两轮实证定版口径）。
     ranking:
     - param: pifa_l_mm
@@ -928,7 +929,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=喇叭增益线性 G=(4π/λ²)·A·B·e（Orfanidis (21.4.2)/(21.4.3)， horn_gain_direct 单源正算 @meta
       f0=10GHz——综合目标 15dB 恒等）。
     ranking:
@@ -953,7 +954,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=首节 λ/4 谐振 f0=c/(4·L_1·√εeff(w_1))（synthesize_multisection_ quarter_wave 各节 λ/4
       恒等式取首节代表——各节同构恒等式逐一在档， branchline_2sect 主线节先例同类；widths_mm/lengths_mm 列表按整体 ±1% 等比缩放扰动，首元弹性=整表同缩口径）。
     ranking:
@@ -970,7 +971,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=环谐振 f0=1.5·c/(2π·r_ring·√εeff(w_ring))（synthesize_ratrace 周长恒等式 C=1.5λg、R=C/(2π)
       的精确逆；环线宽自身 εeff）。
     ranking:
@@ -985,7 +986,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=脊波导 TE10 主模截止 fc=c0·k_c/(2π)（core/ridged_waveguide. cutoff_kc 单源：谐振函数 tan(k·s/2)·tan(k·l_side)=R
       二分求根—— ridged_wg_design_params 反解链正向，名义回代 fc=4.99998GHz 逐位）。
     ranking:
@@ -1010,7 +1011,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=环基模谐振 f0=c/(2π·r_mean·√εeff(w))（闭环周长=λg 恒等式， meta nominal_derivation/test_ring_resonator_template
       同式——W8 回退卡 字节钉前提按本批任务书解除，钉测试同批重生成）。
     ranking:
@@ -1027,7 +1028,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=差分相移 Δφ(f0)（度）（core/synthesis.schiffman_delta_phase 单源： Δφ=β_ref·L_ref−Φ_c；εeff_e/o
       成对显式旁路取 KJ 偶/奇模正演 coupled_microstrip_even_odd_ohm 单源——synthesize_schiffman 合成链 同口径，名义回代 Δφ(f0)=90.0°）。
     ranking:
@@ -1046,7 +1047,7 @@ templates:
     n_samples: 17
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（SICL 矩形同轴共形闭式 sicl_z0 单源，k=tanh(πa/2b)·sech(πw/2b)， b=名义 h_mm 双板腔高）。
     ranking:
     - param: w_mm
@@ -1065,12 +1066,37 @@ templates:
       score: 0.0
     - param: tan_d
       score: 0.0
+  sir_bpf:
+    method: central_finite_difference_elasticity
+    n_samples: 17
+    seed: null
+    source_run: scripts/sensitivity_rankings_build.py
+    registered_at: '2026-10-19'
+    target_quantity: y=SIR 基模谐振 f0（tanθ1·tanθ2=Z_lo/Z_hi 对称恒等式回代：Z/εeff 弱 色散 @meta f0 固定 HJ 回读、低阻段开路端
+      Δl 等效长度、接地端高阻段无 Δl、二分求根——render_c3.sir_bpf_design_from_order 同一恒等式的数值 逆）。
+    ranking:
+    - param: l_high_mm
+      score: 0.499993
+    - param: l_low_mm
+      score: 0.483639
+    - param: w_low_mm
+      score: 0.296761
+    - param: w_high_mm
+      score: 0.179464
+    - param: feed_len_mm
+      score: 0.0
+    - param: gaps_mm
+      score: 0.0
+    - param: order
+      score: 0.0
+    - param: w_feed_mm
+      score: 0.0
   siw:
     method: central_finite_difference_elasticity
     n_samples: 15
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=TE10 截止 fc=c/(2·w_eff·√εr)，w_eff=w−d²/(0.95·s)（Cassivi 2002 过孔藩篱等效腔宽反解式的正向；synthesize_siw_model
       与 meta nominal_derivation 同源：w=12.1317 → w_eff=11.7528 → fc=6.6667）。
     ranking:
@@ -1093,7 +1119,7 @@ templates:
     n_samples: 9
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Booker 对偶+半空间均值设计式精确逆 f=c/(2·L·√((1+εr)/2)) （#190：k_slot 待仲裁不进设计式）。
     ranking:
     - param: slot_l_mm
@@ -1109,7 +1135,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（Janaswamy–Schaubert 分段闭式 slotline_z0 单源；声明域 d/λ0≥0.006， 名义 1.524mm@2.5GHz 落域内）。
     ranking:
     - param: w_mm
@@ -1127,7 +1153,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（同 slotline：JS 闭式 slotline_z0 单源；LumpedPort 路线 B 与 WaveguidePort 路线 A 共享同一槽线闭式，r_port
       缺省=本值）。
     ranking:
@@ -1146,7 +1172,7 @@ templates:
     n_samples: 21
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=同轴段 Z=(60/√εr_fill)·ln(r_o/r_i)（反焊盘同轴口径同式—— via 族设计规则；名义回代 Z=50.014 逐位口径）。
     ranking:
     - param: r_o_mm
@@ -1174,7 +1200,7 @@ templates:
     n_samples: 11
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=SIR 基模 f0：θ_total(f0)=π（λ/2 谐振），段链奇偶交替 （_stepped_lines 渲染同源：偶段 z1/奇段 z2，各 seg_len）⇒
       f0=c/(2·Σ L_i√εeff_i)。
     ranking:
@@ -1193,7 +1219,7 @@ templates:
     n_samples: 5
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（零厚度对称共形映射 _stripline_z0，TEM εeff=εr）。
     ranking:
     - param: w_mm
@@ -1205,7 +1231,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=Z0（悬置带线 FD 重定标闭式 _suspended_stripline_ri）。
     ranking:
     - param: b_mm
@@ -1219,7 +1245,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=全臂 Z0（对称均分口径的设计恒等式，synthesize_tjunc_model 同源： 结点地板 Sii=−1/3 由对称性给出，与臂长无关）。
     ranking:
     - param: w_feed_mm
@@ -1233,7 +1259,7 @@ templates:
     n_samples: 19
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=装载臂谐振 f0（varactor_bpf_design 主谐振方程正解单源： C=突变结 C(bias)=cj0·(1+V/φ)^−1/2 → varactor_line_f0_ghz(C,
       arm_len, 50, εeff)，εeff=forward_z0(w @f_unloaded=2.8GHz 设计缺省、bare Stackup 同设计链)；名义回代 f0=2.499997（bias/arm
       4 位舍入传播带内）。
@@ -1261,7 +1287,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=反焊盘同轴口径 Z_via=(60/√εr)·ln(r_pad/r_via) （synthesize_via_model 设计规则同式；antipad_mm=r_pad）。
     ranking:
     - param: antipad_mm
@@ -1275,7 +1301,7 @@ templates:
     n_samples: 13
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=低截止 f_low=c/(2·w_mouth)（口面半波准则 vivaldi_low_cutoff_ghz 单源；空气侧准则不依赖 εr——二手工程准则近似级别如实）。
     ranking:
     - param: w_mouth_mm
@@ -1295,7 +1321,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=臂 λ/4 谐振 f0=c/(4·arm_len·√εeff(series_w))（XA-3 迭代序：臂线宽 自身 εeff，forward_media 单源；gysel/nway
       同式——synthesize_wilkinson 综合链精确逆）。
     ranking:
@@ -1310,7 +1336,7 @@ templates:
     n_samples: 7
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=阶跃反射 |Γ|=|Z2−Z1|/(Z2+Z1)（synthesize_wstep_model 同式）。
     ranking:
     - param: w2_mm
@@ -1324,7 +1350,7 @@ templates:
     n_samples: 25
     seed: null
     source_run: scripts/sensitivity_rankings_build.py
-    registered_at: '2026-10-18'
+    registered_at: '2026-10-19'
     target_quantity: y=开路环谐振 f0=c/(2·(4·a+2Δl)·√εeff(w))（cross_coupled_bpf_design 周长恒等式正向：周长=λg/2−2Δl（双开路端边缘延伸）、a=周长/4、
       Δl=patch_fringing_delta_l；εeff=HJ @w（参数自带 er/h Stackup））； 名义回代 f0=2.499993（a 4 位舍入传播带内）。
     ranking:

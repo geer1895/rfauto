@@ -1,4 +1,15 @@
-"""匹配与衰减族（λ/4 变换、π/T/桥T 衰减器、驻波换算、贴片谐振长度）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""匹配与衰减族（λ/4 变换、π/T/桥T 衰减器、驻波换算、贴片谐振长度）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+出处（教科书经典闭式二级转引+仓内仲裁终裁）：
+- quarter_wave_transformer/vswr_convert：λ/4 变换 z=√(Zs·Zl) 与驻波
+  换算=传输线教科书经典式（Pozar《Microwave Engineering》匹配/驻波节
+  同族二级转引；本仓零新增推导）。
+- attenuator_pi/attenuator_t/attenuator_bridged_t：匹配+分压两条件闭式
+  衰减器（Pozar 衰减器节经典口径；#118 双源=经典 10dB/50Ω pad 表值+
+  测试内第二实现，tests/unit/test_x5_analytic_anchors 在档）。
+- patch_length：ΔL 单源=core/synthesis.patch_fringing_delta_l；系数
+  0.824 终裁=XA-1 仲裁（runs/xa1_arbitration 2026-10-02，INCONCLUSIVE
+  维持现行口径如实登记，R1-2 审查批注记）。
+"""
 
 from __future__ import annotations
 

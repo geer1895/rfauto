@@ -162,7 +162,7 @@ REQUIREMENT_LINKS: tuple[dict[str, Any], ...] = (
                  "src/rfauto/core/synthesis.py:synthesize_atten_pi_model"],
      "tool": TOOL_SYNTHESIZE, "artifact": ART_SYNTHESIS},
     {"link": "simulate", "requirement": "离线求解（fake 闭式模型，零真机）",
-     "anchors": ["src/rfauto/adapters/fake_adapter.py:FakeAdapter.solve"],
+     "anchors": ["src/rfauto/adapters/fake_adapter/adapter.py:FakeAdapter.solve"],
      "tool": TOOL_SIMULATE, "artifact": ART_SPARAMS},
     {"link": "evaluate", "requirement": "指标评估（SpecEvaluator DSL）",
      "anchors": ["src/rfauto/core/objectives.py:SpecEvaluator.compute_metrics"],
@@ -1198,33 +1198,3 @@ def design_kickoff(
     return envelope
 
 
-def design_close(
-    record_path: str | Path,
-    *,
-    out_dir: str | Path | None = None,
-    certify: bool = True,
-    anchor_writeback: bool = True,
-    replan: bool = True,
-) -> dict[str, Any]:
-    """设计链 record → 三步闭环（certify→锚回写草稿→replan）shell 面。
-
-    record 从 ``design_kickoff`` 落盘的 ``record.json`` 读取（或任意同
-    schema JSON）；闭环本体 = :func:`level2_closure.close_level2_chain`
-    （单步失败不拖垮其余，envelope 逐步留 errors，永不抛）。
-    """
-    import json
-
-    from rfauto.service.level2_closure import close_level2_chain
-
-    p = Path(record_path)
-    if not p.is_file():
-        return error_envelope([f"record 文件不存在: {p}"])
-    try:
-        record = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        return error_envelope([f"record 不可读: {exc}"])
-    if not isinstance(record, dict):
-        return error_envelope([f"record 必须是 JSON 对象: {p}"])
-    return close_level2_chain(
-        record, out_dir=out_dir, certify=certify,
-        anchor_writeback=anchor_writeback, replan=replan)

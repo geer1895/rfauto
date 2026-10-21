@@ -11,7 +11,6 @@ C: 端口扫描全 S 矩阵 + Touchstone（COMSOL 原生导出优先/skrf 兜底
 
 from __future__ import annotations
 
-import inspect
 import json
 from pathlib import Path
 from typing import ClassVar
@@ -150,9 +149,12 @@ def _make_adapter(tmp_path, monkeypatch, client=None, **extra):
 
 class TestA1ExplicitImport:
     def test_r3_services_source_pins_comsol_adapter_import(self):
+        # W7-S1 T2 包化（2026-10-19）：求解器注册面随域迁 r3_services/solvers.py，
+        # 源码锚随实现走（AU-1 测试面映射工艺）
         from rfauto.service import r3_services
 
-        src = inspect.getsource(r3_services)
+        src = (Path(r3_services.__file__).parent / "solvers.py").read_text(
+            encoding="utf-8")
         # 未尽②：注册副作用 import 不得只靠调用方先 import 包
         assert "comsol_adapter" in src
 

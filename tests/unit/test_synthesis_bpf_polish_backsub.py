@@ -1,4 +1,4 @@
-"""W6-C 席（aurora36 R3_followups §② 第 6/7 条）：C13 _cm_polish 兜底路径
+"""W6-C 席（架构批 R3_followups §② 第 6/7 条）：C13 _cm_polish 兜底路径
 钉 + N≥13/14 边界冒烟 + BPF 综合返回前 raise 型回代硬门（R1-4）。
 
 定位（#222 实测口径，登记行只作线索）：
@@ -54,6 +54,7 @@ def _with_budget(fn, *args, **kwargs):
 
 # ─── 任务1：_cm_polish 兜底内核 + N≥13/14 边界 ───────────────────────────────
 
+@pytest.mark.slow  # 终门 DURATIONS >60s 慢件（193s，LM 幅频精化数值重件）
 def test_cm_polish_recovers_degraded_start_substantially():
     """兜底内核钉（构造触发兜底的输入）：对精确横向矩阵人为退化（扰动
     三个耦合系数），LM 幅频精化大幅回收（实测 1.5e−1 → 3.3e−5，≥2 个

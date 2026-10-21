@@ -109,6 +109,21 @@ class TestRoundTripAnchor:
     @requires_kicad
     def test_extraction_ok(self, demo):
         assert demo["ext"]["ok"] is True, demo["ext"]
+        # 提取产物与 demo 已知构成对账（R3 弱测试 #4：面数/网络数/层名
+        # ==fixture 已知值，非空壳 ok）
+        ext = demo["ext"]
+        assert len(ext["traces"]) == 1  # RF1 主线恰一条
+        assert ext["traces"][0]["net"] == "RF1"
+        assert len(ext["vias"]) == len(DEMO_VIA_XS_MM)
+        assert {v["net"] for v in ext["vias"]} == {"GND"}
+        nets = ({t["net"] for t in ext["traces"]}
+                | {v["net"] for v in ext["vias"]}
+                | {z["net"] for z in ext["zones"]}
+                | {p["net"] for fp in ext["footprints"] for p in fp["pads"]})
+        assert nets == {"RF1", "GND"}
+        assert ext["board"]["layer_count"] == 2
+        assert ext["board"]["copper_layers"] == ["F.Cu", "B.Cu"]
+        assert {z["layer"] for z in ext["zones"]} == {"F.Cu", "B.Cu"}
 
     @requires_kicad
     def test_trace_width_length_anchor(self, demo):

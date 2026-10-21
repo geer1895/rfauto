@@ -1,10 +1,18 @@
-"""跨族共享闭式综合/几何 helper（含 _fmt_list；放叶模块避免循环）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""跨族共享闭式综合/几何 helper（含 _fmt_list；放叶模块避免循环）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+提升注记（架构批 W1-S3，2026-10-18）：`coupled_bpf_width_gap_from_zee_zoo`
+（KJ 二维反解）已下沉 core/coupled_microstrip.py（原样提升，函数体逐字节
+未动；core.calc_families.lange 提升式重构需要 core 层可达）——本文件只留
+再导出（#116 不留本地遮蔽副本），既有 import 面零改动。
+"""
 
 from __future__ import annotations
 
 import math
 
-from .render_hairpin import coupled_microstrip_even_odd_ohm
+from rfauto.core.coupled_microstrip import (
+    coupled_bpf_width_gap_from_zee_zoo as coupled_bpf_width_gap_from_zee_zoo,
+)
 
 
 def _fmt_list(values: list[float], ndigits: int) -> str:
@@ -27,86 +35,6 @@ def _open_end_delta_mm(w_mm: float, freq_ghz: float,
     _, ere = forward_z0(float(w_mm), float(freq_ghz), stackup)
     return (patch_fringing_delta_l(float(w_mm) * 1e-3, float(h_mm) * 1e-3,
                                    float(ere)) * 1e3)
-
-
-def coupled_bpf_width_gap_from_zee_zoo(
-    zee_ohm: float, zoo_ohm: float, freq_ghz: float = 2.5,
-    er: float = 3.66, h_mm: float = 0.508,
-) -> tuple[float, float]:
-    """(Z0e, Z0o) → (w_mm, s_mm)：KJ 闭式二维数值反解（嵌套 brentq）。
-
-    内层：固定 w，s↑ ⇒ Z0e 单调下降（s→∞ 退化单线 Z0_single(w)），对 Z0e 解 s；
-    外层：w↑ ⇒ 内层 s*↑ ⇒ Z0o(w,s*) 单调上升（从 Z0o(w,0+)≈小值 到
-    Z0_single(w)），对 Z0o 解 w。单调性为 brentq 前置条件，单测钉住。
-    """
-    from scipy.optimize import brentq
-
-    from rfauto.core.synthesis import Stackup, forward_z0, inverse_width
-
-    ze_t = float(zee_ohm)
-    zo_t = float(zoo_ohm)
-    if not ze_t > zo_t > 0.0:
-        raise ValueError(f"须 Z0e > Z0o > 0，得 ({ze_t}, {zo_t})")
-    stackup = Stackup(name="coupled_bpf", epsilon_r=float(er),
-                      thickness_mm=float(h_mm))
-    # w 下界：单线阻抗须 < Z0e（耦合只能抬升 Z0e）；取 0.999 留耦合余量
-    w_lo = float(inverse_width(ze_t * 0.999, float(freq_ghz), stackup)[0])
-    w_hi = w_lo + 8.0
-    s_lo, s_hi = 0.02, 60.0
-
-    def _ze_residual(w_mm: float, s_mm: float) -> float:
-        single = forward_z0(w_mm, float(freq_ghz), stackup)
-        return (coupled_microstrip_even_odd_ohm(
-            w_mm, s_mm, freq_ghz, er, h_mm, single=single)[0] - ze_t)
-
-    def _h(w_mm: float) -> float:
-        """外层残差 Z0o(w, s*(w)) − Z0o_t（w ∈ [w_lo, w_zemax] 内恒可达）。"""
-
-        def _f(s_mm: float) -> float:
-            return _ze_residual(w_mm, s_mm)
-
-        f_lo = _f(s_lo)
-        if f_lo < 0.0:          # 最大耦合也达不到 Z0e（不发生于可达域内）
-            return float("nan")
-        s_mm = float(brentq(_f, s_lo, s_hi, xtol=1e-9)) if f_lo > 0.0 else s_lo
-        single = forward_z0(w_mm, float(freq_ghz), stackup)
-        return (coupled_microstrip_even_odd_ohm(
-            w_mm, s_mm, freq_ghz, er, h_mm, single=single)[1] - zo_t)
-
-    # 可达上界 w_zemax：Z0e(w, s_lo) = Z0e_t 的宽度（Z0e 随 w 单调降，二分）
-    lo_b, hi_b = w_lo, w_hi
-    for _ in range(60):
-        mid = 0.5 * (lo_b + hi_b)
-        if _ze_residual(mid, s_lo) > 0.0:
-            lo_b = mid
-        else:
-            hi_b = mid
-    w_zemax = 0.5 * (lo_b + hi_b)
-    # 外层残差 h：h(w_lo) = Z0o(w_lo, s→s_hi)−Z0o_t ≈ Z_single−Z0o_t > 0、
-    # h(w_zemax) = Z0o(w_zemax, s_lo)−Z0o_t < 0（紧耦合 Z0o 极低）——单调降。
-    if not _h(w_lo) > 0.0:
-        raise ValueError(
-            f"(Z0e,Z0o)=({ze_t:.3f},{zo_t:.3f})Ω 耦合过弱无解"
-            f"（w 下界处 Z0o 已 ≤ 目标）")
-    lo, hi = w_lo, w_zemax
-    for _ in range(80):
-        mid = 0.5 * (lo + hi)
-        if _h(mid) > 0.0:
-            lo = mid
-        else:
-            hi = mid
-        if hi - lo < 1e-11:
-            break
-    w_root = 0.5 * (lo + hi)
-    single = forward_z0(w_root, float(freq_ghz), stackup)
-
-    def _f2(s_mm: float) -> float:
-        return (coupled_microstrip_even_odd_ohm(
-            w_root, s_mm, freq_ghz, er, h_mm, single=single)[0] - ze_t)
-
-    s_root = (float(brentq(_f2, s_lo, s_hi, xtol=1e-9))
-              if _f2(s_lo) > 0.0 else s_lo)
-    return w_root, s_root
 
 
 def _ant2_eps_eff(w_mm: float, freq_ghz: float, er: float, h_mm: float) -> float:

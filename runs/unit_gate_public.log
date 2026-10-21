@@ -1,195 +1,21 @@
 # rfauto public unit gate record (committed evidence for CONTRIBUTING)
-# Run: 2026-10-17, Windows 11 x64, Python 3.12.14, full [dev] extras installed
-# Command: python -m pytest tests/unit -q -n 2 (pytest-xdist, loadfile)
-#          -p no:randomly (fixed order), -p no:cacheprovider
-# Excluded from collection: 49 CSXCAD-native rendering test modules
-#   (they exercise the openEMS/CSXCAD Python bindings and are skipped on
-#   environments without the bindings -- same effective coverage as the
-#   Linux CI, where CSXCAD is not installable; conftest _CSXCAD_TEST_MODULES)
-# Result: 23177 passed, 5 failed (4 of the 5 are pytest-xdist worker native
-#   crashes on Windows (access-violation class, one per worker), each
-#   verified green when run standalone; the 5th is the CONTRIBUTING gate-log
-#   note itself, which this commit closes). Physical reds are never
-#   quarantined silently; known_flaky marker reruns are opt-in only.
+# Run: 2026-10-19, Windows 11 x64, Python 3.12.14, core deps + dev extras (public repo .venv)
+# Command: python -m pytest tests/unit -q -m "not real_edt" -p no:randomly (serial)
+# Excluded from run: real_edt-marked tests; CSXCAD/ngspice-native modules are
+#   file-level skipped on environments without the bindings (conftest
+#   _CSXCAD_TEST_MODULES/_NGSPICE_TEST_MODULES -- same effective coverage as
+#   the Linux CI where they are not installable).
+# Result: 26836 passed, 4 failed -- the 4 are the docs-drift regeneration
+#   comparison face (test_check_docs_drift / test_docs_site): the committed
+#   docs_site/index.md scale strip was one count stale vs a module-set change
+#   earlier in this same sync commit. Closed in the same commit by rebuilding
+#   docs_site + kernel cards (check_docs_drift GREEN) and a targeted rerun of
+#   the whole face: 17 passed / 0 failed. Physical reds are never quarantined
+#   silently; this header is the dual-evidence note.
 # TOTAL line at the end is parsed by scripts/build_docs_pages.py and
 # tests/unit/test_w6_d_so_leftovers.py::test_count_matches_named_gate_log.
 
-bringing up nodes...
-bringing up nodes...
-
-........................................................................ [  0%]
-........................................................................ [  0%]
-........................................................................ [  0%]
-........................................................................ [  1%]
-........................................................................ [  1%]
-........................................................................ [  1%]
-........................................................................ [  2%]
-........................................................................ [  2%]
-........................................................................ [  2%]
-........................................................................ [  3%]
-.s...................................................................... [  3%]
-........................................................................ [  3%]
-........................................................................ [  3%]
-........................................................................ [  4%]
-......................................................................ss [  4%]
-s....................................................................... [  4%]
-........................................................................ [  5%]
-........................................................................ [  5%]
-........................................................................ [  5%]
-....s............................................ss....ss............... [  6%]
-........................................................................ [  6%]
-........................................................................ [  6%]
-........................................................................ [  7%]
-........................................................................ [  7%]
-..................................s..................................... [  7%]
-........................................................................ [  7%]
-........................................................................ [  8%]
-........................................................................ [  8%]
-........................................................................ [  8%]
-........................................................................ [  9%]
-........................................................................ [  9%]
-........................................................................ [  9%]
-........................................................................ [ 10%]
-........................................................................ [ 10%]
-........................................................................ [ 10%]
-...............................................ssssss................... [ 11%]
-.............................................s...s...................... [ 11%]
-........................................................................ [ 11%]
-............ss.......................................................... [ 11%]
-........................................................................ [ 12%]
-........................................................................ [ 12%]
-........................................................................ [ 12%]
-........................................................................ [ 13%]
-........................................................................ [ 13%]
-...............................................................sssss.... [ 13%]
-s....................................................................... [ 14%]
-........................................................................ [ 14%]
-...............................ssssssss................................. [ 14%]
-........................................................................ [ 15%]
-........................................................................ [ 15%]
-........................................................................ [ 15%]
-........................................................................ [ 15%]
-........................................................................ [ 16%]
-........................................................................ [ 16%]
-........................................................................ [ 16%]
-..........................xxxx.xxx...................................... [ 17%]
-........................................................................ [ 17%]
-........................................................................ [ 17%]
-........................................................................ [ 18%]
-........................................................................ [ 18%]
-........................................................................ [ 18%]
-........................................................................ [ 19%]
-........................................................................ [ 19%]
-........................................................................ [ 19%]
-...........................................s............................ [ 19%]
-........................................................................ [ 20%]
-.......s................................................................ [ 20%]
-........................................................................ [ 20%]
-........................................................................ [ 21%]
-........................................................................ [ 21%]
-........................................................................ [ 21%]
-....................s................................................... [ 22%]
-........................................................................ [ 22%]
-........................................................................ [ 22%]
-.........................................................s.............. [ 23%]
-...........................................................ss....s...... [ 23%]
-........................................................................ [ 23%]
-........................................................................ [ 23%]
-......................................................s................. [ 24%]
-........................................................................ [ 24%]
-........................................................................ [ 24%]
-...........................................................s............ [ 25%]
-........................................................................ [ 25%]
-..........s............................................................. [ 25%]
-........................................................................ [ 26%]
-.................ssss.......................................s........... [ 26%]
-........................................................................ [ 26%]
-........................................................................ [ 27%]
-........................................................................ [ 27%]
-........................................................................ [ 27%]
-........................................................................ [ 27%]
-.ss...................ss...sssssssssssssssssss.......................... [ 28%]
-........................................................................ [ 28%]
-....................................Windows fatal exception: code 0xc0000374
-
-Thread 0x000009a4 (most recent call first):
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 534 in read
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 567 in from_io
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1160 in _thread_receiver
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-
-Current thread 0x00005ddc (most recent call first):
-  File "tools\uv\pythons\cpython-3.12-windows-x86_64-none\Lib\pathlib.py", line 1386 in symlink_to
-  File ".venv\Lib\site-packages\_pytest\pathlib.py", line 219 in _force_symlink
-  File ".venv\Lib\site-packages\_pytest\pathlib.py", line 236 in make_numbered_dir
-  File ".venv\Lib\site-packages\_pytest\tmpdir.py", line 141 in mktemp
-  File ".venv\Lib\site-packages\_pytest\tmpdir.py", line 287 in _mk_tmp
-  File ".venv\Lib\site-packages\_pytest\tmpdir.py", line 300 in tmp_path
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 998 in call_fixture_func
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 1328 in pytest_fixture_setup
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 1232 in execute
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 726 in _get_active_fixturedef
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 630 in getfixturevalue
-  File ".venv\Lib\site-packages\_pytest\fixtures.py", line 806 in _fillfixtures
-  File ".venv\Lib\site-packages\_pytest\python.py", line 1710 in setup
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 536 in setup
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 170 in pytest_runtest_setup
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 361 in from_call
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 132 in runtestprotocol
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 227 in run_one_test
-  File ".venv\Lib\site-packages\xdist\remote.py", line 206 in pytest_runtestloop
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\main.py", line 384 in _main
-  File ".venv\Lib\site-packages\_pytest\main.py", line 330 in wrap_session
-  File ".venv\Lib\site-packages\_pytest\main.py", line 377 in pytest_cmdline_main
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 427 in <module>
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1291 in executetask
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 389 in integrate_as_primary_thread
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1273 in serve
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1806 in serve
-  File "<string>", line 8 in <module>
-  File "<string>", line 1 in <module>
-[gw1] node down: Not properly terminated
-F....................................................................... [ 29%]
-........................................................................ [ 29%]
-........................................................................ [ 29%]
-........................................................................ [ 29%]
-........................................................................ [ 30%]
-........................................................................ [ 30%]
-........................................................................ [ 30%]
-........................................................................ [ 31%]
-........................................................................ [ 31%]
-........................................................................ [ 31%]
-........................................................................ [ 32%]
-........................................................................ [ 32%]
-........................................................................ [ 32%]
-........................................................................ [ 33%]
-........................................................................ [ 33%]
-........................................................................ [ 33%]
-........................................................................ [ 33%]
-........................................................................ [ 34%]
-........................................................................ [ 34%]
-........................................................................ [ 34%]
+................. [ 34%]
 ........................................................................ [ 35%]
 ........................................................................ [ 35%]
 ........................................................................ [ 35%]
@@ -198,292 +24,130 @@ F....................................................................... [ 29%]
 ........................................................................ [ 36%]
 ........................................................................ [ 36%]
 ........................................................................ [ 37%]
-...............................Windows fatal exception: code 0xc0000374
-
-Thread 0x00003f18 (most recent call first):
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 534 in read
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 567 in from_io
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1160 in _thread_receiver
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-
-Current thread 0x00005b6c (most recent call first):
-  File ".venv\Lib\site-packages\scipy\linalg\_decomp_qr.py", line 221 in qr
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\likelihood_eval.py", line 201 in evaluate
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 827 in _reduced_likelihood_function
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 1451 in minus_reduced_likelihood_function
-  File ".venv\Lib\site-packages\scipy\_lib\_util.py", line 544 in __call__
-  File ".venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py", line 362 in _update_fun
-  File ".venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py", line 412 in fun_and_grad
-  File ".venv\Lib\site-packages\scipy\optimize\_tnc.py", line 425 in _minimize_tnc
-  File ".venv\Lib\site-packages\scipy\optimize\_minimize.py", line 787 in minimize
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\hyperparam_optim.py", line 155 in _minimize
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\hyperparam_optim.py", line 100 in optimize
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 1617 in _optimize_hyperparam
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 536 in _run_optimization
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 517 in _new_train
-  File ".venv\Lib\site-packages\smt\surrogate_models\krg_based\krg_based.py", line 726 in _train
-  File ".venv\Lib\site-packages\smt\surrogate_models\surrogate_model.py", line 274 in train
-  File "src\rfauto\optimization\surrogate\smt_kriging.py", line 73 in fit
-  File "tests\unit\test_smt_kriging.py", line 42 in test_fit_predict_accuracy
-  File ".venv\Lib\site-packages\_pytest\python.py", line 167 in pytest_pyfunc_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\python.py", line 1707 in runtest
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 184 in pytest_runtest_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 361 in from_call
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 139 in runtestprotocol
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 227 in run_one_test
-  File ".venv\Lib\site-packages\xdist\remote.py", line 206 in pytest_runtestloop
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\main.py", line 384 in _main
-  File ".venv\Lib\site-packages\_pytest\main.py", line 330 in wrap_session
-  File ".venv\Lib\site-packages\_pytest\main.py", line 377 in pytest_cmdline_main
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 427 in <module>
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1291 in executetask
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 389 in integrate_as_primary_thread
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1273 in serve
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1806 in serve
-  File "<string>", line 8 in <module>
-  File "<string>", line 1 in <module>
-[gw2] node down: Not properly terminated
-F....................................................................... [ 37%]
+........................................................................ [ 37%]
+........................................................................ [ 37%]
+.......ssssssssss....................................................... [ 37%]
 ........................................................................ [ 38%]
 ........................................................................ [ 38%]
-..............................s......................................... [ 38%]
 ........................................................................ [ 38%]
+........................................................................ [ 38%]
+.........................................................sssssssssssssss [ 39%]
+sssssssssssssssssssssssssss............................................. [ 39%]
 ........................................................................ [ 39%]
-........................................................................ [ 39%]
-.............................s.......................................... [ 39%]
 ........................................................................ [ 40%]
 ........................................................................ [ 40%]
-........................................................................ [ 40%]
+.........................................s.............................. [ 40%]
+...................s.................................................... [ 40%]
 ........................................................................ [ 41%]
 ........................................................................ [ 41%]
 ........................................................................ [ 41%]
+........................................s............................... [ 41%]
+.....................ss................................................. [ 42%]
 ........................................................................ [ 42%]
-.......................................................................s [ 42%]
-s....................................................................... [ 42%]
+........................................................................ [ 42%]
 ........................................................................ [ 42%]
 ........................................................................ [ 43%]
-........................................................................ [ 43%]
-........................................................................ [ 43%]
+...............sss...................................................... [ 43%]
+.........ssssssssssssssssssssssssssss................................... [ 43%]
+.......................ssssssssss....................................... [ 43%]
+....................................................................s... [ 44%]
+................s...s................................................... [ 44%]
 ........................................................................ [ 44%]
-........................................................................ [ 44%]
-........................................................................ [ 44%]
-.........................s.........................................s.... [ 45%]
+........................................................................ [ 45%]
+........................................................................ [ 45%]
 ........................................................................ [ 45%]
 ........................................................................ [ 45%]
 ........................................................................ [ 46%]
 ........................................................................ [ 46%]
+............ssssss.ss.ss.s............s................................. [ 46%]
 ........................................................................ [ 46%]
-........................................................................ [ 46%]
+........................................................................ [ 47%]
 ........................................................................ [ 47%]
 ........................................................................ [ 47%]
 ........................................................................ [ 47%]
 ........................................................................ [ 48%]
 ........................................................................ [ 48%]
-...............................s........................................ [ 48%]
-..................................ss......sssssss....................... [ 49%]
-...............................................................s........ [ 49%]
+........................................................................ [ 48%]
 ........................................................................ [ 49%]
-......................s................................................. [ 50%]
+........................................................................ [ 49%]
+........................................................................ [ 49%]
+........................................................................ [ 49%]
 ........................................................................ [ 50%]
-........................................................................ [ 50%]
-..................................Windows fatal exception: code 0xc0000374
-
-Thread 0x00002ab0 (most recent call first):
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 534 in read
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 567 in from_io
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1160 in _thread_receiver
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-
-Current thread 0x000058dc (most recent call first):
-  File "tests\unit\test_pa_architectures.py", line 365 in test_module_json_serializable
-  File ".venv\Lib\site-packages\_pytest\python.py", line 167 in pytest_pyfunc_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\python.py", line 1707 in runtest
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 184 in pytest_runtest_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 361 in from_call
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 139 in runtestprotocol
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 227 in run_one_test
-  File ".venv\Lib\site-packages\xdist\remote.py", line 206 in pytest_runtestloop
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\main.py", line 384 in _main
-  File ".venv\Lib\site-packages\_pytest\main.py", line 330 in wrap_session
-  File ".venv\Lib\site-packages\_pytest\main.py", line 377 in pytest_cmdline_main
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 427 in <module>
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1291 in executetask
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 389 in integrate_as_primary_thread
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1273 in serve
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1806 in serve
-  File "<string>", line 8 in <module>
-  File "<string>", line 1 in <module>
-[gw0] node down: Not properly terminated
-F....................................................................... [ 51%]
+..........s............................................................. [ 50%]
+.............ss......sssssss............................................ [ 50%]
+.......................................s................................ [ 50%]
 ........................................................................ [ 51%]
-.............................................................ssssss.ss.s [ 51%]
-s.s..................................................................... [ 52%]
+........................................................................ [ 51%]
+.................s...................................................... [ 51%]
+........................................................................ [ 51%]
 ........................................................................ [ 52%]
 ........................................................................ [ 52%]
 ........................................................................ [ 52%]
-sssssssssssssssssssssssssssssssssssssssss............................... [ 53%]
-.................................................s...................... [ 53%]
+.....................................ss............s.................... [ 53%]
 ........................................................................ [ 53%]
-.......Windows fatal exception: code 0xc0000374
-
-Thread 0x00004f80 (most recent call first):
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 534 in read
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 567 in from_io
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1160 in _thread_receiver
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-
-Current thread 0x00002f98 (most recent call first):
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\probability_distributions.py", line 227 in log_pdf
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\parzen_estimator.py", line 82 in log_pdf
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\sampler.py", line 651 in _compute_acquisition_func
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\sampler.py", line 612 in _sample
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\sampler.py", line 505 in _sample_relative
-  File ".venv\Lib\site-packages\optuna\samplers\_tpe\sampler.py", line 480 in sample_relative
-  File ".venv\Lib\site-packages\optuna\trial\_trial.py", line 80 in relative_params
-  File ".venv\Lib\site-packages\optuna\trial\_trial.py", line 649 in _is_relative_param
-  File ".venv\Lib\site-packages\optuna\trial\_trial.py", line 617 in _suggest
-  File ".venv\Lib\site-packages\optuna\trial\_trial.py", line 170 in suggest_float
-  File "src\rfauto\optimization\surrogate_loop.py", line 122 in virtual_objective
-  File ".venv\Lib\site-packages\optuna\study\_optimize.py", line 206 in _run_trial
-  File ".venv\Lib\site-packages\optuna\study\_optimize.py", line 165 in _optimize_sequential
-  File ".venv\Lib\site-packages\optuna\study\_optimize.py", line 68 in _optimize
-  File ".venv\Lib\site-packages\optuna\study\study.py", line 502 in optimize
-  File "src\rfauto\optimization\surrogate_loop.py", line 144 in _virtual_search
-  File "src\rfauto\optimization\surrogate_loop.py", line 452 in run_surrogate_loop
-  File "tests\unit\test_surrogate_loop.py", line 123 in test_reduction_on_analytic_peak
-  File ".venv\Lib\site-packages\_pytest\python.py", line 167 in pytest_pyfunc_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\python.py", line 1707 in runtest
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 184 in pytest_runtest_call
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 361 in from_call
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 139 in runtestprotocol
-  File ".venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 227 in run_one_test
-  File ".venv\Lib\site-packages\xdist\remote.py", line 206 in pytest_runtestloop
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\_pytest\main.py", line 384 in _main
-  File ".venv\Lib\site-packages\_pytest\main.py", line 330 in wrap_session
-  File ".venv\Lib\site-packages\_pytest\main.py", line 377 in pytest_cmdline_main
-  File ".venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
-  File ".venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
-  File ".venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
-  File ".venv\Lib\site-packages\xdist\remote.py", line 427 in <module>
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1291 in executetask
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 341 in run
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 411 in _perform_spawn
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 389 in integrate_as_primary_thread
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1273 in serve
-  File ".venv\Lib\site-packages\execnet\gateway_base.py", line 1806 in serve
-  File "<string>", line 8 in <module>
-  File "<string>", line 1 in <module>
-[gw4] node down: Not properly terminated
-F.........................sss........................................... [ 54%]
-.................................................................s...... [ 54%]
+........................................................................ [ 53%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 54%]
+............................................................s........... [ 54%]
 ........................................................................ [ 54%]
 ........................................................................ [ 55%]
 ........................................................................ [ 55%]
-.....s.................................................................. [ 55%]
+........................................................................ [ 55%]
+........................................................................ [ 55%]
 ........................................................................ [ 56%]
 ........................................................................ [ 56%]
-.................................................ss............s........ [ 56%]
+........................................................................ [ 56%]
 ........................................................................ [ 56%]
 ........................................................................ [ 57%]
 ........................................................................ [ 57%]
 ........................................................................ [ 57%]
 ........................................................................ [ 58%]
-......................s................................................. [ 58%]
+........................................................................ [ 58%]
+........................................................................ [ 58%]
 ........................................................................ [ 58%]
 ........................................................................ [ 59%]
+.............................................................ss......... [ 59%]
 ........................................................................ [ 59%]
 ........................................................................ [ 59%]
+..........................................................ss............ [ 60%]
 ........................................................................ [ 60%]
-........................................................................ [ 60%]
-........................................................................ [ 60%]
-........................................................................ [ 60%]
+.............................s.......................................... [ 60%]
+............................................................ssss........ [ 60%]
 ........................................................................ [ 61%]
 ........................................................................ [ 61%]
 ........................................................................ [ 61%]
 ........................................................................ [ 62%]
+.....................................................ssss............... [ 62%]
 ........................................................................ [ 62%]
-........................................................................ [ 62%]
+.........................ssssss.........s............................... [ 62%]
+................ss....................s................................. [ 63%]
 ........................................................................ [ 63%]
-........................ss.............................................. [ 63%]
-.....................................................s.................. [ 63%]
-........................................................................ [ 64%]
-............ssss........................................................ [ 64%]
+........................................................................ [ 63%]
+........................................................................ [ 63%]
 ........................................................................ [ 64%]
 ........................................................................ [ 64%]
+........................................................................ [ 64%]
+...............s........................................................ [ 64%]
 ........................................................................ [ 65%]
 ........................................................................ [ 65%]
+......................................................s................. [ 65%]
 ........................................................................ [ 65%]
 ........................................................................ [ 66%]
 ........................................................................ [ 66%]
 ........................................................................ [ 66%]
+...................................................................s.... [ 67%]
 ........................................................................ [ 67%]
-............ssss........................................................ [ 67%]
-.................ssssss.........s....................................... [ 67%]
-........ss....................s......................................... [ 68%]
+........................................................................ [ 67%]
+........................................................................ [ 67%]
 ........................................................................ [ 68%]
 ........................................................................ [ 68%]
 ........................................................................ [ 68%]
+........................................................................ [ 68%]
+........................sssss........................................... [ 69%]
 ........................................................................ [ 69%]
 ........................................................................ [ 69%]
-........................................................................ [ 69%]
+.........s.............................................................. [ 69%]
 ........................................................................ [ 70%]
 ........................................................................ [ 70%]
 ........................................................................ [ 70%]
@@ -491,54 +155,63 @@ F.........................sss........................................... [ 54%]
 ........................................................................ [ 71%]
 ........................................................................ [ 71%]
 ........................................................................ [ 71%]
-........................................................s............... [ 72%]
+........................................................................ [ 72%]
+........................................................................ [ 72%]
 ........................................................................ [ 72%]
 ........................................................................ [ 72%]
 ........................................................................ [ 73%]
-..............................s......................................... [ 73%]
-.......................................................................F [ 73%]
-........ss.............................................................. [ 74%]
-....ss...ss............................................................. [ 74%]
+........................................................................ [ 73%]
+........................................................................ [ 73%]
+........................................................................ [ 73%]
 ........................................................................ [ 74%]
+...sssssssssssssssssssssssssssssssssssssssss............................ [ 74%]
+......................................................s................. [ 74%]
 ........................................................................ [ 75%]
 ........................................................................ [ 75%]
 ........................................................................ [ 75%]
 ........................................................................ [ 75%]
+........................................................................ [ 76%]
 ........................................................................ [ 76%]
 ........................................................................ [ 76%]
 ........................................................................ [ 76%]
 ........................................................................ [ 77%]
-..............................................................s......... [ 77%]
+........................................................................ [ 77%]
+........................................................................ [ 77%]
 ........................................................................ [ 77%]
 ........................................................................ [ 78%]
 ........................................................................ [ 78%]
 ........................................................................ [ 78%]
+........................................................................ [ 78%]
 ........................................................................ [ 79%]
 ........................................................................ [ 79%]
 ........................................................................ [ 79%]
-...................sssss................................................ [ 79%]
+........................................................................ [ 80%]
 ........................................................................ [ 80%]
 ........................................................................ [ 80%]
 ........................................................................ [ 80%]
 ........................................................................ [ 81%]
+.sssss.................................................................. [ 81%]
 ........................................................................ [ 81%]
-........................................................................ [ 81%]
+.....................sss................................................ [ 81%]
+............................................................s........... [ 82%]
 ........................................................................ [ 82%]
 ........................................................................ [ 82%]
-........................................................................ [ 82%]
+............................................s........................... [ 82%]
 ........................................................................ [ 83%]
-...s.................................................................... [ 83%]
 ........................................................................ [ 83%]
 ........................................................................ [ 83%]
 ........................................................................ [ 84%]
 ........................................................................ [ 84%]
-............................................sss.........s............... [ 84%]
+................................................s....................... [ 84%]
+........................................................................ [ 84%]
 ........................................................................ [ 85%]
-.......................sssss............................................ [ 85%]
+........................................................................ [ 85%]
+........................................................................ [ 85%]
 ........................................................................ [ 85%]
 ........................................................................ [ 86%]
 ........................................................................ [ 86%]
 ........................................................................ [ 86%]
+....................ss.................................................. [ 86%]
 ........................................................................ [ 87%]
 ........................................................................ [ 87%]
 ........................................................................ [ 87%]
@@ -548,10 +221,12 @@ F.........................sss........................................... [ 54%]
 ........................................................................ [ 88%]
 ........................................................................ [ 89%]
 ........................................................................ [ 89%]
-............................................sssss....................... [ 89%]
+........................................................................ [ 89%]
+........................................................................ [ 89%]
+...............s............s..................................s........ [ 90%]
 ........................................................................ [ 90%]
 ........................................................................ [ 90%]
-.....................................................sssssssssssss...... [ 90%]
+........................................................................ [ 90%]
 ........................................................................ [ 91%]
 ........................................................................ [ 91%]
 ........................................................................ [ 91%]
@@ -559,57 +234,114 @@ F.........................sss........................................... [ 54%]
 ........................................................................ [ 92%]
 ........................................................................ [ 92%]
 ........................................................................ [ 92%]
+........................................................................ [ 93%]
 ........................................................................ [ 93%]
 ........................................................................ [ 93%]
 ........................................................................ [ 93%]
 ........................................................................ [ 94%]
-.......................................................s................ [ 94%]
+........................................................................ [ 94%]
+.....................................................s.................. [ 94%]
 ........................................................................ [ 94%]
 ........................................................................ [ 95%]
 ........................................................................ [ 95%]
-...................................................s.................... [ 95%]
-.............................ss......................................... [ 95%]
+........................................................................ [ 95%]
+........................................................................ [ 95%]
+........................................................................ [ 96%]
 ........................................................................ [ 96%]
 ........................................................................ [ 96%]
 ........................................................................ [ 96%]
 ........................................................................ [ 97%]
-.......................sss.............................................. [ 97%]
-.................ssssssssssssssssssssssssssss........................... [ 97%]
-...............................ssssssssss............................... [ 98%]
+....ss...........................................................ss...ss [ 97%]
+........................................................................ [ 97%]
 ........................................................................ [ 98%]
-....s...................s...s........................................... [ 98%]
+........................................................................ [ 98%]
+........................................................................ [ 98%]
+........................................................................ [ 98%]
 ........................................................................ [ 99%]
 ........................................................................ [ 99%]
+.........................................................s.............. [ 99%]
 ........................................................................ [ 99%]
-........................................................................ [ 99%]
-................                                                         [100%]
+........................                                                 [100%]
 ================================== FAILURES ===================================
-[gw1] win32 -- Python 3.12.14 .venv\Scripts\python.exe
-worker 'gw1' crashed while running 'tests/unit/test_dag_cache.py::test_index_store_lookup_hit_zero_copy'
-worker 'gw1' crashed while running 'tests/unit/tes
-[gw2] win32 -- Python 3.12.14 .venv\Scripts\python.exe
-worker 'gw2' crashed while running 'tests/unit/test_smt_kriging.py::TestSMTKriging::test_fit_predict_accuracy'
-worker 'gw2' crashed while running 'tests/unit/tes
-[gw0] win32 -- Python 3.12.14 .venv\Scripts\python.exe
-worker 'gw0' crashed while running 'tests/unit/test_pa_architectures.py::test_module_json_serializable'
-worker 'gw0' crashed while running 'tests/unit/tes
-[gw4] win32 -- Python 3.12.14 .venv\Scripts\python.exe
-worker 'gw4' crashed while running 'tests/unit/test_surrogate_loop.py::TestSurrogateLoop::test_reduction_on_analytic_peak'
-worker 'gw4' crashed while running 'tests/unit/tes
-[gw3] win32 -- Python 3.12.14 .venv\Scripts\python.exe
-E   AssertionError: CONTRIBUTING 缺门日志计数注记
-    assert None
-tests\unit\test_w6_d_so_leftovers.py:517: AssertionError: CONTRIBUTING 缺门日志计数注记
-============================== warnings summary ===============================
-tests\unit\test_a8d_envelope_rest.py:19
-tests\unit\test_a8d_envelope_rest.py:19
-tests\unit\test_a8d_envelope_rest.py:19
-tests\unit\test_a8d_envelope_rest.py:19
-tests\unit\test_a8d_envelope_rest.py:19
-tests\unit\test_a8d_envelope_rest.py:19
-  tests\unit\test_a8d_envelope_rest.py:19: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient
+___________________ test_check_green_on_committed_docs_site ___________________
 
+capsys = <_pytest.capture.CaptureFixture object at 0x000001E0B2896150>
+
+    def test_check_green_on_committed_docs_site(
+            capsys: pytest.CaptureFixture[str]) -> None:
+        rc = build_docs_pages.main(["--check"])
+>       assert rc == 0
+E       assert 1 == 0
+
+tests\unit\test_check_docs_drift.py:81: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[docs_site] 漂移：1 个文件与基准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py
+____________________ test_driver_end_to_end_green_on_repo _____________________
+
+    def test_driver_end_to_end_green_on_repo() -> None:
+        r = subprocess.run(
+            [sys.executable, "scripts/check_docs_drift.py"],
+            cwd=str(_REPO), capture_output=True, text=True, timeout=300)
+>       assert r.returncode == 0, (r.stdout + r.stderr)[-1500:]
+E       AssertionError: == check_docs_drift（docs 再生面漂移日检；红=仓根重跑生成器并同笔提交）==
+E         [DRIFT] docs_site (50.2s) [docs_site] 漂移：1 个文件与基准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py
+E         [PASS] kernel_cards (6.7s) [kernel-cards] OK：74 张卡与三源同步
+E         == check_docs_drift RED (rc=1)：DRIFT/PASS ==
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['E:\\HFSS_Connect\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...y\n[PASS] kernel_cards (6.7s) [kernel-cards] OK：74 张卡与三源同步\n== check_docs_drift RED (rc=1)：DRIFT/PASS ==\n", stderr='').returncode
+
+tests\unit\test_check_docs_drift.py:167: AssertionError
+__________________ test_driver_only_subset_runs_single_face ___________________
+
+    def test_driver_only_subset_runs_single_face() -> None:
+        r = subprocess.run(
+            [sys.executable, "scripts/check_docs_drift.py", "--only",
+             "docs_site"],
+            cwd=str(_REPO), capture_output=True, text=True, timeout=300)
+>       assert r.returncode == 0, (r.stdout + r.stderr)[-1500:]
+E       AssertionError: == check_docs_drift（docs 再生面漂移日检；红=仓根重跑生成器并同笔提交）==
+E         [DRIFT] docs_site (50.8s) [docs_site] 漂移：1 个文件与基准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py
+E         == check_docs_drift RED (rc=1)：DRIFT ==
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['E:\\HFSS_Connect\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py\n== check_docs_drift RED (rc=1)：DRIFT ==\n", stderr='').returncode
+
+tests\unit\test_check_docs_drift.py:178: AssertionError
+________________ test_committed_docs_site_matches_regeneration ________________
+
+tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-8089/test_committed_docs_site_match0')
+
+    def test_committed_docs_site_matches_regeneration(tmp_path: Path) -> None:
+        build_docs_pages.build_all(tmp_path)
+        remedy = (
+            "docs_site/ 落后于代码面或源文档——修复：在仓根重跑 "
+            "`python scripts/build_docs_pages.py`，产物随本轮代码改动同笔提交"
+            "（#97 文档与代码同 commit；#247 他轨推进计数后同样适用）")
+        for rel in GENERATED_FILES:
+            committed = _DOCS_SITE / rel
+            assert committed.exists(), f"缺少已提交产物 docs_site/{rel}；{remedy}"
+            fresh = (tmp_path / rel).read_bytes()
+            assert committed.read_bytes() == fresh, f"docs_site/{rel} 内容漂移；{remedy}"
+        # 首页数字条单独锚（index.md 手写部分不参与逐字节比对）
+        committed_strip = build_docs_pages.read_index_strip(_DOCS_SITE)
+        fresh_strip = build_docs_pages.numbers_strip(
+            build_docs_pages.load_check_numbers())
+>       assert committed_strip.strip() == fresh_strip.strip(), (
+            f"首页数字条漂移；{remedy}")
+E       AssertionError: 首页数字条漂移；docs_site/ 落后于代码面或源文档——修复：在仓根重跑 `python scripts/build_docs_pages.py`，产物随本轮代码改动同笔提交（#97 文档与代码同 commit；#247 他轨推进计数后同样适用）
+E       assert '## 代码面数字（构建时...collect-only）' == '## 代码面数字（构建时...collect-only）'
+E         
+E         Skipping 131 identical leading characters in diff, use -v to show
+E         Skipping 123 identical trailing characters in diff, use -v to show
+E         - 门测试 | 27168 |
+E         ?           ^
+E         + 门测试 | 27169 |
+E         ?           ^
+E           | CLI
+
+tests\unit\test_docs_site.py:148: AssertionError
+============================== warnings summary ===============================
 tests/unit/test_aaa_pilot.py::TestAaaFit::test_pole_recovery_within_predeclared_tol
 tests/unit/test_aaa_pilot.py::TestAaaFit::test_rms_at_samples_machine_level
 tests/unit/test_aaa_pilot.py::TestAaaFit::test_model_off_support_accuracy
@@ -618,14 +350,14 @@ tests/unit/test_aaa_pilot.py::TestAaaFit::test_residues_finite_and_shaped
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_report
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_deterministic
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_deterministic
-  src\rfauto\core\aaa.py:134: ComplexWarning: Casting complex values to real discards the imaginary part
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\aaa.py:134: ComplexWarning: Casting complex values to real discards the imaginary part
     support_points = np.asarray(approx.support_points, dtype=float).ravel()
 
 tests/unit/test_ads_circuit.py::TestRenderNetlistDelegate::test_render_netlist_3port
 tests/unit/test_ads_netlist.py::TestGenerateNetlist::test_3port_generates_snp_and_ports
 tests/unit/test_ads_netlist.py::TestGenerateNetlist::test_missing_template_raises
 tests/unit/test_field_circuit_anchor.py::TestRenderCascadeNetlist::test_rejects_wrong_port_count
-  .venv\Lib\site-packages\skrf\mathFunctions.py:303: RuntimeWarning: divide by zero encountered in log10
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\mathFunctions.py:303: RuntimeWarning: divide by zero encountered in log10
     out = 20 * np.log10(z)
 
 tests/unit/test_afr_2xthru.py::TestDeembed::test_recovery_within_1e3_db
@@ -633,43 +365,44 @@ tests/unit/test_afr_2xthru.py::TestDeembed::test_deterministic
 tests/unit/test_afr_2xthru.py::TestZcVariantZ0Measured::test_zc_z0_follows_measured_network
 tests/unit/test_afr_2xthru_mm.py::test_mm_nzc_four_port_recovery_within_1e3_db
 tests/unit/test_afr_2xthru_mm.py::test_single_end_path_still_gated_and_2port_recovery
+tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_lumped_corpus
-tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
-  src\rfauto\measurement\afr_2xthru.py:90: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\measurement\afr_2xthru.py:90: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
     return IEEEP370_SE_NZC_2xThru.extrapolate_to_dc(net)
 
 tests/unit/test_afr_2xthru.py: 3 warnings
 tests/unit/test_afr_2xthru_mm.py: 2 warnings
-tests/unit/test_w4_d_ms3_selector.py: 4 warnings
 tests/unit/test_rules_verify.py: 1 warning
-  .venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: DC point detected. An interpolated DC point will be included in the errorboxes.
+tests/unit/test_w4_d_ms3_selector.py: 4 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: DC point detected. An interpolated DC point will be included in the errorboxes.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru)
 
 tests/unit/test_afr_2xthru.py: 3 warnings
 tests/unit/test_afr_2xthru_mm.py: 2 warnings
-tests/unit/test_w4_d_ms3_selector.py: 4 warnings
 tests/unit/test_rules_verify.py: 1 warning
-  .venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
+tests/unit/test_w4_d_ms3_selector.py: 4 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
                      this calculation. The output results will be re-interpolated to the original vector.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru)
 
+tests/unit/test_array_coupling.py::test_replay_fixture_provenance_and_structure
+  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_array_coupling.py:414: ComplexWarning: Casting complex values to real discards the imaginary part
+    assert abs(float(np.mean(np.diag(s_meas)))) < 1.0    # 数据合理域
+
 tests/unit/test_builder_utils.py::TestWilkinsonHfssBuildMock::test_build_uses_correct_api_parameter_names
-tests/unit/test_q3d_adapter.py::TestRegistryCapabilities::test_capabilities_declared_honestly
-tests/unit/test_mcp_chat_channel.py::TestMCPAgentChat::test_models_via_mcp_tool
-  .venv\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
     from . import cElementTree
 
-tests/unit/test_c3_q_extract.py::TestSyntheticRecovery::test_mode_recovery
-tests/unit/test_c3_q_extract.py::TestTruncationSensitivity::test_extrapolation_stable_across_truncations
-tests/unit/test_inverse_design.py::TestSearch::test_contract_and_not_worse_than_random
-tests/unit/test_inverse_design.py::TestAcceptance6x6::test_reaches_pass_grade
-tests/unit/test_slotline_route_b.py::TestLumpedGeometryAudit::test_slot_metal_two_isolated_groups_full_domain
-tests/unit/test_slotline_transitions.py::TestGeometryAudit::test_transition_slot_gap_and_short_bridge
-tests/unit/test_slotline_transitions.py::TestHfssAnalysis::test_trans_perfect_line_passes_and_beta_exact
-tests/unit/test_transfer_protocol.py::TestComparisonProtocol::test_low_shot_finetune_wins
-tests/unit/test_trust_region.py::TestTwoStageVsStage1::test_median_final_improves
-  .venv\Lib\site-packages\_pytest\fixtures.py:1313: PytestRemovedIn10Warning: Class-scoped fixture defined as instance method is deprecated.
+tests/unit/test_c3_q_extract.py: 2 warnings
+tests/unit/test_inverse_design.py: 2 warnings
+tests/unit/test_slotline_route_b.py: 1 warning
+tests/unit/test_slotline_template.py: 1 warning
+tests/unit/test_slotline_transitions.py: 2 warnings
+tests/unit/test_transfer_protocol.py: 1 warning
+tests/unit/test_trust_region.py: 1 warning
+tests/unit/test_w1s1_ui_deploy_hardening.py: 2 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\_pytest\fixtures.py:1313: PytestRemovedIn10Warning: Class-scoped fixture defined as instance method is deprecated.
   Instance attributes set in this fixture will NOT be visible to test methods,
   as each test gets a new instance while the fixture runs only once per class.
   Use @classmethod decorator and set attributes on cls instead.
@@ -677,50 +410,20 @@ tests/unit/test_trust_region.py::TestTwoStageVsStage1::test_median_final_improve
     fixturefunc = resolve_fixture_function(fixturedef, request)
 
 tests/unit/test_calkit.py::TestVNAApplyCalkit::test_vna_apply_cal_kit_logs
-  .venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
   2.0-3.0 GHz, 11 pts
     return connect(ntwkA, N, ntwkB, 0, num=N)
-
-tests/unit/test_field_circuit_anchor.py::TestMacromodelBridge::test_fit_reconstruction_and_cascade
-tests/unit/test_field_circuit_anchor.py::TestRunAnchorOffline::test_end_to_end_offline_ok
-tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
-  src\rfauto\core\macromodel.py:1464: UserWarning: The fitted network is passive, but the vector fit is not passive. Consider running `passivity_enforce()` to enforce passivity before using this model.
-    vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
 
 tests/unit/test_com_pam4.py: 16 warnings
 tests/unit/test_com_pam4_service.py: 8 warnings
 tests/unit/test_si_channel_service.py: 2 warnings
-  .venv\Lib\site-packages\skrf\frequency.py:280: DeprecationWarning: 
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:280: DeprecationWarning: 
                             Frequency unit not passed: uses 'Hz' per default.
                             
     temp_freq =  cls(0,0,0,unit=unit)
 
-tests/unit/test_global_local.py::TestMonotoneGuard::test_no_adoption_falls_back_honestly
-  .venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
-    self.H.update(self.x - self.x_prev, self.g - self.g_prev)
-
-tests/unit/test_heteroscedastic_gp.py: 13 warnings
-tests/unit/test_metric_lml_ci.py: 20 warnings
-tests/unit/test_metric_transform.py: 628 warnings
-tests/unit/test_uncertainty.py: 25 warnings
-tests/unit/test_mf_surrogate_loop.py: 70 warnings
-tests/unit/test_surrogate_analysis.py: 17 warnings
-tests/unit/test_trust_region.py: 35 warnings
-tests/unit/test_wp39_benchmark.py: 12 warnings
-tests/unit/test_surrogate_loop.py: 65 warnings
-tests/unit/test_surrogate_optimize_service.py: 10 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
-    warnings.warn(
-
-tests/unit/test_heteroscedastic_gp.py: 6 warnings
-tests/unit/test_metric_transform.py: 40 warnings
-tests/unit/test_surrogate_analysis.py: 18 warnings
-tests/unit/test_wp39_benchmark.py: 10 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
-    warnings.warn(
-
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
-  src\rfauto\optimization\optimizer.py:306: UserWarning: Overwrite an old format constraint.
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:306: UserWarning: Overwrite an old format constraint.
     params[name] = trial.suggest_float(name, low, high, log=log)
 
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
@@ -729,7 +432,7 @@ tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_al
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_tpe_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_gp_batch_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  src\rfauto\optimization\optimizer.py:1358: UserWarning: Overwrite an old format constraint.
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:1358: UserWarning: Overwrite an old format constraint.
     best_trial = study.best_trial
 
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
@@ -738,50 +441,116 @@ tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_al
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_tpe_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_gp_batch_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  src\rfauto\optimization\optimizer.py:342: UserWarning: Overwrite an old format constraint.
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:342: UserWarning: Overwrite an old format constraint.
     cons = getattr(trial, "constraints", None)
 
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  tests\unit\test_constraint_optimization.py:318: UserWarning: Overwrite an old format constraint.
+  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_constraint_optimization.py:318: UserWarning: Overwrite an old format constraint.
     cons = t.constraints
 
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  src\rfauto\optimization\optimizer.py:322: UserWarning: Overwrite an old format constraint.
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:322: UserWarning: Overwrite an old format constraint.
     cons = getattr(trial, "constraints", None)
 
-tests/unit/test_si_channel_service.py::TestSources::test_corrupt_csv_no_touchstone_fallback
-  src\rfauto\service\health_service.py:117: UserWarning: loadtxt: input contained no data: "<tmp>\pytest\pytest-6801\popen-gw2\test_corrupt_csv_no_touchstone0\run_bad_csv\sparams.csv"
-    data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1, ndmin=2)
+tests/unit/test_edb_templates_ext.py::test_cl_custom_params_flow
+  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_edb_templates_ext.py:317: UserWarning: coupled_line 厚度伪象区守卫：s/t=17.89≥4 属伪象主导区划线（W8 实测 bias+2.274dB@s/t=4.29 为 ΔS 收敛档伪象主导、非纯厚度，厚度效应量值未分辨）——仅提示不阻断（数据不足硬门，#122），判读请收紧收敛档复核
+    spec, _ = emit_coupled_line_spec({
 
-tests/unit/test_isac_ambiguity.py::test_woodward_volume_invariant_lfm
-  src\rfauto\core\isac_ambiguity.py:275: ComplexWarning: Casting complex values to real discards the imaginary part
-    chi00 = float(np.sum(np.asarray(sig, dtype=complex)
+tests/unit/test_eipu_cost_cooling.py: 38 warnings
+tests/unit/test_eipu_sampler.py: 100 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.1. Decreasing the bound and calling fit again may find a better value.
+    warnings.warn(
 
-tests/unit/test_metric_transform.py: 14 warnings
-tests/unit/test_surrogate_analysis.py: 4 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 14 iteration(s) (status=2):
+tests/unit/test_eipu_sampler.py::test_loop_budget_referee_eipu_beats_ei
+tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_quality_reacts_to_data
+tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
+tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 11 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_uncertainty.py: 4 warnings
-tests/unit/test_metric_transform.py: 2 warnings
-tests/unit/test_w3_c_registry_e2e.py: 20 warnings
-tests/unit/test_surrogate_analysis.py: 20 warnings
-tests/unit/test_trust_region.py: 1 warning
-tests/unit/test_wp39_benchmark.py: 52 warnings
-tests/unit/test_surrogate_loop.py: 4 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
+tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
+tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
+
+tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
+tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 3.0. Increasing the bound and calling fit again may find a better value.
+    warnings.warn(
+
+tests/unit/test_field_circuit_anchor.py::TestMacromodelBridge::test_fit_reconstruction_and_cascade
+tests/unit/test_field_circuit_anchor.py::TestRunAnchorOffline::test_end_to_end_offline_ok
+tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: UserWarning: The fitted network is passive, but the vector fit is not passive. Consider running `passivity_enforce()` to enforce passivity before using this model.
+    vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
+
+tests/unit/test_global_local.py::TestMonotoneGuard::test_no_adoption_falls_back_honestly
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+    self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+tests/unit/test_heteroscedastic_gp.py: 13 warnings
+tests/unit/test_metric_lml_ci.py: 20 warnings
+tests/unit/test_metric_transform.py: 628 warnings
+tests/unit/test_mf_surrogate_loop.py: 70 warnings
+tests/unit/test_surrogate_analysis.py: 17 warnings
+tests/unit/test_surrogate_loop.py: 80 warnings
+tests/unit/test_surrogate_optimize_service.py: 10 warnings
+tests/unit/test_trust_region.py: 35 warnings
+tests/unit/test_uncertainty.py: 25 warnings
+tests/unit/test_wp39_benchmark.py: 12 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+    warnings.warn(
+
+tests/unit/test_heteroscedastic_gp.py: 6 warnings
+tests/unit/test_metric_transform.py: 40 warnings
+tests/unit/test_surrogate_analysis.py: 18 warnings
+tests/unit/test_wp39_benchmark.py: 10 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
+    warnings.warn(
+
+tests/unit/test_isac_ambiguity.py::test_woodward_volume_invariant_lfm
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\isac_ambiguity.py:275: ComplexWarning: Casting complex values to real discards the imaginary part
+    chi00 = float(np.sum(np.asarray(sig, dtype=complex)
+
+tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_csx_properties_offline_exec
+tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_exec_port_plane_on_grid
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
+    return _methods._mean(a, axis=axis, dtype=dtype,
+
+tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_csx_properties_offline_exec
+tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_exec_port_plane_on_grid
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+    ret = ret.dtype.type(ret / rcount)
+
+tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
+  Hint: the linear system was ill-conditioned (max. condition number was 2.0868286279151756e+16).
+    vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
+
+tests/unit/test_material_characterization.py::TestFreeSpaceMA3::test_network_requires_2port
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:282: InvalidFrequencyWarning: Frequency values are not monotonously increasing!
+  To get rid of the invalid values call `drop_non_monotonic_increasing`
+    temp_freq.check_monotonic_increasing()
+
+tests/unit/test_metric_transform.py: 14 warnings
+tests/unit/test_surrogate_analysis.py: 4 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 14 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
 tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
 tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 16 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 16 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -789,20 +558,30 @@ tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_iden
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_metric_transform.py: 2 warnings
-tests/unit/test_w3_c_registry_e2e.py: 5 warnings
 tests/unit/test_surrogate_analysis.py: 3 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 15 iteration(s) (status=2):
+tests/unit/test_w3_c_registry_e2e.py: 5 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 15 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
+tests/unit/test_metric_transform.py: 2 warnings
+tests/unit/test_surrogate_analysis.py: 20 warnings
+tests/unit/test_surrogate_loop.py: 4 warnings
+tests/unit/test_trust_region.py: 1 warning
+tests/unit/test_uncertainty.py: 4 warnings
+tests/unit/test_w3_c_registry_e2e.py: 20 warnings
+tests/unit/test_wp39_benchmark.py: 52 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
+    warnings.warn(
+
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_wp39_benchmark.py::TestSboOffline::test_1d_converges_within_budget
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-mline]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 19 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 19 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -810,10 +589,10 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_metric_transform.py: 1 warning
-tests/unit/test_w3_c_registry_e2e.py: 10 warnings
 tests/unit/test_surrogate_analysis.py: 1 warning
 tests/unit/test_surrogate_loop.py: 1 warning
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 10 iteration(s) (status=2):
+tests/unit/test_w3_c_registry_e2e.py: 10 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 10 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -821,7 +600,7 @@ tests/unit/test_surrogate_loop.py: 1 warning
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 23 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 23 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -831,7 +610,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perf
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 17 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 17 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -840,9 +619,9 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
 
 tests/unit/test_metric_transform.py: 1 warning
 tests/unit/test_mf_surrogate_loop.py: 1 warning
-tests/unit/test_w3_c_registry_e2e.py: 5 warnings
 tests/unit/test_surrogate_analysis.py: 3 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 12 iteration(s) (status=2):
+tests/unit/test_w3_c_registry_e2e.py: 5 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 12 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -853,7 +632,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 6 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 6 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -864,7 +643,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_loop.py::TestSurrogateLoop::test_budget_stop_and_1d_convergence
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 8 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 8 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -879,7 +658,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_mf_surrogate_loop.py::TestMultiFidelityAcceptance::test_forrester_half_fine_evaluations
@@ -887,43 +666,73 @@ tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_param_importa
 tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_param_importance
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 13 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 13 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_w3_a_lake_compact.py::TestVfSummary::test_bounded_lossy_reports_honest_bound
-  src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
-    vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
-
 tests/unit/test_openems_rotation.py::test_corrupt_csv_forces_round_rerun
-  src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "<tmp>\pytest\pytest-6801\popen-gw0\test_corrupt_csv_forces_round_0\p3\sparams.csv"
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_corrupt_csv_forces_round_0\p3\sparams.csv"
     data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1,
 
 tests/unit/test_openems_rotation.py::test_six_port_corrupt_csv_forces_round_rerun
-  src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "<tmp>\pytest\pytest-6801\popen-gw0\test_six_port_corrupt_csv_forc0\p5\sparams.csv"
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_six_port_corrupt_csv_forc0\p5\sparams.csv"
     data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1,
 
-tests/unit/test_w3_c_registry_e2e.py: 15 warnings
-tests/unit/test_surrogate_analysis.py: 5 warnings
-tests/unit/test_wp39_benchmark.py: 3 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 7 iteration(s) (status=2):
+tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
+tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
+tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
+tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
+tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
+tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
+tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_reports_cross_validated_quality
+tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_runs_selection_on_cost
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 22 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_w3_c_registry_e2e.py: 5 warnings
-tests/unit/test_surrogate_analysis.py: 6 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 9 iteration(s) (status=2):
+tests/unit/test_recipe_loop_remote.py: 3 warnings
+tests/unit/test_wp39_benchmark.py: 8 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 20 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
+
+tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
+tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
+tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_lumped_corpus
+tests/unit/test_w4_d_ms3_selector.py::test_nzc_insensitive_to_dz
+tests/unit/test_w4_d_ms3_selector.py::test_determinism_bitwise_with_noise
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\service\deembed_selector_service.py:79: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
+    return IEEEP370_SE_NZC_2xThru.extrapolate_to_dc(net)
+
+tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
+tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: DC point detected. The included DC point will not be used during extraction.
+    self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
+
+tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
+tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
+                 this calculation. The output results will be re-interpolated to the original vector.
+    self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
+
+tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
+tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
+  100000000.0-40000000000.0 Hz, 2 pts
+    return connect(ntwkA, N, ntwkB, 0, num=N)
+
+tests/unit/test_si_channel_service.py::TestSources::test_corrupt_csv_no_touchstone_fallback
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\service\health_service.py:123: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_corrupt_csv_no_touchstone0\run_bad_csv\sparams.csv"
+    data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1, ndmin=2)
 
 tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_basic_analysis
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_runs_selection_on_cost
@@ -933,164 +742,106 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 21 iteration(s) (status=2):
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 21 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_reports_cross_validated_quality
-tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_runs_selection_on_cost
-tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
-tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
-tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 22 iteration(s) (status=2):
+tests/unit/test_surrogate_analysis.py: 6 warnings
+tests/unit/test_w3_c_registry_e2e.py: 5 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 9 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_quality_reacts_to_data
-tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
-tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-tests/unit/test_eipu_sampler.py::test_loop_budget_referee_eipu_beats_ei
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 11 iteration(s) (status=2):
+tests/unit/test_surrogate_analysis.py: 5 warnings
+tests/unit/test_w3_c_registry_e2e.py: 15 warnings
+tests/unit/test_wp39_benchmark.py: 3 warnings
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 7 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
       https://scikit-learn.org/stable/modules/preprocessing.html
     _check_optimize_result("lbfgs", opt_res)
 
-tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
-  .venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: divide by zero encountered in divide
-    a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
-
-tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
-  .venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: invalid value encountered in multiply
-    a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
-
-tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_lumped_corpus
-tests/unit/test_w4_d_ms3_selector.py::test_nzc_insensitive_to_dz
-tests/unit/test_w4_d_ms3_selector.py::test_determinism_bitwise_with_noise
-tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
-  src\rfauto\service\deembed_selector_service.py:79: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
-    return IEEEP370_SE_NZC_2xThru.extrapolate_to_dc(net)
-
-tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
-  .venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: DC point detected. The included DC point will not be used during extraction.
-    self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
-
-tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
-  .venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
-                 this calculation. The output results will be re-interpolated to the original vector.
-    self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
-
-tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
-  .venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
-  100000000.0-40000000000.0 Hz, 2 pts
-    return connect(ntwkA, N, ntwkB, 0, num=N)
-
-tests/unit/test_recipe_loop_remote.py: 3 warnings
-tests/unit/test_wp39_benchmark.py: 8 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 20 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
-tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 25 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 2 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 1 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 4 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
-  .venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 3 iteration(s) (status=2):
-  ABNORMAL: 
-  
-  You might also want to scale the data as shown in:
-      https://scikit-learn.org/stable/modules/preprocessing.html
-    _check_optimize_result("lbfgs", opt_res)
-
-tests/unit/test_edb_templates_ext.py::test_cl_custom_params_flow
-  tests\unit\test_edb_templates_ext.py:317: UserWarning: coupled_line 厚度伪象区守卫：s/t=17.89≥4 属伪象主导区划线（W8 实测 bias+2.274dB@s/t=4.29 为 ΔS 收敛档伪象主导、非纯厚度，厚度效应量值未分辨）——仅提示不阻断（数据不足硬门，#122），判读请收紧收敛档复核
-    spec, _ = emit_coupled_line_spec({
-
-tests/unit/test_eipu_cost_cooling.py: 38 warnings
-tests/unit/test_eipu_sampler.py: 100 warnings
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.1. Decreasing the bound and calling fit again may find a better value.
-    warnings.warn(
-
-tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
-tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
-    warnings.warn(
-
-tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
-tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
-  .venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 3.0. Increasing the bound and calling fit again may find a better value.
-    warnings.warn(
-
-tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
-  src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
-  Hint: the linear system was ill-conditioned (max. condition number was 2.0868286279151756e+16).
+tests/unit/test_w3_a_lake_compact.py::TestVfSummary::test_bounded_lossy_reports_honest_bound
+  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
     vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
 
-tests/unit/test_material_characterization.py::TestFreeSpaceMA3::test_network_requires_2port
-  .venv\Lib\site-packages\skrf\frequency.py:282: InvalidFrequencyWarning: Frequency values are not monotonously increasing!
-  To get rid of the invalid values call `drop_non_monotonic_increasing`
-    temp_freq.check_monotonic_increasing()
+tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: divide by zero encountered in divide
+    a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
 
-tests/unit/test_mcp_server.py::TestWiringToolsConsistency::test_callability_double_check[marchand_balun_design]
-  tests\conftest.py:239: UserWarning: unit 套件在工作区 runs/ 留下 1 个新目录: ['20261017_204220_31421034']
-    warnings.warn(
+tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: invalid value encountered in multiply
+    a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
+
+tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
+tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 25 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
+
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 2 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
+
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 1 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
+
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 4 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
+
+tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
+  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 3 iteration(s) (status=2):
+  ABNORMAL: 
+  
+  You might also want to scale the data as shown in:
+      https://scikit-learn.org/stable/modules/preprocessing.html
+    _check_optimize_result("lbfgs", opt_res)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ===========================
-FAILED tests/unit/test_dag_cache.py::test_index_store_lookup_hit_zero_copy - ...
-FAILED tests/unit/test_smt_kriging.py::TestSMTKriging::test_fit_predict_accuracy
-FAILED tests/unit/test_pa_architectures.py::test_module_json_serializable - w...
-FAILED tests/unit/test_surrogate_loop.py::TestSurrogateLoop::test_reduction_on_analytic_peak
-FAILED tests/unit/test_w6_d_so_leftovers.py::TestContributingNumbers::test_count_matches_named_gate_log
-5 failed, 23177 passed, 270 skipped, 7 xfailed, 1498 warnings in 2200.08s (0:36:40)
 
-TOTAL: 23177 passed, 5 failed
+-------------------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------------------
+Name (time in ms)                         Min                 Max                Mean              StdDev             Median                 IQR            Outliers       OPS            Rounds  Iterations
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_bench_registry_backfill_scan      5.3347 (1.0)       12.5928 (1.0)        7.2126 (1.0)        1.4353 (1.0)       6.8801 (1.0)        1.7501 (1.0)          69;9  138.6457 (1.0)         233           1
+test_bench_oracle_cross_check_all     18.5181 (3.47)      36.5110 (2.90)      22.4944 (3.12)       3.6695 (2.56)     21.0787 (3.06)       4.0738 (2.33)         32;8   44.4556 (0.32)        153           1
+test_bench_lake_index_build           60.4112 (11.32)    350.7418 (27.85)    126.3302 (17.52)    100.2657 (69.86)    68.3177 (9.93)     122.3655 (69.92)         1;0    7.9158 (0.06)          9           1
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+=========================== short test summary info ===========================
+FAILED tests/unit/test_check_docs_drift.py::test_check_green_on_committed_docs_site
+FAILED tests/unit/test_check_docs_drift.py::test_driver_end_to_end_green_on_repo
+FAILED tests/unit/test_check_docs_drift.py::test_driver_only_subset_runs_single_face
+FAILED tests/unit/test_docs_site.py::test_committed_docs_site_matches_regeneration
+4 failed, 26836 passed, 328 skipped, 7 xfailed, 1512 warnings in 3479.70s (0:57:59)
+RC=1
+
+TOTAL: 26836 passed, 4 failed

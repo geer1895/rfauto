@@ -1,4 +1,10 @@
-"""Klopfenstein 渐变段综合（DP-15 C2）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""Klopfenstein 渐变段综合（DP-15 C2）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（Klopfenstein 渐变线经典文献）：
+- klopfenstein_taper：最优二端口渐变匹配段闭式（D. L. Klopfenstein,
+  "A transmission line taper of improved design", Proc. IRE 44(1),
+  1956；切比雪夫等纹波反射响应推导，二级转引 Pozar, Microwave
+  Engineering 渐变线一节）。"""
 
 from __future__ import annotations
 

@@ -10,10 +10,10 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
+def _isolated_cwd(isolated):
     """create_run 等工具走完整 run_once 链，run 目录按 cwd 落盘——
-    不隔离会把 fake run 写进工作区真实 runs/（#173，污染孤例第二源头）。"""
-    monkeypatch.chdir(tmp_path)
+    不隔离会把 fake run 写进工作区真实 runs/（#173，污染孤例第二源头）；
+    T5 批 6 起隔离体单源化（tests/conftest.py::isolated 适配）。"""
 
 
 @pytest.fixture()
@@ -371,10 +371,16 @@ class TestValidateRecipe:
     """validate_recipe 工具测试。"""
 
     def test_valid_recipe(self, mcp_server, sample_recipe):
+        """契约面行为级（R3 弱测试 #5 加固）：合法配方的"干净判定"逐键
+        ——ok 之外 errors 必须为空集、warnings 为列表（拦"ok=True 但带着
+        一堆错误结论"的假绿）。"""
         import asyncio
         result = asyncio.run(mcp_server.call_tool("validate_recipe", {"recipe_path": str(sample_recipe)}))
         data = _extract_result(result)
         assert data["ok"] is True
+        assert data["errors"] == [], data["errors"]
+        assert isinstance(data["warnings"], list)
+        assert not any("缺少" in w for w in data["warnings"])
 
     def test_invalid_path(self, mcp_server):
         import asyncio
@@ -985,9 +991,13 @@ class TestAfsAndInteropTools:
         assert "evaluate_contract" in plan
 
     def test_afs_plan_invalid_band_envelope(self, mcp_server):
+        """负路径行为级（R3 弱测试 #6 加固）：error 文本须带 band 语义
+        （f_min<f_max 契约）并回显违规值——拦"拒绝错理由"的假绿。"""
         data = _call(mcp_server, "afs_plan",
                      {"f_min_ghz": 4.0, "f_max_ghz": 1.0})
         assert data["ok"] is False
+        assert "f_min < f_max" in data["error"]
+        assert "4000000000.0" in data["error"]  # 违规 f_min 回显（Hz 口径）
 
     def test_read_hfss_touchstone_comments_synthetic(self, mcp_server,
                                                      tmp_path):

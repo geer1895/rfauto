@@ -31,8 +31,7 @@ from rfauto.service.ui_service import recipe_view
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(tmp_path, monkeypatch, isolated):
     # 围栏根只认 cwd + 显式 RFAUTO_FS_ROOT——防本机 set 的该 env 串味
     #（确定性测试要清空同名前缀的整个环境变量集合，AGENTS 踩坑速查）
     monkeypatch.delenv("RFAUTO_FS_ROOT", raising=False)
@@ -60,22 +59,38 @@ class TestFsListRootFence:
     def test_absolute_outside_root_rejected(self, tmp_path: Path) -> None:
         d = fs_list(str(tmp_path.parent))
         assert d["ok"] is False and "路径越界" in d["error"]
+        # R3 弱测试 #20 加固：安全面拒绝必须回显越界路径与允许根（错误
+        # 可行动——调用方一眼看出"拒的是谁、允许的是哪"）
+        assert str(tmp_path.parent) in d["error"]
+        assert str(tmp_path) in d["error"]  # 允许根
+        assert "RFAUTO_FS_ROOT" in d["error"]  # 放行出口同信封
 
     @pytest.mark.skipif(not sys.platform.startswith("win"),
                         reason="Windows-only behavior: drive-escape fence "
                                "rejects a Windows drive prefix")
-    def test_drive_escape_rejected(self) -> None:
+    def test_drive_escape_rejected(self, tmp_path: Path) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")
         assert d["ok"] is False and "路径越界" in d["error"]
+        # R3 弱测试 #21 加固：越界路径逐字回显（围栏对盘符逃逸的拒绝
+        # 理由与根围栏同源，不做存在性外探）
+        assert "D:\\x" in d["error"]
+        assert str(tmp_path) in d["error"]
 
     def test_missing_within_root_reports_not_exist(self, tmp_path: Path) -> None:
         d = fs_list("no_such_dir")
         assert d["ok"] is False and "目录不存在" in d["error"]
 
     def test_env_root_allows_outside(self, tmp_path, monkeypatch) -> None:
+        work = tmp_path / "work"
+        work.mkdir()
         outside = tmp_path / "outside"
         outside.mkdir()
+        monkeypatch.chdir(work)  # cwd 收窄：outside 成真正的根外路径
+        # R3 弱测试 #22 加固：注入对照——先证无 env 时真拒（放行语义
+        # 有对照物），再证设 env 后放行+路径回显
+        d0 = fs_list(str(outside))
+        assert d0["ok"] is False and "路径越界" in d0["error"]
         monkeypatch.setenv("RFAUTO_FS_ROOT", str(outside))
         d = fs_list(str(outside))
         assert d["ok"] and d["path"] == str(outside)
@@ -104,6 +119,11 @@ class TestFsListRootFence:
         sibling = tmp_path.parent / (tmp_path.name + "x")
         d = fs_list(str(sibling))
         assert d["ok"] is False
+        # R3 弱测试 #23 加固：语义+回显双钉——拒绝理由是围栏语义（非
+        # 存在性/敏感面误拦），且被拒路径=兄弟目录本身（#318 前缀串扰
+        # 的直接证据面：tmp+x 整路径被拒，而非 tmp 被误放行后的次生错误）
+        assert "路径越界" in d["error"]
+        assert str(sibling) in d["error"]
 
 
 # ─── 2. 敏感面过滤（S-1）──────────────────────────────────────────────────────
@@ -222,7 +242,7 @@ class TestSystemPromptAccess:
         assert prompt == r3_services._SYSTEM_PROMPT  # 同一单源，私有名保留
 
     def test_server_no_longer_touches_private_name(self) -> None:
-        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（server.py 装配壳 +
+        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py（server.py 装配壳 +
         # routes/* 分域 + csp.py）：私有名任何 UI 模块都不得触碰。
         from pathlib import Path as _P
 

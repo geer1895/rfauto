@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-25500%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-27000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -19,13 +19,13 @@
 > 永远不由大语言模型编造。**
 
 它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **77 个参数化器件模板**和
-配套的物理验收判据，提供 **270 条 CLI 命令**和 **152 个 MCP 工具**（+9 个
+配套的物理验收判据，提供 **273 条 CLI 命令**和 **152 个 MCP 工具**（+9 个
 resources），并靠 **25400+ 条单元测试**保持诚实——这些测试不需要任何商业许可
 就能跑。
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 215（含实验键 216）` · `TEMPLATE_META 72` · `EXPECTED_TEMPLATES 72` ·
-`ANCHORS 79` · CLI 命令 270（叶子） · （152 个工具 + 9 个 resources）
+`CALCULATOR_REGISTRY 323` · `TEMPLATE_META 72` · `EXPECTED_TEMPLATES 72` ·
+`ANCHORS 79` · CLI 命令 273（叶子） · （152 个工具 + 9 个 resources）
 <!-- numbers-end -->
 
 **目录** · [为什么做](#为什么做这个) · [它能做什么](#它能做什么) ·

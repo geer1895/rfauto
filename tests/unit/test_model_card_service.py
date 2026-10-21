@@ -96,7 +96,11 @@ class TestLakeCards:
         assert drift["available"] is True
         cps_row = next(a for a in drift["anchors"]
                        if a["anchor_id"] == "cps.gamma_er.fdref-v1")
-        assert cps_row["verdict"] == "no_data"  # 积累期如实
+        # 积累期如实（2026-10-19 口径迁移）：本锚与 tmp 树无关，verdict 消费
+        # 真实注册表 last_verified 单点（source=registry.last_verified）——
+        # 首个 last_verified 落库后由 no_data 升 insufficient，两态同为积累
+        # 期诚实语义（无漂移主张）；钉可用性+行存在+不越出积累期集合。
+        assert cps_row["verdict"] in ("no_data", "insufficient")
 
     def test_lake_card_campaign_name_fallback(self, tmp_path: Path):
         # meta 缺 model 字段 → 按战役目录名回退匹配

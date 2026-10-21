@@ -1,4 +1,10 @@
-"""QW-11 屏蔽效能（Schelkunoff 平面波三段闭式）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""QW-11 屏蔽效能（Schelkunoff 平面波三段闭式）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（Schelkunoff 平面波三段闭式，函数 docstring 转录）：
+- shielding_effectiveness：吸收/反射/多次反射三段分解与有耗传输线
+  ABCD 严格透射恒等（S. A. Schelkunoff 传输线类比；二级转引 Ott,
+  Electromagnetic Compatibility Engineering 2009 §6 / Pozar §1.4
+  良导体表面阻抗）。"""
 
 from __future__ import annotations
 

@@ -49,6 +49,12 @@ from rfauto.core.solve_health import (
     solve_health_check,
 )
 from rfauto.service.envelope import ok_envelope
+from rfauto.service.lake_service import (
+    LAKE_INDEX_SOURCE_DIRSCAN,
+    LAKE_INDEX_SOURCE_INDEX,
+    index_candidate_paths,
+    lake_index_db_path_for,
+)
 
 _C0 = 299792458.0
 _TIMESTEP_RE = re.compile(r"FDTD timestep is:\s*([0-9.eE+\-]+)\s*s")
@@ -967,6 +973,7 @@ def health_check_batch(
     template: str | None = None,
     campaign: str | None = None,
     limit: int = 500,
+    db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """批量体检（SN-6）：逐 run 调 :func:`health_check_run` 并聚合红绿账。
 
@@ -975,6 +982,13 @@ def health_check_batch(
     - 否则扫 ``runs_dir``（缺省 ``runs/``）一级子目录（``campaign`` 给定时
       扫 ``runs_dir/<campaign>/`` 二级）；目录含 ``meta.json`` 才入选
       （G11 体检以 meta 为事实源，无 meta 的产物目录走 runs monitor 面）。
+
+    S15（架构批 W4）枚举主源接线：扫描态候选优先走 lake index SQL
+    （``depth``+``campaign``+``has_meta``+``meta_source="meta.json"``
+    精确对齐目录扫语义）；计数护栏判索引滞后（行数 vs 目录数差>阈值，
+    best-effort #105）或索引不可用时**回退原目录扫**（行为不变），信封
+    ``enumeration_source``/``enumeration_warnings`` 注记来源与原因。
+    ``db_path`` 缺省 ``<runs_dir>/.lake_index.duckdb``，可显式指认。
 
     过滤（都可选，组合生效）：
     - ``since``：``YYYY-MM-DD``，按 meta.timestamp（缺退目录 mtime）闭区间；
@@ -987,7 +1001,8 @@ def health_check_batch(
 
     Returns:
         dict: ``{ok, n_checked, verdicts, healthy, suspect, unhealthy,
-        failed, truncated}``（verdicts/failed 为 run_id → 值映射）。
+        failed, truncated, enumeration_source, enumeration_warnings}``
+        （verdicts/failed 为 run_id → 值映射）。
     """
     base = Path(runs_dir) if runs_dir is not None else Path("runs")
     since_date: Any = None
@@ -1003,6 +1018,8 @@ def health_check_batch(
                 errors=[f"since 非法（YYYY-MM-DD）: {since!r}"])
 
     candidates: list[Path] = []
+    enum_source = "explicit"
+    enum_warnings: list[str] = []
     if run_ids:
         candidates = [base / str(rid) for rid in run_ids]
     else:
@@ -1012,8 +1029,25 @@ def health_check_batch(
                 n_checked=0, verdicts={}, healthy=[], suspect=[], unhealthy=[],
                 failed={}, truncated=False,
                 errors=[f"扫描目录不存在: {root}"])
-        candidates = sorted(p for p in root.iterdir() if p.is_dir()
-                            and (p / "meta.json").is_file())
+        # S15（架构批 W4）：候选枚举 lake index 主源 + 计数护栏回退
+        # （has_meta+meta_source 精确对齐目录扫"meta.json 存在"判据）
+        probe = index_candidate_paths(
+            scope_dir=root,
+            depth=2 if campaign else 1,
+            campaign=campaign,
+            has_meta=True,
+            meta_source="meta.json",
+            db_path=(str(db_path) if db_path is not None
+                     else str(lake_index_db_path_for(base))),
+        )
+        enum_warnings = list(probe["warnings"])
+        if probe["usable"]:
+            candidates = sorted(base / rel for rel in probe["paths"])
+            enum_source = LAKE_INDEX_SOURCE_INDEX
+        else:
+            candidates = sorted(p for p in root.iterdir() if p.is_dir()
+                                and (p / "meta.json").is_file())
+            enum_source = LAKE_INDEX_SOURCE_DIRSCAN
 
     def _run_date(p: Path) -> Any:
         meta = _read_json(p / "meta.json") or {}
@@ -1077,4 +1111,6 @@ def health_check_batch(
         truncated=truncated,
         runs_root=str(base),
         campaign=campaign or "",
+        enumeration_source=enum_source,
+        enumeration_warnings=enum_warnings,
     )

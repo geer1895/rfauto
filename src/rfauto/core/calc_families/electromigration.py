@@ -1,5 +1,12 @@
 """电迁移-场联动（MP-4，内核在 core/electromigration.py，本模块只做注册壳）。
 
+出处（电迁移经典经验律，正文与内核 core/electromigration.py 转录）：
+- electromigration_mttf_check：Black MTTF 经验律（J. R. Black,
+  "Electromigration failure modes in aluminum metallization for
+  semiconductor devices", Proc. IEEE 57(9), 1969）+ Arrhenius 加速因子
+  （第一性化学速率律）+ Blech immortal 判据（I. A. Blech, J. Appl.
+  Phys. 47, 1976 二级转引）+ IPC-2152 载流温升表。
+
 round15 §三 :86 规格「loss_density 场→局部 J→Black MTTF + IPC-2152 ΔT
 联合」（2026-10-02）。单键 electromigration_mttf_check（局部 J + 局部温度
 → Black MTTF/Arrhenius AF + 可选 Blech immortal 判据的联合报告）；

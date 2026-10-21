@@ -109,7 +109,7 @@ class _MLP:
         g[0] = x.T @ d_h1 + wd * self.w1
         return g
 
-    def adam_step(self, x, y, wd, lr, betas=(0.9, 0.999), eps=1e-8):
+    def adam_step(self, x, y, wd, lr, betas=(0.9, 0.999), eps=1e-8) -> None:
         g = self._grads(x, y, wd)
         self._t += 1
         for p, gi, mi, vi in zip(self._params, g, self._m, self._v, strict=False):

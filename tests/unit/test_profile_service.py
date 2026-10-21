@@ -69,6 +69,13 @@ class TestProfileRun:
     def test_speedscope_ext(self, fake_pyspy):
         r = profile_run(pid=1, fmt="speedscope")
         assert r["ok"] and r["output_path"].endswith(".json")
+        # R3 弱测试 #28 加固：格式开关真传到 py-spy argv+产物路径可信
+        # （stub 落盘字节读回收——路径指向的文件就是本次运行的产物）
+        argv = fake_pyspy["argv"]
+        assert argv[argv.index("--format") + 1] == "speedscope"
+        from pathlib import Path as _P
+
+        assert _P(r["output_path"]).read_bytes() == b"flamegraph-stub"
 
     def test_pid_and_cmd_xor(self, fake_pyspy):
         assert profile_run()["ok"] is False

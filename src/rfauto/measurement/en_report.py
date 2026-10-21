@@ -63,18 +63,33 @@ def gum_combined_uncertainty(
     """GUM 合成标准不确定度：``u_c = √Σ(c_i·u_i)²``、U = k·u_c。
 
     Args:
-        components: ``[{name, u, unit?, c?, per_c?}]``——``u`` 为标准
+        components: ``[{name, u, unit?, c?, per_c?, dof?}]``——``u`` 为标准
             不确定度（dB）；``c`` 灵敏度系数（缺省 1.0）；``per_c=true`` 或
-            ``unit`` 含 "/°C" 的分量按温漂处理：有效 u = u×ΔT。
+            ``unit`` 含 "/°C" 的分量按温漂处理：有效 u = u×ΔT；``dof`` 为
+            该分量自由度 ν_i（≥1 有限值；Type B 分量按 ν→∞ 惯例省略——
+            省略分量不进 W-S 分母）。
         k: 展开因子（缺省 2）。
         delta_t_c: 与校准温度的温差（°C，温漂分量消费）。
 
     Returns:
-        {u_c, U, k, contributions: [{name, contribution}], delta_t_c}
-        —— contributions 逐分量 c_i·u_i（含温漂换算后的有效值）。
+        {u_c, U, k, contributions: [{name, contribution}], delta_t_c,
+        nu_eff, k_effective, U_effective}——contributions 逐分量 c_i·u_i
+        （含温漂换算后的有效值）；nu_eff = Welch–Satterthwaite 有效自由度
+        （JCGM 100:2008（GUM）附件 G 口径：ν_eff = u_c⁴/Σ(c_i·u_i)⁴/ν_i，
+        仅统计带 dof 的分量；无任何 dof 输入恒 None——既有调用方输出
+        语义不变）；k_effective = 95% 置信双侧 t 分位 t.ppf(0.975, ν_eff)
+        （scipy 惰性导入；ν_eff→∞ 退化 1.959964 正态极限）、U_effective =
+        k_effective·u_c。
+
+    Welch–Satterthwaite 出处：B.L. Welch (1947)/F.E. Satterthwaite
+    (1946) 原始文献；合并口径由 GUM（JCGM 100:2008）附件 G 承载
+    （架构批 W4-S4 边际池薄增量——既有函数扩展，非新族，R2 §② 方向 3
+    消费面先验结论）。
     """
     total = 0.0
     contributions: list[dict[str, Any]] = []
+    ws_denominator = 0.0
+    has_dof = False
     for comp in components:
         u = float(comp["u"])
         c = float(comp.get("c", 1.0))
@@ -83,21 +98,44 @@ def gum_combined_uncertainty(
         eff_u = u * float(delta_t_c) if per_c else u
         contrib = c * eff_u
         total += contrib * contrib
-        contributions.append({
+        entry: dict[str, Any] = {
             "name": str(comp.get("name", "")),
             "effective_u": eff_u,
             "c": c,
             "contribution": contrib,
             "per_c": per_c,
-        })
+        }
+        if comp.get("dof") is not None:
+            dof = float(comp["dof"])
+            if not math.isfinite(dof) or dof < 1.0:
+                raise ValueError(
+                    "dof 必须为 ≥1 的有限值（GUM Type A 最少 ν=n−1≥1），得 "
+                    f"{comp.get('dof')!r}")
+            has_dof = True
+            ws_denominator += contrib**4 / dof
+            entry["dof"] = dof
+        contributions.append(entry)
     # math.sqrt(逐项平方和)：闭式对照测试用同一算式逐位对齐
     u_c = math.sqrt(total)
+    nu_eff: float | None = None
+    k_effective: float | None = None
+    u_effective: float | None = None
+    if has_dof:
+        nu_eff = float("inf") if u_c == 0.0 else u_c**4 / ws_denominator
+        from scipy import stats as _stats
+
+        k_effective = (1.959963984540054 if math.isinf(nu_eff)
+                       else float(_stats.t.ppf(0.975, nu_eff)))
+        u_effective = k_effective * u_c
     return {
         "u_c": u_c,
         "U": k * u_c,
         "k": float(k),
         "contributions": contributions,
         "delta_t_c": float(delta_t_c),
+        "nu_eff": nu_eff,
+        "k_effective": k_effective,
+        "U_effective": u_effective,
     }
 
 

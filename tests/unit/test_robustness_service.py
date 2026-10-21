@@ -18,8 +18,8 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 批4 单源化）。"""
     yield
 
 
@@ -342,6 +342,7 @@ class TestFormPf:
 
     def test_engine_channel_monkeypatched(self, monkeypatch):
         """#139 惯例：外部库通道 monkeypatch 钉（存在→对照/缺失→note）。"""
+        from rfauto.service import form_eval
         from rfauto.service import robustness_service as rs
 
         mu = {"x1": 1.0}
@@ -353,14 +354,15 @@ class TestFormPf:
         class _FakeOT:
             pass  # 触发 API 异常 → 对照如实 ok=False
 
-        monkeypatch.setattr(rs, "_import_openturns", lambda: _FakeOT())
+        # T1 解环：_import_openturns 随 form_pf 定义体迁 form_eval，缝改指新居所
+        monkeypatch.setattr(form_eval, "_import_openturns", lambda: _FakeOT())
         r = rs.form_pf(cost, mu, sig, form_engine="auto")
         assert r["form_engine"] == "internal"  # 主算始终 internal
         assert r["cross_check"]["engine"] == "openturns"
         assert r["cross_check"]["ok"] is False
 
-        monkeypatch.setattr(rs, "_import_openturns", lambda: None)
-        monkeypatch.setattr(rs, "_import_uqpy", lambda: None)
+        monkeypatch.setattr(form_eval, "_import_openturns", lambda: None)
+        monkeypatch.setattr(form_eval, "_import_uqpy", lambda: None)
         r2 = rs.form_pf(cost, mu, sig, form_engine="auto")
         assert "cross_check" not in r2
         assert any("均未安装" in n for n in r2.get("notes", []))

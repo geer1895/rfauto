@@ -1,6 +1,6 @@
 """批 B Wave3 G15+G16：Yagi-Uda（NBS TN688）与波导缝隙阵（Stevenson）锚树。
 
-裁判口径（规格包 runs/aurora_c/batch_b_wave3_specs/，2026-10-13 实现席
+裁判口径（规格包 内部证据目录，2026-10-13 实现席
 独立复算；G16 以 RESOLVED 裁决版为公式权威）：
 
 - **G16 式形态=RESOLVED 裁决式**（规格包式 S1 已证伪勘误）：

@@ -186,11 +186,21 @@ def test_service_run_yaml_switch_allows(tmp_path, monkeypatch):
     """configs/settings.yaml 的 calculators.allow_experimental: true 放行。"""
     cfg_dir = tmp_path / "configs"
     cfg_dir.mkdir()
+    # 开关两侧产物差异可观察（R3 弱测试 #11）：无配置（fixture 已清 env）
+    # → 拒；写 yaml=true → 同参放行且 result 是真公式产出（新路径生效键）
+    closed = run_calculator(EXP_KEY, {"l_mm": 40.0, "w_mm": 50.0})
+    assert closed["ok"] is False and closed["experimental"] is True
+    assert "result" not in closed
     (cfg_dir / "settings.yaml").write_text(
         yaml.safe_dump({"calculators": {"allow_experimental": True}}),
         encoding="utf-8")
     out = run_calculator(EXP_KEY, {"l_mm": 40.0, "w_mm": 50.0})
     assert out["ok"] is True, out
+    assert out["experimental"] is True
+    # 开=新路径生效键：公式真跑出数（ 系数锚）+出处/公式键在档
+    assert out["result"]["f0_ghz"] == pytest.approx(
+        _devlog_f0(40.0, 50.0), abs=1e-4)
+    assert "provenance" in out["result"] and "formula" in out["result"]
 
 
 def test_service_run_config_failure_falls_back_closed(monkeypatch):

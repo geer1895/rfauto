@@ -208,19 +208,12 @@ def nfmeas_nf2ff_cmd(
     """平面近场 2D 复场 → 远场方向图（dB 归一 JSON）。"""
     import json as _json
 
-    import numpy as np
-
-    from rfauto.core.nf_transform import NearFieldGrid, planar_nf_to_farfield
-    d = np.load(grid_npz)
-    out = planar_nf_to_farfield(
-        NearFieldGrid(x_m=d["x_m"], y_m=d["y_m"], freq_hz=float(d["freq_hz"]),
-                      ex=d["ex"], ey=d["ey"], z0_m=float(d.get("z0_m", 0.0))),
-        window=window, kaiser_beta=beta)
-    typer.echo(_json.dumps({
-        "theta_deg": out["theta_deg"].tolist(), "phi_deg": out["phi_deg"].tolist(),
-        "pattern_db": [[None if v != v else round(float(v), 4) for v in row]
-                       for row in out["pattern_db"]],
-        "window": out["window"], "validity_max_deg": out["validity_max_deg"]},
+    # T8 越级收口（架构批 W11-S3）：栅格装载+方向图序列化经 service 单源
+    # （nf_measurement_service.planar_nf2ff_from_npz，原位上移逐字节同形）；
+    # cli 零逻辑直渲染。
+    from rfauto.service.nf_measurement_service import planar_nf2ff_from_npz
+    typer.echo(_json.dumps(
+        planar_nf2ff_from_npz(grid_npz, window=window, kaiser_beta=beta),
         ensure_ascii=False, indent=2))
 
 nfc_app = typer.Typer(help="NFC/WPC 平面螺旋线圈闭式（DP-18 C10b）")

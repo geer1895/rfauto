@@ -5231,7 +5231,7 @@ wheels = [
 
 [[package]]
 name = "rfauto"
-version = "0.10.0"
+version = "0.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "loguru" },
@@ -5462,7 +5462,7 @@ requires-dist = [
     { name = "pychopmarg", marker = "extra == 'dev'", specifier = ">=3.1" },
     { name = "pychopmarg", marker = "extra == 'si'", specifier = ">=3.1" },
     { name = "pydantic", specifier = ">=2.5.0" },
-    { name = "pydantic-ai-slim", extras = ["openai"], marker = "extra == 'pai'", specifier = ">=1.0,<3" },
+    { name = "pydantic-ai-slim", extras = ["openai"], marker = "extra == 'pai'", specifier = ">=2.53.0,<3" },
     { name = "pymoo", marker = "extra == 'multiobj'", specifier = ">=0.6.0" },
     { name = "pymupdf", marker = "extra == 'dev'", specifier = ">=1.24" },
     { name = "pymupdf", marker = "extra == 'lit-mining'", specifier = ">=1.24" },
@@ -5499,7 +5499,7 @@ requires-dist = [
     { name = "smt", marker = "extra == 'dev'", specifier = ">=2.9" },
     { name = "smt", marker = "extra == 'smt'", specifier = ">=2.9" },
     { name = "sse-starlette", marker = "extra == 'ui'", specifier = ">=3.0" },
-    { name = "starlette", marker = "extra == 'ui'", specifier = ">=0.35" },
+    { name = "starlette", marker = "extra == 'ui'", specifier = ">=0.46" },
     { name = "sympy", marker = "extra == 'dev'", specifier = ">=1.12" },
     { name = "sympy", marker = "extra == 'lit-mining'", specifier = ">=1.12" },
     { name = "torch", marker = "extra == 'torch'", specifier = ">=2.0" },

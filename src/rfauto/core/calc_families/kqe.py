@@ -1,4 +1,11 @@
-"""k/Qe 标定键（模分裂 k 与群时延 Qe，df6 A1 R4）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""k/Qe 标定键（模分裂 k 与群时延 Qe，df6 A1 R4）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（滤波器耦合标定经典口径，函数 docstring 转录）：
+- k_split_pair：双峰模分裂耦合系数精确式 k=(f2²−f1²)/(f2²+f1²)
+  （J.-S. Hong & M. J. Lancaster, Microstrip Filters for RF/Microwave
+  Applications, Wiley 2001）。
+- qe_group_delay：单谐振器外部 Q 群时延法 τmax=4Qe/ω0（Dishal/Hong
+  反射单端口径，同上书）。"""
 
 from __future__ import annotations
 

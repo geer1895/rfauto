@@ -1,4 +1,11 @@
-"""multiline TRL εr/tan_d 不确定度传播（EC-2，aurora_e W2-S9，2026-10-18）。
+"""multiline TRL εr/tan_d 不确定度传播（EC-2，架构批 W2-S9，2026-10-18）。
+
+出处（不确定度传播规范+多线 TRL 文献，正文方法面节转录）：
+- mtrl_er_tand_uncertainty：GUM 一阶线性传播（JCGM 100:2008）+
+  蒙特卡洛对照方法学（JCGM 101）；multiline TRL 主对模型（R. B. Marks,
+  "A multiline method of network analyzer calibration", IEEE Trans.
+  MTT 39(7), 1991；DeGroot-Jargon-Marks 2002 完整协方差属上游面外，
+  主对一阶只宽不窄如实声明）。
 
 方法面（任务口径："multiline TRL 的 εr/tan_d 提取不确定度传播（GUM 律）"
 ——输入=TRL 标准件尺寸公差/线损测量噪声，输出=εr/tan_d 带区间，喂锚 gate）
@@ -20,7 +27,9 @@ mTRL 的 β 由线对差分相位提取（NIST 多线全对最小二乘的一阶
   u_α_L = α·u_c。
 - **测量噪声通道**：加性复高斯噪声（逐分量 std σ_S）下线相位误差 std
   ≈ σ_S/|S21| = σ_S·e^{αL}，线对差分 σ_Δφ = σ_S·sqrt(e^{2αL1}+e^{2αL2})
-  → u_β_n = σ_Δφ/ΔL（α 通道同型：幅度误差 std ≈ σ_S）。
+  → u_β_n = σ_Δφ/ΔL（α 通道同型：α=−ln|S21|/L 的 **ln 域**幅度误差 std
+  同为 σ_S/|S21| = σ_S·e^{αL}——线性域 |S21| 绝对扰动 σ_S 勿读作"α 通道
+  不加 e^{αL} 放大"；u_α 噪声项与相位通道同取 σ_Δφ/ΔL，实现同项入 RSS）。
 - **相关传播修正（tand 长度通道）**：Δα 与 Δβ 由**同一** ΔL 相对误差
   c 驱动（完全相关，一阶 Δα=α·c、Δβ=β·c），tanδ ≈ 2α_d/(β·q) 的
   ∂t/∂β·β 与 ∂t/∂α·α 反号相消—— tand 长度通道必须用**组合系数**

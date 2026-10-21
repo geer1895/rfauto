@@ -1,4 +1,14 @@
-"""DOA 子空间谱估计 + 自适应波束形成族（aurora36 W5-A 席，R2 空白域 G2）。
+"""DOA 子空间谱估计 + 自适应波束形成族（架构批 W5-A 席，R2 空白域 G2）。
+
+出处（子空间谱估计经典文献，正文公式口径节转录）：
+- doa_music_spectrum：MUSIC 伪谱（R. O. Schmidt, "Multiple emitter
+  location and signal parameter estimation", IEEE Trans. AP 34(3),
+  1986）。
+- doa_esprit：TLS-ESPRIT（R. Roy & T. Kailath, "ESPRIT—estimation of
+  signal parameters via rotational invariance techniques", IEEE Trans.
+  ASSP 37(7), 1989 §III-C）。
+- doa_mvdr_weights：MVDR/Capon 波束形成（J. Capon, Proc. IEEE 57(8),
+  1969；Van Trees, Optimum Array Processing ch.6 二级转引）。
 
 三键：doa_music_spectrum（MUSIC 伪谱 + 峰位回收）/ doa_esprit（TLS-ESPRIT
 闭式）/ doa_mvdr_weights（MVDR 权重与阵列响应/零陷）。

@@ -1,8 +1,11 @@
-"""多节对称定向耦合器族（aurora72 A6-B 席域 1，R7_core_tier2 §② G5 余量）。
+"""多节对称定向耦合器族（架构批 A6-B 席域 1，R7_core_tier2 §② G5 余量；
+架构批 W4-S14 补等纹波成员=R7 G5 唯一遗留）。
 
-两键：multisection_coupler_binomial（对称 N 节二项式=中心最大平坦综合：
-结点权→节耦合→逐节 (Z0e,Z0o)） / multisection_coupler_response（逐节
-(Z0e,Z0o) 偶/奇模精确级联 4 端口频响——耦合/直通/隔离/回损+方向性）。
+三键：multisection_coupler_binomial（对称 N 节二项式=中心最大平坦综合：
+结点权→节耦合→逐节 (Z0e,Z0o)）/ multisection_coupler_response（逐节
+(Z0e,Z0o) 偶/奇模精确级联 4 端口频响——耦合/直通/隔离/回损+方向性）/
+multisection_coupler_equiripple（等纹波 Chebyshev 成员：Q_M=1+ε·T_M(1−
+2y/Y) 母多项式三角分解→结点权，与二项式成员 flatness 语义分派字段）。
 
 与既有耦合面的边界（#222 triple-grep 证据，2026-10-11 实测）
 --------------------------------------------------------
@@ -58,6 +61,17 @@
 守卫：n_sections 为正奇整数（≤15）；coupling_db∈(0,60]；逐节 c_i<0.99
 （过耦不可实现显式拒绝）；response 键列表同长 ≥1、Z0e>Z0o>0、freq>0
 且避开任一节 θ=kπ 奇异点（显式拒绝，coupled_line_bpf_response 同口径）。
+
+出处（Pozar《Microwave Engineering》§7.6/§7.83-7.84；Levy 1966；MY69）：
+- multisection_coupler_response：偶/奇模各自 2 端口线级联+叠加构造
+  4 端口 S（Pozar §7.6 同源；ABCD→S 按 Pozar Table 4.2 转换；构造恒
+  无耗/互易）。
+- multisection_coupler_binomial：对称 N 节二项式中心最大平坦结点权
+  综合（Pozar §7.83/§7.84 单节闭式裁判积木的多节扩展，同源口径）。
+- multisection_coupler_equiripple：等纹波 Chebyshev 成员（Levy
+  "Tables of Element Values for the Inhomogeneous Symmetrical
+  Coupled-Line Directional Coupler", Microwaves 1966 同族；精确等纹波
+  数值综合=MY69 Table 13.06 档）。
 """
 
 from __future__ import annotations
@@ -80,6 +94,77 @@ _SOURCES = {
 _C_MAX = 0.99          # 逐节耦合上限（Z0e/Z0 ≤ ~14.1，过耦显式拒绝）
 _N_MAX = 15            # 节数上限（奇数）
 _SIN_ARG_GUARD = 1e-9  # θ=kπ 奇异守卫阈值
+_RIPPLE_DB_MAX = 40.0  # 等纹波设计纹波上限（ε→1 时带内耦合谷→0 失去意义）
+
+
+def _u_even_poly(k: int) -> list[float]:
+    """U_{2k}(cosθ) 按 y=cos²θ 的幂级数系数（偶数阶切比雪夫第二类）。
+
+    U_0=1、U_1=2x，递推 U_{n+1}=2x·U_n−U_{n−1}（整数系数精确）；偶数阶
+    U_{2k} 是 x 的偶函数，偶次幂系数直接给 y 多项式（V_k(y)=U_{2k}(√y)，
+    次 k：V_0=1、V_1=4y−1、V_2=16y²−12y+1）。
+    """
+    u: list[list[float]] = [[1.0], [0.0, 2.0]]
+    for n in range(1, 2 * k):
+        nu = [0.0] * (len(u[n]) + 1)
+        for i, c in enumerate(u[n]):
+            nu[i + 1] += 2.0 * c
+        for i, c in enumerate(u[n - 1]):
+            nu[i] -= c
+        u.append(nu)
+    p = u[2 * k]
+    return [p[2 * j] for j in range(k + 1)]
+
+
+def _equiripple_q(m_half: int, y_edge: float, eps: float) -> list[float]:
+    """Q_M(y)=1+ε·(−1)^M·T_M(1−2y/Y) 的 y 幂级数系数（带内等纹波母多项式）。
+
+    符号 σ=(−1)^M 选取使最高次系数（h_0=Γ_0 ∝ εσ(−1)^M）为正——首结点
+    反射 Γ_0=c_1/2≥0 是耦合器可实现性（全正节耦合）的硬约束；T_M 按 u
+    的切比雪夫递推（T_0=1、T_1=u、T_{M+1}=2u·T_M−T_{M−1}），再与
+    u(y)=1−(2/Y)y 做多项式复合（二项式展开精确）；常数项补 1。
+    """
+    t: list[list[float]] = [[1.0], [0.0, 1.0]]
+    for n in range(1, m_half):
+        nu = [0.0] * (len(t[n]) + 1)
+        for i, c in enumerate(t[n]):
+            nu[i + 1] += 2.0 * c
+        for i, c in enumerate(t[n - 1]):
+            nu[i] -= c
+        t.append(nu)
+    a = t[m_half]
+    c_scale = 2.0 / y_edge
+    eps_signed = eps * ((-1.0) ** m_half)
+    q = [0.0] * (m_half + 1)
+    for i in range(m_half + 1):
+        for j in range(i + 1):
+            q[j] += eps_signed * a[i] * math.comb(i, j) * ((-c_scale) ** j)
+    q[0] += 1.0
+    return q
+
+
+def _equiripple_half_weights(n_sections: int, ripple_db: float,
+                             fbw: float) -> tuple[list[float], float, float,
+                                                  float]:
+    """等纹波半权 Γ_0..Γ_M 与 (ε, θ_边, Y=cos²θ_边)。
+
+    等纹波口径（一阶小反射）：耦合口响应 F(θ)=Σ_{i≤M}Γ_i·sin((N−2i)θ)
+    =sinθ·Q_M(cos²θ)，Q_M 按 1+ε(−1)^M·T_M(1−2y/Y) 构造（y∈[0,Y] 内
+    M+1 个等纹波极值 ±1→Q∈[1−ε,1+ε]；符号保 Γ_0>0 可实现）；系数匹配
+    V_k(y)=U_{2k}(√y) 基得 (M+1)×(M+1) 线性系统（与二项式成员同款三角
+    分解机械，异母多项式）。
+    """
+    m = (n_sections - 1) // 2
+    r_ratio = 10.0 ** (ripple_db / 20.0)
+    eps = (r_ratio - 1.0) / (r_ratio + 1.0)
+    theta_edge = (math.pi / 2.0) * (1.0 - fbw / 2.0)
+    y_edge = math.cos(theta_edge) ** 2
+    q = _equiripple_q(m, y_edge, eps)
+    v = [_u_even_poly(k) for k in range(m + 1)]
+    mat = [[(v[k][j] if j <= k else 0.0) for k in range(m + 1)]
+           for j in range(m + 1)]
+    half_rev = _solve_linear(mat, q)   # half_rev[k] = Γ_{M−k}
+    return half_rev[::-1], eps, theta_edge, y_edge
 
 
 def _sin_poly(n: int) -> list[float]:
@@ -443,4 +528,169 @@ def multisection_coupler_response(z0e_ohm: list, z0o_ohm: list,
             "f0 处配对阻抗（Z0e·Z0o=Z0²）下 |S41|<1e-12 记 None（构造精"
             "确零的浮点地板）；θ=kπ 奇异频点显式拒绝"),
         "source": _SOURCES["resp"],
+    }
+
+
+# ─── 键 3：等纹波（Chebyshev/Levy 族）多节综合 ────────────────────────────────
+
+@register_calculator(
+    "multisection_coupler_equiripple",
+    "多节耦合器等纹波综合：对称 N 节（奇，≥3）带内等纹波口径（Levy 级联"
+    "理论 Chebyshev 成员）——耦合口一阶响应 F(θ)=sinθ·Q_M(cos²θ)，"
+    "Q_M=1+ε(−1)^M·T_M(1−2y/Y)（M+1 个等纹波极值；符号保 Γ_0>0 可实"
+    "现），系数按 U_{2k} 基三角分解得结点权；节耦合累计→逐节 (Z0e,Z0o)，"
+    "电平归一对精确偶/奇级联 θ=90° 求根（f0 精确命中目标耦合）。一阶 Q "
+    "等纹波精确、|S31| 含 sinθ 锥度（带缘下垂）与精确级联二阶差均如实并"
+    "列；与二项式成员（中心最大平坦=带内单调）的 flatness 语义差异显式"
+    "字段。锚：N=3 闭式逐位/等纹波极值族/能量守恒/f0 隔离零",
+    (("n_sections", "int 耦合节数（正奇整数，3..15；等纹波需 ≥3 节自由度）"),
+     ("coupling_db", "float dB 目标耦合度（f0 处口径，正数）"),
+     ("ripple_db", "float dB 一阶带内峰-谷等纹波量（>0，≤40）"),
+     ("fbw", "float 分数带宽（0,2)：带缘 θ=90°(1−fbw/2)，TEM 线性口径）"),
+     ("z0_ohm", "float Ω 端口/馈线阻抗（>0，缺省 50）")),
+    required=("n_sections", "coupling_db", "ripple_db", "fbw"),
+)
+def multisection_coupler_equiripple(n_sections: int, coupling_db: float,
+                                    ripple_db: float, fbw: float,
+                                    z0_ohm: float = 50.0) -> dict[str, Any]:
+    n = float(n_sections)
+    if n != int(n) or int(n) < 3 or int(n) > _N_MAX or int(n) % 2 == 0:
+        raise ValueError(
+            f"multisection_coupler_equiripple: n_sections 须为正奇整数且 ≥3"
+            f"（3..{_N_MAX}，等纹波需 ≥3 节自由度；单节/二项式请走"
+            f" multisection_coupler_binomial），得到 {n_sections!r}")
+    n = int(n)
+    c_db = _finite(coupling_db, "coupling_db")
+    if not 0.0 < c_db <= 60.0:
+        raise ValueError(
+            f"multisection_coupler_equiripple: coupling_db 须 ∈(0,60]，得"
+            f"到 {c_db!r}")
+    r_db = _finite(ripple_db, "ripple_db")
+    if not 0.0 < r_db <= _RIPPLE_DB_MAX:
+        raise ValueError(
+            f"multisection_coupler_equiripple: ripple_db 须 ∈(0,"
+            f"{_RIPPLE_DB_MAX:g}]，得到 {r_db!r}")
+    frac = _finite(fbw, "fbw")
+    if not 0.0 < frac < 2.0:
+        raise ValueError(
+            f"multisection_coupler_equiripple: fbw 须 ∈(0,2)，得到 {frac!r}")
+    z0 = _finite(z0_ohm, "z0_ohm")
+    if z0 <= 0.0:
+        raise ValueError(
+            f"multisection_coupler_equiripple: z0_ohm 必须 >0，得到 {z0!r}")
+    c_target = 10.0 ** (-c_db / 20.0)
+
+    half_un, eps, th_edge, _y_edge = _equiripple_half_weights(n, r_db, frac)
+    # 全结点权：前半 +，后半 −（镜像反对称 Γ_{N−i}=−Γ_i，与二项式成员同构）
+    gam_un = half_un + [-v for v in reversed(half_un)]
+    m_half = (n - 1) // 2
+    # 一阶中心值（θ=90°：y=0 → Q=1+ε）
+    g1 = sum(gam_un[i] * (1.0 if ((n - 2 * i) // 2) % 2 == 0 else -1.0)
+             for i in range(m_half + 1))
+    scale_fo = c_target / (2.0 * abs(g1))
+
+    def _exact_coupling(scale: float) -> float:
+        cs = _couplings_from_junctions([scale * v for v in gam_un])
+        ze = [_ze_zo(c, z0)[0] for c in cs]
+        zo = [_ze_zo(c, z0)[1] for c in cs]
+        s = _exact_s4(ze, zo, [math.pi / 2.0] * n, [math.pi / 2.0] * n, z0)
+        return abs(s["s31"])
+
+    # 电平归一：精确级联 |S31(90°)|=目标（scale 单调，二分确定性求根）
+    lo_s, hi_s = scale_fo * 0.5, scale_fo * 2.0
+    for _ in range(200):
+        mid = 0.5 * (lo_s + hi_s)
+        if _exact_coupling(mid) < c_target:
+            lo_s = mid
+        else:
+            hi_s = mid
+    scale = 0.5 * (lo_s + hi_s)
+    gam = [scale * v for v in gam_un]
+    couplings = _couplings_from_junctions(gam)
+    bad = [(i + 1, c) for i, c in enumerate(couplings) if not 0.0 < c < _C_MAX]
+    if bad:
+        i1, c1 = bad[0]
+        raise ValueError(
+            f"multisection_coupler_equiripple: 第 {i1} 节耦合 c={c1:.4f} 越"
+            f"域 (0,{_C_MAX})——{n} 节在该目标耦合/纹波/带宽下过耦不可实现；"
+            f"放宽纹波、收窄带宽或提高耦合 dB（目标 {c_db:g}dB）")
+    ze_list: list[float] = []
+    zo_list: list[float] = []
+    zr_dev = 0.0
+    for c in couplings:
+        ze, zo = _ze_zo(c, z0)
+        ze_list.append(ze)
+        zo_list.append(zo)
+        zr_dev = max(zr_dev, abs(ze * zo / (z0 * z0) - 1.0))
+
+    # 精确级联 @f0 与带形采样（带内 S31 极值/实现纹波如实并列）
+    th90 = [math.pi / 2.0] * n
+    at_f0 = _exact_s4(ze_list, zo_list, th90, th90, z0)
+    dev_db = _db(at_f0["s31"]) + c_db
+    band: list[dict[str, float]] = []
+    n_samp = 41
+    ex_lo, ex_hi = _db(at_f0["s31"]), _db(at_f0["s31"])
+    for k in range(n_samp):
+        th = th_edge + (math.pi - 2.0 * th_edge) * k / (n_samp - 1)
+        s = _exact_s4(ze_list, zo_list, [th] * n, [th] * n, z0)
+        d = _db(s["s31"])
+        ex_lo, ex_hi = min(ex_lo, d), max(ex_hi, d)
+        band.append(d)
+    achieved_ripple_db = ex_hi - ex_lo
+    iso_lin = abs(at_f0["s41"])
+    # 一阶带缘锥度（sinθ 因子，一阶口径固有、如实报告）
+    fo_edge = 20.0 * math.log10(
+        max((1.0 - eps) * math.sin(th_edge), 1e-300))
+    fo_center = 20.0 * math.log10(max(1.0 + eps, 1e-300))
+    return {
+        "n_sections": n,
+        "coupling_db_target": c_db,
+        "coupling_linear_target": round(c_target, 15),
+        "ripple_db": r_db,
+        "ripple_linear_eps": round(eps, 15),
+        "fbw": frac,
+        "band_edge_theta_deg": round(math.degrees(th_edge), 12),
+        "z0_ohm": z0,
+        "junction_gamma": [round(v, 15) for v in gam],
+        "coupling_linear": [round(v, 15) for v in couplings],
+        "coupling_db": [round(-20.0 * math.log10(max(v, 1e-300)), 9)
+                        for v in couplings],
+        "z0e_ohm": [round(v, 9) for v in ze_list],
+        "z0o_ohm": [round(v, 9) for v in zo_list],
+        "coupling_palindrome_dev": round(
+            max(abs(couplings[i] - couplings[n - 1 - i])
+                for i in range(n)), 18),
+        "zr_identity_dev": round(zr_dev, 18),
+        "exact_s31_at_f0_db": round(_db(at_f0["s31"]), 9),
+        "exact_vs_target_db": round(dev_db, 12),
+        "exact_s21_at_f0_db": round(_db(at_f0["s21"]), 9),
+        "exact_s11_at_f0_db": round(_db(at_f0["s11"]), 9),
+        "isolation_s41_at_f0_linear": round(iso_lin, 18),
+        "isolation_s41_at_f0_db": (
+            None if iso_lin < 1e-12 else round(_db(at_f0["s41"]), 9)),
+        "first_order_ripple_db": round(
+            20.0 * math.log10((1.0 + eps) / (1.0 - eps)), 9),
+        "first_order_center_db": round(fo_center, 9),
+        "first_order_band_edge_db": round(fo_edge, 9),
+        "exact_band_s31_db": [round(d, 9) for d in band],
+        "achieved_band_ripple_db": round(achieved_ripple_db, 9),
+        "flatness_semantics": "equiripple",
+        "note": (
+            "等纹波口径：一阶 Q_M(y)=1+ε(−1)^M·T_M(1−2y/Y)（y=cos²θ，"
+            "y∈[0,Y] 内 M+1 个等纹波极值；符号 σ=(−1)^M 保首结点权 "
+            "Γ_0=c_1/2>0 可实现——偶 M 中心=耦合峰、奇 M 中心=耦合谷，"
+            "两者同属等纹波族）按构造精确；|S31|=2·scale·sinθ·|Q_M| 含 "
+            "sinθ 锥度——带缘极值一阶值=(1∓ε)·sinθ_边（first_order_band_"
+            "edge_db），精确级联带内纹波 achieved_band_ripple_db 如实并列"
+            "（含有限耦合二阶差，不等于 ripple_db 目标值属正常）；电平归一"
+            "=精确级联 θ=90° 求根（f0 命中目标耦合）；与二项式成员的 "
+            "flatness 语义差异=等纹波带内有 M+1 极值（非单调），二项式中"
+            "心最大平坦（带内单调）——flatness_semantics 字段供消费者显式"
+            "分派；f0 隔离口 |S41|<1e-12 记 None（Z0e·Z0o=Z0² 浮点地板）"),
+        "source": (
+            "等纹波（Chebyshev）多节定向耦合器一阶小反射设计——Levy 级联理"
+            "论 Chebyshev 成员口径（Levy, 'Directional couplers', Advances "
+            "in Microwaves 1966 同族；精确等纹波数值综合=MY69 Table 13.06 "
+            "档不在本键，本项目一阶构造+精确级联求根口径如实）；(Z0e,Z0o) "
+            "闭式同 core/slotline_transitions.even_odd_from_coupling"),
     }

@@ -67,17 +67,24 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-#: v1 模板面（诚实声明——能力表 supported_templates 从此实测导入）。
-#: **位置纪律**：必须前置于 ``em_solver_base`` import——后者尾部能力表经
-#: 本元组实测导入（防手写漂移）；循环 import 回调时本模块只执行到 import
-#: 行，元组若在其后则能力表拿到空表（2026-10-05 W2-F 实证）。
+#: v1 模板面（诚实声明——能力表 supported_templates 单源）。
+#: **位置纪律已解除**（架构批 W2-S2 S6/pssfss2 注册倒置）：原"必须前置于
+#: em_solver_base import"约束源于 base 尾部能力表反向 import 本元组；倒置后
+#: 本模块 import base 时经 register_external_templates 登记清单、base 对本
+#: 模块零 import，双向环断，元组位次不再敏感（物理位次保持不动，最小刀）。
 SUPPORTED_TEMPLATES: tuple[str, ...] = ("ms_cross", "ms_jcross", "ms_patch")
 
-from rfauto.adapters.em_solver_base import (  # noqa: E402 —— 见上，位置纪律
+from rfauto.adapters.em_solver_base import (  # noqa: E402 —— 紧随单源元组（历史位次）
     EMSolverAdapter,
     EMSolverConfig,
     EMSolverResult,
+    register_external_templates,
 )
+
+# S6 注册倒置（架构批 W2-S2）：模板清单登记进 base 注册面——base 能力表
+# supported_templates 原位刷新（pydantic model_copy update），"实测防漂移"
+# 语义保留（数据源仍是本元组单源；test_capability_table_single_source 同钉）。
+register_external_templates("pssfss", SUPPORTED_TEMPLATES)
 
 _TOUCHSTONE_NAME = "pssfss.s2p"
 _SPARAMS_CSV_NAME = "sparams.csv"

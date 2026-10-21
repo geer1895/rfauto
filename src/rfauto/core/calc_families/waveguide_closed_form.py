@@ -1,5 +1,5 @@
-"""波导/腔体任意模式闭式谱族（aurora72 A2-C 席域 2，R7 第二梯队 T2；
-aurora_e W1-S2 续作收口任务书内"圆波导/矩形腔"两子项）。
+"""波导/腔体任意模式闭式谱族（架构批 A2-C 席域 2，R7 第二梯队 T2；
+架构批 W1-S2 续作收口任务书内"圆波导/矩形腔"两子项）。
 
 六键：circular_cavity_mode_spectrum（TE/TM_mnp 谐振谱：给半径/长度/频段
 → 模式频率列表+主模标识+TE11 波导截止参考） / circular_cavity_mode_chart
@@ -16,7 +16,7 @@ rectangular_cavity_mode_q（矩形腔任意模式无载 Q，W1-S2）。
   ridged_waveguide = 脊形波导；waveguide_iris/waveguide_lambda_g = 矩形
   TE10 膜片/传播参数面；bethe_hole 内部圆波导截止常数=孔耦合口径——
   本族做**任意模式闭式谱与传播解**（圆波导+圆柱腔+矩形腔；矩形腔为
-  R7 T2"留续作"子项，aurora_e W1-S2 收口）。
+  R7 T2"留续作"子项，架构批 W1-S2 收口）。
 - cavity.py/cavity_perturbation_shift = 腔体微扰**测量**面；
   material_characterization = 分裂腔/Courtney **材料提取**面——本族是
   它们的**上游模式谱供给**（先定模式再提取）；TE011 空腔频率与
@@ -78,6 +78,16 @@ rectangular_cavity_mode_q（矩形腔任意模式无载 Q，W1-S2）。
 （类型+mnp 三位数字，m 可为 0）且 n≥1、TE 的 p≥1（p=0 非物理显式
 拒绝）；m≥0/n≥1/p≥0 整型（TE p≥1）；conductivity_s_per_m>0；mu_r>0；
 tan_delta≥0；越界一律显式拒绝。
+
+出处（Pozar《Microwave Engineering》§6.3/§6.4/§3.4；Collin）：
+- circular_cavity_mode_spectrum/circular_cavity_mode_chart/
+  circular_cavity_mode_q：Pozar §6.4 圆柱腔 Bessel 零点闭式+导体微扰
+  Q=ωU/P_c（Collin 同族）；闭式与数值积分双路线互证（模块 spec 字段
+  原文转写）。
+- rectangular_cavity_mode_spectrum/rectangular_cavity_mode_q：Pozar
+  §6.3 矩形腔分离变量闭式谐振谱。
+- circular_waveguide_mode_prop：Pozar §3.4 圆波导 Bessel 零点闭式
+  （αc 闭式/数值双路线互证）。
 """
 
 from __future__ import annotations
@@ -87,6 +97,7 @@ import re
 from functools import lru_cache
 from typing import Any
 
+from .coax_line import _roughness_gain_tier
 from .registry import C_MM_GHZ, register_calculator
 from .thermal import _finite
 
@@ -501,7 +512,17 @@ def _radial_integrals(mode_type: str, m: int, n: int, radius_m: float,
      ("conductivity_s_per_m", "float S/m 导体电导率（>0；Cu=5.8e7）"),
      ("epsilon_r", "float 腔内均匀填充相对介电常数（≥1，缺省 1）"),
      ("mu_r", "float 相对磁导率（>0，缺省 1 非磁性）"),
-     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）")),
+     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）"),
+     ("roughness_model", "str 粗糙度档（W5-K）：smooth（缺省，K_R=1 缺省路径"
+      "逐位不变）/hammerstad/huray——conductor_loss.roughness_gain 单源，"
+      "Qc'=Qc/K_R（闭式与数值积分双路线同步含入）"),
+     ("roughness_rms_um", "float µm 导体 RMS 粗糙度 Rq（≥0；hammerstad 档"
+      "必给，0→K_R=1 逐位退化）"),
+     ("roughness_factor", "float Hammerstad 最大增益 RF（≥1，缺省 2 经典"
+      "口径）"),
+     ("nodule_radius_um", "float µm Hall-Huray 铜瘤半径（huray 档必给）"),
+     ("nodules_per_cell", "float 单位元铜瘤数 N（≥0；huray 档必给）"),
+     ("cell_area_um2", "float µm² 单位元面积 A_flat（>0；huray 档必给）")),
     required=("mode_type", "m", "n", "p", "radius_mm", "length_mm",
               "conductivity_s_per_m"),
 )
@@ -509,7 +530,13 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
                            radius_mm: float, length_mm: float,
                            conductivity_s_per_m: float,
                            epsilon_r: float = 1.0, mu_r: float = 1.0,
-                           tan_delta: float = 0.0) -> dict[str, Any]:
+                           tan_delta: float = 0.0,
+                           roughness_model: str = "smooth",
+                           roughness_rms_um: float | None = None,
+                           roughness_factor: float = 2.0,
+                           nodule_radius_um: float | None = None,
+                           nodules_per_cell: float | None = None,
+                           cell_area_um2: float | None = None) -> dict[str, Any]:
     mtype = str(mode_type).strip().upper()
     if mtype not in ("TE", "TM"):
         raise ValueError(
@@ -558,6 +585,17 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
     omega = _C0 * math.sqrt(k_total_sq / eps_r)   # rad/s（色散 k²+kz²=k0²εr）
     f_ghz = omega / (2.0 * math.pi) / 1e9
     rs = math.sqrt(math.pi * (omega / (2.0 * math.pi)) * mu / sigma)
+    # 粗糙度档（W5-K）：K_R 乘 Rs → Qc'=Qc/K_R；闭式与数值积分双路线
+    # 同步含 K_R（两路线都 ∝1/Rs）→ xcheck rel_dev 恒等保持。smooth 缺省
+    # K_R=1.0 乘法逐位不变（conductor_loss.roughness_gain 单源消费）。
+    from rfauto.core import conductor_loss
+
+    delta_m = conductor_loss.skin_depth(omega / (2.0 * math.pi), sigma, mur)
+    k_rough, rough_receipt = _roughness_gain_tier(
+        "circular_cavity_mode_q", roughness_model, roughness_rms_um,
+        roughness_factor, nodule_radius_um, nodules_per_cell,
+        cell_area_um2, delta_m=delta_m)
+    rs_eff = rs * k_rough
     # Lc/Ls：∫cos²(kz z)、∫sin²(kz z)（p=0：L 与 0；p≥1：各 L/2）
     lc = l_m if pp == 0 else l_m / 2.0
     ls = l_m / 2.0 if pp >= 1 else 0.0
@@ -575,7 +613,7 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
     if mtype == "TE":
         d_fac = 1.0 - mm * mm / (x_root * x_root)
         num = (omega * mu * l_m * x_root * x_root * d_fac * k_total_sq)
-        den = rs * (
+        den = rs_eff * (
             4.0 * k ** 4 * a_m * ls
             + 4.0 * kz * kz * mm * mm * lc / a_m
             + 4.0 * kz * kz * x_root * x_root * d_fac)
@@ -584,8 +622,8 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         j_next = float(jv(mm + 1, x_root))
         i2x = x_root * x_root * j_next * j_next / 2.0
         q_closed = i2x * (k * k * lc + kz * kz * ls) / (
-            rs * omega * eps * (j_next * j_next * a_m * k * k * lc
-                                + 2.0 * i2x))
+            rs_eff * omega * eps * (j_next * j_next * a_m * k * k * lc
+                                    + 2.0 * i2x))
 
     # —— 数值路线（同场表达式直接积分，不消费恒等式）——
     if mtype == "TE":
@@ -599,7 +637,7 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         # 侧面（H_t=H_φ+H_z）：J_m²(x')·a·[Ls + (kz·m/(k²a))²·Lc]；
         # 端壁×2（H_t=H_ρ+H_φ，板上 cos=±1 点值无 z 积分）：
         # 2[(kz/k)²R2p + (kz·m/k²)²R1m]
-        p_loss = (rs / 2.0) * acm * (
+        p_loss = (rs_eff / 2.0) * acm * (
             float(jv(mm, x_root)) ** 2 * a_m
             * (ls + (kz * mm / (k * k * a_m)) ** 2 * lc)
             + 2.0 * ((kz / k) ** 2 * r2p
@@ -636,7 +674,10 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         "tan_delta": tand,
         "f_ghz": round(f_ghz, 9),
         "x_root": round(x_root, 12),
-        "rs_ohm_per_sq": round(rs, 15),
+        "roughness_model": rough_receipt["model"],
+        "roughness_gain_k": round(k_rough, 15),
+        "roughness": rough_receipt,
+        "rs_ohm_per_sq": round(rs_eff, 15),
         "q_conductor": round(q_closed, 9),
         "q_conductor_numeric": round(q_numeric, 9),
         "q_xcheck_rel_dev": round(rel_dev, 15),
@@ -646,12 +687,14 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         "note": (
             "导体 Q 闭式（Bessel 恒等式化简）与数值积分双路线互证；"
             "Ue/Um≈1 为谐振腔储能定理自检（数值精度级）；介质满充均匀"
-            "假定；串联合成 1/Qu=1/Qc+1/Qd"),
+            "假定；串联合成 1/Qu=1/Qc+1/Qd"
+            + (f"；粗糙度档 K_R={k_rough:.6g}（{rough_receipt['model']}，"
+               "Qc=Qc_smooth/K_R）" if k_rough != 1.0 else "")),
         "source": _SOURCES["q"],
     }
 
 
-# ─── 键 4：圆波导 TE/TM_mn 传播解（aurora_e W1-S2 补齐 R7 T2 圆波导子项）───
+# ─── 键 4：圆波导 TE/TM_mn 传播解（架构批 W1-S2 补齐 R7 T2 圆波导子项）───
 # 口径（Pozar《Microwave Engineering》§3.4 圆波导/Collin；docstring 写死）：
 #   截止：TE_mn fc=x'_mn·c0/(2πa√(εrμr))（x'=J_m' 零点）、TM_mn fc=x_mn·…
 #   （TE11 主模 x'_11=1.8412 → fc=0.293·c0/a 经典口径）；工作频率须>fc
@@ -900,7 +943,7 @@ def circular_waveguide_mode_prop(mode_type: str, m: int, n: int,
     }
 
 
-# ─── 键 5/6：矩形腔 TE/TM_mnp 谱 + 任意模式 Q（aurora_e W1-S2 补齐 R7 T2
+# ─── 键 5/6：矩形腔 TE/TM_mnp 谱 + 任意模式 Q（架构批 W1-S2 补齐 R7 T2
 # ─── "矩形腔留续作"子项）────────────────────────────────────────────────────
 # 口径（Pozar《Microwave Engineering》§6.3 矩形腔；docstring 写死）：
 #   谐振频率（腔 a×b×d mm，均匀填充 εr/μr，分离变量闭式）：
@@ -1082,7 +1125,17 @@ def _rect_mode_validations(mtype: str, mm: int, nn: int, pp: int,
      ("conductivity_s_per_m", "float S/m 壁导体电导率（>0；Cu=5.8e7）"),
      ("epsilon_r", "float 填充相对介电常数（≥1，缺省 1）"),
      ("mu_r", "float 填充相对磁导率（>0，缺省 1）"),
-     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）")),
+     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）"),
+     ("roughness_model", "str 粗糙度档（W5-K）：smooth（缺省，K_R=1 缺省路径"
+      "逐位不变）/hammerstad/huray——conductor_loss.roughness_gain 单源，"
+      "Qc'=Qc/K_R（闭式与数值积分双路线同步含入）"),
+     ("roughness_rms_um", "float µm 导体 RMS 粗糙度 Rq（≥0；hammerstad 档"
+      "必给，0→K_R=1 逐位退化）"),
+     ("roughness_factor", "float Hammerstad 最大增益 RF（≥1，缺省 2 经典"
+      "口径）"),
+     ("nodule_radius_um", "float µm Hall-Huray 铜瘤半径（huray 档必给）"),
+     ("nodules_per_cell", "float 单位元铜瘤数 N（≥0；huray 档必给）"),
+     ("cell_area_um2", "float µm² 单位元面积 A_flat（>0；huray 档必给）")),
     required=("mode_type", "m", "n", "p", "a_mm", "b_mm", "d_mm",
               "conductivity_s_per_m"),
 )
@@ -1090,7 +1143,13 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
                               a_mm: float, b_mm: float, d_mm: float,
                               conductivity_s_per_m: float,
                               epsilon_r: float = 1.0, mu_r: float = 1.0,
-                              tan_delta: float = 0.0) -> dict[str, Any]:
+                              tan_delta: float = 0.0,
+                              roughness_model: str = "smooth",
+                              roughness_rms_um: float | None = None,
+                              roughness_factor: float = 2.0,
+                              nodule_radius_um: float | None = None,
+                              nodules_per_cell: float | None = None,
+                              cell_area_um2: float | None = None) -> dict[str, Any]:
     from scipy.integrate import quad
 
     mtype = str(mode_type).strip().upper()
@@ -1143,6 +1202,17 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
     mu = _MU0 * mur
     eps = _EPS0 * eps_r
     rs = math.sqrt(math.pi * f_hz * mu / sigma)
+    # 粗糙度档（W5-K）：K_R 乘 Rs → Qc'=Qc/K_R；闭式与 quad 数值因子双
+    # 路线同步含 K_R → xcheck rel_dev 恒等保持。smooth 缺省 K_R=1.0 乘法
+    # 逐位不变（conductor_loss.roughness_gain 单源消费）。
+    from rfauto.core import conductor_loss
+
+    delta_m = conductor_loss.skin_depth(f_hz, sigma, mur)
+    k_rough, rough_receipt = _roughness_gain_tier(
+        "rectangular_cavity_mode_q", roughness_model, roughness_rms_um,
+        roughness_factor, nodule_radius_um, nodules_per_cell,
+        cell_area_um2, delta_m=delta_m)
+    rs_eff = rs * k_rough
 
     def _c(idx: int, length: float) -> float:
         return length / 2.0 if idx >= 1 else length
@@ -1166,11 +1236,11 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
                 + (kz * ky / kc2) ** 2 * ncx * nsy * ncz
                 + ncx * ncy * nsz)
             # 六壁损耗：可分离因子已是 ∫dy·∫dz 面积分（勿再加面积前缀）
-            px = 2.0 * (rs / 2.0) * (
+            px = 2.0 * (rs_eff / 2.0) * (
                 (kz * ky / kc2) ** 2 * nsy * ncz + ncy * ncz)
-            py = 2.0 * (rs / 2.0) * (
+            py = 2.0 * (rs_eff / 2.0) * (
                 (kz * kx / kc2) ** 2 * nsx * ncz + ncx * ncz)
-            pz = 2.0 * (rs / 2.0) * (
+            pz = 2.0 * (rs_eff / 2.0) * (
                 (kz * kx / kc2) ** 2 * nsx * ncy
                 + (kz * ky / kc2) ** 2 * ncx * nsy)
         else:
@@ -1180,11 +1250,11 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
                 + (kz * ky / kc2) ** 2 * nsx * ncy * nsz)
             um = mu / 4.0 * (omega * eps / kc2) ** 2 * (
                 ky * ky * nsx * ncy * ncz + kx * kx * ncx * nsy * ncz)
-            px = 2.0 * (rs / 2.0) * (
+            px = 2.0 * (rs_eff / 2.0) * (
                 omega * eps * kx / kc2) ** 2 * nsy * ncz
-            py = 2.0 * (rs / 2.0) * (
+            py = 2.0 * (rs_eff / 2.0) * (
                 omega * eps * ky / kc2) ** 2 * nsx * ncz
-            pz = 2.0 * (rs / 2.0) * (omega * eps / kc2) ** 2 * (
+            pz = 2.0 * (rs_eff / 2.0) * (omega * eps / kc2) ** 2 * (
                 ky * ky * nsx * ncy + kx * kx * ncx * nsy)
         return ue, um, px, py, pz
 
@@ -1225,7 +1295,10 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         "mu_r": mur,
         "tan_delta": tand,
         "f_ghz": round(f_ghz, 9),
-        "rs_ohm_per_sq": round(rs, 15),
+        "roughness_model": rough_receipt["model"],
+        "roughness_gain_k": round(k_rough, 15),
+        "roughness": rough_receipt,
+        "rs_ohm_per_sq": round(rs_eff, 15),
         "q_conductor": round(q_closed, 9),
         "q_conductor_numeric": round(q_numeric, 9),
         "q_xcheck_rel_dev": round(rel_dev, 15),
@@ -1235,7 +1308,9 @@ def rectangular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
         "note": (
             "导体 Q 闭式（1-D 因子解析）与 quad 数值因子双路线互证；"
             "Ue/Um≈1 为谐振腔储能定理自检；介质满充均匀假定；串联合成 "
-            "1/Qu=1/Qc+1/Qd；微扰假定壁损耗≪储能"),
+            "1/Qu=1/Qc+1/Qd；微扰假定壁损耗≪储能"
+            + (f"；粗糙度档 K_R={k_rough:.6g}（{rough_receipt['model']}，"
+               "Qc=Qc_smooth/K_R）" if k_rough != 1.0 else "")),
         "source": (
             "Pozar Microwave Engineering §6.3 矩形腔（微扰 Q=ωU/P_c 六壁"
             "积分；分离变量因子闭式）；数值因子路线为本席独立落地"),

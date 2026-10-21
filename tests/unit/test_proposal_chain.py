@@ -487,7 +487,11 @@ class TestThinShells:
             "topology", "--f0", "2.5", "--fbw", "0.05",
             "--sandbox-name", "cli_bpf", "--promote"])
         assert result.exit_code == 0, result.output
-        data = json.loads(result.output)
+        # CliRunner 把 stderr 混入 output：重 promote 路径 lazy-import h5py
+        # 的版本 UserWarning 会尾随在 JSON 后（架构批 实证）——取前导
+        # JSON 文档，噪声不参与解析（#278 stdout 纯净约束只辖 MCP stdio
+        # 真子进程，不辖 CliRunner 进程内捕获面）。
+        data, _ = json.JSONDecoder().raw_decode(result.output)
         assert data["promote"]["status"] == "promoted"
 
     def test_mcp_topology_propose_promote_flag(self, tmp_path):

@@ -85,7 +85,7 @@ entries:
   - {raw: lange 200000×dt ≥ 12.2ns，均 ≫ 激励脉冲 5.73ns + refix 能量停机 5.95ns。, threshold: 12.2}
   - {raw: '**回退预案（预声明）**：实测同时窗 < 6.5ns → 该模板 NrTS 抬至 200000/400000 重渲染', threshold: 6.5}
 - path: cps_hfss_arbitration/criteria.md
-  title: CPS εeff 之争 HFSS 全波仲裁 · 预声明判据（wf:hfss-cps-arbitration，2026-09-18 起跑前落盘）
+  title: CPS εeff 之争 HFSS 全波仲裁 · 预声明判据（，2026-09-18 起跑前落盘）
   status: migrate_to_v2
   n_gates: 18
   gates:
@@ -108,7 +108,7 @@ entries:
   - {raw: '- 带整体落入某一方 ±3% 窗 **且** 带半宽 ≤0.25% → 按该方出判决', threshold: 0.25}
   - {raw: '- 带横跨两窗或带半宽 >0.25% → UNDECIDABLE 维持（如实登记）；', threshold: 0.25}
 - path: cps_xrefine/criteria.md
-  title: CPS 引擎 x 向加密对照 · 预声明判据（wf:cps-xrefine，2026-09-19 起跑前落盘）
+  title: CPS 引擎 x 向加密对照 · 预声明判据（，2026-09-19 起跑前落盘）
   status: migrate_to_v2
   n_gates: 20
   gates:
@@ -298,7 +298,7 @@ entries:
   - {raw: '2. **cost 不劣化 >5%**：逐种子 `warm_final_best − cold_final_best ≤ max(0.05·|cold_final_best|, 0.25dB)`',
     threshold: 5.0}
 - path: e11_warm_40db/criteria.md
-  title: wf:oe-e11-40db 预声明判据（起跑前写死，2026-09-19）
+  title:  预声明判据（起跑前写死，2026-09-19）
   status: migrate_to_v2
   n_gates: 5
   gates:
@@ -309,7 +309,7 @@ entries:
   - {raw: '| G2 cost 不劣化 | 逐种子 warm_final_best − cold_final_best ≤ max(0.05\|cold\|, 0.25dB) | 3 种子全过
       |', threshold: null}
 - path: e11_warm_retest_budget30/criteria.md
-  title: wf:oe-e11-retest 预声明判据（起跑前写死，2026-09-18/19）
+  title:  预声明判据（起跑前写死，2026-09-18/19）
   status: migrate_to_v2
   n_gates: 5
   gates:
@@ -336,7 +336,7 @@ entries:
   - {raw: '- 烟测硬门逐臂如实判定（β±2%、均分 ≤0.5dB、|S21|/|S31| −3±1dB、|S32| ≤', threshold: 0.5}
   - {raw: −15dB、|S11| ≤−10dB）——非本 A/B 主判，判据=改善量本身。, threshold: null}
 - path: hairpin_hfss_anchor/criteria.md
-  title: hairpin_alt k(gap) 标尺 HFSS 全波仲裁 · 预声明判据（wf:hfss-hairpin-anchor，2026-09-19 起跑前落盘）
+  title: hairpin_alt k(gap) 标尺 HFSS 全波仲裁 · 预声明判据（，2026-09-19 起跑前落盘）
   status: migrate_to_v2
   n_gates: 22
   gates:
@@ -363,7 +363,7 @@ entries:
   - {raw: 5. 自洽信息项：g0500 馈电对 k_split_s21/k_split_eigen=−17%（>10% 信息门）——, threshold: 10.0}
   - {raw: 60.5+87.6s、line2t 56.7+86.6s ≈ **20.0min ≤ 70min 预算 ✓**（单点 ~9.5min, threshold: 70.0}
 - path: hairpin_hfss_anchor/eigen_ext/criteria.md
-  title: hairpin_alt HFSS eigen 补锚中间两 gap 点 · 预声明判据（wf:hfss-hairpin-eigen2，2026-09-18 起跑前写死）
+  title: hairpin_alt HFSS eigen 补锚中间两 gap 点 · 预声明判据（，2026-09-18 起跑前写死）
   status: migrate_to_v2
   n_gates: 2
   gates:
@@ -419,7 +419,7 @@ entries:
   - {raw: '- A2 端接质量：冒烟轮 `gamma` 报告 non-excited `term_err_max` ≤ 0.05 全 matched', threshold: 0.05}
   - {raw: （stage-4 口径）；激励口 ut 尾段 ≤ −40dB（已衰减，plateau 排除）。, threshold: null}
 - path: marchand_line_calibration/criteria.md
-  title: criteria.md — wf:oe-marchand-calib Marchand 匹配线引擎 Z0/β 标定跑（起跑前预声明，2026-09-18）
+  title: criteria.md —  Marchand 匹配线引擎 Z0/β 标定跑（起跑前预声明，2026-09-18）
   status: migrate_to_v2
   n_gates: 12
   gates:
@@ -436,7 +436,7 @@ entries:
   - {raw: 无源端口 Z_ref2，spread ≤0.6%）→ 引擎 Z0 主判据成立，双端口差是**激励端口, threshold: 0.6}
   - {raw: 差 ≤1.2pp；激励端口 local β +19.7~+24.3% 为同一提取伪像。, threshold: 1.2}
 - path: marchand_sameport_arb/criteria.md
-  title: criteria.md — wf:oe-marchand-sameport 同端口建模仲裁跑（起跑前预声明，2026-09-18）
+  title: criteria.md —  同端口建模仲裁跑（起跑前预声明，2026-09-18）
   status: migrate_to_v2
   n_gates: 11
   gates:

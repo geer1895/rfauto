@@ -629,7 +629,7 @@ def test_report_and_final_verify_stage_result_persistence(
     assert sr_fv["adapter_channel"] == "fake->fake"
 
 
-# ─── aurora_next 审查批修复席 F4 钉（P1-2 显式 0 tune 预算 + P3 falsy 位；
+# ─── 架构批 审查批修复席 F4 钉（P1-2 显式 0 tune 预算 + P3 falsy 位；
 # runs/review_aurora_next/A3_service_am/REPORT.md）────────────────────────────
 
 def test_plan_recipe_explicit_zero_max_trials_respected(tmp_path) -> None:
@@ -652,6 +652,10 @@ def test_explicit_zero_tune_budget_end_to_end(tmp_path, monkeypatch) -> None:
     is not None 判缺（旧 `or 30` 把显式 0 再顶回 30=S2-3 修复 no-op）。"""
     import rfauto.service.api as api_mod
 
+    # 校准 stage 的 run 目录=create_run_dir(Path(".").resolve())（cwd 相对）
+    # ——chdir 隔离（#144 家族终门实证：四日 24 个假 calibration:fake run
+    # 污染真实 runs/ 湖，report.md 直指 pytest tmp 配方路径）
+    monkeypatch.chdir(tmp_path)
     recipe = _ge9b_fake_recipe(tmp_path)
     plan = plan_campaign(str(recipe), mid_adapter="fake",
                          high_adapter="none", tune_budget=0,

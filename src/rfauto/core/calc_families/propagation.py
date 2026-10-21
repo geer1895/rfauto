@@ -1,10 +1,23 @@
 """propagation 族（AP-5 传播基础闭式包，§A-7，2026-10-02，追加尾位）。
 
+出处（标准模型原文逐字转写+教科书同族二级转引，键内描述同源）：
+- two_ray_loss：双径干涉+断点距离 d_break=4h_tx·h_rx/λ（Rappaport,
+  Wireless Communications 2nd ed. §4.6 同族二级转引）。
+- knife_edge_loss：ITU-R P.526-15 §4 刃形绕射（Fresnel-Kirchhoff 参数 v，
+  exact/approx/lee 三档，键内描述逐字转写）。
+- hata_cost231：Okumura-Hata 原式+COST-231 Hata 修正（COST 231 final
+  report ch.4.4 式(27)；ITU-R P.1411 同式承载）。
+- walfisch_ikegami_los/walfisch_ikegami_nlos：COST-231 Walfisch-Ikegami
+  视距/非视距（COST 231 final report ch.4.4.2/4.4.3；ITU-R P.1411 同式
+  承载）。
+
 内核在 core/propagation.py（纯函数零 IO），本模块只做注册薄壳
-（同 link/exposure_limits 惯例）。三键：two_ray_loss（双径干涉+断点
+（同 link/exposure_limits 惯例）。五键：two_ray_loss（双径干涉+断点
 元数据）/ knife_edge_loss（刃形绕射 exact/approx/lee 三档）/
-hata_cost231（Hata+COST-231 统一域盒路损）。fresnel_zone_radius_m/
-clearance_ok 为纯辅助不注册（链路预算组合面，sat_link AP-9 消费）。
+hata_cost231（Hata+COST-231 统一域盒路损）/ walfisch_ikegami_los+
+walfisch_ikegami_nlos（COST-231 Walfisch-Ikegami 视距/非视距，架构批
+W4-S4 追加尾位）。fresnel_zone_radius_m/clearance_ok 为纯辅助不注册
+（链路预算组合面，sat_link AP-9 消费）。
 """
 
 from __future__ import annotations
@@ -107,3 +120,57 @@ def hata_cost231(f_mhz: float, d_km: float, h_b_m: float, h_m_m: float,
         "f_mhz": float(f_mhz),
         "d_km": float(d_km),
     }
+
+
+@register_calculator(
+    "walfisch_ikegami_los",
+    "WI视距路损：COST-231 Walfisch-Ikegami 街道峡谷视距路损（COST 231 "
+    "final report ch.4.4 式(27)；ITU-R P.1411 同式承载）：L=42.6+26lg("
+    "d_km)+20lg(f_MHz)。域盒 f∈[800,2000]MHz/d∈[0.02,5]km（COST 231 "
+    "有效域，d≥0.02km 明文）；教科书点 2000MHz/1km=108.62dB",
+    (("f_mhz", "float MHz 频率（域盒 [800,2000]）"),
+     ("d_km", "float km 收发距离（域盒 [0.02,5]）")),
+    required=("f_mhz", "d_km"),
+)
+def walfisch_ikegami_los(f_mhz: float, d_km: float) -> dict:
+    from rfauto.core.propagation import walfisch_ikegami_los_db
+
+    loss = walfisch_ikegami_los_db(f_mhz, d_km)
+    return {
+        "loss_db": loss,
+        "f_mhz": float(f_mhz),
+        "d_km": float(d_km),
+    }
+
+
+@register_calculator(
+    "walfisch_ikegami_nlos",
+    "WI非视距路损：COST-231 Walfisch-Ikegami 三分量非视距路损（COST 231 "
+    "ch.4.4.2/4.4.3；ITU-R P.1411 同式）：L=L_f+L_rts+L_msd（自由空间+"
+    "屋顶到街道含 L_ori 取向修正+多屏绕射 k_a/k_d/k_f）。h_bs≤h_roof 档"
+    "（k_a=54、k_d=18−15·Δh_b/h_roof、L_bsh=0；h_bs>h_roof 分支 L_bsh/"
+    "k_a 内插档原文未复读不做——#1c 禁凭记忆写常数，显式拒绝）；k_f："
+    "metropolitan=−4+0.7(f/925−1)、medium=−4+1.5(f/925−1)，f=925MHz 时 "
+    "k_f=−4 逐位。域盒 f∈[800,2000]MHz/d∈[0.02,5]km，三分量逐项分列",
+    (("f_mhz", "float MHz 频率（域盒 [800,2000]）"),
+     ("d_km", "float km 收发距离（域盒 [0.02,5]）"),
+     ("h_bs_m", "float m 基站天线高（≤h_roof_m，低于屋项档）"),
+     ("h_m_m", "float m 移动台天线高（<h_roof_m）"),
+     ("h_roof_m", "float m 屋顶平均高度（>h_m_m）"),
+     ("w_m", "float m 街宽（>0）"),
+     ("b_m", "float m 楼间距（≥w_m）"),
+     ("phi_deg", "float ° 街道取向角（[0,90]）"),
+     ("city", "str 'metropolitan'/'medium'（默认 'metropolitan'）")),
+    required=("f_mhz", "d_km", "h_bs_m", "h_m_m", "h_roof_m", "w_m",
+              "b_m", "phi_deg"),
+)
+def walfisch_ikegami_nlos(
+    f_mhz: float, d_km: float, h_bs_m: float, h_m_m: float,
+    h_roof_m: float, w_m: float, b_m: float, phi_deg: float,
+    city: str = "metropolitan",
+) -> dict:
+    from rfauto.core.propagation import walfisch_ikegami_nlos_parts
+
+    return walfisch_ikegami_nlos_parts(
+        f_mhz, d_km, h_bs_m, h_m_m, h_roof_m, w_m, b_m, phi_deg,
+        city=city)

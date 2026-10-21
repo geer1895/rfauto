@@ -51,12 +51,11 @@ def _make_run(
 
 
 @pytest.fixture(autouse=True)
-def _isolated_runs(tmp_path, monkeypatch):
+def _isolated_runs(tmp_path, isolated):
     """runs/ 指到 tmp（RUNS_DIR 是 cwd 相对单源，chdir 即 runs_diff 与
-    sparams_series 两侧对齐，无需分别 patch）。"""
+    sparams_series 两侧对齐，无需分别 patch）；T5 批 6 起 chdir 单源化。"""
     runs = tmp_path / "runs"
     runs.mkdir(exist_ok=True)
-    monkeypatch.chdir(tmp_path)
     yield runs
 
 
@@ -192,7 +191,7 @@ class TestRunsDiffEndpoint:
             paths.index("/api/runs/{run_id}")
         # 端点计数事实钉：58（PR-4 前）→ 59（+diff）→ 63（ge8b Wave B：画廊/仪表盘/profile/队列四页，席B2/B3）
         # → 64（edblane-w7：+edb_status EDB 状态页，e6306cc4）
-        # → 67（aurora_d UI-R3：+统一事件流三端点 /api/events/stream、
+        # → 67（架构批 UI-R3：+统一事件流三端点 /api/events/stream、
         #    /api/tune/events/stream、/api/campaign_queue/events/stream。
         #    溯源登记（UI-R8 审查 P2-1，UI-R10 补注）：此计数 hunk 随
         #    UI-R2 commit de729bae 入库——有意同笔搭乘、非误捎带；端点

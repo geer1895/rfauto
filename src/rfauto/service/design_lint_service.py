@@ -47,6 +47,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from rfauto.infra.registry_kit import RegistryKit
 from rfauto.service.envelope import ok_envelope
 
 __all__ = ["LINT_REGISTRY", "LintCheckRegistry", "design_lint"]
@@ -54,36 +55,33 @@ __all__ = ["LINT_REGISTRY", "LintCheckRegistry", "design_lint"]
 _LINT_CHECK_NAMES = ("constraints", "fab", "bounds", "pdn", "stub")
 """子检查全集（注册表一致性由测试钉住）。"""
 
+_LintCheckFn = Callable[[dict[str, Any]], dict[str, Any]]
+"""子检查函数签名（payload→check row）。"""
 
-class LintCheckRegistry:
-    """子检查注册表（仿 BUDGET_REGISTRY：注册+按名运行，门面不自持判据）。"""
+
+class LintCheckRegistry(RegistryKit[_LintCheckFn]):
+    """子检查注册表（仿 BUDGET_REGISTRY：注册+按名运行，门面不自持判据）。
+
+    T6 试点（R1 审计 §面5/T6）：dict+装饰器样板由 infra.registry_kit.
+    RegistryKit 承载——对外行为（重名 ValueError、register 即刻验重
+    时序、缺名 ValueError 文案）与手写版逐字节一致。
+    """
 
     def __init__(self) -> None:
-        self._checks: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {}
+        super().__init__(label="子检查")
 
-    def register(
-        self, name: str
-    ) -> Callable[[Callable[[dict[str, Any]], dict[str, Any]]],
-                   Callable[[dict[str, Any]], dict[str, Any]]]:
+    def register(self, name: str) -> Callable[[_LintCheckFn], _LintCheckFn]:
         """注册子检查函数（签名 payload→check row）。同名覆盖视为编程错误。"""
-        if name in self._checks:
-            raise ValueError(f"子检查重复注册: {name}")
-
-        def deco(fn: Callable[[dict[str, Any]], dict[str, Any]]
-                 ) -> Callable[[dict[str, Any]], dict[str, Any]]:
-            self._checks[name] = fn
-            return fn
-
-        return deco
+        return super().register(name)
 
     def names(self) -> list[str]:
-        return sorted(self._checks)
+        return self.keys()
 
     def is_registered(self, name: str) -> bool:
-        return name in self._checks
+        return name in self
 
     def run(self, name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        fn = self._checks.get(name)
+        fn = self.get(name, default=None)
         if fn is None:
             raise ValueError(f"未知子检查: {name}（可用: {self.names()}）")
         return fn(payload)

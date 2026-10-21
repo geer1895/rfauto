@@ -239,8 +239,8 @@ class TestAutotuneWiring:
     """接优化环的文件面：配方落盘 → autotune_loop（注入 sampler）全环。"""
 
     @pytest.fixture(autouse=True)
-    def _isolated(self, tmp_path, monkeypatch):
-        monkeypatch.chdir(tmp_path)  # #144：防污染真实 runs/
+    def _isolated(self, isolated):
+        """cwd 隔离单源适配器（T5 批 6，tests/conftest.py::isolated）。"""  # #144：防污染真实 runs/
 
     def test_recipe_lands_from_extract_facts(self, tmp_path):
         from rfauto.service.kicad_em_service import autotune_recipe_from_extract

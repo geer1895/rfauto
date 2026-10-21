@@ -1,4 +1,12 @@
-"""雷达目标 RCS 闭式件族（aurora72 A4-B 席域 1，R7 第二梯队 T9=G10）。
+"""雷达目标 RCS 闭式件族（架构批 A4-B 席域 1，R7 第二梯队 T9=G10）。
+
+出处（RCS 经典闭式口径，正文物理口径节转录）：
+- rcs_sphere_mie：PEC 球精确 Mie 级数（G. Mie, Ann. Phys., 1908；
+  二级转引 Skolnik, Introduction to Radar Systems 球 RCS 一节 / Ruck,
+  Radar Cross Section Handbook, 1970；项数 Wiscombe 截断）。
+- rcs_peak_canonical：平板/二面角/三方角/圆柱/圆锥峰值 RCS 教科书
+  闭式库（Skolnik 教科书表 + Knott-Shaeffer-Tuley, Radar Cross Section
+  口径）。
 
 两键：rcs_sphere_mie（金属球精确 Mie 级数后向散射 RCS + Rayleigh/Mie/
 光学三区判据） / rcs_peak_canonical（典型目标峰值 RCS 库：平板法向/
@@ -44,7 +52,7 @@
 
   dBsm 换算恒等：dBsm = 10·log10(σ/m²)。圆锥（轴向入射尖端绕射）
   σ = λ²tan⁴(α)/(16π)（α=半角，Skolnik 教科书表；单闭式源+λ²/tan⁴ 标度
-  恒等式锚，尺寸无关=尖端绕射口径，aurora_e W1-S2 补齐任务书"圆锥"
+  恒等式锚，尺寸无关=尖端绕射口径，架构批 W1-S2 补齐任务书"圆锥"
   子项——前席 v1 如实不做）。三角三方角/圆盘斜入射姿态项不在口径
   （常数源无法双源钉死，如实不做）。
 

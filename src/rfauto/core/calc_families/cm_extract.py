@@ -1,4 +1,10 @@
-"""C13 EM/电路响应反提链（Cauchy 拟合→Cameron Y 留数 N+2 矩阵；含 |S|² 幅值域反提）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""C13 EM/电路响应反提链（Cauchy 拟合→Cameron Y 留数 N+2 矩阵；含 |S|² 幅值域反提）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（Cameron 滤波器矩阵经典口径）：
+- coupling_matrix_extract：Cauchy 拟合 + Cameron Y 留数 N+2 耦合矩阵
+  反提（R. J. Cameron, "General coupling matrix synthesis methods for
+  Chebyshev filtering functions", IEEE Trans. MTT 47(4), 1999；二级转引
+  Cameron-Kudsia-Mansour, Microwave Filters for Communication Systems）。"""
 
 from __future__ import annotations
 

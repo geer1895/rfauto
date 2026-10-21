@@ -1,4 +1,4 @@
-"""aurora72 A5-B（R6 审计 R-4）：UI 主题档单源 theme.js 回归钉。
+"""架构批 A5-B（R6 审计 R-4）：UI 主题档单源 theme.js 回归钉。
 
 R-4 收编前：pages.js 22 处 body.light 判定 + 30 处 `light ? "#…" : "#…"`
 双档三元、app.js CHART_COLORS 表 + pages.js timeline 整档镜像、热图色带
@@ -33,7 +33,7 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]

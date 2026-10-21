@@ -27,9 +27,7 @@ _REGISTRY_PATH = _REPO_ROOT / "knowledge" / "anchors.yaml"
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(tmp_path, isolated_cache_off):
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
 

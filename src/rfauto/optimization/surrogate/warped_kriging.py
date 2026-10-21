@@ -1,6 +1,6 @@
 """EC-16 HEBO 式 input warping + 确定性 ARD-GP（Kumaraswamy 固定超参）。
 
-池 P3 圈定件（aurora_e W5-S22；ecosystem §二 EC-16）。法源：
+池 P3 圈定件（架构批 W5-S22；ecosystem §二 EC-16）。法源：
 - HEBO（Cowen-Rivers et al., "Engineering design optimisation with
   HEBO", 2020/2022，huawei-noah/HEBO）：输入空间扭曲（beta/Kumaraswamy
   核）让 GP 的"均匀分辨率"假设迁就目标函数的异质灵敏度——典型 RF 场景

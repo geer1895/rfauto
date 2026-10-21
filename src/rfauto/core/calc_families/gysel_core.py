@@ -1,5 +1,11 @@
-"""Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
+"""Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
 余量：Gysel core 级注册键缺，现仅 synthesis.py 模板级等分综合）。
+
+出处（Gysel 拓扑经典文献+偶/奇模半电路验证，正文物理口径节转录）：
+- gysel_core_synthesize / gysel_frequency_response：Gysel 功分器
+  六 λ/4 段拓扑与偶/奇模半电路闭式（U. H. Gysel, "A new technique
+  for power divider/combiner", IEEE MTT-S Int. Microwave Symp. Dig.,
+  1975；隔离桥带必要性判废锚 #206 同文件）。
 
 两键：gysel_core_synthesize（等分口径闭式设计值+偶/奇模半电路验证+理想 f0
 三口 S 矩阵） / gysel_frequency_response（五线六节点导纳网络精确频响——

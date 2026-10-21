@@ -381,10 +381,14 @@ class TestPlanImmutability:
             runner.build_plan(root, force=True)
 
     def test_registered_nominal_matches_redesign_doc(self):
-        """真面一致性钉（R2 df5-c3fix 改当轮口径）：TEMPLATE_NOMINAL 与设计链
-        l_via_h=None（auto=C3_L_VIA_CAL_H）再生名义 4 位舍入一致（经 doc 参数
-        注入，脱 runs/ 存档依赖）；--plan fail-closed 机制面用篡改 doc 钉
-        （改任一在册几何键 → 不一致）。"""
+        """真面一致性钉（R2 df5-c3fix 改当轮口径；架构批 W6-S4 sir_bpf 名义
+        重注册同笔更新）：TEMPLATE_NOMINAL 与各自注册口径设计链再生名义
+        4 位舍入一致（经 doc 参数注入，脱 runs/ 存档依赖）——interdigital/
+        combline 注册名义=过孔补偿链 l_via_h=None（auto=C3_L_VIA_CAL_H，
+        df5-c3fix 口径不变）；sir_bpf 注册名义=理想短路缺省链 l_via_h=0.0
+        （W6-S4 重注册，R3 审计处方：恒等式 tanθ1·tanθ2=Z_lo/Z_hi 名义回代
+        2.5000 自洽，过孔补偿留 render 通道 l_via_h 锚运行时行为）；
+        --plan fail-closed 机制面用篡改 doc 钉（改任一在册几何键 → 不一致）。"""
         designers = {"interdigital": ot.interdigital_design_from_order,
                      "combline": ot.combline_design_from_order,
                      "sir_bpf": ot.sir_bpf_design_from_order}
@@ -394,8 +398,9 @@ class TestPlanImmutability:
                              "feed_len_mm", "c_load_pf"),
                 "sir_bpf": ("order", "w_feed_mm", "w_low_mm", "w_high_mm",
                             "l_low_mm", "l_high_mm", "gaps_mm", "feed_len_mm")}
+        l_via = {"interdigital": None, "combline": None, "sir_bpf": 0.0}
         for t in ("combline", "interdigital", "sir_bpf"):
-            design = designers[t](3, 2.5, 0.05, 20.0, l_via_h=None)
+            design = designers[t](3, 2.5, 0.05, 20.0, l_via_h=l_via[t])
             new_nominal = {k: design[k] for k in keys[t]}
             doc = {"templates": {t: {"new_nominal": new_nominal}}}
             assert runner._nominal_matches_redesign(

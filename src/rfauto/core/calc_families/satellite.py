@@ -1,5 +1,10 @@
 """satellite 族（AP-9 卫星链路预算器，§A-10，追加尾位 2026-10-02）。
 
+出处（卫星链路预算教科书+ITU 口径，内核 core/sat_link.py 转录）：
+- sat_link_budget：C/N0=EIRP−L_total+G/T−k 链路方程（G/T 定义
+  ITU-R S.733-2；几何=Maral & Bousquet, Satellite Communications
+  Systems 球体近似惯例；k 取 2019 SI 精确值）。
+
 内核在 core/sat_link.py（纯函数零 IO），本模块只做注册薄壳
 （同 link/propagation 惯例）。单键 sat_link_budget：单跳卫星链路预算
 （EIRP→FSPL+pointing+gas+rain→G/T（core/gt_link 单源复用）→C/N0→

@@ -79,6 +79,10 @@ from __future__ import annotations
 import math
 import warnings
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import skrf as rf
 
 import numpy as np
 
@@ -249,7 +253,7 @@ def butler4_s_full() -> np.ndarray:
 # ─── skrf 级联路径 ────────────────────────────────────────────────────────────
 
 
-def build_butler_network():
+def build_butler_network() -> rf.Network:
     """skrf Network 级联组装全 8 端口 Butler 网络（端口序 (B1..B4, A1..A4)）。
 
     组件：4×混合环 + 4×移相器 + 2×交叉结，按 :func:`butler_wiring_table`

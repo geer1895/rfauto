@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rfauto"
-version = "0.10.0"
+version = "0.11.0"
 description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
 readme = "README.md"
 # PEP 639（0dd⑥）：license 用 SPDX 表达式 + license-files 列表；
@@ -65,7 +65,7 @@ mcp = [
 #（#178 教训：旧 venv 手动装过、声明缺失，换机即断——WP0.1 收编）
 # sse-starlette = 战役进度 SSE 桥（ui/server.py 事件流端点；缺装时
 # 端点 503 如实报缺，UI 其余面不受影响）
-ui = ["starlette>=0.35", "uvicorn>=0.27", "sse-starlette>=3.0"]
+ui = ["starlette>=0.46", "uvicorn>=0.27", "sse-starlette>=3.0"]  # >=0.46：GZipMiddleware exclude_content_types 含 text/event-stream（SSE 帧不被 gzip 缓冲；0.35-0.45 无排除——2026-10 审查七版本 wheel 实证）
 # openEMS Python 绑定运行时依赖 —— 绑定本体（C 扩展）无 PyPI wheel，需从
 # openEMS 源码自行编译进 venv（参考 scripts/build_python_bindings.cmd），
 # 此处只声明绑定 import 时的依赖（numpy/matplotlib 已在核心依赖里）
@@ -119,8 +119,11 @@ jax = ['jax>=0.11.1; python_version >= "3.12"']
 diff-fdtd = ['fdtdx>=0.6.2; python_version >= "3.11"']
 # pydantic-ai（slim+openai extra）—— WP3.1 runtime: pydantic_ai 可选依赖组：
 # 未安装时 create("pydantic_ai") 照常注册（懒加载），submit 报 PydanticAINotInstalled；
-# 安装：pip install rfauto[pai]。版本口径见 service/pydantic_ai_runtime.py 源码核对注记
-pai = ["pydantic-ai-slim[openai]>=1.0,<3"]
+# 安装：pip install rfauto[pai]。版本口径见 service/pydantic_ai_runtime.py 源码核对注记。
+# 下限 2.53.0=五条 PYSEC-2026（4284/4285/4286/4290/4291）修复线（2026-10-20
+# 实测升级 2.43.0→2.57.0：agent/pai/runtime_ab 定向 283 绿+
+# 真类构造冒烟 4 绿；PYSEC-2026-4290 修复版 2.52.0、4285 修复版 2.53.0）
+pai = ["pydantic-ai-slim[openai]>=2.53.0,<3"]
 # SI 通道报告（T2）—— COM（IEEE 802.3-22 Annex 93A/178A 冻结口径，
 # PyChOpMarg 参考实现）；仅 service/si_channel_service.py 惰性 import，
 # 未安装时 COM 段显式降级报缺、TDR/无源性/因果性段照常
@@ -325,5 +328,6 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 markers = [
     "real_edt: 需要真实 AEDT/ADS 环境（deselect with -m not real_edt）",
+    "slow: 终门 DURATIONS >60s 慢件（2026-10-20 分层标注 8 件：真树敏感/数值重件/再生面；现仅作元数据——夜档 solo/CI 分离后续接线，加标不改任何门的 deselect 行为）",
     "solo: 计时敏感/资源敏感测试，仅串行全量门与 CI 执行（并行门与 xdist 对照臂 deselect）",
 ]

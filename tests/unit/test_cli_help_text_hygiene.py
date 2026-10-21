@@ -17,7 +17,7 @@ click 渲染面**禁 `%%`**（会字面双显，仅 argparse scripts/ 面合法�
 "命令 help 文本"），探针已留档（runs/research_seats_20261004/ra_criteria/
 _probe_d06_help.py）供后续批清零（followUp 登记）。
 
-2026-10-11 aurora36 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
+2026-10-11 架构批 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
 profile_app×2，改写口径同上：全角【】/圆括号/描述化，语义不变），D-06
 参数级欠账闭合——新增 TestParamHelpTextHygiene 下探 cmd.params 逐
 click.Parameter.help（同一棵树同一判定面），裸 `[` 全禁棘轮（参数 help 无
@@ -119,7 +119,7 @@ class TestCliHelpTextHygiene:
 
 
 class TestParamHelpTextHygiene:
-    """D-06 参数级清偿（2026-10-11 aurora36 W5-C）：参数 help 同禁裸 [。
+    """D-06 参数级清偿（2026-10-11 架构批 W5-C）：参数 help 同禁裸 [。
 
     命令级门（上方 TestCliHelpTextHygiene）只查 cmd.help/short_help；本类
     下探 cmd.params 逐 click.Parameter.help——typer.Option/Argument 的 help

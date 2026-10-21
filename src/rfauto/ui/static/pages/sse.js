@@ -1,11 +1,11 @@
-/* rfauto 工作台 SSE 实时面（aurora_d UI-R2 自 pages.js 拆出，
-   aurora72 A6-A 块逐字节搬移）：帧分派/回退判定/URL 构造纯函数（node
+/* rfauto 工作台 SSE 实时面（架构批 UI-R2 自 pages.js 拆出，
+   架构批 A6-A 块逐字节搬移）：帧分派/回退判定/URL 构造纯函数（node
    行为钉）+ EventSource 订阅/收束/恢复连接管理（渐进增强，零硬依赖）。
    帧形态与消费纪律详见块首注释（server P-1 桥契约）。 */
 
 import { getActiveView } from "./context.js";
 
-/* ═══ aurora72 A6-A（R6 审计 F-1）：SSE 实时面（P-1 桥消费，渐进增强）═════
+/* ═══ 架构批 A6-A（R6 审计 F-1）：SSE 实时面（P-1 桥消费，渐进增强）═════
    server.py /api/runs/{run_id}/events/stream（P-1 桥）帧形态：named 事件
    event=<event_type>（值域=core/events.py EventType，见 _SSE_EVENT_TYPES）+
    id=<event_id> + data=事件 JSON；控制帧 end（data.terminal=true=终态

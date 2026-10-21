@@ -1,5 +1,16 @@
 """阵列综合族（RB-ALG-1 差波束三法 + RB-ALG-2 MIP 量化阵列，Phase3 W3-E）。
 
+出处（原文数表逐字转写，内核 core/array_synthesis.py docstring 同源）：
+- array.bayliss_weights：Bayliss 1968 BSTJ 47(4):623-650 原文数表
+  （Doerry SAND-2025-07335 独立复现互证；数表锚
+  tests/unit/test_w3_e_array_synth.py）。
+- array.villeneuve_weights：Villeneuve 1984 IEEE TAP 32(10):1089-1093
+  （Taylor 零点的离散阵精确修正）。
+- array.schelkunoff_nulls：Schelkunoff 1943 BSTJ 22:80-107 单位圆零点
+  置放。
+- array.quantized_milp：scipy.optimize.milp/HiGHS 精确 MIP（spec
+  sa_specs2 §七；求解工具链出处，非文献闭式，如实登记）。
+
 内核：core/array_synthesis.py（bayliss_weights/villeneuve_weights/
 schelkunoff_nulls，Bayliss 1968/Villeneuve 1984/Schelkunoff 1943，出处逐字
 见内核 docstring 与 tests/unit/test_w3_e_array_synth.py 数表锚）与

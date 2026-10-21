@@ -38,13 +38,20 @@ _SOURCE_MODULES = [
 
 
 def _public_defs(module) -> dict[str, object]:
-    """源模块内自定义的公开函数/类（__module__ 过滤掉 import 进来的名字）。"""
+    """源模块内自定义的公开函数/类（__module__ 过滤掉 import 进来的名字）。
+
+    W7-S1 T2 包化（2026-10-19）：源模块可能是同名包（实现随域迁子模块），
+    ``__module__`` 允许 ``module.__name__`` 及其 ``<name>.子模块`` 前缀。
+    """
     out: dict[str, object] = {}
+    prefix = module.__name__ + "."
     for name, obj in inspect.getmembers(
             module, lambda o: inspect.isfunction(o) or inspect.isclass(o)):
         if name.startswith("_"):
             continue
-        if getattr(obj, "__module__", None) != module.__name__:
+        mod_name = getattr(obj, "__module__", None)
+        if mod_name is None or not (
+                mod_name == module.__name__ or mod_name.startswith(prefix)):
             continue
         out[name] = obj
     return out
@@ -122,11 +129,17 @@ class TestApiReexportCompleteness:
         重复定义（文件内二次定义=前者死代码，正是 #116 的土壤）。"""
         import re
 
-        for path in (
-            Path(api.__file__), Path(v3_services.__file__),
-            Path(r3_services.__file__), Path(dataset_service.__file__),
-            Path(dataset_insights.__file__), Path(warm_start_data.__file__),
-        ):
+        # W7-S1 T2 包化（2026-10-19）：api/r3_services/dataset_service 实现
+        # 随域迁子模块，尾部遮蔽盘点随实现走（门面+子模块全扫）
+        paths = [Path(api.__file__), Path(v3_services.__file__),
+                 Path(r3_services.__file__), Path(dataset_service.__file__),
+                 Path(dataset_insights.__file__),
+                 Path(warm_start_data.__file__)]
+        for pkg in (api, r3_services, dataset_service):
+            pkg_dir = Path(pkg.__file__).parent
+            if pkg_dir.is_dir():  # 包化模块：门面+子模块全量入盘
+                paths += sorted(pkg_dir.glob("*.py"))
+        for path in paths:
             names: list[str] = re.findall(
                 r"^(?:def|class) ([A-Za-z_]\w*)",
                 path.read_text(encoding="utf-8"), flags=re.MULTILINE)

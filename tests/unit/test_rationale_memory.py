@@ -10,8 +10,8 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 批4 单源化）。"""
     yield
 
 
@@ -63,6 +63,26 @@ class TestRationaleMemory:
 
         (tmp_path / "empty_runs").mkdir()
         assert not build_index(tmp_path / "empty_runs")["ok"]
+
+    def test_collect_docs_cache_deepcopy_isolation(self, runs_dir):
+        """语料缓存出口 deepcopy 结构隔离（架构批 审查波 2 P3-2 收账）。
+
+        浅拷贝+约定只读在调用方写条目 dict 时跨请求污染缓存——改 deepcopy
+        后（对齐 run_detail/_endpoint_snapshot 先例），命中路径返回的条目
+        可自由变换且不回写缓存（指纹未变=第二次调用走缓存命中路径）。
+        """
+        from rfauto.service.rationale_memory import _collect_docs
+
+        first = _collect_docs(Path(runs_dir))
+        assert first, "语料为空（fixture 预置失效）"
+        first[0]["text"] = "POLLUTED"
+        first[0]["id"] = "polluted/id"
+        first.append({"id": "extra/injected", "text": "x"})
+        second = _collect_docs(Path(runs_dir))
+        assert all(d["text"] != "POLLUTED" for d in second)
+        assert all(d["id"] != "polluted/id" for d in second)
+        assert all(d["id"] != "extra/injected" for d in second)
+        assert len(second) == len(first) - 1
 
 
 # ---------------------------------------------------------------------------

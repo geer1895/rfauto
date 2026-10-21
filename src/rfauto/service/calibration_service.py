@@ -26,7 +26,8 @@ _SAMPLER_REPORT_KEYS = ("ok", "verdict", "run_id")
 
 
 def _template_for(model: str) -> str:
-    from rfauto.service.ui_service import _template_hint
+    # T1 解环：模板名映射改读 template_hints 叶（calibration→ui 环边断）
+    from rfauto.service.template_hints import _template_hint  # lazy: cycle-break（T1 解环：模板映射叶）
 
     hint = _template_hint({"model": model})
     if hint is None:
@@ -39,8 +40,8 @@ def _make_sampler(sampler: str, template: str, freq_range: tuple[float, float],
                   mesh_resolution_mm: float = 0.5):
     """构造采样执行函数 params→metrics（采样执行与设计分离）。"""
     if sampler == "fake":
-        from rfauto.adapters.fake_adapter import FakeAdapter
-        from rfauto.core.objectives import SpecEvaluator
+        from rfauto.adapters.fake_adapter import FakeAdapter  # lazy: run-path（执行面按需取用）
+        from rfauto.core.objectives import SpecEvaluator  # lazy: run-path（执行面按需取用）
 
         def run_fake(params: dict[str, float]) -> dict[str, float]:
             ad = FakeAdapter(model_type=template, n_ports=3,
@@ -55,16 +56,16 @@ def _make_sampler(sampler: str, template: str, freq_range: tuple[float, float],
 
         return run_fake
     if sampler == "openems":
-        from rfauto.adapters.em_solver_base import (
+        from rfauto.adapters.em_solver_base import (  # lazy: run-path（执行面按需取用）
             EMSolverConfig,
             resolve_openems_exe,
         )
-        from rfauto.adapters.openems_solver import OpenEMSSolver
+        from rfauto.adapters.openems_solver import OpenEMSSolver  # lazy: run-path（执行面按需取用）
 
         def run_openems(params: dict[str, float]) -> dict[str, float]:
             import skrf
 
-            from rfauto.core.objectives import SpecEvaluator
+            from rfauto.core.objectives import SpecEvaluator  # lazy: run-path（执行面按需取用）
 
             work = work_root / f"pt_{int(time.time() * 1000) % 10**10}"
             solver = OpenEMSSolver(EMSolverConfig(
@@ -97,7 +98,7 @@ def _make_sampler(sampler: str, template: str, freq_range: tuple[float, float],
 
 def _run_point(config: dict, params: dict[str, float]) -> dict[str, float]:
     """池化 worker 入口（模块级=可 pickle）：config→采样函数→单点执行。"""
-    from rfauto.core.objectives import Objective
+    from rfauto.core.objectives import Objective  # lazy: run-path（执行面按需取用）
 
     run_fn = _make_sampler(
         config["sampler"], config["template"], tuple(config["freq_range"]),
@@ -135,7 +136,7 @@ def fsv_grade_gate(
     - 段不可用/缺失/门限非法 → degraded=True、pass=None：门**不参与**判定，
       调用方必须按既有单点口径判定（降级路径——禁止因 FSV 缺席而 FAIL）。
     """
-    from rfauto.core.fsv import GRADE_CODES
+    from rfauto.core.fsv import GRADE_CODES  # lazy: run-path（执行面按需取用）
 
     thr = str(threshold).upper()
     if thr not in GRADE_CODES:
@@ -186,7 +187,7 @@ def _numeric(value: object) -> float | None:
 
 def _grade_label(code: str) -> str:
     """FSV 六级短码 → 全称（Excellent/Very Good/...）。"""
-    from rfauto.core.fsv import GRADE_CODES, GRADE_LABELS
+    from rfauto.core.fsv import GRADE_CODES, GRADE_LABELS  # lazy: run-path（执行面按需取用）
 
     return GRADE_LABELS[GRADE_CODES.index(code)]
 
@@ -207,7 +208,7 @@ def fsv_curve_levels(
     error_envelope(msg)（``{"ok": False, "errors": [...]}`` 契约口径），
     不抛异常（#105：观测性不得成为故障点）。
     """
-    from rfauto.core.fsv import fsv, to_jsonable
+    from rfauto.core.fsv import fsv, to_jsonable  # lazy: run-path（执行面按需取用）
 
     try:
         raw = to_jsonable(fsv(freq_a, val_a, freq_b, val_b,
@@ -235,7 +236,7 @@ def fsv_curve_levels(
 
 def _worst_gdm_grade(entries: dict[str, Any]) -> str | None:
     """多条曲线里最差（等级下标最大）的 GDM 短码；全失败 → None。"""
-    from rfauto.core.fsv import GRADE_CODES, grade_index_of
+    from rfauto.core.fsv import GRADE_CODES, grade_index_of  # lazy: run-path（执行面按需取用）
 
     worst = -1
     for entry in entries.values():
@@ -317,7 +318,7 @@ def fsv_validation_levels(
     （validation_max_delta / 各点 abs_delta）原样保留、数值不变。
     有效点 < core.fsv.MIN_POINTS 时如实返回不可用（曲线级判读需 ≥16 点）。
     """
-    from rfauto.core.fsv import MIN_POINTS
+    from rfauto.core.fsv import MIN_POINTS  # lazy: run-path（执行面按需取用）
 
     pts = [v for v in validation
            if isinstance(v, dict) and "error" not in v
@@ -372,7 +373,7 @@ def fsv_run_curve_levels(
     """
     import numpy as np
 
-    from rfauto.service.health_service import _parse_sparams_csv
+    from rfauto.service.health_service import _parse_sparams_csv  # lazy: run-path（执行面按需取用）
 
     root = Path(run_dir)
     if not root.is_dir():
@@ -449,11 +450,11 @@ def calibrate_surrogate(
     """
     import yaml
 
-    from rfauto.core.objectives import Objective, SpecEvaluator
-    from rfauto.core.state import generate_run_id
-    from rfauto.infra.run_store import create_run_dir, write_meta
-    from rfauto.optimization.sample_design import lhs_points, taguchi_points
-    from rfauto.optimization.surrogate import PolyRidgeSurrogate, loocv_rho
+    from rfauto.core.objectives import Objective, SpecEvaluator  # lazy: run-path（执行面按需取用）
+    from rfauto.core.state import generate_run_id  # lazy: run-path（执行面按需取用）
+    from rfauto.infra.run_store import create_run_dir, write_meta  # lazy: run-path（执行面按需取用）
+    from rfauto.optimization.sample_design import lhs_points, taguchi_points  # lazy: run-path（执行面按需取用）
+    from rfauto.optimization.surrogate import PolyRidgeSurrogate, loocv_rho  # lazy: run-path（执行面按需取用）
 
     path = Path(recipe_path)
     if not path.exists():
@@ -514,7 +515,7 @@ def calibrate_surrogate(
     if n_workers > 1:
         from functools import partial
 
-        from rfauto.optimization.sampler_pool import run_sampling_pool
+        from rfauto.optimization.sampler_pool import run_sampling_pool  # lazy: run-path（执行面按需取用）
 
         pool_cfg = {"sampler": sampler, "template": template,
                     "freq_range": list(freq_range),
@@ -649,7 +650,7 @@ def _max_delta(validation: list[dict[str, Any]]) -> float | None:
 def _make_model(surrogate_kind: str, bounds: dict[str, tuple[float, float]],
                 order: int, ridge_lambda: float):
     """按注册表构造代理（任意已注册 kind；训练与使用分离）。"""
-    from rfauto.optimization.surrogate import surrogate_registry
+    from rfauto.optimization.surrogate import surrogate_registry  # lazy: run-path（执行面按需取用）
 
     config: dict[str, Any] = {"bounds": bounds}
     if surrogate_kind == "poly_ridge":
@@ -666,7 +667,7 @@ def _lhs_augment_points(bounds: dict[str, tuple[float, float]],
                         max_rounds: int = 8) -> list[dict[str, float]]:
     """生成与既有点保持归一化最小距离的 n_new 个 LHS 增广点（多轮补齐）。"""
 
-    from rfauto.optimization.sample_design import lhs_points, np_rel
+    from rfauto.optimization.sample_design import lhs_points, np_rel  # lazy: run-path（执行面按需取用）
 
     names = sorted(bounds)
     lower = [bounds[n][0] for n in names]
@@ -729,11 +730,11 @@ def augment_calibration(
     """
     import yaml
 
-    from rfauto.core.objectives import Objective, SpecEvaluator
-    from rfauto.core.state import generate_run_id
-    from rfauto.infra.run_store import create_run_dir, write_meta
-    from rfauto.optimization.sample_design import lhs_points
-    from rfauto.optimization.surrogate import loocv_rho
+    from rfauto.core.objectives import Objective, SpecEvaluator  # lazy: run-path（执行面按需取用）
+    from rfauto.core.state import generate_run_id  # lazy: run-path（执行面按需取用）
+    from rfauto.infra.run_store import create_run_dir, write_meta  # lazy: run-path（执行面按需取用）
+    from rfauto.optimization.sample_design import lhs_points  # lazy: run-path（执行面按需取用）
+    from rfauto.optimization.surrogate import loocv_rho  # lazy: run-path（执行面按需取用）
 
     path = Path(recipe_path)
     if not path.exists():
@@ -792,7 +793,7 @@ def augment_calibration(
         # 新增点走进程池（同 calibrate_surrogate 的 4.3 worker 池口径）
         from functools import partial
 
-        from rfauto.optimization.sampler_pool import run_sampling_pool
+        from rfauto.optimization.sampler_pool import run_sampling_pool  # lazy: run-path（执行面按需取用）
 
         pool_cfg = {"sampler": sampler, "template": template,
                     "freq_range": list(freq_range),
@@ -995,8 +996,8 @@ def compare_surrogates(
     bounds = {k: (float(v[0]), float(v[1])) for k, v in bounds_raw.items()}
     objectives = data.get("objectives") or []
 
-    from rfauto.core.objectives import Objective, SpecEvaluator
-    from rfauto.optimization.surrogate import loocv_rho
+    from rfauto.core.objectives import Objective, SpecEvaluator  # lazy: run-path（执行面按需取用）
+    from rfauto.optimization.surrogate import loocv_rho  # lazy: run-path（执行面按需取用）
 
     objs = [Objective(**o) for o in objectives]
 

@@ -1,4 +1,4 @@
-"""矩形波导薄膜片/谐振窗匹配闭式族（aurora72 A7-B 席域 1，任务书候补
+"""矩形波导薄膜片/谐振窗匹配闭式族（架构批 A7-B 席域 1，任务书候补
 "矩形波导膜片/窗匹配"；#222 triple-grep 证据 2026-10-11 实测；
 W3-CORE8 席 TE10 λg/λc/β 抽键原位扩展 2026-10-14）。
 
@@ -68,6 +68,14 @@ _float 自然拒收路径如实注记（df7+⑯ 同 gysel 先例口径）。
 接口：纯函数零 IO；math/cmath 为主；全部返回 JSON 可序列化结构（浮点/
 字符串/bool/None；数值 0.0 合法，判缺失一律 is not None，禁 ``or 缺
 省``，#364④）。无 ``__all__``（公开 API 快照口径，mask_spec 先例反查）。
+
+出处（Marcuvitz《Waveguide Handbook》薄膜片闭式；Rizzi）：
+- wg_iris_susceptance/wg_resonant_window/wg_iris_match：Marcuvitz
+  Waveguide Handbook 薄膜片（t→0）感性/容性电纳闭式首阶形+感容组合
+  谐振窗共振条件（Rizzi 同族二级转引；文献通行式转引，原文页码未逐位
+  复读如实登记——厚膜片/有限厚度修正不在档）。
+- waveguide_lambda_g：TE10 λg/λc/β 波导一般理论（Pozar §3 同族；内部
+  复用 _frequency 单源零公式复制）。
 """
 
 from __future__ import annotations

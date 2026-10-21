@@ -28,11 +28,16 @@ def hfss_import_cmd(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """HFSS 工程导入器：读变量/扫参范围/Setup-Sweep/端口 → 设计规格 + 配方草稿。"""
-    from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
+    # T8 越级收口（架构批 W11-S2）：版本缺省单源本就在 service 侧
+    # （v3_services.hfss_import_recipe 缺省参数=edb_adapter._DEFAULT_AEDT_VERSION），
+    # cli 不再直取 adapters 常量——未显式给 --version 时不传参走 service 缺省，
+    # 行为逐字节等价（原 `version or _DEFAULT_AEDT_VERSION` 与"假值即缺省"同义）。
     from rfauto.service.v3_services import hfss_import_recipe
 
-    result = hfss_import_recipe(
-        project, design, version=version or _DEFAULT_AEDT_VERSION, out=out)
+    kwargs: dict = {"out": out}
+    if version:
+        kwargs["version"] = version
+    result = hfss_import_recipe(project, design, **kwargs)
     if json_output:
         # VI-5 W6-B：--json 信封（成功+失败同构）；缺省 rich 路径逐字节不动
         _emit(result, "导入失败", json_output=True)

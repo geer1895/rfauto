@@ -1,4 +1,10 @@
-"""RF 暴露限值族（内核在 core/exposure_limits.py，本模块只做注册壳）。"""
+"""RF 暴露限值族（内核在 core/exposure_limits.py，本模块只做注册壳）。
+
+出处（公开规范逐位抄录，内核 core/exposure_limits.py 权威口径节转录）：
+- exposure_mpe_limit / exposure_compliance_distance：FCC 47 CFR
+  §1.1310 Table 1 MPE 限值 + ICNIRP 2020（Health Phys. 118(5), 2020）
+  Table 5 公众参考水平；EIRP 合规距离=远场球面反解闭式
+  （S=EIRP/(4πR²) 第一性）。"""
 
 from __future__ import annotations
 

@@ -10,8 +10,9 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 二批单源化）。"""
+    yield
 
 
 def _recipe(tmp_path, arm_len_mm=20.5, name="recipe.yaml"):
@@ -91,6 +92,24 @@ class TestDiagnosisWiring:
 
         result = run_once(_recipe(tmp_path), adapter_name="fake")
         assert result["ok"], "诊断失败必须非阻断"
+        # best-effort 语义兑现（R3 弱测试 #12）：诊断失败时主链关键键
+        # 仍完整可消费——信封业务键、report.md、metrics.json 主段全在
+        for key in ("run_id", "run_dir", "metrics", "cost", "solve_report",
+                    "report"):
+            assert key in result, key
+        assert result["metrics"], "主指标不得因诊断失败为空"
+        run_dir = Path(result["run_dir"])
+        assert Path(result["report"]).is_file()
+        metrics_data = json.loads(
+            (run_dir / "results" / "metrics.json").read_text(
+                encoding="utf-8"))
+        # 诊断失败如实留痕（diagnosis=None），主链 metrics/checks 段不缺
+        assert metrics_data["diagnosis"] is None
+        assert metrics_data["metrics"]
+        assert metrics_data["cost"] is not None
+        assert set(metrics_data["checks"]) == {
+            "passivity_ok", "reciprocity_ok", "sanity_all_ok",
+            "sanity_notes"}
 
     def test_html_report_includes_diagnosis(self, tmp_path):
         from rfauto.infra.report import generate_report

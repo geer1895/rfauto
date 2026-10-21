@@ -1,13 +1,22 @@
 """内核文档卡锚树测试（round18 规格 XA-8 首批 5 张 + W3-S13 扩容批一 11 张
-+ W4-S19 扩容批二 8 张，共 24 张；#97/#122/#222 纪律）。
++ W4-S19 扩容批二 8 张 + 架构批 W1-S3 内核前置批 2 张 + 架构批 W3-S11
+前置批收官 1 张 + 架构批 W6-S22 内核卡扩面批 9 张 + 架构批 W1-S3 内核卡
+批三 9 张 + 架构批 W2-S3 内核卡批四 9 张 + 架构批 W3-S3 内核卡批五 6 张
++ 架构批 W6-S4 内核卡批六 6 张 + 架构批 W8-S1 内核卡批七 3 张
++ 架构批 W12-S2 内核卡终批 5 张，共 74 张；#97/#122/#222 纪律）。
 
 钉六件事（全 live 对 live，零硬编码数字——#247 口径；选题集合除外，
 它是规格与战役批次的显式裁决不是计数）：
-1. 廿四卡与三源重渲染逐字节一致——XC-P/KD-1/docstring/AST/anchors/测试面
+1. 七十四卡与三源重渲染逐字节一致——XC-P/KD-1/docstring/AST/anchors/测试面
    任一源变动未重跑生成器即红（修复动作见断言消息）；
 2. 选题锁定 XA-8 首批五内核 + W3-S13 批一十一族 + W4-S19 批二八族
-   （「CALC 键+teaching 块+锚覆盖」数据源完备性选族；ring_resonator 批二
-   留缺=无专属综合内核，理由见生成器 docstring）；
+   + W1-S3 前置两族 + W3-S11 前置批收官一族 + W6-S22 扩面九族
+   + 架构批 W1-S3 批三九族 + 架构批 W2-S3 批四九族
+   + 架构批 W3-S3 批五六族 + 架构批 W6-S4 批六六族
+   + 架构批 W8-S1 批七三族 + 架构批 W12-S2 终批五族
+   （「CALC 键+teaching
+   块+锚覆盖」数据源完备性选族；ring_resonator 留缺已由 W3-S11 关闭——
+   lange/stepped_impedance 留缺已由 W1-S3 前置批关闭）；
 3. 入口 file:symbol 真实存在（AST 顶层 def/class）；
 4. 手写段引文钉：公式 LaTeX/使用边界/规格指针的 docstring 逐字引文确在
    模块源文件（转写漂移即红）；
@@ -31,17 +40,57 @@ _MKDOCS_YML = _REPO / "mkdocs.yml"
 _CARDS_DIR = _REPO / "docs_site" / "kernel_cards"
 
 # 选题集合（显式裁决面，非计数断言）：XA-8 首批五内核 + W3-S13 批一十一族
-# + W4-S19 批二八族
+# + W4-S19 批二八族 + 架构批 W1-S3 前置两族 + W3-S11 前置批收官一族
+# + 架构批 W6-S22 扩面九族 + 架构批 W1-S3 批三九族
+# + 架构批 W2-S3 批四九族 + 架构批 W3-S3 批五六族
+# + 架构批 W6-S4 批六六族 + 架构批 W8-S1 批七三族
+# + 架构批 W12-S2 终批五族
 CARD_KERNELS = frozenset({
     # round18 规格 XA-8 首批
     "macromodel", "rwg_mmt", "pdn", "pce", "cascade",
-    # aurora_e W3-S13 知识面批 扩容批一
+    # 架构批 W3-S13 知识面批 扩容批一
     "mline", "wilkinson", "branchline", "ratrace", "patch",
     "hairpin", "cpw", "slotline", "coupled_microstrip",
     "finline", "wilkinson_unequal",
-    # aurora_e W4-S19 知识面批 扩容批二
+    # 架构批 W4-S19 知识面批 扩容批二
     "atten_pi", "atten_t", "qwt_multisection", "nway_wilkinson",
     "schiffman", "bethe_hole_coupler", "gysel_core", "coupled_line_bpf",
+    # 架构批 W1-S3 内核前置批（R2 §⑤ F1/F2：lange/stepped_impedance
+    # 留缺关闭）
+    "lange", "stepped_impedance",
+    # 架构批 W3-S11 前置批收官（R2 §⑤ F3：ring_resonator 留缺关闭）
+    "ring_resonator",
+    # 架构批 W6-S22 内核卡扩面批（纯 CALC 键族卡照 cascade/rwg_mmt/
+    # ring_resonator 先例；数据源完备性盘点 9/9 全出）
+    "mixer_conversion", "ruthroff_balun", "gd_equalizer",
+    "measurement_drift", "agc_loop", "cal_kit_verify", "six_port",
+    "iss_on_wafer", "source_power_cal",
+    # 架构批 W1-S3 内核卡批三（R2_core_tier4 §⑤ 余量表 A 组 READY 7 族
+    # + CALC-only 2 族；rf_line 三线与 siw 半族为 C 组兄弟卡剩余键面）
+    "combline", "cps", "interdigital", "siw", "slot", "stripline",
+    "suspended_stripline", "dipole", "helix",
+    # 架构批 W2-S3 内核卡批四（R2_core_tier4 §④ 卡批 A 全量=架构批
+    # 新增 16 族漏卡五族 + W1-S2 新核 2 族 + A 组 2 族薄壳双模块卡）
+    "link_limits", "fec_codes", "directional_bridge", "rf_switch",
+    "kuroda_identities", "pll_lock_time", "multisection_coupler",
+    "itu_link", "link",
+    # 架构批 W3-S3 内核卡批五（R2_core_tier4 §③ 新核三族 C3/C4/C6 落地族
+    # + §④ 卡批 C 波导族三卡）
+    "dgs", "if_digitizer", "wg_dielectric_window",
+    "waveguide_closed_form", "waveguide_iris", "hybrid_junction",
+    # 架构批 W6-S4 内核卡批六（R2_core_tier4 §④ 卡批 E 头两族+卡批 D 头
+    # 一族 + W4-S4 内核余量三族；propagation=注册薄壳+纯函数内核双模块卡）
+    "radar_eq", "modulation_ber", "coax_line",
+    "analog_modulation", "si_ctle", "propagation",
+    # 架构批 W8-S1 内核卡批七（W7-S3 新核三族：HF 天波/FMCW/SAR——
+    # 三族 docstring 出处句完备+锚树测试在档；hf_skywave needle 刻意避开
+    # grounding_critical_frequency_hz 子串误中，见 build_kernel_cards.py）
+    "hf_skywave", "fmcw_radar", "sar_geometry",
+    # 架构批 W12-S2 内核卡终批（R3_domain_expansion 立族的 架构批 新核
+    # 五族收官：gnss_geometry/radar_clutter/microstrip_disc/open_wire_line/
+    # wg_cavity_bpf——逐族三面盘点全齐备；同笔 fmcw_radar 卡扩全族 4 键）
+    "gnss_geometry", "radar_clutter", "microstrip_disc",
+    "open_wire_line", "wg_cavity_bpf",
 })
 
 #: 已入 XC-P 精度档案的卡（渲染走「已建档」分档表支路）
@@ -93,8 +142,11 @@ def rendered_kernels() -> set[str]:
 
 def test_selection_is_xa8_plus_w3s13_batch1() -> None:
     assert rendered_kernels() == set(CARD_KERNELS), (
-        "内核卡选题须为 XA-8 五内核 + W3-S13 批一十一族 + W4-S19 批二八族；"
-        "扩卡须同步更新本集合与本测试文件 docstring")
+        "内核卡选题须为 XA-8 五内核 + W3-S13 批一十一族 + W4-S19 批二八族"
+        " + 架构批 前置三族 + W6-S22 扩面九族 + 架构批 W1-S3 批三九族"
+        " + 架构批 W2-S3 批四九族 + 架构批 W3-S3 批五六族 + W6-S4 批六六族"
+        " + 架构批 W8-S1 批七三族 + 架构批 W12-S2 终批五族；扩卡须同步"
+        "更新本集合与本测试文件 docstring")
 
 
 # ─── 3. 入口 file:symbol 真实存在（AST） ────────────────────────────────────

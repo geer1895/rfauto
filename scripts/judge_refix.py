@@ -1,8 +1,4 @@
-"""rm-oe-c3 判读器（criteria.md G0–G4 确定性判读，写死不调；铁律 7 数值只出内核/判读器）。
-
-公开仓落位：scripts/judge_refix.py（内部 runs/smoke_c3_refix 归档同文移植）——
-band_center_3db（#298 −3dB 带心口径）单一事实源，scripts/c3_fullcurve_runner.py
-判读复用；本文件 CLI 入口面向 runs/smoke_c3_refix 归档布局。
+"""C3 再设计战役判读器（criteria.md G0–G4 确定性判读，写死不调；铁律 7 数值只出内核/判读器）。
 
 输入：runs/smoke_c3_refix/<template>/{_smoke_result.json, sparams.csv, fdtd/}。
 输出：runs/smoke_c3_refix/<template>/judge_refix.json。
@@ -26,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent if HERE.name == "scripts" else HERE.parents[1]
+REPO = HERE.parents[1]
 for _p in (REPO / "src", REPO / "scripts"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))

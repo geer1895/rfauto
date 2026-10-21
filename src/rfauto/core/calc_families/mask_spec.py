@@ -1,5 +1,11 @@
 """mask→滤波器规格综合闭环的计算器注册面（ge6 Wave1 Ph5 池旗舰件）。
 
+出处（切比雪夫最小阶经典闭式，内核 core/mask_filter_synthesis.py 转录）：
+- mask_min_order / mask_filter_synthesize / mask_margin_report：遮罩→
+  最小阶 acosh 闭式（切比雪夫阻带衰减经典式，二级转引 Pozar,
+  Microwave Engineering §8.3 / Cameron-Kudsia-Mansour ch.6；遮罩模板
+  =FCC/ETSI/3GPP 公开规范点态包络语义）。
+
 实现本体在 core/mask_filter_synthesis.py（MaskSpec/内置遮罩模板/最小阶
 acosh 闭式/cm_core 复用闭环/裕量报告）；本模块只做 JSON 进出的薄注册
 （service 层 JSON 进出惯例）：mask 参数为 MaskSpec.to_dict() 形态的 dict

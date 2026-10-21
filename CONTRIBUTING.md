@@ -11,17 +11,17 @@ without any commercial license:
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
 pip install -e ".[dev]"                    # or: uv sync --extra dev
-python -m pytest tests/unit -q             # ~25800 tests, all offline
+python -m pytest tests/unit -q             # ~27000 tests, all offline
 ruff check src/ tests/ scripts/            # must stay at 0 findings
 ```
 
 On Windows, `uv sync --extra dev` creates `.venv\Scripts\python.exe`; use that
 interpreter for pytest if you have multiple Pythons around.
 
-Latest recorded unit gate: `runs/unit_gate_public.log`: 23177 passed + 5 failed
-(4 of the 5 are Windows-xdist worker native crashes, each verified green
-standalone — see the log header; regenerate this record in the same commit
-whenever the suite changes).
+Latest recorded unit gate: `runs/unit_gate_public.log`: 26836 passed + 4 failed
+(the 4 are the docs-drift regeneration comparison face, closed in the same
+commit by rebuilding docs_site and re-running the face green — see the log
+header; regenerate this record in the same commit whenever the suite changes).
 
 ## Architecture in one line
 

@@ -1,11 +1,20 @@
-/* rfauto 配方编辑页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 配方编辑页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
    配方目录 + 参数表 + setup/optimization 表单化 + 3D 预览。 */
 
 import { releaseWebGLIn } from "./charts.js";
 import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
+// i18n（架构批 W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
+// data-i18n+首扫、help 块分段 t()、动态串（目录行/表单标签/toast/aria）
+// t() 烘焙——API 动态中文数据（d.help 文案/模型名）照旧 esc 不迁。
+import { t, applyI18nRoot } from "./i18n.js";
 import { bindClickRows, kitClickRowAttrs } from "./kit.js";
 import { openRun } from "./router.js";
+// P8-9（架构批 W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 5 点）——
+// 数据面（目录/配方加载/3D 预览数据）接 viewSignal("recipe") 切页收束 +
+// aborted 短路（在途请求不再写隐藏区）；动作面（保存/运行 POST）保持
+// 无 signal（用户显式动作不因切页取消），错误信封与 toast 呈现同形。
+import { apiFetch, viewSignal } from "./api.js";
 
 /* ═══ 配方编辑（含配方目录 + 字段说明）═══ */
 let currentRecipe = null;
@@ -18,61 +27,63 @@ export async function pageRecipe() {
   const v = T.$("view-recipe");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li><b>配方目录</b>：recipes/ 下全部配方，点选加载。每个配方 = 一次仿真的完整定义（模型+参数+目标+优化设置）。工作副本（runs/recipe_workcopy/）单独分组显示并标注「工作副本」——保存对原件的改动会重定向到工作副本（原件受保护），人工审阅后经审批链（rfauto inbox）入库。</li>
-      <li><b>参数表</b>：改值即时刷新 3D 预览；「优化范围」是调参时允许搜索的区间。</li>
-      <li><b>保存并运行</b>：单次仿真——fake 秒级演示 / openEMS 真跑 / HFSS 真机。</li>
-      <li>各字段含义见页面底部「配方要素说明」。</li>`) +
-    `<h2 class='page'>配方编辑</h2>
+      <li><b>${t("recipe.help_1_core")}</b>${t("recipe.help_1_tail")}</li>
+      <li><b>${t("recipe.help_2_core")}</b>${t("recipe.help_2_tail")}</li>
+      <li><b>${t("recipe.help_3_core")}</b>${t("recipe.help_3_tail")}</li>
+      <li>${t("recipe.help_4")}</li>`) +
+    `<h2 class='page' data-i18n='recipe.title'>${t("recipe.title")}</h2>
       <div class='grid2'>
-        <div class='panel'><b class='title'>配方目录（点选加载）</b><div id='recipe-cat' class='muted'>加载中...</div></div>
-        <div class='panel'><div class='toolbar' style="align-items:flex-start;flex-direction:column">路径:
+        <div class='panel'><b class='title' data-i18n='recipe.catalog_title'>${t("recipe.catalog_title")}</b><div id='recipe-cat' class='muted'>${t("recipe.loading")}</div></div>
+        <div class='panel'><div class='toolbar' style="align-items:flex-start;flex-direction:column">${t("recipe.label_path")}
           <input id='recipe-path' style='width:100%' placeholder='recipes/wilkinson_pd_v1.yaml'>
-          <button class='minor' id='recipe-load'>加载</button>
-          <span class='muted'>模型: <span id='recipe-model'>-</span></span></div>
+          <button class='minor' id='recipe-load' data-i18n='recipe.load'>${t("recipe.load")}</button>
+          <span class='muted'>${t("recipe.label_model")}<span id='recipe-model'>-</span></span></div>
         </div>
       </div>
       <div class='grid2'>
-        <div class='panel'><b class='title'>参数（可改值；保存后生效）</b><table id='params-table'><thead>
-          <tr><th scope="col">名称</th><th scope="col">值</th><th scope="col">单位</th><th scope="col">优化范围</th></tr></thead><tbody></tbody></table>
-          <p class='toolbar'><button class='act' id='recipe-save'>保存配方</button>
-          <button class='act' id='recipe-run'>运行一次</button>
-          <select id='run-adapter'><option value='fake'>fake（秒级演示）</option><option value='openems'>openEMS（FDTD 真跑）</option><option value='hfss'>HFSS（真机）</option></select></p></div>
-        <div class='panel'><b class='title'>3D 预览（随表单值实时渲染）</b><div id='recipe-3d'></div></div>
+        <div class='panel'><b class='title' data-i18n='recipe.params_title'>${t("recipe.params_title")}</b><table id='params-table'><thead>
+          <tr><th scope="col">${t("recipe.th_name")}</th><th scope="col">${t("recipe.th_value")}</th><th scope="col">${t("recipe.th_unit")}</th><th scope="col">${t("recipe.th_bounds")}</th></tr></thead><tbody></tbody></table>
+          <p class='toolbar'><button class='act' id='recipe-save' data-i18n='recipe.save'>${t("recipe.save")}</button>
+          <button class='act' id='recipe-run' data-i18n='recipe.run_once'>${t("recipe.run_once")}</button>
+          <select id='run-adapter'><option value='fake'>${t("recipe.opt_fake")}</option><option value='openems'>${t("recipe.opt_openems")}</option><option value='hfss'>${t("recipe.opt_hfss")}</option></select></p></div>
+        <div class='panel'><b class='title' data-i18n='recipe.preview_title'>${t("recipe.preview_title")}</b><div id='recipe-3d'></div></div>
       </div>
       <div class='grid2'>
-        <div class='panel'><b class='title'>扫频 / 仿真设置 (setup) — 表单化</b>
+        <div class='panel'><b class='title' data-i18n='recipe.setup_title'>${t("recipe.setup_title")}</b>
           <div id='setup-form' class='toolbar' style='flex-wrap:wrap;gap:var(--space-2)'></div>
-          <details class='help' style='margin-top:var(--space-2)'><summary>高级：完整 setup JSON（表单改不到的字段在这改）</summary>
+          <details class='help' style='margin-top:var(--space-2)'><summary data-i18n='recipe.setup_advanced'>${t("recipe.setup_advanced")}</summary>
           <pre id='setup-pre' contenteditable='true' spellcheck='false'></pre></details></div>
-        <div class='panel'><b class='title'>优化设置 (optimization + objectives)</b>
+        <div class='panel'><b class='title' data-i18n='recipe.opt_title'>${t("recipe.opt_title")}</b>
           <div id='opt-form'></div>
-          <details class='help' style='margin-top:var(--space-2)'><summary>高级：objectives JSON（目标判定，表单改不到）</summary>
+          <details class='help' style='margin-top:var(--space-2)'><summary data-i18n='recipe.opt_advanced'>${t("recipe.opt_advanced")}</summary>
           <pre id='opt-pre' contenteditable='true' spellcheck='false'></pre></details></div>
       </div>
-      <div class='panel'><b class='title'>配方要素说明</b><div id='recipe-help' class='muted'></div></div>`;
+      <div class='panel'><b class='title' data-i18n='recipe.help_title'>${t("recipe.help_title")}</b><div id='recipe-help' class='muted'></div></div>`;
+  applyI18nRoot(v); // 壳静态标签首扫（W4-S1；幂等，动态容器走 t() 烘焙）
   T.$("recipe-load").onclick = loadRecipe;
   T.$("recipe-save").onclick = () => saveRecipe(false);
   T.$("recipe-run").onclick = () => saveRecipe(true);
   loadCatalog();
 
   async function loadCatalog() {
-    const d = await T.api("/api/recipes");
+    const d = await apiFetch("/api/recipes", { signal: viewSignal("recipe") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const el = T.$("recipe-cat");
     const orig = d.recipes || [], work = d.workcopies || [];
     // UI-R4：目录行键盘可达（div 行 role=button 缺省；aria-label 行动作——
     // path 经 kit escAttr 出口转义）
     const row = (r, isWorkcopy) =>
-      `<div class="clickable" style="padding:5px 8px;border-radius:var(--radius-xs)" data-p="${escAttr(r.path)}" ${kitClickRowAttrs({ label: "加载配方：" + (r.path || "") })}>
-        <b>${esc(r.path.split("/").pop())}</b> ${isWorkcopy ? T.badge("工作副本", "warn") + " " : ""}<span class="muted">${esc(r.model)}</span><br>
-        <span class="muted" style="font-size:11.5px">${esc(r.n_params ?? "?")} 参数 · ${esc(r.n_objectives ?? "?")} 目标 · 频段 ${esc(JSON.stringify(r.freq_range))}</span></div>`;
+      `<div class="clickable" style="padding:5px 8px;border-radius:var(--radius-xs)" data-p="${escAttr(r.path)}" ${kitClickRowAttrs({ label: t("recipe.row_open_aria") + (r.path || "") })}>
+        <b>${esc(r.path.split("/").pop())}</b> ${isWorkcopy ? T.badge(t("recipe.workcopy_badge"), "warn") + " " : ""}<span class="muted">${esc(r.model)}</span><br>
+        <span class="muted" style="font-size:11.5px">${esc(r.n_params ?? "?")}${t("recipe.row_params_sep")}${esc(r.n_objectives ?? "?")}${t("recipe.row_obj_band")}${esc(JSON.stringify(r.freq_range))}</span></div>`;
     // C22 分组：recipes/ 原件在上；工作副本（runs/recipe_workcopy/）单独分组，
     // 标注「工作副本」并给人工审阅入库提示（rfauto inbox 审批链，前端只渲染）。
     el.innerHTML =
-      `<div style="margin-bottom:var(--space-1)"><b>原件（recipes/）</b> <span class="muted" style="font-size:11.5px">${orig.length} 个</span></div>` +
+      `<div style="margin-bottom:var(--space-1)"><b>${t("recipe.orig_head")}</b> <span class="muted" style="font-size:11.5px">${orig.length}${t("recipe.count_suffix")}</span></div>` +
       orig.map((r) => row(r, false)).join("") +
       (work.length ?
-        `<div style="margin:10px 0 4px"><b>工作副本（runs/recipe_workcopy/）</b> <span class="muted" style="font-size:11.5px">${work.length} 个</span></div>` +
-        `<div class="muted" style="font-size:11.5px;margin:0 0 4px">人工审阅后入库：与原件 diff 确认改动 → 经审批链（<b>rfauto inbox</b> 审批收件箱，propose→approve→apply 三层 Gate）或显式写回原件后 git commit 留痕。</div>` +
+        `<div style="margin:10px 0 4px"><b>${t("recipe.workcopy_head")}</b> <span class="muted" style="font-size:11.5px">${work.length}${t("recipe.count_suffix")}</span></div>` +
+        `<div class="muted" style="font-size:11.5px;margin:0 0 4px">${t("recipe.review_lead")}<b>rfauto inbox</b>${t("recipe.review_mid")}</div>` +
         work.map((r) => row(r, true)).join("")
         : "");
     el.querySelectorAll("[data-p]").forEach((row) => {
@@ -86,12 +97,14 @@ export async function pageRecipe() {
   }
 
   async function loadRecipe() {
-    const val = await T.api("/api/recipe?path=" + encodeURIComponent(T.$("recipe-path").value.trim()));
+    const val = await apiFetch("/api/recipe?path=" + encodeURIComponent(T.$("recipe-path").value.trim()),
+      { signal: viewSignal("recipe") });
+    if (val.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     if (!val.ok) return T.msg(val.errors.join("; "), false);
     currentRecipe = val;
     // C22：工作副本视图标注（service 端 is_workcopy/review_hint，前端只渲染）
     T.$("recipe-model").textContent =
-      `${val.model}（模板: ${val.template_hint || "无"}）` + (val.is_workcopy ? " · 工作副本" : "");
+      `${val.model}${t("recipe.tpl_lead")}${val.template_hint || t("recipe.no_template")}${t("recipe.tpl_tail")}` + (val.is_workcopy ? t("recipe.workcopy_suffix") : "");
     T.$("recipe-model").title = val.is_workcopy ? (val.review_hint || "") : "";
     const tb = T.$("params-table").tBodies[0];
     tb.innerHTML = "";
@@ -99,7 +112,7 @@ export async function pageRecipe() {
       const bounds = p.bounds ? `[${p.bounds.join(", ")}]`
         : (val.optimization.params[p.name] ? `[${val.optimization.params[p.name].low}, ${val.optimization.params[p.name].high}]` : "-");
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${esc(p.name)}</td><td><input id="rp-param-${key(p.name)}" data-param="${escAttr(p.name)}" value="${escAttr(p.value ?? "")}" size="10" aria-label="参数 ${escAttr(p.name)} 的值"></td><td>${esc(p.unit || "")}</td><td class="muted">${esc(bounds)}</td>`;
+      tr.innerHTML = `<td>${esc(p.name)}</td><td><input id="rp-param-${key(p.name)}" data-param="${escAttr(p.name)}" value="${escAttr(p.value ?? "")}" size="10" aria-label="${t("recipe.param_aria_lead")}${escAttr(p.name)}${t("recipe.param_aria_tail")}"></td><td>${esc(p.unit || "")}</td><td class="muted">${esc(bounds)}</td>`;
       tr.querySelector("input").oninput = renderRecipe3D;
       tb.appendChild(tr);
     }
@@ -114,12 +127,12 @@ export async function pageRecipe() {
   function renderSetupForm(setup) {
     const fr = Array.isArray(setup.freq_range_ghz) ? setup.freq_range_ghz : ["", ""];
     const fields = [
-      ["solver", "求解器", setup.solver ?? "", "text"],
-      ["f0", "扫频起 (GHz)", fr[0] ?? "", "number"],
-      ["f1", "扫频止 (GHz)", fr[1] ?? "", "number"],
-      ["points", "频点数", setup.points ?? "", "number"],
-      ["convergence_delta", "收敛 Δ", setup.convergence_delta ?? "", "number"],
-      ["radiation_box", "辐射边界", setup.radiation_box ?? "", "text"],
+      ["solver", t("recipe.f_solver"), setup.solver ?? "", "text"],
+      ["f0", t("recipe.f_f0"), fr[0] ?? "", "number"],
+      ["f1", t("recipe.f_f1"), fr[1] ?? "", "number"],
+      ["points", t("recipe.f_points"), setup.points ?? "", "number"],
+      ["convergence_delta", t("recipe.f_conv"), setup.convergence_delta ?? "", "number"],
+      ["radiation_box", t("recipe.f_radbox"), setup.radiation_box ?? "", "text"],
     ];
     const form = T.$("setup-form");
     form.innerHTML = fields.map(([k, label, v, t]) =>
@@ -153,15 +166,15 @@ export async function pageRecipe() {
   function renderOptForm(opt) {
     const names = Object.keys(opt.params || {});
     const form = T.$("opt-form");
-    if (!names.length) { form.innerHTML = "<span class='muted'>配方未定义 optimization.params（搜索空间）</span>"; return; }
-    form.innerHTML = `<table><thead><tr><th scope="col">调参变量</th><th scope="col">low</th><th scope="col">high</th></tr></thead><tbody>` +
+    if (!names.length) { form.innerHTML = "<span class='muted'>" + t("recipe.no_opt_params") + "</span>"; return; }
+    form.innerHTML = `<table><thead><tr><th scope="col">${t("recipe.th_tune_var")}</th><th scope="col">low</th><th scope="col">high</th></tr></thead><tbody>` +
       names.map((n) => {
         const p = opt.params[n] || {};
         return `<tr><td><b>${esc(n)}</b></td>
-          <td><input id="rp-opt-${key(n)}-low" class="opt-b" data-param="${escAttr(n)}" data-k="low" value="${escAttr(p.low ?? "")}" size="9" type="number" step="any" aria-label="${escAttr(n)} 搜索下界 low"></td>
-          <td><input id="rp-opt-${key(n)}-high" class="opt-b" data-param="${escAttr(n)}" data-k="high" value="${escAttr(p.high ?? "")}" size="9" type="number" step="any" aria-label="${escAttr(n)} 搜索上界 high"></td></tr>`;
+          <td><input id="rp-opt-${key(n)}-low" class="opt-b" data-param="${escAttr(n)}" data-k="low" value="${escAttr(p.low ?? "")}" size="9" type="number" step="any" aria-label="${escAttr(n)}${t("recipe.opt_low_aria")}"></td>
+          <td><input id="rp-opt-${key(n)}-high" class="opt-b" data-param="${escAttr(n)}" data-k="high" value="${escAttr(p.high ?? "")}" size="9" type="number" step="any" aria-label="${escAttr(n)}${t("recipe.opt_high_aria")}"></td></tr>`;
       }).join("") + "</tbody></table>" +
-      `<div class="muted" style="margin-top:var(--space-1);font-size:11.5px">调整搜索空间（low/high）；目标 objectives 在右侧「高级」折叠框里。</div>`;
+      `<div class="muted" style="margin-top:var(--space-1);font-size:11.5px">${t("recipe.opt_hint")}</div>`;
     form.oninput = syncOptForm;
   }
   function syncOptForm() {
@@ -194,51 +207,54 @@ export async function pageRecipe() {
     document.querySelectorAll("#params-table input[data-param]").forEach((el) => {
       params[el.dataset.param] = Number(el.value) || 0;
     });
-    const r = await T.api("/api/model3d", {
+    const r = await apiFetch("/api/model3d", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ template: currentRecipe.template_hint, params }),
+      signal: viewSignal("recipe"),
     });
+    if (r.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     releaseWebGLIn(T.$("recipe-3d")); // P0-4 防御式：弃置上一代 WebGL 上下文
     T.drawBoxes(T.$("recipe-3d"), r);
   }
 
   async function saveRecipe(andRun) {
-    if (!currentRecipe) return T.msg("先加载配方", false);
+    if (!currentRecipe) return T.msg(t("recipe.load_first"), false);
     const updates = { params: {} };
     document.querySelectorAll("#params-table input[data-param]").forEach((el) => {
       const raw = el.value.trim();
       updates.params[el.dataset.param] = isNaN(Number(raw)) || raw === "" ? raw : Number(raw);
     });
     try { updates.setup = JSON.parse(T.$("setup-pre").textContent); }
-    catch { return T.msg("setup 不是合法 JSON", false); }
+    catch { return T.msg(t("recipe.setup_bad_json"), false); }
     try {
       const opt = JSON.parse(T.$("opt-pre").textContent);
       updates.objectives = opt.objectives; updates.optimization = opt.optimization;
-    } catch { return T.msg("optimization/objectives 不是合法 JSON", false); }
-    const r = await T.api("/api/recipe", {
+    } catch { return T.msg(t("recipe.opt_bad_json"), false); }
+    const r = await apiFetch("/api/recipe", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: currentRecipe.recipe_path, updates }),
     });
-    if (!r.ok) return T.msg("保存被拒: " + r.errors.join("; "), false);
+    if (!r.ok) return T.msg(t("recipe.save_rejected") + r.errors.join("; "), false);
     // 写面守卫：recipes/ 原件受保护时 service 另存工作副本并回传实际路径，
     // 后续运行/加载一律消费该路径（原件字节不变，TODO 增量②）
     if (r.recipe_path) {
       currentRecipe.recipe_path = r.recipe_path;
       if (r.workcopy) T.$("recipe-path").value = r.recipe_path;
     }
-    T.msg(r.workcopy ? (r.message || `已另存工作副本: ${r.recipe_path}`) : "配方已保存", true);
+    T.msg(r.workcopy ? (r.message || t("recipe.saved_workcopy") + r.recipe_path) : t("recipe.saved"), true);
     if (andRun) {
-      const run = await T.api("/api/run", {
+      const run = await apiFetch("/api/run", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: currentRecipe.recipe_path, adapter: T.$("run-adapter").value }),
+        timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：同步 run_once 分钟级
       });
-      if (run.ok) { T.msg(`运行完成: cost=${run.cost}`, true); openRun(run.run_id); } // A4-C：单入口收编（hash 深链同步）
-      else T.msg("运行失败: " + (run.errors || []).join("; "), false);
+      if (run.ok) { T.msg(t("recipe.run_done") + run.cost, true); openRun(run.run_id); } // A4-C：单入口收编（hash 深链同步）
+      else T.msg(t("recipe.run_failed") + (run.errors || []).join("; "), false);
     }
   }
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 recipeCtx ════════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 recipeCtx ════════════
    refresh=配方目录重拉（pageRecipe 幂等——壳判 innerHTML 已在即跳过；已加载
    配方/参数表/3D 预览不受扰——loadRecipe 只在点选/加载时触发）。无轮询面，
    leave 不需要。 */

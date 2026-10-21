@@ -102,9 +102,11 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # 等，合流实测口径）→ 254。
     # EDB 快车道批 +3（2026-10-08：edb build/solve/status 三叶）→ 257。
     # 远程回拉与队列批 +1（2026-10-09：campaign queue-daemon 叶）→ 258。
-    # 公开仓追平批（2026-10-14：aurora_d 同步，+11 叶）→ 269。
+    # 公开仓追平批（2026-10-14：+11 叶）→ 269。
     # 公开仓同步批（2026-10-18：templates golden-diff 单叶）→ 270。
-    assert check_numbers.count_cli() == 270
+    # +3（2026-10-19 架构批：verdict-summary 顶层叶 + runs compare-batch
+    # + datasets profile，全叶带 --json）→ 273
+    assert check_numbers.count_cli() == 273
 
 
 def test_cli_bench_subapp_breakdown():
@@ -166,24 +168,24 @@ def test_mcp_entry_present_in_dev_venv():
 def test_anchors_count_matches_core_single_source():
     # #231 注册表消费者纪律：knowledge/anchors.yaml raw 条数与
     # core/anchors.py EXPECTED_ANCHOR_COUNT 双向一致（DP-3 P1 批=6；
-    # HFSS 窗 B→A 批 wf:anchor-register 2026-09-29 +6=12：constant 2+
-    # pointer 4 双值指针；补批 wf:anchor-register-p1x4 2026-09-29
+    # HFSS 窗 B→A 批  2026-09-29 +6=12：constant 2+
+    # pointer 4 双值指针；补批  2026-09-29
     # +1=13：patch_array_1x4.f_res constant active；指针补批
-    # wf:anchor-pointer-register 2026-09-29 +1=14：patch_array.f_res
+    #  2026-09-29 +1=14：patch_array.f_res
     # 族级 pointer experimental，席 8 2x2 重跑 DISAGREE 双值；
-    # P-KJ-EVEN P3 批 wf:goal-t5 2026-09-30 +1=15：coupled_microstrip.
+    # P-KJ-EVEN P3 批  2026-09-30 +1=15：coupled_microstrip.
     # kj_even_domain.lit-v1——KJ even 闭式适用域盒 constant active，
     # 域盒 u/g/er=[0.1,10]²×[1,18]+域内基准 0.66%+两条域缘注记；
-    # Goal 批 T14 wf:goal-t14 2026-09-30 +2=17：mmt.inductive_post_b.
+    # Goal 批 T14  2026-09-30 +2=17：mmt.inductive_post_b.
     # hfss-v1 / mmt.resonant_window_fres.hfss-v1——ME-5 MMT 销钉/谐振窗
     # HFSS 仲裁锚（sim_host 远程，两案 AGREE_HFSS 偏差常量
     # 9.224%/16.600% active，criteria runs/mmt_anchor_20260930）；
-    # ge6 Wave1 锚注册批 wf:ge6-anchor 2026-10-01 +2=19：
+    # ge6 Wave1 锚注册批  2026-10-01 +2=19：
     # ring.design_dk.openems-hfss-v1（FA3 双引擎 DISAGREE 双值指针
     # {oe 3.5333, hfss 3.3425}，预备稿兑现）+ mmwave.design_dk.ro3003-
     # oe-v1（OE 单引擎封档 er_design=3.1434，C10d 离线复判 PASS
     # runs/ge6_anchor/verdict.json，constant 待 78GHz HFSS 仲裁腿）；
-    # ge6 A22 批 wf:ge6-a22 2026-10-01 +1=20：ms_cross.wg_resonance.
+    # ge6 A22 批  2026-10-01 +1=20：ms_cross.wg_resonance.
     # openems-hfss-v1（ge6 席 2 HFSS 仲裁分支 A 收敛判读——同几何谷位
     # 互差 0.180GHz ≤ 预声明 0.30GHz 门，双值指针 {oe 11.675,
     # hfss 11.4951}，runs/ge6_hfsswin/seat2_mscross）。
@@ -248,6 +250,29 @@ def test_check_doc_flags_wrong_resources_number():
          "cli_leaf": (check_numbers.count_cli(),)},
         failures)
     assert any("mcp=" in f for f in failures), failures
+
+
+@pytest.mark.skipif(
+    "docs/reference.md" not in check_numbers.DOC_PATTERNS,
+    reason="public check_numbers gates README carriers only; docs/reference.md "
+           "number gating is an upstream-only DOC_PATTERNS face")
+def test_check_doc_flags_wrong_reference_numbers():
+    # W7-P3-1 门缺口补钉负向钉（架构批 W1-S4，2026-10-18）：
+    # docs/reference.md 的 CLI/tests/CALCULATOR_REGISTRY 三数字写错必须
+    # 判红——此前该文档不在 DOC_PATTERNS（结构性失明），"日期刷新而数字
+    # 未再生"漂移（单元测试 25534 vs 实测 25961）零报警的教训封堵。
+    failures: list[str] = []
+    check_numbers.check_doc(
+        "docs/reference.md", check_numbers.DOC_PATTERNS["docs/reference.md"],
+        {"tests": (check_numbers.count_tests()[0] + 1,),
+         "cli_leaf": (check_numbers.count_cli() + 1,),
+         "calc_registry_exp": (check_numbers.count_calculators(),
+                               check_numbers.count_calculators_all() + 1)},
+        failures)
+    assert len(failures) >= 3, failures
+    assert any("tests=" in f for f in failures)
+    assert any("cli_leaf=" in f for f in failures)
+    assert any("calc_registry_exp=" in f for f in failures)
 
 
 def test_full_gate_glob_patterns_discriminate_targeted_logs():

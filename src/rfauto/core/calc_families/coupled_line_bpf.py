@@ -1,5 +1,12 @@
-"""平行耦合线带通滤波器（coupled-line BPF）综合族（aurora72 A3-C 席域 1，
+"""平行耦合线带通滤波器（coupled-line BPF）综合族（架构批 A3-C 席域 1，
 R7 第二梯队 T5）。
+
+出处（实现尺寸级综合链，正文物理口径节文献口径转录）：
+- coupled_line_bpf_synthesize：切比雪夫 g 值→J 倒置器→逐节 (Z0e,Z0o)
+  闭式（D. Pozar, Microwave Engineering 4th ed. §8.6；Matthaei-Young-Jones
+  ch.8 同源；(w,s) 反解 Kirschning-Jansen 1984 准静态闭式）。
+- coupled_line_bpf_response：偶/奇模叠加 4 端口 S 构造（同步 TEM 口径，
+  Pozar Table 4.2 S↔ABCD 换算；数值锚=Pozar Example 8.7 文献例）。
 
 两键：coupled_line_bpf_synthesize（规格→J 倒置器→逐节 (Z0e,Z0o)→微带实现
 尺寸 (w,s) mm + 段长/谐振器长） / coupled_line_bpf_response（逐节 (Z0e,Z0o)

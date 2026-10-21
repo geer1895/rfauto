@@ -1,11 +1,11 @@
-/* rfauto 工作台图表生命周期单源（aurora_d UI-R2 自 pages.js 拆出，
-   逐字节搬移）：aurora36 W2-B echarts 实例缓存/resize 去重/子树释放；
+/* rfauto 工作台图表生命周期单源（架构批 UI-R2 自 pages.js 拆出，
+   逐字节搬移）：架构批 W2-B echarts 实例缓存/resize 去重/子树释放；
    W3-B chartExportTools 导出工具条工厂；W4-C palette act-export-chart
    事件桥（监听装配走 initPages；W4-S17 起触发消费 plotcard.js 共享登记面
    ——桥登记面迁 plotCard 壳，本模块 chartExportTools 委托同一注册表）；
    P0-4 WebGL 防御式释放（_isoRenderers 与 view_fieldviz drawIsoMesh 共享
    同一 WeakMap 注册表）。
-   ═══ aurora_d UI-R5：图表能力统一深化 ═══
+   ═══ 架构批 UI-R5：图表能力统一深化 ═══
    - 调用面归一：plotCard 内建同容器复用落地（plotcard.js，W2-B 接口诉求
      闭合）——plotCardCached 降级为零破坏薄委托（tune/tools 两调用点不动），
      全站图表渲染单一入口；绘参选项（S 参数 dB/相位/线性、Smith、热图色带）
@@ -38,7 +38,7 @@ export {
   minmaxIndices, setDefaultMaxPoints,
 };
 
-/* ═══ aurora36 W2-B：前端资源生命周期（R1 审计 P0-4/P0-5/P2-13）═════════
+/* ═══ 架构批 W2-B：前端资源生命周期（R1 审计 P0-4/P0-5/P2-13）═════════
    本块 = pages.js 调用侧自救面。app.js drawBoxes / plotcard.js plotCard 归
    W2-C，接口诉求见各函数注释与席位报告（drawBoxes 返回 renderer 句柄 +
    dispose；plotCard 内建同容器 setOption 复用 + resize 监听去重）。 */
@@ -98,7 +98,7 @@ export function disposeChartsIn(root) {
 export function plotCardCached(el, props) {
   return T.plotCard(el, props);
 }
-/* ═══ aurora_d UI-R5：主题联动（四态切换 → 存活 plotCard 配色跟随）═════
+/* ═══ 架构批 UI-R5：主题联动（四态切换 → 存活 plotCard 配色跟随）═════
    此前图表配色只在渲染时点取 bodyIsLight()——切主题后已渲染的图保持旧配色，
    直到下次轮询/重入才跟上（sparams/timeline 等无轮询页永久滞后）。本块：
    - refreshThemeCharts()：经 plotCardShellEntries()（plotcard.js WeakRef
@@ -139,7 +139,7 @@ export function _bindThemeRefresh() {
   new MutationObserver(() => { refreshThemeCharts(); })
     .observe(document.body, { attributes: true, attributeFilter: ["class"] });
 }
-/* ═══ aurora_d UI-R5：绘参选项工厂（S 参数 dB/相位/线性、Smith、热图色带）═══
+/* ═══ 架构批 UI-R5：绘参选项工厂（S 参数 dB/相位/线性、Smith、热图色带）═══
    此前各视图手拼 props（ylabel 口径散置、crosshair/zoom 档各处复制）——
    预设收敛本层单源；消费面渐进迁移（view_detail 已接，view_sparams 因
    并行席位在制缓接——工厂语义与其现拼逐键同形）。 */
@@ -179,7 +179,7 @@ export function smithChartTheme(light) {
 export function heatColormap() {
   return HEAT_BAND;
 }
-/* ═══ aurora36 W3-B：自研管线图表导出 + 可排序表格（R1 §③ / P1-7）═════════ */
+/* ═══ 架构批 W3-B：自研管线图表导出 + 可排序表格（R1 §③ / P1-7）═════════ */
 
 /* 导出工具条小工厂（不重复装配代码）：与 plotCard 工具条同款 UI/类名
    （.plotcard-tools > button.minor.plotcard-btn）。
@@ -238,7 +238,7 @@ export function _bindExportChartEvent() {
     fireRecentChartExport();
   });
 }
-/* ═══ aurora36 W4-C 块结束 ═══ */
+/* ═══ 架构批 W4-C 块结束 ═══ */
 /* P0-4：WebGL 防御式释放（调用侧能做的最大自救）。
    ① 本文件自有管线（drawIsoMesh）登记的 renderer → 停动画循环 + dispose +
       forceContextLoss（完全释放，自愈面）；

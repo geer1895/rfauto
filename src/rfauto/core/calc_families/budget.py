@@ -1,4 +1,11 @@
-"""DP-5 系统级预算引擎 + 混频杂散搜索（payload 在 core/cascade.py）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""DP-5 系统级预算引擎 + 混频杂散搜索（payload 在 core/cascade.py）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（教科书级联口径+第一性频率代数，内核 core/cascade.py §0 转录）：
+- cascade_budget：Friis 噪声级联（H. T. Friis, "Noise figures of radio
+  receivers", Proc. IRE 32(7), 1944）与 IIP3 功率域级联求和式（二级转引
+  Pozar, Microwave Engineering 级联非线性一节）。
+- if_plan_sweep / spur_search：混频杂散 |m·f_RF+n·f_LO| 频率代数
+  （幂级数非线性产物的第一性枚举，无外部文献依赖）。"""
 
 from __future__ import annotations
 

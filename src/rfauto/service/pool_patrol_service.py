@@ -466,6 +466,7 @@ def scan_code_evidence(
                     hits.append({"path": p, "line": 0, "kind": "filename",
                                  "text": Path(p).name})
         # ② 内容扫描
+        qual_hit = False  # alias qualified 形命中=撞号已消歧（③ 收紧豁免）
         for p in paths_sorted:
             text = files[p]
             matched_lines: list[int] = []
@@ -477,15 +478,24 @@ def scan_code_evidence(
                             kw in line for kw in (*it.keywords_strong, *it.keywords_weak)
                         ):
                             continue  # 撞号裸命中须行内语义佐证
+                        if form in qual_forms:
+                            qual_hit = True
                         matched_lines.append(i)
                         if len(hits) < 8:
                             hits.append({"path": p, "line": i, "kind": "token",
                                          "text": line.strip()[:120]})
                 if matched_lines:
                     break
-            # ③ 强关键词子串
+            # ③ 强关键词子串（撞号且未消解项的纯英文字母词关键词不作代码
+            # 证据——单词撞号误报：FE-6 单词 tool-result 撞 UI DOM id 实证
+            # 内部证据目录；中文长 run/带数字混写词区分力足够保留）
             if not matched_lines:
-                for kw in it.keywords_strong:
+                kws = it.keywords_strong
+                if it.is_collision and not qual_hit:
+                    kws = tuple(
+                        kw for kw in kws
+                        if not re.fullmatch(r"[A-Za-z][A-Za-z-]*", kw))
+                for kw in kws:
                     for i, line in enumerate(text.splitlines(), 1):
                         if kw in line:
                             matched_lines.append(i)
@@ -600,9 +610,9 @@ def _load_impl_face(repo_root: Path) -> dict[str, str]:
 #:   （core/anchors.py 自证「2026-10-08 快赢席 W1 落地」）——账后漂移，
 #:   金标口径是 10-07 快照，工具对活树的判定（partial）如实不参与校准；
 #: - RP-1：账面开放按件级交付判据（anchors.yaml 复现锚+规格卡产物缺），
-#:   工具双判据只见 commit(wf:ge8-rp1)+test_rp1_* 文件 → 判 closed——
+#:   工具双判据只见 commit()+test_rp1_* 文件 → 判 closed——
 #:   工具判据粒度粗于审计员判据的已知局限例（工具假阳清单承载人工复核）。
-#: 金标随池演进的正当迁移（aurora_e 战役 2026-10-18，非篡改校准）：
+#: 金标随池演进的正当迁移（架构批 战役 2026-10-18，非篡改校准）：
 #: - EC-16（HEBO input warping）→ closed：optimization/surrogate/
 #:   warped_kriging.py+saas_gp.py+gp_det.py 落地（W5-S22，战役账 九百七十七）；
 #: - EC-2（multiline TRL 不确定度传播）→ closed：core/calc_families/
@@ -644,9 +654,15 @@ def calibrate(
     gold_closed: tuple[str, ...] = DEFAULT_GOLD_CLOSED,
     gold_open: tuple[str, ...] = DEFAULT_GOLD_OPEN,
 ) -> dict:
-    """金标校准：逐 ID 对账（期望=重审计台账，实测=本工具裁决）。"""
+    """金标校准：逐 ID 对账（期望=重审计台账，实测=本工具裁决）。
+
+    partial 态不参与 rated 计数（XD-8 先例：活树中间态与金标快照不同层级
+    ——partial 意味着代码面证据尚在演化，与 open/closed 的对账不在同一
+    判读层级；降级为 watch 行而非校准不一致）。
+    """
     table: list[dict] = []
     agree = 0
+    rated = 0
     for expected_status, names in (("closed", gold_closed), ("open", gold_open)):
         for name in names:
             item = _resolve_gold_id(name, items)
@@ -656,8 +672,15 @@ def calibrate(
                               "note": "unresolved-in-pool-frame"})
                 continue
             verdict = verdicts[(item.round_no, item.token)]
+            if verdict["status"] == "partial":
+                table.append({"id": name, "expected": expected_status,
+                              "actual": "partial", "agree": None,
+                              "reason": verdict["reason"],
+                              "note": "partial=活树中间态，不参与校准（XD-8 先例）"})
+                continue
             ok = verdict["status"] == expected_status
             agree += int(ok)
+            rated += 1
             table.append({
                 "id": name, "expected": expected_status,
                 "actual": verdict["status"], "agree": ok,

@@ -1,4 +1,4 @@
-"""aurora36 W5-A 席锚树：doa 三键（MUSIC/ESPRIT/MVDR）+ combline_resonator 三键。
+"""架构批 W5-A 席锚树：doa 三键（MUSIC/ESPRIT/MVDR）+ combline_resonator 三键。
 
 数值断言口径（#118 不自证——合成源回收与独立路线，不用自身推导互证）：
 - DOA：①理想协方差双源 MUSIC 峰位回收=真值（<0.01°，黄金分割精化机器

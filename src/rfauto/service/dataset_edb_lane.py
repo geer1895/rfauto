@@ -101,7 +101,7 @@ _JUDGMENT_META_KEYS = ("ok", "all_pass", "n_ports", "n_freqs", "f0_on_grid",
 #: manifest ``runs_root`` 可重建说明字段（随 runs_root 同笔落盘）：相对形态
 #: 解析口径 + 旧绝对路径形态的读取兼容。绝对路径/盘符永不落盘——
 #: runs/datasets 是数据集条件发布面，runs_root 绝对路径是其唯一硬敏感面
-#: （aurora36 W2-D 脱敏，铁律 8 同源）。
+#: （架构批 W2-D 脱敏，铁律 8 同源）。
 RUNS_ROOT_NOTE = (
     "runs_root 为相对本 manifest 所在数据集目录的 posix 相对路径"
     "（解析=manifest 所在目录/runs_root，resolve_dataset_runs_root 单源）；"
@@ -715,7 +715,7 @@ def collect_edb_lane_dataset(
         "points_file": points_path.name,
         "created_at": created_at,
         "importer": "edb_lane",
-        # 脱敏（aurora36 W2-D）：runs_root 落相对本 manifest 目录的 posix
+        # 脱敏（架构批 W2-D）：runs_root 落相对本 manifest 目录的 posix
         # 相对形态（RUNS_ROOT_NOTE 随行说明解析口径），绝对路径/盘符不落盘
         # ——runs/datasets 数据集条件发布面唯一硬敏感面；运行时解析走
         # resolve_dataset_runs_root（兼容旧绝对路径形态）

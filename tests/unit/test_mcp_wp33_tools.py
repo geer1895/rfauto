@@ -22,9 +22,10 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    """战役落盘/数据集物化按 cwd 相对路径落盘——不隔离会污染真实 runs/（#144）。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd(isolated):
+    """战役落盘/数据集物化按 cwd 相对路径落盘——不隔离会污染真实 runs/
+    （#144）；隔离体收编 tests/conftest.py::isolated（T5 三批单源化）。"""
+    yield
 
 
 @pytest.fixture()
@@ -141,11 +142,17 @@ class TestCampaignTools:
         assert "战役计划不存在" in data["errors"][0]
 
     def test_status_corrupt_json(self, mcp_server, tmp_path):
+        """负路径行为级（R3 弱测试 #10 加固）：error 须指明"读取失败"
+        （解析坏档），与"不存在"负路径可区分——拦"拒绝错理由"的假绿。"""
         bad = tmp_path / "bad_plan"
         bad.mkdir()
         (bad / "campaign.plan.json").write_text("{not json", encoding="utf-8")
         data = _call(mcp_server, "get_campaign_status", {"plan_path": str(bad)})
         assert data["ok"] is False
+        assert "读取失败" in data["errors"][0]
+        assert "不存在" not in data["errors"][0]
+        # JSONDecodeError 细节在场（定位行/列），非无名失败
+        assert "Expecting" in data["errors"][0] or "line" in data["errors"][0]
 
     def test_list_campaign_plans_overview(self, mcp_server, sample_recipe, tmp_path):
         plan_result = _call(mcp_server, "plan_campaign",
@@ -292,6 +299,12 @@ class TestBandsEnvTools:
     def test_env_get_unknown_key(self, mcp_server):
         data = _call(mcp_server, "bands_env_get", {"key": "no_such_env"})
         assert data["ok"] is False
+        # R3 弱测试 #11 加固：拒绝必须带契约语义——未知 key 回显+可用键
+        # 列表指路（core/bands.py KeyError 文本经 service error_envelope
+        # 原样透传；"拒绝对了理由"而非仅"拒绝了"）
+        assert data["errors"] and "未知环境包络" in data["errors"][0]
+        assert "no_such_env" in data["errors"][0]
+        assert "industrial_grade_40_85" in data["errors"][0]  # 合法键指路
 
     def test_env_find_85c(self, mcp_server):
         data = _call(mcp_server, "bands_env_find", {"t_c": 85.0})

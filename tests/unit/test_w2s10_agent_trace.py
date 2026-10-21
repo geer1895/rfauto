@@ -1,4 +1,4 @@
-"""EC-23 agent 环结构化追踪单测（aurora_e W2-S10 E1）。
+"""EC-23 agent 环结构化追踪单测（架构批 W2-S10 E1）。
 
 覆盖面：
 - AgentTracer 三级 span 的 JSONL 行结构与字段完整性（mock 环跑一轮）；
@@ -21,9 +21,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(monkeypatch, isolated_cache_off):
     monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
     # 缺省开：清掉可能的外部关闭开关，开关用例自行 setenv
     monkeypatch.delenv("RFAUTO_AGENT_TRACE", raising=False)

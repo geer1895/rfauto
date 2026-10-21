@@ -15,7 +15,7 @@
   这些模态量的唯一直读来源。
 - :func:`attach_port_names` / :func:`resolve_port_key` /
   :func:`connect_by_name` / :func:`reorder_ports_by_name`：skrf v2.1
-  port-name 网络运算采纳（EC-1，2026-10-18 aurora_e W2-S9）——按名
+  port-name 网络运算采纳（EC-1，2026-10-18 架构批 W2-S9）——按名
   级联/装配/重排，校验式端口名设置（唯一性/换行注入防御），#314 掩码
   族的上游防线：端口身份按名锚定，单激励掩码不再依赖裸索引次序。
 

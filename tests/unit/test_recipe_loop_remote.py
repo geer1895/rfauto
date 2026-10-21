@@ -92,9 +92,7 @@ class FlakyLauncher(FakeLauncher):
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated_cwd(isolated_cache_off):
     yield
 
 

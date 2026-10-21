@@ -1,4 +1,4 @@
-"""aurora_d UI-R4（A6 审查 P1-5 全域清偿 + a11y 清扫）可点行键盘可达回归钉。
+"""架构批 UI-R4（A6 审查 P1-5 全域清偿 + a11y 清扫）可点行键盘可达回归钉。
 
 **台账（2026-10-14，A6 REPORT P1-5/P2-9 + 焦点管理面）**
 
@@ -101,7 +101,9 @@ class TestClickRowSourcePins:
             ('bindClickRows(el, (tr) => pickAsset(tr.dataset.p), "tr.clickable");', "UQ 资产"),
             ('bindClickRows(el, (row) => { T.$("recipe-path").value = row.dataset.p; loadRecipe(); }, "[data-p]");', "配方目录"),
             ('bindClickRows(tbody, (tr) => loadCalibration(tr.dataset.rid), "tr[data-rid]");', "校准表"),
-            ('bindClickRows(tbody, async (tr) => {', "报告清单"),
+            # 架构批 W2-S5：reports 行打开链路抽具名 openReport（深链/重试
+            # 同一入口），bindClickRows 收 (tr) => openReport(tr.dataset.p)。
+            ('bindClickRows(tbody, (tr) => openReport(tr.dataset.p), "tr[data-p]");', "报告清单"),
             ("}, \".q-open\");", "queue 决策日志锚"),
             ("}, \".fs-row\");", "文件浏览器行"),
             ('(img) => T.lightboxImg("/" + img.dataset.fig, img.dataset.fig.split("/").pop()),', "Run 详情可点图"),
@@ -132,26 +134,31 @@ class TestClickRowSourcePins:
 
     def test_row_aria_labels_present(self):
         # 行动作 aria-label 摘要（读屏可闻；label 拼接走 String concat——
-        # XSS 反向扫描口径零新增，转义在 kit escAttr 出口）
+        # XSS 反向扫描口径零新增，转义在 kit escAttr 出口）。
+        # W2-S1 批 4：datasets/anchors/uq 三行标签迁词表 t() 模板键
+        # （zh 值同笔；t() 组装后仍由 kit escAttr 出口单点转义）。
+        # S4 发布令批：dashboard 活动流/最近 Run + runs 表三处行标签同款
+        # 迁词表 runs.open_detail_aria（zh 值同笔；三消费面一键单源）。
         for needle in (
-            '"打开 run 详情：" + (r.run_id || "")',  # 活动流 + 最近 Run + runs 表
-            '"预览数据集：" + (x.name || "")',
-            '"查看锚详情：" + (a.anchor_id || "")',
-            '"选用样本集：" + (it.path || "")',
-            '"加载配方：" + (r.path || "")',
-            '"查看校准详情：" + (r.run_id || "")',
-            '"查看报告：" + (r.run_id || "")',
-            '"查看决策日志（" + dl.length + " 条）"',
+            't("runs.open_detail_aria") + (r.run_id || "")',  # 活动流 + 最近 Run + runs 表
+            't("datasets.aria_preview_tpl", { name: (x.name || "") })',
+            't("anchors.aria_detail_tpl", { name: (a.anchor_id || "") })',
+            't("uq.aria_pick_tpl", { name: (it.path || "") })',
+            't("recipe.row_open_aria") + (r.path || "")',  # S3 发布令批：配方目录行同款迁词表
+            't("calibration.open_detail_aria") + (r.run_id || "")',  # S1 发布令批：校准行同款迁词表
+            't("reports.row_open_aria") + (r.run_id || "")',  # S3 发布令批：报告清单行同款迁词表
+            't("queue.open_log_aria_tpl", { n: dl.length })',  # S2 发布令批：队列行同款迁词表
             '"返回上级目录"',
             '"打开目录 " + e.name',
-            '"放大查看曲线图：" + f.split("/").pop()',  # 详情可点图（灯箱动作）
+            't("detail.fig_zoom_lead") + f.split("/").pop()',  # 详情可点图（灯箱动作）——S2 批迁词表 lead
         ):
             assert needle in _PAGES, needle
 
     def test_seat_table_th_scope_cleared(self):
         # A6 P2-9 清零：pages/ 全域零裸表头；座位表两分支 scope 口径
+        # （S3 发布令批：表头文案迁词表 campaign.th_seat，scope 口径钉不变）
         assert _PAGES.count("<th>") == 0
-        assert _PAGES.count('<th scope="col">座位状态</th>') == 2
+        assert _PAGES.count('<th scope="col">${t("campaign.th_seat")}</th>') == 2
 
     def test_sparams_mode_aria_pressed(self):
         # 三模式互斥切换钮状态标注（读屏可知当前档）
@@ -165,16 +172,24 @@ class TestClickRowSourcePins:
     def test_canvas_charts_image_semantics(self):
         # 自研 canvas 管线补 PR-1 图表容器口径（campaign 成本热图/optstack 可行性）
         assert _PAGES.count('canvas.setAttribute("role", "img")') == 2
-        assert 'canvas.setAttribute("aria-label", "图表：成本热图（" + d.x_param' in _PAGES
-        assert 'canvas.setAttribute("aria-label", "图表：可行性热图（" + d.x_param' in _PAGES
+        # S3 发布令批：campaign 热图 aria lead 迁词表（t() 拼 API 参数名，
+        # String concat 口径零新增——setAttribute=单点同信任级）
+        assert 'canvas.setAttribute("aria-label", t("campaign.heat_aria_lead") + d.x_param' in _PAGES
+        # S2 发布令批：optstack 热图 aria lead/tail 迁词表（t() 拼 API 参数名，
+        # String concat 口径零新增——setAttribute=单点同信任级）
+        assert 'canvas.setAttribute("aria-label", t("optstack.heat_aria_lead") + d.x_param' in _PAGES
 
     def test_form_control_aria_labels(self):
         # 动态表单控件显式可闻名（A6 P2-7 a11y 面；id/name 可测试性欠账不在本席范围）
+        # W2-S1 批 4：uq-sigma aria 迁词表 t()（uq.sigma_aria_tpl，zh 值同笔；
+        # 数据实参 escAttr 先行转义、整体不再二次转义——W6-S21 aria tpl 先例）
         for needle in (
-            "aria-label='参数 ${escAttr(n)} 的公差 σ'",  # uq-sigma
-            'aria-label="参数 ${escAttr(p.name)} 的值"',  # 配方参数值
-            'aria-label="${escAttr(n)} 搜索下界 low"',  # opt-b low
-            'aria-label="${escAttr(n)} 搜索上界 high"',  # opt-b high
+            "aria-label='${t(\"uq.sigma_aria_tpl\", { n: escAttr(n) })}'",  # uq-sigma
+            # S3 发布令批：recipe 三处 aria 迁词表（lead/tail 分段夹 escAttr
+            # 数据实参——数据不进词表，转义出口不变）
+            'aria-label="${t("recipe.param_aria_lead")}${escAttr(p.name)}${t("recipe.param_aria_tail")}"',  # 配方参数值
+            'aria-label="${escAttr(n)}${t("recipe.opt_low_aria")}"',  # opt-b low
+            'aria-label="${escAttr(n)}${t("recipe.opt_high_aria")}"',  # opt-b high
             'aria-label="路径"',  # fs-path
         ):
             assert needle in _PAGES, needle

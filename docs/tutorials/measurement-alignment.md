@@ -3,6 +3,7 @@
 > 把"实测 VNA 数据 ↔ 仿真对齐、偏差诊断、修正提案"串成一条命令链
 > （SO 走查任务 B 的 B5 断点收口）。全部命令离线可跑（实测文件在手时），
 > 真机采集另见 `rfauto vna measure`（需仪器）。
+> 英文版（English version）：docs/tutorials/measurement-alignment_en.md。
 
 ## 链路总览
 

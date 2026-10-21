@@ -287,7 +287,7 @@ def uniform_aperture_field(rho: np.ndarray) -> np.ndarray:
     return np.ones_like(np.asarray(rho, dtype=float))
 
 
-def annulus_aperture_field(inner_m: float, d_m: float):
+def annulus_aperture_field(inner_m: float, d_m: float) -> np.ndarray:
     """中心遮挡（环带）口径场——blockage 数值互证路径。"""
     r_in = _pos(inner_m, "inner_m")
     r_out = _pos(d_m, "d_m") / 2.0

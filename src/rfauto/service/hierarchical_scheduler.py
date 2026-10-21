@@ -27,6 +27,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar
 
+from rfauto.infra.registry_kit import RegistryKit
 from rfauto.service.envelope import ok_envelope
 
 SCHEDULE_SCHEMA = "rfauto-hierarchical-schedule-v1"
@@ -172,25 +173,28 @@ class MCTSGridSearchEngine(ParamSearchEngine):
 
 
 class EngineRegistry:
-    """L2 引擎注册表（同 RuntimeRegistry/EMSolverRegistry 模式）。"""
+    """L2 引擎注册表（同 RuntimeRegistry/EMSolverRegistry 模式）。
 
-    _engines: ClassVar[dict[str, type[ParamSearchEngine]]] = {}
+    T6 试点（R1 审计 §面5/T6）：classmethod 门面 + RegistryKit 单例承载
+    ——类键注册面（键取 engine_cls.name）迁移范式。对外行为保真：
+    register 返回原类、缺名 KeyError 文案逐字节不变、available()=keys()。
+    """
+
+    _kit: ClassVar[RegistryKit[type[ParamSearchEngine]]] = RegistryKit(
+        label="参数搜索引擎")
 
     @classmethod
     def register(cls, engine_cls: type[ParamSearchEngine],
                  ) -> type[ParamSearchEngine]:
-        cls._engines[engine_cls.name] = engine_cls
-        return engine_cls
+        return cls._kit.bare_register(engine_cls)
 
     @classmethod
     def create(cls, name: str, **kwargs: Any) -> ParamSearchEngine:
-        if name not in cls._engines:
-            raise KeyError(f"未注册的参数搜索引擎: {name}（可用: {cls.available()}）")
-        return cls._engines[name](**kwargs)
+        return cls._kit.create(name, **kwargs)
 
     @classmethod
     def available(cls) -> list[str]:
-        return sorted(cls._engines)
+        return cls._kit.keys()
 
 
 EngineRegistry.register(SurrogateSearchEngine)

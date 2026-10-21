@@ -334,7 +334,7 @@ def polarization_grids(e_theta: Any, e_phi: Any) -> dict[str, Any]:
     return {"ar_db": ar_db, "tilt_deg": tilt, "sense_code": sense}
 
 
-# ─── EC-21 传输面度量：ΔIPD/ΔIL 与微分群延迟差（aurora_e W4-S18）─────────────
+# ─── EC-21 传输面度量：ΔIPD/ΔIL 与微分群延迟差（架构批 W4-S18）─────────────
 #
 # 口径与出处（铁律 5：来源写 docstring；#118 双源/回收钉在
 # tests/unit/test_polarization_reg.py）：

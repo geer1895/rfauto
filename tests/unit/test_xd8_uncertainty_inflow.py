@@ -11,7 +11,7 @@ docs/research_expansion_20261004_crossdomain_transplant.md:97）：
 - 词边界守卫：suspended_stripline ⊃ stripline 子串假引用排除（实测
   live 注册表 2 条此类假命中）；
 - resolve_anchor 加性键 vv_inflow（既有键零破坏；未知锚早退路径无此键
-  如实）；live 注册表 75 锚全量可算（2026-10-14 aurora_d GATE-FINAL 对账）、无 lower_refs_rss 边（2026-10-08
+  如实）；live 注册表 75 锚全量可算（2026-10-14 架构批 GATE-FINAL 对账）、无 lower_refs_rss 边（2026-10-08
   实测口径：全部 prose 引用同层，零跨层引用边——将来加跨层引用时本钉
   随事实更新）。
 """

@@ -345,7 +345,7 @@ class TestThemeLinkage:
         assert 'attributeFilter: ["class"]' in ch  # 盯 body.light 翻转
         assert "plotCardShellEntries()" in ch  # 遍历面=plotcard.js WeakRef 单源
         # initPages 装配一次（与轮询/SSE/导出桥同一装配点；并集上唯一调用位）
-        assert "_bindThemeRefresh(); // aurora_d UI-R5" in pg
+        assert "_bindThemeRefresh(); // 架构批 UI-R5" in pg
         assert pg.count("_bindThemeRefresh(); //") == 1
 
 

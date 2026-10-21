@@ -24,7 +24,10 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from rfauto.service._helpers import load_run_trials as _load_trials
+from rfauto.service._helpers import (
+    load_run_trials as _load_trials,
+)
+from rfauto.service._helpers import safe_run_id
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 __all__ = [
@@ -86,6 +89,14 @@ def campaign_dashboard(
     # 回仓库 runs/，#295 族；cwd 无 runs 且不在仓内=tmp 面行为不变）。
     from rfauto.infra.runs_paths import resolve_runs_dir
 
+    # P2-2（架构批 W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
+    # （第 10 处拼接点，P9-13 同类漏网）——``..`` 直通 runs 根 is_dir 通过
+    # → 进 trials 读取尝试（存在性 oracle+祖先目录 trials 被读）。
+    run_id_clean = safe_run_id(run_id)
+    if run_id_clean is None:
+        return error_envelope(
+            [f"非法 run_id: {run_id!r}（必须是单段目录名）"])
+    run_id = run_id_clean
     runs_dir = resolve_runs_dir("runs")
     run_dir = runs_dir / str(run_id)
     if not run_dir.is_dir():

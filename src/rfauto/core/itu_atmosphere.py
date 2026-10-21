@@ -1,7 +1,8 @@
 """AP-6 ITU 大气/雨衰包（plan_deepdive_specs_20261002.md §A-8，2026-10-02）。
 
 传播域主线第二件：ITU-R P.676-13 Annex 1 逐线大气吸收 + P.838-3 雨衰
-specific attenuation + P.618 R0.01 入口占位。**纯函数零 IO**、单位显式、
+specific attenuation + P.618 R0.01 入口占位 + P.840-9 云/雾衰减
+（架构批 W14-S3 席 2026-10-19 增，官方 PDF 逐式转写）。**纯函数零 IO**、单位显式、
 零求解器依赖（§A 包跨件裁决）。PV-011 路线：Annex 1 自算零外部数据+
 手工录入系数表，**不捆绑任何 ITU 数据文件**。
 
@@ -893,3 +894,149 @@ def xpd_rain_db(
     xpd_rain = c_f - c_a + c_tau + c_theta + c_sigma
     c_ice = xpd_rain * (0.3 + 0.1 * math.log10(p)) / 2.0
     return xpd_rain - c_ice
+
+
+# ═══ P.840-9 云/雾衰减（架构批 W14-S3 席 2026-10-19；式面=官方 PDF 逐式
+# 转写，证据 内部证据目录 原文在档）═══
+
+#: P.840-9 Annex 1 有效域（Scope 原文 "from 1 to 200 GHz"）
+_F_MIN_GHZ_840, _F_MAX_GHZ_840 = 1.0, 200.0
+
+#: 式(12) Gaussian 修正常数组（P.840-9 §3.1 原文 "with:" 块逐值转写）
+_KL_GAUSS_A = (0.1522, 11.51, -10.4912)
+_KL_GAUSS_F = (-23.9589, 219.2096)
+_KL_GAUSS_SIGMA = (3.2991e3, 2.7595e6)
+
+#: 式(12) 参考温度 [K]（P.840-9 式(11) "T = 273.75K"）
+_KL_REF_T_K = 273.75
+
+
+def water_permittivity_p840(f_ghz: float, t_k: float) -> dict[str, Any]:
+    """液态水双 Debye 复介电常数（P.840-9 §2 式(4)-(10)）。
+
+    参数：f_ghz 频率 [GHz]（有效域 [1,200]，Scope 原文 Rayleigh 近似
+    "up to 200 GHz"）；t_k 液态水温度 [K]（>0 有限；官方未声明温度域，
+    本键守卫有限正值）。
+
+    返回 dict：eps_prime/eps_dprime（式(5)/(4)）、fp/fs（式(9)/(10)
+    主/次弛豫频率 [GHz]）、eps0/eps1/eps2（式(6)/(7)/(8)）、
+    eta（式(3)）、k_l（式(2) [(dB/km)/(g/m³)]）。
+    """
+    f = _num(f_ghz, "f_ghz")
+    t = _num(t_k, "t_k")
+    if not (_F_MIN_GHZ_840 <= f <= _F_MAX_GHZ_840):
+        raise ValueError(
+            f"f_ghz 有效域 [{_F_MIN_GHZ_840:.0f},{_F_MAX_GHZ_840:.0f}]GHz"
+            f"（P.840-9 Scope Rayleigh 域），得 {f_ghz}")
+    if t <= 0.0:
+        raise ValueError(f"t_k 必须 >0 且有限（液态水温度），得 {t_k}")
+    theta = 300.0 / t
+    eps0 = 77.66 + 103.3 * (theta - 1.0)  # 式(6)
+    eps1 = 0.0671 * eps0  # 式(7)
+    eps2 = 3.52  # 式(8)
+    f_p = 20.20 - 146.0 * (theta - 1.0) + 316.0 * (theta - 1.0) ** 2  # 式(9)
+    f_s = 39.8 * f_p  # 式(10)
+    d_p = 1.0 + (f / f_p) ** 2
+    d_s = 1.0 + (f / f_s) ** 2
+    eps_pp = (f * (eps0 - eps1) / (f_p * d_p)  # 式(4)
+              + f * (eps1 - eps2) / (f_s * d_s))
+    eps_p = (eps0 - eps1) / d_p + (eps1 - eps2) / d_s + eps2  # 式(5)
+    eta = (2.0 + eps_p) / eps_pp  # 式(3)
+    k_l = 0.819 * f / (eps_pp * (1.0 + eta * eta))  # 式(2)
+    return {
+        "eps_prime": eps_p,
+        "eps_dprime": eps_pp,
+        "eps0": eps0,
+        "eps1": eps1,
+        "eps2": eps2,
+        "f_p_ghz": f_p,
+        "f_s_ghz": f_s,
+        "eta": eta,
+        "k_l_db_km_per_g_m3": k_l,
+    }
+
+
+def gamma_cloud_db_per_km(f_ghz: float, t_k: float,
+                          lwc_g_m3: float) -> float:
+    """云/雾 specific attenuation γ_c = K_l·ρ_l [dB/km]（P.840-9 式(1)）。
+
+    参数：f_ghz [GHz]（域 [1,200]）；t_k 液态水温度 [K]（>0）；lwc_g_m3
+    液水密度 ρ_l [g/m³]（0 合法 → 0.0 无云雾零分支；典型档：中雾
+    ~0.05、浓雾 ~0.5 g/m³，P.840-9 §1 原文）。
+    """
+    rho = _num(lwc_g_m3, "lwc_g_m3")
+    if rho < 0.0:
+        raise ValueError(f"lwc_g_m3 必须 >= 0，得 {lwc_g_m3}")
+    if rho == 0.0:
+        return 0.0  # 无云雾恒无衰减（非产数路径）
+    kl = water_permittivity_p840(f_ghz, t_k)["k_l_db_km_per_g_m3"]
+    return kl * rho  # 式(1)
+
+
+def kl_mass_cloud_db_per_mm(f_ghz: float) -> float:
+    """云液水质量吸收系数 K_L [dB/(kg/m²)]=[dB/mm]（P.840-9 式(12)）。
+
+    K_L(f) = K_l(f, 273.75K)·(A₁e^{−(f−f₁)²/σ₁}+A₂e^{−(f−f₂)²/σ₂}+A₃)。
+    **分母 σ 无平方**——官方 PDF（08/2023 电子版）式(12) 5× 渲染视觉核
+    verify（分子 (f−f₁)² 有上标 ²、分母 σ₁ 无；证据
+    内部证据目录），勿按"高斯宽度平方"
+    旧记忆改写。
+    """
+    f = _num(f_ghz, "f_ghz")
+    if not (_F_MIN_GHZ_840 <= f <= _F_MAX_GHZ_840):
+        raise ValueError(
+            f"f_ghz 有效域 [{_F_MIN_GHZ_840:.0f},{_F_MAX_GHZ_840:.0f}]GHz"
+            f"（P.840-9 Scope），得 {f_ghz}")
+    k_l = water_permittivity_p840(f, _KL_REF_T_K)["k_l_db_km_per_g_m3"]
+    corr = (_KL_GAUSS_A[0]
+            * math.exp(-((f - _KL_GAUSS_F[0]) ** 2) / _KL_GAUSS_SIGMA[0])
+            + _KL_GAUSS_A[1]
+            * math.exp(-((f - _KL_GAUSS_F[1]) ** 2) / _KL_GAUSS_SIGMA[1])
+            + _KL_GAUSS_A[2])  # 式(12)（A3 为常数项不带指数）
+    return k_l * corr
+
+
+def cloud_attenuation_slant(
+    f_ghz: float, lwp_kg_m2: float, elevation_deg: float,
+) -> dict[str, Any]:
+    """斜路径瞬时云衰减 A_c = K_L(f)·L/sinθ [dB]（P.840-9 §3.1 式(11)）。
+
+    参数：f_ghz 频率 [GHz]（域 [1,200]）；lwp_kg_m2 积分云液水含量
+    L [kg/m²≡mm]（0 合法 → 0 dB 零分支；调用方显式输入——P.840 §4
+    全球数字地图数据文件 PV-011 不捆绑，本地辐射计/气象数据直接进链）；
+    elevation_deg 仰角 θ（[5,90]，原文 §3.1 声明域）。
+
+    返回 dict 全中间量（k_l_273/gaussian_correction/k_l_mass/sin_el/
+    a_c_db）留痕供对拍。
+    """
+    f = _num(f_ghz, "f_ghz")
+    lwp = _num(lwp_kg_m2, "lwp_kg_m2")
+    theta = _num(elevation_deg, "elevation_deg")
+    if not 5.0 <= theta <= 90.0:
+        raise ValueError(
+            f"elevation_deg 有效域 [5,90]°（P.840-9 §3.1 声明域），得 {theta}")
+    if lwp < 0.0:
+        raise ValueError(f"lwp_kg_m2 必须 >= 0，得 {lwp}")
+    out: dict[str, Any] = {
+        "f_ghz": f,
+        "lwp_kg_m2": lwp,
+        "elevation_deg": theta,
+        "sin_el": math.sin(math.radians(theta)),
+    }
+    if lwp == 0.0:
+        out.update({"zero_reason": "lwp=0 (无云液水零分支)", "a_c_db": 0.0})
+        return out
+    k_l = water_permittivity_p840(f, _KL_REF_T_K)["k_l_db_km_per_g_m3"]
+    corr = (_KL_GAUSS_A[0]
+            * math.exp(-((f - _KL_GAUSS_F[0]) ** 2) / _KL_GAUSS_SIGMA[0])
+            + _KL_GAUSS_A[1]
+            * math.exp(-((f - _KL_GAUSS_F[1]) ** 2) / _KL_GAUSS_SIGMA[1])
+            + _KL_GAUSS_A[2])  # 式(12)（A3 为常数项不带指数）
+    k_l_mass = k_l * corr
+    out.update({
+        "k_l_273_db_km_per_g_m3": k_l,
+        "gaussian_correction": corr,
+        "k_l_mass_db_per_mm": k_l_mass,
+        "a_c_db": k_l_mass * lwp / out["sin_el"],  # 式(11)
+    })
+    return out

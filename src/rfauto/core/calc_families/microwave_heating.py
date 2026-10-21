@@ -1,5 +1,15 @@
 """微波加热族（LT-5..7，内核在 core/microwave_heating.py，本模块只做注册壳）。
 
+出处（微波加热经典教材口径，内核 core/microwave_heating.py 转录）：
+- multimode_cavity_heating：Weyl 模式统计 N=8πV/(3λ³)（Weyl 渐近；
+  Jackson, Classical Electrodynamics §8.7 态密度换元；A. C. Metaxas &
+  R. J. Meredith, Industrial Microwave Heating, 1983 ch.5 多模腔口径
+  与装填因子）。
+- single_mode_applicator：TE10p 场量/壁损积分/耦合系数 4β/(1+β)²
+  （能量法第一性；Pozar §6.4 一端口谐振腔耦合口径；Metaxas 同书）。
+- microwave_process_window：体吸收 p=ωε0εr″E_rms²（Metaxas 工程式）
+  + 温变材料链热失控判据（同书工艺窗口口径）。
+
 round18 §五 :137-144 规格「微波加热=唯一整包立项（LT-5/6/7 递进）」
 （2026-10-02）。三键：多模腔模式统计+装填因子 / 单模 applicator 功率
 沉积链 / 工艺窗口+热失控。weyl/精确计数/装填匹配、TE10p 场量、体吸收/

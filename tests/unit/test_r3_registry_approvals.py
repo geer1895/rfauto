@@ -33,9 +33,8 @@ _WILKINSON_RECIPE = {
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
+def _isolated(monkeypatch, isolated):
     """cwd + env 双隔离（#144）：审批读写现在会建 runs/registry.sqlite。"""
-    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv(ENV_REGISTRY_DB, raising=False)
     yield
 
@@ -46,8 +45,10 @@ def _isolated(tmp_path, monkeypatch):
 
 class TestSourceWiringNail:
     def test_r3_services_references_registrydb(self):
+        # W7-S1 T2 包化（2026-10-19）：审批/变更治理实现随域迁
+        # r3_services/governance.py，源码锚随实现走（AU-1 测试面映射工艺）
         src = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "service"
-               / "r3_services.py").read_text(encoding="utf-8")
+               / "r3_services" / "governance.py").read_text(encoding="utf-8")
         # 模块级导入（生产读写走 infra.db 门面）
         assert "from rfauto.infra.db import RegistryDB" in src
         # 读路径与批准路径确实消费 DB（而非仅 import 摆设）

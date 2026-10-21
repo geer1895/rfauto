@@ -1,5 +1,11 @@
 """PLL 环路滤波器综合族（MT-5，内核在 core/pll_loop_filter.py，本模块只做注册壳）。
 
+出处（PLL 环路滤波器综合应用文献口径，正文规格节转录）：
+- pll_loop_filter_synthesize：T1/T2/T3→C1/C2/R2/C3 闭式与相位裕度
+  迭代（D. Banerjee, TI SNAA106C 应用报告；二级转引 F. M. Gardner,
+  Phaselock Techniques 3rd ed. 环路滤波器章）；验收=回代
+  open_loop_transfer 复现目标 f_c/PM。
+
 round17 §二 MT-5 规格「Banerjee SNAA106C（TI 免费）T1/T2/T3→C1/C2/R2/C3
 闭式+相位裕度迭代；验收：回代 open_loop_transfer 复现目标 f_c/PM」
 （2026-10-02）。单键 pll_loop_filter_synthesize（f_c/PM/环路增益数 →

@@ -1,4 +1,4 @@
-"""rfauto UI 路由分域包（aurora_d UI-R1 席，自 ui/server.py 机械拆分）。
+"""rfauto UI 路由分域包（架构批 UI-R1 席，自 ui/server.py 机械拆分）。
 
 拆分纪律（家法 #98 era：AST 逐函数搬家）：函数体逐字节不变地搬家，业务
 仍在 service 层（AGENTS #4/#90/#92）；本包内模块只做参数守卫（params.py

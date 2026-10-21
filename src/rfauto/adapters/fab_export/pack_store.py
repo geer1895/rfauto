@@ -333,5 +333,5 @@ def write_capability_table(out_dir: str | Path) -> Path:
 class FilesystemPackPort:
     name = "filesystem"
 
-    def pack(self, **kwargs):
+    def pack(self, **kwargs) -> DeliverableIndex:
         return pack_deliverable(**kwargs)

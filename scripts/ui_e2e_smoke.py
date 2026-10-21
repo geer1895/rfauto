@@ -1,7 +1,7 @@
-"""UI e2e 冒烟门（aurora_d UI-R7 席，2026-10-14）：UI 大重构安全网制度化。
+"""UI e2e 冒烟门（架构批 UI-R7 席，2026-10-14）：UI 大重构安全网制度化。
 
 背景：UI-R1（server.py→routes/ 10 域拆分）+UI-R2（pages.js→pages/ 33 模块
-ESM）两次大重构各靠一次一次性真机冒烟验收（先例 runs/aurora_d/uir2/ 26 视图
+ESM）两次大重构各靠一次一次性真机冒烟验收（先例 内部证据目录 26 视图
 巡检+SMOKE_LOG）。本脚本把该冒烟固化为可复跑门：起服→五面巡检→结构化
 verdict→退出码，UI-R8+ 再拆任何 UI 面先跑它当安全网。
 
@@ -67,7 +67,7 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 
-REPORT_SCHEMA = "aurora_d/ui_e2e_smoke/1"
+REPORT_SCHEMA = "架构批/ui_e2e_smoke/1"
 
 #: 备用端口动态选起点（8642 是 rfauto ui 缺省口，冒烟避开走 8643 起）。
 DEFAULT_PORT_BASE = 8643
@@ -904,7 +904,7 @@ def assemble_verdict(meta: dict[str, Any], checks: list[dict[str, Any]],
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="UI e2e 冒烟门（aurora_d UI-R7）：起服+五面巡检+verdict")
+        description="UI e2e 冒烟门（架构批 UI-R7）：起服+五面巡检+verdict")
     ap.add_argument("--port", type=int, default=None,
                     help=f"服务端口（缺省从 {DEFAULT_PORT_BASE} 起动态选空闲）")
     ap.add_argument("--base-url", default=None,

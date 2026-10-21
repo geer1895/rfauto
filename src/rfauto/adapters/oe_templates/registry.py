@@ -38,6 +38,16 @@ _SUB_CELLS_DEFAULT = 4
 #:   实验证据链见 registry 头注）。
 _SUB_CELLS_8_TEMPLATES: frozenset[str] = frozenset({"msl_cpw", "cpw", "fgcpw"})
 
+# §MS_METASURFACE 单元模板名单（单源：架构批 W2-S2 S5/grid2 解环自
+# render_metasurface 上提——grid._near_points 与 render_metasurface 双向
+# 消费，名单落本注册表叶后 grid→registry 单向，环断；render_metasurface
+# 保名再导出，全部既有消费点（门面/render_core/测试）零改动）。
+MS_UNIT_TEMPLATES: tuple[str, ...] = (
+    "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
+    # ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：Sievenpiper 蘑菇
+    # EBG/AMC 单元——反射读出族（ms_patch 同款），族内尾部追加（#247 口径）
+    "ms_mushroom")
+
 # 模板元数据公约（方向 2 验收：每模板 meta——仿真时长/网格数/S 参数提取点/端口）
 TEMPLATE_META: dict[str, dict[str, Any]] = {
     "wilkinson": {

@@ -1,18 +1,19 @@
-"""W4-D（aurora36）首屏加载性能钉：vendor 预取 + palette 导出图表事件桥。
+"""W4-D（架构批）首屏加载性能钉：vendor 预取 + palette 导出图表事件桥。
 
 钉三件事：
-1. index.html head 预取基座（R1 审计 P1-12 方案 Y 保底）：three 用
-   <link rel="modulepreload">（importmap 消费的 ES module 提前入模块缓存，
-   首屏 1.27MB 前移到 head 解析即取）、echarts 用 <link rel="preload"
-   as="script">（body 尾经典 script 提前首字节，执行位置/顺序不变）。
-   方案 X（three 改动态 import）被否：pages.js drawIsoMesh 同步消费
-   app.js 注入的 T.THREE（pages.js:2831 `const THREE = T.THREE;`），动态化
-   需要 pages.js 调用侧 await/守卫配合，而 pages.js 归并行席禁改——详见
-   W4-D 席位报告。
-2. 预取 href 与消费点单源一致：modulepreload href == importmap 里 three
-   的目标；preload href == body 尾 echarts <script src>——防预取 URL 漂移
-   落空成第二份下载。
-3. palette act-export-chart（W4-D）：命令总数 14（同步钉
+1. index.html head 预取基座（R1 审计 P1-12 方案 Y → 架构批 W3-S9 P8-2
+   重审改钉）：echarts 用 <link rel="preload" as="script">（body 尾经典
+   script 提前首字节，执行位置/顺序不变）；**three 的 modulepreload 已删除**
+   ——three 改 3D 调用点动态 import（app.js drawBoxes / view_fieldviz
+   drawIsoMesh，架构批 W3-S9；旧否决理由=monolith 时代 pages.js 同步消费
+   T.THREE，现状消费面在动态 import 链内已失效），保留预取会让每个首屏都
+   强制下完 1.27MB（gzip 256,743B=首屏线传 36% 单件），与懒加载目的相抵。
+   改钉方向=modulepreload 缺席为常态（回流钉），importmap three 映射保留
+   （动态 import 的解析单源）。
+2. echarts 预取 href 与消费点单源一致：preload href == body 尾 echarts
+   <script src>——防预取 URL 漂移落空成第二份下载。
+3. palette act-export-chart（W4-D）：命令总数 20（同步钉；架构批 W2-S5 act-locale 语言命令落地同笔 14→15；架构批 W5-S17 动作扩充同笔
+   15→20，动作 4→9，详见 test_ui_palette_cmds）
    test_ui_palette_cmds）；发射端 fireExportChart——window 缺席环境（node）
    静默守卫不抛；window 在场时派发 CustomEvent，事件名恒
    "rfauto:export-chart"、无 payload（CustomEvent 规范缺省 detail=null，
@@ -45,15 +46,16 @@ _HEAD = re.search(r"<head>(.*?)</head>", _INDEX, re.S).group(1)
 # ────────────────────────── 1. vendor 预取（源码钉） ──────────────────────────
 
 class TestVendorPreload:
-    def test_modulepreload_three_in_head(self):
-        m = re.search(r'<link\s+rel="modulepreload"\s+href="([^"]+)"', _HEAD)
-        assert m, "head 缺 three modulepreload（R1 P1-12 方案 Y 预取基座）"
-        href = m.group(1)
+    def test_three_importmap_mapping_present_no_modulepreload(self):
+        # P8-2（架构批 W3-S9 重审改钉）：three 动态 import 的解析单源=
+        # importmap 映射必须保留；modulepreload 必须**缺席**——回流即等于
+        # 每个首屏强制下完 three（1.27MB/gzip 256,743B），抵消懒加载收益。
         im = re.search(r'"three"\s*:\s*"([^"]+)"', _INDEX)
-        assert im, "importmap 缺 three 映射"
-        assert href == im.group(1), (
-            f"modulepreload href {href!r} 与 importmap three 目标 "
-            f"{im.group(1)!r} 不一致——预取落空成第二份下载")
+        assert im, "importmap 缺 three 映射（动态 import 解析单源）"
+        pre = re.findall(r'<link\s+rel="modulepreload"\s+href="([^"]+)"', _HEAD)
+        assert pre == [], (
+            f"head 出现 modulepreload {pre}——three 已改 3D 调用点动态 import"
+            "（W3-S9 P8-2），预取回流=首屏强制下完 three，抵消懒加载")
 
     def test_preload_echarts_in_head_matches_body_script(self):
         m = re.search(r'<link\s+rel="preload"\s+as="script"\s+href="([^"]+)"', _HEAD)
@@ -101,7 +103,7 @@ class TestExportChartCommand:
             "  exportChart() { calls.exportChart++; },\n"
             "};\n"
             "const cat = m.commandCatalog('midnight', act);\n"
-            "if (cat.length !== 14) throw new Error('命令总数=' + cat.length);\n"
+            "if (cat.length !== 20) throw new Error('命令总数=' + cat.length);\n"
             "const cjk = /[\\u4e00-\\u9fff]/;\n"
             "for (const it of cat) {\n"
             "  if (it.mode !== 'cmd') throw new Error('mode: ' + it.id);\n"
@@ -115,7 +117,7 @@ class TestExportChartCommand:
             "if (!/导出/.test(it.haystack) || !/图表/.test(it.haystack))\n"
             "  throw new Error('关键词: ' + it.haystack);\n"
             "const acts = cat.filter((c) => c.id.startsWith('act-'));\n"
-            "if (acts.length !== 3) throw new Error('动作命令数=' + acts.length);\n"
+            "if (acts.length !== 9) throw new Error('动作命令数=' + acts.length);\n"
             "it.run();\n"
             "if (calls.exportChart !== 1) throw new Error('未调 act.exportChart');\n"
             # ① window 缺席（node 原生）：发射端守卫静默不抛
@@ -135,4 +137,4 @@ class TestExportChartCommand:
             "  throw new Error('事件名漂移: ' + got[0].type);\n"
             "if (got[0].detail !== null) throw new Error('应无 payload');\n"
             "console.log('ok:export-chart:' + cat.length);\n")
-        assert "ok:export-chart:14" in out
+        assert "ok:export-chart:20" in out

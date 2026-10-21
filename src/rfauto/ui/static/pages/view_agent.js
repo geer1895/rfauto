@@ -1,76 +1,107 @@
-/* rfauto Agent 助手页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
-   模型设置 + 审批收件箱 + 沙箱草稿 + 浮动可拖拽对话卡片。 */
+/* rfauto Agent 助手页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+   模型设置 + 审批收件箱 + 沙箱草稿 + 浮动可拖拽对话卡片。
+   i18n（架构批 W4-S1 半程收尾全清）：help 块分段 t()（dashboard 先例）、
+   统计条/审批面板/沙箱面板文案全迁词表（agent.* 键域，zh 与旧字面逐字节
+   同、en 新增）——拼接数据段（run id/参数名/diff 值）照旧视图侧 esc 后拼
+   模板，词表值零 HTML；toast/announce 走 textContent 单点。 */
 
-import { S, T } from "./context.js";
+import { T } from "./context.js";
 import { esc, escAttr, help, renderMarkdown } from "./dom.js";
-import { kitPanelHead, kitTable } from "./kit.js";
+import { kitConfirm, kitPanelHead, kitTable } from "./kit.js";
+// i18n（架构批 W6-S21 扩面页 5；W8-S32 批 3 补对话浮窗静态面）：壳静态
+// 标签 data-i18n(-ph)+首扫；徽章/空态/浮窗标题/输入占位/发送态/思考态/
+// 工具前缀/快捷提问随渲染分支重建，文案 t() 渲染期烘焙（对话气泡正文与
+// LLM 回复=模型输出走 marked+净化链，不进词表；统计条与审批/沙箱面板=
+// 后续波次）。
+import { t, applyI18nRoot } from "./i18n.js";
+// P8-9（架构批 W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 12 点）——
+// 数据面板拉取（设置徽章/收件箱/沙箱/提示词/统计）接 viewSignal("agent")
+// 切页收束 + aborted 短路（agentCtx.refresh 与进页拉取不再写隐藏区）；
+// 用户动作 POST（发对话/重置/保存设置/审批/promote/diff）保持无 signal
+// ——对话浮窗挂在 document.body 跨页存活，发送中的对话请求不因切页取消。
+import { apiFetch, viewSignal } from "./api.js";
 
 let _agentReload = null; // R-1：refresh 局部刷新转发登记（agentCtx 消费，pageAgent 内赋值）
+
+/* 对话历史（W6-S2 S 状态收编，R2 审计 §面2：原 S.chatLog 单模块私有键
+   降级模块级——属主=本模块，契约表见 context.js；localStorage rfauto-chat
+   slice(-100) 持久语义不变）。 */
+let _chatLog = [];
 
 /* ═══ Agent 助手（设置 + 收件箱 diff + 浮动可拖拽对话卡片）═══ */
 export async function pageAgent() {
   const v = T.$("view-agent");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li><b>⚙ 模型设置</b>：填 OpenAI 兼容 API（base_url/model/api_key，如 deepseek、gpt、本地 ollama）并保存后，对话即切换为真实 LLM——它能调用框架工具（查 run、诊断、校验配方、生成参数提案）。</li>
-      <li>未配置时为<b>指令模式</b>：直接发 "list runs"、"validate recipes/xxx.yaml"、"diagnose run_id" 等指令。</li>
-      <li><b>安全边界</b>：agent 的工具大多是只读的；唯一会写盘的是「参数提案」——只写 recipes/ 下的提案文件，且必须走三层 Gate + 你在收件箱批准（diff 形式展示改了什么）才生效。<b>它接触不到框架源码</b>。</li>
-      <li>内置系统提示词见下方「内置提示词」折叠块（完全透明）。</li>`) +
-    `<h2 class='page'>Agent 助手</h2>
+      <li><b>${t("agent.model_settings")}</b>${t("agent.help_1_tail")}</li>
+      <li>${t("agent.help_2_lead")}<b>${t("agent.help_2_core")}</b>${t("agent.help_2_tail")}</li>
+      <li><b>${t("agent.help_3_core")}</b>${t("agent.help_3_mid")}<b>${t("agent.help_3_core2")}</b>${t("agent.help_3_tail")}</li>
+      <li>${t("agent.help_4")}</li>`) +
+    `<h2 class='page' data-i18n='agent.title'>${t("agent.title")}</h2>
       <div class='panel'><div class='toolbar'>
-        <b>⚙ 模型设置</b>
+        <b data-i18n='agent.model_settings'>${t("agent.model_settings")}</b>
         base_url: <input id='chat-url' size='28' placeholder='https://api.xxx.com/v1'>
-        model: <input id='chat-model' size='16' placeholder='模型名'>
-        api_key: <input id='chat-key' size='18' type='password' placeholder='不改则留空'>
-        <button class='act' id='chat-save'>保存</button>
-        <button class='minor' id='chat-clear'>清空对话</button>
+        model: <input id='chat-model' size='16' placeholder='${t("agent.ph_model")}' data-i18n-ph='agent.ph_model'>
+        api_key: <input id='chat-key' size='18' type='password' placeholder='${t("agent.ph_key")}' data-i18n-ph='agent.ph_key'>
+        <button class='act' id='chat-save' data-i18n='agent.save'>${t("agent.save")}</button>
+        <button class='minor' id='chat-clear' data-i18n='agent.clear_chat'>${t("agent.clear_chat")}</button>
         <span id='chat-cfg-badge'></span>
       </div>
-      <details class='help' style='margin:0'><summary>内置提示词（系统 prompt，透明可查）</summary>
+      <details class='help' style='margin:0'><summary data-i18n='agent.prompt_summary'>${t("agent.prompt_summary")}</summary>
         <pre id='chat-prompt' style='max-height:200px'></pre></details></div>
-      ${kitPanelHead("审批收件箱（提案以参数 diff 展示）")}<div id='inbox-list' class='muted'>加载中...</div></div>
-      ${kitPanelHead("Agent 沙箱草稿（agent 自主编辑先落沙箱；送审批走三层 Gate 进收件箱）")}
-        <div id='sandbox-list' class='muted'>加载中...</div></div>
-      <div class='panel'><button class='act' id='chat-open'>💬 打开对话浮窗</button>
-        <span class="muted">浮窗可拖拽（按住标题栏）、右下角缩放、可最小化，位置自动记忆。</span></div>`;
+      ${kitPanelHead(t("agent.inbox_title"))}<div id='inbox-list' class='muted'>${t("agent.loading")}</div></div>
+      ${kitPanelHead(t("agent.sandbox_title"))}
+        <div id='sandbox-list' class='muted'>${t("agent.loading")}</div></div>
+      <div class='panel'><button class='act' id='chat-open' data-i18n='agent.open_chat'>${t("agent.open_chat")}</button>
+        <span class="muted" data-i18n='agent.float_hint'>${t("agent.float_hint")}</span></div>`;
+  applyI18nRoot(v); // 壳静态标签首扫（W6-S21 扩面）
   T.$("chat-open").onclick = () => openChatFloat(true);
-  T.$("chat-clear").onclick = async () => {
-    await T.api("/api/chat/reset", { method: "POST" });
-    const log = document.getElementById("chat-log");
-    if (log) log.innerHTML = "";
-    S.chatLog = [];
-    localStorage.removeItem("rfauto-chat");
-  };
+  // W6-S2（R1 P9-8）：清空对话=破坏性动作（POST reset+清 DOM+清本地记录，
+  // 零撤销）——kitConfirm 确认闸（危险档，缺省焦点落取消钮）。
+  T.$("chat-clear").onclick = () => kitConfirm({
+    title: t("agent.clear_chat"),
+    body: t("agent.clear_chat_body"),
+    danger: true,
+    onOk: async () => {
+      await apiFetch("/api/chat/reset", { method: "POST" });
+      const log = document.getElementById("chat-log");
+      if (log) log.innerHTML = "";
+      _chatLog = [];
+      localStorage.removeItem("rfauto-chat");
+    },
+  });
   T.$("chat-save").onclick = async () => {
-    const r = await T.api("/api/chat/settings", {
+    const r = await apiFetch("/api/chat/settings", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ base_url: T.$("chat-url").value.trim(),
                              model: T.$("chat-model").value.trim(),
                              api_key: T.$("chat-key").value }),
     });
-    T.msg(r.ok ? "模型设置已保存" : "保存失败", !!r.ok);
+    T.msg(r.ok ? t("agent.saved_ok") : t("agent.save_failed"), !!r.ok);
     loadCfgBadge();
   };
   loadCfgBadge();
-  const pr = await T.api("/api/chat/prompt");
-  T.$("chat-prompt").textContent = pr.prompt || "(未取到)";
+  const pr = await apiFetch("/api/chat/prompt", { signal: viewSignal("agent") });
+  // W8-S32 i18n 批 3：缺省提示 t() 烘焙
+  if (!pr.aborted) T.$("chat-prompt").textContent = pr.prompt || t("agent.prompt_missing");
   await loadInbox();
   await loadSandbox();
-  S.chatLog = JSON.parse(localStorage.getItem("rfauto-chat") || "[]");
+  _chatLog = JSON.parse(localStorage.getItem("rfauto-chat") || "[]");
   openChatFloat(false);
-  for (const m of S.chatLog) appendBubble(m.who, m.text, m.tools);
+  for (const m of _chatLog) appendBubble(m.who, m.text, m.tools);
   await updateStats();
-  // 快捷提问 chips（点选即发送）
-  const QUICK = ["分析最近一次 run", "list solvers", "校验 recipes/wilkinson_pd_v1.yaml",
-                 "帮 wilkinson 配方提议一组新参数"];
+  // 快捷提问 chips（点选即发送）：文案迁词表（W8-S32 i18n 批 3），点击时
+  // 按当前语言档烘焙为输入种子（循环变量 k 不遮蔽 i18n t——P3-7 同款纪律）
+  const QUICK = ["agent.sug_analyze", "agent.sug_list", "agent.sug_validate",
+                 "agent.sug_propose"];
   const q = document.getElementById("chat-suggest");
   if (q) {
     q.style.display = "flex";
-    for (const t of QUICK) {
+    for (const k of QUICK) {
       const b = document.createElement("button");
       b.className = "chipbtn";
-      b.textContent = t;
-      b.onclick = () => { T.$("chat-in").value = t; sendChat(); };
+      b.textContent = t(k);
+      b.onclick = () => { T.$("chat-in").value = t(k); sendChat(); };
       q.appendChild(b);
     }
   }
@@ -87,23 +118,30 @@ export async function pageAgent() {
         window.marked.parse(String(text), { breaks: true }));
     } else el.textContent = text;
     if (tools?.length) {
+      // W8-S32 i18n 批 3：工具前缀 t() 烘焙（工具名清单=API 数据走 esc）
       el.insertAdjacentHTML("beforeend",
-        `<div class="muted" style="font-size:var(--text-xs);margin-top:var(--space-1)">🔧 工具: ${esc([...new Set(tools)].join(" → "))}</div>`);
+        `<div class="muted" style="font-size:var(--text-xs);margin-top:var(--space-1)">${t("agent.tools_prefix")}${esc([...new Set(tools)].join(" → "))}</div>`);
     }
     log.scrollTop = log.scrollHeight;
   }
   async function updateStats() {
-    let stats;
-    try { stats = (await T.api("/api/chat/stats")).stats; }
-    catch { return; }
+    // apiFetch 永不抛（失败折进 {ok:false} 信封）——旧 try/catch 已成死代码；
+    // 失败/中止路径 .stats 为 undefined，直接消费 stats.prompt_tokens 会
+    // TypeError 出 unhandled rejection（审查波 2 P3-3）——缺席守卫早退。
+    const pr = await apiFetch("/api/chat/stats", { signal: viewSignal("agent") });
+    if (pr.aborted || !pr.ok || !pr.stats) return; // UI-R12：切页取消/失败静默早退
+    const stats = pr.stats;
     const bar = document.getElementById("chat-stats");
     if (!bar) return;
     const fmt = (s2) => s2 >= 60 ? `${Math.floor(s2 / 60)}m${Math.round(s2 % 60)}s` : `${s2.toFixed(1)}s`;
     const hit = stats.prompt_tokens
-      ? ` · 缓存命中 ${Math.round(stats.cached_tokens / stats.prompt_tokens * 100)}%` : "";
-    bar.textContent = `轮数 ${stats.turns} · LLM ${fmt(stats.llm_elapsed_s)}（${stats.llm_calls} 次调用）`
-      + ` · 工具 ${stats.tool_calls} 次耗时 ${fmt(stats.tool_elapsed_s)}`
-      + ` · 输入 ${stats.prompt_tokens} tok · 输出 ${stats.completion_tokens} tok${hit}`;
+      ? t("agent.stats_cache_tpl", { p: Math.round(stats.cached_tokens / stats.prompt_tokens * 100) }) : "";
+    // 统计条=textContent 单点（数字出自 /api/chat/stats，textContent 天然无插值面）
+    bar.textContent = t("agent.stats_turns_tpl",
+        { n: stats.turns, t: fmt(stats.llm_elapsed_s), c: stats.llm_calls })
+      + t("agent.stats_tools_tpl", { n: stats.tool_calls, t: fmt(stats.tool_elapsed_s) })
+      + t("agent.stats_tokens_tpl", { i: stats.prompt_tokens, o: stats.completion_tokens })
+      + hit;
   }
   /* 浮动对话卡片：拖拽 + 缩放 + 最小化，几何记忆 */
   function openChatFloat(focus = true) {
@@ -114,22 +152,22 @@ export async function pageAgent() {
     win = document.createElement("div");
     win.id = "chat-float";
     win.setAttribute("role", "dialog"); // PR-1 a11y：非模态浮窗也补 dialog 语义
-    win.setAttribute("aria-label", "Agent 对话浮窗");
+    win.setAttribute("aria-label", t("agent.chat_float_aria")); // W8-S32 i18n 批 3
     win.style.cssText = `position:fixed;z-index:var(--z-fixed);display:flex;flex-direction:column;
       background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-md);
       box-shadow:var(--shadow);overflow:hidden`;
     win.innerHTML = `
       <div id="cf-head" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);
            background:var(--panel2);cursor:move;user-select:none">
-        <b style="flex:1;font-size:var(--text-sm);color:var(--accent)">💬 对话（历史自动保存）</b>
+        <b style="flex:1;font-size:var(--text-sm);color:var(--accent)">${t("agent.chat_title")}</b>
         <button class="minor" id="cf-min" style="padding:1px 8px">—</button>
         <button class="minor" id="cf-close" style="padding:1px 8px">×</button>
       </div>
       <div id="chat-log" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:var(--space-2);padding:10px"></div>
       <div id="chat-suggest" class="toolbar" style="margin:0;padding:0 10px"></div>
       <div class="toolbar" style="margin:0;padding:6px 10px">
-        <input id='chat-in' style='flex:1' placeholder='例如：分析最近一次 run 并提议参数修改'>
-        <button class='act' id='chat-send'>发送</button>
+        <input id='chat-in' style='flex:1' placeholder='${t("agent.chat_input_ph")}'>
+        <button class='act' id='chat-send'>${t("agent.chat_send")}</button>
       </div>
       <div id="chat-stats" class="muted" style="font-size:var(--text-xs);padding:0 10px 6px"></div>
       <div id="cf-resize" style="position:absolute;right:0;bottom:0;width:16px;height:16px;
@@ -183,15 +221,16 @@ export async function pageAgent() {
     win.querySelector("#chat-send").onclick = sendChat;
     win.querySelector("#chat-in").onkeydown = (e) => { if (e.key === "Enter") sendChat(); };
     if (focus) document.getElementById("chat-in")?.focus();
-    for (const m of S.chatLog) appendBubble(m.who, m.text, m.tools);
+    for (const m of _chatLog) appendBubble(m.who, m.text, m.tools);
   }
 
   async function loadCfgBadge() {
-    const cfg = await T.api("/api/chat/settings");
+    const cfg = await apiFetch("/api/chat/settings", { signal: viewSignal("agent") });
+    if (cfg.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     T.$("chat-url").value = cfg.base_url || "";
     T.$("chat-model").value = cfg.model || "";
     T.$("chat-cfg-badge").innerHTML = cfg.configured
-      ? T.badge("已配置真实 LLM", "ok") : T.badge("未配置（指令模式）", "muted");
+      ? T.badge(t("agent.cfg_ok"), "ok") : T.badge(t("agent.cfg_none"), "muted");
   }
 
   /* 提案 → 参数 diff 表（当前配方值 vs 提案值） */
@@ -202,7 +241,8 @@ export async function pageAgent() {
     const recipePath = p.recipe || "";
     let rows = "";
     try {
-      const cur = await T.api("/api/recipe?path=" + encodeURIComponent(recipePath));
+      const cur = await apiFetch("/api/recipe?path=" + encodeURIComponent(recipePath),
+        { signal: viewSignal("agent") });
       const base = {};
       for (const x of cur.params || []) base[x.name] = x.value;
       const params = p.params || {};
@@ -212,36 +252,39 @@ export async function pageAgent() {
         const pct = (typeof old === "number" && typeof nv === "number" && old)
           ? ` (${nv > old ? "+" : ""}${((nv - old) / old * 100).toFixed(1)}%)` : "";
         const cls = changed ? "color:var(--warn)" : "";
-        return `<tr><td><b>${esc(n)}</b></td><td class="muted">${esc(old ?? "(新增)")}</td>
+        return `<tr><td><b>${esc(n)}</b></td><td class="muted">${esc(old ?? t("agent.diff_new"))}</td>
           <td style="${cls}">${esc(nv)}${pct}</td></tr>`;
       }).join("");
     } catch {
-      rows = `<tr><td colspan="3" class="muted">当前配方值不可读，仅列提案值</td></tr>` +
+      rows = `<tr><td colspan="3" class="muted">${t("agent.proposal_unreadable")}</td></tr>` +
         Object.entries(p.params || {}).map(([n, nv]) => `<tr><td><b>${esc(n)}</b></td><td>-</td><td>${esc(nv)}</td></tr>`).join("");
     }
-    div.innerHTML = `<b>${escAttr(recipePath)}</b> ${T.badge("参数提案", "warn")}
-      ${kitTable({ columns: ["参数", "当前值", "提案值"], rowsHtml: rows, empty: "" })}
-      <div class="toolbar" style="margin-top:var(--space-2)"><button class='act'>批准并执行</button>
+    div.innerHTML = `<b>${escAttr(recipePath)}</b> ${T.badge(t("agent.badge_proposal"), "warn")}
+      ${kitTable({ columns: [t("agent.th_param"), t("agent.th_current"), t("agent.th_proposed")], rowsHtml: rows, empty: "" })}
+      <div class="toolbar" style="margin-top:var(--space-2)"><button class='act'>${t("agent.approve_run")}</button>
       <span class="muted">token: ${escAttr(p.token_hash || "")}</span></div>`;
     div.querySelector("button").onclick = async () => {
       // W7-C（加载态统一）：审批 POST 期间禁用防双击重复批准；失败恢复可重试
       const approveBtn = div.querySelector("button");
       approveBtn.disabled = true;
-      const r = await T.api("/api/inbox/approve", {
+      const r = await apiFetch("/api/inbox/approve", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token_hash: p.token_hash, recipe: recipePath, adapter: "fake" }),
       });
       if (!r.ok) approveBtn.disabled = false;
-      T.msg(r.ok ? "已批准并执行" : "审批失败: " + (r.error || r.errors?.join("; ") || ""), !!r.ok);
+      T.msg(r.ok ? t("agent.approved_ok")
+                  : t("agent.approve_fail_lead") + (r.error || r.errors?.join("; ") || ""),
+            !!r.ok);
       loadInbox();
     };
     return div;
   }
 
   async function loadInbox() {
-    const d = await T.api("/api/inbox");
+    const d = await apiFetch("/api/inbox", { signal: viewSignal("agent") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const el = T.$("inbox-list");
-    if (!(d.pending || []).length) { el.innerHTML = "<span class='muted'>无待审批提案</span>"; return; }
+    if (!(d.pending || []).length) { el.innerHTML = "<span class='muted'>" + t("agent.no_pending") + "</span>"; return; }
     el.innerHTML = "";
     for (const p of d.pending)
       el.appendChild(await renderProposal(p));
@@ -251,10 +294,11 @@ export async function pageAgent() {
   async function loadSandbox() {
     const el = T.$("sandbox-list");
     if (!el) return;
-    const d = await T.api("/api/sandbox/drafts");
-    if (!d.ok) { el.innerHTML = "<span class='muted'>沙箱状态不可读</span>"; return; }
+    const d = await apiFetch("/api/sandbox/drafts", { signal: viewSignal("agent") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
+    if (!d.ok) { el.innerHTML = "<span class='muted'>" + t("agent.sandbox_unreadable") + "</span>"; return; }
     if (!(d.drafts || []).length) {
-      el.innerHTML = "<span class='muted'>无沙箱草稿（agent 在对话中编辑配方后会出现在这里）</span>";
+      el.innerHTML = "<span class='muted'>" + t("agent.sandbox_empty") + "</span>";
       return;
     }
     el.innerHTML = "";
@@ -265,38 +309,40 @@ export async function pageAgent() {
       const changed = Object.entries(item.params_changed || {});
       const rows = changed.length
         ? changed.map(([n, c]) =>
-            `<tr><td><b>${esc(n)}</b></td><td class="muted">${esc(c.old ?? "(新增)")}</td><td style="color:var(--warn)">${esc(c.new ?? "(删除)")}</td></tr>`).join("")
-        : `<tr><td colspan="3" class="muted">无参数差异${item.recipe ? "" : "（草稿未匹配到 recipes/ 源配方）"}</td></tr>`;
+            `<tr><td><b>${esc(n)}</b></td><td class="muted">${esc(c.old ?? t("agent.diff_new"))}</td><td style="color:var(--warn)">${esc(c.new ?? t("agent.diff_del"))}</td></tr>`).join("")
+        : `<tr><td colspan="3" class="muted">${t("agent.no_param_diff")}${item.recipe ? "" : t("agent.draft_unmatched_suffix")}</td></tr>`;
       div.innerHTML = `<b>${escAttr(item.draft.split(/[\\/]/).pop())}</b>
-        ${item.recipe ? T.badge(item.recipe, "ok") : T.badge("来源未匹配", "muted")}
-        <table><thead><tr><th scope="col">参数</th><th scope="col">当前值</th><th scope="col">草稿值</th></tr></thead><tbody>${rows}</tbody></table>
+        ${item.recipe ? T.badge(item.recipe, "ok") : T.badge(t("agent.source_unmatched"), "muted")}
+        <table><thead><tr><th scope="col">${t("agent.th_param")}</th><th scope="col">${t("agent.th_current")}</th><th scope="col">${t("agent.th_draft")}</th></tr></thead><tbody>${rows}</tbody></table>
         <div class="toolbar" style="margin-top:var(--space-2)">
-          ${item.recipe ? `<button class='minor' data-act='diff'>查看 diff</button>
-          <button class='act' data-act='promote'>送审批（进收件箱）</button>` : ""}
-          <span class="muted">promote 只放行 params 差异，其余节差异会被 Gate 拒绝</span></div>
+          ${item.recipe ? `<button class='minor' data-act='diff'>${t("agent.diff_view")}</button>
+          <button class='act' data-act='promote'>${t("agent.promote_send")}</button>` : ""}
+          <span class="muted">${t("agent.promote_note")}</span></div>
         <pre data-role='diffbox' style='display:none;max-height:260px;overflow:auto'></pre>`;
       const diffBtn = div.querySelector("[data-act='diff']");
       if (diffBtn) diffBtn.onclick = async () => {
         const box = div.querySelector("[data-role='diffbox']");
         if (box.style.display === "none") {
-          const r = await T.api("/api/sandbox/diff?recipe=" + encodeURIComponent(item.recipe));
-          box.textContent = r.ok ? (r.unified_diff || "(无文本差异)") : (r.error || "diff 失败");
+          const r = await apiFetch("/api/sandbox/diff?recipe=" + encodeURIComponent(item.recipe));
+          box.textContent = r.ok ? (r.unified_diff || t("agent.diff_none")) : (r.error || t("agent.diff_fail"));
           box.style.display = "";
-          diffBtn.textContent = "收起 diff";
-        } else { box.style.display = "none"; diffBtn.textContent = "查看 diff"; }
+          diffBtn.textContent = t("agent.diff_hide");
+        } else { box.style.display = "none"; diffBtn.textContent = t("agent.diff_view"); }
       };
       const promoteBtn = div.querySelector("[data-act='promote']");
       if (promoteBtn) promoteBtn.onclick = async () => {
         promoteBtn.disabled = true;
-        const r = await T.api("/api/sandbox/promote", {
+        const r = await apiFetch("/api/sandbox/promote", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ recipe: item.recipe }),
+          timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：三层 Gate 分钟级
         });
         if (r.ok) {
-          T.msg("已生成提案，等你在收件箱批准", true);
+          T.msg(t("agent.promoted_ok"), true);
           loadInbox();
         } else {
-          T.msg("promote 被拒: " + (r.error || (r.errors || []).join("; ") || "未知原因"), false);
+          T.msg(t("agent.promote_reject_lead") +
+                (r.error || (r.errors || []).join("; ") || t("agent.reason_unknown")), false);
           promoteBtn.disabled = false;
         }
       };
@@ -311,33 +357,35 @@ export async function pageAgent() {
     if (!text || (btn && btn.disabled)) return; // W7-C：发送中防重入
     inp.value = "";
     appendBubble("user", text);
-    S.chatLog.push({ who: "user", text });
-    localStorage.setItem("rfauto-chat", JSON.stringify(S.chatLog.slice(-100)));
+    _chatLog.push({ who: "user", text });
+    localStorage.setItem("rfauto-chat", JSON.stringify(_chatLog.slice(-100)));
     log.insertAdjacentHTML("beforeend",
-      `<div class='bubble bot'><span class='spin'></span> 思考中（可能连续调用多个工具，约 10-60 秒，复杂任务可能更久）…</div>`);
+      `<div class='bubble bot'><span class='spin'></span> ${t("agent.chat_thinking")}</div>`);
     log.scrollTop = log.scrollHeight;
     // W7-C（加载态统一）：fetch 期间发送钮 disabled+文案提示（与 tune/uq 既有
-    // 口径同构）；api() 已全局兜错不抛，finally 恢复兜异常路径不卡死按钮
-    if (btn) { btn.disabled = true; btn.textContent = "发送中…"; }
+    // 口径同构）；api() 已全局兜错不抛，finally 恢复兜异常路径不卡死按钮。
+    // W8-S32 i18n 批 3：发送/发送中文案 t() 烘焙
+    if (btn) { btn.disabled = true; btn.textContent = t("agent.chat_sending"); }
     let r;
     try {
-      r = await T.api("/api/chat", {
+      r = await apiFetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
+        timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：LLM 回复分钟级
       });
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = "发送"; }
+      if (btn) { btn.disabled = false; btn.textContent = t("agent.chat_send"); }
     }
     const reply = r.reply || r.response || r.text || JSON.stringify(r);
     log.lastChild.remove();
     appendBubble("bot", reply, r.tools);
-    S.chatLog.push({ who: "bot", text: reply, tools: r.tools });
-    localStorage.setItem("rfauto-chat", JSON.stringify(S.chatLog.slice(-100)));
+    _chatLog.push({ who: "bot", text: reply, tools: r.tools });
+    localStorage.setItem("rfauto-chat", JSON.stringify(_chatLog.slice(-100)));
     await updateStats();
     if (r.action && r.action !== "chat" && r.action !== "unknown") loadInbox();
   }
 
-  /* R-1（aurora_e W4-S17）：refresh 局部刷新转发登记（agentCtx 消费）——
+  /* R-1（架构批 W4-S17）：refresh 局部刷新转发登记（agentCtx 消费）——
      数据面板（模型设置徽章/审批收件箱/沙箱草稿/用量统计）重拉；对话浮窗与
      气泡历史不动（appendBubble 非幂等，整页重跑会重复追加气泡）。内置提示词
      为静态系统 prompt（进页拉取一次即可），刷新不重拉。 */
@@ -349,7 +397,7 @@ export async function pageAgent() {
   };
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 agentCtx ═════════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 agentCtx ═════════════
    refresh=数据面板重拉——闭包经模块级引用转发（sparams/campaign 同款模式）
    + 未进页 null 守卫。无轮询面，leave 不需要。 */
 export const agentCtx = {

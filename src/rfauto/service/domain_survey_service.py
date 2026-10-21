@@ -1,4 +1,4 @@
-"""域词表巡检引擎（UX-B13/Z-8 survey domains，aurora_e W2-S10 U3）。
+"""域词表巡检引擎（UX-B13/Z-8 survey domains，架构批 W2-S10 U3）。
 
 把"域扩张靠冲刺缺巡检"的机制根源（ux_vertical B4 探针实证）制度化：
 对 UI/服务层暴露的三张 domains/分组词表做**词表项 ↔ 实际注册面双向对账**
@@ -51,6 +51,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 #: mcp_tools/ 豁免模块（无注册装饰器属正常：包 init 与 mcp 实例承载面）
 _MCP_TOOLS_EXEMPT_MODULES = {"__init__", "_core"}
 
+#: cli/domains/ 豁免模块（无域语义属正常：包 init 与共享核心面）——
+#: 孤儿判定与模块计数共用单源（W6-P3-5③：曾两处口径，计数处硬编码 −2，
+#: 豁免集扩张即计数漂移）
+_CLI_DOMAINS_EXEMPT_MODULES = frozenset({"__init__", "_core"})
+
 
 def _read(path: Path) -> str | None:
     try:
@@ -61,10 +66,25 @@ def _read(path: Path) -> str | None:
 
 # ─── V1 计算器组词表（AST 直读，不 import core）────────────────────────────
 
-def _parse_calc_registry(source: str) -> tuple[list[str], dict[str, str]]:
-    """registry.py 源 → (CALC_GROUP_ORDER, CALC_GROUP_TABLE)。"""
+def _const_str(node: ast.expr | None) -> str | None:
+    """AST 节点 → 字符串字面量值；非 str 字面量（名字引用/拼接/**解包的
+    None 键）返回 None（W5-P3-5/W6-P3-5①：调用方跳过而非裸 ``.value``
+    AttributeError 出轨迹）。"""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def _parse_calc_registry(source: str) -> tuple[list[str], dict[str, str], int]:
+    """registry.py 源 → (CALC_GROUP_ORDER, CALC_GROUP_TABLE, 跳过条目数)。
+
+    非字面量条目跳过不入解析结果、计数如实返回（W5-P3-5：曾直接
+    ``el.value``/``k.value`` 裸取，表达式条目使引擎 AttributeError 而非
+    error 信封；跳过使对应词进 V1 对账红面——漏报方向安全）。
+    """
     order: list[str] = []
     table: dict[str, str] = {}
+    skipped = 0
     for node in ast.parse(source).body:
         target = getattr(node, "target", None)
         if target is None and isinstance(node, ast.Assign) and node.targets:
@@ -73,12 +93,22 @@ def _parse_calc_registry(source: str) -> tuple[list[str], dict[str, str]]:
             continue
         if target.id == "CALC_GROUP_ORDER" and isinstance(
                 node.value, (ast.Tuple, ast.List)):
-            order = [el.value for el in node.value.elts]
+            for el in node.value.elts:
+                val = _const_str(el)
+                if val is None:
+                    skipped += 1
+                else:
+                    order.append(val)
         elif target.id == "CALC_GROUP_TABLE" and isinstance(node.value, ast.Dict):
-            table = {k.value: v.value
-                     for k, v in zip(node.value.keys, node.value.values,
-                                     strict=False)}
-    return order, table
+            for k_node, v_node in zip(node.value.keys, node.value.values,
+                                      strict=False):
+                key = _const_str(k_node)
+                val = _const_str(v_node)
+                if key is None or val is None:
+                    skipped += 1
+                else:
+                    table[key] = val
+    return order, table, skipped
 
 
 _DECORATOR_NAME = re.compile(r"@register_calculator\(")
@@ -91,20 +121,32 @@ def _first_str_arg(call: ast.Call) -> str | None:
     return None
 
 
-def _registered_calc_keys(family_dir: Path) -> list[str]:
-    """calc_families/*.py 的 @register_calculator 首参键（AST 扫，保序去重）。"""
+def _registered_calc_keys(family_dir: Path) -> tuple[list[str], list[str]]:
+    """calc_families/*.py 的 @register_calculator 首参键（AST 扫，保序去重）。
+
+    返回 (keys, unparsable_files)：语法不可解析的族文件跳过并如实列名
+    （W6-P3-5① 同面收口——曾裸 ``ast.parse`` 使单个半成品/损坏族文件
+    让整个巡检出轨迹而非降级；在制席位半成品按 #228 不红活体基线，
+    跳过面入报告计数可见，不静默）。
+    """
     keys: list[str] = []
+    unparsable: list[str] = []
     for path in sorted(family_dir.glob("*.py")):
         text = _read(path)
         if text is None:
             continue
-        for node in ast.walk(ast.parse(text)):
+        try:
+            tree = ast.parse(text)
+        except SyntaxError:
+            unparsable.append(path.stem)
+            continue
+        for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
                     and node.func.id == "register_calculator":
                 key = _first_str_arg(node)
                 if key is not None and key not in keys:
                     keys.append(key)
-    return keys
+    return keys, unparsable
 
 
 # ─── V2 CLI 域词表（运行时枚举 + 源可达面）─────────────────────────────────
@@ -133,7 +175,7 @@ def _orphan_cli_domain_modules(domains_dir: Path,
     orphans: list[str] = []
     for path in sorted(domains_dir.glob("*.py")):
         name = path.stem
-        if name in ("__init__", "_core"):
+        if name in _CLI_DOMAINS_EXEMPT_MODULES:
             continue
         referenced = any(
             f"domains.{name}" in src
@@ -146,15 +188,23 @@ def _orphan_cli_domain_modules(domains_dir: Path,
 # ─── V3 MCP 工具组词表 ──────────────────────────────────────────────────────
 
 def _mcp_tool_registration_counts(tools_dir: Path) -> dict[str, dict[str, int]]:
-    """mcp_tools/*.py → {module: {tool: n, resource: n}}（装饰器行扫描）。"""
+    r"""mcp_tools/*.py → {module: {tool: n, resource: n}}（装饰器行扫描）。
+
+    判定口径（W5-P3-4/W6-P3-5②）：``\s*`` 容缩进形态（类方法/if 块内
+    注册曾因行首锚漏扫误判"死组模块"）；resource 侧 ``\b`` 不强制括号
+    （裸 ``@mcp.resource`` 风格曾必误判；``\b`` 对 ``@mcp.resource(`` 与
+    ``@mcp.resource_x`` 分别兼容/排除——下划线延续标识符无词边界）。
+    """
+    tool_re = re.compile(r"^\s*@mcp\.tool\b", re.MULTILINE)
+    resource_re = re.compile(r"^\s*@mcp\.resource\b", re.MULTILINE)
     counts: dict[str, dict[str, int]] = {}
     for path in sorted(tools_dir.glob("*.py")):
         text = _read(path)
         if text is None:
             continue
         counts[path.stem] = {
-            "tool": len(re.findall(r"^@mcp\.tool\b", text, re.MULTILINE)),
-            "resource": len(re.findall(r"^@mcp\.resource\(", text, re.MULTILINE)),
+            "tool": len(tool_re.findall(text)),
+            "resource": len(resource_re.findall(text)),
         }
     return counts
 
@@ -198,11 +248,16 @@ def domain_survey(
     reg_src = _read(reg_path)
     if reg_src is None:
         return error_envelope(f"计算器注册表不可读: {reg_path}")
-    order, table = _parse_calc_registry(reg_src)
+    try:
+        order, table, n_literal_skipped = _parse_calc_registry(reg_src)
+    except SyntaxError as exc:
+        # 输入面语法损坏同"不可读"契约=error 信封（W6-P3-5① 同面：
+        # 曾直接出 SyntaxError 轨迹，脚本 rc2 口径拿不到）
+        return error_envelope(f"计算器注册表语法不可解析: {reg_path}: {exc}")
     table_values = set(table.values())
     v1_orphan = [o for o in order if o not in table_values]
     v1_missing = sorted(table_values - set(order))
-    calc_keys = _registered_calc_keys(reg_path.parent)
+    calc_keys, unparsable_families = _registered_calc_keys(reg_path.parent)
     calc_keys_ungrouped = [k for k in calc_keys if k not in table]
     group_key_counts: dict[str, int] = {}
     for group in table.values():
@@ -300,6 +355,8 @@ def domain_survey(
             "group_key_counts": dict(sorted(group_key_counts.items())),
             "registered_keys": len(calc_keys),
             "registered_keys_ungrouped": calc_keys_ungrouped,
+            "non_literal_entries_skipped": n_literal_skipped,
+            "family_files_unparsable": unparsable_families,
         },
         "cli_domains": {
             "top_level_group_count": len(groups),
@@ -307,7 +364,9 @@ def domain_survey(
             "duplicate_groups": dup_groups,
             "empty_groups": empty_groups,
             "nameless_groups": nameless_groups,
-            "domain_module_count": len(list(domains_dir.glob("*.py"))) - 2,
+            "domain_module_count": sum(
+                1 for p in domains_dir.glob("*.py")
+                if p.stem not in _CLI_DOMAINS_EXEMPT_MODULES),
             "orphan_modules": orphan_modules,
         },
         "mcp_toolsets": {

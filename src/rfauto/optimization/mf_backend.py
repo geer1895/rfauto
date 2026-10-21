@@ -175,7 +175,7 @@ def _hv_objectives_from_recipe(recipe_data: dict[str, Any],
     return out
 
 
-def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solver_versions=None):
+def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solver_versions=None) -> dict[str, Any]:
     """低/高保真 trial 按 params 匹配 → S11 差与排序翻转计数（A-05 显式化）。
 
     cost 语义（A-05，#117 邻形修正）：缺 cost 不再隐式按 0.0 参与排序比较
@@ -223,7 +223,7 @@ def compute_fidelity_delta(low_trials, high_trials, freq_ghz=None, seed=42, solv
             "seed": seed, "solver_versions": solver_versions or {}}
 
 
-def mf_study_names(recipe_path, *, adapter_low, adapter_high, n_phase2, seed):
+def mf_study_names(recipe_path, *, adapter_low, adapter_high, n_phase2, seed) -> dict[str, Any]:
     """稳定派生 mf 两阶段 study 名（#148 断点续跑：study 名去 run_id 化）。
 
     名字 = ``mf_p1_`` / ``mf_p2_`` + SHA-256(配方内容 + 适配器组合 + k(n_phase2)
@@ -259,7 +259,7 @@ def mf_study_names(recipe_path, *, adapter_low, adapter_high, n_phase2, seed):
 
 
 def run_multifidelity(recipe_path, *, adapter_low="fake", adapter_high="fake",
-                      n_phase1=40, n_phase2=5, seed=42, resume=False):
+                      n_phase1=40, n_phase2=5, seed=42, resume=False) -> dict[str, Any]:
     """两阶段多保真优化（Phase1 粗筛 → HV 选点 → Phase2 精算）。
 
     断点续跑（C18，#148）：study 名稳定派生（:func:`mf_study_names`），Phase1

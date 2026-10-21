@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **117** 组 / **270** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **118** 组 / **273** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -29,7 +29,7 @@
 | `correlate` | 1 | — | 仿真 vs 测量相关性分析。 |
 | `cryo` | 1 | — | 低温材料面（F-H.4：铜面全量+可选超导节/Q 分解估计） |
 | `dag` | 2 | — | DAG 执行基座（断点续跑/CAS/watchdog/#261 互斥；pipeline.dag_runner） |
-| `datasets` | 8 | `datasets`（4 个） | 数据集注册表 v2（runs 点级数据 → Parquet + SQL 查询） |
+| `datasets` | 9 | `datasets`（4 个） | 数据集注册表 v2（runs 点级数据 → Parquet + SQL 查询） |
 | `datasheet` | 1 | — | 器件 datasheet 生成（EP-4：run 报告/模板名义 → 规格书 md/HTML） |
 | `db` | 8 | `db`（6 个） | 注册表数据库（SQLite 事务型注册表 + DuckDB 分析直读；零服务器） |
 | `design` | 2 | — | level2 设计链（NL 意图→族路由→综合→kickoff 草稿→闭环） |
@@ -89,7 +89,7 @@
 | `repro-verify` | 1 | — | 校验复现清单（产物三态差异+环境 packages/lock 差异，如实报告）。 |
 | `rest` | 1 | — | REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读） |
 | `run` | 1 | — | 单次仿真（build → solve → post → 导出）。 |
-| `runs` | 8 | `runs`（7 个） | run 历史对比 |
+| `runs` | 9 | `runs`（7 个） | run 历史对比 |
 | `sandbox` | 3 | — | agent 配方沙箱治理（草稿列表/差异/三层 Gate 提案） |
 | `sar` | 1 | — | SAR 合规后处理（DP-18 C10c） |
 | `self-heal` | 1 | — | 自愈环只读诊断（F5：日志面→确定性 critique→根因/建议） |
@@ -118,6 +118,7 @@
 | `ui` | 1 | — | 启动人工核验 UI（浏览器查看/修改配方、3D 模型、S 参数与中间产物）。 |
 | `uq` | 4 | `uq`（5 个） | 公差/良率收口（WP4.2：名义点良率 / 设计中心化 / D9 温区良率） |
 | `validate` | 1 | — | 校验配方文件（不执行仿真）。 |
+| `verdict-summary` | 1 | — | verdict.json → 人读摘要（总判定+门清单+关键指标，确定性零 LLM）。 |
 | `vna` | 4 | `vna`（3 个） | VNA 测量闭环（DP-11：En 相关性报告 + 离线回放） |
 | `vna-replay` | 1 | — | mock 仪表采集→校准→相关全链回放（零硬件；硬件阻塞下的回归入口）。 |
 | `warm-start` | 1 | — | 数据集历史样本 → warm-start 先验注入优化（相似度门在 warm_start 内）。 |

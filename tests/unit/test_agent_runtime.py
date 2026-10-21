@@ -71,7 +71,7 @@ class TestRuntimeRegistry:
             assert "_fake_test" in RuntimeRegistry.available()
             assert isinstance(RuntimeRegistry.create("_fake_test"), Fake)
         finally:
-            RuntimeRegistry._runtimes.pop("_fake_test", None)
+            RuntimeRegistry._kit.unregister("_fake_test")
 
     def test_unknown_name_raises(self):
         from rfauto.service.agent_runtime import RuntimeRegistry
@@ -283,8 +283,11 @@ class TestSessionFormat:
         assert doc["history"][0]["role"] == "user"
         assert doc["stats"]["turns"] == 1
 
-    def test_agentchat_reset_clears_state(self, monkeypatch):
-        from rfauto.service import r3_services
+    def test_agentchat_reset_clears_state(self, tmp_path, monkeypatch):
+        from rfauto.service import agent_runtime, r3_services
+        # reset 落 session 档走 cwd 相对 SESSIONS_DIR——钉到 tmp（#144 家族
+        # 终门实证：未钉的 reset 每 gate 一个 fallback 会话档污染真实 runs/）
+        monkeypatch.setattr(agent_runtime, "SESSIONS_DIR", tmp_path / "sess")
         monkeypatch.setattr(r3_services, "get_chat_settings",
                             lambda: {"ok": True, "configured": False})
         chat = r3_services.AgentChat()

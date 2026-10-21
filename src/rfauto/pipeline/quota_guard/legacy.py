@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:  # 仅注解引用（future annotations 惰性求值，零运行时依赖）
-    from .ledger import BudgetLimits, CostLedger
+from .ledger import BudgetLimits, CostLedger, QuotaExceededError
 
 
 @dataclass
@@ -83,6 +82,6 @@ class QuotaGuard:
         }
 
 
-class QuotaExceededError(Exception):
-    """Raised when a quota limit is exceeded."""
-    pass
+# QuotaExceededError 单源在 ledger（架构批 W2-S2 S8/quota2 异常归位；
+# 本模块自 ledger 导入保名再导出——QuotaGuard.check_trial/check_wall_time
+# 抛出的类对象与 BudgetExceededError 的基类是同一个，零行为变化）。

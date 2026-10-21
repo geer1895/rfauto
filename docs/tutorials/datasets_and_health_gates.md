@@ -6,6 +6,9 @@
 > 读完你将知道：物化、查 manifest、行级查询、覆盖度/可见性，以及
 > healthy/suspect/unhealthy 三态与 PASS/WARN/FAIL/UNKNOWN 四级因子的
 > 如实判读。
+> 英文版（English version）：docs/tutorials/datasets_and_health_gates_en.md
+> （2026-10-19 全量复测同笔：注册表 20 数据集、三态计数
+> healthy 5573/unhealthy 118/suspect 20 与本文一致）。
 
 ## 0. 前置
 

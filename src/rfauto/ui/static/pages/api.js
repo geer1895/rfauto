@@ -1,4 +1,4 @@
-/* rfauto 工作台统一 API 请求层（aurora_d UI-R12 任务2，前端深化席）。
+/* rfauto 工作台统一 API 请求层（架构批 UI-R12 任务2，前端深化席）。
    收敛目标：pages/ 各视图分散的 fetch/T.api 调用共用单一请求管道——
    ① 统一错误信封：{ok:false, error, errors} 与 app.js 全局 api 的消费
      契约同形（视图两种判法 `!d.ok`+d.error / (d.errors||[]).join 兼容）；
@@ -6,13 +6,30 @@
      头（缺省未设置=零新增头——存量请求逐字节等价）；
    ③ AbortController 取消（全部 opt-in）：视图作用域 signal（viewSignal）
      + 切页收束（abortViewSignals，app.js activate 消费）+ 请求超时
-     （timeoutMs）。未传 opts 的调用与旧 T.api 行为逐字节等价。
+     （timeoutMs）。
+   ④ 缺省超时（架构批 W1-S1，R1 审计 P9-11 v9 Top4——能力在档零消费
+     的补全；端点挂起=视图永久 pending，worker 池被慢请求饿干时正常
+     页面是第一批殃及者）：**未传 timeoutMs 的请求一律挂 30s 超时**
+     （_DEFAULT_TIMEOUT_MS）；显式 `timeoutMs: 0`=豁免（长跑触发端点
+     POST /api/run、/api/tune/start、/api/calculators/run、/api/uq/yield、
+     /api/chat、/api/hfss/import、/api/sandbox/promote、
+     /api/playground/explore、POST /api/profile——这些本就分钟级，
+     调用点已逐点标注）；
+     显式正数=覆盖缺省。超时错误信息回显超时值（`请求超时（Nms …）`），
+     复用 aborted 形态零新呈现面（不 toast，与主动取消同链）。
+     **契约变更登记**：本条之前"未传 opts 的调用与旧 T.api 行为逐字节
+     等价（fetch init 原样缺席）"——缺省超时后无 opts 请求也带超时
+     signal（唯一差异；其余快照路径 timeoutMs:0 仍 init 缺席）。
    层次：本模块零依赖 pages/ 其他模块（node 裸 import 可测——桩 fetch 即
-   真跑）；app.js 的全局 api（T.api 载体，70 处存量调用点）保形消费
-   apiRequestInit 单源（其兜错信封与 msg 呈现被 test_ui_nav_focus 源码钉
-   逐字钉住，留 app.js 本体不动）；渐进迁移视图直接 import apiFetch/
-   viewSignal（本席先迁 dashboard/runs/detail/calibration/data 五高频页，
-   其余 T.api 调用点后续席位按同一口径迁移）。 */
+   真跑）；app.js 的全局 api（T.api 载体）保形消费 apiRequestInit 单源
+   （其兜错信封与 msg 呈现被 test_ui_nav_focus 源码钉逐字钉住，留 app.js
+   本体不动）；迁移终态（架构批 W4-S13，R1 §面4 P8-9 收口）：全部视图
+   （dashboard/runs/detail/calibration/data 五页=架构批 UI-R12；palette+
+   agent/recipe/tune=架构批 W3-S9；余量 15 文件=sparams/reports/fieldviz/
+   tools/loopboard/optstack/playground/solvers/import/gallery/campaign/
+   profile/queue/timeline 视图族+filebrowser 模态，37 点 T.api+1 点裸
+   fetch=架构批 W4-S13）均走本层，pages/ 面 T.api 计数 65→58→37→0
+   （终态防回潮钉 test_ui_r12_deepening）。 */
 
 /* ── token 传递（默认关闭：未设置不加任何头）───────────────────────── */
 let _token = null;
@@ -24,6 +41,23 @@ export function apiTokenSet() {
   return _token != null;
 }
 
+/* token 注入装配（W6-S2，R2 审计 §面5.4 / Top10 #5——通道建成后的首个
+   消费点）：服务端 RFAUTO_UI_TOKEN 设定时 index 响应注入
+   <meta name="rfauto-ui-token">（ui/server.py 同 env 源中继——浏览器进程
+   读不到服务端 env）；本模块装配期读取一次 → setApiToken → 之后全部
+   apiFetch/app.js api 请求自动附 Authorization 头（apiRequestInit 单源）。
+   守卫：无 document（node 裸 import 行为钉）或 querySelector 缺席静默跳过
+   （#105 best-effort：装配面故障不得阻断请求层本体）；meta 缺席（服务端
+   未启用鉴权）=零行为变化。安全语义：单操作者部署语境（页面可达者即持
+   令者），门面价值在非浏览器通道写端点被拒；逐用户登录态不在本批。 */
+if (typeof document !== "undefined" &&
+    typeof document.querySelector === "function") {
+  try {
+    const m = document.querySelector('meta[name="rfauto-ui-token"]');
+    if (m && m.content) setApiToken(m.content);
+  } catch { /* best-effort 静默 */ }
+}
+
 /* ── 失败呈现注入（app.js msg 单源；node/异常部署缺席时静默，#105）── */
 let _notifier = null;
 export function setApiNotifier(fn) {
@@ -32,6 +66,15 @@ export function setApiNotifier(fn) {
 
 /* 失败文案（与 app.js api 兜底同串：两管道呈现语义一致）。 */
 const _ERR_TEXT = "请求失败（网络或服务器异常）";
+
+/* 缺省超时（P9-11，架构批 W1-S1）：30s 量级覆盖全部只读/快端点；
+   长跑触发端点由调用点显式 `timeoutMs: 0` 豁免（见头注④清单）。 */
+const _DEFAULT_TIMEOUT_MS = 30000;
+
+/* 超时文案（回显超时值——调用方可辨识是缺省 30s 还是显式值触发）。 */
+function _timeoutErrText(ms) {
+  return `请求超时（${ms}ms 无响应，已中止）`;
+}
 
 /* AbortSignal 组合：AbortSignal.any 在场直接用；缺席引擎（旧 Safari 等，
    与 sse/polling 降级纪律同款）手工前向 abort。空集返回 undefined=
@@ -65,24 +108,31 @@ export function apiRequestInit(opts) {
 
 /* 统一请求入口：成功=解析后的 JSON 信封；失败=同形错误信封（aborted
    形态多带 aborted:true 且不触发 toast——调用方主动取消不是网络故障，
-   视图以 `if (d.aborted) return;` 短路后续渲染）。 */
+   视图以 `if (d.aborted) return;` 短路后续渲染；缺省超时（头注④）同入
+   aborted 形态，error 文案回显超时值）。 */
 export async function apiFetch(url, opts = null) {
   let init = opts || undefined;
   let cancelTimeout = () => {};
+  let timedOutMs = 0; // >0=本请求因超时被中止（回显值；caller abort 不置位）
   try {
     const o = opts || {};
-    if (o.timeoutMs != null && o.timeoutMs > 0 &&
-        typeof AbortController === "function") {
+    const to = o.timeoutMs == null ? _DEFAULT_TIMEOUT_MS : o.timeoutMs;
+    if (to > 0 && typeof AbortController === "function") {
       const tc = new AbortController();
-      const t = setTimeout(() => tc.abort(), o.timeoutMs);
+      const t = setTimeout(() => { timedOutMs = to; tc.abort(); }, to);
       cancelTimeout = () => clearTimeout(t);
       init = { ...o, signal: composeSignals([o.signal, tc.signal]) };
     }
     const r = await fetch(url, apiRequestInit(init));
     return await r.json(); // await 留在 try 内：json 解析失败同样入 catch
   } catch (e) {
-    if (e && (e.name === "AbortError" || e.name === "TimeoutError"))
+    if (e && (e.name === "AbortError" || e.name === "TimeoutError")) {
+      if (timedOutMs > 0) {
+        const msg = _timeoutErrText(timedOutMs);
+        return { ok: false, error: msg, errors: [msg], aborted: true };
+      }
       return { ok: false, error: _ERR_TEXT, errors: [_ERR_TEXT], aborted: true };
+    }
     if (_notifier) try { _notifier(_ERR_TEXT, false); } catch { /* 静默 */ }
     return { ok: false, error: _ERR_TEXT, errors: [_ERR_TEXT] };
   } finally {

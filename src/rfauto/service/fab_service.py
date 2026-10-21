@@ -665,7 +665,8 @@ def _mc_from_model(
     模型无批路径，_mc_yield 走逐点回退，bounds 仅占位）。返回含内部
     ``_draw_columns`` 键，消费方只取公共键。
     """
-    from rfauto.service.uq_service import _mc_yield
+    # T1 解环：MC 判据簇改读 mc_yield_eval 叶（fab→uq 环边断）
+    from rfauto.service.mc_yield_eval import _mc_yield
 
     bounds = getattr(model, "bounds", None)
     if not isinstance(bounds, dict) or not bounds:

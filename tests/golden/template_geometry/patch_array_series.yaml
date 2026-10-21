@@ -12,7 +12,7 @@ params:
   link_len_mm: 15.2876
   feed_margin_mm: 8.0
 status: ok
-script_sha256: 5cd9fb6f397b8ab6f8f7008aebfa374463f5f0e36e7a7706245c98a5485144d5
+script_sha256: 6c87259b02a5ae8a4bef9b4c7581b69967083d40904a210564634b94348d19a0
 csx:
   n_primitives: 13
   props:

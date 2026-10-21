@@ -17,6 +17,12 @@
 参数完备件+W7-B 战役判据=55 文件/497 门行，gate 85.31%/param 69.42% 棘轮
 上抬）。本文件数字钉以登记面 II 为准，旧值留注见各断言旁注。
 
+冻结测试宇宙覆盖层（EP-2 扩面二批 2026-10）：test_id 扫面输入从 gitignored
+runs/ 缓存剥离为 committed curated 层 knowledge/criteria/trace_test_universe.yaml
+（再生器所有，解析优先级=显式入参>覆盖层>缓存>collect）——真树幂等锚的
+再生不再随 runs/ 缓存增长漂移；新增测试模块走 --refresh-test-universe 显式
+入扫。防脱钩三钉见 test_real_tree_regenerates_byte_identical。
+
 真树锚（index/tests 缓存缺在时诚实 skip——本测试钉工作区资产，不伪造）。
 """
 
@@ -41,12 +47,15 @@ from criteria_index_build import (
     extract_gate_lines,
     migrate_v2,
     parse_table_row,
+    read_test_universe,
 )
 
 INDEX_PATH = _REPO_ROOT / "knowledge" / "criteria" / "index.yaml"
 V2_DIR = _REPO_ROOT / "knowledge" / "criteria" / "v2"
 SKELETON_DIR = V2_DIR / "skeleton"
 TRACE_PATH = _REPO_ROOT / "knowledge" / "trace_matrix.yaml"
+TEST_UNIVERSE_PATH = (_REPO_ROOT / "knowledge" / "criteria"
+                      / "trace_test_universe.yaml")
 TESTS_CACHE = _REPO_ROOT / "runs" / "ep2" / "test_universe.txt"
 CURATED_IDS = {"df6_dp10_scan_j1c_coverage", "df5_c3fix_sentinel_four_gates",
                "hfss_interdigital_check_m1"}
@@ -228,21 +237,38 @@ _need_real = pytest.mark.skipif(
          and SKELETON_DIR.is_dir() and TESTS_CACHE.is_file()),
     reason="真树 EP-2 产物不在（干净检出）——不伪造")
 
+_need_real_universe = pytest.mark.skipif(
+    not (INDEX_PATH.is_file() and TRACE_PATH.is_file()
+         and SKELETON_DIR.is_dir() and TEST_UNIVERSE_PATH.is_file()),
+    reason="真树 EP-2 产物/冻结测试宇宙覆盖层不在（干净检出）——不伪造")
 
-@_need_real
+
+@_need_real_universe
 def test_real_tree_regenerates_byte_identical(tmp_path):
     """幂等锚（真树）：同参重生成 → 矩阵与全部骨架逐字节一致（diff=0），
     且 index.yaml 与既有 curated v2 三个文件零改写。
 
     head_commit 取 shipped 骨架的 provenance.commit（生成时点 HEAD）——
     commit 戳=生成输入的一部分（诚实出处语义），并发轨推进 HEAD 后重生成
-    合法地只变 commit 行，不构成幂等违例。"""
+    合法地只变 commit 行，不构成幂等违例。
+
+    test_id 扫面=冻结测试宇宙覆盖层治理（EP-2 扩面二批）：本锚不传
+    test_modules 显式入参，走 migrate_v2 解析链的覆盖层档——runs/ 缓存
+    增长不进入再生（结构性幂等，架构批 遗留红根因消除）。防脱钩三钉：
+    ①覆盖层每个模块在树上真实存在（防陈旧改名静默滞留）；
+    ②再生 source.n_test_modules==len(覆盖层)（覆盖层确为治理输入，未被
+      缓存/collect 回退顶替）；
+    ③再生 links 全部 test_id ⊆ 覆盖层（扫面产物确从覆盖层派生）。"""
     index_bytes = INDEX_PATH.read_bytes()
     curated_files = sorted(V2_DIR.glob("*.yaml"))
     curated_bytes = {p.name: p.read_bytes() for p in curated_files}
     shipped_commit = next(iter(yaml.safe_load(
         p.read_text(encoding="utf-8"))["provenance"]["commit"]
         for p in sorted(SKELETON_DIR.glob("*.yaml"))))
+    universe = read_test_universe(TEST_UNIVERSE_PATH)
+    assert universe, "冻结测试宇宙覆盖层为空/格式坏——再生治理面缺失"
+    for m in universe:  # 防脱钩钉①
+        assert (_REPO_ROOT / m).is_file(), f"覆盖层模块不在树上: {m}"
 
     index_doc = yaml.safe_load(INDEX_PATH.read_text(encoding="utf-8"))
     import hashlib
@@ -251,9 +277,12 @@ def test_real_tree_regenerates_byte_identical(tmp_path):
     summary = migrate_v2(
         index_doc=index_doc, index_sha256=sha, runs_root=_REPO_ROOT / "runs",
         skeleton_dir=tmp_path / "skeleton", trace_out=tmp_path / "trace.yaml",
-        curated_v2_dir=V2_DIR, head_commit=shipped_commit,
-        test_modules=tuple(check_numbers.read_tests_cache(TESTS_CACHE)))
+        curated_v2_dir=V2_DIR, head_commit=shipped_commit)
     assert summary["ok"] is True
+    regen_doc = yaml.safe_load((tmp_path / "trace.yaml").read_text(encoding="utf-8"))
+    assert regen_doc["source"]["n_test_modules"] == len(universe)  # 防脱钩钉②
+    assert {lk["test_id"] for lk in regen_doc["links"] if lk["test_id"]} \
+        <= set(universe)  # 防脱钩钉③
     # 幂等口径（同 idempotency 锚一致）：ratchet 块=运行态棘轮（首次审计
     # --update-ratchet 上抬过，新路径重生成按设计回首批 floor）；其余逐字节
     # 一致。验证方式=把重生成文档的 ratchet 换成 shipped 值后整文档 dump 逐
@@ -262,7 +291,6 @@ def test_real_tree_regenerates_byte_identical(tmp_path):
 
     shipped_text = TRACE_PATH.read_text(encoding="utf-8")
     shipped_doc = yaml.safe_load(shipped_text)
-    regen_doc = yaml.safe_load((tmp_path / "trace.yaml").read_text(encoding="utf-8"))
     assert regen_doc["ratchet"]["gate_min_pct"] == FIRST_BATCH_FLOORS["gate_min_pct"]
     regen_doc["ratchet"] = shipped_doc["ratchet"]
     assert _dump_yaml(regen_doc).replace("\r\n", "\n") == \

@@ -186,10 +186,8 @@ RECIPE = {
 
 
 @pytest.fixture(autouse=True)
-def _isolated_runs(tmp_path, monkeypatch):
+def _isolated_runs(tmp_path, monkeypatch, isolated_cache_off):
     """chdir + 临时 optuna storage + 关缓存（#144：优化循环类测试必须隔离）。"""
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
     db_dir = tmp_path / "runs" / ".optuna"
     db_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(

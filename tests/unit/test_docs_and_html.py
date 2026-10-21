@@ -7,8 +7,9 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 二批单源化）。"""
+    yield
 
 
 def _recipe(tmp_path):

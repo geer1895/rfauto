@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 首批单源化）。"""
     yield
 
 

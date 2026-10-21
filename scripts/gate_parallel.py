@@ -71,6 +71,15 @@ def main(argv: list[str] | None = None) -> int:
     env = os.environ.copy()
     env["OPENBLAS_NUM_THREADS"] = "1"
 
+    # 慢件分层三态（架构批 R3 #2，与 wf_gate_full_v2 同 env 口径）：
+    # RFAUTO_GATE_SLOW_MODE=day 日常轮再跳过 slow 件（终门仍无差别全量，
+    # slow 件照常进收官终门——#122 语义不变）；缺省与 night 值不追加
+    # 第二 marker（并行门缺省保持全量；night 只跑慢件用
+    # `pytest tests/unit -m slow` 一条命令夜档）。
+    slow_mode = os.environ.get("RFAUTO_GATE_SLOW_MODE", "").strip().lower()
+    if slow_mode == "day":
+        marker_args = [*marker_args[:-1], "not solo and not slow"]
+
     cmd = [
         sys.executable, "-m", "pytest", "tests/unit", "-q",
         *dist_args, *marker_args, f"--junitxml={xml_path}", *args.extra,
@@ -80,7 +89,8 @@ def main(argv: list[str] | None = None) -> int:
         f"# DP-6 gate runner mode={mode}\n"
         f"# cmd: {' '.join(cmd)}\n"
         f"# pytest_root: {pytest_root}\n"
-        f"# deselect: -m 'not solo' (双臂一致，守卫可比；solo 由终门/CI 覆盖)\n"
+        f"# deselect: -m '{' and '.join(marker_args[1:])}'"
+        f" (双臂一致，守卫可比；solo 由终门/CI 覆盖)\n"
         f"# OPENBLAS_NUM_THREADS={env['OPENBLAS_NUM_THREADS']} (forced)\n"
         f"# junitxml: {xml_path}\n"
         f"# started: {datetime.now().isoformat()}\n\n"

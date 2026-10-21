@@ -1,37 +1,52 @@
-/* rfauto 代理 Playground 页（aurora_d UI-R2 自 pages.js 拆出，逐字节
-   搬移）：滑条 → 代理实时预测（诚实呈现）+ 单轴探索（mean±σ 带）。 */
+/* rfauto 代理 Playground 页（架构批 UI-R2 自 pages.js 拆出，逐字节
+   搬移）：滑条 → 代理实时预测（诚实呈现）+ 单轴探索（mean±σ 带）。
+   i18n（发布前软编码批 S2 全清）：help 块分段 t()、标题/面板头/工具栏
+   标签/表头/空态全迁词表（playground.* 键域，zh 与旧字面逐字节同、en
+   新增）；run 清单选项/滑条标签/曲线名为 API 数据照旧 esc/直拼——数据
+   非文案不迁；归一化距离为数值可作 t() params（agent stats 前例）。 */
 
 import { THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
 import { T } from "./context.js";
-import { esc, escAttr, help } from "./dom.js";
-import { kitTable, kitVerdictBadge } from "./kit.js";
+import { esc, escAttr, errorText, help } from "./dom.js";
+// i18n（发布前软编码批 S2）：壳静态标签 data-i18n+首扫；动态容器（预测
+// 结果/探索状态）文案 t() 渲染期烘焙——pg-result 随数据重建不挂 data-i18n。
+import { t, applyI18nRoot } from "./i18n.js";
+import { kitErrorPanel, kitTable, kitVerdictBadge } from "./kit.js";
+// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// 数据面（run 清单）接 viewSignal("playground") 切页收束 + aborted 短路；动作
+// 面（预测/探索 POST——滑条与探索钮触发）保持无 signal（用户动作不被切页
+// 取消）。信封消费形态逐键不变。
+import { apiFetch, viewSignal } from "./api.js";
 
 /* ═══ 代理 Playground（E3/WP0.4：滑条 → 代理实时预测，诚实呈现）═══ */
 export async function pagePlayground() {
   const v = T.$("view-playground");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li>选一个已校准 run（有 calibration 产物），拖动参数滑条实时看代理预测指标。</li>
-      <li><b>诚实呈现</b>：预测来自校准样本拟合的代理模型，<b>非真值</b>——LOOCV ρ/样本量与最近样本真值对照一并列出，精算以 openEMS/HFSS 求解为准。</li>
-      <li>缺省值=参数界中点；越界滑条值会被裁剪到边界并在状态行提示。</li>
-      <li>下方探索器沿单轴做参数扫描切片，画后验 mean 曲线并叠加 <b>±1σ 方差带</b>（面积阴影；仅 smt 族代理有原生逐点 σ，其余如实只画 mean）。</li>`) +
-    `<h2 class='page'>代理 Playground</h2>
+      <li>${t("playground.help_1")}</li>
+      <li><b>${t("playground.help_2_core")}</b>${t("playground.help_2_mid")}<b>${t("playground.help_2_core2")}</b>${t("playground.help_2_tail")}</li>
+      <li>${t("playground.help_3")}</li>
+      <li>${t("playground.help_4_lead")}<b>${t("playground.help_4_core")}</b>${t("playground.help_4_tail")}</li>`) +
+    `<h2 class='page'><span data-i18n='playground.title'>${t("playground.title")}</span></h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b><select id='pg-run' style='max-width:460px'></select>
          <span id='pg-quality'></span></div>
        <div id='pg-sliders'></div>
        <div id='pg-note' class='muted' style='margin-top:var(--space-2)'></div>
      </div>
-     <div class='panel' style='margin-top:14px'><b class='title'>代理预测 vs 最近样本真值</b>
-       <div id='pg-result' class='muted'>选择 run 后自动预测</div></div>
-     <div class='panel' style='margin-top:14px'><b class='title'>参数扫描探索（explore：后验 mean±std）</b>
-       <div class='toolbar'>扫参轴 <select id='pg-ex-axis'></select>
-         点数 <select id='pg-ex-n'><option value='11'>11</option><option value='21'>21</option><option value='41' selected>41</option></select>
-         指标 <select id='pg-ex-metric'></select>
+     <div class='panel' style='margin-top:14px'><b class='title' data-i18n='playground.compare_title'>${t("playground.compare_title")}</b>
+       <div id='pg-result' class='muted'>${t("playground.auto_predict")}</div></div>
+     <div class='panel' style='margin-top:14px'><b class='title' data-i18n='playground.explore_title'>${t("playground.explore_title")}</b>
+       <div class='toolbar'><span data-i18n='playground.sweep_axis'>${t("playground.sweep_axis")}</span> <select id='pg-ex-axis'></select>
+         <span data-i18n='playground.n_points'>${t("playground.n_points")}</span> <select id='pg-ex-n'><option value='11'>11</option><option value='21'>21</option><option value='41' selected>41</option></select>
+         <span data-i18n='playground.metric'>${t("playground.metric")}</span> <select id='pg-ex-metric'></select>
          <span id='pg-ex-status' class='muted'></span></div>
        <div id='pg-ex-chart'></div>
        <div id='pg-ex-note' class='muted' style='margin-top:var(--space-2)'></div></div>`;
-  const d = await T.api("/api/playground/runs");
+  applyI18nRoot(v); // 壳静态标签首扫（幂等，动态容器走 t() 烘焙）
+  const d = await apiFetch("/api/playground/runs",
+    { signal: viewSignal("playground") });
+  if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   const runs = d.runs || [];
   const sel = T.$("pg-run");
   sel.innerHTML = runs.map((r) =>
@@ -64,7 +79,7 @@ export async function pagePlayground() {
   };
   const runExplore = async () => {
     if (!sel.value || !exReady) return;
-    const r = await T.api("/api/playground/explore", {
+    const r = await apiFetch("/api/playground/explore", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -72,10 +87,14 @@ export async function pagePlayground() {
         params: currentParams(),
         sweep: { axis: T.$("pg-ex-axis").value, n: +T.$("pg-ex-n").value },
       }),
+      timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：逐点代理评估分钟级
     });
     const st = T.$("pg-ex-status");
     if (!r.ok) {
-      st.innerHTML = `<span style='color:var(--err)'>✗ ${esc(r.error)}</span>`;
+      // W14-S2 错误呈现归一（R2 Top10 #4）：内联 ✗ span → kitErrorPanel 单源
+      // （文案走 errorText 信封回退链 errors→error→reason，原裸读 r.error 在
+      // errors 列表信封下会渲染 "undefined"——dom.js errorText 头注实证）。
+      st.innerHTML = kitErrorPanel(errorText(r));
       return;
     }
     const metrics = Object.keys(r.curves);
@@ -100,21 +119,23 @@ export async function pagePlayground() {
       xlabel: axisName, ylabel: key, xvalue: true, height: "300px",
       exportName: "explore-sweep", exportCsv: false,
     });
-    st.textContent = `engine=${r.engine} · ${r.has_variance ? "mean±1σ" : "mean（无原生 σ）"}`
+    st.textContent = `engine=${r.engine} · ${r.has_variance ? "mean±1σ" : t("playground.no_native_std")}`
       + ` · fixed=${JSON.stringify(r.sweep.fixed)}`;
     T.$("pg-ex-note").textContent = `${r.variance_note}；${r.honest_note}`;
   };
   for (const id of ["pg-ex-axis", "pg-ex-n", "pg-ex-metric"])
     T.$(id).onchange = runExplore;
   const predict = async (params) => {
-    const r = await T.api("/api/playground/predict", {
+    const r = await apiFetch("/api/playground/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ run_id: sel.value, params }),
     });
     const box = T.$("pg-result");
     if (!r.ok) {
-      box.innerHTML = `<span style='color:var(--err)'>✗ ${esc(r.error)}</span>`;
+      // W14-S2 错误呈现归一（R2 Top10 #4）：内联 ✗ span → kitErrorPanel 单源
+      //（同上 errorText 信封回退链；动作失败无重试钮，gallery 闭式失败点同款）。
+      box.innerHTML = kitErrorPanel(errorText(r));
       return;
     }
     const q = r.quality;
@@ -123,7 +144,7 @@ export async function pagePlayground() {
         kitVerdictBadge(q.verdict, // A7-A ui-kit：二元判定单源（PASS→ok，其余 FAIL/err）
           q.verdict === "PASS" ? `ρ=${(+q.rho).toFixed(3)} PASS` : `ρ=${(+q.rho).toFixed(3)} FAIL`)) +
       ` <span class='muted'>n=${esc(q.n_samples ?? "-")} · ${esc(r.kind)}</span>` +
-      (r.clamped.length ? T.badge(`越界裁剪: ${r.clamped.join(", ")}`, "muted") : "");
+      (r.clamped.length ? T.badge(t("playground.clamped_lead") + r.clamped.join(", "), "muted") : "");
     T.$("pg-note").textContent = r.honest_note;
     if (lastRun !== sel.value) {
       lastRun = sel.value;
@@ -153,17 +174,17 @@ export async function pagePlayground() {
     //（原裸插值形态退场，XSS 豁免清单同笔清理）——kit 内 esc 对数值域恒等
     //（逐字节等价），异常串从裸插值升级为转义；empty:"" 保持空 tbody 等价。
     box.innerHTML = kitTable({
-      columns: ["指标", "代理预测",
-        "最近样本真值（归一化距离 " + r.nearest_sample.normalized_distance + "）"],
+      columns: [t("playground.th_metric"), t("playground.th_pred"),
+        t("playground.th_nearest_tpl", { d: r.nearest_sample.normalized_distance })],
       rowsHtml: rows, empty: "",
     });
   };
   sel.onchange = () => { lastRun = null; predict({}); };
   if (runs.length) await predict({});
-  else T.$("pg-result").textContent = "暂无有校准产物的 run（先跑校准战役）";
+  else T.$("pg-result").textContent = t("playground.no_runs");
 }
 
-/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 playgroundCtx ════════
+/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 playgroundCtx ════════
    refresh=run 清单+缺省预测重拉（pagePlayground 幂等——壳判 innerHTML 已在
    即跳过；滑条随 lastRun 闭包重建=与重进同语义）。无轮询面，leave 不需要。 */
 export const playgroundCtx = {

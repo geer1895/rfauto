@@ -1,4 +1,13 @@
-"""混合结/魔 T/波导三口结族（aurora72 A5-A 席域 2，R7 候补 G8 大件首拆席）。
+"""混合结/魔 T/波导三口结族（架构批 A5-A 席域 2，R7 候补 G8 大件首拆席）。
+
+出处（教科书经典口径二级转引，详见下节物理口径）：
+- magic_tee_s_matrix：理想魔 T 四约束口径（Pozar, Microwave
+  Engineering §7.5 混合结；幺正+E/H 臂隔离+3dB 均分+相位四约束
+  独立复核）。
+- waveguide_tee_s_matrix：H 面/E 面理想对称无耗三口结功率波口径
+  第一性推导（幺正+互易+镜像对称+对偶四约束钉死）。
+- hybrid_sum_difference：魔 T 和差合成行为（能量守恒恒等+正交 3dB
+  拆分；同 Pozar §7.5 口径）。
 
 三键：magic_tee_s_matrix（魔 T 理想 4 口 S 矩阵：匹配+E/H 臂隔离+3dB 均分+
 和差相位行为，激励口逐端口输出） / waveguide_tee_s_matrix（H 面/E 面理想对称

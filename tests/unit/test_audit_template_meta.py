@@ -1,4 +1,4 @@
-"""模板 meta 健康度审计门单测（aurora72 R8 面 3 常驻化，2026-10-11 A8-C 席）。
+"""模板 meta 健康度审计门单测（架构批 R8 面 3 常驻化，2026-10-11 A8-C 席）。
 
 覆盖面：5 维审计逐维合成好/坏样本抓出（schema/nominal/placeholder/teaching/
 link）+ 豁免清单消费 + rc 语义（0 绿/1 红/2 SKIP）+ 现树 GREEN 证据
@@ -306,7 +306,7 @@ class TestTreeAndMain:
     def test_real_tree_green(self):
         rep = mod.audit_tree(REPO / "docs" / "templates", REPO)
         assert rep["green"] is True, rep["violations"]
-        # teaching=72：aurora_d TEACH-B2 席（2026-10-14）63→70，aurora_e
+        # teaching=72：架构批 TEACH-B2 席（2026-10-14）63→70，架构批
         # W3-S13 知识面批（2026-10-18）补 atten_pi/ring_resonator 两族到 72
         # ——非排除注册族（72）teaching 全覆盖；edb_* 5 族系域外信息文档面
         # 不入注册表、无 teaching（#122 如实；历史缺清单 bend/ifa/

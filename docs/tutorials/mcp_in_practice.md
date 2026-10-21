@@ -6,6 +6,8 @@
 > 测试与只读工具实调）；mutating 工具只讲不调。读完你将知道：怎么启动、
 > 客户端怎么配、152 个工具按域怎么找、典型调用长什么样、它和 CLI 是
 > 什么关系。
+> 英文版（English version）：docs/tutorials/mcp_in_practice_en.md
+> （2026-10-19 全量复测同笔）。
 
 ## 0. 前置
 
@@ -187,9 +189,11 @@ docs/tutorials/datasets_and_health_gates.md。
  "experimental": false}
 ```
 
-名单先 `list_calculators` 查（实测当前 178 条 = 177 常规 + 1 实验键；
-实验键标 `experimental: true` 缺省拒跑，`allow_experimental` 三态显式放
-行）。同一内核的另两个壳：CLI `rfauto calc run`、UI「微波工具箱」页。
+名单先 `list_calculators` 查（**2026-10-19 复测 261 条 = 260 常规 +
+1 实验键**——本文初稿时点的 178 条已随内核扩批过期，见文末核对清单
+滚动声明；实验键标 `experimental: true` 缺省拒跑，`allow_experimental`
+三态显式放行）。同一内核的另两个壳：CLI `rfauto calc run`、UI「微波
+工具箱」页。
 
 ### 4.4 get_metrics：run 指标读取
 
@@ -250,6 +254,6 @@ agent 自主改配方走沙箱草稿 → 三层 Gate → promote，不走工作�
 | 工具按域分组表 | `^@mcp\.tool` 逐模块锚定正则实测 | 过（39 模块，十组合计 152） |
 | doctor/list_datasets/query_dataset/run_calculator/get_metrics | 只读工具实调 | 过（§4 输出均为实调 structured content 摘录） |
 | n_rows vs total_rows | query_dataset limit=1 实调 | 过（n_rows=1，total_rows=2） |
-| list_calculators=178（含 1 实验键） | 只读工具实调 | 过（177 常规+1 实验，与 check_numbers CALCULATOR_REGISTRY 口径一致；本行随内核扩批滚动，以 rfauto calc list 实时为准） |
+| list_calculators=320（含 1 实验键；2026-10-20 架构批 复测，306=305+1 系 架构批 收官时点已随第五梯队 +13 过期） | 只读工具实调 | 过（319 常规+1 实验，与 check_numbers CALCULATOR_REGISTRY=319（含实验键 320）口径一致；本行随内核扩批滚动，以 rfauto calc list 实时为准） |
 | CLI/MCP 同 service 单源 | `cli/domains/surrogate.py`/`mcp_tools/datasets.py` 源码实读 | 过（两路收敛 service.dataset_service.query_dataset） |
 | 客户端配置样例 | 与 README「MCP Agent 接口」节同源核对 | 过（"以你的客户端文档为准"已标注） |

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""docs 再生面漂移日检驱动（aurora72 A4-D，2026-10-11）。
+"""docs 再生面漂移日检驱动（架构批 A4-D，2026-10-11）。
 
 对两个再生面各跑一次脚本官方 --check 语义并聚合退出码——供每日 schedule
 巡检/本地手动使用。merge_preflight 已含同一批面（走 pytest 测试文件

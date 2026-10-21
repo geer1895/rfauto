@@ -6,7 +6,7 @@
 分析的网表驱动 + rlc_lowpass 一锚，.HB 分析登记不实现**（如实不虚报，
 supported_templates 仅 ("rlc_lowpass",)）。
 
-部署口径（2026-09-29 wf:xyce-build 实测）：Xyce 7.11（DEVELOPMENT
+部署口径（2026-09-29  实测）：Xyce 7.11（DEVELOPMENT
 opensource，MPI 版 libmpi.so.40）装在 **WSL 默认发行版 Ubuntu**，WSL 侧
 可执行 ``/home/pc/apps/xyce/bin/Xyce``。Windows 侧经
 ``wsl.exe -d <distro> --exec bash -c "..."`` 驱动；网表/产物直接落
@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 #: rfauto-ubuntu（Palace 专用）；Xyce 装在默认发行版）。
 DEFAULT_WSL_DISTRO = "Ubuntu"
 
-#: WSL 侧 Xyce 可执行缺省路径（wf:xyce-build 安装位实测）。
+#: WSL 侧 Xyce 可执行缺省路径（ 安装位实测）。
 DEFAULT_XYCE_WSL_EXE = "/home/pc/apps/xyce/bin/Xyce"
 
 #: 不可达时报错指引的构建脚本（仓内相对路径）。

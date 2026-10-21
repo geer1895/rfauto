@@ -11,6 +11,7 @@
       "ensure_adapter_plugins_loaded",
       "get_global_registry",
       "load_solvers_config",
+      "register_external_templates",
       "resolve_openems_exe",
       "solver_capabilities_for"
     ],
@@ -413,10 +414,59 @@
       "cohn_il_lower_bound",
       "directivity_bounds"
     ],
+    "core/calc_families/agc_loop.py": [
+      "agc_loop_dynamics",
+      "agc_loop_response"
+    ],
+    "core/calc_families/cal_kit_verify.py": [
+      "cal_kit_standard_response",
+      "cal_kit_verify_ripple"
+    ],
+    "core/calc_families/directional_bridge.py": [
+      "directional_bridge_response",
+      "directional_bridge_s_matrix"
+    ],
+    "core/calc_families/iss_on_wafer.py": [
+      "iss_oneport_cal_extract",
+      "iss_standard_response"
+    ],
+    "core/calc_families/lange.py": [
+      "lange_design",
+      "lange_equivalent_zee_zoo",
+      "lange_pair_zee_zoo",
+      "lange_response",
+      "lange_synthesize"
+    ],
     "core/calc_families/mask_spec.py": [
       "mask_filter_synthesize",
       "mask_margin_report_calc",
       "mask_min_order"
+    ],
+    "core/calc_families/mixer_conversion.py": [
+      "mixer_conversion_loss",
+      "mixer_image_plan",
+      "mixer_ssb_nf"
+    ],
+    "core/calc_families/rf_switch.py": [
+      "pin_switch_s2p",
+      "rf_switch_matrix_path",
+      "rf_switch_spdt_quarter_wave"
+    ],
+    "core/calc_families/ring_resonator.py": [
+      "ring_resonator_design_params",
+      "ring_resonator_response",
+      "ring_resonator_synthesize"
+    ],
+    "core/calc_families/six_port.py": [
+      "six_port_cal_extract",
+      "six_port_gamma_solve"
+    ],
+    "core/calc_families/source_power_cal.py": [
+      "source_power_cal_table"
+    ],
+    "core/calc_families/stepped_impedance.py": [
+      "stepped_impedance_lpf_synthesize",
+      "stepped_impedance_response"
     ],
     "core/cispr25_limits.py": [
       "ALSE_1M_NOTE",
@@ -621,6 +671,7 @@
     "core/crlh.py": [
       "SPEED_OF_LIGHT_M_PER_S",
       "_DB_PER_NAPIER",
+      "crlh_balanced_synthesis",
       "crlh_beta",
       "crlh_bloch_impedance",
       "crlh_image_impedance_t",
@@ -2681,7 +2732,8 @@
       "load_run_trials",
       "optional_num",
       "parse_num",
-      "require_payload_dict"
+      "require_payload_dict",
+      "safe_run_id"
     ],
     "service/agent_trace.py": [
       "ARGS_SUMMARY_MAX_CHARS",
@@ -2876,17 +2928,25 @@
       "estimate_rho",
       "fit_discrepancy"
     ],
-    "service/lake_service.py": [
+    "service/lake_service/__init__.py": [
+      "DEFAULT_LAKE_INDEX_NAME",
       "LAKE_INDEX_COLUMNS",
+      "LAKE_INDEX_SOURCE_DIRSCAN",
+      "LAKE_INDEX_SOURCE_INDEX",
+      "LAKE_INDEX_STALENESS_THRESHOLD",
       "LAKE_INDEX_TABLE",
       "PACK_FORMAT",
       "RUN_LINEAGE_TABLE",
       "build_index_cli_entry",
       "build_runs_index",
       "configure_duckdb_connection",
+      "count_runs_index",
       "default_lake_index_db_path",
       "export_index_parquet",
       "extract_study_tuple",
+      "index_candidate_paths",
+      "index_scope_dir_count",
+      "lake_index_db_path_for",
       "pack_campaign",
       "query_lineage",
       "query_runs_index",
@@ -3089,7 +3149,7 @@
       "remote_resources",
       "resources_view"
     ],
-    "service/remote_service.py": [
+    "service/remote_service/__init__.py": [
       "LICENSE_PREFLIGHT_SEAT_QUERY",
       "REMOTE_SMOKE_ENV",
       "hfss_remote_session_config",

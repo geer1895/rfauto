@@ -297,4 +297,39 @@ def test_availability_margin_negative_guards():
 def test_service_run_ok_and_json(key: str, params: dict):
     out = run_calculator(key, params, allow_experimental=True)
     assert out["ok"] is True, out.get("error")
-    json.dumps(out, ensure_ascii=False, allow_nan=False)
+    text = json.dumps(out, ensure_ascii=False, allow_nan=False)
+    assert text and json.loads(text)["result"] == out["result"]
+    # 内容断言（R3 弱测试 #9）：业务键在档+抽点有限性，非空壳 ok
+    res = out["result"]
+    if key == "fade_outage_percent":
+        assert res["kind"] == "rice" and res["margin_db"] == 30.0
+        p = res["outage_percent"]
+        assert math.isfinite(p) and 0.0 <= p <= 100.0
+        assert res["outage_fraction"] == pytest.approx(p / 100.0, rel=1e-15)
+        # #118 独立闭式锚：K→0 退化为 Rayleigh 1−exp(−h)，h=10^(−F/10)
+        # （门限相对平均功率低 margin dB → h=1e-3 @30dB）
+        ray = run_calculator(
+            "fade_outage_percent", {"margin_db": 30.0, "kind": "rice",
+                                    "k": 0.0},
+            allow_experimental=True)["result"]["outage_percent"]
+        assert ray == pytest.approx(
+            (1.0 - math.exp(-10.0 ** (-3.0))) * 100.0, rel=1e-9)
+    else:
+        # availability_margin：多径双模型（V-B/P.530）键在档+有限性+
+        # V-B 闭式独立复算（c=1 average，P=c·(f/4)·1e-5·D_mi³·10^(−F/10)）
+        assert res["direction"] == "availability_from_margin"
+        assert res["f_ghz"] == 6.0 and res["d_km"] == 50.0
+        c_fac = res["vb"]["c_factor"]
+        d_mi = 50.0 / 1.609344
+        vb_frac_want = c_fac * (6.0 / 4.0) * 1e-5 * d_mi ** 3 * 10.0 ** (-3.0)
+        assert res["vb"]["outage_fraction"] == pytest.approx(
+            vb_frac_want, rel=1e-12)
+        for sub in ("vb", "p530"):
+            frac = res[sub]["outage_fraction"]
+            assert math.isfinite(frac) and 0.0 <= frac <= 1.0
+            assert res[sub]["availability_percent"] == pytest.approx(
+                100.0 * (1.0 - frac), rel=1e-12)
+        # 差异带如实记录（声明包络 [0.02,50]，模块 docstring 锚 ≈0.212）
+        ratio = res["diff_band"].get("outage_ratio_p530_over_vb")
+        assert ratio is not None and math.isfinite(ratio)
+        assert 0.02 <= ratio <= 50.0

@@ -1,5 +1,11 @@
 """CMA 特征模计算器（ge6 Wave1 离线档；内核 core/characteristic_modes.py）。
 
+出处（特征模经典文献，正文口径转录）：
+- cma_modes：广义阻抗矩阵 R-加权特征模分解 X·I_n=λ_n·R·I_n
+  （R. F. Harrington & J. R. Mautz, "Theory of characteristic modes for
+  conducting bodies", IEEE Trans. AP 19(5), 1971；综述口径 M. Cabedo-Fabrés
+  et al., IEEE Antennas Propag. Mag. 49(5), 2007）。
+
 Z=R+jX 广义阻抗矩阵的 R-加权特征模分解（Harrington–Mautz 1971 /
 Cabedo-Fabrés 2007 口径）：X·I_n = λ_n·R·I_n，MS_n = 1/(1+λ_n²)，
 R-正交归一特征电流，特征阻抗 Z_cn = 1+jλ_n。矩阵由调用方提供

@@ -43,9 +43,8 @@ def _recipe(tmp_path: Path) -> Path:
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 二批单源化）。"""
     yield
 
 
@@ -65,6 +64,29 @@ class TestWritePathWhitelist:
             _recipe(tmp_path),
         )
         assert result["ok"], result["violations"]
+        # 放行目录集合恰为两根：runs/ 根 + 配方所在目录（R3 弱测试 #1：
+        # 允许断言必须双向——白名单集合本身钉死，不是"反正 ok"）
+        import os
+
+        from rfauto.infra.runs_paths import runs_root
+
+        allowed = {os.path.normcase(r) for r in result["allowed_roots"]}
+        assert allowed == {
+            os.path.normcase(str(runs_root())),
+            os.path.normcase(str(tmp_path)),
+        }
+        # 每个放行路径确落其中一根之下（逐路径隶属验证，非只看总数）
+        for raw in ("runs/agent_proposals/x.yaml", str(tmp_path / "out.bin")):
+            p = Path(raw).resolve()
+            assert any(root == p or root in p.parents
+                       for root in (runs_root(), tmp_path)), raw
+        # 同笔对照：越界路径仍拒（同参数据面上，允许≠全放行）
+        reject = check_write_paths(
+            ["runs/ok.yaml", str(tmp_path.parent / "evil.yaml")],
+            _recipe(tmp_path),
+        )
+        assert not reject["ok"]
+        assert any("evil" in v for v in reject["violations"])
 
     def test_outside_path_rejected(self, tmp_path):
         # 白名单外的绝对路径用 tmp_path 兄弟目录构造（平台无关）——盘符形

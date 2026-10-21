@@ -14,9 +14,9 @@
 
 | 参数 | 名义值 |
 |---|---|
-| feed_len_mm | 53.3232 |
+| feed_len_mm | 53.1613 |
 | gaps_mm | [0.2417,1.5189,1.5189,0.2417] |
-| l_high_mm | 6.7818 |
+| l_high_mm | 7.1055 |
 | l_low_mm | 6.5719 |
 | order | 3 |
 | w_feed_mm | 1.1117 |
@@ -26,17 +26,21 @@
 
 ## 敏感性排序（R9 先承诺）
 
-- 出处=teaching（`docs/templates/<模板名>/meta.yaml` teaching.sensitivity_ranking；EP-5 口径：order 名次 + basis 依据，来自可复核闭式恒等式而非幅值——幅值分数待 `knowledge/sensitivity_rankings.yaml` 数据管线落档后重跑导出器上卡）
+- 出处=computed（幅值分数登记表 `knowledge/sensitivity_rankings.yaml`；证据 scripts/sensitivity_rankings_build.py；坏条目拒收如实降级 #105）
 
-| 名次 | 参数 | 依据 |
+- 方法 central_finite_difference_elasticity ｜ n=17 ｜ 证据：scripts/sensitivity_rankings_build.py
+
+| rank | 参数 | 分数 |
 |---|---|---|
-| 1 | l_low_mm | 低阻段电长度（谐振条件 tanθ1·tanθ2 主通道之一） |
-| 2 | l_high_mm | 高阻段电长度（另一主通道；含过孔缩短回代） |
-| 3 | w_low_mm | 低阻段宽=阻抗比 Z_lo/Z_hi 的分子（紧凑化自由度+耦合区宽） |
-| 4 | w_high_mm | 高阻段宽=阻抗比分母 |
-| 5 | gaps_mm | 低阻耦合区缝 k(gap)（带宽/回损主维） |
-| 6 | order | 阶数=离散综合参数 |
-- 排序=teaching 名次全序（1..N 连续；人工 commit 写入，引用锚文本由 test_teaching_service 对 grounding 文件核验）
+| 1 | l_high_mm | 0.499993 |
+| 2 | l_low_mm | 0.483639 |
+| 3 | w_low_mm | 0.296761 |
+| 4 | w_high_mm | 0.179464 |
+| 5 | feed_len_mm | 0.0 |
+| 6 | gaps_mm | 0.0 |
+| 7 | order | 0.0 |
+| 8 | w_feed_mm | 0.0 |
+- 排序=R9 commitment_order（optimization/eipu；高敏感先钉死，平局按参数名升序）
 
 ## 判据
 
@@ -56,7 +60,7 @@
 
 ## 已知边界
 
-- 参数语义：order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径 7.1055mm − 登记⑨+R1 校准过孔缩短 0.3237mm = 6.7818mm）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长
+- 参数语义：order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径=sir_bpf_design_from_order(3) 缺省链输出 7.1055mm，架构批 W6-S4 名义重注册（R3 审计处方）——旧档 6.7818mm 系理想短路 7.1055 − 登记⑨+R1 校准过孔缩短 0.3237mm，过孔补偿走 render 通道 l_via_h 锚运行时行为非名义档，旧档恒等式名义回代 2.5586GHz 失自洽）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长（=60−(l_low+l_high)/2）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；棒/馈/台阶缘+过孔中心精确入网（#198 精确入网）
 - 冒烟现状：真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收
 - 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：

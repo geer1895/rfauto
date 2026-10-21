@@ -35,6 +35,12 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.core.num_utils import coerce_float
+from rfauto.service.lake_service import (
+    LAKE_INDEX_SOURCE_DIRSCAN,
+    LAKE_INDEX_SOURCE_INDEX,
+    index_candidate_paths,
+    lake_index_db_path_for,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -330,21 +336,62 @@ def _rows_from_meta(run_dir: Path, campaign: str) -> tuple[list[dict[str, Any]],
 # 目录扫描（有界三种形态：顶层 / 一层嵌套 / campaign/runs/）
 # ---------------------------------------------------------------------------
 
-def _iter_candidate_run_dirs(runs_dir: Path) -> list[tuple[Path, str]]:
-    """候选 run 目录（确定性排序）；返回 [(目录, campaign 名)]。
+def _iter_candidate_run_dirs(
+    runs_dir: Path,
+    *,
+    db_path: str | Path | None = None,
+) -> tuple[list[tuple[Path, str]], dict[str, Any]]:
+    """候选 run 目录（确定性排序）；返回 ([(目录, campaign 名)], 枚举注记)。
 
     campaign = 顶层目录名；顶层目录自身即 campaign。
+
+    S15（架构批 W4）主源接线：一/两级候选优先走 lake index SQL
+    （计数护栏：索引行数 vs 两级目录数差>阈值或索引不可用 → 回退原
+    目录扫，best-effort #105）；第三层 ``campaign/runs/<ts>`` 深层战役点
+    索引未覆盖（索引只建两层），恒走目录 glob。序/前缀跳过/去重语义
+    与目录扫逐键一致：顶层 Path 序 → 各自子 Path 序 → 深层 glob 序，
+    str(path) 首见去重（排序在 Path 对象上做，与原实现同 key）。
     """
+    base = Path(runs_dir)
+    notes: dict[str, Any] = {
+        "enumeration_source": LAKE_INDEX_SOURCE_DIRSCAN,
+        "enumeration_warnings": [],
+    }
     out: list[tuple[Path, str]] = []
-    for top in sorted(runs_dir.iterdir()):
-        if not top.is_dir() or top.name.startswith(("_", ".")):
-            continue
-        out.append((top, top.name))
-        for child in sorted(top.iterdir()):
-            if child.is_dir() and not child.name.startswith(("_", ".")):
+    probe = index_candidate_paths(
+        scope_dir=base, depth=None, two_level_dir_count=True,
+        db_path=(str(db_path) if db_path is not None
+                 else str(lake_index_db_path_for(base))),
+    )
+    notes["enumeration_warnings"] = list(probe["warnings"])
+    if probe["usable"]:
+        tops: list[Path] = []
+        children: dict[str, list[Path]] = defaultdict(list)
+        for rel in probe["paths"]:
+            parts = rel.split("/")
+            if len(parts) == 1:
+                tops.append(base / parts[0])
+            else:
+                children[parts[0]].append(base / rel)
+        for top in sorted(tops):
+            if top.name.startswith(("_", ".")):
+                continue
+            out.append((top, top.name))
+            for child in sorted(children.get(top.name, [])):
+                if child.name.startswith(("_", ".")):
+                    continue
                 out.append((child, top.name))
-    # campaign/runs/<ts> 深层战役点（e11_warm 族）
-    for meta_path in sorted(runs_dir.glob("*/campaign/runs/*/meta.json")):
+        notes["enumeration_source"] = LAKE_INDEX_SOURCE_INDEX
+    else:
+        for top in sorted(base.iterdir()):
+            if not top.is_dir() or top.name.startswith(("_", ".")):
+                continue
+            out.append((top, top.name))
+            for child in sorted(top.iterdir()):
+                if child.is_dir() and not child.name.startswith(("_", ".")):
+                    out.append((child, top.name))
+    # campaign/runs/<ts> 深层战役点（e11_warm 族；索引未覆盖，恒目录扫）
+    for meta_path in sorted(base.glob("*/campaign/runs/*/meta.json")):
         point = meta_path.parent
         out.append((point, point.parents[2].name))
     # 去重保序
@@ -355,7 +402,7 @@ def _iter_candidate_run_dirs(runs_dir: Path) -> list[tuple[Path, str]]:
         if key not in seen:
             seen.add(key)
             uniq.append((d, camp))
-    return uniq
+    return uniq, notes
 
 
 # ---------------------------------------------------------------------------
@@ -415,14 +462,28 @@ def _compute_deltas(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], i
     return rows, n_paired
 
 
-def collect_league_rows(runs_dir: str | Path | None = None) -> dict[str, Any]:
-    """只读扫描 runs/ → 联赛行 + 如实统计（纯内存，零写面）。"""
+def collect_league_rows(
+    runs_dir: str | Path | None = None,
+    *,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """只读扫描 runs/ → 联赛行 + 如实统计（纯内存，零写面）。
+
+    S15（架构批 W4）：候选枚举 lake index 主源+护栏回退（语义见
+    :func:`_iter_candidate_run_dirs`）；信封 ``enumeration_source``/
+    ``enumeration_warnings`` 注记来源，``stats`` 计数口径零变化。
+    ``db_path`` 缺省 ``<runs_dir>/.lake_index.duckdb``。
+    """
     base = Path(runs_dir) if runs_dir is not None else default_league_runs_dir()
     if not base.is_dir():
         return _stamped({"ok": False, "reason": f"runs 目录不存在: {base}",
                          "rows": [], "stats": {}})
 
-    candidates = _iter_candidate_run_dirs(base)
+    candidates, enum_notes = _iter_candidate_run_dirs(
+        base,
+        db_path=(str(db_path) if db_path is not None
+                 else str(lake_index_db_path_for(base))),
+    )
     rows: list[dict[str, Any]] = []
     skip_counter: dict[str, int] = defaultdict(int)
     n_meta_dirs = 0
@@ -443,6 +504,8 @@ def collect_league_rows(runs_dir: str | Path | None = None) -> dict[str, Any]:
     return _stamped({
         "ok": True,
         "rows": rows,
+        "enumeration_source": enum_notes["enumeration_source"],
+        "enumeration_warnings": enum_notes["enumeration_warnings"],
         "stats": {
             "n_candidate_dirs": len(candidates),
             "n_meta_dirs": n_meta_dirs,

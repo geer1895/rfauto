@@ -1,4 +1,4 @@
-"""aurora72 A8-A（R6 审计 P-2/P-3/P-4/P-6 打磨批）UI 微交互四面钉。
+"""架构批 A8-A（R6 审计 P-2/P-3/P-4/P-6 打磨批）UI 微交互四面钉。
 
 落地面（pages.js + index.html，两文件）：
 1. **骨架屏（P-2）**：dashboard 首拉 / detail openRun 首建壳 / runs 表首拉
@@ -10,8 +10,9 @@
    test_ui_routing 口径，本席不清偿他席钉）。
 3. **错误态动作化（P-4 面）**：kitErrorPanel（badge+错误串+重试钮，W7-C
    detail 内联面板模式推广）落 datasets / anchors 两处高频 API 失败点；
-   queue ✗ 点按跨席计数钉（"color:var(--err)'>✗"==6）如实豁免；W7-C 原点
-   不动（钉在 test_w7c_ui_p2_sweep）。
+   queue ✗ 点按跨席计数钉如实豁免（余量随归一批顺移：6→5=架构批 W2-S5，
+   5→1=架构批 W14-S2 playground/profile/tools 迁 kitErrorPanel，见
+   TestErrorPanelPins 类注）；W7-C 原点不动（钉在 test_w7c_ui_p2_sweep）。
 4. **微动效收敛（P-6 面）**：.card .v KPI 数字 tabular-nums 防跳动；三个
    高频图表容器 min-height 高度锚（#splot-echart/#tune-trials-chart/
    #cal-evolution，与 plotCard 传参同值）。
@@ -32,7 +33,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -74,14 +75,15 @@ class TestSkeletonPins:
 
     def test_three_wiring_sites(self):
         # dashboard 首拉：组件清单占位壳（含 aria status 语义）
+        # W8-S32 i18n 批 3：骨架 aria 文案迁词表 t() 烘焙（zh 值同笔）
         dash = _body(r"async function pageDashboard\(\)")
         assert "kitSkeleton(3)" in dash
-        assert 'aria-label="组件数据加载中"' in dash
+        assert 'aria-label="${t("dashboard.loading_aria")}"' in dash
         assert "role=\"status\"" in dash
-        # detail openRun 首建壳：head 面板占位
+        # detail openRun 首建壳：head 面板占位（aria 同批迁词表 detail.loading_aria）
         run = _body(r"async function showRun\(runId\)")
         assert "kitSkeleton(4)" in run
-        assert 'aria-label="run 数据加载中"' in run
+        assert 'aria-label="${t("detail.loading_aria")}"' in run
         # runs 表首拉：表体占位行（5×6 与列数一致）
         runs = _body(r"async function pageRuns\(\)")
         assert "kitSkeletonRows(5, 6)" in runs
@@ -119,27 +121,40 @@ class TestSkeletonPins:
 
 class TestEmptyStatePins:
     def test_four_kit_sites(self):
-        # dashboard activity：一句话原文保留（test_ui_dashboard_widgets 钉
-        # "暂无活动" 在 wActivity 函数体内）+ 动作=去工程导入
+        # dashboard activity：文案单源迁词表 t() 烘焙（W8-S32 i18n 批 3，
+        # runs/queue 空态先例同口径——zh 字面同笔迁 pages/i18n.js）+ 动作=去工程导入
         act = _body(r"async function wActivity\(el\)")
-        assert 'kitEmptyState("暂无活动——去「工程导入」跑第一个 run"' in act
+        assert 'kitEmptyState(t("dashboard.activity_empty")' in act
+        assert "暂无活动——去「工程导入」跑第一个 run" in (
+            _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'view: "import"' in act
         assert "bindEmptyStates(el)" in act
         # runs 无匹配：colspan 行包 empty-state（表体语境合法形态）+ 清除筛选
+        # W6-S21 i18n 扩面：文案单源迁词表 t() 烘焙（zh 字面同笔迁
+        # pages/i18n.js，此处钉接线形态——queue 空态先例同口径）
         runs = _body(r"async function pageRuns\(\)")
-        assert 'kitEmptyState("无匹配 run——调整筛选条件试试"' in runs
+        assert 'kitEmptyState(t("runs.empty_filter")' in runs
+        assert "无匹配 run——调整筛选条件试试" in (
+            _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id: "runs-empty-clear"' in runs
         assert "rc.onclick = () => fc.click();" in runs
-        # tune trials 空：动作转触既有「启动调参」钮（aurora_e W2-S7 起
+        # tune trials 空：动作转触既有「启动调参」钮（架构批 W2-S7 起
         # tuneRefresh 提升模块级，kitEmptyState 装配随迁 view_tune.js 模块层
         # ——钉语义不变，作用域从 pageTune 函数体放宽到 view_tune.js 全文）
+        # 发布令 S3 残量清：文案单源迁词表 t() 烘焙（runs/queue 空态先例
+        # 同口径——zh 字面同笔迁 pages/i18n.js，此处钉接线形态）
         tune = (_STATIC / "pages" / "view_tune.js").read_text(encoding="utf-8")
-        assert 'kitEmptyState("暂无 trial 数据（启动调参后这里实时出点）"' in tune
+        assert 'kitEmptyState(t("tune.empty_hint")' in tune
+        assert "暂无 trial 数据（启动调参后这里实时出点）" in (
+            _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id: "tune-empty-go"' in tune
         assert "teg.onclick = () => tgo.click();" in tune
-        # queue 空：引导去战役仪表盘
+        # queue 空：引导去战役仪表盘（W1-S2 架构批 i18n 试点：文案单源迁
+        # 词表 t() 烘焙——zh 字面同笔迁 pages/i18n.js，此处钉接线形态）
         q = _body(r"async function pageQueue\(\)")
-        assert 'kitEmptyState("runs/ 下暂无 campaign.plan.json（先立战役）"' in q
+        assert 'kitEmptyState(t("queue.empty")' in q
+        assert 'runs/ 下暂无 campaign.plan.json（先立战役）' in (
+            _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'view: "campaign"' in q
         assert "bindEmptyStates(el)" in q
 
@@ -150,7 +165,9 @@ class TestEmptyStatePins:
         run = _body(r"async function showRun\(runId\)")
         assert 'id="detail-goto-runs"' in run
         assert 'go.onclick = () => showPage("runs");' in run
-        assert "#/detail/&lt;run_id&gt;" in run
+        # S2 发布令批：转义深链提示迁词表（兜底烘焙钉在此；词表值钉在
+        # test_ui_routing 同笔——实体形态以字符 〈run_id〉 承载渲染保真）
+        assert '${t("detail.empty_no_run")}' in run
         assert 'class="empty-ico" aria-hidden="true"' in run
         assert 'class="empty-txt"' in run
 
@@ -175,20 +192,26 @@ class TestErrorPanelPins:
         assert "if (rb) rb.onclick = load;" in an
 
     def test_queue_error_site_exempt_by_cross_seat_pin(self):
-        """queue ✗ 错误点如实不迁：跨席计数钉 "color:var(--err)'>✗"==6
-        （test_ui_lifecycle / test_ui_tools_page 双钉，本席禁改他席测试）——
-        错误态动作化落 datasets/anchors 两点（任务口径 2-3 点），queue 保持
-        ✗ 形态并以注释登记豁免缘由。"""
+        """queue ✗ 错误点如实不迁：跨席计数钉 "color:var(--err)'>✗"==1
+        （test_ui_lifecycle / test_ui_tools_page 双钉）——queue 保持
+        ✗ 形态并以注释登记豁免缘由。
+        架构批 W2-S5（R1 #8 三态批1）：gallery 闭式计算失败点迁
+        kitErrorPanel（原 ✗ span 形态②清偿），余量 6→5 同笔更新三钉。
+        架构批 W14-S2（R2 Top10 #4 归一波）：playground×2/profile/tools
+        内联 ✗ span 迁 kitErrorPanel，余量 5→1 同笔更新三钉
+        （余 1=queue 豁免点本身）。"""
         src = _PAGES
-        assert src.count("color:var(--err)'>✗") == 6
+        assert src.count("color:var(--err)'>✗") == 1
         assert 'kitErrorPanel((d.errors || []).join("; "), "q-retry")' not in src
         qbody = _body(r"async function pageQueue\(\)")
         assert "如实不清偿" in qbody
 
     def test_w7c_detail_panel_untouched(self):
-        """W7-C 原点（showRun 失败分支）零扰动——本批只推广不重写。"""
+        """W7-C 原点（showRun 失败分支）零扰动——W6-S21 i18n 扩面仅文案
+        单源迁词表 t() 烘焙（结构/esc(id)/重试钮形态不变）。"""
         src = _PAGES
-        assert '<span class="badge err">加载失败</span> <code>${esc(id)}</code>' in src
+        assert '<span class="badge err">${t("detail.load_failed")}</span> <code>${esc(id)}</code>' in src
+        assert "加载失败" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id="detail-retry"' in src and "showRun(id)" in src
 
 

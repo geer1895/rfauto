@@ -1,4 +1,4 @@
-"""域词表巡检引擎单测（UX-B13/Z-8 survey domains，aurora_e W2-S10 U3）。
+"""域词表巡检引擎单测（UX-B13/Z-8 survey domains，架构批 W2-S10 U3）。
 
 两层口径：
 - 探测器灵敏度：合成 repo_root（最小 registry.py/cli 树/toolsets.yaml/
@@ -144,9 +144,10 @@ class TestDetectorSensitivity:
         assert any("V1 缺词" in v and "幽灵组" in v for v in vs)
 
     def test_v1_parser_ann_assign(self):
-        order, table = _parse_calc_registry(_REGISTRY_SRC)
+        order, table, skipped = _parse_calc_registry(_REGISTRY_SRC)
         assert order == ["传输线", "天线", "雷达"]
         assert table["dangling"] == "幽灵组"
+        assert skipped == 0
 
     def test_v2_empty_group_and_orphan_module(self, tmp_path):
         domains = {"alpha": "x = 1\n", "lonely": "z = 3\n",
@@ -199,6 +200,147 @@ class TestDetectorSensitivity:
         result = domain_survey(repo_root=root, registered_tool_names=tools)
         assert result["ok"] is False
         assert any("cli_app 未注入" in e for e in result["errors"])
+
+
+class TestMisreportSurfacesFixed:
+    """三误报面修复钉（架构批 W2-S8：W5-P3-4/W5-P3-5/W6-P3-5）。
+
+    修复前形态：① 非字面量条目 ``el.value``/``k.value`` 裸 AttributeError
+    出轨迹（引擎死而非 error 信封）；② ``^@mcp\\.resource\\(`` 行首+强制
+    括号——缩进装饰器/裸 resource 风格误判"死组模块"；③
+    ``glob(...)-2`` 硬编码豁免计数，树里无 _core.py 时 domain_module_count
+    漂移。每条=行为变更+新用例。
+    """
+
+    def test_v1_parser_non_literal_entries_skipped_not_crash(self):
+        """非字面量条目跳过+计数，不再 AttributeError（W5-P3-5①）。"""
+        src = '''from rfauto.core.calc_families.registry import GROUPS
+CALC_GROUP_ORDER: tuple[str, ...] = (
+    "传输线",
+    GROUPS[0],  # 非字面量：名字引用
+    "天线" + "雷达",  # 非字面量：拼接
+)
+
+CALC_GROUP_TABLE: dict[str, str] = {
+    "mline_analysis": "传输线",
+    **EXTRA,  # 非字面量：dict 解包（键节点为 None）
+    "patch_f0": SUFFIX,  # 非字面量：值引用
+}
+'''
+        order, table, skipped = _parse_calc_registry(src)
+        assert order == ["传输线"]
+        assert table == {"mline_analysis": "传输线"}
+        assert skipped == 4
+
+    def test_v1_survey_envelope_on_non_literal_registry(self, tmp_path):
+        """合成注册表含非字面量条目 → 巡检器 ok 信封 + 跳过计数如实暴露
+        （修复前 AttributeError 轨迹，rc2 error 信封契约拿不到）。"""
+        src = '''CALC_GROUP_ORDER: tuple[str, ...] = ("传输线", PREFIX)
+CALC_GROUP_TABLE: dict[str, str] = {"mline_analysis": "传输线"}
+'''
+        result = _survey(tmp_path, registry_src=src,
+                         domains=dict(_CLEAN_DOMAINS), groups=_CLEAN_GROUPS,
+                         toolsets=_CLEAN_TS, mcp_modules=_CLEAN_MCP,
+                         tool_names=["tool_a", "tool_b1"])
+        assert result["ok"] is True
+        assert result["calc_groups"]["non_literal_entries_skipped"] == 1
+        assert result["calc_groups"]["order_count"] == 1
+
+    def test_v1_error_envelope_on_syntax_broken_registry(self, tmp_path):
+        """注册表语法损坏 → error 信封（同"输入面不可读"rc2 契约）。"""
+        result = _survey(tmp_path, registry_src="CALC_GROUP_ORDER = (\n",
+                         domains=dict(_CLEAN_DOMAINS), groups=_CLEAN_GROUPS,
+                         toolsets=_CLEAN_TS, mcp_modules=_CLEAN_MCP,
+                         tool_names=["tool_a"])
+        assert result["ok"] is False
+        assert any("语法不可解析" in e for e in result["errors"])
+
+    def test_v1_unparsable_family_file_skipped_and_counted(self, tmp_path):
+        """语法损坏的族文件跳过+列名，巡检整体不炸（W6-P3-5① 同面收口）。
+
+        单个半成品/损坏族文件曾使裸 ast.parse 出轨迹而非降级；#228 在制
+        席位半成品不红活体基线——跳过面入报告计数可见，不静默。"""
+        root, app, tools = _make_repo(
+            tmp_path, registry_src=_CLEAN_REGISTRY_SRC,
+            domains=dict(_CLEAN_DOMAINS), groups=_CLEAN_GROUPS,
+            toolsets=_CLEAN_TS, mcp_modules=_CLEAN_MCP,
+            tool_names=["tool_a", "tool_b1"])
+        (root / "src" / "rfauto" / "core" / "calc_families"
+         / "half_done.py").write_text("def broken(:\n", encoding="utf-8")
+        result = domain_survey(repo_root=root, cli_app=app,
+                               registered_tool_names=tools)
+        assert result["ok"] is True
+        cg = result["calc_groups"]
+        assert cg["family_files_unparsable"] == ["half_done"]
+        # 好文件照常解析（mline_analysis+orphan_key 两键在册）
+        assert cg["registered_keys"] == 2
+
+    def test_v3_indented_and_bare_resource_decorators_counted(self, tmp_path):
+        """缩进装饰器与裸 ``@mcp.resource``（无括号）均计数——修复前
+        行首锚+强制括号把该模块误判"死组模块"（W5-P3-4/W6-P3-5②）。"""
+        mcp = {"alpha": "@mcp.tool\ndef tool_a():\n    pass\n",
+               # 类方法缩进 + 裸 resource（无括号）：双误报面同模块
+               "cls_style": (
+                   "class Holder:\n"
+                   "    @mcp.tool\n"
+                   "    def tool_b1(self):\n"
+                   "        pass\n"
+                   "\n"
+                   "    @mcp.resource\n"
+                   "    def res_x(self):\n"
+                   "        pass\n"
+               ),
+               "indented_res": (
+                   "def setup(mcp):\n"
+                   "    @mcp.resource('res://x')\n"
+                   "    def x():\n"
+                   "        pass\n"
+               )}
+        result = _survey(tmp_path, registry_src=_CLEAN_REGISTRY_SRC,
+                         domains=dict(_CLEAN_DOMAINS), groups=_CLEAN_GROUPS,
+                         toolsets=_CLEAN_TS, mcp_modules=mcp,
+                         tool_names=["tool_a", "tool_b1"])
+        counts = result["mcp_toolsets"]["module_registration_counts"]
+        assert counts["cls_style"] == {"tool": 1, "resource": 1}
+        assert counts["indented_res"] == {"tool": 0, "resource": 1}
+        assert not any("死组模块" in v and "cls_style" in v
+                       for v in result["violations"])
+        assert not any("死组模块" in v and "indented_res" in v
+                       for v in result["violations"])
+
+    def test_v3_decorator_lookalike_not_counted(self, tmp_path):
+        """``@mcp.resources``/``@mcp.toolkit``（标识符延续）不误计数
+        （\\b 词边界口径：下划线/字母延续无词边界）。"""
+        from rfauto.service.domain_survey_service import (
+            _mcp_tool_registration_counts,
+        )
+        tools_dir = tmp_path / "mcp_tools"
+        tools_dir.mkdir()
+        (tools_dir / "m.py").write_text(
+            "@mcp.resources('x')\n@mcp.toolkit\ndef f():\n    pass\n",
+            encoding="utf-8")
+        counts = _mcp_tool_registration_counts(tools_dir)
+        assert counts["m"] == {"tool": 0, "resource": 0}
+
+    def test_v2_domain_module_count_without_core_module(self, tmp_path):
+        """合成树无 _core.py → 计数=非豁免模块实数（修复前 −2 硬编码
+        把 maindom+alpha 数成 0，W6-P3-5③）。"""
+        result = _survey(tmp_path, registry_src=_CLEAN_REGISTRY_SRC,
+                         domains=dict(_CLEAN_DOMAINS), groups=_CLEAN_GROUPS,
+                         toolsets=_CLEAN_TS, mcp_modules=_CLEAN_MCP,
+                         tool_names=["tool_a", "tool_b1"])
+        # 合成树 domains/：__init__ 无、maindom+alpha 两个非豁免模块
+        assert result["cli_domains"]["domain_module_count"] == 2
+
+    def test_v2_live_tree_count_matches_exempt_set(self):
+        """活体树计数与豁免集单源口径一致（非豁免模块数）。"""
+        domains_dir = Path(__file__).resolve().parents[2] / "src" \
+            / "rfauto" / "cli" / "domains"
+        stems = {p.stem for p in domains_dir.glob("*.py")}
+        expected = len(stems - {"__init__", "_core"})
+        result = domain_survey(cli_app=_live_cli_app)
+        assert result["cli_domains"]["domain_module_count"] == expected
+        assert result["ok"] is True
 
 
 class TestLiveTreeBaseline:

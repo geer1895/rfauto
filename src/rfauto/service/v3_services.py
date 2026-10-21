@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
 from rfauto.service._helpers import load_run_trials
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 
-def compare_runs_provenance(run_ids):
+def compare_runs_provenance(run_ids) -> dict[str, Any]:
     """Output a citable provenance block for a set of runs."""
     runs_data = []
     for rid in run_ids:
@@ -44,7 +45,7 @@ def compare_runs_provenance(run_ids):
 
 def run_p0_experiment(recipe_path, *, seed=42, coarse_trials=40, fine_trials=15,
                       baseline_trials=30, edge_samples=20, adapter_name="fake",
-                      high_adapter="fake", cross_samples=15):
+                      high_adapter="fake", cross_samples=15) -> dict[str, Any]:
     """Run P0 multi-fidelity validation experiment.
 
     审查缺口 #4：verdict 以跨保真 gate 为硬门槛——high_adapter 与 low 相同
@@ -111,7 +112,7 @@ def run_p0_experiment(recipe_path, *, seed=42, coarse_trials=40, fine_trials=15,
     return result
 
 
-def study_inject(study_name, params, *, source="human"):
+def study_inject(study_name, params, *, source="human") -> dict[str, Any]:
     """Inject human parameters into an Optuna study (方向 6a/4d).
 
     审查缺口 #5 修复：曾用私有 API trial._suggest + ask 不 tell，注入的 trial
@@ -123,7 +124,7 @@ def study_inject(study_name, params, *, source="human"):
     import optuna
 
     from rfauto.optimization.optimizer import get_storage_path
-    from rfauto.service.agent_safety import append_audit_log
+    from rfauto.service.agent_audit import append_audit_log  # T1 解环：审计叶
     try:
         study = optuna.load_study(study_name=study_name, storage=get_storage_path())
     except Exception as e:
@@ -181,7 +182,7 @@ def study_inject(study_name, params, *, source="human"):
     )
 
 
-def structured_sweep(recipe_path, sweep_spec, *, adapter_name="fake"):
+def structured_sweep(recipe_path, sweep_spec, *, adapter_name="fake") -> dict[str, Any]:
     """Run a structured parameter sweep."""
     import itertools
 
@@ -248,7 +249,7 @@ def structured_sweep(recipe_path, sweep_spec, *, adapter_name="fake"):
 
 
 def run_multifidelity_tune(recipe_path, *, adapter_low="fake", adapter_high="fake",
-                           n_phase1=40, n_phase2=5, seed=42):
+                           n_phase1=40, n_phase2=5, seed=42) -> dict[str, Any]:
     from rfauto.optimization.mf_backend import run_multifidelity
     return run_multifidelity(recipe_path, adapter_low=adapter_low, adapter_high=adapter_high,
                              n_phase1=n_phase1, n_phase2=n_phase2, seed=seed)
@@ -257,7 +258,7 @@ def run_multifidelity_tune(recipe_path, *, adapter_low="fake", adapter_high="fak
 def run_multifidelity_sbo_tune(recipe_path, *, adapter_low="fake", adapter_high="fake",
                                n_init=8, top_k=3, max_real=30, fine_budget=8,
                                virtual_trials=None, surrogate_kind="smt_mfk",
-                               seed=42, adapter_kwargs=None):
+                               seed=42, adapter_kwargs=None) -> dict[str, Any]:
     """E7 多保真代理寻优环服务入口（§10.23 #23：WP3.2 环 × 方向 1 两级保真）。
 
     与 run_multifidelity_tune（两阶段 TPE 粗筛+HV 选点精算）互补：本入口
@@ -402,7 +403,7 @@ def run_multifidelity_sbo_tune(recipe_path, *, adapter_low="fake", adapter_high=
     return result
 
 
-def run_sensitivity(recipe_path, *, method="sobol", n_samples=100, seed=42, adapter_name="fake"):
+def run_sensitivity(recipe_path, *, method="sobol", n_samples=100, seed=42, adapter_name="fake") -> dict[str, Any]:
     """Run sensitivity analysis (Direction 8b)."""
     import yaml
 
@@ -572,7 +573,7 @@ def _baseline_lines(run_dir: Path, metrics: dict) -> list[str]:
     return lines
 
 
-def agent_quality_summary(limit: int = 500):
+def agent_quality_summary(limit: int = 500) -> dict[str, Any]:
     """4b 提议质量指标（审查缺口 #16）：接受率/改进率/否决原因分类，源自 audit.jsonl。
 
     Plan §3 方向 4b 验收："提议质量指标（接受率/改进率/否决原因分类）落 audit"。
@@ -618,7 +619,7 @@ def agent_quality_summary(limit: int = 500):
     )
 
 
-def generate_enhanced_report(run_id, *, output=None):
+def generate_enhanced_report(run_id, *, output=None) -> dict[str, Any]:
     """Generate enhanced tuning report (Direction 8c, 五要素全量).
 
     五要素（Plan §3 方向 8c 验收口径）：①收敛曲线 ②Pareto 前沿 ③top-3 方案
@@ -666,13 +667,13 @@ def generate_enhanced_report(run_id, *, output=None):
 
 def hfss_import_recipe(project_path, design_name=None, *,
                        version=_DEFAULT_AEDT_VERSION,
-                       non_graphical=True, out=None):
+                       non_graphical=True, out=None) -> dict[str, Any]:
     """HFSS 工程导入器（2026-09-02 用户需求）：读取 .aedt 的设计变量 /
     Optimetrics 扫参范围 / Setup-Sweep / 端口，生成配方草稿（hfss_var_map +
     参数范围），供 UI 展示与 agent 提案-审批链路继续调优。
 
     缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
-    R1/v251 口径；aurora72 A7-C 前此处误钉 "2026.1"——本机并无 2026.1，
+    R1/v251 口径；架构批 A7-C 前此处误钉 "2026.1"——本机并无 2026.1，
     系"HFSS 2026"口径笔误年代的残留）。"""
     from rfauto.adapters.hfss_import import import_project_spec, spec_to_recipe_draft
     from rfauto.infra.recipe_guard import write_recipe_yaml

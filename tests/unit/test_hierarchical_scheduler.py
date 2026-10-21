@@ -55,7 +55,7 @@ class TestEngineRegistry:
                                 budget=1, seed=1)
             assert out["engine"] == "dummy_test_engine"
         finally:
-            EngineRegistry._engines.pop("dummy_test_engine", None)
+            EngineRegistry._kit.unregister("dummy_test_engine")
 
 
 class TestAllocate:
@@ -112,6 +112,7 @@ class TestPlanCampaign:
         assert json.dumps(a, sort_keys=True, default=str) == json.dumps(
             b, sort_keys=True, default=str)
 
+    @pytest.mark.slow  # 终门 DURATIONS >60s 慢件（64.5s，surrogate 引擎数值面）
     def test_promote_top_two_splits_budget(self, two_candidates):
         out = plan_campaign(two_candidates, total_budget=30, promote_top=2,
                             engine="surrogate", seed=42)

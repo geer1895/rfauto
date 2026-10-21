@@ -84,7 +84,7 @@ def design_close_cmd(
     三步链本体 = service/level2_closure.close_level2_chain（AD-8）；样本集
     与锚回填草案落盘留证，人工审阅后才可 promote（写面不越权）。
     """
-    from rfauto.service.level2_design import design_close
+    from rfauto.service.level2_closure import design_close  # T1 解环：壳面随闭环域
 
     result = design_close(
         record, out_dir=out_dir, certify=not no_certify,

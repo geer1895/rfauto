@@ -1,4 +1,4 @@
-"""鳍线渐变过渡族两键（aurora_e W2-S9，K2 残差面，2026-10-18）。
+"""鳍线渐变过渡族两键（架构批 W2-S9，K2 残差面，2026-10-18）。
 
 **范围声明（#222 triple-grep + 文献可达性核查，2026-10-18）**：
 
@@ -259,7 +259,8 @@ def finline_taper_response(
     "鳍线-波导过渡渐变段长度综合（K2 渐变过渡面）：给定 ρ_max@f_min 反解"
     "最短长度——|Γ(βL)|=rho_max 在 βL∈(0,6π] 首个变号括根+brentq 精化"
     "（β 为波导 TE10 导波口径，同 finline_taper_response 声明近似档）；"
-    "ρ≥|δ|/2 阶跃极限显式拒绝；指数剖面 (0,π) 单调零点 βL=π",
+    "ρ≥|δ|/2 阶跃极限显式拒绝；指数剖面 (0,π) 单调零点 βL=π；线性剖面 "
+    "(0,π) |Γ| 严格单调递减（π 非零点，数值测试钉在案）",
     (("wr_name", "str - WR 波导型号（与 a_mm/b_mm 二选一）"),
      ("a_mm", "float mm 波导宽边内尺寸（须与 b_mm 同给）"),
      ("b_mm", "float mm 波导窄边内尺寸"),
@@ -326,7 +327,11 @@ def finline_taper_length(
 
     length_mm = x_star / beta_min
     achieved = abs(_gamma_closed(x_star, z1, z2, profile))
-    band_edge = math.pi  # 指数剖面 sinc 零点；线性剖面 (0,π) 实测单调（taper_classic）
+    # 通带保证域带缘：指数剖面=解析 sinc 首零点 βL=π；线性剖面（Ei 核）
+    # π 处非零点，但 |Γ| 在 (0,π) 严格单调递减（数值测试钉
+    # test_aurora_e_s9_finline::TestProfileResponse::
+    # test_linear_profile_monotone_on_zero_pi，W5-P3-2）
+    band_edge = math.pi
     preview: list[dict[str, float]] = []
     for beta_l_pt in (x_star, 0.5 * (x_star + band_edge),
                       band_edge * (1.0 - 1e-9)):
@@ -358,10 +363,12 @@ def finline_taper_length(
         "note": (
             "最短长度口径：|Γ(βL)|=rho_max 首个变号根（βL∈(0,6π] 网格+"
             "brentq，β 为波导 TE10 导波口径=声明近似档，同 "
-            "finline_taper_response）；通带保证域=βL∈[x*,π)（指数剖面 "
-            "sinc 零点；首零后旁瓣可再超 ρ，如实不冒充全带达标）；ρ≥"
-            "|δ|/2 阶跃极限显式拒绝；与 classic_taper_synthesize 的分界="
-            "波导 v_p>c 档（其 v_f≤1 守卫结构上排除）"),
+            "finline_taper_response）；通带保证域=βL∈[x*,π)——指数剖面 "
+            "sinc 首零点 βL=π、首零后旁瓣可再超 ρ；线性剖面 (0,π) |Γ| "
+            "严格单调递减（数值测试钉在案）、βL=π 非零点，单调域外行为 "
+            "两剖面均如实不冒充全带达标；ρ≥|δ|/2 阶跃极限显式拒绝；与 "
+            "classic_taper_synthesize 的分界=波导 v_p>c 档（其 v_f≤1 守卫"
+            "结构上排除）"),
         "source": (
             "剖面综合：Pozar《Microwave Engineering》4th ed. §5.9（经 "
             "taper_classic 单源复用）；波导 β：TE10 导波恒等式（与 "

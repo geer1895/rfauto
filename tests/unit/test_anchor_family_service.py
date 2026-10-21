@@ -40,7 +40,7 @@ class TestCoverage:
 
     def test_first_batch_templates_all_uncovered(self):
         cov = afs.anchor_family_coverage()
-        # aurora_d SENS-ANC 批（2026-10-14，ANCHORS 60→70）注册
+        # 架构批 SENS-ANC 批（2026-10-14，ANCHORS 60→70）注册
         # lange.finger_len_mm/cline_coupler.coupled_len_mm closedform-v1，
         # 候选表原 7 席中该 2 席转入覆盖态；service 表本席禁碰不撤条，
         # 钉面按现值放行已覆盖席（须在 covered），余席仍须零覆盖

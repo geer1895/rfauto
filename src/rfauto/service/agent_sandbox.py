@@ -160,7 +160,8 @@ class RecipeSandbox:
         params = {k: v["new"] for k, v in d["params_changed"].items()}
         if not params:
             return {"ok": False, "stage": "promote", "error": "草稿与真实配方无差异"}
-        from rfauto.service.api import agent_propose
+        # T1 解环轴：经服务定位器取门面动作（不再 实现→api 直连）
+        from rfauto.service.agent_actions import agent_propose
         proposed = agent_propose(recipe_path, params, adapter_name=adapter_name)
         return {**proposed, "sandbox_promote": True, "params_proposed": params}
 

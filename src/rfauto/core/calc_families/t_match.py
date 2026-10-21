@@ -1,4 +1,11 @@
-"""T-match 匹配族（内核在 core/t_match.py，本模块只做注册壳）。"""
+"""T-match 匹配族（内核在 core/t_match.py，本模块只做注册壳）。
+
+出处（Balanis T-match 原文逐位核对口径，内核 core/t_match.py 权威
+口径节转录）：
+- t_match_impedance / t_match_design：T-match 电流分配/等效半径/
+  传输线模输入阻抗闭式（C. A. Balanis, Antenna Theory: Analysis and
+  Design 3rd ed., Wiley 2005 §9.7.3 式(9-48)-(9-55)，原文 PDF 逐位
+  抄录；短截线补偿设计同章）。"""
 
 from __future__ import annotations
 

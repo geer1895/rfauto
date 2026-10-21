@@ -27,6 +27,12 @@ from typing import Any
 import numpy as np
 
 from rfauto.service.envelope import error_envelope, ok_envelope
+from rfauto.service.lake_service import (
+    LAKE_INDEX_SOURCE_DIRSCAN,
+    LAKE_INDEX_SOURCE_INDEX,
+    index_candidate_paths,
+    lake_index_db_path_for,
+)
 
 __all__ = [
     "monitor_cycle",
@@ -285,6 +291,7 @@ def monitor_cycle(
     runs_dir: str | Path,
     *,
     previous: dict[str, Any] | None = None,
+    db_path: str | Path | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """周期面：对 runs_dir 下的 run 目录逐个体检并聚合红绿名单。
@@ -293,20 +300,41 @@ def monitor_cycle(
     其余目录忽略。previous 为上轮 ``monitor_cycle`` 返回的
     ``snapshots``（run_id → monitor 结果），透传给单 run 体检算增量。
 
+    S15（架构批 W4）枚举主源接线：一级目录名单优先走 lake index SQL
+    （depth=1 全量行；产物判定列不在索引 schema，meta/fdtd/port_ut/et
+    探测仍逐候选实盘执行——名单源换 SQL，判定语义零变化）；计数护栏
+    判滞后或索引不可用即回退原目录扫（best-effort #105），信封
+    ``enumeration_source``/``enumeration_warnings`` 注记。``db_path``
+    缺省 ``<runs_dir>/.lake_index.duckdb``。
+
     Returns:
         envelope：``{ok, n_monitored, verdicts, red, yellow, unknown,
-        snapshots}``；单 run 体检失败只计入该 run（#105 不传染）。
+        snapshots, enumeration_source, enumeration_warnings}``；单 run
+        体检失败只计入该 run（#105 不传染）。
     """
     root = Path(runs_dir)
     if not root.is_dir():
         return error_envelope([f"runs 目录不存在: {root}"])
+    # S15：候选名单 lake index 主源 + 计数护栏回退
+    probe = index_candidate_paths(
+        scope_dir=root, depth=1,
+        db_path=(str(db_path) if db_path is not None
+                 else str(lake_index_db_path_for(root))),
+    )
+    enum_warnings = list(probe["warnings"])
+    if probe["usable"]:
+        children = sorted(root / rel for rel in probe["paths"])
+        enum_source = LAKE_INDEX_SOURCE_INDEX
+    else:
+        children = sorted(p for p in root.iterdir() if p.is_dir())
+        enum_source = LAKE_INDEX_SOURCE_DIRSCAN
     verdicts: dict[str, str] = {}
     red: list[str] = []
     yellow: list[str] = []
     unknown: list[str] = []
     failed: dict[str, str] = {}
     snapshots: dict[str, Any] = {}
-    for child in sorted(p for p in root.iterdir() if p.is_dir()):
+    for child in children:
         has_art = (child / "meta.json").exists() or (child / "fdtd").is_dir() \
             or any(child.glob("port_ut_*")) or (child / "et").exists()
         if not has_art:
@@ -328,4 +356,6 @@ def monitor_cycle(
         snapshots[child.name] = out
     return ok_envelope(
         n_monitored=len(verdicts), verdicts=verdicts, red=red, yellow=yellow,
-        unknown=unknown, failed=failed, snapshots=snapshots)
+        unknown=unknown, failed=failed, snapshots=snapshots,
+        enumeration_source=enum_source,
+        enumeration_warnings=enum_warnings)

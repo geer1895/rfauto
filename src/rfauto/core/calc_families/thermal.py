@@ -1,4 +1,18 @@
-"""E4 热/功率闭式族（温漂/IPC-2152/热阻栈/微带损耗热/击穿裕量/ECSS 多载流子）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""E4 热/功率闭式族（温漂/IPC-2152/热阻栈/微带损耗热/击穿裕量/ECSS 多载流子）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+出处（IPC-2152；ECSS；教科书族）：
+- resonator_thermal_drift：Δf/f=−CTE·ΔT−½·TCDk·ΔT=f=c/(2L√ε) 对数
+  一阶展开（Pozar《Microwave Engineering》谐振器温漂）。
+- ipc2152_trace_temp_rise：IPC-2152（2009）图表数据的 Brooks-Adam 拟合
+  式 ΔT=K·I^a·W^b·Th^c（D. G. Brooks, J. Adam, "Trace Currents and
+  Temperatures Revisited", 2015, Table 3-1；系数取自 KiCad
+  track_width_calculations 公开实现，公开测试向量复用）。
+- thermal_resistance_stack：稳态热阻网络串/并联教科书口径（Incropera
+  《Fundamentals of Heat and Mass Transfer》）。
+- microstrip_loss_heat：行波线热源 P(z)=P0·e^(−2αz)→2αP（Pozar §2.7）。
+- parallel_plate_breakdown_margin：E=V/d+材料击穿阈值表（表注在档）。
+- ecss_multipactor_fd：ECSS-E-ST-20-01C (2020) Table 5-1 f×d 阈值边界
+  逐行录入（对数插值）。
+"""
 
 from __future__ import annotations
 

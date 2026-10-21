@@ -3,7 +3,7 @@
 openEMS 绑定 2026-10-02 CPWPort exc_dir 语义重定义：旧=面法向/高度方向
 （'z'），新=缝间电场方向=CPW 宽度方向（'x'），高度法向改由 prop×exc 叉积
 自算。两代对 start/stop 的等值检查轴互换（新代查法向 z，旧代查 exc 轴），
-同一渲染字面量跨代部署必有一侧构造即炸（aurora_c cpw 席服务器实测：服务器
+同一渲染字面量跨代部署必有一侧构造即炸（架构批 cpw 席服务器实测：服务器
 绑定停在旧代 v0.37.0-rc1-11-gd3d2a49，按新代口径 exc_dir="x" 渲染即抛
 "CPWPort: start/stop in height direction must be equal"——start/stop 的 z
 两端本就相等（同贴金属面 H_SUB），炸点实为 exc 轴语义换位）。

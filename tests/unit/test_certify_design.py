@@ -14,9 +14,8 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    """隔离 cwd，避免任何相对 runs/ 读写污染真实归档（#144）。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 首批单源化）。"""
     yield
 
 

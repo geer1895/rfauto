@@ -28,7 +28,7 @@ def test_our_side_matches_live_registry() -> None:
     ours = mcp_interop_matrix.our_side()
     assert ours["tool_count"] == len(ours["tools"])
     assert len(ours["tools"]) == len(set(ours["tools"]))  # 无重名
-    assert ours["resource_count"] == 9  # aurora_d GATE-FINAL 对账（W6 edblane 批 +2 rfauto://edb/status、rfauto://edb/datasets 后，aurora_d 批次再 +2=9，2026-10-14 实测）
+    assert ours["resource_count"] == 9  # 架构批 GATE-FINAL 对账（W6 edblane 批 +2 rfauto://edb/status、rfauto://edb/datasets 后，架构批 批次再 +2=9，2026-10-14 实测）
     assert any(u.startswith("rfauto://") for u in ours["protocol"]["resource_schemes"])
 
 

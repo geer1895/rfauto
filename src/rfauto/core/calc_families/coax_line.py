@@ -1,4 +1,4 @@
-"""标准圆同轴传输线通用件族（aurora72 A2-C 席域 1，R7 第二梯队 T1）。
+"""标准圆同轴传输线通用件族（架构批 A2-C 席域 1，R7 第二梯队 T1）。
 
 三键：coax_line_z0（特性阻抗双向解：分析 a,b→Z0 / 综合 z0→a 或 b /
 ratio_only） / coax_line_attenuation（行波线衰减分解：导体 αc∝√f +
@@ -39,6 +39,10 @@ ratio_only） / coax_line_attenuation（行波线衰减分解：导体 αc∝√
   tanδ=0 → αd=0。线 Q = β/(2α_total)；导体路线互证：β/(2αc) 与
   ωμ·ln(b/a)/(Rs·(1/a+1/b))（场积分法，cavity_unloaded_q 同式）解析
   同解——本键按 β/(2αc) 路线算 xcheck，跨键测试互证 ≤1e-12。
+  粗糙度档（W5-K，可选参数组 roughness_model 等，缺省 smooth 逐位不变）：
+  Rs_eff = Rs·K_R → αc 与线 Q 同比含 K_R；K_R 消费 core/conductor_loss.
+  roughness_gain 单源（Huray/Hammerstad 闭式与出处见该模块 docstring；
+  am_loss_budget.wr_loss_budget 同构口径），退化锚 K_R=1 逐位恒等。
 - 峰值功率容量（TEM 场分布，击穿场强 E_br 在内导体表面 ρ=a）：
 
       E(ρ) = V/(ρ·ln(b/a)) → V_max = E_br·a·ln(b/a)
@@ -66,6 +70,16 @@ ratio_only） / coax_line_attenuation（行波线衰减分解：导体 αc∝√
 z0_ohm>0 且 a/b 恰给其一（同给或全缺显式拒绝）；epsilon_r ≥ 1；
 f_ghz>0；conductivity_s_per_m>0；mu_r>0；tan_delta ≥ 0；e_br_v_per_m>0；
 p_op_w ≥ 0；越界一律显式拒绝。
+
+出处（Pozar《Microwave Engineering》§2.2/§2.7/§3；Ramo-Whinnery-Van Duzer）：
+- coax_line_z0：TEM 精确闭式 Z0=(60/√εr)·ln(b/a)（Pozar §2.2 同轴线；
+  TE11 截止保角映射 kc≈2/(a+b) 同节口径）。
+- coax_line_attenuation：Pozar §2.7 传输线损耗（导体 Rs 趋肤+介质
+  β·tanδ/2；线 Q=β/(2α) 场积分路线互证）；Ramo-Whinnery-Van Duzer
+  同族口径。
+- coax_line_power_capacity：内导体表面场强上限 TEM 场解（Pozar §2.2）。
+- coax_line_cutoff_attenuator：Pozar §3 波导一般理论倏逝模
+  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，架构批 W8-S37 批口径）。
 """
 
 from __future__ import annotations
@@ -107,6 +121,89 @@ def _min_loss_ratio() -> float:
 
 
 _MIN_LOSS_RATIO = _min_loss_ratio()
+
+
+# ─── 粗糙度档共用底座（W5-K 升级核 ①②；本族+combline/waveguide 族消费）──────
+
+def _roughness_gain_tier(
+    key: str,
+    roughness_model: str = "smooth",
+    roughness_rms_um: float | None = None,
+    roughness_factor: float = 2.0,
+    nodule_radius_um: float | None = None,
+    nodules_per_cell: float | None = None,
+    cell_area_um2: float | None = None,
+    *,
+    delta_m: float,
+) -> tuple[float, dict[str, Any]]:
+    """可选粗糙度档 → (k_R, 配置回执)——conductor_loss.roughness_gain 单源消费。
+
+    W5-K 升级核（R2 §④ Top3 ①②）口径：k_R 乘表面电阻 Rs（粗糙度作用于
+    表面阻抗、同场分布下 α_c ∝ Rs、Q ∝ 1/Rs——am_loss_budget.wr_loss_budget
+    同构依据）。物理闭式与出处（Huray 2007/Hall-Huray 2007 雪球模型；
+    Hammerstad-Jensen 1980/Shlepnev 2011 修改版）全部见 core/conductor_loss
+    模块 docstring——本 helper 只做 CALC 平面参数（µm/µm²）到 SI 的换算与
+    缺参显式拒绝，数值一律走单源，不复制公式。
+
+    退化锚（测试钉 test_w5k_upgrade_tiers.py）：roughness_model="smooth"
+    （缺省）→ k_R=1.0 恒等；hammerstad Δ=0 → 单源精确返 1.0
+    （atan(0)=0）——k_R=1.0 乘法 IEEE 逐位不变，缺省路径零漂移。
+
+    Returns:
+        (k_rough, receipt)：receipt 含 model 与已消费参数回执（写进键输出）。
+
+    Raises:
+        ValueError: 未知模型、模型缺参、参数为 bool/负值/非有限（值域
+            校验由 conductor_loss 单源二次把关）。
+    """
+    from rfauto.core import conductor_loss
+
+    name = str(roughness_model).strip().lower()
+    if name == "smooth":
+        return 1.0, {"model": "smooth"}
+    if name == "hammerstad":
+        if roughness_rms_um is None:
+            raise ValueError(
+                f"{key}: roughness_model='hammerstad' 需给 roughness_rms_um"
+                "（RMS 粗糙度，µm）")
+        if isinstance(roughness_rms_um, bool):
+            raise ValueError(f"{key}: roughness_rms_um 不能为 bool")
+        rq_m = float(roughness_rms_um) * 1e-6
+        if not math.isfinite(rq_m) or rq_m < 0.0:
+            raise ValueError(
+                f"{key}: roughness_rms_um 必须 >=0 有限，得到 "
+                f"{roughness_rms_um!r}")
+        if isinstance(roughness_factor, bool):
+            raise ValueError(f"{key}: roughness_factor 不能为 bool")
+        rf = float(roughness_factor)
+        k = conductor_loss.roughness_gain(
+            "hammerstad", delta_m=delta_m, rq_m=rq_m, roughness_factor=rf)
+        return k, {"model": "hammerstad", "rq_m": rq_m,
+                   "roughness_factor": rf}
+    if name == "huray":
+        if (nodule_radius_um is None or nodules_per_cell is None
+                or cell_area_um2 is None):
+            raise ValueError(
+                f"{key}: roughness_model='huray' 需给 (nodule_radius_um, "
+                "nodules_per_cell, cell_area_um2) 三参（Hall-Huray 铜瘤"
+                "几何；Ansys SIwave 内置模型 r=0.5µm、SR=1/3/6）")
+        if isinstance(nodule_radius_um, bool):
+            raise ValueError(f"{key}: nodule_radius_um 不能为 bool")
+        if isinstance(nodules_per_cell, bool):
+            raise ValueError(f"{key}: nodules_per_cell 不能为 bool")
+        if isinstance(cell_area_um2, bool):
+            raise ValueError(f"{key}: cell_area_um2 不能为 bool")
+        r_m = float(nodule_radius_um) * 1e-6
+        area_m2 = float(cell_area_um2) * 1e-12
+        n = float(nodules_per_cell)
+        k = conductor_loss.roughness_gain(
+            "huray", delta_m=delta_m, nodule_radius_m=r_m,
+            nodules_per_cell=n, cell_area_m2=area_m2)
+        return k, {"model": "huray", "nodule_radius_m": r_m,
+                   "nodules_per_cell": n, "cell_area_m2": area_m2}
+    raise ValueError(
+        f"{key}: 未知 roughness_model {roughness_model!r}，可选 "
+        f"{conductor_loss.ROUGHNESS_MODELS}")
 
 
 # ─── 键 1：特性阻抗双向解 ────────────────────────────────────────────────────
@@ -258,13 +355,29 @@ def coax_line_z0(a_mm: float | None = None, b_mm: float | None = None,
      ("conductivity_s_per_m", "float S/m 导体电导率（>0；Cu=5.8e7）"),
      ("epsilon_r", "float 填充介质相对介电常数（≥1，缺省 1）"),
      ("mu_r", "float 相对磁导率（>0，缺省 1 非磁性）"),
-     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）")),
+     ("tan_delta", "float 介质损耗角正切（≥0，缺省 0=无耗）"),
+     ("roughness_model", "str 粗糙度档（W5-K）：smooth（缺省，K_R=1 缺省路径"
+      "逐位不变）/hammerstad/huray——conductor_loss.roughness_gain 单源，"
+      "αc 与线 Q 同比乘 K_R（同场分布 αc∝Rs 口径）"),
+     ("roughness_rms_um", "float µm 导体 RMS 粗糙度 Rq（≥0；hammerstad 档"
+      "必给，0→K_R=1 逐位退化）"),
+     ("roughness_factor", "float Hammerstad 最大增益 RF（≥1，缺省 2 经典"
+      "口径）"),
+     ("nodule_radius_um", "float µm Hall-Huray 铜瘤半径（huray 档必给）"),
+     ("nodules_per_cell", "float 单位元铜瘤数 N（≥0；huray 档必给）"),
+     ("cell_area_um2", "float µm² 单位元面积 A_flat（>0；huray 档必给）")),
     required=("f_ghz", "a_mm", "b_mm", "conductivity_s_per_m"),
 )
 def coax_line_attenuation(f_ghz: float, a_mm: float, b_mm: float,
                           conductivity_s_per_m: float,
                           epsilon_r: float = 1.0, mu_r: float = 1.0,
-                          tan_delta: float = 0.0) -> dict[str, Any]:
+                          tan_delta: float = 0.0,
+                          roughness_model: str = "smooth",
+                          roughness_rms_um: float | None = None,
+                          roughness_factor: float = 2.0,
+                          nodule_radius_um: float | None = None,
+                          nodules_per_cell: float | None = None,
+                          cell_area_um2: float | None = None) -> dict[str, Any]:
     f = _finite(f_ghz, "f_ghz")
     a = _finite(a_mm, "a_mm")
     b = _finite(b_mm, "b_mm")
@@ -300,12 +413,24 @@ def coax_line_attenuation(f_ghz: float, a_mm: float, b_mm: float,
     a_m, b_m = a * 1e-3, b * 1e-3
     mu = _MU0 * mur
     omega = 2.0 * math.pi * f_hz
+    # 粗糙度档（W5-K）：conductor_loss.roughness_gain 单源消费；K_R 乘 Rs
+    # （粗糙度作用于表面阻抗，TEM 同场分布下 αc ∝ Rs、线 Q ∝ 1/Rs——
+    # am_loss_budget.wr_loss_budget 同构口径）。smooth 缺省 K_R=1.0，
+    # 乘 1.0 IEEE 逐位不变（缺省路径零漂移，既有测试即证）。
+    from rfauto.core import conductor_loss
+
+    delta_m = conductor_loss.skin_depth(f_hz, sigma, mur)
+    k_rough, rough_receipt = _roughness_gain_tier(
+        "coax_line_attenuation", roughness_model, roughness_rms_um,
+        roughness_factor, nodule_radius_um, nodules_per_cell,
+        cell_area_um2, delta_m=delta_m)
     # Q 链用精确 TEM 阻抗（损耗/Q 与双路线互证须精确常数自洽）：
     # Z0 = (η0/2π)·√(μr/εr)·ln(b/a)，η0/2π=59.9585（工程记号 60 的精确形）
     eta0 = math.sqrt(_MU0 / _EPS0)
     z0 = eta0 / (2.0 * math.pi) * math.log(b_m / a_m) * math.sqrt(mur / eps_r)
     rs = math.sqrt(math.pi * f_hz * mu / sigma)               # Ω/□
-    alpha_c_np = rs * (1.0 / a_m + 1.0 / b_m) / (4.0 * math.pi * z0)
+    rs_eff = rs * k_rough                                     # 粗糙度实效 Rs
+    alpha_c_np = rs_eff * (1.0 / a_m + 1.0 / b_m) / (4.0 * math.pi * z0)
     # 介质损耗：αd = β·tanδ/2，β=ω√(με)=2πf√(μ0ε0εrμr)=2πf√(εrμr)/c₀
     # （C_MM_GHZ=mm·GHz 口径光速 → c₀[m/s]=C_MM_GHZ·1e6）
     alpha_d_np = math.pi * f_hz * math.sqrt(eps_r * mur) * tand / (
@@ -315,9 +440,20 @@ def coax_line_attenuation(f_ghz: float, a_mm: float, b_mm: float,
     line_q = beta / (2.0 * (alpha_c_np + alpha_d_np))
     # 场积分路线互证（cavity_unloaded_q 同式，独立推导路线）
     q_c_field = omega * mu * math.log(b_m / a_m) / (
-        rs * (1.0 / a_m + 1.0 / b_m))
+        rs_eff * (1.0 / a_m + 1.0 / b_m))
     q_c_route = beta / (2.0 * alpha_c_np)
     rel_dev = abs(q_c_field - q_c_route) / q_c_route
+    note = (
+        "行波线口径（每米衰减），非谐振腔 Q；αc 趋肤口径 ∝√f∝1/√σ；"
+        "αd 满充均匀介质假定；q_xcheck=β/(2αc) 与场积分法解析同解；"
+        "本键 Z0 取精确 TEM 常数 η0/2π=59.9585（工程记号 60 的精确"
+        "形，记号差 ~0.07%；阻抗综合面 coax_line_z0 按惯例 60 口径）")
+    source = _SOURCES["att"]
+    if k_rough != 1.0:
+        note += (f"；粗糙度档 K_R={k_rough:.6g}"
+                 f"（{rough_receipt['model']}，αc/线 Q 同比含入）")
+        source += ("；粗糙度增益 core/conductor_loss.roughness_gain 单源"
+                   "（Huray 2007/Hall-Huray 2007；Hammerstad-Jensen 1980）")
     return {
         "f_ghz": f,
         "a_mm": a,
@@ -326,8 +462,11 @@ def coax_line_attenuation(f_ghz: float, a_mm: float, b_mm: float,
         "epsilon_r": eps_r,
         "mu_r": mur,
         "tan_delta": tand,
+        "roughness_model": rough_receipt["model"],
+        "roughness_gain_k": round(k_rough, 15),
+        "roughness": rough_receipt,
         "z0_ohm": round(z0, 12),
-        "rs_ohm_per_sq": round(rs, 15),
+        "rs_ohm_per_sq": round(rs_eff, 15),
         "alpha_conductor_db_m": round(alpha_c_np * 8.686, 12),
         "alpha_dielectric_db_m": (
             None if tand == 0.0 else round(alpha_d_np * 8.686, 12)),
@@ -337,12 +476,8 @@ def coax_line_attenuation(f_ghz: float, a_mm: float, b_mm: float,
         "q_conductor_xcheck": round(q_c_route, 9),
         "q_conductor_field_integral": round(q_c_field, 9),
         "q_xcheck_rel_dev": round(rel_dev, 15),
-        "note": (
-            "行波线口径（每米衰减），非谐振腔 Q；αc 趋肤口径 ∝√f∝1/√σ；"
-            "αd 满充均匀介质假定；q_xcheck=β/(2αc) 与场积分法解析同解；"
-            "本键 Z0 取精确 TEM 常数 η0/2π=59.9585（工程记号 60 的精确"
-            "形，记号差 ~0.07%；阻抗综合面 coax_line_z0 按惯例 60 口径）"),
-        "source": _SOURCES["att"],
+        "note": note,
+        "source": source,
     }
 
 

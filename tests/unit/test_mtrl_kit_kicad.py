@@ -272,6 +272,22 @@ class TestKiCadGeneration:
         assert result["ok"], result.get("errors")
         check = mod.verify_kicad_pcb_opens(result["path"])
         assert check["ok"], check.get("errors")
+        # 实测板参数非空壳（R3 弱测试 #5）：引擎回读 stdout 带轨迹计数，
+        # 提取面复核层数/过孔构成（track/via >0、双层 F.Cu/B.Cu）
+        import re as _re
+
+        m = _re.search(r"TRACKS (\d+)", check.get("stdout", ""))
+        assert m is not None, check.get("stdout")
+        assert int(m.group(1)) > 0, check.get("stdout")
+        from rfauto.adapters.kicad_extract import extract_pcb
+
+        ext = extract_pcb(result["path"])
+        assert ext["ok"] is True, ext.get("errors")
+        assert ext["board"]["layer_count"] == 2
+        assert ext["board"]["copper_layers"] == ["F.Cu", "B.Cu"]
+        drills = {round(v["drill_mm"], 6) for v in ext["vias"]}
+        assert {0.6, 3.2} <= drills  # 地焊盘接地孔 + M3 安装孔
+        assert all(v["pad_diameter_mm"] > v["drill_mm"] for v in ext["vias"])
 
     def test_missing_kicad_python_reports_not_ok(
         self,

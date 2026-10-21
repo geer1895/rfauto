@@ -57,11 +57,11 @@ C_MM_GHZ = 299.792458
 # 审计逐键同值；换钉留 diff 证据纪律同上）。
 EEP_BASE_RENDER_SHA256 = {
     "patch_eep_2x2": "5cb04518208d0beba6113c1223fd565d0b4c8e26d70a4665321834455d5563db",
-    "patch_eep_1x4": "b2e72402470da0067e54ba980433d9079bb0e7508a71f3f85b7512519c8a36f4",
+    "patch_eep_1x4": "b8ae1f4f71497c9928cb66fb2a5f3e349055cc3e5e658ade944b6fe7cd2d85f5",
 }
 EEP_FF_RENDER_SHA256 = {
     "patch_eep_2x2": "fbf82e8793463a0eb3af81bf595e68574b944d8096f292c87f6d0aa3ae0e1344",
-    "patch_eep_1x4": "bd60bdad2892c0429b61410159a1f93cc2e51b1c6557b06d85e0a617b6c2b576",
+    "patch_eep_1x4": "a454652e57a0fe449d1ee7d0e359d0793e1b465e95e8f405ea3f28d96f89d92c",
 }
 
 

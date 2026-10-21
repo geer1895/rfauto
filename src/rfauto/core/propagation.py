@@ -1,7 +1,8 @@
 """AP-5 传播基础闭式包（plan_deepdive_specs_20261002.md §A-7，2026-10-02）。
 
 传播域主线首件：双径干涉/刃形绕射/菲涅尔区净空/Hata-COST231 路损四个
-传播基础闭式，全部**纯函数零 IO**、单位口径显式（SI：m/Hz/MHz/km）、
+传播基础闭式 + COST-231 Walfisch-Ikegami 视距/非视距两式（架构批 W4-S4
+追加尾位），全部**纯函数零 IO**、单位口径显式（SI：m/Hz/MHz/km）、
 返回 JSON 可序列化值。零求解器依赖（§A 包跨件裁决）。
 
 出处与口径：
@@ -325,3 +326,138 @@ def hata_cost231_db(
     if env == "open":
         return base + c_db - (4.78 * lf ** 2 - 18.33 * lf + 40.94)
     return base + c_db
+
+
+# ─── COST-231 Walfisch-Ikegami（COST 231 final report ch.4.4）───────────────
+# 出处：COST Telecom Secretariat, "Final report of the COST Action 231",
+# ch.4.4 "The Walfisch-Ikegami model"（1999）；ITU-R P.1411 同式承载；
+# Rappaport 2nd ed §4.10.4 摘要式。域盒 800–2000 MHz（COST 231 有效域）。
+# 诚实边界（#1c/#122）：h_bs > h_roof 分支含 L_bsh/k_a 内插档，原文页码
+# 未在本席复读核对——域盒显式拒绝 h_bs > h_roof（经典微蜂窝"低于屋项"
+# 用例不受影响），不凭记忆写该分支常数。
+
+_WI_F_MIN_MHZ, _WI_F_MAX_MHZ = 800.0, 2000.0
+_WI_D_MIN_KM, _WI_D_MAX_KM = 0.02, 5.0
+
+
+def _wi_orientation_loss_db(phi_deg: float) -> float:
+    """街道取向修正 L_ori（COST 231 式(22)族，φ ∈ [0,90]°）。
+
+    分段（φ = 街道走向与传播方向夹角）：
+      0 ≤ φ < 35°： −10 + 0.354·φ
+      35 ≤ φ < 55°： 2.5 + 0.075·(φ − 35)
+      55 ≤ φ ≤ 90°： 4.0 − 0.114·(φ − 55)
+    35° 接缝存在原文级 0.11dB 阶跃（2.39 vs 2.5，两段拟合常数所致，
+    非实现误差）；90° 端 L_ori ≈ 0.01dB≈0（原文分段常数内禀）。
+    """
+    p = _num(phi_deg, "phi_deg")
+    if not 0.0 <= p <= 90.0:
+        raise ValueError(f"phi_deg 域盒 [0,90]°，得 {p}")
+    if p < 35.0:
+        return -10.0 + 0.354 * p
+    if p < 55.0:
+        return 2.5 + 0.075 * (p - 35.0)
+    return 4.0 - 0.114 * (p - 55.0)
+
+
+def walfisch_ikegami_los_db(f_mhz: float, d_km: float) -> float:
+    """WI 视距（街道峡谷 LoS）路损 [dB]（COST 231 式(27)）。
+
+        L_los = 42.6 + 26·log10(d) + 20·log10(f)     [d: km, f: MHz]
+
+    域盒：f∈[800,2000]MHz、d∈[0.02,5]km 且 d ≥ 0.02km（COST 231 明文
+    "valid for d ≥ 0.02 km"）。教科书点 f=2000MHz/d=1km → 108.62dB。
+    """
+    f = _num(f_mhz, "f_mhz")
+    d = _num(d_km, "d_km")
+    if not (_WI_F_MIN_MHZ <= f <= _WI_F_MAX_MHZ):
+        raise ValueError(
+            f"f_mhz 域盒 [{_WI_F_MIN_MHZ},{_WI_F_MAX_MHZ}]MHz，得 {f}")
+    if not (_WI_D_MIN_KM <= d <= _WI_D_MAX_KM):
+        raise ValueError(
+            f"d_km 域盒 [{_WI_D_MIN_KM},{_WI_D_MAX_KM}]km，得 {d}")
+    return 42.6 + 26.0 * math.log10(d) + 20.0 * math.log10(f)
+
+
+def walfisch_ikegami_nlos_parts(
+    f_mhz: float,
+    d_km: float,
+    h_bs_m: float,
+    h_m_m: float,
+    h_roof_m: float,
+    w_m: float,
+    b_m: float,
+    phi_deg: float,
+    city: str = "metropolitan",
+) -> dict[str, Any]:
+    """WI 非视距三分量分解 [dB]（COST 231 ch.4.4.2/4.4.3，h_bs ≤ h_roof）。
+
+        L_nlos = L_f + L_rts + L_msd
+
+    - 自由空间 L_f = 32.4 + 20·log10(d_km) + 20·log10(f_MHz)
+      （FSPL 圆化常数形——与 link_limits.free_space_path_loss 精确 SI
+      形差 ~6 mdB 量级，同 hata 族的常数口径注记）；
+    - 屋顶到街道 L_rts = −16.9 − 10·log10(w) + 10·log10(f)
+      + 20·log10(Δh_m) + L_ori，Δh_m = h_roof − h_m > 0（要求收端低于
+      屋顶），w=街宽、L_ori 见 _wi_orientation_loss_db；
+    - 多屏绕射 L_msd = k_a + k_d·log10(d) + k_f·log10(f) − 9·log10(b)
+      （h_bs ≤ h_roof 档：k_a=54 满遮挡、k_d = 18 − 15·(h_roof−h_bs)/
+      h_roof、L_bsh=0），k_f：metropolitan = −4 + 0.7·(f/925 − 1)、
+      medium = −4 + 1.5·(f/925 − 1)——f=925MHz 时 k_f=−4 逐位（原文
+      锚点频率）。
+
+    域盒：f∈[800,2000]MHz、d∈[0.02,5]km、h_bs ≤ h_roof（h_bs > h_roof
+    分支 L_bsh/k_a 内插档不做——#1c 原文未复读不凭记忆写常数，显式
+    ValueError）、Δh_m > 0、w > 0、b ≥ w（物理：楼间距不小于街宽）。
+    """
+    f = _num(f_mhz, "f_mhz")
+    d = _num(d_km, "d_km")
+    hb = _num(h_bs_m, "h_bs_m")
+    hm = _num(h_m_m, "h_m_m")
+    hr = _num(h_roof_m, "h_roof_m")
+    w = _num(w_m, "w_m")
+    b = _num(b_m, "b_m")
+    phi = _num(phi_deg, "phi_deg")
+    if city not in ("metropolitan", "medium"):
+        raise ValueError(
+            f"city 只收 'metropolitan'/'medium'，得 {city!r}")
+    if not (_WI_F_MIN_MHZ <= f <= _WI_F_MAX_MHZ):
+        raise ValueError(
+            f"f_mhz 域盒 [{_WI_F_MIN_MHZ},{_WI_F_MAX_MHZ}]MHz，得 {f}")
+    if not (_WI_D_MIN_KM <= d <= _WI_D_MAX_KM):
+        raise ValueError(
+            f"d_km 域盒 [{_WI_D_MIN_KM},{_WI_D_MAX_KM}]km，得 {d}")
+    if hb > hr:
+        raise ValueError(
+            "h_bs_m 必须 ≤ h_roof_m（低于屋项档；h_bs>h_roof 分支 L_bsh/"
+            f"k_a 内插档原文未复读不做，得 h_bs={hb}/h_roof={hr}）")
+    dh_m = hr - hm
+    if dh_m <= 0.0:
+        raise ValueError(
+            f"要求 h_roof > h_m（收端低于屋顶，Δh_m>0），得 Δh_m={dh_m}")
+    if w <= 0.0:
+        raise ValueError(f"w_m 必须 >0，得 {w}")
+    if b < w:
+        raise ValueError(f"要求 b_m ≥ w_m（楼间距不小于街宽），得 {b}/{w}")
+    l_ori = _wi_orientation_loss_db(phi)
+    l_f = 32.4 + 20.0 * math.log10(d) + 20.0 * math.log10(f)
+    l_rts = (-16.9 - 10.0 * math.log10(w) + 10.0 * math.log10(f)
+             + 20.0 * math.log10(dh_m) + l_ori)
+    dh_b = hr - hb
+    k_a = 54.0
+    k_d = 18.0 - 15.0 * dh_b / hr
+    k_f = -4.0 + (0.7 if city == "metropolitan" else 1.5) * (f / 925.0 - 1.0)
+    l_msd = k_a + k_d * math.log10(d) + k_f * math.log10(f) - 9.0 * math.log10(b)
+    return {
+        "loss_db": l_f + l_rts + l_msd,
+        "l_free_db": l_f,
+        "l_rts_db": l_rts,
+        "l_msd_db": l_msd,
+        "l_ori_db": l_ori,
+        "k_a": k_a,
+        "k_d": k_d,
+        "k_f": k_f,
+        "delta_h_mobile_m": dh_m,
+        "delta_h_base_m": dh_b,
+        "city": city,
+    }

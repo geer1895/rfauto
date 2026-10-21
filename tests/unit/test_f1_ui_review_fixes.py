@@ -32,7 +32,7 @@ import yaml
 from starlette.testclient import TestClient
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -45,9 +45,8 @@ _PLOTCARD = (_STATIC / "plotcard.js").read_text(encoding="utf-8")
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 批4 单源化）。"""
     yield
 
 
@@ -210,10 +209,12 @@ class TestImportUiVersionNarrative:
     def test_dropdown_defaults_to_server_default(self):
         # 缺省项=空值（跟随服务端缺省，不透传显式版本）+ 如实列出当前可用
         # 版本（本机实测 2025 R1/v251）+ 自定义输入框（无版本清单接口形态）
-        assert ("<select id='imp-version'><option value=''>服务端缺省（2025.1）"
-                "</option>") in _PAGES
+        # S1 发布令批：下拉展示文案迁词表（import.ver_default/ver_custom，
+        # zh 值同笔）；value 协议哨兵（空值/2025.1/__custom__）钉不变
+        assert ("<select id='imp-version'><option value=''>"
+                '${t("import.ver_default")}</option>') in _PAGES
         assert "<option value='2025.1'>2025.1</option>" in _PAGES
-        assert "<option value='__custom__'>自定义…</option>" in _PAGES
+        assert '<option value=\'__custom__\'>${t("import.ver_custom")}</option>' in _PAGES
         assert "imp-version-custom" in _PAGES
         # 自定义输入随下拉显隐
         assert 'T.$("imp-version").value === "__custom__"' in _PAGES
@@ -315,7 +316,7 @@ class TestGuardSingleSource:
 
     def test_server_has_no_bare_request_json_left(self):
         # P0-C 清零钉：UI handler 面不再保留裸 await request.json() 调用点
-        # （aurora_d UI-R1 拆分后扫描面=ui 包全 .py，**除 params.py**——
+        # （架构批 UI-R1 拆分后扫描面=ui 包全 .py，**除 params.py**——
         # 守卫单源 _json_body 自身的内部调用是合法实现面，docstring 提法
         # 亦非调用点；campaign_app/edb_app 实测零命中无需豁免）
         ui_dir = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui")

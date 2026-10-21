@@ -1,5 +1,12 @@
 """RIS 级联闭式表征族（NX-4，内核在 core/ris_cascade.py，本模块只做注册壳）。
 
+出处（RIS 级联经典口径，正文规格节转录；物理细节见内核
+core/ris_cascade.py docstring 与 ETSI GR RIS 001 引用）：
+- ris_cascade_budget：BS-RIS-UE 几何级联精确和/远场 N² 闭式
+  （E. Björnson, Ö. Özdogan, E. G. Larsson, IEEE Trans. Wireless
+  Commun. 19(1), 2020 路径损耗∝N² 口径）+ 交叉距离
+  d_cross=4π·d1·d2/(N·λ) 同源闭式。
+
 round14 §四 :96-97 规格「NX-4 RIS 级联闭式表征（P1/M）：BS-RIS-UE 几何
 级联+路径损耗∝N²（Björnson TWC 2020）+无源波束指向角谱验证，挂
 metasurface_lut 量化损失」（2026-10-02）。单键 ris_cascade_budget：

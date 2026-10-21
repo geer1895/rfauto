@@ -15,11 +15,10 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
-    # R2-D-02：审批读写接 RegistryDB 后，清掉注册表 DB 路径 env，
-    # 防止本机 set 的 RFAUTO_REGISTRY_DB 把测试写入写到 tmp 之外（#144）
+def _isolated(isolated_cache_off, monkeypatch):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 批5 单源化）
+    + 专用增量（RFAUTO_REGISTRY_DB 清位）。
+    """
     monkeypatch.delenv("RFAUTO_REGISTRY_DB", raising=False)
     yield
 
@@ -346,10 +345,12 @@ class TestApprovalFullChain:
 
 class TestAgentChat:
     @pytest.fixture(autouse=True)
-    def _no_llm(self, monkeypatch):
+    def _no_llm(self, monkeypatch, tmp_path):
         # 单测对象是关键词路由；不隔离的话本机配了 API key（chat_settings.yaml）
         # 会真打外部 LLM（实测 22s/次且断言随模型回复漂移）
         from rfauto.service import r3_services
+        # 构造即开会话——chdir 隔离会话档落盘（#144 家族终门实证）
+        monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(r3_services, "get_chat_settings",
                             lambda: {"ok": True, "configured": False})
 
@@ -652,8 +653,12 @@ class TestAgentChatApprovalChannel:
     """B-32：AgentChat 通道回归——LLM 通道 monkeypatch 钉住，绝不触网（#139）。"""
 
     @pytest.fixture(autouse=True)
-    def _pin_channel(self, monkeypatch):
+    def _pin_channel(self, monkeypatch, tmp_path):
         from rfauto.service import r3_services
+
+        # 会话档落盘走 cwd 相对 runs/chat_sessions（agent_runtime.SESSIONS_DIR）
+        # ——chdir 隔离（#144 家族终门三例实证：17:17 会话档污染真实 runs/）
+        monkeypatch.chdir(tmp_path)
 
         calls: list[tuple[str, object]] = []
 

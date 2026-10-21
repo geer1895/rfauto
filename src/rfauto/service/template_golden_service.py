@@ -1,4 +1,4 @@
-"""EC-8 全模板 golden 几何回归仓（W2-S8，aurora_e）。
+"""EC-8 全模板 golden 几何回归仓（W2-S8，架构批）。
 
 对 openEMS 模板注册表（TEMPLATE_META）全部族：以标称参数（TEMPLATE_NOMINAL
 ——与 docs/templates/<族>/meta.yaml nominal_params 双侧严格相等，钉在
@@ -212,7 +212,31 @@ def _port_numbers(scope: dict[str, Any]) -> list[int]:
 
 # ── 摘要计算 ─────────────────────────────────────────────────────────────────
 
-_DIGEST_CACHE: dict[tuple[str, int, float], dict[str, Any]] = {}
+#: W5-P3-6（架构批 W1-S4）：会话摘要缓存键补渲染源指纹——旧键
+#: (template, DIGEST_VERSION, mesh) 无源成分，开发期改 openems_templates
+#: 渲染器或测试 monkeypatch render_script 后同键仍吃会话内旧 digest。
+#: _DIGEST_CACHE: dict[tuple[Any, ...], dict[str, Any]]
+_DIGEST_CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
+
+
+def _render_source_fp() -> tuple[int, int, int, int]:
+    """render_script 渲染源指纹（纯键成分，值面零变化）。
+
+    =（函数对象 id, 源文件 (mtime_ns,size) 哈希, 代码首行号, 代码对象长度）
+    ——改源文件（mtime 变）或换函数对象（monkeypatch，id 变）任一即失效；
+    源文件不可得（动态构造函数等）按 (0,0) 计、仍由 id+code 成分兜底。
+    """
+    code = getattr(render_script, "__code__", None)
+    firstline = int(getattr(code, "co_firstlineno", 0) or 0)
+    codelen = len(code.co_code) if code else 0
+    try:
+        import inspect
+
+        st = Path(inspect.getsourcefile(render_script) or "").stat()
+        src_sig = hash((st.st_mtime_ns, st.st_size))
+    except (OSError, TypeError, ValueError):
+        src_sig = 0
+    return (id(render_script), src_sig, firstline, codelen)
 
 
 def compute_template_digest(
@@ -222,9 +246,11 @@ def compute_template_digest(
 
     返回 golden 快照形状 dict：status=ok（含哈希面）/guard_blocked（渲染
     守卫拒绝，guard_error=守卫原文）/error（几何段 exec/实测异常）。
-    同参数结果会话内缓存（load_geometry 先例）。
+    同参数结果会话内缓存（load_geometry 先例）；键含渲染源指纹
+    （W5-P3-6：改渲染器/monkeypatch 后即刻失效）。
     """
-    key = (template, DIGEST_VERSION, float(mesh_resolution_mm))
+    key = (template, DIGEST_VERSION, float(mesh_resolution_mm),
+           *_render_source_fp())
     cached = _DIGEST_CACHE.get(key)
     if cached is not None:
         return copy.deepcopy(cached)
@@ -245,6 +271,14 @@ def compute_template_digest(
         # 渲染期守卫拒绝（#266 缝分辨/孔径分辨/YJ>0 拓扑守卫族）——如实登记
         digest = {**common, "status": "guard_blocked",
                   "guard_error": str(exc)}
+        _DIGEST_CACHE[key] = digest
+        return copy.deepcopy(digest)
+    except Exception as exc:
+        # W6-P3-7（架构批 W1-S4）：渲染期非守卫异常（KeyError/TypeError 等
+        # 渲染器缺陷面）此前裸穿透让 build/diff 整批中断——与几何段 exec
+        # 面同口径落 error 态如实登记，逐族循环不中断（不冒充守卫拒绝）。
+        digest = {**common, "status": "error",
+                  "error": f"{type(exc).__name__}: {exc}"}
         _DIGEST_CACHE[key] = digest
         return copy.deepcopy(digest)
     digest: dict[str, Any] = {

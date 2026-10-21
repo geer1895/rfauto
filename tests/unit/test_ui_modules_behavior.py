@@ -1,4 +1,4 @@
-"""aurora_d UI-R6 席位回归钉：pages/ 核心基础设施模块行为级 node 测试深化。
+"""架构批 UI-R6 席位回归钉：pages/ 核心基础设施模块行为级 node 测试深化。
 
 **模块覆盖清单（2026-10-14，UI-R2 拆分后 33 模块中的核心基础设施 + 2 视图）**
 
@@ -61,6 +61,7 @@ location/history/T.activate/VIEWS；sse 桩 window.EventSource 类。每 pytest
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -867,3 +868,160 @@ class TestViewToolsDetectors:
 
     def test_node_check_view_tools(self):
         _node_check("view_tools.js")
+
+
+# ────────────────────────── 8. context.js：S 收编结构钉（W6-S2） ──────────────────────────
+
+# R2 审计 §面2 / Top10 #1：S 收敛 {currentRunId} 单键（16 个单模块私有键
+# 降级各视图模块级 let，行为等价搬家）；currentRunId 写面唯一=router.js
+# （openRun 主入口 + noteCurrentRunId 旁路同步面）。
+
+_S_KEYS_DOWNGRADED = {
+    "view_agent": ["chatLog"],
+    "view_dashboard": ["dashData", "widgetSet", "widgetSpan", "kpiPrev"],
+    "view_sparams": ["spOverlay", "spRunId", "spMode"],
+    "view_optstack": ["osRunId"],
+    "view_fieldviz": ["fvDump", "ffRunId", "fvRunId"],
+    "view_data": ["dsAll"],
+    "view_runs": ["allRuns"],
+    "view_gallery": ["galCards"],
+    "view_campaign": ["cpRunId"],
+}
+
+
+def _src(name: str) -> str:
+    return (_STATIC / "pages" / name).read_text(encoding="utf-8")
+
+
+def _strip_js_comments(src: str) -> str:
+    """字符级 JS 注释剥离（// 与 /* */，字符串字面量感知——头注里的
+    "原 S.xxx" 契约注记不算代码引用）。"""
+    out = []
+    i, n = 0, len(src)
+    while i < n:
+        c = src[i]
+        nxt = src[i + 1] if i + 1 < n else ""
+        if c == "/" and nxt == "/":
+            while i < n and src[i] != "\n":
+                i += 1
+        elif c == "/" and nxt == "*":
+            i += 2
+            while i + 1 < n and not (src[i] == "*" and src[i + 1] == "/"):
+                i += 1
+            i += 2
+            out.append(" ")
+        elif c in ("'", '"', "`"):
+            q = c
+            out.append(c)
+            i += 1
+            while i < n:
+                if src[i] == "\\":
+                    out.append(src[i:i + 2])
+                    i += 2
+                    continue
+                out.append(src[i])
+                if src[i] == q:
+                    i += 1
+                    break
+                i += 1
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+@pytest.mark.skipif(_NODE is None, reason="本机无 node")
+class TestSConsolidation:
+    def test_s_collapsed_to_single_key(self):
+        """S 收敛单键：context.js 声明 {currentRunId}，无历史键残留。"""
+        out = _run_node_js(
+            "const ctx = await import('./pages/context.js');\n"
+            "console.log(JSON.stringify({ keys: Object.keys(ctx.S),\n"
+            "  cur: ctx.S.currentRunId }));\n"
+        )
+        p = _payload(out)
+        assert p == {"keys": ["currentRunId"], "cur": None}
+
+    def test_write_face_unique_to_router(self):
+        """写面唯一=router.js：全 pages/ 树 S.currentRunId 赋值语句只允许
+        出现在 router.js（openRun + noteCurrentRunId 两处）；其他模块直写
+        即红（含 view_detail 第二写点回潮；头注契约注记不算——注释剥离）。"""
+        offenders = []
+        for f in (_STATIC / "pages").glob("*.js"):
+            if f.name == "router.js":
+                continue
+            body = _strip_js_comments(f.read_text(encoding="utf-8"))
+            for i, line in enumerate(body.splitlines(), 1):
+                if re.search(r"S\.currentRunId\s*=", line):
+                    offenders.append(f"{f.name}:{i}")
+        assert not offenders, f"S.currentRunId 写面越界（唯一=router.js）: {offenders}"
+
+    def test_downgraded_keys_absent_from_s_and_module_let_present(self):
+        """16 键降级双验：①原 S.<key> 代码引用在 pages/ 树清零（注释剥离
+        后判定——头注"原 S.xxx"注记合法）；②各属主模块级 let 在位（行为
+        等价搬家的落地面）。"""
+        for mod, keys in _S_KEYS_DOWNGRADED.items():
+            body = _strip_js_comments(_src(f"{mod}.js"))
+            for k in keys:
+                assert f"S.{k}" not in body, f"{mod}.js S.{k} 未降级（代码面）"
+                assert re.search(rf"^let _{k}\b", body, re.M), \
+                    f"{mod}.js 模块级 let _{k} 缺席"
+
+    def test_s_import_dropped_where_no_shared_consumption(self):
+        """降级后无共享键消费的属主模块 S 绑定移除；仍读 S.currentRunId 的
+        模块（view_sparams/view_reports/view_detail/router）保 S 合法。"""
+        for mod in ("view_agent", "view_dashboard", "view_data", "view_runs",
+                    "view_gallery", "view_campaign", "view_optstack",
+                    "view_fieldviz"):
+            src = _src(f"{mod}.js")
+            assert "import { S," not in src and "import { S }" not in src, \
+                f"{mod}.js S 绑定应随降级移除（无共享键消费面）"
+        for mod in ("view_sparams.js", "view_reports.js", "view_detail.js",
+                    "router.js"):
+            assert "S" in _src(mod), f"{mod} 共享键读者 S 绑定应保留"
+
+    def test_detail_uses_router_note_path(self):
+        """view_detail 显式 id 重渲经 noteCurrentRunId（router 转发面）——
+        openRun 主链与页内直写两路径等价（R2 雷区表钉面）。"""
+        detail = _src("view_detail.js")
+        assert "noteCurrentRunId(id);" in detail
+        assert "S.currentRunId = id;" not in detail
+        router = _src("router.js")
+        assert "export function noteCurrentRunId(runId)" in router
+        assert "S.currentRunId = runId;" in router  # 写面在本模块
+
+    def test_downgraded_modules_still_node_importable(self):
+        """降级后各属主模块 node 裸 import 可测保持（R2 雷区表：模块级 let
+        不得引入顶层 DOM 执行）。"""
+        mods = ["context", "router", "view_detail", "view_agent",
+                "view_dashboard", "view_data", "view_runs", "view_gallery",
+                "view_campaign", "view_optstack", "view_sparams",
+                "view_fieldviz"]
+        out = _run_node_js(
+            "const r = [];\n"
+            + "".join(
+                f"try {{ await import('./pages/{m}.js'); r.push('{m}:ok'); }}\n"
+                f"catch (e) {{ r.push('{m}:FAIL ' + String(e).slice(0, 80)); }}\n"
+                for m in mods)
+            + "console.log(JSON.stringify(r));\n"
+        )
+        results = json_loads(out.strip().splitlines()[-1])
+        bad = [x for x in results if "FAIL" in x]
+        assert not bad, f"node 裸 import 破坏: {bad}"
+        assert len(results) == len(mods)
+
+    def test_context_contract_table_present(self):
+        """键契约表（v8 P8-8 欠账补账）在 context.js 头注：S 唯一键属主 +
+        16 降级键归属 + localStorage 键登记。"""
+        ctx = _src("context.js")
+        assert "键契约表" in ctx
+        for token in ("currentRunId", "_chatLog", "_dashData", "_spOverlay",
+                      "_osRunId", "_ffRunId", "_dsAll", "_allRuns",
+                      "_galCards", "_cpRunId", "localStorage"):
+            assert token in ctx, f"契约表缺 {token}"
+
+    def test_node_check_context_router_detail(self):
+        for name in ("context.js", "router.js", "view_detail.js",
+                     "view_agent.js", "view_dashboard.js", "view_sparams.js",
+                     "view_fieldviz.js"):
+            _node_check(name)

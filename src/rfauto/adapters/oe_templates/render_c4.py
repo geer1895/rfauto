@@ -1,4 +1,14 @@
-"""c4 耦合器族（cline_coupler/branchline_2sect/lange）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""c4 耦合器族（cline_coupler/branchline_2sect/lange）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+提升注记（架构批 W1-S3，2026-10-18）：lange 链四函数
+（lange_pair_zee_zoo/lange_equivalent_zee_zoo/lange_design）已下沉
+core/calc_families/lange.py（R2_core_tier3 §⑤ F1 提升式重构；原样提升，
+函数体逐字节未动，提升前后同参输出逐位一致——字节级对拍钉
+tests/unit/test_w1s3_lange_stepped.py，基线
+内部证据目录）。本文件只留再导出
+（#116 不留本地遮蔽副本），openems_templates/template_specs/fake/edb 等
+既有 import 面零改动。段首口径 1-5 与 §C4 文档段保持本文件口径单源。
+"""
 
 from __future__ import annotations
 
@@ -8,6 +18,16 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import numpy as np
+from rfauto.core.calc_families.lange import (
+    lange_design as lange_design,
+)
+from rfauto.core.calc_families.lange import (
+    lange_equivalent_zee_zoo as lange_equivalent_zee_zoo,
+)
+from rfauto.core.calc_families.lange import (
+    lange_pair_zee_zoo as lange_pair_zee_zoo,
+)
+
 from .closedform import _fmt_list, coupled_bpf_width_gap_from_zee_zoo
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 from .render_coupled_bpf import _coupled_section_s4
@@ -112,41 +132,6 @@ def coupled_line_zee_zoo(coupling_db: float,
     return zee, zoo, c
 
 
-def lange_pair_zee_zoo(coupling: float, z0_ohm: float = 50.0) -> tuple[float, float]:
-    """四指 Lange 设计式（Pozar §7.6 Lange 节）：C → 相邻对 (Z0e, Z0o)。
-
-    Z0e=Z0(4C−3+√(9−8C²))/(2C√((1−C)/(1+C)))、
-    Z0o=Z0(4C+3−√(9−8C²))/(2C√((1+C)/(1−C)))。
-    3dB（C=1/√2）→ (176.216, 52.609)Ω@50Ω（自洽校验见段首口径 3）。
-    """
-    c = float(coupling)
-    if not 0.0 < c < 1.0:
-        raise ValueError(f"coupling={coupling} 须在 (0,1)")
-    if 8.0 * c * c >= 9.0:
-        raise ValueError(f"coupling={coupling} 超出设计式可达（须 8C²<9）")
-    rt = math.sqrt(9.0 - 8.0 * c * c)
-    zee = (float(z0_ohm) * (4.0 * c - 3.0 + rt)
-           / (2.0 * c * math.sqrt((1.0 - c) / (1.0 + c))))
-    zoo = (float(z0_ohm) * (4.0 * c + 3.0 - rt)
-           / (2.0 * c * math.sqrt((1.0 + c) / (1.0 - c))))
-    return zee, zoo
-
-
-def lange_equivalent_zee_zoo(zee_pair: float,
-                             zoo_pair: float) -> tuple[float, float]:
-    """四指 Lange 相邻对 (Z0e,Z0o) → 四线等效两线 (Ze4, Zo4)（Pozar §7.6）。
-
-    Ze4=Z0e(Z0o+Z0e)/(3Z0o+Z0e)、Zo4=Z0o(Z0o+Z0e)/(3Z0e+Z0o)；其耦合
-    C=(Ze4−Zo4)/(Ze4+Zo4)、Z0=√(Ze4·Zo4)（test_coupler2_templates 逐位钉）。
-    """
-    ze = float(zee_pair)
-    zo = float(zoo_pair)
-    if not ze > zo > 0.0:
-        raise ValueError(f"须 Z0e > Z0o > 0，得 ({ze}, {zo})")
-    s = ze + zo
-    return ze * s / (3.0 * zo + ze), zo * s / (3.0 * ze + zo)
-
-
 def branchline_2sect_impedances(z0_ohm: float = 50.0,
                                 main_z_ratio: float = 1.0) -> tuple[float, float, float]:
     """两节分支线 f0 阻抗族（段首口径 2）：(Z_a, Z_b1, Z_b2)。
@@ -197,45 +182,6 @@ def cline_coupler_design(coupling_db: float = 10.0, f0_ghz: float = 2.5,
             "w_mm": w_mm, "s_mm": s_mm, "zee_kj": ze, "zoo_kj": zo,
             "ere_e": ere_e, "ere_o": ere_o, "ere_avg": ere_avg,
             "lc_mm": lc_mm, "w_feed_mm": w_feed, "notes": notes}
-
-
-def lange_design(f0_ghz: float = 2.5, z0_ohm: float = 50.0,
-                 coupling_db: float = 3.0103, *, er: float = 3.66,
-                 h_mm: float = 0.508) -> dict[str, Any]:
-    """Lange 电桥综合链：C → 相邻对 (Z0e,Z0o)（Pozar 设计式）→ 四线等效
-    (Ze4,Zo4) → KJ (w,s) → 几何（口径见段首 3/4）。
-
-    返回 {coupling_db, z0_ohm, f0_ghz, zee_pair_ohm, zoo_pair_ohm, ze4_ohm,
-    zo4_ohm, c, w_mm, s_mm, ere_e, ere_o, finger_len_mm, w_feed_mm, notes}。
-    """
-    from rfauto.core.synthesis import Stackup, inverse_width
-
-    stackup = Stackup(name="lange", epsilon_r=float(er),
-                      thickness_mm=float(h_mm))
-    c = 10.0 ** (-float(coupling_db) / 20.0)
-    zee_p, zoo_p = lange_pair_zee_zoo(c, z0_ohm)
-    ze4, zo4 = lange_equivalent_zee_zoo(zee_p, zoo_p)
-    w_mm, s_mm = coupled_bpf_width_gap_from_zee_zoo(zee_p, zoo_p, f0_ghz,
-                                                    er, h_mm)
-    _ze_kj, _zo_kj, ere_e, ere_o = coupled_microstrip_even_odd_ohm(
-        w_mm, s_mm, f0_ghz, er, h_mm)
-    finger_len = _C4_C_MM_GHZ / (4.0 * float(f0_ghz)
-                                 * math.sqrt(0.5 * (ere_e + ere_o)))
-    w_feed = float(inverse_width(float(z0_ohm), float(f0_ghz), stackup)[0])
-    notes = [
-        f"C={c:.6f} → 相邻对 (Z0e,Z0o)=({zee_p:.3f},{zoo_p:.3f})Ω → 四线等效"
-        f" (Ze4,Zo4)=({ze4:.3f},{zo4:.3f})Ω（C 回代={(ze4 - zo4) / (ze4 + zo4):.6f}、"
-        f"Z0=√(Ze4·Zo4)={math.sqrt(ze4 * zo4):.3f}Ω）",
-        f"KJ 反解 (w,s)=({w_mm:.4f},{s_mm:.4f})mm（g=s/h={s_mm / h_mm:.3f}，"
-        f"KJ 标称有效域下限 0.1 提示见段首 3）、指长 λ/4={finger_len:.4f}mm",
-        "非相邻指耦合忽略；air-bridge 尺寸为 FDTD 网格尺度选择（真工艺 µm 级）；"
-        "假设清单见 openems_templates 文末 §C4 段首 3",
-    ]
-    return {"coupling_db": float(coupling_db), "z0_ohm": float(z0_ohm),
-            "f0_ghz": float(f0_ghz), "zee_pair_ohm": zee_p,
-            "zoo_pair_ohm": zoo_p, "ze4_ohm": ze4, "zo4_ohm": zo4, "c": c,
-            "w_mm": w_mm, "s_mm": s_mm, "ere_e": ere_e, "ere_o": ere_o,
-            "finger_len_mm": finger_len, "w_feed_mm": w_feed, "notes": notes}
 
 
 def branchline_2sect_design(f0_ghz: float = 2.5, z0_ohm: float = 50.0, *,
@@ -504,7 +450,7 @@ def _c4_layout(template: str, p: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("lange 几何须 >0")
         d = w + s
         xs = [(k - 1.5) * d for k in range(4)]    # 四指中心（外指承馈）
-        # c4-去桥单变量对照旋钮（wf:c4-debridge，2026-09-19）：params["_bridge"]
+        # c4-去桥单变量对照旋钮（，2026-09-19）：params["_bridge"]
         # =0 → 桥金属盒+立柱盒全部不渲染、z_lines 同步清空（桥面 z 网格线随之
         # 消失，_near_y 亦不再含桥 y 缘——单变量="无 air-bridge"）；缺省 1=逐
         # 字节不变（render_base_lange.py 快照自证）。关位 0 是合法值，禁用

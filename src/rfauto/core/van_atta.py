@@ -70,6 +70,10 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import skrf as rf
 
 import numpy as np
 
@@ -482,7 +486,7 @@ def coherence_gain(phase_errors_rad) -> float:
 # ─── skrf 级联面（单元 S + 等长线 Line → connect 级联 → 相位表）───────────────
 
 
-def element_s_matrix(gamma_ant: complex = 0j, gamma_line: complex = 0j, tau: float = 1.0):
+def element_s_matrix(gamma_ant: complex = 0j, gamma_line: complex = 0j, tau: float = 1.0) -> np.ndarray:
     """单元 2 端口 S（端口序 (天线侧, 线侧)）：[[Γ_a, τ], [τ, γ_l]]。
 
     gamma_ant：天线侧反射（参数化，|·|<=1）；gamma_line：线侧反射
@@ -531,7 +535,7 @@ def _pair_network(array: VanAttaArray, pair_index: int, gamma_ant: complex, gamm
 
 def build_vanatta_network(
     array: VanAttaArray, gamma_ant: complex = 0j, gamma_line: complex = 0j, tau: float = 1.0
-):
+) -> rf.Network:
     """全阵 skrf 网络：各对级联 2 端口 concat 后按自然端口序重排（N 端口）。
 
     外部端口 = 天线馈端口 0..N−1（自然序）；对间无耦合（块对角精确 0）。

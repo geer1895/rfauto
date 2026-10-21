@@ -1,5 +1,10 @@
 """功率校准链族（SB22-MS-1，内核在 core/power_calibration.py，本模块只做注册壳）。
 
+出处（功率计量工程口径，正文与锚树转录）：
+- power_cal_chain：校准因子补偿/平缆损耗补偿/失配修正三档链
+  （微波功率计量工程惯例，二级转引 Keysight 功率测量应用指南家族
+  口径）；GUM 合成不确定度预算（JCGM 100:2008）。
+
 单键 power_cal_chain：功率计读数 → 校准因子补偿 → 平缆损耗补偿 →
 源匹配/失配修正（none/band/exact 三档）→ 远端平面可用功率 + GUM 合成
 不确定度预算。calibration_factor/type_b_standard_u/power_cal_uncertainty/

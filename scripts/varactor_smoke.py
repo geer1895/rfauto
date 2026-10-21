@@ -18,7 +18,7 @@
   oe     三档真机串行（OpenEMSSolver，solo 单飞 #246）→ v<V>/（sparams.csv +
          _last_stdout.log + nrts_meta.json + oe_result.json）
   judge  跑后判读（零求解）→ verdict.json + verdict.md
-  locate        囚禁模定位对照发射（wf:varactor-locate；单偏压名义档 v=3.6342，
+  locate        囚禁模定位对照发射（；单偏压名义档 v=3.6342，
          四腿短预算，逐腿前置审计 exec 拦无效起跑）→ trapped_mode_locate/<leg>/
   locate-judge  定位判读（零求解）：主音随参数判别表 + 结论解释矩阵 +
          l0 场快照空间分布（FD dump h5，best-effort）→ locate_verdict.md
@@ -66,7 +66,7 @@ FAKE_SPACING_MIN_STEPS = 10.0       # 判据② 两两间距 ≫ 频栅（≥10 
 OE_TOL_REL = 0.03                   # 判据③ OE 谷位容差 rel ≤3%
 DEFAULT_TIMEOUT_S = 14400.0
 
-# ── 囚禁模定位对照（wf:varactor-locate；launch_ready §3 预声明固化）─────────
+# ── 囚禁模定位对照（；launch_ready §3 预声明固化）─────────
 LOCATE_BIAS_V = 3.6342              # 名义档（囚禁模主音 2.710GHz 实证档）
 LOCATE_NRTS_DEFAULT = 300000        # 300k×0.1573ps=47.2ns 窗：晚窗（≥8ns）
                                     # ~39ns 振铃 ≈2.2·τ(Q≈150)=读音充分且
@@ -486,7 +486,7 @@ def cmd_oe(out_root: Path, biases: list[float], nrts: int, end_criteria: float,
     return rc
 
 
-# ── 囚禁模定位对照（wf:varactor-locate；单偏压名义档，短预算读音）──────────
+# ── 囚禁模定位对照（；单偏压名义档，短预算读音）──────────
 # 背景：v3.6342_rerun 判法定案 (b) 囚禁模 high（主音 2.710GHz 跨档 spread 0%、
 # S11 谷在音上、慢振铃 Q_eff≈150）——「偏压无关」已证，「随不随盒走」未证。
 # 四腿单变量对照（判别表与解释矩阵见 launch_ready.md §2，判据先行不改）：

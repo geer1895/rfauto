@@ -38,9 +38,10 @@ _SNAPSHOT_KEYS = {"job_id", "state", "run_id", "result", "error",
 
 
 @pytest.fixture(autouse=True)
-def _isolated_env_and_cwd(tmp_path, monkeypatch):
-    """每个用例独立 CWD + 清空同名前缀 env 集合（#144：清整个集合）。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated_env_and_cwd(isolated, monkeypatch):
+    """隔离体收编 tests/conftest.py::isolated（T5 批5 单源化）
+    + 专用增量：清空同名前缀 env 集合（#144：清整个集合）。
+    """
     for name in (ENV_REGISTRY_DB, ENV_JOB_REGISTRY_DB):
         monkeypatch.delenv(name, raising=False)
     yield

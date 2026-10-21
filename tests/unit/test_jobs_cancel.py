@@ -9,8 +9,11 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(isolated):
+    """隔离体收编 tests/conftest.py::isolated（T5 批4 单源化）。
+
+    job 注册表重置为本文件专用增量（setup+teardown 双清，语义不变）。
+    """
     from rfauto.service.job_registry import reset_job_registry
 
     reset_job_registry()

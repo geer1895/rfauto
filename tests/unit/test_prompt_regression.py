@@ -140,11 +140,14 @@ class TestExternalizedPrompt:
 
     def test_chat_assembly_uses_get_system_prompt(self):
         # AgentChat 组装点改走公开访问口（源码静态断言，防回退到私有名）
+        # W7-S1 T2 包化（2026-10-19）：对话实现随域迁 r3_services/chat.py，
+        # 源码锚随实现走（AU-1 测试面映射工艺）
         from pathlib import Path as _P
 
         from rfauto.service import r3_services
 
-        src = _P(r3_services.__file__).read_text(encoding="utf-8")
+        src = (_P(r3_services.__file__).parent / "chat.py").read_text(
+            encoding="utf-8")
         i = src.index('messages = [{"role": "system",')
         j = src.index("menu_lines}]", i)
         seg = src[i:j]

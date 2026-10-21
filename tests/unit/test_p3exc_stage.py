@@ -1,6 +1,6 @@
 """3 端口 legacy 模板第二激励子进程隔离（#208 处方 a，CFIX 2026-10-13）。
 
-背景（runs/aurora_c_oe/coupled_line 实证）：旧 legacy footer 同进程对同一
+背景（内部证据目录 实证）：旧 legacy footer 同进程对同一
 CSX 二次 FDTD.Run(cleanup=True)——首个 Run 销毁 CSX C++ 对象，第二 run 与
 解释器 teardown 段原生崩（数据齐全、主 CSV 已写、done 已打印仍
 rc=3221226356=0xC0000354），try/except 对原生终止不可见。

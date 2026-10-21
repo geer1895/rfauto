@@ -330,7 +330,7 @@ def check_param_semantics(recipe_path: str | Path) -> dict[str, Any]:
 
     template = None
     try:
-        from rfauto.service.ui_service import _template_hint
+        from rfauto.service.template_hints import _template_hint  # T1 解环：映射叶
         template = _template_hint({"model": model_name})
     except Exception:
         template = None

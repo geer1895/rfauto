@@ -1,5 +1,5 @@
-/* rfauto 工作台路由状态单源（aurora_d UI-R2 自 pages.js 拆出，
-   aurora72 A4-C 块逐字节搬移）：两级 hash 解析 parseRoute（纯函数，
+/* rfauto 工作台路由状态单源（架构批 UI-R2 自 pages.js 拆出，
+   架构批 A4-C 块逐字节搬移）：两级 hash 解析 parseRoute（纯函数，
    node 行为钉）+ 参数页 opener 注册表 + showPage/openRun/openCampaign
    分发入口。视图注册表 VIEWS 由 pages.js 入口组装注入（本模块不
    import 各视图——避免路由→视图→路由整环）；tools opener 的
@@ -15,7 +15,7 @@ import { toolsSelectKey } from "./view_tools.js";
    路由→视图→路由整环）；键集与拆分前 showPage 内联 views 表逐键一致。 */
 export const VIEWS = {};
 
-/* ═══ R-1 页面生命周期协议（aurora72 W1-S3，R6 审计 R-1）══════════════
+/* ═══ R-1 页面生命周期协议（架构批 W1-S3，R6 审计 R-1）══════════════
    PageContext 增量钩子注册表：VIEWS 键→渲染函数（=enter 面，既有
    `(S.currentRunId)` 签名兼容零变化）不动；本表只登记生命周期钩子增量——
    - refresh()：palette「刷新当前页数据」的局部刷新入口（数据拉取与壳渲染
@@ -42,8 +42,8 @@ export function showPage(v) {
       try { prevCtx.leave(); } catch { /* 收束失败静默 */ }
     }
   }
-  setActiveView(v); // aurora36 W2-B：页面可见语义单源（写入经 context.js 访问器）
-  _sseLeavePage(v); // aurora72 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）
+  setActiveView(v); // 架构批 W2-B：页面可见语义单源（写入经 context.js 访问器）
+  _sseLeavePage(v); // 架构批 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）
   T.activate(v);
   (VIEWS[v] || VIEWS.dashboard)(S.currentRunId);
 }
@@ -51,14 +51,22 @@ export function showPage(v) {
 /* PR-2 命令面板入口：从任意处打开 run 详情（S.currentRunId 单源在本模块）。 */
 export function openRun(runId) {
   S.currentRunId = runId;
-  /* aurora72 A4-C（R6 审计 R-2）：深链落地——replaceState 不产生历史条目、
+  /* 架构批 A4-C（R6 审计 R-2）：深链落地——replaceState 不产生历史条目、
      不触 hashchange（与 nav/tools syncToolHash 同款纪律），刷新/分享保持
      run 态；全站 detail 打开点统一走本入口（行点击/调参完成跳转已收编）。 */
   _syncRouteHash("detail", runId);
   showPage("detail");
 }
 
-/* ═══ aurora72 A4-C：两级 hash 路由（R6 审计 R-2）══════════════════════
+/* run 态旁路同步面（W6-S2，R2 审计 §面2 双写收口）：view_detail 显式 id
+   重渲（VIEWS.detail 分发链之外的 showRun(id) 直调，如失败重试钮）的 run 态
+   回写经本入口——S.currentRunId 写面唯一=本模块（契约表见 context.js；
+   openRun 主链与页内直写两路径等价，钉面 test_ui_routing 同笔）。 */
+export function noteCurrentRunId(runId) {
+  S.currentRunId = runId;
+}
+
+/* ═══ 架构批 A4-C：两级 hash 路由（R6 审计 R-2）══════════════════════
    形态："#/page"（裸页，旧形态零破坏）与 "#/page/<arg>"（参数页；arg 单段
    贪婪取到串尾，decodeURIComponent 非法序列守卫原样返回）。解析单源
    parseRoute（纯函数，node 行为钉可测）；分发策略面在 app.js _applyHash
@@ -80,12 +88,17 @@ export function parseRoute(hash) {
 }
 
 /* 参数页 opener 注册表：新增参数化页面 = 实现带参 opener + 在此登记一行。
-   三个 opener 均为本模块函数（函数声明提升，注册表求值时已初始化），无需
-   经 initPages 注入。 */
+   七个 opener：前三个为本模块函数（函数声明提升，注册表求值时已初始化）；
+   深链二批四件（*_Link）为上方 const 绑定（注册表只存箭头体，调用发生在
+   模块求值完成后——绑定恒已初始化），无需经 initPages 注入。 */
 const _ROUTE_OPENERS = {
   detail: (arg) => openRun(arg),
   tools: (arg) => toolsSelectKey(arg),
   campaign: (arg) => openCampaign(arg),
+  sparams: (arg) => openSparamsLink(arg),
+  calibration: (arg) => openCalibrationLink(arg),
+  loopboard: (arg) => openLoopBoardLink(arg),
+  reports: (arg) => openReportsLink(arg),
 };
 
 /* 注册表查询（纯查询不执行 opener，node 结构钉可测）：页未收参返回 null。 */
@@ -126,3 +139,37 @@ export function consumeCampaignPendingId() {
   _campaignPendingId = null;
   return v;
 }
+
+/* ═══ 深链二批（架构批 W2-S5，R1 审计面3 深链节）：数据页参数化 opener ═══
+   四页（sparams/calibration/loopboard/reports）照 campaign 待选纪律复制：
+   open 记待选 id + showPage 拉起；页面渲染清单后 consume（读取并清零，
+   不残留到下次进页）；未命中回落表头/首项（页内各自守卫）。hash 回写在
+   页内选中/打开落地点（_syncRouteHash：replaceState 不产历史条目、不触
+   hashchange）。_pendingLinkOpener 工厂=openCampaign/consumeCampaignPendingId
+   双函数对的同语义泛化（每页独立闭包，互不串扰）。 */
+function _pendingLinkOpener(page) {
+  let _pending = null;
+  return {
+    open(arg) {
+      _pending = String(arg || "");
+      showPage(page);
+    },
+    consume() {
+      const v = _pending;
+      _pending = null;
+      return v;
+    },
+  };
+}
+const _sparamsLink = _pendingLinkOpener("sparams");
+const _calibrationLink = _pendingLinkOpener("calibration");
+const _loopboardLink = _pendingLinkOpener("loopboard");
+const _reportsLink = _pendingLinkOpener("reports");
+export const openSparamsLink = _sparamsLink.open;
+export const consumeSparamsPendingId = _sparamsLink.consume;
+export const openCalibrationLink = _calibrationLink.open;
+export const consumeCalibrationPendingId = _calibrationLink.consume;
+export const openLoopBoardLink = _loopboardLink.open;
+export const consumeLoopBoardPendingId = _loopboardLink.consume;
+export const openReportsLink = _reportsLink.open;
+export const consumeReportsPendingId = _reportsLink.consume;

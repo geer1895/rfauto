@@ -720,6 +720,12 @@ class TestMcpTools:
     def test_programming_error_returns_error_envelope(self):
         out = mcp_edb_emit_spec({"template": "edb_nope"})
         assert out["ok"] is False and out["errors"]
+        # R3 弱测试 #12 加固：错误信封必须自解释——未知模板名回显+合法族
+        # 指路（单源=edb_lane_service 发射分派表；"拒绝的理由可行动"）
+        assert "未知 edb template" in out["errors"][0]
+        assert "edb_nope" in out["errors"][0]
+        assert "edb_branchline" in out["errors"][0]  # 合法族指路
+        assert "edb_lange" in out["errors"][0]  # 声明不支持注记同信封
 
     def test_live_emit_via_tool(self):
         """端到端：工具面直调发射（确定性内核，零 fake 零真机）。"""

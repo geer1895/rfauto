@@ -1,4 +1,4 @@
-"""vibration_srs_service 冒烟门（aurora72 A5-C 测试盲区批量补冒烟席）。
+"""vibration_srs_service 冒烟门（架构批 A5-C 测试盲区批量补冒烟席）。
 
 背景：全仓 232 个 service 模块中 3 个零测试消费真盲区之一（R8 点名，
 复核与总账见 test_smoke_sparse_pce_service.py docstring）。

@@ -341,7 +341,7 @@ class TestPecMirrorServiceView:
 # ─── 极坐标页 η 门复用（TODO C21 followUp：farfield_view 复用 patch_eta_gate）─
 
 class TestFarfieldViewEtaGate:
-    """farfield_view（极坐标页数据源）复用 ui_service.patch_eta_gate（wf:w1c
+    """farfield_view（极坐标页数据源）复用 ui_service.patch_eta_gate（
     登记的 followUp）：patch 族按修正后 η 判读（raw 1.243 非物理值不进门）、
     非 patch 模板如实 None（#274 作用域分派——全包盒 dipole η≈0.99 不误判
     FAIL）；判读函数与 field_view 的 farfield_metrics["eta_gate"] 同一实现。

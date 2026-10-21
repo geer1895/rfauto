@@ -304,6 +304,10 @@ class TestBlobIntegrity:
         broken = dict(entry, blob_path="nowhere/lost.pkl")
         res = reg.load_entry_model(broken)
         assert res["ok"] is True
+        # R3 弱测试 #14-19 族加固：兜底必须载回"正确的那份 blob"而非任意
+        # ok——合成已知量回收（_TinyModel(1.5) predict 恒等面）
+        assert res["model"].offset == 1.5
+        assert res["model"].predict({"p1": 1.0})["s11_db"] == pytest.approx(-8.5)
 
     def test_unpickle_garbage_refused(self, tmp_path):
         """sha 一致但内容非 pickle（sha 复核过了才到反序列化层）→ 拒用。"""
@@ -343,12 +347,16 @@ class TestEmptyRegistryZeroDegradation:
             "registry_path": reg.registry_path,
             "store_dir": reg.store_dir})
         assert svc["ok"] is False
+        # R3 弱测试 #14-19 族加固：服务面拒绝必须点名"YAML 解析失败"
+        # （坏账定性，坏账不静默吞——与缺文件=空表 ok 语义区分开）
+        assert svc["errors"] and "解析失败" in svc["errors"][0]
 
     def test_query_on_missing_via_service(self, tmp_path):
         svc = surrogate_registry_query({
             "registry_path": tmp_path / "nope.yaml",
             "store_dir": tmp_path / "store"})
         assert svc["ok"] is True and svc["n_rows"] == 0
+        assert svc["rows"] == []  # 计数与行集一致（#369 语义族）
 
 
 # ─── 判据①：血缘三跳反查（合成 run + 真实湖索引）─────────────────────────────

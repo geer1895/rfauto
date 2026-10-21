@@ -1,4 +1,4 @@
-"""aurora72 A4-C 席位回归钉：UI 两级 hash 路由参数化（R6 审计 R-2）。
+"""架构批 A4-C 席位回归钉：UI 两级 hash 路由参数化（R6 审计 R-2）。
 
 对象：src/rfauto/ui/static/app.js（两级分发器 _applyHash + routeDispatch 桥）
 与 src/rfauto/ui/static/pages.js（parseRoute 纯解析 + _ROUTE_OPENERS 注册表 +
@@ -36,7 +36,7 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 _APP = (_STATIC / "app.js").read_text(encoding="utf-8")
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -128,7 +128,7 @@ class TestDeepLinkLanding:
 
     def test_three_inline_detail_open_sites_absorbed(self):
         # runs 表行 / dashboard 最近 Run / tune 完成跳转——三处内联形态收编。
-        # UI-R4（aurora_d，A6 P1-5 清偿）：前两处行点击接线再收编 kit
+        # UI-R4（架构批，A6 P1-5 清偿）：前两处行点击接线再收编 kit
         # bindClickRows 单源（键盘可达同笔落地；openRun 单入口深链语义不变）。
         assert 'bindClickRows(tb, (tr) => openRun(tr.dataset.id), "tr.clickable");' in _SRC  # runs 表（R6 R-2 证据页）
         assert 'bindClickRows(el, (tr) => openRun(tr.dataset.id), "tr.clickable");' in _SRC  # dashboard wRecentRuns
@@ -151,7 +151,11 @@ class TestDeepLinkLanding:
         # 裸 #/detail 冷加载：诚实空态引导替代静默早退白页（R6 R-2 证据）
         assert 'id="detail-goto-runs"' in _SRC
         assert 'go.onclick = () => showPage("runs");' in _SRC
-        assert "#/detail/&lt;run_id&gt;" in _SRC  # 深链用法提示（转义形态）
+        # S2 发布令批：深链用法提示迁词表（detail.empty_no_run zh 值同笔——
+        # 原实体 &lt;run_id&gt; 兜底形态在词表侧以字符 〈run_id〉 承载，渲染
+        # 保真；_SRC=pages/ 并集含 i18n.js，兜底烘焙与词表值同源可断）
+        assert '${t("detail.empty_no_run")}' in _SRC
+        assert "#/detail/〈run_id〉" in _SRC
         # W7-C 失败面板不受扰动（重试钮/内联面板钉在 test_w7c_ui_p2_sweep）
 
 
@@ -207,7 +211,7 @@ class TestPagesSingleListener:
 
     def test_init_pages_still_binds_and_boot_fallback_kept(self):
         # 幂等装配 + 初载兜底（tools 形态向后兼容的保险丝）保持
-        assert "_bindToolsDeepLink(); // aurora72 A2-B" in _SRC
+        assert "_bindToolsDeepLink(); // 架构批 A2-B" in _SRC
         body = re.search(r"function _bindToolsDeepLink\(\) \{(.*?)\n\}", _SRC, re.S)
         assert body and "_toolsDeepLinkBound" in body.group(1)
         assert "setTimeout" in body.group(1)
@@ -230,7 +234,7 @@ class TestCrossSeatPinsHold:
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
         assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
-        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1
+        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1
         assert _SRC.count("disposeChartsIn(") == 4
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处
         assert _SRC.count("echartsInitCached(el)") == 2  # 定义 + tools 页（W3-S12 四管线入壳后）

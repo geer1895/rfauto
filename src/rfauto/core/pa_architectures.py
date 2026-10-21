@@ -490,3 +490,123 @@ def z_branch_normalized(phi_rad: float, b_comp: float = 0.0) -> complex:
 def chireix_b_null_check(phi_rad: float, b_comp: float) -> bool:
     """电纳归零判读：|tanφ/2 − b| ≤ 1e-12（b_opt 设计点逐位判据）。"""
     return abs(chireix_susceptance(phi_rad, b_comp)) <= 1e-12
+
+
+# ─── N-way Doherty（架构批 W4-S4，R2 边际池顺延件）─────────────────────────
+
+_N_WAY_MAX = 8
+
+
+def doherty_nway_region(n_way: int, sigma: float) -> int:
+    """σ → 区域号 r（σ ∈ [(r−1)/N, r/N] → r = ⌊N·σ⌋+1，断点归下段闭端）。
+
+    r = 第 r 个器件开通时刻的区域（区域 1 仅主管；断点 σ=m/N 归区域
+    m+1 闭端——两区域公式在断点处逐位相等，归属任一侧同值）。
+    """
+    if not isinstance(n_way, int) or isinstance(n_way, bool) or n_way < 2:
+        raise ValueError(f"n_way 必须为整数 ≥2，得 {n_way!r}")
+    if n_way > _N_WAY_MAX:
+        raise ValueError(f"n_way 上限 {_N_WAY_MAX}（理想链式拓扑域），得 {n_way}")
+    s = _in_unit_interval(sigma, "sigma")
+    r = int(s * n_way) + 1
+    return min(r, n_way)
+
+
+def doherty_nway_efficiency(n_way: int, sigma: float) -> float:
+    """理想 N-way Doherty 效率闭式（区域 r 分段有理式）。
+
+    口径（模块级第一性推导，独立裁判=下方 N=2 逐位回归 Cripps 闭式）：
+    理想 B 类电流簿记 + 输出功率 P_out = σ²·P_max + 顺序开通电流剖面，
+    归一化器件电流和 S_N(σ) = σ + Σ_{k≥2} max(0, 2(σ−(k−1)/N))：
+
+        η(σ) = (π/4)·σ²·N / S_N(σ)
+        区域 r 闭形：η = (π/4)·N·σ² / [σ·(2r−1) − r(r−1)/N]
+
+    恒等式：η(σ=m/N) = π/4 逐位（每个断点回峰——N-way Doherty 经典
+    曲线语义：20·log10(N/m) dB 回退点全为峰值）、η(1) = π/4、全域
+    η ∈ [0, π/4]、区域 1 η = (π/4)·N·σ（主管等效单管 B 类 N·σ 驱动，
+    N=2 时与 doherty_efficiency 区域 I 同口径）。区域凹陷最小值闭式
+    η_min(r) = π·r(r−1)/(2r−1)²（只依赖区域号 r，与 N 无关；r=2 →
+    2π/9 与 DOHERTY_ETA_DIP_MIN 逐位），位于 σ*_r = 2r(r−1)/(N(2r−1))。
+    """
+    if not isinstance(n_way, int) or isinstance(n_way, bool) or n_way < 2:
+        raise ValueError(f"n_way 必须为整数 ≥2，得 {n_way!r}")
+    if n_way > _N_WAY_MAX:
+        raise ValueError(f"n_way 上限 {_N_WAY_MAX}（理想链式拓扑域），得 {n_way}")
+    s = _in_unit_interval(sigma, "sigma")
+    r = doherty_nway_region(n_way, s)
+    if r == 1:
+        return ETA_CLASS_B_PEAK * n_way * s
+    return (ETA_CLASS_B_PEAK * n_way * s * s
+            / (s * (2 * r - 1) - r * (r - 1) / n_way))
+
+
+def doherty_nway_breakpoints(n_way: int) -> dict[str, Any]:
+    """N-way 断点/回峰/凹陷全表（JSON 可序列化 dict 出口）。
+
+    - breakpoints：σ_m = m/N（m=1..N），PBO = 20·log10(N/m) dB（σ=√(P/
+      P_max) 口径 → PBO = −10·log10(σ²) = 20·log10(1/σ)）；m=1 档 =
+      经典 N-way 满回退 20·log10(N) dB、m=N 档 = 0dB 满驱；
+    - dips：区域 r=2..N 的凹陷最小值闭式（σ*_r = 2r(r−1)/(N(2r−1))、
+      η_min = π·r(r−1)/(2r−1)²，与 N 无关）。
+    """
+    if not isinstance(n_way, int) or isinstance(n_way, bool) or n_way < 2:
+        raise ValueError(f"n_way 必须为整数 ≥2，得 {n_way!r}")
+    if n_way > _N_WAY_MAX:
+        raise ValueError(f"n_way 上限 {_N_WAY_MAX}（理想链式拓扑域），得 {n_way}")
+    bps = []
+    for m in range(1, n_way + 1):
+        sigma_m = m / n_way
+        bps.append({
+            "m": m,
+            "sigma": sigma_m,
+            "pbo_db": 20.0 * math.log10(n_way / m),
+            "eta": doherty_nway_efficiency(n_way, sigma_m),
+        })
+    dips = []
+    for r in range(2, n_way + 1):
+        sigma_star = 2.0 * r * (r - 1) / (n_way * (2 * r - 1))
+        dips.append({
+            "region": r,
+            "sigma_star": sigma_star,
+            "eta_min": math.pi * r * (r - 1) / (2 * r - 1) ** 2,
+            "pbo_db": -20.0 * math.log10(sigma_star),
+        })
+    return {
+        "n_way": n_way,
+        "backoff_full_db": 20.0 * math.log10(n_way),
+        "eta_peak": ETA_CLASS_B_PEAK,
+        "breakpoints": bps,
+        "dips": dips,
+    }
+
+
+def doherty_nway_point(n_way: int, sigma: float) -> dict[str, Any]:
+    """N-way 工作点全量（效率 + 归一化器件电流剖面 + 断点判读）。
+
+    器件电流剖面（归一化器件基波电流幅，理想顺序开通）：主管 i_1 = σ；
+    峰值管 k=2..N：i_k = max(0, 2(σ − (k−1)/N))（斜率 2、依次在
+    σ=(k−1)/N 开通）。N=2 时 i_aux = max(0, 2σ−1) 与 doherty_point
+    逐位一致（同仓双源）。
+    """
+    if not isinstance(n_way, int) or isinstance(n_way, bool) or n_way < 2:
+        raise ValueError(f"n_way 必须为整数 ≥2，得 {n_way!r}")
+    if n_way > _N_WAY_MAX:
+        raise ValueError(f"n_way 上限 {_N_WAY_MAX}（理想链式拓扑域），得 {n_way}")
+    s = _in_unit_interval(sigma, "sigma")
+    r = doherty_nway_region(n_way, s)
+    currents = [s] + [max(0.0, 2.0 * (s - (k - 1) / n_way))
+                      for k in range(2, n_way + 1)]
+    eta = doherty_nway_efficiency(n_way, s)
+    return {
+        "n_way": n_way,
+        "sigma": s,
+        "region": r,
+        "eta": eta,
+        "eta_over_peak": eta / ETA_CLASS_B_PEAK,
+        "p_over_ppk": s * s,
+        "obo_db": -20.0 * math.log10(s) if s > 0.0 else float("inf"),
+        "active_devices": r,
+        "device_currents_over_i1": currents,
+        "current_sum": sum(currents),
+    }

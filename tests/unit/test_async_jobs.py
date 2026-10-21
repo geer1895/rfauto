@@ -13,9 +13,12 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd_and_registry(tmp_path, monkeypatch):
-    """每个用例独立 CWD + 干净注册表，避免互相污染。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd_and_registry(isolated):
+    """每个用例独立 CWD + 干净注册表，避免互相污染。
+
+    cwd 隔离收编 tests/conftest.py::isolated（T5 三批单源化）；
+    job 注册表重置为本文件专用增量（setup+teardown 双清，语义不变）。
+    """
     from rfauto.service.job_registry import reset_job_registry
     reset_job_registry()
     yield

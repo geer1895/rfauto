@@ -15,9 +15,8 @@ import yaml
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd_and_registry(tmp_path, monkeypatch):
-    """每个用例独立 CWD + 干净注册表/写锁，避免互相污染。"""
-    monkeypatch.chdir(tmp_path)
+def _isolated_cwd_and_registry(isolated):
+    """每个用例独立 CWD + 干净注册表/写锁，避免互相污染（T5 批 6 起 chdir 单源化）。"""
     from rfauto.service.job_registry import reset_job_registry
     reset_job_registry()
     yield

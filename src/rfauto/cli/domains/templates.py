@@ -1,4 +1,4 @@
-"""templates 子应用——EC-8 全模板 golden 几何回归仓薄壳（aurora_e W2-S8）。
+"""templates 子应用——EC-8 全模板 golden 几何回归仓薄壳（架构批 W2-S8）。
 
 零逻辑转发 service/template_golden_service（规则 4 薄壳；stats.py 先例：
 域内自注册模块级 add_typer，main.py 只 re-export——二次 add_typer 会双

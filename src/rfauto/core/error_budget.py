@@ -50,6 +50,8 @@ from typing import Any, ClassVar, cast
 
 import numpy as np
 
+from rfauto.core.registry_kit import RegistryKit
+
 MODE_QUADRATIC = "quadratic"  # 不相关源：功率域正交叠加 sum |H_i|^2
 MODE_COHERENT = "coherent"  # 相干源：先线性叠加 sum H_i，再入正交总账
 
@@ -92,42 +94,50 @@ class BudgetItem(ABC):
 
 
 # ─── 自持注册表（仿 EMSolverRegistry 惯例；不进 calculators，#231 豁免） ────
-class BudgetRegistry:
+class BudgetRegistry(RegistryKit[type[BudgetItem]]):
     """误差源条目注册表（本模块自持，"budget.*" 键独立命名空间）。
 
     重名注册显式报错、未注册 create KeyError 并列可用名、lookup 不抛错
     返回 None——口径与 CalculatorRegistry/EMSolverRegistry 一致。
+
+    T6 扩面四批（架构批 W2-S3，R1_arch_audit_v3 §5）：dict 样板由
+    core.registry_kit.RegistryKit 承载（Kit 本体已下沉 core，分层合法）——
+    历史语义逐项保真：重名/缺名 ValueError/KeyError 文案经
+    dup_fmt/missing_fmt 逐字节同旧（"误差源条目重名注册: {key}" /
+    "未注册的误差源条目: {key}（可用: {列表 repr}）"——后者经
+    {keys_list} 占位符保列表 repr 形态）、register 返回原类（装饰器用法
+    兼容）、create kwargs 透传构造器、lookup/list_names/is_registered
+    方法名与形态不变、存储属性名 _items 不变（Kit 本体同名）。
     """
 
     def __init__(self) -> None:
-        self._items: dict[str, type[BudgetItem]] = {}
+        super().__init__(
+            label="误差源条目",
+            missing_fmt="未注册的误差源条目: {key}（可用: {keys_list}）",
+            dup_fmt="误差源条目重名注册: {key}",
+        )
 
     def register(self, item_cls: type[BudgetItem]) -> type[BudgetItem]:
         """注册条目类（按类级 name；重名拒绝）。返回原类以便装饰器用法。"""
         cls_name = item_cls.name
         if not cls_name:
             raise ValueError("注册条目类必须有类级 name")
-        if cls_name in self._items:
-            raise ValueError(f"误差源条目重名注册: {cls_name}")
-        self._items[cls_name] = item_cls
+        self.insert(cls_name, item_cls)
         return item_cls
 
     def create(self, name: str, **kwargs: Any) -> BudgetItem:
-        """按注册名实例化条目（kwargs 透传构造器）。"""
-        item_cls = self._items.get(name)
-        if item_cls is None:
-            raise KeyError(f"未注册的误差源条目: {name}（可用: {sorted(self._items)}）")
-        return item_cls(**kwargs)
+        """按注册名实例化条目（kwargs 透传构造器；缺名 KeyError 文案同旧）。"""
+        return self.get(name)(**kwargs)
 
     def lookup(self, name: str) -> type[BudgetItem] | None:
         """按名返回条目类；未注册返回 None（不抛错）。"""
-        return self._items.get(name)
+        return self.get(name, None)
 
     def list_names(self) -> list[str]:
-        return sorted(self._items)
+        return self.keys()
 
     def is_registered(self, name: str) -> bool:
-        return name in self._items
+        return name in self
 
 
 # ─── 账本轨迹与求值 ──────────────────────────────────────────────────────────

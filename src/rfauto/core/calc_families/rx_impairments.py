@@ -1,5 +1,13 @@
 """接收机损伤族（MT-4，内核在 core/rx_impairments.py，本模块只做注册壳）。
 
+出处（规范口径+第一性恒等式，正文规格节转录）：
+- iq_imbalance_irr：IQ 失衡镜像抑制比 IRR 闭式（3GPP TS 38.141
+  口径钉死）。
+- phase_noise_evm：相噪积分 EVM（幂律谱积分恒等式，消费
+  core/clock_noise 单源；第一性）。
+- blocking_budget：阻塞/信道选择性预算（级联聚总复用 cascade_budget
+  Friis/IIP3 口径，同 budget 族出处）。
+
 round17 §二 MT-4 规格「IQ 失衡 IRR（3GPP TS 38.141 口径钉死）、相噪→
 积分 EVM、blocking/信道选择性预算（复用 cascade spur_search）」
 （2026-10-02）。三键逐件对应规格三件；core 直调面

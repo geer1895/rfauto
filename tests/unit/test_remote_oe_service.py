@@ -273,6 +273,12 @@ def test_wait_mode_invalid_rejected(monkeypatch):
     monkeypatch.setattr(roe, "SshTransport", _boom)
     out = remote_oe_run("sim_host", _seat_spec(), wait_mode="detached")
     assert out["ok"] is False and "wait_mode" in out["reason"]
+    # R3 弱测试 #13 加固：fail-closed 信封形状+非法值回显（"detached" 被
+    # 指名道姓拒绝；合法枚举 sync/poll 见 service :609 判据，行为面不变）
+    assert out["verdict"] == "FAIL"
+    assert out["launched"] is False and out["skipped"] is False
+    assert "detached" in out["reason"]
+    assert out["criteria"] == {} and out["steps"] == {}
 
 
 # ─── 互斥三态（#261 服务器侧：命中候跑/旁证/查询失败 fail-closed） ──────────

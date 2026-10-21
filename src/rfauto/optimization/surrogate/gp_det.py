@@ -1,6 +1,6 @@
 """确定性 ARD 高斯过程内核（EC-16/17/18 三件的共享数值底座）。
 
-定位（池 P3 圈定件批，aurora_e W5-S22）：numpy+scipy 零新依赖的紧凑
+定位（池 P3 圈定件批，架构批 W5-S22）：numpy+scipy 零新依赖的紧凑
 GP 实现——闭式后验 + 超参沿负对数边际似然（MLE）或 MAP（先验罚项）
 的确定性优化（L-BFGS-B，固定初值/固定数据 → 同结果逐位可复现，C4）。
 本模块不注册 surrogate_registry（内部底座），对外键面由消费模块给出：
@@ -120,7 +120,12 @@ def gp_nll(
     amp = float(np.exp(log_params[d]))
     if log_params.size > d + 1:  # 末位 log nugget（MLE 可优化档）
         nugget = float(np.exp(log_params[d + 1]))
-    assert nugget is not None
+    if nugget is None:
+        # W6-P3-4（架构批 W1-S4）：assert 做控制流在 -O 下失效（届时 None
+        # 潜行到 max(float(nugget),...) 才 TypeError）——显式守卫单点拦截。
+        raise ValueError(
+            "gp_nll 需要 nugget：传 nugget=None 时 log_params 必须附末位 "
+            "log σ_n（可优化档），否则显式传固定值")
     k = _kernel_matrix(x, x, ell, amp, kind)
     k[np.diag_indices(x.shape[0])] += max(float(nugget), 0.0) + _JITTER
     chol = np.linalg.cholesky(k)
@@ -173,8 +178,10 @@ def fit_mle(
 ) -> dict[str, Any]:
     """无先验 MLE 档（确定性：固定初值 + L-BFGS-B，同数据同结果）。
 
-    缺省 nugget 固定为 1e-6·var(y)+1e-10 不参与优化（SMT KRG 的插值
-    口径）：小样本上"联优 nugget"会退化到"把信号全解释成噪声"的常数
+    缺省 nugget 固定为 max(var(y), 1)·1e-6+1e-10（var(y)<1 时取 1.0 地板，
+    W6-P3-3 文档对齐：旧文"1e-6·var(y)+1e-10"漏写地板项）不参与优化
+    （SMT KRG 的插值口径）：小样本上"联优 nugget"会退化到"把信号全解释成
+    噪声"的常数
     预测器（实测 n=14 的 √x 面 NRMSE=1.0、nugget→0.5·var）——真要联优
     须显式 optimize_nugget=True 并自担该退化风险（消费方做交叉验证
     自证后才可采信）。

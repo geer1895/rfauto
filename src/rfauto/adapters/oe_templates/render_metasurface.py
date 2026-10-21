@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     pass
 from .grid import _fd_nrts_defaults, _fd_nrts_override_block
-from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
+from .registry import _DEFAULT_SUB, MS_UNIT_TEMPLATES, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ─── §MS_METASURFACE 超表面/FSS 族（2026-09-24 df6 DP-10，文末注册块）─────────
 # 规格与判据：docs/plan_deepdive_specs_20260924.md §DP-10 +
@@ -31,11 +31,8 @@ from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 #   S21=传输（带阻/带通），底边界 MUR。
 # 极化前提双处注明（meta extraction + 渲染脚本注释）；斜入射与无限阵
 # 仲裁走 HFSS Floquet（J4，真机轨）。
-MS_UNIT_TEMPLATES: tuple[str, ...] = (
-    "ms_patch", "ms_cross", "ms_jcross", "ms_ring_patch",
-    # ms_mushroom（TA-13 EBG/FSS 净表注册件，2026-10-08）：Sievenpiper 蘑菇
-    # EBG/AMC 单元——反射读出族（ms_patch 同款），族内尾部追加（#247 口径）
-    "ms_mushroom")
+# MS_UNIT_TEMPLATES 单源在 registry（W2-S2 S5/grid2 解环上提；grid._near_points
+# 直连注册表叶，本模块保名再导出——元组内容逐字节未动）。
 METASURFACE_TEMPLATES: tuple[str, ...] = (*MS_UNIT_TEMPLATES, "ms_array_NxN")
 #: 无端口模板（软平面照明散射体，audit ②/③ 独立分支）：
 PORTLESS_TEMPLATES: tuple[str, ...] = ("ms_array_NxN",)
@@ -810,7 +807,7 @@ def ms_array_render(template: str, params: dict[str, Any],
     base_m = (3e8 / ((f0 + fc) * (er ** 0.5)) / 50 if not mesh_resolution_mm
               else float(mesh_resolution_mm) * 1e-3)
     _nrts = int(params.get("_nrts", 100000) or 100000)
-    # F-D NrTS/EndCriteria 缺省接线（wf:nrts-fix）：本渲染器只经 render_script
+    # F-D NrTS/EndCriteria 缺省接线（）：本渲染器只经 render_script
     # 早分发/直调到达，_fd_nrts_defaults 在此恰调一次（主路径已跳过 PORTLESS）
     _fd_max_time_ns = _fd_nrts_defaults(template, params)
     _fd_end_criteria_src = (

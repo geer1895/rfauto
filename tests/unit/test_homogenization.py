@@ -455,7 +455,26 @@ class TestRegisteredServiceFace:
         for name, params in rows:
             out = run_calculator(name, params)
             assert out["ok"], (name, out)
-            json.dumps(out, allow_nan=False)  # JSON 契约（NaN/Inf 禁入）
+            text = json.dumps(out, allow_nan=False)  # JSON 契约（NaN/Inf 禁入）
+            # roundtrip 语义兑现（R3 弱测试 #3）：result 序列化→读回逐位相等
+            loaded = json.loads(text)["result"]
+            assert loaded == out["result"], name
+            # 业务键非空且量级合理（非空壳 ok）
+            res = out["result"]
+            if name == "homog_mix_eff":
+                # MG 球形夹杢单测独立复算锚：落 Wiener 界内、虚部≈0
+                assert 2.2 < res["eps_eff"][0] < 7.9
+                assert res["eps_eff"] == pytest.approx(
+                    [hm.maxwell_garnett_eff(2.2, 7.9, 0.2).real, 0.0],
+                    abs=1e-12)
+            elif name == "srr_permeability":
+                assert res["mu"][0] < 0.0
+                assert res["negative_mu"] is True  # 9.7GHz 落负 μ 带 (9,10.39)
+            elif name == "wire_media_plasma":
+                assert res["omega_p_rad_s"] > 0.0
+            elif name == "retrieve_eff_params":
+                assert res["n_eff"] == pytest.approx([2.5, 0.08], abs=1e-9)
+                assert res["z_eff"] == pytest.approx([1.3, 0.0], abs=1e-9)
 
     def test_retrieve_service_matches_core_direct(self):
         s11 = [0.06957524811418508, -0.10918571421118077]

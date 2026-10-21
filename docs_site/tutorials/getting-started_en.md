@@ -201,7 +201,7 @@ The core progression chain (each assumes you finished this article):
 - Replay an archived judgment against today's criteria (RECAST):
   docs/tutorials/recast-walkthrough.md
 - Add an adapter/calculator/channel/template to rfauto (base class +
-  registry, four standard paths): docs/tutorials/extending-rfauto.md
+  registry, four standard paths): docs/tutorials/extending-rfauto_en.md
 
 The full tutorial map (Chinese, 18 articles — each has an English
 version where a `*_en.md` sibling exists):

@@ -1,4 +1,4 @@
-"""oe_phase3 三期发射编排驱动测试（wf:oe-phase3-prep，全离线零仿真零发射）。
+"""oe_phase3 三期发射编排驱动测试（，全离线零仿真零发射）。
 
 覆盖面：①判据窗/席位表完整性（预声明单源）；②脉冲长度标定锚（引擎两日志
 口径）+NrTS 计划；③HJ 逆根同源回收（#118 换算正确性钉，模型正确性锚在
@@ -339,6 +339,26 @@ class TestNominalSingleSource:
     def test_docs_meta_matches_src(self, template):
         out = drv.nominal_vs_docs(template)
         assert out["ok"] is True, out["mismatches"]
+        # 对账语义兑现（R3 弱测试 #10）：核对非空壳——src 侧名义键数 >0，
+        # 且 docs meta.yaml 名义键集与 src 实测恰等（无缺键无多键），
+        # 五个 meta 顶层键双侧均在档
+        import yaml
+
+        from rfauto.adapters.openems_templates import (
+            TEMPLATE_META,
+            TEMPLATE_NOMINAL,
+        )
+
+        data = yaml.safe_load(
+            Path(out["docs_path"]).read_text(encoding="utf-8"))
+        src_keys = set(TEMPLATE_NOMINAL[template])
+        assert src_keys, template
+        doc_keys = set(data.get("nominal_params") or {})
+        assert doc_keys == src_keys, (template, doc_keys ^ src_keys)
+        for key in ("f0_ghz", "n_ports", "max_time_ns", "mesh_resolution_mm"):
+            assert data.get(key) is not None, (template, key)
+            assert TEMPLATE_META[template].get(key) is not None, \
+                (template, key)
 
 
 # ── ⑧ ring 预飞 exec 审计（#212 口径真实渲染一次，秒级零仿真）────────────

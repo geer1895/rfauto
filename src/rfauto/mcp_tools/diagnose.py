@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from rfauto.mcp_tools._core import mcp as mcp
-from rfauto.service.envelope import error_envelope, ok_envelope
+from rfauto.service.envelope import error_envelope
 
 # ─── 9c. CM 诊断三件套 (DP-2) ─────────────────────────────────────────────────
 
@@ -150,12 +150,11 @@ def correlate_measurement(
         dict: {ok, data: {is_correlated, metrics, warnings}}；文件缺失
         或解析失败 → ok=False
     """
-    from rfauto.measurement.correlate import compute_correlation
-    from rfauto.measurement.import_data import import_touchstone
+    # T8 越级收口（架构批 W2-S1，2026-10-19）：原直连 measurement 两行
+    # 改走 service 单点 correlate_files（其 docstring 即"MCP correlate_
+    # measurement 同源"，函数体内 lazy 取 measurement 保住 monkeypatch 缝）。
+    from rfauto.service.api import correlate_files  # lazy: startup-cost（MCP 壳层面，首调暖机由 _core lifespan 承担）
     try:
-        sim = import_touchstone(sim_file)
-        measured = import_touchstone(measured_file)
-        result = compute_correlation(sim, measured, threshold_db)
-        return ok_envelope(data=result.to_dict())
+        return correlate_files(sim_file, measured_file, threshold_db=threshold_db)
     except Exception as e:
         return error_envelope([str(e)])

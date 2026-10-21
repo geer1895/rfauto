@@ -1,4 +1,4 @@
-"""aurora_d UI-R12 席位回归钉：前端深化三件（懒加载路由 / 统一 API 层 / CSS 变量审计）。
+"""架构批 UI-R12 席位回归钉：前端深化三件（懒加载路由 / 统一 API 层 / CSS 变量审计）。
 
 对象：src/rfauto/ui/static/{pages.js, app.js, pages/api.js, theme.js}、
 pages/ 五个迁移视图（dashboard/runs/detail/calibration/data）与审计收编面
@@ -18,8 +18,11 @@ test_ui_data_anchor_uq_pages 等）全部保持绿——注册表字节经绑定
    api 同形 / setApiToken 透传 / viewSignal+abortViewSignals 视图作用域
    取消 / timeoutMs 超时）——node 桩 fetch 全链行为钉；app.js api 保形
    消费 apiRequestInit（test_ui_nav_focus 钉住的本体 needles 不动）；
-   五迁移视图零 T.api 残留 + aborted 短路守卫在位；全仓 T.api 计数棘轮
-   （58，只收不放）。
+   **迁移终态（架构批 W4-S13，R1 §面4 P8-9 收口）**：全部视图零 T.api
+   残留 + aborted 短路守卫在位（五页=架构批 UI-R12，palette+agent/
+   recipe/tune=架构批 W3-S9，余量 15 文件 37 点+view_import 裸 fetch
+   1 点=架构批 W4-S13）；全仓 T.api 计数棘轮收口为防回潮钉
+   （65→58→37→**0 终态**，pages/ 面新增请求一律走 apiFetch 单源）。
 3. **CSS 变量审计（任务3）**：theme.js 冻结现值单源（fieldAxisLine/
    calibNullCost 同值双档 + ISO_BAND 色带）+ filebrowser 遮罩走 ：root
    令牌 --backdrop-dim + 令牌同值替换（font-size/border-radius/margin/
@@ -196,7 +199,43 @@ _MIGRATED = {
     "view_detail.js": "detail",
     "view_calibration.js": "calibration",
     "view_data.js": None,  # 三页各族键（datasets/anchors/uq）——单独钉
+    # 架构批 W3-S9（P8-9 apiFetch 收敛二批）：palette 第三形态裸 fetch 同批
+    # 收敛（palette.js 无 T.api，不进本表）；agent 数据面接 viewSignal、
+    # 对话/审批等用户动作 POST 保持无 signal（对话浮窗跨页存活不取消）；
+    # recipe 数据面（目录/加载/3D 预览）接 signal、保存/运行动作无 signal；
+    # tune 轮询/SSE 共用拉取体接 signal、startTune 动作无 signal。
+    "view_agent.js": "agent",
+    "view_recipe.js": "recipe",
+    "view_tune.js": "tune",
+    # 架构批 W4-S13（P8-9 apiFetch 收敛三批=终态，余 37 点全量迁移）：
+    # 同一口径——数据面接 viewSignal(<页键>) 切页收束 + aborted 短路（在途
+    # 拉取不再写隐藏区），用户动作 POST 保持无 signal（不被切页取消）；
+    # view_fieldviz 双视图键（farfield/field）单独钉；filebrowser 模态是
+    # 非视图共享模块，单独钉（见 _MODAL_MODULES）。信封处理逐键一致。
+    "view_sparams.js": "sparams",
+    "view_reports.js": "reports",
+    "view_fieldviz.js": None,  # 双视图键（farfield/field）——单独钉
+    "view_tools.js": "tools",
+    "view_loopboard.js": "loopboard",
+    "view_optstack.js": "optstack",
+    "view_playground.js": "playground",
+    "view_solvers.js": "solvers",
+    "view_gallery.js": "gallery",
+    "view_campaign.js": "campaign",
+    "view_profile.js": "profile",
+    "view_queue.js": "queue",
+    "view_timeline.js": "timeline",
 }
+
+# 非视图共享模块（W4-S13）：filebrowser 文件弹层（sparams/import 等视图
+# 共用）。模态打开期遮罩挡导航=无"切页在途写隐藏区"面，视图作用域取消对
+# 其不适用——单 apiFetch 导入、不接 viewSignal（aborted 短路亦不适用）。
+_MODAL_MODULES = ("filebrowser.js",)
+
+# 动作-only 视图（W4-S13）：view_import 全页皆用户动作 POST（读取工程/
+# 保存配方草稿，含同批收敛的裸 fetch 尾段），零数据面拉取=无视图作用域可
+# 绑、无 aborted 短路需求（无 signal 则 aborted 形态恒不出现）。
+_ACTION_ONLY_VIEWS = ("view_import.js",)
 
 
 class TestUnifiedApiSource:
@@ -243,15 +282,40 @@ class TestUnifiedApiSource:
         for key in ("datasets", "anchors", "uq"):
             assert f'viewSignal("{key}")' in src, key
 
-    def test_t_api_remaining_ratchet(self):
-        # 渐进迁移棘轮：存量 T.api 计数只收不放（UI-R12 迁 5 视图后=58）
-        n = len(re.findall(r"\bT\.api\(", _UNION))
-        assert n == 58, f"T.api 存量漂移（迁移面变动须同笔更新本钉）: {n}"
+    def test_view_fieldviz_two_view_scoped_signals(self):
+        # W4-S13：view_fieldviz 双视图键（farfield/field 两页共用一模块文件，
+        # 同 view_data 三键先例——各接各的 viewSignal，不共享作用域）
+        src = _view_src("view_fieldviz.js")
+        for key in ("farfield", "field"):
+            assert f'viewSignal("{key}")' in src, key
 
-    def test_non_migrated_paths_untouched(self):
-        # palette 自带 fetch（nav_focus 钉）/ tools 串行 await T.api（tools_page 钉）不动
-        assert "await T.api" in _view_src("view_tools.js")
-        assert ".catch(" in (_STATIC / "palette.js").read_text(encoding="utf-8")
+    def test_modal_shared_module_unified(self):
+        # W4-S13：filebrowser 模态（非视图共享模块）走 apiFetch 单源但不接
+        # viewSignal——模态打开期遮罩挡导航，无切页在途写面（台账注记；
+        # 负向钉按调用形态判，不误伤注记文字）
+        src = _view_src("filebrowser.js")
+        assert 'import { apiFetch } from "./api.js";' in src
+        assert "T.api(" not in src
+        assert "viewSignal(" not in src
+
+    def test_action_only_view_unified(self):
+        # W4-S13：动作-only 视图（全页用户动作 POST，零数据面）——apiFetch
+        # 单源但无 viewSignal/aborted 短路（无 signal 恒不 aborted）
+        for fname in _ACTION_ONLY_VIEWS:
+            src = _view_src(fname)
+            assert 'import { apiFetch } from "./api.js";' in src, fname
+            assert "T.api(" not in src, fname
+            assert "await fetch(" not in src, fname  # 裸 fetch 尾段不回潮
+            assert "viewSignal(" not in src, fname
+
+    def test_t_api_ratchet_zero(self):
+        # 终态防回潮钉（架构批 W4-S13 收口，R1 §面4 P8-9：T.api 全退=终态）：
+        # 存量 65→58→37→0；此后 pages/ 面新增请求一律走 pages/api.js apiFetch
+        # 单源（token 透传/超时/切页取消/统一信封四能力才覆盖全站）。
+        # app.js 的全局 api（T.api 载体）在 static 根不在 _UNION，nav_focus
+        # 逐字钉保形保留，不受本钉约束。
+        n = len(re.findall(r"\bT\.api\(", _UNION))
+        assert n == 0, f"T.api 回潮（apiFetch 单源纪律，新增请求走 pages/api.js）: {n}"
 
 
 @pytest.mark.skipif(_NODE is None, reason="本机无 node")
@@ -268,10 +332,13 @@ class TestUnifiedApiBehavioral:
         "};\n")
 
     def test_ok_path_and_passthrough(self):
+        # 架构批 W1-S1（P9-11 缺省超时）契约变更：无 opts 请求也挂 30s
+        # 超时 signal（api.js 头注④登记）——init 不再原样缺席。
         out = _run_node_js(self._BOOT +
             "const d = await api.apiFetch('/api/x');\n"
             "A(d.ok === true, 'ok path');\n"
-            "A(lastInit === undefined, '无 opts 无 token → init 原样缺席');\n"
+            "A(lastInit && typeof lastInit.signal !== 'undefined',"
+            " '无 opts → 缺省超时 signal 在');\n"
             "await api.apiFetch('/api/y', { method: 'POST' });\n"
             "A(lastInit.method === 'POST', 'opts 透传');\n"
             "console.log('ok:api-ok-path');\n")
@@ -321,6 +388,40 @@ class TestUnifiedApiBehavioral:
             "A(d.aborted === true, '超时入 aborted 形态');\n"
             "console.log('ok:api-timeout');\n")
         assert "ok:api-timeout" in out
+
+    def test_default_timeout_attaches_and_zero_exempts(self):
+        """P9-11（架构批 W1-S1）：缺省 30s 超时挂在无 opts 请求上；
+        显式 timeoutMs:0 =豁免（长跑端点），快照路径 init 缺席复原。"""
+        out = _run_node_js(self._BOOT +
+            "await api.apiFetch('/api/x');\n"
+            "A(lastInit && lastInit.signal,"
+            " '无 opts → 缺省超时 signal 附加');\n"
+            "await api.apiFetch('/api/y', { timeoutMs: 0 });\n"
+            "A(lastInit && typeof lastInit.signal === 'undefined',"
+            " 'timeoutMs:0 显式豁免 → 零超时 signal');\n"
+            "await api.apiFetch('/api/z', { timeoutMs: 5000 });\n"
+            "A(lastInit && lastInit.signal, '显式正数覆盖缺省');\n"
+            "console.log('ok:api-default-timeout');\n")
+        assert "ok:api-default-timeout" in out
+
+    def test_timeout_error_message_echoes_value(self):
+        """超时错误信息回显超时值（缺省 30000 与显式值两形态）+ 不 toast。"""
+        hang = ("globalThis.fetch = async (url, init) => {\n"
+                "  return new Promise((resolve, reject) => {\n"
+                "    init.signal.addEventListener('abort', () =>\n"
+                "      reject(Object.assign(new Error('t'),"
+                " { name: 'AbortError' })));\n"
+                "  });\n"
+                "};\n")
+        out = _run_node_js(self._BOOT + hang +
+            "const seen = [];\n"
+            "api.setApiNotifier((t) => seen.push(t));\n"
+            "const d = await api.apiFetch('/api/x', { timeoutMs: 25 });\n"
+            "A(d.ok === false && d.aborted === true, 'aborted 形态');\n"
+            "A(d.error.indexOf('25') !== -1, '超时值回显: ' + d.error);\n"
+            "A(seen.length === 0, '超时不 toast（复用 aborted 链）');\n"
+            "console.log('ok:api-timeout-echo');\n")
+        assert "ok:api-timeout-echo" in out
 
     def test_token_header_passthrough_and_reset(self):
         out = _run_node_js(self._BOOT +
@@ -463,6 +564,11 @@ class TestCssAuditSource:
 class TestCrossSeatPinsHold:
     def test_pages_union_counts_untouched(self):
         assert _UNION.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        # W4-S13 同笔更新：T.api==0（迁移终态，与 test_t_api_ratchet_zero
+        # 同源口径的跨席复述）+ setInterval==2（仅轮询托管器两处——本席零新
+        # 定时器；lifecycle/sse/routing/tools_page/dashboard_widgets 五钉同值）
+        assert len(re.findall(r"\bT\.api\(", _UNION)) == 0
+        assert _UNION.count("setInterval(") == 2
         assert _UNION.count('window.addEventListener("hashchange"') == 1
         assert _UNION.count("bindClickRows(") == 13
         assert _UNION.count("color: HEAT_BAND") == 3

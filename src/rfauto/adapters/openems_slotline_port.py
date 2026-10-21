@@ -35,6 +35,10 @@ import cmath
 import json
 import math
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from openEMS.ports import WaveguidePort
 from pathlib import Path
 from typing import Any
 
@@ -170,7 +174,7 @@ def slotline_port_boxes(x_exc: float, x_meas: float, y_half: float,
 
 def add_slotline_wg_port(csx, port_nr: int, x_exc: float, x_meas: float,
                          y_half: float, z_lo: float, z_hi: float,
-                         files: ModeFilePair, excite: float = 0.0, **kw):
+                         files: ModeFilePair, excite: float = 0.0, **kw) -> WaveguidePort:
     """创建槽线 WaveguidePort（exc_dir='x'，文件模式，kc 由 files 给出，不传 origin）。"""
     from openEMS.ports import WaveguidePort
 

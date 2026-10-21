@@ -391,7 +391,10 @@ def assemble_route_b_sparams(s11_raw: Any, s21_raw: Any, r_port_ohm: float,
     """
     import numpy as np
 
-    from rfauto.adapters.openems_templates import renorm_engine_s_to_ref
+    # 直连真身模块（oe_templates/smatrix），不走 openems_templates 门面——
+    # 门面→render_core→render_slotline→本模块 的反向边构成 SCC 环
+    # （架构批 W2-S2 解环，S3/oe5；函数对象同一，行为零变）。
+    from rfauto.adapters.oe_templates.smatrix import renorm_engine_s_to_ref
 
     s11 = np.asarray(s11_raw, dtype=complex)
     s21 = np.asarray(s21_raw, dtype=complex)

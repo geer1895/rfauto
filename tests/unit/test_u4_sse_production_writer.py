@@ -1,6 +1,6 @@
-"""aurora_e W2-S7 席位钉：U4 SSE 生产写入方（events.jsonl 生产侧接线 + e2e）。
+"""架构批 W2-S7 席位钉：U4 SSE 生产写入方（events.jsonl 生产侧接线 + e2e）。
 
-背景（W0_recon §1.3 U4 定谳）：aurora_d UI-R3 落了统一 EventBus+3 SSE 端点
+背景（W0_recon §1.3 U4 定谳）：架构批 UI-R3 落了统一 EventBus+3 SSE 端点
 +读侧镜像（35 新钉），但生产编排器对 ``runs/<run_id>/events.jsonl`` 零写入
 ——core.events.EventBus 的 set_jsonl_sink 无任何生产调用方（grep 全仓定谳），
 orchestration_wiring/agent_graph 的 emit 全部落空（无 sink 不落盘），

@@ -1,5 +1,9 @@
 """link 族（LT-1 G/T 组合键，round18 :129，追加尾位 2026-10-02）。
 
+出处（出处逐字见内核 core/gt_link.py docstring——本模块只做注册薄壳）：
+- gt_ratio：G/T = G_dB − 10·log10(T_sys_K)（ITU-R S.733-2 方法口径 /
+  标准 link-budget 优值；T0=290K IEEE 噪声温度基准）。
+
 内核在 core/gt_link.py（纯函数零 IO），本模块只做注册薄壳
 （同 exposure_limits/t_match 惯例）。键名与 cascade_budget 输出字段
 （gain_total_db/nf_total_db）同名直连——级联面输出即本键输入。

@@ -20,9 +20,7 @@ runner = CliRunner()
 
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated_cwd(isolated_cache_off):
     yield
 
 
@@ -266,16 +264,16 @@ class TestCommandRegistryCount:
         #   新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解
         #   编排全在 service+adapters 确定性内核）= 264（README/
         #   交接文档/docs_site 三处 docs 数字随本批同步）
-        # +2（aurora36 W2-D 2026-10-11：recast status/replay，RECAST 判据
+        # +2（架构批 W2-D 2026-10-11：recast status/replay，RECAST 判据
         #   重放两只读叶——教程 docs/tutorials/recast-walkthrough.md 的
         #   CLI 出口，零逻辑转发 service/recast_service→core/recast；R3
         #   授权"1-2 只读叶"取两叶，任务书预估"264→265"系单叶口径）
         #   = 266（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
-        # +1（aurora_d REST-B 2026-10-14：rest schema，REST 面 schema 导出
+        # +1（架构批 REST-B 2026-10-14：rest schema，REST 面 schema 导出
         #   只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+
         #   OpenAPI spec 落盘，零逻辑转发 service/rest_api）
         #   = 267（README/交接文档/docs_site/CHANGELOG 数字同笔）
-        # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化
+        # +2（架构批 KB-B 2026-10-14：pitfalls search/get，坑账结构化
         #   检索面两叶——索引加载/校验/id 查零逻辑转发
         #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
         #   数据面=knowledge/pitfalls_index_full.json）
@@ -283,7 +281,13 @@ class TestCommandRegistryCount:
         # +1（公开仓同步批：golden-diff 单叶 templates 域内自注册，
         #   src/rfauto/cli/domains/templates.py——公开分发视图实测口径）
         #   = 270（公开仓实测；check_numbers.count_cli()=270 同值互证）
-        assert total == 270
+        # +3（2026-10-19 架构批：verdict-summary 顶层叶（verdict
+        #   人读摘要出口，零逻辑转发 service/verdict_summary_service）+
+        #   runs compare-batch（多 run 收官对账，转发 batch_ops_service.
+        #   compare_runs_batch）+ datasets profile（数据集一键画像，转发
+        #   dataset_service.dataset_profile），全叶带 --json）
+        #   = 273（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
+        assert total == 273
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""

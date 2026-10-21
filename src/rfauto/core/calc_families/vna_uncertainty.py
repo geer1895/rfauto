@@ -1,4 +1,12 @@
-"""VNA 测量不确定度族（aurora72 A4-A 席域 1，R7 第二梯队 T7=G19）。
+"""VNA 测量不确定度族（架构批 A4-A 席域 1，R7 第二梯队 T7=G19）。
+
+出处（VNA 残差不确定度经典口径，正文物理口径节转录）：
+- vna_reflection_uncertainty / vna_transmission_uncertainty：校准后
+  残差误差箱线性化最坏界/RSS 合成（Rytting 误差模型口径；EURAMET
+  cg-12, Evaluation of Vector Network Analysers Type-B 评定惯例；
+  Keysight AN 1287 误差模型应用口径）。
+- three_antenna_gain：三天线法/比较法增益定标（IEEE Std 149 天线
+  测量惯例；Friis 远场 FS 口径）。
 
 三键：vna_reflection_uncertainty（反射测量不确定度：方向性/源匹配/跟踪
 三残差项经典纹波合成）/ vna_transmission_uncertainty（传输测量不确定度：

@@ -1,5 +1,11 @@
 """电晕/局放判据族（MP-2，内核在 core/corona.py，本模块只做注册壳）。
 
+出处（规范事实+经典判据，正文与内核 core/corona.py 转录）：
+- corona_pd_check：Paschen 击穿曲线（F. Paschen, Ann. Phys., 1889）
+  + ISA 标准大气海拔降额（ISO 2533）+ Peek 起始场工程判据（F. W. Peek,
+  Dielectric Phenomena in High Voltage Engineering），ECSS-E-ST-10-04C
+  空间环境语境。
+
 round15 §三 :82 规格「电晕/局放判据（Paschen+海拔降额）入 high_power，
 ECSS-E-ST-10-04C 语境」（2026-10-02）。单键 corona_pd_check（施加电压对
 空气隙的击穿/局放/电晕三面裕量报告）；isa_pressure_pa/isa_temperature_c/

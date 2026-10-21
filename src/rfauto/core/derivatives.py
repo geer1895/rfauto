@@ -1,6 +1,6 @@
 """XD-3 微分包统一件：declare_partials 三档 + 链式总导数 + 三方互证门。
 
-池 P3 圈定件（aurora_e W5-S22；crossdomain R20 XD-3）。OpenMDAO
+池 P3 圈定件（架构批 W5-S22；crossdomain R20 XD-3）。OpenMDAO
 "组件声明偏导 + 框架组装 + 互证"三段式的最小确定性实现（零新依赖，
 纯 numpy/scipy-free——FD 与复步长都手写闭式）：
 

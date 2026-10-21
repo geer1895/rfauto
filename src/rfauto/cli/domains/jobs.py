@@ -35,8 +35,12 @@ def jobs_status(
             return
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False))
         return
-    from rfauto.infra.run_store import list_runs
-    rows = list_runs()
+    # T8 越级收口（架构批 W11-S2）：run 清单经 service 层单一入口
+    # （service.ui_service.list_runs，ListRunsPayload 契约 UI/MCP 共用）。
+    # 显式 limit=20 保持 infra.run_store.list_runs 的原缺省 limit（行集逐
+    # 字节不变；ui_service 内部即同函数转发）。
+    from rfauto.service.ui_service import list_runs as _svc_list_runs
+    rows = _svc_list_runs(limit=20)["runs"]
     if json_output:
         # VI-5 W6-B：清单信封（空表如实 runs=[]）
         console.print_json(json.dumps(
@@ -138,14 +142,16 @@ def cache_clear(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """手动清理结果缓存。"""
-    from rfauto.infra.result_cache import ResultCache
-    rc = ResultCache()
-    removed = rc.clear(model_name=model)
+    # T8 越级收口（架构批 W11-S3）：清理经 service 单源
+    # （service.api.run_core.clear_result_cache，service→infra 合法向下）；
+    # 信封键 {ok, removed, model} 与原地构造逐字节一致，cli 零逻辑直渲染。
+    from rfauto.service.api.run_core import clear_result_cache
+    result = clear_result_cache(model_name=model)
+    removed = result["removed"]
     if json_output:
         # VI-5 W6-B：--json 信封（清理为无失败面操作，ok=True 如实）
         console.print_json(json.dumps(
-            ok_envelope(removed=removed, model=model),
-            ensure_ascii=False, default=str))
+            result, ensure_ascii=False, default=str))
         return
     scope = f"（模型: {model}）" if model else ""
     console.print(f"[green]✓ 缓存已清除{scope}：移除 {removed} 个条目[/green]")

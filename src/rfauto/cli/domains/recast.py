@@ -1,4 +1,4 @@
-"""recast 子应用（RECAST 判据重放 CLI 出口，2026-10-11 aurora36 W2-D）——
+"""recast 子应用（RECAST 判据重放 CLI 出口，2026-10-11 架构批 W2-D）——
 status/replay 两只读叶。
 
 零逻辑转发 service/recast_service（规则 4 薄壳；重放数值全部在

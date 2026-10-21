@@ -1,4 +1,12 @@
-"""UHF RFID 链路预算闭式（正向 Friis + 反向背散射）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""UHF RFID 链路预算闭式（正向 Friis + 反向背散射）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（RFID 链路预算教科书口径，函数 docstring 转录）：
+- rfid_forward_link：Friis 传输公式 EIRP 口径（H. T. Friis, Proc. IRE
+  34(5), 1946；二级转引 Balanis, Antenna Theory 有效口径 A_e=Gλ²/4π）。
+- rfid_backscatter_link：单站雷达方程+差分 RCS（Skolnik 雷达方程；
+  P. V. Nikitin, K. V. S. Rao, R. Martinez, "Differential RCS of RFID
+  tag", Electron. Lett. 43(8), 2007；1/R⁴ 律=Griffin-Durgin 背散射
+  链路口径）。"""
 
 from __future__ import annotations
 

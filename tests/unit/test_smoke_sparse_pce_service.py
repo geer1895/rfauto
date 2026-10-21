@@ -1,4 +1,4 @@
-"""sparse_pce_service 冒烟门（aurora72 A5-C 测试盲区批量补冒烟席）。
+"""sparse_pce_service 冒烟门（架构批 A5-C 测试盲区批量补冒烟席）。
 
 盲区总账（A5-C triple-grep 复核，R8 盘点面 4 交叉映射勘误）：R8 报
 "单引用 38 个"系过时/口径漂移登记——38 个被点名实现类

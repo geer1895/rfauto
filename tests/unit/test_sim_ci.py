@@ -12,8 +12,7 @@ from rfauto.pipeline.quota_guard import CostLedger
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+def _isolated(tmp_path, monkeypatch, isolated):
     # write_meta 的 pip freeze / git sha 子进程只影响 meta 内容与耗时，
     # 与本项报告无关——钉住以保持单测快且确定。
     monkeypatch.setattr("rfauto.infra.run_store._pip_freeze_sha", lambda: "test")

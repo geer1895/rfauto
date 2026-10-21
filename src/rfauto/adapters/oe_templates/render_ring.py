@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     pass
+from rfauto.core.calc_families.ring_resonator import (
+    ring_resonator_design_params as ring_resonator_design_params,
+)
+
 from .registry import (
     _TEMPLATE_PORT_AXES,
     _TEMPLATE_RADIATOR,
@@ -38,7 +41,6 @@ _C0_M_S = 299792458.0
 RING_RESONATOR_F1_GHZ = 2.5
 RING_RESONATOR_W_MM = 1.1134     # 50Ω HJ @2.5GHz rogers4350b（mline/gysel 同源档）
 RING_RESONATOR_GAP_MM = 0.4      # 馈线-环带间隙（0.4mm 审计档下 NEAR=0.1≤gap/3）
-
 RING_RESONATOR_META: dict[str, Any] = {
     "f0_ghz": 2.5, "n_ports": 2,
     "extraction": "S11/S21 @ MSLPort 1-2（环形谐振器：S21 谐振指纹 f_n≈n·c/"
@@ -71,35 +73,11 @@ RING_RESONATOR_META: dict[str, Any] = {
 }
 
 
-def ring_resonator_design_params(
-    f1_ghz: float = RING_RESONATOR_F1_GHZ,
-    w_mm: float = RING_RESONATOR_W_MM,
-    gap_mm: float = RING_RESONATOR_GAP_MM,
-    z0_ohm: float = 50.0,
-) -> dict[str, Any]:
-    """环形谐振器名义设计点（HJ 精算单源，#1c——名义值禁手算捷径）。
-
-    设计链（方案 F-A M3 闭式）：目标基模 f1 → 50Ω 馈线宽（inverse_width HJ
-    自洽回代）→ 环带线宽名义档下 εeff(f1)（forward_z0 HJ）→
-    r_mean = c/(2π·f1·√εeff(f1))（基模 n=1：闭环周长=λg）。
-    恒等式由 test_ring_resonator_template 综合反解自洽测试钉住（rtol 1e-9）。
-    近似级别：εeff 取直微带 HJ 值，未含曲率/色散修正（v1，见段头注）。
-    """
-    from rfauto.core.synthesis import Stackup, forward_z0, inverse_width
-
-    sub = Stackup.from_materials_yaml("rogers4350b_h0.508")
-    w_feed, _, status = inverse_width(z0_ohm, f1_ghz, sub)
-    if status != "ok":
-        raise ValueError(f"ring_resonator 馈线宽反解未收敛: {status}")
-    _, eeff = forward_z0(w_mm, f1_ghz, sub)
-    r_mean_mm = (_C0_M_S / (2.0 * math.pi * f1_ghz * 1e9
-                            * math.sqrt(eeff)) * 1e3)
-    return {
-        "r_mean_mm": r_mean_mm,
-        "w_mm": w_mm,
-        "gap_mm": gap_mm,
-        "feed_w_mm": round(w_feed, 4),
-    }
+# 提升式重构单一事实源（架构批 W3-S11，R2_core_tier3 §⑤ F3）：函数体已
+# 逐字节下沉 core/calc_families/ring_resonator.py（顶部 import 再导出零改动，
+# #116 不留本地遮蔽副本；同参输出逐位一致由 tests/unit/test_w3s11_ring.py
+# 字节级对拍钉，重构前基线 内部证据目录）。
+# openems_templates 的同名再导出经本模块透传，仍为 core 同一函数对象。
 
 
 #: 名义设计点（2026-09-26 由 ring_resonator_design_params() 缺省实参精算，

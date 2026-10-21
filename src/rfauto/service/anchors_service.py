@@ -1,7 +1,7 @@
 """DP-3 锚注册表 JSON 薄面（服务层，规则 4：JSON 进出，CLI/MCP 是薄壳）。
 
 一切返回 dict 且 JSON 可序列化；ok=False 时带 ``errors`` list[str] 字段
-（schema 1.1 起，error_envelope 单源，aurora_d AU-2C 域升版）。消费接线
+（schema 1.1 起，error_envelope 单源，架构批 AU-2C 域升版）。消费接线
 （synthesize_*/渲染链 resolve_anchor 接入）为 DP-3 第二批——本批只开
 数据面（list/inspect/validate/resolve 四个只读入口）。
 """
@@ -38,7 +38,7 @@ _SUMMARY_FIELDS = ("anchor_id", "kind", "status", "version",
 #: anchors 报告域 schema 版本（AU-2③ 按域推广，PDN 惯例；旧档案无键照
 #: 读=消费面向后兼容。与快照库 payload 的 ``schema`` 键（_SNAPSHOT_SCHEMA）
 #: 语义区分：后者是库文件格式标识，本常量只进 service 返回信封）。
-#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2C 席）：失败信封单数
+#: 1.1（2026-10-14 AU-2 域升版，架构批 AU-2C 席）：失败信封单数
 #: ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——契约
 #: §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；本域 CLI 面
 #: （cli/domains/anchors.py drift --history-file 两处）与 MCP 壳

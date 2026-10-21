@@ -1,4 +1,10 @@
-"""chipless RFID 频域零点编码族（内核在 core/chipless_rfid.py，本模块只做注册壳）。"""
+"""chipless RFID 频域零点编码族（内核在 core/chipless_rfid.py，本模块只做注册壳）。
+
+出处（文献族口径+滤波器综合惯用式，内核 core/chipless_rfid.py 转录）：
+- chipless_tag_plan / chipless_tag_encode / chipless_tag_decode：频域
+  零点编码 chipless RFID 文献族（Karmakar 系 chipless 标签口径）；单谷
+  闭式=传输线并联串联-RLC 陷波，电抗斜率参数定义二级转引
+  Matthaei-Young-Jones ch.4；S21=2Y0/(2Y0+Y) 为并联导纳二端口恒等式。"""
 
 from __future__ import annotations
 

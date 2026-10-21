@@ -596,7 +596,7 @@
 - **抽取判据**：S11/S21 @ MSLPort 1-2（SIR 带通：带内回波纹波 + 带外抑制；裁判=并联谐振 J 倒置器链 c3_circuit_sparams，同步 TEM 极限对照 C13 coupling_matrix_response 互证，实测 max\|ΔS21\|=0.0061dB）
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`order`、`w_feed_mm`、`w_low_mm`、`w_high_mm`、`l_low_mm`、`l_high_mm`、`gaps_mm`、`feed_len_mm`
-- **名义参数**：`order`=3，`w_feed_mm`=1.1117，`w_low_mm`=1.8944，`w_high_mm`=0.6144，`l_low_mm`=6.5719，`l_high_mm`=6.7818，`gaps_mm`=[0.2417, 1.5189, 1.5189, 0.2417]，`feed_len_mm`=53.3232
+- **名义参数**：`order`=3，`w_feed_mm`=1.1117，`w_low_mm`=1.8944，`w_high_mm`=0.6144，`l_low_mm`=6.5719，`l_high_mm`=7.1055，`gaps_mm`=[0.2417, 1.5189, 1.5189, 0.2417]，`feed_len_mm`=53.1613
 - **拓扑**：λ/4 型接地 SIR 带通（§C3 滤波器族 II，MYJ SIR 章口径）：N 根阶梯阻抗棒平行排列（开路端低阻段 w_low + 接地端高阻段 w_high，步进比 Z_lo/Z_hi=35/70 给出紧凑化，谐振条件 tanθ1·tanθ2=Z_lo/Z_hi），同端接地顶端过孔 r=0.15mm，耦合区=低阻段（相邻棒低阻段对齐）；双 50Ω 馈线（板边段 w_feed + 耦合段 w_low 台阶）缝耦合自 y=−BOARD 板边引入（单轴 PML）
 - **冒烟注记**：真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收
 

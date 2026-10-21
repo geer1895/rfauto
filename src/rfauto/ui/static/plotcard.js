@@ -12,7 +12,7 @@
    - plotCard：DOM 壳（工具条 CSV/PNG/SVG 导出按钮 + 图表容器），浏览器侧。
    迁移面：pages.js 全部 drawEChart 调用点换壳为本组件；drawLineChart /
    Smith / 3D 自研管线不动。主题三态沿用 PR-1（body.light 类 + 调色板入参）。
-   ═══ aurora_d UI-R5 增量 ═══
+   ═══ 架构批 UI-R5 增量 ═══
    - 万点级降采样（保形）：minmaxIndices（min-max 包络抽稀，峰值/谷值位置
      与数值逐位保持）+ 共享 x 网分组（多迹线同索引集，category 轴同步）；
      lttbIndices 为感知保形备选档；在 plotCardOption 接缝生效
@@ -206,7 +206,7 @@ export function toCsv(series) {
   return rows.map((r) => r.map(q).join(",")).join("\r\n");
 }
 
-/* ═══ aurora_d UI-R5：万点级曲线降采样（保形）═════════════════════════
+/* ═══ 架构批 UI-R5：万点级曲线降采样（保形）═════════════════════════
    S 参数宽扫/多迹线可达数万频点——echarts 全量入 option 渲染与悬停读数
    随点数线性劣化。三件套：
    - minmaxIndices(ys, target)：min-max 包络抽稀（等间隔桶，每桶取 argmin+
@@ -374,7 +374,7 @@ export function downsamplePlotSeries(series, cap) {
 /* PlotCard 的 option（props 与 drawEChart opts 同形 + mode/crosshair/y2 增量；
    UI-R5：接缝处套降采样——buildEChartOption 保持纯构造（golden 钉不受扰），
    convergence 整跳、props.maxPoints 显式覆盖优先。
-   ═══ aurora_e W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
+   ═══ 架构批 W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
    props.option 非空 → 调用方自带完整 option 直通，跳过 base 单源构造与
    降采样（非笛卡尔管线——polar/Smith/custom/heatmap 不在 builder 能力面——
    由此接入 plotCard 壳，获得 CSV/PNG/SVG 导出+同容器复用+主题联动）：
@@ -396,11 +396,16 @@ export function plotCardOption(props, theme) {
 /* PlotCard：图表卡片壳（工具条 CSV/PNG/SVG 导出 + 图表容器）。
    props={series, xlabel, ylabel, y2?, markline, band, xvalue, zoom, height,
           width?, title?, mode?:"line"|"convergence", crosshair?, exportCsv?, exportPng?,
-          exportName?, maxPoints?, ariaLabel?, option?}；
+          exportName?, maxPoints?, ariaLabel?, option?, connectGroup?}；
    ctx={light:boolean, palette:string[]}（app.js 按 body.light 现取注入）。
    W3-S12（P-5）：option? 为逃生舱（语义见 plotCardOption 头注——非笛卡尔
    管线自携 option 直通，series 仅作 CSV 数据面）；width? 设图表容器宽
    （Smith 方图等比管线用；不传="" 与既有 DOM 逐字节同）。
+   W5-S17（架构批，R1 §面3 联动 watch 激活）：connectGroup? 非空 → 实例
+   挂 .group + echarts.connect(group)（同组 tooltip/axisPointer/dataZoom
+   双向同步，echarts 原生零新依赖；典型面=sparams 多文件卡+叠加卡按频段
+   对照）。实现面 _applyConnectGroup（首绘与复用换代两组路径共用），窗口
+   缺席（node 行为钉环境）零抛跳过（#105 best-effort——联动面不阻渲染）。
    返回 echarts 实例（失败返 null 并把错误写进容器——不静默吞错，#135）。
 
    A6 P1-3（review_aurora_next 审查，2026-10-13）图表生命周期：T.plotCard 共
@@ -459,6 +464,22 @@ function _ariaLabel(props) {
     `${props.ylabel ? "，纵轴 " + props.ylabel : ""}${props.xlabel ? "，横轴 " + props.xlabel : ""}`;
 }
 
+/* W5-S17（R1 §面3 联动 watch 激活）：跨图联动组挂接（首绘与复用换代共用
+   单源）。echarts.connect(group) 只把组标记为已连接（5.6 vendored 实测
+   fm[group]=true），实例经 .group 加入/离场（dispose 自动移出注册表），
+   重复调用幂等——首绘逐卡 connect 与复用换代重连均安全。返回是否实际
+   挂接（node 行为钉消费）；window/echarts 缺席（node 假环境）零抛跳过。 */
+export function applyConnectGroup(chart, group) {
+  if (!chart || !group) return false;
+  try {
+    if (typeof window === "undefined" || !window.echarts ||
+        typeof window.echarts.connect !== "function") return false;
+    chart.group = group;
+    window.echarts.connect(group);
+    return true;
+  } catch { return false; } // 联动面故障不阻渲染主路径（#105 best-effort）
+}
+
 export function plotCard(el, props = {}, ctx = {}) {
   try {
     const light = !!ctx.light;
@@ -468,10 +489,14 @@ export function plotCard(el, props = {}, ctx = {}) {
         prevShell.chart.getDom() && el.contains(prevShell.chart.getDom())) {
       // UI-R5 复用路径：仅 setOption 整体替换（新实例/新监听/新钮全为零）+
       // aria 与 shell 记录随数据刷新（主题联动重放也消费该记录）
+      const prevGroup = prevShell.props ? prevShell.props.connectGroup : null;
       prevShell.props = props;
       prevShell.ctx = shell.ctx;
       prevShell.chart.setOption(plotCardOption(props, shell.ctx), true);
       prevShell.chart.getDom().setAttribute("aria-label", _ariaLabel(props));
+      // W5-S17：换代换组时重挂联动（同组幂等；未传组零动作——旧行为不变）
+      if (props.connectGroup && props.connectGroup !== prevGroup)
+        applyConnectGroup(prevShell.chart, props.connectGroup);
       // W4-S17：复用换代=一次"最近渲染"（桥目标随最后一次渲染走；工具条
       // DOM 原地保留，钮仍存活——登记刷新零新增 DOM 面）
       const rp = el.querySelector && el.querySelector('button[data-export-kind="png"]');
@@ -508,7 +533,7 @@ export function plotCard(el, props = {}, ctx = {}) {
       getChart: () => shell.chart,
       getCsv: () => "\ufeff" + toCsv(shell.props.series),
     }, kinds)) tools.appendChild(b);
-    // W4-S17（aurora_e，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
+    // W4-S17（架构批，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
     // 全站"最近渲染"（palette act-export-chart 事件桥消费面）。querySelector
     // 守卫=node 行为钉假元素环境静默跳过（#105 best-effort）。
     const pngBtn = tools.querySelector
@@ -528,6 +553,8 @@ export function plotCard(el, props = {}, ctx = {}) {
       if (!chart.isDisposed()) chart.resize();
     };
     chart.setOption(plotCardOption(props, shell.ctx));
+    // W5-S17：首绘挂联动组（props.connectGroup 非空时；缺席=旧行为逐字节不变）
+    if (props.connectGroup) applyConnectGroup(chart, props.connectGroup);
     window.addEventListener("resize", onResize);
     shell.chart = chart;
     _plotShells.set(el, shell);
@@ -540,7 +567,7 @@ export function plotCard(el, props = {}, ctx = {}) {
   }
 }
 
-/* ═══ W4-S17（aurora_e，W3-S12 建议①）：palette act-export-chart 桥登记面 ═══
+/* ═══ W4-S17（架构批，W3-S12 建议①）：palette act-export-chart 桥登记面 ═══
    四管线（polar/Smith/custom/heatmap）W3-S12 退场 chartExportTools 后，桥的
    "最近装配"登记只剩 dashboard 甜甜圈一个消费者——登记面由此迁 plotCard 壳：
    plotCard 每次渲染（首绘装配/复用换代）都把该壳工具条 PNG 钮登记为全站

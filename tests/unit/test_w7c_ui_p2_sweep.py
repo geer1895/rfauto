@@ -1,4 +1,4 @@
-"""aurora36 W7-C（UI P2 清扫批）回归钉。
+"""架构批 W7-C（UI P2 清扫批）回归钉。
 
 落地面（本席只动 pages.js / index.html / 本测试，零 commit）：
 1. P2-11 窄屏策略：900px 断点块（main 收距 / 页头换行 / 面板横滚 /
@@ -15,7 +15,7 @@
    reduced-motion delay 归零）/ P2-5 @supports not backdrop-filter 降级 /
    P2-8 .pk-hint 死类补样式 / P2-9 重复 .bubble.md 样式块删除 /
    P2-15 表头 scope="col"（原跨席字面钉豁免的战役座位表 2 处已由
-   aurora_d UI-R4 清偿挂 scope，全域零裸表头）/ P1-14 残余 nav .ico
+   架构批 UI-R4 清偿挂 scope，全域零裸表头）/ P1-14 残余 nav .ico
    aria-hidden(26) / P2-4 残余 logo 升 h1。
 
 零改动项（核查结论钉住，防未来漂移）：
@@ -47,7 +47,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -135,8 +135,9 @@ class TestMicroInteraction:
 
     def test_chat_send_loading_state(self):
         assert 'if (!text || (btn && btn.disabled)) return;' in _PAGES, "发送中防重入"
-        assert 'btn.disabled = true; btn.textContent = "发送中…"' in _PAGES
-        assert 'if (btn) { btn.disabled = false; btn.textContent = "发送"; }' in _PAGES
+        # W8-S32 i18n 批 3：发送/发送中文案迁词表 t() 烘焙（disabled 结构不变）
+        assert 'btn.disabled = true; btn.textContent = t("agent.chat_sending")' in _PAGES
+        assert 'if (btn) { btn.disabled = false; btn.textContent = t("agent.chat_send"); }' in _PAGES
         # finally 恢复（异常路径不卡死按钮）
         m = re.search(r"if \(btn\) \{ btn\.disabled = true;.*?\} finally \{", _PAGES, re.S)
         assert m, "chat 发送 disabled 须在 try/finally 恢复结构内"
@@ -154,7 +155,8 @@ class TestRunDetailInlineError:
         assert m, "showRun 失败分支缺内联面板"
         body = m.group(1)
         assert 'T.msg((d.errors || []).join("; "), false)' in body, "msg 双通道保留"
-        assert '<span class="badge err">加载失败</span>' in body
+        # W6-S21 i18n 扩面：文案单源迁词表 t() 烘焙（结构/双通道/重试钮不变）
+        assert '<span class="badge err">${t("detail.load_failed")}</span>' in body
         assert "${esc(id)}" in body, "run_id 内联可见"
         assert 'id="detail-retry"' in body and "showRun(id)" in body, "重试钮"
 
@@ -195,12 +197,13 @@ class TestGuideLeftovers:
         assert _INDEX.count(".bubble.md th, .bubble.md td") == 1
 
     def test_p2_15_all_th_have_scope(self):
-        # UI-R4（aurora_d）清偿 A6 P2-9：原 X2 席裸字面钉豁免的战役座位表
+        # UI-R4（架构批）清偿 A6 P2-9：原 X2 席裸字面钉豁免的战役座位表
         # PASS/FAIL 两分支 2 处已挂 scope=col（test_x2_pr68_ui /
         # test_ui_kit 同笔更新）——pages/ 全域零裸表头，新增一律挂 scope。
         bare = [m.start() for m in re.finditer(r"<th>", _PAGES)]
         assert len(bare) == 0, f"裸表头应已清零（A6 P2-9），实得 {len(bare)}"
-        assert _PAGES.count('<th scope="col">座位状态</th>') == 2, "座位表 scope 口径"
+        # UI i18n 批（2026-10-19）：表头文案迁词表——scope 钉改钉键面
+        assert _PAGES.count('<th scope="col">${t("campaign.th_seat")}</th>') == 2, "座位表 scope 口径"
         assert _PAGES.count("scope=") >= 28, "scope=col 覆盖面"
         assert _PAGES.count('scope="col"') + _PAGES.count("scope='col'") >= 28
 

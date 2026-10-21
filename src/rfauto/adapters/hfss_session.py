@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -256,7 +257,7 @@ def _stage_mtls_certs(mtls: HfssMtlsCerts) -> tuple[str, str | None]:
 @contextlib.contextmanager
 def remote_session_switches(
     mtls: HfssMtlsCerts | _AutoSwitches | None = _AUTO,
-):
+) -> Iterator[None]:
     """远程 attach 四开关+一环境变量的作用域管理（共享单源，L1/L2/session 同款）。
 
     远程分支的 ``Desktop`` 构造必需（pyaedt 1.4.0 × AEDT 2025.1.0 无 SP

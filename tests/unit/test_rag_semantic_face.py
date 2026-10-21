@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -318,9 +319,44 @@ class _BadEmbedder:
 
 class TestBadVectorRejection:
     def test_valid_vectors_pass(self) -> None:
-        result = query_with_embedder(_build_index(), "wilkinson 隔离",
-                                     embedder=_FakeEmbedder())
+        """合法向量全链（R3 弱测试 #8）：维度一致 + cosine 按 L2 归一化
+        语义产出——已知向量独立复算逐 hit 分数（归一化范数语义的观察面：
+        原始 dot=11 的 hit 分数仍是 dot/(|q||d|)≈0.984，非 11）。"""
+        query_text = "wilkinson 隔离"
+        doc_vectors = {
+            "wilkinson 功分器 隔离电阻 等分 S11 回损 isolation": (3.0, 4.0),
+            "SIW 基片集成波导 金属化过孔 截止频率 via fence": (0.0, 1.0),
+            "Sobol 灵敏度 Saltelli 采样 全局敏感性 指数": (1.0, 1.0),
+            "KiCad pcbnew ZONE 铜皮 填充 DRC footprint": (0.0, 1.0),
+        }
+
+        class _KnownEmbedder:
+            def embed(self, texts):
+                return [[1.0, 2.0] if t == query_text else
+                        list(doc_vectors[t]) for t in texts]
+
+        result = query_with_embedder(_build_index(), query_text,
+                                     embedder=_KnownEmbedder())
         assert result["ok"] is True
+        # 全向量维度一致（dim=2），命中数=全语料（分数均 >1e-12）
+        assert result["n_indexed"] == 4
+        assert result["n_hits"] == 4
+        # 独立复算 cosine（#118：不调被测侧归一化函数拼期望）
+        q_norm = math.sqrt(1.0 + 4.0)  # |q|=√5
+        expect = {
+            "wk": 11.0 / (5.0 * q_norm),    # |d|=5；原始 dot=11 → 归一化 0.984
+            "siw": 2.0 / (1.0 * q_norm),
+            "sob": 3.0 / (math.sqrt(2.0) * q_norm),
+            "pcb": 2.0 / (1.0 * q_norm),
+        }
+        scores = {h["chunk_id"]: h["score"] for h in result["hits"]}
+        assert set(scores) == set(expect)
+        for cid, want in expect.items():
+            assert scores[cid] == pytest.approx(want, rel=1e-12), cid
+            assert 0.0 < scores[cid] <= 1.0  # 归一化语义：分数恒 ≤1
+        # 排序降序、同分（siw/pcb 同 (0,1)）按入库序
+        assert [h["chunk_id"] for h in result["hits"]] == \
+            ["wk", "sob", "siw", "pcb"]
 
     @pytest.mark.parametrize("mode,message", [
         ("short", "期望"),

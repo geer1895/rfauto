@@ -42,10 +42,11 @@ from typing import Any, ClassVar
 
 import numpy as np
 
+from rfauto.infra.registry_kit import RegistryKit
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
-#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：JSON 进出入口
+#: 1.1（2026-10-14 AU-2 域升版，架构批 AU-2B 席）：JSON 进出入口
 #: propose_topology 的失败信封单数 ``error`` 键统一为 ``errors`` list[str]
 #: （error_envelope 单源）——契约 §1 判读规则 2 口径的破坏性形状变更，
 #: 按 §2 规则升位；消费面（CLI/MCP 薄壳透传+test_w2_c_json_coverage）同笔
@@ -263,26 +264,29 @@ class TopologyProposer(ABC):
 
 
 class TopologyProposerRegistry:
-    """提议器注册表。"""
+    """提议器注册表（基类+注册表，同 AgentRuntime/RuntimeRegistry 模式）。
 
-    _proposers: ClassVar[dict[str, type[TopologyProposer]]] = {}
+    T6 扩面二批（R1 审计 §面5/T6，W10-S3）：classmethod 门面 + RegistryKit
+    单例承载（hierarchical_scheduler.EngineRegistry 同款）——类键裸装饰器
+    注册（键取 name 类属性）、重名静默覆盖（allow_overwrite=True 历史
+    语义）、缺名 KeyError 文案逐字节不变、available()=keys()。
+    """
+
+    _kit: ClassVar[RegistryKit[type[TopologyProposer]]] = RegistryKit(
+        label="提议器", allow_overwrite=True)
 
     @classmethod
     def register(cls, proposer_cls: type[TopologyProposer]) \
             -> type[TopologyProposer]:
-        cls._proposers[proposer_cls.name] = proposer_cls
-        return proposer_cls
+        return cls._kit.bare_register(proposer_cls)
 
     @classmethod
     def create(cls, name: str, **kwargs: Any) -> TopologyProposer:
-        if name not in cls._proposers:
-            raise KeyError(
-                f"未注册的提议器: {name}（可用: {cls.available()}）")
-        return cls._proposers[name](**kwargs)
+        return cls._kit.create(name, **kwargs)
 
     @classmethod
     def available(cls) -> list[str]:
-        return sorted(cls._proposers)
+        return cls._kit.keys()
 
 
 def _order_from_rejection(spec: FilterSpec) -> int:

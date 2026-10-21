@@ -351,8 +351,8 @@ def export_dxf_pdf(dxf_path: str | Path, pdf_path: str | Path | None = None) -> 
 class EzdxfDrawPort:
     name = "ezdxf"
 
-    def render(self, dims, out_path, **kwargs):
+    def render(self, dims, out_path, **kwargs) -> Path:
         return render_drawing(out_path, dims, **kwargs)
 
-    def render_pdf(self, dxf_path, pdf_path=None):
+    def render_pdf(self, dxf_path, pdf_path=None) -> Path | None:
         return export_dxf_pdf(dxf_path, pdf_path)

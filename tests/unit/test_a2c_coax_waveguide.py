@@ -1,4 +1,4 @@
-"""aurora72 A2-C 席锚树：coax_line 四键（同轴 Z0 双向/行波衰减分解/功率
+"""架构批 A2-C 席锚树：coax_line 四键（同轴 Z0 双向/行波衰减分解/功率
 容量/截止式衰减器）+ waveguide_closed_form 三键（圆柱腔模式谱/模式图/模式无载 Q）。
 
 数值断言口径（#118 不自证——恒等式/独立常数/双路线/跨键互证，不用自身
@@ -689,7 +689,7 @@ def test_mode_q_domain_rejections():
 
 
 def test_new_keys_description_first_line_format():
-    """aurora72 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
+    """架构批 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
     new_keys = (
         "coax_line_z0", "coax_line_attenuation", "coax_line_power_capacity",
         "circular_cavity_mode_spectrum", "circular_cavity_mode_chart",

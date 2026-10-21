@@ -116,7 +116,7 @@ def planar_nf_to_farfield(
 ) -> dict[str, Any]:
     """平面近场 → 远场方向图（确定性，幅度 dB 归一）。
 
-    theta_deg/phi_deg 缺省 = arange(0, 81, 1) / [0, 90, 180, 270]；返回
+    theta_deg/phi_deg 缺省 = arange(0, 85, 1) / [0, 90, 180, 270]；返回
     (n_theta, n_phi) 网格的复 E_θ/E_φ 与峰值归一 dB 图。θ≥85° 方向如实 NaN；
     谱支撑（Nyquist）覆盖不到的方向（|k sinθ| > π/Δx 等频轴越界）如实 NaN。
     """
@@ -138,7 +138,10 @@ def planar_nf_to_farfield(
     wy = _window_1d(window, y.size, kaiser_beta)
     w = wx[:, None] * wy[None, :]
 
-    th = (np.arange(0.0, FF_VALIDITY_MAX_DEG + 0.5, 1.0)
+    # 缺省轴末值必须 < FF_VALIDITY_MAX_DEG（arange 半开区间不含上界）——
+    # 曾写 "+0.5" 致末值=85.0 撞自家 >=85° 守卫，缺省路径恒 ValueError
+    # （W12-S1 终审 F-1，2026-10-20 一行修）。
+    th = (np.arange(0.0, FF_VALIDITY_MAX_DEG, 1.0)
           if theta_deg is None else np.asarray(theta_deg, dtype=float))
     ph = (np.array([0.0, 90.0, 180.0, 270.0])
           if phi_deg is None else np.asarray(phi_deg, dtype=float))

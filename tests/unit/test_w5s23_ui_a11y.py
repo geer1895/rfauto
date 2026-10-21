@@ -1,4 +1,4 @@
-"""aurora_e W5-S23 席位回归钉：UI a11y 深化+体验增强批（深审 a-e 五面六件）。
+"""架构批 W5-S23 席位回归钉：UI a11y 深化+体验增强批（深审 a-e 五面六件）。
 
 对象：src/rfauto/ui/static/{index.html,app.js} + pages/{sortable,kit,
 view_dashboard,view_tune,view_loopboard,view_runs,view_calibration}.js。
@@ -13,8 +13,8 @@ view_dashboard,view_tune,view_loopboard,view_runs,view_calibration}.js。
    - c 面：组件增删焦点保持（refreshGridKeepingFocus 三消费面）+ wclose
      aria-label + skip-link 未定义变量修复（--text→--fg 全站唯一未定义
      var 引用清零）+ .sr-only 工具类；
-   - e 面：KPI count-up（wKpi 接线 + S.kpiPrev 记忆 + W4-C 零自由定时器
-     钉不涉本块复核）。
+   - e 面：KPI count-up（wKpi 接线 + _kpiPrev 记忆=W6-S2 S 收编降级名
+     + W4-C 零自由定时器钉不涉本块复核）。
 2. **行为钉（node 真执行，缺 node skip）**：count-up 纯函数数值钉
    （easeOutCubic 真值表/countUpText 夹边/animateKpiValue reduced 直出+
    raf 注入帧推进）+ kitTable caption 字节形态（有/无/恶意串转义/无表头
@@ -85,9 +85,15 @@ class TestTableCaption:
         assert '<caption class="sr-only">${esc(caption)}</caption>' in _KIT
 
     def test_three_wiring_sites(self):
-        assert 'caption: "最近 Run 表：点行打开 run 详情，点表头排序"' in _DASH
-        assert '<caption class="sr-only">Run 历史：点行打开详情，' in _RUNS
-        assert '<caption class="sr-only">校准 run 清单：点行打开' in _CAL
+        # W8-S32 i18n 批 3：dashboard caption 迁词表 t() 烘焙（zh 值同笔
+        # dashboard.recent_caption，runs/cal 直写形态不涉本批）
+        # S4 发布令批：runs caption 同款迁词表 t() 烘焙（zh 值同笔
+        # runs.caption；cal 直写形态不涉本批）
+        # S1 发布令批：cal caption 同款迁词表 t() 烘焙（zh 值同笔
+        # calibration.caption；三站自此全部词表化）
+        assert 'caption: t("dashboard.recent_caption")' in _DASH
+        assert '<caption class="sr-only">${t("runs.caption")}</caption>' in _RUNS
+        assert '<caption class="sr-only">${t("calibration.caption")}</caption>' in _CAL
 
     def test_sortable_table_prefix_pins_untouched(self):
         # 跨席钉复核：挂载点约定字面保持（caption 插在其后）
@@ -114,10 +120,14 @@ class TestPollAnnounce:
         assert "announceTuneEnd(st);" in _TUNE
         body = _body(_TUNE, r"function announceTuneEnd\(st\)")
         assert 'typeof T.announce !== "function"' in body  # 缺席静默（#105）
-        assert "调参已结束：出错" in body and "调参已完成" in body
+        # 发布令 S3 残量清：公告文案迁词表（zh 字面同笔迁 pages/i18n.js，
+        # loopboard.announce_lead 同款接线形态钉）
+        assert 'T.announce(st.error ? t("tune.announce_error") : t("tune.announce_done"))' in body
 
     def test_loopboard_status_change_announce(self):
-        assert 'T.announce("执行看板状态：" + b.status)' in _LB
+        # 架构批 W4-S1 i18n 半程收尾：公告 lead 迁词表（t() 拼 API 状态串，
+        # announce=textContent 单点同信任级）——接线形态原样钉住
+        assert 'T.announce(t("loopboard.announce_lead") + b.status)' in _LB
         assert 'let _lastBoardStatus = "";' in _LB
         assert "b.status && b.status !== _lastBoardStatus" in _LB
         # 错误响应清状态记忆（恢复后同状态重播报一次）
@@ -143,8 +153,14 @@ class TestWidgetFocusKeep:
         assert 'const add = T.$("w-add");' in _DASH  # 无余面板退添加菜单
 
     def test_wclose_aria_labels(self):
-        assert 'aria-label="加宽/收窄组件：${esc(w.title)}"' in _DASH
-        assert 'aria-label="移除组件：${esc(w.title)}"' in _DASH
+        # W6-S21 i18n 扩面：面板标题经 t(w.tk) 词表烘焙。
+        # W8-S32 i18n 批 3：控件钮 title/aria 前缀同笔迁词表——aria 走
+        # {name} 占位整句键（en 语序自由），t(w.tk)=开发侧可信文本，整值
+        # escAttr 属性语境出口（zh 输出与旧字面前缀形态逐字节等价）。
+        assert 'title="${t("dashboard.btn_span")}"' in _DASH
+        assert 'aria-label="${escAttr(t("dashboard.aria_span_tpl", { name: t(w.tk) }))}"' in _DASH
+        assert 'title="${t("dashboard.btn_remove")}"' in _DASH
+        assert 'aria-label="${escAttr(t("dashboard.aria_remove_tpl", { name: t(w.tk) }))}"' in _DASH
 
     def test_mutation_count_pins_aligned(self):
         # 与 test_ui_dashboard_widgets 同笔对齐（直呼 1=drop + 包装器 1）
@@ -168,7 +184,9 @@ class TestKpiCountUp:
     def test_wkpi_wiring_and_prev_memory(self):
         body = _body(_DASH, r"async function wKpi\(el\)", close="  ")
         assert "animateKpiValue(vs[0], prev.runs || 0, list.length" in body
-        assert "S.kpiPrev = { runs: list.length, best, adapters };" in body
+        # W6-S2 S 状态收编：原 S.kpiPrev 降级模块级 _kpiPrev（行为等价搬家，
+        # count-up 上一拍记忆语义不变——钉面同笔）。
+        assert "_kpiPrev = { runs: list.length, best, adapters };" in body
         # W4-C 既有字面钉保持（freshnessRing 挂角 + 卡角落定位）
         assert "freshnessRingSvg(list.length ? list[0].timestamp : null, Date.now())" in body
         assert "position:absolute;top:8px;right:10px" in body
@@ -178,8 +196,8 @@ class TestKpiCountUp:
         # 零自由定时器钉不受扰（文本级复核）
         for name in ("dashboard_util.js", "charts.js"):
             t = (_STATIC / "pages" / name).read_text(encoding="utf-8")
-            if "aurora36 W4-C：dashboard 组件深化" in t:
-                m = re.search(r"aurora36 W4-C：dashboard 组件深化(.*?)aurora36 W4-C 块结束", t, re.S)
+            if "架构批 W4-C：dashboard 组件深化" in t:
+                m = re.search(r"架构批 W4-C：dashboard 组件深化(.*?)架构批 W4-C 块结束", t, re.S)
                 if m:
                     for timer in ("setInterval(", "setTimeout(", "requestAnimationFrame("):
                         assert timer not in m.group(1), f"{name}: {timer}"
@@ -277,6 +295,8 @@ class TestSyntax:
         "app.js", "pages/sortable.js", "pages/kit.js", "pages/view_dashboard.js",
         "pages/view_tune.js", "pages/view_loopboard.js", "pages/view_runs.js",
         "pages/view_calibration.js",
+        # 架构批 W1-S2：i18n 骨架（R1 审计面2 新文件，进语法门清单）
+        "pages/i18n.js",
     ])
     def test_node_check(self, name):
         r = subprocess.run([_NODE, "--check", str(_STATIC / name)],

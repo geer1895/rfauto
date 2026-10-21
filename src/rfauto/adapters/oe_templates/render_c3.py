@@ -1333,8 +1333,10 @@ SIR_BPF_META: dict[str, Any] = {
                        "=馈线宽（50Ω HJ），w_low_mm/w_high_mm=低阻/高阻段宽"
                        "（须 w_low>w_high），l_low_mm/l_high_mm=低阻/高阻段物理"
                        "长（l_low 已减开路端 Δl，裁判以等效长度回代；l_high 名义"
-                       "值含登记⑨ 过孔补偿：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)"
-                       "，接地端过孔缩短），gaps_mm"
+                       "值=理想短路口径 7.1055mm，架构批 W6-S4 名义重注册"
+                       "（R3 审计处方）；render 通道过孔补偿走 l_via_h 锚运行时"
+                       "行为：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，接地端过孔"
+                       "缩短，非名义档），gaps_mm"
                        "[j]=第 j 缝边到边（低阻耦合区，同索引同语义 #154），"
                        "feed_len_mm=板边到棒阵列底端馈段长",
     "mesh_note": "mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；"
@@ -1348,13 +1350,20 @@ SIR_BPF_NOMINAL: dict[str, Any] = {
     "w_low_mm": 1.8944,
     "w_high_mm": 0.6144,
     # 低阻段电长 6.7941 − Δl(w_low)=0.2222 → 物理 6.5719；高阻段电长 7.1055
-    # − 过孔缩短 0.3237（t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，θ2c=0.587437 rad；
-    # 登记⑨+R1 校准 0.125nH 过孔补偿）= 6.7818（接地端无 Δl）
+    # （接地端无 Δl）。名义重注册（架构批 W6-S4，2026-10-19，R3 审计处方
+    # 「解锁性最高」项）：旧注册档 6.7818=理想短路 7.1055 − 登记⑨+R1 校准
+    # 0.125nH 过孔缩短 0.3237（t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，
+    # θ2c=0.587437 rad）——过孔补偿是 render 通道 l_via_h 锚（c3.l_via_h.
+    # openems-hfss-v1）的运行时行为，不是恒等式 tanθ1·tanθ2=Z_lo/Z_hi 的
+    # 名义设计点（旧档恒等式名义回代 2.5586GHz 失自洽=sensitivity 留缺
+    # 主因）；本档回填=sir_bpf_design_from_order(3) 理想短路缺省链输出
+    # 4 位舍入（l_high 7.105522…/feed 53.161285…），名义回代 2.5000
+    # （4 位舍入带内，sensitivity 第 71 族解锁）。
     "l_low_mm": 6.5719,
-    "l_high_mm": 6.7818,
+    "l_high_mm": 7.1055,
     "gaps_mm": [0.2417, 1.5189, 1.5189, 0.2417],
     # 60 − (l_low+l_high)/2（棒阵列 y 居中）
-    "feed_len_mm": 53.3232,
+    "feed_len_mm": 53.1613,
 }
 
 # ── 注册（2026-09-15，c3-filter-family-ii）：三模板正式注册 ──

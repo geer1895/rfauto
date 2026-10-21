@@ -7,6 +7,7 @@ import json
 import typer
 
 from rfauto.cli.domains._core import _emit as _emit
+from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import _kv_floats as _kv_floats
 from rfauto.cli.domains._core import _load_json_file as _load_json_file
 from rfauto.cli.domains._core import app as app
@@ -23,7 +24,9 @@ def electrothermal_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """Wilkinson 隔离电阻损耗 → 温升 → 材料温漂 → S 参数失谐（+带内判据），纯闭式。"""
-    from rfauto.service.electrothermal_service import run_wilkinson_electrothermal
+    from rfauto.service.electrothermal_service import (
+        run_wilkinson_electrothermal,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(run_wilkinson_electrothermal(_load_json_file(payload, "payload")),
@@ -38,7 +41,9 @@ def parasitic_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """PCB 互连 RLC 提取链：pcell 几何 → RF-DRC 门 → 闭式锚 →（Q3D 注入对比 ≤5％ 门）。"""
-    from rfauto.service.parasitic_service import extract_interconnect_rlc
+    from rfauto.service.parasitic_service import (
+        extract_interconnect_rlc,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = extract_interconnect_rlc(_load_json_file(payload, "payload"))
     if not result.get("ok") and result.get("stage") == "drc":
@@ -67,7 +72,9 @@ def tolerance_allocate_cmd(
     上限 R；compare=true 附 greedy 与 proportional 两对照法；spec 段可选
     出 Cpk 重算。优化不可行 → ok=False 信封（不抛）。
     """
-    from rfauto.service.tolerance_allocation_service import tolerance_allocate
+    from rfauto.service.tolerance_allocation_service import (
+        tolerance_allocate,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = tolerance_allocate(_load_json_file(payload, "payload"))
     _emit(result, "公差分配失败", json_output=json_output)
@@ -104,7 +111,9 @@ def topology_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """滤波器拓扑提议（typed，禁数值字段）→ 综合初值 →（--campaign）小战役精算。"""
-    from rfauto.service.topology_service import propose_topology
+    from rfauto.service.topology_service import (
+        propose_topology,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     spec: dict = {"f0_ghz": f0, "fbw": fbw, "rl_db": rl, "stop_fbw_mult": stop_fbw_mult}
     if stop_rejection is not None:
@@ -135,7 +144,9 @@ def vna_replay_cmd(
     与 ``vna replay`` 子命令互为别名（同一 service 链路）；退出码同口径：
     调用失败或相关性判读未过门（is_correlated=False）均 exit 1（E2-3 统一）。
     """
-    from rfauto.service.api import vna_offline_replay
+    from rfauto.service.api import (
+        vna_offline_replay,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = vna_offline_replay(measured, sim, threshold_db=threshold_db,
                                 session_path=session)
@@ -166,7 +177,9 @@ def report_narrative_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """F9 叙述位：run 白名单 → 确定性模板叙述，或审计外来叙述（未授权数字定位；不调 LLM）。"""
-    from rfauto.service.report_narrative import report_narrative_for_run
+    from rfauto.service.report_narrative import (
+        report_narrative_for_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = report_narrative_for_run(run_id, narrative=text)
     if result.get("errors"):
@@ -178,6 +191,55 @@ def report_narrative_cmd(
         for v in result.get("violations") or []:
             console.print(f"  [red]! 未授权数字 {v.get('text')} @{v.get('start')}: {v.get('reason')}[/red]")
     raise typer.Exit(code=0 if result.get("ok") else 1)
+
+
+# ─── verdict-summary（W8-S4 verdict 人读摘要出口；2026-10-19） ────────────────
+
+@app.command("verdict-summary")
+def verdict_summary_cmd(
+    run_id: str = typer.Argument(
+        ..., help="run_id / runs 内相对路径（战役/run）/ verdict.json 文件路径"),
+    fmt: str = typer.Option("md", "--format", "-f", help="摘要形态 md | json"),
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """verdict.json → 人读摘要（总判定+门清单+关键指标，确定性零 LLM）。
+
+    数据层=service/verdict_summary_service（唯一事实源）；``--format md``
+    渲染 Markdown 表格（审计/收官对账直读），``--format json`` 结构化
+    直出。只读零写入。
+    """
+    # _emit_usage_error：同层 _core 顶部已 import 该模块（零增量成本），
+    # 按 lazy 约定"缺省=顶层"移顶（T10 示范：惯性 lazy 的正型归位）。
+    from rfauto.service.verdict_summary_service import (
+        verdict_summary,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
+
+    fmt_n = (fmt or "md").strip().lower()
+    if fmt_n not in ("md", "json"):
+        _emit_usage_error(f"--format 只允许 md|json，收到 {fmt!r}",
+                          json_output=json_output)
+        return
+    result = verdict_summary(run_id)
+    if not result.get("ok"):
+        _emit(result, "verdict 摘要失败", json_output=json_output)
+        return
+    if fmt_n == "md":
+        from rfauto.service.verdict_summary_service import (
+            verdict_summary_md,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
+
+        md = verdict_summary_md(run_id)
+        if json_output:
+            # 信封=结构化摘要 + markdown 键（一次提取双消费形态）
+            result["markdown"] = md
+        else:
+            console.print(md, markup=False)
+    if json_output or fmt_n == "json":
+        # --format json 即结构化直出（--json 显式时全形态走信封；
+        # 此前仅挂 json_output——fmt=json 单独使用静默零输出）
+        console.print_json(json.dumps(
+            result, indent=2, ensure_ascii=False, default=str))
 
 
 # ─── rationale（F11 经验记忆 / F2 理由检索；0z） ──────────────────────────────
@@ -194,7 +256,9 @@ def rationale_recall_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """任务描述 → 命中历史坑/核对表/动作（确定性关键词匹配，无 embedding/网络）。"""
-    from rfauto.service.rationale_memory import recall_with_memory
+    from rfauto.service.rationale_memory import (
+        recall_with_memory,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = recall_with_memory(task, memory_path=memory, top_k=top_k)
     _emit(result, "经验检索失败", json_output=json_output)
@@ -219,7 +283,9 @@ def rationale_checklist_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """冒烟前核对表门禁：模板名 → 核对表 + gate（命中即要求先离线审计），可嵌入任务书。"""
-    from rfauto.service.rationale_memory import checklist_with_memory
+    from rfauto.service.rationale_memory import (
+        checklist_with_memory,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = checklist_with_memory(template, extras=extras, memory_path=memory)
     _emit(result, "核对表生成失败", json_output=json_output)
@@ -240,7 +306,9 @@ def rationale_search_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """runs/ 产物理由语料 TF-IDF 余弦检索（为什么这么做：autotune issues/fixes/meta）。"""
-    from rfauto.service.rationale_memory import search_runs_rationale
+    from rfauto.service.rationale_memory import (
+        search_runs_rationale,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     _emit(search_runs_rationale(query, runs_dir=runs_dir, top_k=top_k),
           "理由检索失败", json_output=True)
@@ -274,7 +342,9 @@ def rag_index_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """构建 RAG 索引并输出统计快照（JSON 直出，零写副作用）。"""
-    from rfauto.service.rag_service import index_corpus
+    from rfauto.service.rag_service import (
+        index_corpus,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     docs_dir, runs_dir = _rag_scope_dirs(docs, runs, scope)
     _emit(index_corpus(docs_dir=docs_dir, runs_dir=runs_dir,
@@ -305,19 +375,25 @@ def rag_query_cmd(
     """
     docs_dir, runs_dir = _rag_scope_dirs(docs, runs, scope)
     if mode == "lexical":
-        from rfauto.service.rag_service import query_corpus
+        from rfauto.service.rag_service import (
+            query_corpus,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         _emit(query_corpus(text, top_k=top_k, docs_dir=docs_dir,
                            runs_dir=runs_dir, base_dir=".",
                            runs_limit=runs_limit), "RAG 检索失败")
     elif mode == "semantic":
-        from rfauto.service.rag_service import semantic_query_corpus
+        from rfauto.service.rag_service import (
+            semantic_query_corpus,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         _emit(semantic_query_corpus(text, top_k=top_k, docs_dir=docs_dir,
                                     runs_dir=runs_dir, base_dir=".",
                                     runs_limit=runs_limit), "RAG 检索失败")
     elif mode == "hybrid":
-        from rfauto.service.rag_service import hybrid_query_corpus
+        from rfauto.service.rag_service import (
+            hybrid_query_corpus,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        )
 
         _emit(hybrid_query_corpus(text, top_k=top_k, alpha=alpha,
                                   docs_dir=docs_dir, runs_dir=runs_dir,
@@ -341,7 +417,9 @@ def rag_explain_cmd(
         help="JSON 信封输出（成功+失败同构；本命令缺省即 JSON 信封，旗标为归一兼容位）"),
 ) -> None:
     """RAG 检索 + 逐词 BM25 分数明细（tf/df/idf/contribution，打分可溯）。"""
-    from rfauto.service.rag_service import explain_corpus
+    from rfauto.service.rag_service import (
+        explain_corpus,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     docs_dir, runs_dir = _rag_scope_dirs(docs, runs, scope)
     _emit(explain_corpus(text, top_k=top_k, docs_dir=docs_dir, runs_dir=runs_dir,
@@ -362,7 +440,9 @@ def self_heal_run_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """对既有 run 跑一次只读自愈环（零真机；只诊断+建议，不自动改配方）。"""
-    from rfauto.service.self_heal_service import self_heal_run_for_run
+    from rfauto.service.self_heal_service import (
+        self_heal_run_for_run,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = self_heal_run_for_run(run_id, retries=retries)
     _emit(result, f"自愈环诊断失败（{run_id}）", json_output=json_output)
@@ -391,7 +471,9 @@ def logs_digest_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """日志 → 结构化 digest（rc/errors/warnings/指标/失败签名；只读不落文件）。"""
-    from rfauto.service.self_heal_service import log_digest_for_path
+    from rfauto.service.self_heal_service import (
+        log_digest_for_path,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     result = log_digest_for_path(path, source=source)
     _emit(result, f"日志蒸馏失败（{path}）", json_output=json_output)
@@ -423,7 +505,9 @@ def materials_dispersion_report_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """材料在频带内的色散适应性报告（εr/tanδ 漂移 + 常数近似判定 + 修正建议）。"""
-    from rfauto.service.dispersion_service import dispersion_fitness_report
+    from rfauto.service.dispersion_service import (
+        dispersion_fitness_report,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     band = None if (f_low_ghz is None and f_high_ghz is None) else [f_low_ghz, f_high_ghz]
     result = dispersion_fitness_report(
@@ -450,47 +534,16 @@ def materials_dispersion_report_cmd(
 
 
 def _pcell_geometry_to_layout(geo, name: str | None = None):
-    """渲染桥（LC-2）：PCellGeometry → layout_interchange.Layout（求值产物直产）。
-
-    盒→xy 外接多边形、路径→LayoutPath、多边形→LayoutPolygon、过孔→
-    LayoutVia；层号 assign_gds_layers 确定性分配；坐标域=毫米（LC-2 新
-    单元口径）零换算直出——迁移的 3 个米制模板（mline/cpw/wstep）须由
-    调用方自行换算单位后求值，本桥不做隐式单位改写。
+    """渲染桥薄委托（W11-S3 T8 收口）：实现上移 service.layout_service
+    .pcell_geometry_to_layout（LC-2 单源，逐行未动）；cli 侧保留本名保
+    既有测试导入面（test_pcell_cli/test_rf_guard）。语义（盒/路径/多边形/
+    过孔映射、assign_gds_layers 层号、毫米口径零换算）见 service 侧 docstring。
     """
-    from rfauto.adapters.layout_interchange import (
-        Layout,
-        LayoutPath,
-        LayoutPolygon,
-        LayoutVia,
-        assign_gds_layers,
+    from rfauto.service.layout_service import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        pcell_geometry_to_layout,
     )
 
-    items: list = []
-    for b in geo.boxes:
-        (x0, y0, _), (x1, y1, _) = b.lo, b.hi
-        items.append(LayoutPolygon(
-            points=((x0, y0), (x1, y0), (x1, y1), (x0, y1)), layer=b.layer))
-    for p in geo.paths:
-        items.append(LayoutPath(
-            points=tuple(p.points), width_mm=p.width, layer=p.layer))
-    for p in geo.polygons:
-        items.append(LayoutPolygon(points=tuple(p.points), layer=p.layer))
-    for v in geo.vias:
-        items.append(LayoutVia(
-            position=v.position, pad_diameter_mm=v.pad_diameter,
-            drill_diameter_mm=v.drill_diameter, pad_layer=v.pad_layer))
-    layer_names: list[str] = []
-    for it in items:
-        lname = it.pad_layer if isinstance(it, LayoutVia) else it.layer
-        if lname not in layer_names:
-            layer_names.append(lname)
-    return Layout(
-        name=name or geo.pcell,
-        layers=assign_gds_layers(layer_names),
-        items=tuple(items),
-        annotations={"source": "pcell_dsl", "pcell": geo.pcell,
-                     "params_json": json.dumps(geo.params, sort_keys=True)},
-    )
+    return pcell_geometry_to_layout(geo, name)
 
 
 pcell_app = typer.Typer(help="PCell 参数化单元 DSL（LC-2 复活：库清单/定义/"
@@ -501,7 +554,10 @@ app.add_typer(pcell_app, name="pcell")
 def _pcell_eval_or_exit(name: str, param: list[str] | None,
                         context: list[str] | None):
     """求值薄壳共用体：未知单元/参数错 → 红字+退出码 2（不抛裸 traceback）。"""
-    from rfauto.core.pcell_dsl import evaluate_pcell, get_pcell
+    from rfauto.core.pcell_dsl import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        evaluate_pcell,
+        get_pcell,
+    )
 
     try:
         return evaluate_pcell(
@@ -517,7 +573,9 @@ def pcell_list_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="输出完整 JSON"),
 ) -> None:
     """列出 PCell 库：单元名/参数边界/原语构成（3 迁移模板 + LC-2 新单元）。"""
-    from rfauto.core.pcell_dsl import PCELL_LIBRARY
+    from rfauto.core.pcell_dsl import (
+        PCELL_LIBRARY,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+    )
 
     cells = []
     for cell_name in sorted(PCELL_LIBRARY):
@@ -552,7 +610,11 @@ def pcell_show_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="输出 dict 而非 YAML"),
 ) -> None:
     """显示 PCell 定义（DSL 文本面：参数/派生量/原语声明/内核名）。"""
-    from rfauto.core.pcell_dsl import def_to_dict, def_to_yaml, get_pcell
+    from rfauto.core.pcell_dsl import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+        def_to_dict,
+        def_to_yaml,
+        get_pcell,
+    )
 
     try:
         defn = get_pcell(name)
@@ -604,10 +666,17 @@ def pcell_render_cmd(
     layout = _pcell_geometry_to_layout(geo)
     out_path = None
     if out is not None:
-        from rfauto.adapters.layout_interchange import export_layout
+        # T8 越级收口（架构批 W11-S2）：导出经 service.layout_service 单源
+        # （export_layout_payload 内部即 layout_from_payload→adapters.export_layout；
+        # layout_to_payload/from_payload 为确定性同构转换，导出文件逐字节不变）。
+        from rfauto.service.layout_service import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
+            export_layout_payload,
+            layout_to_payload,
+        )
 
         try:
-            out_path = str(export_layout(layout, out, fmt))
+            out_path = export_layout_payload(
+                layout_to_payload(layout), out, fmt)["path"]
         except (ValueError, ImportError) as exc:
             console.print(f"[red]✗ Layout 导出失败: {exc}[/red]")
             raise typer.Exit(code=2) from None

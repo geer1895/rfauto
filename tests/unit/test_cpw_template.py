@@ -178,7 +178,7 @@ def test_meta_yaml_sync():
     assert data["n_ports"] == TEMPLATE_META["cpw"]["n_ports"]
 
 
-# ── CFIX 2026-10-13（aurora_c cpw 席）：CPWPort exc_dir 语义两代并存自适应 ──
+# ── CFIX 2026-10-13（架构批 cpw 席）：CPWPort exc_dir 语义两代并存自适应 ──
 # 服务器绑定停在旧代（v0.37.0-rc1-11-gd3d2a49：exc_dir=面法向/高度方向，
 # start/stop 等值检查在 exc 轴）；本机 .venv 为新代（exc_dir=缝间横向，
 # 检查在法向 z）。同一渲染字面量跨代部署必有一侧构造即炸——渲染脚本内

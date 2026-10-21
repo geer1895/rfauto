@@ -1,5 +1,13 @@
 """fading 族（AP-7 多径衰落统计包，§A-9，2026-10-02，追加尾位）。
 
+出处（衰落统计经典口径，内核 core/fading.py 出节转录）：
+- fade_outage_percent：Rayleigh/Rice/Nakagami-m/对数正态小尺度衰落
+  CDF 族（经典闭式；对数正态阴影=Gudmundson 模型口径）+ 微波视距
+  多径中断双模型（W. T. Barnett, BSTJ 51(2), 1972 Vigants-Barnett 简式；
+  ITU-R P.530-18 正式式）。
+- availability_margin：可用性↔衰落裕量双向换算（同上双模型，同参
+  差异带如实报告）。
+
 内核在 core/fading.py（纯函数零 IO），本模块只做注册薄壳（同
 propagation/link 惯例）。双键：fade_outage_percent（Rice/Rayleigh/
 Nakagami-m/对数正态小尺度衰落 CDF 族）+ availability_margin（可用性↔

@@ -113,9 +113,8 @@ class TestLayering:
 # ─── 环内 opt-in 行为 ────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
-def _isolated_cwd(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated_cwd(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 三批单源化）。"""
     yield
 
 

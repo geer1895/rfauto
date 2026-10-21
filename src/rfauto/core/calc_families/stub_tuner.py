@@ -1,4 +1,11 @@
-"""并联支节调配器族（aurora72 A3-B 席域 1，R7 第二梯队 T3）。
+"""并联支节调配器族（架构批 A3-B 席域 1，R7 第二梯队 T3）。
+
+出处（支节调配经典口径，正文物理口径节转录）：
+- stub_tuner_double：双支节并联调配解析解与禁区 g≤csc²(βd) 判据
+  （D. Pozar, Microwave Engineering §5.3 双支节调配；λ/8 间距 g_max=2
+  经典口径）。
+- stub_tuner_triple：三支节消禁区确定性两路线（首支节旁路/旋转，
+  任意无源负载有解——本仓第一性推导口径，正文 200 随机负载验证）。
 
 两键：stub_tuner_double（双支节并联调配：归一电纳解析解 + 禁区
 g>csc²(βd) 判定 + ABCD 级联 |Γ| 回代） / stub_tuner_triple（三支节级联

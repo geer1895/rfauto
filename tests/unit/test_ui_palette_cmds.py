@@ -1,9 +1,15 @@
-"""W3-D（aurora36）palette 命令面扩展 + SVG 图标基座 回归钉。
+"""W3-D（架构批）palette 命令面扩展 + SVG 图标基座 回归钉。
 
 钉四件事：
 1. 命令目录（palette.js commandCatalog，纯函数 node 真执行，缺 node skip）：
-   总数 14（主题 4 + 页面跳转 7 + 动作 3）、mode/subtitle/中文标题契约、
-   "当前"提示只在当前主题、run() 动作面真被调用且参数与 id 对齐；
+   总数 20（主题 4 + 页面跳转 7 + 动作 9；架构批 W2-S5 语言切换命令
+   act-locale 落地同笔 14→15；架构批 W5-S17 动作扩充同笔 15→20——
+   act-run-search/act-run-latest/act-run-2nd/act-run-3rd/act-latest-campaign）、
+   mode/subtitle/中文标题契约、"当前"提示只在当前主题、run() 动作面真被调用
+   且参数与 id 对齐、act-locale 随语言档翻转提示与切换目标（zh→en / en→zh）、
+   W5-S17 五新命令动作面接线（openRecentRun 收 rank 1..3 / enterRunSearch /
+   openLatestCampaign）与 recentRunAt 现取（hint 携带 run id+可检索；旧
+   两参 spy 缺该方法=hint 回落"直达"零抛降级）；
 2. 跳转命令与 showPage 的 data-v 对齐：go-* 目标 ⊆ index.html nav data-v
    全集（跨文件核对，防目录漂移出死命令）；
 3. SVG sprite 基座（index.html）：display:none 容器、10 个 symbol 全在档、
@@ -102,15 +108,20 @@ class TestCommandCatalog:
     def test_count_contract_actions_and_alignment(self):
         out = _run_node_js(
             "const m = await import('./palette.js');\n"
-            "const calls = { setTheme: [], showPage: [], refresh: 0, help: 0 };\n"
+            "const calls = { setTheme: [], showPage: [], refresh: 0, help: 0, setLocale: [],\n"
+            "  openRecentRun: [], enterRunSearch: 0, openLatestCampaign: 0 };\n"
             "const act = {\n"
             "  setTheme: (x) => calls.setTheme.push(x),\n"
             "  showPage: (x) => calls.showPage.push(x),\n"
             "  refresh: () => { calls.refresh++; },\n"
             "  help: () => { calls.help++; },\n"
+            "  setLocale: (x) => calls.setLocale.push(x),\n"
+            "  openRecentRun: (r) => calls.openRecentRun.push(r),\n"
+            "  enterRunSearch: () => { calls.enterRunSearch++; },\n"
+            "  openLatestCampaign: () => { calls.openLatestCampaign++; },\n"
             "};\n"
             "const cat = m.commandCatalog('midnight', act);\n"
-            "if (cat.length !== 14) throw new Error('命令总数=' + cat.length);\n"
+            "if (cat.length !== 20) throw new Error('命令总数=' + cat.length);\n"
             "const cjk = /[\\u4e00-\\u9fff]/;\n"
             "for (const it of cat) {\n"
             "  if (it.mode !== 'cmd') throw new Error('mode: ' + it.id);\n"
@@ -143,9 +154,53 @@ class TestCommandCatalog:
             "if (calls.refresh !== 1) throw new Error('act-refresh 未调 refresh');\n"
             "byId['act-palette-help'].run();\n"
             "if (calls.help !== 1) throw new Error('act-palette-help 未调 help');\n"
+            "// act-locale（架构批 W2-S5）：语言档决定提示与切换目标；缺省档参数\n"
+            "//（旧两参调用形态）按 zh 处理——向后兼容钉。\n"
+            "if (byId['act-locale'].hint !== '切换到 English') throw new Error('zh 档提示漂移');\n"
+            "byId['act-locale'].run();\n"
+            "if (calls.setLocale[calls.setLocale.length - 1] !== 'en') throw new Error('zh→en 切换目标');\n"
+            "const catEn = m.commandCatalog('midnight', act, 'en');\n"
+            "const localeEn = catEn.find((it) => it.id === 'act-locale');\n"
+            "if (localeEn.hint !== '切换到中文') throw new Error('en 档提示漂移');\n"
+            "localeEn.run();\n"
+            "if (calls.setLocale[calls.setLocale.length - 1] !== 'zh') throw new Error('en→zh 切换目标');\n"
+            "if (catEn.length !== 20) throw new Error('en 档总数漂移');\n"
+            "// W5-S17 动作扩充五件：动作面接线与 rank 参数对齐。\n"
+            "const acts = cat.filter((c) => c.id.startsWith('act-'));\n"
+            "if (acts.length !== 9) throw new Error('动作命令数=' + acts.length);\n"
+            "byId['act-run-search'].run();\n"
+            "if (calls.enterRunSearch !== 1) throw new Error('act-run-search 未调 enterRunSearch');\n"
+            "for (const [id, rank] of [\n"
+            "  ['act-run-latest', 1], ['act-run-2nd', 2], ['act-run-3rd', 3],\n"
+            "]) {\n"
+            "  byId[id].run();\n"
+            "  if (calls.openRecentRun[calls.openRecentRun.length - 1] !== rank)\n"
+            "    throw new Error(id + ' rank 漂移');\n"
+            "}\n"
+            "byId['act-latest-campaign'].run();\n"
+            "if (calls.openLatestCampaign !== 1) throw new Error('act-latest-campaign 未调');\n"
+            "// recentRunAt 现取：hint 携带 run id 且可检索（命令模式按 id 直达）。\n"
+            "const ids = { 1: 'run_aaa', 2: 'run_bbb', 3: 'run_ccc' };\n"
+            "const catIds = m.commandCatalog('midnight',\n"
+            "  { ...act, recentRunAt: (r) => ids[r] || '' });\n"
+            "for (const [id, rid] of [\n"
+            "  ['act-run-latest', 'run_aaa'], ['act-run-2nd', 'run_bbb'],\n"
+            "  ['act-run-3rd', 'run_ccc'],\n"
+            "]) {\n"
+            "  const it = catIds.find((c) => c.id === id);\n"
+            "  if (it.hint !== rid) throw new Error(id + ' hint 未携带 run id');\n"
+            "  if (!it.haystack.includes(rid)) throw new Error(id + ' 不可按 id 检索');\n"
+            "}\n"
+            "// 旧两参 spy 兼容：缺 recentRunAt → hint 回落'直达'，构建零抛。\n"
+            "const catBare = m.commandCatalog('midnight', {\n"
+            "  setTheme() {}, showPage() {}, refresh() {}, help() {}, setLocale() {},\n"
+            "  openRecentRun() {}, enterRunSearch() {}, openLatestCampaign() {},\n"
+            "});\n"
+            "if (catBare.find((c) => c.id === 'act-run-latest').hint !== '直达')\n"
+            "  throw new Error('缺 recentRunAt 时 hint 未回落直达');\n"
             "const icons = [...new Set(cat.map((it) => it.icon).filter(Boolean))];\n"
             "console.log('ok:' + cat.length + ':' + goViews.join(',') + ':' + icons.join(','));\n")
-        assert "ok:14:" in out
+        assert "ok:20:" in out
         parts = out.strip().split(":")
         # go 目标与 index.html nav data-v 全集对齐（showPage 单源对齐钉）
         go_views = set(parts[2].split(","))

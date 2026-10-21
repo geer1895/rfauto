@@ -138,7 +138,7 @@ class TestDualCriteria:
     def test_closed_needs_both(self):
         res = _run(
             POOL_DOC_MIN,
-            [_commit("a" * 40, "wf:x 实现笔 Z-42 巡检器落地", ("src/x.py",))],
+            [_commit("a" * 40, " 实现笔 Z-42 巡检器落地", ("src/x.py",))],
             {"src/x.py": "# Z-42 巡检器实现\n"},
         )
         assert _verdict_of(res, "Z-42")["status"] == "closed"
@@ -146,7 +146,7 @@ class TestDualCriteria:
     def test_tag_only_is_partial_code_pending(self):
         res = _run(
             POOL_DOC_MIN,
-            [_commit("b" * 40, "wf:y Z-42 巡检器落地", ("src/y.py",))],
+            [_commit("b" * 40, " Z-42 巡检器落地", ("src/y.py",))],
             {"src/other.py": "pass\n"},
         )
         v = _verdict_of(res, "Z-42")
@@ -215,7 +215,7 @@ class TestCollisionDisambiguation:
         # 账面 qualified 名（SB22-MP-1 形态口径）直接归属 22 轮
         res = _run(
             COLLISION_DOC,
-            [_commit("d" * 40, "wf:w SB22-MP-1 失谐链落地", ("src/w.py",))],
+            [_commit("d" * 40, " SB22-MP-1 失谐链落地", ("src/w.py",))],
             {"src/w.py": "# 非均匀热梯度失谐链\n"},
         )
         v22 = next(it for it in res["items"] if it["token"] == "MP-1" and it["round"] == 22)
@@ -225,7 +225,7 @@ class TestCollisionDisambiguation:
         # ge8-mp1 笔形态：裸 MP-1 + 十五轮家族语义 → 归 15，22 侧零证据=开放
         res = _run(
             COLLISION_DOC,
-            [_commit("e" * 40, "wf:ge8-mp1 MP-1瞬态热RC(Foster闭式)", ("src/t.py",))],
+            [_commit("e" * 40, " MP-1瞬态热RC(Foster闭式)", ("src/t.py",))],
             {"src/other.py": "pass\n"},
         )
         v15 = next(it for it in res["items"] if it["token"] == "MP-1" and it["round"] == 15)
@@ -237,7 +237,7 @@ class TestCollisionDisambiguation:
         # 裸 token 命中但零轮关键词可认领 → 撞号未消解不强判
         res = _run(
             COLLISION_DOC,
-            [_commit("f" * 40, "wf:z MP-1 第三命名空间件", ("src/z.py",))],
+            [_commit("f" * 40, " MP-1 第三命名空间件", ("src/z.py",))],
             {"src/other.py": "pass\n"},
         )
         for rnd in (15, 22):
@@ -248,7 +248,7 @@ class TestCollisionDisambiguation:
         # ≥2 轮关键词同票 → 最早登记轮胜出（后轮=引用/勘误补记）
         res = _run(
             COLLISION_DOC,
-            [_commit("g" * 40, "wf:x MP-1 瞬态热与非均匀热梯度同批", ("src/x.py",))],
+            [_commit("g" * 40, " MP-1 瞬态热与非均匀热梯度同批", ("src/x.py",))],
             {"src/other.py": "pass\n"},
         )
         v15 = next(it for it in res["items"] if it["token"] == "MP-1" and it["round"] == 15)
@@ -288,7 +288,7 @@ class TestEnvelope:
     def test_ids_lens_is_context_stable(self):
         # 透镜不是改判器：qualified 名只报 22 轮，但裁决必须与全池一致
         # （15 轮在场时 ge8 形态 commit 被选举吸走；单看 22 轮会误判 partial）
-        commits = [_commit("e" * 40, "wf:ge8-mp1 MP-1瞬态热RC(Foster闭式)",
+        commits = [_commit("e" * 40, " MP-1瞬态热RC(Foster闭式)",
                            ("src/t.py",))]
         full = _run(COLLISION_DOC, commits, {"src/o.py": "pass\n"})
         lens = _run(COLLISION_DOC, commits, {"src/o.py": "pass\n"},
@@ -409,6 +409,7 @@ POOL_DOC_REAL = REPO / "docs" / "plan_expansion_pool_20260924.md"
 
 
 class TestGoldCalibrationRealRepo:
+    @pytest.mark.slow  # 终门 DURATIONS >60s 慢件（206s，真仓金标校准）
     def test_default_gold_rate_is_one(self):
         if not POOL_DOC_REAL.exists():
             pytest.skip("池登记文档不在帧内（公开仓无此文件）——真仓校准 skip")

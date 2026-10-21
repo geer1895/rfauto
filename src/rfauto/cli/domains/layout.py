@@ -38,8 +38,13 @@ def _fail(message: str) -> dict:
 
 
 def _fmt_choices() -> tuple[str, ...]:
-    """互操作格式全集（service 单源；CLI 不复制枚举）。"""
-    from rfauto.adapters.layout_interchange import LAYOUT_INTERCHANGE_FORMATS
+    """互操作格式全集（service 单源；CLI 不复制枚举）。
+
+    T8 越级收口（架构批 W11-S2）：本函数 docstring 自立"service 单源"已久，
+    实际却直取 adapters 常量——改经 service.layout_service 取同一名字（该名
+    本就是其模块级 import 面），cli→adapters 边归位 cli→service，取值逐字节
+    不变。"""
+    from rfauto.service.layout_service import LAYOUT_INTERCHANGE_FORMATS
 
     return tuple(LAYOUT_INTERCHANGE_FORMATS)
 

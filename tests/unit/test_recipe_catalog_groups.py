@@ -23,9 +23,8 @@ SRC = Path(__file__).resolve().parents[2] / "src"
 
 
 @pytest.fixture(autouse=True)
-def _isolated(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("RFAUTO_CACHE", "off")
+def _isolated(isolated_cache_off):
+    """隔离体收编 tests/conftest.py::isolated_cache_off（T5 批5 单源化）。"""
     yield
 
 
@@ -124,12 +123,14 @@ class TestPagesRenderPin:
 
     def test_catalog_groups_original_and_workcopy(self) -> None:
         body = self._page_recipe_body()
-        assert "原件（recipes/）" in body
-        assert "工作副本（runs/recipe_workcopy/）" in body
-        assert 'T.badge("工作副本"' in body
+        # UI i18n 批（2026-10-19）把文案迁入 pages/i18n.js 词表——渲染钉
+        # 同步改钉键面（zh 词值仍钉在词表，见 test_ui_i18n 键集互证）。
+        assert 't("recipe.orig_head")' in body
+        assert 't("recipe.workcopy_head")' in body
+        assert 'T.badge(t("recipe.workcopy_badge")' in body
         # 工作副本条目给人工审阅入库提示（指向既有审批链入口名）
         assert "rfauto inbox" in body
-        assert "propose→approve→apply" in body
+        assert 't("recipe.review_mid")' in body
 
     def test_loaded_recipe_workcopy_indicator(self) -> None:
         body = self._page_recipe_body()

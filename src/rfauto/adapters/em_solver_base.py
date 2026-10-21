@@ -27,6 +27,7 @@ from typing import Any, ClassVar
 import numpy as np
 
 from rfauto.core.interfaces import AdapterCapabilities
+from rfauto.core.registry_kit import RegistryKit
 
 logger = logging.getLogger(__name__)
 
@@ -409,44 +410,81 @@ class EMSolverAdapter(ABC):
 
 
 
-class EMSolverRegistry:
+class EMSolverRegistry(RegistryKit[type[EMSolverAdapter]]):
     """EM 求解器注册表。
 
     用法：
         registry = EMSolverRegistry()
         registry.register(EMSolverType.OPENEMS, OpenEMSSolver)
         solver = registry.create(EMSolverType.OPENEMS, config)
+
+    T6 扩面四批（架构批 W2-S3，R1_arch_audit_v3 §5）：dict 样板由
+    core.registry_kit.RegistryKit 承载——历史语义逐项保真：
+    重名静默覆盖（allow_overwrite=True）、缺名 ValueError 文案
+    ``未注册的求解器: {getattr(key, 'value', key)}`` 逐字节同旧（自定义
+    异常类型走 create 前置判缺，SystemOneRegistry 同款）、键面=EMSolverType
+    枚举∪自定义字符串键（allow_non_str_keys=True；qucsator/xyce 的
+    type_key 与 entry-point stub 插件字符串键既有口径）、list_available()=
+    登记序（ordered=True，dict 插入序历史语义）；``_solvers`` 属性名以
+    property 直通 Kit 存储（消费测试快照/还原缝逐字节兼容，#362 口径）。
     """
 
-    def __init__(self):
-        self._solvers: dict[EMSolverType, type[EMSolverAdapter]] = {}
+    def __init__(self) -> None:
+        super().__init__(
+            label="求解器",
+            allow_overwrite=True,
+            allow_non_str_keys=True,
+            ordered=True,
+        )
 
-    def register(self, solver_type: EMSolverType, solver_cls: type[EMSolverAdapter]) -> None:
-        """注册求解器。"""
-        self._solvers[solver_type] = solver_cls
+    def __bool__(self) -> bool:
+        """恒真（历史语义钉）：手写面无 ``__len__``，实例恒真——注册函数
+        与 create_solver_from_config 的 ``registry or get_global_registry()``
+        形态依赖该真值把"空注册表实例"判为有效注入目标；Kit 通用
+        ``__len__`` 真值（空表=falsy）会反转该判据静默偷写全局表，
+        此处显式钉回（真值行为也是注册表对外语义的一部分）。
+        """
+        return True
 
-    def create(self, solver_type: EMSolverType, config: EMSolverConfig) -> EMSolverAdapter:
+    @property
+    def _solvers(self) -> dict[Any, type[EMSolverAdapter]]:
+        """历史存储属性名（Kit ``_items`` 直通视图）：消费测试的快照/
+        清空/还原缝（test_adapters_registry_completeness autouse fixture
+        与 test_em_solver_discovery registry_guard 的 ``reg._solvers`` 赋值
+        还原）逐字节兼容，测试面零改动。
+        """
+        return self._items
+
+    @_solvers.setter
+    def _solvers(self, mapping: dict[Any, type[EMSolverAdapter]]) -> None:
+        self._items = mapping
+
+    def register(self, solver_type: Any, solver_cls: type[EMSolverAdapter]) -> None:
+        """注册求解器（重名静默覆盖=历史语义）。"""
+        self.insert(solver_type, solver_cls)
+
+    def create(self, solver_type: Any, config: EMSolverConfig) -> EMSolverAdapter:
         """创建求解器实例。
 
         未注册类型显式报错（含自定义 EDA 字符串类型——不再因 .value 缺失
         退化成 AttributeError）。
         """
-        if solver_type not in self._solvers:
+        if not self.is_registered(solver_type):
             name = getattr(solver_type, "value", solver_type)
             raise ValueError(f"未注册的求解器: {name}")
-        return self._solvers[solver_type](config)
+        return self.get(solver_type)(config)
 
     def list_available(self) -> list[EMSolverType]:
-        """列出已注册的求解器类型。"""
-        return list(self._solvers.keys())
+        """列出已注册的求解器类型（登记序=历史 dict 插入序）。"""
+        return self.keys()
 
-    def is_registered(self, solver_type: EMSolverType) -> bool:
+    def is_registered(self, solver_type: Any) -> bool:
         """检查求解器是否已注册。"""
-        return solver_type in self._solvers
+        return solver_type in self
 
     def lookup(self, solver_type: EMSolverType | str) -> type[EMSolverAdapter] | None:
         """按类型返回已注册适配器类；未注册返回 None（不抛错）。"""
-        return self._solvers.get(solver_type)
+        return self.get(solver_type, None)
 
 
 # 全局注册表
@@ -517,14 +555,52 @@ def get_global_registry() -> EMSolverRegistry:
     return _global_registry
 
 
+# ── 外部适配器模板清单注册面（架构批 W2-S2 S6/pssfss2 注册倒置）─────────
+# 原形态：下方 PSSFSS 能力表经 _pssfss_template_names() 反向 import
+# pssfss_adapter 的 SUPPORTED_TEMPLATES，而后者 strict import 本模块的
+# EMSolverAdapter/EMSolverConfig/EMSolverResult——双向成环（R1 v3 SCC S6）。
+# 倒置后：适配器模块 import 本模块时经 register_external_templates 登记
+# 模板清单，本模块对适配器零 import；"实测防漂移"语义保留（数据源仍是
+# 适配器常量，方向反转为 适配器→base 单向）。base 导入期构造的能力表先持
+# 空表，注册发生时 pydantic model_copy(update=) 原位刷新 supported_templates
+# （其余字段不动；故能力表块仍须在 EMSolverAdapter/_SOLVER_CAPABILITY_SPECS
+# 之后——非为循环 import，而是定义序），适配器侧位置纪律随之解除。
+_EXTERNAL_TEMPLATE_NAMES: dict[str, tuple[str, ...]] = {}
+
+
+def register_external_templates(engine: str, names: tuple[str, ...]) -> None:
+    """外部适配器模板清单注册（S6 注册倒置：本模块不再反向 import 适配器）。
+
+    engine=EMSolverType 值串（如 "pssfss"）；names=该通道 SUPPORTED_TEMPLATES
+    实测元组。登记后若静态能力表已有该引擎条目，原位刷新其 supported_
+    templates 字段（pydantic model_copy(update=)，其余字段零变化）。
+    """
+    key = str(engine)
+    _EXTERNAL_TEMPLATE_NAMES[key] = tuple(names)
+    try:
+        st = EMSolverType(key)
+    except ValueError:
+        return
+    spec = _SOLVER_CAPABILITY_SPECS.get(st)
+    if spec is None or spec.supported_templates == tuple(names):
+        return
+    _SOLVER_CAPABILITY_SPECS[st] = spec.model_copy(
+        update={"supported_templates": tuple(names)})
+
+
+def _pssfss_template_names() -> tuple[str, ...]:
+    """PSSFSS 支持的模板名（注册表实测，防手写清单漂移）。
+
+    S6 注册倒置（架构批 W2-S2）：清单由 pssfss_adapter import 本模块时
+    register_external_templates 登记进来，本模块不再反向 import 适配器；
+    未注册（适配器未导入）时如实空表，不臆造。
+    """
+    return _EXTERNAL_TEMPLATE_NAMES.get("pssfss", ())
+
+
 # PSSFSS 能力声明（EC-20 W2-F，2026-10-05）：周期结构/FSS 族单胞 Floquet
-# 快档（RWG MoM，分钟级，介于 LC 闭式与 openEMS 单胞全波之间）。**位置纪
-# 律**：必须在 EMSolverAdapter 类定义之后构造——supported_templates 经
-# _pssfss_template_names() 反向 import pssfss_adapter，而后者 import 本模
-# 块的 EMSolverAdapter/EMSolverConfig/EMSolverResult；若本块前置于类定义
-# 则循环 import 失败被 best-effort 吞掉 → supported_templates 静默空表
-# （2026-10-05 W2-F 实证）。事实依据（pypssfss 0.1.0 包源逐文件核对 +
-# PSSFSS.jl stable 文档）：
+# 快档（RWG MoM，分钟级，介于 LC 闭式与 openEMS 单胞全波之间）。事实依据
+# （pypssfss 0.1.0 包源逐文件核对 + PSSFSS.jl stable 文档）：
 #   - 端口：周期结构 Floquet 端口为方法内建（非 wave/lumped 边界端口）
 #     → 两 False；
 #   - 材料：PEC 薄片（clas='J'）+ 均匀介质 Layer（epsr/tand）→ pec +
@@ -534,18 +610,9 @@ def get_global_registry() -> EMSolverRegistry:
 #   - 场导出/收敛报告/optimetrics/nf2ff/SAR：无对应实现 → False
 #     （单胞近场 RWG 基非辐射方向图面）；
 #   - dimension："2d"（无限周期单胞，z 向分层一维堆叠）；
-#   - 模板：ms_* 超表面族（SUPPORTED_TEMPLATES 实测导入，防手写漂移）；
+#   - 模板：ms_* 超表面族（注册面实测，S6 倒置后见 _pssfss_template_names）；
 #   - license：MIT 零席位（Julia 工具链自动装）→ False；
 #   - availability：pypssfss 可 import 门（缺装 fail-closed 显式报缺）。
-def _pssfss_template_names() -> tuple[str, ...]:
-    """PSSFSS 支持的模板名（从 pssfss_adapter 实测，防手写清单漂移）。"""
-    try:
-        from rfauto.adapters.pssfss_adapter import SUPPORTED_TEMPLATES
-    except Exception:  # best-effort：拿不到就声明为空，不臆造
-        return ()
-    return tuple(SUPPORTED_TEMPLATES)
-
-
 _SOLVER_CAPABILITY_SPECS[EMSolverType.PSSFSS] = SolverCapabilities(
     solver_type="pssfss",
     supports_wave_port=False,

@@ -1,4 +1,4 @@
-"""aurora36 W4-C 席位回归钉：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/
+"""架构批 W4-C 席位回归钉：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/
 甜甜圈）+ palette act-export-chart 事件桥。
 
 对象：src/rfauto/ui/static/pages.js（本席独占文件面；app.js/palette.js 只读）。
@@ -7,9 +7,9 @@
 1. **源码钉（免 node）**：
    - widget 注册表：activity（最近活动）/status_mix（pass/fail 分布）进
      WIDGETS + WIDGET_DEFAULTS + renderers 装配面；
-   - 活动日志：数据源=本页已拉取的 /api/runs（S.dashData.runs，零新增端点/
-     零新增 fetch）、最近 10 条、openRun 单入口跳详情、esc/escAttr/badge
-     转义纪律、行键盘可达（Enter/Space）；
+   - 活动日志：数据源=本页已拉取的 /api/runs（_dashData.runs=W6-S2 S 收编
+     降级名，零新增端点/零新增 fetch）、最近 10 条、openRun 单入口跳详情、
+     esc/escAttr/badge 转义纪律、行键盘可达（Enter/Space）；
    - 新鲜度环：纯 SVG 串（token 三档 --ok/--warn/--muted2 + escAttr 属性
      语境 + title 悬浮），挂在 wKpi 首卡右上角，零定时器（重绘只挂 dashboard
      既有渲染时机）；
@@ -42,7 +42,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -70,7 +70,7 @@ def _w4c_block() -> str:
     （导出事件桥+块结束标记）——两模块并读，钉语义（零自由定时器）不变。"""
     t = "".join((_STATIC / "pages" / n).read_text(encoding="utf-8")
                 for n in ("dashboard_util.js", "charts.js"))
-    m = re.search(r"aurora36 W4-C：dashboard 组件深化(.*?)aurora36 W4-C 块结束",
+    m = re.search(r"架构批 W4-C：dashboard 组件深化(.*?)架构批 W4-C 块结束",
                   t, re.S)
     assert m, "W4-C 块缺失"
     return m.group(1)
@@ -82,8 +82,9 @@ class TestWidgetRegistry:
     """活动日志/甜甜圈两 widget 进注册表+缺省面+渲染装配。"""
 
     def test_widgets_registered_and_defaulted(self):
-        assert re.search(r"activity:\s*\{ title: \"最近活动\"", _SRC)
-        assert re.search(r"status_mix:\s*\{ title: \"pass/fail 分布\"", _SRC)
+        # W6-S21 i18n 扩面：注册表 title 字面迁 tk 词表键（渲染期 t() 烘焙）
+        assert re.search(r"activity:\s*\{ tk: \"dashboard\.w_activity\"", _SRC)
+        assert re.search(r"status_mix:\s*\{ tk: \"dashboard\.w_status_mix\"", _SRC)
         dm = re.search(r"const WIDGET_DEFAULTS = \[(.*?)\];", _SRC, re.S)
         assert dm, "WIDGET_DEFAULTS 缺失"
         defaults = dm.group(1)
@@ -100,17 +101,21 @@ class TestActivityFeed:
 
     def test_data_source_existing_runs_no_new_fetch(self):
         body = _body(r"async function wActivity\(el\)", "  ")
-        assert "S.dashData.runs.slice(0, 10)" in body  # 最近 10 条
+        assert "_dashData.runs.slice(0, 10)" in body  # 最近 10 条
+        # （W6-S2 S 状态收编：原 S.dashData 单模块私有键降级模块级 _dashData，
+        # 行为等价搬家——钉面同笔，语义不变=复用进页已拉取数据。）
         assert "T.api(" not in body  # 零新增 fetch（复用本页已拉取数据）
-        assert "暂无活动" in body  # 空态引导（R1 P1-8 同族，不空白）
+        # W8-S32 i18n 批 3：空态文案单源迁词表 t() 烘焙（zh 值同笔迁 i18n.js）
+        assert 't("dashboard.activity_empty")' in body
 
     def test_rows_click_openrun_and_keyboard(self):
         body = _body(r"async function wActivity\(el\)", "  ")
         assert "openRun(row.dataset.id)" in body  # 复用 run 详情单入口
-        # UI-R4（aurora_d，A6 P1-5 清偿）：本组件=R1 P1-2 手写试点原位点，
+        # UI-R4（架构批，A6 P1-5 清偿）：本组件=R1 P1-2 手写试点原位点，
         # 键盘可达三件套收编 kitClickRow 单源（role=link→button 缺省口径，
         # Enter/Space 接线在 kit bindClickRows；行为钉 test_ui_a11y_rows）
-        assert 'kitClickRowAttrs({ label: "打开 run 详情：" + (r.run_id || "") })' in body
+        # S4 发布令批：行标签迁词表 t() 烘焙（zh 值同笔 runs.open_detail_aria）
+        assert 'kitClickRowAttrs({ label: t("runs.open_detail_aria") + (r.run_id || "") })' in body
         assert 'bindClickRows(el, (row) => openRun(row.dataset.id), "[data-id]");' in body
 
     def test_escape_and_badge_discipline(self):
@@ -187,7 +192,8 @@ class TestDonut:
         assert "export function statusBucket(status)" in _SRC
         body = _body(r"async function wStatusMix\(el\)", "  ")
         assert "statusBucket(r.status)" in body  # 分桶单源（与活动徽章共用）
-        assert "暂无 run" in body  # 空态文案（R1 P1-8 同族）
+        # W8-S32 i18n 批 3：空态文案单源迁词表 t() 烘焙（zh 值同笔迁 i18n.js）
+        assert 't("dashboard.mix_empty")' in body
 
 
 class TestExportChartEventBridge:
@@ -259,7 +265,7 @@ console.log(JSON.stringify({ afterLive, afterDetach: clicked }));
         assert "_exportEvtBound" in body  # 幂等守卫（装配一次）
         assert "fireRecentChartExport();" in body  # W4-S17：消费共享登记面
         # 监听在 initPages 装配（与 W2-B 轮询监听同一浏览器侧装配点）
-        assert "_bindExportChartEvent(); // aurora36 W4-C" in _SRC
+        assert "_bindExportChartEvent(); // 架构批 W4-C" in _SRC
 
     @pytest.mark.skipif(_NODE is None, reason="本机无 node")
     def test_bridge_weakref_deregisters_on_toolbar_detach(self):
@@ -340,7 +346,7 @@ class TestCrossSeatPinsHold:
             assert f"export function {fn}(" in _SRC, fn
 
 
-# ────────── R-1 dashboard 局部刷新试点（aurora72 W1-S3 席位钉） ──────────
+# ────────── R-1 dashboard 局部刷新试点（架构批 W1-S3 席位钉） ──────────
 
 def _view_src(name: str) -> str:
     """单视图模块源码（R-1 席位钉：文件面收敛读，并集钉归并集口径）。"""
@@ -348,7 +354,7 @@ def _view_src(name: str) -> str:
 
 
 class TestLocalRefreshPilot:
-    """R-1（aurora72 W1-S3，R6 审计 R-1）：widget 增删/拖拽局部刷新。
+    """R-1（架构批 W1-S3，R6 审计 R-1）：widget 增删/拖拽局部刷新。
 
     此前增删/拖拽任一变更递归整页渲染函数=全量 refetch /api/runs?limit=200
     + /api/solvers（R6 审计旧单体 pages.js:696/724/746 三处）；现收敛到
@@ -375,7 +381,7 @@ class TestLocalRefreshPilot:
     def test_refresh_path_is_fetch_free(self):
         body = _body(r"export async function refreshDashboard\(\)")
         assert "apiFetch" not in body and "T.api(" not in body  # 数据面零 fetch
-        assert "S.dashData" in body  # 复用进页已拉取数据
+        assert "_dashData" in body  # 复用进页已拉取数据（W6-S2 S 收编降级名）
         assert "renderDashboardGrid()" in body
         assert "return pageDashboard();" in body  # 壳未就绪回退全量路径
 

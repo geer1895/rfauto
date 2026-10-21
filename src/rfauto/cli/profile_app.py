@@ -4,7 +4,7 @@
   rfauto profile status            → service.profile_service.profile_status
   rfauto profile run               → service.profile_service.profile_run
 
-宏图口径=docs/research_expansion_20261002_round16.md §四 PR-8：
+宏图口径=docs/history/research/research_expansion_20261002_round16.md §四 PR-8：
 "``rfauto profile`` 封装 py-spy（MIT）火焰图落 runs/"。此前 ge8b Wave B
 席B2 按当时任务书收窄为 UI 面（/api/profile + 剖析页）；本席补 CLI 面——
 py-spy 可用性探测与采样封装对 CLI 脚本/CI 同样可发现可驱动。

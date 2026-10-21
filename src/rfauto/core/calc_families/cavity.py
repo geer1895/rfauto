@@ -1,4 +1,10 @@
-"""B3 腔体微扰频移（TE101 场积分 + 三角网格样品微扰）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""B3 腔体微扰频移（TE101 场积分 + 三角网格样品微扰）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+出处（一阶腔微扰定理，内核 core/material_characterization.py MA-2 转录）：
+- cavity_perturbation_shift：一阶腔体微扰定理 εr′/tanδ 反演
+  （Waldron/Harrington 标准式；二级转引 L. F. Chen et al.,
+  Microwave Electronics: Measurement and Materials Characterization,
+  2004 腔微扰测量章）。"""
 
 from __future__ import annotations
 

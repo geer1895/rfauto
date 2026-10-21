@@ -1,4 +1,13 @@
-"""C13 耦合矩阵内核（广义切比雪夫原型→Cameron N+2 综合→folded/arrow 约简，含显式 TZ 口径）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""C13 耦合矩阵内核（广义切比雪夫原型→Cameron N+2 综合→folded/arrow 约简，含显式 TZ 口径）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+出处（Cameron《Microwave Filters for Communication Systems》ch.6/8）：
+- chebyshev_prototype/chebyshev_prototype_asym/chebyshev_refl_fn：广义
+  切比雪夫滤波函数 cosh 和构造（Cameron 1999 §III-B 与书 ch.6 口径，
+  模块头注逐字转写；N=1 解析锚+幺正性单测钉）。
+- coupling_matrix_arrow/coupling_matrix_folded/coupling_matrix_response
+  及 N+2 综合键：Cameron 书 §8.2 N+2 横向矩阵闭式（LM 精化仅病态兜底）；
+  folded 经典 palindromic 序列对照 Yellowbooker/
+  Standard-Coupling-Matrix-Synthesis-Code to_foldedCM.m 转录。
+"""
 
 from __future__ import annotations
 

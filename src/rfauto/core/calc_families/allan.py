@@ -1,5 +1,10 @@
 """Allan 稳定度族（MS-5，内核在 core/allan_variance.py，本模块只做注册壳）。
 
+出处（IEEE 稳定度标准口径，内核 core/allan_variance.py 出节转录）：
+- allan_deviation：重叠 Allan/M 偏差与幂律斜率分类（IEEE Std 1139-2008
+  Table 1；D. W. Allan, "Statistics of atomic frequency standards",
+  Proc. IEEE 54(2), 1966 原始定义；MDEV 斜率表 NIST SP 1065）。
+
 round15 :212 规格「重叠 Allan 三 coef 公式（IEEE 1139）与 clock_noise
 幂律谱互检」；round16 §二 :49 与 clock_noise Leeson 接回合并（与 DR-8
 CDR 抖动传函互补）。单键 allan_deviation（时序进、ADEV 序列出）；

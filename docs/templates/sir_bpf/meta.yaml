@@ -23,12 +23,12 @@ nominal_params:
   w_low_mm: 1.8944
   w_high_mm: 0.6144
   l_low_mm: 6.5719
-  l_high_mm: 6.7818
+  l_high_mm: 7.1055
   gaps_mm: [0.2417, 1.5189, 1.5189, 0.2417]
-  feed_len_mm: 53.3232
+  feed_len_mm: 53.1613
 topology: λ/4 型接地 SIR 带通（§C3 滤波器族 II，MYJ SIR 章口径）：N 根阶梯阻抗棒平行排列（开路端低阻段 w_low + 接地端高阻段 w_high，步进比 Z_lo/Z_hi=35/70 给出紧凑化，谐振条件 tanθ1·tanθ2=Z_lo/Z_hi），同端接地顶端过孔 r=0.15mm，耦合区=低阻段（相邻棒低阻段对齐）；双 50Ω 馈线（板边段 w_feed + 耦合段 w_low 台阶）缝耦合自 y=−BOARD 板边引入（单轴 PML）
-param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径 7.1055mm − 登记⑨+R1 校准过孔缩短 0.3237mm = 6.7818mm）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长
-design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；对称分θ=arctan√(Z_lo/Z_hi)=0.61548 rad，总电长 1.23096 rad=78.4% λ/4；MYJ 斜率 b=0.017585 S（闭式 vs 数值中心差分 rel 3.2e-8，#118）；登记⑨+R1 过孔补偿（设计链 l_via_h=None）：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)（x=ω0L/Z_hi=0.0280，L_via=0.125nH HFSS 仲裁校准值）→ θ2c=0.58744 rad、高阻段缩短 0.3237mm，Y(f0) 过孔端接自证 |Y|=1.09e-17 S；|Y(ω)| 数值极小化定位谐振=2.5GHz 与闭式一致
+param_semantics: order=谐振棒数 N（决定 gaps_mm 列表长度 N+1，单独改 order 而不改列表=非法）；w_feed_mm=馈线板边段宽（50Ω HJ）；w_low_mm/w_high_mm=低阻/高阻段宽（HJ 精算 35Ω/70Ω，须 w_low>w_high）；l_low_mm=低阻段物理长（电长 6.7941 − 开路端 Δl 0.2222，裁判以等效长度回代）；l_high_mm=高阻段物理长（接地端无 Δl；理想短路口径=sir_bpf_design_from_order(3) 缺省链输出 7.1055mm，架构批 W6-S4 名义重注册（R3 审计处方）——旧档 6.7818mm 系理想短路 7.1055 − 登记⑨+R1 校准过孔缩短 0.3237mm，过孔补偿走 render 通道 l_via_h 锚运行时行为非名义档，旧档恒等式名义回代 2.5586GHz 失自洽）；gaps_mm[j]=第 j 缝边到边（低阻耦合区，同索引同语义，#154）；feed_len_mm=板边到棒阵列底端馈段长（=60−(l_low+l_high)/2）
+design_note: C13 folded N=3/RL20dB/δ5% → Q_e=17.0689、k=0.051514；对称分θ=arctan√(Z_lo/Z_hi)=0.61548 rad，总电长 1.23096 rad=78.4% λ/4；MYJ 斜率 b=0.017585 S（闭式 vs 数值中心差分 rel 3.2e-8，#118）；名义重注册（架构批 W6-S4，2026-10-19）：l_high/feed_len 回填理想短路缺省链输出 4 位舍入（7.105522…/53.161285…），恒等式名义回代 2.5000（4 位舍入带内，sensitivity 第 71 族解锁）；登记⑨+R1 过孔补偿留 render 通道（l_via_h 锚 c3.l_via_h.openems-hfss-v1，L_via=0.125nH HFSS 仲裁校准值）：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)（x=ω0L/Z_hi=0.0280）→ θ2c=0.58744 rad、高阻段缩短 0.3237mm，Y(f0) 过孔端接自证 |Y|=1.09e-17 S；|Y(ω)| 数值极小化定位谐振=2.5GHz 与闭式一致
 smoke_note: 真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例），本项全程离线验收
 
 teaching:
@@ -41,16 +41,16 @@ teaching:
       formula: tan(θ1)*tan(θ2) = Z_lo/Z_hi
       source: M. Makimoto & S. Yamashita, Microwave Resonators and Filters SIR 章（MYJ 口径）；docs/templates/sir_bpf/meta.yaml
         topology 已核
-    - claim: 接地端无 Δl、开路端有 Δl 的物理长拆分（含过孔缩短校准）
-      formula: l_high = 7.1055 - 0.3237 = 6.7818 mm
-      source: docs/templates/sir_bpf/meta.yaml param_semantics（登记⑨+R1 校准口径 tanθ_c=Z_r/(ω0L_via)）
+    - claim: 接地端无 Δl、开路端有 Δl 的物理长拆分（理想短路名义档，架构批 W6-S4 名义重注册）
+      formula: l_high = 7.1055 mm（=sir_bpf_design_from_order(3) 理想短路缺省链输出 4 位舍入；恒等式名义回代 2.5000）
+      source: docs/templates/sir_bpf/meta.yaml param_semantics 与 design_note（R3 审计处方「解锁性最高」项；旧档 6.7818=7.1055−0.3237 过孔缩短系登记⑨+R1 校准 tanθ_c=Z_r/(ω0L_via)，留 render 通道 l_via_h 锚运行时行为非名义档——弃档缘由）
   sensitivity_ranking:
   - param: l_low_mm
     order: 1
     basis: 低阻段电长度（谐振条件 tanθ1·tanθ2 主通道之一）
   - param: l_high_mm
     order: 2
-    basis: 高阻段电长度（另一主通道；含过孔缩短回代）
+    basis: 高阻段电长度（另一主通道；理想短路名义档回代）
   - param: w_low_mm
     order: 3
     basis: 低阻段宽=阻抗比 Z_lo/Z_hi 的分子（紧凑化自由度+耦合区宽）

@@ -1,4 +1,4 @@
-"""lc_filter_service 冒烟门（aurora72 A5-C 测试盲区批量补冒烟席）。
+"""lc_filter_service 冒烟门（架构批 A5-C 测试盲区批量补冒烟席）。
 
 背景（R8 盘点面 4 + A5-C triple-grep 复核）：src/rfauto/service/ 232 模块中
 本服务是全仓零测试消费的 3 个真盲区之一（tests/ 无任何 qualified 引用，

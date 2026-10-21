@@ -571,6 +571,247 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/agc_loop:<module>:01
+  kernel_file: src/rfauto/core/calc_families/agc_loop.py
+  module: rfauto.core.calc_families.agc_loop
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（控制论一阶环+对数放大器教科书口径）：
+  claim_block: "出处（控制论一阶环+对数放大器教科书口径）：\n- agc_loop_dynamics/agc_loop_response：对数域一阶环线性化（控制论\n  一阶环经典式+对数放大器惯用接收机口径，二级转引；模块\
+    \ docstring 逐项\n  推导在档，阶跃轨迹三点恒等测试钉）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/allan:<module>:01
+  kernel_file: src/rfauto/core/calc_families/allan.py
+  module: rfauto.core.calc_families.allan
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（IEEE 稳定度标准口径，内核 core/allan_variance.py 出节转录）：
+  claim_block: "出处（IEEE 稳定度标准口径，内核 core/allan_variance.py 出节转录）：\n- allan_deviation：重叠 Allan/M 偏差与幂律斜率分类（IEEE\
+    \ Std 1139-2008\n  Table 1；D. W. Allan, \"Statistics of atomic frequency standards\",\n  Proc. IEEE\
+    \ 54(2), 1966 原始定义；MDEV 斜率表 NIST SP 1065）。"
+  refs:
+  - IEEE Std 1139-2008
+  - Proc. IEEE 54(2), 1966 原始定义；MDEV 斜率表 NIST SP 1065
+  source_doi: null
+  eq_no: Table 1
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/analog_modulation:<module>:01
+  kernel_file: src/rfauto/core/calc_families/analog_modulation.py
+  module: rfauto.core.calc_families.analog_modulation
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Rappaport §5.3.2 "FM improvement factor" I=3β²(β+1)；
+  claim_block: "  出处：Rappaport §5.3.2 \"FM improvement factor\" I=3β²(β+1)；\n  (3/2)β²·C/(N₀W) 形见 Haykin/Couch\
+    \ 模拟调制标准推导（鉴频器输出\n  信号 ∝ Δf²、输出噪声 PSD ∝ f² 积分 ∫₀^W f²df = W³/3）。FM 广播\n  β=5 → G=450=26.5321dB（广被引用的处理增益量级）。门限效应：CNR\n\
+    \  低于 ~10dB 时上式失效（FM 捕获门限，工程惯例 7–12dB 区间，本键取\n  10dB 标记位如实三态——门限本体的统计模型不做，UNVERIFIED 如实）。\n- AM DSB-LC\
+    \ 功率分配（任何模拟通信教科书，Rappaport §5.2 同族）：\n\n      载波 P_c；边带 P_sb = P_c·m²/2；总 P = P_c·(1 + m²/2)\n   \
+    \   功率效率 η = P_sb/P = m²/(2 + m²)；PEP = P_c·(1 + m)²"
+  refs: []
+  source_doi: null
+  eq_no: §5.3.2
+  expr: null
+  access_status: unverified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/antenna_q:<module>:01
+  kernel_file: src/rfauto/core/calc_families/antenna_q.py
+  module: rfauto.core.calc_families.antenna_q
+  symbol: <module>
+  kind: pointer
+  marker: 出处见
+  claim_line: 公式（出处见 core/antenna_q.py 模块 docstring，不复制推导）
+  claim_block: 公式（出处见 core/antenna_q.py 模块 docstring，不复制推导）
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/array_synth:<module>:01
+  kernel_file: src/rfauto/core/calc_families/array_synth.py
+  module: rfauto.core.calc_families.array_synth
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（原文数表逐字转写，内核 core/array_synthesis.py docstring 同源）：
+  claim_block: "出处（原文数表逐字转写，内核 core/array_synthesis.py docstring 同源）：\n- array.bayliss_weights：Bayliss\
+    \ 1968 BSTJ 47(4):623-650 原文数表\n  （Doerry SAND-2025-07335 独立复现互证；数表锚\n  tests/unit/test_w3_e_array_synth.py）。\n\
+    - array.villeneuve_weights：Villeneuve 1984 IEEE TAP 32(10):1089-1093\n  （Taylor 零点的离散阵精确修正）。\n- array.schelkunoff_nulls：Schelkunoff\
+    \ 1943 BSTJ 22:80-107 单位圆零点\n  置放。\n- array.quantized_milp：scipy.optimize.milp/HiGHS 精确 MIP（spec\n\
+    \  sa_specs2 §七；求解工具链出处，非文献闭式，如实登记）。"
+  refs:
+  - '- array.bayliss_weights：Bayliss 1968 BSTJ 47(4):623-650 原文数表'
+  - '- array.villeneuve_weights：Villeneuve 1984 IEEE TAP 32(10):1089-1093'
+  - '- array.schelkunoff_nulls：Schelkunoff 1943 BSTJ 22:80-107 单位圆零点'
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/bethe_hole:<module>:01
+  kernel_file: src/rfauto/core/calc_families/bethe_hole.py
+  module: rfauto.core.calc_families.bethe_hole
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（原文口径+教科书二级转引，详见下节物理口径）：
+  claim_block: "出处（原文口径+教科书二级转引，详见下节物理口径）：\n- bethe_hole_coupler：Bethe 小孔极化率 αe=2r³/3、αm=4r³/3（H. A.\n\
+    \  Bethe 零厚无限屏原文口径）；耦合/方向性闭式与 M/E 比=2(β/k0)²\n  （Pozar, Microwave Engineering §7.9 同族二级转引/结构锚 USPAS\n\
+    \  Nassiri 2003、Microwaves101 directional couplers 条目）；Cohn 有限\n  壁厚修正（孔口共振增强+截止波导衰减，Collin, Foundations\
+    \ for\n  Microwave Engineering 截止波导节）。"
+  refs:
+  - Nassiri 2003、Microwaves101 directional couplers 条目）；Cohn 有限
+  source_doi: null
+  eq_no: §7.9
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/budget:<module>:01
+  kernel_file: src/rfauto/core/calc_families/budget.py
+  module: rfauto.core.calc_families.budget
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书级联口径+第一性频率代数，内核 core/cascade.py §0 转录）：
+  claim_block: "出处（教科书级联口径+第一性频率代数，内核 core/cascade.py §0 转录）：\n- cascade_budget：Friis 噪声级联（H. T. Friis,\
+    \ \"Noise figures of radio\n  receivers\", Proc. IRE 32(7), 1944）与 IIP3 功率域级联求和式（二级转引\n  Pozar, Microwave\
+    \ Engineering 级联非线性一节）。\n- if_plan_sweep / spur_search：混频杂散 |m·f_RF+n·f_LO| 频率代数\n  （幂级数非线性产物的第一性枚举，无外部文献依赖）。"
+  refs:
+  - receivers", Proc. IRE 32(7), 1944）与 IIP3 功率域级联求和式（二级转引
+  source_doi: null
+  eq_no: §0
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/building_penetration:<module>:01
+  kernel_file: src/rfauto/core/calc_families/building_penetration.py
+  module: rfauto.core.calc_families.building_penetration
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：ITU-R P.2040-4 (09/2025)《Effects of building materials and
+  claim_block: '出处：ITU-R P.2040-4 (09/2025)《Effects of building materials and
+
+    structures on radio-wave propagation in the range of 1 MHz to 450 GHz》
+
+    官方 PDF 逐式转写（本模块式号按原文）； Fresnel/Airy 干涉式与任意电磁
+
+    教科书同构（Balanis ch.5 平面波斜入射同式）——零新引源。复反射干涉
+
+    窗（半波窗/Brewster）为式内恒等结构锚，见 tests/unit/
+
+    test_w14s3_core_domains.py 锚树。'
+  refs:
+  - ITU-R P.2040-4
+  - 出处：ITU-R P.2040-4 (09/2025)《Effects of building materials and
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cal_kit_verify:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cal_kit_verify.py
+  module: rfauto.core.calc_families.cal_kit_verify
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（EURAMET cg-12；NIST TN 1341；SOLT 标准件定义口径）：
+  claim_block: "出处（EURAMET cg-12；NIST TN 1341；SOLT 标准件定义口径）：\n- cal_kit_standard_response/cal_kit_verify_ripple：校准件响应与\n\
+    \  verification 惯例=EURAMET cg-12/NIST TN 1341 文献族\n  （vna_uncertainty 同源文献族，二级转引）；机械校准件 offset 一阶\n\
+    \  模型=SOLT 标准件定义口径（Keysight 85052D 语境二级转引——定义惯例\n  出处而非厂商数值）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cavity:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cavity.py
+  module: rfauto.core.calc_families.cavity
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（一阶腔微扰定理，内核 core/material_characterization.py MA-2 转录）：
+  claim_block: "出处（一阶腔微扰定理，内核 core/material_characterization.py MA-2 转录）：\n- cavity_perturbation_shift：一阶腔体微扰定理\
+    \ εr′/tanδ 反演\n  （Waldron/Harrington 标准式；二级转引 L. F. Chen et al.,\n  Microwave Electronics: Measurement\
+    \ and Materials Characterization,\n  2004 腔微扰测量章）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cdr_mask:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cdr_mask.py
+  module: rfauto.core.calc_families.cdr_mask
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（第一性线性系统闭式，#118 双锚内证）：
+  claim_block: "出处（第一性线性系统闭式，#118 双锚内证）：\n- cdr_jitter_mask：一阶/二阶 CDR 环路线性相位抖动传函 JT(ω) 与容限\n  闭式（单/双极点环路传函恒等式推导，无外部文献依赖；mask\
+    \ 点列由\n  调用方按所引标准给入，本核不 ship 标准门限——#122 同纪律）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/chipless_rfid:<module>:01
+  kernel_file: src/rfauto/core/calc_families/chipless_rfid.py
+  module: rfauto.core.calc_families.chipless_rfid
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（文献族口径+滤波器综合惯用式，内核 core/chipless_rfid.py 转录）：
+  claim_block: "出处（文献族口径+滤波器综合惯用式，内核 core/chipless_rfid.py 转录）：\n- chipless_tag_plan / chipless_tag_encode\
+    \ / chipless_tag_decode：频域\n  零点编码 chipless RFID 文献族（Karmakar 系 chipless 标签口径）；单谷\n  闭式=传输线并联串联-RLC\
+    \ 陷波，电抗斜率参数定义二级转引\n  Matthaei-Young-Jones ch.4；S21=2Y0/(2Y0+Y) 为并联导纳二端口恒等式。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cm_core:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cm_core.py
+  module: rfauto.core.calc_families.cm_core
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Cameron《Microwave Filters for Communication Systems》ch.6/8）：
+  claim_block: "出处（Cameron《Microwave Filters for Communication Systems》ch.6/8）：\n- chebyshev_prototype/chebyshev_prototype_asym/chebyshev_refl_fn：广义\n\
+    \  切比雪夫滤波函数 cosh 和构造（Cameron 1999 §III-B 与书 ch.6 口径，\n  模块头注逐字转写；N=1 解析锚+幺正性单测钉）。\n- coupling_matrix_arrow/coupling_matrix_folded/coupling_matrix_response\n\
+    \  及 N+2 综合键：Cameron 书 §8.2 N+2 横向矩阵闭式（LM 精化仅病态兜底）；\n  folded 经典 palindromic 序列对照 Yellowbooker/\n\
+    \  Standard-Coupling-Matrix-Synthesis-Code to_foldedCM.m 转录。"
+  refs:
+  - 切比雪夫滤波函数 cosh 和构造（Cameron 1999 §III-B 与书 ch.6 口径
+  source_doi: null
+  eq_no: §III-B
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/cm_diag:q_factor_vf_zero:01
   kernel_file: src/rfauto/core/calc_families/cm_diag.py
   module: rfauto.core.calc_families.cm_diag
@@ -585,6 +826,226 @@ entries:
   refs: []
   source_doi: null
   eq_no: §6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cm_extract:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cm_extract.py
+  module: rfauto.core.calc_families.cm_extract
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Cameron 滤波器矩阵经典口径）：
+  claim_block: "出处（Cameron 滤波器矩阵经典口径）：\n- coupling_matrix_extract：Cauchy 拟合 + Cameron Y 留数 N+2 耦合矩阵\n\
+    \  反提（R. J. Cameron, \"General coupling matrix synthesis methods for\n  Chebyshev filtering functions\"\
+    , IEEE Trans. MTT 47(4), 1999；二级转引\n  Cameron-Kudsia-Mansour, Microwave Filters for Communication\
+    \ Systems）。"
+  refs:
+  - Chebyshev filtering functions", IEEE Trans. MTT 47(4), 1999；二级转引
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/cma:<module>:01
+  kernel_file: src/rfauto/core/calc_families/cma.py
+  module: rfauto.core.calc_families.cma
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（特征模经典文献，正文口径转录）：
+  claim_block: "出处（特征模经典文献，正文口径转录）：\n- cma_modes：广义阻抗矩阵 R-加权特征模分解 X·I_n=λ_n·R·I_n\n  （R. F. Harrington\
+    \ & J. R. Mautz, \"Theory of characteristic modes for\n  conducting bodies\", IEEE Trans. AP 19(5),\
+    \ 1971；综述口径 M. Cabedo-Fabrés\n  et al., IEEE Antennas Propag. Mag. 49(5), 2007）。"
+  refs:
+  - conducting bodies", IEEE Trans. AP 19(5), 1971；综述口径 M. Cabedo-Fabrés
+  - et al., IEEE Antennas Propag. Mag. 49(5), 2007
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/coax_line:<module>:01
+  kernel_file: src/rfauto/core/calc_families/coax_line.py
+  module: rfauto.core.calc_families.coax_line
+  symbol: <module>
+  kind: pointer
+  marker: 出处见
+  claim_line: roughness_gain 单源（Huray/Hammerstad 闭式与出处见该模块 docstring；
+  claim_block: roughness_gain 单源（Huray/Hammerstad 闭式与出处见该模块 docstring；
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/coax_line:<module>:02
+  kernel_file: src/rfauto/core/calc_families/coax_line.py
+  module: rfauto.core.calc_families.coax_line
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》§2.2/§2.7/§3；Ramo-Whinnery-Van Duzer）：
+  claim_block: "出处（Pozar《Microwave Engineering》§2.2/§2.7/§3；Ramo-Whinnery-Van Duzer）：\n- coax_line_z0：TEM\
+    \ 精确闭式 Z0=(60/√εr)·ln(b/a)（Pozar §2.2 同轴线；\n  TE11 截止保角映射 kc≈2/(a+b) 同节口径）。\n- coax_line_attenuation：Pozar\
+    \ §2.7 传输线损耗（导体 Rs 趋肤+介质\n  β·tanδ/2；线 Q=β/(2α) 场积分路线互证）；Ramo-Whinnery-Van Duzer\n  同族口径。\n- coax_line_power_capacity：内导体表面场强上限\
+    \ TEM 场解（Pozar §2.2）。\n- coax_line_cutoff_attenuator：Pozar §3 波导一般理论倏逝模\n  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，架构批\
+    \ W8-S37 批口径）。"
+  refs: []
+  source_doi: null
+  eq_no: §2.2
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/combline_resonator:<module>:01
+  kernel_file: src/rfauto/core/calc_families/combline_resonator.py
+  module: rfauto.core.calc_families.combline_resonator
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典闭式二级转引，详见下节公式口径）：
+  claim_block: "出处（教科书经典闭式二级转引，详见下节公式口径）：\n- combline_resonance：Matthaei–Young–Jones, Microwave Filters,\n\
+    \  Impedance-Matching Networks, and Coupling Structures ch.8 combline\n  等效电路口径。\n- coaxial_cavity_resonance：同轴腔\
+    \ TEM 谐振+Z0 闭式（Pozar, Microwave\n  Engineering §6.6 同轴线谐振器；TE11 截止 kc≈2/(a+b) 保角映射近似）。\n- cavity_unloaded_q：趋肤电阻口径导体\
+    \ Q+介质 Q 串联合成（Pozar §6.6\n  谐振器 Q；场积分法与 β/(2α) 衰减关系两路线同解自洽）。"
+  refs: []
+  source_doi: null
+  eq_no: §6.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/corona:<module>:01
+  kernel_file: src/rfauto/core/calc_families/corona.py
+  module: rfauto.core.calc_families.corona
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（规范事实+经典判据，正文与内核 core/corona.py 转录）：
+  claim_block: "出处（规范事实+经典判据，正文与内核 core/corona.py 转录）：\n- corona_pd_check：Paschen 击穿曲线（F. Paschen, Ann.\
+    \ Phys., 1889）\n  + ISA 标准大气海拔降额（ISO 2533）+ Peek 起始场工程判据（F. W. Peek,\n  Dielectric Phenomena in High\
+    \ Voltage Engineering），ECSS-E-ST-10-04C\n  空间环境语境。"
+  refs:
+  - ECSS-E-ST-10-04C
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/coupled_line_bpf:<module>:01
+  kernel_file: src/rfauto/core/calc_families/coupled_line_bpf.py
+  module: rfauto.core.calc_families.coupled_line_bpf
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（实现尺寸级综合链，正文物理口径节文献口径转录）：
+  claim_block: "出处（实现尺寸级综合链，正文物理口径节文献口径转录）：\n- coupled_line_bpf_synthesize：切比雪夫 g 值→J 倒置器→逐节 (Z0e,Z0o)\n\
+    \  闭式（D. Pozar, Microwave Engineering 4th ed. §8.6；Matthaei-Young-Jones\n  ch.8 同源；(w,s) 反解 Kirschning-Jansen\
+    \ 1984 准静态闭式）。\n- coupled_line_bpf_response：偶/奇模叠加 4 端口 S 构造（同步 TEM 口径，\n  Pozar Table 4.2 S↔ABCD\
+    \ 换算；数值锚=Pozar Example 8.7 文献例）。"
+  refs:
+  - ch.8 同源；(w,s) 反解 Kirschning-Jansen 1984 准静态闭式
+  source_doi: null
+  eq_no: §8.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/crlh:<module>:01
+  kernel_file: src/rfauto/core/calc_families/crlh.py
+  module: rfauto.core.calc_families.crlh
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（CRLH 传输线经典口径，内核 core/crlh.py §3.1 转录）：
+  claim_block: "出处（CRLH 传输线经典口径，内核 core/crlh.py §3.1 转录）：\n- crlh_unit_cell_report：CRLH T 型单元色散/平衡条件/ZOR/漏波角闭式\n\
+    \  （C. Caloz & T. Itoh, Electromagnetic Metamaterials: Transmission Line\n  Theory and Microwave Applications,\
+    \ Wiley 2006 §3.1；二级转引 A. Lai,\n  C. Caloz, T. Itoh, IEEE Microwave Mag. 5(3), 2004）。\n- crlh_balanced_synthesize：四元\
+    \ LC 平衡综合（内核 §8 第一性联立消元，\n  平衡条件 L_R·C_L=L_L·C_R 同上 Caloz-Itoh 口径）。"
+  refs:
+  - Theory and Microwave Applications, Wiley 2006 §3.1；二级转引 A. Lai
+  - C. Caloz, T. Itoh, IEEE Microwave Mag. 5(3), 2004
+  source_doi: null
+  eq_no: §3.1
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/detector_device:<module>:01
+  kernel_file: src/rfauto/core/calc_families/detector_device.py
+  module: rfauto.core.calc_families.detector_device
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（第一性传递恒等式+工程判据惯例，正文物理口径节转录）：
+  claim_block: "出处（第一性传递恒等式+工程判据惯例，正文物理口径节转录）：\n- diode_square_law_detect：小信号平方律检波 I_dc=k·R_j·P_in（零偏\n\
+    \  Schottky 二极管伏安特性小信号泰勒展开，第一性；平方律域上沿工程\n  惯例量级 docstring 写死）。\n- detector_tss_nep：视频约翰逊-奈奎斯特噪声链 NEP=v_n/γ（第一性）\n\
+    \  + 8dB 切向灵敏度判据（EW 接收机工程量化惯例，二级转引口径）。\n- thermal_power_sensor_detect：热链 ΔT=η·R_th·P 与 Seebeck EMF\n\
+    \  （热电效应第一性；热偶/测辐射热计功率计工程惯例）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/dgs:<module>:01
+  kernel_file: src/rfauto/core/calc_families/dgs.py
+  module: rfauto.core.calc_families.dgs
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（文献族口径+第一性推导，详见下节物理口径）：
+  claim_block: "出处（文献族口径+第一性推导，详见下节物理口径）：\n- dgs_dumbbell_lc_extract：哑铃 DGS 一阶 LC 等效（Lim/Ahn IEEE MTT\n\
+    \  2000-2002 文献族等效电路口径；本族两条提取条件从第一性推导不逐字\n  转抄——文献原文页码级复读未做，如实登记 UNVERIFIED）。\n- dgs_notch_response：一阶\
+    \ LC 陷波/低通响应再生（同上等效电路构造\n  恒等式，#118 锚树 tests/unit/test_w2s2_core_tier4.py）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: unverified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/directional_bridge:<module>:01
+  kernel_file: src/rfauto/core/calc_families/directional_bridge.py
+  module: rfauto.core.calc_families.directional_bridge
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》4th ed. Ch.12；经典微波测量文献）：
+  claim_block: "出处（Pozar《Microwave Engineering》4th ed. Ch.12；经典微波测量文献）：\n- directional_bridge_s_matrix/directional_bridge_response：反射计/\n\
+    \  定向桥测量口径（Pozar Ch.12 二级转引）；反射计误差模型\n  Γ_meas≈Γ+d+s·Γ² 一阶展开=经典微波测量文献口径（Rytting VNA 误差\n  模型族；回损地板与\
+    \ vna_reflection_uncertainty 同仓双源互证）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/doa:<module>:01
+  kernel_file: src/rfauto/core/calc_families/doa.py
+  module: rfauto.core.calc_families.doa
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（子空间谱估计经典文献，正文公式口径节转录）：
+  claim_block: "出处（子空间谱估计经典文献，正文公式口径节转录）：\n- doa_music_spectrum：MUSIC 伪谱（R. O. Schmidt, \"Multiple emitter\n\
+    \  location and signal parameter estimation\", IEEE Trans. AP 34(3),\n  1986）。\n- doa_esprit：TLS-ESPRIT（R.\
+    \ Roy & T. Kailath, \"ESPRIT—estimation of\n  signal parameters via rotational invariance techniques\"\
+    , IEEE Trans.\n  ASSP 37(7), 1989 §III-C）。\n- doa_mvdr_weights：MVDR/Capon 波束形成（J. Capon, Proc. IEEE\
+    \ 57(8),\n  1969；Van Trees, Optimum Array Processing ch.6 二级转引）。"
+  refs:
+  - ASSP 37(7), 1989 §III-C
+  - 1969；Van Trees, Optimum Array Processing ch.6 二级转引
+  source_doi: null
+  eq_no: §III-C
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -665,6 +1126,105 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/electromigration:<module>:01
+  kernel_file: src/rfauto/core/calc_families/electromigration.py
+  module: rfauto.core.calc_families.electromigration
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（电迁移经典经验律，正文与内核 core/electromigration.py 转录）：
+  claim_block: "出处（电迁移经典经验律，正文与内核 core/electromigration.py 转录）：\n- electromigration_mttf_check：Black MTTF\
+    \ 经验律（J. R. Black,\n  \"Electromigration failure modes in aluminum metallization for\n  semiconductor\
+    \ devices\", Proc. IEEE 57(9), 1969）+ Arrhenius 加速因子\n  （第一性化学速率律）+ Blech immortal 判据（I. A. Blech,\
+    \ J. Appl.\n  Phys. 47, 1976 二级转引）+ IPC-2152 载流温升表。"
+  refs:
+  - semiconductor devices", Proc. IEEE 57(9), 1969）+ Arrhenius 加速因子
+  - Phys. 47, 1976 二级转引）+ IPC-2152 载流温升表
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/emc_immunity:<module>:01
+  kernel_file: src/rfauto/core/calc_families/emc_immunity.py
+  module: rfauto.core.calc_families.emc_immunity
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（IEC 抗扰度标准事实口径，正文物理口径节转录）：
+  claim_block: "出处（IEC 抗扰度标准事实口径，正文物理口径节转录）：\n- radiated_immunity_power：IEC 61000-4-3 严酷度等级与远场换算\n  （E=√(30PG)/R；二级转引\
+    \ Ott, Electromagnetic Compatibility\n  Engineering ch.5）。\n- conducted_immunity_cdn：IEC 61000-4-6\
+    \ CDN 耦合 emf 口径换算\n  （0dBm≡107 dBµV/113 dBµV emf，50Ω 恒等式）。\n- esd_contact_waveform：IEC 61000-4-2 接触放电双指数波形表\n\
+    \  （150pF/330Ω 发生器校准口径；保守双指数参数化为任务书口径）。"
+  refs:
+  - IEC 61000-4-3
+  - IEC 61000-4-6
+  - IEC 61000-4-2
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/exposure_limits:<module>:01
+  kernel_file: src/rfauto/core/calc_families/exposure_limits.py
+  module: rfauto.core.calc_families.exposure_limits
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（公开规范逐位抄录，内核 core/exposure_limits.py 权威口径节转录）：
+  claim_block: "出处（公开规范逐位抄录，内核 core/exposure_limits.py 权威口径节转录）：\n- exposure_mpe_limit / exposure_compliance_distance：FCC\
+    \ 47 CFR\n  §1.1310 Table 1 MPE 限值 + ICNIRP 2020（Health Phys. 118(5), 2020）\n  Table 5 公众参考水平；EIRP\
+    \ 合规距离=远场球面反解闭式\n  （S=EIRP/(4πR²) 第一性）。"
+  refs:
+  - §1.1310 Table 1 MPE 限值 + ICNIRP 2020（Health Phys. 118(5), 2020
+  source_doi: null
+  eq_no: §1.1310
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/fading:<module>:01
+  kernel_file: src/rfauto/core/calc_families/fading.py
+  module: rfauto.core.calc_families.fading
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（衰落统计经典口径，内核 core/fading.py 出节转录）：
+  claim_block: "出处（衰落统计经典口径，内核 core/fading.py 出节转录）：\n- fade_outage_percent：Rayleigh/Rice/Nakagami-m/对数正态小尺度衰落\n\
+    \  CDF 族（经典闭式；对数正态阴影=Gudmundson 模型口径）+ 微波视距\n  多径中断双模型（W. T. Barnett, BSTJ 51(2), 1972 Vigants-Barnett\
+    \ 简式；\n  ITU-R P.530-18 正式式）。\n- availability_margin：可用性↔衰落裕量双向换算（同上双模型，同参\n  差异带如实报告）。"
+  refs:
+  - ITU-R P.530-18
+  - 多径中断双模型（W. T. Barnett, BSTJ 51(2), 1972 Vigants-Barnett 简式
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/fec_codes:<module>:01
+  kernel_file: src/rfauto/core/calc_families/fec_codes.py
+  module: rfauto.core.calc_families.fec_codes
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（原文/教科书经典闭式二级转引，详见下节公式口径）：
+  claim_block: "出处（原文/教科书经典闭式二级转引，详见下节公式口径）：\n- hamming_code_design：R. W. Hamming, Bell Syst. Tech. J.\
+    \ 1950；Lin &\n  Costello, Error Control Coding 2nd ed. ch.3（Hamming bound 球填充界，\n  完全系完全码取等）。\n- reed_solomon_capacity：Reed\
+    \ & Solomon 1960；MDS=Singleton 1964 界\n  取等（RS(255,223) GF(256) NASA/CCSDS 标准码锚）。\n- coded_ebn0_requirement：硬判译码\
+    \ union bound 一阶口径（Lin & Costello\n  2ed / Clark & Cain 1981）。"
+  refs:
+  - '- hamming_code_design：R. W. Hamming, Bell Syst. Tech. J. 1950；Lin &'
+  - '- reed_solomon_capacity：Reed & Solomon 1960；MDS=Singleton 1964 界'
+  - 2ed / Clark & Cain 1981
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/finline:<module>:01
   kernel_file: src/rfauto/core/calc_families/finline.py
   module: rfauto.core.calc_families.finline
@@ -684,6 +1244,97 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/fmcw_radar:<module>:01
+  kernel_file: src/rfauto/core/calc_families/fmcw_radar.py
+  module: rfauto.core.calc_families.fmcw_radar
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：三角波几何恒等式=Skolnik IRS ch.14+Richards FRSP ch.3 教科书通用
+  claim_block: '出处：三角波几何恒等式=Skolnik IRS ch.14+Richards FRSP ch.3 教科书通用
+
+    口径，零新引源（R3 报告预声明"trivial-clean"）；发射泄漏/相位噪声/多维
+
+    波形（快慢时间 MIMO）/FFT 处理链不在本键口径（isac no-go 同源尊重）。'
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/gd_equalizer:<module>:01
+  kernel_file: src/rfauto/core/calc_families/gd_equalizer.py
+  module: rfauto.core.calc_families.gd_equalizer
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（全通网络教科书恒等式；#118 锚树）：
+  claim_block: "出处（全通网络教科书恒等式；#118 锚树）：\n- gd_allpass_section_synthesize/gd_equalizer_cascade_response：一阶/\n\
+    \  二阶全通节 H(s) 恒等式与群时延闭式（滤波/控制教科书经典式，模块\n  docstring 逐项推导在档；|H|≡1/级联时延可加性恒等面测试侧独立互证，\n  #118 锚树=tests/unit/test_w2s7_ruthroff_gd_drift.py）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/gnss_geometry:<module>:01
+  kernel_file: src/rfauto/core/calc_families/gnss_geometry.py
+  module: rfauto.core.calc_families.gnss_geometry
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：H/Q/DOP 定义、UERE 恒等式与 RSS 分解=Misra & Enge GPS ch.6+
+  claim_block: '出处：H/Q/DOP 定义、UERE 恒等式与 RSS 分解=Misra & Enge GPS ch.6+
+
+    Parkinson & Spilker v.1 ch.11（教科书恒等式）；GDOP 最小值 √(5/2)=
+
+    Kihara & Okada 1984 IEEE Trans.AES（4 星最优几何）。'
+  refs:
+  - Kihara & Okada 1984 IEEE Trans.AES（4 星最优几何
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/guanella_tlt:<module>:01
+  kernel_file: src/rfauto/core/calc_families/guanella_tlt.py
+  module: rfauto.core.calc_families.guanella_tlt
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（传输线变压器经典口径，正文物理口径节转录）：
+  claim_block: "出处（传输线变压器经典口径，正文物理口径节转录）：\n- guanella_tlt_design / guanella_tlt_response：n²:1 串并复合传输线\n\
+    \  变压器（G. Guanella, \"New method of impedance matching in\n  radio-frequency circuits\", Brown Boveri\
+    \ Review 31, 1944 原始拓扑；\n  λ/8 线长上限=Sevick, Transmission Line Transformers 工程准则）。\n  低频端磁化电感拐角不在本族口径（UNVERIFIED\
+    \ 如实登记段见正文）。"
+  refs:
+  - radio-frequency circuits", Brown Boveri Review 31, 1944 原始拓扑
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: unverified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/gysel_core:<module>:01
+  kernel_file: src/rfauto/core/calc_families/gysel_core.py
+  module: rfauto.core.calc_families.gysel_core
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Gysel 拓扑经典文献+偶/奇模半电路验证，正文物理口径节转录）：
+  claim_block: "出处（Gysel 拓扑经典文献+偶/奇模半电路验证，正文物理口径节转录）：\n- gysel_core_synthesize / gysel_frequency_response：Gysel\
+    \ 功分器\n  六 λ/4 段拓扑与偶/奇模半电路闭式（U. H. Gysel, \"A new technique\n  for power divider/combiner\", IEEE\
+    \ MTT-S Int. Microwave Symp. Dig.,\n  1975；隔离桥带必要性判废锚 #206 同文件）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/helix_axial_reg:<module>:01
   kernel_file: src/rfauto/core/calc_families/helix_axial_reg.py
   module: rfauto.core.calc_families.helix_axial_reg
@@ -693,6 +1344,89 @@ entries:
   claim_line: '- 出处见 rfauto.core.helix_axial 模块 docstring（Kraus 经验闭式，Balanis'
   claim_block: '- 出处见 rfauto.core.helix_axial 模块 docstring（Kraus 经验闭式，Balanis'
   refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/hf_skywave:<module>:01
+  kernel_file: src/rfauto/core/calc_families/hf_skywave.py
+  module: rfauto.core.calc_families.hf_skywave
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：f_p 系数/secant 定律/n² 标度=Davies《Ionospheric Radio》(IEE
+  claim_block: '出处：f_p 系数/secant 定律/n² 标度=Davies《Ionospheric Radio》(IEE
+
+    1990) ch.1/ch.5 教科书恒等式+ITU-R P.531 同口径（零新引源，R3 报告
+
+    预声明"标度锚干净"）；NVIS 档/M 因子曲线/P.368 场强/P.372 噪声带=
+
+    半经验表，本次环境不可达不 ship（#122 如实缺席）。'
+  refs:
+  - ITU-R P.531
+  - 1990) ch.1/ch.5 教科书恒等式+ITU-R P.531 同口径（零新引源，R3 报告
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: unverified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/homogenization:<module>:01
+  kernel_file: src/rfauto/core/calc_families/homogenization.py
+  module: rfauto.core.calc_families.homogenization
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（原文公式逐字转写，键内描述同源）：
+  claim_block: "出处（原文公式逐字转写，键内描述同源）：\n- homog_mix_eff：maxwell_garnett（Garnett 1904 球夹杂稀疏极限）/\n  bruggeman（Bruggeman\
+    \ 1935 对称有效介质）/looyenga（Looyenga 1965\n  立方根加权）三混合式+Wiener 双界。\n- srr_permeability：Pendry 1999 IEEE\
+    \ TMTT 47(11):2075 SRR Lorentz\n  μ(ω)（arXiv 2006.13861 同式互证）。\n- wire_media_plasma：Pendry 1996 PRL\
+    \ 76:4773 线媒质等离子频率\n  ωp²=2π·c0²/(a²ln(a/r))+Drude ε(ω)。\n- retrieve_eff_params：单频 (S11,S21) 对称面板反演（Smith\
+    \ 2002 PRB\n  65:195104 同族口径）。"
+  refs:
+  - '- homog_mix_eff：maxwell_garnett（Garnett 1904 球夹杂稀疏极限）/'
+  - bruggeman（Bruggeman 1935 对称有效介质）/looyenga（Looyenga 1965
+  - '- srr_permeability：Pendry 1999 IEEE TMTT 47(11):2075 SRR Lorentz'
+  - μ(ω)（arXiv 2006.13861 同式互证
+  - '- wire_media_plasma：Pendry 1996 PRL 76:4773 线媒质等离子频率'
+  - '- retrieve_eff_params：单频 (S11,S21) 对称面板反演（Smith 2002 PRB'
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/hybrid_junction:<module>:01
+  kernel_file: src/rfauto/core/calc_families/hybrid_junction.py
+  module: rfauto.core.calc_families.hybrid_junction
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典口径二级转引，详见下节物理口径）：
+  claim_block: "出处（教科书经典口径二级转引，详见下节物理口径）：\n- magic_tee_s_matrix：理想魔 T 四约束口径（Pozar, Microwave\n  Engineering\
+    \ §7.5 混合结；幺正+E/H 臂隔离+3dB 均分+相位四约束\n  独立复核）。\n- waveguide_tee_s_matrix：H 面/E 面理想对称无耗三口结功率波口径\n  第一性推导（幺正+互易+镜像对称+对偶四约束钉死）。\n\
+    - hybrid_sum_difference：魔 T 和差合成行为（能量守恒恒等+正交 3dB\n  拆分；同 Pozar §7.5 口径）。"
+  refs: []
+  source_doi: null
+  eq_no: §7.5
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/if_digitizer:<module>:01
+  kernel_file: src/rfauto/core/calc_families/if_digitizer.py
+  module: rfauto.core.calc_families.if_digitizer
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（原文定理逐式转写，详见下节物理口径）：
+  claim_block: "出处（原文定理逐式转写，详见下节物理口径）：\n- bandpass_sampling_plan：带通采样定理可行 fs 区间（Vaughan-Scott-White\n\
+    \  1991, IEEE Trans. SP 39(9) 带通采样不等式）。\n- alias_fold_check：折叠恒等式 f'=|f−round(f/fs)·fs|（采样混叠第一性\n\
+    \  恒等式）+孔径抖动 SNR 消费口径（adc_budget 同族）。"
+  refs:
+  - 1991, IEEE Trans. SP 39(9) 带通采样不等式
   source_doi: null
   eq_no: null
   expr: null
@@ -739,6 +1473,154 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/iss_on_wafer:<module>:01
+  kernel_file: src/rfauto/core/calc_families/iss_on_wafer.py
+  module: rfauto.core.calc_families.iss_on_wafer
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar VNA 校准章；ISS 探针格式惯例）：
+  claim_block: "出处（Pozar VNA 校准章；ISS 探针格式惯例）：\n- iss_standard_response/iss_oneport_cal_extract：一端口三项误差模型\n\
+    \  与回收闭式=Pozar Microwave Engineering VNA 校准章同款（trl_solt\n  同源文献族，二级转引）；探针 ISS 标准 L0..L3 数据格式=探针校准惯例\n\
+    \  二级转引（格式出处而非厂商数值）；退化档与 trl_solt 同式同仓双源。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/itu_link:<module>:01
+  kernel_file: src/rfauto/core/calc_families/itu_link.py
+  module: rfauto.core.calc_families.itu_link
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py
+  claim_block: "出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py\ndocstring 与 runs/ap8/）：\n- gaseous_attenuation：ITU-R\
+    \ P.676-13 Annex 1 大气气体 specific\n  attenuation（逐线表系数 AP-8 批逐值录入）。\n- rain_specific_attenuation：ITU-R\
+    \ P.838-3 式(1) 雨衰 specific\n  attenuation γ_R（Tables 1-4 系数逐值录入）。\n- rain_attenuation_r001：ITU-R P.618-13\
+    \ §2.2.1.1 长期雨衰全链\n  （R0.01→A0.01，Step1-9 逐中间量留痕）。"
+  refs:
+  - ITU-R P.676-13
+  - ITU-R P.838-3
+  - ITU-R P.618-13
+  source_doi: null
+  eq_no: 式(1)
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/kqe:<module>:01
+  kernel_file: src/rfauto/core/calc_families/kqe.py
+  module: rfauto.core.calc_families.kqe
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（滤波器耦合标定经典口径，函数 docstring 转录）：
+  claim_block: "出处（滤波器耦合标定经典口径，函数 docstring 转录）：\n- k_split_pair：双峰模分裂耦合系数精确式 k=(f2²−f1²)/(f2²+f1²)\n\
+    \  （J.-S. Hong & M. J. Lancaster, Microstrip Filters for RF/Microwave\n  Applications, Wiley 2001）。\n\
+    - qe_group_delay：单谐振器外部 Q 群时延法 τmax=4Qe/ω0（Dishal/Hong\n  反射单端口径，同上书）。"
+  refs:
+  - Applications, Wiley 2001
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/kuroda_identities:<module>:01
+  kernel_file: src/rfauto/core/calc_families/kuroda_identities.py
+  module: rfauto.core.calc_families.kuroda_identities
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》Table 8.7/§8.5/Example 8.5）：
+  claim_block: "出处（Pozar《Microwave Engineering》Table 8.7/§8.5/Example 8.5）：\n- kuroda_identity_abcd：Pozar\
+    \ Table 8.7 四恒等式原样（Richards 变换\n  Ω=tanβℓ；§8.5 式(8.79)-(8.80) 因式分解证明口径；Ex8.5 文献数值窗\n  ±0.5% 逐位锚在测试）。\n\
+    - kuroda_shunt_realize：Pozar Example 8.5 三阶低通全并联实现全链\n  （g=(3.3487,0.7117,3.3487) 文献数值锚原文实取）。"
+  refs: []
+  source_doi: null
+  eq_no: Table 8
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/lange:<module>:01
+  kernel_file: src/rfauto/core/calc_families/lange.py
+  module: rfauto.core.calc_families.lange
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（经典文献，文末「出处」节转录）：
+  claim_block: "出处（经典文献，文末「出处」节转录）：\n- lange_synthesize / lange_response：四指 Lange 电桥设计式与四线等效\n  两线闭式（J.\
+    \ Lange, \"Interdigitated stripline quadrature hybrid\",\n  IEEE Trans. MTT 17(12), 1969；二级转引 Pozar,\
+    \ Microwave Engineering\n  4th ed. §7.6；多导体模式相速口径 W. P. Ou, IEEE Trans. MTT, 1975）。"
+  refs:
+  - IEEE Trans. MTT 17(12), 1969；二级转引 Pozar, Microwave Engineering
+  - 4th ed. §7.6；多导体模式相速口径 W. P. Ou, IEEE Trans. MTT, 1975
+  source_doi: null
+  eq_no: §7.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/linear_antenna_zin:<module>:01
+  kernel_file: src/rfauto/core/calc_families/linear_antenna_zin.py
+  module: rfauto.core.calc_families.linear_antenna_zin
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典闭式二级转引，详见下节物理口径）：
+  claim_block: "出处（教科书经典闭式二级转引，详见下节物理口径）：\n- dipole_emf_zin：R=正弦电流辐射功率积分（对假设分布精确）+X=感应\n  电动势法经典闭式 Si/Ci（Balanis,\
+    \ Antenna Theory §8.4 印刷形）；\n  半波 73.1Ω/+j42.5Ω 教科书常数锚。\n- folded_dipole_zin：Balanis 传输线法两模分解（天线模\
+    \ 4Z_d 与传输线\n  模 2jZ_t·tan(kl/2) 并联；等粗谐振 4×300Ω 教科书口径）。\n- small_loop_zin：小环辐射电阻 Rr=320π⁴N²(A/λ²)²（Balanis\
+    \ 小环节\n  经典式，三式恒等）+单匝圆环电感 Grover 闭式+趋肤损耗口径。"
+  refs: []
+  source_doi: null
+  eq_no: §8.4
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/link:<module>:01
+  kernel_file: src/rfauto/core/calc_families/link.py
+  module: rfauto.core.calc_families.link
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（出处逐字见内核 core/gt_link.py docstring——本模块只做注册薄壳）：
+  claim_block: "出处（出处逐字见内核 core/gt_link.py docstring——本模块只做注册薄壳）：\n- gt_ratio：G/T = G_dB − 10·log10(T_sys_K)（ITU-R\
+    \ S.733-2 方法口径 /\n  标准 link-budget 优值；T0=290K IEEE 噪声温度基准）。"
+  refs:
+  - ITU-R S.733-2
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/link_limits:<module>:01
+  kernel_file: src/rfauto/core/calc_families/link_limits.py
+  module: rfauto.core.calc_families.link_limits
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典闭式二级转引，详见下节公式口径）：
+  claim_block: "出处（教科书经典闭式二级转引，详见下节公式口径）：\n- shannon_capacity：Shannon 信道容量 C=B·log2(1+SNR)（Cover & Thomas,\n\
+    \  Elements of Information Theory 2nd ed. ch.5；Shannon 1948/1949 原文\n  口径；η→0 极限 ln2=−1.59175dB 即\
+    \ Shannon 极限）。\n- free_space_path_loss：FSPL=(4πd/λ)²（Friis 1946 传输公式；ITU-R\n  P.525 口径 dB 形）。\n- link_margin_calc：Friis\
+    \ dB 形逐项可加链路预算（标准 link-budget\n  惯例）。"
+  refs:
+  - "ITU-R\n  P.525"
+  - Elements of Information Theory 2nd ed. ch.5；Shannon 1948/1949 原文
+  - '- free_space_path_loss：FSPL=(4πd/λ)²（Friis 1946 传输公式；ITU-R'
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/manufacturing_yield:<module>:01
   kernel_file: src/rfauto/core/calc_families/manufacturing_yield.py
   module: rfauto.core.calc_families.manufacturing_yield
@@ -779,6 +1661,198 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/mask_spec:<module>:01
+  kernel_file: src/rfauto/core/calc_families/mask_spec.py
+  module: rfauto.core.calc_families.mask_spec
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（切比雪夫最小阶经典闭式，内核 core/mask_filter_synthesis.py 转录）：
+  claim_block: "出处（切比雪夫最小阶经典闭式，内核 core/mask_filter_synthesis.py 转录）：\n- mask_min_order / mask_filter_synthesize\
+    \ / mask_margin_report：遮罩→\n  最小阶 acosh 闭式（切比雪夫阻带衰减经典式，二级转引 Pozar,\n  Microwave Engineering §8.3 /\
+    \ Cameron-Kudsia-Mansour ch.6；遮罩模板\n  =FCC/ETSI/3GPP 公开规范点态包络语义）。"
+  refs: []
+  source_doi: null
+  eq_no: §8.3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/measurement_drift:<module>:01
+  kernel_file: src/rfauto/core/calc_families/measurement_drift.py
+  module: rfauto.core.calc_families.measurement_drift
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（同仓 SPC 内核复用+经典控制图口径）：
+  claim_block: "出处（同仓 SPC 内核复用+经典控制图口径）：\n- measurement_drift_estimate/measurement_drift_monitor：EWMA/CUSUM\n\
+    \  控制图统计内核=core/anchor_drift_spc 机器直接复用（同仓双源，复用钉\n  在测试）；线性趋势=OLS 合成（统计教科书口径；控制限恒等式自检在档）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/microstrip_disc:<module>:01
+  kernel_file: src/rfauto/core/calc_families/microstrip_disc.py
+  module: rfauto.core.calc_families.microstrip_disc
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh
+  claim_block: '出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh
+
+    2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切
+
+    角档另有 qucsator msmbend.cpp 可执行同式）；Douville-James 1978 MTT-26(3)
+
+    pp.175-181（最优切角百分式，经 Microwaves101 Mitered Bends 与 rftools.io
+
+    Microstrip Mitered Bend Calculator 双网源逐字，W10-S4 补齐）；Hammerstad-
+
+    Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐
+
+    字）；Garg-Bahl 1978（阶跃，经 qucsator msstep.cpp 可执行逐字，Qucs 手册
+
+    引 Gupta [38]）；Garg-Bahl（串联间隙，经 qucsator msgap.cpp 可执行逐字
+
+    转录——Qucs 手册 §Microstrip gap 归 [37]/[30]；等宽特化与 Bahl
+
+    《Microstrip Lines and Slotlines》[39] 口径第三方文献转写互证，
+
+    内部证据目录 在案）；Kirschning-Jansen-Koster 1981
+
+    Electron. Lett.（开路端等效延长，经 qucsator msopen.cpp calcCend
+
+    "Kirschning" 段可执行逐字；Hammerstad-Bekkadal 0.412 档=仓内单源
+
+    slotline_transitions.microstrip_open_end_delta_l_mm 复用；等效电容恒等式
+
+    经 msopen C 段+第三方文献 CL=Cll·√εe/(Z0·c) 互证）——W11-S4 两件网源
+
+    逐字在 内部证据目录。'
+  refs:
+  - 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh
+  - 2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切
+  - 角档另有 qucsator msmbend.cpp 可执行同式）；Douville-James 1978 MTT-26(3
+  - Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐
+  - 字）；Garg-Bahl 1978（阶跃，经 qucsator msstep.cpp 可执行逐字，Qucs 手册
+  - 内部证据目录 在案）；Kirschning-Jansen-Koster 1981
+  source_doi: null
+  eq_no: 式(20)
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/microstrip_extra:<module>:01
+  kernel_file: src/rfauto/core/calc_families/microstrip_extra.py
+  module: rfauto.core.calc_families.microstrip_extra
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Hammerstad-Bekkadal 系十字结拟合（经 qucsator mscross.cpp 可执行
+  claim_block: '出处：Hammerstad-Bekkadal 系十字结拟合（经 qucsator mscross.cpp 可执行
+
+    逐字+Qucs 技术手册 §Microstrip cross 式(11.226)-(11.231) 双源）；E.
+
+    Hammerstad & Ø. Jensen 衰减式（经 qucsator msline.cpp analyseLoss 可执行
+
+    逐字+Qucs 手册 式(11.79)-(11.83) 双源）；M. Goldfarb & R. A. Pucel
+
+    "Modeling Via Grounds in Microstrip" IEEE MGW Lett. 1(6) 1991 pp.135-137
+
+    （经 Qucs 手册 式(11.232)-(11.234)+finetune.co.jp 独立转录双源；qucsator
+
+    msvia.cpp 可执行偏差注记在案）；Balanis《Antenna Theory》4th ed Ch.14
+
+    槽辐射电导两极限（SDSMT 讲义逐字+_w15s2_msant.pdf Bahl-Bhartia p.51
+
+    同式，内插约定=Bahl 系通行形态如实记档）。'
+  refs:
+  - '"Modeling Via Grounds in Microstrip" IEEE MGW Lett. 1(6) 1991 pp.135-137'
+  source_doi: null
+  eq_no: §Microstrip
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/microwave_heating:<module>:01
+  kernel_file: src/rfauto/core/calc_families/microwave_heating.py
+  module: rfauto.core.calc_families.microwave_heating
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（微波加热经典教材口径，内核 core/microwave_heating.py 转录）：
+  claim_block: "出处（微波加热经典教材口径，内核 core/microwave_heating.py 转录）：\n- multimode_cavity_heating：Weyl 模式统计\
+    \ N=8πV/(3λ³)（Weyl 渐近；\n  Jackson, Classical Electrodynamics §8.7 态密度换元；A. C. Metaxas &\n  R. J. Meredith,\
+    \ Industrial Microwave Heating, 1983 ch.5 多模腔口径\n  与装填因子）。\n- single_mode_applicator：TE10p 场量/壁损积分/耦合系数\
+    \ 4β/(1+β)²\n  （能量法第一性；Pozar §6.4 一端口谐振腔耦合口径；Metaxas 同书）。\n- microwave_process_window：体吸收 p=ωε0εr″E_rms²（Metaxas\
+    \ 工程式）\n  + 温变材料链热失控判据（同书工艺窗口口径）。"
+  refs:
+  - R. J. Meredith, Industrial Microwave Heating, 1983 ch.5 多模腔口径
+  source_doi: null
+  eq_no: §8.7
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/mimo:<module>:01
+  kernel_file: src/rfauto/core/calc_families/mimo.py
+  module: rfauto.core.calc_families.mimo
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（MIMO 容量与虚拟阵经典口径，正文规格节转录）：
+  claim_block: "出处（MIMO 容量与虚拟阵经典口径，正文规格节转录）：\n- mimo_channel_capacity：等功率/注水容量 C=log₂det(I+γHH†)\n  （G.\
+    \ J. Foschini & M. J. Gans, Wireless Pers. Commun. 6(3), 1998；\n  I. E. Telatar, Eur. Trans. Telecommun.\
+    \ 10(6), 1999 二级转引）。\n- mimo_virtual_array：TX×RX Kronecker 虚拟阵与角分辨率闭式\n  （验收复现 EuRAD 2023 12×6 案例口径；正文锚树同源）。"
+  refs:
+  - （G. J. Foschini & M. J. Gans, Wireless Pers. Commun. 6(3), 1998
+  - I. E. Telatar, Eur. Trans. Telecommun. 10(6), 1999 二级转引
+  - （验收复现 EuRAD 2023 12×6 案例口径；正文锚树同源
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/mixer_conversion:<module>:01
+  kernel_file: src/rfauto/core/calc_families/mixer_conversion.py
+  module: rfauto.core.calc_families.mixer_conversion
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》4th ed. Ch.12；Razavi）：
+  claim_block: "出处（Pozar《Microwave Engineering》4th ed. Ch.12；Razavi）：\n- mixer_ssb_nf/mixer_conversion_loss/mixer_image_plan：混频器\
+    \ DSB/SSB\n  噪声口径与镜像噪声折入=Pozar 4th ed. Ch.12（F_SSB=(1+g·t)·F_DSB\n  恒等式全推导在模块 docstring；3.0103dB 极限逐位测试钉）；IRR\
+    \ 式=\n  Razavi《RF Microelectronics》2nd ed. Ch.8（rx_impairments 同仓双源\n  独立复算互证）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/modulation_ber:<module>:01
+  kernel_file: src/rfauto/core/calc_families/modulation_ber.py
+  module: rfauto.core.calc_families.modulation_ber
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典闭式二级转引，详见下节公式口径）：
+  claim_block: "出处（教科书经典闭式二级转引，详见下节公式口径）：\n- modulation_ber_curve：BPSK/QPSK Pb=Q(√(2γb)) 与 square M-QAM\
+    \ Gray\n  精确和式（Proakis, Digital Communications 5th ed. ch.4/QAM 节；\n  Cho & Kim, IEEE Comm. Lett.\
+    \ 2005 square-QAM 同形逐项式）。\n- required_ebn0：目标 BER→Eb/N0 反解（同上闭式；域内严格单调降\n  二分反解，物理出处同曲线键）。\n- coded_ber_estimate：码率能量扩张+固定净编码增益一阶粗估（工程\n\
+    \  惯例口径，如实标注粗估不冒充精确，G 取目标 BER 点净增益）。"
+  refs:
+  - Cho & Kim, IEEE Comm. Lett. 2005 square-QAM 同形逐项式
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/ms_gstc:<module>:01
   kernel_file: src/rfauto/core/calc_families/ms_gstc.py
   module: rfauto.core.calc_families.ms_gstc
@@ -797,6 +1871,43 @@ entries:
   - 法源 arXiv:1408.0273v2 = IEEE TAP 63(7) 2015 逐式核到（法向入射单轴
   source_doi: null
   eq_no: Eq.19
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/mtrl_uncertainty:<module>:01
+  kernel_file: src/rfauto/core/calc_families/mtrl_uncertainty.py
+  module: rfauto.core.calc_families.mtrl_uncertainty
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（不确定度传播规范+多线 TRL 文献，正文方法面节转录）：
+  claim_block: "出处（不确定度传播规范+多线 TRL 文献，正文方法面节转录）：\n- mtrl_er_tand_uncertainty：GUM 一阶线性传播（JCGM 100:2008）+\n\
+    \  蒙特卡洛对照方法学（JCGM 101）；multiline TRL 主对模型（R. B. Marks,\n  \"A multiline method of network analyzer\
+    \ calibration\", IEEE Trans.\n  MTT 39(7), 1991；DeGroot-Jargon-Marks 2002 完整协方差属上游面外，\n  主对一阶只宽不窄如实声明）。"
+  refs:
+  - '- mtrl_er_tand_uncertainty：GUM 一阶线性传播（JCGM 100:2008）+'
+  - MTT 39(7), 1991；DeGroot-Jargon-Marks 2002 完整协方差属上游面外
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/multipactor:<module>:01
+  kernel_file: src/rfauto/core/calc_families/multipactor.py
+  module: rfauto.core.calc_families.multipactor
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（微放电敏感带经典口径，正文规格节转录）：
+  claim_block: "出处（微放电敏感带经典口径，正文规格节转录）：\n- multipactor_susceptibility_check：平行板一阶渡越敏感带 × SEY\n  crossover\
+    \ 窗口（Vaughan 二次发射模型；20-gap 串接+N 载波等效功率\n  口径）；工程仲裁面=ECSS f·d 实验包络（ECSS-E-ST-10-04C 语境，\n  high_power.ecss_multipactor_fd\
+    \ 单源，本族不与其语义重叠）。"
+  refs:
+  - ECSS-E-ST-10-04C
+  source_doi: null
+  eq_no: null
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -856,6 +1967,62 @@ entries:
   - Networks, and Coupling Structures*, Artech 1980（多工器经典章+Butterworth
   source_doi: null
   eq_no: §4.06
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/multisection_coupler:<module>:01
+  kernel_file: src/rfauto/core/calc_families/multisection_coupler.py
+  module: rfauto.core.calc_families.multisection_coupler
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》§7.6/§7.83-7.84；Levy 1966；MY69）：
+  claim_block: "出处（Pozar《Microwave Engineering》§7.6/§7.83-7.84；Levy 1966；MY69）：\n- multisection_coupler_response：偶/奇模各自\
+    \ 2 端口线级联+叠加构造\n  4 端口 S（Pozar §7.6 同源；ABCD→S 按 Pozar Table 4.2 转换；构造恒\n  无耗/互易）。\n- multisection_coupler_binomial：对称\
+    \ N 节二项式中心最大平坦结点权\n  综合（Pozar §7.83/§7.84 单节闭式裁判积木的多节扩展，同源口径）。\n- multisection_coupler_equiripple：等纹波\
+    \ Chebyshev 成员（Levy\n  \"Tables of Element Values for the Inhomogeneous Symmetrical\n  Coupled-Line\
+    \ Directional Coupler\", Microwaves 1966 同族；精确等纹波\n  数值综合=MY69 Table 13.06 档）。"
+  refs:
+  - 出处（Pozar《Microwave Engineering》§7.6/§7.83-7.84；Levy 1966；MY69
+  - Coupled-Line Directional Coupler", Microwaves 1966 同族；精确等纹波
+  source_doi: null
+  eq_no: §7.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/noise_correlation:<module>:01
+  kernel_file: src/rfauto/core/calc_families/noise_correlation.py
+  module: rfauto.core.calc_families.noise_correlation
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（噪声相关级联经典文献，正文规格节转录）：
+  claim_block: "出处（噪声相关级联经典文献，正文规格节转录）：\n- correlated_cascade_nf：ABCD 噪声描述符链式级联（H. Hillbrand &\n  P. Russer,\
+    \ \"An efficient method for computer aided noise analysis of\n  linear amplifier networks\", IEEE\
+    \ Trans. CAS 23(4), 1976；Friis 仅\n  匹配单通道成立的对照声明同文）。"
+  refs:
+  - linear amplifier networks", IEEE Trans. CAS 23(4), 1976；Friis 仅
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/open_wire_line:<module>:01
+  kernel_file: src/rfauto/core/calc_families/open_wire_line.py
+  module: rfauto.core.calc_families.open_wire_line
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Ramo-Whinnery-Van Duzer（双线精确式）、Pozar 4th ed（双线/单线
+  claim_block: '出处：Ramo-Whinnery-Van Duzer（双线精确式）、Pozar 4th ed（双线/单线
+
+    对地/低损衰减口径）、镜像定理（Jackson §2.2 级教科书恒等式）。'
+  refs: []
+  source_doi: null
+  eq_no: §2.2
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -1003,6 +2170,63 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/pim_cascade:<module>:01
+  kernel_file: src/rfauto/core/calc_families/pim_cascade.py
+  module: rfauto.core.calc_families.pim_cascade
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（PIM 测量规范口径+第一性合成式，正文物理口径节转录）：
+  claim_block: "出处（PIM 测量规范口径+第一性合成式，正文物理口径节转录）：\n- pim_nodes_combine：多节点 PIM 电平双口径合成（非相干功率和\n  10log10ΣP/相干同相上界\
+    \ 20log10Σ√P，对数域恒等式第一性；极限\n  语义=IEC 62037/运营商验收惯例双口径）。\n- pim_cascade_budget：载波功率幂级数平移律 order n 产物∝V^n→n·ΔP\n\
+    \  （幂级数第一性；参考条件=IEC 62037 双音每载波 +43dBm）。"
+  refs:
+  - IEC 62037
+  - 语义=IEC 62037/运营商验收惯例双口径
+  - （幂级数第一性；参考条件=IEC 62037 双音每载波 +43dBm
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/pll_lock_time:<module>:01
+  kernel_file: src/rfauto/core/calc_families/pll_lock_time.py
+  module: rfauto.core.calc_families.pll_lock_time
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Gardner 2005 Ch.3；Best 1999 App.A）：
+  claim_block: "出处（Gardner 2005 Ch.3；Best 1999 App.A）：\n- pll_lock_time：线性环标准形式=F.M. Gardner, Phaselock\
+    \ Techniques,\n  3rd ed., Wiley 2005, Ch.3（pll_loop_filter 同源引注）；pull-in 时间/\n  范围式=R.E. Best, Phase-Locked\
+    \ Loops, 4th ed., McGraw-Hill 1999,\n  App.A（经 P.E. Allen ECE6440 L060 讲义数值例转引实取 4.675s 逐位锚）。"
+  refs:
+  - 出处（Gardner 2005 Ch.3；Best 1999 App.A
+  - 3rd ed., Wiley 2005, Ch.3（pll_loop_filter 同源引注）；pull-in 时间/
+  - 范围式=R.E. Best, Phase-Locked Loops, 4th ed., McGraw-Hill 1999
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/pll_loop_filter:<module>:01
+  kernel_file: src/rfauto/core/calc_families/pll_loop_filter.py
+  module: rfauto.core.calc_families.pll_loop_filter
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（PLL 环路滤波器综合应用文献口径，正文规格节转录）：
+  claim_block: "出处（PLL 环路滤波器综合应用文献口径，正文规格节转录）：\n- pll_loop_filter_synthesize：T1/T2/T3→C1/C2/R2/C3 闭式与相位裕度\n\
+    \  迭代（D. Banerjee, TI SNAA106C 应用报告；二级转引 F. M. Gardner,\n  Phaselock Techniques 3rd ed. 环路滤波器章）；验收=回代\n\
+    \  open_loop_transfer 复现目标 f_c/PM。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/polarization_reg:<module>:01
   kernel_file: src/rfauto/core/calc_families/polarization_reg.py
   module: rfauto.core.calc_families.polarization_reg
@@ -1014,6 +2238,44 @@ entries:
   refs: []
   source_doi: null
   eq_no: §4.4
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/power_cal:<module>:01
+  kernel_file: src/rfauto/core/calc_families/power_cal.py
+  module: rfauto.core.calc_families.power_cal
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（功率计量工程口径，正文与锚树转录）：
+  claim_block: "出处（功率计量工程口径，正文与锚树转录）：\n- power_cal_chain：校准因子补偿/平缆损耗补偿/失配修正三档链\n  （微波功率计量工程惯例，二级转引 Keysight\
+    \ 功率测量应用指南家族\n  口径）；GUM 合成不确定度预算（JCGM 100:2008）。"
+  refs:
+  - 口径）；GUM 合成不确定度预算（JCGM 100:2008
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/propagation:<module>:01
+  kernel_file: src/rfauto/core/calc_families/propagation.py
+  module: rfauto.core.calc_families.propagation
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（标准模型原文逐字转写+教科书同族二级转引，键内描述同源）：
+  claim_block: "出处（标准模型原文逐字转写+教科书同族二级转引，键内描述同源）：\n- two_ray_loss：双径干涉+断点距离 d_break=4h_tx·h_rx/λ（Rappaport,\n\
+    \  Wireless Communications 2nd ed. §4.6 同族二级转引）。\n- knife_edge_loss：ITU-R P.526-15 §4 刃形绕射（Fresnel-Kirchhoff\
+    \ 参数 v，\n  exact/approx/lee 三档，键内描述逐字转写）。\n- hata_cost231：Okumura-Hata 原式+COST-231 Hata 修正（COST 231\
+    \ final\n  report ch.4.4 式(27)；ITU-R P.1411 同式承载）。\n- walfisch_ikegami_los/walfisch_ikegami_nlos：COST-231\
+    \ Walfisch-Ikegami\n  视距/非视距（COST 231 final report ch.4.4.2/4.4.3；ITU-R P.1411 同式\n  承载）。"
+  refs:
+  - ITU-R P.526-15
+  - ITU-R P.1411
+  source_doi: null
+  eq_no: §4.6
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -1056,6 +2318,34 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/radar_clutter:<module>:01
+  kernel_file: src/rfauto/core/calc_families/radar_clutter.py
+  module: rfauto.core.calc_families.radar_clutter
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：|H|=2|sin(πfTr)|/盲速/改善因子=Skolnik IRS ch.15+Richards FRSP
+  claim_block: '出处：|H|=2|sin(πfTr)|/盲速/改善因子=Skolnik IRS ch.15+Richards FRSP
+
+    ch.2（教科书恒等式）；σ_v 谱宽典型值=Greco《Radar Clutter Modeling》
+
+    讲义（Univ. Pisa）逐字；Ac=R·αρ·θ_az·sec(φ_gr)=Greco 讲义 slide 7+
+
+    Richards ch.2 同式；constant-γ=Skolnik/Richards/Nathanson 通用模型；
+
+    Weibull 杂波模型=Fay-Clarke-Peters 1977（海杂波 Weibull 首提）+Skolnik/
+
+    Richards 教科书口径（矩=Γ 函数标准结果）；CA-CFAR 门限/β/α/SW1 Pd=
+
+    Richards FRSP 2ed ch.6（与 radar_eq.ca_cfar_threshold 同源）。'
+  refs:
+  - Weibull 杂波模型=Fay-Clarke-Peters 1977（海杂波 Weibull 首提）+Skolnik/
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/radar_detection_ext:<module>:01
   kernel_file: src/rfauto/core/calc_families/radar_detection_ext.py
   module: rfauto.core.calc_families.radar_detection_ext
@@ -1069,6 +2359,64 @@ entries:
 
     耗曲线"数 dB"窗——Richards FRSP ch.6 / Skolnik 检测因子曲线族锚）。'
   refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/radar_eq:<module>:01
+  kernel_file: src/rfauto/core/calc_families/radar_eq.py
+  module: rfauto.core.calc_families.radar_eq
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典口径二级转引，详见下节公式口径）：
+  claim_block: "出处（教科书经典口径二级转引，详见下节公式口径）：\n- radar_range_equation：基本雷达方程（Skolnik, Introduction to Radar\n\
+    \  Systems 3rd ed. ch.2 / Richards, Fundamentals of Radar Signal\n  Processing 2nd ed. ch.1 通用口径）。\n\
+    - albersheim_detection_snr：Albersheim 经验式（W. J. Albersheim,\n  \"A graphical approach to linear detector\
+    \ SNR\", IEEE Trans. AES, 1981；\n  转引口径 Skolnik 3ed ch.2 / Richards FRSP；√(N+0.44) 原式形态）。\n- ca_cfar_threshold：CA-CFAR\
+    \ 门限因子闭式（Richards FRSP ch.6\n  CA-CFAR 节标准结果）。"
+  refs:
+  - '"A graphical approach to linear detector SNR", IEEE Trans. AES, 1981'
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/rcs_targets:<module>:01
+  kernel_file: src/rfauto/core/calc_families/rcs_targets.py
+  module: rfauto.core.calc_families.rcs_targets
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（RCS 经典闭式口径，正文物理口径节转录）：
+  claim_block: "出处（RCS 经典闭式口径，正文物理口径节转录）：\n- rcs_sphere_mie：PEC 球精确 Mie 级数（G. Mie, Ann. Phys., 1908；\n\
+    \  二级转引 Skolnik, Introduction to Radar Systems 球 RCS 一节 / Ruck,\n  Radar Cross Section Handbook, 1970；项数\
+    \ Wiscombe 截断）。\n- rcs_peak_canonical：平板/二面角/三方角/圆柱/圆锥峰值 RCS 教科书\n  闭式库（Skolnik 教科书表 + Knott-Shaeffer-Tuley,\
+    \ Radar Cross Section\n  口径）。"
+  refs:
+  - '- rcs_sphere_mie：PEC 球精确 Mie 级数（G. Mie, Ann. Phys., 1908'
+  - Radar Cross Section Handbook, 1970；项数 Wiscombe 截断
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/reliability:<module>:01
+  kernel_file: src/rfauto/core/calc_families/reliability.py
+  module: rfauto.core.calc_families.reliability
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（FORM 可靠度方法经典文献，正文规格节转录）：
+  claim_block: "出处（FORM 可靠度方法经典文献，正文规格节转录）：\n- form_beta_linear：线性极限状态面可靠度指标 β 闭式与 HL-RF 迭代\n  双路径（FORM/H-L\
+    \ 方法：A. M. Hasofer & N. C. Lind, \"Exact and\n  invariant second-moment code format\", J. Eng. Mech.\
+    \ Div. ASCE\n  100(EM1), 1974）。"
+  refs:
+  - 100(EM1), 1974
   source_doi: null
   eq_no: null
   expr: null
@@ -1131,6 +2479,174 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/rf_match:<module>:01
+  kernel_file: src/rfauto/core/calc_families/rf_match.py
+  module: rfauto.core.calc_families.rf_match
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典闭式二级转引+仓内仲裁终裁）：
+  claim_block: "出处（教科书经典闭式二级转引+仓内仲裁终裁）：\n- quarter_wave_transformer/vswr_convert：λ/4 变换 z=√(Zs·Zl) 与驻波\n\
+    \  换算=传输线教科书经典式（Pozar《Microwave Engineering》匹配/驻波节\n  同族二级转引；本仓零新增推导）。\n- attenuator_pi/attenuator_t/attenuator_bridged_t：匹配+分压两条件闭式\n\
+    \  衰减器（Pozar 衰减器节经典口径；#118 双源=经典 10dB/50Ω pad 表值+\n  测试内第二实现，tests/unit/test_x5_analytic_anchors 在档）。\n\
+    - patch_length：ΔL 单源=core/synthesis.patch_fringing_delta_l；系数\n  0.824 终裁=XA-1 仲裁（runs/xa1_arbitration\
+    \ 2026-10-02，INCONCLUSIVE\n  维持现行口径如实登记，R1-2 审查批注记）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/rf_switch:<module>:01
+  kernel_file: src/rfauto/core/calc_families/rf_switch.py
+  module: rfauto.core.calc_families.rf_switch
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》Ch.12 控制器件节）：
+  claim_block: "出处（Pozar《Microwave Engineering》Ch.12 控制器件节）：\n- pin_switch_s2p：PIN 串/并联元件二态 S 参数+cutoff\
+    \ 品质因数\n  f_c=1/(2πR_onC_off)（Pozar Ch.12；R. White 分类口径二级转引）。\n- rf_switch_spdt_quarter_wave：λ/4 并联二极管\
+    \ SPDT=经典 quarter-wave\n  switched line（Pozar Ch.12/微波控制器件文献二级转引；结点分析/ABCD\n  闭式=均匀线标准式落地，f0 极限恒等测试钉）。\n\
+    - rf_switch_matrix_path：开关链二态预算插损/隔离可加性+失配纹波界\n  （微波测量文献二级转引；恒等式面测试侧独立互证）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/rfid:<module>:01
+  kernel_file: src/rfauto/core/calc_families/rfid.py
+  module: rfauto.core.calc_families.rfid
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（RFID 链路预算教科书口径，函数 docstring 转录）：
+  claim_block: "出处（RFID 链路预算教科书口径，函数 docstring 转录）：\n- rfid_forward_link：Friis 传输公式 EIRP 口径（H. T. Friis,\
+    \ Proc. IRE\n  34(5), 1946；二级转引 Balanis, Antenna Theory 有效口径 A_e=Gλ²/4π）。\n- rfid_backscatter_link：单站雷达方程+差分\
+    \ RCS（Skolnik 雷达方程；\n  P. V. Nikitin, K. V. S. Rao, R. Martinez, \"Differential RCS of RFID\n  tag\"\
+    , Electron. Lett. 43(8), 2007；1/R⁴ 律=Griffin-Durgin 背散射\n  链路口径）。"
+  refs:
+  - 34(5), 1946；二级转引 Balanis, Antenna Theory 有效口径 A_e=Gλ²/4π
+  - tag", Electron. Lett. 43(8), 2007；1/R⁴ 律=Griffin-Durgin 背散射
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/ring_resonator:<module>:01
+  kernel_file: src/rfauto/core/calc_families/ring_resonator.py
+  module: rfauto.core.calc_families.ring_resonator
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（MYJ §8.5；Pozar 4th ed. §8.6；同仓双源）：
+  claim_block: "出处（MYJ §8.5；Pozar 4th ed. §8.6；同仓双源）：\n- ring_resonator_design_params/ring_resonator_response/\n\
+    \  ring_resonator_synthesize：λ/2 谐振条件 εeff_n 反演两向同仓双源互证\n  （模块 docstring 全推导在档）；串联隙 J-反相器 J=ω0·C_g\
+    \ 与\n  Q_e=(π/2)(Z0/Z_r)/x²=MYJ §8.5/Pozar §8.6 小隙口径（#122 文献锚在档）。"
+  refs: []
+  source_doi: null
+  eq_no: §8.5
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/ris_cascade:<module>:01
+  kernel_file: src/rfauto/core/calc_families/ris_cascade.py
+  module: rfauto.core.calc_families.ris_cascade
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（RIS 级联经典口径，正文规格节转录；物理细节见内核
+  claim_block: "出处（RIS 级联经典口径，正文规格节转录；物理细节见内核\ncore/ris_cascade.py docstring 与 ETSI GR RIS 001 引用）：\n\
+    - ris_cascade_budget：BS-RIS-UE 几何级联精确和/远场 N² 闭式\n  （E. Björnson, Ö. Özdogan, E. G. Larsson, IEEE Trans.\
+    \ Wireless\n  Commun. 19(1), 2020 路径损耗∝N² 口径）+ 交叉距离\n  d_cross=4π·d1·d2/(N·λ) 同源闭式。"
+  refs:
+  - Commun. 19(1), 2020 路径损耗∝N² 口径）+ 交叉距离
+  source_doi: null
+  eq_no: null
+  expr: d_cross=4π·d1·d2/(N·λ) 同源闭式。
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/ruthroff_balun:<module>:01
+  kernel_file: src/rfauto/core/calc_families/ruthroff_balun.py
+  module: rfauto.core.calc_families.ruthroff_balun
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（NIST Ranzani et al. IEEE Trans. Appl. Supercond. 22(5) 2012）：
+  claim_block: "出处（NIST Ranzani et al. IEEE Trans. Appl. Supercond. 22(5) 2012）：\n- ruthroff_balun_design/ruthroff_balun_response：标准\
+    \ Ruthroff 4:1\n  不平衡变换器盖章模型（Ranzani 2012 Fig.1 无电容 C 口径；式(3) 低频\n  极限 θ→0 Z_in→4R_out、θ=π 传输零点原文引注逐位锚；每线最优\n\
+    \  Z0=√(r_in·r_out) 一阶带宽定理=NIST 扩展口径；P2-1 锚树双路线互证\n  ≤1e-12 在测试）。"
+  refs:
+  - 出处（NIST Ranzani et al. IEEE Trans. Appl. Supercond. 22(5) 2012
+  - 不平衡变换器盖章模型（Ranzani 2012 Fig.1 无电容 C 口径；式(3) 低频
+  source_doi: null
+  eq_no: 式(3)
+  expr: Z0=√(r_in·r_out) 一阶带宽定理=NIST 扩展口径；P2-1 锚树双路线互证
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/rx_impairments:<module>:01
+  kernel_file: src/rfauto/core/calc_families/rx_impairments.py
+  module: rfauto.core.calc_families.rx_impairments
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（规范口径+第一性恒等式，正文规格节转录）：
+  claim_block: "出处（规范口径+第一性恒等式，正文规格节转录）：\n- iq_imbalance_irr：IQ 失衡镜像抑制比 IRR 闭式（3GPP TS 38.141\n  口径钉死）。\n\
+    - phase_noise_evm：相噪积分 EVM（幂律谱积分恒等式，消费\n  core/clock_noise 单源；第一性）。\n- blocking_budget：阻塞/信道选择性预算（级联聚总复用\
+    \ cascade_budget\n  Friis/IIP3 口径，同 budget 族出处）。"
+  refs:
+  - 3GPP TS 38.141
+  source_doi: null
+  eq_no: "式（3GPP TS 38.141\n  口径钉死）"
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/sar_geometry:<module>:01
+  kernel_file: src/rfauto/core/calc_families/sar_geometry.py
+  module: rfauto.core.calc_families.sar_geometry
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：δ_az=D/2/θ_az=λ/D/条带几何=Curlander & McDonough (1991) 教科书
+  claim_block: '出处：δ_az=D/2/θ_az=λ/D/条带几何=Curlander & McDonough (1991) 教科书
+
+    恒等式+Skolnik IRS ch.21 同口径，零新引源（R3 报告预声明"教科书级零
+
+    风险锚"）；DBS 多普勒梯度/聚束/TOPS 模式/距离徙动校正不在本键口径。'
+  refs:
+  - 出处：δ_az=D/2/θ_az=λ/D/条带几何=Curlander & McDonough (1991) 教科书
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/satellite:<module>:01
+  kernel_file: src/rfauto/core/calc_families/satellite.py
+  module: rfauto.core.calc_families.satellite
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（卫星链路预算教科书+ITU 口径，内核 core/sat_link.py 转录）：
+  claim_block: "出处（卫星链路预算教科书+ITU 口径，内核 core/sat_link.py 转录）：\n- sat_link_budget：C/N0=EIRP−L_total+G/T−k\
+    \ 链路方程（G/T 定义\n  ITU-R S.733-2；几何=Maral & Bousquet, Satellite Communications\n  Systems 球体近似惯例；k 取\
+    \ 2019 SI 精确值）。"
+  refs:
+  - ITU-R S.733-2
+  - Systems 球体近似惯例；k 取 2019 SI 精确值
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/saw_idt:<module>:01
   kernel_file: src/rfauto/core/calc_families/saw_idt.py
   module: rfauto.core.calc_families.saw_idt
@@ -1146,6 +2662,62 @@ entries:
   source_doi: null
   eq_no: null
   expr: H(f) = Σ_{n=0}^{N_p-1} e^{-j2πn·f/f0}
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/shield:<module>:01
+  kernel_file: src/rfauto/core/calc_families/shield.py
+  module: rfauto.core.calc_families.shield
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Schelkunoff 平面波三段闭式，函数 docstring 转录）：
+  claim_block: "出处（Schelkunoff 平面波三段闭式，函数 docstring 转录）：\n- shielding_effectiveness：吸收/反射/多次反射三段分解与有耗传输线\n\
+    \  ABCD 严格透射恒等（S. A. Schelkunoff 传输线类比；二级转引 Ott,\n  Electromagnetic Compatibility Engineering 2009\
+    \ §6 / Pozar §1.4\n  良导体表面阻抗）。"
+  refs:
+  - Electromagnetic Compatibility Engineering 2009 §6 / Pozar §1.4
+  source_doi: null
+  eq_no: §6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/si_ctle:<module>:01
+  kernel_file: src/rfauto/core/calc_families/si_ctle.py
+  module: rfauto.core.calc_families.si_ctle
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（通用连续时间搁架均衡器零极点代数；无 802.3 规格表依赖——规格
+  claim_block: "出处（通用连续时间搁架均衡器零极点代数；无 802.3 规格表依赖——规格\n常数不进键面，详见下节物理口径）：\n- ctle_nyquist_gain/ctle_gain_at：1\
+    \ 零 2 极传输函数 H(f)=g(1+jf/f_z)/\n  [(1+jf/f_p1)(1+jf/f_p2)] 的闭式评估（通用零极点代数，第一性推导；\n  802.3 COM CTLE 每级拓扑同构见\
+    \ pychopmarg/com_pam4 消费面）。\n- ctle_pole_from_boost：目标 Nyquist 增益反解主极点（同构代数反解；\n  achievability 区间由域盒自然导出）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/six_port:<module>:01
+  kernel_file: src/rfauto/core/calc_families/six_port.py
+  module: rfauto.core.calc_families.six_port
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Engen 1977；Engen-Hoer 1979）：
+  claim_block: "出处（Engen 1977；Engen-Hoer 1979）：\n- six_port_gamma_solve/six_port_cal_extract/six_port_power：六端口\n\
+    \  反射计原理=G. F. Engen, \"The Six-Port Reflectometer: An Alternative\n  Network Analyzer\", IEEE Trans.\
+    \ MTT 25(12):1075-1080, 1977（二级\n  转引）；G. F. Engen & C. A. Hoer, \"Thru-Reflect-Line\", IEEE Trans.\n\
+    \  MTT 27(12):987-998, 1979（TRL 口径走 trl_standards 面，同源引注\n  背书）。"
+  refs:
+  - 出处（Engen 1977；Engen-Hoer 1979
+  - Network Analyzer", IEEE Trans. MTT 25(12):1075-1080, 1977（二级
+  - MTT 27(12):987-998, 1979（TRL 口径走 trl_standards 面，同源引注
+  source_doi: null
+  eq_no: null
+  expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
@@ -1204,6 +2776,108 @@ entries:
   access_status: verified
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/source_power_cal:<module>:01
+  kernel_file: src/rfauto/core/calc_families/source_power_cal.py
+  module: rfauto.core.calc_families.source_power_cal
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（"Source Power Calibration"定义惯例二级转引；同仓双源）：
+  claim_block: "出处（\"Source Power Calibration\"定义惯例二级转引；同仓双源）：\n- source_power_cal_table：源功率校准损耗闭环方程（功率计闭环\
+    \ offset\n  口径，与 power_cal_chain 测量端/源编程端边界互指同仓双源；\n  \"Source Power Calibration\"语义二级转引——定义惯例出处而非厂商数值）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/stepped_impedance:<module>:01
+  kernel_file: src/rfauto/core/calc_families/stepped_impedance.py
+  module: rfauto.core.calc_families.stepped_impedance
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（阶梯阻抗 LPF 综合经典口径，文末「出处」节转录）：
+  claim_block: "出处（阶梯阻抗 LPF 综合经典口径，文末「出处」节转录）：\n- stepped_impedance_lpf_synthesize：原型 g_k→高低阻段电长设计式\n\
+    \  （D. Pozar, Microwave Engineering 4th ed. §8.3；切比雪夫 g 值表\n  Matthaei-Young-Jones Table 4.05-1 经\
+    \ core/synthesis 单源转引）。\n- stepped_impedance_response：均匀线 ABCD 级联频响（Pozar Table 4.2\n  换算；无耗互易构造性成立）。"
+  refs: []
+  source_doi: null
+  eq_no: §8.3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/stub_tuner:<module>:01
+  kernel_file: src/rfauto/core/calc_families/stub_tuner.py
+  module: rfauto.core.calc_families.stub_tuner
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（支节调配经典口径，正文物理口径节转录）：
+  claim_block: "出处（支节调配经典口径，正文物理口径节转录）：\n- stub_tuner_double：双支节并联调配解析解与禁区 g≤csc²(βd) 判据\n  （D. Pozar,\
+    \ Microwave Engineering §5.3 双支节调配；λ/8 间距 g_max=2\n  经典口径）。\n- stub_tuner_triple：三支节消禁区确定性两路线（首支节旁路/旋转，\n\
+    \  任意无源负载有解——本仓第一性推导口径，正文 200 随机负载验证）。"
+  refs: []
+  source_doi: null
+  eq_no: §5.3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/symbolic:<module>:01
+  kernel_file: src/rfauto/core/calc_families/symbolic.py
+  module: rfauto.core.calc_families.symbolic
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（实验键非文献闭式——符号归纳产物如实登记）：
+  claim_block: "出处（实验键非文献闭式——符号归纳产物如实登记）：\n- patch_f0_symbolic_e13：符号回归归纳公式（E13 机制，系数只来自\n  runs/ 记录产物或确定性重拟合；非文献闭式、experimental\
+    \ 默认关，\n  人工审核晋级另行显式动作——#122 零物理背书声明）。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/t_match:<module>:01
+  kernel_file: src/rfauto/core/calc_families/t_match.py
+  module: rfauto.core.calc_families.t_match
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Balanis T-match 原文逐位核对口径，内核 core/t_match.py 权威
+  claim_block: "出处（Balanis T-match 原文逐位核对口径，内核 core/t_match.py 权威\n口径节转录）：\n- t_match_impedance / t_match_design：T-match\
+    \ 电流分配/等效半径/\n  传输线模输入阻抗闭式（C. A. Balanis, Antenna Theory: Analysis and\n  Design 3rd ed., Wiley 2005\
+    \ §9.7.3 式(9-48)-(9-55)，原文 PDF 逐位\n  抄录；短截线补偿设计同章）。"
+  refs:
+  - Design 3rd ed., Wiley 2005 §9.7.3 式(9-48)-(9-55)，原文 PDF 逐位
+  source_doi: null
+  eq_no: §9.7.3
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/taper:<module>:01
+  kernel_file: src/rfauto/core/calc_families/taper.py
+  module: rfauto.core.calc_families.taper
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Klopfenstein 渐变线经典文献）：
+  claim_block: "出处（Klopfenstein 渐变线经典文献）：\n- klopfenstein_taper：最优二端口渐变匹配段闭式（D. L. Klopfenstein,\n  \"\
+    A transmission line taper of improved design\", Proc. IRE 44(1),\n  1956；切比雪夫等纹波反射响应推导，二级转引 Pozar,\
+    \ Microwave\n  Engineering 渐变线一节）。"
+  refs:
+  - 1956；切比雪夫等纹波反射响应推导，二级转引 Pozar, Microwave
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/taper_classic:<module>:01
   kernel_file: src/rfauto/core/calc_families/taper_classic.py
   module: rfauto.core.calc_families.taper_classic
@@ -1229,6 +2903,161 @@ entries:
   refs: []
   source_doi: null
   eq_no: §5.9
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/thermal:<module>:01
+  kernel_file: src/rfauto/core/calc_families/thermal.py
+  module: rfauto.core.calc_families.thermal
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（IPC-2152；ECSS；教科书族）：
+  claim_block: "出处（IPC-2152；ECSS；教科书族）：\n- resonator_thermal_drift：Δf/f=−CTE·ΔT−½·TCDk·ΔT=f=c/(2L√ε) 对数\n\
+    \  一阶展开（Pozar《Microwave Engineering》谐振器温漂）。\n- ipc2152_trace_temp_rise：IPC-2152（2009）图表数据的 Brooks-Adam\
+    \ 拟合\n  式 ΔT=K·I^a·W^b·Th^c（D. G. Brooks, J. Adam, \"Trace Currents and\n  Temperatures Revisited\"\
+    , 2015, Table 3-1；系数取自 KiCad\n  track_width_calculations 公开实现，公开测试向量复用）。\n- thermal_resistance_stack：稳态热阻网络串/并联教科书口径（Incropera\n\
+    \  《Fundamentals of Heat and Mass Transfer》）。\n- microstrip_loss_heat：行波线热源 P(z)=P0·e^(−2αz)→2αP（Pozar\
+    \ §2.7）。\n- parallel_plate_breakdown_margin：E=V/d+材料击穿阈值表（表注在档）。\n- ecss_multipactor_fd：ECSS-E-ST-20-01C\
+    \ (2020) Table 5-1 f×d 阈值边界\n  逐行录入（对数插值）。"
+  refs:
+  - ECSS-E-ST-20-01C
+  - '- ipc2152_trace_temp_rise：IPC-2152（2009）图表数据的 Brooks-Adam 拟合'
+  - Temperatures Revisited", 2015, Table 3-1；系数取自 KiCad
+  - '- ecss_multipactor_fd：ECSS-E-ST-20-01C (2020) Table 5-1 f×d 阈值边界'
+  source_doi: null
+  eq_no: Table 3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/thz_vna:<module>:01
+  kernel_file: src/rfauto/core/calc_families/thz_vna.py
+  module: rfauto.core.calc_families.thz_vna
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（经典 VNA 误差模型口径，内核 core/thz_vna.py 转录）：
+  claim_block: "出处（经典 VNA 误差模型口径，内核 core/thz_vna.py 转录）：\n- tnvna_extender_error_model：一端口三项误差模型闭式反演+一阶\n\
+    \  灵敏度 RSS 预算（经典 VNA 一端口误差模型，与 Pozar 一端口校准\n  同款；不确定度合成=NIST Microwave Uncertainty Framework 一阶\n\
+    \  灵敏度 RSS 口径；带级标定随带失效 Hesler ISSTT 2010 语义）。\n- tnvna_band_stitch：相邻带重叠区线性权重拼接与一致性判据\n  （本仓确定性实现，阈值不\
+    \ ship 标准门限——#122）。"
+  refs:
+  - 灵敏度 RSS 口径；带级标定随带失效 Hesler ISSTT 2010 语义
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/trl_standards:<module>:01
+  kernel_file: src/rfauto/core/calc_families/trl_standards.py
+  module: rfauto.core.calc_families.trl_standards
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（TRL 校准经典文献，正文物理口径节转录）：
+  claim_block: "出处（TRL 校准经典文献，正文物理口径节转录）：\n- trl_standards_design / trl_line_electric_scan：TRL 标准件设计与\n\
+    \  经典窗判据（G. F. Engen & C. A. Hoer, \"'Thru-Reflect-Line': An\n  improved technique for calibrating\
+    \ the dual six-port automatic\n  network analyzer\", IEEE Trans. MTT 27(12), 1979；校准件设计规则\n  NIST\
+    \ Technical Note 1341）。"
+  refs:
+  - network analyzer", IEEE Trans. MTT 27(12), 1979；校准件设计规则
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/vna_uncertainty:<module>:01
+  kernel_file: src/rfauto/core/calc_families/vna_uncertainty.py
+  module: rfauto.core.calc_families.vna_uncertainty
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（VNA 残差不确定度经典口径，正文物理口径节转录）：
+  claim_block: "出处（VNA 残差不确定度经典口径，正文物理口径节转录）：\n- vna_reflection_uncertainty / vna_transmission_uncertainty：校准后\n\
+    \  残差误差箱线性化最坏界/RSS 合成（Rytting 误差模型口径；EURAMET\n  cg-12, Evaluation of Vector Network Analysers Type-B\
+    \ 评定惯例；\n  Keysight AN 1287 误差模型应用口径）。\n- three_antenna_gain：三天线法/比较法增益定标（IEEE Std 149 天线\n  测量惯例；Friis\
+    \ 远场 FS 口径）。"
+  refs:
+  - IEEE Std 149
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/waveguide_closed_form:<module>:01
+  kernel_file: src/rfauto/core/calc_families/waveguide_closed_form.py
+  module: rfauto.core.calc_families.waveguide_closed_form
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Pozar《Microwave Engineering》§6.3/§6.4/§3.4；Collin）：
+  claim_block: "出处（Pozar《Microwave Engineering》§6.3/§6.4/§3.4；Collin）：\n- circular_cavity_mode_spectrum/circular_cavity_mode_chart/\n\
+    \  circular_cavity_mode_q：Pozar §6.4 圆柱腔 Bessel 零点闭式+导体微扰\n  Q=ωU/P_c（Collin 同族）；闭式与数值积分双路线互证（模块 spec\
+    \ 字段\n  原文转写）。\n- rectangular_cavity_mode_spectrum/rectangular_cavity_mode_q：Pozar\n  §6.3 矩形腔分离变量闭式谐振谱。\n\
+    - circular_waveguide_mode_prop：Pozar §3.4 圆波导 Bessel 零点闭式\n  （αc 闭式/数值双路线互证）。"
+  refs: []
+  source_doi: null
+  eq_no: §6.3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/waveguide_iris:<module>:01
+  kernel_file: src/rfauto/core/calc_families/waveguide_iris.py
+  module: rfauto.core.calc_families.waveguide_iris
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（Marcuvitz《Waveguide Handbook》薄膜片闭式；Rizzi）：
+  claim_block: "出处（Marcuvitz《Waveguide Handbook》薄膜片闭式；Rizzi）：\n- wg_iris_susceptance/wg_resonant_window/wg_iris_match：Marcuvitz\n\
+    \  Waveguide Handbook 薄膜片（t→0）感性/容性电纳闭式首阶形+感容组合\n  谐振窗共振条件（Rizzi 同族二级转引；文献通行式转引，原文页码未逐位\n  复读如实登记——厚膜片/有限厚度修正不在档）。\n\
+    - waveguide_lambda_g：TE10 λg/λc/β 波导一般理论（Pozar §3 同族；内部\n  复用 _frequency 单源零公式复制）。"
+  refs: []
+  source_doi: null
+  eq_no: §3
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/wg_cavity_bpf:<module>:01
+  kernel_file: src/rfauto/core/calc_families/wg_cavity_bpf.py
+  module: rfauto.core.calc_families.wg_cavity_bpf
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：Cohn 1957 Proc. IRE 45(2) pp.187-196（Fig.5/Fig.13(e)/λg 标度全链
+  claim_block: '出处：Cohn 1957 Proc. IRE 45(2) pp.187-196（Fig.5/Fig.13(e)/λg 标度全链
+
+    逐字；J 公式族与 Pozar §8.6.2/MYJ ch.8 同形——coupled_line_bpf 已双源在
+
+    案）；g_k：Pozar 表 8.4（core/matching 单源）；膜片闭式：Marcuvitz
+
+    Waveguide Handbook 薄感性窗工程式（wg_iris_susceptance 同源）。'
+  refs:
+  - 出处：Cohn 1957 Proc. IRE 45(2) pp.187-196（Fig.5/Fig.13(e)/λg 标度全链
+  source_doi: null
+  eq_no: §8.6.2
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/wg_dielectric_window:<module>:01
+  kernel_file: src/rfauto/core/calc_families/wg_dielectric_window.py
+  module: rfauto.core.calc_families.wg_dielectric_window
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（教科书经典口径二级转引，详见下节物理口径）：
+  claim_block: "出处（教科书经典口径二级转引，详见下节物理口径）：\n- wg_dielectric_window：介质填充波导段 TE10 口径+半波长全传输谐振\n  （Pozar,\
+    \ Microwave Engineering 波导媒质填充/阻抗变换节同族二级转引；\n  半波长段=双界面反射对消构造恒等式）。"
+  refs: []
+  source_doi: null
+  eq_no: null
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）

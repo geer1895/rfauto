@@ -5,13 +5,13 @@
 **场景**：你改了模板渲染面（`adapters/openems_templates/` 的几何段、
 网格段、守卫阈值），要确认"除你有意改动的那几族外，72 族渲染产物
 零漂移"；或你有意改动后要把新基线入库。golden 仓是 EC-8 能力
-（W2-S8，aurora_e），对全部注册族（TEMPLATE_META=72，2026-10-18
+（W2-S8，架构批），对全部注册族（TEMPLATE_META=72，2026-10-18
 实测）逐族钉住四类摘要。
 
 ## 1. golden 快照里钉了什么
 
-每族一份 `tests/golden/template_geometry/<族>.yaml`（2-4KB，零时间戳，
-同树重算 diff 恒空）：
+每族一份 `tests/golden/template_geometry/<族>.yaml`（实测 0.40–3.16KB
+量级，零时间戳，同树重算 diff 恒空）：
 
 | 摘要 | 粒度 | 抓什么 |
 |---|---|---|

@@ -1,6 +1,13 @@
-"""Guanella 传输线变压器族（aurora72 A7-B 席域 2，任务书候补"巴伦族
+"""Guanella 传输线变压器族（架构批 A7-B 席域 2，任务书候补"巴伦族
 Guanella/5:1 传输线变压器"的 n² 拓扑半边；#222 triple-grep 证据
 2026-10-11 实测）。
+
+出处（传输线变压器经典口径，正文物理口径节转录）：
+- guanella_tlt_design / guanella_tlt_response：n²:1 串并复合传输线
+  变压器（G. Guanella, "New method of impedance matching in
+  radio-frequency circuits", Brown Boveri Review 31, 1944 原始拓扑；
+  λ/8 线长上限=Sevick, Transmission Line Transformers 工程准则）。
+  低频端磁化电感拐角不在本族口径（UNVERIFIED 如实登记段见正文）。
 
 两键：guanella_tlt_design（n²:1 阻抗比设计——线数 n、每线最优
 Z0=√(R_hi·R_lo)、θ≤45° 线长上限 λ/8 准则）/ guanella_tlt_response
@@ -18,7 +25,9 @@ Z0=√(R_hi·R_lo)、θ≤45° 线长上限 λ/8 准则）/ guanella_tlt_respons
   t_match/rf_match=集总 L 网络、balanced_pair_sparams=PA 平衡对合成
   ——均非串/并复合传输线变压器，不并入。
 - 5:1 等非 n² 整数比（复合/自耦混合拓扑）**显式拒绝如实不做**；Ruthroff
-  单磁芯延迟分量拓扑不在本族（docstring 如实登记）。
+  单磁芯延迟分量拓扑不在本族——**Ruthroff 等延迟族见
+  calc_families/ruthroff_balun.py**（架构批 W2-S7 补全，直通+延迟求
+  和口径，与本品等比族边界互斥）。
 
 物理口径（docstring 写死，#1c/#300 出处纪律；#118 锚树见
 tests/unit/test_a7b_iris_guanella.py）
@@ -145,7 +154,9 @@ def guanella_tlt_design(r_in_ohm: float, r_out_ohm: float,
             "理想匹配（无耗理想口径，实测受磁芯/线损耗限制如实不做）；"
             "θ≤45°（λ/8）为通行工程准则（经验档）；低频端磁化电感拐角依"
             "赖磁芯 L_m 数据——UNVERIFIED 不冒充（如不做）；5:1 等非 n²"
-            "复合比显式拒绝，Ruthroff 单磁芯拓扑不在本族"),
+            "复合比显式拒绝，Ruthroff 单磁芯拓扑不在本族——等延迟族见 "
+            "calc_families/ruthroff_balun.py（ruthroff_balun_design/"
+            "response）"),
         "source": (
             "G. Guanella 串/并复合传输线变压器拓扑（1944 原理，二级文献"
             "通行口径转引）；J. Sevick Transmission Line Transformers "

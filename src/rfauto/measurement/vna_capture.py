@@ -511,7 +511,7 @@ class VNAInterface:
         ))
 
 
-def np_complex_pairs(values: list[float], n: int):
+def np_complex_pairs(values: list[float], n: int) -> np.ndarray:
     """[re0, im0, re1, im1, ...] → complex ndarray (n,)。"""
     import numpy as np
     return np.array([complex(values[2 * i], values[2 * i + 1]) for i in range(n)], dtype=complex)

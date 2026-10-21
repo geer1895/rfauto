@@ -1,11 +1,27 @@
-/* rfauto 优化洞察页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
-   Pareto 前沿 + 可行性热图（E9/E10，数据解释全在 service，前端只渲染）。 */
+/* rfauto 优化洞察页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+   Pareto 前沿 + 可行性热图（E9/E10，数据解释全在 service，前端只渲染）。
+   i18n（发布前软编码批 S2 全清）：壳/help 块分段 t()、画布文字/悬停 title/
+   aria/状态行/空态全迁词表（optstack.* 键域，zh 与旧字面逐字节同、en 新增）
+   ——拼接数据段（参数名/来源/目标名）照旧 esc 外拼或 textContent 直写，
+   词表值零 HTML；API 字符串数据不进 t() params（t() 头注契约，数字/格式化
+   数值与 t() 产出可作 params——agent stats 前例）。 */
 
 import {
   CANVAS_FONT, CANVAS_FONT_SMALL, CANVAS_HEAT_LAYOUT, THEME_COLORS, bodyIsLight, themePick,
 } from "../theme.js";
-import { S, T } from "./context.js";
+import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
+// i18n（发布前软编码批 S2）：壳静态标签 data-i18n+首扫；动态容器文案 t()
+// 渲染期烘焙（canvas fillText/aria/title 同为绘制期定格当前档）。
+import { t, applyI18nRoot } from "./i18n.js";
+// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// 数据面全页（run 清单/Pareto 前沿/可行性热图）接 viewSignal("optstack") 切页
+// 收束 + aborted 短路（在途拉取不再写隐藏区）。信封消费形态逐键不变。
+import { apiFetch, viewSignal } from "./api.js";
+
+/* 优化 run 选中记忆（W6-S2 S 状态收编：原 S.osRunId 单模块私有键降级
+   模块级——属主=本模块，契约表见 context.js；会话级记忆语义不变）。 */
+let _osRunId = null;
 
 /* ═══ 优化洞察（E9 Pareto 前沿 / E10 可行性热图）═══
    数据解释全在 service（ui_service.pareto_view / feasibility_heatmap）；
@@ -59,15 +75,16 @@ function drawFeasibilityGrid(el, d) {
     ctx.fillRect(cx, Tp + k, 14, 1);
   }
   ctx.fillStyle = fg; ctx.textAlign = "left";
-  ctx.fillText("可行率 1", cx + 18, Tp + 10);
+  ctx.fillText(t("optstack.legend_feas_1"), cx + 18, Tp + 10);
   ctx.fillText("0", cx + 18, Tp + ch);
   // UI-R4 a11y：canvas 图像语义（PR-1 图表容器口径补齐本自研管线——
   // 参数名经 String 拼接，XSS 反向扫描口径零新增）
   canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", "图表：可行性热图（" + d.x_param + " × " + d.y_param +
-    "，格色=可行率 红（0）→黄（0.5）→绿（1），灰=无样本，格内数字=样本数）");
-  info.textContent = `${d.n_trials_used}/${d.n_trials_total} 条 trial 参与分箱 · 可行 ${d.n_feasible_total} · ` +
-    `${d.cells.length}/${n * n} 格有样本（格内数字=样本数；灰=无样本）`;
+  canvas.setAttribute("aria-label", t("optstack.heat_aria_lead") + d.x_param + " × " + d.y_param +
+    t("optstack.heat_aria_tail"));
+  info.textContent = t("optstack.heat_info_a_tpl",
+    { used: d.n_trials_used, total: d.n_trials_total, feas: d.n_feasible_total }) +
+    t("optstack.heat_info_b_tpl", { cells: d.cells.length, total: n * n });
   canvas.onmousemove = (ev) => {
     const rect = canvas.getBoundingClientRect();
     const mx = (ev.clientX - rect.left) * (W / rect.width), my = (ev.clientY - rect.top) * (H / rect.height);
@@ -78,8 +95,9 @@ function drawFeasibilityGrid(el, d) {
     const c = byCell[`${i},${j}`];
     canvas.title = c
       ? `${d.x_param}∈[${xe[i].toPrecision(4)},${xe[i + 1].toPrecision(4)}] ${d.y_param}∈[${ye[j].toPrecision(4)},${ye[j + 1].toPrecision(4)}]\n` +
-        `n=${c.n} 可行 ${c.n_feasible} 可行率 ${(c.feasible_rate * 100).toFixed(0)}% 平均总违约 ${c.mean_total_violation.toFixed(4)}`
-      : "（无样本）";
+        t("optstack.hover_cell_tpl", { n: c.n, feas: c.n_feasible,
+          rate: (c.feasible_rate * 100).toFixed(0), viol: c.mean_total_violation.toFixed(4) })
+      : t("optstack.hover_empty");
   };
 }
 
@@ -87,66 +105,72 @@ export async function pageOptStack() {
   const v = T.$("view-optstack");
   if (!v.innerHTML)
     v.innerHTML = help(`
-      <li>Pareto 前沿：nsga2 run 直读 results/pareto_front.json（E9 起落盘，含逐代精英存档超体积 hv_convergence）；旧 run / TPE run 由服务层从 trials 审计现算约束 Pareto（Deb 可行优先支配：可行支配不可行、不可行间总违约量小者优）。</li>
-      <li>可行性热图：读 trials/*.json 的 params + constraint_values（≤0=可行），对所选两参数做确定性等宽分箱——格色=可行率、格内数字=样本数、悬停看平均总违约量；无约束 run 如实报"不可算"。</li>
-      <li>数值全部出自确定性内核（SpecEvaluator 违约量 / pareto_tools），前端只渲染。</li>`) +
-    `<h2 class='page'>优化洞察<small>Pareto 前沿 · 可行性热图（E9/E10）</small></h2>
+      <li>${t("optstack.help_1")}</li>
+      <li>${t("optstack.help_2")}</li>
+      <li>${t("optstack.help_3")}</li>`) +
+    `<h2 class='page'><span data-i18n='optstack.title'>${t("optstack.title")}</span><small data-i18n='optstack.subtitle'>${t("optstack.subtitle")}</small></h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b>
          <select id='os-run' style='max-width:340px'></select>
-         <button class='minor' id='os-reload'>刷新</button>
+         <button class='minor' id='os-reload' data-i18n='optstack.reload'>${t("optstack.reload")}</button>
          <span id='os-src' class='muted'></span></div>
        <div id='os-pareto'></div>
        <div id='os-hv' class='muted' style='margin-top:6px'></div>
      </div>
      <div class='panel'>
-       <div class='toolbar'><b>x 参数</b><select id='os-x' style='max-width:200px'></select>
-         <b>y 参数</b><select id='os-y' style='max-width:200px'></select>
-         <b>网格</b><input id='os-n' value='12' style='width:56px'>
-         <button class='minor' id='os-heat-btn'>可行性热图</button>
+       <div class='toolbar'><b data-i18n='optstack.x_param'>${t("optstack.x_param")}</b><select id='os-x' style='max-width:200px'></select>
+         <b data-i18n='optstack.y_param'>${t("optstack.y_param")}</b><select id='os-y' style='max-width:200px'></select>
+         <b data-i18n='optstack.grid'>${t("optstack.grid")}</b><input id='os-n' value='12' style='width:56px'>
+         <button class='minor' id='os-heat-btn' data-i18n='optstack.heat_btn'>${t("optstack.heat_btn")}</button>
          <span id='os-info' class='muted'></span></div>
        <div id='os-heat'></div>
      </div>`;
-  const listing = await T.api("/api/pareto_runs");
+  applyI18nRoot(v); // 壳静态标签首扫（幂等，动态容器走 t() 烘焙）
+  const listing = await apiFetch("/api/pareto_runs",
+    { signal: viewSignal("optstack") });
+  if (listing.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   const runs = listing.runs || [];
   const sel = T.$("os-run");
   if (!runs.length) {
-    sel.innerHTML = "<option>（无 run）</option>";
-    T.$("os-src").textContent = "先跑一次 tune --multi（nsga2）或带 optimization.constraints 的 tune";
+    sel.innerHTML = "<option>" + t("optstack.no_runs") + "</option>";
+    T.$("os-src").textContent = t("optstack.src_hint");
     return;
   }
   // 分组下拉（项 3）：优化 run 排前，单点仿真 run 标注排后（仍可选，选中给人话空态）
-  const tierLabel = { front: "有 Pareto 前沿（pareto_front.json）",
-                      trials: "有调参轨迹（可由 trials 现算前沿）",
-                      single: "单点仿真（无优化轨迹）" };
+  const tierLabel = { front: t("optstack.tier_front"),
+                      trials: t("optstack.tier_trials"),
+                      single: t("optstack.tier_single") };
   const tierClass = { front: "", trials: "", single: "muted" };
   const byTier = { front: [], trials: [], single: [] };
   for (const r of runs) (byTier[r.tier] = byTier[r.tier] || []).push(r);
+  // 归参 tier（原 t）：t() 词表函数入域后循环变量不得再遮蔽（#116 家族）
   sel.innerHTML = ["front", "trials", "single"]
-    .filter((t) => byTier[t].length)
-    .map((t) => `<optgroup label='${escAttr(tierLabel[t])}'>` + byTier[t].map((r) =>
-      `<option value='${escAttr(r.run_id)}' class='${tierClass[t]}'>${esc(r.run_id)}（${esc(r.model || r.adapter || "?")}${t === "trials" ? " · " + esc(r.n_trials) + " trials" : ""}${t === "single" ? " · 单点" : ""}）</option>`).join("") + "</optgroup>")
+    .filter((tier) => byTier[tier].length)
+    .map((tier) => `<optgroup label='${escAttr(tierLabel[tier])}'>` + byTier[tier].map((r) =>
+      `<option value='${escAttr(r.run_id)}' class='${tierClass[tier]}'>${esc(r.run_id)}（${esc(r.model || r.adapter || "?")}${tier === "trials" ? " · " + esc(r.n_trials) + " trials" : ""}${tier === "single" ? t("optstack.single_suffix") : ""}）</option>`).join("") + "</optgroup>")
     .join("");
-  if (S.osRunId && runs.some((r) => r.run_id === S.osRunId)) sel.value = S.osRunId;
+  if (_osRunId && runs.some((r) => r.run_id === _osRunId)) sel.value = _osRunId;
 
   const fillParams = (names) => {
     const opts = names.map((n) => `<option value='${escAttr(n)}'>${esc(n)}</option>`).join("")
-      || "<option value=''>（先选一个优化 run）</option>";
+      || "<option value=''>" + t("optstack.no_run_selected") + "</option>";
     T.$("os-x").innerHTML = opts; T.$("os-y").innerHTML = opts;
     if (names.length > 1) T.$("os-y").value = names[1];
   };
 
   async function loadPareto() {
-    S.osRunId = sel.value;
-    const d = await T.api(`/api/runs/${encodeURIComponent(sel.value)}/pareto`);
+    _osRunId = sel.value;
+    const d = await apiFetch(`/api/runs/${encodeURIComponent(sel.value)}/pareto`,
+      { signal: viewSignal("optstack") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const el = T.$("os-pareto"), hv = T.$("os-hv");
     hv.textContent = "";
     if (!d.ok) {
       // 人话空态（项 3）：单点仿真 run 没有优化轨迹是预期，不是故障
       const meta = runs.find((r) => r.run_id === sel.value) || {};
       const human = meta.tier === "single"
-        ? "该 run 是单点仿真，没有优化轨迹——请在下拉里选择带 pareto_front.json 的优化 run（或带 trials 的调参 run，可由 trials 现算前沿）。"
-        : "该 run 暂无可画的 Pareto 前沿。";
+        ? t("optstack.empty_single")
+        : t("optstack.empty_no_front");
       el.innerHTML = `<div class='muted'>${human}<br><small>${esc((d.errors || []).join("; "))}</small></div>`;
       T.$("os-src").textContent = "";
       fillParams([]);
@@ -155,43 +179,52 @@ export async function pageOptStack() {
     fillParams(d.param_names || []);
     const names = d.objective_names || [];
     const pts = d.points || [];
-    T.$("os-src").textContent = `来源 ${d.source} · ${d.n_pareto} 点` +
-      (d.constraint_names && d.constraint_names.length ? ` · 约束 ${d.constraint_names.join(",")}` : "");
+    T.$("os-src").textContent = t("optstack.src_lead") + d.source + " · " +
+      t("optstack.src_points_tpl", { n: d.n_pareto }) +
+      (d.constraint_names && d.constraint_names.length
+        ? t("optstack.constraints_lead") + d.constraint_names.join(",") : "");
     if (!pts.length || names.length < 2) {
-      el.innerHTML = "<div class='muted'>前沿为空或目标数不足 2</div>";
+      el.innerHTML = "<div class='muted'>" + t("optstack.front_empty") + "</div>";
       return;
     }
     const feas = pts.filter((p) => p.feasible !== false);
     const infeas = pts.filter((p) => p.feasible === false);
     const toXY = (p) => [+p.objectives[names[0]], +p.objectives[names[1]]];
-    const series = [{ name: `前沿${infeas.length ? "（可行）" : ""}`, type: "scatter",
+    const series = [{ name: infeas.length ? t("optstack.series_front_feas") : t("optstack.series_front"),
+                      type: "scatter",
                       data: feas.map(toXY),
                       color: themePick(bodyIsLight(), THEME_COLORS.seriesTeal),
                       symbolSize: 11 }];
     if (infeas.length)
-      series.push({ name: "不可行", type: "scatter", data: infeas.map(toXY),
+      series.push({ name: t("optstack.series_infeasible"), type: "scatter", data: infeas.map(toXY),
         color: themePick(bodyIsLight(), THEME_COLORS.seriesRed), symbolSize: 9 });
     // PR-3 PlotCard 换壳：option 与迁移前等价（scatter+xvalue，zoom off）
     T.plotCard(el, {
       series,
-      xvalue: true, xlabel: `${names[0]} 违约量`, ylabel: `${names[1]} 违约量`,
+      xvalue: true, xlabel: names[0] + t("optstack.violation_axis_suffix"),
+      ylabel: names[1] + t("optstack.violation_axis_suffix"),
       height: "300px", zoom: false,
       exportName: "pareto-front", exportCsv: false,
     });
     if (names.length > 2)
-      hv.textContent = `目标 ${names.length} 维，散点取前两维（${names.slice(2).join(", ")} 未画）。`;
+      hv.textContent = t("optstack.hv_dims_lead", { n: names.length }) +
+        names.slice(2).join(", ") + t("optstack.hv_dims_tail");
     if (d.hv_convergence && d.hv_convergence.length) {
       const h = d.hv_convergence;
       const mono = h.every((x, i) => i === 0 || x >= h[i - 1] - 1e-12);
-      hv.textContent += ` 超体积收敛：${h.length} 代，${h[0].toFixed(4)} → ${h[h.length - 1].toFixed(4)}` +
-        `（精英存档${mono ? "弱单调 ✓" : "非单调 ✗"}）`;
+      hv.textContent += t("optstack.hv_conv_tpl",
+        { n: h.length, a: h[0].toFixed(4), b: h[h.length - 1].toFixed(4) }) +
+        t("optstack.hv_archive_tpl",
+          { v: mono ? t("optstack.hv_mono_ok") : t("optstack.hv_mono_bad") });
     }
   }
 
   async function loadHeat() {
     const x = T.$("os-x").value, y = T.$("os-y").value;
     const q = new URLSearchParams({ x_param: x, y_param: y, grid_n: T.$("os-n").value || "12" });
-    const d = await T.api(`/api/runs/${encodeURIComponent(sel.value)}/feasibility?${q}`);
+    const d = await apiFetch(`/api/runs/${encodeURIComponent(sel.value)}/feasibility?${q}`,
+      { signal: viewSignal("optstack") });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const info = T.$("os-info"), el = T.$("os-heat");
     if (!d.ok) { info.textContent = (d.errors || []).join("; "); el.innerHTML = ""; return; }
     info.textContent = "";
@@ -203,7 +236,7 @@ export async function pageOptStack() {
   await loadPareto();
 }
 
-/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 optstackCtx ══════════
+/* ═══ R-1（架构批 W3-S12）：PageContext 增量钩子 optstackCtx ══════════
    refresh=图表数据重拉（pageOptStack 幂等：壳判 innerHTML 已在即跳过，
    pareto_runs 清单与当前 run 的前沿图重拉重渲——plotCard 壳 setOption
    复用零重建；可行性热图按需点钮重算不随刷新）。无轮询面，leave 不需要。 */

@@ -19,7 +19,7 @@ TODO/followUps）。
 
 铁律：本模块全部为确定性纯函数或注入式 evaluator 环——零真机即可
 单测（预算/判据/搜索环逻辑），真机只发生在 scripts/wp39_benchmark_run.py
-的 HFSS evaluator 里。数值只在确定性内核（项目规则 规则 7）。
+的 HFSS evaluator 里。数值只在确定性内核（AGENTS 规则 7）。
 """
 
 from __future__ import annotations

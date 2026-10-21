@@ -4,12 +4,14 @@
 - 登记表过 W8 消费链：capability_cards_export.load_sensitivity_rankings
   （真实路径装载）+ normalize_sensitivity_entry 逐条 PASS + 三态
   resolve_sensitivity computed 胜出（provenance 数据指针）；
-- 入表集=COMPUTABLE_TEMPLATES（70 = X7 首批 18 + aurora72 A3-D 扩批 22 +
-  R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + aurora_d
-  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4 + aurora_e W4-S19 全覆盖批
-  24：teaching 首批 9 模板全部入表转双源并存 + 15 补族；留缺 2 族
-  sir_bpf/ms_array_NxN 如实不入表——builder docstring「W4-S19 全覆盖批」
-  节⑤；W6 卡面字节钉前提按全覆盖批任务书解除并同批重生成）；
+- 入表集=COMPUTABLE_TEMPLATES（71 = X7 首批 18 + 架构批 A3-D 扩批 22 +
+  R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + 架构批
+  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4 + 架构批 W4-S19 全覆盖批
+  24：teaching 首批 9 模板全部入表转双源并存 + 15 补族 + 架构批 W6-S4
+  sir_bpf 名义重注册解锁 1（l_high 6.7818 旧档→7.1055 理想短路口径，
+  R3 审计处方）；留缺 1 族 ms_array_NxN 如实不入表——builder docstring
+  「W4-S19 全覆盖批」节⑤；W6 卡面字节钉前提按全覆盖批任务书解除并同批
+  重生成）；
 - schema 面：ranking 参数集==模板注册名义参数（TEMPLATE_NOMINAL 单源）、
   分数有限非负、R9 序（-score, param）、n_samples=1+2·n_params、
   method/source_run/registered_at 在场；
@@ -29,6 +31,8 @@ import math
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
@@ -45,18 +49,20 @@ def _load() -> dict:
 # ── 入表集与 W8 消费链 ───────────────────────────────────────────────────────
 
 def test_registry_exists_and_matches_computable_set():
-    """登记表在场、模板集==生成器可算集（70=X7 首批 18+A3-D 扩批 22
-    +R8-KN 扩批 4+SENS-ANC 复核扩批 2+W4-S19 全覆盖批 24，2026-10-18
-    计数钉按新值更新；留缺 2 族 sir_bpf/ms_array_NxN 不在集）。"""
+    """登记表在场、模板集==生成器可算集（71=X7 首批 18+A3-D 扩批 22
+    +R8-KN 扩批 4+SENS-ANC 复核扩批 2+W4-S19 全覆盖批 24+W6-S4 sir_bpf
+    名义重注册解锁 1，2026-10-19 计数钉按新值更新；留缺 1 族
+    ms_array_NxN 不在集）。"""
     from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
 
     reg = _load()
     assert set(reg) == set(srb.COMPUTABLE_TEMPLATES)
-    assert len(reg) == 70
-    # 留缺 2 族如实不在表（builder docstring「W4-S19 全覆盖批」节⑤）
-    assert "sir_bpf" not in reg and "ms_array_NxN" not in reg
-    # 注册面 72 分母：70 + 留缺 2 = 全部 TEMPLATE_NOMINAL
-    assert set(reg) | {"sir_bpf", "ms_array_NxN"} == set(TEMPLATE_NOMINAL)
+    assert len(reg) == 71
+    # sir_bpf 已解锁入表（W6-S4 名义重注册）；留缺 1 族如实不在表
+    # （builder docstring「W4-S19 全覆盖批」节⑤）
+    assert "sir_bpf" in reg and "ms_array_NxN" not in reg
+    # 注册面 72 分母：71 + 留缺 1 = 全部 TEMPLATE_NOMINAL
+    assert set(reg) | {"ms_array_NxN"} == set(TEMPLATE_NOMINAL)
 
 
 def test_registry_entries_pass_w8_normalize():
@@ -174,6 +180,7 @@ def test_elasticity_rejects_bad_domain():
         srb.elasticity(lambda p: 1.0, {"x": "wide"}, "x")
 
 
+@pytest.mark.slow  # 终门 DURATIONS >60s 慢件（78s，全族 build_all 再生面）
 def test_build_all_deterministic_and_matches_file():
     """build_all 两次逐位一致；render_yaml 与落档文件逐字节一致
     （生成器↔登记表一致性钉；登记表改动必须同批重跑生成器）。"""
@@ -235,7 +242,7 @@ def test_sanity_resonant_length_identity_one():
 
 
 def test_sanity_a3d_expansion_closed_chains():
-    """aurora72 扩批闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
+    """架构批 扩批闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
     reg = _load()
     # siw：fc=c/(2·w_eff·√εr)、w_eff=w−d²/(0.95s)（Cassivi 反解正向）——
     # dw 弹性=w/w_eff 解析精确（1.032246…）、der=1/2（fc∝εr^−1/2 恒等式）
@@ -330,6 +337,29 @@ def test_sanity_sensanc_expansion_closed_chains():
     for zero_p in ("g12_mm", "g23_mm", "g34_mm", "g14_mm", "g_open_mm",
                    "g_pos_mm", "tap_t_mm", "tan_d"):
         assert scores_xch[zero_p] == 0.0, zero_p
+
+
+def test_sanity_sir_bpf_unlock_back_substitution():
+    """W6-S4 sir_bpf 名义重注册解锁 sanity 钉（#118 纪律）：
+    - 名义回代：tanθ1·tanθ2=Z_lo/Z_hi 恒等式在重注册名义（l_high=7.1055
+      理想短路口径）回代 f0=2.5000（4 位舍入带内 <5e-4——解锁前提
+      「名义↔恒等式自洽」，旧档 6.7818 回代 2.5586 失自洽即留缺主因）；
+    - 弹性通道：对称分θ（θ1=θ2 各半）⇒ l_high 通道恰 1/2、l_low 通道
+      <1/2（开路端 Δl 稀释）；w_low=Z_lo 分子+εeff 双通道同向、w_high=
+      Z_hi 分母/εeff 对冲弱通道（均 >0）；w_feed/gaps/feed_len/order 不进
+      单棒谐振恒等式=0。"""
+    reg = _load()
+    from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+
+    y = srb._TARGETS["sir_bpf"](dict(TEMPLATE_NOMINAL["sir_bpf"]))
+    assert abs(y - 2.5) < 5e-4, y
+    scores = _scores(reg, "sir_bpf")
+    assert abs(scores["l_high_mm"] - 0.5) < 1e-3
+    assert 0.4 < scores["l_low_mm"] < 0.5
+    assert 0.2 < scores["w_low_mm"] < 0.4
+    assert 0.0 < scores["w_high_mm"] < 0.4
+    for zero_p in ("w_feed_mm", "gaps_mm", "feed_len_mm", "order"):
+        assert scores[zero_p] == 0.0, zero_p
 
 
 def test_sanity_helix_wire_linear_chain():

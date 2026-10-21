@@ -56,6 +56,36 @@ def _microstrip_media(width_mm: float, freq_ghz: float,
     )
 
 
+def _hj_dispersion_eps_eff(er: float, eps_qs: float, z0_qs: float,
+                           h_m: float, f_hz: float) -> float:
+    """Hammerstad-Jensen 1980 微带色散式 εeff(f)（W5-K 升级核 ③ 闭式）。
+
+    εeff(f) = εr − (εr − εeff_qs) / (1 + g·fp²)
+    g       = (π²/12)·((εr−1)/εeff_qs)·√(2π·Z0_qs/η0)
+    fp      = 2·μ0·h·f / Z0_qs
+
+    f→0 时 fp→0 → εeff(f)→εeff_qs（准静态逐位退化锚）。出处：E.
+    Hammerstad, O. Jensen, "Accurate Models for Microstrip Computer-Aided
+    Design", IEEE MTT-S Int. Microwave Symp. Dig., 1980, pp. 407-409
+    （色散修正因子；与 core/conductor_loss.hammerstad_roughness_factor
+    同一 1980 论文族）。#118 双证：skrf 2.1.0 media/mline.py
+    analyse_dispersion 的 'hammerstadjensen' 支是仓内第二独立实现
+    （test_w5k_upgrade_tiers.py 裁判对拍 ≤1e-9 rel；f→0 段逐位一致）。
+    Kirschning-Jansen 色散档不加：系数表需 KJ 原文核（R2 ⚠️ 判定，
+    #122 不凭记忆转录）。
+
+    μ0 取 conductor_loss.MU0（CODATA 2018/NIST，与 skrf 侧
+    scipy.constants.mu_0 同值）；η0 = √(μ0/ε0)。
+    """
+    from rfauto.core.conductor_loss import MU0
+
+    eta0 = math.sqrt(MU0 / _EPS0)
+    g = (math.pi ** 2 / 12.0) * ((er - 1.0) / eps_qs) * math.sqrt(
+        2.0 * math.pi * z0_qs / eta0)
+    fp = 2.0 * MU0 * h_m * f_hz / z0_qs
+    return er - (er - eps_qs) / (1.0 + g * fp * fp)
+
+
 @register_calculator(
     "microstrip_analysis",
     "微带线分析：线宽 → (Z0, εeff)。skrf HJ 模型",
@@ -121,17 +151,57 @@ def microstrip_synthesis(z0_ohm: float, freq_ghz: float,
     (("width_mm", "float mm 导带宽度"),
      ("freq_ghz", "float GHz 频率"),
      ("epsilon_r", "float - 基板相对介电常数"),
-     ("h_mm", "float mm 基板厚度")),
+     ("h_mm", "float mm 基板厚度"),
+     ("dispersion", "str 色散档（W5-K）：none（缺省，准静态 εeff——缺省路径"
+      "逐位不变）/hammerstad-jensen（HJ 1980 色散式 εeff(f)，f→0 退化="
+      "准静态逐位；KJ 档系数需原文核不加）")),
     required=("width_mm", "freq_ghz", "epsilon_r", "h_mm"),
 )
 def microstrip_lambda_g(width_mm: float, freq_ghz: float,
-                        epsilon_r: float, h_mm: float) -> dict:
+                        epsilon_r: float, h_mm: float,
+                        dispersion: str = "none") -> dict:
+    mode = str(dispersion).strip().lower()
+    tier_active = mode not in ("", "none")
+    if tier_active:
+        # 档位守卫先行（缺省路径零改动：mode/f/h 校验只在档位激活时进）
+        if mode not in ("hammerstad-jensen", "hammerstad_jensen"):
+            raise ValueError(
+                f"microstrip_lambda_g: dispersion 须为 'none'/"
+                f"'hammerstad-jensen'（Kirschning-Jansen 档系数需原文核，"
+                f"不提供——R2 ⚠️ 判定），得到 {dispersion!r}")
+        if freq_ghz <= 0.0:
+            raise ValueError(
+                f"microstrip_lambda_g: 色散档要求 freq_ghz >0，得到 "
+                f"{freq_ghz!r}")
+        if h_mm <= 0.0:
+            raise ValueError(
+                f"microstrip_lambda_g: 色散档要求 h_mm >0，得到 {h_mm!r}")
     media = _microstrip_media(width_mm, freq_ghz, epsilon_r, h_mm, 0.0)
     z0, eps_eff = _media_z0_eps(media, freq_ghz, epsilon_r)
-    return {"eps_eff": round(eps_eff, 4),
-            "lambda_0_mm": round(C_MM_GHZ / freq_ghz, 3),
-            "lambda_g_mm": round(_lambda_g_mm(freq_ghz, eps_eff), 3),
-            "z0_ohm": round(z0, 2)}
+    out: dict[str, Any] = {"eps_eff": round(eps_eff, 4),
+                           "lambda_0_mm": round(C_MM_GHZ / freq_ghz, 3),
+                           "lambda_g_mm": round(_lambda_g_mm(freq_ghz, eps_eff), 3),
+                           "z0_ohm": round(z0, 2)}
+    if not tier_active:
+        return out
+    # 准静态量取 skrf HJ quasi-static 单源（zl_eff/ep_reff=analyse_quasi_static
+    # 产物；输出面 eps_eff 本就是准静态口径——现键行为，零改动）
+    z0_qs = float(np.real(media.zl_eff[0]))
+    eps_f = _hj_dispersion_eps_eff(float(epsilon_r), eps_eff, z0_qs,
+                                   h_mm * 1e-3, freq_ghz * 1e9)
+    out.update({
+        "dispersion": "hammerstad-jensen",
+        "eps_eff_quasi_static": round(eps_eff, 9),
+        "eps_eff_disp": round(eps_f, 9),
+        "lambda_g_disp_mm": round(
+            C_MM_GHZ / (freq_ghz * math.sqrt(eps_f)), 3),
+        "note": ("HJ 1980 色散档 εeff(f)=εr−(εr−εeff_qs)/(1+g·fp²)"
+                 "（g=(π²/12)(εr−1)/εeff_qs·√(2π·Z0_qs/η0)、fp=2μ0·h·f/"
+                 "Z0_qs）；f→0 退化=准静态 εeff 逐位；skrf mline "
+                 "analyse_dispersion 同式作仓内第二实现裁判；Z0_qs 取 "
+                 "skrf HJ 准静态 zl_eff"),
+    })
+    return out
 
 
 # ─── CPW ─────────────────────────────────────────────────────────────────────

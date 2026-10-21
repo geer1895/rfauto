@@ -1,4 +1,4 @@
-"""aurora72 A6-D（W8-B P2 尾项 + R6 F-3 版本口径）回归钉。
+"""架构批 A6-D（W8-B P2 尾项 + R6 F-3 版本口径）回归钉。
 
 本席文件面=index.html + server.py + 本测试（pages.js/app.js/palette.js/
 theme.js/plotcard.js 他席在制或冻结，禁改）。三块：
@@ -53,7 +53,7 @@ from pathlib import Path
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _INDEX = (_STATIC / "index.html").read_text(encoding="utf-8")
 _SERVER = (_STATIC.parent / "server.py").read_text(encoding="utf-8")
-# aurora_d UI-R1 拆分：api_hfss_import 机械迁 routes/importer.py（函数体
+# 架构批 UI-R1 拆分：api_hfss_import 机械迁 routes/importer.py（函数体
 # 逐字节未动）——缺省版本钉/旧字面守卫扫描面随单源走。
 _IMPORTER = ((_STATIC.parent / "routes" / "importer.py")
              .read_text(encoding="utf-8"))

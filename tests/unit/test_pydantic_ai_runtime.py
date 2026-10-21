@@ -584,9 +584,12 @@ class TestOfflineConstructionSmoke:
             self._build(model_name="")
 
     def test_default_runner_wiring_without_network(self, monkeypatch):
+        from rfauto.service import chat_settings_io
         from rfauto.service import pydantic_ai_runtime as mod
-        from rfauto.service import r3_services
-        monkeypatch.setattr(r3_services, "get_chat_settings_raw",
+        # 缝随 T1 叶化迁移：runner 直读 chat_settings_io 叶（W16 消费侧
+        # 迁移 fa9934b7），patch 必须钉叶本体才拦得住通道（#139 钉通道
+        # 纪律——本测曾因缝未随迁放真配置泄入，架构批 T1 席实证）
+        monkeypatch.setattr(chat_settings_io, "get_chat_settings_raw",
                             lambda: {"base_url": "http://127.0.0.1:9", "model": "dummy-model",
                                      "api_key": "x"})
         seen = {}

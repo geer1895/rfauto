@@ -1,4 +1,4 @@
-"""R8-ENG2（aurora_c）：UI runs 端点 registry 单源接线 + 长 POST 线程池行为钉。
+"""R8-ENG2（架构批）：UI runs 端点 registry 单源接线 + 长 POST 线程池行为钉。
 
 覆盖面：
 - registry 单源：covered 态与 legacy 态（RFAUTO_UI_REGISTRY=0）五端点
@@ -337,7 +337,7 @@ class TestLongPostThreadpool:
         """chat 探针：AgentChat 单例打桩为 parked chat，短请求不被阻塞。"""
         import httpx
 
-        # aurora_d UI-R1 拆分：会话单例随 api_chat 机械迁 routes/agent.py
+        # 架构批 UI-R1 拆分：会话单例随 api_chat 机械迁 routes/agent.py
         # （server_mod 薄 re-export 不含 _CHAT_INSTANCE，patch 目标随单源走）。
         from rfauto.ui.routes import agent as agent_routes
         from rfauto.ui.server import create_ui_app

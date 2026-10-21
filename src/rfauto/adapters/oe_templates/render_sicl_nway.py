@@ -143,7 +143,10 @@ def sicl_design_params(
     """
     from scipy.optimize import brentq
 
-    from rfauto.core.calc_families.slotline_siw import siw_check_design_rules
+    # W11-S3 T7：计算器键统一走 core.calculators facade（不再直插
+    # calc_families 子模块——.importlinter calc-families-no-direct-consumption
+    # 契约收口；facade 逐名 re-export 同一函数对象，语义零变化）。
+    from rfauto.core.calculators import siw_check_design_rules
     from rfauto.core.sicl_line import sicl_closed_form, sicl_z0
 
     a_mm = float(a_over_b) * float(b_mm)

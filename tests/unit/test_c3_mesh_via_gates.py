@@ -152,15 +152,22 @@ class TestCircuitJudgeViaInductance:
 
     @pytest.mark.parametrize("template,ideal_up_pct,auto_off_pct", [
         ("interdigital", 2.560, 0.000), ("combline", 3.240, 0.060),
-        ("sir_bpf", 2.380, 0.020),
+        # sir_bpf 名义 2026-10-12 W6-S4（acd720b8）重注册为理想短路设计链
+        # 输出（sir_bpf_design_from_order(3) 4 位舍入 l_high 7.1055，名义
+        # 回代 2.5000=sensitivity 71 族解锁）——过孔补偿降格为 render 通道
+        # l_via_h 锚的运行时行为，不再是名义设计点：理想裁判回 f0（+0.035%
+        # 4 位舍入残差），0.125nH 过孔链下移 −2.185%（与另两族口径相反，
+        # 名义约定族内不齐为 W6-S4 记录在案的取舍）。
+        ("sir_bpf", 0.035, -2.185),
     ])
     def test_compensated_nominal_resonates_at_f0(self, template, ideal_up_pct,
                                                  auto_off_pct, freqs):
-        """登记⑨+R1 校准过孔补偿口径：NOMINAL 已按设计链 l_via_h=None
-        （=C3_L_VIA_CAL_H 0.125nH，df5-c3fix）再生（棒长按谐振条件精确解缩短）
-        ——过孔裁判（l_via_h=None）带心回 f0（|偏移|≤0.1%）；理想短路裁判同
-        几何则上移 2.4~3.3%（0.125nH 补偿量，lcal_compute.py 实测；旧 G-P
-        0.296nH 口径为 5.8~8.0%）；无耗/互易/回文对称由构造保持。"""
+        """登记⑨+R1 校准过孔补偿口径：interdigital/combline NOMINAL 按设计链
+        l_via_h=None（=C3_L_VIA_CAL_H 0.125nH，df5-c3fix）再生（棒长按谐振
+        条件精确解缩短）——过孔裁判（l_via_h=None）带心回 f0（|偏移|≤0.1%）；
+        理想短路裁判同几何则上移 2.4~3.3%（0.125nH 补偿量，lcal_compute.py
+        实测；旧 G-P 0.296nH 口径为 5.8~8.0%）；sir_bpf 例外见参数注（W6-S4
+        名义=理想短路设计链）；无耗/互易/回文对称由构造保持。"""
         nom = dict(ot.TEMPLATE_NOMINAL[template])
         s0 = ot.c3_circuit_sparams(template, freqs, nom)
         s1 = ot.c3_circuit_sparams(template, freqs, nom, l_via_h=None)
@@ -169,7 +176,8 @@ class TestCircuitJudgeViaInductance:
         assert (bc_auto / 2.5 - 1.0) * 100.0 == pytest.approx(auto_off_pct, abs=0.05)
         assert (bc_ideal / 2.5 - 1.0) * 100.0 == pytest.approx(ideal_up_pct, abs=0.05)
         shift = (bc_auto / bc_ideal - 1.0) * 100.0
-        # 0.125nH 补偿量（df5-c3fix 实测 −2.47/−3.18/−2.36%）；旧 G-P 口径 −8~−3%
+        # 0.125nH 补偿量（df5-c3fix 实测 −2.47/−3.18/−2.36%；sir_bpf 现口径
+        # −2.22 同量级）；旧 G-P 口径 −8~−3%
         assert -8.0 < shift < -2.0
         p = np.abs(s1[:, 0, 0]) ** 2 + np.abs(s1[:, 1, 0]) ** 2
         assert float(np.max(np.abs(p - 1.0))) < 1e-9

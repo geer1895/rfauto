@@ -1,4 +1,4 @@
-"""EC-21 极化传输面度量 CALC 注册面薄包装族（aurora_e W4-S18，2026-10-18）。
+"""EC-21 极化传输面度量 CALC 注册面薄包装族（架构批 W4-S18，2026-10-18）。
 
 三键：pol_axial_ratio（轴比标量闭式）/ pol_delta_ipd_il（ΔIPD/ΔIL 传输面
 度量主键）/ pol_group_delay_diff（微分群延迟差二点差分）。

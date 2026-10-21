@@ -14,6 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from rfauto.service._helpers import safe_run_id
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 RUNS_DIR = Path("runs")
@@ -152,7 +153,10 @@ def farfield_view(run_id: str) -> dict[str, Any]:
         summarize_cut,
     )
 
-    run_dir = RUNS_DIR / run_id
+    run_id_clean = safe_run_id(run_id)
+    if run_id_clean is None:  # P9-13 路径段守卫（单源 safe_run_id）
+        return error_envelope([f"非法 run_id: {run_id!r}"])
+    run_dir = RUNS_DIR / run_id_clean
     if not run_dir.is_dir():
         return error_envelope([f"run 不存在: {run_id}"])
     found = find_artifacts(run_dir)

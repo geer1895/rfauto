@@ -1,5 +1,5 @@
-/* rfauto 工作台轮询生命周期托管（aurora_d UI-R2 自 pages.js 拆出，
-   aurora36 W2-B 块逐字节搬移）：_pollRegister/_pollStop/_pollVisible +
+/* rfauto 工作台轮询生命周期托管（架构批 UI-R2 自 pages.js 拆出，
+   架构批 W2-B 块逐字节搬移）：_pollRegister/_pollStop/_pollVisible +
    标签页可见性暂停/恢复（装配走 initPages 的 _bindVisibilityPolling）。 */
 
 import { T, getActiveView } from "./context.js";
@@ -47,4 +47,4 @@ export function _bindVisibilityPolling() {
     }
   });
 }
-/* ═══ aurora36 W2-B 生命周期块结束 ═══ */
+/* ═══ 架构批 W2-B 生命周期块结束 ═══ */
