@@ -1,4 +1,4 @@
-/* rfauto 工作台统一 API 请求层（架构批 UI-R12 任务2，前端深化席）。
+/* rfauto 工作台统一 API 请求层（aurora_d UI-R12 任务2，前端深化席）。
    收敛目标：pages/ 各视图分散的 fetch/T.api 调用共用单一请求管道——
    ① 统一错误信封：{ok:false, error, errors} 与 app.js 全局 api 的消费
      契约同形（视图两种判法 `!d.ok`+d.error / (d.errors||[]).join 兼容）；
@@ -7,7 +7,7 @@
    ③ AbortController 取消（全部 opt-in）：视图作用域 signal（viewSignal）
      + 切页收束（abortViewSignals，app.js activate 消费）+ 请求超时
      （timeoutMs）。
-   ④ 缺省超时（架构批 W1-S1，R1 审计 P9-11 v9 Top4——能力在档零消费
+   ④ 缺省超时（aurora_g W1-S1，R1 审计 P9-11 v9 Top4——能力在档零消费
      的补全；端点挂起=视图永久 pending，worker 池被慢请求饿干时正常
      页面是第一批殃及者）：**未传 timeoutMs 的请求一律挂 30s 超时**
      （_DEFAULT_TIMEOUT_MS）；显式 `timeoutMs: 0`=豁免（长跑触发端点
@@ -23,12 +23,12 @@
    层次：本模块零依赖 pages/ 其他模块（node 裸 import 可测——桩 fetch 即
    真跑）；app.js 的全局 api（T.api 载体）保形消费 apiRequestInit 单源
    （其兜错信封与 msg 呈现被 test_ui_nav_focus 源码钉逐字钉住，留 app.js
-   本体不动）；迁移终态（架构批 W4-S13，R1 §面4 P8-9 收口）：全部视图
-   （dashboard/runs/detail/calibration/data 五页=架构批 UI-R12；palette+
-   agent/recipe/tune=架构批 W3-S9；余量 15 文件=sparams/reports/fieldviz/
+   本体不动）；迁移终态（aurora_f W4-S13，R1 §面4 P8-9 收口）：全部视图
+   （dashboard/runs/detail/calibration/data 五页=aurora_d UI-R12；palette+
+   agent/recipe/tune=aurora_f W3-S9；余量 15 文件=sparams/reports/fieldviz/
    tools/loopboard/optstack/playground/solvers/import/gallery/campaign/
    profile/queue/timeline 视图族+filebrowser 模态，37 点 T.api+1 点裸
-   fetch=架构批 W4-S13）均走本层，pages/ 面 T.api 计数 65→58→37→0
+   fetch=aurora_f W4-S13）均走本层，pages/ 面 T.api 计数 65→58→37→0
    （终态防回潮钉 test_ui_r12_deepening）。 */
 
 /* ── token 传递（默认关闭：未设置不加任何头）───────────────────────── */
@@ -64,10 +64,25 @@ export function setApiNotifier(fn) {
   _notifier = typeof fn === "function" ? fn : null;
 }
 
+/* ── 统一错误卡呈现注入（UI 人性化批 R4，opt-in 双闸）──────────────────
+   注入面与 _notifier 同构（kit.js 装配期注册缺省实现=showApiError，本模块
+   保持零 pages/ 依赖纪律——注册的是函数引用非模块依赖）。消费面双闸：
+   ①调用点显式 opts.apiError（真值=启用；对象形态则透传为呈现参数
+   {title,hint,...}）②注册表非空。缺省（无 flag/无注册）零行为变化——
+   存量调用逐字节等价（他席在改页不被波及）。触发面只限"服务端已应答的
+   ok:false 信封"（JSON 解析成功路径）；网络层失败（catch 分支）已由
+   _notifier toast 覆盖，此处不再叠加防双呈现；aborted（主动取消/超时）
+   不触发——取消不是错误卡语义。呈现失败吞掉不阻返回（#105：呈现面
+   不得成为请求主路径故障点），信封原样返回=调用方既有分支照常工作。 */
+let _errorPresenter = null;
+export function setApiErrorPresenter(fn) {
+  _errorPresenter = typeof fn === "function" ? fn : null;
+}
+
 /* 失败文案（与 app.js api 兜底同串：两管道呈现语义一致）。 */
 const _ERR_TEXT = "请求失败（网络或服务器异常）";
 
-/* 缺省超时（P9-11，架构批 W1-S1）：30s 量级覆盖全部只读/快端点；
+/* 缺省超时（P9-11，aurora_g W1-S1）：30s 量级覆盖全部只读/快端点；
    长跑触发端点由调用点显式 `timeoutMs: 0` 豁免（见头注④清单）。 */
 const _DEFAULT_TIMEOUT_MS = 30000;
 
@@ -124,7 +139,16 @@ export async function apiFetch(url, opts = null) {
       init = { ...o, signal: composeSignals([o.signal, tc.signal]) };
     }
     const r = await fetch(url, apiRequestInit(init));
-    return await r.json(); // await 留在 try 内：json 解析失败同样入 catch
+    const d = await r.json(); // await 留在 try 内：json 解析失败同样入 catch
+    // 统一错误卡（R4，opt-in 双闸——见 setApiErrorPresenter 头注）：
+    // 只对"服务端已应答的 ok:false 信封"触发；呈现失败静默、信封原样返回。
+    if (d && typeof d === "object" && d.ok === false && !d.aborted &&
+        o.apiError && _errorPresenter) {
+      try {
+        _errorPresenter(d, typeof o.apiError === "object" ? o.apiError : {});
+      } catch { /* #105：呈现面故障不阻请求主路径 */ }
+    }
+    return d;
   } catch (e) {
     if (e && (e.name === "AbortError" || e.name === "TimeoutError")) {
       if (timedOutMs > 0) {

@@ -1,4 +1,4 @@
-/* rfauto 工程导入页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 工程导入页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    HFSS .aedt → 设计规格 → 配方草稿。
    i18n（发布前置软编码批 S1 全清）：壳/help 块分段 t()、工具条标签/
    下拉选项/占位符/规格表/配方生成面板/提示与 toast 全迁词表（import.*
@@ -11,17 +11,20 @@
    同族）。 */
 
 import { T } from "./context.js";
-import { errorText, esc, escAttr, help } from "./dom.js";
+import { esc, escAttr, help } from "./dom.js";
 import { fileBrowser } from "./filebrowser.js";
 // i18n（S1 全清）：壳静态标签 data-i18n+首扫；动态容器文案 t() 渲染期烘焙。
 import { t, applyI18nRoot } from "./i18n.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点
 // T.api + 1 点裸 fetch 同批收敛）——全页皆用户动作 POST（读取工程/保存配方
 // 草稿），保持无 signal（用户动作不被切页取消；首次启动 AEDT 读取 ~30s 更
 // 不可中断）。apiFetch 永不抛——保存草稿尾段信封消费走 errorText 回退链
 // （审查波 2 P3-4 清偿：error_envelope 只有 errors 列表，旧裸读单数 error
 // 键渲染 "undefined"；旧代码同病，此处为顺手清偿非迁移引入）。
 import { apiFetch } from "./api.js";
+// R4 交互细节批：长操作按钮三态（kitBtnBusy）/破坏性动作确认（kitConfirm
+// 复用既有单源——保存草稿覆盖写同名文件）/统一错误卡（showApiError）。
+import { kitBtnBusy, kitConfirm, showApiError } from "./kit.js";
 
 /* ═══ 工程导入（HFSS .aedt → 配方草稿）═══ */
 let importSpec = null;
@@ -65,7 +68,9 @@ export async function pageImport() {
 
   async function readProject() {
     const btn = T.$("imp-read");
-    btn.disabled = true; btn.textContent = t("import.reading");
+    // R4 按钮三态归一：disabled+aria-busy+spinner（页域标签 import.reading
+    // 保留读取耗时提示；disabled 本身即重复点击防抖）
+    kitBtnBusy(btn, true, t("import.reading"));
     T.$("imp-msg").textContent = "";
     const body = { project: T.$("imp-project").value.trim(),
                    design: T.$("imp-design").value.trim() || null };
@@ -76,8 +81,15 @@ export async function pageImport() {
       body: JSON.stringify(body),
       timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：AEDT 工程读取分钟级
     });
-    btn.disabled = false; btn.textContent = t("import.read");
-    if (!importSpec.ok) { T.$("imp-msg").innerHTML = `<span style="color:var(--err)">${esc(importSpec.error)}</span>`; return; }
+    kitBtnBusy(btn, false);
+    if (!importSpec.ok) {
+      // R4 错误呈现归一：统一错误卡进页内消息位（errorText 单源解析——
+      // errors-only 信封不再渲染 "导入失败: undefined"；标题沿用既有前导式
+      // fail_lead，建议行给 .lock/AEDT 占用提示）
+      showApiError(importSpec,
+        { into: T.$("imp-msg"), title: t("import.fail_lead"), hint: t("import.msg_hint") });
+      return;
+    }
     renderSpec();
   }
 
@@ -127,7 +139,22 @@ export async function pageImport() {
       });
   }
 
-  async function saveRecipeDraft() {
+  /* R4 危险操作确认（kitConfirm 复用单源）：保存草稿=向 out 路径覆盖写
+     （同名配方文件被覆盖且无撤销）——先确认后执行；路径为用户可编辑数据
+     走 esc 出口，词表段为开发侧可信文本（值零 HTML 纪律）。 */
+  function saveRecipeDraft() {
+    const outPath = T.$("imp-out").value.trim();
+    kitConfirm({
+      title: t("import.save_confirm_title"),
+      body: t("import.save_confirm_body_pre") + "<code>" + esc(outPath) + "</code>" +
+        t("import.save_confirm_body_tail"),
+      onOk: () => doSaveRecipeDraft(outPath),
+    });
+  }
+
+  async function doSaveRecipeDraft(outPath) {
+    const btn = T.$("imp-save");
+    kitBtnBusy(btn, true); // R4 三态：两次串行 POST 分钟级，busy 防重复提交
     const params = {};
     document.querySelectorAll("#imp-spec .imp-include").forEach((cb) => {
       if (!cb.checked) return;
@@ -137,7 +164,6 @@ export async function pageImport() {
       const f = (x) => parseFloat(x) || 0;
       params[n] = { value: parseFloat(importSpec.spec.variables[n].value) || 0, low: f(lo), high: f(hi) };
     });
-    const outPath = T.$("imp-out").value.trim();
     const body = { project: importSpec.project, design: importSpec.design,
                    out: outPath };
     const ver = impVersionValue();
@@ -147,16 +173,26 @@ export async function pageImport() {
       body: JSON.stringify(body),
       timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：几何导入+配方生成分钟级
     });
-    // UI-R11 A6 P2-3 同款收编（审查波 2 P3-4 清偿）：error_envelope 只有
-    // errors 列表，裸读单数 error 键会渲染 "导入失败: undefined"——走
-    // errorText 回退链（errors→error→reason，filebrowser.js 同面先例）。
-    if (!r.ok) return T.msg(t("import.fail_lead") + errorText(r), false);
-    // 用客户端编辑后的 params 覆盖保存（服务端 out 只含默认范围）
-    await apiFetch("/api/recipe", { method: "POST", headers: { "Content-Type": "application/json" },
+    if (!r.ok) {
+      kitBtnBusy(btn, false);
+      // R4 错误呈现归一：统一错误卡进保存状态位（errorText 单源——
+      // errors-only 信封不再渲染 "导入失败: undefined"）
+      showApiError(r, { into: T.$("imp-saved"), title: t("import.fail_lead"),
+        hint: t("common.error_hint") });
+      return;
+    }
+    // 用客户端编辑后的 params 覆盖保存（服务端 out 只含默认范围）。
+    // R4 api.js 开关演示点（opt-in，缺省关闭）：此调旧版忽略失败信封——
+    // apiError:true 后 ok:false 经 kit 注册的统一错误卡通道呈现（无容器
+    // =toast 回退）；成功路径零变化。
+    const rr = await apiFetch("/api/recipe", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: outPath, create: {
         ...importSpec.recipe, params,
         hfss_var_map: Object.fromEntries(Object.keys(params).map((n) => [n, n])),
-      } }) });
+      } }),
+      apiError: { hint: t("common.error_hint") } });
+    kitBtnBusy(btn, false);
+    if (rr.ok === false) return; // 呈现已由 apiError 通道兜住，此处只短路成功面
     T.$("imp-saved").innerHTML = T.badge(t("import.saved_badge"), "ok") + ` <span class="muted">${escAttr(outPath)}</span>`;
     T.msg(t("import.saved_msg"), true);
   }

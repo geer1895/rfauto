@@ -1,4 +1,4 @@
-/* rfauto 剖析页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移，PR-8）：
+/* rfauto 剖析页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移，PR-8）：
    py-spy 火焰图落 runs/（可选依赖如实降级）。
    i18n（发布前软编码批 S2 全清）：help 块分段 t()、标题/面板头/表单标签/
    选项/占位/状态行/结果行全迁词表（profile.* 键域，zh 与旧字面逐字节同、
@@ -10,16 +10,18 @@ import { esc, errorText, help } from "./dom.js";
 // i18n（发布前软编码批 S2）：壳静态标签 data-i18n+首扫；状态/结果行动态
 // 容器文案 t() 渲染期烘焙。
 import { t, applyI18nRoot } from "./i18n.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点）——
 // 数据面（py-spy 环境检测）接 viewSignal("profile") 切页收束 + aborted 短路；
 // 动作面（开始采样 POST）保持无 signal——采样在服务端持续（页面可切走），
-// 用户动作不被切页取消。P2-1（架构批 W3-S2 审查，W4-S1 修复）：POST 加
+// 用户动作不被切页取消。P2-1（aurora_g W3-S2 审查，W4-S1 修复）：POST 加
 // timeoutMs:0 长跑豁免——profile_run 同步阻塞 duration_s（缺省 30s 与
 // apiFetch 缺省超时恰好竞速必现假"请求超时"），调大采样时长同理。
 import { apiFetch, viewSignal } from "./api.js";
 // W14-S2 错误呈现归一（R2 Top10 #4）：采样失败点内联 ✗ span → kitErrorPanel
 // 单源（三态 kit 续波——本页原为零三态余量文件，错误态自此收编）。
-import { kitErrorPanel } from "./kit.js";
+// R4 交互细节批：长操作按钮三态（kitBtnBusy）——采样同步阻塞 duration_s，
+// busy 期 disabled+spinner 防重复触发。
+import { kitBtnBusy, kitErrorPanel } from "./kit.js";
 
 /* ═══ PR-8 剖析入口（ge8b Wave B 席B2）：py-spy 火焰图落 runs/ ═══
    py-spy 为可选依赖：未装=状态卡如实"未安装"+安装提示（不假装可用）。 */
@@ -69,10 +71,13 @@ export async function pageProfile() {
     };
     if (mode === "pid") body.pid = T.$("pf-pid").value.trim();
     else body.cmd = T.$("pf-cmd").value.trim().split(/\s+/).filter(Boolean);
+    const btn = T.$("pf-run");
+    kitBtnBusy(btn, true); // R4 三态：采样同步阻塞 duration_s（≥30s）
     T.$("pf-msg").textContent = t("profile.sampling_msg");
     const r = await apiFetch("/api/profile", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body), timeoutMs: 0 });
+    kitBtnBusy(btn, false);
     T.$("pf-msg").textContent = "";
     const el = T.$("pf-result");
     if (!r.ok) { el.innerHTML = kitErrorPanel(errorText(r)); return; } // W14-S2 归一（R2 #4）
@@ -82,7 +87,7 @@ export async function pageProfile() {
   };
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 profileCtx ═══════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 profileCtx ═══════════
    refresh=py-spy 可用性状态重拉（pageProfile 幂等——壳判 innerHTML 已在即
    跳过，采样表单态保留；无轮询面，leave 不需要）。 */
 export const profileCtx = {

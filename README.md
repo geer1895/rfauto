@@ -109,20 +109,30 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 
 ## Quick start
 
-No commercial tools needed — the built-in fake solver covers the whole core.
+**Prereq:** Python 3.10–3.12 (`python --version` to check). No commercial
+tools needed — the built-in fake solver covers the whole core.
 
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
-pip install -e ".[dev]"          # or: uv sync --extra dev
+python -m venv .venv
+.venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
+pip install -e .
 
-# run the test suite (~25400 tests, no EDA required)
-python -m pytest tests/unit -q
-
-# check which solvers/licenses are visible on your machine
-rfauto doctor
+rfauto ui                        # opens http://127.0.0.1:8642 (local only)
 ```
 
-Synthesize a 50 Ω microstrip line at 2.4 GHz (pure math, instant):
+**Five-minute first run, no license required.** In the workbench open
+**Tune**, leave the adapter on **fake**, press **Start** — a full optimization
+loop on a Wilkinson power divider (10 trials, closed-form physics) finishes in
+seconds and shows the recommended dimensions in a result card. Then:
+
+- **Runs** — every simulation's metrics, curves and quality-gate verdicts
+- **Gallery** — 72 device templates; each card opens a plain-language
+  parameter table (what it is, what the numbers mean, where they come from)
+- **Tools** — 323 closed-form calculators for instant cross-checks
+- Top-right **zh/EN** — the whole workbench is bilingual
+
+Prefer the terminal? Same two steps without the browser:
 
 ```bash
 $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
@@ -130,21 +140,18 @@ $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
   目标阻抗: 50.00 Ω
   线宽:     1.1133 mm
   εeff:     2.8530
-  状态:     ok
-```
 
-Run a Wilkinson power-divider simulation without any solver installed
-(the fake adapter answers instantly; plug in openEMS or HFSS later for real
-physics):
-
-```bash
 $ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 ✓ 仿真完成  run_id: 20260921_001708_3fe788d3
   指标:
     s11_db_max_in_band: -12.21
-    s21_db_mean_in_band: -3.67
-    iso_s23_db_min_in_band: 28.07
 ```
+
+`rfauto doctor` shows which solvers/licenses are visible on your machine.
+When you're ready for real physics, switch the adapter to **openEMS** (free,
+build instructions in the docs) or **HFSS** (needs AEDT 2025 R1) — same
+recipes, same quality gates. To run the test suite:
+`pip install -e ".[dev]"` then `python -m pytest tests/unit -q`.
 
 ![CLI in action — real output](docs/assets/cli_demo.png)
 

@@ -1,5 +1,5 @@
-/* rfauto 使用指南页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）。
-   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：纯静态页整页分段 t() 迁入
+/* rfauto 使用指南页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）。
+   i18n（aurora_g W2-S1 批 4，R1 §面2 P9-5）：纯静态页整页分段 t() 迁入
    （guide.* 41 键，zh 与旧字面逐字节同、en 新增）——本页零 API 数据、
    零动态容器，结构（<li>/<b>/<table>/guide-flow）留模板、纯文本段进词表
    （view_dashboard help 块分段先例）；值内 &lt;/&gt; 为渲染保真的字符实体
@@ -32,7 +32,7 @@ export function pageGuide() {
         <tr><td>adapter</td><td>${t("guide.gl_adapter_d")}</td></tr>
         <tr><td>objectives</td><td>${t("guide.gl_obj_d")}</td></tr>
         <tr><td>${t("guide.gl_mf_t")}</td><td>${t("guide.gl_mf_d")}</td></tr>
-        <tr><td>P0 gate</td><td>${t("guide.gl_p0_d")}</td></tr>
+        <tr><td>${t("guide.gl_p0_t")}</td><td>${t("guide.gl_p0_d")}</td></tr>
         <tr><td>${t("guide.gl_gate_t")}</td><td>${t("guide.gl_gate_d")}</td></tr>
       </tbody></table></div>
     <div class='panel'><b class='title'>${t("guide.faq_title")}</b>

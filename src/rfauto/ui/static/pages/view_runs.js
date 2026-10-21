@@ -1,20 +1,20 @@
-/* rfauto Run 历史页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto Run 历史页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    指标筛选 + 可排序表 + 骨架屏/空态。 */
 
 import { T } from "./context.js";
 // UI-R12 任务2：统一 API 层（apiFetch + 视图作用域取消 signal）
 import { apiFetch, viewSignal } from "./api.js";
 import { esc, help } from "./dom.js";
-// i18n（架构批 W6-S21 扩面页 2）：壳静态标签 data-i18n+首扫；筛选空态随
+// i18n（aurora_f W6-S21 扩面页 2）：壳静态标签 data-i18n+首扫；筛选空态随
 // render() 重建，文案 t() 渲染期烘焙（i18n.js 头注纪律）。
 import { t, applyI18nRoot } from "./i18n.js";
-import { bindClickRows, kitApplyClickRowAttrs, kitEmptyState, kitSkeletonRows } from "./kit.js";
+import { bindClickRows, bindEmptyStates, kitApplyClickRowAttrs, kitEmptyState, kitSkeletonRows } from "./kit.js";
 import { openRun } from "./router.js";
 import { makeSortable } from "./sortable.js";
 
 /* ═══ Run 历史（指标筛选）═══ */
 
-/* W5-S17（架构批，R1 §面3 虚拟滚动 watch 激活）：行数自适应降级阈值。
+/* W5-S17（aurora_f，R1 §面3 虚拟滚动 watch 激活）：行数自适应降级阈值。
    R1 盘点结论「limit=500 现状可接受、>1000 再复用 renderVirtualList」的本
    意=拿数据定案，真机实测（Chrome 155，500 行×6 列）：JS+DOM 全量重建
    8.2ms、稳态脏重排 ~21ms、滚动 180fps 零掉帧——本机流畅；故按"行数
@@ -23,7 +23,7 @@ import { makeSortable } from "./sortable.js";
    无感收益但零风险，规则作为渐进增强与阈值挂点保留；不支持者忽略=
    旧行为）。≤阈值全量渲染旧形态逐字节不变；行数增长无界，>1000 行升级
    renderVirtualList 窗口化仍挂 watch（数据归档
-   内部证据目录）。 */
+   runs/aurora_f/w5s17_runs_vrows_measure.md）。 */
 const VROWS_THRESHOLD = 200;
 
 /* run 清单缓存（W6-S2 S 状态收编：原 S.allRuns 单模块私有键降级模块级
@@ -53,7 +53,7 @@ export async function pageRuns() {
   const skTable = T.$("runs-table");
   if (skTable && skTable.tBodies[0])
     skTable.tBodies[0].innerHTML = kitSkeletonRows(5, 6);
-  // P8-7（架构批 R1 §面3 P2 级）：显式 limit=500——裸调 /api/runs 落服务端
+  // P8-7（aurora_f R1 §面3 P2 级）：显式 limit=500——裸调 /api/runs 落服务端
   // 缺省 50（runs/ 实存 3255 条目），历史页只见最近 50 条口径失真；对齐
   // view_sparams.js:37 同款已修形态（sparams 页 W7 P2-1 先例）。真分页
   // （服务端 total+翻页条）挂 R1 watch，500 内缓行。
@@ -95,6 +95,18 @@ export async function pageRuns() {
     // A4-C：单入口收编（hash 深链同步，R6 R-2）+ UI-R4：click/Enter/Space 同一激活
     bindClickRows(tb, (tr) => openRun(tr.dataset.id), "tr.clickable");
     if (!rows.length) {
+      if (!_allRuns.length) {
+        // R4 空态三件式（零记录 vs 筛选零命中分流）：一句话现状 + 下一步
+        // （跳转钮去 Tuning + CLI 命令行示例 <code> 段——结构留模板、文案
+        // 进词表，词表值零 HTML 纪律不变；命令行为 ASCII 协议字面）。
+        tb.innerHTML = `<tr><td colspan="6">` + kitEmptyState(
+          t("runs.empty_no_runs") +
+          "<code>rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake</code>",
+          { icon: "☰", label: t("runs.goto_tune"), view: "tune" },
+        ) + `</td></tr>`;
+        bindEmptyStates(tb);
+        return;
+      }
       // A8-A（R6 审计 P-3）：筛选空态三件式（表体形态=colspan 行包 empty-state；
       // 动作钮转触既有「清除筛选」逻辑）。W6-S21：文案随 render() 重建，走
       // t() 渲染期烘焙（词表 runs.empty_filter / runs.clear_filter）。
@@ -104,7 +116,7 @@ export async function pageRuns() {
       const fc = T.$("f-clear");
       if (rc && fc) rc.onclick = () => fc.click();
     }
-    // 架构批 W3-B（P1-7）：筛选重渲染后重放当前排序（makeSortable 幂等）
+    // aurora36 W3-B（P1-7）：筛选重渲染后重放当前排序（makeSortable 幂等）
     const sruns = makeSortable(T.$("runs-table"));
     if (sruns) sruns.refresh();
   };
@@ -127,7 +139,7 @@ export async function pageRuns() {
   render();
 }
 
-/* ═══ R-1（架构批 W2-S7）：PageContext 增量钩子 runsCtx ══════════════
+/* ═══ R-1（aurora_e W2-S7）：PageContext 增量钩子 runsCtx ══════════════
    refresh=数据重拉（pageRuns 幂等——壳判 innerHTML 已在即跳过、筛选控件
    值保留、表体经骨架屏→render() 替换；apiFetch 带 viewSignal("runs") 切页
    取消语义随行）。无轮询/定时器面，leave 不需要。 */

@@ -1,4 +1,4 @@
-"""架构批 W7-C（UI P2 清扫批）回归钉。
+"""aurora36 W7-C（UI P2 清扫批）回归钉。
 
 落地面（本席只动 pages.js / index.html / 本测试，零 commit）：
 1. P2-11 窄屏策略：900px 断点块（main 收距 / 页头换行 / 面板横滚 /
@@ -15,7 +15,7 @@
    reduced-motion delay 归零）/ P2-5 @supports not backdrop-filter 降级 /
    P2-8 .pk-hint 死类补样式 / P2-9 重复 .bubble.md 样式块删除 /
    P2-15 表头 scope="col"（原跨席字面钉豁免的战役座位表 2 处已由
-   架构批 UI-R4 清偿挂 scope，全域零裸表头）/ P1-14 残余 nav .ico
+   aurora_d UI-R4 清偿挂 scope，全域零裸表头）/ P1-14 残余 nav .ico
    aria-hidden(26) / P2-4 残余 logo 升 h1。
 
 零改动项（核查结论钉住，防未来漂移）：
@@ -47,7 +47,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -197,13 +197,14 @@ class TestGuideLeftovers:
         assert _INDEX.count(".bubble.md th, .bubble.md td") == 1
 
     def test_p2_15_all_th_have_scope(self):
-        # UI-R4（架构批）清偿 A6 P2-9：原 X2 席裸字面钉豁免的战役座位表
+        # UI-R4（aurora_d）清偿 A6 P2-9：原 X2 席裸字面钉豁免的战役 trial 表
         # PASS/FAIL 两分支 2 处已挂 scope=col（test_x2_pr68_ui /
         # test_ui_kit 同笔更新）——pages/ 全域零裸表头，新增一律挂 scope。
+        # 人性化 R3 文案批：列头文案迁词表（campaign.th_seat），钉改键引用形态。
         bare = [m.start() for m in re.finditer(r"<th>", _PAGES)]
         assert len(bare) == 0, f"裸表头应已清零（A6 P2-9），实得 {len(bare)}"
-        # UI i18n 批（2026-10-19）：表头文案迁词表——scope 钉改钉键面
-        assert _PAGES.count('<th scope="col">${t("campaign.th_seat")}</th>') == 2, "座位表 scope 口径"
+        assert _PAGES.count('<th scope="col">${t("campaign.th_seat")}</th>') == 2, \
+            "trial 表 scope 口径"
         assert _PAGES.count("scope=") >= 28, "scope=col 覆盖面"
         assert _PAGES.count('scope="col"') + _PAGES.count("scope='col'") >= 28
 

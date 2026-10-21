@@ -1,4 +1,4 @@
-"""架构批 A2-B 席位回归钉：微波工具箱分组+搜索选择器与 #/tools/<key> 深链。
+"""aurora72 A2-B 席位回归钉：微波工具箱分组+搜索选择器与 #/tools/<key> 深链。
 
 对象：src/rfauto/ui/static/pages.js 工具箱页（pageTools 及其纯函数助手）。
 app.js / index.html / palette.js / plotcard.js 归他席——本文件只读，不动。
@@ -36,7 +36,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -132,7 +132,7 @@ class TestToolsDeepLink:
     def test_entry_point_exported_and_wired(self):
         assert "export function toolsSelectKey(key)" in _SRC
         # 装配点在 initPages（幂等 + node import 零 DOM 依赖守卫同 W4-C 惯例）
-        assert "_bindToolsDeepLink(); // 架构批 A2-B" in _SRC
+        assert "_bindToolsDeepLink(); // aurora72 A2-B" in _SRC
         body = re.search(r"function _bindToolsDeepLink\(\) \{(.*?)\n\}", _SRC, re.S)
         assert body, "_bindToolsDeepLink 函数体缺失"
         b = body.group(1)
@@ -174,8 +174,9 @@ class TestHelpTextRefreshed:
         assert 't("tools.help_groups_tpl"' in tools
 
     def test_three_shell_sentence_kept(self):
-        # 三壳同源说明保留（CLI rfauto calc / MCP run_calculator / 本 UI）
-        assert "三壳一个内核" in _SRC
+        # 三壳同源说明保留（CLI rfauto calc / MCP run_calculator / 本 UI）；
+        # 人性化 R3 文案批："三壳一个内核"白话化为"同一套内核"（语义不变）
+        assert "同一套内核" in _SRC
         assert "rfauto calc" in _SRC and "run_calculator" in _SRC
 
     def test_deeplink_hint_in_help(self):
@@ -305,7 +306,7 @@ class TestNodeBehavioral:
         assert r.returncode == 0, r.stderr[-2000:]
 
 
-# ═══════════════ 4. 架构批 A3-A：结果可视化 + 扫参 + 公式面板 ═══════════════
+# ═══════════════ 4. aurora72 A3-A：结果可视化 + 扫参 + 公式面板 ═══════════════
 # 对象：pages.js 工具箱页 A3-A 增量（R5 审计 §③§④§⑤ 落地面）。沿用本文件
 # 三层惯例：源码钉（免 node）→ 跨席计数钉复述 → node 行为钉（合成数据实测）。
 
@@ -328,7 +329,7 @@ class TestResultVisualizationPins:
         assert body, "resultChart 函数体缺失"
         b = body.group(1)
         assert "echartsInitCached(el)" in b
-        assert "bindChartResize(el); // 架构批 A3-A" in b  # 独立注释尾，不扰 P0-5 计数钉
+        assert "bindChartResize(el); // aurora72 A3-A" in b  # 独立注释尾，不扰 P0-5 计数钉
         assert "window.echarts.init(" not in b
         # 实例自持句柄：innerHTML 换血前自释放（不新增 disposeChartsIn 装配点）
         assert "_toolResultCharts" in b
@@ -415,7 +416,7 @@ class TestFormulaPanelPins:
         assert 'const descFull = String(cal.description || "")' in tools
         assert "toolDescHasFormula(descFull)" in tools  # 特征探测单源
         assert "<details class='tool-formula'>" in tools
-        # W1-S2（架构批 i18n 试点）：summary 文案单源迁词表 t() 渲染期烘焙
+        # W1-S2（aurora_f i18n 试点）：summary 文案单源迁词表 t() 渲染期烘焙
         # （动态容器不挂 data-i18n——重扫会覆写）——zh 字面同笔迁 pages/i18n.js
         assert '${t("tools.formula_summary")}</summary>' in tools
         assert "公式与出处" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
@@ -445,10 +446,10 @@ class TestA3ACrossSeatPinsHold:
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
         assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
-        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1  # 本席 1 面
+        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1  # 本席 1 面
         assert _SRC.count("disposeChartsIn(") == 4  # 本席零新增（_toolResultCharts 自持）
         assert _SRC.count("setInterval(") == 2  # 扫参逐点 await，零新定时器
-        assert _SRC.count("color:var(--err)'>✗") == 1  # 本席错误标记用「跳过：」不用 ✗；架构批 W2-S5 gallery ✗ 迁 kitErrorPanel（R1 #8 批1）6→5；架构批 W14-S2 tools 计算失败点迁 kitErrorPanel（R2 Top10 #4）5→1（余 1=queue 豁免点）
+        assert _SRC.count("color:var(--err)'>✗") == 1  # 本席错误标记用「跳过：」不用 ✗；aurora_f W2-S5 gallery ✗ 迁 kitErrorPanel（R1 #8 批1）6→5；aurora_g W14-S2 tools 计算失败点迁 kitErrorPanel（R2 Top10 #4）5→1（余 1=queue 豁免点）
         assert _SRC.count("echartsInitCached(el)") == 2  # 定义+本席 draw()（W3-S12 四管线入壳后）
         assert _SRC.count("plotCardCached(") == 3  # 定义+tune+本席扫参
 

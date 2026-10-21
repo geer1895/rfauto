@@ -1,19 +1,22 @@
-/* rfauto 工作台 UI-KIT（架构批 UI-R2 自 pages.js 拆出，架构批
+/* rfauto 工作台 UI-KIT（aurora_d UI-R2 自 pages.js 拆出，aurora72
    A7-A/A8-A 两块逐字节搬移）：kitTable/kitPanelHead/kitBadge 族 +
    kitSkeleton/kitEmptyState/kitErrorPanel。全部零顶层执行（node 行为钉
    可测）；bindEmptyStates 的空态跳转钮复用 router.showPage 单源。
-   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：错误/空态三缺省串
+   i18n（aurora_g W2-S1 批 4，R1 §面2 P9-5）：错误/空态三缺省串
    "暂无数据/加载失败/重试" 单源迁 common.empty/load_failed/retry（kit 是
    11 视图的空态/错误态单源，一处迁词表全站受益）——zh 档 t() 返回值与
    旧字面逐字节同（node 行为钉 zh 缺省档复现）；调用方显式传 empty/文案
    的覆盖路径零扰动。 */
 
 import { T } from "./context.js";
-import { esc, escAttr } from "./dom.js";
+import { esc, escAttr, errorText } from "./dom.js";
 import { t } from "./i18n.js";
 import { showPage } from "./router.js";
+// UI 人性化批 R4：apiFetch 统一错误卡的缺省呈现注册（仅存函数引用，
+// 本模块零对 api 的请求面依赖；api.js 仍零 pages/ 模块依赖——见文件尾）。
+import { setApiErrorPresenter } from "./api.js";
 
-/* ═══ 架构批 A7-A（R6 审计 R-3 试点）：UI-KIT 三件（表/面板头/状态徽章）═══
+/* ═══ aurora72 A7-A（R6 审计 R-3 试点）：UI-KIT 三件（表/面板头/状态徽章）═══
    试点策略（R6 R-3）：不全量重构，抽 3 类最高频重复模式做共享层——
    ①kitTable（34 张表同构 thead/tbody/scope/空态壳）②kitPanelHead
    （43 处 <div class='panel'><b class='title'> 面板头壳）③kitBadge 族
@@ -106,9 +109,9 @@ export function kitVerdictBadge(verdict, label) {
 export function kitBoolBadge(ok, yes, no) {
   return _kitBadgeEl(ok ? yes : no, ok ? "ok" : "err");
 }
-/* ═══ 架构批 A7-A UI-KIT 块结束 ═══ */
+/* ═══ aurora72 A7-A UI-KIT 块结束 ═══ */
 
-/* ═══ 架构批 A8-A（R6 审计 P-2/P-3/P-4 打磨批）：kit 五件 ═══
+/* ═══ aurora72 A8-A（R6 审计 P-2/P-3/P-4 打磨批）：kit 五件 ═══
    ①kitSkeleton 骨架占位条 ②kitSkeletonRows 表体骨架行（数据首拉占位，
    reduced-motion 降级=静态灰块，见 index.html .skeleton 块）③kitEmptyState
    空态三件式（图标+一句话+下一步动作钮）④bindEmptyStates 空态跳转钮接线
@@ -175,9 +178,9 @@ export function kitErrorPanel(msg, retryId) {
     ` <span class="muted">${esc(msg == null ? "" : String(msg))}</span>` +
     (retryId ? ` <button class="minor" id="${escAttr(retryId)}">${t("common.retry")}</button>` : "") + `</div>`;
 }
-/* ═══ 架构批 A8-A kit 五件结束 ═══ */
+/* ═══ aurora72 A8-A kit 五件结束 ═══ */
 
-/* ═══ 架构批 UI-R4（A6 审查 P1-5 全域清偿）：kitClickRow 可点行统一形态 ═══
+/* ═══ aurora_d UI-R4（A6 审查 P1-5 全域清偿）：kitClickRow 可点行统一形态 ═══
    行点击（clickRow 式）交互的键盘可达单源。改造站点 12 处（台账见
    tests/unit/test_ui_a11y_rows.py）：dashboard 活动流/最近 Run、runs 表、
    datasets、anchors、UQ 资产、配方目录、校准、报告清单、queue 决策日志、
@@ -221,9 +224,9 @@ export function bindClickRows(root, onActivate, selector) {
     };
   });
 }
-/* ═══ 架构批 UI-R4 kitClickRow 块结束 ═══ */
+/* ═══ aurora_d UI-R4 kitClickRow 块结束 ═══ */
 
-/* ═══ 架构批 W6-S2（R1 审计 P9-8 / R2 Top10 #6 遗产照搬）：kitConfirm ═══
+/* ═══ aurora_g W6-S2（R1 审计 P9-8 / R2 Top10 #6 遗产照搬）：kitConfirm ═══
    破坏性动作确认模态（实证痛点：清空对话/接管环控制此前单击即发零确认
    零撤销）。两件：
    ①kitConfirmHtml——纯串构建（node 行为钉可测）：面板壳（标题/正文/取消/
@@ -302,4 +305,87 @@ export function kitConfirm(opts) {
   if (cancelBtn) cancelBtn.focus({ preventScroll: true });
   return modal;
 }
-/* ═══ 架构批 W6-S2 kitConfirm 块结束 ═══ */
+/* ═══ aurora_g W6-S2 kitConfirm 块结束 ═══ */
+
+/* ═══ UI 人性化批 R4（交互细节与公共组件）：错误卡单源 + 按钮三态 ═══
+   用户反馈"点运行甩裸 JSON/错误呈现各页不一/按钮无 loading 禁用态"的
+   公共件收口（他席 R1 tune 运行链/R2 gallery 抽屉/R3 文案要复用的面）。
+   两件三函数，全部 node 行为钉可测（showApiError 无 document 守卫返回
+   null——kitConfirm 同款口径）：
+
+   ①kitApiErrorHtml(envelope, {title,hint})——纯串构建：统一错误卡
+     （标题 badge + 错误原文 + 建议行）。信封解析走 dom.errorText 单源
+     （errors[] join → error → reason → common.error_generic 兜底——
+     error_envelope 只有 errors 列表，裸读单数 error 键渲染 "undefined"
+     的 filebrowser 实证病不再复发）；信封无 errors 时给通用文案。
+     title 缺省 common.error_title、hint 缺省 common.error_hint（传 ""
+     显式去建议行）；msg/hint 均 esc 单点转义（错误原文是 API 数据）。
+   ②showApiError(envelope, {title,hint,into})——DOM 接线：into=容器元素
+     或选择器（innerHTML 覆写，返回容器）；无 into/无 document 时回退
+     全局 toast 单源（T.msg，与 app.js 兜底同通道）并返回 null。
+   ③kitBtnBusy(btn, busy, busyLabel)——长操作按钮三态（idle/busy/restore）：
+     busy=true 时 disabled+aria-busy+spinner 文案（缺省 common.busy
+     "运行中…"，import.reading 等页域标签传参覆盖），原钮面存
+     data-kit-idle-html 恢复；disabled 本身即重复点击防抖（disabled 元素
+     不派发 click）。busy=false 还原钮面并清标记（幂等：无标记时 restore
+     为无操作）。btn 缺席/非元素静默（#105 best-effort）。
+
+   api.js 开关（apiError:true|{title,hint}）的缺省呈现=本文件装配注册
+   showApiError（文件尾，零 DOM 副作用——只存函数引用）；apiError 触发
+   时不带 into → 走 toast 回退，视图想就地卡片自己传容器调 showApiError。 */
+
+export function kitApiErrorHtml(envelope, opts) {
+  const o = opts || {};
+  const title = o.title != null ? o.title : t("common.error_title");
+  const msg = errorText(envelope, t("common.error_generic"));
+  const hint = o.hint != null ? o.hint : t("common.error_hint");
+  return `<div class="err-panel" role="alert">` +
+    `<span class="badge err">${esc(title)}</span>` +
+    ` <span class="muted">${esc(msg)}</span>` +
+    (hint ? ` <div class="muted" style="font-size:12px;flex-basis:100%">${esc(hint)}</div>` : "") +
+    `</div>`;
+}
+
+export function showApiError(envelope, opts) {
+  const o = opts || {};
+  const html = kitApiErrorHtml(envelope, o);
+  if (o.into && typeof document !== "undefined") {
+    const el = typeof o.into === "string"
+      ? document.querySelector(o.into) : o.into;
+    if (el && typeof el.innerHTML !== "undefined") {
+      el.innerHTML = html;
+      return el;
+    }
+  }
+  try {
+    if (T.msg) T.msg(errorText(envelope, t("common.error_generic")), false);
+  } catch { /* toast 缺席静默（node/裸环境） */ }
+  return null;
+}
+
+export function kitBtnBusy(btn, busy, busyLabel) {
+  if (!btn || typeof btn.disabled !== "boolean") return;
+  if (busy) {
+    if (btn.dataset.kitIdleHtml == null) btn.dataset.kitIdleHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.innerHTML = "<span class='spin' aria-hidden='true'></span> " +
+      esc(busyLabel || t("common.busy"));
+  } else {
+    btn.disabled = false;
+    btn.removeAttribute("aria-busy");
+    if (btn.dataset.kitIdleHtml != null) {
+      btn.innerHTML = btn.dataset.kitIdleHtml;
+      delete btn.dataset.kitIdleHtml;
+    }
+  }
+}
+
+/* apiError 开关缺省呈现装配（R4）：kit.js 是全站共享件，pages.js 静态
+   import 即注册——apiFetch({apiError}) 的 ok:false 信封经 showApiError
+   呈现（无 into=toast 回退）。node 裸 import 同样安全（只存引用零 DOM）；
+   注册异常吞掉（#105：装配面故障不得阻断 kit 本体）。 */
+try {
+  setApiErrorPresenter((envelope, o) => showApiError(envelope, o || {}));
+} catch { /* best-effort 静默 */ }
+/* ═══ UI 人性化批 R4 块结束 ═══ */

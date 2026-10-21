@@ -39,11 +39,13 @@ class TestCampaignPageAssembly:
         assert "async function pageCampaign()" in _PAGES_JS
 
     def test_seat_status_table_markup_present(self):
-        # X2 v1：座位状态表（PASS/SKIP/FAIL 分色）= 真 <table> 标记
+        # X2 v1：trial 状态表（PASS/SKIP/FAIL 分色）= 真 <table> 标记
         # （语义化表格：无 JS 交互/读屏/复制场景仍逐格可读）。
-        # 架构批 UI-R4（A6 P2-9 清偿）：表头补 scope=col（原裸字面钉随本笔
+        # aurora_d UI-R4（A6 P2-9 清偿）：表头补 scope=col（原裸字面钉随本笔
         # 更新，与 kitTable 既有 scope 口径齐；test_w7c_ui_p2_sweep::test_p2_15
         # 同笔解除豁免）。
+        # 人性化 R3 文案批：列头迁词表后钉键引用形态（campaign.th_seat，
+        # zh 值"trial 状态"——"座位"内部黑话已白话化）。
         assert 'cp-seats' in _PAGES_JS
         assert '<th scope="col">${t("campaign.th_seat")}</th>' in _PAGES_JS
         assert 'T.badge("PASS", "ok")' in _PAGES_JS
@@ -51,7 +53,7 @@ class TestCampaignPageAssembly:
         assert 'T.badge("FAIL", "err")' in _PAGES_JS
 
     def test_seat_numbers_go_through_esc(self):
-        # AU-4：座位表计数是 API 数据插值——必须经 esc（badge 自身单点转义）
+        # AU-4：trial 表计数是 API 数据插值——必须经 esc（badge 自身单点转义）
         assert 'esc(d.n_trials_used)' in _PAGES_JS
         assert 'esc(skipped)' in _PAGES_JS
         assert 'esc((d.errors || []).join("; "))' in _PAGES_JS
@@ -60,8 +62,9 @@ class TestCampaignPageAssembly:
         # XSS 抽查钉：trial_number 出自 runs/ trials 审计（#320 导入面
         # 外来数据可达），此前裸插值是逃逸面——必须 esc
         assert 'esc(rows[i].trial_number)' in _PAGES_JS
-        # 进度条走 textContent（无 innerHTML 插值面）
-        assert '座位进度' in _PAGES_JS
+        # 进度条走 textContent（无 innerHTML 插值面）；人性化 R3：文案值
+        # "座位进度"→"进度"（白话化），钉改词表键引用形态
+        assert 'T.$("cp-info").textContent = `${t("campaign.prog_lead")}' in _PAGES_JS
 
     def test_profile_page_registered(self):
         # PR-8 UI 页（ge8b 席B2 已落）：装配钉防静默丢失

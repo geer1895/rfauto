@@ -1,11 +1,11 @@
-"""架构批 W1-S2 席位回归钉：UI i18n 骨架 + 静态壳/三试点页（tools/gallery/queue）
+"""aurora_f W1-S2 席位回归钉：UI i18n 骨架 + 静态壳/三试点页（tools/gallery/queue）
 + W6-S21 扩面五页（dashboard/runs/detail/sparams/agent）
 + W8-S32 批 3（timeline 页接线=第 9 页；dashboard 控件钮/KPI/activity/图表
 系列名与 help 分段深化、detail/agent 补点——键集互证按九页视图扫描）
-+ W2-S1 批 4（架构批：view_data 三页（datasets/anchors/uq）+ view_guide
++ W2-S1 批 4（aurora_g：view_data 三页（datasets/anchors/uq）+ view_guide
 接线=11 视图扫描；kit.js 共享组件三缺省串入壳面引用集（dom.js help summary
 同款口径——kit 是 11 视图错误/空态单源））
-+ 架构批 W4-S1（半程三页收尾+新页壳层）：键集互证扩到 16 视图——
++ aurora_h W4-S1（半程三页收尾+新页壳层）：键集互证扩到 16 视图——
 loopboard/tune/reports/recipe/campaign 五页入扫描域（loopboard 全清+
 新四页壳层迁移，agent 全清；tools 协议组名表=刻意保留不计入文案面）
 + 发布前置 i18n 软编码批 S2：键集互证扩到 20 视图——optstack/solvers/
@@ -16,8 +16,8 @@ import 三页入扫描域（S1 席三页全清；view_fieldviz 承 farfield/fiel
 共壳，fieldviz.* 单域；import 域键名与 ES import 语句无字面冲突——键字面
 形如 "import.xxx" 仅 t()/data-i18n 注入口出现）。
 
-规格=内部证据目录 §面2（W5-S23 决议"自研词表+t()"落地）
-+ 内部证据目录 §面2（P9-5/P9-6）。
+规格=runs/aurora_f/R1_ui_v8_audit.md §面2（W5-S23 决议"自研词表+t()"落地）
++ runs/aurora_g/R1_ui_v9_audit.md §面2（P9-5/P9-6）。
 
 钉五层：
 1. 骨架行为（node 真执行，缺 node skip）：t() zh/en 真值表 + {name} 占位
@@ -75,7 +75,7 @@ _VIEWS = {
     # W2-S1 批 4（data=三页共壳 datasets/anchors/uq；guide=纯静态页）
     "data": (_STATIC / "pages" / "view_data.js").read_text(encoding="utf-8"),
     "guide": (_STATIC / "pages" / "view_guide.js").read_text(encoding="utf-8"),
-    # 架构批 W4-S1（半程三页收尾+新页壳层五页入扫描域）
+    # aurora_h W4-S1（半程三页收尾+新页壳层五页入扫描域）
     "loopboard": (_STATIC / "pages" / "view_loopboard.js").read_text(encoding="utf-8"),
     "tune": (_STATIC / "pages" / "view_tune.js").read_text(encoding="utf-8"),
     "reports": (_STATIC / "pages" / "view_reports.js").read_text(encoding="utf-8"),
@@ -115,7 +115,7 @@ def _t_refs(src: str) -> set[str]:
 # 动态映射字面量通道：视图内以页前缀形态出现的键字面（如 view_dashboard
 # widget 注册表 `tk: "dashboard.w_kpi"`，渲染期 t(w.tk) 动态实参——t("字面")
 # 正则抓不到，按引号字面补收，W6-S21 扩面；W8-S32 批 3 收录 timeline 域；
-# 架构批 W4-S1 收录 loopboard/tune/reports/recipe/campaign 五域；
+# aurora_h W4-S1 收录 loopboard/tune/reports/recipe/campaign 五域；
 # 发布前置软编码批 S2 收录 optstack/solvers/profile/playground 四域；
 # 发布前置软编码批 S1 收录 fieldviz/calibration/import 三域）。
 _PAGE_KEY_LIT = re.compile(
@@ -262,7 +262,7 @@ class TestKeySetCrossValidation:
             ("timeline", ("timeline.",)),
             # W2-S1 批 4（data=datasets/anchors/uq 三页共壳；guide）
             ("data", ("datasets.", "anchors.", "uq.")), ("guide", ("guide.",)),
-            # 架构批 W4-S1（半程收尾+新页壳层五页入域）
+            # aurora_h W4-S1（半程收尾+新页壳层五页入域）
             ("loopboard", ("loopboard.",)), ("tune", ("tune.",)),
             ("reports", ("reports.",)), ("recipe", ("recipe.",)),
             ("campaign", ("campaign.",)),
@@ -355,3 +355,78 @@ class TestHardcodeRatchet:
         assert r.returncode == 0, (
             "i18n hardcode 棘轮回潮（新 CJK 字面量超基线——文案进词表，"
             f"勿手写字面）:\n{r.stdout[-2000:]}")
+
+
+# ────────────────── 7. 画廊详情抽屉覆盖（R2 人性化席 2026-10-19） ──────────────────
+
+class TestGalleryDrawerCoverage:
+    """R2 人性化改造席（模板画廊用户实测批次）：72 卡全量详情抽屉的
+    前端逻辑自证——
+
+    1. 词表覆盖：每个注册模板（TEMPLATE_META 全量）都有 gallery.desc_%
+       词表键且 zh/en 双语（抽屉①一句话人话说明的数据源；72/72，
+       键名小写化契约 ms_array_NxN→desc_ms_array_nxn）；
+    2. 视图字面表覆盖：view_gallery.js DESC_KEYS 逐一引用（动态拼键
+       逃逸 _PAGE_KEY_LIT 键集互证的画廊面补强，缺一即死键/回退链）；
+    3. 抽屉三件套在位：说明（cardDesc）+ 参数白话表（parseSemantics
+       语义段解析+GLOSS 兜底+origin 来源列）+ 预览诚实边界
+       （preview_uncovered 一行，替代满屏"未配通道"徽标）；
+    4. 语法兜底：node --check view_gallery.js（同 i18n.js 层 5 口径——
+       本文件原无 view 语法钉，抽屉 DOM 组装面新增后补齐）。"""
+
+    def test_desc_keys_cover_all_templates_bilingual(self):
+        from rfauto.adapters.openems_templates import TEMPLATE_META
+
+        assert _NODE is not None, "本机无 node"
+        out = _run_node_js(
+            "const m = await import('./pages/i18n.js');\n"
+            "const desc = {};\n"
+            "for (const k of Object.keys(m.LOCALES))\n"
+            "  if (k.startsWith('gallery.desc_')) {\n"
+            "    const e = m.LOCALES[k];\n"
+            "    desc[k] = (typeof e.zh === 'string' && e.zh\n"
+            "      && typeof e.en === 'string' && e.en) ? 1 : 0;\n"
+            "  }\n"
+            "console.log(JSON.stringify(desc));\n")
+        desc = json.loads(out.strip())
+        missing = [n for n in TEMPLATE_META
+                   if f"gallery.desc_{n.lower()}" not in desc
+                   or desc[f"gallery.desc_{n.lower()}"] != 1]
+        assert not missing, (
+            "模板缺 gallery.desc_* 词表键（或 zh/en 缺半边）: "
+            f"{sorted(missing)}——抽屉①说明数据源必须 72/72 全覆盖")
+
+    def test_desc_keys_literal_table_covers_all_templates(self):
+        from rfauto.adapters.openems_templates import TEMPLATE_META
+
+        src = _VIEWS["gallery"]
+        table = re.search(r"const DESC_KEYS = \{.*?\n\};", src, re.S)
+        assert table, "DESC_KEYS 字面映射表缺席"
+        missing = [n for n in TEMPLATE_META
+                   if f'"gallery.desc_{n.lower()}"' not in table.group(0)]
+        assert not missing, (
+            f"DESC_KEYS 映射表缺模板（键集互证盲区补钉）: {sorted(missing)}")
+
+    def test_drawer_surface_pins(self):
+        src = _VIEWS["gallery"]
+        assert "function openDrawer(" in src, "详情抽屉开函缺席"
+        assert "function parseSemantics(" in src, "语义白话段解析器缺席"
+        assert "data-slot='preview'" in src, "抽屉预览槽缺席"
+        assert "gallery.preview_uncovered" in src, "预览诚实边界键未消费"
+        assert "gallery.origin_nominal" in src, "数值来源列（名义值）缺席"
+        # 卡面瘦身：参数串不再整卡平铺（旧 Object.entries 拼串形态退场，
+        # 参数表折叠进抽屉——抽屉内 orderedParams 逐行消费属合法面）
+        assert "Object.entries(c.nominal_params" not in src, (
+            "卡面仍平铺参数串（应折叠进抽屉）")
+        # 满屏"未配通道"徽标退场：no_preview 仅作卡角小标记（预览钮不再
+        # 以 preview 有无二分支——详情钮全量在位）
+        assert "gallery.detail_btn" in src
+        assert 'data-gal=' in src
+
+    def test_node_check_view_gallery_js(self):
+        assert _NODE is not None, "本机无 node"
+        r = subprocess.run([_NODE, "--check",
+                            str(_STATIC / "pages" / "view_gallery.js")],
+                           capture_output=True, text=True, timeout=60)
+        assert r.returncode == 0, (
+            f"node --check view_gallery.js:\n{r.stderr[-2000:]}")

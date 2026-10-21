@@ -1,6 +1,6 @@
-/* rfauto 数据资产页族（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 数据资产页族（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    数据集注册表 + 标定锚 + UQ 不确定度（全部只读，数值只在确定性内核）。
-   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：三页 chrome 文案全迁词表
+   i18n（aurora_g W2-S1 批 4，R1 §面2 P9-5）：三页 chrome 文案全迁词表
    （datasets./anchors./uq. 键域，zh 与旧字面逐字节同、en 新增）——静态
    壳标题/过滤框/刷新钮挂 data-i18n（h2 内含 small 子元素，静态文案包
    span——detail 页先例）；随数据重建的容器（表体/选项表/预览面板）一律
@@ -15,7 +15,8 @@ import { apiFetch, viewSignal } from "./api.js";
 import { esc, escAttr, help } from "./dom.js";
 // i18n（批 4）：三页接线（壳静态标注 + 动态容器烘焙）
 import { t, applyI18nRoot } from "./i18n.js";
-import { bindClickRows, kitBadge, kitClickRowAttrs, kitErrorPanel, kitPanelHead, kitTable } from "./kit.js";
+import { bindClickRows, bindEmptyStates, kitApiErrorHtml, kitBadge, kitBtnBusy,
+  kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitPanelHead, kitTable, showApiError } from "./kit.js";
 
 /* 数据集清单缓存（W6-S2 S 状态收编：原 S.dsAll 单模块私有键降级模块级
    ——属主=本模块三页共壳，契约表见 context.js；进页重拉语义不变）。 */
@@ -61,7 +62,22 @@ export async function pageDatasets() {
       return true;
     });
     T.$("ds-count").textContent = t("datasets.count_tpl", { n: rows.length, total: _dsAll.length });
-    if (!rows.length) { body.innerHTML = `<span class='muted'>${t("datasets.empty_filter")}</span>`; return; }
+    if (!rows.length) {
+      // R4 空态三件式分流：注册表为空=现状+下一步（跳「使用指南」）；
+      // 有数据但筛选零命中=现状+「清除筛选」动作钮（runs 空态同款）。
+      body.innerHTML = _dsAll.length
+        ? kitEmptyState(t("datasets.empty_filter"),
+          { icon: "☰", label: t("datasets.clear_filter"), id: "ds-empty-clear" })
+        : kitEmptyState(
+          t("datasets.empty_none") + "<br>" + t("datasets.empty_none_next"),
+          { icon: "▣", label: t("datasets.goto_guide"), view: "guide" });
+      bindEmptyStates(body);
+      const rc = T.$("ds-empty-clear");
+      if (rc) rc.onclick = () => {
+        T.$("ds-filter").value = ""; T.$("ds-family").value = ""; render();
+      };
+      return;
+    }
     body.innerHTML = "<table><thead><tr>" +
       `<th scope='col'>${t("datasets.th_name")}</th><th scope='col'>${t("datasets.th_points")}</th>` +
       `<th scope='col'>${t("datasets.th_rows")}</th><th scope='col'>${t("datasets.th_family")}</th>` +
@@ -100,7 +116,12 @@ export async function pageDatasets() {
       { signal: viewSignal("datasets") });
     if (p.aborted) return; // UI-R12：切页取消——不写隐藏区
     const el = T.$("ds-preview");
-    if (!p.ok) { el.innerHTML = `<div class='panel'><b class='title'>${t("datasets.preview_lead")}${escAttr(name)}</b><span style="color:var(--err)">${esc((p.errors || []).join("; "))}</span></div>`; return; }
+    if (p.ok === false) {
+      // R4 错误呈现归一：面板头保留 + 统一错误卡（原内联色字退役）
+      el.innerHTML = `<div class='panel'><b class='title'>${t("datasets.preview_lead")}${escAttr(name)}</b>` +
+        kitApiErrorHtml(p, { hint: t("common.error_hint") }) + `</div>`;
+      return;
+    }
     const cols = p.columns || [];
     const fmtCell = (val) => {
       if (val == null) return "<span class='muted'>-</span>";
@@ -150,6 +171,11 @@ export async function pageAnchors() {
     // A7-A ui-kit：锚状态→类单源（kitBadge 查 KIT_STATUS_CLS；未知状态
     // 一律 muted——原查表回退同串；无状态 UNKNOWN 同串）
     const stBadge = (st) => kitBadge(st || "UNKNOWN", st);
+    if (!(d.anchors || []).length) {
+      // R4 空态三件式：注册表零锚=现状一句话（不臆测原因）。
+      body.insertAdjacentHTML("beforeend", kitEmptyState(t("anchors.empty")));
+      return;
+    }
     body.insertAdjacentHTML("beforeend",
       "<table><thead><tr><th scope='col'>anchor_id</th>" +
       `<th scope='col'>${t("anchors.th_status")}</th><th scope='col'>${t("anchors.th_kind")}</th>` +
@@ -178,7 +204,7 @@ export async function pageAnchors() {
       if (det.aborted) return; // UI-R12：切页取消——不写隐藏区
       T.$("an-detail").innerHTML = det.ok
         ? `<div class='panel'><b class='title'>${t("anchors.detail_lead")}${esc(det.anchor.anchor_id)}</b><pre>${esc(JSON.stringify(det.anchor, null, 2))}</pre></div>`
-        : `<div class='panel'><span style="color:var(--err)">${esc(det.error || t("anchors.detail_unreadable"))}</span></div>`;
+        : `<div class='panel'>${kitApiErrorHtml(det, { title: t("anchors.detail_unreadable") })}</div>`;
     }, "tr.clickable");
   };
   T.$("an-reload").onclick = load;
@@ -199,16 +225,25 @@ export async function pageUq() {
        <div class='toolbar'>${t("uq.label_samples")}<input id='uq-path' style='flex:1;min-width:280px' placeholder='runs/xxx/calibration/samples.json'>
          ${t("uq.label_kind")}<select id='uq-kind'><option>poly_ridge</option><option>nn</option></select>
          ${t("uq.label_draws")}<input id='uq-n' value='10000' size='7'> seed: <input id='uq-seed' value='42' size='5'>
-         <button class='act' id='uq-run'>${t("uq.run")}</button><span id='uq-spin'></span></div>
+         <button class='act' id='uq-run'>${t("uq.run")}</button></div>
        <div id='uq-tol' class='muted' style='margin-top:6px'>${t("uq.tol_hint")}</div></div>
      <div id='uq-result'></div>`;
   applyI18nRoot(v); // 壳静态标注首扫
   const assets = await apiFetch("/api/uq/samples", { signal: viewSignal("uq") });
   if (assets.aborted) return; // UI-R12：切页取消——不写隐藏区
   const el = T.$("uq-assets");
-  if (!assets.ok) { el.innerHTML = `<span style="color:var(--err)">${esc((assets.errors || []).join("; "))}</span>`; return; }
+  if (!assets.ok) {
+    // R4 错误呈现归一：内联色字 → kitErrorPanel 带重试（datasets/anchors 同款）
+    el.innerHTML = kitErrorPanel((assets.errors || []).join("; "), "uq-assets-retry");
+    const rb = T.$("uq-assets-retry");
+    if (rb) rb.onclick = () => pageUq();
+    return;
+  }
   if (!(assets.items || []).length) {
-    el.innerHTML = `<span class='muted'>${t("uq.empty_assets")}</span>`;
+    // R4 空态三件式：现状一句话（uq.empty_assets）+ 下一步跳转钮（去校准）
+    el.innerHTML = kitEmptyState(t("uq.empty_assets"),
+      { icon: "◔", label: t("uq.goto_calibration"), view: "calibration" });
+    bindEmptyStates(el);
   } else {
     el.innerHTML = "<table><thead><tr>" +
       `<th scope='col'>${t("uq.th_file")}</th><th scope='col'>${t("uq.th_samples")}</th>` +
@@ -254,7 +289,9 @@ export async function pageUq() {
     if (bad) return T.msg(t("uq.err_sigma_tpl", { p: bad }), false);
     if (!Object.keys(tolerances).length) return T.msg(t("uq.err_sigma_empty"), false);
     const btn = T.$("uq-run");
-    btn.disabled = true; T.$("uq-spin").innerHTML = "<span class='spin'></span>";
+    // R4 按钮三态归一：disabled+aria-busy+spinner 文案（kitBtnBusy 单源，
+    // disabled 本身即重复点击防抖；原独立 uq-spin span 退役）
+    kitBtnBusy(btn, true);
     const r = await apiFetch("/api/uq/yield", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ samples_path: T.$("uq-path").value.trim(),
@@ -264,7 +301,7 @@ export async function pageUq() {
       signal: viewSignal("uq"), // UI-R12：统一 API 层（token 透传/切页取消）
       timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：万点重采样分钟级
     });
-    btn.disabled = false; T.$("uq-spin").innerHTML = "";
+    kitBtnBusy(btn, false);
     if (r.aborted) return; // UI-R12：切页取消——不写隐藏区（按钮态已在上方复位）
     renderUqResult(r);
   };
@@ -272,7 +309,12 @@ export async function pageUq() {
   function renderUqResult(r) {
     const el = T.$("uq-result");
     if (!r.ok) {
-      el.innerHTML = `<div class='panel'><span style="color:var(--err)">${t("uq.err_lead")}${esc((r.errors || [t("uq.unknown_error")]).join("; "))}</span></div>`;
+      // R4 错误呈现归一：统一错误卡（标题/错误原文/建议行）。标题沿用
+      // uq.err_lead（前导式标题，冒号收尾与错误原文连读）、无 errors 信封
+      // 回退 uq.unknown_error——与旧字面渲染语义逐点等价，仅呈现形态归一。
+      const env = (r.errors && r.errors.length)
+        ? r : { ok: false, errors: [t("uq.unknown_error")] };
+      showApiError(env, { into: el, title: t("uq.err_lead"), hint: t("common.error_hint") });
       return;
     }
     const yPct = (r.yield_rate * 100).toFixed(1) + "%";
@@ -307,7 +349,7 @@ export async function pageUq() {
   }
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子（数据资产三页）════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子（数据资产三页）════════
    refresh=各自 page 函数整体重拉（三页均只读数据面；datasets/anchors 与页内
    「刷新」钮同语义，uq 与重进同语义——σ 表单态随重建清空，palette 旧回退
    路径本就如此，无行为增量）。无轮询面，leave 不需要。 */

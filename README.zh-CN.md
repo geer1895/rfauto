@@ -86,20 +86,29 @@ AI 想改任何东西都要走沙箱加三道门。
 
 ## 快速开始
 
-不需要任何商业工具——内置 fake 求解器覆盖全部核心功能。
+**环境要求：** Python 3.10–3.12（`python --version` 确认）。不需要任何商业
+工具——内置 fake 求解器覆盖全部核心功能。
 
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
-pip install -e ".[dev]"          # 或者：uv sync --extra dev
+python -m venv .venv
+.venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
+pip install -e .
 
-# 跑测试套件（约 25400 条，不需要任何 EDA 软件）
-python -m pytest tests/unit -q
-
-# 探测本机可见的求解器与许可
-rfauto doctor
+rfauto ui                        # 打开 http://127.0.0.1:8642（仅本机）
 ```
 
-综合一根 2.4 GHz 的 50 Ω 微带线（纯数学，瞬间出结果）：
+**五分钟首次运行，零 license。** 在工作台打开「优化调参」页，通道保持
+**fake**，点「启动」——一个完整的 Wilkinson 功分器调优环（10 轮、闭式
+物理）几秒跑完，直接给出推荐尺寸结果卡。然后逛逛：
+
+- **Runs** —— 每次仿真的指标、曲线与质量门判定
+- **模板画廊** —— 72 种器件模板，每张卡可点开白话参数表（是什么、数值
+  什么含义、怎么算出来的）
+- **Tools** —— 323 个闭式计算器，随手交叉核对
+- 右上角 **zh/EN** —— 整站双语
+
+习惯终端的话，同样的两步不用浏览器：
 
 ```bash
 $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
@@ -107,20 +116,17 @@ $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
   目标阻抗: 50.00 Ω
   线宽:     1.1133 mm
   εeff:     2.8530
-  状态:     ok
-```
 
-不装任何求解器也能跑一次 Wilkinson 功分器仿真（fake 适配器即时返回；之后
-接上 openEMS 或 HFSS 就是真实物理）：
-
-```bash
 $ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 ✓ 仿真完成  run_id: 20260921_001708_3fe788d3
   指标:
     s11_db_max_in_band: -12.21
-    s21_db_mean_in_band: -3.67
-    iso_s23_db_min_in_band: 28.07
 ```
+
+`rfauto doctor` 查看本机可用的求解器与 license。想上真实物理时，把通道切到
+**openEMS**（免费，编译指引见文档）或 **HFSS**（需 AEDT 2025 R1）——配方和
+质量门完全不变。跑测试套件：`pip install -e ".[dev]"` 后
+`python -m pytest tests/unit -q`。
 
 ![命令行实操（真实输出）](docs/assets/cli_demo.png)
 

@@ -1,4 +1,4 @@
-/* rfauto UI i18n 骨架（架构批 W1-S2；规格=内部证据目录
+/* rfauto UI i18n 骨架（aurora_f W1-S2；规格=runs/aurora_f/R1_ui_v8_audit.md
    §面2，W5-S23 决议"自研词表+t()"的实现落地）。
 
    ═══ 与 esc 体系共存纪律（R1 规格写死，违者返工）═══
@@ -21,7 +21,7 @@
    queue）+ W6-S21 扩面五页（dashboard/runs/detail/sparams/agent）+
    W8-S32 批 3（timeline 页接线=第 9 页 + dashboard 控件钮/KPI/activity/
    图表系列名深化 + help() 壳 summary 全站单点 + detail 骨架 aria +
-   sparams 相位轴 + agent 对话浮窗静态面）+ W2-S1 批 4（架构批：
+   sparams 相位轴 + agent 对话浮窗静态面）+ W2-S1 批 4（aurora_g：
    TOP3 全迁 view_tools/view_data 三页/view_guide + kit.js 三串
    common.empty/load_failed/retry 单源化——kit 是 11 视图错误/空态单源，
    一处迁全站受益；view_tools 组名展示层翻译（协议标识符仍以中文单源，
@@ -127,11 +127,12 @@ export const LOCALES = {
     en: "Formula & source (full description)",
   },
   "tools.sweep_label": { zh: "扫参模式", en: "Sweep mode" },
-  /* ── gallery.*（试点页 2：模板画廊）── */
+  /* ── gallery.*（试点页 2：模板画廊；R2 人性化席 2026-10-19 重写——
+     顶栏去内部概念、卡面瘦身、72 卡详情抽屉，详见 view_gallery 头注）── */
   "gallery.title": { zh: "模板画廊", en: "Template Gallery" },
   "gallery.subtitle": {
-    zh: "交互卡 · 闭式即时预览（PR-5）",
-    en: "Interactive cards · closed-form live preview",
+    zh: "内置模板库 · 点「详情」看器件说明与参数表",
+    en: "Built-in template library · click Details for the blurb and parameter table",
   },
   "gallery.filter_placeholder": { zh: "按名称/拓扑过滤…", en: "Filter by name/topology…" },
   "gallery.loading": { zh: "加载中...", en: "Loading..." },
@@ -140,12 +141,15 @@ export const LOCALES = {
     en: "{n} templates · {p} with closed-form preview",
   },
   "gallery.preview_badge": { zh: "闭式预览", en: "Closed-form preview" },
-  "gallery.no_preview": { zh: "未配预览通道", en: "No preview channel" },
-  "gallery.open_preview": { zh: "打开预览", en: "Open preview" },
-  "gallery.preview_prefix": { zh: "闭式预览：", en: "Closed-form preview: " },
+  "gallery.no_preview": { zh: "预览未覆盖", en: "no preview" },
+  "gallery.detail_btn": { zh: "详情", en: "Details" },
+  "gallery.detail_aria_tpl": {
+    zh: "查看模板详情：{name}",
+    en: "View template details: {name}",
+  },
   "gallery.compute": { zh: "计算", en: "Compute" },
   "gallery.result_hint": { zh: "拖动滑块后点「计算」", en: "Drag sliders, then click Compute" },
-  /* 三态收敛（架构批 W2-S5，R1 #8 批1）：过滤零命中空态（kitEmptyState 消费） */
+  /* 三态收敛（aurora_f W2-S5，R1 #8 批1）：过滤零命中空态（kitEmptyState 消费） */
   "gallery.empty_filter": {
     zh: "无匹配模板——调整过滤词再试",
     en: "No matching templates — adjust the filter",
@@ -153,12 +157,12 @@ export const LOCALES = {
   /* ── queue.*（试点页 3：调度队列）── */
   "queue.title": { zh: "调度队列", en: "Queue" },
   "queue.subtitle": {
-    zh: "战役计划 · G13 决策日志（PR-9）",
-    en: "Campaign plans · G13 decision log (PR-9)",
+    zh: "战役计划 · 调度决策日志",
+    en: "Campaign plans · scheduling decision log",
   },
   "queue.runs_root": { zh: "runs 根", en: "runs root" },
-  "queue.machine_label": { zh: "remote 机器", en: "Remote machine" },
-  "queue.machine_placeholder": { zh: "（留空=不查 remote 面）", en: "(empty = skip remote panel)" },
+  "queue.machine_label": { zh: "远程机器", en: "Remote machine" },
+  "queue.machine_placeholder": { zh: "（留空=不查远程机器）", en: "(empty = skip remote machines)" },
   "queue.reload": { zh: "刷新", en: "Reload" },
   "queue.info_tpl": { zh: "{n} 个战役计划", en: "{n} campaign plans" },
   "queue.empty": {
@@ -203,10 +207,10 @@ export const LOCALES = {
      静态文案包 span 挂 data-i18n（textContent 重扫不伤动态子元素））── */
   "detail.title": { zh: "Run 详情", en: "Run Detail" },
   "detail.empty_no_run": {
-    zh: "未指定 run——请从「Run 列表」或总览点选，或用 #/detail/〈run_id〉 深链直达。",
-    en: "No run specified — pick one from Run History or Dashboard, or open #/detail/〈run_id〉 directly.",
+    zh: "未指定 run——从「Run 历史」或总览点选一个，或直接打开 #/detail/〈run_id〉。",
+    en: "No run specified — pick one from Run History or the Dashboard, or open #/detail/〈run_id〉 directly.",
   },
-  "detail.goto_runs": { zh: "去 Run 列表", en: "Go to Run History" },
+  "detail.goto_runs": { zh: "去 Run 历史", en: "Go to Run History" },
   "detail.sparams_title": {
     zh: "S 参数（图例点击切换分量；滚轮缩放、悬停读数）",
     en: "S-params (click legend to toggle; wheel zoom, hover readout)",
@@ -265,8 +269,8 @@ export const LOCALES = {
     en: "Approval inbox (proposals shown as parameter diffs)",
   },
   "agent.sandbox_title": {
-    zh: "Agent 沙箱草稿（agent 自主编辑先落沙箱；送审批走三层 Gate 进收件箱）",
-    en: "Agent sandbox drafts (agent edits land in the sandbox first; sending for approval goes through the three-gate into the inbox)",
+    zh: "Agent 沙箱草稿（agent 在对话里改的配方先落这里，送审批后进收件箱）",
+    en: "Agent sandbox drafts (recipe edits made in chat land here first; send for approval to reach the inbox)",
   },
   "agent.open_chat": { zh: "💬 打开对话浮窗", en: "💬 Open chat window" },
   "agent.loading": { zh: "加载中...", en: "Loading..." },
@@ -452,7 +456,7 @@ export const LOCALES = {
     en: "propose a new parameter set for the wilkinson recipe",
   },
 
-  /* ═══ W2-S1 i18n 批 4 扩面（+278 键，架构批）════════════════════════
+  /* ═══ W2-S1 i18n 批 4 扩面（+278 键，aurora_g）════════════════════════
      zh 值=既有字面同笔迁入（渲染逐字节不变），en 值新增。kit 三串为
      11 视图错误/空态单源（字节等价钉 test_ui_kit/test_ui_polish 在
      node zh 档下逐字节复现）。 */
@@ -508,8 +512,8 @@ export const LOCALES = {
     en: "screen parameters with fast surrogates (fake/openEMS) first, then high-fidelity-run the few candidates in HFSS/ADS",
   },
   "guide.what_tail": {
-    zh: "，并用 P0 门禁（排序一致性 recall≥80%）保证“粗筛挑出来的确实靠谱”。",
-    en: " — with a P0 gate (ranking-consistency recall≥80%) guaranteeing “what the screen picks is actually reliable”.",
+    zh: "，再用可信度门把关——粗筛挑出的排名要和高保真对得上（回测命中率≥80%）才算靠谱。",
+    en: " — then a credibility gate keeps it honest: the screen's rankings must match high fidelity (hit rate ≥80%).",
   },
   "guide.steps_title": { zh: "5 分钟上手路线", en: "5-minute quick start" },
   "guide.step1_t": { zh: "工程导入", en: "Import Project" },
@@ -552,17 +556,18 @@ export const LOCALES = {
   },
   "guide.gl_mf_t": { zh: "多保真", en: "Multi-fidelity" },
   "guide.gl_mf_d": {
-    zh: "fake 粗筛 + 高保真精算的两阶段流程；靠 P0 gate 保证排序一致性。",
-    en: "The two-stage flow of fake screening + high-fidelity refinement; the P0 gate keeps rankings consistent.",
+    zh: "两阶段流程：fake 粗筛 + 高保真精算；两边的排序要对得上（见下方可信度门）。",
+    en: "A two-stage flow: fake screening then high-fidelity refinement; the two stages must rank parameters consistently (see the credibility gate below).",
   },
+  "guide.gl_p0_t": { zh: "可信度门", en: "Credibility gate" },
   "guide.gl_p0_d": {
-    zh: "可信度验收：fake 与高保真对同一批参数的排名 Spearman ρ≥0.8 且 top-5 命中≥80%。",
-    en: "Credibility acceptance: fake vs high-fidelity rankings over the same parameters need Spearman ρ≥0.8 and top-5 hit≥80%.",
+    zh: "fake 粗筛挑出的参数要和高保真精算对照：排序相关 ρ≥0.8 且前 5 命中≥80%，达标才可信。",
+    en: "The fake screen's picks are checked against high-fidelity results: ranking correlation ρ≥0.8 and top-5 hit rate ≥80% must both pass.",
   },
-  "guide.gl_gate_t": { zh: "Agent 三层 Gate", en: "Agent three-layer gate" },
+  "guide.gl_gate_t": { zh: "Agent 审批链", en: "Agent approval chain" },
   "guide.gl_gate_d": {
-    zh: "LLM 提参数 → L1/L2 自动校验 → 生成 token → 你在收件箱批准才执行。",
-    en: "LLM proposes parameters → L1/L2 automatic checks → token issued → runs only after you approve in the inbox.",
+    zh: "LLM 提参数 → 自动校验 → 你在收件箱批准 → 才真正执行。",
+    en: "The LLM proposes parameters → automatic checks run → you approve in the inbox → only then does it execute.",
   },
   "guide.faq_title": { zh: "常见问题", en: "FAQ" },
   "guide.faq1_q": { zh: "为什么第一次都建议跑 fake？", en: "Why is fake recommended first?" },
@@ -587,7 +592,7 @@ export const LOCALES = {
   },
   "guide.next_title": { zh: "下一步去哪", en: "Where to go next" },
   "guide.next_1_lead": { zh: "深入口径与踩坑：仓库 ", en: "For deeper conventions and pitfalls: repo " },
-  "guide.next_1_tail": { zh: " 与 。", en: " and the ." },
+  "guide.next_1_tail": { zh: " 与 DEVLOG。", en: " and the DEVLOG." },
   "guide.next_2": {
     zh: "想看某个页面怎么用：每个页面顶部都有「❓ 本页说明」。",
     en: "To learn a specific page: every page has a “❓ Page guide” at the top.",
@@ -595,13 +600,13 @@ export const LOCALES = {
 
   /* ── datasets.*（数据集页：runs/datasets 注册表，只读）── */
   "datasets.help_1_lead": {
-    zh: "数据集 = 多次 run 的点级数据物化（Parquet/HDF5），是调参/校准/公开集的输入资产；本页",
-    en: "Datasets = point-level materializations of many runs (Parquet/HDF5), the input assets for tuning/calibration/public sets; this page is ",
+    zh: "数据集 = 多次 run 攒下的参数与指标数据（Parquet/HDF5），是调参、校准和基准集的原料；本页",
+    en: "Datasets = the parameter and metric data accumulated across runs (Parquet/HDF5), the raw material for tuning, calibration and benchmark sets; this page is ",
   },
   "datasets.help_1_core": { zh: "只读", en: "read-only" },
   "datasets.help_1_tail": { zh: "。", en: "." },
   "datasets.help_2_lead": {
-    zh: "点数据集行 → 行级预览（抽样前 N 行）。",
+    zh: "点数据集行看行级预览（抽样前 N 行）。",
     en: "Click a point-dataset row for a row-level preview (first N sampled rows). ",
   },
   "datasets.help_2_core": {
@@ -610,8 +615,8 @@ export const LOCALES = {
   },
   "datasets.help_2_tail": { zh: "；全量看「点数」列。", en: "; see the Points column for the full count." },
   "datasets.help_3": {
-    zh: "「模板族」来自 manifest 登记的 per_family_rows / ground_truth.per_model 键集；旧 manifest 未登记时如实显示“未登记”，不臆测。",
-    en: "“Template family” comes from the manifest's per_family_rows / ground_truth.per_model keys; older manifests honestly show “unregistered” rather than guessing.",
+    zh: "「模板族」读自数据集的 manifest 登记项；旧数据没登记的如实显示「未登记」，不猜。",
+    en: "“Template family” reads the dataset's manifest entries; older manifests honestly show “unregistered” rather than guessing.",
   },
   "datasets.title": { zh: "数据集", en: "Datasets" },
   "datasets.subtitle": { zh: "runs/datasets · 只读", en: "runs/datasets · read-only" },
@@ -621,8 +626,8 @@ export const LOCALES = {
   "datasets.all_families": { zh: "全部模板族", en: "All template families" },
   "datasets.count_tpl": { zh: "{n} / {total} 个数据集", en: "{n} / {total} datasets" },
   "datasets.empty_filter": {
-    zh: "无匹配数据集（runs/datasets 下先物化）",
-    en: "No matching datasets (materialize under runs/datasets first)",
+    zh: "无匹配数据集（先在 runs/datasets 下生成）",
+    en: "No matching datasets (generate some under runs/datasets first)",
   },
   "datasets.th_name": { zh: "名称", en: "Name" },
   "datasets.th_points": { zh: "点数", en: "Points" },
@@ -652,17 +657,17 @@ export const LOCALES = {
 
   /* ── anchors.*（标定锚页：锚注册表 + 新鲜度，只读）── */
   "anchors.help_1": {
-    zh: "锚 = (模板族 × 引擎对 × 域) → (常量|曲线|公式|指针) 的物理标定单源（knowledge/anchors.yaml），运行时只读；修订不改历史，新证据登记 -vN+1。指针锚=双引擎分歧双值登记（不产常数、不就地求值）。",
-    en: "Anchors = the physical-calibration single source of (template family × engine pair × domain) → (constant|curve|formula|pointer) (knowledge/anchors.yaml), read-only at runtime; revisions never rewrite history, new evidence lands as -vN+1. Pointer anchors register both values on engine disagreement (no constant produced, no in-place evaluation).",
+    zh: "锚 = 物理标定值的单一出处：每个「模板族 × 引擎对 × 物理量」登记一个常量、曲线、公式或指针（清单在 knowledge/anchors.yaml，运行时只读）。修订不覆盖历史，新证据登记为 -vN+1 新版本；两个引擎有分歧时登记双值，不强行合成一个数。",
+    en: "Anchors = the single source of physical calibration values: each template family × engine pair × quantity registers a constant, curve, formula or pointer (the list lives in knowledge/anchors.yaml, read-only at runtime). Revisions never overwrite history — new evidence lands as a -vN+1 version; when two engines disagree, both values are registered instead of forcing one number.",
   },
   "anchors.help_2_core": { zh: "状态", en: "Status" },
   "anchors.help_2_tail": {
-    zh: "即注册表裁决：active 健在 / stale 已过期 / experimental 实验指针（双值分歧待归因） / awaiting_data 骨架待回填 / retired 退役。无 last_verified 的锚新鲜度如实显示 UNKNOWN（不虚构判定）。",
-    en: " is the registry verdict: active / stale / experimental (pointer with disagreed dual values) / awaiting_data (skeleton) / retired. Anchors without last_verified honestly show UNKNOWN freshness (never fabricated).",
+    zh: "是注册表的裁决：active 在用 / stale 已过期 / experimental 实验性（双值待归一） / awaiting_data 等数据回填 / retired 已退役。没有验证日期的锚，新鲜度如实显示 UNKNOWN，不编判定。",
+    en: " is the registry verdict: active / stale / experimental (dual values pending) / awaiting_data (skeleton) / retired. Anchors without a verified date honestly show UNKNOWN — never a made-up verdict.",
   },
   "anchors.help_3": {
-    zh: "点锚行看全量记录（provenance / uncertainty / consumers）。",
-    en: "Click an anchor row for the full record (provenance / uncertainty / consumers).",
+    zh: "点锚行看完整记录：出处、不确定度、消费方。",
+    en: "Click an anchor row for the full record: provenance, uncertainty, consumers.",
   },
   "anchors.title": { zh: "标定锚", en: "Calibration Anchors" },
   "anchors.subtitle": { zh: "物理标定锚注册表 · 只读", en: "Physical calibration anchor registry · read-only" },
@@ -690,16 +695,16 @@ export const LOCALES = {
 
   /* ── uq.*（UQ 不确定度页：代理蒙特卡洛良率 + 敏感性）── */
   "uq.help_1": {
-    zh: "UQ = 代理蒙特卡洛公差分析：给定校准样本集 + 逐参数公差 σ，免费评估良率 / 指标分布 / 参数敏感性——不跑真机。",
-    en: "UQ = surrogate Monte-Carlo tolerance analysis: given a calibration sample set + per-parameter tolerances σ, evaluate yield / metric distributions / parameter sensitivity for free — no solver runs.",
+    zh: "UQ = 用代理模型做蒙特卡洛公差分析：选一个校准样本集、给每个参数填公差 σ，即可估算良率、指标分布和参数敏感性——全程不跑真机。",
+    en: "UQ = Monte-Carlo tolerance analysis on a surrogate: pick a calibration sample set, give each parameter a tolerance σ, and estimate yield, metric distributions and parameter sensitivity — no solver runs.",
   },
   "uq.help_2_lead": {
-    zh: "数值全部由确定性内核（uq_service.surrogate_yield）产出，前端只渲染；",
-    en: "All numbers come from the deterministic kernel (uq_service.surrogate_yield); the UI only renders. ",
+    zh: "所有数字由本地计算内核算出，页面只负责显示；",
+    en: "All numbers come from the local compute kernel; the page only renders. ",
   },
   "uq.help_2_core": {
-    zh: "无样本集/无公差时如实空态，不 mock",
-    en: "honest empty states when no sample set/tolerances — never mocked",
+    zh: "没有样本集或公差时如实显示空态，不放假数据",
+    en: "empty states are honest when no sample set or tolerances exist — no fake data",
   },
   "uq.help_2_tail": { zh: "。", en: "." },
   "uq.help_3": {
@@ -709,11 +714,11 @@ export const LOCALES = {
   "uq.title": { zh: "UQ 不确定度", en: "UQ" },
   "uq.subtitle": { zh: "代理蒙特卡洛 · 良率 / 分布 / 敏感性", en: "Surrogate Monte-Carlo · yield / distributions / sensitivity" },
   "uq.panel_assets": {
-    zh: "① 校准样本集（runs/ 下 samples 资产，点选填入）",
-    en: "① Calibration sample sets (samples assets under runs/, click to fill in)",
+    zh: "① 校准样本集（点选下方文件填入）",
+    en: "① Calibration sample sets (click one to fill it in)",
   },
   "uq.loading": { zh: "加载中...", en: "Loading..." },
-  "uq.panel_run": { zh: "② 运行（确定性内核，万点级秒回）", en: "② Run (deterministic kernel, 10k points in seconds)" },
+  "uq.panel_run": { zh: "② 运行（万点级秒回）", en: "② Run (10k points in seconds)" },
   "uq.label_samples": { zh: "样本集: ", en: "Samples: " },
   "uq.label_kind": { zh: "代理: ", en: "Surrogate: " },
   "uq.label_draws": { zh: "抽样: ", en: "Draws: " },
@@ -723,8 +728,8 @@ export const LOCALES = {
     en: "After picking a sample set, per-parameter tolerances σ are listed here (empty = parameter not perturbed)",
   },
   "uq.empty_assets": {
-    zh: "runs/ 下未发现校准样本集（samples.json 族）——先跑校准或战役，本页如实空态",
-    en: "No calibration sample sets (samples.json family) found under runs/ — run a calibration or campaign first; honest empty state",
+    zh: "runs/ 下没找到校准样本集（samples.json）——先跑一次校准或战役",
+    en: "No calibration sample sets (samples.json) found under runs/ — run a calibration or campaign first",
   },
   "uq.th_file": { zh: "文件", en: "File" },
   "uq.th_samples": { zh: "样本数", en: "Samples" },
@@ -739,15 +744,15 @@ export const LOCALES = {
   "uq.sigma_ph": { zh: "σ（留空不扰动）", en: "σ (empty = not perturbed)" },
   "uq.sigma_aria_tpl": { zh: "参数 {n} 的公差 σ", en: "Tolerance σ of parameter {n}" },
   "uq.no_bounds": {
-    zh: "该样本集无 bounds 参数清单，σ 需按参数名手填内核参数（或换样本集）",
-    en: "This sample set has no bounds parameter list — σ must be filled by parameter name for the kernel (or pick another set)",
+    zh: "该样本集没有参数清单，σ 需按参数名手填（或换一个样本集）",
+    en: "This sample set has no parameter list — fill in σ by parameter name (or pick another set)",
   },
   "uq.err_sigma_tpl": { zh: "参数 {p} 的 σ 不是数值", en: "σ of parameter {p} is not a number" },
   "uq.err_sigma_empty": {
-    zh: "至少填一个参数公差 σ（内核要求 {param: σ} 非空）",
-    en: "Fill at least one parameter tolerance σ (kernel requires non-empty {param: σ})",
+    zh: "至少填一个参数的公差 σ",
+    en: "Fill in at least one parameter tolerance σ",
   },
-  "uq.err_lead": { zh: "UQ 未出结果（如实）：", en: "UQ produced no result (honest): " },
+  "uq.err_lead": { zh: "UQ 没出结果：", en: "UQ produced no result: " },
   "uq.unknown_error": { zh: "未知错误", en: "unknown error" },
   "uq.k_yield": { zh: "良率", en: "Yield" },
   "uq.k_draws": { zh: "抽样点数", en: "Draws" },
@@ -768,7 +773,7 @@ export const LOCALES = {
     zh: "敏感性越大 = 该参数公差对指标影响越大，优先收公差或换设计中心。",
     en: "Larger sensitivity = that parameter's tolerance drives the metric more — tighten it first or move the design center.",
   },
-  "uq.done_msg": { zh: "UQ 完成（确定性内核）", en: "UQ done (deterministic kernel)" },
+  "uq.done_msg": { zh: "UQ 完成", en: "UQ done" },
 
   /* ── tools.*（W2-S1 批 4：微波工具箱余量全迁。cn_ 键/cp_ 键=计算器中文名/
      用途兜底表词表化（键尾=注册表 name，zh 与旧 CALC_ZH 逐字节同）；组名
@@ -785,8 +790,8 @@ export const LOCALES = {
     en: "Same conventions as the synthesis engines (skrf Hammerstad-Jensen / Balanis closed forms); required params are marked *, empty optional params are not sent.",
   },
   "tools.help_3_lead": {
-    zh: "同一 service 也开放在 CLI（rfauto calc）与 MCP（run_calculator）——三壳一个内核；深链 ",
-    en: "The same service is exposed on the CLI (rfauto calc) and MCP (run_calculator) — three shells, one kernel; deep link ",
+    zh: "这些计算器也开放在命令行（rfauto calc）与 MCP（run_calculator）——同一套内核；深链 ",
+    en: "The same calculators are exposed on the CLI (rfauto calc) and MCP (run_calculator) — one kernel, three frontends; deep link ",
   },
   "tools.help_3_code": { zh: "#/tools/&lt;键名&gt;", en: "#/tools/&lt;key&gt;" },
   "tools.help_3_tail": { zh: " 可直达并分享某计算器。", en: " jumps straight to (and shares) a calculator." },
@@ -901,8 +906,8 @@ export const LOCALES = {
   "tools.ph_required": { zh: "必填", en: "required" },
   "tools.ph_optional": { zh: "可选，留空不传", en: "optional, empty = not sent" },
   "tools.sweep_note": {
-    zh: "（逐点串行调 /api/calculators/run，点数 ≤101）",
-    en: " (serial per-point calls to /api/calculators/run, ≤101 points)",
+    zh: "（逐点串行计算，点数 ≤101）",
+    en: " (computed point by point, ≤101 points)",
   },
   "tools.sweep_start": { zh: "起点 ", en: "Start " },
   "tools.sweep_stop": { zh: "终点 ", en: "Stop " },
@@ -954,7 +959,7 @@ export const LOCALES = {
     en: "Pick sweep parameter (numeric)",
   },
 
-  /* ═══ 架构批 W4-S1 扩面（+155 键）══════════════════════════════════
+  /* ═══ aurora_h W4-S1 扩面（+155 键）══════════════════════════════════
      半程三页收尾（agent 全清/loopboard 全清/tools 壳尾清——tools 协议
      标识符组名表仍以中文单源留在视图，见 view_tools 头注）+ 新页四页
      壳层迁移（tune/reports/recipe/campaign：chrome 文案+help 块；动态
@@ -976,8 +981,8 @@ export const LOCALES = {
   },
   "agent.help_3_core": { zh: "安全边界", en: "Security boundary" },
   "agent.help_3_mid": {
-    zh: "：agent 的工具大多是只读的；唯一会写盘的是「参数提案」——只写 recipes/ 下的提案文件，且必须走三层 Gate + 你在收件箱批准（diff 形式展示改了什么）才生效。",
-    en: ": most agent tools are read-only; the only disk-writing one is the parameter proposal — it only writes proposal files under recipes/, and takes effect only after the three-gate plus your approval in the inbox (shown as a diff of what changed). ",
+    zh: "：agent 的工具大多是只读的；唯一会写盘的是「参数提案」——只写 recipes/ 下的提案文件，且要经过自动校验加你在收件箱批准（diff 展示改了什么）才生效。",
+    en: ": most agent tools are read-only; the only disk-writing one is the parameter proposal — it only writes proposal files under recipes/, and takes effect only after automatic checks plus your approval in the inbox (a diff shows what changed). ",
   },
   "agent.help_3_core2": { zh: "它接触不到框架源码", en: "It cannot touch the framework source" },
   "agent.help_3_tail": { zh: "。", en: "." },
@@ -1035,8 +1040,8 @@ export const LOCALES = {
   "agent.diff_fail": { zh: "diff 失败", en: "diff failed" },
   "agent.promote_send": { zh: "送审批（进收件箱）", en: "Send for approval (to inbox)" },
   "agent.promote_note": {
-    zh: "promote 只放行 params 差异，其余节差异会被 Gate 拒绝",
-    en: "promote only passes params differences; other section diffs are rejected by the gate",
+    zh: "送审批只接受 params 差异，其余节的改动会被自动校验拒绝",
+    en: "Only params differences are accepted; changes to other sections are rejected by the automatic checks",
   },
   "agent.promoted_ok": {
     zh: "已生成提案，等你在收件箱批准",
@@ -1049,12 +1054,12 @@ export const LOCALES = {
      控制 toast 10 + 公告 1 + 表头 7；takeover(_body) 两键已在 W14-S2 收）── */
   "loopboard.title": { zh: "执行看板", en: "Execution Board" },
   "loopboard.subtitle": {
-    zh: "自治环步骤可视 + 暂停/接管（CLI 批处理 + GUI 观察）",
-    en: "Autonomous-loop step visualization + pause/take-over (CLI batch + GUI observe)",
+    zh: "自治环步骤可视化，支持暂停/继续/接管",
+    en: "Watch the autonomous loop step by step; pause, resume or take over",
   },
   "loopboard.help_1_lead": {
-    zh: "自验证环（propose→verify→fix + 由易到难里程碑）以批处理方式在 service 层跑，本页",
-    en: "The self-verification loop (propose→verify→fix + easy-to-hard milestones) runs as a batch in the service layer; this page ",
+    zh: "自验证环（提参数 → 验证 → 修正，里程碑由易到难）在后台批处理跑，本页",
+    en: "The self-verification loop (propose → verify → fix, milestones easy to hard) runs as a background batch; this page ",
   },
   "loopboard.help_1_core": { zh: "观察", en: "observes" },
   "loopboard.help_1_mid": {
@@ -1066,13 +1071,13 @@ export const LOCALES = {
   "loopboard.help_2_lead": { zh: "暂停是", en: "Pause is " },
   "loopboard.help_2_core": { zh: "协作式", en: "cooperative" },
   "loopboard.help_2_tail": {
-    zh: "的：环只在步骤边界响应，不打断进行中的仿真；暂停超时自动续跑（批处理不被无限期挂死）。",
-    en: ": the loop only responds at step boundaries and never interrupts a running simulation; a paused loop auto-resumes after timeout (the batch cannot hang forever).",
+    zh: "的：环只在步骤边界响应，不打断进行中的仿真；暂停超时后会自动继续，不会一直挂着。",
+    en: ": the loop only responds at step boundaries and never interrupts a running simulation; after a pause timeout it resumes by itself instead of hanging forever.",
   },
   "loopboard.help_3_core": { zh: "接管", en: "Take-over" },
   "loopboard.help_3_tail": {
-    zh: "：环如实停止（verdict=TAKEN_OVER），best-so-far 参数已落沙箱草稿，去「Agent 助手」promote 走三层 Gate 继续生效。",
-    en: ": the loop stops honestly (verdict=TAKEN_OVER), best-so-far params land in the sandbox drafts — go to Agent to promote them through the three-gate.",
+    zh: "：环立即停下，目前最优参数已存为沙箱草稿——到「Agent 助手」送审批，你批准后继续生效。",
+    en: ": the loop stops immediately and the best-so-far parameters are saved as a sandbox draft — send them for approval on the Agent page; they take effect once you approve.",
   },
   "loopboard.board_label": { zh: "看板: ", en: "Board: " },
   "loopboard.reload": { zh: "刷新清单", en: "Reload list" },
@@ -1107,52 +1112,60 @@ export const LOCALES = {
   },
   "loopboard.control_failed": { zh: "命令失败", en: "Command failed" },
 
-  /* ── tune.*（新页壳层：help 块分段 7 + 标题/副标题 2 + 工具条 3 +
-     面板题 2 + 表头 2；动态数据面当时不迁，残量由发布令 S3 批迁清（见下））── */
+  /* ── tune.*（新页壳层；UI 人性化席 R1 2026-10-19 人话重写：短句动宾、
+     每句一件事、术语进白话——内部黑话挪折叠区/原始 JSON）── */
   "tune.title": { zh: "优化调参", en: "Tuning" },
   "tune.subtitle": {
-    zh: "fake 粗筛 → 高保真精算（多保真）",
-    en: "fake screening → high-fidelity refinement (multi-fidelity)",
+    zh: "自动寻找更好的参数（fake 练手 → 真机精算）",
+    en: "Auto-search better params (rehearse on fake, refine on real)",
   },
-  "tune.help_1": {
-    zh: "：调参用的仿真通道。fake=秒级解析模型（先验证流程）；hfss=真机（慢、耗 license）；openEMS=免费 FDTD。",
-    en: ": the simulation channel for tuning. fake = second-scale analytic model (validate the flow first); hfss = real solver (slow, uses license); openEMS = free FDTD.",
+  "tune.help_flow": {
+    zh: "这页自动寻找更好的参数：每一轮（trial）按一组参数值仿真一次并打分，跑完后给出评分最好的那组参数。",
+    en: "This page auto-searches better parameter values: each trial simulates once with one parameter set and scores it; when it finishes you get the best-scoring set.",
   },
-  "tune.help_2": {
-    zh: "：试验次数——每 trial 仿真一次配方并按 objectives 打分，TPE 采样器会越猜越准。",
-    en: ": number of trials — each trial runs the recipe once and scores it against the objectives; the TPE sampler guesses better over time.",
+  "tune.help_channel": {
+    zh: "仿真通道先选 fake：秒级出结果、不占用软件许可，用来把流程跑通；确认没问题后再切 hfss（需先启动 ANSYS EDT 并连接）或 openEMS（免费开源）跑真机。",
+    en: "Pick the fake channel first: results in seconds, no license needed — use it to walk through the flow. Then switch to hfss (start and connect ANSYS EDT first) or openEMS (free, open source) for real solves.",
   },
-  "tune.help_3_core": { zh: "多保真", en: "Multi-fidelity" },
-  "tune.help_3_tail": {
-    zh: "：先用 fake 粗筛出 Pareto 候选、再对 top-k 用高保真精算（省时数倍）。可信度看 P0 gate（recall≥80%）。",
-    en: ": screen Pareto candidates with fake first, then high-fidelity-run the top-k (saves hours). Credibility via the P0 gate (recall≥80%).",
+  "tune.help_need": {
+    zh: "开始前准备两件事：配方里已定义 objectives（什么算\"好\"的判据），且 optimization.params 写了每个参数的搜索范围。缺哪样，去「配方编辑」页补齐再回来。",
+    en: "Two things to prepare: the recipe defines objectives (what counts as \"good\") and optimization.params lists a search range for every parameter. Fill any gap on the Recipes page first.",
   },
-  "tune.help_4_lead": { zh: "结果里的 ", en: "In the results, " },
-  "tune.help_4_tail": {
-    zh: "就是推荐工作点，可回「配方编辑」应用后真机验证。",
-    en: " is the recommended operating point — apply it back in Recipes and verify on a real solver.",
+  "tune.help_read": {
+    zh: "跑完看「结果」卡：best 参数表就是推荐的一组值；trial 表和曲线是逐轮成绩，best-so-far 曲线走低=在进步。下一步点「查看 run 详情」看曲线，或回「配方编辑」把参数写回去做真机验证。",
+    en: "When it finishes, read the Result card: the best-params table is the recommended set; the trial table and curve show per-round scores (best-so-far trending down = improving). Next: open the run detail for curves, or apply the params back in the recipe editor for a real-solver check.",
   },
-  "tune.help_5": {
-    zh: "调参前确认配方的 objectives 与 optimization.params 范围已定义。",
-    en: "Before tuning, make sure the recipe defines objectives and optimization.params ranges.",
+  "tune.help_multi": {
+    zh: "多保真（可选）：先用 fake 大量粗筛，再把少量候选放到高保真通道精算，省时数倍；结论以高保真复核为准。",
+    en: "Multi-fidelity (optional): screen widely with fake first, then refine a few candidates on a high-fidelity solver — hours saved; trust the high-fidelity recheck.",
   },
   "tune.label_recipe": { zh: "配方: ", en: "Recipe: " },
+  "tune.label_adapter": { zh: "仿真通道: ", en: "Channel: " },
+  "tune.label_trials": { zh: "试验次数: ", en: "Trials: " },
+  "tune.label_sampler": { zh: "采样器: ", en: "Sampler: " },
   "tune.label_multi": { zh: "多保真: ", en: "Multi-fidelity: " },
   "tune.start": { zh: "启动", en: "Start" },
+  "tune.start_busy": { zh: "启动中…", en: "Starting…" },
   "tune.result_title": { zh: "结果", en: "Result" },
   "tune.trials_title": {
-    zh: "Trial 实时监控（SSE 进度流可达时推送刷新，否则每 3 秒轮询；收敛曲线 = cost 随 trial 下降）",
-    en: "Live trial monitor (pushed via SSE progress stream when available, else polled every 3 s; convergence curve = cost vs trial)",
+    zh: "实时进度：每轮一行，曲线是\"目前为止最好成绩\"（越低越好）",
+    en: "Live progress: one row per trial; the curve is the best score so far (lower is better)",
+  },
+  "tune.trials_mech": {
+    zh: "刷新方式（技术细节）：SSE 进度流可达时推送刷新，否则每 3 秒轮询。",
+    en: "Refresh mechanism (technical): pushed via the SSE progress stream when available, else polled every 3 s.",
   },
   "tune.th_params": { zh: "参数", en: "Params" },
   "tune.th_metrics": { zh: "指标", en: "Metrics" },
+  "tune.th_value": { zh: "最优值", en: "Best value" },
+  "tune.th_unit": { zh: "单位", en: "Unit" },
 
   /* ── reports.*（新页壳层：help 块分段 8 + 标题/清单题 2 + 表头 3 +
      对比面板 4；动态数据面当时不迁，残量由发布令 S3 批迁清（见下））── */
   "reports.title": { zh: "报告中心", en: "Reports" },
   "reports.help_1": {
-    zh: "汇总 runs/ 下全部人读报告：run 五要素报告（report.md）、夜间回归（sim_ci_report.md）、校准报告（calibration/report.md）。",
-    en: "Collects all human-readable reports under runs/: run five-part reports (report.md), nightly regression (sim_ci_report.md), calibration (calibration/report.md).",
+    zh: "汇总 runs/ 下所有报告：单次 run 报告（report.md）、夜间回归报告（sim_ci_report.md）、校准报告（calibration/report.md）。",
+    en: "Collects every report under runs/: per-run reports (report.md), nightly regression (sim_ci_report.md), calibration (calibration/report.md).",
   },
   "reports.help_2_lead": {
     zh: "点行在右侧渲染；长报告（&gt;3 个 h2/h3 节）自动出",
@@ -1196,8 +1209,8 @@ export const LOCALES = {
   "recipe.title": { zh: "配方编辑", en: "Recipes" },
   "recipe.help_1_core": { zh: "配方目录", en: "Recipe catalog" },
   "recipe.help_1_tail": {
-    zh: "：recipes/ 下全部配方，点选加载。每个配方 = 一次仿真的完整定义（模型+参数+目标+优化设置）。工作副本（runs/recipe_workcopy/）单独分组显示并标注「工作副本」——保存对原件的改动会重定向到工作副本（原件受保护），人工审阅后经审批链（rfauto inbox）入库。",
-    en: ": all recipes under recipes/, click to load. Each recipe = the complete definition of one simulation (model+params+objectives+optimizer settings). Work copies (runs/recipe_workcopy/) are grouped separately and badged — saving changes to a protected original redirects to a work copy; it lands in the original only after human review via the approval chain (rfauto inbox).",
+    zh: "：recipes/ 下全部配方，点选加载。每个配方 = 一次仿真的完整定义：模型、参数、目标、优化设置。工作副本单独分组并标注「工作副本」——原件受保护，保存的改动会写到 runs/recipe_workcopy/，人工审阅后才能写回原件。",
+    en: ": all recipes under recipes/, click to load. A recipe is the complete definition of one simulation: model, parameters, objectives, optimizer settings. Work copies are grouped and badged separately — originals are protected; saved changes land in runs/recipe_workcopy/ and reach the original only after human review.",
   },
   "recipe.help_2_core": { zh: "参数表", en: "Parameter table" },
   "recipe.help_2_tail": {
@@ -1245,60 +1258,60 @@ export const LOCALES = {
      动态数据面当时不迁，残量由发布令 S3 批迁清（见下））── */
   "campaign.title": { zh: "战役仪表盘", en: "Campaigns" },
   "campaign.subtitle": {
-    zh: "座位状态 · 成本热图 · trial 虚拟列表（PR-6）",
-    en: "Seat status · cost heatmap · trial virtual list (PR-6)",
+    zh: "trial 状态 · 成本热图 · trial 清单",
+    en: "Trial status · cost heatmap · trial list",
   },
   "campaign.help_1_lead": {
-    zh: "战役 = 带 trials 审计的调参/优化 run；",
-    en: "A campaign = a tuning/optimization run with a trials audit; ",
+    zh: "战役 = 带完整 trial 记录的调参/优化 run；",
+    en: "A campaign = a tuning/optimization run with full trial records; ",
   },
-  "campaign.help_1_core": { zh: "座位状态表", en: "the seat status table" },
+  "campaign.help_1_core": { zh: "trial 状态表", en: "the trial status table" },
   "campaign.help_1_tail": {
-    zh: "按 cost 有效性三分（PASS 已评入盘 / SKIP 审计行剔除 / FAIL 端点错误态）。",
-    en: " splits rows three ways by cost validity (PASS evaluated & counted / SKIP dropped by the audit / FAIL endpoint error state).",
+    zh: "把 trial 按有效性分三类：PASS 已计入统计 / SKIP 已剔除（cost 无效或缺参数） / FAIL 读取出错。",
+    en: " sorts trials three ways by validity: PASS counted / SKIP dropped (invalid cost or missing params) / FAIL read error.",
   },
   "campaign.help_2_core": { zh: "成本热图", en: "The cost heatmap" },
   "campaign.help_2_tail": {
-    zh: "对所选两参数确定性分箱（格色=平均 cost，格内数字=样本数）。",
-    en: " bins the two selected parameters deterministically (cell color = mean cost, cell number = sample count).",
+    zh: "对所选两参数等宽分箱：格色=平均 cost，格内数字=样本数。",
+    en: " bins the two selected parameters into equal-width cells: cell color = mean cost, cell number = sample count.",
   },
-  "campaign.help_3_core": { zh: "trial 虚拟列表", en: "The trial virtual list" },
+  "campaign.help_3_core": { zh: "trial 清单", en: "The trial list" },
   "campaign.help_3_tail": {
-    zh: "只渲染可视窗口行（千行级滚动 60fps）；选中 run 后订阅 SSE 进度流，流中有事件即自动刷新（终态自动收束）；流不可用或该 run 无事件流（events.jsonl 缺席）时不会自动刷新，用「刷新」按钮手动刷新。",
-    en: " renders only the visible window of rows (60fps at thousands of rows); after picking a run it subscribes to the SSE progress stream and auto-refreshes on events (auto-closes on the terminal frame); when the stream is unavailable or the run has none (no events.jsonl) it does not auto-refresh — use Refresh.",
+    zh: "只画屏幕内的行，几千行也滚动流畅；选中 run 后有进度事件就自动刷新，跑完自动停；没有事件流时不自动刷新，用「刷新」按钮手动刷。",
+    en: " renders only the rows on screen, so thousands still scroll smoothly; after picking a run it refreshes on progress events and stops when the run finishes; without an event stream it does not auto-refresh — use Refresh.",
   },
   "campaign.help_4": {
-    zh: "数值全部出自 trials 审计文件（优化器落盘），前端只渲染。",
-    en: "All numbers come from the trials audit files (written by the optimizer); the UI only renders.",
+    zh: "所有数字来自优化器落盘的 trial 记录，页面只负责显示。",
+    en: "All numbers come from the trial records written by the optimizer; the page only renders.",
   },
   "campaign.label_grid": { zh: "网格", en: "Grid" },
   "campaign.reload": { zh: "刷新", en: "Refresh" },
 
-  /* ── campaign.* 残量清（架构批 发布令 S3：动态容器 t() 烘焙——run 下拉
+  /* ── campaign.* 残量清（aurora_h 发布令 S3：动态容器 t() 烘焙——run 下拉
      空态/座位表头与三行语义/进度行/best 行/列表 meta/热图 aria 与 title/
      虚拟列表空态；zh 逐字节+en 新增；数据插值仍在词表外 esc）── */
-  "campaign.no_runs_opt": { zh: "（无带 trials 的 run）", en: "(no runs with trials)" },
+  "campaign.no_runs_opt": { zh: "（没有带 trial 记录的 run）", en: "(no runs with trial records)" },
   "campaign.no_runs_hint": {
-    zh: "先跑一次 tune（带 trials 审计的调参/优化 run）",
-    en: "Run a tune first (a tuning/optimization run with a trials audit)",
+    zh: "先跑一次调参——trial 记录会随 run 落盘",
+    en: "Run a tuning job first — trial records are saved with the run",
   },
-  "campaign.th_seat": { zh: "座位状态", en: "Seat" },
-  "campaign.th_n": { zh: "数", en: "Count" },
-  "campaign.th_sem": { zh: "语义", en: "Meaning" },
-  "campaign.prog_lead": { zh: "座位进度 ", en: "Seat progress " },
+  "campaign.th_seat": { zh: "trial 状态", en: "Trial status" },
+  "campaign.th_n": { zh: "数量", en: "Count" },
+  "campaign.th_sem": { zh: "含义", en: "Meaning" },
+  "campaign.prog_lead": { zh: "进度 ", en: "Progress " },
   "campaign.prog_pct": { zh: "%（", en: "% (" },
   "campaign.prog_src": { zh: "）· 参数源=", en: ") · params=" },
   "campaign.seat_pass": {
-    zh: "trial 已评且 cost 有限（入热图/表/best）",
-    en: "Trial evaluated with finite cost (into heatmap/table/best)",
+    zh: "trial 已评分且 cost 有效，计入热图/表格/最优",
+    en: "Evaluated with a valid cost — counted in heatmap/table/best",
   },
   "campaign.seat_skip": {
-    zh: "审计行被剔除（cost 非有限/参数缺失，service 端如实跳过）",
-    en: "Audit rows excluded (non-finite cost / missing params; skipped as-is service-side)",
+    zh: "cost 无效或参数缺失，已剔除不计",
+    en: "Invalid cost or missing params — dropped",
   },
   "campaign.seat_fail": {
-    zh: "端点错误态（本载荷 ok=true，无 FAIL；出错时整表换 FAIL 行）",
-    en: "Endpoint error state (this payload has ok=true with no FAIL; on error the whole table becomes a FAIL row)",
+    zh: "读取出错时整表显示此行（正常为 0）",
+    en: "The whole table becomes this row when reading fails (normally 0)",
   },
   "campaign.best_lead": { zh: "最优 trial #", en: "Best trial #" },
   "campaign.best_mid": { zh: "（", en: " (" },
@@ -1317,7 +1330,7 @@ export const LOCALES = {
   },
   "campaign.no_trial_rows": { zh: "无 trial 行", en: "No trial rows" },
 
-  /* ── reports.* 残量清（架构批 发布令 S3：TOC aria/对比面（选取提示/
+  /* ── reports.* 残量清（aurora_h 发布令 S3：TOC aria/对比面（选取提示/
      进行中/失败缺省/跨模型警示分段/两表题头列与空态/叠图题/无产物空态）/
      清单面（计数后缀/三类 kind 徽标/行开 aria/空态/图缺失占位分段）；
      zh 逐字节+en 新增；kind 协议值（sim_ci/calibration）留码侧不变）── */
@@ -1356,13 +1369,13 @@ export const LOCALES = {
   "reports.kind_run": { zh: "run 报告", en: "Run report" },
   "reports.row_open_aria": { zh: "查看报告：", en: "View report: " },
   "reports.empty_hint": {
-    zh: "暂无报告——先跑一次 run（五要素报告/夜间回归/校准报告在此汇总）",
-    en: "No reports yet — run once first (five-element / nightly regression / calibration reports aggregate here)",
+    zh: "暂无报告——先跑一次 run，报告会汇总在这里",
+    en: "No reports yet — run once first; reports aggregate here",
   },
   "reports.img_missing_lead": { zh: "该 run 无此图：", en: "This run has no such figure: " },
   "reports.img_missing_tail": { zh: "（未生成或已清理）", en: " (not generated or cleaned up)" },
 
-  /* ── recipe.* 残量清（架构批 发布令 S3：目录行（开行 aria/工作副本徽标/
+  /* ── recipe.* 残量清（aurora_h 发布令 S3：目录行（开行 aria/工作副本徽标/
      参数·目标·频段段/原件与工作副本分组题/审阅入库提示分段）/模型行（模板
      括段/无兜底/工作副本尾注）/参数行 aria 分段/setup 表单六标签/优化表
      （空态/表头/上下界 aria/提示段）/保存与运行 toast；zh 逐字节+en 新增；
@@ -1378,12 +1391,12 @@ export const LOCALES = {
     en: "Working copies (runs/recipe_workcopy/)",
   },
   "recipe.review_lead": {
-    zh: "人工审阅后入库：与原件 diff 确认改动 → 经审批链（",
-    en: "Promote after manual review: confirm changes via diff with the original → through the approval chain (",
+    zh: "写入原件需人工审阅：先与原件 diff 确认改动，再走 ",
+    en: "Reaching the original needs human review: confirm the changes via a diff with the original, then go through the ",
   },
   "recipe.review_mid": {
-    zh: " 审批收件箱，propose→approve→apply 三层 Gate）或显式写回原件后 git commit 留痕。",
-    en: " approval inbox, propose→approve→apply three-layer Gate) or write back to the original explicitly, then git commit for the record.",
+    zh: " 审批收件箱批准；也可以显式写回原件后 git commit 留痕。",
+    en: " approval inbox; alternatively write back to the original explicitly and git commit for the record.",
   },
   "recipe.tpl_lead": { zh: "（模板: ", en: " (template: " },
   "recipe.no_template": { zh: "无", en: "none" },
@@ -1420,7 +1433,7 @@ export const LOCALES = {
   "recipe.run_done": { zh: "运行完成: cost=", en: "Run finished: cost=" },
   "recipe.run_failed": { zh: "运行失败: ", en: "Run failed: " },
 
-  /* ── tune.* 残量清（架构批 发布令 S3：配方信息行分段/启动 toast/运行态
+  /* ── tune.* 残量清（aurora_h 发布令 S3：配方信息行分段/启动 toast/运行态
      spin/结果错误前缀/终态读屏公告两串/空态两件式/trial 信息行分段/收敛图
      aria；zh 逐字节+en 新增；结果 JSON 体为纯数据面不迁）── */
   "tune.sel_lead": { zh: "已选配方：", en: "Selected recipe: " },
@@ -1437,7 +1450,6 @@ export const LOCALES = {
   },
   "tune.started": { zh: "调参已启动，状态轮询中...", en: "Tuning started; polling status..." },
   "tune.running": { zh: " 运行中", en: " Running" },
-  "tune.error_prefix": { zh: "错误: ", en: "Error: " },
   "tune.announce_error": { zh: "调参已结束：出错", en: "Tuning ended: error" },
   "tune.announce_done": { zh: "调参已完成", en: "Tuning completed" },
   "tune.empty_hint": {
@@ -1451,6 +1463,88 @@ export const LOCALES = {
   "tune.chart_aria": {
     zh: "图表：cost，纵轴 cost，横轴 trial（含 best-so-far 阶梯）",
     en: "Chart: cost, y-axis cost, x-axis trial (with best-so-far step)",
+  },
+  /* ── tune.* 人性化批（UI 人性化席 R1 2026-10-19）：通道预检卡/错误卡/
+     结构化结果卡——错误原文是 API 数据由视图 esc，词表值零 HTML 纪律不变；
+     内部函数名（connect()/open_or_create_project()）只出现在视图侧识别
+     正则里，词表值全部动作指引白话。 ── */
+  "tune.adapter_hint": {
+    zh: "想打真机：切 hfss / openEMS（需先启动对应软件并连接）",
+    en: "For real solves: switch to hfss / openEMS (start and connect the software first)",
+  },
+  "tune.opt_fake": {
+    zh: "fake —— 先跑通流程（秒级，不用 license）",
+    en: "fake — rehearse first (seconds, no license)",
+  },
+  "tune.opt_hfss": {
+    zh: "hfss —— 真机（需先启动 ANSYS EDT 并连接）",
+    en: "hfss — real solver (start & connect ANSYS EDT first)",
+  },
+  "tune.opt_openems": {
+    zh: "openEMS —— 真机 FDTD（免费，不占 license）",
+    en: "openEMS — real FDTD (free, no license)",
+  },
+  "tune.pre_hfss_title": {
+    zh: "真机通道：先确认 HFSS 已连接",
+    en: "Real solver: confirm HFSS is connected first",
+  },
+  "tune.pre_hfss_body": {
+    zh: "hfss 需要 ANSYS EDT 已启动并完成会话连接；还没连接就点「启动」会立刻失败。",
+    en: "hfss needs a started, connected ANSYS EDT session; without it, Start fails immediately.",
+  },
+  "tune.pre_hfss_hint": {
+    zh: "还没准备好？先把通道切回 fake 跑通流程。",
+    en: "Not ready yet? Switch back to fake and walk through the flow first.",
+  },
+  "tune.pre_openems_body": {
+    zh: "openEMS 是免费开源的 FDTD 引擎（本机已装），不占 license；速度介于 fake 和 hfss 之间。",
+    en: "openEMS is a free open-source FDTD engine (installed locally), no license seat; speed sits between fake and hfss.",
+  },
+  "tune.err_title": { zh: "调参没跑起来", en: "Tuning failed to run" },
+  "tune.err_hfss_title": { zh: "HFSS 未连接", en: "HFSS is not connected" },
+  "tune.err_hfss_hint": {
+    zh: "请先启动 ANSYS EDT 并完成会话连接；或先把通道切回 fake 跑通流程，再回真机。",
+    en: "Start ANSYS EDT and connect the session first; or switch back to fake to validate the flow, then return to the real solver.",
+  },
+  "tune.err_generic_hint": {
+    zh: "可以先自查：配方路径是否存在、objectives 是否已定义；或先用 fake 通道试跑一轮。",
+    en: "Quick self-checks: does the recipe path exist, are the objectives defined; or try one fake run first.",
+  },
+  "tune.err_switch_fake": { zh: "切回 fake 通道", en: "Switch to fake" },
+  "tune.err_raw_label": {
+    zh: "展开原始报错（排障用）",
+    en: "Raw error (for debugging)",
+  },
+  "tune.res_title": { zh: "调参完成", en: "Tuning finished" },
+  "tune.res_best_lead": {
+    zh: "推荐工作点（best 参数）",
+    en: "Recommended operating point (best params)",
+  },
+  "tune.res_cost_tpl": {
+    zh: "最优评分 cost={v}（越小越好）",
+    en: "Best score cost={v} (lower is better)",
+  },
+  "tune.res_stats_tpl": {
+    zh: "完成 {done} 轮（{pruned} 轮提前终止）· 用时 {secs} 秒",
+    en: "{done} trials done ({pruned} stopped early) · {secs} s",
+  },
+  "tune.res_metrics_lead": {
+    zh: "最优点上的其他指标：",
+    en: "Other metrics at the best point:",
+  },
+  "tune.res_next_runs": { zh: "查看 run 详情", en: "Open run detail" },
+  "tune.res_next_recipe": { zh: "回配方编辑", en: "Back to recipe editor" },
+  "tune.res_next_hint": {
+    zh: "下一步：把这组参数写回配方做真机验证（「配方编辑」页可直接改值）。",
+    en: "Next: write these params back into the recipe and verify on a real solver (editable on the Recipes page).",
+  },
+  "tune.res_details_label": {
+    zh: "展开原始结果 JSON",
+    en: "Raw result JSON",
+  },
+  "tune.res_multi_note": {
+    zh: "多目标模式：结果是一组各有取舍的 Pareto 前沿点，原始数据见折叠区与 run 详情。",
+    en: "Multi-objective mode: the result is a Pareto front of trade-offs; see the folded section and run detail.",
   },
   /* ── S4 发布令批（九页残量清偿）：runs/sparams/gallery/timeline 动态文案
      + 壳面兜底 t() 烘焙（zh 逐字节+en 新增；help 块富 HTML 分段跨段标点归
@@ -1478,12 +1572,12 @@ export const LOCALES = {
     en: "dB mode for matching/loss valleys; phase mode (unwrapped) for electrical length/resonance behavior.",
   },
   "sparams.help_3": {
-    zh: "「+外部 .sNp」= 导入本机 Touchstone 文件与 run 产物叠加对比（WP0.3/E8，只读）；相位模式下叠加会清空以防量纲混淆。",
-    en: "\"+ External .sNp\" imports local Touchstone files to overlay against run artifacts (WP0.3/E8, read-only); overlaying is cleared in phase mode to avoid mixing dimensions.",
+    zh: "「+外部 .sNp」= 导入本机 Touchstone 文件与 run 产物叠加对比；导入只读，不改 run 产物。相位模式下叠加会清空，避免量纲混淆。",
+    en: "\"+ External .sNp\" imports a local Touchstone file and overlays it on the run's curves; imports are read-only. Overlays are cleared in phase mode to avoid mixing units.",
   },
   "sparams.help_4": {
-    zh: "「Smith」= 各端口反射系数 S_ii 的 Smith 圆图（G9）：恒 r 圆/恒 x 弧为纯几何网格，悬停读频率与 Z=Z0(1+Γ)/(1−Γ)；|Γ|→1 时阻抗读数置 N/A。",
-    en: "\"Smith\" plots per-port reflection S_ii on a Smith chart (G9): constant-r circles / constant-x arcs are pure geometric grids; hover reads frequency and Z=Z0(1+Γ)/(1−Γ); impedance readout shows N/A as |Γ|→1.",
+    zh: "「Smith」= 各端口反射系数 S_ii 的 Smith 圆图：恒 r 圆/恒 x 弧是几何网格线，悬停读频率与 Z=Z0(1+Γ)/(1−Γ)；|Γ|→1 时阻抗读数显示 N/A。",
+    en: "\"Smith\" plots per-port reflection S_ii on a Smith chart: the constant-r circles / constant-x arcs are grid lines; hover reads frequency and Z=Z0(1+Γ)/(1−Γ); the impedance readout shows N/A as |Γ|→1.",
   },
   "sparams.help_5": {
     zh: "数据源 = run 产物 Touchstone；fake 通道无 Touchstone 时到「Run 详情」看 PNG 曲线。",
@@ -1493,33 +1587,372 @@ export const LOCALES = {
   "sparams.import_failed": { zh: "导入失败", en: "Import failed" },
   "sparams.already_overlay": { zh: "该文件已叠加", en: "File already overlaid" },
   "sparams.overlayed": { zh: "已叠加: ", en: "Overlaid: " },
-  "gallery.help_1_lead": {
-    zh: "模板卡出自 TEMPLATE_META/TEMPLATE_NOMINAL（与 docs meta.yaml 同源）；",
-    en: "Template cards come from TEMPLATE_META/TEMPLATE_NOMINAL (same source as docs meta.yaml); ",
+  /* ── gallery.*（R2 人性化席续：顶栏人话重写 + 详情抽屉三段 + 参数
+     白话兜底 + 72 模板一句话说明；去"显式白名单/规则 7"内部指称，
+     详见 view_gallery.js 头注）── */
+  "gallery.help_1": {
+    zh: "这一页是内置模板库：每张卡点「详情」，看它是什么器件、每个参数是什么意思、数值怎么来的。",
+    en: "This page is the built-in template library: click Details on any card to see what the device is, what each parameter means, and where the values come from.",
   },
-  "gallery.help_1_core": {
-    zh: "滑块改值 → 闭式计算器即时预览",
-    en: "drag a slider and the closed-form calculator previews instantly",
-  },
-  "gallery.help_1_tail": { zh: "（零 EM 求解）。", en: " (zero EM solving)." },
-  "gallery.help_2_lead": { zh: "闭式预览通道是", en: "Closed-form preview channels are an " },
-  "gallery.help_2_core": { zh: "显式白名单", en: "explicit whitelist" },
-  "gallery.help_2_tail": {
-    zh: "（当前 siw/slotline 线分析族）；未映射模板如实显示\"未配通道\"，不猜不硬凑。",
-    en: " (currently the siw/slotline line-analysis family); unmapped templates honestly show \"no channel\" — no guessing, no forcing.",
+  "gallery.help_2": {
+    zh: "几何预览目前支持 siw/slotline 两族（卡角有「闭式预览」小标记），其余模板看参数详情即可。",
+    en: "Live geometry preview currently covers the siw/slotline families only (small corner badge); other templates show parameter details instead.",
   },
   "gallery.help_3": {
-    zh: "数值只在确定性内核（规则 7）：本页零物理数字产生，滑块初值=注册表名义参数。",
-    en: "Numbers only in the deterministic kernel (rule 7): this page produces zero physics numbers; slider initial values = registry nominal params.",
+    zh: "预览数字由闭式公式即时算出，不做电磁求解；参数初值是内置名义设计值，都能在配方里修改。",
+    en: "Preview numbers come from closed-form formulas instantly — no EM solving; initial values are built-in nominal design values, all editable in recipes.",
   },
   "gallery.no_sliders": {
     zh: "本通道无可调滑块（固定参数直算）",
     en: "No adjustable sliders in this channel (fixed params, direct compute)",
   },
   "gallery.computing": { zh: "计算中...", en: "Computing..." },
+  /* 详情抽屉三段（说明/参数表/预览）与参数白话兜底（R2） */
+  "gallery.drawer_topology": { zh: "结构", en: "Structure" },
+  "gallery.drawer_params": {
+    zh: "参数表（含义与数值来源）",
+    en: "Parameters (meaning & value source)",
+  },
+  "gallery.th_param": { zh: "参数", en: "Parameter" },
+  "gallery.th_mean": { zh: "含义", en: "Meaning" },
+  "gallery.th_value": { zh: "当前名义值", en: "Nominal value" },
+  "gallery.th_origin": { zh: "数值怎么来的", en: "Where it comes from" },
+  "gallery.origin_nominal": {
+    zh: "名义设计值——内置缺省（多数按中心频率由闭式综合解出），配方里可改",
+    en: "Nominal design value — built-in default (mostly closed-form synthesis at f0); editable in recipes",
+  },
+  "gallery.origin_substrate": {
+    zh: "基板材料常量（与模板文档 substrate 同源）",
+    en: "Substrate material constant (same source as the template doc)",
+  },
+  "gallery.origin_f0": { zh: "设计中心频率", en: "Design center frequency" },
+  "gallery.origin_tunable": {
+    zh: "名义设计值——可在下方预览拖动滑块即时试算",
+    en: "Nominal design value — drag the preview slider below to try values instantly",
+  },
+  "gallery.origin_other": {
+    zh: "模板附加设计参数（与模板文档同源）",
+    en: "Extra design parameter (same source as the template doc)",
+  },
+  "gallery.sem_missing": {
+    zh: "（说明未登记——详见模板文档）",
+    en: "(no registered description — see the template doc)",
+  },
+  "gallery.desc_missing": {
+    zh: "（该模板说明待补——看下方参数表与结构）",
+    en: "(blurb pending — see the parameter table and structure below)",
+  },
+  "gallery.drawer_preview": {
+    zh: "闭式预览（拖动滑块后点「计算」，不做电磁求解）",
+    en: "Closed-form preview (drag sliders, then Compute; no EM solving)",
+  },
+  "gallery.preview_uncovered": {
+    zh: "几何预览暂未覆盖此模板（仅 siw/slotline 线分析族支持）——参数含义与数值来源见上表",
+    en: "Geometry preview does not cover this template yet (only the siw/slotline line-analysis families) — see the table above for meanings and value sources",
+  },
+  "gallery.close": { zh: "关闭", en: "Close" },
+  "gallery.ports_tpl": { zh: "{n} 端口", en: "{n} ports" },
+  /* 参数白话兜底（nominal_params 附加键——语义段未覆盖时显示；键尾=键名） */
+  "gallery.gloss_er": { zh: "基板相对介电常数 εr", en: "Substrate relative permittivity" },
+  "gallery.gloss_tan_d": { zh: "基板损耗角正切（介质损耗大小）", en: "Substrate loss tangent (dielectric loss)" },
+  "gallery.gloss_h_mm": { zh: "基板厚度", en: "Substrate thickness" },
+  "gallery.gloss_h_sub_mm": { zh: "基板厚度", en: "Substrate thickness" },
+  "gallery.gloss_f0_ghz": { zh: "设计中心频率", en: "Design center frequency" },
+  "gallery.gloss_load_r_ohm": { zh: "端接负载电阻", en: "Terminating load resistance" },
+  "gallery.gloss_r_ring_mm": { zh: "环体半径（环形结构主几何）", en: "Ring radius (main ring geometry)" },
+  /* 72 模板一句话人话说明（键尾=模板名小写化——键命名契约禁大写，
+     ms_array_NxN→nxn；view_gallery DESC_KEYS 字面表同名引用） */
+  "gallery.desc_atten_pi": {
+    zh: "π 型电阻衰减器：三个电阻组成 π 网络，把信号衰减设定的 dB 数，两端仍保持匹配。",
+    en: "Pi resistive attenuator: three resistors in a pi network pad the signal by a set number of dB while keeping both ports matched.",
+  },
+  "gallery.desc_atten_t": {
+    zh: "T 型电阻衰减器：三个电阻组成 T 网络，按设定的 dB 数衰减信号并保持匹配。",
+    en: "T resistive attenuator: three resistors in a T network pad the signal by a set number of dB while staying matched.",
+  },
+  "gallery.desc_bend": {
+    zh: "微带直角弯折：50Ω 走线拐 90° 直角，用来观察拐弯带来的反射。",
+    en: "Microstrip right-angle bend: a 50Ω line turning 90°, used to observe the reflection the corner causes.",
+  },
+  "gallery.desc_branchline": {
+    zh: "Branchline 正交耦合器：方形环四臂各 λ/4，把输入按 3dB 分给直通与耦合两路输出并彼此隔离。",
+    en: "Branchline quadrature coupler: a square ring of quarter-wave arms splits the input 3 dB into through and coupled outputs with isolation.",
+  },
+  "gallery.desc_branchline_2sect": {
+    zh: "两节 Branchline 耦合器：多一节分支臂展宽频带的 3dB 正交功分器。",
+    en: "Two-section branchline coupler: a 3 dB quadrature splitter with an extra branch section for a wider band.",
+  },
+  "gallery.desc_cline_coupler": {
+    zh: "耦合线定向耦合器：两条 λ/4 平行线靠缝耦合，按设定耦合度分出一路采样信号。",
+    en: "Coupled-line directional coupler: two parallel quarter-wave lines couple through a gap to tap a set fraction of the signal.",
+  },
+  "gallery.desc_coax_waveguide_transition": {
+    zh: "波导-同轴过渡：探针从同轴经底壁伸入矩形波导，把两种传输线连接起来。",
+    en: "Coax-to-waveguide transition: a probe reaches from the coax through the wall into a rectangular waveguide, joining the two line types.",
+  },
+  "gallery.desc_coil_nfc": {
+    zh: "NFC 平面线圈：方螺旋线圈做 13.56MHz 近场耦合天线（NFC 标签/无线充电类）。",
+    en: "Planar NFC coil: a square spiral coil acting as a 13.56 MHz near-field antenna (NFC tags / wireless power).",
+  },
+  "gallery.desc_combline": {
+    zh: "梳状带通滤波器：N 根一端接地、一端加载电容的谐振棒，靠缝耦合选出通带。",
+    en: "Combline bandpass filter: resonator rods grounded at one end with loading capacitors at the other, gap-coupled to form the passband.",
+  },
+  "gallery.desc_coupled_bpf": {
+    zh: "平行耦合带通滤波器：N 个半波谐振器错位平行排列，靠边缘缝耦合出通带。",
+    en: "Parallel-coupled bandpass filter: half-wave resonators staggered side by side, edge-coupled through gaps.",
+  },
+  "gallery.desc_coupled_line": {
+    zh: "耦合线段：两条平行线靠近摆放，用于观察线间耦合强度。",
+    en: "Coupled-line section: two parallel lines placed close together to observe coupling between them.",
+  },
+  "gallery.desc_cps": {
+    zh: "共面带状线 CPS：两条等宽带并行、中央开缝、没有地板的平衡传输线。",
+    en: "Coplanar stripline (CPS): two parallel strips with a slot between them and no ground plane — a balanced line.",
+  },
+  "gallery.desc_cpw": {
+    zh: "共面波导 CPW：中心导电带加两侧同层地板，微波集成电路常用走线。",
+    en: "Coplanar waveguide: a center strip with ground on both sides in the same layer, common in microwave ICs.",
+  },
+  "gallery.desc_diplexer": {
+    zh: "双工器：一个输入口接低通+高通两条支路，两个频段各走一个输出口。",
+    en: "Diplexer: one input feeds low-pass and high-pass branches, so each band exits at its own port.",
+  },
+  "gallery.desc_dipole": {
+    zh: "半波偶极子天线：中央馈电的两根臂，最经典的线天线。",
+    en: "Half-wave dipole: two arms fed at a center gap — the classic wire antenna.",
+  },
+  "gallery.desc_embedded_ms": {
+    zh: "嵌入式微带：走线埋进介质内部（上下都有介质），观察埋入对阻抗的影响。",
+    en: "Embedded microstrip: the trace buried inside dielectric (covered above and below), to see how burial shifts impedance.",
+  },
+  "gallery.desc_fgcpw": {
+    zh: "有限地共面波导：CPW 但两侧地板是有限宽度，更接近真实版图。",
+    en: "Finite-ground CPW: like CPW but with finite-width side grounds, closer to real layouts.",
+  },
+  "gallery.desc_gysel": {
+    zh: "Gysel 功分器：Wilkinson 的变体，用外接端接电阻吸收不平衡功率，耐功率更高。",
+    en: "Gysel divider: a Wilkinson variant that dumps imbalance power into external terminations for higher power handling.",
+  },
+  "gallery.desc_hairpin": {
+    zh: "发夹线带通滤波器：半波谐振器折成 U 形并排，省面积的经典平面滤波器。",
+    en: "Hairpin bandpass filter: half-wave resonators folded into U shapes side by side — a compact classic.",
+  },
+  "gallery.desc_hairpin_alt": {
+    zh: "交替取向发夹滤波器：U 形谐振器上下翻转交替排列，抑制同向耦合的变体。",
+    en: "Alternating hairpin filter: U resonators flipped up and down alternately, a variant that cancels same-direction coupling.",
+  },
+  "gallery.desc_helix": {
+    zh: "螺旋天线：导线绕成方螺旋（法向模），用于紧凑型小天线。",
+    en: "Helix antenna: a wire wound into a square spiral (normal mode), for compact small antennas.",
+  },
+  "gallery.desc_hmsiw": {
+    zh: "半模 SIW：把基片集成波导沿中线切一半，尺寸减半的变体。",
+    en: "Half-mode SIW: a substrate-integrated waveguide cut in half along its centerline, at half the size.",
+  },
+  "gallery.desc_ifa": {
+    zh: "倒 F 天线（IFA）：一条臂加短路板和馈针，手机等设备常见的紧凑天线。",
+    en: "Inverted-F antenna (IFA): an arm with a shorting plate and a feed pin — the common compact antenna in phones.",
+  },
+  "gallery.desc_interdigital": {
+    zh: "交指带通滤波器：N 根 λ/4 谐振棒交错接地排列，缝耦合选频、结构紧凑。",
+    en: "Interdigital bandpass filter: quarter-wave rods grounded at alternating ends, gap-coupled and compact.",
+  },
+  "gallery.desc_inverted_ms": {
+    zh: "倒置微带：导带悬在介质下方（与常规微带相反），空气占比高、辐射损耗低。",
+    en: "Inverted microstrip: the strip hangs below the substrate (flipped microstrip), lower loss thanks to more air.",
+  },
+  "gallery.desc_isl_shielded": {
+    zh: "屏蔽悬置线：悬置带线再加过孔屏蔽墙，接近全屏蔽的基准传输线。",
+    en: "Shielded suspended line: a suspended stripline with via-fence walls, close to a fully shielded reference line.",
+  },
+  "gallery.desc_lange": {
+    zh: "Lange 电桥：四条指状线交指耦合，宽带 3dB 正交功分。",
+    en: "Lange coupler: four interleaved finger lines giving a wideband 3 dB quadrature split.",
+  },
+  "gallery.desc_loop": {
+    zh: "环形天线：方环在底边断口处馈电的小型谐振环天线。",
+    en: "Loop antenna: a small square ring fed at a gap in one side.",
+  },
+  "gallery.desc_marchand_balun": {
+    zh: "Marchand 巴伦：耦合槽线段把不平衡口转成平衡口（平衡馈电用）。",
+    en: "Marchand balun: coupled slotline sections converting an unbalanced port into a balanced one.",
+  },
+  "gallery.desc_mline": {
+    zh: "均匀微带线：一段 50Ω 直走线，校准与引擎仲裁用的基准传输线。",
+    en: "Uniform microstrip line: a straight 50Ω run — the reference line for calibration and solver arbitration.",
+  },
+  "gallery.desc_mmwave_series_array": {
+    zh: "毫米波串馈贴片阵：N 个贴片串成一行行波馈电（78GHz 等毫米波频段）。",
+    en: "mmWave series-fed patch array: patches chained in a row fed by a traveling wave (78 GHz class bands).",
+  },
+  "gallery.desc_monopole": {
+    zh: "单极子天线：地板上竖起 λ/4 导线，相当于偶极子借地面成像的一半。",
+    en: "Monopole: a quarter-wave wire standing on a ground plane — half a dipole mirrored by the ground.",
+  },
+  "gallery.desc_ms_array_nxn": {
+    zh: "反射阵列：N×N 贴片单元平铺，逐单元调相位把入射波反射聚束。",
+    en: "Reflectarray: an N-by-N tile of patch cells, each tuning its reflection phase to focus the beam.",
+  },
+  "gallery.desc_ms_cross": {
+    zh: "十字 FSS 单元：十字偶极子组成频率选择表面，对特定极化呈带阻。",
+    en: "Cross FSS cell: cross-dipole cells forming a frequency-selective surface, band-reject for one polarization.",
+  },
+  "gallery.desc_ms_jcross": {
+    zh: "耶路撒冷十字 FSS：端加载十字缝单元组成的带通频率选择表面。",
+    en: "Jerusalem-cross FSS: end-loaded cross-slot cells forming a band-pass selective surface.",
+  },
+  "gallery.desc_ms_mushroom": {
+    zh: "蘑菇 EBG 单元：贴片+过孔+邻缝电容构成人工磁导体（抑制表面波）。",
+    en: "Mushroom EBG cell: patch + via + gap capacitance forming an artificial magnetic conductor (surface-wave suppression).",
+  },
+  "gallery.desc_ms_patch": {
+    zh: "方贴片反射阵单元：反射阵最简单的单元，看贴片尺寸如何调反射相位。",
+    en: "Square-patch reflectarray cell: the simplest reflectarray cell — shows how patch size tunes reflection phase.",
+  },
+  "gallery.desc_ms_ring_patch": {
+    zh: "方环+贴片双谐振单元：环与中心贴片两个谐振，扩宽反射相位范围。",
+    en: "Ring and patch dual-resonance cell: a square ring plus a center patch widen the reflection-phase range.",
+  },
+  "gallery.desc_msl_cpw": {
+    zh: "微带-CPW 过渡：阶梯渐变段把微带与接地共面波导连接起来。",
+    en: "Microstrip-to-CPW transition: a stepped taper joins microstrip and grounded CPW.",
+  },
+  "gallery.desc_msl_siw_taper": {
+    zh: "微带-SIW 过渡：锥形阻抗变换把 50Ω 微带馈进基片集成波导。",
+    en: "Microstrip-to-SIW transition: a taper matches 50Ω microstrip into substrate-integrated waveguide.",
+  },
+  "gallery.desc_msl_slot_transition": {
+    zh: "微带-槽线过渡：地板开槽、微带跨槽，把上下两层传输线耦合起来。",
+    en: "Microstrip-to-slotline transition: a ground slot crossed by microstrip couples the two layers.",
+  },
+  "gallery.desc_nway_wilkinson": {
+    zh: "N 路 Wilkinson 功分器：树形 T 叉把一路输入分成四路等幅输出。",
+    en: "N-way Wilkinson divider: a tree of T junctions splitting one input into four equal outputs.",
+  },
+  "gallery.desc_patch": {
+    zh: "矩形贴片天线：最常见的微带贴片，底部探针馈电在 λ/2 谐振上。",
+    en: "Rectangular patch antenna: the standard microstrip patch, probe-fed from below at its half-wave resonance.",
+  },
+  "gallery.desc_patch_array_1x4": {
+    zh: "1×4 贴片阵：四个贴片等距排成一行，并联馈电网络换取更高增益。",
+    en: "1-by-4 patch array: four patches in a row fed by a corporate network for higher gain.",
+  },
+  "gallery.desc_patch_array_2x2": {
+    zh: "2×2 贴片阵：四元平面阵，λ/4 变换段做阻抗匹配。",
+    en: "2-by-2 patch array: a four-element planar array with quarter-wave transformer matching.",
+  },
+  "gallery.desc_patch_array_series": {
+    zh: "串馈贴片阵：三个贴片用半波互联线串成一行，馈电网络最简。",
+    en: "Series-fed patch array: three patches chained by half-wave lines — the simplest feed network.",
+  },
+  "gallery.desc_patch_eep_1x4": {
+    zh: "1×4 独立馈电阵（EEP）：每个单元独立端口，可逐元控制幅相。",
+    en: "1-by-4 element-level patch array: each element has its own port for per-element amplitude/phase control.",
+  },
+  "gallery.desc_patch_eep_2x2": {
+    zh: "2×2 独立馈电阵（EEP）：四个单元各接一个端口，波束赋形研究用。",
+    en: "2-by-2 element-level patch array: four individually ported elements for beamforming studies.",
+  },
+  "gallery.desc_pifa": {
+    zh: "PIFA 天线：贴片一边短路接地，体积更小的内置天线方案。",
+    en: "PIFA: a patch shorted to ground along one edge — a compact internal antenna.",
+  },
+  "gallery.desc_pyramid_horn": {
+    zh: "角锥喇叭天线：波导加四壁张口的喇叭，标准增益天线或馈源。",
+    en: "Pyramidal horn: a waveguide flared on four walls — the standard-gain antenna or feed.",
+  },
+  "gallery.desc_qwt_multisection": {
+    zh: "多节 λ/4 阻抗变换器：几节 λ/4 线级联，把两个不同阻抗在带内匹配。",
+    en: "Multisection quarter-wave transformer: cascaded quarter-wave lines matching two impedances across a band.",
+  },
+  "gallery.desc_ratrace": {
+    zh: "环形电桥（rat-race）：1.5λ 周长的环，提供 0°/180° 两路功分加隔离。",
+    en: "Rat-race hybrid: a 1.5-wavelength ring giving 0°/180° power splits with isolation.",
+  },
+  "gallery.desc_ridged_wg": {
+    zh: "脊波导：矩形波导顶壁加脊，压低截止频率（小尺寸传低频）。",
+    en: "Ridged waveguide: a ridge on the top wall lowers the cutoff frequency for compact low-frequency use.",
+  },
+  "gallery.desc_ring_resonator": {
+    zh: "微带环谐振器：闭环环带靠两条缝耦合，介质材料/介电常数测量常用。",
+    en: "Microstrip ring resonator: a closed ring coupled through two gaps, common for material/permittivity measurement.",
+  },
+  "gallery.desc_schiffman": {
+    zh: "Schiffman 移相器：耦合 U 形段产生约 90° 定差相移，馈电网络相位补偿用。",
+    en: "Schiffman phase shifter: a coupled U-section producing a near-constant 90° differential phase for feed networks.",
+  },
+  "gallery.desc_sicl": {
+    zh: "基片集成同轴（SICL）：上下地板加两列过孔围成矩形同轴腔，屏蔽性好。",
+    en: "SICL: via walls plus top and bottom grounds forming a rectangular coax — well shielded.",
+  },
+  "gallery.desc_sir_bpf": {
+    zh: "阶梯阻抗谐振（SIR）带通：高低阻抗段拼接的谐振棒，比均匀棒更紧凑。",
+    en: "SIR bandpass filter: rods built from high/low impedance sections, more compact than uniform rods.",
+  },
+  "gallery.desc_siw": {
+    zh: "基片集成波导（SIW）：基板里两排金属过孔围成波导，性能介于微带与波导之间。",
+    en: "SIW: two rows of metal vias in the substrate forming a waveguide — between microstrip and waveguide.",
+  },
+  "gallery.desc_slot": {
+    zh: "缝隙天线：地板开缝、微带跨槽馈电，是贴片天线的互补结构。",
+    en: "Slot antenna: a slot cut in the ground fed by microstrip crossing it — the complement of a patch.",
+  },
+  "gallery.desc_slotline": {
+    zh: "槽线：单面金属开缝构成的传输线（本模板两端用波导端口馈电）。",
+    en: "Slotline: a transmission line formed by a slot in a single metal layer (waveguide ports here).",
+  },
+  "gallery.desc_slotline_lumped": {
+    zh: "槽线（集总端口版）：同一种槽线，改用跨槽集总端口馈电的范式版本。",
+    en: "Slotline (lumped-port variant): the same slotline fed by a lumped port bridging the slot.",
+  },
+  "gallery.desc_sma_launcher": {
+    zh: "SMA 边缘弹射座：板边同轴转微带，实测夹具的标准输入接口。",
+    en: "SMA end-launcher: an edge coax-to-microstrip connector, the standard fixture interface.",
+  },
+  "gallery.desc_stepped_impedance": {
+    zh: "阶梯阻抗滤波器：高/低阻抗段交替级联，靠线宽变化实现滤波。",
+    en: "Stepped-impedance filter: alternating high/low impedance sections filtering through width changes.",
+  },
+  "gallery.desc_stripline": {
+    zh: "带状线：中心导带夹在上下两层地板之间，全屏蔽平面传输线。",
+    en: "Stripline: a center strip sandwiched between two ground planes — fully shielded.",
+  },
+  "gallery.desc_suspended_stripline": {
+    zh: "悬置带线：基板悬在腔中、导带位于腔的中面，空气占比高损耗低。",
+    en: "Suspended stripline: the substrate floats in a cavity with the strip at mid-height — low loss from high air share.",
+  },
+  "gallery.desc_tjunc": {
+    zh: "微带 T 接头：主线中点分出支臂，最基础的功分不连续结构。",
+    en: "Microstrip T-junction: a branch splitting off the main line — the basic power-split discontinuity.",
+  },
+  "gallery.desc_varactor_bpf": {
+    zh: "变容管调谐滤波器：发夹滤波器加载变容电容，调偏压即可改中心频率。",
+    en: "Varactor-tuned bandpass: a hairpin filter loaded with varactor capacitance — bias voltage tunes the center frequency.",
+  },
+  "gallery.desc_via": {
+    zh: "过孔过渡：金属化孔把上下两层的走线连接起来（层间垂直互连）。",
+    en: "Via transition: a metalized barrel connecting traces on the two layers (vertical interconnect).",
+  },
+  "gallery.desc_vivaldi_tsa": {
+    zh: "Vivaldi 天线：地板上指数张口的槽，端射行波天线（宽带毫米波常用）。",
+    en: "Vivaldi antenna: an exponentially flared slot in the ground — a broadband end-fire traveling-wave antenna.",
+  },
+  "gallery.desc_wilkinson": {
+    zh: "Wilkinson 功分器：T 型分叉加两段 λ/4 臂和隔离电阻，把一路分成两路等幅输出。",
+    en: "Wilkinson divider: a T split with two quarter-wave arms and an isolation resistor — one input, two equal outputs.",
+  },
+  "gallery.desc_wstep": {
+    zh: "微带宽度阶跃：走线宽度在中点突变，观察阶跃反射的基本不连续。",
+    en: "Microstrip width step: a sudden width change at mid-line — the basic step discontinuity.",
+  },
+  "gallery.desc_xcheb_bpf4": {
+    zh: "交叉耦合滤波器：四个开路环 2×2 排布并加交叉耦合，做出准椭圆响应。",
+    en: "Cross-coupled filter: four open-loop rings in a 2-by-2 layout with a cross coupling for a quasi-elliptic response.",
+  },
   "timeline.help_1": {
-    zh: "上图：每个 run 的目标成本（快照 objectives 确定性重算，越低越好）按时间排列——战役/调参的整体进步一目了然，颜色按 adapter 分通道。",
-    en: "Top: per-run objective cost (deterministic recompute from snapshot objectives, lower is better) over time — campaign/tuning progress at a glance, colored by adapter.",
+    zh: "上图：每个 run 的目标成本按时间排列（按配方目标重算，越低越好）——调参/战役是否在进步一目了然，颜色按 adapter 区分。",
+    en: "Top: per-run objective cost over time (recomputed from the recipe objectives; lower is better) — progress at a glance, colored by adapter.",
   },
   "timeline.help_2": {
     zh: "下图：最近一次调参 run 的 trial 级 cost 收敛曲线（数据来自 trials 产物）。",
@@ -1534,18 +1967,18 @@ export const LOCALES = {
      画布文字/悬停 title/aria/状态行/空态；API 字符串数据（参数名/来源/
      目标名）照旧模板外拼不进词表值；数字与格式化数值可作 params）── */
   "optstack.title": { zh: "优化洞察", en: "Optimization Insights" },
-  "optstack.subtitle": { zh: "Pareto 前沿 · 可行性热图（E9/E10）", en: "Pareto front · feasibility heatmap (E9/E10)" },
+  "optstack.subtitle": { zh: "Pareto 前沿 · 可行性热图", en: "Pareto front · feasibility heatmap" },
   "optstack.help_1": {
-    zh: "Pareto 前沿：nsga2 run 直读 results/pareto_front.json（E9 起落盘，含逐代精英存档超体积 hv_convergence）；旧 run / TPE run 由服务层从 trials 审计现算约束 Pareto（Deb 可行优先支配：可行支配不可行、不可行间总违约量小者优）。",
-    en: "Pareto front: nsga2 runs read results/pareto_front.json directly (written since E9, incl. per-generation elite-archive hypervolume hv_convergence); for older runs / TPE runs the service layer computes constrained Pareto live from the trials audit (Deb feasibility-first dominance: feasible dominates infeasible; among infeasible, smaller total violation wins).",
+    zh: "Pareto 前沿：nsga2 优化 run 直读落盘的前沿文件 results/pareto_front.json；旧 run 或 TPE 调参 run 由服务端从 trial 记录现算——可行解支配不可行解，同为不可行时总违约量小者胜。",
+    en: "Pareto front: nsga2 runs read the stored front file (results/pareto_front.json) directly; for older runs or TPE runs the backend recomputes it from the trial records — feasible solutions dominate infeasible ones, and among infeasible ones the smaller total violation wins.",
   },
   "optstack.help_2": {
-    zh: "可行性热图：读 trials/*.json 的 params + constraint_values（≤0=可行），对所选两参数做确定性等宽分箱——格色=可行率、格内数字=样本数、悬停看平均总违约量；无约束 run 如实报\"不可算\"。",
-    en: "Feasibility heatmap: reads params + constraint_values from trials/*.json (≤0 = feasible) and does deterministic equal-width binning over the two selected params — cell color = feasible rate, cell number = sample count, hover for mean total violation; unconstrained runs honestly report \"not computable\".",
+    zh: "可行性热图：按 trial 记录里的约束值分格（≤0 视为可行），对所选两参数等宽分箱——格色=可行率、格内数字=样本数、悬停看平均总违约量；无约束的 run 如实显示「不可算」。",
+    en: "Feasibility heatmap: bins the two selected parameters into equal-width cells using the constraint values recorded per trial (≤0 = feasible) — cell color = feasible rate, cell number = sample count, hover for the mean total violation; runs without constraints honestly show \"not computable\".",
   },
   "optstack.help_3": {
-    zh: "数值全部出自确定性内核（SpecEvaluator 违约量 / pareto_tools），前端只渲染。",
-    en: "All numbers come from the deterministic kernel (SpecEvaluator violations / pareto_tools); the frontend only renders.",
+    zh: "所有数字由本地计算内核算出，页面只负责显示。",
+    en: "All numbers come from the local compute kernel; the page only renders.",
   },
   "optstack.reload": { zh: "刷新", en: "Reload" },
   "optstack.x_param": { zh: "x 参数", en: "x param" },
@@ -1623,17 +2056,17 @@ export const LOCALES = {
   /* ── profile.*（发布前置 i18n 软编码批 S2：剖析页全清——采样结果行的
      产物路径/fmt 为 API 数据照旧模板外拼，textContent 直写零转义需求）── */
   "profile.title": { zh: "剖析", en: "Profiler" },
-  "profile.subtitle": { zh: "py-spy 火焰图（PR-8）", en: "py-spy flame graphs (PR-8)" },
+  "profile.subtitle": { zh: "py-spy 火焰图", en: "py-spy flame graphs" },
   "profile.help_1_lead": { zh: "封装 ", en: "Wraps " },
   "profile.help_1_tail": {
-    zh: "（MIT）：对运行中进程（pid）或新起命令采样，产物落 runs/profile/（flamegraph .svg 浏览器直接看 / speedscope .json 可交互）。",
-    en: " (MIT): samples a running process (pid) or a freshly started command; artifacts land in runs/profile/ (flamegraph .svg opens directly in the browser / speedscope .json is interactive).",
+    zh: "：对运行中的进程（按 pid）或新起的命令采样，产物存到 runs/profile/——火焰图 .svg 浏览器直接打开，speedscope .json 可交互探索。",
+    en: ": samples a running process (by pid) or a freshly started command; artifacts land in runs/profile/ — the flamegraph .svg opens directly in the browser, the speedscope .json is interactive.",
   },
   "profile.help_2_lead": { zh: "py-spy 缺装时本页如实降级：", en: "If py-spy is missing this page degrades honestly: " },
   "profile.help_2_tail": { zh: " 后刷新即可。", en: " then reload." },
   "profile.help_3": {
-    zh: "剖析是开发面工具：只读采样不改业务状态；Windows 下附着其他用户进程需管理员。",
-    en: "Profiling is a developer-facing tool: read-only sampling that never touches business state; attaching to other users' processes on Windows requires admin.",
+    zh: "剖析是开发用工具：只读采样，不影响正在跑的任务；Windows 下附着其他用户的进程需要管理员权限。",
+    en: "Profiling is a developer tool: read-only sampling that never disturbs running jobs; attaching to another user's process on Windows needs admin rights.",
   },
   "profile.env_title": { zh: "环境", en: "Environment" },
   "profile.detecting": { zh: "检测中...", en: "Detecting..." },
@@ -1670,8 +2103,8 @@ export const LOCALES = {
   "playground.help_2_mid": { zh: "：预测来自校准样本拟合的代理模型，", en: ": predictions come from a surrogate fitted on calibration samples, " },
   "playground.help_2_core2": { zh: "非真值", en: "not ground truth" },
   "playground.help_2_tail": {
-    zh: "——LOOCV ρ/样本量与最近样本真值对照一并列出，精算以 openEMS/HFSS 求解为准。",
-    en: " — LOOCV ρ / sample size and the nearest-sample truth are listed side by side; high-fidelity numbers come from openEMS/HFSS solves.",
+    zh: "——旁边列出交叉验证精度 ρ、样本量与最近样本真值对照；要精算以 openEMS/HFSS 求解为准。",
+    en: " — cross-validation accuracy ρ, sample size and the nearest-sample truth are listed alongside; high-fidelity numbers come from openEMS/HFSS solves.",
   },
   "playground.help_3": {
     zh: "缺省值=参数界中点；越界滑条值会被裁剪到边界并在状态行提示。",
@@ -1705,15 +2138,15 @@ export const LOCALES = {
   /* ── queue.* 残量清（发布前置 i18n 软编码批 S2：help 块/详情面板/状态段；
      表头 model/verdict/remote=协议标识符豁免；战役名/决策日志条目=API 数据
      照旧 esc 不迁）── */
-  "queue.help_1_lead": { zh: "战役队列=runs/ 下已落盘的 campaign.plan.json（确定性拆解的阶段计划）；", en: "Campaign queue = campaign.plan.json files already persisted under runs/ (deterministically expanded stage plans); " },
+  "queue.help_1_lead": { zh: "战役队列 = runs/ 下已保存的 campaign.plan.json（拆解好的阶段计划）；", en: "Campaign queue = campaign.plan.json files saved under runs/ (stage plans already expanded); " },
   "queue.help_1_core": { zh: "决策日志", en: "decision log" },
-  "queue.help_1_tail": { zh: "出自 G13 确定性调度前置步（派发顺序/预测时长来源/拒绝清单的审计事件）。", en: "comes from the G13 deterministic scheduling pre-step (audit events for dispatch order / predicted-duration sources / rejection list)." },
-  "queue.help_2_core": { zh: "remote 面", en: "Remote panel" },
+  "queue.help_1_tail": { zh: "记录调度器怎么排的：派发顺序、时长预测依据、拒绝了哪些任务。", en: "records how the scheduler decided: dispatch order, duration-prediction sources, and what got rejected." },
+  "queue.help_2_core": { zh: "远程机器", en: "Remote machines" },
   "queue.help_2_tail": {
-    zh: "（可选）：填机器名后按战役显示 HFSS 阶段的远端附着配置增量（只读组装，零真连）；mTLS 是条件项，按服务器接入说明口径如实登记。",
-    en: " (optional): enter a machine name to show, per campaign, the remote-attach config delta for HFSS stages (read-only assembly, zero live connections); mTLS is conditional and honestly recorded per the server integration notes.",
+    zh: "（可选）：填机器名后按战役显示 HFSS 阶段的远程配置差异，只读展示、不会真连；mTLS 视服务器配置而定。",
+    en: " (optional): enter a machine name to show, per campaign, the remote-attach config delta for HFSS stages — display only, never a live connection; mTLS depends on the server setup.",
   },
-  "queue.help_3": { zh: "数据全部出自服务层既有函数，本页只渲染。", en: "All data comes from existing service-layer functions; this page only renders." },
+  "queue.help_3": { zh: "所有数字由后端算好，页面只负责显示。", en: "All numbers are computed by the backend; the page only renders." },
   "queue.detail_title_suffix": { zh: " — 阶段与决策日志", en: " — stages and decision log" },
   "queue.th_decision": { zh: "决策", en: "Decision" },
   "queue.no_decision_log": {
@@ -1722,7 +2155,7 @@ export const LOCALES = {
   },
   "queue.mtls_status_lead": { zh: "mTLS 状态：", en: "mTLS status: " },
   "queue.remote_no_config": { zh: "无配置（本地零变化）", en: "No config (local unchanged)" },
-  "queue.dead_tpl": { zh: "(死 {n})", en: "({n} dead)" },
+  "queue.dead_tpl": { zh: "（失败/中止 {n}）", en: "({n} failed/aborted)" },
   "queue.jobs_tpl": { zh: "✓ {n} 作业", en: "✓ {n} jobs" },
   "queue.open_log_aria_tpl": { zh: "查看决策日志（{n} 条）", en: "View decision log ({n} entries)" },
   "queue.entries_tpl": { zh: "{n} 条", en: "{n}" },
@@ -1742,16 +2175,16 @@ export const LOCALES = {
 
   /* ── fieldviz.*（远场极坐标 + Smith 圆图 + 场可视化 3D，view_fieldviz）── */
   "fieldviz.ff_help_1": {
-    zh: "数据源 = openEMS 真跑 run 的 nf2ff 产物（模板 far_field/sar=True 渲染：farfield_cut/3d.csv + farfield_meta.json + sar.csv）。",
-    en: "Data source = nf2ff artifacts of a real openEMS run (template rendered with far_field/sar=True: farfield_cut/3d.csv + farfield_meta.json + sar.csv).",
+    zh: "看什么：openEMS 真跑 run 的远场产物——方向图切面与 3D 数据、增益/效率指标、SAR 表。",
+    en: "What you are looking at: far-field artifacts of a real openEMS run — pattern cuts and 3D data, gain/efficiency metrics, SAR tables.",
   },
   "fieldviz.ff_help_2": {
     zh: "极坐标切面：φ=0°（xz 面）与 φ=90°（yz 面），θ −180..180°，dB 相对峰值归一。",
     en: "Polar cuts: φ=0° (xz plane) and φ=90° (yz plane), θ −180..180°, dB normalized to peak.",
   },
   "fieldviz.ff_help_3": {
-    zh: "指标口径（官方 nf2ff 教程）：Dmax=方向性（dBi），η=Prad/P_acc（辐射效率），G=η·D；HPBW=半功率波瓣宽度；功率闭合=|P_acc−Prad|/P_acc（SAR 注入时 P_acc−Prad=组织吸收）。",
-    en: "Metric conventions (official nf2ff tutorial): Dmax = directivity (dBi), η = Prad/P_acc (radiation efficiency), G = η·D; HPBW = half-power beamwidth; power closure = |P_acc−Prad|/P_acc (with SAR injection, P_acc−Prad = tissue absorption).",
+    zh: "指标口径按官方 nf2ff 教程：Dmax=方向性 dBi，η=辐射效率 Prad/P_acc，G=η·D，HPBW=半功率波瓣宽度；功率闭合=|P_acc−Prad|/P_acc，注入 SAR 时即组织吸收占比。",
+    en: "Metrics follow the official nf2ff tutorial: Dmax = directivity (dBi), η = radiation efficiency Prad/P_acc, G = η·D, HPBW = half-power beamwidth; power closure = |P_acc−Prad|/P_acc, i.e. tissue absorption when SAR is injected.",
   },
   "fieldviz.ff_help_4": {
     zh: "SAR（官方 Dipole SAR 教程）：IEEE_62704 1g 平均，含 1W 接受功率归一值。",
@@ -1818,24 +2251,24 @@ export const LOCALES = {
     en: "Chart: far-field 3D pattern θ×φ heatmap (dB rel. peak)",
   },
   "fieldviz.help_1": {
-    zh: "数据源 = openEMS 真跑 run 的 DumpHDF5 产物：nf2ff 盒六面 nf2ff_E_*.h5（时域包络 max|E(t)|）、SAR_raw.h5（频域 |E(f0)|）、SAR_1g.h5（标量 SAR 体）。",
-    en: "Data source = DumpHDF5 artifacts of a real openEMS run: six faces of the nf2ff box nf2ff_E_*.h5 (time-domain envelope max|E(t)|), SAR_raw.h5 (frequency-domain |E(f0)|), SAR_1g.h5 (scalar SAR volume).",
+    zh: "数据源 = openEMS 真跑 run 的场 dump 文件：nf2ff 盒六面存时域包络 max|E(t)|，SAR_raw.h5 存频域 |E(f0)|，SAR_1g.h5 存 1g 平均 SAR 体。",
+    en: "Data source: field dumps of a real openEMS run — the six nf2ff-box faces hold the time-domain envelope max|E(t)|, SAR_raw.h5 the frequency-domain |E(f0)|, SAR_1g.h5 the 1 g-averaged SAR volume.",
   },
   "fieldviz.help_2": {
-    zh: "切片：三轴中面 |E| 热图（dB 相对体峰值，单元格按真实 mm 网格绘制），拖滑块改切片索引；等值线 −3/−10/−20 dB 叠加（可改）。",
-    en: "Slices: mid-plane |E| heatmaps on the three axes (dB rel. volume peak, cells drawn on the true mm grid) — drag the slider to change the slice index; −3/−10/−20 dB contours overlaid (editable).",
+    zh: "切片 = 三轴中面的 |E| 热图，dB 相对体峰值、格子按真实 mm 网格画；拖滑块换切片，等值线 −3/−10/−20 dB 可改。",
+    en: "Slices are mid-plane |E| heatmaps on the three axes, dB relative to the volume peak, drawn on the true mm grid; drag the slider to change the slice, contour levels −3/−10/−20 dB are editable.",
   },
   "fieldviz.help_3_lead": {
     zh: "等值面：安装 extras ",
     en: "Isosurfaces: install the extras ",
   },
   "fieldviz.help_3_tail": {
-    zh: "（PyVista/VTK）后为三角网 3D（three.js 渲染）；未安装时诚实降级为切片等值线（engine 标签可见）。",
-    en: " (PyVista/VTK) to get a 3D triangle mesh (three.js rendering); without it, honest degradation to slice contours (see the engine label).",
+    zh: "（PyVista/VTK）后得到三角网 3D 等值面；未安装时自动降级为切片等值线（看引擎标签）。",
+    en: " (PyVista/VTK) to get 3D isosurface meshes; without it the page falls back to slice contours (see the engine label).",
   },
   "fieldviz.help_4": {
-    zh: "远场 3D 图（farfield_3d.h5，θ×φ 热图）与 D4 指标（farfield_meta.json）联动；「→ 远场极坐标页」跳到同一 run 的极坐标切面。",
-    en: "The far-field 3D plot (farfield_3d.h5, θ×φ heatmap) links with the D4 metrics (farfield_meta.json); “→ Far-field polar page” jumps to the polar cuts of the same run.",
+    zh: "远场 3D 图读 farfield_3d.h5（θ×φ 热图），与 farfield_meta.json 的远场指标联动；「→ 远场极坐标页」跳到同一 run 的极坐标切面。",
+    en: "The far-field 3D plot reads farfield_3d.h5 (θ×φ heatmap) and links with the metrics in farfield_meta.json; “→ Far-field polar page” jumps to the polar cuts of the same run.",
   },
   "fieldviz.title": { zh: "场可视化 3D", en: "3D Fields" },
   "fieldviz.subtitle": {
@@ -1861,13 +2294,13 @@ export const LOCALES = {
   },
   "fieldviz.m_mirror": { zh: "镜像修正 ", en: "Mirror correction " },
   "fieldviz.no_farfield_meta": {
-    zh: "（无 farfield_meta.json：D4 指标不可用）",
-    en: "(no farfield_meta.json: D4 metrics unavailable)",
+    zh: "（无 farfield_meta.json：远场指标不可用）",
+    en: "(no farfield_meta.json: far-field metrics unavailable)",
   },
   "fieldviz.slice_head_mid": { zh: " 切面（", en: " slice (" },
   "fieldviz.slice_head_idx": { zh: "，索引 ", en: ", index " },
   "fieldviz.iso_head": {
-    zh: "等值面（PyVista/VTK 移动立方体）",
+    zh: "等值面（PyVista/VTK marching cubes）",
     en: "Isosurfaces (PyVista/VTK marching cubes)",
   },
   "fieldviz.iso_degrade_engine": { zh: "等值面引擎 ", en: "Isosurface engine " },
@@ -1892,16 +2325,16 @@ export const LOCALES = {
 
   /* ── calibration.*（校准工作台，view_calibration）── */
   "calibration.help_1": {
-    zh: "校准产物一览：每次 calibrate/augment 的 gate 判定、LOOCV ρ、样本量与网格档。",
-    en: "Calibration artifact overview: gate verdicts, LOOCV ρ, sample counts and mesh grades of every calibrate/augment.",
+    zh: "校准产物一览：每次校准/增广的门判定、交叉验证精度 ρ、样本量与网格档。",
+    en: "Calibration artifacts at a glance: per calibrate/augment — gate verdict, cross-validation accuracy ρ, sample count and mesh grade.",
   },
   "calibration.help_2": {
     zh: "点击行看详情：参数空间散点（cost 着色）、验证点偏差、报告全文。",
     en: "Click a row for detail: parameter-space scatter (cost-colored), validation-point deltas, and the full report.",
   },
   "calibration.help_3": {
-    zh: "演化图：ρ 随样本量的收敛轨迹 + 跨保真 gate 历史——校准数据是资产，逐次增广都会点亮一个点。",
-    en: "Evolution plot: ρ convergence vs sample count + cross-fidelity gate history — calibration data is an asset; every augmentation lights up another point.",
+    zh: "演化图：ρ 随样本量的收敛轨迹 + 跨保真门历史——校准数据是资产，每做一次增广就多一个点。",
+    en: "Evolution plot: ρ convergence vs sample count plus cross-fidelity gate history — calibration data is an asset; each augmentation adds a point.",
   },
   "calibration.title": { zh: "校准工作台", en: "Calibration Workbench" },
   "calibration.run_label": { zh: "校准 run", en: "Calibration runs" },
@@ -1923,14 +2356,14 @@ export const LOCALES = {
     en: "View calibration detail: ",
   },
   "calibration.empty": {
-    zh: "暂无校准 run——先跑一次 calibrate/augment（校准数据是资产，逐次增广都会点亮一个点）",
-    en: "No calibration runs yet — run a calibrate/augment first (calibration data is an asset; every augmentation lights up another point)",
+    zh: "暂无校准 run——先跑一次校准/增广（校准数据是资产，每做一次增广就多一个点）",
+    en: "No calibration runs yet — run a calibrate/augment first (calibration data is an asset; each augmentation adds a point)",
   },
   "calibration.series_sur": { zh: "代理 LOOCV ρ", en: "surrogate LOOCV ρ" },
-  "calibration.series_cross": { zh: "跨保真 gate ρ", en: "cross-fidelity gate ρ" },
+  "calibration.series_cross": { zh: "跨保真门 ρ", en: "cross-fidelity gate ρ" },
   "calibration.xlabel": { zh: "样本量", en: "samples" },
   "calibration.no_cross": {
-    zh: "暂无跨保真 gate 记录",
+    zh: "暂无跨保真门记录",
     en: "No cross-fidelity gate records",
   },
   "calibration.series_points": { zh: "样本点", en: "sample points" },
@@ -2016,6 +2449,51 @@ export const LOCALES = {
   "import.fail_lead": { zh: "导入失败: ", en: "Import failed: " },
   "import.saved_badge": { zh: "已保存", en: "Saved" },
   "import.saved_msg": { zh: "配方草稿已生成", en: "Recipe draft generated" },
+
+  /* ═══ UI 人性化批 R4（交互细节与公共组件）append-only 增量 ═══════════
+     ①公共错误卡（kit.js kitApiErrorHtml/showApiError 消费；common.* 三键
+     为壳面引用集——kit.js t() 烘焙即计入，test_ui_i18n 死键互证同口径）；
+     ②统一 busy 态缺省钮面（common.busy，kitBtnBusy 缺省值）；
+     ③空态三件式补齐（runs 零记录引导/datasets 空库与筛选零命中动作化/
+     anchors 空注册表/uq 资产跳转钮）；
+     ④导入覆盖确认（import.save_confirm_* 三段：正文含动态路径，路径段
+     由视图 esc 外拼——词表值零 HTML 纪律不变）。 */
+  "common.error_title": { zh: "操作失败", en: "Action failed" },
+  "common.error_generic": {
+    zh: "操作未成功（服务未就绪或请求异常），可稍后重试",
+    en: "The operation did not succeed (service not ready or request error) — try again later",
+  },
+  "common.error_hint": {
+    zh: "若持续失败，请查看服务端日志，或刷新页面重试",
+    en: "If this persists, check the server logs or reload the page",
+  },
+  "common.busy": { zh: "运行中…", en: "Running…" },
+  "runs.empty_no_runs": {
+    zh: "还没有仿真记录。到「优化调参」页跑一轮，或用命令行先来一发：",
+    en: "No simulation runs yet. Start one on the Tuning page, or fire one from the command line: ",
+  },
+  "runs.goto_tune": { zh: "去优化调参", en: "Go to Tuning" },
+  "datasets.empty_none": {
+    zh: "还没有数据集（runs/datasets 注册表为空）",
+    en: "No datasets yet (the runs/datasets registry is empty)",
+  },
+  "datasets.empty_none_next": {
+    zh: "先跑几轮仿真/校准，再用 rfauto datasets materialize 物化——路线见「使用指南」",
+    en: "Run some simulations/calibrations first, then materialize via rfauto datasets materialize — see the Guide",
+  },
+  "datasets.goto_guide": { zh: "去使用指南", en: "Go to Guide" },
+  "datasets.clear_filter": { zh: "清除筛选", en: "Clear filters" },
+  "anchors.empty": {
+    zh: "注册表为空（knowledge/anchors.yaml 无锚登记）",
+    en: "Registry is empty (no anchors in knowledge/anchors.yaml)",
+  },
+  "uq.goto_calibration": { zh: "去校准工作台", en: "Go to Calibration" },
+  "import.save_confirm_title": { zh: "保存配方草稿", en: "Save recipe draft" },
+  "import.save_confirm_body_pre": { zh: "将写入 ", en: "This writes " },
+  "import.save_confirm_body_tail": {
+    zh: " ，同名文件会被覆盖。确定继续？",
+    en: " — an existing file at that path will be overwritten. Continue?",
+  },
 };
 
 /* ═══ 语言档判定：localStorage 显式档 > <html lang> 跟随 > zh 缺省 ═══ */

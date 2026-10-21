@@ -1,4 +1,4 @@
-"""架构批 A6-A 席位回归钉：UI SSE 实时面（R6 审计 F-1）。
+"""aurora72 A6-A 席位回归钉：UI SSE 实时面（R6 审计 F-1）。
 
 对象：src/rfauto/ui/static/pages.js（SSE 消费块：订阅/回退链/生命周期 +
 sseStreamUrl/sseSubscribedTypes/sseFrameAction/sseEndMark/sseShouldGiveUp/
@@ -39,7 +39,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -98,7 +98,7 @@ class TestSseConsumerPins:
 
     def test_refresh_body_shared_by_poll_and_sse(self):
         # SSE kick 与轮询共用幂等整页刷新（tuneRefresh）——含终态停既有逻辑
-        # （架构批 W3-S9 P8-9：T.api→apiFetch+viewSignal 同笔迁移本钉）
+        # （aurora_f W3-S9 P8-9：T.api→apiFetch+viewSignal 同笔迁移本钉）
         body = _body(r"async function tuneRefresh\(\)")
         assert 'await apiFetch("/api/tune/status", { signal: viewSignal("tune") });' in body
         assert "if (st.aborted) return; // UI-R12" in body  # 切页取消短路
@@ -182,13 +182,13 @@ class TestSseLifecycle:
 
     def test_leave_page_hook_in_showpage_single_source(self):
         # showPage 单源写入 _activeView 处同点挂离页收束（不另开 hashchange 监听）
-        assert "_activeView = v; // 架构批 W2-B：页面可见语义单源（轮询当前页守卫消费）" in _SRC
-        assert "_sseLeavePage(v); // 架构批 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）" in _SRC
+        assert "_activeView = v; // aurora36 W2-B：页面可见语义单源（轮询当前页守卫消费）" in _SRC
+        assert "_sseLeavePage(v); // aurora72 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）" in _SRC
         body = _body(r"function _sseLeavePage\(v\)")
         assert "if (_SSE[name].view !== v) _sseClose(name);" in body  # 切走才收束
 
     def test_visibility_binding_and_resume(self):
-        assert "_bindVisibilitySSE(); // 架构批 A6-A" in _SRC  # initPages 装配一次
+        assert "_bindVisibilitySSE(); // aurora72 A6-A" in _SRC  # initPages 装配一次
         body = _body(r"function _bindVisibilitySSE\(\)")
         assert "_sseVisBound" in body  # 幂等装配
         assert 'document.addEventListener("visibilitychange"' in body
@@ -222,9 +222,11 @@ class TestSseCopyHonesty:
         assert "实时进度监听 SSE 流自动刷新" not in _SRC
 
     def test_campaign_help_truthful(self):
-        assert "选中 run 后订阅 SSE 进度流" in _SRC
-        assert "流不可用或该 run 无事件流（events.jsonl 缺席）时不会自动刷新" in _SRC
-        assert "「刷新」按钮手动刷新" in _SRC  # 回退面如实
+        # 人性化 R3 文案批：help 重写为白话，宣称=行为口径不变
+        # （有进度事件自动刷新/跑完自动停/无事件流手动刷）
+        assert "选中 run 后有进度事件就自动刷新" in _SRC
+        assert "没有事件流时不自动刷新" in _SRC
+        assert "「刷新」按钮手动刷" in _SRC  # 回退面如实
 
     def test_tune_panel_title_truthful(self):
         # tune 标题从"每 3 秒刷新"改为真实双形态（SSE 推送可达时推送，否则轮询）
@@ -244,7 +246,7 @@ class TestCrossSeatPinsHold:
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
         assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
-        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1
+        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1
         assert _SRC.count("disposeChartsIn(") == 4
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处（SSE 让位走回调守卫，不加定时器）
         assert _SRC.count("echartsInitCached(el)") == 2  # 定义 + tools 页（W3-S12 四管线入壳后）
