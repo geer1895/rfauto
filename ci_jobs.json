@@ -1,0 +1,695 @@
+{
+  "total_count": 8,
+  "jobs": [
+    {
+      "id": 119130876859,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDruw",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130876859",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130876859",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T08:55:01Z",
+      "name": "lint + contracts + numbers + encoding + sensitive",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:19Z",
+          "completed_at": "2026-10-21T08:54:20Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:20Z",
+          "completed_at": "2026-10-21T08:54:24Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:24Z",
+          "completed_at": "2026-10-21T08:54:27Z"
+        },
+        {
+          "name": "Install dev tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:27Z",
+          "completed_at": "2026-10-21T08:54:53Z"
+        },
+        {
+          "name": "ruff (src/ tests/ scripts/)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-21T08:54:53Z",
+          "completed_at": "2026-10-21T08:54:54Z"
+        },
+        {
+          "name": "import-linter contracts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-21T08:54:54Z",
+          "completed_at": "2026-10-21T08:54:54Z"
+        },
+        {
+          "name": "number self-check (README vs code)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-21T08:54:54Z",
+          "completed_at": "2026-10-21T08:54:57Z"
+        },
+        {
+          "name": "UTF-8 no-BOM encoding check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-21T08:54:57Z",
+          "completed_at": "2026-10-21T08:54:57Z"
+        },
+        {
+          "name": "palace wrapper pinned-content check (graceful skip when assets absent)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-21T08:54:57Z",
+          "completed_at": "2026-10-21T08:54:57Z"
+        },
+        {
+          "name": "sensitive content scan",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-21T08:54:57Z",
+          "completed_at": "2026-10-21T08:54:58Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-21T08:54:58Z",
+          "completed_at": "2026-10-21T08:54:58Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-21T08:54:58Z",
+          "completed_at": "2026-10-21T08:54:59Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-10-21T08:54:59Z",
+          "completed_at": "2026-10-21T08:54:59Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130876859",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000280,
+      "runner_name": "GitHub Actions 1000000280",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130877211,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDtGw",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130877211",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130877211",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T08:56:25Z",
+      "name": "supply chain (pip-audit + CycloneDX SBOM + hashed requirements)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:18Z",
+          "completed_at": "2026-10-21T08:54:19Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:19Z",
+          "completed_at": "2026-10-21T08:54:22Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:22Z",
+          "completed_at": "2026-10-21T08:54:24Z"
+        },
+        {
+          "name": "Install pinned supply-chain tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:24Z",
+          "completed_at": "2026-10-21T08:54:32Z"
+        },
+        {
+          "name": "Install package with test-relevant extras",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-21T08:54:32Z",
+          "completed_at": "2026-10-21T08:55:52Z"
+        },
+        {
+          "name": "Export hash-pinned requirements from uv.lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-21T08:55:52Z",
+          "completed_at": "2026-10-21T08:55:52Z"
+        },
+        {
+          "name": "Generate CycloneDX SBOM (JSON)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-21T08:55:52Z",
+          "completed_at": "2026-10-21T08:56:12Z"
+        },
+        {
+          "name": "pip-audit fail on known vulnerabilities",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-21T08:56:12Z",
+          "completed_at": "2026-10-21T08:56:22Z"
+        },
+        {
+          "name": "Upload supply-chain artifacts",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-21T08:56:22Z",
+          "completed_at": "2026-10-21T08:56:23Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-21T08:56:23Z",
+          "completed_at": "2026-10-21T08:56:23Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-21T08:56:23Z",
+          "completed_at": "2026-10-21T08:56:23Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-21T08:56:23Z",
+          "completed_at": "2026-10-21T08:56:23Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130877211",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000283,
+      "runner_name": "GitHub Actions 1000000283",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130877226,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDtKg",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130877226",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130877226",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T08:55:07Z",
+      "name": "Dockerfile build smoke (C14b)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:19Z",
+          "completed_at": "2026-10-21T08:54:20Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:20Z",
+          "completed_at": "2026-10-21T08:54:24Z"
+        },
+        {
+          "name": "Run docker/setup-buildx-action@v3",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:24Z",
+          "completed_at": "2026-10-21T08:54:29Z"
+        },
+        {
+          "name": "Build image (no push)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:29Z",
+          "completed_at": "2026-10-21T08:55:03Z"
+        },
+        {
+          "name": "Container import smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-21T08:55:03Z",
+          "completed_at": "2026-10-21T08:55:03Z"
+        },
+        {
+          "name": "Post Run docker/setup-buildx-action@v3",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-21T08:55:03Z",
+          "completed_at": "2026-10-21T08:55:04Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-21T08:55:04Z",
+          "completed_at": "2026-10-21T08:55:04Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-21T08:55:04Z",
+          "completed_at": "2026-10-21T08:55:04Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130877226",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000281,
+      "runner_name": "GitHub Actions 1000000281",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130877292,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDtbA",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130877292",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130877292",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T09:30:00Z",
+      "name": "pytest (unit + integration-fake, no EDA)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:18Z",
+          "completed_at": "2026-10-21T08:54:20Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:20Z",
+          "completed_at": "2026-10-21T08:54:23Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:23Z",
+          "completed_at": "2026-10-21T08:54:29Z"
+        },
+        {
+          "name": "Install package with test-relevant extras",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:29Z",
+          "completed_at": "2026-10-21T08:56:13Z"
+        },
+        {
+          "name": "Run unit + integration-fake tests (real_edt deselected)",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-10-21T08:56:13Z",
+          "completed_at": "2026-10-21T09:29:58Z"
+        },
+        {
+          "name": "Verify real_edt tests are collectable and always deselected in CI",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-10-21T09:29:58Z",
+          "completed_at": "2026-10-21T09:29:58Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-10-21T09:29:58Z",
+          "completed_at": "2026-10-21T09:29:58Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-21T09:29:58Z",
+          "completed_at": "2026-10-21T09:29:59Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-21T09:29:59Z",
+          "completed_at": "2026-10-21T09:29:59Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130877292",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000284,
+      "runner_name": "GitHub Actions 1000000284",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130877293,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDtbQ",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130877293",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130877293",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T08:55:07Z",
+      "name": "license compliance gate (P-3 pip-licenses)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:18Z",
+          "completed_at": "2026-10-21T08:54:19Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:19Z",
+          "completed_at": "2026-10-21T08:54:22Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:22Z",
+          "completed_at": "2026-10-21T08:54:23Z"
+        },
+        {
+          "name": "Install package with test-relevant extras",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:23Z",
+          "completed_at": "2026-10-21T08:55:03Z"
+        },
+        {
+          "name": "Run license compliance gate (scripts/license_gate.py, ALLOWED+EXEMPT 表)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-21T08:55:03Z",
+          "completed_at": "2026-10-21T08:55:05Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-21T08:55:05Z",
+          "completed_at": "2026-10-21T08:55:05Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-21T08:55:05Z",
+          "completed_at": "2026-10-21T08:55:05Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-21T08:55:05Z",
+          "completed_at": "2026-10-21T08:55:05Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130877293",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000282,
+      "runner_name": "GitHub Actions 1000000282",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130877330,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDtkg",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130877330",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130877330",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:18Z",
+      "completed_at": "2026-10-21T09:10:44Z",
+      "name": "merge preflight (drift-face early gate)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-21T08:54:19Z",
+          "completed_at": "2026-10-21T08:54:20Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-21T08:54:20Z",
+          "completed_at": "2026-10-21T08:54:24Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-21T08:54:24Z",
+          "completed_at": "2026-10-21T08:54:27Z"
+        },
+        {
+          "name": "Install package with test-relevant extras",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-21T08:54:27Z",
+          "completed_at": "2026-10-21T08:55:49Z"
+        },
+        {
+          "name": "Run scripts/merge_preflight.py (numbers + goldens + regen diffs + AST/meta audits)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-21T08:55:49Z",
+          "completed_at": "2026-10-21T09:10:40Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-21T09:10:40Z",
+          "completed_at": "2026-10-21T09:10:40Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-21T09:10:40Z",
+          "completed_at": "2026-10-21T09:10:41Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-21T09:10:41Z",
+          "completed_at": "2026-10-21T09:10:41Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130877330",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000285,
+      "runner_name": "GitHub Actions 1000000285",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119130878822,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDzZg",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130878822",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130878822",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:16Z",
+      "completed_at": "2026-10-21T08:54:15Z",
+      "name": "docs_site regeneration drift (daily schedule)",
+      "steps": [
+
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130878822",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    },
+    {
+      "id": 119130878835,
+      "run_id": 39572799979,
+      "workflow_name": "CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/geer1895/rfauto/actions/runs/39572799979",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUjPRMc8AAAAbvMDzcw",
+      "head_sha": "a35978babbc55890a9bbeb574800e0cad8ae3e60",
+      "url": "https://api.github.com/repos/geer1895/rfauto/actions/jobs/119130878835",
+      "html_url": "https://github.com/geer1895/rfauto/actions/runs/39572799979/job/119130878835",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-21T08:54:16Z",
+      "started_at": "2026-10-21T08:54:16Z",
+      "completed_at": "2026-10-21T08:54:15Z",
+      "name": "live rules periodic re-verify (K1, weekly cron only)",
+      "steps": [
+
+      ],
+      "check_run_url": "https://api.github.com/repos/geer1895/rfauto/check-runs/119130878835",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    }
+  ]
+}

@@ -180,8 +180,10 @@ class TestCountAndProbe:
         except (OSError, NotImplementedError):
             pytest.skip("符号链接创建受限（Windows 无开发者模式/特权）")
         n1 = index_scope_dir_count(tree)
+        # Path.is_dir(follow_symlinks=) 系 py3.13+ 形参（CI 3.12 实证
+        # TypeError）——等价语义=目录且非 symlink（与 DirEntry 口径一致）
         manual = sum(1 for p in tree.iterdir()
-                     if p.is_dir(follow_symlinks=False))
+                     if p.is_dir() and not p.is_symlink())
         assert n1 == manual
         assert link.is_dir()  # 前提自证：symlink 确实指向目录（但未计数）
         n2 = index_scope_dir_count(tree, two_level=True)

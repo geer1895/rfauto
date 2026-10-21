@@ -201,6 +201,8 @@ docs = ["mkdocs-material>=9.5,<10"]
 rag = ["sentence-transformers>=2.2"]
 # 开发依赖
 dev = [
+    "build>=1.0",  # release_readiness --sdist-hygiene 门（--no-isolation 本地后端）
+    "hatchling>=1.0",  # build-system 后端（--no-isolation 需本地在位）
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-xdist==3.8.0",  # 并行日常门（钉版；日常=并行、终门=串行双轨）

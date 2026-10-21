@@ -243,6 +243,19 @@ _need_real_universe = pytest.mark.skipif(
     reason="真树 EP-2 产物/冻结测试宇宙覆盖层不在（干净检出）——不伪造")
 
 
+def _runs_corpus_present() -> bool:
+    runs = _REPO_ROOT / "runs"
+    return runs.is_dir() and any(runs.glob("**/criteria.md"))
+
+
+_need_corpus = pytest.mark.skipif(
+    not _runs_corpus_present(),
+    reason="runs/ 判据语料不在（公开仓不随 runs 账面）——trace 再生幂等"
+           "锚消费 runs/**/criteria.md 语料，属内部仓治理面；公开仓消费"
+           "已构建矩阵（同 pool_patrol 金标公开仓 skip 先例）")
+
+
+@_need_corpus
 @_need_real_universe
 def test_real_tree_regenerates_byte_identical(tmp_path):
     """幂等锚（真树）：同参重生成 → 矩阵与全部骨架逐字节一致（diff=0），

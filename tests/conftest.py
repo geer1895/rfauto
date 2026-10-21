@@ -136,6 +136,13 @@ def pytest_collection_modifyitems(config, items):
     # (测试文件名, 测试函数名)：轨迹/选型对 BLAS 与 CPU 归约顺序敏感，
     # Windows 基线钉值在 Linux 上会漂移——Linux CI 上诚实跳过
     linux_numeric = frozenset({
+        # 0.11.0 发布令批新增（2026-10-21 CI 实测三例：末 ulp/容差敏感）
+        ("test_w4s4_core_margin.py",
+         "test_ctle_gain_at_phase_and_consistency"),
+        ("test_w6s3_core_domains.py",
+         "test_mti_notch_peak_bit_exact_and_periodic"),
+        ("test_w1s3_lange_stepped.py",
+         "test_lange_promotion_byte_parity_and_single_object"),
         ("test_topology_service.py",
          "test_campaign_constrained_improvement_and_deterministic"),
         ("test_trust_region.py", "test_median_final_improves"),
