@@ -189,8 +189,8 @@ class TestCountAndProbe:
         n2 = index_scope_dir_count(tree, two_level=True)
         manual2 = manual + sum(
             1 for t in tree.iterdir()
-            if t.is_dir(follow_symlinks=False)
-            for c in t.iterdir() if c.is_dir(follow_symlinks=False))
+            if t.is_dir() and not t.is_symlink()
+            for c in t.iterdir() if c.is_dir() and not c.is_symlink())
         assert n2 == manual2
 
     def test_probe_usable_matches_dirscan(self, wired):
