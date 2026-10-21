@@ -318,14 +318,16 @@ jobs:
           # （venv 模式 --skip-editable 仍报 "distribution marked as
           # editable" rc=1，2026-10-07 二跑实证）——锁集即供应链审计对象。
           #
-          # pillow 11.3.0 豁免清单（2026-10-07，18×PYSEC-2026，本注释即
-          # 留痕处）：diff-fdtd extra 的 fdtdx→moviepy>=2.1.1 钉
-          # pillow>=9.2.0,<12.0（冲突链 uv lock 亲证），pillow 12.3.0 虽
-          # 已修复全部 35 项但被该上限排除；漏洞面=PSD/PDF/FITS 等**图像
-          # 文件解析器**，本仓 pillow 仅作 matplotlib 栅格后端，不解析
-          # 不可信图像文件。解锁条件=fdtdx/moviepy 放开 pillow<12 上游
-          # 升级后删除全部 --ignore-vuln 并回归。豁免清单须与本注释同步
-          # 留痕（既定政策：不降级 continue-on-error）。
+          # pillow 11.3.0 豁免清单（2026-10-07，18×PYSEC-2026；2026-10-21
+          # 扩 8×CVE-2026-112395/112397/112400/112895/112896/112897/
+          # 112899/112404=同包同版本 advisory 库新增 CVE 形条目，fix 均
+          # 13.0.0，本注释即留痕处）：diff-fdtd extra 的 fdtdx→moviepy
+          # 钉 pillow>=9.2.0,<12.0（冲突链 uv lock 亲证），pillow 13.0.0
+          # 虽已修复全部 26 项但被该上限排除；漏洞面=PSD/PDF/FITS 等
+          # **图像文件解析器**，本仓 pillow 仅作 matplotlib 栅格后端，
+          # 不解析不可信图像文件。解锁条件=fdtdx/moviepy 放开 pillow<12
+          # 上游升级后删除全部 --ignore-vuln 并回归。豁免清单须与本注释
+          # 同步留痕（既定政策：不降级 continue-on-error）。
           pip-audit --strict --no-deps \
             --ignore-vuln PYSEC-2026-165 \
             --ignore-vuln PYSEC-2026-2249 \
@@ -345,6 +347,14 @@ jobs:
             --ignore-vuln PYSEC-2026-3494 \
             --ignore-vuln PYSEC-2026-3495 \
             --ignore-vuln PYSEC-2026-3496 \
+            --ignore-vuln CVE-2026-112395 \
+            --ignore-vuln CVE-2026-112397 \
+            --ignore-vuln CVE-2026-112400 \
+            --ignore-vuln CVE-2026-112895 \
+            --ignore-vuln CVE-2026-112896 \
+            --ignore-vuln CVE-2026-112897 \
+            --ignore-vuln CVE-2026-112899 \
+            --ignore-vuln CVE-2026-112404 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
