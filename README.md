@@ -155,6 +155,16 @@ recipes, same quality gates. To run the test suite:
 
 ![CLI in action — real output](docs/assets/cli_demo.png)
 
+### Why trust the results?
+
+Every simulation result carries its provenance: which solver produced it,
+which formulas derived the geometry, and which quality gates it passed.
+79 calibration anchors — each cross-validated between HFSS (reference) and
+openEMS (free) — cover the template library, and the gallery shows an
+arbitration badge on every template that has been dual-engine verified.
+When two engines agree on the same physics, you can trust the third (free)
+one for parameter sweeps.
+
 From there, the usual loop:
 
 ```bash
