@@ -14,7 +14,7 @@ import { esc, escAttr } from "./dom.js";
 // small#detail-id 不挂标注——静态文案包 span 防 textContent 重扫伤子元素）；
 // 失败面板/重试钮随数据分支重建，文案 t() 渲染期烘焙。
 import { t, applyI18nRoot, getLocale } from "./i18n.js";
-import { bindClickRows, kitApplyClickRowAttrs, kitSkeleton, metricBadgeHtml } from "./kit.js";
+import { bindClickRows, kitApiErrorHtml, kitApplyClickRowAttrs, kitSkeleton, metricBadgeHtml } from "./kit.js";
 import { metricGlossaryMap } from "./metric_glossary.js";
 import { showPage, noteCurrentRunId } from "./router.js";
 
@@ -105,10 +105,18 @@ export async function showRun(runId) {
     // W7-C（R1 P1-6）：失败不只弹 toast——详情头写内联错误面板（含 run_id
     // 与重试钮），页面不再停留骨架空壳（msg 同步保留，双通道可见）。
     // W6-S21：面板文案随失败分支重建，t() 渲染期烘焙（词表 detail.*）。
+    // 人性化三批（2026-10-19 审计 ✗1/✗2）：①错误分支同步把 h2 动态段
+    // （small#detail-id）置为"加载失败"——不再残留上一个 run id 造成
+    // run 间误读；②错误呈现收编 kitApiErrorHtml 统一错误卡（信封解析走
+    // errorText 单源——errors[]/error/reason 全形态覆盖，含 W2-S2 种子
+    // run 无 meta 时列表/详情口径差的 ok:false 信封），run_id 内联可见、
+    // 重试钮保留（钉面 test_w7c_ui_p2_sweep 同笔更新）。
     T.msg((d.errors || []).join("; "), false);
+    const idEl = T.$("detail-id");
+    if (idEl) idEl.textContent = t("detail.load_failed");
     T.$("detail-head").innerHTML =
-      `<span class="badge err">${t("detail.load_failed")}</span> <code>${esc(id)}</code>` +
-      ` <span class="muted">${esc((d.errors || []).join("; "))}</span>` +
+      kitApiErrorHtml(d, { title: t("detail.load_failed"), hint: "" }) +
+      ` <code>${esc(id)}</code>` +
       ` <button class="minor" id="detail-retry">${t("detail.retry")}</button>`;
     const retry = T.$("detail-retry");
     if (retry) retry.onclick = () => showRun(id);

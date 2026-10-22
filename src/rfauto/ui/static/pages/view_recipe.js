@@ -102,6 +102,10 @@ export async function pageRecipe() {
     if (val.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     if (!val.ok) return T.msg(val.errors.join("; "), false);
     currentRecipe = val;
+    // 人性化三批（2026-10-19 审计 ⚠3）：加载成功给正反馈 toast（msg 区单点
+    // 复用——成功消息即覆写先前的"路径为空"类错误残留）；xxx=文件名尾段。
+    T.msg(t("recipe.loaded_ok") +
+      String(val.recipe_path || T.$("recipe-path").value.trim()).split(/[\\/]/).pop(), true);
     // C22：工作副本视图标注（service 端 is_workcopy/review_hint，前端只渲染）
     T.$("recipe-model").textContent =
       `${val.model}${t("recipe.tpl_lead")}${val.template_hint || t("recipe.no_template")}${t("recipe.tpl_tail")}` + (val.is_workcopy ? t("recipe.workcopy_suffix") : "");
@@ -248,8 +252,13 @@ export async function pageRecipe() {
         body: JSON.stringify({ path: currentRecipe.recipe_path, adapter: T.$("run-adapter").value }),
         timeoutMs: 0, // 长跑豁免（P9-11 缺省超时）：同步 run_once 分钟级
       });
-      if (run.ok) { T.msg(t("recipe.run_done") + run.cost, true); openRun(run.run_id); } // A4-C：单入口收编（hash 深链同步）
-      else T.msg(t("recipe.run_failed") + (run.errors || []).join("; "), false);
+      // 人性化三批（2026-10-19 审计 ⚠5）：cost 浮点截断 4 位小数——此前
+      // 15 位全精度直出（cost=7.424965102246688）不可读。
+      if (run.ok) {
+        T.msg(t("recipe.run_done") +
+          (typeof run.cost === "number" ? run.cost.toFixed(4) : run.cost), true);
+        openRun(run.run_id); // A4-C：单入口收编（hash 深链同步）
+      } else T.msg(t("recipe.run_failed") + (run.errors || []).join("; "), false);
     }
   }
 }

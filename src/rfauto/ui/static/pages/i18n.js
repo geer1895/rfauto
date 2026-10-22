@@ -471,6 +471,21 @@ export const LOCALES = {
     zh: "帮 wilkinson 配方提议一组新参数",
     en: "propose a new parameter set for the wilkinson recipe",
   },
+  /* ── agent.*（人性化三批 2026-10-19，审计 ✗4/⚠4）：指令模式摘要气泡 +
+     空输入提示——摘要=徽章+白话统计（solvers/runs 报数、ok 旗），全量
+     JSON 折叠进详情不再直接面客；空输入 toast。 */
+  "agent.cmd_badge": { zh: "指令结果", en: "Command result" },
+  "agent.cmd_solvers_tpl": { zh: "{n} 个求解器", en: "{n} solvers" },
+  "agent.cmd_available_tpl": { zh: "可用 {n} 个", en: "{n} available" },
+  "agent.cmd_runs_tpl": { zh: "{n} 个 run", en: "{n} runs" },
+  "agent.cmd_total_tpl": { zh: "共 {n} 项", en: "{n} items" },
+  "agent.cmd_ok": { zh: "执行成功", en: "OK" },
+  "agent.cmd_fail": { zh: "执行失败", en: "Failed" },
+  "agent.cmd_details": {
+    zh: "查看完整数据（JSON）",
+    en: "Full data (JSON)",
+  },
+  "agent.empty_input": { zh: "请输入指令", en: "Type a message first" },
 
   /* ═══ W2-S1 i18n 批 4 扩面（+278 键，aurora_g）════════════════════════
      zh 值=既有字面同笔迁入（渲染逐字节不变），en 值新增。kit 三串为
@@ -1382,6 +1397,9 @@ export const LOCALES = {
   "recipe.loading": { zh: "加载中...", en: "Loading..." },
   "recipe.label_path": { zh: "路径:", en: "Path:" },
   "recipe.load": { zh: "加载", en: "Load" },
+  /* 人性化三批（2026-10-19 审计 ⚠3）：加载成功正反馈 toast（msg 区单点，
+     覆写先前错误残留）；拼接 xxx=文件名尾段（视图侧 esc 外拼）。 */
+  "recipe.loaded_ok": { zh: "配方已加载：", en: "Recipe loaded: " },
   "recipe.label_model": { zh: "模型: ", en: "Model: " },
   "recipe.params_title": { zh: "参数（可改值；保存后生效）", en: "Parameters (editable; takes effect on save)" },
   "recipe.th_name": { zh: "名称", en: "Name" },
@@ -1413,6 +1431,7 @@ export const LOCALES = {
     zh: "trial 状态 · 成本热图 · trial 清单",
     en: "Trial status · cost heatmap · trial list",
   },
+  "campaign.loading_aria": { zh: "看板数据加载中", en: "Loading dashboard data" },
   "campaign.help_1_lead": {
     zh: "战役 = 带完整 trial 记录的调参/优化 run；",
     en: "A campaign = a tuning/optimization run with full trial records; ",
@@ -2205,6 +2224,37 @@ export const LOCALES = {
     zh: "数据来源：{s}",
     en: "Data sources: {s}",
   },
+  /* ── gallery.cred_*（aurora_i 人性化三批 R2：对照图表增强——①文献/
+     官方例验收参考第三线（lit_refs.js 前端常量，值=rf_template_references
+     .md 转录）②卡面可信度盾牌徽章（家族仲裁锚 worst-of，#122 先红后绿）
+     ③图下白话教学行（gallery+sparams 对照卡同键复用））── */
+  "gallery.cred_howto": {
+    zh: "怎么读这张图：每条线是同一个物理结构的 S 参数预测——橙线=HFSS（商业电磁仿真软件，仲裁基准），蓝线=openEMS（本仓主力开源引擎）。两条线越贴近，说明两个独立软件对同一结构给出越一致的预测，结果越可信；青绿水平线=教科书/厂商手册在该频点的验收参考值（量级对照）。",
+    en: "How to read this chart: each line is an S-parameter prediction for the same physical structure — orange = HFSS (commercial EM solver, the arbitration referee), blue = openEMS (the primary open-source engine here). The closer the two lines, the more the two independent solvers agree on the same structure, and the more credible the result; teal horizontal lines = textbook / vendor-manual acceptance reference values at that frequency (magnitude reference).",
+  },
+  "gallery.cred_lit_series_tpl": {
+    zh: "文献·{n} {v} dB",
+    en: "Lit·{n} {v} dB",
+  },
+  "gallery.cred_lit_source_tpl": {
+    zh: "文献参考值出处：{s}（@f0 验收基准；水平线仅作量级对照）",
+    en: "Literature reference: {s} (@f0 acceptance values; horizontal lines are magnitude references)",
+  },
+  "gallery.cred_badge_agree": { zh: "仲裁一致", en: "AGREE" },
+  "gallery.cred_badge_disagree": { zh: "仲裁分歧", en: "DISAGREE" },
+  "gallery.cred_badge_unknown": {
+    zh: "已登记·无判定",
+    en: "Registered · no verdict",
+  },
+  "gallery.cred_badge_none": { zh: "待验证", en: "Unverified" },
+  "gallery.cred_badge_tip_tpl": {
+    zh: "该模板有 {n} 条 HFSS 仲裁锚——点「详情」看逐锚判定与证据",
+    en: "{n} HFSS arbitration anchor(s) — open details for per-anchor verdicts and evidence",
+  },
+  "gallery.cred_badge_none_tip": {
+    zh: "该模板暂无 HFSS 仲裁锚——可信度锚随真机战役积累",
+    en: "No HFSS arbitration anchors for this template yet — credibility anchors accumulate with real-machine campaigns",
+  },
   "timeline.help_1": {
     zh: "上图：每个 run 的目标成本按时间排列（按配方目标重算，越低越好）——调参/战役是否在进步一目了然，颜色按仿真通道（adapter）区分。",
     en: "Top: per-run objective cost over time (recomputed from the recipe objectives; lower is better) — progress at a glance, colored by simulation channel (adapter).",
@@ -2841,6 +2891,7 @@ export const LOCALES = {
   "queue.res_disk_tpl": { zh: "磁盘余量 {n} GB", en: "disk free {n} GB" },
   "queue.res_local_label": { zh: "本机", en: "Local" },
   "queue.tab_all": { zh: "全部", en: "All" },
+  "queue.loading_aria": { zh: "队列数据加载中", en: "Loading queue data" },
   "queue.tab_running": { zh: "进行中", en: "Running" },
   "queue.tab_done": { zh: "已完成", en: "Done" },
   "queue.tab_failed": { zh: "失败/中止", en: "Failed/Aborted" },

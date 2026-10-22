@@ -134,7 +134,10 @@ class TestMicroInteraction:
             assert re.search(rf"button\.primary{re.escape(state)}\s*\{{", _INDEX), state
 
     def test_chat_send_loading_state(self):
-        assert 'if (!text || (btn && btn.disabled)) return;' in _PAGES, "发送中防重入"
+        # 人性化三批（2026-10-19，审计 ⚠4）：两守卫拆分——防重入静默保留，
+        # 空输入不再无声（toast 提示后返回）。
+        assert 'if (btn && btn.disabled) return;' in _PAGES, "发送中防重入"
+        assert 'if (!text) { T.msg(t("agent.empty_input"), false); return; }' in _PAGES
         # W8-S32 i18n 批 3：发送/发送中文案迁词表 t() 烘焙（disabled 结构不变）
         assert 'btn.disabled = true; btn.textContent = t("agent.chat_sending")' in _PAGES
         assert 'if (btn) { btn.disabled = false; btn.textContent = t("agent.chat_send"); }' in _PAGES
@@ -155,8 +158,11 @@ class TestRunDetailInlineError:
         assert m, "showRun 失败分支缺内联面板"
         body = m.group(1)
         assert 'T.msg((d.errors || []).join("; "), false)' in body, "msg 双通道保留"
-        # W6-S21 i18n 扩面：文案单源迁词表 t() 烘焙（结构/双通道/重试钮不变）
-        assert '<span class="badge err">${t("detail.load_failed")}</span>' in body
+        # 人性化三批（2026-10-19，审计 ✗1/✗2）：错误卡收编 kitApiErrorHtml
+        # 统一错误卡；h2 动态段（small#detail-id）同步置"加载失败"——
+        # 不再残留上一个 run id（run 间误读面清偿）。
+        assert 'kitApiErrorHtml(d, { title: t("detail.load_failed"), hint: "" })' in body
+        assert 'if (idEl) idEl.textContent = t("detail.load_failed");' in body
         assert "${esc(id)}" in body, "run_id 内联可见"
         assert 'id="detail-retry"' in body and "showRun(id)" in body, "重试钮"
 

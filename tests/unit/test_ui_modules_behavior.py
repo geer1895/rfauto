@@ -1,4 +1,4 @@
-"""架构批 UI-R6 席位回归钉：pages/ 核心基础设施模块行为级 node 测试深化。
+"""aurora_d UI-R6 席位回归钉：pages/ 核心基础设施模块行为级 node 测试深化。
 
 **模块覆盖清单（2026-10-14，UI-R2 拆分后 33 模块中的核心基础设施 + 2 视图）**
 
@@ -442,7 +442,11 @@ const ctx = await import('./pages/context.js');
 const r = await import('./pages/router.js');
 globalThis.location = { hash: '' };
 const replaced = [];
-globalThis.history = { replaceState: (a, b, u) => replaced.push(u) };
+// 人性化三批（2026-10-19）：showPage 直调路径补 hash 同步（审计 ⚠1）——
+// 守卫读 location.hash 判同页跳过，桩须还原浏览器语义（replaceState 会
+// 更新 location.hash），否则 openRun 深链回写对 showPage 守卫不可见=
+// 误判裸页补写冲参（真实浏览器 replaceState 后 location.hash 即新值）。
+globalThis.history = { replaceState: (a, b, u) => { replaced.push(u); globalThis.location.hash = u; } };
 const activated = [];
 ctx.T.activate = (v) => activated.push(v);
 const rendered = [];
@@ -529,6 +533,37 @@ class TestRouterOpenerBehavior:
         )
         assert _payload(out) == {"act": "tools", "activatedLast": "tools",
                                  "fallback": ["dashboard", None]}
+
+    def test_showpage_direct_call_syncs_bare_hash(self):
+        """人性化三批（2026-10-19 审计 ⚠1）：直调 showPage 跳页补写裸 hash
+        （replaceState 同款纪律）——dashboard 导览卡/可信度卡等页内跳转
+        此前 hash 停留旧页。"""
+        out = _run_node_js(_ROUTER_SETUP +
+            "r.VIEWS.gallery = () => rendered.push(['gallery', null]);\n"
+            "r.showPage('gallery');\n"
+            "console.log(JSON.stringify({ last: replaced[replaced.length - 1],\n"
+            "  act: ctx.getActiveView() }));\n"
+        )
+        assert _payload(out) == {"last": "#/gallery", "act": "gallery"}
+
+    def test_showpage_hash_guards_boot_and_deeplink(self):
+        """hash 同步双守卫：①boot 初载（初始 activeView=dashboard）不写——
+        深链 hash 保留给 _applyHash 分发；②参数页深链（#/detail/<id>）不被
+        裸页补写冲参；直调异页跳转才补写。"""
+        out = _run_node_js(_ROUTER_SETUP +
+            "const n0 = replaced.length;\n"
+            "r.showPage('dashboard');\n"  # prev(初始 dashboard)===v → 跳过
+            "const bootKept = replaced.length === n0;\n"
+            "ctx.setActiveView('runs');\n"
+            "globalThis.location.hash = '#/detail/run%2F1';\n"
+            "r.showPage('detail');\n"  # cur.page===v → 跳过（不冲参）
+            "const deeplinkKept = replaced.length === n0;\n"
+            "r.showPage('tune');\n"  # 直调异页 → 补写裸 hash
+            "console.log(JSON.stringify({ bootKept, deeplinkKept,\n"
+            "  last: replaced[replaced.length - 1] }));\n"
+        )
+        assert _payload(out) == {"bootKept": True, "deeplinkKept": True,
+                                 "last": "#/tune"}
 
     def test_node_check_router(self):
         _node_check("router.js")
@@ -966,6 +1001,57 @@ class TestSConsolidation:
                 assert f"S.{k}" not in body, f"{mod}.js S.{k} 未降级（代码面）"
                 assert re.search(rf"^let _{k}\b", body, re.M), \
                     f"{mod}.js 模块级 let _{k} 缺席"
+
+
+# ────────────────────────── 9. view_agent：指令模式摘要（人性化三批） ──────────────────────────
+
+@pytest.mark.skipif(_NODE is None, reason="本机无 node")
+class TestAgentCmdSummary:
+    """审计 ✗4（2026-10-19）：指令模式 JSON 全量转储→结构化摘要气泡。
+    parseChatJsonDump/chatCmdSummaryHtml 纯函数 node 行为钉。"""
+
+    def test_dump_detection(self):
+        out = _run_node_js(
+            "const m = await import('./pages/view_agent.js');\n"
+            "const dump = JSON.stringify({ ok: true, solvers: [1, 2], total: 2 });\n"
+            "console.log(JSON.stringify({\n"
+            "  json: m.parseChatJsonDump(dump) != null,\n"
+            "  prefixed: m.parseChatJsonDump('[LLM 调用失败: x]\\n' + dump) != null,\n"
+            "  array: m.parseChatJsonDump('[{\\\"a\\\":1}]') != null,\n"
+            "  prose: m.parseChatJsonDump('Found 5 runs'),\n"
+            "  help: m.parseChatJsonDump('Available commands:\\n  solvers'),\n"
+            "  nul: m.parseChatJsonDump('null'),\n"
+            "  empty: m.parseChatJsonDump(''),\n"
+            "}));\n"
+        )
+        assert _payload(out) == {"json": True, "prefixed": True, "array": True,
+                                 "prose": None, "help": None, "nul": None,
+                                 "empty": None}
+
+    def test_summary_solvers_and_error(self):
+        out = _run_node_js(
+            "const m = await import('./pages/view_agent.js');\n"
+            "const s = m.chatCmdSummaryHtml({ ok: true, total: 11,\n"
+            "  solvers: [{ available: true }, { available: false }, { available: true }] });\n"
+            "const e = m.chatCmdSummaryHtml({ ok: false, errors: ['run 不存在'] });\n"
+            "console.log(JSON.stringify({ s, e }));\n"
+        )
+        p = _payload(out)
+        # solvers 数组分支优先（报数组长度非 total）——ok=true 不叠加冗余
+        # "执行成功"（有统计行时省略，仅未知形态兜底才出）
+        assert "指令结果" in p["s"] and "3 个求解器" in p["s"] and "可用 2 个" in p["s"]
+        assert "执行成功" not in p["s"]
+        assert "badge ok" in p["s"] and "run 不存在" in p["e"]
+
+    def test_summary_xss_inert_and_fallback(self):
+        out = _run_node_js(
+            "const m = await import('./pages/view_agent.js');\n"
+            "const x = m.chatCmdSummaryHtml({ name: '<img src=x onerror=alert(1)>' });\n"
+            "console.log(JSON.stringify({ x }));\n"
+        )
+        p = _payload(out)
+        assert "<img" not in p["x"] and "&lt;img" in p["x"]
+        assert "name=" in p["x"]  # 未知形态兜底=可读字段直出（esc 后）
 
     def test_s_import_dropped_where_no_shared_consumption(self):
         """降级后无共享键消费的属主模块 S 绑定移除；仍读 S.currentRunId 的

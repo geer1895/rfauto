@@ -207,10 +207,12 @@ class TestErrorPanelPins:
         assert "如实不清偿" in qbody
 
     def test_w7c_detail_panel_untouched(self):
-        """W7-C 原点（showRun 失败分支）零扰动——W6-S21 i18n 扩面仅文案
-        单源迁词表 t() 烘焙（结构/esc(id)/重试钮形态不变）。"""
+        """W7-C 原点（showRun 失败分支）呈现收编 kitApiErrorHtml（人性化
+        三批 2026-10-19，审计 ✗1/✗2：h2 动态段不再残留上一个 run id +
+        统一错误卡；msg 双通道/esc(id) 内联/重试钮形态不变）。"""
         src = _PAGES
-        assert '<span class="badge err">${t("detail.load_failed")}</span> <code>${esc(id)}</code>' in src
+        assert 'kitApiErrorHtml(d, { title: t("detail.load_failed"), hint: "" })' in src
+        assert 'if (idEl) idEl.textContent = t("detail.load_failed");' in src
         assert "加载失败" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id="detail-retry"' in src and "showRun(id)" in src
 
@@ -298,3 +300,75 @@ class TestNodeBehavioral:
             capture_output=True, text=True, timeout=60, cwd=str(_STATIC))
         assert r.returncode == 0, r.stderr[-2000:]
         assert "ok:polish" in r.stdout
+
+
+# ────────────────────────── 6. R3 人性化三批（hfssq-ui-kit P7 微交互思想） ──────────────────────────
+
+class TestR3PolishPins:
+    """UI 人性化三批 R3（2026-10-19）：骨架屏扩面 + 表格行状态色条 + 微交互。
+
+    落地面（index.html + app.js + view_runs/view_queue/view_tune/view_campaign）：
+    1. **骨架屏扩面**：runs 表/dashboard/detail 三处 A8-A 已有——本批补
+       tune trials 表（kitSkeletonRows(5,4)，runs 表同款无 aria 形态）/
+       campaign 三容器（seats/heat/table，dashboard widget 同款
+       skeleton-wrap+role=status）/queue q-table（kitSkeleton(4)）；campaign
+       清单空分支显式清场防骨架滞留。
+    2. **表格行状态色条**：runs 历史/战役队列两表行左缘 3px 竖线
+       （tr.st-ok/st-err/st-muted border-left——绿=PASS/完成 红=FAIL
+       灰=运行中/未知；类由渲染侧挂 kitBadgeCls 单源映射，tr class 属性面
+       零 DOM 结构变化）；:has() inset 竖线对 st-* 行 :not 让位免双条叠加。
+    3. **微交互**：.act/.primary hover 上浮+影变（glow 叠 --shadow）、
+       .minor/.danger hover 补上浮+微影（150ms ease-out 同构）；.panel hover
+       上浮 2px（.card 同幅度，transform 进过渡链）；toast 退场 slide+fade
+       （.msg.msg-out → toast-out，app.js 双句柄时序单源）。
+    """
+
+    def test_skeleton_three_new_sites(self):
+        tune = _body(r"async function pageTune\(\)")
+        assert "kitSkeletonRows(5, 4)" in tune
+        camp = _body(r"async function pageCampaign\(\)")
+        assert 'aria-label="${t("campaign.loading_aria")}"' in camp
+        assert "kitSkeleton(3)" in camp
+        assert '["cp-seats", "cp-heat", "cp-table"]' in camp  # 三容器一循环
+        assert 'if (el) el.innerHTML = "";' in camp  # 清单空分支骨架清场
+        queue = _body(r"async function pageQueue\(\)")
+        assert 'aria-label="${t("queue.loading_aria")}"' in queue
+        assert "kitSkeleton(4)" in queue
+
+    def test_row_status_bars_css_and_wiring(self):
+        src = _INDEX.read_text(encoding="utf-8")
+        assert "tr.st-ok { border-left: 3px solid var(--ok); }" in src
+        assert "tr.st-err { border-left: 3px solid var(--err); }" in src
+        assert "tr.st-muted { border-left: 3px solid var(--muted2); }" in src
+        # :has() inset 竖线对显式 st-* 行让位（免 border-left 双条叠加）
+        assert ("tbody tr:has(.badge.err):not(.st-ok):not(.st-err):not(.st-muted)") in src
+        runs = _body(r"async function pageRuns\(\)")
+        assert 'tr.classList.add("st-" + kitBadgeCls(r.status || "done"));' in runs
+        queue = _body(r"async function pageQueue\(\)")
+        assert "const vcls = kitBadgeCls(c.verdict);" in queue
+        assert "<tr class='st-${vcls}'>" in queue
+
+    def test_button_panel_hover_microinteraction(self):
+        src = _INDEX.read_text(encoding="utf-8")
+        # 主按钮 hover=上浮+影变（glow 叠深影）
+        for sel in ("button.act", "button.primary"):
+            m = re.search(re.escape(sel) + r":hover\s*\{([^}]*)\}", src)
+            assert m, sel
+            assert "translateY(-1px)" in m.group(1) and "var(--shadow)" in m.group(1)
+        # 次按钮/危险按钮 hover 补上浮+微影（150ms ease-out 同构）
+        for sel in ("button.minor", "button.danger"):
+            m = re.search(re.escape(sel) + r":hover\s*\{([^}]*)\}", src)
+            assert m, sel
+            assert "translateY(-1px)" in m.group(1) and "var(--shadow-sm)" in m.group(1)
+        # 面板 hover 轻浮（.card 同幅度 2px）+ transform 进过渡链
+        assert re.search(r"\.panel:hover\s*\{[^}]*translateY\(-2px\)", src)
+        m = re.search(r"\.panel\s*\{([^}]*)\}", src)
+        assert m and "transform var(--transition-fast) var(--ease-out)" in m.group(1)
+
+    def test_toast_exit_slide_fade(self):
+        src = _INDEX.read_text(encoding="utf-8")
+        assert ".msg.msg-out { animation: toast-out" in src
+        assert "@keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }" in src
+        app = (_STATIC / "app.js").read_text(encoding="utf-8")
+        assert 'el.className = "msg msg-out " + (ok ? "ok" : "err");' in app
+        assert "_msgOutTimer" in app  # 退场收束句柄（新消息先全清防误隐）

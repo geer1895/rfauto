@@ -46,6 +46,19 @@ export function showPage(v) {
   _sseLeavePage(v); // aurora72 A6-A：离页收束 SSE 连接（留档 runId，回页重订阅幂等）
   T.activate(v);
   (VIEWS[v] || VIEWS.dashboard)(S.currentRunId);
+  // 人性化三批（2026-10-19 审计 ⚠1）：直调 showPage 的页内跳转（dashboard
+  // 导览三步/可信度卡/命令面板/fieldviz 转页等）hash 同步——此前只有侧边栏
+  // 路径（app.js data-v click）写 hash，直调路径刷新/分享回落旧页。双守卫：
+  // ①prev===v 跳过——boot 初载 showPage("dashboard") 不得冲掉深链 hash
+  // （_applyHash 随后读 hash 分发，context.js 初始 _activeView="dashboard"）；
+  // ②参数页深链跳过——#/detail/<id>、#/tools/<key> 等已带参形态只认裸页
+  // 补写，覆写会丢参（openRun 先 _syncRouteHash 再 showPage 同款互保）。
+  // replaceState 与全站纪律同款：不产历史条目、不触 hashchange（不分发互激）。
+  if (prev !== v && typeof location !== "undefined") {
+    const cur = parseRoute(location.hash);
+    if (!cur || cur.page !== v)
+      history.replaceState(null, "", "#/" + v);
+  }
 }
 
 /* PR-2 命令面板入口：从任意处打开 run 详情（S.currentRunId 单源在本模块）。 */

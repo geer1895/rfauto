@@ -28,6 +28,72 @@ let _agentReload = null; // R-1：refresh 局部刷新转发登记（agentCtx �
    slice(-100) 持久语义不变）。 */
 let _chatLog = [];
 
+/* ═══ 人性化三批（2026-10-19 审计 ✗4）：指令模式 JSON 全量转储→结构化摘要 ═══
+   病灶：指令模式（LLM 未配置/调用失败回退）的 list solvers/validate/
+   diagnose/propose 回复正文=服务端 json.dumps 全量原文（数百行裸 JSON 直接
+   面客）。修法=呈现层识别"正文是 JSON 转储"→ 改渲染摘要气泡（徽章+白话
+   统计+折叠详情 <pre>，首次展开才序列化——detail 失败诊断包同款纪律）；
+   自然语言正文（list runs 一句话/LLM markdown 回复）恒不命中零扰动。
+   两函数纯串构建/纯解析零 DOM（node 行为钉可测，test_ui_modules_behavior
+   同笔钉）。 */
+/* JSON 转储识别：剥可选回退前缀行（[LLM 调用失败…]——只认 [LLM 开头，
+   不吃 JSON 数组本体）后整体 parse 为对象/数组才算。 */
+export function parseChatJsonDump(text) {
+  let body = String(text == null ? "" : text);
+  const m = body.match(/^\s*\[LLM[^\]]*\]\s*/);
+  if (m) body = body.slice(m[0].length);
+  if (!/^[{[]/.test(body)) return null;
+  try {
+    const v = JSON.parse(body);
+    return v && typeof v === "object" ? v : null;
+  } catch { return null; }
+}
+
+/* 摘要行构建（信封常见键 best-effort：solvers/runs 数组报数+可用数、
+   total、ok 旗+错误原文；未知形态兜底取前 3 个可读字段——标量直出、
+   数组报数，不递归展开）。动态数据一律 esc 单点转义（插值只收已构串
+   局部变量，XSS 反向扫描口径零新增）。 */
+export function chatCmdSummaryHtml(dump) {
+  const d = (dump && typeof dump === "object") ? dump : {};
+  const bits = [];
+  if (Array.isArray(d.solvers)) {
+    const n = d.solvers.length;
+    bits.push(t("agent.cmd_solvers_tpl", { n }));
+    let okN = 0;
+    for (const s of d.solvers) if (s && s.available) okN++;
+    bits.push(t("agent.cmd_available_tpl", { n: okN }));
+  } else if (Array.isArray(d.runs)) {
+    const n = d.runs.length;
+    bits.push(t("agent.cmd_runs_tpl", { n }));
+  } else if (typeof d.total === "number") {
+    const n = d.total;
+    bits.push(t("agent.cmd_total_tpl", { n }));
+  }
+  if (d.ok === false) {
+    const e = Array.isArray(d.errors) && d.errors.length ? d.errors.join("; ")
+      : (d.error != null ? String(d.error) : "");
+    bits.push(e ? esc(e) : t("agent.cmd_fail"));
+  } else if (!bits.length) {
+    // 未知形态兜底：前 3 个可读字段（标量直出、数组报数，不递归展开）
+    let shown = 0;
+    for (const [k, v] of Object.entries(d)) {
+      if (shown >= 3) break;
+      if (typeof v === "number" || typeof v === "boolean") {
+        bits.push(esc(k) + "=" + esc(String(v))); shown++;
+      } else if (typeof v === "string" && v.length <= 80) {
+        bits.push(esc(k) + "=" + esc(v)); shown++;
+      } else if (Array.isArray(v)) {
+        const n = v.length;
+        bits.push(esc(k) + " × " + n); shown++;
+      }
+    }
+    if (!bits.length) bits.push(t("agent.cmd_ok"));
+  }
+  const summary = bits.join(" · ");
+  return `<span class="badge ok">${esc(t("agent.cmd_badge"))}</span> ` +
+    `<span class="muted">${summary}</span>`;
+}
+
 /* ═══ Agent 助手（设置 + 收件箱 diff + 浮动可拖拽对话卡片）═══ */
 export async function pageAgent() {
   const v = T.$("view-agent");
@@ -68,6 +134,12 @@ export async function pageAgent() {
       if (log) log.innerHTML = "";
       _chatLog = [];
       localStorage.removeItem("rfauto-chat");
+      // 人性化三批（2026-10-19 审计 ⚠4）：清空后统计条同步复位——服务端
+      // reset 已清零 turns/tokens，本地先清旧值再重读回填（fetch 失败=
+      // 空条，不残留"轮数 1"假计数）。
+      const bar = document.getElementById("chat-stats");
+      if (bar) bar.textContent = "";
+      updateStats();
     },
   });
   T.$("chat-save").onclick = async () => {
@@ -88,7 +160,7 @@ export async function pageAgent() {
   await loadSandbox();
   _chatLog = JSON.parse(localStorage.getItem("rfauto-chat") || "[]");
   openChatFloat(false);
-  for (const m of _chatLog) appendBubble(m.who, m.text, m.tools);
+  for (const m of _chatLog) appendHistoryEntry(m);
   await updateStats();
   // 快捷提问 chips（点选即发送）：文案迁词表（W8-S32 i18n 批 3），点击时
   // 按当前语言档烘焙为输入种子（循环变量 k 不遮蔽 i18n t——P3-7 同款纪律）
@@ -123,6 +195,33 @@ export async function pageAgent() {
         `<div class="muted" style="font-size:var(--text-xs);margin-top:var(--space-1)">${t("agent.tools_prefix")}${esc([...new Set(tools)].join(" → "))}</div>`);
     }
     log.scrollTop = log.scrollHeight;
+  }
+  /* 摘要气泡（人性化三批，审计 ✗4）：摘要行 + 折叠详情（首次展开才序列化
+     全量 JSON——detail 失败诊断包同款懒序列化纪律）。 */
+  function appendCmdBubble(dump) {
+    const log = document.getElementById("chat-log");
+    if (!log) return;
+    log.insertAdjacentHTML("beforeend",
+      `<div class='bubble bot'>${chatCmdSummaryHtml(dump)}` +
+      `<details style="margin-top:var(--space-2)"><summary class="muted" style="cursor:pointer;font-size:var(--text-xs)">${t("agent.cmd_details")}</summary>` +
+      `<pre data-role='cmd-json' style="max-height:280px;overflow:auto;white-space:pre-wrap;user-select:all;font-size:var(--text-xs)"></pre></details></div>`);
+    const el = log.lastChild;
+    const pre = el.querySelector("[data-role='cmd-json']");
+    el.querySelector("details").addEventListener("toggle", () => {
+      if (pre && !pre.textContent) pre.textContent = JSON.stringify(dump, null, 2);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+  /* bot 回复分派：正文=JSON 全量转储→摘要气泡；自然语言→原 markdown 气泡。
+     历史重放与实时回复同走本口（历史持久原文，重放渲染与首播一致）。 */
+  function appendBotReply(text, tools) {
+    const dump = parseChatJsonDump(text);
+    if (dump) appendCmdBubble(dump);
+    else appendBubble("bot", text, tools);
+  }
+  function appendHistoryEntry(m) {
+    if (m.who === "bot") appendBotReply(m.text, m.tools);
+    else appendBubble(m.who, m.text, m.tools);
   }
   async function updateStats() {
     // apiFetch 永不抛（失败折进 {ok:false} 信封）——旧 try/catch 已成死代码；
@@ -221,7 +320,7 @@ export async function pageAgent() {
     win.querySelector("#chat-send").onclick = sendChat;
     win.querySelector("#chat-in").onkeydown = (e) => { if (e.key === "Enter") sendChat(); };
     if (focus) document.getElementById("chat-in")?.focus();
-    for (const m of _chatLog) appendBubble(m.who, m.text, m.tools);
+    for (const m of _chatLog) appendHistoryEntry(m);
   }
 
   async function loadCfgBadge() {
@@ -354,7 +453,10 @@ export async function pageAgent() {
     const inp = document.getElementById("chat-in"), log = document.getElementById("chat-log");
     const btn = document.getElementById("chat-send");
     const text = inp.value.trim();
-    if (!text || (btn && btn.disabled)) return; // W7-C：发送中防重入
+    // W7-C：发送中防重入（静默）；人性化三批（2026-10-19 审计 ⚠4）：空输入
+    // 点发送不再无声——toast 提示后返回（两守卫拆分，防重入仍零反馈）。
+    if (btn && btn.disabled) return;
+    if (!text) { T.msg(t("agent.empty_input"), false); return; }
     inp.value = "";
     appendBubble("user", text);
     _chatLog.push({ who: "user", text });
@@ -378,7 +480,11 @@ export async function pageAgent() {
     }
     const reply = r.reply || r.response || r.text || JSON.stringify(r);
     log.lastChild.remove();
-    appendBubble("bot", reply, r.tools);
+    // 人性化三批（2026-10-19 审计 ✗4）：正文=JSON 全量转储（指令模式
+    // list solvers/validate/diagnose/propose 的 json.dumps 产物）→ 摘要
+    // 气泡（徽章+白话统计+折叠详情）；自然语言正文（list runs 一句话/
+    // LLM markdown）照旧。历史持久原文，重放经 appendBotReply 同口渲染。
+    appendBotReply(reply, r.tools);
     _chatLog.push({ who: "bot", text: reply, tools: r.tools });
     localStorage.setItem("rfauto-chat", JSON.stringify(_chatLog.slice(-100)));
     await updateStats();

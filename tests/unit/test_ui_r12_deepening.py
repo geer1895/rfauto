@@ -496,7 +496,9 @@ class TestCssAuditSource:
     def test_token_same_value_swaps_landed(self):
         # 同值替换落位（computed value 逐字节不变——:root 令牌 4/8/12/16px、
         # --text-xs 11px、--text-sm 13px、--radius-xs/sm/md 6/8/12px）
-        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 7
+        # 人性化三批（2026-10-19）：--text-xs 7→9（view_agent 指令摘要气泡
+        # 两处新增同款令牌用法——详情折叠 summary 与 JSON pre 字号）。
+        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 9
         assert len(re.findall(r'font-size:var\(--text-sm\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'border-radius:var\(--radius-xs\)(?=["\';}])', _UNION)) == 4
         assert len(re.findall(r'border-radius:var\(--radius-sm\)(?=["\';}])', _UNION)) == 1

@@ -38,8 +38,12 @@ export async function pageSolvers() {
       rows: d.solvers || [],
       rowHtml: (s) =>
         `<tr><td><b>${esc(s.type)}</b></td><td class="muted">${esc(s.class)}</td><td>${kitBoolBadge(s.available, t("solvers.badge_available"), t("solvers.badge_unavailable"))}</td><td>${esc(s.n_visualizations)}</td></tr>`,
-    }) +
-    `<pre>${esc(JSON.stringify(viz, null, 2))}</pre>`;
+    });
+    // 人性化三批（2026-10-19 审计 ✗3）：表尾裸 JSON <pre> 调试遗物删除——
+    // /api/solvers/viz 整包响应曾以 JSON.stringify 直渲染给用户（数百行
+    // 无格式原文面客）；注册表数据已在上方 kitTable 结构化呈现。viz 拉取
+    // 暂保留（卸载它需同步清 scripts/check_ui_contracts.py 未传参数豁免
+    // 表 /api/solvers/viz#solver 条目=本席禁改面——留待后续席一并清偿）。
 }
 
 /* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 solversCtx ═══════════

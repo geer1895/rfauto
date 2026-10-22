@@ -7,7 +7,8 @@
 
    W3.5-K2 人性化二批（2026-10-19）深度扩展：概念导览 → 完整工作流教程——
    ①页顶新增锚点目录（.guide-toc，g-* 锚点）：页内跳转点击 preventDefault +
-   scrollIntoView smooth，**不写 location.hash**——hash 是两级路由信道
+   文档绝对坐标直设 scrollTop（人性化三批改——原 scrollIntoView smooth 实测
+   不可靠，见 _bindToc 注），**不写 location.hash**——hash 是两级路由信道
    （router.js parseRoute 仅认 ^#/ 形态），裸 #anchor 会污染路由态；
    委托监听经 dataset 去重挂本页容器（容器跨渲染复用，重渲零叠加），
    各节标题行右侧带「↑ 目录」回跳锚。②新增「第一个真实工作流」四节
@@ -27,7 +28,13 @@ function _back() {
 }
 
 /* 锚点目录跳转（W3.5-K2）：委托监听挂本页容器（dataset 去重防重渲叠加）；
-   点击锚链接 preventDefault + smooth scrollIntoView，零 hash 写入。 */
+   点击锚链接 preventDefault 后跳转。
+   人性化三批（2026-10-19 审计 ⚠2）：scrollIntoView(smooth) 实测不可靠——
+   全局 html{scroll-behavior:smooth}（index.html:199）与 SPA 布局位移叠加，
+   出现 2s 零滚动/反向上滚且目标未入视口。改文档绝对坐标直设 scrollTop
+   （window.scrollTo 行为字面量 "instant" 强制即时跳转——CSS 平滑与动画
+   中断面一并消除；旧引擎对未知行为字面量抛 TypeError 时降级两参形态，
+   仍为同容器直设，可靠性不回退）。 */
 function _bindToc(v) {
   if (v.dataset.tocBound) return;
   v.dataset.tocBound = "1";
@@ -38,7 +45,10 @@ function _bindToc(v) {
     const el = document.getElementById(a.getAttribute("data-goto"));
     if (!el) return;
     ev.preventDefault();
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const top = el.getBoundingClientRect().top +
+      (window.scrollY || window.pageYOffset || 0) - 12; // 12px 顶部留白
+    try { window.scrollTo({ top, left: 0, behavior: "instant" }); }
+    catch { window.scrollTo(0, top); }
   });
 }
 
