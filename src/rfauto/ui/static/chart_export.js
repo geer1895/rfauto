@@ -1,4 +1,4 @@
-/* rfauto 图表导出统一出口（架构批 UI-R5）：CSV/PNG/SVG 三格式与文件名
+/* rfauto 图表导出统一出口（aurora_d UI-R5）：CSV/PNG/SVG 三格式与文件名
    规范的单源。此前 plotcard.js（CSV/PNG 内联按钮 + 私有 downloadFile）与
    charts.js chartExportTools（CSV/PNG 工厂）两套装配各自拼文件名
    （`exportName + ".csv"` 无时间戳），SVG 无出口——本模块收编为：

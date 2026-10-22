@@ -1,4 +1,4 @@
-/* rfauto 工作台 DOM 工具单源（架构批 UI-R2 自 pages.js 拆出）：
+/* rfauto 工作台 DOM 工具单源（aurora_d UI-R2 自 pages.js 拆出）：
    esc/escAttr HTML 转义单源（AU-4 五字符集，62 sink 纪律的地基）、
    fmtNum 数值展示单源、markdown 净化单点（D-05 硬错化：DOMPurify
    缺失即拒绝 innerHTML）、help 本页说明壳、downloadTextFile Blob 下载
@@ -22,7 +22,7 @@ export function escAttr(v) {
   return esc(v);
 }
 
-/* 架构批 W3-B（R1 P1-10 数字口径）：数值展示单源——null/undefined/NaN →
+/* aurora36 W3-B（R1 P1-10 数字口径）：数值展示单源——null/undefined/NaN →
    "-"，其余 toFixed(d)。约定沿用既有逐处口径（cost=4dp、S11=2dB、ρ=3dp），
    只在明显不一致处替换（campaign 表 cost 原用 8 位有效数字的 toPrecision
    是全仓唯一离群点，反直觉）；既有一致口径逐处不动（最小替换原则）。 */

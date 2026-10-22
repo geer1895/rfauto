@@ -5,6 +5,29 @@
 > 读结果与健康度体检。全程不需要 HFSS/ADS 许可证（fake 适配器离线近似）。
 > 英文版（English version）：docs/tutorials/getting-started_en.md。
 
+## 五分钟先跑起来
+
+赶时间的话，五条命令就能在浏览器里看到第一份结果（全程不需要任何
+商业许可证）：
+
+```bash
+git clone <repo-url> rfauto && cd rfauto
+python -m venv .venv
+source .venv/Scripts/activate        # Linux/macOS 用 source .venv/bin/activate
+pip install -e .
+rfauto ui                            # 浏览器打开 http://127.0.0.1:8642
+```
+
+进入工作台后：左侧导航点「优化调参」（Tune）→ 选一个自带配方（例如
+`wilkinson_pd_v1`）→ 适配器选 `fake`（离线近似通道，秒级出结果）→
+点启动。跑完后页面会给出一张结果卡：cost、带内指标和 verdict 判读
+一览，run 产物落在 `runs/<run_id>/` 目录。
+
+看懂这张卡每项是什么，就是下文的内容。想走命令行路线，按本文顺序来：
+先装好环境、认识 CLI（第 1-2 节），再用综合器和闭式计算器两条相互
+独立的路径算同一条线并交叉核对（第 3-4 节），然后跑第一次仿真（第
+5 节）、学会判读结果好坏（第 6 节），最后按第 7 节选进阶方向。
+
 ## 0. 前置
 
 - Python ≥3.10，<3.13（项目按 3.12 开发）。
@@ -106,6 +129,9 @@ microstrip_synthesis
 
 ## 5. 跑一次仿真：fake 适配器（5 分钟）
 
+综合与计算器给出的都是"设计值"；这一节让 rfauto 真正跑一次仿真，
+拿到指标与 cost：
+
 ```bash
 rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 ```
@@ -114,7 +140,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 
 ```
 ✓ 仿真完成  run_id: 20260925_062950_1a6365e9
-  run 目录: <workspace>\runs\20260925_062950_1a6365e9
+  run 目录: E:\HFSS_Connect\runs\20260925_062950_1a6365e9
   cost: 7.424965102246688
   指标:
     s11_db_max_in_band: -8.0835
@@ -134,7 +160,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake --dry-run  # 输出执行
 
 ## 6. 读结果：健康度体检（5 分钟）
 
-每次 run 落一个 `runs/<run_id>/` 目录。用 G11 体检门读它：
+每次 run 落一个 `runs/<run_id>/` 目录。用自带的体检命令读它：
 
 ```bash
 rfauto runs health 20260925_062950_1a6365e9
@@ -154,14 +180,14 @@ rfauto runs health 20260925_062950_1a6365e9
 
 判读要点：`verdict` 取 healthy / suspect / unhealthy，退出码与之一致
 （healthy=0），可直接进 CI 门禁；`--json` 出原始 JSON。状态为 UNKNOWN
-的检查项是"证据不足、如实不判"（比如 fake run 没有场 dump 就不评功率
-守恒），不是通过也不是失败。注意：现行 fake 通道只落指标不落 S 参数
-产物（新跑的 run `results/` 下无 `params.s3p`），所以新 run 的证据类
-检查项（excitation/passivity/gain 等）如实报 UNKNOWN、rollup 仍
+的检查项表示证据不足、暂不下结论（比如 fake run 没有场 dump 就不评
+功率守恒），既不是通过也不是失败。注意：现行 fake 通道只落指标不落
+S 参数产物（新跑的 run `results/` 下无 `params.s3p`），所以新 run 的
+证据类检查项（excitation/passivity/gain 等）报 UNKNOWN、rollup 仍
 healthy——UNKNOWN 既非 PASS 也非 FAIL；历史档案 run（带 s3p 产物，如
 上例 run_id）才会出现 PASS 判行。逐项含义与历史教训编号见
-`rfauto runs health --help` 与 docs/reference.md 指针；判读语义深读
-（掩码/门口径/两族 FAIL）见 docs/tutorials/verdict_semantics.md。
+`rfauto runs health --help` 与 docs/reference.md 指针；判读语义
+（掩码、判据怎么定、两类 FAIL）见 docs/tutorials/verdict_semantics.md。
 
 ## 7. 下一步
 

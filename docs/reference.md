@@ -12,10 +12,10 @@
 | 快速上手样例 | README「快速开始」「CLI 命令一览」节 |
 | 逐命令教程 | docs/tutorials/getting-started.md；docs/how-to/ 各篇 |
 
-当前规模（2026-10-19 实测，与 `scripts/check_numbers.py` 同源）：CLI 273 个
+当前规模（2026-10-19 实测，与 `scripts/check_numbers.py` 同源）：CLI 274 个
 叶子命令（non-bench 267 + bench 6）；单元测试 27261（check_numbers 口径
 =全量门日志 passed+failed）。规模数字以该脚本实跑为准，此处快照仅作
-量级参考（上游全量门口径；公开仓 CI 收集数见 README 徽章）。
+量级参考（本页三数字已入该脚本 DOC_PATTERNS 门控，漂移即门红）。
 
 机读出口（架构面，防手抄漂移）：`rfauto rest schema --json`（REST
 `/api/v1` 全端点清单，25 端点实测）；`rfauto pitfalls search <关键词>`
@@ -30,8 +30,8 @@
 | UI 交互面 | 看板「微波工具箱」页（`#/tools`）：按组下拉+搜索、结果自动画图/热图、扫参模式（2–101 点）、`#/tools/<键名>` 深链直达——与 CLI/MCP 同一内核 |
 
 规模快照（2026-10-19 实测复核，与 `scripts/check_numbers.py` 同源）：
-`CALCULATOR_REGISTRY` 323（含实验键 324，16 业务组+实验组；2026-10
-架构批期间自 248 净增 49 键）。
+`CALCULATOR_REGISTRY` 323（含实验键 324，16 业务组+实验组；aurora_g
+战役期间自 248 净增 49 键，`git diff cdad7549..HEAD --stat` 口径）。
 键数与分组**以 `rfauto calc list` 实时输出为准**——本页不钉死数字，
 注册表扩键后此处无需跟改。
 
@@ -68,8 +68,8 @@ pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 - 工具清单权威出口：MCP 服务器自注册表导出的 `mcp/manifest.json`
   （发布产物布局见 README「发布」节）；
 - 客户端接入（Claude Desktop/Cursor 配置示例、stdio 传输、与 CLI 共享
-  状态）：README「MCP Agent 接口」节；当前 **152 个工具 + 9 个
-  resources**（`@mcp.tool`/`@mcp.resource` 实测计数，2026-10-18，
+  状态）：README「MCP Agent 接口」节；当前 **152 个工具 + 10 个
+  resources**（`@mcp.tool`/`@mcp.resource` 实测计数，2026-10-19，
   与 `scripts/check_numbers.py` 同源）；
   发布产物布局见 README「发布就绪与手动发布步骤」节。
 

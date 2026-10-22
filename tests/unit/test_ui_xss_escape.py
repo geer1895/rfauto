@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -241,6 +241,9 @@ class TestEscSourcePins:
             #    ${seg.level_db}=图表 series 名（非 DOM），${o.file}=series
             #    label 前缀（chart 数据面，非 DOM）——五处均非 HTML 注入位。
             "${r.has_sar", "${r.has_farfield_h5", "${rows.length",
+            #    人性化二批 W3.5-K1 dashboard credibility 新面（同族豁免）：
+            #    ${s.fams.length}/${s.nArb}=计数/枚举长度插值，非 HTML 注入位
+            "${s.fams.length", "${s.nArb",
             "${seg.level_db", "${o.file",
             #    W2-S1 批 4：${d.expected_count}/${d.no_date_count} 随锚 KPI/
             #    无日期徽章迁 t() params 退场（${d.stale_count} 余 1 处=stale
@@ -252,13 +255,17 @@ class TestEscSourcePins:
             "${d.n_trials_used",
             "${d.n_trials_total",
             "${list.length", "${orig.length",
-            #    架构批 W8-S32 i18n 批 3：${d.n_without_cost 随 timeline 状态
+            #    aurora_f W8-S32 i18n 批 3：${d.n_without_cost 随 timeline 状态
             #    行迁词表 t() {n} 占位退场（计数=开发侧数值走 params 插值，
             #    不经模板裸插值面）——豁免条目同笔删除（本钉设计的清偿闭环）。
-            #    架构批 W2-S1 批 4：${d.expected_count}/${d.no_date_count}/
+            #    aurora_g W2-S1 批 4：${d.expected_count}/${d.no_date_count}/
             #    ${si.age_days}/${stats.length} 随 anchors KPI/新鲜度徽章与
             #    uq 卡片计数迁 t() params 插值退场（同笔删除，清偿闭环同源）。
             "${work.length", "${trials.length",
+            #    人性化二批 W2-S1：${ep.referee}=锚卡三元判定字面量
+            #    （ep.referee ? A : B，枚举协议值非 API 数据注入；实际
+            #    引擎名经 esc(anchorEngineName(...)) 单点转义消费）
+            "${ep.referee",
             #    W6-S2 S 状态收编：run 总数计数插值原走 S.allRuns（S 根名
             #    在扫描排除集）——键降级模块级改名 _allRuns 后进扫描面，
             #    同笔迁入本清单（textContent 语境数字计数，语义不变）。
@@ -273,7 +280,7 @@ class TestEscSourcePins:
         # 2) textContent / canvas / echarts 配置 / URL 语境（非 HTML sink）
         #    A7-A ui-kit 清理（2026-10-11）：${stats.map 随 uq 指标分布表迁
         #    kitTable(rowsHtml) 退场（map 移出模板插值面）。
-        #    架构批 W4-S1：${stats.* 五项随 agent 统计条迁 t() params 退场
+        #    aurora_h W4-S1：${stats.* 五项随 agent 统计条迁 t() params 退场
         #    （t() 产出后仍走 textContent 单点，sink 语境不变）。
         exempt |= {
             "${val.model", "${val.template_hint", "${r.engine",
@@ -294,7 +301,7 @@ class TestEscSourcePins:
         exempt |= {"${d.stale_count"}
         # 4) 分派三元（分支全是静态字面量或已 esc/badge 包裹的 API 值）
         #    A7-A ui-kit 清理：${s.available 随求解器可用徽章迁 kitBoolBadge 退场。
-        #    架构批 W2-S5（R1 #8 三态批1）：${d.ok 随 sparams Smith 无产物
+        #    aurora_f W2-S5（R1 #8 三态批1）：${d.ok 随 sparams Smith 无产物
         #    分支拆 kitEmptyState/kitErrorPanel 退场——豁免条目同笔删除
         #   （本钉设计的清偿闭环，P8-11 钉面注记）。
         exempt |= {
@@ -307,7 +314,7 @@ class TestEscSourcePins:
         # 5) id 查找对（模板 id 与 T.$ 查找同用原始值，转义反而失配）
         exempt |= {"${s.axis"}
         # 6) 代码控制常量与 builder 中间量（sink 处已 esc）
-        #    架构批 W6-S21（2026-10-18）：${w.title 随 dashboard widget 标题
+        #    aurora_f W6-S21（2026-10-18）：${w.title 随 dashboard widget 标题
         #    迁注册表 tk 字段 t() 渲染期烘焙退场（t() 产出=开发侧可信文本，
         #    i18n.js 纪律头注在档；t( 前缀形态不在裸插值扫描口径内）——
         #    豁免条目同笔删除（本钉设计的清偿闭环）。
@@ -360,17 +367,17 @@ class TestEscSourcePins:
             "${r.duration_s", "${r.fmt", "${r.output_path", "${r.rate_hz",
             "${s.license_gated", "${stages.map",
         }
-        # 架构批 W1-S2（2026-10-18）：${d.n_campaigns}/${d.n_templates}/
+        # aurora_f W1-S2（2026-10-18）：${d.n_campaigns}/${d.n_templates}/
         # ${d.n_previews} 三条随 i18n 试点迁 t(key, params) 渲染期烘焙
         # （view_queue info 行 / view_gallery 计数行）退场——豁免条目同笔
         # 删除（本钉设计的清偿闭环）。
-        # 架构批 合流批（2026-10-12）：tools 页 A2-B/A3-A 落地的 15 处，逐条归因——
+        # aurora72 合流批（2026-10-12）：tools 页 A2-B/A3-A 落地的 15 处，逐条归因——
         # ①textContent/计数/维度数字（无法携带标签）：cals/groups/vis/nums/val.length、
         #   mat.rows/cols、g.items.length、groups.map（map 回调只产出组名字符串进 textContent 拼接）；
         # ②echarts 文本语境（tooltip formatter/系列名按文本渲染，载荷=服务端计算器结果的
         #   结构键名与数值矩阵，非用户输入面）：m.key/m.raw/mat.key/sub.title；
         # ③esc 已包裹的分派三元：r.y/r.error（真值分支均走 esc()）。
-        #    架构批 W2-S1 批 4：${groups.length}/${groups.map}/${mat.rows}/
+        #    aurora_g W2-S1 批 4：${groups.length}/${groups.map}/${mat.rows}/
         #    ${mat.cols}/${mat.key}/${val.length} 随帮助组清单/热图标签/结果
         #    单元格迁 t() params 退场（同笔删除）；${cals.length} 余 1 处=
         #    tool-count 计数行（纯数字，未迁）。

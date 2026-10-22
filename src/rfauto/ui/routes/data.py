@@ -7,6 +7,8 @@
 - GET  /api/anchors/{anchor_id}       api_anchor_detail（单锚 raw 记录）
 - GET  /api/uq/samples                api_uq_samples（校准样本集清单）
 - POST /api/uq/yield                  api_uq_yield（代理蒙特卡洛良率+敏感性）
+- GET  /api/metric-glossary           api_metric_glossary（指标词典全量，R3 M2）
+- GET  /api/credibility/curves        api_credibility_curves（双引擎对照曲线，R3 M3）
 """
 
 from __future__ import annotations
@@ -70,3 +72,29 @@ async def api_uq_yield(request: Request) -> JSONResponse:
         n=_int_param(body.get("n"), 10000, "n"),
         seed=_int_param(body.get("seed"), 42, "seed"),
         kind=str(body.get("kind", "poly_ridge"))))
+
+
+async def api_metric_glossary(request: Request) -> JSONResponse:
+    """指标词典全量清单（只读）：knowledge/metric_glossary.yaml 服务层透传。
+
+    R3 设计 M2（aurora_i W2-S2）：前端 tooltip 单源数据——一次拉全量后
+    本地判定着色（词条是小清单，不打逐键请求；单键查询走 service 层
+    get_metric，REST 面不设未消费路由——UI 契约门 C 向只收不放）。
+    """
+    from rfauto.service import metric_glossary_service
+    return JSONResponse(metric_glossary_service.list_metric_glossary())
+
+
+async def api_credibility_curves(request: Request) -> JSONResponse:
+    """双引擎对照曲线数据面（只读）：runs/ 证据湖服务层组装。
+
+    R3 设计 M3（aurora_i W3-S1）：HFSS 仲裁基准 vs openEMS 主力引擎的
+    S 曲线族（引擎名→freq[]+s_db[]）+ 偏差注记 + verdict 态汇总 +
+    provenance 路径指针——前端叠加图零文件读取（runs 静态挂载默认关，
+    R2-B-05）。template 缺省=全族可用性总览；未知模板=诚实空信封。
+    解析走既有链（service 层 Touchstone/掩码 CSV 双口径，
+    #248/#287/#294/#314 口径），证据零改写。
+    """
+    from rfauto.service import credibility_curves_service
+    return JSONResponse(credibility_curves_service.credibility_curves(
+        request.query_params.get("template") or None))

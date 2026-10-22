@@ -389,3 +389,96 @@ try {
   setApiErrorPresenter((envelope, o) => showApiError(envelope, o || {}));
 } catch { /* best-effort 静默 */ }
 /* ═══ UI 人性化批 R4 块结束 ═══ */
+
+/* ═══ aurora_i W2-S2（R3 设计 M2）：指标词典悬浮说明三件 ══════════════════
+   数据源 /api/metric-glossary（knowledge/metric_glossary.yaml 服务层透传，
+   数据湖实测 38 键）。三件纯字符串/纯判定函数，零顶层执行零 DOM（node
+   行为钉可测）：
+   - metricGateVerdict(gate, value)：机读判据三态判定（"good"/"bad"/""）
+     ——与 service/metric_glossary_service._judge_entry 同构（两端由
+     test_metric_glossary 交叉钉）；gate 缺席/value 非数值/未知 op → ""
+     中性（无判据可判=如实中性，#122 不凑绿也不冒充 FAIL）。
+   - metricTipText(entry, locale)：tooltip 文本（白话定义+健康判据+坑号，
+     \n 分行由 CSS white-space:pre-line 保留；locale==="en" 取 plain_en，
+     缺失回退 plain_zh）。
+   - metricBadgeHtml(key, value, entry, locale)：指标行徽章——词条在场带
+     data-tip 悬浮（纯 CSS，index.html .m-tip 块）+ 判据着色（good→
+     var(--ok) / bad→var(--err)）；词条缺席→与原徽章模板逐字节同形
+     （说明层故障不阻渲染，#105）。
+   消费点：view_detail.js 指标行（主落点）、view_runs.js 带内 S11 列头
+   （data-mkey 挂点由 metric_glossary.js mountMetricTips 接线）。 */
+
+/* 数值型机读判据 op 表（与 service METRIC_GATE_OPS 数值三分支同构）。 */
+const _METRIC_GATE_OPS = {
+  max_below: (v, g) => v <= g,
+  min_above: (v, g) => v >= g,
+  abs_le: (v, g) => Math.abs(v) <= g,
+};
+
+/* 机读判据三态判定。返回 "good"|"bad"|""（空串=中性）。 */
+export function metricGateVerdict(gate, value) {
+  if (!gate || typeof gate !== "object" || !gate.op) return "";
+  if (gate.op === "bool_true") {
+    const s = typeof value === "string" ? value.trim().toLowerCase() : null;
+    const truthy = value === true || value === 1 || s === "true";
+    const falsy = value === false || value === 0 || s === "false";
+    if (!truthy && !falsy) return "";
+    return truthy ? "good" : "bad";
+  }
+  const f = _METRIC_GATE_OPS[gate.op];
+  if (!f) return "";
+  if (typeof value !== "number" || !isFinite(value)) return "";
+  if (typeof gate.good !== "number" || !isFinite(gate.good)) return "";
+  return f(value, gate.good) ? "good" : "bad";
+}
+
+/* 词条 tooltip 文本（\n 分行；无词条返回空串）。 */
+export function metricTipText(entry, locale) {
+  if (!entry || typeof entry !== "object") return "";
+  const en = locale === "en";
+  const def = en ? (entry.plain_en || entry.plain_zh) : entry.plain_zh;
+  // 段标签走词表（i18n 棘轮：common.tip_healthy/tip_pitfalls）；locale
+  // 仅切词典 plain_zh/plain_en 数据面（API 双语字段，非文案不迁）。
+  const healthy = t("common.tip_healthy");
+  const pitsLabel = t("common.tip_pitfalls");
+  const parts = [];
+  if (def) parts.push(def);
+  if (entry.good_when) parts.push(healthy + entry.good_when);
+  const pits = Array.isArray(entry.pitfall_refs)
+    ? entry.pitfall_refs.join(" ") : "";
+  if (pits) parts.push(pitsLabel + pits);
+  return parts.join("\n");
+}
+
+/* 指标行徽章（词条缺席=原模板逐字节同形降级）。 */
+export function metricBadgeHtml(key, value, entry, locale) {
+  const inner = typeof value === "number"
+    ? value.toFixed(4)
+    : esc(typeof value === "object" && value !== null
+      ? JSON.stringify(value) : value);
+  const verdict = metricGateVerdict(entry && entry.gate, value);
+  const color = verdict === "good" ? "color:var(--ok)"
+    : verdict === "bad" ? "color:var(--err)" : "color:var(--fg)";
+  const badge = `<span class="badge muted" style="margin-right:8px">` +
+    `${esc(key)}: <b style="${color}">${inner}</b></span>`;
+  const tip = metricTipText(entry, locale);
+  return tip
+    ? `<span class="m-tip" tabindex="0" data-tip="${escAttr(tip)}">${badge}</span>`
+    : badge;
+}
+/* ═══ aurora_i W2-S2 指标词典块结束 ═══ */
+
+/* 指标值单元（结果卡单元格用，W2-S2）：词条判据着色+悬浮（数值在场时）；
+   文本格式化由调用方传 fmt（缺省 toFixed(4)），非数值一律 "-"（runs 表
+   既有口径）。词条缺席→纯 esc 文本（无色无悬浮，中性降级）。 */
+export function metricValueHtml(entry, value, fmt, locale) {
+  const txt = typeof value === "number"
+    ? (fmt ? fmt(value) : value.toFixed(4)) : "-";
+  const verdict = metricGateVerdict(entry && entry.gate, value);
+  const color = verdict === "good" ? ' style="color:var(--ok)"'
+    : verdict === "bad" ? ' style="color:var(--err)"' : "";
+  const tip = metricTipText(entry, locale);
+  const tipAttr = tip && typeof value === "number"
+    ? ` class="m-tip" tabindex="0" data-tip="${escAttr(tip)}"` : "";
+  return `<span${tipAttr}${color}>${esc(txt)}</span>`;
+}

@@ -115,10 +115,6 @@ def test_edge_refined_lines_structure() -> None:
 
 
 @pytest.mark.slow  # 终门 DURATIONS >60s 慢件（66s，t→0⁺ 连续性数值重件）
-@pytest.mark.known_flaky(reason=(
-    "环境类（隔离复跑 3 次全绿 2026-10-17 公开仓取证）：并行门长跑内存压力下 "
-    "scipy SuperLU gssv 抛 MemoryError（'Can't expand MemType 0'，公开仓门日志"
-    "现场）——与上游 gssv malloc 族同形态，环境类定性三分法①；重跑仍红=物理红照常上报"))
 def test_cpw_finite_thickness_continuity_to_zero_t() -> None:
     """有限厚 CPW 裁判 t→0⁺ 连续性：εeff/Z0 回到零厚族（t=1µm 修正量
     ~0.05% 内，物理响应与离散残差同量级——rel 1e-3 口径）。"""

@@ -1,9 +1,9 @@
-/* rfauto 执行看板页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 执行看板页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    自治环步骤可视 + 暂停/接管（WP3.5）。
-   ═══ 架构批 W1-S3（R6 审计 F-4/R-1）═══ pollBoard/boardBadge 提升到模块
+   ═══ aurora72 W1-S3（R6 审计 F-4/R-1）═══ pollBoard/boardBadge 提升到模块
    层（无页内闭包依赖，注册字面与守卫字面不动）；渲染降噪缓存 _lastBoardKey
    + PageContext 增量钩子 loopboardCtx（注册在 pages.js → router.js PAGE_CTX）。
-   i18n（架构批 W4-S1 半程收尾全清）：壳/help 块分段 t()、状态行/空态/
+   i18n（aurora_h W4-S1 半程收尾全清）：壳/help 块分段 t()、状态行/空态/
    控制 toast 全迁词表（loopboard.* 键域，zh 与旧字面逐字节同、en 新增）——
    拼接数据段（板 id/步骤名/时间戳）照旧 esc 后拼模板，词表值零 HTML；
    公告/toast 走 textContent 单点。 */
@@ -15,9 +15,9 @@ import { kitBadge, kitConfirm, kitPanelHead } from "./kit.js";
 // 文案 t() 渲染期烘焙。
 import { t, applyI18nRoot } from "./i18n.js";
 import { _pollRegister, _pollStop, _pollVisible } from "./polling.js";
-// 深链二批（架构批 W2-S5）：#/loopboard/<board_id> 待选消费 + 选中回写 hash
+// 深链二批（aurora_f W2-S5）：#/loopboard/<board_id> 待选消费 + 选中回写 hash
 import { _syncRouteHash, consumeLoopBoardPendingId } from "./router.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
 // 数据面（2s 轮询看板/看板清单）接 viewSignal("loopboard") 切页收束 + aborted
 // 短路（离页在途 tick 不再写隐藏区）；动作面（暂停/接管控制 POST）保持无
 // signal（用户动作不被切页取消）。信封消费形态逐键不变。
@@ -121,7 +121,7 @@ export async function pageLoopBoard() {
         <table id='lb-steps'><thead><tr><th scope="col">#</th><th scope="col">${t("loopboard.th_step")}</th><th scope="col">${t("loopboard.th_milestone")}</th><th scope="col">${t("loopboard.th_detail")}</th><th scope="col">${t("loopboard.th_time")}</th></tr></thead><tbody></tbody></table></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W4-S1 全清；幂等，动态容器走 t() 烘焙）
   T.$("lb-refresh").onclick = loadBoards;
-  // 深链二批（架构批 W2-S5）：选中回写 hash（replaceState 不触 hashchange）
+  // 深链二批（aurora_f W2-S5）：选中回写 hash（replaceState 不触 hashchange）
   const syncLoopHash = () => { if (loopSelected) _syncRouteHash("loopboard", loopSelected); };
   T.$("lb-id").onchange = () => { loopSelected = T.$("lb-id").value || null; syncLoopHash(); pollBoard(); };
   T.$("lb-pause").onclick = () => sendControl("pause");
@@ -173,7 +173,7 @@ export async function pageLoopBoard() {
   }
 }
 
-/* R-1 PageContext（架构批 W1-S3 试点，增量钩子）：refresh=palette「刷新
+/* R-1 PageContext（aurora72 W1-S3 试点，增量钩子）：refresh=palette「刷新
    当前页数据」立即拉一次看板（不全量重进重挂轮询）；leave=离页停表（
    _pollStop 非终态并入——fn 保留，重进 _pollRegister 先停旧再挂新；
    _pollVisible 双守卫语义保留，恢复可见复活纪律=test_ui_lifecycle 钉面）。 */

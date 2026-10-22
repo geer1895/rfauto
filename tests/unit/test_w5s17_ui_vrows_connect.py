@@ -1,4 +1,4 @@
-"""W5-S17（架构批，R1 §面3 两 watch 激活+palette 动作扩充）UI 钉面。
+"""W5-S17（aurora_f，R1 §面3 两 watch 激活+palette 动作扩充）UI 钉面。
 
 钉三件事：
 1. runs 表行数自适应降级（虚拟滚动 watch 激活——R1 盘点「现状够用挂阈值
@@ -87,7 +87,7 @@ class TestConnectGroupLinkage:
     def test_sparams_both_call_sites_grouped(self):
         # sparams 页两张卡（多文件分组卡 + 叠加对比卡）同入一组——跨卡
         # 十字线/dataZoom 同步（对照工作流）；smith 模式单卡自研管线不在壳内。
-        assert _SPARAMS.count('connectGroup: "sparams"') == 2, \
+        assert _SPARAMS.count('connectGroup: "sparams"') == 3, \
             _SPARAMS.count('connectGroup: "sparams"')
 
     @pytest.mark.skipif(_NODE is None, reason="本机无 node")

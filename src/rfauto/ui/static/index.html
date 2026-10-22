@@ -34,7 +34,7 @@
   });
 })();
 </script>
-<!-- W4-D（架构批，R1 审计 P1-12 前半·方案 Y）→ P8-2（架构批 W3-S9 重审）：
+<!-- W4-D（aurora36，R1 审计 P1-12 前半·方案 Y）→ P8-2（aurora_f W3-S9 重审）：
      echarts 预取保留（经典 script，body 尾执行、dashboard 首屏即用）用
      preload as=script 提前首字节，执行位置与顺序不变。three 的 modulepreload
      **删除**——three 已改 3D 调用点动态 import（app.js drawBoxes /
@@ -117,7 +117,7 @@
 }
 /* Ocean 主题（灵感：Brittany Chiang portfolio；指南 §4.1 三色法；
    hex 经 w14_palette_check 全矩阵核对）。
-   A6-D（架构批 / 架构批 W8-B P2-3，2026-10-12）：主按钮渐变族一档
+   A6-D（aurora72 / aurora36 W8-B P2-3，2026-10-12）：主按钮渐变族一档
    加深提饱和——accent/accent2 teal·sky 300 档→400 档、primary→teal-500、
    act2 cyan 200 档→400 档，修"浅青底+深字视觉重量偏弱"（浅 pastel 停靠
    对 panel 亮度比 ~14:1 发飘；加深后落 7-10:1 中亮带，与 midnight 档位
@@ -274,7 +274,7 @@ aside nav button.active {
   border-left-color: var(--accent); font-weight: var(--font-semibold);
 }
 aside .foot { margin-top: auto; padding: 10px 12px; font-size: 11px; color: var(--muted2); }
-/* W7-C（架构批 P2-8）：.pk-hint 此前是死类（命令面板按钮里的 Ctrl+K
+/* W7-C（aurora36 P2-8）：.pk-hint 此前是死类（命令面板按钮里的 Ctrl+K
    提示 span 无任何样式定义）——补 muted 小字弱化档（muted2×panel2 对比度
    在三主题矩阵钉内 ≥4.5）。 */
 .pk-hint { color: var(--muted2); font-size: 10px; margin-left: 4px; }
@@ -303,7 +303,7 @@ h2.page small { color: var(--muted); font-size: 12px; margin-left: 10px; font-we
   animation: fade-slide var(--transition-slow) var(--ease-out) backwards;
 }
 .panel:hover { border-color: var(--glass-border); box-shadow: var(--shadow); }
-/* W7-C（架构批 P2-3，guide §10.3）：入场动画 50ms 交错阶梯（此前全部
+/* W7-C（aurora36 P2-3，guide §10.3）：入场动画 50ms 交错阶梯（此前全部
    同拍）；nth-child 6 档封顶，后续面板不再加迟滞。.panel 动画简写已带
    backwards 填充=延迟窗内保持初帧不可见。轮询页（tune/loopboard）只更新
    面板内子容器、不重建面板元素，阶梯不会随轮询重放。 */
@@ -332,7 +332,7 @@ h2.page small { color: var(--muted); font-size: 12px; margin-left: 10px; font-we
   .grid2, .grid3 { grid-template-columns: 1fr; }
   #widget-grid .widget, #widget-grid .widget.w6 { grid-column: span 12; }
 }
-/* W7-C（架构批 P2-11）：窄屏（<900px）策略——R1 审计"仅 1150px 一档、
+/* W7-C（aurora36 P2-11）：窄屏（<900px）策略——R1 审计"仅 1150px 一档、
    <900px 无策略"收账：main 内距收缩、页头允许换行、面板成横滚容器
    （数据表超宽不再撑破版心；sticky 表头改在面板容器内停靠=窄屏合理降级）、
    KPI 卡最小宽 190→150px 保小屏两列。侧栏折叠走 W2-A 的 CQ 门
@@ -434,7 +434,7 @@ tbody tr { transition: background var(--transition-fast); }
 tbody tr:nth-child(even) { background: var(--panel2); }
 tbody tr:hover { background: var(--surface-hover); }
 tr.clickable { cursor: pointer; }
-/* W5-S17（架构批，R1 §面3 虚拟滚动 watch 激活）：runs 表行数自适应降级
+/* W5-S17（aurora_f，R1 §面3 虚拟滚动 watch 激活）：runs 表行数自适应降级
    ——筛选后行数 >200（view_runs.js VROWS_THRESHOLD 单源）时表挂 .vrows，
    视口外行 content-visibility:auto 跳过渲染（零新依赖的轻量虚拟化）；
    不支持者忽略本规则=全量渲染旧行为降级。contain-intrinsic-size 预置行高
@@ -443,7 +443,7 @@ tr.clickable { cursor: pointer; }
    8.2ms/滚动 180fps 零掉帧——本机流畅，cv 在 tr 上布局/绘制实测无感收益
    但零风险（渐进增强+引擎差异兜底），守卫主价值=行数增长挂点（>1000 行
    升级 renderVirtualList 仍挂 watch）；数据归档
-   内部证据目录。 */
+   runs/aurora_f/w5s17_runs_vrows_measure.md。 */
 #runs-table.vrows tbody tr {
   content-visibility: auto;
   contain-intrinsic-size: auto 36px;
@@ -460,6 +460,26 @@ div.clickable { cursor: pointer; }
 .badge.warn { background: var(--warn-bg); color: var(--warn); }
 .badge.muted { background: var(--panel2); color: var(--muted); }
 
+/* ── 指标词典悬浮说明（aurora_i W2-S2，R3 设计 M2）──
+   纯 CSS tooltip（零 JS 监听零内联脚本，CSP 同律）：挂点 .m-tip[data-tip]
+   （kit.metricBadgeHtml 动态徽章 / metric_glossary.js mountMetricTips 静态
+   列头）；hover/focus 显示，内容 \n 分行经 white-space:pre-line 保留；
+   徽章内数值着色走内联 style（var(--ok)/var(--err)，kit 单源）。 */
+.m-tip { cursor: help; position: relative; }
+th.m-tip { text-decoration: underline dotted var(--muted2); text-underline-offset: 3px; }
+.m-tip:hover::after, .m-tip:focus::after {
+  content: attr(data-tip);
+  position: absolute; left: 0; top: calc(100% + 6px);
+  z-index: var(--z-tooltip);
+  background: var(--panel2); color: var(--fg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 11px; font-size: 12px; font-weight: normal; letter-spacing: normal;
+  max-width: 440px; width: max-content;
+  white-space: pre-line; text-align: left;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+  pointer-events: none;
+}
+
 /* ── 表单 ── */
 input, select, textarea {
   background: var(--input-bg); color: var(--fg); border: 1px solid var(--border);
@@ -472,7 +492,7 @@ input:focus, select:focus, textarea:focus {
 }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* W7-C（架构批 P2-5，guide §7.3）：backdrop-filter 缺失引擎降级——
+/* W7-C（aurora36 P2-5，guide §7.3）：backdrop-filter 缺失引擎降级——
    玻璃面半透明底（alpha .66）没有模糊时背后内容透出发糊，退成不透明实底。
    #lightbox 底是深色遮罩（alpha .78），无模糊仍可读，不进降级块。 */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -511,7 +531,7 @@ input:focus, select:focus, textarea:focus {
 #palette-list li .pk { color: var(--muted2); font-size: 11.5px; margin-left: auto; white-space: nowrap; }
 #palette-list li.sel { background: var(--surface-hover); }
 #palette-list li.sel .pt { color: var(--accent); }
-/* W3-D（架构批）：palette 行图标（sprite <use> 消费面，挂在 palette.js
+/* W3-D（aurora36）：palette 行图标（sprite <use> 消费面，挂在 palette.js
    iconSvg）——尺寸定恒、行内垂直居中；颜色由 stroke=currentColor 随行文字
    （选中态随 .sel 的 accent 标题，装饰性 aria-hidden 不进读屏）。 */
 #palette-list li .pico {
@@ -555,7 +575,7 @@ button.danger:hover { background: var(--err-bg); }
    面，.minor/.danger/.chipbtn 此前只有 hover 无 active；补 1px 下压位移
    （transform 已加进各自 transition 链），触感与主按钮同构。 */
 button.minor:active, button.danger:active, .chipbtn:active { transform: translateY(1px); }
-/* W2-A（架构批 P0-1）：pages.js 三处 class='primary' 主按钮（工具箱/画廊/
+/* W2-A（aurora36 P0-1）：pages.js 三处 class='primary' 主按钮（工具箱/画廊/
    剖析页"计算/开始采样"）此前无样式规则、按 UA 默认灰裸奔——补主色变体：
    accent→accent2 渐变底 + --act-fg 深字/浅色反白（三主题停靠色 ≥4.5:1，
    见 TestContrastPin primary 钉），状态面与 .act 同构。 */
@@ -759,7 +779,7 @@ details.help li { margin: 3px 0; }
 </style>
 </head>
 <body>
-<!-- W3-D（架构批，guide §11 SVG 图标系统基座）：<symbol> 线性图标 sprite。
+<!-- W3-D（aurora36，guide §11 SVG 图标系统基座）：<symbol> 线性图标 sprite。
      消费面=palette.js 命令行图标（<use href="#icon-*">，aria-hidden 装饰性
      不进读屏）；stroke=currentColor 随主题/选中态变色，fill=none 线性口径。
      席规：26 个 nav 按钮已带 .ico Unicode 图标——不重复挂第二图标，本基座
@@ -777,7 +797,7 @@ details.help li { margin: 3px 0; }
   <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 4.2v2.4"/><path d="M12 17.4v2.4"/><path d="M4.2 12h2.4"/><path d="M17.4 12h2.4"/><path d="M6.5 6.5l1.7 1.7"/><path d="M15.8 15.8l1.7 1.7"/><path d="M17.5 6.5l-1.7 1.7"/><path d="M8.2 15.8l-1.7 1.7"/></symbol>
   <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
 </svg>
-<!-- W1-S2（架构批，R1 审计面2 i18n 规格）：data-i18n 静态壳接线——文本
+<!-- W1-S2（aurora_f，R1 审计面2 i18n 规格）：data-i18n 静态壳接线——文本
      保留 zh 字面作缺省（扫描器覆盖前/缺 JS 时仍可读）；locale 判定/切换在
      pages/i18n.js（localStorage rfauto-locale，缺省跟随 html lang）。nav
      按钮标签包一层 span（textContent 注入口不能吞 .ico 图标节点）；键名
@@ -823,7 +843,7 @@ details.help li { margin: 3px 0; }
   <div class="foot">
     <button class="minor" id="palette-open" style="width:100%;margin-bottom:8px" aria-label="打开命令面板（Ctrl+K）" data-i18n-aria="palette.open_aria">⌘ <span data-i18n="palette.open_label">命令面板</span> <span class="pk-hint">Ctrl+K</span></button>
     <button class="minor" id="theme-toggle" style="width:100%;margin-bottom:8px">🌌 Midnight</button>
-    <!-- A6-D（架构批 R6 F-3 / W8-B P2，2026-10-12）：版本叙事中性化（UI 说真话）——
+    <!-- A6-D（aurora72 R6 F-3 / W8-B P2，2026-10-12）：版本叙事中性化（UI 说真话）——
          旧字面写死具体版本号+verified，停留旧口径（仓库真机=AEDT 2025 R1/v251，
          AGENTS 规则 0 勘误；后端 /api/solvers 现无版本字段可消费，写死任一
          具体版本都会再次过时）；硬编码回环端口号一并删除（端口可配，W8-B

@@ -1,4 +1,4 @@
-# 如何声明公式出处与再生 KD-1 注册表
+# 如何声明公式出处并再生产出注册表
 
 **场景**：你在 `core/` 写了一个新内核函数（或改了某模块的出处注记），
 定向门报"注册表与 docstring 扫描漂移"；或者你要给新内核模块写出处
@@ -12,7 +12,7 @@
 | 载体 | 文件 | 角色 |
 |---|---|---|
 | 人读面 | 各内核模块 docstring 的出处行 | 出处声明的**唯一写作点**（禁反向手改注册表） |
-| 机读单源 | `knowledge/formula_provenance.yaml` | 收集器生成（`manual_entries` 段除外），消费面查这里 |
+| 机读单源 | `knowledge/formula_provenance.yaml`（公式出处注册表，内部代号 KD-1） | 收集器生成（`manual_entries` 段除外），消费面查这里 |
 | 机制面 | `src/rfauto/core/formula_provenance.py` | schema/AST 扫描/查询；`scripts/collect_formula_provenance.py` 是再生薄壳 |
 
 再生方向永远是 **docstring → 注册表**：改出处只改 docstring，然后跑
@@ -31,7 +31,7 @@ def microstrip_attenuation(...):
 
     出处：Hammerstad-Jensen 导体衰减（经 qucsator msline.cpp 可执行
     逐字+Qucs 手册 式(11.79)-(11.83) 双源）；介质衰减式同节。
-    已核——两网源逐字一致，β 闭环对照另见 内部证据目录*。
+    已核——两网源逐字一致，β 闭环对照另见 runs/ 下对应审计记录。
     """
 ```
 
@@ -46,7 +46,7 @@ def microstrip_attenuation(...):
   `§x.y`、`Eq. n`、`Table n`）；
 - **可达性词面**（自声明，unverified 从严优先）：写"已核/逐位核对/
   双源/实测可达"→ verified；写"未核/付费墙/不可达"→ unverified；
-  判不了就别写词——如实 null，不编；
+  判不了就别写词——留 null，不编；
 - 模块 docstring 也收（symbol 记 `<module>`，`出处见` 指针的常规落点）。
 
 ### 形态 B：pointer（指针，"出处见"）
@@ -65,10 +65,10 @@ def mbvd_impedance(...):
 
 ### 两条边界
 
-- `精度档案：knowledge/precision_profiles.yaml#…` 镜像行属于 **XC-P
-  精度档案**载体，收集器按前缀剥离不进本表（两表分工见 explanation）；
-- 注释（`#`）与无标记的内联引文**不在收集面**——宁缺毋滥是登记口径
-  （如实不凑数）。
+- `精度档案：knowledge/precision_profiles.yaml#…` 镜像行属于**精度
+  档案**载体，收集器按前缀剥离不进本表（两表分工见 explanation）；
+- 注释（`#`）与无标记的内联引文**不在收集面**——宁缺毋滥是登记
+  原则（不凑数）。
 
 ## 2. 再生与漂移门
 
@@ -92,7 +92,7 @@ def mbvd_impedance(...):
 .venv/Scripts/python.exe -m pytest tests/unit/test_formula_provenance.py -q
 ```
 
-## 3. 健康巡检：audit_provenance（XA-6）
+## 3. 健康巡检：audit_provenance
 
 ```bash
 .venv/Scripts/python.exe scripts/audit_provenance.py          # 人读报告
@@ -133,7 +133,7 @@ provenance_summary()                                   # 覆盖摘要（by_kind/
 ```
 
 内核卡（`scripts/build_kernel_cards.py`，74 张）按 kernel_file 过滤渲染
-"KD-1 出处注册"节，零命中的卡如实渲染"0 条"——写卡前先把出处声明写进
+"出处注册（KD-1）"节，零命中的卡就显示"0 条"——写卡前先把出处声明写进
 docstring，卡面数字由 builder 机读，禁手抄。
 
 ## 6. 高频坑位
@@ -144,7 +144,7 @@ docstring，卡面数字由 builder 机读，禁手抄。
   收集不到，条目静默缺失——拿查询面查自己的符号确认在档；
 - **可达性词面误伤**：块里出现"未经"（如"未经仿真"）即判 unverified
   （从严优先）——只想声明"已核"时别在同一块里带否定词面；
-- **XC-P 镜像行抄进出处块**：会被剥离（防两表串味），但它不是出处
+- **精度档案镜像行抄进出处块**：会被剥离（防两表串味），但它不是出处
   证据——两表各写各的行；
 - **manual 条目 formula_id 撞扫描 id**：加载器整表唯一钉红，自定前缀
   规避。

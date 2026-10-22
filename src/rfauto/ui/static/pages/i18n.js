@@ -103,8 +103,8 @@ export const LOCALES = {
   "palette.hint.cmd": { zh: " 命令 · Ctrl+K 开关", en: " commands · Ctrl+K toggle" },
   /* ── foot.*（侧栏版本注记，A6-D 中性化口径的 en 对照）── */
   "foot.version_note": {
-    zh: "HFSS/ADS 以实装版本为准（本机实测 2025 R1 / v251）",
-    en: "HFSS/ADS per installed version (local: 2025 R1 / v251)",
+    zh: "HFSS/ADS 取决于实际安装的版本（开发机为 2025 R1 / v251）",
+    en: "HFSS/ADS depends on the version actually installed (dev machine: 2025 R1 / v251)",
   },
   "foot.local": { zh: "本机服务", en: "Local service" },
   /* ── tools.*（试点页 1：微波工具箱静态壳标签）── */
@@ -137,8 +137,8 @@ export const LOCALES = {
   "gallery.filter_placeholder": { zh: "按名称/拓扑过滤…", en: "Filter by name/topology…" },
   "gallery.loading": { zh: "加载中...", en: "Loading..." },
   "gallery.count_tpl": {
-    zh: "{n} 模板 · {p} 配闭式预览通道",
-    en: "{n} templates · {p} with closed-form preview",
+    zh: "{n} 个模板 · 其中 {p} 个支持闭式预览",
+    en: "{n} templates · {p} of them support closed-form preview",
   },
   "gallery.preview_badge": { zh: "闭式预览", en: "Closed-form preview" },
   "gallery.no_preview": { zh: "预览未覆盖", en: "no preview" },
@@ -166,8 +166,8 @@ export const LOCALES = {
   "queue.reload": { zh: "刷新", en: "Reload" },
   "queue.info_tpl": { zh: "{n} 个战役计划", en: "{n} campaign plans" },
   "queue.empty": {
-    zh: "runs/ 下暂无 campaign.plan.json（先立战役）",
-    en: "No campaign.plan.json under runs/ (create a campaign first)",
+    zh: "runs/ 下还没有 campaign.plan.json（先创建一个战役）",
+    en: "No campaign.plan.json under runs/ yet (create a campaign first)",
   },
   "queue.empty_action": { zh: "去战役仪表盘", en: "Go to Campaigns" },
   "queue.th_campaign": { zh: "战役", en: "Campaign" },
@@ -251,6 +251,22 @@ export const LOCALES = {
   "sparams.overlay_only_title": {
     zh: "外部叠加（该 run 无 Touchstone 产物）",
     en: "External overlays (no Touchstone artifacts for this run)",
+  },
+  /* ── sparams.compare_*（aurora_i W3-S2：S 参数页「对照」开关，R3 设计
+     M6——对照卡=可信度登记曲线（同模板名义设计双引擎对，非当前 run
+     产物，标题诚实区分）；降级态=无模板名/无登记曲线两明示行）── */
+  "sparams.compare_btn": { zh: "对照", en: "Compare" },
+  "sparams.compare_title": {
+    zh: "双引擎对照（可信度登记曲线 · 同模板名义设计，非当前 run 产物）",
+    en: "Cross-engine comparison (registered credibility curves · same nominal design, not this run's artifacts)",
+  },
+  "sparams.compare_none": {
+    zh: "该模板暂无可信度对照曲线（曲线配对随仲裁批次逐步登记）",
+    en: "No registered comparison curves for this template yet (curve pairs accumulate with arbitration campaigns)",
+  },
+  "sparams.compare_no_model": {
+    zh: "无法识别当前 run 的模板名，未拉取对照曲线",
+    en: "Cannot identify this run's template — comparison curves not fetched",
   },
   /* ── agent.*（扩面页 5：Agent 助手——对话浮窗与 toast 走下一波，
      本波收页面壳静态 chrome + 徽章/空态烘焙）── */
@@ -372,10 +388,10 @@ export const LOCALES = {
   "dashboard.solvers_available": { zh: "可用", en: "available" },
   "dashboard.solvers_unavailable": { zh: "不可用", en: "unavailable" },
   "dashboard.solvers_note_hfss": {
-    zh: "HFSS/AEDT：以实装版本为准（本仓实测 2025 R1/v251）",
-    en: "HFSS/AEDT: per installed version (repo-tested 2025 R1 / v251)",
+    zh: "HFSS/AEDT：取决于实际安装的版本（开发机 2025 R1/v251）",
+    en: "HFSS/AEDT: depends on the version actually installed (dev machine 2025 R1/v251)",
   },
-  "dashboard.solvers_note_ads": { zh: "ADS 2027：link 已验证", en: "ADS 2027: link verified" },
+  "dashboard.solvers_note_ads": { zh: "ADS 2027：接口已验证联调", en: "ADS 2027: interface verified in integration" },
   "dashboard.tune_running": {
     zh: "调参运行中…（详情见「优化调参」页）",
     en: "Tuning in progress… (see the Tuning page)",
@@ -465,6 +481,11 @@ export const LOCALES = {
   "common.empty": { zh: "暂无数据", en: "No data" },
   "common.load_failed": { zh: "加载失败", en: "Load failed" },
   "common.retry": { zh: "重试", en: "Retry" },
+  /* ── W2-S2 指标词典悬浮说明段标签（aurora_i，R3 M2；kit.js 单源消费）──
+     tooltip 本体是词典数据（API plain_zh/plain_en，非文案不迁），仅两段
+     前缀标签是 UI chrome。 */
+  "common.tip_healthy": { zh: "健康判据：", en: "Healthy when: " },
+  "common.tip_pitfalls": { zh: "常见坑：", en: "Pitfalls: " },
 
   /* ── W6-S2 kitConfirm 破坏性动作确认（R1 P9-8 / R2 Top10 #6）────────
      钮面=kit.js 单源缺省（common.confirm/cancel）；标题/正文由接线点传
@@ -487,14 +508,14 @@ export const LOCALES = {
   },
   "loopboard.takeover": { zh: "✋ 接管", en: "✋ Take over" },
   "loopboard.takeover_body": {
-    zh: "接管后环将停止自动推进、改由你手动控制（可再下发「继续」恢复自动模式）。确定接管？",
-    en: "After taking over, the loop stops auto-advancing and waits for manual control (send Resume to return to auto). Take over?",
+    zh: "接管后环将停止自动推进、改由你手动控制（可再点「继续」恢复自动模式）。确定接管？",
+    en: "After taking over, the loop stops auto-advancing and waits for manual control (click Resume to return to auto mode). Take over?",
   },
 
   /* ── guide.*（使用指南页：纯静态页整页分段 t() 迁入）── */
   "guide.help_1": {
-    zh: "本页 = 内置说明书。第一次用？按下面 4 步走一遍 fake 演示即可上手。",
-    en: "This page = the built-in manual. First time? Walk through the 4-step fake demo below.",
+    zh: "本页 = 内置说明书。第一次用？先按「5 分钟上手」走一遍 fake 演示，再跟着「第一个真实工作流」逐步走查（每步都写明在哪个页面点哪个按钮）。",
+    en: "This page = the built-in manual. First time? Do the 5-minute fake demo, then follow the “first real workflow” walkthrough — every step names the page and the button to click.",
   },
   "guide.help_2": {
     zh: "随时可以回「总览」点「＋ 添加组件」定制你想盯的面板。",
@@ -582,8 +603,8 @@ export const LOCALES = {
   },
   "guide.faq3_q": { zh: "HFSS 用哪个版本？", en: "Which HFSS version is used?" },
   "guide.faq3_a": {
-    zh: " 以实装版本为准（本机实测 2025 R1/v251）；工程导入页版本留空即跟随服务端缺省，无需手选。",
-    en: " Per the installed version (repo-tested 2025 R1 / v251); leave the version field empty on Import Project to follow the server default.",
+    zh: " 取决于实际安装的版本（开发机 2025 R1/v251）；工程导入页版本留空即跟随服务端缺省，无需手选。",
+    en: " Depends on the version actually installed (dev machine 2025 R1 / v251); leave the version field empty on Import Project to follow the server default.",
   },
   "guide.faq4_q": { zh: "openEMS 第一次跑很慢？", en: "openEMS slow on first run?" },
   "guide.faq4_a": {
@@ -591,11 +612,142 @@ export const LOCALES = {
     en: " Real resonant structures must run out the full energy decay (the 280s in old references was a bad model's fake speed). Results are cached — same config returns instantly.",
   },
   "guide.next_title": { zh: "下一步去哪", en: "Where to go next" },
-  "guide.next_1_lead": { zh: "深入口径与踩坑：仓库 ", en: "For deeper conventions and pitfalls: repo " },
-  "guide.next_1_tail": { zh: " 与 DEVLOG。", en: " and the DEVLOG." },
+  "guide.next_1_lead": { zh: "想继续深挖：仓库 ", en: "Want to dig deeper: the repo " },
+  "guide.next_1_tail": {
+    zh: " 里有更多约定说明与踩坑记录（见仓库 docs/ 目录）。",
+    en: " has more conventions and pitfall notes (see the repo docs/ folder).",
+  },
   "guide.next_2": {
     zh: "想看某个页面怎么用：每个页面顶部都有「❓ 本页说明」。",
     en: "To learn a specific page: every page has a “❓ Page guide” at the top.",
+  },
+
+  /* ── guide.*（W3.5-K2 人性化二批 2026-10-19 追加 45 键：完整工作流教程
+     「第一个真实工作流」四节走查 + 锚点目录。每步给「在哪个页面点哪个
+     按钮」的具体指路，按钮与页面名与 tune、recipe、import、queue 各域
+     词表逐字对齐；zh/en 双语同笔，值零 HTML。 ── */
+  "guide.toc_title": { zh: "本页目录", en: "On this page" },
+  "guide.wf_title": { zh: "第一个真实工作流", en: "Your first real workflow" },
+  "guide.wf_lead": {
+    zh: "下面用内置的 wilkinson 功分器配方当例子，把「选模板 → 存配方 → 调参 → 读结果」整条链走一遍。每一步都写明在哪个页面、点哪个按钮；照着做即可，全程 fake 通道不占一点 license。",
+    en: "This walkthrough uses the built-in wilkinson power-divider recipe to walk the whole chain — pick a template, save a recipe, tune, read results. Every step names the page and the button to click; follow along at zero license cost (fake channel all the way).",
+  },
+  "guide.wf1_t": { zh: "① 配方从哪来", en: "① Where a recipe comes from" },
+  "guide.wf1_p0": {
+    zh: "配方就是一个 YAML 文件（模型 + 参数 + 目标 + 优化范围）。三条来路，任选其一：",
+    en: "A recipe is just a YAML file (model + parameters + objectives + search ranges). Three ways to get one — pick any:",
+  },
+  "guide.wf1_li1": {
+    zh: "「模板画廊」选型：左侧导航点「模板画廊」，用顶部搜索框过滤器件（如 wilkinson），点卡片「详情」看一句话说明与参数表——先确定器件族，记下关键参数的含义。",
+    en: "Pick a family in the Template Gallery: open “Template Gallery” in the sidebar, filter by device name (e.g. wilkinson) in the search box, click “Details” on a card for the blurb and parameter table — settle on a family and note what its key parameters mean.",
+  },
+  "guide.wf1_li2": {
+    zh: "「配方编辑」落地：左侧导航点「配方编辑」，在「配方目录（点选加载）」里点一条配方载入（内置示例在「原件（recipes/）」区），右侧参数表直接改值，点「保存配方」——自动另存为工作副本，原件不动。",
+    en: "Land it in the Recipes editor: open “Recipes” in the sidebar, click a recipe in the catalog to load it (built-in examples live under “Originals (recipes/)”), edit values directly in the parameter table, then click “Save recipe” — it is saved as a working copy; the original stays untouched.",
+  },
+  "guide.wf1_li3": {
+    zh: "有现成 HFSS 工程：「工程导入」页点「浏览…」选 .aedt → 点「读取工程」→ 在变量表确认要调的参数 → 「生成配方」区点「保存配方草稿」；之后回「配方编辑」补 objectives 和优化范围。",
+    en: "Already have an HFSS project: on Import Project click “Browse…”, pick a .aedt, click “Read project”, confirm the variables to tune in the table, then click “Save recipe draft” under Generate recipe; afterwards fill in objectives and search ranges back on the Recipes page.",
+  },
+  "guide.wf1_out": {
+    zh: "产出：recipes/ 下一个 YAML 文件（页面顶部显示路径），内含参数值与优化范围（low/high）——下一步调参吃的就是这个文件。",
+    en: "Output: a YAML file under recipes/ (path shown at the top of the page) holding parameter values and search ranges (low/high) — exactly the file the next step consumes.",
+  },
+  "guide.wf2_t": { zh: "② 到 Tune 页跑通", en: "② Run it through on Tuning" },
+  "guide.wf2_p0": {
+    zh: "左侧导航点「优化调参」，「配方」框填上一步的 YAML 路径（内置例子 recipes/wilkinson_pd_v1.yaml 已是缺省值）。先选「仿真通道」——决策表：",
+    en: "Open “Tuning” in the sidebar and put the YAML path from the previous step in the Recipe box (the built-in recipes/wilkinson_pd_v1.yaml is the default). First pick the Channel — decision table:",
+  },
+  "guide.wf2_th_ch": { zh: "通道", en: "Channel" },
+  "guide.wf2_th_what": { zh: "它是什么", en: "What it is" },
+  "guide.wf2_th_when": { zh: "什么时候用它", en: "When to use it" },
+  "guide.wf2_ch_fake_t": { zh: "fake", en: "fake" },
+  "guide.wf2_ch_fake_d": {
+    zh: "解析近似模型，秒级返回，不占 license；数字不能当真。",
+    en: "An analytic surrogate: seconds per run, no license; numbers are not physical.",
+  },
+  "guide.wf2_ch_fake_when": {
+    zh: "第一次跑通流程；改目标/改范围后验证写法；上真机前先看趋势。",
+    en: "First end-to-end pass; validating objective/range edits; trending before spending real solves.",
+  },
+  "guide.wf2_ch_openems_t": { zh: "openEMS", en: "openEMS" },
+  "guide.wf2_ch_openems_d": {
+    zh: "免费开源 FDTD 真跑，速度中等，结果是真实物理（首跑较慢，同配置有缓存）。",
+    en: "A free open-source FDTD solve: medium speed, real physics (slower first run, cached for repeats).",
+  },
+  "guide.wf2_ch_openems_when": {
+    zh: "没有 HFSS license 时的真解；批量粗算与中期校验。",
+    en: "Real physics without an HFSS license; batch screening and mid-course checks.",
+  },
+  "guide.wf2_ch_hfss_t": { zh: "HFSS", en: "HFSS" },
+  "guide.wf2_ch_hfss_d": {
+    zh: "商业全波真机，最慢最准，占 license；需先启动 ANSYS EDT 并连接。",
+    en: "The commercial full-wave solver: slowest, most accurate, uses a license seat; start and connect ANSYS EDT first.",
+  },
+  "guide.wf2_ch_hfss_when": {
+    zh: "最终可信数字与跨引擎仲裁；候选收敛后的精算。",
+    en: "Final trustworthy numbers and cross-engine arbitration; refining converged candidates.",
+  },
+  "guide.wf2_li": {
+    zh: "第一次照做：「仿真通道」选 fake，「试验次数」保持 30，点「启动」——等状态条出现「调参已完成」。",
+    en: "For your first pass: pick fake as the Channel, leave Trials at 30, click Start, and wait for the “Tuning completed” banner.",
+  },
+  "guide.wf2_hint": {
+    zh: "换 openEMS 直接切下拉即可；切 HFSS 前页面会弹「先确认 HFSS 已连接」的预检卡——没连就按提示先去连，或切回 fake 练手。",
+    en: "Switching to openEMS is just a dropdown away; before hfss the page shows a “confirm HFSS is connected” precheck card — connect first as prompted, or switch back to fake to rehearse.",
+  },
+  "guide.wf3_t": { zh: "③ 结果怎么读", en: "③ Reading the results" },
+  "guide.wf3_fields_lead": {
+    zh: "跑完后「结果」卡从上往下读：",
+    en: "When it finishes, read the Result card top to bottom:",
+  },
+  "guide.wf3_f1_t": { zh: "推荐工作点（best 参数）", en: "Recommended operating point (best params)" },
+  "guide.wf3_f1_d": {
+    zh: " —— 评分最高的那组参数值，直接抄回配方或工程里用。",
+    en: " — the highest-scoring parameter set; copy it back into your recipe or project.",
+  },
+  "guide.wf3_f2_t": { zh: "最优评分 cost=…", en: "Best score cost=…" },
+  "guide.wf3_f2_d": {
+    zh: " —— 目标函数在 best 点的取值，越小越好；多目标模式下给出的是一组 Pareto 前沿点。",
+    en: " — the objective at the best point, lower is better; in multi-objective mode you get a Pareto front instead.",
+  },
+  "guide.wf3_f3_t": { zh: "完成 N 轮 · 用时", en: "Trials done · wall time" },
+  "guide.wf3_f3_d": {
+    zh: " —— 搜索过程量；「提前终止」的轮次是优化器判定无望而跳过的，属正常现象。",
+    en: " — search bookkeeping; trials “stopped early” were pruned by the optimizer as hopeless, which is normal.",
+  },
+  "guide.wf3_f4_t": { zh: "最优点上的其他指标", en: "Other metrics at the best point" },
+  "guide.wf3_f4_d": {
+    zh: " —— best 点上 cost 之外的指标（如带内 S11），用来交叉确认。",
+    en: " — metrics other than cost at the best point (e.g. in-band S11) for cross-checking.",
+  },
+  "guide.wf3_next": {
+    zh: "点结果卡下方「查看 run 详情」看 S 参数曲线与 3D 模型；「Run 历史」页按通道/指标过滤、对比历次 run；「S 参数分析」页可把多条曲线叠加对照。",
+    en: "Click “Open run detail” under the result card for S-parameter curves and the 3D model; filter and compare runs on Run History; overlay curves on the S-Parameters page.",
+  },
+  "guide.wf3_q": {
+    zh: "常见第一疑问：为什么 fake 的 S11 这么好（或这么差）？",
+    en: "First-timer question: why does fake’s S11 look so good (or so bad)?",
+  },
+  "guide.wf3_a": {
+    zh: " 因为 fake 是解析近似模型，不是真实电磁仿真——曲线由闭式公式生成，只用来验证目标写法和粗筛排序，数字本身不能当真。要真数字，把通道切到 openEMS 或 HFSS 再跑——这正是多保真流程存在的意义。",
+    en: " Because fake is an analytic surrogate, not a real simulation — its curves come from closed-form formulas and only validate your objective wording and screen rankings; the numbers themselves are not physical. For real numbers switch the channel to openEMS or HFSS — exactly what the multi-fidelity flow is for.",
+  },
+  "guide.wf4_t": { zh: "④ 进阶去哪", en: "④ Going further" },
+  "guide.wf4_sweep_t": { zh: "扫参（摸参数敏感度）", en: "Parameter sweep (feel the sensitivity)" },
+  "guide.wf4_sweep_d": {
+    zh: " ——「微波工具箱」页选一个闭式计算器，勾「扫参模式」，选数值参数、填起点/终点/点数（上限 101），点「扫描」出曲线族——调参前先弄清哪个参数敏感。",
+    en: " — on Microwave Tools pick a closed-form calculator, tick Sweep mode, choose a numeric parameter with start/stop/points (cap 101) and click Sweep for a curve family — learn which parameter matters before tuning.",
+  },
+  "guide.wf4_mf_t": { zh: "多保真（省时数倍）", en: "Multi-fidelity (hours saved)" },
+  "guide.wf4_mf_d": {
+    zh: " ——「优化调参」页勾「多保真」：fake 大量粗筛、高保真只精算少数候选；粗筛排名必须过高保真复核（可信度门：排序相关 ρ≥0.8、前 5 命中 ≥80%）才算数，详见下方「概念速查」。",
+    en: " — tick Multi-fidelity on the Tuning page: fake screens widely, high fidelity refines only a few candidates; the screen’s rankings must pass the credibility gate (ranking correlation ρ≥0.8, top-5 hit rate ≥80%) — see the glossary below.",
+  },
+  "guide.wf4_remote_t": { zh: "远程派发（借服务器算力）", en: "Remote dispatch (borrow server compute)" },
+  "guide.wf4_remote_d": {
+    zh: " ——「调度队列」页顶部「远程机器」卡片：填机器名点「刷新」看可达性/占用/磁盘与「建议派往」；长跑战役在战役计划（campaign.plan.json）里指定远程机器派发，页面只读展示，派发配置走 CLI 侧。",
+    en: " — the Remote machines card at the top of the Queue page: enter a machine name and click Reload for reachability/occupancy/disk and the suggested target; long campaigns dispatch to a remote machine via the campaign plan (campaign.plan.json) — the page is read-only, dispatch is configured CLI-side.",
   },
 
   /* ── datasets.*（数据集页：runs/datasets 注册表，只读）── */
@@ -615,8 +767,8 @@ export const LOCALES = {
   },
   "datasets.help_2_tail": { zh: "；全量看「点数」列。", en: "; see the Points column for the full count." },
   "datasets.help_3": {
-    zh: "「模板族」读自数据集的 manifest 登记项；旧数据没登记的如实显示「未登记」，不猜。",
-    en: "“Template family” reads the dataset's manifest entries; older manifests honestly show “unregistered” rather than guessing.",
+    zh: "「模板族」读自数据集 manifest 里的登记项；老数据没登记的就显示「未登记」，不会去猜。",
+    en: "“Template family” comes from the entry registered in the dataset's manifest; older data without one just shows “unregistered” — no guessing.",
   },
   "datasets.title": { zh: "数据集", en: "Datasets" },
   "datasets.subtitle": { zh: "runs/datasets · 只读", en: "runs/datasets · read-only" },
@@ -662,8 +814,8 @@ export const LOCALES = {
   },
   "anchors.help_2_core": { zh: "状态", en: "Status" },
   "anchors.help_2_tail": {
-    zh: "是注册表的裁决：active 在用 / stale 已过期 / experimental 实验性（双值待归一） / awaiting_data 等数据回填 / retired 已退役。没有验证日期的锚，新鲜度如实显示 UNKNOWN，不编判定。",
-    en: " is the registry verdict: active / stale / experimental (dual values pending) / awaiting_data (skeleton) / retired. Anchors without a verified date honestly show UNKNOWN — never a made-up verdict.",
+    zh: "是注册表的裁决：active 在用 / stale 已过期 / experimental 实验性（双值待归一） / awaiting_data 等数据回填 / retired 已退役。没有验证日期的锚，新鲜度一栏显示 UNKNOWN，不替它下结论。",
+    en: " is the registry verdict: active / stale / experimental (dual values pending) / awaiting_data (skeleton) / retired. Anchors without a verified date show UNKNOWN in the freshness column — no verdict is made up for them.",
   },
   "anchors.help_3": {
     zh: "点锚行看完整记录：出处、不确定度、消费方。",
@@ -703,8 +855,8 @@ export const LOCALES = {
     en: "All numbers come from the local compute kernel; the page only renders. ",
   },
   "uq.help_2_core": {
-    zh: "没有样本集或公差时如实显示空态，不放假数据",
-    en: "empty states are honest when no sample set or tolerances exist — no fake data",
+    zh: "没选样本集或没填公差时就显示空态，不放假数据",
+    en: "shows an empty state when no sample set or tolerance is given — no fake data",
   },
   "uq.help_2_tail": { zh: "。", en: "." },
   "uq.help_3": {
@@ -786,12 +938,12 @@ export const LOCALES = {
   },
   "tools.help_groups_loading": { zh: "清单加载中…", en: "loading list…" },
   "tools.help_2": {
-    zh: "与综合引擎同口径（skrf Hammerstad-Jensen / Balanis 闭式）；必填参数标 *，留空的可选参数不传。",
-    en: "Same conventions as the synthesis engines (skrf Hammerstad-Jensen / Balanis closed forms); required params are marked *, empty optional params are not sent.",
+    zh: "和综合引擎用的是同一套公式（skrf Hammerstad-Jensen / Balanis 闭式）；必填参数标 *，留空的可选参数不传。",
+    en: "Uses the same formulas as the synthesis engines (skrf Hammerstad-Jensen / Balanis closed forms); required params are marked *, empty optional params are not sent.",
   },
   "tools.help_3_lead": {
-    zh: "这些计算器也开放在命令行（rfauto calc）与 MCP（run_calculator）——同一套内核；深链 ",
-    en: "The same calculators are exposed on the CLI (rfauto calc) and MCP (run_calculator) — one kernel, three frontends; deep link ",
+    zh: "这些计算器在命令行 rfauto calc 和 MCP 工具 run_calculator 里也能用——三处同一套算法；深链 ",
+    en: "The same calculators also work on the CLI (rfauto calc) and as the MCP tool run_calculator — one shared engine across all three; deep link ",
   },
   "tools.help_3_code": { zh: "#/tools/&lt;键名&gt;", en: "#/tools/&lt;key&gt;" },
   "tools.help_3_tail": { zh: " 可直达并分享某计算器。", en: " jumps straight to (and shares) a calculator." },
@@ -804,8 +956,8 @@ export const LOCALES = {
     en: "List unavailable (service not ready? reload to retry)",
   },
   "tools.badge_experimental": {
-    zh: "实验态（默认不放行）",
-    en: "Experimental (blocked by default)",
+    zh: "实验性（默认禁用）",
+    en: "Experimental (disabled by default)",
   },
   "tools.opt_experimental": { zh: " [实验]", en: " [exp]" },
   /* ── 组名展示层翻译（16 已知组 + 实验/其他殿后组）── */
@@ -885,14 +1037,14 @@ export const LOCALES = {
   "tools.cp_cpw_synthesis": { zh: "目标 Z0 → 中心导带宽/缝宽", en: "Target Z0 → strip width/gap" },
   "tools.cp_cpwg_analysis": { zh: "带底地 CPW 几何 → Z0/εeff", en: "Grounded CPW geometry → Z0/εeff" },
   "tools.cp_cpwg_synthesis": { zh: "目标 Z0 → 带底地 CPW 几何", en: "Target Z0 → grounded CPW geometry" },
-  "tools.cp_ecss_multipactor_fd": { zh: "间隙×频率 → 微放电击穿裕度（ECSS 口径）", en: "Gap×frequency → multipactor margin (ECSS)" },
+  "tools.cp_ecss_multipactor_fd": { zh: "间隙×频率 → 微放电击穿裕度（ECSS 标准）", en: "Gap×frequency → multipactor margin (ECSS standard)" },
   "tools.cp_ipc2152_trace_temp_rise": { zh: "电流/线宽/铜厚 → 走线温升估算", en: "Current/width/copper thickness → trace ΔT estimate" },
   "tools.cp_microstrip_analysis": { zh: "线宽 → Z0/εeff（skrf Hammerstad-Jensen）", en: "Width → Z0/εeff (skrf Hammerstad-Jensen)" },
   "tools.cp_microstrip_lambda_g": { zh: "几何/频率 → εeff、λ0、λg", en: "Geometry/frequency → εeff, λ0, λg" },
   "tools.cp_microstrip_loss_heat": { zh: "导体/介质损耗 → 单位长度耗散功率", en: "Conductor/dielectric loss → dissipated power per unit length" },
   "tools.cp_microstrip_synthesis": { zh: "目标 Z0 → 线宽（求逆+自洽回代）", en: "Target Z0 → width (inversion + self-consistent back-substitution)" },
   "tools.cp_parallel_plate_breakdown_margin": { zh: "间隙/电压 → 击穿场强裕度", en: "Gap/voltage → breakdown field margin" },
-  "tools.cp_patch_f0_symbolic_e13": { zh: "自动归纳经验式，默认不放行", en: "Auto-induced empirical formula, blocked by default" },
+  "tools.cp_patch_f0_symbolic_e13": { zh: "自动归纳的经验公式，默认禁用", en: "Auto-derived empirical formula, disabled by default" },
   "tools.cp_patch_length": { zh: "目标频率/基板 → 贴片长度（Balanis 闭式）", en: "Target frequency/substrate → patch length (Balanis closed form)" },
   "tools.cp_quarter_wave_transformer": { zh: "两端阻抗 → 变换段 Z0 与长度", en: "Two port impedances → section Z0 & length" },
   "tools.cp_resonator_thermal_drift": { zh: "温度变化 → 谐振频率漂移", en: "Temperature change → resonance frequency drift" },
@@ -923,8 +1075,8 @@ export const LOCALES = {
   },
   "tools.sweep_need_num": { zh: "起点/终点须为数值", en: "Start/stop must be numbers" },
   "tools.sweep_points_range": {
-    zh: "点数须为 2–101 的整数（上限 101 防滥用）",
-    en: "Points must be an integer in 2–101 (capped at 101 against abuse)",
+    zh: "点数须为 2–101 的整数（上限 101，避免误设超大扫描）",
+    en: "Points must be an integer in 2–101 (capped at 101 to avoid accidentally huge sweeps)",
   },
   "tools.sweep_progress_tpl": {
     zh: "扫描中 {i}/{n}（{p}={x}）",
@@ -1063,8 +1215,8 @@ export const LOCALES = {
   },
   "loopboard.help_1_core": { zh: "观察", en: "observes" },
   "loopboard.help_1_mid": {
-    zh: "当前步骤与逐里程碑验收，并可下发 ",
-    en: " the current step and per-milestone acceptance, and can issue ",
+    zh: "当前步骤和各里程碑的验收进度，还能 ",
+    en: " the current step and per-milestone acceptance progress, and can also ",
   },
   "loopboard.help_1_core2": { zh: "暂停/继续/接管", en: "pause/resume/take-over" },
   "loopboard.help_1_tail": { zh: "。", en: "." },
@@ -1107,8 +1259,8 @@ export const LOCALES = {
   "loopboard.no_steps": { zh: "暂无完成步骤", en: "No completed steps yet" },
   "loopboard.select_first": { zh: "先选择看板", en: "Pick a board first" },
   "loopboard.control_sent_tpl": {
-    zh: "已下发 {a}，环在步骤边界响应",
-    en: "{a} sent — the loop responds at step boundaries",
+    zh: "已发送 {a}，环会在当前步骤结束后响应",
+    en: "{a} sent — the loop responds once the current step finishes",
   },
   "loopboard.control_failed": { zh: "命令失败", en: "Command failed" },
 
@@ -1168,8 +1320,8 @@ export const LOCALES = {
     en: "Collects every report under runs/: per-run reports (report.md), nightly regression (sim_ci_report.md), calibration (calibration/report.md).",
   },
   "reports.help_2_lead": {
-    zh: "点行在右侧渲染；长报告（&gt;3 个 h2/h3 节）自动出",
-    en: "Click a row to render it on the right; long reports (&gt;3 h2/h3 sections) get a ",
+    zh: "点一行在右侧打开；章节较多的报告（&gt;3 节）自动配",
+    en: "Click a row to open it on the right; reports with many sections (&gt;3) automatically get a ",
   },
   "reports.help_2_core": { zh: "左侧目录", en: "left TOC" },
   "reports.help_2_tail": {
@@ -1178,8 +1330,8 @@ export const LOCALES = {
   },
   "reports.help_3_core": { zh: "双 run 对比", en: "Two-run diff" },
   "reports.help_3_tail": {
-    zh: "（页底）：选 A/B 两个 run 出参数递归 diff、指标 Δ 与 S 参数叠图；跨模型对比会显式警示「口径不同」。",
-    en: " (page bottom): pick runs A/B for a recursive parameter diff, metric Δ and an S-parameter overlay; cross-model comparisons warn explicitly about the mismatched basis.",
+    zh: "（页底）：选 A/B 两个 run，给出参数逐项对照、指标差值和 S 参数叠图；两边模型或通道不同时，页顶会先提示「两侧配置不同」。",
+    en: " (page bottom): pick runs A/B to get a side-by-side parameter comparison, metric deltas and an S-parameter overlay; when the two sides use different models or adapters, a notice appears at the top first — “the two sides differ”.",
   },
   "reports.help_4": {
     zh: "打印/存 PDF：浏览器「打印 → 另存为 PDF」，导航/工具条/按钮自动隐藏、强制白底。",
@@ -1338,7 +1490,7 @@ export const LOCALES = {
   "reports.diff_pick_two": { zh: "选两个不同的 run", en: "Pick two different runs" },
   "reports.diff_running": { zh: " 对比中...", en: " Comparing..." },
   "reports.diff_failed": { zh: "对比失败", en: "Diff failed" },
-  "reports.warn_lead": { zh: "⚠ 口径不同：模型 a=", en: "⚠ Different calibration: model a=" },
+  "reports.warn_lead": { zh: "⚠ 两侧配置不同：模型 a=", en: "⚠ The two sides differ: model a=" },
   "reports.warn_mid": { zh: "，通道 a=", en: ", adapter a=" },
   "reports.warn_tail": {
     zh: "——指标与曲线不可直接比较，仅作形态参考。",
@@ -1950,9 +2102,112 @@ export const LOCALES = {
     zh: "交叉耦合滤波器：四个开路环 2×2 排布并加交叉耦合，做出准椭圆响应。",
     en: "Cross-coupled filter: four open-loop rings in a 2-by-2 layout with a cross coupling for a quasi-elliptic response.",
   },
+  /* ── gallery.anchor_*（aurora_i W2-S1：可信度锚对照卡，R3 设计 M1——
+     零新端点，消费 /api/anchors 摘要 + /api/anchors/{id} 详情；
+     呈现红线=#122 家族：DISAGREE/UNKNOWN/双值如实渲染不凑绿）── */
+  "gallery.drawer_credibility": {
+    zh: "可信度（HFSS 仲裁锚）",
+    en: "Credibility (HFSS arbitration anchors)",
+  },
+  "gallery.anchor_legend": {
+    zh: "徽章：绿=两引擎一致 · 红=分歧 · 灰=无判定/其他；分歧与双值如实呈现，不凑绿不隐藏。",
+    en: "Badges: green = engines agree · red = disagree · gray = no verdict/other. Disagreements and dual values are shown as-is, never hidden.",
+  },
+  "gallery.anchor_count_tpl": {
+    zh: "匹配 {n} 条仲裁锚（裁判=HFSS）",
+    en: "{n} arbitration anchor(s) matched (referee = HFSS)",
+  },
+  "gallery.anchor_verdict_agree": { zh: "一致 AGREE", en: "AGREE" },
+  "gallery.anchor_verdict_disagree": { zh: "分歧 DISAGREE", en: "DISAGREE" },
+  "gallery.anchor_verdict_unknown": {
+    zh: "UNKNOWN（无判定记录）",
+    en: "UNKNOWN (no verdict on record)",
+  },
+  "gallery.anchor_verdict_pending": { zh: "判定读取中…", en: "verdict loading…" },
+  "gallery.anchor_global": { zh: "全局锚", en: "Global anchor" },
+  "gallery.anchor_pair_tpl": {
+    zh: "引擎对：{a} → {r}（{r} 为仲裁基准）",
+    en: "Engine pair: {a} → {r} ({r} = referee)",
+  },
+  "gallery.anchor_dev_tpl": { zh: "引擎对偏差：{v}", en: "Engine-pair deviation: {v}" },
+  "gallery.anchor_value_tpl": { zh: "登记锚值：{v}", en: "Registered anchor value: {v}" },
+  "gallery.anchor_values_tpl": { zh: "登记双值：{pairs}", en: "Registered values: {pairs}" },
+  "gallery.anchor_gate_tpl": {
+    zh: "预声明门：±{v}{u}",
+    en: "Pre-declared gate: ±{v}{u}",
+  },
+  "gallery.anchor_observed_split_tpl": {
+    zh: "观测引擎对分裂：±{v}{u}（非判据门）",
+    en: "Observed engine-pair split: ±{v}{u} (not a gate)",
+  },
+  "gallery.anchor_unc_rel_tpl": {
+    zh: "不确定度：±{p}%（相对）",
+    en: "Uncertainty: ±{p}% (relative)",
+  },
+  "gallery.anchor_unc_spread_tpl": {
+    zh: "引擎对散布带：{v}",
+    en: "Engine-pair spread band: {v}",
+  },
+  "gallery.anchor_no_single_value": {
+    zh: "曲线/多值锚：无单点登记值（口径见语义行，证据见锚数据页）",
+    en: "Curve/multi-value anchor: no single registered value (see the semantics line; evidence lives on the anchors page)",
+  },
+  "gallery.anchor_evidence_tpl": { zh: "证据：{ev}", en: "Evidence: {ev}" },
+  "gallery.anchor_age_tpl": {
+    zh: "距上次验证 {n} 天",
+    en: "last verified {n} days ago",
+  },
+  "gallery.anchor_stale_flag": {
+    zh: "（已超期，待复验）",
+    en: "(stale — re-verification due)",
+  },
+  "gallery.anchor_no_date": { zh: "无验证日期记录", en: "no verification date on record" },
+  "gallery.anchor_none": {
+    zh: "该模板暂无仲裁锚（可信度锚随真机战役积累）",
+    en: "No arbitration anchors for this template yet — credibility anchors accumulate with real-machine campaigns",
+  },
+  "gallery.anchor_load_fail": {
+    zh: "锚清单加载失败，暂无法展示可信度锚",
+    en: "Anchor list failed to load — credibility anchors are unavailable right now",
+  },
+  "gallery.engine_mmt": { zh: "闭式内核（mmt）", en: "closed-form kernel (mmt)" },
+  "gallery.unit_dimensionless": { zh: "无量纲", en: "dimensionless" },
+  /* ── gallery.cred_*（aurora_i W3-S2：抽屉「对照曲线」节，R3 设计 M3
+     前端半——/api/credibility/curves 叠加图：双引擎对=两线+图例+偏差
+     注记，单引擎=单线+note，无数据=整节隐藏；引擎角色/配色语义在本域
+     图例注记行，图例短标签（HFSS/openEMS 专有名词）语言中立不进词表；
+     偏差注记键被 view_sparams 对照卡跨页复用（只增引用不减））── */
+  "gallery.cred_title": {
+    zh: "对照曲线（双引擎同设计）",
+    en: "Cross-engine curves (same nominal design)",
+  },
+  "gallery.cred_legend": {
+    zh: "着色：橙=HFSS（仲裁基准）· 蓝=openEMS（主力引擎）。悬停读逐频点数值，框选/滚轮缩放。",
+    en: "Colors: orange = HFSS (arbitration referee) · blue = openEMS (primary engine). Hover for per-frequency readings; drag or scroll to zoom.",
+  },
+  "gallery.cred_dev_tpl": {
+    zh: "双引擎最大偏差：{name} {v} dB @ {f} GHz",
+    en: "Max cross-engine deviation: {name} {v} dB @ {f} GHz",
+  },
+  "gallery.cred_dev_na": {
+    zh: "两引擎频网不齐，未生成自动偏差注记（可悬停逐点对照读数）",
+    en: "Frequency grids differ — no automatic deviation note (hover to compare point by point)",
+  },
+  "gallery.cred_single_note_tpl": {
+    zh: "仅登记到单引擎曲线（{e}）：无同设计双引擎对照对，此图仅作展示参考",
+    en: "Only single-engine curves registered ({e}): no same-design cross-engine pair — for reference only",
+  },
+  "gallery.cred_verdict_counts_tpl": {
+    zh: "判定：{a} 一致 · {d} 分歧 · {u} 未知（共 {n} 条）",
+    en: "Verdict: {a} agree · {d} disagree · {u} unknown (of {n})",
+  },
+  "gallery.cred_sources_tpl": {
+    zh: "数据来源：{s}",
+    en: "Data sources: {s}",
+  },
   "timeline.help_1": {
-    zh: "上图：每个 run 的目标成本按时间排列（按配方目标重算，越低越好）——调参/战役是否在进步一目了然，颜色按 adapter 区分。",
-    en: "Top: per-run objective cost over time (recomputed from the recipe objectives; lower is better) — progress at a glance, colored by adapter.",
+    zh: "上图：每个 run 的目标成本按时间排列（按配方目标重算，越低越好）——调参/战役是否在进步一目了然，颜色按仿真通道（adapter）区分。",
+    en: "Top: per-run objective cost over time (recomputed from the recipe objectives; lower is better) — progress at a glance, colored by simulation channel (adapter).",
   },
   "timeline.help_2": {
     zh: "下图：最近一次调参 run 的 trial 级 cost 收敛曲线（数据来自 trials 产物）。",
@@ -1969,12 +2224,12 @@ export const LOCALES = {
   "optstack.title": { zh: "优化洞察", en: "Optimization Insights" },
   "optstack.subtitle": { zh: "Pareto 前沿 · 可行性热图", en: "Pareto front · feasibility heatmap" },
   "optstack.help_1": {
-    zh: "Pareto 前沿：nsga2 优化 run 直读落盘的前沿文件 results/pareto_front.json；旧 run 或 TPE 调参 run 由服务端从 trial 记录现算——可行解支配不可行解，同为不可行时总违约量小者胜。",
-    en: "Pareto front: nsga2 runs read the stored front file (results/pareto_front.json) directly; for older runs or TPE runs the backend recomputes it from the trial records — feasible solutions dominate infeasible ones, and among infeasible ones the smaller total violation wins.",
+    zh: "Pareto 前沿：nsga2 优化 run 直接读取保存下来的前沿文件 results/pareto_front.json；旧 run 或 TPE 调参 run 由服务端从 trial 记录现算——可行解排在不可行解前面；同样不可行时，违约总量小的排前面。",
+    en: "Pareto front: nsga2 runs read the saved front file (results/pareto_front.json) directly; for older runs or TPE runs the backend recomputes it from the trial records — feasible solutions rank ahead of infeasible ones, and among infeasible ones the smaller total violation ranks ahead.",
   },
   "optstack.help_2": {
-    zh: "可行性热图：按 trial 记录里的约束值分格（≤0 视为可行），对所选两参数等宽分箱——格色=可行率、格内数字=样本数、悬停看平均总违约量；无约束的 run 如实显示「不可算」。",
-    en: "Feasibility heatmap: bins the two selected parameters into equal-width cells using the constraint values recorded per trial (≤0 = feasible) — cell color = feasible rate, cell number = sample count, hover for the mean total violation; runs without constraints honestly show \"not computable\".",
+    zh: "可行性热图：按 trial 记录里的约束值分格（≤0 视为可行），对所选两参数等宽分箱——格色=可行率、格内数字=样本数、悬停看平均总违约量；没有约束的 run 会显示「不可算」。",
+    en: "Feasibility heatmap: bins the two selected parameters into equal-width cells using the constraint values recorded per trial (≤0 = feasible) — cell color = feasible rate, cell number = sample count, hover for the mean total violation; runs without constraints show \"not computable\".",
   },
   "optstack.help_3": {
     zh: "所有数字由本地计算内核算出，页面只负责显示。",
@@ -2037,8 +2292,8 @@ export const LOCALES = {
     en: " = the engine that actually runs the EM simulation. openEMS: free open-source FDTD (currently available); Palace: FEM (unavailable if not installed).",
   },
   "solvers.help_2": {
-    zh: "HFSS 走商业 license，版本以实装为准（工程导入页留空=服务端缺省）；在「配方编辑」运行按钮旁或「优化调参」的 adapter 下拉中选择。",
-    en: "HFSS uses a commercial license; the version is whatever is installed (leave blank on the Import page = server default). Pick it next to the run button in Recipes or in the adapter dropdown under Tuning.",
+    zh: "HFSS 走商业 license，版本以实际安装为准（工程导入页留空=服务端缺省）；在「配方编辑」运行按钮旁或「优化调参」的通道（adapter）下拉中选择。",
+    en: "HFSS uses a commercial license; the version is whatever is installed (leave blank on the Import page = server default). Pick it next to the run button in Recipes or in the channel (adapter) dropdown under Tuning.",
   },
   "solvers.help_3": {
     zh: "「可视化 N 个」= 该求解器能产出的补充视图数量。",
@@ -2062,7 +2317,7 @@ export const LOCALES = {
     zh: "：对运行中的进程（按 pid）或新起的命令采样，产物存到 runs/profile/——火焰图 .svg 浏览器直接打开，speedscope .json 可交互探索。",
     en: ": samples a running process (by pid) or a freshly started command; artifacts land in runs/profile/ — the flamegraph .svg opens directly in the browser, the speedscope .json is interactive.",
   },
-  "profile.help_2_lead": { zh: "py-spy 缺装时本页如实降级：", en: "If py-spy is missing this page degrades honestly: " },
+  "profile.help_2_lead": { zh: "没装 py-spy 时本页会降级：", en: "Without py-spy installed, this page degrades: " },
   "profile.help_2_tail": { zh: " 后刷新即可。", en: " then reload." },
   "profile.help_3": {
     zh: "剖析是开发用工具：只读采样，不影响正在跑的任务；Windows 下附着其他用户的进程需要管理员权限。",
@@ -2116,8 +2371,8 @@ export const LOCALES = {
   },
   "playground.help_4_core": { zh: "±1σ 方差带", en: "±1σ variance band" },
   "playground.help_4_tail": {
-    zh: "（面积阴影；仅 smt 族代理有原生逐点 σ，其余如实只画 mean）。",
-    en: " (area shading; only smt-family surrogates have native per-point σ, the rest honestly plot the mean only).",
+    zh: "（面积阴影；只有 smt 族代理能算出每个点的 σ，其余只画一条 mean）。",
+    en: " (area shading; only smt-family surrogates can compute per-point σ — the rest plot a single mean line).",
   },
   "playground.compare_title": { zh: "代理预测 vs 最近样本真值", en: "Surrogate prediction vs nearest-sample truth" },
   "playground.auto_predict": { zh: "选择 run 后自动预测", en: "Auto-predicts after a run is selected" },
@@ -2143,8 +2398,8 @@ export const LOCALES = {
   "queue.help_1_tail": { zh: "记录调度器怎么排的：派发顺序、时长预测依据、拒绝了哪些任务。", en: "records how the scheduler decided: dispatch order, duration-prediction sources, and what got rejected." },
   "queue.help_2_core": { zh: "远程机器", en: "Remote machines" },
   "queue.help_2_tail": {
-    zh: "（可选）：填机器名后按战役显示 HFSS 阶段的远程配置差异，只读展示、不会真连；mTLS 视服务器配置而定。",
-    en: " (optional): enter a machine name to show, per campaign, the remote-attach config delta for HFSS stages — display only, never a live connection; mTLS depends on the server setup.",
+    zh: "（可选）：填机器名，按战役列出 HFSS 阶段在远程机器上要改哪些配置——只读展示、不会真连；传输加密（mTLS）取决于服务器配置。",
+    en: " (optional): enter a machine name to list, per campaign, which HFSS-stage settings would change on that remote machine — display only, never a live connection; transport encryption (mTLS) depends on the server setup.",
   },
   "queue.help_3": { zh: "所有数字由后端算好，页面只负责显示。", en: "All numbers are computed by the backend; the page only renders." },
   "queue.detail_title_suffix": { zh: " — 阶段与决策日志", en: " — stages and decision log" },
@@ -2183,8 +2438,8 @@ export const LOCALES = {
     en: "Polar cuts: φ=0° (xz plane) and φ=90° (yz plane), θ −180..180°, dB normalized to peak.",
   },
   "fieldviz.ff_help_3": {
-    zh: "指标口径按官方 nf2ff 教程：Dmax=方向性 dBi，η=辐射效率 Prad/P_acc，G=η·D，HPBW=半功率波瓣宽度；功率闭合=|P_acc−Prad|/P_acc，注入 SAR 时即组织吸收占比。",
-    en: "Metrics follow the official nf2ff tutorial: Dmax = directivity (dBi), η = radiation efficiency Prad/P_acc, G = η·D, HPBW = half-power beamwidth; power closure = |P_acc−Prad|/P_acc, i.e. tissue absorption when SAR is injected.",
+    zh: "指标定义遵循官方 nf2ff 教程：Dmax=方向性 dBi，η=辐射效率 Prad/P_acc，G=η·D，HPBW=半功率波瓣宽度；功率闭合=|P_acc−Prad|/P_acc，注入 SAR 时即组织吸收占比。",
+    en: "Metric definitions follow the official nf2ff tutorial: Dmax = directivity (dBi), η = radiation efficiency Prad/P_acc, G = η·D, HPBW = half-power beamwidth; power closure = |P_acc−Prad|/P_acc, i.e. tissue absorption when SAR is injected.",
   },
   "fieldviz.ff_help_4": {
     zh: "SAR（官方 Dipole SAR 教程）：IEEE_62704 1g 平均，含 1W 接受功率归一值。",
@@ -2325,16 +2580,16 @@ export const LOCALES = {
 
   /* ── calibration.*（校准工作台，view_calibration）── */
   "calibration.help_1": {
-    zh: "校准产物一览：每次校准/增广的门判定、交叉验证精度 ρ、样本量与网格档。",
-    en: "Calibration artifacts at a glance: per calibrate/augment — gate verdict, cross-validation accuracy ρ, sample count and mesh grade.",
+    zh: "校准产物一览：每次校准/样本扩充的门判定、交叉验证精度 ρ、样本量与网格档。",
+    en: "Calibration artifacts at a glance: per calibrate/sample-augmentation — gate verdict, cross-validation accuracy ρ, sample count and mesh grade.",
   },
   "calibration.help_2": {
     zh: "点击行看详情：参数空间散点（cost 着色）、验证点偏差、报告全文。",
     en: "Click a row for detail: parameter-space scatter (cost-colored), validation-point deltas, and the full report.",
   },
   "calibration.help_3": {
-    zh: "演化图：ρ 随样本量的收敛轨迹 + 跨保真门历史——校准数据是资产，每做一次增广就多一个点。",
-    en: "Evolution plot: ρ convergence vs sample count plus cross-fidelity gate history — calibration data is an asset; each augmentation adds a point.",
+    zh: "演化图：一条线是 ρ 随样本量的收敛过程，另一条是 fake↔HFSS 对照门的历史——校准数据是资产，每补一次样本就多一个点。",
+    en: "Evolution plot: one line is ρ converging as the sample count grows, the other is the history of the fake↔HFSS cross-check gate — calibration data is an asset; every batch of new samples adds a point.",
   },
   "calibration.title": { zh: "校准工作台", en: "Calibration Workbench" },
   "calibration.run_label": { zh: "校准 run", en: "Calibration runs" },
@@ -2348,23 +2603,23 @@ export const LOCALES = {
   "calibration.th_samples": { zh: "样本", en: "Samples" },
   "calibration.th_surrogate": { zh: "代理", en: "Surrogate" },
   "calibration.evo_title": {
-    zh: "ρ 演化（样本量 ↔ 代理/跨保真 gate）",
-    en: "ρ evolution (samples ↔ surrogate/cross-fidelity gates)",
+    zh: "ρ 演化（样本量 ↔ 代理/fake↔HFSS 对照）",
+    en: "ρ evolution (samples ↔ surrogate/fake↔HFSS cross-check)",
   },
   "calibration.open_detail_aria": {
     zh: "查看校准详情：",
     en: "View calibration detail: ",
   },
   "calibration.empty": {
-    zh: "暂无校准 run——先跑一次校准/增广（校准数据是资产，每做一次增广就多一个点）",
-    en: "No calibration runs yet — run a calibrate/augment first (calibration data is an asset; each augmentation adds a point)",
+    zh: "暂无校准 run——先跑一次校准或样本扩充（校准数据是资产，每补一次多一个点）",
+    en: "No calibration runs yet — run a calibration or a sample augmentation first (calibration data is an asset; every new batch adds a point)",
   },
   "calibration.series_sur": { zh: "代理 LOOCV ρ", en: "surrogate LOOCV ρ" },
-  "calibration.series_cross": { zh: "跨保真门 ρ", en: "cross-fidelity gate ρ" },
+  "calibration.series_cross": { zh: "fake↔HFSS 对照 ρ", en: "fake↔HFSS cross-check ρ" },
   "calibration.xlabel": { zh: "样本量", en: "samples" },
   "calibration.no_cross": {
-    zh: "暂无跨保真门记录",
-    en: "No cross-fidelity gate records",
+    zh: "暂无 fake↔HFSS 对照记录",
+    en: "No fake↔HFSS cross-check records",
   },
   "calibration.series_points": { zh: "样本点", en: "sample points" },
   "calibration.val_fail": { zh: "验证点失败: ", en: "validation point failed: " },
@@ -2391,8 +2646,8 @@ export const LOCALES = {
      placeholder 等 ASCII 协议面不迁）── */
   "import.help_1_core": { zh: "工程文件", en: "Project file" },
   "import.help_1_tail": {
-    zh: "：点「浏览」选 .aedt（也可手输路径）；版本留空=跟随服务端缺省（以实装版本为准）。",
-    en: ": click Browse to pick a .aedt (or type the path); leave version empty to follow the server default (per the installed version).",
+    zh: "：点「浏览」选 .aedt（也可手输路径）；版本留空=跟随服务端缺省（取决于实际安装的版本）。",
+    en: ": click Browse to pick a .aedt (or type the path); leave version empty to follow the server default (depends on the actually installed version).",
   },
   "import.help_2_tail": {
     zh: " 后列出设计变量：勾选哪些进优化空间、编辑 low/high（默认取 HFSS Optimetrics 扫参范围，没有则 ±20%）。",
@@ -2494,6 +2749,155 @@ export const LOCALES = {
     zh: " ，同名文件会被覆盖。确定继续？",
     en: " — an existing file at that path will be overwritten. Continue?",
   },
+  /* ── queue.block.* + detail.failure.*（aurora_i W2-S3：队列阻塞原因人读
+     透出 + 失败诊断包；code 词表渲染，detail/waited 为 API 数据经 esc 注入
+     ——数据非文案不迁；服务层 text 字段为 zh 单源兜底）── */
+  "queue.th_block_reason": { zh: "阻塞原因", en: "Blocked" },
+  "queue.block_solo": {
+    zh: "等单飞位：在途战役未收尾",
+    en: "Waiting for solo slot: another campaign is in flight",
+  },
+  "queue.block_solo_tpl": {
+    zh: "等单飞位：在途战役未收尾（{detail}）",
+    en: "Waiting for solo slot: {detail} is still in flight",
+  },
+  "queue.block_calendar_tpl": {
+    zh: "等日历窗：{detail}",
+    en: "Waiting for calendar window: {detail}",
+  },
+  "queue.block_license_tpl": {
+    zh: "等 license：{detail}",
+    en: "Waiting for license: {detail}",
+  },
+  "queue.block_ahead_tpl": {
+    zh: "排队中：前面还有 {n} 个候选",
+    en: "Queued: {n} candidate(s) ahead",
+  },
+  "queue.block_waited_tpl": { zh: "（已等 {d}）", en: " (waited {d})" },
+  "queue.block_wait_min_tpl": { zh: "{n} 分钟", en: "{n} min" },
+  "queue.block_wait_sec_tpl": { zh: "{n} 秒", en: "{n} s" },
+  "queue.daemon_off": {
+    zh: "队列守护未在跑（无阻塞账）",
+    en: "Queue daemon not running (no block ledger)",
+  },
+  "queue.daemon_summary_tpl": {
+    zh: "守护账 {n} 项 · 在途 {m}",
+    en: "daemon ledger {n} items · {m} in flight",
+  },
+  "detail.failure_title": { zh: "失败诊断", en: "Failure diagnostics" },
+  "detail.failure_view_btn": { zh: "一键查看诊断", en: "View diagnostics" },
+  "detail.failure_hide_btn": { zh: "收起诊断", en: "Hide diagnostics" },
+  "detail.failure_toggle_aria": {
+    zh: "展开或收起失败诊断详情",
+    en: "Toggle failure diagnostics details",
+  },
+  "detail.failure_captured_lead": { zh: "采集时间：", en: "Captured: " },
+  "detail.failure_verdict_lead": { zh: "采集判定：", en: "Collection: " },
+  "detail.failure_license_lead": { zh: "license：", en: "license: " },
+  "detail.failure_machine_lead": { zh: "机器：", en: "Machine: " },
+  "detail.failure_machine_ok": { zh: "可达", en: "reachable" },
+  "detail.failure_machine_down": { zh: "不可达", en: "unreachable" },
+  "detail.failure_machine_local": {
+    zh: "本地（无登记机器）",
+    en: "local (no machine registered)",
+  },
+  /* ── queue.res.* + queue.tab.*（aurora_i W2-S4：远程机器面板——数据
+     新鲜度片/占用条/选机推荐行/维护遮罩 + 筛选 tab 徽章；{n}{m}{s} 为
+     计数与得分数字、机器名为 API 数据经 esc 注入——数据非文案不迁）── */
+  "queue.res_title": { zh: "远程机器", en: "Remote machines" },
+  "queue.res_fresh_tpl": { zh: "{n}s 前探测", en: "probed {n}s ago" },
+  "queue.res_fresh_stale": {
+    zh: "数据可能过时，点此刷新",
+    en: "Data may be stale — click to refresh",
+  },
+  "queue.res_fresh_aria": {
+    zh: "刷新远程机器数据",
+    en: "Refresh remote machine data",
+  },
+  "queue.res_fresh_unknown": { zh: "探测时间未知", en: "probe time unknown" },
+  "queue.res_reach_ok": { zh: "可达", en: "reachable" },
+  "queue.res_reach_bad": { zh: "不可达", en: "unreachable" },
+  "queue.res_reach_unknown": { zh: "未知", en: "unknown" },
+  "queue.res_occupancy_tpl": {
+    zh: "在跑战役 {n}/{m}",
+    en: "in-flight campaigns {n}/{m}",
+  },
+  "queue.res_no_machine": {
+    zh: "无登记机器（本地模式）",
+    en: "No registered machine (local mode)",
+  },
+  "queue.res_recommend_lead": { zh: "建议派往：", en: "Suggested target: " },
+  "queue.res_recommend_score_tpl": { zh: "得分 {s}", en: "score {s}" },
+  "queue.res_not_recommended": { zh: "暂不推荐", en: "Not recommended now" },
+  "queue.res_maintenance": {
+    zh: "维护窗内，暂不派发",
+    en: "Maintenance window — dispatch paused",
+  },
+  "queue.res_backup_risk": {
+    zh: "备份窗内（可发，风险自担）",
+    en: "Backup window (launchable, at your own risk)",
+  },
+  "queue.res_tasks_tpl": { zh: "在跑进程 {n}", en: "running procs {n}" },
+  "queue.res_disk_tpl": { zh: "磁盘余量 {n} GB", en: "disk free {n} GB" },
+  "queue.res_local_label": { zh: "本机", en: "Local" },
+  "queue.tab_all": { zh: "全部", en: "All" },
+  "queue.tab_running": { zh: "进行中", en: "Running" },
+  "queue.tab_done": { zh: "已完成", en: "Done" },
+  "queue.tab_failed": { zh: "失败/中止", en: "Failed/Aborted" },
+  "queue.filter_empty": {
+    zh: "该筛选下暂无战役",
+    en: "No campaigns under this filter",
+  },
+  /* ── queue.hedge.*（aurora_i W3-S3：长跑防卡死对冲告警；监测缺省关=
+     无 queue_hedge 字段零渲染；code 词表渲染，stalled_s 为 API 数据照旧
+     esc——数据非文案不迁；服务层 text 字段为 zh 单源兜底）── */
+  "queue.hedge_stall_tpl": {
+    zh: "疑似停滞：在途战役无进展",
+    en: "Stall suspected: in-flight campaign shows no progress",
+  },
+  "queue.hedge_waited_tpl": { zh: "（已停滞 {d}）", en: " (stalled {d})" },
+  "queue.hedge_relaunched_tpl": { zh: "已对冲重发", en: "hedged relaunch" },
+  /* ── dashboard.cred_* + dashboard.onboard_*（aurora_i W3.5-K1：M7 首页
+     可信度 KPI 卡 + 首访三步导览——数据源零新端点（/api/anchors 摘要
+     referee=hfss 过滤 + /api/anchors/{id} 详情 verdict_state，画廊 W2-S1
+     同款两段取数）；呈现红线=#122 家族：分歧/待判/其他如实进注记行，
+     AGREE 占比=分数形态不折百分比凑绿；导览步骤标题复用 nav.* 既有键
+     （单源不重立））── */
+  "dashboard.w_credibility": { zh: "结果可信度", en: "Result credibility" },
+  "dashboard.cred_k_anchors": { zh: "HFSS 仲裁锚", en: "HFSS-arbitrated anchors" },
+  "dashboard.cred_k_agree": { zh: "AGREE 判定", en: "AGREE verdicts" },
+  "dashboard.cred_k_fams": { zh: "覆盖模板族", en: "Template families covered" },
+  "dashboard.cred_note_tpl": {
+    zh: "分歧 {d} · 待判 {p} · 其他 {o}——分歧与双值如实呈现，不凑绿",
+    en: "disagree {d} · pending {p} · other {o} — disagreements shown as-is, never greenwashed",
+  },
+  "dashboard.cred_open": {
+    zh: "在模板画廊查看锚对照与对照曲线",
+    en: "Open anchor cards and cross-engine curves in the gallery",
+  },
+  "dashboard.cred_stats_aria": {
+    zh: "打开模板画廊，查看可信度锚对照卡",
+    en: "Open the template gallery to view credibility anchor cards",
+  },
+  "dashboard.cred_load_fail": {
+    zh: "锚注册表加载失败，可信度数字暂不可用",
+    en: "Anchor registry failed to load — credibility figures unavailable",
+  },
+  "dashboard.onboard_title": { zh: "三步上手", en: "Get started in three steps" },
+  "dashboard.onboard_s1_desc": {
+    zh: "跑一轮 fake 调优：不依赖求解器先把「配方→优化→结果」走通",
+    en: "Run a fake tuning round: exercise recipe → optimization → results without any solver",
+  },
+  "dashboard.onboard_s2_desc": {
+    zh: "到 Run 历史看判读：每个 run 的指标与健康门结论",
+    en: "Check Run History for verdicts: per-run metrics and health-gate outcomes",
+  },
+  "dashboard.onboard_s3_desc": {
+    zh: "逛模板画廊可信度节：HFSS 仲裁锚与双引擎对照曲线",
+    en: "Browse the gallery credibility section: HFSS arbitration anchors and cross-engine curves",
+  },
+  "dashboard.onboard_dismiss": { zh: "知道了，开始使用", en: "Got it, let's start" },
+  "dashboard.onboard_aria": { zh: "首次使用导览", en: "First-use guide" },
 };
 
 /* ═══ 语言档判定：localStorage 显式档 > <html lang> 跟随 > zh 缺省 ═══ */

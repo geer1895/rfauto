@@ -7,8 +7,9 @@ import { apiFetch, viewSignal } from "./api.js";
 import { esc, help } from "./dom.js";
 // i18n（aurora_f W6-S21 扩面页 2）：壳静态标签 data-i18n+首扫；筛选空态随
 // render() 重建，文案 t() 渲染期烘焙（i18n.js 头注纪律）。
-import { t, applyI18nRoot } from "./i18n.js";
-import { bindClickRows, bindEmptyStates, kitApplyClickRowAttrs, kitEmptyState, kitSkeletonRows } from "./kit.js";
+import { t, applyI18nRoot, getLocale } from "./i18n.js";
+import { bindClickRows, bindEmptyStates, kitApplyClickRowAttrs, kitEmptyState, kitSkeletonRows, metricValueHtml } from "./kit.js";
+import { metricGlossaryMap, mountMetricTips } from "./metric_glossary.js";
 import { openRun } from "./router.js";
 import { makeSortable } from "./sortable.js";
 
@@ -45,9 +46,12 @@ export async function pageRuns() {
         <span id='f-count' class='muted'></span>
       </div>
       <table id='runs-table' data-sortable><caption class="sr-only">${t("runs.caption")}</caption><thead>
-        <tr><th scope="col">run_id</th><th scope="col" data-i18n='runs.th_time'>${t("runs.th_time")}</th><th scope="col">adapter</th><th scope="col" data-i18n='runs.th_inband_s11'>${t("runs.th_inband_s11")}</th><th scope="col" data-i18n='runs.th_status'>${t("runs.th_status")}</th><th scope="col" data-i18n='runs.th_best_metric'>${t("runs.th_best_metric")}</th></tr>
+        <tr><th scope="col">run_id</th><th scope="col" data-i18n='runs.th_time'>${t("runs.th_time")}</th><th scope="col">adapter</th><th scope="col" data-i18n='runs.th_inband_s11' data-mkey='s11_db_max_in_band'>${t("runs.th_inband_s11")}</th><th scope="col" data-i18n='runs.th_status'>${t("runs.th_status")}</th><th scope="col" data-i18n='runs.th_best_metric'>${t("runs.th_best_metric")}</th></tr>
       </thead><tbody></tbody></table></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W6-S21 扩面）
+  // W2-S2（aurora_i，R3 M2）：带内 S11 列头悬浮说明（data-mkey 挂点接线，
+  // 词条缺席零触碰；best-effort 不阻列表主路径 #105）
+  mountMetricTips(v).catch(() => { /* 说明层静默 */ });
   // A8-A（R6 审计 P-2）：首拉骨架屏——表体占位行（shimmer 条，reduced-motion
   // 降级静态灰块）；/api/runs 数据到达后 render() 整体替换。
   const skTable = T.$("runs-table");
@@ -60,6 +64,11 @@ export async function pageRuns() {
   const data = await apiFetch("/api/runs?limit=500", { signal: viewSignal("runs") });
   if (data.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   _allRuns = data.runs || [];
+  // W2-S2（aurora_i，R3 M2）：词典词条会话级缓存（失败=空映射→单元格
+  // 中性降级原文本）；render 闭包消费，debounce 重绘同源。
+  const glossary = await metricGlossaryMap();
+  const gEntry = glossary["s11_db_max_in_band"];
+  const gLocale = getLocale();
   const render = () => {
     const ft = T.$("f-text").value.trim().toLowerCase();
     const fa = T.$("f-adapter").value;
@@ -84,7 +93,11 @@ export async function pageRuns() {
         ? Object.entries(r.metrics).map(([k, v2]) => `${esc(k)}=${typeof v2 === "number" ? v2.toFixed(3) : esc(v2)}`).join(" ")
         : "";
       const m11 = r.metrics?.s11_db_max_in_band;
-      tr.innerHTML = `<td>${esc(r.run_id || "")}</td><td>${esc(r.timestamp || r.ts || "")}</td><td>${esc(r.adapter || "")}</td><td>${esc(typeof m11 === "number" ? m11.toFixed(2) + " dB" : "-")}</td><td>${T.badge(r.status || "done", "muted")}</td><td class="muted">${metrics}</td>`;
+      // W2-S2（aurora_i，R3 M2）：带内 S11 单元悬浮+判据着色（词条缺席
+      // →中性原文本；fmt=2 位小数+dB 同原口径）
+      const m11Cell = metricValueHtml(gEntry, m11,
+        (x) => x.toFixed(2) + " dB", gLocale);
+      tr.innerHTML = `<td>${esc(r.run_id || "")}</td><td>${esc(r.timestamp || r.ts || "")}</td><td>${esc(r.adapter || "")}</td><td>${m11Cell}</td><td>${T.badge(r.status || "done", "muted")}</td><td class="muted">${metrics}</td>`;
       tr.dataset.id = r.run_id || ""; // UI-R4：激活回调按行取 id（bindClickRows 单入口）
       // UI-R4：键盘可达三件套（tr 行 role:null 保 row/cell 语义；
       // aria-label 行动作读屏可闻——run_id 经 setAttribute 字面量语境）

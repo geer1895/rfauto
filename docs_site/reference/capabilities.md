@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **118** 组 / **273** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **118** 组 / **274** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -18,7 +18,7 @@
 | `budget` | 1 | — | 链路预算（E8c） |
 | `cache` | 1 | — | 缓存管理 |
 | `calc` | 2 | — | 微波闭式计算器（E4：mm/GHz/Ω/dB 口径） |
-| `campaign` | 6 | — | 战役状态机（calibrate→prefilter→tune→tolerance→report→final_verify） |
+| `campaign` | 7 | — | 战役状态机（calibrate→prefilter→tune→tolerance→report→final_verify） |
 | `cascade` | 3 | — | 系统级级联预算+混频杂散搜索（DP-5） |
 | `certify` | 1 | `certify`（4 个） | 公差盒 → 指标区间证书（三值门面：逐目标 PASS/FAIL/UNKNOWN + 总 verdict）。 |
 | `chain` | 2 | — | 有源链路分析（C14：LNA 匹配链 / PA load-pull 口径） |

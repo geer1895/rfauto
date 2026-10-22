@@ -161,14 +161,14 @@ class TestI18nSkeletonNode:
             "  JSON.stringify(a) + ' != ' + JSON.stringify(b)); };\n"
             "if (m.getLocale() !== 'zh') errs.push('缺省 locale=' + m.getLocale());\n"
             "eq(m.t('nav.dashboard'), '总览', 't zh');\n"
-            "eq(m.t('gallery.count_tpl', { n: 3, p: 2 }), '3 模板 · 2 配闭式预览通道', '插值 zh');\n"
+            "eq(m.t('gallery.count_tpl', { n: 3, p: 2 }), '3 个模板 · 其中 2 个支持闭式预览', '插值 zh');\n"
             "eq(m.t('dashboard.aria_span_tpl', { name: 'KPI' }), '加宽/收窄组件：KPI', 'aria tpl zh');\n"
             "if (m.setLocale('en') !== true) errs.push('setLocale en 拒绝');\n"
             "if (m.getLocale() !== 'en') errs.push('getLocale en');\n"
             "eq(m.t('nav.dashboard'), 'Dashboard', 't en');\n"
             "eq(m.t('tools.run'), 'Compute', 't en tools');\n"
             "eq(m.t('gallery.count_tpl', { n: 3, p: 2 }),\n"
-            "  '3 templates · 2 with closed-form preview', '插值 en');\n"
+            "  '3 templates · 2 of them support closed-form preview', '插值 en');\n"
             "eq(m.t('dashboard.aria_span_tpl', { name: 'KPI' }),\n"
             "  'Resize widget: KPI', 'aria tpl en');\n"
             "eq(m.t('no.such.key'), 'no.such.key', '缺键直返');\n"
@@ -422,6 +422,43 @@ class TestGalleryDrawerCoverage:
         # 以 preview 有无二分支——详情钮全量在位）
         assert "gallery.detail_btn" in src
         assert 'data-gal=' in src
+
+    def test_credibility_anchor_surface(self):
+        """W2-S1（aurora_i，R3 设计 M1 零新端点）：抽屉可信度锚对照卡面钉。
+
+        1. 槽与渲染单点：抽屉 data-slot='credibility' + 渲染函数在位；
+        2. 过滤口径双钉：engine_pair.referee=hfss（注册表现役 17 条仲裁
+           锚）× template_family 精确命中或 "*" 通配（注册表语义原样
+           消费，前端不自创映射）；
+        3. 诚实边界四件套：无锚诚实行 / 清单失败降级行 / 详情在途
+           （pending）与无判定记录（UNKNOWN）两徽章分立 / 双值指针锚
+           values 并列渲染（#122 家族：DISAGREE 不凑绿不隐藏）；
+        4. verdict 三分类 DISAGREE 先判（长串态内可并列 AGREE_JUDGE
+           "单项不救总态"字样——先红后绿防误绿）；
+        5. 证据目录纯文本：runs/ 缺省不挂载（R2-B-05），锚卡不渲染链接。"""
+        src = _VIEWS["gallery"]
+        assert 'data-slot=\'credibility\'' in src, "抽屉可信度槽缺席"
+        assert "function renderCredibilityInto(" in src, "可信度节渲染单点缺席"
+        assert 'referee === "hfss"' in src, "仲裁锚过滤口径（referee=hfss）缺席"
+        assert 'indexOf("*") >= 0' in src, "template_family * 通配匹配缺席"
+        assert "gallery.anchor_none" in src, "无锚诚实行键未消费"
+        assert "gallery.anchor_load_fail" in src, "清单失败降级键未消费"
+        assert "gallery.anchor_verdict_pending" in src, "详情在途徽章键未消费"
+        assert "gallery.anchor_verdict_unknown" in src, "UNKNOWN 徽章键未消费"
+        assert "gallery.anchor_values_tpl" in src, "双值指针锚并列渲染键未消费"
+        # 门/观测分裂标签二分：DISAGREE 指针锚的 uncertainty 是观测分裂
+        # 幅度非预声明门——误标即把观测值当判据（#122 诚实呈现家族）；
+        # 前缀 CJK 字面走 \u 转义（view_gallery 字面量 Han 基线=0 棘轮）
+        assert "gallery.anchor_observed_split_tpl" in src, "观测分裂标签键未消费"
+        assert "\\u89c2\\u6d4b" in src, "观测 note 前缀匹配（\\u 转义形态）缺席"
+        vfn = re.search(r"function anchorVerdictOf\(.*?\n\}", src, re.S)
+        assert vfn, "verdict 三分类函数缺席"
+        body = vfn.group(0)
+        assert body.index("DISAGREE") < body.index("AGREE"), (
+            "verdict 分类须 DISAGREE 先判（长串态内并列 AGREE 字样防误绿）")
+        card = re.search(r"function anchorCardHtml\(.*?\n\}", src, re.S)
+        assert card, "锚卡渲染函数缺席"
+        assert "<a " not in card.group(0), "锚卡证据目录不得渲染链接（runs/ 缺省不挂载）"
 
     def test_node_check_view_gallery_js(self):
         assert _NODE is not None, "本机无 node"

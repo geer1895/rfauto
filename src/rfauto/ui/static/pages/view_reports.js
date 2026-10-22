@@ -1,18 +1,18 @@
-/* rfauto 报告中心页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 报告中心页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    TOC+scrollspy + 双 run 对比（PR-4）；打印面在 index.html @media print。 */
 
 import { THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
 import { S, T } from "./context.js";
 import { esc, escAttr, help, mdReady, mdSanitize } from "./dom.js";
-// i18n（架构批 W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
+// i18n（aurora_h W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
 // data-i18n+首扫、help 块分段 t()、动态串（TOC aria/对比面/清单面/图缺失
 // 占位）t() 烘焙——API 动态数据（报告正文/run_id/指标值）照旧 esc 不迁。
 import { t, applyI18nRoot } from "./i18n.js";
-// 三态收敛（架构批 W2-S5，R1 #8 批1）：错误=kitErrorPanel、空态=kitEmptyState
+// 三态收敛（aurora_f W2-S5，R1 #8 批1）：错误=kitErrorPanel、空态=kitEmptyState
 import { bindClickRows, kitBadge, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitPanelHead, kitTable } from "./kit.js";
-// 深链二批（架构批 W2-S5）：#/reports/<path> 待选消费 + 打开 hash 回写
+// 深链二批（aurora_f W2-S5）：#/reports/<path> 待选消费 + 打开 hash 回写
 import { _syncRouteHash, consumeReportsPendingId } from "./router.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 4 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 4 点）——
 // 数据面（报告清单/内容/双 run 对比/run 下拉）接 viewSignal("reports") 切页
 // 收束 + aborted 短路（在途拉取不再写隐藏区）。信封消费形态逐键不变。
 import { apiFetch, viewSignal } from "./api.js";
@@ -81,7 +81,7 @@ async function renderRunDiff() {
     { signal: viewSignal("reports") });
   if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   if (!d.ok) {
-    // 三态收敛（架构批 W2-S5，R1 #8 批1）：对比失败=kitErrorPanel（原内联
+    // 三态收敛（aurora_f W2-S5，R1 #8 批1）：对比失败=kitErrorPanel（原内联
     // err span；重触发=页底「对比」钮，不加重试钮防双发）
     out.innerHTML = kitErrorPanel((d.errors || [t("reports.diff_failed")]).join("; "));
     return;
@@ -171,7 +171,7 @@ export async function pageReports() {
   const tbody = T.$("rp-table").querySelector("tbody");
   // UI-R4：报告行键盘可达（tr 行 role:null 保 row/cell 语义；aria-label 行
   // 动作）——空态行（暂无报告）无 data-p 不入选择器，不伪装成可交互行。
-  // 三态收敛（架构批 W2-S5，R1 #8 批1）：空清单=kitEmptyState 整行三件式
+  // 三态收敛（aurora_f W2-S5，R1 #8 批1）：空清单=kitEmptyState 整行三件式
   //（原 muted 空态行；div 入 td 合法，colspan 对齐 4 列表头）。
   tbody.innerHTML = list.length
     ? list.map((r) =>
@@ -179,7 +179,7 @@ export async function pageReports() {
      <td>${kindBadge(r.kind)}</td><td>${esc(r.model || "-")}</td>
      <td class='muted'>${(r.size_bytes / 1024).toFixed(1)} KB</td></tr>`).join("")
     : `<tr><td colspan='4'>${kitEmptyState(t("reports.empty_hint"))}</td></tr>`;
-  /* 深链二批（架构批 W2-S5）：行打开链路抽具名 openReport——点行/深链/
+  /* 深链二批（aurora_f W2-S5）：行打开链路抽具名 openReport——点行/深链/
      错误重试三入口同一函数；hash 回写在内容就绪落地点（replaceState 不产
      历史条目不触 hashchange，刷新/分享保持所选报告）。 */
   const openReport = async (path) => {
@@ -232,7 +232,7 @@ export async function pageReports() {
   // UI-R4：click 与 Enter/Space 同一激活（bindClickRows 单源；点行/深链/
   // 重试三入口同一 openReport 链路）
   bindClickRows(tbody, (tr) => openReport(tr.dataset.p), "tr[data-p]");
-  // 深链二批（架构批 W2-S5）：#/reports/<path> 待选消费——清单命中才打开，
+  // 深链二批（aurora_f W2-S5）：#/reports/<path> 待选消费——清单命中才打开，
   // 未命中回落表头（campaign 深链同款待选纪律）；消费即清（router.js 单源写）。
   const pendingReport = consumeReportsPendingId();
   if (pendingReport && list.some((r) => r.path === pendingReport))
@@ -250,7 +250,7 @@ export async function pageReports() {
   T.$("rd-go").onclick = () => renderRunDiff();
 }
 
-/* ═══ R-1（架构批 W2-S7）：PageContext 增量钩子 reportsCtx ═══════════
+/* ═══ R-1（aurora_e W2-S7）：PageContext 增量钩子 reportsCtx ═══════════
    refresh=报告清单重拉（pageReports 幂等——壳判 innerHTML 已在即跳过、
    清单/对比面板 run 下拉重填、行绑定 bindClickRows 覆盖式幂等）。无轮询/
    定时器面，leave 不需要。 */

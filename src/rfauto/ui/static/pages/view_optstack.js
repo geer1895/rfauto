@@ -1,4 +1,4 @@
-/* rfauto 优化洞察页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 优化洞察页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    Pareto 前沿 + 可行性热图（E9/E10，数据解释全在 service，前端只渲染）。
    i18n（发布前软编码批 S2 全清）：壳/help 块分段 t()、画布文字/悬停 title/
    aria/状态行/空态全迁词表（optstack.* 键域，zh 与旧字面逐字节同、en 新增）
@@ -14,7 +14,7 @@ import { esc, escAttr, help } from "./dom.js";
 // i18n（发布前软编码批 S2）：壳静态标签 data-i18n+首扫；动态容器文案 t()
 // 渲染期烘焙（canvas fillText/aria/title 同为绘制期定格当前档）。
 import { t, applyI18nRoot } from "./i18n.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
 // 数据面全页（run 清单/Pareto 前沿/可行性热图）接 viewSignal("optstack") 切页
 // 收束 + aborted 短路（在途拉取不再写隐藏区）。信封消费形态逐键不变。
 import { apiFetch, viewSignal } from "./api.js";
@@ -236,7 +236,7 @@ export async function pageOptStack() {
   await loadPareto();
 }
 
-/* ═══ R-1（架构批 W3-S12）：PageContext 增量钩子 optstackCtx ══════════
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 optstackCtx ══════════
    refresh=图表数据重拉（pageOptStack 幂等：壳判 innerHTML 已在即跳过，
    pareto_runs 清单与当前 run 的前沿图重拉重渲——plotCard 壳 setOption
    复用零重建；可行性热图按需点钮重算不随刷新）。无轮询面，leave 不需要。 */

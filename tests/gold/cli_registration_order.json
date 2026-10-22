@@ -260,6 +260,7 @@
   "rfauto campaign event",
   "rfauto campaign list",
   "rfauto campaign run",
+  "rfauto campaign digest",
   "rfauto campaign queue-daemon",
   "rfauto template-spec list",
   "rfauto template-spec draft",
@@ -394,6 +395,6 @@
   "rfauto rest schema",
   "rfauto templates golden-diff"
  ],
- "n_leaves": 273,
+ "n_leaves": 274,
  "n_top": 118
 }

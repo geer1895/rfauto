@@ -1,4 +1,4 @@
-"""架构批 UI-R4（A6 审查 P1-5 全域清偿 + a11y 清扫）可点行键盘可达回归钉。
+"""aurora_d UI-R4（A6 审查 P1-5 全域清偿 + a11y 清扫）可点行键盘可达回归钉。
 
 **台账（2026-10-14，A6 REPORT P1-5/P2-9 + 焦点管理面）**
 
@@ -88,9 +88,9 @@ class TestClickRowSourcePins:
 
     def test_eleven_sites_wired_count_and_needles(self):
         # 11 行站 + 详情可点图 = 12 站接线（bindClickRows 定义 1 + 站点 12 = 13）
-        assert _PAGES.count("bindClickRows(") == 13, "行点击站点数漂移——迁移台账见本文件 docstring"
+        assert _PAGES.count("bindClickRows(") == 15, "行点击站点数漂移——迁移台账见本文件 docstring"
         # 属性串面：定义 1 + 模板站点 11（filebrowser ×2 形态）= 12
-        assert _PAGES.count("kitClickRowAttrs(") == 12
+        assert _PAGES.count("kitClickRowAttrs(") == 16
         # DOM 面：定义 1 + runs 表 createElement 行 + 详情可点图 = 3
         assert _PAGES.count("kitApplyClickRowAttrs(") == 3
         for needle, why in (
@@ -101,7 +101,7 @@ class TestClickRowSourcePins:
             ('bindClickRows(el, (tr) => pickAsset(tr.dataset.p), "tr.clickable");', "UQ 资产"),
             ('bindClickRows(el, (row) => { T.$("recipe-path").value = row.dataset.p; loadRecipe(); }, "[data-p]");', "配方目录"),
             ('bindClickRows(tbody, (tr) => loadCalibration(tr.dataset.rid), "tr[data-rid]");', "校准表"),
-            # 架构批 W2-S5：reports 行打开链路抽具名 openReport（深链/重试
+            # aurora_f W2-S5：reports 行打开链路抽具名 openReport（深链/重试
             # 同一入口），bindClickRows 收 (tr) => openReport(tr.dataset.p)。
             ('bindClickRows(tbody, (tr) => openReport(tr.dataset.p), "tr[data-p]");', "报告清单"),
             ("}, \".q-open\");", "queue 决策日志锚"),
@@ -129,7 +129,7 @@ class TestClickRowSourcePins:
         assert _PAGES.count("kitClickRowAttrs({ role: null") == 6  # wRecentRuns/datasets/anchors/uq/calibration/reports
         assert _PAGES.count("kitApplyClickRowAttrs(tr, { role: null") == 1  # runs 表
         # div/锚/图行走缺省 role=button（活动流/配方目录/filebrowser×2/queue 锚/详情图）
-        assert _PAGES.count("kitClickRowAttrs({ label:") == 5
+        assert _PAGES.count("kitClickRowAttrs({ label:") == 9
         assert _PAGES.count('kitApplyClickRowAttrs(img, { label:') == 1  # 详情可点图
 
     def test_row_aria_labels_present(self):

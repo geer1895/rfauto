@@ -28,7 +28,9 @@ if src_dir.exists() and str(src_dir) not in sys.path:
 
 # UX-B7 +1（2026-10-08：queue-daemon 队列常驻执行体叶，campaign 域内追加
 # ——本常量为 campaign 组命令集钉面，随新叶同笔扩展）。
-_CLI_COMMANDS = ["event", "list", "plan", "queue-daemon", "run", "status"]
+# aurora_e W3-S4 +1（2026-10-19：digest 战役终态摘要聚合叶，全带 --json）。
+_CLI_COMMANDS = ["digest", "event", "list", "plan", "queue-daemon", "run",
+                 "status"]
 
 
 def test_cli_campaign_app_module_structure() -> None:
@@ -52,7 +54,7 @@ def test_cli_thin_shell_reexport_identity() -> None:
     assert bands_uq.campaign_app is camp_mod.campaign_app
     for name in ("campaign_plan_cmd", "campaign_status_cmd",
                  "campaign_event_cmd", "campaign_list_cmd",
-                 "campaign_run_cmd"):
+                 "campaign_run_cmd", "campaign_digest_cmd"):
         assert getattr(bands_uq, name) is getattr(camp_mod, name)
 
 

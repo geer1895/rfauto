@@ -53,7 +53,7 @@ dataset_profile("my_batch")
 
 ```bash
 # runs/ 两层目录（一级战役+二级 run 点）全量入 DuckDB 索引
-# （缺省库 runs/.lake_index.duckdb；缺失字段如实 NULL 不臆造）
+# （缺省库 runs/.lake_index.duckdb；缺失字段留 NULL，不臆造）
 rfauto lake index --json
 
 # 只读查询：等值过滤+日期段；值只进 ? 绑定，永不拼进 SQL
@@ -89,7 +89,7 @@ rfauto lake compact --runs-root runs --dedup-et-ht --json
 
 放量纪律（破坏性动作绝不自动执行）：
 
-1. `--apply` 有**前置互锁**——XD-5 golden 基线未 pin 一律拒绝（先
+1. `--apply` 有**前置互锁**——simci 金基线未 pin 一律拒绝（先
    `rfauto simci-pin-baseline`）；
 2. 缺省 `--reversible`：apply 把删除清单 blob 化进内容寻址存储 +
    manifest 审计（观察窗内可恢复回填，禁裸删），窗满 purge 才物理
@@ -116,7 +116,7 @@ rfauto lake compact --runs-root runs --dedup-et-ht --json
   `n_points/n_rows/n_dup` 统计；
 - **在跑 run 没有 meta**：meta 在 run 结束才落盘（#144）——索引/体检
   里"有 trials 无 meta"是在跑或中断的常态，`lake sweep` 把它归
-  incomplete 如实清点；判定 run 真伪看 meta 的 adapter/study 字段，
+  incomplete，照实清点；判定 run 真伪看 meta 的 adapter/study 字段，
   别拿索引 NULL 行当坏行清；
 - **workdir 导入别按文件序猜归属**：多曲线目录共用根级 JSON 时，按
   显式引用（曲线相对该 JSON 目录的路径）或同名 stem 归属，猜错的

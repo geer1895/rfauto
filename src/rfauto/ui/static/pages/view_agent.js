@@ -1,6 +1,6 @@
-/* rfauto Agent 助手页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto Agent 助手页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    模型设置 + 审批收件箱 + 沙箱草稿 + 浮动可拖拽对话卡片。
-   i18n（架构批 W4-S1 半程收尾全清）：help 块分段 t()（dashboard 先例）、
+   i18n（aurora_h W4-S1 半程收尾全清）：help 块分段 t()（dashboard 先例）、
    统计条/审批面板/沙箱面板文案全迁词表（agent.* 键域，zh 与旧字面逐字节
    同、en 新增）——拼接数据段（run id/参数名/diff 值）照旧视图侧 esc 后拼
    模板，词表值零 HTML；toast/announce 走 textContent 单点。 */
@@ -8,13 +8,13 @@
 import { T } from "./context.js";
 import { esc, escAttr, help, renderMarkdown } from "./dom.js";
 import { kitConfirm, kitPanelHead, kitTable } from "./kit.js";
-// i18n（架构批 W6-S21 扩面页 5；W8-S32 批 3 补对话浮窗静态面）：壳静态
+// i18n（aurora_f W6-S21 扩面页 5；W8-S32 批 3 补对话浮窗静态面）：壳静态
 // 标签 data-i18n(-ph)+首扫；徽章/空态/浮窗标题/输入占位/发送态/思考态/
 // 工具前缀/快捷提问随渲染分支重建，文案 t() 渲染期烘焙（对话气泡正文与
 // LLM 回复=模型输出走 marked+净化链，不进词表；统计条与审批/沙箱面板=
 // 后续波次）。
 import { t, applyI18nRoot } from "./i18n.js";
-// P8-9（架构批 W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 12 点）——
+// P8-9（aurora_f W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 12 点）——
 // 数据面板拉取（设置徽章/收件箱/沙箱/提示词/统计）接 viewSignal("agent")
 // 切页收束 + aborted 短路（agentCtx.refresh 与进页拉取不再写隐藏区）；
 // 用户动作 POST（发对话/重置/保存设置/审批/promote/diff）保持无 signal
@@ -385,7 +385,7 @@ export async function pageAgent() {
     if (r.action && r.action !== "chat" && r.action !== "unknown") loadInbox();
   }
 
-  /* R-1（架构批 W4-S17）：refresh 局部刷新转发登记（agentCtx 消费）——
+  /* R-1（aurora_e W4-S17）：refresh 局部刷新转发登记（agentCtx 消费）——
      数据面板（模型设置徽章/审批收件箱/沙箱草稿/用量统计）重拉；对话浮窗与
      气泡历史不动（appendBubble 非幂等，整页重跑会重复追加气泡）。内置提示词
      为静态系统 prompt（进页拉取一次即可），刷新不重拉。 */
@@ -397,7 +397,7 @@ export async function pageAgent() {
   };
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 agentCtx ═════════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 agentCtx ═════════════
    refresh=数据面板重拉——闭包经模块级引用转发（sparams/campaign 同款模式）
    + 未进页 null 守卫。无轮询面，leave 不需要。 */
 export const agentCtx = {

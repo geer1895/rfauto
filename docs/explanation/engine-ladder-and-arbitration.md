@@ -55,7 +55,7 @@ fake 数字回答不了排序问题。
 ## 为什么 HFSS 是对齐基准
 
 项目立规（2026-09-08）：**HFSS 结果为对齐基准，其他引擎/设计值向
-HFSS 对齐**。理由不是"HFSS 永远对"，而是一个工程判断：
+HFSS 对齐**。理由是一个工程判断（并非"HFSS 永远对"）：
 
 - HFSS 是射频领域认可度最高的 EDA——对齐到它，结论才可对外主张；
 - 同模型仿真异常时，**几乎必然是我方建模错误**（波端口尺寸、边界、
@@ -82,7 +82,7 @@ best_effort、ADS 2027 verified——没有 license 时 doctor 如实标注，
 1. **常量锚必须带证据链**。例：c3 过孔寄生电感，闭式
    Goldfarb-Pucel 对粗短过孔高估 2.2-2.5 倍；HFSS 反解 0.12-0.13nH
    区间中点定值 0.125nH（锚 `c3.l_via_h.openems-hfss-v1`，status
-   active，provenance 带仲裁 run 目录/commit/ 出处/replaces
+   active，provenance 带仲裁 run 目录/commit/DEVLOG 出处/replaces
    旧值）。openEMS 反解 0.20nH 如实登记为跨引擎发现、**不作定值**
    ——裁判只有一个。
 2. **证据在手但仲裁未完时，登记指针不产定值**（kind=pointer，实测

@@ -1,4 +1,13 @@
-"""@mcp.resource 只读资源七件（runs 索引/materials/compat/terminology/toolsets/calculators 目录/datasets 目录）——不计入工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正 parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D EC-6 +1 toolsets 工具集目录资源；2026-10-14 架构批 MCP-B 席 +2 calculators/datasets 目录资源——Agent 发现面，与同名工具同源 service 单点）。"""
+"""@mcp.resource 只读资源十件（runs 索引/materials/compat/terminology/
+指标词典/toolsets/calculators 目录/datasets 目录+edb 域两件）——不计入
+工具数（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动；
+2026-10-01 月终门 C1 勘误：terminology 资源的 __file__ 锚深随拆分修正
+parents[2]→[3]，回到仓根、与 terminology_service 同源；2026-10-05 W5-D
+EC-6 +1 toolsets 工具集目录资源；2026-10-14 aurora_d MCP-B 席 +2
+calculators/datasets 目录资源——Agent 发现面，与同名工具同源 service
+单点；2026-10-19 aurora_i W3.5-K3 席 +1 metric-glossary 指标词典资源，
+W2-S2 留账跨锚补齐——service/metric_glossary_service.load_metric_glossary
+同源薄资源）。edb 域两件（status/datasets）在 mcp_tools/edb.py。"""
 
 from __future__ import annotations
 
@@ -48,6 +57,19 @@ def terminology_resource() -> dict[str, Any]:
     _root = Path(__file__).resolve().parents[3]
     with (_root / "knowledge" / "terminology.yaml").open(encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
+
+
+@mcp.resource("rfauto://knowledge/metric-glossary")
+def metric_glossary_resource() -> dict[str, Any]:
+    """指标词典（knowledge/metric_glossary.yaml 原文结构；aurora_i
+    W3.5-K3，W2-S2 留账跨锚补齐）。
+    service/metric_glossary_service.load_metric_glossary 同源薄资源
+    （同一 __file__ 锚定，CWD 无关；缺失/损坏→空表不抛，同
+    terminology 资源红线）。逐键判定走 get_metric/judge_metric 同源
+    service，REST 面 /api/metric-glossary 同参。"""
+    from rfauto.service.metric_glossary_service import load_metric_glossary
+
+    return load_metric_glossary()
 
 
 @mcp.resource("rfauto://toolsets/definition")

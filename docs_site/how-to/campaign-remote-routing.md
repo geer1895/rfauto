@@ -3,9 +3,8 @@
 # 如何把战役 stage 路由到远程机器（campaign --remote）
 
 **场景**：战役计划里的真机 stage（HFSS 精算/openEMS 批）想发到课题组
-仿真服务器跑，本机只留编排。这是 E62 席能力（2026-10-08，E-06/PR-15
-拆批件）：plan 级 `--remote` 旗标 + stage 级 `remote` 键，经发射门序
-路由到注册机器。多机通道全景与机器登记实操见
+仿真服务器跑，本机只留编排。战役计划支持 plan 级 `--remote` 旗标 +
+stage 级 `remote` 键，把真机阶段路由到已登记的远程机器。多机通道全景与机器登记实操见
 docs/tutorials/remote_server.md；服务器硬规则以
 docs/服务器接入与仿真资源说明.md 为准（本文不重复红线表）。
 
@@ -22,14 +21,14 @@ docs/服务器接入与仿真资源说明.md 为准（本文不重复红线表�
 
 ```bash
 rfauto remote probe [machine]      # TCP 连通性+时延（零副作用零凭据）
-rfauto remote status [machine]     # 探活+SSH 认证可达（凭据缺失如实
-                                   #   missing_credentials，不猜不试）
+rfauto remote status [machine]     # 探活+SSH 认证可达（凭据缺失会明确
+                                   #   报 missing_credentials，不会去猜去试）
 rfauto remote queue [machine]      # 在途作业+单写锁排队+席位占用
 rfauto remote resources [machine]  # 资源视图
 ```
 
-机器名缺省=唯一登记机器；无登记时全部"空表如实"（本地模式零行为
-变化）。
+不指定机器名时用唯一已登记的那台；一台都没登记时所有命令返回空表
+（本地模式行为不变）。
 
 ## 2. 写 remote 声明：三种形态
 
@@ -71,20 +70,20 @@ rfauto campaign run <plan> --remote sim_server --json
 
 | 序 | 门 | 不过时行为 |
 |---|---|---|
-| 1 | 资源日历窗（维护窗判定） | blocked → **SKIP**，预检/通道不被触达 |
-| 2 | license 预检（端口探活；席位 lmstat 查询登记 UNVERIFIED——端口 OPEN≠席位可用，G6 教训） | fail-closed → **SKIP**（不假射） |
+| 1 | 资源日历窗（维护窗/备份窗判定） | blocked → **SKIP**，预检/通道不被触达 |
+| 2 | license 预检（端口探活；席位 lmstat 查询登记 UNVERIFIED——端口开放不等于席位可用，实测踩过） | fail-closed → **SKIP**（不假射） |
 | 3 | 执行通道（HFSS gRPC/ADS/openEMS 三通道单源复用 remote_service/remote_oe_service，零双实现） | 通道缺/SKIP → **SKIP**；通道 FAIL → 如实 FAIL |
 
-SKIP 语义=无座位载荷/前置不满足的**如实声明**，不假绿也不假红
-（信封三态见 docs/explanation/envelope-and-api-evolution.md）。
+SKIP 表示这一段没有可执行内容或前置条件不满足，既不算成功也不算
+失败（信封三态见 docs/explanation/envelope-and-api-evolution.md）。
 
 ## 5. 产物与判读
 
-- 每个 remote 座位目录落 `remote_stage.json`（全量信封）+ 座位级
+- 每个远程阶段目录落 `remote_stage.json`（全量信封）+ 阶段级
   stage_result（瘦身记账键：`license_preflight`/`remote_exec`/
   `solve_success`/`batch`/`task_dir_remote`/`out_dir_local`…）；
 - 服务器侧任务目录在注册表 `hfss.project_root` 指定的大容量数据盘
-  （`<remote-workspace>\tasks\<batch>` 形态）——**服务器侧临时目录一律
+  （`E:\rfauto_remote\tasks\<batch>` 形态）——**服务器侧临时目录一律
   放数据盘，禁写生产云盘**；
 - 断点续跑：`--resume` 重调同参（续跑语义由战役期刊承担）；
 - 查询面：`rfauto remote queue` 看在途与排队，`rfauto campaign status`
@@ -94,12 +93,12 @@ SKIP 语义=无座位载荷/前置不满足的**如实声明**，不假绿也不
 
 清理失败翻 FAIL，不许留孤儿：杀掉本次拉起的 `ansysedt`、删 schtasks
 任务、清任务目录——走 `remote_hfss_cleanup`（remote_service 单源）。
-发射前互斥预检（#261 每机互斥）命中他人在跑实例=候跑 SKIP，
-**禁止代杀**别人的进程。
+发射前互斥预检（#261 每机互斥）命中他人在跑的实例时，本任务排队
+等待（SKIP），**禁止代杀**别人的进程。
 
 ## 7. 边界与已知余项
 
-- `recipe-loop` 远跑是拆批余件（未接线路由如实 SKIP）；
-- `--detach` 后台执行 v1 如实 skipped 登记（未接线）；
+- `recipe-loop` 的远程执行暂未接线（会 SKIP）；
+- `--detach` 后台执行暂未开放（明确标 skipped）；
 - 全离线单测面：`tests/unit/test_campaign_remote_route.py`
   （#139：预检/通道/日历全 monkeypatch，零网络零真机）。

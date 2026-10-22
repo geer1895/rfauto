@@ -1,0 +1,395 @@
+# 指标词典（aurora_i R3 设计 M2，W2-S2 席 2026-10-19）。
+#
+# 数据单一事实源：数据湖 20 个 dataset parquet 的 metrics_json 实测
+# **38 个不同指标键**（R3 §3.1 实测口径；本席开工复测 38 键不变），
+# 逐键：白话定义（plain_zh/plain_en）/健康判据（good_when）/机读判据
+# （gate，可有着色）/门语义（gate_semantics）/常见坑引用（pitfall_refs，
+# #NNN 为仓内账本出处标记，保留不脱敏）/关联术语（related_terms，指向
+# knowledge/terminology.yaml）/计算出处（computed_by）。
+#
+# 铁律 7 一致声明：本文件只搬运仓内既有判据与在盘实测数字（criteria/
+# verdict 门、官方例验收值、judgment 正本），不产生任何新物理数字。
+# 机读 gate 只在"判据跨产出族语义稳定"的键上登记（family 敏感键如
+# s41_db@f0 在 coupled_line=隔离口/ratrace=直通口两族语义不同——如实
+# 不设 gate，判据写进 good_when 文本由读者按族对号）。
+#
+# 消费链：service/metric_glossary_service.py（JSON 进出）→
+# GET /api/metric-glossary → 前端 kit.js metricBadgeHtml 悬浮说明
+# （run 详情页/结果卡指标名，着色=gate 判定 good 绿/bad 红/无 gate 中性）。
+schema: metric-glossary/v1
+updated: "2026-10-19"
+entries:
+  # ── 带内统计量族（SpecEvaluator / 数据工厂收集器）───────────────────────
+  - metric_id: s11_db_max_in_band
+    plain_zh: "带内回波损耗最差点：工作频带里反射最强处有多强，越负（越小）匹配越好"
+    plain_en: "Worst in-band return loss: the strongest reflection inside the operating band; more negative means better matching"
+    unit: dB
+    good_when: "≤ −10 dB 匹配可用（bw_ghz_s11_lt_-10 门与 εeff 提取守卫同口径，core/objectives.py），≤ −15 dB 良好（CPS 锚 G1 门/EDB 真机锚门口径），官方例 −40 dB 为理想口径（rf_template_references §1 Wilkinson）"
+    gate:
+      op: max_below
+      good: -10.0
+    gate_semantics: "max_below 门：带内最大值须低于阈值（worst-case 口径）"
+    pitfall_refs: ["#195", "#370"]
+    related_terms: ["return_loss", "dB", "S_parameters"]
+    computed_by: "core/objectives.py SpecEvaluator（skrf，带内 max）；各数据工厂收集器同键"
+  - metric_id: s11_db_min_in_band
+    plain_zh: "带内谷深：反射最小点（谐振深度），谐振器件看这个而不是带内最大值"
+    plain_en: "In-band valley depth: the deepest reflection dip (resonance depth); for resonant devices read this, not the in-band max"
+    unit: dB
+    good_when: "≤ −10 dB 算有效谐振；EDB 真机扫描健康带实测 −31.9~−37.6 dB（w5_sweep 如实转录），官方例 −40 dB 为理想口径"
+    gate:
+      op: max_below
+      good: -10.0
+    gate_semantics: "max_below 门：谷深读数越负越好（数值判定方向与带内 max 相同）"
+    pitfall_refs: ["#195", "#298"]
+    related_terms: ["return_loss", "s11_db_min", "dB"]
+    computed_by: "core/objectives.py SpecEvaluator（skrf，带内 min；#195 双变体恒产出）"
+  - metric_id: s21_db_mean_in_band
+    plain_zh: "带内平均插损：信号从端口 1 传到端口 2 的损耗，越接近 0 dB 越省"
+    plain_en: "Mean in-band insertion loss from port 1 to port 2; closer to 0 dB means less loss"
+    unit: dB
+    good_when: "直通/等分口贴近设计理想值：等分族 −3 dB 附近（branchline 两节理想 −3.01 dB，rf_template_references §13）；传输线族以带内平坦为主"
+    gate_semantics: "MEAN_WITHIN 门：带内均值须落在阈值区间（判据按器件族预声明，无统一数字）"
+    pitfall_refs: ["#250"]
+    related_terms: ["insertion_loss", "dB"]
+    computed_by: "core/objectives.py SpecEvaluator.s21_db（带内均值）"
+  - metric_id: iso_s23_db_min_in_band
+    plain_zh: "带内隔离度（正值口径）：端口 2 与 3 互相漏信号有多小，数值越大隔离越好——注意与 S 参数负值读数方向相反"
+    plain_en: "In-band isolation stored as a positive caliber (minus max |S23| dB); larger is better — opposite sign to raw S-parameter dB"
+    unit: dB
+    good_when: "≥ 15 dB 可用（gysel 锚硬门 S32 ≤ −15 dB 换算到本键正向口径），≥ 20 dB 良好；官方例 Wilkinson 隔离 −43 dB 为理想口径"
+    gate:
+      op: min_above
+      good: 15.0
+    gate_semantics: "MIN_ABOVE 门：本键=−（带内 max|S23| dB），正向隔离量，越大越好"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters"]
+    computed_by: "core/objectives.py compute_metrics iso_s23_db 分支（−s_param_db；网络 ≥3 端口才产出）"
+  - metric_id: s31_db_mean_in_band
+    plain_zh: "第三端口带内平均读数：等分/耦合口（3 端口以上网络才有此键）"
+    plain_en: "Mean in-band |S31| dB; only produced for networks with 3 or more ports (second output / coupled port)"
+    unit: dB
+    good_when: "等分口 −3 dB 附近为理想（官方例 S31=−3 dB，rf_template_references §1）；耦合器族按设计耦合度对照"
+    gate_semantics: "按器件族预期窗预声明对照；单激励通道隔离类未测不产出（不凑数）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters", "insertion_loss"]
+    computed_by: "scripts/c10_gt_campaign.py compute_point_metrics（≥3 端口并列产键）"
+  - metric_id: eps_eff_mean_in_band
+    plain_zh: "有效介电常数（带内平均）：微带/共面线里场的等效介质常数，决定线速与综合线宽"
+    plain_en: "Mean in-band effective permittivity extracted from the unwrapped S21 phase slope"
+    unit: "无量纲（比值）"
+    good_when: "对照闭式/基准偏差 ≤3% PASS、≤7% PARTIAL（docs 均匀线锚 G2 门口径）；物理上必落在 [1, εr] 区间"
+    gate_semantics: "对照型判据：与闭式内核或独立 FD 基准的比值判定"
+    pitfall_refs: ["#364", "#301", "#255"]
+    related_terms: ["epsilon_eff"]
+    computed_by: "core/objectives.py eps_eff_band_average（S21 解缠相位斜率×objective.length_mm）"
+    notes: "length_mm 必须取端口参考面跨度而非名义线长（#364-②）；mline 数据工厂旧列即因 L=名义线长虚大 ~5.4×（只留档不消费），mline 族消费优先 eps_eff_beta_mean_in_band"
+  - metric_id: eps_eff_beta_mean_in_band
+    plain_zh: "有效介电常数（引擎 β 口径）：由引擎端口传播常数 β 换算，与参考面位置无关"
+    plain_en: "Effective permittivity derived from the engine CalcPort propagation constant; reference-plane independent"
+    unit: "无量纲（比值）"
+    good_when: "与 S21 斜率口径互证一致（两口径差大=参考面/驻波问题）；物理上必落在 [1, εr] 区间"
+    gate_semantics: "互证型判据：与 eps_eff_mean_in_band/闭式对照"
+    pitfall_refs: ["#364", "#301"]
+    related_terms: ["epsilon_eff"]
+    computed_by: "scripts/factory_m1_eps_eff_beta.py（port_beta.csv 带内中位 β → (β·c/ω)²）"
+    notes: "参考面无关（#301 口径）；mline 族 εeff 消费优先本键"
+  - metric_id: zl1_re_ohm_med_in_band
+    plain_zh: "端口 1 实阻抗带内中位：引擎自算端口阻抗的实部，应贴近 50 Ω 设计值"
+    plain_en: "Median in-band real part of the engine-computed port-1 impedance; should sit near the 50 ohm design value"
+    unit: "Ω"
+    good_when: "落在 50 Ω 附近（HJ 综合 50 Ω 馈线惯例）；系统性偏离先查网格/端口落格再怀疑物理"
+    gate_semantics: "对照 50 Ω 设计值的相对偏差（无统一硬门，按模板预声明）"
+    pitfall_refs: ["#280", "#301"]
+    related_terms: ["characteristic_impedance"]
+    computed_by: "scripts/factory_m1_collect.py、factory_m1_eps_eff_beta.py（port_beta 带内中位）"
+    notes: "#280：金属边正落网格线时引擎自算 ZL 偏低 ~8.6%（45.7 Ω 实证）——网格伪象非物理"
+  - metric_id: zl2_re_ohm_med_in_band
+    plain_zh: "端口 2 实阻抗带内中位：引擎自算端口阻抗的实部，应贴近 50 Ω 设计值"
+    plain_en: "Median in-band real part of the engine-computed port-2 impedance; should sit near the 50 ohm design value"
+    unit: "Ω"
+    good_when: "落在 50 Ω 附近（HJ 综合 50 Ω 馈线惯例）；系统性偏离先查网格/端口落格再怀疑物理"
+    gate_semantics: "对照 50 Ω 设计值的相对偏差（无统一硬门，按模板预声明）"
+    pitfall_refs: ["#280", "#301"]
+    related_terms: ["characteristic_impedance"]
+    computed_by: "scripts/factory_m1_collect.py、factory_m1_eps_eff_beta.py（port_beta 带内中位）"
+    notes: "#280：金属边正落网格线时引擎自算 ZL 偏低 ~8.6%（45.7 Ω 实证）——网格伪象非物理"
+  # ── 设计频点 f0 单点族（EDB 快车道 judgment readings）──────────────────
+  - metric_id: s11_db@f0
+    plain_zh: "设计频点 f0 处的 |S11|：设计频率上的匹配深度，越负越好"
+    plain_en: "|S11| in dB at the design frequency f0; more negative is better"
+    unit: dB
+    good_when: "≤ −15 dB（EDB 真机锚硬门，judgment gates bound=−15 原样转录）；官方例 −40 dB 为理想口径"
+    gate:
+      op: max_below
+      good: -15.0
+    gate_semantics: "EDB judgment 硬门 op='≤' bound=−15"
+    pitfall_refs: ["#195"]
+    related_terms: ["return_loss", "dB"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数，dataset_edb_lane 收集）"
+  - metric_id: s21_db@f0
+    plain_zh: "设计频点 f0 处的 |S21|：直通/传输读数，直通口贴近 0 dB、等分口 −3 dB 附近"
+    plain_en: "|S21| in dB at f0: through/transmission reading; near 0 dB for a through path, near −3 dB for an equal-split port"
+    unit: dB
+    good_when: "按器件族判读正本（judgment expect_windows）预声明窗对照；branchline 直通口径物理值=−10log10(1−C²)（W8 §5.4 仲裁口径）"
+    gate_semantics: "family 预期窗对照（无跨族统一硬门）"
+    related_terms: ["insertion_loss", "S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s22_db@f0
+    plain_zh: "设计频点 f0 处端口 2 的反射：输出端口匹配健康度，越负越好"
+    plain_en: "|S22| in dB at f0: output-port matching health; more negative is better"
+    unit: dB
+    good_when: "同 s11 健康语义（越负越好）；硬门按判读正本预声明（EDB 锚门只硬设 s11/隔离口）"
+    gate_semantics: "对照型读数（无跨族统一硬门）"
+    related_terms: ["return_loss"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s23_db@f0
+    plain_zh: "设计频点 f0 处的 |S23|：耦合线族=隔离口读数（越负越好）；他族语义以 judgment 正本为准"
+    plain_en: "|S23| in dB at f0: isolation-port reading for coupled-line family; consult the judgment file for other families"
+    unit: dB
+    good_when: "coupled_line W10 真机实测 −22.6 dB 档（隔离健康）；跨族直比禁止"
+    gate_semantics: "family 敏感键（不设跨族机读门）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s24_db@f0
+    plain_zh: "设计频点 f0 处的 |S24|：耦合线族=耦合口读数（10 dB 耦合器预期 −10 dB 附近）；他族语义以 judgment 正本为准"
+    plain_en: "|S24| in dB at f0: coupled-port reading for coupled-line family (about −10 dB for a 10 dB coupler); consult the judgment file elsewhere"
+    unit: dB
+    good_when: "coupled_line 族按设计耦合度对照（W10 预期窗 −11.6~−9.6 dB，实测 −7.5 dB 档如实登记厚度偏置）"
+    gate_semantics: "family 敏感键（不设跨族机读门）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s31_db@f0
+    plain_zh: "设计频点 f0 处的 |S31|：等分口（branchline/power_divider）或耦合口（coupled_line）读数"
+    plain_en: "|S31| in dB at f0: equal-split port (branchline/power divider) or coupled port (coupled line)"
+    unit: dB
+    good_when: "等分口 −3 dB 附近；coupled_line W10 预期窗 −11.6~−9.6 dB（10 dB 耦合器，任务书口径）"
+    gate_semantics: "family 预期窗对照（不设跨族机读门）"
+    related_terms: ["S_parameters", "insertion_loss"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s32_db@f0
+    plain_zh: "设计频点 f0 处的 |S32|：隔离口读数，越负越好"
+    plain_en: "|S32| in dB at f0: isolation-port reading; more negative is better"
+    unit: dB
+    good_when: "≤ −15 dB 可用（gysel 锚硬门 S32 ≤ −15 dB），官方例 Wilkinson 隔离 −43 dB 为理想口径"
+    gate:
+      op: max_below
+      good: -15.0
+    gate_semantics: "隔离门 op='≤'（各产键族 S32 均为隔离语义）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s33_db@f0
+    plain_zh: "设计频点 f0 处端口 3 的反射：输出端口匹配健康度，越负越好"
+    plain_en: "|S33| in dB at f0: output-port matching health; more negative is better"
+    unit: dB
+    good_when: "同 s11 健康语义（越负越好）；硬门按判读正本预声明"
+    gate_semantics: "对照型读数（无跨族统一硬门）"
+    related_terms: ["return_loss"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s34_db@f0
+    plain_zh: "设计频点 f0 处的 |S34|：ratrace 族=直通/等分口读数（−3 dB 附近）；他族以 judgment 正本为准"
+    plain_en: "|S34| in dB at f0: through/equal-split reading for ratrace family; consult the judgment file elsewhere"
+    unit: dB
+    good_when: "ratrace W10 真机实测 −3.25 dB 档（贴近理想 −3 dB）"
+    gate_semantics: "family 敏感键（不设跨族机读门）"
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s41_db@f0
+    plain_zh: "设计频点 f0 处的 |S41|：耦合线族=隔离口（越负越好）；ratrace 族=等分口（−3 dB 附近）——两族语义相反，按族对号"
+    plain_en: "|S41| in dB at f0: isolation port for coupled-line family, equal-split port for ratrace family — opposite semantics, read per family"
+    unit: dB
+    good_when: "coupled_line W10 硬门 ≤ −18 dB（隔离语义）；ratrace 实测 −3.15~−3.17 dB（等分语义）"
+    gate_semantics: "family 敏感键（coupled_line=隔离/ratrace=等分，不设跨族机读门）"
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s44_db@f0
+    plain_zh: "设计频点 f0 处端口 4 的反射：输出端口匹配健康度，越负越好"
+    plain_en: "|S44| in dB at f0: output-port matching health; more negative is better"
+    unit: dB
+    good_when: "同 s11 健康语义（越负越好）；硬门按判读正本预声明"
+    gate_semantics: "对照型读数（无跨族统一硬门）"
+    related_terms: ["return_loss"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s21_phase_deg@f0
+    plain_zh: "设计频点 f0 处 S21 的相位（度）：传输相位读数，对照/装配用"
+    plain_en: "S21 phase in degrees at f0: transmission-phase reading for cross-checks and assembly budgets"
+    unit: "°"
+    good_when: "对照读数（无独立健康门）；与参考面口径强相关"
+    gate_semantics: "对照型读数（不设机读门）"
+    related_terms: ["S_parameters", "group_delay"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s41_phase_deg@f0
+    plain_zh: "设计频点 f0 处 S41 的相位（度）：第二输出臂相位读数"
+    plain_en: "S41 phase in degrees at f0: second output-arm phase reading"
+    unit: "°"
+    good_when: "与 s21_phase_deg@f0 配对照相位差（s21_s41_phase_diff_deg）"
+    gate_semantics: "对照型读数（不设机读门）"
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  - metric_id: s21_s41_phase_diff_deg
+    plain_zh: "双输出臂相位差：|∠S21−∠S41|，等分相位平衡读数（越小越平衡）"
+    plain_en: "Phase difference between the two output arms; smaller means better phase balance"
+    unit: "°"
+    good_when: "理想同相 0°（ratrace Σ 口径，rf_template_references §9）；W10 真机实测 |Δ|≤0.14°"
+    gate_semantics: "对照型判据（仓内无统一数字硬门，按族预声明）"
+    related_terms: ["S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点读数）"
+  # ── 质量判定族（passivity/互易/定向性/平衡）───────────────────────────
+  - metric_id: sigma_max@f0
+    plain_zh: "设计频点 f0 处 S 矩阵最大奇异值：无源性代理量，物理网络应 ≤1（容差内）"
+    plain_en: "Largest singular value of the S-matrix at f0: a passivity proxy; a physical network stays at or below 1 within tolerance"
+    unit: "无量纲"
+    good_when: "≤ 1.05（EDB 锚 passivity 门，judgment gates 正本唯一实例
+      bound=1.05——W4-R2 审查实测 22 份 judgment；原 1.01 系
+      sigma_max_fullband 门借位，1.01~1.05 区间读数会被误标红）"
+    gate:
+      op: max_below
+      good: 1.05
+    gate_semantics: "passivity 门 op='≤' bound=1.05（5% 容差，f0 单点口径）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters", "power_wave"]
+    computed_by: "EDB 快车道 judgment readings（f0 单点奇异值）"
+  - metric_id: sigma_max_fullband
+    plain_zh: "全带宽 S 矩阵最大奇异值：整段扫频上的无源性代理量，物理网络应 ≤1（容差内）"
+    plain_en: "Largest singular value over the full sweep band: a full-band passivity proxy"
+    unit: "无量纲"
+    good_when: "≤ 1.01（EDB 锚 passivity 门 1% 容差；W10 实测 0.99 档健康）"
+    gate:
+      op: max_below
+      good: 1.01
+    gate_semantics: "passivity 门 op='≤' bound=1.01（1% 容差）"
+    pitfall_refs: ["#314"]
+    related_terms: ["S_parameters", "power_wave"]
+    computed_by: "EDB 快车道 judgment readings（全带宽奇异值）"
+  - metric_id: reciprocity_max_abs
+    plain_zh: "互易破缺最大值（线性域）：max|S_ij−S_ji|，无源互易网络应为机器零量级"
+    plain_en: "Largest reciprocity violation in the linear domain; a passive reciprocal network sits at machine-epsilon level"
+    unit: "无量纲（线性域）"
+    good_when: "越小越互易（无源网络实测 1e-14 量级）；判据只对两向独立已测的端口对下结论，门阈随判据书 recip_le 预声明"
+    gate_semantics: "recip_le 随判据书预声明（无统一数字）；无双向已测对=UNKNOWN 不凑判"
+    pitfall_refs: ["#314", "#122"]
+    related_terms: ["S_parameters", "measured_mask_matrix"]
+    computed_by: "scripts/hfss_window_arbitration.py 质量节（掩码对枚举）"
+  - metric_id: directivity_db_proxy
+    plain_zh: "定向性代理量：耦合口与隔离口读数差（各族判读脚本口径不同，不可跨族直比）"
+    plain_en: "A directivity proxy from the coupled-vs-isolated port reading gap; the caliber differs per family judgment script"
+    unit: dB
+    good_when: "coupled_line 族=s24−s23（越大定向越好，W10 实测 +15.1~+15.7）；ratrace 族为负值口径（W10 实测 −43.6~−48.0）——以 judgment 正本为准"
+    gate_semantics: "family 口径代理量（不设机读门，判读正本优先）"
+    related_terms: ["directivity", "S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（family 判读脚本产键）"
+    notes: "跨族直比禁止（edblane 发布评估 caveat：coupled_line 正值/ratrace 负值系口径差异非质量问题）"
+  - metric_id: s21_s31_balance_db
+    plain_zh: "双输出臂幅度不平衡：|S21| 与 |S31| 的读数差，越接近 0 越均衡"
+    plain_en: "Amplitude imbalance between the two output arms; closer to 0 dB means better balance"
+    unit: dB
+    good_when: "|Δ|≤ 0.5 dB（ratrace 均分差硬门，core/anchor_benchmark.py RATRACE_BALANCE_MAX_DB；真机实测 0.001~0.021 dB 健康带）"
+    gate:
+      op: abs_le
+      good: 0.5
+    gate_semantics: "abs_le 门：绝对值不超过 0.5 dB"
+    related_terms: ["insertion_loss", "S_parameters"]
+    computed_by: "EDB 快车道 judgment readings（等分族产键）"
+  # ── 谐振定位与判读元数据族 ────────────────────────────────────────────
+  - metric_id: f_res_ghz_s11min
+    plain_zh: "带内 |S11| 极小所在频点：谐振位置的实测读数，与设计频率 f0 对照看偏移"
+    plain_en: "Frequency of the in-band |S11| minimum: the measured resonance location, compared against the design f0"
+    unit: GHz
+    good_when: "贴近设计 f0 为健康（偏移量化见 f0_offset_pct）；落在扫频带缘=谐振可能未定位（读数歧义）"
+    gate_semantics: "对照型读数（偏移判读走 f0_offset_pct）"
+    pitfall_refs: ["#298"]
+    related_terms: ["cutoff_frequency"]
+    computed_by: "EDB 快车道 judgment readings（带内 argmin）"
+    notes: "#298 族：argmin/argmax 峰位在带缘或纹波平台处是歧义量，门判读取带心/谷心口径"
+  - metric_id: f0_offset_pct
+    plain_zh: "谐振频偏百分比：(f_res−f0)/f0×100，实测谐振偏离设计频率多少"
+    plain_en: "Percent resonance offset from the design frequency"
+    unit: "%"
+    good_when: "≤ 5%（EDB 判读正本 12/12 实例 bound=5.0，W4-R2 审查复核；
+      更严参考=官方例中心频偏口径 <1%，rf_template_references §1）；w5 真
+      机扫描健康带实测 0.15~0.75%"
+    gate:
+      op: abs_le
+      good: 5.0
+    gate_semantics: "abs_le 门：绝对偏移不超过 5%（正本口径；1% 为更严的
+      官方例参考线，本门不采用）"
+    pitfall_refs: ["#298"]
+    related_terms: ["cutoff_frequency"]
+    computed_by: "EDB 快车道 judgment readings（(f_res−f0)/f0）"
+    notes: "带缘钳制伪象如实登记：coupled_line W10 实测 +30%（S11 极小落带缘，谐振在窗外）；ratrace 实测 −17%（双谷夹持多模族）——FAIL 行=判读器如实产出非数据事故"
+  - metric_id: f0_on_grid
+    plain_zh: "设计频率是否落在扫频栅格上：true=f0 读数严格在栅格频点，false=插值读数"
+    plain_en: "Whether the design frequency lies exactly on the sweep grid; false means the f0 reading is interpolated"
+    unit: "布尔"
+    good_when: "true 优先（f0 读数无插值；false 时对照判读须留意插值语义）"
+    gate:
+      op: bool_true
+    gate_semantics: "布尔门：true=通过"
+    related_terms: []
+    computed_by: "EDB 快车道 judgment 顶层元数据（_JUDGMENT_META_KEYS）"
+  - metric_id: grid_step_ghz
+    plain_zh: "扫频步长（GHz）：频率栅格分辨率，读数定位精度的上界"
+    plain_en: "Sweep frequency step in GHz: the resolution of the frequency grid and an upper bound on readout localization"
+    unit: GHz
+    good_when: "判读元数据（非物理量）；步长越细谐振定位读数越准（对照 f_res_ghz_s11min）"
+    gate_semantics: "判读元数据（不设门）"
+    related_terms: []
+    computed_by: "EDB 快车道 judgment 顶层元数据（_JUDGMENT_META_KEYS）"
+  - metric_id: n_ports
+    plain_zh: "端口数：Touchstone 矩阵阶数（网络规模元数据）"
+    plain_en: "Number of ports: the Touchstone matrix order (network-size metadata)"
+    unit: "计数"
+    good_when: "判读元数据（非物理量）；决定哪些 S 键可产出（如隔离类需 ≥3 端口）"
+    gate_semantics: "判读元数据（不设门）"
+    related_terms: ["Touchstone_rank"]
+    computed_by: "EDB 快车道 judgment 顶层元数据 / skrf 复读 Touchstone"
+  - metric_id: n_freqs
+    plain_zh: "频点数：Touchstone 扫频点个数（数据密度元数据）"
+    plain_en: "Number of frequency points in the Touchstone sweep (data-density metadata)"
+    unit: "计数"
+    good_when: "判读元数据（非物理量）；斜率类提取（εeff 相位斜率）要求带内频点 ≥3"
+    gate_semantics: "判读元数据（不设门）"
+    related_terms: []
+    computed_by: "EDB 快车道 judgment 顶层元数据 / skrf 复读 Touchstone"
+  - metric_id: ok
+    plain_zh: "判读总判定：单点判读整体是否成立（硬门全过=true）"
+    plain_en: "Overall judgment flag for the product point; true only when all hard gates pass"
+    unit: "布尔"
+    good_when: "true=判读成立；false=如实 FAIL（拦住坏数据入库是正常产出，非数据事故）"
+    gate:
+      op: bool_true
+    gate_semantics: "布尔门：true=通过"
+    pitfall_refs: ["#122"]
+    related_terms: []
+    computed_by: "EDB 快车道 judgment 顶层元数据（_JUDGMENT_META_KEYS）"
+  - metric_id: all_pass
+    plain_zh: "全门通过标志：本次判读所有 gates 逐项 pass"
+    plain_en: "All-gates-passed flag: every gate in the judgment list passed"
+    unit: "布尔"
+    good_when: "true=逐门全过；与 ok 独立落盘，冲突以 judgment 正本为准"
+    gate:
+      op: bool_true
+    gate_semantics: "布尔门：true=通过"
+    pitfall_refs: ["#122"]
+    related_terms: []
+    computed_by: "EDB 快车道 judgment 顶层元数据（_JUDGMENT_META_KEYS）"
+  - metric_id: n_gates_total
+    plain_zh: "预声明门总数：本次判读共设多少门"
+    plain_en: "Total number of pre-declared gates in the judgment"
+    unit: "计数"
+    good_when: "判读元数据（非物理量）；与 n_gates_pass 配对读（pass<total 即有 FAIL 行如实保留）"
+    gate_semantics: "判读元数据（不设门）"
+    related_terms: []
+    computed_by: "dataset_edb_lane._judgment_metrics（gates 列表计数）"
+  - metric_id: n_gates_pass
+    plain_zh: "通过门数：本次判读通过的门个数"
+    plain_en: "Number of gates passed in the judgment"
+    unit: "计数"
+    good_when: "等于 n_gates_total 为全过；不足时看各 gate 明细定位 FAIL 项"
+    gate_semantics: "判读元数据（不设门；pass<total=FAIL 行如实保留）"
+    pitfall_refs: ["#122"]
+    related_terms: []
+    computed_by: "dataset_edb_lane._judgment_metrics（gates 列表计数）"

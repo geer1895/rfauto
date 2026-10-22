@@ -16,8 +16,8 @@ mkdocs nav 逐张注册）：
 
 | 源 | 文件 | 喂给卡面哪节 |
 |---|---|---|
-| XC-P 精度档案 | `knowledge/precision_profiles.yaml` | 「精度域」（已建档/未收录两支路，不编造分档数字） |
-| KD-1 出处注册 | `knowledge/formula_provenance.yaml` | 按 kernel_file 过滤的「出处」引注（零命中如实渲染 0 条） |
+| 精度档案（XC-P） | `knowledge/precision_profiles.yaml` | 「精度域」（已建档/未收录两支路，不编造分档数字） |
+| 出处注册（KD-1） | `knowledge/formula_provenance.yaml` | 按 kernel_file 过滤的「出处」引注（零命中就显示"0 条"） |
 | 模块 docstring/AST | `src/rfauto/core/...` | 物理语义、公式原文、使用边界、公开符号 |
 | 辅源 | `knowledge/anchors.yaml` + tests/service/adapters 引用扫描 | 「锚与测试入口」「关联」（消费拓扑） |
 
@@ -47,7 +47,7 @@ mkdocs nav 逐张注册）：
 | 你想改 | 动哪里 | 之后 |
 |---|---|---|
 | 公式/物理语义/口径 | 内核模块 docstring | 重跑生成器（docstring 是唯一写作点） |
-| 精度分档 | XC-P 档案（先看 formula-provenance 与精度档案分工） | 重跑生成器 |
+| 精度分档 | 精度档案（先看 formula-provenance 与精度档案分工） | 重跑生成器 |
 | 出处 | docstring 出处行（KD-1 再生，见 formula-provenance.md） | 先跑 KD-1 收集器，再跑卡生成器 |
 | 公式 LaTeX 转写/使用边界注记 | 生成器内该卡的手写段 | **每条必须携带 docstring 逐字引文（quote）** |
 | 消费拓扑/测试计数 | 不用动——引用扫描机读 | 重跑生成器即更新 |
@@ -62,8 +62,8 @@ LaTeX 与使用边界注记两处，且引文是机器核对载体——构建�
 - `docs/how-to/add-new-calc-key.md`：键注册 + 五钉消费者同步——
   "让键存在且门全绿"；
 - `docs/how-to/formula-provenance.md`：出处声明写作与 KD-1 再生——
-  "让出处可查"，卡面 KD-1 节按 kernel_file 过滤渲染，零命中的卡如实
-  渲染"0 条"（诚实支路，先例 ring_resonator 等纯 CALC 键族卡）；
+  "让出处可查"，卡面出处注册节按 kernel_file 过滤渲染，零命中的卡
+  就显示"0 条"（诚实路径）；
 - `docs_site` 参考页再生（`scripts/build_docs_pages.py`）：管站点
   目录/参考页同步，不管卡内容。
 
@@ -73,9 +73,9 @@ LaTeX 与使用边界注记两处，且引文是机器核对载体——构建�
   （docstring/YAML/生成器手写段）后重跑生成器；
 - **手写段引文不逐字**：quote 与模块源文件差一个字/标点，构建断言
   即红——引文从 docstring 复制粘贴，不要凭记忆转写；
-- **零命中想"补数字"**：某内核还没有 XC-P 档案/KD-1 条目时卡面如实
-  渲染 0 条/未收录——去补的是源（建档/写出处行），不是卡面数字
-  （#122 如实口径，不凑绿）；
+- **零命中想"补数字"**：某内核还没有精度档案/出处条目时，卡面就
+  显示"0 条"/未收录——去补的是源（建档/写出处行），不是卡面数字
+  （#122 的原则：宁可显示 0，不编一个数）；
 - **先出处后出卡**：写新卡前先把 docstring 出处声明写好并跑 KD-1
   收集器——卡面按 kernel_file 过滤，出处行缺失时卡面"出处注册 0 条"
   而不是报错，容易漏看。

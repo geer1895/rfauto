@@ -2,9 +2,8 @@
 
 **场景**：你改了模板渲染面（`adapters/openems_templates/` 的几何段、
 网格段、守卫阈值），要确认"除你有意改动的那几族外，72 族渲染产物
-零漂移"；或你有意改动后要把新基线入库。golden 仓是 EC-8 能力
-（W2-S8，架构批），对全部注册族（TEMPLATE_META=72，2026-10-18
-实测）逐族钉住四类摘要。
+零漂移"；或你有意改动后要把新基线入库。golden 仓是内置能力，对
+全部注册族（TEMPLATE_META=72，2026-10-18 实测）逐族钉住四类摘要。
 
 ## 1. golden 快照里钉了什么
 
@@ -21,7 +20,7 @@
 渲染以标称参数（`TEMPLATE_NOMINAL`，与 docs/templates/<族>/meta.yaml
 `nominal_params` 双侧严格相等）+ 缺省网格（meta
 `mesh_resolution_mm=0.0` 自动档）执行；判断面在 CSXCAD 实测对象上
-（#212 家法：渲染 → exec 几何段 → 实测，秒级零仿真）。
+（#212 的做法：渲染 → exec 几何段 → 实测，秒级零仿真）。
 
 ## 2. 日常三连：diff → 改代码 → 再 diff
 
@@ -67,8 +66,8 @@ rfauto templates golden-diff                     # 复核 verdict=clean
 ## 4. 判读纪律
 
 1. **drift 面前先问归属**：这次 diff 里的每个漂移族，能不能对回你这轮
-   有意改动？对不回来的就是真回归（或他席在制——并行批先对
-   `git status` 查在制面，勿急着 accept）；
+   有意改动？对不回来的就是真回归（或别人正在改——先 `git status`
+   看有没有未提交改动，别急着 accept）；
 2. **accept 与源改动同笔 commit**：新基线 + 造成它的源改动 +
    （如适用）meta/regen 面一起提交，golden 哈希才可追溯；
 3. **守卫拒绝不是绕过的理由**：guard_blocked 族要换审计档渲染走
@@ -81,7 +80,7 @@ rfauto templates golden-diff                     # 复核 verdict=clean
 
 | 门 | 管什么 | golden 仓管什么 |
 |---|---|---|
-| 模板几何离线审计（#212 家法） | 单族几何连通性/带宽实测 | 72 族全量的**回归**（改动检测） |
+| 模板几何离线审计（#212 的做法） | 单族几何连通性/带宽实测 | 72 族全量的**回归**（改动检测） |
 | test_template_meta_consistency | TEMPLATE_NOMINAL ↔ meta.yaml 双侧相等 | 不重复（nominal 键集另一层面） |
 | docs_site/kernel_cards 再生 | 文档数字面 | 渲染产物几何面 |
 

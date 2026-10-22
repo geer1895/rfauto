@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **273** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **274** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -480,13 +480,14 @@ AgentBench/goldset 回归门（WP3.7/F6）——离线、确定性、零网络
 
 战役状态机（calibrate→prefilter→tune→tolerance→report→final_verify）
 
-共 6 条叶子命令。
+共 7 条叶子命令。
 
 - `rfauto campaign plan` — 配方 → 确定性战役阶段队列（含依赖/预算/license 门槛）；--out-dir 落盘。
 - `rfauto campaign status` — 读回已落盘战役计划的状态（verdict/各阶段 status/n_done/n_dead）。
 - `rfauto campaign event` — 推进战役状态机（stage_failed 时依赖它的未完成阶段递归 aborted）并回写落盘。
 - `rfauto campaign list` — 扫 root 下全部已落盘战役计划（总览）。
 - `rfauto campaign run` — 一键闭环执行战役计划（calibrate→…→report→final_verify；断点续跑内嵌）。
+- `rfauto campaign digest` — 扫描战役终态（COMPLETE/PARTIAL/ABORTED）聚合成 zh 人读摘要，JSON+文本产物落 runs/ 下。
 - `rfauto campaign queue-daemon` — campaign 排队常驻执行体（UX-B7）：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。
 
 ## rfauto template-spec

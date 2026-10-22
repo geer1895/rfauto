@@ -1,4 +1,4 @@
-/* rfauto 总览页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 总览页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    组件化仪表盘（可增删 widget 注册表 + 拖拽排序 + 宽度记忆）。 */
 
 import { THEME_COLORS, bodyIsLight, chartPalette, themePick } from "../theme.js";
@@ -6,8 +6,9 @@ import { THEME_COLORS, bodyIsLight, chartPalette, themePick } from "../theme.js"
 // 视图作用域取消，切页由 app.js activate 收束在途请求）
 import { apiFetch, viewSignal } from "./api.js";
 import { bindChartResize, chartExportTools, echartsInitCached } from "./charts.js";
-import { T } from "./context.js";
-// i18n（架构批 W6-S21 扩面页 1；W8-S32 批 3 深化）：壳静态标签 data-i18n+
+// W3.5-K1：getActiveView=可信度 KPI 跳画廊代点的"用户已离开画廊"守卫读面
+import { T, getActiveView } from "./context.js";
+// i18n（aurora_f W6-S21 扩面页 1；W8-S32 批 3 深化）：壳静态标签 data-i18n+
 // 首扫；widget 标题经注册表 tk 字段、控件钮/aria 前缀/KPI/activity/空态/
 // 图表系列名与 help 块富 HTML 分段全走 t() 渲染期烘焙（i18n.js 头注纪律：
 // 随数据重建的动态容器不挂 data-i18n，防语言切换重扫覆写动态状态；富 HTML
@@ -22,6 +23,8 @@ import {
   kitBoolBadge,
   kitClickRowAttrs,
   kitEmptyState,
+  // W3.5-K1：可信度 KPI 清单定局失败=kitErrorPanel（A8-A 三态收敛同款）
+  kitErrorPanel,
   kitSkeleton,
   kitTable,
 } from "./kit.js";
@@ -40,13 +43,16 @@ const WIDGETS = {
   solvers:     { tk: "dashboard.w_solvers",     span: 4  },
   tune_status: { tk: "dashboard.w_tune_status", span: 4  },
   status_mix:  { tk: "dashboard.w_status_mix",  span: 4  },
+  // aurora_i W3.5-K1（R3 设计 M7 前端半）：可信度 KPI 卡进缺省面（既有
+  // 用户 localStorage 记忆优先——W4-C 同款口径，点「＋ 添加组件」自取）。
+  credibility: { tk: "dashboard.w_credibility", span: 4  },
   adapter_mix: { tk: "dashboard.w_adapter_mix", span: 4  },
   quick_links: { tk: "dashboard.w_quick_links", span: 12 },
 };
-// 架构批 W4-C：activity/status_mix 进缺省面（既有用户 localStorage 记忆
+// aurora36 W4-C：activity/status_mix 进缺省面（既有用户 localStorage 记忆
 // 优先——存过自定义清单的看不到新组件，点「＋ 添加组件」自取）。
 const WIDGET_DEFAULTS = ["kpi", "recent_runs", "activity", "s11_trend",
-  "solvers", "tune_status", "status_mix", "quick_links"];
+  "solvers", "tune_status", "status_mix", "credibility", "quick_links"];
 
 /* 页私有状态（W6-S2 S 状态收编，R2 审计 §面2：原 S.dashData/S.widgetSet/
    S.widgetSpan/S.kpiPrev 单模块私有键降级模块级——属主=本模块，契约表见
@@ -57,9 +63,28 @@ let _dashData = null;
 let _widgetSet = new Set();
 let _widgetSpan = {};
 let _kpiPrev = null;
+/* ═══ aurora_i W3.5-K1（R3 设计 M7 前端半）模块级缓存（属主=本模块；
+   context.js 键契约表登记面禁改（他文件），属主/生命周期注记随本块）═══
+   _credSummary=仲裁锚摘要行（/api/anchors 过滤 engine_pair.referee=hfss，
+   会话级缓存——重进页/局部刷新即渲不重发）；_credLoadFail=清单定局失败
+   （诚实降级一行，不重试风暴——gallery _anchorLoadFailed 同款纪律）；
+   _credVerdicts=anchor_id→verdict_state 串（详情 /api/anchors/{id} 既有
+   端点逐锚补拉，Map 缓存，失败也缓存空串）；_credVerdictsDone/_credVerdicts
+   InFlight=补拉定局/在途旗（切页 abort 不定局不缓存，回页重拉）。 */
+let _credSummary = null;
+let _credLoadFail = false;
+const _credVerdicts = new Map();
+let _credVerdictsDone = false;
+let _credVerdictsInFlight = false;
+/* 首访导览 localStorage 键（rfauto- 家族命名；context.js 登记表禁改同上，
+   键登记注记随本块头注）。 */
+const ONBOARD_KEY = "rfauto-onboard-v1";
 
 export async function pageDashboard() {
   const v = T.$("view-dashboard");
+  // W3.5-K1：首访导览（键缺席=首访弹三步引导卡；已读 localStorage 记忆
+  // 不再弹——onboardSeen/markOnboardSeen，store 注入=node 行为钉入口）。
+  const showOnboard = !onboardSeen();
   // W8-S32 i18n 批 3：help 块富 HTML 分段 t() 烘焙（zh 输出逐字节不变）：
   // <b>/结构留模板、纯文本段进词表（值零 HTML 纪律），跨段标点归前段键尾。
   v.innerHTML = help(`
@@ -70,8 +95,12 @@ export async function pageDashboard() {
     <li>${t("dashboard.help_5")}</li>`) +
     `<div class='pagehead'><h2 class='page' data-i18n='dashboard.title'>${t("dashboard.title")}</h2><span class='spacer'></span>
       <span class='muted' style="font-size:12px" data-i18n='dashboard.add_widget_label'>${t("dashboard.add_widget_label")}</span><span id='w-add'></span></div>
-      <div id='widget-grid'></div>`;
-  applyI18nRoot(v); // 壳静态标签首扫（W6-S21 扩面）
+      ` + (showOnboard ? onboardCardHtml() : "") +
+      // 导览卡在场时格网上面留一档间距（margin-bottom:var(--space-3) 已是
+      // r12 CSS 同值替换钉的冻结计数面——间距挂格网侧不增该计数）
+      `<div id='widget-grid'${showOnboard ? " style='margin-top:var(--space-3)'" : ""}></div>`;
+  applyI18nRoot(v); // 壳静态标签首扫（W6-S21 扩面；导览卡=静态壳可挂 data-i18n）
+  if (showOnboard) bindOnboard(v); // W3.5-K1：导览步骤跳页+dismiss 接线
   // A8-A（R6 审计 P-2）：首拉骨架屏——数据未到先按组件清单铺占位壳（shimmer
   // 条，reduced-motion 降级静态灰块）；下方 Promise.all 数据到达后 grid 重建
   // 整体替换。清单读 localStorage 与真实渲染同源（自定义清单用户看到自己清单
@@ -88,7 +117,7 @@ export async function pageDashboard() {
       `<div class="skeleton-wrap" role="status" aria-label="${t("dashboard.loading_aria")}">${kitSkeleton(3)}</div></div></div>`
     ).join("");
   }
-  // P8-4（架构批 R1 §面1）：渐进首绘——/api/solvers 冷端点实测 8.3s
+  // P8-4（aurora_f R1 §面1）：渐进首绘——/api/solvers 冷端点实测 8.3s
   // （服务端 TTL 缓存过期后再冷 3.7s），此前 Promise.all 把 KPI/最近 Run/
   // 活动流全押在最慢端点上，首屏白骨架窗最长秒级。两请求同时起飞，
   // runs 先到即整格首绘（solvers 槽位骨架占位）；solvers 后到只直写该
@@ -107,7 +136,7 @@ export async function pageDashboard() {
   if (body) body.innerHTML = solversBodyHtml(_dashData.solvers); // 后补直写
 }
 
-/* ═══ R-1 局部刷新试点（架构批 W1-S3，R6 审计 R-1）══════════════════
+/* ═══ R-1 局部刷新试点（aurora72 W1-S3，R6 审计 R-1）══════════════════
    refreshDashboard：widget 增删/拖拽与 palette「刷新当前页数据」走本入口
    ——只重铺组件面（renderDashboardGrid），不再全量 refetch /api/runs?limit=200
    + /api/solvers（复用进页时已拉取的 _dashData）。壳或数据未就绪（直调
@@ -227,7 +256,8 @@ async function renderDashboardGrid() {
   const renderers = { kpi: wKpi, recent_runs: wRecentRuns, s11_trend: wS11Trend,
                       solvers: wSolvers, tune_status: wTuneStatus,
                       adapter_mix: wAdapterMix, quick_links: wQuickLinks,
-                      activity: wActivity, status_mix: wStatusMix };
+                      activity: wActivity, status_mix: wStatusMix,
+                      credibility: wCredibility };
   // 宽度记忆（每组件 4/6/12 栅格列循环）
   _widgetSpan = JSON.parse(localStorage.getItem("rfauto-widget-span") || "{}");
   const order = [..._widgetSet];
@@ -291,7 +321,7 @@ async function renderDashboardGrid() {
     const s11s = list.map((r) => r.metrics?.s11_db_max_in_band).filter((c) => typeof c === "number");
     const best = s11s.length ? Math.max(...s11s) : null;
     const adapters = new Set(list.map((r) => r.adapter)).size;
-    // 架构批 W4-C：数据新鲜度环挂首卡右上角（runs=新→旧序，list[0] 即最近
+    // aurora36 W4-C：数据新鲜度环挂首卡右上角（runs=新→旧序，list[0] 即最近
     // run 的 timestamp；零定时器，随本 widget 渲染重绘——进页/增删组件/拖拽）。
     const ring = freshnessRingSvg(list.length ? list[0].timestamp : null, Date.now());
     // W5-S23 count-up（W6 P-6）：初值占位，下方 animateKpiValue 同步补间/
@@ -314,7 +344,7 @@ async function renderDashboardGrid() {
     _kpiPrev = { runs: list.length, best, adapters };
   }
   async function wActivity(el) {
-    // 架构批 W4-C（R1 §1.3 活动日志）：数据源=本页已拉取的 /api/runs
+    // aurora36 W4-C（R1 §1.3 活动日志）：数据源=本页已拉取的 /api/runs
     // （_dashData.runs，零新增后端端点）；渲染最近 10 条（run 名/状态徽章/
     // 相对时间），点击复用 openRun 跳详情（palette 同款单入口，showPage("detail")
     // 形态的既有封装）。UI-R4：行可达形态收编 kitClickRow 单源（本组件为
@@ -349,7 +379,7 @@ async function renderDashboardGrid() {
     bindClickRows(el, (row) => openRun(row.dataset.id), "[data-id]");
   }
   async function wStatusMix(el) {
-    // 架构批 W4-C（R1 §1.3 甜甜圈图）：pass/fail 分布环形图——数据源=本页
+    // aurora36 W4-C（R1 §1.3 甜甜圈图）：pass/fail 分布环形图——数据源=本页
     // 已拉取的 /api/runs status 字段（零新增端点）；走 W2-B 缓存基建
     // （echartsInitCached 实例守卫 + bindChartResize 监听去重）与 W3-B
     // chartExportTools 导出面（CSV/PNG，并顺带成为事件桥"最近装配"目标）。
@@ -496,4 +526,204 @@ async function renderDashboardGrid() {
     el.innerHTML = "<div class='guide-flow'>" + steps.map(([label, desc], i) =>
       `<div class='guide-step'><span class='n'>${i + 1}</span><b>${label}</b><div>${desc}</div></div>`).join("") + "</div>";
   }
+  /* ═══ 可信度 KPI widget（aurora_i W3.5-K1，R3 设计 M7 前端半）═══════
+     三数：HFSS 仲裁锚数 / AGREE 判定占比（分数形态） / 覆盖模板族数。
+     数据源零新端点：/api/anchors 摘要（engine_pair.referee=hfss 过滤，
+     现役 17 条）+ /api/anchors/{id} 详情既有字段（verdict_state 只在
+     详情——画廊 W2-S1 同款两段取数）。呈现红线（#122 家族）：分歧/待判/
+     其他如实进注记行，不折百分比凑绿。点卡跳画廊抽屉 credibility 节
+     （openGalleryCredibility，禁改他页通路=代点既有 data-gal 钮）。 */
+  async function wCredibility(el) {
+    if (_credLoadFail) {
+      el.innerHTML = kitErrorPanel(t("dashboard.cred_load_fail"));
+      return;
+    }
+    if (_credSummary) { credRenderBody(el); ensureCredVerdicts(el); return; }
+    // 首拉骨架占位（P8-4 渐进首绘同款：取数不阻塞后续 widget 渲染）
+    el.innerHTML = `<div class="skeleton-wrap" role="status" aria-label="${escAttr(t("dashboard.loading_aria"))}">${kitSkeleton(3)}</div>`;
+    apiFetch("/api/anchors", { signal: viewSignal("dashboard") }).then((d) => {
+      if ((d && d.aborted) || !el.isConnected) return; // 切页取消/面板离场
+      if (d && d.ok) {
+        _credSummary = (d.anchors || []).filter((a) => a && a.engine_pair &&
+          a.engine_pair.referee === "hfss"); // 仲裁口径单源：裁判=HFSS
+        credRenderBody(el);
+        ensureCredVerdicts(el);
+      } else {
+        _credLoadFail = true; // 定局失败：诚实降级（不重试风暴，gallery 同款）
+        el.innerHTML = kitErrorPanel(((d && d.errors) || []).join("; ") ||
+          t("dashboard.cred_load_fail"));
+      }
+    }).catch(() => {
+      _credLoadFail = true;
+      if (el.isConnected) el.innerHTML = kitErrorPanel(t("dashboard.cred_load_fail"));
+    });
+  }
+}
+
+/* ═══ aurora_i W3.5-K1：可信度 KPI 纯函数（node 行为钉可测导出面）══════
+   verdict 态三分类（画廊 anchorVerdictOf 同款纪律复述——DISAGREE 先于
+   AGREE 判：长串态内可能并列"AGREE_JUDGE 单项不救总态"字样，先红后绿
+   防误绿；空态=pending；其余 token（REJUDGE_PASS/BRANCH_A_* 等）原样归
+   other 不猜测。#122 家族呈现红线：pending/other 照实进注记行，不并入
+   AGREE 凑占比）。 */
+export function credVerdictClass(state) {
+  const s = state == null ? "" : String(state).trim();
+  if (!s) return "pending";
+  // W4-R2 P3-1：先剥全角括注（ms_cross 的 BRANCH_A_…（…一致…）注记
+  // 语义是中性观测非总态——括注内的一致判定不应落绿）
+  const tok = s.split("（")[0];
+  if (/DISAGREE/i.test(tok)) return "disagree";
+  if (/AGREE/i.test(tok)) return "agree";
+  return "other";
+}
+
+/* 仲裁锚摘要行→KPI 统计：nArb=referee=hfss 条数；fams=覆盖模板族
+   （template_family 数组/标量/缺席三形态收敛；"*" 通配=全局锚不落族）；
+   agree/disagree/other 取 verdicts Map（anchor_id→态串），缺席=待判。 */
+export function credStats(arb, verdicts) {
+  const list = Array.isArray(arb) ? arb : [];
+  const fams = new Set();
+  let agree = 0, disagree = 0, other = 0, pending = 0;
+  for (const a of list) {
+    const tf = a && Array.isArray(a.template_family) ? a.template_family
+      : (a && a.template_family != null ? [a.template_family] : []);
+    for (const f of tf) {
+      const k = String(f || "").trim();
+      if (k && k !== "*") fams.add(k);
+    }
+    const cls = credVerdictClass(verdicts ? verdicts.get(String(a.anchor_id)) : undefined);
+    if (cls === "agree") agree++;
+    else if (cls === "disagree") disagree++;
+    else if (cls === "other") other++;
+    else pending++;
+  }
+  return { nArb: list.length, fams: [...fams].sort(), agree, disagree, other, pending };
+}
+
+/* ═══ aurora_i W3.5-K1：首访导览（localStorage 记忆已读不再弹）════════
+   键缺席=首访（弹三步引导卡）；写档失败（隐私模式等）→ dismiss 仅本会话
+   生效（下次再弹=诚实降级，#105 best-effort）。store 参数注入=node 行为
+   钉入口（缺省读浏览器 localStorage，typeof 守卫零 DOM 依赖——node 裸
+   import 惯例）。 */
+export function onboardSeen(store) {
+  const ls = store || (typeof localStorage === "undefined" ? null : localStorage);
+  if (!ls || typeof ls.getItem !== "function") return false;
+  try { return ls.getItem(ONBOARD_KEY) != null; } catch { return false; }
+}
+export function markOnboardSeen(store) {
+  const ls = store || (typeof localStorage === "undefined" ? null : localStorage);
+  if (!ls || typeof ls.setItem !== "function") return;
+  try { ls.setItem(ONBOARD_KEY, "seen"); } catch { /* 隐私模式等 */ }
+}
+
+/* 导览卡 HTML（静态壳：data-i18n 三通道合法面——文案随 setLocale 重扫
+   自更新；步骤行 data-go 由 bindOnboard 经 bindClickRows 接 showPage，
+   键盘可达同 kitClickRow 单源；键字面逐一落模板防动态拼键逃逸
+   _PAGE_KEY_LIT 扫描）。 */
+function onboardCardHtml() {
+  return `<div class='panel' id='onboard-card' role='region' aria-label="${escAttr(t("dashboard.onboard_aria"))}">` +
+    `<div style='display:flex;align-items:baseline;gap:8px;flex-wrap:wrap'>` +
+    `<b data-i18n='dashboard.onboard_title'>${t("dashboard.onboard_title")}</b>` +
+    `<span style='flex:1'></span>` +
+    `<button class='minor' data-onboard-dismiss>${t("dashboard.onboard_dismiss")}</button></div>` +
+    `<div class='guide-flow' style='margin-top:var(--space-2)'>` +
+    `<div class='guide-step' data-go='tune' ${kitClickRowAttrs({ label: t("dashboard.onboard_s1_desc") })}>` +
+    `<span class='n'>1</span><b data-i18n='nav.tune'>${t("nav.tune")}</b>` +
+    `<div data-i18n='dashboard.onboard_s1_desc'>${t("dashboard.onboard_s1_desc")}</div></div>` +
+    `<div class='guide-step' data-go='runs' ${kitClickRowAttrs({ label: t("dashboard.onboard_s2_desc") })}>` +
+    `<span class='n'>2</span><b data-i18n='nav.runs'>${t("nav.runs")}</b>` +
+    `<div data-i18n='dashboard.onboard_s2_desc'>${t("dashboard.onboard_s2_desc")}</div></div>` +
+    `<div class='guide-step' data-go='gallery' ${kitClickRowAttrs({ label: t("dashboard.onboard_s3_desc") })}>` +
+    `<span class='n'>3</span><b data-i18n='nav.gallery'>${t("nav.gallery")}</b>` +
+    `<div data-i18n='dashboard.onboard_s3_desc'>${t("dashboard.onboard_s3_desc")}</div></div>` +
+    `</div></div>`;
+}
+
+/* 导览接线（幂等：card 缺席静默）：三步=点击/Enter/Space 跳对应页
+   （bindClickRows 单源，与活动流同款）；dismiss=写 localStorage + 摘卡。 */
+function bindOnboard(v) {
+  const card = v.querySelector("#onboard-card");
+  if (!card) return;
+  bindClickRows(card, (row) => showPage(row.dataset.go), "[data-go]");
+  const btn = card.querySelector("[data-onboard-dismiss]");
+  if (btn) btn.onclick = () => { markOnboardSeen(); card.remove(); };
+}
+
+/* 可信度卡体渲染（摘要就绪与 verdict 补拉定局两路径共用单点；数据全部
+   出自 _credSummary/_credVerdicts 模块缓存+词表，零 API 数据插值——无
+   esc 面）。AGREE 占比=x/总数 分数形态；verdict 补拉在途="…"占位。 */
+function credRenderBody(el) {
+  const s = credStats(_credSummary || [], _credVerdicts);
+  const agreeTxt = _credVerdictsDone ? s.agree + "/" + s.nArb : "…";
+  el.innerHTML =
+    `<div class="cards" style="margin:0;cursor:pointer" data-cred-open ` +
+    kitClickRowAttrs({ label: t("dashboard.cred_stats_aria") }) + `>` +
+    `<div class='card'><div class='k'>${t("dashboard.cred_k_anchors")}</div><div class='v'>${s.nArb}</div></div>` +
+    `<div class='card'><div class='k'>${t("dashboard.cred_k_agree")}</div><div class='v'>${agreeTxt}</div></div>` +
+    `<div class='card'><div class='k'>${t("dashboard.cred_k_fams")}</div><div class='v'>${s.fams.length}</div></div></div>` +
+    `<div class="muted" style="margin-top:var(--space-1)">${t("dashboard.cred_note_tpl", { d: s.disagree, p: s.pending, o: s.other })}</div>` +
+    `<div style="margin-top:var(--space-2)"><button class="minor" data-cred-btn>${t("dashboard.cred_open")}</button></div>`;
+  const open = () => openGalleryCredibility();
+  bindClickRows(el, open, "[data-cred-open]");
+  const btn = el.querySelector("[data-cred-btn]");
+  if (btn) btn.onclick = open;
+}
+
+/* 逐锚详情补拉（既有端点 /api/anchors/{id}：verdict_state 在 provenance、
+   只在详情面——画廊 W2-S1 同款两段取数）。全部定局才写缓存旗；切页 abort
+   不定局不缓存（回页重拉）；单锚失败按空串=pending 如实进注记（失败也
+   缓存不重试风暴）。定局后只重铺本 widget 体（AGREE 数到位，零全格重建）。 */
+function ensureCredVerdicts(el) {
+  if (_credVerdictsInFlight || _credVerdictsDone || !_credSummary ||
+    !_credSummary.length) return;
+  _credVerdictsInFlight = true;
+  const ids = _credSummary.map((a) => String(a.anchor_id));
+  Promise.all(ids.map((id) =>
+    apiFetch("/api/anchors/" + encodeURIComponent(id),
+      { signal: viewSignal("dashboard") })
+      .then((d) => ({ id, aborted: !!(d && d.aborted),
+        st: d && d.ok && d.anchor
+          ? String(((d.anchor.provenance || {}).verdict_state) || "") : "" }))
+      .catch(() => ({ id, aborted: false, st: "" }))
+  )).then((rs) => {
+    _credVerdictsInFlight = false;
+    if (rs.some((r) => r.aborted)) return; // 切页取消：不定局（回页重拉）
+    for (const r of rs) _credVerdicts.set(r.id, r.st);
+    _credVerdictsDone = true;
+    if (el.isConnected) credRenderBody(el);
+  });
+}
+
+/* 点卡跳画廊抽屉 credibility 节（禁改他页通路）：view_gallery 的抽屉开函
+   私有，唯一不动他页的通路=showPage("gallery") 后代点既有 data-gal 详情
+   钮（openDrawer 同步铺节），再把抽屉滚到可信度节标题。目标模板=覆盖族
+   优先（wilkinson 恒首选——仲裁锚+对照曲线双面样板）；画廊网格未到则
+   100ms 轮询上限 ~6s；期间用户离开画廊（activeView≠gallery）即放弃；
+   目标缺席静默降级=停在画廊页（#105 best-effort：导览链路不阻业务主
+   路径）。 */
+function openGalleryCredibility() {
+  showPage("gallery");
+  const fams = credStats(_credSummary || [], _credVerdicts).fams;
+  let tries = 0;
+  const tick = () => {
+    if (getActiveView() !== "gallery") return; // 用户已离开画廊：放弃代点
+    const grid = T.$("gal-grid");
+    const btns = grid ? [...grid.querySelectorAll("[data-gal]")] : [];
+    let target = null;
+    for (const name of ["wilkinson", ...fams]) {
+      target = btns.find((b) => b.getAttribute("data-gal") === name);
+      if (target) break;
+    }
+    if (!target && btns.length) target = btns[0];
+    if (target) {
+      target.click(); // 抽屉同步铺节（openDrawer 私有——代点是唯一通路）
+      const slot = document.querySelector(".kit-confirm [data-slot=credibility]");
+      const h = slot && slot.previousElementSibling;
+      if (h && typeof h.scrollIntoView === "function")
+        h.scrollIntoView({ block: "start" });
+      return;
+    }
+    if (++tries < 60) setTimeout(tick, 100); // 网格未到：~6s 上限
+  };
+  setTimeout(tick, 100);
 }

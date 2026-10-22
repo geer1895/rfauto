@@ -46,7 +46,7 @@ arm_len = resolve_role("resonator_length_mm", self._variables)
   出口；
 - **量纲后缀收紧到 mm**——旧实现剥 `m` 后缀把 `"20m"`（米）静默读
   成 20.0（千倍量纲错），现在 `"20m"` 抛 ValueError、`"2.5cm"` 同面
-  收紧，无单位杂串仍返回 None 由调用方回退（A2 P2-5 批固化）。
+  收紧，无单位杂串仍返回 None 由调用方回退。
 
 消费面实测：`resolve_role` 在 `adapters/fake_adapter.py` 中 95 处
 调用（fake 的全部解析模型走角色取参）、`service/aging_service.py`

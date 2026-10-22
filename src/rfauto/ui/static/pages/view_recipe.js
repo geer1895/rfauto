@@ -1,16 +1,16 @@
-/* rfauto 配方编辑页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 配方编辑页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    配方目录 + 参数表 + setup/optimization 表单化 + 3D 预览。 */
 
 import { releaseWebGLIn } from "./charts.js";
 import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
-// i18n（架构批 W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
+// i18n（aurora_h W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
 // data-i18n+首扫、help 块分段 t()、动态串（目录行/表单标签/toast/aria）
 // t() 烘焙——API 动态中文数据（d.help 文案/模型名）照旧 esc 不迁。
 import { t, applyI18nRoot } from "./i18n.js";
 import { bindClickRows, kitClickRowAttrs } from "./kit.js";
 import { openRun } from "./router.js";
-// P8-9（架构批 W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 5 点）——
+// P8-9（aurora_f W3-S9，R1 §面4）：T.api→apiFetch 统一请求层（本页 5 点）——
 // 数据面（目录/配方加载/3D 预览数据）接 viewSignal("recipe") 切页收束 +
 // aborted 短路（在途请求不再写隐藏区）；动作面（保存/运行 POST）保持
 // 无 signal（用户显式动作不因切页取消），错误信封与 toast 呈现同形。
@@ -254,7 +254,7 @@ export async function pageRecipe() {
   }
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 recipeCtx ════════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 recipeCtx ════════════
    refresh=配方目录重拉（pageRecipe 幂等——壳判 innerHTML 已在即跳过；已加载
    配方/参数表/3D 预览不受扰——loadRecipe 只在点选/加载时触发）。无轮询面，
    leave 不需要。 */

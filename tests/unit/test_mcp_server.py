@@ -289,7 +289,23 @@ class TestMCPResources:
             # MCP-B 席两件（2026-10-14）：calculators/datasets 目录发现面
             "rfauto://calculators/index",
             "rfauto://datasets/index",
+            # aurora_i W3.5-K3（2026-10-19）：指标词典（W2-S2 留账跨锚补齐）
+            "rfauto://knowledge/metric-glossary",
         }
+
+    def test_read_metric_glossary_resource(self, mcp_server):
+        """aurora_i W3.5-K3（2026-10-19）：指标词典资源读回——YAML 原文
+        结构含 entries 清单（同 test_terminology 读回形态；CWD 无关，
+        service load_metric_glossary 同源 __file__ 锚）。"""
+        import anyio
+        content = anyio.run(
+            lambda: mcp_server.read_resource(
+                "rfauto://knowledge/metric-glossary")
+        )
+        data = json.loads(_resource_text(content))
+        entries = data.get("entries")
+        assert isinstance(entries, list) and entries, "指标词典不应为空"
+        assert "metric_id" in entries[0]
 
     def test_read_compat_matrix_resource(self, mcp_server, monkeypatch):
         from pathlib import Path
@@ -603,7 +619,7 @@ _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 
 class TestCalculatorExperimentalPassthrough:
     """list_calculators/run_calculator 的 experimental 标签与 allow_experimental
-    三态透传（followUp ①；默认不参与、显式开关才启用）。"""
+    三态透传（DEVLOG（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
 
     def test_list_default_includes_experimental_with_label(self, mcp_server):
         data = _call(mcp_server, "list_calculators", {})
@@ -640,7 +656,7 @@ class TestCalculatorExperimentalPassthrough:
             "allow_experimental": True})
         assert data["ok"] is True
         assert data["experimental"] is True
-        # 三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
+        # DEVLOG（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
         assert data["result"]["f0_ghz"] == pytest.approx(1.918754, abs=2e-6)
 
     def test_run_explicit_false_beats_env(self, mcp_server, monkeypatch):
@@ -889,7 +905,7 @@ _SLOT_SUB = {"h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}
 
 class TestSlotlineTransitionTools:
     """W2⑨ 槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
-    确定性内核（锚 ②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
+    确定性内核（锚 DEVLOG（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
     Z0=110.92Ω、εeff=1.6462、λ'=93.462mm；名义两节 Marchand (w,s,ℓ)=
     (1.7616,0.1016,18.467)mm）；越域/不可达如实进信封不抛出。"""
 
@@ -1185,15 +1201,15 @@ class TestRemoteTools:
 
         def fake_probe(machine):
             captured["machine"] = machine
-            return {"ok": True, "machines": [{"name": "sim_host",
+            return {"ok": True, "machines": [{"name": "sim_server",
                                               "reachable": True}]}
 
         monkeypatch.setattr(rsvc, "remote_probe", fake_probe)
         data = self._call(mcp_server, "remote_probe_machine",
-                          {"machine": "sim_host"})
+                          {"machine": "sim_server"})
         assert data["ok"] is True
-        assert data["machines"][0]["name"] == "sim_host"
-        assert captured["machine"] == "sim_host"
+        assert data["machines"][0]["name"] == "sim_server"
+        assert captured["machine"] == "sim_server"
 
     def test_remote_machine_status_missing_credentials_envelope(
             self, mcp_server, monkeypatch):

@@ -92,7 +92,7 @@ class TestGroupedSearchSelector:
         # W2-S1 批 4：组名/实验态徽章文案迁词表（grpDisp 显示层翻译）
         assert "T.badge(grpDisp(calcGroup(cal)), \"muted\")" in tools
         assert 'T.badge(t("tools.badge_experimental"), "warn")' in tools
-        assert "实验态（默认不放行）" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
+        assert "实验性（默认禁用）" in (_STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'c.experimental ? t("tools.opt_experimental")' in tools  # 选项内标记保持
 
 
@@ -175,8 +175,9 @@ class TestHelpTextRefreshed:
 
     def test_three_shell_sentence_kept(self):
         # 三壳同源说明保留（CLI rfauto calc / MCP run_calculator / 本 UI）；
-        # 人性化 R3 文案批："三壳一个内核"白话化为"同一套内核"（语义不变）
-        assert "同一套内核" in _SRC
+        # 人性化 R3 文案批："三壳一个内核"白话化为"同一套内核"；R2 人性化二批
+        # （2026-10-19）再顺化为"三处同一套算法"（语义不变）
+        assert "三处同一套算法" in _SRC
         assert "rfauto calc" in _SRC and "run_calculator" in _SRC
 
     def test_deeplink_hint_in_help(self):
@@ -220,7 +221,7 @@ class TestCrossSeatPinsHold:
     归他席文件）——按 pages.js 实测口径钉。"""
 
     def test_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _SRC.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
@@ -441,7 +442,7 @@ class TestA3ACrossSeatPinsHold:
     """A3-A 增量后的跨席计数钉复述（新画图全部走缓存基建，钉不红）。"""
 
     def test_counts_untouched_after_a3a(self):
-        assert _SRC.count("T.plotCard(") == 16  # 扫参图走 plotCardCached 包装（12+W3-S12 四管线）
+        assert _SRC.count("T.plotCard(") == 18  # 扫参图走 plotCardCached 包装（12+W3-S12 四管线）
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳

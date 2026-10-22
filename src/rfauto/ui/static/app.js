@@ -1,15 +1,15 @@
 /* rfauto 射频调优工作台前端（vanilla JS + three.js，无构建步骤）。
    本文件 = 外壳（导航/工具函数/3D）；各页面逻辑在 pages.js。
-   P8-2（架构批 W3-S9，R1 §面1 重审）：three 不再顶层静态 import——
+   P8-2（aurora_f W3-S9，R1 §面1 重审）：three 不再顶层静态 import——
    drawBoxes 是全壳唯一静态消费点（T.THREE 消费点 view_fieldviz drawIsoMesh
    同批改调用点动态 import），改为 3D 渲染时 `await import("three")`
    （importmap 单源映射 index.html，模块缓存命中后零开销）。首屏关键路径
    去 1,272,972B 原始 / 256,743B gzip（W1 GZip 后实=首屏线传 36% 单件），
    仅 recipe/detail/field 三视图首次 3D 渲染时拉取。旧否决理由（monolith
-   时代 pages.js 同步消费 T.THREE）已失效，见 内部证据目录
+   时代 pages.js 同步消费 T.THREE）已失效，见 runs/aurora_f/R1_ui_v8_audit.md
    P8-2 与本席位报告。 */
 import { initPages, showPage, esc } from "./pages.js";
-// 架构批 A4-C（R6 审计 R-2）：parseRoute（两级 hash 解析纯函数）与
+// aurora72 A4-C（R6 审计 R-2）：parseRoute（两级 hash 解析纯函数）与
 // routeOpen（参数页 opener 注册表分发）单源在 pages.js——本壳只持策略面。
 // （独立 import 声明：上行形态被 test_ui_xss_escape 源码钉逐字，勿合并。）
 import { parseRoute, routeOpen } from "./pages.js";
@@ -17,14 +17,14 @@ import { parseRoute, routeOpen } from "./pages.js";
 // 迁移前 drawEChart 逐字节等价，golden 快照钉 runs/pr34/），drawEChart
 // 与 plotCard 共用；drawLineChart/Smith/3D 自研管线不动。
 import { buildEChartOption, plotCard } from "./plotcard.js";
-// 架构批 A5-B（R6 审计 R-4）：主题判定/双档调色板单源在 theme.js——
+// aurora72 A5-B（R6 审计 R-4）：主题判定/双档调色板单源在 theme.js——
 // body.light 现取 bodyIsLight()、CHART_COLORS 档位经 chartPalette(light)、
 // 自研 canvas 管线双档色经 themePick(light, THEME_COLORS.x)（SCENE3D 两档
 // 3D 场景色暂留本壳：test_ui_nav_focus 源码钉逐字钉住其消费位，A5-B 不动）。
 import {
   bodyIsLight, CANVAS_FONT, CANVAS_LINE_LAYOUT, chartPalette, themePick, THEME_COLORS,
 } from "./theme.js";
-// UI-R12（架构批 前端深化席）：统一 API 请求层单源在 pages/api.js——
+// UI-R12（aurora_d 前端深化席）：统一 API 请求层单源在 pages/api.js——
 // 本壳 api（T.api 载体）保形消费 apiRequestInit（token/init 归一单源，
 // 无 token 无 opts 时逐字节等价），activate 消费 abortViewSignals 做
 // 切页在途请求收束（仅影响显式接 viewSignal 的迁移视图）。
@@ -161,7 +161,7 @@ export const badge = (text, cls) => `<span class="badge ${cls}">${esc(text)}</sp
 export const passBadge = (p) =>
   p === true ? badge("PASS", "ok") : p === false ? badge("FAIL", "err") : badge("N/A", "muted");
 
-/* PR-1 对比度：图表系列调色板按主题分档——单源已收编 theme.js（架构批
+/* PR-1 对比度：图表系列调色板按主题分档——单源已收编 theme.js（aurora72
    A5-B，R6 审计 R-4），本壳经 chartPalette(light) 消费（dark/light 档取值、
    ocean 共用 dark 档的已固化结论与对比度核算见 theme.js 头注与
    runs/pr1_contrast/）。显式 s.color 仍优先——调色板只兜底缺省系列。 */
@@ -475,7 +475,7 @@ function orbitLike(camera, dom, maxDim = 120) {
   dom.onwheel = (e) => { e.preventDefault(); radius *= e.deltaY > 0 ? 1.1 : 0.9; apply(); };
 }
 
-/* ── 两级 hash 路由（架构批 A4-C，R6 审计 R-2）── */
+/* ── 两级 hash 路由（aurora72 A4-C，R6 审计 R-2）── */
 // 页名权威面（nav data-v 派生，26 颗含隐藏 detail）——回落语义单源在此。
 const _VALID_PAGES = new Set(
     [...document.querySelectorAll("[data-v]")]
@@ -521,7 +521,7 @@ document.querySelectorAll("[data-v]").forEach((b) => {
   });
 });
 
-/* ═══ W14-S2（架构批，R1 §面5 P9-12 / R2 Top10 #8）：离线检测 ═══
+/* ═══ W14-S2（aurora_g，R1 §面5 P9-12 / R2 Top10 #8）：离线检测 ═══
    navigator.onLine 状态翻转到时经 window online/offline 事件呈现：
    - offline → #msg 错误 toast（role=status aria-live 在壳，读屏同播）；
    - online → 恢复 toast + 当前页 PAGE_CTX.refresh 一次（断网期间失败的
@@ -546,7 +546,7 @@ try {
   });
 } catch { /* 事件面不可用（异常宿主）静默 */ }
 
-/* ═══ W14-S2（架构批，R1 §面1 P9-4 / R2 审计 §1.3 Top10 #8）：空闲预载 ═══
+/* ═══ W14-S2（aurora_g，R1 §面1 P9-4 / R2 审计 §1.3 Top10 #8）：空闲预载 ═══
    boot 装配完成后把浏览器空闲时窗用满：requestIdleCallback 分三批预热
    懒加载面，高频页首访/首次 3D 渲染的 1-2s 动态 import 延迟（W7 §1 实测
    口径）归零。三批按单件重量降序，批内串行、批间让出空闲槽：

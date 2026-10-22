@@ -106,7 +106,7 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # 公开仓同步批（2026-10-18：templates golden-diff 单叶）→ 270。
     # +3（2026-10-19 架构批：verdict-summary 顶层叶 + runs compare-batch
     # + datasets profile，全叶带 --json）→ 273
-    assert check_numbers.count_cli() == 273
+    assert check_numbers.count_cli() == 274
 
 
 def test_cli_bench_subapp_breakdown():
@@ -224,7 +224,7 @@ def test_mcp_resources_dual_source_consistent():
     # rfauto://datasets/index → 9。
     n, src = check_numbers.count_mcp_resources()
     n_rx = check_numbers.count_mcp_resources_regex()
-    assert n == n_rx == 9
+    assert n == n_rx == 10
     assert src.startswith("list_resources()")  # 注册面主口径可达（非回退态）
 
 

@@ -104,13 +104,15 @@ def test_cli_leaf_paths_registration_order():
     """叶命令深度优先注册序逐位=金快照（E2-8：失败消息改动态 len 防再陈旧）。"""
     gold = json.loads(_GOLD_CLI.read_text(encoding="utf-8"))
     snap = _cli_tree_snapshot()
-    assert snap["n_leaves"] == 273, (
-        f"叶命令数漂移: {snap['n_leaves']} != 273（check_numbers CLI 口径；"
-        "架构批 W8-S4 2026-10-19 +3 重钉——verdict-summary 顶层叶（verdict "
+    assert snap["n_leaves"] == 274, (
+        f"叶命令数漂移: {snap['n_leaves']} != 274（check_numbers CLI 口径；"
+        "aurora_e W3-S4 2026-10-19 campaign digest +1 重钉——战役终态 zh "
+        "摘要聚合叶（campaign 域内追加，手动单节触发，全带 --json）；上锚="
+        "aurora_g W8-S4 2026-10-19 +3 重钉——verdict-summary 顶层叶（verdict "
         "人读摘要出口）+ runs compare-batch（多 run 收官对账）+ datasets "
-        "profile（数据集一键画像），全叶带 --json；上锚=架构批 W2-S8 "
+        "profile（数据集一键画像），全叶带 --json；上锚=aurora_e W2-S8 "
         "2026-10-18 templates golden-diff +1——EC-8 全模板 golden 几何回归"
-        "仓叶，零逻辑转发 service/template_golden_service；上上锚=架构批 "
+        "仓叶，零逻辑转发 service/template_golden_service；上上锚=aurora_d "
         "KB-B 2026-10-14 pitfalls search/get +2）")
     assert snap["leaf_paths"] == gold["leaf_paths"], (
         "CLI 叶命令注册序漂移（同族段内次序是 AU-1B4 钉的镜像面）")

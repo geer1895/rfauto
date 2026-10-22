@@ -4,8 +4,7 @@
 本文讲三件事：性能基线钉在哪里、怎么复测（运维视角）；契约棘轮门
 `check_ui_contracts.py` 的双向对账口径——新增端点/调用时会发生什么
 （贡献者视角）；以及服务端批处理面的 lake index 消费语义。全部命令与
-数字实测（2026-10-19，架构批 W13-S3 文档席复测；W4-S15/W3-S9 历史口径
-按当时点保留标注）。
+数字实测（2026-10-19 复测；历史数据按当时点保留标注）。
 
 ## 1. 性能基线：钉了什么、在哪
 
@@ -51,7 +50,7 @@ curl -s -N -m 3 -D - -o /dev/null http://127.0.0.1:8643/api/events/stream \
 | palette TTL 60s | `palette.js` `_DYN_TTL_MS = 60000` | runs+recipes 数据源 60s 缓存命中零网络；`#` 前缀搜 run 强制刷新一次绕 TTL；失败响应不入缓存 |
 | dashboard 渐进首绘 | `routes/agent.py` `api_solvers` 走 `run_in_threadpool` | 同步冷扫曾阻塞事件循环 8.3s（真机抓出）——线程池化后首绘 ~99ms，数据后补填装 |
 
-首屏线传实测（W3-S9 席位）：710KB → 454KB（−36%）。
+首屏线传实测：710KB → 454KB（−36%）。
 
 **怎么复测**：首屏线传 = 浏览器 DevTools Network 面板 reload 总传输量
 （无 three 大件即懒加载生效）；守卫测试一条命令：
@@ -75,7 +74,7 @@ health 批检 / monitor 巡环 / league 联赛三个批处理面的**候选枚�
 health/monitor 面枚举 ~30ms、league 两层面 ~150ms；把索引人为放旧后
 （index=9168 vs 目录 11447）护栏当场判 `usable=False` 回退目录扫，信封
 `enumeration_source` 落 `dir_scan_fallback` + 告警注记——消费方零感知。
-W4-S15 席位批量口径（同机当时点）：health 枚举 103→28.5ms（−72%）/
+同机当时点的批量实测：health 枚举 103→28.5ms（−72%）/
 league 575→120ms（−79%）/ monitor 152→19ms（−87%）。
 
 **怎么复测**：
@@ -155,7 +154,8 @@ UI 面（契约棘轮门=面 18、CSP、注册序、信封契约）与数字链�
 ## 5. 高频坑位
 
 - **契约门对参数串失明**：查询串从 `?` 截断——`?limit=500` 写错参数名
-  本门不报（P8-10 如实降级）。参数面契约靠服务端 ParamError→400 信封
+  本门不报（这是已知限制，门对此失明）。参数面契约靠服务端
+  ParamError→400 信封
   （`A8-D`）+ 定向测试兜底；
 - **SSE 端点别手挂 gzip 排除**：starlette 缺省 `exclude_content_types`
   已覆盖 `text/event-stream`，手工再配一遍反而漂移；

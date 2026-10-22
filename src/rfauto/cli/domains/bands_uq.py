@@ -13,6 +13,7 @@ from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 from rfauto.cli.domains.calc_vna import _coerce_param as _coerce_param
 from rfauto.cli.domains.campaign import campaign_app as campaign_app
+from rfauto.cli.domains.campaign import campaign_digest_cmd as campaign_digest_cmd
 from rfauto.cli.domains.campaign import campaign_event_cmd as campaign_event_cmd
 from rfauto.cli.domains.campaign import campaign_list_cmd as campaign_list_cmd
 from rfauto.cli.domains.campaign import campaign_plan_cmd as campaign_plan_cmd
@@ -261,7 +262,7 @@ def template_spec_draft_cmd(
         _emit(result, f"模板 {name} 草稿生成失败")
     if output:
         # --output 由用户显式指定 → 显式保存入口；序列化/落盘走守卫统一出口
-        # T8 越级收口（架构批 W11-S3）：落盘经 service 单源
+        # T8 越级收口（aurora_g W11-S3）：落盘经 service 单源
         # （template_spec_service.save_recipe_draft，recipe_guard 守卫
         # explicit=True 原样转发），返回 Path 含 overwritten 属性语义不变。
         from rfauto.service.template_spec_service import (

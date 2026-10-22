@@ -160,6 +160,7 @@
   "rfauto://edb/status",
   "rfauto://knowledge/compat_matrix",
   "rfauto://knowledge/materials",
+  "rfauto://knowledge/metric-glossary",
   "rfauto://knowledge/terminology",
   "rfauto://runs/index",
   "rfauto://toolsets/definition"

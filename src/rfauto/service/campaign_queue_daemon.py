@@ -51,6 +51,46 @@ v1 如实注记不做事务化。**单飞不逃逸**：在途（launched）账�
 ``external_running`` 只观察不接管（人工在跑的面不劫持）；子进程死亡而
 plan verdict 停留 RUNNING 的孤儿态 v1 不做 pid 存活探测（如实留档，
 followUp）。
+
+**队列阻塞原因人读透出（aurora_i W2-S3，采纳 #2；hfssq blocked_reason
+"仅变化落账"范式的思想重实现）**：排队项每 tick 经 :func:`merge_blocked_reason`
+携带结构化阻塞块 ``rec["blocked"] = {code, detail, since, updated_at}``——
+code ∈ :data:`BLOCK_SOLO`/:data:`BLOCK_CALENDAR`/:data:`BLOCK_LICENSE`/
+:data:`BLOCK_AHEAD`；**变化才落账**：同 (code, detail) 不改写不刷新
+（``since`` 保持首次阻塞时刻，等待时长由读侧按 ``now - since`` 即时计算，
+人读一句话经 :func:`blocked_text_of` 组装——"等 license：…（已等 12
+分钟）"形态）；换因/解除才写账。读侧 :func:`queue_blocks_index` 供
+``/api/campaign_queue`` 合流透出（前端 i18n 按 code 另有 en 对照，
+服务层 ``text`` 为 zh 单源兜底）。依赖门控（depends_on）v1 无键无门
+（b3 的 priority/depends_on 属 v2）——排队在后候选的"依赖未满足"近义
+面=:data:`BLOCK_AHEAD`（前序候选未发射）。
+
+**失败诊断包触发（aurora_i W2-S3，采纳 #3）**：``launch_failed`` 或本守护
+已发射战役终态回读为 ABORTED/PARTIAL 时，经 ``failure_context_fn`` 注入缝
+落失败快照（:mod:`rfauto.service.failure_context_service` 单源，案发现场
+语义）；纯函数缺省 ``None``=零副作用，生产执行体
+:func:`run_queue_daemon` 缺省接真包。先于守护的终态（record_terminal/
+排队期他人代跑收口）不触发——非本守护经手的失败不越权写他人 run 目录。
+
+**长跑防卡死对冲（aurora_i W3-S3，服务器管控采纳 #1；hfss-dispatch
+ADR-0007 hedged scheduling 的思想轻量改写——不搬其"多副本赛马"形态）**：
+W2-S3 失败诊断只盖终态（ABORTED/PARTIAL）与发射失败，**"卡死但未死"
+（子进程在、plan verdict 停留 RUNNING、无任何进展）零覆盖**——单飞位被
+无限占用、队列停摆、无人知晓。对冲=在途项经 :func:`default_progress_ts`
+进展探针（计划文件+发射日志的最新 mtime，注入缝 ``progress_fn`` 可换
+心跳档）判"无进展时长 ≥ 阈值"，触发时**缺省只告警**：hedge 账
+（``rec["hedge"]``，变化才落账同 W2-S3 范式）+ ``hedge_alert`` 动作落
+tick 事件流 + 读侧 :func:`queue_hedge_index` 经 ``/api/campaign_queue``
+透出（``queue_hedge`` 字段）。**配置全走 env、缺省关闭=零行为变化**
+（硬验收）：``RFAUTO_QUEUE_HEDGE_STALL_S``（秒，未设/非法/≤0=关）启监测；
+``RFAUTO_QUEUE_HEDGE_RELAUNCH``（"1/true/yes/on"）才开自动重发——#261
+互斥红线下自动重发有双跑风险，故做成显式开关且每项硬帽至多一次
+（:data:`_HEDGE_RELAUNCH_CAP`；发射走同一 ``launcher_fn`` 缝 ``--resume``
+续跑，原进程若仍持 run 实例锁则新实例占即拒速败=安全侧失败，不杀原
+进程树——#157 家族远杀 hazard 不引入）。探针读不到证据（文件全缺/异常）
+=unknown 保守不告警（#105/#122：宁缺勿判）；本 tick 扫描未命中的在途
+陈账同样不判（计划不可读分不清"移走"与"卡死"）。进展恢复（无进展时长
+回落阈值下）摘账落 ``hedge_recovered``；终态随态清扫。
 """
 
 from __future__ import annotations
@@ -70,15 +110,31 @@ from typing import Any
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 __all__ = [
+    "BLOCK_AHEAD",
+    "BLOCK_CALENDAR",
+    "BLOCK_LICENSE",
+    "BLOCK_NONE",
+    "BLOCK_SOLO",
     "DEFAULT_INTERVAL_S",
+    "HEDGE_CODE_STALL",
+    "HEDGE_RELAUNCH_ENV",
+    "HEDGE_STALL_S_ENV",
     "ITEM_EXTERNAL",
     "ITEM_LAUNCHED",
     "QUEUE_DAEMON_SCHEMA",
     "QUEUE_STATE_DIRNAME",
     "QUEUE_STATE_FILE",
+    "blocked_text_of",
+    "default_progress_ts",
     "default_queue_state_path",
+    "env_hedge_relaunch",
+    "env_hedge_stall_s",
+    "hedge_text_of",
     "item_id_of",
     "load_queue_state",
+    "merge_blocked_reason",
+    "queue_blocks_index",
+    "queue_hedge_index",
     "queue_status_view",
     "queue_tick",
     "run_queue_daemon",
@@ -123,6 +179,356 @@ _VERDICT_TERMINAL: dict[str, str] = {
     "PARTIAL": ITEM_PARTIAL,
     "ABORTED": ITEM_ABORTED,
 }
+
+# ─── 队列阻塞原因（aurora_i W2-S3 采纳 #2；人读透出+变化才落账）───────────────
+
+#: 阻塞码词表（机读；"" = 未阻塞/已解除）。
+BLOCK_NONE = ""
+BLOCK_SOLO = "solo_wait"            # 单飞互斥：在途战役未收尾（#261 意识）
+BLOCK_CALENDAR = "calendar_blocked"  # 资源日历窗 blocked（本 tick 不发射）
+BLOCK_LICENSE = "license_wait"      # license 预检未过（fail-skip 下 tick 重探）
+BLOCK_AHEAD = "queued_ahead"        # 前序候选未发射（排队等轮次；依赖门 v2）
+
+#: 服务层 zh 人读模板单源（前端 i18n 按 code 另有 en 对照；detail/n_ahead
+#: 为占位参数——detail 是 API 动态数据，消费方照旧 esc，禁拼进壳文案）。
+_BLOCK_TEXT_TEMPLATES: dict[str, str] = {
+    BLOCK_SOLO: "等单飞位：在途战役未收尾（{detail}）",
+    BLOCK_CALENDAR: "等日历窗：{detail}",
+    BLOCK_LICENSE: "等 license：{detail}",
+    BLOCK_AHEAD: "排队中：前面还有 {n_ahead} 个候选",
+}
+
+#: 等待时长人读换算秒界（<此值报秒，否则报分钟）。
+_BLOCK_WAIT_SEC_LIMIT = 90.0
+
+
+def _format_waited(waited_s: float, *, label: str = "已等") -> str:
+    """等待秒数 → zh 人读时长（<90s 报秒，否则报分钟；负值按 0）。
+
+    ``label`` 换语义头词（对冲面用"已停滞"，缺省"已等"保持既有文案逐
+    字节不变——W2-S3 消费方零感知）。
+    """
+    w = max(0.0, float(waited_s))
+    if w < _BLOCK_WAIT_SEC_LIMIT:
+        return f"{label} {round(w)} 秒"
+    return f"{label} {round(w / 60.0)} 分钟"
+
+
+def blocked_text_of(
+    code: str,
+    *,
+    detail: str = "",
+    waited_s: float | None = None,
+    n_ahead: int = 0,
+) -> str:
+    """阻塞码+细节+等待时长 → 人读一句话（纯函数；zh 单源）。
+
+    形态："等 license：HFSS 许可端口不可达（已等 12 分钟）"；waited_s
+    缺省 None=不附等待段（code 未知=返回空串——调用方按 API data 透传
+    原文，不猜）。
+    """
+    tpl = _BLOCK_TEXT_TEMPLATES.get(str(code or ""))
+    if tpl is None:
+        return ""
+    base = tpl.format(detail=str(detail or ""), n_ahead=int(n_ahead))
+    if waited_s is None:
+        return base
+    return f"{base}（{_format_waited(waited_s)}）"
+
+
+def merge_blocked_reason(
+    rec: dict[str, Any],
+    code: str,
+    *,
+    detail: str = "",
+    n_ahead: int = 0,
+    now: float,
+) -> tuple[dict[str, Any], bool]:
+    """阻塞块"变化才落账"合并（纯函数，copy-on-write 不改性入参）。
+
+    - 同 (code, detail) 不变 → 原账原样返回（``since`` 保持首次阻塞时刻，
+      ``updated_at`` 不推进——同因不刷屏；调用方也就不重写整条记录）；
+    - 换因（同码异 detail 或异码）→ 写新 detail，``since`` 保留（同码同
+      一段等待期）或重置（异码=新一段阻塞）；``updated_at=now``；
+    - 解除（code=BLOCK_NONE）→ 摘除 ``blocked`` 键（终态/发射换账时调）。
+
+    Returns
+    -------
+    (new_rec, changed)
+    changed=True 表示阻塞账面确有变化（调用方可留痕；本守护的状态档
+    每 tick 整档重写，"落账"语义收敛在账面字段不空转+读侧等待时长稳定）。
+    """
+    new_rec = dict(rec)
+    prev = new_rec.get("blocked")
+    prev = prev if isinstance(prev, dict) else None
+    code = str(code or BLOCK_NONE)
+    if code == BLOCK_NONE:
+        if prev is None:
+            return new_rec, False
+        new_rec.pop("blocked", None)
+        return new_rec, True
+    detail = str(detail or "")
+    if prev is not None and prev.get("code") == code \
+            and prev.get("detail") == detail:
+        return new_rec, False  # 同因不刷屏（since/updated_at 原样）
+    since = now if (prev is None or prev.get("code") != code) \
+        else prev.get("since")
+    new_rec["blocked"] = {
+        "code": code, "detail": detail, "n_ahead": int(n_ahead),
+        "since": since, "updated_at": now,
+    }
+    return new_rec, True
+
+
+def queue_blocks_index(
+    state: dict[str, Any],
+    *,
+    now: float | None = None,
+) -> dict[str, dict[str, Any]]:
+    """状态档 → {item_id: 阻塞块}（读侧人话渲染；``waited_s``/``text``
+    即时计算，状态档零冗余存储）。仅 ``status=queued`` 且带阻塞账的项
+    入索引——终态/在途项的陈账自动隐身。"""
+    ts = time.time() if now is None else float(now)
+    out: dict[str, dict[str, Any]] = {}
+    for iid, rec in (state.get("items") or {}).items():
+        if not isinstance(rec, dict):
+            continue
+        if rec.get("status") != ITEM_QUEUED:
+            continue
+        blk = rec.get("blocked")
+        if not isinstance(blk, dict) or not blk.get("code"):
+            continue
+        code = str(blk.get("code") or "")
+        try:
+            waited = ts - float(blk.get("since") or ts)
+        except (TypeError, ValueError):
+            waited = 0.0
+        detail = str(blk.get("detail") or "")
+        n_ahead = int(blk.get("n_ahead") or 0)
+        out[str(iid)] = {
+            "item_id": str(iid),
+            "plan_path": rec.get("plan_path"),
+            "code": code,
+            "detail": detail,
+            "n_ahead": n_ahead,
+            "since": blk.get("since"),
+            "waited_s": round(max(0.0, waited), 3),
+            "text": blocked_text_of(code, detail=detail,
+                                    waited_s=max(0.0, waited),
+                                    n_ahead=n_ahead),
+        }
+    return out
+
+
+# ─── 长跑防卡死对冲（aurora_i W3-S3，服务器管控采纳 #1；缺省关=零行为变化）──
+
+#: 对冲监测阈值 env（秒）。未设/空/非法/≤0 = 关闭（缺省=零行为变化，硬验收）；
+#: >0 = 对在途项做"无进展时长 ≥ 阈值"监测。显式参数 > env > 缺省关。
+HEDGE_STALL_S_ENV = "RFAUTO_QUEUE_HEDGE_STALL_S"
+
+#: 自动重发显式开关 env（"1"/"true"/"yes"/"on" 大小写不敏感=开）。
+#: **缺省关=只告警不重发**——#261 互斥红线下自动重发有双跑风险
+#: （原进程可能仍存活并持 run 实例锁）；开启后每项硬帽至多重发一次。
+HEDGE_RELAUNCH_ENV = "RFAUTO_QUEUE_HEDGE_RELAUNCH"
+
+#: 对冲告警码（``rec["hedge"]["code"]`` 词表；v1 单码——停滞疑似）。
+HEDGE_CODE_STALL = "stall_suspected"
+
+#: 每项对冲重发硬帽（v1=1：防停滞+锁拒循环里无界拉子进程；再停滞只告警
+#: 人工处置）。
+_HEDGE_RELAUNCH_CAP = 1
+
+#: 缺省进展探针覆盖面：计划文件（阶段事件 apply_event→save_plan 每次重写
+#: =mtime 推进）+ 发射日志（子进程 stdout 追加）。两者皆陈旧=无进展证据。
+_HEDGE_PROBE_NAMES = ("campaign.plan.json", "queue_daemon_launch.log")
+
+#: 对冲告警 zh 人读模板单源（前端 i18n 另有 en 对照；同 W2-S3 纪律）。
+_HEDGE_TEXT_TEMPLATES: dict[str, str] = {
+    HEDGE_CODE_STALL: "疑似停滞：在途战役无进展",
+}
+
+
+def env_hedge_stall_s() -> float | None:
+    """读 :data:`HEDGE_STALL_S_ENV` → 阈值秒数（未设/空/非法/≤0=None=关）。"""
+    raw = os.environ.get(HEDGE_STALL_S_ENV)
+    raw = str(raw or "").strip()
+    if not raw:
+        return None
+    with contextlib.suppress(ValueError):
+        v = float(raw)
+        if v > 0:
+            return v
+    return None
+
+
+def env_hedge_relaunch() -> bool:
+    """读 :data:`HEDGE_RELAUNCH_ENV` → 自动重发开关（缺省 False=只告警）。"""
+    return str(os.environ.get(HEDGE_RELAUNCH_ENV, "")).strip().lower() \
+        in ("1", "true", "yes", "on")
+
+
+def default_progress_ts(plan_path: str | Path) -> float | None:
+    """缺省进展探针（纯读）：计划文件与发射日志的最新 mtime。
+
+    ``plan_path`` 文件/目录两形态都接（生产记账面存文件路径，目录形态
+    兜底 load_plan 同款宽容）：证据面=两探针名（计划文件+发射日志），
+    目录形态按目录内解析；**目录本体 mtime 不作证据**（随目录内条目
+    增删/改名变化，不代表战役求解进展——放个文件就洗白停滞钟的噪声
+    证据面）。返回 None=无任何证据（全缺）——调用方按 unknown 保守
+    不告警；探针异常同样按 unknown 处置（调用方兜，#105 观测面不阻塞
+    主路径）。
+    """
+    p = Path(plan_path)
+    base = p if p.is_dir() else p.parent
+    cands = [base / name for name in _HEDGE_PROBE_NAMES]
+    if p.is_file():
+        cands.append(p)
+    best: float | None = None
+    for f in cands:
+        with contextlib.suppress(OSError):
+            mt = f.stat().st_mtime
+            best = mt if best is None else max(best, mt)
+    return best
+
+
+def hedge_text_of(
+    code: str,
+    *,
+    detail: str = "",
+    stalled_s: float | None = None,
+    attempts: int = 0,
+) -> str:
+    """对冲码+停滞时长 → zh 人读一句话（纯函数；同 :func:`blocked_text_of`
+    口径——未知码返回空串，调用方回退 API 原文不猜）。"""
+    tpl = _HEDGE_TEXT_TEMPLATES.get(str(code or ""))
+    if tpl is None:
+        return ""
+    base = tpl.format(detail=str(detail or ""))
+    if stalled_s is not None:
+        base += f"（{_format_waited(stalled_s, label='已停滞')}）"
+    if attempts:
+        base += f"（已对冲重发 {int(attempts)} 次）"
+    return base
+
+
+def queue_hedge_index(
+    state: dict[str, Any],
+    *,
+    now: float | None = None,
+) -> dict[str, dict[str, Any]]:
+    """状态档 → {item_id: 对冲账}（读侧人话渲染；同
+    :func:`queue_blocks_index` 口径——``stalled_s``/``text`` 即时计算，
+    状态档零冗余存储）。仅 ``status=launched`` 且带对冲账的项入索引——
+    终态/排队项的陈账自动隐身（终态随态清扫+此处双保险）。"""
+    ts = time.time() if now is None else float(now)
+    out: dict[str, dict[str, Any]] = {}
+    for iid, rec in (state.get("items") or {}).items():
+        if not isinstance(rec, dict):
+            continue
+        if rec.get("status") != ITEM_LAUNCHED:
+            continue
+        hedge = rec.get("hedge")
+        if not isinstance(hedge, dict) or not hedge.get("code"):
+            continue
+        code = str(hedge.get("code") or "")
+        try:
+            stalled = ts - float(hedge.get("since") or ts)
+        except (TypeError, ValueError):
+            stalled = 0.0
+        stalled = max(0.0, stalled)
+        attempts = int(hedge.get("attempts") or 0)
+        out[str(iid)] = {
+            "item_id": str(iid),
+            "plan_path": rec.get("plan_path"),
+            "code": code,
+            "detail": str(hedge.get("detail") or ""),
+            "since": hedge.get("since"),
+            "stalled_s": round(stalled, 3),
+            "attempts": attempts,
+            "text": hedge_text_of(code, stalled_s=stalled, attempts=attempts),
+        }
+    return out
+
+
+def _resolve_hedge_cfg(
+    stall_s: float | None,
+    relaunch: bool | None,
+) -> tuple[float | None, bool]:
+    """对冲配置解析（显式参数 > env > 缺省关；纯函数不读 env 当参数给定）。"""
+    threshold = (env_hedge_stall_s() if stall_s is None
+                 else (float(stall_s) if float(stall_s) > 0 else None))
+    relaunch_on = env_hedge_relaunch() if relaunch is None else bool(relaunch)
+    return threshold, relaunch_on
+
+
+def _hedge_check(
+    rec: dict[str, Any],
+    actions: list[dict[str, Any]],
+    *,
+    now: float,
+    threshold_s: float,
+    relaunch: bool,
+    progress_fn: Callable[[str], float | None],
+    launcher_fn: Callable[[str], dict[str, Any]],
+) -> None:
+    """在途项停滞判定+处置（就地改性 ``rec``——本 tick 新建副本，非入参
+    state；动作落 ``actions``，变化才落账同 W2-S3 范式）。
+
+    - 探针无证据（None）/异常 → unknown 保守不动账不告警（#105/#122）；
+    - 无进展 < 阈值：有账则摘账落 ``hedge_recovered``（进展恢复），无账不动；
+    - 无进展 ≥ 阈值：无账=建账+``hedge_alert``；有账=同因不刷屏原样返回；
+      重发开关开且未触帽 → 同 ``launcher_fn`` 缝 ``--resume`` 重发一次
+      （``hedge_relaunch``/``hedge_relaunch_failed``；``hedge_attempts``
+      尝试即计数落账防锁拒循环重发轰炸；不杀原进程树）。
+    """
+    plan_path = str(rec.get("plan_path") or "")
+    iid = str(rec.get("item_id") or "")
+    try:
+        last = progress_fn(plan_path)
+    except Exception:  # #105：探针异常=证据不可得，不判停滞不告警
+        return
+    if last is None:
+        return
+    stalled = now - float(last)
+    hedge = rec.get("hedge")
+    hedge = hedge if isinstance(hedge, dict) else None
+    if stalled < threshold_s:
+        if hedge is not None:
+            rec.pop("hedge", None)
+            actions.append({"action": "hedge_recovered", "item_id": iid,
+                            "plan": plan_path})
+        return
+    if hedge is not None and hedge.get("code") == HEDGE_CODE_STALL:
+        return  # 同因不刷屏（since/attempts 原样，读侧时长即时算）
+    attempts = int(rec.get("hedge_attempts") or 0)
+    rec["hedge"] = {"code": HEDGE_CODE_STALL, "since": now, "updated_at": now,
+                    "last_progress": float(last), "attempts": attempts}
+    actions.append({"action": "hedge_alert", "item_id": iid, "plan": plan_path,
+                    "stalled_s": round(max(0.0, stalled), 3),
+                    "threshold_s": float(threshold_s),
+                    "reason": hedge_text_of(HEDGE_CODE_STALL,
+                                            stalled_s=max(0.0, stalled),
+                                            attempts=attempts)})
+    if not relaunch or attempts >= _HEDGE_RELAUNCH_CAP:
+        return
+    attempts += 1
+    rec["hedge_attempts"] = attempts  # 尝试即计数千账（锁拒也烧帽，防循环拉起）
+    rec["hedge"]["attempts"] = attempts
+    res = launcher_fn(plan_path)
+    if res.get("ok"):
+        rec["pid"] = res.get("pid")
+        rec["launched_at"] = now
+        rec["log_path"] = res.get("log_path")
+        rec["hedge"]["relaunched_at"] = now
+        rec["reason"] = ("对冲重发（停滞超阈疑似卡死；原进程不杀，"
+                         "若仍持 run 实例锁则新实例占即拒=安全侧失败）")
+        actions.append({"action": "hedge_relaunch", "item_id": iid,
+                        "plan": plan_path, "pid": res.get("pid"),
+                        "attempt": attempts})
+    else:
+        actions.append({"action": "hedge_relaunch_failed", "item_id": iid,
+                        "plan": plan_path,
+                        "error": str(res.get("error") or "")})
 
 
 def default_queue_state_path() -> Path:
@@ -193,6 +599,39 @@ def _license_preflight(machine: str | None) -> dict[str, Any]:
     from rfauto.service.remote_service import license_preflight
 
     return license_preflight(machine)
+
+
+def _write_failure_context(plan_path: str) -> dict[str, Any]:
+    """失败诊断包落包薄包装（failure_context_service 单源；#139）。
+
+    案发现场目录=计划文件父目录（战役 run 目录）；失败瞬间采集机器
+    实况/license 态含 TCP 探活（生产语义），测试经注入缝替换。
+    """
+    from pathlib import Path as _Path
+
+    from rfauto.service.failure_context_service import write_failure_context
+
+    return write_failure_context(_Path(plan_path).parent)
+
+
+def _snapshot_failure_context(
+    fn: Callable[[str], Any] | None, plan_path: str, iid: str,
+    actions: list[dict[str, Any]],
+) -> None:
+    """失败诊断包触发（best-effort #105：采集面异常留痕不拆 tick）。"""
+    if fn is None:
+        return
+    try:
+        res = fn(plan_path)
+    except Exception as exc:
+        actions.append({"action": "failure_context_error", "item_id": iid,
+                        "plan": plan_path,
+                        "error": f"{type(exc).__name__}: {exc}"})
+        return
+    actions.append({"action": "failure_context", "item_id": iid,
+                    "plan": plan_path,
+                    "path": (res or {}).get("path") if isinstance(res, dict)
+                    else None})
 
 
 def _launch_cmd(plan_path: str, python_exe: str | None = None) -> list[str]:
@@ -279,18 +718,32 @@ def save_queue_state(state: dict[str, Any], path: str | Path) -> str:
 
 
 def queue_status_view(state: dict[str, Any]) -> dict[str, Any]:
-    """状态档 → 人读摘要（计数按记账态；状态可查面，零额外 I/O）。"""
+    """状态档 → 人读摘要（计数按记账态；状态可查面，零额外 I/O）。
+
+    ``blocked``=排队项按阻塞码计数（W2-S3 采纳 #2；无阻塞账则键缺席
+    ——消费方按缺键=无阻塞读，不加空壳键）。
+    """
     items = state.get("items") or {}
     by_status: dict[str, int] = {}
+    blocked: dict[str, int] = {}
     for rec in items.values():
-        key = str((rec or {}).get("status") or "?")
+        rec = rec if isinstance(rec, dict) else {}
+        key = str(rec.get("status") or "?")
         by_status[key] = by_status.get(key, 0) + 1
+        blk = rec.get("blocked")
+        if isinstance(blk, dict) and blk.get("code") \
+                and rec.get("status") == ITEM_QUEUED:
+            code = str(blk.get("code"))
+            blocked[code] = blocked.get(code, 0) + 1
     in_flight = sum(1 for rec in items.values()
                     if (rec or {}).get("status") == ITEM_LAUNCHED)
-    return {"schema": str(state.get("schema") or ""),
-            "n_items": len(items), "by_status": by_status,
-            "in_flight": in_flight,
-            "last_tick_at": state.get("last_tick_at")}
+    out = {"schema": str(state.get("schema") or ""),
+           "n_items": len(items), "by_status": by_status,
+           "in_flight": in_flight,
+           "last_tick_at": state.get("last_tick_at")}
+    if blocked:
+        out["blocked"] = blocked
+    return out
 
 
 # ─── tick 单步纯函数 ─────────────────────────────────────────────────────────
@@ -325,12 +778,26 @@ def queue_tick(
     root: str = "runs",
     machine: str | None = None,
     survivor_ttl_s: float | None = None,
+    failure_context_fn: Callable[[str], Any] | None = None,
+    hedge_stall_s: float | None = None,
+    hedge_relaunch: bool | None = None,
+    progress_fn: Callable[[str], float | None] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """tick 单步：读队列→日历窗→license 预检→发射→状态回写（纯函数）。
 
     全部副作用经注入缝（now_fn/calendar_fn/preflight_fn/queue_fn/
-    launcher_fn，缺省=生产适配薄包装）；输入 state 不改性，新状态由返回
-    值交付（落盘归调用方——:func:`run_queue_daemon` 每 tick 单点写）。
+    launcher_fn/failure_context_fn/progress_fn，缺省=生产适配薄包装；唯
+    ``failure_context_fn`` 缺省 ``None``=纯函数零副作用——落失败快照是
+    写他目录的实质副作用，只在生产执行体 :func:`run_queue_daemon` 缺省
+    接真包，测试显式注入假件）；输入 state 不改性，新状态由返回值交付
+    （落盘归调用方——:func:`run_queue_daemon` 每 tick 单点写）。
+
+    对冲配置（W3-S3）：``hedge_stall_s``/``hedge_relaunch`` 显式参数 >
+    env（:data:`HEDGE_STALL_S_ENV`/:data:`HEDGE_RELAUNCH_ENV`）> 缺省关
+    （阈值 None=对冲代码路径整体不进：零探针调用、零新动作、零新字段
+    ——缺省路径零行为变化硬验收）。``hedge_stall_s`` 显式 ≤0=显式关
+    （压过 env）；``progress_fn`` 缺省=:func:`default_progress_ts`
+    （mtime 探针，仅阈值开启后才被调用）。
 
     Returns
     -------
@@ -338,7 +805,9 @@ def queue_tick(
     actions=本 tick 动作清单（词表：scan/enqueue/launch/launch_failed/
     in_flight_wait/calendar_blocked/calendar_risk/license_pass/
     license_skip_open/license_skip/record_terminal/observe_external/
-    refresh_terminal/recycle_stale/tick_error/state_save_error）；
+    refresh_terminal/recycle_stale/failure_context/failure_context_error/
+    hedge_alert/hedge_relaunch/hedge_relaunch_failed/hedge_recovered/
+    tick_error/state_save_error）；
     new_state=回写后的完整状态档（同 :func:`default_state` 形态）。
     """
     now = float((now_fn or time.time)())
@@ -346,12 +815,17 @@ def queue_tick(
     pre_fn = preflight_fn or _license_preflight
     q_fn = queue_fn or scan_queue
     l_fn = launcher_fn or _launch_campaign_subprocess
+    fc_fn = failure_context_fn  # None=不落失败快照（纯函数缺省零副作用）
+    hedge_threshold, hedge_relaunch_on = _resolve_hedge_cfg(
+        hedge_stall_s, hedge_relaunch)
+    probe_fn = progress_fn or default_progress_ts
 
     new_state = default_state(root=root, machine=machine)
     prev_items = dict((state or {}).get("items") or {})
     items: dict[str, Any] = {}
     actions: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
+    tick_blocks: dict[str, tuple[str, str, int]] = {}  # iid → (code, detail, n_ahead)
     in_flight: dict[str, Any] | None = None
     in_flight_unseen = False  # 在途账目本 tick 扫描未命中（计划瞬时不可读）
 
@@ -389,6 +863,7 @@ def queue_tick(
         if prev.get("status") == ITEM_QUEUED:
             if terminal_status is not None:
                 # 排队期被他人跑完——plan verdict 权威收口（不发射，#122）
+                prev.pop("blocked", None)  # 阻塞账随态清除（W2-S3）
                 prev["status"] = terminal_status
                 prev["verdict_seen"] = verdict
                 prev["reason"] = f"verdict={verdict}（排队期权威收口）"
@@ -399,6 +874,7 @@ def queue_tick(
                                 "plan": entry.get("plan_path")})
                 continue
             if verdict == "RUNNING":
+                prev.pop("blocked", None)  # 阻塞账随态清除（W2-S3）
                 prev["status"] = ITEM_EXTERNAL
                 prev["verdict_seen"] = verdict
                 prev["reason"] = "verdict=RUNNING 但非本守护发射（只观察不接管）"
@@ -415,6 +891,8 @@ def queue_tick(
             continue
         if prev.get("status") == ITEM_LAUNCHED:
             if terminal_status is not None:
+                prev.pop("blocked", None)  # 阻塞账随态清除（防御，launched 不带账）
+                prev.pop("hedge", None)  # 对冲账随态清除（W3-S3）
                 prev["status"] = terminal_status
                 prev["verdict_seen"] = verdict
                 prev["reason"] = f"verdict={verdict}（发射后终态回读）"
@@ -423,11 +901,23 @@ def queue_tick(
                 actions.append({"action": "refresh_terminal", "item_id": iid,
                                 "status": terminal_status,
                                 "plan": entry.get("plan_path")})
+                if terminal_status in (ITEM_ABORTED, ITEM_PARTIAL):
+                    # 失败诊断包触发（W2-S3 采纳 #3）：本守护发射的战役
+                    # 终态回读为失败态——案发现场快照落计划目录。
+                    _snapshot_failure_context(
+                        fc_fn, str(entry.get("plan_path") or ""), iid, actions)
                 continue
             prev["verdict_seen"] = verdict
             prev["updated_at"] = now
             items[iid] = prev
             in_flight = in_flight or prev  # 单飞约束：在途未收尾不发射下一项
+            if hedge_threshold is not None:
+                # 长跑防卡死对冲（W3-S3）：仅本 tick 扫描命中的在途项判定
+                # ——陈账（计划不可读）分不清"移走"与"卡死"，保守不判。
+                _hedge_check(prev, actions, now=now,
+                             threshold_s=hedge_threshold,
+                             relaunch=hedge_relaunch_on,
+                             progress_fn=probe_fn, launcher_fn=l_fn)
             continue
         items[iid] = prev  # 终态/external 记账保留（永不重发）
         if terminal_status is not None and prev.get("status") != terminal_status:
@@ -462,6 +952,10 @@ def queue_tick(
                 break
 
     if in_flight is not None:
+        _m = str((in_flight or {}).get("model") or "")
+        if not _m:
+            _pp = str((in_flight or {}).get("plan_path") or "")
+            _m = _pp.replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
         actions.append({"action": "in_flight_wait",
                         "item_id": in_flight.get("item_id"),
                         "plan": in_flight.get("plan_path"),
@@ -469,8 +963,18 @@ def queue_tick(
                                   + ("（计划本 tick 扫描未命中——在途陈账"
                                      "照常阻塞，单飞不逃逸）"
                                      if in_flight_unseen else "")})
+        # 单飞互斥=全体候选的共同阻塞因（W2-S3 采纳 #2）
+        for c in candidates:
+            _iid = str(c.get("item_id") or "")
+            if _iid:
+                tick_blocks[_iid] = (BLOCK_SOLO, _m, 0)
     elif candidates:
         entry = candidates[0]
+        # 后位候选：前序未发射即其阻塞因（依赖门 v2 前的近义面，docstring）
+        for _idx, c in enumerate(candidates[1:], start=1):
+            _iid = str(c.get("item_id") or "")
+            if _iid:
+                tick_blocks[_iid] = (BLOCK_AHEAD, "", _idx)
         # 门 1：资源日历窗（blocked=本 tick 不发射，项不记永久 skip——
         # E62 SKIP=inconclusive 续跑重探同源；risk=照发风险落账）
         try:
@@ -484,6 +988,10 @@ def queue_tick(
                             "item_id": entry.get("item_id"),
                             "windows_hit": calendar.get("windows_hit"),
                             "reason": str(calendar.get("reason") or "")})
+            _iid0 = str(entry.get("item_id") or "")
+            if _iid0:
+                tick_blocks[_iid0] = (BLOCK_CALENDAR,
+                                      str(calendar.get("reason") or ""), 0)
         else:
             if cal_state == "risk":
                 actions.append({"action": "calendar_risk",
@@ -519,6 +1027,10 @@ def queue_tick(
                                     "item_id": entry.get("item_id"),
                                     "verdict": verdict_pf,
                                     "reason": str(pf.get("reason") or "")})
+                    _iid0 = str(entry.get("item_id") or "")
+                    if _iid0:
+                        tick_blocks[_iid0] = (BLOCK_LICENSE,
+                                              str(pf.get("reason") or ""), 0)
             if gate_open:
                 # 门 3：发射（fire-and-forget；记账 launched 永不重发）
                 launched = l_fn(str(entry.get("plan_path") or ""))
@@ -540,8 +1052,31 @@ def queue_tick(
                     actions.append({"action": "launch_failed", "item_id": iid,
                                     "plan": entry.get("plan_path"),
                                     "error": str(launched.get("error") or "")})
+                    # 发射失败=本守护经手的失败——失败诊断包触发（W2-S3）
+                    _snapshot_failure_context(
+                        fc_fn, str(entry.get("plan_path") or ""), iid, actions)
 
-    new_state["items"] = {**survivors, **items}
+    # 阻塞账合并（W2-S3 采纳 #2）：变化才落账——同 (code, detail) 原账
+    # 不动（since 保持首次阻塞时刻，读侧等待时长连续）；换因/解除才写。
+    for _iid, (_code, _detail, _n) in tick_blocks.items():
+        rec = items.get(_iid)
+        if not isinstance(rec, dict) or rec.get("status") != ITEM_QUEUED:
+            continue
+        items[_iid], _changed = merge_blocked_reason(
+            rec, _code, detail=_detail, n_ahead=_n, now=now)
+
+    # 对冲账随态清扫（W3-S3）：对冲账只属于在途（launched）——记录换成
+    # 其他态（终态/external/queued）时残留的陈账摘除。copy-on-write
+    # （survivors 是入参 state 的原对象，就地 pop 会破"输入 state 不改性"）。
+    _merged_items: dict[str, Any] = {**survivors, **items}
+    for _iid, rec in list(_merged_items.items()):
+        if isinstance(rec, dict) and rec.get("status") != ITEM_LAUNCHED \
+                and "hedge" in rec:
+            rec = dict(rec)
+            rec.pop("hedge", None)
+            _merged_items[_iid] = rec
+
+    new_state["items"] = _merged_items
     new_state["last_tick_at"] = now
     new_state["last_actions"] = actions
     new_state["updated_at"] = now
@@ -615,6 +1150,10 @@ def run_queue_daemon(
     preflight_fn: Callable[[str | None], dict[str, Any]] | None = None,
     queue_fn: Callable[[str], list[dict[str, Any]]] | None = None,
     launcher_fn: Callable[[str], dict[str, Any]] | None = None,
+    failure_context_fn: Callable[[str], Any] | None = None,
+    hedge_stall_s: float | None = None,
+    hedge_relaunch: bool | None = None,
+    progress_fn: Callable[[str], float | None] | None = None,
 ) -> dict[str, Any]:
     """常驻执行体：while 循环逐 tick（读队列→门→发射→状态落盘）+优雅退出。
 
@@ -625,7 +1164,11 @@ def run_queue_daemon(
       防误释他人/接管期锁）；
     - 优雅退出：SIGTERM 处理器置停旗（注册失败平台 best-effort #105）+
       KeyboardInterrupt 捕获——当前 tick 完成并落账后退出；
-    - 注入缝同 :func:`queue_tick`（sleep_fn/stop_check 供测试免真睡）。
+    - 注入缝同 :func:`queue_tick`（sleep_fn/stop_check 供测试免真睡）；
+      ``failure_context_fn`` 缺省接生产真包（失败诊断包自动触发，W2-S3
+      采纳 #3——与 :func:`queue_tick` 纯函数缺省 None 相区别）；
+    - 对冲参数（W3-S3）透传 :func:`queue_tick`（显式参数 > env > 缺省关；
+      配置通道=env，CLI 不加旗标零面变化）。
     """
     sp = Path(state_path) if state_path is not None else default_queue_state_path()
     from rfauto.pipeline.dag_runner import acquire_lock, release_lock
@@ -667,7 +1210,13 @@ def run_queue_daemon(
                     state, now_fn=now_fn, calendar_fn=calendar_fn,
                     preflight_fn=preflight_fn, queue_fn=queue_fn,
                     launcher_fn=launcher_fn, license_gate=license_gate,
-                    root=root, machine=machine)
+                    root=root, machine=machine,
+                    failure_context_fn=(failure_context_fn
+                                        if failure_context_fn is not None
+                                        else _write_failure_context),
+                    hedge_stall_s=hedge_stall_s,
+                    hedge_relaunch=hedge_relaunch,
+                    progress_fn=progress_fn)
             except Exception as exc:  # #105：单 tick 异常不拆循环，留痕降级
                 actions = [{"action": "tick_error",
                             "error": f"{type(exc).__name__}: {exc}"}]

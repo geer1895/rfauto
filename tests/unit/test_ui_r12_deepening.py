@@ -1,4 +1,4 @@
-"""架构批 UI-R12 席位回归钉：前端深化三件（懒加载路由 / 统一 API 层 / CSS 变量审计）。
+"""aurora_d UI-R12 席位回归钉：前端深化三件（懒加载路由 / 统一 API 层 / CSS 变量审计）。
 
 对象：src/rfauto/ui/static/{pages.js, app.js, pages/api.js, theme.js}、
 pages/ 五个迁移视图（dashboard/runs/detail/calibration/data）与审计收编面
@@ -18,10 +18,10 @@ test_ui_data_anchor_uq_pages 等）全部保持绿——注册表字节经绑定
    api 同形 / setApiToken 透传 / viewSignal+abortViewSignals 视图作用域
    取消 / timeoutMs 超时）——node 桩 fetch 全链行为钉；app.js api 保形
    消费 apiRequestInit（test_ui_nav_focus 钉住的本体 needles 不动）；
-   **迁移终态（架构批 W4-S13，R1 §面4 P8-9 收口）**：全部视图零 T.api
-   残留 + aborted 短路守卫在位（五页=架构批 UI-R12，palette+agent/
-   recipe/tune=架构批 W3-S9，余量 15 文件 37 点+view_import 裸 fetch
-   1 点=架构批 W4-S13）；全仓 T.api 计数棘轮收口为防回潮钉
+   **迁移终态（aurora_f W4-S13，R1 §面4 P8-9 收口）**：全部视图零 T.api
+   残留 + aborted 短路守卫在位（五页=aurora_d UI-R12，palette+agent/
+   recipe/tune=aurora_f W3-S9，余量 15 文件 37 点+view_import 裸 fetch
+   1 点=aurora_f W4-S13）；全仓 T.api 计数棘轮收口为防回潮钉
    （65→58→37→**0 终态**，pages/ 面新增请求一律走 apiFetch 单源）。
 3. **CSS 变量审计（任务3）**：theme.js 冻结现值单源（fieldAxisLine/
    calibNullCost 同值双档 + ISO_BAND 色带）+ filebrowser 遮罩走 ：root
@@ -167,7 +167,8 @@ class TestLazyRoutingBehavioral:
         out = _run_node_js(
             "const ctx = await import('./pages/context.js');\n"
             "const captured = [];\n"
-            "ctx.T.$ = (id) => { const el = { id, innerHTML: '' };\n"
+            "ctx.T.$ = (id) => { const el = { id, innerHTML: '',\n"
+            "  dataset: {}, addEventListener() {} };\n"
             "  captured.push(el); return el; };\n"
             "await import('./pages.js'); // 侧写：组装 VIEWS\n"
             "const r = await import('./pages/router.js');\n"
@@ -199,7 +200,7 @@ _MIGRATED = {
     "view_detail.js": "detail",
     "view_calibration.js": "calibration",
     "view_data.js": None,  # 三页各族键（datasets/anchors/uq）——单独钉
-    # 架构批 W3-S9（P8-9 apiFetch 收敛二批）：palette 第三形态裸 fetch 同批
+    # aurora_f W3-S9（P8-9 apiFetch 收敛二批）：palette 第三形态裸 fetch 同批
     # 收敛（palette.js 无 T.api，不进本表）；agent 数据面接 viewSignal、
     # 对话/审批等用户动作 POST 保持无 signal（对话浮窗跨页存活不取消）；
     # recipe 数据面（目录/加载/3D 预览）接 signal、保存/运行动作无 signal；
@@ -207,7 +208,7 @@ _MIGRATED = {
     "view_agent.js": "agent",
     "view_recipe.js": "recipe",
     "view_tune.js": "tune",
-    # 架构批 W4-S13（P8-9 apiFetch 收敛三批=终态，余 37 点全量迁移）：
+    # aurora_f W4-S13（P8-9 apiFetch 收敛三批=终态，余 37 点全量迁移）：
     # 同一口径——数据面接 viewSignal(<页键>) 切页收束 + aborted 短路（在途
     # 拉取不再写隐藏区），用户动作 POST 保持无 signal（不被切页取消）；
     # view_fieldviz 双视图键（farfield/field）单独钉；filebrowser 模态是
@@ -309,7 +310,7 @@ class TestUnifiedApiSource:
             assert "viewSignal(" not in src, fname
 
     def test_t_api_ratchet_zero(self):
-        # 终态防回潮钉（架构批 W4-S13 收口，R1 §面4 P8-9：T.api 全退=终态）：
+        # 终态防回潮钉（aurora_f W4-S13 收口，R1 §面4 P8-9：T.api 全退=终态）：
         # 存量 65→58→37→0；此后 pages/ 面新增请求一律走 pages/api.js apiFetch
         # 单源（token 透传/超时/切页取消/统一信封四能力才覆盖全站）。
         # app.js 的全局 api（T.api 载体）在 static 根不在 _UNION，nav_focus
@@ -332,7 +333,7 @@ class TestUnifiedApiBehavioral:
         "};\n")
 
     def test_ok_path_and_passthrough(self):
-        # 架构批 W1-S1（P9-11 缺省超时）契约变更：无 opts 请求也挂 30s
+        # aurora_g W1-S1（P9-11 缺省超时）契约变更：无 opts 请求也挂 30s
         # 超时 signal（api.js 头注④登记）——init 不再原样缺席。
         out = _run_node_js(self._BOOT +
             "const d = await api.apiFetch('/api/x');\n"
@@ -390,7 +391,7 @@ class TestUnifiedApiBehavioral:
         assert "ok:api-timeout" in out
 
     def test_default_timeout_attaches_and_zero_exempts(self):
-        """P9-11（架构批 W1-S1）：缺省 30s 超时挂在无 opts 请求上；
+        """P9-11（aurora_g W1-S1）：缺省 30s 超时挂在无 opts 请求上；
         显式 timeoutMs:0 =豁免（长跑端点），快照路径 init 缺席复原。"""
         out = _run_node_js(self._BOOT +
             "await api.apiFetch('/api/x');\n"
@@ -495,13 +496,13 @@ class TestCssAuditSource:
     def test_token_same_value_swaps_landed(self):
         # 同值替换落位（computed value 逐字节不变——:root 令牌 4/8/12/16px、
         # --text-xs 11px、--text-sm 13px、--radius-xs/sm/md 6/8/12px）
-        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 6
+        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 7
         assert len(re.findall(r'font-size:var\(--text-sm\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'border-radius:var\(--radius-xs\)(?=["\';}])', _UNION)) == 4
         assert len(re.findall(r'border-radius:var\(--radius-sm\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'border-radius:var\(--radius-md\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'margin:var\(--space-2\) 0 2px', _UNION)) == 2
-        assert len(re.findall(r'margin:var\(--space-2\) 0(?=["\';}])', _UNION)) == 3
+        assert len(re.findall(r'margin:var\(--space-2\) 0(?=["\';}])', _UNION)) == 5
         assert len(re.findall(r'padding:var\(--space-1\) 0(?=["\';}])', _UNION)) == 2
         assert len(re.findall(r'margin:var\(--space-1\) 0(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'margin-bottom:var\(--space-3\)(?=["\';}])', _UNION)) == 3
@@ -563,14 +564,15 @@ class TestCssAuditSource:
 
 class TestCrossSeatPinsHold:
     def test_pages_union_counts_untouched(self):
-        assert _UNION.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        # 12 + W3-S12 四管线逃生舱迁移 + 2（aurora_i W3-S2 对照曲线节/对照卡）
+        assert _UNION.count("T.plotCard(") == 18
         # W4-S13 同笔更新：T.api==0（迁移终态，与 test_t_api_ratchet_zero
         # 同源口径的跨席复述）+ setInterval==2（仅轮询托管器两处——本席零新
         # 定时器；lifecycle/sse/routing/tools_page/dashboard_widgets 五钉同值）
         assert len(re.findall(r"\bT\.api\(", _UNION)) == 0
         assert _UNION.count("setInterval(") == 2
         assert _UNION.count('window.addEventListener("hashchange"') == 1
-        assert _UNION.count("bindClickRows(") == 13
+        assert _UNION.count("bindClickRows(") == 15
         assert _UNION.count("color: HEAT_BAND") == 3
 
     def test_index_inline_scripts_untouched(self):

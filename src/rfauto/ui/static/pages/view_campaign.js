@@ -1,6 +1,6 @@
-/* rfauto 战役仪表盘页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移，
+/* rfauto 战役仪表盘页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移，
    PR-6）：座位状态 + 成本热图 + trial 虚拟列表；进度刷新=SSE 订阅
-   （A6-A）。R-1（架构批 W2-S7）：PageContext 增量钩子 campaignCtx
+   （A6-A）。R-1（aurora_e W2-S7）：PageContext 增量钩子 campaignCtx
    （refresh=当前所选 run 立即拉一次看板；leave 不需要——SSE 收束由
    router._sseLeavePage 单源管，无轮询定时器面）。 */
 
@@ -9,14 +9,14 @@ import {
 } from "../theme.js";
 import { T } from "./context.js";
 import { esc, escAttr, fmtNum, help } from "./dom.js";
-// i18n（架构批 W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
+// i18n（aurora_h W4-S1 壳层迁移 + 发布令 S3 残量清）：壳静态标签
 // data-i18n+首扫、help 块分段 t()、动态串（座位表/进度/best 行/热图 aria/
 // 虚拟列表空态）t() 烘焙——API 动态数据（run_id/数字/params_source）照旧
 // esc 插值不迁。
 import { t, applyI18nRoot } from "./i18n.js";
 import { _syncRouteHash, consumeCampaignPendingId } from "./router.js";
 import { _sseSubscribe } from "./sse.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点）——
 // 数据面全页（run 清单/看板拉取，含 SSE 事件与 ctx.refresh 的重拉）接
 // viewSignal("campaign") 切页收束 + aborted 短路（在途拉取不再写隐藏区）。
 // 信封消费形态逐键不变。
@@ -34,7 +34,7 @@ let _cpRunId = null;
 
 /* ═══ PR-6 战役仪表盘（ge8b Wave B 席B2）：成本热图 + trial 虚拟列表 ═══
    热图=确定性分箱快照（service 端）；进度刷新=选中 run 后订阅 SSE 流
-   （P-1 桥，架构批 A6-A 接通前端消费；流不可用/无事件流时回退「刷新」
+   （P-1 桥，aurora72 A6-A 接通前端消费；流不可用/无事件流时回退「刷新」
    手动）。虚拟列表=窗口化渲染（只画可视行，千行 60fps 零框架）。 */
 export async function pageCampaign() {
   const v = T.$("view-campaign");
@@ -73,7 +73,7 @@ export async function pageCampaign() {
   }
   sel.innerHTML = runs.map((r) =>
     `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.model || r.adapter || "?")} · ${esc(r.n_trials)} trials）</option>`).join("");
-  // 架构批 A4-C：#/campaign/<run_id> 深链消费——列表命中才选，未命中回落
+  // aurora72 A4-C：#/campaign/<run_id> 深链消费——列表命中才选，未命中回落
   // 表头（tools 深链同款待选纪律）；消费即清（不残留到下次进页）。
   const _campaignPendingId = consumeCampaignPendingId(); // 读取并清零（router.js 单源写）
   if (_campaignPendingId && runs.some((r) => r.run_id === _campaignPendingId))

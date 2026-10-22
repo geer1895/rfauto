@@ -241,7 +241,7 @@ class TestCrossSeatPinsHold:
     先红=本批扰动生命周期/图表不变量）。"""
 
     def test_pages_js_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _SRC.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳

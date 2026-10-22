@@ -1,4 +1,4 @@
-/* rfauto 场/远场可视化页族（架构批 UI-R2 自 pages.js 拆出，逐字节
+/* rfauto 场/远场可视化页族（aurora_d UI-R2 自 pages.js 拆出，逐字节
    搬移）：远场极坐标（nf2ff）+ Smith 圆图（G9，S 参数页复用）+ 场切片
    热图/等值面/远场 3D（DumpHDF5）。W3-S12（R6 审计 P-5）：polar/Smith/
    custom/heatmap 四管线不在 plotcard builder 能力面，经 plotCard
@@ -23,7 +23,7 @@ import { esc, escAttr, help } from "./dom.js";
 // i18n（S1 全清）：壳静态标签 data-i18n+首扫；动态容器文案 t() 渲染期烘焙。
 import { t, applyI18nRoot } from "./i18n.js";
 import { showPage } from "./router.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本文件 4 点，
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本文件 4 点，
 // 双视图键）——farfield 页数据面接 viewSignal("farfield")、field 页数据面接
 // viewSignal("field")，切页收束 + aborted 短路（在途拉取不再写隐藏区）。
 // 信封消费形态逐键不变。
@@ -153,7 +153,7 @@ export async function pageFarfield() {
   await load();
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 farfieldCtx ══════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 farfieldCtx ══════════
    refresh=当前 run 方向图/指标重拉（pageFarfield 幂等——壳判 innerHTML 已在
    即跳过，_ffRunId 选择态保留；plotCard 壳同容器复用换数据）。无轮询面，
    leave 不需要。 */
@@ -322,7 +322,7 @@ function drawFieldSlice(el, slice, contours, vmin) {
 }
 
 /* PyVista 等值面三角网 → three.js（顶点按 dB 着色；无 PyVista 时服务层不给此块）
-   P8-2（架构批 W3-S9，R1 §面1 重审）：T.THREE 同步取改调用点
+   P8-2（aurora_f W3-S9，R1 §面1 重审）：T.THREE 同步取改调用点
    `await import("three")` 惰性取（app.js 顶层静态 import 与工具包 THREE 键
    已同批移除）——本函数改 async，唯一调用点（pageField.load 等值面分支）
    fire-and-forget 不消费返回值，行为等价；模块缓存命中后 await 立即返回。 */
@@ -561,7 +561,7 @@ export async function pageField() {
   await load();
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 fieldCtx ═════════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 fieldCtx ═════════════
    refresh=当前 run/dump 的切片/等值面/远场 3D 重拉——load 闭包经模块级引用
    转发（sparams/campaign 同款模式）+ 未进页 null 守卫；走 load 而非
    pageField 整体重进=切片滑条索引（sliceIdx）与 dump/run 选择态保留。

@@ -32,7 +32,7 @@ import yaml
 from starlette.testclient import TestClient
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -230,7 +230,9 @@ class TestImportUiVersionNarrative:
         for stale in ("verified 真机通道", "issue #7410", "已验证真机通道",
                       "已验证通道"):
             assert stale not in _PAGES, f"版本旧叙事残留: {stale!r}"
-        assert _PAGES.count("以实装版本为准") >= 3
+        # 人性化二批 W1-S1：i18n 值二遍重写清掉两处副本，现仅 pages.js 尾注 1 处
+    # 人性化二批终态：旧叙事全清偿（i18n 值二遍重写+壳脚注同笔），归零钉
+    assert _PAGES.count("以实装版本为准") == 0
 
 
 # ────────────────── P1-D：plotCard 图表生命周期 ──────────────────
@@ -256,7 +258,7 @@ class TestPlotCardLifecycle:
     def test_call_sites_untouched(self):
         # 座位约束：不改 12 个调用点（与 test_ui_plotcard/test_ui_lifecycle
         # 计数钉同源复述；本钉先红=包装入口被误改）
-        assert _PAGES.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _PAGES.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
 
 
 # ────────────────── P1-F：Mount(/runs) 非仓根 cwd 冒烟 ──────────────────
@@ -316,7 +318,7 @@ class TestGuardSingleSource:
 
     def test_server_has_no_bare_request_json_left(self):
         # P0-C 清零钉：UI handler 面不再保留裸 await request.json() 调用点
-        # （架构批 UI-R1 拆分后扫描面=ui 包全 .py，**除 params.py**——
+        # （aurora_d UI-R1 拆分后扫描面=ui 包全 .py，**除 params.py**——
         # 守卫单源 _json_body 自身的内部调用是合法实现面，docstring 提法
         # 亦非调用点；campaign_app/edb_app 实测零命中无需豁免）
         ui_dir = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui")

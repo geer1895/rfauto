@@ -36,8 +36,7 @@ def my_formula(freq_ghz: float, w_mm: float = 1.0) -> dict:
 
 ### 0b. 脚手架入口（推荐）：new_calc_key 生成骨架与五钉模板
 
-手写之前先用生成器（架构批 W8-S3 落件、W15-S3 增强）把骨架与逐钉
-可粘贴模板一次产出——**只生成不改**：绝不自动编辑消费者文件，模板
+手写之前先用生成器把骨架与逐钉可粘贴模板一次产出——**只生成不改**：绝不自动编辑消费者文件，模板
 落盘后由人对照锚点粘贴（消费者文件是并行合流热区）：
 
 ```bash
@@ -89,7 +88,8 @@ test_model_docs / test_experimental_calculators 是注册表驱动的自动
 ```
 
 若你的实现带出处声明（docstring 行首"出处："标记，铁律 5 惯例），
-还要第四处：KD-1 注册表再生——`scripts/collect_formula_provenance.py`
+还要第四处：公式出处注册表（KD-1）再生——
+`scripts/collect_formula_provenance.py`
 （漂移门 `--check`；声明写法见 docs/how-to/formula-provenance.md），
 漏跑的指纹是 test_formula_provenance 三连红。
 
@@ -128,7 +128,7 @@ rfauto calc run my_formula -p freq_ghz=2.4 -p w_mm=3.0 --json
   拒跑（显式 `include_experimental=True` 才列）——"calc list 看不到
   我的新键"先查这个开关，不是注册失败；
 - **键名与 CLI/MCP 文档数字联动**：注册序金快照与计数锚都是"改一处
-  动全链"——漏跑再生是 W3 门实红谱系第一位；
+  动全链"——漏跑再生成是历史上最常见的门失败原因；
 - **数值断言对计算函数不对渲染文本**（#175）：给计算器写单测时直接
   断言返回 dict 的数值（解析恒等式/独立来源解析值双对照，#118），
   别匹配 --help 渲染文本；

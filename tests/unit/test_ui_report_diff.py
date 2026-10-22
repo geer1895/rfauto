@@ -191,13 +191,13 @@ class TestRunsDiffEndpoint:
             paths.index("/api/runs/{run_id}")
         # 端点计数事实钉：58（PR-4 前）→ 59（+diff）→ 63（ge8b Wave B：画廊/仪表盘/profile/队列四页，席B2/B3）
         # → 64（edblane-w7：+edb_status EDB 状态页，e6306cc4）
-        # → 67（架构批 UI-R3：+统一事件流三端点 /api/events/stream、
+        # → 67（aurora_d UI-R3：+统一事件流三端点 /api/events/stream、
         #    /api/tune/events/stream、/api/campaign_queue/events/stream。
         #    溯源登记（UI-R8 审查 P2-1，UI-R10 补注）：此计数 hunk 随
         #    UI-R2 commit de729bae 入库——有意同笔搭乘、非误捎带；端点
         #    业务归属 UI-R3 ebd32005）
         n_routes = sum(1 for r in app.routes if isinstance(r, Route))
-        assert n_routes == 67, n_routes
+        assert n_routes == 71, n_routes  # aurora_i：契约门三向+对照曲线+资源面板四路由
 
     def test_server_route_order_source_pin(self):
         src = (Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui"
@@ -230,7 +230,7 @@ class TestReportPageUiPins:
             "async function renderRunDiff(",
             '"/api/runs/diff?a="',
             'id=\'rd-a\'', "id='rd-b'", "id='rd-go'",
-            "口径不同",  # 跨模型显式警示
+            "两侧配置不同",  # 跨模型显式警示（R2 人性化：口径不同→两侧配置不同）
             "metrics_delta", "params_recursive_diff",
             "sparams_a", "verdict_hints",
         ):

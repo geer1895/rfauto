@@ -44,7 +44,7 @@ JSON 出"的门面函数。规则：
 ## UI 架构：双 HTTP 面、routes 分域与统一事件流
 
 UI 壳曾长期是 `ui/server.py` 单体（全部 handler 挤一个文件）加前端
-`pages.js` 单体。两战役（架构批 UI-R1/R2/R3）后是"**装配薄壳 +
+`pages.js` 单体。两轮重构后是"**装配薄壳 +
 分域路由 + 一条事件总线 + 零构建前端 ESM**"的形态（下列数字
 2026-10-14 树面实测）。
 
@@ -144,8 +144,8 @@ rfauto 的领域是射频仿真自动化，一条铁律支配整个架构：**LL
 docs/plugins.md），壳层与优化外环完全不感知具体求解器。这就是 fake →
 openEMS → HFSS 多保真切换只是换 `--adapter` 参数的原因。
 
-适配器目录里也住着另一类"可选能力配套件"——它们不是求解器，而是让
-真机链路更稳的 helper，一律走 **fail-soft 纪律**（观测面/增强面绝不
+适配器目录里也住着另一类"可选能力配套件"——它们本身不求解，作用是
+让真机链路更稳的 helper，一律走 **fail-soft 纪律**（观测面/增强面绝不
 阻塞业务主路径，#105）：如 `adapters/pyedb_preload.py`（import pyedb
 之前预载 AnsysEM 自带 OpenSSL DLL，规避同名 DLL 对撞硬崩——任何失败
 只落 `ok=False + reason` 信封、绝不抛异常，幂等可重入）。判别标准：

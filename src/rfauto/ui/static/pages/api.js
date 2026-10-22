@@ -58,6 +58,36 @@ if (typeof document !== "undefined" &&
   } catch { /* best-effort 静默 */ }
 }
 
+/* ── mock 通道（aurora_i W3.5-K3 UI 离线开发回路，opt-in 双闸）────────
+   setApiMockBase(base) 设置后 apiFetch 仅对**相对 /api/ 路径**做前缀
+   改写（相对 api 路径前缀替换为 base 同形；绝对 URL 与非 api 路径原样——SSE/
+   静态资源不经此），配 scripts/ui_dev_loop.py 的 mock 数据服务或任意
+   静态伺服跨源取数。超时/Bearer/错误信封/取消逻辑逐字节不变（只换
+   URL）。装配期激活面（best-effort，#105 同款守卫）：URL 查询 ?mock=1
+   （默认基址 /mock/）或 ?mock=<base> 显式；**会话级不落 localStorage**
+   ——刷新即回真通道，防 mock 读数被误当真值消费（纪律见
+   docs/how-to/ui-offline-dev.md）。缺省（无查询参数/未设置）零行为
+   变化——存量请求逐字节等价。
+   覆盖面说明：仅 apiFetch（视图 27 文件已全迁移）；app.js 全局 api
+   （T.api 载体）不经本开关，直连面清单见 how-to 篇限制节。 */
+let _mockBase = null;
+export function setApiMockBase(base) {
+  _mockBase = base == null || base === "" ? null : String(base);
+}
+/* 测试/诊断面：当前 mock 基址（null=真通道）。 */
+export function apiMockBase() {
+  return _mockBase;
+}
+if (typeof location !== "undefined" && typeof location.search === "string") {
+  try {
+    const mm = location.search.match(/[?&]mock=([^&]*)/);
+    if (mm) {
+      const v = decodeURIComponent(mm[1]);
+      setApiMockBase(v === "" || v === "1" ? "/mock/" : v);
+    }
+  } catch { /* best-effort 静默 */ }
+}
+
 /* ── 失败呈现注入（app.js msg 单源；node/异常部署缺席时静默，#105）── */
 let _notifier = null;
 export function setApiNotifier(fn) {
@@ -126,6 +156,18 @@ export function apiRequestInit(opts) {
    视图以 `if (d.aborted) return;` 短路后续渲染；缺省超时（头注④）同入
    aborted 形态，error 文案回显超时值）。 */
 export async function apiFetch(url, opts = null) {
+  // mock 通道（W3.5-K3）：仅改写相对 /api/ 路径，其余（绝对 URL/静态
+  // 资源/SSE）原样——改写发生在超时/token 装配之前，两者互不感知。
+  // 基址若已以 /api 结尾则不重复拼接（?mock=http://host:port/api 直指
+  // 真服务同形路径；/mock 基址则拼出 /mock/api/...）。
+  if (_mockBase && typeof url === "string") {
+    const mm = url.match(/^\/?(api\/.*)$/);
+    if (mm) {
+      const base = _mockBase.replace(/\/+$/, "");
+      const rest = /\/api$/.test(base) ? mm[1].slice(4) : mm[1];
+      url = base + "/" + rest;
+    }
+  }
   let init = opts || undefined;
   let cancelTimeout = () => {};
   let timedOutMs = 0; // >0=本请求因超时被中止（回显值；caller abort 不置位）

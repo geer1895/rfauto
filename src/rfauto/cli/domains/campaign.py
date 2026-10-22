@@ -218,6 +218,31 @@ def campaign_run_cmd(
     raise typer.Exit(code=0)
 
 
+@campaign_app.command("digest")
+def campaign_digest_cmd(
+    root: str = typer.Option("runs", "--root", help="战役计划扫描根目录（直属子目录 campaign.plan.json，与 campaign list 同口径）"),
+    out_dir: str = typer.Option(None, "--out-dir", help="digest 产物落盘目录（缺省 runs/campaign_digest/）"),
+    since_h: float = typer.Option(None, "--since-h", help="时间窗：只统计计划文件距今 N 小时内的战役（24=昨晚口径；缺省不过滤）"),
+    include_running: bool = typer.Option(False, "--include-running", help="把 RUNNING 等非终态战役也计入摘要（如实标注进行中）"),
+    no_write: bool = typer.Option(False, "--no-write", help="只打印摘要不落盘"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """扫描战役终态（COMPLETE/PARTIAL/ABORTED）聚合成 zh 人读摘要，JSON+文本产物落 runs/ 下。"""
+    from rfauto.service.campaign_digest_service import campaign_digest
+
+    result = campaign_digest(
+        root, out_dir=(out_dir if out_dir else None), since_h=since_h,
+        include_running=include_running, write=not no_write)
+    _emit(result, "战役摘要生成失败", json_output=json_output)
+    if json_output:
+        return
+    console.print(result["summary_text"], markup=False, soft_wrap=True)
+    artifacts = result.get("artifacts") or {}
+    if artifacts:
+        console.print(f"  产物: {artifacts.get('json')}")
+        console.print(f"        {artifacts.get('txt')}")
+
+
 @campaign_app.command("queue-daemon")
 def campaign_queue_daemon_cmd(
     root: str = typer.Option("runs", "--root", help="队列扫描根目录（直属子目录的 campaign.plan.json=队列项，与队列页同口径）"),

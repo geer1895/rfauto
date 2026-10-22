@@ -1,4 +1,4 @@
-"""架构批 A8-A（R6 审计 P-2/P-3/P-4/P-6 打磨批）UI 微交互四面钉。
+"""aurora72 A8-A（R6 审计 P-2/P-3/P-4/P-6 打磨批）UI 微交互四面钉。
 
 落地面（pages.js + index.html，两文件）：
 1. **骨架屏（P-2）**：dashboard 首拉 / detail openRun 首建壳 / runs 表首拉
@@ -10,8 +10,8 @@
    test_ui_routing 口径，本席不清偿他席钉）。
 3. **错误态动作化（P-4 面）**：kitErrorPanel（badge+错误串+重试钮，W7-C
    detail 内联面板模式推广）落 datasets / anchors 两处高频 API 失败点；
-   queue ✗ 点按跨席计数钉如实豁免（余量随归一批顺移：6→5=架构批 W2-S5，
-   5→1=架构批 W14-S2 playground/profile/tools 迁 kitErrorPanel，见
+   queue ✗ 点按跨席计数钉如实豁免（余量随归一批顺移：6→5=aurora_f W2-S5，
+   5→1=aurora_g W14-S2 playground/profile/tools 迁 kitErrorPanel，见
    TestErrorPanelPins 类注）；W7-C 原点不动（钉在 test_w7c_ui_p2_sweep）。
 4. **微动效收敛（P-6 面）**：.card .v KPI 数字 tabular-nums 防跳动；三个
    高频图表容器 min-height 高度锚（#splot-echart/#tune-trials-chart/
@@ -33,7 +33,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -138,7 +138,7 @@ class TestEmptyStatePins:
             _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id: "runs-empty-clear"' in runs
         assert "rc.onclick = () => fc.click();" in runs
-        # tune trials 空：动作转触既有「启动调参」钮（架构批 W2-S7 起
+        # tune trials 空：动作转触既有「启动调参」钮（aurora_e W2-S7 起
         # tuneRefresh 提升模块级，kitEmptyState 装配随迁 view_tune.js 模块层
         # ——钉语义不变，作用域从 pageTune 函数体放宽到 view_tune.js 全文）
         # 发布令 S3 残量清：文案单源迁词表 t() 烘焙（runs/queue 空态先例
@@ -149,11 +149,11 @@ class TestEmptyStatePins:
             _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'id: "tune-empty-go"' in tune
         assert "teg.onclick = () => tgo.click();" in tune
-        # queue 空：引导去战役仪表盘（W1-S2 架构批 i18n 试点：文案单源迁
+        # queue 空：引导去战役仪表盘（W1-S2 aurora_f i18n 试点：文案单源迁
         # 词表 t() 烘焙——zh 字面同笔迁 pages/i18n.js，此处钉接线形态）
         q = _body(r"async function pageQueue\(\)")
         assert 'kitEmptyState(t("queue.empty")' in q
-        assert 'runs/ 下暂无 campaign.plan.json（先立战役）' in (
+        assert 'runs/ 下还没有 campaign.plan.json（先创建一个战役）' in (
             _STATIC / "pages" / "i18n.js").read_text(encoding="utf-8")
         assert 'view: "campaign"' in q
         assert "bindEmptyStates(el)" in q
@@ -195,9 +195,9 @@ class TestErrorPanelPins:
         """queue ✗ 错误点如实不迁：跨席计数钉 "color:var(--err)'>✗"==1
         （test_ui_lifecycle / test_ui_tools_page 双钉）——queue 保持
         ✗ 形态并以注释登记豁免缘由。
-        架构批 W2-S5（R1 #8 三态批1）：gallery 闭式计算失败点迁
+        aurora_f W2-S5（R1 #8 三态批1）：gallery 闭式计算失败点迁
         kitErrorPanel（原 ✗ span 形态②清偿），余量 6→5 同笔更新三钉。
-        架构批 W14-S2（R2 Top10 #4 归一波）：playground×2/profile/tools
+        aurora_g W14-S2（R2 Top10 #4 归一波）：playground×2/profile/tools
         内联 ✗ span 迁 kitErrorPanel，余量 5→1 同笔更新三钉
         （余 1=queue 豁免点本身）。"""
         src = _PAGES

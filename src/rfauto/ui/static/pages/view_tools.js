@@ -1,14 +1,14 @@
-/* rfauto 微波工具箱页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 微波工具箱页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    计算器分组/搜索/深链（A2-B）+ 结果可视化/扫参/公式面板（A3-A）。
    数值只在确定性内核（规则 7）：本模块零物理数字产生。
-   i18n（架构批 W2-S1 批 4，R1 §面2 P9-5）：chrome 文案余量全迁词表
+   i18n（aurora_g W2-S1 批 4，R1 §面2 P9-5）：chrome 文案余量全迁词表
    （tools.* 键域，zh 与旧字面逐字节同、en 新增）——help 块分段 t()；
    组名=展示层翻译（协议标识符仍以中文单源对齐 API c.group，显示经
    GROUP_I18N 映射、服务端未知组回退原文）；计算器中文名/用途兜底表
    词表化（tools.cn_ 键/cp_ 键，键尾=注册表 name；calcZhName locale 感知，
    en 档兜底显示英文名——API description 中文前缀仍优先，数据面照旧）；
    随数据重建的容器零 data-i18n（头注纪律），API 数据照旧走 esc/escAttr。
-   架构批 W4-S1 半程收尾：壳模板兜底字面改 t() 烘焙（data.js 先例，
+   aurora_h W4-S1 半程收尾：壳模板兜底字面改 t() 烘焙（data.js 先例，
    zh 档渲染逐字节不变）、扫参选择器 aria 迁词表、组序表改回退表下标
    引用（协议名单源化，序表不再复写中文字面）——本文件残余 CJK 字面量
    仅剩组协议标识符（TOOL_GROUP_FALLBACK 组名 + 实验/其他两常量，与
@@ -19,13 +19,13 @@ import { HEAT_BAND, THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
 import { _isoRenderers, bindChartResize, echartsInitCached, plotCardCached } from "./charts.js";
 import { T, getActiveView } from "./context.js";
 import { esc, escAttr, errorText, help } from "./dom.js";
-// i18n（架构批 W1-S2 试点页 1；批 4 余量全迁）：壳静态标签 data-i18n+首扫；
+// i18n（aurora_f W1-S2 试点页 1；批 4 余量全迁）：壳静态标签 data-i18n+首扫；
 // 随数据重建的容器（#tool-desc/#tool-params/#tool-result）文案一律 t() 渲染
 // 期烘焙——data-i18n 重扫会覆写动态状态（i18n.js 头注纪律）。
 import { t, applyI18nRoot } from "./i18n.js";
 import { kitErrorPanel, kitTable } from "./kit.js";
 import { showPage } from "./router.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
 // 数据面（计算器清单）接 viewSignal("tools") 切页收束 + aborted 短路；动作面
 // （计算/扫参 POST，扫参逐点串行 await）保持无 signal（用户动作不被切页取消）。
 // 信封消费形态逐键不变。
@@ -96,7 +96,7 @@ function parseParamDesc(desc) {
   return { unit: "", text: String(desc || "") };
 }
 
-/* ── 架构批 A2-B：工具箱分组+搜索选择器与 #/tools/<key> 深链（R5 审计 §②§⑤§⑥）──
+/* ── aurora72 A2-B：工具箱分组+搜索选择器与 #/tools/<key> 深链（R5 审计 §②§⑤§⑥）──
    契约：/api/calculators 每键带 group 字段（A2-A 席并行落地）——本席只消费
    c.group；字段缺席时回退"实验态→键名前缀粗映射→其他"，页面不炸。回退表刻意
    粗粒度（键名前缀，不复刻 133 键全表）——group 字段落地后回退仅剩兜底义。
@@ -203,7 +203,7 @@ export function toolsSelectKey(key) {
 }
 
 /* hashchange 单源监听（initPages 装配一次，幂等 + node import 零 DOM 依赖）：
-   架构批 A4-C 起收编为全站唯一 hashchange 监听——旧 app.js 页级 _applyHash
+   aurora72 A4-C 起收编为全站唯一 hashchange 监听——旧 app.js 页级 _applyHash
    监听与本席 tools key 级自查双监听并存，两级路由落地后归一：事件经宿主注入
    的 T.routeDispatch（app.js 两级分发器，页级+参数级都在其上）回注；宿主
    缺席（独立加载）时回退本席 tools 自查（旧行为保全）。 */
@@ -227,7 +227,7 @@ export function _bindToolsDeepLink() {
 }
 
 /* 工具箱页局部样式（页自注入，不动 index.html——席位文件面隔离）：
-   参数表淡入 + 尊重系统"减少动态效果"设置 + 架构批 A3-A 公式面板/扫参
+   参数表淡入 + 尊重系统"减少动态效果"设置 + aurora72 A3-A 公式面板/扫参
    面样式。幂等：按 id 只注入一次。 */
 function _ensureToolsStyle() {
   if (document.getElementById("tools-page-style")) return;
@@ -247,7 +247,7 @@ function _ensureToolsStyle() {
   document.head.appendChild(st);
 }
 
-/* ═══ 架构批 A3-A：工具箱结果可视化 + 扫参 + 公式面板（R5 审计 §③§④§⑤）═══
+/* ═══ aurora72 A3-A：工具箱结果可视化 + 扫参 + 公式面板（R5 审计 §③§④§⑤）═══
    通用启发式（零 service 改动，数值语义全由注册表键名自述）：
    - x-y 曲线：结果 dict 中"轴名键的 num_list"判 x（R5 §③ 命名清单），
      其余等长非轴 num_list 判 y 系列；嵌套值对象 {x:[...],y:[...]} 形态
@@ -482,7 +482,7 @@ function resultChart(host, result) {
     host.appendChild(el);
     const chart = echartsInitCached(el); // P0-5 同源守卫（唯一 init 入口）
     chart.setOption(option, true); // notMerge：复用路径整体替换
-    bindChartResize(el); // 架构批 A3-A：resize 去重（WeakSet 单源）
+    bindChartResize(el); // aurora72 A3-A：resize 去重（WeakSet 单源）
     _toolResultCharts.push(chart);
     n++;
   };
@@ -620,6 +620,10 @@ export async function pageTools() {
         : `<div class='muted' style='margin-top:var(--space-1)'>${t("tools.sweep_unavailable")}</div>`) : "");
     T.$("tool-sweep-out").style.display = "none"; // 换计算器：上一轮扫参产物收起（容器保留供复用）
     if (prevOn && nums.length) T.$("tool-sweep-go").onclick = () => runSweep(cal);
+    // 勾选即展开控制行（W4-R1 P0 清偿：原实现只读 checked 不挂 change——
+    // 首次勾选后无任何响应，新手教程第一步即死路）
+    const sweepOn = T.$("tool-sweep-on");
+    if (sweepOn) sweepOn.onchange = () => renderSweep(cal);
   };
   const runSweep = async (cal) => {
     const msg = T.$("tool-sweep-msg");
@@ -787,7 +791,7 @@ export async function pageTools() {
   };
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 toolsCtx ═════════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 toolsCtx ═════════════
    refresh=计算器注册表目录重拉（pageTools 幂等——壳判 innerHTML 已在即跳过；
    重拉后选项表重建=与重进同语义，深链/hash 待选键优先恢复）。无轮询面，
    leave 不需要。 */

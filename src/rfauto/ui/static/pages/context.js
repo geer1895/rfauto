@@ -1,9 +1,9 @@
-/* rfauto 工作台共享状态单源（架构批 UI-R2 自 pages.js 拆出）：
+/* rfauto 工作台共享状态单源（aurora_d UI-R2 自 pages.js 拆出）：
    T=工具集（app.js initPages 注入，Object.assign 就地装配——对象同一性
    即拆分前语义）；S=跨页共享状态；_activeView=当前激活页（showPage 单源
    写、轮询/SSE 可见性守卫读）——模块私有 let 经访问器跨模块读写。
 
-   ═══ 键契约表（架构批 W6-S2，R2 审计 §面2 / Top10 #1——v8 P8-8 欠账
+   ═══ 键契约表（aurora_g W6-S2，R2 审计 §面2 / Top10 #1——v8 P8-8 欠账
    补账；S 收敛为 {currentRunId} 单键，16 个单模块私有键降级为各视图模块级
    let，行为逐位等价搬家。新增共享键须先在此登记属主/写面/生命周期）═══
 
@@ -59,7 +59,7 @@ let _activeView = "dashboard";
    守卫/SSE 恢复守卫/tools 深链守卫。可变原语留在唯一状态模块，跨模块经
    访问器读写（ESM import 绑定只读，写面收敛）。 */
 export function setActiveView(v) {
-  _activeView = v; // 架构批 W2-B：页面可见语义单源（轮询当前页守卫消费）
+  _activeView = v; // aurora36 W2-B：页面可见语义单源（轮询当前页守卫消费）
 }
 export function getActiveView() {
   return _activeView;

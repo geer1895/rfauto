@@ -4,6 +4,8 @@
 - GET  /api/runs                              api_runs
 - GET  /api/runs/diff                         api_runs_diff（双 run 只读对比）
 - GET  /api/runs/{run_id}                     api_run_detail
+- GET  /api/runs/{run_id}/failure_context     api_run_failure_context
+  （W2-S3 失败诊断包读面，aurora_i 采纳 #3）
 - GET  /api/runs/{run_id}/events/stream       api_run_events_stream（P-1 SSE 桥）
 - POST /api/run                               api_run（复用 service.run_once）
 - GET  /api/runs/{run_id}/figs/{name:path}    api_run_fig（报告图片白名单）
@@ -37,6 +39,21 @@ async def api_run_detail(request: Request) -> JSONResponse:
 
     detail = ui_service.run_detail(request.path_params["run_id"])
     return JSONResponse(annotate_contract("run_detail", detail))
+
+
+async def api_run_failure_context(request: Request) -> JSONResponse:
+    """失败诊断包读面（aurora_i W2-S3 采纳 #3，只读零副作用）。
+
+    ``failure_context_service.read_failure_context`` 单源（信封进出）：
+    缺包=``ok=True, exists=False``（非守护失败战役如实无包，前端据此
+    隐"一键查看诊断"节）；run 不存在/包损坏=error 信封。契约名未注册
+    → annotate_contract 原样透传（best-effort，#105）。
+    """
+    from rfauto.service.contracts import annotate_contract
+    from rfauto.service.failure_context_service import read_failure_context
+
+    ctx = read_failure_context(request.path_params["run_id"])
+    return JSONResponse(annotate_contract("run_failure_context", ctx))
 
 
 async def api_runs_diff(request: Request) -> JSONResponse:

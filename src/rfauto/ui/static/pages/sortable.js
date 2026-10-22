@@ -1,4 +1,4 @@
-/* rfauto 工作台可排序表格（架构批 UI-R2 自 pages.js 拆出，架构批
+/* rfauto 工作台可排序表格（aurora_d UI-R2 自 pages.js 拆出，aurora36
    W3-B 块逐字节搬移）：纯函数三件（columnIsNumeric/sortCellKey/
    sortCellCompare）+ DOM 胶水 makeSortable/mountSortableTables。 */
 
@@ -107,4 +107,4 @@ export function mountSortableTables(root) {
   if (!root || !root.querySelectorAll) return;
   for (const tb of root.querySelectorAll("table[data-sortable]")) makeSortable(tb);
 }
-/* ═══ 架构批 W3-B 块结束 ═══ */
+/* ═══ aurora36 W3-B 块结束 ═══ */

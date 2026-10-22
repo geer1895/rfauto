@@ -262,7 +262,7 @@ class TestMsgAndNumberConsistencyHonest:
 
 class TestCrossSeatPinSelfCheck:
     def test_pages_js_count_pins(self):
-        assert _PAGES.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _PAGES.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
         assert _PAGES.count("window.echarts.init(") == 1
         assert _PAGES.count('window.addEventListener("resize"') == 1
         assert _PAGES.count("setInterval(") == 2

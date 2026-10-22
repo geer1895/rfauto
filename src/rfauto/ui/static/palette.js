@@ -1,7 +1,7 @@
 /* rfauto 命令面板（PR-2，规格 §D-8）：零构建 vanilla ES module。
    数据源：nav 页注册表（#nav button[data-v]，DOM 单源）+ /api/runs?limit=200
    + /api/recipes（两个端点均已存在，本模块零新增 /api 面）。
-   W3-D（架构批）：命令面扩展——`>` 命令目录抽纯函数 commandCatalog
+   W3-D（aurora36）：命令面扩展——`>` 命令目录抽纯函数 commandCatalog
    （node 可测，动作面注入）：主题四态 + 页面跳转组（go-*，与 showPage 的
    data-v 对齐，出口复用 pages.js 单源）+ 动作命令（刷新当前页/导出当前
    页图表/面板用法提示）。行图标消费 index.html 的 SVG sprite
@@ -15,11 +15,11 @@
    （无 DOM 环境）的 import 链。两处改动须成对审视，语义保持一致
    （开=存焦点+焦点入层、Tab=回绕、关=Esc/点遮罩+还焦）。 */
 import { showPage, openRun, openCampaign, setThemeMode, getThemeMode, pageContextFor } from "./pages.js";
-// i18n（架构批 W2-S5，S2 偏差申报收账）：语言切换命令接线——t()/setLocale
+// i18n（aurora_f W2-S5，S2 偏差申报收账）：语言切换命令接线——t()/setLocale
 // 单源在 pages/i18n.js（零依赖，无 import 环）；读档走 getLocale（与主题
 // cur 同款"参数注入"口径：commandCatalog 保持纯函数零 DOM）。
 import { getLocale, setLocale } from "./pages/i18n.js";
-// P8-9（架构批 W3-S9，R1 §面4）：第三形态裸 fetch 收敛——apiFetch 单源
+// P8-9（aurora_f W3-S9，R1 §面4）：第三形态裸 fetch 收敛——apiFetch 单源
 // （统一错误信封/token 透传/超时与 abort 组合，缺省参数与旧裸 fetch 等价
 // 路径）。失败语义保持：loadDynamic 检出错误信封显式 throw → open() 既有
 // .catch 静默降级（面板仍可用）+ 错误响应**不入 TTL 缓存**（旧形态 fetch
@@ -52,7 +52,7 @@ function iconSvg(doc, name) {
   return svg;
 }
 
-/* P8-3（架构批 R1 §面1，W7 走查 P3-6 收账）：runs+recipes 数据源 TTL
+/* P8-3（aurora_f R1 §面1，W7 走查 P3-6 收账）：runs+recipes 数据源 TTL
    缓存（60s）——palette 每开必重拉收账（runs/ 现存 3255 条目，本地无感
    但 run 增长与远程部署时线性恶化）。模块级缓存跨开关复用；`#` 前缀命中
    （显式搜 run）时本开启会话强制刷新一次；拉取失败静默降级为仅页面/命令
@@ -128,7 +128,7 @@ export function iconForView(v) {
    cur=当前主题模式（"当前"提示）；loc=当前语言档（act-locale 提示与切换
    目标；缺省 zh——test_ui_palette_cmds 旧两参调用兼容）；act=注入的动作面
    （生产=下方 commandItems 装配 pages.js 单源出口；node 测试=spy），本函数
-   零 DOM。命令总数 20（主题 4 + 跳转 7 + 动作 9；架构批 W5-S17 动作扩充
+   零 DOM。命令总数 20（主题 4 + 跳转 7 + 动作 9；aurora_f W5-S17 动作扩充
    同笔 15→20）——总数钉在 tests/unit/test_ui_palette_cmds.py 与
    test_ui_perf_loading.py，增删命令须同笔同步。
    W5-S17（R1 §面3 palette 补全 watch 激活）动作扩充 5 件：
@@ -183,7 +183,7 @@ export function commandCatalog(cur, act, loc) {
       "", () => act.exportChart()),
     mk("act-palette-help", "帮助：命令面板用法", "help palette 帮助 提示 用法 快捷键",
       "帮助", "", () => act.help()),
-    /* 语言切换（架构批 W2-S5，S2 偏差申报收账）：词表 t()/setLocale 已
+    /* 语言切换（aurora_f W2-S5，S2 偏差申报收账）：词表 t()/setLocale 已
        随 W1-S2 落地，此处只接命令出口——zh↔en 翻面切换（setLocale 写档+
        全壳重扫，i18n.js 单源）；提示随档翻转（当前档→目标档）。 */
     mk("act-locale", "语言 / Language", "language locale i18n 语言 英文 中文 english 切换",
@@ -230,7 +230,7 @@ function currentView() {
   return b && b.dataset ? b.dataset.v : "";
 }
 
-/* 刷新当前页数据（R-1 架构批 W1-S3）：登记了 PageContext.refresh 的页走
+/* 刷新当前页数据（R-1 aurora72 W1-S3）：登记了 PageContext.refresh 的页走
    局部刷新（数据拉取与壳渲染分离——dashboard 重铺组件面不重拉 /api/runs、
    loopboard 立即拉一次看板）；未登记页回退 showPage 整页重进（旧行为），
    回退路径 detail 页由 pages.js 内部 currentRunId 重渲染当前 run。 */

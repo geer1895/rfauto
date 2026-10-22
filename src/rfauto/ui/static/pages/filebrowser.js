@@ -1,11 +1,11 @@
-/* rfauto 文件浏览器弹层（架构批 UI-R2 自 pages.js 拆出，逐字节
+/* rfauto 文件浏览器弹层（aurora_d UI-R2 自 pages.js 拆出，逐字节
    搬移）：工程导入选 .aedt/.yaml 与 S 参数页外部 .sNp 叠加共用
    （/api/fs/list）。 */
 
 import { T } from "./context.js";
 import { errorText, esc, escAttr } from "./dom.js";
 import { bindClickRows, kitClickRowAttrs } from "./kit.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本模块 1 点）
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本模块 1 点）
 // ——非视图共享模块（sparams/import 等视图共用的文件弹层）：无视图作用域可
 // 绑，不接 viewSignal（模态打开期遮罩挡导航，无"切页在途写隐藏区"面，视图
 // 作用域取消对其不适用）；信封消费形态逐键不变（errorText 回退链原样）。

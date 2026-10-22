@@ -12,7 +12,7 @@
    - plotCard：DOM 壳（工具条 CSV/PNG/SVG 导出按钮 + 图表容器），浏览器侧。
    迁移面：pages.js 全部 drawEChart 调用点换壳为本组件；drawLineChart /
    Smith / 3D 自研管线不动。主题三态沿用 PR-1（body.light 类 + 调色板入参）。
-   ═══ 架构批 UI-R5 增量 ═══
+   ═══ aurora_d UI-R5 增量 ═══
    - 万点级降采样（保形）：minmaxIndices（min-max 包络抽稀，峰值/谷值位置
      与数值逐位保持）+ 共享 x 网分组（多迹线同索引集，category 轴同步）；
      lttbIndices 为感知保形备选档；在 plotCardOption 接缝生效
@@ -206,7 +206,7 @@ export function toCsv(series) {
   return rows.map((r) => r.map(q).join(",")).join("\r\n");
 }
 
-/* ═══ 架构批 UI-R5：万点级曲线降采样（保形）═════════════════════════
+/* ═══ aurora_d UI-R5：万点级曲线降采样（保形）═════════════════════════
    S 参数宽扫/多迹线可达数万频点——echarts 全量入 option 渲染与悬停读数
    随点数线性劣化。三件套：
    - minmaxIndices(ys, target)：min-max 包络抽稀（等间隔桶，每桶取 argmin+
@@ -215,7 +215,7 @@ export function toCsv(series) {
      （Grafana/M3 同款选型）；高 Q 窄谷（宽于 1 样本、窄于桶宽）恰是 S 参数
      最关心的特征，感知类算法（LTTB）按三角形面积选点会整桶错过次深谷
      （实测 20001 点三谷曲线 LTTB 把 −25/−31dB 谷抹平成 −3dB 级，见
-     对比实验归档证据），故不做默认。
+     runs/aurora_d/uir5/ 证据），故不做默认。
    - lttbIndices(ys, n)：LTTB（Largest-Triangle-Three-Buckets）感知保形选点
      备选档（平滑曲线视觉等价性更好；不保证极值保留，导出供调用方自选）。
    - downsamplePlotSeries(series, cap)：共享 x 网分组——同图多迹线（同文件
@@ -374,7 +374,7 @@ export function downsamplePlotSeries(series, cap) {
 /* PlotCard 的 option（props 与 drawEChart opts 同形 + mode/crosshair/y2 增量；
    UI-R5：接缝处套降采样——buildEChartOption 保持纯构造（golden 钉不受扰），
    convergence 整跳、props.maxPoints 显式覆盖优先。
-   ═══ 架构批 W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
+   ═══ aurora_e W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
    props.option 非空 → 调用方自带完整 option 直通，跳过 base 单源构造与
    降采样（非笛卡尔管线——polar/Smith/custom/heatmap 不在 builder 能力面——
    由此接入 plotCard 壳，获得 CSV/PNG/SVG 导出+同容器复用+主题联动）：
@@ -401,7 +401,7 @@ export function plotCardOption(props, theme) {
    W3-S12（P-5）：option? 为逃生舱（语义见 plotCardOption 头注——非笛卡尔
    管线自携 option 直通，series 仅作 CSV 数据面）；width? 设图表容器宽
    （Smith 方图等比管线用；不传="" 与既有 DOM 逐字节同）。
-   W5-S17（架构批，R1 §面3 联动 watch 激活）：connectGroup? 非空 → 实例
+   W5-S17（aurora_f，R1 §面3 联动 watch 激活）：connectGroup? 非空 → 实例
    挂 .group + echarts.connect(group)（同组 tooltip/axisPointer/dataZoom
    双向同步，echarts 原生零新依赖；典型面=sparams 多文件卡+叠加卡按频段
    对照）。实现面 _applyConnectGroup（首绘与复用换代两组路径共用），窗口
@@ -533,7 +533,7 @@ export function plotCard(el, props = {}, ctx = {}) {
       getChart: () => shell.chart,
       getCsv: () => "\ufeff" + toCsv(shell.props.series),
     }, kinds)) tools.appendChild(b);
-    // W4-S17（架构批，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
+    // W4-S17（aurora_e，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
     // 全站"最近渲染"（palette act-export-chart 事件桥消费面）。querySelector
     // 守卫=node 行为钉假元素环境静默跳过（#105 best-effort）。
     const pngBtn = tools.querySelector
@@ -567,7 +567,7 @@ export function plotCard(el, props = {}, ctx = {}) {
   }
 }
 
-/* ═══ W4-S17（架构批，W3-S12 建议①）：palette act-export-chart 桥登记面 ═══
+/* ═══ W4-S17（aurora_e，W3-S12 建议①）：palette act-export-chart 桥登记面 ═══
    四管线（polar/Smith/custom/heatmap）W3-S12 退场 chartExportTools 后，桥的
    "最近装配"登记只剩 dashboard 甜甜圈一个消费者——登记面由此迁 plotCard 壳：
    plotCard 每次渲染（首绘装配/复用换代）都把该壳工具条 PNG 钮登记为全站

@@ -1,4 +1,4 @@
-/* rfauto 成本时间线页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）。
+/* rfauto 成本时间线页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）。
    W8-S32 i18n 批 3：本页接入壳扫描（第 9 页）——壳静态标签 data-i18n+
    首扫；状态行/空态/图表系列名与 aria 走 t() 渲染期烘焙（run_id/adapter
    等 API 数据仍走拼接直出，不进 t() params——i18n.js 头注纪律）。 */
@@ -8,9 +8,9 @@ import { T } from "./context.js";
 import { help } from "./dom.js";
 // i18n（W8-S32 批 3）
 import { t, applyI18nRoot } from "./i18n.js";
-// 三态收敛（架构批 W2-S5，R1 #8 批1）：错误=kitErrorPanel、空态=kitEmptyState
+// 三态收敛（aurora_f W2-S5，R1 #8 批1）：错误=kitErrorPanel、空态=kitEmptyState
 import { kitEmptyState, kitErrorPanel } from "./kit.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 1 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 1 点）——
 // 数据面全页（成本时间线）接 viewSignal("timeline") 切页收束 + aborted 短路
 //（在途拉取不再写隐藏区）。信封消费形态逐键不变。
 import { apiFetch, viewSignal } from "./api.js";
@@ -32,7 +32,7 @@ export async function pageTimeline() {
   const d = await apiFetch("/api/cost_timeline", { signal: viewSignal("timeline") });
   if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   if (!d.ok) {
-    // 三态收敛（架构批 W2-S5，R1 #8 批1）：加载失败=kitErrorPanel 带重试
+    // 三态收敛（aurora_f W2-S5，R1 #8 批1）：加载失败=kitErrorPanel 带重试
     //（重试=整页重进，pageTimeline 幂等：壳判 innerHTML 已在即跳过）
     T.$("tl-cost").innerHTML = kitErrorPanel((d.errors || []).join("; "), "tl-retry");
     const rb = T.$("tl-retry");
@@ -83,7 +83,7 @@ export async function pageTimeline() {
     T.$("tl-tune").innerHTML = kitEmptyState(t("timeline.empty_tune"));
 }
 
-/* ═══ R-1（架构批 W3-S12）：PageContext 增量钩子 timelineCtx ══════════
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 timelineCtx ══════════
    refresh=图表数据重拉（pageTimeline 幂等：壳判 innerHTML 已在即跳过，
    cost_timeline 重拉后 T.plotCard 同容器 setOption 复用刷新两张图）。
    无轮询面，leave 不需要。 */

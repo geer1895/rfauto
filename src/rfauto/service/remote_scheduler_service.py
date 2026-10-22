@@ -1,20 +1,27 @@
 """remote_scheduler_service —— v1 调度面拆批切片：多机资源可见性 + 队列视图。
 
-立项出处（2026-10-08 储备池立项评审）：调度面拆批项与调度面余项
-（mTLS+队列页+--remote）同域；本模块
-= 两项在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
+立项出处（2026-10-08 储备池立项席 S）：runs/pool_reaudit/REAUDIT_REPORT.md
+E-06（调度面拆批）与 PR-15（调度面余项 mTLS+队列页+--remote）同域；本模块
+= 两账目在「多机资源可见性+队列视图」切片上的 v1 落地——**纯只读聚合**
 （零发射、零写入、零杀进程；发射侧路由/资源日历全版/campaign --remote
-仍是拆批余件，不在本切片）。
+仍是 E-06 拆批余件，不在本切片）。
 
 能力（规则 4：JSON 进出，CLI 是薄壳）：
 
 - ``resources_view``：并发求解面资源视图——本机 openEMS/HFSS 进程互斥态
-  （#261 进程指纹计数）+ 登记机器（缺省 sim_host）可达性/在跑进程数/
-  磁盘余量。
+  （#261 进程指纹计数）+ 登记机器（缺省 sim_server）可达性/在跑进程数/
+  磁盘余量 + ``remote.probed_at`` 探测时间戳 + ``recommend`` 只读选机
+  推荐块（W2-S4，size_aware 思想轻量重实现，max_parallel 钉 1 合 #261
+  互斥红线，**零调度权**）。
 - ``queue_view``：任务队列视图——job_registry 在途作业 + 单写锁
   （owner/FIFO 队长）+ 席位占用表 + 服务器在途态合并。
+- ``queue_inflight_view``：在途战役记账只读视图（W2-S4 机器占用面）——
+  campaign_queue_daemon 状态档 launched 态瘦形（占用徽章行 + 单飞计数），
+  纯读零写零 tick。
+- ``resources_panel_view``：远程机器面板聚合（resources + occupancy，
+  UI 端点 ``/api/remote/resources`` 数据面，W2-S4）。
 - ``calendar_launch_view``/``calendar_view``：资源日历机读化（UX-B8，
-  2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
+  E62 席 2026-10-08）——``configs/resource_calendar.yaml``（备份窗/
   维护窗/许可席位峰谷/单机内存帽）装载 + 「当前是否可发」三态判定
   （open/risk/blocked）；缺文件=恒可发不阻塞（#105 fail-open 观测面）。
 
@@ -53,7 +60,7 @@ from rfauto.infra.remote_machines import (
     probe_machine,
     resolve_machine,
 )
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.job_registry import get_job_registry, get_write_lock
 from rfauto.service.remote_service import remote_mutex_command
 
@@ -62,21 +69,26 @@ __all__ = [
     "HFSS_MUTEX_FINGERPRINT",
     "OE_MUTEX_FINGERPRINT",
     "QUEUE_ACTIVE_STATES",
+    "RECOMMEND_MAX_PARALLEL",
+    "RECOMMEND_MIN_FREE_DISK_GB",
     "RESOURCE_CALENDAR_FILE",
     "calendar_launch_view",
     "calendar_view",
     "default_resource_calendar_path",
     "local_hfss_view",
     "local_openems_view",
+    "queue_inflight_view",
     "queue_view",
+    "recommend_machine",
     "remote_resources",
+    "resources_panel_view",
     "resources_view",
 ]
 
 # ─── #261 通道互斥指纹（视图侧常量） ─────────────────────────────────────────
 # OE 语义同源 remote_oe_service._MUTEX_FINGERPRINT（进程内 FDTD.Run 的
 # python 家族；#261：本仓 openEMS 非 openEMS.exe，进程域钉 python.exe）——
-# 视图侧独立常量，避免共享文件改动耦合；命令构造单源复用
+# 视图侧独立常量，避免跨席共享文件 hunk 耦合；命令构造单源复用
 # remote_service.remote_mutex_command（G5 全程单引号零双引号）。
 #: 语义自排除（#261 自锁红线）：指纹词元均非本 CLI 调用链命令行词元
 #（``rfauto remote resources`` 不含 _rfauto_runner/simulation.py/…）。
@@ -92,6 +104,18 @@ QUEUE_ACTIVE_STATES = ("running", "cancel_requested")
 _HIT_LINE_RE = re.compile(r"^\d+\|")
 
 _GB = 1024.0**3
+
+# ─── 选机推荐（只读 recommend 字段；W2-S4 人性化二批，R1 采纳 #5） ────────────
+# 思想出处 hfss-dispatch plugins/scheduler/size_aware.py（只读借鉴，按 rfauto
+# 规范重实现——R1 §4「默认思想借鉴按 rfauto 规范重实现」）。**只读显示字段，
+# 不抢调度权**：发射路由仍归 campaign_queue_daemon 单飞链，本面零行为。
+#: 磁盘余量排除线（GB）——size_aware MIN_FREE_DISK_GB 同值（20GB）。
+RECOMMEND_MIN_FREE_DISK_GB = 20.0
+#: 单机并行上限**钉 1**（#261 每机互斥红线；R1 §d"采纳 b2 打分时
+#: max_parallel 应钉 1"）：n_tasks ≥ 1 即排除推荐。config 侧
+#: ``hfss.max_parallel``（缺省 2）是发射侧 --parallel 收敛旋钮，与本
+#: 推荐面口径不同源、互不读写——推荐面按互斥纪律从严钉 1，如实展示。
+RECOMMEND_MAX_PARALLEL = 1
 
 # ─── 资源日历（UX-B8 机读化：备份窗/维护窗/许可席位峰谷转机读） ────────────────
 #: 日历缺省文件名（``configs/resource_calendar.yaml``，仓根锚定；schema 与
@@ -171,7 +195,7 @@ def local_hfss_view() -> dict[str, Any]:
 # ─── 登记机器资源面（可达性/在跑进程数/磁盘余量） ─────────────────────────────
 
 def _drive_letter_of(work_root: str) -> str | None:
-    """服务器侧工作根 → 盘符（``<drive>:\\work_root`` → ``<drive>:``；无盘符 None）。"""
+    """服务器侧工作根 → 盘符（``E:\\rfauto_remote`` → ``E:``；无盘符 None）。"""
     m = re.match(r"^([A-Za-z]):", str(work_root or ""))
     return m.group(1).upper() + ":" if m else None
 
@@ -240,12 +264,15 @@ def remote_resources(machine: str | None = None) -> dict[str, Any]:
     dict
         ``{"machine": 注册表键名|None, "state", "reason", "reachable",
         "ports": {语义名: {open, latency_ms}}, "ssh", "openems", "hfss",
-        "disk", "n_tasks"}``。**主机名/IP 与凭据恒不落信封**。
+        "disk", "n_tasks", "probed_at"}``。**主机名/IP 与凭据恒不落信封**。
         ``state``：ok（三子面全 ok）/ partial（部分降级）/ unknown（全降级
         或无 SSH 面）。``n_tasks`` = OE+HFSS 两通道在跑进程数合计（census
         口径，非 license 席位；任一**通道** unknown 时为 None——半边 census
         不凑数，#122；磁盘面降级不影响 n_tasks）。
+        ``probed_at`` = 本次探测 census 完成时刻（epoch 秒；前端数据新鲜度
+        消费口——视图为请求时现算，该值即"上次探测"时间锚，W2-S4）。
     """
+    stamp = time.time()
     machines = load_remote_machines()
     if machine is None and not machines:
         return {
@@ -256,7 +283,7 @@ def remote_resources(machine: str | None = None) -> dict[str, Any]:
             "hfss": _unknown("无登记机器"),
             "disk": {"state": "unknown", "free_gb": None, "drive": None,
                      "reason": "无登记机器"},
-            "n_tasks": None,
+            "n_tasks": None, "probed_at": stamp,
         }
     cfg = resolve_machine(machine, machines)
 
@@ -266,6 +293,7 @@ def remote_resources(machine: str | None = None) -> dict[str, Any]:
         "disk": {"state": "unknown", "free_gb": None, "drive": None,
                  "reason": "未探测"},
         "n_tasks": None, "state": "unknown", "reason": None,
+        "probed_at": stamp,
     }
     try:
         probe = probe_machine(cfg)
@@ -334,7 +362,95 @@ def remote_resources(machine: str | None = None) -> dict[str, Any]:
     return view
 
 
-# ─── 聚合视图（resources / queue） ───────────────────────────────────────────
+# ─── 选机推荐（只读 recommend；W2-S4，R1 采纳 #5 size_aware 思想） ────────────
+
+def recommend_machine(view: dict[str, Any]) -> dict[str, Any]:
+    """机器实况 → 只读选机推荐块（size_aware 思想的轻量重实现；纯函数）。
+
+    消费 :func:`remote_resources` 产物形态的机器实况 dict（**只读机器实况
+    字段，零新增探测零网络**），产出展示用推荐块：
+
+    - 排除集（size_aware 同构，任一命中 → ``eligible=False``）：机器未登记
+      （None）/不可达 / SSH 非 ok（凭据缺失或链路失败）/ ``n_tasks`` unknown
+      （#122：census 不全不猜"空闲"）/ ``n_tasks >= RECOMMEND_MAX_PARALLEL``
+      （钉 1 占用中）/ 磁盘余量已知且 < 20GB（size_aware MIN_FREE_DISK_GB
+      同值；磁盘 unknown 不排除——size_aware 同语义"未知≠不足"）。
+    - 打分（size_aware 公式在 rfauto 实况字段上的可算子集）：
+      ``disk_free_gb/100 − oe_procs×2 − hfss_procs×2``。size_aware 的
+      free_mem/cpu_load/sessions 三项 rfauto census 无对应实况字段，**如实
+      不凑**（诚实边界登记于模块 docstring）；每项以 ``reasons`` 人读串
+      落账（+加分为正项、-罚项）。
+
+    Returns
+    -------
+    dict
+        ``{"machine", "eligible", "score"(float|None), "max_parallel"(=1),
+        "n_tasks", "reasons": [str], "excluded_by": [str]}``——排除态
+        ``score=None``（被排除机不打分不冒充可比，#122 同族）。
+    """
+    machine = view.get("machine")
+    reasons: list[str] = []
+    excluded: list[str] = []
+
+    def _procs_of(key: str) -> int | None:
+        ch = view.get(key) or {}
+        if isinstance(ch, dict) and ch.get("state") == "ok":
+            n = ch.get("n_procs")
+            return int(n) if isinstance(n, (int, float)) else None
+        return None
+
+    n_tasks = view.get("n_tasks")
+    if machine is None:
+        excluded.append("无登记机器（本地模式）")
+    if view.get("reachable") is not True:
+        excluded.append("机器不可达（TCP 探活不通）")
+    ssh = view.get("ssh") or {}
+    if ssh.get("auth") != "ok":
+        excluded.append(f"SSH 通道非 ok（auth={ssh.get('auth') or 'unknown'}）")
+    if n_tasks is None:
+        excluded.append("在跑任务数 unknown（census 不全不猜，#122）")
+    elif int(n_tasks) >= RECOMMEND_MAX_PARALLEL:
+        excluded.append(
+            f"占用中 {int(n_tasks)}/{RECOMMEND_MAX_PARALLEL}"
+            f"（max_parallel 钉 {RECOMMEND_MAX_PARALLEL}，#261 每机互斥）")
+    disk = view.get("disk") or {}
+    free_gb = disk.get("free_gb") if disk.get("state") == "ok" else None
+    if free_gb is not None and float(free_gb) < RECOMMEND_MIN_FREE_DISK_GB:
+        excluded.append(
+            f"磁盘余量不足（{float(free_gb):.1f}GB < "
+            f"{RECOMMEND_MIN_FREE_DISK_GB:.0f}GB）")
+
+    eligible = not excluded
+    score: float | None = None
+    if eligible:
+        score = 0.0
+        if free_gb is not None:
+            term = float(free_gb) / 100.0
+            score += term
+            reasons.append(f"+磁盘余量 {float(free_gb):.1f}GB（+{term:.2f}）")
+        else:
+            reasons.append("磁盘余量 unknown（不计项）")
+        for key, label in (("openems", "openEMS"), ("hfss", "HFSS")):
+            n = _procs_of(key)
+            if n is None:
+                reasons.append(f"{label} 在跑进程 unknown（不计项）")
+                continue
+            term = float(n) * 2.0
+            score -= term
+            reasons.append(f"-{label} 在跑进程 {n}（-{term:.1f}）")
+        score = round(score, 2)
+    return {
+        "machine": machine,
+        "eligible": eligible,
+        "score": score,
+        "max_parallel": RECOMMEND_MAX_PARALLEL,
+        "n_tasks": n_tasks if n_tasks is None else int(n_tasks),
+        "reasons": reasons,
+        "excluded_by": excluded,
+    }
+
+
+# ─── 聚合视图（resources / queue） ───────────────────────────────────────
 
 def resources_view(machine: str | None = None) -> dict[str, Any]:
     """并发求解面资源视图（本机进程互斥态 + 登记机器资源面 + 资源日历，
@@ -344,17 +460,22 @@ def resources_view(machine: str | None = None) -> dict[str, Any]:
     -------
     dict
         ``{"ok": True, "local": {"openems", "hfss"},
-        "remote": remote_resources(...), "calendar": calendar_launch_view(...)}``
+        "remote": remote_resources(...), "calendar": calendar_launch_view(...),
+        "recommend": recommend_machine(remote)}``
         ——子面降级不翻 ok（#105）；``calendar.launchable`` =「当前是否可发」
-        状态字段（缺省未配置日历=恒可发，UX-B8 机读化消费口）。
+        状态字段（缺省未配置日历=恒可发，UX-B8 机读化消费口）；
+        ``recommend`` = 只读选机推荐块（W2-S4 人性化二批，size_aware 思想
+        轻量重实现，**零调度权**——发射路由仍归 campaign_queue_daemon）。
     """
+    remote = remote_resources(machine)
     return ok_envelope(
         local={
             "openems": local_openems_view(),
             "hfss": local_hfss_view(),
         },
-        remote=remote_resources(machine),
+        remote=remote,
         calendar=calendar_launch_view(),
+        recommend=recommend_machine(remote),
     )
 
 
@@ -381,7 +502,7 @@ def queue_view(machine: str | None = None) -> dict[str, Any]:
     - ``jobs``：job_registry 全体在册快照瘦形（注册序；跨进程历史 run 走
       ``jobs status``/meta.json 磁盘回落链，不在本视图）；
     - ``write_lock``：单写锁 owner + FIFO 队长（并发 hfss job 的排队面）；
-    - ``seat_occupancy``：席位 → 占用 job 列表（记账实时快照）；
+    - ``seat_occupancy``：席位 → 占用 job 列表（B-29 记账实时快照）；
     - ``remote``：:func:`remote_resources` 同源服务器在途态（unknown 降级
       原样透传）。
     """
@@ -399,6 +520,84 @@ def queue_view(machine: str | None = None) -> dict[str, Any]:
         write_lock={"owner": lock.owner, "queue_length": int(lock.queue_length)},
         seat_occupancy=registry.seat_occupancy(),
         remote=remote_resources(machine),
+    )
+
+
+def queue_inflight_view(
+    state_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """在途战役记账只读视图（W2-S4 机器占用面数据源；**零写零 tick**）。
+
+    消费 campaign_queue_daemon 状态档（``runs/campaign_queue/
+    queue_state.json``，经其公开装载口 ``load_queue_state``——损坏/缺文件
+    =空白档语义原样继承，#105），取 ``launched`` 态记录瘦形：
+
+    Returns
+    -------
+    dict
+        ``{"ok": True, "state_path", "exists", "in_flight",
+        "max_parallel"(=RECOMMEND_MAX_PARALLEL 钉 1), "last_tick_at",
+        "campaigns": [{item_id, plan_path, model, launched_at, updated_at}]}``
+        ——``campaigns`` 即"哪个战役占着"的徽章行（占用机器卡消费面）。
+    纯读：守护进程状态档零改动，调度核心行为零触碰（禁改清单红线）。
+    """
+    from rfauto.service.campaign_queue_daemon import (
+        ITEM_LAUNCHED,
+        default_queue_state_path,
+        load_queue_state,
+    )
+
+    p = Path(state_path) if state_path is not None else default_queue_state_path()
+    state = load_queue_state(p)
+    items = state.get("items") or {}
+    campaigns = [
+        {"item_id": rec.get("item_id"),
+         "plan_path": rec.get("plan_path"),
+         "model": rec.get("model"),
+         "launched_at": rec.get("launched_at"),
+         "updated_at": rec.get("updated_at")}
+        for rec in items.values()
+        if isinstance(rec, dict) and rec.get("status") == ITEM_LAUNCHED
+    ]
+    campaigns.sort(key=lambda c: (c.get("launched_at") is None,
+                                  c.get("launched_at") or 0.0))
+    return ok_envelope(
+        state_path=str(p),
+        exists=p.is_file(),
+        in_flight=len(campaigns),
+        max_parallel=RECOMMEND_MAX_PARALLEL,
+        last_tick_at=state.get("last_tick_at"),
+        campaigns=campaigns,
+    )
+
+
+def resources_panel_view(
+    machine: str | None = None,
+    state_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """远程机器面板聚合视图（W2-S4 UI 端点 ``/api/remote/resources`` 数据面）。
+
+    合并三只读子面（JSON 进出，handler 薄壳直渲染）：
+
+    - ``resources``：:func:`resources_view`（本机互斥态 + 登记机器资源面
+      + 资源日历 + **recommend 选机推荐块** + ``remote.probed_at`` 探测
+      时间戳）；
+    - ``occupancy``：:func:`queue_inflight_view`（单飞在途战役计数 + 徽章
+      行，max_parallel 钉 1 如实展示）。
+
+    未知机器名（RemoteConfigError）→ error 信封（ok=False + errors，
+    与 load_plan 显式报错语义同族）；探测降级不翻 ok（#105，与
+    resources_view 同口径）。
+    """
+    from rfauto.core.errors import RFAutoError
+
+    try:
+        resources = resources_view(machine)
+    except RFAutoError as exc:
+        return error_envelope([f"机器注册表解析失败: {exc}"])
+    return ok_envelope(
+        resources=resources,
+        occupancy=queue_inflight_view(state_path),
     )
 
 

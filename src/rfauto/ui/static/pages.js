@@ -1,24 +1,24 @@
-/* rfauto 工作台页面入口（架构批 UI-R2：pages.js 单体 ES module 化拆分）。
+/* rfauto 工作台页面入口（aurora_d UI-R2：pages.js 单体 ES module 化拆分）。
    本文件 = 薄入口，只做三件事：
    ① 按域组装 pages/ 各模块——视图注册表 VIEWS 逐键注入（键集与拆分前
      showPage 内联 views 表逐字节一致）；
    ② 初始化——initPages（工具集注入 + 轮询/SSE/导出桥/tools 深链四监听装配）
      与主题四态控制（setThemeMode/getThemeMode）；
    ③ 既有公开导出面全量 re-export（app.js/palette.js 的 import 路径
-     "./pages.js" 不变；导出面 54 名逐名等价见等价性审计归档）。
+     "./pages.js" 不变；导出面 54 名逐名等价见 runs/aurora_d/uir2/）。
    拆分域：context/dom/sortable/charts/polling/sse/kit/router/dashboard_util/
    filebrowser + view_*（按页面域，见各模块 docstring）。行为零变化纪律：
    页面代码逐字节搬移（含注释），仅 import 接线与跨模块状态访问器
    （_activeView→context.js、_campaignPendingId→router.js 消费函数）为接缝。
    零构建：原生 <script type="module"> 相对路径 import，浏览器直跑。
-   ═══ UI-R12（架构批 前端深化席）任务1：路由懒加载 ═══
+   ═══ UI-R12（aurora_d 前端深化席）任务1：路由懒加载 ═══
    视图注册从全量静态 import 改为原生 ESM 动态 import()（零构建形态保持，
    浏览器直跑）：首屏只装配基础设施 + view_tools（router opener 静态依赖）
    + view_dashboard（首屏落地页），其余 21 视图首次进入该页时按需拉取——
    VIEWS 注册表键集/字节与拆分前一致（绑定名别名保形），showPage 同步
    分发/回落语义不动；加载失败可见化（单页错误面板，#105）。 */
 import { T } from "./pages/context.js";
-// 主题判定/双档调色板单源在 theme.js（架构批 A5-B）——本入口消费四态
+// 主题判定/双档调色板单源在 theme.js（aurora72 A5-B）——本入口消费四态
 // 控制面并 re-export 常量/纯函数（palette.js 与 node 行为钉 import 自
 // pages.js 的历史口径不变）。
 import {
@@ -38,13 +38,13 @@ import { _bindToolsDeepLink, pageTools } from "./pages/view_tools.js";
 import { pageDashboard, dashboardCtx } from "./pages/view_dashboard.js";
 // 路由分发（VIEWS 注册表 + showPage 单源）+ R-1 PageContext 注册表
 import { PAGE_CTX, VIEWS } from "./pages/router.js";
-// i18n 骨架（架构批 W1-S2，R1 审计面2 规格）：静态壳首扫 + html lang 同步
+// i18n 骨架（aurora_f W1-S2，R1 审计面2 规格）：静态壳首扫 + html lang 同步
 import { applyI18nRoot, getLocale } from "./pages/i18n.js";
 // esc 本模块内直接消费（懒加载失败面板转义）；dom.js 本就随门面 re-export
 // 在静态依赖图内，此处补具名绑定（re-export 语法不产生本地绑定）。
 import { esc } from "./pages/dom.js";
 
-/* ═══ UI-R12 任务1（架构批 前端深化席）：懒加载视图包装器 ═════════
+/* ═══ UI-R12 任务1（aurora_d 前端深化席）：懒加载视图包装器 ═════════
    路由从全量静态 import 改为原生 ESM 动态 import()（零构建：相对说明符
    浏览器直跑，无打包器）——首屏 JS 体积从"基础设施+全部 23 视图"降到
    "基础设施+view_tools+view_dashboard"，其余视图在首次进入该页时按需
@@ -83,7 +83,7 @@ function _lazyView(key, file, name) {
   };
 }
 
-/* ═══ R-1（架构批 W1-S3）：懒加载页的 PageContext 包装器 ═════════
+/* ═══ R-1（aurora72 W1-S3）：懒加载页的 PageContext 包装器 ═════════
    懒加载视图的钩子面：进过页后模块已在缓存，refresh/leave 动态 import
    命中缓存零网络；leave 仅在离页触发（此前必已进页）=恒缓存命中。未加载
    （页面从未进入）时理论不可达，仍按 #105 best-effort 静默兜底。 */
@@ -148,8 +148,8 @@ Object.assign(VIEWS, {
   queue: pageQueue,
 });
 
-/* R-1 PageContext 注册（架构批 W1-S3 协议在 router.js PAGE_CTX；
-   架构批 W2-S7 波2 余页迁移 + W3-S12 波3 第二组 6 页 + W4-S17 波4 收尾）：
+/* R-1 PageContext 注册（aurora72 W1-S3 协议在 router.js PAGE_CTX；
+   aurora_e W2-S7 波2 余页迁移 + W3-S12 波3 第二组 6 页 + W4-S17 波4 收尾）：
    - dashboard=静态导入直登记（widget 增删/拖拽/palette 刷新走局部重铺，
      view_dashboard.js refreshDashboard）；
    - 懒加载页经 _lazyCtx 包装：
@@ -213,7 +213,7 @@ Object.assign(PAGE_CTX, {
    system 态用 matchMedia(prefers-color-scheme) 跟随并监听变化（仅 system 态
    生效）。主题变量挂在 html[data-theme]（v5.0 设计系统）；body.light 信号
    保留=echarts/图表消费面（浅色主题才置位，双暗主题下为 false）。
-   ═══ 架构批 A5-B（R6 审计 R-4）═══ THEME_KEY/THEME_MODES/THEME_LABEL
+   ═══ aurora72 A5-B（R6 审计 R-4）═══ THEME_KEY/THEME_MODES/THEME_LABEL
    常量、themeIsLight 纯函数、applyThemeDom 双写单源全部迁入 theme.js；
    此处 re-export 保持既有公开面（palette.js 与 node 行为钉 import 自
    pages.js 的历史口径不变）。 */
@@ -237,17 +237,17 @@ export function getThemeMode() {
 
 export function initPages(toolkit) {
   Object.assign(T, toolkit);
-  // 架构批 W1-S2（R1 审计面2 规格）：i18n 静态壳首扫（index.html 的
+  // aurora_f W1-S2（R1 审计面2 规格）：i18n 静态壳首扫（index.html 的
   // nav/group/skip/palette/foot data-i18n* 三通道；试点页壳各自渲染后再扫）
   // + html lang 与语言档同步（读屏发音口径）。装配序在 app.js showPage 前，
   // navBtns onclick 绑 data-v 不受文本替换影响。
   applyI18nRoot(document);
   try { document.documentElement.setAttribute("lang", getLocale()); } catch { /* node 等 */ }
-  _bindVisibilityPolling(); // 架构批 W2-B：轮询暂停/恢复监听（浏览器侧装配一次）
-  _bindVisibilitySSE(); // 架构批 A6-A：SSE 连接隐藏收束/恢复重开监听（装配一次）
-  _bindExportChartEvent(); // 架构批 W4-C：palette act-export-chart 事件桥（装配一次）
-  _bindThemeRefresh(); // 架构批 UI-R5：主题联动——body.light 翻转时存活 plotCard 重放配色（装配一次）
-  _bindToolsDeepLink(); // 架构批 A2-B：#/tools/<key> 深链自查（app.js 页级路由不认 key 段）
+  _bindVisibilityPolling(); // aurora36 W2-B：轮询暂停/恢复监听（浏览器侧装配一次）
+  _bindVisibilitySSE(); // aurora72 A6-A：SSE 连接隐藏收束/恢复重开监听（装配一次）
+  _bindExportChartEvent(); // aurora36 W4-C：palette act-export-chart 事件桥（装配一次）
+  _bindThemeRefresh(); // aurora_d UI-R5：主题联动——body.light 翻转时存活 plotCard 重放配色（装配一次）
+  _bindToolsDeepLink(); // aurora72 A2-B：#/tools/<key> 深链自查（app.js 页级路由不认 key 段）
   // 主题四态：读档（旧 "dark" 别名→midnight）→ 应用 → system 态跟随系统
   // 变化 → 按钮四态循环切换。应用=v5.0 双写（html[data-theme] 设计系统
   // 变量面 + body.light 图表消费面信号）——单源在 theme.js applyThemeDom
@@ -306,6 +306,9 @@ export {
   kitTable, kitPanelHead, kitBadgeCls, kitBadge, kitVerdictBadge, kitBoolBadge,
   kitSkeleton, kitSkeletonRows, kitEmptyState, bindEmptyStates, kitErrorPanel,
   kitClickRowAttrs, kitApplyClickRowAttrs, bindClickRows,
+  // W2-S2（aurora_i，R3 M2）：指标词典悬浮说明四件（行为钉经 pages.js
+  // import 口径——test_ui_metric_tip 同 test_ui_kit 走本 facade）
+  metricGateVerdict, metricTipText, metricBadgeHtml, metricValueHtml,
 } from "./pages/kit.js";
 export {
   parseRoute, routeOpenerFor, routeOpen, openRun, openCampaign, showPage,

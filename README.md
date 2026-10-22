@@ -21,14 +21,14 @@ whole pipeline through MCP, under one hard rule:
 > deterministic kernel or solver — never by the LLM.**
 
 It drives **16 EM/EDA engines** behind one interface, ships
-**77 parameterized device templates** with built-in physics checks, and
-exposes **273 CLI commands** and **152 MCP tools** (+9 resources) — kept
-honest by **25400+ unit tests** that run without any commercial license.
+**72 parameterized device templates** with built-in physics checks, and
+exposes **274 CLI commands** and **152 MCP tools** (+10 resources) — kept
+honest by **27000+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 323 (with experimental 324)` · `TEMPLATE_META 72` ·
-`EXPECTED_TEMPLATES 72` · `ANCHORS 79` · CLI commands 273 (leaves) ·
-(152 MCP tools + 9 resources)
+`EXPECTED_TEMPLATES 72` · `ANCHORS 79` · CLI commands 274 (leaves) ·
+(152 MCP tools + 10 resources)
 <!-- numbers-end -->
 
 **Contents** · [Why](#why) · [What it does](#what-it-does) ·
@@ -64,7 +64,7 @@ and every reported number carries its provenance.
   (analytic modal), QucsatorRF and VNA behind a common adapter layer. Commercial engines stay opt-in extras; everything
   core runs against a built-in fake solver, so you can try the whole framework
   with zero licenses.
-- **Device template factory** — 71 parameterized families (couplers, power
+- **Device template factory** — 72 parameterized families (couplers, power
   dividers, filters, antennas, transitions…). Each template synthesizes
   starting dimensions from closed-form physics, and registers acceptance
   checks so you can tell "real result" from "mesh artifact".
@@ -104,7 +104,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 152 (+9 resources) | CLI commands 273 (leaves) | CALCULATOR_REGISTRY 323 [with experimental 324] | device templates 72 | anchors 79
+**Scale numbers**: MCP tools 152 (+10 resources) | CLI commands 274 (leaves) | CALCULATOR_REGISTRY 323 [with experimental 324] | device templates 72 | anchors 79
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start
@@ -167,7 +167,7 @@ rfauto replay <run_id>                                     # reproduce a past ru
 
 ```bash
 pip install -e ".[mcp]"
-python -m rfauto.mcp_server        # stdio transport; 152 tools (+7 resources)
+python -m rfauto.mcp_server        # stdio transport; 152 tools (+9 resources)
 ```
 
 Then register it in your MCP client (Claude Desktop example):

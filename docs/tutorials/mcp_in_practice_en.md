@@ -70,8 +70,8 @@ form recommended; escape Windows paths with `\\`):
 {
   "mcpServers": {
     "rfauto": {
-      "command": "E:\\rf_workspace\\.venv\\Scripts\\rfauto-mcp.exe",
-      "cwd": "E:\\rf_workspace"
+      "command": "E:\\HFSS_Connect\\.venv\\Scripts\\rfauto-mcp.exe",
+      "cwd": "E:\\HFSS_Connect"
     }
   }
 }
@@ -85,7 +85,7 @@ The generic stdio JSON form (README's form, module entry):
     "rfauto": {
       "command": "python",
       "args": ["-m", "rfauto.mcp_server"],
-      "cwd": "E:\\rf_workspace"
+      "cwd": "E:\\HFSS_Connect"
     }
   }
 }
@@ -103,13 +103,13 @@ check the client log for the JSON-RPC handshake. **stdout must be pure
 protocol**: wrapping the entry point in a shim that prints a banner
 will break it every time.
 
-## 3. The surface: 152 tools + 9 resources
+## 3. The surface: 152 tools + 10 resources
 
 Where the number comes from: `scripts/check_numbers.py` measured output
-`MCP=152+9res` (tools = facade + the `@mcp.tool` registration surface
+`MCP=152+10res` (tools = facade + the `@mcp.tool` registration surface
 of every module under `mcp_tools/`, regex-counted; resources =
 `list_resources()` enumerated live). The README scale line uses the
-same source (152+9), and the generated reference pages of the docs site
+same source (152+10), and the generated reference pages of the docs site
 are regenerated from it. **docs/reference.md's "当前 100 个工具
 （2026-09-24）" is outdated** — trust check_numbers.
 
@@ -134,7 +134,7 @@ representative tool names are quoted from the registration surface):
 registration surface on 2026-10-19 — 39 modules, the ten groups sum to
 152 exactly.)
 
-The 9 resources (read-only; URIs quoted from the registration surface):
+The 10 resources (read-only; URIs quoted from the registration surface):
 
 | URI | Content |
 |---|---|
@@ -142,7 +142,10 @@ The 9 resources (read-only; URIs quoted from the registration surface):
 | `rfauto://knowledge/materials` | materials library (configs/materials.yaml structure) |
 | `rfauto://knowledge/compat_matrix` | version compatibility matrix |
 | `rfauto://knowledge/terminology` | terminology cards |
+| `rfauto://knowledge/metric-glossary` | metric glossary (38 metric keys + machine-readable gates, aurora_i W3.5-K3) |
 | `rfauto://toolsets/definition` | toolset catalog (name/description/skill/tools per entry) |
+| `rfauto://calculators/index` | calculator registry catalog (2026-10-14 MCP-B seat) |
+| `rfauto://datasets/index` | dataset registry overview (2026-10-14 MCP-B seat) |
 | `rfauto://edb/status` | EDB fast-lane status (five families + artifact-root asset stats) |
 | `rfauto://edb/datasets` | edb_lane_* dataset listing under runs/datasets/ |
 
@@ -297,7 +300,7 @@ is pure-instruction mode and will not call the network mid-flight.
 | twin entry `python -m rfauto.mcp_server` | same pin executed | pass |
 | fastmcp version | `python -c "import fastmcp"` executed | pass (3.4.7) |
 | extras declaration `.[mcp]` | pyproject read | pass (fastmcp>=3.0.0) |
-| MCP=152+9res | `scripts/check_numbers.py` executed (2026-10-19) | pass (tools=registration-surface regex 152; resources=list_resources()=9) |
+| MCP=152+10res | `scripts/check_numbers.py` executed (2026-10-19) | pass (tools=registration-surface regex 152; resources=list_resources()=10) |
 | per-group tool table | `^@mcp\.tool` per-module regex measured | pass (39 modules; ten groups sum to 152) |
 | doctor/list_datasets/query_dataset/run_calculator/get_metrics | read-only tools live-called | pass (§4 outputs are structured-content excerpts) |
 | n_rows vs total_rows | query_dataset limit=1 live call | pass (n_rows=1, total_rows=2) |

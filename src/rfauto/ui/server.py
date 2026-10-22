@@ -9,7 +9,7 @@
 service/rest_api.py（/api/v1/*，传输壳禁业务逻辑，8644）——两边各自独立
 路由表，新增能力按消费方选面，不在两边互相转发。
 
-架构批 UI-R1（2026-10-14）：API handler 按域机械迁 rfauto/ui/routes/
+aurora_d UI-R1（2026-10-14）：API handler 按域机械迁 rfauto/ui/routes/
 （函数体逐字节不变，域清单见各模块 docstring）；CSP 策略（哈希钉常量+
 中间件）迁 rfauto/ui/csp.py。本模块只保留 app 装配（create_ui_app/
 exception_handlers/CSP 中间件接线/Mount/serve 启动逻辑）与既有引用路径
@@ -40,6 +40,8 @@ from starlette.staticfiles import StaticFiles
 from rfauto.ui import csp as csp_routes
 from rfauto.ui.campaign_app import api_campaign_dashboard as api_campaign_dashboard
 from rfauto.ui.campaign_app import api_campaign_queue as api_campaign_queue
+from rfauto.ui.campaign_app import api_remote_resources as api_remote_resources
+# W2-S4 远程机器面板（只读）——import 与注释分行（合流预检参数降级清偿）
 
 # D-04 哈希钉既有消费面保持（test_w1e_ui_csp/test_ui_theme_boot 直 import）。
 from rfauto.ui.csp import CSP_HEADER as CSP_HEADER
@@ -54,7 +56,7 @@ from rfauto.ui.params import ParamError as ParamError
 from rfauto.ui.params import _int_param as _int_param
 from rfauto.ui.params import _json_body as _json_body
 
-# 架构批 UI-R1：分域模块按命名空间收编（route 表引用 <域>_routes.<handler>
+# aurora_d UI-R1：分域模块按命名空间收编（route 表引用 <域>_routes.<handler>
 # ——同一对象透传，注册序零漂移）；既有消费面保持薄 re-export（test_fs_fence
 # 直 import api_fs_list、test_a8d/test_f1 经 server_mod._TUNE_STATE setitem
 # 就地置位——同一 dict 对象透传；#116 教训：只经 import 名字透传）。
@@ -79,7 +81,7 @@ async def index(request: Request) -> Any:
     return _index_html_response()
 
 
-# ── 写端点 Bearer 鉴权（架构批 W6-S2，R2 审计 §面5.4 / Top10 #5）────────
+# ── 写端点 Bearer 鉴权（aurora_g W6-S2，R2 审计 §面5.4 / Top10 #5）────────
 #
 # R2 审计定谳：前端 api.js setApiToken Bearer 通道建成零消费、服务端零鉴权
 # ——非回环绑定（AGENTS 规则 0b 远程部署方向）下写端点（POST /api/run、
@@ -170,7 +172,7 @@ def _index_html_response() -> Any:
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]", "0:0:0:0:0:0:0:1"}
 
 
-# ── Cache-Control 分域（架构批 W1-S1，R1 审计 P9-1 v9 Top3）────────────
+# ── Cache-Control 分域（aurora_g W1-S1，R1 审计 P9-1 v9 Top3）────────────
 #
 # R1 实证：真机 curl /static/vendor/echarts.min.js 有 etag/last-modified
 # 但 cache-control 缺席——W7 走查首屏 26 请求每次导航全量条件重验证
@@ -248,6 +250,10 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         # PR-4 双 run 对比：具体路径必须先于 /{run_id} 参数路由（顺序坑）
         Route("/api/runs/diff", runs_routes.api_runs_diff),
         Route("/api/runs/{run_id}", runs_routes.api_run_detail),
+        # W2-S3 失败诊断包读面（aurora_i 采纳 #3；具体路径先于参数路由无冲突，
+        # 独立段名不与 /{run_id} 竞争——保守仍注册在其后）
+        Route("/api/runs/{run_id}/failure_context",
+              runs_routes.api_run_failure_context),
         # P-1 战役进度 SSE 桥（run_id 过滤；旧 3s 轮询端点保留为降级）
         Route("/api/runs/{run_id}/events/stream", runs_routes.api_run_events_stream),
         Route("/api/recipe", recipes_routes.api_recipe),
@@ -257,7 +263,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         Route("/api/tune/start", tune_routes.api_tune_start, methods=["POST"]),
         Route("/api/tune/status", tune_routes.api_tune_status),
         Route("/api/tune/trials", tune_routes.api_tune_trials),
-        # UI-R3 统一实时事件流（架构批）：tune/campaign 接入 SSE——统一信封
+        # UI-R3 统一实时事件流（aurora_d）：tune/campaign 接入 SSE——统一信封
         # {seq,ts,kind,domain,payload}（单源 helper 在 routes/event_bus.py）；
         # 既有轮询端点（/api/tune/status、/api/campaign_queue）与 runs SSE 桥
         # 保留不动=兼容层，前端消费适配留后续席。
@@ -312,10 +318,20 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         Route("/api/anchors/{anchor_id}", data_routes.api_anchor_detail),
         Route("/api/uq/samples", data_routes.api_uq_samples),
         Route("/api/uq/yield", data_routes.api_uq_yield, methods=["POST"]),
+        # R3 设计 M2（aurora_i W2-S2）：指标词典悬浮说明数据面（只读；
+        # 单键查询在 service 层 get_metric——REST 面不设未消费路由）
+        Route("/api/metric-glossary", data_routes.api_metric_glossary),
+        # R3 设计 M3（aurora_i W3-S1）：双引擎对照曲线数据面（只读；
+        # 前端画廊抽屉"对照"标签页叠加图消费——runs 挂载默认关故必须
+        # 服务层组装，解析走既有链，证据零改写）
+        Route("/api/credibility/curves", data_routes.api_credibility_curves),
         Route("/api/gallery", tools_routes.api_gallery),
         Route("/api/runs/{run_id}/dashboard", api_campaign_dashboard),
         # PR-9 调度队列页（ge8b Wave B 席B3）：战役队列+G13 决策日志（只读）
         Route("/api/campaign_queue", api_campaign_queue),
+        # W2-S4 远程机器面板：resources_view（recommend 推荐+probed_at）
+        #   + 在途战役占用面（只读，照 campaign_queue 先例）
+        Route("/api/remote/resources", api_remote_resources),
         # EDB 快车道状态页：产物清单+模板能力面（只读，照 campaign_app 先例）
         Route("/api/edb_status", api_edb_status),
         Route("/api/profile", tools_routes.api_profile, methods=["GET", "POST"]),
@@ -342,7 +358,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
                 file=sys.stderr,
             )
     # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
-    # P8-1（架构批 R1 审计 Top1）：全站 GZip 压缩——静态首载 2.61MB 线传
+    # P8-1（aurora_f R1 审计 Top1）：全站 GZip 压缩——静态首载 2.61MB 线传
     # 压至 ~715KB（three.module.js 1.27MB→~350KB 级），远程/服务器部署
     # 线传 ×3.6（AGENTS 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
     # （Starlette 列表首项为最外层）：响应出站先经内层 CSP 附加头、再经
@@ -354,9 +370,9 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
     # A4 P0-3 保险环：未来新增调用点若漏过 _json_body 守卫直接裸
     # request.json()，JSON 解码错误仍归一 400 信封（非 500 纯文本）。
     # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
-    # P9-14（架构批 W1-S1）：同一中间件单点附加安全头批
+    # P9-14（aurora_g W1-S1）：同一中间件单点附加安全头批
     # （X-Content-Type-Options/Referrer-Policy，csp.py 单源）。
-    # P9-1（架构批 W1-S1）：Cache-Control 分域中间件挂最内层（响应出站
+    # P9-1（aurora_g W1-S1）：Cache-Control 分域中间件挂最内层（响应出站
     # 先经本层加分域头，再经 CSP/安全头批、最后 GZip 压缩体）——SSE 路径
     # 在该层直通零缓存头，gzip 对 text/event-stream 的既有豁免不交互。
     # Bearer 鉴权（W6-S2）与 CacheControl 同层（最内）：401 拒绝响应出站

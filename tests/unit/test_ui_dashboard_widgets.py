@@ -1,4 +1,4 @@
-"""架构批 W4-C 席位回归钉：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/
+"""aurora36 W4-C 席位回归钉：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/
 甜甜圈）+ palette act-export-chart 事件桥。
 
 对象：src/rfauto/ui/static/pages.js（本席独占文件面；app.js/palette.js 只读）。
@@ -42,7 +42,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -70,7 +70,7 @@ def _w4c_block() -> str:
     （导出事件桥+块结束标记）——两模块并读，钉语义（零自由定时器）不变。"""
     t = "".join((_STATIC / "pages" / n).read_text(encoding="utf-8")
                 for n in ("dashboard_util.js", "charts.js"))
-    m = re.search(r"架构批 W4-C：dashboard 组件深化(.*?)架构批 W4-C 块结束",
+    m = re.search(r"aurora36 W4-C：dashboard 组件深化(.*?)aurora36 W4-C 块结束",
                   t, re.S)
     assert m, "W4-C 块缺失"
     return m.group(1)
@@ -111,7 +111,7 @@ class TestActivityFeed:
     def test_rows_click_openrun_and_keyboard(self):
         body = _body(r"async function wActivity\(el\)", "  ")
         assert "openRun(row.dataset.id)" in body  # 复用 run 详情单入口
-        # UI-R4（架构批，A6 P1-5 清偿）：本组件=R1 P1-2 手写试点原位点，
+        # UI-R4（aurora_d，A6 P1-5 清偿）：本组件=R1 P1-2 手写试点原位点，
         # 键盘可达三件套收编 kitClickRow 单源（role=link→button 缺省口径，
         # Enter/Space 接线在 kit bindClickRows；行为钉 test_ui_a11y_rows）
         # S4 发布令批：行标签迁词表 t() 烘焙（zh 值同笔 runs.open_detail_aria）
@@ -265,7 +265,7 @@ console.log(JSON.stringify({ afterLive, afterDetach: clicked }));
         assert "_exportEvtBound" in body  # 幂等守卫（装配一次）
         assert "fireRecentChartExport();" in body  # W4-S17：消费共享登记面
         # 监听在 initPages 装配（与 W2-B 轮询监听同一浏览器侧装配点）
-        assert "_bindExportChartEvent(); // 架构批 W4-C" in _SRC
+        assert "_bindExportChartEvent(); // aurora36 W4-C" in _SRC
 
     @pytest.mark.skipif(_NODE is None, reason="本机无 node")
     def test_bridge_weakref_deregisters_on_toolbar_detach(self):
@@ -330,7 +330,7 @@ class TestCrossSeatPinsHold:
     同源复述）。"""
 
     def test_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _SRC.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处
@@ -346,7 +346,7 @@ class TestCrossSeatPinsHold:
             assert f"export function {fn}(" in _SRC, fn
 
 
-# ────────── R-1 dashboard 局部刷新试点（架构批 W1-S3 席位钉） ──────────
+# ────────── R-1 dashboard 局部刷新试点（aurora72 W1-S3 席位钉） ──────────
 
 def _view_src(name: str) -> str:
     """单视图模块源码（R-1 席位钉：文件面收敛读，并集钉归并集口径）。"""
@@ -354,7 +354,7 @@ def _view_src(name: str) -> str:
 
 
 class TestLocalRefreshPilot:
-    """R-1（架构批 W1-S3，R6 审计 R-1）：widget 增删/拖拽局部刷新。
+    """R-1（aurora72 W1-S3，R6 审计 R-1）：widget 增删/拖拽局部刷新。
 
     此前增删/拖拽任一变更递归整页渲染函数=全量 refetch /api/runs?limit=200
     + /api/solvers（R6 审计旧单体 pages.js:696/724/746 三处）；现收敛到

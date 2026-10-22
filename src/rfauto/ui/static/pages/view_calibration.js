@@ -1,4 +1,4 @@
-/* rfauto 校准工作台页（架构批 UI-R2 自 pages.js 拆出，逐字节搬移）：
+/* rfauto 校准工作台页（aurora_d UI-R2 自 pages.js 拆出，逐字节搬移）：
    校准产物一览 + ρ 演化 + 详情（3.2 + 3.3 跨保真数据源同页）。
    i18n（发布前置软编码批 S1 全清）：壳/help 块分段 t()、表头/图系列名/
    空态/详情面板/aria 全迁词表（calibration.* 键域，zh 与旧字面逐字节同、
@@ -14,10 +14,10 @@ import { apiFetch, viewSignal } from "./api.js";
 import { esc, escAttr, help, mdReady, mdSanitize } from "./dom.js";
 // i18n（S1 全清）：壳静态标签 data-i18n+首扫；动态容器文案 t() 渲染期烘焙。
 import { t, applyI18nRoot } from "./i18n.js";
-// 三态收敛（架构批 W2-S5，R1 #8 批1）：空态=kitEmptyState、错误=kitErrorPanel
+// 三态收敛（aurora_f W2-S5，R1 #8 批1）：空态=kitEmptyState、错误=kitErrorPanel
 import { bindClickRows, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitVerdictBadge } from "./kit.js";
 import { makeSortable } from "./sortable.js";
-// 深链二批（架构批 W2-S5）：#/calibration/<run_id> 待选消费 + 详情 hash 回写
+// 深链二批（aurora_f W2-S5）：#/calibration/<run_id> 待选消费 + 详情 hash 回写
 import { _syncRouteHash, consumeCalibrationPendingId } from "./router.js";
 
 /* ═══ 校准工作台（阶段 3.2）+ 跨保真演化（3.3 数据源同页）═══ */
@@ -46,7 +46,7 @@ export async function pageCalibration() {
   const list = runs.runs || [];
   T.$("cal-count").textContent = list.length + t("calibration.count_unit");
   const tbody = T.$("cal-table").querySelector("tbody");
-  // 三态收敛（架构批 W2-S5，R1 #8 批1）：空清单=kitEmptyState 整行三件式
+  // 三态收敛（aurora_f W2-S5，R1 #8 批1）：空清单=kitEmptyState 整行三件式
   // （原静默空 tbody；colspan 对齐 7 列表头）
   tbody.innerHTML = list.length
     ? list.map((r) => {
@@ -65,12 +65,12 @@ export async function pageCalibration() {
   }
   // UI-R4：click 与 Enter/Space 同一激活（bindClickRows 单源）
   bindClickRows(tbody, (tr) => loadCalibration(tr.dataset.rid), "tr[data-rid]");
-  // 架构批 W3-B（P1-7）：校准表可排序（ρ/样本列数值序最有用）；重进页
+  // aurora36 W3-B（P1-7）：校准表可排序（ρ/样本列数值序最有用）；重进页
   // tbody 重建后重放当前排序保持列头状态一致
   const scal = makeSortable(T.$("cal-table"));
   if (scal) scal.refresh();
 
-  // 深链二批（架构批 W2-S5）：#/calibration/<run_id> 待选消费——清单命中
+  // 深链二批（aurora_f W2-S5）：#/calibration/<run_id> 待选消费——清单命中
   // 才打开详情，未命中回落表头（campaign 深链同款待选纪律）；消费即清
   // （router.js 单源写）；hash 回写在 loadCalibration 落地点（点行同一口径）。
   const pendingCal = consumeCalibrationPendingId();
@@ -98,7 +98,7 @@ export async function pageCalibration() {
 }
 
 async function loadCalibration(runId) {
-  // 深链二批（架构批 W2-S5）：点行/深链打开同一 hash 口径（replaceState
+  // 深链二批（aurora_f W2-S5）：点行/深链打开同一 hash 口径（replaceState
   // 不产历史条目不触 hashchange；刷新/分享保持所选校准详情）
   _syncRouteHash("calibration", runId);
   const d = await apiFetch("/api/calibration/" + encodeURIComponent(runId),
@@ -106,7 +106,7 @@ async function loadCalibration(runId) {
   if (d.aborted) return; // UI-R12：切页取消——不写隐藏区
   const v = T.$("cal-detail");
   if (!d.ok) {
-    // 三态收敛（架构批 W2-S5，R1 #8 批1 形态⑤原点）：内联 muted 面板 →
+    // 三态收敛（aurora_f W2-S5，R1 #8 批1 形态⑤原点）：内联 muted 面板 →
     // kitErrorPanel 带重试（重开同一校准详情）
     v.innerHTML = `<div class='panel'>` +
       kitErrorPanel((d.errors || []).join("; "), "cal-retry") + `</div>`;
@@ -168,7 +168,7 @@ async function loadCalibration(runId) {
   });
 }
 
-/* ═══ R-1（架构批 W3-S12）：PageContext 增量钩子 calibrationCtx ═══════
+/* ═══ R-1（aurora_e W3-S12）：PageContext 增量钩子 calibrationCtx ═══════
    refresh=表数据重拉（runs 同模板——pageCalibration 幂等：壳判 innerHTML
    已在即跳过、清单/ρ 演化图重渲染，行点击详情区不整清）；apiFetch 带
    viewSignal("calibration") 切页取消语义随行。无轮询面，leave 不需要。 */

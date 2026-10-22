@@ -1,4 +1,4 @@
-"""架构批 A4-C 席位回归钉：UI 两级 hash 路由参数化（R6 审计 R-2）。
+"""aurora72 A4-C 席位回归钉：UI 两级 hash 路由参数化（R6 审计 R-2）。
 
 对象：src/rfauto/ui/static/app.js（两级分发器 _applyHash + routeDispatch 桥）
 与 src/rfauto/ui/static/pages.js（parseRoute 纯解析 + _ROUTE_OPENERS 注册表 +
@@ -36,7 +36,7 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 _APP = (_STATIC / "app.js").read_text(encoding="utf-8")
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -128,7 +128,7 @@ class TestDeepLinkLanding:
 
     def test_three_inline_detail_open_sites_absorbed(self):
         # runs 表行 / dashboard 最近 Run / tune 完成跳转——三处内联形态收编。
-        # UI-R4（架构批，A6 P1-5 清偿）：前两处行点击接线再收编 kit
+        # UI-R4（aurora_d，A6 P1-5 清偿）：前两处行点击接线再收编 kit
         # bindClickRows 单源（键盘可达同笔落地；openRun 单入口深链语义不变）。
         assert 'bindClickRows(tb, (tr) => openRun(tr.dataset.id), "tr.clickable");' in _SRC  # runs 表（R6 R-2 证据页）
         assert 'bindClickRows(el, (tr) => openRun(tr.dataset.id), "tr.clickable");' in _SRC  # dashboard wRecentRuns
@@ -211,7 +211,7 @@ class TestPagesSingleListener:
 
     def test_init_pages_still_binds_and_boot_fallback_kept(self):
         # 幂等装配 + 初载兜底（tools 形态向后兼容的保险丝）保持
-        assert "_bindToolsDeepLink(); // 架构批 A2-B" in _SRC
+        assert "_bindToolsDeepLink(); // aurora72 A2-B" in _SRC
         body = re.search(r"function _bindToolsDeepLink\(\) \{(.*?)\n\}", _SRC, re.S)
         assert body and "_toolsDeepLinkBound" in body.group(1)
         assert "setTimeout" in body.group(1)
@@ -229,12 +229,12 @@ class TestCrossSeatPinsHold:
     hashchange 计数变化已在 §2 单钉——本类只复述不变量）。"""
 
     def test_pages_js_counts_untouched(self):
-        assert _SRC.count("T.plotCard(") == 16  # 12 + W3-S12 四管线逃生舱迁移
+        assert _SRC.count("T.plotCard(") == 18  # 12 + W3-S12 四管线逃生舱迁移 + aurora_i W3-S2 画廊对照图两处
         assert _SRC.count("window.echarts.init(") == 1  # 唯一入口=echartsInitCached
         assert _SRC.count('window.addEventListener("resize"') == 1
         assert _SRC.count("chartExportTools(el.parentElement, el, {") == 0  # W3-S12 四管线入壳
         assert _SRC.count("bindChartResize(el); // P0-5") == 0  # W3-S12 随壳内建去重
-        assert _SRC.count("bindChartResize(el); // 架构批 A3-A") == 1
+        assert _SRC.count("bindChartResize(el); // aurora72 A3-A") == 1
         assert _SRC.count("disposeChartsIn(") == 4
         assert _SRC.count("setInterval(") == 2  # 仅轮询托管器两处
         assert _SRC.count("echartsInitCached(el)") == 2  # 定义 + tools 页（W3-S12 四管线入壳后）

@@ -1,4 +1,4 @@
-/* rfauto 代理 Playground 页（架构批 UI-R2 自 pages.js 拆出，逐字节
+/* rfauto 代理 Playground 页（aurora_d UI-R2 自 pages.js 拆出，逐字节
    搬移）：滑条 → 代理实时预测（诚实呈现）+ 单轴探索（mean±σ 带）。
    i18n（发布前软编码批 S2 全清）：help 块分段 t()、标题/面板头/工具栏
    标签/表头/空态全迁词表（playground.* 键域，zh 与旧字面逐字节同、en
@@ -12,7 +12,7 @@ import { esc, escAttr, errorText, help } from "./dom.js";
 // 结果/探索状态）文案 t() 渲染期烘焙——pg-result 随数据重建不挂 data-i18n。
 import { t, applyI18nRoot } from "./i18n.js";
 import { kitErrorPanel, kitTable, kitVerdictBadge } from "./kit.js";
-// P8-9（架构批 W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
+// P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 3 点）——
 // 数据面（run 清单）接 viewSignal("playground") 切页收束 + aborted 短路；动作
 // 面（预测/探索 POST——滑条与探索钮触发）保持无 signal（用户动作不被切页
 // 取消）。信封消费形态逐键不变。
@@ -184,7 +184,7 @@ export async function pagePlayground() {
   else T.$("pg-result").textContent = t("playground.no_runs");
 }
 
-/* ═══ R-1（架构批 W4-S17）：PageContext 增量钩子 playgroundCtx ════════
+/* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 playgroundCtx ════════
    refresh=run 清单+缺省预测重拉（pagePlayground 幂等——壳判 innerHTML 已在
    即跳过；滑条随 lastRun 闭包重建=与重进同语义）。无轮询面，leave 不需要。 */
 export const playgroundCtx = {

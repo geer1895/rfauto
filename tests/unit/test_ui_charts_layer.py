@@ -226,11 +226,6 @@ class TestExportUnification:
         payload = json.loads(out.strip())
         assert payload["ok"] is True, payload
 
-    # vendored echarts 不随 git 分发（.gitignore vendor/）——CI/干净 clone
-    # 无 vendor 时 SSR 件诚实跳过（exportStampName 纯函数件照常真跑）
-    _VENDOR = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static" / "vendor" / "echarts.min.js"
-
-    @pytest.mark.skipif(not _VENDOR.exists(), reason="vendored echarts 未放置（vendor/ 不随 git 分发）")
     def test_chart_to_svg_text_is_vector_via_ssr(self):
         out = _run_node_js(
             "const req = (await import('node:module')).createRequire("
@@ -345,7 +340,7 @@ class TestThemeLinkage:
         assert 'attributeFilter: ["class"]' in ch  # 盯 body.light 翻转
         assert "plotCardShellEntries()" in ch  # 遍历面=plotcard.js WeakRef 单源
         # initPages 装配一次（与轮询/SSE/导出桥同一装配点；并集上唯一调用位）
-        assert "_bindThemeRefresh(); // 架构批 UI-R5" in pg
+        assert "_bindThemeRefresh(); // aurora_d UI-R5" in pg
         assert pg.count("_bindThemeRefresh(); //") == 1
 
 
@@ -400,11 +395,11 @@ class TestCallSiteUnification:
     def test_cross_seat_counts_hold(self):
         src = _read("pages.js")
         # 12（W2 收口）+ 4（W3-S12 四管线逃生舱迁移）= 16
-        assert src.count("T.plotCard(") == 16
+        assert src.count("T.plotCard(") == 18
         assert src.count("T.drawEChart(") == 0
         assert src.count('mode: "convergence"') == 2
         # crosshair: view_detail(0, 收编工厂) + sparams 2 + reports 1 + 工厂 1
-        assert src.count("crosshair: true") == 4
+        assert src.count("crosshair: true") == 6  # +2 aurora_i W3-S2 cred_curves 对照图
 
     def test_downsample_seam_in_plot_card_option(self):
         pc = _read("plotcard.js")
