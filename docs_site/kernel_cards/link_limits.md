@@ -122,10 +122,11 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_w1s2_link_fec.py`——引文："数值锚（#118 独立来源；锚树 tests/unit/test_w1s2_link_fec.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **117** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **129** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w1s2_link_fec.py` | 24 |
 | `tests/unit/test_w4s1_review_guards.py` | 20 |

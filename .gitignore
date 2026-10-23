@@ -89,6 +89,10 @@ hfss_projects/
 # ===== 单工作区方案 B（docs/migration_guide.md）：vendor 运行时与缓存不入库 =====
 # openEMS 二进制为 GPL，且体积大——仓库（拟开源）永不跟踪
 vendor/
+# UI 前端第三方库例外（echarts/three/marked/dompurify 分发件随仓走——
+# SSR 回归测试与浏览器端图表/3D 都消费它们；上位 vendor/ 规则只针对
+# openEMS GPL 运行时，误伤前端分发件致 CI fresh checkout 缺文件）
+!src/rfauto/ui/static/vendor/
 .cache/
 # 工具链（uv 本体+基解释器，2026-09-07 换机起进工作区，体积大不入库）
 # DP-17 O1：插件模板（cookiecutter 骨架）是交付资产必须入库——目录内容

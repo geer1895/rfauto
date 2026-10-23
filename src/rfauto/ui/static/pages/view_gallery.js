@@ -12,6 +12,12 @@
    双引擎对=HFSS/openEMS 两线+图例+偏差注记；单引擎=单线+note；无数据
    =整节隐藏（display:none 缺省，数据定局才揭示）。数据面在
    cred_curves.js 纯数据模块（normalize/偏差/缓存），本文件只做渲染。
+   aurora_i 人性化三批 R2（对照图表增强，R3 设计 §2①③）：①对照曲线节
+   加第三线=文献/官方例验收参考值（lit_refs.js 前端常量，docs 面转录，
+   水平参考线形态）+ 图下"怎么读这张图"白话教学行；②卡面可信度徽章
+   （盾牌+verdict 态聚合：/api/anchors 家族专属锚 worst-of，DISAGREE
+   如实先红 #122，无锚=灰色"待验证"；'*' 全局锚不计入卡面徽章——mmt
+   全局锚对任意模板恒真，计入会把 72 卡全盖"已验证"章）。
    映射/量程解释仍在 service/gallery_service（前端只渲染）；预览数值全部
    出自 /api/calculators/run 闭式纯函数（零 EM 求解）。 */
 
@@ -29,6 +35,9 @@ import { apiFetch, viewSignal } from "./api.js";
 // W3-S2 对照曲线数据面（cred_curves.js 纯数据模块：normalize/偏差注记/
 // series 组装/取数缓存——渲染在本文件，i18n 文案在此烘焙）。
 import { credFetch, credSeriesLabeled, credMaxDev, credEngineTag } from "./cred_curves.js";
+// 人性化三批 R2：文献/官方例验收参考线（lit_refs.js 前端常量数据模块，
+// 值=docs/rf_template_references.md 转录；水平参考线 series 组装单点）。
+import { litSeriesFor, litRefOf } from "./lit_refs.js";
 // 引擎色对取档（theme.js 单源——cred_curves 色对经 themePick(light)）
 import { bodyIsLight } from "../theme.js";
 
@@ -238,6 +247,9 @@ let _anchorLoadFailed = false; // 清单定局失败（诚实降级一行，不�
 const _anchorProv = new Map(); // anchor_id → provenance（详情惰性补拉缓存）
 const _anchorInFlight = new Set(); // 在途详情去重（晚到补铺重铺不重发）
 let _drawerCard = null;        // 当前抽屉模板卡（清单/详情晚到时整节重铺用）
+// 人性化三批 R2：卡面徽章 verdict 预取的卡面重铺回调（pageGallery 注入
+// render；_galCards 就绪守卫在 rerenderGalleryCards——壳未建成时零操作）。
+let _galRender = null;
 
 function anchorEngineName(e) {
   if (e === "mmt") return t("gallery.engine_mmt");
@@ -269,13 +281,111 @@ function anchorVerdictOf(state) {
   return { cls: "muted", label: tok, raw: tok };
 }
 
+/* 单锚详情惰性补拉单点（人性化三批 R2 从 renderCredibilityInto 内联段
+   收编；缓存/在途双守卫零重发；失败也缓存空 provenance 定局——不无限
+   重试）。返回 promise 恒 resolve（调用方决定补铺时机）。 */
+function fetchAnchorDetail(id) {
+  if (_anchorProv.has(id) || _anchorInFlight.has(id))
+    return Promise.resolve();
+  _anchorInFlight.add(id);
+  return apiFetch("/api/anchors/" + encodeURIComponent(id)).then((d) => {
+    _anchorProv.set(id, d && d.ok && d.anchor ? (d.anchor.provenance || {}) : {});
+    _anchorInFlight.delete(id);
+  }).catch(() => {
+    _anchorProv.set(id, {});
+    _anchorInFlight.delete(id);
+  });
+}
+
+/* 家族专属仲裁锚判定（卡面徽章口径：'*' 全局锚不计入——mmt 全局锚对
+   任意模板恒真，计入会把 72 卡全量盖"已验证"章，违背诚实呈现；抽屉
+   可信度节仍按 anchorFamilyMatch 含 '*' 渲染，两口径分工不同）。 */
+function isFamilySpecificAnchor(a) {
+  if (!a || !a.engine_pair || a.engine_pair.referee !== "hfss") return false;
+  const fams = Array.isArray(a.template_family)
+    ? a.template_family
+    : (a.template_family == null ? [] : [a.template_family]);
+  return fams.indexOf("*") < 0;
+}
+
+function familyArbitratedAnchors(name) {
+  return (_anchorList || []).filter((a) =>
+    isFamilySpecificAnchor(a) && anchorFamilyMatch(a.template_family, name));
+}
+
+/* 盾牌图标（内联 SVG，currentColor 随主题；无 emoji 字体依赖）。 */
+const _SHIELD_SVG = "<svg width='11' height='11' viewBox='0 0 24 24' aria-hidden='true' style='vertical-align:-1px'><path fill='currentColor' d='M12 2 4 5v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V5l-8-3z'/></svg>";
+
+/* 卡面可信度徽章（人性化三批 R2，任务2）：有家族仲裁锚=盾牌+verdict
+   态聚合徽章（worst-of，#122 先红后绿：任一 DISAGREE→红盖绿）；已登记
+   但无判定记录→灰；详情在途→灰"读取中"（补铺轮刷新）；无家族锚=灰色
+   "待验证"小字；清单未到/加载失败=不出占位（晚到重铺补齐）。 */
+function cardCredBadgeHtml(name) {
+  if (!_anchorList) return "";
+  const matched = familyArbitratedAnchors(name);
+  const tip = escAttr(t(matched.length
+    ? "gallery.cred_badge_tip_tpl"
+    : "gallery.cred_badge_none_tip", { n: matched.length }));
+  if (!matched.length)
+    return `<span class='muted' style='font-size:11.5px' title='${tip}'>${esc(t("gallery.cred_badge_none"))}</span>`;
+  let anyDis = false, anyAgree = false, settled = 0;
+  for (const a of matched) {
+    const id = String(a.anchor_id);
+    if (!_anchorProv.has(id)) continue; // 详情真在途（预取定局后整批补铺）
+    // 已定局即计入 settled（含 verdict_state=null=无判定记录——那是
+    // UNKNOWN 灰态不是"读取中"，卡面不吞真在途与无记录两语义）
+    const st = String(((_anchorProv.get(id)) || {}).verdict_state || "");
+    settled += 1;
+    if (/DISAGREE/i.test(st)) anyDis = true; // 先红后绿（长串态内并列
+    else if (/AGREE/i.test(st)) anyAgree = true; // AGREE 字样防误绿 #122
+  }
+  if (!settled)
+    return `<span class='badge muted' title='${tip}'>${esc(t("gallery.anchor_verdict_pending"))}</span>`;
+  // worst-of 聚合三分类（DISAGREE 先判——裸插值棘轮口径：插值用简单
+  // 标量，不走点号取值形态）
+  const cls = anyDis ? "err" : anyAgree ? "ok" : "muted";
+  const key = anyDis ? "gallery.cred_badge_disagree"
+    : anyAgree ? "gallery.cred_badge_agree"
+    : "gallery.cred_badge_unknown";
+  return `<span class='badge ${cls}' title='${tip}'>${_SHIELD_SVG} ${esc(t(key))}</span>`;
+}
+
+/* 卡面重铺（verdict 预取定局后一次补徽章；壳未建成/数据未到=零操作）。 */
+function rerenderGalleryCards() {
+  if (_galRender && _galCards && T.$("gal-grid")) _galRender();
+}
+
+/* 卡面徽章 verdict 预取（家族专属锚详情并行补拉，全部定局后卡面一次
+   补铺 + 打开的抽屉可信度节补铺；fetchAnchorDetail 缓存守卫下与抽屉
+   惰性补拉零重发——先到者赢，后到者直接命中缓存）。 */
+function prefetchAnchorBadges() {
+  const ids = (_anchorList || []).filter(isFamilySpecificAnchor)
+    .map((a) => String(a.anchor_id));
+  if (!ids.length) {
+    rerenderGalleryCards(); // 无家族锚：卡面直接出"待验证"态
+    return;
+  }
+  Promise.all(ids.map(fetchAnchorDetail)).then(() => {
+    rerenderGalleryCards();
+    if (_drawerEl && _drawerEl.isConnected && _drawerCard) {
+      const s2 = _drawerEl.querySelector("[data-slot=credibility]");
+      if (s2) renderCredibilityInto(s2, _drawerCard);
+    }
+  });
+}
+
 /* 进页预取锚清单（幂等：已就绪/已定局即跳过；signal=视图切页收束同款）。 */
 function ensureAnchorList(signal) {
   if (_anchorList || _anchorLoadFailed) return;
   apiFetch("/api/anchors", { signal }).then((d) => {
     if (d && d.aborted) return; // UI-R12：切页取消——不写隐藏区
-    if (d && d.ok) _anchorList = d.anchors || [];
-    else _anchorLoadFailed = true;
+    if (d && d.ok) {
+      _anchorList = d.anchors || [];
+      prefetchAnchorBadges(); // 卡面徽章 verdict 预取（人性化三批 R2）
+      rerenderGalleryCards(); // 清单已到：卡面先出"待验证/读取中"态
+    } else {
+      _anchorLoadFailed = true;
+    }
     // 清单晚到且抽屉已开：可信度节补铺（用户先点开抽屉的慢网路径）
     if (_drawerEl && _drawerEl.isConnected && _drawerCard) {
       const s2 = _drawerEl.querySelector("[data-slot=credibility]");
@@ -400,18 +510,10 @@ function renderCredibilityInto(slot, c) {
   for (const a of matched) {
     const id = String(a.anchor_id);
     // 在途/已缓存（含失败定局）都跳过——首条详情到达触发的整节重铺
-    // 会对未定局锚重扫，无在途守卫会重复发请求（实测 duple 病理）
+    // 会对未定局锚重扫，无在途守卫会重复发请求（实测 duple 病理）；
+    // fetchAnchorDetail 内同款双守卫（卡面徽章预取共用单点，零重发）
     if (_anchorProv.has(id) || _anchorInFlight.has(id)) continue;
-    _anchorInFlight.add(id);
-    apiFetch("/api/anchors/" + encodeURIComponent(id)).then((d) => {
-      _anchorProv.set(id, d && d.ok && d.anchor ? (d.anchor.provenance || {}) : {});
-      _anchorInFlight.delete(id);
-      settle();
-    }).catch(() => {
-      _anchorProv.set(id, {});
-      _anchorInFlight.delete(id);
-      settle();
-    });
+    fetchAnchorDetail(id).then(settle);
   }
 }
 
@@ -430,7 +532,16 @@ async function renderCredCurvesInto(wrap, c) {
   if (r.aborted || !wrap.isConnected) return;
   if (r.status !== "data") return; // 无对照数据：整节保持隐藏
   const v = r.view;
-  const series = credSeriesLabeled(v.curves, bodyIsLight());
+  // 人性化三批 R2（任务1）：第三线=文献/官方例验收参考值（lit_refs.js
+  // 前端常量，docs 面转录）。参考线必须追加在引擎系列之后（plotCard
+  // category 轴=series[0].x——首引擎曲线定轴网，litSeriesFor 内建同网
+  // 采样）；图例名在此烘焙（数据模块零 t() 纪律）。
+  const light = bodyIsLight();
+  const series = credSeriesLabeled(v.curves, light).concat(litSeriesFor(
+    c.name, v.curves,
+    (p) => t("gallery.cred_lit_series_tpl", { n: p.curve, v: p.db }),
+    light));
+  const litRef = litRefOf(c.name);
   const maxDev = v.maxDev || (v.hasPair ? credMaxDev(v.curves) : null);
   let head = "";
   if (v.verdict) {
@@ -471,6 +582,12 @@ async function renderCredCurvesInto(wrap, c) {
     ? `<div class='muted' style='font-size:11.5px;margin-top:4px'>` +
       t("gallery.cred_sources_tpl", { s: esc(v.sources.join("; ")) }) + `</div>`
     : "";
+  // 人性化三批 R2：文献参考值出处行（仅登记了文献值的模板显示——转录
+  // 源逐条指回 docs 面节号，#97 出处口径）
+  const litLine = litRef
+    ? `<div class='muted' style='font-size:11.5px;margin-top:4px'>` +
+      t("gallery.cred_lit_source_tpl", { s: esc(litRef.source) }) + `</div>`
+    : "";
   // 服务端 notes（掩码口径/单引擎缺席原因/DISAGREE 预警）原样脚注（esc）
   const notesLine = v.notes.length
     ? `<div class='muted' style='font-size:11.5px;margin-top:4px'>` +
@@ -479,10 +596,16 @@ async function renderCredCurvesInto(wrap, c) {
   wrap.style.display = ""; // 数据定局才揭示（无数据模板整节不可见）
   slot.innerHTML = head + note +
     `<div id='gal-cred-chart'></div>` +
+    // 人性化三批 R2（任务3）：图下白话教学行（两线越贴近=两软件对同一
+    // 结构的预测越一致=结果越可信；含三色角色说明，对照模式 S 参数页同键复用）
+    `<div class='muted' style='font-size:11.5px;margin-top:var(--space-1)'>${t("gallery.cred_howto")}</div>` +
     `<div class='muted' style='font-size:11.5px;margin-top:var(--space-1)'>${t("gallery.cred_legend")}</div>` +
-    srcLine + notesLine;
+    litLine + srcLine + notesLine;
   T.plotCard(T.$("gal-cred-chart"), {
     series,
+    // aurora_j W1-S1 异栅根治：值轴模式——双引擎各自 freq_ghz 频网自持
+    // （[x,y] 对出数，异栅不再按 series[0].x 索引错位拉伸）
+    xvalue: true,
     xlabel: "GHz", ylabel: "dB",
     height: "300px", zoom: true, crosshair: true,
     exportName: "cred-curves-" + c.name.replace(/\W/g, "-"),
@@ -526,11 +649,14 @@ export async function pageGallery() {
     }
     // R2 卡面瘦身：一句人话说明 + 详情钮（参数串折叠进抽屉）；"未配
     // 预览通道"降为卡角小标记，不再满屏徽标（诚实行在抽屉内）。
+    // 人性化三批 R2（任务2）：卡面可信度徽章（盾牌+verdict 态聚合/
+    // 灰色"待验证"）——数据随锚清单/详情晚到经 rerenderGalleryCards 补铺。
     grid.innerHTML = `<div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:10px'>` +
       rows.map((c) => `<div class='panel' style='margin:0'>
         <div style='display:flex;align-items:baseline;gap:6px;flex-wrap:wrap'>
           <b>${esc(c.name)}</b>
           ${c.f0_ghz ? `<span class='badge muted'>f0 ${esc(c.f0_ghz)} GHz</span>` : ""}
+          ${cardCredBadgeHtml(c.name)}
           <span style='flex:1'></span>
           ${c.preview ? T.badge(t("gallery.preview_badge"), "ok") : `<span class='muted' style='font-size:var(--text-xs)'>${t("gallery.no_preview")}</span>`}
         </div>
@@ -541,6 +667,7 @@ export async function pageGallery() {
       btn.onclick = () => openDrawer(btn.getAttribute("data-gal"));
   };
   T.$("gal-filter").oninput = render;
+  _galRender = render; // 锚 verdict 晚到补铺钩子（rerenderGalleryCards 消费）
 
   /* ═══ 详情抽屉（R2）：全部 72 卡可点开 ═══════════════════════════
      五段=①人话说明（+结构口径次行）②参数白话表（含义/名义值/来源）

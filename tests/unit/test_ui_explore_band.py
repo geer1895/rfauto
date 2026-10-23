@@ -44,8 +44,9 @@ class TestBandSeriesInDrawEChart:
 
     def test_band_branch_keeps_existing_line_path(self):
         src = _read("plotcard.js")
-        # 普通线系列仍走原 data: s.y 路径（其他 drawEChart 消费面不变）
-        assert "name: s.name, type: \"line\", data: s.y, showSymbol: false" \
+        # 普通线系列缺省仍走 data: s.y 路径（xvalue 门才出 [x,y] 对——
+        # aurora_j W1-S1 异栅根治；非 xvalue 消费面渲染不变）
+        assert "name: s.name, type: \"line\", data: xyPairs ? xyPairs : s.y" \
             in src
 
 

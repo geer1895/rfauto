@@ -112,7 +112,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 - `runs/siw_family/criteria.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："双源核实与全部常数出处：runs/siw_family/criteria.md §1（铁律 1c）——"
 - `tests/unit/test_siw_template.py`——引文："回收基准（#118/#300，test_siw_template 钉死）：d→0 极限 w_eff→w 逐位；"
 
-测试面（tests/unit 引用扫描，机读；合计 **132** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **143** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -120,6 +120,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_closed_form_oracle.py` | 18 |
 | `tests/unit/test_rwg_mmt.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
+| `tests/unit/test_w4s15_anchor_batch.py` | 11 |
 | `tests/unit/test_x5_analytic_anchors.py` | 13 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

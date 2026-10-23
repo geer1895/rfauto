@@ -312,6 +312,7 @@ class TestSurrogateLoopWriteHook:
         loaded = reg.load_entry_model(ch["entry"])
         assert loaded["ok"] is True
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（45.6s，代理环 E2E 真实注册面）
     def test_gate_off_no_key_zero_degradation(self, tmp_path, monkeypatch):
         monkeypatch.setenv("RFAUTO_CACHE", "off")
         monkeypatch.delenv("RFAUTO_SURROGATE_REGISTRY_WRITE", raising=False)

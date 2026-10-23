@@ -148,12 +148,24 @@ def _lake_model_families(runs_dir: str | Path) -> dict[str, int]:
 
 def _linked_anchor_drift(model_id: str, *, anchors_path: str | None,
                          store_path: str | Path | None) -> dict[str, Any]:
-    """QW-16 接线：template_family（含 * 通配）覆盖该模型族的锚漂移聚合。"""
+    """QW-16 接线：template_family（含 * 通配）覆盖该模型族的锚漂移聚合。
+
+    存量 run 旧模型名（P0–P6 三族 wilkinson_power_divider 等，aurora_j
+    W1-S2）经 credibility_curves_service.normalize_model_alias（公开
+    别名，W5-S20 审查清偿——不再引下划线私有名）归一到
+    现行模板名后再做 template_family 覆盖匹配——锚注册表用现行名空间，
+    湖卡 model_id 直取 meta.model 可能是旧名（只认显式登记历史名，不做
+    模糊匹配；未命中原样返回，现行名零行为变化）。
+    """
     from rfauto.infra.anchors_store import load_anchors
+    from rfauto.service.credibility_curves_service import (
+        normalize_model_alias,
+    )
 
     anchor_set = load_anchors(anchors_path)
+    fam_key = normalize_model_alias(str(model_id))
     linked = [rec for rec in anchor_set.records
-              if model_id in rec.template_family
+              if fam_key in rec.template_family
               or _ANCHOR_FAMILY_WILDCARD in rec.template_family]
     if not linked:
         return {"available": False, "verdict": "no_data",

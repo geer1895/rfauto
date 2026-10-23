@@ -25,7 +25,7 @@ import { esc, escAttr, help } from "./dom.js";
 // i18n（aurora_f W1-S2 试点页 3）：壳标签 data-i18n+首扫；表头/空态随 load()
 // 重建，文案一律 t() 渲染期烘焙（i18n.js 头注纪律）。
 import { t, applyI18nRoot } from "./i18n.js";
-import { bindClickRows, bindEmptyStates, kitBadgeCls, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitTable } from "./kit.js";
+import { bindClickRows, bindEmptyStates, kitBadgeCls, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitSkeleton, kitTable } from "./kit.js";
 import { mountSortableTables } from "./sortable.js";
 // P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 1 点）——
 // 数据面全页（队列清单 load()，刷新钮与 ctx.refresh 共用）接
@@ -307,6 +307,8 @@ function queueBlockHtml(b) {
     txt = t("queue.block_calendar_tpl", { detail: b.detail || "" });
   else if (b.code === "license_wait")
     txt = t("queue.block_license_tpl", { detail: b.detail || "" });
+  else if (b.code === "deps_blocked")
+    txt = t("queue.block_deps_tpl", { detail: b.detail || "" });
   else if (b.code === "queued_ahead")
     txt = t("queue.block_ahead_tpl", { n: b.n_ahead || 0 });
   else txt = b.text || b.code; // 未知码回退服务层人读原文（API data→esc）
@@ -353,6 +355,12 @@ export async function pageQueue() {
      <div id='q-resources' style='margin-top:var(--space-3)'></div>
      <div id='q-detail' style='margin-top:var(--space-3)'></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W1-S2）
+  // R3 人性化三批：队列首拉骨架屏——campaign_queue 数据到后 load()→
+  // renderQueue() 整体替换（错误态 ✗ 形态照旧替换，骨架不滞留；runs 表
+  // A8-A 首拉占位同款形态，本页此前无任何加载占位）。
+  const qTable = T.$("q-table");
+  if (qTable)
+    qTable.innerHTML = `<div class="skeleton-wrap" role="status" aria-label="${t("queue.loading_aria")}">${kitSkeleton(4)}</div>`;
 /* 筛选 tab（W2-S4 小件①）：计数上 tab（queueTabCounts），aria-pressed
    标激活态；other 桶（空 verdict 等）只在"全部"出现——不臆测归类。
    注：本席 inline 间距写 0px 而非 0——test_ui_r12 迁移落位计数钉
@@ -401,6 +409,10 @@ export async function pageQueue() {
         const done = (c.stages || []).filter((s) => s.status === "done").length;
         const dead = (c.stages || []).filter((s) => s.status === "failed" || s.status === "aborted").length;
         const dl = c.scheduling ? (c.scheduling.decision_log || []) : [];
+        // R3 人性化三批：行左缘 3px 状态竖线（verdict 徽章类同源 kitBadgeCls
+        // ——COMPLETE 绿/FAILED·ABORTED 红/RUNNING 等中间态灰；tr class 属性
+        // 面，零 DOM 结构变化，与行内徽章同一状态判定）
+        const vcls = kitBadgeCls(c.verdict);
         const name = String(c.path || "").replace(/\\/g, "/").split("/").slice(-2, -1)[0] || c.path;
         const remote = c.remote
           ? (c.remote.ok
@@ -414,8 +426,8 @@ export async function pageQueue() {
         const total = Number(c.n_stages) || (c.stages || []).length || 0;
         const pct = total > 0 ? Math.round((done / total) * 100) : null;
         const bar = miniBarHtml(pct, "var(--info)", 4, 90);
-        return `<tr><td title='${escAttr(c.path)}'>${esc(name)}</td><td>${esc(c.model || "?")}</td>
-          <td>${T.badge(c.verdict || "—", kitBadgeCls(c.verdict))}</td>
+        return `<tr class='st-${vcls}'><td title='${escAttr(c.path)}'>${esc(name)}</td><td>${esc(c.model || "?")}</td>
+          <td>${T.badge(c.verdict || "—", vcls)}</td>
           <td>${queueBlockHtml(c.queue_block) || hedgeHtml(c.queue_hedge) || "<span class='muted'>—</span>"}</td>
           <td>${done}/${c.n_stages}${dead ? ` <span style='color:var(--err)'>${t("queue.dead_tpl", { n: dead })}</span>` : ""}${bar}</td>
           <td>${c.scheduling && c.scheduling.ok ? `<span style='color:var(--ok)'>✓ ${t("queue.jobs_tpl", { n: esc(String(c.scheduling.n_jobs)) })}</span>` : "<span class='muted'>—</span>"}</td>

@@ -1,4 +1,4 @@
-"""架构批 W5-S23 席位回归钉：UI a11y 深化+体验增强批（深审 a-e 五面六件）。
+"""aurora_e W5-S23 席位回归钉：UI a11y 深化+体验增强批（深审 a-e 五面六件）。
 
 对象：src/rfauto/ui/static/{index.html,app.js} + pages/{sortable,kit,
 view_dashboard,view_tune,view_loopboard,view_runs,view_calibration}.js。
@@ -125,7 +125,7 @@ class TestPollAnnounce:
         assert 'T.announce(st.error ? t("tune.announce_error") : t("tune.announce_done"))' in body
 
     def test_loopboard_status_change_announce(self):
-        # 架构批 W4-S1 i18n 半程收尾：公告 lead 迁词表（t() 拼 API 状态串，
+        # aurora_h W4-S1 i18n 半程收尾：公告 lead 迁词表（t() 拼 API 状态串，
         # announce=textContent 单点同信任级）——接线形态原样钉住
         assert 'T.announce(t("loopboard.announce_lead") + b.status)' in _LB
         assert 'let _lastBoardStatus = "";' in _LB
@@ -196,8 +196,8 @@ class TestKpiCountUp:
         # 零自由定时器钉不受扰（文本级复核）
         for name in ("dashboard_util.js", "charts.js"):
             t = (_STATIC / "pages" / name).read_text(encoding="utf-8")
-            if "架构批 W4-C：dashboard 组件深化" in t:
-                m = re.search(r"架构批 W4-C：dashboard 组件深化(.*?)架构批 W4-C 块结束", t, re.S)
+            if "aurora36 W4-C：dashboard 组件深化" in t:
+                m = re.search(r"aurora36 W4-C：dashboard 组件深化(.*?)aurora36 W4-C 块结束", t, re.S)
                 if m:
                     for timer in ("setInterval(", "setTimeout(", "requestAnimationFrame("):
                         assert timer not in m.group(1), f"{name}: {timer}"
@@ -295,7 +295,7 @@ class TestSyntax:
         "app.js", "pages/sortable.js", "pages/kit.js", "pages/view_dashboard.js",
         "pages/view_tune.js", "pages/view_loopboard.js", "pages/view_runs.js",
         "pages/view_calibration.js",
-        # 架构批 W1-S2：i18n 骨架（R1 审计面2 新文件，进语法门清单）
+        # aurora_f W1-S2：i18n 骨架（R1 审计面2 新文件，进语法门清单）
         "pages/i18n.js",
     ])
     def test_node_check(self, name):

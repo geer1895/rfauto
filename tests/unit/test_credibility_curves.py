@@ -41,20 +41,25 @@ class TestCredibilityCurvesService:
     """service 层（真实 runs/ 数据对 + 注册表面）。"""
 
     def test_overview_registry_surface(self):
-        """总览面：注册 9 族、5 配对、4 单引擎（R3 清单+本席在盘复核口径
-        ——此断言钉注册表代码，不依赖证据在盘）。"""
+        """总览面：注册 9 族（R3 清单口径——注册表代码钉，不依赖证据在盘）；
+        配对/单引擎计数=逐族实时在盘探测面——公开分发视图不随附 runs/ 证据
+        档（CI 干净检出 n_paired=0 如实），证据在盘（内部工作机/随附证据）
+        才钉 5 配对+4 单引擎的全量口径。"""
         from rfauto.service import credibility_curves_service as c
 
         ov = c.credibility_curves()
         assert ov["ok"] is True
         assert ov["count"] == 9
-        assert ov["n_paired"] == 5
-        assert ov["n_single_engine"] == 4
         templates = {f["template"] for f in ov["families"]}
         assert {"wilkinson", "branchline", "ratrace",
                 "slotline_transitions"} <= templates
         for f in ov["families"]:
             assert f["pairing_state"] in ("paired", "single_engine")
+        assert ov["n_paired"] + ov["n_single_engine"] == 9
+        if _E_WILKINSON.is_file():
+            # 在盘口径（本表全量证据在档时）：5 配对 + 4 单引擎
+            assert ov["n_paired"] == 5
+            assert ov["n_single_engine"] == 4
 
     def test_registered_families_listing(self):
         from rfauto.service import credibility_curves_service as c
@@ -186,6 +191,114 @@ class TestCredibilityCurvesService:
         assert r["count"] == 0
         assert "wilkinson" in r["available_templates"]
         assert r["notes"] and "无对照曲线注册数据" in r["notes"][0]
+
+
+class TestModelAliasNormalization:
+    """存量 run 旧模型名别名映射（aurora_j W1-S2 席 2026-10-23）。
+
+    差异面证据：P0–P6 时代模型插件恰三族（git 851614e8
+    models/registry.py 实测）→ v3 模板库（936a8e8e 2026-09-01）起改用
+    现行短名；runs/ 湖 meta.model 旧名存量实测在盘
+    （wilkinson_power_divider×~1290/branchline_coupler×~77/
+    patch_antenna×4，2026-10-23 抽样 1819 份 meta.json）。
+    本类全部确定性零 runs/ 证据依赖（命中面断言信封结构与回显名，
+    引擎负载可用性与证据在盘无关）；证据同负载恒等钉 skipif 门控。
+    """
+
+    def test_alias_hit_resolves_current_family(self):
+        """旧名命中现行族：model 回显=现行名（信封 hit 路径
+        entry["template"]），走引擎解析面（engines 双键在，非诚实空态
+        ——available 与否是证据在盘问题，与名字解析正交）。
+        patch_antenna→patch 归一命中现行模板名，但 patch 不在本服务
+        9 族对照注册表（_FAMILIES）→ 与直查 "patch" 同样的诚实空态
+        （别名只做名字归一，不虚构曲线注册）。"""
+        from rfauto.service import credibility_curves_service as c
+
+        for old, cur in (("wilkinson_power_divider", "wilkinson"),
+                         ("branchline_coupler", "branchline")):
+            r = c.credibility_curves(old)
+            assert r["ok"] is True
+            assert r["model"] == cur
+            assert set(r["engines"]) == {"hfss", "openems"}
+            assert "available_templates" not in r
+
+    def test_patch_antenna_alias_resolves_but_unregistered_honest(self):
+        """patch_antenna 归一到现行 patch 族：归一层命中（纯函数钉），
+        信封层与直查现行名 "patch" 同构诚实空态（数据负载逐键恒等；
+        model/notes 回显用户输入原样是既有契约——别名不虚构注册数据）。"""
+        from rfauto.service import credibility_curves_service as c
+
+        assert c._normalize_model_alias("patch_antenna") == "patch"
+        ro = c.credibility_curves("patch_antenna")
+        rc = c.credibility_curves("patch")
+        assert ro["ok"] is True and rc["ok"] is True
+        assert ro["engines"] == rc["engines"] == {}
+        assert ro["count"] == rc["count"] == 0
+        assert ro["available_templates"] == rc["available_templates"]
+        assert ro["model"] == "patch_antenna"  # 回显输入原样（既有契约）
+
+    def test_alias_case_and_whitespace_normalized(self):
+        """strip+lower 归一在查表前（大小写/空白混杂的旧名同样命中）。"""
+        from rfauto.service import credibility_curves_service as c
+
+        r = c.credibility_curves("  Wilkinson_Power_Divider  ")
+        assert r["ok"] is True
+        assert r["model"] == "wilkinson"
+
+    def test_no_fuzzy_or_prefix_match_honest_empty(self):
+        """前缀/模糊名不命中（诚实降级红线钉）：旧名前缀截断
+        （wilkinson_power）与子串（power_divider）都走诚实空态，
+        不制造假对照。"""
+        from rfauto.service import credibility_curves_service as c
+
+        for fuzzy in ("wilkinson_power", "power_divider",
+                      "wilkinson_power_divider_v2"):
+            r = c.credibility_curves(fuzzy)
+            assert r["engines"] == {}, fuzzy
+            assert "wilkinson" in r["available_templates"]
+
+    def test_current_and_unknown_names_unchanged(self):
+        """现行名/未知名零行为变化（别名只加不改：现行名命中现行族、
+        未知名诚实空态+model 回显用户输入原样）。"""
+        from rfauto.service import credibility_curves_service as c
+
+        cur = c.credibility_curves("wilkinson")
+        assert cur["ok"] is True and cur["model"] == "wilkinson"
+        miss = c.credibility_curves("no_such_template")
+        assert miss["engines"] == {}
+        assert miss["model"] == "no_such_template"
+
+    def test_normalize_function_unit(self):
+        """纯函数单点：命中换现行名/现行名恒等/未知名 strip+lower 原样。"""
+        from rfauto.service import credibility_curves_service as c
+
+        assert c._normalize_model_alias(
+            "wilkinson_power_divider") == "wilkinson"
+        assert c._normalize_model_alias("  BranchLine_Coupler ") \
+            == "branchline"
+        assert c._normalize_model_alias("cpw") == "cpw"  # 现行名恒等
+        assert c._normalize_model_alias("  Ghost_Family ") == "ghost_family"
+
+    def test_empty_alias_table_zero_behavior(self, monkeypatch):
+        """空表零行为变化（常量 docstring 契约钉）：旧名退回诚实空态，
+        现行名解析不受影响。"""
+        from rfauto.service import credibility_curves_service as c
+
+        monkeypatch.setattr(c, "_MODEL_ALIASES", {})
+        miss = c.credibility_curves("wilkinson_power_divider")
+        assert miss["engines"] == {}
+        assert "wilkinson" in miss["available_templates"]
+        cur = c.credibility_curves("wilkinson")
+        assert cur["ok"] is True and cur["model"] == "wilkinson"
+
+    @pytest.mark.skipif(not _E_WILKINSON.is_file(), reason=_skip_no)
+    def test_alias_hit_payload_identical_to_current_name(self):
+        """证据在盘时：旧名与现行名同族同负载（整信封恒等——别名只
+        改名字解析，不触曲线/配对/判读任何字段）。"""
+        from rfauto.service import credibility_curves_service as c
+
+        assert c.credibility_curves("wilkinson_power_divider") \
+            == c.credibility_curves("wilkinson")
 
 
 class TestCredibilityCurvesEndpoint:

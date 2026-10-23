@@ -34,7 +34,7 @@ EXPECTED = {
     "cps_analysis", "cps_synthesis",
     "suspended_stripline_analysis", "suspended_stripline_synthesis",
     # 槽线（2026-09-18 w1b 注册，#231 三表同步）：Janaswamy–Schaubert 闭式
-    # core/slotline（路线 A 裁判面，仓内账本（一百九十八）），越域显式拒绝不外推
+    # core/slotline（路线 A 裁判面，DEVLOG（一百九十八）），越域显式拒绝不外推
     "slotline_analysis", "slotline_synthesis",
     # SIW（2026-09-22 siw-family 立项，#231 三表同步）：Cassivi 2002 等效宽度
     # + RWG TE10 等效（双源出处 runs/siw_family/criteria.md §1；WR-90/RWG
@@ -332,7 +332,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_th2_tnvna_calculator_keys.py（恒等/回收/有限差分
     # 灵敏度互证+WR-10/WR-8 重叠文献例）
     "tnvna_extender_error_model", "tnvna_band_stitch",
-    # 架构批 W3-A 确定性内核新域批 1 两键（2026-10-11，#231 五钉同步）：
+    # aurora36 W3-A 确定性内核新域批 1 两键（2026-10-11，#231 五钉同步）：
     # ① 不等分 Wilkinson 综合（R2 空白域 G6）：Pozar 4ed §7.3 K²=P3/P2
     # 口径臂/隔离电阻/变换段闭式（原始设计 Parad–Moynihan 1965；文献锚
     # 2:1→51.5/103/106.07Ω @50Ω）；薄壳 calc_families/wilkinson_unequal.py；
@@ -344,7 +344,7 @@ EXPECTED = {
     # bethe.py（K=1 等分退化+Parad–Moynihan 锚+节点导纳分析独立裁判/
     # X 波段 20~30dB 量级锚+d³ 律+设计频率方向性极大+守卫）
     "unequal_split_wilkinson", "bethe_hole_coupler",
-    # 架构批 W4-A 确定性内核新域批 2 六键（2026-10-11，#231 五钉同步）：
+    # aurora36 W4-A 确定性内核新域批 2 六键（2026-10-11，#231 五钉同步）：
     # ① 数字调制 BER/Eb-N0 族（R2 空白域 G3）：Q 函数单源 0.5·erfc(x/√2)
     # （_qfunc 全族唯一实现），BPSK/QPSK 闭式 Q(√(2γb))（同比特能量口径
     # QPSK≡BPSK 物理恒等）+square-QAM Gray 精确和式（Proakis 5ed/Cho&Kim
@@ -362,7 +362,7 @@ EXPECTED = {
     # 判+守卫）
     "modulation_ber_curve", "required_ebn0", "coded_ber_estimate",
     "radar_range_equation", "albersheim_detection_snr", "ca_cfar_threshold",
-    # 架构批 W5-A 确定性内核新域批 3 六键（2026-10-11，#231 五钉同步）：
+    # aurora36 W5-A 确定性内核新域批 3 六键（2026-10-11，#231 五钉同步）：
     # ① DOA 子空间谱估计+自适应波束形成（R2 空白域 G2）：MUSIC 伪谱
     # （Schmidt 1986，噪声子空间 1/‖E_nᴴa‖²+黄金分割峰位精化）/TLS-ESPRIT
     # （Roy & Kailath 1989 §III-C 堆叠 SᴴS 分块 Φ=−V₁₂V₂₂⁻¹）/MVDR 权重
@@ -381,7 +381,7 @@ EXPECTED = {
     # ≤1e-12/C→0 λ/4 极限/Qu 单调性+√σ·√f 定标/守卫）
     "doa_music_spectrum", "doa_esprit", "doa_mvdr_weights",
     "combline_resonance", "coaxial_cavity_resonance", "cavity_unloaded_q",
-    # 架构批 W6-A 确定性内核新域批 4 五键（2026-10-11，#231 五钉同步）：
+    # aurora36 W6-A 确定性内核新域批 4 五键（2026-10-11，#231 五钉同步）：
     # ① TRL 校准件设计面（R2 空白域 G7——trl_solt 只做提取/应用，设计端
     # 补口）：线标准 λg/4@带心（Engen-Hoer 1979/NIST TN 1341 规则面）+
     # 直通（0=flush/短直通）+反射标准（短/开 × ideal/λg/4 偏置，|Γ|≡1）
@@ -403,7 +403,7 @@ EXPECTED = {
     "trl_standards_design", "trl_line_electric_scan",
     "radiated_immunity_power", "conducted_immunity_cdn",
     "esd_contact_waveform",
-    # 架构批 W7-A 确定性内核新域批 5 六键（2026-10-11，#231 五钉同步）：
+    # aurora36 W7-A 确定性内核新域批 5 六键（2026-10-11，#231 五钉同步）：
     # ① PA 平衡对+Doherty 合成网络（R2 空白域 G11——pa_architectures
     # 只有负载调制/Chireix 效率闭式，合成网络与平衡对=零）：平衡放大器
     # 对 S 参数合成（90° 杂交 Kurokawa 口径：S11,bal=(S11a−S11b)/2 同管
@@ -433,7 +433,7 @@ EXPECTED = {
     "balanced_pair_sparams", "doherty_combining_network",
     "doherty_efficiency_curve", "qubit_dispersive_shift",
     "qubit_readout_s21", "qubit_readout_snr",
-    # 架构批 A2-C 确定性内核第二梯队批 1 六键（2026-10-11，#231 五钉
+    # aurora72 A2-C 确定性内核第二梯队批 1 六键（2026-10-11，#231 五钉
     # 同步；R7_core_tier2 Top12 排名 1/2 两域，各一新股文件 2-3 键）：
     # ① 标准圆同轴传输线通用件族 coax_line.py（T1——R7 三重搜索证据：
     # coaxial 既有面仅 SICL/combline 腔/PCB 带状语境，行波线通用件=零；
@@ -484,7 +484,7 @@ EXPECTED = {
     "coax_line_cutoff_attenuator",
     "circular_cavity_mode_spectrum", "circular_cavity_mode_chart",
     "circular_cavity_mode_q",
-    # 架构批 A3-B 内核第二梯队批 2 五键（2026-10-11，#231 五钉同步；
+    # aurora72 A3-B 内核第二梯队批 2 五键（2026-10-11，#231 五钉同步；
     # R7_core_tier2 Top12 排名 3/4 两域，各一新股文件）：
     # ① 双/三支节并联调配器族 stub_tuner.py（T3——R7 三重搜索证据：
     # stub/tuner 键面零命中；t_match=集总三元件、quarter_wave/klopfenstein=
@@ -523,7 +523,7 @@ EXPECTED = {
     # 三式恒等机器精度/N×2→Rr×4、b×2→Rr×16 标度逐位/守卫）
     "stub_tuner_double", "stub_tuner_triple",
     "dipole_emf_zin", "folded_dipole_zin", "small_loop_zin",
-    # 架构批 A3-C 内核批 2 四键（2026-10-11，#231 五钉同步；R7 第二梯队
+    # aurora72 A3-C 内核批 2 四键（2026-10-11，#231 五钉同步；R7 第二梯队
     # T5/T6 两域，各一新股文件 2 键）：
     # ① 耦合线带通综合族 coupled_line_bpf.py（T5——R7 三重搜索证据：
     # calc_families 注册键面 coupled/interdigital 零命中；synthesis.py
@@ -574,7 +574,7 @@ EXPECTED = {
     # 守卫族/描述形态门）
     "coupled_line_bpf_synthesize", "coupled_line_bpf_response",
     "interdigital_bars_capacitance", "interdigital_bpf_synthesize",
-    # 架构批 A4-B 内核第二梯队批 5 六键（2026-10-11，#231 五钉同步；
+    # aurora72 A4-B 内核第二梯队批 5 六键（2026-10-11，#231 五钉同步；
     # R7_core_tier2 T9/T10/T11 三域，各一新股文件 2 键）：
     # ① 雷达目标 RCS 闭式件族 rcs_targets.py（T9=G10——R7 三重搜索证据：
     # corner.reflector|角反射器 零、mie|sphere.*rcs 仅 ridged_waveguide
@@ -620,7 +620,7 @@ EXPECTED = {
     "rcs_sphere_mie", "rcs_peak_canonical",
     "diode_square_law_detect", "detector_tss_nep",
     "pim_nodes_combine", "pim_cascade_budget",
-    # 架构批 A4-A 内核第二梯队批 4 五键（2026-10-11，#231 五钉同步；
+    # aurora72 A4-A 内核第二梯队批 4 五键（2026-10-11，#231 五钉同步；
     # R7_core_tier2 T7/T8 两域，各一新股文件）：
     # ① VNA 测量不确定度族 vna_uncertainty.py（T7=G19——R7 三重搜索证据：
     # three.antenna|增益比较 零；nf_measurement=Y 因子 GUM（噪声面）、
@@ -659,7 +659,7 @@ EXPECTED = {
     "vna_reflection_uncertainty", "vna_transmission_uncertainty",
     "three_antenna_gain",
     "swerling_detection_factor", "swerling_integration_gain",
-    # 架构批 A5-A 内核第二梯队批 6 六键（2026-10-11，#231 五钉同步；
+    # aurora72 A5-A 内核第二梯队批 6 六键（2026-10-11，#231 五钉同步；
     # R7_core_tier2 余量两域，各一新股文件 3 键）：
     # ① 声表面波 IDT 族 saw_idt.py（T12=G14——R7 三重搜索证据：\bsaw\b|IDT|
     # 声表面波 除 baw_ladder docstring 一句（梯形电路语境）外零命中；fading/
@@ -688,7 +688,7 @@ EXPECTED = {
     # 能量守恒/正交拆分/跨键矩阵乘互证/守卫族/描述形态门）
     "saw_idt_sync_design", "saw_idt_frequency_response", "saw_delay_line",
     "magic_tee_s_matrix", "waveguide_tee_s_matrix", "hybrid_sum_difference",
-    # 架构批 A6-B 内核机动批四键（2026-10-11，#231 五钉同步；R7_core_tier2
+    # aurora72 A6-B 内核机动批四键（2026-10-11，#231 五钉同步；R7_core_tier2
     # §② 余量两域，各一新股文件 2 键）：
     # ① 多节对称定向耦合器族 multisection_coupler.py（G5 余量——R7 三重搜
     # 索证据：multisection|levy 注册键面零命中，synthesize_multisection_
@@ -720,7 +720,7 @@ EXPECTED = {
     # no_bridge=−6.53 判废/跨键互证/守卫族/描述形态门）
     "multisection_coupler_binomial", "multisection_coupler_response",
     "gysel_core_synthesize", "gysel_frequency_response",
-    # 架构批 A7-B 内核机动批2 五键（2026-10-11，#231 五钉同步；任务书候补
+    # aurora72 A7-B 内核机动批2 五键（2026-10-11，#231 五钉同步；任务书候补
     # 两域——R7_core_tier2 候补池，各一新股文件）：
     # ① 矩形波导膜片/谐振窗匹配族 waveguide_iris.py（#222 triple-grep 证据：
     # iris|膜片 注册键面零命中，rwg_mmt=数值模匹配（H 阶梯构件级联 GSM，
@@ -749,7 +749,7 @@ EXPECTED = {
     # 称单调段/n=1 直通恒等/θ=kπ 精确奇异拒绝/守卫族/描述形态门）
     "wg_iris_susceptance", "wg_resonant_window", "wg_iris_match",
     "guanella_tlt_design", "guanella_tlt_response",
-    # 架构批 A8-B 内核末批四键（2026-10-11，#231 五钉同步；任务书候补
+    # aurora72 A8-B 内核末批四键（2026-10-11，#231 五钉同步；任务书候补
     # 两域，R7_core_tier2 附加候选余量成席，各一新股文件）：
     # ① 经典渐变线族 taper_classic.py（#222 triple-grep 证据：
     # exponential_taper|linear_taper|triangular_taper 注册键面零命中，
@@ -835,7 +835,7 @@ EXPECTED = {
     # 衰减节 attenuator_pi/t、混频杂散 spur_search 不并入
     "envelope_tracking_efficiency", "pin_diode_limiter",
     "step_attenuator_design", "multiplier_chain_budget",
-    # 架构批 W3-CORE6 四键（2026-10-14，R7 附加候选"loaded-line/
+    # aurora_d W3-CORE6 四键（2026-10-14，R7 附加候选"loaded-line/
     # switched-line 移相器"+G20 行"doa 余量=CRB"+多工器顺手件）：
     # 加载线移相器（双并联可切换电纳格胞——匹配 b=2cotθ、Δφ=2arctan(b/2)
     # 闭式+ABCD 分析反解，Δφ≥180° 拒绝指回开关线）+开关线移相器（路径差
@@ -850,7 +850,7 @@ EXPECTED = {
     # 无定义如实跳过不硬造
     "loaded_line_phaser", "switched_line_phaser",
     "doa_crb_ula", "multiplexer_channel_plan",
-    # 架构批 W3-CORE7 三键（2026-10-14，R7 附加候选顺手件三域）：
+    # aurora_d W3-CORE7 三键（2026-10-14，R7 附加候选顺手件三域）：
     # ① Cpk↔良率正态尾双向换算+多工序串联良率（manufacturing_yield.py——
     # 单尾 Φ(3Cpk) Montgomery 表值档+双限边际精确两尾 Φ(3Cu)·Φ(3Cl)+仅知
     # Cpk 的界 [Φ(3Cpk)²,Φ(3Cpk)] 如实声明；串联=独立乘积+等相关高斯精确
@@ -868,7 +868,7 @@ EXPECTED = {
     # 1962+MYJ ch.8，Caspi 多项式近似档不并入）
     "cpk_yield_convert", "serial_yield_budget",
     "combline_coupling_gap",
-    # 架构批 W3-CORE8 四键（2026-10-14，CORE6 遗留清单续作+R7-PREP G16
+    # aurora_d W3-CORE8 四键（2026-10-14，CORE6 遗留清单续作+R7-PREP G16
     # 可选件）：① doa_crb_ula_multisource（多源确定性 CRB——FIM=2T·
     # Re[(DᴴP⊥D)⊙P̄ᵀ] 通用式求逆对角元（Stoica-Nehorai 1989/Viberg-
     # Ottersten 1991 形态），P̄=√snr·R·√snr 等相关源协方差 ρ∈[0,1)；ρ=0
@@ -891,7 +891,7 @@ EXPECTED = {
     # 第二路线+退化回归钉+域拒绝）
     "doa_crb_ula_multisource", "reflective_phaser",
     "multiplexer_channel_prototype", "waveguide_lambda_g",
-    # 架构批 W3-CORE9 三键（2026-10-14，CORE8 遗留登记收口）：
+    # aurora_d W3-CORE9 三键（2026-10-14，CORE8 遗留登记收口）：
     # ① doa_crb_stochastic（随机（高斯）信号 CRB——celebrated 闭式
     # CRB=(σ²/2T){Re[(DᴴP⊥D)⊙(QAᴴR⁻¹AQ)ᵀ]}⁻¹（Stoica-Nehorai 1989 两模
     # 型对照随机半边）+精确 Slepian-Bangs 全参数（σ²、Q Schur 消元）内建
@@ -908,8 +908,8 @@ EXPECTED = {
     # tests/unit/test_aurora_d_core9.py（naive N×N Slepian-Bangs/模态
     # S21/ABCD 数值级联三族第二路线+退化回归钉+域拒绝）
     "doa_crb_stochastic", "schiffman_phaser", "switched_network_phaser",
-    # 架构批 W1-S2 内核第二梯队余量收口四键（2026-10-18，#231 五钉同步；
-    # R7_core_tier2 T2/T4/T9/T10 四族核心键已由 架构批 A2/A3/A4 落地
+    # aurora_e W1-S2 内核第二梯队余量收口四键（2026-10-18，#231 五钉同步；
+    # R7_core_tier2 T2/T4/T9/T10 四族核心键已由 aurora72 A2/A3/A4 落地
     # （#222 开工核实），本席收口任务书内明确列出的四处余量子项——
     # ① circular_waveguide_mode_prop（圆波导 TE/TM_mn 单频传播解——
     # R7 T2"圆波导截止/衰减/波导波长/功率容量"子项，bethe_hole 内部截止
@@ -948,7 +948,7 @@ EXPECTED = {
     "circular_waveguide_mode_prop",
     "rectangular_cavity_mode_spectrum", "rectangular_cavity_mode_q",
     "thermal_power_sensor_detect",
-    # 架构批 W2-S9（2026-10-18）三键：① 鳍线-波导渐变过渡两键（K2 渐变
+    # aurora_e W2-S9（2026-10-18）三键：① 鳍线-波导渐变过渡两键（K2 渐变
     # 过渡面——指数/线性剖面在波导 TE10 导波 β 下的响应/长度综合；基模
     # 等效 Meier/Sharma-Hoefer 经验档系数非公开可达、如实放弃未注册，
     # finline.py 范围声明）；② EC-2 multiline TRL εr/tan_d 不确定度传播
@@ -957,7 +957,7 @@ EXPECTED = {
     # tests/unit/test_aurora_e_s9_mtrl_uc.py
     "finline_taper_response", "finline_taper_length",
     "mtrl_er_tand_uncertainty",
-    # 架构批 W4-S18（2026-10-18）EC-21 三键：极化传输面度量面（随 EC-20
+    # aurora_e W4-S18（2026-10-18）EC-21 三键：极化传输面度量面（随 EC-20
     # PSSFSS/ms_cross 极化转换面消费线）——①pol_axial_ratio（Balanis 4th
     # §4.4 轴比闭式+时域第三法对照 dB+#118 cot 恒等锚）；②pol_delta_ipd_il
     # （ΔIPD 主值/ΔIL 幅度差+§4.4 极化态链单源透传——线-圆转换面设计判据
@@ -966,7 +966,7 @@ EXPECTED = {
     # 薄注册：物理单源 core/polarization（AP-1 在库+EC-21 新增纯函数），
     # 锚树 tests/unit/test_polarization_reg.py（薄度逐位+单源性+回收锚）
     "pol_axial_ratio", "pol_delta_ipd_il", "pol_group_delay_diff",
-    # 架构批 W1-S3 四键（2026-10-18，#231 五钉同步；R2_core_tier3 §③ 前置
+    # aurora_f W1-S3 四键（2026-10-18，#231 五钉同步；R2_core_tier3 §③ 前置
     # 三族之 F1/F2，kernel_cards 留缺补口）：
     # ① Lange 电桥 core 提升两键 lange.py（全链此前在 adapters/render_c4.py
     # :202 零 core 键零卡——提升式重构单一事实源，字节级对拍钉
@@ -997,7 +997,7 @@ EXPECTED = {
     # 重算/渐近单调/fc 回收/HJ 回代+模板名义锚/守卫族）
     "lange_synthesize", "lange_response",
     "stepped_impedance_lpf_synthesize", "stepped_impedance_response",
-    # 架构批 W2-S7 内核池件批 3 六键（2026-10-18，#231 五钉同步；
+    # aurora_f W2-S7 内核池件批 3 六键（2026-10-18，#231 五钉同步；
     # R2_core_tier3 §③ D1/D9/D6 三域，各一新股文件）：
     # ① Ruthroff 巴伦族 ruthroff_balun.py（#222 证据：ruthroff 全仓仅
     # guanella_tlt.py 2 处拒绝性引用=:148 官方声明缺口——本席把等延迟域
@@ -1037,7 +1037,7 @@ EXPECTED = {
     "ruthroff_balun_design", "ruthroff_balun_response",
     "gd_allpass_section_synthesize", "gd_equalizer_cascade_response",
     "measurement_drift_estimate", "measurement_drift_monitor",
-    # 架构批 W2-S6 内核池件批 2 八键（2026-10-18，#231 五钉同步；
+    # aurora_f W2-S6 内核池件批 2 八键（2026-10-18，#231 五钉同步；
     # R2_core_tier3 §③ D2/D4/D8 三域，各一新股文件）：
     # ① 混频器变换面 mixer_conversion.py（#222 证据：conversion.gain/
     # 变频损耗/dsb.*ssb/image.*noise 注册键面零命中，spur_search/if_plan_
@@ -1078,7 +1078,7 @@ EXPECTED = {
     "mixer_ssb_nf", "mixer_conversion_loss", "mixer_image_plan",
     "directional_bridge_s_matrix", "directional_bridge_response",
     "pin_switch_s2p", "rf_switch_spdt_quarter_wave", "rf_switch_matrix_path",
-    # 架构批 W3-S10 内核池件批 4 六键（2026-10-18，#231 五钉同步；
+    # aurora_f W3-S10 内核池件批 4 六键（2026-10-18，#231 五钉同步；
     # R2_core_tier3 §③ D3/D5/D7 三域，各一新股文件）：
     # ① AGC 环路动力学 agc_loop.py（#222 证据：agc 全仓仅 rx_impairments
     # docstring 预声明排除+package_chain SnAgCu 焊料误中——本席立动态
@@ -1115,7 +1115,7 @@ EXPECTED = {
     "agc_loop_dynamics", "agc_loop_response",
     "cal_kit_standard_response", "cal_kit_verify_ripple",
     "six_port_gamma_solve", "six_port_cal_extract",
-    # 架构批 W3-S11 两键（2026-10-18，#231 五钉同步；R2_core_tier3 §⑤
+    # aurora_f W3-S11 两键（2026-10-18，#231 五钉同步；R2_core_tier3 §⑤
     # F3 kernel_cards 前置第三族，build_kernel_cards docstring 点名留缺
     # 就此关闭）：ring_resonator.py（边界：ratrace=环行功分器拓扑、
     # dielectric_extract.ring_resonator_f0_to_er=反方向提取面（同仓双源
@@ -1123,7 +1123,7 @@ EXPECTED = {
     # ring_resonator_synthesize（f1→50Ω 馈线宽 inverse_width HJ→εeff
     # forward_z0 HJ→r_mean=c/(2π·f1·√εeff)（闭环周长=λg 恒等式残差随值
     # 报告——render_ring.py:74 链逐字节提升单一事实源，基线
-    # 内部证据目录 对拍钉）+ 间隙耦合 Qe
+    # runs/aurora_f/w3s11_ring_parity_baseline.json 对拍钉）+ 间隙耦合 Qe
     # 设计式（串联隙=J-反相器：C_g=ε0·εh·w²/g 系数 1 量纲估计档
     # UNVERIFIED 如实标（R2 F3 设计案预授权；c_gap_ff 覆盖档跳过模型链）
     # →J=ω0·C_g→Q_e=(π/2)/x² 与 coupled_line_bpf 同式同仓双源；
@@ -1138,7 +1138,7 @@ EXPECTED = {
     # 回收/隙模型单调性与极限/反向设计回代/pk 闭式双路线/Q 分解互证/
     # 守卫族/描述形态门）
     "ring_resonator_synthesize", "ring_resonator_response",
-    # 架构批 W4-S14 内核边际池批 4 键（2026-10-18，#231 五钉同步；
+    # aurora_f W4-S14 内核边际池批 4 键（2026-10-18，#231 五钉同步；
     # R2_core_tier3 边际池节+R7 G5 唯一遗留，三域）：
     # ① 等纹波多节耦合器 multisection_coupler.py 原位扩展第三键（R7 G5
     # 唯一遗留=Levy 等纹波成员收官；binomial 成员同族续作）：
@@ -1171,7 +1171,7 @@ EXPECTED = {
     "multisection_coupler_equiripple",
     "kuroda_identity_abcd", "kuroda_shunt_realize",
     "pll_lock_time",
-    # 架构批 W5-S18 内核边际池批 2 三键（2026-10-18，#231 五钉同步；
+    # aurora_f W5-S18 内核边际池批 2 三键（2026-10-18，#231 五钉同步；
     # R2_core_tier3 边际池节余量）：
     # ① 在片 ISS 校准 iss_on_wafer.py（#222 证据：ISS/在片全仓零实现零
     # 键；cal_kit_verify=同轴机械件——频率开路电容多项式恰在其预声明诚
@@ -1201,7 +1201,7 @@ EXPECTED = {
     # 链间握手/触顶不裁剪/守卫族/描述形态门）
     "iss_standard_response", "iss_oneport_cal_extract",
     "source_power_cal_table",
-    # 架构批 W1-S2 内核第四梯队 C1+C2 六键（2026-10-19，#231 五钉同步；
+    # aurora_g W1-S2 内核第四梯队 C1+C2 六键（2026-10-19，#231 五钉同步；
     # R2_core_tier4 §③ Top1/Top3）：
     # ① 链路极限面 link_limits.py 三键（shannon/FSPL 独立键全仓零命中补
     # 口——20lg(4πd/λ) 此前仅 rfid.py:91/vna_uncertainty.py:48 内嵌式）：
@@ -1229,7 +1229,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w1s2_link_fec.py
     "shannon_capacity", "free_space_path_loss", "link_margin_calc",
     "hamming_code_design", "reed_solomon_capacity", "coded_ebn0_requirement",
-    # ③ 架构批 W2-S2 内核第四梯队 C3-C6 四域六键（R2_core_tier4 §③，
+    # ③ aurora_g W2-S2 内核第四梯队 C3-C6 四域六键（R2_core_tier4 §③，
     # 2026-10-19）：
     # dgs_dumbbell_lc_extract/dgs_notch_response（DGS 缺陷接地结构族
     # dgs.py——`DGS` 三面全零首批键：哑铃一阶 LC 等效提取（陷波 f0+3dB
@@ -1249,7 +1249,7 @@ EXPECTED = {
     "dgs_dumbbell_lc_extract", "dgs_notch_response",
     "bandpass_sampling_plan", "alias_fold_check",
     "crlh_balanced_synthesize", "wg_dielectric_window",
-    # ④ 架构批 W4-S4 内核余量出键批十键（2026-10-19；R2_core_tier4
+    # ④ aurora_g W4-S4 内核余量出键批十键（2026-10-19；R2_core_tier4
     # 边际池+本席 grep 新发现）：
     # walfisch_ikegami_los/nlos（COST-231 Walfisch-Ikegami 两键——
     # `walfisch|ikegami` 全仓零命中；hata_cost231=经验拟合、本两键=WI
@@ -1274,7 +1274,7 @@ EXPECTED = {
     "carson_bandwidth", "fm_processing_gain", "am_power_split",
     "doherty_nway_efficiency", "doherty_nway_breakpoints",
     "ctle_nyquist_gain", "ctle_pole_from_boost", "ctle_gain_at",
-    # ⑤ 架构批 W6-S3 内核新域首批六键（2026-10-19；R3_domain_expansion
+    # ⑤ aurora_g W6-S3 内核新域首批六键（2026-10-19；R3_domain_expansion
     # 视角1 A1 Top1 + 视角4 E2 Top2）：
     # microstrip_bend_parasitics/microstrip_t_junction_parasitics/
     # microstrip_step_parasitics（微带不连续寄生三键——mitre|chamfer|
@@ -1294,7 +1294,7 @@ EXPECTED = {
     "microstrip_step_parasitics",
     "mti_frequency_response", "mti_improvement_factor",
     "clutter_sigma0_model",
-    # ⑥ 架构批 W7-S3 内核新域批 2 七键（2026-10-19；R3_domain_expansion
+    # ⑥ aurora_g W7-S3 内核新域批 2 七键（2026-10-19；R3_domain_expansion
     # 视角3 D1/D5 + 视角4 E6）：
     # critical_frequency/secant_law_muf/ionospheric_plasma_frequency
     # （HF 电离层天波三键——ionospher|muf|secant|天波 三面仅 NIST MUF/
@@ -1315,7 +1315,7 @@ EXPECTED = {
     "ionospheric_plasma_frequency",
     "fmcw_range_doppler", "fmcw_bandwidth_range_resolution",
     "sar_azimuth_resolution", "sar_swath_coverage",
-    # ⑦ 架构批 W9-S2 内核新域批 3 五键（2026-10-19；R3_domain_expansion
+    # ⑦ aurora_g W9-S2 内核新域批 3 五键（2026-10-19；R3_domain_expansion
     # 视角4 E1 Top6 + E2 续作）：
     # gdop_dop/dop_from_satellite_geometry/uere_to_position_error（GNSS
     # 定位几何三键——gdop|uere|dilution 三面零命中的导航场景收官；正四面
@@ -1331,7 +1331,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w9s2_core_domains.py
     "gdop_dop", "uere_to_position_error", "dop_from_satellite_geometry",
     "weibull_clutter_model", "cell_averaging_cfar",
-    # ⑧ 架构批 W10-S4 内核余量出键批 2 五键（2026-10-19；R2 边际池顺延
+    # ⑧ aurora_g W10-S4 内核余量出键批 2 五键（2026-10-19；R2 边际池顺延
     # 件+R3_domain_expansion 视角1 A2/视角2 B1）：
     # open_two_wire_line/open_wire_over_ground（平衡开线族两键——
     # twin|open_wire|明线 三面零命中的 rf_line 第七线型收官；双线=双极
@@ -1357,7 +1357,7 @@ EXPECTED = {
     "open_two_wire_line", "open_wire_over_ground",
     "microstrip_optimal_miter",
     "wg_cavity_bpf_synthesize", "wg_cavity_bpf_response",
-    # ⑨ 架构批 W11-S4 内核新域批 3 四键（2026-10-19；R3_domain_expansion
+    # ⑨ aurora_g W11-S4 内核新域批 3 四键（2026-10-19；R3_domain_expansion
     # 视角3 D5 续作 + 视角1 A1 全族收尾）：
     # fmcw_chirp_design/fmcw_if_signal_chain（FMCW 域内扩展两键——W7-S3 波
     # 形-观测量映射两键的正问题逆解面与信号链规划面：chirp 参数设计（目标
@@ -1374,7 +1374,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w11s4_core_domains.py
     "fmcw_chirp_design", "fmcw_if_signal_chain",
     "microstrip_gap_parasitics", "microstrip_open_end_parasitics",
-    # ⑩ 架构批 W14-S3 内核新域批 4 五键（2026-10-19；R3_domain_expansion
+    # ⑩ aurora_g W14-S3 内核新域批 4 五键（2026-10-19；R3_domain_expansion
     # §④ 余量三件：D3 云雾+E4 穿墙+E6 squint 扩展）：
     # cloud_specific_attenuation/cloud_attenuation_slant（云雾衰减 P.840-9
     # 两键——itu_link 第三成员（雨 P.838/气体 P.676 之后云雾零命中补口）：
@@ -1394,7 +1394,7 @@ EXPECTED = {
     "cloud_specific_attenuation", "cloud_attenuation_slant",
     "building_material_properties", "wall_slab_transmission",
     "sar_doppler_geometry",
-    # ⑪ 架构批 W15-S2 内核新域批 5 四键（2026-10-20；R3_domain_expansion
+    # ⑪ aurora_g W15-S2 内核新域批 5 四键（2026-10-20；R3_domain_expansion
     # §④ A1 余量+损耗/接地过渡族收口）：
     # microstrip_cross_parasitics（微带十字结四口寄生网络+复 S 矩阵——
     # W6-S3 弯/T/阶跃+W10-S4 最优切角+W11-S4 间隙/开路端之后不连续族第
@@ -1413,7 +1413,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w15s2_core_domains.py
     "microstrip_cross_parasitics", "microstrip_attenuation",
     "microstrip_via_short", "microstrip_open_end_radiation",
-    # ⑫ 架构批 W1-K2 调制/数字链路波形体制域五键 + 雷达脉冲压缩一键
+    # ⑫ aurora_h W1-K2 调制/数字链路波形体制域五键 + 雷达脉冲压缩一键
     # （2026-10-19；R2_core_tier5 §③ 4-7 号）：
     # papr_ofdm_ccdf/cfr_evm_cost（PAPR/CFR 提升核——core/papr 全套+
     # service/papr_service 现成零键，lange F1 同构：单源消费零公式复制，
@@ -1429,7 +1429,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w1k2_core_domains.py
     "papr_ofdm_ccdf", "cfr_evm_cost", "ofdm_waveform_params",
     "ofdm_cp_design", "spread_spectrum_gain", "pulse_compression_design",
-    # ⑬ 架构批 W1-K1 内核第五梯队批 1 七键（2026-10-19；R2_core_tier5
+    # ⑬ aurora_h W1-K1 内核第五梯队批 1 七键（2026-10-19；R2_core_tier5
     # §③ 1/2/3/8 号四域）：
     # l_section_match（L 节匹配提升核——core/matching.synthesize_l_match
     # 现代入口包壳，0bf 遗留标签入口不透传键面）；
@@ -1445,7 +1445,7 @@ EXPECTED = {
     "l_section_match", "wg_te10_attenuation", "wg_te10_power_capacity",
     "tdr_fault_location", "tdr_resolution", "tdr_ets_equivalent_time",
     "far_field_region",
-    # ⑭ 架构批 W3-K 池件批四键（2026-10-19；R2_core_tier5 §⑤ 池件
+    # ⑭ aurora_h W3-K 池件批四键（2026-10-19；R2_core_tier5 §⑤ 池件
     # P3 清偿 1/2/3 号，提升核三连+账面销账同批）：
     # superconductor_rs/superconductor_gap（量子读出组——池件 MP-7 同笔
     # 清偿：core/quantum_cryo 登记级现成零键的注册面，两流体 σ₁=t⁴+
@@ -1462,13 +1462,48 @@ EXPECTED = {
     "superconductor_rs", "superconductor_gap",
     "antenna_q_yaghjian_best",
     "weibull_paper_fit",
+    # aurora_j W4-S12 三键（2026-10-23；候选定稿 runs/aurora_j/
+    # w4_candidates.md §1.3 A1-A3）：
+    # conductor_surface_impedance（EC-3 收口——calc_families 注册键面零
+    # 命中：薄注册单源 core/conductor_loss（polarization_reg 同款），δ=
+    # √(2/(ωμσ))/Rs=√(πfμ/σ)/Zs=Rs(1+j)，wg_fundamental "Rs 留调用方自
+    # 算"注记的正式面补口）；
+    # wg_evanescent_attenuation（矩形波导 TE10 截止下倏逝传播解——截止
+    # 侧全仓空白：α=k√((fc/f)²−1) 精确式+倏逝波阻抗 ηc=jη/√((fc/f)²−1)
+    # +深截止 α→kc 极限；f≥fc 显式拒绝，coax 截止衰减器/行波衰减键边界
+    # 互指）；
+    # cavity_tm010_perturbation_shift（TM010 圆柱腔轴上细杆微扰介质测量
+    # 正反解——cavity.py 原位扩展：填充因子 F 含 J0²+J1² Bessel 恒等式
+    # 精确场权，细杆极限=文献 0.539/0.269 几何常数式（Alekajbaf-Dancila
+    # 2024 DOI 10.1017/S1759078724000308 式(1)-(3) 逐字核对；Chen 2004
+    # 书页式号不可核按 #df6-⑬ 不落）；与 cavity_perturbation_shift=
+    # TE101 矩形腔同定理异几何）。
+    # 锚树 tests/unit/test_w4s12_wg_conductor_keys.py
+    "conductor_surface_impedance", "wg_evanescent_attenuation",
+    "cavity_tm010_perturbation_shift",
+    # aurora_j W4-S13 三键（2026-10-23；候选定稿 runs/aurora_j/
+    # w4_candidates.md §1.4 B1-B3，天线口径效率分解域）：
+    # polarization_loss_factor（PLF=|ê_r·ê_t|² 薄注册——§4.4.3 同库直取
+    # core/polarization.polarization_loss_factor（pol_* 三键同款单源），
+    # plf→0 时 dB −300 地板截断 JSON 安全如实）；
+    # aperture_efficiency_components（反射面效率分量分解提升核——core/
+    # reflector_antenna 在库零键的注册面：η_s=1−cos^{q+1}θ₀/η_i=η_ap/η_s
+    # 射线映射口径/Ruze 1966/η-加权方向性，uniform|cos2 两档+q 覆盖，
+    # f/D≥1/4 守卫）；
+    # horn_aperture_efficiency（最优角锥喇叭提升核——core/horn_synthesis
+    # ME-7 在库零键的注册面：η_ap=(21.4.3) Fresnel 闭式（最优 δ_H=3λ/8、
+    # δ_E=λ/4 → ≈0.51 Balanis Ch.13 文献口径）+G=(21.4.2) 装配+HPBW
+    # 54λ/b_p、78λ/a_p（外部讲义引文+Fresnel 数值互证 ≤1.5%））。
+    # 锚树 tests/unit/test_w4s13_antenna_aperture_keys.py
+    "polarization_loss_factor", "aperture_efficiency_components",
+    "horn_aperture_efficiency",
 }
 
 # W1⑨（2026-09-16 用户口径）：实验态计算器分表——自动归纳（符号回归）公式
 # 一律 experimental=True 入库但默认关。EXPECTED 断言 names() **默认排除**；
 # include_experimental=True 才含本表（默认列/默认跑都不过这道开关）。
 EXPERIMENTAL_EXPECTED = {
-    # E13 patch 基模谐振候选公式（符号回归实验态归档，51 点归纳，vs HJ 0.765%）
+    # E13 patch 基模谐振候选公式（DEVLOG（六十九），51 点归纳，vs HJ 0.765%）
     "patch_f0_symbolic_e13",
 }
 
@@ -1495,7 +1530,7 @@ def test_registry_is_experimental():
 
 @pytest.mark.parametrize("key", sorted(EXPERIMENTAL_EXPECTED))
 def test_registry_is_experimental_all_experimental_keys(key: str) -> None:
-    """实验表逐键 is_experimental=True（T9 参数化，架构批 W14-S1）。
+    """实验表逐键 is_experimental=True（T9 参数化，aurora_g W14-S1）。
 
     旧径 ``for key in EXPERIMENTAL_EXPECTED`` 循环合一断言——逐键参数化后
     新实验键入表即自动覆盖（消费者税从"改循环"变"零测试代码增量"）。
@@ -1721,7 +1756,7 @@ def test_stripline_synthesis_5ohm_wide_band_roundtrip():
     assert abs(z_back - 5.0) / 5.0 < 1e-6
 
 
-# ── R1-3 拒绝面回归钉（R1-T9 参数化改造，2026-10-19 架构批 W11-S2）────────
+# ── R1-3 拒绝面回归钉（R1-T9 参数化改造，2026-10-19 aurora_g W11-S2）────────
 # 原三测试（cpw/microstrip/stripline 各一函数）断言结构完全同构：
 #   run_calculator(key, params) → assert not ok and <param> in error
 # 合并为参数化组；收集用例数 3→3 恒等（check_numbers 口径不动），
@@ -1784,7 +1819,7 @@ def test_line_analysis_guards_raise_valueerror_core_face(
     """R1-3 内核面：分析入口守卫在函数直调层抛 ValueError（带参数名）。
 
     旧径三段 with 块同构（fn/入参/match 三元组逐位搬运，行为不变），T9 批
-    （架构批 W14-S1）合并为参数化组——失败定位粒度按入口分列。
+    （aurora_g W14-S1）合并为参数化组——失败定位粒度按入口分列。
     """
     from rfauto.core.calc_families import rf_line
 
@@ -1831,7 +1866,7 @@ def test_line_synthesis_guards_raise_valueerror_core_face(
     旧径实测 er=0.5 静默返非物理 eps_eff=0.6483）。
 
     旧径六段 with 块同构（fn/入参/match 三元组逐位搬运，行为不变），T9 批
-    （架构批 W14-S1）合并为参数化组。
+    （aurora_g W14-S1）合并为参数化组。
     """
     from rfauto.core.calc_families import rf_line
 
@@ -2104,7 +2139,7 @@ def test_cavity_perturbation_box_analytic_exact_vs_independent_integral():
     assert r["route"] == "analytic_box"
 
 
-# ─── 工具箱分组 + 中文名结构（架构批 A2-A，2026-10-11）─────────────────────
+# ─── 工具箱分组 + 中文名结构（aurora72 A2-A，2026-10-11）─────────────────────
 
 def test_group_table_covers_all_keys_zero_leak_zero_dup():
     """分组单源表（CALC_GROUP_TABLE）对注册表键全集（含实验键）零漏零重。

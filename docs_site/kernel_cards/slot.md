@@ -111,12 +111,13 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 - `内部证据目录`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："内部规格档（Stevenson 阵综合）"
 - `tests/unit/test_b_wave3_yagi_slot.py`——引文："（锚树 tests/unit/test_b_wave3_yagi_slot.py）。"
 
-测试面（tests/unit 引用扫描，机读；合计 **107** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **119** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_aurora_d_core8.py` | 26 |
 | `tests/unit/test_b_wave3_yagi_slot.py` | 32 |
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

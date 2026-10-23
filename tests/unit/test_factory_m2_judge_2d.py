@@ -175,6 +175,7 @@ def test_synthetic_recovery_gp_heldout_2d_within_gates():
     assert 0.5 <= tri["w_mm"] <= 2.0 and 20.0 <= tri["line_len_mm"] <= 60.0
 
 
+@pytest.mark.slow  # 终门 DURATIONS top-20 慢件（30.1s，GP 确定性双跑逐位对账）
 def test_determinism_double_run_bit_identical():
     # G4-回归锚：同数据集同划分判读链双跑逐位一致（bit-identical）
     rows = m2d.synthetic_line_rows_2d(SMALL_FREQS)

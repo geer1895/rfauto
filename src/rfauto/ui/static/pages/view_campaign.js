@@ -14,6 +14,9 @@ import { esc, escAttr, fmtNum, help } from "./dom.js";
 // 虚拟列表空态）t() 烘焙——API 动态数据（run_id/数字/params_source）照旧
 // esc 插值不迁。
 import { t, applyI18nRoot } from "./i18n.js";
+// R3 人性化三批：看板首拉骨架屏（kitSkeleton 单件；dashboard widget 首拉
+// A8-A 同款形态——本页此前无任何加载占位）。
+import { kitSkeleton } from "./kit.js";
 import { _syncRouteHash, consumeCampaignPendingId } from "./router.js";
 import { _sseSubscribe } from "./sse.js";
 // P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 2 点）——
@@ -61,6 +64,13 @@ export async function pageCampaign() {
        <div id='cp-table' style='margin-top:6px'></div>
      </div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W4-S1；幂等，动态容器走 t() 烘焙）
+  // R3 人性化三批：看板三容器首拉骨架屏（座位表/成本热图/trials——数据到
+  // 后 loadDash() 整体替换；清单空分支显式清场防骨架滞留，见下）。
+  for (const id of ["cp-seats", "cp-heat", "cp-table"]) {
+    const el = T.$(id);
+    if (el) el.innerHTML =
+      `<div class="skeleton-wrap" role="status" aria-label="${t("campaign.loading_aria")}">${kitSkeleton(3)}</div>`;
+  }
   const listing = await apiFetch("/api/pareto_runs",
     { signal: viewSignal("campaign") });
   if (listing.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
@@ -69,6 +79,11 @@ export async function pageCampaign() {
   if (!runs.length) {
     sel.innerHTML = "<option>" + t("campaign.no_runs_opt") + "</option>";
     T.$("cp-info").textContent = t("campaign.no_runs_hint");
+    // R3 同笔：无战役可看——骨架清场（留占位=假加载）
+    for (const id of ["cp-seats", "cp-heat", "cp-table"]) {
+      const el = T.$(id);
+      if (el) el.innerHTML = "";
+    }
     return;
   }
   sel.innerHTML = runs.map((r) =>

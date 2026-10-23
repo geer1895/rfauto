@@ -69,7 +69,7 @@ from typing import Any
 # domain 字段表达 schema 零扩展；0795b2a T3 核验解锁，P1 §8.5 主路线兑现）。
 # Goal 批 T14（wf:goal-t14，2026-09-30）+2：mmt.inductive_post_b.hfss-v1 /
 # mmt.resonant_window_fres.hfss-v1 constant active——ME-5 MMT 销钉/谐振窗
-# HFSS 仲裁锚（远程仲裁归档 §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
+# HFSS 仲裁锚（远程仲裁归档 criteria §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
 # 随工作点 domain 钉死；单点锚 consumers=[] 零接线如实）。
 # ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2：ring.design_dk.
 # openems-hfss-v1 pointer experimental（FA3 Design Dk 战役账 六百八十
@@ -183,7 +183,7 @@ EXPECTED_ANCHORS = frozenset({
     # （constant + calibrated=closedform + closure 层 + experimental，真机
     # 首判前如实）；#118 双源=文献恒等式/经典公式独立第二源+测试第二实现
     # 转录回代钉（tests/unit/test_sensanc_analytic_anchors.py）；逐锚账=
-    # 判读报告归档（候选裁决策同档）。
+    # runs/aurora_d_sensanc/REPORT.md（候选裁决策同档）。
     "loop.loop_side_mm.closedform-v1",
     "slot.slot_l_mm.closedform-v1",
     "ifa.ifa_arm_mm.closedform-v1",
@@ -201,7 +201,7 @@ EXPECTED_ANCHORS = frozenset({
     # （λ0/2 阵格，ms_patch/ms_ring_patch/ms_array_NxN 三族）；#118 双源=
     # 文献恒等式独立第二源+测试第二实现转录回代钉
     # （tests/unit/test_anchd_analytic_anchors.py）；逐锚账与弃选 10 族
-    # 逐族理由=判读报告归档（SENS-ANC 报告第三节同口径复核）。
+    # 逐族理由=runs/aurora_d_anchd/REPORT.md（SENS-ANC 报告第三节同口径复核）。
     "coax_waveguide_transition.backshort_mm.closedform-v1",
     "sma_launcher.r_o_mm.closedform-v1",
     "patch_eep.elem_w_mm.closedform-v1",
@@ -217,6 +217,25 @@ EXPECTED_ANCHORS = frozenset({
     "tjunc.s11_db.closedform-v1",
     "tjunc.s21_db.closedform-v1",
     "mline.z0_ohm.closedform-v1",
+    # aurora_j W4-S15 锚覆盖转正批（2026-10-23）+8：72 模板无锚差集清偿，
+    # 有锚族 64/72→72/72（TEMPLATE_META 全覆盖）。wstep/bend=阶跃 Γ 代数
+    # 恒等/文献门界（WP2.2 归档冒烟 PASS 在档，真机首判已结故两席
+    # active）；dipole/pifa=aurora_e w2srv_r2 归档真机 pointer（单引擎
+    # 单点禁产 constant，mmwave v1 制度）；helix=HFSS 仲裁 AGREE 双值
+    # pointer（K_HELIX 同源风险声明禁产 constant，ring.design_dk 判例）；
+    # embedded_ms=FD 裁判名义 εeff（inverted_ms fdref 制度+双退化极限
+    # 恒等链）；msl_slot_transition/slotline_lumped=槽线段 J-S 闭式 β/λg
+    # 面（非 Z0 重复，真机判读在档）。逐锚源值复提取账=
+    # runs/aurora_j/w4s15/values.json（前两轮弃选账 runs/aurora_d_sensanc
+    # /REPORT.md 第三节+runs/aurora_d_anchd/REPORT.md 本批逐族改道）。
+    "wstep.s11_step_db.closedform-v1",
+    "bend.s11_max_db.lit-v1",
+    "dipole.f_res.openems-v1",
+    "pifa.f_res.openems-v1",
+    "helix.f_x.openems-hfss-v1",
+    "embedded_ms.eps_eff.fdref-v1",
+    "msl_slot_transition.beta_slot.closedform-v1",
+    "slotline_lumped.line_len_mm.closedform-v1",
 })
 EXPECTED_ANCHOR_COUNT = len(EXPECTED_ANCHORS)
 

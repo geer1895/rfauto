@@ -321,6 +321,25 @@ function drawFieldSlice(el, slice, contours, vmin) {
   }
 }
 
+/* ═══ aurora_j W3-S8（键盘可达盘点）：3D 轨道相机键盘替代纯函数 ════════
+   drawIsoMesh 相机原为纯指针（拖拽旋转+滚轮缩放，键盘完全不可达）。本纯
+   函数=单步语义（方向键旋转 0.1rad、+/- 缩放与滚轮同档 1.1/0.9；φ 钳制
+   与指针拖拽同口径 0.1-3.0），未知键返回 null=无操作。导出供 node 行为
+   钉真值表；DOM 胶水（画布 tabindex=0 + keydown）在 drawIsoMesh 内。 */
+export function orbitCamStep(state, key) {
+  const ROT = 0.1, ZOOM = 1.1;
+  const s = { theta: state.theta, phi: state.phi, radius: state.radius };
+  if (key === "ArrowLeft") s.theta -= ROT;
+  else if (key === "ArrowRight") s.theta += ROT;
+  else if (key === "ArrowUp") s.phi -= ROT;
+  else if (key === "ArrowDown") s.phi += ROT;
+  else if (key === "+" || key === "=") s.radius /= ZOOM;
+  else if (key === "-" || key === "_") s.radius *= ZOOM;
+  else return null;
+  s.phi = Math.max(0.1, Math.min(3.0, s.phi));
+  return s;
+}
+
 /* PyVista 等值面三角网 → three.js（顶点按 dB 着色；无 PyVista 时服务层不给此块）
    P8-2（aurora_f W3-S9，R1 §面1 重审）：T.THREE 同步取改调用点
    `await import("three")` 惰性取（app.js 顶层静态 import 与工具包 THREE 键
@@ -390,6 +409,19 @@ async function drawIsoMesh(container, iso) {
     phi = Math.max(0.1, Math.min(3.0, phi)); px = e.clientX; py = e.clientY; apply();
   };
   dom.onwheel = (e) => { e.preventDefault(); radius *= e.deltaY > 0 ? 1.1 : 0.9; apply(); };
+  // aurora_j W3-S8：相机键盘替代（本文件 orbitCamStep 纯函数的 DOM 胶水）
+  // ——画布 tabindex=0 可 Tab 聚焦，方向键旋转/+-缩放（档位与指针同口径）；
+  // hint 走词表（aria-label+title 双注入口；值零 HTML 纪律）。
+  dom.setAttribute("tabindex", "0");
+  dom.setAttribute("aria-label", t("fieldviz.iso_kb_hint"));
+  dom.title = t("fieldviz.iso_kb_hint");
+  dom.addEventListener("keydown", (e) => {
+    const st = orbitCamStep({ theta, phi, radius }, e.key);
+    if (!st) return;
+    e.preventDefault(); // 防方向键滚屏
+    theta = st.theta; phi = st.phi; radius = st.radius;
+    apply();
+  });
   renderer.setAnimationLoop(() => renderer.render(scene, camera));
   const legend = document.createElement("div");
   legend.className = "legend3d";

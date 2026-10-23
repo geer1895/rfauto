@@ -116,10 +116,11 @@ src/rfauto/core/calc_families/bethe_hole.py 公开符号 **1** 个（AST 机读�
 
 analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双路径互证内核登记 analytic-anchor 轻条目」的延伸项——登记后重跑本生成器）。
 
-测试面（tests/unit 引用扫描，机读；合计 **67** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **79** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w3a_unsplit_bethe.py` | 18 |
 

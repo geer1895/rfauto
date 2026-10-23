@@ -1,5 +1,5 @@
-"""UI 前后端契约棘轮门（架构批 W2-S5 落地，R1 审计 #6/P8-10 常驻化；
-架构批 W5-S1 R3 立项 #9 扩查询参数维度）。
+"""UI 前后端契约棘轮门（aurora_f W2-S5 落地，R1 审计 #6/P8-10 常驻化；
+aurora_h W5-S1 R3 立项 #9 扩查询参数维度）。
 
 三向对账（只读静态分析，零网络、零 import 前端代码）：
   A. 悬空调用：前端 JS（src/rfauto/ui/static/**/*.js，vendor/ 除外）的
@@ -9,7 +9,7 @@
   B. 无消费端点：server.py Route 表（/api/*）经归一化后，必须被前端调用
      或登记进 UNCONSUMED_ALLOWLIST（带理由）——服务端加端点无人消费
      （死路由）同样报红。
-  C. 查询参数两向（R3 立项 #9，架构批 W5-S1——P8-10 "参数面更无守卫"
+  C. 查询参数两向（R3 立项 #9，aurora_h W5-S1——P8-10 "参数面更无守卫"
      的清偿；A 向原"查询串从首个 ? 截断"口径对路径向保持不变）：
      C1 悬空参数：前端调用 URL 查询串里的参数名，按归一化路由对账
         server handler 实际消费的参数名——前端传了 server 不收=红
@@ -44,7 +44,7 @@
   - DANGLING_PARAM_ALLOWLIST：悬空参数豁免表——**基线必须为空**（同
     DANGLING 纪律）。
   - UNSENT_PARAM_ALLOWLIST：未传参数豁免表（键=f"{归一化路由}#{参数名}"）
-    ——现值 15 条=服务端可选能力面（field 切片族 sx/sy/sz+engine、清单
+    ——现值 14 条=服务端可选能力面（field 切片族 sx/sy/sz+engine、清单
     端点 limit 缺省档、CLI/程序化消费参数如 anchors path）；只可删不可
     加（删=前端接入清偿，加=新未传参数须台账背书）；活体门另钉"登记集
     ==实算未传集"（双向零陈旧：前端开始传=条目陈旧须删，server 新收=
@@ -93,7 +93,7 @@ DANGLING_ALLOWLIST: dict[str, str] = {}
 # 无消费端点豁免——逐条理由；条目只可删（前端接入清偿）不可加（新死路由
 # 须台账背书）。键=归一化路由形态。
 UNCONSUMED_ALLOWLIST: dict[str, str] = {
-    # 统一实时事件流服务端面（架构批 UI-R3）：tune/campaign 前端消费走
+    # 统一实时事件流服务端面（aurora_d UI-R3）：tune/campaign 前端消费走
     # P-1 按桥 /api/runs/{id}/events/stream（sse.js sseStreamUrl 单源），
     # 三条通用流=server.py 注释自述的"兼容层保留"（server.py:112-119），
     # 前端消费适配留后续席（W5-S23 走查同结论）。
@@ -104,9 +104,14 @@ UNCONSUMED_ALLOWLIST: dict[str, str] = {
     # EDB 快车道状态页：消费面在 edb_app 侧 CLI/脚本链（非人工工作台 JS），
     # server.py:171-172 注释自述"照 campaign_app 先例"的独立装配面。
     "/api/edb_status": "EDB 快车道状态面——edb_app 侧消费，非工作台 JS 面",
+    # 求解器可视化清单能力面（aurora_j W1-S3 清偿）：view_solvers.js 曾拉取
+    # 但无消费（aurora_i 已删裸 JSON 调试渲染，拉取本身亦属无消费死代码），
+    # 本席删除该 fetch——端点保留为服务端能力面（ui_e2e_smoke/REST 测试在
+    # 档），前端无消费场景。
+    "/api/solvers/viz": "求解器可视化清单——服务端能力面，前端无消费场景（台账=aurora_j W1-S3）",
 }
 
-# 悬空参数豁免——零违例基线（C1 向，架构批 W5-S1 建门时实测零悬空），
+# 悬空参数豁免——零违例基线（C1 向，aurora_h W5-S1 建门时实测零悬空），
 # 禁止加条目。键=f"{归一化路由}#{参数名}"。
 DANGLING_PARAM_ALLOWLIST: dict[str, str] = {}
 
@@ -136,8 +141,6 @@ UNSENT_PARAM_ALLOWLIST: dict[str, str] = {
     "/api/model3d#path": "model3d GET 预览参——前端只走 POST 体分支",
     # routes/tune.py api_tune_trials：run_id 过滤参（跨 run 对比/程序化面）
     "/api/tune/trials#run_id": "trials run 过滤参——前端拉全集，程序化消费面",
-    # routes/agent.py api_solvers_viz：solver 过滤参（前端拉全集自过滤）
-    "/api/solvers/viz#solver": "可视化清单 solver 过滤参——前端拉全集自过滤",
 }
 
 

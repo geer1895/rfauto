@@ -226,6 +226,44 @@ class TestCredSeriesShape:
         assert "ok:echarts" in out
 
 
+    def test_series_feed_xvalue_value_axis_hetero_grid(self):
+        """aurora_j W1-S1 异栅根治钉：xvalue:true 值轴下 cred series 以各自
+        频网 [x,y] 对出数（两引擎频网点数/间距不同不再按索引共享
+        series[0].x 错位拉伸）。"""
+        out = _run_node_js(
+            _ENV_DUAL +
+            "const m = await import('./pages/cred_curves.js');\n"
+            "const pc = await import('./plotcard.js');\n"
+            "// 异栅信封：openems 频网改 4 点（与 hfss 5 点不同）\n"
+            "const env = JSON.parse(JSON.stringify(ENV));\n"
+            "env.engines.openems.freq_ghz = [2.0, 2.1, 2.5, 2.8];\n"
+            "env.engines.openems.curves = "
+            "[{ name: 'S11', s_db: [-1.1, -4, -14, -2.1] }];\n"
+            "const series = m.credSeriesLabeled(m.credNormalize(env).curves, false);\n"
+            "const opt = pc.buildEChartOption(series, "
+            "{ xvalue: true, xlabel: 'GHz', ylabel: 'dB' }, "
+            "{ light: false, palette: [] });\n"
+            "const errs = [];\n"
+            "if (opt.xAxis.type !== 'value') errs.push('xAxis 应值轴');\n"
+            "if (opt.series.length !== series.length) errs.push('series 数');\n"
+            "for (let i = 0; i < opt.series.length; i++) {\n"
+            "  const e = opt.series[i], s = series[i];\n"
+            "  if (e.type !== 'line') { errs.push('type: ' + e.type); continue; }\n"
+            "  if (!Array.isArray(e.data) || e.data.length !== s.y.length) "
+            "{ errs.push('data 长度: ' + i); continue; }\n"
+            "  for (let j = 0; j < e.data.length; j++) {\n"
+            "    if (e.data[j][0] !== s.x[j] || e.data[j][1] !== s.y[j]) "
+            "{ errs.push('对数据错位: ' + i + ':' + j); break; }\n"
+            "  }\n"
+            "}\n"
+            "// 异栅：两引擎 x 网各自保留（openEMS 4 点不被拉伸到 hfss 5 点索引集）\n"
+            "const oe = series.filter((s) => s.name.indexOf('openEMS') === 0);\n"
+            "if (oe.length !== 1 || oe[0].x.length !== 4) errs.push('OE 频网应 4 点');\n"
+            "if (errs.length) throw new Error(errs.join('; '));\n"
+            "console.log('ok:xvalue-hetero');\n")
+        assert "ok:xvalue-hetero" in out
+
+
 @pytest.mark.skipif(_NODE is None, reason="本机无 node")
 class TestCredFetchCache:
     """桩 fetch 真跑（apiFetch 链）：三级缓存语义逐案独立进程。"""
@@ -344,6 +382,12 @@ class TestSourcePins:
         # 偏差注记/单引擎 note 复用画廊同款词表键（跨页复用只增引用）
         assert "gallery.cred_dev_tpl" in _SP
         assert "gallery.cred_single_note_tpl" in _SP
+
+    def test_cred_plots_value_axis_mode(self):
+        """aurora_j W1-S1 异栅根治：两处 cred 叠加图传 xvalue:true（值轴，
+        双引擎各自 freq_ghz 频网自持——异栅不再按 series[0].x 索引错位）。"""
+        assert "xvalue: true" in _GAL, "画廊对照曲线节缺 xvalue"
+        assert "xvalue: true" in _SP, "S 参数页对照卡缺 xvalue"
 
     def test_cred_module_discipline(self):
         # 纯数据纪律：零 DOM 写面、零 i18n 依赖（键集互证页前缀死键口径；

@@ -18,6 +18,9 @@
   ``campaign run``，非 plan stage 的纸面 entry——executor"禁 shell 出
   entry"红线（其 kind 无对应 CLI 命令）不适用；
 - **判定门序**（E62 同款语义，逐项发射、不硬打）：
+  0. 依赖门（aurora_j W2-S5）：计划级 ``depends_on`` 前置未全终态=本
+     tick 不发射（pass-over——就绪候选照常上位，坏账降级阻塞不拆
+     tick，详见文末"队列依赖门控"段）；
   1. 日历窗（remote_scheduler_service.calendar_launch_view 三态
      open/risk/blocked）：blocked=本 tick 不发射（fail-skip，下 tick 重探，
      项**不**记永久 skip——E62 SKIP=inconclusive 续跑重探同源）；risk=
@@ -61,9 +64,21 @@ code ∈ :data:`BLOCK_SOLO`/:data:`BLOCK_CALENDAR`/:data:`BLOCK_LICENSE`/
 人读一句话经 :func:`blocked_text_of` 组装——"等 license：…（已等 12
 分钟）"形态）；换因/解除才写账。读侧 :func:`queue_blocks_index` 供
 ``/api/campaign_queue`` 合流透出（前端 i18n 按 code 另有 en 对照，
-服务层 ``text`` 为 zh 单源兜底）。依赖门控（depends_on）v1 无键无门
-（b3 的 priority/depends_on 属 v2）——排队在后候选的"依赖未满足"近义
-面=:data:`BLOCK_AHEAD`（前序候选未发射）。
+服务层 ``text`` 为 zh 单源兜底）。
+
+**队列依赖门控（aurora_j W2-S5；b3 的 depends_on 由 v2 落地）**：计划级
+可选键 ``depends_on``（前置任务 item_id 列表，同队列内引用）经
+:func:`scan_queue` 入条目；候选发射前先过依赖门——任一前置未达终态
+（:data:`ITEM_TERMINAL`）→ 本 tick 不发射（新码 :data:`BLOCK_DEPS`，
+"变化才落账"同 W2-S3 范式，detail=首个未满足前置 ``<id>（<状态>）``,
+状态变化换因保 ``since``）；前置全终态即放行。**失败如实传播不自动
+取消**（#122）：前置 launch_failed/aborted 也是终态，依赖方照常获得
+发射资格、成败由自身战役判定（v1 记账词表无 skip 态，不新增）。入队
+校验 :func:`validate_depends_on`（写侧契约：引用不存在/依赖环 →
+ValueError，环路径进文案）；守护 tick 内坏账项（环/无账引用）降级为
+BLOCK_DEPS 阻塞账不拆 tick（#105，单条坏计划不瘫痪全队列）。依赖未
+满足候选**不阻塞队头**（pass-over）：就绪候选照常上位发射，与
+:data:`BLOCK_AHEAD` 的排队序互补。缺字段=零行为变化（硬验收）。
 
 **失败诊断包触发（aurora_i W2-S3，采纳 #3）**：``launch_failed`` 或本守护
 已发射战役终态回读为 ABORTED/PARTIAL 时，经 ``failure_context_fn`` 注入缝
@@ -112,6 +127,7 @@ from rfauto.service.envelope import error_envelope, ok_envelope
 __all__ = [
     "BLOCK_AHEAD",
     "BLOCK_CALENDAR",
+    "BLOCK_DEPS",
     "BLOCK_LICENSE",
     "BLOCK_NONE",
     "BLOCK_SOLO",
@@ -140,6 +156,7 @@ __all__ = [
     "run_queue_daemon",
     "save_queue_state",
     "scan_queue",
+    "validate_depends_on",
 ]
 
 #: 状态文件 schema 版本（不一致=整档弃用重新起步，防跨版本静默误读）。
@@ -187,7 +204,8 @@ BLOCK_NONE = ""
 BLOCK_SOLO = "solo_wait"            # 单飞互斥：在途战役未收尾（#261 意识）
 BLOCK_CALENDAR = "calendar_blocked"  # 资源日历窗 blocked（本 tick 不发射）
 BLOCK_LICENSE = "license_wait"      # license 预检未过（fail-skip 下 tick 重探）
-BLOCK_AHEAD = "queued_ahead"        # 前序候选未发射（排队等轮次；依赖门 v2）
+BLOCK_AHEAD = "queued_ahead"        # 前序候选未发射（排队等轮次）
+BLOCK_DEPS = "deps_blocked"         # 依赖门：前置任务未达终态（W2-S5）
 
 #: 服务层 zh 人读模板单源（前端 i18n 按 code 另有 en 对照；detail/n_ahead
 #: 为占位参数——detail 是 API 动态数据，消费方照旧 esc，禁拼进壳文案）。
@@ -196,6 +214,14 @@ _BLOCK_TEXT_TEMPLATES: dict[str, str] = {
     BLOCK_CALENDAR: "等日历窗：{detail}",
     BLOCK_LICENSE: "等 license：{detail}",
     BLOCK_AHEAD: "排队中：前面还有 {n_ahead} 个候选",
+    BLOCK_DEPS: "等依赖：{detail}",
+}
+
+#: 前置记账态 → zh 短语（依赖等待 detail 用；终态不进 detail——终态=放行）。
+_DEP_STATUS_TEXT: dict[str, str] = {
+    ITEM_QUEUED: "排队中",
+    ITEM_LAUNCHED: "在途",
+    ITEM_EXTERNAL: "他人在跑",
 }
 
 #: 等待时长人读换算秒界（<此值报秒，否则报分钟）。
@@ -318,6 +344,118 @@ def queue_blocks_index(
                                     n_ahead=n_ahead),
         }
     return out
+
+
+# ─── 队列依赖门控（aurora_j W2-S5；depends_on 校验+评估，纯函数）──────────────
+
+def _norm_deps(raw: Any) -> list[str]:
+    """``depends_on`` 原始值 → 规范 id 列表（str+strip、去空、去重保序；
+    非列表形态=[]。防御面不抛——坏形态按无依赖读，#105 观测不炸主路径）。"""
+    if not isinstance(raw, (list, tuple)):
+        return []
+    out: list[str] = []
+    for d in raw:
+        s = str(d or "").strip()
+        if s and s not in out:
+            out.append(s)
+    return out
+
+
+def _deps_cycle_texts(entries: list[dict[str, Any]]) -> dict[str, str]:
+    """条目集 → {item_id: 依赖环文案}（纯函数；无环=空表）。
+
+    Kahn 剥叶：反复摘除"前置已全解"节点，剩余=卡死集（环成员及其下游
+    依赖——两者同样永不满足，共享同一条环路径文案）；DFS 在卡死集内取
+    一条实环路径入文案（卡死集每节点必有卡死前置，环必可达）。环路径
+    形如 ``a → b → a``（含自身环 ``a → a``）。
+    """
+    ids = {str(e.get("item_id") or "") for e in entries}
+    adj: dict[str, list[str]] = {}
+    for e in entries:
+        iid = str(e.get("item_id") or "")
+        deps = [d for d in _norm_deps(e.get("depends_on")) if d in ids]
+        if deps:
+            adj[iid] = deps
+    removed = ids - set(adj)  # 无依赖条目=天然已解（叶）
+    remaining = set(adj)
+    changed = True
+    while changed and remaining - removed:
+        changed = False
+        for iid in sorted(remaining - removed):
+            if all(d in removed for d in adj.get(iid, ())):
+                removed.add(iid)
+                changed = True
+    stuck = remaining - removed
+    if not stuck:
+        return {}
+    seen_at: dict[str, int] = {}
+    path: list[str] = []
+    node = sorted(stuck)[0]
+    while node not in seen_at:
+        seen_at[node] = len(path)
+        path.append(node)
+        node = next(d for d in adj.get(node, ()) if d in stuck)
+    cycle = [*path[seen_at[node]:], node]
+    text = f"依赖环 {' → '.join(cycle)}（永不满足）"
+    return {iid: text for iid in stuck}
+
+
+def validate_depends_on(entries: list[dict[str, Any]]) -> None:
+    """入队校验（写侧契约，纯函数）：``depends_on`` 引用必须在本队列
+    条目集内存在、依赖图无环——违规抛 :class:`ValueError`（逐项明细+
+    环路径进文案）。**如实声明：当前 src 内无强制调用点**（写侧 opt-in
+    实用函数，计划落盘/UI 入队等写面可先经此校验拒绝，测试面直接
+    调用）；守护 tick **不**调用本函数——坏计划在 tick 内降级为
+    :data:`BLOCK_DEPS` 阻塞账兜底（见 :func:`queue_tick`，单条坏计划
+    不瘫痪整个 tick，#105）。"""
+    ids = {str(e.get("item_id") or "") for e in entries}
+    problems: list[str] = []
+    for e in entries:
+        iid = str(e.get("item_id") or "") or "?"
+        for dep in _norm_deps(e.get("depends_on")):
+            if dep not in ids:
+                problems.append(f"{iid}：前置 {dep} 不在当前队列（未知 id）")
+    for iid, text in sorted(_deps_cycle_texts(entries).items()):
+        problems.append(f"{iid}：{text}")
+    if problems:
+        raise ValueError(
+            "depends_on 校验失败（" + "；".join(problems) + "）")
+
+
+def _dep_block_detail(
+    entry: dict[str, Any],
+    *,
+    items: dict[str, Any],
+    survivors: dict[str, Any],
+    entry_ids: set[str],
+    cycle_texts: dict[str, str],
+) -> str:
+    """候选条目 → 依赖门阻塞 detail（""=放行；纯函数）。
+
+    依赖环成员直接给环文案（:func:`_deps_cycle_texts`）；否则逐前置按
+    列出序取**首个未满足**（文案随首个未满足者走——同码换因保 ``since``，
+    列出序固定故逐 tick 稳定）：前置账在本 tick 扫描面 ``items`` ∪ 陈账
+    ``survivors`` 查——终态（:data:`ITEM_TERMINAL`）即满足（失败态也
+    放行：失败如实传播不自动取消，#122；v1 无 skip 态不新增）；非终态
+    给 ``<id>（<状态>）``；账面全无且不在本条目集=引用无账
+    ``<id>（不在当前队列）``；账面缺而条目在=防御兜底 ``状态未知``
+    （多报不放过，#316）。
+    """
+    iid = str(entry.get("item_id") or "")
+    if iid in cycle_texts:
+        return cycle_texts[iid]
+    for dep in _norm_deps(entry.get("depends_on")):
+        rec = items.get(dep) or survivors.get(dep)
+        rec = rec if isinstance(rec, dict) else None
+        if rec is None:
+            if dep not in entry_ids:
+                return f"{dep}（不在当前队列）"
+            return f"{dep}（状态未知）"
+        st = str(rec.get("status") or "")
+        if st in ITEM_TERMINAL:
+            continue
+        return f"{dep}（{_DEP_STATUS_TEXT.get(st, st or '状态未知')}）"
+    return ""
 
 
 # ─── 长跑防卡死对冲（aurora_i W3-S3，服务器管控采纳 #1；缺省关=零行为变化）──
@@ -561,7 +699,9 @@ def scan_queue(root: str | Path = "runs") -> list[dict[str, Any]]:
     """扫描根 → 队列条目（只读；list_campaign_plans+load_plan 单源复用）。
 
     条目形态：``{"item_id", "plan_path", "model", "verdict", "n_stages",
-    "license_gated"}``；损坏计划逐条跳过（list_campaign_plans #105 口径），
+    "license_gated", "depends_on"}``；``depends_on``=计划级可选键（前置
+    任务 item_id 列表，W2-S5 依赖门）规范化（str+strip、去空、去重保序，
+    缺键/坏形态=[]）；损坏计划逐条跳过（list_campaign_plans #105 口径），
     plan 读回失败同样跳过不猜。零发射零写入。
     """
     from rfauto.service.campaign_manager import list_campaign_plans, load_plan
@@ -581,6 +721,7 @@ def scan_queue(root: str | Path = "runs") -> list[dict[str, Any]]:
             "verdict": str(plan.get("verdict") or ""),
             "n_stages": len(plan.get("stages") or []),
             "license_gated": _plan_license_gated(plan),
+            "depends_on": _norm_deps(plan.get("depends_on")),
         })
     return entries
 
@@ -783,7 +924,14 @@ def queue_tick(
     hedge_relaunch: bool | None = None,
     progress_fn: Callable[[str], float | None] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """tick 单步：读队列→日历窗→license 预检→发射→状态回写（纯函数）。
+    """tick 单步：读队列→依赖门→单飞/日历窗→license 预检→发射→状态
+    回写（纯函数）。
+
+    依赖门（aurora_j W2-S5）：候选按计划级 ``depends_on`` 分流——任一
+    前置未达终态（:data:`ITEM_TERMINAL`，失败态也放行=失败如实传播不
+    自动取消）或依赖环/无账引用 → :data:`BLOCK_DEPS` 阻塞账本 tick 不
+    发射；就绪候选照常走单飞/日历/许可门（pass-over，依赖未满足不阻塞
+    队头）。坏账项降级阻塞不拆 tick（#105）；缺字段=零行为变化。
 
     全部副作用经注入缝（now_fn/calendar_fn/preflight_fn/queue_fn/
     launcher_fn/failure_context_fn/progress_fn，缺省=生产适配薄包装；唯
@@ -951,6 +1099,26 @@ def queue_tick(
                 in_flight_unseen = True
                 break
 
+    # 依赖门（aurora_j W2-S5）：候选按 depends_on 分流——存在未达终态
+    # 前置或依赖环/无账引用的候选本 tick 不发射（BLOCK_DEPS，"变化才落
+    # 账"同 W2-S3 范式），其余候选（ready）保持既有单飞/日历/许可门序。
+    # 依赖未满足**不阻塞队头**（pass-over）：就绪候选照常上位，坏账项
+    # 只挡自身。对全体候选评估明细：单飞挡住的 tick 里依赖码覆写 solo
+    # 码（依赖是更持久的原因——单飞解除后依赖未必解除）。
+    deps_cycle = _deps_cycle_texts(entries)
+    entry_ids_all = {str(e.get("item_id") or "") for e in entries}
+    deps_detail: dict[str, str] = {}
+    ready: list[dict[str, Any]] = []
+    for c in candidates:
+        _iid = str(c.get("item_id") or "")
+        _det = _dep_block_detail(c, items=items, survivors=survivors,
+                                 entry_ids=entry_ids_all,
+                                 cycle_texts=deps_cycle)
+        if _det:
+            deps_detail[_iid] = _det
+        else:
+            ready.append(c)
+
     if in_flight is not None:
         _m = str((in_flight or {}).get("model") or "")
         if not _m:
@@ -968,10 +1136,10 @@ def queue_tick(
             _iid = str(c.get("item_id") or "")
             if _iid:
                 tick_blocks[_iid] = (BLOCK_SOLO, _m, 0)
-    elif candidates:
-        entry = candidates[0]
-        # 后位候选：前序未发射即其阻塞因（依赖门 v2 前的近义面，docstring）
-        for _idx, c in enumerate(candidates[1:], start=1):
+    elif ready:
+        entry = ready[0]
+        # 后位候选：前序未发射即其阻塞因（依赖已就绪者内的排队序）
+        for _idx, c in enumerate(ready[1:], start=1):
             _iid = str(c.get("item_id") or "")
             if _iid:
                 tick_blocks[_iid] = (BLOCK_AHEAD, "", _idx)
@@ -1055,6 +1223,13 @@ def queue_tick(
                     # 发射失败=本守护经手的失败——失败诊断包触发（W2-S3）
                     _snapshot_failure_context(
                         fc_fn, str(entry.get("plan_path") or ""), iid, actions)
+
+    # 依赖门阻塞账（W2-S5）：整段门序之后统一落账——单飞码之上覆写
+    # （同真时报依赖，更持久的原因）；elif-ready 分支里被依赖门挡下的
+    # 候选（未进 ready）也在此入账。
+    for _iid, _det in deps_detail.items():
+        if _iid:
+            tick_blocks[_iid] = (BLOCK_DEPS, _det, 0)
 
     # 阻塞账合并（W2-S3 采纳 #2）：变化才落账——同 (code, detail) 原账
     # 不动（since 保持首次阻塞时刻，读侧等待时长连续）；换因/解除才写。

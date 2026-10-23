@@ -111,12 +111,13 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a7b_iris_guanella.py`——引文："tests/unit/test_a7b_iris_guanella.py 与 tests/unit/test_aurora_d_core8.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **123** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **135** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a7b_iris_guanella.py` | 24 |
 | `tests/unit/test_aurora_d_core8.py` | 26 |
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w10s4_core_domains.py` | 24 |
 

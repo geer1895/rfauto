@@ -488,7 +488,7 @@ AgentBench/goldset 回归门（WP3.7/F6）——离线、确定性、零网络
 - `rfauto campaign list` — 扫 root 下全部已落盘战役计划（总览）。
 - `rfauto campaign run` — 一键闭环执行战役计划（calibrate→…→report→final_verify；断点续跑内嵌）。
 - `rfauto campaign digest` — 扫描战役终态（COMPLETE/PARTIAL/ABORTED）聚合成 zh 人读摘要，JSON+文本产物落 runs/ 下。
-- `rfauto campaign queue-daemon` — campaign 排队常驻执行体（UX-B7）：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。
+- `rfauto campaign queue-daemon` — campaign 排队常驻执行体：轮询队列→依赖检查→日历窗→license 预检→逐项启动（启动后不等）。
 
 ## rfauto template-spec
 

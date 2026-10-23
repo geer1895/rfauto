@@ -80,10 +80,15 @@ def remote_status_cmd(
 @remote_app.command("resources")
 def remote_resources_cmd(
     machine: str | None = typer.Argument(
-        None, help="机器注册表名（缺省=唯一登记机器；未登记=空面如实）"),
+        None, help="机器注册表名（缺省=唯一登记机器；未登记时显示为空）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
-    """并发求解面资源视图（本机 openEMS/HFSS 进程互斥态+服务器可达/在跑/磁盘）。"""
+    """并发求解面资源视图（本机 openEMS/HFSS 进程互斥态+服务器可达/在跑/磁盘）。
+
+    --json 输出里的 recommend 字段是选机推荐块（eligible/score/reasons，
+    纯只读参考，不改变任务去向；人读表格不含此块）。写法见
+    docs/how-to/campaign-queue-and-notify.md。
+    """
     from rfauto.service.remote_scheduler_service import resources_view
 
     result = resources_view(machine)
@@ -142,7 +147,7 @@ def remote_resources_cmd(
 @remote_app.command("queue")
 def remote_queue_cmd(
     machine: str | None = typer.Argument(
-        None, help="机器注册表名（缺省=唯一登记机器；未登记=空面如实）"),
+        None, help="机器注册表名（缺省=唯一登记机器；未登记时显示为空）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
     """任务队列视图（job_registry 在途作业+单写锁排队+席位占用+服务器在跑态）。"""

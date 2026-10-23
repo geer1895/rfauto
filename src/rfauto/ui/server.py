@@ -41,8 +41,8 @@ from rfauto.ui import csp as csp_routes
 from rfauto.ui.campaign_app import api_campaign_dashboard as api_campaign_dashboard
 from rfauto.ui.campaign_app import api_campaign_queue as api_campaign_queue
 from rfauto.ui.campaign_app import api_remote_resources as api_remote_resources
-# W2-S4 远程机器面板（只读）——import 与注释分行（合流预检参数降级清偿）
 
+# W2-S4 远程机器面板（只读）——import 与注释分行（合流预检参数降级清偿）
 # D-04 哈希钉既有消费面保持（test_w1e_ui_csp/test_ui_theme_boot 直 import）。
 from rfauto.ui.csp import CSP_HEADER as CSP_HEADER
 from rfauto.ui.csp import CSP_VALUE as CSP_VALUE

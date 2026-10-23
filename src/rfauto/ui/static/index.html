@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <title>rfauto 射频调优工作台</title>
+<!-- W3-S10 走查修复：空 favicon 声明抑制 /favicon.ico 404（console error=0
+   走查门的唯一常态污染源；data: 空 URI 不发请求，CSP 无 img-src 不受阻） -->
+<link rel="icon" href="data:,">
 <script>
 /* 主题防闪（FOUC，guide §13.1 / R1 审计 P0-2）：head 内联、样式表生效前同步
    读档 → html[data-theme]，消灭"存了 light/ocean/system(亮) 的用户刷新先闪
@@ -299,10 +302,17 @@ h2.page small { color: var(--muted); font-size: 12px; margin-left: 10px; font-we
   border-radius: var(--radius-xl); padding: var(--space-4);
   margin-bottom: var(--space-4); box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition-base) var(--ease-out),
-              border-color var(--transition-base) var(--ease-out);
+              border-color var(--transition-base) var(--ease-out),
+              transform var(--transition-fast) var(--ease-out);
   animation: fade-slide var(--transition-slow) var(--ease-out) backwards;
 }
-.panel:hover { border-color: var(--glass-border); box-shadow: var(--shadow); }
+/* R3 人性化三批（hfssq-ui-kit P7 微交互）：面板 hover 轻微上浮 2px
+   （.card 同款幅度；150ms ease-out，入场 fade-slide 结束后 transform
+   交还本规则——backwards 填充不占用稳态）。 */
+.panel:hover {
+  border-color: var(--glass-border); box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
 /* W7-C（aurora36 P2-3，guide §10.3）：入场动画 50ms 交错阶梯（此前全部
    同拍）；nth-child 6 档封顶，后续面板不再加迟滞。.panel 动画简写已带
    backwards 填充=延迟窗内保持初帧不可见。轮询页（tune/loopboard）只更新
@@ -544,16 +554,23 @@ input:focus, select:focus, textarea:focus {
 #palette-hint code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; }
 
 /* ── 按钮 ── */
+/* R3 人性化三批（hfssq-ui-kit P7 微交互）：hover 反馈统一=上浮 1px+阴影
+   加深（150ms ease-out；--shadow-glow 外叠加 --shadow 深影，浅色按钮
+   --shadow-sm 微影）——.act/.primary 此前只有位移无影变，.minor/.danger
+   此前无位移，四族同构。active 下压沿旧 W7-C 规则不变。 */
 button.act {
   background: linear-gradient(90deg, var(--primary), var(--act2));
   color: var(--act-fg); border: none; padding: 7px 18px;
   border-radius: var(--radius-sm); cursor: pointer; font-weight: 650;
   box-shadow: var(--shadow-glow);
   transition: filter var(--transition-fast), transform var(--transition-fast) var(--ease-out),
-              box-shadow var(--transition-fast);
+              box-shadow var(--transition-fast) var(--ease-out);
 }
 body.light button.act { color: #ffffff; }
-button.act:hover { filter: brightness(1.12); transform: translateY(-1px); }
+button.act:hover {
+  filter: brightness(1.12); transform: translateY(-1px);
+  box-shadow: var(--shadow-glow), var(--shadow);
+}
 button.act:active { transform: translateY(0); }
 button.act:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
 button.minor {
@@ -561,16 +578,24 @@ button.minor {
   padding: 5px 13px; border-radius: var(--radius-sm); cursor: pointer;
   transition: border-color var(--transition-fast), color var(--transition-fast),
               background var(--transition-fast),
-              transform var(--transition-fast) var(--ease-out);
+              transform var(--transition-fast) var(--ease-out),
+              box-shadow var(--transition-fast) var(--ease-out);
 }
-button.minor:hover { border-color: var(--accent); color: var(--accent); background: var(--surface-hover); }
+button.minor:hover {
+  border-color: var(--accent); color: var(--accent); background: var(--surface-hover);
+  transform: translateY(-1px); box-shadow: var(--shadow-sm);
+}
 button.danger {
   background: transparent; color: var(--err); border: 1px solid var(--err);
   padding: 5px 13px; border-radius: var(--radius-sm); cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast),
-              transform var(--transition-fast) var(--ease-out);
+              transform var(--transition-fast) var(--ease-out),
+              box-shadow var(--transition-fast) var(--ease-out);
 }
-button.danger:hover { background: var(--err-bg); }
+button.danger:hover {
+  background: var(--err-bg);
+  transform: translateY(-1px); box-shadow: var(--shadow-sm);
+}
 /* W7-C（微交互一致性）：press 反馈统一——.act/.primary 已有 hover/active
    面，.minor/.danger/.chipbtn 此前只有 hover 无 active；补 1px 下压位移
    （transform 已加进各自 transition 链），触感与主按钮同构。 */
@@ -585,10 +610,13 @@ button.primary {
   border-radius: var(--radius-sm); cursor: pointer; font-weight: 650;
   box-shadow: var(--shadow-glow);
   transition: filter var(--transition-fast), transform var(--transition-fast) var(--ease-out),
-              box-shadow var(--transition-fast);
+              box-shadow var(--transition-fast) var(--ease-out);
 }
 body.light button.primary { color: #ffffff; }
-button.primary:hover { filter: brightness(1.12); transform: translateY(-1px); }
+button.primary:hover {
+  filter: brightness(1.12); transform: translateY(-1px);
+  box-shadow: var(--shadow-glow), var(--shadow);
+}
 button.primary:active { transform: translateY(0); filter: brightness(.98); }
 button.primary:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 button.primary:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -623,6 +651,11 @@ canvas.plot { background: var(--plot-bg); width: 100%; height: 260px; border-rad
   animation: toast-in var(--transition-slow) var(--ease-spring);
 }
 @keyframes toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+/* R3 人性化三批（hfssq-ui-kit P7）：退场 slide+fade——app.js msg() 到时挂
+   .msg-out 触发滑出（forwards 定格，复位类摘除由 app.js 单源时序收束；
+   reduced-motion 全局降级照常覆盖）。 */
+.msg.msg-out { animation: toast-out var(--transition-fast) var(--ease-in-out) forwards; }
+@keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }
 .msg.ok { background: var(--ok-bg); color: var(--ok); display: block; border: 1px solid var(--ok); backdrop-filter: blur(8px); }
 .msg.err { background: var(--err-bg); color: var(--err); display: block; border: 1px solid var(--err); backdrop-filter: blur(8px); }
 
@@ -770,11 +803,20 @@ details.help li { margin: 3px 0; }
   aside .foot #palette-open::before { content: "⌘"; font-size: 15px; }
   aside .foot #theme-toggle::before { content: "🌗"; font-size: 14px; }
 }
+/* R3 人性化三批（hfssq-ui-kit P7 状态色条思想）：表格行左缘 3px 状态竖线
+   ——runs 历史表与战役队列表（渲染侧按行状态挂 st-* 类，kitBadgeCls 单源
+   映射：绿=PASS/完成 红=FAIL 灰=运行中/未知；tr class 属性面，零 DOM 结构
+   变化，border-collapse 下 tr 边框可绘）。 */
+tr.st-ok { border-left: 3px solid var(--ok); }
+tr.st-err { border-left: 3px solid var(--err); }
+tr.st-muted { border-left: 3px solid var(--muted2); }
 @supports selector(:has(*)) {
-  /* 行状态竖线（guide §12.3）：按行内徽章功能色左缘指示；无徽章行不受扰 */
-  tbody tr:has(.badge.err) { box-shadow: inset 3px 0 0 var(--err); }
-  tbody tr:has(.badge.warn) { box-shadow: inset 3px 0 0 var(--warn); }
-  tbody tr:has(.badge.ok) { box-shadow: inset 3px 0 0 var(--ok); }
+  /* 行状态竖线（guide §12.3）：按行内徽章功能色左缘指示；无徽章行不受扰。
+     R3：已挂显式 st-* 类的行（runs/queue 两表）由上方 border-left 规则
+     负责——:not 让位免双条叠加（inset 3px + border-left 3px）。 */
+  tbody tr:has(.badge.err):not(.st-ok):not(.st-err):not(.st-muted) { box-shadow: inset 3px 0 0 var(--err); }
+  tbody tr:has(.badge.warn):not(.st-ok):not(.st-err):not(.st-muted) { box-shadow: inset 3px 0 0 var(--warn); }
+  tbody tr:has(.badge.ok):not(.st-ok):not(.st-err):not(.st-muted) { box-shadow: inset 3px 0 0 var(--ok); }
 }
 </style>
 </head>

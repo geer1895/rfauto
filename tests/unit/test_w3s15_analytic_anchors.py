@@ -22,7 +22,7 @@
 2. **注册表钉**：resolve_anchor 域内命中、analytic 档形态=engine_pair.
    calibrated="closedform"（与引擎档可区分，#122）、v1→v2 演进钉。
 
-弃选维持（本批复核，逐族理由沿判读报告归档不变）：
+弃选维持（本批复核，逐族理由沿 runs/aurora_d_anchd/REPORT.md 不变）：
 bend/tjunc 宽度面/wstep/dipole/pifa/helix/embedded_ms/msl_slot_transition/
 slotline_lumped 共 9 族仍零锚（tjunc 本批只立结点 S 面双锚）——任务书
 "8-12 模板"前提与树面两轮评审弃选账的差额如实报告（W3-S15 返回账）。
@@ -238,7 +238,7 @@ def test_w3s15_batch_count_and_expected_source_sync() -> None:
         for fam in (entry.get("template_family") or [])
         if fam in TEMPLATE_META
     }
-    assert len(covered) == 64  # W3-S15 批 60→64（+4 族：ms_ring_patch/
+    assert len(covered) == 72  # W4-S15 批 +8=72/72 全覆盖（本批时点 60→64；aurora_j 转正批 2026-10-23 +8 族：ms_ring_patch/
     # ms_array_NxN=缺陷接替实覆盖、tjunc、mline）
     for fam in ("ms_patch", "ms_ring_patch", "ms_array_NxN", "tjunc",
                 "mline"):

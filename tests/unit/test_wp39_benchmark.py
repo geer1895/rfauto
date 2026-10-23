@@ -294,6 +294,7 @@ class TestRunnerDryRun:
         assert data["wall_s"]["optimization_s"] >= 0.0
         assert data["metric_name"] in ("s11_f0_db", "s31_f0_db")
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（49.4s，bench 判读 dry-run 三问题×双引擎）
     def test_judge_on_dry_results(self, tmp_path):
         pytest.importorskip("smt")
         for problem in ("mline", "patch", "ratrace"):

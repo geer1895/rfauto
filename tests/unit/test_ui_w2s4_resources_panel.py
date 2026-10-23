@@ -328,6 +328,7 @@ class TestJsPureFunctions:
             "queue.res_tasks_tpl", "queue.res_disk_tpl",
             "queue.res_local_label", "queue.tab_all", "queue.tab_running",
             "queue.tab_done", "queue.tab_failed", "queue.filter_empty",
+            "queue.block_deps_tpl",
         ]
         out = _run_node_js(
             "const m = await import('./pages/i18n.js');\n"
@@ -340,7 +341,7 @@ class TestJsPureFunctions:
             "}\n"
             "if (errs.length) throw new Error(errs.join('; '));\n"
             "console.log('ok:keys:' + want.length);\n")
-        assert "ok:keys:23" in out
+        assert "ok:keys:24" in out
 
 
 # ─── 源码钉（免 node；跨席计数钉与合流面） ────────────────────────────────────
@@ -374,6 +375,10 @@ class TestSourcePins:
         assert 't("queue.th_block_reason")' in q
         assert ("${queueBlockHtml(c.queue_block) || hedgeHtml(c.queue_hedge)"
                 " || \"<span class='muted'>—</span>\"}") in q
+        # W5-S20（aurora_j 审查清偿）：依赖门码 deps_blocked 有专属 i18n
+        # 分支（等依赖：{detail}）——落在未知码回退链之前的显式词表面。
+        assert 'b.code === "deps_blocked"' in q
+        assert 't("queue.block_deps_tpl"' in q
         # 本席面：机器卡容器 + 资源请求点（字面量含 "?"，契约门归一按 ?
         # 截断得精确路径——campaign_queue 先例）+ 推荐行 + 维护遮罩在位
         assert "id='q-resources'" in q

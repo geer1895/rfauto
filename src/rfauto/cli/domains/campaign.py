@@ -220,11 +220,16 @@ def campaign_run_cmd(
 
 @campaign_app.command("digest")
 def campaign_digest_cmd(
-    root: str = typer.Option("runs", "--root", help="战役计划扫描根目录（直属子目录 campaign.plan.json，与 campaign list 同口径）"),
+    root: str = typer.Option("runs", "--root", help="战役计划扫描根目录（直属子目录 campaign.plan.json，与 campaign list 相同）"),
     out_dir: str = typer.Option(None, "--out-dir", help="digest 产物落盘目录（缺省 runs/campaign_digest/）"),
-    since_h: float = typer.Option(None, "--since-h", help="时间窗：只统计计划文件距今 N 小时内的战役（24=昨晚口径；缺省不过滤）"),
-    include_running: bool = typer.Option(False, "--include-running", help="把 RUNNING 等非终态战役也计入摘要（如实标注进行中）"),
+    since_h: float = typer.Option(None, "--since-h", help="时间窗：只统计计划文件距今 N 小时内的战役（24=昨晚以来；缺省不过滤）"),
+    include_running: bool = typer.Option(False, "--include-running", help="把 RUNNING 等非终态战役也计入摘要（进行中的照实标注）"),
     no_write: bool = typer.Option(False, "--no-write", help="只打印摘要不落盘"),
+    notify: bool | None = typer.Option(
+        None, "--notify/--no-notify",
+        help="webhook 推送三态开关：缺省=读 env 配置决定，"
+             "RFAUTO_NOTIFY_WEBHOOK_URL/RFAUTO_NOTIFY_FEISHU_WEBHOOK 均未"
+             "设即关；--notify=配置了就推；--no-notify=这一次不推"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """扫描战役终态（COMPLETE/PARTIAL/ABORTED）聚合成 zh 人读摘要，JSON+文本产物落 runs/ 下。"""
@@ -232,7 +237,7 @@ def campaign_digest_cmd(
 
     result = campaign_digest(
         root, out_dir=(out_dir if out_dir else None), since_h=since_h,
-        include_running=include_running, write=not no_write)
+        include_running=include_running, write=not no_write, notify=notify)
     _emit(result, "战役摘要生成失败", json_output=json_output)
     if json_output:
         return
@@ -245,19 +250,25 @@ def campaign_digest_cmd(
 
 @campaign_app.command("queue-daemon")
 def campaign_queue_daemon_cmd(
-    root: str = typer.Option("runs", "--root", help="队列扫描根目录（直属子目录的 campaign.plan.json=队列项，与队列页同口径）"),
+    root: str = typer.Option("runs", "--root", help="队列扫描根目录（直属子目录的 campaign.plan.json=队列项，与队列页相同）"),
     once: bool = typer.Option(False, "--once", help="单步模式：执行一个 tick 即退出（测试/cron 拉起）"),
     interval_s: float = typer.Option(60.0, "--interval-s", help="常驻轮询间隔（秒）"),
     machine: str = typer.Option(None, "--machine", help="license 预检指名机器（缺省=注册表缺省机器）"),
     license_gate: bool | None = typer.Option(
         None, "--license-gate/--no-license-gate",
-        help="license 预检门三态（#277 惯例）：缺省=仅对声明 license 消耗面"
+        help="license 预检三态开关：缺省=仅对声明 license 消耗面"
              "（stage license_gated/adapter=hfss）的计划预检；--license-gate="
              "全部强制预检；--no-license-gate=一律不预检"),
     state_path: str = typer.Option(None, "--state-path", help="队列状态 JSON 落盘路径（缺省 runs/campaign_queue/queue_state.json，崩溃重启可续）"),
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出（--once=信封；常驻=逐 tick JSON 行流）"),
 ) -> None:
-    """campaign 排队常驻执行体（UX-B7）：轮询队列→日历窗→license 预检→逐项发射（发射后不等）。"""
+    """campaign 排队常驻执行体：轮询队列→依赖检查→日历窗→license 预检→逐项启动（启动后不等）。
+
+    长时间无进展的对冲（缺省关）走 env 配置：RFAUTO_QUEUE_HEDGE_STALL_S=
+    无进展告警阈值秒数；RFAUTO_QUEUE_HEDGE_RELAUNCH=1 开启自动重发
+    （缺省只告警，每项至多重发一次）。写法与语义见
+    docs/how-to/campaign-queue-and-notify.md。
+    """
     from rfauto.service.campaign_queue_daemon import run_queue_daemon
 
     def _tick_line(payload: dict) -> None:

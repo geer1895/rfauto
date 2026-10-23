@@ -110,7 +110,7 @@ def test_real_tree_baseline_within_ratchet():
     records = [mod._record_to_dict(r) for r in anchor_set.records]
     rep = mod.audit_records(records, datetime.now(timezone.utc),
                             ratchet=mod.FRESH_RATCHET_MISSING)
-    assert rep["total"] == 79  # 单源口径：core EXPECTED_ANCHOR_COUNT 同值（W3-S15 批 75→79 沿革）
+    assert rep["total"] == 87  # 单源口径：core EXPECTED_ANCHOR_COUNT 同值（W4-S15 批 79→87 沿革）
     assert len(rep["missing_last_verified"]) <= rep["ratchet"]
     assert mod.verdict(rep) == 0
 

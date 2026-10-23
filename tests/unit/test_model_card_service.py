@@ -109,6 +109,41 @@ class TestLakeCards:
         assert card["ok"] is True
         assert card["n_matched_runs"] == 1
 
+    def test_lake_card_old_model_name_anchor_linkage(
+            self, tmp_path: Path, monkeypatch):
+        """旧名湖卡锚联动（aurora_j W1-S2）：锚 template_family 用现行
+        名空间，湖卡 model_id 直取 meta.model 可能是 P0–P6 旧名——
+        归一后命中（本测钉无 * 通配场景：此前旧名恒 no_data；现行名
+        路径不受影响，零行为变化由 test_lake_card_run_history 钉）。"""
+        import rfauto.infra.anchors_store as anchors_store
+        from rfauto.core.anchors import AnchorSet
+
+        _make_run(tmp_path, "camp", "r1", "wilkinson_power_divider")
+        rec_raw = {
+            "anchor_id": "test.link.openems-hfss-v1",
+            "kind": "constant",
+            "status": "active",
+            "template_family": ["wilkinson"],  # 现行名，无 * 通配
+            "engine_pair": {"calibrated": "openems", "referee": "hfss"},
+            "quantity": {"name": "alias_link_probe", "unit": "1",
+                         "semantics": "旧名归一联动探针（合成）"},
+            "value": 1.0,
+        }
+        # _linked_anchor_drift 调用期 lazy import → 模块属性补丁生效；
+        # 行内 anchor_drift_status 走未补丁的真实注册表 → 未知锚
+        # ok=False → 行 verdict 如实 no_data（合成锚不污染判读）。
+        monkeypatch.setattr(
+            anchors_store, "load_anchors",
+            lambda path=None, **kw: AnchorSet([rec_raw]))
+        card = build_model_card("wilkinson_power_divider", "lake",
+                                runs_dir=tmp_path,
+                                store_path=tmp_path / "snapshots.json")
+        assert card["ok"] is True
+        assert card["n_matched_runs"] == 1
+        drift = card["drift_status"]
+        assert drift["available"] is True
+        assert "1 个联动锚" in drift["reason"]
+
     def test_lake_unknown_family_lists_available(self, tmp_path: Path):
         _make_run(tmp_path, "camp", "r1", "wilkinson")
         out = build_model_card("ghost", "lake", runs_dir=tmp_path)

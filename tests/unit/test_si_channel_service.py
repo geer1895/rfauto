@@ -267,6 +267,7 @@ class TestCausality:
 # ---------------------------------------------------------------------------
 
 class TestCom:
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（24.7s，COM 4 端口全流程）
     def test_4port_full_flow_in_band(self, tmp_path: Path) -> None:
         s4p = _write_s4p_decoupled_pair(tmp_path / "thru.s4p")
         rep = si_channel_report(s4p)

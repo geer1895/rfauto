@@ -1,18 +1,18 @@
-"""W4-D（架构批）首屏加载性能钉：vendor 预取 + palette 导出图表事件桥。
+"""W4-D（aurora36）首屏加载性能钉：vendor 预取 + palette 导出图表事件桥。
 
 钉三件事：
-1. index.html head 预取基座（R1 审计 P1-12 方案 Y → 架构批 W3-S9 P8-2
+1. index.html head 预取基座（R1 审计 P1-12 方案 Y → aurora_f W3-S9 P8-2
    重审改钉）：echarts 用 <link rel="preload" as="script">（body 尾经典
    script 提前首字节，执行位置/顺序不变）；**three 的 modulepreload 已删除**
    ——three 改 3D 调用点动态 import（app.js drawBoxes / view_fieldviz
-   drawIsoMesh，架构批 W3-S9；旧否决理由=monolith 时代 pages.js 同步消费
+   drawIsoMesh，aurora_f W3-S9；旧否决理由=monolith 时代 pages.js 同步消费
    T.THREE，现状消费面在动态 import 链内已失效），保留预取会让每个首屏都
    强制下完 1.27MB（gzip 256,743B=首屏线传 36% 单件），与懒加载目的相抵。
    改钉方向=modulepreload 缺席为常态（回流钉），importmap three 映射保留
    （动态 import 的解析单源）。
 2. echarts 预取 href 与消费点单源一致：preload href == body 尾 echarts
    <script src>——防预取 URL 漂移落空成第二份下载。
-3. palette act-export-chart（W4-D）：命令总数 20（同步钉；架构批 W2-S5 act-locale 语言命令落地同笔 14→15；架构批 W5-S17 动作扩充同笔
+3. palette act-export-chart（W4-D）：命令总数 20（同步钉；aurora_f W2-S5 act-locale 语言命令落地同笔 14→15；aurora_f W5-S17 动作扩充同笔
    15→20，动作 4→9，详见 test_ui_palette_cmds）
    test_ui_palette_cmds）；发射端 fireExportChart——window 缺席环境（node）
    静默守卫不抛；window 在场时派发 CustomEvent，事件名恒
@@ -47,7 +47,7 @@ _HEAD = re.search(r"<head>(.*?)</head>", _INDEX, re.S).group(1)
 
 class TestVendorPreload:
     def test_three_importmap_mapping_present_no_modulepreload(self):
-        # P8-2（架构批 W3-S9 重审改钉）：three 动态 import 的解析单源=
+        # P8-2（aurora_f W3-S9 重审改钉）：three 动态 import 的解析单源=
         # importmap 映射必须保留；modulepreload 必须**缺席**——回流即等于
         # 每个首屏强制下完 three（1.27MB/gzip 256,743B），抵消懒加载收益。
         im = re.search(r'"three"\s*:\s*"([^"]+)"', _INDEX)

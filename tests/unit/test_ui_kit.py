@@ -1,4 +1,4 @@
-"""架构批 A7-A（R6 审计 R-3 试点）UI-KIT 三件行为钉 + 逐字节等价钉。
+"""aurora72 A7-A（R6 审计 R-3 试点）UI-KIT 三件行为钉 + 逐字节等价钉。
 
 两层钉（同 test_ui_xss_escape 口径）：
 1. **行为钉（node 真执行）**：动态 import pages.js，对 kitTable/kitPanelHead/
@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]
@@ -413,7 +413,7 @@ class TestKitSourcePins:
         # （列头复用 runs.th_inband_s11 既有键，zh 值同笔）
         # W2-S1 批 4：tools 扫参表列头 响应/状态 迁词表 t()
         # （tools.th_response/th_status 新键，zh 值同笔）
-        # 架构批 W4-S1：agent 提案表列头 参数/当前值/提案值 迁词表 t()
+        # aurora_h W4-S1：agent 提案表列头 参数/当前值/提案值 迁词表 t()
         # （agent.th_param/th_current/th_proposed 新键，zh 值同笔）
         assert src.count("kitTable({") == 10
         for needle in (
@@ -437,7 +437,7 @@ class TestKitSourcePins:
     def test_migrated_panel_head_and_badge_consumers_present(self):
         src = _PAGES
         # 8 消费点 + 1 定义 = 9 处 kitPanelHead(
-        # 架构批 W4-S1：tune 结果/reports 双 run 对比/loopboard 里程碑
+        # aurora_h W4-S1：tune 结果/reports 双 run 对比/loopboard 里程碑
         # 三处面板题迁词表 t()（tune.result_title/reports.diff_title/
         # loopboard.ms_title 新键，zh 值同笔）
         assert src.count("kitPanelHead(") == 9
@@ -473,7 +473,7 @@ class TestKitSourcePins:
     def test_honest_non_migration_pins_untouched(self):
         """如实不迁点原样在位（字节不等/语义差异，逐条注记原因）。"""
         src = _PAGES
-        # ① runs 表：行点击路由钉（test_ui_routing）——UI-R4（架构批，A6
+        # ① runs 表：行点击路由钉（test_ui_routing）——UI-R4（aurora_d，A6
         #    P1-5 清偿）随 kit bindClickRows 单源收编更新本钉（键盘可达同笔；
         #    openRun 单入口深链语义不变）；状态列恒 muted（语义=次要信息非
         #    状态灯，与 KIT_STATUS_CLS.done:ok 不同）+ w7c 悬停钉不动

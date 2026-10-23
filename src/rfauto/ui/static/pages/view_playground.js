@@ -114,9 +114,10 @@ export async function pagePlayground() {
           lower: cur.mean.map((m, i) => m - cur.std[i]),
           upper: cur.mean.map((m, i) => m + cur.std[i]) });
     // PR-3 PlotCard 换壳：option 与迁移前等价（base 路径，含 band 系列）
+    // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，与 cred 卡同款组合）
     T.plotCard(T.$("pg-ex-chart"), {
       series,
-      xlabel: axisName, ylabel: key, xvalue: true, height: "300px",
+      xlabel: axisName, ylabel: key, xvalue: true, crosshair: true, height: "300px",
       exportName: "explore-sweep", exportCsv: false,
     });
     st.textContent = `engine=${r.engine} · ${r.has_variance ? "mean±1σ" : t("playground.no_native_std")}`

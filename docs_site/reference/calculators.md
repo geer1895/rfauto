@@ -1,6 +1,6 @@
 # 计算器注册表参考
 
-> `CALCULATOR_REGISTRY` 实注册 **323** 个（含实验键共 **324** 个；实验键默认不列、需显式开关）。与 `scripts/check_numbers.py` 的 `count_calculators()`/`count_calculators_all()` 构建时逐位互证。运行入口 `rfauto calc list` / `rfauto calc run <名> -p k=v`。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> `CALCULATOR_REGISTRY` 实注册 **329** 个（含实验键共 **330** 个；实验键默认不列、需显式开关）。与 `scripts/check_numbers.py` 的 `count_calculators()`/`count_calculators_all()` 构建时逐位互证。运行入口 `rfauto calc list` / `rfauto calc run <名> -p k=v`。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 数值只在确定性内核（LLM/agent 永不产生物理数字）；每键的输入表由 `tests/unit/test_physics_invariants.py` 物理不变量门逐键消费。
 
@@ -90,6 +90,20 @@ AM功率分配：AM DSB-LC 载波/边带功率分配闭式（Rappaport §5.2 同
 | `vswr` | float VSWR 档 S（>1，缺省 2） | 否 |
 | `ka` | float k·a 电尺寸（>0 可选；给定时附 Chu 界 verdict） | 否 |
 | `polarization` | str 线/圆极化档：linear/circular（缺省 linear，圆极化 Chu 界减半） | 否 |
+
+## aperture_efficiency_components
+
+反射面效率分量分解（W4-S13）：焦馈抛物面 η_ap=η_s(溢出)·η_i(照射)·η_p(极化)·η_δ(表面公差)——η_s=1−cos^{q+1}θ₀（cos^q 功率方向图前半球馈）、η_i=η_ap/η_s（口径面积分口径 |∫E_a dA|²/(A∫|E_a|²dA) 的射线映射实现）、η_δ=exp[−(4πσ/λ)²]（Ruze 1966），+η-加权方向性 dBi=10log10(η_ap·(πD/λ)²)。分布档：uniform（q=0）/cos2（q=2 经典边照档），q_power 显式覆盖；θ₀=2·atan(1/(4·f/D))，f/D≥1/4 守卫。单源 core/reflector_antenna（公式零复制）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `profile` | str 口径分布档：uniform/cos2（档义见模块 docstring） | 是 |
+| `f_over_d` | float 焦径比 F/D（≥0.25；θ₀=边缘半角 ≤90° 前半球馈域） | 是 |
+| `f_ghz` | float GHz 工作频率（>0；λ/Ruze σ 换算与方向性） | 是 |
+| `diameter_m` | float m 反射面口径直径（>0） | 是 |
+| `sigma_over_lambda` | float λ 口径面法向 rms 表面误差/波长（≥0，缺省 0=理想面） | 否 |
+| `eta_polarization` | float 极化效率 η_p（∈(0,1]，缺省 1） | 否 |
+| `q_power` | float 馈源功率指数 q 覆盖（≥0 可选；给定时忽略 profile） | 否 |
 
 ## array.bayliss_weights
 
@@ -350,6 +364,22 @@ DP-5 级联预算：stage 列表 → 总增益/Friis NF/IIP3·OIP3 级联/P1dB(�
 | `sample_triangles_mm` | array (n,3,3) 样品水密三角网格（mm，体素路线） | 否 |
 | `sample_eps_r` | float - 样品相对介电常数（>1；缺省=金属微扰路线） | 否 |
 | `voxel_mm` | float mm 体素步长上限（网格路线；缺省自动=样品最大边/24） | 否 |
+
+## cavity_tm010_perturbation_shift
+
+TM010 圆柱腔微扰介质测量：轴上细杆样品一阶微扰正反解（f0=x01·c/2πa、x01=2.4048；填充因子 F 含 J0²+J1² Bessel 恒等式精确场权，细杆极限=文献 0.539/0.269 几何常数式）；εr′↔Δf 恰给其一（正解/反解互斥），Q 面可选（tanδ+Q0→Qs / Qs+Q0→εr″·tanδ）；εr′≤1 或 Δf≤0 非物理显式拒绝；与 cavity_perturbation_shift（TE101 矩形腔）同定理异几何
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `a_mm` | float mm 腔半径（>0） | 是 |
+| `h_mm` | float mm 腔高（>0） | 是 |
+| `sample_radius_mm` | float mm 轴上样品杆半径（0<rs<a） | 是 |
+| `sample_height_mm` | float mm 样品高（0<hs≤h；TM010 无 z 依赖，取样体积即可） | 是 |
+| `epsilon_r` | float - 样品相对介电常数（正解方向，>1；与 df_ghz 恰给其一） | 否 |
+| `df_ghz` | float GHz 实测频移 f_loaded−f_empty（反解方向，<0；与 epsilon_r 恰给其一） | 否 |
+| `tan_delta` | float - 样品损耗正切（正解 Q 面，须配 q_empty；≥0） | 否 |
+| `q_empty` | float - 空腔无载 Q（Q 面必配项，>0） | 否 |
+| `q_sample` | float - 加载腔无载 Q（反解 Q 面，>0，与 tan_delta 恰给其一） | 否 |
 
 ## cavity_unloaded_q
 
@@ -783,6 +813,16 @@ combline 耦合缝→间隙换算：k_ij（MYJ 综合归一化耦合=δ/√(g_j�
 | `test_level` | int 严酷度等级 1\|2\|3（Table 1 emf 口径；与 emf_v 恰给其一） | 否 |
 | `emf_v` | float V 显式电动势 emf（开路口径，>0；与 test_level 恰给其一） | 否 |
 | `system_z_ohm` | float Ω 系统阻抗（>0，缺省 50） | 否 |
+
+## conductor_surface_impedance
+
+良导体表面阻抗基准面：趋肤深度 δ=√(2/(ωμ0μrσ))、表面电阻 Rs=√(πfμ/σ)=1/(σδ)、复表面阻抗 Zs=Rs(1+j)（良导体 45° 口径，[re,im] 服务复数约定）；薄注册单源复用 core/conductor_loss；μr 幂律标度（μr×4 → δ×2、Rs×2）；分层镀层/超导/衰减率消费面不并入
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `f_hz` | float Hz 工作频率（>0） | 是 |
+| `sigma_s_per_m` | float S/m 导体电导率（>0；铜 5.8e7） | 是 |
+| `mu_r` | float 相对磁导率（>0，缺省 1；铁磁材料微波 μr 取值注意弛豫，如实注记不猜） | 否 |
 
 ## corona_pd_check
 
@@ -1708,6 +1748,18 @@ MM-7 三混合式统一面（规格 §五 :154，通用 core 内核）：rule �
 | `v_inclusion` | float 夹杂体积分数 ∈[0,1]（端点恒等直返） | 是 |
 | `depol` | float depolarization 因子 L ∈[0,1]（默认 1/3=球形） | 否 |
 
+## horn_aperture_efficiency
+
+最优角锥喇叭增益效率（W4-S13）：口径 a_p×b_p 与 E/H 面径向长 → η_ap（一阶 Fresnel 闭式 (21.4.3)，最优厚度条件 δ_H=3λ/8、δ_E=λ/4 → η_ap≈0.51 Balanis Ch.13 文献口径）、增益 G=η_ap·(4π/λ²)·a_p·b_p（(21.4.2)）、HPBW_E≈54°·λ/b_p、HPBW_H≈78°·λ/a_p（最优喇叭设计关系，大口径近似）。单源 core/horn_synthesis（公式零复制）；偏离最优以 delta_*/near_optimum 如实暴露
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `a_p_mm` | float mm 口径宽边 a_p（H 面，>0） | 是 |
+| `b_p_mm` | float mm 口径窄边 b_p（E 面，>0） | 是 |
+| `l_h_mm` | float mm H 面径向长 ρ₁（虚顶点→口径面，>0） | 是 |
+| `l_e_mm` | float mm E 面径向长 ρ₂（虚顶点→口径面，>0） | 是 |
+| `f_ghz` | float GHz 工作频率（>0；λ=自由空间 c/f） | 是 |
+
 ## hybrid_sum_difference
 
 魔 T/180° 混合结和差合成：双侧臂复数输入（dBm+相对相位）→ 和口 b_sum=(a2+a3)/√2 与差口 b_diff=(a2−a3)/√2 功率（dBm，null 如实 None）+占总功率份额；能量守恒 |b_sum|²+|b_diff|²=|a2|²+|a3|² 恒等（残差字段）；等幅同相→差口 null（隔离）、反相→和口 null、正交→恰各半 −3.0103dB。锚：与 magic_tee_s_matrix 全矩阵乘 b=S·a 匹配负载口径跨键逐位互证；正交 3.0103dB 恒等
@@ -2615,6 +2667,19 @@ PLL环路滤波：MT-5 三阶 PLL 环路滤波器综合（round17 MT-5，Banerje
 | `t_x_f2` | float\|[re,im] f2 频点 x 极化透射系数 | 是 |
 | `t_y_f1` | float\|[re,im] f1 频点 y 极化透射系数 | 是 |
 | `t_y_f2` | float\|[re,im] f2 频点 y 极化透射系数 | 是 |
+
+## polarization_loss_factor
+
+极化失配因子 PLF（W4-S13）：PLF=|ê_r·ê_t|²（Balanis 4th §4.4.3 + IEEE Std 145-1983 薄注册；公式单源 core/polarization 零复制）。收发各给极化态 (E1,E2,delta_deg)（两正交分量幅度+相位差，同横截面基）→ plf_linear∈[0,1] 与 plf_db。经典锚：对齐线 1/正交线 0/45° 交叉 0.5（−3.0103 dB）/同向圆 1/反向圆 0/圆×线 0.5（−3.0103 dB）。plf→0 时 plf_db 按 −300 dB 地板截断（真值 −∞，JSON 安全如实）
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `e1_rx` | float 收端第一正交分量幅度（≥0） | 是 |
+| `e2_rx` | float 收端第二正交分量幅度（≥0；两分量不全零） | 是 |
+| `delta_rx_deg` | float ° 收端相位差 phase(E2)−phase(E1)（任意实数） | 是 |
+| `e1_tx` | float 发端第一正交分量幅度（≥0） | 是 |
+| `e2_tx` | float 发端第二正交分量幅度（≥0；两分量不全零） | 是 |
+| `delta_tx_deg` | float ° 发端相位差 phase(E2)−phase(E1)（任意实数） | 是 |
 
 ## power_cal_chain
 
@@ -3878,6 +3943,18 @@ Weibull 概率纸作图回归（完全样本）：Benard 中位秩 p=(i−0.3)/(
 | `t_mm` | float mm 介质片厚度（核验档；缺省=设计档 m·λg,slab/2） | 否 |
 | `m_order` | int 半波长阶数（设计档 t=m·λg,slab/2；≥1，缺省 1——工程取最薄档） | 否 |
 | `freq_ghz` | float\|list GHz 逐频扫描点（可选——带宽面 \|S11\|/\|S21\| 逐点闭式） | 否 |
+
+## wg_evanescent_attenuation
+
+矩形波导 TE10 截止下倏逝传播解：fc=c/2a√(εrμr)、α=k√((fc/f)²−1) Np/m（深截止 f≪fc → α→π/a 只由几何决定）+倏逝波阻抗 ηc=jη0√(μr/εr)/√((fc/f)²−1)（纯虚感抗，e^{jωt} 口径）+dB/m 换算；f≥fc 行波区显式拒绝（传播态用 wg_te10_attenuation）；同轴线 TE11 截止衰减器=coax_line_cutoff_attenuator 器件面不撞
+
+| 参数 | 说明 | 必填 |
+|---|---|---|
+| `a_mm` | float mm 波导宽边（TE10 截止=c/2a√(εrμr)；>0） | 是 |
+| `f_ghz` | float GHz 工作频率（须<fc，截止以下倏逝态；≥fc 显式拒绝） | 是 |
+| `b_mm` | float mm 波导窄边（>0 且 ≤a_mm，可选——TE10 倏逝量与 b 无关，给出即校验标准口径） | 否 |
+| `epsilon_r` | float 填充相对介电常数（≥1，缺省 1） | 否 |
+| `mu_r` | float 填充相对磁导率（>0，缺省 1） | 否 |
 
 ## wg_iris_match
 

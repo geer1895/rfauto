@@ -163,7 +163,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `runs/xa1_arbitration/l5_sweep/criteria.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："仲裁 INCONCLUSIVE 在档 runs/xa1_arbitration/；语义终裁挂 L5 v2 批，"
 
-测试面（tests/unit 引用扫描，机读；合计 **1502** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -240,6 +240,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_w3s15_analytic_anchors.py` | 7 |
 | `tests/unit/test_w4_a_sm_core.py` | 21 |
 | `tests/unit/test_w4_w4e_anchors.py` | 10 |
+| `tests/unit/test_w4s15_anchor_batch.py` | 11 |
 | `tests/unit/test_w6_d_so_leftovers.py` | 32 |
 | `tests/unit/test_w6_f_anchors_cpw.py` | 7 |
 | `tests/unit/test_width_single_source.py` | 11 |

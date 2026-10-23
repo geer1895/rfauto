@@ -200,6 +200,7 @@ class TestRefineRecoveryPin:
         assert len(phys_rep) == 1
         assert phys_rep[0] == pytest.approx(2.50, rel=1e-2)
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（34.5s，refine 恢复链真跑 harness 形态）
     def test_dual_physical_no_false_spurious(self):
         """双物理模对照（无一伪）：两模 α/ω 均 ≤1% 回收且分类零改动。"""
         t, u = _synth_modes(T_EXC + RING_PIN_S,

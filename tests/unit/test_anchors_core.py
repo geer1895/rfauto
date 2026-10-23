@@ -1,4 +1,4 @@
-"""DP-3 锚注册表纯内核测试（判据 a 核心 + c，）。
+"""DP-3 锚注册表纯内核测试（判据 a 核心 + c，预声明 runs/df6_dp3anchors/criteria.md）。
 
 - a1：c3.l_via_h 锚值与 openems_templates.C3_L_VIA_CAL_H 逐位相等；
 - a3：cps.gamma_er 锚公式（AST 白名单求值）与 calculators.
@@ -47,7 +47,7 @@ def test_expected_anchors_single_source_shape() -> None:
     # + ge8e X5 解析档锚批（wf:review-ge8e-x5，2026-10-04）：首批 analytic
     # 锚扩面 13 席（atten_pi/atten_t/ratrace/stripline/slotline/siw/
     # monopole/coil_nfc/pyramid_horn 九族闭式恒等锚）13 = 48
-    assert len(EXPECTED_ANCHORS) == 79  # 解析锚续批 +4（ms_lattice.period v2 接替/tjunc s11+s21/mline.z0；v1 retired 留册）；锚批序列累计（X5 解析档/TA 恒等锚/aurora_d 两批等，随批更新）
+    assert len(EXPECTED_ANCHORS) == 87  # aurora_j W4-S15 批 +8（wstep/bend/dipole/pifa/helix/embedded_ms/msl_slot_transition/slotline_lumped 无锚差集清偿，2026-10-23）  # aurora_e W3-S15 批 +4（ms_lattice v2/tjunc×2/mline；v1 retired 留册）  # aurora_d ANCH-D 席 +5（coax_wg backshort/sma r_o/patch_eep W+L/ms_lattice period analytic 锚第四批）  # aurora_d SENS-ANC 批 +10（loop/slot/ifa/lange/cline_coupler/branchline_2sect/via/ms_mushroom/ms_jcross/ms_patch analytic 锚第三批）  # ge8e X5 批 +13  # ge8 K-4 锚演进 +1  # ge8 TA 批三 +4  # ge8 TA 批二 +4  # ge8 TA 批 20→22  # ge8b WA 席1 +3
     assert all(a.count(".") >= 2 and "-v" in a for a in EXPECTED_ANCHORS)
 
 
@@ -252,7 +252,7 @@ def test_c6_residual_beyond_threshold_stale_alarm() -> None:
     assert rec is not None and rec.status == "stale"  # 仅内存面；YAML 零改写
 
 
-# ── HFSS 窗 B→A 批（2026-09-29）：锚值与 verdict 互证 ──
+# ── HFSS 窗 B→A 批（wf:anchor-register，2026-09-29）：锚值与 verdict 互证 ──
 # 三层互证：yaml 装载 → core resolve → verdict.json 实测门值逐位（只读证据，
 # runs/ 归档零改写）。
 
@@ -360,10 +360,10 @@ def test_b2a_window_anchors_stale_age_semantics() -> None:
         assert row[aid]["stale"] is True, aid  # 过线即 stale
 
 
-# ── P-KJ-EVEN P3 批（2026-09-30）：KJ even 闭式适用域盒锚───────
+# ── P-KJ-EVEN P3 批（wf:goal-t5，2026-09-30）：KJ even 闭式适用域盒锚───────
 # 域盒语义钉：入盒 hit+域内基准逐位；越域消费点（P1 §4/§8.6 清单）结构化
 # fallback=out_of_domain（越域告警语义，不抛）；两条域缘 MARGINAL 注记随
-# provenance 落档。证据链=内部证据档（公开分发视图不随附），判读口径
+# provenance 落档。证据链：runs/df7_kjeven p1_audit §8.5/§8.6 → p2 判读
 # §4/§6 → elmer_recheck §5（T3 核验 0795b2a 解锁）。
 
 _KJ_DOMAIN_AID = "coupled_microstrip.kj_even_domain.lit-v1"
@@ -420,21 +420,21 @@ def test_kj_even_domain_edge_notes_registered() -> None:
     assert rec.uncertainty is not None and rec.uncertainty["value"] == 1.0
 
 
-# ── ge6 Wave1 锚注册批（2026-10-01）：Dk 指针锚互证 ─────────
-# 三层互证：yaml 装载 → core resolve → runs/ 证据档实测值逐位（只读证据，
-# runs/ 归档零改写；B2A verdict 同口径——证据档仓本机在档）。
+# ── ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）：Dk 指针锚互证 ─────────
+# 三层互证：yaml 装载 → core resolve → 验收证据档实测值逐位。证据档
+# =tests/gold/anchors_evidence/（ge9 审查 R7 P1-2 自 runs/ 迁 gold 入库：
+# 原路径 gitignored 干净检出必红；两 JSON 按"验收证据"语义字节一致入库，
+# runs/ 原件留痕零改写；B2A verdict 同口径）。
 
 _RING_DK_AID = "ring.design_dk.openems-hfss-v1"
 _MMWAVE_DK_AID = "mmwave.design_dk.ro3003-oe-v1"
+_ANCHORS_EVIDENCE_DIR = (_REPO_ROOT / "tests" / "gold" / "anchors_evidence")
 
 
 def test_ge6_ring_pointer_dual_values_bit_exact_vs_prep() -> None:
-    _ev = Path(__file__).resolve().parents[2].joinpath("runs", "ge5_fa3_dk", "anchor_prep.json")
-    if not _ev.exists():
-        pytest.skip("runs/ 证据档缺席（公开分发视图）: " + str(_ev))
     """ring Dk 指针锚：双值逐位=FA3 预备稿 anchor_prep.json（DISAGREE 实测）。"""
     prep = json.loads(
-        (_REPO_ROOT / "runs" / "ge5_fa3_dk" / "anchor_prep.json")
+        (_ANCHORS_EVIDENCE_DIR / "anchor_prep.json")
         .read_text(encoding="utf-8"))
     assert prep["anchor_id"] == _RING_DK_AID
     assert prep["kind"] == "pointer" and prep["status"] == "experimental"
@@ -457,12 +457,9 @@ def test_ge6_ring_pointer_dual_values_bit_exact_vs_prep() -> None:
 
 
 def test_ge6_mmwave_pointer_value_bit_exact_vs_rejudge() -> None:
-    _ev = Path(__file__).resolve().parents[2].joinpath("runs", "ge6_anchor", "rejudge")
-    if not _ev.exists():
-        pytest.skip("runs/ 证据档缺席（公开分发视图）: " + str(_ev))
     """mmwave Dk 指针锚（OE 单引擎）：值逐位=离线复判 verdict 注册值。"""
     verdict = json.loads(
-        (_REPO_ROOT / "runs" / "ge6_anchor" / "verdict.json")
+        (_ANCHORS_EVIDENCE_DIR / "verdict.json")
         .read_text(encoding="utf-8"))
     assert verdict["verdict"] == "PASS" and verdict["zero_resim"] is True
     assert verdict["gates"]["R3_old_nominal_explained_by_dk_anchor"] is True

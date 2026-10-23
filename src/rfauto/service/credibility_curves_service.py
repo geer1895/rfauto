@@ -172,6 +172,47 @@ def registered_families() -> list[str]:
     return [str(f["template"]) for f in _FAMILIES]
 
 
+#: 存量 run 旧模型名 → 现行模板名（aurora_j W1-S2 席 2026-10-23）。
+#: 证据链：P0–P6 时代（2026-08-27~08-30）模型插件恰三族
+#: src/rfauto/models/{wilkinson_power_divider,branchline_coupler,
+#: patch_antenna}/（git 851614e8 的 models/registry.py 实测）；v3 模板库
+#: 扩充（936a8e8e 2026-09-01，"branchline/dipole/stepped/coupled_line"）
+#: 起改用现行短名 wilkinson/branchline/patch（f65a9afe 2026-09-02
+#: "wilkinson/patch openEMS 真跑"旁证；patch_antenna→patch 另有参数面
+#: 实证：湖内 patch_antenna run 的 samples.json bounds 恰为现行 patch
+#: 族 TEMPLATE_NOMINAL 的 patch_len_mm/patch_w_mm 同名参数）。
+#: runs/ 湖 meta.model 旧名存量实测（2026-10-23 抽样 1819 份 meta.json）：
+#: wilkinson_power_divider×~1290 / branchline_coupler×~77 /
+#: patch_antenna×4。映射只认此处**显式登记**的历史名——不做模糊/前缀
+#: 匹配（模糊匹配会制造假对照，违反诚实降级原则）；表为空时零行为
+#: 变化。注意：别名解析到的是**模板注册表名空间**（72 族）——归一结果
+#: 未必在本服务对照注册表（如 patch 不在 _FAMILIES 9 族），此时与直查
+#: 该现行名同样走诚实空态（别名不虚构曲线注册）。
+_MODEL_ALIASES: dict[str, str] = {
+    "wilkinson_power_divider": "wilkinson",
+    "branchline_coupler": "branchline",
+    "patch_antenna": "patch",
+}
+
+
+def _normalize_model_alias(model: str) -> str:
+    """存量 run 旧模型名 → 现行模板名（strip→lower→查表）。
+
+    命中 _MODEL_ALIASES 换现行名；未命中返回 strip+lower 后的输入
+    （调用方对注册表本就大小写不敏感精确匹配，语义不变）。只认显式
+    登记的历史名，不做模糊匹配/前缀匹配——模糊匹配会制造假对照
+    （诚实降级原则，#122 同族：不凑对照）；表为空时零行为变化。
+    """
+    key = str(model).strip().lower()
+    return _MODEL_ALIASES.get(key, key)
+
+
+#: 跨模块消费的公开别名（同一函数对象，aurora_j W5-S20 审查清偿：
+#: model_card_service 等外部模块不再引下划线私有名）。本模块无 __all__
+#:（见模块 docstring 公开面说明），别名不翻公开 API 金快照。
+normalize_model_alias = _normalize_model_alias
+
+
 # ── 曲线解析（全部走既有链，见模块 docstring 红线节）────────────────────
 
 
@@ -442,7 +483,9 @@ def credibility_curves(model: str | None = None) -> dict[str, Any]:
 
     Args:
         model: 模板族名（registered_families() 同名空间；None=全族
-            可用性总览——前端画廊抽屉"对照"标签页清单面）。
+            可用性总览——前端画廊抽屉"对照"标签页清单面）。存量 run
+            旧模型名（wilkinson_power_divider 等 P0–P6 三族，见
+            _MODEL_ALIASES）归一到现行族后匹配。
 
     Returns:
         model=None → ok 信封：families=[{template, engines 可用性,
@@ -485,9 +528,9 @@ def credibility_curves(model: str | None = None) -> dict[str, Any]:
                 "证据零改写：本面纯只读（R3 §5，#325/#326）",
             ])
 
-    key = str(model).strip()
+    key = _normalize_model_alias(model)
     entry = next((f for f in _FAMILIES
-                  if str(f["template"]).lower() == key.lower()), None)
+                  if str(f["template"]).lower() == key), None)
     if entry is None:
         return ok_envelope(
             schema_version=CREDIBILITY_CURVES_SERVICE_SCHEMA_VERSION,

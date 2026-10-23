@@ -245,6 +245,12 @@ jobs:
         env:
           OPENBLAS_NUM_THREADS: "1"
 
+  # 容器真构建通道：每次 push/PR 在 runner 上 build 本仓 Dockerfile，并在
+  # 容器内三连冒烟——①import 可导入 ②__version__ 元数据就位 ③默认入口
+  # （CMD=rfauto --help）退出码 0。镜像只装核心依赖（extras 全不进镜像），
+  # 故本 job 同时是「核心依赖在 linux 容器自洽」的常驻证明（CLI 入口链
+  # 模块级导入零 extras，惰性 import 纪律由它背书）。构建与冒烟全用裸
+  # docker 命令，除官方 checkout/buildx 外不引第三方 action。
   docker-build:
     name: Dockerfile build smoke (C14b)
     runs-on: ubuntu-latest
@@ -255,6 +261,10 @@ jobs:
         run: docker build -t rfauto:ci .
       - name: Container import smoke
         run: docker run --rm rfauto:ci python -c "import rfauto; print('ok')"
+      - name: Container version smoke
+        run: docker run --rm rfauto:ci python -c "import rfauto; print(rfauto.__version__)"
+      - name: Container CLI help smoke (default CMD)
+        run: docker run --rm rfauto:ci
 
   # ---------------------------------------------------------------------
   # supply-chain（X5 供应链卫生门，2026-09-24）
@@ -320,8 +330,11 @@ jobs:
           #
           # pillow 11.3.0 豁免清单（2026-10-07，18×PYSEC-2026；2026-10-21
           # 扩 8×CVE-2026-112395/112397/112400/112895/112896/112897/
-          # 112899/112404=同包同版本 advisory 库新增 CVE 形条目，fix 均
-          # 13.0.0，本注释即留痕处）：diff-fdtd extra 的 fdtdx→moviepy
+          # 112899/112404=同包同版本 advisory 库新增 CVE 形条目；2026-10-23
+          # 再扩 15×CVE-2026-112390/112391/112392/112393/112396/112399/
+          # 112401/112402/112406/112891/112892/112893/112894/112900/
+          # 112901=同包同版本 advisory 库第三批新增（fix 均 13.0.0），
+          # 本注释即留痕处）：diff-fdtd extra 的 fdtdx→moviepy
           # 钉 pillow>=9.2.0,<12.0（冲突链 uv lock 亲证），pillow 13.0.0
           # 虽已修复全部 26 项但被该上限排除；漏洞面=PSD/PDF/FITS 等
           # **图像文件解析器**，本仓 pillow 仅作 matplotlib 栅格后端，
@@ -355,6 +368,21 @@ jobs:
             --ignore-vuln CVE-2026-112897 \
             --ignore-vuln CVE-2026-112899 \
             --ignore-vuln CVE-2026-112404 \
+            --ignore-vuln CVE-2026-112390 \
+            --ignore-vuln CVE-2026-112391 \
+            --ignore-vuln CVE-2026-112392 \
+            --ignore-vuln CVE-2026-112393 \
+            --ignore-vuln CVE-2026-112396 \
+            --ignore-vuln CVE-2026-112399 \
+            --ignore-vuln CVE-2026-112401 \
+            --ignore-vuln CVE-2026-112402 \
+            --ignore-vuln CVE-2026-112406 \
+            --ignore-vuln CVE-2026-112891 \
+            --ignore-vuln CVE-2026-112892 \
+            --ignore-vuln CVE-2026-112893 \
+            --ignore-vuln CVE-2026-112894 \
+            --ignore-vuln CVE-2026-112900 \
+            --ignore-vuln CVE-2026-112901 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()

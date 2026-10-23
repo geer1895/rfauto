@@ -38,7 +38,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from rfauto.service.envelope import error_envelope, ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope, skipped_envelope
 
 # 有意不声明 __all__（同 campaign_manager.py 口径）：check_public_api 金快照
 # 不收私有模块——并发席位共用该金快照文件，本席零共享金样 churn（aurora_e
@@ -164,6 +164,43 @@ def _atomic_write_text(target: Path, text: str) -> None:
     os.replace(tmp, target)
 
 
+def _notify_note(result: dict[str, Any]) -> str:
+    """notify 结果 → 单行人读注记（信封 notes 用；skipped 不入 notes）。"""
+    if result.get("skipped"):
+        return str(result.get("reason") or "skipped")
+    errs = [str((r or {}).get("error") or "?")
+            for r in (result.get("results") or {}).values()
+            if isinstance(r, dict) and not r.get("ok")]
+    return "; ".join(errs) or "unknown"
+
+
+def _notify_tail(out: dict[str, Any], summary_text: str,
+                 notify: bool | None) -> dict[str, Any]:
+    """产物落盘后的 best-effort webhook 推送尾（aurora_j W2-S6）。
+
+    - ``notify=False``：显式关（service 显式 False 优先于 env 配置，#277
+      三态惯例），零网络；
+    - 其余（None=读 env 配置决定 / True=配置了就推）：调
+      campaign_notify_service.notify_digest，结果记 ``out["notify"]``；
+      推送失败只在信封 notes 加一行（#105：通知失败不回滚 digest 主
+      产物，任何异常兜底不抛）。
+    """
+    if notify is False:
+        out["notify"] = skipped_envelope(
+            "disabled：显式 --no-notify（service 显式 False 优先于 env 配置）")
+        return out
+    from rfauto.service.campaign_notify_service import notify_digest
+
+    try:
+        result = notify_digest(out, summary_text)
+    except Exception as exc:  # #105：观测面兜底，通知异常不拆主路径
+        result = error_envelope(f"notify 未捕获异常: {exc}")
+    out["notify"] = result
+    if not result.get("ok"):
+        out["notes"] = [f"notify 推送未成功: {_notify_note(result)}"]
+    return out
+
+
 def campaign_digest(
     root: str | Path = "runs",
     *,
@@ -171,6 +208,7 @@ def campaign_digest(
     since_h: float | None = None,
     include_running: bool = False,
     write: bool = True,
+    notify: bool | None = None,
 ) -> dict[str, Any]:
     """扫描战役终态聚合成人读摘要（服务层 JSON 进出，规则 4）。
 
@@ -180,10 +218,16 @@ def campaign_digest(
     - since_h：时间窗（计划文件 mtime 距今 N 小时内；None=不过滤；≤0/非数
       如实报错）；
     - include_running：非终态战役也计入（文案如实标"进行中"）；
-    - write：落 JSON+文本双产物（CLI 缺省 True；测试/预览可 False）。
+    - write：落 JSON+文本双产物（CLI 缺省 True；测试/预览可 False）；
+    - notify：webhook 推送三态（W2-S6，#277 惯例）：None=读 env 配置决定
+      （RFAUTO_NOTIFY_WEBHOOK_URL/RFAUTO_NOTIFY_FEISHU_WEBHOOK 均未设即
+      skipped 零网络零行为）；False=显式不推；True=配置了就推。仅
+      write=True（产物已落盘）时生效；结果记返回信封 "notify" 字段，
+      推送失败不回滚主产物（#105 best-effort）。
 
     返回信封：n_campaigns（计入数）/ counts / campaigns（逐战役明细含
-    plan 路径）/ headline / summary_text / artifacts（write=True 时）。
+    plan 路径）/ headline / summary_text / artifacts（write=True 时）/
+    notify（write=True 时，推送结果信封）。
     """
     from rfauto.service.campaign_manager import list_campaign_plans, load_plan
 
@@ -271,4 +315,4 @@ def campaign_digest(
                                             indent=1, default=str))
     _atomic_write_text(txt_path, summary_text + "\n")
     out["artifacts"] = {"json": str(json_path), "txt": str(txt_path)}
-    return out
+    return _notify_tail(out, summary_text, notify)

@@ -1,6 +1,6 @@
-"""架构批 ANCH-D analytic 锚第四批回归钉（5 锚六族；#118 独立重算）。
+"""aurora_d ANCH-D analytic 锚第四批回归钉（5 锚六族；#118 独立重算）。
 
-锚册：knowledge/anchors.yaml 架构批 ANCH-D 席扩批（2026-10-14，
+锚册：knowledge/anchors.yaml aurora_d ANCH-D 席扩批（2026-10-14，
 56→62 有锚族）——剩余 16 未覆盖模板逐个评估后可立 6 族：
 coax_waveguide_transition（TE10 λg/4 背短路恒等）/sma_launcher（同轴 TEM
 对数律反解 r_o）/patch_eep_1x4+patch_eep_2x2（共享单元 Balanis W+λ/2 腔 L，
@@ -18,7 +18,7 @@ test_x5_analytic_anchors 同制度）：
 
 弃选 10 族（bend/tjunc/wstep/mline=唯一闭式面是 HJ 宽度本身；dipole/
 pifa/helix/embedded_ms/msl_slot_transition/slotline_lumped=引擎/文献面
-缺失或公式族重复）逐族理由见 内部证据目录（SENS-ANC
+缺失或公式族重复）逐族理由见 runs/aurora_d_anchd/REPORT.md（SENS-ANC
 报告第三节同口径复核）。
 """
 
@@ -271,7 +271,7 @@ def test_anchd_batch_count_and_expected_source_sync() -> None:
         for fam in (entry.get("template_family") or [])
         if fam in TEMPLATE_META
     }
-    assert len(covered) == 64  # W3-S15 批接替后实覆盖 64/72（v2+4 族）
+    assert len(covered) == 72  # W4-S15 批 +8 族=72/72 全覆盖（aurora_j 锚覆盖转正批，2026-10-23；W3-S15 批接替后 64）
     for fam in ("coax_waveguide_transition", "sma_launcher",
                 "patch_eep_1x4", "patch_eep_2x2", "ms_ring_patch",
                 "ms_array_NxN"):

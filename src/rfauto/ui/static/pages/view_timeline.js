@@ -47,6 +47,7 @@ export async function pageTimeline() {
   const colors = chartPalette(bodyIsLight());
   // PR-3 PlotCard 换壳：option 与迁移前等价（base 路径）
   // W8-S32 i18n 批 3：横轴 t() 烘焙（系列名=adapter 通道值，API 数据不进词表）
+  // W3-S9：数值读数类开十字线（category 轴 trigger=axis，cross 双轴读数=原生标准组合）
   T.plotCard(T.$("tl-cost"), {
     series: Object.keys(byAdapter).map((a, i) => ({
       name: a, x: labels,
@@ -54,6 +55,7 @@ export async function pageTimeline() {
       color: colors[i % colors.length],
     })),
     xlabel: t("timeline.xlabel_cost"), ylabel: "cost", height: "300px",
+    crosshair: true,
     exportName: "cost-timeline",
   });
   // W8-S32 i18n 批 3：状态行分段 t() 烘焙（计数走 {n} 占位=开发侧数值；
@@ -67,6 +69,7 @@ export async function pageTimeline() {
   if (tr.length)
     // PR-3 PlotCard 换壳 + convergence（声明增量：best-so-far 阶梯+末点）
     // W8-S32 i18n 批 3：系列名/横轴/aria t() 烘焙
+    // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，收敛末点读数面）
     T.plotCard(T.$("tl-tune"), {
       series: [{
         name: t("timeline.series_trial_cost"), x: tr.map((x) => x.trial_number),
@@ -74,7 +77,7 @@ export async function pageTimeline() {
         color: themePick(bodyIsLight(), THEME_COLORS.seriesOrange),
       }],
       mode: "convergence",
-      xvalue: true, xlabel: "trial", ylabel: "cost", height: "260px",
+      xvalue: true, crosshair: true, xlabel: "trial", ylabel: "cost", height: "260px",
       exportName: "tune-trial-convergence",
       ariaLabel: t("timeline.aria_tune"),
     });

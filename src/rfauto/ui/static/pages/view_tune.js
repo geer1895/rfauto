@@ -24,7 +24,7 @@ import { esc, errorText, fmtNum, help } from "./dom.js";
 // data-i18n+首扫、help 块分段 t()、动态串（状态行/空态/公告/aria）t() 烘焙
 // ——trial 表体/结果 JSON 纯数据面不迁（数据插值仍在词表外 esc）。
 import { t, applyI18nRoot } from "./i18n.js";
-import { kitBtnBusy, kitEmptyState, kitPanelHead } from "./kit.js";
+import { kitBtnBusy, kitEmptyState, kitPanelHead, kitSkeletonRows } from "./kit.js";
 import { _pollRegister, _pollStop, _pollVisible } from "./polling.js";
 // R1：结果卡下一步按钮复用路由单源（view_recipe openRun 同款先例）。
 import { openRun, showPage } from "./router.js";
@@ -69,6 +69,11 @@ export async function pageTune() {
         <div id='tune-trials-chart'></div>
         <table id='tune-trials-table'><thead><tr><th scope="col">#</th><th scope="col">cost</th><th scope="col">${t("tune.th_params")}</th><th scope="col">${t("tune.th_metrics")}</th></tr></thead><tbody></tbody></table></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W4-S1；幂等，动态容器走 t() 烘焙）
+  // R3 人性化三批：trials 表首拉骨架屏（结果区/tune-spin 是运行态指示，
+  // 表数据加载此前零占位——/api/tune/trials 到达后 renderTrials 整体替换；
+  // runs 表 A8-A 首拉占位同款形态。4 列=#/cost/params/metrics）。
+  const skTb = T.$("tune-trials-table") && T.$("tune-trials-table").tBodies[0];
+  if (skTb) skTb.innerHTML = kitSkeletonRows(5, 4);
   T.$("tune-go").onclick = startTune;
   T.$("tune-path").onchange = showRecipeInfo;
   T.$("tune-adapter").onchange = renderPrecheck; // R1：换通道即出/收预检卡

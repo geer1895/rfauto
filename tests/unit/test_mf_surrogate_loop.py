@@ -1,6 +1,6 @@
 """E7 多保真代理寻优环单测（#18 optstack 收口；§10.23 #23「接 WP3.2 环」）。
 
-验收口径（延续计划 §10.23 #23 原文「多保真同精度细网格次数减半
+验收口径（continuation_plan §10.23 #23 原文「多保真同精度细网格次数减半
 （合成）」）：合成双保真裁判 ×2——
 - Forrester 文献对（高保真 (6x−2)²sin(12x−4)、低保真 0.5·high+4(x−0.5)−1，
   与 test_smt_mfk.py 同型；低保真最优 x≈0.53 vs 高保真 x≈0.757，系统偏差
@@ -134,6 +134,7 @@ def _judge(bounds, objs, high, low, *, fine_max_real, fine_n_init,
 class TestMultiFidelityAcceptance:
     """§10.23 #23：多保真同精度细网格次数减半（合成裁判）。"""
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（33.9s，多保真环 Forrester 合成）
     def test_forrester_half_fine_evaluations(self):
         pytest.importorskip("smt", reason="SMT 为可选依赖（extra: smt）")
         fine_max = 16
@@ -145,6 +146,7 @@ class TestMultiFidelityAcceptance:
         assert _median(n_high) <= fine_max * 0.5, n_high
         assert _median(mf_best) <= _median(fine_best) + 0.5, (mf_best, fine_best)
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（24.4s，多保真环 bowl 2D 合成）
     def test_bowl_2d_half_fine_evaluations(self):
         pytest.importorskip("smt", reason="SMT 为可选依赖（extra: smt）")
         fine_max = 18

@@ -517,6 +517,22 @@ export const LOCALES = {
     en: "Network offline — data refresh paused, will resume automatically",
   },
   "common.online": { zh: "网络已恢复", en: "Network back online" },
+  /* ── aurora_j W3-S9：plotCard 数据表文本替代（a11y W5-S23 建议④落地；
+     plotcard.js 单源消费——钮面/caption/空态三键，共享模块消费与 index.html
+     引用同权计入壳面引用集（kit.js/app.js 同款口径，test_ui_i18n 消费））。 */
+  "common.data_table": { zh: "数据表", en: "Data table" },
+  "common.data_table_title": {
+    zh: "切换图表数据表（文本替代，可复制）",
+    en: "Toggle chart data table (text alternative, copyable)",
+  },
+  "common.data_table_caption": {
+    zh: "图表数据已转成表格（列=数据系列，行=数据点）",
+    en: "Chart data shown as a table (columns = series, rows = points)",
+  },
+  "common.data_table_empty": {
+    zh: "（本图没有能转成表格的数据系列）",
+    en: "(This chart has no data series that can be shown as a table)",
+  },
   "agent.clear_chat_body": {
     zh: "将清空对话历史（含本地保存的记录），不可恢复。确定继续？",
     en: "This clears the chat history (including locally saved messages) and cannot be undone. Continue?",
@@ -2819,6 +2835,10 @@ export const LOCALES = {
     zh: "等 license：{detail}",
     en: "Waiting for license: {detail}",
   },
+  "queue.block_deps_tpl": {
+    zh: "等依赖：{detail}",
+    en: "Waiting for dependencies: {detail}",
+  },
   "queue.block_ahead_tpl": {
     zh: "排队中：前面还有 {n} 个候选",
     en: "Queued: {n} candidate(s) ahead",
@@ -2949,6 +2969,20 @@ export const LOCALES = {
   },
   "dashboard.onboard_dismiss": { zh: "知道了，开始使用", en: "Got it, let's start" },
   "dashboard.onboard_aria": { zh: "首次使用导览", en: "First-use guide" },
+  /* ── aurora_j W3-S8 追加（拖拽键盘替代批）：widget 重排 + 3D 轨道相机
+     （消费面 view_dashboard 标题条方向键 / view_fieldviz 画布键盘）── */
+  "dashboard.dnd_kb_hint": {
+    zh: "排序：←↑ 前移一位，→↓ 后移一位（拖拽的键盘替代）",
+    en: "Reorder: Left/Up moves one slot earlier, Right/Down one later (keyboard alternative to drag)",
+  },
+  "dashboard.aria_move_tpl": {
+    zh: "{name}，位次 {pos}/{total}；←↑ 前移一位，→↓ 后移一位",
+    en: "{name}, position {pos}/{total}; Left/Up moves earlier, Right/Down moves later",
+  },
+  "fieldviz.iso_kb_hint": {
+    zh: "3D 视角：方向键旋转，+/- 缩放（画布可 Tab 聚焦）",
+    en: "3D view: arrow keys rotate, +/- zoom (canvas is Tab-focusable)",
+  },
 };
 
 /* ═══ 语言档判定：localStorage 显式档 > <html lang> 跟随 > zh 缺省 ═══ */

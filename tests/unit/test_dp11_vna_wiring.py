@@ -147,6 +147,7 @@ class TestMeasurementRunArtifacts:
         finally:
             adapter.close()
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（30.0s，VNA 接线失败路径超时窗）
     def test_connect_failure_reported(self, workdir):
         out = _measure(workdir, address="TCPIP0::no-such-host::10001::INSTR")
         assert out["ok"] is False

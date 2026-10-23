@@ -130,7 +130,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `src/rfauto/core/calculators.py`——引文："在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见"
 
-测试面（tests/unit 引用扫描，机读；合计 **1502** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -207,6 +207,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_w3s15_analytic_anchors.py` | 7 |
 | `tests/unit/test_w4_a_sm_core.py` | 21 |
 | `tests/unit/test_w4_w4e_anchors.py` | 10 |
+| `tests/unit/test_w4s15_anchor_batch.py` | 11 |
 | `tests/unit/test_w6_d_so_leftovers.py` | 32 |
 | `tests/unit/test_w6_f_anchors_cpw.py` | 7 |
 | `tests/unit/test_width_single_source.py` | 11 |

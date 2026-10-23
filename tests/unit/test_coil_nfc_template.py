@@ -328,6 +328,7 @@ class TestNumericReferenceGates:
             0.0, length, 0.0, length)
         assert closed == pytest.approx(MU0 / (4 * math.pi) * raw, rel=1e-9)
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（41.7s，Mohan 闭式对照门，多形状×匝数网格）
     def test_gate_a_numeric_vs_mohan_le_5pct(self):
         """判据 (a)：square+octagon 必测（另两形状同门如实），≤5%。"""
         rows = []

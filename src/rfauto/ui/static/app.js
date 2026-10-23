@@ -58,16 +58,30 @@ export const $id = $;
 /* W8-B P1-2（2026-10-12）：err 消息此前无撤销路径——一次 500 的残影横跨
    页面滞留数分钟误导当前状态。错误 toast 8s 后自动清除（阅读时长取 ok 的
    两倍），成功仍 4s；单定时器句柄：新消息先清旧定时器，否则 ok 的 4s
-   撤销会把后到的 err 提前清掉。 */
+   撤销会把后到的 err 提前清掉。
+   R3 人性化三批（hfssq-ui-kit P7）：退场 slide+fade——到时先挂 .msg-out
+   （CSS toast-out 滑出动画，150ms）再复位 hidden；双句柄（到时器+退场
+   收束器）新消息先全清，防"退场中残影被新消息顶掉后旧收束器误隐新 toast"。
+   复位→重显之间强制一次样式失效（reflow），display none→block 真实切换
+   才能重放滑入动画（同类名直切浏览器不重启 animation）。 */
 let _msgTimer = null;
+let _msgOutTimer = null;
 export function msg(text, ok) {
   const el = $("msg");
-  el.textContent = text;
-  el.className = "msg " + (ok ? "ok" : "err");
   if (_msgTimer) clearTimeout(_msgTimer);
+  if (_msgOutTimer) clearTimeout(_msgOutTimer);
+  _msgOutTimer = null;
+  el.textContent = text;
+  el.className = "msg";
+  void el.offsetWidth; // 强制样式失效：退场中断/同帧重显都能重放滑入动画
+  el.className = "msg " + (ok ? "ok" : "err");
   _msgTimer = setTimeout(() => {
-    el.className = "msg";
     _msgTimer = null;
+    el.className = "msg msg-out " + (ok ? "ok" : "err"); // 退场滑出（CSS 单源）
+    _msgOutTimer = setTimeout(() => {
+      _msgOutTimer = null;
+      el.className = "msg";
+    }, 200);
   }, ok ? 4000 : 8000);
 }
 

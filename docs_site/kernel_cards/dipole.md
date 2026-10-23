@@ -124,11 +124,12 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a3b_stub_antenna.py`——引文："（架构批 A3-B 席域 2，R7 第二梯队 T4）"
 
-测试面（tests/unit 引用扫描，机读；合计 **77** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **89** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a3b_stub_antenna.py` | 28 |
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

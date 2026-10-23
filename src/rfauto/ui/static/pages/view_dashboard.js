@@ -174,6 +174,23 @@ async function refreshGridKeepingFocus(widgetId, action, prevIdx) {
   } catch { /* 还焦失败静默 */ }
 }
 
+/* ═══ aurora_j W3-S8（W5-S23 后续建议2 清偿）：widget 拖拽排序键盘替代 ══
+   深审 a 面缺口2 原文「拖拽排序纯指针（draggable=true 无键盘替代）——登记
+   后续」+ 后续批次建议2「方向键移动语义」。纯函数 widgetMoveOrder（node
+   行为钉可测导出面，count-up 同款纪律）+ DOM 胶水在 renderDashboardGrid
+   循环内（标题条 tabindex=0 + 方向键）。移动走行引用重排（insertBefore，
+   sortable.js 同款：图表/监听随节点走不丢）+ _widgetSet 重排 persist——
+   零全格重建（refreshDashboard/refreshGridKeepingFocus 字面计数钉 2/3
+   保持），焦点留在标题条随动。 */
+export function widgetMoveOrder(order, id, delta) {
+  const arr = Array.from(order || []);
+  const i = arr.indexOf(id);
+  const j = i + delta;
+  if (!delta || i < 0 || j < 0 || j >= arr.length) return null; // 边界/缺席=无操作
+  arr.splice(j, 0, arr.splice(i, 1)[0]);
+  return arr;
+}
+
 /* ═══ W5-S23（深审 e 面，W6 P-6 遗留清偿）：KPI 数字滚动 count-up ══════
    rAF 300ms easeOutCubic 补间；prefers-reduced-motion（或环境无 rAF）直出
    终值。easeOutCubic/countUpText 纯函数导出（node 行为钉可测）；DOM 驱动
@@ -261,6 +278,25 @@ async function renderDashboardGrid() {
   // 宽度记忆（每组件 4/6/12 栅格列循环）
   _widgetSpan = JSON.parse(localStorage.getItem("rfauto-widget-span") || "{}");
   const order = [..._widgetSet];
+  /* aurora_j W3-S10 走查修复（实点发现的 3 处可达性缺陷）：
+     ① 初装 total 错缩——原 kbLabel 在 append 循环内急切求值，此刻 grid
+        只有已渲染前缀，panels.length 被错缩成自身位次（"位次 2/2"应为
+        "2/8"）；改为循环结束后统一刷新（此刻 grid 完整）。
+     ② 对换伙伴标注陈旧——方向键移动只重排两个节点，仅更新被移动者时
+        伙伴仍报旧位次；改为全格标注单点刷新。
+     ③ 连续移动断链——insertBefore 摘除+回插焦点节点必 blur（Chrome 将
+        被移除的焦点节点焦点回落 body），第二次方向键落空；还焦标题条
+        才能连续按键移动。 */
+  const syncMoveLabels = () => {
+    const panels = [...grid.querySelectorAll(".widget[data-id]")];
+    panels.forEach((p, i) => {
+      const w2 = WIDGETS[p.dataset.id];
+      const el = p.querySelector(".title");
+      if (!w2 || !el) return;
+      el.setAttribute("aria-label", escAttr(t("dashboard.aria_move_tpl",
+        { name: t(w2.tk), pos: i + 1, total: panels.length })));
+    });
+  };
   for (const id of order) {
     const w = WIDGETS[id];
     if (!w || !renderers[id]) continue;
@@ -309,8 +345,33 @@ async function renderDashboardGrid() {
       refreshDashboard();
     };
     grid.appendChild(panel);
+    // aurora_j W3-S8：拖拽排序的键盘替代（W5-S23 后续建议2）——标题条
+    // tabindex=0 可聚焦，方向键移动（←↑=前移一位、→↓=后移一位，边界静默
+    // 停住）；aria-label 带位次随移动更新（读屏回读可得位次；app.js
+    // announce 为模块私有且 app.js 本席禁改，live 公告面登记后续）。
+    const wtitle = panel.querySelector(".title");
+    if (wtitle) {
+      wtitle.setAttribute("tabindex", "0");
+      wtitle.title = t("dashboard.dnd_kb_hint");
+      wtitle.addEventListener("keydown", (e) => {
+        const delta = (e.key === "ArrowLeft" || e.key === "ArrowUp") ? -1
+          : (e.key === "ArrowRight" || e.key === "ArrowDown") ? 1 : 0;
+        if (!delta) return;
+        e.preventDefault(); // 防方向键滚屏
+        const arr = widgetMoveOrder(_widgetSet, id, delta);
+        if (!arr) return; // 边界/缺席：静默停住（不重建不落档）
+        _widgetSet = new Set(arr);
+        persistWidgets();
+        const prev = panel.previousElementSibling, next = panel.nextElementSibling;
+        if (delta < 0 && prev) grid.insertBefore(panel, prev); // 行引用重排
+        else if (delta > 0 && next) grid.insertBefore(next, panel);
+        wtitle.focus(); // W3-S10：insertBefore 必 blur 焦点节点——还焦保连续移动
+        syncMoveLabels(); // W3-S10：全格位次标注刷新（含对换伙伴）
+      });
+    }
     await renderers[id](panel.querySelector(".wbody"));
   }
+  syncMoveLabels(); // W3-S10：全格渲染完成后统一刷位次标注（循环内求值 total 会错缩）
 
   function persistWidgets() {
     localStorage.setItem("rfauto-widgets", JSON.stringify([..._widgetSet]));

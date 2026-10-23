@@ -23,7 +23,10 @@ import { drawSmith } from "./view_fieldviz.js";
 // W3-S2 对照模式（R3 设计 M6 顺带）：view_sparams「对照」开关——
 // cred_curves.js 纯数据模块共享（画廊抽屉同源缓存）；对照卡=可信度登记
 // 曲线（同模板名义设计双引擎对），非当前 run 产物（诚实标题区分）。
+// 人性化三批 R2（任务1/3）：对照卡同挂文献参考第三线（lit_refs.js 前端
+// 常量，docs 面转录）+ 图下白话教学行（gallery.cred_howto 同键复用）。
 import { credFetch, credSeriesLabeled, credMaxDev, credEngineTag } from "./cred_curves.js";
+import { litSeriesFor, litRefOf } from "./lit_refs.js";
 // 引擎色对取档（theme.js 单源——cred_curves 色对经 themePick(light)）
 import { bodyIsLight } from "../theme.js";
 
@@ -203,10 +206,12 @@ export async function pageSparams() {
     if (_spCompare) await renderCompareCard();
   }
 
-  /* 对照卡容器 HTML（空态分支与正常分支共用；消息行=降级态明示位）。 */
+  /* 对照卡容器 HTML（空态分支与正常分支共用；消息行=降级态明示位）。
+     人性化三批 R2（任务3）：图下教学行槽（howto 文案在渲染单点补铺——
+     同槽追加文献出处行，有登记文献值的模板才显示）。 */
   function compareCardHtml() {
     // margin-bottom 用 --space-2（--space-3 形态在 test_ui_r12 有 ==3 精确计数钉）
-    return `<div style='margin-bottom:var(--space-2)'><b class='muted'>${t("sparams.compare_title")}</b> <span id='sp-compare-msg' class='muted'></span><div id='sp-chart-compare'></div></div>`;
+    return `<div style='margin-bottom:var(--space-2)'><b class='muted'>${t("sparams.compare_title")}</b> <span id='sp-compare-msg' class='muted'></span><div id='sp-chart-compare'></div><div id='sp-compare-howto' class='muted' style='font-size:11.5px;margin-top:var(--space-1)'></div></div>`;
   }
 
   /* W3-S2 对照卡补铺（load 尾部与空态分支共用的单点）：当前 run 所属
@@ -241,9 +246,26 @@ export async function pageSparams() {
           })
         : "";
     }
+    // 人性化三批 R2（任务1/3）：图下教学行 + 文献出处行（有登记文献值的
+    // 模板才显示出处；教学行=gallery.cred_howto 同键复用）
+    const howto = T.$("sp-compare-howto");
+    if (howto) {
+      const lr = litRefOf(model);
+      howto.innerHTML = esc(t("gallery.cred_howto")) +
+        (lr ? "<br>" + esc(t("gallery.cred_lit_source_tpl", { s: lr.source }))
+            : "");
+    }
+    // 人性化三批 R2（任务1）：第三线=文献/官方例验收参考值（追加在引擎
+    // 系列之后——plotCard category 轴=series[0].x，litSeriesFor 内建同网采样）
+    const light = bodyIsLight();
+    const lit = litSeriesFor(model, cr.view.curves,
+      (p) => t("gallery.cred_lit_series_tpl", { n: p.curve, v: p.db }), light);
     // 对照卡入 sparams 联动组（与 run 产物卡/外部叠加卡跨卡同步）
     T.plotCard(T.$("sp-chart-compare"), {
-      series: credSeriesLabeled(cr.view.curves, bodyIsLight()),
+      series: credSeriesLabeled(cr.view.curves, light).concat(lit),
+      // aurora_j W1-S1 异栅根治：值轴模式——双引擎各自频网自持（[x,y]
+      // 对出数，异栅不再按 series[0].x 索引错位拉伸）
+      xvalue: true,
       xlabel: "GHz",
       ylabel: mode === "db" ? "dB" : t("sparams.ylabel_deg"),
       height: "320px", zoom: true,

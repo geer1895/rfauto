@@ -8,7 +8,7 @@ import { esc, help } from "./dom.js";
 // i18n（aurora_f W6-S21 扩面页 2）：壳静态标签 data-i18n+首扫；筛选空态随
 // render() 重建，文案 t() 渲染期烘焙（i18n.js 头注纪律）。
 import { t, applyI18nRoot, getLocale } from "./i18n.js";
-import { bindClickRows, bindEmptyStates, kitApplyClickRowAttrs, kitEmptyState, kitSkeletonRows, metricValueHtml } from "./kit.js";
+import { bindClickRows, bindEmptyStates, kitApplyClickRowAttrs, kitBadgeCls, kitEmptyState, kitSkeletonRows, metricValueHtml } from "./kit.js";
 import { metricGlossaryMap, mountMetricTips } from "./metric_glossary.js";
 import { openRun } from "./router.js";
 import { makeSortable } from "./sortable.js";
@@ -89,6 +89,10 @@ export async function pageRuns() {
     for (const r of rows) {
       const tr = document.createElement("tr");
       tr.className = "clickable";
+      // R3 人性化三批：行左缘 3px 状态竖线（绿=done/pass 红=fail 灰=运行中
+      // /未知；kitBadgeCls 单源映射，tr class 属性面零 DOM 结构变化——状态
+      // 徽章仍恒 muted 淡显，行色条是独立视觉面不翻既有"状态列次要信息"账）
+      tr.classList.add("st-" + kitBadgeCls(r.status || "done"));
       const metrics = r.metrics
         ? Object.entries(r.metrics).map(([k, v2]) => `${esc(k)}=${typeof v2 === "number" ? v2.toFixed(3) : esc(v2)}`).join(" ")
         : "";

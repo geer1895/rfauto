@@ -1,10 +1,10 @@
-"""UI 前后端契约门提取器单元回归（架构批 审查波 2 P3-1 正式化；
-架构批 W5-S1 R3 #9 扩查询参数维度 C 向）。
+"""UI 前后端契约门提取器单元回归（aurora_f 审查波 2 P3-1 正式化；
+aurora_h W5-S1 R3 #9 扩查询参数维度 C 向）。
 
 scripts/check_ui_contracts.py 此前全仓零测试引用（SUMMARY 的"负向自证"
 无落盘测试载体）——提取器若被改坏（字符类收窄/归一漂移）门会假绿静默
 放行调用面漂移。本文件把审查席 16 例探针
-（内部证据目录）正式化：
+（runs/aurora_f/w7s26_probe_extractor.py）正式化：
 
 1. 三形态提取（反引号模板串 / 引号字面量+拼接链 / 查询串截断）+ 注释
    噪声消音 + 已知漏报/误报形态现行语义如实钉（改窄改宽都须重审契约
@@ -12,10 +12,10 @@ scripts/check_ui_contracts.py 此前全仓零测试引用（SUMMARY 的"负向�
 2. norm_call/norm_route 归一口径（{param}/${...}/占位符→"*"、查询串
    截断、尾斜杠补 "*"）；
 3. 两豁免表棘轮（DANGLING 零基线；UNCONSUMED 只删不加——现值 ⊆ 已知
-   四键集，逐条理由非空）；
+   五键集，逐条理由非空）；
 4. 负向自证常态化：合成悬空调用 → main() rc=1；空路由表 → rc=2 诚实
    降级；vendor/ 排除；实树活体 main() rc=0 + 双向对账子集关系。
-5. 查询参数 C 向（架构批 W5-S1）：前端查询串四形态参数名提取（字面/
+5. 查询参数 C 向（aurora_h W5-S1）：前端查询串四形态参数名提取（字面/
    拼接链/模板值位/局部查询构造变量三通道）+ 值位占位无害与整段委托
    降级语义；server 端 AST 消费面（直取/别名/下标/f-string 循环动态键
    解析）；DANGLING_PARAM 零基线与 UNSENT_PARAM 只删不加棘轮；合成负向
@@ -142,13 +142,16 @@ class TestNormalization:
 
 # ── 3. 两豁免表棘轮（只收不放）─────────────────────────────────────────
 
-# UNCONSUMED_ALLOWLIST 已知集（2026-10-18 审查波 2 时点）：只可删（前端
-# 接入清偿）不可加（新死路由须台账背书）——新条目必红，删条目绿。
+# UNCONSUMED_ALLOWLIST 已知集（2026-10-18 审查波 2 时点；2026-10-23
+# aurora_j W1-S3 台账背书加 /api/solvers/viz——view_solvers 无消费 fetch
+# 清偿后端点保留为服务端能力面）：只可删（前端接入清偿）不可加（新死
+# 路由须台账背书）——新条目必红，删条目绿。
 _KNOWN_UNCONSUMED = {
     "/api/tune/events/stream",
     "/api/campaign_queue/events/stream",
     "/api/events/stream",
     "/api/edb_status",
+    "/api/solvers/viz",
 }
 
 
@@ -246,7 +249,7 @@ class TestLiveGateOnRealTree:
         assert not dangling, f"悬空调用: {sorted(dangling)}"
 
 
-# ── 5. 查询参数 C 向（架构批 W5-S1，R3 立项 #9）──────────────────────
+# ── 5. 查询参数 C 向（aurora_h W5-S1，R3 立项 #9）──────────────────────
 
 class TestFrontendQueryParamExtraction:
     """前端查询串四形态参数名提取（frontend_query_params 直测）。"""
@@ -357,7 +360,7 @@ class TestServerQueryParamExtraction:
 
 # ── 6. 参数两豁免表棘轮（C 向；只收不放）───────────────────────────────
 
-# UNSENT_PARAM_ALLOWLIST 已知集（2026-10-19 架构批 W5-S1 建门时点）：
+# UNSENT_PARAM_ALLOWLIST 已知集（2026-10-19 aurora_h W5-S1 建门时点）：
 # 只可删（前端接入清偿）不可加（新未传参数须台账背书）——新条目必红。
 _KNOWN_UNSENT = {
     "/api/field/*#engine", "/api/field/*#sx", "/api/field/*#sy",
@@ -367,7 +370,6 @@ _KNOWN_UNSENT = {
     "/api/uq/samples#limit",
     "/api/anchors#path", "/api/anchors/*#path",
     "/api/model3d#path", "/api/tune/trials#run_id",
-    "/api/solvers/viz#solver",
 }
 
 

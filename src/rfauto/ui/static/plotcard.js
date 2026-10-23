@@ -23,8 +23,26 @@
      W2-B 接口诉求落地）——旧 pages/charts.js plotCardCached 轮询包装降级
      为零破坏薄委托，全站图表渲染单一入口。
    - 导出统一：CSV/PNG/SVG 走 chart_export.js 单源出口（文件名
-     `视图_指标_时间戳`），本文件私有 downloadFile 删除。 */
-import { esc } from "./pages/dom.js"; // UI-R2：esc 单源直连（拆分前自 pages.js，与入口循环引用消除）
+     `视图_指标_时间戳`），本文件私有 downloadFile 删除。
+   ═══ aurora_j W1-S1 增量（双引擎叠加图异栅根治：line 族值轴支持）═══
+   - opts.xvalue 值轴下 line 族（及 band 两条 stack 线）带等长 x →
+     [x,y] 对数据——每条迹线自持横轴网（双引擎可信度对照 hfss/openems
+     频网点数/间距可不同，category 轴按索引共享 series[0].x 会把第二
+     引擎按索引拉伸错位）；散点 data=[[x,y]] 先例同构。门不满足/convergence
+     组合的路径逐字节现状（golden 钉）；plotCardOption 接缝 xvalue 整跳
+     分组降采样（值轴异栅下共享索引集抽稀语义不适用）。
+   ═══ aurora_j W3-S9 增量（echarts 数据表文本替代：a11y W5-S23 建议④）═══
+   - buildDataTable(series)：表格组装纯函数（wide/long 两态与 toCsv 同构
+     ——wide=共享 x 网按索引对齐 行×列=[x, 系列...]；long=散点 [[x,y]] 或
+     异栅 x 网 → [series,x,y] 长表，各系列 x 逐点保留不失真；band 是合成
+     阴影带不是数据不进表）。toCsv 改为消费本函数（宽/长分派单源——
+     数据表与 CSV 导出永一致），引号转义与 \r\n 行尾字节不变（行为钉）。
+   - plotCard 工具条"数据表"切换钮（导出钮旁，kit 按钮同款类名）：点击在
+     图表下方渲染可折叠 <table>（esc/escAttr 全动态值转义；table 带
+     aria-label；默认收起零视觉回归）——读屏/复制数据的文本替代面。
+     复用路径数据换代时若表展开则原样重渲染（toggle 状态保持）。 */
+import { esc, escAttr } from "./pages/dom.js"; // UI-R2：esc 单源直连（拆分前自 pages.js，与入口循环引用消除）
+import { t } from "./pages/i18n.js"; // W3-S9：数据表钮/caption/空态文案（词表单源，零硬编码 CJK——i18n 棘轮）
 import { mkExportButtons } from "./chart_export.js"; // UI-R5：导出统一出口（CSV/PNG/SVG+时间戳命名）
 import { CHART_GRID } from "./theme.js"; // W3-S12（P-5）：grid 常量单源（值冻结，golden 不受扰）
 
@@ -83,21 +101,42 @@ export function buildEChartOption(series, opts = {}, theme) {
       if (s.type === "band") {
         const stackId = `band-${Math.random().toString(36).slice(2, 8)}`;
         const xs = s.x || [];
+        // aurora_j W1-S1：值轴下带线与同图 line 族同门出 [x,·] 对——否则
+        // 均值线落真 x 而带线落 0..n-1 索引，带与线错位（playground explore
+        // 的 line+band+xvalue 同款组合实证）。两 stack 线共用同一 s.x，
+        // 堆叠按 x 对齐语义不变（第二条仍喂 upper−lower 差值）。
+        const xy = opts.xvalue && opts.mode !== "convergence" &&
+            Array.isArray(s.x) && Array.isArray(s.lower) &&
+            Array.isArray(s.upper) && s.x.length === s.lower.length &&
+            s.x.length === s.upper.length
+          ? (arr) => s.x.map((v, i) => [v, arr[i]])
+          : null;
         return [
-          { type: "line", stack: stackId, data: s.lower,
+          { type: "line", stack: stackId, data: xy ? xy(s.lower) : s.lower,
             showSymbol: false, silent: true,
             lineStyle: { opacity: 0 }, emphasis: { disabled: true },
             tooltip: { show: false } },
           { name: s.name, type: "line", stack: stackId,
-            data: (s.upper || []).map((u, i) => +u - +(s.lower?.[i] ?? 0)),
+            data: xy
+              ? s.x.map((v, i) => [v, +s.upper[i] - +(s.lower?.[i] ?? 0)])
+              : (s.upper || []).map((u, i) => +u - +(s.lower?.[i] ?? 0)),
             showSymbol: false, silent: true,
             lineStyle: { opacity: 0 }, emphasis: { disabled: true },
             areaStyle: { color: s.color || "#4fc3f7", opacity: 0.18 },
             tooltip: { show: false } },
         ];
       }
+      // aurora_j W1-S1（异栅根治）：xvalue 值轴下 line 族带等长 x → [x,y]
+      // 对数据（每条迹线自持横轴网；散点 data=[[x,y]] 先例同构）。不满足
+      // 条件的路径逐字节现状（golden 钉）；convergence+xvalue 组合不支持
+      // （阶梯线按 trial 序索引，view_timeline 声明组合维持原状）。
+      const xyPairs = opts.xvalue && opts.mode !== "convergence" &&
+        Array.isArray(s.y) && Array.isArray(s.x) && s.x.length === s.y.length
+        ? s.x.map((v, i) => [v, s.y[i]])
+        : null;
       return [{
-        name: s.name, type: "line", data: s.y, showSymbol: false,
+        name: s.name, type: "line", data: xyPairs ? xyPairs : s.y,
+        showSymbol: false,
         lineStyle: { width: 1.6, color: s.color },
         itemStyle: { color: s.color },
         markLine: opts.band ? {
@@ -172,29 +211,30 @@ export function bestSoFar(ys) {
   return out;
 }
 
-/* CSV 平铺（纯函数）：线族（共享同一 x 网）→ 宽表 [x, 系列...]；
-   散点（data=[[x,y],...]）或 x 网不齐 → 长表 [series,x,y]。
-   band 是合成的阴影带不是数据，不导出。 */
-export function toCsv(series) {
+/* 数据表组装（纯函数，W3-S9）：图表数据的表格形态单源——
+   线族（共享同一 x 网）→ 宽表 {headers:["x", 系列...], rows:[[x, 系列...]...]}
+   （行=共享索引对齐）；散点（data=[[x,y],...]）或 x 网不齐（异栅，如
+   xvalue 双引擎频网）→ 长表 {headers:["series","x","y"], rows}（各系列
+   x 逐点保留，不失真）。band 是合成的阴影带不是数据，不进表。
+   零新计算：结构直读 series（与渲染 option 同一数据面）。toCsv 与
+   plotCard 数据表面（工具条"数据表"钮）共同消费本函数——表格与 CSV
+   导出永一致。 */
+export function buildDataTable(series) {
   const ss = (series || []).filter((s) => s.type !== "band");
-  if (!ss.length) return "";
-  const q = (v) => {
-    const t = v == null ? "" : String(v);
-    return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-  };
+  if (!ss.length) return { headers: [], rows: [] };
   const isXY = (s) => Array.isArray(s.data) && s.data.length > 0 && Array.isArray(s.data[0]);
   const sameX = (a, b) => Array.isArray(a) && Array.isArray(b) &&
     a.length === b.length && a.every((v, i) => v === b[i]);
   if (ss.every((s) => !isXY(s))) {
     const x0 = ss[0].x || ss[0].y.map((_, i) => i);
     if (ss.slice(1).every((s) => sameX(s.x || s.y.map((_, i) => i), x0))) {
-      const rows = [["x", ...ss.map((s) => s.name || "y")]];
-      x0.forEach((x, i) =>
-        rows.push([x, ...ss.map((s) => (s.y || [])[i] ?? "")]));
-      return rows.map((r) => r.map(q).join(",")).join("\r\n");
+      return {
+        headers: ["x", ...ss.map((s) => s.name || "y")],
+        rows: x0.map((x, i) => [x, ...ss.map((s) => (s.y || [])[i] ?? "")]),
+      };
     }
   }
-  const rows = [["series", "x", "y"]];
+  const rows = [];
   for (const s of ss) {
     if (isXY(s)) {
       for (const [x, y] of s.data) rows.push([s.name || "y", x, y]);
@@ -203,7 +243,21 @@ export function toCsv(series) {
       (s.y || []).forEach((y, i) => rows.push([s.name || "y", xs[i], y]));
     }
   }
-  return rows.map((r) => r.map(q).join(",")).join("\r\n");
+  return { headers: ["series", "x", "y"], rows };
+}
+
+/* CSV 平铺（纯函数）：buildDataTable 产物 → CSV 字符串（五字符外引号
+   转义 + \r\n 行尾；BOM 头由调用方加）。W3-S9 起消费 buildDataTable
+   （宽/长分派单源——数据表与导出永一致）；分派逻辑与字节形态同先前
+   内联实现逐字节等价（行为钉 test_to_csv_wide_long_and_quoting）。 */
+export function toCsv(series) {
+  const { headers, rows } = buildDataTable(series);
+  if (!headers.length) return "";
+  const q = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers, ...rows].map((r) => r.map(q).join(",")).join("\r\n");
 }
 
 /* ═══ aurora_d UI-R5：万点级曲线降采样（保形）═════════════════════════
@@ -373,7 +427,8 @@ export function downsamplePlotSeries(series, cap) {
 
 /* PlotCard 的 option（props 与 drawEChart opts 同形 + mode/crosshair/y2 增量；
    UI-R5：接缝处套降采样——buildEChartOption 保持纯构造（golden 钉不受扰），
-   convergence 整跳、props.maxPoints 显式覆盖优先。
+   convergence 整跳、props.maxPoints 显式覆盖优先；aurora_j W1-S1：xvalue
+   值轴（异栅叠加）整跳降采样（语义见上方增量头注）。
    ═══ aurora_e W3-S12（R6 审计 P-5）：props.option 逃生舱（gated 纯增量）═══
    props.option 非空 → 调用方自带完整 option 直通，跳过 base 单源构造与
    降采样（非笛卡尔管线——polar/Smith/custom/heatmap 不在 builder 能力面——
@@ -388,6 +443,10 @@ export function plotCardOption(props, theme) {
   const raw = props.series || [];
   let cap;
   if (props.maxPoints != null) cap = Math.floor(+props.maxPoints);
+  // aurora_j W1-S1：xvalue 值轴（异栅叠加图）整跳分组降采样——值轴下各迹线
+  // 自持 [x,y] 网，"共享索引集分组抽稀"语义不适用；cred 曲线 201/401 点量级
+  // 无需降采样（显式 props.maxPoints 仍最高优先，逐调用可强制抽稀）。
+  else if (props.xvalue) cap = Infinity;
   else cap = props.mode === "convergence" ? Infinity : getDefaultMaxPoints();
   const series = Number.isFinite(cap) ? downsamplePlotSeries(raw, cap) : raw;
   return buildEChartOption(series, props, theme);
@@ -464,6 +523,26 @@ function _ariaLabel(props) {
     `${props.ylabel ? "，纵轴 " + props.ylabel : ""}${props.xlabel ? "，横轴 " + props.xlabel : ""}`;
 }
 
+/* W3-S9：数据表渲染（plotCard 工具条"数据表"切换钮消费）。展开时按传入
+   series 现渲染（点击现取 shell.props.series——复用换代后闭包不陈旧，与
+   导出钮同口径）。全动态值经 esc/escAttr（系列名/坐标=外部数据面；i18n
+   词表值同为可信 chrome 也统一走转义，sink 语境不留例外）；table 带
+   aria-label（读屏面）。零行数上限：与 CSV 导出同一保真口径（不静默
+   截断失真；S 参数宽扫 2 万行=显式用户动作的一次性渲染成本）。 */
+function _renderDataTable(wrap, series) {
+  const { headers, rows } = buildDataTable(series);
+  if (!headers.length) {
+    wrap.innerHTML = `<span class="muted">${esc(t("common.data_table_empty"))}</span>`;
+    return;
+  }
+  const head = headers.map((h) => `<th scope="col">${esc(h)}</th>`).join("");
+  const body = rows.map((r) =>
+    `<tr>${r.map((v) => `<td>${esc(v)}</td>`).join("")}</tr>`).join("");
+  wrap.innerHTML =
+    `<table aria-label="${escAttr(t("common.data_table_caption"))}">` +
+    `<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
 /* W5-S17（R1 §面3 联动 watch 激活）：跨图联动组挂接（首绘与复用换代共用
    单源）。echarts.connect(group) 只把组标记为已连接（5.6 vendored 实测
    fm[group]=true），实例经 .group 加入/离场（dispose 自动移出注册表），
@@ -501,6 +580,10 @@ export function plotCard(el, props = {}, ctx = {}) {
       // DOM 原地保留，钮仍存活——登记刷新零新增 DOM 面）
       const rp = el.querySelector && el.querySelector('button[data-export-kind="png"]');
       if (rp) registerRecentChartExport(rp);
+      // W3-S9：数据换代时若数据表展开 → 原样重渲染（toggle 开合态保持，
+      // 表内数据永与图同代；收起态零动作零渲染）
+      if (prevShell.dtWrap && !prevShell.dtWrap.hidden)
+        _renderDataTable(prevShell.dtWrap, props.series);
       return prevShell.chart;
     }
     if (prevShell) { // 同容器重建：旧实例先释放+旧监听先摘除（防泄漏累积）
@@ -533,6 +616,29 @@ export function plotCard(el, props = {}, ctx = {}) {
       getChart: () => shell.chart,
       getCsv: () => "\ufeff" + toCsv(shell.props.series),
     }, kinds)) tools.appendChild(b);
+    // W3-S9：数据表文本替代切换钮（CSV 导出旁，kit 按钮同款类名；读屏/
+    // 复制数据的文本替代面，W5-S23 a11y 建议④）。默认收起（零视觉回归）；
+    // 点击现取 shell.props.series 渲染/收起（复用换代后闭包不陈旧）；
+    // aria-expanded 同步开合态。node 行为钉环境无 document——整段只在
+    // 浏览器路径触达（plotCard 本身不进 node 行为钉）。
+    const dtBtn = document.createElement("button");
+    dtBtn.type = "button";
+    dtBtn.className = "minor plotcard-btn";
+    dtBtn.textContent = t("common.data_table");
+    dtBtn.title = t("common.data_table_title");
+    dtBtn.setAttribute("aria-expanded", "false");
+    const dtWrap = document.createElement("div");
+    dtWrap.className = "plotcard-dtable";
+    dtWrap.hidden = true;
+    dtBtn.onclick = () => {
+      const show = dtWrap.hidden;
+      dtWrap.hidden = !show;
+      dtBtn.setAttribute("aria-expanded", String(show));
+      if (show) _renderDataTable(dtWrap, shell.props.series);
+    };
+    tools.appendChild(dtBtn);
+    shell.dtBtn = dtBtn;
+    shell.dtWrap = dtWrap;
     // W4-S17（aurora_e，W3-S12 建议①登记面收窄）：本壳 PNG 导出钮登记为
     // 全站"最近渲染"（palette act-export-chart 事件桥消费面）。querySelector
     // 守卫=node 行为钉假元素环境静默跳过（#105 best-effort）。
@@ -548,6 +654,7 @@ export function plotCard(el, props = {}, ctx = {}) {
     chartDiv.style.width = props.width || ""; // W3-S12：Smith 方图等比（缺省=""=零变化）
     el.appendChild(tools);
     el.appendChild(chartDiv);
+    el.appendChild(dtWrap); // W3-S9：数据表容器（默认 hidden，零视觉回归）
     const chart = window.echarts.init(chartDiv);
     const onResize = () => { // 监听持存活守卫：实例被 dispose 后自动跳过
       if (!chart.isDisposed()) chart.resize();

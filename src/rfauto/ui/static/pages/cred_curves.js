@@ -179,7 +179,10 @@ export function credMaxDev(curves) {
    视图 i18n 烘焙——本模块零 t()；light=当前主题档（消费面 bodyIsLight()
    现取），经 themePick 取单源色对档位）。输出可直接喂 T.plotCard/
    buildEChartOption（line 族，数据形态在 tests/unit/test_ui_cred_curves
-   .py 钉）。 */
+   .py 钉）。消费口径（aurora_j W1-S1 异栅根治）：消费视图一律传
+   xvalue:true——双引擎各自 freq_ghz 频网点数/间距可不同，值轴下每条
+   迹线以自持 [x,y] 网出数（category 轴按索引共享 series[0].x 会把第二
+   引擎拉伸错位）；同栅场景值轴同样无损。 */
 export function credSeries(curves, labelOf, light) {
   return (curves || []).map((c) => ({
     name: labelOf(c),

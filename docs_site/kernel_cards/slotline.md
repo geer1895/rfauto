@@ -115,13 +115,17 @@ src/rfauto/core/slotline.py 公开符号 **13** 个（AST 机读）：
 
 ## 锚与测试入口
 
-analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双路径互证内核登记 analytic-anchor 轻条目」的延伸项——登记后重跑本生成器）。
+analytic-anchor（knowledge/anchors.yaml 机读命中）：
+
+| anchor_id | quantity |
+|---|---|
+| `msl_slot_transition.beta_slot.closedform-v1` | msl_slot_transition_beta_slot |
 
 判据书/规格指针（docstring 逐字引文钉）：
 
 - `tests/unit/test_w4_b_p3_slotline_wide.py`——引文："tests/unit/test_w4_b_p3_slotline_wide.py 钉）。"
 
-测试面（tests/unit 引用扫描，机读；合计 **213** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **224** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -137,6 +141,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 | `tests/unit/test_slotline_transitions.py` | 33 |
 | `tests/unit/test_w11s4_core_domains.py` | 15 |
 | `tests/unit/test_w4_b_p3_slotline_wide.py` | 15 |
+| `tests/unit/test_w4s15_anchor_batch.py` | 11 |
 | `tests/unit/test_x5_analytic_anchors.py` | 13 |
 
 XC-P 精度档案收集器（防漂移对照面）：`tests/unit/test_precision_profiles.py`；本卡保鲜门：`tests/unit/test_kernel_cards.py`。

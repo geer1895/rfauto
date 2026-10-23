@@ -760,6 +760,37 @@ entries:
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/cavity:cavity_tm010_perturbation_shift:01
+  kernel_file: src/rfauto/core/calc_families/cavity.py
+  module: rfauto.core.calc_families.cavity
+  symbol: cavity_tm010_perturbation_shift
+  kind: source
+  marker: 出处（
+  claim_line: 出处（一阶腔微扰定理 TM010 几何面）：
+  claim_block: '出处（一阶腔微扰定理 TM010 几何面）：
+
+    文献通行 TM010 测量式 εr′=1+0.539·(Vc/Vs)·(f0−fs)/f0、ε″=0.269·
+
+    (Vc/Vs)·(1/QLs−1/QL)——Alekajbaf-Dancila 2024 Int. J. Microw. Wirel.
+
+    Technol. 16(10):1665-1670 式(1)-(3) DOI 10.1017/S1759078724000308
+
+    逐字核对；一般定理同 Pozar Microwave Engineering §6.7/Slater 1946
+
+    （既有 cavity_perturbation_shift 同源）；Chen et al. 2004 书页式号
+
+    不可核按 #df6-⑬ 不落。'
+  refs:
+  - 10.1017/S1759078724000308
+  - (Vc/Vs)·(1/QLs−1/QL)——Alekajbaf-Dancila 2024 Int. J. Microw. Wirel
+  - 逐字核对；一般定理同 Pozar Microwave Engineering §6.7/Slater 1946
+  - （既有 cavity_perturbation_shift 同源）；Chen et al. 2004 书页式号
+  source_doi: 10.1017/S1759078724000308
+  eq_no: 式(1)
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/cdr_mask:<module>:01
   kernel_file: src/rfauto/core/calc_families/cdr_mask.py
   module: rfauto.core.calc_families.cdr_mask
@@ -916,6 +947,25 @@ entries:
   refs: []
   source_doi: null
   eq_no: §6.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/conductor_reg:<module>:01
+  kernel_file: src/rfauto/core/calc_families/conductor_reg.py
+  module: rfauto.core.calc_families.conductor_reg
+  symbol: <module>
+  kind: source
+  marker: 出处（
+  claim_line: 出处（见 rfauto.core.conductor_loss 模块 docstring §1：D. M. Pozar,
+  claim_block: '出处（见 rfauto.core.conductor_loss 模块 docstring §1：D. M. Pozar,
+
+    Microwave Engineering, 4th ed., §1.7.1 趋肤深度与表面电阻；本键为薄注
+
+    册包装，公式零复制）。'
+  refs: []
+  source_doi: null
+  eq_no: §1
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -3058,6 +3108,22 @@ entries:
   refs: []
   source_doi: null
   eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/wg_evanescent:<module>:01
+  kernel_file: src/rfauto/core/calc_families/wg_evanescent.py
+  module: rfauto.core.calc_families.wg_evanescent
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- wg_evanescent_attenuation：矩形波导一般理论截止下传播常数与波阻抗\n  （Pozar Microwave Engineering §3\
+    \ 矩形波导 TE/TM 模一般理论——式级\n  转引 Rizzi/Eaton 同族教科书通行形态，章节级落键面不落页码）。"
+  refs: []
+  source_doi: null
+  eq_no: §3
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）

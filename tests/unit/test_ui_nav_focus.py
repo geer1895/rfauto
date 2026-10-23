@@ -1,4 +1,4 @@
-"""W2-C a11y 焦点管理与全局兜错 回归钉（架构批 R1 审计 P1-1/P1-3/P1-5/
+"""W2-C a11y 焦点管理与全局兜错 回归钉（aurora36 R1 审计 P1-1/P1-3/P1-5/
 P2-4 项，2026-10-11 批）。
 
 源码钉（免 node DOM；node --check 保语法，风格对齐 test_ui_a11y_theme.py）：
@@ -30,7 +30,7 @@ _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "stati
 _APP = (_STATIC / "app.js").read_text(encoding="utf-8")
 _PALETTE = (_STATIC / "palette.js").read_text(encoding="utf-8")
 _INDEX = (_STATIC / "index.html").read_text(encoding="utf-8")
-# 架构批 A5-B（R6 R-4）：CHART_COLORS 单源迁 theme.js（app.js 经
+# aurora72 A5-B（R6 R-4）：CHART_COLORS 单源迁 theme.js（app.js 经
 # chartPalette 消费）——对比度钉换地址不换值
 _THEME = (_STATIC / "theme.js").read_text(encoding="utf-8")
 _NODE = shutil.which("node")

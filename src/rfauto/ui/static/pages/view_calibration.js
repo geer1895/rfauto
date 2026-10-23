@@ -82,6 +82,7 @@ export async function pageCalibration() {
   // PR-1 对比度：显式系列色按主题分档（浅色档白底 ≥3:1，深色档不变）
   const light = bodyIsLight();
   // PR-3 PlotCard 换壳：option 与迁移前等价（base 路径，scatter+xvalue+markline）
+  // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，ρ 散点读数面）
   T.plotCard(T.$("cal-evolution"), {
     series: [
       { name: t("calibration.series_sur"), type: "scatter", color: themePick(light, THEME_COLORS.seriesTeal),
@@ -89,7 +90,7 @@ export async function pageCalibration() {
       { name: t("calibration.series_cross"), type: "scatter", color: themePick(light, THEME_COLORS.seriesBlue),
         data: cro.map((e) => [e.n_evaluated, +e.rho]) },
     ],
-    xvalue: true, xlabel: t("calibration.xlabel"), ylabel: "ρ", zoom: false, height: "300px",
+    xvalue: true, crosshair: true, xlabel: t("calibration.xlabel"), ylabel: "ρ", zoom: false, height: "300px",
     markline: [{ yAxis: 0.8 }], exportName: "cal-evolution", exportCsv: false,
   });
   T.$("cal-gates").textContent = cro.length
@@ -160,9 +161,10 @@ async function loadCalibration(runId) {
       <details><summary class='muted'>${t("calibration.report_summary")}</summary><div class='muted'>${report}</div></details>
     </div>`;
   // PR-3 PlotCard 换壳：option 与迁移前等价（scatter+xvalue）
+  // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，参数空间散点读数面）
   T.plotCard(T.$("cal-scatter"), {
     series: [scatter],
-    xvalue: true, xlabel: xy[0],
+    xvalue: true, crosshair: true, xlabel: xy[0],
     ylabel: xy[1] || "cost", zoom: false, height: "320px",
     exportName: "cal-scatter", exportCsv: false,
   });

@@ -30,8 +30,9 @@ class TestCoverage:
         # covered ⊆ 注册表；patch 在覆盖内（patch.f_dip_l 双锚）
         assert set(out["covered"]) <= set(TEMPLATE_NOMINAL)
         assert "patch" in out["covered"]
-        # 覆盖率 ∈ (0,1)：首批补挂前的真实现状
-        assert 0.0 < out["coverage_ratio"] < 1.0
+        # 覆盖率 ∈ (0,1]：W4-S15 批（2026-10-23，ANCHORS 79→87）后
+        # 72/72 全覆盖 ratio=1.0（历史批补挂前真实现状 <1.0）
+        assert 0.0 < out["coverage_ratio"] <= 1.0
         # 通配锚单列（cps.gamma_er / mmt×2 / coupled_microstrip）
         wid = [w["anchor_id"] for w in out["wildcard_anchors"]]
         assert "cps.gamma_er.fdref-v1" in wid
@@ -40,14 +41,18 @@ class TestCoverage:
 
     def test_first_batch_templates_all_uncovered(self):
         cov = afs.anchor_family_coverage()
-        # 架构批 SENS-ANC 批（2026-10-14，ANCHORS 60→70）注册
+        # aurora_d SENS-ANC 批（2026-10-14，ANCHORS 60→70）注册
         # lange.finger_len_mm/cline_coupler.coupled_len_mm closedform-v1，
         # 候选表原 7 席中该 2 席转入覆盖态；service 表本席禁碰不撤条，
         # 钉面按现值放行已覆盖席（须在 covered），余席仍须零覆盖
         # （候选表不变式收窄版：零覆盖候选表只含未注册模板）。
         # W3-S15 批（2026-10-18）mline.z0_ohm.closedform-v1 落册：候选表
         # mline 席同款转覆盖态放行（钉面按现值，表不撤）
-        _SENS_ANC_COVERED = {"lange", "cline_coupler", "mline"}
+        # W4-S15 批（2026-10-23，ANCHORS 79→87）dipole/pifa/helix/wstep/
+        # embedded_ms 四族落册：候选表 7 席至此全部转覆盖态放行
+        # （表不撤；72/72 全覆盖后本候选表自然退役，未来新批另立）
+        _SENS_ANC_COVERED = {"lange", "cline_coupler", "mline", "dipole",
+                             "helix", "wstep", "embedded_ms"}
         for cand in afs.POINTER_BATCH_CANDIDATES:
             if cand["template"] in _SENS_ANC_COVERED:
                 assert cand["template"] in cov["covered"], (

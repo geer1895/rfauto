@@ -399,7 +399,9 @@ class TestCallSiteUnification:
         assert src.count("T.drawEChart(") == 0
         assert src.count('mode: "convergence"') == 2
         # crosshair: view_detail(0, 收编工厂) + sparams 2 + reports 1 + 工厂 1
-        assert src.count("crosshair: true") == 6  # +2 aurora_i W3-S2 cred_curves 对照图
+        # + 2 aurora_i W3-S2 cred_curves 对照图 + 6 aurora_j W3-S9（数值读数
+        # 类开十字线：playground/timeline×2/calibration×2/optstack）
+        assert src.count("crosshair: true") == 12
 
     def test_downsample_seam_in_plot_card_option(self):
         pc = _read("plotcard.js")

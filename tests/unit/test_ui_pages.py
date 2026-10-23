@@ -269,7 +269,7 @@ _FORBIDDEN_UI_TOKENS = (
 
 class TestUiLayerStaticGuard:
     def test_server_source_has_no_parsing_or_computation(self):
-        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py（handler 分域入 routes/，
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（handler 分域入 routes/，
         # 守卫随面走：任一 UI 模块出现解析/计算即红）。
         import rfauto.ui as ui_pkg
 
@@ -285,8 +285,8 @@ class TestUiLayerStaticGuard:
         assert [t for t in _FORBIDDEN_UI_TOKENS if t in bad]
 
     def test_static_pages_no_internal_absolute_path_placeholder(self):
-        # UI-R9 P2-5（uir8 审查；上传零敏感口径 项目规则 8）：static 面 js
-        # 不出现盘符绝对路径（filebrowser 占位符曾是 D:\rf_workspace；
+        # UI-R9 P2-5（uir8 审查；上传零敏感口径 AGENTS 8）：static 面 js
+        # 不出现盘符绝对路径（filebrowser 占位符曾是 E:\\HFSS_Connect；
         # vendor/ 排除——echarts.min.js 压缩体有 N:+ 类良性误命中）。
         import rfauto.ui as ui_pkg
 
@@ -299,7 +299,7 @@ class TestUiLayerStaticGuard:
         hits = {k: v for k, v in hits.items() if v}
         assert hits == {}, f"static 面出现盘符绝对路径: {hits}"
         # 守卫非空转：坏样本必命中（防正则笔误退化成永真）
-        assert pat.findall(r'placeholder="D:\rf_workspace 或其子目录"')
+        assert pat.findall(r'placeholder="E:\\HFSS_Connect 或其子目录"')
         # 修复本体钉：filebrowser 占位符为中性文案
         fb = (static_dir / "pages" / "filebrowser.js").read_text(
             encoding="utf-8")

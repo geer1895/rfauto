@@ -1,10 +1,45 @@
-"""B3 腔体微扰频移（TE101 场积分 + 三角网格样品微扰）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动）。
+"""B3 腔体微扰频移（TE101 场积分 + 三角网格样品微扰）（AU-1 自 core/calculators.py 机械拆分，2026-09-30；函数体逐字节未动；aurora_j W4-S12 原位扩展 cavity_tm010_perturbation_shift TM010 圆柱腔键 2026-10-23）。
 
 出处（一阶腔微扰定理，内核 core/material_characterization.py MA-2 转录）：
 - cavity_perturbation_shift：一阶腔体微扰定理 εr′/tanδ 反演
   （Waldron/Harrington 标准式；二级转引 L. F. Chen et al.,
   Microwave Electronics: Measurement and Materials Characterization,
-  2004 腔微扰测量章）。"""
+  2004 腔微扰测量章）。
+
+─── cavity_tm010_perturbation_shift（aurora_j W4-S12，2026-10-23）─────────
+
+TM010 圆柱腔介质测量键（轴上细杆样品正反解+Q 面）。物理口径（铁律 1c/
+#300；式号级来源见键 docstring/source）：
+
+- 空腔谐振：f0 = x01·c/(2πa)，x01=J0 第一零点=2.4048256（工程惯用圆整
+  2.405；scipy jn_zeros 单源）。TM010 无 z 依赖（p=0），场 Ez=E0·J0
+  (x01·r/a) 轴上极大。
+- 一阶材料微扰定理（Slater 1946 Rev. Mod. Phys. 18:441 / Waldron 1960
+  同族；Pozar §6.7 腔微扰同式）：
+      Δf/f0 = −(εr′−1)/2 · ∫Vs|E0|²dV / ∫Vc|E0|²dV
+- TM010 填充因子（本键精确式，超越"细杆轴上 E 场均匀"近似档）：
+      ∫0^rs J0²(kr)·r·dr = (rs²/2)·[J0²(k·rs)+J1²(k·rs)]（Bessel 恒等
+      式，k=x01/a）→ ∫Vs|E0|² = π·rs²·hs·[J0²(krs)+J1²(krs)]·E0²；
+      ∫Vc|E0|² = π·a²·h·J1²(x01)·E0²
+      → F = rs²·hs·[J0²(krs)+J1²(krs)] / (a²·h·J1²(x01))
+  细杆极限 rs≪a → F ≈ (Vs/Vc)/J1²(x01)。J1²(x01)=0.269514、2J1²=0.539028
+  ——文献通行 TM010 测量式的 0.269/0.539 几何常数即此（多源独立核实：
+  Alekajbaf-Dancila 2024 Int. J. Microw. Wirel. Technol. 16(10):1665-1670
+  DOI 10.1017/S1759078724000308 式(1)-(3) 逐字给出 ε′=1+0.539·(Vc/Vs)·
+  (f0−fs)/f0、ε″=0.269·(Vc/Vs)·(1/QLs−1/QL)；MSI 工程页同值注记"0.539
+  arises from Bessel function analysis"）。
+- 正解：Δf/f0 = −(εr′−1)·F/2（εr′ 已知→频移）；反解：εr′ = 1 −
+  2·(Δf/f0)/F（实测频移→εr′，Δf<0 必有 εr′>1）。f0/f_s 分母约定：
+  分母取空腔 f0（二级源式(1) 同口径；Δf/f0≪1 时与 /fs 二阶等价），本键
+  跟随。
+- Q 面（介质损耗）：1/Qs − 1/Q0 = εr″·F（样品耗散/储能比能量恒等式推
+  导，P_sample=(ωε0εr″/2)∫Vs|E|²）→ 正解 Qs = 1/(1/Q0 + εr′·tanδ·F)；
+  反解 εr″ = (1/Qs−1/Q0)/F、tanδ = εr″/εr′。ε″ 式无 ε′ 因子（能量比
+  恒等式，与文献 0.269 系数式逐字同构）。
+- L.F. Chen et al. 2004 书页式号：公开源不可逐位核实（书不在手边、网
+  源仅转引不带书内式号）——按 #df6-⑬ citation rot 纪律**不落书内式号**，
+  以上述可核验二级源（DOI 逐字式+多源系数互证）落档；与既有
+  cavity_perturbation_shift（TE101 矩形腔）同定理异几何，边界互指。"""
 
 from __future__ import annotations
 
@@ -232,3 +267,198 @@ def cavity_perturbation_shift(a_mm: float, b_mm: float, d_mm: float,
                     "（材料微扰式）+ Slater 形状微扰一阶式；TE101 场权 "
                     "sin²(πx/a)sin²(πz/d)，∫Vc|E|²=Vc/4。金属形状因子"
                     "（球/针极化率修正）不在一阶式内（followUp）。"}
+
+
+# ─── TM010 圆柱腔介质测量键（aurora_j W4-S12，2026-10-23；物理口径与
+# ─── 来源注记见模块 docstring「cavity_tm010_perturbation_shift」节）──────────
+
+def _tm010_field_ratio(x01: float, a_m: float, h_m: float, rs_m: float,
+                       hs_m: float) -> float:
+    """TM010 填充因子 F=∫Vs|E0|²/∫Vc|E0|²（轴上同轴杆，Bessel 恒等式精确）。
+
+    Ez=E0·J0(k·r)、k=x01/a；∫0^rs J0²(kr)·r·dr=(rs²/2)[J0²(krs)+J1²(krs)]；
+    ∫Vc|E|²=πa²h·J1²(x01)·E0²。细杆极限 rs≪a 退化为 (Vs/Vc)/J1²(x01)。
+    """
+    from scipy.special import j0, j1
+
+    kr = x01 / a_m * rs_m
+    int_vs = math.pi * rs_m * rs_m * hs_m * (
+        float(j0(kr)) ** 2 + float(j1(kr)) ** 2)
+    int_vc = math.pi * a_m * a_m * h_m * float(j1(x01)) ** 2
+    return int_vs / int_vc
+
+
+@register_calculator(
+    "cavity_tm010_perturbation_shift",
+    "TM010 圆柱腔微扰介质测量：轴上细杆样品一阶微扰正反解（f0=x01·c/2πa、"
+    "x01=2.4048；填充因子 F 含 J0²+J1² Bessel 恒等式精确场权，细杆极限="
+    "文献 0.539/0.269 几何常数式）；εr′↔Δf 恰给其一（正解/反解互斥），"
+    "Q 面可选（tanδ+Q0→Qs / Qs+Q0→εr″·tanδ）；εr′≤1 或 Δf≤0 非物理显式"
+    "拒绝；与 cavity_perturbation_shift（TE101 矩形腔）同定理异几何",
+    (("a_mm", "float mm 腔半径（>0）"),
+     ("h_mm", "float mm 腔高（>0）"),
+     ("sample_radius_mm", "float mm 轴上样品杆半径（0<rs<a）"),
+     ("sample_height_mm", "float mm 样品高（0<hs≤h；TM010 无 z 依赖，"
+      "取样体积即可）"),
+     ("epsilon_r", "float - 样品相对介电常数（正解方向，>1；与 df_ghz "
+      "恰给其一）"),
+     ("df_ghz", "float GHz 实测频移 f_loaded−f_empty（反解方向，<0；与 "
+      "epsilon_r 恰给其一）"),
+     ("tan_delta", "float - 样品损耗正切（正解 Q 面，须配 q_empty；≥0）"),
+     ("q_empty", "float - 空腔无载 Q（Q 面必配项，>0）"),
+     ("q_sample", "float - 加载腔无载 Q（反解 Q 面，>0，与 tan_delta 恰"
+      "给其一）")),
+    required=("a_mm", "h_mm", "sample_radius_mm", "sample_height_mm"),
+)
+def cavity_tm010_perturbation_shift(
+    a_mm: float, h_mm: float, sample_radius_mm: float,
+    sample_height_mm: float, epsilon_r: float | None = None,
+    df_ghz: float | None = None, tan_delta: float | None = None,
+    q_empty: float | None = None, q_sample: float | None = None,
+) -> dict:
+    """TM010 腔微扰介质测量正反解（物理口径与式号级注记见模块 docstring
+    TM010 节）。
+
+    出处（一阶腔微扰定理 TM010 几何面）：
+    文献通行 TM010 测量式 εr′=1+0.539·(Vc/Vs)·(f0−fs)/f0、ε″=0.269·
+    (Vc/Vs)·(1/QLs−1/QL)——Alekajbaf-Dancila 2024 Int. J. Microw. Wirel.
+    Technol. 16(10):1665-1670 式(1)-(3) DOI 10.1017/S1759078724000308
+    逐字核对；一般定理同 Pozar Microwave Engineering §6.7/Slater 1946
+    （既有 cavity_perturbation_shift 同源）；Chen et al. 2004 书页式号
+    不可核按 #df6-⑬ 不落。
+    """
+    from scipy.special import j1, jn_zeros
+
+    tag = "cavity_tm010_perturbation_shift"
+    a = _finite(a_mm, f"{tag}.a_mm")
+    h = _finite(h_mm, f"{tag}.h_mm")
+    rs = _finite(sample_radius_mm, f"{tag}.sample_radius_mm")
+    hs = _finite(sample_height_mm, f"{tag}.sample_height_mm")
+    if a <= 0.0:
+        raise ValueError(f"{tag}: a_mm 必须 >0，得到 {a_mm!r}")
+    if h <= 0.0:
+        raise ValueError(f"{tag}: h_mm 必须 >0，得到 {h_mm!r}")
+    if not 0.0 < rs < a:
+        raise ValueError(
+            f"{tag}: sample_radius_mm 必须在 (0, a_mm)（样品须细杆在腔内），"
+            f"得到 rs={rs!r}, a={a!r}")
+    if not 0.0 < hs <= h:
+        raise ValueError(
+            f"{tag}: sample_height_mm 必须在 (0, h_mm]，得到 {hs!r}")
+    if (epsilon_r is None) == (df_ghz is None):
+        raise ValueError(
+            f"{tag}: epsilon_r 与 df_ghz 必须恰给其一（正解/反解互斥；双给"
+            "或缺给均显式拒绝）")
+
+    a_m, h_m, rs_m, hs_m = a * 1e-3, h * 1e-3, rs * 1e-3, hs * 1e-3
+    x01 = float(jn_zeros(0, 1)[0])
+    j1_sq = float(j1(x01)) ** 2
+    f0_ghz = C_MM_GHZ * x01 / (2.0 * math.pi * a)
+    fill = _tm010_field_ratio(x01, a_m, h_m, rs_m, hs_m)
+    out: dict[str, Any] = {
+        "x01": round(x01, 15),
+        "f0_ghz": round(f0_ghz, 12),
+        "j1_sq_x01": round(j1_sq, 15),
+        "two_j1_sq": round(2.0 * j1_sq, 15),
+        "filling_factor": round(fill, 15),
+        "sample_volume_mm3": round(math.pi * rs * rs * hs, 12),
+        "cavity_volume_mm3": round(math.pi * a * a * h, 12),
+        "route": None,
+        "epsilon_r": None,
+        "df_ghz": None,
+        "df_over_f": None,
+    }
+
+    if epsilon_r is not None:
+        eps = _finite(epsilon_r, f"{tag}.epsilon_r")
+        if eps <= 1.0:
+            raise ValueError(
+                f"{tag}: epsilon_r 必须 >1（介质微扰；εr≤1 无微扰意义），"
+                f"得到 {epsilon_r!r}")
+        df_over_f = -(eps - 1.0) / 2.0 * fill
+        out.update({"route": "forward_shift", "epsilon_r": eps,
+                    "df_over_f": round(df_over_f, 18),
+                    "df_ghz": round(f0_ghz * df_over_f, 15)})
+    else:
+        df = _finite(df_ghz, f"{tag}.df_ghz")
+        if df >= 0.0:
+            raise ValueError(
+                f"{tag}: df_ghz 必须 <0（介质样品使谐振频率下降；df≥0 非"
+                f"物理），得到 {df_ghz!r}")
+        df_over_f = df / f0_ghz
+        eps_inv = 1.0 - 2.0 * df_over_f / fill
+        if eps_inv <= 1.0:
+            raise ValueError(
+                f"{tag}: 反解 epsilon_r={eps_inv!r} ≤1 非物理（频移量与填"
+                "充因子不自洽——检查样品体积/频移测量），显式拒绝")
+        out.update({"route": "inverse_eps_r",
+                    "df_over_f": round(df_over_f, 18),
+                    "df_ghz": round(df, 15), "epsilon_r": round(eps_inv, 15)})
+
+    if (tan_delta is not None) and (q_sample is not None):
+        raise ValueError(
+            f"{tag}: tan_delta 与 q_sample 必须恰给其一（Q 面正解/反解互斥"
+            "；双给显式拒绝）")
+    if q_sample is not None and q_empty is None:
+        raise ValueError(
+            f"{tag}: q_sample 反解须同时给 q_empty（Δ(1/Q) 口径需要空腔基"
+            "准），显式拒绝")
+    if tan_delta is not None and q_empty is None:
+        raise ValueError(
+            f"{tag}: tan_delta 正解须同时给 q_empty（1/Qs=1/Q0+εr″F 口径"
+            "需要空腔基准），显式拒绝")
+    if q_empty is not None:
+        q0 = _finite(q_empty, f"{tag}.q_empty")
+        if q0 <= 0.0:
+            raise ValueError(f"{tag}: q_empty 必须 >0，得到 {q_empty!r}")
+        eps_for_q = (epsilon_r if epsilon_r is not None else eps_inv)
+        if tan_delta is not None:
+            td = _finite(tan_delta, f"{tag}.tan_delta")
+            if td < 0.0:
+                raise ValueError(
+                    f"{tag}: tan_delta 必须 ≥0，得到 {tan_delta!r}")
+            qs = 1.0 / (1.0 / q0 + eps_for_q * td * fill)
+            out.update({"q_empty": q0, "tan_delta": td,
+                        "q_sample": round(qs, 12),
+                        "delta_inv_q": round(1.0 / qs - 1.0 / q0, 18)})
+        elif q_sample is not None:
+            qs = _finite(q_sample, f"{tag}.q_sample")
+            if qs <= 0.0:
+                raise ValueError(
+                    f"{tag}: q_sample 必须 >0，得到 {q_sample!r}")
+            d_inv = 1.0 / qs - 1.0 / q0
+            if d_inv <= 0.0:
+                raise ValueError(
+                    f"{tag}: 1/q_sample−1/q_empty={d_inv!r} ≤0（加载腔 Q "
+                    "不降非物理），显式拒绝")
+            eps_dd = d_inv / fill
+            out.update({"q_empty": q0, "q_sample": qs,
+                        "epsilon_r_double": round(eps_dd, 18),
+                        "tan_delta": round(eps_dd / eps_for_q, 18)})
+        else:
+            raise ValueError(
+                f"{tag}: q_empty 单给无消费方向（Q 面须 tan_delta 或 "
+                "q_sample 恰给其一），显式拒绝")
+
+    out.update({
+        "note": (
+            "一阶材料微扰定理 TM010 面：Δf/f0=−(εr′−1)F/2、εr″=(1/Qs−"
+            "1/Q0)/F（能量比恒等式）；F 为 J0²+J1² Bessel 恒等式精确场权"
+            "（细杆极限=(Vs/Vc)/J1²(x01)，文献通行式 0.539=2J1²/0.269="
+            "J1² 圆整）；分母频率按空腔 f0 口径（Δf/f0≪1 时与 /fs 二阶等"
+            "价，文献式(1) 同）；正反解经计算器级 forward→inverse 回代自"
+            "证（测试面合成样品回收钉）；与 "
+            "cavity_perturbation_shift 边界=TE101 矩形腔场积分面（同定"
+            "理异几何）；细杆近似有效性 rs≪a 守卫只做几何上限（场权精确"
+            "式对粗杆亦自洽，微扰小量假设的定量判据留 followUp）"),
+        "source": (
+            "一阶腔微扰定理（Slater 1946 Rev. Mod. Phys. 18:441/Waldron "
+            "1960 同族；Pozar Microwave Engineering §6.7 同式——既有 "
+            "cavity_perturbation_shift 同源）；TM010 几何常数 0.539=2J1²"
+            "(2.4048)/0.269=J1²：Alekajbaf-Dancila 2024 Int. J. Microw. "
+            "Wirel. Technol. 16(10):1665-1670 式(1)-(3)（DOI "
+            "10.1017/S1759078724000308）逐字核对+MSI 工程页同值注"
+            "记；L.F. Chen et al. 2004 书页式号公开源不可逐位核实——"
+            "#df6-⑬ 纪律不落书内式号如实登记"),
+    })
+    return out

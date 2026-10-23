@@ -26,8 +26,8 @@ exposes **274 CLI commands** and **152 MCP tools** (+10 resources) — kept
 honest by **27000+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 323 (with experimental 324)` · `TEMPLATE_META 72` ·
-`EXPECTED_TEMPLATES 72` · `ANCHORS 79` · CLI commands 274 (leaves) ·
+`CALCULATOR_REGISTRY 329 (with experimental 330)` · `TEMPLATE_META 72` ·
+`EXPECTED_TEMPLATES 72` · `ANCHORS 87` · CLI commands 274 (leaves) ·
 (152 MCP tools + 10 resources)
 <!-- numbers-end -->
 
@@ -104,7 +104,7 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 152 (+10 resources) | CLI commands 274 (leaves) | CALCULATOR_REGISTRY 323 [with experimental 324] | device templates 72 | anchors 79
+**Scale numbers**: MCP tools 152 (+10 resources) | CLI commands 274 (leaves) | CALCULATOR_REGISTRY 329 [with experimental 330] | device templates 72 | anchors 87
 <!-- AUTO-NUMBERS:END -->
 
 ## Quick start
@@ -193,6 +193,20 @@ Then register it in your MCP client (Claude Desktop example):
   }
 }
 ```
+
+## Run in Docker
+
+The repo ships a `Dockerfile`; CI builds it and smoke-tests the container on
+every push and PR. Local use is two commands:
+
+```bash
+docker build -t rfauto:local .
+docker run --rm rfauto:local   # entrypoint smoke: prints the CLI help
+```
+
+The image contains the open-source core only — no commercial tools or
+licenses included. For real runs, mount your work directory: add
+`-v "$PWD:/work" -w /work` before the image name.
 
 ## The Web UI
 

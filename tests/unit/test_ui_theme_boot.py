@@ -1,4 +1,4 @@
-"""W2-A（架构批）主题防闪（FOUC）boot 内联脚本回归钉。
+"""W2-A（aurora36）主题防闪（FOUC）boot 内联脚本回归钉。
 
 P0-2（R1_ui_audit §13/P0-2）：index.html head 内联脚本在样式表生效前同步读档
 → html[data-theme]，消灭"存了 light/ocean/system(亮) 的用户每次刷新先闪暗色
@@ -25,7 +25,7 @@ from pathlib import Path
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _HTML = (_STATIC / "index.html").read_text(encoding="utf-8")
-# 架构批 A5-B（R6 R-4）：THEME_KEY 键面单源迁 theme.js（pages.js re-export）
+# aurora72 A5-B（R6 R-4）：THEME_KEY 键面单源迁 theme.js（pages.js re-export）
 _THEME = (_STATIC / "theme.js").read_text(encoding="utf-8")
 
 _m = re.search(r"<head>(.*?)</head>", _HTML, re.S)

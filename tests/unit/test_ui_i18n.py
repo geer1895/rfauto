@@ -128,6 +128,9 @@ def _view_refs(src: str) -> set[str]:
 
 
 _APP_JS = (_STATIC / "app.js").read_text(encoding="utf-8")
+# aurora_j W3-S9：plotcard.js 同款入集（common.data_table* 四键——图表数据表
+# 文本替代面钮/caption/空态，共享组件与 index.html 引用同权）。
+_PLOTCARD_JS = (_STATIC / "plotcard.js").read_text(encoding="utf-8")
 
 
 def _shell_refs() -> set[str]:
@@ -135,8 +138,10 @@ def _shell_refs() -> set[str]:
     + kit.js t() 烘焙（common.empty/load_failed/retry 三缺省串——共享组件
     与 index.html 引用同权，W2-S1 批 4）+ app.js t() 烘焙（common.offline/
     online 离线检测提示串——壳 toast 单源消费，与 kit.js 同款口径，
-    W14-S2）。"""
-    return _attr_refs(_INDEX) | _t_refs(_DOM_JS) | _t_refs(_KIT_JS) | _t_refs(_APP_JS)
+    W14-S2）+ plotcard.js t() 烘焙（common.data_table* 数据表文本替代面，
+    aurora_j W3-S9，共享组件同款口径）。"""
+    return (_attr_refs(_INDEX) | _t_refs(_DOM_JS) | _t_refs(_KIT_JS)
+            | _t_refs(_APP_JS) | _t_refs(_PLOTCARD_JS))
 
 
 def _run_node_js(js: str) -> str:

@@ -2774,6 +2774,7 @@
     "service/campaign_queue_daemon.py": [
       "BLOCK_AHEAD",
       "BLOCK_CALENDAR",
+      "BLOCK_DEPS",
       "BLOCK_LICENSE",
       "BLOCK_NONE",
       "BLOCK_SOLO",
@@ -2801,7 +2802,8 @@
       "queue_tick",
       "run_queue_daemon",
       "save_queue_state",
-      "scan_queue"
+      "scan_queue",
+      "validate_depends_on"
     ],
     "service/cascade_service.py": [
       "PASSIVE_TYPES",

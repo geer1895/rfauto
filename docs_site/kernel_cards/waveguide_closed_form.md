@@ -113,12 +113,13 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a2c_coax_waveguide.py`——引文："数值锚（#118 独立来源；锚树 tests/unit/test_a2c_coax_waveguide.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **175** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **187** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a2c_coax_waveguide.py` | 38 |
 | `tests/unit/test_b_wave3_dr_te01d.py` | 16 |
+| `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_ui_tools_page.py` | 41 |
 | `tests/unit/test_w1s2_tier2_residual.py` | 17 |

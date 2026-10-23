@@ -213,9 +213,15 @@ def count_expected_templates() -> int:
 
 
 def count_templates() -> int:
-    """参数化器件模板数（docs/templates/*/meta.yaml 目录数）。"""
-    root = REPO_ROOT / "docs" / "templates"
-    return sum(1 for p in root.iterdir() if p.is_dir()) if root.is_dir() else 0
+    """参数化器件模板数（TEMPLATE_META 注册表单源，惰性 import）。
+
+    历史=docs/templates/*/ 目录计数；edb_* 板级载体文档族（5 目录，不在
+    72 族参数化注册表）入库后目录计数漂移为 77 与 README 72 失真——改按
+    注册表口径计数（README "parameterized device templates" 语义本就是
+    TEMPLATE_META）。"""
+    from rfauto.adapters.oe_templates.registry import TEMPLATE_META
+
+    return len(TEMPLATE_META)
 
 
 def count_anchors() -> int:

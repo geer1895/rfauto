@@ -24,8 +24,8 @@ resources），并靠 **27000+ 条单元测试**兜底验证——这些测试�
 就能跑。
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 323` · `TEMPLATE_META 72` · `EXPECTED_TEMPLATES 72` ·
-`ANCHORS 79` · CLI 命令 273（叶子） · （152 个工具 + 9 个 resources）
+`CALCULATOR_REGISTRY 329 (with experimental 330)` · `TEMPLATE_META 72` · `EXPECTED_TEMPLATES 72` ·
+`ANCHORS 87` · CLI 命令 274（叶子） · （152 个工具 + 10 个 resources）
 <!-- numbers-end -->
 
 **目录** · [为什么做](#为什么做这个) · [它能做什么](#它能做什么) ·
@@ -158,6 +158,19 @@ python -m rfauto.mcp_server        # stdio 传输；152 个工具
   }
 }
 ```
+
+## Docker 容器
+
+仓库根目录自带 `Dockerfile`，CI 每次 push 或 PR 都会构建并在容器里冒烟。
+本机两条命令即可复验：
+
+```bash
+docker build -t rfauto:local .
+docker run --rm rfauto:local   # 入口冒烟：打印 CLI 帮助后正常退出
+```
+
+镜像只含开源核心——不含任何商业工具与许可。真跑时挂载工作目录即可：
+在镜像名前加 `-v "$PWD:/work" -w /work`。
 
 ## Web UI
 

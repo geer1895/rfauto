@@ -238,7 +238,9 @@ class TestCrossSeatCountPins:
         assert _SRC.count("T.plotCard(") == 18
         assert _SRC.count("T.drawEChart(") == 0
         assert _SRC.count('mode: "convergence"') == 2
-        assert _SRC.count("crosshair: true") == 6
+        # + 6 aurora_j W3-S9（数值读数类开十字线：playground/timeline×2/
+        # calibration×2/optstack）
+        assert _SRC.count("crosshair: true") == 12
 
 
 # ────────────────────────── 2. 行为钉（node 在才跑） ──────────────────────────

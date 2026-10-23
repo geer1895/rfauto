@@ -82,6 +82,7 @@ class TestPlanCampaign:
         out = plan_campaign(two_candidates, total_budget=0)
         assert not out["ok"]
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（34.2s，surrogate 引擎数值面）
     def test_topology_ranking_and_promotion(self, two_candidates):
         out = plan_campaign(two_candidates, total_budget=12, promote_top=1,
                             engine="surrogate", seed=42)
@@ -104,6 +105,7 @@ class TestPlanCampaign:
         assert runs[0]["n_evaluations"] <= 12
         assert runs[0]["best_params"]
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（35.4s，surrogate 确定性双跑）
     def test_deterministic_same_seed_same_plan(self, two_candidates):
         a = plan_campaign(two_candidates, total_budget=10, promote_top=1,
                           seed=7)
@@ -121,6 +123,7 @@ class TestPlanCampaign:
         shares = [r["budget_share"] for r in runs]
         assert sum(shares) == 30 and shares[0] > shares[1]
 
+    @pytest.mark.slow  # 终门 DURATIONS top-20 慢件（34.7s，surrogate 引擎数值面）
     def test_recipe_without_bounds_not_promoted(self, tmp_path,
                                                 two_candidates):
         recipe = tmp_path / "no_bounds.yaml"

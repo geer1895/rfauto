@@ -330,6 +330,6 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 markers = [
     "real_edt: 需要真实 AEDT/ADS 环境（deselect with -m not real_edt）",
-    "slow: 终门 DURATIONS >60s 慢件（2026-10-20 分层标注 8 件：真树敏感/数值重件/再生面；现仅作元数据——夜档 solo/CI 分离后续接线，加标不改任何门的 deselect 行为）",
+    "slow: 终门 DURATIONS 慢件分层（>60s 全覆盖=top-20：2026-10-20 标 8 件 +2026-10-23 补 top-20 余量 13 件，共 21 件；夜档三态 RFAUTO_GATE_SLOW_MODE=day/night——加标不改任何门缺省 deselect 行为）",
     "solo: 计时敏感/资源敏感测试，仅串行全量门与 CI 执行（并行门与 xdist 对照臂 deselect）",
 ]

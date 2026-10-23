@@ -1,8 +1,9 @@
 # rfauto 容器镜像
 #
-# 如实口径：本镜像发布时只做过静态校验（指令合法性、COPY 源存在性、
-# JSON 数组形式 CMD 解析、基镜像与 requires-python 相容性），**未真构建**。
-# 首次真构建建议：
+# 真构建通道：GitHub Actions "docker-build" job（.github/workflows/ci.yml）
+# 每次 push/PR 用本文件真构建镜像，并在容器内冒烟（import / __version__ /
+# 默认入口 rfauto --help，退出码 0 即通过）。
+# 本机复验（需本机有 docker）：
 #   docker build -t rfauto:local .
 #   docker run --rm rfauto:local        # 入口冒烟：CMD 跑 rfauto --help
 FROM python:3.12-slim

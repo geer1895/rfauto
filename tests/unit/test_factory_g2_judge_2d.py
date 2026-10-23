@@ -192,6 +192,7 @@ def test_synthetic_recovery_gp_heldout_2d_within_gates():
     assert 0.5 <= tri["w_mm"] <= 1.6 and 0.15 <= tri["gap_mm"] <= 0.5
 
 
+@pytest.mark.slow  # 终门 DURATIONS top-20 慢件（28.6s，GP 确定性双跑逐位对账）
 def test_determinism_double_run_bit_identical():
     # G4-回归锚：同数据集同划分判读链双跑逐位一致（bit-identical）
     rows = g2j.synthetic_cpw_rows(SMALL_FREQS)

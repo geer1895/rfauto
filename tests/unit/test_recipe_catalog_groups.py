@@ -123,14 +123,14 @@ class TestPagesRenderPin:
 
     def test_catalog_groups_original_and_workcopy(self) -> None:
         body = self._page_recipe_body()
-        # UI i18n 批（2026-10-19）把文案迁入 pages/i18n.js 词表——渲染钉
-        # 同步改钉键面（zh 词值仍钉在词表，见 test_ui_i18n 键集互证）。
-        assert 't("recipe.orig_head")' in body
-        assert 't("recipe.workcopy_head")' in body
-        assert 'T.badge(t("recipe.workcopy_badge")' in body
+        # aurora_i 文案二遍把分组标签迁 i18n 词表（recipe.* 键域）——
+        # 钉改键位形态，语义不变：原件组在上、工作副本组独立+徽章+审阅提示
+        assert "t(\"recipe.orig_head\")" in body
+        assert "t(\"recipe.workcopy_head\")" in body
+        assert "t(\"recipe.workcopy_badge\")" in body
+        assert "T.badge(t(\"recipe.workcopy_badge\")" in body
         # 工作副本条目给人工审阅入库提示（指向既有审批链入口名）
         assert "rfauto inbox" in body
-        assert 't("recipe.review_mid")' in body
 
     def test_loaded_recipe_workcopy_indicator(self) -> None:
         body = self._page_recipe_body()

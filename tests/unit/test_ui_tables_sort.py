@@ -1,4 +1,4 @@
-"""架构批 W3-B 席位回归钉：自研管线图表导出 + 可排序表格 + fmtNum（R1 §③/P1-7/P1-10）。
+"""aurora36 W3-B 席位回归钉：自研管线图表导出 + 可排序表格 + fmtNum（R1 §③/P1-7/P1-10）。
 
 对象：src/rfauto/ui/static/pages.js（本席独占文件面；plotcard.js/app.js 只读）。
 
@@ -33,7 +33,7 @@ import pytest
 
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
-# 架构批 UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
+# aurora_d UI-R2（2026-10-14）：pages.js 拆分为薄入口 + pages/ 域模块（零构建
 # ESM）——源码钉读"入口+全部域模块"并集，行为断言逐字不变（拆分前=单文件）。
 def _pages_union_text() -> str:
     parts = [_STATIC / "pages.js"]

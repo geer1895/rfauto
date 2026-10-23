@@ -199,9 +199,10 @@ export async function pageOptStack() {
       series.push({ name: t("optstack.series_infeasible"), type: "scatter", data: infeas.map(toXY),
         color: themePick(bodyIsLight(), THEME_COLORS.seriesRed), symbolSize: 9 });
     // PR-3 PlotCard 换壳：option 与迁移前等价（scatter+xvalue，zoom off）
+    // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，前沿点读数面）
     T.plotCard(el, {
       series,
-      xvalue: true, xlabel: names[0] + t("optstack.violation_axis_suffix"),
+      xvalue: true, crosshair: true, xlabel: names[0] + t("optstack.violation_axis_suffix"),
       ylabel: names[1] + t("optstack.violation_axis_suffix"),
       height: "300px", zoom: false,
       exportName: "pareto-front", exportCsv: false,

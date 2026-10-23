@@ -197,11 +197,13 @@ nav:
       - 公式出处声明与再生: how-to/formula-provenance.md
       - golden 几何回归仓: how-to/golden-geometry-regression.md
       - campaign 远程路由: how-to/campaign-remote-routing.md
+      - 远程调度与通知: how-to/campaign-queue-and-notify.md
       - UI 性能与契约门: how-to/ui-performance-and-contract-gate.md
       - i18n 键管理: how-to/i18n-keys.md
       - RegistryKit 注册表脚手架: how-to/registry-kit.md
       - 数据湖与数据集消费: how-to/lake-data-guide.md
       - 内核文档卡再生: how-to/kernel-cards.md
+      - 容器构建与 CI 通道: how-to/container-build-and-ci.md
   - 画廊: gallery.md
 
 copyright: "MIT License · rfauto contributors"

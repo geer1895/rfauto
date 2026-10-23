@@ -5,6 +5,8 @@
 stage 级 `remote` 键，把真机阶段路由到已登记的远程机器。多机通道全景与机器登记实操见
 docs/tutorials/remote_server.md；服务器硬规则以
 docs/服务器接入与仿真资源说明.md 为准（本文不重复红线表）。
+队列常驻调度、停滞对冲、选机推荐、digest 摘要推送与计划间依赖见
+docs/how-to/campaign-queue-and-notify.md。
 
 ## 0. 前置
 
