@@ -93,7 +93,7 @@ JSON 输出里的 `recommend` 块给登记机器打一个可用性参考分（�
 ```jsonc
 {
   "recommend": {
-    "machine": "sim_server",
+    "machine": "sim-host",
     "eligible": true,
     "score": 1.5,
     "max_parallel": 1,

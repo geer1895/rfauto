@@ -289,7 +289,7 @@ E         [PASS] kernel_cards (6.7s) [kernel-cards] OK：74 张卡与三源同�
 E         == check_docs_drift RED (rc=1)：DRIFT/PASS ==
 E         
 E       assert 1 == 0
-E        +  where 1 = CompletedProcess(args=['E:\\HFSS_Connect\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...y\n[PASS] kernel_cards (6.7s) [kernel-cards] OK：74 张卡与三源同步\n== check_docs_drift RED (rc=1)：DRIFT/PASS ==\n", stderr='').returncode
+E        +  where 1 = CompletedProcess(args=['C:\\rfauto\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...y\n[PASS] kernel_cards (6.7s) [kernel-cards] OK：74 张卡与三源同步\n== check_docs_drift RED (rc=1)：DRIFT/PASS ==\n", stderr='').returncode
 
 tests\unit\test_check_docs_drift.py:167: AssertionError
 __________________ test_driver_only_subset_runs_single_face ___________________
@@ -305,12 +305,12 @@ E         [DRIFT] docs_site (50.8s) [docs_site] 漂移：1 个文件与基准不
 E         == check_docs_drift RED (rc=1)：DRIFT ==
 E         
 E       assert 1 == 0
-E        +  where 1 = CompletedProcess(args=['E:\\HFSS_Connect\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py\n== check_docs_drift RED (rc=1)：DRIFT ==\n", stderr='').returncode
+E        +  where 1 = CompletedProcess(args=['C:\\rfauto\\release\\rfauto_public\\.venv\\Scripts\\python.exe', 'scripts/check_docs_dri...准不一致（前 1）：['index.md']——仓根重跑 python scripts/build_docs_pages.py\n== check_docs_drift RED (rc=1)：DRIFT ==\n", stderr='').returncode
 
 tests\unit\test_check_docs_drift.py:178: AssertionError
 ________________ test_committed_docs_site_matches_regeneration ________________
 
-tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-8089/test_committed_docs_site_match0')
+tmp_path = WindowsPath('C:/Users/user/AppData/Local/Temp/pytest-of-user/pytest-8089/test_committed_docs_site_match0')
 
     def test_committed_docs_site_matches_regeneration(tmp_path: Path) -> None:
         build_docs_pages.build_all(tmp_path)
@@ -350,14 +350,14 @@ tests/unit/test_aaa_pilot.py::TestAaaFit::test_residues_finite_and_shaped
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_report
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_deterministic
 tests/unit/test_aaa_pilot.py::TestAaaVsVfCompare::test_compare_deterministic
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\aaa.py:134: ComplexWarning: Casting complex values to real discards the imaginary part
+  C:\rfauto\release\rfauto_public\src\rfauto\core\aaa.py:134: ComplexWarning: Casting complex values to real discards the imaginary part
     support_points = np.asarray(approx.support_points, dtype=float).ravel()
 
 tests/unit/test_ads_circuit.py::TestRenderNetlistDelegate::test_render_netlist_3port
 tests/unit/test_ads_netlist.py::TestGenerateNetlist::test_3port_generates_snp_and_ports
 tests/unit/test_ads_netlist.py::TestGenerateNetlist::test_missing_template_raises
 tests/unit/test_field_circuit_anchor.py::TestRenderCascadeNetlist::test_rejects_wrong_port_count
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\mathFunctions.py:303: RuntimeWarning: divide by zero encountered in log10
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\mathFunctions.py:303: RuntimeWarning: divide by zero encountered in log10
     out = 20 * np.log10(z)
 
 tests/unit/test_afr_2xthru.py::TestDeembed::test_recovery_within_1e3_db
@@ -368,30 +368,30 @@ tests/unit/test_afr_2xthru_mm.py::test_single_end_path_still_gated_and_2port_rec
 tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_lumped_corpus
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\measurement\afr_2xthru.py:90: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
+  C:\rfauto\release\rfauto_public\src\rfauto\measurement\afr_2xthru.py:90: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
     return IEEEP370_SE_NZC_2xThru.extrapolate_to_dc(net)
 
 tests/unit/test_afr_2xthru.py: 3 warnings
 tests/unit/test_afr_2xthru_mm.py: 2 warnings
 tests/unit/test_rules_verify.py: 1 warning
 tests/unit/test_w4_d_ms3_selector.py: 4 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: DC point detected. An interpolated DC point will be included in the errorboxes.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: DC point detected. An interpolated DC point will be included in the errorboxes.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru)
 
 tests/unit/test_afr_2xthru.py: 3 warnings
 tests/unit/test_afr_2xthru_mm.py: 2 warnings
 tests/unit/test_rules_verify.py: 1 warning
 tests/unit/test_w4_d_ms3_selector.py: 4 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:3150: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
                      this calculation. The output results will be re-interpolated to the original vector.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru)
 
 tests/unit/test_array_coupling.py::test_replay_fixture_provenance_and_structure
-  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_array_coupling.py:414: ComplexWarning: Casting complex values to real discards the imaginary part
+  C:\rfauto\release\rfauto_public\tests\unit\test_array_coupling.py:414: ComplexWarning: Casting complex values to real discards the imaginary part
     assert abs(float(np.mean(np.diag(s_meas)))) < 1.0    # 数据合理域
 
 tests/unit/test_builder_utils.py::TestWilkinsonHfssBuildMock::test_build_uses_correct_api_parameter_names
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\defusedxml\__init__.py:30: DeprecationWarning: defusedxml.cElementTree is deprecated, import from defusedxml.ElementTree instead.
     from . import cElementTree
 
 tests/unit/test_c3_q_extract.py: 2 warnings
@@ -402,7 +402,7 @@ tests/unit/test_slotline_transitions.py: 2 warnings
 tests/unit/test_transfer_protocol.py: 1 warning
 tests/unit/test_trust_region.py: 1 warning
 tests/unit/test_w1s1_ui_deploy_hardening.py: 2 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\_pytest\fixtures.py:1313: PytestRemovedIn10Warning: Class-scoped fixture defined as instance method is deprecated.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\_pytest\fixtures.py:1313: PytestRemovedIn10Warning: Class-scoped fixture defined as instance method is deprecated.
   Instance attributes set in this fixture will NOT be visible to test methods,
   as each test gets a new instance while the fixture runs only once per class.
   Use @classmethod decorator and set attributes on cls instead.
@@ -410,20 +410,20 @@ tests/unit/test_w1s1_ui_deploy_hardening.py: 2 warnings
     fixturefunc = resolve_fixture_function(fixturedef, request)
 
 tests/unit/test_calkit.py::TestVNAApplyCalkit::test_vna_apply_cal_kit_logs
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
   2.0-3.0 GHz, 11 pts
     return connect(ntwkA, N, ntwkB, 0, num=N)
 
 tests/unit/test_com_pam4.py: 16 warnings
 tests/unit/test_com_pam4_service.py: 8 warnings
 tests/unit/test_si_channel_service.py: 2 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:280: DeprecationWarning: 
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:280: DeprecationWarning: 
                             Frequency unit not passed: uses 'Hz' per default.
                             
     temp_freq =  cls(0,0,0,unit=unit)
 
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:306: UserWarning: Overwrite an old format constraint.
+  C:\rfauto\release\rfauto_public\src\rfauto\optimization\optimizer.py:306: UserWarning: Overwrite an old format constraint.
     params[name] = trial.suggest_float(name, low, high, log=log)
 
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
@@ -432,7 +432,7 @@ tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_al
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_tpe_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_gp_batch_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:1358: UserWarning: Overwrite an old format constraint.
+  C:\rfauto\release\rfauto_public\src\rfauto\optimization\optimizer.py:1358: UserWarning: Overwrite an old format constraint.
     best_trial = study.best_trial
 
 tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_partial_feasible_region
@@ -441,31 +441,31 @@ tests/unit/test_constraint_optimization.py::TestConstrainedOptimization::test_al
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_tpe_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSamplerPolicy::test_gp_batch_with_constraints_runs
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:342: UserWarning: Overwrite an old format constraint.
+  C:\rfauto\release\rfauto_public\src\rfauto\optimization\optimizer.py:342: UserWarning: Overwrite an old format constraint.
     cons = getattr(trial, "constraints", None)
 
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_constraint_optimization.py:318: UserWarning: Overwrite an old format constraint.
+  C:\rfauto\release\rfauto_public\tests\unit\test_constraint_optimization.py:318: UserWarning: Overwrite an old format constraint.
     cons = t.constraints
 
 tests/unit/test_constraint_optimization.py::TestSetConstraintDualWrite::test_dual_write_user_attrs_and_system_attrs
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\optimization\optimizer.py:322: UserWarning: Overwrite an old format constraint.
+  C:\rfauto\release\rfauto_public\src\rfauto\optimization\optimizer.py:322: UserWarning: Overwrite an old format constraint.
     cons = getattr(trial, "constraints", None)
 
 tests/unit/test_edb_templates_ext.py::test_cl_custom_params_flow
-  E:\HFSS_Connect\release\rfauto_public\tests\unit\test_edb_templates_ext.py:317: UserWarning: coupled_line 厚度伪象区守卫：s/t=17.89≥4 属伪象主导区划线（W8 实测 bias+2.274dB@s/t=4.29 为 ΔS 收敛档伪象主导、非纯厚度，厚度效应量值未分辨）——仅提示不阻断（数据不足硬门，#122），判读请收紧收敛档复核
+  C:\rfauto\release\rfauto_public\tests\unit\test_edb_templates_ext.py:317: UserWarning: coupled_line 厚度伪象区守卫：s/t=17.89≥4 属伪象主导区划线（W8 实测 bias+2.274dB@s/t=4.29 为 ΔS 收敛档伪象主导、非纯厚度，厚度效应量值未分辨）——仅提示不阻断（数据不足硬门，#122），判读请收紧收敛档复核
     spec, _ = emit_coupled_line_spec({
 
 tests/unit/test_eipu_cost_cooling.py: 38 warnings
 tests/unit/test_eipu_sampler.py: 100 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.1. Decreasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.1. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_eipu_sampler.py::test_loop_budget_referee_eipu_beats_ei
 tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_quality_reacts_to_data
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 11 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 11 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -474,22 +474,22 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
 
 tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
 tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_eipu_sampler.py::test_loop_bounds_respected
 tests/unit/test_eipu_sampler.py::test_loop_breaks_on_saturation
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 3.0. Increasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 3.0. Increasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_field_circuit_anchor.py::TestMacromodelBridge::test_fit_reconstruction_and_cascade
 tests/unit/test_field_circuit_anchor.py::TestRunAnchorOffline::test_end_to_end_offline_ok
 tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: UserWarning: The fitted network is passive, but the vector fit is not passive. Consider running `passivity_enforce()` to enforce passivity before using this model.
+  C:\rfauto\release\rfauto_public\src\rfauto\core\macromodel.py:1464: UserWarning: The fitted network is passive, but the vector fit is not passive. Consider running `passivity_enforce()` to enforce passivity before using this model.
     vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
 
 tests/unit/test_global_local.py::TestMonotoneGuard::test_no_adoption_falls_back_honestly
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\scipy\optimize\_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
     self.H.update(self.x - self.x_prev, self.g - self.g_prev)
 
 tests/unit/test_heteroscedastic_gp.py: 13 warnings
@@ -502,43 +502,43 @@ tests/unit/test_surrogate_optimize_service.py: 10 warnings
 tests/unit/test_trust_region.py: 35 warnings
 tests/unit/test_uncertainty.py: 25 warnings
 tests/unit/test_wp39_benchmark.py: 12 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_heteroscedastic_gp.py: 6 warnings
 tests/unit/test_metric_transform.py: 40 warnings
 tests/unit/test_surrogate_analysis.py: 18 warnings
 tests/unit/test_wp39_benchmark.py: 10 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_isac_ambiguity.py::test_woodward_volume_invariant_lfm
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\isac_ambiguity.py:275: ComplexWarning: Casting complex values to real discards the imaginary part
+  C:\rfauto\release\rfauto_public\src\rfauto\core\isac_ambiguity.py:275: ComplexWarning: Casting complex values to real discards the imaginary part
     chi00 = float(np.sum(np.asarray(sig, dtype=complex)
 
 tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_csx_properties_offline_exec
 tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_exec_port_plane_on_grid
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
     return _methods._mean(a, axis=axis, dtype=dtype,
 
 tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_csx_properties_offline_exec
 tests/unit/test_layout_sim_service.py::TestExecGeometryAudit::test_exec_port_plane_on_grid
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\numpy\_core\_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
     ret = ret.dtype.type(ret / rcount)
 
 tests/unit/test_macromodel_replay.py::test_replay_skrf_export_n4_matches_closed_form
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
+  C:\rfauto\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
   Hint: the linear system was ill-conditioned (max. condition number was 2.0868286279151756e+16).
     vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
 
 tests/unit/test_material_characterization.py::TestFreeSpaceMA3::test_network_requires_2port
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:282: InvalidFrequencyWarning: Frequency values are not monotonously increasing!
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\frequency.py:282: InvalidFrequencyWarning: Frequency values are not monotonously increasing!
   To get rid of the invalid values call `drop_non_monotonic_increasing`
     temp_freq.check_monotonic_increasing()
 
 tests/unit/test_metric_transform.py: 14 warnings
 tests/unit/test_surrogate_analysis.py: 4 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 14 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 14 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -550,7 +550,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perf
 tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
 tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
 tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 16 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 16 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -560,7 +560,7 @@ tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_iden
 tests/unit/test_metric_transform.py: 2 warnings
 tests/unit/test_surrogate_analysis.py: 3 warnings
 tests/unit/test_w3_c_registry_e2e.py: 5 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 15 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 15 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -574,14 +574,14 @@ tests/unit/test_trust_region.py: 1 warning
 tests/unit/test_uncertainty.py: 4 warnings
 tests/unit/test_w3_c_registry_e2e.py: 20 warnings
 tests/unit/test_wp39_benchmark.py: 52 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:455: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified upper bound 100000.0. Increasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_wp39_benchmark.py::TestSboOffline::test_1d_converges_within_budget
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-mline]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 19 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 19 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -592,7 +592,7 @@ tests/unit/test_metric_transform.py: 1 warning
 tests/unit/test_surrogate_analysis.py: 1 warning
 tests/unit/test_surrogate_loop.py: 1 warning
 tests/unit/test_w3_c_registry_e2e.py: 10 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 10 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 10 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -600,7 +600,7 @@ tests/unit/test_w3_c_registry_e2e.py: 10 warnings
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 23 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 23 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -610,7 +610,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perf
 tests/unit/test_metric_transform.py::TestSelection::test_loo_loglik_prefers_perfect_function_over_noise
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 17 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 17 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -621,7 +621,7 @@ tests/unit/test_metric_transform.py: 1 warning
 tests/unit/test_mf_surrogate_loop.py: 1 warning
 tests/unit/test_surrogate_analysis.py: 3 warnings
 tests/unit/test_w3_c_registry_e2e.py: 5 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 12 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 12 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -632,7 +632,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 6 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 6 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -643,7 +643,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_selection_failure_is_best_effort
 tests/unit/test_surrogate_loop.py::TestSurrogateLoop::test_budget_stop_and_1d_convergence
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 8 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 8 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -658,7 +658,7 @@ tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
 tests/unit/test_metric_transform.py::TestSelection::test_complex_curves_all_four_domains
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 1e-05. Decreasing the bound and calling fit again may find a better value.
     warnings.warn(
 
 tests/unit/test_mf_surrogate_loop.py::TestMultiFidelityAcceptance::test_forrester_half_fine_evaluations
@@ -666,7 +666,7 @@ tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_param_importa
 tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_param_importance
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 13 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 13 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -674,11 +674,11 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_openems_rotation.py::test_corrupt_csv_forces_round_rerun
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_corrupt_csv_forces_round_0\p3\sparams.csv"
+  C:\rfauto\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\user\AppData\Local\Temp\pytest-of-user\pytest-8089\test_corrupt_csv_forces_round_0\p3\sparams.csv"
     data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1,
 
 tests/unit/test_openems_rotation.py::test_six_port_corrupt_csv_forces_round_rerun
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_six_port_corrupt_csv_forc0\p5\sparams.csv"
+  C:\rfauto\release\rfauto_public\src\rfauto\adapters\openems_rotation.py:127: UserWarning: loadtxt: input contained no data: "C:\Users\user\AppData\Local\Temp\pytest-of-user\pytest-8089\test_six_port_corrupt_csv_forc0\p5\sparams.csv"
     data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1,
 
 tests/unit/test_recipe_loop_remote.py::test_run_loop_remote_backfill_and_result_file
@@ -689,7 +689,7 @@ tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_iden
 tests/unit/test_recipe_loop_remote.py::test_restart_full_replay_zero_launch_identical_trace
 tests/unit/test_surrogate_analysis.py::TestQualityMetrics::test_analyze_reports_cross_validated_quality
 tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_runs_selection_on_cost
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 22 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 22 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -698,7 +698,7 @@ tests/unit/test_surrogate_analysis.py::TestMetricDomainMeta::test_auto_domain_ru
 
 tests/unit/test_recipe_loop_remote.py: 3 warnings
 tests/unit/test_wp39_benchmark.py: 8 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 20 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 20 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -710,28 +710,28 @@ tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_lumped_corpus
 tests/unit/test_w4_d_ms3_selector.py::test_nzc_insensitive_to_dz
 tests/unit/test_w4_d_ms3_selector.py::test_determinism_bitwise_with_noise
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\service\deembed_selector_service.py:79: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
+  C:\rfauto\release\rfauto_public\src\rfauto\service\deembed_selector_service.py:79: RuntimeWarning: Non-uniform frequency vector detected. Consider interpolation.
     return IEEEP370_SE_NZC_2xThru.extrapolate_to_dc(net)
 
 tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: DC point detected. The included DC point will not be used during extraction.
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: DC point detected. The included DC point will not be used during extraction.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
 
 tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\calibration\deembedding.py:4047: RuntimeWarning: Non-uniform frequency vector detected. An interpolated S-parameter matrix will be created for
                  this calculation. The output results will be re-interpolated to the original vector.
     self.s_side1, self.s_side2 = self.split2xthru(self.s2xthru.copy(),
 
 tests/unit/test_rules_verify.py::test_r010_deembed_selector_ideal_baseline
 tests/unit/test_w4_d_ms3_selector.py::test_ideal_baseline_distributed_corpus
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\network.py:6106: UserWarning: Using a frequency subset:
   100000000.0-40000000000.0 Hz, 2 pts
     return connect(ntwkA, N, ntwkB, 0, num=N)
 
 tests/unit/test_si_channel_service.py::TestSources::test_corrupt_csv_no_touchstone_fallback
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\service\health_service.py:123: UserWarning: loadtxt: input contained no data: "C:\Users\PC\AppData\Local\Temp\pytest-of-PC\pytest-8089\test_corrupt_csv_no_touchstone0\run_bad_csv\sparams.csv"
+  C:\rfauto\release\rfauto_public\src\rfauto\service\health_service.py:123: UserWarning: loadtxt: input contained no data: "C:\Users\user\AppData\Local\Temp\pytest-of-user\pytest-8089\test_corrupt_csv_no_touchstone0\run_bad_csv\sparams.csv"
     data = np.loadtxt(str(csv_path), delimiter=",", skiprows=1, ndmin=2)
 
 tests/unit/test_surrogate_analysis.py::TestSurrogateAnalysis::test_basic_analysis
@@ -742,7 +742,7 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 21 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 21 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -751,7 +751,7 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
 
 tests/unit/test_surrogate_analysis.py: 6 warnings
 tests/unit/test_w3_c_registry_e2e.py: 5 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 9 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 9 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -761,7 +761,7 @@ tests/unit/test_w3_c_registry_e2e.py: 5 warnings
 tests/unit/test_surrogate_analysis.py: 5 warnings
 tests/unit/test_w3_c_registry_e2e.py: 15 warnings
 tests/unit/test_wp39_benchmark.py: 3 warnings
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 7 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 7 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -769,20 +769,20 @@ tests/unit/test_wp39_benchmark.py: 3 warnings
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_w3_a_lake_compact.py::TestVfSummary::test_bounded_lossy_reports_honest_bound
-  E:\HFSS_Connect\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
+  C:\rfauto\release\rfauto_public\src\rfauto\core\macromodel.py:1464: RuntimeWarning: Vector Fitting: The pole relocation process stopped after reaching the maximum number of iterations (N_max = 100). The results did not converge properly.
     vf.vector_fit(n_poles_real=n_real, n_poles_cmplx=n_cmplx)
 
 tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: divide by zero encountered in divide
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: divide by zero encountered in divide
     a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
 
 tests/unit/test_w4_a_sm_core.py::test_kj_dispersion_monotone_toward_er_and_air_identity
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: invalid value encountered in multiply
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\skrf\media\mline.py:657: RuntimeWarning: invalid value encountered in multiply
     a_dielectric =  pi * ep_r / (ep_r - 1) * (ep_reff - 1) / \
 
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_campaign_json_contract[sbo-ratrace]
 tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 25 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 25 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -790,7 +790,7 @@ tests/unit/test_wp39_benchmark.py::TestRunnerDryRun::test_judge_on_dry_results
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 2 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 2 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -798,7 +798,7 @@ tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 1 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 1 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -808,7 +808,7 @@ tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-mline_eps]
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 4 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 4 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:
@@ -816,7 +816,7 @@ tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_
     _check_optimize_result("lbfgs", opt_res)
 
 tests/unit/test_wp39_benchmark.py::TestVariantProblemsOffline::test_variant_dry_run_contract[sbo-ratrace_null]
-  E:\HFSS_Connect\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 3 iteration(s) (status=2):
+  C:\rfauto\release\rfauto_public\.venv\Lib\site-packages\sklearn\gaussian_process\_gpr.py:667: ConvergenceWarning: lbfgs failed to converge after 3 iteration(s) (status=2):
   ABNORMAL: 
   
   You might also want to scale the data as shown in:

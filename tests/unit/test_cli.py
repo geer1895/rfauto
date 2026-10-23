@@ -394,11 +394,11 @@ class TestCommandRegistryCount:
         from rfauto.infra.remote_machines import RemoteMachineConfig
 
         cfg = RemoteMachineConfig(
-            name="sim_server", host="172.26.218.196", ssh_port=22,
+            name="sim-host", host="198.51.100.10", ssh_port=22,
             probe_ports={"rdp": 3389},
         )
         monkeypatch.setattr(rsvc, "load_remote_machines",
-                            lambda: {"sim_server": cfg})
+                            lambda: {"sim-host": cfg})
         monkeypatch.setattr(
             rsvc, "probe_machine",
             lambda c: {"name": c.name, "host": c.host, "reachable": True,
@@ -407,11 +407,11 @@ class TestCommandRegistryCount:
                        "probe_s": 0.01},
         )
         runner = CliRunner()
-        result = runner.invoke(app, ["remote", "probe", "sim_server", "--json"])
+        result = runner.invoke(app, ["remote", "probe", "sim-host", "--json"])
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)
         m = payload["machines"][0]
-        assert m["name"] == "sim_server" and m["reachable"] is True
+        assert m["name"] == "sim-host" and m["reachable"] is True
         assert m["ports"]["ssh"]["open"] is True
 
     def test_afs_plan_json_smoke(self):

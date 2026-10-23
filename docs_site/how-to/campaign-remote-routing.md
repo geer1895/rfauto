@@ -39,12 +39,12 @@ rfauto remote resources [machine]  # 资源视图
 
 ```jsonc
 {
-  "campaign_remote_default": "sim_server",     // plan 级：全部 stage 缺省路由
+  "campaign_remote_default": "sim-host",     // plan 级：全部 stage 缺省路由
   "stages": [
     {"node_id": "calibrate", "stage_extra": {
-        "remote": "sim_server"}},              // stage 级：机器名
+        "remote": "sim-host"}},              // stage 级：机器名
     {"node_id": "tune", "stage_extra": {
-        "remote": {"machine": "sim_server",
+        "remote": {"machine": "sim-host",
                    "wait_mode": "poll",
                    "keep_remote": true}}},     // stage 级：dict 细控
     {"node_id": "report", "stage_extra": {
@@ -65,7 +65,7 @@ remote 声明、CLI 不带 `--remote`，执行路径与历史逐字节同。
 rfauto campaign run <plan 目录或 campaign.plan.json> --dry-run
 
 # 战役级缺省路由（CLI 旗标；stage 声明在场时逐 stage 优先）
-rfauto campaign run <plan> --remote sim_server --json
+rfauto campaign run <plan> --remote sim-host --json
 ```
 
 ## 4. 发射门序（每个 remote stage 过一遍）

@@ -70,8 +70,8 @@ form recommended; escape Windows paths with `\\`):
 {
   "mcpServers": {
     "rfauto": {
-      "command": "E:\\HFSS_Connect\\.venv\\Scripts\\rfauto-mcp.exe",
-      "cwd": "E:\\HFSS_Connect"
+      "command": "C:\\rfauto\\.venv\\Scripts\\rfauto-mcp.exe",
+      "cwd": "C:\\rfauto"
     }
   }
 }
@@ -85,7 +85,7 @@ The generic stdio JSON form (README's form, module entry):
     "rfauto": {
       "command": "python",
       "args": ["-m", "rfauto.mcp_server"],
-      "cwd": "E:\\HFSS_Connect"
+      "cwd": "C:\\rfauto"
     }
   }
 }

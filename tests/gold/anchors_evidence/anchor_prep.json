@@ -81,7 +81,7 @@
   ],
   "criteria": "runs/ge5_fa3_dk/criteria.md（2026-10-01 HFSS 发射前落盘）",
   "oe_evidence": "Tier-2 A 席 verdict.json（2026-09-30 硬门全绿）+本战役 oe_recovery.json 复算逐位一致",
-  "hfss_evidence": "sim_server DrivenModal 2025.1 同几何（平滑圆环）ΔS 0.02@15pass 收敛、Discrete 401 点同栅、50Ω 重归一（hfss_side/ring_fa3.s2p+ring_fa3_conv.prof）",
+  "hfss_evidence": "sim-host DrivenModal 2025.1 同几何（平滑圆环）ΔS 0.02@15pass 收敛、Discrete 401 点同栅、50Ω 重归一（hfss_side/ring_fa3.s2p+ring_fa3_conv.prof）",
   "server_cleanup": "remote_hfss_cleanup ok：ansysedt_after=0/任务已删/本端口零残留/工作目录已删",
   "devlog": "F-A.3 Design Dk 锚战役笔（主代理合流时记）"
  },

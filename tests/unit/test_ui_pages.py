@@ -286,7 +286,7 @@ class TestUiLayerStaticGuard:
 
     def test_static_pages_no_internal_absolute_path_placeholder(self):
         # UI-R9 P2-5（uir8 审查；上传零敏感口径 AGENTS 8）：static 面 js
-        # 不出现盘符绝对路径（filebrowser 占位符曾是 E:\\HFSS_Connect；
+        # 不出现盘符绝对路径（filebrowser 占位符曾是 C:\\rfauto_test；
         # vendor/ 排除——echarts.min.js 压缩体有 N:+ 类良性误命中）。
         import rfauto.ui as ui_pkg
 
@@ -299,7 +299,7 @@ class TestUiLayerStaticGuard:
         hits = {k: v for k, v in hits.items() if v}
         assert hits == {}, f"static 面出现盘符绝对路径: {hits}"
         # 守卫非空转：坏样本必命中（防正则笔误退化成永真）
-        assert pat.findall(r'placeholder="E:\\HFSS_Connect 或其子目录"')
+        assert pat.findall(r'placeholder="C:\\rfauto_test 或其子目录"')
         # 修复本体钉：filebrowser 占位符为中性文案
         fb = (static_dir / "pages" / "filebrowser.js").read_text(
             encoding="utf-8")

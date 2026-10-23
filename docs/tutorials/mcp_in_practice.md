@@ -58,8 +58,8 @@ Claude Desktop 的 `claude_desktop_config.json` 样例（推荐 console script
 {
   "mcpServers": {
     "rfauto": {
-      "command": "E:\\HFSS_Connect\\.venv\\Scripts\\rfauto-mcp.exe",
-      "cwd": "E:\\HFSS_Connect"
+      "command": "C:\\rfauto\\.venv\\Scripts\\rfauto-mcp.exe",
+      "cwd": "C:\\rfauto"
     }
   }
 }
@@ -73,7 +73,7 @@ Claude Desktop 的 `claude_desktop_config.json` 样例（推荐 console script
     "rfauto": {
       "command": "python",
       "args": ["-m", "rfauto.mcp_server"],
-      "cwd": "E:\\HFSS_Connect"
+      "cwd": "C:\\rfauto"
     }
   }
 }

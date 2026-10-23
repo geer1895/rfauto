@@ -1201,15 +1201,15 @@ class TestRemoteTools:
 
         def fake_probe(machine):
             captured["machine"] = machine
-            return {"ok": True, "machines": [{"name": "sim_server",
+            return {"ok": True, "machines": [{"name": "sim-host",
                                               "reachable": True}]}
 
         monkeypatch.setattr(rsvc, "remote_probe", fake_probe)
         data = self._call(mcp_server, "remote_probe_machine",
-                          {"machine": "sim_server"})
+                          {"machine": "sim-host"})
         assert data["ok"] is True
-        assert data["machines"][0]["name"] == "sim_server"
-        assert captured["machine"] == "sim_server"
+        assert data["machines"][0]["name"] == "sim-host"
+        assert captured["machine"] == "sim-host"
 
     def test_remote_machine_status_missing_credentials_envelope(
             self, mcp_server, monkeypatch):

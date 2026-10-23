@@ -140,7 +140,7 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 
 ```
 ✓ 仿真完成  run_id: 20260925_062950_1a6365e9
-  run 目录: E:\HFSS_Connect\runs\20260925_062950_1a6365e9
+  run 目录: C:\rfauto\runs\20260925_062950_1a6365e9
   cost: 7.424965102246688
   指标:
     s11_db_max_in_band: -8.0835

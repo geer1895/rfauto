@@ -9,7 +9,7 @@ E-06（调度面拆批）与 PR-15（调度面余项 mTLS+队列页+--remote）�
 能力（规则 4：JSON 进出，CLI 是薄壳）：
 
 - ``resources_view``：并发求解面资源视图——本机 openEMS/HFSS 进程互斥态
-  （#261 进程指纹计数）+ 登记机器（缺省 sim_server）可达性/在跑进程数/
+  （#261 进程指纹计数）+ 登记机器（缺省 sim-host）可达性/在跑进程数/
   磁盘余量 + ``remote.probed_at`` 探测时间戳 + ``recommend`` 只读选机
   推荐块（W2-S4，size_aware 思想轻量重实现，max_parallel 钉 1 合 #261
   互斥红线，**零调度权**）。
