@@ -1682,7 +1682,7 @@ DOMAIN_ERROR_CASES = [
     ("suspended_stripline_analysis", {
         "w_mm": 0.731, "b_mm": 1.016, "h_mm": 1.2, "epsilon_r": 3.66}),
     # 槽线（2026-09-18 w1b）：仓库缺省叠层 h=0.508@2.5GHz 因 d/λ0=0.0042<0.006
-    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（DEVLOG（一百九十八））；
+    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（开发注记（一百九十八））；
     # 综合目标 30Ω 低于窄槽段可达下限（≈80Ω@1.524mm）→ 括号越界显式报错；
     # εr=12 高介电段（Garg–Gupta 1976）未实现 → 显式拒绝
     ("slotline_analysis", {

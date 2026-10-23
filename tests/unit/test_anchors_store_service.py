@@ -102,7 +102,7 @@ def test_a2_patch_oe_last_verified_backfilled() -> None:
     assert rec.value == 76.8  # 锚值维持（保守裁决，不随复测改锚）
     assert "复测回填" in str(rec.provenance.get("devlog"))  # 注记随锚落档
     # 兄弟席 hfss-v1（99.8）：W1 批时点为 null（零触碰钉）；2026-10-04
-    # G1 G-14 批按 DEVLOG 一百二十三 ④+runs/wp39_mvp_followup/patch_calib.
+    # G1 G-14 批按 开发注记 一百二十三 ④+runs/wp39_mvp_followup/patch_calib.
     # json hfss 块（probe.s1p 离线复核 99.79，相对锚值残差 1.0e-4）回填
     # ——时点收窄改钉回填值（#353① 口径：历史时点钉随新批次重标定收窄）
     hfss_rec = anchor_set.get("patch.f_dip_l.hfss-v1")

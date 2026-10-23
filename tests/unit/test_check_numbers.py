@@ -110,7 +110,7 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # → 260（本席 delta 口径）。
     # 并发席在树 +1（2026-10-08：campaign queue-daemon，队列守护薄壳）
     # → 261（树真值口径；共享计数禁单席独钉——#247，合流主代理实测终裁；
-    # README/AGENT_HANDOFF/docs_site/handoff_prompt 的 docs 数字已随本批
+    # README/交接文档/docs_site/交接提示文档 的 docs 数字已随本批
     # 同步 261=同树真值，count 行豁免）。
     # edb 快车道 CLI +3（2026-10-08：edb build/solve/status，零逻辑转发
     # 新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解编排
@@ -118,11 +118,11 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # aurora36 W2-D +2（2026-10-11：recast status/replay，RECAST 判据重放
     # 两只读叶——教程 CLI 出口，零逻辑转发 service/recast_service；R3
     # 授权"1-2 只读叶"取两叶，任务书预估"264→265"系单叶口径）→ 266
-    # （docs 数字未随本席，合流批统一回填——README/AGENT_HANDOFF/
-    # docs_site/handoff_prompt 四处 264 登记于席位返回报告）。
+    # （docs 数字未随本席，合流批统一回填——README/交接文档/
+    # docs_site/交接提示文档 四处 264 登记于席位返回报告）。
     # aurora_d REST-B +1（2026-10-14：rest schema，REST 面 schema 导出
     # 只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+OpenAPI
-    # spec 落盘；README/AGENT_HANDOFF/docs_site/CHANGELOG 数字同笔）→ 267
+    # spec 落盘；README/交接文档/docs_site/CHANGELOG 数字同笔）→ 267
     # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化检索面
     # 两叶——零逻辑转发 service/pitfall_index_service 只读面）→ 269
     # +1（aurora_e W2-S8 2026-10-18：templates golden-diff，EC-8 全模板

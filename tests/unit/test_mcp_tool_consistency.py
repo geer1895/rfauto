@@ -11,7 +11,7 @@
 - 逐工具可调用性烟测（静态）：函数体全局名引用与惰性 import 目标
   必须可解析（diagnose 死壳实证的系统性盲区，confirm_2 第 1 条）。
 
-DEVLOG 记 18 个工具，本文件以源码/运行时实测为准。
+开发注记 记 18 个工具，本文件以源码/运行时实测为准。
 """
 
 from __future__ import annotations
@@ -45,10 +45,10 @@ _DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+([A-Za-z_]\w*)\s*\(")
 _ARGS_ENTRY_RE = re.compile(r"^\s{4,}([A-Za-z_]\w*)\s*(?:\([^)]*\))?\s*:")
 _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes):\s*$")
 
-# DEVLOG 记录值，仅作交叉核对；实测不符时断言会直接暴露
-# （18→19：2026-09-13 export_report_pdf 工具入库，DEVLOG（一百零八）/090e631）
+# 开发注记 记录值，仅作交叉核对；实测不符时断言会直接暴露
+# （18→19：2026-09-13 export_report_pdf 工具入库，开发注记（一百零八）/090e631）
 # （19→36：2026-09-13 WP3.3 MCP 工具面全量开放 +17——模板库 2/战役 3/
-#   数据集 2/bands 10（D9 归口）；DEVLOG 数字待主控合流轮同步）
+#   数据集 2/bands 10（D9 归口）；开发注记 数字待主控合流轮同步）
 # （36→62：2026-09-15 cli-mcp-api-shell-bundle +26——回归门 2（goldset/agentbench）
 #   /多 Agent 4 内核工具+multi_agent_run/autotune_self_verify/uq 3/farfield 2/
 #   kicad 2/electrothermal/parasitic/topology/dataset 4/vna_offline_replay/
@@ -121,7 +121,7 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 #   preflight_run（D-07，W6-E））
 # （149→152：2026-10-08 edb 快车道 +3——edb_emit_spec/edb_build_solve/
 #   edb_status（零逻辑转发新建 edb_lane_service，CLI edb 域同源））
-_DEVLOG_DECLARED_TOOL_COUNT = 152
+_DECLARED_TOOL_COUNT = 152
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:
@@ -324,7 +324,7 @@ class TestMcpToolRegistryConsistency:
     def test_source_decorator_count_matches_registered(self, source_text, mcp_tools):
         source_names = _decorated_function_names(source_text, _TOOL_DECORATOR_RE)
         assert len(source_names) == len(mcp_tools)
-        assert len(mcp_tools) == _DEVLOG_DECLARED_TOOL_COUNT
+        assert len(mcp_tools) == _DECLARED_TOOL_COUNT
 
     def test_source_function_names_equal_registered_names(self, source_text, mcp_tools):
         source_names = set(_decorated_function_names(source_text, _TOOL_DECORATOR_RE))

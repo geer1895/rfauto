@@ -52,7 +52,7 @@ rfauto 选后者——因为临时修一下的偏差知识留在会话记忆里�
 | layer | closure / component / system | V&V 层级制度化：闭式验证层 / 单器件仲裁层 / 阵列系统确认层——引用锚时先看它属于哪层验证，不越层消费 |
 
 **Provenance 是锚的主体，不是附件**。每个锚必须带：仲裁 run 目录
-（`arbitration_runs:`）、commit、DEVLOG 出处、被替换的旧值
+（`arbitration_runs:`）、commit、开发注记 出处、被替换的旧值
 （`replaces:`）。判一个锚可不可信，看的是这条证据链，不是数值本身
 好不好看。
 

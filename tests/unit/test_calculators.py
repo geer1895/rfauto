@@ -34,7 +34,7 @@ EXPECTED = {
     "cps_analysis", "cps_synthesis",
     "suspended_stripline_analysis", "suspended_stripline_synthesis",
     # 槽线（2026-09-18 w1b 注册，#231 三表同步）：Janaswamy–Schaubert 闭式
-    # core/slotline（路线 A 裁判面，DEVLOG（一百九十八）），越域显式拒绝不外推
+    # core/slotline（路线 A 裁判面，开发注记（一百九十八）），越域显式拒绝不外推
     "slotline_analysis", "slotline_synthesis",
     # SIW（2026-09-22 siw-family 立项，#231 三表同步）：Cassivi 2002 等效宽度
     # + RWG TE10 等效（双源出处 runs/siw_family/criteria.md §1；WR-90/RWG
@@ -1503,7 +1503,7 @@ EXPECTED = {
 # 一律 experimental=True 入库但默认关。EXPECTED 断言 names() **默认排除**；
 # include_experimental=True 才含本表（默认列/默认跑都不过这道开关）。
 EXPERIMENTAL_EXPECTED = {
-    # E13 patch 基模谐振候选公式（DEVLOG（六十九），51 点归纳，vs HJ 0.765%）
+    # E13 patch 基模谐振候选公式（开发注记（六十九），51 点归纳，vs HJ 0.765%）
     "patch_f0_symbolic_e13",
 }
 

@@ -223,7 +223,7 @@ class TestCommandRegistryCount:
         # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
         # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
         # 同名对已由 89852ba 改名 reports 闭合；df7 程序化裁定注册面=解析面
-        # =140 零 shadow（回归钉 test_zero_shadow_*，DEVLOG（三九八）"10 面"
+        # =140 零 shadow（回归钉 test_zero_shadow_*，开发注记（三九八）"10 面"
         # 系中间稿误计数，全 git 历史仅此一对同名冲突）。
         total = len(app.registered_commands)
         for info in app.registered_groups:
@@ -250,7 +250,7 @@ class TestCommandRegistryCount:
         # 合流实测口径）= 254
         # +2（E-06/PR-15 调度面 v1 2026-10-08：remote resources/queue，
         # 多机资源可见性+队列视图薄壳零逻辑转发 remote_scheduler_service）
-        # = 256（README/AGENT_HANDOFF/docs_site 三处 docs 数字同步=合流收口项）
+        # = 256（README/交接文档/docs_site 三处 docs 数字同步=合流收口项）
         # +1（Z-11 2026-10-08：pool-patrol，池登记项新鲜度巡检薄壳零逻辑
         # 转发 pool_patrol_service.pool_patrol）= 257
         # +3（P3 尾程项13 2026-10-08：oracle list/check/check-all，QM-2 闭式
@@ -263,7 +263,7 @@ class TestCommandRegistryCount:
         # +3（edb 快车道 2026-10-08：edb build/solve/status，零逻辑转发
         #   新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解
         #   编排全在 service+adapters 确定性内核）= 264（README/
-        #   AGENT_HANDOFF/docs_site 三处 docs 数字随本批同步）
+        #   交接文档/docs_site 三处 docs 数字随本批同步）
         # +2（aurora36 W2-D 2026-10-11：recast status/replay，RECAST 判据
         #   重放两只读叶——教程 docs/tutorials/recast-walkthrough.md 的
         #   CLI 出口，零逻辑转发 service/recast_service→core/recast；R3
@@ -272,12 +272,12 @@ class TestCommandRegistryCount:
         # +1（aurora_d REST-B 2026-10-14：rest schema，REST 面 schema 导出
         #   只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+
         #   OpenAPI spec 落盘，零逻辑转发 service/rest_api）
-        #   = 267（README/AGENT_HANDOFF/docs_site/CHANGELOG 数字同笔）
+        #   = 267（README/交接文档/docs_site/CHANGELOG 数字同笔）
         # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化
         #   检索面两叶——索引加载/校验/id 查零逻辑转发
         #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
         #   数据面=knowledge/pitfalls_index_full.json）
-        #   = 269（README/AGENT_HANDOFF/docs_site/CHANGELOG 数字同笔）
+        #   = 269（README/交接文档/docs_site/CHANGELOG 数字同笔）
         # +1（aurora_e W2-S8 2026-10-18：templates golden-diff，EC-8 全模板
         #   golden 几何回归仓叶——零逻辑转发 service/template_golden_service）
         #   = 270（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
@@ -997,7 +997,7 @@ _SLOT_SUB = ["--h-mm", "1.524", "--eps-r", "3.66", "--freq-ghz", "2.5"]
 class TestSlotlineTransitionsCommands:
     """rfauto slotline（2）/ transitions（3）薄壳（W2⑨）：零逻辑转发 slotline_service，
     --json 直出信封；越域红字 exit 1；synth 不可达=退 0+realizable=False（D5
-    语义，同文件 :578-588 钉）。数值锚同 DEVLOG（二百二十二）②③（数值只出
+    语义，同文件 :578-588 钉）。数值锚同 开发注记（二百二十二）②③（数值只出
     内核，壳层不复算）。"""
 
     def test_help_lists_commands(self):

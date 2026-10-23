@@ -619,7 +619,7 @@ _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 
 class TestCalculatorExperimentalPassthrough:
     """list_calculators/run_calculator 的 experimental 标签与 allow_experimental
-    三态透传（DEVLOG（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
+    三态透传（开发注记（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
 
     def test_list_default_includes_experimental_with_label(self, mcp_server):
         data = _call(mcp_server, "list_calculators", {})
@@ -656,7 +656,7 @@ class TestCalculatorExperimentalPassthrough:
             "allow_experimental": True})
         assert data["ok"] is True
         assert data["experimental"] is True
-        # DEVLOG（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
+        # 开发注记（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
         assert data["result"]["f0_ghz"] == pytest.approx(1.918754, abs=2e-6)
 
     def test_run_explicit_false_beats_env(self, mcp_server, monkeypatch):
@@ -905,7 +905,7 @@ _SLOT_SUB = {"h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}
 
 class TestSlotlineTransitionTools:
     """W2⑨ 槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
-    确定性内核（锚 DEVLOG（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
+    确定性内核（锚 开发注记（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
     Z0=110.92Ω、εeff=1.6462、λ'=93.462mm；名义两节 Marchand (w,s,ℓ)=
     (1.7616,0.1016,18.467)mm）；越域/不可达如实进信封不抛出。"""
 
