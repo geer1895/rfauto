@@ -69,8 +69,18 @@ jobs:
         run: python scripts/scan_sensitive.py
 
   test:
-    name: pytest (unit + integration-fake, no EDA)
+    name: pytest (unit + integration-fake, no EDA) shard${{ matrix.shard }}/2
     runs-on: ubuntu-latest
+    # 双分片：套件扩到 27642 后单 job 连续两轮被 runner 外杀
+    # （run 39936814053 在 82% 处 exit 143、run 39945200918 主 step 悬挂
+    # 至 job 判死）——按内部仓"门口径 v2 分段"家法把单长跑拆成两片
+    # 并行短跑，单片时长/内存余量双恢复；fail-fast 关闭保证两片都跑完
+    # 一次拿全失败面。
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -94,6 +104,14 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
       - name: Run unit + integration-fake tests (real_edt deselected)
         run: |
+          # 分片选择：文件名字典序交错取半（NR%2），两片体量近似均衡；
+          # 合计覆盖 tests/unit 全部测试文件（与原单 job 全集等价）。
+          if [ "${{ matrix.shard }}" = "1" ]; then
+            FILES=$(ls tests/unit/test_*.py | sort | awk 'NR % 2 == 1')
+          else
+            FILES=$(ls tests/unit/test_*.py | sort | awk 'NR % 2 == 0')
+          fi
+          echo "shard ${{ matrix.shard }}: $(echo "$FILES" | wc -l) files"
           # xdist loadfile 并行：内部仓 gate_parallel.py 先例直接搬
           # （8.55× 实测，2026-09-25 df6 批）；loadfile 按测试文件分组
           # 分发，不破坏文件内顺序依赖。真跑/重型 job 本 CI 不存在
@@ -106,7 +124,7 @@ jobs:
           # （2026-10-13 run 37 实证），钉死并行度消除该变量。
           # 失败面经 ::error:: annotation 公开可读（诊断期；稳定后可收）。
           set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/注解/summary 手工序列必须自管
-          python -m pytest tests/unit -q -m "not real_edt" -n 2 --dist=loadfile 2>&1 | tee /tmp/unit.log
+          python -m pytest $FILES -q -m "not real_edt" -n 2 --dist=loadfile 2>&1 | tee /tmp/unit.log
           rc=${PIPESTATUS[0]}
           grep -E "^FAILED" /tmp/unit.log | head -12 | while IFS= read -r line; do
             echo "::error ::$line"
