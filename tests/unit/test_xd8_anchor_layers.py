@@ -53,7 +53,7 @@ def test_live_registry_all_anchors_have_valid_layer() -> None:
 
     anchor_set = _live_anchor_set()
     assert len(anchor_set.load_errors) == 0
-    assert len(anchor_set) == 79  # W3-S15 批 75→79（ANCH-D 70→75 沿革，store test 同钉）
+    assert len(anchor_set) == 87  # W3-S15 批 75→79 → aurora_j W4-S15 批 79→87（store test 同钉）
     for rec in anchor_set.records:
         assert rec.layer in ANCHOR_LAYERS, (
             f"{rec.anchor_id}: layer={rec.layer!r} 越界/缺失")
@@ -69,9 +69,9 @@ def test_layer_classification_rule_and_non_degenerate() -> None:
         assert rec.layer == expect, (
             f"{rec.anchor_id}: layer={rec.layer!r} != 规则期望 {expect!r}")
         got[expect].append(rec.anchor_id)
-    # 三档均非空（分类不退化；W3-S15 批后口径：closure 61 / component 14 / system 4）
-    assert len(got["closure"]) == 61  # W3-S15 批 +4 全 closure（ANCH-D 57 + tjunc×2/mline/v2）
-    assert len(got["component"]) == 14
+    # 三档均非空（分类不退化；aurora_j W4-S15 批后口径：closure 66 / component 17 / system 4）
+    assert len(got["closure"]) == 66  # W3-S15 批 +4（ANCH-D 57+5）→ W4-S15 批 +5 全 closure（wstep/bend/embedded_ms/msl_slot_transition/slotline_lumped）
+    assert len(got["component"]) == 17  # 14 + aurora_j W4-S15 三真机 pointer（dipole/pifa/helix）
     assert len(got["system"]) == 4
     assert set(got["system"]) == {
         "patch_array_1x4.f_res.openems-hfss-v1",
@@ -108,7 +108,7 @@ def test_validate_live_registry_clean_of_layer_issues() -> None:
     report = validate_anchor_set(_live_anchor_set(),
                                  registry_path=_REGISTRY_PATH)
     assert report["ok"], f"issues: {report['issues']}"
-    assert report["expected_match"] and report["count"] == 79
+    assert report["expected_match"] and report["count"] == 87
     assert not any("layer" in i for i in report["issues"])
 
 
@@ -131,7 +131,7 @@ def test_service_summary_rows_carry_layer_key() -> None:
     from rfauto.service.anchors_service import list_anchors
 
     listed = list_anchors()
-    assert listed["ok"] and listed["count"] == 79
+    assert listed["ok"] and listed["count"] == 87
     legacy_keys = ("anchor_id", "kind", "status", "value", "uncertainty")
     for row in listed["anchors"]:
         assert "layer" in row, row.get("anchor_id")

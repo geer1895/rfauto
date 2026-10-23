@@ -184,15 +184,18 @@ class TestApertureEfficiencyComponents:
 # ─── horn_aperture_efficiency（提升核）───────────────────────────────────────
 
 def _hpbw_numeric(kind: str, size_m: float, rho_m: float, lam_m: float,
-                  n_theta: int = 40001) -> float:
+                  n_theta: int = 4001) -> float:
     """Fresnel 口径积分独立数值 HPBW（deg；测试内第三方法，非键内路径）。
 
     kind="e"：均匀幅+二次相位（E 面扇形口径，δ_E=λ/4 档）；
     kind="h"：cos(πx/A) 幅+二次相位（H 面扇形口径，δ_H=3λ/8 档）。
+    网格口径：4001×4001 复矩阵 ≈0.5GB 峰值（首版 40001×20001 ≈25GB 在
+    并行门内存压力下 MemoryError——HPBW 读数只需 θ 分辨率 ≈0.017° 与
+    Riemann 4001 点积分精度，档位对 ≤1.5% 容差裕量充分）。
     """
     k = 2.0 * math.pi / lam_m
     import numpy as np
-    n = 20000
+    n = 4000
     xs = np.linspace(-size_m / 2.0, size_m / 2.0, n + 1)
     amp = (np.ones_like(xs) if kind == "e"
            else np.cos(math.pi * xs / size_m))

@@ -235,7 +235,7 @@ def test_live_registry_all_anchors_inflow_no_cross_layer_edges() -> None:
     from rfauto.infra.anchors_store import load_anchors
 
     aset = load_anchors()
-    assert len(aset) == 79 and not aset.load_errors  # W3-S15 批 75→79
+    assert len(aset) == 87 and not aset.load_errors  # W3-S15 批 75→79 → aurora_j W4-S15 批 79→87
     rules: dict[str, int] = {}
     for rec in aset.records:
         got = uncertainty_inflow(aset, rec.anchor_id)
@@ -251,7 +251,7 @@ def test_live_registry_all_anchors_inflow_no_cross_layer_edges() -> None:
     # closure identity 锚确实按 0 直传（非全带 own_sigma 退化）
     assert rules.get("identity_passthrough_bottom", 0) >= 1
     assert rules.get("bottom_own_sigma", 0) >= 1
-    assert rules.get("no_lower_refs", 0) == 18  # component 14 + system 4
+    assert rules.get("no_lower_refs", 0) == 21  # component 17 + system 4（W4-S15 批 +3）
     assert rules.get("lower_refs_rss_one_layer", 0) == 0
 
 
