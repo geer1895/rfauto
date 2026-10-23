@@ -333,8 +333,10 @@ jobs:
           # 112899/112404=同包同版本 advisory 库新增 CVE 形条目；2026-10-23
           # 再扩 15×CVE-2026-112390/112391/112392/112393/112396/112399/
           # 112401/112402/112406/112891/112892/112893/112894/112900/
-          # 112901=同包同版本 advisory 库第三批新增（fix 均 13.0.0），
-          # 本注释即留痕处）：diff-fdtd extra 的 fdtdx→moviepy
+          # 112901=第三批 +11×CVE-2026-96636/96637/96638/96639/96640/
+          # 96641/96642/96643/96644/96778/GHSA-78g4-xqwv-q3g8（末者无 CVE
+          # 别名按 GHSA id 豁免）=第四批，均为同包同版本 advisory 库增量
+          # （fix 均 13.0.0），本注释即留痕处）：diff-fdtd extra 的 fdtdx→moviepy
           # 钉 pillow>=9.2.0,<12.0（冲突链 uv lock 亲证），pillow 13.0.0
           # 虽已修复全部 26 项但被该上限排除；漏洞面=PSD/PDF/FITS 等
           # **图像文件解析器**，本仓 pillow 仅作 matplotlib 栅格后端，
@@ -383,6 +385,17 @@ jobs:
             --ignore-vuln CVE-2026-112894 \
             --ignore-vuln CVE-2026-112900 \
             --ignore-vuln CVE-2026-112901 \
+            --ignore-vuln CVE-2026-96636 \
+            --ignore-vuln CVE-2026-96637 \
+            --ignore-vuln CVE-2026-96638 \
+            --ignore-vuln CVE-2026-96639 \
+            --ignore-vuln CVE-2026-96640 \
+            --ignore-vuln CVE-2026-96641 \
+            --ignore-vuln CVE-2026-96642 \
+            --ignore-vuln CVE-2026-96643 \
+            --ignore-vuln CVE-2026-96644 \
+            --ignore-vuln CVE-2026-96778 \
+            --ignore-vuln GHSA-78g4-xqwv-q3g8 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
