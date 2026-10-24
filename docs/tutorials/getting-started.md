@@ -219,7 +219,11 @@ rfauto runs verify 20261024_133154_a8b244f6
 
 **岔路**（README 排查表）：盘上 Touchstone 和 run 记录对不上——旧文
 件顶替了新 run。`rfauto runs verify <run_id>` 报 `stale`、退出码 1，
-不静默放行。
+不静默放行。指纹面不止 Touchstone 曲线：`recipe.snapshot.yaml` 配方
+快照与 `results/metrics.json`、`report.md` 报告主数据源也在内，任一被
+旧文件顶替或丢失都报 `stale`。`rfauto replay <run_id>` 复现前走同一
+道校验——源 run 被 `stale` 判定则拒绝重跑（复现的必须是源 run 真实
+的配方）；老 run（无 manifest）不受影响，照常复现。
 
 ## 6. 起浏览器工作台（2 分钟）
 
