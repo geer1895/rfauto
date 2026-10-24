@@ -87,28 +87,77 @@ AI 想改任何东西都要走沙箱加三道门。
 ## 快速开始
 
 **环境要求：** Python 3.10–3.12（`python --version` 确认）。不需要任何商业
-工具——内置 fake 求解器覆盖全部核心功能。
+工具——内置 fake 求解器覆盖全部核心功能。下面六步：安装 → 体检 → 零
+license 冒烟 → 看 run 产物 → 起工作台 → 真机。
+
+### 1. 安装
 
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
 python -m venv .venv
 .venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
-pip install -e .
-
-rfauto ui                        # 打开 http://127.0.0.1:8642（仅本机）
+pip install -e ".[ui]"               # 核心 + 浏览器工作台
 ```
 
-**五分钟首次运行，零 license。** 在工作台打开「优化调参」页，通道保持
-**fake**，点「启动」——一个完整的 Wilkinson 功分器调优环（10 轮、闭式
-物理）几秒跑完，直接给出推荐尺寸结果卡。然后逛逛：
+`rfauto --help` 出命令表即装好。只装核心（`pip install -e .`）够跑第 2-4
+步；`rfauto ui` 需要 `[ui]` 组（starlette/uvicorn，缺装时该命令报
+ImportError）。
 
-- **Runs** —— 每次仿真的指标、曲线与质量门判定
-- **模板画廊** —— 72 种器件模板，每张卡可点开白话参数表（是什么、数值
-  什么含义、怎么算出来的）
-- **Tools** —— 323 个闭式计算器，随手交叉核对
-- 右上角 **zh/EN** —— 整站双语
+### 2. 体检（秒级）
 
-习惯终端的话，同样的两步不用浏览器：
+```bash
+rfauto doctor
+```
+
+打印本机探到的 Python/AEDT/ADS 版本与路径。AEDT 读安装目录推断版本，标
+`best_effort`，不冒充 verified；ADS 经实测握手才标 `verified`。
+`rfauto doctor --janitor --min-free-gb 8` 加查残留进程面板（孤儿
+`ansysedt` 清点 + AEDT 工程锁）与内存闸。
+
+### 3. 第一条链路，零 license
+
+```bash
+$ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
+✓ 仿真完成  run_id: 20260921_001708_3fe788d3
+  指标:
+    s11_db_max_in_band: -12.21
+```
+
+fake 是闭式解析近似模型，不是电磁仿真——它的用处是把「配方 → run → 产物
+→ 质检门」整条链路在几秒内走通，不占 license。真物理在第 6 步切 openEMS
+或 HFSS，配方与质量门不变。
+
+### 4. 看 run 产物
+
+每次 run 落在 `runs/<时间戳>_<哈希>/`：
+
+- `meta.json` —— 环境指纹（git sha、numpy/BLAS、pip freeze 哈希），复现凭据
+- `recipe.snapshot.yaml` —— 本次 run 的配方快照，`rfauto replay <run_id>`
+  按它复跑
+- `report.md` 与 `results/` —— 指标与图；真机 run 另有 Touchstone 文件
+
+产物新鲜度校验（manifest 收官指纹 vs 盘上文件；三态 fresh/stale/legacy）：
+
+```bash
+rfauto runs verify <run_id>
+```
+
+`stale`——旧文件顶替新 run——退出码 1，不静默放行。
+
+### 5. 起工作台
+
+```bash
+rfauto ui --port 8643        # 缺省 8642；被旧实例占用时换端口
+```
+
+浏览器打开 http://127.0.0.1:8643（仅本机）。**Runs** —— 每次 run 的指标、
+曲线与质量门判定。**模板画廊** —— 72 种器件模板，每张卡可点开白话参数表
+（是什么、数值什么含义、怎么算出来的）。**优化调参** —— 第 3 步同款循环
+搬进浏览器：通道保持 **fake**，点「启动」——Wilkinson 功分器 10 轮几秒跑
+完，出推荐尺寸结果卡。**Tools** —— 323 个闭式计算器，随手交叉核对。右上
+角 **zh/EN** 整站切换。
+
+习惯终端的话，不开浏览器也行——闭式综合器随手一例：
 
 ```bash
 $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
@@ -116,19 +165,46 @@ $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
   目标阻抗: 50.00 Ω
   线宽:     1.1133 mm
   εeff:     2.8530
-
-$ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
-✓ 仿真完成  run_id: 20260921_001708_3fe788d3
-  指标:
-    s11_db_max_in_band: -12.21
 ```
 
-`rfauto doctor` 查看本机可用的求解器与 license。想上真实物理时，把通道切到
-**openEMS**（免费，编译指引见文档）或 **HFSS**（需 AEDT 2025 R1）——配方和
-质量门完全不变。跑测试套件：`pip install -e ".[dev]"` 后
-`python -m pytest tests/unit -q`。
+### 6. 真机
+
+```bash
+pip install -e ".[hfss]"     # pyaedt；需 AEDT 2025 R1
+```
+
+把通道切到 **openEMS**（免费，编译指引见文档）或 **HFSS**——配方与质量门
+不变。无人值守跑 HFSS 前先读
+[docs/unattended_hfss_automation.md](docs/unattended_hfss_automation.md)
+——一年真机踩坑沉淀的操作纪律。最先咬人的三条：
+
+- `Desktop(version=…, non_graphical=…, new_desktop=…)` —— 构造参数名不是
+  旧版 `specified_version`；
+- 同一 Desktop 只建一个 `Hfss` 实例——第二个实例的设计变量管理器开始返
+  `None`；
+- 一次失败赋值毒化整个会话（元数据查询返 `None`），gRPC 通道连带损坏，
+  `release_desktop` 随之静默失败——毒化会话整轮重建，绝不带毒续跑。
+
+发射前闸门：`rfauto doctor --janitor --min-free-gb 8`；工程/outdir/日志
+一律绝对路径——相对 `-outdir` 会让 `Project.Rename` 挂起数分钟才报错。跑
+测试套件：`pip install -e ".[dev]"` 后 `python -m pytest tests/unit -q`。
+想用容器：[Docker 容器](#docker-容器)两条命令——镜像只含开源核心（fake
+求解器与确定性计算器），不含商业工具。
 
 ![命令行实操（真实输出）](docs/assets/cli_demo.png)
+
+### 常见第一次
+
+| 症状 | 可能原因 | 处置 |
+|---|---|---|
+| `rfauto ui` 打不开或页面 404 | 8642 被旧实例占着（旧进程带旧代码） | `rfauto ui --port 8643`；或核对命令行后清掉旧实例 |
+| AEDT 写文件失败（STEP/导出） | 路径含中文等非 ASCII 字符 | 工程/工作目录用 ASCII 路径；先落 ASCII 临时目录再拷回 |
+| HFSS 连不上/报 license 错 | 孤儿 `ansysedt` 进程占着许可席位 | `rfauto doctor --janitor` 出清单（带父进程链证据），复核后 `--janitor-clean` |
+| 求解中途被杀/机器卡死 | 可用内存不足 | 发射前 `rfauto doctor --min-free-gb 8 --enforce`，低于阈值非 0 退出 |
+| license 服务器连不上 | 探测目标未配置 | 设 `RFAUTO_LICENSE_SERVER` 后重跑 `rfauto doctor` |
+| fake 结果与真机差很多 | fake 是闭式解析近似，不是电磁仿真 | fake 只验链路；通道切 openEMS/HFSS——同配方同质量门 |
+| run 目录里没有 Touchstone | fake 通道只出解析指标 | 看 `results/metrics.json`；Touchstone 出自真机通道 |
+| 盘上 Touchstone 和 run 记录对不上 | 旧文件顶替了新文件 | `rfauto runs verify <run_id>`——stale 退出码 1，不静默放行 |
 
 接下来就是常规循环：
 

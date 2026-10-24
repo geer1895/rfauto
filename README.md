@@ -110,29 +110,89 @@ number, and a sandbox-plus-gates path for anything an AI agent wants to change.
 ## Quick start
 
 **Prereq:** Python 3.10–3.12 (`python --version` to check). No commercial
-tools needed — the built-in fake solver covers the whole core.
+tools needed — the built-in fake solver covers the whole core. Six steps
+below: install → check the machine → a zero-license smoke run → read the
+run → open the workbench → real physics.
+
+### 1. Install
 
 ```bash
 git clone https://github.com/geer1895/rfauto && cd rfauto
 python -m venv .venv
 .venv\Scripts\activate               # Linux/macOS: source .venv/bin/activate
-pip install -e .
-
-rfauto ui                        # opens http://127.0.0.1:8642 (local only)
+pip install -e ".[ui]"               # core + browser workbench
 ```
 
-**Five-minute first run, no license required.** In the workbench open
-**Tune**, leave the adapter on **fake**, press **Start** — a full optimization
-loop on a Wilkinson power divider (10 trials, closed-form physics) finishes in
-seconds and shows the recommended dimensions in a result card. Then:
+`rfauto --help` prints the command table once the install lands. Core-only
+(`pip install -e .`) covers steps 2–4; `rfauto ui` needs the `[ui]` group
+(starlette/uvicorn — without it the command exits with ImportError).
 
-- **Runs** — every simulation's metrics, curves and quality-gate verdicts
-- **Gallery** — 72 device templates; each card opens a plain-language
-  parameter table (what it is, what the numbers mean, where they come from)
-- **Tools** — 323 closed-form calculators for instant cross-checks
-- Top-right **zh/EN** — the whole workbench is bilingual
+### 2. Check the machine (seconds)
 
-Prefer the terminal? Same two steps without the browser:
+```bash
+rfauto doctor
+```
+
+Prints the Python/AEDT/ADS versions and paths it found on this machine.
+AEDT detection reads the install directory and is labeled `best_effort` —
+never presented as verified; ADS reports `verified` only after a live
+handshake. `rfauto doctor --janitor --min-free-gb 8` adds the leftover-
+process panel (orphan `ansysedt` inventory + AEDT project locks) and a
+memory gate.
+
+### 3. First pipeline run, zero license
+
+```bash
+$ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
+✓ 仿真完成  run_id: 20260921_001708_3fe788d3
+  指标:
+    s11_db_max_in_band: -12.21
+```
+
+fake is a closed-form analytic stand-in, not an EM simulation — it exists
+to exercise the whole chain (recipe → run → artifacts → gates) in seconds
+without touching a license. Real physics comes in step 6 with openEMS or
+HFSS; recipes and quality gates stay the same.
+
+### 4. Read the run
+
+Every run lands in `runs/<timestamp>_<hash>/`:
+
+- `meta.json` — environment fingerprint (git sha, numpy/BLAS, pip-freeze
+  hash): your reproduction credentials
+- `recipe.snapshot.yaml` — the recipe as-run; `rfauto replay <run_id>`
+  re-runs it verbatim
+- `report.md` and `results/` — metrics and figures; real-solver runs add
+  Touchstone files
+
+Freshness check (manifest closing fingerprint vs files on disk; verdicts
+fresh/stale/legacy):
+
+```bash
+rfauto runs verify <run_id>
+```
+
+`stale` — an old file standing in for a new run — exits 1 instead of
+passing silently.
+
+### 5. Open the workbench
+
+```bash
+rfauto ui --port 8643        # default 8642; switch ports when an old instance holds it
+```
+
+Then open http://127.0.0.1:8643 (local only). **Runs** — every
+simulation's metrics, curves and quality-gate verdicts. **Gallery** — 72
+device templates, each card opens a plain-language parameter table (what
+it is, what the numbers mean, where they come from). **Tune** — the same
+loop as step 3 from the browser: keep the adapter on **fake**, press
+**Start** — 10 trials on the Wilkinson divider finish in seconds and show
+the recommended dimensions in a result card. **Tools** — 323 closed-form
+calculators for instant cross-checks. Top-right **zh/EN** switches the
+whole workbench.
+
+The terminal path works without any browser — the closed-form
+synthesizer, for example:
 
 ```bash
 $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
@@ -140,20 +200,52 @@ $ rfauto syn mline 50.0 --freq 2.4 --stackup rogers4350b_h0.508
   目标阻抗: 50.00 Ω
   线宽:     1.1133 mm
   εeff:     2.8530
-
-$ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
-✓ 仿真完成  run_id: 20260921_001708_3fe788d3
-  指标:
-    s11_db_max_in_band: -12.21
 ```
 
-`rfauto doctor` shows which solvers/licenses are visible on your machine.
-When you're ready for real physics, switch the adapter to **openEMS** (free,
-build instructions in the docs) or **HFSS** (needs AEDT 2025 R1) — same
-recipes, same quality gates. To run the test suite:
-`pip install -e ".[dev]"` then `python -m pytest tests/unit -q`.
+### 6. Real physics
+
+```bash
+pip install -e ".[hfss]"     # pyaedt; needs AEDT 2025 R1
+```
+
+Switch the adapter to **openEMS** (free, build instructions in the docs)
+or **HFSS** — same recipes, same quality gates. Before unattended HFSS
+runs, read
+[docs/unattended_hfss_automation.md](docs/unattended_hfss_automation.md) —
+operations discipline from a year of real-machine runs. The three traps
+that bite first:
+
+- `Desktop(version=…, non_graphical=…, new_desktop=…)` — the constructor
+  argument names are not the old `specified_version`;
+- one `Hfss` instance per Desktop — a second instance's design-variable
+  manager starts returning `None`;
+- one failed boundary assignment poisons the whole session (metadata
+  queries return `None`), the gRPC channel breaks with it, and
+  `release_desktop` then fails silently — treat a poisoned session as
+  rebuild-from-scratch, never continue on it.
+
+Pre-flight gates: `rfauto doctor --janitor --min-free-gb 8`; keep project,
+output and log paths absolute — a relative `-outdir` hangs
+`Project.Rename` for minutes before failing. To run the test suite:
+`pip install -e ".[dev]"` then `python -m pytest tests/unit -q`. Prefer
+containers? Two commands under [Run in Docker](#run-in-docker) — the
+image carries the open-source core (fake solver and deterministic
+calculators), no commercial tools inside.
 
 ![CLI in action — real output](docs/assets/cli_demo.png)
+
+### Common first-run failures
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `rfauto ui` won't open, or pages return 404 | port 8642 held by an older instance (old process, old code) | `rfauto ui --port 8643`; or check the command line, then kill the stale instance |
+| AEDT fails writing files (STEP/exports) | non-ASCII (e.g. Chinese) characters in the path | keep project/work paths ASCII; write to an ASCII temp dir and copy back |
+| HFSS won't connect / license errors | orphan `ansysedt` processes holding license seats | `rfauto doctor --janitor` lists them with parent-process evidence; review, then `--janitor-clean` |
+| solve killed mid-run / machine unresponsive | not enough free memory | `rfauto doctor --min-free-gb 8 --enforce` before launch; exits non-zero below the threshold |
+| license server unreachable | probe target not set | set `RFAUTO_LICENSE_SERVER`, rerun `rfauto doctor` |
+| fake results far off the real ones | fake is closed-form analytic, not an EM simulation | fake validates the chain only; switch the adapter to openEMS/HFSS — same recipes, same gates |
+| run directory has no Touchstone | the fake channel emits analytic metrics only | see `results/metrics.json`; Touchstone comes from real-solver channels |
+| on-disk Touchstone doesn't match the run record | an old file was copied over the new one | `rfauto runs verify <run_id>` — stale exits 1, never passes silently |
 
 ### Why trust the results?
 
