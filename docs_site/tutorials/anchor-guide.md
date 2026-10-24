@@ -19,16 +19,16 @@
 这个差值不是 bug，而是每个引擎的系统性偏差——把它测出来、登记成
 锚，后续综合与判读就有了跨引擎的"换算基准"。
 
-当前注册表共 79 条锚（`rfauto anchors validate` 实测，2026-10-18；
+当前注册表共 87 条锚（`rfauto anchors validate` 实测，2026-10-23；
 注册表随战役逐批增长，实时计数以 validate 输出为准），分型分布：
 
 | 维度 | 分布 |
 |---|---|
-| kind | constant 68 / pointer 8 / formula 2 / curve 1 |
-| status | experimental 59 / active 19 / retired 1 |
-| engine_pair | closedform→∅ 56 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / 无 3 |
-| layer（XD-8 V&V 层级） | closure 61 / component 14 / system 4 |
-| 模板族 | 66 族（template_family 并集：c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
+| kind | constant 73 / pointer 11 / formula 2 / curve 1 |
+| status | experimental 64 / active 22 / retired 1 |
+| engine_pair | closedform→∅ 59 / openems→hfss 17 / mmt→hfss 2 / quasistatic_fd→∅ 3 / hfss→hfss 1 / hfss→openems 1 / 无 4 |
+| layer（XD-8 V&V 层级） | closure 66 / component 17 / system 4 |
+| 模板族 | 69 族（template_family 并集：c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …） |
 
 **pointer（双值指针锚）值得单说**：openEMS 与 HFSS 各登记一个值，
 **不合并成单一常数、也不就地求值**。设计意图是"双值并存、比对消费"，
@@ -72,7 +72,7 @@ c3.l_via_h.openems-hfss-v1（v1，constant，active）
 
 **（2）仲裁语义**。凡经引擎对仲裁的锚，provenance 里带
 `verdict_state`（AGREE_OPENEMS / AGREE_HFSS / DISAGREE 三向，当前
-15 条带）；HFSS 是对齐基准——两引擎分歧时以 HFSS 侧为准采信
+18 条带）；HFSS 是对齐基准——两引擎分歧时以 HFSS 侧为准采信
 （各引擎的定位与门槛见 docs/tutorials/real-simulation.md 第 6 节
 多保真全景）。
 带 ΔS 收敛阶梯的锚还有 `ladder_last_rung`：判读前先看它是否触顶——
@@ -101,17 +101,17 @@ rfauto anchors validate      # schema + provenance + 单源计数校验
 rfauto anchors stale --threshold 30   # 新鲜度盘点
 ```
 
-实测 `validate` 输出（2026-10-18 时点快照）：
+实测 `validate` 输出（2026-10-23 时点快照）：
 
 ```
-锚注册表校验（DP-3）：79 条（单源期望 79，匹配=True），registry=None
+锚注册表校验（DP-3）：87 条（单源期望 87，匹配=True），registry=None
 ✓ schema + provenance 全过
 ```
 
 实测 `stale` 输出头（`no_date` 是"从未复验、如实不算 stale"）：
 
 ```
-锚新鲜度（QW-3，阈值 30.0 天，stale 2/no_date 54/79 条）
+锚新鲜度（QW-3，阈值 30.0 天，stale 8/no_date 1/87 条）
 ```
 
 另有 `rfauto anchors drift <anchor_id>`：Mann-Kendall 趋势 + 分布
@@ -137,7 +137,7 @@ from rfauto.service.knowledge_service import search_knowledge
 search_knowledge("l_via_h", scope="anchors")
 # → {'ok': True, 'hits': [c3.l_via_h.openems-hfss-v1, …],
 #    'counts': {'anchors': 2, 'total': 2},
-#    'scanned': {'rules': 10, 'anchors': 79, 'playbook': 17, 'fab': 2}}
+#    'scanned': {'rules': 10, 'anchors': 87, 'playbook': 17, 'fab': 2}}
 ```
 
 MCP 面（`anchors_list` / `anchors_inspect`）与 service 同源，供

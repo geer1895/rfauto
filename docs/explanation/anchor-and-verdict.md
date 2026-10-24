@@ -39,7 +39,7 @@ rfauto 选后者——因为临时修一下的偏差知识留在会话记忆里�
 ## 锚注册表的设计决定
 
 注册表是 `knowledge/anchors.yaml`（schema `anchors/v1`），单源计数在
-`core/anchors.py` 的 `EXPECTED_ANCHORS`（2026-10-18 实测 79）。锚的
+`core/anchors.py` 的 `EXPECTED_ANCHORS`（2026-10-23 实测 87）。锚的
 定义式：**(模板族 × 引擎对 × 域) → (常量 | 曲线 | 公式)**。几个关键
 枚举不是摆设，每一个都对应一次制度演进：
 

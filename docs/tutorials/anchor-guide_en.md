@@ -4,7 +4,7 @@
 > never used one: what an anchor is → why it is trustworthy → how to
 > query → how to consume → how to maintain — five questions, one page.
 > All commands and code were measured in the development environment
-> (exit code 0; re-verified 2026-10-18); example outputs are measured
+> (exit code 0; re-verified 2026-10-23); example outputs are measured
 > excerpts. Registry counts below are snapshots of that date (the
 > registry grows campaign by campaign — re-run `rfauto anchors
 > validate` for the live count). Prerequisite: you have read
@@ -28,16 +28,16 @@ it is each engine's systematic deviation. Measure it, register it as
 an anchor, and later synthesis and judgment gain a cross-engine
 "conversion baseline".
 
-Current registry: **79 anchors** (`rfauto anchors validate` measured
-2026-10-18). Distribution:
+Current registry: **87 anchors** (`rfauto anchors validate` measured
+2026-10-23). Distribution:
 
 | Dimension | Distribution |
 |---|---|
-| kind | constant 68 / pointer 8 / formula 2 / curve 1 |
-| status | experimental 59 / active 19 / retired 1 |
-| engine_pair | closedform→∅ 56 / openems→hfss 14 / mmt→hfss 2 / quasistatic_fd→∅ 2 / hfss→hfss 1 / hfss→openems 1 / none 3 |
-| layer (XD-8 V&V level) | closure 61 / component 14 / system 4 |
-| template families | 66 distinct families (union of template_family lists: c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …) |
+| kind | constant 73 / pointer 11 / formula 2 / curve 1 |
+| status | experimental 64 / active 22 / retired 1 |
+| engine_pair | closedform→∅ 59 / openems→hfss 17 / mmt→hfss 2 / quasistatic_fd→∅ 3 / hfss→hfss 1 / hfss→openems 1 / none 4 |
+| layer (XD-8 V&V level) | closure 66 / component 17 / system 4 |
+| template families | 69 distinct families (union of template_family lists: c3 / patch / wilkinson / branchline / cps / coil_nfc / siw …) |
 
 **pointer (dual-value pointer anchors) deserve a special word**: an
 openEMS value and an HFSS value are registered side by side, **never
@@ -85,7 +85,7 @@ current registry:
 
 **(2) Arbitration semantics**. Every engine-pair-arbitrated anchor
 carries `verdict_state` in its provenance (three-way:
-AGREE_OPENEMS / AGREE_HFSS / DISAGREE — 15 anchors carry it in the
+AGREE_OPENEMS / AGREE_HFSS / DISAGREE — 18 anchors carry it in the
 current registry). HFSS is the alignment baseline: when two engines
 disagree, the HFSS side wins (engine roles and gates: §6 of
 docs/tutorials/real-simulation_en.md, the multi-fidelity panorama).
@@ -96,8 +96,8 @@ last rung did not converge", discount the number accordingly.
 **(3) Freshness**. `last_verified.at/residual` record the last
 re-verification time and residual; the status lifecycle is active |
 stale | experimental | retired | awaiting_data. Measured freshness
-report (`rfauto anchors stale --threshold 30`, 2026-10-18): 2 stale /
-54 no_date / 79 total. **A broken anchor never rewrites history**: new
+report (`rfauto anchors stale --threshold 30`, 2026-10-23): 8 stale /
+1 no_date / 87 total. **A broken anchor never rewrites history**: new
 evidence registers as -vN+1, the old version is marked retired +
 superseded_by with the original text preserved — archived evidence is
 never edited in place.
@@ -125,10 +125,10 @@ rfauto anchors stale --threshold 30   # freshness inventory
 rfauto anchors drift <anchor_id>      # Mann-Kendall trend + distribution fingerprint diff
 ```
 
-Measured `validate` output (point-in-time snapshot, 2026-10-18):
+Measured `validate` output (point-in-time snapshot, 2026-10-23):
 
 ```
-锚注册表校验（DP-3）：79 条（单源期望 79，匹配=True），registry=None
+锚注册表校验（DP-3）：87 条（单源期望 87，匹配=True），registry=None
 ✓ schema + provenance 全过
 ```
 
@@ -136,7 +136,7 @@ Measured `stale` header (no_date means "never re-verified, honestly
 not counted as stale"):
 
 ```
-锚新鲜度（QW-3，阈值 30.0 天，stale 2/no_date 54/79 条）
+锚新鲜度（QW-3，阈值 30.0 天，stale 8/no_date 1/87 条）
 ```
 
 `drift` reports honestly during the data-accumulation phase (measured:
@@ -166,7 +166,7 @@ from rfauto.service.knowledge_service import search_knowledge
 search_knowledge("l_via_h", scope="anchors")
 # → {'ok': True, 'hits': [c3.l_via_h.openems-hfss-v1, …],
 #    'counts': {'anchors': 2, 'total': 2},
-#    'scanned': {'rules': 10, 'anchors': 79, 'playbook': 17, 'fab': 2}}
+#    'scanned': {'rules': 10, 'anchors': 87, 'playbook': 17, 'fab': 2}}
 ```
 
 MCP face (`anchors_list` / `anchors_inspect`) shares the service
