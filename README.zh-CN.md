@@ -34,6 +34,9 @@ resources），并靠 **27000+ 条单元测试**兜底验证——这些测试�
 
 ![架构](docs/assets/zh/architecture.png)
 
+> 注：上下图示内嵌数字为历史快照，实时数字以 `rfauto doctor` 或
+> `scripts/check_numbers.py` 为准。
+
 ## 为什么做这个
 
 射频仿真日常充满重复劳动和悄无声息的坑：
@@ -75,6 +78,8 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
 性批处理基座。
 
 ![工作流](docs/assets/zh/workflow.png)
+
+（本图内嵌数字为历史快照，口径见上方架构图处的注记。）
 
 ## 信任层
 

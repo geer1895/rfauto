@@ -74,8 +74,8 @@ best_effort、ADS 2027 verified——没有 license 时 doctor 如实标注，
 ## 仲裁语义：引擎对、锚、指针
 
 两个引擎对同一设计的偏差，本身是**可登记的知识**。登记式样
-（knowledge/anchors.yaml，schema `anchors/v1`，2026-10-19 实测
-79 条）：**(模板族 × 引擎对 × 域) → (常量 | 曲线 | 公式 | 指针)**，
+（knowledge/anchors.yaml，schema `anchors/v1`，2026-10-23 实测
+87 条）：**(模板族 × 引擎对 × 域) → (常量 | 曲线 | 公式 | 指针)**，
 其中 `engine_pair: {calibrated: openems, referee: hfss}` 显式写明
 谁被校准、谁当裁判。
 
@@ -84,7 +84,7 @@ best_effort、ADS 2027 verified——没有 license 时 doctor 如实标注，
 1. **常量锚必须带证据链**。例：c3 过孔寄生电感，闭式
    Goldfarb-Pucel 对粗短过孔高估 2.2-2.5 倍；HFSS 反解 0.12-0.13nH
    区间中点定值 0.125nH（锚 `c3.l_via_h.openems-hfss-v1`，status
-   active，provenance 带仲裁 run 目录/commit/开发注记 出处/replaces
+   active，provenance 带仲裁 run 目录/commit/DEVLOG 出处/replaces
    旧值）。openEMS 反解 0.20nH 如实登记为跨引擎发现、**不作定值**
    ——裁判只有一个。
 2. **证据在手但仲裁未完时，登记指针不产定值**（kind=pointer，实测
@@ -96,10 +96,10 @@ best_effort、ADS 2027 verified——没有 license 时 doctor 如实标注，
    引擎对成对登记；预声明 AGREE/DISAGREE 门在 DISAGREE 时阻止
    单侧误采信。
 
-注册表当日分布（实测）：kind = constant 68 / pointer 8 / formula 2 /
-curve 1；layer = closure 61 / component 14 / system 4；status =
-active 19 / experimental 59 / retired 1。experimental 占多数是
-制度健康的信号——新锚先挂 experimental 观察窗，验证后才翻 active。
+注册表当日分布（实测）：kind = constant 73 / pointer 11 / formula 2 /
+curve 1；layer = closure 66 / component 17 / system 4；status =
+active 22 / experimental 64 / retired 1；模板族 69。experimental 占
+多数是制度健康的信号——新锚先挂 experimental 观察窗，验证后才翻 active。
 
 ## 阶梯与锚怎么协作
 

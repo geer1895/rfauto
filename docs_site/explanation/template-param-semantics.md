@@ -60,7 +60,8 @@ arm_len = resolve_role("resonator_length_mm", self._variables)
 每个参数**在本通道**充当什么"。两层声明、一个消费者：
 
 - `TEMPLATE_META`（`adapters/oe_templates/registry.py`）每个模板的
-  `param_semantics` 字段——**实测 72/72 模板全部声明**（2026-10-19），
+  `param_semantics` 字段——**实测 75/75 模板全部声明**（2026-10-24，
+  IPD 集总无源三族入表），
   且 `docs/templates/<t>/meta.yaml` 逐键同步（单测
   test_template_meta_consistency 钉住）。wilkinson 的声明原文：
   `series_w_mm=70.7Ω 臂宽（窄），shunt_w_mm=50Ω 馈线宽（宽），
@@ -96,7 +97,7 @@ arm_len = resolve_role("resonator_length_mm", self._variables)
 三个结构性理由：
 
 1. **参数名空间不受控**。模板由多人/多批次贡献，参数名没有全局
-   唯一性约束；靠约定记不住 72 个模板 × 每模板十几个参数的语义，
+   唯一性约束；靠约定记不住 75 个模板 × 每模板十几个参数的语义，
    数据化的声明才可被机器核对（声明进 TEMPLATE_META/meta.yaml，
    一致性有单测钉）。
 2. **失败模式是静默的**。语义错配不报错——几何照画、仿真照跑、

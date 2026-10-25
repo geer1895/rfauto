@@ -40,6 +40,9 @@ honest by **27000+ unit tests** that run without any commercial license.
   <img src="docs/assets/architecture.png" alt="rfauto architecture: interfaces → service → domain → adapters → deterministic core, with the AI agent loop and the iron rule" width="100%">
 </p>
 
+> Note: numbers shown inside the diagrams above and below are historical
+> snapshots; for live counts run `rfauto doctor` or `scripts/check_numbers.py`.
+
 ## Why
 
 RF simulation work is full of manual repetition and quiet traps:
@@ -91,6 +94,9 @@ one-shot HFSS batch base that drives the whole chain from a single entry
 point.
 
 ![workflow](docs/assets/workflow.png)
+
+(The counts rendered inside this diagram are a historical snapshot; see the
+note above the architecture figure.)
 
 ## The trust layer
 

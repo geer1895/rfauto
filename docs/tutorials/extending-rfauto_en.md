@@ -8,7 +8,7 @@
 > which layer your addition lives in determines what it may import).
 > Chinese original: docs/tutorials/extending-rfauto.md; only the
 > narrative is translated, all code/output is verbatim. Re-verified
-> 2026-10-19.
+> 2026-10-24.
 
 ## 0. Two universal constraints
 
@@ -154,10 +154,11 @@ inside the factory body) with sys.modules pinning in tests.
 ## 4. Add an openEMS template
 
 The template single source is `adapters/oe_templates/registry.py`:
-`TEMPLATE_META` (72 templates: geometry parameter tables / port axes /
-mesh conventions) and `TEMPLATE_NOMINAL` (nominal value tables),
+`TEMPLATE_META` (75 templates: geometry parameter tables / port axes /
+mesh conventions — this count grows as templates are registered; never
+hardcode it) and `TEMPLATE_NOMINAL` (nominal value tables),
 re-exported for consumption via `adapters/openems_templates.py`.
-(Both counts measured 2026-10-19: 72/72.)
+(Both counts measured 2026-10-24: 75/75.)
 
 Two iron rules (both paid for historically — don't pay again):
 
@@ -177,7 +178,7 @@ Two iron rules (both paid for historically — don't pay again):
 |---|---|
 | 1 | `tests/unit/test_template_meta_consistency.py` (TEMPLATE_NOMINAL ↔ docs/templates/<t>/meta.yaml key-by-key agreement) |
 | 2 | `tests/unit/test_template_geometry_audit.py` (EXPECTED_TEMPLATES full count, single source `len(TEMPLATE_META)`) |
-| 3-5 | three template-count literals changed to the single source (never write `== 72`) |
+| 3-5 | three template-count literals changed to the single source (never write `== 75` — the count grows as templates are registered) |
 
 Plus: a template-specific unit test `tests/unit/test_<template>_template.py`
 (geometry audit gate) and the `docs/templates/<template>/meta.yaml`

@@ -49,7 +49,7 @@
 | `rfauto.service.calculator_service` | 计算器清单/执行（UI/CLI/MCP 三壳共享） |
 | `rfauto.service.health_service` | run 健康度体检（G11 门权威实现） |
 | `rfauto.adapters.em_solver_base` | EMSolverAdapter/EMSolverRegistry（适配器契约与发现口） |
-| `rfauto.adapters.openems_templates` | 72 个模板的 CSXCAD 渲染（TEMPLATE_META/TEMPLATE_NOMINAL/render_script） |
+| `rfauto.adapters.openems_templates` | 75 个模板的 CSXCAD 渲染（TEMPLATE_META/TEMPLATE_NOMINAL/render_script） |
 
 **doctest 制度**：上表标注"带可运行示例"的模块，其 docstring 示例由
 测试守护——示例跑不过测试即红，文档与代码不会脱钩：
@@ -78,7 +78,7 @@ pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 | 要找什么 | 去哪 |
 |---|---|
 | 每个模板的名义参数/冒烟口径/参数语义 | `docs/templates/<模板名>/meta.yaml` |
-| 模板清单（72 个） | `rfauto.adapters.openems_templates.TEMPLATE_META` |
+| 模板清单（75 个） | `rfauto.adapters.openems_templates.TEMPLATE_META` |
 | 端口/网格铁律、验收基准 dB 值、官方例出处 | docs/rf_template_references.md |
 | COMSOL API 口径与本地 PDF 索引 | docs/comsol_references.md |
 | openEMS 源码构建 | docs/openems_build_guide.md |

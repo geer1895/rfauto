@@ -82,7 +82,7 @@ per-page notes.
 | Execution Board | `#/loopboard` | observation surface for the autonomous loop (propose→verify→fix): milestone acceptance + pause/resume/take-over (cooperative, honored at step boundaries) |
 | Campaigns | `#/campaign` | tuning/optimization runs with trial audit: seat status (PASS/SKIP/FAIL three-way) + cost heatmap + trial virtual list (thousand-row scrolling) |
 | Queue | `#/queue` | campaign queue + decision log (read-only) |
-| Template Gallery | `#/gallery` | interactive cards for all device templates (same source as the docs template metadata, 72 templates); whitelisted templates get sliders with instant closed-form preview (zero EM solving) |
+| Template Gallery | `#/gallery` | interactive cards for all device templates (same source as the docs template metadata, 75 templates); whitelisted templates get sliders with instant closed-form preview (zero EM solving) |
 
 **Analysis** (looking at data, drilling into artifacts):
 
@@ -197,7 +197,7 @@ calculators — the same kernel as CLI `rfauto calc` and the MCP
 **generated live from the registry** (the page is not hand-maintained;
 the key count grows automatically as the kernel gains keys, so this
 tutorial does not pin a number). The full shape, matured in the
-架构批 batch:
+aurora72 batch:
 
 - **Browse by group**: a dropdown groups keys by business domain
   (common groups first; experimental/other always last), each group

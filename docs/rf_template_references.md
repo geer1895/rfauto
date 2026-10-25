@@ -777,3 +777,91 @@ port2 β→HJ εeff |Δ| ≤ 2%（msl_cpw ±1% 先例）。扫频 1.5–3.5GHz�
 - **WR 表消费纪律**：波导族模板名义尺寸一律 `wr_lookup` 表口径导入期精算
   （coax_waveguide_transition/pyramid_horn 先例），禁止沿用其他文档毫米数
   （#1c/#252 同源）；跨模块 C0 同值由单测钉住。
+
+## 19. GaAs IPD 集总无源件三模板：octagonal_spiral / mim_cap / interdigital_cap（K11/K12，2026-10-24 增补）
+
+三模板同为 GaAs 薄膜 IPD 工艺集总器件，μm 参数口径（W/S/N/Din 等，经
+core.stackup.to_mm(v,'um') 单源换算），基板 GaAs 半绝缘典型档
+（er=12.9/tanδ=0.0006/h=100μm），全域 MUR（电小器件近场主导）。**网格禁
+λ_sub/50 口径**（2GHz λ_sub/50≈6mm 装不下 0.2mm 器件），自动档=最细几何
+特征/4；渲染期共同守卫：特征缘/切角/焊盘/端口盒边精确入网（#198）、
+NEAR≤min(缝)/3（#266）、全轴近重合去重（#152）、端口盒激励向 ≥2 格
+（#283）、离线几何审计（#212）。名义几何全部闭式精算
+（docs/templates/<模板>/meta.yaml nominal_derivation 同源）；真机冒烟
+均未发射（离线审计过，发射留真机批，HFSS=对齐基准）。
+
+### 19.1 octagonal_spiral 八角螺旋电感
+
+- 闭式：Mohan–Schneider–Chibante, "Simple Accurate Expressions for Planar
+  Spiral Inductances", IEEE JSSC 34(10):1419-1424, Oct. 1999，三表达式
+  系数逐形状原文锚——Table I 修正 Wheeler（八角 K1,K2=(2.25,3.55)）、
+  **Table II 电流片式（八角 (c1,c2,c3,c4)=(1.07,2.29,0,0.19)）**：
+  L=(c1·μ0·n²·d_avg/2)·(ln(c2/ρ)+c3·ρ+c4·ρ²)，ρ=(D_out−D_in)/(D_out+D_in)
+  填充比、d_avg=(D_out+D_in)/2、n 允许分数（原文拟合库口径）；Table III
+  单项式（八角 β=1.33e-3，μm/nH 单位口径）。原文 Table IV 两条八角实测例
+  回放钉住（n=4/5、d_out=346μm、w=18、s=2μm → 原文实测 5.90/7.50nH）：
+  本实现 5.993/7.447nH，误差列 |Δe|≤0.3 个百分点、对实测 |ΔL|/L≤10%
+  （tests/unit/test_nfc_coil.py）。
+- 仓内单源：core/nfc_coil（spiral_inductance 三式+turn_perimeter_m 匝梯
+  几何+winding_parasitic_capacitance_f 匝间寄生 C 一阶，未标定如实声明）；
+  CALC 键 octagonal_spiral_inductance（μm 参数薄注册包装，公式零复制）。
+- 拓扑口径：八角折线螺旋（across-flats，45° 切角阶梯盒相邻重叠保导通），
+  d_out 闭式=d_in+2nW+2(n−1)S；内端过孔上引跳线桥出外端同侧（§13.3
+  lange air-bridge 同法）；外端-焊盘水平桥隙 LumpedPort 串联口径
+  （Zin=50(1+S11)/(1−S11)，低频 L=Im(Zin)/(2πf)，SRF=绕组寄生并联谐振峰）。
+- 验收：提取 L 对闭式 ±25% + SRF>2×f0（CALC 门随结果透传）。名义档
+  n=5/din=80/w=10/s=5μm → d_out=220μm、ρ=0.4667、电流片式
+  L=4.1147nH（三式互差 3.1%）；用户 HFSS 实测 2.4GHz L=4.226nH（默认
+  网格）/4.312nH（金属局部 5μm 网格），偏差 +2.7%/+4.8%（门内）；C_par
+  一阶 80.75fF → SRF=8.73GHz（对实测 6.32/7.18GHz 同量级，未标定如实）。
+- **网格敏感性告警（用户 HFSS 实测教训）**：HFSS 默认网格 Q=10.86，金属
+  局部 5μm 网格复核后 Q=13.44——默认网格 Q 低约 19% 而 L 只动 ~2%：
+  **L 对网格钝感、Q 强烈依赖金属边缘网格**，Q 类判读必须金属局部细网格
+  复核，单看默认网格 Q 会误判品质。Q 预算门阈值留真机批实测定。
+
+### 19.2 mim_cap MIM 电容
+
+- 闭式：平行板 C=ε0·εr·A/d（A=上极板叠合面积 w·l）教科书精确式，边缘场
+  偏差 O(d/√A) 如实声明，**不引入未核修正系数**（铁律 1c：可选修正不做
+  凭记忆式）；小电容档 O(d/√A) 占比上升，±25% 判据在精确几何档成立。
+  串联寄生一阶：R_s=ρ·l/(t·w)（双板串联，趋肤/邻近不在内）、
+  L_s=μ0·d·l/w（宽板 Ampère 精确 × 回路路径，可推导非转写）→
+  SRF=1/(2π√(L_s·C))；MIM 本体自谐振远高于工作带，实测 SRF 由端口引线
+  寄生主导（core/ipc_cap 模块头一阶口径声明）。
+- 仓内单源：core/package_interconnect.mim_capacitance（复用零公式复制，
+  #116）；报告面 core/ipc_cap.mim_capacitance_report；CALC 键
+  mim_capacitance。
+- 拓扑口径：下极板零厚金属面（足迹四周外伸 bot_overhang 抑制边缘场集中）
+  + 介质真实体块 z∈[H,H+d]（SiNx）+ 上极板零厚金属面；竖直 LumpedPort
+  跨介质（并联口径：Zin=R_s+jωL_s+1/(jωC)，低频 C=−1/(ω·Im(Zin))，
+  Im(Zin) 过零=串联 SRF）。
+- 验收：C±25% + SRF>2×f0。名义档 w=l=20μm/d=0.2μm SiNx（εr=7.5）→
+  C=132.8128fF（面密度 0.332fF/μm²=0.2μm SiNx IPD 典型档）；串联寄生
+  R_s=8.13mΩ（ρ=2.44e-8 金、t=3μm）/L_s=0.2513pH → SRF≈871GHz（CALC
+  名义档输出 871.12GHz）。
+- **薄介质网格成本告警**：介质 z 向三线（H、H+d/2、H+d）显式入网保证
+  端口激励体积 ≥2 格（#283），最小 z-cell=d/2 → dt≈d/2c——d=0.2μm 档
+  **dt≈0.33fs**，比 mm 级结构小三个量级，NrTS 预算按 dt 实测折算（#312
+  纪律）；#152 近重合去重阈值 z 轴降为 d/4（全局 1μm 阈值会吞介质线）。
+
+### 19.3 interdigital_cap 叉指电容（IDC）
+
+- 闭式：侧壁 sum-of-capacitances 一阶——(N−1) 个相邻齿缝各贡献
+  C_pair=ε0·εeff·t·l_c/s（面对面积 t·l_c、缝距 s 的几何恒等式推导，非
+  文献转写），εeff=(1+εr)/2 衬底半空间均匀化，l_c=lf−e_tip（B 排尖部
+  外伸段不产生相邻缝）。**精度类 ±50% 如实**：槽平面（共面缝）场与齿端
+  边缘场为同阶省略项，薄金属（t/s 小）时系统性低估（零厚极限侧壁项→0
+  而槽平面场有限）；Gevorgian 1996 级 even/odd 模精确式为上位替代——
+  原文数表未逐位核对，不凭记忆转写（铁律 1c）。另：渲染零厚金属 vs
+  闭式侧壁 t=3μm 跨口径（双处声明，真机对拍注记）。
+- 仓内单源：core/ipc_cap.interdigital_capacitance_f（scope_note 携带
+  ±50%+低估偏置声明）；CALC 键 interdigital_capacitance。
+- 拓扑口径：n 根指 A/B 两排交错梳齿互锁（两排 DC 隔离=定义性质，几何
+  审计恰 2 分量）；双水平桥隙 LumpedPort 串联口径（理想串联元
+  Z=2·Z0·(1−S21)/S21 → 低频 C=−1/(ω·Im Z)，与 em deembed 的 Z12 提取
+  链同式；Z12 对 T 型串联元精确、对 π 型端并联敏感——去嵌后口径）。
+- 验收：对用户实测 C=173.5fF（Z12 去嵌后）±50% + SRF>2×f0。名义档
+  n=24/lf=220/wf=sf=5/e_tip=15μm（l_c=205μm、t=3μm 金、εeff=6.95）→
+  C=174.087fF（23 缝对 × 7.569fF），对实测偏差 0.34%（用户几何未给全，
+  同量级参考对拍非逐位锚）；串联寄生一阶 R_s=824mΩ/L_s=209.9pH →
+  SRF≈26.3GHz（CALC 名义档输出 26.33GHz）。

@@ -29,10 +29,10 @@
   <text x="56" y="184" fill="#7C8DA6" font-size="14.5">HFSS · ADS · openEMS · Palace behind one deterministic interface</text>
 
   <g font-size="14" font-weight="700">
-    <rect x="640"  y="28" width="96"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="688"  y="48" fill="#7DD3FC" text-anchor="middle">71 templates</text>
-    <rect x="748"  y="28" width="88"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="792"  y="48" fill="#7DD3FC" text-anchor="middle">254 CLI</text>
-    <rect x="848"  y="28" width="128" height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="912"  y="48" fill="#7DD3FC" text-anchor="middle">149 MCP tools</text>
-    <rect x="988"  y="28" width="88"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="1032" y="48" fill="#7DD3FC" text-anchor="middle">60 anchors</text>
+    <rect x="640"  y="28" width="96"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="688"  y="48" fill="#7DD3FC" text-anchor="middle">75 templates</text>
+    <rect x="748"  y="28" width="88"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="792"  y="48" fill="#7DD3FC" text-anchor="middle">280 CLI</text>
+    <rect x="848"  y="28" width="128" height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="912"  y="48" fill="#7DD3FC" text-anchor="middle">157 MCP tools</text>
+    <rect x="988"  y="28" width="88"  height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="1032" y="48" fill="#7DD3FC" text-anchor="middle">87 anchors</text>
     <rect x="1088" y="28" width="100" height="30" rx="15" fill="#1E293B" stroke="#334155"/><text x="1138" y="48" fill="#7DD3FC" text-anchor="middle">16+ engines</text>
   </g>
   <text x="1144" y="222" fill="#475569" font-size="12" text-anchor="end">GPL-3.0 · python 3.10+</text>

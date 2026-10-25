@@ -7,7 +7,8 @@
 > docs/explanation/layered-architecture.md（分层架构——你加的东西落在
 > 哪一层决定它能 import 什么）。
 > 英文版（English version）：docs/tutorials/extending-rfauto_en.md
-> （2026-10-19 全量复测同笔：六适配器/72 模板/通道三元组均与本文一致；
+> （2026-10-24 复测同笔：六适配器/75 模板/通道三元组均与本文一致——
+> 模板数随模板注册增长，下文计数以注册表单源为准，勿硬编码；
 > 脚手架返回值现含 `module` 键，见 §1 注记）。
 
 ## 0. 两条通用约束
@@ -126,7 +127,8 @@ sys.modules 钉死测试。
 ## 4. 加一个 openEMS 模板
 
 模板单源在 `adapters/oe_templates/registry.py`：`TEMPLATE_META`
-（72 模板：几何参数表/端口轴/网格口径）与 `TEMPLATE_NOMINAL`
+（75 模板：几何参数表/端口轴/网格口径——此数随模板注册增长，
+勿硬编码）与 `TEMPLATE_NOMINAL`
 （名义值表），经 `adapters/openems_templates.py` re-export 消费。
 
 两条铁律（都有历史代价，别再付）：
@@ -144,7 +146,7 @@ sys.modules 钉死测试。
 |---|---|
 | 1 | tests/unit/test_template_meta_consistency.py（TEMPLATE_NOMINAL ↔ docs/templates/<t>/meta.yaml 逐键一致） |
 | 2 | tests/unit/test_template_geometry_audit.py（EXPECTED_TEMPLATES 全量计数，单源 `len(TEMPLATE_META)`） |
-| 3-5 | 三处模板计数字面改单源（勿写 `== 72`） |
+| 3-5 | 三处模板计数字面改单源（勿写 `== 75`——此数随模板注册增长） |
 
 外加：模板定向单测 `tests/unit/test_<模板>_template.py`（几何审计
 门槛）、docs/templates/<模板>/meta.yaml 落盘。
