@@ -1,4 +1,4 @@
-"""B2/B5 版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳（AGENTS 规则 4）。
+"""B2/B5 版图服务层：JSON 进出的生成/导出/读入/往返报告薄壳（内核立规注记 规则 4）。
 
 CLI/MCP 若要暴露版图互操作，直接消费本模块的 *_payload 函数；
 数值与几何全部来自确定性内核（adapters/layout_generator、
@@ -258,7 +258,7 @@ def load_laymap(path: str | Path) -> dict[str, str]:
     （YAML 整型键坑：YAML 里 ``1:`` 会解析成 int 键）；未知后缀 ValueError、
     缺文件 FileNotFoundError、顶层非映射或键非层号 ValueError。
 
-    值冲突告警级校验（P2⑳ 批登记 followUp，TODO C24）：键归一冲突/多键
+    值冲突告警级校验（P2⑳ 批登记 followUp，待办清单 C24）：键归一冲突/多键
     同目标值不 raise、不改变返回语义（键冲突保持"后者覆盖"），只
     ``warnings.warn`` 给出可定位清单——合层可能是用户本意，判读留给人。
     """

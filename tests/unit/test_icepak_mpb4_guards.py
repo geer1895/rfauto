@@ -1,6 +1,6 @@
 """MP-B4 Icepak 判据清偿（#244 五坑离线固化）：守卫自检 + 源扫描 + 语义钉。
 
-五坑 → 处置（全账见 runs/mpb4/clearance.md；既有钉=tests/unit/
+五坑 → 处置（全账见 内部证据档；既有钉=tests/unit/
 test_icepak_adapter.py 内对应测试）：
 1. **Region 自动生成**（首个实体自动生成 Region，create_region 报
    "already exists"）→ 既有钉 ``test_auto_region_reconfigured_instead_

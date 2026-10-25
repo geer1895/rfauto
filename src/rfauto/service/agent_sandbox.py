@@ -86,7 +86,7 @@ class RecipeSandbox:
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
     def _save_yaml(self, path: Path, data: dict[str, Any]) -> None:
-        # 统一出口守卫（TODO 增量②）：草稿写面不得越到受保护 recipes/ 下
+        # 统一出口守卫（待办清单 增量②）：草稿写面不得越到受保护 recipes/ 下
         from rfauto.infra.recipe_guard import write_recipe_yaml
 
         write_recipe_yaml(path, data)
@@ -114,7 +114,7 @@ class RecipeSandbox:
     def write_yaml(self, recipe_path: str | Path, content: str) -> dict[str, Any]:
         """整文件覆写草稿（给将来的原文编辑模式；守卫同 apply）。"""
         draft = self.draft_path(recipe_path)
-        # 统一出口守卫（TODO 增量②）：沙箱根不可被指到受保护 recipes/ 下
+        # 统一出口守卫（待办清单 增量②）：沙箱根不可被指到受保护 recipes/ 下
         from rfauto.infra.recipe_guard import write_recipe_text
 
         write_recipe_text(draft, content)

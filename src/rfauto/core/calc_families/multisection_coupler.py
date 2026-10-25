@@ -1,5 +1,5 @@
-"""多节对称定向耦合器族（架构批 A6-B 席域 1，R7_core_tier2 §② G5 余量；
-架构批 W4-S14 补等纹波成员=R7 G5 唯一遗留）。
+"""多节对称定向耦合器族（aurora72 A6-B 席域 1，R7_core_tier2 §② G5 余量；
+aurora_f W4-S14 补等纹波成员=R7 G5 唯一遗留）。
 
 三键：multisection_coupler_binomial（对称 N 节二项式=中心最大平坦综合：
 结点权→节耦合→逐节 (Z0e,Z0o)）/ multisection_coupler_response（逐节

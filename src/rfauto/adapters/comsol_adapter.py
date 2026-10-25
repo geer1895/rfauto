@@ -11,7 +11,7 @@
   * 模型树骨架（component/geom/material/physics/study）：ApplicationProgrammingGuide；
   * 材料 ``propertyGroup("def").set(...)``：ApplicationProgrammingGuide p.52；
   * LumpedPort 属性名（PortName/PortType/TerminalType/Zref/PortExcitation）：
-    官方例 microstrip_line_tem_via.mph 实录（runs/comsol_smoke/_probe_api_dump.json）
+    官方例 microstrip_line_tem_via.mph 实录（内部证据档）
     + RF Module User's Guide "Lumped Port" 节（p.143-149）；
   * Box 选择集属性（entitydim/xmin..zmax/condition）：Programming Reference Manual
     Table 2-125；网格 size 属性（custom/hmax）：同手册 mesh Size 节；
@@ -57,7 +57,7 @@ COMSOL_VERSION_PIN = "6.3"  # #215：6.4 license 过期，必须显式钉 6.3
 DEFAULT_COMSOL_ROOT = r"E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics"
 PHYSICS_TYPE = "ElectromagneticWaves"  # RF Module 频域接口 API 类型串（官方例实录）
 PHYSICS_TAG = "emw"  # 官方默认 tag；S 变量 comp1.emw.Sij（User's Guide p.71）
-# 注意（2026-09-11 真机实证，runs/comsol_smoke/_probe_lport.py）：
+# 注意（2026-09-11 真机实证，内部证据档）：
 # "ElectromagneticWavesFrequencyDomain" 也能创建，但该接口**没有 LumpedPort 特征**
 # （Wave Optics 风格 ewfd，仅 Port）——RF 集总端口建模必须用 "ElectromagneticWaves"。
 STUDY_TAG = "std1"
@@ -100,7 +100,7 @@ MLINE_PORT_MARGIN_MM = 3.0  # 端口面到 y 端吸收边界的余量（真机�
 #     index.txt）：emw + Port 特征（PortType="TEM"、numericTEM=1）+ study
 #     std=[bma(BoundaryModeAnalysis), freq(Frequency)]；
 #   * 解析 TEM 官方链=官方例 microstrip_line_tem_via.mph dmodel.xml 实录（本机
-#     解包 runs/comsol_tail/_doc_probe/tem_via/）：Port StudyStep="std1/tbma"
+#     解包 内部证据档）：Port StudyStep="std1/tbma"
 #     解引用（端口模取自边界模分析步）——本适配器照此同构把 StudyStep 指向
 #     "std1/bma"。run9/10 的 Cmode_1 未定义即缺这条解引用接线（端口缺省指向
 #     Frequency 步，而 Cmode/Lmode 只在边界模分析步产生）。
@@ -123,13 +123,13 @@ INTEGRATION_LINE_FOR_VOLTAGE = "IntegrationLineforVoltage"  # 真机自校验实
 # （GUI 名 "Integration Line for Voltage" 去空格、for 小写；RF User's Guide
 # p.128：数值 TEM 端口必须配电压积分线子特征定标端口模阻抗）
 # tanδ 介质损耗口径（官方 RF 材料库 rf_lib.mph dmodel 实录，本机解包
-# runs/comsol_tail/_doc_probe/rf_lib_dmodel.xml）：损耗介质的属性组类型串
+# 内部证据档）：损耗介质的属性组类型串
 # "LossTangentDF"（Loss tangent, dissipation factor），组内属性 epsilonPrim
 # （相对介电常数实部）+ tanDelta（损耗角正切）；def 组不再设 relpermittivity
 # （Rogers 材料实录：def 组仅 relpermeability+electricconductivity）。emw 波动
 # 方程特征按 *_mat="from_mat" 自动消费该组（tem_via dmodel wee1 属性块实录）。
 MATERIAL_GROUP_LOSS_TANGENT = "LossTangentDF"
-# 分域网格（真机验证方案，runs/comsol_tail/）：全局粗、走线区/基板中块细。
+# 分域网格（真机验证方案，内部证据档）：全局粗、走线区/基板中块细。
 # 全局 0.15mm 会撑爆装配内存（run3 实证 OOM）；extra_params 的 mesh_scale
 # （默认 1.0）可整体缩放做网格收敛研究。
 MLINE_MESH_HMAX: dict[str, float] = {
@@ -165,7 +165,7 @@ COUPLING_TAG = "emh1"
 STUDY_STEP_FREQUENCY = "Frequency"
 STUDY_STEP_STATIONARY = "Stationary"
 # D14 stage-2 热漂移 study 步（官方例 cavity_filter_thermal_expansion.mph
-# study 步 op 实录，runs/d14_stage2/_doc_probe/cavity_te/）
+# study 步 op 实录，内部证据档）
 STUDY_STEP_EIGENFREQUENCY = "Eigenfrequency"
 STUDY_STEP_TRANSIENT = "Transient"  # 时间步类型串（官方 oven StudyFeature op），非 "TimeDependent"
 HEAT_FLUX_CONVECTIVE = "ConvectiveHeatFlux"
@@ -641,7 +641,7 @@ class ComsolAdapter(EMSolverAdapter):
     # A5 能力声明（如实，2026-09-14 逐行核对 + 真机过锚）：
     #   - 端口：LumpedPort（既有链）+ 数值 TEM 边界模端口完整链
     #     （mline_port_chain="tem"，真机三源对拍双锚 PASS，
-    #     runs/comsol_tail/mline_tem_mesh_convergence.json）→ wave=True；
+    #     内部证据档）→ wave=True；
     #   - 材料：PEC 板/走线 + 无耗/有耗介质（loss_tangent>0 走官方
     #     LossTangentDF 组，tanδ 建模真机验证）；
     #   - 场导出：temperature_field/evaluate_volume_series 体积场提取（多物理，
@@ -923,7 +923,7 @@ class ComsolAdapter(EMSolverAdapter):
     def _build_mline(self, client: Any) -> Any:
         """在 Client 内构建 mline 锚模型（直微带线，WP2.1 权威口径同锚）。
 
-        官方口径逐条出处（2026-09-12 真机验证，runs/comsol_tail/）：
+        官方口径逐条出处（2026-09-12 真机验证，内部证据档）：
         - 走线=零厚度 PEC 片：WorkPlane(z=HS)+Rectangle 印痕（官方例
           vivaldi_antenna.mph 同手法）。有限厚 Block 不可用——skrf 实测
           t=0.05mm 已使 εeff -2.0%/Z0 -1.4Ω（本锚 openEMS/HFSS/HJ 闭式
@@ -943,7 +943,7 @@ class ComsolAdapter(EMSolverAdapter):
         （+4.8% vs HJ 闭式，超出锚 ±2% 门；run5→7 网格/空气盒细化各仅回
         -0.4%，排除网格/域因素）。tem 链（mline_port_chain="tem"）为该口径
         差的官方修正路径：数值 TEM 边界模端口完整链（本文件常量区实录出处
-        ）——真机实证五坑（2026-09-14 runs/comsol_tail/tem_probe/_doc_probe/）：
+        ）——真机实证五坑（2026-09-14 内部证据档）：
         ① Port 特征只能放外部边界（「狭缝条件只能应用于内部边界，或者，
         端口只能放置在外部边界上」）→ 域端=端口面（官方 cpw 例同构）；
         ② StudyStep 解引用须在 bma 步创建后回填（步不存在时 set 报
@@ -1236,7 +1236,7 @@ class ComsolAdapter(EMSolverAdapter):
         """端口扫描后取全 S 矩阵：EvalGlobal 行=表达式、列=解（不假设解序）。
 
         端口扫描把每个激励存为独立 dataset/outer（真机实证：
-        runs/comsol_tail/mline_run6.log + _postmortem_eval.py——dset1=
+        内部证据档 + _postmortem_eval.py——dset1=
         PortName 2、dset2=PortName 1）→ 遍历 dataset × outersolnum 收集全部
         解列，每列以 freq 与 PortName（扫描参数）两行做 (频率, 激励端口) 识
         别后装配：PortName=1 列只定义 S11/S21（官方 p.145：一次只激励一个
@@ -1446,6 +1446,18 @@ class ComsolAdapter(EMSolverAdapter):
                 rows.append(",".join(cells))
             (self._working_dir / "sparams.csv").write_text(
                 "\n".join(rows) + "\n", encoding="utf-8")
+            # B4（aurora_l Wave-B）：曲线 sidecar（归属证据）best-effort（#105）
+            try:
+                from rfauto.service.runs_verify_service import (
+                    write_artifact_sidecar,
+                )
+
+                write_artifact_sidecar(
+                    self._working_dir / "sparams.csv",
+                    run_id=self._working_dir.name, kind="sparams_csv")
+            except Exception:
+                logger.warning("sparams.csv sidecar 写出失败（不影响结果）",
+                               exc_info=True)
         except Exception:
             logger.warning("COMSOL sparams.csv 落盘失败（不影响结果）", exc_info=True)
 
@@ -1531,10 +1543,10 @@ class ComsolAdapter(EMSolverAdapter):
     # ── D14 stage-2：热-结构-EM 三场（solid 热膨胀 → 变形构型 → emw 本征重解）──
     # 官方参照（方案 §10.4 D14 引用 COMSOL"微波滤波器热漂移"官方例）：
     # applications/RF_Module/Filters/cavity_filter_thermal_expansion.mph，其
-    # dmodel.xml 建模指令流已解包实录到 runs/d14_stage2/_doc_probe/cavity_te/
+    # dmodel.xml 建模指令流已解包实录到 内部证据档
     # （actions.txt）：Stationary(仅 solid) → Eigenfrequency(emw、关空间框架)
     # →（Parametric 温度扫描）；材料结构属性实录 MEMS_Module
-    # biased_resonator_3d_basic.mph（runs/d14_stage2/_doc_probe/mems3d/）。
+    # biased_resonator_3d_basic.mph（内部证据档）。
     # 以下方法全部加性、不进 solve() 主链路（真机脚本显式组装）。
 
     @staticmethod
@@ -1546,7 +1558,7 @@ class ComsolAdapter(EMSolverAdapter):
         官方实录（biased_resonator_3d_basic.mph dmodel actions）：
         - materialmodel 建 "Enu" 组（**三参 (tag, type, label)**："Young's
           modulus and Poisson's ratio"——label 是材料属性模型组的元数据，
-          两参建组真机实证（2026-09-14 runs/d14_stage2/）solid 消费不到
+          两参建组真机实证（2026-09-14 内部证据档）solid 消费不到
           E/nu，刚度矩阵退化、稳态步残差 ~0.007 永不收敛且位移恒零），
           属性名 E / nu（标量字符串，如 "160e9[Pa]" / "0.22"）；
         - def 组 thermalexpansioncoefficient = 9 元 1/K 数组（各向同性对角）；
@@ -1625,7 +1637,7 @@ class ComsolAdapter(EMSolverAdapter):
         set("prescribedMeshDisplacement", ["u","v","w"])——把网格位移显式
         绑定到 solid 位移分量，EM 在变形构型上重解（配合热漂移 study 的
         eig 步 setSolveFor("/frame/spatial1", false)）。
-        真机实证（2026-09-14 runs/d14_stage2/）：同域（emw 与 solid 同一
+        真机实证（2026-09-14 内部证据档）：同域（emw 与 solid 同一
         介质域）场景这是**必需且充分**的桥梁——只建 DeformingDomain（free1）
         时 solid 位移恒零、EM 频移不含几何项（tcdk=0 时漂移精确为 0）；
         补上本特征后位移场 ~17μm（期望 18μm）、纯几何频移 +874ppm（期望
@@ -1691,7 +1703,7 @@ class ComsolAdapter(EMSolverAdapter):
     def configure_eigen_shift(model: Any, shift_expr: str) -> list[str]:
         """给 study 已生成的 solver 序列里的 Eigenvalue 求解器设搜索 shift。
 
-        真机实证（2026-09-14 runs/d14_stage2/）：java 自动序列的 Eigenvalue
+        真机实证（2026-09-14 内部证据档）：java 自动序列的 Eigenvalue
         特征（默认 tag e1，属性清单含 shift/eigref/eigvf，真机 properties()
         dump）缺省 shift=0 → ARPACK 命中零空间解 → emw.freq=0（假结果）；
         set("shift", "<f0>[GHz]") 后基模 3.9176008 GHz 与闭式 3.9176007 GHz
@@ -1910,7 +1922,7 @@ class ComsolAdapter(EMSolverAdapter):
                           unit: str = "degC") -> np.ndarray | None:
         """best-effort：取节点温度场（落 CSV / 自洽统计用）。
 
-        真机实证（2026-09-12，runs/comsol_microwave_oven/）：
+        真机实证（2026-09-12，内部证据档）：
         - MPh evaluate 返回的是**全模型**节点值（384420 个），而 T 只在土豆域
           有定义 -> 其余实体为 NaN，故只能取有限子集，不能要求全有限；
         - 数据集里既有稳态解（研究 1//解 1，T≈3565..7207 degC），也有

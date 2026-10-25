@@ -151,7 +151,12 @@
   "run_sweep",
   "edb_emit_spec",
   "edb_build_solve",
-  "edb_status"
+  "edb_status",
+  "em_doctor_check",
+  "runs_verify",
+  "em_diff_runs",
+  "em_metrics_from_run",
+  "em_sweep_plan"
  ],
  "resources": [
   "rfauto://calculators/index",

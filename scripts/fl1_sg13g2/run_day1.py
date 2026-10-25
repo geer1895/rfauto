@@ -3,7 +3,7 @@
 链路（docs/research_expansion_20260926_round6.md §二 F-L 第 1 步，Day-1
 零 Verilog-A / 零新包）：HBT 偏置/gm/fT 网格（3x3）→ 单级共射 LNA 的
 S 参 + NF → Pospieszalski 闭式（core/fet_noise）互证。产出
-runs/fl1_sg13g2/day1_results.json。
+内部证据档。
 
 判据先行（#122，预声明即铁约，不凑绿）：
 - 仪器自检：串 100Ω 双 50Ω port 的 2-port 网络，解析 S11=S21=S12=S22=0.5

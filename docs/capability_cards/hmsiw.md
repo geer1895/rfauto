@@ -48,11 +48,11 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `hmsiw.fc_ghz.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：hmsiw_fc_te05_ghz = 6.666664 GHz；±0.0001（rounding_band）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `hmsiw.fc_ghz.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：hmsiw_fc_te05_ghz = 6.666664 GHz；±0.0001（rounding_band）；证据：runs/ge8_followup/wave_a/refs
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -60,7 +60,7 @@
 - 参数语义：w_mm=HMSIW 宽（过孔列心到开路边；设计链 core/hmsiw.hmsiw_design_params：fc 目标=f0/1.5 反解，式 (8)(9)(13)(10)(11) 联立 brentq，名义 5.5829mm@fc=6.6667GHz/er=3.66/h=0.508/d=0.6/s=1.0）、d_mm=过孔直径、 s_mm=过孔心距（渲染按 k·s 精确栅格、藩篱止于端口面）、line_len_mm=两端口测量面间距； h/er/tan_d 走 substrate/nominal（式 (13) 声明域 εr∈(2.2,15)/h∈(0.254,2.54)mm/w∈(2.5,10)mm， hmsiw_check_validity 越界拒渲染）
 - 网格：mesh_resolution_mm=网格 base 覆盖；0=自动 λ_sub/50@F_MAX；过孔直径 ≥4·NEAR 守卫、孔间缝 ≥1 内部线（siw 同款）、显式近场线 10µm 地板（#349）、端口盒边/开路边/藩篱心线落格（#283， 生成期断言）、基板 z 4 层
 - 冒烟现状：离线审计先行（#212，test_ta_wave_a_templates）；内核数字裁判=论文图面数值锚三方互证（Fig.6/7：fc 4.789/20.746GHz、β(12GHz) 342 rad/m，test_ta_wave_a_templates 钉）；近似级别如实登记：式 (13) 拟合 <2%（论文声明域内）、过孔藩篱离散化未经真机仲裁（siw 经验迁移）、端面 LumpedPort R=Z_PV 对 1/4 余弦场分布的功率-电压近似（siw v1/v2 同族近似级）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

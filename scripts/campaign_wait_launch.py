@@ -1,6 +1,6 @@
 """内存守望战役启动器（阶段 1.3 patch 战役的纪律化发射）。
 
-铁律背景：真机求解内存门槛自查（项目规则；calibration_campaign.py 内置
+铁律背景：真机求解内存门槛自查（内核立规注记；calibration_campaign.py 内置
 --min-free-kb 门）。本启动器在内存不足时不压门槛，而是周期探测、
 门开即射：
 - 默认目标 workers=2（需 4GB+1.5GB/worker ≈ 5.5GB 可用）；
@@ -33,7 +33,7 @@
 "内存门超时"双义——判读以输出标记为准（WAIT_TIMEOUT:=门超时交还人，
 usage 行=用法错）。本脚本只发射 calibration_campaign.py；如改接其他
 驱动，退出码判读须先对齐该驱动的退出码表（如 fd_oe_campaign 的座位
-退出码表，见其模块 docstring 与 runs/review_ge8e/f6_scripts_fix/
+退出码表，见其模块 docstring 与 内部证据档
 REPORT.md 总表）。
 
 用法：
@@ -73,7 +73,7 @@ def _parse_free_kb(out: str) -> int:
 
 
 def free_physical_memory_kb() -> int:
-    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（ #182）
+    # wmic 在 Win11 24H2+ 已移除，回退 PowerShell CIM（开发注记 #182）
     for cmd in (
         ["wmic", "OS", "get", "FreePhysicalMemory", "/Value"],
         ["powershell", "-NoProfile", "-Command",

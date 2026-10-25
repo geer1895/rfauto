@@ -2,8 +2,8 @@
 
 round15 口径：「锚族」批量挂法 + **每模板至少 1 pointer 锚** + 每新增
 2 模板配 1 锚族。本模块只做**计划面**（盘点+骨架生成），不写锚注册表——
-knowledge/anchors.yaml 运行时只读、写入只经人工 commit（写面隔离
-纪律）；骨架锚 status=awaiting_data（DP-3 预声明扩展：骨架
+knowledge/anchors.yaml 运行时只读、写入只经人工 commit（内核立规注记 规则 6
+Agent 写面隔离）；骨架锚 status=awaiting_data（DP-3 预声明扩展：骨架
 如实登记、仲裁数据回填后翻 active/experimental）。
 
 覆盖判定口径：
@@ -43,7 +43,7 @@ _SOURCE = "rfauto.service.anchor_family_service"
 #: 闭式席）；同批补 3 席新候选（embedded_ms/cline_coupler/wstep，均零
 #: 覆盖+core 闭式对照在档；embedded_ms/cline_coupler=X5 §四.5 原名单，
 #: wstep=阶梯一阶 Γ 理想值对照）维持首批 ≥8 不变式。撤出 4 族的引擎对
-#: 分歧指针语义仍有效（hairpin 交替取向耦合峰位指针涉 TODO 0dk/0cv 物理
+#: 分歧指针语义仍有效（hairpin 交替取向耦合峰位指针涉 待办清单 0dk/0cv 物理
 #: 结论在档），未来批可按 pointer 通道重新立项（与闭式档并存不冲突）。
 POINTER_BATCH_CANDIDATES: tuple[dict[str, Any], ...] = (
     {"template": "mline", "anchor_id": "mline.eps_eff.openems-hfss-v1",
@@ -213,7 +213,7 @@ def pointer_anchor_batch_plan(batch_size: int = _BATCH_DEFAULT,
         plan=plan,
         skipped_collisions=skipped_collisions,
         write_policy="本面只产骨架文本；anchors.yaml 写入只经人工 commit"
-                        "（写面隔离纪律）+ 同步 EXPECTED_ANCHORS 单源",
+                        "（AGENTS 规则 6）+ 同步 EXPECTED_ANCHORS 单源",
         source=_SOURCE,
     )
 

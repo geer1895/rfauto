@@ -6,7 +6,7 @@
 
 # 内核文档卡：pll_lock_time
 
-> PLL 锁定/捕获时间族（架构批 W4-S14 席域 3，R2_core_tier3 边际池立项
+> PLL 锁定/捕获时间族（aurora_f W4-S14 席域 3，R2_core_tier3 边际池立项
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 PLL 锁定/捕获时间：二阶 II 型环频率阶跃的线性锁定精确包络闭式与非线性 pull-in 近似档、lock-in/pull-out 范围档位判别——环路滤波器综合（ω_n/ζ 供给端）与相噪预算面之间的捕获动力学键。
 
-模块自述（docstring 首行，机读）：PLL 锁定/捕获时间族（架构批 W4-S14 席域 3，R2_core_tier3 边际池立项
+模块自述（docstring 首行，机读）：PLL 锁定/捕获时间族（aurora_f W4-S14 席域 3，R2_core_tier3 边际池立项
 
 ## 公式与口径
 

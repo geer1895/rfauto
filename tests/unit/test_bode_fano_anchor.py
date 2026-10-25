@@ -4,7 +4,7 @@
 
     ∫₀^∞ ln(1/|Γ(ω)|) dω ≤ π/(RC)          （并联 RC，ω 为 rad/s 全带宽）
 
-出处（多源逐字对照见 runs/review_ge8e/v1_bode_fano/REPORT.md §1）：
+出处（多源逐字对照见 内部证据档 §1）：
 
 - **Fano 1948** MIT RLE Technical Report No. 41《Theoretical Limitations
   on the Broadband Matching of Arbitrary Impedances》§1 p.3 Eqs.(3)(4)

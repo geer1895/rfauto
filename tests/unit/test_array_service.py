@@ -1,6 +1,6 @@
 """DP-4 P2 阵列服务层单测（service/array_service.py，J1/J3 全合成判据）。
 
-裁判=独立闭式（runs/df6_dp4af/criteria.md 预声明）：
+裁判=独立闭式（内部证据档 预声明）：
 - J1a 快速档全链逐位：uniform N=4 d=0.5λ 侧射 |F| vs uniform_af_closed_form
   ≤1e-12（经 array_pattern 的单元×AF 复域乘法与切面装配）；
 - J1b 4 元切比雪夫 −30dB：服务切面实测峰副瓣 −30.0±0.05dB（均匀 u 网格

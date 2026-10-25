@@ -16,7 +16,7 @@ test_msl_cpw/test_sma_launcher 钉）。
   min|S21|≥−3dB（pt2 FAIL 签名 +5.42dB/−375dB 即结构死亡，非精度门）。
 
 运行（串行：同一进程内先 msl_cpw 后 sma_launcher，满足 openEMS 全机
-单真跑资源轨；后台+日志轮询 #157）。证据链 runs/wp25_tier2_smoke/：
+单真跑资源轨；后台+日志轮询 #157）。证据链 内部证据档：
 pt1_msl_cpw3 PASS（勿重跑）、pt2_sma_launcher 根治前 FAIL 留档（只读）、
 pt3_sma_launcher_v1 根治后无前脸 FAIL 留档（|S11| −4.0dB）、
 pt3_sma_launcher_v2 最终几何 PASS（--only pt3_sma_launcher_v2 --no-cache

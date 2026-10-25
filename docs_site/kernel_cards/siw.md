@@ -109,13 +109,14 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `runs/siw_family/criteria.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："双源核实与全部常数出处：runs/siw_family/criteria.md §1（铁律 1c）——"
+- `runs/siw_family/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："# 双源核实与全部常数出处：内部证据档 §1（铁律 1c）——"
 - `tests/unit/test_siw_template.py`——引文："回收基准（#118/#300，test_siw_template 钉死）：d→0 极限 w_eff→w 逐位；"
 
-测试面（tests/unit 引用扫描，机读；合计 **143** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **148** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_closed_form_oracle.py` | 18 |
 | `tests/unit/test_rwg_mmt.py` | 26 |

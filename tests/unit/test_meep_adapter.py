@@ -6,7 +6,7 @@
   实测几何块尺寸/端口面/网格/激励参数）；
 - 求解链路（mock 解释器 exe 产出 CSV → 装配全 S 矩阵 + β）；
 - β 三方对照确定性内核（Meep/openEMS/HJ 互差 ≤5%，A1 验收口径）；
-- HJ 腿 vs openEMS 真锚 golden（runs/benchmark/mline_mauto 实测值冻结，
+- HJ 腿 vs openEMS 真锚 golden（内部证据档 实测值冻结，
   两腿互差 ≤2%——#162 金标准口径，比三方 5% 更紧）。
 """
 
@@ -613,7 +613,7 @@ class TestBetaTriadKernel:
 
 # ── HJ 腿 + 真锚 golden（openEMS mline_mauto 实测，两腿 ≤2%）─────────────────
 
-# golden 源：runs/benchmark/mline_mauto/port_beta.csv（W=1.113mm 锚、auto 网格、
+# golden 源：内部证据档（W=1.113mm 锚、auto 网格、
 # 2.25-2.75GHz；#162 β 金标准）。冻结为常量：测试不依赖 runs/（工作区态）。
 _OPENEMS_GOLDEN = {2.25: 80.55376868947421, 2.5: 89.50940246779182,
                    2.75: 98.45637105318495}

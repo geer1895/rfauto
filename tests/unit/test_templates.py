@@ -31,7 +31,11 @@ class TestGeometrySpec:
         assert len(spec["ports"]) >= 1
 
     def test_wilkinson_box_count(self):
-        spec = geometry_spec("wilkinson", {"series_w_mm": 1.113, "shunt_w_mm": 0.604, "arm_len_mm": 18.1})
+        # series_w_mm=λ/4 臂（窄 0.604）、shunt_w_mm=50Ω 馈线（宽 1.113）
+        # ——语义口径与 test_wilkinson_param_semantics_aligned_with_recipe
+        # 一致（2026-09-04 统一；反值语料被 oe_port_semantics 建模期
+        # 五判据当场拦下，aurora_l 终门实证）。
+        spec = geometry_spec("wilkinson", {"series_w_mm": 0.604, "shunt_w_mm": 1.113, "arm_len_mm": 18.1})
         # substrate + ground + feed_in + T + 2 arms + 2 feed_out = 8
         assert len(spec["boxes"]) == 8
 
@@ -194,7 +198,7 @@ class TestRenderScript:
 
 def _default_params(template: str) -> dict:
     defaults = {
-        "wilkinson": {"f0_ghz": 2.5, "series_w_mm": 1.113, "shunt_w_mm": 0.604, "arm_len_mm": 18.1},
+        "wilkinson": {"f0_ghz": 2.5, "series_w_mm": 0.604, "shunt_w_mm": 1.113, "arm_len_mm": 18.1},
         "patch": {"f0_ghz": 2.4, "patch_len_mm": 34.9, "patch_w_mm": 50.0, "feed_offset_mm": 10.0},
         "branchline": {"f0_ghz": 2.4, "arm_len_mm": 20.5, "series_w_mm": 1.87, "shunt_w_mm": 1.11},
         "dipole": {"f0_ghz": 2.4, "dipole_len_mm": 58.0, "dipole_w_mm": 2.0, "gap_mm": 2.0},

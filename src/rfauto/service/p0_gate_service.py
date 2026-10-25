@@ -28,7 +28,7 @@ from typing import Any
 
 from rfauto.service.envelope import error_envelope
 
-#: 跨保真门阈值单一真源（R3-3，runs/review_ge8e/f3_fix/REPORT.md）：
+#: 跨保真门阈值单一真源（R3-3，内部证据档）：
 #: ui_service 跨保真演化视图对 p0_*result.json 的 verdict 重推与门判定
 #: 同源引用此常量，防"阈值改动后 UI 判读静默漂移"。
 THRESHOLD_RHO = 0.8
@@ -326,5 +326,14 @@ def emit_gate_artifact(recipe_path: str | Path,
                     "fsv_gate": {"grade": _gate.get("grade"),
                                  "pass": _gate.get("pass"),
                                  "degraded": _gate.get("degraded")}}})
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     return result | {"run_id": run_id, "run_dir": str(run_dir),
                      "elapsed_note": "资产复用通道：无真机求解"}

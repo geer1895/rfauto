@@ -1,4 +1,4 @@
-"""雷达杂波与 MTI 滤波族（架构批 W6-S3 席立族，R3_domain_expansion 视角4
+"""雷达杂波与 MTI 滤波族（aurora_g W6-S3 席立族，R3_domain_expansion 视角4
 E2 Top2——雷达场景第五件收官：方程/起伏/RCS/波形指标之后唯一零命中面；
 W9-S2 席批 3 扩展两键：Weibull 杂波幅度分布+CA-CFAR 滑窗检测链）。
 
@@ -59,7 +59,7 @@ radar_detection_ext 的积累增益正交衔接（同仓消费链）。
    - GIT 档（Horst-Dyer-Tuley 1978 海杂波）**缺席如实声明**：模型=多区域
      插值+频段(1-10/10-100GHz)×极化(HH/VV)系数表结构，原表在本次执行
      环境不可达（Greco 讲义只给结构不给逐字系数表）——按 finline
-     （架构批 无原文经验式放弃）/ra769（ITU 表不可达不 ship）先例不凑
+     （aurora_e 无原文经验式放弃）/ra769（ITU 表不可达不 ship）先例不凑
      （#122）。
    杂波单元面积（脉冲限档）Ac = R·ρ_R·θ_az·sec(ψ)（Greco 讲义 slide 7
    逐字形态 A_c=R·α·ρ·θ_az·sec(φ_gr)，本键取形状因子 α=1 档如实），杂波

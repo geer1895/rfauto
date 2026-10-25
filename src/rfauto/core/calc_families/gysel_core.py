@@ -1,4 +1,4 @@
-"""Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
+"""Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
 余量：Gysel core 级注册键缺，现仅 synthesis.py 模板级等分综合）。
 
 出处（Gysel 拓扑经典文献+偶/奇模半电路验证，正文物理口径节转录）：

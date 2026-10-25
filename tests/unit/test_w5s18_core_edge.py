@@ -1,10 +1,10 @@
-"""架构批 W5-S18 席锚树：在片 ISS 校准两键（iss_standard_response/
+"""aurora_f W5-S18 席锚树：在片 ISS 校准两键（iss_standard_response/
 iss_oneport_cal_extract）+ 源功率校准一键（source_power_cal_table）。
 
-域边界与 #222 结论（详见 内部证据目录 报告）：
+域边界与 #222 结论（详见 runs/aurora_f 报告）：
 - outphasing/Chireixx=本席边际池件 1，#222 查实**已闭合**（fe-batch1
   2026-09-27 落 core/pa_architectures chireix_* 全函数+service 面+锚测，
-  ；R2 审计"仅引注"系误判）且模块 docstring 预声明
+  开发注记 五百一十九；R2 审计"仅引注"系误判）且模块 docstring 预声明
   "不进 calculators 注册表（F-E 域内约定，消费者是 service 层）"——
   零改动交付，本文件不涉。
 - ISS/源功率校准=真实缺口（#222 triple-grep 零实现零键），本文件为锚树。

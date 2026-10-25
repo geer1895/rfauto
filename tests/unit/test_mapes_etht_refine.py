@@ -1,4 +1,4 @@
-"""et/ht 源参考精修列（runs/mapes_etht_refine）单测：回归钉 + 纯函数回收。
+"""et/ht 源参考精修列（内部证据档）单测：回归钉 + 纯函数回收。
 
 对应 core.mapes.sref_etht_column_factors（纯增量）与既有装配链 opt-in 消费：
 - 回归钉：assemble_s_from_ui 缺省路径逐位不变（sref_recal=None 显式=缺省）；
@@ -6,9 +6,9 @@
   Re 通道 median、Im 通道 lstsq——精确回收用相位 wobble + 对角直构）；
 - 非循环钉：因子只依赖激励口对角（扰动非对角逐位不变）；
 - 守卫：et 谱线含零 / 相位卷绕 / 形状错误显式报错；
-- 真机钉（无档 skip）：runs/mapes_zall_refix 三锚值 + et 因子有限。
+- 真机钉（无档 skip）：内部证据档 三锚值 + et 因子有限。
 
-预声明门（EFFECTIVE/MARGINAL/SATURATED）在 runs/mapes_etht_refine/criteria.md
+预声明门（EFFECTIVE/MARGINAL/SATURATED）在 内部证据档
 与驱动 scripts/mapes_etht_refine.py，本文件不钉 verdict（verdict 由数据出）。
 """
 
@@ -328,7 +328,7 @@ def test_etht_delay_model_reuse_consistency():
 
 
 # --------------------------------------------------------------------------- #
-# 真机钉（runs/mapes_zall_refix；无档机器 skip 不算绿）
+# 真机钉（内部证据档；无档机器 skip 不算绿）
 # --------------------------------------------------------------------------- #
 
 def test_refix150_etht_chain_realdata_pin():

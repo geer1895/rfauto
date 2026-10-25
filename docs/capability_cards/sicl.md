@@ -50,12 +50,12 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `sicl.eps_eff.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：sicl_eps_eff = 3.66 dimensionless；±0.0（identity）
-- `sicl.z0_ohm.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：sicl_z0_ohm = 50.0 ohm；±0.005（rounding_band）
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `sicl.eps_eff.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：sicl_eps_eff = 3.66 dimensionless；±0.0（identity）；证据：runs/ta12_schiffman_qwt
+- `sicl.z0_ohm.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：sicl_z0_ohm = 50.0 ohm；±0.005（rounding_band）；证据：runs/ta12_schiffman_qwt
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -63,7 +63,7 @@
 - 参数语义：w_mm=内导体条带宽（Z0=50Ω 对 sicl_closed_form 共形闭式 brentq 反解，sicl_design_params 单源）；a_mm=两过孔列心距（外腔宽，a/b=2.5 名义）；d_mm=过孔直径、s_mm=过孔心距（SIW 经验迁移 s≤2d、d<λ_sub/5，内核 docstring 登记面；siw 同源档 0.6/1.0）；line_len_mm=条带两端间距；腔高 b=H_SUB=nominal h_mm=1.016（RO4350B 双板，stripline 同源）；er/tan_d 只进基板材料（MATERIAL_VALUE_PARAMS 豁免）——w 的 Z0 联动仅在名义设计点（sicl_design_params），渲染期 er 扰动不改导体（slotline/siw 同口径）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；条带缘/过孔墙三线对（列心±d/2、列心）/条带两端/端口面精确入网（#198）；条带中面 z=b/2 落格依赖基板 z 偶数格（_sub_cells 缺省 4，生成期断言 #283 口径）；过孔直径 ≥4·NEAR + 孔间缝>NEAR（#311 先例口径）守卫；显式近场线 10µm 地板（#349）；全轴 1µm 近重合去重（#152）
 - 冒烟现状：未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①准静态闭式无色散/零厚带/均匀填充（内核 FD 裁判 ±5% 声明域，UNVERIFIED-1 公式族归属如实登记）；②过孔墙离散化（s=1.0mm 圆柱列）对理想连续壁的等效性未经真机仲裁（SIW 经验迁移，内核 docstring 登记面）；③StripLinePort 端口段=屏蔽腔内均匀延伸无过渡（同 stripline 口径）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

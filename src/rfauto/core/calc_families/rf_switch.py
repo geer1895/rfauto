@@ -1,4 +1,4 @@
-"""射频开关件面（架构批 W2-S6 席域，R2_core_tier3 §③ D8 立项）。
+"""射频开关件面（aurora_f W2-S6 席域，R2_core_tier3 §③ D8 立项）。
 
 三键：pin_switch_s2p（PIN 串/并联元件二态 S 参数+cutoff 品质因数）/
 rf_switch_spdt_quarter_wave（λ/4 并联二极管 SPDT 频响=开关带宽语义）/

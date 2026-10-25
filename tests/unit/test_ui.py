@@ -179,7 +179,9 @@ class TestModel3D:
         """镜像约束：geometry_spec 与渲染脚本的关键尺寸一致。"""
         from rfauto.adapters.openems_templates import geometry_spec, render_script
 
-        params = {"series_w_mm": 1.113, "shunt_w_mm": 0.604, "arm_len_mm": 20.5}
+        # series_w_mm=λ/4 Ō（窄）、shunt_w_mm=50Ω 馈线（宽）——语义统一
+        # 口径（2026-09-04），反值会被 oe_port_semantics 建模期五判据拦下。
+        params = {"series_w_mm": 0.604, "shunt_w_mm": 1.113, "arm_len_mm": 20.5}
         spec = geometry_spec("wilkinson", params)
         script = render_script("wilkinson", params, (2.0, 3.0))
         arm = next(b for b in spec["boxes"] if b["name"] == "arm_left")

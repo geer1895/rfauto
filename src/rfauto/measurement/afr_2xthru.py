@@ -7,12 +7,12 @@
 实测件）为 opt-in——DP-15 C2 实证合成语料上 ZC 不达标（gated=False，
 不设门，#122 不凑绿），本模块沿该结论只做薄透传。
 
-skrf 接入点（runs/df6_a3/skrf2x_audit.md §1 注）：IEEEP370 类在
+skrf 接入点（内部证据档 §1 注）：IEEEP370 类在
 ``skrf.calibration.deembedding`` 子模块，**不在** ``skrf.calibration``
 顶层（顶层 import 即 ImportError——tests 钉）。
 
 DC 预处理（DP-15 C2 坑预声明）：P370 内部 IFFT/时域剥离对带限合成网络
-DC 敏感，缺省做 ``extrapolate_to_dc``（runs/df6_dp15c2/criteria.md §0.2
+DC 敏感，缺省做 ``extrapolate_to_dc``（内部证据档 §0.2
 实测：IEEE370 合规语料三模式无差异，守卫保留）。
 
 预检（规格书 §2：预检不过 → ok=False 如实，不出去嵌结果）：

@@ -65,7 +65,7 @@
 | `RFAUTO_MAPES_G0_TAG` / `RFAUTO_MAPES_G0_DELTA_S` / `RFAUTO_MAPES_G0_MAX_PASSES` | hfss_mapes_g0_arbitration.py | MAPES G0 仲裁战役旋钮 |
 | `RFAUTO_MAPES_M_TAG` / `RFAUTO_MAPES_M_DELTA_S` / `RFAUTO_MAPES_M_MAX_PASSES` | hfss_mapes_m_arbitration.py | MAPES M 仲裁战役旋钮 |
 
-## 四b、远程多机面（infra/remote_machines，E3-4 ge8e 审查批补登）
+## 四b、远程多机面（infra/remote_machines，E3-4 审查批补登）
 
 | 变量 | 消费者 | 用途 |
 |---|---|---|
@@ -117,3 +117,19 @@ GET / 的 meta 传递=同源可读是已声明取舍，W9 P2-1）；②明文 HT
 单测内大量使用同名前缀清空+注入（#139 纪律：网络通道 monkeypatch 钉住；
 确定性测试清空整个同名前缀集合）。此类变量（如 tests/conftest.py 的
 CSXCAD 门控）不在上表逐项列出，以 conftest 注释为准。
+
+## 八、doctor 资源卫生面（janitor + 内存闸）
+
+来自真实用户实战反馈（异常退出后孤儿 ansysedt.exe 堆积把整机内存推到
+提交量上限、HFSS 无法再启动）的诊断与清理入口，service 单源
+`src/rfauto/service/resource_janitor_service.py`：
+
+| 命令 | 作用 |
+|---|---|
+| `rfauto doctor --janitor` | 只扫描不动手：清点 ansysedt 族进程（PID/内存/启动时间/父进程链，疑似孤儿仅启发式标记=父进程已退出或父进程为系统会话进程，是否击杀由用户判断）+ 扫描 runs/ 工作根内 AEDT 工程锁（`*.aedt.lock` 命名或与同名 `.aedt` 工程伴生的 `*.lock`，文件/目录皆收；不扫全盘） |
+| `rfauto doctor --janitor --janitor-clean` | 对同次扫描标疑的进程 + 扫到的 AEDT 锁执行清理（击杀走白名单+击杀前进程名复核防 PID 复用；不给 `--janitor-clean` 绝不动手） |
+| `rfauto doctor --min-free-gb N` | 内存闸：系统可用内存（psutil 优先、Windows ctypes 兜底）低于 N GB 时判定不放行，信息性恒 exit 0 |
+| `rfauto doctor --min-free-gb N --enforce` | 闸不放行时退出码非 0（供脚本在求解发射前做门） |
+
+均支持 `--json`（信封形态：`{ok, scan, clean, memory_gate}` 分节）。psutil
+为惰性可选依赖（未装时进程面/内存面如实注明通道不可用，不阻塞 doctor）。

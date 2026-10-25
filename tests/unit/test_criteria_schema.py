@@ -6,8 +6,8 @@
    逐一钉死；
 2. **词表收敛钉**——form/op/status/V&V 值域与 core/recast、core/vv_mapping
    一致；发明新词表（新 form/新 op/新状态）显式拒收；
-3. **ge7 criteria.md 真实样本回放钉**——runs/ge7_ffrender 与
-   runs/ge7_clwide 的预声明门转写为 criteria/v2（数值逐字取自 criteria.md
+3. **ge7 criteria.md 真实样本回放钉**——内部证据档 与
+   内部证据档 的预声明门转写为 criteria/v2（数值逐字取自 criteria.md
    冻结值），过 schema 后交 core/recast.replay_one 对归档产物重放，
    重放方向与归档判读一致（same/如实 not_judged）。
 """

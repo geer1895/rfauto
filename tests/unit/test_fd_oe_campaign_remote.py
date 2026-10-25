@@ -32,7 +32,7 @@ mod = _load()
 
 def _ok_envelope(**kw):
     env = {"ok": True, "verdict": "PASS", "skipped": False, "launched": True,
-           "reason": None, "machine": "sim_host", "batch": "oe_ab12cd34",
+           "reason": None, "machine": "sim_server", "batch": "oe_ab12cd34",
            "task_dir_remote": "E:\\rfauto_remote\\tasks\\oe_ab12cd34",
            "out_dir_local": "runs/ge_fd/fake_t", "exec_rc": 0,
            "wait_mode": "sync", "criteria": {}, "steps": {}}
@@ -64,7 +64,7 @@ def test_parse_args_remote_forms():
     带值（=显式机器名）。"""
     assert mod._parse_args([]).remote is None
     assert mod._parse_args(["--remote"]).remote == ""
-    assert mod._parse_args(["--remote", "sim_host"]).remote == "sim_host"
+    assert mod._parse_args(["--remote", "sim_server"]).remote == "sim_server"
 
 
 def test_parse_args_local_flags_unchanged():
@@ -88,13 +88,13 @@ def test_remote_seat_gate_preflight_fail_skips():
     def _boom(m, s):
         raise AssertionError("预检未过不得发起远程执行")
 
-    out = mod.remote_seat_gate("sim_host", _pf, execute_fn=_boom,
+    out = mod.remote_seat_gate("sim_server", _pf, execute_fn=_boom,
                                seat_spec={"template": "x"})
-    assert calls == ["sim_host"]
+    assert calls == ["sim_server"]
     assert out["status"] == "SKIP"
     assert "fail-skip" in out["reason"] and "不硬打" in out["reason"]
     assert out["license_preflight"]["verdict"] == "FAIL"
-    assert out["remote"]["machine"] == "sim_host"
+    assert out["remote"]["machine"] == "sim_server"
     assert out["remote"]["routed"] is True
 
 
@@ -102,7 +102,7 @@ def test_remote_seat_gate_pass_without_channel_skips_honestly():
     """预检 PASS 但 execute_fn/seat_spec 缺 → SKIP 如实（通道未提供，
     不假绿不冒充远程执行）。"""
     out = mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None})
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None})
     assert out["status"] == "SKIP"
     assert "通道未提供" in out["reason"]
     assert out["remote"]["exec_channel"].startswith("remote_oe_service")
@@ -116,7 +116,7 @@ def test_remote_seat_gate_channel_skipped_is_seat_skip():
                             reason="互斥命中 1 例=候跑（#261，禁止代杀）")
 
     out = mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None},
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None},
         execute_fn=_run, seat_spec={"template": "fake_t"})
     assert out["status"] == "SKIP"
     assert "候跑" in out["reason"] and "未发射" in out["reason"]
@@ -131,7 +131,7 @@ def test_remote_seat_gate_channel_fail_is_seat_fail():
                             reason="服务器侧任务目录清理未通过（AGENTS 0b）")
 
     out = mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None},
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None},
         execute_fn=_run, seat_spec={"template": "fake_t"})
     assert out["status"] == "FAIL"
     assert "远程执行通道失败" in out["reason"]
@@ -145,7 +145,7 @@ def test_remote_seat_gate_channel_ok_judgment_pending():
         return _ok_envelope()
 
     out = mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None},
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None},
         execute_fn=_run, seat_spec={"template": "fake_t"})
     assert "status" not in out
     assert out["solve_success"] is True
@@ -153,7 +153,7 @@ def test_remote_seat_gate_channel_ok_judgment_pending():
     assert out["remote_exec"]["task_dir_remote"].endswith("oe_ab12cd34")
 
     out2 = mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None},
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None},
         execute_fn=lambda m, s: _ok_envelope(exec_rc=3, verdict="PARTIAL"),
         seat_spec={"template": "fake_t"})
     assert "status" not in out2
@@ -168,9 +168,9 @@ def test_remote_seat_gate_passes_seat_spec_through():
         return _ok_envelope()
 
     mod.remote_seat_gate(
-        "sim_host", lambda m: {"verdict": "PASS", "reason": None},
+        "sim_server", lambda m: {"verdict": "PASS", "reason": None},
         execute_fn=_run, seat_spec={"template": "fake_t", "timeout_s": 99.0})
-    assert seen["machine"] == "sim_host"
+    assert seen["machine"] == "sim_server"
     assert seen["spec"]["template"] == "fake_t"
     assert seen["spec"]["timeout_s"] == 99.0
 
@@ -180,10 +180,10 @@ def test_remote_seat_gate_passes_seat_spec_through():
 def test_resolve_remote_machine_bare_and_named(monkeypatch):
     import rfauto.infra.remote_machines as rm
 
-    cfg = rm.RemoteMachineConfig(name="sim_host", host="1.2.3.4")
-    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_host": cfg})
-    assert mod._resolve_remote_machine("") == "sim_host"      # 裸=唯一机器
-    assert mod._resolve_remote_machine("sim_host") == "sim_host"
+    cfg = rm.RemoteMachineConfig(name="sim_server", host="1.2.3.4")
+    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_server": cfg})
+    assert mod._resolve_remote_machine("") == "sim_server"      # 裸=唯一机器
+    assert mod._resolve_remote_machine("sim_server") == "sim_server"
 
 
 def test_resolve_remote_machine_errors(monkeypatch):
@@ -217,8 +217,8 @@ def test_main_remote_gate_end_to_end(tmp_path, monkeypatch):
     _patch_render(monkeypatch)
     import rfauto.infra.remote_machines as rm
 
-    cfg = rm.RemoteMachineConfig(name="sim_host", host="1.2.3.4")
-    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_host": cfg})
+    cfg = rm.RemoteMachineConfig(name="sim_server", host="1.2.3.4")
+    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_server": cfg})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "FAIL",
                                    "reason": "license 端口不可达"})
@@ -228,14 +228,14 @@ def test_main_remote_gate_end_to_end(tmp_path, monkeypatch):
 
     monkeypatch.setattr(mod, "_remote_oe_run", _boom)
     # H1-5：单座 SKIP → rc 3（修复前恒 0，全座 SKIP 曾被记成链成功）。
-    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_host"])
+    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_server"])
     assert rc == 3
     v = json.loads((tmp_path / "runs" / "ge_fd" / TEMPLATE / "verdict.json")
                    .read_text(encoding="utf-8"))
     assert v["status"] == "SKIP"
     assert "fail-skip" in v["reason"]
     assert v["license_preflight"]["verdict"] == "FAIL"
-    assert v["remote"]["machine"] == "sim_host"
+    assert v["remote"]["machine"] == "sim_server"
     assert v["g1_render"] is True                     # G1 渲染在本地先走
     s = json.loads((tmp_path / "runs" / "ge_fd" / "campaign_summary.json")
                    .read_text(encoding="utf-8"))
@@ -255,7 +255,7 @@ def test_main_remote_channel_ok_products_judged(tmp_path, monkeypatch):
     import rfauto.service.health_service as hs
 
     monkeypatch.setattr(rm, "load_remote_machines", lambda: {
-        "sim_host": rm.RemoteMachineConfig(name="sim_host", host="h")})
+        "sim_server": rm.RemoteMachineConfig(name="sim_server", host="h")})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "PASS", "reason": None})
     seen: dict = {}
@@ -274,9 +274,9 @@ def test_main_remote_channel_ok_products_judged(tmp_path, monkeypatch):
     monkeypatch.setattr(hs, "health_check_run",
                         lambda name, runs_dir=None: {"verdict": "skip",
                                                      "ok": True})
-    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_host"])
+    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_server"])
     assert rc == 0
-    assert seen["machine"] == "sim_host"
+    assert seen["machine"] == "sim_server"
     assert seen["spec"]["template"] == TEMPLATE
     assert seen["spec"]["simulation_py"].startswith(f"# {TEMPLATE} auto")
     assert "criteria" in seen["spec"]["criteria_md"]     # 判据先行随座
@@ -300,7 +300,7 @@ def test_main_remote_channel_partial_rc_nonzero(tmp_path, monkeypatch):
     import rfauto.service.health_service as hs
 
     monkeypatch.setattr(rm, "load_remote_machines", lambda: {
-        "sim_host": rm.RemoteMachineConfig(name="sim_host", host="h")})
+        "sim_server": rm.RemoteMachineConfig(name="sim_server", host="h")})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "PASS", "reason": None})
 
@@ -317,7 +317,7 @@ def test_main_remote_channel_partial_rc_nonzero(tmp_path, monkeypatch):
                         lambda name, runs_dir=None: {"verdict": "skip",
                                                      "ok": True})
     # H1-5：PARTIAL 座位（引擎 rc≠0 产物在）→ rc 4（非 PASS 非 FAIL/SKIP）。
-    assert mod.main(["--only", TEMPLATE, "--remote", "sim_host"]) == 4
+    assert mod.main(["--only", TEMPLATE, "--remote", "sim_server"]) == 4
     v = json.loads((tmp_path / "runs" / "ge_fd" / TEMPLATE / "verdict.json")
                    .read_text(encoding="utf-8"))
     assert v["status"] == "PARTIAL"
@@ -333,7 +333,7 @@ def test_main_remote_channel_busy_skips(tmp_path, monkeypatch):
     import rfauto.infra.remote_machines as rm
 
     monkeypatch.setattr(rm, "load_remote_machines", lambda: {
-        "sim_host": rm.RemoteMachineConfig(name="sim_host", host="h")})
+        "sim_server": rm.RemoteMachineConfig(name="sim_server", host="h")})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "PASS", "reason": None})
     monkeypatch.setattr(
@@ -341,7 +341,7 @@ def test_main_remote_channel_busy_skips(tmp_path, monkeypatch):
         lambda m, s: _ok_envelope(ok=False, skipped=True, launched=False,
                                   reason="互斥命中 1 例=候跑（#261）"))
     # H1-5：座位 SKIP（互斥候跑）→ rc 3（K-7 形态，修复前恒 0）。
-    assert mod.main(["--only", TEMPLATE, "--remote", "sim_host"]) == 3
+    assert mod.main(["--only", TEMPLATE, "--remote", "sim_server"]) == 3
     v = json.loads((tmp_path / "runs" / "ge_fd" / TEMPLATE / "verdict.json")
                    .read_text(encoding="utf-8"))
     assert v["status"] == "SKIP"
@@ -357,7 +357,7 @@ def test_main_remote_channel_fail_records(tmp_path, monkeypatch, capsys):
     import rfauto.infra.remote_machines as rm
 
     monkeypatch.setattr(rm, "load_remote_machines", lambda: {
-        "sim_host": rm.RemoteMachineConfig(name="sim_host", host="h")})
+        "sim_server": rm.RemoteMachineConfig(name="sim_server", host="h")})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "PASS", "reason": None})
     monkeypatch.setattr(
@@ -365,7 +365,7 @@ def test_main_remote_channel_fail_records(tmp_path, monkeypatch, capsys):
         lambda m, s: _ok_envelope(ok=False, verdict="FAIL",
                                   reason="服务器侧任务目录无可回拉产物"))
     # H1-5：座位 FAIL → rc 2（修复前恒 0）。
-    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_host"])
+    rc = mod.main(["--only", TEMPLATE, "--remote", "sim_server"])
     assert rc == 2
     out = capsys.readouterr().out
     assert "[fd] seats=1 pass=0 skip=0 fail=1 rc=2" in out, \
@@ -385,7 +385,7 @@ def test_main_remote_criteria_fallback_predeclared(tmp_path, monkeypatch):
     import rfauto.infra.remote_machines as rm
 
     monkeypatch.setattr(rm, "load_remote_machines", lambda: {
-        "sim_host": rm.RemoteMachineConfig(name="sim_host", host="h")})
+        "sim_server": rm.RemoteMachineConfig(name="sim_server", host="h")})
     monkeypatch.setattr(mod, "_license_preflight",
                         lambda m: {"verdict": "PASS", "reason": None})
     seen: dict = {}
@@ -397,14 +397,14 @@ def test_main_remote_criteria_fallback_predeclared(tmp_path, monkeypatch):
 
     monkeypatch.setattr(mod, "_remote_oe_run", _fake_channel)
     # H1-5：SKIP 座位 → rc 3（判据随座断言不变）。
-    assert mod.main(["--only", TEMPLATE, "--remote", "sim_host"]) == 3
+    assert mod.main(["--only", TEMPLATE, "--remote", "sim_server"]) == 3
     assert "G5" in seen["criteria"] and "nrts_converged" in seen["criteria"]
     # 主判据在档时随座原文（优先级钉）
     (tmp_path / "runs" / "ge_fd").mkdir(parents=True, exist_ok=True)
     (tmp_path / "runs" / "ge_fd" / "criteria.md").write_text(
         "# 主判据原文 MARKER\n", encoding="utf-8")
     seen.clear()
-    assert mod.main(["--only", TEMPLATE, "--remote", "sim_host"]) == 3
+    assert mod.main(["--only", TEMPLATE, "--remote", "sim_server"]) == 3
     assert "MARKER" in seen["criteria"]
 
 

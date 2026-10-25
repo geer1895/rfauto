@@ -11,7 +11,7 @@
    等价的零配置形式（不依赖 conftest 开关）：
        pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 
-目标模块选择（O3 判据书 runs/df6_o3docs/criteria.md §1.2）：纯函数、
+目标模块选择（O3 判据书 内部证据档 §1.2）：纯函数、
 零 IO、确定性、定向单测钉死（test_cascade.py / test_wcd.py）；
 core/calculators.py 的示例由 docs/how-to/ 以 CLI/service 形式覆盖。
 """

@@ -1,6 +1,6 @@
 """DP-13 Z1 单测——criteria_index_build 批量抽取与无静默漏抽门。
 
-判据（runs/df6_dp13/criteria.md §Z1）：
+判据（内部证据档 §Z1）：
 - 门阈值行 regex 抽取（正例抽中+阈值、负例零抽中）；
 - status 双态 migrate_to_v2|legacy_only；
 - 无静默漏抽：index 行数==rglob 扫描文件数（tmp 合成树 + 真实 runs/ 树双向钉）；

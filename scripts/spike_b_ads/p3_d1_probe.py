@@ -18,7 +18,7 @@ os.environ["HPEESOF_DIR"] = ADS
 import keysight.ads.de as de
 from keysight.ads.de._pde.db import DesignMode
 
-BASE = r"D:\rf_workspace\scripts\spike_b_ads"
+BASE = r"D:/rf_workspace\scripts\spike_b_ads"
 WRK = BASE + r"\sample_wrk27\Datalink_Basics_wrk"
 OUT = BASE + r"\p3_d1_out"
 SEP = os.sep

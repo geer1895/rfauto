@@ -1,6 +1,6 @@
 """SIW 族第二成员=MSL 锥形过渡+SIW 直段（df6 A2，2026-09-24）离线审计测试。
 
-权威口径：runs/df6_a2siwmsl/criteria.md（Deslandes-Wu 两段论/文献互证账/
+权威口径：内部证据档（Deslandes-Wu 两段论/文献互证账/
 G3' 预声明门/预算）。覆盖（#212 制度化 + #118 数值裁判 + #231 注册四件套）：
   1) 设计式与单源链互洽：layout 派生量（w_eff/β/Z_PV/w50/w_end/锥装配）与
      core 单源逐位对账；锥长候选的对称双锥级联实测（criteria §1.1 勘误账）；

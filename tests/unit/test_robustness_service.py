@@ -1,6 +1,6 @@
 """DP-15 C3：良率流水线第二片（向量化 MC/FORM v1/worst-case/profile/report）。
 
-判据预声明见 runs/df6_dp15c3/criteria.md（先于实现写就）：
+判据预声明见 内部证据档（先于实现写就）：
 - (d) 向量化 vs 旧循环逐位一致（1e3 同种子 yield 逐位同）；
 - (b) FORM 线性失效面合成例 Pf 相对差 ≤20%（实测机器精度级）；深谷
   非线性如实标近似（method_note + pf_vs_mc 对照，不凑 PASS）；

@@ -13,9 +13,9 @@ runs/hairpin_hfss_anchor/eigen_ext/）。
   分辨极限（k 真值=eigen 值）；HFSS 不分裂（Δf≤2MHz 地板）=合并是物理。
 
 运行（#157 分离+日志轮询；#243 绝对路径）：
-  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_eigen_ext.py" -WorkingDirectory
-    D:\rf_workspace -RedirectStandardOutput
+    D:/rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/eigen_ext/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/eigen_ext/run.err.log
 """

@@ -17,7 +17,7 @@ from .registry import C_MM_GHZ, register_calculator
 from .rf_line import _microstrip_media
 
 # ─── Klopfenstein 渐变段（DP-15 C2，2026-09-24 df6_dp15c2，#231/#304 四表同步）
-# 判据预声明与实测锚见 runs/df6_dp15c2/criteria.md §3；阻抗剖面来自
+# 判据预声明与实测锚见 内部证据档 §3；阻抗剖面来自
 # skrf.taper.Klopfenstein 闭式（ DefinedGammaZ0(gamma=ω/c) 承载），宽度剖面
 # 由 MLine 闭式同源求根——全程无抄毫米数（铁律 1c）。
 

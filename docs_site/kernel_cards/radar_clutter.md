@@ -6,7 +6,7 @@
 
 # 内核文档卡：radar_clutter
 
-> 雷达杂波与 MTI 滤波族（架构批 W6-S3 席立族，R3_domain_expansion 视角4
+> 雷达杂波与 MTI 滤波族（aurora_g W6-S3 席立族，R3_domain_expansion 视角4
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 雷达杂波环境与 MTI 滤波五键：双脉冲对消器频响+盲速、Gaussian 杂波谱改善因子（闭式+数值积分双路径）、面杂波 σ0 常数/γ 双档+杂波单元 RCS、Weibull 杂波幅度分布参数化与 CA-CFAR 滑窗检测链——雷达场景第五件（方程/起伏/RCS/波形指标之后的杂波面）。
 
-模块自述（docstring 首行，机读）：雷达杂波与 MTI 滤波族（架构批 W6-S3 席立族，R3_domain_expansion 视角4
+模块自述（docstring 首行，机读）：雷达杂波与 MTI 滤波族（aurora_g W6-S3 席立族，R3_domain_expansion 视角4
 
 ## 公式与口径
 
@@ -132,7 +132,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w6s3_core_domains.py`——引文："雷达杂波与 MTI 滤波族（架构批 W6-S3 席立族，R3_domain_expansion 视角4"
+- `tests/unit/test_w6s3_core_domains.py`——引文："雷达杂波与 MTI 滤波族（aurora_g W6-S3 席立族，R3_domain_expansion 视角4"
 
 测试面（tests/unit 引用扫描，机读；合计 **88** 个 test 函数）：
 

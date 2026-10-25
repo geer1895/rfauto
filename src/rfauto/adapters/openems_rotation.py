@@ -47,6 +47,19 @@ _CACHE_SCHEMA = "rfauto-openems-smatrix-v1"
 _SLOT_GUARD = "slot-count-mismatch"
 
 
+def _sidecar_for(csv_path: Path, root: Path) -> None:
+    """轮次曲线 sidecar（B4，aurora_l Wave-B）：sparams.csv 落盘点旁指纹。
+
+    best-effort（#105）：失败静默不阻塞装配主路；断点复用轮同样补写
+    （幂等——sidecar 记录的是当前盘上文件的内容哈希，老产物借此补齐
+    归属证据）。
+    """
+    with suppress(Exception):
+        from rfauto.service.runs_verify_service import write_artifact_sidecar
+
+        write_artifact_sidecar(csv_path, run_id=root.name, kind="sparams_csv")
+
+
 def _script_hash(scripts: list[str], exe_path: str | None,
                  salt: str = "") -> str:
     h = hashlib.sha256()
@@ -416,6 +429,7 @@ def solve_smatrix_openems(
                 return {"ok": False, "errors": [err]}
             else:
                 resumed.append(k)
+                _sidecar_for(csv_path, root)  # B4：复用轮补齐 sidecar（幂等）
                 continue
         script_path.write_text(scripts[k - 1], encoding="utf-8")
         runner = work_k / "_rfauto_runner.py"
@@ -447,6 +461,7 @@ def solve_smatrix_openems(
             return {"ok": False, "errors": [
                 f"p{k} 产物不可解析（rc={proc.returncode}）；stderr 尾: "
                 f"{(proc.stderr or '')[-800:]}"]}
+        _sidecar_for(csv_path, root)  # B4（aurora_l Wave-B）：sidecar（#105）
         err = _absorb_round(round_data[0], round_data[1], k)
         if err is not None:
             return {"ok": False, "errors": [err]}

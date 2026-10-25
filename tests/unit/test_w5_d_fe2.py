@@ -28,7 +28,7 @@ def test_our_side_matches_live_registry() -> None:
     ours = mcp_interop_matrix.our_side()
     assert ours["tool_count"] == len(ours["tools"])
     assert len(ours["tools"]) == len(set(ours["tools"]))  # 无重名
-    assert ours["resource_count"] == 10  # aurora_d 对账 9 + aurora_i 批 +1=10（2026-10-23 基线门实测，对齐 HANDOFF MCP=152+10res 口径）
+    assert ours["resource_count"] == 10  # aurora_d 对账 9 + aurora_i 批 +1=10（2026-10-23 基线门实测，对齐开发接续说明 MCP=152+10res 口径）
     assert any(u.startswith("rfauto://") for u in ours["protocol"]["resource_schemes"])
 
 

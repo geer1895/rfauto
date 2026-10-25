@@ -1,4 +1,4 @@
-"""架构批 W4-A 席锚树：modulation_ber 三键 + radar_eq 三键。
+"""aurora36 W4-A 席锚树：modulation_ber 三键 + radar_eq 三键。
 
 数值断言口径（#118 不自证）：
 - 调制族：①Q 函数 vs scipy.stats.norm.sf（独立实现逐位互证）+ 任务书

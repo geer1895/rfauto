@@ -44,11 +44,11 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `schiffman.delta_phase.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：schiffman_delta_phase_deg = 90.0 deg；±0.0（identity）
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `schiffman.delta_phase.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：schiffman_delta_phase_deg = 90.0 deg；±0.0（identity）；证据：runs/ta12_schiffman_qwt
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -56,7 +56,7 @@
 - 参数语义：w_mm=耦合段带条宽（Z0e/Z0o 经 KJ 反解联动，schiffman_design_params 单源）；gap_mm=耦合缝宽（同 KJ 反解；ρ=Z0e/Z0o 名义 2.0——低 εr 可达域上限见 nominal_derivation）；l_coupled_mm=耦合段长（θ0=ratio·90° 电长度闭式，ratio=1 经典 λ/4 耦合段）；l_ref_mm=参考段长（Δφ=90° 目标对 L_ref 线性一步反解，Schiffman 3L 惯例语义由内核解出实际值）；w_ref_mm=参考段/馈线宽（50Ω HJ 精算）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；耦合缝 0.0692mm<NEAR 按 #311 缝中点精确入网（x=0 中线+±gap/2 带缘精确 AddLine，缝内内部线 ≥1 恒成立，不设 NEAR≤gap/3 硬守卫——C4 决议口径）；耦合对四带缘/桥带缘/段两端/参考段两端/参考带缘精确入网（#198）；真机建议显式 mesh_resolution_mm≤0.3（缝邻域分辨）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）
 - 冒烟现状：未冒烟（离线审计过，#212，test_schiffman_qwt_templates）；近似级别如实登记：①准静态 εeff 逐模常数化无色散（内核 v1 声明）；②参考段 εeff 取偶/奇模相速平均口径（内核 v1）；③测量面解嵌到段端面，端面孤立线↔耦合对阶跃寄生不建模（Schiffman 原文口径）；④ρ=2.0 平坦度 ±25% 窗 max 偏差 ≈7.2°（低 εr 可达域内，不凑 ρ=3）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

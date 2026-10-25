@@ -3,7 +3,7 @@
 零副作用读面：probe（TCP 连通性+时延）/status（+SSH 可达性，凭据缺失
 如实 missing 不猜不试）、license_preflight（v1 调度面一级门，fail-closed）、
 hfss_remote_session_config（settings 增量组装，无登记零行为变化契约）。
-架构批 W3-S3 自 service/remote_service 巨石逐字节迁入（AU-1 facade，
+aurora_h W3-S3 自 service/remote_service 巨石逐字节迁入（AU-1 facade，
 函数体零改动）。
 """
 
@@ -107,7 +107,7 @@ def license_preflight(
     口径（诚实边界，随信封 ``seat_level_query`` 落账）：
 
     - **一级门=license 端口 TCP 探活**：注册表 ``probe_ports`` 里语义名含
-      ``license`` 的端口（sim-host=ansys_license 1055 / ads_license 27009）
+      ``license`` 的端口（sim_server=ansys_license 1055 / ads_license 27009）
       全 OPEN → ``verdict="PASS"``；任一不通或未登记 license 端口 →
       ``verdict="FAIL"``（fail-closed——调用方按 SKIP 记账不硬打）。
     - **席位级查询 UNVERIFIED**：lmutil/lmstat 的服务器侧路径与调用形态

@@ -1,6 +1,6 @@
 """rfauto 注册表数据库层（W1⑫）—— SQLite 事务型注册表 + PostgreSQL 迁移接缝。
 
-设计口径（TODO 5.5 / 用户 2026-09-16 口径⑤）：
+设计口径（待办清单 5.5 / 用户 2026-09-16 口径⑤）：
 - 零服务器：SQLite（WAL + busy_timeout），默认文件 ``runs/registry.sqlite``，
   env ``RFAUTO_REGISTRY_DB`` 或 settings ``db.path`` 可覆盖（env 优先）；
   runs/ 已 gitignore，不入 git。

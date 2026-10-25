@@ -636,6 +636,15 @@ def calibrate_surrogate(
         "metrics": {"verdict": verdict, "rho": rho,
                     "n_samples": len(samples)}},
         derived_from=derived_from, edge_kind="calib")
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     return {k: v for k, v in result.items() if k not in _SAMPLER_REPORT_KEYS} | {
         k: result[k] for k in _SAMPLER_REPORT_KEYS}
 
@@ -917,6 +926,15 @@ def augment_calibration(
                     "n_samples": len(merged),
                     "n_new_samples": len(new_samples)}},
         derived_from=derived_from, edge_kind="calib")
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     return {k: v for k, v in result.items() if k not in _SAMPLER_REPORT_KEYS} | {
         k: result[k] for k in _SAMPLER_REPORT_KEYS}
 

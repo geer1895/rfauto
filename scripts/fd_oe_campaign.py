@@ -20,7 +20,7 @@ NrTS + 显式 EndCriteria=1e-6（−60dB）——#262 截断族修复面；--nrt
 引擎触 NrTS 帽且能量未达 EndCriteria=截断非物理，PASS 如实降 FAIL（#266 口径）。
 
 退出码（H1-5 修复，F6 席 2026-10-04；scripts 退出码总表见
-runs/review_ge8e/f6_scripts_fix/REPORT.md）：
+内部证据档）：
   0=全座 PASS；1=发射面异常（--remote 机器解析失败/驱动级未捕获异常）；
   2=任一座 FAIL；3=任一座 SKIP（FAIL 优先于 SKIP）；4=无 FAIL/SKIP 但存在
   非 PASS 座位（PARTIAL/未知状态）；64=argparse 用法错（自定义 error，避开
@@ -277,7 +277,7 @@ _SALVAGE_COVERAGE_MIN = 0.90    # S1 阈值（criteria_salvage.md §三）
 _SALVAGE_CRITERIA_REL = "runs/ms_array_nxn_rerun/salvage/criteria_salvage.md"
 _V2_DMAX_DBI_RANGE = (0.0, 40.0)     # S3b-v2 预声明：ms 族 Dmax 物理带
 _V2_EVIDENCE_FILENAME = "farfield_v2.json"   # run 目录内联 v2 证据约定名
-# 空场熔断地板（7×7 教训， 六百九十三）：E_norm 全局 max=6.6e-9
+# 空场熔断地板（7×7 教训，开发注记 六百九十三）：E_norm 全局 max=6.6e-9
 # （−163.7dB）/P_up=2.17e-22W 时 argmax 仍给 25° 与 Dmax=35.19dBi（零/零
 # 比值伪象）——低于地板=空远场，判读熔断 UNKNOWN 不产 Dmax 假值。
 _V2_P_UP_ABS_FLOOR_W = 10.0 ** (-140.0 / 10.0)    # −140 dBW = 1e-14 W

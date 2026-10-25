@@ -1,7 +1,7 @@
 """W5-D 件 3 DS-7 测试：dsh（deepseek-harness）挂 rfauto MCP server 配置面。
 
 判据（宏图 v3.2 §十 DS-7 行 + W5-D criteria）：产配置模板（cordis 补丁
-形态+JSON schema 形态）+互通对拍记录（runs/w5_phase5/w5d/interop_report.md）；
+形态+JSON schema 形态）+互通对拍记录（内部证据档）；
 不引 TS 依赖、不装 dsh（零网络）；适用版本在模板头预声明（快照日期+
 锁模式不锁版本，宏图 §10.2 裁决③）。字段面锚=packages/mcp/mcp-client
 配置目录（serverName/transport/command/args/cwd/env + url/headers）。

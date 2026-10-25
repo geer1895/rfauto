@@ -121,7 +121,11 @@ _SECTION_END_RE = re.compile(r"^(Args|Returns|Raises|Examples?|Yields|Note|Notes
 #   preflight_run（D-07，W6-E））
 # （149→152：2026-10-08 edb 快车道 +3——edb_emit_spec/edb_build_solve/
 #   edb_status（零逻辑转发新建 edb_lane_service，CLI edb 域同源））
-_DECLARED_TOOL_COUNT = 152
+# （152→157：2026-10-23 aurora_l Wave-C C1 em 族五只读薄壳 +5——
+#   em_doctor_check/runs_verify/em_diff_runs/em_metrics_from_run/
+#   em_sweep_plan（零逻辑转发 em_doctor/runs_verify/em_diff/em_metrics/
+#   em_sweep service 单源；sweep 执行面不上 MCP，反馈 F5））
+_DECLARED_TOOL_COUNT = 157
 
 
 def _decorated_function_names(source: str, decorator_re: re.Pattern[str]) -> list[str]:

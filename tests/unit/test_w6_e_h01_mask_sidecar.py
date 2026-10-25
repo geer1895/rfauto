@@ -5,7 +5,7 @@
   旁并排落 sparams.mask.json（schema_version/n_ports/excite_port/
   measured_mask/filler_columns/reciprocity_filled/symmetry_filled）；
 - B 案核心承诺：csv 写出段字节零漂移（渲染 diff 仅追加 sidecar 段，
-  证据 runs/w6_phase6/w6e/{pre,post}_render_h01/ 实测 removed=0）；本文件
+  证据 内部证据档{pre,post}_render_h01/ 实测 removed=0）；本文件
   另以冻结 csv writer 块逐字节钉住 default 尾段；
 - 读入端：health_service._load_sparams_csv sidecar 权威 → 缺档回退启发式
   （旧归档永续可读：5 列/9 列双激励/fdtd 子目录三形态零破坏）；

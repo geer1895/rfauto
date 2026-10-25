@@ -412,7 +412,7 @@ def test_bias_tee_service_envelope_errors():
         assert out["ok"] is False and out["errors"], f"应 ok=False: {bad!r}"
 
 
-# ─── 10. mutmut 盲区补测（：负分支/缺省实参/序列化契约）─────────
+# ─── 10. mutmut 盲区补测（wf:mutmut-fix：负分支/缺省实参/序列化契约）─────────
 #
 # 口径三条（#118）：断言钉行为不钉实现；期望值独立于被测分支推导；
 # 小值比值断言替代 pytest.approx 裸 rel（其含隐式 abs=1e-12 地板，

@@ -11,7 +11,7 @@
 - test_rules_verify_nodes_collectable：收集器——rules.yaml 每条 verify.test
   子进程 pytest --co 真实可收集（防声明漂移）。
 
-数值锚（预声明 runs/df6_dp13/criteria.md §K1，venv 2026-09-24 实测）：
+数值锚（预声明 内部证据档 §K1，venv 2026-09-24 实测）：
 forward_z0(1.11mm, 2.4GHz, rogers4350b_h0.508)=50.094Ω；
 forward_z0(1.87mm)=35.359Ω vs 35.3553Ω；forward_z0(2.20mm)=31.426Ω。
 """

@@ -1,4 +1,4 @@
-"""介质参数提取内核单元测试（F-A P1，研究扩充 F-A §4）。
+"""介质参数提取内核单元测试（F-A P1，docs/research_expansion_20260926.md F-A §4）。
 
 预声明判据（先写后跑，#122）：
 - G1 主门：已知 (εr, tanδ)→skrf MLine 解析正向→提取→|Δεr|/εr≤1%、
@@ -704,7 +704,7 @@ def _valid_entry() -> dict:
         "er_fit": {"model": "constant", "value": 4.4, "u95": 0.05},
         "tan_d_fit": {"model": "constant", "value": 0.02},
         "domain": {"f_ghz": [3.0, 8.0], "thickness_mm": [1.6]},
-        "provenance": {"commit": "abc1234", "devlog": "DEV" + "LOG（示例条目）"},
+        "provenance": {"commit": "abc1234", "devlog": "开发注记（三百零一）"},
     }
 
 

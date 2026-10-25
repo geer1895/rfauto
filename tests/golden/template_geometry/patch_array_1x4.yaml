@@ -14,7 +14,7 @@ params:
   q_w_mm: 0.6025
   q_len_mm: 7.8217
 status: ok
-script_sha256: a0554af44b24cce280efebde32495bf47f46ca7530bcc85e03043c1642300455
+script_sha256: 0bf973f23a5cc93b3031e0e8d1e980cff48718ef1e04a777238d4674ae825a00
 csx:
   n_primitives: 36
   props:

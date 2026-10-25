@@ -1,6 +1,6 @@
 """hairpin 单谐振器双抽头 Q 标定（WP2.3 收口 B1：τ 扫描 → Q_u 本体 + Q_e(τ) 修正）。
 
-背景：runs/hairpin_calib/pt0-pt3 四轮 N=3 真机复合 Q≈22-36，远低于介质上限
+背景：内部证据档 四轮 N=3 真机复合 Q≈22-36，远低于介质上限
 1/tanδ=270（substrate kappa=tanδ·ω·ε0·εr，金属 PEC），损耗不在介质模型——按
 #1b「先验模型再校准」，须先用**单谐振器**把无载 Q_0 本体与抽头外部 Q_e(τ)
 分别量出，再谈 N=3 设计标定。探针 = order=1 双抽头对称二端口（A3 放开 n≥1：
@@ -388,7 +388,7 @@ def solve_tap_frac_for_qe(qe_target: float, c0: float, c1: float,
     return float(brentq(_res, tau_lo, tau_hi, xtol=1e-9))
 
 
-# ── W4④ N=2 弱抽头双谐振器 k(gap) 提取（2026-09-17，runs/hairpin_kgap）────────
+# ── W4④ N=2 弱抽头双谐振器 k(gap) 提取（2026-09-17，内部证据档）────────
 # 结构：order=2 等几何双 U 谐振器，两抽头同 τ（B1 已标定 Q_e/Q_u 的 τ=0.43）→ 对称
 # 同步（无 N=3 中间无抽头谐振器失谐问题）。观测量：
 #   ① 峰电平：k·Q_L ≪ 1 时 S21≈½(Γ_e−Γ_o) 为导数线形，|S21|peak ∝ k（合成 ≈8.7dB/ln k），
@@ -397,7 +397,7 @@ def solve_tap_frac_for_qe(qe_target: float, c0: float, c1: float,
 #   ② 全线形拟合 fit_coupled_model(order=2, Q_e 固定)：合成 k≥0.03 ±2%、k≤0.015 不可辨识
 #      （硬下限 ≈0.032：线宽不再携带 k 信息）——两法互补覆盖全域。
 #   一致性门：模型 3dB 宽@k̂ vs 实测 3dB 宽 相差 ≤25%（N=3 归档正因此门失败：56-90MHz vs
-#   16-19MHz，暴露中间谐振器失谐 ~1%，见 runs/hairpin_kgap/progress.log）。
+#   16-19MHz，暴露中间谐振器失谐 ~1%，见 内部证据档）。
 
 
 def bandwidth_3db_of_db(freq_hz: np.ndarray, s_db: np.ndarray) -> float:
@@ -497,13 +497,13 @@ def kgap_curve(gaps_mm: list[float], c_vals: list[float]) -> dict:
 
 
 # ── hairpin_alt k(gap) 图谱判读门（2026-09-18 w2g；先于真机写死，#122 不凑绿）────
-# 背景（TODO 0dk/）：同向 hairpin 真机 k_EM(gap) 非单调、极大
+# 背景（待办清单 0dk/开发注记（二百零三））：同向 hairpin 真机 k_EM(gap) 非单调、极大
 # 0.0155@0.65 ≪ k_KJ 0.0515，比值 c=k_EM/k_KJ∈[0.12,0.26]、设计点比值 ≈0.29——相邻臂
 # 开路端对齐的电/磁相消签名。交替取向变体（hairpin_alt）的预声明期望：
 #   ① 单调：k_EM 随 gap 严格递减（与 KJ 平行线闭式同向；非单调=相消未消除）；
 #   ② 比值：c 每点 ∈ [C_MIN, C_MAX]——下限 0.6 = 同向真机比值上限 ≈0.30 的 2×（"显著
 #      高于"的可证伪口径）；上限 1.2 = KJ 闭式对 NGSolve 独立源 k_NG/k_KJ=1.003-1.049
-#      （runs/hairpin_kgap/offline_kj_vs_ngsolve.json，域内 ≤5% 低估）加 3D 端部/弯带
+#      （内部证据档，域内 ≤5% 低估）加 3D 端部/弯带
 #      效应余量——c>1.2 意味着闭式类外机制（如馈线直通/自耦）而非"更强耦合"；
 #   ③ 点数 ≥3（单调性至少三点可判）。
 # 全过=PASS（campaign_capable 解锁的真机侧条件，另需设计点自洽的离线条件，见
@@ -811,9 +811,9 @@ def _read_sparams_csv(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def _kgap_analyze(args: argparse.Namespace) -> None:
-    """runs/hairpin_calib/<pt>/（N=2 τ0.43 弱抽头轮）→ 逐点 k_EM/c(gap) → kgap_curve.json。
+    """内部证据档<pt>/（N=2 τ0.43 弱抽头轮）→ 逐点 k_EM/c(gap) → kgap_curve.json。
 
-    Q_e/Q_u 取 B1 同 τ 单腔实测（runs/hairpin_q_extract/<qe-pt>/q_extract.json），
+    Q_e/Q_u 取 B1 同 τ 单腔实测（内部证据档<qe-pt>/q_extract.json），
     k_KJ 取 core 闭式（w=名义 1.1117、2.5GHz、rogers4350b）。铁律 7：常数全部可由本函数
     从归档 sparams.csv 复算。"""
     from rfauto.core.coupled_microstrip import hairpin_k_from_gap_mm

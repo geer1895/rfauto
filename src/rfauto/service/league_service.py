@@ -345,7 +345,7 @@ def _iter_candidate_run_dirs(
 
     campaign = 顶层目录名；顶层目录自身即 campaign。
 
-    S15（架构批 W4）主源接线：一/两级候选优先走 lake index SQL
+    S15（aurora_f W4）主源接线：一/两级候选优先走 lake index SQL
     （计数护栏：索引行数 vs 两级目录数差>阈值或索引不可用 → 回退原
     目录扫，best-effort #105）；第三层 ``campaign/runs/<ts>`` 深层战役点
     索引未覆盖（索引只建两层），恒走目录 glob。序/前缀跳过/去重语义
@@ -469,7 +469,7 @@ def collect_league_rows(
 ) -> dict[str, Any]:
     """只读扫描 runs/ → 联赛行 + 如实统计（纯内存，零写面）。
 
-    S15（架构批 W4）：候选枚举 lake index 主源+护栏回退（语义见
+    S15（aurora_f W4）：候选枚举 lake index 主源+护栏回退（语义见
     :func:`_iter_candidate_run_dirs`）；信封 ``enumeration_source``/
     ``enumeration_warnings`` 注记来源，``stats`` 计数口径零变化。
     ``db_path`` 缺省 ``<runs_dir>/.lake_index.duckdb``。

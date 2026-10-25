@@ -10,7 +10,7 @@ params:
   series_w_mm: 1.87
   shunt_w_mm: 1.11
 status: ok
-script_sha256: e6b8bc2a74983ff2e65856947af3e7990da118dfd2b297dfeee5a8c16e6e0d29
+script_sha256: 9aecd0bdf3f139c0e4dad26fba38ddfe862f461e67907422bdfd5cd60f81c592
 csx:
   n_primitives: 34
   props:

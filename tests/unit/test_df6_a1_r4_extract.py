@@ -1,6 +1,6 @@
 """df6 A1（R4）判读内核单测：k 模分裂提取 + Qe 群时延 C 常数（零真机零引擎）。
 
-钉面（criteria.md §一，runs/df6_a1_r4/selftest_result.json 同源判定）：
+钉面（criteria.md §一，内部证据档 同源判定）：
 ① C 常数裁决：无耗单端口（J 倒置器耦合谐振臂）S11 群时延 Lorentzian 拟合
    A=4Qe/ω0 ⇒ **C=4**（/2 口径被合成回收否决）；对称双馈 S21 口径 C=1（记
    录量）；tap2 弱加载的系统性偏移由点位配置钉 C_cfg 吸收（回收逐位）。

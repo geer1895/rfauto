@@ -666,7 +666,7 @@ def pcell_render_cmd(
     layout = _pcell_geometry_to_layout(geo)
     out_path = None
     if out is not None:
-        # T8 越级收口（架构批 W11-S2）：导出经 service.layout_service 单源
+        # T8 越级收口（aurora_g W11-S2）：导出经 service.layout_service 单源
         # （export_layout_payload 内部即 layout_from_payload→adapters.export_layout；
         # layout_to_payload/from_payload 为确定性同构转换，导出文件逐字节不变）。
         from rfauto.service.layout_service import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）

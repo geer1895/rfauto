@@ -20,10 +20,16 @@
   显式窗覆盖与形态非法回退 / 未登记族判据缺席（缺席=不判，非 UNKNOWN
   冒充）/ 窗界两侧各单腿 FAIL 形态 / 2 端口-f0 缺失-出跨度-无数据四路
   UNKNOWN。
+- result_freshness（第 8 判据，aurora_l Wave-C C3）：三态+SKIP 钉——
+  sha256/mtime 全符 PASS（恰等 mtime==generated_at 边界 PASS）/ 任一
+  不符 FAIL（旧文件顶替/错拷）/ expected 缺省 SKIP 行且 verdict 不降级
+  （增量兼容：零 expected 时 verdict 与七判据时代逐位一致）/ 畸形
+  expected 与文件不在档 UNKNOWN（#122 不冒充）。
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -195,7 +201,12 @@ class TestTouchstone:
         assert report["verdict"] == "PASS"
         assert report["ok"] is True
         assert report["touchstone"] == str(snp_ok)
-        assert all(c["status"] == "PASS" for c in report["criteria"])
+        # 七判据全 PASS + 第 8 判据无 expected 落 SKIP（verdict 不降级钉）
+        by = _by_factor(report)
+        for name in ("solve_status", "touchstone", "port_count", "passivity",
+                     "s11_dip", "reciprocity"):
+            assert by[name]["status"] == "PASS", name
+        assert by["result_freshness"]["status"] == "SKIP"
         assert report["summary"]["n_pass"] == 6
 
     def test_file_missing_fails(self, tmp_path):
@@ -610,12 +621,13 @@ class TestSSplitWindow:
         assert f["evidence"]["window_scope"] == "template:edb_power_divider"
         assert f["evidence"]["s21_db_at_f0"] == pytest.approx(-3.465, abs=0.02)
         assert f["evidence"]["s31_db_at_f0"] == pytest.approx(-3.565, abs=0.02)
-        # 全绿七判据（窗生效族）+ verdict PASS
+        # 全绿七判据（窗生效族）+ 第 8 判据 SKIP（verdict PASS 不降级）
         assert report["verdict"] == "PASS"
         assert report["summary"]["n_pass"] == 7
         assert {c["factor"] for c in report["criteria"]} == {
             "solve_status", "touchstone", "port_count", "passivity",
-            "s11_dip", "reciprocity", "s_split_window"}
+            "s11_dip", "reciprocity", "s_split_window",
+            "result_freshness"}
 
     def test_leg_below_window_fails(self, tmp_path):
         """S21=-4.3dB 低于下界（S31 在窗内）→ 单腿 FAIL 点名 + 方向。"""
@@ -817,13 +829,14 @@ class TestVerdictAndShape:
                                "touchstone", "criteria", "summary"}
         for c in report["criteria"]:
             assert set(c) >= {"factor", "status", "detail", "lesson_ref"}
-            assert c["status"] in ("PASS", "FAIL", "UNKNOWN")
+            assert c["status"] in ("PASS", "FAIL", "UNKNOWN", "SKIP")
         assert {c["factor"] for c in report["criteria"]} == {
             "solve_status", "touchstone", "port_count", "passivity",
-            "s11_dip", "reciprocity"}
+            "s11_dip", "reciprocity", "result_freshness"}
         summary = report["summary"]
+        # 四账守恒（第 8 判据 SKIP 记 n_skip，不混入红绿未知三账）
         assert (summary["n_pass"] + summary["n_fail"] + summary["n_unknown"]
-                == len(report["criteria"]))
+                + summary["n_skip"] == len(report["criteria"]))
         # JSON 进出（规则 4）：数值/门/判定全 JSON 友好
         doc = json.loads(json.dumps(report))
         assert doc["verdict"] == report["verdict"]
@@ -1059,3 +1072,161 @@ class TestMultiDipF0Offset:
         got_flat = ehg._find_dips_near_f0(
             freq, np.full(freq.size, 0.3).astype(complex), f0)
         assert got_flat == ([], [])
+
+
+# ---------------------------------------------------------------------------
+# result_freshness：第 8 判据（aurora_l Wave-C C3）——sha/mtime 新鲜度
+# ---------------------------------------------------------------------------
+
+def _sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class TestResultFreshness:
+    """第 8 判据钉（aurora_l R1 侦察 #6：七判据全查 S 数据无新鲜度判据，
+    旧 Touchstone 物理判据凑巧过即 PASS）。
+
+    四态语义终表（SKIP=判据未启用态，不参与 verdict 聚合）：
+    - expected_freshness=None → SKIP 行（"无预期指纹，新鲜度未校验"），
+      verdict/n_pass 与七判据时代逐位一致（增量兼容钉：既有调用方零
+      变化）；
+    - sha256 一致 且 mtime ≥ generated_at → PASS（恰等边界 PASS，≥ 为过；
+      sha hex 大小写不敏感；generated_at epoch 秒/ISO-8601 双形态）；
+    - 任一在档字段不符（sha 错配 / mtime 早于生成时刻）→ FAIL
+      （"旧文件顶替/错拷"），FAIL 主导 verdict；
+    - expected 非 dict / 无可核对字段 / 字段不可解析 / 文件不在档 /
+      IO 失败 → UNKNOWN + errors 留痕（#122 不冒充；文件存在性缺陷由
+      touchstone 判据负责 FAIL，本判据不双记）。
+    """
+
+    def test_no_expected_skips_verdict_not_degraded(self, snp_ok):
+        """expected 缺省 → SKIP 行 + verdict PASS（增量兼容核心钉）。"""
+        report = check_edb_batch_health(_batch_ok(snp_ok, 2), spec=_spec(2))
+        f = _by_factor(report)["result_freshness"]
+        assert f["status"] == "SKIP"
+        assert "无预期指纹" in f["detail"]
+        assert "未校验" in f["detail"]
+        assert f["evidence"]["expected"] is None
+        # 七判据时代逐位一致：verdict/ok/n_pass 零变化
+        assert report["verdict"] == "PASS"
+        assert report["ok"] is True
+        assert report["summary"]["n_pass"] == 6
+        assert report["summary"]["n_fail"] == 0
+        assert report["summary"]["n_unknown"] == 0
+        # SKIP 单独记账（n_skip/skip_factors），四账守恒
+        assert report["summary"]["n_skip"] == 1
+        assert report["summary"]["skip_factors"] == ["result_freshness"]
+        s = report["summary"]
+        assert (s["n_pass"] + s["n_fail"] + s["n_unknown"] + s["n_skip"]
+                == len(report["criteria"]))
+
+    def test_match_passes(self, snp_ok):
+        """sha256（大小写不敏感）+ mtime ≥ 生成时刻 → PASS。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={
+                "sha256": _sha256_of(snp_ok).upper(),
+                "generated_at": snp_ok.stat().st_mtime - 10.0})
+        f = _by_factor(report)["result_freshness"]
+        assert f["status"] == "PASS"
+        assert f["evidence"]["observed_sha256"] == _sha256_of(snp_ok)
+        assert f["evidence"]["observed_mtime"] == pytest.approx(
+            snp_ok.stat().st_mtime, abs=1e-6)
+        assert report["verdict"] == "PASS"
+
+    def test_mtime_exact_boundary_passes(self, snp_ok):
+        """mtime == generated_at 恰等 → PASS（≥ 为过；同刻同一 double
+        逐位相等，无 #376 类换算噪声面）。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={"generated_at": snp_ok.stat().st_mtime})
+        assert _by_factor(report)["result_freshness"]["status"] == "PASS"
+
+    def test_sha256_only_expected(self, snp_ok):
+        """单给 sha256（无 generated_at）→ 只核指纹（字段可单给）。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={"sha256": _sha256_of(snp_ok)})
+        assert _by_factor(report)["result_freshness"]["status"] == "PASS"
+
+    def test_generated_at_iso_string_accepted(self, snp_ok):
+        """generated_at ISO-8601 字符串（Z 后缀）同核新鲜度。"""
+        from datetime import datetime, timezone
+        past = datetime.fromtimestamp(snp_ok.stat().st_mtime - 60.0,
+                                      tz=timezone.utc)
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={
+                "generated_at": past.strftime("%Y-%m-%dT%H:%M:%SZ")})
+        assert _by_factor(report)["result_freshness"]["status"] == "PASS"
+
+    def test_sha_mismatch_fails(self, snp_ok):
+        """sha 错配 → FAIL（"旧文件顶替/错拷"点题）+ FAIL 主导 verdict。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={
+                "sha256": "0" * 64,
+                "generated_at": snp_ok.stat().st_mtime - 10.0})
+        f = _by_factor(report)["result_freshness"]
+        assert f["status"] == "FAIL"
+        assert "旧文件顶替/错拷" in f["detail"]
+        assert "sha256 不符" in f["detail"]
+        assert report["verdict"] == "FAIL"
+        assert report["summary"]["fail_factors"] == ["result_freshness"]
+
+    def test_stale_mtime_fails(self, snp_ok):
+        """sha 一致但 mtime 早于构建记录生成时刻 → FAIL（旧文件顶替）。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={
+                "sha256": _sha256_of(snp_ok),
+                "generated_at": snp_ok.stat().st_mtime + 100.0})
+        f = _by_factor(report)["result_freshness"]
+        assert f["status"] == "FAIL"
+        assert "早于" in f["detail"]
+        assert report["verdict"] == "FAIL"
+
+    def test_malformed_expected_unknown(self, snp_ok):
+        """expected 非 dict / 字段不可解析 / 无可核对字段 → UNKNOWN +
+        errors 留痕（#122 不冒充）。"""
+        r1 = check_edb_batch_health(_batch_ok(snp_ok, 2), spec=_spec(2),
+                                    expected_freshness="junk")
+        f1 = _by_factor(r1)["result_freshness"]
+        assert f1["status"] == "UNKNOWN"
+        assert any("expected_freshness" in e for e in r1.get("errors", []))
+        r2 = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={"generated_at": "not-a-date"})
+        f2 = _by_factor(r2)["result_freshness"]
+        assert f2["status"] == "UNKNOWN"
+        assert "ISO-8601" in f2["detail"]
+        r3 = check_edb_batch_health(_batch_ok(snp_ok, 2), spec=_spec(2),
+                                    expected_freshness={})
+        f3 = _by_factor(r3)["result_freshness"]
+        assert f3["status"] == "UNKNOWN"
+        assert "无可核对字段" in f3["detail"]
+
+    def test_missing_file_unknown_not_double_fail(self, tmp_path):
+        """文件不在档 → UNKNOWN（存在性 FAIL 由 touchstone 判据负责，
+        本判据不双记）；touchstone FAIL 照常主导 verdict。"""
+        ghost = tmp_path / "ghost.s2p"
+        report = check_edb_batch_health(
+            _batch_ok(ghost, 2), spec=_spec(2),
+            expected_freshness={"sha256": "a" * 64})
+        assert _by_factor(report)["touchstone"]["status"] == "FAIL"
+        f = _by_factor(report)["result_freshness"]
+        assert f["status"] == "UNKNOWN"
+        assert report["verdict"] == "FAIL"
+        assert report["summary"]["n_skip"] == 0  # expected 给了=判据启用
+
+    def test_json_round_trip(self, snp_ok):
+        """evidence JSON 可序列化（epoch 秒/ISO 双形态）。"""
+        report = check_edb_batch_health(
+            _batch_ok(snp_ok, 2), spec=_spec(2),
+            expected_freshness={
+                "sha256": _sha256_of(snp_ok),
+                "generated_at": snp_ok.stat().st_mtime - 10.0})
+        doc = json.loads(json.dumps(report))
+        f = {c["factor"]: c for c in doc["criteria"]}["result_freshness"]
+        assert f["status"] == "PASS"
+        assert f["evidence"]["observed_sha256"] == _sha256_of(snp_ok)

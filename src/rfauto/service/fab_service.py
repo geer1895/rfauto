@@ -1,6 +1,6 @@
 """fab 剖面 / DFM 门服务层（DP-7 P1/P3，JSON 进出）。
 
-职责（AGENTS 硬规则 4：服务层 JSON 进出，CLI/MCP 薄壳）：
+职责（内核立规注记 硬规则 4：服务层 JSON 进出，CLI/MCP 薄壳）：
 - ``load_fab_profile``：knowledge/fab_profiles/*.yaml → JSON 视图；
 - ``check_template_dfm``：模板名义几何（``template_meta()`` 只读）+ 用户
   覆盖 → 对剖面校验（几何事实提取见 ``FAB_GEOMETRY_FACTS``——显式登记
@@ -259,7 +259,7 @@ def fab_profile_yield(
 
     P2 之前本段为「接口预留」注记：tolerance_source 键自始即本函数
     单源定义点，P2 批已落地（本 docstring 原文见
-    runs/df6_dp7fab/criteria.md P2 延后注记）。
+    内部证据档 P2 延后注记）。
     """
     import numpy as np
 
@@ -321,7 +321,7 @@ def fab_profile_yield(
 
 
 # ─── DP-7 P2：公差来源单源（fab 剖面 + materials.yaml → {param: σ}）─────────
-# 判据预声明 runs/df6_dp7p2/criteria.md。一处定义：uq/yield 链的 σ 一律
+# 判据预声明 内部证据档。一处定义：uq/yield 链的 σ 一律
 # 经 resolve_tolerance_source/derive_tolerances_from_fab_profile 派生，
 # 不再手抄。σ 口径 = 半宽/k_sigma（k_sigma 缺省 3.0，"3σ=公差"惯例，
 # 与 robustness_service.load_tolerance_profile / tolerance.py 同源）。
@@ -449,7 +449,7 @@ def derive_tolerances_from_fab_profile(
 ) -> dict[str, Any]:
     """公差单源派生：fab 剖面 + materials.yaml → {param: σ}（一处定义）。
 
-    派生公式（σ = 半宽/k_sigma，预声明 runs/df6_dp7p2/criteria.md C1）：
+    派生公式（σ = 半宽/k_sigma，预声明 内部证据档 C1）：
     - trace 参数：``tol = 名义 × trace.tolerance_pct/100``；
     - 板厚参数：名义 ≥1.0mm → ``tol = 名义 ×
       board_thickness.tolerance_pct_ge_1mm/100``；<1.0mm → ``tol =

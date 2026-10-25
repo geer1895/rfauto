@@ -6,7 +6,7 @@ algorithm 选择在 multiobj_backend（"nsga2" | "rnsga3"）落地；本模块�
 组下跑多引擎，判据=累计评估的约束 Pareto 前沿超体积（pareto_tools.
 exact_hypervolume，最小化口径统一 ref）。
 
-设计（基类+注册表，AGENTS 硬限制 3）：
+设计（基类+注册表，内核立规注记 硬限制 3）：
 - :class:`CompetitionProblem` 纯数据问题书（目标函数/边界/ref 点/可选
   偏好参考点）；:data:`ENGINE_REGISTRY` 注册引擎 runner（名字 →
   ``run(problem, n_eval, seed) -> dict``）；:func:`run_competition`

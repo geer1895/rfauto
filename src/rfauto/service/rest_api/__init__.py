@@ -1,6 +1,6 @@
 """G1 REST API（§10.7）：service 层能力的 OpenAPI 化薄壳。
 
-设计红线（AGENTS 硬限制 4）：路由是薄壳——参数校验 / HTTP 状态映射 /
+设计红线（内核立规注记 硬限制 4）：路由是薄壳——参数校验 / HTTP 状态映射 /
 OpenAPI 文档在本模块，业务语义全部仍在 service 层（health / run 查询 /
 calculator 调用 / dataset 查询 / db·rag 只读查询 / slotline·transitions
 确定性计算）；本模块不含任何物理数值计算（铁律 7）。
@@ -19,7 +19,7 @@ calculator 调用 / dataset 查询 / db·rag 只读查询 / slotline·transition
   直接驱动（starlette TestClient）；serve() 才起 uvicorn。
 """
 
-# ══ T2 巨石拆分 facade（架构批 W3-S2，2026-10-19）══════════════════
+# ══ T2 巨石拆分 facade（aurora_h W3-S2，2026-10-19）══════════════════
 # 本文件原为单文件巨石（service/rest_api.py，1417 行），实现按资源族
 # 迁入上方 re-export 的子模块；公开面快照钉：拆分前后模块级名逐名相等
 # （含私有助手——测试面按名取用）。**无 __all__**（公开 API 快照口径=

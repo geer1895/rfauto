@@ -29,19 +29,19 @@ r"""WP3.9 MVP 基准运行器（§10.0）：3 问题 × 2 引擎 × 真跑预算
 运行（长任务分离+日志轮询，#157）：
   powershell Start-Process -FilePath .venv\Scripts\python.exe `
     -ArgumentList "scripts/wp39_benchmark_run.py -problem mline -engine pattern_search" `
-    -RedirectStandardOutput runs/wp39_mvp/mline__pattern_search.log `
-    -RedirectStandardError runs/wp39_mvp/mline__pattern_search.err.log -Wait
+    -RedirectStandardOutput 内部证据档 `
+    -RedirectStandardError 内部证据档 -Wait
 判定汇总：.venv\Scripts\python.exe scripts/wp39_benchmark_run.py -judge
 离线自检（零真机，dry-run 走解析面）：
   .venv\Scripts\python.exe scripts/wp39_benchmark_run.py -problem mline `
-    -engine sbo -dry-run -outdir runs/wp39_mvp_dry
+    -engine sbo -dry-run -outdir 内部证据档
 
-产出：runs/wp39_mvp/{problem}__{engine}.json + summary.json。
+产出：内部证据档{problem}__{engine}.json + summary.json。
 几何纪律：字面量一律显式 mm（#218）；设计变量表达式随变量量纲
 （#218 三类语义③），不出现纯数字串/纯字面算术。
 
 换判据变体（wp39-factory-verdict-next，2026-09-16；产出走新目录
-runs/wp39_factory_verdict_next/，不覆盖既有归档 #122）：
+内部证据档，不覆盖既有归档 #122）：
 - mline_eps     |εeff−target|（S21 相位斜率抽取，sweep 2.4–2.6 Discrete 41 点，
                 ④ 名义点先标定 target；非 dB 越小越好）——mline 基线臂与
                 openEMS 工厂回代同 setup 同抽取；
@@ -98,7 +98,7 @@ MLINE_Y_HALF = 40.0
 MLINE_LINE_LEN_M = 2.0 * MLINE_Y_HALF * 1e-3
 MLINE_EPS_SWEEP = {"band_ghz": (2.4, 2.6), "points": 41,
                    "type": "Discrete", "name": "Sweep"}
-# ratrace_null：深零点邻域指标常量与 runs/wp39_mvp_followup/ratrace_null.json
+# ratrace_null：深零点邻域指标常量与 内部证据档
 # 同源（search 2.3–2.7GHz、hw 25MHz）保证可比；sweep 走 Interpolating
 # （81 点 5MHz 栅格；Discrete 81 点 4 端口每评估 +数分钟，两臂 ×25 超墙钟预算）
 RATRACE_NULL_SEARCH_GHZ = (2.3, 2.7)

@@ -2,11 +2,11 @@
 
 对 knowledge/anchors.yaml 全锚盘点可用的残差时序长度（快照库 + 注册表
 last_verified），逐锚跑 core/anchor_drift_spc 三证据报告（广义 ESD + EWMA
-+ CUSUM），落档 runs/qm8_anchor_spc/assessment.json。
++ CUSUM），落档 内部证据档。
 
 判读纪律（#122 如实，任务书预判口径）：锚注册表当前每锚只落**单点**
 ``last_verified.residual``（部分锚连该点也没有），漂移快照库
-（runs/anchor_drift/snapshots.json，QW-16 机制）尚未积累——预期全锚
+（内部证据档，QW-16 机制）尚未积累——预期全锚
 n<8 → verdict=insufficient（三线不硬算）。本评估的价值=把"哪条证据线
 还差什么数据"逐锚量化落档，作为 revalidate 数据积累的启用条件清单，
 **不虚构序列、不从单点内估 σ 凑判**（#118 家族）。

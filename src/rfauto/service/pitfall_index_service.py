@@ -1,16 +1,21 @@
-"""pitfall_index_service —— 坑账结构化索引只读 loader。
+"""pitfall_index_service —— 坑账结构化索引只读 loader（ge8e X6 批，KD-坑账 v1）。
 
-定位：工程教训条目（坑号 #NNN / 行锚 A<N>）的结构化索引面——加载+校验+
-确定性检索。数据面 knowledge/pitfalls_index.json 属内部账本衍生数据，
-公开分发视图**不随附**：缺省路径缺数据 → ok=False+errors 显式报（不
-静默回退空账）；检索/注入消费面以合成索引样本驱动（见对应测试）。
+定位（宏图弱点#3「坑账 300+ 纯文本」的最小闭环）：坑号体系（#89…#372+）
+此前只以纯文本散落在 内核立规注记.md 踩坑速查与 内部证据档 正文，机器不可检索。本模块
+对 knowledge/pitfalls_index.json（结构化子集：id/title/category/lesson_one_line/
+source 行段）做**只读**加载+校验+确定性检索——零写入、零改写既有账本（新增
+索引文件允许，既有文件零改写）。
 
-消费挂点（best-effort #105 纪律）：
-- service/premortem_service._pitfall_notes：报告尾部 pitfall_notes 注记
-  （索引缺席时返回空列表，不阻塞主路径）；
+消费挂点（FU-16 清偿，2026-10-05：premortem 已接线——
+service/premortem_service.py:37 惰性导入本模块 pitfall_notes_for 做
+报告尾注记，best-effort 零阻塞；逐坑消费指针面=
+knowledge/pitfall_consumption.yaml，由 W5-E B12 SLA 门驻守）：
+- service/premortem_service.premortem_report / campaign_premortem_block：
+  报告尾部附带 pitfall_notes_for(task 关键词) 的 top 命中（best-effort #105，
+  索引缺失时返回空列表不阻塞）——本模块已备好 pitfall_notes_for 单调用面；
 - KD-4 失败库注入（core/premortem FAILURE_MODE_LIBRARY 同窗）可复用同函数。
 
-设计约束（确定性内核；#122 如实）：
+设计约束（确定性内核，铁律 7；#122 如实）：
 - 纯函数、零网络、零 LLM；同输入两次输出逐字节一致（canonical JSON）；
 - 索引文件缺失/畸形 → ok=False+errors 显式报，不静默回退空账（#316 同方向：
   坏账如实报，不假装无坑）；

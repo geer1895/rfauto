@@ -1,4 +1,4 @@
-"""FORM 可靠性评估叶（T1 解环；架构批 W6-S1）。
+"""FORM 可靠性评估叶（T1 解环；aurora_g W6-S1）。
 
 从 robustness_service 叶化：form_pf（XD-11 换基，HL-RF 收敛
 core.form_beta 单源内核）+ _mk_cost_fn（违约 cost 构造）+ 外部库

@@ -1,16 +1,16 @@
 """#261 openEMS 单飞互斥守卫内核（全进程表父链爬升自排除）。
 
-背景（runs/dp10_j2j3/j3_chain/_recovery_note.md 披露，2026-09-30 修复）：
+背景（内部证据档 披露，2026-09-30 修复）：
 旧式祖先自排除只在「命中互斥模式的进程子集」里爬父链——分离发射形态
 （Start-Process 发射器命令行含互斥模式串、driver 本体命令行不命中）下
 driver 不在该子集→父链第一步即断→发射器被误判他席→rc=1 自锁拒射
-（实证：runs/dp10_j2j3/j3_chain/chain_coarse_launch.log 首段）。
+（实证：内部证据档 首段）。
 
 修法（_recovery_note 修法建议原文）：先取**全进程表** PID→PPID 映射，
 从当前进程沿父链爬升得祖先集（含自身），再对命中互斥模式的行做
 「pid ∈ 祖先集 → 自排除」。driver 是否命中模式不再影响父链认领。
 
-消费者：runs/dp10_j2j3/j3_chain/j3_chain.py::_oe_mutex_processes（薄包装：
+消费者：内部证据档::_oe_mutex_processes（薄包装：
 query_process_table() + filter_mutex_busy()）；行为钉
 tests/unit/test_oe_mutex_guard.py（合成进程表，零 PowerShell/零真机依赖）。
 

@@ -492,7 +492,7 @@ def chireix_b_null_check(phi_rad: float, b_comp: float) -> bool:
     return abs(chireix_susceptance(phi_rad, b_comp)) <= 1e-12
 
 
-# ─── N-way Doherty（架构批 W4-S4，R2 边际池顺延件）─────────────────────────
+# ─── N-way Doherty（aurora_g W4-S4，R2 边际池顺延件）─────────────────────────
 
 _N_WAY_MAX = 8
 

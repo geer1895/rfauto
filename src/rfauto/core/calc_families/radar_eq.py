@@ -1,4 +1,4 @@
-"""雷达方程与检测统计族（架构批 W4-A 席，R2 空白域 G1）。
+"""雷达方程与检测统计族（aurora36 W4-A 席，R2 空白域 G1）。
 
 出处（教科书经典口径二级转引，详见下节公式口径）：
 - radar_range_equation：基本雷达方程（Skolnik, Introduction to Radar

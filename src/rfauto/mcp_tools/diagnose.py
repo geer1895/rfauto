@@ -150,7 +150,7 @@ def correlate_measurement(
         dict: {ok, data: {is_correlated, metrics, warnings}}；文件缺失
         或解析失败 → ok=False
     """
-    # T8 越级收口（架构批 W2-S1，2026-10-19）：原直连 measurement 两行
+    # T8 越级收口（aurora_h W2-S1，2026-10-19）：原直连 measurement 两行
     # 改走 service 单点 correlate_files（其 docstring 即"MCP correlate_
     # measurement 同源"，函数体内 lazy 取 measurement 保住 monkeypatch 缝）。
     from rfauto.service.api import correlate_files  # lazy: startup-cost（MCP 壳层面，首调暖机由 _core lifespan 承担）

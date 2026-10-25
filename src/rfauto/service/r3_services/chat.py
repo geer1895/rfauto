@@ -1,6 +1,6 @@
 """r3_services.chat —— LLM 对话面（6j AgentChat + system prompt 面 + chat 设置读写 + function-calling 工具映射）。
 
-自 r3_services.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原「6j LLM Conversation」节逐字节搬迁。
+自 r3_services.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原「6j LLM Conversation」节逐字节搬迁。
 """
 
 from __future__ import annotations

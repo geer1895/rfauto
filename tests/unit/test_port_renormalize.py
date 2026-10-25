@@ -1,6 +1,6 @@
 """端口 renormalize 数学钉子（W2⑤ 定案 (a)，零 openEMS 依赖、零网络）。
 
-机理与全链（followUps①）：openEMS 端口面贴 PML，非激励
+机理与全链（开发注记（一百八十四）followUps①）：openEMS 端口面贴 PML，非激励
 端的线由 PML 按线自身 Z0 匹配端接 → 单激励 uf 比值是**带载比值**（非激励端在
 50Ω 基下被 Γ=(Z−50)/(Z+50) 端接、a≠0），与 50Ω 双端接裁判（fake Pozar
 ABCD@50 / skrf renormalize([50,50])）本非同一量。落实（a）：

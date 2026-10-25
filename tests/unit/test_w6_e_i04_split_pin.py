@@ -2,7 +2,7 @@
 
 判据（ra_criteria SPECS §五 5.2 预声明，W9 拆分对拍口径）：
 - collect 恒等：拆分后节点集与拆分前冻结清单 sorted 逐位一致
-  （拆前实测 138 节点；冻结清单存证 runs/w6_phase6/w6e_i04_nodes_split_before.txt）；
+  （拆前实测 138 节点；冻结清单存证 内部证据档）；
 - 纯搬运钉：主文件零本地 fake/helper def（#116 遮蔽治理）；fakes
   模块承载 _Fake 三件+_mmf+_load 与契约镜像 banner（SPECS §5.2 判据④）；
 - 单例钉：主文件与 fakes 模块的驱动模块对象同一（_load 单例搬移后

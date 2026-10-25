@@ -1,6 +1,6 @@
 """全仓审计：字面算术表达式作几何 origin/尺寸值（#218 家族，队列3-B）。
 
-HFSS 模型器表达式引擎语义（runs/mline_repro_attribution_20260911.md §二）：
+HFSS 模型器表达式引擎语义（内部证据档 §二）：
   纯数字串（"-25"）        → 按模型单位补全（PyAEDT _arg_with_dim）
   带单位串（"0mm"）        → 显式单位 ✓
   字面算术表达式           → 无量纲数字按 SI 米求值 ✗（"-2.5*1.113" 曾致
@@ -47,7 +47,7 @@ VIOLATING_CATEGORIES = {"LITERAL_ARITH", "LITERAL_ARITH_VAR"}
 # 2) scripts/hfss_same_geometry_arbitration.py:176——插值均为 HFSS 设计
 #    变量（w_in/x_half 等经 hfss[k]="…mm" 定义带 mm 量纲，:75-83 实读；
 #    2026-09-12 人工确认），#218 语义四"量纲随变量"安全类，且该手法
-#    r8 真机 PASS_A 背书（runs/mline_repro_attribution_20260911.md）。
+#    r8 真机 PASS_A 背书（内部证据档）。
 ALLOWLIST: dict[str, tuple[str, ...]] = {
     "scripts/hfss_mline_repro_sweep_assert.py": ("-2.5*",),
     "scripts/hfss_same_geometry_arbitration.py": ("-2.5*w_in",),

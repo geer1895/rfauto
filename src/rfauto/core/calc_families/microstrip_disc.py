@@ -1,4 +1,4 @@
-"""微带不连续寄生闭式族（架构批 W6-S3 席，R3_domain_expansion 视角1 A1
+"""微带不连续寄生闭式族（aurora_g W6-S3 席，R3_domain_expansion 视角1 A1
 Top1，跨视角 1/2 双归属——物理不连续层+PCB layout 节点唯一直系核空白；
 W11-S4 席全族扩展 +2 键：串联间隙+开路端效应）。
 
@@ -82,7 +82,7 @@ docstring 逐字"理想的唯一偏差即弯角寄生贡献，|S11| 绝对门 -1
 4. 串联间隙（W11-S4；Garg-Bahl——qucsator msgap.cpp 可执行逐字转录，
    Qucs 技术手册 §Microstrip gap："两开路端+串联耦合电容"π 网络；等宽
    对称特化与第三方文献转写（Bahl《Microstrip Lines and Slotlines》
-   [39] 口径，2018 论文在案 内部证据目录）互证：
+   [39] 口径，2018 论文在案 内部证据档）互证：
    Q1/Q2/Q3 常数与 (Q2+Q3)/(Q2+1) 修正结构逐项一致，2026-10-19 双源
    核对）：
 
@@ -172,7 +172,7 @@ layout_ports.ports_from_open_ends（版图端口提取，非寄生）——全�
 非覆盖；FMCW 侧 ``fmcw_chirp_design|chirp_slope|fmcw_if_signal_chain|
 if_signal_chain`` 三面零命中（W7-S3 已收 range_doppler/
 bandwidth_resolution 两键，本席做域内设计/链面扩展，isac no-go 同源尊
-重）。todo.md 无四键处置注记；R3_domain_expansion A1/D5 为立项出处。
+重）。待办清单 无四键处置注记；R3_domain_expansion A1/D5 为立项出处。
 
 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh
 2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切
@@ -184,12 +184,12 @@ Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐
 引 Gupta [38]）；Garg-Bahl（串联间隙，经 qucsator msgap.cpp 可执行逐字
 转录——Qucs 手册 §Microstrip gap 归 [37]/[30]；等宽特化与 Bahl
 《Microstrip Lines and Slotlines》[39] 口径第三方文献转写互证，
-内部证据目录 在案）；Kirschning-Jansen-Koster 1981
+内部证据档 在案）；Kirschning-Jansen-Koster 1981
 Electron. Lett.（开路端等效延长，经 qucsator msopen.cpp calcCend
 "Kirschning" 段可执行逐字；Hammerstad-Bekkadal 0.412 档=仓内单源
 slotline_transitions.microstrip_open_end_delta_l_mm 复用；等效电容恒等式
 经 msopen C 段+第三方文献 CL=Cll·√εe/(Z0·c) 互证）——W11-S4 两件网源
-逐字在 内部证据目录。
+逐字在 内部证据档。
 """
 
 from __future__ import annotations

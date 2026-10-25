@@ -1,4 +1,4 @@
-"""ME-17b 接线批后半 + 批 B1 平台薄壳单测（，2026-09-28）。
+"""ME-17b 接线批后半 + 批 B1 平台薄壳单测（wf:batch-b1-wiring，2026-09-28）。
 
 覆盖面（方案 gap 盘点 §二批 B1 五件，2026-09-28）：
 - ME-17b 后半接线：repro-manifest/repro-verify（CLI）、chain lna/loadpull
@@ -222,7 +222,7 @@ class TestMcpB1Tools:
              "n_simulations": 30, "seed": 42})))
         assert result["ok"] is True
         assert result["best_cost_pred"] <= result["root_cost_pred"]
-        # 种子确定性（AGENTS #7：typed tool call 可复现）
+        # 种子确定性（内核立规注记 #7：typed tool call 可复现）
         again = _extract_result(asyncio.run(mcp.call_tool(
             "mcts_search",
             {"samples_path": str(tmp_path / "samples.json"),

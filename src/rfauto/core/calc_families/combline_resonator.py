@@ -1,4 +1,4 @@
-"""combline/同轴腔谐振器物理实现族（架构批 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
+"""combline/同轴腔谐振器物理实现族（aurora36 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
 
 出处（教科书经典闭式二级转引，详见下节公式口径）：
 - combline_resonance：Matthaei–Young–Jones, Microwave Filters,

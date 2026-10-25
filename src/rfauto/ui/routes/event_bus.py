@@ -1,4 +1,4 @@
-"""UI 统一实时事件流总线（架构批 UI-R3 席）——routes 层单源广播/订阅 helper。
+"""UI 统一实时事件流总线（aurora_d UI-R3 席）——routes 层单源广播/订阅 helper。
 
 背景：现役实时面三套语义并存——runs 的 SSE 桥（routes/runs.py
 api_run_events_stream，events.jsonl 偏移轮询）、tune 轮询（routes/tune.py

@@ -8,7 +8,7 @@ mline_benchmark_verdict + tests/golden/mline_benchmark_rescan_20260913.json）�
 无纯函数内核、无 per-anchor benchmark JSON。本内核把四锚判据收编为
 确定性纯函数，scripts/engine_benchmark_expand.py 以 --ingest 离线读
 runs/*_smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺档锚，
-逐锚落 runs/benchmark/<anchor>_engine_benchmark.json。
+逐锚落 内部证据档<anchor>_engine_benchmark.json。
 
 判据口径（每锚显式统计量名，#195 谷深/带内 max 语义不混；与 smoke
 脚本逐门对齐，五坑 #231 精神——改门=显式重标定决策，须附真机证据，
@@ -45,12 +45,12 @@ runs/*_smoke 归档（只读）、以 --msl-cpw 真机补跑 msl_cpw 唯一缺�
 
 诚实性（#122 不凑绿）：任何输入 None/NaN（无数据、收敛不可算）→
 对应门如实 FAIL 并写明「不可判」，绝不按门内放行。LLM/agent 永不
-产生物理数字（数值只在确定性内核纪律）：锚值与参考值全部来自确定性链路
+产生物理数字（内核立规注记 规则 7）：锚值与参考值全部来自确定性链路
 （openEMS CalcPort β / core/synthesis HJ 与 CPWG 闭式）。
 
 消费方：
 - scripts/engine_benchmark_expand.py（--ingest 离线归档入账 / --msl-cpw
-  真机补跑，逐锚落 runs/benchmark/<anchor>_engine_benchmark.json）
+  真机补跑，逐锚落 内部证据档<anchor>_engine_benchmark.json）
 - tests/unit/test_anchor_benchmark.py（合成数组钉每门 PASS/FAIL 边界
   与 None 诚实性）
 - tests/unit/test_engine_benchmark_expand_golden.py（2026-09-15 证据
@@ -65,10 +65,10 @@ from rfauto.core.anchor_verdict import S11_HEALTH_DB
 
 # 判据版本（判据/门常量集的时点戳；改任一门=显式重标定，须递增并附真机证据）
 # 20260915b：msl_cpw 传输门增补无源上界 CPW_S21_MAX_LIN（F1② 审查；证据=
-# runs/benchmark/msl_cpw_m0.4 归档 sparams.csv 离线复算 带内 max 1.290 与
-# runs/benchmark/msl_cpw_renorm/ 零仿真重归一查证）
+# 内部证据档 归档 sparams.csv 离线复算 带内 max 1.290 与
+# 内部证据档 零仿真重归一查证）
 # 20260918a：via 传输门同构增补无源上界 VIA_S21_MAX_LIN（round2 R2-A-01
-# 审查；证据=runs/via_smoke/pt3 归档 sparams.csv 离线复算 带内 max 0.9503
+# 审查；证据=内部证据档 归档 sparams.csv 离线复算 带内 max 0.9503
 # @2.25GHz、401 点全部 ≤1.02——收紧为预防性，判定零翻转）
 GATE_VERSION = "20260918a"
 
@@ -96,8 +96,7 @@ VIA_RECIP_MAX_DB = 0.5           # 互易 |mean S11-mean S22| ≤0.5dB
 # CPW_S21_MAX_LIN 同构——无源二端口逐频 |S21|≤1 是能量守恒硬约束，纯下侧
 # mean 门对 >1 的端口提取伪象（伪波分解/时域截断/参考阻抗口径）会非物理
 # 放行；理想无源地板 1.0 + 0.02 裕量仅覆盖单位附近数值噪声，已实证伪象
-# ~3%（cba2687）刻意不吸收，超门=先审计提取口径再谈校准（先审计后校准
-# 纪律）。
+# ~3%（cba2687）刻意不吸收，超门=先审计提取口径再谈校准（内核立规注记 1b）。
 # 独立常量不引用 CPW_*：门重标定按锚显式、互不牵连（#231）。
 VIA_S21_MAX_LIN = 1.0 + 0.02
 # via |S11| 门 = S11_HEALTH_DB（-10dB 绝对门）
@@ -108,7 +107,7 @@ CPW_IDEAL_S21_LIN = 1.0          # 理想级联地板（同阻异模对接，仅
 # 无源上界（上侧，带内 max 语义）：无源二端口逐频 |S21|≤1 是能量守恒硬约束，
 # 超出只能是端口提取伪象（伪波分解 / 时域截断 / 参考阻抗口径），不是器件
 # 性能。裕量 0.02 仅覆盖单位附近数值噪声；已实证伪象 ~3%（cba2687）刻意
-# 不吸收，超门=先审计提取口径再谈校准（先审计后校准纪律）。
+# 不吸收，超门=先审计提取口径再谈校准（内核立规注记 1b）。
 CPW_S21_MAX_LIN = CPW_IDEAL_S21_LIN + 0.02
 # msl_cpw |S11| 门 = S11_HEALTH_DB（-10dB 保守文献地板，#195 worst-case）
 
@@ -404,7 +403,7 @@ def msl_cpw_benchmark_verdict(
     无源上界依据：无源二端口逐频 |S21|≤1 是能量守恒硬约束；带内 max >1
     只能是端口提取伪象（伪波分解 (U+Z_ref·I)/2 对非 50Ω 模式的混叠、
     NrTS 定步截断、参考阻抗口径）而非器件性能，须先审计提取口径再谈
-    校准（先审计后校准纪律）。首轮真跑 mean 1.0296 / max 1.290 曾在纯下侧门下
+    校准（内核立规注记 1b）。首轮真跑 mean 1.0296 / max 1.290 曾在纯下侧门下
     PASS——本门即为堵住该非物理放行而立。
 
     s21_lin_band_max 为 keyword-only 可选：旧调用（四位置参数）不抛

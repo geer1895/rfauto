@@ -1,6 +1,6 @@
 """rest_api.common —— 信封/错误映射与壳层参数校验助手。
 
-自 rest_api.py 巨石按职责域拆分（架构批 W3-S2，AU-1 工艺）：代码体自
+自 rest_api.py 巨石按职责域拆分（aurora_h W3-S2，AU-1 工艺）：代码体自
 原「常量」「BadRequestError」「信封与错误映射」与壳层校验助手
 （_require_name/_opt_*/_require_numbers）逐字节搬迁。
 """
@@ -37,7 +37,7 @@ class BadRequestError(Exception):
 # ---------------------------------------------------------------------------
 
 def _ok(data: Any) -> JSONResponse:
-    """成功信封出口（构造器单源收编，架构批 REST-B；线形逐字节不变）。"""
+    """成功信封出口（构造器单源收编，aurora_d REST-B；线形逐字节不变）。"""
     return JSONResponse(ok_envelope(data=data))
 
 

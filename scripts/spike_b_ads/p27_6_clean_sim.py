@@ -9,11 +9,11 @@ env["HPEESOF_DIR"] = ADS
 env["PATH"] = ";".join([rf"{ADS}\bin", rf"{ADS}\adsptolemy\lib.win32_64",
                         rf"{ADS}\tools\python", env.get("PATH", "")])
 
-workdir = r"D:\rf_workspace\scripts\spike_b_ads\sim_out_2027"
+workdir = r"D:/rf_workspace\scripts\spike_b_ads\sim_out_2027"
 os.makedirs(workdir, exist_ok=True)
 
 # 剥离示例特有的 python 模块加载与二级 ParamSweep（保留 SP1 主仿真）
-src = open(r"D:\rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt", errors="ignore").read()
+src = open(r"D:/rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt", errors="ignore").read()
 lines = src.splitlines()
 kept, skip_blocks = [], 0
 for line in lines:
@@ -35,7 +35,7 @@ with open(os.path.join(workdir, "sim_out.txt"), "w") as fo, open(os.path.join(wo
 print("EXIT:", p.returncode)
 
 out = open(os.path.join(workdir, "sim_out.txt"), errors="ignore").read()
-rep = open(r"D:\rf_workspace\scripts\spike_b_ads\p27_sim_report.txt", "w", encoding="utf-8")
+rep = open(r"D:/rf_workspace\scripts\spike_b_ads\p27_sim_report.txt", "w", encoding="utf-8")
 rep.write(out[-1200:])
 rep.write("\n\nFILES:\n")
 for f2 in glob.glob(workdir + "/**/*", recursive=True):

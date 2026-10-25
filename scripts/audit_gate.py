@@ -1,6 +1,6 @@
 """依赖漏洞常态化门（QM-4 周期化，2026-10-05 W1-E）——audit_deps 的门包装。
 
-职责（runs/w1_phase1/criteria.md §W1-E）：
+职责（内部证据档 §W1-E）：
 - 周期触发入口：本地计划任务/CI 定时跑本脚本；产物（门日志 + audit_deps
   门报告 JSON）按时间戳落 ``runs/audit_gate/``（#242 惯例：门命令一律先
   落日志文件再判读——stdout 直消费有 256KB cap 且管道吃退出码）；
@@ -12,7 +12,7 @@
 - 日志落盘失败 → rc=4（门不可留痕=不判绿，诚实降级，#242 同源）。
 
 周期化方式（本脚本只做门，不替操作者注册计划任务——schtasks 隐藏形态
-按 AGENTS 规则 0b-2 避免静默形态，注册属运维动作）：
+按 内核立规注记 规则 0b-2 避免静默形态，注册属运维动作）：
 - CI：cron/GitHub schedule 步骤跑
   ``.venv/Scripts/python.exe scripts/audit_gate.py``，rc!=0 即门红；
 - 本地：任务计划程序 console 可见形态直指本脚本（避免 0b-2 隐藏形态）。

@@ -15,8 +15,8 @@
 3. **容差传播**：线性档 half_width=|S|·nominal·(tol/Dk)（一阶）；
    Monte Carlo 档（均匀 Dk±tol，numpy default_rng 固定种子）给端点/
    分位/std——两档一致性是单测门（≤2%），MC 是交叉验证不是替代。
-4. **78GHz Design Dk 锚案例**（C10d 语境钉死，runs/ge6_anchor/criteria.md
-   §0 + runs/df7_c10d/smoke_nominal 渲染字面量）：RO3003 process Dk
+4. **78GHz Design Dk 锚案例**（C10d 语境钉死，内部证据档
+   §0 + 内部证据档 渲染字面量）：RO3003 process Dk
    3.00±0.04 的容差带对 78 GHz 谐振的传播量级 ~±0.45 GHz，而 C10d 实测
    谷位缺口 1.80 GHz（−2.31%）≈ 容差带的 4 倍——**制造容差解释不了，
    方法域 Dk 差（process vs circuit 差 ~5%，本库 material_library 冲突
@@ -33,7 +33,7 @@
    解——解析恒等只对冻结 ΔL 档成立，两档差异如实双报。
 3. MC 均匀采样假设 process 容差带均匀分布（datasheet 未给分布形状）；
    正态假设下 std 面走 linear_std·√3 换算，不另行编分布参数。
-4. 78GHz 案例的 f_dip=76.20 GHz 是 OE 单引擎单点真跑（runs/df7_c10d），
+4. 78GHz 案例的 f_dip=76.20 GHz 是 OE 单引擎单点真跑（内部证据档），
    锚 er_design=3.1434 是 pointer/experimental（constant 待 HFSS 仲裁腿）
    ——本模块量化的是缺口量级归因，不产新材料常数。
 5. 温度档只覆盖线性 TCDk 系数（material_library.dk_at_temperature），
@@ -79,9 +79,9 @@ __all__ = [
 #: 光速（mm·GHz）——与 core/synthesis.py、core/symbolic_fit.py 同口径
 _C_MM_GHZ = 299.792458
 
-#: C10d 串馈毫米波阵名义（runs/ge6_anchor/criteria.md §1「旧名义 G_old」，
+#: C10d 串馈毫米波阵名义（内部证据档 §1「旧名义 G_old」，
 #: 源=render_mmwave.MMWAVE_SERIES_NOMINAL @er=3.0 导入期闭式合成；f_dip=
-#: runs/df7_c10d/smoke_nominal sparams.csv |S11| 谷位 76.20 GHz）
+#: 内部证据档 sparams.csv |S11| 谷位 76.20 GHz）
 C10D_CASE: dict[str, Any] = {
     "f0_ghz": 78.0,
     "l_mm": 0.9271,
@@ -385,7 +385,7 @@ def case_78ghz_design_dk(
 
     链路：旧名义 er=3.0 设计链自检（R4）→ 实测缺口（−2.31%）→ 容差带
     传播量级（线性+MC）→ 缺口/容差带比值 → 方法域 Dk 差与锚值互证。
-    判定语义沿用 runs/ge6_anchor/criteria.md §2 门宽（1%/0.1%），如实
+    判定语义沿用 内部证据档 §2 门宽（1%/0.1%），如实
     输出布尔量与比值，不凑绿。
 
     Returns:

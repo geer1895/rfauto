@@ -1,4 +1,4 @@
-"""VNA 测量不确定度族（架构批 A4-A 席域 1，R7 第二梯队 T7=G19）。
+"""VNA 测量不确定度族（aurora72 A4-A 席域 1，R7 第二梯队 T7=G19）。
 
 出处（VNA 残差不确定度经典口径，正文物理口径节转录）：
 - vna_reflection_uncertainty / vna_transmission_uncertainty：校准后

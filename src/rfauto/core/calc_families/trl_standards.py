@@ -1,4 +1,4 @@
-"""TRL 校准件设计面（架构批 W6-A 席，R2 空白域 G7——标准件设计端补口）。
+"""TRL 校准件设计面（aurora36 W6-A 席，R2 空白域 G7——标准件设计端补口）。
 
 出处（TRL 校准经典文献，正文物理口径节转录）：
 - trl_standards_design / trl_line_electric_scan：TRL 标准件设计与
@@ -32,7 +32,7 @@ core/trl_solt.py = 标准件**原始测量数据 → 误差箱提取 + 校准应
   the Dual Six-Port Automatic Network Analyzer", IEEE Trans. MTT
   27(12):987-998, 1979 原理；NIST Technical Note 1341 校准件设计
   规则面。同源引注背书的六端口反演架构面=calc_families/six_port.py
-  （架构批 W3-S10 D7 落地；本族=TRL/SOLT 标准件设计端、六端口
+  （aurora_f W3-S10 D7 落地；本族=TRL/SOLT 标准件设计端、六端口
   Γ 反演在其层，边界互指））。
 - 经典窗判据（教科书规则面，两判据独立回显）：
   ① 线标准电长度窗 θ∈[20°,160°]：θ 过小（近 0°，line 与 thru 不可分）

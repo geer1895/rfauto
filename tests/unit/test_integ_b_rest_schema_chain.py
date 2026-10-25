@@ -1,4 +1,4 @@
-"""INTEG-B 席跨模块集成测试：REST schema 链全链一致（架构批 INTEG-B，2026-10-14）.
+"""INTEG-B 席跨模块集成测试：REST schema 链全链一致（aurora_d INTEG-B，2026-10-14）.
 
 链条（单源 _ROUTE_TABLE 程序化枚举 → 四个消费面身份不变形，零网络）：
 

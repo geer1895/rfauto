@@ -1,6 +1,6 @@
 """datafactory 二期 B 批·cpw 2D 双口径复判驱动（G2 前置，新薄驱动不改源）。
 
-判据预声明见 runs/datafactory_g2_cpw_20260922/criteria.md §2（先写后算）：
+判据预声明见 内部证据档 §2（先写后算）：
 - G4 主口径（三项全 PASS 才 PASS）：S21 held-out max|ΔS21| ≤0.5dB +
   εeff ≤1% + 线性域 |ΔΓ| max ≤0.04（#371 消费口径）；
 - G4-并列：S11-dB 只列账不进 overall 判定（#371 深谷族 dB 门为误定口径；

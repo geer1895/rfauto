@@ -1,5 +1,5 @@
 """DP-1 P3 G1——MMT vs HFSS 对拍判读 v3（离线零求解；判据
-runs/df6_dp1p3/criteria.md §1 + §4 v2 修订，先写后跑 #122）。
+内部证据档 §1 + §4 v2 修订，先写后跑 #122）。
 
 v3（df7_dp1fix 缺陷①修复）：mmt_modal_s 改用归档完整 2×2（含 s22/s12）
 反归一模态基——v2 对称假定 [[s11,s21],[s21,s11]] 在 s22≠s11（旧 core 端口
@@ -15,9 +15,9 @@ v2 判定口径（§4 修订 1，首轮 run1_voided 证据后）：
   标量收敛）——50Ω renormalize 的 S 带基失真，模态基绕开该误差源。
 
 输入（禁手抄数字——全部直读产物）：
-- runs/df6_dp1p3/mmt/{straight,iris_t0,iris_t1}/mmt_meta.json；
-- runs/df6_dp1p3/hfss_run.json（v2：阶梯 + harvest 扫频面 Gamma/Zo）；
-- runs/df6_dp1p3/hfss/{p3_straight,p3_iris_t0,p3_iris_t1}.s2p（模态基）。
+- 内部证据档{straight,iris_t0,iris_t1}/mmt_meta.json；
+- 内部证据档（v2：阶梯 + harvest 扫频面 Gamma/Zo）；
+- 内部证据档{p3_straight,p3_iris_t0,p3_iris_t1}.s2p（模态基）。
 
 门（criteria §1 + §4 v2）：
 - G1-conv：每设计末级 delta_s≤0.005 且未触 max_passes（#335）；
@@ -32,7 +32,7 @@ verdict（#350 判向双记）：AGREE / AGREE_HFSS / AGREE_MMT / DISAGREE
 / UNKNOWN；恒携带 hfss_self 与 mmt_self 两节自洽锚结果。判向：超差时
 S11 偏差符号一致性 ≥0.8（|d|<0.05dB 平局不计入）为方向系统性。
 
-产物：runs/df6_dp1p3/g1_verdict.json + sparam_diff_table.csv。
+产物：内部证据档 + sparam_diff_table.csv。
 自检：--selftest 合成回收（闭式 50Ω 线式反归一回 TE10 基恒等恢复
 S=[[0,T],[T,0]]、roundtrip ≤1e-12；注入偏差验证门旗与判向）。
 """
@@ -97,7 +97,7 @@ def renorm_s(s: np.ndarray, z_from: list[float],
 def mmt_modal_s(mmt: dict) -> tuple[np.ndarray, np.ndarray]:
     """MMT 50Ω S（meta）反归一回 TE10 模基（Z_TE=ωμ0/β 解析逐频）。
 
-    v3（df7_dp1fix 缺陷①修复， 四四六登记）：以归档完整 2×2
+    v3（df7_dp1fix 缺陷①修复，开发注记 四四六登记）：以归档完整 2×2
     [[s11,s12],[s21,s22]] 重建后反归一——v2 曾以 [[s11,s21],[s21,s11]] 对称
     假定重建，而归档 meta s22≠s11（旧 core 端口交换缺陷在档证据），模态腿
     被污染（judge −13.146 vs 真模态 −12.957 dB @8GHz 实例）。straight 例

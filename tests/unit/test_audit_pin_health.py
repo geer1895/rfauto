@@ -136,7 +136,7 @@ def test_main_rc2_on_unreadable(tmp_path):
 
 
 def test_main_real_tree_baseline():
-    out = Path("runs/架构批/_a7d_pin_health_test.json")
+    out = Path("runs/aurora72/_a7d_pin_health_test.json")
     out.parent.mkdir(parents=True, exist_ok=True)  # 干净 checkout 容错
     try:
         rc = ph.main(["--json", str(out)])

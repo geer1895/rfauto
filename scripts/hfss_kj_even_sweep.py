@@ -2,7 +2,7 @@
 
 判据预声明：runs/df7_kjeven/p2_criteria_v2.md（**v2 测量面架构**，先写后
 跑；判读冲突如实记 FAIL/UNKNOWN 不事后改门 #122/#286）。v1 判据
-p2_criteria.md 零改写留档；v1 战役 7 点全 UNKNOWN 归因=：
+p2_criteria.md 零改写留档；v1 战役 7 点全 UNKNOWN 归因=开发注记（四五三）：
 CharImp 三定义重建 Z0 互差在准 TEM 宽端口 0.09~14%（物理路径分歧，≤1% 门
 不可达）+ gate0 0.5% 绝对步进门边缘假警报。P1 输入：runs/df7_kjeven/
 p1_audit.md（H2 成立：半模型小波端口横向截断偶模场尾）。

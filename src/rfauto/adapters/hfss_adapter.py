@@ -14,7 +14,15 @@ from pathlib import Path
 from typing import Any
 
 from rfauto.adapters.hfss_builder_utils import validate_object_name
-from rfauto.adapters.hfss_session import HfssSession, remote_session_switches
+from rfauto.adapters.hfss_session import (
+    HfssSession,
+    ascii_workdir_path,
+    deliver_ascii_workdir,
+    has_non_ascii,
+    prepare_ascii_workdir,
+    remote_session_switches,
+    validate_setup_config,
+)
 from rfauto.core.coupled_mode_z import DualConductorModeImpedances
 from rfauto.core.coupled_mode_z import (
     dual_conductor_mode_impedances as _dual_conductor_mode_impedances,
@@ -40,6 +48,22 @@ _PROFILE_ERROR_MSG_RE = re.compile(r"\*{3}(.+?)(?:\\'|'|\)|$)")
 
 # profile 状态中被判为"未完成"的关键字（大小写不敏感）
 _PROFILE_FAILURE_KEYWORDS = ("error", "abort", "terminat")
+
+
+def _project_file_state(path: Path | None) -> tuple[str, int, int] | None:
+    """P1 工程文件状态快照 (形态, 字节数, mtime_ns)；缺失/不可及=None。
+
+    形态：``"ok"``（存在且非空）/ ``"empty"``（存在但 0 字节=截断疑点）。
+    best-effort：stat 任何异常一律 None（观测面不阻塞主路径，#105）。
+    """
+    if path is None:
+        return None
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return ("ok" if st.st_size > 0 else "empty", int(st.st_size),
+            int(st.st_mtime_ns))
 
 
 def parse_profile_text(text: str) -> tuple[str | None, list[str]]:
@@ -240,6 +264,10 @@ class HfssAdapter(SimulatorAdapter):
         self.session = HfssSession.instance()
         self._project_path: Path | None = None
         self._design_name: str | None = None
+        # P5 ascii_workdir 交付账（2026-10 用户实战反馈）：open_or_create_
+        # project 启用 CJK→ASCII 重定向时记 (工作副本, 原目标)；close()
+        # 交付拷回后清空。None=未启用（缺省路径零行为变化）。
+        self._ascii_delivery: tuple[Path, Path] | None = None
 
     # ─── 核心八方法实现 ──────────────────────────────────────────────────────
 
@@ -254,11 +282,49 @@ class HfssAdapter(SimulatorAdapter):
         self.session.connect(settings)
 
     def open_or_create_project(self, path: str | Path, design_name: str) -> None:
-        """打开或创建 HFSS 项目。"""
+        """打开或创建 HFSS 项目。
+
+        P5 CJK 路径守卫（2026-10 用户实战反馈）：非 ASCII 工程路径能建
+        能解，但 ``analyze()`` 内部 ``save_project`` 报 macro error（纯
+        路径问题）——缺省 fail-closed 给出指引；connect settings 带
+        ``ascii_workdir: True`` 时自动重定向到 ``%TEMP%`` 下 ASCII 工作
+        目录（原工程先播副本，close() 交付拷回原目标）。远程会话路径是
+        服务器侧语义，本地 %TEMP% 重定向不成立——非 ASCII 一律显式拒绝。
+        """
         from pathlib import Path as StdPath
 
         Hfss = _ensure_hfss()
         path = StdPath(path)
+        # P5 守卫（先于任何状态写入/目录创建——契约错误不留半成品）
+        if has_non_ascii(path):
+            if self.session.remote_info:
+                raise ValueError(
+                    f"HFSS 工程路径含非 ASCII 字符: {path}——远程会话路径按"
+                    "服务器侧文件系统解释，本地 %TEMP% 重定向语义不成立。"
+                    "请在服务器侧改用 ASCII 工程路径（AEDT 在 CJK 路径下 "
+                    "analyze() 内部 save_project 会报 macro error，2026-10"
+                    " 用户实测）。")
+            if not self.session._settings.get("ascii_workdir", False):
+                raise ValueError(
+                    f"HFSS 工程路径含非 ASCII 字符: {path}——AEDT 在 CJK "
+                    "路径下能建能解，但 analyze() 内部 save_project 会报 "
+                    "macro error（纯路径问题，2026-10 用户实测）。请改用 "
+                    "ASCII 工作目录，或在 connect settings 传 "
+                    "ascii_workdir=True 启用临时 ASCII 工作目录重定向"
+                    "（求解交付时自动把 .aedt+.aedtresults 拷回原目标）。")
+            work = ascii_workdir_path(path)
+            # %TEMP% 本身含非 ASCII（用户名等）时重定向语义失效，显式拒绝
+            if has_non_ascii(work):
+                raise ValueError(
+                    f"ascii_workdir 重定向目标仍含非 ASCII 字符: {work}"
+                    "（%TEMP% 路径本身非 ASCII）——请设 TEMP 环境变量指向 "
+                    "ASCII 目录后重试。")
+            work = prepare_ascii_workdir(path, work)
+            self._ascii_delivery = (work, path)
+            logger.warning(
+                "ascii_workdir 启用: 工程重定向到 ASCII 工作目录 %s"
+                "（close 时把 .aedt+.aedtresults 拷回原目标 %s）", work, path)
+            path = work
         self._project_path = path
         self._design_name = design_name
 
@@ -277,7 +343,7 @@ class HfssAdapter(SimulatorAdapter):
             # remote_rpc_session/PYAEDT_USE_PRE_GRPC_ARGS）——connect() 的 CM
             # 在 Desktop attach 完成时已恢复缺省，本方法是**第二个构造窗口**，
             # 两窗口独立进出互不干扰。CM 内先临时置 remote_rpc_session=None
-            # （ 五百四十二坑 1：该开关双语义——Hfss 设计初始化按 rpyc
+            # （内部证据档 坑 1：该开关双语义——Hfss 设计初始化按 rpyc
             # 消费 settings.remote_rpc_session.filemanager，Desktop attach 完成
             # 后必须置 None 再构造 Hfss；CM 退出统一恢复原值）。
             from ansys.aedt.core.generic.settings import settings as aedt_settings
@@ -345,8 +411,13 @@ class HfssAdapter(SimulatorAdapter):
     def configure_setup(self, setup_cfg: dict) -> str:
         """按配方 setup 段创建 Setup + Sweep，返回 setup 名。
 
-        setup_cfg 支持键：name/sweep_name/freq_range_ghz/points/
-        convergence_delta/max_passes。
+        setup_cfg 支持键（P2 白名单，单源
+        :func:`hfss_session.validate_setup_config`）：name/sweep_name/
+        freq_range_ghz/points/convergence_delta/max_passes/
+        minimum_passes（含 AEDT 原生大小写别名 MaxDeltaS/MaximumPasses/
+        MinimumPasses）+ 模板层消费的 solver/radiation_box。白名单外键
+        显式 ValueError（P2 用户实战反馈：pyaedt 1.4 透传未知 kwarg 即
+        GrpcApiError: EditSetup 求解直接失败，静默丢键亦是契约错误）。
         """
         hfss = self.session.hfss
         if hfss is None:
@@ -357,11 +428,20 @@ class HfssAdapter(SimulatorAdapter):
         fstart, fstop = float(freq_range[0]), float(freq_range[1])
         points = int(setup_cfg.get("points", 101))
 
+        # P2 白名单校验 + 收敛面 props 解析（MinimumPasses 等 AEDT 原生
+        # 字段经此进 props——pyaedt 1.4 create_setup kwarg 透传即
+        # GrpcApiError: EditSetup；props+update 是原生支持路径，参考工程
+        # .aedt 内 "MinimumPasses: 1"）。配置错误在此显式抛出（fail-loud）。
+        props_map = validate_setup_config(setup_cfg)
+
         new_setup = hfss.create_setup(name=setup_name)
         # 自适应求解频率取频段中点
         new_setup.props["Frequency"] = f"{(fstart + fstop) / 2}GHz"
-        new_setup.props["MaxDeltaS"] = float(setup_cfg.get("convergence_delta", 0.02))
-        new_setup.props["MaximumPasses"] = int(setup_cfg.get("max_passes", 12))
+        # 收敛面三字段统一走原生属性字典（MaxDeltaS/MaximumPasses 历史缺
+        # 省在 validate_setup_config 内保真回填，既有调用行为不变；
+        # MinimumPasses 仅在配方显式给出时写入）
+        for _props_key, _props_val in props_map.items():
+            new_setup.props[_props_key] = _props_val
         new_setup.update()
 
         sweep_name = setup_cfg.get("sweep_name", "Sweep1")
@@ -422,7 +502,7 @@ class HfssAdapter(SimulatorAdapter):
            返回 Profiles 映射，SimulationProfile.status 即求解状态）；
         2. 磁盘 .profile 兜底（``<project>.aedtresults/<design>.results/``
            下 mtime 最新的 *.profile）——``***`` 引擎诊断行只有这里全量
-           可见（ #191：求解失败先读 profile）。
+           可见（内部证据档 #191：求解失败先读 profile）。
         """
         # 来源 1：活态 API（状态）
         status: str | None = None
@@ -684,6 +764,11 @@ class HfssAdapter(SimulatorAdapter):
 
         logger.info("求解完成: %s, passes=%d, delta_s=%.4f, 耗时=%.1fs",
                     setup_name, passes, delta_s, elapsed)
+        # P1 用户实战反馈：可靠窗口=求解完成后立即同会话导出（跨会话/重开
+        # 工程后导出失败率骤升且重试无效）——求解成功点就地提醒（log-only）。
+        logger.info(
+            "建议立即同会话导出 Touchstone（export_touchstone 可靠窗口；"
+            "跨会话导出易遇 GrpcApiError 且重试无效，2026-10 用户实测）")
         return SolveReport(
             success=True,
             passes=passes,
@@ -751,7 +836,7 @@ class HfssAdapter(SimulatorAdapter):
         IndexError）。单端口边界模数=BoundaryObject.props["Modes"]（缺省 1，
         集总端口无该键按 1 模）；boundaries 查询失败退回端口边界数口径，
         ports 查询整体失败返回 None 交给文件推断（R4-1 审查批 2026-10-04，
-        runs/review_ge8e/r4_adapters/REPORT.md）。
+        内部证据档）。
         """
         try:
             names = list(hfss.ports)
@@ -815,6 +900,15 @@ class HfssAdapter(SimulatorAdapter):
         n_ports = self._design_port_count(hfss)
         path = touchstone_path_for_ports(path, n_ports)
 
+        # P1 工程保留审计（2026-10 用户实战反馈：导出失败后工程曾被覆盖丢
+        # 数据）：导出前快照工程文件状态；失败路径核对（存在性/字节数/
+        # mtime 是否变化）并把工程绝对路径+设计名+建议动作写进结构化错误
+        # （details）。审计结论：本仓导出失败路径无 save/覆盖/删除点（回退
+        # 链只读），工程重存来自 AEDT/pyaedt 会话内部（analyze 等）——
+        # 快照对比如实区分两种情形。
+        project_file = self._project_path
+        pre_state = _project_file_state(project_file)
+
         # pyaedt 1.4.0 的 export_touchstone 在导出前调用
         # available_variations.nominal_variation()，unite 后触发 GetObjType 崩溃，
         # 故直接调用底层 osolution.ExportNetworkData 绕过（空 DesignVariations = nominal 变体）
@@ -822,6 +916,7 @@ class HfssAdapter(SimulatorAdapter):
             self._direct_export_touchstone(hfss, setup_name, sweep_name, path)
         except Exception as exc:
             # 回退：pyaedt 包装方法（可能因 numeric_value 崩溃），或自动导出文件
+            # （单轮回退链，不做自动重试——同会话自动重试用户实测无效）
             if not path.exists():
                 try:
                     hfss.export_touchstone(setup=setup_name, sweep=sweep_name, output_file=str(path))
@@ -833,10 +928,16 @@ class HfssAdapter(SimulatorAdapter):
                     logger.warning("使用自动导出的 Touchstone 文件: %s", found)
                     return found
             if not path.exists():
-                raise ModelBuildError(f"Touchstone 导出失败: {exc}") from exc
+                raise self._export_failure_error(
+                    f"Touchstone 导出失败: {exc}",
+                    setup_name=setup_name, target=path, pre_state=pre_state,
+                ) from exc
 
         if not path.exists():
-            raise ModelBuildError(f"Touchstone 导出失败: 文件未生成 {path}")
+            raise self._export_failure_error(
+                f"Touchstone 导出失败: 文件未生成 {path}",
+                setup_name=setup_name, target=path, pre_state=pre_state,
+            )
 
         # 设计端口数查询失败时，由导出文件的数据行结构反推端口数并纠正扩展名
         # （Touchstone 内容不依赖扩展名，重命名即可，无需重导出）
@@ -861,6 +962,53 @@ class HfssAdapter(SimulatorAdapter):
             read_touchstone(output_file, tc)
 
         return StdPath(output_file)
+
+    def _export_failure_error(
+        self,
+        reason: str,
+        *,
+        setup_name: str,
+        target: Path,
+        pre_state: tuple[str, int, int] | None,
+    ) -> ModelBuildError:
+        """P1 结构化导出失败（工程绝对路径+设计名+工程文件对比+建议动作）。
+
+        不做自动重试（用户实测同会话自动重试无效）；本仓导出失败路径无
+        save/覆盖/删除点，工程文件状态对比用于如实区分"未被本次导出触碰"
+        与"会话内部重存/丢失"（后者=用户丢数据场景的可观测信号）。
+        """
+        project_file = self._project_path
+        post_state = _project_file_state(project_file)
+        if pre_state is not None and post_state is None:
+            file_note = (
+                "警告：导出尝试后工程文件已不存在（数据丢失风险——检查 "
+                "AEDT 会话是否把它另存到他处）")
+        elif pre_state is not None and post_state is not None \
+                and pre_state[1:] != post_state[1:]:
+            # 字节数或 mtime 任一变化即判重存（Windows mtime 刻度粒度可
+            # 粗于导出耗时，单比 mtime 会漏判同刻度内的重存）
+            file_note = (
+                "注意：导出尝试期间工程文件被会话重存（AEDT/pyaedt 会话"
+                "内部行为，非本仓导出路径）——磁盘工程已非求解前状态")
+        elif post_state is not None and post_state[1] == 0:
+            file_note = "警告：工程文件为 0 字节（截断疑点，数据丢失风险）"
+        else:
+            file_note = "工程文件未被本次导出尝试改动（本仓导出失败路径无 save/覆盖/删除点）"
+        message = (
+            f"{reason}。工程: {project_file}；设计: {self._design_name}；"
+            f"setup: {setup_name}；目标: {target}。{file_note}。建议: "
+            "①同会话立即重试 export_touchstone（约半数失败为瞬时 gRPC "
+            "抖动，跨会话/重开工程后重试无效）；②仍失败则重跑 build+solve"
+            "，求解完成后立即同会话导出（可靠窗口=求解完成即导出）。")
+        details: dict[str, Any] = {
+            "project": str(project_file) if project_file else None,
+            "design": self._design_name,
+            "setup": setup_name,
+            "target": str(target),
+            "project_file_pre": pre_state,
+            "project_file_post": post_state,
+        }
+        return ModelBuildError(message, details=details)
 
     @staticmethod
     def _direct_export_touchstone(
@@ -930,6 +1078,14 @@ class HfssAdapter(SimulatorAdapter):
         ----------
         save : bool
             是否保存项目。
+
+        Raises
+        ------
+        ModelBuildError
+            P5 ascii_workdir 交付拷回失败时（如实报不静默；工作副本保留
+            供人工兜底，路径在错误消息与 details 内）。注意：close() 若在
+            finally 链中调用，本异常会取代链上原异常——交付失败=数据未
+            落目标，比被掩盖的原异常更需要显形。
         """
         try:
             if save and self._project_path and self.session.hfss:
@@ -940,6 +1096,22 @@ class HfssAdapter(SimulatorAdapter):
             self.session.close(save=save)
             self._project_path = None
             self._design_name = None
+        # P5 交付拷回（ascii_workdir 会话）：save/release 完成后把工作
+        # 副本的 .aedt + .aedtresults 逐文件拷回原目标；任何失败如实抛出，
+        # 工作副本永不删除（人工兜底面）。
+        delivery, self._ascii_delivery = self._ascii_delivery, None
+        if delivery is not None:
+            work, original = delivery
+            copy_errors = deliver_ascii_workdir(work, original)
+            if copy_errors:
+                raise ModelBuildError(
+                    f"ascii_workdir 交付拷回失败（{len(copy_errors)} 项；"
+                    f"工作副本保留在 {work.parent} 供人工兜底）: "
+                    + "；".join(copy_errors),
+                    details={"work": str(work), "original": str(original),
+                             "errors": copy_errors},
+                )
+            logger.info("ascii_workdir 交付完成: %s", original)
 
     # ─── 可选方法层 ──────────────────────────────────────────────────────────
 
@@ -1103,8 +1275,7 @@ class HfssAdapter(SimulatorAdapter):
         与未来消费者走单源。
 
         背景（F7 受阻登记收口）：ge8e 审查批 F7 建 core/coupled_mode_z
-        单源时本适配器并发在制无法接线（审查 R4-4：换算链只活在 runs
-        handoff 文档与战役脚本、无可复用实现）；本批（ge8e W1 A2）补挂。
+        单源时本适配器并发在制无法接线（审查 R4-4：换算链只活在开发接续说明与战役脚本、无可复用实现）；本批（ge8e W1 A2）补挂。
 
         Args:
             zo_by_mode: 模键 → 模阻抗读数（Ω；单端口标量或多端口序列，

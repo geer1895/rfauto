@@ -3,9 +3,9 @@
 
 只读工作区真实数据：
 
-* .md（三十一）五轨批次记录（run dwfrun-40bb6d54：5h46m / ~6240 万
+* 开发注记.md（三十一）五轨批次记录（run dwfrun-40bb6d54：5h46m / ~6240 万
   token / 62 节点 / 8 子代理）——LLM token 记账来源；
-* runs/benchmark/mline_mesh_convergence.json、runs/ratrace_arbitration/
+* 内部证据档、内部证据档
   openems_convergence.json 及 runs/**/simulation.py——openEMS 求解机时
   （solve_s）与网格/域特征来源；
 * runs/**/*.log 中形如 solve_s=NNN 的冒烟记录——次级（受并发污染的）样本。
@@ -38,7 +38,7 @@ from rfauto.pipeline.quota_guard import (  # noqa: E402
     OffsetPowerDurationPredictor,
 )
 
-_PATH = _ROOT / ".md"
+_PATH = _ROOT / "开发注记.md"
 RUNS_DIR = _ROOT / "runs"
 OUT_PATH = RUNS_DIR / "cost" / "cost_report.json"
 
@@ -53,7 +53,7 @@ _RATRACE_CONVERGENCE = "ratrace_arbitration/openems_convergence.json"
 # 数据读取
 # ---------------------------------------------------------------------------
 def parse_devlog_batch(devlog_path: Path) -> dict[str, Any]:
-    """从 小节提取五轨批次规模记录（真实文本，缺一即报错）。"""
+    """从 开发注记（三十一）小节提取五轨批次规模记录（真实文本，缺一即报错）。"""
     text = devlog_path.read_text(encoding="utf-8")
     lines = text.splitlines()
     start = None
@@ -62,7 +62,7 @@ def parse_devlog_batch(devlog_path: Path) -> dict[str, Any]:
             start = index
             break
     if start is None:
-        raise SystemExit(f" 未找到（三十一）小节: {devlog_path}")
+        raise SystemExit(f"开发注记 未找到（三十一）小节: {devlog_path}")
     end = len(lines)
     for index in range(start + 1, len(lines)):
         if lines[index].startswith("## "):
@@ -76,7 +76,7 @@ def parse_devlog_batch(devlog_path: Path) -> dict[str, Any]:
     node_match = re.search(r"([0-9]+)\s*节点", section)
     agent_match = re.search(r"([0-9]+)\s*子代理", section)
     if not (run_match and wall_match and token_match):
-        raise SystemExit("小节缺少 run id / 墙钟 / token 记录")
+        raise SystemExit("开发注记（三十一）小节缺少 run id / 墙钟 / token 记录")
 
     wall_hours = int(wall_match.group(1)) + int(wall_match.group(2)) / 60.0
     return {
@@ -262,13 +262,13 @@ def evaluate_offset_power(samples: list[DurationSample], mesh_power: float) -> d
 
 def main() -> int:
     if not _PATH.is_file():
-        raise SystemExit(f"缺少 : {_PATH}")
+        raise SystemExit(f"缺少 开发注记: {_PATH}")
     batch = parse_devlog_batch(_PATH)
     controlled, provenance = load_controlled_samples()
     smoke = load_smoke_samples(controlled)
 
     ledger = CostLedger()
-    # 批次 1：五轨动态工作流——LLM token 实耗
+    # 批次 1：开发注记（三十一）五轨动态工作流——LLM token 实耗
     ledger.add(batch["run_id"], "workflow_orchestration", tokens=batch["tokens"])
 
     # 批次 2/3：openEMS 受控收敛求解机时（真实 run 产物）

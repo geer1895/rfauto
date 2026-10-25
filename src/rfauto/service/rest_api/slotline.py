@@ -1,6 +1,6 @@
 """rest_api.slotline —— 槽线/过渡确定性计算端点（W3-S2 T2 拆分）。
 
-代码体自原「slotline·transitions 五入口」逐字节搬迁（架构批 W3-S2，
+代码体自原「slotline·transitions 五入口」逐字节搬迁（aurora_h W3-S2，
 AU-1 工艺）；数值只出确定性内核（铁律 7）。
 """
 

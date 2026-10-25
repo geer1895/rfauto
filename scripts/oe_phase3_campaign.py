@@ -1,4 +1,4 @@
-"""OE 三期发射编排驱动（；runs/oe_phase3/<t>/ 逐席 verdict）。
+"""OE 三期发射编排驱动（wf:oe-phase3-prep；runs/oe_phase3/<t>/ 逐席 verdict）。
 
 三席（月计划 W3 OE 窗 · completeness-mid 缺口映射）：
   ① ring_resonator      F-A.3 Design Dk 锚（F-A 仿真域闭环首步：OE run+提取回收）

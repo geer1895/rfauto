@@ -1,6 +1,6 @@
 """D13 SPICE 回放自检定向单元测试（纯 Python 复数 MNA；不依赖 ngspice.exe）。
 
-任务来源：§10.24 D13 PARTIAL 收口（PARTIAL 原因 = 无
+任务来源：§10.24 D13 PARTIAL 收口（开发注记（四十八）PARTIAL 原因 = 无
 ngspice.exe 回放未做）。本文件验证 `core/macromodel.replay_spice_subcircuit_s`：
 
 1. MNA 内核语义对拍闭式解（与拟合器/skrf 无共享代码路径）：

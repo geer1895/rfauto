@@ -29,7 +29,7 @@
     域守卫 ok=False。
 
 确定性：无网络、无真机、无文件 IO；MC 固定种子 numpy Generator
-（runs/research_seats_20261004/s6_wave2/ 预验脚本实测后锚值写死）。
+（内部证据档 预验脚本实测后锚值写死）。
 """
 from __future__ import annotations
 

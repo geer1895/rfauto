@@ -11,7 +11,7 @@ params:
   coupled_len_mm: 18.1469
   w_feed_mm: 1.1117
 status: ok
-script_sha256: 427535f2b9abc9a8dfc3a26d19f54200df75194be7b3d59c73a691e9a9411c4d
+script_sha256: 0d8ef37b8d451b8368d6932c1c3b21c806685d521ecea8caa4c1175dc032944f
 csx:
   n_primitives: 36
   props:

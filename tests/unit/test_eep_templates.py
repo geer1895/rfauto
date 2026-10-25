@@ -46,22 +46,20 @@ C_MM_GHZ = 299.792458
 #: 漂移即红，换钉须留 diff 证据——msl_siw_taper/compose 三钉同纪律）
 #: wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案（ra_criteria SPECS
 #: §六）——render_script 尾段追加 sparams.mask.json sidecar 写出块
-#: （csv 写出段逐字节零漂移，diff 证据 runs/w6_phase6/w6e/{pre,post}_
+#: （csv 写出段逐字节零漂移，diff 证据 内部证据档{pre,post}_
 #: render_h01/ removed=0 实测）；本钉=整脚本 sha，随尾段追加必移，
 #: 语义断言（nf2ff 面注入/缺省不含）保留不变。
 #: wf:nrts-fix 换钉（2026-09-28）：patch_eep_1x4 系四 F-D 模板之一，缺省
 #: 路径新增 EndCriteria=1e-06+Run 前 NrTS 终网格 CFL 折算块（#262 截断族
 #: 修复面，tests/unit/test_nrts_wiring.py 同钉）；patch_eep_2x2 非 F-D 席位
 #: 逐字节不变（旧钉保留实测通过）。
-# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释字节漂移（几何段 exec
-# 审计逐键同值；换钉留 diff 证据纪律同上）。
 EEP_BASE_RENDER_SHA256 = {
-    "patch_eep_2x2": "5cb04518208d0beba6113c1223fd565d0b4c8e26d70a4665321834455d5563db",
-    "patch_eep_1x4": "b8ae1f4f71497c9928cb66fb2a5f3e349055cc3e5e658ade944b6fe7cd2d85f5",
+    "patch_eep_2x2": "862bd5ee6747f9f5760dda4269c091beb9c22c6d83eebe5ff078994b7ae17a95",
+    "patch_eep_1x4": "78106deb872b3e52774932d5f6a96c4d5d88f427d222ba7f6573baf6156ecb49",
 }
 EEP_FF_RENDER_SHA256 = {
-    "patch_eep_2x2": "fbf82e8793463a0eb3af81bf595e68574b944d8096f292c87f6d0aa3ae0e1344",
-    "patch_eep_1x4": "a454652e57a0fe449d1ee7d0e359d0793e1b465e95e8f405ea3f28d96f89d92c",
+    "patch_eep_2x2": "9d5a5035d12e281639e993ab8a323f010b9117f345afe809bcc0f74f6911b271",
+    "patch_eep_1x4": "cd255b51fb00afc1dbdba7b46d6cdda65f93606984eee35c437312d89fc0126f",
 }
 
 

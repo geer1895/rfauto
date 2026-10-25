@@ -21,7 +21,7 @@ _DEFAULT_SUB = {"er": 3.66, "h_mm": 0.508, "tan_d": 0.0037}
 
 # 基板 z 向格数缺省（render_script `_sub_cells` 旋钮的缺省档，G3 2026-09-22）：
 # 非族模板维持官方 substrate_cells=4（旧口径逐字节不变）；CPW/槽下场族生产
-# 缺省抬到 8——依据 msl_cpw zconv 定案实验（内部证据档，2026-09-20
+# 缺省抬到 8——依据 msl_cpw zconv 定案实验（runs/msl_cpw_zconv，2026-09-20
 # 预声明判据先写后跑）：β2 偏差 dev −2.151→−0.971→−0.474pp（sub4→8→16），
 # verdict=GRID_UNDERRES(份额归网格, 78%)+SATURATED_RESIDUAL，sub8 即回
 # msl_cpw_benchmark_verdict ±2% 锚门内（kernel PASS 五门全过）——z 向基板
@@ -38,7 +38,7 @@ _SUB_CELLS_DEFAULT = 4
 #:   实验证据链见 registry 头注）。
 _SUB_CELLS_8_TEMPLATES: frozenset[str] = frozenset({"msl_cpw", "cpw", "fgcpw"})
 
-# §MS_METASURFACE 单元模板名单（单源：架构批 W2-S2 S5/grid2 解环自
+# §MS_METASURFACE 单元模板名单（单源：aurora_h W2-S2 S5/grid2 解环自
 # render_metasurface 上提——grid._near_points 与 render_metasurface 双向
 # 消费，名单落本注册表叶后 grid→registry 单向，环断；render_metasurface
 # 保名再导出，全部既有消费点（门面/render_core/测试）零改动）。
@@ -91,7 +91,7 @@ TEMPLATE_META: dict[str, dict[str, Any]] = {
         "臂中点馈电+隔离端悬空，三处结构性错误）。名义臂注记（R2-1 审查批"
         " 2026-10-04）：arm_len_mm=20.5 为薄线极限捷径口径（HJ 精算正解 "
         "18.09mm，偏差 +11.8%，已裁定维持锚定基线不改数值）；出处："
-        "内部证据档 R2-1 "
+        "runs/review_ge8e/r2_synthesis_templates_anchors/REPORT.md R2-1 "
         "与坑#252",
     },
     "dipole": {

@@ -1,6 +1,6 @@
 """dataset_service.query —— DuckDB 直查面（谓词下推/列裁剪/csv 导出）。
 
-自 dataset_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原节「DuckDB 直查」逐字节搬迁。
+自 dataset_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原节「DuckDB 直查」逐字节搬迁。
 """
 
 from __future__ import annotations

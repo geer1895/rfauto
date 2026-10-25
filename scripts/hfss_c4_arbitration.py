@@ -1,6 +1,6 @@
 """rm-hfss-c4-arbitration：HFSS 名义几何仲裁 C4 耦合器族裁判口径（对齐基准口径）。
 
-背景（TODO「C4 下一假设」①）：openEMS 合规网格两轮复跑 S31 归一后 −2.03（lange）/
+背景（待办清单「C4 下一假设」①）：openEMS 合规网格两轮复跑 S31 归一后 −2.03（lange）/
 −8.00（cline）vs 裁判闭式 −3.01/−10.05——耦合度强 1~2dB；z 向地板已排除面内离散；
 剩余假设=裁判闭式在 lange s/h=0.076<KJ 有效域 0.1（cline 0.161 边缘）不适用，即
 "裁判错"而非"引擎错"。
@@ -291,7 +291,7 @@ def build_template(adapter, template: str) -> dict[str, Any]:
 def make_setup(adapter) -> str:
     """自适应 @2.5GHz + 2-3GHz 401 点插值扫频（同 openEMS 频轴）。
 
-    网格收敛自检（AGENTS 1b）用环境变量收紧：RFAUTO_C4_ARB_DELTA_S /
+    网格收敛自检（内核立规注记 1b）用环境变量收紧：RFAUTO_C4_ARB_DELTA_S /
     RFAUTO_C4_ARB_MAX_PASSES；产物名后缀 RFAUTO_C4_ARB_TAG。
     """
     import os

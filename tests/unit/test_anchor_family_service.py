@@ -3,7 +3,7 @@
 判据（#122）：覆盖判定=具名族对模板注册表精确匹配（``*`` 通配单列不
 计入单模板）；批量计划=候选表∩零覆盖模板，anchor_id 与注册表查重；
 骨架 schema 与 anchors/v1 同构（kind=pointer、values 留空、
-status=awaiting_data、consumers=[]）；**零写注册表**（AGENTS 规则 6，
+status=awaiting_data、consumers=[]）；**零写注册表**（内核立规注记 规则 6，
 写面只经人工 commit）。卡注记=只增注释行（幂等）。
 """
 

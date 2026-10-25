@@ -6,7 +6,7 @@
 
 # 内核文档卡：wg_cavity_bpf
 
-> 波导膜片耦合腔带通滤波器综合链（架构批 W10-S4 席，R3_domain_expansion
+> 波导膜片耦合腔带通滤波器综合链（aurora_g W10-S4 席，R3_domain_expansion
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 波导膜片耦合腔带通滤波器综合链两键：g_k→J 倒置器→感性膜片电纳/开口/腔长全链综合与膜片电纳 λg 标度+腔电角逐频 ABCD 级联频响——滤波器实现族的波导腔体侧（Cohn 1957 原文链全文逐字核验）。
 
-模块自述（docstring 首行，机读）：波导膜片耦合腔带通滤波器综合链（架构批 W10-S4 席，R3_domain_expansion
+模块自述（docstring 首行，机读）：波导膜片耦合腔带通滤波器综合链（aurora_g W10-S4 席，R3_domain_expansion
 
 ## 公式与口径
 
@@ -129,7 +129,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w10s4_core_domains.py`——引文："波导膜片耦合腔带通滤波器综合链（架构批 W10-S4 席，R3_domain_expansion"
+- `tests/unit/test_w10s4_core_domains.py`——引文："波导膜片耦合腔带通滤波器综合链（aurora_g W10-S4 席，R3_domain_expansion"
 
 测试面（tests/unit 引用扫描，机读；合计 **73** 个 test 函数）：
 

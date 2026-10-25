@@ -1,6 +1,6 @@
 """hairpin_alt k(gap) 交替取向·极点分裂口径（k_split）逐点提取（wf:hairpin-alt-extract）。
 
-背景（+ runs/hairpin_hfss_anchor/ 仲裁）：hairpin_alt 5 点
+背景（开发注记（二百五十七）+ runs/hairpin_hfss_anchor/ 仲裁）：hairpin_alt 5 点
 openEMS 真机 k_EM 图谱（runs/hairpin_kgap_refix）单调但预声明门 G3 FAIL——对称
 2 极有耗模型对交替拓扑失配（强耦点 full_fit rms 2.24-4.35dB > 门 1dB，g11328 实测
 峰电平 −1.175dB 高于对称模型渐近峰 −1.2304dB=模型类够不着）。机理：交替取向使

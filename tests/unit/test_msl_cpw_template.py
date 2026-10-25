@@ -1,6 +1,6 @@
 """WP2.5 Tier 2：MSL↔CPWG 过渡模板单测（附加模板口径，同 coupled_bpf 段）。
 
-方案行（延续计划 §4 WP2.5）：MSL↔CPW、
+方案行（docs/continuation-plan_20260907.md §4 WP2.5）：MSL↔CPW、
 MSL↔slotline（Marchand，随 slotline 端口原语缺失阻塞，归 C5 行）、
 SMA launcher。本件覆盖 MSL↔CPW：
 - 正式注册（2026-09-16 wp25-sma-launcher-rootcause）：MSL_CPW_META/NOMINAL

@@ -1,6 +1,6 @@
 """Y3 批次 BO 单测（DP-13）——批 ask/tell + constant_liar + 归一化距离门。
 
-判据（runs/df6_dp13/criteria.md §Y3）：
+判据（内部证据档 §Y3）：
 - batch_size 缺省 1=旧路径逐字节等价（固定种子同 budget：不传旋钮 vs
   batch_size=1，trial 轨迹（params+cost+state 序列）与 best 终值一致）；
 - batch_size>1：TPESampler(constant_liar=True) 显式开启；ask k 全 RUNNING

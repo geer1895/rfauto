@@ -10,7 +10,7 @@ params:
   w2_mm: 1.897
   line_len_mm: 40.0
 status: ok
-script_sha256: a6f069ccd36f4c307116b1ecf1d5bc06930d7df7c1ef571744e22f0acbbba85a
+script_sha256: f7ffb1895c1b6231ccec6f14a9492c9f2aa9dd267c982a7a6c2697e5b9ec4fdc
 csx:
   n_primitives: 16
   props:

@@ -1,0 +1,114 @@
+f0_ghz: 2.0
+n_ports: 1
+template: mim_cap
+substrate:
+  er: 12.9
+  h_mm: 0.1
+  tan_d: 0.0006
+params:
+- w_um
+- l_um
+- d_um
+- bot_overhang_um
+- port_um
+- h_mm
+- er_diel
+- tand_diel
+nominal_params:
+  w_um: 20.0
+  l_um: 20.0
+  d_um: 0.2
+  bot_overhang_um: 5.0
+  port_um: 2.5
+  h_mm: 0.1
+  er_diel: 7.5
+  tand_diel: 0.001
+  er: 12.9
+  tan_d: 0.0006
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ LumpedPort 1（上极板-下极板竖直跨介质，R=50Ω CalcPort 同参考；
+  Zin=50(1+S11)/(1−S11)→低频段 C=−1/(ω·Im(Zin)) 提取，Im(Zin) 过零=
+  串联 SRF 判读——并联形式，Zin=R_s+jωL_s+1/(jωC)；C±25%/SRF>2×f0
+  质量判据由 CALC 键 mim_capacitance 承载）
+topology: >-
+  GaAs IPD MIM 电容：下极板（零厚金属面 z=H，上极板足迹外扩
+  bot_overhang）- 介质薄层（真实体块 z∈[H,H+d]，SiNx）- 上极板（零厚
+  金属面 z=H+d，W×L 叠合面积=C 的 A）；竖直 LumpedPort 跨介质（上-下
+  极板之间，exc 沿 z，并联形式）；全域 MUR（电小器件近场主导）；
+  stackup z 叠算+共形介质单足迹退化档消费（render 模块头）
+param_semantics: >-
+  w_um/l_um=上极板叠合区宽/长（μm，C 的 A=w·l），d_um=介质厚（μm，
+  SiNx 0.2μm 典型档），bot_overhang_um=下极板四周外伸（μm，抑制边缘场
+  集中），port_um=端口盒 x/y 跨距（μm，≥2 格 #283），h_mm=基板厚
+  （仓内基板惯例 mm，GaAs 100μm 档）；er_diel/tand_diel=介质 εr/损耗
+  （SiNx）；er/tan_d 走 substrate/nominal（GaAs）——W/L/D 全 μm 为
+  IPD 工艺口径，经 core.stackup.to_mm(v,'um') 单源换算（μm 帮手函数）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(port,d)（μm 尺度
+  几何驱动网格——base 取最细 x/y 特征端口盒，#266 守卫 NEAR=base/4 ≤
+  port/3；禁 λ_sub/50 口径）；极板缘/端口盒边+中线精确入网（#198）；
+  介质薄层 z 向三线（H、H+d/2、H+d）显式入网——端口激励体积 ≥2 格
+  （#283），#152 去重阈值 z 轴降为 d/4（全局 1µm 阈值吞介质线——薄层
+  适配）；min z-cell=d/2 → dt≈d/2c（薄介质 FDTD 物理成本，真机预算留
+  登记）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记
+  （C/SRF 低频回收对拍待真机批，本批零发射）
+nominal_derivation: |-
+  用户实测同量级档：w=l=20μm 叠合、d=0.2μm SiNx（er=7.5）→
+  C=ε0·εr·A/d=132.8128fF（平行板精确式，手算逐位回收；面密度
+  0.333fF/μm²=0.2μm SiNx IPD 工艺典型档）；串联寄生一阶：R_s=
+  ρ·l/(t·w)=8.13mΩ（ρ=2.44e-8 金、t=3μm）、L_s=μ0·d·l/w=0.2513pH →
+  SRF=1/(2π√(L_s·C))≈871GHz（远高于工作带——MIM 自谐振由端口引线
+  主导的声明见 core/ipc_cap 一阶口径）；基板 GaAs 半绝缘典型值
+  （er=12.9/tanδ=0.0006/h=100μm 薄膜 IPD 档，octagonal_spiral 同板）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: MIM 电容：平行板 C=ε0·εr·A/d（精确式，边缘场 O(d/√A) 忽略声明），介质薄（0.1-0.2μm SiNx）决定高面密度；串联寄生（R_s/L_s）决定自谐振频率 SRF=1/(2π√(L_s·C)) 与 Q。典型用于 GaAs IPD/MMIC 集总匹配与隔直；常见误用=只看 C 不管边缘场占比——小电容（A 小）时 O(d/√A) 边缘场偏差上升，±25% 判据在精确几何档成立。
+    derivations:
+    - claim: 平行板电容（精确式）
+      formula: C = eps0*er*w*l/d
+      source: 本仓 core/package_interconnect.mim_capacitance（单源复用零复制；docs/templates/mim_cap/meta.yaml nominal_derivation（名义档 132.8128fF））
+    - claim: 串联寄生电感（平行板线一阶）
+      formula: L_s = mu0*d*l/w（L'=mu0*d/w 宽板 Ampère 精确 × 回路路径 l）
+      source: 本仓 core/ipc_cap.mim_series_inductance_h（可推导非转写）
+    - claim: 自谐振频率（串联寄生谐振）
+      formula: SRF = 1/(2*pi*sqrt(L_s*C))
+      source: 本仓 core/ipc_cap.mim_capacitance_report（平行板单源复用 core/package_interconnect，边缘场声明见模块头）
+  sensitivity_ranking:
+  - param: d_um
+    order: 1
+    basis: 介质厚（C∝1/d 主项+L_s 正比通道）
+  - param: w_um
+    order: 2
+    basis: 叠合宽（C∝A 主项+L_s∝1/w 反比通道）
+  - param: l_um
+    order: 3
+    basis: 叠合长（C∝A 主项+R_s/L_s 路径通道）
+  - param: er_diel
+    order: 4
+    basis: 介质 εr（C∝εr）
+  - param: bot_overhang_um
+    order: 5
+    basis: 下极板外伸不进平行板式（0——边缘场弱通道属全波维）
+  - param: port_um
+    order: 6
+    basis: 端口盒跨距不进闭式（0——寄生提取约定）
+  - param: h_mm
+    order: 7
+    basis: 板厚不进闭式（0）
+  - param: tand_diel
+    order: 8
+    basis: 介质损耗不进 C 闭式（0——Q 面经 kappa 进全波）
+  - param: er
+    order: 9
+    basis: 基板 εr 不进闭式（0）
+  - param: tan_d
+    order: 10
+    basis: 基板损耗不进闭式（0）
+  quiz_refs: []

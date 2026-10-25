@@ -1,7 +1,7 @@
 """W2-C（VI-5 批A+批B，2026-10-05）+ W6-B（批C 余件 86，2026-10-06）``--json`` 归一常驻门：
 探针内联棘轮 + 34 命令双路径冒烟 + 86 命令参数化冒烟批。
 
-规格=runs/research_seats_20261004/sp_specs6/SPECS.md §VI-5；批席位判据：
+规格=内部证据档 §VI-5；批席位判据：
 1. 棘轮门（探针逻辑内联，禁 runs/ 工件依赖）：批A 后 WITHOUT_JSON≤110、
    批B 后 ≤87（防回潮棘轮，#325 家法逐批收窄；并发席新增无 --json 命令
    也会打红本门——这正是规格"新命令必须带 --json"惯例的钉面）；
@@ -25,11 +25,11 @@ tracking/bands 8/fab 9/bench 5 的 _emit 缺省 json_output=True 路线）——
 面自始即 _emit 信封（json_output 缺省 True）——该三处缺省路径逐字节不动，
 --json 只切换成功面（W6-B bytecmp 实测抓出并修正的回归点）。
 
-缺省路径逐字节不变：runs/w2_phase2/w2c/_bytecmp.py 工作树 vs git HEAD
+缺省路径逐字节不变：内部证据档 工作树 vs git HEAD
 worktree 双跑比对 17 用例全等（12 命令，含成功+失败路径），结果快照
 bytecmp_results.json（本测试不依赖该工件，离线自洽）；W6-B 批 20 用例
 （18 命令，含批 C 新面成功+失败路径）同法全等，快照
-runs/w6_phase6/w6b/bytecmp_results.json（本测试不依赖该工件，离线自洽）。
+内部证据档（本测试不依赖该工件，离线自洽）。
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ W2C_TARGETS = BATCH_A + BATCH_B
 RATCHET_BATCH_A = 110
 RATCHET_BATCH_B = 1
 
-# 批C（W6-B）结构性豁免清单（与 runs/w6_phase6/w6b/REPORT.md §豁免清单同账）：
+# 批C（W6-B）结构性豁免清单（与 内部证据档 §豁免清单同账）：
 # ui=阻塞式 uvicorn serve（人工核验台长驻进程），无单发 JSON 输出面。
 W6B_EXEMPT = ["ui"]
 

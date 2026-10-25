@@ -3,7 +3,7 @@
 ① 耦合缝网格守卫（#266）：render_script 对 interdigital/combline/sir_bpf 断言
    NEAR=base/4 ≤ 最小耦合缝/3，违反即 ValueError（不许静默粗网格）；
 ② NrTS/EndCriteria 收敛判读门：scripts/smoke_c3_filter_family.judge 在引擎触
-   NrTS 上限且能量未达判据时判 FAIL（−46/−29dB 触顶实证）；
+   NrTS 上限且能量未达判据时判 FAIL（开发注记（二百零五）−46/−29dB 触顶实证）；
 ③ 过孔电感进裁判：Goldfarb-Pucel 1991 闭式 L=(μ0/2π)·h·[ln(4h/d)+1] 端接
    短路端，c3_circuit_sparams(l_via_h=None) 自动取几何值；缺省 0.0 逐位复现
    理想短路旧口径。数值锚：|Y| 数值极小化 vs 闭式谐振条件 tanθ=Z_r/(ωL)
@@ -30,7 +30,7 @@ from rfauto.adapters import openems_templates as ot
 
 BAND = (2.25, 2.75)
 H_MM = 0.508
-# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm（）
+# 缺省 mesh=0 → base=λ_sub/50@2.75GHz=1.1405mm、NEAR=0.2851mm（开发注记（二百零五））
 NEAR_DEFAULT_MM = 3e8 / (2.75e9 * math.sqrt(3.66)) / 50 / 4 * 1e3
 
 

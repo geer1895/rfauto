@@ -142,7 +142,7 @@ The 10 resources (read-only; URIs quoted from the registration surface):
 | `rfauto://knowledge/materials` | materials library (configs/materials.yaml structure) |
 | `rfauto://knowledge/compat_matrix` | version compatibility matrix |
 | `rfauto://knowledge/terminology` | terminology cards |
-| `rfauto://knowledge/metric-glossary` | metric glossary (38 metric keys + machine-readable gates, aurora_i W3.5-K3) |
+| `rfauto://knowledge/metric-glossary` | metric glossary (38 metric keys + machine-readable gates, W3.5-K3 batch) |
 | `rfauto://toolsets/definition` | toolset catalog (name/description/skill/tools per entry) |
 | `rfauto://calculators/index` | calculator registry catalog (2026-10-14 MCP-B seat) |
 | `rfauto://datasets/index` | dataset registry overview (2026-10-14 MCP-B seat) |
@@ -173,7 +173,7 @@ Input `{}`. Returned envelope (structured-content excerpt):
 {"ok": true, "checks": [
   {"name": "Python", "status": "ok", "detail": "3.12.14"},
   {"name": "AEDT", "status": "ok",
-   "detail": "E:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
+   "detail": "<drive>:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
   {"name": "ADS", "status": "ok",
    "detail": "E:\\ADS\\ADS27（版本 2027，verified）"},
   {"name": "缓存模式", "status": "ok", "detail": "readwrite"}]}

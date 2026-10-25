@@ -9,16 +9,16 @@ OE 低保真预测 u**（响应空间键控），而非设计参数 w（与 df5 
 
 信任域：|δ_pred| > (τ/100)·max(|u|, floor_head) 的条目回退到原始 OE 值
 （δ=0）并记 warning——修正至多使响应幅值翻倍（τ=100% 预声明，判据见
-runs/df6_dp14n8/criteria.md）。参数提取步不实现（已知脆弱点固定结构
+内部证据档）。参数提取步不实现（已知脆弱点固定结构
 规避）；GP 残差守卫（std<1e-9 → affine-only）防 KRG 对零残差产出垃圾值
 （实现前探针实证 0.203）。实现无随机源（OLS 闭式 + SMT 单起点 +
 确定性线代），"random_state 钉死"等价落实为双跑逐位一致。
 
-基线锚定：runs/df5_mfk_lowfi_fix/anchor15/mfk_verdict_lowfi_fix.json 的
+基线锚定：内部证据档 的
 koh_lowfi_direct 臂 held-out |ΔΓ|max = 0.00373（9 锚，只读）。
 
 
-# ── 终态裁定（2026-09-25，runs/df6_dp14n8/output_sm_eval_verdict.json）────────
+# ── 终态裁定（2026-09-25，内部证据档）────────
 # output_sm_verdict = **rejected-inferior**：与 koh 基线（held-out |ΔΓ|=0.00373）
 # 同协议对照 0.14101（37.8× 劣，且劣于"纯 OE 直接当预测"0.0875）。归因=该微带
 # 族 |Γ| 对 w/频带内近平（1.3% 跨度）而 δ_true 跨 2.6×——响应标量不携带可分辨

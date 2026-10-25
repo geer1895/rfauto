@@ -27,7 +27,7 @@
 **hairpin 结构经验修正 c(gap)（W4④，2026-09-17）**：并排同向 U 形 hairpin 的级间耦合
 不是均匀无限平行耦合线——相邻臂电流反向、两端开路、U 弯邻近，电/磁耦合部分相消，
 EM 有效 k_EM 显著低于 KJ 平行线 k_KJ。闭式本身已由独立来源核实无误（NGSolve 2D 准静态
-偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，runs/hairpin_kgap/
+偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，内部证据档
 offline_kj_vs_ngsolve.json），故修正只作用于 hairpin 通道、显式 opt-in
 （structural_correction=True），常数 HAIRPIN_KGAP_TABLE_MM 全部出自本战役 openEMS
 N=2 弱抽头双谐振器真机（scripts/hairpin_q_extract.py --kgap-analyze 可复算，铁律 7），
@@ -68,7 +68,7 @@ def _hairpin_default_w_mm(w_mm: float | None, er: float,
 # 提取=有耗 4×4 耦合矩阵模型峰电平反演（k<0.03）/全线形拟合（k≥0.03），Q_e/Q_u 取 B1
 # 同 τ 单腔实测 34.691/236.347。表为 (gap_mm, c) 升序，内插=分段线性；域=[首,末] gap。
 HAIRPIN_KGAP_TABLE_MM: tuple[tuple[float, float], ...] = (
-    # (gap_mm, c)：runs/hairpin_kgap/kgap_curve.json（2026-09-17，N=2 τ0.43，openEMS 0.4mm）
+    # (gap_mm, c)：内部证据档（2026-09-17，N=2 τ0.43，openEMS 0.4mm）
     (0.5, 0.12108771661717306),      # kgap2_g0500：峰 −3.79dB，宽 66.0/65.5MHz，k_EM 0.014659
     (0.65, 0.16083017395381485),     # kgap2_g0650：峰 −3.49dB，宽 69.0/66.5MHz，k_EM 0.015457
     (0.8, 0.19408963003474614),      # kgap2_g0800：峰 −3.62dB，宽 66.0/66.0MHz，k_EM 0.015112
@@ -461,7 +461,7 @@ def hairpin_tap_frac_from_qe(qe: float, z0_ohm: float = 50.0,
     return math.acos(math.sqrt(c2)) / math.pi
 
 
-# ── (Z0e, Z0o) → (w, s) KJ 二维数值反解（架构批 W1-S3 提升，2026-10-18）──
+# ── (Z0e, Z0o) → (w, s) KJ 二维数值反解（aurora_f W1-S3 提升，2026-10-18）──
 # 自 adapters/oe_templates/closedform.py 原样下沉（函数体与 docstring 逐字
 # 保留；adapters 经再导出零改动消费，#116 不留本地遮蔽副本）——core 层
 # calc_families.lange 的提升式重构需要它（core 禁 import adapters）。

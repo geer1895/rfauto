@@ -1,6 +1,6 @@
 # ge8 K-3 coupled_line 机制分离批 · 判读输入面 envelope.json 回退读（审查 R6-1）。
 #
-# 原缺陷（R6-1，P2）：runs/ge8_k3mech/judge_k3.py 的 campaign_gates 只读
+# 原缺陷（R6-1，P2）：内部证据档 的 campaign_gates 只读
 # seat_dir/verdict.json——本次批该文件不存在（launcher 直调通道无判读共用
 # 尾），三座真实通道状态记在 envelope.json（verdict=PARTIAL、exec_rc=1、
 # reason 明言"solve_success=False 降档"）→ campaign_* 门全 null、三座
@@ -13,11 +13,11 @@
 #   通道级 status="PARTIAL"（降档如实，不凑 OK 也不冒充 FAIL——产物优先于
 #   退出码口径，机械数值门照算）；verdict=FAIL → "FAIL"（阻断 usable）；
 # - 两档全缺 → 相关字段 None（best-effort 如实，#122）。
-# 归档零改写：本模块不写 runs/ge8_k3mech/ 下任何文件（含既有 judge_k3.py），
+# 归档零改写：本模块不写 内部证据档 下任何文件（含既有 judge_k3.py），
 # 输出只落显式 --out 指定路径。
 #
 # 用法（仓根）：.venv/Scripts/python.exe scripts/judge_k3_envelope.py \
-#   --batch-dir runs/ge8_k3mech [--out <json 路径>]
+#   --batch-dir 内部证据档 [--out <json 路径>]
 from __future__ import annotations
 
 import argparse

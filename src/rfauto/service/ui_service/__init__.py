@@ -1,5 +1,5 @@
 """
-原则（AGENTS 硬限制）：服务层 JSON 进出；cli/mcp 是薄壳；写操作只经
+原则（内核立规注记 硬限制）：服务层 JSON 进出；cli/mcp 是薄壳；写操作只经
 本模块落盘（配方保存走 validate_recipe 校验 + 单写锁由 run 链路负责）。
 
 页面数据：
@@ -375,7 +375,7 @@ from .views import (
 
 _LOG = logging.getLogger(__name__)
 
-# ══ T2 巨石拆分 facade（架构批 W7-S1，2026-10-19）══════════════════
+# ══ T2 巨石拆分 facade（aurora_g W7-S1，2026-10-19）══════════════════
 # 本文件原为单文件巨石，实现按职责域迁入上方 re-export 的子模块；此处
 # 逐名显式 re-export 全部模块级名（公开面快照钉：拆分前后 dir() 逐名
 # 相等；redundant-alias=PEP 484 显式 re-export 惯例）。

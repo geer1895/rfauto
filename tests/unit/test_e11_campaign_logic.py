@@ -285,7 +285,7 @@ class TestJudgeCampaignPriorTarget:
         assert v["per_seed"] == {}
 
     def test_real_campaign_verdict_shape_regression(self):
-        # runs/e11_warm_campaign/e11c_main/campaign_verdict.json 实录形状：
+        # 内部证据档 实录形状：
         # target=0（fake wilkinson 平底碗）双臂均达——新口径下 target 仍为
         # 冷臂末代 0.0，结论不变（3 种子 PASS，均值 95.49%）
         pairs = {

@@ -44,18 +44,18 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `stepped_impedance.f_pass.openems-hfss-v1`（pointer/experimental；引擎对 openems（hfss 仲裁））：stepped_f_pass_dev_pct 双值 hfss=2.99 / openems=3.235 GHz（不取平均，#122）；±7.573416（arbitration_interval）；verdict DISAGREE
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `stepped_impedance.f_pass.openems-hfss-v1`（pointer/experimental；引擎对 openems（hfss 仲裁））：stepped_f_pass_dev_pct 双值 hfss=2.99 / openems=3.235 GHz（不取平均，#122）；±7.573416（arbitration_interval）；verdict DISAGREE；证据：runs/hfss_window_b2a/stepped_impedance
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
 
 - 参数语义：z1_width_mm=高阻段宽（HJ 96.9Ω，交替起点），z2_width_mm=低阻段宽（HJ 24.8Ω），seg_len_mm=单段长度，n_segments=段数，feed_w_mm=两端馈线宽（50Ω HJ 精算 1.1133mm，六百七十一/#1c 修复批：端口线=50Ω 使 #250 参考系分裂机制根除；缺省回退 z1=修复前口径）。旧文本 z1 低阻/z2 高阻系标签颠倒勘误
 - 网格：分段 junction 处 y 向 near 加密
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

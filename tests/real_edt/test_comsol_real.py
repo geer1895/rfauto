@@ -7,7 +7,7 @@
 2. 机器状态门：MPh 可导入 + COMSOL 安装根存在（RFAUTO_COMSOL_ROOT >
    默认 E:\\COMSOL\\COMSOL_63\\COMSOL63\\Multiphysics，缺席 skip 不红）。
 
-用例语义（#215 首案例锚复刻，runs/comsol_smoke/run_smoke_parallel_plate.py
+用例语义（#215 首案例锚复刻，内部证据档
 同判据）：平行板 TEM 传输线 2 端口，connect → build_geometry → solve
 （COMSOL 6.3 显式钉版，频域 5 点）→ get_sparams vs 闭式精确解
 （TEM：εeff=εr 精确、Z0=η0/√εr·(H/W)，tl_section_sparams ABCD→S）。
@@ -22,7 +22,7 @@
   |S11|worst≤−20dB。
 
 预算：FEM 5 频点实测求解 13.6s + comsolmphserver 启动数十秒，分钟级内。
-绿记录：2026-09-11 runs/comsol_smoke/smoke_summary_parallel_plate.json 全门 PASS。
+绿记录：2026-09-11 内部证据档 全门 PASS。
 """
 
 from __future__ import annotations

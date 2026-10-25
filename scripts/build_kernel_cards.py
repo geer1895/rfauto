@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""XA-8 内核域文档卡生成器（round18 规格 XA-8 首批 5 张 + 架构批 W3-S13
-知识面批扩容批一 11 张 + 架构批 W4-S19 知识面批扩容批二 8 张 + 架构批
-W1-S3 内核前置批 2 张 + 架构批 W3-S11 前置批收官 1 张 + 架构批 W6-S22
-内核卡扩面批 9 张 + 架构批 W1-S3 内核卡批三 9 张 + 架构批 W2-S3 内核卡
-批四 9 张 + 架构批 W3-S3 内核卡批五 6 张 + 架构批 W6-S4 内核卡
-批六 6 张 + 架构批 W8-S1 内核卡批七 3 张 + 架构批 W12-S2 内核卡
+"""XA-8 内核域文档卡生成器（round18 规格 XA-8 首批 5 张 + aurora_e W3-S13
+知识面批扩容批一 11 张 + aurora_e W4-S19 知识面批扩容批二 8 张 + aurora_f
+W1-S3 内核前置批 2 张 + aurora_f W3-S11 前置批收官 1 张 + aurora_f W6-S22
+内核卡扩面批 9 张 + aurora_g W1-S3 内核卡批三 9 张 + aurora_g W2-S3 内核卡
+批四 9 张 + aurora_g W3-S3 内核卡批五 6 张 + aurora_g W6-S4 内核卡
+批六 6 张 + aurora_g W8-S1 内核卡批七 3 张 + aurora_g W12-S2 内核卡
 终批 5 张（gnss_geometry/radar_clutter/microstrip_disc/open_wire_line/
 wg_cavity_bpf；同笔 fmcw_radar 卡扩至全族 4 键），共 74 张）。
 
@@ -32,45 +32,45 @@ wg_cavity_bpf；同笔 fmcw_radar 卡扩至全族 4 键），共 74 张）。
   完备族：atten_pi/atten_t/qwt_multisection/nway_wilkinson/schiffman
   （synthesis.py 同源面+rf_match CALC 键）+ bethe_hole_coupler/gysel_core/
   coupled_line_bpf（calc_families 注册计算器三族）。
-- 架构批 W1-S3 内核前置批 2 卡（2026-10-18）：lange（R2 §⑤ F1——core
+- aurora_f W1-S3 内核前置批 2 卡（2026-10-18）：lange（R2 §⑤ F1——core
   提升式重构解锁）/stepped_impedance（R2 §⑤ F2——综合两键解锁），
   批一 docstring 所记两族「无专属综合内核」留缺理由就此关闭；ring_resonator
   留缺已由 W3-S11 前置批收官关闭（R2 §⑤ F3——render_ring 设计链提升
   + 间隙耦合 Qe 设计式 + 模阶谱/Q 分解/基模频响两键，2026-10-18）。
-- 架构批 W6-S22 内核卡扩面批 9 卡（2026-10-18）：照 cascade/rwg_mmt/
+- aurora_f W6-S22 内核卡扩面批 9 卡（2026-10-18）：照 cascade/rwg_mmt/
   ring_resonator 纯 CALC 键族卡先例——mixer_conversion/ruthroff_balun/
   gd_equalizer/measurement_drift/agc_loop/cal_kit_verify/six_port/
   iss_on_wafer/source_power_cal（数据源完备性盘点 9/9 全出：注册键+模块
   docstring「物理口径/出处」节+锚树测试面 needles 三面齐备；anchors.yaml/
   formula_provenance.yaml 零命中如实渲染「0 条」诚实支路，同 ring_resonator
   先例）。
-- 架构批 W1-S3 内核卡批三 9 卡（2026-10-19，R2_core_tier4 §⑤ 余量表 A 组
+- aurora_g W1-S3 内核卡批三 9 卡（2026-10-19，R2_core_tier4 §⑤ 余量表 A 组
   READY 7 族+CALC-only 2 族）：combline/cps/interdigital/siw/slot/stripline/
   suspended_stripline/dipole/helix——照 W6-S22 纯 CALC 键族卡先例；rf_line
   三线（cps/stripline/suspended_stripline）与 slotline_siw siw 半族为 C 组
   兄弟卡部分覆盖的剩余键面（slotline 半族已由既有 slotline 卡覆盖，防重复
   出卡）；9 族 docstring 出处句全部在源（零补写）。
-- 架构批 W2-S3 内核卡批四 9 卡（2026-10-19，R2_core_tier4 §④ 卡批 A 全量
+- aurora_g W2-S3 内核卡批四 9 卡（2026-10-19，R2_core_tier4 §④ 卡批 A 全量
   （directional_bridge/rf_switch/kuroda_identities/pll_lock_time/
-  multisection_coupler——架构批 新增 16 族漏卡五族）+W1-S2 新核 2 族
+  multisection_coupler——aurora_f 新增 16 族漏卡五族）+W1-S2 新核 2 族
   （link_limits/fec_codes——R2 §③ C1/C2 落地族）+A 组 2 族（itu_link/link
   ——注册薄壳+纯函数内核双模块卡）：注册键+docstring「物理口径/出处」节
   引文钉+锚树测试面 needles 三面齐备；102 条引文经预验探针
-  内部证据目录 一次全命中（零补写）；anchors/KD-1
+  内部证据档 一次全命中（零补写）；anchors/KD-1
   零命中如实渲染同 W6-S22 先例。
-- 架构批 W3-S3 内核卡批五 6 卡（2026-10-19，R2_core_tier4 §③ 新核
+- aurora_g W3-S3 内核卡批五 6 卡（2026-10-19，R2_core_tier4 §③ 新核
   三族 C3/C4/C6 落地族 dgs/if_digitizer/wg_dielectric_window + §④ 卡批 C
   波导族三卡 waveguide_closed_form/waveguide_iris/hybrid_junction）：照
   W2-S3 纯 CALC 键族卡先例——注册键+docstring「物理口径/出处」节引文钉
   +锚树测试面 needles 三面齐备；68 条引文经预验探针
-  内部证据目录 一次全命中（零补写）；anchors/KD-1
+  内部证据档 一次全命中（零补写）；anchors/KD-1
   零命中如实渲染同 W6-S22 先例。
-- 架构批 W6-S4 内核卡批六 6 卡（2026-10-19，R2_core_tier4 §④ 卡批 E
+- aurora_g W6-S4 内核卡批六 6 卡（2026-10-19，R2_core_tier4 §④ 卡批 E
   头两族 radar_eq/modulation_ber + 卡批 D 头一族 coax_line + W4-S4 内核
   余量三族 analog_modulation/si_ctle/propagation）：照 W2-S3/W3-S3 纯
   CALC 键族卡先例——注册键+docstring「物理口径/出处」节引文钉+锚树测试
-  面 needles 三面齐备；71 条引文经预验探针 内部证据目录
-  .py 一次全命中（零补写）、19 CALC 键数值抽查 内部证据目录
+  面 needles 三面齐备；71 条引文经预验探针 内部证据档
+  .py 一次全命中（零补写）、19 CALC 键数值抽查 内部证据档
   w6s4_numeric_probe.py docstring 锦点全 PASS；propagation=注册薄壳+纯
   函数内核双模块卡（同 itu_link 先例）；anchors 零命中/KD-1 按
   formula_provenance 实测渲染（coax_line/analog_modulation 各 1 条、
@@ -277,7 +277,7 @@ SPECS: tuple[CardSpec, ...] = (
         ),
         doc_refs=(
             DocRef(
-                path="延续计划（仓内规划档，不随公开分发）",
+                path="内部证据档",
                 quote="任务来源：延续计划 §10.3 D13 / §10.19 第 2 条。",
                 tracked=False,
             ),
@@ -402,7 +402,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
             DocRef(
                 path="runs/df6_dp1mmt/criteria.md",
-                quote="判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。",
+                quote="判据预声明 = 内部证据档（先写后跑，#122）。",
                 tracked=False,
             ),
         ),
@@ -635,13 +635,13 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="Saltelli 互证 ±10%（§10.15）",
                 note=(
                     "验收口径=patch 公差问题 PCE-Sobol vs 既有 Saltelli 互证 "
-                    "±10%（规划档 §10.15 预声明）。"
+                    "±10%（延续计划 §10.15 预声明）。"
                 ),
             ),
         ),
         doc_refs=(
             DocRef(
-                path="延续计划（仓内规划档，不随公开分发）",
+                path="内部证据档",
                 quote="延续计划 §10.4 D8：稀疏 PCE（ChaosPy/OpenTURNS）",
                 tracked=False,
             ),
@@ -763,12 +763,12 @@ SPECS: tuple[CardSpec, ...] = (
             ),
             DocRef(
                 path="runs/df6_dp5cascade/criteria.md",
-                quote="runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。",
+                quote="内部证据档（回收钉锚值与来源）。",
                 tracked=False,
             ),
         ),
     ),
-    # ─── 架构批 W3-S13 知识面批 扩容批一（11 张；按「CALC 键+teaching 块+
+    # ─── aurora_e W3-S13 知识面批 扩容批一（11 张；按「CALC 键+teaching 块+
     # 锚覆盖」数据源完备性选族；公式与边界全部 quote 钉在模块源文件） ──────
     CardSpec(
         kernel_id="mline",
@@ -1167,7 +1167,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="runs/xa1_arbitration/l5_sweep/criteria.md",
-                quote="仲裁 INCONCLUSIVE 在档 runs/xa1_arbitration/；语义终裁挂 L5 v2 批，",
+                quote="在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见",
                 tracked=False,
             ),
         ),
@@ -1301,9 +1301,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="src/rfauto/core/calculators.py",
-                quote="在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见",
+            DocRef(path="src/rfauto/core/calculators.py", quote="在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见",
                 tracked=True,
             ),
         ),
@@ -1391,9 +1389,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="tests/unit/test_w4_b_p3_slotline_wide.py",
-                quote="tests/unit/test_w4_b_p3_slotline_wide.py 钉）。",
+            DocRef(path="tests/unit/test_w4_b_p3_slotline_wide.py", quote="权威口径（铁律 1c：常数逐个有出处、分段声明有效范围、超范围显式报错不外推）",
                 tracked=True,
             ),
         ),
@@ -1490,9 +1486,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="runs/hairpin_kgap/offline_kj_vs_ngsolve.json",
-                quote="偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，runs/hairpin_kgap/",
+            DocRef(path="runs/hairpin_kgap/offline_kj_vs_ngsolve.json", quote="偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，内部证据档",
                 tracked=False,
             ),
         ),
@@ -1645,7 +1639,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
     ),
-    # ─── 架构批 W4-S19 知识面批 扩容批二（8 张；优先任务书点名的
+    # ─── aurora_e W4-S19 知识面批 扩容批二（8 张；优先任务书点名的
     # 「专属 CALC 键或 synthesis 面」完备族；引文全部钉在模块源文件） ────
     CardSpec(
         kernel_id="atten_pi",
@@ -2227,7 +2221,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
     ),
-    # ─── 架构批 W1-S3 内核前置批（2026-10-18，R2_core_tier3 §⑤ F1/F2
+    # ─── aurora_f W1-S3 内核前置批（2026-10-18，R2_core_tier3 §⑤ F1/F2
     # 设计案；lange/stepped_impedance 批一留缺理由就此关闭）──────────────────
     CardSpec(
         kernel_id="lange",
@@ -2330,14 +2324,14 @@ SPECS: tuple[CardSpec, ...] = (
                 note=(
                     "提升式重构单一事实源：adapters/render_c4 与 "
                     "openems_templates 的同名入口=core 同一函数对象（字节级"
-                    "对拍钉，基线 内部证据目录）。"
+                    "对拍钉，基线 runs/aurora_f/）。"
                 ),
             ),
         ),
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w1s3_lange_stepped.py",
-                quote="内部证据目录",
+                quote="runs/aurora_f/w1s3_lange_parity_baseline.json",
                 tracked=True,
             ),
         ),
@@ -2448,7 +2442,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
     ),
-    # ─── 架构批 W3-S11 前置批收官（2026-10-18，R2_core_tier3 §⑤ F3
+    # ─── aurora_f W3-S11 前置批收官（2026-10-18，R2_core_tier3 §⑤ F3
     # 设计案；build_kernel_cards 批一 docstring 所记 ring_resonator 留缺
     # 就此关闭，前置三族全部出卡）────────────────────────────────────────
     CardSpec(
@@ -2475,7 +2469,7 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="r_mean = c/(2π·f1·√εeff(f1))，εeff 取微带 HJ 正向（core/synthesis.",
                 cite=(
                     "模块 docstring「谐振恒等式」节（闭环周长=λg；基线 "
-                    "内部证据目录 字节对拍钉；"
+                    "runs/aurora_f/w3s11_ring_parity_baseline.json 字节对拍钉；"
                     "反方向=core/dielectric_extract.ring_resonator_f0_to_er "
                     "同仓双源，回收带 −0.52% 如实）"
                 ),
@@ -2564,12 +2558,12 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w3s11_ring.py",
-                quote="内部证据目录",
+                quote="runs/aurora_f/w3s11_ring_parity_baseline.json",
                 tracked=True,
             ),
         ),
     ),
-    # ─── 架构批 W6-S22 内核卡扩面批（9 张；照 cascade/rwg_mmt/ring_resonator
+    # ─── aurora_f W6-S22 内核卡扩面批（9 张；照 cascade/rwg_mmt/ring_resonator
     # 纯 CALC 键族卡先例——数据源完备性盘点 9/9 全出：注册键+docstring「物理
     # 口径/出处」节+锚树测试面 needles 三面齐备；anchors/KD-1 零命中如实渲染）──
     CardSpec(
@@ -2676,7 +2670,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w2s6_mixer_bridge_switch.py",
-                quote="架构批 W2-S6 席域，R2_core_tier3 §③ D2 立项",
+                quote="aurora_f W2-S6 席域，R2_core_tier3 §③ D2 立项",
                 tracked=True,
             ),
         ),
@@ -3049,7 +3043,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w3s10_agc_calkit_sixport.py",
-                quote="架构批 W3-S10 席域，R2_core_tier3 §③ D3 立项",
+                quote="aurora_f W3-S10 席域，R2_core_tier3 §③ D3 立项",
                 tracked=True,
             ),
         ),
@@ -3139,7 +3133,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w3s10_agc_calkit_sixport.py",
-                quote="架构批 W3-S10 席域，R2_core_tier3 §③ D5 立项",
+                quote="aurora_f W3-S10 席域，R2_core_tier3 §③ D5 立项",
                 tracked=True,
             ),
         ),
@@ -3218,7 +3212,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w3s10_agc_calkit_sixport.py",
-                quote="架构批 W3-S10 席域，R2_core_tier3 §③ D7 立项",
+                quote="aurora_f W3-S10 席域，R2_core_tier3 §③ D7 立项",
                 tracked=True,
             ),
         ),
@@ -3303,7 +3297,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w5s18_core_edge.py",
-                quote="架构批 W5-S18 席域，R2_core_tier3 边际池立项",
+                quote="aurora_f W5-S18 席域，R2_core_tier3 边际池立项",
                 tracked=True,
             ),
         ),
@@ -3381,12 +3375,12 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w5s18_core_edge.py",
-                quote="架构批 W5-S18 席域，R2_core_tier3 边际池立项",
+                quote="aurora_f W5-S18 席域，R2_core_tier3 边际池立项",
                 tracked=True,
             ),
         ),
     ),
-    # ─── 架构批 W1-S3 内核卡批三（9 张；R2_core_tier4 §⑤ 余量表 A 组 READY
+    # ─── aurora_g W1-S3 内核卡批三（9 张；R2_core_tier4 §⑤ 余量表 A 组 READY
     # 7 族 + CALC-only 2 族——照 W6-S22 纯 CALC 键族卡先例：注册键+docstring
     # 「物理口径/出处」节引文钉+锚树测试面 needles 三面齐备；rf_line 三线
     # 与 slotline_siw siw 半族为 C 组兄弟卡部分覆盖的剩余键面，slotline 半族
@@ -3720,7 +3714,7 @@ SPECS: tuple[CardSpec, ...] = (
                 tracked=True,
             ),
             DocRef(
-                path="内部证据目录",
+                path="runs/aurora_d/_core7_verify_derivation.py",
                 quote="前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参",
                 tracked=False,
             ),
@@ -3803,9 +3797,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="runs/siw_family/criteria.md",
-                quote="双源核实与全部常数出处：runs/siw_family/criteria.md §1（铁律 1c）——",
+            DocRef(path="runs/siw_family/criteria.md", quote="# 双源核实与全部常数出处：内部证据档 §1（铁律 1c）——",
                 tracked=False,
             ),
             DocRef(
@@ -3909,9 +3901,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="内部证据目录",
-                quote="内部规格档（Stevenson 阵综合）",
+            DocRef(path="runs/aurora_c/batch_b_wave3_specs/G16_slot_array_stevenson_RESOLVED.md", quote="边界防撞（R7 §③ 三重搜索证据沿用规格包）",
                 tracked=False,
             ),
             DocRef(
@@ -3976,9 +3966,7 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="runs/review_ge8e/r1_calculators/REPORT.md",
-                quote="R1-1，runs/review_ge8e/r1_calculators/REPORT.md）；AGM 形态两式数学",
+            DocRef(path="runs/review_ge8e/r1_calculators/REPORT.md", quote="R1-1，内部证据档）；AGM 形态两式数学",
                 tracked=False,
             ),
         ),
@@ -4197,7 +4185,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_a3b_stub_antenna.py",
-                quote="（架构批 A3-B 席域 2，R7 第二梯队 T4）",
+                quote="（aurora72 A3-B 席域 2，R7 第二梯队 T4）",
                 tracked=True,
             ),
         ),
@@ -4284,17 +4272,15 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="tests/unit/test_helix_axial.py H1-H6 已 #118 合规在库——本席不重造",
                 tracked=True,
             ),
-            DocRef(
-                path=None,
-                quote="薄注册纪律（规格包（内部档））",
+            DocRef(path="runs/aurora_c/batch_b_wave3_specs/G17_helical_axial.md", quote="**薄注册纪律（规格包 内部证据档）**：",
                 tracked=False,
             ),
         ),
     ),
-    # ─── 架构批 W2-S3 内核卡批四（9 张；R2_core_tier4 §④ 卡批 A 全量 + W1-S2
+    # ─── aurora_g W2-S3 内核卡批四（9 张；R2_core_tier4 §④ 卡批 A 全量 + W1-S2
     # 新核 2 族 + 测量/链路 A 组 2 族——照 W6-S22/W1-S3 纯 CALC 键族卡先例：
     # 注册键+docstring「物理口径/出处」节引文钉+锚树测试面 needles 三面齐备
-    # （102 条引文预验探针 内部证据目录 一次全命中）；
+    # （102 条引文预验探针 内部证据档 一次全命中）；
     # itu_link/link 为注册薄壳+纯函数内核双模块卡（主模块=注册面，同族模块
     # =内核面）；anchors/KD-1 零命中如实渲染）──
     CardSpec(
@@ -4626,7 +4612,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w2s6_mixer_bridge_switch.py",
-                quote="定向电桥/反射计桥（架构批 W2-S6 席域，R2_core_tier3 §③ D4 立项）。",
+                quote="定向电桥/反射计桥（aurora_f W2-S6 席域，R2_core_tier3 §③ D4 立项）。",
                 tracked=True,
             ),
         ),
@@ -4731,7 +4717,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w2s6_mixer_bridge_switch.py",
-                quote="射频开关件面（架构批 W2-S6 席域，R2_core_tier3 §③ D8 立项）。",
+                quote="射频开关件面（aurora_f W2-S6 席域，R2_core_tier3 §③ D8 立项）。",
                 tracked=True,
             ),
         ),
@@ -4830,7 +4816,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w4s14_core_edge.py",
-                quote="Kuroda 恒等式族（架构批 W4-S14 席域 2，R2_core_tier3 边际池立项）。",
+                quote="Kuroda 恒等式族（aurora_f W4-S14 席域 2，R2_core_tier3 边际池立项）。",
                 tracked=True,
             ),
         ),
@@ -5159,9 +5145,7 @@ SPECS: tuple[CardSpec, ...] = (
                 quote="Tables 1-4 系数已由 AP-8 批逐值录入，验证链见该模块 docstring 与",
                 tracked=True,
             ),
-            DocRef(
-                path="tests/unit/test_w4_c_p10_itu_p618.py",
-                quote="P.618-13 式面（W4-C P10 批 2026-10-05，已逐式对照官方 PDF 视觉核verify）",
+            DocRef(path="tests/unit/test_w4_c_p10_itu_p618.py", quote="出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py",
                 tracked=True,
             ),
         ),
@@ -5240,17 +5224,15 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="tests/unit/test_gt_link_calculators.py",
-                quote="（定义级引用；数值锚=恒等式回收，见 tests/unit/test_gt_link_calculators.py）。",
+            DocRef(path="tests/unit/test_gt_link_calculators.py", quote="出处（出处逐字见内核 core/gt_link.py docstring——本模块只做注册薄壳）：",
                 tracked=True,
             ),
         ),
     ),
-    # ─── 架构批 W3-S3 内核卡批五（2026-10-19，R2_core_tier4 §③ 新核
+    # ─── aurora_g W3-S3 内核卡批五（2026-10-19，R2_core_tier4 §③ 新核
     # 三族 C3/C4/C6 落地族 + §④ 卡批 C 波导族三卡）——照 W2-S3 纯 CALC
     # 键族卡先例：注册键+docstring「物理口径/出处」节引文钉+锚树测试面
-    # needles 三面齐备（68 条引文预验探针 内部证据目录
+    # needles 三面齐备（68 条引文预验探针 内部证据档
     # 一次全命中）；anchors/KD-1 零命中如实渲染 ──
     CardSpec(
         kernel_id="dgs",
@@ -5939,10 +5921,10 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
     ),
-    # ─── 架构批 W6-S4 内核卡批六 6 卡（R2_core_tier4 §④ 卡批 E 头两族
-    # + 卡批 D 头一族 + W4-S4 内核余量三族；引文经 内部证据目录
+    # ─── aurora_g W6-S4 内核卡批六 6 卡（R2_core_tier4 §④ 卡批 E 头两族
+    # + 卡批 D 头一族 + W4-S4 内核余量三族；引文经 内部证据档
     # w6s4_quote_probe.py 预验 71/71 一次全命中，数值抽查
-    # 内部证据目录 19 CALC 键 docstring 锦点全 PASS）──
+    # 内部证据档 19 CALC 键 docstring 锦点全 PASS）──
     CardSpec(
         kernel_id="radar_eq",
         tagline=(
@@ -6580,14 +6562,12 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
         doc_refs=(
-            DocRef(
-                path="tests/unit/test_propagation.py",
-                quote="tests/unit/test_propagation.py（断点干涉峰 +6dB/远场斜率回归/",
+            DocRef(path="tests/unit/test_propagation.py", quote="出处（标准模型原文逐字转写+教科书同族二级转引，键内描述同源）：",
                 tracked=True,
             ),
         ),
     ),
-    # ─── 架构批 W8-S1 内核卡批七（W7-S3 新核三族：HF 天波/FMCW/SAR） ───────
+    # ─── aurora_g W8-S1 内核卡批七（W7-S3 新核三族：HF 天波/FMCW/SAR） ───────
     CardSpec(
         kernel_id="hf_skywave",
         tagline=(
@@ -6953,8 +6933,8 @@ SPECS: tuple[CardSpec, ...] = (
             ),
         ),
     ),
-    # ─── 架构批 W12-S2 内核卡终批（5 张：R3_domain_expansion 立族的
-    # 架构批 新核五族收官——gnss_geometry/radar_clutter/microstrip_disc/
+    # ─── aurora_g W12-S2 内核卡终批（5 张：R3_domain_expansion 立族的
+    # aurora_g 新核五族收官——gnss_geometry/radar_clutter/microstrip_disc/
     # open_wire_line/wg_cavity_bpf，逐族三面盘点（注册键+docstring 出处节
     # 引文钉+锚树测试面 needles）全齐备；同笔 fmcw_radar 卡扩至全族 4 键
     # （W11-S4 扩展 2 键入 primary_entries/needles/公式/边界）。KD-1 各
@@ -7182,7 +7162,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w6s3_core_domains.py",
-                quote="雷达杂波与 MTI 滤波族（架构批 W6-S3 席立族，R3_domain_expansion 视角4",
+                quote="雷达杂波与 MTI 滤波族（aurora_g W6-S3 席立族，R3_domain_expansion 视角4",
                 tracked=True,
             ),
         ),
@@ -7450,12 +7430,12 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w6s3_core_domains.py",
-                quote="微带不连续寄生闭式族（架构批 W6-S3 席，R3_domain_expansion 视角1 A1",
+                quote="微带不连续寄生闭式族（aurora_g W6-S3 席，R3_domain_expansion 视角1 A1",
                 tracked=True,
             ),
             DocRef(
                 path="tests/unit/test_w15s2_core_domains.py",
-                quote="微带全族扩展四键（架构批 W15-S2 席，R3_domain_expansion §④ A1 余量",
+                quote="微带全族扩展四键（aurora_g W15-S2 席，R3_domain_expansion §④ A1 余量",
                 tracked=True,
             ),
         ),
@@ -7554,7 +7534,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w10s4_core_domains.py",
-                quote="平衡开线族（架构批 W10-S4 席，R3_domain_expansion 视角1 A2——rf_line",
+                quote="平衡开线族（aurora_g W10-S4 席，R3_domain_expansion 视角1 A2——rf_line",
                 tracked=True,
             ),
         ),
@@ -7671,7 +7651,7 @@ SPECS: tuple[CardSpec, ...] = (
         doc_refs=(
             DocRef(
                 path="tests/unit/test_w10s4_core_domains.py",
-                quote="波导膜片耦合腔带通滤波器综合链（架构批 W10-S4 席，R3_domain_expansion",
+                quote="波导膜片耦合腔带通滤波器综合链（aurora_g W10-S4 席，R3_domain_expansion",
                 tracked=True,
             ),
         ),
@@ -7780,7 +7760,7 @@ def _test_texts() -> dict[str, str]:
 
     生成器对每张卡的每个模块都调 referencing_tests()——零缓存时
     6 测试×74 specs×~1090 文件 ≈48 万次全树读，是 kernel_cards 六件
-    门测各 64-83s 与预检 docs 再生面 466s 的主因（架构批 R3 #1）。
+    门测各 64-83s 与预检 docs 再生面 466s 的主因（aurora_h R3 #1）。
     dict 保插入序=sorted(glob) 序，下游遍历序与旧实现逐字节一致；
     单进程内文本不可变假设=生成器只读树（测试进程同一性成立）。
     """
@@ -7835,7 +7815,7 @@ _KD1_DATA_CACHE: list[dict[str, Any]] | None = None
 
 def kd1_entries(kernel_file: str) -> list[dict[str, Any]]:
     # KD1 大表（formula_provenance.yaml ~300 条目级嵌套）逐卡重解析是
-    # 六件门测 44-58s 的真瓶颈（架构批 R3 #1+本席 profile 实证 379 次
+    # 六件门测 44-58s 的真瓶颈（aurora_h R3 #1+本席 profile 实证 379 次
     # safe_load=145s）——进程级解析一次按 kernel_file 过滤。
     global _KD1_DATA_CACHE
     if _KD1_DATA_CACHE is None:
@@ -8112,7 +8092,7 @@ def render_card(spec: CardSpec) -> str:
     if spec.doc_refs:
         lines += ["判据书/规格指针（docstring 逐字引文钉）：", ""]
         for ref in spec.doc_refs:
-            exist_note = "" if ref.tracked else "（仓内档，公开分发视图不随附，存在性不作测试断言）"
+            exist_note = "" if ref.tracked else "（runs/ 证据面，gitignored，存在性不作测试断言）"
             lines.append(f"- `{ref.path}`{exist_note}——引文：\"{_md_text(ref.quote)}\"")
         lines.append("")
     all_tests = test_face_rows(spec)
@@ -8221,10 +8201,10 @@ def build(target_dir: Path) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="XA-8 内核域文档卡生成器（首批 5 张 + W3-S13 批一 11 张 + "
-                    "W4-S19 批二 8 张 + 架构批 前置批 3 张 + W6-S22 扩面 9 张"
-                    " + 架构批 W1-S3 批三 9 张 + 架构批 W2-S3 批四 9 张"
-                    " + 架构批 W3-S3 批五 6 张 + 架构批 W6-S4 批六 6 张"
-                    " + 架构批 W8-S1 批七 3 张 + 架构批 W12-S2 终批 5 张）")
+                    "W4-S19 批二 8 张 + aurora_f 前置批 3 张 + W6-S22 扩面 9 张"
+                    " + aurora_g W1-S3 批三 9 张 + aurora_g W2-S3 批四 9 张"
+                    " + aurora_g W3-S3 批五 6 张 + aurora_g W6-S4 批六 6 张"
+                    " + aurora_g W8-S1 批七 3 张 + aurora_g W12-S2 终批 5 张）")
     parser.add_argument(
         "--check", action="store_true",
         help="漂移检查：重渲染与已提交卡逐字节比对，漂移即退出码 1（不写文件）",

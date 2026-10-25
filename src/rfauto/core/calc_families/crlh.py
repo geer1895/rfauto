@@ -18,7 +18,7 @@ crlh_s21_closed_form/crlh_skrf_cascade_s21 为 core 纯函数不注册
 （级联对拍面走 core 直调+test_crlh.py 锚树；≤0.1dB/1° 验收在传播
 频段，阻带镜像阻抗纯虚在 power-wave S 下无定义）。
 
-架构批 W2-S2 席增键 crlh_balanced_synthesize（R2_core_tier4 §③ Top8
+aurora_g W2-S2 席增键 crlh_balanced_synthesize（R2_core_tier4 §③ Top8
 C5——分析面既有、综合面 `crlh.*synth|crlh.*design` 全仓零的补口）：
 (f0, Z0, C_L|L_R 恰给其一)→四元 LC 平衡综合闭式；内核
 core/crlh.crlh_balanced_synthesis（§8，第一性联立消元），回判面=本族

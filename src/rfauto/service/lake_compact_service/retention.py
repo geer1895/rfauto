@@ -1,6 +1,6 @@
 """lake_compact_service.retention —— ① h5 白名单保留策略（纯读规划+直删执行）。
 
-自 service/lake_compact_service.py 单文件巨石按职责域拆分（架构批 W3-S1，
+自 service/lake_compact_service.py 单文件巨石按职责域拆分（aurora_h W3-S1，
 T2 范式/AU-1 工艺）：代码体自原节「① h5 白名单保留策略（纯读规划器）」
 逐字节搬迁（指针源扫描/保护链判定/plan 三档规划/apply 白名单点名删除），
 零逻辑改动；reversible/et_ht_dedup 域的保护面扫描从这里单向导入。

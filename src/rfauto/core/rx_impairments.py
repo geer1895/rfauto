@@ -50,7 +50,7 @@
    前端选择性用**单一聚总抑制参数**（不逐级频变）；AGC/压缩行为只做
    P1dB 裕量检查（不迭代压缩后 NF）——AGC 环路动态面（闭环增益/
    attack-release 时间常数/稳态误差/阶跃轨迹）已由
-   calc_families/agc_loop.py 补全（架构批 R2 D3 立项，本注记改
+   calc_families/agc_loop.py 补全（aurora_f R2 D3 立项，本注记改
    指路；本模块保留静态线性度面，语义零改动）。
 
 单位口径：dB/dBm/Hz/K/rad/deg 显式钉在参数名。数值 0.0 合法（判缺失

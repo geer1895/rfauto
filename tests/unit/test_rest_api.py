@@ -203,7 +203,7 @@ class TestOpenApi:
         assert dataset_ref.endswith("/DatasetQueryRequest")
 
     def test_endpoint_total_count_pin(self):
-        """端点总数钉（程序化枚举钉死；新端点必更新本值——架构批 REST-B
+        """端点总数钉（程序化枚举钉死；新端点必更新本值——aurora_d REST-B
         2026-10-14。操作集形态由 test_expected_operations_present 另钉，
         本钉管**计数棘轮**：加端点必须显式动数字，静默漂移即红）。"""
         spec = rest_api.openapi_spec()
@@ -280,7 +280,7 @@ class TestSchemaExport:
 
 
 class TestSchemaCliLeaf:
-    """`rfauto rest schema` CLI 叶（架构批 REST-B；--json 信封 + --out 落盘
+    """`rfauto rest schema` CLI 叶（aurora_d REST-B；--json 信封 + --out 落盘
     + --openapi raw spec 出口；ge1㉙ 错误路径也必须 JSON）。"""
 
     def _invoke(self, args: list[str]):

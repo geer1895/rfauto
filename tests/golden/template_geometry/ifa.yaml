@@ -10,7 +10,7 @@ params:
   ifa_w_mm: 1.0
   feed_off_mm: 2.0
 status: ok
-script_sha256: ceae336ba61df16fa816c55d4befe6796cddeb4dc7942c01eec355522f970aab
+script_sha256: e66a063c30c5ec62a48bda1b97172bbf4fd84a3736f9e18f728aafd9328f87fb
 csx:
   n_primitives: 7
   props:

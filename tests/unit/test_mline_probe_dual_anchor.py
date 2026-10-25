@@ -1,7 +1,7 @@
 """mline 探针双锚判据单测（队列3-A，廿八未尽①；纯函数零真机）。
 
-锚值来源（归因档 runs/mline_repro_attribution_20260911.md §二 + 旧判读
-runs/mline_repro_diag4_originfix.log:54）：
+锚值来源（归因档 内部证据档 §二 + 旧判读
+内部证据档:54）：
   openEMS β 金标准 2.886（#189 收敛值族 2.8813~2.8884，采 2.886）
   HJ 准静态闭式 2.8526（forward_z0 rogers4350b w=1.113）
   HFSS 真机 2.9200（diag4）/ 2.9249（diag5）
@@ -213,7 +213,7 @@ class TestEngineBenchmarkVerdict:
     （对金标准 ≤2%/对 HJ ≤3%）+ 健康 |S11|max<-10dB。
     """
 
-    # #189 真实收敛数据回放（runs/benchmark/mline_mesh_convergence.json）
+    # #189 真实收敛数据回放（内部证据档）
     EPS_FINEST_189 = 2.8813
     CONV_189 = 0.0534
     S11_WORST_189 = -23.93   # ok 档全带最差（auto 档）

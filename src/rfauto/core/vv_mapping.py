@@ -1,7 +1,7 @@
 """V&V 20 术语映射层 + u_num 保守上界（DP-12，纯函数，零真机零网络）。
 
 背景（docs/plan_deepdive_specs_20260924.md DP-12 §2/§4/§5；预声明判据
-runs/df6_dp12vv/criteria.md 先于动工落盘）：现有判据门（AGREE_*/SPLIT/
+内部证据档 先于动工落盘）：现有判据门（AGREE_*/SPLIT/
 UNDECIDED/UNDECIDABLE/FAIL/PARTIAL/UNKNOWN、passivity 旁证）纪律已备但
 语言是项目黑话——对外无标准可信度表述。本模块是**唯一翻译层**：
 
@@ -26,7 +26,7 @@ UNDECIDED/UNDECIDABLE/FAIL/PARTIAL/UNKNOWN、passivity 旁证）纪律已备但
   （preflight_invalid）。各 criteria 的数据健全性带（如 ≤1.02 越界=数据
   坏）是另一语义，在 v2 YAML preflight 分开声明，本模块不混用。
 
-LLM/agent 永不产生物理数字（AGENTS 规则 7）：本模块只做确定性换算与
+LLM/agent 永不产生物理数字（内核立规注记 规则 7）：本模块只做确定性换算与
 判定，全部数值来自调用方传入的证据字段（verdict.json / stage1 判读档 /
 v2 YAML 声明值）。
 
@@ -34,8 +34,8 @@ v2 YAML 声明值）。
 NASA GRC Richardson-GCI / Celik 2008 ASME JFE。
 
 消费方（本批）：tests/unit/test_vv_mapping.py（映射+u_num 合成钉）、
-tests/unit/test_vv_recast.py（RECAST 历史重放：runs/df5_c3fix/
-sentinel_verdict.json 与 runs/hfss_interdigital_check/verdict.json 只读）。
+tests/unit/test_vv_recast.py（RECAST 历史重放：内部证据档
+sentinel_verdict.json 与 内部证据档 只读）。
 runner/报告面接入=后续批（knowledge/criteria/v2/*.yaml 的
 runner_binding: followUp 预声明）。
 """
@@ -263,7 +263,7 @@ def ladder_saturated(levels: list[float]) -> tuple[bool, dict[str, Any]]:
 def u_num_from_ladder(levels: list[float], fs: float = FS_CONSERVATIVE) -> float | None:
     """u_num 保守上界：Fs·max|Δφ_ladder|（饱和合格级才可估，否则 None 不虚构）。
 
-    合成回收钉（runs/df6_dp12vv/criteria.md §二）：[0.0625, 0.03125,
+    合成回收钉（内部证据档 §二）：[0.0625, 0.03125,
     0.015625] → u_num=1.25×0.03125=0.0390625（二进制可逐位）。
     """
     ok, _detail = ladder_saturated(levels)
@@ -317,7 +317,7 @@ def validate_claim(
 ) -> dict[str, Any]:
     """V&V 20 判定：|E|≤U_val（E=S−D，U_val=k·u_val）——纯函数。
 
-    分量缺失语义（预声明进 schema，runs/df6_dp12vv/criteria.md §二）：
+    分量缺失语义（预声明进 schema，内部证据档 §二）：
 
     - 缺省（fallback_u_val=None）：任一分量 None → u_val=None 不虚构 →
       ``vv_status=validation_not_attempted``（UNDECIDED 同向）；

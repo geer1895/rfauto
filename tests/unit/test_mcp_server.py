@@ -145,7 +145,11 @@ class TestMCPToolsRegistered:
         # edb 快车道 +3（2026-10-08）：edb_emit_spec/edb_build_solve/
         #   edb_status（零逻辑转发新建 edb_lane_service，CLI edb 域同源）
         #   = 152
-        assert len(tools) == 152
+        # em 族五只读薄壳 +5（2026-10-23，aurora_l Wave-C C1）：em_doctor_check/
+        #   runs_verify/em_diff_runs/em_metrics_from_run/em_sweep_plan（零逻辑
+        #   转发 em_doctor/runs_verify/em_diff/em_metrics/em_sweep service
+        #   单源；sweep 执行面不上 MCP，反馈 F5）= 157
+        assert len(tools) == 157
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -264,6 +268,11 @@ class TestMCPToolsRegistered:
             # EDB 快车道三工具薄壳（2026-10-08）——零逻辑转发
             # edb_lane_service（发射/建库+批解/资产清单，CLI edb 域同源）
             "edb_emit_spec", "edb_build_solve", "edb_status",
+            # em 族五只读薄壳（aurora_l Wave-C C1，2026-10-23）——零逻辑转发
+            # em_doctor/runs_verify/em_diff/em_metrics/em_sweep service 单源；
+            # sweep 执行面不上 MCP（v1 只读 plan 面，反馈 F5）
+            "em_doctor_check", "runs_verify", "em_diff_runs",
+            "em_metrics_from_run", "em_sweep_plan",
         }
         assert names == expected
 
@@ -1201,15 +1210,15 @@ class TestRemoteTools:
 
         def fake_probe(machine):
             captured["machine"] = machine
-            return {"ok": True, "machines": [{"name": "sim-host",
+            return {"ok": True, "machines": [{"name": "sim_server",
                                               "reachable": True}]}
 
         monkeypatch.setattr(rsvc, "remote_probe", fake_probe)
         data = self._call(mcp_server, "remote_probe_machine",
-                          {"machine": "sim-host"})
+                          {"machine": "sim_server"})
         assert data["ok"] is True
-        assert data["machines"][0]["name"] == "sim-host"
-        assert captured["machine"] == "sim-host"
+        assert data["machines"][0]["name"] == "sim_server"
+        assert captured["machine"] == "sim_server"
 
     def test_remote_machine_status_missing_credentials_envelope(
             self, mcp_server, monkeypatch):

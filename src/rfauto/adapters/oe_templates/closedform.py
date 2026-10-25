@@ -1,6 +1,6 @@
 """跨族共享闭式综合/几何 helper（含 _fmt_list；放叶模块避免循环）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。
 
-提升注记（架构批 W1-S3，2026-10-18）：`coupled_bpf_width_gap_from_zee_zoo`
+提升注记（aurora_f W1-S3，2026-10-18）：`coupled_bpf_width_gap_from_zee_zoo`
 （KJ 二维反解）已下沉 core/coupled_microstrip.py（原样提升，函数体逐字节
 未动；core.calc_families.lange 提升式重构需要 core 层可达）——本文件只留
 再导出（#116 不留本地遮蔽副本），既有 import 面零改动。

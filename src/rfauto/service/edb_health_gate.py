@@ -11,7 +11,7 @@ G11 目录体检会"无可识别体检产物"全空 suspect。本模块消费批
 dict + Touchstone 文件（skrf 读，health_service._load_touchstone 同款
 懒加载惯例），产出独立三态质量门。
 
-数值门边界纪律（项目规则 #376 家法，2026-10-08/09 W5 回取复核席实证）：
+数值门边界纪律（内核立规注记 #376 家法，2026-10-08/09 W5 回取复核席实证）：
 本门全部闭边界 verdict 判据一律留 1e-9 家法余量（与
 core/trl_solt._LINE_PASSIVE_MARGIN 同源）——健康门闭区间语义（实测
 ≤ 门 / σmax ≤ 1+容差 / 窗双边闭）在恰等边界读数上字面比较会被量化
@@ -49,10 +49,11 @@ f0 扫频跨度 ``f_min ≤ f0 ≤ f_max`` 为成员性前置（出跨度 → UN
 ``_S11_DIP_DB_EPS`` 保护）；其余为整型形态/契约比较与已带
 rtol=1e-6 容差的 ``np.isclose``（f0 落格兜底）。
 
-判据族（七因子+条件性 f0_offset 谷位标记，全部确定性数值规则——铁律
+判据族（八因子+条件性 f0_offset 谷位标记，全部确定性数值规则——铁律
 7：LLM/agent 永不产生物理数字，本门只消费求解器实测与批处理结构化
 回执，门常量为判据非产物；``s_split_window`` 为模板作用域判据未登记
-族不计入 criteria，``f0_offset`` 仅在 f0 邻域检出多谷时出现）：
+族不计入 criteria，``f0_offset`` 仅在 f0 邻域检出多谷时出现，
+``result_freshness`` 无预期指纹时以 SKIP 态在档）：
 
 - ``solve_status``：求解 rc/超时态。``rc==0 且未超时`` → PASS；
   ``timed_out`` → FAIL（watchdog 整树击杀后残留产物不可信，#157 家族）；
@@ -93,7 +94,7 @@ rtol=1e-6 容差的 ``np.isclose``（f0 落格兜底）。
   ``S_WINDOW_DB_BY_TEMPLATE`` 登记表；**无通用缺省窗**——等分分配窗是
   功分器族专属物理语义，未登记且无显式窗的族不设本判据（criteria 键
   缺席=不判，不硬套他族门，也不冒充 PASS）。登记出处=W1 冒烟门语义
-  仲裁（2026-10-09，runs/edblane85/w1_smoke REPORT §3.2）：理想等分
+  仲裁（2026-10-09，内部证据档 REPORT §3.2）：理想等分
   分配损耗 -3.01dB，健康实测 -3.19/-3.26；冒烟任务书字面门"各
   ≤-3.8dB"是单边下界语义错位，会误杀任何健康功分器——裁定物理窗
   [-3.8, -2.5]dB（下界=3dB 分配+0.8dB 实现容差，上界排除异常增益/
@@ -101,9 +102,25 @@ rtol=1e-6 容差的 ``np.isclose``（f0 落格兜底）。
 - ``reciprocity``：|Sij−Sji| 逐对（掩码纪律 #314——Touchstone 是全矩阵
   无掩码载体，按全矩阵判但 detail/evidence 如实声明
   ``measured_mask=None`` 语义；单端口无跨端口对 = 平凡真如实注记）。
+- ``result_freshness``（第 8 判据，aurora_l Wave-C C3）：盘上
+  Touchstone 指纹 vs 构建记录预期（``expected_freshness`` 块：
+  ``sha256`` hex 串 + ``generated_at`` 生成时刻 epoch 秒/ISO-8601）
+  ——sha 一致且 mtime ≥ 生成时刻 → PASS；任一字段不符 → FAIL
+  （"Touchstone 与 EDB 构建记录不符（旧文件顶替/错拷）"——旧
+  Touchstone 物理判据凑巧过即 PASS 的新鲜度缺口，aurora_l R1 侦察
+  #6）；``expected_freshness`` 缺省 → **SKIP 行**（第四态："无预期
+  指纹，新鲜度未校验"——不冒充 PASS，也不冒充 UNKNOWN/FAIL，不参与
+  verdict 聚合；增量兼容：既有调用方零变化）。expected 块由调用方从
+  EDB build/solve 记录传入——**当前链路暂无指纹落点**（hfss_batch
+  export 段/edb_lane_service 信封均未落 solve 产物 sha/mtime 存证，
+  2026-10-23 普查），接线登记待构建链补指纹落点后跟进。
 
 verdict 规则（#122）：任一 FAIL → FAIL；否则任一 UNKNOWN → UNKNOWN
-（不冒充 FAIL 也不冒充 PASS）；全 PASS → PASS。``ok`` 仅作报告字段
+（不冒充 FAIL 也不冒充 PASS）；全 PASS → PASS。**SKIP 不参与 verdict
+聚合**（第 8 判据 result_freshness 未启用态：expected 缺省时 verdict
+与七判据时代逐位一致，既不降级也不放行，增量兼容）；
+``summary.n_skip``/``skip_factors`` 记 SKIP 账（SKIP 判据不计入
+n_pass/n_fail/n_unknown 三账）。``ok`` 仅作报告字段
 （= verdict==PASS），非门禁判据（G11 同款口径）。
 
 best-effort（#105）：判读输入缺失/畸形不抛异常，落结构化
@@ -112,7 +129,9 @@ UNKNOWN/FAIL + ``errors`` 留痕；单因子异常不传染。
 
 from __future__ import annotations
 
+import hashlib
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -141,6 +160,13 @@ PASS = "PASS"
 FAIL = "FAIL"
 UNKNOWN = "UNKNOWN"
 
+#: SKIP＝判据未启用态（第 8 判据 result_freshness 无 expected 时落 SKIP
+#: 行）：不参与 verdict 聚合（不冒充 PASS 也不冒充 UNKNOWN/FAIL 降级，
+#: 增量兼容钉），不进 n_pass/n_fail/n_unknown 三账——单独记
+#: ``summary.n_skip``/``skip_factors``（em_doctor_service SKIP/n_skip
+#: 同词汇先例）。
+SKIP = "SKIP"
+
 VERDICT_PASS = "PASS"
 VERDICT_FAIL = "FAIL"
 VERDICT_UNKNOWN = "UNKNOWN"
@@ -163,8 +189,9 @@ FACTOR_S_SPLIT_WINDOW = "s_split_window"
 _SPLIT_WINDOW_DB_EPS = 1e-9
 FACTOR_RECIPROCITY = "reciprocity"
 FACTOR_F0_OFFSET = "f0_offset"
+FACTOR_RESULT_FRESHNESS = "result_freshness"
 
-# 教训编号（）——写进每条判据，保证报告可回溯到踩坑原文
+# 教训编号——写进每条判据，保证报告可回溯到踩坑原文
 LESSON_SOLVE_STATUS = "#157（watchdog 整树击杀，击杀后残留产物不可信）"
 LESSON_TOUCHSTONE = "#316（证据损坏多报方向）+ 2026-10-08 -BatchSolve 不产网络参数断链"
 LESSON_PORT_COUNT = "#248/#309（Touchstone 端口数契约：skrf 按扩展名推 rank/多模改名）"
@@ -177,6 +204,11 @@ LESSON_S_SPLIT_WINDOW = (
 LESSON_F0_OFFSET = (
     "#298（峰位/频偏口径：argmax/argmin 只在两侧同口径可用）"
     "+ W7 冒烟（ratrace 双谷 1.97/2.67GHz 夹持，谷位标记语义失真）"
+)
+LESSON_RESULT_FRESHNESS = (
+    "#157 家族（watchdog 击杀/旧解残留产物不可信）"
+    "+ aurora_l R1 侦察 #6（EDB health gate 七判据全查 S 数据无 sha/"
+    "mtime 新鲜度判据，旧 Touchstone 物理判据凑巧过即 PASS）"
 )
 
 #: S 参数幅值的 log 地板（SpecEvaluator 同款 1e-30，防 log10(0)）。
@@ -231,14 +263,14 @@ _PASSIVITY_LINEAR_EPS = 1e-9
 DEFAULT_S11_DIP_DB = -10.0
 
 #: 模板作用域门登记表（#274 家法：键=spec.template 名；值=S11@f0 谷深门
-#: dB 或 None）。登记须带出处（ 坑号/官方口径）；值 None=该族显式
+#: dB 或 None）。登记须带出处（坑号/官方口径）；值 None=该族显式
 #: 不设谷深门（如实 UNKNOWN，不硬套通用缺省门）。未登记的模板名回退
 #: :data:`DEFAULT_S11_DIP_DB`。
 S11_DIP_DB_BY_TEMPLATE: dict[str, float | None] = {}
 
 #: Wilkinson 功分器族 |S21|/|S31|@f0 等分分配窗（dB，双边界闭区间，
 #: 两腿各自落窗内才算过）＝W1 冒烟门语义仲裁裁定值（2026-10-09，
-#: runs/edblane85/w1_smoke REPORT §3.2）：理想等分分配损耗 -3.01dB，
+#: 内部证据档 REPORT §3.2）：理想等分分配损耗 -3.01dB，
 #: 下界 -3.8 = 3dB 分配 + 0.8dB 实现容差（健康实测 -3.19/-3.26 有余量），
 #: 上界 -2.5 排除异常增益（分配损耗显著小于 3dB = 提取/接线伪象）。
 #: 禁止臆造物理数字（铁律 7）：改动此窗须带真机/仲裁出处。
@@ -430,6 +462,61 @@ def _load_touchstone_gate(
             "（须 1D 频轴 + 方阵 S）")
         return "corrupt", None, None
     return "found", freq_hz, s_matrix
+
+
+# ---------------------------------------------------------------------------
+# 新鲜度指纹（第 8 判据 result_freshness 的预期块核对原语）
+# ---------------------------------------------------------------------------
+
+def _json_scalar(value: Any) -> Any:
+    """任意入参 → JSON 安全标量（str/int/float/bool/None 直通，其余
+    repr 留痕）——expected 块可能带畸形值，evidence 进报告须可序列化
+    （JSON 进出，规则 4）。"""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return repr(value)
+
+
+def _sha256_of_file(path: Path) -> tuple[str | None, str | None]:
+    """文件字节流 sha256 hex（1MB 分块，best-effort：IO 失败
+    (None, 错误消息) 不抛异常，#105）。"""
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                digest.update(chunk)
+    except OSError as exc:
+        return None, f"sha256 计算失败 {path.name}: {exc}"
+    return digest.hexdigest(), None
+
+
+def _parse_generated_at(value: Any) -> tuple[float | None, str | None]:
+    """expected.generated_at → epoch 秒（best-effort，#105）。
+
+    契约：epoch 秒（int/float，bool 先排——int 子类陷阱）或 ISO-8601
+    字符串（``datetime.fromisoformat``，容 Z 后缀；naive 按本地时区，
+    与 ``Path.stat().st_mtime`` 的 epoch 语义对齐）。不可解析 →
+    (None, 错误消息)，调用方落 UNKNOWN 不硬判（#122）。
+    """
+    if isinstance(value, bool):
+        return None, f"generated_at 形态非法（bool 不收）: {value!r}"
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+        if not np.isfinite(seconds):
+            return None, f"generated_at 非有限: {value!r}"
+        return seconds, None
+    if isinstance(value, str):
+        text = value.strip()
+        if text.endswith(("Z", "z")):
+            text = text[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return None, (f"generated_at 非 ISO-8601 且非 epoch 秒: "
+                          f"{value!r}")
+        return parsed.timestamp(), None
+    return None, (f"generated_at 形态非法（契约=epoch 秒或 ISO-8601）: "
+                  f"{value!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -634,6 +721,121 @@ def _reciprocity_factor(s_matrix: np.ndarray | None) -> dict[str, Any]:
         f"互易（max|Sij−Sji|={worst_val:.2e} < {RECIPROCITY_TOLERANCE}，"
         "全矩阵口径）",
         LESSON_RECIPROCITY, evidence=evidence)
+
+
+def _result_freshness_factor(
+    ts_path: Path | None,
+    expected: dict[str, Any] | None,
+    errors: list[str],
+) -> dict[str, Any]:
+    """第 8 判据：盘上 Touchstone 指纹 vs 构建记录预期（顶替/错拷检测）。
+
+    expected 契约（调用方从 EDB build/solve 记录传入；**当前链路暂无
+    指纹落点**——hfss_batch export 段/edb_lane_service 信封未落 solve
+    产物 sha/mtime 存证，2026-10-23 普查，接线登记待构建链补落点）：
+
+    - ``sha256``：预期 Touchstone 文件字节 sha256 hex 串（大小写不敏感，
+      strip 后比对）；
+    - ``generated_at``：预期生成时刻（epoch 秒或 ISO-8601），盘上
+      mtime ≥ 生成时刻为新鲜（恰等 PASS——mtime 与生成时刻同一 double
+      时逐位相等，无 #376 类换算噪声面；外部记录 1µs 量化低于任何
+      mtime 粒度）。
+
+    四态语义（SKIP 不参与 verdict 聚合，增量兼容钉）：
+    - expected=None → SKIP（"无预期指纹，新鲜度未校验"——不冒充 PASS，
+      不降级 verdict）；
+    - 在档字段全部相符 → PASS；
+    - 任一在档字段不符 → FAIL（旧文件顶替/错拷，aurora_l R1 侦察 #6）；
+    - expected 非 dict / 无可核对字段 / 字段不可解析 / 文件不在档 /
+      IO 失败 → UNKNOWN + errors 留痕（不可证实不冒充，#122；存在性
+      缺陷由 touchstone 判据负责 FAIL，本判据不双记）。
+    """
+    if expected is None:
+        return _factor(
+            FACTOR_RESULT_FRESHNESS, SKIP,
+            "无预期指纹，新鲜度未校验（expected_freshness 缺省——判据未"
+            "启用态，不参与 verdict 聚合）",
+            LESSON_RESULT_FRESHNESS,
+            evidence={"expected": None,
+                      "path": str(ts_path) if ts_path is not None else None})
+    if not isinstance(expected, dict):
+        errors.append(
+            "expected_freshness 形态非法: "
+            f"{type(expected).__name__}（契约=dict{{sha256, generated_at}}"
+            "），新鲜度不可校验")
+        return _unknown(
+            FACTOR_RESULT_FRESHNESS,
+            "expected_freshness 非 dict，预期指纹无从读取"
+            "（不可证实不冒充 FAIL/PASS，#122）",
+            LESSON_RESULT_FRESHNESS,
+            evidence={"expected_type": type(expected).__name__})
+
+    raw_sha = expected.get("sha256")
+    raw_gen = expected.get("generated_at")
+    evidence: dict[str, Any] = {
+        "expected_sha256": _json_scalar(raw_sha),
+        "expected_generated_at": _json_scalar(raw_gen),
+        "path": str(ts_path) if ts_path is not None else None,
+    }
+    mismatches: list[str] = []   # 不符明细（FAIL 面）
+    unverified: list[str] = []   # 不可证实明细（UNKNOWN 面）
+
+    if ts_path is None or not ts_path.is_file():
+        unverified.append(
+            "Touchstone 不在档，sha/mtime 无从校验（存在性缺陷由 "
+            "touchstone 判据负责，本判据不双记 FAIL）")
+    else:
+        if raw_sha is not None:
+            if isinstance(raw_sha, str) and raw_sha.strip():
+                want = raw_sha.strip().lower()
+                got, sha_err = _sha256_of_file(ts_path)
+                if got is None:
+                    unverified.append(str(sha_err))
+                elif got != want:
+                    mismatches.append(
+                        f"sha256 不符（盘上 {got[:12]}… vs 预期 "
+                        f"{want[:12]}…）")
+                else:
+                    evidence["observed_sha256"] = got
+            else:
+                unverified.append(
+                    f"expected.sha256 形态非法（契约=hex 字符串）: "
+                    f"{_json_scalar(raw_sha)!r}")
+        if raw_gen is not None:
+            gen_ts, gen_err = _parse_generated_at(raw_gen)
+            if gen_ts is None:
+                unverified.append(str(gen_err))
+            else:
+                try:
+                    mtime = float(ts_path.stat().st_mtime)
+                except OSError as exc:
+                    unverified.append(f"mtime 读取失败: {exc}")
+                else:
+                    evidence["observed_mtime"] = mtime
+                    evidence["expected_generated_at_epoch"] = gen_ts
+                    if mtime < gen_ts:
+                        mismatches.append(
+                            f"mtime（{mtime:.3f}）早于构建记录生成时刻"
+                            f"（{gen_ts:.3f}）——旧文件顶替嫌疑")
+    if not mismatches and not unverified and raw_sha is None and raw_gen is None:
+        unverified.append(
+            "expected_freshness 无可核对字段（sha256/generated_at 均缺）")
+
+    if mismatches:
+        return _factor(
+            FACTOR_RESULT_FRESHNESS, FAIL,
+            "Touchstone 与 EDB 构建记录不符（旧文件顶替/错拷）："
+            + "；".join(mismatches),
+            LESSON_RESULT_FRESHNESS, evidence=evidence)
+    if unverified:
+        return _unknown(
+            FACTOR_RESULT_FRESHNESS,
+            "新鲜度不可证实（#122 不冒充）：" + "；".join(unverified),
+            LESSON_RESULT_FRESHNESS, evidence=evidence)
+    return _factor(
+        FACTOR_RESULT_FRESHNESS, PASS,
+        "Touchstone 与构建记录一致（sha256/mtime 新鲜度在档核对通过）",
+        LESSON_RESULT_FRESHNESS, evidence=evidence)
 
 
 def _resolve_s11_gate(
@@ -982,6 +1184,7 @@ def check_edb_batch_health(
     template: str | None = None,
     s11_dip_gate_db: float | None = None,
     s_split_window_db: tuple[float, float] | None = None,
+    expected_freshness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """对 EDB 快车道批处理产物做健康门判读（三态 verdict + 逐判据明细）。
 
@@ -1002,17 +1205,27 @@ def check_edb_batch_health(
             （最高优先级，覆盖模板登记表；形态非法时 errors 留痕并回退
             登记表，#105）。显式窗/登记窗都缺席时本判据不进 criteria
             （等分窗为功分器族专属，无通用缺省，#274）。
+        expected_freshness: 第 8 判据 result_freshness 的预期指纹块
+            （调用方从 EDB build/solve 记录传入；schema=``{sha256``:
+            预期 Touchstone hex 摘要，``generated_at``: 预期生成时刻
+            epoch 秒或 ISO-8601}``，两键均可单给）。None（缺省）→ 该判据
+            落 SKIP 行（"无预期指纹，新鲜度未校验"），**不参与 verdict
+            聚合**（零 expected 时 verdict 与七判据时代逐位一致，既有
+            调用方零变化）。当前 hfss_batch/edb_lane_service 链路暂无
+            solve 产物指纹落点（接线登记，见 _result_freshness_factor）。
 
     Returns:
         dict: ``{schema, ok, verdict, template, touchstone, criteria,
         summary[, errors]}``——``verdict`` ∈ PASS/FAIL/UNKNOWN（任一
         FAIL → FAIL；否则任一 UNKNOWN → UNKNOWN；全 PASS → PASS，
-        #122）；``ok`` 仅作报告字段（=verdict==PASS），非门禁判据
-        （G11 同款口径）；``criteria`` 逐判据明细（factor/status/detail/
-        lesson_ref[/evidence]，数值/门/判定全在 evidence；``s_split_window``
-        仅在窗生效时出现，``f0_offset`` 仅在 f0 邻域多谷时出现=W7 谷位
-        标记语义扩展）；``summary`` 红绿账。best-effort（#105）：
-        输入缺失/畸形不抛异常。
+        #122；SKIP 不参与聚合）；``ok`` 仅作报告字段（=verdict==PASS），
+        非门禁判据（G11 同款口径）；``criteria`` 逐判据明细（factor/
+        status/detail/lesson_ref[/evidence]，数值/门/判定全在 evidence；
+        status ∈ PASS/FAIL/UNKNOWN/SKIP，SKIP 仅 result_freshness 无
+        expected 时出现=判据未启用态；``s_split_window`` 仅在窗生效时
+        出现，``f0_offset`` 仅在 f0 邻域多谷时出现=W7 谷位标记语义
+        扩展）；``summary`` 红绿账+SKIP 账（n_skip/skip_factors）。
+        best-effort（#105）：输入缺失/畸形不抛异常。
     """
     errors: list[str] = []
     criteria: list[dict[str, Any]] = []
@@ -1049,7 +1262,15 @@ def check_edb_batch_health(
 
     criteria.append(_reciprocity_factor(s_matrix))
 
-    # verdict 聚合（#122：FAIL > UNKNOWN > PASS；UNKNOWN 不冒充 FAIL/PASS）
+    # ⑧ 结果新鲜度（第 8 判据，aurora_l Wave-C C3）：expected 缺省落
+    # SKIP 行——不参与 verdict 聚合，既有调用方 verdict 零变化（增量
+    # 兼容钉：判据在档可见、聚合面不降级）。
+    criteria.append(_result_freshness_factor(ts_path, expected_freshness,
+                                             errors))
+
+    # verdict 聚合（#122：FAIL > UNKNOWN > PASS；UNKNOWN 不冒充 FAIL/PASS；
+    # SKIP=判据未启用态不参与聚合——result_freshness 无 expected 时
+    # verdict 与七判据时代逐位一致，增量兼容）
     statuses = [str(c["status"]) for c in criteria]
     if FAIL in statuses:
         verdict = VERDICT_FAIL
@@ -1060,6 +1281,7 @@ def check_edb_batch_health(
 
     fail_factors = [c["factor"] for c in criteria if c["status"] == FAIL]
     unknown_factors = [c["factor"] for c in criteria if c["status"] == UNKNOWN]
+    skip_factors = [c["factor"] for c in criteria if c["status"] == SKIP]
 
     # 信封契约 §4：域报告非 RPC 信封，ok 键构建后补赋（避开 AST 一跳
     # 变量中转形态的裸信封守卫；ok 语义=verdict==PASS，见下）。
@@ -1073,8 +1295,10 @@ def check_edb_batch_health(
             "n_pass": statuses.count(PASS),
             "n_fail": len(fail_factors),
             "n_unknown": len(unknown_factors),
+            "n_skip": len(skip_factors),
             "fail_factors": fail_factors,
             "unknown_factors": unknown_factors,
+            "skip_factors": skip_factors,
         },
     }
     report["ok"] = verdict == VERDICT_PASS

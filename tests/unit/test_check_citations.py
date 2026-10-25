@@ -29,7 +29,7 @@ class TestExtract:
         assert hits == [(1, "https://example.com/a"), (2, "https://example.com/b")]
 
     def test_no_url_empty(self) -> None:
-        assert extract_urls_from_text("内部指针 runs/df5 与 。") == []
+        assert extract_urls_from_text("内部指针 runs/df5 与 开发注记（三六九）。") == []
 
     def test_中文右括号不吞(self) -> None:
         hits = extract_urls_from_text("[源](https://example.com/c）尾注")

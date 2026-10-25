@@ -4,10 +4,10 @@
 - 登记表过 W8 消费链：capability_cards_export.load_sensitivity_rankings
   （真实路径装载）+ normalize_sensitivity_entry 逐条 PASS + 三态
   resolve_sensitivity computed 胜出（provenance 数据指针）；
-- 入表集=COMPUTABLE_TEMPLATES（71 = X7 首批 18 + 架构批 A3-D 扩批 22 +
-  R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + 架构批
-  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4 + 架构批 W4-S19 全覆盖批
-  24：teaching 首批 9 模板全部入表转双源并存 + 15 补族 + 架构批 W6-S4
+- 入表集=COMPUTABLE_TEMPLATES（71 = X7 首批 18 + aurora72 A3-D 扩批 22 +
+  R8-KN 扩批 4：diplexer/schiffman/msl_cpw/msl_siw_taper + aurora_d
+  SENS-ANC 复核扩批 2：varactor_bpf/xcheb_bpf4 + aurora_e W4-S19 全覆盖批
+  24：teaching 首批 9 模板全部入表转双源并存 + 15 补族 + aurora_g W6-S4
   sir_bpf 名义重注册解锁 1（l_high 6.7818 旧档→7.1055 理想短路口径，
   R3 审计处方）；留缺 1 族 ms_array_NxN 如实不入表——builder docstring
   「W4-S19 全覆盖批」节⑤；W6 卡面字节钉前提按全覆盖批任务书解除并同批
@@ -57,7 +57,7 @@ def test_registry_exists_and_matches_computable_set():
 
     reg = _load()
     assert set(reg) == set(srb.COMPUTABLE_TEMPLATES)
-    assert len(reg) == 71
+    assert len(reg) == 74  # 71→74 aurora_k：octagonal_spiral/mim_cap/interdigital_cap 三族入表
     # sir_bpf 已解锁入表（W6-S4 名义重注册）；留缺 1 族如实不在表
     # （builder docstring「W4-S19 全覆盖批」节⑤）
     assert "sir_bpf" in reg and "ms_array_NxN" not in reg
@@ -242,7 +242,7 @@ def test_sanity_resonant_length_identity_one():
 
 
 def test_sanity_a3d_expansion_closed_chains():
-    """架构批 扩批闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
+    """aurora72 扩批闭式链 sanity 钉（每钉旁注物理依据，#118 纪律）。"""
     reg = _load()
     # siw：fc=c/(2·w_eff·√εr)、w_eff=w−d²/(0.95s)（Cassivi 反解正向）——
     # dw 弹性=w/w_eff 解析精确（1.032246…）、der=1/2（fc∝εr^−1/2 恒等式）

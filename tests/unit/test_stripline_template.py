@@ -9,7 +9,7 @@ _sub_cells_z z 向介质细分诊断档（W7-A z0 地板碰撞 followUp，预声
 N=细分倍率——z 网格 linspace(0, 2·H_SUB) 共 8N 格（N=1 → 9 点=旧口径
 逐字节 #329）、介质盒每半层切 N 片同材料堆叠（共 2N 盒，界面 z=i·H/N
 恰在网格线）。背景：W7-A 网格阶梯 m1→m2 x/y 加密 ~2× 而 z 恒 9 线
-（runs/real_machine_window/w7a/stripline.*.verdict.json，eps_eff 已收敛
+（内部证据档，eps_eff 已收敛
 3.6601≈εr 而引擎 ZL 卡 44-45Ω 不随档收敛）——z0 仲裁 limit 项=z 向离散
 （#313 z 向地板项 stripline 实证）。dt/预算注记（CFL 线性估）：z 最小格
 H_SUB/(4N) 随 N 线性缩小 → dt 随全局最小格线性塌缩（0.4mm 审计档 N=3

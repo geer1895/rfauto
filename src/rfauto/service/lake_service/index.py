@@ -1,6 +1,6 @@
 """lake_service.index —— runs/ 湖索引核心（DuckDB 建表/查询/计数/护栏）。
 
-自 lake_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原节「runs/ 湖索引（DuckDB）」逐字节搬迁；本域同时承载共享文件系统/JSON/duckdb 助手（lineage/audit/pack/study 各域从这里单向导入，包内零环）。
+自 lake_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原节「runs/ 湖索引（DuckDB）」逐字节搬迁；本域同时承载共享文件系统/JSON/duckdb 助手（lineage/audit/pack/study 各域从这里单向导入，包内零环）。
 """
 
 from __future__ import annotations
@@ -500,7 +500,7 @@ def query_runs_index(
     path 排序零行为变化）；``order``=``asc``|``desc``（缺省 desc，仅
     order_by 给定时生效）。列名走白名单映射不进自由 SQL 文本面。
 
-    S15（架构批 W4，2026-10-18）批处理面消费三参（全 None=零行为变化）：
+    S15（aurora_f W4，2026-10-18）批处理面消费三参（全 None=零行为变化）：
     ``depth``（1=runs/<dir>，2=runs/<campaign>/<dir>）、``has_meta``、
     ``meta_source``（"meta.json"|"run_meta.json"）——等值过滤，``?`` 绑定
     同防线；health/monitor/league 候选枚举接线走本查询（对齐后替换目录扫，
@@ -605,7 +605,7 @@ def query_runs_index(
 
 
 # ---------------------------------------------------------------------------
-# S15（架构批 W4，2026-10-18）：批处理面候选枚举接线——lake index 主源
+# S15（aurora_f W4，2026-10-18）：批处理面候选枚举接线——lake index 主源
 # + 计数护栏 + 目录扫回退（R3_perf_quality.md Top5；护栏 best-effort #105）
 # ---------------------------------------------------------------------------
 

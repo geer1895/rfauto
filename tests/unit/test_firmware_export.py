@@ -37,7 +37,7 @@ from rfauto.core.dpd_static import MemoryPolyModel, apply_memory_polynomial, syn
 from rfauto.core.metasurface_lut import quantization_loss_db, quantize_phase_deg
 from rfauto.core.varactor import bias_for_capacitance_v, loaded_line_f0_limits_ghz, varactor_load_capacitance_pf
 
-# varactor 表锚参数（预探 runs/pt6 实测窗 (2.650, 5.300)GHz，cj0=2pF 可行域
+# varactor 表锚参数（预探 内部证据档 实测窗 (2.650, 5.300)GHz，cj0=2pF 可行域
 # f≥3.53GHz；f=4.4GHz → V=19.9V 供饱和例）
 _VAR_KW = dict(line_len_mm=20.0, z0_ohm=50.0, ereff=2.0,
                cj0_pf=2.0, phi_v=0.9)
@@ -328,7 +328,7 @@ class TestDpdFixedPointTable:
     """PT-6③ DPD 定点表：Q 定标/回代 NMSE 门/级联劣化/溢出告警。"""
 
     def test_fine_q_nmse_within_gate(self):
-        # 锚：合成系数定点回代 NMSE 门内——Q16.12 实测 −67dB（预探 runs/pt6）
+        # 锚：合成系数定点回代 NMSE 门内——Q16.12 实测 −67dB（预探 内部证据档）
         x, pa, dpd = _ila_dpd()
         table = fe.dpd_fixed_point_table(dpd, x, pa_coeffs=pa)
         assert table["verdict"] == "PASS"

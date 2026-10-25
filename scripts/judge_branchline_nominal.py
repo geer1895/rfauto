@@ -1,6 +1,6 @@
 """branchline 名义臂谐振判读（W2⑥a-B，离线，不发起求解）。
 
-问题：runs/branchline_real_anchor 真机四端口 .s4p 的均分/匹配中心 f_c≈2.15GHz
+问题：内部证据档 真机四端口 .s4p 的均分/匹配中心 f_c≈2.15GHz
 ≠ 声明 f0=2.4GHz（−10%）。三个候选归因——① 名义几何（TEMPLATE_META/recipe
 的 arm_len_mm=20.5 按何种 εeff 综合）、② 端接口径（35.4Ω/50Ω 臂宽是否错）、
 ③ 引擎频率尺度（#190 openEMS 系统差 ~−10% 同族？）。
@@ -13,7 +13,7 @@
   隔离深度 = 归因②的证据（端接错则 f_c 处也不会 −36dB）。
 
 用法：.venv\\Scripts\\python.exe scripts/judge_branchline_nominal.py
-      [--run runs/branchline_real_anchor] [--f0 2.4] [--arm 20.5]
+      [--run 内部证据档] [--f0 2.4] [--arm 20.5]
 产物：<run>/verdict_nominal.json
 """
 
@@ -32,7 +32,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 C_MM_GHZ = 299.792458
-#:  确定性链回归锚：fake 模型 eps_eff=3.28（HFSS 校准锚反推）给名义
+#: 开发注记 确定性链回归锚：fake 模型 eps_eff=3.28（HFSS 校准锚反推）给名义
 #: 20.5mm 臂 f_dip=2.0904GHz——第三独立来源（引擎无关）
 FAKE_ANCHOR_F_DIP_GHZ = 2.0904
 
@@ -167,7 +167,7 @@ def judge(run: Path, f0_ghz: float, arm_len_mm: float, series_w_mm: float,
             f"{abs(hj['series_arm']['quarter_wave_mm_at_f0']-hj['shunt_arm']['quarter_wave_mm_at_f0']):.2f}mm，建议按臂宽各自综合（synthesis.py 禁改，记 followUp）",
         ],
         "evidence": [str(s4p), str(run / "_smoke_result.json"),
-                     " 确定性链回归锚 branchline@2.4GHz f_dip=2.0904GHz（fake eps_eff=3.28）",
+                     "开发注记 确定性链回归锚 branchline@2.4GHz f_dip=2.0904GHz（fake eps_eff=3.28）",
                      "src/rfauto/core/synthesis.py::synthesize_branchline（w=1.0mm εeff）"],
     }
 

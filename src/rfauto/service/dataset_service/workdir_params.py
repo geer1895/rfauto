@@ -1,7 +1,7 @@
 """dataset_service.workdir_params —— 工作目录参数 JSON 写出端与
 键路径解析簇（import_workdir_runs 契约的单一事实源）。
 
-自 workdir.py 域内二次分域（架构批 W7-S1 T2：workdir 835 行
+自 workdir.py 域内二次分域（aurora_g W7-S1 T2：workdir 835 行
 超 800 棘轮，参数写出/解析簇自洽成叶）；代码体逐字节搬迁。
 """
 

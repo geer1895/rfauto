@@ -313,7 +313,7 @@ class LinkBudget:
 #   https://rfessentials.com/resources/rf-glossary/bode-fano-limit/）。
 #
 # 常数出处（V1 席 P0 裁决 2026-10-04 逐字核对；errata:
-# runs/review_ge8e/v1_bode_fano/ERRATA_C1.md）：π/τ 与
+# 内部证据档）：π/τ 与
 # Δf_max=1/(2τ·ln(1/Γmax)) 为并联 RC/串联 RL 行——Fano 1948 MIT RLE
 # TR-41 §1 Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω=rad/s 全带宽）
 # + p.16 "parallel RC ⇒ A₁=2/RC"（×π/2 积分恰=π/(RC)）；Kerr NRAO

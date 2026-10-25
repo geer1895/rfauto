@@ -57,11 +57,17 @@ _OUR_PREFIX_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
              "start_tune")),
     ("测量", ("vna_", "nfmeas_", "bands_", "sar_analytic_plane_wave")),
     ("求解", ("create_run", "poll_job", "wait_job", "cancel_job", "run_campaign",
-             "mmt_solve", "electrothermal_chain", "preflight_run", "run_sweep")),
+             "mmt_solve", "electrothermal_chain", "preflight_run", "run_sweep",
+             # aurora_l C1 em 族：建模前检查清单/DOE 扫描计划=求解准备面
+             # （preflight_run/run_sweep 同域）
+             "em_doctor_check", "em_sweep_plan")),
     ("后处理", ("get_metrics", "get_run_artifacts", "compare_runs", "run_monitor",
                "export_report_pdf", "report_narrative", "build_datasheet",
                "fault_tree_report", "log_digest", "even_odd_report",
-               "dispersion_report", "get_model_3d")),
+               "dispersion_report", "get_model_3d",
+               # aurora_l C1 em 族：run 产物差分/指标提取/新鲜度核验=后处理面
+               # （compare_runs/get_metrics/get_run_artifacts 同域）
+               "em_diff_runs", "em_metrics_from_run", "runs_verify")),
     ("基准", ("agentbench_regression", "dataset_", "db_", "discover_workdir_runs",
              "import_workdir_runs", "import_solid_payload", "lake_", "query_dataset",
              "list_datasets")),

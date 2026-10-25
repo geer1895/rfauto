@@ -1,7 +1,7 @@
-"""verdict.json → 人读摘要面（架构批 W8-S4，2026-10-19）。
+"""verdict.json → 人读摘要面（aurora_g W8-S4，2026-10-19）。
 
 runs/ 下的 verdict.json 是各战役自研 schema 的判定档案（219 份在档，
-形态分家：架构批/架构批 族=平铺 dict（status + g1_render/g3_*
+形态分家：aurora_c_oe/aurora_d 族=平铺 dict（status + g1_render/g3_*
 /g5_health 等门键 + 数值标量）；k2/五点族=points/attempts 嵌套；
 designs_verify 族=arms.checks 嵌套）——此前只有 JSON 面无人读汇总出口，
 审计/收官对账要逐份手开。本模块给确定性提取层（零 LLM、零臆测）：

@@ -49,7 +49,7 @@ def _row_with_totals(row: dict[str, float]) -> dict[str, float]:
 class QuotaExceededError(Exception):
     """Raised when a quota limit is exceeded.
 
-    单源定义（架构批 W2-S2 S8/quota2 异常归位）：自 legacy 迁入本新 API
+    单源定义（aurora_h W2-S2 S8/quota2 异常归位）：自 legacy 迁入本新 API
     侧——ledger 只向下被 legacy 依赖（QuotaGuard 抛出本类、BudgetExceeded-
     Error 继承本类），legacy 自本模块导入保名再导出，ledger→legacy 反向边
     删除，quota_guard 同层环断。类对象唯一，全部既有 except 路径零变化。

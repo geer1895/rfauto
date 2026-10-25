@@ -16,8 +16,8 @@ import 三页入扫描域（S1 席三页全清；view_fieldviz 承 farfield/fiel
 共壳，fieldviz.* 单域；import 域键名与 ES import 语句无字面冲突——键字面
 形如 "import.xxx" 仅 t()/data-i18n 注入口出现）。
 
-规格=runs/aurora_f/R1_ui_v8_audit.md §面2（W5-S23 决议"自研词表+t()"落地）
-+ runs/aurora_g/R1_ui_v9_audit.md §面2（P9-5/P9-6）。
+规格=内部证据档 §面2（W5-S23 决议"自研词表+t()"落地）
++ 内部证据档 §面2（P9-5/P9-6）。
 
 钉五层：
 1. 骨架行为（node 真执行，缺 node skip）：t() zh/en 真值表 + {name} 占位

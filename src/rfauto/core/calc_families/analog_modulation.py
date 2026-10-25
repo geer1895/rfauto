@@ -1,4 +1,4 @@
-"""模拟调制域闭式族（架构批 W4-S4 席，R2 边际池外本席 grep 新发现）。
+"""模拟调制域闭式族（aurora_g W4-S4 席，R2 边际池外本席 grep 新发现）。
 
 三键：carson_bandwidth（FM/PM Carson 带宽规则）/ fm_processing_gain
 （FM 处理增益 3β²(β+1)+门限标记）/ am_power_split（AM DSB-LC 功率

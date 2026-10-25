@@ -701,19 +701,6 @@ def check_drift(ref_dir: Path, *, list_cap: int = 20) -> int:
             rel for rel in fresh_files & ref_files
             if (fresh / rel).read_bytes() != (ref_dir / rel).read_bytes())
         extras = sorted(ref_files - fresh_files)
-        # 首个漂移文件的逐行差异（前 ~14 行）——数字条类漂移一眼可断
-        # （tests 计数随构建环境 collect 面变化的高频误红诊断面）。
-        # tmp 生命周期内取文本（出了 with 就读不到了）。
-        first_diff: list[str] = []
-        if drifted:
-            import difflib
-
-            first = drifted[0]
-            old = (ref_dir / first).read_text(encoding="utf-8").splitlines()
-            new = (fresh / first).read_text(encoding="utf-8").splitlines()
-            first_diff = list(difflib.unified_diff(
-                old, new, f"committed/{first.as_posix()}",
-                f"regenerated/{first.as_posix()}", lineterm=""))[:18]
     if missing or drifted:
         if missing:
             shown = [str(p) for p in missing[:list_cap]]
@@ -724,8 +711,6 @@ def check_drift(ref_dir: Path, *, list_cap: int = 20) -> int:
             print(f"[docs_site] 漂移：{len(drifted)} 个文件与基准不一致"
                   f"（前 {len(shown)}）：{shown}——仓根重跑 "
                   f"python scripts/build_docs_pages.py")
-            for ln in first_diff:
-                print(f"[docs_site]   {ln}")
         return 1
     if extras:
         shown = [str(p) for p in extras[:list_cap]]

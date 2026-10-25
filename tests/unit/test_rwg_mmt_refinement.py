@@ -1,6 +1,6 @@
 """DP-1 风险分流④最小诚实交付（df7_dp1r4）——core/rwg_mmt.py 增量段的
-合成回收测试（不依赖 runs/ 真机证据；真数据演示归 runs/df7_dp1r4/
-refine_offline_demo.py；判据 runs/df7_dp1r4/criteria.md 先写后跑 #122）。
+合成回收测试（不依赖 runs/ 真机证据；真数据演示归 内部证据档
+refine_offline_demo.py；判据 内部证据档 先写后跑 #122）。
 
 覆盖（任务书 §二.5）：
 - 触发判定 helper 边界：全单调/翻转/平局剔除/带外掩码/阈值边界/非法输入；
@@ -31,7 +31,7 @@ from rfauto.core.rwg_mmt import (
 # 固定小例（WR-90 居中感性膜片 d=16mm 零厚；两点带内，秒级零真机）：
 # golden 以缺省路径实测固定。df7_dp1fix 缺陷②根因修复（gsm_cascade 星积
 # s12/s21 中间逆 + 窄→宽结面 canonical 翻转，criteria §2）为**授权变更**，
-# 金钉随之按修后缺省路径实测重钉（修前值见  四四六 batch 档案；
+# 金钉随之按修后缺省路径实测重钉（修前值见 开发注记 四四六 batch 档案；
 # 本钉职能=强迫缺省数学变更显式化，非禁止变更）。只钉 S11/S21 两腿。
 _WG = Waveguide(a=22.86e-3, b=10.16e-3)
 _CHAIN = [UniformSection(_WG, 10e-3), InductiveIris(_WG, 16e-3, 0.0),
@@ -90,7 +90,7 @@ class TestG1SystematicBiasCheck:
     def test_archived_formula_quirk_small_n_documented(self) -> None:
         """归档式小样本病理（如实钉）：平局点符号匹配中位数时 sc 可 >1
         ——[+1.0,+0.04,−0.04] → med=0.04、n_tie=2、n_same=2、分母 1 →
-        sc=2.0。helper 逐位忠实于 runs/df6_dp1p3_judge.py 归档公式
+        sc=2.0。helper 逐位忠实于 内部证据档 归档公式
         （真数据 t0/t1 无此病理，n=155 下 sc∈[0,1]），不擅自改式。"""
         f = np.array([10e9, 10.1e9, 10.2e9])
         v = g1_systematic_bias_check(f, np.array([1.0, 0.04, -0.04]))

@@ -105,7 +105,7 @@ def _near_points(template: str, params: dict[str, Any],
         nx += edges(-cl_w - cl_gap / 2, cl_gap / 2 + cl_w, 1e-3)
         ny += edges(-cl_len / 2, cl_len / 2, 1e-3)
         if params.get("_gap_midline"):
-            # X1 缝场网格加密旋钮（ge8 K-3 机制分离批，内部证据档
+            # X1 缝场网格加密旋钮（ge8 K-3 机制分离批，runs/ge8_k3mech/
             # criteria.md 预声明；缺省 False=不进本分支，近点集与渲染
             # 逐字节不变——缺省恒等由单测钉）：缝区 [-gap/2, +gap/2] 等分
             # 10 格（0.5mm 缝 → 0.05mm 格），内部线精确入网（#311 缝中点
@@ -593,8 +593,8 @@ def _near_points(template: str, params: dict[str, Any],
     return _dedup(nx), _dedup(ny)
 
 
-# ── F-D NrTS/EndCriteria 接线（，#262 截断族修复面）──────────────
-# 根因缺口（内部证据档 判读）：TEMPLATE_
+# ── F-D NrTS/EndCriteria 接线（wf:nrts-fix，#262 截断族修复面）──────────────
+# 根因缺口（runs/fd_rerun_20260927/seat2_truncation_verdict 判读）：TEMPLATE_
 # META.max_time_ns 早已声明（墙钟上界语义，#328）但渲染链从未消费——四 F-D
 # 模板缺省 NrTS=100000/不设 EndCriteria，patch_array_series 在 11.5ns 窗内
 # 4.88GHz 长寿命储能只衰减到幅值 14%（尾/峰 0.1414）即被切，max|S|=5.65 非物理。
@@ -615,7 +615,7 @@ _C_LIGHT_MS = 299792458.0         # 真空光速 m/s（生成脚本内 CFL dt �
 def cfl_dt_s(dx_min: float, dy_min: float, dz_min: float) -> float:
     """FDTD CFL 稳定性时间步（秒）：dt=1/(c·√(1/dx²+1/dy²+1/dz²))。
 
-    纯函数（）；生成脚本内联公式与此镜像，test_nrts_wiring 以
+    纯函数（wf:nrts-fix）；生成脚本内联公式与此镜像，test_nrts_wiring 以
     exec 渲染脚本实测 _dt_cfl 回算互证（#212 离线审计口径）。
     """
     vals = (float(dx_min), float(dy_min), float(dz_min))
@@ -658,7 +658,7 @@ def _fd_nrts_defaults(template: str, params: dict[str, Any]) -> float | None:
 
 
 def _fd_nrts_override_block(max_time_ns: float) -> str:
-    """生成 Run 前 NrTS 终网格折算块（；注入主/MS 渲染脚本）。
+    """生成 Run 前 NrTS 终网格折算块（wf:nrts-fix；注入主/MS 渲染脚本）。
 
     与 cfl_dt_s/nrts_from_max_time_ns 公式镜像（互证钉在 test_nrts_wiring）；
     nrts_meta.json best-effort 落盘（#105）供 fd_oe_campaign nrts_converged
@@ -669,7 +669,7 @@ def _fd_nrts_override_block(max_time_ns: float) -> str:
     c = repr(_C_LIGHT_MS)
     return (
         "# ── NrTS 按 TEMPLATE_META.max_time_ns 终网格 CFL 折算"
-        "（，#262/#328 口径）──\n"
+        "（wf:nrts-fix，#262/#328 口径）──\n"
         "# dt=1/(c·√(Σ 1/dmin²))（终网格三轴最小间距）；NrTS=ceil(" + safety
         + "·T/dt)（1.1=#312 估-实测漂余量，宁长勿截）；\n"
         "# SetNumberOfTimeSteps=官方 setter（构造占位后 Run 前覆写）。\n"

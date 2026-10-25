@@ -1,4 +1,4 @@
-"""架构批 W3-CORE7：制造良率/三角渐变/combline 耦合缝三域单测。
+"""aurora_d W3-CORE7：制造良率/三角渐变/combline 耦合缝三域单测。
 
 cpk_yield_convert / serial_yield_budget（calc_families/manufacturing_yield.py）/
 classic_taper_response+classic_taper_synthesize 三角剖面（calc_families/
@@ -6,7 +6,7 @@ taper_classic.py 原位扩展） / combline_coupling_gap（calc_families/
 interdigital_bpf.py 第三键）。
 
 裁判口径（#118 双路径：实现路线=各键闭式；独立第二路线=本文件不同算法
-重算——实现前独立复算轨迹 内部证据目录，
+重算——实现前独立复算轨迹 runs/aurora_d/_core7_verify_derivation.py，
 锚值实现前写死）：
 
 - **cpk↔良率**：Montgomery 表值单尾档逐位（Cpk=1→出界 1349.8980316e-6、

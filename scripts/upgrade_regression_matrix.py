@@ -18,8 +18,8 @@ EC-12 用法：升级前跑一遍基线（--out 落 JSON）；升级后重跑同
 用法（venv python，仓根执行）：
   python scripts/upgrade_regression_matrix.py --list
   python scripts/upgrade_regression_matrix.py
-  python scripts/upgrade_regression_matrix.py --out runs/w2_phase2/z16_baseline.json \
-      --log runs/w2_phase2/z16_baseline.log
+  python scripts/upgrade_regression_matrix.py --out 内部证据档 \
+      --log 内部证据档
 
 退出码：0 全绿（skip 如实计数不红）；1 有红；2 装配错误（repo 根缺失/
 锚注册表不可读）。
@@ -178,12 +178,17 @@ def check_anchors_registry() -> dict[str, Any]:
         q = a.get("quantity") or {}
         if not q.get("name"):
             problems.append(f"{aid}: 缺 quantity.name")
+        # 公开树豁免：runs/ 证据湖不入公开仓——runs/ 前缀指针跳过存在性
+        # 检查（发布面如实保留指针原值），仓内其余路径照查不放松。
+        def _pub_missing(rel):
+            s = str(rel).replace(chr(92), "/")
+            return not s.startswith("runs/") and not (REPO_ROOT / s).is_file()
         for key in ("referee_script",):
             ref = (a.get("provenance") or {}).get(key)
-            if ref and not (REPO_ROOT / ref).is_file():
+            if ref and _pub_missing(ref):
                 problems.append(f"{aid}: {key} 不存在: {ref}")
         for cons in a.get("consumers") or []:
-            if not (REPO_ROOT / str(cons)).is_file():
+            if _pub_missing(cons):
                 problems.append(f"{aid}: consumer 不存在: {cons}")
         if a.get("kind") == "constant":
             v = a.get("value")

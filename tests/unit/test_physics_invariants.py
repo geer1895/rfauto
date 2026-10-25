@@ -12,7 +12,7 @@
 4. **S 面分类封闭**：S 面白名单 ∪ skip 清单 == 注册表全集（新键未归类即
    fail）+ reciprocal=False 豁免清单封闭。
 
-架构批 W2-S4 拆分批（R1 立项 #7）：原 4581 行单件按域拆四——电长度元变
+aurora_h W2-S4 拆分批（R1 立项 #7）：原 4581 行单件按域拆四——电长度元变
 （Maxwell 尺度律/频移等价）见 test_physics_invariants_tl.py；端口网络对称
 元变（镜像/置换/互易扫描/叠加/无源）见 test_physics_invariants_rf.py；
 预言机自证可失败见 test_physics_invariants_meas.py。拆分铁律：collect 计数

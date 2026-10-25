@@ -1,4 +1,4 @@
-"""错误提示规则表叶（T1 解环；架构批 W6-S1）。
+"""错误提示规则表叶（T1 解环；aurora_g W6-S1）。
 
 从 error_hints_service 叶化：_HINT_RULES/_SOURCE/list_hint_rules 是
 纯确定性数据+读面。systemone_service 的 hint_question_for_message

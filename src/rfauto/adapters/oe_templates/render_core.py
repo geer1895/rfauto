@@ -106,6 +106,21 @@ from .render_coil_nfc import (
     coil_nfc_geometry_spec,
     coil_nfc_render,
 )
+from .render_octagonal_spiral import (
+    OCTAGONAL_SPIRAL_TEMPLATES,
+    octagonal_spiral_geometry_spec,
+    octagonal_spiral_render,
+)
+from .render_mim_cap import (
+    MIM_CAP_TEMPLATES,
+    mim_cap_geometry_spec,
+    mim_cap_render,
+)
+from .render_interdigital_cap import (
+    INTERDIGITAL_CAP_TEMPLATES,
+    interdigital_cap_geometry_spec,
+    interdigital_cap_render,
+)
 from .render_mmwave import (
     MMWAVE_SERIES_TEMPLATES,
     mmwave_series_geometry_spec,
@@ -190,6 +205,21 @@ def geometry_spec(
         # §COIL_NFC（文末 COIL_NFC 段）：盒/端口由 coil_nfc_geometry_spec
         # 单源换算（单端口馈隙 LumpedPort）
         return coil_nfc_geometry_spec(params, substrate)
+    if template in OCTAGONAL_SPIRAL_TEMPLATES:
+        # §OCTAGONAL_SPIRAL（aurora_k K11，render_octagonal_spiral 注册块）：
+        # 盒/端口由 octagonal_spiral_geometry_spec 单源换算（单端口外端-
+        # 焊盘桥隙 LumpedPort，串联绕组口径）
+        return octagonal_spiral_geometry_spec(params, substrate)
+    if template in MIM_CAP_TEMPLATES:
+        # §MIM_CAP（aurora_k K12，render_mim_cap 注册块）：盒/端口由
+        # mim_cap_geometry_spec 单源换算（单端口竖直跨介质 LumpedPort，
+        # 并联口径；K9 stackup/共形消费示范）
+        return mim_cap_geometry_spec(params, substrate)
+    if template in INTERDIGITAL_CAP_TEMPLATES:
+        # §INTERDIGITAL_CAP（aurora_k K12，render_interdigital_cap 注册块）：
+        # 盒/端口由 interdigital_cap_geometry_spec 单源换算（双端口水平
+        # 桥隙 LumpedPort，串联口径）
+        return interdigital_cap_geometry_spec(params, substrate)
     if template in MMWAVE_SERIES_TEMPLATES:
         # §MMWAVE_SERIES_ARRAY（文末 MMWAVE_SERIES_ARRAY 段）：盒/端口由
         # mmwave_series_geometry_spec 单源换算（单端口 MSLPort 行波串馈）
@@ -1573,7 +1603,7 @@ def render_script(
     #                 使 NEAR=0.114mm ≤ w/6=0.1218mm）
     #   _sub_cells  → 基板 z 向格数（G3 2026-09-22 缺省分档：CPW/槽下场族
     #                 msl_cpw/cpw 缺省 8——zconv 定案 GRID_UNDERRES+SATURATED_
-    #                 RESIDUAL（内部证据档，网格份额 78%，sub8 回 ±2%
+    #                 RESIDUAL（runs/msl_cpw_zconv，网格份额 78%，sub8 回 ±2%
     #                 锚门内；_SUB_CELLS_8_TEMPLATES 见模块头）；其余模板缺省
     #                 4=官方 substrate_cells=4 旧口径逐字节不变；#313 z 向
     #                 地板项；微带/lange 等 z 块同消费，SSL/CPS 各自点数换算
@@ -1589,7 +1619,7 @@ def render_script(
     _nrts = int(params.get("_nrts", 100000) or 100000)
     #   _end_criteria → 显式 EndCriteria（如 1e-8=−80dB；cps_xrefine addendum：
     #                 缺省 −60dB 能量判据在长脉冲激励末 ~95% 处提前自停，
-    #                 port_ut 时窗不覆盖激励全程触发 V1 截断门，内部证据档
+    #                 port_ut 时窗不覆盖激励全程触发 V1 截断门，runs/cps_xrefine/
     #                 run1 实证）——缺省 None 不加参逐字节不变（官方口径）
     _knob_end_criteria = params.get("_end_criteria")
     _end_criteria_repr = (
@@ -1607,7 +1637,7 @@ def render_script(
     #                 linspace(0, 2·H_SUB) 共 8N 格（N=1 → 9 点=旧口径字面），
     #                 介质盒每半层切 N 片同材料堆叠（共 2N 盒，界面 z=i·H/N 恰
     #                 在网格线上）。背景：W7-A 网格阶梯 m1→m2 x/y 加密 ~2× 而
-    #                 z 恒 9 线（内部证据档*/
+    #                 z 恒 9 线（runs/real_machine_window/w7a/stripline.*/
     #                 verdict.json grid=[163,315,9]→[309,613,9]）——eps_eff 已
     #                 收敛 3.6601≈εr 而引擎 ZL 卡 44-45Ω 不随档收敛，z0 仲裁
     #                 的 limit 项=z 向离散（#313 z 向地板项 stripline 实证），
@@ -1673,6 +1703,30 @@ def render_script(
                                mesh_resolution_mm=mesh_resolution_mm,
                                substrate=substrate,
                                excite_port=params["_excite_port"])
+    if template in OCTAGONAL_SPIRAL_TEMPLATES:
+        # §OCTAGONAL_SPIRAL 八角螺旋电感（aurora_k K11，反馈 F1）：
+        # 单端口外端-焊盘桥隙 LumpedPort 整脚本渲染器（μm 几何驱动网格；
+        # 中跳线桥 + 45° 切角阶梯 + 全 MUR，coil_nfc 同款早分发）
+        return octagonal_spiral_render(template, params, freq_range_ghz,
+                                       mesh_resolution_mm=mesh_resolution_mm,
+                                       substrate=substrate,
+                                       excite_port=params["_excite_port"])
+    if template in MIM_CAP_TEMPLATES:
+        # §MIM_CAP MIM 叠层电容（aurora_k K12，反馈 F1）：单端口竖直跨
+        # 介质 LumpedPort 整脚本渲染器（μm 几何驱动网格；薄层 z 三线 +
+        # 全 MUR，coil_nfc 同款早分发）
+        return mim_cap_render(template, params, freq_range_ghz,
+                              mesh_resolution_mm=mesh_resolution_mm,
+                              substrate=substrate,
+                              excite_port=params["_excite_port"])
+    if template in INTERDIGITAL_CAP_TEMPLATES:
+        # §INTERDIGITAL_CAP 叉指电容（aurora_k K12，反馈 F1）：双端口水平
+        # 桥隙 LumpedPort 整脚本渲染器（串联口径，μm 几何驱动网格；
+        # 梳齿互锁 + 全 MUR，coil_nfc 同款早分发）
+        return interdigital_cap_render(template, params, freq_range_ghz,
+                                       mesh_resolution_mm=mesh_resolution_mm,
+                                       substrate=substrate,
+                                       excite_port=params["_excite_port"])
     if template in MMWAVE_SERIES_TEMPLATES:
         # §MMWAVE_SERIES_ARRAY 行波串馈毫米波阵（文末 MMWAVE_SERIES_ARRAY 段）：
         # 单端口 MSLPort（PML_8 域边入）+ 链末匹配集总负载到地整脚本渲染器
@@ -1934,7 +1988,7 @@ def render_script(
     if template in C3_TEMPLATES:
         # §C3 耦合缝网格守卫（#266）：NEAR ≤ 最小耦合缝/3，违反即抛错——缺省
         # mesh=0（λ_sub/50）下 NEAR 0.285mm > 外缝 0.139~0.242mm 曾致缝内零
-        # 内部线、外 Q 建模粗、峰位 −5%（）；不许静默粗网格
+        # 内部线、外 Q 建模粗、峰位 −5%（内部证据档）；不许静默粗网格
         c3_gap_mesh_guard(template, params, near_m)
     radiator = _TEMPLATE_RADIATOR.get(template, False)
     air_top = (3e8 / f_max / 4) if radiator else 5e-3
@@ -1957,7 +2011,7 @@ def render_script(
         # cps 缝区 x 向加密（wf:cps-xrefine，单变量对照）：缝 [−gap/2, gap/2]
         # 等分 2N 格，内部线（含缝中线 x=0 去重）精确入网。CPS 奇模场集中于
         # 缝区——引擎 εeff +13.3% 归因候选①"缝 0.5mm 仅 2 格"的收敛性验证档
-        # （内部证据档 预声明；c9 复跑遗留 TODO）。
+        # （runs/cps_xrefine/criteria.md 预声明；c9 复跑遗留 TODO）。
         _gap_half_m = float(params.get("gap_mm", 0.5)) * 1e-3 / 2.0
         near_x.extend(_xv for _xv in (
             _gap_half_m * (_i / _knob_x_refine - 1.0)
@@ -2607,7 +2661,7 @@ def render_script(
         _ant2_z_list, _ant2_z_top = "", 0.0
     # §C4 lange：air-bridge 抬高薄金属的 z 底/顶面精确入网（布局单源，米）。
     # 去桥变体（_bridge=0）z_lines 为空 → 哨兵 "H_SUB"：CSRectGrid.AddLine
-    # 拒绝空数组（assert len>0，内部证据档 exec 实证），
+    # 拒绝空数组（assert len>0，runs/c4_debridge/audit_nobridge.py exec 实证），
     # H_SUB 与基板 linspace 末点重合、脚本内 1µm 去重守卫随后移除重复线——
     # 最终 z 网格与"桥面线不再入网"等价。
     if template == "lange":
@@ -2891,6 +2945,36 @@ def render_script(
         + _sub_head +
         "sub.AddBox((-BOARD, -BOARD, 0), (BOARD, BOARD, H_SUB), priority=0)\n"
     )
+
+    # ── P7 薄层朝向守卫接线（E1，aurora_l；render_fns 族基板层盒单一落点）──
+    # 基板层盒创建即校验（core.stackup.assert_thin_layer，K9 P7 断言）：
+    # 实测 z 跨度 == 声明厚度，不符 fail-fast 不带病求解。渲染侧单位 m，
+    # 声明侧 h_mm（mm）×1e-3 单源换算（K12 mim_cap 的 to_mm 惯例同款；
+    # 各分支文本与声明同源——本守卫把"未来分支文本改动致 span≠h"从静默
+    # 带病求解变为渲染期红，竖墙病灶=span 比 h 差 ≥1 个数量级必红）。
+    # 跨源场景对账：sma_launcher 夹具抬板 z_g/z_top 来自 sma_launcher_layout
+    # 单源（与本守卫的 h_m 独立）、suspended_stripline 悬浮窗由 _ssl_b/h_m
+    # 派生——实测跨度按分支文本同款表达式取值，声明厚度按 meta 口径。
+    # 跳过面如实声明：自由空间/天线 2 高杆族（dipole/loop/monopole/helix）
+    # 无介质层（comment-only substrate_block），无层可校验。
+    if not (is_free_space or template in _ANTENNA2_TALL_TEMPLATES):
+        from rfauto.core.stackup import assert_thin_layer
+        if template in ("stripline", "via"):
+            _p7_meas = 2.0 * h_m       # 双片基板堆叠盒（上下对称 2·H_SUB）
+        elif template == "embedded_ms":
+            _p7_meas = h_m + _emb_h2   # 基板+覆盖层同 εr 单盒 [0, H+H2]
+        elif template == "suspended_stripline":
+            _p7_meas = _ssl_zhi - _ssl_zlo   # 腔中对称悬浮 [b/2−H/2, b/2+H/2]
+        elif template == "sma_launcher" and _sma_lay is not None:
+            _p7_meas = _sma_lay["z_top"] - _sma_lay["z_g"]  # 夹具抬板跨度
+        elif template == "isl_shielded" and _isl_lay is not None:
+            _p7_meas = (_isl_lay["g"] + h_m) - _isl_lay["g"]  # 空气隙顶悬浮
+        else:
+            _p7_meas = h_m             # guided/域盒缺省分支 [0, H_SUB]
+        _p7_decl = (2.0 * h_m if template in ("stripline", "via")
+                    else h_m + _emb_h2 if template == "embedded_ms"
+                    else h_m)
+        assert_thin_layer(_p7_meas, _p7_decl, axis="z")
 
     # ── WP4.1 nf2ff / SAR 注入块 ─────────────────────────────────────────────
     # 官方口径锚（docs/rf_template_references.md §8 + wiki 教程）：
@@ -3277,7 +3361,7 @@ import os
 # CSXCAD/openEMS 扩展模块的依赖 DLL 不在 Python 3.8+ 的 PATH 搜索里，
 # 必须 add_dll_directory（仅 os.environ PATH 会 ImportError: DLL load
 # failed——2026-09-03 审计实测）。目录可用 RFAUTO_OPENEMS_BIN 覆盖。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"E:\\openEMS\\install\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
@@ -3306,7 +3390,7 @@ CSV_PATH = __import__("os").path.join(
 
 {_p3exc_begin}# ── 仿真环境：官方 MSL_NotchFilter 教程方法学（2026-09-04 频率尺度根因
 # 实验后定稿；旧版 λ/20@空气粗网格 + 有限小板使 λ/4 谷位系统性低 30-40%
-# 且随网格漂移，证据链 内部证据档 E1-E4）──
+# 且随网格漂移，证据链 runs/audit_freq_scale/ E1-E4）──
 CSX = ContinuousStructure()
 FDTD = openEMS(NrTS={_nrts!r}{_end_criteria_src}{', CellConstantMaterial=1' if sar else ''})   # 官方口径：不设 EndCriteria，默认能量判据停机{'；EndCriteria=显式停机判据（_end_criteria 旋钮）' if _end_criteria_src else ''}{'；CellConstantMaterial=1 = 官方 SAR 要求（每 Yee 元单值材料）' if sar else ''}
 FDTD.SetCSX(CSX)

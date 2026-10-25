@@ -40,7 +40,7 @@
   桌面；每轮前白名单清工程产物（陈旧设计重名=监控读默认值的坑）；
 - 真机失败如实 ok=false + error 落 JSON，不凑绿。
 
-产物：runs/icepak_hfss_loss_e2e/e2e_case.json
+产物：内部证据档
 """
 import json
 import math
@@ -98,7 +98,7 @@ def _kill_desktops() -> None:
 
 def _clean_project_artifacts() -> None:
     """白名单清 AEDT 工程产物（陈旧设计重名=监控读默认值，2026-09-13 实证）。
-    只点名工程四件，不碰日志与 JSON 证据（AGENTS 硬规 3）。"""
+    只点名工程四件，不碰日志与 JSON 证据（内核立规注记 硬规 3）。"""
     import shutil
 
     for name in ("wp44a_e2e.aedt",

@@ -1,6 +1,6 @@
 """数据工厂 M4·摊销台账（长期指标"随采集自然累积"的机制化，B1 小项批）。
 
-背景（）：一期 M4 实测摊销盈亏平衡 K=3.35 场（墙钟门
+背景（开发注记（三百零二））：一期 M4 实测摊销盈亏平衡 K=3.35 场（墙钟门
 ratio=0.1398=7.15×）；≥5× 摊销需 K≈16.7 场（df1_next 候选队列#4）。
 **"一场" = 一次对数据工厂库存发起的代理寻优战役（``run_surrogate_loop`` 类）**，
 即"查库存 + 代理环"代替"逐点从头真解"的那类战役——库存采集成本
@@ -73,7 +73,7 @@ ENTRIES_FILENAME = "entries.jsonl"
 #: 台账汇总。
 LEDGER_FILENAME = "ledger.json"
 
-#: 预声明常数（一期 M4 实测口径，；verdict 档缺省时回退）。
+#: 预声明常数（一期 M4 实测口径，开发注记（三百零二）；verdict 档缺省时回退）。
 DECLARED_BREAKEVEN_K = 3.35
 DECLARED_TARGET_5X_K = 16.7
 #: 一期 M4 verdict 归档（实测常数优先源，相对 runs 根）。
@@ -229,7 +229,7 @@ def breakeven_constants(runs_dir: str | Path) -> dict[str, Any]:
     return {
         "breakeven_k": DECLARED_BREAKEVEN_K,
         "target_5x_k": DECLARED_TARGET_5X_K,
-        "source": f"declared（{M4_VERDICT_REL} 缺档回退，口径）",
+        "source": f"declared（{M4_VERDICT_REL} 缺档回退，开发注记（三百零二）口径）",
     }
 
 

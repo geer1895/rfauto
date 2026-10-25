@@ -1,6 +1,6 @@
 {
  "provenance": {
-  "source_dir": "仓内归档/eep_2x2",
+  "source_dir": "runs/df6_dp4p3/eep_2x2",
   "source_sha256": {
    "p1/sparams.csv": "ce48d59ae2763f9a08ec711306f13c1f7ce1c93a52ff83d9d5b22642d542ea47",
    "p2/sparams.csv": "d8a5a7b422d2cf2e7174e35040a1b3ac51d0e6089ff3eb378a4eb3601153bb6c",
@@ -9,7 +9,7 @@
   },
   "generated_at": "2026-10-18T00:00:00+08:00",
   "generator": "aurora_e W3-S15 席一次性 inline 生成；装配链=_load_smatrix_from_rounds+parse_farfield_3d_cplx_csv+eep_superposition（与 coupled_tier_solve 同链）",
-  "campaign": "仓内归档（DP-4 P3 EEP 2x2；judge_2x2.json f0_ghz=5.8/scan 0/uniform）"
+  "campaign": "runs/df6_dp4p3（DP-4 P3 EEP 2x2；judge_2x2.json f0_ghz=5.8/scan 0/uniform）"
  },
  "template": "patch_eep_2x2",
  "f0_ghz": 5.8,

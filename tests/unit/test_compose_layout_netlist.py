@@ -1,7 +1,7 @@
 """DP-8 组合引擎离线审计（P1+P2；#212 制度化升级）。
 
-权威口径：组合引擎设计规格 §DP-8 +
-预声明判据档（C1-C3 判据预声明；C4/C5 留 P3）。
+权威口径：docs/plan_deepdive_specs_20260924.md §DP-8 +
+内部证据档（C1-C3 判据预声明；C4/C5 留 P3）。
 
 覆盖：
   C1 golden 门：首例「MSL 过渡+SIW 直段+MSL 过渡」组合输出与
@@ -58,13 +58,11 @@ SUB = {"h_mm": 0.508, "er": 3.66, "tan_d": 0.0037}
 # 缺省渲染字节钉（§3 判据；taper/v2 二值=DP-8 改动前实测基线冻结）
 # wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案 render_script 尾段追加
 # sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
-# runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
+# 内部证据档{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
 # 随尾段追加必移，port_pins 契约断言（本文件其余）保留不变。
-# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释字节漂移（几何段 exec
-# 审计逐键同值；换钉留 diff 证据纪律同 test_siw_template）。
-_V1_RENDER_SHA256 = "ff60ee37dcf6b0ca6b31ae92da12ec29f5cdc394ce3e1d1efc633666ae672376"
-_TAPER_RENDER_SHA256 = "59a8b3a6ee522afdfde9e68e006b105641f0588f54877fd0ced26a318c7022f0"
-_SIW_V2_RENDER_SHA256 = "8f937055433bba19cf9c7e3902930543a74af5901a7b58af79d983d30e2c5af1"
+_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
+_TAPER_RENDER_SHA256 = "0dfef4dddcf82de7b700fb3090733975382e42d6ad5379a38151a2e974130c83"
+_SIW_V2_RENDER_SHA256 = "3a45ca9a50e5474fa38b74c9190284b66326ad28f51060ae995a908deeda7796"
 
 _GOLDEN = REPO / "tests" / "golden" / "compose_siw_chain_simulation.py"
 
@@ -125,7 +123,7 @@ def test_c1_golden_byte_identical():
     golden = _GOLDEN.read_bytes()
     assert text.encode("utf-8") == golden, (
         "C1 字节同失败：组合输出与 goldfile 漂移——有意改动必须换钉并留 "
-        "unified diff 证据（预声明判据档 §2 C1）")
+        "unified diff 证据（runs/df6_dp8compose/criteria.md §2 C1）")
     assert hashlib.sha256(text.encode("utf-8")).hexdigest() == (
         meta["render_sha256"])
 

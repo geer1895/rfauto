@@ -1,0 +1,80 @@
+schema: rfauto-template-geometry-golden/v1
+template: mim_cap
+digest_version: 1
+mesh_resolution_mm: 0.0
+freq_range_ghz:
+- 1.75
+- 2.25
+params:
+  w_um: 20.0
+  l_um: 20.0
+  d_um: 0.2
+  bot_overhang_um: 5.0
+  port_um: 2.5
+  h_mm: 0.1
+  er_diel: 7.5
+  tand_diel: 0.001
+  er: 12.9
+  tan_d: 0.0006
+status: ok
+script_sha256: b9a5bf1af563429bef3feaa55772ed60d82c9dbc8c61129b9e4450ad46bcca9a
+csx:
+  n_primitives: 8
+  props:
+  - name: substrate
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: mim_diel
+    kind: Material
+    n: 1
+    types:
+      '1': 1
+  - name: metal
+    kind: Metal
+    n: 2
+    types:
+      '1': 2
+  - name: port_resist_1
+    kind: LumpedElement
+    n: 1
+    types:
+      '1': 1
+  - name: port_excite_1
+    kind: Excitation
+    n: 1
+    types:
+      '1': 1
+  - name: port_ut_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  - name: port_it_1
+    kind: ProbeBox
+    n: 1
+    types:
+      '1': 1
+  primitives_sha256: 9aa7b011468b63a47aa006e31822e344512848b787d17abf9eb8d8b98972a6a5
+  bbox_m:
+  - -3.0e-05
+  - -3.0e-05
+  - 0.0
+  - 3.0e-05
+  - 3.0e-05
+  - 0.0001002
+mesh:
+  lines:
+    x:
+      n: 27
+      min_gap_m: 1.0e-06
+    y:
+      n: 27
+      min_gap_m: 1.0e-06
+    z:
+      n: 57
+      min_gap_m: 0.0
+  lines_sha256: 4a2696af9a10cdc845c04282b5a05634d1931eea336c1223081ed68b5c21d696
+ports:
+- 1

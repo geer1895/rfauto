@@ -13,7 +13,7 @@ params:
   sect_len_mm: 17.7338
   branch_len_mm: 18.4304
 status: ok
-script_sha256: 03396c537ca723dffab5376eacc1bf3edabc924e78a2d878a8b957c78dab8d2e
+script_sha256: 7dec19db7bff5e4262ccf01fd2ade88c98a4a2b0791b11d7d5e1a5eeff1edfce
 csx:
   n_primitives: 35
   props:

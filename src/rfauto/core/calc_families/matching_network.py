@@ -1,4 +1,4 @@
-"""L 节匹配网络键（架构批 W1-K1 内核第五梯队批 1，R2_core_tier5 §③ 1）。
+"""L 节匹配网络键（aurora_h W1-K1 内核第五梯队批 1，R2_core_tier5 §③ 1）。
 
 提升核：消费 core/matching.py::synthesize_l_match（C14 锚现代入口——
 response 显式声明滤波响应型、LCElement kind/role/value 显式、元件按负载端

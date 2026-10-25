@@ -1,4 +1,4 @@
-"""UI 离线开发回路（aurora_i R1 采纳 #4，hfssq-ui-kit 思想；W3.5-K3 席）。
+"""UI 离线开发回路（采纳 #4 提案，hfssq-ui-kit 思想）。
 
 一个极简静态服务（stdlib http.server，零新依赖）把 rfauto 前端
 ``src/rfauto/ui/static/`` 与 mock 数据信封拼成**无后端可跑**的 UI 开发
@@ -16,7 +16,7 @@
 - 同一信封镜像伺服在 ``/mock/api/<端点>``（配前端 apiFetch 的
   ``?mock=1`` 查询参数开关——同源场景；跨源场景（任意静态伺服 +
   ``?mock=http://127.0.0.1:8643/api``）由 mock 响应的 CORS ``*`` 支持；
-- mock 文件缺省 ``runs/aurora_i/ui_mock_data.json``（gitignored 证据区
+- mock 文件缺省 ``内部证据档``（gitignored 证据区
   ——mock 读数不进 git、禁止当真值，纪律见 docs/how-to/ui-offline-dev.md）；
   缺失时自动落一份内置合成样例（结构照真实信封，身份全合成），
   ``--capture`` 可随时从真 UI 重采。
@@ -38,7 +38,7 @@ from urllib import request as _urlrequest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STATIC = REPO_ROOT / "src" / "rfauto" / "ui" / "static"
-DEFAULT_MOCK = REPO_ROOT / "runs" / "aurora_i" / "ui_mock_data.json"
+DEFAULT_MOCK = REPO_ROOT / "runs" / "ui_dev_loop" / "ui_mock_data.json"
 DEFAULT_PORT = 8643
 
 #: --capture 采样端点（GET；前端首屏/高频只读面，W3.5-K3 实测选点）。
@@ -302,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--static", default=str(DEFAULT_STATIC),
                     help="前端静态目录（缺省 src/rfauto/ui/static）")
     ap.add_argument("--mock", default=str(DEFAULT_MOCK),
-                    help="mock 信封文件（缺省 runs/aurora_i/ui_mock_data.json）")
+                    help="mock 信封文件（缺省 runs/ui_dev_loop/ui_mock_data.json）")
     ap.add_argument("--capture", metavar="BASE_URL", default=None,
                     help="从运行中的真 UI（如 http://127.0.0.1:8699）采样"
                          "脱敏并入 mock 文件后退出（不起服务）")

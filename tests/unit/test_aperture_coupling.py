@@ -11,7 +11,7 @@
   ——**孔径-波长幂律 −60dB/dec（SE 视角）= 1e-6 级严格恒等**（round17
   EM-2 验收锚；Robinson 腔链同域孔径斜率 ≈−47dB/dec 另行并陈钉带）。
 - Robinson 1998 式(1)-(12) 全链（White Rose 后印本逐式回收，留档
-  runs/em2/robinson1998_postprint.pdf）：图锚=Fig.6/7（300×120×300mm
+  内部证据档）：图锚=Fig.6/7（300×120×300mm
   腔 t=1.5mm + 100×5mm 缝、p=150mm：谐振 ~700MHz 负屏蔽、
   SE_E(200MHz)≈45dB、SE 随 p 单调增、TE10 截止 500MHz——按图读数
   放宽容差）；单点全链测试内独立重写裁判（|Δ|≤1e-9 dB）；圆孔式(11)

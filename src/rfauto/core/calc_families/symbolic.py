@@ -19,7 +19,7 @@ from .registry import CALCULATOR_REGISTRY, CalculatorRegistry, CalculatorSpec
 
 # ─── E13 符号归纳公式登记（experimental 默认关，W1⑨ 2026-09-16 用户口径）─────
 # 用户决定（2026-09-16）：所有符号回归归纳公式入库但**默认关**、显式开关才用
-# （TODO「0-用户口径（2026-09-16）」②）。机制：register_symbolic_formula 把
+# （待办清单「0-用户口径（2026-09-16）」②）。机制：register_symbolic_formula 把
 # symbolic_fit 的 CandidateFormula 一律以 experimental=True 登记进注册表——
 # names()/describe() 默认不列、service 运行默认拒绝（run_calculator 显式
 # allow_experimental=True，或 configs/settings.yaml 的
@@ -205,7 +205,7 @@ def _register_e13_patch_f0() -> str:
         param_names=("l_mm", "w_mm"),
         output_key="f0_ghz",
         provenance=(
-            "E13（符号回归实验态归档）：数据集 "
+            "E13（内部证据档）：数据集 "
             "patch_antenna_openems_campaign，51 真实 openEMS 点"
             "（L∈[35,45]mm、W∈[40,60]mm、er=3.66、h=0.508），基模=[1.3,2.7]GHz"
             " 最低频 ≥3dB 局部谷；holdout 每 5 留 1，rmse_holdout=0.001773GHz、"

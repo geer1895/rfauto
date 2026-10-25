@@ -87,13 +87,14 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `runs/review_ge8e/r1_calculators/REPORT.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："R1-1，runs/review_ge8e/r1_calculators/REPORT.md）；AGM 形态两式数学"
+- `runs/review_ge8e/r1_calculators/REPORT.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："R1-1，内部证据档）；AGM 形态两式数学"
 
-测试面（tests/unit 引用扫描，机读；合计 **141** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **146** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a3c_coupled_interdigital.py` | 20 |
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |
 | `tests/unit/test_ta_wave_c_templates.py` | 23 |

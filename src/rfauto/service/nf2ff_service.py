@@ -1,6 +1,6 @@
 """nf2ff 远场/SAR 服务层（WP4.1 / §10.4 D4，openEMS 原生）。
 
-职责（AGENTS 硬限 4：服务层 JSON 进出，UI/CLI/MCP 薄壳）：
+职责（内核立规注记 硬限 4：服务层 JSON 进出，UI/CLI/MCP 薄壳）：
 - 盘点 runs/ 下含远场产物的 run（模板 far_field/sar=True 真跑落盘）；
 - 单 run 远场视图：farfield_meta.json + farfield_cut.csv → 切面极坐标
   序列（θ-dB）+ 指标（Dmax/增益/效率/HPBW/前后比/功率闭合），数值
@@ -244,7 +244,7 @@ def farfield_view(run_id: str) -> dict[str, Any]:
             grid3d = None  # 交叉校验 best-effort（#105）
 
     metrics = _read_metrics(meta, sar, grid3d)
-    # η 门判读（TODO C21 followUp）：极坐标页复用 ui_service 同一
+    # η 门判读（待办清单 C21 followUp）：极坐标页复用 ui_service 同一
     # patch_eta_gate（与 field_view 的 farfield_metrics["eta_gate"] 同判读
     # 函数同口径）。η 消费修正后值（_read_metrics 已按镜像因子修正，raw
     # 1.243 这类非物理原值不进门）；patch 族作用域分派（#274）——非 patch

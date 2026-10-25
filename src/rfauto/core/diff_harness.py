@@ -361,8 +361,8 @@ def discover_engine_pairs(
     """引擎名清单 → 待差分 pair 矩阵（确定性序，去重）。
 
     reference=None：全部无序组合（itertools.combinations 2，字典序）；
-    reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例——
-    HFSS 结果为对齐基准）。exclude 命中的引擎不参与配对。
+    reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
+    内核立规注记 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
     引擎名 < 2 个 → 空矩阵（合法，无对可差分）。
     """
     seen: dict[str, None] = {}

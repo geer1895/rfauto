@@ -136,7 +136,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `runs/hairpin_kgap/offline_kj_vs_ngsolve.json`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，runs/hairpin_kgap/"
+- `runs/hairpin_kgap/offline_kj_vs_ngsolve.json`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："偶/奇模 k_NG/k_KJ=1.003/1.018/1.049 @gap 0.8/1.1328/1.6，内部证据档"
 
 测试面（tests/unit 引用扫描，机读；合计 **264** 个 test 函数）：
 

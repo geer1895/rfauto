@@ -87,10 +87,10 @@ class TestRemoteBlock:
         monkeypatch.setattr(
             "rfauto.service.remote_service.hfss_remote_session_config",
             fake_config)
-        r = client.get("/api/campaign_queue?machine=sim_host").json()
+        r = client.get("/api/campaign_queue?machine=sim_server").json()
         c = r["campaigns"][0]
         assert c["remote"]["ok"] is True
-        assert c["remote"]["remote_machine"]["remote_machine"] == "sim_host"
+        assert c["remote"]["remote_machine"]["remote_machine"] == "sim_server"
         # 候选=license_gated 阶段（final_verify）
         assert c["remote"]["stage_candidates"] == ["final_verify"]
         # mTLS 条件项如实登记（不硬上）：状态字符串恒携带

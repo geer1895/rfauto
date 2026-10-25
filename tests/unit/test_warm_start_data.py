@@ -9,6 +9,9 @@
   拦截 params/metrics/cost 非有限值——E11 未尽②根治 + NaN cost 实证
   P1 收口；本面拦截保留为纵深防御，直写 Parquet 的坏行照样拦）
 - 空数据集/全无效样本：run 包装层如实 ok=False 报错，不偷偷降级冷启动
+- 溯源块（R1 #13 旧数据冒充防线）：recipe_path 盖章（sha/数据集身份/
+  采集时刻/adapter/template）；消费端三态——匹配注入、不匹配拒注入+note
+  溯源对比、老格式（无 provenance）照旧注入+note 未校验
 
 外部通道钉住（#139）：run 包装层单测 monkeypatch
 rfauto.optimization.optimizer.run_optimization（warm_start_data 惰性导入
@@ -18,9 +21,11 @@ test_warm_start.py 先例），chdir 隔离不污染真实 runs/（#144）。
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -249,6 +254,51 @@ class TestCollectWarmStartSamples:
         assert r["skip_reasons"] == {"cost 含 NaN/Inf": 1}
 
 
+# ─── 溯源盖章（R1 #13 写点：collect 带 recipe_path 时样本附 provenance） ─────
+
+class TestProvenanceStamping:
+    def test_stamped_with_recipe_path(self, tmp_path):
+        """recipe_path 盖章：sha=文件字节哈希，数据集身份/时刻/行列齐全。"""
+        _write_dataset(tmp_path, "prov_ds", _std_rows())
+        recipe = tmp_path / "prov_recipe.yaml"
+        recipe.write_text("model: mline\n", encoding="utf-8")
+        r = collect_warm_start_samples("prov_ds", recipe_path=str(recipe))
+        assert r["ok"], r.get("errors")
+        assert r["n_samples"] == 3
+        expected_sha = hashlib.sha256(recipe.read_bytes()).hexdigest()
+        ddir = tmp_path / "runs" / "datasets" / "prov_ds"
+        for s in r["samples"]:
+            prov = s["provenance"]
+            assert prov["recipe_sha256"] == expected_sha
+            assert prov["dataset_id"] == "prov_ds"
+            assert prov["dataset_dir_mtime"] == pytest.approx(
+                ddir.stat().st_mtime, abs=1e-6)
+            # ISO 8601 带时区时刻（可解析即口径合格，值本身不钉）
+            collected = datetime.fromisoformat(prov["collected_at"])
+            assert collected.tzinfo is not None
+        # adapter/template 逐行取自数据集列（混族数据集各自归属）
+        by_rid = {s["run_id"]: s for s in r["samples"]}
+        assert by_rid["ok_0"]["provenance"]["adapter"] == "fake"
+        assert by_rid["ok_0"]["provenance"]["template"] == "mline"
+
+    def test_not_stamped_without_recipe_path(self, tmp_path):
+        """缺省（无 recipe_path）：样本无 provenance 段=老格式，增量兼容。"""
+        _write_dataset(tmp_path, "plain_ds", _std_rows())
+        r = collect_warm_start_samples("plain_ds")
+        assert r["ok"], r.get("errors")
+        assert r["n_samples"] == 3
+        assert all("provenance" not in s for s in r["samples"])
+
+    def test_missing_recipe_file_stamps_sha_none(self, tmp_path):
+        """recipe 文件不可读：recipe_sha256=None（未校验注入口径，不阻塞）。"""
+        _write_dataset(tmp_path, "nofile_ds", _std_rows()[:2])
+        r = collect_warm_start_samples(
+            "nofile_ds", recipe_path=str(tmp_path / "nope.yaml"))
+        assert r["ok"], r.get("errors")
+        assert all(s["provenance"]["recipe_sha256"] is None
+                   for s in r["samples"])
+
+
 # ─── run 包装层（monkeypatch 钉 run_optimization 通道，#139） ─────────────────
 
 class TestRunWrapper:
@@ -333,6 +383,87 @@ class TestRunWrapper:
         assert result["warm_start_data"]["n_samples"] == 3
 
 
+# ─── 消费端溯源三态分拣（optimizer 消费点单源，R1 #13） ───────────────────────
+
+class TestProvenanceFilter:
+    """直接钉 optimizer._filter_warm_start_provenance 的三态语义。"""
+
+    @staticmethod
+    def _sample(sha: str | None, cost: float = 0.1) -> dict:
+        s: dict = {"params": {"w_mm": 1.0}, "cost": cost,
+                   "run_id": f"r_{cost}", "point_index": 0}
+        if sha is not None:
+            s["provenance"] = {
+                "recipe_sha256": sha, "dataset_id": "d",
+                "collected_at": "2026-10-23T00:00:00+00:00",
+                "adapter": "fake", "template": "mline"}
+        return s
+
+    CUR = "a" * 64
+    OLD = "b" * 64
+
+    def test_matched_injected_without_notes(self):
+        from rfauto.optimization.optimizer import _filter_warm_start_provenance
+
+        r = _filter_warm_start_provenance([self._sample(self.CUR)], self.CUR)
+        assert [s["run_id"] for s in r["inject"]] == ["r_0.1"]
+        assert len(r["matched"]) == 1
+        assert r["mismatched"] == [] and r["legacy"] == []
+        assert r["notes"] == []
+
+    def test_all_mismatched_rejected_cold_start_note(self):
+        from rfauto.optimization.optimizer import _filter_warm_start_provenance
+
+        r = _filter_warm_start_provenance(
+            [self._sample(self.OLD, 0.1), self._sample(self.OLD, 0.2)], self.CUR)
+        assert r["inject"] == []                    # 全拒 → 本次冷启动
+        assert len(r["mismatched"]) == 2
+        note = r["notes"][0]
+        assert "本次冷启动" in note
+        assert "bbbbbbbb" in note and "aaaaaaaa" in note   # sha 前 8 位对比
+        assert "×2" in note
+
+    def test_mixed_partial_inject_with_both_notes(self):
+        from rfauto.optimization.optimizer import _filter_warm_start_provenance
+
+        samples = [self._sample(self.CUR, 0.1),    # 匹配 → 注入
+                   self._sample(self.OLD, 0.2),    # 不匹配 → 拒
+                   self._sample(None, 0.3)]        # 老格式 → 注入+未校验
+        r = _filter_warm_start_provenance(samples, self.CUR)
+        assert [s["cost"] for s in r["inject"]] == [0.1, 0.3]
+        assert len(r["mismatched"]) == 1
+        assert any("拒绝注入 1 个样本" in n and "其余 2 个照常注入" in n
+                   for n in r["notes"])
+        assert any("老格式样本无溯源，注入未校验（1 个）" in n
+                   for n in r["notes"])
+
+    def test_legacy_only_injected_with_unverified_note(self):
+        from rfauto.optimization.optimizer import _filter_warm_start_provenance
+
+        r = _filter_warm_start_provenance(
+            [self._sample(None, 0.1), self._sample(None, 0.2)], self.CUR)
+        assert len(r["inject"]) == 2
+        assert r["notes"] == ["warm-start 老格式样本无溯源，注入未校验（2 个）"]
+
+    def test_provenance_without_usable_sha_is_legacy(self):
+        """provenance 段存在但无有效 sha（盖章失败/畸形）→ 按未校验注入，
+        不冒充匹配也不误拒（增量兼容口径）。"""
+        from rfauto.optimization.optimizer import _filter_warm_start_provenance
+
+        broken = [
+            {"params": {"w_mm": 1.0}, "cost": 0.1, "provenance": {}},
+            {"params": {"w_mm": 1.0}, "cost": 0.2,
+             "provenance": {"recipe_sha256": None}},
+            {"params": {"w_mm": 1.0}, "cost": 0.3,
+             "provenance": "not-a-dict"},
+            {"params": {"w_mm": 1.0}, "cost": 0.4},   # 非 dict 样本本体
+        ]
+        r = _filter_warm_start_provenance(broken, self.CUR)
+        assert len(r["inject"]) == 4 and r["legacy"] == broken
+        assert r["mismatched"] == []
+        assert len(r["notes"]) == 1 and "未校验" in r["notes"][0]
+
+
 # ─── 端到端（进程内 fake 通道：喂料 → stage-1 门 → 注入） ────────────────────
 
 class TestEndToEndFake:
@@ -402,6 +533,59 @@ class TestEndToEndFake:
         assert result["warm_start_data"]["n_samples"] == 3
         assert result["warm_start_data"]["n_skipped_invalid"] == 1
         assert result["warm_start_n"] == 2
+        assert result["trials_completed"] == 4
+        # 溯源匹配（wrapper 盖章=当前 recipe）→ 无 note 键（干净路径）
+        assert "warm_start_notes" not in result
+
+    def test_mismatched_provenance_rejected_cold_start(self, tmp_path):
+        """R1 #13 端到端：样本溯源 sha 与当前 recipe 不匹配 → 拒注入，
+        note 带溯源对比（sha 前 8 位），优化照常冷启动跑完。"""
+        from rfauto.optimization.optimizer import run_optimization
+
+        recipe = self._write_recipe(tmp_path)
+        old_sha = "f" * 64
+        result = run_optimization(
+            recipe, adapter_name="fake", max_trials=4,
+            study_name="ws_prov_mismatch", adapter_kwargs={"n_ports": 3},
+            warm_start=[
+                {"params": {"arm_len_mm": 19.5, "series_w_mm": 0.35},
+                 "cost": 0.05,
+                 "provenance": {"recipe_sha256": old_sha,
+                                "dataset_id": "old_ds",
+                                "collected_at": "2026-01-01T00:00:00+00:00",
+                                "adapter": "fake",
+                                "template": "wilkinson_power_divider"}},
+                {"params": {"arm_len_mm": 22.5, "series_w_mm": 0.40},
+                 "cost": 0.50,
+                 "provenance": {"recipe_sha256": old_sha}},
+            ])
+        assert result["ok"], result.get("errors")
+        assert result["warm_start_n"] == 0            # 旧 recipe 数据一个不进
+        note = result["warm_start_notes"][0]
+        assert "本次冷启动" in note
+        assert "ffffffff" in note                     # 旧 sha 前 8 位
+        assert result["trials_completed"] == 4        # 冷启动照常执行
+        assert result["best_params"], "冷启动仍应产出 best"
+
+    def test_legacy_samples_injected_with_unverified_note(self, tmp_path):
+        """R1 #13 端到端：老格式样本（无 provenance）→ 照旧注入 + note
+        声明未校验（增量兼容不废老数据）。"""
+        from rfauto.optimization.optimizer import run_optimization
+
+        recipe = self._write_recipe(tmp_path)
+        result = run_optimization(
+            recipe, adapter_name="fake", max_trials=4,
+            study_name="ws_prov_legacy", adapter_kwargs={"n_ports": 3},
+            warm_start=[
+                {"params": {"arm_len_mm": 19.5, "series_w_mm": 0.35},
+                 "cost": 0.05, "run_id": "legacy_0"},
+                {"params": {"arm_len_mm": 22.5, "series_w_mm": 0.40},
+                 "cost": 0.50, "run_id": "legacy_1"},
+            ])
+        assert result["ok"], result.get("errors")
+        assert result["warm_start_n"] == 2            # 老数据照常注入
+        assert result["warm_start_notes"] == [
+            "warm-start 老格式样本无溯源，注入未校验（2 个）"]
         assert result["trials_completed"] == 4
 
 

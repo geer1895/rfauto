@@ -1,6 +1,6 @@
 """W1-E Z-6 定向门——known_flaky marker 消费（pytest-rerunfailures 重跑行为）。
 
-判据（runs/w1_phase1/criteria.md §W1-E）：
+判据（内部证据档 §W1-E）：
 - 标记用例重跑行为：RFAUTO_FLAKY_RERUN=1 + known_flaky → 首红+重跑绿，
   整门 rc=0（ENV_FLAKY 分级：不计回归），实测重跑真发生（attempts=2）；
 - **物理红永不隔离**（诚实分级铁律）：缺省门（无 env）带 marker → 单次

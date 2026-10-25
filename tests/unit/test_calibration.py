@@ -1,6 +1,6 @@
 """E9b 校准框架单元测试。
 
-验收标准（规划扩展 §E9b）：
+验收标准（规划扩展_v2 §E9b）：
 ① SOLT 校准套件加载
 ② TRL 校准套件加载
 ③ 无校准时返回原样数据
@@ -433,7 +433,7 @@ class TestFsvGradeGate:
         判定与 gate.json/report 同步仍端到端覆盖。旧锚口径（GDM=F 边界、
         ρ≈0.633、verdict=FAIL）的"门通过不掩盖 base FAIL"路径改由下方
         两条注入式单测覆盖（不依赖 fake 响应数值，锚再变也不漂）。
-        runs/fake_anchor_354/criteria.md §4。
+        内部证据档 §4。
         """
         monkeypatch.chdir(tmp_path)
         from rfauto.service.calibration_service import calibrate_surrogate

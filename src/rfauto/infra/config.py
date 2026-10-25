@@ -136,7 +136,7 @@ class Settings(BaseModel):
 # Loader
 # ---------------------------------------------------------------------------
 
-#: load_settings 会话缓存（架构批 W1-S4 Top6，仿 anchors_store mtime 键控）：
+#: load_settings 会话缓存（aurora_f W1-S4 Top6，仿 anchors_store mtime 键控）：
 #: 双 YAML 读+OmegaConf+pydantic（R3 实测 3.1ms/次、11 调用点）→ 签名命中
 #: 零 IO。签名=（_ENV_MAP 全部 env 现值, 双 YAML (mtime_ns,size)）——env 与
 #: 文件任一变化即刻失效（确定性签名，无需 TTL 兜底）；stat 失败按缺失计
@@ -172,7 +172,7 @@ def load_settings(yaml_path: str | Path = _DEFAULT_YAML) -> Settings:
        ``settings.local.yaml``（gitignore 的本机路径覆盖）存在时后加载覆盖
     3. Code defaults
 
-    会话缓存（架构批 W1-S4）：签名=env 现值+双 YAML (mtime,size)——env
+    会话缓存（aurora_f W1-S4）：签名=env 现值+双 YAML (mtime,size)——env
     monkeypatch/文件改写即刻失效，命中时零文件 IO（同入参两次调用结果
     逐字段一致）；返回深度拷贝，调用方可自由改动返回值。
     """

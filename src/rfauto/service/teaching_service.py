@@ -296,6 +296,42 @@ def _solve_ratrace_circumference(p: dict[str, float]) -> float:
     ) * 2.0 * math.pi
 
 
+def _solve_idc_capacitance_ff(p: dict[str, float]) -> float:
+    from rfauto.core.ipc_cap import interdigital_capacitance_f
+
+    out = interdigital_capacitance_f(
+        n_fingers=int(p["n_fingers"]),
+        lf_m=p["lf_um"] * 1e-6,
+        wf_m=p["wf_um"] * 1e-6,
+        sf_m=p["sf_um"] * 1e-6,
+        t_m=p["t_um"] * 1e-6,
+        er_sub=p["er_sub"],
+        e_tip_m=p["e_tip_um"] * 1e-6,
+    )
+    return float(out["c_f"]) * 1e15
+
+
+def _solve_mim_capacitance_ff(p: dict[str, float]) -> float:
+    from rfauto.core.ipc_cap import mim_capacitance_report
+
+    out = mim_capacitance_report(
+        w_m=p["w_um"] * 1e-6, l_m=p["l_um"] * 1e-6,
+        d_m=p["d_um"] * 1e-6, er_diel=p["er_diel"],
+    )
+    return float(out["c_f"]) * 1e15
+
+
+def _solve_octagon_inductance_nh(p: dict[str, float]) -> float:
+    from rfauto.core.nfc_coil import CoilGeometry, spiral_inductance
+
+    n = float(p["n_turns"])
+    # 外径几何闭式（octagonal_spiral meta 同语义 #154）：d_out=d_in+2nW+2(n−1)S
+    d_out_um = p["din_um"] + 2.0 * n * p["w_um"] + 2.0 * (n - 1.0) * p["s_um"]
+    geom = CoilGeometry(
+        "octagon", n, d_out_um * 1e-6, p["w_um"] * 1e-6, p["s_um"] * 1e-6)
+    return float(spiral_inductance(geom)) * 1e9
+
+
 #: 题库（statement 以 str.format(**params) 参数化；solve=确定性内核现算）
 QUIZ_BANK: tuple[dict[str, Any], ...] = (
     {
@@ -442,6 +478,68 @@ QUIZ_BANK: tuple[dict[str, Any], ...] = (
             "Pozar, Microwave Engineering (4th ed.), §7.5（180° hybrid ring；"
             "docs/rf_template_references.md ratrace 权威口径节；本仓 core/"
             "synthesis.synthesize_ratrace_model 闭式：环 √2·Z0、周长 1.5λg）"
+        ),
+    },
+    {
+        "id": "Q-OCTA-L",
+        "topic": "八角螺旋电感（Mohan 电流片式）",
+        "statement": (
+            "GaAs IPD 八角螺旋电感：匝数 N={n_turns}、内径 {din_um} μm、"
+            "线宽 {w_um} μm、匝间距 {s_um} μm，外径按几何闭式 "
+            "d_out=d_in+2NW+2(N−1)S，按 Mohan 电流片式（八角系数）"
+            "电感 L 是多少（nH）？"
+        ),
+        "params": {"n_turns": 5, "din_um": 80.0, "w_um": 10.0, "s_um": 5.0},
+        "solve": _solve_octagon_inductance_nh,
+        "tolerance_rel": 0.005,
+        "unit": "nH",
+        "source": (
+            "本仓 core/nfc_coil.spiral_inductance（Mohan 电流片式单源，"
+            "IEEE JSSC 34(10) 1999 Table II 系数原文逐位核对；"
+            "docs/templates/octagonal_spiral/meta.yaml nominal_derivation"
+            "（名义档 4.1147nH，d_out=220μm））"
+        ),
+    },
+    {
+        "id": "Q-MIM-C",
+        "topic": "MIM 电容（平行板精确式）",
+        "statement": (
+            "MIM 电容上极板叠合区 {w_um}×{l_um} μm、介质厚 {d_um} μm、"
+            "介质 εr={er_diel}（SiNx），按平行板精确式 C=ε0·εr·A/d "
+            "是多少（fF）？"
+        ),
+        "params": {"w_um": 20.0, "l_um": 20.0, "d_um": 0.2, "er_diel": 7.5},
+        "solve": _solve_mim_capacitance_ff,
+        "tolerance_rel": 0.005,
+        "unit": "fF",
+        "source": (
+            "本仓 core/ipc_cap.mim_capacitance_report（平行板单源复用 "
+            "core/package_interconnect.mim_capacitance，边缘场 O(d/√A) 忽略"
+            "声明见模块头；docs/templates/mim_cap/meta.yaml "
+            "nominal_derivation（名义档 132.8128fF））"
+        ),
+    },
+    {
+        "id": "Q-IDC-C",
+        "topic": "叉指电容（sum-of-capacitances 一阶）",
+        "statement": (
+            "GaAs IPD 叉指电容（衬底 εr={er_sub}）：总齿数 N={n_fingers}、"
+            "齿长 {lf_um} μm、齿宽 {wf_um} μm、齿间距 {sf_um} μm、"
+            "金属厚 {t_um} μm、尖部外伸 {e_tip_um} μm，按 "
+            "sum-of-capacitances 一阶 C=(N−1)·ε0·εeff·t·l_c/s"
+            "（εeff=(1+εr)/2、l_c=lf−e_tip）是多少（fF）？"
+        ),
+        "params": {
+            "n_fingers": 24, "lf_um": 220.0, "wf_um": 5.0, "sf_um": 5.0,
+            "t_um": 3.0, "er_sub": 12.9, "e_tip_um": 15.0,
+        },
+        "solve": _solve_idc_capacitance_ff,
+        "tolerance_rel": 0.005,
+        "unit": "fF",
+        "source": (
+            "本仓 core/ipc_cap.interdigital_capacitance_f（sum-of-capacitances "
+            "推导式，±50% 精度类如实声明；docs/templates/interdigital_cap/"
+            "meta.yaml nominal_derivation（名义档 174.09fF））"
         ),
     },
 )

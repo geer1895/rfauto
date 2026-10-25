@@ -103,6 +103,23 @@ async function renderRunDiff() {
     html += `<div style="color:var(--warn);border:1px dashed var(--warn);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:10px">` +
       `${t("reports.warn_lead")}${esc(ma)} / b=${esc(mb)}${t("reports.warn_mid")}${esc(aa)} / b=${esc(ab)}` +
       `${t("reports.warn_tail")}</div>`;
+  // C2 aurora_l（R1 #14/15）：freshness 对照行（A/B 各自 K4 状态；stale
+  // 标红不硬拒——对比结论可读出"哪边是脏数据"；状态词=协议值透传，人话
+  // 修饰走词表 reports.freshness_*；stale_kinds=API 数据 esc 拼接）
+  const frBadge = (s) => s === "stale"
+    ? `<span style="color:var(--err)">${t("reports.freshness_stale_badge")}</span>`
+    : s === "legacy"
+      ? `<span class="muted">${t("reports.freshness_legacy_badge")}</span>`
+      : s === "unknown"
+        ? `<span class="muted">${t("reports.freshness_unknown_badge")}</span>`
+        : `<span style="color:var(--ok)">${t("reports.freshness_fresh_badge")}</span>`;
+  const frKinds = (side) => side?.stale_kinds
+    ? ` <span class="muted">（${esc(side.stale_kinds)}）</span>` : "";
+  const fa = d.freshness?.a?.status, fb = d.freshness?.b?.status;
+  if (fa || fb)
+    html += `<div class="muted" style="margin-bottom:var(--space-2)">` +
+      `${t("reports.freshness_row_label")}：a ${frBadge(fa)}${frKinds(d.freshness?.a)}` +
+      ` · b ${frBadge(fb)}${frKinds(d.freshness?.b)}</div>`;
   html += `<div class="muted" style="margin-bottom:var(--space-2)">${hints}</div>`;
   // A7-A ui-kit 试点：两表壳单源（kitTable；空态行走原样覆盖串——原
   // colspan='4' 单引号形态逐字节保留）

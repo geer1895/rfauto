@@ -1,4 +1,4 @@
-"""架构批 A4-A 席锚树：vna_uncertainty 三键 + radar_detection_ext 两键。
+"""aurora72 A4-A 席锚树：vna_uncertainty 三键 + radar_detection_ext 两键。
 
 数值断言口径（#118 不自证——裁判全部为测试侧独立实现）：
 - VNA 族：①方向性地板恒等（Γ=0 → |δΓ|=|Ed|、回损地板=−directivity_db，

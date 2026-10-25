@@ -137,7 +137,7 @@ def morris_screening(
 ) -> dict[str, Any]:
     """Morris elementary effects screening (for high-dimensional problems).
 
-    边界处理（D1-3 修复 2026-10-04，runs/review_ge8e/d1_opt_linkage/
+    边界处理（D1-3 修复 2026-10-04，内部证据档
     REPORT.md）：x+delta 越上界时**反射**取 x−delta（Morris 1991 原始
     OAT 轨道惯例，步长仍=delta）——旧径 min(1.0, x+delta) 把上界附近
     的实际步长截半（起点 x>1−delta 时步长=1−x<delta），效应被 |Δx|

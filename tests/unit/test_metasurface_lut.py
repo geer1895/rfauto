@@ -1,4 +1,4 @@
-"""DP-10 P1 离线内核测试：metasurface_lut 纯函数面（判据预声明 runs/df6_dp10ms/criteria.md）。
+"""DP-10 P1 离线内核测试：metasurface_lut 纯函数面（判据预声明 内部证据档）。
 
 判据（本文件全部离线合成，零仿真）：
 - J1a 合成回收钉（逐位）：合成 S11→LUT→布局综合反查→已知相位图逐位；
@@ -481,7 +481,7 @@ class TestNominalSizingClosedForms:
         assert d["stub_len_mm"] == pytest.approx(lamg / 8, rel=1e-12)
 
     def test_sizing_deterministic(self) -> None:
-        """确定性内核：同入参两次调用逐位一致（AGENTS 硬规则 7）。"""
+        """确定性内核：同入参两次调用逐位一致（内核立规注记 硬规则 7）。"""
         a = ms_patch_resonant_len_mm(10.0, ER, H_MM)
         b = ms_patch_resonant_len_mm(10.0, ER, H_MM)
         assert a == b

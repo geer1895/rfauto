@@ -8,7 +8,7 @@ note: EP-2 C-7 四向追溯矩阵（机械生成；strength=mechanical 待人工
 criteria_index_sha256: 207d72c8cf6164e6363b0b94bc79f8c1ac248c6af7c9601724e3f2503ae59d0e
 source: {index: index.yaml, n_files: 55, n_gate_rows: 497, n_migrate_files: 52, n_legacy_files: 3, n_curated_skipped: 2,
   n_test_modules: 1055}
-ratchet: {gate_min_pct: 85.31, param_min_pct: 70.62, note: 首批棘轮（specs C-7）：只升不降——update 只取 max，重生成保留既有更高
+ratchet: {gate_min_pct: 85.31, param_min_pct: 76.86, note: 首批棘轮（specs C-7）：只升不降——update 只取 max，重生成保留既有更高
     floor}
 links:
 - {gate_id: c3_combline_cap7p8h_20260923#1, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
@@ -87,137 +87,137 @@ links:
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
 - {gate_id: c3_interdigital_cap12k_20260923#7, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#1, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#1, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#1, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#1, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#2, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#2, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#2, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#2, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#3, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#3, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#3, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#3, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#4, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#4, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#4, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#4, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#5, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#5, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#5, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#5, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#6, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#6, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#6, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#6, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#7, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#7, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#7, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#7, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#8, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#8, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#8, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#8, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#9, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#9, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#9, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#9, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#10, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#10, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#10, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#10, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#11, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#11, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#11, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#11, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#12, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#12, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#12, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#12, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#13, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#13, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#13, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#13, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#14, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#14, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#14, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#14, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#15, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: c3_sirbpf_spurious#15, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: c3_sirbpf_spurious#15, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
+- {gate_id: c3_sirbpf_spurious#15, param_key: combline_coupling_gap, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: c4_debridge#1, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#1, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#1, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#1, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#2, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#2, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#2, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#2, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#3, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#3, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#3, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#3, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#4, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#4, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#4, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#4, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#5, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#5, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#5, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#5, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#6, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#6, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#6, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#6, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#7, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#7, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#7, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#7, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#8, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_debridge#8, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_debridge#8, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_debridge#8, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#1, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#1, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#1, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#1, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#2, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#2, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#2, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#2, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#3, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#3, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#3, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#3, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#4, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#4, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#4, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#4, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#5, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#5, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#5, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#5, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#6, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#6, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#6, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#6, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#7, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#7, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#7, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#7, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#8, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#8, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#8, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#8, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#9, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#9, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#9, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#9, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#10, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: c4_z_substrate#10, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: c4_z_substrate#10, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: c4_z_substrate#10, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
 - {gate_id: cps_hfss_arbitration#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py,
   anchor_id: cps.eps_eff.closedform-v1, strength: mechanical}
@@ -1041,57 +1041,57 @@ links:
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
 - {gate_id: smoke_c3_redesign#5, param_key: combline_resonance, test_id: tests/unit/test_combline_template.py,
   anchor_id: c3.l_via_h.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#1, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#1, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#1, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#1, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#2, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#2, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#2, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#2, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#3, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#3, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#3, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#3, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#4, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#4, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#4, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#4, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#5, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#5, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#5, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#5, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#6, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#6, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#6, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#6, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#7, param_key: combline_coupling_gap, test_id: tests/unit/test_a3c_coupled_interdigital.py,
+- {gate_id: smoke_c3_refix#7, param_key: branchline_coupler_design, test_id: tests/unit/test_a3c_coupled_interdigital.py,
   anchor_id: branchline.f_match.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c3_refix#7, param_key: combline_resonance, test_id: tests/unit/test_c3_mesh_via_gates.py,
+- {gate_id: smoke_c3_refix#7, param_key: combline_coupling_gap, test_id: tests/unit/test_c3_mesh_via_gates.py,
   anchor_id: c3.k_of_g.openems-hfss-v1, strength: mechanical}
-- {gate_id: smoke_c4_final#1, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#1, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#1, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#1, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#2, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#2, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#2, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#2, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#3, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#3, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#3, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#3, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#4, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#4, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#4, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#4, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#5, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#5, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#5, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#5, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#6, param_key: lange_response, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
+- {gate_id: smoke_c4_final#6, param_key: branchline_coupler_design, test_id: null, anchor_id: branchline.f_match.openems-hfss-v1,
   strength: mechanical}
-- {gate_id: smoke_c4_final#6, param_key: lange_synthesize, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
+- {gate_id: smoke_c4_final#6, param_key: lange_response, test_id: null, anchor_id: cline_coupler.coupled_len_mm.closedform-v1,
   strength: mechanical}
 - {gate_id: smoke_c9_refix#1, param_key: cps_analysis, test_id: tests/unit/test_cps_corner2d.py, anchor_id: cps.eps_eff.closedform-v1,
   strength: mechanical}

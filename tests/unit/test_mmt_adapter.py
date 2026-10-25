@@ -289,7 +289,7 @@ class TestSectionParsing:
 
     def test_json_chain_value_equal_instances_solve(self, tmp_path):
         """行为等价钉（P1 core id() 反查根治后适配器权宜 canonicalize_chain
-        已删， 四一零 followUp 闭合）：JSON 段表逐段**新造** Waveguide
+        已删，开发注记 四一零 followUp 闭合）：JSON 段表逐段**新造** Waveguide
         （值相等、实例不同——本链三处 WR90 互为不同实例），core 值语义
         去重+按值反查直接可解。物理旁证：两段同规格均匀段级联=无结构
         均匀线（值去重若失效会引入伪结面/伪 guide 破坏守恒）。"""

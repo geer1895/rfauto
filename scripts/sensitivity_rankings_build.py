@@ -18,9 +18,9 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     εeff 弱色散：在模板 meta f0_ghz 处取值（antenna2 fake 同口径）。
     n_samples = 1 + 2·n_params（名义点 + 每参数 ± 两点）。
 
-可算集判定（首批 18 + 架构批 A3-D 扩批 +22 + R8-KN 扩批 +4
-    + 架构批 SENS-ANC 复核扩批 +2 = 46；架构批 W4-S19 全覆盖批 +24
-    = 70/72；架构批 W6-S4 sir_bpf 名义重注册解锁 +1 = 71/72，余 1 族
+可算集判定（首批 18 + aurora72 A3-D 扩批 +22 + R8-KN 扩批 +4
+    + aurora_d SENS-ANC 复核扩批 +2 = 46；aurora_e W4-S19 全覆盖批 +24
+    = 70/72；aurora_g W6-S4 sir_bpf 名义重注册解锁 +1 = 71/72，余 1 族
     如实留缺，见「W4-S19 全覆盖批」节）：
     首批 X7（2026-10-04）：25 个模板有确定性闭式目标量可扰动（19
     TEMPLATE_NOMINAL 原生 + 6 antenna2 设计式精确逆）；其中 9 个已有
@@ -31,7 +31,7 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     模板当前无登记表条目"）；② teaching 面（EP-5 名次）另含 er/h 基板
     敏感性而闭式几何弹性不含，teaching 卡保留无信息损失；③ 升级面从
     None→computed，teaching 卡与回退卡逐字节零变化，卡面 diff 可审计。
-    架构批 A3-D 扩批（2026-10-11）：新 +22 目标（nway_wilkinson/
+    aurora72 A3-D 扩批（2026-10-11）：新 +22 目标（nway_wilkinson/
     branchline_2sect/cline_coupler/lange/fgcpw/slotline/slotline_lumped/
     embedded_ms/inverted_ms/isl_shielded/sicl/coil_nfc/ms_patch/
     ms_ring_patch/ms_cross/ms_jcross/ms_mushroom/siw/hmsiw/vivaldi_tsa/
@@ -46,7 +46,7 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     resolve_sensitivity 三态①），卡面显示幅值分、teaching 名次保留在
     teaching CLI 面，两源不冲突；首批 9 模板维持不入表（卡面字节钉前提
     不变）。
-    架构批 R8-KN 扩批（2026-10-13）：新 +4 目标（diplexer/schiffman/
+    aurora72 R8-KN 扩批（2026-10-13）：新 +4 目标（diplexer/schiffman/
     msl_cpw/msl_siw_taper）——A3-D 批「级联/过渡需逐模板装配」判定按
     marchand_balun/msl_slot_transition 同款先例收窄：过渡/网络族的段
     参数与内核相位单点闭式可扰动即入表（diplexer=CR 对偶 fc 臂定标
@@ -66,7 +66,7 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     契约，非数据批授权）；⑤edb_* 五模板=EDB 快车道信息文档形态，
     不入 TEMPLATE_NOMINAL 注册面（meta 自述 72 项冻结不扫描），
     capability_cards 消费面不覆盖，登记表 universe=注册模板（72 口径）。
-    架构批 SENS-ANC 复核扩批（2026-10-14）：+2（varactor_bpf/xcheb_bpf4）
+    aurora_d SENS-ANC 复核扩批（2026-10-14）：+2（varactor_bpf/xcheb_bpf4）
     ——R8-KN「缺推导锚」组的 #222 树面复核勘误：两族名义推导链实为纯闭式
     内核单源（varactor.varactor_bpf_design 装载谐振链：突变结 C(bias)→主谐
     振方程正解，c823ac45 引入；cross_coupled_map.cross_coupled_bpf_design
@@ -76,7 +76,7 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     段头「alt 真机复标后可改」）且 campaign_capable=False（kgap 门未过），
     非稳定闭式恒等。
 
-    架构批 W4-S19 全覆盖批（2026-10-18）：+24（teaching 首批 9 模板全部
+    aurora_e W4-S19 全覆盖批（2026-10-18）：+24（teaching 首批 9 模板全部
     入表转双源并存 + coax_waveguide_transition/ridged_wg/sma_launcher/
     ring_resonator/qwt_multisection/coupled_bpf/combline/interdigital/
     hairpin/hairpin_alt/pyramid_horn + 6 阵列族 patch_array_1x4/2x2/
@@ -94,7 +94,7 @@ W8 桥（scripts/capability_cards_export.resolve_sensitivity，review_ge8e F1 �
     相对步长同语义）；非数值列表（ms_array_NxN cell_map）不可扰动。
     ④ **零值名义参数**（h_mm=0/tan_d_fill=0）：正域守卫不可扰动，登记
     0 分并在 NON_PERTURBABLE 声明缘由（显式「不进恒等式」陈述，非缺失）。
-    ⑤ **如实留缺 1 族**：(a) sir_bpf——**已于 架构批 W6-S4 解锁入表**
+    ⑤ **如实留缺 1 族**：(a) sir_bpf——**已于 aurora_g W6-S4 解锁入表**
     （2026-10-19，R3 审计「解锁性最高」处方）：名义重注册 l_high
     6.7818（旧档=理想短路 7.1055 − 登记⑨+R1 校准 0.125nH 过孔缩短
     0.3237，恒等式名义回代 2.5586GHz 失自洽=留缺主因）→ 7.1055（理想
@@ -136,7 +136,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = REPO_ROOT / "knowledge" / "sensitivity_rankings.yaml"
 
 SCHEMA = "sensitivity_rankings/v1"
-BATCH_ID = "架构批"
+BATCH_ID = "aurora_g_w6s4_sirbpf_unlock_20261019"
 BATCH_DATE = "2026-10-19"
 METHOD = "central_finite_difference_elasticity"
 SOURCE_RUN = "scripts/sensitivity_rankings_build.py"
@@ -150,7 +150,7 @@ STRIPLINE_B_MM = 1.016
 # teaching 卡并存集合（W4-S19 全覆盖批起这 9 模板同时持有 teaching EP-5
 # 名次卡与登记表幅值条目——W8 消费优先级 computed>teaching，teaching 名次
 # 保留 teaching CLI 面；不再作为入表排除面，历史排除语义见模块 docstring
-# 「架构批 W4-S19 全覆盖批」节①）
+# 「aurora_e W4-S19 全覆盖批」节①）
 TEACHING_TEMPLATES = frozenset({
     "wilkinson", "branchline", "cpw", "dipole", "hairpin", "mline",
     "patch", "pyramid_horn", "ratrace",
@@ -159,6 +159,10 @@ TEACHING_TEMPLATES = frozenset({
 # 零值名义参数（正域守卫不可扰动）：登记 0 分（「不进目标恒等式」显式
 # 陈述——schema 只收非负分数，0 分语义见 test 钉），缘由逐条声明
 NON_PERTURBABLE: dict[str, dict[str, str]] = {
+    "octagonal_spiral": {
+        "ground_plane": "0/1 旗标（可选地板开关）——非正域参数不可中心差分，"
+                        "不进电流片式恒等式（0 分显式陈述，非缺失）",
+    },
     "pyramid_horn": {
         "h_mm": "h_mm 名义 0.0（空气填充无介质板，meta nominal_derivation）——"
                 "零值不可中心差分；er=1.0 可扰动但增益内核（horn_gain_direct）"
@@ -431,7 +435,7 @@ def _t_slot(p: dict[str, Any]) -> float:
                                   er=er, h_mm=h)
 
 
-# ── 架构批 A3-D 扩批目标量（+25；专族内核/既有单源，符号语义见 docstring）──
+# ── aurora72 A3-D 扩批目标量（+25；专族内核/既有单源，符号语义见 docstring）──
 
 
 def _stackup_params(template: str, p: dict[str, Any]):
@@ -716,7 +720,7 @@ def _t_msl_slot_transition(p: dict[str, Any]) -> float:
         p["w_slot_mm"], p["h_mm"], p["er"], float(p["f0_ghz"])))
 
 
-# ── 架构批 R8-KN 扩批目标量（+4；段参数/内核相位单点闭式，与 A3-D 批
+# ── aurora72 R8-KN 扩批目标量（+4；段参数/内核相位单点闭式，与 A3-D 批
 #    marchand_balun/msl_slot_transition「过渡族取段自身线参数」先例同类）──
 
 
@@ -825,7 +829,7 @@ def _t_xcheb_bpf4(p: dict[str, Any]) -> float:
     return C_MM_GHZ / (2.0 * perimeter * math.sqrt(ee))
 
 
-# ── 架构批 W4-S19 全覆盖批目标量（+24；teaching 9 全入表 + 15 补族；
+# ── aurora_e W4-S19 全覆盖批目标量（+24；teaching 9 全入表 + 15 补族；
 #    列表参数=整体 ±1% 等比缩放，零值参数走 NON_PERTURBABLE=0 分声明）────
 
 
@@ -1119,7 +1123,7 @@ def _t_sir_bpf(p: dict[str, Any]) -> float:
     逆）。符号：dl_low/dl_high→f0 降（两段电长度主通道，对称分θ 各半 <1）、
     dw_low→Z_lo 恒等式分子+εeff 双通道同向降、dw_high→Z_hi 分母通道升/
     εeff 通道降（双通道对冲，净号按实测弹性）；dw_feed/dgaps/dfeed_len/
-    order 不进单棒谐振恒等式（0）。名义回代 2.5000（架构批 W6-S4 名义
+    order 不进单棒谐振恒等式（0）。名义回代 2.5000（aurora_g W6-S4 名义
     重注册 l_high=7.1055 理想短路口径后 4 位舍入带内，第 71 族解锁）。"""
     from rfauto.adapters.oe_templates.render_c3 import (
         _c3_single_line,
@@ -1225,8 +1229,52 @@ def _t_mmwave_series_array(p: dict[str, Any]) -> float:
         float(p["er"]), float(p["h_mm"])))
 
 
-# 可算集（字母序）：首批 18 + 架构批 A3-D 扩批 22 + R8-KN 扩批 4
-# + SENS-ANC 复核扩批 2 + W4-S19 全覆盖批 24 + 架构批 W6-S4 sir_bpf
+@_target("octagonal_spiral")
+def _t_octagonal_spiral(p: dict[str, Any]) -> float:
+    """y=八角螺旋电感 L（Mohan 电流片式，core/nfc_coil 单源——K11 模板
+    与 octagonal_spiral_inductance 键同源：across-flats 口径 W/S/Din 全 μm）。
+    符号：W/S/din/n 全部进电感；h_mm/er/tan_d 不进电流片式（0）。"""
+    from rfauto.core.nfc_coil import CoilGeometry, spiral_inductance
+
+    n = int(p["n_turns"])
+    w_m = float(p["w_um"]) * 1e-6
+    s_m = float(p["s_um"]) * 1e-6
+    d_in_m = float(p["din_um"]) * 1e-6
+    d_out_m = d_in_m + 2.0 * n * w_m + 2.0 * (n - 1.0) * s_m
+    return float(spiral_inductance(CoilGeometry("octagon", n, d_out_m, w_m, s_m)))
+
+
+@_target("mim_cap")
+def _t_mim_cap(p: dict[str, Any]) -> float:
+    """y=MIM 平行板 C（mim_capacitance_report 单源——K12 模板同源；
+    边缘场一阶不含，模块已声明口径）。符号：w/l/d/er_diel 进 C；
+    bot_overhang/port/h_mm/er/tan_d 不进平行板式（0）。"""
+    from rfauto.core.ipc_cap import mim_capacitance_report
+
+    return float(mim_capacitance_report(
+        w_m=float(p["w_um"]) * 1e-6, l_m=float(p["l_um"]) * 1e-6,
+        d_m=float(p["d_um"]) * 1e-6, er_diel=float(p["er_diel"]))["c_f"])
+
+
+@_target("interdigital_cap")
+def _t_interdigital_cap(p: dict[str, Any]) -> float:
+    """y=叉指 IDC 侧壁 sum-of-capacitances C（interdigital_capacitance_f
+    单源——K12 模板同源；±50% 精度类已声明；SI 米制入参）。符号：
+    n/lf/wf/sf/e_tip/er 进 C；h_mm 衬底半空间已并入 εeff 均匀化（0）。"""
+    from rfauto.core.ipc_cap import interdigital_capacitance_f
+
+    u = 1e-6
+    t_m = float(p.get("t_um", 3.0)) * u  # IPD 厚金档缺省（CALC 键同款）
+    return float(interdigital_capacitance_f(
+        n_fingers=int(p["n_fingers"]), lf_m=float(p["lf_um"]) * u,
+        wf_m=float(p["wf_um"]) * u, sf_m=float(p["sf_um"]) * u,
+        t_m=t_m, er_sub=float(p["er"]),
+        e_tip_m=float(p["e_tip_um"]) * u)["c_f"])
+
+
+
+# 可算集（字母序）：首批 18 + aurora72 A3-D 扩批 22 + R8-KN 扩批 4
+# + SENS-ANC 复核扩批 2 + W4-S19 全覆盖批 24 + aurora_g W6-S4 sir_bpf
 # 名义重注册解锁 1 = 71/72（模块 docstring 判定；
 # W4-S19 起 teaching 集合不再排除入表、注册=全部 _TARGETS；
 # 留缺 1 族=ms_array_NxN，缘由见 docstring「W4-S19 全覆盖批」节⑤）
@@ -1336,8 +1384,8 @@ def render_yaml(data: dict[str, dict[str, Any]]) -> str:
         "batch_id": BATCH_ID,
         "generated_by": SOURCE_RUN,
         "notes": (
-            "敏感性排序登记表（X7 数据面批 + 架构批 A3-D 扩批 + R8-KN 扩批"
-            "+ 架构批 SENS-ANC 复核扩批 + 架构批 W4-S19 全覆盖批；W8 桥"
+            "敏感性排序登记表（X7 数据面批 + aurora72 A3-D 扩批 + R8-KN 扩批"
+            "+ aurora_d SENS-ANC 复核扩批 + aurora_e W4-S19 全覆盖批；W8 桥"
             "消费端）。逐模板 score=|Δln y/Δln x| 中心差分弹性：连续参数 "
             "±1%、整数参数 ±1 单位步、正数列表参数（gaps/widths/lengths）"
             "整体 ±1% 等比缩放；目标量 y=模板核心闭式输出（逐模板 "
@@ -1349,7 +1397,7 @@ def render_yaml(data: dict[str, dict[str, Any]]) -> str:
             "EP-5 名次保留 teaching CLI 面；W6 卡面字节钉同批解除重生成）；"
             "hairpin/hairpin_alt 入表（c_f0=1.0370 真机标定常数系恒等式一"
             "部分，SENS-ANC 留缺判定 #222 复核勘误）；列表参数管线扩展+"
-            "零值名义参数 NON_PERTURBABLE 0 分声明。架构批 W6-S4 解锁批"
+            "零值名义参数 NON_PERTURBABLE 0 分声明。aurora_g W6-S4 解锁批"
             "（2026-10-19）+1=71/72：sir_bpf 名义重注册（l_high 6.7818 旧档"
             "含 R1 校准过孔缩短致恒等式名义回代 2.5586GHz 失自洽，重注册为 "
             "理想短路缺省链输出 7.1055 后名义回代 2.5000 带内——R3 审计处方；"

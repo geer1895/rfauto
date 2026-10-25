@@ -1,8 +1,8 @@
-"""架构批 W1-S4：service 目录扫回潮治理三件缓存 + P3 快活批行为单测。
+"""aurora_f W1-S4：service 目录扫回潮治理三件缓存 + P3 快活批行为单测。
 
 缓存三件（R3_perf_quality.md §1.1 A 类）：
 - a. surrogate_playground.playground_runs（UI GET 每请求全表扫）→ 接
-  ui_service._SNAPSHOT_CACHE 指纹+TTL 快照（架构批 A2-D 基建复用）；
+  ui_service._SNAPSHOT_CACHE 指纹+TTL 快照（aurora72 A2-D 基建复用）；
 - b. ui_service.run_detail（rglob 全树+Touchstone 每请求重解析）→
   _RUN_SCAN_CACHE per-run (path, 结构名集, 语义文件 mtime/size) 签名；
 - c. rationale_memory._collect_docs（1803+ 次 meta/autotune/report 逐读）

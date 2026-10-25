@@ -8,7 +8,7 @@
 本模块只放零依赖（numpy）的确定性射频内核，全部公式为教科书口径
 （Pozar《Microwave Engineering》ch.12 有源网络稳定性/增益/噪声；
 Cripps《RF Power Amplifiers for Wireless Communications》ch.3 解析
-load-pull 恒功率圈），LLM 不参与任何数值（项目规则 纪律 7）。
+load-pull 恒功率圈），LLM 不参与任何数值（内核立规注记 纪律 7）。
 
 口径说明:
 - 增益内核接受 2x2 S 矩阵（单频点）+ 源/负载反射系数 ΓS/ΓL；

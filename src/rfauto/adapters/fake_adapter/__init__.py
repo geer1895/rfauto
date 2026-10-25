@@ -128,6 +128,12 @@ from .calibration import (
 from .calibration import (
     load_fake_calibration as load_fake_calibration,
 )
+from .capacitor_family import (
+    _interdigital_cap_sparams as _interdigital_cap_sparams,
+)
+from .capacitor_family import (
+    _mim_cap_sparams as _mim_cap_sparams,
+)
 from .coupler_family import (
     _branchline_2sect_sparams as _branchline_2sect_sparams,
 )
@@ -190,6 +196,9 @@ from .filter_family import (
 )
 from .filter_family import (
     hairpin_coupling_matrix as hairpin_coupling_matrix,
+)
+from .inductor_family import (
+    _octagonal_spiral_sparams as _octagonal_spiral_sparams,
 )
 from .slotline_family import (
     _coil_nfc_sparams as _coil_nfc_sparams,
@@ -303,15 +312,18 @@ slotline_route_b_sparams = _slotline_route_b_sparams
 msl_slot_transition_sparams = _msl_slot_transition_sparams
 marchand_balun_sparams = _marchand_balun_sparams
 coil_nfc_sparams = _coil_nfc_sparams
+octagonal_spiral_sparams = _octagonal_spiral_sparams
+mim_cap_sparams = _mim_cap_sparams
+interdigital_cap_sparams = _interdigital_cap_sparams
 mmwave_series_sparams = _mmwave_series_sparams
 
 
-# ══ R1#8 巨石拆分 facade（架构批 W4-S2，2026-10-19）══════════════════
+# ══ R1#8 巨石拆分 facade（aurora_h W4-S2，2026-10-19）══════════════════
 # 本文件原为单文件巨石 adapters/fake_adapter.py（3137 行），实现按模板物理
 # 域迁入上方 re-export 的子模块（calibration/fault/tl_family/coupler_family/
 # filter_family/antenna_family/slotline_family/adapter）；此处逐名显式
 # re-export 全部模块级名（公开面快照钉：拆分前后 dir() 逐名相等，
-# 内部证据目录 一次性证明；redundant-alias=PEP 484
+# runs/aurora_h/w4s2_ns_snapshot.py 一次性证明；redundant-alias=PEP 484
 # 显式 re-export 惯例）。原件无 __all__（DP-17 公开 API 快照不入册，共享
 # 计数面零碰），门面同样保持无 __all__；文末 AU-1 b4 公开别名块（37 行）
 # 原件逐字节保留在门面（RHS 私有名经上方 re-export 在位，identity 不变）。

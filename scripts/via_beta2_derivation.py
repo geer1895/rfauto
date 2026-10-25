@@ -4,13 +4,13 @@ r"""§10.20 ② via β2 收口：镜像前提裁决 + openEMS 单激励可复现
     .venv\Scripts\python.exe scripts\via_beta2_derivation.py            # 离线推导（秒级，读归档）
     .venv\Scripts\python.exe scripts\via_beta2_derivation.py --run      # 真机小例（openEMS 空闲时，分钟级）
 
-背景（/commit 61851a4 的 PARTIAL 尾巴）
+背景（开发注记（七十六）/commit 61851a4 的 PARTIAL 尾巴）
 ----------------------------------------------------
 上轮把 via β2 案例的 4.91% 当"探针尺度常数"去嵌（εeff2'≈εeff1 ≤1% 达标），
 但第一性推导未达成。本轮新增 core/deembed.beta_from_voltage_trio：由同一端口
 **等距三点电压探针**直接解波动方程 β²=−U″/U——对任意驻波比精确、与电流链
 及 CalcPort 的 −dEt·dHt/(Ht·Et) 公式无关。它作用在归档**原始探针场数据**
-（runs/via_smoke/pt3/fdtd/port_ut_*）上的结论是：
+（内部证据档*）上的结论是：
 
     β2/β1 = 1.04662±0.00033（带内平坦 0.031%）→ **镜像前提（εeff2≡εeff1）
     被原始场数据否证**；1.0491 ≈ 1.04662(真实模态比) × 1.00232(探针链路
@@ -136,7 +136,7 @@ def _print_report(report: dict, source: str) -> None:
         print("镜像前提成立且链路比值≈1：无需去嵌。")
 
 
-# 缩小版 via 复制品：与 runs/via_smoke/pt3/simulation.py 同一结构配方
+# 缩小版 via 复制品：与 内部证据档 同一结构配方
 # （官方 MSL_NotchFilter 网格方法学 + MSLPort + 抗焊盘/金孔/barrel），
 # 仅 BOARD 60→24mm、单激励 port1、只写 port_beta.csv/sparams.csv。
 _SIM_TEMPLATE = r'''#!/usr/env/python3
@@ -144,7 +144,7 @@ _SIM_TEMPLATE = r'''#!/usr/env/python3
 import csv
 import os
 
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"D:\rf_workspace\vendor\openEMS\install\bin")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"D:/rf_workspace\vendor\openEMS\install\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

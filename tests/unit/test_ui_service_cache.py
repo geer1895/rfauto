@@ -1,4 +1,4 @@
-"""架构批 A2-D：ui_service runs/ 扫描端点缓存行为单测。
+"""aurora72 A2-D：ui_service runs/ 扫描端点缓存行为单测。
 
 覆盖面：
 - 缓存原语（_UiScanCache）：TTL 内零重扫（producer 计数桩）/签名变化

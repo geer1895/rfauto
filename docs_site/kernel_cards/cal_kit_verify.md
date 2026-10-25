@@ -6,7 +6,7 @@
 
 # 内核文档卡：cal_kit_verify
 
-> 校准件完整性验证（架构批 W3-S10 席域，R2_core_tier3 §③ D5 立项）。
+> 校准件完整性验证（aurora_f W3-S10 席域，R2_core_tier3 §③ D5 立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 校准件完整性验证：机械 SOLT 标准件一阶模型响应闭式与工程验收判据、校准后 verification 纹波法正反双解——校准件「使用链」之外的模型核验与质量验收端。
 
-模块自述（docstring 首行，机读）：校准件完整性验证（架构批 W3-S10 席域，R2_core_tier3 §③ D5 立项）。
+模块自述（docstring 首行，机读）：校准件完整性验证（aurora_f W3-S10 席域，R2_core_tier3 §③ D5 立项）。
 
 ## 公式与口径
 
@@ -105,7 +105,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："架构批 W3-S10 席域，R2_core_tier3 §③ D5 立项"
+- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："aurora_f W3-S10 席域，R2_core_tier3 §③ D5 立项"
 
 测试面（tests/unit 引用扫描，机读；合计 **85** 个 test 函数）：
 

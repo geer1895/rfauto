@@ -59,7 +59,7 @@ from tests.unit import _geometry_audit_helpers as gh
 # Knorr 过渡 / marchand_balun 双槽臂最小族——单支节设计已证伪、保留作对照口径）
 # 由附加模块升格正式注册（38→42；整脚本渲染器，分发见 openems_templates 文末
 # SLOTLINE_FAMILY 段）。
-# 2026-09-18 w2g-hairpin-alt：hairpin_alt 交替取向发夹线（TODO 0dk 根修：奇数序
+# 2026-09-18 w2g-hairpin-alt：hairpin_alt 交替取向发夹线（待办清单 0dk 根修：奇数序
 # 谐振器翻转使相邻臂开路端交替、电/磁耦合同号叠加；纯 KJ gap→k 口径）正式注册
 # （42→43；注册在 hairpin 之后、coupled_bpf 之前，槽线族仍居尾 #247）。
 # 2026-09-22 siw-family：SIW 族首族=直 SIW 传输线段（LumpedPort z 桥×2、矩形域
@@ -194,6 +194,19 @@ EXPECTED_TEMPLATES = frozenset({
     # grid/registry 最小追加，既有行零改动）
     "embedded_ms",
     "xcheb_bpf4",
+    # §OCTAGONAL_SPIRAL 八角螺旋电感（2026-10-23 aurora_k K11，反馈 F1；
+    # render_octagonal_spiral 文末注册块；单端口外端-焊盘桥隙 LumpedPort
+    # 串联绕组口径，整脚本渲染器早分发，72→73）
+    "octagonal_spiral",
+    # §MIM_CAP MIM 叠层电容（2026-10-23 aurora_k K12，反馈 F1；
+    # render_mim_cap 文末注册块；单端口竖直跨介质 LumpedPort 并联口径，
+    # 介质薄层 z 三线显式入网+K9 stackup/共形消费示范，整脚本渲染器
+    # 早分发，73→74）
+    "mim_cap",
+    # §INTERDIGITAL_CAP 叉指电容（2026-10-23 aurora_k K12，反馈 F1；
+    # render_interdigital_cap 文末注册块；双端口水平桥隙 LumpedPort 串联
+    # 口径（K8 Z12 提取链同路径），整脚本渲染器早分发，74→75）
+    "interdigital_cap",
 })
 
 # 渲染脚本实际创建的端口对象数与 meta n_ports 的差异（历史口径）：
@@ -209,10 +222,10 @@ _AXES = ("x", "y", "z")
 
 def test_template_coverage_locked():
     """TEMPLATE_META / TEMPLATE_NOMINAL / docs meta.yaml 三处条目集完全一致。"""
-    assert len(EXPECTED_TEMPLATES) == 72, (
-        "覆盖基线漂移： 记 72 个模板（TA-13 EBG/FSS 净表注册件 "
-        "ms_mushroom 注册 71→72，render_metasurface ms 族段内尾部追加，"
-        "2026-10-08）")
+    assert len(EXPECTED_TEMPLATES) == 75, (
+        "覆盖基线漂移：开发注记 记 75 个模板（aurora_k K12 MIM 叠层电容 "
+        "mim_cap+叉指电容 interdigital_cap 注册 73→75，render_mim_cap/"
+        "render_interdigital_cap 文末注册块尾部追加，2026-10-23）")
     assert frozenset(TEMPLATE_META) == EXPECTED_TEMPLATES
     assert frozenset(TEMPLATE_NOMINAL) == EXPECTED_TEMPLATES
     yaml_names = {
@@ -534,8 +547,10 @@ def test_mesh_min_gap_guard(template):
         assert lines.size >= 2, f"{template}: {axis} 轴网格线不足"
         diffs = np.diff(lines)
         assert bool(np.all(diffs > 0)), f"{template}: {axis} 轴网格线非严格递增"
-        assert bool(np.all(diffs > 1e-6)), \
-            f"{template}: {axis} 轴存在 <1µm 近重合线（#152 CFL 塌缩）"
+        min_gap = gh.MESH_MIN_GAP_M.get(template, 1e-6)
+        assert bool(np.all(diffs > min_gap)), \
+            f"{template}: {axis} 轴存在 <{min_gap * 1e6:.4g}µm 近重合线" \
+            f"（#152 CFL 塌缩；MESH_MIN_GAP_M 模板档）"
 
 
 # ─── 参数化几何布线（声明即生效）─────────────────────────────────────────────

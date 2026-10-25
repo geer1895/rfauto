@@ -200,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     machines = load_remote_machines()
-    cfg = resolve_machine("sim_host", machines)
+    cfg = resolve_machine("sim_server", machines)
     whitelist = collect_whitelist(cfg, args.whitelist)
     if args.explain:
         print(f"[config] whitelist={list(whitelist) or '（空=无白名单）'}")

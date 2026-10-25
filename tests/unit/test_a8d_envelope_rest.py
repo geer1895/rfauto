@@ -1,6 +1,6 @@
-"""A8-D（架构批）REST 信封一致性抽查回归钉：ui/server.py 信封收编 + 400 守卫。
+"""A8-D（aurora72）REST 信封一致性抽查回归钉：ui/server.py 信封收编 + 400 守卫。
 
-背景（架构批 A8-D 抽查实测，2026-10-12）：
+背景（aurora72 A8-D 抽查实测，2026-10-12）：
 - 抽 61 个 /api/* 端点（TestClient 实测）：ok/错误面基本齐备，发现两类缺口——
   ①``/api/tune/status`` 成功响应缺 ``ok`` 键（信封成功面缺失）；
   ②limit=abc 等 11 个端点的非法查询/请求参数在 handler 内 int()/float()
@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-# 架构批 UI-R1 拆分后 handler 分域入 routes/——信封守卫扫描面随面走
+# aurora_d UI-R1 拆分后 handler 分域入 routes/——信封守卫扫描面随面走
 # （server.py 装配壳 + routes/* + csp.py 全 .py）。
 _UI_PACKAGE_DIR = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui"
 
@@ -141,7 +141,7 @@ class TestEnvelopeConstructorSingleSource:
     """server.py 裸 ``return {"ok"...}`` 字面量清零（信封构造器单源收编）。"""
 
     def test_no_bare_ok_return_literals(self):
-        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py（守卫随面走，防 routes/
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（守卫随面走，防 routes/
         # 分域模块回潮裸 return {"ok"...}）；**campaign_app.py 豁免**——
         # UX-B6 逐字节拆分的既有面，_campaign_remote_block 的裸块是带
         # machine/mtls 富键的历史单数失败族（A8-D 收编当时即未触），归

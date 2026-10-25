@@ -205,7 +205,7 @@ class TestEscSourcePins:
         r"""修后余量复查的机器可执行版（双向钉）：全文件扫裸 API 根变量插值
         `${var.field}`（var=API 响应对象命名惯例），命中必须逐一登记在豁免
         清单；豁免条目也必须仍能在源码命中（防清单腐烂）。豁免逐条理由见
-        runs/au4_xss/xss_audit.md §余量：数字/布尔格式化、textContent/canvas/
+        内部证据档 §余量：数字/布尔格式化、textContent/canvas/
         echarts 语境、badge 内部转义、esc 已包裹的分派三元、id 查找对。
 
         ge5 审查 P2-2 修复：扫描口径从"22 个白名单根名"改为**反向**——

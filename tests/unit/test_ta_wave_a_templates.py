@@ -3,7 +3,7 @@
 
 数字裁判纪律（#118/#300，逐锚独立来源）：
 - hmsiw：Lai-Fumeaux-Hong-Vahldieck 2009 T-MTT 论文图面数值（PDF 存
-  runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf，Fig.6/7 读数带）+
+  内部证据档，Fig.6/7 读数带）+
   式 (8) 与本仓 siw 族 Cassivi 式双拟合交叉；
 - inverted_ms/fgcpw：core/quasistatic_fd FD 裁判（求解器资格=微带 vs HJ
   静态 +0.18~0.32%/CPS 半空间 −0.1%/Cohn −0.5%/h→b 精确四锚）+ 新族

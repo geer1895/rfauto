@@ -50,12 +50,12 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `ridged_wg.evanescent_atten_db_0p8fc.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：ridged_wg_evanescent_atten_db = 21.85 dB；±0.05（rounding_band）
-- `ridged_wg.fc_ghz.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：ridged_wg_fc_ghz = 5.0 GHz；±0.0（identity）
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `ridged_wg.evanescent_atten_db_0p8fc.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：ridged_wg_evanescent_atten_db = 21.85 dB；±0.05（rounding_band）；证据：runs/ta12_schiffman_qwt
+- `ridged_wg.fc_ghz.closedform-v1`（constant/experimental；引擎对 closedform（None 仲裁））：ridged_wg_fc_ghz = 5.0 GHz；±0.0（identity）；证据：runs/ta12_schiffman_qwt
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -63,7 +63,7 @@
 - 参数语义：a_mm/b_mm=脊段外廓宽/窄边（b/a=0.5 标准档）；s_mm=脊宽（s/a=0.4 档）；d_mm=脊深（design_ridge_depth 对 fc_target=5.0GHz 反解，名义 g/b=0.454 落 XC-P 精度域 ≥0.4；g=b−d 单脊）；l_ridge_mm=脊段长（40mm→消逝衰减 ≈22dB@0.8fc）；l_feed_mm=单侧馈段最短长（实际域长自动外推保端口两面+余量，horn 同款）；er=1.0/h_mm=0.0 为空气填充占位键（MATERIAL_VALUE_PARAMS 豁免）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，horn 同款）；全部壁面站线（外廓缘/脊缘/馈段缘/阶跃框/端口面）显式入网（#198）+ 全轴 1µm 近重合去重（#152）；渲染守卫：NEAR ≤ min(s,g)/3（#266 族特征分辨）、g/b≥0.4（XC-P 精度域）、判读带 ⊂（fc_feed, min(1.5·fc_ridge, 外廓 TE10)）单模域
 - 冒烟现状：未冒烟（离线审计过，#212，test_diplexer_ridged_templates）；近似级别如实登记：①一阶横磁共振闭式遗漏脊缘杂散电容（kc 高估 +1.5~+8% @g/b≥0.4 分档域，内核精度档案 WARN）；②H 面阶跃结反射不进闭式裁判（v1 直阶跃无渐变——工程实践为 λ/4 锥削过渡，后续变体）；③RectWGPort 打在馈段，脊模经阶跃结的耦合损耗计入 S21；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

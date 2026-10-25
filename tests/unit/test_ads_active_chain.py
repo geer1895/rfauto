@@ -12,7 +12,7 @@
 - service 两入口 JSON 进出 + 落盘 + Cripps 合理性全绿。
 
 离线纪律: 本文件不跑 hpeesofsim（真机通道由 tests/real_edt 与
-runs/rm_ads_c14/ 承载）。
+内部证据档 承载）。
 """
 
 import json

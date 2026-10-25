@@ -1,4 +1,4 @@
-"""FEC 块码族（架构批 W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
+"""FEC 块码族（aurora_g W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
 
 出处（原文/教科书经典闭式二级转引，详见下节公式口径）：
 - hamming_code_design：R. W. Hamming, Bell Syst. Tech. J. 1950；Lin &
@@ -118,7 +118,7 @@ _SOURCES = {
 }
 
 #: union bound 键块长上限（RS(255,*)/Hamming(127,*) 实用域内；二分
-#: 200 轮 × O(n) 循环的耗时上限约束）。上沿收缩 1024→1020（架构批
+#: 200 轮 × O(n) 循环的耗时上限约束）。上沿收缩 1024→1020（aurora_g
 #: W3-S1 审查 P2-1，W4-S1 修复）：求值序 ``i·C(n,i)`` 先于乘 p**i 完成
 #: int→float 转换，n=1021 起中央项 C(n,n/2)·n/2 > DBL_MAX≈1.8e308 必
 #: OverflowError（实测 n≤1020 正常：1020 档最大项 ≈1.4e308）——声明域

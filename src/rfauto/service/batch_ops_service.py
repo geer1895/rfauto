@@ -33,6 +33,54 @@ def _resolve_runs_dir(rel: str | Path) -> Path:
 
     return resolve_runs_dir(rel)
 
+
+def _freshness_column(run_dir: Path | None) -> tuple[str | None, str]:
+    """run 目录 → (freshness, freshness_note) 列值（K4 verify_run 单源，只读）。
+
+    aurora_l A3（R2 侦察 Top3）：compare/batch 面此前对"事后被旧 sNp
+    顶替"的 run 不设防——对比结论建立在未验产物上。本 helper 给逐 run
+    行出 freshness 列：fresh/stale/legacy 三态透传 verify_run（stale 标
+    红不硬拒——对比结论可读出"哪边是脏数据"；legacy 带 note 老 run 不
+    废）；目录不在场（missing 行）→ (None, "")；校验面自身故障 →
+    ("unknown", 诊断 note)（#105：观测面不阻塞对比主路径）。
+    """
+    if run_dir is None:
+        return None, ""
+    try:
+        from rfauto.service.runs_verify_service import verify_run
+
+        verdict = verify_run(run_dir)
+    except Exception as exc:  # 校验面故障如实 unknown 不阻塞（#105）
+        return "unknown", f"新鲜度校验不可用（非阻断）: {exc}"
+    status = str(verdict.get("status", "unknown"))
+    note = str(verdict.get("note") or "")
+    if status == "stale":
+        kinds = ",".join(sorted({
+            str(issue.get("kind")) for issue in (verdict.get("issues") or [])
+            if issue.get("kind")}))
+        note = f"stale（{kinds}）：盘上产物与 run 收官指纹不符，采信前先复核"
+    return status, note
+
+
+def _stale_freshness_notes(
+    rows: list[dict[str, Any]] | list[tuple[str, str]],
+) -> list[str]:
+    """行集 → 顶层 stale 注记（stale 标红不硬拒，脏侧显式点名）。
+
+    行形态二选一：dict 行（含 run_id/freshness 键）或 (run_id, status)
+    元组——compare 两面共用。 """
+    out: list[str] = []
+    for row in rows:
+        if isinstance(row, dict):
+            rid, status = str(row.get("run_id")), str(row.get("freshness"))
+        else:
+            rid, status = str(row[0]), str(row[1])
+        if status == "stale":
+            out.append(
+                f"freshness: {rid} 标记 stale（盘上产物与 run 收官指纹"
+                "不符）——对比结论采信前先处理该侧数据")
+    return out
+
 # ---------------------------------------------------------------------------
 # SN-7：N-way runs compare（delta 矩阵 N×N + 逐键并集统计）
 # ---------------------------------------------------------------------------
@@ -43,10 +91,13 @@ def compare_runs_nway(run_ids: list[str]) -> dict[str, Any]:
     - ``pairwise``：N×N 上三角，每对复用单对比 delta 语义（数值键 b−a，
       非数值键 delta=None，不臆测方向）；
     - ``per_metric``：指标并集逐键 {run_id: value} 行表（供 CLI 渲染矩阵）；
-    - ``runs``：逐 run 摘要（run_id/cost/metrics）。
+    - ``runs``：逐 run 摘要（run_id/cost/metrics/freshness）。
 
     N<2 或任一 run 无指标 → ok=False 如实报错（与 compare_runs 同口径）。
     数值全部来自 ``get_metrics``（既有内核），本函数只做表格重排。
+
+    freshness 列（aurora_l A3）：逐 run ``verify_run``（K4 单源）——
+    stale 标红不硬拒（顶层 notes 点名脏侧），legacy 带 note。
     """
     ids = [str(r).strip() for r in (run_ids or []) if str(r).strip()]
     if len(ids) < 2:
@@ -65,10 +116,13 @@ def compare_runs_nway(run_ids: list[str]) -> dict[str, Any]:
             errs.append(f"run {rid} 无指标")
             continue
         data = r.get("data") or {}
+        freshness, fresh_note = _freshness_column(_resolve_run_dir(rid))
         runs.append({
             "run_id": rid,
             "cost": data.get("cost"),
             "metrics": dict(data.get("metrics") or {}),
+            "freshness": freshness,
+            "freshness_note": fresh_note,
         })
     if errs:
         return error_envelope(errs)
@@ -108,9 +162,12 @@ def compare_runs_nway(run_ids: list[str]) -> dict[str, Any]:
 
     return ok_envelope(
         n_runs=len(runs),
-        runs=[{"run_id": r["run_id"], "cost": r["cost"]} for r in runs],
+        runs=[{"run_id": r["run_id"], "cost": r["cost"],
+               "freshness": r["freshness"],
+               "freshness_note": r["freshness_note"]} for r in runs],
         pairwise=pairwise,
         per_metric=per_metric,
+        notes=_stale_freshness_notes(runs),
     )
 
 
@@ -203,6 +260,8 @@ def report_runs_batch(
     for rid in ids:
         r = generate_report_for_run(rid, fmt=fmt)
         if not r.get("ok"):
+            # freshness_gate 拒绝（stale）也落 failed 留账——errors 里带
+            # verify_run 点名信息（aurora_l A3：批量面不绕过单 run 门）
             failed.append({"run_id": rid,
                            "errors": [str(e) for e in r.get("errors") or ["失败"]]})
             continue
@@ -212,6 +271,7 @@ def report_runs_batch(
             "report": str(r.get("report") or ""),
             "cost": r.get("metrics", {}).get("cost"),
             "metrics": dict(r.get("metrics") or {}),
+            "freshness": r.get("freshness"),
         })
 
     lines = ["# 批量报告索引", "",
@@ -277,7 +337,7 @@ def discover_run_ids(
 
 
 # ---------------------------------------------------------------------------
-# W8-S4（架构批 2026-10-19）：战役收官多 run 对账（compare_runs_nway 的
+# W8-S4（aurora_g 2026-10-19）：战役收官多 run 对账（compare_runs_nway 的
 # 收官姊妹面——nway 面向指标矩阵且任一 run 无指标即整门 FAIL；本面面向
 # 对账：status/耗时/verdict 判定逐 run 并排，缺产物降级 unknown 不传染，
 # 指标偏差只对有数 run 计算并给 top-K。语义不同，并存不混。）
@@ -339,6 +399,10 @@ def compare_runs_batch(run_ids: list[str], *, top_k: int = _MAX_TOP_K) -> dict[s
     数值全部来自 meta.json / verdict.json / results/metrics.json 原文
     透传（铁律 7）；本函数只做并排与排序。run_id 非法（绝对路径/穿越
     段）或不存在 → 该行 missing 记 errors，不中断整批。
+
+    freshness 列（aurora_l A3）：逐 run ``verify_run``（K4 单源）——
+    stale 标红不硬拒（notes 点名脏侧，md 渲染面经注记行自动透出），
+    legacy 带 note；missing 行 freshness=None（无从校验，不冒充状态）。
     """
     ids = [str(r).strip() for r in (run_ids or []) if str(r).strip()]
     if not ids:
@@ -362,14 +426,16 @@ def compare_runs_batch(run_ids: list[str], *, top_k: int = _MAX_TOP_K) -> dict[s
             errs.append(f"非法 run_id: {rid!r}")
             rows.append({"run_id": rid, "status": "missing",
                          "model": None, "adapter": None, "duration_s": None,
-                         "cost": None, "n_metrics": 0, "has_verdict": False})
+                         "cost": None, "n_metrics": 0, "has_verdict": False,
+                         "freshness": None, "freshness_note": ""})
             continue
         run_dir = _resolve_run_dir(rid)
         if run_dir is None:
             errs.append(f"run 不存在: {rid}")
             rows.append({"run_id": rid, "status": "missing",
                          "model": None, "adapter": None, "duration_s": None,
-                         "cost": None, "n_metrics": 0, "has_verdict": False})
+                         "cost": None, "n_metrics": 0, "has_verdict": False,
+                         "freshness": None, "freshness_note": ""})
             continue
 
         meta = _read_json_file(run_dir / "meta.json") or {}
@@ -407,6 +473,7 @@ def compare_runs_batch(run_ids: list[str], *, top_k: int = _MAX_TOP_K) -> dict[s
                 break
 
         cost = numeric_metrics.get("cost")
+        freshness, fresh_note = _freshness_column(run_dir)
         rows.append({
             "run_id": rid,
             "status": verdict_status or meta_status or "unknown",
@@ -418,6 +485,8 @@ def compare_runs_batch(run_ids: list[str], *, top_k: int = _MAX_TOP_K) -> dict[s
             "cost": cost,
             "n_metrics": len(numeric_metrics),
             "has_verdict": bool(verdict),
+            "freshness": freshness,
+            "freshness_note": fresh_note,
         })
 
     # 跨 run 指标偏差 top-K（数值并集；<2 个 run 有指标时如实空表+note）
@@ -440,6 +509,7 @@ def compare_runs_batch(run_ids: list[str], *, top_k: int = _MAX_TOP_K) -> dict[s
     if len(metrics_by_run) < 2:
         notes.append(f"仅 {len(metrics_by_run)} 个 run 有数值指标——"
                      "偏差表需要 ≥2（missing/纯 verdict 档案 run 不参与）")
+    notes.extend(_stale_freshness_notes(rows))
     truncated = len(devs) > k
 
     return ok_envelope(

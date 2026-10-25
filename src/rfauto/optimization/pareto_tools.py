@@ -10,7 +10,7 @@
   surrogate_loop.constraint_violations 同源（≥0，0=可行边界）；
 - hv_convergence：逐代前沿的超体积序列（统一 ref，供弱单调断言）。
 
-铁律：本模块只做集合运算，不产生任何物理数值（AGENTS 规则 7）；无 pymoo
+铁律：本模块只做集合运算，不产生任何物理数值（内核立规注记 规则 7）；无 pymoo
 ——多目标后端（multiobj_backend）与 UI 服务层（ui_service.pareto_view）
 共享同一内核，避免两套支配定义分叉。
 """

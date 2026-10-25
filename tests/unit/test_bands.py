@@ -1,4 +1,4 @@
-"""D9 标准频段/法规掩模注册表单测（延续计划 §10.4/§10.17）。
+"""D9 标准频段/法规掩模注册表单测（continuation-plan §10.4/§10.17）。
 
 覆盖：种子表完整性（唯一键/lo<hi/出处非空）、查表显式报错、包含查找、
 过滤、to_spec_bounds 结构与 SpecEvaluator（core/objectives.py，只读参照）

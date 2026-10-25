@@ -620,7 +620,7 @@ _SOURCES["schiffman"] = (
     "j(a−b)) 换算=core/synthesis.py QW-10 同链（实测 4e-6°）；平坦点双条"
     "件（dΔφ/dθ=0 解析式 2√ρ·sec²θ/(ρ+tan²θ)=B + Δφ=target）与连续支延"
     "拓（φ_c(θ+180°)=φ_c(θ)+360°）=本仓第一性推导（模态第二路线逐象限 "
-    "≤7e-14°，独立验证轨迹（内部档））")
+    "≤7e-14°，轨迹 runs/aurora_d/_core9_verify_derivation.py）")
 
 
 def _schiffman_phi_c_deg(theta_deg: float, rho: float) -> float:
@@ -860,8 +860,8 @@ _SOURCES["switched_network"] = (
     "parameters）LC 低通 T 节综合=传输线教科书标准法（Pozar §2.x 镜像参"
     "数口径）：τ=2sin(φ/2)/ω₀、L=2Z0·tan(φ/2)/ω₀、C=sinφ/(ω₀Z0)、截止 "
     "ω_c=ω₀/sin(φ/2)=本仓镜像参数第一性推导（ABCD 数值级联第二路线 "
-    "|S11|≤1.2e-15 roundtrip，独立验证档）；开关插损 "
-    "|S21|=2Z0/(2Z0+R_on) 与 pa_arch pin_diode_limiter "
+    "|S11|≤1.2e-15 roundtrip，轨迹 runs/aurora_d/_core9_verify_derivation"
+    ".py）；开关插损 |S21|=2Z0/(2Z0+R_on) 与 pa_arch pin_diode_limiter "
     "同章同口径")
 
 

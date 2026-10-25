@@ -1,6 +1,6 @@
 """lake_compact_service.reversible —— ①b h5 保留的可逆执行面（blob 化+回填+清退）。
 
-自 service/lake_compact_service.py 单文件巨石按职责域拆分（架构批 W3-S1，
+自 service/lake_compact_service.py 单文件巨石按职责域拆分（aurora_h W3-S1，
 T2 范式/AU-1 工艺）：代码体自原节「①b h5 保留策略的可逆执行面」逐字节
 搬迁（W6-G 用户豁免放量：内容寻址 blob store+manifest 审计+观察窗，
 禁裸删），零逻辑改动；保护面扫描自 retention 域单向导入。

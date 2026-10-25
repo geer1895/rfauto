@@ -6,7 +6,7 @@
 
 # 内核文档卡：sar_geometry
 
-> SAR 合成孔径几何指标族（架构批 W7-S3 席，R3_domain_expansion 视角4
+> SAR 合成孔径几何指标族（aurora_g W7-S3 席，R3_domain_expansion 视角4
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 SAR 合成孔径几何指标两键：聚焦方位分辨率 δ_az=D/2「悖论」恒等式（真实孔径对照面）与条带几何/PRF 不模糊窗/天线照明面——遥感场景收官件（成像几何指标，不做成像处理链）。
 
-模块自述（docstring 首行，机读）：SAR 合成孔径几何指标族（架构批 W7-S3 席，R3_domain_expansion 视角4
+模块自述（docstring 首行，机读）：SAR 合成孔径几何指标族（aurora_g W7-S3 席，R3_domain_expansion 视角4
 
 ## 公式与口径
 

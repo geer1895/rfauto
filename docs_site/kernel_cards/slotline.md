@@ -123,7 +123,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w4_b_p3_slotline_wide.py`——引文："tests/unit/test_w4_b_p3_slotline_wide.py 钉）。"
+- `tests/unit/test_w4_b_p3_slotline_wide.py`——引文："权威口径（铁律 1c：常数逐个有出处、分段声明有效范围、超范围显式报错不外推）"
 
 测试面（tests/unit 引用扫描，机读；合计 **224** 个 test 函数）：
 

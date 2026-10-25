@@ -4,11 +4,11 @@ import os
 os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
 import keysight.ads.dataset as dataset
 
-path = r"D:\rf_workspace\scripts\spike_b_ads\sim_out_2027\swept_s_parameter.ds"
+path = r"D:/rf_workspace\scripts\spike_b_ads\sim_out_2027\swept_s_parameter.ds"
 data = dataset.open(path)
 print("traces:", list(data.keys()))
 df = data[list(data.keys())[0]].to_dataframe().reset_index()
-out = open(r"D:\rf_workspace\scripts\spike_b_ads\p27_parse_report.txt", "w", encoding="utf-8")
+out = open(r"D:/rf_workspace\scripts\spike_b_ads\p27_parse_report.txt", "w", encoding="utf-8")
 out.write(f"columns: {list(df.columns)}\nrows: {len(df)}\n")
 out.write(df.head(3).to_string())
 # S 参数量级 sanity

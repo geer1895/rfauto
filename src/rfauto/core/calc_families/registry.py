@@ -11,7 +11,7 @@ from rfauto.core.registry_kit import RegistryKit
 C_MM_GHZ = 299.792458  # mm·GHz（光速，f[GHz]×λ[mm]=此值）
 
 
-# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案=runs/aurora72/
+# ─── 工具箱分组单源表（aurora72 A2-A，2026-10-11；分组方案=内部证据档
 # R5_tools_audit.md §② 程序验证零漏零重版）────────────────────────────────
 # 键 → 组名。describe() 每键输出 group（CalculatorSpec.group 显式声明优先，
 # 未声明键查本表，表外键落 DEFAULT_CALC_GROUP="其他"——新键注册未同步本表
@@ -42,7 +42,7 @@ CALC_GROUP_ORDER: tuple[str, ...] = (
 )
 
 CALC_GROUP_TABLE: dict[str, str] = {
-    # ── 传输线正反解（39）────
+    # ── 传输线正反解（40）────
     "microstrip_analysis": "传输线正反解",
     "microstrip_synthesis": "传输线正反解",
     "microstrip_lambda_g": "传输线正反解",
@@ -113,7 +113,7 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # wg_fundamental.py 模块 docstring）
     "wg_te10_attenuation": "传输线正反解",
     "wg_te10_power_capacity": "传输线正反解",
-    # aurora_j W4-S12 两键（2026-10-23；候选定稿 runs/aurora_j/
+    # aurora_j W4-S12 两键（2026-10-23；候选定稿 内部证据档
     # w4_candidates.md §1.3 A1/A2）：良导体表面阻抗基准面（EC-3 收口——
     # calc_families 注册键面零命中，薄注册单源 core/conductor_loss，
     # wg_fundamental "Rs 留调用方自算"注记的正式面补口）+矩形波导 TE10
@@ -122,7 +122,13 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # 均不撞，边界见 wg_evanescent.py 模块 docstring）
     "conductor_surface_impedance": "传输线正反解",
     "wg_evanescent_attenuation": "传输线正反解",
-    # ── 匹配·功分·衰减·耦合（49）────
+    # aurora_l G1 一键（2026-10-23）：端接线输入阻抗精确解（Pozar §2.3-2.4
+    # sin/cos 形——微波网络最基本单线变换；``tan.*βl|电长度输入``
+    # calc_families 注册面零命中补口。vswr_convert=纯标量 Γ/VSWR 换算无
+    # 电长度自由度、stub_tuner=调配拓扑解、microstrip_*=几何正反解不撞，
+    # 边界见 terminated_line.py 模块 docstring）
+    "line_input_impedance": "传输线正反解",
+    # ── 匹配·功分·衰减·耦合（54）────
     "attenuator_pi": "匹配·功分·衰减·耦合",
     "attenuator_t": "匹配·功分·衰减·耦合",
     "attenuator_bridged_t": "匹配·功分·衰减·耦合",
@@ -146,6 +152,12 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # quarter_wave=λ/4 变换不并入，边界见 R7 §③ T3）
     "stub_tuner_double": "匹配·功分·衰减·耦合",
     "stub_tuner_triple": "匹配·功分·衰减·耦合",
+    # aurora_l G1 一键（2026-10-23）：单支节并联调配（Pozar §5.2 电导圆
+    # 条件二次闭式，判别式=g[b²+(g−1)²]≥0 任意无源负载有解——R7 T3 立项
+    # 时"单支节如实不做"的遗留空白补口；``single.?stub|单支节`` 三面零
+    # 命中复测在案。double/triple=禁区判据族不撞，边界见 stub_tuner.py
+    # 模块 docstring 单支节节）
+    "stub_tuner_single": "匹配·功分·衰减·耦合",
     # aurora72 A5-A 混合结/魔 T 三键（R7 G8 大件候补首拆席——ratrace 仅
     # anchor_benchmark 模板锚判读、butler_matrix 内部固定理想 90° 混合环块
     # （未注册）不并入，边界见 hybrid_junction.py 模块 docstring）
@@ -239,7 +251,7 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # 输谐振（阻抗变换口径）与 wg_resonant_window 膜片型（电纳对消口径）
     # 成族两形态，边界见 wg_dielectric_window.py 模块 docstring）
     "wg_dielectric_window": "匹配·功分·衰减·耦合",
-    # ── 滤波器与耦合矩阵（40）────
+    # ── 滤波器与耦合矩阵（41）────
     "chebyshev_prototype": "滤波器与耦合矩阵",
     "chebyshev_prototype_asym": "滤波器与耦合矩阵",
     "chebyshev_refl_fn": "滤波器与耦合矩阵",
@@ -317,6 +329,12 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # crlh=周期单元不并入，边界见 dgs.py 模块 docstring）
     "dgs_dumbbell_lc_extract": "滤波器与耦合矩阵",
     "dgs_notch_response": "滤波器与耦合矩阵",
+    # aurora_l G1 一键（2026-10-23）：最平坦（Butterworth）低通原型（Pozar
+    # §8.2 g_k=2sin[(2k−1)π/2n] 生成式+RL/RS/ωs 阶数闭式+梯形 ABCD vs
+    # 多项式双路径自证；``butterworth|最平坦`` 键面零命中补口——
+    # chebyshev_prototype=广义切比雪夫耦合矩阵级、multisection_coupler_
+    # binomial=耦合器域不撞，边界见 filter_prototype.py 模块 docstring）
+    "butterworth_prototype": "滤波器与耦合矩阵",
     # ── 谐振器与腔体（15）────
     "coaxial_cavity_resonance": "谐振器与腔体",
     "combline_resonance": "谐振器与腔体",
@@ -534,7 +552,7 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "gdop_dop": "链路与传播",
     "uere_to_position_error": "链路与传播",
     "dop_from_satellite_geometry": "链路与传播",
-    # ── 收发链路·频综（21）────
+    # ── 收发链路·频综（22）────
     "cascade_budget": "收发链路·频综",
     "correlated_cascade_nf": "收发链路·频综",
     "blocking_budget": "收发链路·频综",
@@ -581,6 +599,11 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "mixer_ssb_nf": "收发链路·频综",
     "mixer_conversion_loss": "收发链路·频综",
     "mixer_image_plan": "收发链路·频综",
+    # aurora_l G1 一键（2026-10-23）：Leeson 振荡器相噪模型（Leeson 1966
+    # Proc. IEEE 54(2):329-330——L(f_m)=[FkT/2Ps](1+fc/fm)(1+(f0/2QLfm)²)；
+    # ``leeson`` src/tests 三面零命中，phase_noise_evm=相噪→EVM 消费面
+    # 不撞（本键=谱形产生面），边界见 oscillator_leeson.py 模块 docstring）
+    "leeson_phase_noise": "收发链路·频综",
     # ── 调制与数字链路（18）────
     "modulation_ber_curve": "调制与数字链路",
     "required_ebn0": "调制与数字链路",
@@ -655,7 +678,7 @@ CALC_GROUP_TABLE: dict[str, str] = {
     # 面、aging/cpk=统计域不并入，边界见 probability_paper.py 模块
     # docstring）
     "weibull_paper_fit": "热·功率·可靠性",
-    # ── 测量与校准（29）────
+    # ── 测量与校准（32）────
     "power_cal_chain": "测量与校准",
     "trl_standards_design": "测量与校准",
     "trl_line_electric_scan": "测量与校准",
@@ -728,6 +751,37 @@ CALC_GROUP_TABLE: dict[str, str] = {
     "tdr_fault_location": "测量与校准",
     "tdr_resolution": "测量与校准",
     "tdr_ets_equivalent_time": "测量与校准",
+    # aurora_k K8 THRU 去嵌+Z12 串联指标两键（反馈 F6/P14：波端口参考面
+    # 从引线外端移回 pad 边缘+强失配简化式拒绝——Z12 传输阻抗主口径与
+    # −1/Y21 π 并联免疫副口径、2x-thru 对称半拆双边去嵌一站式；公式
+    # 单源 core/deembed K8 扩展面（deembed_thru half/z12_series_metrics）
+    # 零复制，iss_on_wafer 预声明"泛用件不并入"指向的正是该单源的注册
+    # 出口补齐；afr_2xthru=IEEEP370 时域面与频域精确代数互补不并入，
+    # 边界见 deembed_metrics.py 模块 docstring）
+    "z12_series_extract": "测量与校准",
+    "deembed_thru_metrics": "测量与校准",
+    # aurora_l G1 一键（2026-10-23）：二端口 S/Z/Y/ABCD 全对全换算（Pozar
+    # §4.4 网络互换恒等式——S=Z0(I+S)(I−S)⁻¹ 1 端口短路/开路口径自证；
+    # kuroda_identity_abcd=Kuroda 恒等式实现域、deembed_thru_metrics=去
+    # 嵌指标面不撞，边界见 network_convert.py 模块 docstring）
+    "twoport_matrix_convert": "测量与校准",
+    # aurora_k K11 八角螺旋电感一键（反馈 F1：GaAs 薄膜 IPD 工艺集总无源
+    # 模板族闭式锚——W/S/N/Din μm 参数→Mohan 三式 L+SRF/Q 一阶+L±25%/
+    # SRF>2×f0 质量门；公式单源 core/nfc_coil（四形状内核）八角形状的
+    # 注册出口，边界见 spiral_inductor.py 模块 docstring）
+    "octagonal_spiral_inductance": "匹配·功分·衰减·耦合",
+    # aurora_k K12 两键（反馈 F1：MIM/IDC 电容闭式锚——C±25%/±50%+
+    # SRF>2×f0 质量门；公式单源 core/ipc_cap（MIM 复用
+    # package_interconnect 平行板精确式零复制；IDC 侧壁推导式±50%
+    # 精度类如实声明），边界见 calc_families/ipc_cap.py 模块 docstring）
+    "mim_capacitance": "匹配·功分·衰减·耦合",
+    "interdigital_capacitance": "匹配·功分·衰减·耦合",
+    # aurora_l G1 一键（2026-10-23）：分支线耦合器理想设计（Pozar §7——
+    # 耦合系数 c→臂阻抗闭式 Z1=c·Z0/Z2=Z0·c/√(1−c²)+奇偶模解析 4×4 S；
+    # ``branchline|分支线`` calc_families 键面零命中，模板级几何综合=
+    # core/synthesis.synthesize_branchline 不撞，边界见
+    # branchline_coupler.py 模块 docstring）
+    "branchline_coupler_design": "匹配·功分·衰减·耦合",
     # ── 超材料·超表面（9）────
     "homog_mix_eff": "超材料·超表面",
     "retrieve_eff_params": "超材料·超表面",

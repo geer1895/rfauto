@@ -1,4 +1,4 @@
-"""架构批 W4-S14 席锚树：multisection_coupler 等纹波成员（R7 G5 唯一
+"""aurora_f W4-S14 席锚树：multisection_coupler 等纹波成员（R7 G5 唯一
 遗留收官）+ kuroda_identities 两键（Pozar Table 8.7 四恒等式/Example 8.5
 三阶低通全并联实现）+ pll_lock_time（二阶 II 型环捕获/锁定时间）。
 

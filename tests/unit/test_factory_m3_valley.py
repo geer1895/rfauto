@@ -3,7 +3,7 @@
 被测对象：scripts/factory_m3_valley.py 的纯逻辑
 （core_grid_points / nudge_free / build_valley_plan / judge_batch /
 core_min_spacing_um）与采集链复用契约（factory_m1_collect re-export 面）。
-真跑面不在单测范围——真机批量由主控按 runs/datafactory_m3/criteria.md
+真跑面不在单测范围——真机批量由主控按 内部证据档
 独立执行（共享锁 + #261 互斥 + 首点探针）。
 
 数值口径（#118 合成注入→回收）：查重/重采样用合成指纹集验证确定性回收；

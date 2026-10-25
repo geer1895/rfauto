@@ -157,9 +157,6 @@ def _child_env() -> dict:
 
 # ─── 判据①：断点续跑演练（node2 中段 kill → 重跑 node1 零重执行）─────────────
 
-@pytest.mark.skipif(not sys.platform.startswith("win"),
-            reason="Windows-only behavior: mid-solve tree kill "
-                   "simulates the taskkill /T workflow")
 def test_resume_after_mid_solve_tree_kill(tmp_path) -> None:
     run_dir = tmp_path / "run1"
     cache_dir = tmp_path / "cache"

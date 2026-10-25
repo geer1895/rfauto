@@ -1,13 +1,13 @@
 r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍（6×6）。
 
-链路（stage-1 未尽项 / §10.24 A8 stage-2）：
+链路（开发注记（五十二）stage-1 未尽项 / §10.24 A8 stage-2）：
 1. **Z_ALL 实采**：6×6 像素单层 PCB（底面地 + 基板 + 36 浮地贴片），Q=150
    端口（io×2 + pixel 36 + h/v 60 + diag 50 + via_ground 2，PixelLayout
    stage-1 槽序）。进程隔离激励轮转（#208 同款）：每端口渲染一份单激励
    全端口探针脚本、独立子进程跑一次，逐轮断点缓存（脚本逐字节一致+CSV
    可解析才复用，同 adapters/openems_rotation.py 语义）。
 2. **装配**：全端口 S（全端口 50Ω 匹配端接口径）→ `core/mapes.s_to_z`
-   → Z_ALL 落 <out-dir>/z_all.npz（缺省 runs/mapes_s4）；`z_all_quality` 出互易/无源/条件数
+   → Z_ALL 落 <out-dir>/z_all.npz（缺省 内部证据档）；`z_all_quality` 出互易/无源/条件数
    逐频诊断；轮转实测互易 |S_ik − S_ki| 独立复检。
 3. **对拍**：图案（全空/单像素/整行/棋盘）直接全波（金属化短路的真实
    结构，无虚拟口元件）×2 激励 vs 同 Z_ALL 的 Schur 闭式（MapesModel），
@@ -21,7 +21,7 @@ r"""A8 MAPES stage-2：openEMS 单层像素板 Z_ALL 实采 + Schur 闭式对拍
 在场像素=贴片-地金属化过孔，耦合槽=缝隙金属桥，与 stage-1 占用→负载
 语义逐槽对应。β/α 校准超参不在 stage-2（stage-3 #190 范式）。
 
-stage-4 增补（2026-09-15，残模根治）：缺省产物目录改为 runs/mapes_s4
+stage-4 增补（2026-09-15，残模根治）：缺省产物目录改为 内部证据档
 （runs/mapes_s2 原档只读留存）；横向空气垫 EDGE_PAD_MM 1→6mm（PML 不再
 覆盖外圈端口——真根因，见常量注释）；``gamma`` 子命令对任一轮 fdtd/
 port_ut·port_it 时域档做零仿真逐口端接质量诊断；``--base-mm`` 细网格档、
@@ -37,11 +37,11 @@ port_ut·port_it 时域档做零仿真逐口端接质量诊断；``--base-mm`` �
     .venv/Scripts/python.exe scripts/mapes_s2_zall.py reassemble
         （stage-5：零仿真重推导——150 轮原始 port_ut/port_it → 跨轮 Z_ui 漂移
         诊断先行 → current-only 装配 + 互易势场增益校准 + 对称化（±最小无源
-        投影）→ runs/mapes_s5_diag/z_all_s5.npz + reassemble_report.json；
+        投影）→ 内部证据档 + reassemble_report.json；
         不覆盖 s4 装配产物）
     .venv/Scripts/python.exe scripts/mapes_s2_zall.py drift
         （#257：只做跨轮 Z_ui 漂移诊断——装配矩阵类先做跨轮漂移诊断，逐口/
-        逐类中位·最大相对偏差 → runs/mapes_s5_diag/drift_report.json）
+        逐类中位·最大相对偏差 → 内部证据档）
 
 探针装配侧根因修复（2026-09-18，#257，core.mapes stage-5b 节）：渲染时每
 端口盒三轴中线全部落硬网格线（u 探针横断面中心 + i 探针激励轴中面按
@@ -89,7 +89,7 @@ from rfauto.core.mapes import (
 )
 
 REPO = Path(__file__).resolve().parents[1]
-# 缺省产物根目录 = runs/mapes_s4（stage-4 质量版）；stage-2 原档 runs/mapes_s2
+# 缺省产物根目录 = 内部证据档（stage-4 质量版）；stage-2 原档 runs/mapes_s2
 # 只读留存（原始 Z_ALL 与 150 轮时域档零覆盖，任务书硬要求）。可用 --out-dir 覆盖。
 OUT_DIR = REPO / "runs" / "mapes_s4"
 FREQ_RANGE_GHZ = (1.0, 6.0)
@@ -210,7 +210,7 @@ def render_mesh_lines(
 
     中线语义（core.mapes.probe_midlines）：u 探针横断面中心线 + i 探针激励
     轴中面线；盒边已是结构线，三线齐备 → 每盒每轴恰 ≥2 格，探针逐位落位，
-    不再被吸附到盒角/PEC 面（跨轮漂移根因）。
+    不再被吸附到盒角/PEC 面（开发注记（二百零一）跨轮漂移根因）。
     """
     xs, ys, zs = mesh_lines(geom)
     mid_x, mid_y, mid_z = probe_midlines(geom)
@@ -901,7 +901,7 @@ def stage_gamma(args: argparse.Namespace) -> int:
 # reassemble：150 轮原始 port_ut/port_it → 重推导 Z_ALL（stage-5，零仿真）
 # --------------------------------------------------------------------------- #
 
-#: stage-5 缺省产物目录（原 s4 装配产物 runs/mapes_s4/z_all.npz 留痕不覆盖）
+#: stage-5 缺省产物目录（原 s4 装配产物 内部证据档 留痕不覆盖）
 S5_OUT_DIR = REPO / "runs" / "mapes_s5_diag"
 
 

@@ -1,6 +1,6 @@
 """fake_adapter.coupler_family —— 功分器/耦合器族解析模型。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：wilkinson 2/3 端口、分支线（真机校准版）、耦合线/Lange/两节
 分支线（§C4）、阶梯阻抗/耦合线（初始模板补注册）。代码体逐字节搬迁，零
 逻辑改动；_ANT2_C_MM_GHZ 从 antenna_family 单向导入（c_mm 光速常数单源）。

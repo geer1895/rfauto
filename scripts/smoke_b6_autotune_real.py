@@ -1,17 +1,17 @@
 """B6 autotune 真机一轮薄驱动（openems-real-smoke-bundle ⑤）。
 
-等价 `rfauto autotune runs/kicad_b6_stage2/b6_autotune_recipe.yaml --budget 2
+等价 `rfauto autotune 内部证据档 --budget 2
 --json`：直调 service.autotune_service.autotune_loop（缺省通道
 =_make_openems_sampler 真机，autotune_service.py:273），零源码改动。
 
 验收（如实）：verdict 原样；首轮名义点 w_mm=0.849（配方 params 优先，:286-290）
-复现 stage-2 锚 runs/kicad_b6_stage2/stage2_summary.json（|S11|max≈−22.5dB；
+复现 stage-2 锚 内部证据档（|S11|max≈−22.5dB；
 εeff −1.95% 需 port_beta.csv——仅活跑产出，缓存回放时如实标注不可再导出）；
 每轮 typed fix 步长 ≤ max_step_pct 且落 bounds。缓存回放检测：采样器工作目录
 runs/autotune_work_<id>/pt_*/fdtd/ 是否存在（solve() 全局缓存
 runs/openems_cache 按脚本内容命中时引擎不启动）。
 
-产物 runs/<run_id>/autotune.json（服务落盘）+ runs/b6_autotune_real/_smoke_result.json。
+产物 runs/<run_id>/autotune.json（服务落盘）+ 内部证据档。
 """
 from __future__ import annotations
 

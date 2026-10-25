@@ -1,4 +1,4 @@
-"""调制与数字链路·波形/体制域五键（架构批 W1-K2 席批 2，R2_core_tier5 §③ 4-6 号设计案）。
+"""调制与数字链路·波形/体制域五键（aurora_h W1-K2 席批 2，R2_core_tier5 §③ 4-6 号设计案）。
 
 五键：papr_ofdm_ccdf（OFDM PAPR 解析 CCDF 提升核）/ cfr_evm_cost（CFR 软削
 峰 EVM 代价提升核）/ ofdm_waveform_params（OFDM 波形参数链+CP 判据）/

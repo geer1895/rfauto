@@ -5,10 +5,10 @@
    观察阶 p 与 PASS/WARN 判读、网格阶梯振荡×非恒定比的诚实不可估（#316）；
 2. 提取器对档钉（skipif：runs/ 归档在本机在场时）——脚本提取序列与嵌入
    字面量逐位一致（#144 判真口径：只读归档零改写）；
-3. 试点档 schema 钉（runs/qm12_gci/summary.json 在场时）——落档形态稳定。
+3. 试点档 schema 钉（内部证据档 在场时）——落档形态稳定。
 
-数值出处：runs/hfss_c4_arbitration/{pass1,verdict_conv,verdict_conv3}.json
-（#335 判读先例同源）与 runs/audit_mesh_conv/m*/sparams.csv（2.5GHz 直读）。
+数值出处：内部证据档{pass1,verdict_conv,verdict_conv3}.json
+（#335 判读先例同源）与 内部证据档（2.5GHz 直读）。
 """
 from __future__ import annotations
 
@@ -32,12 +32,12 @@ from rfauto.core.solve_health import (
     solve_health_check,
 )
 
-#: runs/hfss_c4_arbitration 三档实测值（ΔS 0.02/0.01/0.005，r=2 恒定）
+#: 内部证据档 三档实测值（ΔS 0.02/0.01/0.005，r=2 恒定）
 _LANGE_F = (-2.3119576567030196, -2.8142090054018434, -3.1054661175194314)
 _CLINE_F = (-8.752295316959621, -9.726498696566207, -9.996245874370114)
 _DS = (0.02, 0.01, 0.005)
 
-#: runs/audit_mesh_conv 三档 2.5GHz 直读（h 0.3/0.5/0.8mm，r 非恒定）
+#: 内部证据档 三档 2.5GHz 直读（h 0.3/0.5/0.8mm，r 非恒定）
 _MESH_H = (0.3, 0.5, 0.8)
 _MESH_S21 = (-3.515282, -3.727884, -3.492022)
 

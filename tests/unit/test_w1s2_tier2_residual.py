@@ -1,7 +1,7 @@
-"""架构批 W1-S2 席锚树：R7 第二梯队余量收口四键（T2 圆波导传播解+矩形腔
+"""aurora_e W1-S2 席锚树：R7 第二梯队余量收口四键（T2 圆波导传播解+矩形腔
 谱/Q+T9 圆锥 RCS+T10 热偶/测辐射热计换算）。
 
-背景（#222 开工核实）：R7_core_tier2 T2/T4/T9/T10 四族核心键已由 架构批
+背景（#222 开工核实）：R7_core_tier2 T2/T4/T9/T10 四族核心键已由 aurora72
 A2/A3/A4 落地（circular_cavity_* / linear_antenna_zin / rcs_sphere_mie+
 rcs_peak_canonical / diode_square_law_detect+detector_tss_nep）；本席只收口
 任务书内明确列出的四处余量：① 圆波导 TE/TM_mn 传播键（任务书"圆波导截

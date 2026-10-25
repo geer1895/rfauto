@@ -3,7 +3,7 @@
 锚点（零回归纪律）：
 - tol=None（缺省）时 run_surrogate_loop 结果字典与不加参数逐字节一致——
   新代码路径零触发；
-- σ 序列同 seed 逐位一致（确定性内核，AGENTS 规则 7）；
+- σ 序列同 seed 逐位一致（确定性内核，内核立规注记 规则 7）；
 - uncertainty.py 分层 lint：optimization 禁 import service（import-linter
   layers 契约），内核是移植不是引用。
 """

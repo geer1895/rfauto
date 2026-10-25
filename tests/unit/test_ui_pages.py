@@ -285,8 +285,8 @@ class TestUiLayerStaticGuard:
         assert [t for t in _FORBIDDEN_UI_TOKENS if t in bad]
 
     def test_static_pages_no_internal_absolute_path_placeholder(self):
-        # UI-R9 P2-5（uir8 审查；上传零敏感口径 AGENTS 8）：static 面 js
-        # 不出现盘符绝对路径（filebrowser 占位符曾是 C:\\rfauto_test；
+        # UI-R9 P2-5（uir8 审查；上传零敏感口径 内核立规注记 8）：static 面 js
+        # 不出现盘符绝对路径（filebrowser 占位符曾是 D:/rf_workspace；
         # vendor/ 排除——echarts.min.js 压缩体有 N:+ 类良性误命中）。
         import rfauto.ui as ui_pkg
 

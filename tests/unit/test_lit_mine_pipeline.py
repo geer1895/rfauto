@@ -4,7 +4,7 @@
 公式层 parse_latex lark 后端/确定性 regex 抽取/双门/promote 面）与候选
 JSON 契约。
 
-设计约束（runs/df6_dp18c9/criteria.md 预声明）：
+设计约束（内部证据档 预声明）：
 - 判据核心=γ(εr) 全管线回收：从 docs/rf_template_references.md 原文抽取
   →双门→8 档逐档 rel err ≤1.4%（与 DP-14 M1 的 PySR 路线互相独立）；
 - 门 B 数值回收走独立 AST 求值器（非 sympy 路径，#118/#341 口径），并与

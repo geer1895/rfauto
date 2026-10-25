@@ -1,6 +1,6 @@
 """确定性 ARD 高斯过程内核（EC-16/17/18 三件的共享数值底座）。
 
-定位（池 P3 圈定件批，架构批 W5-S22）：numpy+scipy 零新依赖的紧凑
+定位（池 P3 圈定件批，aurora_e W5-S22）：numpy+scipy 零新依赖的紧凑
 GP 实现——闭式后验 + 超参沿负对数边际似然（MLE）或 MAP（先验罚项）
 的确定性优化（L-BFGS-B，固定初值/固定数据 → 同结果逐位可复现，C4）。
 本模块不注册 surrogate_registry（内部底座），对外键面由消费模块给出：
@@ -121,7 +121,7 @@ def gp_nll(
     if log_params.size > d + 1:  # 末位 log nugget（MLE 可优化档）
         nugget = float(np.exp(log_params[d + 1]))
     if nugget is None:
-        # W6-P3-4（架构批 W1-S4）：assert 做控制流在 -O 下失效（届时 None
+        # W6-P3-4（aurora_f W1-S4）：assert 做控制流在 -O 下失效（届时 None
         # 潜行到 max(float(nugget),...) 才 TypeError）——显式守卫单点拦截。
         raise ValueError(
             "gp_nll 需要 nugget：传 nugget=None 时 log_params 必须附末位 "

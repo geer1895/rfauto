@@ -1,6 +1,6 @@
 """lake_compact_service.common —— 跨域共用 helpers（runs 树遍历与保护面）。
 
-自 service/lake_compact_service.py 单文件巨石按职责域拆分（架构批 W3-S1，
+自 service/lake_compact_service.py 单文件巨石按职责域拆分（aurora_h W3-S1，
 T2 范式/AU-1 工艺）：本域持有归一/JSON 读取/git 探针/保护前缀判定等共用
 helpers 与 meta 文件名常量，et_ht_dedup/retention/reversible/vf_summary
 各域从此单向导入（包内零环）。代码体自原节「共用：runs 树遍历与保护面」

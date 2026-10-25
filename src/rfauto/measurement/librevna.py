@@ -1,13 +1,13 @@
 """DP-11 P1：LibreVNA 自建 SCPI 命令映射（**单源**，规格书 §2）。
 
-背景（runs/df6_a3/skrf2x_audit.md）：skrf 2.1.0 的 ``skrf.vi.vna`` 驱动面
+背景（内部证据档）：skrf 2.1.0 的 ``skrf.vi.vna`` 驱动面
 只有 PNA/FieldFox/ZNB/ZVA/NanoVNAv2/HP8510——**无 LibreVNA 驱动**，命令
 映射必须自建。本模块是 LibreVNA 命令集的唯一事实来源（single source）：
 命令常量、语义注释（含官方出处节名）、应答解析全部集中在此，adapter/测试
 只消费本模块的表面，不散落命令串。
 
 语义口径（官方 ProgrammingGuide.tex，2026-09-24 自 jankae/LibreVNA@master
-``Documentation/UserManual`` 拉取，存档 runs/df6_dp11vna/_progguide.tex）：
+``Documentation/UserManual`` 拉取，存档 内部证据档）：
 
 - TCP SCPI server **单客户端**：第二连接会把第一连接顶掉（§SCPI Server
   Configuration）；每条 query 的应答以换行结尾。

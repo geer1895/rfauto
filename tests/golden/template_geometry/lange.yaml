@@ -11,7 +11,7 @@ params:
   finger_len_mm: 18.9712
   w_feed_mm: 1.1117
 status: ok
-script_sha256: 0df68f313901f57ccdd217015effb8685d078fb2addb4809daa2fec14519dc81
+script_sha256: cee010046e796964ff74812541906de6ca1b893d0563f85a12c8ad4282fec1e6
 csx:
   n_primitives: 50
   props:

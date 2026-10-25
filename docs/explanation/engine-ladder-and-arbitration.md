@@ -82,7 +82,7 @@ best_effort、ADS 2027 verified——没有 license 时 doctor 如实标注，
 1. **常量锚必须带证据链**。例：c3 过孔寄生电感，闭式
    Goldfarb-Pucel 对粗短过孔高估 2.2-2.5 倍；HFSS 反解 0.12-0.13nH
    区间中点定值 0.125nH（锚 `c3.l_via_h.openems-hfss-v1`，status
-   active，provenance 带仲裁 run 目录/commit/开发注记 出处/replaces
+   active，provenance 带仲裁 run 目录/commit/开发日志出处/replaces
    旧值）。openEMS 反解 0.20nH 如实登记为跨引擎发现、**不作定值**
    ——裁判只有一个。
 2. **证据在手但仲裁未完时，登记指针不产定值**（kind=pointer，实测

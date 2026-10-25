@@ -1,6 +1,6 @@
 """sleep-AST 常驻守卫 + 门口径 v2 durations 分层（2026-10-11 W2-D 清偿批）。
 
-覆盖面（ 八百八十三 v2 采纳批 ④ followUp 两半）：
+覆盖面（开发注记 八百八十三 v2 采纳批 ④ followUp 两半）：
 - TestSleepAudit：scripts/audit_test_sleeps.py——AST 结构判定（数值字面量
   sleep(N>阈值) 违例；字符串模板/变量实参零误报；阈值严格大于；属性与
   from-import 双形态；--allow 豁免；main rc 语义 0/1/2）；

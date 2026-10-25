@@ -2,20 +2,20 @@
 
 传播域主线第二件：ITU-R P.676-13 Annex 1 逐线大气吸收 + P.838-3 雨衰
 specific attenuation + P.618 R0.01 入口占位 + P.840-9 云/雾衰减
-（架构批 W14-S3 席 2026-10-19 增，官方 PDF 逐式转写）。**纯函数零 IO**、单位显式、
+（aurora_g W14-S3 席 2026-10-19 增，官方 PDF 逐式转写）。**纯函数零 IO**、单位显式、
 零求解器依赖（§A 包跨件裁决）。PV-011 路线：Annex 1 自算零外部数据+
 手工录入系数表，**不捆绑任何 ITU 数据文件**。
 
 状态（2026-10-02 AP-8 录入批；式面=AP-6 骨架批逐式核verify）
 ------------------------------
-式实现已**逐式对照官方 PDF 视觉核verify**（runs/ap6/ 本地证据：
+式实现已**逐式对照官方 PDF 视觉核verify**（内部证据档 本地证据：
 R-REC-P.676-13.pdf 32 页 / R-REC-P.838-3.pdf 8 页 + eq*.png 渲染）。
-系数表已**逐值录入并验证**（AP-8 批，证据 runs/ap8/）：P.676-13
+系数表已**逐值录入并验证**（AP-8 批，证据 内部证据档）：P.676-13
 Table 1 全 44 行 + Table 2 全 35 行（含 1780GHz 伪线）经 pypdf 文本层
 机械抽取 + 前席 dump 逐 token 对拍 all-equal（553 值）+ 187dpi PNG
 视觉抽检；P.838-3 Tables 1-4 四组系数另经官方 **Table 5 全量 116 频点
 对拍 max rel dev 0.112%**（≤ 4 位有效数字印刷舍入界，脚本
-runs/ap8/crosscheck_838.py）。P.837 R0.01 系数仍 UNVERIFIED（ITU 数据
+内部证据档）。P.837 R0.01 系数仍 UNVERIFIED（ITU 数据
 文件不捆绑，PV-011）：rain_rate_r001_mmh 维持显式 ValueError 占位。
 
 P.676-13 Annex 1 式面（已逐式核verify，式号按 P.676-13 原文）：
@@ -100,7 +100,7 @@ P.837 雨率图与 P.839-4 冻结层高度均为 ITU 数字地图数据文件（
 缺口清单（AP-6 骨架批立账；1-3 已由 AP-8 录入批闭合，见上方状态）
 --------------------------------------------------------
 1. P.676-13 Table 1（O2，印刷页 8-9 = PDF 页索引 9-10）44 行 ×
-   (f0, a1..a6)；表文本层 pypdf 可机械抽取（runs/ap6/page9*.txt
+   (f0, a1..a6)；表文本层 pypdf 可机械抽取（内部证据档*.txt
    已留 dump；注意 a5/a6 负号=U+2010 形态、b 列 ".70" 前导零省略）。
 2. P.676-13 Table 2（H2O，印刷页 9-10 = PDF 页索引 10-12，末行
    1780GHz 伪线）全部行 × (f0, b1..b6)。
@@ -162,7 +162,7 @@ class RainCoeffs(NamedTuple):
 
 
 # ─── P.676-13 Table 1/2 + P.838-3 Tables 1-4 逐值（AP-8 录入批 2026-10-02）───
-# 来源：runs/ap6/ 官方 PDF 文本层机械抽取（脚本 runs/ap8/extract_evidence.py），
+# 来源：内部证据档 官方 PDF 文本层机械抽取（脚本 内部证据档），
 # 前席 dump 逐 token 交叉核对 all-equal（553 值）+ 187dpi PNG 视觉抽检；
 # P.838-3 另经 Table 5 全量 116 频点对拍（max rel dev 0.112% ≤ 4 位有效数字
 # 印刷舍入界，crosscheck_838.csv）。
@@ -411,7 +411,7 @@ def gamma_gasses_db_per_km(
     p_hpa **干空气**分压 [hPa]（P.676 约定，总压 ptot=p+e）；t_k 温度 [K]；
     rho_wv_g_m3 水汽密度 [g/m³]（0=干空气）。
 
-    系数表已逐值录入（AP-8 批，验证链见模块 docstring 与 runs/ap8/）；
+    系数表已逐值录入（AP-8 批，验证链见模块 docstring 与 内部证据档）；
     量级锚 γO(60GHz,1013hPa,15℃)≈15、γW(22.235GHz,7.5g/m³)≈0.19 见测试
     （窗值先于落表钉死，#122）。
     """
@@ -475,7 +475,7 @@ def gamma_rain_db_per_km(
     pol "h"/"v"（水平/垂直极化 → kH/kV 表）。
 
     Tables 1-4 系数已逐值录入（AP-8 批）：经官方 Table 5 全量 116 频点
-    对拍验证（max rel dev 0.112%，证据 runs/ap8/crosscheck_838.csv）。
+    对拍验证（max rel dev 0.112%，证据 内部证据档）。
     """
     f = _num(f_ghz, "f_ghz")
     r = _num(rain_rate_mmh, "rain_rate_mmh")
@@ -896,8 +896,8 @@ def xpd_rain_db(
     return xpd_rain - c_ice
 
 
-# ═══ P.840-9 云/雾衰减（架构批 W14-S3 席 2026-10-19；式面=官方 PDF 逐式
-# 转写，证据 内部证据目录 原文在档）═══
+# ═══ P.840-9 云/雾衰减（aurora_g W14-S3 席 2026-10-19；式面=官方 PDF 逐式
+# 转写，证据 内部证据档 原文在档）═══
 
 #: P.840-9 Annex 1 有效域（Scope 原文 "from 1 to 200 GHz"）
 _F_MIN_GHZ_840, _F_MAX_GHZ_840 = 1.0, 200.0
@@ -979,7 +979,7 @@ def kl_mass_cloud_db_per_mm(f_ghz: float) -> float:
     K_L(f) = K_l(f, 273.75K)·(A₁e^{−(f−f₁)²/σ₁}+A₂e^{−(f−f₂)²/σ₂}+A₃)。
     **分母 σ 无平方**——官方 PDF（08/2023 电子版）式(12) 5× 渲染视觉核
     verify（分子 (f−f₁)² 有上标 ²、分母 σ₁ 无；证据
-    内部证据目录），勿按"高斯宽度平方"
+    内部证据档），勿按"高斯宽度平方"
     旧记忆改写。
     """
     f = _num(f_ghz, "f_ghz")

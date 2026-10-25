@@ -324,7 +324,7 @@ def test_wr_bands_display_field_values() -> None:
 def test_guard_message_contract() -> None:
     """守卫与查表报错的消息体整串契约钉死（消息升级为对外契约）。
 
-    背景（runs/mutmut_pilot/fix_report.md）：pytest.raises(ValueError) 裸
+    背景（内部证据档）：pytest.raises(ValueError) 裸
     raises 对消息体 XX 包裹类变异零判别力，23 条"守卫消息/参数名标签"变异
     因此假性存活。本测试把消息体按整串相等纳入契约（入参名/入参值/期望边界
     全部在消息内）；报文措辞变更必须连带改本测试——即消息消费方知情。

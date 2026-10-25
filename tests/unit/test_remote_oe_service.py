@@ -42,12 +42,12 @@ def _one_machine(monkeypatch, **kw):
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_project_root=kw.pop("project_root", WORK_ROOT),
         probe_ports={"ansys_license": 1055},
         **kw,
     )
-    monkeypatch.setattr(roe, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(roe, "load_remote_machines", lambda: {"sim_server": cfg})
     return cfg
 
 
@@ -176,7 +176,7 @@ def _run_sync(monkeypatch, tmp_path, transport=None, **kw):
     monkeypatch.setattr(roe, "SshTransport", lambda cfg: t)
     out_dir = tmp_path / "pull"
     envelope = remote_oe_run(
-        "sim_host", _seat_spec(**kw.pop("spec_kw", {})),
+        "sim_server", _seat_spec(**kw.pop("spec_kw", {})),
         out_dir=out_dir, **kw,
     )
     return envelope, t, out_dir
@@ -192,7 +192,7 @@ def test_run_refuses_without_env_gate(monkeypatch):
         raise AssertionError("env 门未开时不得发起任何连接")
 
     monkeypatch.setattr(roe, "SshTransport", _boom)
-    out = remote_oe_run("sim_host", _seat_spec())
+    out = remote_oe_run("sim_server", _seat_spec())
     assert out["ok"] is False and out["skipped"] is True
     assert "RFAUTO_REMOTE_SMOKE" in out["reason"]
 
@@ -215,7 +215,7 @@ def test_run_missing_credentials_no_ssh(monkeypatch):
         raise AssertionError("凭据缺失时不得发起 SSH")
 
     monkeypatch.setattr(roe, "SshTransport", _boom)
-    out = remote_oe_run("sim_host", _seat_spec())
+    out = remote_oe_run("sim_server", _seat_spec())
     assert out["skipped"] is True
     assert out["steps"]["ssh"]["auth"] == "missing_credentials"
 
@@ -230,7 +230,7 @@ def test_run_missing_project_root_skips(monkeypatch):
         raise AssertionError("配置缺失时不得发起 SSH")
 
     monkeypatch.setattr(roe, "SshTransport", _boom)
-    out = remote_oe_run("sim_host", _seat_spec())
+    out = remote_oe_run("sim_server", _seat_spec())
     assert out["skipped"] is True and "project_root" in out["reason"]
 
 
@@ -258,7 +258,7 @@ def test_seat_spec_validation_failclosed(monkeypatch, mutate, frag):
         raise AssertionError("座位校验失败时不得发起 SSH")
 
     monkeypatch.setattr(roe, "SshTransport", _boom)
-    out = remote_oe_run("sim_host", _seat_spec(**mutate))
+    out = remote_oe_run("sim_server", _seat_spec(**mutate))
     assert out["ok"] is False and out["launched"] is False
     assert frag in out["reason"]
 
@@ -271,7 +271,7 @@ def test_wait_mode_invalid_rejected(monkeypatch):
         raise AssertionError("wait_mode 非法时不得发起 SSH")
 
     monkeypatch.setattr(roe, "SshTransport", _boom)
-    out = remote_oe_run("sim_host", _seat_spec(), wait_mode="detached")
+    out = remote_oe_run("sim_server", _seat_spec(), wait_mode="detached")
     assert out["ok"] is False and "wait_mode" in out["reason"]
     # R3 弱测试 #13 加固：fail-closed 信封形状+非法值回显（"detached" 被
     # 指名道姓拒绝；合法枚举 sync/poll 见 service :609 判据，行为面不变）
@@ -428,7 +428,7 @@ def test_fetch_empty_enumeration_failclosed(monkeypatch, tmp_path):
 
 
 def test_cleanup_failure_flips_verdict(monkeypatch, tmp_path):
-    """清理失败翻 FAIL（任务毕必须清理，AGENTS 0b）——不静默放行。"""
+    """清理失败翻 FAIL（任务毕必须清理，内核立规注记 0b）——不静默放行。"""
     t = FakeTransport(None)
 
     real_run = t.run_command
@@ -482,7 +482,7 @@ def test_backup_window_flag_registered(monkeypatch, tmp_path):
     monkeypatch.setattr(_time, "localtime",
                         lambda: _time.struct_time(
                             (2026, 9, 30, 3, 0, 0, 0, 0, 0)))
-    envelope = remote_oe_run("sim_host", _seat_spec(),
+    envelope = remote_oe_run("sim_server", _seat_spec(),
                              out_dir=tmp_path / "pull")
     assert envelope["backup_window_risk"] is True
 
@@ -718,7 +718,7 @@ def test_resolve_machine_unknown_name_skip_envelope(monkeypatch):
     """F3 修复钉：机器名未登记 → fail-closed SKIP 信封（不再裸抛
     RemoteConfigError——与 remote_ads_service 同批同构，直连消费面不分叉）。"""
     monkeypatch.setenv(REMOTE_OE_ENV, "1")
-    _one_machine(monkeypatch)          # 注册表只有 sim_host
+    _one_machine(monkeypatch)          # 注册表只有 sim_server
     _set_creds(monkeypatch)
 
     def _boom(*a, **kw):

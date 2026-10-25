@@ -748,7 +748,7 @@ def finish_qualitative_note(finish: str, freq_hz: float) -> str:
     raise ValueError(f"未知表面处理 {finish!r}，支持 {FINISH_NOTE_KEYS}")
 
 
-# ─── skrf 第三来源裁判（EC-3，架构批 W2-S9 2026-10-18）──────────────────────
+# ─── skrf 第三来源裁判（EC-3，aurora_e W2-S9 2026-10-18）──────────────────────
 
 #: 光滑叠层裁判阈值（硬门）：rfauto layered_surface_impedance（良导体近似
 #: gamma=(1+j)/delta + ch/sh 级联）vs skrf tlineFunctions.surface_impedance

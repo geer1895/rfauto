@@ -1,10 +1,10 @@
-"""D11 网格伪象诊断三教训复算脚本（真实/带 provenance 数据 → runs/mesh_artifact/*.json）。
+"""D11 网格伪象诊断三教训复算脚本（真实/带 provenance 数据 → 内部证据档）。
 
 三案例（全部有出处，禁止编造）：
-1. ratrace pt8 回放——真实逐点归档 runs/ratrace_smoke/pt8/ratrace.s4p（0.4mm、k=1
-   原始渲染）+ runs/ratrace_arbitration/openems_convergence.json（0.4→0.2mm 中心上移）
+1. ratrace pt8 回放——真实逐点归档 内部证据档（0.4mm、k=1
+   原始渲染）+ 内部证据档（0.4→0.2mm 中心上移）
    + /（三十九）定版 k=1.0975。期望 MESH_ARTIFACT 且 k≈1.10。
-2. via 1.0491——真实逐点归档 runs/via_smoke/pt3/port_beta.csv（β2/β1 带内恒定）
+2. via 1.0491——真实逐点归档 内部证据档（β2/β1 带内恒定）
    +  §205。期望 PROBE_SCALE（探针尺度常数，非网格伪象）。
 3. #152 nm 近重合网格线—— #152 塌缩值 7.7e-19 s（正常 CFL 步长按 0.4mm
    网格闭式 dx/(2c) 推算）。期望 TIMESTEP_COLLAPSE。

@@ -1,4 +1,4 @@
-"""W6-C AD-5 五段模板批 2+批 3 门（runs/w6_phase6/criteria.md W6-C 节）。
+"""W6-C AD-5 五段模板批 2+批 3 门（内部证据档 W6-C 节）。
 
 W5-A 批 1（test_w5_a_ad5_gates.py）同构三面，扩到余量 106 工具：
   - Z-10b 五段 regex 门（批 2=52 件 <120 chars 组 / 批 3=54 件 ≥120 chars
@@ -9,9 +9,9 @@ W5-A 批 1（test_w5_a_ad5_gates.py）同构三面，扩到余量 106 工具：
   - Z-10a 转发型只读工具 Returns 键集运行时对拍（批 2 7 件+批 3 6 件，
     全部本地确定性通道零 LLM 零网络，#139 纪律）。
 
-规格：runs/research_seats_20261004/sk_specs5/SPECS.md §三（AD-5）；批 1
+规格：内部证据档 §三（AD-5）；批 1
 先例 test_w5_a_ad5_gates.py。锚定快照=2026-10-05 批 2/3 改 docstring 前
-（runs/w6_phase6/w6c/baseline.json，106 件签名+description 前长度）。
+（内部证据档，106 件签名+description 前长度）。
 注记：并发席位（W6-B SN-16 optim.py 等）新增工具不在本席清单内（#228
 门作用域限本项文件）。
 """
@@ -537,12 +537,6 @@ def _returns_top_level_keys(doc: str) -> list[str]:
 class TestZ10aReturnsKeyRuntime:
     #: 转发型只读试点（tool → (service 模块, 函数, kwargs)）；全部本地确定性
     #: 通道（零 LLM 零网络零真机，#139 纪律）；批 2 ≥5 + 批 3 ≥5。
-    #: 依赖 knowledge 数据面的试点（tool → 相对仓根的数据文件）——公开分发
-    #: 视图不随附内部账本衍生数据（guidelines_service 模块 docstring 契约），
-    #: 缺源时如实 skip（error 信封形态由 guidelines 服务自身单测覆盖）。
-    PILOT_DATA_FACE: typing.ClassVar[dict[str, str]] = {
-        "get_guidelines_for": "knowledge/pitfalls_index.json",
-    }
     PILOT_B2: typing.ClassVar[dict[str, tuple[str, str, dict]]] = {
         "bands_list": ("rfauto.service.bands_service", "bands_list", {}),
         "bands_spec_bounds": ("rfauto.service.bands_service",
@@ -582,12 +576,6 @@ class TestZ10aReturnsKeyRuntime:
 
     def _assert_subset(self, name: str, mod_name: str, fn_name: str,
                        kwargs: dict, tmp_path: Path) -> None:
-        data_face = self.PILOT_DATA_FACE.get(name)
-        if data_face is not None and not (REPO / data_face).is_file():
-            pytest.skip(
-                f"{name}: knowledge 数据面 {data_face} 不随公开分发视图"
-                "（内部账本衍生数据，guidelines_service 契约口径）——本 "
-                "checkout 无源可试点，Returns 键对拍以内部仓为准")
         kwargs = {k: (str(tmp_path / Path(v).name)
                       if v == "__TMP__/w6c_probe.sqlite" else v)
                   for k, v in kwargs.items()}

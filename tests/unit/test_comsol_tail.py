@@ -1,6 +1,6 @@
-"""队列4 COMSOL 尾巴（未尽②-⑤）单测：mock/闭式级。
+"""队列4 COMSOL 尾巴（开发注记（廿七）未尽②-⑤）单测：mock/闭式级。
 
-零 COMSOL/license/JVM 依赖；真机断言不进单测（证据 runs/comsol_tail/）。
+零 COMSOL/license/JVM 依赖；真机断言不进单测（证据 内部证据档）。
 A1: r3_services 显式 import comsol_adapter（注册副作用不依赖调用方）；
 A2: configs/solvers.yaml comsol 条目可读；
 A3: scripts/comsol_probe.py 正式探针 #217 口径（6.3 钉扎 + ElectromagneticWaves）；
@@ -155,7 +155,7 @@ class TestA1ExplicitImport:
 
         src = (Path(r3_services.__file__).parent / "solvers.py").read_text(
             encoding="utf-8")
-        # 未尽②：注册副作用 import 不得只靠调用方先 import 包
+        # 开发注记（廿七）未尽②：注册副作用 import 不得只靠调用方先 import 包
         assert "comsol_adapter" in src
 
     def test_list_registered_solvers_reports_comsol(self):
@@ -209,7 +209,7 @@ class TestMlinePure:
 
     def test_closed_form_matches_benchmark_anchor(self):
         # 同一条 skrf HJ 链路（core/synthesis.forward_z0）必须复现 WP1.2 引擎
-        # 基准的闭式锚值（runs/benchmark/mline_mesh_convergence.json：
+        # 基准的闭式锚值（内部证据档：
         # eps_hj_closed_form=2.85264）
         z0, eps = mline_closed_form(1.113, 2.5, 3.66, 0.508)
         assert z0 == pytest.approx(50.011, abs=0.05)
@@ -345,7 +345,7 @@ class TestMlineSolveMock:
 class TestTemPortChain:
     """数值 TEM 边界模端口完整链（官方例 cpw_numeric_tem_port/tem_via 同构）。
 
-    官方实录（runs/comsol_tail/_doc_probe/ 本机解包）：Port 特征
+    官方实录（内部证据档 本机解包）：Port 特征
     PortType="TEM"+numericTEM="1"（cpw 链）、StudyStep="std1/tbma" 解引用
     （tem_via dmodel）；study 首步=边界模分析（bma），端口模变量
     Cmode/Lmode 只在该步产生——run9/10 报 Cmode_1 未定义即缺此链。
@@ -585,7 +585,7 @@ class TestTouchstoneRoundTrip:
     def test_skrf_written_s2p_passes_reciprocity_passivity_gates(self,
                                                                  tmp_path):
         # 兜底写出的 .s2p 必须过互易/无源/无耗单位性三判据（真机证据
-        # runs/comsol_tail/ 用同一判据读 COMSOL 原生导出）
+        # 内部证据档 用同一判据读 COMSOL 原生导出）
         import skrf
 
         freqs = np.linspace(2.3, 2.7, 5)

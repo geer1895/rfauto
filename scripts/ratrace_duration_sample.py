@@ -22,7 +22,7 @@ _render/_run_openems/_center_from_columns/_gates（R2/R3/R10 同一路径）。
 - sample：补样（缺省自动互补选档：既有干净集 {0.2:2, 0.3:1, 0.4:1}，0.2mm
   实测墙钟 7681.6/13936.7s 超单点 3600s 预算被淘汰 → 选 0.4 与 0.3，补齐
   2/2/2 均衡设计）；
-- refit：loader 消费新旧档合并（runs/quota_guard 14 样本档按 id 取干净子集
+- refit：loader 消费新旧档合并（内部证据档 14 样本档按 id 取干净子集
   + R10 档 + 本批新档）→ RobustDurationPredictor 重训 + LOO 如实对比。
 
 用法：
@@ -71,8 +71,8 @@ FIELD_NOTES_REF = "runs/quota_guard/ratrace_duration_samples.json"
 DEFAULT_OUT_ROOT = REPO / "runs" / "ratrace_clean_sample_20260921"
 RETRAIN_ROOT = REPO / "runs" / "ratrace_clean6_retrain"
 
-#: 既有干净集（任务书口径 n=4：R1/R2/R3/R10，runs/quota_guard 14 样本档 +
-#: runs/ratrace_03mm_sample R10 档；宽松口径 R4/R5/R6-R9 禁用）。
+#: 既有干净集（任务书口径 n=4：R1/R2/R3/R10，内部证据档 14 样本档 +
+#: 内部证据档 R10 档；宽松口径 R4/R5/R6-R9 禁用）。
 EXISTING_CLEAN_TIERS: tuple[tuple[str, float], ...] = (
     ("R1", 0.2),
     ("R2", 0.2),

@@ -600,7 +600,7 @@ def patch_fringing_delta_l(w_m: float, h_m: float, er_eff: float) -> float:
     每个辐射边缘各延伸 ΔL，两边缘合计 2ΔL。本函数是全仓唯一 ΔL 算术单源
     （XA-1/PV-016 三副本收敛，2026-10-02）；εeff 由调用方按同口径给出。
 
-    XA-1/PV-016 仲裁注记（runs/xa1_arbitration/xa1_arbitration_evidence.json，
+    XA-1/PV-016 仲裁注记（内部证据档，
     2026-10-02）：历史三副本（synthesize_patch / rf_match.patch_length /
     closedform._array_patch_eps_dl）以 0.824=2×0.412 作"两边缘合计"常数、
     调用侧再 ×2 ⇒ 总扣 4ΔL（疑似双计）。离线锚仲裁判 INCONCLUSIVE：两语义
@@ -610,7 +610,7 @@ def patch_fringing_delta_l(w_m: float, h_m: float, er_eff: float) -> float:
     反解 D_eng<0 物理不可能（本机口径，非 TM10 物理量）。故本函数只单源化
     0.412 每边缘原式，调用侧现行总扣口径零行为维持；语义翻转（总扣 2ΔL）
     需联动 ARRAY_NOMINAL/docs meta/fake 逆/symbolic_fit 判决式，留主代理批。
-    语义终裁挂 L5 v2 批（runs/xa1_arbitration/l5_sweep/criteria.md §一；
+    语义终裁挂 L5 v2 批（内部证据档 §一；
     R1-2 审查批 2026-10-04 出处标签注记）。
     """
     w = float(w_m)
@@ -704,7 +704,7 @@ def patch_cavity_metrics(w_mm: float, l_mm: float, h_mm: float,
       双重积分经 Jacobi-Anger（∫₀^π cos²(c·sinφ)dφ = (π/2)(1+J0(2c))）
       降为 scipy.quad 一维确定性求积（铁律 7）；大 W 渐近 D0→8·(W/λ0)
       （式 14-57 第二支，测试钉）；式 (14-55) 两形态恒等与单槽渐近的
-      π 因子定谳记录见 runs/w4_phase4/w4a/REPORT.md。
+      π 因子定谳记录见 内部证据档。
 
     Returns:
         {"q_rad", "q_c", "q_d", "q_total", "bw_frac", "bw_pct",
@@ -797,8 +797,8 @@ def synthesize_patch(
     - ΔL_edge = patch_fringing_delta_l（0.412 每边缘，Hammerstad 1975 单源）
     - dL = 2*ΔL_edge（两边缘合计，数值上=旧 0.824h(…) 常数）
     - L = c/(2*f0*sqrt(er_eff)) - 2*dL   [总扣口径=4ΔL（三副本一致，历史
-      仲裁 INCONCLUSIVE 在档 runs/xa1_arbitration/；语义终裁挂 L5 v2 批，
-      见 runs/xa1_arbitration/l5_sweep/criteria.md §一——R1-2 审查批
+      仲裁 INCONCLUSIVE 在档 内部证据档；语义终裁挂 L5 v2 批，
+      见 内部证据档 §一——R1-2 审查批
       2026-10-04 出处标签注记，数值零改动；另见 patch_fringing_delta_l
       docstring]
     - feed_offset（XA-2 馈电闭式；2026-10-02 替换旧魔数 l_mm*0.3，
@@ -1523,7 +1523,7 @@ def synthesize_siw_model(
 ) -> ModelSynthesisResult:
     """直 SIW 线段综合（siw-family 首族，2026-09-22 立项）：f0 + 过孔 d/s →
     fc10 目标=f0/1.5 → 两过孔列心距 w（Cassivi 2002 等效宽度反解；
-    runs/siw_family/criteria.md §1 双源/§2 设计点）。line_len 缺省=3λg@f0
+    内部证据档 §1 双源/§2 设计点）。line_len 缺省=3λg@f0
     （β 闭式）；过孔设计规则（s≤2d、d<λ_sub/5）违规显式报错（越界不外推，
     #1c/#122）。h 只进损耗不进 fc10/β（Microwaves101 SIW 条目口径），
     params 带出供渲染/meta 同源。"""
@@ -1580,7 +1580,7 @@ def synthesize_msl_siw_taper_model(
 ) -> ModelSynthesisResult:
     """MSL 锥形过渡+SIW 直段综合（SIW 族第二成员，df6 A2 立项）：w 沿
     siw_synthesis（fc10 目标=f0/1.5 反解 Cassivi 式）；锥长缺省=λg/2@f0
-    （runs/df6_a2siwmsl/criteria.md §1.1 对称双锥确定性级联实测：λg/4 在本
+    （内部证据档 §1.1 对称双锥确定性级联实测：λg/4 在本
     阻抗比 50/Z_PV=2.19 下带内 |S11| max −7.8dB 达不到 RL>15dB 预声明门，
     如实收档，λg/4 只作旋钮变体）；siw_len 缺省=3λg（与 siw 族 line_len
     同链）。w50/w_end（锥两端宽）不进 params：Z_PV 闭式链带心相关，渲染/

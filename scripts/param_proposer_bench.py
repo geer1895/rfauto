@@ -20,7 +20,7 @@ evals_to_target = 首次到达 f_min + 2%·(f_max−f_min) 的评估数（#207�
 
 用法（cwd 任意，产物绝对路径）：
   python scripts/param_proposer_bench.py [--seeds 15] [--budget 40]
-      [--seed0 20260921] [--out runs/param_proposer_bench/bench.json]
+      [--seed0 20260921] [--out 内部证据档]
 """
 
 from __future__ import annotations

@@ -32,7 +32,7 @@ L2 先例）。脚本为模块内字符串资产按字面量烘焙（IronPython 
 ASCII 无 f-string、不读 argv/env）；导出失败只向 errors 追加告警项，
 绝不推翻求解 ok（#105）。
 
-导出分派（2026-10-08 W5 真机实证，runs/edblane85/w5_batch_campaign/）：
+导出分派（2026-10-08 W5 真机实证，内部证据档）：
 HFSS 3D Layout 设计（EDB 快车道产物形态）**无任何 Analysis 模块**——
 GetModule("AnalysisSetup"/"Setup"/"Output"/"Solutions") 四名全 FAIL，
 ``ExportNetworkData`` 直接挂在 design 对象上（pyaedt analysis.py 源码
@@ -48,6 +48,7 @@ GetModule("AnalysisSetup"/"Setup"/"Output"/"Solutions") 四名全 FAIL，
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import re
 import subprocess
@@ -55,6 +56,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from rfauto.adapters.hfss_session import has_non_ascii
 from rfauto.pipeline.watchdog import Watchdog
 
 #: AEDT 批处理日志文件名形态（<stem> 拼工程名，落 logfile_dir/工程旁）。
@@ -89,7 +91,7 @@ _TOUCHSTONE_RE = re.compile(r"\.s(\d{1,2})p$", re.IGNORECASE)
 _RESULT_EXTS = (".prof", ".csv", ".mesh", ".sol")
 
 #: ``-designs`` 设计限定在 AEDT 2025 R1 (v251) ``-BatchSolve`` **不受支持**
-#: （2026-10-13 sim_host 真机核实 verdict=FAIL，设计核验档）
+#: （2026-10-13 sim_server 真机核实 verdict=FAIL，runs/aurora_c/designs_verify/
 #: ：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态旗标被静默吞掉，
 #: 值按 ``Unexpected command line argument 'DesignB' ignored.`` 丢弃并
 #: **退化为全设计求解（rc=0）**；desktop.dll 命令行选项表无 -designs）。
@@ -99,7 +101,7 @@ _DESIGNS_UNSUPPORTED_MSG = (
     "-designs 设计限定不受 AEDT 2025 R1 (v251) -BatchSolve 支持"
     "（2026-10-13 真机核实：旗标被忽略并退化为全设计求解，console log"
     " 'Unexpected command line argument ... ignored'，证据"
-    " 设计核验档））——为避免静默 solve-all 本模块拒绝"
+    " runs/aurora_c/designs_verify/）——为避免静默 solve-all 本模块拒绝"
     "发射；限定了设计的需求请按设计拆分工程（每工程单设计）后批解，或走"
     " hfss_session 会话通道指定设计分析")
 
@@ -175,7 +177,7 @@ def build_batch_command(
     -Logfile 收 AEDT 自身输出（进程 console 输出另由 Popen 重定向追加进
     同一文件）。
 
-    参数顺序纪律（真机实证 2026-10-08，runs/edblane85/w1_smoke/）：
+    参数顺序纪律（真机实证 2026-10-08，内部证据档）：
     AEDT 2025 R1 拒收"-Logfile 置于工程之后"（requires a filename
     ... last parameter，rc=1）——**工程路径必须恒为末位**。
 
@@ -272,7 +274,7 @@ def collect_solve_artifacts(project_path: str | Path,
     会把同父目录下兄弟工程/他 run 的同名白名单产物混进本工程清单——父目录
     常为共享工作目录；②results 目录名原为 ``<p.name>.aedtresults``（对
     demo.aedt 拼出 demo.aedt.aedtresults，恒不存在——真机布局是
-    ``<stem>.aedtresults``，runs/edblane85/w1_smoke/branchline 实证），其失
+    ``<stem>.aedtresults``，内部证据档 实证），其失
     效一直被①的父目录递归扫描掩盖；两处同修后工程旁浅层+工程专属目录递归）：
     - .aedt 工程 → ``<stem>.aedtresults/``（递归）+ 工程旁浅层（批后导出
       ``<stem>_export.sNp`` 落工程旁，浅层即覆盖）；
@@ -594,7 +596,8 @@ def build_batch_extract_script(
         ("<<OUT_FILE>>",
          _bake_string_literal(
              # 宿主无关规范形：显式反斜杠→正斜杠（Path.as_posix 依赖宿主
-             # OS 分隔符语义——POSIX 宿主下反斜杠是普通字符不归一）
+             # 路径分隔符语义——POSIX 宿主对含反斜杠字面量原样保留，烘焙出
+             # 带反斜杠的脚本；公开仓 CI Linux 实证）。
              str(out_file).replace("\\", "/") if str(out_file) else "")),
         ("<<DESIGN_NAME>>", _bake_string_literal(design or "")),
         ("<<SETUP_NAME>>", _bake_string_literal(setup or "")),
@@ -777,6 +780,20 @@ def export_touchstone_after_solve(
                     f"out={out!r} log_dir={log_dir!r}"],
             project=str(project), project_kind=kind,
             ansysedt_exe=str(exe_path), mode=mode, elapsed=_elapsed(started))
+    # CJK 工程路径定向提示（P5 交叉面）：导出脚本为 IronPython 2 纯 ASCII
+    # 资产，工程名/输出路径非 ASCII 时烘焙守卫必拒——与其落到通用
+    # "烘焙失败"文案，不如在此给出 ASCII 目录/会话通道重定向指引（同为
+    # 结构化失败，只是把判读成本从 logfile 挖掘前移到错误清单）。
+    if not project.name.isascii() or not str(out).isascii():
+        return _export_fail_result(
+            errors=["导出段路径含非 ASCII 字符（CJK 工程路径）: "
+                    f"project={project} out={out}——-batchextract 导出脚本"
+                    "为纯 ASCII 资产无法烘焙。请将工程复制到 ASCII 目录后"
+                    "重试，或走 hfss_session 会话通道 connect settings "
+                    "ascii_workdir=True（自动 ASCII 工作目录+交付拷回）"],
+            project=str(project), project_kind=kind,
+            ansysedt_exe=str(exe_path), mode=mode, elapsed=_elapsed(started))
+
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
     except (OSError, ValueError) as exc:
@@ -918,7 +935,7 @@ def solve_project_batch(
     - ``design``/``setup``：历史形态为 ``-designs <design:setup>`` 限定；
       **2026-10-13 真机核实 AEDT 2025 R1 (v251) ``-BatchSolve`` 不支持该
       旗标**（静默退化为全设计求解，证据 :data:`_DESIGNS_UNSUPPORTED_MSG`
-      与 设计核验档））——传非 None 时**发射前结构化
+      与 runs/aurora_c/designs_verify/）——传非 None 时**发射前结构化
       fail-closed**（``ok=False``/``rc=None``/零进程零许可消耗），绝不带
       假限定发射；``None``=工程内全部设计求解（AEDT 缺省语义，真机对照
       臂实证）。
@@ -966,6 +983,17 @@ def solve_project_batch(
                     " 目录）"],
             project=str(project_path), elapsed=_elapsed(started))
     project, kind = resolved
+
+    # P5 交叉提示（2026-10 用户实战反馈，零行为变化）：会话通道已实证
+    # CJK 工程路径 analyze() 内部 save_project 报 macro error（hfss_session
+    # has_non_ascii 守卫 + ascii_workdir 重定向）；批处理 -BatchSolve 对
+    # CJK 路径用户实测能建能解，故此处只提示不拦截。
+    if has_non_ascii(project):
+        logging.getLogger(__name__).warning(
+            "hfss_batch: 工程路径含非 ASCII 字符（%s）——批处理 -BatchSolve "
+            "实测可行，但若遇保存/macro 类错误请改用 ASCII 工作目录，或走 "
+            "hfss_session 会话通道 ascii_workdir=True（自动重定向+交付拷回）",
+            project)
 
     # -designs 设计限定不受 v251 支持（真机核实 FAIL，2026-10-13）——
     # 发射前结构化 fail-closed（零进程零许可），绝不带假限定静默 solve-all。
@@ -1088,8 +1116,6 @@ def solve_project_batch(
 
 def _on_watchdog_fire(pid: int) -> None:
     """watchdog 到点回调：整树击杀（坑账 #157/#265 语义：不留孤儿桌面）。"""
-    import logging
-
     logging.getLogger(__name__).warning(
         "hfss_batch: ansysedt pid=%s 超时，整树击杀", pid)
     _kill_process_tree(pid)

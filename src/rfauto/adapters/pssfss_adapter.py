@@ -1,6 +1,6 @@
 """EC-20 PyPSSFSS 严格快通道适配器（EMSolverRegistry 第 13 注册键，W2-F）。
 
-定位（规格 runs/research_seats_20261004/sa_specs2/SPECS.md §三）：PSSFSS.jl
+定位（规格 内部证据档 §三）：PSSFSS.jl
 （RWG MoM+GSM 周期结构专用，Julia，MIT）经 pypssfss 桥接入 EMSolverRegistry，
 成为 FSS/超表面 ms_* 族的"严格快档"（分钟级，介于 LC 闭式与 openEMS 单胞
 全波之间），同时把 metasurface 模板"J3 vs PSSFSS"文献值判读升级为仓内可
@@ -22,14 +22,14 @@
   注；#300 升级路径）与 HFSS Floquet 终裁（scripts/hfss_floquet_anchor.py
   通道，11.4199 对拍 +0.06%）。
 
-sheet 映射表（与仓内可复跑裁判 runs/dp10_j2j3/judge_pssfss.jl 逐构造参数
+sheet 映射表（与仓内可复跑裁判 内部证据档 逐构造参数
 同源——该驱动即 ge5/ge6 归档参考值 10.152GHz 的产生器，2026-10-01 起
 载板口径；本适配器=其 Python 面合法化，#154 同名参数语义逐对钉）：
 - ms_cross（带阻十字偶极子贴片）→ ``jerusalemcross`` all-filled 实心十字
   （P=period, L1=2·arm_len, L2=arm_w, **A=L2−ε（ε=CROSS_A_REL_OFFSET·L2=
   1e-3·L2）**, B=arm_w, w=arm_w, clas='J'）。均匀十字唯一正确映射 A==L2，
   但 A==L2 → xrequired 重复值 → 零宽网格 → analyze 抛 "matrix contains
-  Infs or NaNs"（原驱动 :75-77 同款哨兵注释；runs/seat4_cross 实测复现
+  Infs or NaNs"（原驱动 :75-77 同款哨兵注释；内部证据档 实测复现
   +504 零面积面）；旧哨兵 A=aw/2 静默改形（面积 −38.2%，W7-B 裁判链
   几何发散根源）——2026-10-05 W7-B followUp 改 ε 偏移（几何代价 0.075%
   面积，谷位 11.4265 ↔ HFSS Floquet 11.4199）；
@@ -41,7 +41,7 @@ sheet 映射表（与仓内可复跑裁判 runs/dp10_j2j3/judge_pssfss.jl 逐构
   （strata：air / patch / substrate / PEC / air；设计锚 =Hammerstad 不动点
   名义边长，量级互证口径）。
 
-Julia depot 钉 E 盘（AGENTS 硬规则 1 + 用户指令）:首次 use 触发 Julia+
+Julia depot 钉 E 盘（内核立规注记 硬规则 1 + 用户指令）:首次 use 触发 Julia+
 PSSFSS 自动安装编译（分钟-十分钟级）；本模块在 import pypssfss **之前**
 显式设 ``JULIA_DEPOT_PATH``（缺省 E:\\julia_depot，用户已设值时尊重不
 覆盖），不依赖 shell env。缺装环境 is_available()=False 显式报缺
@@ -68,7 +68,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 #: v1 模板面（诚实声明——能力表 supported_templates 单源）。
-#: **位置纪律已解除**（架构批 W2-S2 S6/pssfss2 注册倒置）：原"必须前置于
+#: **位置纪律已解除**（aurora_h W2-S2 S6/pssfss2 注册倒置）：原"必须前置于
 #: em_solver_base import"约束源于 base 尾部能力表反向 import 本元组；倒置后
 #: 本模块 import base 时经 register_external_templates 登记清单、base 对本
 #: 模块零 import，双向环断，元组位次不再敏感（物理位次保持不动，最小刀）。
@@ -81,7 +81,7 @@ from rfauto.adapters.em_solver_base import (  # noqa: E402 —— 紧随单源�
     register_external_templates,
 )
 
-# S6 注册倒置（架构批 W2-S2）：模板清单登记进 base 注册面——base 能力表
+# S6 注册倒置（aurora_h W2-S2）：模板清单登记进 base 注册面——base 能力表
 # supported_templates 原位刷新（pydantic model_copy update），"实测防漂移"
 # 语义保留（数据源仍是本元组单源；test_capability_table_single_source 同钉）。
 register_external_templates("pssfss", SUPPORTED_TEMPLATES)
@@ -103,7 +103,7 @@ _JULIA_DEPOT_DEFAULT = r"E:\julia_depot"
 #: 渲染（臂带减半+端垫成方垫，面积 −38.2%，静默改形）——真形 A=L2−ε
 #: （ε=1e-3·L2）实测 PSSFSS Floquet 谷位 11.4265GHz，ε→0 收敛
 #: 11.4206–11.4265，对 HFSS Floquet 终裁 11.4199 偏差 +0.006%~+0.06%
-#: （四源包络内；证据 runs/seat4_cross/exp_candidates.json+各档原始曲线）。
+#: （四源包络内；证据 内部证据档+各档原始曲线）。
 #: 旧"两引擎一致偏高 13-15% 前提差"结论系哨兵形污染，作废重述：wg 通道
 #: 双值（11.675/11.4951）对真形 Floquet 残差仅 +0.7%~+2.2%。|Δf|≤1% 门=
 #: 规格 §3.3.2 预声明不变；judge_ms_cross 消费本值。
@@ -119,7 +119,7 @@ _NPIX_DEFAULT = 96
 _NTRI_DEFAULT = 1500
 
 #: cross_sheet_spec 的 A 相对偏移 ε=1e-3·L2（W7-B REPORT §五-3 cross_sheet_spec
-#: 两难定谳，2026-10-05 席位实测 runs/seat4_cross/）。均匀实心十字唯一正确
+#: 两难定谳，2026-10-05 席位实测 内部证据档）。均匀实心十字唯一正确
 #: 映射是 A==L2（jerusalemcross is_inside allfilled 支：臂带半宽 A/2、端垫
 #: 半高 L2/2，均匀要求二者相等），但 A==L2 → make_plaid_mesh xrequired
 #: 重复值 → 零宽网格（实测 504 个零面积三角面）→ analyze 抛 "matrix
@@ -203,7 +203,7 @@ def cross_sheet_spec(params: dict[str, Any]) -> dict[str, Any]:
     返回 kwargs 字典（数值 mm 口径 + clas；units 由 solve 面套 pypssfss.mm）。
     A=L2−ε 哨兵（ε=CROSS_A_REL_OFFSET·L2）：均匀实心十字要求 A==L2，但
     A==L2 → xrequired 重复值 → 零宽网格 → 引擎 Infs/NaNs（judge_pssfss.jl
-    :75-77、W2-F 坑①与本席 runs/seat4_cross 三重实证）；旧哨兵 A=aw/2 避崩
+    :75-77、W2-F 坑①与本席 内部证据档 三重实证）；旧哨兵 A=aw/2 避崩
     的代价是静默改形（面积 −38.2%）。A=L2−ε 实测：面积偏差 0.075%、谷位
     11.4265GHz ↔ HFSS Floquet 11.4199（W7-B 件 1 §1.4-2 修法候选①择优）。
     """
@@ -760,6 +760,19 @@ class PssfssAdapter(EMSolverAdapter):
                                                form="ri")
             except Exception as exc:
                 logger.warning("Touchstone 导出失败（CSV/meta 保留）: %s", exc)
+        # B4（aurora_l Wave-B）：曲线产物 sidecar（sparams.csv+pssfss.s2p，
+        # 归属证据），best-effort 观测面（#105）——失败不回滚 S 主路产物。
+        try:
+            from rfauto.service.runs_verify_service import write_artifact_sidecar
+
+            write_artifact_sidecar(workdir / _SPARAMS_CSV_NAME,
+                                   run_id=workdir.name, kind="sparams_csv")
+            touch_path = workdir / _TOUCHSTONE_NAME
+            if touch_path.is_file():
+                write_artifact_sidecar(touch_path, run_id=workdir.name,
+                                       kind="touchstone")
+        except Exception as exc:  # 观测面兜底（#105）
+            logger.warning("sidecar 写出失败（S 主路产物保留）: %s", exc)
         meta_out = {**meta, "wall_time_s": wall, "solver": "pssfss",
                     "adapter": "pssfss", "schema": "rfauto-pssfss/v1"}
         try:

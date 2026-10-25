@@ -9,7 +9,7 @@
   4. 消费面分流钉（UX-B 注入键不出现在 adapter/render 输入面，组装信封
      键集固定）。
 
-规格：runs/research_seats_20261004/sk_specs5/SPECS.md §1.4（2026-10-04）。
+规格：内部证据档 §1.4（2026-10-04）。
 W5-A 席位自建测试；不进共享计数面。
 """
 
@@ -28,7 +28,7 @@ SRC = REPO / "src" / "rfauto"
 # 位点=(模块名, 函数链)；豁免理由见行尾。AD-2 接线零扩白名单——extra_system
 # 走 agent_runtime.submit 既有插入点。键=文件 stem：r3_services 平铺模块经
 # T2 巨石拆分改包 r3_services/chat.py 后，_llm_turn 位点名随 stem 迁移
-# （2026-10-19 架构批 终门三审定谳：同一位点改名，非新注入面）。
+# （2026-10-19 aurora_g 终门三审定谳：同一位点改名，非新注入面）。
 SYSTEM_MESSAGE_WHITELIST: set[tuple[str, str]] = {
     ("agent_runtime", "submit"),                       # extra_system 注入点本体
     ("pydantic_ai_runtime", "pai_messages_to_openai"),  # 消息格式转换面

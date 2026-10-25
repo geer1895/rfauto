@@ -285,8 +285,8 @@ def cps_corner() -> list[dict]:
 
 # ─── C5：CPS 角落二维修正（2026-09-21 followUp，#333 方法论）──────────────────
 #
-# 结构（数据出发：runs/w2f_rescale_batch/cps_bh_scan.json 160 点形状族对比，
-# explore 脚本 runs/cps_corner2d_fit/explore_fit.py）：
+# 结构（数据出发：内部证据档 160 点形状族对比，
+# explore 脚本 内部证据档）：
 #   修正走 γ 空间（h_eff = γ(εr)·E2·h，进 tanh 映射）——εr=1 / h→0 / h→∞ 三支
 #   极限由框架自动保持；εeff 直接乘性则 εr=1 需额外约束（已对比否决）。
 #   角落区= a/h ≥ 1（γ 定标域边界；ah=1 行残差已达 −2.07% > 1.2% INFO 门，

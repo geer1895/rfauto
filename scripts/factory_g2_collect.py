@@ -1,6 +1,6 @@
 """数据工厂二期 B 批·cpw 平滑族采集驱动（datafactory G2 前置，criteria 预声明）。
 
-判据/口径全部预声明 runs/datafactory_g2_cpw_20260922/criteria.md v1（写死
+判据/口径全部预声明 内部证据档 v1（写死
 再跑，2026-09-22）。骨架整体复制 factory_a2d_collect（M3 锁/互斥/探针/
 resume 机制已验证面，只复制不改源——决策与理由见 criteria §4）：共享锁
 runs/.oe_collect.lock + #261 命令行互斥（fail-closed 不代杀）+ QuotaGuard

@@ -36,7 +36,7 @@ PROBE_COMMAND = (
     "powershell -NoProfile -ExecutionPolicy Bypass -File "
     "E:\\rfauto_remote\\kit\\06_tools\\run_server_probe.ps1")
 PROBE_TIMEOUT_S = 180.0
-MACHINE = "sim_host"
+MACHINE = "sim_server"
 
 
 def parse_census_probe(text: str) -> str:

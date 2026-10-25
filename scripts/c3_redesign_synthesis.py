@@ -18,7 +18,7 @@ criteria.md，先于本脚本运行落盘）：
      预测峰移（路线 a G1 消费口）。
 
 产物：runs/smoke_c3_redesign/{redesign_nominals.json, cpass_verdict.json}。
-全程零电磁仿真（只有闭式电路裁判）；不 commit、不写 /TODO、不跑
+全程零电磁仿真（只有闭式电路裁判）；不 commit、不写 开发注记/TODO、不跑
 openEMS/HFSS；src/** 零改动。
 """
 from __future__ import annotations

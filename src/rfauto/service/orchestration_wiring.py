@@ -6,7 +6,7 @@ service/campaign_manager 已能确定性拆解"校准→粗筛→精算→公差
 FDTD / CPU）做确定性仲裁，但两者之间没有接线：战役阶段推进不会广播事件，
 作业到达/释放也不会进入调度器，更没有"哪类资源被哪个作业占用"的可查询账目。
 
-本模块只做三类接线，不产生任何新的物理/数值决策（项目规则 规则 7）：
+本模块只做三类接线，不产生任何新的物理/数值决策（内核立规注记 规则 7）：
 1. **事件出口**：campaign 阶段事件经既有 core.events.EventBus 发布
    （复用 EventType，不改 core/events.py 与 core/state.py）；
 2. **调度入口**：作业到达/释放信号转发给 resource_scheduler.schedule

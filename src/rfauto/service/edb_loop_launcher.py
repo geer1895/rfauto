@@ -38,6 +38,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
@@ -148,6 +149,39 @@ def default_edb_metrics(
     return metrics
 
 
+def _load_expected_freshness(out_file: Any) -> dict[str, Any] | None:
+    """Touchstone 指纹 sidecar → 第 8 判据 expected 块（缺失→None=SKIP）。
+
+    aurora_l Wave-F F2 接线：构建链（edb_lane_service.edb_solve）在
+    Touchstone 写盘后落 ``<touchstone>.freshness.json`` 指纹 sidecar；
+    本读取经 ``freshness_sidecar_path`` 单源派生同路径（writer/reader
+    命名同源防漂移）。sidecar 在档=门启用（``{sha256, generated_at}``
+    透传健康门，比对全归门）；缺失/不可读/形态非法/无可核对字段一律
+    None=SKIP（判据未启用态，与 C3 增量兼容语义一致——老信封/手构
+    信封零变化，verdict 与七判据时代逐位一致）。best-effort（#105）：
+    IO/解析失败不抛异常不阻塞评估链。
+    """
+    if not out_file:
+        return None
+    try:
+        from rfauto.service.edb_lane_service import freshness_sidecar_path
+
+        raw = json.loads(freshness_sidecar_path(str(out_file)).read_text(
+            encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    expected: dict[str, Any] = {}
+    sha = raw.get("sha256")
+    if isinstance(sha, str) and sha.strip():
+        expected["sha256"] = sha
+    gen = raw.get("generated_at")
+    if gen is not None:
+        expected["generated_at"] = gen
+    return expected or None
+
+
 def _resolve_entry(
     injected: Callable[..., Any] | None,
     module_name: str,
@@ -168,7 +202,7 @@ class EdbLoopLauncher:
             edb_coupled_line / edb_ratrace；lange 预留键在建库段即被拒）。
         params: 固定设计参数底座（stackup/sweep 等不参与寻优的键）；
             evaluate 的 params 同键覆盖（环参数窗内的设计参数逐点注入）。
-        workdir: 产物根目录（.aedb/Touchstone 落点；真机按 AGENTS 规则 0
+        workdir: 产物根目录（.aedb/Touchstone 落点；真机按 内核立规注记 规则 0
             磁盘纪律显式给，勿落系统盘）。
         name: 账本溯源名（缺省 ``edb:<template>``；LoopLauncher 协议
             name 属性约定）。
@@ -298,10 +332,16 @@ class EdbLoopLauncher:
             "elapsed_s": solve_view.get("elapsed_s"),
             "errors": solve_env.get("errors"),
         }
+        # 第 8 判据 result_freshness 接线（aurora_l Wave-F F2）：从构建链
+        # 指纹 sidecar 读 expected 块——缺失=expected None=SKIP（判据未
+        # 启用态，不参与 verdict 聚合，增量兼容）。
+        expected_freshness = _load_expected_freshness(
+            export_view.get("out_file"))
         report = self._health_gate()(
             batch_result, spec=spec, template=self.template,
             s11_dip_gate_db=self.s11_dip_gate_db,
-            s_split_window_db=self.s_split_window_db)
+            s_split_window_db=self.s_split_window_db,
+            expected_freshness=expected_freshness)
         if not isinstance(report, dict):
             return EvalResult.from_error(
                 f"健康门返回 {type(report).__name__}，契约要求判读报告 dict",

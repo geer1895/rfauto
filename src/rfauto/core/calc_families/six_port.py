@@ -1,4 +1,4 @@
-"""六端口反射计（架构批 W3-S10 席域，R2_core_tier3 §③ D7 立项——
+"""六端口反射计（aurora_f W3-S10 席域，R2_core_tier3 §③ D7 立项——
 trl_standards.py 文献引注背书的反演架构面落地）。
 
 两键：six_port_gamma_solve（功率读数→Γ 最小二乘反演闭式）/

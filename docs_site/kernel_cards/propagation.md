@@ -127,7 +127,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_propagation.py`——引文："tests/unit/test_propagation.py（断点干涉峰 +6dB/远场斜率回归/"
+- `tests/unit/test_propagation.py`——引文："出处（标准模型原文逐字转写+教科书同族二级转引，键内描述同源）："
 
 测试面（tests/unit 引用扫描，机读；合计 **97** 个 test 函数）：
 

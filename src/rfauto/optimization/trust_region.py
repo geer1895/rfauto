@@ -17,7 +17,7 @@ cjors.2025184 综述锚）：
     验证候选 → ρ 接受/拒绝 + 半径伸缩 → 收敛（半径塌缩 / 停摆 / 预算）。
 
 铁律落地（同 stage-1）：
-- 数值只在确定性内核（项目规则 规则 7）：粗模型出自 surrogate_registry，
+- 数值只在确定性内核（内核立规注记 规则 7）：粗模型出自 surrogate_registry，
   映射为闭式 lstsq，cost 出自 SpecEvaluator.evaluate_objectives，LLM 不入环；
 - 零真机验证路径：evaluate_fn 注入（单测用合成解析裁判面，§4 口径）；
 - 本模块不改 surrogate_loop.py 任何行为——run_two_stage 用 evaluate_fn

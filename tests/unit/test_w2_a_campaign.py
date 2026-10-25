@@ -629,7 +629,7 @@ def test_report_and_final_verify_stage_result_persistence(
     assert sr_fv["adapter_channel"] == "fake->fake"
 
 
-# ─── 架构批 审查批修复席 F4 钉（P1-2 显式 0 tune 预算 + P3 falsy 位；
+# ─── aurora_next 审查批修复席 F4 钉（P1-2 显式 0 tune 预算 + P3 falsy 位；
 # runs/review_aurora_next/A3_service_am/REPORT.md）────────────────────────────
 
 def test_plan_recipe_explicit_zero_max_trials_respected(tmp_path) -> None:

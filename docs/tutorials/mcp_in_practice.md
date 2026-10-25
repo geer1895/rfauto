@@ -119,7 +119,7 @@ docs_site 机生 reference 页同源新鲜。**docs/reference.md 的"当前 100 
 | `rfauto://knowledge/materials` | 材料库（configs/materials.yaml 原文结构） |
 | `rfauto://knowledge/compat_matrix` | 版本兼容矩阵 |
 | `rfauto://knowledge/terminology` | 术语卡 |
-| `rfauto://knowledge/metric-glossary` | 指标词典（38 指标键+机读判据，aurora_i W3.5-K3） |
+| `rfauto://knowledge/metric-glossary` | 指标词典（38 指标键+机读判据，W3.5-K3 批） |
 | `rfauto://toolsets/definition` | 工具集目录（每条目 name/description/skill/tools） |
 | `rfauto://calculators/index` | 计算器注册表目录（2026-10-14 MCP-B 席） |
 | `rfauto://datasets/index` | 数据集注册表总览（2026-10-14 MCP-B 席） |
@@ -145,7 +145,7 @@ run_campaign 等）本文只讲不调**——它们会真起仿真/真写盘。
 {"ok": true, "checks": [
   {"name": "Python", "status": "ok", "detail": "3.12.14"},
   {"name": "AEDT", "status": "ok",
-   "detail": "E:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
+   "detail": "<drive>:\\ANSYSINC\\ANSYS Inc\\v251（版本 2025.1，best_effort）"},
   {"name": "ADS", "status": "ok",
    "detail": "E:\\ADS\\ADS27（版本 2027，verified）"},
   {"name": "缓存模式", "status": "ok", "detail": "readwrite"}]}
@@ -253,10 +253,10 @@ agent 自主改配方走沙箱草稿 → 三层 Gate → promote，不走工作�
 | 同源入口 `python -m rfauto.mcp_server` | 同款钉测实跑 | 过（exit 0，stdout 0 字节） |
 | fastmcp 版本 | `python -c "import fastmcp"` 实跑 | 过（3.4.7） |
 | extras 声明 `.[mcp]` | pyproject 实读 | 过（fastmcp>=3.0.0） |
-| MCP=152+10res | `scripts/check_numbers.py` 实跑 | 过（工具=注册面正则 152；resources=list_resources()=10；2026-10-19 aurora_i W3.5-K3 +1 资源） |
+| MCP=152+10res | `scripts/check_numbers.py` 实跑 | 过（工具=注册面正则 152；resources=list_resources()=10；2026-10-19 W3.5-K3 批 +1 资源） |
 | 工具按域分组表 | `^@mcp\.tool` 逐模块锚定正则实测 | 过（39 模块，十组合计 152） |
 | doctor/list_datasets/query_dataset/run_calculator/get_metrics | 只读工具实调 | 过（§4 输出均为实调 structured content 摘录） |
 | n_rows vs total_rows | query_dataset limit=1 实调 | 过（n_rows=1，total_rows=2） |
-| list_calculators=320（含 1 实验键；2026-10-20 aurora_h 复测，306=305+1 系 aurora_g 收官时点已随第五梯队 +13 过期） | 只读工具实调 | 过（319 常规+1 实验，与 check_numbers CALCULATOR_REGISTRY=319（含实验键 320）口径一致；本行随内核扩批滚动，以 rfauto calc list 实时为准） |
+| list_calculators=320（含 1 实验键；2026-10-20 复测，306=305+1 系前批收官时点已随第五梯队 +13 过期） | 只读工具实调 | 过（319 常规+1 实验，与 check_numbers CALCULATOR_REGISTRY=319（含实验键 320）口径一致；本行随内核扩批滚动，以 rfauto calc list 实时为准） |
 | CLI/MCP 同 service 单源 | `cli/domains/surrogate.py`/`mcp_tools/datasets.py` 源码实读 | 过（两路收敛 service.dataset_service.query_dataset） |
 | 客户端配置样例 | 与 README「MCP Agent 接口」节同源核对 | 过（"以你的客户端文档为准"已标注） |

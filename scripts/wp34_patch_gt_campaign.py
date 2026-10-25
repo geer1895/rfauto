@@ -16,7 +16,7 @@ comsol/meas 词根且不含 fake）。本战役只补 **HFSS** 真机点。
 
 执行口径：
 - LHS（``optimization.sample_design.lhs_points``）固定 seed，N=36（>31 留失败余量）；
-- 逐点写配方副本（runs/wp34_patch_gt/recipes/，原件不改）→ ``service.api.run_once``
+- 逐点写配方副本（内部证据档，原件不改）→ ``service.api.run_once``
   （adapter_name="hfss"，study 只进 provenance #158）→ 每点一个 runs/<run_id>
   （meta.json adapter=hfss，与既有 GT 行同物化路径）；
 - 串行 1（机器独占，#246），HFSS 失败整点重试 ≤2 次（#191）带退避，仍失败记
@@ -29,13 +29,13 @@ comsol/meas 词根且不含 fake）。本战役只补 **HFSS** 真机点。
   .venv\Scripts\python.exe scripts/wp34_patch_gt_campaign.py --mode run --max-points 1   # 前台验链路
   powershell Start-Process -FilePath .venv\Scripts\python.exe `
     -ArgumentList "scripts/wp34_patch_gt_campaign.py --mode run" `
-    -RedirectStandardOutput runs/wp34_patch_gt/stdout.log `
-    -RedirectStandardError runs/wp34_patch_gt/stderr.log
+    -RedirectStandardOutput 内部证据档 `
+    -RedirectStandardError 内部证据档
 收尾（全部点完成后）：
   .venv\Scripts\python.exe scripts/wp34_patch_gt_campaign.py --mode ingest
   → 以新名 wp34_registry_20260916 物化（旧注册表 source_runs + 本战役 done runs，
     双集口径不碰 wp24_registry_20260913），跑 neural_operator_readiness 写
-    runs/wp34_patch_gt/readiness.json。
+    内部证据档。
 
 几何纪律：参数值 float 预计算写入配方 value（单位由配方字段语义 mm 固定，#218）；
 Hfss()/run_dir 由 run_once 以绝对路径创建（#243），本脚本 --mode run/ingest

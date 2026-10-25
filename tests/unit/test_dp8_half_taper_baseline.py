@@ -26,11 +26,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-# 公开分发视图：runs/df7_dp8p3 证据档不入公开仓——缺席时整组如实 skip
-pytestmark = pytest.mark.skipif(
-    not (Path(__file__).resolve().parents[2] / 'runs' / 'df7_dp8p3').is_dir(),
-    reason='runs/df7_dp8p3 证据档缺席（公开分发视图），如实 skip')
+# 公开树无 runs/ 证据湖（df7_dp8p3 判据脚本随内部仓）——整模块诚实 skip
 
+if not (Path(__file__).resolve().parents[2] / "runs" / "df7_dp8p3").is_dir():
+    pytest.skip("公开树无 runs/ 证据湖（df7_dp8p3 基线脚本随内部仓）", allow_module_level=True)
 
 REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "src"

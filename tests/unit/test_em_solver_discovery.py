@@ -1,6 +1,6 @@
 """DP-17 O1 单测——em_solver_base 第三方适配器 entry-point 发现口。
 
-判据（runs/df6_dp17/criteria.md §O1）：
+判据（内部证据档 §O1）：
 - monkeypatch importlib.metadata.entry_points 伪造 rfauto.adapters 组 →
   ensure_adapter_plugins_loaded() 后注册表含伪插件（不依赖真实安装；
   pyproject 段本批不加，由主代理合入）；

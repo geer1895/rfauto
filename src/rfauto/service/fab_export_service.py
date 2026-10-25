@@ -435,7 +435,7 @@ def _finish_package(
     pdf_path = export_dxf_pdf(drawing_path, work / "drawing.pdf")
 
     # 几何：优先读 STEP（OCP），缺省用变量包络。
-    # 溯源（R3-2，runs/review_ge8e/f3_fix/REPORT.md）：STEP 读失败/缺失的
+    # 溯源（R3-2，内部证据档）：STEP 读失败/缺失的
     # 静默回退不再无痕——geometry_source 落进 go_result（"step" |
     # "envelope_estimate"），回退分支同时追加 warning，发厂包两种几何
     # 来源可辨（诚实分级面）。

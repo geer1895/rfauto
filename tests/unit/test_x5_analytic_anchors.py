@@ -10,7 +10,7 @@ pyramid_horn 九族闭式恒等锚（verdict 语义=闭式推导档，真机首�
 2. **注册表钉**：resolve_anchor 域内命中、值/单位/域盒一致；analytic 档
    形态=engine_pair.calibrated="closedform"（与引擎档可区分，#122）。
 
-候选裁决策（宁少勿滥，followUp 留账 runs/review_ge8e/x5_analytic_anchors/
+候选裁决策（宁少勿滥，followUp 留账 内部证据档
 REPORT.md）：cpw 因 skrf-CPW（无底地，名义 67.44Ω）与 _cpwg_ri（底接地
 CPWG，名义 50.0Ω）模型二义不立锚；mline 因 HJ 系数无仓内已核原文转录面
 （#df6-⑬ citation-rot 防御）不立锚。

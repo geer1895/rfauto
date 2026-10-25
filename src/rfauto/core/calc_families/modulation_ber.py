@@ -1,4 +1,4 @@
-"""数字调制理论 BER/Eb-N0 族（架构批 W4-A 席，R2 空白域 G3）。
+"""数字调制理论 BER/Eb-N0 族（aurora36 W4-A 席，R2 空白域 G3）。
 
 出处（教科书经典闭式二级转引，详见下节公式口径）：
 - modulation_ber_curve：BPSK/QPSK Pb=Q(√(2γb)) 与 square M-QAM Gray

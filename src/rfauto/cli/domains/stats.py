@@ -9,7 +9,7 @@
 JSON 信封直出（ok=false → 退出码 1）；长列表走 --file JSON
 （{"samples": [...]} / {"failures": [...], "censored": [...]}）。
 
-信封契约（架构批 AU-2C 域升版 2026-10-14）：响应信封一律走
+信封契约（aurora_d AU-2C 域升版 2026-10-14）：响应信封一律走
 rfauto.service.envelope 构造器；失败形单数 ``error`` 键统一为
 ``errors`` list[str]（error_envelope 单源，契约 §1 判读规则 2）——
 无戳域补戳 ``MANUFACTURING_STATS_SCHEMA_VERSION="1.1"``，成功/失败信封

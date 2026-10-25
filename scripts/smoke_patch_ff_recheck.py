@@ -1,6 +1,6 @@
 """patch 远场复跑（W2⑥a-A PEC 镜像修正后的验证；0dc followUps ②）。
 
-背景：runs/patch_field_smoke 的 nf2ff 盒顶距贴片仅 22.3mm（AIR_TOP=λ0/4@2.8GHz=
+背景：内部证据档 的 nf2ff 盒顶距贴片仅 22.3mm（AIR_TOP=λ0/4@2.8GHz=
 26.79mm − 4×BASE 盒缩），< λ/4@f_res(2.21GHz)=33.9mm——"紧贴盒"使远场图积分与
 面通量 Prad 差 20%（图形自归一 Dmax 6.50 vs 修正通量 Dmax 5.52 dBi）。本脚本零源码
 改动（模板 ff_calc_block 未接 correct_pec_mirror，he 轨禁改）：
@@ -26,7 +26,7 @@ verdict：PASS=G1..G5 全过；PARTIAL=G3/G4/G5 过而 G1 或 G2 失；FAIL=其�
 
 运行（~1-2h，Start-Process 分离 #157）：
   python scripts/smoke_patch_ff_recheck.py
-产物 runs/patch_field_smoke_recheck/{simulation.py,engine.log,sparams.csv,
+产物 内部证据档{simulation.py,engine.log,sparams.csv,
 farfield_meta.json,farfield3d.csv,_smoke_result.json}。
 """
 from __future__ import annotations

@@ -1,9 +1,9 @@
 """DP-4 J4c HFSS Floquet 对拍锚驱动（wf:goal-t15，半登记件落地）。
 
-语境（#222）：runs/df6_dp4p3/criteria.md §J4c 预声明「Γ_act,n(侧射)=Σ_m S_nm，
-报逐端口 |Γ_act| 与 |ΔΓ| vs HFSS Floquet」（ 四五零登记后续批）。
+语境（#222）：内部证据档 §J4c 预声明「Γ_act,n(侧射)=Σ_m S_nm，
+报逐端口 |Γ_act| 与 |ΔΓ| vs HFSS Floquet」（开发注记 四五零登记后续批）。
 本驱动=缺位的发射面（research_expansion "E3 脚本缺"）+判读一体：
-sim_host per-port grpcsrv（不碰他人实例 #261）→ 远程 attach（四开关
+sim_server per-port grpcsrv（不碰他人实例 #261）→ 远程 attach（四开关
 remote_session_switches，§1.3）→ 单元胞 Floquet 模型（Region+lattice pair×2
 +Floquet port+50Ω 集总馈口）→ Driven Modal 自适应+Discrete 扫频 → S 参数
 落 JSON 回拉 → 离线判读（对照归档 judge_2x2.json 的 gamma_act_f0，#340
@@ -17,7 +17,7 @@ remote_session_switches，§1.3）→ 单元胞 Floquet 模型（Region+lattice 
 用法（工作区根目录）::
 
     .venv/Scripts/python.exe scripts/hfss_floquet_anchor.py --dry-run   # 离线全链钉
-    .venv/Scripts/python.exe scripts/hfss_floquet_anchor.py             # sim_host 真跑
+    .venv/Scripts/python.exe scripts/hfss_floquet_anchor.py             # sim_server 真跑
     .venv/Scripts/python.exe scripts/hfss_floquet_anchor.py --judge-only  # 只判读
 
 退出码：0=执行完成且 verdict 落盘（verdict 是裁决数据，DISAGREE 不算执行
@@ -67,7 +67,7 @@ SERVER_SUBDIR = "floquet_j4c"
 OE_JUDGE_JSON = REPO / "runs" / "df6_dp4p3" / "judge_2x2.json"
 OE_S4P = REPO / "runs" / "df6_dp4p3" / "eep_2x2" / "patch_eep_2x2.s4p"
 
-DEFAULT_MACHINE = "sim_host"
+DEFAULT_MACHINE = "sim_server"
 DEFAULT_PORT = 50053          # 50051=T14 残留实例不碰；50052 留 T14 波段
 PORT_SCAN = range(50050, 50061)  # §3.4：attach 前扫实际监听面
 F0_GHZ = 5.8

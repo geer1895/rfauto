@@ -1,4 +1,4 @@
-"""架构批 W3-CORE8：CORE6 遗留续作+λg 抽键四键单测。
+"""aurora_d W3-CORE8：CORE6 遗留续作+λg 抽键四键单测。
 
 doa_crb_ula_multisource（calc_families/doa_crb.py 原位扩展）/
 reflective_phaser（calc_families/phase_shifter.py 原位扩展）/
@@ -7,7 +7,7 @@ waveguide_lambda_g（calc_families/waveguide_iris.py 原位扩展）。
 
 裁判口径（#118 双路径：实现路线=各键闭式；独立第二路线=本文件不同
 算法重算——全参数 FIM Schur 消元/T_n 多项式递推/整数阶扫描/阻抗式
-数值角/λg kz 形态，实现前独立复算（内部证据目录
+数值角/λg kz 形态，实现前独立复算（runs/aurora_d/
 _core8_verify_derivation.py 轨迹）后写死）：
 
 - **多源 CRB**：M=1 退化=doa_crb_ula **逐位一致**（== 回归钉，同

@@ -388,7 +388,7 @@ def _stripline_z0(w_mm: float, b_mm: float, epsilon_r: float) -> float:
 
     旧实现直调 scipy ellipk：w/b ≳ 12.1 后 tanh 双精度饱和（k≡1）→
     1−k² 下溢为 0、ellipk(1)=inf → ratio=0 → Z0 静默返 0（本仓审查
-    R1-1，runs/review_ge8e/r1_calculators/REPORT.md）；AGM 形态两式数学
+    R1-1，内部证据档）；AGM 形态两式数学
     恒等、饱和域不塌（#333 _kk_ratio_tanh 同款先例：k'=sech(x) 直取避免
     1−k² 相消）。极限：w→0 时 r→0 → Z0→∞（细条高阻）、w→∞ 时 r→∞
     → Z0→0（x≥710 cosh 溢出 r=inf → Z0=0 正确极限）。
@@ -619,9 +619,9 @@ def cps_effective_thickness_factor(epsilon_r: float) -> float:
 
 
 #: CPS 角落二维修正常数（2026-09-21 C5 followUp，#333 方法论；定标数据=
-#: runs/w2f_rescale_batch/cps_bh_scan.json 160 点 a/h×b/h×εr FD 单档裁判，
+#: 内部证据档 160 点 a/h×b/h×εr FD 单档裁判，
 #: 复现：scripts/fd_laplace_tline_referee.py --refit-cps-corner2d，侦察与
-#: 形状族对比脚本 runs/cps_corner2d_fit/explore_fit.py）。模型（γ 空间，
+#: 形状族对比脚本 内部证据档）。模型（γ 空间，
 #: 进 tanh 映射，εr=1 / h→0 / h→∞ 三支极限由框架自动保持）：
 #:   log E2 = Σ c·φ，x = a/h − 1，
 #:   φ = (1, x, ln(b/h), ln(εr), x², ln²(b/h), ln²(εr),

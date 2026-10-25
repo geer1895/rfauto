@@ -426,7 +426,7 @@ def build_oven_model(client: Any, spec: dict[str, float],
 def _dataset_candidates(model: Any) -> list[str | None]:
     """数据集候选序：默认解优先，其后按标签倒序（新建靠后=新解靠前）。
 
-    真机实证（踩坑③）：双步 study 的默认数据集可能是
+    真机实证（开发注记（七十三）踩坑③）：双步 study 的默认数据集可能是
     频率步解（无 T 场/ht 变量）→ 全 NaN 或报错；逐候选重试兜底
     （best-effort，不阻塞主读数）。
     """

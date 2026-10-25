@@ -1,14 +1,14 @@
 """Pre-mortem 失败预演内核（XN-1，第十九轮 P1，KD-4 的对偶）。
 
 战役/设计开工前自动生成"最可能失败模式 + 症状指纹 + 早期检测探针"——
-把内部踩坑经验从"事后追账"变"前置防线"（#157/#177 家族
+把坑账（内核立规注记.md 踩坑速查）从"事后追账"变"前置防线"（#157/#177 家族
 教训前置化）。与 service/rationale_memory.py 的 recall_for（"这个坑踩过
 没有"检索）互为对偶：那里按任务文本检索历史经验，这里按任务类别把整张
 失败模式表确定性铺开。
 
 设计约束（与 rationale_memory / solve_health 同源）：
 - 失败模式生成 = **确定性规则引擎**：按 task_kind 查静态模式库，无 LLM、
-  无网络、无随机数（数值与判断只在确定性内核——LLM/agent 永不产生失败模式与物理
+  无网络、无随机数（内核立规注记 硬规则 7——LLM/agent 永不产生失败模式与物理
   判断；库是内嵌模块常量的结构化知识，每条带坑号 source 可溯）。
 - 纯函数内核：同输入两次输出逐位一致（JSON sort_keys 往返逐字节同）。
 - 每条失败模式：模式名 / 可能性档（high|medium|low）/ 症状指纹（早期信号）
@@ -18,7 +18,7 @@
   发射前后台分离+存活探针在案？"。探针不碰文件系统/进程/网络（纯读
   context），可静态检查、可单测钉死。
 
-模式库种子 = 仓内真实踩坑经验提炼（内部经验账 + 批次记录），
+模式库种子 = 仓内真实坑账提炼（内核立规注记.md 踩坑速查 + 内部证据档 批次账），
 五类起步：真机求解 / 参数扫描战役 / 校准 / 综合注册 / 模板注册，
 每类 5-10 条。扩库 = 往 ``FAILURE_MODE_LIBRARY`` 追加条目 + 需要的新探针
 spec（注册表消费者：tests/unit/test_premortem.py 完整性锚）。
@@ -370,7 +370,7 @@ def run_probe(probe: str | ProbeSpec, context: Mapping[str, Any] | None = None) 
 
 @dataclass(frozen=True)
 class FailureMode:
-    """单条失败模式（踩坑经验提炼的结构化知识条目）。
+    """单条失败模式（坑账提炼的结构化知识条目）。
 
     - mode_id：全局唯一（<类前缀>-<序号>，如 RS-01）
     - task_kind：所属任务类别（规范 id）
@@ -378,8 +378,8 @@ class FailureMode:
     - likelihood_band：可能性档 high|medium|low（仓内复发频次的经验定档）
     - early_signals：症状指纹（早期信号，判读时逐条对照）
     - detection_probe：检测探针 id（PROBE_REGISTRY 键）
-    - mitigation_ref：缓解引用（坑号/条目号，可溯）
-    - source：出处（内部经验账 / 批次记录）
+    - mitigation_ref：缓解引用（坑号/TODO 项/内核立规注记 规则号，可溯）
+    - source：出处（内核立规注记.md 踩坑速查 / 内部证据档 批次账）
     """
 
     mode_id: str
@@ -425,7 +425,7 @@ _SRC_D = "内部批次经验账（df4）"
 _SRC_D7 = "内部批次经验账（df7）"
 _SRC_R4 = "内部审查批经验账（round4）"
 
-#: 失败模式库（五类起步；条目全部提炼自仓内真实踩坑经验，坑号可溯）。
+#: 失败模式库（五类起步；条目全部提炼自仓内真实坑账，坑号可溯）。
 FAILURE_MODE_LIBRARY: dict[str, tuple[FailureMode, ...]] = {
     "real_solve": (
         _fm("RS-01", "real_solve",
@@ -576,12 +576,12 @@ FAILURE_MODE_LIBRARY: dict[str, tuple[FailureMode, ...]] = {
     ),
     "calibration": (
         _fm("CA-01", "calibration",
-            "对错误模型校准：建模错误（几何/单位/端口）被调参固化（先验模再校准纪律）",
+            "对错误模型校准：建模错误（几何/单位/端口）被调参固化（AGENTS 规则 1b）",
             "high",
             ("校准残差系统性偏移且多保真互不一致",
              "网格收敛后指标整体平移不收敛"),
             "model_audit_first", "#1b/#191",
-            "先审计建模再校准的硬纪律（#191）"),
+            "内核立规注记 硬限制 1b+（#191）"),
         _fm("CA-02", "calibration",
             "参数段张冠李戴：design_params（校准前设计值）与 calib_params（实跑几何）"
             "语义相反，提取静默错配",

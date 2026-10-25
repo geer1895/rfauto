@@ -1,7 +1,7 @@
 """oe_templates 渲染管线逐字节恒等抽样钉（AU-1 批1 快照转正，ge6 followUp 批1）.
 
 AU-1 批1（openems_templates.py 821KB → oe_templates/ 包 23 子模块）的
-验收以一次性字节钉门（787 消费测试）+ runs/au1_split/ 快照落档——拆分
+验收以一次性字节钉门（787 消费测试）+ 内部证据档 快照落档——拆分
 后渲染逐字节恒等只有当时的一次性证据。本守卫把**渲染字节恒等**转正常驻
 抽样钉：四族代表模板（wilkinson/lange/ms_patch/hairpin，各落不同
 render_<family> 子模块，名义参数+band×0.8..1.2+meta 网格）的渲染输出

@@ -1,12 +1,12 @@
 """DP-8 几何组合引擎：netlist → 单一 simulation.py（布局合并路线，纯确定性）。
 
 规格=docs/plan_deepdive_specs_20260924.md §DP-8；判据预声明
-runs/df6_dp8compose/criteria.md。关键路线裁决（规格 §3）：**不做渲染文本
+内部证据档。关键路线裁决（规格 §3）：**不做渲染文本
 拼接**——实例契约拆为 layout(params, frame)→{pins, 图元, 域/板/守卫声明}
 + 引擎单一文本发射器（图元→CSXCAD 语句逐条渲染），杜绝 CSX/FDTD/mesh
 头尾与守卫段的重复拼接。
 
-分层（AGENTS #3/.importlinter）：本模块属 core，零 I/O、零 adapters 依赖
+分层（内核立规注记 #3/.importlinter）：本模块属 core，零 I/O、零 adapters 依赖
 ——实例契约（布局/图元）由调用方（service/adapters）注入 ``contracts``；
 pin schema（TEMPLATE_META[t]["port_pins"]）经 ``schema_map`` 注入做 opt-in
 一致性校验。契约形态（adapters/openems_templates.py COMPOSE_CONTRACTS）::
@@ -477,7 +477,7 @@ def _render(*, netlist: dict, frames: dict[str, tuple[float, float, bool]],
 """openEMS script (rfauto compose auto-generated, {COMPOSE_NETLIST_SCHEMA}).
 Instances: {inst_line}
 DP-8 几何组合引擎发射（布局合并路线：逐实例 layout→帧仿射→合并→单脚本，
-非渲染文本拼接——runs/df6_dp8compose/criteria.md §0）。"""
+非渲染文本拼接——内部证据档 §0）。"""
 import csv
 import os
 
@@ -511,7 +511,7 @@ CSV_PATH = __import__("os").path.join(
 
 # ── 仿真环境：官方 MSL_NotchFilter 教程方法学（组合域 D5 合并口径：端口轴
 # PML_8、x 侧 MUR、z 底 PEC 当地面、顶 MUR——MSL 区微带环境开放顶，SIW 顶壁
-# =各实例显式零厚板见 body；runs/df6_dp8compose/criteria.md §1）──
+# =各实例显式零厚板见 body；内部证据档 §1）──
 CSX = ContinuousStructure()
 FDTD = openEMS(NrTS={nrts!r})   # 官方口径：不设 EndCriteria，默认能量判据停机
 FDTD.SetCSX(CSX)

@@ -243,19 +243,6 @@ _need_real_universe = pytest.mark.skipif(
     reason="真树 EP-2 产物/冻结测试宇宙覆盖层不在（干净检出）——不伪造")
 
 
-def _runs_corpus_present() -> bool:
-    runs = _REPO_ROOT / "runs"
-    return runs.is_dir() and any(runs.glob("**/criteria.md"))
-
-
-_need_corpus = pytest.mark.skipif(
-    not _runs_corpus_present(),
-    reason="runs/ 判据语料不在（公开仓不随 runs 账面）——trace 再生幂等"
-           "锚消费 runs/**/criteria.md 语料，属内部仓治理面；公开仓消费"
-           "已构建矩阵（同 pool_patrol 金标公开仓 skip 先例）")
-
-
-@_need_corpus
 @_need_real_universe
 def test_real_tree_regenerates_byte_identical(tmp_path):
     """幂等锚（真树）：同参重生成 → 矩阵与全部骨架逐字节一致（diff=0），
@@ -267,7 +254,7 @@ def test_real_tree_regenerates_byte_identical(tmp_path):
 
     test_id 扫面=冻结测试宇宙覆盖层治理（EP-2 扩面二批）：本锚不传
     test_modules 显式入参，走 migrate_v2 解析链的覆盖层档——runs/ 缓存
-    增长不进入再生（结构性幂等，架构批 遗留红根因消除）。防脱钩三钉：
+    增长不进入再生（结构性幂等，aurora_d 遗留红根因消除）。防脱钩三钉：
     ①覆盖层每个模块在树上真实存在（防陈旧改名静默滞留）；
     ②再生 source.n_test_modules==len(覆盖层)（覆盖层确为治理输入，未被
       缓存/collect 回退顶替）；

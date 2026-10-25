@@ -2,7 +2,7 @@
 
 物理裁判：openEMS 升级/换机/模板迁移后重跑本脚本——mline 均匀线
 多点网格求解，β→εeff（金标准判据 #162），结果入库
-runs/benchmark/mline_mesh_convergence.json。
+内部证据档。
 
 判据显式决策（2026-09-12，廿八未尽①收口；内核=
 core/anchor_verdict.mline_benchmark_verdict，与 HFSS 探针

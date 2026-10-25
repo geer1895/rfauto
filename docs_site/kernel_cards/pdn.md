@@ -163,7 +163,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `docs/research_expansion_20260926.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
+- `docs/research_expansion_20260926.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："§F-B 第 4 节（先写后跑，#122）；本文件交付判据 1-5"
 
 测试面（tests/unit 引用扫描，机读；合计 **259** 个 test 函数）：
 

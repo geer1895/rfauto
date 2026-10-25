@@ -6,7 +6,7 @@
 
 # 内核文档卡：ring_resonator
 
-> 微带环形谐振器综合内核（架构批 W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
+> 微带环形谐振器综合内核（aurora_f W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 微带环形谐振器专属综合内核：目标基模 f1→HJ εeff→环平均半径 r_mean=c/(2π·f1·√εeff)（闭环周长=λg 恒等式——render_ring 设计链的提升式重构单一事实源，字节级对拍钉），附间隙耦合 Qe 设计式（串联隙=J-反相器）与模阶谱/Q 分解/基模频响两键。
 
-模块自述（docstring 首行，机读）：微带环形谐振器综合内核（架构批 W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
+模块自述（docstring 首行，机读）：微带环形谐振器综合内核（aurora_f W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
 
 ## 公式与口径
 
@@ -33,7 +33,7 @@
 r_{\mathrm{mean}}=\frac{c}{2\pi f_1\sqrt{\varepsilon_{\mathrm{eff}}(f_1)}}
 ```
 
-出处：模块 docstring「谐振恒等式」节（闭环周长=λg；基线 内部证据目录 字节对拍钉；反方向=core/dielectric_extract.ring_resonator_f0_to_er 同仓双源，回收带 −0.52% 如实）。
+出处：模块 docstring「谐振恒等式」节（闭环周长=λg；基线 runs/aurora_f/w3s11_ring_parity_baseline.json 字节对拍钉；反方向=core/dielectric_extract.ring_resonator_f0_to_er 同仓双源，回收带 −0.52% 如实）。
 
 docstring 逐字引文（防漂移钉）："r_mean = c/(2π·f1·√εeff(f1))，εeff 取微带 HJ 正向（core/synthesis."
 
@@ -126,7 +126,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w3s11_ring.py`——引文："内部证据目录"
+- `tests/unit/test_w3s11_ring.py`——引文："runs/aurora_f/w3s11_ring_parity_baseline.json"
 
 测试面（tests/unit 引用扫描，机读；合计 **61** 个 test 函数）：
 

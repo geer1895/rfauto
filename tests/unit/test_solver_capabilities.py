@@ -193,7 +193,7 @@ class TestDeclaredVsImplemented:
 
         官方出处：config-schema.json 顶层 required=五分节、Boundaries 下
         WavePort/LumpedPort 数组（2026-09-22 实测取证，
-        runs/palace_spike/schema_fix_plan.md §0）。
+        内部证据档 §0）。
         """
         from rfauto.adapters.palace_solver import PalaceSolver
 

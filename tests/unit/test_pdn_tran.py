@@ -321,7 +321,7 @@ def _xyce_real_cross_check() -> str:
     """真机对照：Xyce .TRAN 纹波峰峰 vs IFFT 纹波峰峰（规格 ≤10% 起步）。
 
     走 adapters/xyce_adapter 的 WSL 通道（core 层禁 import adapters——分层
-    契约，故驱动面落在本测试）；产物归档 runs/dr67/。
+    契约，故驱动面落在本测试）；产物归档 内部证据档。
     """
     from rfauto.adapters.xyce_adapter import (
         prn_path_for,

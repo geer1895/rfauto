@@ -1,4 +1,4 @@
-"""MCP 描述单源门（Z-10，架构批 W2-S10 E2）——独立入口。
+"""MCP 描述单源门（Z-10，aurora_e W2-S10 E2）——独立入口。
 
 单源不变量：**工具 docstring 的 Args 段 = 参数描述唯一真源**；fastmcp
 把它渲染进 inputSchema ``properties[].description``（多行 Args 条目以

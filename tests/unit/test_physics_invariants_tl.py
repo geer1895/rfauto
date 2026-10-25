@@ -1,6 +1,6 @@
 """G15 物理不变量·传输线电长度元变（§2 Maxwell 尺度律 + §4.4 频移等价）。
 
-架构批 W2-S4 拆分批自 test_physics_invariants.py 迁出（R1 立项 #7）：
+aurora_h W2-S4 拆分批自 test_physics_invariants.py 迁出（R1 立项 #7）：
 本件两条不变量都作用在"承载电长度的传播尺寸"上（传输线域元变）——
 
 1. **Maxwell 尺度律**（§2）：几何 ×k、频率 ÷k、材料不变 → S 参数不变。

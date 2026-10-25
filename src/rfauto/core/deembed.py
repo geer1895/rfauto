@@ -3,7 +3,7 @@
 背景
 ----
 openEMS MSLPort.CalcPort 的参考面/探针安排在倒置叠层下产生**乘性**传播
-常数偏移（#205：runs/via_smoke/pt3 β2/β1 = 1.0491±0.0011 带内恒定），
+常数偏移（#205：内部证据档 β2/β1 = 1.0491±0.0011 带内恒定），
 以及 S21 相位含端口分解伪象（#161：相位门撤下）。此前项目把这类偏差当
 "经验常数"（ratrace k=1.0975 / via 1.0491）使用。本模块把去嵌入过程
 **标准化、确定化、可审计化**：
@@ -14,6 +14,13 @@ openEMS MSLPort.CalcPort 的参考面/探针安排在倒置叠层下产生**乘�
   标准件端点；
 - deembed_reference_plane / deembed_thru：端口平移（参考面平移），对已知
   电长度的理想线精确；
+- **thru_half_network / deembed_thru(half=True)（aurora_k K8，2026-10-23，
+  反馈 F6/P14）**：2x-thru 对称半拆（级联平方根闭式+二阶差分分支连续）
+  与对称双边 THRU 去嵌——把波端口参考面从引线外端移回 pad 边缘；
+- **z12_series_metrics（aurora_k K8）**：串联 2 端口 C/R/Q 的 Z12 传输
+  阻抗主口径 + −1/Y21（ABCD B）π 并联免疫副口径 + 简化式 2Z0(1/S21−1)
+  强失配拒绝（|S11|>0.9，反馈 P14：R=1.4Ω 误算 50Ω）+ 并联 1 端口
+  Y11 的 L/C/Q/SRF；
 - deembed_open_short：OpenShort 法——open 标准件给出并联 Y_p、short 标准
   件给出串联 Z_s，解出去嵌后的器件 Z：
   Z_dut = inv(Y_meas - Y_open) - Z_short；
@@ -32,7 +39,7 @@ openEMS MSLPort.CalcPort 的参考面/探针安排在倒置叠层下产生**乘�
    "串联 Z_s + 并联 Y_p"。模型不成立时结果无物理意义——调用方自负其责。
 3. **2026-09-13 收口修订（推翻上条的镜像前提）**：beta_from_voltage_trio
    （三点波动方程估计器 β²=−U″/U，对任意驻波比精确、只用电压探针、与
-   CalcPort 的 −dEt·dHt/(Ht·Et) 链路无关）作用在 runs/via_smoke/pt3 的
+   CalcPort 的 −dEt·dHt/(Ht·Et) 链路无关）作用在 内部证据档 的
    **原始电压探针场数据**上给出 β2/β1 = 1.0467±0.0003（带内平坦 0.03%）
    ——即 4.9% 的比值**主要是真实模态差异**（εeff2/εeff1 ≈ 1.095），
    仅 ~0.23% 是探针链路驻波采样残差。因此：
@@ -61,7 +68,7 @@ import skrf
 #: 真空光速 (m/s)，与 core/synthesis.py 同口径
 C0 = 299_792_458.0
 
-#: #205  定版的探针尺度常数与半宽（独立来源裁判，禁止改成本项恰好通过的值）
+#: #205 定版的探针尺度常数与半宽（独立来源裁判，禁止改成本项恰好通过的值）
 DOCUMENTED_VIA_SCALE = 1.0491
 DOCUMENTED_VIA_SCALE_HALF_WIDTH = 0.0011
 
@@ -201,14 +208,149 @@ def deembed_reference_plane(
     raise ValueError(f"side 只能是 'input'/'output'，实际 {side!r}")
 
 
+def thru_half_network(
+    thru: skrf.Network,
+    *,
+    sym_tol: float = 1e-3,
+    step_tol_rel: float = 0.2,
+) -> skrf.Network:
+    """对称半拆：由 2x-thru（= 左夹具 ** 右夹具）提取单侧夹具半件。
+
+    aurora_k K8（反馈 F6/P14：THRU 去嵌把参考面从引线外端移回 pad 边缘）。
+    数学路线=**级联（ABCD）平方根闭式**：对称互易 2x-thru 的级联矩阵
+    M=[[A,B],[C,D]]（A=D、det=1）的对称半件 H=[[a,b],[c,a]] 满足 H²=M，
+
+        a² = (A + √det)/2 =（互易时）(A+1)/2， b = B/(2a)， c = C/(2a)，
+
+    代数上精确（对称互易前提下 H 的唯一族；A=−1 且 B≠0 无解=λ/4 级联
+    奇点，实测浮点上表现为 |a|→0，见下方守卫）。与 IEEEP370 NZC（时域
+    步进求 infiltrate，测量数据启发式，measurement/afr_2xthru 面）互补：
+    本函数是**频域精确代数**，合成语料回收残差 ~1e-15（测试钉）。
+
+    分支选择（平方根 ±歧义 = 半件 S21 相位 180° 翻转）：逐频点取
+    ``np.sqrt`` 主值后按**二阶差分连续性**定号——首点锚 |a−1| 最小
+    （物理半件随 f→0 → I，要求 f_min 夹具电长度短），k=1 用一阶差分、
+    k≥2 用二阶差分 ‖H_k−2H_{k−1}+H_{k−2}‖ 取小者。**纯一阶差分在
+    B 元 sin 过零处失效**（真步长与歧义量同量级，实测 3π 跨度/101 点
+    语料首错于 b 过零点）——二阶差分裁判"导数方向连续"，在 b/a 交替
+    过零的两类奇点均给出 O(量级) 的判别余量（实测 βL 全跨度 22.6rad、
+    ≥120 点语料回收 1e-14）。
+
+    守卫（越界显式 ValueError，不静默给错数）：
+    - 对称性 max|S11−S22|（线性域）> sym_tol：非对称件不能做 2x-thru
+      半拆（左右夹具镜像但非对称时闭式前提不成立）；
+    - 互易性 max|S12−S21| > sym_tol：det≠1，闭式 √det≈1 前提不成立；
+    - 频栅格欠采样：选定半件轨迹的逐点最大步长 > step_tol_rel·z0——
+      半件 B 元 ∝ sin(βl/2) 快振荡，栅格点距不足时二阶差分信号退化
+      （实测 22.6rad/61 点语料步长 20.6 vs 良采样 ≤4.6），如实拒绝；
+    - 结果非有限（A≈−1 奇点数值爆炸）：由 finiteness 检查兜底。
+
+    Args:
+        thru: 2x-thru 标准 2 端口网络（左夹具 ** 右夹具）。
+        sym_tol: 对称/互易线性域容差（缺省 1e-3，同 afr_2xthru 预检量级）。
+        step_tol_rel: 半件轨迹步长容限（相对 z0；缺省 0.2——良采样语料
+            实测 ≤0.093·z0，欠采样失败语料 ≈0.4·z0，取中间量级）。
+    """
+    _as_network(thru, "thru")
+    _require_2port(thru, "thru")
+    s = np.asarray(thru.s)
+    sym_max = float(np.max(np.abs(s[:, 0, 0] - s[:, 1, 1])))
+    rec_max = float(np.max(np.abs(s[:, 0, 1] - s[:, 1, 0])))
+    if sym_max > sym_tol:
+        raise ValueError(
+            f"thru 非对称（max|S11−S22|={sym_max:.3e} > {sym_tol:.1e}）——"
+            "半拆前提=左右夹具相同（镜像对称件），非对称 2x-thru 半拆无唯一解")
+    if rec_max > sym_tol:
+        raise ValueError(
+            f"thru 非互易（max|S12−S21|={rec_max:.3e} > {sym_tol:.1e}）——"
+            "闭式 √det=1 前提不成立")
+    a_mat = np.asarray(thru.a)
+    nf = a_mat.shape[0]
+    a_el, b_el, c_el, d_el = (
+        a_mat[:, 0, 0], a_mat[:, 0, 1], a_mat[:, 1, 0], a_mat[:, 1, 1])
+    det = a_el * d_el - b_el * c_el
+    if float(np.max(np.abs(det - 1.0))) > 10.0 * sym_tol:
+        raise ValueError(
+            f"thru 级联行列式偏离互易 1（max|det−1|="
+            f"{float(np.max(np.abs(det - 1.0))):.3e}）")
+    a_sq = ((a_el + d_el) / 2.0 + np.sqrt(det.astype(complex))) / 2.0
+    ha = np.sqrt(a_sq)
+    hb = b_el / (2.0 * ha)
+    hc = c_el / (2.0 * ha)
+    # 首点锚：物理半件随 f→0 → I（要求 f_min 夹具电长度短）
+    if abs(-ha[0] - 1.0) < abs(ha[0] - 1.0):
+        ha[0], hb[0], hc[0] = -ha[0], -hb[0], -hc[0]
+    z0_scale = float(np.asarray(thru.z0).real.mean())
+    max_step = 0.0
+    for k in range(1, nf):
+        cand = ((ha[k], hb[k], hc[k]), (-ha[k], -hb[k], -hc[k]))
+        if k == 1:
+            r1 = (ha[0], hb[0], hc[0])
+            dist = [
+                abs(v[0] - r1[0]) ** 2 + abs(v[1] - r1[1]) ** 2
+                + abs(v[2] - r1[2]) ** 2 for v in cand]
+        else:
+            r1 = (ha[k - 1], hb[k - 1], hc[k - 1])
+            r2 = (ha[k - 2], hb[k - 2], hc[k - 2])
+            dist = [
+                abs(v[0] - 2 * r1[0] + r2[0]) ** 2
+                + abs(v[1] - 2 * r1[1] + r2[1]) ** 2
+                + abs(v[2] - 2 * r1[2] + r2[2]) ** 2 for v in cand]
+        pick = 1 if dist[1] < dist[0] else 0
+        if pick:
+            ha[k], hb[k], hc[k] = -ha[k], -hb[k], -hc[k]
+        step = float(np.sqrt(
+            abs(ha[k] - ha[k - 1]) ** 2 + abs(hb[k] - hb[k - 1]) ** 2
+            + abs(hc[k] - hc[k - 1]) ** 2))
+        max_step = max(max_step, step)
+    if max_step > step_tol_rel * z0_scale:
+        raise ValueError(
+            f"thru 频栅格对半拆欠采样（半件 ABCD 逐点最大步长 "
+            f"{max_step:.2f} > {step_tol_rel:.2f}×z0={z0_scale:.1f}）——"
+            "半件 B 元随 sin(βl/2) 快振荡，栅格不足时平方根分支不可靠；"
+            "加密频栅格或缩短 thru 电长度")
+    abcd_half = np.stack(
+        [np.stack([ha, hb], axis=1), np.stack([hc, ha], axis=1)], axis=1)
+    s_half = skrf.network.a2s(abcd_half, np.asarray(thru.z0))
+    if not bool(np.all(np.isfinite(s_half))):
+        raise ValueError(
+            "半拆结果含非有限值（thru 电长度落于 A≈−1 级联奇点附近，"
+            "λ/4 半件无有限 ABCD 逆）——换 thru 长度或频段")
+    return skrf.Network(frequency=thru.frequency, s=s_half, z0=thru.z0)
+
+
 def deembed_thru(
     dut: skrf.Network,
     thru: skrf.Network,
     *,
+    half: bool = True,
     side: str = "output",
+    sym_tol: float = 1e-3,
+    step_tol_rel: float = 0.2,
 ) -> skrf.Network:
-    """thru 归一化去嵌入：被测网络级联 thru 夹具 → 移除之。"""
-    return deembed_reference_plane(dut, thru, side=side)
+    """THRU 去嵌（aurora_k K8，反馈 F6：参考面从引线外端移回 pad 边缘）。
+
+    - ``half=True``（缺省）：**对称半拆双边去嵌**——测量模型
+      ``measured = F ** DUT ** F``（左右夹具=同一夹具的镜像）、
+      ``thru = F ** F``：由 thru 半拆出 F（:func:`thru_half_network`），
+      去嵌 ``F⁻¹ ** measured ** F⁻¹``。合成语料回收残差 ~1e-15（#340
+      家法：合成已知夹具+已知 DUT 级联→去嵌→逐位回收，测试钉）。
+    - ``half=False``：**全长单边去嵌**（遗留语义，2026-09-13 起）——
+      夹具整段在一侧（``measured = DUT ** thru`` 或 ``thru ** DUT``），
+      按 ``side`` 移除，等价 :func:`deembed_reference_plane`。
+
+    诚实边界：half=True 假设左右夹具镜像相同（2x-thru 半拆标准前提，
+    thru 对称性守卫把关）；镜像非对称夹具留 IEEEP370 NZC 时域面
+    （measurement/afr_2xthru）。半拆的频栅格/电长度域限制见
+    :func:`thru_half_network` docstring。
+    """
+    dut = _as_network(dut, "dut")
+    thru = _as_network(thru, "thru")
+    if not half:
+        return deembed_reference_plane(dut, thru, side=side)
+    half_fixture = thru_half_network(thru, sym_tol=sym_tol,
+                                     step_tol_rel=step_tol_rel)
+    return half_fixture.inv ** dut ** half_fixture.inv
 
 
 def deembed_thru_line(
@@ -262,6 +404,242 @@ def deembed_open_short(
         raise ValueError(f"Y_meas - Y_open 奇异，无法求逆去嵌: {exc}") from exc
     z_dut = z_series_removed - short_std.z
     return skrf.Network(frequency=dut.frequency, z=z_dut, z0=dut.z0)
+
+
+# ---------------------------------------------------------------------------
+# 串联/并联器件指标提取（aurora_k K8，反馈 P14/F6：Z12 传输阻抗路线）
+# ---------------------------------------------------------------------------
+
+#: |S11| 超过该阈值时拒绝简化式 2Z0(1/S21−1)（P14 实测：|S11|≈0.95 强失配
+#: 下把 R=1.4Ω 误算成几十 Ω 量级——简化式仅对纯串联件+匹配系统精确，
+#: 含并联寄生时强失配放大误差）
+DEFAULT_SIMPLIFIED_REJECT = 0.9
+
+
+def _db20(mag: float) -> float:
+    return float(20.0 * np.log10(mag if mag > 0 else 1e-300))
+
+
+def _reactance_kind(x_ohm: float) -> str:
+    if x_ohm < 0:
+        return "capacitive"
+    if x_ohm > 0:
+        return "inductive"
+    return "resistive"
+
+
+def _series_block(r_ohm: float, x_ohm: float, omega: float) -> dict[str, Any]:
+    """串联指标块（z12 主口径与 y21 副口径共用装配）。"""
+    kind = _reactance_kind(x_ohm)
+    c_f = -1.0 / (omega * x_ohm) * 1e15 if kind == "capacitive" else None
+    l_h = x_ohm / omega if kind == "inductive" else None
+    q = abs(x_ohm) / r_ohm if r_ohm > 0 else None
+    return {
+        "r_series_ohm": float(r_ohm),
+        "x_series_ohm": float(x_ohm),
+        "reactance": kind,
+        "c_series_f": None if c_f is None else float(c_f),
+        "l_series_h": None if l_h is None else float(l_h),
+        "q_series": None if q is None else float(q),
+        "r_series_nonpositive": bool(r_ohm <= 0),
+    }
+
+
+def _srf_from_imag(freq_hz: np.ndarray, imag: np.ndarray) -> float | None:
+    """Im 分量带内首个符号变化点的线性插值过零频率（无过零= None）。"""
+    sign = np.sign(imag)
+    cross = np.nonzero(sign[:-1] * sign[1:] < 0)[0]
+    if cross.size == 0:
+        return None
+    k = int(cross[0])
+    f0, f1 = freq_hz[k], freq_hz[k + 1]
+    y0, y1 = imag[k], imag[k + 1]
+    return float(f0 + (f1 - f0) * (-y0) / (y1 - y0))
+
+
+def z12_series_metrics(
+    network: skrf.Network,
+    *,
+    f_hz: Any = None,
+    topology: str = "series",
+    simplified_reject_threshold: float = DEFAULT_SIMPLIFIED_REJECT,
+    deembedded: bool = False,
+    reference_plane: str = "as-measured",
+) -> dict[str, Any]:
+    """串联/并联器件 C/R/Q 指标提取（反馈 P14/F6：传输阻抗路线）。
+
+    **series（2 端口）**：Z12 传输阻抗主口径——Z 参数定义=对端开路下
+    V1/I2 的转移阻抗，串联支路（T 型拓扑的中臂）不受夹具串联臂污染：
+    R_series=Re(Z12)、X=Im(Z12)、C=−1/(ω·Im(Z12))（容性 X<0）、
+    Q=|X|/R（容性=任务书 −Im/Re 同值）。副口径 ``series_y21``：
+    Zs=−1/Y21（=ABCD 的 B 元）——**π 型拓扑（端并联寄生）免疫**路线，
+    THRU 去嵌后对 π 型 DUT 的 C/R 逐位回收（测试钉 1e-9）。两口径显著
+    不一致=网络同时含串/并联寄生（去嵌或建模判断的信号，notes 如实报）。
+
+    **简化式拒绝语义**（P14：|S11|≈0.95 时 2Z0(1/S21−1) 把 R=1.4Ω 误算
+    成几十 Ω）：``simplified_formula`` 块始终给出简化式的"假值"作诊断，
+    |S11|>simplified_reject_threshold（缺省 0.9）时 ``rejected=True`` +
+    建议文案（用 Z12/Y21 口径）。注意简化式对**纯串联件**本就精确——
+    误算源于并联寄生+强失配组合，拒绝门按用户实测场景定在 |S11| 面。
+
+    **shunt（1 端口）**：Y11 口径——G=Re(Y11)、B=Im(Y11)、
+    C=B/ω（容性 B>0）、L=−1/(ωB)（感性）、Q=|B|/G（任务书 Y 参数
+    Im(Y)/Re(Y) 口径）、SRF=带内 Im(Y11) 首个过零（线性插值）。
+
+    metadata（为 K17 metric registry 预留）：topology/deembedded/
+    reference_plane/formula/f_eval_hz 随结果透传；Q 输出恒附
+    "Q 随 C/L 变化，非纯损耗指标"告警（P14：减薄实验 Q 升 40% 主因
+    C 降 33% 而非损耗改善）。
+
+    Guards（显式 ValueError）：
+    - topology 白名单 series|shunt；series 须 2 端口、shunt 须 1 端口；
+    - f_hz 出带（<f_min 或 >f_max）显式拒绝；缺省=带内几何中心最近栅格点；
+    - Z 参数退化（|det(I−S)| ≤ 1e-8：纯串联件端口开路无确定 Z）显式
+      拒绝——skrf 对该类网络返回 ~1e10 量级垃圾值，宁拒不错（#122）。
+    """
+    _as_network(network, "network")
+    if topology not in ("series", "shunt"):
+        raise ValueError(
+            f"topology 只能是 'series'/'shunt'，实际 {topology!r}")
+    if topology == "series" and network.nports != 2:
+        raise ValueError(
+            f"series 拓扑须 2 端口网络，实际 {network.nports} 端口"
+            "（并联器件用 topology='shunt' 的 1 端口 .s1p）")
+    if topology == "shunt" and network.nports != 1:
+        raise ValueError(
+            f"shunt 拓扑须 1 端口网络，实际 {network.nports} 端口"
+            "（2 端口串联器件用 topology='series'）")
+    freq = np.asarray(network.f, dtype=float)
+    n = freq.size
+    if n == 0:
+        raise ValueError("频率栅格为空")
+    # 评估频点：显式给出→带内最近栅格点；缺省→带内几何中心最近点
+    if f_hz is None:
+        center = float(np.sqrt(freq[0] * freq[-1]))
+    else:
+        target = _positive_finite(f_hz, "f_hz")
+        if target < freq[0] or target > freq[-1]:
+            raise ValueError(
+                f"f_hz={target:.6g} 超出频带 [{freq[0]:.6g}, {freq[-1]:.6g}]")
+        center = target
+    idx = int(np.argmin(np.abs(freq - center)))
+    omega = 2.0 * np.pi * freq[idx]
+    out: dict[str, Any] = {
+        "ok": True,
+        "topology": topology,
+        "deembedded": bool(deembedded),
+        "reference_plane": str(reference_plane),
+        "f_eval_hz": float(freq[idx]),
+        "f_eval_index": idx,
+        "n_points": int(n),
+    }
+    notes: list[str] = [
+        "Q=|X|/R（或 |B|/G）随 C（或 L）变小而升高——Q 不是纯损耗指标，"
+        "判读损耗须同时看串联 R_series（并联 G_shunt）与 S21/S11（实测例："
+        "衬底减薄 Q 升 40% 主因 C 降 33%，R_series 反而 1.285→"
+        "1.365Ω 微升）",
+    ]
+    s = np.asarray(network.s)
+    if topology == "series":
+        eye_minus_s = np.eye(2) - s[idx]
+        det_ratio = abs(np.linalg.det(eye_minus_s))
+        if det_ratio <= 1e-8:
+            raise ValueError(
+                f"Z 参数退化（|det(I−S)|={det_ratio:.3e} ≤1e-8：网络近似"
+                "纯串联件——端口开路下转移阻抗无定义，skrf 会返回 ~1e10 "
+                "量级垃圾值；串联 C/R 改用 series_y21 块（−1/Y21=ABCD B）"
+                "或补并联通路后再提取）")
+        z = np.asarray(network.z)
+        y = np.asarray(network.y)
+        z12 = complex(z[idx, 0, 1])
+        out["formula"] = "Z12 transfer impedance (series primary); " \
+                         "-1/Y21 = ABCD B (shunt-parasitic-immune secondary)"
+        out["series"] = _series_block(z12.real, z12.imag, omega)
+        out["series"]["z12_re_ohm"] = float(z12.real)
+        out["series"]["z12_im_ohm"] = float(z12.imag)
+        y21 = complex(y[idx, 1, 0])
+        zs_y21 = -1.0 / y21
+        out["series_y21"] = _series_block(zs_y21.real, zs_y21.imag, omega)
+        out["srf_hz"] = _srf_from_imag(freq, np.asarray(z[:, 0, 1]).imag)
+        s11_mag = float(abs(s[idx, 0, 0]))
+        out["series"]["s11_mag"] = s11_mag
+        out["series"]["s11_db"] = _db20(s11_mag)
+        out["series"]["s21_db"] = _db20(float(abs(s[idx, 1, 0])))
+        # 简化式诊断块（P14 拒绝语义）
+        s21 = complex(s[idx, 1, 0])
+        if s21 == 0:
+            zs_simpl = complex("nan")
+        else:
+            z0_eval = float(np.asarray(network.z0)[idx, 0].real)
+            zs_simpl = 2.0 * z0_eval * (1.0 / s21 - 1.0)
+        rejected = bool(s11_mag > simplified_reject_threshold)
+        advice = (
+            f"|S11|>{simplified_reject_threshold:.2f} 强失配：简化式 "
+            "2Z0(1/S21−1) 仅对纯串联件+匹配系统精确，并联寄生（引线/pad "
+            "并联电容）下会把 R 误算成几十 Ω 量级（实测 R=1.4Ω "
+            "误算 50Ω）——用 Z12（串联主方法）/−1/Y21（π 并联免疫方法）"
+            "提取")
+        out["simplified_formula"] = {
+            "r_series_ohm": float(zs_simpl.real),
+            "x_series_ohm": float(zs_simpl.imag),
+            "c_series_f": (
+                -1.0 / (omega * zs_simpl.imag) * 1e15
+                if np.isfinite(zs_simpl.imag) and zs_simpl.imag < 0 else None),
+            "s11_mag": s11_mag,
+            "threshold": float(simplified_reject_threshold),
+            "rejected": rejected,
+            "advice": advice,
+        }
+        # 口径一致性诊断（显著分歧=串/并联寄生共存信号）
+        c_a = out["series"]["c_series_f"]
+        c_b = out["series_y21"]["c_series_f"]
+        if c_a is not None and c_b is not None and c_b != 0:
+            rel_gap = abs(c_a - c_b) / abs(c_b)
+            if rel_gap > 0.2:
+                notes.append(
+                    f"Z12 与 −1/Y21 两方法 C 相差 {rel_gap * 100:.1f}%"
+                    "（>20%）——网络同时含串联与并联寄生（π/T 混合），"
+                    "指标以去嵌后 y21 方法为准（π 型 DUT 精确），Z12 方法"
+                    "适合 T 型/夹具串联臂污染场景")
+    else:
+        if abs(1.0 - complex(s[idx, 0, 0])) <= 1e-9:
+            raise ValueError(
+                "Y11 退化（S11≈+1 理想开路：1/(1−S11) 无定义）——并联"
+                "指标无意义")
+        y11 = complex(np.asarray(network.y)[idx, 0, 0])
+        g_s, b_s = y11.real, y11.imag
+        # 导纳域极性（与阻抗域相反）：B>0 容性、B<0 感性
+        if b_s > 0:
+            kind = "capacitive"
+            c_f: float | None = b_s / omega * 1e15
+            l_h: float | None = None
+        elif b_s < 0:
+            kind = "inductive"
+            c_f = None
+            l_h = -1.0 / (omega * b_s)
+        else:
+            kind = "resistive"
+            c_f = None
+            l_h = None
+        q_shunt = abs(b_s) / g_s if g_s > 0 else None
+        s11_mag = float(abs(s[idx, 0, 0]))
+        out["formula"] = "Y11 shunt admittance (Im(Y)/Re(Y) Q form)"
+        out["shunt"] = {
+            "y11_re_s": float(g_s),
+            "y11_im_s": float(b_s),
+            "g_shunt_s": float(g_s),
+            "b_shunt_s": float(b_s),
+            "reactance": kind,
+            "c_shunt_f": None if c_f is None else float(c_f),
+            "l_shunt_h": None if l_h is None else float(l_h),
+            "q_shunt": None if q_shunt is None else float(q_shunt),
+            "s11_mag": s11_mag,
+            "s11_db": _db20(s11_mag),
+        }
+        out["srf_hz"] = _srf_from_imag(
+            freq, np.asarray(network.y)[:, 0, 0].imag)
+    out["notes"] = notes
+    return out
 
 
 # ---------------------------------------------------------------------------

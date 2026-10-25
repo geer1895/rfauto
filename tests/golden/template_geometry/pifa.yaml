@@ -12,7 +12,7 @@ params:
   pin_back_mm: 2.0
   pin_y_mm: 2.0
 status: ok
-script_sha256: 1b140a7c14aa2e73baba7231174419030156b633846b19f2571f2e45f1e79e9c
+script_sha256: e1e5c2480572754e6533558280e65cf19df4aaa58fcfe81721e1edc9d0ad16d4
 csx:
   n_primitives: 7
   props:

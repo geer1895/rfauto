@@ -6,7 +6,7 @@
 
 # 内核文档卡：gysel_core
 
-> Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
+> Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 Gysel 功分器 core 电气闭式族：六 λ/4 电气段拓扑（桥带 λ/2 中点=对称面真实节点）+偶/奇模半电路验证+五线六节点导纳网络精确频响——隔离负载外置可独立散热，是与内嵌电阻 Wilkinson 的族界。
 
-模块自述（docstring 首行，机读）：Gysel 功分器 core 电气闭式族（架构批 A6-B 席域 2，R7_core_tier2 §② G6
+模块自述（docstring 首行，机读）：Gysel 功分器 core 电气闭式族（aurora72 A6-B 席域 2，R7_core_tier2 §② G6
 
 ## 公式与口径
 

@@ -12,7 +12,7 @@
 **骨架优秀、中段肥胖、语义漂移——方向纪律已经钉死，体量与同层环是
 主要存量债。** 分层上下方向由 import-linter 钉牢（实测 2 kept /
 0 broken，1055 文件 2582 依赖，契约覆盖 100%）；service 层是体量与
-耦合双高发区；AGENTS 分层链条文本 `service → linkage/optimization/
+耦合双高发区；内核分层链条注记 `service → linkage/optimization/
 models → adapters` 与代码现实（service 直编 adapters+core，中间层
 消费面近乎空转）存在结构性偏差（T4，尚未定）。
 
@@ -50,7 +50,7 @@ models → adapters` 与代码现实（service 直编 adapters+core，中间层
    mcp_server→mcp_tools（dir() 快照钉公开面，门面保名 re-export）；
    迁 lazy import 回模块顶时必须逐站核对 patch 缝（见约定文 run-path 条）。
 3. **T4：分层铁律文本对齐（待定）**——方案 A=承认 service 直编
-   adapters/core 的现实并改写 AGENTS 链条与 .importlinter 注释；
+   adapters/core 的现实并改写内核分层链条注记与 .importlinter 注释；
    方案 B=逐域下沉（审计不推荐，成本高且中间层仍空心）。
 4. **T5 批 6+：conftest fixture 收编余量 28 份**（批 5 收编 10 份
    48→38→28；余量含 kicad/sim_ci/rest 专用变体，需专用超集适配器形态）；

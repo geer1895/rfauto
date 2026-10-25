@@ -3,7 +3,7 @@
 纯算法 numpy-only 零 IO 零外部进程（铁律 7 合规）；参照 adapters/ngsolve_modes.py
 先例不进 @register_calculator（免 #231 注册表消费者三表同步），导出函数供
 service 层直接调。规格 = docs/plan_deepdive_specs_20260924.md DP-1 §2；
-判据预声明 = runs/df6_dp1mmt/criteria.md（先写后跑，#122）。
+判据预声明 = 内部证据档（先写后跑，#122）。
 
 数学口径（推导在档，#1b 先验模型）
 ----------------------------------
@@ -815,10 +815,10 @@ def solve_chain(chain: list, freqs_hz, policy: ModePolicy | None = None) -> Solv
 
 # ── DP-1 风险分流④：G1 触发判定与膜片精化对照归档（df7_dp1r4） ─────────────────
 #
-# 上游终态（runs/df6_dp1p3/g1_verdict.json， 四二三）：膜片绝对值
+# 上游终态（内部证据档）：膜片绝对值
 # UNDECIDABLE→规格风险分流④（docs/plan_deepdive_specs_20260924.md DP-1 §5）
 # 登记 followUp。本段为**最小诚实交付**（分支选择树与出处核查见
-# runs/df7_dp1r4/criteria.md §1，先写死后动工 #122）：
+# 内部证据档 §1，先写死后动工 #122）：
 # - 触发判定 helper：判据=scripts/df6_dp1p3_judge.py summarize() 逐位同式
 #   （median 符号一致性、|d|<0.05dB 平局剔除、阈值 0.8）——不自造口径；
 # - 精化对照归档框架：缺省腿=既有 solve_chain 原路径（零改动，缺省关）；
@@ -832,7 +832,7 @@ def solve_chain(chain: list, freqs_hz, policy: ModePolicy | None = None) -> Solv
 class G1TriggerVerdict:
     """G1「超差且方向单调」触发判定输出（规格风险④触发条件的确定性裁定）。
 
-    判据（逐位同 runs/df6_dp1p3_judge.py summarize()，criteria §2）：
+    判据（逐位同 内部证据档 summarize()，criteria §2）：
     sign_consistency = #{sign(d)==sign(median(d))} / max(n−n_tie, 1)，
     d=逐频带符号偏差 dB 序列（HFSS−MMT），|d|<tie_db 平局剔除。
     monotonic_direction 仅是"系统性方向偏差存在"的判定，**不构成**对
@@ -941,7 +941,7 @@ class RefinementSlot:
 
 
 #: Xu-Wu 2005 精化式候选（SIW 等效宽度精化族）——原文不可达如实 blocked
-#: （七路核查证据 runs/df7_dp1r4/criteria.md §1，2026-09-26）。
+#: （七路核查证据 内部证据档 §1，2026-09-26）。
 XU_WU_2005_REFINEMENT_BLOCKED = RefinementSlot(
     formula_id="xu_wu_2005_w_eff",
     status="blocked",

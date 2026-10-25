@@ -1,6 +1,6 @@
 """W1-E UX-A12 定向门——cli run 失败路径尾部接 explain_run 根因候选摘要。
 
-判据（runs/w1_phase1/criteria.md §W1-E）：
+判据（内部证据档 §W1-E）：
 - 注入已知指纹的合成失败 run（tmp_path 构造）→ 输出含"根因候选"摘要段；
 - 原错误文本逐字节保留（摘要不得遮蔽/改写原错误，#105 best-effort）；
 - 缺 run_dir / explain_run 抛异常 → 摘要静默降级，原错误与退出码不变。

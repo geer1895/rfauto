@@ -5,7 +5,7 @@
 - 解析 ADS 安装版本（目录名 ADS<yyyy>）
 - 从 knowledge/compat_matrix.yaml 读取版本支持等级（verified / best_effort / unsupported）
 
-背景（TODO 项目 B）：原先 aedt_version 由"路径含 v231"字符串启发式推导，
+背景（待办清单 项目 B）：原先 aedt_version 由"路径含 v231"字符串启发式推导，
 脆弱且只认两个硬编码版本（经验 10：EDA 默认值不可信）。本模块把探测
 收敛到 infra 层，service/optimization 只调用 resolve 函数。
 """

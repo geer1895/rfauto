@@ -1,6 +1,6 @@
 """fake_adapter.calibration —— fake 联合校准锚（configs/fake_calibration.yaml）。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺，W3-S1 lake_compact_service 先例）：本域持有 _CAL_CACHE/
 _DEFAULT_CALIBRATION/load_fake_calibration（#105 best-effort 读链）。代码体
 自原节「fake 联合校准」逐字节搬迁，零逻辑改动。唯一物理路径调整：配置根
@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-# ─── fake 联合校准（fake ↔ openEMS，AGENTS 硬限 1b：先验模型再校准）──────────
+# ─── fake 联合校准（fake ↔ openEMS，内核立规注记 硬限 1b：先验模型再校准）──────────
 
 _CAL_CACHE: dict[str, Any] | None = None
 
@@ -47,7 +47,7 @@ def load_fake_calibration(path: str | Path | None = None) -> dict[str, dict[str,
     配置来源与含义：eps_eff 为该模型 fake 谐振公式的有效介电常数锚
     （绝对覆盖语义）；eps_eff_scale 为乘法缩放位置锚（对 HJ 物理推导
     εeff 乘频率尺度修正因子，wilkinson 2026-09-23 起用，见
-    runs/fake_anchor_354/criteria.md 语义裁定）；
+    内部证据档 语义裁定）；
     s11_floor_db/s11_edge_scale 已废除（2026-09-23 df4a，零读取点）。
     数值以 knowledge/reference/openems_nominal/ 的收敛
     openEMS 曲线为准（多模态审计确认模型正确后的联合校准）。

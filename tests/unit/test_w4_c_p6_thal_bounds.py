@@ -3,7 +3,7 @@
 原文核对证据（#1c，2026-10-05）：
 - 主源：A.D. Yaghjian, "Fundamentals of Antenna Bandwidth and Quality
   Factors," arXiv:2501.03146（开放 PDF 本地存证
-  runs/w4_phase4/w4c/evidence/arxiv_2501_03146.pdf）——式(42)/(47)/(51)
+  内部证据档）——式(42)/(47)/(51)
   印刷页 10-11 视觉读式；式(40a-c)/(41)/(44)/(49)/(50) 球模阻抗与调谐 Q
   定义同源。
 - 谱系勘误（实测原文引用）：Thal "Gain and Q bounds for coupled TM-TE

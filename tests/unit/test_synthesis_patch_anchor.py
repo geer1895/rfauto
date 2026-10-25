@@ -11,7 +11,7 @@ XA-2/XA-3/XA-4 翻新补强锚（2026-10-02 同日第二批，规格 §B-1）：
 - XA-4 ForwardMedia：四通道 source 探测 + bulk_fallback 状态下泄 + pickle；
 - forward_z0/εeff 链绝对锚 ≥2（50Ω/70.7Ω 名义点，测试文件头实测钉值）。
 
-XA-1 语义双档留痕（PV-016 仲裁 INCONCLUSIVE，runs/xa1_arbitration/）：
+XA-1 语义双档留痕（PV-016 仲裁 INCONCLUSIVE，内部证据档）：
 - 修前（现行，0.824=2×0.412 两边缘合计、调用侧再×2 ⇒ 总扣 4ΔL）：
     patch_len@2.4GHz 名义 = 32.08mm（patch_length 4 位口径 32.0803）、
     elem_len@5.8GHz 阵列名义 = 12.9058mm。

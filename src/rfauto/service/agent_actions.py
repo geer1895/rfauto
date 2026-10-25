@@ -1,6 +1,6 @@
-"""门面动作服务定位器（T1 解环轴；架构批 W6-S1）。
+"""门面动作服务定位器（T1 解环轴；aurora_g W6-S1）。
 
-背景（R1 架构审计 §面3/§六 T1，内部证据目录）：service
+背景（R1 架构审计 §面3/§六 T1，内部证据档）：service
 实现模块（r3_services/agent_sandbox/ui_service）此前在函数内 lazy import
 api 门面的动作函数，静态依赖图上形成 实现→门面→实现 的意图环——19 模块
 SCC 的轴心即 ``api -顶层-> r3_services`` 与 ``r3_services -lazy-> api`` 的

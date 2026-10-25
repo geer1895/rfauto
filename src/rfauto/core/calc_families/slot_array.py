@@ -44,7 +44,7 @@ B(θ) 表不在键面（锚为实测曲线数字化，#118 不可自证，登记
   （原文 closed，Unpaywall 2026-10-13 实测不可达；**式号不可考——禁编造
   原文字号/式号**；式形态经四路独立二手源逐字互证 + WR90 数值逐位复算，
   四路出处/锚勘误表/置信度声明见
-  内部规格档（Stevenson 阵综合）
+  内部证据档
   §2/§4/§6；裁决式含 (a/b) 与 cos²(πλ0/2λg) 两因子，规格包式 S1 已证伪；
   access_status=verified_secondary_4source）。
 - λg/fc 教科书式：Pozar *Microwave Engineering* §3.3（任意波导教本同式）。
@@ -92,11 +92,13 @@ _SOURCES = {
         "（原文 closed，式号不可考——禁编造原文字号；式形态=四路独立二手源"
         "逐字互证+WR90 数值逐位复算的 RESOLVED 裁决式，含 (a/b) 与 "
         "cos²(πλ0/2λg) 两因子，规格包式 S1 已勘误；四路出处与锚勘误表见 "
-        "内部规格档 §2/§4/§6）；λg/fc 教科书式 "
+        "runs/aurora_c/batch_b_wave3_specs/"
+        "G16_slot_array_stevenson_RESOLVED.md §2/§4/§6）；λg/fc 教科书式 "
         "Pozar Microwave Engineering §3.3"),
     "array": (
         "驻波阵综合口径（Σgn=g_total·wn²/Σw²+λg/2 同相间距+交替换边+末缝"
-        "后 λg/4 短路；单缝导电率=Stevenson 式）；同内部规格档 §2/§5"
+        "后 λg/4 短路；单缝导电率=Stevenson 式）；同 runs/aurora_c/"
+        "batch_b_wave3_specs/G16_slot_array_stevenson_RESOLVED.md §2/§5"
         "（S3 源 PIER C 56 (2015) 式 (4)(5) 同口径）；Stevenson 1948 DOI "
         "10.1063/1.1697868（原文 closed，式号不可考）"),
 }

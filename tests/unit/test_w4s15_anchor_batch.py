@@ -2,7 +2,7 @@
 
 锚册：knowledge/anchors.yaml aurora_j W4-S15 批（2026-10-23，79→87 锚、
 有锚族 64/72→72/72=TEMPLATE_META 全覆盖）——前两轮评审弃选 9 族
-（runs/aurora_d_sensanc/REPORT.md 第三节 + runs/aurora_d_anchd/REPORT.md）
+（内部证据档 第三节 + 内部证据档）
 本批逐族改道兑现，逐锚两类钉（#118 禁同源自证，X5/SENS-ANC/ANCH-D/W3-S15
 同制度）：
 

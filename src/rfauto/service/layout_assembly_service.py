@@ -4,7 +4,7 @@
 pos/BOM 聚合/装配图/3D 板"的**最小面**——位号提取 + .pos + BOM 聚合 CSV。
 3D 板/装配图属 P3（trimesh 可选），本模块不做（如实收窄）。
 
-铁律 2（AGENTS）：**KiCad 一律子进程** ``E:\\KiCad\\bin\\python.exe``——
+铁律 2（内核立规注记）：**KiCad 一律子进程** ``E:\\KiCad\\bin\\python.exe``——
 pcbnew ABI 硬限制绝不 import 进主 venv。本模块零 pcbnew import：几何/
 位号提取全部发生在生成的子进程脚本内（脚本落 out_dir 留证据链，自描述），
 主进程只收 marker 包夹的 JSON（kicad_extract 同款协议）与解析器解析

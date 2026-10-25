@@ -7,7 +7,7 @@
 
 诚实口径（#122）：qucsator 用 KJ 色散、HJ 为准静态——两者之差含**物理
 口径差**，verdict 里 ``kj_vs_hj_note`` 单独成账，不与适配器 bug 混写；
-openEMS 腿用 runs/benchmark/mline_mauto 金锚冻结值（零仿真只读引用），
+openEMS 腿用 内部证据档 金锚冻结值（零仿真只读引用），
 请求网格与金锚三点无精确交叠时如实 ``openems_leg="unavailable"`` 不硬凑。
 """
 
@@ -145,7 +145,7 @@ def solve_mline_three_way(
 ) -> dict[str, Any]:
     """mline 名义点三方 β 对照（qucsator vs openEMS 金锚 vs HJ 闭式）。
 
-    判据（runs/df6_dp14n7/criteria.md §4a）：max 两两互差 ≤ tol_rel
+    判据（内部证据档 §4a）：max 两两互差 ≤ tol_rel
     （缺省 0.05，Meep 先例口径）。openEMS 腿 = 金锚冻结值
     （2.25/2.5/2.75 GHz），请求网格须与之精确交叠，否则该腿如实记
     unavailable（不插值硬凑）。

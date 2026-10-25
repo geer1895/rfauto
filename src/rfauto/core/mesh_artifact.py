@@ -23,7 +23,7 @@ D11 判"网格病"并开药（局部加密 / 更换 BASE / 标定常数落 prove
 - 产物缺失 → UNKNOWN，不误报。
 - 判据只判"网格病"：单一"随 f 单调劣化"证据不足以定性（可能是设计错），
   必须叠加网格特异证据（细化中心上移 / 等效 εeff 超物理界）才落
-  MESH_ARTIFACT，否则 INCONCLUSIVE（项目规则 1b：先验模型再校准）。
+  MESH_ARTIFACT，否则 INCONCLUSIVE（内核立规注记 1b：先验模型再校准）。
 - 裸数据路径（D11 PARTIAL 收口，）：k 反推不再要求完整
   provenance 链——直接输入多网格档响应数据（tiers，每档 mesh_mm + 频率轴
   + S 数据，全矩阵或驱动行均可）即可判伪象（各档中心裸定位 → 中心随细化
@@ -615,7 +615,7 @@ _ACTIONS = {
         "局部加密网格（BASE/2）复核中心是否继续上移（伪象自证）",
         "更换 BASE/网格策略（环带带缘对齐或柱坐标，避免阶梯化，§10.18 补强①）",
         "把引擎常数 k 与生效范围（mesh/BASE）写进 provenance，换档必须重定标",
-        "以 HFSS（物理 R 无补偿）为对齐基准仲裁归属（项目规则：HFSS 为对齐基准）",
+        "以 HFSS（物理 R 无补偿）为对齐基准仲裁归属（AGENTS：HFSS 为对齐基准）",
     ],
     PROBE_SCALE: [
         "端口去嵌入/标定 MSLPort 探针尺度常数（skrf de-embedding，§10.18 补强②）",

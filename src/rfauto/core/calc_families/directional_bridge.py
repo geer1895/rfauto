@@ -1,4 +1,4 @@
-"""定向电桥/反射计桥（架构批 W2-S6 席域，R2_core_tier3 §③ D4 立项）。
+"""定向电桥/反射计桥（aurora_f W2-S6 席域，R2_core_tier3 §③ D4 立项）。
 
 两键：directional_bridge_s_matrix（电阻 Wheatstone 反射计桥理想/容差
 S 矩阵，节点分析精确解）/ directional_bridge_response（反射计响应闭式：
@@ -47,7 +47,7 @@ S 矩阵，节点分析精确解）/ directional_bridge_response（反射计响�
   反射计件**（Wheatstone 平衡直接ivity 机构，与耦合器族零撞）。
 - vna_uncertainty=误差箱传播/不确定度面（消费反射计残差做预算）——
   本族给器件级 S 矩阵与响应模型（其上游件面）；回损地板恒等式互证。
-- six_port（架构批 W3-S10 D7，calc_families/six_port.py）=六端口
+- six_port（aurora_f W3-S10 D7，calc_families/six_port.py）=六端口
   反演架构（多端口功率检波干涉法，4 路功率读数圆交点反演 Γ）——
   本族=两端口差分检波电阻桥器件面，语义不同域共存互指不互代；
   本族可为其供前级 S 矩阵，反演只在 six_port 层。

@@ -1,6 +1,6 @@
 """悬置/倒置/嵌入线族色散标定曲线层（W4-B P7，通用机械件）。
 
-规格出处（SM·core 深化报告 P7，runs/research_seats_20261004/sm_core_deepen/
+规格出处（SM·core 深化报告 P7，内部证据档
 REPORT.md §3 P7）：inverted_ms/embedded_line/isl_line 三族静态面为**准静态**
 口径（FD 裁判 brentq 反解 / 分层串联等效），色散层无可靠闭式——L. K. Wu,
 "Analysis of dispersion and series gap discontinuity in shielded suspended

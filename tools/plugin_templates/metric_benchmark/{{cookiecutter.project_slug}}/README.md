@@ -13,7 +13,7 @@ rfauto metric/benchmark 插件（AgentBench 任务集 + 确定性指标计算 + 
   family/artifacts/numeric 三关）；
 - `{{ cookiecutter.module_name }}/metrics.py`：确定性指标计算函数（从 S 参数
   产物提取 `expected.numeric` 里的 metric 值——**数值只在确定性内核产出**
-  ，LLM/agent 永不产生物理数字）；
+  （内核铁律 7），LLM/agent 永不产生物理数字）；
 - `{{ cookiecutter.module_name }}/provider.py`：离线参考提供器
   （`run_agentbench_regression(trajectory_provider=...)` 注入点；回放任务期望，
   仅作门自洽正控，不构成对真实 agent 质量的判据）。

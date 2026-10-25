@@ -1,4 +1,4 @@
-"""架构批 W2-S7 席锚树：ruthroff_balun 两键（Ruthroff 巴伦设计/频响）
+"""aurora_f W2-S7 席锚树：ruthroff_balun 两键（Ruthroff 巴伦设计/频响）
 + gd_equalizer 两键（全通节综合/级联频响）+ measurement_drift 两键
 （测量漂移估计/监控）。
 
@@ -9,7 +9,7 @@
   f_zero 链）；带缘跨键一致（设计 l_max 处频响 |S11|=0.1）；与 Guanella
   同比值同 Z0 档对拍（同仓双源：guanella_tlt_design 实调对比块逐字段
   互证）；≥16:1 复合拓扑与 5:1 复合比显式拒绝（族界如实）。
-- Ruthroff 频响（W7-S25 P1-1/P2-1 修正体，审查 内部证据目录
+- Ruthroff 频响（W7-S25 P1-1/P2-1 修正体，审查 runs/aurora_f/
   review_w6_kernel.md）：**真独立双路线**——① KCL 全节点方程求解（4 端
   子分支方程直写、零 Y₂ₚ 形成、功率波 a/b 带 √R 归一）② 4 端子差分导纳
   congruence（Y4=Tᵀ·Y2·T+节点映射+消 GND）——两路线互证并对照实现盖章

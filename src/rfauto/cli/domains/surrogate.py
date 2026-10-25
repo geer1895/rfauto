@@ -300,6 +300,43 @@ def runs_health(
         raise typer.Exit(code=1)
 
 
+@runs_app.command("verify")
+def runs_verify_cmd(
+    run_dir: str = typer.Argument(..., help="run 目录路径（或 runs/ 下的 run_id 目录名）"),
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """run 产物新鲜度校验：manifest 收官指纹 vs 盘上 Touchstone。
+
+    三态：fresh=记录逐一相符；stale=旧文件顶替/漏拷/sidecar 错配（退出码 1
+    ——旧 Touchstone 混进新 run 在此必须报错，不能静默通过）；legacy=老
+    run 无 manifest（放行带 note，老 run 行为不变）。
+    """
+    from rfauto.service.runs_verify_service import resolve_run_dir, verify_run  # lazy: cli 注册根轻载
+
+    result = verify_run(resolve_run_dir(run_dir))
+    if json_output:
+        _emit(result, "run 新鲜度校验失败", json_output=True)
+        return
+    status = str(result.get("status", "error"))
+    if not result.get("ok") and status == "error":
+        console.print(f"[red]✗ {result.get('errors', ['run 目录不存在'])[0]}[/red]")
+        raise typer.Exit(code=1)
+    color = {"fresh": "green", "stale": "red", "legacy": "yellow"}.get(status, "white")
+    console.print(f"[bold]run 产物新鲜度校验[/bold]  {result.get('run_id')}"
+                  f"  status: [{color}]{status}[/{color}]")
+    if result.get("note"):
+        console.print(f"  {result['note']}")
+    for issue in result.get("issues", []):
+        kind = str(issue.get("kind", ""))
+        kind_color = "red" if kind in ("stale_replaced", "missing",
+                                       "sidecar_mismatch", "manifest_corrupt") else "yellow"
+        console.print(f"  [{kind_color}]- {kind}: {issue.get('path', '')}"
+                      f"（{issue.get('detail', '')}）[/{kind_color}]")
+    if not result.get("ok"):
+        raise typer.Exit(code=1)
+
+
 # ─── runs diff / runs watch（SN-15 / SN-19，W6-A 2026-10-06）────────────────
 
 @runs_app.command("diff")

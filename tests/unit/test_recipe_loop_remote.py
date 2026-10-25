@@ -121,8 +121,8 @@ def test_local_launcher_contract():
 
 
 def test_remote_launcher_honest_placeholder():
-    rl = RemoteLoopLauncher("sim_host")
-    assert rl.name == "remote:sim_host"
+    rl = RemoteLoopLauncher("sim_server")
+    assert rl.name == "remote:sim_server"
     assert isinstance(rl, LoopLauncher)
     with pytest.raises(NotImplementedError, match="未接线"):
         rl.evaluate({"x": 0.5})

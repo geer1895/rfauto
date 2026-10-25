@@ -463,7 +463,7 @@ def stage_remote_decl(node: dict[str, Any]) -> dict[str, Any] | None:
     ``campaign_remote_default`` 作战役级缺省——**stage 声明优先**）：
 
     - ``true`` → 缺省登记机器（注册表唯一机器语义，resolve_machine None）；
-    - ``"sim_host"`` → 指名机器；
+    - ``"sim_server"`` → 指名机器；
     - ``{"machine": ..., "wait_mode": ..., "keep_remote": ..., "seat": ...}``
       → dict 形态（machine 同上两态；seat 覆盖 stage_extra.remote_seat）；
     - ``false``/缺省/``""`` → 本机。

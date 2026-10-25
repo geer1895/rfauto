@@ -9,7 +9,7 @@
   - Z-10c 单源锚（段 5 `rfauto <cmd>` 引用 ∈ CLI 注册面；toolsets.yaml
     工具名引用 ∈ 注册面——文件未落时 skip 留口，W5-D EC-6 落地后激活）。
 
-规格：runs/research_seats_20261004/sk_specs5/SPECS.md §三/§四（2026-10-04
+规格：内部证据档 §三/§四（2026-10-04
 快照；#222 接地勘误：MCP 现役 145→并发批 146，本席零新增，清单不含新键）。
 """
 
@@ -40,7 +40,7 @@ BATCH1: tuple[str, ...] = (
     "pdn_gate", "run_calculator", "list_composable_templates",
 )
 
-#: 批 1 改 docstring 前取证签名（runs/w5_phase5/w5a/capture_sigs.py 快照，
+#: 批 1 改 docstring 前取证签名（内部证据档 快照，
 #: 2026-10-05 pre-edit；描述批不得触碰 def 行——签名零变钉）。
 BATCH1_SIGNATURES: dict[str, str] = {
     "correlate_measurement":

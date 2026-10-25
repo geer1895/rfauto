@@ -3,14 +3,14 @@
 锚判据（WP2.2）：
 1. 分段 β 金标准（#162 同法）：CalcPort 双端口 β → εeff1/εeff2 对照
    skrf HJ 闭式 ±2%（mesh=0.4mm 收敛档——基准曲线 auto 档 +2.30% 未
-   收敛，见 runs/benchmark/mline_mesh_convergence.json）；
+   收敛，见 内部证据档）；
 2. |S11| 单侧门：引擎 max 不得比 skrf 级联理想裁判差 3dB 以上
    （理想地板=两段阻抗失配；阶梯寄生只允许小幅恶化）；
 3. |S21| 幅度：引擎 ≥ 理想 −0.05（额外损耗判废）。
    相位门撤下：MSLPort 测量面 de-embedding 使裸 S21 相位不含全长
    （pt1 实证 82° 偏差=测量面间 13.4mm 而非 40mm，#161 同源）——
    分段 β 金标准即为此设计的替代锚。
-工作目录参数化（#198 教训）。证据链 runs/wstep_smoke/。
+工作目录参数化（#198 教训）。证据链 内部证据档。
 """
 import argparse
 import csv

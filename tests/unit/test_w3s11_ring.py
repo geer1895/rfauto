@@ -1,8 +1,8 @@
-"""架构批 W3-S11 锚树：环形谐振器 core 提升（F3）+ 综合两键。
+"""aurora_f W3-S11 锚树：环形谐振器 core 提升（F3）+ 综合两键。
 
 锚面（#118 独立来源/#122 如实口径，逐测试注明）
 - F3 字节级对拍钉：render_ring→core 提升式重构前后同参输出**逐位一致**
-  （字面量=重构前 内部证据目录 实测捕获，
+  （字面量=重构前 runs/aurora_f/w3s11_ring_parity_baseline.json 实测捕获，
   提升提交前落档）；再导出单对象断言（#116 不留遮蔽副本的结构性铁证，
   含 openems_templates 透传层）；缺省实参与模板常量逐位一致。
 - F3 恒等式锚：2π·r_mean·f1·√εeff = c（render_ring 恒等式测试同式，
@@ -39,7 +39,7 @@ from rfauto.core.calc_families.ring_resonator import (
     ring_resonator_synthesize,
 )
 
-# ── F3 提升前基线（内部证据目录 字面量，
+# ── F3 提升前基线（runs/aurora_f/w3s11_ring_parity_baseline.json 字面量，
 #    2026-10-18 重构前 render_ring.ring_resonator_design_params 实测捕获）──
 _RING_BASELINE_DEFAULT = {
     "r_mean_mm": 11.299802692199101, "w_mm": 1.1134,

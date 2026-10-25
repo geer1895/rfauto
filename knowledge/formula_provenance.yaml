@@ -186,36 +186,22 @@ entries:
   claim_block: "出处等级（如实标注）：\n- **Robinson 1998 全链式(1)-(12)**：M.P. Robinson, T.M. Benson,\n  C. Christopoulos,\
     \ J.F. Dawson, M.D. Ganley, A.C. Marvin, S.J. Porter,\n  D.W.P. Thomas, \"Analytical formulation for\
     \ the shielding effectiveness\n  of enclosures with apertures\", IEEE Trans. EMC 40(3):240-248, Aug.\
-    \ 1998。"
+    \ 1998。\n  本机留档 runs/em2/robinson1998_postprint.pdf（White Rose 免费后印本，\n  eprints.whiterose.ac.uk/id/eprint/90051），式(1)-(12)\
+    \ 于 2026-10-02\n  PDF 渲染放大逐式抄录（原文式回收，非转引）。图锚=Fig.6/7（300×120×300\n  mm 黄铜腔 t=1.5mm + 100×5mm 缝，p=150mm：谐振\
+    \ ~700MHz 负屏蔽、\n  SE_E(200MHz)≈45dB、SE 随观察距离 p 增大、TE10 截止 500MHz——均由\n  单测钉住，限值带按图读数放宽）。\n- **Bethe\
+    \ 极化率**：圆孔 αe=2r³/3、αmx=αmy=4r³/3（规格原文式；Bethe\n  1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table\
+    \ 4.1\n  （etheses.whiterose.ac.uk/id/eprint/24535，其引用 Bethe[39]/Junqua\n  [42]）回收：矩形 αe=A^{3/2}/(3√π·E(e))·(w/l)、\n\
+    \  αmx=A^{3/2}e²(l/w)^{3/2}/(3√π[K(e)−E(e)])、\n  αmy=A^{3/2}e²(w/l)^{1/2}/(3√π[K−E])（A=lw，e=√(1−(w/l)²)）。\n\
+    \  原表 αmy 分母印作 [E(e)−K(e)]：按 K≥E（0≤e≤1）判为排版负号，量级取\n  [K−E]（σ_t 为平方和不受符号影响；方孔极限与窄缝渐近均复核自洽）。\n- **传输截面**\
+    \ σ_t=(2k⁴/9π)(αe²+αmx²+αmy²)：同论文式(4.28)（Junqua\n  口径：随机极化等概率+半空间积分两 ½ 因子已折入）。\n- **孔径-波长幂律 −60dB/dec\
+    \ 恒等**：圆孔 α∝a³ ⇒ σ_t∝k⁴a⁶ ⇒\n  σ_t/λ²=(2(2π)⁴/9π)·(a/λ)⁶——对 (a/λ) 严格 6 次幂（SE 视角\n  −60dB/dec，任意十年期逐位恒等，无小量近似；规格验收恒等式由本律\n\
+    \  承担，test 钉 1e-9）。同域 Robinson 腔链的孔径斜率实测 ≈−47dB/dec\n  （孔阻抗 Z_ap∝(l/a)·Z0s(w_e/b)·k0·l，Z0s 随 w_e/b\
+    \ 对数缓增），与\n  Bethe 截面律非同一定义（腔内场比 vs 随机入射截面），两口径并陈。\n- **矩形缝截止穿透**：f_c=c/(2L)（半波缝谐振/截止，规格原文语义）；\n \
+    \ 低于截止衰减 SE=20lg(e)·t·√((π/L)²−k0²)（矩形波导消失模衰减常数，\n  f→0 极限=27.289·t/L dB，即\"波导低于截止\"经验律的闭式来源）。"
   refs:
   - '- **Robinson 1998 全链式(1)-(12)**：M.P. Robinson, T.M. Benson'
   - of enclosures with apertures", IEEE Trans. EMC 40(3):240-248, Aug. 1998
-  source_doi: null
-  eq_no: 式(1)
-  expr: null
-  access_status: null
-  verified_by: collect_formula_provenance.py（docstring 转录）
-  origin: docstring
-- formula_id: aperture_coupling:<module>:02
-  kernel_file: src/rfauto/core/aperture_coupling.py
-  module: rfauto.core.aperture_coupling
-  symbol: <module>
-  kind: source
-  marker: 文献：
-  claim_line: 文献：White Rose 免费后印本（
-  claim_block: "  文献：White Rose 免费后印本（\n  eprints.whiterose.ac.uk/id/eprint/90051），式(1)-(12) 于 2026-10-02\n\
-    \  PDF 渲染放大逐式抄录（原文式回收，非转引）。图锚=Fig.6/7（300×120×300\n  mm 黄铜腔 t=1.5mm + 100×5mm 缝，p=150mm：谐振 ~700MHz\
-    \ 负屏蔽、\n  SE_E(200MHz)≈45dB、SE 随观察距离 p 增大、TE10 截止 500MHz——均由\n  单测钉住，限值带按图读数放宽）。\n- **Bethe 极化率**：圆孔\
-    \ αe=2r³/3、αmx=αmy=4r³/3（规格原文式；Bethe\n  1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table 4.1\n  （etheses.whiterose.ac.uk/id/eprint/24535，其引用\
-    \ Bethe[39]/Junqua\n  [42]）回收：矩形 αe=A^{3/2}/(3√π·E(e))·(w/l)、\n  αmx=A^{3/2}e²(l/w)^{3/2}/(3√π[K(e)−E(e)])、\n\
-    \  αmy=A^{3/2}e²(w/l)^{1/2}/(3√π[K−E])（A=lw，e=√(1−(w/l)²)）。\n  原表 αmy 分母印作 [E(e)−K(e)]：按 K≥E（0≤e≤1）判为排版负号，量级取\n\
-    \  [K−E]（σ_t 为平方和不受符号影响；方孔极限与窄缝渐近均复核自洽）。\n- **传输截面** σ_t=(2k⁴/9π)(αe²+αmx²+αmy²)：同论文式(4.28)（Junqua\n\
-    \  口径：随机极化等概率+半空间积分两 ½ 因子已折入）。\n- **孔径-波长幂律 −60dB/dec 恒等**：圆孔 α∝a³ ⇒ σ_t∝k⁴a⁶ ⇒\n  σ_t/λ²=(2(2π)⁴/9π)·(a/λ)⁶——对\
-    \ (a/λ) 严格 6 次幂（SE 视角\n  −60dB/dec，任意十年期逐位恒等，无小量近似；规格验收恒等式由本律\n  承担，test 钉 1e-9）。同域 Robinson 腔链的孔径斜率实测\
-    \ ≈−47dB/dec\n  （孔阻抗 Z_ap∝(l/a)·Z0s(w_e/b)·k0·l，Z0s 随 w_e/b 对数缓增），与\n  Bethe 截面律非同一定义（腔内场比 vs 随机入射截面），两口径并陈。\n\
-    - **矩形缝截止穿透**：f_c=c/(2L)（半波缝谐振/截止，规格原文语义）；\n  低于截止衰减 SE=20lg(e)·t·√((π/L)²−k0²)（矩形波导消失模衰减常数，\n  f→0\
-    \ 极限=27.289·t/L dB，即\"波导低于截止\"经验律的闭式来源）。\n  t→0 精确退化为薄屏（Bethe 口径，SE→0）。"
-  refs:
+  - 本机留档 runs/em2/robinson1998_postprint.pdf（White Rose 免费后印本
   - 1944 Phys. Rev. 66:163）。方孔/矩形闭式经 York 博士论文 Table 4.1
   source_doi: null
   eq_no: 式(1)
@@ -506,19 +492,19 @@ entries:
   symbol: <module>
   kind: source
   marker: 出处（
-  claim_line: 出处（V1 审查裁决 2026-10-04 逐字核对，errata 归档在案）：
-  claim_block: "        出处（V1 审查裁决 2026-10-04 逐字核对，errata 归档在案）：\n        Fano 1948 MIT RLE TR-41 §1\n\
-    \        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及 p.16 \"parallel RC ⇒ A₁=2/RC\"\
-    （×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2 并联 RC 行（p.262, 3rd ed.\n     \
-    \   §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个 2 因子，\n\
-    \        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington Q 界\n        Chu 1948（J. Appl.\
-    \ Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n\
+  claim_line: '出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:'
+  claim_block: "        出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:\n        内部证据档）：Fano 1948 MIT RLE TR-41\
+    \ §1\n        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及 p.16 \"parallel RC\
+    \ ⇒ A₁=2/RC\"（×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2 并联 RC 行（p.262, 3rd\
+    \ ed.\n        §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个\
+    \ 2 因子，\n        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington Q 界\n        Chu 1948（J.\
+    \ Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n\
     \        Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界）。\n    Cohn 插损下限\n        Cohn 1959（Proc. IRE，多耦合谐振器滤波器的耗散损耗）；\n\
     \        IL_dB ≥ 4.343·(f0/BW)·Σgᵢ/Qu（4.343 = 10/ln10 的教材常用舍入；\n        MYJ《Microstrip Filters...》/Pozar\
     \ 同口径）。窄带（f0/BW≫1）近似。\n    方向性界\n        口径面 D ≤ 4πA/λ²（均匀口径达到，一般口径为上界，Harrington）；\n        球包络 D\
     \ ≤ (ka)² + 2ka（Harrington 1960，J. Res. NBS）；\n        MIMO 自由度 ≤ min(Nt, Nr)（自由度口径）。"
   refs:
-  - Fano 1948 MIT RLE TR-41 §1
+  - 内部证据档）：Fano 1948 MIT RLE TR-41 §1
   - Chu 1948（J. Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为
   - McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半
   - Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界
@@ -677,6 +663,22 @@ entries:
   - Nassiri 2003、Microwaves101 directional couplers 条目）；Cohn 有限
   source_doi: null
   eq_no: §7.9
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/branchline_coupler:<module>:01
+  kernel_file: src/rfauto/core/calc_families/branchline_coupler.py
+  module: rfauto.core.calc_families.branchline_coupler
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- branchline_coupler_design：分支线耦合器奇偶模分析与设计方程\n  （Pozar Microwave Engineering §7 功分器与定向耦合器——分支线耦合\n\
+    \  器节，章节级转引；设计闭式与 S 矩阵解析合成为本席推导，独立数值\n  解/fsolve 与幺正性验证在案）。"
+  refs: []
+  source_doi: null
+  eq_no: §7
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -924,7 +926,7 @@ entries:
   claim_block: "出处（Pozar《Microwave Engineering》§2.2/§2.7/§3；Ramo-Whinnery-Van Duzer）：\n- coax_line_z0：TEM\
     \ 精确闭式 Z0=(60/√εr)·ln(b/a)（Pozar §2.2 同轴线；\n  TE11 截止保角映射 kc≈2/(a+b) 同节口径）。\n- coax_line_attenuation：Pozar\
     \ §2.7 传输线损耗（导体 Rs 趋肤+介质\n  β·tanδ/2；线 Q=β/(2α) 场积分路线互证）；Ramo-Whinnery-Van Duzer\n  同族口径。\n- coax_line_power_capacity：内导体表面场强上限\
-    \ TEM 场解（Pozar §2.2）。\n- coax_line_cutoff_attenuator：Pozar §3 波导一般理论倏逝模\n  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，架构批\
+    \ TEM 场解（Pozar §2.2）。\n- coax_line_cutoff_attenuator：Pozar §3 波导一般理论倏逝模\n  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，aurora_e\
     \ W8-S37 批口径）。"
   refs: []
   source_doi: null
@@ -1023,6 +1025,25 @@ entries:
   - C. Caloz, T. Itoh, IEEE Microwave Mag. 5(3), 2004
   source_doi: null
   eq_no: §3.1
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/deembed_metrics:<module>:01
+  kernel_file: src/rfauto/core/calc_families/deembed_metrics.py
+  module: rfauto.core.calc_families.deembed_metrics
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：物理公式与去嵌算法出处见 rfauto.core.deembed 模块 docstring
+  claim_block: '出处：物理公式与去嵌算法出处见 rfauto.core.deembed 模块 docstring
+
+    （K8 节：对称半拆闭式代数+二阶差分分支连续；Z12/Y21 口径=Z 参数
+
+    定义+P14 用户实测）；本模块为薄注册包装，公式零复制。'
+  refs: []
+  source_doi: null
+  eq_no: null
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -1142,7 +1163,9 @@ entries:
 
     引）；投影二次型 ULA 闭式（Σm/Σm² 代入）与多源 FIM Schur 消元推导
 
-    =本仓代数推导（实现前独立复算（内部验证档）：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
+    =本仓代数推导（实现前独立复算 runs/aurora_d/_core9_verify_derivation
+
+    .py：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
 
     +比值恒等式 1+1/(pN)；celebrated 闭式对角 Q 全参数 Schur rel≤2.0e-15、
 
@@ -1271,6 +1294,22 @@ entries:
   - 2ed / Clark & Cain 1981
   source_doi: null
   eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/filter_prototype:<module>:01
+  kernel_file: src/rfauto/core/calc_families/filter_prototype.py
+  module: rfauto.core.calc_families.filter_prototype
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- butterworth_prototype：最平坦低通原型 g 值与阶数估计（Pozar\n  Microwave Engineering §8.2 插损法滤波器综合——最平坦原型定义式、\n\
+    \  Table 8.3 生成式与阶数闭式，章节级转引；式号按 #df6-⑬ 不落页码）。"
+  refs: []
+  source_doi: null
+  eq_no: §8.2
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -1493,7 +1532,7 @@ entries:
   claim_block: "  出处（剖面电容：Getsinger, IRE Trans. MTT-10(1) 1962 薄条极限——\n  combline 与交指截面几何恒同；k_ij↔J_ij\
     \ 与归一化耦合口径：Matthaei–\n  Young–Jones ch.8 combline / ch.10 倒置器综合，章节级转引；装载斜率\n  b_s=[cotθ₀+θ₀csc²θ₀]/(2Z_r)\
     \ 为本仓 MYJ ch.8 等效电路第一性推导，实现\n  前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参\n  内节 (w,s) 与 interdigital_bpf_synthesize\
-    \ 逐位）、θ₀→90° 退化=π/(4Z_r)\n  恒等，独立验证轨迹（内部档），锚树\n  tests/unit/test_aurora_d_core7.py）。"
+    \ 逐位）、θ₀→90° 退化=π/(4Z_r)\n  恒等，轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树\n  tests/unit/test_aurora_d_core7.py）。"
   refs:
   - 出处（剖面电容：Getsinger, IRE Trans. MTT-10(1) 1962 薄条极限——
   source_doi: null
@@ -1547,7 +1586,7 @@ entries:
   kind: source
   marker: 出处（
   claim_line: 出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py
-  claim_block: "出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py\ndocstring 与 runs/ap8/）：\n- gaseous_attenuation：ITU-R\
+  claim_block: "出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py\ndocstring 与 内部证据档）：\n- gaseous_attenuation：ITU-R\
     \ P.676-13 Annex 1 大气气体 specific\n  attenuation（逐线表系数 AP-8 批逐值录入）。\n- rain_specific_attenuation：ITU-R\
     \ P.838-3 式(1) 雨衰 specific\n  attenuation γ_R（Tables 1-4 系数逐值录入）。\n- rain_attenuation_r001：ITU-R P.618-13\
     \ §2.2.1.1 长期雨衰全链\n  （R0.01→A0.01，Step1-9 逐中间量留痕）。"
@@ -1698,7 +1737,7 @@ entries:
 
     Gauss–Hermite 双数值路线（ρ=0 退化乘积逐位、ρ→1 退化 min(y) 双极限锚），
 
-    独立验证轨迹（内部档），锚树
+    轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树
 
     tests/unit/test_aurora_d_core7.py。）'
   refs:
@@ -1771,7 +1810,7 @@ entries:
 
     《Microstrip Lines and Slotlines》[39] 口径第三方文献转写互证，
 
-    内部证据目录 在案）；Kirschning-Jansen-Koster 1981
+    内部证据档 在案）；Kirschning-Jansen-Koster 1981
 
     Electron. Lett.（开路端等效延长，经 qucsator msopen.cpp calcCend
 
@@ -1781,14 +1820,14 @@ entries:
 
     经 msopen C 段+第三方文献 CL=Cll·√εe/(Z0·c) 互证）——W11-S4 两件网源
 
-    逐字在 内部证据目录。'
+    逐字在 内部证据档。'
   refs:
   - 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh
   - 2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切
   - 角档另有 qucsator msmbend.cpp 可执行同式）；Douville-James 1978 MTT-26(3
   - Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐
   - 字）；Garg-Bahl 1978（阶跃，经 qucsator msstep.cpp 可执行逐字，Qucs 手册
-  - 内部证据目录 在案）；Kirschning-Jansen-Koster 1981
+  - 内部证据档 在案）；Kirschning-Jansen-Koster 1981
   source_doi: null
   eq_no: 式(20)
   expr: null
@@ -2010,7 +2049,7 @@ entries:
 
     带宽和恒等三锚）；阶数闭式 vs 整数扫描、cosh 闭式 vs T_n 递推、Ω 边缘
 
-    恒等=本仓双路线复算（内部验证档：
+    恒等=本仓双路线复算（runs/aurora_d/_core8_verify_derivation.py：
 
     rel≤3.4e-16，锚树 tests/unit/test_aurora_d_core8.py）。'
   refs:
@@ -2038,6 +2077,22 @@ entries:
   - Coupled-Line Directional Coupler", Microwaves 1966 同族；精确等纹波
   source_doi: null
   eq_no: §7.6
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/network_convert:<module>:01
+  kernel_file: src/rfauto/core/calc_families/network_convert.py
+  module: rfauto.core.calc_families.network_convert
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- twoport_matrix_convert：二端口 S/Z/Y/ABCD 互换恒等式（Pozar\n  Microwave Engineering §4.4\
+    \ 网络分析——散射/阻抗/导纳/ABCD 矩阵\n  互换表，章节级转引通行形态）。"
+  refs: []
+  source_doi: null
+  eq_no: §4.4
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -2073,6 +2128,23 @@ entries:
   refs: []
   source_doi: null
   eq_no: §2.2
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/oscillator_leeson:<module>:01
+  kernel_file: src/rfauto/core/calc_families/oscillator_leeson.py
+  module: rfauto.core.calc_families.oscillator_leeson
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- leeson_phase_noise：反馈振荡器噪声谱线性模型（Leeson 1966 Proc.\n  IEEE 54(2):329-330 原始文献；Pozar\
+    \ Microwave Engineering §10 振荡\n  器噪声节同族通行形态，章节级转引）。"
+  refs:
+  - '- leeson_phase_noise：反馈振荡器噪声谱线性模型（Leeson 1966 Proc'
+  source_doi: null
+  eq_no: §10
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -2539,8 +2611,8 @@ entries:
   claim_block: "出处（教科书经典闭式二级转引+仓内仲裁终裁）：\n- quarter_wave_transformer/vswr_convert：λ/4 变换 z=√(Zs·Zl) 与驻波\n\
     \  换算=传输线教科书经典式（Pozar《Microwave Engineering》匹配/驻波节\n  同族二级转引；本仓零新增推导）。\n- attenuator_pi/attenuator_t/attenuator_bridged_t：匹配+分压两条件闭式\n\
     \  衰减器（Pozar 衰减器节经典口径；#118 双源=经典 10dB/50Ω pad 表值+\n  测试内第二实现，tests/unit/test_x5_analytic_anchors 在档）。\n\
-    - patch_length：ΔL 单源=core/synthesis.patch_fringing_delta_l；系数\n  0.824 终裁=XA-1 仲裁（runs/xa1_arbitration\
-    \ 2026-10-02，INCONCLUSIVE\n  维持现行口径如实登记，R1-2 审查批注记）。"
+    - patch_length：ΔL 单源=core/synthesis.patch_fringing_delta_l；系数\n  0.824 终裁=XA-1 仲裁（内部证据档 2026-10-02，INCONCLUSIVE\n\
+    \  维持现行口径如实登记，R1-2 审查批注记）。"
   refs: []
   source_doi: null
   eq_no: null
@@ -2797,7 +2869,7 @@ entries:
   claim_line: '- 法源：Stevenson 1948, J. Appl. Phys. 19, 24-38, DOI 10.1063/1.1697868'
   claim_block: "- 法源：Stevenson 1948, J. Appl. Phys. 19, 24-38, DOI 10.1063/1.1697868\n  （原文 closed，Unpaywall\
     \ 2026-10-13 实测不可达；**式号不可考——禁编造\n  原文字号/式号**；式形态经四路独立二手源逐字互证 + WR90 数值逐位复算，\n  四路出处/锚勘误表/置信度声明见\n\
-    \  内部规格档（Stevenson 阵综合）\n  §2/§4/§6；裁决式含 (a/b) 与 cos²(πλ0/2λg) 两因子，规格包式 S1 已证伪；\n  access_status=verified_secondary_4source）。\n\
+    \  内部证据档\n  §2/§4/§6；裁决式含 (a/b) 与 cos²(πλ0/2λg) 两因子，规格包式 S1 已证伪；\n  access_status=verified_secondary_4source）。\n\
     - λg/fc 教科书式：Pozar *Microwave Engineering* §3.3（任意波导教本同式）。\n- 锚（#118 双路径）：RESOLVED §4 勘误表 A1-A7 替代锚\
     \ + 新增 N1-N4（实现席\n  2026-10-13 全部独立复算逐位确认）+ S1 源（arXiv:2608.21231）Table II\n  跨源钉 g(2.3814mm)@9.375GHz=0.127649（原文\
     \ 0.12765）+ 测试面 sin² 半角\n  恒等式第二路线（锚树 tests/unit/test_b_wave3_yagi_slot.py）。"
@@ -2842,6 +2914,24 @@ entries:
   access_status: verified
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: calc_families/spiral_inductor:<module>:01
+  kernel_file: src/rfauto/core/calc_families/spiral_inductor.py
+  module: rfauto.core.calc_families.spiral_inductor
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：八角螺旋电感修正 Wheeler/电流片/单项式三闭式与八角形状系数
+  claim_block: "出处：八角螺旋电感修正 Wheeler/电流片/单项式三闭式与八角形状系数\n  =Mohan–Schneider–Chibante, IEEE JSSC 34(10) 1999,\
+    \ pp.1419–1424\n  （Table II 电流片八角系数 c1–c4；Table IV 八角实测例 #55/#56 回放\n  锚）——物理单源 rfauto.core.nfc_coil（2026-09-24\
+    \ 原文逐位核对在档，\n  PDF 存档 内部证据档），本模块薄注册零公式\n  复制（#116）。"
+  refs:
+  - =Mohan–Schneider–Chibante, IEEE JSSC 34(10) 1999, pp.1419–1424
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: verified
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: calc_families/stepped_impedance:<module>:01
   kernel_file: src/rfauto/core/calc_families/stepped_impedance.py
   module: rfauto.core.calc_families.stepped_impedance
@@ -2866,12 +2956,13 @@ entries:
   kind: source
   marker: 出处（
   claim_line: 出处（支节调配经典口径，正文物理口径节转录）：
-  claim_block: "出处（支节调配经典口径，正文物理口径节转录）：\n- stub_tuner_double：双支节并联调配解析解与禁区 g≤csc²(βd) 判据\n  （D. Pozar,\
-    \ Microwave Engineering §5.3 双支节调配；λ/8 间距 g_max=2\n  经典口径）。\n- stub_tuner_triple：三支节消禁区确定性两路线（首支节旁路/旋转，\n\
-    \  任意无源负载有解——本仓第一性推导口径，正文 200 随机负载验证）。"
+  claim_block: "出处（支节调配经典口径，正文物理口径节转录）：\n- stub_tuner_single：单支节并联调配解析解（电导圆条件二次方程）\n  （D. Pozar, Microwave\
+    \ Engineering §5.2 单支节调配）。\n- stub_tuner_double：双支节并联调配解析解与禁区 g≤csc²(βd) 判据\n  （D. Pozar, Microwave\
+    \ Engineering §5.3 双支节调配；λ/8 间距 g_max=2\n  经典口径）。\n- stub_tuner_triple：三支节消禁区确定性两路线（首支节旁路/旋转，\n  任意无源负载有解——本仓第一性推导口径，正文\
+    \ 200 随机负载验证）。"
   refs: []
   source_doi: null
-  eq_no: §5.3
+  eq_no: §5.2
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -2945,7 +3036,7 @@ entries:
 
     本仓推导，实现前独立复算：闭式 vs 剖面核 Simpson 积分 ≤1.3e-16、首零
 
-    βL=2π 精确、F(½)=½ 几何中点，独立验证轨迹（内部档）；
+    βL=2π 精确、F(½)=½ 几何中点，轨迹 runs/aurora_d/_core7_verify_derivation.py；
 
     锚树 tests/unit/test_aurora_d_core7.py 第二路线）；两路互证锚与包络恒等式
 
@@ -2953,6 +3044,22 @@ entries:
   refs: []
   source_doi: null
   eq_no: §5.9
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: calc_families/terminated_line:<module>:01
+  kernel_file: src/rfauto/core/calc_families/terminated_line.py
+  module: rfauto.core.calc_families.terminated_line
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：
+  claim_block: "出处：\n- line_input_impedance：端接线输入阻抗/反射系数精确式（Pozar\n  Microwave Engineering §2.3–§2.4 传输线理论与端接线分析——章节级\n\
+    \  转引通行形态；sin/cos 奇异消除形为等价代数变形）。"
+  refs: []
+  source_doi: null
+  eq_no: §2.3
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -3459,11 +3566,11 @@ entries:
   symbol: <module>
   kind: source
   marker: 出处链（
-  claim_line: 出处链（回归钉证据，真机判读归档零改写只读）：
-  claim_block: "出处链（回归钉证据，真机判读归档零改写只读）：\n- 换算式与识别规则：判读交接档 §路线 C（\"换算 Z0e=2·Zc、\n  Z0o=Zd/2；模序按 εeff 较高识别偶模\"\
-    ）；\n- 数值证据：HFSS hairpin 锚归档 hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
-    \ 每模 Zo 读数 + 换算后\n  z0e_ohm/z0o_ohm）与锚判读 criteria 档 §表\n  （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200:\
-    \ 54.31/52.70）；\n- 审查条目：适配器审查批 R4-4（换算链此前只在\n  真机交接文档与战役脚本中，无 core/service 可复用实现）。"
+  claim_line: 出处链（回归钉证据，runs 归档零改写只读）：
+  claim_block: "出处链（回归钉证据，runs 归档零改写只读）：\n- 换算式与识别规则：内部证据档 §路线 C（\"换算 Z0e=2·Zc、\n  Z0o=Zd/2；模序按 εeff 较高识别偶模\"\
+    ）；\n- 数值证据：runs/hairpin_hfss_anchor/hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
+    \ 每模 Zo 读数 + 换算后\n  z0e_ohm/z0o_ohm）与 runs/hairpin_hfss_anchor/criteria.md §表\n  （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200:\
+    \ 54.31/52.70）；\n- 审查条目：内部证据档 R4-4（换算链此前只在\n  runs handoff 文档与战役脚本中，无 core/service 可复用实现）。"
   refs: []
   source_doi: null
   eq_no: null
@@ -3557,16 +3664,16 @@ entries:
   symbol: discover_engine_pairs
   kind: source
   marker: reference=ref：
-  claim_line: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例——
-  claim_block: 'reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例——
+  claim_line: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
+  claim_block: 'reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
 
-    HFSS 结果为对齐基准）。exclude 命中的引擎不参与配对。
+    内核立规注记 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
 
     引擎名 < 2 个 → 空矩阵（合法，无对可差分）。'
   refs: []
   source_doi: null
   eq_no: null
-  expr: null
+  expr: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
@@ -4058,6 +4165,23 @@ entries:
   access_status: unverified
   verified_by: collect_formula_provenance.py（docstring 转录）
   origin: docstring
+- formula_id: flip_chip:<module>:01
+  kernel_file: src/rfauto/core/flip_chip.py
+  module: rfauto.core.flip_chip
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：本模块为**本仓设计**（aurora_k K13 席面，零文献转写公式）——
+  claim_block: "出处：本模块为**本仓设计**（aurora_k K13 席面，零文献转写公式）——\n  截断球鼓形图元=参考工程 Project1.aedt 的 Sphere 布尔截断做法（用户\n\
+    \  反馈 F3 指认）；植球布点两规则（足迹完全落在地金属并集+相邻球净距\n  ≥30μm）、开窗盖板自动剔球（F4）与 keepout 过滤语义（P13，与 K6\n  filter_keepout_candidates\
+    \ 逐字段同构）均为本仓布点规则设计，判定\n  逻辑可由上列\"矩形近似声明\"逐条推导复算；无经验系数、无拟合常数。"
+  refs: []
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
 - formula_id: fresnel_zone_plate:<module>:01
   kernel_file: src/rfauto/core/fresnel_zone_plate.py
   module: rfauto.core.fresnel_zone_plate
@@ -4199,21 +4323,22 @@ entries:
   symbol: <module>
   kind: source
   marker: 权威口径（
-  claim_line: 权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条）：
-  claim_block: "权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条）：\nQ. Lai, C. Fumeaux, W. Hong, R. Vahldieck, \"Characterization\
-    \ of the Propagation\nProperties of the Half-Mode Substrate Integrated Waveguide,\" IEEE Trans.\n\
-    Microw. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug. 2009,\nDOI 10.1109/TMTT.2009.2025429。\n\
-    \n- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形\n  波导宽 w_eff,SIW = 2w − 1.08·d²/s + 0.1·d²/(2w)（d=过孔直径、s=孔心距）。\n\
-    \  与本仓 siw 族在用 Cassivi 式 w−d²/(0.95·s)（core/calculators.\n  siw_effective_width_mm）是同一物理的两家发表拟合，互差\
-    \ <2%（单测钉）。\n- 式 (9)(10)：w'_eff = w_eff,SIW/2；w_eff,HMSIW = w'_eff + Δw（Δw=开路边\n  边缘场附加宽度）。\n- 式 (13)：Δw/h\
-    \ = (0.05 + 0.30/εr)·ln(0.79·w'²/h³ + (104·w'−261)/h² +\n  38/h + 2.77)——非线性最小二乘拟合式，**mm 量纲约定**（各显式常数按\
-    \ mm\n  计）。声明域：εr∈(2.2,15)、h∈(0.254,2.54)mm、w∈(2.5,10)mm（论文 §II.B\n  明文，覆盖 2–60GHz；拟合误差 <2%）。域外显式\
-    \ ValueError 拒算（越界不\n  外推，#1c/#122）。\n- 式 (11)：fc,TE0.5,0 = c/(4·√εr·w_eff,HMSIW)。\n- 式 (12)：k_z =\
-    \ √(k0²εr − (π/(2·w_eff,HMSIW))²)（f<fc 时倏逝，返回 NaN，\n  siw_beta_rad_m 同契约）。\n- 式 (14)：fc,TE1.5,0 =\
-    \ 3·c/(4·√εr·w_eff,HMSIW)（单模工作带上界，论文 §II.B\n  末：HMSIW 单模带宽 ≈ 同截半宽 SIW 的 2 倍——TE1.5 对应整腔 TE10 二阶）。"
+  claim_line: 权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf）：
+  claim_block: "权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf）：\nQ. Lai, C. Fumeaux,\
+    \ W. Hong, R. Vahldieck, \"Characterization of the Propagation\nProperties of the Half-Mode Substrate\
+    \ Integrated Waveguide,\" IEEE Trans.\nMicrow. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug.\
+    \ 2009,\nDOI 10.1109/TMTT.2009.2025429。\n\n- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形\n\
+    \  波导宽 w_eff,SIW = 2w − 1.08·d²/s + 0.1·d²/(2w)（d=过孔直径、s=孔心距）。\n  与本仓 siw 族在用 Cassivi 式 w−d²/(0.95·s)（core/calculators.\n\
+    \  siw_effective_width_mm）是同一物理的两家发表拟合，互差 <2%（单测钉）。\n- 式 (9)(10)：w'_eff = w_eff,SIW/2；w_eff,HMSIW\
+    \ = w'_eff + Δw（Δw=开路边\n  边缘场附加宽度）。\n- 式 (13)：Δw/h = (0.05 + 0.30/εr)·ln(0.79·w'²/h³ + (104·w'−261)/h²\
+    \ +\n  38/h + 2.77)——非线性最小二乘拟合式，**mm 量纲约定**（各显式常数按 mm\n  计）。声明域：εr∈(2.2,15)、h∈(0.254,2.54)mm、w∈(2.5,10)mm（论文\
+    \ §II.B\n  明文，覆盖 2–60GHz；拟合误差 <2%）。域外显式 ValueError 拒算（越界不\n  外推，#1c/#122）。\n- 式 (11)：fc,TE0.5,0 =\
+    \ c/(4·√εr·w_eff,HMSIW)。\n- 式 (12)：k_z = √(k0²εr − (π/(2·w_eff,HMSIW))²)（f<fc 时倏逝，返回 NaN，\n  siw_beta_rad_m\
+    \ 同契约）。\n- 式 (14)：fc,TE1.5,0 = 3·c/(4·√εr·w_eff,HMSIW)（单模工作带上界，论文 §II.B\n  末：HMSIW 单模带宽 ≈ 同截半宽 SIW\
+    \ 的 2 倍——TE1.5 对应整腔 TE10 二阶）。"
   refs:
   - 10.1109/TMTT.2009.2025429
-  - 权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条
+  - 权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf
   - Microw. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug. 2009
   - DOI 10.1109/TMTT.2009.2025429
   - '- 式 (8)（引其文献 [7] 即 Cassivi 2002 MWCL 拟合式）：SIW 宽 2w 等效矩形'
@@ -4244,6 +4369,34 @@ entries:
   refs:
   - '- R.E. Moore, Interval Analysis (Prentice-Hall, 1966)——包含单调性'
   - affine，Rump-Kashiwagi 2014，round3 [26]
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: ipc_cap:<module>:01
+  kernel_file: src/rfauto/core/ipc_cap.py
+  module: rfauto.core.ipc_cap
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：MIM=平行板精确式 C=ε0·εr·A/d（教科书式，单源复用
+  claim_block: "出处：MIM=平行板精确式 C=ε0·εr·A/d（教科书式，单源复用\n  core/package_interconnect.mim_capacitance 零公式复制）；IDC=相邻\n\
+    \  齿对**侧壁平行板主项**的几何恒等式推导（非文献转写）+εeff=(1+εr)/2\n  衬底半空间均匀化（nfc_coil 匝间寄生同款推导类）；Gevorgian 1996\n  级\
+    \ even/odd 模精确式**未入库**——分项声明见下。\n\n- **MIM**：平行板 C=ε0·εr·A/d（A=上极板重叠面积，d=介质厚）——教科书\n  精确式，**单源复用 core/package_interconnect.mim_capacitance（零公式\n\
+    \  复制，#116）**；边缘场 O(d/√A) 偏差如实声明（该单源已声明\"不引入未\n  核修正系数\"，本模块沿袭——可选修正一律不做凭记忆式）。串联寄生：\n  - R_s：双极板 DC\
+    \ 电阻一阶（电流自端口边摊开，平均路径 l/2/板，\n    R=ρ·l/(t·w) 双板串联合计；趋肤/邻近不在内，coil_esr 同类声明）；\n  - L_s：平行板线电感 L'=μ0·d/w（Ampère\
+    \ 定律宽板精确、边缘场忽略，\n    可推导不转写）×回路路径长 l（上/下板各 l/2 平均）→ L=μ0·d·l/w\n    ——一阶估计，端口引线/馈线电感不在内（如实）。\n- **叉指\
+    \ IDC**：sum-of-capacitances 一阶模型——(n−1) 个相邻齿对的\n  **侧壁平行板主项** C=(n−1)·ε0·εeff·t·l_c/s（面对面积 t·l_c、间距\
+    \ s\n  的几何恒等式推导，非文献转写；εeff=(1+εr)/2 衬底半空间均匀化——\n  nfc_coil.winding_parasitic_capacitance_f 同款推导类）。\n\
+    \  **如实声明**：①槽平面（共面缝）场与齿端边缘场为同阶省略项，薄金属\n  （t/s 小）时模型**系统性低估**（趋近零厚极限时侧壁项→0 而槽平面场\n  有限）；②Gevorgian\
+    \ 1996 级 even/odd 模精确式未入库（原文数表未逐位\n  核对，K11 教训不凭记忆写系数）——精度类 **±50%**（反馈 F1 原文质量\n  门口径），用户实测 173.5fF\
+    \ 作同量级参考锚（非逐位）。\n- **IDC 串联寄生 L**：齿排并联电感一阶（Greenhouse 自感+同排最近邻\n  互感/equal-current 并联合成，core/package_interconnect\
+    \ 单源复用）；\n  汇流排与齿根电流不均匀为一阶省略项（如实）。"
+  refs:
+  - 衬底半空间均匀化（nfc_coil 匝间寄生同款推导类）；Gevorgian 1996
+  - 有限）；②Gevorgian 1996 级 even/odd 模精确式未入库（原文数表未逐位
   source_doi: null
   eq_no: null
   expr: null
@@ -4508,6 +4661,23 @@ entries:
   refs: []
   source_doi: null
   eq_no: §1
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: metric_groups:<module>:01
+  kernel_file: src/rfauto/core/metric_groups.py
+  module: rfauto.core.metric_groups
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：本模块为**本仓设计**（aurora_k K16 席面，零文献转写公式）——
+  claim_block: "出处：本模块为**本仓设计**（aurora_k K16 席面，零文献转写公式）——\n  series/shunt 两族的分槽与候选键优先序按 K8 ``z12_series_metrics``\n\
+    \  输出键对齐设计（绑定行为，非物理公式）；Q=|X|/R 为教科书串联品质\n  因数定义（判读语义，非拟合系数）；\"Q 随 C 变，不是纯损耗\"提示吸收\n  自用户反馈 P14 实验观察（衬底\
+    \ 200→50μm：Q↑40% 主因 C↓33%）。"
+  refs: []
+  source_doi: null
+  eq_no: null
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）
@@ -5720,6 +5890,22 @@ entries:
   refs:
   - Prentice Hall 1993（ground bounce / simultaneous switching 工程口径
   - Trans. Adv. Packag., vol. 22, no. 3, 1999 目标阻抗法同族（频域阻抗×
+  source_doi: null
+  eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: stackup:<module>:01
+  kernel_file: src/rfauto/core/stackup.py
+  module: rfauto.core.stackup
+  symbol: <module>
+  kind: source
+  marker: 出处：
+  claim_line: 出处：本模块为**本仓设计**（aurora_k K9 席面，零文献转写公式）——
+  claim_block: "出处：本模块为**本仓设计**（aurora_k K9 席面，零文献转写公式）——\n  Stackup/StackLayer 的 z 叠算（z_ranges 逐层累加）、units\
+    \ 换算与\n  共形介质矩形分层规划（plan_conformal_dielectric）按用户反馈\n  P15/F10/F2/P7 的工艺需求设计（反馈原文见节首），几何规则可由\n  模块内声明逐条推导复算；无经验系数、无拟合常数。"
+  refs: []
   source_doi: null
   eq_no: null
   expr: null

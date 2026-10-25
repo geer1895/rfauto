@@ -1,7 +1,7 @@
 """D13 第三方 SPICE 交叉验证（ngspice .AC xval）定向单元测试——**全离线**。
 
 任务来源：TODO 0g followUp①（D13 第三方 .AC 对拍通道全无）+ 方案冻结验收行
-延续计划 D13："ngspice/Xyce 回放 vs 原 S 参数 FSV
+docs/continuation-plan_20260907.md D13："ngspice/Xyce 回放 vs 原 S 参数 FSV
 （D12）评级 ≥Good"。
 
 本文件验证 `adapters.spice_netlist.xval_macromodel_spice` /

@@ -12,7 +12,7 @@ Pozar §8.4 递推双源）/msl_cpw×1（同阻异模理想级联 S11(f0)=0）�
    形态=engine_pair.calibrated="closedform"（与引擎档可区分，#122）。
 
 候选裁决（宁少勿滥）：cpw 模型二义（CPWG 50.0Ω vs skrf-CPW 67.44Ω）不立
-锚——两候选并列证据档 runs/w4_phase4/w4e/cpw_ambiguity_evidence.md，裁决
+锚——两候选并列证据档 内部证据档，裁决
 权在用户；mline HJ 系数无仓内已核原文（#df6-⑬）不立锚。
 """
 

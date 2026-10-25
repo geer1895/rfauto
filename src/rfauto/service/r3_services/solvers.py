@@ -1,6 +1,6 @@
 """r3_services.solvers —— 求解器注册面（6g 可视化协议 + 6h 管理 + spice 工具状态）。
 
-自 r3_services.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原「6g/6h」节逐字节搬迁；governance（变更应用）与 chat（工具映射）从这里单向导入，包内零环。
+自 r3_services.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原「6g/6h」节逐字节搬迁；governance（变更应用）与 chat（工具映射）从这里单向导入，包内零环。
 """
 
 from __future__ import annotations

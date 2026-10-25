@@ -1,5 +1,5 @@
 """QM-12 GCI 启用试点（round16 QM-12；P3/S）：历史 run 的 r 恒定 ΔS/网格阶梯
-实算观察阶 p 与 GCI，落档 runs/qm12_gci/。
+实算观察阶 p 与 GCI，落档 内部证据档。
 
 消费面（零实现重复）：本脚本只消费
 - ``rfauto.core.solve_health.solve_health_check`` 的 ``grid_convergence``
@@ -23,7 +23,7 @@ WARN；不可估（振荡×非恒定比等）→ solve_health 因子按 #316 方
 
 用法::
 
-    .venv/Scripts/python.exe scripts/qm12_gci_pilot.py            # 生成/覆盖 runs/qm12_gci/
+    .venv/Scripts/python.exe scripts/qm12_gci_pilot.py            # 生成/覆盖 内部证据档
     .venv/Scripts/python.exe scripts/qm12_gci_pilot.py --dry-run  # 只打印不落盘
 """
 from __future__ import annotations

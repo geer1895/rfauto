@@ -3,7 +3,7 @@
 钉 edb_status 与导出链产物命名契约对齐的两处修正：
 - 批后导出 Touchstone 按文件内容反推端口数后**改名 .sNp**（hfss_batch
   导出链：``_export.s2p`` 只是 2 端口占位——4 端口真机产物实为
-  ``*_export.s4p``，runs/edblane85/w5_batch_campaign/ 五件实证）——
+  ``*_export.s4p``，内部证据档 五件实证）——
   status 面原只认 ``.s2p`` 恒 miss 真实产物（touchstone 列 None + stem
   不登记）；
 - .aedb 工程的日志/导出名带 ``.aedb`` 尾缀（hfss_batch 按**工程名**派生：

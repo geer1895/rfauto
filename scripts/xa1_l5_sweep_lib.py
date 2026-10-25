@@ -1,9 +1,9 @@
 """XA-1 语义终裁·L5 扫频差分批·纯核（拟合/判读/座位设计/合成器）。
 
-判据面 = runs/xa1_arbitration/l5_sweep/criteria.md（#122 判据先行，发射前
+判据面 = 内部证据档（#122 判据先行，发射前
 冻结；本模块是其可执行镜像——阈值常量与判据文本逐条对应，改动须同笔）。
 
-背景（#222 接前席 runs/xa1_arbitration/xa1_arbitration_evidence.json
+背景（#222 接前席 内部证据档
 INCONCLUSIVE）：单点锚 K=f_dip·L 的 ±5% 不确定度吞掉两语义差（0.02%）。
 扫频差分法：同一 W 档扫 5 点贴片长 L，逐座测引擎谷位 f_dip(L)，模型
 Y=c0/(2·f_dip) = √εeff·(L+X) 对 L **恒等线性**——OLS 斜率=√εeff_eff、

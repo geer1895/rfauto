@@ -3,7 +3,7 @@
 Palace（AWS Labs，Apache-2.0，FEM/libCEED）微波 S 参数提取适配器。
 
 2026-09-22 按 Palace v0.18.1 官方口径对齐（实测取证见
-runs/palace_spike/schema_fix_plan.md，取证源=官方 config-schema.json（tag
+内部证据档，取证源=官方 config-schema.json（tag
 v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
 - build_geometry(): 生成 Palace JSON 配置——官方五分节
   Problem/Model/Domains/Boundaries/Solver（顶层键集由此固定），
@@ -20,7 +20,7 @@ v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
   度相位列，频率列 GHz）为 (n, n_ports, n_ports) 线性复数矩阵；单激励
   run 仅激励列有测量值，未测条目零填并在 message 报告已测清单。
 - 多激励 S 矩阵（2026-09-22 df5 消账 PENDING #3，源码+真跑双取证见
-  runs/palace_spike/df5_multiexcite_criteria.md）：官方**单 run 多激励**
+  内部证据档）：官方**单 run 多激励**
   （drivensolver.cpp L154 主循环激励外层×频率内层，每激励扫全频段）；
   port-S.csv 单文件逐激励列块（postoperatorcsv.cpp InitializePortS：列
   = f (GHz) + 逐激励 e × 逐端口 o 交替 |S[o][e]| (dB)/arg(S[o][e])
@@ -32,7 +32,7 @@ v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
   warning（官方归一化不适用，S 列按激励组索引）。解析按 (o,e) 列标签
   回填全矩阵；已测掩码经 get_measured_mask() 结构化透出（#314 口径）。
 - exe 解析链（resolve_palace_exe，2026-09-23 WSL2 通道落地，判据见
-  runs/palace_spike/bridge_criteria.md §1）：① env `RFAUTO_PALACE_EXE`
+  内部证据档 §1）：① env `RFAUTO_PALACE_EXE`
   （显式绝对路径，指向 Windows wrapper `palace.cmd` 或原生二进制——存在
   即用，不存在则 warning+不可用，不静默落回）；② 仓库
   `tools/palace-install/bin/`（win32 命中 `palace.cmd`/`palace.bat`，
@@ -50,7 +50,7 @@ v0.18.1）/docs/src/run.md/palace/models/postoperatorcsv.cpp）：
 
 安装说明见 knowledge/compat_matrix.yaml palace 条目：官方无 Windows 预编译
 （零 release 资产），本机经 WSL2 发行版 rfauto-ubuntu 源码构建 v0.18.1
-（构建/验证实录 runs/palace_spike/wsl_validation.md，官方例 7 案 10/10 门
+（构建/验证实录 内部证据档，官方例 7 案 10/10 门
 PASS），Windows 侧经 tools wrapper 端到端真跑闭环（bridge_smoke.md）。
 """
 

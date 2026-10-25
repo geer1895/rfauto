@@ -1,7 +1,7 @@
 """KiCad 电源对自动提取（B5-5）单测：fixture .kicad_pcb 文本样本，全离线。
 
 零 KiCad 安装依赖（纯 s-expression 文本解析路线，无 pcbnew 子进程分支——
-AGENTS 硬限 2 的 ABI 面整体绕开）。判据预声明（#122）：
+内核立规注记 硬限 2 的 ABI 面整体绕开）。判据预声明（#122）：
 1. sexp 解析：嵌套/引号转义/不配平 ValueError；
 2. net 双格式（KiCad 10 内联名 / 旧式码查表）+ zone net_name 优先；
 3. 网分类：缺省启发式（GND/VSS 族→地，+/VCC 族→电源）与显式名单**替换**

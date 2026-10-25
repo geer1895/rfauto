@@ -7,12 +7,12 @@
      分离+日志轮询；#242：stdout 落文件）；已有 slotline_summary.json 直接复用
      （#158 缓存口径；--no-cache 强制重跑）；
   3) R 两档：r_closed = core/slotline 闭式 Z0（110.92Ω）；r_hfss_zpv = HFSS 仲裁
-     Zpv（读 runs/slotline_arbitration/hfss_arbitration.json 的 verdict/variants，
+     Zpv（读 内部证据档 的 verdict/variants，
      缺则该档标 pending 跳过）；
   4) 后处理：β_B(探针相位斜率)@f0 vs 闭式 / vs HFSS（缺则 pending）；带载比值
      → `assemble_route_b_sparams`（#250）→ 50Ω 基 |S11|/|S21|；线基 |S11_raw|
      = LumpedPort 集总近似失配水平（如实）；swr_amp 诊断；
-  5) 结果 JSON 落 runs/slotline_port_b/result.json（每档一节 + 门）。
+  5) 结果 JSON 落 内部证据档（每档一节 + 门）。
 
 设计点（与路线 A/HFSS 同）：f0=2.5GHz、εr=3.66、h=1.524mm、W=1.0mm、
 L=1λ'=93.4624mm；扫描 2.25–2.75GHz（路线 A 同带）。

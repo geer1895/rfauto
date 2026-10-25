@@ -181,7 +181,7 @@ class TestQualityMetrics:
 class TestMetricDomainMeta:
     """DP-15 C1：fit meta 的 metric_domain / domain_selection 接线。
 
-    判据（runs/df6_dp15c1/criteria.md）：缺省路径行为零变化（只加键）；
+    判据（内部证据档）：缺省路径行为零变化（只加键）；
     auto_domain=True 才跑逐域 LOO-LML；显式统计量指标名豁免。
     """
 

@@ -1,6 +1,6 @@
 """fake_adapter.antenna_family —— 天线/阵列族解析模型。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：patch/dipole/天线族 II（ANT2）/C2 阵列/EEP 阵列/串馈毫米波阵
 ——一阶谐振闭式族（设计式精确逆 f0 + R/Q 常数不进锚）。代码体逐字节搬迁，
 零逻辑改动；_ANT2_C_MM_GHZ 被 coupler_family 单向复用（光速常数单源）。
@@ -206,7 +206,7 @@ def _antenna2_sparams(
     ⇒ S11=Z_s/(Z_s+2Z0)、S21=2Z0/(Z_s+2Z0)（互易；1−|S11|²−|S21|² = R_s 吸收
     = 辐射功率，S21 在缝谐振处出辐射凹——真机锚签名；真机 S11 全带
     −0.5~−2.8dB 的有限地/底 MUR 口径寄生不复现）。
-    真机冒烟对照（runs/antenna2_smoke，2026-09-14/16）见 openems_templates
+    真机冒烟对照（内部证据档，2026-09-14/16）见 openems_templates
     ANTENNA2_META 段注：monopole/ifa/slot PASS；pifa 旧通式标称 FAIL → L 路径
     式定版（override 17.08 PASS，2026-09-16 设计式/标称同步）；loop 贴地镜像
     FAIL → 自由空间改造（2026-09-16）；helix 口径 FAIL——本 fake 是设计口径

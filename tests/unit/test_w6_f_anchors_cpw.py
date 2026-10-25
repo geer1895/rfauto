@@ -1,6 +1,6 @@
 """Phase 6 W6-F cpw 锚回归钉（用户裁决⑥执行件：条件裁 A=CPWG/50Ω、核验优先）。
 
-裁决材料：runs/w4_phase4/w4e/cpw_ambiguity_evidence.md（W4-E 两候选并列档，
+裁决材料：内部证据档（W4-E 两候选并列档，
 49→59 批时如实缓立）；本批核验 2026-10-05 通过 → 锚 cpw.z0_ohm.closedform-v1
 =50.0（CPWG 口径）落 knowledge/anchors.yaml。ANCHORS 单源计数 59→60 由主代理
 合流同步（EXPECTED_ANCHORS @ core/anchors.py，席位禁碰——本文件不做计数断言）。

@@ -6,7 +6,7 @@ series_feed_*：C2 极限锚/AF 峰位/衰减不变性/方向图积抽查/既有
 等价）+ 设计链往返（draft_recipe==NOMINAL 逐位）+ fake 派发（谷位=设计式
 精确逆，未标定如实）+ 注册四件套 + 引擎预算预声明复核（#328 口径，
 cells/dt/NrTS 以 exec 实测终网格复核预声明值——零发射）。判据预声明
-runs/df7_c10d/criteria.md（先声明后实测）。
+内部证据档（先声明后实测）。
 """
 
 from __future__ import annotations
@@ -413,7 +413,7 @@ class TestRegistration:
         # ge8b WA 席1 inverted_ms+hmsiw+fgcpw 67、WB 席B9 69、ge8d WD 席D2
         # embedded_ms+xcheb_bpf4 71、TA-13 ms_mushroom 72 由单源承载，
         # 字面计数退役）
-        assert len(EXPECTED_TEMPLATES) == 72
+        assert len(EXPECTED_TEMPLATES) == 75  # 72→73 K11 octagonal_spiral→75 K12 mim_cap+interdigital_cap（aurora_k）
         assert len(TEMPLATE_META) == len(TEMPLATE_NOMINAL) == len(EXPECTED_TEMPLATES)
 
     def test_tail_order_contract(self):

@@ -1,8 +1,8 @@
 """MM-4 CRLH 内核单测（core/crlh.py，round17 §五 :146）。
 
 裁判 = 外部独立来源（#118：不是被测实现的自我推导）：
-  * 锚值独立落盘：runs/mm4/anchor_derivation.py（不 import 被测实现的
-    独立闭式+skrf 级联现写实现，输出 runs/mm4/anchor_output.txt，本文件
+  * 锚值独立落盘：内部证据档（不 import 被测实现的
+    独立闭式+skrf 级联现写实现，输出 内部证据档，本文件
     逐值写死）；
   * 闭式恒等式：平衡点 β 过零 = ω_se = ω_sh = ZOR（scipy.brentq 数值
     求根对拍）、平衡 Z_CRLH ≡ √(L_R/C_R)（Caloz-Itoh 经典结果）、
@@ -47,7 +47,7 @@ from rfauto.core.crlh import (
 )
 from rfauto.service.calculator_service import run_calculator
 
-# ── 名义例（runs/mm4/anchor_derivation.py 同参）─────────────────────────
+# ── 名义例（内部证据档 同参）─────────────────────────
 # 平衡：L_R=L_L=10 nH、C_L=C_R=2.5 pF、d=5 mm
 L_R = 10.0e-9
 C_L = 2.5e-12

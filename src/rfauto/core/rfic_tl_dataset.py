@@ -28,7 +28,7 @@ provenance 诚实性（#122 不凑绿 / #331 观察不失真）：
 
 数据获取（工作区快照，gitignored 不入库）：本仓快照 =
 ``git clone --depth 1 https://github.com/ChenhaoChu/RFIC-TL.git
-runs/pb1_rfic_tl/upstream``（2026-09-26 实测，commit 见
+内部证据档``（2026-09-26 实测，commit 见
 RFIC_TL_SNAPSHOT_COMMIT）；他机可重放同一命令。
 
 消费方：
@@ -186,7 +186,7 @@ def load_rfic_tl(root: str | Path, *, nodes: Sequence[str] | None = None) -> dic
     ----------
     root : str | Path
         上游仓库根（含 ``data/``）或数据目录本身。典型取法
-        ``<repo>/runs/pb1_rfic_tl/upstream``。
+        ``<repo>/内部证据档``。
     nodes : Sequence[str] | None
         只加载指定节点（None = 全部）。未知节点名报 ValueError。
 

@@ -1,4 +1,4 @@
-"""标准圆同轴传输线通用件族（架构批 A2-C 席域 1，R7 第二梯队 T1）。
+"""标准圆同轴传输线通用件族（aurora72 A2-C 席域 1，R7 第二梯队 T1）。
 
 三键：coax_line_z0（特性阻抗双向解：分析 a,b→Z0 / 综合 z0→a 或 b /
 ratio_only） / coax_line_attenuation（行波线衰减分解：导体 αc∝√f +
@@ -79,7 +79,7 @@ p_op_w ≥ 0；越界一律显式拒绝。
   同族口径。
 - coax_line_power_capacity：内导体表面场强上限 TEM 场解（Pozar §2.2）。
 - coax_line_cutoff_attenuator：Pozar §3 波导一般理论倏逝模
-  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，架构批 W8-S37 批口径）。
+  α=k_c·√(1−(f/f_c)²)（保角映射截止常数，aurora_e W8-S37 批口径）。
 """
 
 from __future__ import annotations

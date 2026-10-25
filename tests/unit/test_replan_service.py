@@ -1,6 +1,6 @@
 """df7+ R3：AQE 分段重规划多保真路由测试（replan_service，零真机零网络）。
 
-判据/决策表/成本模型阈值预声明于 runs/df7_r3aqe/criteria.md，本文件逐条对照
+判据/决策表/成本模型阈值预声明于 内部证据档，本文件逐条对照
 （对照表见 criteria §五）。隔离纪律：tmp_path 落盘 + chdir（#144，不污染真实
 runs/）。
 """

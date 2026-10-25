@@ -1,4 +1,4 @@
-"""PLL 锁定/捕获时间族（架构批 W4-S14 席域 3，R2_core_tier3 边际池立项
+"""PLL 锁定/捕获时间族（aurora_f W4-S14 席域 3，R2_core_tier3 边际池立项
 ——边际池"PLL 锁定时间（S）"，R2 §④ grep 证据 `lock.time|settling.*pll`
 全零）。
 

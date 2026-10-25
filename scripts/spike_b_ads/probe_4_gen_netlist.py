@@ -8,7 +8,7 @@ os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
 
 import keysight.ads.de as de
 
-wrk = r"D:\rf_workspace\scripts\spike_b_ads\sample_wrk\Datalink_Basics_wrk"
+wrk = r"D:/rf_workspace\scripts\spike_b_ads\sample_wrk\Datalink_Basics_wrk"
 de.open_workspace(wrk)
 print("workspace open:", de.workspace_is_open())
 
@@ -34,7 +34,7 @@ else:
     print("=== NETLIST (first 60 lines) ===")
     lines = str(netlist).splitlines()
     print("\n".join(lines[:60]))
-    out = r"D:\rf_workspace\scripts\spike_b_ads\sample_netlist.txt"
+    out = r"D:/rf_workspace\scripts\spike_b_ads\sample_netlist.txt"
     with open(out, "w", encoding="ascii", errors="ignore") as f:
         f.write(str(netlist))
     print("saved to", out)

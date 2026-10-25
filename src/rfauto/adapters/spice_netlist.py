@@ -59,7 +59,7 @@ from rfauto.core.circuit_hb import (
 )
 from rfauto.core.macromodel import compare_s_matrices, spice_subcircuit_port_info
 
-#: 工作区随带 ngspice 的缺省位置（tools/ngspice，项目规则 环境 rule 1：
+#: 工作区随带 ngspice 的缺省位置（tools/ngspice，内核立规注记.md 环境 rule 1：
 #: 工具链一律落 E 盘工作区；不存在时回落 PATH 探测）。
 _WORKSPACE_NGSPICE = Path(__file__).resolve().parents[3] / "tools" / "ngspice" / (
     "Spice64/bin"

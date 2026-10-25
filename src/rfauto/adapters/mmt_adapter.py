@@ -14,7 +14,7 @@
    同构产物落盘（sparams.csv 5 列掩码契约 + mmt.s2p + mmt_meta.json）；
 3. 注册进全局 EMSolverRegistry（EMSolverType.MMT，导入即注册）。
 
-诚实边界（P1 判据 runs/df6_dp1mmt/criteria.md §0 全额继承）：
+诚实边界（P1 判据 内部证据档 §0 全额继承）：
 - 膜片/阶梯的绝对 S 值 UNDECIDABLE 待 G1 HFSS 仲裁（P3）——meta 携带
   absolute_s_note，不冒充已认证；
 - undetermined 频点（近截止 ±5%·fc10 / 端口过传）S=NaN 如实不外推，
@@ -471,6 +471,19 @@ class MmtAdapter(EMSolverAdapter):
                                                form="ri")
             except Exception as exc:  # 观测性面：TS 失败不回滚 CSV/meta（#105）
                 logger.warning("Touchstone 导出失败（CSV/meta 保留）: %s", exc)
+        # B4（aurora_l Wave-B）：曲线产物 sidecar（sparams.csv+mmt.s2p，归属
+        # 证据），best-effort 观测面（#105）——失败不回滚 S 主路产物。
+        try:
+            from rfauto.service.runs_verify_service import write_artifact_sidecar
+
+            write_artifact_sidecar(workdir / _SPARAMS_CSV_NAME,
+                                   run_id=workdir.name, kind="sparams_csv")
+            touch_path = workdir / _TOUCHSTONE_NAME
+            if touch_path.is_file():
+                write_artifact_sidecar(touch_path, run_id=workdir.name,
+                                       kind="touchstone")
+        except Exception as exc:  # 观测面兜底（#105）
+            logger.warning("sidecar 写出失败（S 主路产物保留）: %s", exc)
         meta = {
             "schema": "rfauto-mmt/v1",
             "solver": "mmt",

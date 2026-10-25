@@ -10,7 +10,7 @@ params:
   mon_w_mm: 1.0
   feed_gap_mm: 2.0
 status: ok
-script_sha256: 047b5d11363e6daa236bd9b46789a414fcc868b2a0f791adf85069646cd04f96
+script_sha256: ac6a2d7a47458235ff9104086adab7422f7e5f12a4c4f6c8726ca6580791f9be
 csx:
   n_primitives: 5
   props:

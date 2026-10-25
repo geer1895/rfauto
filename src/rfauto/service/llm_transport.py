@@ -1,4 +1,4 @@
-"""LLM 传输层叶（T1 终章解环；架构批 W1-S1）。
+"""LLM 传输层叶（T1 终章解环；aurora_h W1-S1）。
 
 从 agent_runtime 叶化：``openai_chat_completion`` 是纯外呼传输面
 （OpenAI 兼容 /chat/completions，configs/chat_settings.yaml 的
@@ -8,7 +8,7 @@ runtime_ab / r3_services.chat 多处函数内引用。叶化后 systemone_servic
 systemone→agent_runtime 边（agent_runtime→agent_safety→systemone→
 agent_runtime 三角环的最后一条回边断；第一条 agent_runtime→agent_safety
 TYPE_CHECKING 边由 agent_waterfall_types 叶断——R1 架构深审 v3 §2.2 S1，
-内部证据目录）。
+runs/aurora_h/R1_arch_audit_v3.md）。
 
 消费面与测试缝保真声明：
 - agent_runtime 顶层同名再导出（``openai_chat_completion as

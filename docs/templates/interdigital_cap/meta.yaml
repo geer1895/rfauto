@@ -1,0 +1,107 @@
+f0_ghz: 2.0
+n_ports: 2
+template: interdigital_cap
+substrate:
+  er: 12.9
+  h_mm: 0.1
+  tan_d: 0.0006
+params:
+- n_fingers
+- lf_um
+- wf_um
+- sf_um
+- e_tip_um
+- h_mm
+nominal_params:
+  n_fingers: 24
+  lf_um: 220.0
+  wf_um: 5.0
+  sf_um: 5.0
+  e_tip_um: 15.0
+  h_mm: 0.1
+  er: 12.9
+  tan_d: 0.0006
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S21/S11 @ LumpedPort 1/2（馈盘A-左排 / 右排-馈盘B 水平桥隙，R=50Ω
+  CalcPort 同参考；串联提取：理想串联元 Z=2·Z0·(1−S21)/S21→低频段
+  C=−1/(ω·Im(Z))，与 em deembed 的 Z12 提取链同式——IDC 集总 C=去嵌后
+  173.5fF 实测路径；C±50%/SRF>2×f0 质量判据由 CALC 键
+  interdigital_capacitance 承载）
+topology: >-
+  GaAs IPD 叉指电容：n 根指条 A/B 两排交错（A 排接左汇流排、B 排接右
+  汇流排，B 排指条外伸 e_tip 越 A 排指条端），两端馈焊盘+双 LumpedPort
+  水平桥隙（Port1 跨馈盘A-左排、Port2 跨右排-馈盘B，串联口径）；两排
+  导体 DC 隔离（梳齿互锁=定义性质，缝塌缩短路即红）；全域 MUR（电小
+  器件近场主导）
+param_semantics: >-
+  n_fingers=总齿数 N（渲染取整，≥2 且 A/B 排各半），lf_um=齿长 L
+  （μm），wf_um=齿宽 W（μm），sf_um=齿间距 S（μm），e_tip_um=B 排尖部
+  外伸（μm，Clears 左汇流排、不产生相邻缝；闭式耦合长度 l_c=lf−e_tip），
+  h_mm=基板厚（仓内基板惯例 mm，GaAs 100μm 档）；er/tan_d 走
+  substrate/nominal（GaAs 半绝缘）——N/L/W/S 全 μm 为 IPD 工艺口径，
+  经 core.stackup.to_mm(v,'um') 单源换算（μm 帮手函数）；汇流排宽=wf、
+  馈盘宽=3·wf（派生值不单列参数）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(wf,sf,port_gap)/4
+  （μm 尺度几何驱动网格，禁 λ_sub/50 口径）；齿缘/汇流排/馈盘/端口盒
+  边+中线精确入网（#198）；NEAR≤min(sf,port_gap)/3 渲染期守卫（#266）；
+  全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、激励向 ≥2 格
+  （#174/#283）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记
+  （C/SRF 串联提取对拍+渲染零厚 vs CALC 侧壁 t_um 差异注记待真机批，
+  本批零发射）
+nominal_derivation: |-
+  用户实测参考同量级档（Z12 去嵌后 C=173.5fF）：n=24,
+  lf=220, wf=sf=5, e_tip=15μm → 耦合长度 l_c=lf−e_tip=205μm →
+  C=(N−1)·ε0·εeff·t·l_c/s=174.09fF（侧壁 sum-of-capacitances 一阶，
+  εeff=(1+εr)/2=6.95 半空间均匀化、t=3μm 金）——对用户实测偏差
+  +0.34%（±50% 判据内；用户几何未给全，同量级参考对拍非逐位锚，模型
+  精度类 ±50% 如实声明：槽平面/齿端边缘场省略→薄金属低估偏置）；
+  串联寄生一阶：L_s=双排齿组 Greenhouse 并联电感 186.98pH、R_s=
+  齿排并联+汇流排 DC 135.6mΩ → SRF≈45.7GHz；基板 GaAs 半绝缘典型值
+  （er=12.9/tanδ=0.0006/h=100μm 薄膜 IPD 档，octagonal_spiral 同板）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 叉指电容（IDC）：梳齿互锁把面内缝电容串并联放大——(N−1) 个相邻齿缝各贡献侧壁电容 ε0·εeff·t·l_c/s（sum-of-capacitances 一阶）。薄金属时槽平面场与齿端边缘场同阶（模型低估偏置，±50% 精度类）；εeff=(1+εr)/2 为衬底半空间均匀化。典型用于 GaAs IPD/MMIC 集总匹配与 RF 旁路；常见误用=把面内缝电容当平行板 A/d（介质是空气+衬底，d 不是板距）。
+    derivations:
+    - claim: 侧壁 sum-of-capacitances（一阶）
+      formula: C = (N-1)*eps0*eps_eff*t*l_c/s, eps_eff=(1+er)/2, l_c=lf-e_tip
+      source: 本仓 core/ipc_cap.interdigital_capacitance_f（推导式非文献转写，精度声明见模块头；docs/templates/interdigital_cap/meta.yaml nominal_derivation（名义档 174.09fF vs 用户实测 173.5fF））
+    - claim: 齿排串联寄生电感（Greenhouse 并联合成）
+      formula: L_s = L_self(l_f,w_f,t)/n_bank + (n_bank-1)*M(gmd)/n_bank（双排串联）
+      source: 本仓 core/package_interconnect（greenhouse_segment_self_h/greenhouse_mutual_equal_length_h/gmd_equal_strips 单源复用）
+    - claim: 自谐振频率（串联寄生谐振）
+      formula: SRF = 1/(2*pi*sqrt(L_s*C))
+      source: 本仓 core/ipc_cap.interdigital_capacitance_f（推导式非文献转写，精度声明见模块头）
+  sensitivity_ranking:
+  - param: n_fingers
+    order: 1
+    basis: 齿数（C∝(N−1) 缝数主项）
+  - param: lf_um
+    order: 2
+    basis: 齿长（C∝l_c 主项+L_s 通道）
+  - param: sf_um
+    order: 3
+    basis: 齿间距（C∝1/s 主项）
+  - param: wf_um
+    order: 4
+    basis: 齿宽（C 间接经 l_c/e_tip 守卫+R_s/L_s 通道）
+  - param: e_tip_um
+    order: 5
+    basis: 尖部外伸（C∝(lf−e_tip) 负通道； Clears 汇流排属寄生维）
+  - param: h_mm
+    order: 6
+    basis: 板厚不进闭式（0——εeff 半空间假设内属全波维）
+  - param: er
+    order: 7
+    basis: 衬底 εr（经 εeff=(1+εr)/2 弱通道）
+  - param: tan_d
+    order: 8
+    basis: 损耗角不进闭式（0）
+  quiz_refs: []

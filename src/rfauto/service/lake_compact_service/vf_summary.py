@@ -1,6 +1,6 @@
 """lake_compact_service.vf_summary —— ③ sparams VF 有界摘要（生成/读回/盘点）。
 
-自 service/lake_compact_service.py 单文件巨石按职责域拆分（架构批 W3-S1，
+自 service/lake_compact_service.py 单文件巨石按职责域拆分（aurora_h W3-S1，
 T2 范式/AU-1 工艺）：代码体自原节「③ sparams VF 有界摘要」逐字节搬迁
 （复用 core/macromodel 拟合，误差界是摘要组成部分——不带误差界的摘要
 不落盘），零逻辑改动。

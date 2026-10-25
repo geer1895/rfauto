@@ -207,7 +207,7 @@ class TestGeometryAudit:
 
 
 class TestSlotEdgeRefinement:
-    """槽缘 NEAR→w/8 细化（TODO 0df④）：纯函数口径 + #212 离线网格实测。
+    """槽缘 NEAR→w/8 细化（待办清单 0df④）：纯函数口径 + #212 离线网格实测。
 
     #311 判据：缝内内部线 ≥1（缝缘线不算）；#349：槽区最小线距 ≥10µm。
     """

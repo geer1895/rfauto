@@ -1,6 +1,6 @@
 """fake_adapter.slotline_family —— 槽线族/线圈族解析模型。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：槽线闭式 γ（core/slotline 单源）+ 路线 A/路线 B/Knorr 过渡/
 Marchand 巴伦 + coil_nfc 串联 RLC 一阶。代码体逐字节搬迁，零逻辑改动
 （数值只在 core 闭式内核，铁律 7）。
@@ -167,7 +167,7 @@ def _coil_nfc_sparams(freq_ghz: Any, n_turns: int = 7,
 
     **未标定注记（如实）**：本模型为「几何 → core Mohan current_sheet 闭式
     L → 外匹配电容 C_tune → 串联 RLC」的电路级一阶裁判，未对标任何真机/全波
-    引擎（coil_nfc 13.56MHz 全波 FDTD 预算见 runs/df7_nfc/criteria.md §e，
+    引擎（coil_nfc 13.56MHz 全波 FDTD 预算见 内部证据档 §e，
     本批未冒烟）。仅作优化环闭环裁判面，不作为引擎偏差裁判；分布式效应/
     自谐振/邻近损耗不在模型内（13.56MHz 电小频段一阶可接受，如实声明）。
 

@@ -33,7 +33,7 @@ if src_dir.exists() and str(src_dir) not in sys.path:
 
 def _fake_probe(reachable: bool = True, n_machines: int = 1):
     def _probe(machine=None):
-        machines = [{"name": "sim-host", "host": "10.0.0.8",
+        machines = [{"name": "sim_server", "host": "10.0.0.8",
                      "reachable": reachable,
                      "ports": {"ansys_license": {"port": 1055,
                                                  "open": reachable,
@@ -47,7 +47,7 @@ def _fake_probe(reachable: bool = True, n_machines: int = 1):
 def _fake_preflight(verdict: str = "PASS", reason: str | None = None):
     def _pf(machine=None):
         out = {"ok": verdict == "PASS", "verdict": verdict,
-               "reason": reason, "machine": "sim-host" if verdict != "SKIP"
+               "reason": reason, "machine": "sim_server" if verdict != "SKIP"
                else None,
                "gate": {"kind": "tcp_license_ports",
                         "all_open": verdict == "PASS", "closed": []}}

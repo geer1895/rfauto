@@ -1,6 +1,6 @@
 """DP-15 C1 变换域注册表与逐域 LOO-LML 选择器单测（合成回收，快路径）。
 
-判据（预声明 runs/df6_dp15c1/criteria.md §a）：逐域 forward/inverse 回路、
+判据（预声明 内部证据档 §a）：逐域 forward/inverse 回路、
 dB 钳制、diff 缺频率轴如实排除、平局保序、已知域选择（#370 深谷形态）、
 选择确定性。全组 <10s（小样本 + GP 重启数压低）。
 """

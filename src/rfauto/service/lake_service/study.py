@@ -1,6 +1,6 @@
 """lake_service.study —— study 元组抽取与索引首建 CLI 入口（DA-1）。
 
-自 lake_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原节「study 元组抽取」逐字节搬迁。
+自 lake_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原节「study 元组抽取」逐字节搬迁。
 """
 
 from __future__ import annotations

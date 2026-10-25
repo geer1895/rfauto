@@ -1,6 +1,6 @@
 """EC-18 TuRBO-1 式信任域贝叶斯优化（trust_region 旁的 batch-GP 路径）。
 
-池 P3 圈定件（架构批 W5-S22；ecosystem §二 EC-18）。法源：
+池 P3 圈定件（aurora_e W5-S22；ecosystem §二 EC-18）。法源：
 - TuRBO（D. Eriksson, M. Pearce, J. Gardner, R. Turner, M. Poloczek,
   "Scalable Global Optimization via Local Bayesian Optimization",
   NeurIPS 2019）：TuRBO-1 = 单信任域循环——域内局部 GP + Thompson
@@ -8,7 +8,7 @@
   后以 incumbent 为中心重开；
   成功/失败计数伸缩信任域边长（×2 / ×0.5），域塌缩后以 incumbent 为
   中心重开；
-- **官方计数器对称性核对结论（架构批 W2-S8，W6-P3-1 清偿；review_w6
+- **官方计数器对称性核对结论（aurora_f W2-S8，W6-P3-1 清偿；review_w6
   曾凭记忆记"官方非对称=成功不清零"系误记，按 #122 以官方源为准）**：
   官方仓 uber-research/TuRBO（NeurIPS 2019 配套代码，master 分支
   turbo/turbo_1.py ``_adjust_length``，2026-10-18 原文取回逐行核对）——

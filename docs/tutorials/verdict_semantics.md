@@ -53,10 +53,10 @@ UNKNOWN 上：证据不在，就写明缺什么，不硬判。
 
 ## 3. unhealthy 怎么读：掩码语义与 FAIL 的两族分解
 
-再看一个真实档案里的 unhealthy（aurora_c 战役 branchline 工作目录）：
+再看一个真实档案里的 unhealthy（demo_oe_campaign 示例档案的 branchline 工作目录）：
 
 ```bash
-rfauto runs health aurora_c_oe/branchline
+rfauto runs health demo_oe_campaign/branchline
 ```
 
 实测输出（节选）：

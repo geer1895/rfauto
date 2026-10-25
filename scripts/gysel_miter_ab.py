@@ -1,7 +1,7 @@
 """C7：gysel mitered-jog 切角旋钮真机 A/B（离线面+真机编排，marchand_via_ab 同骨架）。
 
-登记语境（TODO:285/794 排空五轮 followUps "gysel 弯折等效长度/mitered-jog 再
-一轮真机"）：gysel L-jog 等长变体（P2⑪，runs/gysel_smoke/pt3）真跑 S32@f0
+登记语境（待办清单:285/794 排空五轮 followUps "gysel 弯折等效长度/mitered-jog 再
+一轮真机"）：gysel L-jog 等长变体（P2⑪，内部证据档）真跑 S32@f0
 -38.1dB，电路级 ≤-88dB 增益被 EM 地板吃掉大半（归因假设待证 #122：两处未切角
 90° 弯折等效长度/弯角寄生）。IC67 已落 `_jog_miter_mm` opt-in 旋钮
 （adapters/openems_templates._gysel_layout/_gysel_jog_lines：每侧 jog 转角外
@@ -11,7 +11,7 @@
 
 A/B 口径（渲染单源 render_script("gysel", ...)，两变体唯一差异=jog 段原语+
 缺口缘网格线；off=不带旋钮键=烟测口径逐字节同源，仅一条注释行随 #313 文档化
-与 runs/gysel_smoke/pt3/simulation.py 漂移——FDTD 输入零差异）：
+与 内部证据档 漂移——FDTD 输入零差异）：
   off = _jog_miter_mm 缺省（不传键）——A 臂基线（=pt3 复跑）
   on  = _jog_miter_mm=0.2——B 臂切角档
 c=0.2mm 的选择（预声明，网格相撞约束）：缺口缘 x=±(XA+W_F/2−c) 与既有桥带缘
@@ -30,7 +30,7 @@ YJ+G/2 间距=(W_F−G)/2−c=0.3067−c；c≥0.3 时后者塌到 6.7µm、c=0.
 历史参考 wall=pt3 6926s（并发批嫌疑，solo 预期更低）；单轮硬超时 90min、两轮
 名义 ≤2h，**PARTIAL 门=1.5×（3h，到点停）**；共享锁 runs/.oe_collect.lock
 （O_CREAT|O_EXCL、30s 轮询、30min 上限 fail-closed、陈锁 pid 接管）+#261 命令
-行互斥查（自身名 gysel_miter_ab 不入模式——AGENTS #261 自锁坑）；断点 resume=
+行互斥查（自身名 gysel_miter_ab 不入模式——内核立规注记 #261 自锁坑）；断点 resume=
 collect_ok.json 逐变体幂等。
 
 判读（G11 掩码纪律）：gysel 9 列 CSV=部分矩阵——S11/S21/S31 出自激励 1 run、
@@ -82,7 +82,7 @@ GYS_PARAMS: dict[str, float] = {"w_arm_mm": 0.6035, "w_feed_mm": 1.1134,
 SOLVE_TIMEOUT_S = 90.0 * 60.0       # 单轮硬超时
 BUDGET_WALL_S = 2.0 * 60.0 * 60.0   # 两轮名义预算
 PARTIAL_FACTOR = 1.5                # 超 1.5×（3h）→ PARTIAL 停
-#: gysel 烟测历史 wall（runs/gysel_smoke/pt*_pass.log；pt3 含并发拖慢嫌疑）
+#: gysel 烟测历史 wall（内部证据档；pt3 含并发拖慢嫌疑）
 PT3_REF_WALL_S = 6926
 PT2_REF_WALL_S = 1702
 
@@ -94,14 +94,14 @@ SIDE_EFFECT_SPLIT_DB = 0.5          # |Δ均分差| ≥ 0.5dB → 均分护栏
 MESH_MIN_SPAN_M = 40e-6             # exec 审计门（#152 族；c=0.2 实测 53.4µm）
 DT_FACTOR_MAX = 1.5                 # on/off CFL dt 因子门（c=0.2 实测 1.26）
 
-#: gysel 烟测硬门（runs/gysel_smoke 判据，逐臂如实判定非本 A/B 主判）
+#: gysel 烟测硬门（内部证据档 判据，逐臂如实判定非本 A/B 主判）
 GATE_BETA_PCT = 2.0
 GATE_SPLIT_DB = 0.5
 GATE_S32_DB = -15.0
 GATE_S11_DB = -10.0
 H_SUB_MM, ER, TAND = 0.508, 3.66, 0.0037   # _DEFAULT_SUB（rogers4350b_h0.508）
 
-#: pt3 基线（runs/gysel_smoke/pt3_pass.log 原文；off 臂应为同轮复现锚）
+#: pt3 基线（内部证据档 原文；off 臂应为同轮复现锚）
 PT3_BASELINE = {"s32_db": -38.1, "s32_min_db": -52.5, "s32_min_f_ghz": 2.451,
                 "s11_db": -25.0, "beta_delta_pct": 0.94}
 
@@ -683,9 +683,9 @@ def release_lock(owner_pid: int) -> None:
 
 def oe_foreign_running() -> list[str]:
     """#261 互斥查：python 进程 CommandLine 含 `_rfauto_runner|simulation.py|
-    render_script.py`（渲染脚本名=AGENTS #261 口径第二模式）。
+    render_script.py`（渲染脚本名=内核立规注记 #261 口径第二模式）。
 
-    自身名 gysel_miter_ab 不入模式（AGENTS #261 自锁坑：互斥模式含自身名会
+    自身名 gysel_miter_ab 不入模式（内核立规注记 #261 自锁坑：互斥模式含自身名会
     命中自身 shim+解释器对死锁）。临时 .ps1 经 powershell -NoProfile
     -ExecutionPolicy Bypass -File 执行（#289：内联 $_ 会被 shell 层展开）。
     探测失败=如实抛错（fail-closed）。

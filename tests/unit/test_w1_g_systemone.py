@@ -1,6 +1,6 @@
 """W1-G System One（Jev 类）决策通道测试（全离线；#139 monkeypatch 钉外呼）。
 
-判据对照（runs/w1_phase1/criteria.md W1-G）：
+判据对照（内部证据档 W1-G）：
 - 铁律 7：答案 schema 白名单负控（float 进物理语义字段被拒）；
 - #139：openai_compatible/typesafe_jev 全部传输面 monkeypatch 钉住，
   配置缺失→unavailable 不发网；缺省态纯确定性零网络；

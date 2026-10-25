@@ -1,6 +1,6 @@
 """EC-17 SAAS 精神稀疏 ARD 高维先验（确定性 MAP 点估计，无 MCMC）。
 
-池 P3 圈定件（架构批 W5-S22；ecosystem §二 EC-17，条件件"≥15 维战役"
+池 P3 圈定件（aurora_e W5-S22；ecosystem §二 EC-17，条件件"≥15 维战役"
 驱动——本档为离线内核+合成基准验证，真机放量等条件触发）。法源：
 - SAASBO（Eriksson & Jankowiak, "High-Dimensional Bayesian Optimization
   with Sparse Axis-Aligned Subspaces", UAI 2021；botorch SAASBO）：

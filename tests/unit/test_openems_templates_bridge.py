@@ -1,6 +1,6 @@
 """lange 去桥对照旋钮（_bridge=0）单测：缺省逐字节不变 + 去桥恰桥相关行。
 
-c4-去桥单变量对照（，runs/c4_debridge/criteria.md 预声明）：
+c4-去桥单变量对照（wf:c4-debridge，runs/c4_debridge/criteria.md 预声明）：
 params["_bridge"]=0 → 桥金属 4 盒+立柱 8 盒不渲染、桥面 z 网格线不再入网
 （哨兵 np.array([H_SUB])——CSRectGrid.AddLine 拒绝空数组）、_near_y 恰去 8 个
 桥 y 缘值；缺省（无键或 =1）渲染与旋钮落位前快照逐字节不变（离线自证

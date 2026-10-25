@@ -880,7 +880,7 @@ def test_run_seat_remote_export_fetch_fail_is_fail(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "export_network_data", lambda h, p: None)
     monkeypatch.setattr(mod, "fetch_remote_file",
                         lambda machine, rp, lp: False)
-    v = mod.run_seat("stepped_impedance", machine="sim_host",
+    v = mod.run_seat("stepped_impedance", machine="sim_server",
                      out_dir=tmp_path, dry_run=False)
     assert v["verdict"] == "FAIL"
     assert "回取失败" in v["error"]
@@ -1111,7 +1111,7 @@ def test_open_remote_hfss_switches_active_at_construction(monkeypatch):
              os.environ.get("PYAEDT_USE_PRE_GRPC_ARGS"))
     try:
         _desktop, _h, info = mod.open_remote_hfss(
-            {"template": "wilkinson"}, "sim_host")
+            {"template": "wilkinson"}, "sim_server")
     finally:
         pass
     d = calls["desktop"]
@@ -1124,7 +1124,7 @@ def test_open_remote_hfss_switches_active_at_construction(monkeypatch):
     assert calls["hfss"]["kw"]["project"].endswith("project.aedt")
     assert calls["order"] == ["bootstrap", "desktop", "hfss"]
     assert calls["bootstrap"] == [(
-        "sim_host",
+        "sim_server",
         "E:\\rfauto_remote\\hfss_window_b2a\\wilkinson\\hfss_side")]
     assert info["server_project"].endswith("project.aedt")
     assert info["project_dir"].endswith("hfss_side")
@@ -1140,7 +1140,7 @@ def test_open_remote_hfss_bootstrap_fail_closed(monkeypatch):
     calls: dict = {}
     _patch_remote_session(monkeypatch, calls, bootstrap_ok=False)
     with pytest.raises(RuntimeError, match="预建失败"):
-        mod.open_remote_hfss({"template": "wilkinson"}, "sim_host")
+        mod.open_remote_hfss({"template": "wilkinson"}, "sim_server")
     assert calls["order"] == ["bootstrap"]        # attach 未开始
 
 
@@ -1166,9 +1166,9 @@ def test_ensure_remote_project_dir_cmd_mkdir(monkeypatch):
     base = "rfauto.infra.remote_machines"
     monkeypatch.setattr(f"{base}.SshTransport", _T)
     monkeypatch.setattr(f"{base}.load_remote_machines",
-                        lambda: {"sim_host": object()})
+                        lambda: {"sim_server": object()})
     monkeypatch.setattr(f"{base}.resolve_machine", lambda name, table: object())
-    ok = mod.ensure_remote_project_dir("sim_host",
+    ok = mod.ensure_remote_project_dir("sim_server",
                                        "E:\\rfauto_remote\\a\\b")
     assert ok is True
     assert sent == ['cmd /c mkdir "E:\\rfauto_remote\\a\\b"']
@@ -1178,7 +1178,7 @@ def test_ensure_remote_project_dir_cmd_mkdir(monkeypatch):
             raise OSError("ssh down")
 
     monkeypatch.setattr(f"{base}.SshTransport", _TDown)
-    assert mod.ensure_remote_project_dir("sim_host", "E:\\x") is False
+    assert mod.ensure_remote_project_dir("sim_server", "E:\\x") is False
 
 
 def test_is_license_error_fingerprint_variants():
@@ -1255,7 +1255,7 @@ def test_assign_ports_matches_partition():
 def test_seat_argv_wiring():
     """单席子进程 argv：--grpc-port 仅 remote 真机路径携带；--no-residue-check
     仅 local 并行真机路径携带；--dry-run 透传；缺省最小面。"""
-    base = {"machine": "sim_host", "out_dir": Path("o"), "dry_run": False}
+    base = {"machine": "sim_server", "out_dir": Path("o"), "dry_run": False}
     argv = mod._seat_argv("wilkinson", grpc_port=50052, residue_check=True,
                           **base)
     assert "--grpc-port" in argv and argv[argv.index("--grpc-port") + 1] == "50052"
@@ -1351,11 +1351,11 @@ def test_run_all_parallel_remote_ports_launch_cleanup(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "launch_remote_grpcsrv", _fake_launch)
     monkeypatch.setattr(mod, "cleanup_remote_grpcsrv", _fake_cleanup)
     monkeypatch.setattr(mod, "_spawn_seat", _fake_spawn)
-    rc = mod.run_all_parallel("sim_host", False, 2, port_base=60000,
+    rc = mod.run_all_parallel("sim_server", False, 2, port_base=60000,
                               out_root=tmp_path)
     assert rc == 0
-    assert launches == [("sim_host", 60000), ("sim_host", 60001),
-                        ("sim_host", 60000), ("sim_host", 60001)]
+    assert launches == [("sim_server", 60000), ("sim_server", 60001),
+                        ("sim_server", 60000), ("sim_server", 60001)]
     # cleanup 与 launch 同席同端口同任务名（波次复用端口逐席清理不互杀）
     assert [(p, t) for _m, p, t in cleanups] == [
         (60000, "RFAuto\\hfss_window_60000_deadbeef"),
@@ -1402,7 +1402,7 @@ def test_run_all_parallel_launch_fail_fail_closed(tmp_path, monkeypatch):
                         lambda m, p, *, task_name=None: cleanups.append(p)
                         or {"ok": True, "killed_pids": []})
     monkeypatch.setattr(mod, "_spawn_seat", _fake_spawn)
-    rc = mod.run_all_parallel("sim_host", False, 2, out_root=tmp_path)
+    rc = mod.run_all_parallel("sim_server", False, 2, out_root=tmp_path)
     assert rc == 1
     assert "coupled_line" not in spawned and "marchand_balun" not in spawned
     fail_entry = next(e for e in
@@ -1488,9 +1488,9 @@ def test_run_all_default_serial_zero_change(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "run_seat", _fake_run_seat)
     assert mod.main(["--all"]) == 0
     assert captured["all"] == ("local", False, 1, 50051, None)
-    assert mod.main(["--all", "--machine", "sim_host", "--dry-run",
+    assert mod.main(["--all", "--machine", "sim_server", "--dry-run",
                      "--out-dir", str(tmp_path)]) == 0
-    assert captured["all"] == ("sim_host", True, 1, 50051, Path(tmp_path))
+    assert captured["all"] == ("sim_server", True, 1, 50051, Path(tmp_path))
     assert mod.main(["--seat", "wilkinson"]) == 0
     seat_name, kw = captured["seat"]
     assert seat_name == "wilkinson"
@@ -1518,13 +1518,13 @@ def test_run_seat_grpc_port_forwarded_and_recorded(tmp_path, monkeypatch):
         raise mod.LicenseBlockedError("probe skip（接线钉）")
 
     monkeypatch.setattr(mod, "open_remote_hfss", _open)
-    v = mod.run_seat("wilkinson", machine="sim_host", out_dir=tmp_path,
+    v = mod.run_seat("wilkinson", machine="sim_server", out_dir=tmp_path,
                      grpc_port=50053)
     assert v["verdict"] == "SKIP"
     assert captured["grpc_port"] == 50053
     assert v["grpc_port"] == 50053
     captured.clear()
-    v = mod.run_seat("wilkinson", machine="sim_host", out_dir=tmp_path)
+    v = mod.run_seat("wilkinson", machine="sim_server", out_dir=tmp_path)
     assert captured["grpc_port"] is None
     assert "grpc_port" not in v          # 缺省零变化：无端口覆盖零新键
 
@@ -1590,7 +1590,7 @@ def test_open_remote_hfss_grpc_port_override(monkeypatch):
                         lambda machine, project_dir: True)
 
     _d, _h, info = mod.open_remote_hfss({"template": "wilkinson"},
-                                        "sim_host", grpc_port=50053)
+                                        "sim_server", grpc_port=50053)
     assert calls["desktop"]["port"] == 50053
     assert calls["hfss"]["port"] == 50053
     assert info["remote"]["port"] == 50053
@@ -1598,7 +1598,7 @@ def test_open_remote_hfss_grpc_port_override(monkeypatch):
         "hfss_window_b2a\\wilkinson\\hfss_side\\project.aedt")
     calls.clear()
     _d, _h, info = mod.open_remote_hfss({"template": "wilkinson"},
-                                        "sim_host")
+                                        "sim_server")
     assert calls["desktop"]["port"] == 50051    # 缺省=注册表单值
     assert info["remote"]["port"] == 50051
 
@@ -1617,7 +1617,7 @@ def test_launch_remote_grpcsrv_per_port_vbs_and_task(monkeypatch):
         return (probe_state["n"] > 1, 1.0)   # 首查（预检）未占用，轮询即开
 
     monkeypatch.setattr(f"{base}.probe_port", _probe)
-    env = mod.launch_remote_grpcsrv("sim_host", 50052, grpc_wait_s=5.0)
+    env = mod.launch_remote_grpcsrv("sim_server", 50052, grpc_wait_s=5.0)
     assert env["ok"] is True and env["port"] == 50052
     assert env["task_name"].startswith("RFAuto\\hfss_window_50052_")
     (vbs_remote, vbs_bytes), = uploads
@@ -1647,7 +1647,7 @@ def test_launch_remote_grpcsrv_silent_vbs_semantics(monkeypatch):
         return (probe_state["n"] > 1, 1.0)   # 首查（预检）未占用，轮询即开
 
     monkeypatch.setattr(f"{base}.probe_port", _probe)
-    env = mod.launch_remote_grpcsrv("sim_host", 50051, grpc_wait_s=5.0)
+    env = mod.launch_remote_grpcsrv("sim_server", 50051, grpc_wait_s=5.0)
     assert env["ok"] is True
     (_vbs_remote, vbs_bytes), = uploads
     text = vbs_bytes.decode("ascii")
@@ -1670,7 +1670,7 @@ def test_launch_remote_grpcsrv_port_busy_fail_closed(monkeypatch):
     _patch_registry_transport(monkeypatch, sent)
     monkeypatch.setattr("rfauto.infra.remote_machines.probe_port",
                         lambda host, port, timeout_s=3.0: (True, 1.0))
-    env = mod.launch_remote_grpcsrv("sim_host", 50051)
+    env = mod.launch_remote_grpcsrv("sim_server", 50051)
     assert env["ok"] is False
     assert "已有监听" in env["reason"] and "不代杀" in env["reason"]
     assert not any("schtasks" in c for c in sent)
@@ -1682,12 +1682,12 @@ def test_launch_remote_grpcsrv_missing_exe_and_ssh_down(monkeypatch):
 
     sent: list[str] = []
     cfg = types.SimpleNamespace(
-        name="sim_host", host="h", hfss_ansysedt_exe="",
+        name="sim_server", host="h", hfss_ansysedt_exe="",
         hfss_project_root="E:/rfauto_remote")
     uploads = _patch_registry_transport(monkeypatch, sent, cfg=cfg)
     monkeypatch.setattr("rfauto.infra.remote_machines.probe_port",
                         lambda host, port, timeout_s=3.0: (False, 1.0))
-    env = mod.launch_remote_grpcsrv("sim_host", 50051)
+    env = mod.launch_remote_grpcsrv("sim_server", 50051)
     assert env["ok"] is False and "ansysedt_exe" in env["reason"]
     assert uploads == [] and not any("schtasks" in c for c in sent)
 
@@ -1703,7 +1703,7 @@ def test_launch_remote_grpcsrv_missing_exe_and_ssh_down(monkeypatch):
 
     base = "rfauto.infra.remote_machines"
     monkeypatch.setattr(f"{base}.SshTransport", _TDown)
-    env = mod.launch_remote_grpcsrv("sim_host", 50051)
+    env = mod.launch_remote_grpcsrv("sim_server", 50051)
     assert env["ok"] is False and "OSError" in env["reason"]
 
 
@@ -1719,7 +1719,7 @@ def test_cleanup_remote_grpcsrv_fingerprint_no_mutual_kill(monkeypatch):
     sent: list[str] = []
     _patch_registry_transport(monkeypatch, sent, query_output=query_out)
     task = "RFAuto\\hfss_window_50051_ab12cd34"
-    env = mod.cleanup_remote_grpcsrv("sim_host", 50051, task_name=task)
+    env = mod.cleanup_remote_grpcsrv("sim_server", 50051, task_name=task)
     assert env["ok"] is True and env["killed_pids"] == ["111"]
     kill = next(c for c in sent if c.startswith("taskkill"))
     assert "/PID 111" in kill
@@ -1729,7 +1729,7 @@ def test_cleanup_remote_grpcsrv_fingerprint_no_mutual_kill(monkeypatch):
     assert task in delete
     # 反向：50052 席只杀 222（波次复用端口逐席清理语义）
     sent.clear()
-    env = mod.cleanup_remote_grpcsrv("sim_host", 50052)
+    env = mod.cleanup_remote_grpcsrv("sim_server", 50052)
     assert env["killed_pids"] == ["222"]
     kill = next(c for c in sent if c.startswith("taskkill"))
     assert "/PID 222" in kill and "/PID 111" not in kill
@@ -1740,7 +1740,7 @@ def test_cleanup_remote_grpcsrv_no_match_and_failure(monkeypatch):
     """无匹配=0 杀如实上报（ok 信封）；SSH 面故障=失败信封不抛（#105）。"""
     sent: list[str] = []
     _patch_registry_transport(monkeypatch, sent, query_output="")
-    env = mod.cleanup_remote_grpcsrv("sim_host", 50051)
+    env = mod.cleanup_remote_grpcsrv("sim_server", 50051)
     assert env["ok"] is True and env["killed_pids"] == []
     assert not any(c.startswith("taskkill") for c in sent)
 
@@ -1756,7 +1756,7 @@ def test_cleanup_remote_grpcsrv_no_match_and_failure(monkeypatch):
 
     base = "rfauto.infra.remote_machines"
     monkeypatch.setattr(f"{base}.SshTransport", _TDown)
-    env = mod.cleanup_remote_grpcsrv("sim_host", 50051)
+    env = mod.cleanup_remote_grpcsrv("sim_server", 50051)
     assert env["ok"] is False and "OSError" in env["reason"]
 
 
@@ -2421,7 +2421,7 @@ def test_marchand_port_form_cli_guards():
 def test_seat_argv_carries_port_form():
     """并行编排器→席位子进程 argv 全链携带 --marchand-port-form（缺省零
     携带=行为零变化）。"""
-    argv = mod._seat_argv("marchand_balun", machine="sim_host",
+    argv = mod._seat_argv("marchand_balun", machine="sim_server",
                           out_dir=Path("x"), dry_run=True, grpc_port=None,
                           residue_check=True,
                           marchand_port_form="wave2mode")
@@ -2447,7 +2447,7 @@ def test_run_seat_remote_preflight_fail_skips(tmp_path, monkeypatch):
         raise AssertionError("预检未过不得进入会话层")
 
     monkeypatch.setattr(mod, "open_remote_hfss", _boom)
-    v = mod.run_seat("stepped_impedance", machine="sim_host",
+    v = mod.run_seat("stepped_impedance", machine="sim_server",
                      out_dir=tmp_path, dry_run=False)
     assert v["verdict"] == "SKIP"
     assert "预检未过" in v["error"]
@@ -2466,7 +2466,7 @@ def test_run_seat_remote_preflight_pass_records_envelope(tmp_path, monkeypatch):
         raise ConnectionError("gRPC 拒绝")
 
     monkeypatch.setattr(mod, "open_remote_hfss", _connect_boom)
-    v = mod.run_seat("stepped_impedance", machine="sim_host",
+    v = mod.run_seat("stepped_impedance", machine="sim_server",
                      out_dir=tmp_path, dry_run=False)
     assert v["verdict"] == "FAIL"
     assert v["license_preflight"]["verdict"] == "PASS"
@@ -2489,7 +2489,7 @@ def test_run_seat_local_and_dry_never_preflight(tmp_path, monkeypatch):
                      dry_run=False)
     assert v["verdict"] == "FAIL"          # local 故障照旧，无预检
     assert "license_preflight" not in v
-    v2 = mod.run_seat("wilkinson", machine="sim_host", out_dir=tmp_path,
+    v2 = mod.run_seat("wilkinson", machine="sim_server", out_dir=tmp_path,
                       dry_run=True)        # dry 合成链零网络
     assert v2["verdict"] in mod._OK_VERDICTS   # dry 端到端照常（裁决态不挑）
     assert "license_preflight" not in v2
@@ -2511,7 +2511,7 @@ def test_run_all_parallel_remote_license_gate_blocks_wave(tmp_path, monkeypatch)
     monkeypatch.setattr(
         mod, "_spawn_seat",
         lambda argv, out_dir, fh: spawned.append(argv) or _FakeProc(0))
-    rc = mod.run_all_parallel("sim_host", False, 2, out_root=tmp_path)
+    rc = mod.run_all_parallel("sim_server", False, 2, out_root=tmp_path)
     assert rc == 2
     assert spawned == []
     s = json.loads((tmp_path / "window_summary.json").read_text(
@@ -2564,10 +2564,10 @@ def test_run_all_remote_parallel_capped_by_registry(tmp_path, monkeypatch):
         return 0
 
     monkeypatch.setattr(mod, "run_all_parallel", _fake_par)
-    cfg = rm.RemoteMachineConfig(name="sim_host", host="1.2.3.4",
+    cfg = rm.RemoteMachineConfig(name="sim_server", host="1.2.3.4",
                                  hfss_max_parallel=2)
-    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_host": cfg})
-    assert mod.run_all("sim_host", False, parallel=8, out_root=tmp_path) == 0
+    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_server": cfg})
+    assert mod.run_all("sim_server", False, parallel=8, out_root=tmp_path) == 0
     assert captured["parallel"] == 2
     assert captured["cap"]["declared"] == 8
     assert captured["cap"]["effective"] == 2
@@ -2603,7 +2603,7 @@ def test_run_all_remote_parallel_registry_unreadable_no_cap(tmp_path,
         raise RuntimeError("registry io boom")
 
     monkeypatch.setattr(rm, "load_remote_machines", _boom)
-    assert mod.run_all("sim_host", False, parallel=6, out_root=tmp_path) == 0
+    assert mod.run_all("sim_server", False, parallel=6, out_root=tmp_path) == 0
     assert captured["parallel"] == 6
 
 
@@ -2611,8 +2611,8 @@ def test_cli_remote_routing(monkeypatch):
     """--remote 路由分派：裸 --remote=唯一登记机器、带值=显式机器名、
     --all 路径透传 run_all。"""
     import rfauto.infra.remote_machines as rm
-    cfg = rm.RemoteMachineConfig(name="sim_host", host="1.2.3.4")
-    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_host": cfg})
+    cfg = rm.RemoteMachineConfig(name="sim_server", host="1.2.3.4")
+    monkeypatch.setattr(rm, "load_remote_machines", lambda: {"sim_server": cfg})
     seat_calls: list = []
     all_calls: list = []
 
@@ -2629,13 +2629,13 @@ def test_cli_remote_routing(monkeypatch):
     monkeypatch.setattr(mod, "run_seat", _fake_seat)
     monkeypatch.setattr(mod, "run_all", _fake_all)
     assert mod.main(["--seat", "wilkinson", "--remote"]) == 0
-    assert seat_calls == [("wilkinson", "sim_host")]      # 裸=唯一登记机器
+    assert seat_calls == [("wilkinson", "sim_server")]      # 裸=唯一登记机器
     seat_calls.clear()
     assert mod.main(["--seat", "wilkinson",
-                     "--remote", "sim_host"]) == 0
-    assert seat_calls == [("wilkinson", "sim_host")]      # 显式名
+                     "--remote", "sim_server"]) == 0
+    assert seat_calls == [("wilkinson", "sim_server")]      # 显式名
     assert mod.main(["--all", "--remote"]) == 0
-    assert all_calls == ["sim_host"]
+    assert all_calls == ["sim_server"]
 
 
 def test_cli_remote_conflicts_and_errors(monkeypatch):
@@ -2643,7 +2643,7 @@ def test_cli_remote_conflicts_and_errors(monkeypatch):
     互斥、--remote local 拒绝、未登记机器拒绝、空注册表拒绝。"""
     import rfauto.infra.remote_machines as rm
     for bad in (
-        ["--all", "--machine", "sim_host", "--remote"],
+        ["--all", "--machine", "sim_server", "--remote"],
         ["--seat", "wilkinson", "--remote", "local"],
         ["--seat", "wilkinson", "--remote", "nope"],
     ):

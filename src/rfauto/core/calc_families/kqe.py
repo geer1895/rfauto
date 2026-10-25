@@ -18,7 +18,7 @@ from .cm_extract import _cm_as_complex
 from .registry import register_calculator
 
 # ─── k/Qe 标定键（df6 A1 R4 产品化，2026-09-25；签名出处
-# runs/df6_a1_r4/calculator_signatures.md；内核与 scripts/df6_a1_r4_runner.py
+# 内部证据档；内核与 scripts/df6_a1_r4_runner.py
 # 提取面同式移植——test_kqe_registry_keys 跨实现互证钉防漂移）───────────────
 
 _KSPLIT_RULE = {
@@ -160,7 +160,7 @@ def qe_group_delay(freq_hz: Any, s11: Any, c: float = 4.0) -> dict:
     τ(f)=A/(1+((f−f0)/w)²)+D 四参数 Lorentzian+基线拟合（D 吸收馈线往返
     时延+基线；带缘斜率法被谐振器电抗斜率污染实测 3.2×，禁用）。无耗单端
     口理论 τmax=4Qe/ω0 ⇒ **缺省 c=4**（合成回收实测 3.9972，
-    runs/df6_a1_r4/selftest_result.json；"/2"口径否决——DP-2 轨独立互证同
+    内部证据档；"/2"口径否决——DP-2 轨独立互证同
     裁决）；对称双馈 S21 口径 τmax=2Q_L/ω0 配 c=1.0（仅记录）。Qe=A·ω0/c。
     """
     from scipy.optimize import curve_fit

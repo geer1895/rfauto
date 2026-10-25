@@ -4,12 +4,12 @@ import os
 os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
 import keysight.ads.de as de
 
-wrk_dir = r"D:\rf_workspace\scripts\spike_b_ads\sample_wrk\Datalink_Basics_wrk"
+wrk_dir = r"D:/rf_workspace\scripts\spike_b_ads\sample_wrk\Datalink_Basics_wrk"
 if de.workspace_is_open():
     de.close_workspace()
 ws = de.open_workspace(wrk_dir)
 
-out = open(r"D:\rf_workspace\scripts\spike_b_ads\probe8_out.txt", "w", encoding="utf-8")
+out = open(r"D:/rf_workspace\scripts\spike_b_ads\probe8_out.txt", "w", encoding="utf-8")
 for lib_name in ws.library_names():
     lib = ws.open_library(lib_name)
     for cell in lib.cells:

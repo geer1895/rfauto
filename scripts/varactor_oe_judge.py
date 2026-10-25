@@ -1,6 +1,6 @@
-"""varactor OE 三档 FAIL 归因判读工具（，纯离线判读）。
+"""varactor OE 三档 FAIL 归因判读工具（wf:varactor-oe-judge，纯离线判读）。
 
-对 runs/varactor_smoke/ 三档偏压 OE 真机档（v0.5 / v3.6342 / v10，全部 FAIL：
+对 内部证据档 三档偏压 OE 真机档（v0.5 / v3.6342 / v10，全部 FAIL：
 缺省 NrTS=100000 触帽、能量远未达 -60dB）做谐振定位归因。读既有产物
 （fdtd/port_ut·it、et/ht、sparams.csv、oe_result.json、_last_stdout.log——
 oe-queue2 修复后引擎日志成功路径在档、_last_stderr.log），零求解零渲染。
@@ -42,7 +42,7 @@ tone_source="port_ut_fallback" + missing_artifacts 缺件清单 + fallback_tone
 语义不动，只修证据获取链；正常路径（sparams 在）计算零行为变化。
 
 用法：
-    .venv/Scripts/python.exe scripts/varactor_oe_judge.py [--root runs/varactor_smoke]
+    .venv/Scripts/python.exe scripts/varactor_oe_judge.py [--root 内部证据档]
 """
 
 from __future__ import annotations
@@ -815,7 +815,7 @@ def _write_md(r: dict, path: Path) -> None:
     attrs = r["attribution_per_tier"]
     overall = r["overall_primary"]
     lines = [
-        "# varactor_bpf 三档 OE FAIL 谐振定位归因判读（）",
+        "# varactor_bpf 三档 OE FAIL 谐振定位归因判读（wf:varactor-oe-judge）",
         "",
         f"- 产物根：`{r['root']}`（生成 {r['generated']}，纯离线：只读 port dump/"
         "引擎日志/sparams/oe_result，零求解）",

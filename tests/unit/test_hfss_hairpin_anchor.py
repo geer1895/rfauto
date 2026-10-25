@@ -2,7 +2,7 @@
 
 背景：#307 换算链（Z0e=2·Zc、Z0o=Zd/2，偶模=εeff 较高者）此前在脚本
 analyze_line_modes 内联两行（与 core/coupled_mode_z 双轨，审查 R4-4）；
-本批改道 core 单源——行为逐位不变，用 runs/hairpin_hfss_anchor 归档读数
+本批改道 core 单源——行为逐位不变，用 内部证据档 归档读数
 回代钉（#118 独立来源回收：归档=真机判读产物，零改写只读）。
 
 脚本经 importlib 直载（test_hfss_hairpin_anchor_c8 先例；main 有
@@ -26,7 +26,7 @@ assert _SPEC is not None and _SPEC.loader is not None
 mod = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(mod)
 
-# ── runs/hairpin_hfss_anchor/hairpin_anchor.json verdict.points[gap].
+# ── 内部证据档 verdict.points[gap].
 #    line_default_zpi.per_port 归档读数（逐位字面量）→ 原始 port_data 量形
 #    重构：Gamma=[alpha_np_m, beta_rad_m]、Zo=[zo_re, zo_im]（脚本解析口径
 #    "Gamma(P1sheetP:1)" / "Zo(P1sheetP:1)"，模 3=倏逝框模由传播过滤排除）。──

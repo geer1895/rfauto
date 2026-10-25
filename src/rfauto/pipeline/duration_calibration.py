@@ -10,10 +10,10 @@
 性（§10.7 G14 验收教训：受控同模板 mline 序列 LOO_max=22.4%，跨模板混池
 281%）：
 
-* ``mline_benchmark``——runs/benchmark/mline_mesh_convergence.json 受控同模板
+* ``mline_benchmark``——内部证据档 受控同模板
   网格序列（4 点）；
-* ``ratrace``——runs/ratrace_arbitration/openems_convergence.json（0.2mm 精算
-  1 点）+ runs/ratrace_smoke/pt8|pt9 日志 solve_s（0.4mm 冒烟 2 点，
+* ``ratrace``——内部证据档（0.2mm 精算
+  1 点）+ 内部证据档|pt9 日志 solve_s（0.4mm 冒烟 2 点，
   受并发污染的次级样本，source 中如实标注）。
 
 域体积/网格特征从各 run 的渲染脚本 simulation.py 解析（与
@@ -59,8 +59,8 @@ MLINE_CONVERGENCE_REL = "benchmark/mline_mesh_convergence.json"
 #: ratrace 仲裁精算实耗（相对 runs/ 的路径）。
 RATRACE_CONVERGENCE_REL = "ratrace_arbitration/openems_convergence.json"
 #: duration_sample 同构 schema 前缀（0-P2⑱； 二百六十"同构可并入训练集"）。
-#: 实档：runs/quota_guard/ratrace_duration_samples.json（14 样本档）、
-#: runs/ratrace_03mm_sample/duration_sample.json（R10）。schema 缺省按同构宽容
+#: 实档：内部证据档（14 样本档）、
+#: 内部证据档（R10）。schema 缺省按同构宽容
 #: 装载；schema 存在且前缀不符时整文件记 skipped（不猜格式）。
 DURATION_SAMPLE_SCHEMA_PREFIX = "rfauto.quota_guard.ratrace_duration_samples"
 #: ratrace 冒烟日志（0.4mm，次级样本）。
@@ -139,7 +139,7 @@ def load_openems_duration_samples(runs_dir: str | Path) -> dict[str, Any]:
         # skipped 继续装载（best-effort #105），wall_s 非正亦跳过（0/负值
         # 实耗入拟合集会在 RobustDurationPredictor.fit 被拒，此处提前以
         # 更精确的条目上下文记录）。mesh_mm<=0 保留既有 mauto 回退语义
-        # （runs/benchmark/mline_mesh_convergence.json 实档 mesh_mm=0.0 行）。
+        # （内部证据档 实档 mesh_mm=0.0 行）。
         for index, entry in enumerate(conv.get("entries", [])):
             tag = f"{MLINE_CONVERGENCE_REL}#{index}"
             if not isinstance(entry, dict):
@@ -250,8 +250,8 @@ def _stop_reason_from_entry(entry: dict[str, Any]) -> str:
 def load_duration_sample_json(path: str | Path) -> dict[str, Any]:
     """装载 duration_sample 同构 schema 归档 -> :class:`DurationSample` 档。
 
-    消费 0-P2⑱ 归档形态（``runs/quota_guard/ratrace_duration_samples.json``
-    14 样本档与 ``runs/ratrace_03mm_sample/duration_sample.json`` R10 同构；
+    消费 0-P2⑱ 归档形态（``内部证据档``
+    14 样本档与 ``内部证据档`` R10 同构；
     二百六十声明"同构可并入训练集"）。逐条字段映射：
 
     * ``wall_s`` -> ``solve_s``、``base_mm``（缺省回退 ``mesh_mm``）->

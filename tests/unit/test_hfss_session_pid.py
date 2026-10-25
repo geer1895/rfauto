@@ -161,7 +161,7 @@ def test_close_warns_on_pid_residue_local_only(monkeypatch, caplog):
         session = HfssSession.instance()
         session.desktop = _FakeDesktopWithPid(pid=8888)
         session._desktop_pid = 8888
-        session._remote = {"name": "sim_host"}
+        session._remote = {"name": "sim_server"}
         with caplog.at_level("WARNING",
                              logger="rfauto.adapters.hfss_session"):
             session.close()

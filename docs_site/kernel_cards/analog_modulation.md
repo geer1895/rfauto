@@ -6,7 +6,7 @@
 
 # 内核文档卡：analog_modulation
 
-> 模拟调制域闭式族（架构批 W4-S4 席，R2 边际池外本席 grep 新发现）。
+> 模拟调制域闭式族（aurora_g W4-S4 席，R2 边际池外本席 grep 新发现）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 模拟调制域三闭式：FM/PM Carson 带宽规则、FM 处理增益 3β²(β+1) 与捕获门限三态标记、AM DSB-LC 功率分配与 PEP——数字链既有面（modulation BER/rx_impairments）的模拟姊妹面。
 
-模块自述（docstring 首行，机读）：模拟调制域闭式族（架构批 W4-S4 席，R2 边际池外本席 grep 新发现）。
+模块自述（docstring 首行，机读）：模拟调制域闭式族（aurora_g W4-S4 席，R2 边际池外本席 grep 新发现）。
 
 ## 公式与口径
 

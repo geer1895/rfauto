@@ -1,12 +1,12 @@
 """双导体模阻抗基准换算单测（ge8e 审查批 F7 回归钉，审查 R4-4 / #307）。
 
 原缺陷：#307 换算链（共模 Zc→Z0e=2·Zc、差模 Zd→Z0o=Zd/2，模序按 εeff
-较高识别偶模）只活在 runs handoff 文档（runs/df6_dp14y1/handoff.md §路线 C）
+较高识别偶模）只活在内部接续文档（内部证据档 §路线 C）
 与战役脚本——无 core/service 可复用实现；#307 首判 −22%/+29% DISAGREE
 正是"按 Z0 大小识别偶模"在 Zc=Z0e/2 基准下反转之害。
 
 回归钉证据（runs 归档零改写只读，数值烧进测试字面量）：
-runs/hairpin_hfss_anchor/hairpin_anchor.json verdict.points.<gap>.
+内部证据档 verdict.points.<gap>.
 line_default_zpi 的 per_port 每模 Zo 读数与换算后 z0e_ohm/z0o_ohm
 （criteria.md §表：g0500: 58.29/48.02、g2200: 54.31/52.70）。
 """
@@ -17,7 +17,7 @@ import pytest
 
 from rfauto.core.coupled_mode_z import dual_conductor_mode_impedances
 
-# ── runs/hairpin_hfss_anchor/hairpin_anchor.json 实测读数（逐位字面量）──
+# ── 内部证据档 实测读数（逐位字面量）──
 # gap=0.5：P1/P2 两端口 × m1(偶)/m2(奇) 的 Modal Solution Data Zo 读数
 G05_ZO = {"m1": (29.29097559664919, 29.002746036964748),
           "m2": (96.74300002087644, 95.33145958876825)}

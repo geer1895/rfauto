@@ -3,10 +3,10 @@
 循 coupled_bpf 先例（scripts/coupled_bpf_smoke.py 五门 + scripts/
 smoke_coupled_bpf_nrts.py NrTS 加长与终止诊断）：三模板皆 fbw=5% 窄带高 Q，
 NrTS=100000 官方口径会截断于激励脉冲进行中（pt1 探针实证），本脚本脚本级改写
-NrTS→--nrts（默认 1000000，followUp ②）并解析引擎日志给终止
+NrTS→--nrts（默认 1000000，开发注记（二百零五）followUp ②）并解析引擎日志给终止
 诊断。零源码改动。
 
-2026-09-18 w2e 三处收紧（c3 PARTIAL 归因三项由假设级落地）：
+2026-09-18 w2e 三处收紧（开发注记（二百零五）c3 PARTIAL 归因三项由假设级落地）：
 - 网格：--mesh 0 不再是 λ_sub/50 缺省（NEAR 0.285mm > 外缝 0.139~0.242mm ⇒
   缝内零内部线），而是取 c3_mesh_max_mm（NEAR ≤ 缝_min/3，#266 渲染守卫上限）
   向下取整到 µm；显式 --mesh 越界由 render_script 抛错（不许静默粗网格）。

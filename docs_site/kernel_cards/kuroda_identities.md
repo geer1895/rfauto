@@ -6,7 +6,7 @@
 
 # 内核文档卡：kuroda_identities
 
-> Kuroda 恒等式族（架构批 W4-S14 席域 2，R2_core_tier3 边际池立项）。
+> Kuroda 恒等式族（aurora_f W4-S14 席域 2，R2_core_tier3 边际池立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 Kuroda 恒等式：单位元与短截线四恒等式的两侧 ABCD 逐位精确等效变换（Pozar Table 8.7）与三阶低通原型 Richards 变换+恒等式两端化并联全链实现（Example 8.5 文献数值锚）。
 
-模块自述（docstring 首行，机读）：Kuroda 恒等式族（架构批 W4-S14 席域 2，R2_core_tier3 边际池立项）。
+模块自述（docstring 首行，机读）：Kuroda 恒等式族（aurora_f W4-S14 席域 2，R2_core_tier3 边际池立项）。
 
 ## 公式与口径
 
@@ -107,7 +107,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w4s14_core_edge.py`——引文："Kuroda 恒等式族（架构批 W4-S14 席域 2，R2_core_tier3 边际池立项）。"
+- `tests/unit/test_w4s14_core_edge.py`——引文："Kuroda 恒等式族（aurora_f W4-S14 席域 2，R2_core_tier3 边际池立项）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **66** 个 test 函数）：
 

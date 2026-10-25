@@ -1,8 +1,8 @@
-"""模板 meta 健康度审计门单测（架构批 R8 面 3 常驻化，2026-10-11 A8-C 席）。
+"""模板 meta 健康度审计门单测（aurora72 R8 面 3 常驻化，2026-10-11 A8-C 席）。
 
 覆盖面：5 维审计逐维合成好/坏样本抓出（schema/nominal/placeholder/teaching/
 link）+ 豁免清单消费 + rc 语义（0 绿/1 红/2 SKIP）+ 现树 GREEN 证据
-（registered=72/edb=5/teaching=51 实测口径，唯一实违例 ms_ring_patch 死链
+（registered=75/edb=5 实测口径（K12 电容族 ×2 后），唯一实违例 ms_ring_patch 死链
 修复后零违例零证据缺失）。
 
 脚本经 sys.path 装载（scripts 非包，test_audit_anchor_freshness 同款口径）。
@@ -306,13 +306,15 @@ class TestTreeAndMain:
     def test_real_tree_green(self):
         rep = mod.audit_tree(REPO / "docs" / "templates", REPO)
         assert rep["green"] is True, rep["violations"]
-        # teaching=72：架构批 TEACH-B2 席（2026-10-14）63→70，架构批
+        # teaching=72：aurora_d TEACH-B2 席（2026-10-14）63→70，aurora_e
         # W3-S13 知识面批（2026-10-18）补 atten_pi/ring_resonator 两族到 72
         # ——非排除注册族（72）teaching 全覆盖；edb_* 5 族系域外信息文档面
         # 不入注册表、无 teaching（#122 如实；历史缺清单 bend/ifa/
         # patch_eep_*/pifa/via/wstep 已由中间批次闭合）。
-        assert rep["counts"] == {"dirs": 77, "edb": 5, "registered": 72,
-                                 "teaching": 72}
+        # dirs/registered 72→75（aurora_k K12：mim_cap+interdigital_cap
+        # 注册+teaching 块同批；edb 不变）
+        assert rep["counts"] == {"dirs": 80, "edb": 5, "registered": 75,
+                                 "teaching": 75}
         assert rep["violations"] == []
         assert rep["evidence_links_missing"] == []
         assert mod.verdict(rep) == 0

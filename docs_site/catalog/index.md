@@ -1,6 +1,6 @@
 # 模板库
 
-> 器件模板共 **72** 个（`docs/templates/*/meta.yaml` 聚合；与代码单源 `openems_templates.TEMPLATE_META` 键集/计数构建时互证，一致性另由 `tests/unit/test_template_meta_consistency.py` 钉死）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；单模板物理细节（几何画法/标定史/真机锚）以仓内 `docs/templates/<名>/` 为准。
+> 器件模板共 **75** 个（`docs/templates/*/meta.yaml` 聚合；与代码单源 `openems_templates.TEMPLATE_META` 键集/计数构建时互证，一致性另由 `tests/unit/test_template_meta_consistency.py` 钉死）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；单模板物理细节（几何画法/标定史/真机锚）以仓内 `docs/templates/<名>/` 为准。
 
 ## 总表
 
@@ -30,11 +30,13 @@
 | [hmsiw](#hmsiw) | 10.0 | 2 | 4 | HM-SIW 半模基片集成波导均匀段（TA-8）：基板矩形域，底板=显式零厚板贴 z=0 PEC 底界+单列过孔藩篱 x=+w/2（藩篱止于端口面），开路边 x=−w/2=磁壁（域 MUR 余量 w_eff/2）、顶开放（MUR，无上板——HMSIW 定义性质）；端口=两端面 LumpedPort z 桥（跨介质孔径、R=Z_PV， 端口即终端负载 siw v2 口径）——准 TE0.5 模 fc 由式 (11) 链给出（Lai-Fumeaux 2009 T-MTT 式 (8)-(14)） |
 | [ifa](#ifa) | 2.4 | 1 | 3 | IFA（§10.3 C1，PIFA 窄臂退化）：短路板 x∈[−1,0]（z 0→h）+ 臂 z=h 自短路板 −x 向伸出 λ/4 + 馈针=LumpedPort x=−feed_off（顶触臂、底触地，不另画金属针盒）；基板 + z-min PEC 地 |
 | [interdigital](#interdigital) | 2.5 | 2 | 5 | 交指带通（§C3 滤波器族 II，Cohn 交指口径）：N 根 λ/4 均匀谐振棒平行排列，接地端交替（奇棒底端过孔/偶棒顶端过孔，r=0.15mm），相邻棒全长缝耦合；双 50Ω 馈线缝耦合自 y=−BOARD 板边引入（gysel 同边先例，单轴 PML） |
+| [interdigital_cap](#interdigital_cap) | 2.0 | 2 | 6 | GaAs IPD 叉指电容：n 根指条 A/B 两排交错（A 排接左汇流排、B 排接右 汇流排，B 排指条外伸 e_tip 越 A 排指条端），两端馈焊盘+双 LumpedPort 水平桥隙（Port1 跨馈盘A-左排、Port2 跨右排-馈盘B，串联口径）；两排 导体 DC 隔离（梳齿互锁=定义性质，缝塌缩短路即红）；全域 MUR（电小 器件近场主导） |
 | [inverted_ms](#inverted_ms) | 2.5 | 2 | 3 | 倒置微带均匀段（TA-7）：金属/介质 z 序相对微带对调——地面=z=0 域 PEC 底界，零厚条带悬于 z=h_air 空气隙顶（基板下表面），基板 [h_air, h_air+h_sub] 上覆、其上开放（top MUR）；双 MSLPort 板边入（端口面贴 PML） |
 | [isl_shielded](#isl_shielded) | 2.5 | 2 | 6 | ISL 屏蔽悬置线均匀段（TA-10，准静态口径如实）：地面=z=0 域 PEC 底界→空气隙 g→基板 [g, g+h_sub]（悬浮）→零厚条带（基板上表面）→空气 h_top→屏蔽顶板（显式零厚板 z=z_wall）；两列过孔藩篱 x=±wall_x 贯通底地与顶板（藩篱止于端口面，hmsiw v2 端面口径）；双 MSLPort 板边入（端口面贴 PML） |
 | [lange](#lange) | 2.5 | 4 | 4 | 展开型 Lange 电桥（3dB 正交，C4 族）：四指交替并联（网络 A=指1/3、B=指2/4，DC 隔离），air-bridge=抬高薄金属+竖直立柱（同端 A/B 桥错位、两端分置）；外指承馈 P1/P2/P3/P4，等效两线 (Ze4,Zo4)=(120.71,20.71)Ω 精确成立 |
 | [loop](#loop) | 2.4 | 1 | 3 | 环形（§10.3 C1，2026-09-16 自由空间改造）：z=0 方环（中心线边 a、带宽 w，顶/左/右全跨含角）+ 底边中央断口 g（馈口位）LumpedPort 跨断口（E 沿 x，dipole 中央馈口同型）；无基板无地：底 MUR + 域 z 向下延 λ0/4（dipole 同款） |
 | [marchand_balun](#marchand_balun) | 2.5 | 3 | 3 | Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：设计级结论=单支节串接已被两引擎互证证伪（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，）——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦 |
+| [mim_cap](#mim_cap) | 2.0 | 1 | 8 | GaAs IPD MIM 电容：下极板（零厚金属面 z=H，上极板足迹外扩 bot_overhang）- 介质薄层（真实体块 z∈[H,H+d]，SiNx）- 上极板（零厚 金属面 z=H+d，W×L 叠合面积=C 的 A）；竖直 LumpedPort 跨介质（上-下 极板之间，exc 沿 z，并联形式）；全域 MUR（电小器件近场主导）； stackup z 叠算+共形介质单足迹退化档消费（render 模块头） |
 | [mline](#mline) | 2.5 | 2 | 2 | — |
 | [mmwave_series_array](#mmwave_series_array) | 78.0 | 1 | 7 | 1×N 串馈毫米波阵（§18.3d C10d）：N 元共线沿 y（x=0 居中，L 沿 y/W 沿 x）， 相邻元以互联线接辐射边中心（互联长 s=自由设计参数，行波渐进相位 βg·s）； MSLPort 自 y=−DOM 入、自画馈段至链首元（feed_margin）；链末 stub+匹配集总 负载到地（R=线 Z0 一阶）——行波阵口径，与 C2 patch_array_series（λg/2 谐振式、链末开路）分族；基板 + z-min PEC 地，y 轴 PML_8 |
 | [monopole](#monopole) | 2.4 | 1 | 3 | 单极子（§10.3 C1 天线族 II）：竖直零厚细带（x 向宽 mon_w，y=0 面）自馈口顶 z=feed_gap 起立 λ0/4；馈口=地面 z=0 → 细带底缘 LumpedPort（patch 底馈探针同型）；无介质板（像理论口径） |
@@ -48,6 +50,7 @@
 | [msl_siw_taper](#msl_siw_taper) | 10.0 | 2 | 5 | MSL 锥形过渡+SIW 直段（Deslandes-Wu 两段论）：50Ω MSL 馈线 → 线性锥（w50→ w_end=Z_PV 微带当宽的阻抗变换器+锥末-SIW 台阶不连续）→ SIW 直段（顶壁显式板 +两列过孔藩篱止于板缘=siw v2 口径+底壁板）；基板填满矩形域，z=0 PEC 底界， 顶界 MUR（MSL 区微带环境）；端口=双 MSLPort（面贴域界 PML_8、端口段=均匀 50Ω 线） |
 | [msl_slot_transition](#msl_slot_transition) | 2.5 | 2 | 3 | Roberts/Knorr 过渡（双层板）：底层地板开槽（槽开口向 −x 直入 PML，+x 封口=λg'/4 短路臂），顶层微带沿 y 跨槽后延伸 λg_m/4−Δl 开路支节（C6 2026-09-22 符号修正：端效应惯例=物理长缩短，Pozar eq.4.23）（跨越点虚短路/虚开路机理，Knorr 1974/Schuppert 1988）；MSLPort 段内移 14·BASE（H4：段⊂PML_8 致非物理已根治） |
 | [nway_wilkinson](#nway_wilkinson) | 2.5 | 5 | 4 | N-way Wilkinson 功分器（TA-4，树形 N=4）：输入馈线（port1，−BOARD 板边）→ 一级 T 叉（双 λ/4 臂 √2·Z0，x 向并列间距 G1=9mm，wilkinson GAP 口径）→ 50Ω 支线 → 二级双 T 叉（各叉臂间距 G2=5.5mm）→ 四路 50Ω 输出馈线（port2..5，+BOARD 板边）；隔离电阻 R=2·Z0 各臂端面跨接（LumpedElement ny=0，共 3 支）；全金属同层零交叉。拓扑选择：内核 star 分支（Pon 1961 浮点节点）单层 N≥3 不可布（浮点节点/Δ 环闭合路径必与边界馈线交叉）——渲染取 内核 tree 分支（阻抗级同源），N=2 与 wilkinson 模板同解、N≥8 超轮转管线规模（渲染守卫拒 n_way≠4） |
+| [octagonal_spiral](#octagonal_spiral) | 2.0 | 1 | 7 | GaAs IPD 八角螺旋电感：八角折线螺旋（across-flats 口径，d_out 闭式= d_in+2nW+2(n−1)S，45° 切角阶梯化渲染）+ 内端过孔上引中跳线桥（lange air-bridge 同法，把内端引出到外端端口同侧）+ 外端-焊盘水平桥隙 LumpedPort（端口串在绕组回路，Zin=R+jωL，SRF=寄生并联谐振峰）；可选 底地平面（ground_plane=1 时全域金属地板，镜像降 L/Q 属物理）；全域 MUR（电小器件近场主导） |
 | [patch](#patch) | 2.4 | 1 | 3 | 矩形贴片（patch_len = 谐振 λ/2 轴，沿馈电方向 y）+ 边缘微带馈电 |
 | [patch_array_1x4](#patch_array_1x4) | 5.8 | 1 | 7 | 1×4 直线贴片阵（§10.3 C2）：4 元沿 x 等距 spacing、行中心 y=20mm，单元 L 沿 y/W 沿 x、插入馈缺口开在 −y 边（3 盒贴片）；corporate 树=主干 50Ω（底探针→J0）+ J0→J1± λ/4 70.7Ω + J1± 50Ω 透明连线（y0 横走/各元 x 竖走）+ 每元最后一段 λ/4 70.7Ω 入缺口；基板 + z-min PEC 地 |
 | [patch_array_2x2](#patch_array_2x2) | 5.8 | 1 | 8 | 2×2 平面贴片阵（§10.3 C2）：栅格中心 (0,20mm)，元列 x=±dx/2、元排 y=20∓dy/2；底排缺口向 −y 自下入，顶排缺口向 +y——馈线经 J1± 沿 y0 外走到元列外侧走廊 x=±(dx/2+W/2+2mm) 上行、顶排上方内折、变换段自上向下入缺口（同层零交叉）；H-tree 阻抗账同 1×4；基板 + z-min PEC 地 |
@@ -285,6 +288,16 @@
 - **拓扑**：交指带通（§C3 滤波器族 II，Cohn 交指口径）：N 根 λ/4 均匀谐振棒平行排列，接地端交替（奇棒底端过孔/偶棒顶端过孔，r=0.15mm），相邻棒全长缝耦合；双 50Ω 馈线缝耦合自 y=−BOARD 板边引入（gysel 同边先例，单轴 PML）
 - **冒烟注记**：真机 openEMS 冒烟后置（followUp，循 coupled_bpf NrTS PARTIAL 先例；真机轨道留队列 openems-real-smoke-bundle 类包），本项全程离线验收
 
+## interdigital_cap
+
+- **抽取判据**：S21/S11 @ LumpedPort 1/2（馈盘A-左排 / 右排-馈盘B 水平桥隙，R=50Ω CalcPort 同参考；串联提取：理想串联元 Z=2·Z0·(1−S21)/S21→低频段 C=−1/(ω·Im(Z))，与 em deembed 的 Z12 提取链同式——IDC 集总 C=去嵌后 173.5fF 实测路径；C±50%/SRF>2×f0 质量判据由 CALC 键 interdigital_capacitance 承载）
+- **基板**：er=12.9，h_mm=0.1
+- **参数**：`n_fingers`、`lf_um`、`wf_um`、`sf_um`、`e_tip_um`、`h_mm`
+- **名义参数**：`n_fingers`=24，`lf_um`=220.0，`wf_um`=5.0，`sf_um`=5.0，`e_tip_um`=15.0，`h_mm`=0.1，`er`=12.9，`tan_d`=0.0006
+- **拓扑**：GaAs IPD 叉指电容：n 根指条 A/B 两排交错（A 排接左汇流排、B 排接右 汇流排，B 排指条外伸 e_tip 越 A 排指条端），两端馈焊盘+双 LumpedPort 水平桥隙（Port1 跨馈盘A-左排、Port2 跨右排-馈盘B，串联口径）；两排 导体 DC 隔离（梳齿互锁=定义性质，缝塌缩短路即红）；全域 MUR（电小 器件近场主导）
+- **冒烟注记**：未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记 （C/SRF 串联提取对拍+渲染零厚 vs CALC 侧壁 t_um 差异注记待真机批， 本批零发射）
+- **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(wf,sf,port_gap)/4 （μm 尺度几何驱动网格，禁 λ_sub/50 口径）；齿缘/汇流排/馈盘/端口盒 边+中线精确入网（#198）；NEAR≤min(sf,port_gap)/3 渲染期守卫（#266）； 全轴 1µm 近重合去重（#152）；端口盒三向 ≥NEAR 厚、激励向 ≥2 格 （#174/#283）
+
 ## inverted_ms
 
 - **抽取判据**：S11/S21 @ MSLPort 1-2（倒置微带均匀线：S21 相位斜率→εeff，β 金标准 mline 同口径；\|S11\| 显著非零=端口/网格判废信号）
@@ -302,7 +315,7 @@
 - **参数**：`w_mm`、`g_air_mm`、`h_top_mm`、`d_mm`、`s_mm`、`line_len_mm`
 - **名义参数**：`w_mm`=2.4818，`g_air_mm`=0.508，`h_top_mm`=1.016，`d_mm`=0.6，`s_mm`=1.0，`line_len_mm`=40.0，`er`=3.66，`tan_d`=0.0037
 - **拓扑**：ISL 屏蔽悬置线均匀段（TA-10，准静态口径如实）：地面=z=0 域 PEC 底界→空气隙 g→基板 [g, g+h_sub]（悬浮）→零厚条带（基板上表面）→空气 h_top→屏蔽顶板（显式零厚板 z=z_wall）；两列过孔藩篱 x=±wall_x 贯通底地与顶板（藩篱止于端口面，hmsiw v2 端面口径）；双 MSLPort 板边入（端口面贴 PML）
-- **冒烟注记**：离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（round15 IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(\|h1−h2\|/D)（模型 wide-limit 与逐径混合差异，h1=h2 点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
+- **冒烟注记**：离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（扩展轮 IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(\|h1−h2\|/D)（模型 wide-limit 与逐径混合差异，h1=h2 点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘/藩篱三线对 x 向 + 线两端/每孔三线 y 向精确入网（#198）；过孔直径 ≥4·NEAR、孔间缝 ≥1 内部线（hmsiw 同守卫）、显式近场线 10µm 地板（#349）；基板 z 4 层+空气隙 2 层（z 网格字面与基板盒/条带同源）
 
 ## lange
@@ -332,6 +345,16 @@
 - **拓扑**：Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：设计级结论=单支节串接已被两引擎互证证伪（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，）——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦
 - **冒烟注记**：真机（a8abe8d）四门 FAIL 两引擎一致：不平衡 2.76/2.64dB、RL −7.4/−5.6、\|S21\| −4.05/−3.93、隔离 −0.55/−5.42、相位 −97°/−31°；幅度三量两引擎差 ≤0.2dB 互证=设计级结论成立。复跑冒烟只作回归对照，验收看两节新设计（followUp 立项）
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50、NEAR=base/4；槽内缘/中条/封口桥共边网格线已钉（PEC 共棱连通）
+
+## mim_cap
+
+- **抽取判据**：S11 @ LumpedPort 1（上极板-下极板竖直跨介质，R=50Ω CalcPort 同参考； Zin=50(1+S11)/(1−S11)→低频段 C=−1/(ω·Im(Zin)) 提取，Im(Zin) 过零= 串联 SRF 判读——并联形式，Zin=R_s+jωL_s+1/(jωC)；C±25%/SRF>2×f0 质量判据由 CALC 键 mim_capacitance 承载）
+- **基板**：er=12.9，h_mm=0.1
+- **参数**：`w_um`、`l_um`、`d_um`、`bot_overhang_um`、`port_um`、`h_mm`、`er_diel`、`tand_diel`
+- **名义参数**：`w_um`=20.0，`l_um`=20.0，`d_um`=0.2，`bot_overhang_um`=5.0，`port_um`=2.5，`h_mm`=0.1，`er_diel`=7.5，`tand_diel`=0.001，`er`=12.9，`tan_d`=0.0006
+- **拓扑**：GaAs IPD MIM 电容：下极板（零厚金属面 z=H，上极板足迹外扩 bot_overhang）- 介质薄层（真实体块 z∈[H,H+d]，SiNx）- 上极板（零厚 金属面 z=H+d，W×L 叠合面积=C 的 A）；竖直 LumpedPort 跨介质（上-下 极板之间，exc 沿 z，并联形式）；全域 MUR（电小器件近场主导）； stackup z 叠算+共形介质单足迹退化档消费（render 模块头）
+- **冒烟注记**：未冒烟（离线审计过，#212，test_k12_ipc_caps）；真机发射留登记 （C/SRF 低频回收对拍待真机批，本批零发射）
+- **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(port,d)（μm 尺度 几何驱动网格——base 取最细 x/y 特征端口盒，#266 守卫 NEAR=base/4 ≤ port/3；禁 λ_sub/50 口径）；极板缘/端口盒边+中线精确入网（#198）； 介质薄层 z 向三线（H、H+d/2、H+d）显式入网——端口激励体积 ≥2 格 （#283），#152 去重阈值 z 轴降为 d/4（全局 1µm 阈值吞介质线——薄层 适配）；min z-cell=d/2 → dt≈d/2c（薄介质 FDTD 物理成本，真机预算留 登记）
 
 ## mline
 
@@ -371,7 +394,7 @@
 
 ## ms_cross
 
-- **抽取判据**：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=\|S11\|²+\|S21\|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 ge5 同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（内部证据档 §E）
+- **抽取判据**：S11/S21 @ 双 E 探针对方向求解（soft plane 激励 exc_type=0；探针对=屏两侧 空气区各 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B； 波导模拟器≡无限阵@θ=0，E∥x 极化前提；S21 谷=带阻谐振；J3 vs PSSFSS.jl Δf≤0.3GHz 或 ≤5% 属真机轨）。能量门=\|S11\|²+\|S21\|²∈[0.90,1.02]（单模子带 f≤0.95·c/(2b)）。2026-10-01 扩展批同族修复：原全口径 LumpedPort 电阻片= 测量面并联 Z0 负载，能量预算破损（内部证据档 §E）
 - **基板**：er=3.66，h_mm=0.508
 - **参数**：`arm_len_mm`、`arm_w_mm`、`period_mm`、`h_mm`
 - **名义参数**：`arm_len_mm`=4.91，`arm_w_mm`=0.982，`period_mm`=11.9917，`h_mm`=0.508，`er`=3.66，`tan_d`=0.0037
@@ -401,7 +424,7 @@
 
 ## ms_patch
 
-- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提； \|S11\|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）； 健康判据=\|Γ\| 线性域 ≈1（空波导标定 EN=\|Γ\|²≈1.0 平坦）。无耗接地结构幅度 读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像， 内部证据档 §D/E）
+- **抽取判据**：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/S 列 schema 不变， _port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提； \|S11\|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）； 健康判据=\|Γ\| 线性域 ≈1（空波导标定 EN=\|Γ\|²≈1.0 平坦）。无耗接地结构幅度 读出 «1 = 读出判废信号。（2026-10-01 扩展批 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像， 内部证据档 §D/E）
 - **基板**：er=3.66，h_mm=1.524
 - **参数**：`px_mm`、`py_mm`、`period_mm`、`h_mm`
 - **名义参数**：`px_mm`=8.5406，`py_mm`=8.5406，`period_mm`=14.9896，`h_mm`=1.524，`er`=3.66，`tan_d`=0.0037
@@ -456,6 +479,16 @@
 - **拓扑**：N-way Wilkinson 功分器（TA-4，树形 N=4）：输入馈线（port1，−BOARD 板边）→ 一级 T 叉（双 λ/4 臂 √2·Z0，x 向并列间距 G1=9mm，wilkinson GAP 口径）→ 50Ω 支线 → 二级双 T 叉（各叉臂间距 G2=5.5mm）→ 四路 50Ω 输出馈线（port2..5，+BOARD 板边）；隔离电阻 R=2·Z0 各臂端面跨接（LumpedElement ny=0，共 3 支）；全金属同层零交叉。拓扑选择：内核 star 分支（Pon 1961 浮点节点）单层 N≥3 不可布（浮点节点/Δ 环闭合路径必与边界馈线交叉）——渲染取 内核 tree 分支（阻抗级同源），N=2 与 wilkinson 模板同解、N≥8 超轮转管线规模（渲染守卫拒 n_way≠4）
 - **冒烟注记**：未冒烟（离线审计过，#212，test_sicl_nway_templates）；近似级别如实登记：①λ/4 臂窄带理想口径——T 叉/臂端电阻位结点寄生不进闭式裁判（gysel/branchline 同口径，离线裁判=skrf 理想 2-way 单元级联装配）；②隔离电阻 LumpedElement 零厚度集总（qwt 端接同法，寄生 L/C 未建模）；③star 分支单层不可布为渲染面拓扑约束（非内核语义变更）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
 - **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50（官方口径）；全部盒缘（叉臂带缘/T 条缘/电阻盒边/支线与输出馈线缘）+ 端口 junction 精确入网（#198）；显式近场线 10µm 地板（#349）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边（#154 前节）
+
+## octagonal_spiral
+
+- **抽取判据**：S11 @ LumpedPort 1（外端-焊盘水平桥隙，R=50Ω CalcPort 同参考； Zin=50(1+S11)/(1−S11)→低频段 L=Im(Zin)/(2πf) 提取，Im(Zin) 过零/ \|Zin\| 峰=SRF 判读——串联绕组提取，绕组寄生并联谐振；L±25%/SRF>2×f0 质量判据由 CALC 键 octagonal_spiral_inductance 承载）
+- **基板**：er=12.9，h_mm=0.1
+- **参数**：`n_turns`、`din_um`、`w_um`、`s_um`、`gap_um`、`h_mm`、`ground_plane`
+- **名义参数**：`n_turns`=5，`din_um`=80.0，`w_um`=10.0，`s_um`=5.0，`gap_um`=10.0，`h_mm`=0.1，`ground_plane`=0，`er`=12.9，`tan_d`=0.0006
+- **拓扑**：GaAs IPD 八角螺旋电感：八角折线螺旋（across-flats 口径，d_out 闭式= d_in+2nW+2(n−1)S，45° 切角阶梯化渲染）+ 内端过孔上引中跳线桥（lange air-bridge 同法，把内端引出到外端端口同侧）+ 外端-焊盘水平桥隙 LumpedPort（端口串在绕组回路，Zin=R+jωL，SRF=寄生并联谐振峰）；可选 底地平面（ground_plane=1 时全域金属地板，镜像降 L/Q 属物理）；全域 MUR（电小器件近场主导）
+- **冒烟注记**：未冒烟（离线审计过，#212，test_octagonal_spiral_template）；真机发射 留登记（L/SRF/Q 三量 HFSS 对拍+Q 预算区间判据待真机批，本批零发射）
+- **网格注记**：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(w,s,gap)/4（μm 尺度几何驱动网格，禁 λ_sub/50 口径——2GHz λ_sub/50≈6mm 装不下 0.2mm 器件）；螺旋缘/切角阶梯盒缘/焊盘/过孔棱/端口盒边精确入网（#198）； NEAR≤min(s,gap)/3 渲染期守卫（#266）；全轴 1µm 近重合去重（#152）； 45° 切角=步长 w 阶梯盒（相邻盒重叠保证导通）；端口盒三向 ≥NEAR 厚、 边全入网（#174/#283）
 
 ## patch
 

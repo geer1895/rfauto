@@ -932,6 +932,18 @@ class NGSolveAdapter(EMSolverAdapter):
                 rows.append(",".join(cells))
             (self._working_dir / "sparams.csv").write_text(
                 "\n".join(rows) + "\n", encoding="utf-8")
+            # B4（aurora_l Wave-B）：曲线 sidecar（归属证据）best-effort（#105）
+            try:
+                from rfauto.service.runs_verify_service import (
+                    write_artifact_sidecar,
+                )
+
+                write_artifact_sidecar(
+                    self._working_dir / "sparams.csv",
+                    run_id=self._working_dir.name, kind="sparams_csv")
+            except Exception:
+                logger.warning("sparams.csv sidecar 写出失败（不影响结果）",
+                               exc_info=True)
         except Exception:
             logger.warning("NGSolve sparams.csv 落盘失败（不影响结果）",
                            exc_info=True)

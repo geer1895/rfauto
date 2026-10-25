@@ -1,6 +1,6 @@
 """r3_services.governance —— 审批治理面（6i 收件箱 + 变更提案/审批/拒绝/应用 + RegistryDB 同步）。
 
-自 r3_services.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原「6i Approval Inbox」与变更提案流逐字节搬迁；两面互调（approve_proposal→_approve_change、_append_change_event→_record_approval_event_in_db）故合并同域，保包内零环。
+自 r3_services.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原「6i Approval Inbox」与变更提案流逐字节搬迁；两面互调（approve_proposal→_approve_change、_append_change_event→_record_approval_event_in_db）故合并同域，保包内零环。
 """
 
 from __future__ import annotations

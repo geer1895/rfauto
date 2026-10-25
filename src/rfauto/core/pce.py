@@ -7,7 +7,7 @@
   设计中心化（良率最大化）；验收口径 = patch 公差问题 PCE-Sobol vs 既有
   Saltelli 互证 ±10%（§10.15）。
 - core 零依赖叶子约束（.importlinter）：只依赖 numpy，不装 chaospy/openturns，
-  不 import optimization/sensitivity（互证在测试里做，见 项目规则 #118）。
+  不 import optimization/sensitivity（互证在测试里做，见 内核立规注记 #118）。
 
 机制（纯 numpy，确定性）
 ------------------------

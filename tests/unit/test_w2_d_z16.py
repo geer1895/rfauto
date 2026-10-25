@@ -1,7 +1,7 @@
 """W2-D Z-16：升级回归矩阵（EC-12 前置锚快检）脚本面测试。
 
 不真跑矩阵全量（真跑=基线落盘动作，归 scripts/upgrade_regression_matrix.py
-的 CLI 调用；runs/w2_phase2/z16_baseline.json 为在档基线证据）——本文件钉：
+的 CLI 调用；内部证据档 为在档基线证据）——本文件钉：
 - 矩阵清单确定性（同输入逐位一致、段位结构、real-machine 档 run_policy）；
 - 两内联体检在当前 vendor 上全绿（锚注册表结构 + 内核抽样 golden）；
 - 基线 JSON（在档证据）verdict 全绿（存在时）。
@@ -86,7 +86,7 @@ class TestInlineChecks:
 
 
 class TestBaselineArtifact:
-    """在档基线证据（runs/w2_phase2/z16_baseline.json，存在时校验）。"""
+    """在档基线证据（内部证据档，存在时校验）。"""
 
     def test_baseline_green_if_present(self):
         p = _REPO_ROOT / "runs" / "w2_phase2" / "z16_baseline.json"

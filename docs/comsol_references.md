@@ -9,7 +9,7 @@
 
 | 项 | 状态 |
 |---|---|
-| COMSOL 6.3.0.290 | ✅ **可用**（E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe/） |
+| COMSOL 6.3.0.290 | ✅ **可用**（<drive>:\COMSOL\COMSOL_63\COMSOL63\Multiphysics）；RF 模块运行时 license PASS（MPh 实测，证据链 runs/comsol_probe/） |
 | COMSOL 6.4 | ❌ 禁用（license 单行 SERIAL 13-apr-2026 过期且无模块包） |
 | **版本钉扎** | **必须显式 `mph.start(version="6.3")`**——MPh 自动探测选"最新"=6.4=过期（#215） |
 | license 形态 | permanent uncounted，RF/RFBATCH/RFCSL/RFCOMPL 齐全；**每次求解占一个席位，串行使用** |
@@ -19,7 +19,7 @@
 ## 1. 权威文档来源（按查询优先序）
 
 1. **本地官方 PDF（6.3 精确对应版）**：
-   - `E:\COMSOL\COMSOL_63\COMSOL63\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
+   - `<drive>:\COMSOL\COMSOL_63\COMSOL63\Multiphysics\doc\pdf\COMSOL_Multiphysics\ApplicationProgrammingGuide.pdf`（254 页，端到端 Java 惯用法）
    - 同目录 `COMSOL_ProgrammingReferenceManual.pdf`（model.* 全方法参考：geom/material/mesh/physics/study/sol/result/…）
    - RF 模块专属：`doc\pdf\RF_Module\`（端口/S 参数/频域求解器口径）
 2. **MPh 文档**（Python 桥 API）：https://mph.readthedocs.io/en/latest/

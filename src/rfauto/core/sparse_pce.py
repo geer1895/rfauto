@@ -43,7 +43,7 @@ OLS 重拟合 + 系数幅值截断 + 自适应升阶（Blatman-Sudret），Sobol
 core 叶子层：模块顶层只 import numpy 与 core.pce；sklearn（lars_path）与
 scipy（stats.qmc / stats.norm.ppf）在函数内 lazy import（同
 core/metric_transform.py 的 GP lazy import 先例）。不读 runs/、不联网、
-零文件 IO、数值只出确定性内核（AGENTS 规则 7）。
+零文件 IO、数值只出确定性内核（内核立规注记 规则 7）。
 
 诚实边界
 --------

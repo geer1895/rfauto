@@ -1,6 +1,6 @@
 """W5-D 件 2 EC-6 测试：toolsets 目录资源+guidelines 上下文工具（零网络全确定性）。
 
-判据（spec §2.3 预声明门值，runs/research_seats_20261004/se_specs3/SPECS.md）：
+判据（spec §2.3 预声明门值，内部证据档）：
 1. 单一真源对拍：枚举名单==live list_tools 名单（逐位）；
 2. skill 文本质量：非空且含坑号或命令名；缺 → errors 显式；
 3. guidelines 回收例：openems ≥5 条且可溯源；未知 topic ok=False（双态钉）；
@@ -167,7 +167,7 @@ def test_guidelines_openems_recovery() -> None:
             or "openems" in hit["text"].lower()
         )
         assert relevant, hit
-        # 可溯源：ref 非空 + anchor 非空（#NNN 是  出处标记/AGENTS 行锚）
+        # 可溯源：ref 非空 + anchor 非空（#NNN 是 开发注记 出处标记/内核立规注记 行锚）
         assert hit["ref"].strip()
         assert hit["anchor"].strip()
 

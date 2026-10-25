@@ -86,7 +86,7 @@ _HB_PAYLOAD = {
 
 class TestParseHbDataset:
     """parse_hb_dataset 的 JSON 管线与诚实报错（ADS 子进程以 monkeypatch 替身,
-    真机 .ds 读取由 runs/rm_ads_c14/loadpull_hb/ 与 real_edt 承载）。"""
+    真机 .ds 读取由 内部证据档 与 real_edt 承载）。"""
 
     @pytest.fixture
     def fake_ads(self, monkeypatch, tmp_path):

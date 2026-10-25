@@ -10,7 +10,7 @@ params:
   dipole_w_mm: 2.0
   gap_mm: 2.0
 status: ok
-script_sha256: 25dd5884644f99fa2f3ae3756db8e2623de6bbc5c66d053e3258c46fdb679f6e
+script_sha256: 1ce6adf9d84d8d832aa7b66b37bc8606a472e8d5328a8d8f991ccb6b9a9716ff
 csx:
   n_primitives: 6
   props:

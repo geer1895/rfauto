@@ -1,6 +1,6 @@
 """Runtime A/B token 效率仪表（WP3.1 验收件：离线结构 A/B + live 真模型 A/B）。
 
-方案口径（TODO 〇-c / 延续计划 §第 3 期 WP3.1）：runtime: pydantic_ai
+方案口径（待办清单 〇-c / 延续计划 §第 3 期 WP3.1）：runtime: pydantic_ai
 与 builtin A/B token 效率后再决定是否切默认。
 
 离线结构 A/B（compare_runtime_token_efficiency，确定性、进测试）：同一脚本化

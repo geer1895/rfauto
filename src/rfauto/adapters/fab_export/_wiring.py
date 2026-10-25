@@ -1,4 +1,4 @@
-"""fab_export 插件接线（架构批 W2-S2 S4/fab3 解环：注册副作用自 base 外提）.
+"""fab_export 插件接线（aurora_h W2-S2 S4/fab3 解环：注册副作用自 base 外提）.
 
 原形态：base.register_builtin_plugins 函数体内 lazy import hfss_export/
 spaceclaim 等插件模块，而插件又 strict import base 的协议类型——分发器↔

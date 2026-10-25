@@ -1,7 +1,7 @@
 """0.1⑤ HFSS 同几何仲裁：E4 探针 wilkinson 标称点在 HFSS 中的独立复算。
 
 背景（0.1 频率尺度根因闭环的最后一环）：openEMS 官方方法学重建后谷位
-收敛于 ~2.2GHz（E4/E4-fine，runs/audit_freq_scale/e4_wilk*/），而设计
+收敛于 ~2.2GHz（E4/E4-fine，内部证据档），而设计
 预期 2.5GHz（arm=λ/4 @2.5）。-10%~-12% 残差当初归结为"色散/结效应"
 （耦合臂偶模色散 + T 结不连续，理想闭式不含）——该归结目前是假设
 （docs/v1_acceptance_verdict.md §4 caveat）。本脚本把 E4 探针的同一
@@ -26,10 +26,10 @@
   E4 的 MeasPlaneShift=L/3；
 - 介质 er=3.66 tanδ=0.0037、扫频 1.5-3.5GHz 401 点：同 E4。
 
-运行前提（内存纪律，AGENTS 铁律）：patch/dipole 等真机任务空闲、
+运行前提（内存纪律，内核立规注记 铁律）：patch/dipole 等真机任务空闲、
 wmic OS get FreePhysicalMemory ≥ 4GB。执行：
     .venv\\Scripts\\python.exe scripts\\hfss_same_geometry_arbitration.py
-产物：runs/audit_freq_scale/hfss_arbitration/{result.json, report.md,
+产物：内部证据档{result.json, report.md,
 hfss_arb.s3p}
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORK_DIR = REPO_ROOT / "runs" / "audit_freq_scale" / "hfss_arbitration"
 
-# E4 探针标称点（runs/audit_freq_scale/probe_wilk_official.py，mm/Hz）
+# E4 探针标称点（内部证据档，mm/Hz）
 W_IN, W_ARM, L_ARM = 1.113, 0.604, 18.1
 GAP = 8.0
 ER, TAND, SUB_H = 3.66, 0.0037, 0.508

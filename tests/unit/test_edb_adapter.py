@@ -217,7 +217,7 @@ class TestSpecTranslation:
         dotnet/database/stackup.py:97-130 源码实证；__update_stackup 同口径
         layers.pop(0) 走 add_layer_top）；官方示例 TOP,DE,BOTTOM 首项=顶层；
         docs/pyedb_distilled.md §3.1/§6-2（「adapter 翻转一次」处方）；
-        真机冒烟（runs/edblane85/w1_smoke/build_pyaedt.py）以 GND=elevation0
+        真机冒烟（内部证据档）以 GND=elevation0
         验证的正确物理序=信号层在上。未翻转时发射族叠层整体上下颠倒
         （GND 落物理顶层=倒置微带，综合 λ/4 几何全错且无报错）。
         """
@@ -400,7 +400,7 @@ class TestBuild:
         kw = calls[0][1]
         assert kw["edbpath"] == str(result.aedb_path)
         assert kw["isreadonly"] is False
-        assert kw["version"] == "2025.1"  # AGENTS 规则 0：本机 AEDT 2025 R1 对齐基准
+        assert kw["version"] == "2025.1"  # 内核立规注记 规则 0：本机 AEDT 2025 R1 对齐基准
         # configuration.load 收到与落盘 JSON 逐字节同构的 dict + apply_file=True
         loads = [c for c in calls if c[0] == "load"]
         assert len(loads) == 1
@@ -671,12 +671,23 @@ class TestEmitterSpecContract:
             assert cfg["modeler"]["traces"]  # 走线全量翻译
 
     def test_adapter_config_matches_emitter_assemble_config(self):
-        """契约统一最强钉：同 spec 双路径 config 逐键相等（唯一豁免
-        setups[0]["name"]，见本节头注）。"""
+        """契约统一最强钉：同 spec 双路径 config 逐键相等。豁免两处（均
+        有注释存证）：① setups[0]["name"]（纯命名差异，本节头注）；②
+        ports[*]["pec_launch_width"]——R1 #7 孔径联动的**已知双路径分歧**：
+        适配器侧缺省=走线宽（覆盖导体判据，TestWavePortApertureLinkage
+        钉），发射器侧（schema.py，本席位禁改面）暂仍硬编码 "0.01mm"；
+        豁免不是放水——适配器侧联动值在本测试内逐端口钉死，待发射器侧
+        同步后收口。"""
         for (spec, emitter_cfg) in _emit_samples().values():
             cfg = spec_to_config_json(spec)
             expected = copy.deepcopy(emitter_cfg)
             expected["setups"][0]["name"] = "hfss_setup_1"
+            width_by_name = {t["name"]: t["width_mm"] for t in spec["traces"]}
+            for pt_exp, pt_got in zip(expected["ports"], cfg["ports"],
+                                      strict=True):
+                pt_exp.pop("pec_launch_width", None)   # 豁免②（分歧见 docstring）
+                got_ap = pt_got.pop("pec_launch_width")  # 适配器侧必须带孔径
+                assert got_ap == (f"{width_by_name[pt_exp['primitive_name']]:.10g}mm")
             assert cfg == expected
 
     def test_emitter_meta_validated_then_skipped(self):
@@ -777,13 +788,16 @@ class TestEmitterSpecContract:
             spec_to_config_json(dia_first)
 
     def test_wave_port_extent_factors_passthrough(self):
+        """extent 因子在合理域内透传（合理域守卫见
+        TestWavePortApertureLinkage）；pec_launch_width=缺省联动走线宽
+        （R1 #7，本例走线宽 0.3mm）。"""
         port = spec_to_config_json(_wave_spec(
             horizontal_extent_factor=7, vertical_extent_factor=4))["ports"][0]
         assert port == {"name": "P1", "type": "wave_port",
                         "primitive_name": "tl", "point_on_edge": [0.005, 0.0],
                         "horizontal_extent_factor": 7,
                         "vertical_extent_factor": 4,
-                        "pec_launch_width": "0.01mm"}
+                        "pec_launch_width": "0.3mm"}
 
     def test_wave_port_defaults_impedance_and_extents(self):
         """缺省：extent 5/3（CfgEdgePort 官方缺省）、阻抗缺省 50。"""
@@ -916,6 +930,84 @@ class TestEmitterSpecContract:
         fr = cfg["setups"][0]["freq_sweep"][0]["frequencies"][0]
         assert fr["start"] == f"{0.7 * 2.4:.10g}GHz"
         assert fr["stop"] == f"{1.3 * 2.4:.10g}GHz"
+
+
+# ─── wave_port 孔径联动守卫（R1 #7，aurora_l E4）────────────────────────────
+#
+# 反馈 16 项清单 #3/#4 的 EDB 版：pec_launch_width（pyedb PEC launch pad 宽=
+# 端口孔径）原硬编码 "0.01mm" 不与走线宽联动——孔径不含导体照样能建能解，
+# 解出等效短路假结果（HFSS 13:05 病灶 EDB 版）。守卫三条：
+# ① 孔径 ≥ 走线宽（覆盖导体判据；缺省=走线宽联动）；
+# ② 孔径 ≤ 走线宽+2×gap（过宽圈入介质边沿/邻导体；spec 无 gap 键按
+#    gap=走线宽计——诚实边界见 _translate_wave_port docstring）；
+# ③ extent 因子合理域 [2,10]（"线宽倍数"口径）。
+
+
+class TestWavePortApertureLinkage:
+    """wave_port 孔径联动+守卫（R1 #7；违例 ValueError=EdbSpecError 子类）。"""
+
+    def test_default_aperture_links_trace_width(self):
+        """缺省：pec_launch_width=所引走线宽（覆盖导体判据，非硬编码缺省）。"""
+        cfg = spec_to_config_json(_wave_spec())
+        assert cfg["ports"][0]["pec_launch_width"] == "0.3mm"
+        # 全精度综合值：%.10g 同 _fmt_mm 口径（0.7mm 级走线无 0.01 截断）
+        spec = _wave_spec()
+        spec["traces"][0]["width_mm"] = 1.1133408215162708
+        cfg = spec_to_config_json(spec)
+        assert cfg["ports"][0]["pec_launch_width"] == "1.113340822mm"
+
+    def test_explicit_aperture_within_domain_passes(self):
+        """显式孔径在合理域（走线宽 ≤ 孔径 ≤ 3×走线宽）逐点通过。"""
+        for w in (0.3, 0.35, 0.9):  # 下界=走线宽、域内、上界=走线宽+2×gap
+            cfg = spec_to_config_json(_wave_spec(pec_launch_width_mm=w))
+            assert cfg["ports"][0]["pec_launch_width"] == f"{w:.10g}mm"
+
+    def test_aperture_narrower_than_trace_rejected(self):
+        """守卫①：孔径 < 走线宽 → ValueError 带数值证据（13:05 病灶证据链）。"""
+        with pytest.raises(ValueError, match=r"孔径 0\.2mm < 走线宽 0\.3mm"):
+            spec_to_config_json(_wave_spec(pec_launch_width_mm=0.2))
+        with pytest.raises(EdbSpecError, match="不含导体"):
+            spec_to_config_json(_wave_spec(pec_launch_width_mm=0.01))
+
+    def test_aperture_wider_than_domain_rejected(self):
+        """守卫②：孔径 > 走线宽+2×gap（gap 缺省=走线宽）→ ValueError。"""
+        with pytest.raises(EdbSpecError,
+                           match=r"孔径 1mm > 走线宽 0\.3mm \+ 2×gap=0\.9mm"):
+            spec_to_config_json(_wave_spec(pec_launch_width_mm=1.0))
+
+    def test_extent_factor_domain_guard(self):
+        """守卫③：extent 因子出合理域 [2,10] → ValueError；边界 2/10 通过。"""
+        with pytest.raises(EdbSpecError,
+                           match="horizontal_extent_factor=1 出合理域"):
+            spec_to_config_json(_wave_spec(horizontal_extent_factor=1))
+        with pytest.raises(EdbSpecError,
+                           match="horizontal_extent_factor=11 出合理域"):
+            spec_to_config_json(_wave_spec(horizontal_extent_factor=11))
+        with pytest.raises(EdbSpecError,
+                           match="vertical_extent_factor=1 出合理域"):
+            spec_to_config_json(_wave_spec(vertical_extent_factor=1))
+        with pytest.raises(EdbSpecError,
+                           match="vertical_extent_factor=11 出合理域"):
+            spec_to_config_json(_wave_spec(vertical_extent_factor=11))
+        # 边界值在域内（守卫不误伤）
+        for hef, vef in ((2, 10), (10, 2)):
+            spec_to_config_json(_wave_spec(horizontal_extent_factor=hef,
+                                           vertical_extent_factor=vef))
+
+    def test_emitter_sample_aperture_linked(self):
+        """发射族实跑样例（走线宽 0.6–1.9mm，原硬编码孔径只有导体 ~1%）：
+        适配器 config 逐端口孔径=所引走线宽。"""
+        for _name, (spec, _cfg) in _emit_samples().items():
+            cfg = spec_to_config_json(spec)
+            width_by_name = {t["name"]: t["width_mm"] for t in spec["traces"]}
+            for pt in cfg["ports"]:
+                assert pt["pec_launch_width"] == (
+                    f"{width_by_name[pt['primitive_name']]:.10g}mm")
+
+    def test_unknown_trace_error_lists_widths_table(self):
+        """trace 引用守卫消息随联动签名更新（已知走线=宽度映射键集）。"""
+        with pytest.raises(EdbSpecError, match="引用不存在走线 'nope'"):
+            spec_to_config_json(_wave_spec(trace="nope"))
 
 
 # ─── 发射样例 build 全链（假 pyedb：configuration+RLC 落地面全替身）──────────
@@ -1068,7 +1160,9 @@ class TestEmitterBuildChain:
     def test_emitter_build_config_matches_emitter_config_on_disk(
             self, tmp_path, monkeypatch):
         """build 落盘存证（配置 JSON）与发射器 assemble_config 逐键一致
-        （setup 名豁免同契约测试）——存证即正本镜像。"""
+        （setup 名豁免同契约测试；pec_launch_width 豁免=R1 #7 孔径联动的
+        已知双路径分歧，同 test_adapter_config_matches_emitter_assemble_config
+        口径）——存证即正本镜像。"""
         calls: list = []
         _install_fake_pyedb_family(monkeypatch, calls)
         spec, emitter_cfg = _emit_samples()["edb_power_divider"]
@@ -1076,12 +1170,16 @@ class TestEmitterBuildChain:
         on_disk = json.loads(result.config_json_path.read_text(encoding="utf-8"))
         expected = copy.deepcopy(emitter_cfg)
         expected["setups"][0]["name"] = "hfss_setup_1"
+        for pt in expected["ports"]:
+            pt.pop("pec_launch_width", None)
+        for pt in on_disk["ports"]:
+            pt.pop("pec_launch_width", None)
         assert on_disk == expected
 
 
 # ─── 3D Layout setup 自适应档写入通道（W8 仲裁建议 2，2026-10-09）────────────
 #
-# W8 实证（runs/edblane85/w8_cl_arb/ARBITRATION.md §2 V3/§5-2）：对已解
+# W8 实证（内部证据档 §2 V3/§5-2）：对已解
 # 3D Layout 工程重载改档不传播——pyaedt props 无 AdaptiveSettings 子树，
 # 子树重建写入+update+save 后批解仍逐位回放缓存解（S31 十位小数同值
 # -9.4569、wall 26s vs 原档 ~52s）。因此改档走建模期写入
@@ -1089,7 +1187,7 @@ class TestEmitterBuildChain:
 # 配套写入一致断言 verify_adapt_tightening（批解后重开工程读回 setup
 # max_delta 与存证请求档核对，不一致/不可核对=告警，best-effort 不抛异常）。
 #
-# W9 勘误 + W10 定谳（runs/edblane85/w9_cl_recheck 与 w10_cl_recheck）：
+# W9 勘误 + W10 定谳（内部证据档 与 w10_cl_recheck）：
 # 本节单测验证的是**请求值达 configuration.load 的写入面**，非"求解按
 # 新档收敛"的行为效力——W9 真机 props 建库期写入 0.005 读回确认后批解
 # 仍按 0.02 准则停机（TIGHTENING_NOT_EFFECTIVE）；W10 定谳：EDB 3D
@@ -1228,7 +1326,7 @@ class TestAdaptTighteningChannel:
         assert "改档须重建" in doc
         assert "AdaptiveSettings" in doc
         assert "verify_adapt_tightening" in doc
-        assert "W8 仲裁档" in doc
+        assert "w8_cl_arb" in doc
 
     # ── 生效断言：一致/不一致/不可核对全谱 ─────────────────────────────────
 

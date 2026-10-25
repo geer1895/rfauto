@@ -1,4 +1,4 @@
-"""架构批 W3-CORE9：CORE8 遗留收口三键单测。
+"""aurora_d W3-CORE9：CORE8 遗留收口三键单测。
 
 doa_crb_stochastic（calc_families/doa_crb.py 原位扩展）/
 schiffman_phaser + switched_network_phaser（calc_families/phase_shifter.py
@@ -6,7 +6,7 @@ schiffman_phaser + switched_network_phaser（calc_families/phase_shifter.py
 
 裁判口径（#118 双路径：实现路线=各键闭式；独立第二路线=本文件不同
 算法重算——naive N×N 全参数 Slepian-Bangs FIM/模态 S21 解缠/ABCD 数值
-级联，实现前独立复算（内部证据目录 轨迹）
+级联，实现前独立复算（runs/aurora_d/_core9_verify_derivation.py 轨迹）
 后写死）：
 
 - **随机 CRB**：naive N×N 全参数 FIM（θ + Q 实参数化 + σ²）逐块构造

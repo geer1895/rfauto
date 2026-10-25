@@ -223,6 +223,89 @@ def _a1_single_pole_s11(f, qe: float = 200.0, f0: float = 2.5e9):
 
 
 @lru_cache(maxsize=1)
+def _k8_meas_fixture() -> dict[str, Any]:
+    """aurora_k K8 锚场景的实测网络参数（确定性闭式合成，反馈 F6/P14）。
+
+    measured = lead ** dut ** lead：lead=π(250fF,2mm α=0.15Np/m 线)，
+    dut=π(70fF pad, 串联 1.4Ω+173.5fF, 70fF)——@2.4GHz |S11|≈0.96
+    强失配语料。逐频 [re,im] 对形态（iss_oneport gamma 惯例）。
+    """
+    import skrf
+
+    freq_ghz = [float(f) for f in np.linspace(0.5, 10.0, 41)]
+    freq = skrf.Frequency.from_f(np.asarray(freq_ghz) * 1e9, unit="hz")
+    w = 2.0 * np.pi * np.asarray(freq.f)
+    nf = len(freq_ghz)
+
+    def pi_net(c_ff: float, alpha: float, len_m: float) -> skrf.Network:
+        y_half = 1j * w * (c_ff * 1e-15) / 2.0
+        beta = w * 1.5 / 299792458.0
+        abcd = np.zeros((nf, 2, 2), dtype=complex)
+        for k in range(nf):
+            g = (alpha + 1j * beta[k]) * len_m
+            line = np.array([[np.cosh(g), 50.0 * np.sinh(g)],
+                             [np.sinh(g) / 50.0, np.cosh(g)]])
+            sh = np.array([[1.0, 0.0], [-y_half[k], 1.0]])
+            abcd[k] = sh @ line @ sh
+        return skrf.Network(
+            frequency=freq,
+            s=skrf.network.a2s(abcd, np.full((nf, 2), 50.0)), z0=50.0)
+
+    zs = 1.4 + 1.0 / (1j * w * 173.5e-15)
+    dut_abcd = np.stack([
+        np.stack([np.ones(nf, dtype=complex), zs], axis=1),
+        np.stack([np.zeros(nf, dtype=complex), np.ones(nf, dtype=complex)],
+                 axis=1)], axis=1)
+    core = skrf.Network(
+        frequency=freq,
+        s=skrf.network.a2s(dut_abcd, np.full((nf, 2), 50.0)), z0=50.0)
+    lead = pi_net(250.0, 0.15, 0.002)
+    pad = pi_net(70.0, 0.0, 0.0)
+    meas = lead ** pad ** core ** pad ** lead
+    s = np.asarray(meas.s)
+    out: dict[str, Any] = {"freq_ghz": freq_ghz}
+    for i, j, name in ((0, 0, "s11"), (1, 0, "s21"),
+                       (0, 1, "s12"), (1, 1, "s22")):
+        out[name] = [[float(v.real), float(v.imag)] for v in s[:, i, j]]
+    return out
+
+
+def _k8_deembed_fixture() -> dict[str, Any]:
+    """deembed_thru_metrics 输入=实测参数+2x-thru 参数（同栅格同款式）。"""
+    import skrf
+
+    base = _k8_meas_fixture()
+    freq = skrf.Frequency.from_f(
+        np.asarray(base["freq_ghz"]) * 1e9, unit="hz")
+    nf = len(base["freq_ghz"])
+    w = 2.0 * np.pi * np.asarray(freq.f)
+
+    def pi_net(c_ff: float, alpha: float, len_m: float) -> skrf.Network:
+        y_half = 1j * w * (c_ff * 1e-15) / 2.0
+        beta = w * 1.5 / 299792458.0
+        abcd = np.zeros((nf, 2, 2), dtype=complex)
+        for k in range(nf):
+            g = (alpha + 1j * beta[k]) * len_m
+            line = np.array([[np.cosh(g), 50.0 * np.sinh(g)],
+                             [np.sinh(g) / 50.0, np.cosh(g)]])
+            sh = np.array([[1.0, 0.0], [-y_half[k], 1.0]])
+            abcd[k] = sh @ line @ sh
+        return skrf.Network(
+            frequency=freq,
+            s=skrf.network.a2s(abcd, np.full((nf, 2), 50.0)), z0=50.0)
+
+    lead = pi_net(250.0, 0.15, 0.002)
+    thru = lead ** lead
+    st = np.asarray(thru.s)
+    out = {f"dut_{k}": base[k] for k in ("s11", "s21", "s12", "s22")}
+    for i, j, name in ((0, 0, "thru_s11"), (1, 0, "thru_s21"),
+                       (0, 1, "thru_s12"), (1, 1, "thru_s22")):
+        out[name] = [[float(v.real), float(v.imag)] for v in st[:, i, j]]
+    out["freq_ghz"] = base["freq_ghz"]
+    return out
+
+
+@lru_cache(maxsize=1)
 def _calculator_inputs() -> dict[str, dict[str, Any]]:
     """每个注册键一份确定性合法输入。新增注册键必须在此补行。"""
     matrix = _coupling_matrix_fixture()
@@ -272,7 +355,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "z0_ohm": 110.92, "h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5},
         # ─── SIW（2026-09-22 siw-family 立项，#231 三表同步）───────────────────
         # 名义设计点：w=12.1317/d=0.6/s=1.0@εr=3.66 → fc10=6.6667GHz、
-        # β@10GHz=298.856 rad/m（runs/siw_family/criteria.md §2 闭式精算）
+        # β@10GHz=298.856 rad/m（内部证据档 §2 闭式精算）
         "siw_analysis": {
             "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0, "epsilon_r": 3.66,
             "freq_ghz": 10.0},
@@ -331,7 +414,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "sample_box_mm": [14.0, 4.0, 19.0, 16.0, 6.0, 21.0],
             "sample_eps_r": 2.1},
         # ─── DP-5 系统级预算引擎 + spur search（2026-09-24 df6_dp5cascade）─────
-        # 回收钉与公式口径见 runs/df6_dp5cascade/criteria.md
+        # 回收钉与公式口径见 内部证据档
         "cascade_budget": {
             "stages": [
                 {"type": "amp", "gain_db": 20.0, "nf_db": 2.0,
@@ -372,7 +455,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "homotopy_steps": 4, "n_starts": 2},
         # ─── DP-15 C2 Klopfenstein 渐变段（2026-09-24 df6_dp15c2，四表同步）──
         # n_sections=25 控 G15 运行时长（锚表缓存后 ~0.02s/次）；判据预声明
-        # runs/df6_dp15c2/criteria.md §3
+        # 内部证据档 §3
         "klopfenstein_taper": {
             "z1_ohm": 30.0, "z2_ohm": 90.0, "length_mm": 40.0,
             "epsilon_r": 3.66, "h_mm": 0.508, "freq_ghz": 2.5,
@@ -1604,6 +1687,62 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
         "horn_aperture_efficiency": {"a_p_mm": 40.0, "b_p_mm": 20.0,
                                      "l_h_mm": 160.0 / 3.0,
                                      "l_e_mm": 20.0, "f_ghz": 29.9792458},
+        # ─── aurora_k K8 两键（2026-10-23；反馈 F6/P14。名义点=用户锚场景
+        # 合成：lead=π(250fF 并联,2mm 有耗线)、dut=π(70fF pad,串联
+        # 1.4Ω+173.5fF,70fF)——measured=lead**dut**lead、thru=lead**lead
+        # （闭式 ABCD 逐点装配，确定性；主判锚树在
+        # test_k8_deembed_metrics：去嵌网络回收 ≤1e-9+y21 口径 C/R 逐位
+        # 173.5fF/1.4Ω+简化式强失配拒绝）
+        "z12_series_extract": _k8_meas_fixture(),
+        "deembed_thru_metrics": _k8_deembed_fixture(),
+        # ─── aurora_k K11（2026-10-23；反馈 F1 名义设计点=n=5/din=80/w=10/
+        # s=5μm → L_闭式=4.1147nH（Mohan 电流片式）；f0=2GHz+c_par 匝间
+        # 一阶估计（winding_parasitic_capacitance_f，未标定如实）→ SRF/
+        # Q 一阶+双门（L±25%/SRF>2×f0）全 pass 路径；主判锚树
+        # test_k11_octagonal_spiral：Mohan Table IV #55/#56 回放）
+        "octagonal_spiral_inductance": {
+            "n_turns": 5, "din_um": 80.0, "w_um": 10.0, "s_um": 5.0,
+            "f0_ghz": 2.0, "c_par_ff": 80.75, "reference_l_nh": 4.226,
+        },
+        # ─── aurora_k K12 两键（2026-10-23；反馈 F1 名义设计点：
+        # MIM=w=l=20μm/d=0.2μm/SiNx7.5 → C_闭式=132.8128fF（平行板精确式，
+        # 手算回收）；IDC=n=24/lf=220/wf=sf=5/e_tip=15μm → l_c=205μm →
+        # C_闭式=174.09fF（侧壁 sum-of-capacitances 一阶）对用户实测
+        # 173.5fF（K8 Z12 去嵌后）偏差 −0.34%；f0=2GHz → SRF/Q 一阶+
+        # 双门（C±25%/±50%+SRF>2×f0）全 pass 路径；主判锚树
+        # test_k12_ipc_caps：手算回收+分解回收钉+缩放恒等式）
+        "mim_capacitance": {
+            "w_um": 20.0, "l_um": 20.0, "d_um": 0.2, "er_diel": 7.5,
+            "f0_ghz": 2.0, "reference_c_ff": 132.8128,
+        },
+        "interdigital_capacitance": {
+            "n_fingers": 24, "lf_um": 220.0, "wf_um": 5.0, "sf_um": 5.0,
+            "e_tip_um": 15.0, "er_sub": 12.9, "f0_ghz": 2.0,
+            "reference_c_ff": 173.5,
+        },
+        # ─── aurora_l G1 六键（2026-10-23；教科书覆盖缺口侦察+闭式推导
+        # 数值验证 内部证据档。名义点：端接线=
+        # 100+j30Ω@50Ω/θ=33.7°（λ/4 锚在锚树）；单支节=z_L=100Ω（r=2
+        # 经典 Smith 图档 d=0.152λ/开路支节 0.402λ）；最平坦=显式 n=3
+        # （g=[1,1,2,1,1] 表值锚）；分支线=缺省 3dB（Z1=Z0/√2、Z2=Z0
+        # 经典值+幺正 1e-12 级）；Leeson=f0=10GHz/QL=1e5/fc=1kHz（地板
+        # −176.985+3.01 半功率锚）；矩阵换算=λ/4 50Ω 线 ABCD（物理单位，
+        # 四表示全在无缺席））
+        "line_input_impedance": {"rl_ohm": 100.0, "xl_ohm": 30.0,
+                                 "theta_deg": 33.7, "z0_ohm": 50.0},
+        "stub_tuner_single": {"rl_ohm": 100.0, "xl_ohm": 0.0,
+                              "z0_ohm": 50.0, "stub_type": "open"},
+        "butterworth_prototype": {"order": None, "rl_db": 0.5,
+                                  "rs_db": 30.0, "omega_s": 2.0},
+        "branchline_coupler_design": {"z0_ohm": 50.0},
+        "leeson_phase_noise": {"f_offset_hz": 1e6, "f0_hz": 1e10,
+                               "q_loaded": 1e5, "f_flicker_hz": 1e3,
+                               "nf_db": 3.0, "p_carrier_dbm": 10.0,
+                               "t_kelvin": 290.0},
+        "twoport_matrix_convert": {
+            "matrix": [[[0.0, 0.0], [0.0, 50.0]],
+                       [[0.0, 0.02], [0.0, 0.0]]],
+            "from_type": "ABCD", "z0_ohm": 50.0},
     }
 
 
@@ -3502,6 +3641,86 @@ DOMAIN_ERROR_CASES = [
     ("horn_aperture_efficiency", {"a_p_mm": 1.0, "b_p_mm": 0.5,
                                   "l_h_mm": 10.0, "l_e_mm": 10.0,
                                   "f_ghz": 29.9792458}),
+    # aurora_k K8：series 缺 s21/shunt 拒收 s21/|S|>1 无源/长度不一致/
+    # f_eval 出带/deembed thru 长度≠dut（deembed_metrics 守卫族）
+    ("z12_series_extract", {"freq_ghz": [1.0], "s11": [[0.1, 0.0]]}),
+    ("z12_series_extract", {"freq_ghz": [1.0], "s11": [[0.1, 0.0]],
+                            "s21": [[0.9, 0.0]], "topology": "shunt"}),
+    ("z12_series_extract", {"freq_ghz": [1.0], "s11": [[1.5, 0.0]],
+                            "s21": [[0.1, 0.0]]}),
+    ("z12_series_extract", {"freq_ghz": [1.0, 2.0], "s11": [[0.1, 0.0]],
+                            "s21": [[0.1, 0.0]]}),
+    ("z12_series_extract", {"freq_ghz": [1.0], "s11": [[0.1, 0.0]],
+                            "s21": [[0.9, 0.0]], "f_eval_ghz": 5.0}),
+    ("deembed_thru_metrics", {"freq_ghz": [1.0],
+                              "dut_s11": [[0.1, 0.0]],
+                              "dut_s21": [[0.9, 0.0]],
+                              "thru_s11": [[0.0, 0.0], [0.0, 0.0]],
+                              "thru_s21": [[1.0, 0.0], [1.0, 0.0]]}),
+    # aurora_k K11：n_turns=0/非正 μm 参数/dout 漂移 >1% 显式拒绝
+    # （spiral_inductor 守卫族——d_out=d_in+2nW+2(n−1)S #154 同语义）
+    ("octagonal_spiral_inductance", {"n_turns": 0, "din_um": 80.0,
+                                     "w_um": 10.0, "s_um": 5.0}),
+    ("octagonal_spiral_inductance", {"n_turns": 5, "din_um": 0.0,
+                                     "w_um": 10.0, "s_um": 5.0}),
+    ("octagonal_spiral_inductance", {"n_turns": 5, "din_um": 80.0,
+                                     "w_um": -10.0, "s_um": 5.0}),
+    ("octagonal_spiral_inductance", {"n_turns": 5, "din_um": 80.0,
+                                     "w_um": 10.0, "s_um": 5.0,
+                                     "dout_um": 300.0}),
+    # aurora_k K12：MIM 非正 μm/介质 εr 越界；IDC 奇数齿/非正 μm/
+    # e_tip ≥ lf（耦合长度 ≤0 显式拒绝）——ipc_cap 守卫族
+    ("mim_capacitance", {"w_um": 0.0, "l_um": 20.0, "d_um": 0.2,
+                         "er_diel": 7.5}),
+    ("mim_capacitance", {"w_um": 20.0, "l_um": -1.0, "d_um": 0.2,
+                         "er_diel": 7.5}),
+    ("mim_capacitance", {"w_um": 20.0, "l_um": 20.0, "d_um": 0.2,
+                         "er_diel": 0.0}),
+    ("mim_capacitance", {"w_um": 20.0, "l_um": 20.0, "d_um": 0.2,
+                         "er_diel": 7.5, "reference_c_ff": -1.0}),
+    ("interdigital_capacitance", {"n_fingers": 23, "lf_um": 220.0,
+                                  "wf_um": 5.0, "sf_um": 5.0}),
+    ("interdigital_capacitance", {"n_fingers": 1, "lf_um": 220.0,
+                                  "wf_um": 5.0, "sf_um": 5.0}),
+    ("interdigital_capacitance", {"n_fingers": 24, "lf_um": 0.0,
+                                  "wf_um": 5.0, "sf_um": 5.0}),
+    ("interdigital_capacitance", {"n_fingers": 24, "lf_um": 15.0,
+                                  "wf_um": 5.0, "sf_um": 5.0,
+                                  "e_tip_um": 15.0}),
+    ("interdigital_capacitance", {"n_fingers": 24, "lf_um": 220.0,
+                                  "wf_um": 5.0, "sf_um": -5.0}),
+    # ─── aurora_l G1 六键（2026-10-23）：显式守卫路径
+    ("line_input_impedance", {"rl_ohm": -5.0, "xl_ohm": 0.0,
+                              "theta_deg": 30.0}),
+    ("line_input_impedance", {"rl_ohm": 50.0, "xl_ohm": 0.0,
+                              "theta_deg": 30.0, "z0_ohm": 0.0}),
+    ("stub_tuner_single", {"rl_ohm": 0.0, "xl_ohm": 60.0}),
+    ("stub_tuner_single", {"rl_ohm": 100.0, "xl_ohm": 60.0,
+                           "stub_type": "series"}),
+    ("butterworth_prototype", {"order": 0}),
+    ("butterworth_prototype", {"order": 32}),
+    ("butterworth_prototype", {"order": None}),
+    ("butterworth_prototype", {"order": None, "rl_db": 0.5, "rs_db": 0.2,
+                               "omega_s": 2.0}),
+    ("butterworth_prototype", {"order": None, "rl_db": 0.5, "rs_db": 30.0,
+                               "omega_s": 0.5}),
+    ("branchline_coupler_design", {"coupling_c": 0.0}),
+    ("branchline_coupler_design", {"coupling_c": 1.0}),
+    ("branchline_coupler_design", {"z0_ohm": 0.0}),
+    ("leeson_phase_noise", {"f_offset_hz": 0.0, "f0_hz": 1e10,
+                            "q_loaded": 50.0}),
+    ("leeson_phase_noise", {"f_offset_hz": 1e6, "f0_hz": 1e10,
+                            "q_loaded": 0.0}),
+    ("leeson_phase_noise", {"f_offset_hz": 1e6, "f0_hz": 1e10,
+                            "q_loaded": 50.0, "nf_db": -3.0}),
+    ("twoport_matrix_convert", {"matrix": [[[1.0, 0.0]]],
+                                "from_type": "S"}),
+    ("twoport_matrix_convert", {"matrix": [[[1.0, 0.0], [0.0, 1.0]],
+                                           [[0.0, 0.0], [0.0, 1.0]]],
+                                "from_type": "Q"}),
+    ("twoport_matrix_convert", {"matrix": [[[1.0, 0.0], [0.0, 1.0]],
+                                           [[0.0, 0.0], [0.0, 1.0]]],
+                                "from_type": "S", "z0_ohm": 0.0}),
 ]
 
 
@@ -3520,6 +3739,23 @@ SCALAR_SWEEPS = [
     ("attenuator_bridged_t", "attenuation_db", 0.1, 60.0),
     ("patch_length", "epsilon_r", 1.1, 12.0),
     ("quarter_wave_transformer", "z_load_ohm", 5.0, 500.0),
+    # aurora_k K11：din_um 物理域扫描（n=5/w=10/s=5μm 下 d_out 随 din
+    # 单调，全部可行域内 ok/有限/确定）
+    ("octagonal_spiral_inductance", "din_um", 20.0, 200.0),
+    # aurora_k K12：MIM 介质厚物理域扫描（C∝1/d 单调，全域 ok/有限/
+    # 确定）；IDC 齿长扫描（侧壁主项 C∝l_c 单调，Greenhouse 域守卫
+    # 在 l_c ≥ 2·pitch bracket 内全绿）
+    ("mim_capacitance", "d_um", 0.05, 1.0),
+    ("interdigital_capacitance", "lf_um", 45.0, 400.0),
+    # aurora_l G1：物理域标量扫描（全域 ok/有限/确定）
+    ("line_input_impedance", "theta_deg", 0.0, 179.9),
+    ("line_input_impedance", "rl_ohm", 0.0, 300.0),
+    ("stub_tuner_single", "rl_ohm", 1.0, 300.0),
+    ("stub_tuner_single", "xl_ohm", -300.0, 300.0),
+    ("branchline_coupler_design", "coupling_c", 0.05, 0.95),
+    ("leeson_phase_noise", "f_offset_hz", 1.0, 1e10),
+    ("leeson_phase_noise", "q_loaded", 1.0, 1e6),
+    ("butterworth_prototype", "rl_db", 0.05, 2.5),
 ]
 
 
@@ -3768,6 +4004,11 @@ S_PLANE_CALCULATOR_KEYS = frozenset({
     # aurora72 A6-B 一键（2026-10-11）：Gysel core 理想 f0 三口 S 矩阵
     # （互易 S=Sᵀ 成立；Δ1/Δ2 外置负载吸收→非无耗不幺正，如实注记）
     "gysel_core_synthesize",
+    # aurora_l G1 两键（2026-10-23）：分支线耦合器理想 4 口 S 矩阵（奇偶
+    # 模解析合成，幺正 1e-12 级+互易 S=Sᵀ 构造保证）+二端口 S/Z/Y/ABCD
+    # 全对全换算（线性代数恒等式；S=Sᵀ 由输入如实标注 non-structural——
+    # 换算本身保持输入对称性）
+    "branchline_coupler_design", "twoport_matrix_convert",
     # aurora_f W2-S6 一键（2026-10-18）：Wheatstone 电阻反射计桥 3 口 S
     # 矩阵（节点分析三激励精确解，s_matrix 为 [row][col]=[re,im]；互易
     # S=Sᵀ 成立；有耗电阻臂→非幺正不幺正如实，无源性由行功率和 ≤1 判）
@@ -4143,6 +4384,20 @@ _NO_S_PLANE_KEYS = frozenset({
     # ——均无 S 矩阵产出
     'polarization_loss_factor', 'aperture_efficiency_components',
     'horn_aperture_efficiency',
+    # aurora_k K8 两键（2026-10-23）：Z12/−1/Y21 串联与 Y11 并联指标
+    # （C/R/Q/SRF 标量面——消费 S 提取标量指标，无 S 矩阵产出）+THRU
+    # 去嵌一站式（同款指标面输出）
+    'z12_series_extract', 'deembed_thru_metrics',
+    # aurora_k K11（2026-10-23）：八角螺旋电感闭式（L/GMD/R_dc/Q/SRF
+    # 标量面+门透传——无 S 矩阵产出）
+    'octagonal_spiral_inductance',
+    # aurora_k K12 两键（2026-10-23）：MIM/IDC 电容闭式（C/分解/R_s/L_s/
+    # SRF/Q 标量面+门透传——无 S 矩阵产出）
+    'mim_capacitance', 'interdigital_capacitance',
+    # aurora_l G1 四键（2026-10-23）：端接线输入阻抗/单支节调配/最平坦
+    # 原型/Leeson 相噪——均幅相标量与列表面，无 S 矩阵结构产出
+    'line_input_impedance', 'stub_tuner_single',
+    'butterworth_prototype', 'leeson_phase_noise',
 })
 
 

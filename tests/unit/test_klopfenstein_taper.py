@@ -1,4 +1,4 @@
-"""DP-15 C2 件3：klopfenstein_taper 计算器判据（runs/df6_dp15c2/criteria.md §3）。
+"""DP-15 C2 件3：klopfenstein_taper 计算器判据（内部证据档 §3）。
 
 文献例 = Pozar §5.9 参数化（50→100Ω、ρ0=0.05）；独立来源交叉验证 = 剖面喂
 TEM 级联仿真对拍通带纹波（[0.9, 1.25]×ρ0，下界防恒零退化通过）；端部台阶

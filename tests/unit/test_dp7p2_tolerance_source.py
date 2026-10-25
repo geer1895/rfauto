@@ -1,4 +1,4 @@
-"""DP-7 P2：公差来源单源注入（判据预声明 runs/df6_dp7p2/criteria.md）。
+"""DP-7 P2：公差来源单源注入（判据预声明 内部证据档）。
 
 - C1 单源：``derive_tolerances_from_fab_profile`` /
   ``resolve_tolerance_source`` / ``load_material_epsilon_r_tolerance``

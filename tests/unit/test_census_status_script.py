@@ -1,6 +1,6 @@
 """scripts/census_status.py 收编版（H1-4）解析面离线回归钉（零 SSH 零真机）。
 
-出处链：runs/ge8_server_batch/census_status.py（gitignored 原版，H1-4
+出处链：内部证据档（gitignored 原版，H1-4
 登记：无版本控制/in_census 死变量/宽窄双轨"同源"靠约定）→ F6 修复席
 收编 scripts/census_status.py（解析逻辑抽纯函数 parse_census_probe，
 行为与原版逐行同源；runs/ 原版零改写留档）。

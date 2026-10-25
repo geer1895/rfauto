@@ -6,7 +6,7 @@
 
 # 内核文档卡：iss_on_wafer
 
-> 在片 ISS 校准件族（架构批 W5-S18 席域，R2_core_tier3 边际池立项）。
+> 在片 ISS 校准件族（aurora_f W5-S18 席域，R2_core_tier3 边际池立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 在片 ISS 校准件族：共面开路/短路/负载/直通的频率多项式寄生模型闭式响应与一端口三项误差模型提取——任意非理想标准定义下 Ed/Es/Er 闭式线性反解。
 
-模块自述（docstring 首行，机读）：在片 ISS 校准件族（架构批 W5-S18 席域，R2_core_tier3 边际池立项）。
+模块自述（docstring 首行，机读）：在片 ISS 校准件族（aurora_f W5-S18 席域，R2_core_tier3 边际池立项）。
 
 ## 公式与口径
 
@@ -105,7 +105,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w5s18_core_edge.py`——引文："架构批 W5-S18 席域，R2_core_tier3 边际池立项"
+- `tests/unit/test_w5s18_core_edge.py`——引文："aurora_f W5-S18 席域，R2_core_tier3 边际池立项"
 
 测试面（tests/unit 引用扫描，机读；合计 **61** 个 test 函数）：
 

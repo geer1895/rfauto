@@ -17,7 +17,7 @@ theme.js/plotcard.js 他席在制或冻结，禁改）。三块：
 
 2. **R6 F-3 版本口径（UI 说真话）**：index.html 旧字面 "HFSS 2023.1
    verified" 与硬编码端口 127.0.0.1:8642 清零，脚注中性化（"以实装版本
-   为准"+首处括注实测环境 2025 R1/v251，AGENTS 规则 0 勘误口径）；
+   为准"+首处括注实测环境 2025 R1/v251，内核立规注记 规则 0 勘误口径）；
    server.py api_hfss_import 缺省版本钉 2023.1→2025.1（与
    edb_adapter._DEFAULT_AEDT_VERSION / remote_machines.yaml 同源）。
    **登记不修项（跨席）**：pages.js 五处旧口径（~940 dashboard solvers
@@ -155,7 +155,7 @@ class TestVersionNarrative:
 
 # ────────────────── 3. W8-B P2-3 ocean 主按钮视觉重量 ──────────────────
 
-# WCAG 自含实现（与 test_ui_a11y_theme / runs/edblane85/w14_palette_check
+# WCAG 自含实现（与 test_ui_a11y_theme / 内部证据档
 # 同口径，#118：多源互证而非单源自证）
 def _lin(c: float) -> float:
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4

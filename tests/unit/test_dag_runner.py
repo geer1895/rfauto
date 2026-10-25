@@ -200,22 +200,9 @@ print("UNREACHABLE", res)
 '''
 
 
-@pytest.mark.known_flaky(reason=(
-    "并行门环境类（xdist Windows 原生层，非断言红）：runs/unit_gate_public.log "
-    "gw1 现场=Windows fatal access violation，crash 栈在陈锁接管 _pid_alive 的 "
-    "tasklist 子进程创建（subprocess._execute_child GC 段）与 execnet I/O 线程"
-    "并发处——#157/#245 家族进程类测试的已知偶发形态；串行门与隔离跑绿"
-    "（2026-10-17 公开仓 26 passed）。注意：worker 整体崩死时 rerun 不可达，"
-    "本 marker 只对普通失败形态给二次机会（重跑仍红=物理红照常上报）"))
 def test_kill_parent_then_resume_zero_recompute(tmp_path) -> None:
     """判据 ①（#157 实证版）：子进程跑到 s2 时整树硬死；重启后已完成 3 节点
-    零重算（3 hit / 7 recompute），陈锁自动接管。
-
-    失败形态记录（known_flaky 取证）：并行门下 xdist worker 可在真子进程
-    spawn + 陈锁 pid 存活探测（tasklist）路径发生原生 access violation 整
-    worker 崩死（非本测试断言问题）——见 marker reason 与
-    runs/unit_gate_public.log gw1 现场。
-    """
+    零重算（3 hit / 7 recompute），陈锁自动接管。"""
     run_dir = tmp_path / "run1"
     _seed_inputs(run_dir)
     cache_dir = tmp_path / "cache"

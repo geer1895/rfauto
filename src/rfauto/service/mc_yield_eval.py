@@ -1,4 +1,4 @@
-"""代理蒙特卡洛良率评估叶（T1 解环；架构批 W6-S1）。
+"""代理蒙特卡洛良率评估叶（T1 解环；aurora_g W6-S1）。
 
 从 uq_service 叶化：_mc_yield 判据簇（逐点回退 loop + 向量化批预测
 两条实现，抽样序逐位一致锚见 docstring）被 fab_service（制造公差

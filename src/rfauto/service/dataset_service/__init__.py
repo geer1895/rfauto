@@ -292,7 +292,7 @@ from .workdir_params import (
     write_workdir_params_json as write_workdir_params_json,
 )
 
-# ══ T2 巨石拆分 facade（架构批 W7-S1，2026-10-19）══════════════════
+# ══ T2 巨石拆分 facade（aurora_g W7-S1，2026-10-19）══════════════════
 # 本文件原为单文件巨石，实现按职责域迁入上方 re-export 的子模块；此处
 # 逐名显式 re-export 全部模块级名（公开面快照钉：拆分前后 dir() 逐名
 # 相等；redundant-alias=PEP 484 显式 re-export 惯例）。

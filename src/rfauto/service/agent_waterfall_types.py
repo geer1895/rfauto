@@ -1,4 +1,4 @@
-"""DS-1 工具执行瀑布类型/驱动器叶（T1 终章解环；架构批 W1-S1）。
+"""DS-1 工具执行瀑布类型/驱动器叶（T1 终章解环；aurora_h W1-S1）。
 
 从 agent_safety 叶化：五段瀑布的**纯类型面与驱动器**——裁决/结果常量
 （GUARD_*/OUTCOME_*/POST_*）、事件总线 ToolEvent、GuardVerdict/PostAction、
@@ -11,7 +11,7 @@ TYPE_CHECKING 类型边）与 agent_safety（装配面）消费。叶化后 agen
 的 TYPE_CHECKING import 改读本叶，静态图上不再出现 agent_runtime→
 agent_safety 边（agent_runtime→agent_safety→systemone→agent_runtime
 三角环第一条边断；第二条 systemone→agent_runtime 边由 llm_transport 叶
-断——R1 架构深审 v3 §2.2 S1，内部证据目录）。
+断——R1 架构深审 v3 §2.2 S1，runs/aurora_h/R1_arch_audit_v3.md）。
 
 留驻 agent_safety 的面（本叶不感知）：三段注册表（_WaterfallRegistry/
 GuardRegistry/PrePolicyRegistry/PostHookRegistry）、具体组件

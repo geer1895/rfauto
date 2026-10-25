@@ -20,7 +20,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
 from pathlib import Path
 
 import pytest
@@ -33,7 +32,7 @@ from rfauto.service.ui_service import recipe_view
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path, monkeypatch, isolated):
     # 围栏根只认 cwd + 显式 RFAUTO_FS_ROOT——防本机 set 的该 env 串味
-    #（确定性测试要清空同名前缀的整个环境变量集合，AGENTS 踩坑速查）
+    #（确定性测试要清空同名前缀的整个环境变量集合，内核立规注记 踩坑速查）
     monkeypatch.delenv("RFAUTO_FS_ROOT", raising=False)
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
@@ -65,9 +64,6 @@ class TestFsListRootFence:
         assert str(tmp_path) in d["error"]  # 允许根
         assert "RFAUTO_FS_ROOT" in d["error"]  # 放行出口同信封
 
-    @pytest.mark.skipif(not sys.platform.startswith("win"),
-                        reason="Windows-only behavior: drive-escape fence "
-                               "rejects a Windows drive prefix")
     def test_drive_escape_rejected(self, tmp_path: Path) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")
@@ -242,7 +238,7 @@ class TestSystemPromptAccess:
         assert prompt == r3_services._SYSTEM_PROMPT  # 同一单源，私有名保留
 
     def test_server_no_longer_touches_private_name(self) -> None:
-        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py（server.py 装配壳 +
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py（server.py 装配壳 +
         # routes/* 分域 + csp.py）：私有名任何 UI 模块都不得触碰。
         from pathlib import Path as _P
 

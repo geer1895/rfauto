@@ -1,4 +1,4 @@
-"""rat-race HFSS 仲裁（ 廿九 未尽①，#219③ 物理通道）：物理 R=17.344
+"""rat-race HFSS 仲裁（开发注记 廿九 未尽①，#219③ 物理通道）：物理 R=17.344
 的 4 端口 rat-race 在 HFSS 2026 中 2-3GHz 扫频全 S 矩阵，仲裁
 k=1.0975 的归属（0.4mm 网格伪象 / 设计错 / 不可判定）。
 
@@ -29,7 +29,7 @@ k=1.0975 的归属（0.4mm 网格伪象 / 设计错 / 不可判定）。
 运行（长任务分离+日志轮询，#157）：
   powershell Start-Process .venv\\Scripts\\python.exe -ArgumentList
   "scripts/hfss_ratrace_arbitration.py" -RedirectStandardOutput ...
-产物：runs/ratrace_arbitration/{hfss_arbitration.json, hfss_ratrace.s4p,
+产物：内部证据档{hfss_arbitration.json, hfss_ratrace.s4p,
   hfss_arb.log}
 """
 from __future__ import annotations

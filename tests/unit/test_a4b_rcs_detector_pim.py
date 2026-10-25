@@ -1,4 +1,4 @@
-"""架构批 A4-B 席锚树：rcs_targets 两键（金属球 Mie/典型目标峰值 RCS）+
+"""aurora72 A4-B 席锚树：rcs_targets 两键（金属球 Mie/典型目标峰值 RCS）+
 detector_device 两键（平方律检波/TSS-NEP）+ pim_cascade 两键（多节点累计/
 PIM 级联预算）。
 
@@ -291,7 +291,7 @@ def test_peak_trihedral_effective_aperture_flat_plate_route():
 def test_peak_guards():
     """守卫族：非法 shape/cone_tip 多给 a/缺 b/b≤0/a≤0/f≤0/三方角多给 b。
 
-    （cone_tip 于 架构批 W1-S2 从"非法 shape"转正为封闭集合成员——
+    （cone_tip 于 aurora_e W1-S2 从"非法 shape"转正为封闭集合成员——
     原"cone_tip 拒绝"守卫语义改为"cone_tip 拒绝尺寸入参"；正值路径见
     tests/unit/test_w1s2_tier2_residual.py。）
     """

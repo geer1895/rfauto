@@ -2,7 +2,7 @@
 
 载荷解析/审计读取等零业务逻辑的微助手自此单源：存量四份近逐字节拷贝
 （humidity_drift vs cryo_materials 逐字节同；aging/glass_weave_skew 仅
-docstring 异，出自 runs/review_ge8e/s2_service_biz/REPORT.md S2-8 实测
+docstring 异，出自 内部证据档 S2-8 实测
 diff）收敛至此。消费侧以别名 import 保持原调用名（``_num``/``_err``/
 ``_require_payload_dict``）不变、调用点零改动；本地副本按 #116 治理纪律
 删净防遮蔽（回归钉=tests/unit/test_service_payload_helpers.py 单源身份
@@ -13,7 +13,7 @@ diff）收敛至此。消费侧以别名 import 保持原调用名（``_num``/``
 ``err_envelope`` 只是它的可选 schema 版本戳变体；本模块只收入参收敛与
 审计文件枚举。
 
-数字出处：本模块零物理数字（AGENTS 规则 7）——纯入参校验与文件读取。
+数字出处：本模块零物理数字（内核立规注记 规则 7）——纯入参校验与文件读取。
 """
 
 from __future__ import annotations
@@ -64,9 +64,9 @@ def require_payload_dict(payload: Any) -> dict[str, Any]:
 
 
 def safe_run_id(run_id: Any) -> str | None:
-    """run_id 路径段守卫单源（架构批 W1-S1，R1 审计 P9-13 v9 Top1）。
+    """run_id 路径段守卫单源（aurora_g W1-S1，R1 审计 P9-13 v9 Top1）。
 
-    背景（内部证据目录 §面6）：同一 UI service 面内
+    背景（内部证据档 §面6）：同一 UI service 面内
     ``RUNS_DIR / run_id`` 拼接 10 处仅 read_run_events/append_run_event/
     run_fig_file 3 处设防，run_detail/tune_trials/calibration_view/
     sparams_series/field_view/smith_view/_run_dir_or_error（pareto/

@@ -11,7 +11,7 @@ os.environ.setdefault("HPEESOF_DIR", r"E:\ADS\ads2023")
 import keysight.ads.de as de
 
 ADS = r"E:\ADS\ads2023"
-wrk_dir = r"D:\rf_workspace\scripts\spike_b_ads\auto_wrk"
+wrk_dir = r"D:/rf_workspace\scripts\spike_b_ads\auto_wrk"
 
 if de.workspace_is_open():
     de.close_workspace()

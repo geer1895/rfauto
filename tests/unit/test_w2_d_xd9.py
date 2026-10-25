@@ -224,11 +224,9 @@ class TestRealLakeSmoke:
 
     def test_real_repo_lake_audit_rows(self):
         repo_runs = Path(__file__).resolve().parents[2] / "runs"
-        if not repo_runs.is_dir() or not any(repo_runs.iterdir()):
-            pytest.skip("本环境无真实 runs/ 湖（公开分发视图证据缺席）")
-        _probe = audit_stale_runs(repo_runs, max_detail=1)
-        if _probe.get("n_checked", 0) < 50:
-            pytest.skip("runs/ 湖规模不足真湖量级（公开分发视图），如实 skip")
+        n_lake = sum(1 for _ in repo_runs.rglob("meta.json")) if repo_runs.is_dir() else 0
+        if n_lake <= 1000:
+            pytest.skip(f"本环境 runs/ 非真判例湖（meta.json {n_lake} 点 < 1000；公开树仅门日志/本地产物）")
         import time
 
         t0 = time.monotonic()

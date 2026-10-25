@@ -7,7 +7,7 @@ test_dr_stream_seat6），本文件钉的是**注册面可达性 + 官方印刷�
 
 锚出处（#118：裁判=独立来源，非自证）：
 - P.838-3 Table 5 印刷 (k,α) spot 值（官方 PDF 页索引 4-7，2026-10-08
-  web 抓取留档 runs/pool_reaudit/w2_quickwin_ap6_p838_table5.md）——
+  web 抓取留档 内部证据档）——
   与模块 Gauss 和式路径（Tables 1-4 系数）构成双路径对拍。
 - CDR：JT(fc)=√2、高频平台→1、peaking 闭式（core 模块 docstring 内证，
   test_dr_stream_seat6 已钉 core 面，此处钉计算器面透传）。

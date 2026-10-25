@@ -26,7 +26,7 @@
 - All commands go through the console-script entry
   `.venv/Scripts/rfauto.exe`; `python -m rfauto` is not a valid CLI
   entry.
-- One iron rule runs through the whole article (AGENTS rule 7):
+- One iron rule runs through the whole article (kernel rule 7):
   **physical numbers come only from the deterministic kernel** —
   sampling, surrogate fitting, LOOCV, and yield MC are all deterministic
   functions; LLM/agents orchestrate but never produce numbers.

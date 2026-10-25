@@ -1,4 +1,4 @@
-"""R1-T10 lazy import 约定棘轮（架构批 W11-S2，2026-10-19；W14-S1 扩 service）。
+"""R1-T10 lazy import 约定棘轮（aurora_g W11-S2，2026-10-19；W14-S1 扩 service）。
 
 约定文：docs/explanation/lazy-import-conventions.md（形态判定与合法
 lazy 原因白名单在那里）。本文件只钉三道门：

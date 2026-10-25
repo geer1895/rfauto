@@ -1,4 +1,4 @@
-"""UI 扫描面缓存原语叶（T1 解环；架构批 W6-S1）。
+"""UI 扫描面缓存原语叶（T1 解环；aurora_g W6-S1）。
 
 从 ui_service 叶化：_UiScanCache（TTL+签名失效，RFAUTO_UI_CACHE=0
 直通）被 rationale_memory 复用（strict 顶层 import 是 19 模块 SCC 的

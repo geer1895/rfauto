@@ -477,7 +477,7 @@ _port1 = FDTD.AddLumpedPort(1, {p1['r_ohm']!r},
 # ── 端口 2：RectWGPort 解析 TE10（Pozar 模式函数，绑定自算 kc=π/a）──
 # COMPAT 簇4：构造后 _wg_probe_refit 把探针角点偏移改内联（安装栈探针
 # ModeOrigin 序列化错位致 uf_tot≡0/S11≡−1；根因见
-# oe_templates/wg_port_compat.py，复现 内部证据档）。
+# oe_templates/wg_port_compat.py，复现 runs/seat1_rectwg/repro_rectwg.py）。
 # 绑定参数序（exc_dir=z）：ny_P=x、ny_PP=y——a 绑宽边 x、b 绑窄边 y，
 # mode="TE10"（M=1,N=0：E 沿 y、半波沿 x，与探针轴平行=耦合口径）。
 # Z_ref 缺省=解析波导阻抗 ZL=k·Z0/β（WaveguidePort.CalcPort 填）。

@@ -6,7 +6,7 @@
 
 # 内核文档卡：coax_line
 
-> 标准圆同轴传输线通用件族（架构批 A2-C 席域 1，R7 第二梯队 T1）。
+> 标准圆同轴传输线通用件族（aurora72 A2-C 席域 1，R7 第二梯队 T1）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 标准圆同轴传输线通用件：TEM 特性阻抗双向解（分析/综合/ratio）、导体+介质行波衰减分解与线 Q 场积分路线互证、内导体表面场强功率容量与 30Ω/76.7Ω 经典最优比、截止波导衰减器倏逝模——与 combline 谐振腔面语义防撞。
 
-模块自述（docstring 首行，机读）：标准圆同轴传输线通用件族（架构批 A2-C 席域 1，R7 第二梯队 T1）。
+模块自述（docstring 首行，机读）：标准圆同轴传输线通用件族（aurora72 A2-C 席域 1，R7 第二梯队 T1）。
 
 ## 公式与口径
 
@@ -124,11 +124,12 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a2c_coax_waveguide.py`——引文："数值锚（#118 独立来源；锚树 tests/unit/test_a2c_coax_waveguide.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **113** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **118** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a2c_coax_waveguide.py` | 38 |
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w5k_upgrade_tiers.py` | 14 |

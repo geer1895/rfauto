@@ -2,7 +2,7 @@
 """openEMS script (rfauto compose auto-generated, rfauto-netlist-v1).
 Instances: taper_in=msl_siw_taper@(0.0, 0.0, rot180=False) | run=siw@(0.0, 0.0329362, rot180=False) | taper_out=msl_siw_taper@(0.0, 0.0658724, rot180=True)
 DP-8 几何组合引擎发射（布局合并路线：逐实例 layout→帧仿射→合并→单脚本，
-非渲染文本拼接——runs/df6_dp8compose/criteria.md §0）。"""
+非渲染文本拼接——内部证据档 §0）。"""
 import csv
 import os
 
@@ -36,7 +36,7 @@ CSV_PATH = __import__("os").path.join(
 
 # ── 仿真环境：官方 MSL_NotchFilter 教程方法学（组合域 D5 合并口径：端口轴
 # PML_8、x 侧 MUR、z 底 PEC 当地面、顶 MUR——MSL 区微带环境开放顶，SIW 顶壁
-# =各实例显式零厚板见 body；runs/df6_dp8compose/criteria.md §1）──
+# =各实例显式零厚板见 body；内部证据档 §1）──
 CSX = ContinuousStructure()
 FDTD = openEMS(NrTS=100000)   # 官方口径：不设 EndCriteria，默认能量判据停机
 FDTD.SetCSX(CSX)

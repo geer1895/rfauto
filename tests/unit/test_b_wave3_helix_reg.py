@@ -1,6 +1,6 @@
 """批 B Wave3 G17：helical（轴向模螺旋）CALC 注册面薄注册单测。
 
-裁判口径（规格包 内部证据目录 ④）：
+裁判口径（规格包 runs/aurora_c/batch_b_wave3_specs/G17_helical_axial.md ④）：
 
 - **薄度守卫（主判据）**：三键 wrapper 输出与 core/helix_axial 直调路径
   **逐位一致**（``==`` 原子比较，非 approx）——wrapper 只做参数单位换算

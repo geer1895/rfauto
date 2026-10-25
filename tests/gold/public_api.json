@@ -203,6 +203,10 @@
       "stackup_from_kicad_text",
       "validate_stackup_z_order"
     ],
+    "adapters/oe_port_semantics.py": [
+      "assert_msl_port_geometry",
+      "validate_msl_port_geometry"
+    ],
     "core/aaa.py": [
       "AaaFit",
       "SCIPY_AAA_HINT",
@@ -422,9 +426,17 @@
       "cal_kit_standard_response",
       "cal_kit_verify_ripple"
     ],
+    "core/calc_families/deembed_metrics.py": [
+      "deembed_thru_metrics",
+      "z12_series_extract"
+    ],
     "core/calc_families/directional_bridge.py": [
       "directional_bridge_response",
       "directional_bridge_s_matrix"
+    ],
+    "core/calc_families/ipc_cap.py": [
+      "interdigital_capacitance",
+      "mim_capacitance"
     ],
     "core/calc_families/iss_on_wafer.py": [
       "iss_oneport_cal_extract",
@@ -463,6 +475,9 @@
     ],
     "core/calc_families/source_power_cal.py": [
       "source_power_cal_table"
+    ],
+    "core/calc_families/spiral_inductor.py": [
+      "octagonal_spiral_inductance"
     ],
     "core/calc_families/stepped_impedance.py": [
       "stepped_impedance_lpf_synthesize",
@@ -1110,6 +1125,15 @@
       "fgcpw_gn_closed_form",
       "fgcpw_gn_closed_form_thickness"
     ],
+    "core/flip_chip.py": [
+      "DEFAULT_MIN_PITCH_CLEARANCE_UM",
+      "DOCTOR_NETS",
+      "FlipChipPlanError",
+      "balls_to_doctor_manifest",
+      "plan_lid_windows",
+      "plan_solder_balls",
+      "truncated_ball_profile"
+    ],
     "core/form_reliability.py": [
       "FormResult",
       "SormResult",
@@ -1300,6 +1324,16 @@
     "core/inverted_ms.py": [
       "inverted_ms_design_params",
       "inverted_ms_fd"
+    ],
+    "core/ipc_cap.py": [
+      "EPS0",
+      "MU0",
+      "interdigital_bank_inductance_h",
+      "interdigital_capacitance_f",
+      "interdigital_series_resistance_ohm",
+      "mim_capacitance_report",
+      "mim_series_inductance_h",
+      "mim_series_resistance_ohm"
     ],
     "core/isac_ambiguity.py": [
       "C0_M_S",
@@ -2287,6 +2321,18 @@
       "srft_polynomials",
       "srft_synthesize"
     ],
+    "core/stackup.py": [
+      "ConformalPlanError",
+      "LayerZRange",
+      "RECIPE_UNITS",
+      "StackLayer",
+      "Stackup",
+      "StackupError",
+      "assert_thin_layer",
+      "normalize_units",
+      "plan_conformal_dielectric",
+      "to_mm"
+    ],
     "core/stub_k_inverter.py": [
       "DEFAULT_THETA0",
       "SIR_STUB_SLOPE",
@@ -2867,6 +2913,11 @@
       "SCHEMA",
       "domain_survey"
     ],
+    "service/em_sweep_service.py": [
+      "plan_sweep",
+      "run_sweep",
+      "summarize_sweep"
+    ],
     "service/envelope.py": [
       "ENVELOPE_SCHEMA_VERSION",
       "error_envelope",
@@ -3212,6 +3263,12 @@
       "collect_unverified_from_sources",
       "render_assumptions_markdown",
       "report_assumptions"
+    ],
+    "service/resource_janitor_service.py": [
+      "janitor_clean",
+      "janitor_scan",
+      "lock_owner_verdict",
+      "memory_gate"
     ],
     "service/runtime_monitor_service.py": [
       "monitor_cycle",

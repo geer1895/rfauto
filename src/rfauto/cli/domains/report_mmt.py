@@ -208,7 +208,7 @@ def nfmeas_nf2ff_cmd(
     """平面近场 2D 复场 → 远场方向图（dB 归一 JSON）。"""
     import json as _json
 
-    # T8 越级收口（架构批 W11-S3）：栅格装载+方向图序列化经 service 单源
+    # T8 越级收口（aurora_g W11-S3）：栅格装载+方向图序列化经 service 单源
     # （nf_measurement_service.planar_nf2ff_from_npz，原位上移逐字节同形）；
     # cli 零逻辑直渲染。
     from rfauto.service.nf_measurement_service import planar_nf2ff_from_npz

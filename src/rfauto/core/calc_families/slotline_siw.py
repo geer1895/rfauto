@@ -91,7 +91,7 @@ def slotline_synthesis(z0_ohm: float, h_mm: float, epsilon_r: float,
 
 
 # ─── SIW（基片集成波导）闭式：Cassivi 2002 等效宽度 + RWG TE10 等效 ───────────
-# 双源核实与全部常数出处：runs/siw_family/criteria.md §1（铁律 1c）——
+# 双源核实与全部常数出处：内部证据档 §1（铁律 1c）——
 # 等效宽度 w_eff = w − d²/(0.95·s)（来源 A：Wikipedia SIW 条目引 Cassivi et al.
 # 2002 MWCL 12(9):333–335 / Bozzi 2011 IET 综述；来源 B：Microwaves101 SIW 条目
 # eq.4 引 Wu–Deslandes–Cassivi TELSIKS 2003；rfessentials/calculator.academy 文本

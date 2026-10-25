@@ -19,12 +19,12 @@ from .cm_extract import _cm_as_complex, _cm_band_edges, _cm_extract_from_fit, _c
 from .registry import register_calculator
 
 # ─── DP-2 耦合矩阵诊断三件套（2026-09-24，规格 docs/plan_deepdive_specs_20260924.md
-#     §DP-2；判据预声明 runs/df6_dp2diag/criteria.md 先写后跑）────────────────────
+#     §DP-2；判据预声明 内部证据档 先写后跑）────────────────────
 # 定位：既有 6 个 coupling_matrix 键（Cauchy 反提 coupling_matrix_extract 等）
 # 保留为初值/独立裁判不删改（#315），本段是互补镜像面（VF+LM 固定拓扑诊断 +
 # Q 双通道 + Dishal 调谐 critique）。
 #
-# C 系数裁决（#118/#300：合成回收唯一确定，判据 runs/df6_dp2diag/criteria.md §3）：
+# C 系数裁决（#118/#300：合成回收唯一确定，判据 内部证据档 §3）：
 #   Qe = ω0·τmax/C 的 C 由单极点合成回收钉死，且**分属两个测量端口**：
 #   * S21 透射泄漏口径（Dishal 原生通道，其余腔远失谐）：泄漏路径 ≈ 单极点
 #     K/(Ω−jm01²)，τ_phys = 2Qe/ω0 ⟹ **C=2**（失谐 |Δm|=2..50 实测 C_eff

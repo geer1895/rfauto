@@ -1,6 +1,6 @@
 """DP-7 P1/P3：fab 服务层 JSON 进出 + KiCad 导出前接线 + C4 端到端良率。
 
-判据预声明：runs/df6_dp7fab/criteria.md C3/C4。
+判据预声明：内部证据档 C3/C4。
 - C3：check_template_dfm / check_design_dfm JSON 契约；KiCad
   generate_pcb 导出前 best-effort DFM（#105 不阻塞导出）。
 - C4：mline 名义 ±20% 线宽扰动在既有 GP 代理（surrogate_registry
@@ -130,7 +130,7 @@ def mline_gp():
 
     # 101 均匀点：|w/1.113−1| 的 kink 处 kriging 平滑使稀疏采样（41 点）
     # 良率对真值偏差 +9.3pt（0.845 vs 0.752）——101 点实测偏差 −0.0004
-    # （2026-09-24 会话内三档采样对照实验，见 runs/df6_dp7fab/criteria.md
+    # （2026-09-24 会话内三档采样对照实验，见 内部证据档
     # 判据实绩节）。门断言用同 GP 双实现对照（保真度偏差相消），密度
     # 档只影响"良率估计对真函数"的质量，不改变实现等价性判定。
     ws = np.linspace(0.4, 2.0, 101)

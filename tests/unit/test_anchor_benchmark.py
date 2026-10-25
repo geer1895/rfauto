@@ -26,7 +26,7 @@ import pytest
 from rfauto.core import anchor_benchmark as ab
 from rfauto.core.anchor_verdict import S11_HEALTH_DB
 
-# 归档真值（本会话 scratch 复算，与 smoke 日志/ 逐值一致）
+# 归档真值（本会话 scratch 复算，与 smoke 日志/开发注记 逐值一致）
 RATRACE_PT9 = dict(delta_eps_pct=0.89, s21_db=-3.11, s41_db=-3.27,
                    s31_db=-24.32, s24_db=-23.81, s11_db=-26.57,
                    recip_lin=0.0017)
@@ -36,14 +36,14 @@ ATTEN_T_PT1 = dict(delta_eps_pct=0.96, s21_db_band_mean=-9.64,
                    s11_db_band_max=-15.34)
 VIA_PT3 = dict(delta_eps1_pct=0.79, s11_db_band_max=-26.01,
                s21_lin_mean=0.944, recip_db=0.0, delta_eps2_pct=10.93,
-               # 带内 max 为 20260918a 新增统计量：runs/via_smoke/pt3
+               # 带内 max 为 20260918a 新增统计量：内部证据档
                # sparams.csv 离线复算（401 点，max@2.25GHz）
                s21_lin_band_max=0.9503)
 # msl_cpw 合成通过点（真机结果见 golden 快照，本文件只钉门语义）
 CPW_GOOD = dict(delta_eps1_pct=1.0, delta_eps2_pct=-1.5,
                 s11_db_band_max=-15.0, s21_lin_mean=0.95,
                 s21_lin_band_max=0.98)
-# msl_cpw 首轮真跑归档（runs/benchmark/msl_cpw_m0.4 sparams.csv 离线复算，
+# msl_cpw 首轮真跑归档（内部证据档 sparams.csv 离线复算，
 # 2026-09-15）：旧门 20260915 PASS，现门 20260915b 无源上界如实 FAIL
 CPW_ARCHIVE_M04 = dict(delta_eps1_pct=0.373, delta_eps2_pct=-1.04,
                        s11_db_band_max=-15.29, s21_lin_mean=1.0296,
@@ -179,7 +179,7 @@ class TestAttenVerdict:
         assert r["atten_dev_db"] == pytest.approx(dev, abs=1e-9)
 
     def test_old_minus20_gate_would_have_failed_pi(self):
-        # 旧 -20 门（§3 校准前）对 pt2 -12.77dB 判 FAIL；
+        # 旧 -20 门（开发注记（五）§3 校准前）对 pt2 -12.77dB 判 FAIL；
         # 现门 -12 商用 lumped 地板 PASS——内核只认现门，旧判定归 provenance
         assert ATTEN_PI_PT2["s11_db_band_max"] > -20.0
         assert ab.atten_benchmark_verdict(**ATTEN_PI_PT2)["match_ok"] is True

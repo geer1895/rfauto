@@ -18,7 +18,7 @@ SIwave EDB 全板链路为后续项（如实不虚报）。
   r_unit, l_unit, c_unit, freq, ...)`（q3d.py:547，底层 oDesign.ExportMatrixData）；
 - **版本钉扎**：AEDT 2025.1（本机 v251，与 hfss/icepak 同池；license 探测
   2026-09-12 q3d_desktop=exists + Q3D.dll/Q3DCOMENGINE.exe 齐，见
-  runs/multiphysics_probe/capability_matrix.json）；
+  内部证据档）；
 - **闭式锚（裁判=独立来源 #118）**：提取的每长度 L/C 对
   core/parasitic.interconnect_rlc_anchor（传输线恒等式 L=Z0·√εeff/c0、
   C=√εeff/(Z0·c0)，Z0/εeff=skrf MLine HJ）做门判 ≤5%；R（DC/AC 参考）
@@ -28,7 +28,7 @@ SIwave EDB 全板链路为后续项（如实不虚报）。
   pyaedt 连接时警告缺 SP）gRPC 桥的**矩阵导出族命令全部失败**——
   export_matrix_data / 裸 oDesign.ExportMatrixData（6 组参数×图形/非图形）、
   oanalysis.ExportCircuit（WElement/Spice）、AlphaNumericMatrix（返回
-  None）逐一实证，详见 runs/wp44b_q3d/probe_export*.log 与
+  None）逐一实证，详见 内部证据档*.log 与
   case_result.json。solve 本身成功（RL/CG/DC RL 三张 Table 均出解），
   数值取不出的阻塞点在工具桥不在建模；装 SP/升级 AEDT 后按本适配器
   原路径复跑即可（followUps）；
@@ -276,7 +276,7 @@ class Q3dAdapter(EMSolverAdapter):
     def connect(self) -> bool:
         """启动/连接 AEDT Desktop 并创建 Q3D Extractor 设计（non_graphical）。
 
-        真机实证（2026-09-13 探针 runs/wp44b_q3d/probe_rename.py + 三轮
+        真机实证（2026-09-13 探针 内部证据档 + 三轮
         case_result.json）：``Q3d(project="<不存在路径>")`` 会走
         ``oProject.Rename``，在 AEDT 2025.1 gRPC 下**确定性失败**
         （非 #191 瞬态抖动，3 次整轮重试同错）——改为 project=None

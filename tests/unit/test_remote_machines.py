@@ -50,7 +50,7 @@ def test_load_parses_full_entry(tmp_path):
     cfg_path.write_text(
         yaml.safe_dump({
             "machines": {
-                "sim_host": {
+                "sim_server": {
                     "host": "10.20.30.40",
                     "ssh_port": 22,
                     "probe_ports": {"rdp": 3389, "ansys_license": 1055},
@@ -67,8 +67,8 @@ def test_load_parses_full_entry(tmp_path):
         encoding="utf-8",
     )
     machines = load_remote_machines(cfg_path)
-    assert set(machines) == {"sim_host"}
-    cfg = machines["sim_host"]
+    assert set(machines) == {"sim_server"}
+    cfg = machines["sim_server"]
     assert cfg.host == "10.20.30.40"
     assert cfg.ssh_port == 22
     assert cfg.hfss_version == "2025.1"
@@ -345,7 +345,7 @@ def test_load_parses_hfss_mtls_keys(tmp_path):
     cfg_path.write_text(
         yaml.safe_dump({
             "machines": {
-                "sim_host": {
+                "sim_server": {
                     "host": "10.20.30.40",
                     "hfss": {
                         "version": "2025.1",
@@ -359,7 +359,7 @@ def test_load_parses_hfss_mtls_keys(tmp_path):
         }, allow_unicode=True),
         encoding="utf-8",
     )
-    cfg = load_remote_machines(cfg_path)["sim_host"]
+    cfg = load_remote_machines(cfg_path)["sim_server"]
     assert cfg.hfss_ca_cert == "E:\\certs\\ca.crt"
     assert cfg.hfss_client_cert == "E:\\certs\\client.crt"
     assert cfg.hfss_client_key == "E:\\certs\\client.key"
@@ -377,7 +377,7 @@ def test_mtls_certs_partial_config_raises():
     from rfauto.infra.remote_machines import hfss_mtls_certs
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="h", hfss_ca_cert="E:\\certs\\ca.crt",
+        name="sim_server", host="h", hfss_ca_cert="E:\\certs\\ca.crt",
     )
     with pytest.raises(RemoteConfigError, match="配置不完整"):
         hfss_mtls_certs(cfg)
@@ -391,7 +391,7 @@ def test_mtls_certs_missing_file_raises(tmp_path):
     d.mkdir()
     (d / "ca.crt").write_bytes(b"CA")
     cfg = RemoteMachineConfig(
-        name="sim_host", host="h",
+        name="sim_server", host="h",
         hfss_ca_cert=str(d / "ca.crt"),
         hfss_client_cert=str(d / "nope.crt"),
         hfss_client_key=str(d / "nope.key"),
@@ -409,7 +409,7 @@ def test_mtls_certs_complete_returns_frozen_spec(tmp_path):
     for name in ("ca.crt", "client.crt", "client.key"):
         (d / name).write_bytes(b"x")
     cfg = RemoteMachineConfig(
-        name="sim_host", host="h",
+        name="sim_server", host="h",
         hfss_ca_cert=str(d / "ca.crt"),
         hfss_client_cert=str(d / "client.crt"),
         hfss_client_key=str(d / "client.key"),

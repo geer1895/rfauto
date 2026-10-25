@@ -21,7 +21,7 @@
 
 net 字段双格式兼容：KiCad ≤7 旧式 ``(net 2 "+3V3")``（顶层 ``(net 2
 "+3V3")`` 声明表 + 条目 ``（net 2）`` 查表）与 KiCad 10 新式条目内联
-``(net "GND")``（实测 runs/kicad_b6_stage2 demo 板与 parts/test_minimal）
+``(net "GND")``（实测 内部证据档 demo 板与 parts/test_minimal）
 均支持；zone 另有 ``(net_name "...")`` 优先。
 
 JSON 信封（service :func:`rfauto.service.pdn_service.pdn_power_pairs` 薄壳

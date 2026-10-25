@@ -50,11 +50,11 @@
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
-- `pyramid_horn.gain_db.closedform-v1`（constant/active；引擎对 closedform（None 仲裁））：pyramid_horn_gain_db = 15.0 dB；±0.0（identity）
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `pyramid_horn.gain_db.closedform-v1`（constant/active；引擎对 closedform（None 仲裁））：pyramid_horn_gain_db = 15.0 dB；±0.0（identity）；证据：runs/review_ge8e/x5_analytic_anchors、runs/real_machine_window/w7a
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -62,7 +62,7 @@
 - 参数语义：a_mm=波导口宽边（H 面，x 向，WR 口径）；b_mm=波导口窄边（E 面，z 向）； a1_mm=口径宽边（H 面，综合目标增益下 Orfanidis(21.5.1)+Balanis δ_H=3λ/8 设计方程解）；b1_mm=口径窄边（E 面，δ_E=λ/4 同链）；l_feed_mm=馈电直管 最短长（实际管长=max(l_feed, l_flare+λ0/4+4mm) 口径侧空气域自动保证）； l_flare_mm=喇叭轴向长（同设计链）
 - 网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ0/50（空气口径，官方 base 级）；NEAR=base/4；全部壁面站线（波导口缘/逐段截面缘/阶梯框/口径面/端口面） 显式入网（#198）+ 全轴 1µm 近重合去重（#152）；渲染守卫：阶梯步距 ≥4·NEAR （#266 族）、a1>a 且 b1>b；口径侧空气域 ≥λ0/4+4mm 由管长自动外推保证 （#174 族）
 - 冒烟现状：未冒烟（离线审计过，#212，test_pyramid_horn_template）；近似级别如实登记： ①斜壁 8 段阶梯化（矩形截面链，段中截面采样）；②闭式口径面模型不含壁损耗/ 口面反射/边缘绕射；③方向图/nf2ff 与真机冒烟=Ph3 窗（本批零发射）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

@@ -1,7 +1,7 @@
 """W4-A 席（SM-core 杠杆五首件 P1/P2/P4/P9/P12）验证锚（2026-10-05）。
 
 五件各自的双源裁判与连续性钉（判据出处见各测试 docstring 与
-runs/w4_phase4/w4a/REPORT.md 逐件文献核对节）：
+内部证据档 逐件文献核对节）：
 - P1 KJ 1984 频变偶/奇 εeff：Linecalc 锚（Wcalc .data 附注）+ f→0 连续性；
 - P2 Cohn/W-J 边缘电容加载：本仓独立 FEM（复用 test_ridged_waveguide 的
   P1 三角元裁判，#118 独立代码路径）深脊 ≤3% 预声明门；

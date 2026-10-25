@@ -132,13 +132,15 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 | anchor_id | quantity |
 |---|---|
+| `c3.k_of_g.openems-hfss-v1` | k_of_g |
 | `mline.z0_ohm.closedform-v1` | mline_z0_ohm |
 | `ratrace.r_ring_mm.closedform-v1` | ratrace_r_ring_mm |
 | `ratrace.ring_z_ohm.closedform-v1` | ratrace_ring_z_ohm |
+| `schiffman.delta_phase.closedform-v1` | schiffman_delta_phase_deg |
 | `atten_pi.r_series_mid_ohm.closedform-v1` | atten_pi_r_series_mid_ohm |
 | `atten_t.r_series_arm_ohm.closedform-v1` | atten_t_r_series_arm_ohm |
 
-测试面（tests/unit 引用扫描，机读；合计 **1689** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1694** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -152,6 +154,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_b_wave3_pa_ctrl.py` | 35 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_cli_oracle.py` | 9 |
 | `tests/unit/test_closed_form_oracle.py` | 18 |

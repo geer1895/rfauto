@@ -4,7 +4,7 @@
 - 包装 :class:`rfauto.core.mapes.MapesModel`（Z_ALL 分块 + Schur 补闭式，
   确定性内核，铁律 7 兼容）——**零训练**：fit 不学习，只做装配校验与契约
   记账（解析代理语义，区别于 poly_ridge 等数据驱动档）。
-- 保真档位（stage-3 对照实测，runs/mapes_s3/report.json，全波=基准，
+- 保真档位（stage-3 对照实测，内部证据档，全波=基准，
   预声明筛选档门 G1/G2/G3，raw 消费口径 PASS；sym 口径 G1 2.016dB 未达）：
   s11_db_min 逐案 |Δ| ≤ 1.997dB（7 案 worst=checker）、|S21|@fc 线性
   |Δ| ≤ 8e-5、排序 Spearman ρ = 1.0。矩阵级 max|ΔS| ≈ 0.43 受 stage-2

@@ -4,7 +4,7 @@
 合成 run 落 tmp_path）。判定式与实现同源：
 :func:`rfauto.service.report_render.bare_number_fields` /
 :func:`external_resource_refs` / :func:`fmt_value` / :func:`typ_escape`
-（判据预声明 runs/df6_dp13u1/criteria.md §一/§二）。
+（判据预声明 内部证据档 §一/§二）。
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def _make_meta(run: Path, template: str = "interdigital") -> None:
 
 
 def _make_sentinel_verdict(run: Path) -> None:
-    """镜像 runs/df5_c3fix/sentinel_verdict.json 的证据路径（合成小样）。"""
+    """镜像 内部证据档 的证据路径（合成小样）。"""
     (run / "sentinel_verdict.json").write_text(json.dumps({
         "schema": "df5_c3fix_sentinel_verdict/1",
         "run": {"template": "interdigital", "stage": "stage1"},
@@ -162,7 +162,7 @@ class TestFourSections:
             assert f"<th>{col}</th>" in html
 
     def test_real_run_fixture_both_products(self, tmp_path):
-        """真实健康 run 只读 smoke：runs/ratrace_03mm_sample（存在才跑）。"""
+        """真实健康 run 只读 smoke：内部证据档（存在才跑）。"""
         pytest.importorskip("typst")
         pytest.importorskip("pypdf")
         import pypdf

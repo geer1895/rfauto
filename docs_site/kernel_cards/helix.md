@@ -96,7 +96,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_b_wave3_helix_reg.py`——引文："（tests/unit/test_b_wave3_helix_reg.py 逐字段 ``==`` 钉）"
 - `tests/unit/test_helix_axial.py`——引文："tests/unit/test_helix_axial.py H1-H6 已 #118 合规在库——本席不重造"
-- `None`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："薄注册纪律（规格包（内部档））"
+- `runs/aurora_c/batch_b_wave3_specs/G17_helical_axial.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："**薄注册纪律（规格包 内部证据档）**："
 
 测试面（tests/unit 引用扫描，机读；合计 **60** 个 test 函数）：
 

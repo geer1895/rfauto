@@ -1,6 +1,6 @@
 """hairpin_alt k(gap) 标尺 HFSS 全波仲裁（wf:hfss-hairpin-anchor，登记队列第 3 项）。
 
-背景：hairpin_alt k(gap) 图谱 5 点 openEMS 真机
+背景：开发注记（二百五十七）hairpin_alt k(gap) 图谱 5 点 openEMS 真机
 （runs/hairpin_kgap_refix，k_EM 严格单调 0.0934→0.0110）但预声明门 G3 FAIL=
 提取模型失配。本任务=HFSS 全波 2 个 gap 点（0.5/2.2mm）给独立 k，锚定
 openEMS k_EM 标尺（c=k_EM/k_KJ 随之锚定）。判据 runs/hairpin_hfss_anchor/
@@ -23,9 +23,9 @@ criteria.md 起跑前写死（#122）。
 marchand 既有配方）。
 
 运行（#157 分离+日志轮询；#242 stdout 落文件；#243 绝对路径）：
-  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_hairpin_anchor.py" -WorkingDirectory
-    D:\rf_workspace -RedirectStandardOutput
+    D:/rf_workspace -RedirectStandardOutput
     runs/hairpin_hfss_anchor/hfss/run.log -RedirectStandardError
     runs/hairpin_hfss_anchor/hfss/run.err.log
 """

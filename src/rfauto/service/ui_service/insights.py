@@ -1,6 +1,6 @@
 """ui_service.insights —— 场可视化/Smith 圆图/patch η 门/优化洞察（Pareto/热图）/数据集·标定锚·UQ 三页端点。
 
-自 ui_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
+自 ui_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ FARFIELD_H5_NAMES: tuple[str, ...] = ("farfield_3d.h5", "nf2ff.h5")
 def _is_field_dump(path: Path) -> bool:
     """DumpHDF5 契约辨识：Mesh + FieldData 组（nf2ff.h5 是 nf2ff 组，排除）。
 
-    架构批 A2-D：h5py 开文件探测按 (mtime_ns, size) 键控缓存——250GB
+    aurora72 A2-D：h5py 开文件探测按 (mtime_ns, size) 键控缓存——250GB
     面上百 MB 级 dump 的头部读取命中后零开销；文件变化即刻失效。
     """
 
@@ -63,7 +63,7 @@ def _is_field_dump(path: Path) -> bool:
 def _field_dump_candidates(run_dir: Path) -> list[Path]:
     """run 根与 fdtd/ 下的场 dump（体 dump 优先于 nf2ff 盒面 dump，再按名排序）。
 
-    架构批 A2-D：per-run 目录 mtime 键控缓存——命中免 *.h5 枚举与探测；
+    aurora72 A2-D：per-run 目录 mtime 键控缓存——命中免 *.h5 枚举与探测；
     目录内 h5 新增/删除改目录 mtime 即刻失效；返回副本防调用方 mutate。
     """
     try:
@@ -111,10 +111,10 @@ def _viz3d_available() -> bool:
 # 数字依据链（坑 #118：裁判 = 收敛真跑实测 + 独立来源解析式，不是自己的推导）：
 # * 解析式（Balanis 单腔损耗分解，PEC 导体 Q_c→∞）：η = Q_d/(Q_d+Q_rad)，
 #   Q_d = 1/tanδ；RO4350B tanδ=0.0037 → Q_d = 270.27。
-# * 实测锚 runs/patch_field_smoke_recheck/_smoke_result.json（真收敛：能量
+# * 实测锚 内部证据档（真收敛：能量
 #   −60.3dB、nf2ff 盒顶余量 40.5mm ≥ λ/4 33.9mm、两口径 Dmax 差 0.015dB）：
 #   η_corr = 0.5711 → Q_rad = Q_d·(1−η)/η = 203（≈200）。
-# * 伪象幅度 runs/patch_field_smoke（同几何、仅 AIR_TOP 26.79→45mm 差异的
+# * 伪象幅度 内部证据档（同几何、仅 AIR_TOP 26.79→45mm 差异的
 #   紧贴盒轮）：η_corr 0.6215 = 较锚值 Prad 虚高 +8.82% → 守卫带取该观测值。
 # * 下沿 = Q_d/(Q_d + 203×1.0882) = 270.27/491.13 = 0.5503 ≈ 0.55（旧门 0.62
 #   出自 W2⑥a "Q_rad~60–80" 估计，被实测 2.5× 否定）；上沿保留 0.79（对应
@@ -161,7 +161,7 @@ def patch_eta_gate(metrics: dict[str, Any]) -> dict[str, Any]:
 def field_runs(limit: int = 50) -> dict[str, Any]:
     """含场 dump 产物的 run 清单（场可视化页下拉；战役多 run 逐个可选）。
 
-    架构批 A2-D：h5 探测（_is_field_dump）与 per-run 候选清单走
+    aurora72 A2-D：h5 探测（_is_field_dump）与 per-run 候选清单走
     (mtime_ns, size)/目录 mtime 键控缓存，端点快照指纹失效（真树冷跑
     9.3s → 命中毫秒级）；RFAUTO_UI_CACHE=0 直通；schema 不变。
     R8-ENG2：本端点条目不含 meta 字段、registry 库内亦无场 dump 信息，

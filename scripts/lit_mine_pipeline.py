@@ -1,7 +1,7 @@
 """DP-18 C9 文献挖掘管线（降级路线全链）——scripts 唯一所有者批内工具。
 
 规格书：docs/plan_deepdive_specs_20260924.md §18.2；判据预声明：
-runs/df6_dp18c9/criteria.md（2026-09-24 开工前落盘）。
+内部证据档（2026-09-24 开工前落盘）。
 
 六级（降级路线：MinerU Windows VLM 后端需 GPU 不可用→PyMuPDF 文本层+md 直读）：
   1. 矿源层：仓内 md 直读（逐行文本单元+行号锚点）+ PDF→pymupdf 逐页文本层；
@@ -34,7 +34,7 @@ runs/df6_dp18c9/criteria.md（2026-09-24 开工前落盘）。
 
 用法（零网络）：
     python scripts/lit_mine_pipeline.py \
-        --docs docs/rf_template_references.md --out runs/df6_dp18c9
+        --docs docs/rf_template_references.md --out 内部证据档
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ---------------------------------------------------------------------------
-# 预声明真值（runs/df6_dp18c9/criteria.md，2026-09-24 落盘；出处
+# 预声明真值（内部证据档，2026-09-24 落盘；出处
 # docs/rf_template_references.md §11.1 L319-323，--refit-cps-gamma 可复现）。
 # 门 B 的裁判对象=本表，而非 calculators.py 常数（后者只读不入管线）。
 # ---------------------------------------------------------------------------
@@ -383,7 +383,7 @@ def llm_schema_extract(unit_text: str) -> dict[str, Any]:
     """LLM 抽取接口（预留不实现——本批零 LLM 调用）。
 
     规格书 §18.2 的「schema 约束 LLM 抽取」段在本批以确定性 regex/sympy
-    管线替代（AGENTS 铁律 #7：LLM 永不产生物理数字）。若未来接入 LLM：
+    管线替代（内核立规注记 铁律 #7：LLM 永不产生物理数字）。若未来接入 LLM：
     只允许其回填结构字段 {formula_latex, variables[{symbol,unit}], domain,
     source{doc,anchor}}；一切数值仍由门 B 的确定性求值器 vs 仓内真值裁定，
     且候选必须过门 A 引文回链（formula_raw 在场）才能 promote。

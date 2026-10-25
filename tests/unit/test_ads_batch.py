@@ -255,7 +255,7 @@ class TestSshLaunch:
 
     def test_ssh_argv_no_port_with_extra_options(self):
         argv = build_ssh_command(
-            "C:\\Windows\\System32\\OpenSSH\\ssh.exe", "sim_host", "dir",
+            "C:\\Windows\\System32\\OpenSSH\\ssh.exe", "sim_server", "dir",
             extra_options=["-o", "StrictHostKeyChecking=accept-new"])
         assert argv[0].endswith("ssh.exe")
         assert argv[1:4] == ["-o", "BatchMode=yes",

@@ -1,6 +1,6 @@
 """rfauto-dag-v1：配方 DAG 化的确定性 schema 内核（DP-9 P2，规格 §2）。
 
-分层（AGENTS #3）：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
+分层（内核立规注记 #3）：core 只做确定性内核，零 I/O 依赖——节点 schema 校验、
 构造期拓扑排序+环检测、旧配方/旧计划的兼容包装全在这里；键计算与 CAS
 落盘在 infra.dag_cache，执行与断点续跑在 pipeline.dag_runner。
 
@@ -106,7 +106,7 @@ class DagSchemaError(ValueError):
     """DAG 构造期拒绝（schema 非法 / 未知依赖 / 环）——显式报错不静默。"""
 
 
-#: node_id 白名单（E1-3 审查批 2026-10-04，runs/review_ge8e/e1_pipeline/
+#: node_id 白名单（E1-3 审查批 2026-10-04，内部证据档
 #: REPORT.md exp7）：node_id 进 dag_runner.node_work_dir=run_dir/node_id，
 #: 半可信计划面（recipes/campaign/agent 编排 JSON）里 '../escaped'、'..'、
 #: Windows 绝对路径曾全数通过并逃逸 run_dir——构造期字符白名单拒绝。

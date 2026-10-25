@@ -1,12 +1,12 @@
 """AFS 自适应频扫真机验收 harness（§10.20⑩ 冻结判据，队列 #26①）。
 
-判据（延续计划 §10.20⑩ 原文："频点数减半且 vs 全扫 FSV >= VG"，
+判据（continuation-plan §10.20⑩ 原文："频点数减半且 vs 全扫 FSV >= VG"，
 core/afs.py:303 已按此预置 ``vs_full.fsv.at_least_vg``）：
     status == "converged" 且 summary["vs_full"]["fsv"]["at_least_vg"] 为真
     且 reduction_ratio >= 0.5（reduction_ratio = 1 - n_solves / n_full，
     n_full=全扫密集参考点数——"频点数减半"语义即 n_solves <= n_full/2）。
 
-案例（mline TEM 链，同 runs/comsol_tail/mline_tem_mesh_convergence.json
+案例（mline TEM 链，同 内部证据档
 真机过锚模型）：50Ω 微带线（skrf HJ 综合 W=1.113mm@rogers4350b）、带
 2.3-2.7 GHz、mesh_scale=1.0、comsol_version="6.3" 钉版本（#215）、基板
 tanδ=0.0037（rogers4350b 表值，官方 LossTangentDF 组；与 tem benchmark 同

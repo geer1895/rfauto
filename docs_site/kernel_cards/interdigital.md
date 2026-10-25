@@ -122,7 +122,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a3c_coupled_interdigital.py`——引文："锚树 tests/unit/test_a3c_coupled_interdigital.py 与"
 - `tests/unit/test_aurora_d_core7.py`——引文："tests/unit/test_aurora_d_core7.py）。"
-- `内部证据目录`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参"
+- `runs/aurora_d/_core7_verify_derivation.py`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："前独立复算：k roundtrip ≤1e-15、k↔J 代数互逆恒等式、跨键结构锚（同参"
 
 测试面（tests/unit 引用扫描，机读；合计 **91** 个 test 函数）：
 

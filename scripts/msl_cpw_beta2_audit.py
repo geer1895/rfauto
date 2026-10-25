@@ -1,7 +1,7 @@
 """msl_cpw β2 口径审计驱动脚本（纯离线，零引擎真跑）。
 
 任务书：⑦ msl_cpw β2 口径审计；预声明判据见
-runs/msl_cpw_beta2_audit/criteria.md（先写后算，本脚本不设门只产证据）。
+内部证据档（先写后算，本脚本不设门只产证据）。
 
 E1 窗长归因：300k 探针序列截到 N100 样本（=100k 窗）重算 β2/β1 中位，
    对照 100k 真跑归档 port_beta.csv（确定性预期 ≈0 差）。
@@ -16,7 +16,7 @@ E4 闭式参考审计：_cpwg_ri 同参复算+参数敏感性；2D FDM 下域电
    C_via/C_novia 同网格比值转移到闭式基）；sparams S21 相位去嵌旁证。
 
 用法: .venv/Scripts/python.exe scripts/msl_cpw_beta2_audit.py
-输出: runs/msl_cpw_beta2_audit/evidence.json（+stdout 全文）
+输出: 内部证据档（+stdout 全文）
 """
 from __future__ import annotations
 

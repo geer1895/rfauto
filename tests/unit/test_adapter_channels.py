@@ -1,6 +1,6 @@
 """AU-6 optimizer 通道注册表钉——收拢后行为零变化 + 惰性导入面。
 
-钉面（对应 runs/au3_audit/au6_design.md）：
+钉面（对应 内部证据档）：
 - 注册表内容：内置三通道 fake/hfss/openems 注册在位；
 - 未知通道：``(None, "")`` fallthrough 逐位（原 optimizer._create_adapter
   尾部落点）；

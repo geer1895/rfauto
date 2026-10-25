@@ -1,6 +1,6 @@
 """EC-6 工具集目录服务（W5-D）：toolsets.yaml 单一真源 + 注册面自动枚举。
 
-规格（runs/research_seats_20261004/se_specs3/SPECS.md §2.2）：
+规格（内部证据档 §2.2）：
 - yaml 只持 name/description/skill/tools_hint——**tools 成员名单不在 yaml 手写**，
   输出时按 mcp_tools 注册面自动枚举（check_numbers 同法的装饰器行正则），
   单一真源防 yaml 与注册面漂移；

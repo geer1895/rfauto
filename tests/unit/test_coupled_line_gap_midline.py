@@ -1,6 +1,6 @@
 """coupled_line `_gap_midline` 缝场网格加密旋钮（ge8 K-3 机制分离批）。
 
-旋钮语义（runs/ge8_k3mech/criteria.md 预声明）：True 时缝区
+旋钮语义（内部证据档 预声明）：True 时缝区
 [-gap/2, +gap/2] 等分 10 格内部线精确入网（0.5mm 名义缝 → 0.05mm 格，
 #311 缝中点精确入网法推广）；False/缺省=近点集与渲染逐字节不变
 （#329 缺省恒等口径）。

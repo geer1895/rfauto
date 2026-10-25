@@ -232,7 +232,7 @@ def test_invalid_hfss_cores_raises_without_desktop(fake_aedt, bad):
 
 def _cfg(cores: int) -> RemoteMachineConfig:
     return RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40",
+        name="sim_server", host="10.20.30.40",
         hfss_project_root="E:\\rfauto_remote", hfss_cores=cores)
 
 

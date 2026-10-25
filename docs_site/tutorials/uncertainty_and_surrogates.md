@@ -18,7 +18,7 @@
   （`runs/`、`recipes/` 相对 cwd 解析）。
 - 全文命令一律走 console script 入口 `.venv/Scripts/rfauto.exe`；
   `python -m rfauto` 不是有效 CLI 入口。
-- 有一条铁律贯穿全文（AGENTS 规则 7）：**物理数字只出自确定性内核**——
+- 有一条铁律贯穿全文（内核立规 7）：**物理数字只出自确定性内核**——
   采样执行、代理拟合、LOOCV、良率 MC 全部是确定性函数，LLM/agent 只编
   排不产生数值。
 

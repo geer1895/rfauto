@@ -1,7 +1,7 @@
 """MS-4 core/cispr_detector 验收钉（规格 docs/plan_deepdive_specs_20261002.md §D-3）。
 
 锚面三组（出处与诚实注记见 cispr_detector 模块 docstring，#122 学术诚信原则）：
-- 参数表：CISPR 16-1-1:2006+A1 Table 1（iTeh 免费镜像 preview，runs/ms4/ 归档）×
+- 参数表：CISPR 16-1-1:2006+A1 Table 1（iTeh 免费镜像 preview，内部证据档 归档）×
   Schwarzbeck 总览表双源逐值；
 - Band B 脉冲响应 7 点表（任务书验收锚 ±1.5 dB）：100/60/25 Hz 容差内如实 PASS；
   10/5/2/1 Hz 内核偏深 3.0–6.7 dB，如实 xfail——任务锚低频尾与其所引官方曲线不一致

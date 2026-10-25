@@ -6,7 +6,7 @@
 
 # 内核文档卡：fmcw_radar
 
-> FMCW 三角波调制波形-观测量映射族（架构批 W7-S3 席，
+> FMCW 三角波调制波形-观测量映射族（aurora_g W7-S3 席，
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 三角调制 FMCW 波形→观测量映射四键：拍频正反解（距离/多普勒解耦恒等式）、带宽→距离分辨率/IF 带宽量程面、chirp 参数设计（正问题链逆解面，W11-S4 扩展）与 IF 信号链规划（混频→LPF→ADC→距离 FFT，W11-S4 扩展）——ISAC/车载最主流波形的指标面延长线（不做 FFT 处理链/动目标检测链）。
 
-模块自述（docstring 首行，机读）：FMCW 三角波调制波形-观测量映射族（架构批 W7-S3 席，
+模块自述（docstring 首行，机读）：FMCW 三角波调制波形-观测量映射族（aurora_g W7-S3 席，
 
 ## 公式与口径
 
@@ -149,10 +149,11 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_w7s3_core_domains.py`——引文："物理口径（#1c/#300 出处纪律；三角波几何恒等式，2026-10-19 数值锤独立"
 
-测试面（tests/unit 引用扫描，机读；合计 **87** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **92** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w11s4_core_domains.py` | 15 |
 | `tests/unit/test_w7s3_core_domains.py` | 23 |

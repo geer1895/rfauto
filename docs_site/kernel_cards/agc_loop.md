@@ -6,7 +6,7 @@
 
 # 内核文档卡：agc_loop
 
-> AGC 环路动力学（架构批 W3-S10 席域，R2_core_tier3 §③ D3 立项——
+> AGC 环路动力学（aurora_f W3-S10 席域，R2_core_tier3 §③ D3 立项——
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 AGC 环路动力学：对数域一阶环线性化闭环常数（环路带宽/attack-release 时间常数/稳态误差）与阶跃扰动时域轨迹——rx_impairments 预声明排除面的动态半边补全。
 
-模块自述（docstring 首行，机读）：AGC 环路动力学（架构批 W3-S10 席域，R2_core_tier3 §③ D3 立项——
+模块自述（docstring 首行，机读）：AGC 环路动力学（aurora_f W3-S10 席域，R2_core_tier3 §③ D3 立项——
 
 ## 公式与口径
 
@@ -105,7 +105,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："架构批 W3-S10 席域，R2_core_tier3 §③ D3 立项"
+- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："aurora_f W3-S10 席域，R2_core_tier3 §③ D3 立项"
 
 测试面（tests/unit 引用扫描，机读；合计 **73** 个 test 函数）：
 

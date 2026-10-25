@@ -15,7 +15,7 @@ transport（HTTP/JSON-RPC、agent card 发现端点）留待后续轮次：
 - **A2ARegistry**：按名字注册 Agent、卡发现、消息分发；handler 异常折入
   failed Task，不向调用方抛协议外异常。
 
-数值铁律（项目规则 规则 7）：本模块只搬 typed JSON，不产生任何物理数字。
+数值铁律（内核立规注记 规则 7）：本模块只搬 typed JSON，不产生任何物理数字。
 """
 
 from __future__ import annotations

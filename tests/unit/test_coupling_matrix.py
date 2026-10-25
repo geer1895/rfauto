@@ -1222,7 +1222,7 @@ def test_bpf_model_nominal_labels_n9_disambiguated():
 # 本文件逐例可复现）：响应不变 ≤1.6e−15（合同旋转保证）；pattern 清洁度分化
 # ——N3[2.0] 残差 0/family=anti、N2[1.5] 残差 0/shifted，N3[1.5,−2.0]≈0.3124、
 # N4[1.2,2.5]≈0.7990、N5[1.5,2.5]≈0.2101 均 mixed（各恰 1 个非 keeper 违例）。
-# 复系数 folded 拓扑增量不在本内核（方案 §10.18-§10.23 冻结，TODO 另立增量）。
+# 复系数 folded 拓扑增量不在本内核（方案 §10.18-§10.23 冻结，待办清单 另立增量）。
 
 FOLDED_COMPLEX_BOUNDARY = [
     (3, [2.0], 0.0, "anti", 0),

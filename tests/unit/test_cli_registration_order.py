@@ -104,16 +104,29 @@ def test_cli_leaf_paths_registration_order():
     """叶命令深度优先注册序逐位=金快照（E2-8：失败消息改动态 len 防再陈旧）。"""
     gold = json.loads(_GOLD_CLI.read_text(encoding="utf-8"))
     snap = _cli_tree_snapshot()
-    assert snap["n_leaves"] == 274, (
-        f"叶命令数漂移: {snap['n_leaves']} != 274（check_numbers CLI 口径；"
-        "aurora_e W3-S4 2026-10-19 campaign digest +1 重钉——战役终态 zh "
-        "摘要聚合叶（campaign 域内追加，手动单节触发，全带 --json）；上锚="
-        "aurora_g W8-S4 2026-10-19 +3 重钉——verdict-summary 顶层叶（verdict "
-        "人读摘要出口）+ runs compare-batch（多 run 收官对账）+ datasets "
-        "profile（数据集一键画像），全叶带 --json；上锚=aurora_e W2-S8 "
-        "2026-10-18 templates golden-diff +1——EC-8 全模板 golden 几何回归"
-        "仓叶，零逻辑转发 service/template_golden_service；上上锚=aurora_d "
-        "KB-B 2026-10-14 pitfalls search/get +2）")
+    assert snap["n_leaves"] == 280, (
+        f"叶命令数漂移: {snap['n_leaves']} != 280（check_numbers CLI 口径；"
+        "aurora_k K18 2026-10-23 em diff +1 重钉——run 目录级四面对比叶"
+        "（P17/F13：替代手工 diff .aedt 文本——meta params 逐键/K5 模型清单"
+        "按 name 逐项[aperture z 验收靶]/Touchstone S 参数同栅对拍/K4 新鲜"
+        "度交叉，零逻辑转发 service/em_diff_service，带 --json）；上锚="
+        "aurora_k K10 2026-10-23 em sweep +1 重钉——DOE/矩阵编排叶（P16/F9："
+        "cases.yaml 笛卡尔全积展开→逐 case 串行执行[内存闸+janitor 资源防线]"
+        "→summary.csv/json 汇总，零逻辑转发 service/em_sweep_service，带 "
+        "--json）；上锚=aurora_k K8 2026-10-23 em deembed+metrics +2 重钉"
+        "——THRU 对称半拆"
+        "双边去嵌叶+串联/并联器件 Z12/Y11 指标提取叶（反馈 F6/P14，零逻辑"
+        "薄壳直连 core/deembed K8 扩展纯函数面，calc_vna oracle 叶 A-11 同"
+        "款只读出口，全叶带 --json）；上锚=aurora_k K5 2026-10-23 em doctor"
+        " +1 重钉——自定义 EM 模型清单体检叶（P12/F8：清单驱动的 pre-solve "
+        "几何/端口语义检查器，零 AEDT 依赖，带 --json）；上锚=aurora_k K4 "
+        "2026-10-23 runs verify +1 重钉——run 产物新鲜度校验叶"
+        "（manifest 收官指纹 vs 盘上 Touchstone，P11/F7 交付错配防线，带 "
+        "--json）；上锚=aurora_e W3-S4 2026-10-19 campaign digest +1 重钉"
+        "——战役终态 zh 摘要聚合叶（campaign 域内追加，手动单节触发，全带 "
+        "--json）；上锚=aurora_g W8-S4 2026-10-19 +3 重钉——verdict-summary "
+        "顶层叶（verdict 人读摘要出口）+ runs compare-batch（多 run 收官对"
+        "账）+ datasets profile（数据集一键画像），全叶带 --json）")
     assert snap["leaf_paths"] == gold["leaf_paths"], (
         "CLI 叶命令注册序漂移（同族段内次序是 AU-1B4 钉的镜像面）")
 
@@ -122,11 +135,15 @@ def test_mcp_tool_and_resource_order():
     """132 个 MCP 工具注册序 + 资源清单=金快照（批3 拆分对账面转正）。"""
     gold = json.loads(_GOLD_MCP.read_text(encoding="utf-8"))
     snap = _mcp_snapshot()
-    assert len(snap["tool_names_order"]) == 152, (
-        f"MCP 工具数漂移: {len(snap['tool_names_order'])} != 152"
-        "（check_numbers MCP 口径；edb 快车道 2026-10-08 edb_emit_spec/"
-        "edb_build_solve/edb_status +3 重钉；上锚=W6 2026-10-06 "
-        "start_tune/run_sweep/preflight_run +3）")
+    assert len(snap["tool_names_order"]) == 157, (
+        f"MCP 工具数漂移: {len(snap['tool_names_order'])} != 157"
+        "（check_numbers MCP 口径；aurora_l Wave-C C1 2026-10-23 em 族五只读"
+        "薄壳 +5 重钉——em_doctor_check/runs_verify/em_diff_runs/"
+        "em_metrics_from_run/em_sweep_plan（反馈 F5：runs/ 历史、质量门判读、"
+        "收敛门结论直喂 Agent；零逻辑转发 em_doctor/runs_verify/em_diff/"
+        "em_metrics/em_sweep service 单源，sweep 执行面不上 MCP）；上锚="
+        "edb 快车道 2026-10-08 edb_emit_spec/edb_build_solve/edb_status +3；"
+        "上锚=W6 2026-10-06 start_tune/run_sweep/preflight_run +3）")
     assert snap["tool_names_order"] == gold["tool_names_order"], (
         "MCP 工具注册序漂移")
     assert snap["resources"] == gold["resources"], "MCP 资源清单漂移"

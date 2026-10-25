@@ -6,7 +6,7 @@
 
 # 内核文档卡：coupled_line_bpf
 
-> 平行耦合线带通滤波器（coupled-line BPF）综合族（架构批 A3-C 席域 1，
+> 平行耦合线带通滤波器（coupled-line BPF）综合族（aurora72 A3-C 席域 1，
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 平行耦合线带通滤波器实现族：全极点切比雪夫 g 值→J 倒置器→逐节 (Z0e,Z0o)→KJ 二维反解微带 (w,s)——耦合矩阵级（C13）之下的器件实现尺寸级，Pozar Example 8.7 阻抗表逐位锚。
 
-模块自述（docstring 首行，机读）：平行耦合线带通滤波器（coupled-line BPF）综合族（架构批 A3-C 席域 1，
+模块自述（docstring 首行，机读）：平行耦合线带通滤波器（coupled-line BPF）综合族（aurora72 A3-C 席域 1，
 
 ## 公式与口径
 

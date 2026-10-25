@@ -1,6 +1,6 @@
 """W2-B 席（VI-3 模板推荐器 + TEMPLATE_SPECS 49→71 + UX-A7 深链）单测。
 
-规格=runs/research_seats_20261004/sp_specs6/SPECS.md §VI-3 + 批判据
+规格=内部证据档 §VI-3 + 批判据
 runs/w2_phase2/criteria.md W2-B 节。判据（预声明门值）：
 ① TEMPLATE_SPECS names()=71（bootstrap 后真跑计数）；
 ② recommend 三组预声明查询 top-1 golden 稳定；
@@ -55,10 +55,15 @@ def _bootstrap():
 
 
 class TestSpecCoverage72:
-    def test_names_equal_template_meta_72(self):
-        assert len(TEMPLATE_META) == 72
+    def test_names_equal_template_meta_73(self):
+        # 72→73（aurora_k K11 2026-10-23：octagonal_spiral 八角螺旋电感
+        # 注册，spec 同批 _register_octagonal_spiral）→ 73→75（aurora_k
+        # K12 2026-10-23：mim_cap+interdigital_cap 电容族注册，spec 同批
+        # _register_mim_cap/_register_interdigital_cap，计数以合流实测为
+        # 准；类名 TestSpecCoverage72 为历史锚保留）
+        assert len(TEMPLATE_META) == 75
         assert TEMPLATE_SPECS.names() == sorted(TEMPLATE_META)
-        assert len(TEMPLATE_SPECS.names()) == 72
+        assert len(TEMPLATE_SPECS.names()) == 75
 
     def test_w2b_22_newly_registered(self):
         missing = sorted(set(W2B_NEW_TEMPLATES) - set(TEMPLATE_SPECS.names()))
@@ -303,13 +308,15 @@ class TestRecommendFilterRank:
         assert RECOMMEND_F0_TOL == 0.30
 
 
-# ═══ 判据⑤：UX-A7 深链 72 卡路径逐一存在 ═════════════════════════════════════
+# ═══ 判据⑤：UX-A7 深链 72 卡路径逐一存在（72→73 K11 2026-10-23，
+#     octagonal_spiral 注册 → 73→75 K12 2026-10-23 mim_cap/
+#     interdigital_cap 注册，计数以合流实测为准）══════════════════════
 
 
 class TestDocsDeepLinks:
     def test_gallery_cards_docs_link_all_72_exist(self):
         d = gallery_cards()
-        assert d["n_templates"] == 72
+        assert d["n_templates"] == 75
         for card in d["cards"]:
             link = card.get("docs_link")
             assert link == f"docs/templates/{card['name']}/meta.yaml", card
@@ -325,7 +332,7 @@ class TestDocsDeepLinks:
         spec.loader.exec_module(mod)
         cards = mod.collect_cards()
         svc = {c["name"]: c["docs_link"] for c in gallery_cards()["cards"]}
-        assert len(cards) == 72
+        assert len(cards) == 75
         for card in cards:
             assert card["docs_link"] == svc[card["name"]], card["name"]
             assert (REPO / card["docs_link"]).is_file()

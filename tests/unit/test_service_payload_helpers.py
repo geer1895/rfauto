@@ -1,6 +1,6 @@
 """S2-8 单源化回归钉（review_ge8e 阶段二 F5）：service 层载荷微助手单源断言。
 
-出处：runs/review_ge8e/s2_service_biz/REPORT.md S2-8——_num/
+出处：内部证据档 S2-8——_num/
 _require_payload_dict/_err/_optional_num 在 humidity_drift/cryo_materials/
 aging/glass_weave_skew 四文件近逐字节拷贝（humidity vs cryo 逐字节同、
 aging 仅 docstring 异、gws 同形）；campaign_dashboard._load_trials 与

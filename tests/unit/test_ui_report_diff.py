@@ -10,7 +10,7 @@
    （58→59，docs 侧「58 路由」钉由主代理回填，本测试为代码侧事实钉）。
 3. **UI 源码钉**：报告页 TOC（h2/h3 稳定 id + >3 节左侧栏 + scrollspy）、
    双 run 对比面板（双 select + 两栏 diff 表 + 单 PlotCard 叠图 + 口径警示）。
-4. **runs/ 证据面（软钉）**：runs/pr34/ 本批 harness 在档时校验 golden
+4. **runs/ 证据面（软钉）**：内部证据档 本批 harness 在档时校验 golden
    与内嵌快照一致（缺席跳过——干净环境不依赖 runs/）。
 """
 
@@ -240,7 +240,7 @@ class TestReportPageUiPins:
 
 
 def test_pr34_golden_evidence_consistent():
-    """runs/pr34/ 证据面在档时：harness 快照与内嵌金钉同源（软钉，缺席跳过）。"""
+    """内部证据档 证据面在档时：harness 快照与内嵌金钉同源（软钉，缺席跳过）。"""
     from tests.unit.test_ui_plotcard import _GOLDEN
 
     evidence = Path(__file__).resolve().parents[2] / "runs" / "pr34" / \

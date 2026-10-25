@@ -36,7 +36,7 @@ _FAKE_TOKEN = "-".join(
 
 @pytest.fixture(autouse=True)
 def _clean_gitleaks_env(monkeypatch):
-    """清空本门的整个环境变量集合（同名前缀全清，AGENTS 确定性铁律）。"""
+    """清空本门的整个环境变量集合（同名前缀全清，内核立规注记 确定性铁律）。"""
     for name in (pcg.ENV_STRICT, pcg.ENV_BIN):
         monkeypatch.delenv(name, raising=False)
 

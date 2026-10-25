@@ -337,7 +337,7 @@ import csv
 import os
 
 # CSXCAD/openEMS 扩展模块依赖 DLL 不在 Python 3.8+ 的 PATH 搜索里
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"E:\\openEMS\\install\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

@@ -2,7 +2,7 @@
 
 三层：
 1. **等价金钉（node 真执行，缺 node skip）**：迁移前 app.js drawEChart 的
-   option 构造固化为 5 案例快照（harness=runs/pr34/golden_option_harness.mjs，
+   option 构造固化为 5 案例快照（harness=内部证据档，
    Math.random 钉 0.42——band stack id 随机量；快照值内嵌本文件，runs/ 是
    gitignored 证据面，测试不依赖）。迁移后 plotcard.js buildEChartOption
    对同输入同主题必须 **逐字节相等**——「同数据同 option 快照等价」的机器
@@ -41,7 +41,7 @@ import pytest
 _STATIC = Path(__file__).resolve().parents[2] / "src" / "rfauto" / "ui" / "static"
 _NODE = shutil.which("node")
 
-# 迁移前 option 快照（runs/pr34/golden_option_harness.mjs 产出，2026-10-02；
+# 迁移前 option 快照（内部证据档 产出，2026-10-02；
 # valueFormatter 等函数 JSON.stringify 不含——等价断言即 JSON 逐字节口径）。
 _GOLDEN_JSON = r"""
 {
@@ -64,7 +64,7 @@ def _run_node_js(js: str) -> str:
     return r.stdout
 
 
-# 案例输入与 runs/pr34/golden_option_harness.mjs 逐字一致（含 Math.random 钉）。
+# 案例输入与 内部证据档 逐字一致（含 Math.random 钉）。
 # aurora_j W1-S1（2026-10-23）：band_series 案例含 xvalue+等长 x/y 的 line+band
 # 组合，命中新增的值轴 [x,y] 对门——该条期望值按新门再生（mean/带线 data 变
 # [x,y] 对）；其余四案例（line_category/band_marks/empty_series=category base

@@ -1,6 +1,6 @@
 """ui_service.views —— 查看数据源端点（校准工作台/跨保真/S 参数交互/报告中心/循环板）。
 
-自 ui_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
+自 ui_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ _LOG = logging.getLogger(__name__)
 def calibration_runs() -> dict[str, Any]:
     """扫描 runs/ 下的校准产物清单（工作台首页列表）。
 
-    架构批 A2-D：目录清单/JSON 读/端点快照三层缓存（指纹+mtime 失效、
+    aurora72 A2-D：目录清单/JSON 读/端点快照三层缓存（指纹+mtime 失效、
     TTL 兜底、RFAUTO_UI_CACHE=0 直通）；响应 schema 与条目顺序不变。
     R8-ENG2：条目 model/adapter 接 registry 单源（covered 态零 meta.json
     读；缺行/关闭回退文件读，字节等价），gate.json 字段仍由文件面缓存供给。
@@ -117,7 +117,7 @@ def calibration_view(run_id: str) -> dict[str, Any]:
 def cross_fidelity_view() -> dict[str, Any]:
     """跨保真对比数据（3.3）：ρ/recall 随样本量与网格档的演化曲线。
 
-    架构批 A2-D：原始 gate/meta/p0 文档走指纹快照缓存；行组装与 p0 阈值
+    aurora72 A2-D：原始 gate/meta/p0 文档走指纹快照缓存；行组装与 p0 阈值
     verdict 重推保持每请求现算（THRESHOLD_RHO 单源 monkeypatch 语义不变）。
     R8-ENG2：本端点需全量 meta 文档（algorithm/metrics），registry 摘要列
     不含 → meta/gate 仍走文件缓存；registry 仅经快照签名代际参与失效
@@ -385,7 +385,7 @@ _REPORT_FILES = (
 def list_reports() -> dict[str, Any]:
     """报告中心清单（3.5）：扫描 runs/ 下人读报告（kind+路径+元信息）。
 
-    架构批 A2-D：端点快照缓存（指纹+mtime 失效；报告文件同名就地改写的
+    aurora72 A2-D：端点快照缓存（指纹+mtime 失效；报告文件同名就地改写的
     size/mtime 最迟 TTL 秒后可见；RFAUTO_UI_CACHE=0 直通）；schema 不变。
     R8-ENG2：条目 model 接 registry 单源（covered 态零 meta.json 读；
     缺行/关闭回退文件读，字节等价）；报告文件存在性/size/mtime 仍走文件面。
@@ -482,7 +482,7 @@ def pareto_runs(limit: int = 200) -> dict[str, Any]:
     无优化轨迹）。优化 run 排前、单点 run 排后——前端据此分组下拉、
     无数据 run 标注并给人话空态。
 
-    架构批 A2-D：快照缓存存 limit 切片前的全量 entries（不同 limit
+    aurora72 A2-D：快照缓存存 limit 切片前的全量 entries（不同 limit
     共享一次扫描）；指纹+mtime 失效；trials 计数 per-run 目录 mtime
     键控缓存；schema 与排序不变。R8-ENG2：条目 model/adapter 接 registry
     单源（covered 态零 meta.json 读；缺行/关闭回退文件读，字节等价）；

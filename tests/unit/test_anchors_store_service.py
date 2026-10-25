@@ -1,10 +1,10 @@
-"""DP-3 锚注册表装载/服务/CLI 接线测试（判据 a2 + b + d）。
+"""DP-3 锚注册表装载/服务/CLI 接线测试（判据 a2 + b + d，预声明
+runs/df6_dp3anchors/criteria.md）。
 
 - a2：f_dip·L 双锚值与 scripts/wp39_followup_run.py 硬编码字面值逐位相等
   （regex 只读提取，scripts 非包不入 import 面）；
-- b：provenance 单测——真实注册表 validate 全过（commit 可解析/时戳可
-  解析/consumers 文件存在/referee_script 若给出则存在；公开分发视图不
-  随附内部仲裁证据档，arbitration_runs 字段可缺省）；
+- b：provenance 单测——真实注册表 validate 全过（runs 路径存在/commit 可
+  解析/时戳可解析/consumers 文件存在/referee_script 存在）；
 - d：装载集合 == EXPECTED_ANCHORS 单源；
 - store best-effort：缺文件/坏 YAML → 空集 + warning（#105）；
 - service JSON 面四入口 + CLI/MCP 挂载最小接线。
@@ -57,8 +57,7 @@ def test_b_each_active_anchor_provenance_fields_resolvable() -> None:
     for rec in anchor_set.records:
         if rec.status == "awaiting_data":
             continue
-        # 公开分发视图不随附内部仲裁证据档：arbitration_runs 字段可缺省
-        # （若给出则路径须存在，由 validate 门核对）
+        assert rec.provenance.get("arbitration_runs"), rec.anchor_id
         assert re.fullmatch(r"[0-9a-f]{7,40}",
                             str(rec.provenance["commit"]).lower())
         datetime.fromisoformat(str(rec.registered_at))
@@ -102,7 +101,7 @@ def test_a2_patch_oe_last_verified_backfilled() -> None:
     assert rec.value == 76.8  # 锚值维持（保守裁决，不随复测改锚）
     assert "复测回填" in str(rec.provenance.get("devlog"))  # 注记随锚落档
     # 兄弟席 hfss-v1（99.8）：W1 批时点为 null（零触碰钉）；2026-10-04
-    # G1 G-14 批按 开发注记 一百二十三 ④+runs/wp39_mvp_followup/patch_calib.
+    # G1 G-14 批按开发日志一百二十三 ④+内部证据档（patch_calib.
     # json hfss 块（probe.s1p 离线复核 99.79，相对锚值残差 1.0e-4）回填
     # ——时点收窄改钉回填值（#353① 口径：历史时点钉随新批次重标定收窄）
     hfss_rec = anchor_set.get("patch.f_dip_l.hfss-v1")
@@ -260,8 +259,7 @@ def test_service_registry_yaml_shape_honest() -> None:
                 if a["anchor_id"] == "c3.k_of_g.openems-hfss-v1")
     assert len(kofg["points"]) == 6
     assert kofg["uncertainty"] is not None
-    # 公开分发视图不随附内部仲裁证据档：arbitration_runs 字段缺省
-    assert kofg["provenance"].get("arbitration_runs") is None
+    assert kofg["provenance"]["arbitration_runs"] == ["runs/df6_a1_r4"]
 
 
 # ── CLI 挂载最小接线（#305：--help 真构建；list/validate JSON 出）──────────

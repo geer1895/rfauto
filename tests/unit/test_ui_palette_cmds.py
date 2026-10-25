@@ -1,9 +1,9 @@
-"""W3-D（架构批）palette 命令面扩展 + SVG 图标基座 回归钉。
+"""W3-D（aurora36）palette 命令面扩展 + SVG 图标基座 回归钉。
 
 钉四件事：
 1. 命令目录（palette.js commandCatalog，纯函数 node 真执行，缺 node skip）：
-   总数 20（主题 4 + 页面跳转 7 + 动作 9；架构批 W2-S5 语言切换命令
-   act-locale 落地同笔 14→15；架构批 W5-S17 动作扩充同笔 15→20——
+   总数 20（主题 4 + 页面跳转 7 + 动作 9；aurora_f W2-S5 语言切换命令
+   act-locale 落地同笔 14→15；aurora_f W5-S17 动作扩充同笔 15→20——
    act-run-search/act-run-latest/act-run-2nd/act-run-3rd/act-latest-campaign）、
    mode/subtitle/中文标题契约、"当前"提示只在当前主题、run() 动作面真被调用
    且参数与 id 对齐、act-locale 随语言档翻转提示与切换目标（zh→en / en→zh）、
@@ -154,7 +154,7 @@ class TestCommandCatalog:
             "if (calls.refresh !== 1) throw new Error('act-refresh 未调 refresh');\n"
             "byId['act-palette-help'].run();\n"
             "if (calls.help !== 1) throw new Error('act-palette-help 未调 help');\n"
-            "// act-locale（架构批 W2-S5）：语言档决定提示与切换目标；缺省档参数\n"
+            "// act-locale（aurora_f W2-S5）：语言档决定提示与切换目标；缺省档参数\n"
             "//（旧两参调用形态）按 zh 处理——向后兼容钉。\n"
             "if (byId['act-locale'].hint !== '切换到 English') throw new Error('zh 档提示漂移');\n"
             "byId['act-locale'].run();\n"

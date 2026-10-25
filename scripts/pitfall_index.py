@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-"""pitfall_index —— 坑账全量结构化索引构建器（架构批 KB-B 席，2026-10-14）.
+"""pitfall_index —— 坑账全量结构化索引构建器（aurora_d KB-B 席，2026-10-14）.
 
-解析 项目规约.md「踩坑速查」节（行级启发：顶层 ``- `` 段落=一条坑，缩进行=
+解析 内核立规注记.md「踩坑速查」节（行级启发：顶层 ``- `` 段落=一条坑，缩进行=
 续行；形态相对规整）+ runs/ SESSION_PITFALLS 会话坑账散档（KB-B2 席接入，
 2026-10-14：有序列表 ``N. ``/无序 ``- `` 开行=一条，折行并入，h2 分节题/
 blockquote/空行结构性跳过）+ knowledge/pitfall_consumption.yaml（消费指针
@@ -13,12 +13,12 @@ validate_pitfall_index 同契约——检索面零改动直接可加载）。
 - v1 = 人工逐行实读子集（"宁少而真"），零改写（W5-E SLA 门以 id 关联
   消费指针，本脚本不动它）；
 - 本产物 = 机器全量解析（行级启发），id=条目首个坑号组（**检索键非权威
-  登记**，权威出处=；正文引用号会先于本条坑号出现时 id 随首个命中，
+  登记**，权威出处=开发注记；正文引用号会先于本条坑号出现时 id 随首个命中，
   全量候选见 numbers 字段）；无坑号条目=A<行号> 行锚合成 id（前缀 A=合成，
-  随 项目规约.md 行移动重锚，与 v1 口径一致）；
+  随 内核立规注记.md 行移动重锚，与 v1 口径一致）；
 - 散档条目 id=`#<TOKEN>-<文档序号>`（TOKEN=文件名去 SESSION_PITFALLS_
   前缀；序号=档内物理顺序）——散档序号是**文件局部空间**，直当 #N 用会
-  撞 项目规约.md 全局坑号（FINAL 档 #222 重申条 vs 全局 #222 登记），故
+  撞 内核立规注记.md 全局坑号（FINAL 档 #222 重申条 vs 全局 #222 登记），故
   隔离；正文引用的全局坑号仍收进 numbers 供 --number 召回（合成 id 非
   坑号 → devlog_ref 如实 None；runs/ 属 gitignored 工作区资产，缺文件
   如实计入 missing 不中断构建，条目 text 内嵌全文故产物自包含）；
@@ -54,7 +54,7 @@ CONSUMPTION_PATH = REPO_ROOT / "knowledge" / "pitfall_consumption.yaml"
 DEFAULT_OUT_PATH = REPO_ROOT / "knowledge" / "pitfalls_index_full.json"
 #: 精选档（v1 稳定锚注册表）——消费行 A<行> 合成 id 的解析源（W6-S4 收口
 #: 2026-10-19）：v1 约定=id 稳定、行窗随手维护重锚（pitfall_consumption
-#: SLA 门以 v1 id 关联），本全量档 A-id=再生成时行号、随 项目规约.md 演化
+#: SLA 门以 v1 id 关联），本全量档 A-id=再生成时行号、随 内核立规注记.md 演化
 #: 天然形态差（W5-R4 实证：A216(v1)≡A344(全量) 等）。A-id 消费行先精确
 #: 对全量条目 id，miss 再经 v1 注册表**现行行窗重叠**对账同块（非标题
 #: 模糊匹配——错配比缺配更毒；v1 窗失修越块则如实 unmatched，维护纪律=
@@ -119,7 +119,7 @@ CATEGORY_RULES: list[tuple[str, tuple[str, ...]]] = [
                 "yaml", "AST", "装饰器")),
     ("testing", ("pytest", "测试", "单测", "golden", "快照", "skip",
                  "fixture", "monkeypatch", "回归", "门口径")),
-    ("docs", ("文档", "", "README", "docs", "TODO", "AGENTS",
+    ("docs", ("文档", "开发注记", "README", "docs", "TODO", "AGENTS",
               "handoff", "方案", "教程")),
     ("numerics", ("数值", "Sobol", "拟合", "收敛", "矩阵", "插值", "浮点",
                   "S 参数", "谐振", "网格", "闭式", "物理", "dB", "GHz",
@@ -135,11 +135,11 @@ _NUM_RANGE_RE = re.compile(r"#(\d+)\s*[-–~]\s*#(\d+)")
 #: 单坑号。
 _NUM_ONE_RE = re.compile(r"#(\d+)")
 
-#: 条目开行标记（项目规约.md=无序 ``- ``；散档兼有有序 ``N. ``——
+#: 条目开行标记（内核立规注记.md=无序 ``- ``；散档兼有有序 ``N. ``——
 #: 标题提取/空条目判据对两形态通用，text 保留原标记）。
 _ENTRY_MARKER_RE = re.compile(r"^(?:-|\d+\.)\s*")
 _ENTRY_BOLD_TITLE_RE = re.compile(r"^(?:-|\d+\.)\s*\*\*(.+?)\*\*")
-#: 散档有序列表开行（无序 ``- `` 与 AGENTS 同形，用前缀判）。点号后须
+#: 散档有序列表开行（无序 ``- `` 与 内核立规注记 同形，用前缀判）。点号后须
 #: 空白或行尾——放行 ``2.`` 空条目（占号失败如实计），又不放行
 #: 「0.7.0 绑定」类版本号续行误切。
 _SCATTERED_ORDERED_RE = re.compile(r"^\d+\.(?:\s+|$)")
@@ -207,7 +207,7 @@ def _split_entry_blocks(lines: list[str], section_start: int,
             if current is not None:
                 blocks.append((current_start, current))
             current = [stripped]
-            current_start = i + 1  # 1-based 行号（对齐编辑器/AGENTS 引用口径）
+            current_start = i + 1  # 1-based 行号（对齐编辑器/内核立规注记 引用口径）
         elif current is not None:
             current.append(stripped)
         elif not stripped:
@@ -267,15 +267,15 @@ def _strip_emphasis(s: str) -> str:
     return s.replace("**", "")
 
 
-_TITLE_META_RE = re.compile(r"20\d\d|#\d||实证|立规|用户令|批|席|门|簇")
+_TITLE_META_RE = re.compile(r"20\d\d|#\d|开发注记|实证|立规|用户令|批|席|门|簇")
 _LEADING_PAREN_RE = re.compile(
     r"^（((?:[^（）]|（[^（）]{1,60}）){1,200})）[：:]?\s*")
 
 
 def _clean_title(title: str) -> str:
-    """去标题尾部出处定语括号（内含日期/坑号//实证类字样才算定语——
+    """去标题尾部出处定语括号（内含日期/坑号/开发注记/实证类字样才算定语——
     语义性括号如「（配方 schema 版本）」保留）。尾部括号取**平衡配对**的
-    最外层（定语内可嵌 类小括号）。"""
+    最外层（定语内可嵌 开发注记（一百八十六）类小括号）。"""
     t = title.strip()
     while t.endswith("）") and "(" not in t[-40:]:
         depth = 0
@@ -398,7 +398,7 @@ def split_scattered_blocks(
     blockquote 注记、空行属结构性跳过逐类计数（先于续行吸收判定——
     分节题不得并进前条 text/行段）；其余非空行并入当前条目（散档为
     手写折行流）；首条目之前的其它非空行=孤儿行如实计数。空行不并入
-    条目（行段止于末内容行，比 AGENTS 面更紧）。
+    条目（行段止于末内容行，比 内核立规注记 面更紧）。
     """
     blocks: list[tuple[int, list[str]]] = []
     skipped: dict[str, Any] = {"blank": 0, "blockquote": 0, "heading": 0,
@@ -418,7 +418,7 @@ def split_scattered_blocks(
             if current is not None:
                 blocks.append((current_start, current))
             current = [stripped]
-            current_start = i + 1  # 1-based 行号（对齐 AGENTS 面口径）
+            current_start = i + 1  # 1-based 行号（对齐 内核立规注记 面口径）
         elif current is not None:
             current.append(stripped)
         else:
@@ -442,10 +442,10 @@ def parse_scattered_doc(rel_path: str, seen_ids: set[str],
 
     id=`#<TOKEN>-<文档序号>`：序号=条目开行在档内的物理顺序（1-based），
     与有序列表印的号一致（分节续号/折行不影响；解析失败的条目同样占号，
-    失败记录带合成 id 便于对档）。序号是**文件局部空间**，与 项目规约.md
+    失败记录带合成 id 便于对档）。序号是**文件局部空间**，与 内核立规注记.md
     全局坑号隔离（直当 #N 用会撞 #89/#122 类已注册坑号）；正文引用的
     全局坑号仍收进 numbers 供 --number 召回；合成 id 非坑号 →
-    devlog_ref 如实 None（权威出处=散档本身， 段落记账在档头注）。
+    devlog_ref 如实 None（权威出处=散档本身，开发注记 段落记账在档头注）。
     """
     path = root / rel_path
     token = scattered_id_token(rel_path)
@@ -551,7 +551,7 @@ def merge_consumption(entries: list[dict[str, Any]],
         else:
             # A<行> 合成 id：先与"行号恰同"的合成条目精确对（诚实口径，
             # 不做标题模糊匹配——错配比缺配更毒）；miss 再经 v1 稳定锚
-            # 现行行窗重叠对账同块（行窗相交=同一 项目规约.md 块，两档同源
+            # 现行行窗重叠对账同块（行窗相交=同一 内核立规注记.md 块，两档同源
             # 同刻解析时恒成立；v1 窗失修则落空如实 unmatched）。
             rid = str(row.get("id", ""))
             for entry in entries:
@@ -594,7 +594,7 @@ def build_index(agents_path: Path = AGENTS_PATH,
                 runs_root: Path = REPO_ROOT) -> dict[str, Any]:
     """构建全量索引 artifact dict（确定性：同输入逐字节同输出）。
 
-    条目序=项目规约.md 踩坑速查全量在前 + runs/ 散档（登记表序=战役时序）
+    条目序=内核立规注记.md 踩坑速查全量在前 + runs/ 散档（登记表序=战役时序）
     在后；消费指针按坑号交集并入（含散档条目正文引用的全局坑号）。
     """
     text = agents_path.read_text(encoding="utf-8")
@@ -642,17 +642,17 @@ def build_index(agents_path: Path = AGENTS_PATH,
     return {
         "schema_version": SCHEMA_VERSION,
         "description": (
-            "坑账全量结构化索引（架构批 KB-B/KB-B2 席，"
+            "坑账全量结构化索引（aurora_d KB-B/KB-B2 席，"
             "scripts/pitfall_index.py 机器解析）——项目规约.md 踩坑速查节全量"
             "条目+runs/ SESSION_PITFALLS 散档条目+pitfall_consumption.yaml "
             "消费指针并入。AGENTS 条目 id=条目首个坑号组（检索键非权威登记，"
-            "权威=；正文引用号先现时随首命中，全量候选见 numbers），"
+            "权威=开发注记；正文引用号先现时随首命中，全量候选见 numbers），"
             "无坑号条目=A<行号> 行锚合成 id（随 项目规约.md 行移动重锚）；"
             "散档条目 id=#<TOKEN>-<文档序号>（文件局部空间，与全局坑号隔离，"
             "devlog_ref 如实 None）。与 pitfalls_index.json（ge8e X6 人工"
             "精选 66 条 v1）并存互补，本文件可随源演进重导："
             "python scripts/pitfall_index.py"),
-        "generated_by": "架构批 KB-B/KB-B2 席（scripts/pitfall_index.py）",
+        "generated_by": "aurora_d KB-B/KB-B2 席（scripts/pitfall_index.py）",
         "generated_date": "2026-10-14",
         "source": {
             "file": "项目规约.md",

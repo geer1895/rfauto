@@ -12,7 +12,7 @@ B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载
   域外/未知/非 active 一律 source=fallback（结构化回退闭式，不抛）；
 - ``AnchorSet.note_anchor_residual(anchor_id, point, observed)``：漂移检测，
   |残差| > max(3σ, 5%·|锚值|) → 内存面翻 stale + 告警字段（注册表运行时
-  只读，落盘回填走人工 commit——Agent 写面隔离，AGENTS 规则 6）；
+  只读，落盘回填走人工 commit——Agent 写面隔离，内核立规注记 规则 6）；
 - ``find_anchors(template_family, quantity)`` / ``apply_anchor_correction(
   family, quantity, params)``（XC-A，规格 §B-2）：族×量投影查询 + 偏差面
   设计修正（三拒绝门 + 修正量包络）——与 warm_start（参数面优化起点）
@@ -38,7 +38,7 @@ B→A 批启用）。本模块只做求值与域守卫，一切 IO（YAML 装载
 
 单源计数：EXPECTED_ANCHORS / EXPECTED_ANCHOR_COUNT 与 knowledge/anchors.yaml
 同步维护（#231/#304 注册表消费者纪律；check_numbers 绑定建议见
-runs/df6_dp3anchors/criteria.md 判据 d2）。
+内部证据档 判据 d2）。
 """
 
 from __future__ import annotations
@@ -69,7 +69,8 @@ from typing import Any
 # domain 字段表达 schema 零扩展；0795b2a T3 核验解锁，P1 §8.5 主路线兑现）。
 # Goal 批 T14（wf:goal-t14，2026-09-30）+2：mmt.inductive_post_b.hfss-v1 /
 # mmt.resonant_window_fres.hfss-v1 constant active——ME-5 MMT 销钉/谐振窗
-# HFSS 仲裁锚（远程仲裁归档 criteria §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
+# HFSS 仲裁锚（sim_server 远程仲裁，runs/mmt_anchor_20260930/criteria.md
+# §6；两案 AGREE_HFSS：闭式偏感性方向 100% 系统，偏差常量 9.224%/16.600%
 # 随工作点 domain 钉死；单点锚 consumers=[] 零接线如实）。
 # ge6 Wave1 锚注册批（wf:ge6-anchor，2026-10-01）+2：ring.design_dk.
 # openems-hfss-v1 pointer experimental（FA3 Design Dk 战役账 六百八十
@@ -77,10 +78,10 @@ from typing import Any
 # 双值 {oe 3.5333, hfss 3.3425}；基准式依赖引擎几何表征=禁 constant 物理根
 # 据）+ mmwave.design_dk.ro3003-oe-v1 pointer experimental（OE 单引擎单点
 # 封档：既有真跑谷位反推 er_design=3.1434，C10d 离线复判 PASS
-# runs/ge6_anchor/verdict.json；constant 待 78GHz HFSS 仲裁腿）。
+# 内部证据档；constant 待 78GHz HFSS 仲裁腿）。
 # ge6 A22 批（wf:ge6-a22，2026-10-01）+1：ms_cross.wg_resonance.
 # openems-hfss-v1 pointer experimental——ge6 Wave1 席 2 HFSS 仲裁分支 A
-# 收敛判读（runs/ge6_hfsswin/seat2_mscross/：同几何谷位互差 0.180GHz ≤
+# 收敛判读（内部证据档：同几何谷位互差 0.180GHz ≤
 # 预声明 0.30GHz 门，verdict=BRANCH_A_OPENEMS_ENGINE_FAITHFUL），双值
 # {openems 11.675, hfss 11.4951}GHz；偏离 Floquet 属 wg 模拟器前提差，
 # 禁产 constant，A 级判据走 T22「收敛仲裁 AGREE」分支（主代理裁定）。
@@ -137,7 +138,7 @@ EXPECTED_ANCHORS = frozenset({
     # （Cassivi w_eff×TE10 双链）/monopole（λ0/4 像理论）/coil_nfc（Mohan
     # JSSC 1999 current-sheet）/pyramid_horn（Orfanidis×Balanis 最优 σ）——
     # 逐锚 #118 双源与独立重算钉见 tests/unit/test_x5_analytic_anchors.py
-    # 与 runs/review_ge8e/x5_analytic_anchors/REPORT.md；cpw（skrf-CPW vs
+    # 与 内部证据档；cpw（skrf-CPW vs
     # _cpwg_ri 模型二义）与 mline（HJ 系数无仓内已核原文）落 followUp。
     "atten_pi.r_series_mid_ohm.closedform-v1",
     "atten_pi.r_shunt_end_ohm.closedform-v1",
@@ -158,8 +159,8 @@ EXPECTED_ANCHORS = frozenset({
     # cheb_g 5 席（coupled_bpf/xcheb_bpf4/hairpin/hairpin_alt/varactor_bpf，
     # MYJ Table 4.05-1 0.1dB 档表值×Pozar §8.4 递推双源）/msl_cpw 1 席
     # （同阻异模理想级联 S11(f0)=0）——逐锚 #118 独立重算与首判窗见
-    # tests/unit/test_w4_w4e_anchors.py 与 runs/w4_phase4/w4e/REPORT.md；
-    # cpw（模型二义，两候选并列证据档 runs/w4_phase4/w4e/
+    # tests/unit/test_w4_w4e_anchors.py 与 内部证据档；
+    # cpw（模型二义，两候选并列证据档 内部证据档
     # cpw_ambiguity_evidence.md，裁决权在用户）与 mline（HJ 系数无仓内
     # 已核原文，#df6-⑬）仍缓——裁决后各 +1。
     "cps.z0_ohm.closedform-v1",
@@ -176,14 +177,14 @@ EXPECTED_ANCHORS = frozenset({
     # 几何核验优先：渲染侧地贯穿 render_tl.py:61-62+底 MUR 白名单外=PEC
     # render_core.py:1899-1906+综合链 _cpwg_ri 同源 49.9999816 双源）——
     # B 口径（skrf 无地 CPW 67.44Ω）作对照注记进 semantics；证据档
-    # runs/w4_phase4/w4e/cpw_ambiguity_evidence.md + runs/w6_phase6/w6f/。
+    # 内部证据档 + 内部证据档。
     "cpw.z0_ohm.closedform-v1",
     # aurora_d SENS-ANC 复核扩批（wf:aurora-d-sensanc，2026-10-14）+10：
     # analytic 锚第三批（L1 锚覆盖 46/72→56/72 有锚族），X5/W4-E 同制度
     # （constant + calibrated=closedform + closure 层 + experimental，真机
     # 首判前如实）；#118 双源=文献恒等式/经典公式独立第二源+测试第二实现
     # 转录回代钉（tests/unit/test_sensanc_analytic_anchors.py）；逐锚账=
-    # runs/aurora_d_sensanc/REPORT.md（候选裁决策同档）。
+    # 内部证据档（候选裁决策同档）。
     "loop.loop_side_mm.closedform-v1",
     "slot.slot_l_mm.closedform-v1",
     "ifa.ifa_arm_mm.closedform-v1",
@@ -201,7 +202,7 @@ EXPECTED_ANCHORS = frozenset({
     # （λ0/2 阵格，ms_patch/ms_ring_patch/ms_array_NxN 三族）；#118 双源=
     # 文献恒等式独立第二源+测试第二实现转录回代钉
     # （tests/unit/test_anchd_analytic_anchors.py）；逐锚账与弃选 10 族
-    # 逐族理由=runs/aurora_d_anchd/REPORT.md（SENS-ANC 报告第三节同口径复核）。
+    # 逐族理由=内部证据档（SENS-ANC 报告第三节同口径复核）。
     "coax_waveguide_transition.backshort_mm.closedform-v1",
     "sma_launcher.r_o_mm.closedform-v1",
     "patch_eep.elem_w_mm.closedform-v1",
@@ -226,8 +227,8 @@ EXPECTED_ANCHORS = frozenset({
     # embedded_ms=FD 裁判名义 εeff（inverted_ms fdref 制度+双退化极限
     # 恒等链）；msl_slot_transition/slotline_lumped=槽线段 J-S 闭式 β/λg
     # 面（非 Z0 重复，真机判读在档）。逐锚源值复提取账=
-    # runs/aurora_j/w4s15/values.json（前两轮弃选账 runs/aurora_d_sensanc
-    # /REPORT.md 第三节+runs/aurora_d_anchd/REPORT.md 本批逐族改道）。
+    # 内部证据档（前两轮弃选账 内部证据档
+    # /REPORT.md 第三节+内部证据档 本批逐族改道）。
     "wstep.s11_step_db.closedform-v1",
     "bend.s11_max_db.lit-v1",
     "dipole.f_res.openems-v1",
@@ -979,7 +980,7 @@ def anchor_correction_provenance(correction: Mapping[str, Any]) -> dict[str, Any
 # ——走既有 kind=constant + uncertainty kind=identity 形态（ge8 TA 三批先例
 # 10 锚：schiffman/qwt_multisection/sicl/nway_wilkinson/diplexer/ridged_wg
 # 六族，2026-10-02）。本节纯构造零 IO：helper 产出注册表 raw dict 供注册链
-# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，AGENTS
+# 批次落盘（knowledge/anchors.yaml 运行时只读，写面=人工 commit，内核立规注记
 # 规则 6 同源）；provenance.arbitration_runs/commit 由注册链批次回填，
 # helper 不伪造仲裁证据（#122 如实口径）。
 

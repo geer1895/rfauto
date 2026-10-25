@@ -1,4 +1,4 @@
-"""DGS 缺陷接地结构族（架构批 W2-S2 席域 C3，R2_core_tier4 §③ Top5 设计案）。
+"""DGS 缺陷接地结构族（aurora_g W2-S2 席域 C3，R2_core_tier4 §③ Top5 设计案）。
 
 出处（文献族口径+第一性推导，详见下节物理口径）：
 - dgs_dumbbell_lc_extract：哑铃 DGS 一阶 LC 等效（Lim/Ahn IEEE MTT

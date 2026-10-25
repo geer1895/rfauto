@@ -1,8 +1,8 @@
 """DP-12 RECAST 历史重放钉（规格书 §5②；对象 verdict 只读，归档零改写）。
 
 重放对象（RECAST 首例两件）：
-- runs/df5_c3fix/sentinel_verdict.json（哨四门 FAIL+模对 PASS，预算 1.3×）
-- runs/hfss_interdigital_check/verdict.json（UNDECIDED，无合格收敛解）
+- 内部证据档（哨四门 FAIL+模对 PASS，预算 1.3×）
+- 内部证据档（UNDECIDED，无合格收敛解）
 
 判据源=knowledge/criteria/v2/*.yaml（schema: criteria/v2，机器判据）；
 判读机器=src/rfauto/core/vv_mapping.py（纯函数）。断言：v2 管线重放判定

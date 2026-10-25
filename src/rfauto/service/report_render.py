@@ -1,6 +1,6 @@
 """DP-13 U1 双输出报告链：run → 报告模型 → typst PDF ‖ plotly 自包含 HTML 同源双出。
 
-合规形态（AGENTS 规则 7 + #105/#122）：
+合规形态（内核立规注记 规则 7 + #105/#122）：
 
 1. **同源双出**：:func:`build_report_model` 产出唯一报告模型（schema
    ``rfauto-report/v1``，纯 dict、可直接 json.dumps）；:func:`render_typ` 与
@@ -38,7 +38,7 @@ from html.parser import HTMLParser as HtmlParser
 from pathlib import Path
 from typing import Any
 
-from rfauto.service.envelope import ok_envelope
+from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.report_domains import DOMAINS_TYP_BLOCK
 
 REPORT_SCHEMA = "rfauto-report/v1"
@@ -133,7 +133,7 @@ class _ExternalRefScanner(HtmlParser):
 def external_resource_refs(html: str) -> list[str]:
     """列出 HTML 里可发起外部取回的资源引用（零外网判定式，与测试同源）。
 
-    判定面（runs/df6_dp13u1/criteria.md §一.3）=HTML 解析层的资源标签属性
+    判定面（内部证据档 §一.3）=HTML 解析层的资源标签属性
     （script/link/img/iframe/source/video/audio/embed/track/object 的
     src·href）与 style 层的 @import/url() 指向协议相对或 http(s) 地址。
     脚本源码内的 URL 字符串字面量不是取回引用，不算违规。
@@ -163,7 +163,7 @@ def _dict_directly_holds_numbers(node: dict) -> bool:
 def bare_number_fields(node: Any, path: str = "model") -> list[str]:
     """provenance 判定式：返回缺 source 键却持有数值叶的 dict 节点路径。
 
-    规则（runs/df6_dp13u1/criteria.md §一.2）：凡 dict 节点直接或经 list
+    规则（内部证据档 §一.2）：凡 dict 节点直接或经 list
     间接持有数值叶（int/float，bool 豁免），必须带非空字符串 source。
     """
     out: list[str] = []
@@ -991,6 +991,27 @@ def render_run_report(run_dir: str | Path, out_dir: str | Path | None = None, *,
     out_dir 缺省=run_dir/_report。
     """
     run_path = Path(run_dir)
+    # K4（aurora_k，P11/F7）新鲜度门：读曲线/产物前先校验 run 收官指纹
+    # （manifest.json vs 盘上 Touchstone sha256）。stale=旧文件顶替/漏拷/
+    # sidecar 错配 → 错误信封拒绝出图（交付错配不能再静默通过）；legacy=
+    # 老 run 无 manifest → 放行带 note（增量兼容红线：老 run 不废）；
+    # 校验面自身故障不阻塞报告主路径（#105 best-effort）。
+    freshness_status = "unknown"
+    freshness_note = ""
+    try:
+        from rfauto.service.runs_verify_service import verify_run  # lazy: 同层 service 直引
+
+        freshness = verify_run(run_path)
+        freshness_status = str(freshness.get("status", "unknown"))
+        if freshness_status == "stale":
+            return error_envelope(
+                list(freshness.get("errors") or ["run 产物新鲜度校验未通过"]),
+                stage="freshness_gate",
+                run_id=freshness.get("run_id"), status="stale",
+                issues=freshness.get("issues") or [])
+        freshness_note = str(freshness.get("note") or "")
+    except Exception as exc:  # pragma: no cover - 观测面兜底（#105）
+        freshness_note = f"新鲜度校验不可用（非阻断）: {exc}"
     try:
         model = build_report_model(run_path, criteria_dir=criteria_dir)
     except FileNotFoundError as exc:
@@ -1019,4 +1040,5 @@ def render_run_report(run_dir: str | Path, out_dir: str | Path | None = None, *,
         verdict=model["conclusion"]["verdict"],
         vv_status=model["conclusion"]["vv_status"],
         n_anomalies=len(model["conclusion"]["anomalies"]),
+        freshness={"status": freshness_status, "note": freshness_note},
     )

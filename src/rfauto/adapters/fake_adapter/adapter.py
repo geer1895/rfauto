@@ -1,6 +1,6 @@
 """fake_adapter.adapter —— FakeAdapter 主类（SimulatorAdapter 解析近似实现）。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：solve() per-model 派发分支引用的各族 sparams 函数/族常量从兄弟
 子模块显式导入（名入本模块 globals——patch 门面名经 AU-1 扇出同步落位，
 monkeypatch 缝逐位保持）；类体逐字节搬迁，零逻辑改动。
@@ -41,6 +41,10 @@ from .antenna_family import (
 from .calibration import (
     load_fake_calibration,
 )
+from .capacitor_family import (
+    _interdigital_cap_sparams,
+    _mim_cap_sparams,
+)
 from .coupler_family import (
     _branchline_2sect_sparams,
     _branchline_sparams,
@@ -62,6 +66,9 @@ from .filter_family import (
     _c3_sparams,
     _coupled_bpf_sparams,
     _hairpin_sparams,
+)
+from .inductor_family import (
+    _octagonal_spiral_sparams,
 )
 from .slotline_family import (
     _coil_nfc_sparams,
@@ -473,7 +480,7 @@ class FakeAdapter(SimulatorAdapter):
                 tan_d=stackup.loss_tangent)
         elif self.model_type == "siw":
             # 直 SIW 线段（siw-family 首族）：w/d/s → w_eff（Cassivi 2002
-            # 等效宽度闭式，runs/siw_family/criteria.md §1）→ 等效 RWG TE10
+            # 等效宽度闭式，内部证据档 §1）→ 等效 RWG TE10
             # 色散 γ（复数支含 tanδ）；#154 同名参数逐参对语义：w_mm=两过孔
             # 列心距、d_mm=过孔直径、s_mm=过孔心距、line_len_mm=两端口面间距
             # ——与 openEMS _siw_lines 同口径
@@ -1162,6 +1169,86 @@ class FakeAdapter(SimulatorAdapter):
             s_data = _coil_nfc_sparams(
                 freq.f / 1e9, z0=self.z0, n_turns=int(float(n_turns)),
                 d_out_mm=float(d_out_mm), w_mm=float(w_mm), s_mm=float(s_mm))
+        elif self.model_type == "octagonal_spiral":
+            # 八角螺旋电感族（2026-10-23 aurora_k K11 注册）：几何 → core
+            # Mohan current_sheet 闭式 L → 匝间寄生 C_par 一阶 → 并联寄生
+            # 谐振自洽 S11（未标定，_octagonal_spiral_sparams docstring 如实
+            # 声明）。变量名与渲染/CALC 同名同语义（#154，全 μm IPD 口径）；
+            # f0/SRF 由 L·C_par 自洽涌现（不读 recipe f0_ghz）。
+            from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+            from rfauto.core.physics_roles import resolve_role
+
+            nominal = TEMPLATE_NOMINAL["octagonal_spiral"]
+            n_turns = resolve_role("n_turns", self._variables,
+                                   candidates=("n_turns",),
+                                   default=float(nominal["n_turns"]))
+            din_um = resolve_role("din_um", self._variables,
+                                  candidates=("din_um",),
+                                  default=float(nominal["din_um"]))
+            w_um = resolve_role("w_um", self._variables,
+                                candidates=("w_um",),
+                                default=float(nominal["w_um"]))
+            s_um = resolve_role("s_um", self._variables,
+                                candidates=("s_um",),
+                                default=float(nominal["s_um"]))
+            s_data = _octagonal_spiral_sparams(
+                freq.f / 1e9, z0=self.z0, n_turns=int(float(n_turns)),
+                din_um=float(din_um), w_um=float(w_um), s_um=float(s_um))
+        elif self.model_type == "mim_cap":
+            # MIM 叠层电容族（2026-10-23 aurora_k K12 注册）：几何 → core
+            # 平行板闭式 C → 一阶串联寄生（R_s/L_s）→ 自洽 1 端口 S11
+            # （未标定，_mim_cap_sparams docstring 如实声明）。变量名与
+            # 渲染/CALC 同名同语义（#154，全 μm IPD 口径）；SRF 由 L_s·C
+            # 自洽涌现（不读 recipe f0_ghz）。
+            from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+            from rfauto.core.physics_roles import resolve_role
+
+            nominal = TEMPLATE_NOMINAL["mim_cap"]
+            w_um = resolve_role("w_um", self._variables,
+                                candidates=("w_um",),
+                                default=float(nominal["w_um"]))
+            l_um = resolve_role("l_um", self._variables,
+                                candidates=("l_um",),
+                                default=float(nominal["l_um"]))
+            d_um = resolve_role("d_um", self._variables,
+                                candidates=("d_um",),
+                                default=float(nominal["d_um"]))
+            er_diel = resolve_role("er_diel", self._variables,
+                                   candidates=("er_diel",),
+                                   default=float(nominal["er_diel"]))
+            s_data = _mim_cap_sparams(
+                freq.f / 1e9, z0=self.z0, w_um=float(w_um),
+                l_um=float(l_um), d_um=float(d_um), er_diel=float(er_diel))
+        elif self.model_type == "interdigital_cap":
+            # 叉指电容族（2026-10-23 aurora_k K12 注册）：几何 → core 侧壁
+            # sum-of-capacitances 闭式 C（±50% 精度类如实声明）→ 一阶串联
+            # 寄生（R_s/L_s）→ 2 端口串联口径解析 S（K8 Z12 提取链同口径，
+            # 未标定，_interdigital_cap_sparams docstring 如实声明）。变量
+            # 名与渲染/CALC 同名同语义（#154，全 μm IPD 口径）；SRF 由
+            # L_s·C 自洽涌现（不读 recipe f0_ghz）。
+            from rfauto.adapters.openems_templates import TEMPLATE_NOMINAL
+            from rfauto.core.physics_roles import resolve_role
+
+            nominal = TEMPLATE_NOMINAL["interdigital_cap"]
+            n_fingers = int(float(resolve_role(
+                "n_fingers", self._variables, candidates=("n_fingers",),
+                default=float(nominal["n_fingers"]))))
+            lf_um = resolve_role("lf_um", self._variables,
+                                 candidates=("lf_um",),
+                                 default=float(nominal["lf_um"]))
+            wf_um = resolve_role("wf_um", self._variables,
+                                 candidates=("wf_um",),
+                                 default=float(nominal["wf_um"]))
+            sf_um = resolve_role("sf_um", self._variables,
+                                 candidates=("sf_um",),
+                                 default=float(nominal["sf_um"]))
+            e_tip_um = resolve_role("e_tip_um", self._variables,
+                                    candidates=("e_tip_um",),
+                                    default=float(nominal["e_tip_um"]))
+            s_data = _interdigital_cap_sparams(
+                freq.f / 1e9, z0=self.z0, n_fingers=n_fingers,
+                lf_um=float(lf_um), wf_um=float(wf_um), sf_um=float(sf_um),
+                e_tip_um=float(e_tip_um))
         else:
             raise ValueError(f"未知模型类型: {self.model_type}")
 

@@ -155,9 +155,11 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 | anchor_id | quantity |
 |---|---|
+| `c3.k_of_g.openems-hfss-v1` | k_of_g |
 | `mline.z0_ohm.closedform-v1` | mline_z0_ohm |
 | `ratrace.r_ring_mm.closedform-v1` | ratrace_r_ring_mm |
 | `ratrace.ring_z_ohm.closedform-v1` | ratrace_ring_z_ohm |
+| `schiffman.delta_phase.closedform-v1` | schiffman_delta_phase_deg |
 | `coupled_microstrip.kj_even_domain.lit-v1` | kj_even_domain_dev_pct |
 
 判据书/规格指针（docstring 逐字引文钉）：

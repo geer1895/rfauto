@@ -35,7 +35,7 @@ def jobs_status(
             return
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False))
         return
-    # T8 越级收口（架构批 W11-S2）：run 清单经 service 层单一入口
+    # T8 越级收口（aurora_g W11-S2）：run 清单经 service 层单一入口
     # （service.ui_service.list_runs，ListRunsPayload 契约 UI/MCP 共用）。
     # 显式 limit=20 保持 infra.run_store.list_runs 的原缺省 limit（行集逐
     # 字节不变；ui_service 内部即同函数转发）。
@@ -142,7 +142,7 @@ def cache_clear(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """手动清理结果缓存。"""
-    # T8 越级收口（架构批 W11-S3）：清理经 service 单源
+    # T8 越级收口（aurora_g W11-S3）：清理经 service 单源
     # （service.api.run_core.clear_result_cache，service→infra 合法向下）；
     # 信封键 {ok, removed, model} 与原地构造逐字节一致，cli 零逻辑直渲染。
     from rfauto.service.api.run_core import clear_result_cache

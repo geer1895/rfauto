@@ -11,7 +11,7 @@ params:
   arm_len_mm: 18.162
   iso_len_mm: 17.75
 status: ok
-script_sha256: de1e7421bcebca1072c0313db1d50a0d0d11ce999e9a961d37a4bbf13246f03d
+script_sha256: fe43bfe8078b5f842e1716e9f44e4451e6e825348645c6148f0db8afc7f50d44
 csx:
   n_primitives: 28
   props:

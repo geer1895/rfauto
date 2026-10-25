@@ -11,7 +11,7 @@ params:
   arm_len_mm: 18.1624
   iso_r_ohm: 100.0
 status: ok
-script_sha256: 62679b3c2de60dfa056412bc035d0e59240f88d5e54cd1a4b667fd1dc8d79115
+script_sha256: 7fb1dec3d1f8697c8e0f54789662bfe0be501f98758a6ec84fb1778916a2faf6
 csx:
   n_primitives: 46
   props:

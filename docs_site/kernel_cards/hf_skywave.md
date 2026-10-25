@@ -6,7 +6,7 @@
 
 # 内核文档卡：hf_skywave
 
-> HF 电离层天波族（架构批 W7-S3 席，R3_domain_expansion 视角3 D1
+> HF 电离层天波族（aurora_g W7-S3 席，R3_domain_expansion 视角3 D1
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 HF 3-30MHz 电离层传播机理三键：等离子体频率/临界频率恒等式、割线定律 MUF（平地单跳几何档）、冷等离子体折射指数标度——全频段维度唯一整段空白的补口件（传播机理面，不做处理链）。
 
-模块自述（docstring 首行，机读）：HF 电离层天波族（架构批 W7-S3 席，R3_domain_expansion 视角3 D1
+模块自述（docstring 首行，机读）：HF 电离层天波族（aurora_g W7-S3 席，R3_domain_expansion 视角3 D1
 
 ## 公式与口径
 
@@ -108,10 +108,11 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_w7s3_core_domains.py`——引文："物理口径（#1c/#300 出处纪律；教科书恒等式，2026-10-19 数值锤独立实测）"
 
-测试面（tests/unit 引用扫描，机读；合计 **72** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **77** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w7s3_core_domains.py` | 23 |
 

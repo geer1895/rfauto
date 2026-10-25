@@ -1,6 +1,6 @@
 """rest_api.datasets —— 数据集直查/insights 八接口/工作目录发现端点。
 
-自 rest_api.py 巨石按职责域拆分（架构批 W3-S2，AU-1 工艺）：代码体自
+自 rest_api.py 巨石按职责域拆分（aurora_h W3-S2，AU-1 工艺）：代码体自
 原「datasets 直查」「datasets 余量（dataset_insights 八接口薄壳）」与
 「工作目录形态发现」逐字节搬迁。
 """

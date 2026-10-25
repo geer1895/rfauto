@@ -164,10 +164,10 @@
     "old_gate_verdict": {
      "verdict": "FAIL→现门 PASS",
      "source": "devlog",
-     "path": ".md 2026-09-09（五）§3",
+     "path": "开发注记.md 2026-09-09（五）§3",
      "note": "冒烟控制台 FAIL 系旧 −20 匹配门（实测带内 −13.4dB 未过）；现门 −12dB 商用 lumped 地板下现判定 PASS。pt3 为缓存复用致 port_beta.csv 缺失坏点，弃用（本 harness 取 pt2）"
     },
-    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地， 2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地，开发注记 2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },
@@ -225,7 +225,7 @@
      "path": "（冒烟控制台输出，归档无日志文件；数值经本 harness 离线复算 sparams.csv/port_beta.csv 逐值复核一致）",
      "note": "β +0.96%/dev 0.36dB/|S11|max −15.3dB（任务书 recon 转录）"
     },
-    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地， 2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
+    "gate_calibration": "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB口径），原 −20 门经 pt2 真机校准落地，开发注记 2026-09-09（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },
@@ -287,11 +287,11 @@
     "old_gate_verdict": {
      "verdict": "FAIL→现门 PASS",
      "source": "devlog",
-     "path": ".md 2026-09-09（四）#203 pt3（:5122 转录）",
-     "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；/1.0491 分解段定征 β2=real_modal_difference（倒置馈 CalcPort 提取污染），现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py:82 同口径）→ 现判定 PASS"
+     "path": "开发注记.md 2026-09-09（四）#203 pt3（:5122 转录）",
+     "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；开发注记（七十六）/1.0491 分解段定征 β2=real_modal_difference（倒置馈 CalcPort 提取污染），现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py:82 同口径）→ 现判定 PASS"
     },
-    "recip_provenance": "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 :5122 归档转录，source=archive_log",
-    "gate_calibration": "β1 单判（β2=real_modal_difference 不设门），与 2026-09-09（四）#203 pt3 定征；20260918a 增补无源上界 |S21| 带内 max ≤1.02（R2-A-01 审查，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1 能量守恒硬约束；归档 401 点带内 max 0.9503 全部 ≤1.02，判定零翻转）",
+    "recip_provenance": "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 开发注记:5122 归档转录，source=archive_log",
+    "gate_calibration": "β1 单判（β2=real_modal_difference 不设门），开发注记（七十六）与 2026-09-09（四）#203 pt3 定征；20260918a 增补无源上界 |S21| 带内 max ≤1.02（R2-A-01 审查，与 msl_cpw 20260915b 同构：无源二端口逐频 |S21|≤1 能量守恒硬约束；归档 401 点带内 max 0.9503 全部 ≤1.02，判定零翻转）",
     "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"
    }
   },

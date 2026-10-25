@@ -1,4 +1,4 @@
-"""conftest fixture 库卫生门（T5 配套棘轮，架构批 W8-S3）。
+"""conftest fixture 库卫生门（T5 配套棘轮，aurora_g W8-S3）。
 
 背景（R1 审计 §面4/T5）：``_isolated`` 同名复制 55 份——同一套
 "chdir 落 tmp"模板手工复制，任何一份修 bug 都不会同步到其余副本。
@@ -11,7 +11,7 @@ isolated_cache_off 单源（top-10 文件），本测试把收敛钉成**只收�
    即红；新写测试应参数注入 ``isolated`` 或保留一行 autouse 适配器
    （``def _isolated(isolated): yield``）。
 2. **ALLOWLIST 只可删不可加**：T5 五批（至 W15-S3）收编后余 28 份，
-   架构批 W2-S4 批 6 将余量 28 份全部收编为单源适配器，**名单清零**——
+   aurora_h W2-S4 批 6 将余量 28 份全部收编为单源适配器，**名单清零**——
    任何新条目一律红；条目已迁移仍留在名单=名单陈旧，同样红（提示删行）。
 3. **禁止遮蔽 conftest 公共名**：本地定义 fixture 名 ``isolated`` /
    ``isolated_cache_off`` 一律红（pytest 就近优先会静默覆盖单源）。
@@ -32,7 +32,7 @@ _TESTS_ROOT = Path(__file__).resolve().parents[1]
 #: 形态①（纯 chdir）→ ``def _isolated(isolated): yield``；
 #: 形态②（chdir+RFAUTO_CACHE=off）→ ``def _isolated(isolated_cache_off)``；
 #: 专用超集变体 → 适配器依赖公共 fixture 后再补专用增量。
-#: T5 批 6（架构批 W2-S4，2026-10-19）收编余量 28 份后**名单清零**：
+#: T5 批 6（aurora_h W2-S4，2026-10-19）收编余量 28 份后**名单清零**：
 #: 本名单保留为空集棘轮——任何新的本地隔离体重写一律红。
 ALLOWLIST: frozenset[str] = frozenset()
 

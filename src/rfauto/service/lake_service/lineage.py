@@ -1,6 +1,6 @@
 """lake_service.lineage —— 跨 run 血缘查询/校验/md 渲染（XD-1）。
 
-自 lake_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原节「跨 run lineage」逐字节搬迁。
+自 lake_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原节「跨 run lineage」逐字节搬迁。
 """
 
 from __future__ import annotations

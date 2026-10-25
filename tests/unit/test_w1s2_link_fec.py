@@ -1,4 +1,4 @@
-"""架构批 W1-S2 席锚树：link_limits 链路极限面三键 + fec_codes FEC 块码族三键。
+"""aurora_g W1-S2 席锚树：link_limits 链路极限面三键 + fec_codes FEC 块码族三键。
 
 数值断言口径（#118 不自证）：
 - Shannon 族：①η=2 → Eb/N0_min=1.5=1.76091dB（教科书点，独立解析算术

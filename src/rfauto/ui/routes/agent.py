@@ -16,7 +16,7 @@
 
 _CHAT_INSTANCE/_chat_session 是进程内会话单例（历史在同一 UI 进程内保留）：
 测试经 ``monkeypatch.setattr(rfauto.ui.routes.agent, "_CHAT_INSTANCE", None)``
-重置（架构批 UI-R1 自 server_mod 机械重靶，语义不变）。
+重置（aurora_d UI-R1 自 server_mod 机械重靶，语义不变）。
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ async def api_sandbox_promote(request: Request) -> JSONResponse:
 async def api_solvers(request: Request) -> JSONResponse:
     from rfauto.service.r3_services import list_registered_solvers
 
-    # P8-4（架构批 W1-S1 真机实证）：冷扫 2.9-4.2s 系同步阻塞面（适配器
+    # P8-4（aurora_f W1-S1 真机实证）：冷扫 2.9-4.2s 系同步阻塞面（适配器
     # import+is_available 探测），原样在事件循环上直调会把整个 UI 服务停摆
     # ——并发请求（/api/tune/status 等）全部排队到扫完，前端渐进首绘被
     # 连坐。挪 worker 线程（api_chat 同款既有模式），循环不被阻塞。

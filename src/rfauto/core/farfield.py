@@ -119,7 +119,7 @@ def power_budget_closure(
 #   nf2ff.cpp Write2HDF5 写出的 Prad = m_radPower = 真实 5 面 + 镜像 5 面
 #   通量之和 = **2×物理辐射功率**；Dmax = 4π·U_max/m_radPower = 常规
 #   D0（Balanis：Prad 取实际辐射的上半球）的 **½（−3.01 dB）**。
-# * 真机复核（runs/patch_field_smoke/fdtd/farfield_3d.h5）：下/上半球图积分比
+# * 真机复核（内部证据档）：下/上半球图积分比
 #   1.0000、逐点镜像误差 5.7e-7——下半球是纯镜像、非物理。
 # 修正口径：盒底 z_start==0（贴 PEC 地）→ Prad/2、Dmax×2、η/2、增益与闭合重算。
 # 六面全包（dipole/slot/loop，z_start<0）不受影响（dipole η=0.990 闭合 1%）。

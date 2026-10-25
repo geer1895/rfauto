@@ -6,7 +6,7 @@
 
 # 内核文档卡：mixer_conversion
 
-> 混频器变换面（架构批 W2-S6 席域，R2_core_tier3 §③ D2 立项）。
+> 混频器变换面（aurora_f W2-S6 席域，R2_core_tier3 §③ D2 立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 混频器变换面：镜像噪声折入 SSB-NF 精确恒等式、变频损耗 SSB/DSB 口径换算与无源混频噪声地板、镜像频率规划与 IQ 失衡 IRR 同式复算——级联噪声预算上游的变换记账内核。
 
-模块自述（docstring 首行，机读）：混频器变换面（架构批 W2-S6 席域，R2_core_tier3 §③ D2 立项）。
+模块自述（docstring 首行，机读）：混频器变换面（aurora_f W2-S6 席域，R2_core_tier3 §③ D2 立项）。
 
 ## 公式与口径
 
@@ -120,7 +120,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："架构批 W2-S6 席域，R2_core_tier3 §③ D2 立项"
+- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："aurora_f W2-S6 席域，R2_core_tier3 §③ D2 立项"
 
 测试面（tests/unit 引用扫描，机读；合计 **74** 个 test 函数）：
 

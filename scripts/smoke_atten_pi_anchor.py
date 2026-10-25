@@ -6,7 +6,7 @@
    确定性裁判同源）；
 3. 匹配：|S11|max <-12dB（商用 lumped 衰减模块回损规格地板
    12~18dB 口径；理想 pad 匹配，实测残余= lumped 寄生）。
-工作目录参数化（#198 教训）。证据链 runs/atten_pi_smoke/。
+工作目录参数化（#198 教训）。证据链 内部证据档。
 """
 import argparse
 import csv

@@ -9,7 +9,7 @@
    真值表 + palette.js modeOf/filterItems 前缀/子串匹配。
 3. **对比度钉（自含 WCAG 实现）**：从 index.html 解析 :root/ocean/body.light
    三主题变量，独立重算核心对（文字 >=4.5:1 / 图形 >=3:1）——与
-   runs/pr1_contrast/compute_contrast.py 互为独立来源（#118：裁判不得单源自证）。
+   内部证据档 互为独立来源（#118：裁判不得单源自证）。
 4. **W2-A（aurora36）扩钉**：--muted2 小字正文门（P0-3）、.primary 主色变体
    完整状态面（P0-1）、静态壳错误色令牌化钉（P0-6 静态面）、guide v5 未落项
    收账（--border-angle conic 旋转边框 / CQ / :has()，含 reduced-motion 降级）。
@@ -370,7 +370,7 @@ class TestW2AStylePins:
 # ────────────────────────── 4. runs/ 证据面存在性（软钉） ──────────────────────────
 
 def test_contrast_evidence_table_exists_locally():
-    """runs/pr1_contrast/ 是 gitignored 证据面：存在时校验口径一致，缺席跳过
+    """内部证据档 是 gitignored 证据面：存在时校验口径一致，缺席跳过
     （干净环境不依赖 runs/；本机开发面要求核算表在档）。"""
     evidence = Path(__file__).resolve().parents[2] / "runs" / "pr1_contrast" / "contrast_table.json"
     if not evidence.exists():

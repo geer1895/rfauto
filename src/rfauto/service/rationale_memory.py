@@ -39,7 +39,7 @@ def _tokenize(text: str) -> list[str]:
     return [t.lower() for t in _TOKEN.findall(text or "")]
 
 
-#: 语料快照缓存（架构批 W1-S4，R3 Top1-c）：runs/ 全表 meta/autotune/
+#: 语料快照缓存（aurora_f W1-S4，R3 Top1-c）：runs/ 全表 meta/autotune/
 #: report 逐读（R3 实测 1803+ 次、~0.4s 级）→ 指纹键控进程内快照。
 #: 复用 ui_service._UiScanCache（RFAUTO_UI_CACHE=0 直通 + TTL 兜底 +
 #: 命中观测同源）；键=normcase(abs runs_dir)（build_index 任意 runs_dir
@@ -78,7 +78,7 @@ def _corpus_signature(runs_dir: Path) -> tuple[Any, ...] | None:
 def _collect_docs(runs_dir: Path) -> list[dict[str, str]]:
     """扫描 runs/ 产物，收集 (doc_id, text) 理由语料。
 
-    缓存（架构批 W1-S4）：指纹命中时零文件读，返回缓存列表的 deepcopy
+    缓存（aurora_f W1-S4）：指纹命中时零文件读，返回缓存列表的 deepcopy
     结构隔离（对齐 ui_service run_detail/_endpoint_snapshot 先例——浅拷贝
     +约定只读在调用方写 `d[...]` 时会跨请求污染缓存，审查波 2 P3-2 收账；
     语料条目小，deepcopy 代价可忽）。
@@ -319,7 +319,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="带缘/断口/端口面未精确入网会让激励体积为零或结构对却激励"
                    "不起来（几何画法对 ≠ 入网对）",
         evidence_paths=(
-            ".md（#198 激励体积教训）",
+            "内部证据档（#198 激励体积教训）",
             "src/rfauto/adapters/openems_templates.py（带缘精确入网注释）",
             "tests/unit/test_ratrace_template.py（#212 离线几何审计）",
         ),
@@ -334,12 +334,12 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="0.4mm 阶梯环慢波/容性栅格化伪象：六门在带内低端几乎全过、随 f "
                    "单调劣化；等效 εeff 超微带闭式物理上限",
         evidence_paths=(
-            ".md（廿九 / （三十九）rat-race pt8 判读）",
+            "内部证据档（廿九 / （三十九）rat-race pt8 判读）",
             "src/rfauto/core/mesh_artifact.py（D11 网格病诊断链）",
         ),
         applies_to=("ratrace", "环形", "环带", "栅格化", "阶梯化", "网格伪象"),
         action=f"{OFFLINE_AUDIT_ACTION_PREFIX}：核对等效 εeff 是否超闭式上限 + 网格"
-               "细化中心是否上移；未定性前不得进入校准/细调（项目规则 1b）",
+               "细化中心是否上移；未定性前不得进入校准/细调（AGENTS 1b）",
         checklist=MESH_ARTIFACT_CHECKLIST,
         requires_offline_audit=True,
     ),
@@ -348,7 +348,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="AddEdges2Grid/SmoothMesh 留下 nm 级近重合网格线 → CFL 时间步"
                    "塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错",
         evidence_paths=(
-            ".md（#152 最小间距守卫）",
+            "内部证据档（#152 最小间距守卫）",
             "src/rfauto/core/mesh_artifact.py（timestep_collapse 检查）",
         ),
         applies_to=("网格", "网格线", "网格间距", "timestep", "CFL", "CalcPort", "openems"),

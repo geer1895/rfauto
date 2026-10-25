@@ -87,7 +87,7 @@ class TestBuildReal:
     def test_entry_count_ratchet(self, built):
         # 只收不放：他席往 项目规约.md 踩坑速查加条目只增不减（2026-10-14
         # 基线 152；KB-B2 散档并入后总基线 220=152+68，散档缺失的新
-        # clone 退回 AGENTS 面基线 152）。条目被删属异常重构，打红让
+        # clone 退回 内核立规注记 面基线 152）。条目被删属异常重构，打红让
         # 维护者重导属期望行为。
         floor = 220 if RUNS_DOCS_PRESENT else 150
         assert built["n_entries"] >= floor, built["n_entries"]
@@ -202,7 +202,7 @@ class TestScatteredHeuristics:
             5, ["12. **有序条标题**：主张——理由。"], seen)
         assert entry["id"] == "A5"  # 无 id_override → 行锚合成（12. 非坑号）
         assert entry["title"] == "有序条标题"
-        # 「——」前置过短（<8 字）退回首句口径（与 AGENTS 面同规则）
+        # 「——」前置过短（<8 字）退回首句口径（与 内核立规注记 面同规则）
         assert entry["lesson_one_line"] == "主张——理由。"
         # 有序空条目与无序同判：如实计空条目不静默丢
         fail = pitfall_index.parse_entry(7, ["12."], seen)

@@ -205,6 +205,15 @@ def surrogate_optimize(
         "algorithm": "surrogate_loop",
         "metrics": meta_metrics,
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": recipe_data.get("model", ""),

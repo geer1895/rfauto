@@ -12,10 +12,10 @@ G11 健康门（#314 掩码）→ 仲裁判读（#350 四态预声明）→ verd
     .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --list
     .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --seat wilkinson --dry-run
     .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --seat wilkinson --machine local
-    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --machine sim_host
-    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --machine sim_host \
+    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --machine sim_server
+    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --machine sim_server \
         --parallel 3 --port-base 50051        # 波内 3 席并行（wf:hfss-window-parallel）
-    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --remote sim_host \
+    .venv/Scripts/python.exe scripts/hfss_window_arbitration.py --all --remote sim_server \
         --parallel 4                          # v1 调度面：--remote 路由（license 预检
                                               # fail-closed+hfss.max_parallel 闸缺省 2）
 
@@ -38,7 +38,7 @@ OE 参考值单一事实源（发射前置已补齐，oe_nominal_README.md 2026-
 - wilkinson          → runs/hfss_window_b2a/wilkinson/oe_nominal/sparams.csv
 - coupled_line       → …/coupled_line/oe_nominal_wideband/sparams.csv（仲裁档）
 - stepped_impedance  → …/stepped_impedance/oe_nominal_wideband/sparams.csv（仲裁档）
-- branchline         → runs/branchline_real_anchor/branchline.s4p
+- branchline         → 内部证据档
 - gysel              → runs/gysel_miter_ab/verdict.json variants.off.judged
 - marchand_balun     → runs/smoke_marchand_2sect/verdict.json + sameport_arb（常量钉）
 - patch_array_1x4/2x2 → runs/ge_fd/<t>/（归档 CSV，常量钉，README 读档实测）
@@ -108,7 +108,7 @@ if str(REPO / "src") not in sys.path:
 
 OUT_ROOT = REPO / "runs" / "hfss_window_b2a"
 B2A_ROOT_ON_SERVER = "hfss_window_b2a"      # 服务器侧 project_root 下的相对段
-HFSS_VERSION = "2025.1"                     # 与 v251 配对（AGENTS 规则 0）
+HFSS_VERSION = "2025.1"                     # 与 v251 配对（内核立规注记 规则 0）
 SOLVE_TIMEOUT_S_DEFAULT = 3600.0            # watchdog（criteria §6 单结构 3600s）
 
 
@@ -3744,9 +3744,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="单席（与 --all 二选一）")
     parser.add_argument("--all", action="store_true",
                         help="按 README 发射序全部 8 席（缺省 solo 串行）")
-    parser.add_argument("--machine", choices=("local", "sim_host"),
+    parser.add_argument("--machine", choices=("local", "sim_server"),
                         default="local",
-                        help="会话目标（缺省 local；sim_host=远程注册表机器）")
+                        help="会话目标（缺省 local；sim_server=远程注册表机器）")
     parser.add_argument("--remote", nargs="?", const="", default=None,
                         metavar="MACHINE",
                         help="战役路由到注册表远程机器（v1 调度面，2026-09-29）："

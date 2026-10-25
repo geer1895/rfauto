@@ -92,23 +92,23 @@ def test_classify_non_task_is_skip():
 def test_whitelist_default_empty():
     """缺省空=无白名单（E3-1：硬编码批次号必腐烂，在飞批次须显式声明）。"""
     assert orph.collect_whitelist(None, []) == ()
-    cfg = RemoteMachineConfig(name="sim_host", host="h")
+    cfg = RemoteMachineConfig(name="sim_server", host="h")
     assert orph.collect_whitelist(cfg, []) == ()
 
 
 def test_whitelist_from_config_extra_list_and_str():
     cfg_list = RemoteMachineConfig(
-        name="sim_host", host="h",
+        name="sim_server", host="h",
         extra={"orphan_whitelist": ["oe_1a417ed4", "k7_final"]})
     assert orph.collect_whitelist(cfg_list, []) == ("oe_1a417ed4", "k7_final")
     cfg_str = RemoteMachineConfig(
-        name="sim_host", host="h", extra={"orphan_whitelist": "oe_abc123"})
+        name="sim_server", host="h", extra={"orphan_whitelist": "oe_abc123"})
     assert orph.collect_whitelist(cfg_str, []) == ("oe_abc123",)
 
 
 def test_whitelist_cli_and_config_merge_dedup_keep_order():
     cfg = RemoteMachineConfig(
-        name="sim_host", host="h",
+        name="sim_server", host="h",
         extra={"orphan_whitelist": ["oe_1a417ed4", "k7_final"]})
     merged = orph.collect_whitelist(cfg, ["k7_final", "oe_20261004"])
     assert merged == ("oe_1a417ed4", "k7_final", "oe_20261004")

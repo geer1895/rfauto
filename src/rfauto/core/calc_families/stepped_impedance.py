@@ -1,4 +1,4 @@
-"""阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（架构批 W1-S3 席域，
+"""阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（aurora_f W1-S3 席域，
 R2_core_tier3 §⑤ F2 设计案）。
 
 出处（阶梯阻抗 LPF 综合经典口径，文末「出处」节转录）：

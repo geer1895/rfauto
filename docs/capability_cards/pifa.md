@@ -38,16 +38,17 @@
 
 ## 判据
 
-- 锚覆盖 4：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1（core/anchors；通配 + 专属）
+- 锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1、cps.gamma_er.fdref-v1、mmt.inductive_post_b.hfss-v1、mmt.resonant_window_fres.hfss-v1、pifa.f_res.openems-v1（core/anchors；通配 + 专属）
 - 健康门：无模板作用域专属健康门（gate 如实不判，#274 口径）
 - 通用体检：求解健康度体检 G11 九因子（core/solve_health；service/health_service.health_check_run 按 run 装载产物判定）
 
 ## 引擎精度卡（跨引擎仲裁锚）
 
-- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）
-- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）
-- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS
-- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS
+- `coupled_microstrip.kj_even_domain.lit-v1`（constant/active；闭式/文献锚（无引擎对））：kj_even_domain_dev_pct = 0.66 percent；±1.0（arbitration_interval）；verdict KJ_VINDICATED_J1_PASS（Elmer 三紧缝/域缘点 even −0.180%/−0.590%/−0.439% 全 J1 PASS；p2_summary.json overall=FAIL 属 HFSS 测量面非 KJ 本体，勿混淆）；证据：runs/df7_kjeven
+- `cps.gamma_er.fdref-v1`（formula/active；闭式/文献锚（无引擎对））：cps_gamma_er expr = 1 + 0.9014*er**-0.6361（变量：er）；±0.006（relative）；证据：runs/df6_dp14m1、runs/df6_dp18c9
+- `mmt.inductive_post_b.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：inductive_post_b_dev_pct = 9.224 percent；±7.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `mmt.resonant_window_fres.hfss-v1`（constant/active；引擎对 mmt（hfss 仲裁））：resonant_window_f_res_dev_pct = 16.6 percent；±3.0（arbitration_interval）；verdict AGREE_HFSS；证据：runs/mmt_anchor_20260930
+- `pifa.f_res.openems-v1`（pointer/experimental；引擎对 openems（hfss 仲裁））：pifa_f_res_ghz 双值 openems=2.268 GHz（不取平均，#122）；±0.12（engine_pair_spread）；verdict PASS（同 dipole 席门族全过）；证据：runs/aurora_e/w2srv_r2/pifa
 - 数据源：`knowledge/anchors.yaml`（仲裁锚注册表，status/版本演进口径见该文件头注；本节零计算零求值）
 
 ## 已知边界
@@ -55,7 +56,7 @@
 - 参数语义：pifa_l_mm=贴片长 L（L 路径式定版 L=λ0/(4√εeff(W))，HJ @W；居中短路板电流不绕行，文献通式 L+W−Ws 的 +W−Ws 项不适用，真机两轮实证），pifa_w_mm=贴片宽 W，pifa_ws_mm=短路板宽 Ws（≤W，几何输入不进谐振式），pin_back_mm=馈针距短路板（定匹配），pin_y_mm=馈针 y 偏置（<W）
 - 网格：辐射器件：上方/侧向空气隙 λ0/4；贴片/短路板/针缘精确入网
 - 冒烟现状：真机 内部证据档（2026-09-14，旧通式标称 L=11.0785）FAIL：|S11|≥−0.02dB 全带，Zin=0.0+j(3.9→8.6)Ω 随 f 线性=纯短路桩电感 ⇒ 谐振在 2.9GHz 之上。两轮实证：① 去掉同体积金属针盒（pifa_v1_pin_short→pifa）S11 逐点不变，"PEC 针盒短路端口"假设证伪；② override pifa_l_mm=17.08（=λ0/(4√εeff(W))，仅 L 路径口径，内部证据档）→ −8.79dB @2.26GHz（−5.8%）PASS，Zin@谷=105−14jΩ（并联型谐振，馈针距短路板 2mm ⇒ R_peak≈100Ω 过耦合限谷深）。根因：L+W−Ws=λ/4 通式假定角部短路板（电流绕行贴片宽），本布局短路板居中不绕行，有效路径≈L。定版（2026-09-16）：设计式改 L 路径式 pifa_l_mm=λ0/(4√εeff(W))，标称 17.0785（与 PASS 的 override 17.08 差 0.0015mm=0.009%，真机证据直接沿用，不另跑），fake 逆/ANTENNA2_NOMINAL/单测/本文件同步；谷位 −5.8% 为细带端效应/短路板电感口径偏差，设计式不预补偿（#190）
-- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为仓内账本出处标记）：
+- 失败模式坑账链（playbook 命中 17 条，坑号 #NNN 为 开发注记 出处标记）：
   - `fdtd_truncation_artifact`（fdtd_truncation_artifact；坑：#262、#84、#266）——窄 FC 窗/NrTS 截断长脉冲 → |S11|>1 假象；max|S11|>1 先查截断再怀疑物理
   - `sparam_nonphysical_investigate`（sparam_nonphysical_investigate；坑：#262、#174）——无衰减证据时的保守候选：截断已排除才升级物理怀疑
   - `single_excitation_mask_semantics`（single_excitation_mask_semantics；坑：#314、#248）——单激励产物零填充/互易补齐元素不构成互易证据；全矩阵比对是假阳性指纹

@@ -1,25 +1,31 @@
-"""并联支节调配器族（架构批 A3-B 席域 1，R7 第二梯队 T3）。
+"""并联支节调配器族（aurora72 A3-B 席域 1，R7 第二梯队 T3；aurora_l G1
+补齐单支节成员，2026-10-23）。
 
 出处（支节调配经典口径，正文物理口径节转录）：
+- stub_tuner_single：单支节并联调配解析解（电导圆条件二次方程）
+  （D. Pozar, Microwave Engineering §5.2 单支节调配）。
 - stub_tuner_double：双支节并联调配解析解与禁区 g≤csc²(βd) 判据
   （D. Pozar, Microwave Engineering §5.3 双支节调配；λ/8 间距 g_max=2
   经典口径）。
 - stub_tuner_triple：三支节消禁区确定性两路线（首支节旁路/旋转，
   任意无源负载有解——本仓第一性推导口径，正文 200 随机负载验证）。
 
-两键：stub_tuner_double（双支节并联调配：归一电纳解析解 + 禁区
-g>csc²(βd) 判定 + ABCD 级联 |Γ| 回代） / stub_tuner_triple（三支节级联
-消除禁区：首支节旁路/旋转双路线确定性规则，任意无源负载有解）。
+三键：stub_tuner_single（单支节并联调配：电导圆条件二次闭式，任意
+无源负载有解，双解如实并列 + ABCD 级联 |Γ| 回代）/ stub_tuner_double
+（双支节并联调配：归一电纳解析解 + 禁区 g>csc²(βd) 判定 + ABCD 级联
+|Γ| 回代）/ stub_tuner_triple（三支节级联消除禁区：首支节旁路/旋转
+双路线确定性规则，任意无源负载有解）。
 
-与既有匹配面的边界（语义防撞，R7 §③ T3 三重搜索证据）
+与既有匹配面的边界（语义防撞，R7 §③ T3 三重搜索证据；aurora_l G1
+开工 #222 triple-grep 复测：``single.?stub|单支节`` calc_families 面
+零命中——stub_tuner_double/triple docstring 均只述双/三支节）
 --------------------------------------------------------
 - t_match（t_match_design/t_match_impedance）= 三元件集总 L 型网络；
   本族只做**分布参数并联支节**拓扑。
 - quarter_wave_transformer / klopfenstein_taper = λ/4 变换/渐变线；
   本族不碰阻抗变换器。
 - rf_match/synthesis.py 的微带综合面 = 模板级几何综合；本族只做
-  **双/三支节调配拓扑的解析解**（单支节不在 R7 T3 立项口径，如实
-  不做）。
+  **单/双/三支节调配拓扑的解析解**。
 
 物理口径（docstring 写死，#1c/#300 出处纪律）
 ----------------------------------------------
@@ -341,4 +347,114 @@ def stub_tuner_triple(rl_ohm: float, xl_ohm: float, z0_ohm: float = 50.0,
             "两支节完成调配，rotate_first=首支节旋转出双支节禁区；"
             "b_s3=0（开路支节零长/短路支节 λ/4）为合法退化解"),
         "source": _SOURCES["triple"],
+    }
+
+# ─── 键 3：单支节并联调配（aurora_l G1，2026-10-23）─────────────────────────
+
+@register_calculator(
+    "stub_tuner_single",
+    "单支节并联调配器（Pozar §5.2）：电导圆条件二次闭式——负载 y_L=Z0/Z_L"
+    "=g+jb 经线长 θ₁（t=tanθ₁）变换 Re[y(θ₁)]=g(1+t²)/[(1−bt)²+t²g²]=1 "
+    "⟺ (b²+g²−g)t²−2bt+(1−g)=0，判别式=g[b²+(g−1)²]≥0（g>0 恒有两实解"
+    "——单支节无禁区，任意无源负载可调）；双解 t=[b±√D]/A 如实并列（各配"
+    "支节电纳 b_s=−Im[y(t)] 与开路/短路支节长度 l/λ），solution 字段标"
+    "nearest_180=距负载最近解；ABCD 级联 [线 θ₁→并联 jb_s] |Γ_in| 回代"
+    "机器精度级（matched 旗标）。与双支节（禁区 g≤csc²(βd) 判据）成族"
+    "分工，t_match=集总三元件不并入",
+    (("rl_ohm", "float Ω 负载电阻实部（>0；纯电抗负载退化显式拒绝）"),
+     ("xl_ohm", "float Ω 负载电抗（有限任意，可负）"),
+     ("z0_ohm", "float Ω 传输线特性阻抗（>0，缺省 50）"),
+     ("stub_type", "str 支节终端类型 'open'|'short'（缺省 open）")),
+    required=("rl_ohm", "xl_ohm"),
+)
+def stub_tuner_single(rl_ohm: float, xl_ohm: float, z0_ohm: float = 50.0,
+                      stub_type: str = "open") -> dict[str, Any]:
+    """单支节并联调配：电导圆条件二次闭式 + ABCD 回代（任意无源负载）。"""
+    rl = _finite(rl_ohm, "rl_ohm")
+    xl = _finite(xl_ohm, "xl_ohm")
+    z0 = _finite(z0_ohm, "z0_ohm")
+    if rl <= 0.0:
+        raise ValueError(
+            f"stub_tuner_single: rl_ohm 必须 >0（纯电抗负载 |Γ|=1 调配问题"
+            f"退化，显式拒绝），得到 {rl_ohm!r}")
+    if z0 <= 0.0:
+        raise ValueError(f"stub_tuner_single: z0_ohm 必须 >0，得到 {z0_ohm!r}")
+    if stub_type not in ("open", "short"):
+        raise ValueError(
+            f"stub_tuner_single: stub_type 须 'open'|'short'，得到 {stub_type!r}")
+
+    y_l = _normalize_y(rl, xl, z0)
+    g, b = y_l.real, y_l.imag
+    # 电导圆条件 Re[y(θ₁)]=1 展开：A t² + B t + C = 0（t=tan θ₁）
+    # A = b²+g²−g；B = −2b；C = 1−g；判别式 D = 4g[b²+(g−1)²] ≥ 0（g>0 恒有解）
+    a_q = b * b + g * g - g
+    b_q = -2.0 * b
+    c_q = 1.0 - g
+    solutions: list[dict[str, Any]] = []
+    if abs(a_q) < 1e-15:
+        # A=0 退化：g²+b²=g（|y_L|²=g ⟺ |z_L|=1，位于单位圆——含 g=1,b=0
+        # 已匹配点）。线性根 t=-C/B（B≠0）；B=C=0 即 g=1,b=0 已匹配。
+        if abs(b_q) > 1e-15:
+            roots = [-c_q / b_q]
+        elif abs(c_q) < 1e-15:
+            roots = [0.0]  # 已匹配负载：支节零长平凡解
+        else:
+            roots = []
+    else:
+        disc = b_q * b_q - 4.0 * a_q * c_q
+        roots = []
+        if disc >= 0.0:
+            root = math.sqrt(disc)
+            roots = [(-b_q + root) / (2.0 * a_q), (-b_q - root) / (2.0 * a_q)]
+    for t_v in sorted(roots, key=abs):
+        theta1_deg = math.degrees(math.atan(t_v)) % 180.0
+        y_at = _transform_y(y_l, t_v)
+        b_s = -y_at.imag
+        solutions.append({
+            "t_tan_theta1": round(t_v, 15),
+            "theta1_deg": round(theta1_deg, 12),
+            "theta1_over_lambda": round(theta1_deg / 360.0, 15),
+            "b_stub_norm": round(b_s, 15),
+            "stub_len_over_lambda": round(
+                _stub_len_over_lambda(b_s, stub_type), 12),
+            "g_at_stub": round(y_at.real, 15),
+        })
+    matched = bool(solutions)
+    # ABCD 级联回代（解 1=|t| 最小支；与 double/triple 的 gamma_in_abs 同口径）
+    gamma_abs = None
+    if matched:
+        sol1 = solutions[0]
+        gamma_abs = _abcd_gamma(
+            rl, xl, z0,
+            [("shunt", sol1["b_stub_norm"]),
+             ("line", math.radians(sol1["theta1_deg"]))])
+        matched = gamma_abs < 1e-9
+    # 距负载最近解标记（θ₁∈[0,180) 内最小 θ₁）
+    nearest = min(
+        range(len(solutions)),
+        key=lambda i: solutions[i]["theta1_deg"]) if solutions else None
+    for i, sol in enumerate(solutions):
+        sol["nearest_180"] = (i == nearest)
+
+    return {
+        "rl_ohm": rl,
+        "xl_ohm": xl,
+        "z0_ohm": z0,
+        "stub_type": stub_type,
+        "y_load_norm": [round(g, 15), round(b, 15)],
+        "solvable": bool(solutions),
+        "matched": matched,
+        "gamma_in_abs": None if gamma_abs is None else round(gamma_abs, 15),
+        "n_solutions": len(solutions),
+        "solutions": solutions,
+        "note": (
+            "单支节无禁区：判别式 D=g[b²+(g−1)²]≥0 对任意 g>0 成立（负载"
+            "可先经任意线长旋转，本键固定 stub 在负载平面直接解——双解即"
+            "两支 Smith 图路径）；A=0 退化档=负载在单位圆 |z|=1（含已匹配"
+            "平凡解）；ABCD 回代=解 1（|t| 最小支）；θ₁ 与支节长度均以 "
+            "[0,180)°/λ 归一口径（半波长周期内最短解）"),
+        "source": (
+            "Pozar Microwave Engineering §5.2 单支节调配（电导圆条件与支节"
+            "电纳消去口径；二次方程与判别式为本席自恰推导，200 随机负载 "
+            "ABCD 回代验证 runs/aurora_l_g1/derive_check.py）"),
     }

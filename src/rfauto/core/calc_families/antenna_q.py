@@ -1,4 +1,4 @@
-"""电小天线 Q 提取/带宽/Chu 界一键（架构批 W3-K 池件批，R2_core_tier5
+"""电小天线 Q 提取/带宽/Chu 界一键（aurora_h W3-K 池件批，R2_core_tier5
 §⑤-2/§③-11 提升核——池件 T1-A-04 分期承诺同笔清偿）。
 
 提升核：消费 core/antenna_q.py 全套闭式（round17 §三 AP-12 落地物；

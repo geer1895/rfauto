@@ -155,13 +155,15 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 | anchor_id | quantity |
 |---|---|
+| `c3.k_of_g.openems-hfss-v1` | k_of_g |
 | `mline.z0_ohm.closedform-v1` | mline_z0_ohm |
 | `ratrace.r_ring_mm.closedform-v1` | ratrace_r_ring_mm |
 | `ratrace.ring_z_ohm.closedform-v1` | ratrace_ring_z_ohm |
+| `schiffman.delta_phase.closedform-v1` | schiffman_delta_phase_deg |
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `runs/xa1_arbitration/l5_sweep/criteria.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："仲裁 INCONCLUSIVE 在档 runs/xa1_arbitration/；语义终裁挂 L5 v2 批，"
+- `runs/xa1_arbitration/l5_sweep/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见"
 
 测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
 

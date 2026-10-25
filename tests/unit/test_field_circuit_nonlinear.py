@@ -19,7 +19,7 @@ import pytest
 from rfauto.core.circuit_hb import solve_harmonic_balance
 from rfauto.linkage import field_circuit_nonlinear as fcn
 
-#: 2026-09-14 真机 ngspice-47（runs/a3_field_circuit_nonlinear/smoke 实测）：
+#: 2026-09-14 真机 ngspice-47（内部证据档 实测）：
 #: 检波器锚 DEFAULT_COMPARE_QUANTITIES 的参考值 + p2 基波相位（正弦参考）。
 REAL_NGSPICE_20260914 = {
     "fourier": {

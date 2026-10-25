@@ -4,11 +4,11 @@
 ≤5%」（render_metasurface.py:1122/:1156）此前依赖**外部文献值**；本脚本把
 PSSFSS 侧判读升级为仓内可复跑——adapter 面（adapters/pssfss_adapter.py）
 真跑单胞 Floquet S 参数 → 纯函数估计器取谷/峰位 → 预声明门判读 → verdict
-落盘。几何/读出口径与归档参考链逐构造参数同源（runs/dp10_j2j3/
+落盘。几何/读出口径与归档参考链逐构造参数同源（内部证据档
 judge_pssfss.jl，ge6 锚 ms_cross.wg_resonance.openems-hfss-v1 semantics 引
 其 10.152GHz 为 Floquet 无限阵裁判）。
 
-判据（预声明，SPECS §3.3；发射前冻结于 runs/w2_phase2/criteria.md W2-F）：
+判据（预声明，SPECS §3.3；发射前冻结于 内部证据档 W2-F）：
 1. ms_cross：pypssfss 复算谷位 vs PSSFSS 参考值 10.152GHz，|Δf| ≤1%
    （文献回收钉，#118 家法）；旁证=双极化谷位同频 + EC 设计值
    （半波口径 ms_cross_arm_len_mm）量级互证。

@@ -109,7 +109,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_gt_link_calculators.py`——引文："（定义级引用；数值锚=恒等式回收，见 tests/unit/test_gt_link_calculators.py）。"
+- `tests/unit/test_gt_link_calculators.py`——引文："出处（出处逐字见内核 core/gt_link.py docstring——本模块只做注册薄壳）："
 
 测试面（tests/unit 引用扫描，机读；合计 **120** 个 test 函数）：
 

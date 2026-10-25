@@ -2,7 +2,7 @@
 
 全部零网络（#139：LLM/外部通道一律 monkeypatch 钉住）；真机通道零触碰；
 chdir 隔离（#144：优化循环类测试不污染真实 runs/）。逐件对应 SN 席报告
-§二行级规格（runs/research_seats_20261004/sn_platform_deepen/REPORT.md）。
+§二行级规格（内部证据档）。
 """
 
 from __future__ import annotations
@@ -202,7 +202,10 @@ class TestSn11SweepResume:
                  if ln.strip()]
         assert len(lines) == result["total_combos"] > 0
         first = json.loads(lines[0])
-        assert {"params", "cost", "metrics"} <= set(first)
+        # B3/T7：行级信封（seq/sha256/payload），结果 dict 在 payload 内
+        assert {"seq", "sha256", "payload"} <= set(first)
+        assert first["seq"] == 0
+        assert {"params", "cost", "metrics"} <= set(first["payload"])
         # 逐组合进度：末 tick 达到本 phase 总数
         assert ticks and ticks[-1][0] == ticks[-1][1]
 

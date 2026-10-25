@@ -17,7 +17,7 @@ params:
   port_len_mm: 0.2
   tan_d_fill: 0.0
 status: ok
-script_sha256: e61385939fdbe47317ab76bb1607c2afd8d5ddfb271bbecef13768c5f5237147
+script_sha256: c47144a275b1a8d50fedf93fdbb4d5b4689ca92e8833c232de501d2f143cd601
 csx:
   n_primitives: 20
   props:

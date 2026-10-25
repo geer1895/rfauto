@@ -12,8 +12,8 @@
 | 快速上手样例 | README「快速开始」「CLI 命令一览」节 |
 | 逐命令教程 | docs/tutorials/getting-started.md；docs/how-to/ 各篇 |
 
-当前规模（2026-10-19 实测，与 `scripts/check_numbers.py` 同源）：CLI 274 个
-叶子命令（non-bench 267 + bench 6）；单元测试 27261（check_numbers 口径
+当前规模（2026-10-23 实测，与 `scripts/check_numbers.py` 同源）：CLI 280 个
+叶子命令（non-bench 274 + bench 6）；单元测试 28673（check_numbers 口径
 =全量门日志 passed+failed）。规模数字以该脚本实跑为准，此处快照仅作
 量级参考（本页三数字已入该脚本 DOC_PATTERNS 门控，漂移即门红）。
 
@@ -30,8 +30,8 @@
 | UI 交互面 | 看板「微波工具箱」页（`#/tools`）：按组下拉+搜索、结果自动画图/热图、扫参模式（2–101 点）、`#/tools/<键名>` 深链直达——与 CLI/MCP 同一内核 |
 
 规模快照（2026-10-19 实测复核，与 `scripts/check_numbers.py` 同源）：
-`CALCULATOR_REGISTRY` 323（含实验键 324，16 业务组+实验组；aurora_g
-战役期间自 248 净增 49 键，`git diff cdad7549..HEAD --stat` 口径）。
+`CALCULATOR_REGISTRY` 340（含实验键 341，16 业务组+实验组；扩展批次
+战役期间自 248 净增 49 键，早期基线累计口径）。
 键数与分组**以 `rfauto calc list` 实时输出为准**——本页不钉死数字，
 注册表扩键后此处无需跟改。
 

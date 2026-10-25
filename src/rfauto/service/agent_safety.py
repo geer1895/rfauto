@@ -521,7 +521,7 @@ def neutralize_prompt_injection(text: str) -> dict[str, Any]:
 def extract_external_numbers(text: str) -> dict[str, Any]:
     """外部内容数值的清洗/标注接口：白名单为空，一律不得进入内核。
 
-    数值纪律：物理数字只由确定性内核（求解器/综合引擎/评判器）产出。
+    内核立规注记 规则 7：物理数字只由确定性内核（求解器/综合引擎/评判器）产出。
     外部内容里的数值**只作参考数据**，本函数提取并标注 kernel_eligible=False，
     供调用方剥离或送内核复核；不臆断单位、量纲与是否可用。
 
@@ -548,7 +548,7 @@ def extract_external_numbers(text: str) -> dict[str, Any]:
         "kernel_eligible": [],  # 外部来源白名单恒为空
         "note": (
             "外部数值一律 untrusted/kernel_eligible=False；物理数字只能由"
-            "确定性内核产出（数值纪律），须由内核重新计算或核对。"
+            "确定性内核产出（AGENTS 规则 7），须由内核重新计算或核对。"
         ),
     }
 
@@ -619,7 +619,7 @@ def mark_external_content(
 
 # ─── DS-1 工具执行瀑布（tool-execution-pipeline，W5-B 2026-10-05） ────────────
 #
-# T1 终章解环（架构批 W1-S1）：瀑布常量/类型/组件 ABC/缺省审批器/
+# T1 终章解环（aurora_h W1-S1）：瀑布常量/类型/组件 ABC/缺省审批器/
 # ToolWaterfall 驱动器的定义体已叶化至 agent_waterfall_types（本模块
 # 文件头同名再导出保面）；本节留驻三段注册表、具体组件（沙箱白名单/
 # 提示注入守卫）与 SystemOne 预筛口。五段瀑布语义详见叶 docstring。

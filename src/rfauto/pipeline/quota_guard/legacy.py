@@ -82,6 +82,6 @@ class QuotaGuard:
         }
 
 
-# QuotaExceededError 单源在 ledger（架构批 W2-S2 S8/quota2 异常归位；
+# QuotaExceededError 单源在 ledger（aurora_h W2-S2 S8/quota2 异常归位；
 # 本模块自 ledger 导入保名再导出——QuotaGuard.check_trial/check_wall_time
 # 抛出的类对象与 BudgetExceededError 的基类是同一个，零行为变化）。

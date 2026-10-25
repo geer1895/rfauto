@@ -6,7 +6,7 @@
 
 # 内核文档卡：waveguide_iris
 
-> 矩形波导薄膜片/谐振窗匹配闭式族（架构批 A7-B 席域 1，任务书候补
+> 矩形波导薄膜片/谐振窗匹配闭式族（aurora72 A7-B 席域 1，任务书候补
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 矩形波导薄膜片面：感性/容性膜片归一化电纳正反解、感容组合谐振窗全传输条件与单膜片匹配双分支闭式——工程薄膜片近似档，数值模匹配为真机仲裁路径。
 
-模块自述（docstring 首行，机读）：矩形波导薄膜片/谐振窗匹配闭式族（架构批 A7-B 席域 1，任务书候补
+模块自述（docstring 首行，机读）：矩形波导薄膜片/谐振窗匹配闭式族（aurora72 A7-B 席域 1，任务书候补
 
 ## 公式与口径
 
@@ -111,12 +111,13 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_a7b_iris_guanella.py`——引文："tests/unit/test_a7b_iris_guanella.py 与 tests/unit/test_aurora_d_core8.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **135** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **140** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a7b_iris_guanella.py` | 24 |
 | `tests/unit/test_aurora_d_core8.py` | 26 |
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calc_sympy_oracle.py` | 12 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w10s4_core_domains.py` | 24 |

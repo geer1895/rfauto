@@ -18,14 +18,14 @@
 > **所有物理数字（频率、损耗、几何尺寸）都由确定性公式内核或求解器产生，
 > 永远不由大语言模型编造。**
 
-它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **72 个参数化器件模板**和
+它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **75 个参数化器件模板**和
 配套的物理验收判据，提供 **273 条 CLI 命令**和 **152 个 MCP 工具**（+9 个
 resources），并靠 **27000+ 条单元测试**兜底验证——这些测试不需要任何商业许可
 就能跑。
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 329 (with experimental 330)` · `TEMPLATE_META 72` · `EXPECTED_TEMPLATES 72` ·
-`ANCHORS 87` · CLI 命令 274（叶子） · （152 个工具 + 10 个 resources）
+`CALCULATOR_REGISTRY 340 (with experimental 330)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
+`ANCHORS 87` · CLI 命令 280（叶子） · （157 个工具 + 10 个 resources）
 <!-- numbers-end -->
 
 **目录** · [为什么做](#为什么做这个) · [它能做什么](#它能做什么) ·

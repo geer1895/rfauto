@@ -1,6 +1,6 @@
-"""架构批 W4-S1 审查波守卫漏网修复批定向门（W3-S1/W3-S2 审查报告清偿）。
+"""aurora_g W4-S1 审查波守卫漏网修复批定向门（W3-S1/W3-S2 审查报告清偿）。
 
-审查依据：内部证据目录（P2-1 fec OverflowError 域上限
+审查依据：内部证据档（P2-1 fec OverflowError 域上限
 + P3×5）+ review_w3_ui_eng.md（P1-1 surrogate_playground run_id 第 9 处
 守卫漏网 / P2-1 profile timeoutMs 豁免 / P2-2 campaign_dashboard 第 10 处）。
 

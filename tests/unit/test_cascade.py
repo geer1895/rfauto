@@ -1,6 +1,6 @@
 """DP-5 系统级预算引擎 + spur search 单测：回收钉 + 注册表契约 + service/CLI。
 
-判据书：runs/df6_dp5cascade/criteria.md（锚值来源 compute_anchors.py，
+判据书：内部证据档（锚值来源 compute_anchors.py，
 独立精算脚本不 import rfauto——#118 口径）。回收钉一律 ≤1e-12 逐位对拍；
 唯一例外 ΔN_floor=ΔNF_tot（criteria §1 钉 3：浮点结合序尾差，门 1e-12）。
 

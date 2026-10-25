@@ -22,7 +22,7 @@
 2. **注册表钉**：resolve_anchor 域内命中、analytic 档形态=engine_pair.
    calibrated="closedform"（与引擎档可区分，#122）、v1→v2 演进钉。
 
-弃选维持（本批复核，逐族理由沿 runs/aurora_d_anchd/REPORT.md 不变）：
+弃选维持（本批复核，逐族理由沿 内部证据档 不变）：
 bend/tjunc 宽度面/wstep/dipole/pifa/helix/embedded_ms/msl_slot_transition/
 slotline_lumped 共 9 族仍零锚（tjunc 本批只立结点 S 面双锚）——任务书
 "8-12 模板"前提与树面两轮评审弃选账的差额如实报告（W3-S15 返回账）。

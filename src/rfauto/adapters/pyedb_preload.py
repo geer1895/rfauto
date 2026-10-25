@@ -1,6 +1,6 @@
 """pyedb DotNet 通道 Ansys OpenSSL 预载 helper（#373 回归实验，2026-10-14）。
 
-背景（#373 + runs/pyedb_pr2599_test/REPORT.md R5 实证）：python-build-
+背景（#373 + 内部证据档 R5 实证）：python-build-
 standalone venv 上 pyedb DotNet 后端在 EDB native 初始化期因同名 OpenSSL
 DLL 对撞硬崩（``0xc0000139 @ create_edb``/``legacy Provider loading
 failed``/``EVP_DecryptInit``）——CPython 副本（解释器树 ``DLLs\\``）抢先

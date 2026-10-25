@@ -410,7 +410,7 @@ def _render_html(now: str, sections: dict[str, Any]) -> str:
 # WP4.7 — PDF export：D12 FSV 等级 / G14 成本表 / F9 叙述位（数值 100% 可溯）
 #
 # 渲染层只做「把传入值转成字符串并排版」，不计算 / 不四舍五入 / 不硬编码任何
-# 物理数字（AGENTS 规则 7）：PDF 里出现的每个数值都必须来自调用方传入的
+# 物理数字（内核立规注记 规则 7）：PDF 里出现的每个数值都必须来自调用方传入的
 # report data / sections。多页输出用 matplotlib PdfPages（matplotlib 是既有
 # 核心依赖，不引入新 GUI 依赖）。F9 叙述位只放传入文本 / None，绝不调用 LLM。
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Lange 电桥专属综合内核（架构批 W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
+"""Lange 电桥专属综合内核（aurora_f W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
 
 出处（经典文献，文末「出处」节转录）：
 - lange_synthesize / lange_response：四指 Lange 电桥设计式与四线等效
@@ -12,7 +12,7 @@ adapters/oe_templates/render_c4.py:202（core 零模块零键零卡）。本模�
 ``lange_design`` 函数体自 render_c4 原样下沉（逐字节未动），render_c4 改为
 消费 core（再导出零改动，#116 不留本地遮蔽副本）；提升前后同参输出逐位一致
 （字节级对拍钉 tests/unit/test_w1s3_lange_stepped.py，重构前基线
-内部证据目录）。
+runs/aurora_f/w1s3_lange_parity_baseline.json）。
 
 物理口径（docstring 写死，#1c/#300 出处纪律；与 render_c4 §C4 口径 3 同源）
 --------------------------------------------------------

@@ -1,13 +1,13 @@
-# mapes et/ht 源参考精修列驱动（纯离线零仿真，runs/mapes_etht_refine）。
+# mapes et/ht 源参考精修列驱动（纯离线零仿真，内部证据档）。
 #
-# 任务：correction_limit.next_steps ①（runs/mapes_sref_study/evidence.json）——
+# 任务：correction_limit.next_steps ①（内部证据档）——
 # 以归档 et（激励时序）DFT 为绝对相位/幅度参考，精修激励口列参考，
 # 在 150 轮归档上零仿真复算互易底四档并列：
 #   raw_current / raw_wave / wav+colC / wav+et(诊断) / wav+colC+et(主判)。
 #
-# 预声明门见 runs/mapes_etht_refine/criteria.md（先于任何计算写就；含
-# 2026-09-19 符号修订记录）。主档 runs/mapes_zall_refix（evidence.json 同源，
-# wav+colC 锚 0.0070773704118137 必须逐位复现 rel≤1e-9）；副档 runs/mapes_s4
+# 预声明门见 内部证据档（先于任何计算写就；含
+# 2026-09-19 符号修订记录）。主档 内部证据档（evidence.json 同源，
+# wav+colC 锚 0.0070773704118137 必须逐位复现 rel≤1e-9）；副档 内部证据档
 # （原始 port_ut/port_it 零仿真重导，复刻 scripts/mapes_s2_zall.py
 # read_rounds_ui 口径），门相对其自身 wav+colC 评估，仅作稳健性并列。
 #
@@ -200,7 +200,7 @@ def main() -> int:
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
 
-    # ---- 主档：runs/mapes_zall_refix --------------------------------------
+    # ---- 主档：内部证据档 --------------------------------------
     uf, im, freqs, et_t, et_v = load_refix()
     q = uf.shape[0]
     print(f"[refix] q={q} nf={freqs.size}", flush=True)
@@ -220,7 +220,7 @@ def main() -> int:
     print(f"[refix] gate: improvement={gate_ref['improvement_frac']:+.4%} "
           f"verdict={gate_ref['verdict']}", flush=True)
 
-    # ---- 副档：runs/mapes_s4 ----------------------------------------------
+    # ---- 副档：内部证据档 ----------------------------------------------
     res_s4 = gate_s4 = None
     s4_hash = None
     if not args.quick or not S4_CACHE.exists():

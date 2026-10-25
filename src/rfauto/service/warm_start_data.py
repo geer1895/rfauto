@@ -17,14 +17,23 @@
   拼进 SQL 文本，防注入面不倒退），limit 在过滤后生效（E11 未尽③）；
   Python 侧精确相等过滤保留为纵深防御，where 参数仅原样透传
   query_dataset（其内部白名单校验负责防注入）。
+- 溯源块（R1 #13 旧数据冒充防线）：给 ``recipe_path`` 时每个样本附
+  ``provenance: {recipe_sha256, dataset_id, dataset_dir_mtime, collected_at,
+  adapter, template}`` 来源指纹；消费端（optimizer 注入前）校验
+  recipe_sha256 与当前 recipe 一致才注入，不匹配拒绝（旧 recipe 的 cost
+  不再静默喂进新优化）。不给 ``recipe_path``（纯数据面/旧调用方）样本
+  无 provenance 段=老格式，消费端照旧注入+note 声明未校验——增量兼容
+  不废老数据。
 - CLI/MCP 是薄壳（规则 4）；run_optimization 惰性导入（optimizer 依赖重，
   且便于单测 monkeypatch 钉住通道，#139）。
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -36,8 +45,9 @@ __all__ = [
     "run_optimization_warm_start_from_dataset",
 ]
 
-# 查询列裁剪：喂料所需最小列集（cost/params_json 为核心，run_id/point_index 供溯源）
-_QUERY_COLUMNS = ["run_id", "model", "study_name", "params_json", "cost", "point_index"]
+# 查询列裁剪：喂料所需最小列集（cost/params_json 为核心，run_id/point_index
+# 供溯源；adapter 供 R1 #13 provenance 盖章逐行取值）
+_QUERY_COLUMNS = ["run_id", "model", "adapter", "study_name", "params_json", "cost", "point_index"]
 
 
 def _has_nonfinite(value: Any) -> bool:
@@ -53,6 +63,26 @@ def _has_nonfinite(value: Any) -> bool:
     return False
 
 
+def _recipe_sha256(path: str | Path) -> str | None:
+    """recipe 文件字节 sha256（mf_backend.recipe_sha256 同口径）；不可读→None。
+
+    None 只在文件缺失/不可读时出现——消费端对无 sha 的样本按"未校验注入"
+    处理（不因溯源自身故障拒绝数据，#105 best-effort 同源）。
+    """
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _dataset_dir_mtime(dataset_dir: Path) -> float | None:
+    """数据集目录 mtime（数据集版本指纹之一）；不可得→None（best-effort）。"""
+    try:
+        return dataset_dir.stat().st_mtime
+    except OSError:
+        return None
+
+
 def collect_warm_start_samples(
     dataset: str,
     *,
@@ -61,6 +91,7 @@ def collect_warm_start_samples(
     where: str | None = None,
     limit: int = 1000,
     out_dir: str | Path = DEFAULT_OUT_DIR,
+    recipe_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """从 E1 数据集收集 warm-start 喂料样本（JSON 进出）。
 
@@ -73,10 +104,15 @@ def collect_warm_start_samples(
         limit: 行数上限（E11 未尽③根治：model/study 过滤已 ``?`` 参数化下推
             DuckDB，limit 在过滤**之后**生效，按族取样不再漏样本）。
         out_dir: 数据集根目录（与 materialize_dataset 口径一致）。
+        recipe_path: 源 recipe 文件路径（R1 #13 溯源写点）。给出时每个样本附
+            ``provenance: {recipe_sha256, dataset_id, dataset_dir_mtime,
+            collected_at, adapter, template}``（recipe_sha256=文件字节哈希，
+            不可读为 None；adapter/template 取自该行的 adapter/model 列）。
+            None（缺省）=样本无 provenance 段，消费端按老格式照旧注入。
 
     Returns:
-        ``{"ok": True, "samples": [{"params", "cost", "run_id", "point_index"}],
-        "n_rows_scanned", "n_samples", "n_filtered_by_model",
+        ``{"ok": True, "samples": [{"params", "cost", "run_id", "point_index",
+        ("provenance")}], "n_rows_scanned", "n_samples", "n_filtered_by_model",
         "n_filtered_by_study", "n_skipped_invalid", "skip_reasons",
         "skip_examples", "limit", "filters"}``；数据集不存在/查询失败 →
         ``{"ok": False, "errors": [...]}``（空数据集如实报错，不静默）。
@@ -95,6 +131,18 @@ def collect_warm_start_samples(
     if not q.get("ok"):
         return error_envelope(list(q.get("errors") or ["数据集查询失败"]))
 
+    # 溯源基座（R1 #13）：recipe 哈希/数据集身份/采集时刻为收集级常量，
+    # adapter/template 逐行取（混族数据集各自归属，不臆造统一值）。
+    prov_base: dict[str, Any] | None = None
+    if recipe_path is not None:
+        prov_base = {
+            "recipe_sha256": _recipe_sha256(recipe_path),
+            "dataset_id": str(q.get("dataset") or dataset),
+            "dataset_dir_mtime": _dataset_dir_mtime(
+                Path(out_dir) / str(q.get("dataset") or dataset)),
+            "collected_at": datetime.now(timezone.utc).isoformat(),
+        }
+
     samples: list[dict[str, Any]] = []
     n_filtered_model = 0
     n_filtered_study = 0
@@ -108,6 +156,7 @@ def collect_warm_start_samples(
 
     for row in q.get("rows") or []:
         row_model = str(row.get("model") or "")
+        row_adapter = str(row.get("adapter") or "")
         row_study = str(row.get("study_name") or "")
         rid = str(row.get("run_id") or "?")
         pidx = row.get("point_index")
@@ -144,12 +193,19 @@ def collect_warm_start_samples(
             _skip("cost 含 NaN/Inf", tag)
             continue
 
-        samples.append({
+        sample: dict[str, Any] = {
             "params": params,
             "cost": cost_f,
             "run_id": rid,
             "point_index": pidx,
-        })
+        }
+        if prov_base is not None:
+            sample["provenance"] = {
+                **prov_base,
+                "adapter": row_adapter or None,
+                "template": row_model or None,
+            }
+        samples.append(sample)
 
     return {
         "ok": True,
@@ -192,13 +248,17 @@ def run_optimization_warm_start_from_dataset(
     冷启动（调用方明确要求 warm-start 通道时静默降级=硬凑）；stage-1 门
     拒绝异族样本属正常降级（ok=True 且 warm_start_n=0），不在本层拦截。
 
+    溯源接线（R1 #13）：recipe_path 透传给收集函数做来源指纹盖章；注入前
+    的"当前 recipe sha == 样本 recipe_sha"校验单源在 optimizer 消费点
+    （覆盖一切 warm_start= 调用方），本层只做盖章不重复校验。
+
     Returns:
         run_optimization 结果，附加 ``warm_start_data``（数据面统计，
         不含 samples 本体防重复大对象）。
     """
     collect = collect_warm_start_samples(
         dataset, model=model, source_study=source_study, where=where,
-        limit=limit, out_dir=out_dir,
+        limit=limit, out_dir=out_dir, recipe_path=recipe_path,
     )
     data_stats = {k: v for k, v in collect.items() if k != "samples"}
     if not collect.get("ok"):

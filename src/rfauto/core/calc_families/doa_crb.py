@@ -97,7 +97,8 @@ fitting", IEEE Trans. SP 39(5):1110-1121, 1991（多源确定性 CRB 同式
 形态，章节级转引）；Ottersten, Stoica & Söderström, "On statistical
 properties of subspace fitting estimators"（随机 CRB 形态，章节级转
 引）；投影二次型 ULA 闭式（Σm/Σm² 代入）与多源 FIM Schur 消元推导
-=本仓代数推导（实现前独立复算（内部验证档）：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
+=本仓代数推导（实现前独立复算 runs/aurora_d/_core9_verify_derivation
+.py：单源随机闭式=Slepian-Bangs 数值 FIM（σ² 已知/未知两口径）逐位
 +比值恒等式 1+1/(pN)；celebrated 闭式对角 Q 全参数 Schur rel≤2.0e-15、
 非对角 Q 偏差实测 ~2%（如实并列）；Schiffman/开关网络两键同轨迹），
 锚树 tests/unit/test_aurora_d_core9.py 第二路线（naive N×N Slepian-
@@ -152,7 +153,8 @@ _SOURCES = {
         "级转引）；Slepian-Bangs 复高斯 FIM=Tr[R⁻¹R'_i R⁻¹R'_j]（实参数"
         "Hermitian 口径）；精确性前提（Q、σ² 全 Schur 消元，全域 rel≤"
         "7.5e-15 实测）与单源比值恒等式 1+1/(pN)=本仓代数推导（Slepian-"
-        "Bangs 全参数 Schur 数值第二路线，独立验证档）"),
+        "Bangs 全参数 Schur 数值第二路线，轨迹 runs/aurora_d/"
+        "_core9_verify_derivation.py）"),
 }
 
 #: 多源键 n_sources 上限（FIM 面与 JSON 体积守卫）

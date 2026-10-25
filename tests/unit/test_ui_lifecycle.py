@@ -289,7 +289,7 @@ class TestPageLifecycleProtocol:
     { refresh?, leave? } 增量——palette 刷新走 ctx.refresh（未登记页回退
     showPage 整页重进）、showPage 离页调 prev.leave（先于激活，best-effort）。
     试点批（W1-S3）=dashboard（静态）+loopboard（懒加载 _lazyCtx）；波2
-    （aurora_e W2-S7）=tune/detail/runs/campaign/reports 五页（懒加载
+    （aurora_e W2-S7）=tune/detail/内部证据档 五页（懒加载
     _lazyCtx）；波3 第二组（aurora_e W3-S12）=sparams/calibration/queue/
     gallery/optstack/timeline 六页（全 refresh-only）；波4 收尾（aurora_e
     W4-S17）=solvers/profile/datasets/anchors/uq/playground/farfield/field/

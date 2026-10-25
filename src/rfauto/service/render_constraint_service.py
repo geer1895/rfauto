@@ -20,7 +20,7 @@ core 内完成）；不接 CLI/MCP（五钉清单不扩张，接线留后续批�
 min_line_spacing_mm 缺省。数值只在确定性内核（规则 7）：全部数字出自
 z3 求解（witness）或调用方输入，LLM/agent 只消费报告。
 
-判据预声明：runs/df7_r4z3/criteria.md（C1–C7）。
+判据预声明：内部证据档（C1–C7）。
 """
 
 from __future__ import annotations

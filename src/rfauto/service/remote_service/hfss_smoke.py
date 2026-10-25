@@ -3,7 +3,7 @@
 L1 attach 冒烟、L2 求解冒烟（远程建模→求解→Touchstone 回拉→判读）、
 grpcsrv 拉起（schtasks）/按 PID 精确清理/attach 四开关、L2 判据纯函数；
 真机 opt-in 门 env ``RFAUTO_REMOTE_SMOKE=1``（unit 门零真机零连网，
-#139/df4⑥）。架构批 W3-S3 自 service/remote_service 巨石逐字节迁入
+#139/df4⑥）。aurora_h W3-S3 自 service/remote_service 巨石逐字节迁入
 （AU-1 facade，函数体零改动）；L2 几何/材料单一事实源见常量区注记。
 """
 
@@ -280,7 +280,7 @@ def remote_hfss_cleanup(
       schtasks 任务名无空白，双/单引号形态语义等价、实为一致性收敛，
       证据链见 W7-B §1.5-1）。
 
-    W7-B §1.5-1 复诊（2026-10-07，复现证据 ``runs/seat5_ssh/``）：旧实现
+    W7-B §1.5-1 复诊（2026-10-07，复现证据 ``内部证据档``）：旧实现
     用 ``Get-CimInstance -Filter "Name='ansysedt.exe'"`` 查指纹，经 SSH
     exec 通道**静默失效**（killed=[] 而进程活着）。根因（字节级实证）：
     Win32-OpenSSH 把命令串拼进 CreateProcess 命令行 → 双引号被

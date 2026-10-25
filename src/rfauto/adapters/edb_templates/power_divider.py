@@ -38,7 +38,7 @@ edb_adapter 负责按 spec 用 pedb lumped RLC 边界落地。
 Layout 波端口物理片宽=水平扩展因子 5×线宽（50Ω 馈线约 5.57mm@缺省
 层叠），两输出口中心距 2.0mm 时 P2/P3 端口片互相交叠，AEDT 网格生成
 失败 rc=103（``Port#Port2 intersects mesh body: Port#Port3``，W1 真机
-冒烟实证 2026-10-09，runs/edblane85/w1_smoke REPORT §3.3）。
+冒烟实证 2026-10-09，内部证据档 REPORT §3.3）。
 
 渲染期守卫（#347 家法）：发射时按 ``gap_mm ≤ 因子×shunt_w + 浮点余量``
 fail-fast 抛 ValueError，报错带建议放宽值（最小可行间隙上取 0.5mm 网格

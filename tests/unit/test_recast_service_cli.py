@@ -1,4 +1,4 @@
-"""RECAST 判据重放服务+CLI 薄壳测试（2026-10-11 架构批 W2-D）。
+"""RECAST 判据重放服务+CLI 薄壳测试（2026-10-11 aurora36 W2-D）。
 
 覆盖面（教程-代码断链清偿：docs/tutorials/recast-walkthrough.md 此前
 无 CLI/MCP 壳）：

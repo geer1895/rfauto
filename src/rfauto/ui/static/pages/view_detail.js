@@ -124,12 +124,35 @@ export async function showRun(runId) {
   }
   T.$("detail-id").textContent = d.run_id;
   const m = d.metrics || {};
+  // C2 aurora_l（R1 #14/15）：freshness 条（指标区顶部）——stale 红条
+  // （结果文件与 run 记录不符，勿用于交付）/ legacy 灰条（老 run 无新鲜度
+  // 记录）/ fresh 不出条。文案 t() 烘焙（detail.freshness_* 词表），issue
+  // 摘要=API 数据（issues_n/stale_kinds）esc 拼接（数据非文案不进词表）；
+  // 数据源=/api/runs/<id> 响应 freshness 块（verify 面故障 unknown 不出
+  // 条，观测面 #105）。
+  const fr = d.freshness || {};
+  let frBanner = "";
+  if (fr.status === "stale") {
+    const frIssues = fr.issues_n
+      ? t("detail.freshness_issues_lead") + esc(fr.issues_n) +
+        (fr.stale_kinds ? `（${esc(fr.stale_kinds)}）` : "")
+      : "";
+    frBanner =
+      `<div role="alert" style="color:var(--err);border:1px solid var(--err);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2)">` +
+      t("detail.freshness_stale_banner") +
+      (frIssues ? `<br><span class="muted">${frIssues}</span>` : "") +
+      `</div>`;
+  } else if (fr.status === "legacy") {
+    frBanner =
+      `<div style="color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:var(--space-2) var(--space-3);margin-bottom:var(--space-2)">` +
+      t("detail.freshness_legacy_banner") + `</div>`;
+  }
   // W2-S2（aurora_i，R3 M2）指标词典悬浮说明：词条在场→data-tip 白话+
   // 健康判据+坑号 & 判据着色（达标 var(--ok)/未达标 var(--err)）；词典
   // 加载失败=空映射→逐键降级原徽章形态（metricBadgeHtml 单源，#105）。
   const glossary = await metricGlossaryMap();
   const loc = getLocale();
-  T.$("detail-head").innerHTML =
+  T.$("detail-head").innerHTML = frBanner +
     Object.entries(m).map(([k, v2]) =>
       metricBadgeHtml(k, v2, glossary[k], loc)).join("");
   const ftb = T.$("files-table").tBodies[0];

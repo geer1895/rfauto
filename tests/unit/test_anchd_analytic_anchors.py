@@ -18,7 +18,7 @@ test_x5_analytic_anchors 同制度）：
 
 弃选 10 族（bend/tjunc/wstep/mline=唯一闭式面是 HJ 宽度本身；dipole/
 pifa/helix/embedded_ms/msl_slot_transition/slotline_lumped=引擎/文献面
-缺失或公式族重复）逐族理由见 runs/aurora_d_anchd/REPORT.md（SENS-ANC
+缺失或公式族重复）逐族理由见 内部证据档（SENS-ANC
 报告第三节同口径复核）。
 """
 

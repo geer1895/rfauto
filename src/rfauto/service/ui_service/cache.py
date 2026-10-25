@@ -1,6 +1,6 @@
-"""ui_service.cache —— 端点扫描缓存三层原语 + registry 单源索引层/自愈回填（架构批 A2-D / R8-ENG2）。
+"""ui_service.cache —— 端点扫描缓存三层原语 + registry 单源索引层/自愈回填（aurora72 A2-D / R8-ENG2）。
 
-自 ui_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；本域是包内叶子（runs_recipes/views/insights 从这里单向导入，包内零环）。
+自 ui_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；本域是包内叶子（runs_recipes/views/insights 从这里单向导入，包内零环）。
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ RUNS_DIR = Path("runs")
 _LOG = logging.getLogger(__name__)
 
 
-# ═══ runs/ 全表扫端点缓存（架构批 A2-D；R8 发现 1）═════════════════════════
+# ═══ runs/ 全表扫端点缓存（aurora72 A2-D；R8 发现 1）═════════════════════════
 #
 # calibration_runs / cross_fidelity_view / list_reports / pareto_runs /
 # field_runs 五端点此前每请求对 runs/（实测 2246 目录）逐 run stat+读 JSON，
@@ -137,7 +137,7 @@ def _runs_fingerprint(
     目录 mtime（NTFS 懒更新，racy）+ TTL 兜底。目录缺失/扫描失败 →
     None（直通不缓存）。
 
-    架构批 W1-S4：root 可选参数——兄弟模块（surrogate_playground）缓存
+    aurora_f W1-S4：root 可选参数——兄弟模块（surrogate_playground）缓存
     复用同一指纹语义但扫自己的 RUNS_DIR（缺省 None=ui_service.RUNS_DIR，
     五端点行为不变）。
     """

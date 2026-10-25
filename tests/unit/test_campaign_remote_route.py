@@ -60,10 +60,10 @@ def _ok_channel(machine, seat_spec):
 @pytest.mark.parametrize("raw,expect", [
     (None, None), (False, None), ("", None),
     (True, {"machine": None}),
-    ("sim_host", {"machine": "sim_host"}),
-    ("  sim_host  ", {"machine": "sim_host"}),
-    ({"machine": "sim_host", "wait_mode": "poll", "keep_remote": True},
-     {"machine": "sim_host", "wait_mode": "poll", "keep_remote": True}),
+    ("sim_server", {"machine": "sim_server"}),
+    ("  sim_server  ", {"machine": "sim_server"}),
+    ({"machine": "sim_server", "wait_mode": "poll", "keep_remote": True},
+     {"machine": "sim_server", "wait_mode": "poll", "keep_remote": True}),
     ({"machine": True}, {"machine": None}),
 ])
 def test_stage_remote_decl_forms(raw, expect):
@@ -78,8 +78,8 @@ def test_stage_remote_decl_absent_is_none():
 def test_stage_remote_decl_plan_default_fallback_and_priority():
     # plan 级缺省（campaign_remote_default）在场 → 缺省路由
     node = {"node_id": "tune",
-            "stage_extra": {"campaign_remote_default": "sim_host"}}
-    assert stage_remote_decl(node) == {"machine": "sim_host"}
+            "stage_extra": {"campaign_remote_default": "sim_server"}}
+    assert stage_remote_decl(node) == {"machine": "sim_server"}
     # stage 级声明优先：stage remote=False 压掉 plan 级缺省
     node["stage_extra"]["remote"] = False
     assert stage_remote_decl(node) is None
@@ -93,7 +93,7 @@ def _gate_boom(*_a, **_k):
 
 def test_gate_calendar_blocked_skips_without_preflight():
     gate = remote_stage_gate(
-        {"machine": "sim_host"},
+        {"machine": "sim_server"},
         preflight_fn=_gate_boom,
         calendar={"state": "blocked", "launchable": False, "loaded": True,
                   "windows_hit": ["maintenance_windows[0] 01:00-03:00"]},
@@ -105,7 +105,7 @@ def test_gate_calendar_blocked_skips_without_preflight():
 
 def test_gate_preflight_fail_is_skip():
     gate = remote_stage_gate(
-        {"machine": "sim_host"}, preflight_fn=_pf_fail,
+        {"machine": "sim_server"}, preflight_fn=_pf_fail,
         calendar={"state": "open", "launchable": True, "loaded": True})
     assert gate["status"] == "SKIP"
     assert gate["license_preflight"]["verdict"] == "FAIL"
@@ -114,7 +114,7 @@ def test_gate_preflight_fail_is_skip():
 
 def test_gate_backup_risk_passes_to_preflight():
     gate = remote_stage_gate(
-        {"machine": "sim_host"}, preflight_fn=_pf_fail,
+        {"machine": "sim_server"}, preflight_fn=_pf_fail,
         calendar={"state": "risk", "launchable": True, "loaded": True,
                   "backup_risk": True,
                   "windows_hit": ["backup_windows[0] 02:50-05:35"]})
@@ -138,18 +138,18 @@ def test_gate_channel_skipped_is_skip():
         return {"ok": False, "skipped": True, "launched": False,
                 "reason": "互斥命中候跑"}
 
-    gate = remote_stage_gate({"machine": "sim_host"},
+    gate = remote_stage_gate({"machine": "sim_server"},
                              preflight_fn=_pf_pass,
                              calendar={"state": "open"},
                              execute_fn=_chan, seat_spec={"template": "t"})
     assert gate["status"] == "SKIP"
-    assert calls["machine"] == "sim_host"
+    assert calls["machine"] == "sim_server"
     assert "候跑" in gate["reason"]
 
 
 def test_gate_channel_fail_is_fail():
     gate = remote_stage_gate(
-        {"machine": "sim_host"}, preflight_fn=_pf_pass,
+        {"machine": "sim_server"}, preflight_fn=_pf_pass,
         calendar={"state": "open"},
         execute_fn=lambda m, s: {"ok": False, "skipped": False,
                                  "launched": True, "reason": "SSH 链路失败"},
@@ -160,7 +160,7 @@ def test_gate_channel_fail_is_fail():
 
 def test_gate_channel_ok_records_solve_success():
     gate = remote_stage_gate(
-        {"machine": "sim_host"}, preflight_fn=_pf_pass,
+        {"machine": "sim_server"}, preflight_fn=_pf_pass,
         calendar={"state": "open"},
         execute_fn=lambda m, s: _ok_channel(m, s), seat_spec={"template": "t"})
     assert "status" not in gate
@@ -288,7 +288,7 @@ def test_local_zero_change_no_remote_touch(tmp_path):
 
 def test_route_preflight_fail_skip_is_inconclusive(tmp_path, monkeypatch):
     monkeypatch.setattr(ce, "_license_preflight", _pf_fail)
-    camp = _plan_dir(tmp_path, tune_extra={"remote": "sim_host"})
+    camp = _plan_dir(tmp_path, tune_extra={"remote": "sim_server"})
     res = _run(tmp_path, camp)
     # PARTIAL（inconclusive 不冒充完成；战役未死=ok True 信封 + verdict PARTIAL）
     assert res["ok"] is True
@@ -300,7 +300,7 @@ def test_route_preflight_fail_skip_is_inconclusive(tmp_path, monkeypatch):
     gate = json.loads((work / REMOTE_STAGE_FILE).read_text(encoding="utf-8"))
     assert gate["status"] == "SKIP"
     assert gate["license_preflight"]["verdict"] == "FAIL"
-    assert gate["remote"]["machine"] == "sim_host"
+    assert gate["remote"]["machine"] == "sim_server"
     slim = json.loads((work / STAGE_RESULT_FILE).read_text(encoding="utf-8"))
     assert slim["ok"] is True
     assert slim["license_preflight"]["verdict"] == "FAIL"
@@ -334,14 +334,14 @@ def test_route_channel_ok_done_and_seat_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(ce, "_license_preflight", _pf_pass)
     monkeypatch.setattr(ce, "_remote_oe_run", _chan)
     camp = _plan_dir(tmp_path, tune_extra={
-        "remote": "sim_host",
+        "remote": "sim_server",
         "remote_seat": {"template": "patch",
                         "simulation_py": "# inline\n",
                         "criteria_md": "# crit\n"}})
     res = _run(tmp_path, camp)
     assert res["ok"] is True
     assert _node_status(camp, "tune") == "done"
-    assert seen["machine"] == "sim_host"
+    assert seen["machine"] == "sim_server"
     assert seen["seat"]["template"] == "patch"
     # 产物回拉落座位目录（out_dir=节点工作目录语义由通道承担；信封在此）
     work = camp / "tune"
@@ -354,7 +354,7 @@ def test_route_channel_ok_done_and_seat_dir(tmp_path, monkeypatch):
 
 def test_route_no_seat_payload_skips_honestly(tmp_path, monkeypatch):
     monkeypatch.setattr(ce, "_license_preflight", _pf_pass)
-    camp = _plan_dir(tmp_path, tune_extra={"remote": "sim_host"})
+    camp = _plan_dir(tmp_path, tune_extra={"remote": "sim_server"})
     _run(tmp_path, camp)
     assert _node_status(camp, "tune") == "inconclusive"
     gate = json.loads((camp / "tune" / REMOTE_STAGE_FILE)
@@ -366,7 +366,7 @@ def test_route_no_seat_payload_skips_honestly(tmp_path, monkeypatch):
 def test_plan_level_remote_flag_routes(tmp_path, monkeypatch):
     monkeypatch.setattr(ce, "_license_preflight", _pf_fail)
     camp = _plan_dir(tmp_path)
-    res = _run(tmp_path, camp, remote="sim_host")
+    res = _run(tmp_path, camp, remote="sim_server")
     assert _node_status(camp, "tune") == "inconclusive"
     # "true" 串归一缺省机器形态（CLI 传值形态）
     camp2 = _plan_dir(tmp_path / "b", plan_level_remote=None)
@@ -379,7 +379,7 @@ def test_stage_decl_overrides_plan_level(tmp_path, monkeypatch):
     monkeypatch.setattr(ce, "_license_preflight", _pf_fail)
     # plan 级缺省给出，但 stage 显式 remote=False → 本机（零触达预检）
     camp = _plan_dir(tmp_path, tune_extra={"remote": False},
-                     plan_level_remote="sim_host")
+                     plan_level_remote="sim_server")
     res = _run(tmp_path, camp)
     assert res["ok"] is True and _node_status(camp, "tune") == "done"
 

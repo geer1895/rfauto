@@ -1,6 +1,6 @@
 """runs/ 面路径单源：cwd 根 ∪ 仓库根双根收敛（R3-9）。
 
-背景（runs/review_ge8e/r3_service/REPORT.md R3-9）：agent_sandbox.SANDBOX_ROOT、
+背景（内部证据档 R3-9）：agent_sandbox.SANDBOX_ROOT、
 agent_runtime.SESSIONS_DIR、agent_safety.AUDIT_DIR 历史上是 cwd 相对
 ``Path("runs")/...``——进程 chdir 进仓库子目录（#295 族"从 runs/ 子目录执行"
 的驱动脚本）会把沙箱草稿/会话存档/审计日志静默分叉到 ``<子目录>/runs/``。

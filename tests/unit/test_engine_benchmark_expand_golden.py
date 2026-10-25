@@ -1,6 +1,6 @@
 """G8 引擎基准扩容 2026-09-15 证据 golden 钉子（离线零真机）。
 
-背景：五锚产物落 runs/benchmark/（runs/ 不入库），可提交证据面为空。
+背景：五锚产物落 内部证据档（runs/ 不入库），可提交证据面为空。
 按 tests/golden/ 惯例（参照 mline_benchmark_rescan_20260913.json）把
 G8 扩容结果快照入库：tests/golden/engine_benchmark_expand_20260915.json
 （四离线锚归档入账 + msl_cpw 真机补跑）。本文件离线回放：
@@ -10,16 +10,16 @@ G8 扩容结果快照入库：tests/golden/engine_benchmark_expand_20260915.json
 ③ criteria == 内核默认门常量（判据改动=显式重标定，须同步快照）；
 ④ 四离线锚 verdict==PASS 硬钉（归档数值离线复算实测现门全过）；
    msl_cpw 为真跑快照，只钉自洽不预设 PASS（#122 不凑绿）；
-⑤ mline 证据面未动（新时点只新增不覆写，TODO :561 followUp 口径）；
+⑤ mline 证据面未动（新时点只新增不覆写，待办清单 :561 followUp 口径）；
 ⑥ 20260915b 重标定（F1② 审查）：msl_cpw 传输门增补无源上界 |S21| 带内
    max ≤1.02，首轮真跑 mean 1.0296 / 带内 max 1.2902 由 PASS 如实改判
    FAIL（#122）；快照 metrics 补 s21_lin_band_max、gate_flags 补
    passive_ok、criteria 补 s21_lin_band_max_le，五锚 gate_version 同步；
    归档 runs/benchmark/msl_cpw_engine_benchmark.json 保持原样（归档不改），
-   零仿真重归一证据见 runs/benchmark/msl_cpw_renorm/renorm_report.json；
+   零仿真重归一证据见 内部证据档；
 ⑦ 20260918a 重标定（round2 R2-A-01 审查）：via 传输门同构增补无源上界
    |S21| 带内 max ≤1.02，快照 metrics 补 s21_lin_band_max（0.9503，
-   runs/via_smoke/pt3/sparams.csv 离线复算）、gate_flags 补 passive_ok、
+   内部证据档 离线复算）、gate_flags 补 passive_ok、
    criteria 补 s21_lin_band_max_le，五锚 gate_version 同步；归档 401 点
    全部 ≤1.02 → 判定零翻转（收紧为预防性，与 msl_cpw 改判情形不同）；
    harness ingest_via 已同批补传带内 max（无悬空 followUp）。
@@ -27,8 +27,8 @@ G8 扩容结果快照入库：tests/golden/engine_benchmark_expand_20260915.json
 证据源真跑命令（本测试不执行任何求解）：
   .venv/Scripts/python.exe scripts/engine_benchmark_expand.py --ingest all
   .venv/Scripts/python.exe scripts/engine_benchmark_expand.py --msl-cpw
-  → runs/benchmark/<anchor>_engine_benchmark.json ×5
-  日志尾：runs/benchmark/msl_cpw_m0.4/run_20260915.log
+  → 内部证据档<anchor>_engine_benchmark.json ×5
+  日志尾：内部证据档
 """
 
 from __future__ import annotations
@@ -202,7 +202,7 @@ class TestOfflineAnchorsHardPinned:
         assert a["atten_t"]["metrics"]["s21_db_band_mean"] == -9.64
         assert a["via"]["metrics"]["s11_db_band_max"] == -26.01
         assert a["via"]["metrics"]["s21_lin_mean"] == 0.944
-        # 20260918a 补录统计量：runs/via_smoke/pt3/sparams.csv 离线复算
+        # 20260918a 补录统计量：内部证据档 离线复算
         assert a["via"]["metrics"]["s21_lin_band_max"] == 0.9503
         assert a["via"]["metrics"]["delta_eps1_pct"] == 0.793
         assert a["via"]["beta2_modal_difference_pct"] == 10.935
@@ -267,7 +267,7 @@ class TestMslCpwRecalibration20260915b:
         assert "无源上界超门" in entry["reason"]
 
     def test_band_max_pinned_from_archive_recompute(self):
-        # runs/benchmark/msl_cpw_m0.4/sparams.csv 离线复算：带内 max 1.2902
+        # 内部证据档 离线复算：带内 max 1.2902
         # @2.25GHz；mean 1.0296 保留（旧门口径数值不改，只补统计量）
         m = _load()["anchors"]["msl_cpw"]["metrics"]
         assert m["s21_lin_band_max"] == 1.2902
@@ -351,7 +351,7 @@ class TestViaRecalibration20260918a:
 
 
 class TestMlineEvidenceUntouched:
-    """新时点只新增不覆写 mline golden（TODO :561 followUp 口径）。"""
+    """新时点只新增不覆写 mline golden（待办清单 :561 followUp 口径）。"""
 
     def test_mline_golden_still_present(self):
         assert MLINE_GOLDEN.exists(), "mline 证据 golden 被误删/移动"

@@ -5,7 +5,7 @@ AU-1 b4 同构注册收缩：22 个「直引综合内核 + 直引 fake 模型 + 
 单点注册循环驱动（新同构模板 = 表加一行 + bootstrap plan 加一个名字）；
 定制注册（本地综合闭包/族循环）保留独立函数。行为零变化：注册序、
 TemplateSpec 六件套字段、组件对象身份与收缩前逐位一致（快照钉
-runs/au1_b4/ts_surface_{before,after}.json）。
+内部证据档{before,after}.json）。
 
 组件引用全部在注册时 import——保持插件 entry-point 发现的启动轻量
 （models 层允许 import adapters/core，见 .importlinter 分层）。
@@ -121,7 +121,7 @@ _SIMPLE_SPECS: tuple[_SimpleSpecEntry, ...] = (
     # #154 角色映射只收语义确定键：w_mm=两过孔列心距（line_width_mm 词表
     # 口径）、line_len_mm=两端口面间距；d_mm/s_mm 无词表条目按名直读同义
     # （suspended_stripline b_mm 先例）。f0=10GHz 设计点（2.5GHz 下 SIW
-    # 物理上装不下 60mm 板，runs/siw_family/criteria.md §2）
+    # 物理上装不下 60mm 板，内部证据档 §2）
     ("siw", "synthesize_siw_model", "siw_sparams", None,
      {"w_mm": "line_width_mm",
       "line_len_mm": "line_length_mm"}),
@@ -129,7 +129,7 @@ _SIMPLE_SPECS: tuple[_SimpleSpecEntry, ...] = (
     # MSLPort 线基（CalcPort ref=50 主口径，line_z0=engine 反演旋钮留判读
     # 侧）。#154：w_mm=两过孔列心距、siw_len_mm=线段长；d_mm/s_mm/
     # taper_len_mm 无词表条目按名直读同义。预声明门
-    # runs/df6_a2siwmsl/criteria.md §4
+    # 内部证据档 §4
     ("msl_siw_taper", "synthesize_msl_siw_taper_model",
      "msl_siw_taper_sparams", None,
      {"w_mm": "line_width_mm",
@@ -163,7 +163,7 @@ def _register_simple_spec(entry: _SimpleSpecEntry) -> None:
 
 
 def _register_hairpin_alt() -> None:
-    # 交替取向 hairpin（2026-09-18 w2g，TODO 0dk 根修）：综合入口 = core 的
+    # 交替取向 hairpin（2026-09-18 w2g，待办清单 0dk 根修）：综合入口 = core 的
     # synthesize_hairpin_model 纯 KJ 链（几何与 hairpin 同链同值，唯一变量=取向），
     # 本处只改模型标签/注记并保持 ModelSynthesisResult 合同（零数值，coupled_bpf
     # 本地组装同款）；fake 派发按 model_type="hairpin_alt" 走纯 KJ（不乘同向 c(gap)）。
@@ -2237,7 +2237,7 @@ def _register_coil_nfc() -> None:
     synthesize_coil 反解 d_out（确定性内核，4 位舍入与 COIL_NFC_NOMINAL
     再生口径一致），本处只组装零数值（#154 角色映射只收语义确定键：
     gap_mm=馈隙长/h_mm=板厚/er/tan_d 无词表条目按名直读同义）。
-    hfss_plugin=None；真机 13.56MHz FDTD 预算见 runs/df7_nfc/criteria.md
+    hfss_plugin=None；真机 13.56MHz FDTD 预算见 内部证据档
     §e（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _coil_nfc_sparams
     from rfauto.adapters.openems_templates import (
@@ -2329,6 +2329,315 @@ def _register_coil_nfc() -> None:
     ))
 
 
+def _register_octagonal_spiral() -> None:
+    """§OCTAGONAL_SPIRAL 八角螺旋电感族（2026-10-23 aurora_k K11，反馈 F1）：
+    GaAs 薄膜 IPD 工艺八角螺旋电感（W/S/N/Din 全 μm 标量参数，集总无源
+    模板族首件）。综合入口 = L_target → core/nfc_coil synthesize_coil
+    （octagon 形状，d_out 单调二分反解）→ d_in=d_out−2nW−2(n−1)S 闭式回
+    演与 OCTAGONAL_SPIRAL_NOMINAL 再生口径一致，本处只组装零数值（#154
+    角色映射：μm 键无词表条目按名直读同义）。hfss_plugin=None；真机对拍
+    留登记 内部证据档（本批零发射）。"""
+    from rfauto.adapters.fake_adapter import _octagonal_spiral_sparams
+    from rfauto.adapters.openems_templates import (
+        OCTAGONAL_SPIRAL_NOMINAL,
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.nfc_coil import spiral_inductance, synthesize_coil
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_octagonal_spiral_model(
+        l_target_nh: float = 4.1147, n_turns: int = 5,
+        w_um: float = 10.0, s_um: float = 5.0, gap_um: float = 10.0,
+        h_mm: float = 0.1, ground_plane: int = 0, er: float = 12.9,
+        tan_d: float = 0.0006, **_: Any,
+    ) -> ModelSynthesisResult:
+        """octagonal_spiral spec 综合入口：L_target → core synthesize_coil
+        二分反解 d_out → d_in 闭式回演（确定性内核，只组装零数值）。"""
+        if not (float(l_target_nh) > 0.0):
+            raise ValueError(
+                f"l_target_nh 须为正，收到 {l_target_nh!r}")
+        design = synthesize_coil(float(l_target_nh) * 1e-9, "octagon",
+                                 float(n_turns), float(w_um) * 1e-6,
+                                 float(s_um) * 1e-6)
+        d_out_m = float(design["d_out_m"])
+        n = float(n_turns)
+        din_m = d_out_m - 2.0 * n * float(w_um) * 1e-6 \
+            - 2.0 * (n - 1.0) * float(s_um) * 1e-6
+        if din_m <= 0.0:
+            raise ValueError(
+                "octagonal_spiral: 综合不可行（d_in ≤ 0——匝数/线宽/间距"
+                "相对目标 L 过大，减 n_turns 或 l_target_nh）")
+        params: dict[str, Any] = {
+            "n_turns": int(n_turns),
+            "din_um": round(din_m * 1e6, 4),
+            "w_um": round(float(w_um), 4),
+            "s_um": round(float(s_um), 4),
+            "gap_um": round(float(gap_um), 4),
+            "h_mm": round(float(h_mm), 4),
+            "ground_plane": int(ground_plane),
+            "er": round(float(er), 4),
+            "tan_d": round(float(tan_d), 4),
+        }
+        assert set(params) == set(OCTAGONAL_SPIRAL_NOMINAL)
+        from rfauto.core.nfc_coil import CoilGeometry
+
+        l_realized = spiral_inductance(
+            CoilGeometry("octagon", n, d_out_m, float(w_um) * 1e-6,
+                         float(s_um) * 1e-6), "current_sheet")
+        f0_ghz = 2.0
+        recipe_draft = {
+            "model": "octagonal_spiral",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [0.1, 10.0],
+                      "points": 201},
+            "objectives": [],
+        }
+        return ModelSynthesisResult(
+            model="octagonal_spiral",
+            goal={"l_target_nh": round(float(l_target_nh), 6),
+                  "l_realized_nh": round(l_realized * 1e9, 6),
+                  "d_out_um": round(d_out_m * 1e6, 4),
+                  "note_f0_ghz": f0_ghz},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"L_target={float(l_target_nh):.4f}nH → d_in="
+                f"{params['din_um']}μm 闭式回演（core/nfc_coil."
+                f"synthesize_coil octagon 二分反解，回代相对差 "
+                f"{design['rel_error']:.2e}）",
+                "objectives 留空如实：电感 1 端口 S11 无谐振谷（SRF 处为"
+                "并联谐振峰非谷），优化目标待真机批按 L 提取指标定义",
+                "fake=一阶集总电感（Mohan 闭式 L+匝间 C_par 并联谐振，未"
+                "标定如实声明）；质量门 L±25%/SRF>2×f0 走 CALC "
+                "octagonal_spiral_inductance",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="octagonal_spiral",
+        meta=dict(TEMPLATE_META["octagonal_spiral"]),
+        synthesizer=synthesize_octagonal_spiral_model,
+        physics_roles={},
+        render_script=partial(render_script, "octagonal_spiral"),
+        fake_model=_octagonal_spiral_sparams,
+        hfss_plugin=None,
+    ))
+
+
+def _register_mim_cap() -> None:
+    """§MIM_CAP MIM 叠层电容族（2026-10-23 aurora_k K12，反馈 F1）：
+    GaAs 薄膜 IPD 工艺 MIM 电容（W/L/D 全 μm 标量参数，集总无源电容族
+    首件）。综合入口 = c_target_ff → d_um 单调二分反解（平行板 C∝1/d，
+    bracket=[0.02,2.0]μm 档；w/l 固定名义档）→ 回代相对差与
+    MIM_CAP_NOMINAL 再生口径一致，本处只组装零数值（#154 角色映射：
+    μm 键无词表条目按名直读同义）。hfss_plugin=None；真机对拍留登记
+    内部证据档（本批零发射）。"""
+    from rfauto.adapters.fake_adapter import _mim_cap_sparams
+    from rfauto.adapters.openems_templates import (
+        MIM_CAP_NOMINAL,
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.ipc_cap import mim_capacitance_report
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_mim_cap_model(
+        c_target_ff: float = 132.81, w_um: float = 20.0, l_um: float = 20.0,
+        bot_overhang_um: float = 5.0, port_um: float = 2.5,
+        h_mm: float = 0.1, er_diel: float = 7.5, tand_diel: float = 0.001,
+        er: float = 12.9, tan_d: float = 0.0006, **_: Any,
+    ) -> ModelSynthesisResult:
+        """mim_cap spec 综合入口：c_target_ff → d_um 二分反解（确定性
+        内核，只组装零数值；C∝1/d 单调减、bracket 内恒有解）。"""
+        if not (float(c_target_ff) > 0.0):
+            raise ValueError(f"c_target_ff 须为正，收到 {c_target_ff!r}")
+        w_m, l_m = float(w_um) * 1e-6, float(l_um) * 1e-6
+        c_target_f = float(c_target_ff) * 1e-15
+        lo, hi = 0.02e-6, 2.0e-6   # 介质厚 bracket（μm 档）
+        c_hi = float(mim_capacitance_report(w_m, l_m, hi, float(er_diel))["c_f"])
+        c_lo = float(mim_capacitance_report(w_m, l_m, lo, float(er_diel))["c_f"])
+        if not (c_hi <= c_target_f <= c_lo):
+            raise ValueError(
+                "mim_cap: 综合不可行（目标 "
+                f"{float(c_target_ff):.4g}fF 出 bracket "
+                f"[{c_hi * 1e15:.4g}, {c_lo * 1e15:.4g}]fF——增减 "
+                "w_um/l_um 或 er_diel）")
+        c_mid = c_hi
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            c_mid = float(mim_capacitance_report(
+                w_m, l_m, mid, float(er_diel))["c_f"])
+            if c_mid > c_target_f:
+                lo = mid
+            else:
+                hi = mid
+        d_m = 0.5 * (lo + hi)
+        rel_err = abs(c_mid - c_target_f) / c_target_f
+        params: dict[str, Any] = {
+            "w_um": round(float(w_um), 4), "l_um": round(float(l_um), 4),
+            "d_um": round(d_m * 1e6, 6),
+            "bot_overhang_um": round(float(bot_overhang_um), 4),
+            "port_um": round(float(port_um), 4), "h_mm": round(float(h_mm), 4),
+            "er_diel": round(float(er_diel), 4),
+            "tand_diel": round(float(tand_diel), 4),
+            "er": round(float(er), 4), "tan_d": round(float(tan_d), 4),
+        }
+        assert set(params) == set(MIM_CAP_NOMINAL)
+        f0_ghz = 2.0
+        recipe_draft = {
+            "model": "mim_cap",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [0.1, 10.0],
+                      "points": 201},
+            "objectives": [],
+        }
+        return ModelSynthesisResult(
+            model="mim_cap",
+            goal={"c_target_ff": round(float(c_target_ff), 6),
+                  "c_realized_ff": round(c_mid * 1e15, 6),
+                  "d_um": params["d_um"], "note_f0_ghz": f0_ghz},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"C_target={float(c_target_ff):.4g}fF → d="
+                f"{params['d_um']}μm 二分反解（core/ipc_cap 平行板精确式 "
+                f"C∝1/d 单调，回代相对差 {rel_err:.2e}）",
+                "objectives 留空如实：电容 1 端口 S11 无谐振谷（SRF 处为"
+                "串联谐振过零），优化目标待真机批按 C 提取指标定义",
+                "fake=一阶集总电容（平行板闭式 C+R_s/L_s 串联寄生，未标定"
+                "如实声明）；质量门 C±25%/SRF>2×f0 走 CALC mim_capacitance",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="mim_cap",
+        meta=dict(TEMPLATE_META["mim_cap"]),
+        synthesizer=synthesize_mim_cap_model,
+        physics_roles={},
+        render_script=partial(render_script, "mim_cap"),
+        fake_model=_mim_cap_sparams,
+        hfss_plugin=None,
+    ))
+
+
+def _register_interdigital_cap() -> None:
+    """§INTERDIGITAL_CAP 叉指电容族（2026-10-23 aurora_k K12，反馈 F1）：
+    GaAs 薄膜 IPD 工艺 IDC（N/L/W/S/e_tip 全 μm 标量参数）。综合入口 =
+    c_target_ff → lf_um 单调二分反解（侧壁主项 C∝l_c∝lf）→ 回代相对差
+    与 INTERDIGITAL_CAP_NOMINAL 再生口径一致，本处只组装零数值（#154
+    角色映射：μm 键无词表条目按名直读同义）。hfss_plugin=None；真机
+    对拍留登记 内部证据档（本批零发射）。"""
+    from rfauto.adapters.fake_adapter import _interdigital_cap_sparams
+    from rfauto.adapters.openems_templates import (
+        INTERDIGITAL_CAP_NOMINAL,
+        TEMPLATE_META,
+        render_script,
+    )
+    from rfauto.core.ipc_cap import interdigital_capacitance_f
+    from rfauto.core.synthesis import ModelSynthesisResult
+
+    def synthesize_interdigital_cap_model(
+        c_target_ff: float = 174.1, n_fingers: int = 24, wf_um: float = 5.0,
+        sf_um: float = 5.0, e_tip_um: float = 15.0, t_um: float = 3.0,
+        h_mm: float = 0.1, er: float = 12.9, tan_d: float = 0.0006,
+        **_: Any,
+    ) -> ModelSynthesisResult:
+        """interdigital_cap spec 综合入口：c_target_ff → lf_um 二分反解
+        （确定性内核，只组装零数值；侧壁主项 C∝l_c 单调增）。"""
+        if not (float(c_target_ff) > 0.0):
+            raise ValueError(f"c_target_ff 须为正，收到 {c_target_ff!r}")
+        n = int(n_fingers)
+        if n < 2 or n % 2 != 0:
+            raise ValueError(
+                f"interdigital_cap: n_fingers 须为 ≥2 偶数，收到 {n_fingers!r}")
+        wf_m, sf_m, e_m = (float(wf_um) * 1e-6, float(sf_um) * 1e-6,
+                           float(e_tip_um) * 1e-6)
+        c_target_f = float(c_target_ff) * 1e-15
+        # lf bracket：侧壁主项 C∝l_c 线性 → 宽档 bracket 必含目标
+        eps_eff = 0.5 * (1.0 + float(er))
+        lo = e_m + 2.0 * (wf_m + sf_m)   # l_c ≥ 2·pitch（Greenhouse 域）
+        hi = 80.0 * max(wf_m, sf_m)
+        c_lo = float(interdigital_capacitance_f(
+            n, lo, wf_m, sf_m, float(t_um) * 1e-6, float(er),
+            e_tip_m=e_m)["c_f"])
+        c_hi = float(interdigital_capacitance_f(
+            n, hi, wf_m, sf_m, float(t_um) * 1e-6, float(er),
+            e_tip_m=e_m)["c_f"])
+        if not (c_lo <= c_target_f <= c_hi):
+            raise ValueError(
+                "interdigital_cap: 综合不可行（目标 "
+                f"{float(c_target_ff):.4g}fF 出 bracket "
+                f"[{c_lo * 1e15:.4g}, {c_hi * 1e15:.4g}]fF——"
+                "增减 n_fingers/wf_um 或 er）")
+        c_mid = c_lo
+        for _ in range(200):
+            mid = 0.5 * (lo + hi)
+            c_mid = float(interdigital_capacitance_f(
+                n, mid, wf_m, sf_m, float(t_um) * 1e-6, float(er),
+                e_tip_m=e_m)["c_f"])
+            if c_mid < c_target_f:
+                lo = mid
+            else:
+                hi = mid
+        lf_m = 0.5 * (lo + hi)
+        rel_err = abs(c_mid - c_target_f) / c_target_f
+        params: dict[str, Any] = {
+            "n_fingers": n, "lf_um": round(lf_m * 1e6, 4),
+            "wf_um": round(float(wf_um), 4), "sf_um": round(float(sf_um), 4),
+            "e_tip_um": round(float(e_tip_um), 4),
+            "h_mm": round(float(h_mm), 4),
+            "er": round(float(er), 4), "tan_d": round(float(tan_d), 4),
+        }
+        assert set(params) == set(INTERDIGITAL_CAP_NOMINAL)
+        f0_ghz = 2.0
+        recipe_draft = {
+            "model": "interdigital_cap",
+            "recipe_version": 1,
+            "schema_version": 1,
+            "params": {k: {"value": v} for k, v in params.items()},
+            "setup": {"solver": "openEMS",
+                      "freq_range_ghz": [0.1, 10.0],
+                      "points": 201},
+            "objectives": [],
+        }
+        return ModelSynthesisResult(
+            model="interdigital_cap",
+            goal={"c_target_ff": round(float(c_target_ff), 6),
+                  "c_realized_ff": round(c_mid * 1e15, 6),
+                  "lf_um": params["lf_um"], "note_f0_ghz": f0_ghz,
+                  "eps_eff_used": round(eps_eff, 6)},
+            params=params,
+            recipe_draft=recipe_draft,
+            notes=[
+                f"C_target={float(c_target_ff):.4g}fF → lf="
+                f"{params['lf_um']}μm 二分反解（core/ipc_cap 侧壁主项 "
+                f"C∝l_c 单调增，回代相对差 {rel_err:.2e}）",
+                "objectives 留空如实：串联口径 S21 无谐振谷（SRF 处为串联"
+                "谐振过零），优化目标待真机批按 C 提取指标定义",
+                "fake=一阶集总电容（侧壁 sum-of-capacitances ±50% 精度类+"
+                "R_s/L_s 串联寄生，未标定如实声明）；质量门 C±50%/SRF>2×f0 "
+                "走 CALC interdigital_capacitance",
+            ],
+        )
+
+    register_template_spec(TemplateSpec(
+        name="interdigital_cap",
+        meta=dict(TEMPLATE_META["interdigital_cap"]),
+        synthesizer=synthesize_interdigital_cap_model,
+        physics_roles={},
+        render_script=partial(render_script, "interdigital_cap"),
+        fake_model=_interdigital_cap_sparams,
+        hfss_plugin=None,
+    ))
+
+
 def _register_mmwave_series_array() -> None:
     """§MMWAVE_SERIES_ARRAY 串馈毫米波阵（2026-09-26 df7 C10d，文末注册块）：
     汽车雷达 76-81GHz 行波串馈贴片阵（f0=78GHz、N=4、链末匹配集总负载到地）。
@@ -2337,7 +2646,7 @@ def _register_mmwave_series_array() -> None:
     MMWAVE_SERIES_NOMINAL 再生口径一致），本处只组装零数值（#154 角色映射
     只收语义确定键：h_mm=板厚/er/tan_d/n_elem/feed_margin_mm/load_r_ohm
     无词表条目按名直读同义）。hfss_plugin=None；真机预算预声明
-    runs/df7_c10d/criteria.md §d（本批零发射）。"""
+    内部证据档 §d（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _mmwave_series_sparams
     from rfauto.adapters.openems_templates import (
         MMWAVE_SERIES_NOMINAL,
@@ -2505,6 +2814,10 @@ def bootstrap_template_specs() -> None:
         # SIW 族 ×2 → 文末注册块 ×2
         "siw", "msl_siw_taper",
         _register_coil_nfc,
+        _register_octagonal_spiral,
+        # aurora_k K12 电容族 ×2（反馈 F1：MIM 平行板/叉指 IDC 闭式锚）
+        _register_mim_cap,
+        _register_interdigital_cap,
         _register_mmwave_series_array,
         # §VI-3 W2-B spec 补齐 ×4（批①线/波导 9 + 批②辐射/超表面 8 +
         # 批③滤波/功分/移相 5 = 22 件；注册序=批内表序）

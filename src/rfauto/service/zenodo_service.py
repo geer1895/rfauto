@@ -2,7 +2,7 @@
 
 规格=docs/research_expansion_20261002_round16.md §四 PR-11："填 CITATION.cff+
 Zenodo 集成（.zenodo.json+概念 DOI，release 自动归档）"。本模块承担**纯元
-数据面**（AGENTS 规则 4：JSON 进出，CLI/MCP 薄壳）：
+数据面**（内核立规注记 规则 4：JSON 进出，CLI/MCP 薄壳）：
 
 - :func:`export_zenodo_metadata`：读 CITATION.cff（Citation File Format
   1.2.0，YAML）→ 组装 Zenodo deposit 元数据 dict（upload_type=software、

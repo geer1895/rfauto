@@ -1,6 +1,6 @@
 """campaign_queue_daemon：campaign 排队执行的后台常驻进程面（UX-B7，2026-10-08）。
 
-登记语义（交接书尾程项 11，UX-B6/E62 之上的第三块）：**发射后不等**——
+登记语义（开发接续说明尾程项 11，UX-B6/E62 之上的第三块）：**发射后不等**——
 常驻轮询队列、按资源日历窗与许可预检逐项发射、状态可查。本模块承担：
 
 - **tick 单步纯函数**（:func:`queue_tick`）：读队列→日历窗判定→license
@@ -1408,7 +1408,7 @@ def run_queue_daemon(
                        "status": queue_status_view(state),
                        "state_path": str(sp)}
             if log is not None:
-                # 结构化 tick 流（dict 载荷：渲染归调用方——AGENTS 前端只
+                # 结构化 tick 流（dict 载荷：渲染归调用方——内核立规注记 前端只
                 # 渲染口径；log 抛异常不拆循环，#105 观测面不阻塞主路径）
                 with contextlib.suppress(Exception):
                     log(dict(emitted))

@@ -12,7 +12,7 @@ params:
   spacing_x_mm: 25.0172
   feed_w_mm: 1.112
 status: ok
-script_sha256: 629f9c299c60a5f6d9471a0c8079f9e65e2f6670dd032afffdff092b9606b60f
+script_sha256: 5045294433b05027251130c223bcf96b0f6439a32b39c1089fade7968056f610
 csx:
   n_primitives: 30
   props:

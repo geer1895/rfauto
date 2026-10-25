@@ -3,31 +3,31 @@
 物理裁判：WP1.2 mline harness（scripts/engine_benchmark_mline.py）范式的
 四锚扩容——引擎升级/换机/模板迁移后重跑本脚本，判据内核
 core/anchor_benchmark（纯函数，与 smoke 脚本逐门对齐），结果逐锚入库
-runs/benchmark/<anchor>_engine_benchmark.json。
+内部证据档<anchor>_engine_benchmark.json。
 
 两种模式（可同跑）：
 1. --ingest {ratrace|atten_pi|atten_t|via|all}：离线读 runs/*_smoke
    归档（只读，禁重跑覆写），经判据内核入账：
-   - ratrace  runs/ratrace_smoke/pt9（ratrace.s4p 经 skrf + p1/
-     port_beta.csv 单 β；solve 2989s 归档，定版主产物）
+   - ratrace  内部证据档（ratrace.s4p 经 skrf + p1/
+     port_beta.csv 单 β；solve 2989s 归档，开发注记（一百零三）定版主产物）
    - atten_pi runs/atten_pi_smoke/pt2（sparams.csv+port_beta.csv；pt3
      缓存复用 port_beta 缺失坏点弃用；匹配门 −12dB=商用 lumped 地板，
-     §3 校准记录）
+     开发注记（五）§3 校准记录）
    - atten_t  runs/atten_t_smoke/pt1（同格式）
-   - via      runs/via_smoke/pt3（双 β 列；β1 顶馈单判、β2 仅诊断
-     real_modal_difference，/2026-09-09（四）#203 pt3；
-     互易 sparams.csv 无 S22 列不可复算，引 :5122 归档转录
+   - via      内部证据档（双 β 列；β1 顶馈单判、β2 仅诊断
+     real_modal_difference，开发注记（七十六）/2026-09-09（四）#203 pt3；
+     互易 sparams.csv 无 S22 列不可复算，引 开发注记:5122 归档转录
      0.000dB，source=archive_log）
 2. --msl-cpw：openEMS 真机补跑唯一缺档锚（runs/ 无任何 msl_cpw 归档），
    synthesize_msl_cpw_model 名义参数经 OpenEMSSolver.build_geometry
    直接渲染（msl_cpw 有意不入 TEMPLATE_META——additive 未注册，
    test_msl_cpw_template.test_additive_not_registered 钉死；注册四件套
    归 wp25 项，本脚本严禁注册），家族口径 mesh 0.4mm、(2.25,2.75)GHz、
-   solve_timeout 36000，working_dir runs/benchmark/msl_cpw_m0.4。
+   solve_timeout 36000，working_dir 内部证据档。
    同族单档时长预算：cpw 88s/atten_t 383s/via 623s → ≤30min。
 
 provenance 惯例：归档路径 + mesh 0.4 + 门常量 + gate_version + 旧日志
-判定与现门判定并列（引  门校准依据）；HJ/CPWG 参考值一律运行时
+判定与现门判定并列（引 开发注记 门校准依据）；HJ/CPWG 参考值一律运行时
 经 core/synthesis 闭式计算，不硬编码（铁律 7）。
 """
 import argparse
@@ -238,7 +238,7 @@ def ingest_atten(anchor: str, work_rel: str, old_gate: dict) -> Path:
             "old_gate_verdict": old_gate,
             "gate_calibration":
                 "匹配门 −12dB=商用 lumped 衰减模块回损规格地板（典型 12~18dB"
-                "口径），原 −20 门经 pt2 真机校准落地， 2026-09-09"
+                "口径），原 −20 门经 pt2 真机校准落地，开发注记 2026-09-09"
                 "（五）§3 匹配门校准记录；|S21| 带内 mean 平坦均值语义 #195",
             "note": "四锚公共口径 mesh=0.4mm 收敛档（引擎基准曲线判读）"}})
     return _write(anchor, out)
@@ -247,7 +247,7 @@ def ingest_atten(anchor: str, work_rel: str, old_gate: dict) -> Path:
 def ingest_atten_pi() -> Path:
     return ingest_atten("atten_pi", "runs/atten_pi_smoke/pt2", {
         "verdict": "FAIL→现门 PASS", "source": "devlog",
-        "path": ".md 2026-09-09（五）§3",
+        "path": "开发注记.md 2026-09-09（五）§3",
         "note": "冒烟控制台 FAIL 系旧 −20 匹配门（实测带内 −13.4dB 未过）；"
                 "现门 −12dB 商用 lumped 地板下现判定 PASS。pt3 为缓存复用致 "
                 "port_beta.csv 缺失坏点，弃用（本 harness 取 pt2）"})
@@ -275,7 +275,7 @@ def ingest_via() -> Path:
     eps_hj = _eps_hj_feed()
     delta1 = (eps1 / eps_hj - 1.0) * 100.0
     delta2 = (eps2 / eps_hj - 1.0) * 100.0
-    recip = 0.0  # sparams.csv 无 S22 列不可复算；:5122 归档转录
+    recip = 0.0  # sparams.csv 无 S22 列不可复算；开发注记:5122 归档转录
 
     bench = via_benchmark_verdict(delta1, s11_max, s21_mean, recip, delta2,
                                   s21_lin_band_max=s21_band_max)
@@ -316,18 +316,19 @@ def ingest_via() -> Path:
                 " --ingest via",
             "old_gate_verdict": {
                 "verdict": "FAIL→现门 PASS", "source": "devlog",
-                "path": ".md 2026-09-09（四）#203 pt3（:5122 转录）",
+                "path": "开发注记.md 2026-09-09（四）#203 pt3（:5122 转录）",
                 "note": "冒烟控制台 FAIL 系 β2 +10.93% 旧双馈 ±2% 门；"
-                        "/1.0491 分解段定征 β2="
+                        "开发注记（七十六）/1.0491 分解段定征 β2="
                         "real_modal_difference（倒置馈 CalcPort 提取污染），"
                         "现门 β1 顶馈单判、β2 仅诊断（smoke_via_anchor.py"
                         ":82 同口径）→ 现判定 PASS"},
             "recip_provenance":
                 "互易 |mean S11−mean S22|=0.000dB：sparams.csv 列仅 "
-                "freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 "
+                "freq_hz,re/im_S11,re/im_S21 无 S22，不可复算；引 开发注记"
                 ":5122 归档转录，source=archive_log",
             "gate_calibration":
-                "β1 单判（β2=real_modal_difference 不设门），与 2026-09-09（四）#203 pt3 定征；传输门 20260918a "
+                "β1 单判（β2=real_modal_difference 不设门），开发注记（七十"
+                "六）与 2026-09-09（四）#203 pt3 定征；传输门 20260918a "
                 "增补无源上界 |S21| 带内 max ≤1.02（R2-A-01 审查，与 "
                 "msl_cpw 20260915b 同构；归档 401 点带内 max 0.9503 "
                 "全部 ≤1.02，判定零翻转）",
@@ -403,7 +404,7 @@ def run_msl_cpw() -> Path:
 
 def ingest_msl_cpw(wall_s: float | None = None,
                    repro: dict | None = None) -> Path:
-    """判读入账 runs/benchmark/msl_cpw_m0.4 真跑产物（只读工作目录，零求解）。
+    """判读入账 内部证据档 真跑产物（只读工作目录，零求解）。
 
     与四离线锚同范式：门重标定后可 --msl-cpw-ingest 复判而不重解。
     wall_s/repro 由求解步传入；纯复判时从既有 JSON 结转（缺则 None）。

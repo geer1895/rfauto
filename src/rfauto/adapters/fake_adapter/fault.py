@@ -1,6 +1,6 @@
 """fake_adapter.fault —— 故障注入配置（FaultInjection）。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：代码体自原节「故障注入配置」逐字节搬迁，零逻辑改动。
 """
 

@@ -92,7 +92,7 @@ rfauto dag run runs/demo/dag_tutorial/plan.json \
   done         render
   done         solve
   done         judge
-  期刊: runs\aurora_d\tut\dag_demo_run\dag.state.json
+  期刊: runs\demo\tut\dag_demo_run\dag.state.json
 ```
 
 `--solve-lock` 显式指定互斥锁路径（缺省=runs 家族锁 `runs/.oe_collect.lock`
@@ -228,7 +228,7 @@ inconclusive（跑完但证据不可判；产物留盘不写 manifest/不入索�
 - 失败（执行族）≠ inconclusive（判定族）≠ skipped（策略族）：三态分别
   记录，verdict 消费面不引入新态；
 - solve 节点必过 #261 互斥；同机并发求解是性能坑不是功能（#246）；
-- 长跑真机节点：后台分离+日志轮询+watchdog 超时给足（AGENTS #157）。
+- 长跑真机节点：后台分离+日志轮询+watchdog 超时给足（内核坑条 #157）。
 
 ## 下一步
 

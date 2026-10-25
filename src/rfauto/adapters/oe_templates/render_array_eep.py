@@ -540,7 +540,7 @@ EEP_META: dict[str, dict[str, Any]] = {
         "extraction": "整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 "
                       "进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv"
                       "（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档"
-                      "判据 J4 见 内部证据档",
+                      "判据 J4 见 runs/df6_dp4p3/criteria.md",
         "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
         "params": ["elem_len_mm", "elem_w_mm", "elem_feed_mm", "spacing_x_mm",
                    "spacing_y_mm", "feed_w_mm"],
@@ -558,7 +558,7 @@ EEP_META: dict[str, dict[str, Any]] = {
         "extraction": "整 4×4 S @ LumpedPort 1-4（单激励 9 列 CSV，excite_port=1..4 "
                       "进程隔离轮转装配 → .s4p，#208）+ EEPₙ @ farfield3d_cplx.csv"
                       "（far_field=True，f_res=F0 固定口径，轮间同频可叠加）；互耦档"
-                      "判据 J4 见 内部证据档",
+                      "判据 J4 见 runs/df6_dp4p3/criteria.md",
         "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
         "params": ["elem_len_mm", "elem_w_mm", "elem_feed_mm", "spacing_x_mm",
                    "feed_w_mm"],

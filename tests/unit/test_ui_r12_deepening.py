@@ -498,17 +498,20 @@ class TestCssAuditSource:
         # --text-xs 11px、--text-sm 13px、--radius-xs/sm/md 6/8/12px）
         # 人性化三批（2026-10-19）：--text-xs 7→9（view_agent 指令摘要气泡
         # 两处新增同款令牌用法——详情折叠 summary 与 JSON pre 字号）。
+        # aurora_l Wave-C C2（2026-10-23）：--radius-sm 1→3 + padding
+        # space-2×space-3 2→4（freshness 红条/灰条两处告警条——与
+        # view_reports 口径警示条同款令牌形态，view_detail.js）。
         assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 9
         assert len(re.findall(r'font-size:var\(--text-sm\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'border-radius:var\(--radius-xs\)(?=["\';}])', _UNION)) == 4
-        assert len(re.findall(r'border-radius:var\(--radius-sm\)(?=["\';}])', _UNION)) == 1
+        assert len(re.findall(r'border-radius:var\(--radius-sm\)(?=["\';}])', _UNION)) == 3
         assert len(re.findall(r'border-radius:var\(--radius-md\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'margin:var\(--space-2\) 0 2px', _UNION)) == 2
         assert len(re.findall(r'margin:var\(--space-2\) 0(?=["\';}])', _UNION)) == 5
         assert len(re.findall(r'padding:var\(--space-1\) 0(?=["\';}])', _UNION)) == 2
         assert len(re.findall(r'margin:var\(--space-1\) 0(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'margin-bottom:var\(--space-3\)(?=["\';}])', _UNION)) == 3
-        assert len(re.findall(r'padding:var\(--space-2\) var\(--space-3\)', _UNION)) == 2
+        assert len(re.findall(r'padding:var\(--space-2\) var\(--space-3\)', _UNION)) == 4
         assert len(re.findall(r'gap:var\(--space-2\)(?=["\';}])', _UNION)) == 5
         # 旧字面归零（被替换的 (属性,值) 组合不得回潮）
         for stale in ("font-size:11px", "font-size:13px", "border-radius:6px",

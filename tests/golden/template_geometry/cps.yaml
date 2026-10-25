@@ -10,7 +10,7 @@ params:
   gap_mm: 0.5
   line_len_mm: 40.0
 status: ok
-script_sha256: 64a99644bba2ddea72ca3bc32a7c2b6afe4e2001f3c7ad76c0487668fd785098
+script_sha256: 098c535acffccb8320f9e643a19c422f2302d03df33665f151b0d98a35499299
 csx:
   n_primitives: 10
   props:

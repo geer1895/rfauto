@@ -230,3 +230,66 @@ class TestQuizBank:
         # ratrace meta r_ring_mm=17.344（周长=2πR≈108.97mm@2.5GHz）
         r = ts.check_answer("Q-RATRACE-RING", 2 * math.pi * 17.344)
         assert r["correct"] is True
+
+    # ── R1 #19：三新模板族入题库（octagonal_spiral/mim_cap/interdigital_cap）──
+
+    def test_new_family_cards_present_and_count_sync(self):
+        ids = {q["id"] for q in ts.QUIZ_BANK}
+        assert {"Q-OCTA-L", "Q-MIM-C", "Q-IDC-C"} <= ids
+        # 卡数计数同步：旧族 9 + 新族 3 = 12
+        assert len(ts.QUIZ_BANK) == 12
+
+    def test_quiz_sources_grounded(self):
+        # 出处接地（quiz 面）：凡声称的仓内指针必须真实存在——core/ 斜杠
+        # 形式→模块文件 is_file（K19 修法：斜杠形式可被正则捕获且文件
+        # 真实存在；点分 core.calc_families 形态不进正则，禁用）；三新族卡
+        # 必须各含 ≥1 仓内指针（铁律 7：不接受 LLM 自编出处）
+        import re
+
+        new_ids = {"Q-OCTA-L", "Q-MIM-C", "Q-IDC-C"}
+        for q in ts.QUIZ_BANK:
+            src = q["source"]
+            pointers = 0
+            for doc in _GROUNDING_FILES:
+                if doc in src:
+                    pointers += 1
+            for token in re.findall(r"(core/[A-Za-z0-9_.]+)", src):
+                rel = token if token.endswith(".py") else token.split(".")[0] + ".py"
+                assert (REPO / "src" / "rfauto" / rel).is_file(), (q["id"], token)
+                pointers += 1
+            for meta_path in re.findall(r"(docs/templates/[a-z0-9_]+/meta\.yaml)", src):
+                assert (REPO / meta_path).is_file(), (q["id"], meta_path)
+                pointers += 1
+            if q["id"] in new_ids:
+                assert pointers >= 1, (q["id"], src)
+
+    def test_octagon_l_matches_template_nominal(self):
+        # octagonal_spiral meta 名义档 L=4.1147nH（n=5、d_in=80、W=10、S=5μm
+        # →d_out=220μm）；内核现算与 meta nominal_derivation 同链
+        r = ts.check_answer("Q-OCTA-L", 4.1147)
+        assert r["correct"] is True
+        # 参数覆盖改变期望值（题面参数化、答案现算）
+        r2 = ts.check_answer("Q-OCTA-L", 4.1147, params={"n_turns": 6})
+        assert r2["expected"] > r["expected"]  # n² 主项单调
+
+    def test_mim_cap_matches_template_nominal(self):
+        # mim_cap meta 名义档 C=132.8128fF（20×20μm、d=0.2μm、εr=7.5；
+        # 独立手算：ε0·7.5·400μm²/0.2μm——ε0 取 8.854187817e-12（ipc_cap
+        # 常数口径）；内核 _EPS0=1/(μ0c²) 与之差 <1e-10 相对，绝对门放宽）
+        expect = 8.854187817e-12 * 7.5 * (20e-6 * 20e-6) / 0.2e-6 * 1e15
+        r = ts.check_answer("Q-MIM-C", expect)
+        assert r["correct"] is True
+        assert abs(r["expected"] - expect) <= 1e-6  # ε0 常数尾数口径差
+        # meta nominal_derivation 名义档（4 位小数引用口径）
+        assert abs(r["expected"] - 132.8128) < 1e-3
+
+    def test_idc_cap_matches_template_nominal(self):
+        # interdigital_cap meta 名义档 C=174.09fF（N=24、l_c=220−15=205μm、
+        # s=5μm、t=3μm、εeff=(1+12.9)/2=6.95；用户实测 173.5fF 同量级参考）
+        expect = 23 * 8.8541878128e-12 * 6.95 * 3e-6 * 205e-6 / 5e-6 * 1e15
+        r = ts.check_answer("Q-IDC-C", expect)
+        assert r["correct"] is True
+        assert abs(r["expected"] - 174.09) < 0.01
+        # 尖部外伸不产生相邻缝：e_tip 增大 → l_c 减小 → C 减小（负通道）
+        r2 = ts.check_answer("Q-IDC-C", expect, params={"e_tip_um": 25.0})
+        assert r2["expected"] < r["expected"]

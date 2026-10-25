@@ -1,6 +1,6 @@
-"""rm-hfss-mapes-g0m：HFSS 逐口 m 规范仲裁（sref 剩余互易底，TODO ⑥）。
+"""rm-hfss-mapes-g0m：HFSS 逐口 m 规范仲裁（sref 剩余互易底，待办清单 ⑥）。
 
-预声明：runs/hfss_mapes_m_arb/criteria.md（先于任何真跑写死，判读常量
+预声明：内部证据档（先于任何真跑写死，判读常量
 不许跑后改）。模板：scripts/hfss_mapes_g0_arbitration.py（结构构建/负载
 接法/判读链照抄改造；被仲裁口=lumped_port 50Ω，其余 149 口（含 io 两口）
 全部 50Ω RLC 负载——与 openEMS 每轮"单激励+全 50Ω 端接"同端接语义）。

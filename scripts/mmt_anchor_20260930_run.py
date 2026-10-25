@@ -1,6 +1,6 @@
 """ME-5 MMT 销钉/谐振窗 HFSS 仲裁锚（T14）——sim_host 远程发射驱动。
 
-判据预声明：runs/mmt_anchor_20260930/criteria.md（先写后跑，#122）。
+判据预声明：内部证据档（先写后跑，#122）。
 三设计（WR-90，Driven Modal，模态基 renormalize=False）：ma_straight
 （直段 40mm 互洽锚）/ ma_post（居中感性销钉 r=1.0mm@10GHz）/ ma_window
 （零厚谐振窗孔 13.916189×3.0mm，f_res_est=10.000GHz）。
@@ -16,7 +16,7 @@ sftp 回拉 → finally release + remote_hfss_cleanup（:50051: 指纹精确杀
 +删 schtasks，不代杀）→ hfss_run.json 落档。
 
 真机 opt-in：RFAUTO_REMOTE_SMOKE=1（unit 门内一律拒绝）。
-运行（分离进程 #157/#242）：见 runs/mmt_anchor_20260930/launch.ps1。
+运行（分离进程 #157/#242）：见 内部证据档。
 """
 from __future__ import annotations
 

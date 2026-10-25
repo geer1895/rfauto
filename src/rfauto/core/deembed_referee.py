@@ -4,7 +4,7 @@
 ------------------
 自研去嵌链 ``core/deembed.py`` 是参考面/理想线去嵌（几何先验驱动），本模块
 **不替换它**，而是给它配一条独立第三方对照路（IEEEP370 2x-thru 夹具去嵌，
-skrf 2.1.0 ``skrf.calibration.deembedding`` 实现，runs/df6_a3/skrf2x_audit.md
+skrf 2.1.0 ``skrf.calibration.deembedding`` 实现，内部证据档
 审计：该类不在 ``skrf.calibration`` 顶层）并输出逐频连续差（s_error 口径）：
 
 - 自研路：``extract_line_gamma``（identity/thru 差分提 γ）→
@@ -14,7 +14,7 @@ skrf 2.1.0 ``skrf.calibration.deembedding`` 实现，runs/df6_a3/skrf2x_audit.md
 
 DC 预处理（规格书坑预声明）：P370 内部 IFFT/时域剥离对带限合成网络缺 DC
 敏感，裁判面缺省做 ``extrapolate_to_dc``（可选 "add_dc" / None）。2026-09-24
-实测（runs/df6_dp15c2/criteria.md §0.2）：在 IEEE370 合规语料上三模式无差
+实测（内部证据档 §0.2）：在 IEEE370 合规语料上三模式无差
 异（坑未显现，守卫保留）；窄带违规语料（2x-thru<3λg）失效主因是 3λg 条件
 本身，DC 预处理救不回。
 

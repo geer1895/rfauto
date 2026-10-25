@@ -117,7 +117,8 @@
   "edb",
   "recast",
   "rest",
-  "templates"
+  "templates",
+  "em"
  ],
  "leaf_paths": [
   "rfauto doctor",
@@ -196,6 +197,7 @@
   "rfauto surrogate uq",
   "rfauto runs compare",
   "rfauto runs health",
+  "rfauto runs verify",
   "rfauto runs diff",
   "rfauto runs compare-batch",
   "rfauto runs watch",
@@ -393,8 +395,13 @@
   "rfauto recast status",
   "rfauto recast replay",
   "rfauto rest schema",
-  "rfauto templates golden-diff"
+  "rfauto templates golden-diff",
+  "rfauto em doctor",
+  "rfauto em deembed",
+  "rfauto em metrics",
+  "rfauto em sweep",
+  "rfauto em diff"
  ],
- "n_leaves": 274,
- "n_top": 118
+ "n_leaves": 280,
+ "n_top": 119
 }

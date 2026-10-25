@@ -405,7 +405,7 @@ wall = CSX.AddMetal("horn_wall")
 # ── 端口：RectWGPort 解析 TE10（Pozar 模式函数，绑定自算 kc=π/a_phys）──
 # COMPAT 簇4（上游 2026-05 端口重写 9527f81/efc90db）：安装栈探针
 # ModeOrigin 序列化错位 (x,y,z)->(0,x,y) 致探针权重与被激励模式正交
-# （uf_tot≡0、S11≡−1；复现 内部证据档），构造后
+# （uf_tot≡0、S11≡−1；复现 runs/seat1_rectwg/repro_rectwg.py），构造后
 # _wg_probe_refit 把角点偏移改回模式函数内联（根因见
 # oe_templates/wg_port_compat.py）。
 # 绑定参数序：a=第一横向轴（exc_dir=y 时=z）、b=第二横向轴（=x）；本喇叭

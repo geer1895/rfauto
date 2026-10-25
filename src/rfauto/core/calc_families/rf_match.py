@@ -7,7 +7,7 @@
   衰减器（Pozar 衰减器节经典口径；#118 双源=经典 10dB/50Ω pad 表值+
   测试内第二实现，tests/unit/test_x5_analytic_anchors 在档）。
 - patch_length：ΔL 单源=core/synthesis.patch_fringing_delta_l；系数
-  0.824 终裁=XA-1 仲裁（runs/xa1_arbitration 2026-10-02，INCONCLUSIVE
+  0.824 终裁=XA-1 仲裁（内部证据档 2026-10-02，INCONCLUSIVE
   维持现行口径如实登记，R1-2 审查批注记）。
 """
 
@@ -162,20 +162,20 @@ def patch_length(f0_ghz: float, epsilon_r: float, h_mm: float) -> dict:
     """矩形贴片谐振长度（Balanis W/εeff 闭式 + Hammerstad 边缘修正）。
 
     **总扣口径=4ΔL**（三副本一致，历史仲裁 INCONCLUSIVE 在档
-    runs/xa1_arbitration/；语义终裁挂 L5 v2 批，见
-    runs/xa1_arbitration/l5_sweep/criteria.md §一）：本函数 L =
+    内部证据档；语义终裁挂 L5 v2 批，见
+    内部证据档 §一）：本函数 L =
     c/(2f0√εeff) − 2·dL，其中 dL=两边缘合计（2×0.412 每边缘，Hammerstad
     单源 patch_fringing_delta_l；数值上=旧 0.824h(…) 常数）⇒ 总扣 4ΔL。
     所引 Balanis/本仓 docs/rf_template_references.md §13 字面为 −2ΔL，与
     实现 4ΔL 的矛盾即 0.824 终裁本体——出处标签如实登记，数值零改动
-    （R1-2 审查批注记 2026-10-04，runs/review_ge8e/r1_calculators/REPORT.md）。
+    （R1-2 审查批注记 2026-10-04，内部证据档）。
     """
     w_mm = C_MM_GHZ / (2.0 * f0_ghz) * math.sqrt(2.0 / (epsilon_r + 1.0))
     eps_eff = ((epsilon_r + 1.0) / 2.0
                + (epsilon_r - 1.0) / 2.0 * (1.0 + 12.0 * h_mm / w_mm) ** -0.5)
     # d_l = 两边缘合计（2×0.412 每边缘，Hammerstad 单源 patch_fringing_delta_l；
     # 数值上=旧 0.824h(…) 常数），L 再 ×2 ⇒ 总扣 4ΔL——XA-1/PV-016 仲裁
-    # INCONCLUSIVE 维持现行口径（2026-10-02，runs/xa1_arbitration/）。
+    # INCONCLUSIVE 维持现行口径（2026-10-02，内部证据档）。
     d_l = 2.0 * patch_fringing_delta_l(w_mm * 1e-3, h_mm * 1e-3, eps_eff) * 1e3
     l_mm = C_MM_GHZ / (2.0 * f0_ghz * math.sqrt(eps_eff)) - 2.0 * d_l
     return {"patch_w_mm": round(w_mm, 4), "eps_eff": round(eps_eff, 4),

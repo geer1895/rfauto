@@ -381,7 +381,7 @@ class TestPlanImmutability:
             runner.build_plan(root, force=True)
 
     def test_registered_nominal_matches_redesign_doc(self):
-        """真面一致性钉（R2 df5-c3fix 改当轮口径；架构批 W6-S4 sir_bpf 名义
+        """真面一致性钉（R2 df5-c3fix 改当轮口径；aurora_g W6-S4 sir_bpf 名义
         重注册同笔更新）：TEMPLATE_NOMINAL 与各自注册口径设计链再生名义
         4 位舍入一致（经 doc 参数注入，脱 runs/ 存档依赖）——interdigital/
         combline 注册名义=过孔补偿链 l_via_h=None（auto=C3_L_VIA_CAL_H，

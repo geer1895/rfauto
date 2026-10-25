@@ -1,4 +1,4 @@
-"""DP-15 C2 件1+件2：2x-thru 双路去嵌裁判 + s_error 包装（runs/df6_dp15c2/criteria.md）。
+"""DP-15 C2 件1+件2：2x-thru 双路去嵌裁判 + s_error 包装（内部证据档）。
 
 判据预声明（§1/§2）：理想匹配线合成语料 G1–G3 < 1e-6；s_error 恒等=0/已知
 缩放=解析值逐位；ZC opt-in 不设门只记结构；skrf 版本钉 2.1.0。

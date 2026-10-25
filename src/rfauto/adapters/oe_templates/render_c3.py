@@ -125,7 +125,7 @@ _MU0_H_PER_M = 4.0e-7 * math.pi  # 真空磁导率（Goldfarb-Pucel 系数 μ0/2
 # _audit2/audit2_evidence.json：θ(2.60)=1.5350、ωL=1.953Ω@2.60GHz）取区间中点
 # 0.125nH——内核立规注记 2026-09-08 立规"HFSS 为对齐基准"。Goldfarb-Pucel 闭式
 # （c3_via_inductance_h，0.29596nH）对"连续 PEC 地面上粗短过孔"高估 2.2–2.5×
-# （SC 内部证据档 次根因），降级为文献公式保留；OE 反解
+# （SC runs/df5_c3_mapping/verdict.json 次根因），降级为文献公式保留；OE 反解
 # ≈0.20nH 与 HFSS 的差异如实登记为跨引擎发现（OE 哨预期承载，不进定值）。
 C3_L_VIA_CAL_H = 0.125e-9
 C3_TEMPLATES: tuple[str, ...] = ("interdigital", "combline", "sir_bpf")
@@ -1333,7 +1333,7 @@ SIR_BPF_META: dict[str, Any] = {
                        "=馈线宽（50Ω HJ），w_low_mm/w_high_mm=低阻/高阻段宽"
                        "（须 w_low>w_high），l_low_mm/l_high_mm=低阻/高阻段物理"
                        "长（l_low 已减开路端 Δl，裁判以等效长度回代；l_high 名义"
-                       "值=理想短路口径 7.1055mm，架构批 W6-S4 名义重注册"
+                       "值=理想短路口径 7.1055mm，aurora_g W6-S4 名义重注册"
                        "（R3 审计处方）；render 通道过孔补偿走 l_via_h 锚运行时"
                        "行为：t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，接地端过孔"
                        "缩短，非名义档），gaps_mm"
@@ -1350,7 +1350,7 @@ SIR_BPF_NOMINAL: dict[str, Any] = {
     "w_low_mm": 1.8944,
     "w_high_mm": 0.6144,
     # 低阻段电长 6.7941 − Δl(w_low)=0.2222 → 物理 6.5719；高阻段电长 7.1055
-    # （接地端无 Δl）。名义重注册（架构批 W6-S4，2026-10-19，R3 审计处方
+    # （接地端无 Δl）。名义重注册（aurora_g W6-S4，2026-10-19，R3 审计处方
     # 「解锁性最高」项）：旧注册档 6.7818=理想短路 7.1055 − 登记⑨+R1 校准
     # 0.125nH 过孔缩短 0.3237（t2=(Z_lo−Z_hi t1 x)/(Z_hi t1+Z_lo x)，
     # θ2c=0.587437 rad）——过孔补偿是 render 通道 l_via_h 锚（c3.l_via_h.

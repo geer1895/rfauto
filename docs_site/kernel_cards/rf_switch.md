@@ -6,7 +6,7 @@
 
 # 内核文档卡：rf_switch
 
-> 射频开关件面（架构批 W2-S6 席域，R2_core_tier3 §③ D8 立项）。
+> 射频开关件面（aurora_f W2-S6 席域，R2_core_tier3 §③ D8 立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 射频开关器件面：PIN 串/并联元件导通/截止两态 S 参数与 cutoff 品质因数、λ/4 并联二极管 SPDT 频响（开关带宽语义）、开关链二态插损/隔离 dB 可加预算与失配纹波界。
 
-模块自述（docstring 首行，机读）：射频开关件面（架构批 W2-S6 席域，R2_core_tier3 §③ D8 立项）。
+模块自述（docstring 首行，机读）：射频开关件面（aurora_f W2-S6 席域，R2_core_tier3 §③ D8 立项）。
 
 ## 公式与口径
 
@@ -108,7 +108,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："射频开关件面（架构批 W2-S6 席域，R2_core_tier3 §③ D8 立项）。"
+- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："射频开关件面（aurora_f W2-S6 席域，R2_core_tier3 §③ D8 立项）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **74** 个 test 函数）：
 

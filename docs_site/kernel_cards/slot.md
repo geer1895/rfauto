@@ -108,7 +108,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `内部证据目录`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："内部规格档（Stevenson 阵综合）"
+- `runs/aurora_c/batch_b_wave3_specs/G16_slot_array_stevenson_RESOLVED.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："边界防撞（R7 §③ 三重搜索证据沿用规格包）"
 - `tests/unit/test_b_wave3_yagi_slot.py`——引文："（锚树 tests/unit/test_b_wave3_yagi_slot.py）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **119** 个 test 函数）：

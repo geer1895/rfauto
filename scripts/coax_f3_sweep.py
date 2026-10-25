@@ -1,8 +1,8 @@
 """coax_waveguide_transition F3 pin_len 五点扫掠驱动（T18 实现席）。
 
-预声明：runs/coax_f3_sweep/launch_ready.md（判据先行，跑后不改 #122）。
+预声明：内部证据档（判据先行，跑后不改 #122）。
 审计锚：docs/audit/oe3_coax_fail_audit_20260929.md §5 F3 +
-runs/oe_phase3/coax_waveguide_transition/verdict_offline_fix.json
+内部证据档
 （修后格局：s21 门 −0.883dB PASS；S11 三门 −7.85/−8.80/−7.77 vs
 −10/−10/−8 边缘 FAIL=调参级）。模板 S21 公式已修（T2 commit b24a0c2，
 uf_inc 透射通道）——本驱动渲染的 sparams.csv 直接可判读。
@@ -19,7 +19,7 @@ core_max ≤−8、s21_f0 ≥−1.5、passive ≤1.05、finite、must_converge�
   oe         五点串行真机（solo 单飞 #246/#261）→ p1..p5/oe_result.json
   judge      跑后判读（零求解）→ sweep_verdict.json + sweep_verdict.md
 
-第二轮收针（T24 预备席；预声明 runs/coax_f3_sweep_round2/launch_ready.md，
+第二轮收针（T24 预备席；预声明 内部证据档，
 判据/选择/停机规则以该档为准，r2 段只做机制实现；T18 三子命令零行为钉）：
   r2dryrender  Stage A 渲染审计+机制彩排+T18 p2 哈希钉 → dryrender.json
   r2oe         两旋钮正交化串行真机（A→b*→B→条件细化）→ sweep_verdict.*
@@ -573,7 +573,7 @@ def cmd_judge(out_root: Path) -> int:
     return 0 if in_window else 1
 
 
-# ── 第二轮收针（T24 预备席 2026-09-29；预声明 runs/coax_f3_sweep_round2/
+# ── 第二轮收针（T24 预备席 2026-09-29；预声明 内部证据档
 #    launch_ready.md——判据/选择/停机规则全部以该档为准，本段只做机制实现）──
 # T18 定案：pin_len 单旋钮到顶（Re 54→91Ω 单调 / Im 容性平坦 −52~−43Ω），最优
 # p2=6.1mm（Z=64.0−j43.2）未进窗。第二轮两旋钮正交化（Smith 直觉）：

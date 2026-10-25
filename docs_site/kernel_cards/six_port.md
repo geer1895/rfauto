@@ -6,7 +6,7 @@
 
 # 内核文档卡：six_port
 
-> 六端口反射计（架构批 W3-S10 席域，R2_core_tier3 §③ D7 立项——
+> 六端口反射计（aurora_f W3-S10 席域，R2_core_tier3 §③ D7 立项——
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 六端口反射计反演架构：功率读数→Γ 最小二乘闭式反演与已知负载→q 点校准常数提取——4 路功率检波干涉法的圆交点反演（桥式检波器件面之外的架构层）。
 
-模块自述（docstring 首行，机读）：六端口反射计（架构批 W3-S10 席域，R2_core_tier3 §③ D7 立项——
+模块自述（docstring 首行，机读）：六端口反射计（aurora_f W3-S10 席域，R2_core_tier3 §③ D7 立项——
 
 ## 公式与口径
 
@@ -105,7 +105,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："架构批 W3-S10 席域，R2_core_tier3 §③ D7 立项"
+- `tests/unit/test_w3s10_agc_calkit_sixport.py`——引文："aurora_f W3-S10 席域，R2_core_tier3 §③ D7 立项"
 
 测试面（tests/unit 引用扫描，机读；合计 **73** 个 test 函数）：
 

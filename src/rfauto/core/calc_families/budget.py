@@ -13,7 +13,7 @@ from .registry import register_calculator
 
 # ─── DP-5 系统级预算引擎 + 混频杂散搜索（payload 在 core/cascade.py）──────────
 # 公式口径/规格书勘误（IIP3 级联式增益落分子）/经验口径标注见 core/cascade.py
-# 模块 docstring 与 runs/df6_dp5cascade/criteria.md §0；回收钉在
+# 模块 docstring 与 内部证据档 §0；回收钉在
 # tests/unit/test_cascade.py（≤1e-12 逐位）。
 
 

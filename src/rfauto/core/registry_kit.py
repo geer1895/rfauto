@@ -1,11 +1,11 @@
 """RegistryKit：name→object 注册表轻量基类（R1 T6 统一脚手架试点）。
 
-背景（内部证据目录 §面5/T6）：全仓 35+ 注册面、
+背景（内部证据档 §面5/T6）：全仓 35+ 注册面、
 20 个 Registry 类里 ``_registry dict + register()/get()/keys()`` 同构
 手写 11 处。本模块把该同构收敛为一个百行级 Generic 基类——注册表
 新增面直接继承/组合本 Kit，不再各写一遍 dict+装饰器样板。
 
-**本体位置（架构批 W2-S3 下沉）**：R1_arch_audit_v3 §5 扩面三件中
+**本体位置（aurora_h W2-S3 下沉）**：R1_arch_audit_v3 §5 扩面三件中
 Calculator（core/calc_families/registry.py）与 Budget（core/error_budget.py）
 两注册表住 core 层——分层契约（.importlinter layers，"core is a stable
 dependency-free leaf"）禁止 core 反向 import infra；Kit 为零第三方依赖的
@@ -45,7 +45,7 @@ dependency-free leaf"）禁止 core 反向 import infra；Kit 为零第三方依
 - 暂不声明 ``__all__``：public_api 金快照口径下无 ``__all__`` 记私有，
   并行合流期不动共享金快照（是否转正公开面由合流席位统一裁定）。
 
-键泛化扩展（架构批 W2-S3，R1 扩面三件）：
+键泛化扩展（aurora_h W2-S3，R1 扩面三件）：
 - ``allow_non_str_keys=True``：键面放开为任意 hashable（EMSolverRegistry
   的 ``dict[EMSolverType, cls]`` 枚举键∪自定义 EDA 字符串键既有口径）；
   缺省 False 保持 str 键强校验（非字符串键/空键 TypeError）逐字节不变；

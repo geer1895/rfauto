@@ -40,7 +40,7 @@ FBW = 0.05
 RL_DB = 20.0
 NOMINAL = dict(ot.SIR_BPF_NOMINAL)
 DESIGN = ot.sir_bpf_design_from_order(3, F0, FBW, RL_DB)
-# 名义重注册（架构批 W6-S4，R3 审计处方）后口径：NOMINAL=设计链缺省
+# 名义重注册（aurora_g W6-S4，R3 审计处方）后口径：NOMINAL=设计链缺省
 # l_via_h=0.0（理想短路）4 位舍入=恒等式 tanθ1·tanθ2=Z_lo/Z_hi 的名义设计点；
 # IDEAL_NOMINAL=同一口径的冻结常数（防注册表回翻）；VIA_NOMINAL=过孔补偿链
 # （l_via_h=None 自动取 R1 校准 0.125nH）冻结常数——补偿是 render 通道

@@ -1,6 +1,6 @@
 """DP-13 Z2 单测——plan v1.1 shadow_points + 影子点选择器 + fidelity_shadow 联赛表。
 
-判据（runs/df6_dp13/criteria.md §Z2）：
+判据（内部证据档 §Z2）：
 - plan v1.1：final_verify 阶段带 shadow_points 配置（n_points 硬帽=budget 5）；
 - 旧 v1 plan 无 shadow_points 照常 load_plan/apply_event（读面零 schema 强制）；
 - 影子点选择器：cost top_k + 归一化 max-min spread 补点；确定性（同输入逐字节

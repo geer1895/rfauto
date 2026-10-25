@@ -1,4 +1,4 @@
-"""群时延均衡器族（架构批 W2-S7，R2_core_tier3 §③ D9）：一阶/二阶
+"""群时延均衡器族（aurora_f W2-S7，R2_core_tier3 §③ D9）：一阶/二阶
 全通节群时延整形闭式+级联频响（纯综合面）。
 
 两键：gd_allpass_section_synthesize（全通节设计——一阶 τ_dc 参数化/

@@ -1,6 +1,6 @@
 """ui_service.runs_recipes —— runs/ 与配方写面端点（list_runs/run_detail/events/recipe_view·save·create/tune_trials/sandbox/model3d）。
 
-自 ui_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
+自 ui_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
 """
 
 from __future__ import annotations
@@ -147,7 +147,7 @@ def append_run_event(
 
 
 def _run_detail_signature(run_dir: Path) -> tuple[Any, ...] | None:
-    """run_detail 缓存签名（架构批 W1-S4，R3 Top1-b）。
+    """run_detail 缓存签名（aurora_f W1-S4，R3 Top1-b）。
 
     组成（全部廉价调用，深层嵌套树零遍历）：
     - run 根 / results/ / results/figs/ 三层 scandir **条目名集**——
@@ -191,22 +191,62 @@ def _run_detail_signature(run_dir: Path) -> tuple[Any, ...] | None:
         return None
 
 
+def _freshness_block(run_dir: Path) -> dict[str, Any]:
+    """run 目录 → freshness 观测块（C2 aurora_l，R1 #14/15）。
+
+    run 详情页红条数据源：K4 ``runs_verify_service.verify_run`` 单源
+    （只读）；stale 附 issue 种类摘要（``stale_kinds``）供前端红条
+    "人话+摘要"消费。verify 面自身故障 → ``status="unknown"`` 不阻塞
+    详情主路径（观测面 #105，与 batch_ops/em_diff 消费口同款语义）。
+    """
+    try:
+        from rfauto.service.runs_verify_service import verify_run
+
+        verdict = verify_run(run_dir)
+    except Exception as exc:  # 新鲜度观测面故障如实 unknown 不阻塞（#105）
+        return {"status": "unknown", "ok": None, "run_id": run_dir.name,
+                "issues_n": 0, "stale_kinds": "",
+                "note": f"新鲜度校验不可用（非阻断）: {exc}"}
+    status = str(verdict.get("status", "unknown"))
+    issues = [i for i in (verdict.get("issues") or []) if isinstance(i, dict)]
+    kinds = ",".join(sorted({
+        str(issue.get("kind")) for issue in issues if issue.get("kind")}))
+    note = str(verdict.get("note") or "")
+    if status == "stale":
+        note = f"stale（{kinds}）：盘上产物与 run 收官指纹不符，采信前先复核"
+    elif not note:  # error 等无 note 态：错误串透出（信封 errors 单源）
+        note = "; ".join(str(e) for e in (verdict.get("errors") or []))
+    return {
+        "status": status,
+        "ok": verdict.get("ok"),
+        "run_id": str(verdict.get("run_id") or run_dir.name),
+        "issues_n": len(issues),
+        "stale_kinds": kinds,
+        "note": note,
+    }
+
+
 def run_detail(run_id: str) -> dict[str, Any]:
     """单次 run 的全部中间产物（人工核验主页面数据）。
 
     聚合：metrics、S 参数曲线数据（解析 Touchstone）、产物文件清单、
-    配方快照、报告路径。
+    配方快照、报告路径、freshness 新鲜度观测块（C2 aurora_l）。
 
-    缓存（架构批 W1-S4，R3 Top1-b；架构批 R8 Top9 落地）：per-run
+    缓存（aurora_f W1-S4，R3 Top1-b；aurora72 R8 Top9 落地）：per-run
     (path, mtime, size) 签名 + TTL 键控的进程内缓存（_RUN_SCAN_CACHE，
     RFAUTO_UI_CACHE=0 直通）——rglob 全树遍历与 Touchstone 重解析
     （大 run 族中–秒级）降为命中路径 sub-ms；签名语义见
     :func:`_run_detail_signature`。返回 deepcopy——调用方可自由变换
     返回值不污染缓存（与端点快照同一约定）。
+
+    freshness **不进缓存**：新鲜度判定的是"当前盘面"（manifest 被顶替/
+    损坏等形态不在 :func:`_run_detail_signature` 签名面内，缓存期内文件
+    错配会出假 fresh），故缓存命中后逐请求现算（verify_run 只读哈希
+    比对，代价可承受）；故障 unknown 不阻塞（#105）。
     """
     run_id_clean = safe_run_id(run_id)
     if run_id_clean is None:
-        # P9-13（架构批 W1-S1）：``RUNS_DIR / ".."`` 仓根 is_dir 通过 →
+        # P9-13（aurora_g W1-S1）：``RUNS_DIR / ".."`` 仓根 is_dir 通过 →
         # rglob 全仓枚举（worker 阻塞+结构泄漏）——路径段守卫前置拦截。
         return error_envelope([f"非法 run_id: {run_id!r}"])
     run_dir = RUNS_DIR / run_id_clean
@@ -286,7 +326,12 @@ def run_detail(run_id: str) -> dict[str, Any]:
         (_runs_dir_key(), os.path.normcase(str(run_dir.absolute())),
          "run_detail"),
         _run_detail_signature(run_dir), _produce)
-    return copy.deepcopy(cached)
+    detail = copy.deepcopy(cached)
+    # freshness 观测块（C2 aurora_l，R1 #14/15）：缓存命中后逐请求现算
+    # （不进 _RUN_SCAN_CACHE——签名面盖不住 manifest 顶替/损坏，见上）；
+    # verify 面故障 unknown 不阻塞（#105）。
+    detail["freshness"] = _freshness_block(run_dir)
+    return detail
 
 
 def _model3d_from_snapshot(run_dir: Path) -> dict[str, Any] | None:
@@ -420,7 +465,7 @@ def recipe_save(
     updates 允许的键：params（{name: value} 平铺，逐项带 bounds 校验）、
     setup、objectives、optimization（整段替换）。
 
-    写面守卫（配方污染根修，处置账 todo.md「fix-recipe-pollution」条）：
+    写面守卫（配方污染根修，处置账 待办清单「fix-recipe-pollution」条）：
     整文档 ``yaml.safe_dump`` 会丢注释/
     引号并把表单归一化的 optimization 段整段写回——2026-09-17 17:18 正是此链把
     recipes/branchline_coupler_v1.yaml 重序列化（diff 85 行）。recipes/ 原件

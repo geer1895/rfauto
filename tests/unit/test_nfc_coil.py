@@ -211,8 +211,8 @@ class TestQFace:
 class TestScalingInvariance:
     """几何等比缩放阶梯不变量钉（df7 引擎面 followUp 前置）。
 
-    预声明判据：runs/df7_nfc/scaling_criteria.md §2（硬门 0.5%/0.1%，
-    实测机器级）；研究脚本 runs/df7_nfc/scaling_study.py。本类钉在 1e-12
+    预声明判据：内部证据档 §2（硬门 0.5%/0.1%，
+    实测机器级）；研究脚本 内部证据档。本类钉在 1e-12
     档——比硬门严 ~9 个量级，仍留 4 个量级浮点余量（非 2 幂档实测噪声
     ~2e-16，scaling_results.json supplement 节）。"""
 

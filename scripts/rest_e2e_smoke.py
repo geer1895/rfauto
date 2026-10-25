@@ -1,4 +1,4 @@
-"""REST e2e 冒烟门（架构批 E2E-REST 席，2026-10-14）：REST 面（/api/v1）安全网。
+"""REST e2e 冒烟门（aurora_d E2E-REST 席，2026-10-14）：REST 面（/api/v1）安全网。
 
 照 UI-R7 先例（scripts/ui_e2e_smoke.py）把 REST 面真机冒烟固化为可复跑门：
 起服→四组巡检+内核往返→结构化 verdict→退出码。REST-B schema 叶
@@ -38,7 +38,7 @@ rc：0=全过；1=任一 fail（含起服/探针失败 fail-loud）。任务口�
 
 注册面：scripts/ 自检类脚本惯例（ui_e2e_smoke 同款）——不挂 CLI 叶；注册
 面=本文件+定向钉测试 tests/unit/test_rest_e2e_smoke_script.py；真机留档
-内部证据目录。
+runs/aurora_d/reste2e/。
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 
-REPORT_SCHEMA = "架构批/rest_e2e_smoke/1"
+REPORT_SCHEMA = "aurora_d/rest_e2e_smoke/1"
 
 #: 备用端口动态选起点（serve() 缺省 8644、UI 冒烟 8643 起——本门走 8645 起）。
 DEFAULT_PORT_BASE = 8645
@@ -578,7 +578,7 @@ def assemble_verdict(meta: dict[str, Any], checks: list[dict[str, Any]],
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="REST e2e 冒烟门（架构批 E2E-REST）：起服+巡检+verdict")
+        description="REST e2e 冒烟门（aurora_d E2E-REST）：起服+巡检+verdict")
     ap.add_argument("--port", type=int, default=None,
                     help=f"服务端口（缺省从 {DEFAULT_PORT_BASE} 起动态选空闲）")
     ap.add_argument("--base-url", default=None,

@@ -12,7 +12,7 @@ params:
   l_ref_mm: 54.577898
   w_ref_mm: 1.1134
 status: ok
-script_sha256: 29dd6d8c912abec37e4c3ed385ebf50de12b9c74be33c5a0421cc59f619d14b0
+script_sha256: 97e3b5aadcefddba7b0a80f4e90d312832d6421de09d114c7ef657605b25af8f
 csx:
   n_primitives: 30
   props:

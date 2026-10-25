@@ -4,7 +4,7 @@
 - 合成误差网络恢复（thru/line 差分、端口平移、OpenShort）——误差界=实测达到值；
 - 恒等（无误差）不变、确定性（两次逐字节一致）；
 - 非法输入/维度不符显式报错；
-- via β2 真实归档（runs/via_smoke/pt3/port_beta.csv）去嵌验收：εeff2 与
+- via β2 真实归档（内部证据档）去嵌验收：εeff2 与
   εeff1 自洽 ≤1%，且 1.0491 常数被复现（归档自算 1.049083，落 #205 定版
   1.0491±0.0011 窗内）；
 - 2026-09-13 收口：三点波动方程估计器（驻波免疫）合成解析验证 + via 镜像
@@ -12,7 +12,7 @@
   runs/ 缺失时 skip）。
 
 裁判独立性（不得自证）：
-- ≤1% 一致性断言用  #205 的**定版常数 1.0491**（外部独立来源）做去嵌，
+- ≤1% 一致性断言用 开发注记 #205 的**定版常数 1.0491**（外部独立来源）做去嵌，
   不用归档自算的尺度；
 - 归档自算尺度只用于"复现 #205 常数"与"带内恒定"两个断言。
 - 归档缺失时相关用例 pytest.skip（不假装通过）。
@@ -141,7 +141,9 @@ def test_deembed_reference_plane_input_side_recovers_dut():
 def test_deembed_thru_recovers_dut():
     dut = _dut()
     thru = _line(_DL)
-    recovered = deembed_thru(dut ** thru, thru)
+    # half=False=全长单边（遗留语义，aurora_k K8 起 deembed_thru 缺省改
+    # 对称半拆 half=True；本用例夹具整段在输出侧，显式关半拆）
+    recovered = deembed_thru(dut ** thru, thru, half=False)
     assert s_max_abs_diff(recovered, dut) < _CASCADE_TOL
 
 
@@ -537,7 +539,7 @@ def _via_trios() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
 def test_via_archive_trio_derivation_refutes_mirror_premise():
     """收口主测：原始场数据的独立 β 通道否证镜像前提，1.0491=真实模态比×链路残差。
 
-    关键误差数字（runs/via_smoke/pt3 实测，2026-09-13）：
+    关键误差数字（内部证据档 实测，2026-09-13）：
     - trio β2/β1 = 1.04662±0.00033（带内平坦 0.031%）→ 镜像前提（≤1%）不成立；
     - 链路（CalcPort）比值 1.04905 复现 #205 定版 1.0491±0.0011；
     - 分解：1.04905 = 1.04662(真实模态) × 1.00232(链路残差因子)。

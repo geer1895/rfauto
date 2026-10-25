@@ -5,7 +5,7 @@ mode_policy）→ **经全局注册表** create(EMSolverType.MMT)（判据 G-P2-
 注册全链即此路径）→ build_geometry → solve（solve_chain → renormalize
 z0_ref=50Ω → skrf Network → openEMS 同构产物）→ JSON 信封。
 
-诚实口径（#122；P1 判据 runs/df6_dp1mmt/criteria.md §0 继承）：
+诚实口径（#122；P1 判据 内部证据档 §0 继承）：
 - undetermined 频点 S=null 不外推、逐点列进 undetermined_freqs_ghz；
 - converged/warnings 原样透传不掩盖；
 - 膜片/阶梯绝对 S 值 UNDECIDABLE（absolute_s_note 随信封返回），

@@ -1,4 +1,4 @@
-"""术语卡服务（QW-6；服务层 JSON 进出，AGENTS 硬限 4）。
+"""术语卡服务（QW-6；服务层 JSON 进出，内核立规注记 硬限 4）。
 
 数据单一事实源：knowledge/terminology.yaml（首版 50 条，schema 见该文件
 头注：term/definition 必填，unit/scope/see_also 可选）。三条主入口全部
@@ -24,7 +24,7 @@ import yaml
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
-#: 1.1（2026-10-14 AU-2 域升版，架构批 AU-2B 席）：get_term 失败信封单数
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d AU-2B 席）：get_term 失败信封单数
 #: ``error`` 键统一为 ``errors`` list[str]（error_envelope 单源）——契约
 #: §1 判读规则 2 口径的破坏性形状变更，按 §2 规则升位；成功信封同笔带戳。
 #: 消费面（tests/unit/test_terminology.py）同笔迁移；MCP knowledge/

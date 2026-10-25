@@ -1,6 +1,6 @@
 """HFSS Driven Modal 双导体（耦合线对）端口模阻抗基准换算（#307 单源）。
 
-背景（#307，2026-09-18 HFSS hairpin 锚真机实证；HFSS hairpin
+背景（#307，2026-09-18 rm-hfss-anchor 实证；内核立规注记 踩坑速查 HFSS hairpin
 锚点六坑①族）：HFSS Driven Modal 双导体端口的**模阻抗输出基准**是
 共模 Zc = Z0e/2、差模 Zd = 2·Z0o（终端分组随模而变：偶模等电位端子合并
 → Zvi=Z0e/2、奇模分立 → Zvi=Z0o；Zvi=√(Zpi·Zpv) 恒等式可实测自校，
@@ -13,15 +13,15 @@
 （本基准下共模读数 < 差模读数，如 hairpin g0.5 实测 Zc≈29.3 < Zd≈96.7），
 #307 首判即此翻车（DISAGREE −22%/+29%），Modal Solution Data Zo 独立确认。
 
-出处链（回归钉证据，真机判读归档零改写只读）：
-- 换算式与识别规则：判读交接档 §路线 C（"换算 Z0e=2·Zc、
+出处链（回归钉证据，runs 归档零改写只读）：
+- 换算式与识别规则：内部证据档 §路线 C（"换算 Z0e=2·Zc、
   Z0o=Zd/2；模序按 εeff 较高识别偶模"）；
-- 数值证据：HFSS hairpin 锚归档 hairpin_anchor.json
+- 数值证据：runs/hairpin_hfss_anchor/hairpin_anchor.json
   verdict.points.<gap>.line_default_zpi（per_port 每模 Zo 读数 + 换算后
-  z0e_ohm/z0o_ohm）与锚判读 criteria 档 §表
+  z0e_ohm/z0o_ohm）与 runs/hairpin_hfss_anchor/criteria.md §表
   （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200: 54.31/52.70）；
-- 审查条目：适配器审查批 R4-4（换算链此前只在
-  真机交接文档与战役脚本中，无 core/service 可复用实现）。
+- 审查条目：内部证据档 R4-4（换算链此前只在
+  runs handoff 文档与战役脚本中，无 core/service 可复用实现）。
 
 多端口读数口径：同一模在两端口的读数先跨端口取算术均值再换算
 （hairpin anchor 管线实测口径：g0.5 的 z0e_ohm=58.29372163361394

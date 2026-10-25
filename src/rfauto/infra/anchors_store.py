@@ -92,10 +92,9 @@ def validate_anchor_set(anchor_set: AnchorSet,
     - schema：anchor_id 格式/kind/status 枚举/layer 分层枚举+必填
       （XD-8）/active 锚 uncertainty 必填/曲线锚 interp 口径
       （core 构造期校验之外的字段级核对）；
-    - provenance（规格书判据 3）：arbitration_runs 若给出则路径存在
-      （公开树不随附内部仲裁证据档，字段可缺省）、commit 7-40 位 hex、
-      registered_at 可解析、consumers 文件存在、referee_script/
-      data_source/candidates 若给出则文件存在。
+    - provenance（规格书判据 3）：arbitration_runs 路径存在（awaiting_data
+      允许空）、commit 7-40 位 hex、registered_at 可解析、consumers 文件
+      存在、referee_script/data_source/candidates 若给出则文件存在。
     """
     root = Path(repo_root) if repo_root else _default_repo_root()
     issues: list[str] = []
@@ -159,18 +158,25 @@ def _validate_record(rec: AnchorRecord, root: Path,
             and (not rec.points or not rec.interp)):
         issues.append(f"{aid}: 非 awaiting_data 曲线锚缺 points/interp")
 
-    # provenance：runs 路径若给出则存在（公开树不随附内部仲裁证据档，
-    # arbitration_runs 字段可缺省——证据面留内部仓人工 commit 记录）
+    # provenance：runs 路径存在（awaiting_data 允许空清单）
+    # 公开树豁免：runs/ 证据湖不入公开仓——runs/ 前缀路径跳过存在性检查
+    # （发布面如实保留指针原值；仓内其余路径照查不放松）。
+    def _pub_path_missing(rel: str) -> bool:
+        return not str(rel).replace("\\", "/").startswith("runs/") and (
+            not _resolve_repo_path(root, str(rel)).exists())
+
     runs = prov.get("arbitration_runs") or []
+    if not runs and rec.status != "awaiting_data":
+        issues.append(f"{aid}: provenance.arbitration_runs 为空且非 awaiting_data")
     for rel in runs:
-        if not _resolve_repo_path(root, str(rel)).exists():
+        if _pub_path_missing(str(rel)):
             issues.append(f"{aid}: arbitration_runs 路径不存在: {rel}")
     for key in ("referee_script", "data_source"):
         val = prov.get(key)
-        if val and not _resolve_repo_path(root, str(val)).exists():
+        if val and _pub_path_missing(str(val)):
             issues.append(f"{aid}: provenance.{key} 文件不存在: {val}")
     for rel in prov.get("candidates") or []:
-        if not _resolve_repo_path(root, str(rel)).exists():
+        if _pub_path_missing(str(rel)):
             issues.append(f"{aid}: provenance.candidates 路径不存在: {rel}")
 
     commit = prov.get("commit")

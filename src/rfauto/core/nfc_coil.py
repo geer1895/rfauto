@@ -12,7 +12,7 @@
 
 数字出处（2026-09-24 原文逐位核对，#118/#331 纪律）：
 - 原文 PDF（Boyd Stanford 主页公开版）存档
-  runs/df6_dp18c10/_ref_mohan1999.pdf；系数表经 600dpi 渲染逐位目检：
+  内部证据档；系数表经 600dpi 渲染逐位目检：
   * Table I 修正 Wheeler  L=K₁μ₀n²d_avg/(1+K₂ρ)：
     square(2.34,2.75) / hexagon(2.33,3.82) / octagon(2.25,3.55)；圆形无此式；
   * Table II 电流片  L=c₁μ₀n²d_avg/2·(ln(c₂/ρ)+c₃ρ+c₄ρ²)：
@@ -430,7 +430,7 @@ def polygon_loop_vertices(shape: str, half_size_m: float,
     half_size/cos(π/n) 外接圆上）——形状外缘宽度恒为 2·half_size，与
     d_out 的「形状总宽」语义一致（2026-09-26 实证：外接圆半径口径使
     octagon/hexagon 对 current_sheet 系统性 −9%/−13%，across-flats 口径
-    归位 ≤2%，runs/df7_nfc/criteria.md §1）；
+    归位 ≤2%，内部证据档 §1）；
     circle=CIRCLE_SIDES 边正多边形离散（半径=half_size）。
     """
     import numpy as np
@@ -594,7 +594,7 @@ def spiral_numeric_inductance(geom: CoilGeometry, gmd_m: float | None = None,
     """多匝平面螺旋电感数值参考（H，与 Mohan 拟合式零共享系数）。
 
     理想同心多边形环模型（未含渲染端阶梯过渡尾/中跳线，见
-    runs/df7_nfc/criteria.md §附）：L=Σ匝自感 + Σ匝对互感（有序对求和，
+    内部证据档 §附）：L=Σ匝自感 + Σ匝对互感（有序对求和，
     互易对计两次）。返回总量与逐匝分量（报告面）。"""
     geom.validate()
     g = float(gmd_m) if gmd_m is not None else strip_gmd(geom.w_m)
@@ -917,3 +917,47 @@ def coil_q_curve(
             "q_unloaded": omega * l_h / esr["esr_ohm"],
         })
     return rows
+
+
+def turn_perimeter_m(geom: CoilGeometry, k: int) -> float:
+    """第 k 匝多边形环中心线周长（m，across-flats 顶点单源闭合求和）。
+
+    K11（2026-10-23）自 calc_families.spiral_inductor 上提：匝间寄生
+    电容模型与渲染匝梯共用的几何单源（adapters 层禁直插 calc_families
+    ——import-linter 棘轮契约，物理公式归本文件与 coil_esr 同族）。"""
+    import numpy as np
+
+    pitch = geom.w_m + geom.s_m
+    a0 = geom.d_out_m / 2.0 - geom.w_m / 2.0
+    a_k = a0 - k * pitch
+    v = np.asarray(polygon_loop_vertices(geom.shape, a_k), dtype=float)
+    nxt = np.roll(v, -1, axis=0)
+    return float(np.sum(np.hypot(*(nxt - v).T)))
+
+
+def winding_parasitic_capacitance_f(geom: CoilGeometry, t_m: float,
+                                    er: float) -> float:
+    """绕组匝间寄生电容一阶估计（F，确定性闭式，**未标定**）。
+
+    平行板匝间口径（Mohan 组一阶模型族）：相邻匝重叠区 C_k=ε0·εeff·
+    (t_m·l_k)/s，l_k=第 k 匝中心线周长（t=金属厚为极板重叠尺度）、
+    εeff=(1+εr)/2 微带型平均（匝间场半空气半基板）；总 C=Σ_{k=0}^{n−2}
+    C_k（n−1 个相邻匝对，隔匝耦合二阶不计）。仅供 SRF 量级评估与
+    fake 通道自洽裁判——未对标真机/全波，进锚前必须标定（如实注记）。
+    K11（2026-10-23，反馈 F1）落地，与 coil_esr（W4-B）同族损耗/寄生面。
+
+    守卫：er≥1、t_m>0（CoilGeometry.validate 由调用方先行）。
+    """
+    if not (er >= 1.0):
+        raise ValueError(f"winding_parasitic_capacitance_f: er 须 ≥1，收到 {er!r}")
+    if not (t_m > 0.0):
+        raise ValueError(f"winding_parasitic_capacitance_f: t_m 须为正，收到 {t_m!r}")
+    geom.validate()
+    eps0 = 8.854187817e-12
+    eps_eff = 0.5 * (1.0 + float(er))
+    total = 0.0
+    n = int(geom.n_turns)
+    for k in range(n - 1):
+        l_k = turn_perimeter_m(geom, k)
+        total += eps0 * eps_eff * (t_m * l_k) / geom.s_m
+    return total

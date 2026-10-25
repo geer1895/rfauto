@@ -1,4 +1,4 @@
-"""EC-8 全模板 golden 几何回归仓（W2-S8，架构批）。
+"""EC-8 全模板 golden 几何回归仓（W2-S8，aurora_e）。
 
 钉面：TEMPLATE_META 全部注册族的缺省档渲染产物 vs
 tests/golden/template_geometry/<族>.yaml golden 快照——渲染脚本全文

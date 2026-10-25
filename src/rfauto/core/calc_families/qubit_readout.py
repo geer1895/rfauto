@@ -1,4 +1,4 @@
-"""超导量子比特读出链族（架构批 W7-A 席，R2 空白域 G18——quantum_cryo 升格）。
+"""超导量子比特读出链族（aurora36 W7-A 席，R2 空白域 G18——quantum_cryo 升格）。
 
 三键：qubit_dispersive_shift（色散位移 χ 一阶闭式+强色散域判据）/
 qubit_readout_s21（读出谐振器 S21 双态频响，单源实现）/

@@ -39,7 +39,7 @@ from rfauto.service.llm_transport import (  # T1 终章解环：传输层叶化�
 if TYPE_CHECKING:
     from rfauto.pipeline.quota_guard import CostLedger
 
-    # T1 终章解环（架构批 W1-S1）：类型改读瀑布叶，静态图不再出现
+    # T1 终章解环（aurora_h W1-S1）：类型改读瀑布叶，静态图不再出现
     # agent_runtime→agent_safety 边（三角环第一条边断）
     from rfauto.service.agent_waterfall_types import ToolEvent, ToolWaterfall
 
@@ -337,7 +337,7 @@ class BuiltinOpenAIRuntime(AgentRuntime):
 
 
 # openai_chat_completion 定义体已叶化至 service/llm_transport.py（T1 终章
-# 解环，架构批 W1-S1）：本模块经文件头同名再导出保名，消费面与测试
+# 解环，aurora_h W1-S1）：本模块经文件头同名再导出保名，消费面与测试
 # monkeypatch 缝零变化（见 llm_transport 叶 docstring 的保真声明）。
 
 

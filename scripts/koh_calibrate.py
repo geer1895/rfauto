@@ -14,12 +14,12 @@
     summary.json —— 合并摘要 + caveats。
 
 数据来源（只读本仓归档，不改动）：
-    runs/ratrace_arbitration/ratrace_arbitration.json
-    runs/ratrace_arbitration/openems_convergence.json
-    runs/audit_freq_scale/hfss_arbitration/result.json
-    runs/audit_freq_scale/hfss_arbitration/hfss_arb.s3p
-    runs/ratrace_arbitration/hfss_ratrace.s4p
-    runs/ratrace_arbitration/mesh_0p2mm/p1/sparams.csv
+    内部证据档
+    内部证据档
+    内部证据档
+    内部证据档
+    内部证据档
+    内部证据档
 """
 
 from __future__ import annotations

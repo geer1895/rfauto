@@ -1,4 +1,4 @@
-"""混频器变换面（架构批 W2-S6 席域，R2_core_tier3 §③ D2 立项）。
+"""混频器变换面（aurora_f W2-S6 席域，R2_core_tier3 §③ D2 立项）。
 
 三键：mixer_ssb_nf（镜像噪声折入 SSB-NF 链路口径）/ mixer_conversion_loss
 （变频损耗 SSB/DSB 口径换算+无源混频噪声地板）/ mixer_image_plan（镜像

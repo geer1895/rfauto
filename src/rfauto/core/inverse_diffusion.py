@@ -1,11 +1,11 @@
 """E12 像素逆设计 stage-2 离线段：提议器注册表 + 确定性"扩散式"噪声-去噪提议器。
 
-任务口径（TODO 0-P2 余项 ⑭ 离线部分，W2⑦）：在既有像素逆设计闭环
+任务口径（待办清单 0-P2 余项 ⑭ 离线部分，W2⑦）：在既有像素逆设计闭环
 （core/inverse_design.py：提议器 × MAPES 闭式评判 × top-k）上加一个可注入
 随机源、固定 seed 可复现的"扩散式"提议器——噪声-去噪迭代把可行像素图案向
 目标推进，评判仍走既有确定性内核（core/mapes 闭式代理）。
 
-设计（基类 + 注册表，AGENTS 硬限制 3）
+设计（基类 + 注册表，内核立规注记 硬限制 3）
 - :class:`PixelProposer` 基类统一接口 ``propose(layout, rng, *, seed_pattern,
   score_fn) -> 0/1 numpy 矩阵``；:data:`PROPOSER_REGISTRY` 以名字注册，
   :func:`create_proposer` 工厂构造——换/加提议器实现注册即可。

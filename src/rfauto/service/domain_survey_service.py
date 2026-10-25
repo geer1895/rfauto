@@ -1,4 +1,4 @@
-"""域词表巡检引擎（UX-B13/Z-8 survey domains，架构批 W2-S10 U3）。
+"""域词表巡检引擎（UX-B13/Z-8 survey domains，aurora_e W2-S10 U3）。
 
 把"域扩张靠冲刺缺巡检"的机制根源（ux_vertical B4 探针实证）制度化：
 对 UI/服务层暴露的三张 domains/分组词表做**词表项 ↔ 实际注册面双向对账**

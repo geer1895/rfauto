@@ -1,8 +1,8 @@
-"""架构批 W1-S3 锚树：Lange 电桥 core 提升（F1）+ 阶梯阻抗 LPF 综合（F2）。
+"""aurora_f W1-S3 锚树：Lange 电桥 core 提升（F1）+ 阶梯阻抗 LPF 综合（F2）。
 
 锚面（#118 独立来源/#122 如实口径，逐测试注明）
 - F1 字节级对拍钉：render_c4→core 提升式重构前后同参输出**逐位一致**
-  （字面量=重构前 内部证据目录 实测捕获，
+  （字面量=重构前 runs/aurora_f/w1s3_lange_parity_baseline.json 实测捕获，
   提升提交前落档）；再导出单对象断言（#116 不留遮蔽副本的结构性铁证）。
 - F1 回代恒等式：C=(Ze4−Zo4)/(Ze4+Zo4)、Z0=√(Ze4·Zo4)（render_c4 §C4
   口径 3 写死）；KJ (w,s) 正向回代 ≤0.5Ω（inverse_width 同款自洽阈）。
@@ -40,7 +40,7 @@ from rfauto.core.calc_families.stepped_impedance import (
 )
 from rfauto.service.calculator_service import run_calculator
 
-# ── F1 提升前基线（内部证据目录 字面量，
+# ── F1 提升前基线（runs/aurora_f/w1s3_lange_parity_baseline.json 字面量，
 #    2026-10-18 重构前 render_c4.lange_design 实测捕获；notes 不入对拍）──
 _LANGE_BASELINE_DEFAULT = {
     "coupling_db": 3.0103, "z0_ohm": 50.0, "f0_ghz": 2.5,

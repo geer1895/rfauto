@@ -34,7 +34,7 @@ RUNS_DIR = Path("runs")
 
 
 def _load_artifacts(run_id: str) -> dict[str, Any]:
-    # P1-1（架构批 W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
+    # P1-1（aurora_g W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
     # （第 9 处拼接点）——"../docs" 相对穿越/NUL 字节直通 → 读 samples/
     # surrogate/campaign 定名 JSON+存在性 oracle，与 P9-13 已修 8 处同类。
     run_id_clean = safe_run_id(run_id)
@@ -52,8 +52,8 @@ def _load_artifacts(run_id: str) -> dict[str, Any]:
 def playground_runs() -> dict[str, Any]:
     """有校准产物的 run 清单（供 Playground 下拉选择）。
 
-    缓存（架构批 W1-S4，R3 Top1-a）：接 ui_service 端点快照缓存基建
-    （架构批 A2-D 同款，R3 判"五端点族在兄弟模块回潮"的收口）——
+    缓存（aurora_f W1-S4，R3 Top1-a）：接 ui_service 端点快照缓存基建
+    （aurora72 A2-D 同款，R3 判"五端点族在兄弟模块回潮"的收口）——
     runs/ 指纹（顶层条目名集+目录 mtime，单次 scandir ~ms 级）+TTL
     键控，每请求全表扫（R3 实测 193ms 级）降为命中 sub-ms。失效语义：
     run 目录新增/删除/改名即刻失效；既有 run 内新落校准产物由该 run

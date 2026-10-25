@@ -82,6 +82,6 @@ rfauto warm-start <study> --dataset <数据集>       # 历史数据先验注入
 
 - 采集与校准：`rfauto vna measure --help`（真机）、
   `rfauto vna calibrate --help`（独立校准/去嵌入口）
-- 判读纪律（先验证模型再校准）：AGENTS 规则 1b；
+- 判读纪律（先验证模型再校准）：内核立规 1b；
   `docs/how-to/read-verdict-gates.md`
 - 偏差深查（仿真侧指纹）：`rfauto diagnose detective --run-dir runs/<id>`

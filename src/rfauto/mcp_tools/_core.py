@@ -23,7 +23,7 @@ async def _server_lifespan(_server: FastMCP) -> AsyncIterator[dict[str, Any]]:
     _silence_pyaedt_screen_logs()
     # 2. 预导入核心模块——flush 出延迟 import 的初始化副作用
     try:
-        # T8 越级收口（架构批 W2-S1，2026-10-19）：原 objectives/parameters
+        # T8 越级收口（aurora_h W2-S1，2026-10-19）：原 objectives/parameters
         # 两行直连 core 预导入删除——下一行 service.api 的传递性 import 面
         # 已覆盖二者（子进程实测 sys.modules 双 True；models.registry 不在
         # 其覆盖面故保留直连），"首工具调用前 flush 注册副作用"语义不变。

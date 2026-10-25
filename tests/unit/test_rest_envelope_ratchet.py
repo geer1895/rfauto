@@ -1,4 +1,4 @@
-"""REST 面裸 ``{"ok": ...}`` 字面棘轮门（架构批 REST-B 席，2026-10-14）。
+"""REST 面裸 ``{"ok": ...}`` 字面棘轮门（aurora_d REST-B 席，2026-10-14）。
 
 照 CLI 棘轮形态（test_cli_envelope_ratchet.py，#325 家法同式只收不放）：
 REST 双面（``service/rest_api/`` 包 + ``service/sdk.py``——
@@ -80,7 +80,7 @@ def test_rest_bare_ok_envelope_ratchet():
     assert total <= RATCHET_CAP, (
         f'REST 面裸 {{"ok": ...}} 字面计数超棘轮帽（{total} > {RATCHET_CAP}）'
         "——新端点响应信封必须走 rest_api._ok/_error 传输面出口，"
-        "禁止再造裸 dict 信封（架构批 REST-B，ENGH 棘轮家法同式）。"
+        "禁止再造裸 dict 信封（aurora_d REST-B，ENGH 棘轮家法同式）。"
         "降低本棘轮=同笔把站点改走构造器（输出逐字节不变）后调小 "
         "RATCHET_CAP；调大=违约。当前计数明细：\n" + "\n".join(per_file))
 

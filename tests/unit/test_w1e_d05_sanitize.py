@@ -1,6 +1,6 @@
 """W1-E D-05 定向门——mdSanitize 硬错化：净化器缺失/净化失败拒绝 innerHTML。
 
-判据（runs/w1_phase1/criteria.md §W1-E）：
+判据（内部证据档 §W1-E）：
 - 禁用 DOMPurify 的反证测试渲染零注入：DOMPurify 整体缺失 / sanitize 非函
   数 / 净化结果非字符串三形态下，renderMarkdown 一律 textContent 兜底，
   XSS 载荷（img onerror / script）永不进入 innerHTML；

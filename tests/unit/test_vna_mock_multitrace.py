@@ -5,7 +5,7 @@
   （名 → S<rx><tx>），query() 补目录（PAR:CAT?/NAME?）、迹线号（SNUM?）与
   点名/选中迹线复数据（DATA:SDAT? [名]）；
 - 多迹线采集 → skrf Network 形状正确（(n, P, P)，P=最高端口号）；
-- 真机协议行为零臆造（实现面 TODO 注记承接着真机联调半边）；
+- 真机协议行为零臆造（实现面 待办清单 注记承接着真机联调半边）；
 - 全链：connect(mock 文件) → 定义迹线 → capture() → 形状与数据断言。
 
 全部离线合成数据，秒级、零硬件（与 test_vna_replay.py L1 口径一致）。

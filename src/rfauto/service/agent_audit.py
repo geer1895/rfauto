@@ -1,4 +1,4 @@
-"""agent 审批审计叶（T1 解环；架构批 W6-S1）。
+"""agent 审批审计叶（T1 解环；aurora_g W6-S1）。
 
 从 agent_safety 叶化：append_audit_log/token_hash/AUDIT_DIR 是纯观测
 面（#105 best-effort 审计日志），被 api/r3_services/v3_services 多处

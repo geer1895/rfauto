@@ -572,7 +572,7 @@ def board_facts_from_extract(extract: Mapping[str, Any]) -> dict[str, Any]:
 def extract_pcb_facts(pcb_path: str | Path,
                       kicad_python: str | None = None) -> dict[str, Any]:
     """.kicad_pcb → extract_pcb 产物契约（JSON 进出透传；子进程走 KiCad 自带
-    Python 3.11，项目规则 硬限制 2）。文件不存在/子进程失败 ok=False。"""
+    Python 3.11，内核立规注记 硬限制 2）。文件不存在/子进程失败 ok=False。"""
     from rfauto.adapters.kicad_extract import extract_pcb
 
     return extract_pcb(pcb_path, kicad_python=kicad_python)

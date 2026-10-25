@@ -23,7 +23,7 @@ core/electrothermal.isolation_injection_case）+ RO4350B 量级基板，置入
 纪律：AEDT 2025.1 gRPC 整轮重试 ×3（#191，仅杀本脚本遗留桌面）；
 每轮前白名单清工程产物；真机失败如实 ok=false 不凑绿（#122）。
 
-产物：runs/icepak_convection_case/convection_case.json
+产物：内部证据档
 """
 import json
 import sys

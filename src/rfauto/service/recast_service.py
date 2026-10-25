@@ -1,7 +1,7 @@
 """recast_service —— RECAST 判据重放服务面（core/recast 的 JSON 进出薄壳）。
 
 教程 docs/tutorials/recast-walkthrough.md 的 CLI 出口（2026-10-11
-架构批 W2-D 清偿教程-代码断链：教程有 recast walkthrough 而 cli 零
+aurora36 W2-D 清偿教程-代码断链：教程有 recast walkthrough 而 cli 零
 recast 命令）。规则 4：本模块只做判据装载状态与重放报告的信封封装，
 零重放逻辑；铁律 7：数值全部来自 core.recast 确定性重算（判据声明值
 ×产物证据字段），LLM/agent 永不经手物理数字。

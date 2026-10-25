@@ -9,14 +9,14 @@ os.environ["HPEESOF_DIR"] = ADS
 
 import keysight.ads.de as de
 
-wrk = r"D:\rf_workspace\scripts\spike_b_ads\sample_wrk27\Datalink_Basics_wrk"
+wrk = r"D:/rf_workspace\scripts\spike_b_ads\sample_wrk27\Datalink_Basics_wrk"
 if de.workspace_is_open():
     de.close_workspace()
 ws = de.open_workspace(wrk)
 print("open:", ws.is_open)
 
 # 遍历 schematic，逐个尝试生成 netlist，记录成败与错误
-out = open(r"D:\rf_workspace\scripts\spike_b_ads\p27_netlist_report.txt", "w", encoding="utf-8")
+out = open(r"D:/rf_workspace\scripts\spike_b_ads\p27_netlist_report.txt", "w", encoding="utf-8")
 netlist_text = None
 # 2027 API 漂移：library_names 是属性（set）而非方法
 libs = ws.library_names if isinstance(ws.library_names, (set, list, tuple)) else ws.library_names()
@@ -39,7 +39,7 @@ out.close()
 print("netlist report written")
 
 if netlist_text:
-    nl_path = r"D:\rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt"
+    nl_path = r"D:/rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt"
     with open(nl_path, "w", encoding="ascii", errors="ignore") as f:
         f.write(netlist_text)
     print("=== netlist head ===")

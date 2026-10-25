@@ -282,7 +282,7 @@ def build_leaderboard_payload() -> dict[str, Any]:
     return {
         "kind": "rfauto_public_leaderboard",
         "note": "全部数值为 runs/ 既有 JSON 的原值搬运（本生成器零算术改写）；"
-                "verdict/门限语义见各源文件 criteria 与  对应教训编号。",
+                "verdict/门限语义见各源文件 criteria 与 开发注记 对应教训编号。",
         "sources": sources,
         "anchors": anchors,
         "mesh_convergence": mesh_rows,

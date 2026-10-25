@@ -1,6 +1,6 @@
 r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选档达标门 + WP3.2 A/B。
 
-链路（§10.24 A8 stage-3 / stage-2 followUps ③⑥）：
+链路（§10.24 A8 stage-3 / 开发注记（一百一十九）stage-2 followUps ③⑥）：
 1. **新增滤波器图案**（`patterns`）：阶梯金属桥链 route_full / route_broken /
    route_half——像素桥链 = 串联桥（L）+ 贴片接地（并联对地）的梯形像素滤波
    结构，直通 / 中断 / 半程三档给排序面；直接全波每图案 2 激励（渲染器与
@@ -18,12 +18,12 @@ r"""A8 MAPES stage-3：像素滤波器闭式 S vs openEMS 全波对照 + 筛选�
     .venv/Scripts/python.exe scripts/mapes_s3_compare.py patterns
     .venv/Scripts/python.exe scripts/mapes_s3_compare.py compare
     .venv/Scripts/python.exe scripts/mapes_s3_compare.py ab
-    # stage-4 质量版（runs/mapes_s4）复测与 α 校准：
-    .venv/Scripts/python.exe scripts/mapes_s3_compare.py patterns --out-dir runs/mapes_s4
-    .venv/Scripts/python.exe scripts/mapes_s3_compare.py compare --z-all runs/mapes_s4/z_all.npz \
-        --s2-dir runs/mapes_s4 --patterns-dir runs/mapes_s4/patterns --out-dir runs/mapes_s4/s3
-    .venv/Scripts/python.exe scripts/mapes_s3_compare.py calibrate --z-all runs/mapes_s4/z_all.npz \
-        --s2-dir runs/mapes_s4 --patterns-dir runs/mapes_s4/patterns --out-dir runs/mapes_s4/s3
+    # stage-4 质量版（内部证据档）复测与 α 校准：
+    .venv/Scripts/python.exe scripts/mapes_s3_compare.py patterns --out-dir 内部证据档
+    .venv/Scripts/python.exe scripts/mapes_s3_compare.py compare --z-all 内部证据档 \
+        --s2-dir 内部证据档 --patterns-dir 内部证据档 --out-dir 内部证据档
+    .venv/Scripts/python.exe scripts/mapes_s3_compare.py calibrate --z-all 内部证据档 \
+        --s2-dir 内部证据档 --patterns-dir 内部证据档 --out-dir 内部证据档
 """
 
 from __future__ import annotations
@@ -240,7 +240,7 @@ def _case_direct_dir(
 
     缺省口径：stage-2 四案在 ``<s2_dir>/patterns``、stage-3 三案在
     ``<s3_dir>/patterns``；给了 ``patterns_dir`` 则 7 案同根（质量版复测：
-    runs/mapes_s4/patterns 同时装 s2 四案与 s3 三案）。
+    内部证据档 同时装 s2 四案与 s3 三案）。
     """
     if patterns_dir is not None:
         return patterns_dir / name

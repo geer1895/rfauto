@@ -80,7 +80,7 @@ QW-7（verdict 三态 + 失败策略，映射口径预声明）：
   不判死下游）。skip 策略的 skipped 不复活语义不变（PARTIAL 注记不
   冒充 COMPLETE）；失败分支本轮新标的 aborted 仍由主循环守卫挡住。
 
-分层（AGENTS #3）：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
+分层（内核立规注记 #3）：pipeline → infra/core 合法；键与 CAS 在 infra.dag_cache，
 schema/拓扑在 core.compose.dag_schema。
 """
 
@@ -505,7 +505,7 @@ class DagRunner:
                     data.setdefault("skipped_count", 0)
                     return data
             # UnicodeDecodeError 与 OSError 并列（E1-2 审查批 2026-10-04，
-            # runs/review_ge8e/e1_pipeline/REPORT.md）：非法 UTF-8 字节的期刊
+            # 内部证据档）：非法 UTF-8 字节的期刊
             # 同属"损坏 = 不可信"，旧 except 漏接会带原始 UnicodeDecodeError
             # 炸出加载链而非走 .corrupt 留痕重置。
             except (OSError, UnicodeDecodeError, json.JSONDecodeError):

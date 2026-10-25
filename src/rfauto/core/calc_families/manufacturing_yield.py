@@ -62,7 +62,7 @@ Copulas*, 2nd ed., Springer 2006（章节级转引）；等相关正态联合达
 条件分解恒等式=标准多元正态结果（chapter 级转引）。实现前独立复算：
 Montgomery 表值 1350/31.7/0.287 ppm 档逐位+scipy sf/ppf 第二路线+quad vs
 Gauss–Hermite 双数值路线（ρ=0 退化乘积逐位、ρ→1 退化 min(y) 双极限锚），
-独立验证轨迹（内部档），锚树
+轨迹 runs/aurora_d/_core7_verify_derivation.py，锚树
 tests/unit/test_aurora_d_core7.py。）
 
 守卫：cpk≥0 有限（0 合法=均值恰在规格限，#364④ is not None 判缺失）；

@@ -1,4 +1,4 @@
-"""RegistryKit 兼容入口（本体已下沉 core/registry_kit.py，架构批 W2-S3）。
+"""RegistryKit 兼容入口（本体已下沉 core/registry_kit.py，aurora_h W2-S3）。
 
 下沉原因：R1_arch_audit_v3 §5 扩面三件中 Calculator（core/calc_families/
 registry.py）与 Budget（core/error_budget.py）两注册表住 core 层——分层

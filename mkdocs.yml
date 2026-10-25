@@ -97,6 +97,7 @@ nav:
       - CLI 命令参考: reference/cli.md
       - MCP 工具参考: reference/mcp.md
       - 计算器注册表: reference/calculators.md
+      - 计算器使用指南（按设计流程）: reference/calculator-usage.md
   - 内核文档卡:
       - macromodel: kernel_cards/macromodel.md
       - rwg_mmt: kernel_cards/rwg_mmt.md

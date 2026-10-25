@@ -200,12 +200,8 @@ class TestSyntheticDetectors:
 # 真仓回放（判据主表：5 FAIL 命中 + 1 健康负例；runs/ 缺席环境 skip）
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skipif(
-    not _REPO_RUNS.is_dir()
-    or not any((_REPO_RUNS / d).is_dir() for d in (
-        "hairpin_calib", "hfss_mapes_m_arb", "helix_arbitration",
-        "icepak_electrothermal", "wp25_tier2")),
-    reason="真仓 runs/ 证据档缺席（公开分发视图），回放判据如实 skip")
+@pytest.mark.skipif(not (_REPO_RUNS / "hairpin_calib").is_dir(),
+                   reason="真仓 runs/ 判例证据湖缺席（公开树不带内部判例）")
 class TestRealRunsReplay:
     CASES: ClassVar[list] = [
         ("R1_fdtd_truncation", "hairpin_calib/kgap_b3_n3_invalid_fc200",

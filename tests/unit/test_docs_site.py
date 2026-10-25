@@ -109,7 +109,6 @@ def test_generator_pages_embed_live_counts(tmp_path: Path) -> None:
     assert manifest["calculators"] == check_numbers.count_calculators()
     assert manifest["templates"] == check_numbers.count_template_meta()
     assert manifest["anchors"] == check_numbers.count_anchors()
-    # tests 计数与生成器同源（公开分发视图=collect 口径单源，无门日志依赖）
     assert manifest["tests"] == check_numbers.count_tests()[0]
 
     cli_md = (tmp_path / "reference" / "cli.md").read_text(encoding="utf-8")

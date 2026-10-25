@@ -1,6 +1,6 @@
 """DP-17 O2 单测——公开 API 快照（check_public_api + tests/gold 金样例）。
 
-判据（runs/df6_dp17/criteria.md §O2）：
+判据（内部证据档 §O2）：
 - 生成器幂等：同一棵树连跑两次逐字节同 JSON；
 - 真仓金样例 --check 通过（翻公开名=显式评审动作，测试即门）；
 - 翻转公开名快照测试红：tmp 迷你树改 __all__（增/删/改名）→ --check

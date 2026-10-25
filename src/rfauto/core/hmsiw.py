@@ -1,6 +1,6 @@
 """HM-SIW 半模基片集成波导闭式内核（TA-7 批 Wave A 席 1；Lai-Fumeaux 2009 T-MTT）。
 
-权威口径（式号/页码逐条，2009 MTT HMSIW 论文逐条）：
+权威口径（式号/页码逐条，PDF 存 runs/ge8_followup/wave_a/refs/2009_MTT_HMSIW.pdf）：
 Q. Lai, C. Fumeaux, W. Hong, R. Vahldieck, "Characterization of the Propagation
 Properties of the Half-Mode Substrate Integrated Waveguide," IEEE Trans.
 Microw. Theory Techn., vol. 57, no. 8, pp. 1996-2004, Aug. 2009,

@@ -6,7 +6,7 @@ Each template renders CSXCAD scripts for openEMS Python bindings.
 方向 2 参数化公约（Plan §3：防 6 个模板 6 种风格）。
 
 网格/边界方法学（2026-09-04 频率尺度根因实验后重写，对照官方 MSL_NotchFilter
-教程基线，证据链 runs/audit_freq_scale/ E1-E4）：
+教程基线，证据链 内部证据档 E1-E4）：
 - 网格 base = 基板内波长 λ_sub/50（官方口径），近走线区 base/4；
   旧版 λ/20@空气 ≈4.3mm 粗网格导致谷位系统性低 30-40% 且随网格漂移；
 - 地面 = z-min PEC 边界（官方口径），基板延伸到侧边界（旧版有限小板
@@ -863,6 +863,24 @@ from .oe_templates.render_horn import (
 from .oe_templates.render_horn import (
     pyramid_horn_render as pyramid_horn_render,
 )
+from .oe_templates.render_interdigital_cap import (
+    INTERDIGITAL_CAP_META as INTERDIGITAL_CAP_META,
+)
+from .oe_templates.render_interdigital_cap import (
+    INTERDIGITAL_CAP_NOMINAL as INTERDIGITAL_CAP_NOMINAL,
+)
+from .oe_templates.render_interdigital_cap import (
+    INTERDIGITAL_CAP_TEMPLATES as INTERDIGITAL_CAP_TEMPLATES,
+)
+from .oe_templates.render_interdigital_cap import (
+    _interdigital_cap_layout as _interdigital_cap_layout,
+)
+from .oe_templates.render_interdigital_cap import (
+    interdigital_cap_geometry_spec as interdigital_cap_geometry_spec,
+)
+from .oe_templates.render_interdigital_cap import (
+    interdigital_cap_render as interdigital_cap_render,
+)
 from .oe_templates.render_metasurface import (
     _MS_ARRAY_CELL_MAP as _MS_ARRAY_CELL_MAP,
 )
@@ -968,6 +986,24 @@ from .oe_templates.render_metasurface import (
 from .oe_templates.render_metasurface import (
     ms_unit_layout as ms_unit_layout,
 )
+from .oe_templates.render_mim_cap import (
+    MIM_CAP_META as MIM_CAP_META,
+)
+from .oe_templates.render_mim_cap import (
+    MIM_CAP_NOMINAL as MIM_CAP_NOMINAL,
+)
+from .oe_templates.render_mim_cap import (
+    MIM_CAP_TEMPLATES as MIM_CAP_TEMPLATES,
+)
+from .oe_templates.render_mim_cap import (
+    _mim_cap_layout as _mim_cap_layout,
+)
+from .oe_templates.render_mim_cap import (
+    mim_cap_geometry_spec as mim_cap_geometry_spec,
+)
+from .oe_templates.render_mim_cap import (
+    mim_cap_render as mim_cap_render,
+)
 from .oe_templates.render_mmwave import (
     _MMWAVE_AIR_TOP_MM as _MMWAVE_AIR_TOP_MM,
 )
@@ -1045,6 +1081,24 @@ from .oe_templates.render_msl_sma import (
 )
 from .oe_templates.render_msl_sma import (
     sma_launcher_r_o_mm as sma_launcher_r_o_mm,
+)
+from .oe_templates.render_octagonal_spiral import (
+    OCTAGONAL_SPIRAL_META as OCTAGONAL_SPIRAL_META,
+)
+from .oe_templates.render_octagonal_spiral import (
+    OCTAGONAL_SPIRAL_NOMINAL as OCTAGONAL_SPIRAL_NOMINAL,
+)
+from .oe_templates.render_octagonal_spiral import (
+    OCTAGONAL_SPIRAL_TEMPLATES as OCTAGONAL_SPIRAL_TEMPLATES,
+)
+from .oe_templates.render_octagonal_spiral import (
+    _octagonal_spiral_layout as _octagonal_spiral_layout,
+)
+from .oe_templates.render_octagonal_spiral import (
+    octagonal_spiral_geometry_spec as octagonal_spiral_geometry_spec,
+)
+from .oe_templates.render_octagonal_spiral import (
+    octagonal_spiral_render as octagonal_spiral_render,
 )
 from .oe_templates.render_phase_qwt import (
     QWT_MULTISECTION_META as QWT_MULTISECTION_META,

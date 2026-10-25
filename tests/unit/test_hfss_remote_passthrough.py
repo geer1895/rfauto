@@ -138,7 +138,7 @@ def test_connect_remote_desktop_receives_machine_port(fake_aedt_module, monkeypa
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40",
+        name="sim_server", host="10.20.30.40",
         hfss_grpc_port=50051, hfss_project_root="E:\\rfauto_remote",
     )
     monkeypatch.setattr(
@@ -147,14 +147,14 @@ def test_connect_remote_desktop_receives_machine_port(fake_aedt_module, monkeypa
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     kwargs = _FakeDesktop.last_kwargs
     assert kwargs["machine"] == "10.20.30.40"
     assert kwargs["port"] == 50051
     info = session.remote_info
     assert info == {
-        "name": "sim_host", "machine": "10.20.30.40", "port": 50051,
+        "name": "sim_server", "machine": "10.20.30.40", "port": 50051,
         "project_root": "E:\\rfauto_remote", "version": "2025.1",
     }
 
@@ -169,7 +169,7 @@ def test_connect_remote_switches_during_desktop_and_restored(
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40",
+        name="sim_server", host="10.20.30.40",
         hfss_grpc_port=50051, hfss_project_root="E:\\rfauto_remote",
     )  # hfss_version 缺省 "2025.1" 与 desktop_version 配对
     monkeypatch.setattr(
@@ -178,7 +178,7 @@ def test_connect_remote_switches_during_desktop_and_restored(
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     # 构造期快照（FakeDesktop.__init__ 捕获）：四开关+一 env 全部在位
     assert _FakeDesktop.last_switches == {
@@ -207,7 +207,7 @@ def test_connect_remote_version_mismatch_raises(fake_aedt_module, monkeypatch):
 
     _, _fake_settings = fake_aedt_module
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", hfss_version="2025.1",
+        name="sim_server", host="10.20.30.40", hfss_version="2025.1",
         hfss_grpc_port=50051,
     )
     monkeypatch.setattr(
@@ -217,7 +217,7 @@ def test_connect_remote_version_mismatch_raises(fake_aedt_module, monkeypatch):
     with pytest.raises(ConnectFailedError, match="版本配对失配"):
         session.connect({
             "desktop_version": "2024.1", "non_graphical": True,
-            "remote_machine": "sim_host",
+            "remote_machine": "sim_server",
         })
     assert _FakeDesktop.last_kwargs is None  # 失配在 Desktop 构造前拒绝
 
@@ -290,7 +290,7 @@ def test_open_or_create_project_remote_no_local_mkdir(monkeypatch, tmp_path,
     session = HfssSession.instance()
     session._connected = True
     session._remote = {
-        "name": "sim_host", "machine": "10.20.30.40", "port": 50051,
+        "name": "sim_server", "machine": "10.20.30.40", "port": 50051,
         "project_root": "E:\\rfauto_remote", "version": "2025.1",
     }
     session._settings = {"non_graphical": True}
@@ -340,7 +340,7 @@ def test_open_or_create_project_remote_hfss_construct_switches(
     monkeypatch, tmp_path, fake_aedt_module,
 ):
     """review-fix1 v1 锚闭合：远程分支 Hfss 构造点包四开关 CM（第二个
-    构造窗口），构造期 remote_rpc_session=None（ 五百四十二坑 1：
+    构造窗口），构造期 remote_rpc_session=None（开发注记 五百四十二坑 1：
     该开关双语义——Hfss 设计初始化按 rpyc 消费 filemanager，Desktop
     attach 后须置 None 再构造 Hfss），构造完成后 CM 恢复原值。"""
     _patch_adapter_hfss(monkeypatch)
@@ -350,7 +350,7 @@ def test_open_or_create_project_remote_hfss_construct_switches(
     session = HfssSession.instance()
     session._connected = True
     session._remote = {
-        "name": "sim_host", "machine": "10.20.30.40", "port": 50051,
+        "name": "sim_server", "machine": "10.20.30.40", "port": 50051,
         "project_root": "E:\\rfauto_remote", "version": "2025.1",
     }
     session._settings = {"non_graphical": True}
@@ -392,7 +392,7 @@ def test_two_construct_windows_independent_sequence(
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40",
+        name="sim_server", host="10.20.30.40",
         hfss_grpc_port=50051, hfss_project_root="E:\\rfauto_remote",
     )
     monkeypatch.setattr(
@@ -401,7 +401,7 @@ def test_two_construct_windows_independent_sequence(
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     adapter = HfssAdapter.__new__(HfssAdapter)
     adapter.session = session
@@ -457,7 +457,7 @@ def _secure_cfg(cert_dir: Path, **overrides):
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     kwargs = dict(
-        name="sim_host", host="10.20.30.40",
+        name="sim_server", host="10.20.30.40",
         hfss_grpc_port=50051, hfss_project_root="E:\\rfauto_remote",
         hfss_ca_cert=str(cert_dir / "ca.crt"),
         hfss_client_cert=str(cert_dir / "client.crt"),
@@ -483,7 +483,7 @@ def test_connect_remote_mtls_secure_switches_and_env(
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     # 构造期快照：secure 形态三开关 + env 注入内容逐键
     assert _FakeDesktop.last_switches == {
@@ -498,7 +498,7 @@ def test_connect_remote_mtls_secure_switches_and_env(
     assert active_mtls_certs() is session.remote_mtls_certs
     # remote_info 五键契约零变化（mtls 不进该 dict）
     assert session.remote_info == {
-        "name": "sim_host", "machine": "10.20.30.40", "port": 50051,
+        "name": "sim_server", "machine": "10.20.30.40", "port": 50051,
         "project_root": "E:\\rfauto_remote", "version": "2025.1",
     }
     # connect 返回前 env 全恢复（防污染本地会话）
@@ -530,7 +530,7 @@ def test_connect_remote_mtls_staging_noncanonical_names(
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     staged = _FakeDesktop.last_certs
     assert staged is not None and Path(staged) != d
@@ -556,7 +556,7 @@ def test_connect_remote_mtls_partial_config_fail_closed(
 
     cert_dir = _write_canonical_certs(tmp_path / "certs_partial")
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", hfss_grpc_port=50051,
+        name="sim_server", host="10.20.30.40", hfss_grpc_port=50051,
         hfss_ca_cert=str(cert_dir / "ca.crt"),  # 只配一件
     )
     monkeypatch.setattr(
@@ -566,7 +566,7 @@ def test_connect_remote_mtls_partial_config_fail_closed(
     with pytest.raises(RemoteConfigError, match="mTLS 证书配置不完整"):
         session.connect({
             "desktop_version": "2025.1", "non_graphical": True,
-            "remote_machine": "sim_host",
+            "remote_machine": "sim_server",
         })
     assert _FakeDesktop.last_kwargs is None
     assert active_mtls_certs() is None
@@ -587,7 +587,7 @@ def test_open_or_create_project_remote_mtls_window2_auto(
     session = HfssSession.instance()
     session.connect({
         "desktop_version": "2025.1", "non_graphical": True,
-        "remote_machine": "sim_host",
+        "remote_machine": "sim_server",
     })
     adapter = HfssAdapter.__new__(HfssAdapter)
     adapter.session = session

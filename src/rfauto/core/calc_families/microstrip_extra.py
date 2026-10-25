@@ -1,4 +1,4 @@
-"""微带全族扩展四键（架构批 W15-S2 席，R3_domain_expansion §④ A1 余量
+"""微带全族扩展四键（aurora_g W15-S2 席，R3_domain_expansion §④ A1 余量
 + 微带损耗/接地过渡族收尾——W6-S3/W10-S4/W11-S4 六不连续键之后的余量）。
 
 四键：microstrip_cross_parasitics（十字结四口寄生网络+复 S 矩阵）
@@ -9,7 +9,7 @@
 #222 triple-grep 证据（2026-10-20 本席开工实测）
 --------------------------------------------------------
 ``microstrip_cross|mscross|cross_junction`` src/tests/scripts 三面仅历史
-runs/ 目录名与判读注释误中（runs/ge6_hfsswin/seat2_mscross、judge_mscross
+runs/ 目录名与判读注释误中（内部证据档、judge_mscross
 注释）——注册键面零命中（W6-S3 弯/T/阶跃、W10-S4 最优切角、W11-S4 间隙/
 开路端之后十字结=不连续族唯一未落件）。
 ``radiation_conductance|open_end_radiation|g_rad`` 三面零注册键（唯一误中
@@ -25,7 +25,7 @@ microstrip_resonator_em 有未注册 helper αc=Rs/(Z0·W)（HJ 双因子=1 渐�
 PCB 工艺参数面、rf_guard_structures 过孔=DRC 几何面，非电路模型）。
 
 物理口径（#1c/#300 出处纪律；2026-10-20 逐式双源核对，网源在
-内部证据目录*.{cpp,h,pdf}）
+内部证据档*.{cpp,h,pdf}）
 --------------------------------------------------------
 1. 十字结（Hammerstad-Bekkadal 系拟合；qucsator mscross.cpp 可执行逐字
    + Qucs 技术手册 §Microstrip cross 式(11.226)-(11.231) 双源逐字一致；

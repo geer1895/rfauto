@@ -1,4 +1,4 @@
-"""compare_runs_batch 多 run 收官对账面测试（架构批 W8-S4，2026-10-19）。
+"""compare_runs_batch 多 run 收官对账面测试（aurora_g W8-S4，2026-10-19）。
 
 钉四件事：对账行并排（verdict status 优先回落 meta.status、wall_s 耗时、
 has_verdict）、偏差 top-K 排行（相对极差降序/截断计数）、缺产物容错

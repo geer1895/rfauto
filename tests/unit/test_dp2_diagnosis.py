@@ -1,6 +1,6 @@
 """DP-2 耦合矩阵诊断三件套判据测试（df6_dp2diag，2026-09-24）。
 
-判据预声明 runs/df6_dp2diag/criteria.md（先写后跑，#122）；全部合成回收，
+判据预声明 内部证据档（先写后跑，#122）；全部合成回收，
 裁判=综合内核真值/解析已知量，独立于被测实现（#118/#300）：
 - ① CM 回收：synthesize（N=2..6、folded/arrow、TZ 0-2）→response→提取→
   逐元素 ≤5%；噪声 σ=1e-3/1e-2 → ≤10% 或 ok=False；
@@ -220,7 +220,7 @@ def test_q_loss_degraded_flag():
 
 # ─── §4.2b Q 回收·零点法（T36 vf_zero 腿：Γ 极点+零点求和口径，免 q_e）────────
 # 公式 ground 与存档验证见 calculators.q_factor_vf_zero docstring 与
-# runs/df6_dp2diag/q_half/vf_zero_archive_check.json（vs circle 0.01%/0.19%）。
+# 内部证据档（vs circle 0.01%/0.19%）。
 
 
 @pytest.mark.parametrize("q_u,beta", [(100.0, 0.5), (100.0, 2.0),
@@ -603,7 +603,7 @@ def test_service_cm_target_check_tol_single_source_constant():
 
 def test_service_cm_order_not_forwarded_to_refine():
     """回归钉（T20 修③，T12 实测留痕
-    runs/df6_dp2diag/p3_real/p3_crossval_result_order_bug.json）：带 order 的
+    内部证据档）：带 order 的
     diagnose_cm 请求曾把 order 透传给 cm_refine_lm（该内核无此参）→
     「参数不匹配: ... unexpected keyword argument 'order'」直接失败。
     修法=refine_req 剔除 order；钉=带 order 全链路 ok=True 且段一按
@@ -732,7 +732,7 @@ def test_service_unknown_mode_explicit_error():
     assert "未知 mode" in r["error"]
 
 
-# ─── full 模式聚合 verdict（R3-1，runs/review_ge8e/f3_fix/REPORT.md）──────────
+# ─── full 模式聚合 verdict（R3-1，内部证据档）──────────
 # 信封口径对齐 R3 席 evidence_envelope_sampling.md：diagnosis_service 属契约
 # §3.1 遗留族（_stamped 出口 + schema_version 落键 + 失败面单数 error 键），
 # 聚合只加 verdict 键不改信封形态。

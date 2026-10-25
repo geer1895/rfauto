@@ -37,7 +37,7 @@ EXPECTED = {
     # core/slotline（路线 A 裁判面，开发注记（一百九十八）），越域显式拒绝不外推
     "slotline_analysis", "slotline_synthesis",
     # SIW（2026-09-22 siw-family 立项，#231 三表同步）：Cassivi 2002 等效宽度
-    # + RWG TE10 等效（双源出处 runs/siw_family/criteria.md §1；WR-90/RWG
+    # + RWG TE10 等效（双源出处 内部证据档 §1；WR-90/RWG
     # 极限回收钉在 test_siw_template）
     "siw_analysis", "siw_synthesis",
     "quarter_wave_transformer", "attenuator_pi", "attenuator_t",
@@ -56,20 +56,20 @@ EXPECTED = {
     # B3 腔体微扰频移（Pozar §6.7 / Slater 一阶式）
     "cavity_perturbation_shift",
     # DP-5 系统级预算引擎 + spur search（2026-09-24 df6_dp5cascade，#231 三表同步）
-    # payload=core/cascade.py；回收钉 runs/df6_dp5cascade/criteria.md
+    # payload=core/cascade.py；回收钉 内部证据档
     "cascade_budget", "spur_search", "if_plan_sweep",
     # DP-2 耦合矩阵诊断三件套（2026-09-24 df6_dp2diag，#231 三表同步）：
     # VF+LM 固定拓扑反演 + Q 双通道 + Dishal critique；判据预声明
-    # runs/df6_dp2diag/criteria.md；既有 Cauchy 反提键保留为独立裁判（#315）
+    # 内部证据档；既有 Cauchy 反提键保留为独立裁判（#315）
     "cm_extract_vf", "cm_refine_lm", "q_factor_vf", "q_factor_circle",
     # T36（2026-09-29）：Q 半零点法第四键——Γ 极点+零点求和口径免 q_e
     # （launch_ready §6① 落地；存档验证
-    # runs/df6_dp2diag/q_half/vf_zero_archive_check.json vs circle 0.01%/0.19%）
+    # 内部证据档 vs circle 0.01%/0.19%）
     "q_factor_vf_zero",
     "cat_critique",
     # DP-15 C2 Klopfenstein 渐变段（2026-09-24 df6_dp15c2，#231/#304 四表
     # 同步）：skrf.taper.Klopfenstein 剖面 + 微带 MLine 同源宽度剖面；
-    # 判据预声明 runs/df6_dp15c2/criteria.md §3
+    # 判据预声明 内部证据档 §3
     "klopfenstein_taper",
     "k_split_pair",
     "qe_group_delay",
@@ -1462,7 +1462,7 @@ EXPECTED = {
     "superconductor_rs", "superconductor_gap",
     "antenna_q_yaghjian_best",
     "weibull_paper_fit",
-    # aurora_j W4-S12 三键（2026-10-23；候选定稿 runs/aurora_j/
+    # aurora_j W4-S12 三键（2026-10-23；候选定稿 内部证据档
     # w4_candidates.md §1.3 A1-A3）：
     # conductor_surface_impedance（EC-3 收口——calc_families 注册键面零
     # 命中：薄注册单源 core/conductor_loss（polarization_reg 同款），δ=
@@ -1481,7 +1481,7 @@ EXPECTED = {
     # 锚树 tests/unit/test_w4s12_wg_conductor_keys.py
     "conductor_surface_impedance", "wg_evanescent_attenuation",
     "cavity_tm010_perturbation_shift",
-    # aurora_j W4-S13 三键（2026-10-23；候选定稿 runs/aurora_j/
+    # aurora_j W4-S13 三键（2026-10-23；候选定稿 内部证据档
     # w4_candidates.md §1.4 B1-B3，天线口径效率分解域）：
     # polarization_loss_factor（PLF=|ê_r·ê_t|² 薄注册——§4.4.3 同库直取
     # core/polarization.polarization_loss_factor（pol_* 三键同款单源），
@@ -1497,6 +1497,71 @@ EXPECTED = {
     # 锚树 tests/unit/test_w4s13_antenna_aperture_keys.py
     "polarization_loss_factor", "aperture_efficiency_components",
     "horn_aperture_efficiency",
+    # aurora_k K8 两键（2026-10-23，反馈 F6/P14：THRU 去嵌+Z12 指标；
+    # #231 五钉同步）：
+    # z12_series_extract（串联 2 端口 C/R/Q 的 Z12 传输阻抗主口径
+    # ——R=Re(Z12)、C=−1/(ω·Im(Z12))、Q=|X|/R+−1/Y21 副口径（π 端并联
+    # 寄生免疫，去嵌后逐位回收）+简化式 2Z0(1/S21−1) 强失配拒绝
+    # （|S11|>0.9，P14 实测 R=1.4Ω 误算 50Ω）+shunt 1 端口 Y11 的
+    # L/C/Q=|Im(Y)/Re(Y)|/SRF）/
+    # deembed_thru_metrics（THRU 对称半拆双边去嵌一站式——2x-thru 级联
+    # 平方根闭式+二阶差分分支连续，参考面从引线外端移回 pad 边缘；F6
+    # 验收语义：173.5fF+250fF 引线并联场景去嵌后回集总值±5%）。
+    # 公式单源 core/deembed K8 扩展面零复制（conductor_reg 同款薄注册）。
+    # 锚树 tests/unit/test_k8_deembed_metrics.py（半拆/去嵌网络回收
+    # ≤1e-9+y21 口径 C/R 逐位+多波长半拆+欠采样守卫+强失配拒绝+CLI 冒烟）
+    "z12_series_extract", "deembed_thru_metrics",
+    # aurora_k K11 一键（2026-10-23，反馈 F1：八角螺旋电感闭式锚；
+    # #231 五钉同步）：
+    # octagonal_spiral_inductance（GaAs IPD 工艺 W/S/N/Din μm 参数 →
+    # Mohan 三式 L+GMD+d_out 闭式导出+R_dc/Q 一阶+SRF；质量门透传
+    # L±25%/SRF>2×f0——F1 原文口径）。公式单源 core/nfc_coil 四形状
+    # 内核（Mohan Table I/II/III 原文锚在案）八角形状的注册出口，
+    # 零公式复制（conductor_reg 同款薄注册）。
+    # 锚树 tests/unit/test_k11_octagonal_spiral.py（Mohan Table IV 八角例
+    # #55/#56 回放 5.90/7.50nH+用户实测参考 4.226/4.312nH 对拍+门行为）
+    "octagonal_spiral_inductance",
+    # aurora_k K12 两键（2026-10-23，反馈 F1：MIM/IDC 电容闭式锚；
+    # #231 五钉同步）：
+    # mim_capacitance（GaAs IPD 工艺 W/L/D/εr μm 参数 → 平行板精确式
+    # C=ε0·εr·A/d（core/package_interconnect 单源复用零复制）+面密度+
+    # 双板 R_s/L_s 一阶+SRF/Q；质量门透传 C±25%/SRF>2×f0——F1 原文
+    # 口径）/ interdigital_capacitance（N/L/W/S/e_tip μm 参数 → 侧壁
+    # sum-of-capacitances 一阶 C=(N−1)·ε0·εeff·t·l_c/s+Greenhouse 齿排
+    # L_s/R_s+SRF/Q；±50% 精度类如实声明——K11 教训不凭记忆写
+    # Gevorgian 系数，推导式非文献转写；质量门 C±50%/SRF>2×f0）。
+    # 公式单源 core/ipc_cap 零复制（deembed_metrics 同款薄注册）。
+    # 锚树 tests/unit/test_k12_ipc_caps.py（手算回收+分解回收钉+缩放
+    # 恒等式+用户实测 173.5fF 参考+门行为）
+    "mim_capacitance", "interdigital_capacitance",
+    # aurora_l G1 教科书覆盖缺口六键（2026-10-23；缺口侦察+闭式推导
+    # 数值验证 内部证据档；#231 五钉同步）：
+    # line_input_impedance（端接线输入阻抗精确解——Pozar §2.3-2.4 微波
+    # 网络最基本单线变换，sin/cos 形无 tan 奇点+Γ_in 双路径恒等互证；
+    # vswr_convert 标量面零电长度自由度的补口）；
+    # stub_tuner_single（单支节并联调配——Pozar §5.2 电导圆条件二次闭
+    # 式，判别式=g[b²+(g−1)²]≥0 任意无源负载有解；R7 T3"如实不做"遗留
+    # 空白补口，double/triple 禁区族成三键）；
+    # butterworth_prototype（最平坦低通原型——Pozar §8.2 g_k=2sin[(2k−1)
+    # π/2n] 生成式+RL/RS/ωs 阶数闭式+截止预畸变 ωc；梯形 ABCD vs
+    # 10lg(1+ω^{2n}) 多项式双路径互证）；
+    # branchline_coupler_design（分支线耦合器理想设计——Pozar §7 臂阻
+    # 抗闭式 Z1=c·Z0/Z2=Z0·c/√(1−c²)（3dB=Z0/√2·Z0 经典值）+奇偶模解
+    # 析 4×4 S 矩阵（幺正 1e-12 级自检）；synthesize_branchline=模板级
+    # 几何综合不撞）；
+    # leeson_phase_noise（Leeson 1966 振荡器相噪模型——谱形产生面；
+    # phase_noise_evm=相噪→EVM 消费面成对不撞）；
+    # twoport_matrix_convert（二端口 S/Z/Y/ABCD 全对全换算——Pozar §4.4
+    # 网络互换恒等式；串联/并联单元表示缺席如实 null+原因，kuroda/
+    # deembed 面不撞）。
+    # 锚树 tests/unit/test_g1_calc_coverage_keys.py（六键教科书锚+合成
+    # 回收钉+守卫行为）
+    "line_input_impedance",
+    "stub_tuner_single",
+    "butterworth_prototype",
+    "branchline_coupler_design",
+    "leeson_phase_noise",
+    "twoport_matrix_convert",
 }
 
 # W1⑨（2026-09-16 用户口径）：实验态计算器分表——自动归纳（符号回归）公式
@@ -1726,7 +1791,7 @@ def test_stripline_synthesis_roundtrip():
     assert 0 < out["result"]["w_mm"] < 3.156
 
 
-# ─── 审查 R1-1/R1-3 回归钉（runs/review_ge8e/r1_calculators/REPORT.md）───────
+# ─── 审查 R1-1/R1-3 回归钉（内部证据档）───────
 
 def test_stripline_z0_wide_band_no_tanh_cliff():
     """R1-1：w/b≳12.1 后旧 ellipk 形态 tanh 双精度饱和 → 1−k² 下溢、

@@ -55,7 +55,7 @@ from rfauto.core.state import (
 # def 遮蔽都会身份断言失败）。
 # 契约性排除：r3_services.get_chat_settings_raw（返回含 api_key 明文，
 # 自述"不对外"）不入 api 公开面。
-# ─── T1 解环轴（架构批 W6-S1）：门面动作注册（service/agent_actions）───────
+# ─── T1 解环轴（aurora_g W6-S1）：门面动作注册（service/agent_actions）───────
 # 实现模块（r3_services/agent_sandbox/ui_service）经 agent_actions 服务定位器
 # 取本门面动作，静态依赖图上不再出现 实现→门面 边（R1 审计 19 模块 SCC 的
 # 轴心 api↔r3_services 解环）。注册必须在本文件全部动作定义之后。
@@ -203,7 +203,7 @@ _register_actions(
     get_metrics=get_metrics,
 )
 
-# ══ T2 巨石拆分 facade（架构批 W7-S1，2026-10-19）══════════════════
+# ══ T2 巨石拆分 facade（aurora_g W7-S1，2026-10-19）══════════════════
 # 本文件原为单文件巨石，实现按职责域迁入上方 re-export 的子模块；此处
 # 逐名显式 re-export 全部模块级名（公开面快照钉：拆分前后 dir() 逐名
 # 相等；redundant-alias=PEP 484 显式 re-export 惯例）。

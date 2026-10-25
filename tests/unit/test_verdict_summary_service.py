@@ -1,4 +1,4 @@
-"""verdict 摘要面测试（架构批 W8-S4，2026-10-19）。
+"""verdict 摘要面测试（aurora_g W8-S4，2026-10-19）。
 
 钉三件事：
 1. 提取层确定性：平铺族（status+g 门键+复合 dict-ok 门+rc 门）与嵌套族
@@ -29,7 +29,7 @@ from rfauto.service.verdict_summary_service import (
     verdict_summary_md,
 )
 
-# 平铺族（架构批/架构批 战役档形态）：status + g 门键 + 复合门 + rc
+# 平铺族（aurora_c_oe/aurora_d 战役档形态）：status + g 门键 + 复合门 + rc
 _FLAT_VERDICT = {
     "template": "mline",
     "started": "2026-10-19 08:00:00",

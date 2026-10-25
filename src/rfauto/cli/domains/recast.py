@@ -1,11 +1,11 @@
-"""recast 子应用（RECAST 判据重放 CLI 出口，2026-10-11 架构批 W2-D）——
+"""recast 子应用（RECAST 判据重放 CLI 出口，2026-10-11 aurora36 W2-D）——
 status/replay 两只读叶。
 
 零逻辑转发 service/recast_service（规则 4 薄壳；重放数值全部在
 core.recast 确定性内核，铁律 7——本模块零物理数值）：
   rfauto recast status
   rfauto recast status --criteria-dir knowledge/criteria/v2
-  rfauto recast replay -a runs/df5_c3fix/sentinel_verdict.json
+  rfauto recast replay -a 内部证据档
   rfauto recast replay -a verdict.json --evidence-path df6_dp10_scan=four_gates.span_db
   rfauto recast replay -a verdict.json --archived-verdict-path none
 

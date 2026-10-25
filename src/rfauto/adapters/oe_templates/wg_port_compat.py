@@ -7,7 +7,7 @@ v0.37.0-rc1-11 + CSXCAD v0.7.0-rc1-12 + python 绑定 0.7.0，2026-10-02
 重写版）实测该探针 origin 的 XML 序列化错位：(x,y,z) 落盘成 (0,x,y)
 （GetModeOrigin 读回正确、Write2XML 落盘错位）。后果：探针权重=未平移
 模式函数，与被激励 TE 模正交 → uf_tot≡0、S11≡−1、P_acc≈0（w7a
-pyramid_horn_l12 实证；最小复现 内部证据档：
+pyramid_horn_l12 实证；最小复现 runs/seat1_rectwg/repro_rectwg.py：
 案例 A 缺省 |S11|≡1 全反射、案例 B 旧约定内联偏移 S11max=−48dB 健康、
 案例 D=本修补口径与 B 逐位一致）。
 

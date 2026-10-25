@@ -1,4 +1,4 @@
-"""AGC 环路动力学（架构批 W3-S10 席域，R2_core_tier3 §③ D3 立项——
+"""AGC 环路动力学（aurora_f W3-S10 席域，R2_core_tier3 §③ D3 立项——
 rx_impairments docstring 预声明排除面"AGC/压缩行为只做 P1dB 裕量检查"
 的动态半边补全，rx_impairments 静态面语义零改动）。
 

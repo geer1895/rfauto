@@ -47,7 +47,7 @@ def snapshot_recipe(run_dir: str | Path, recipe_dict: dict[str, Any]) -> Path:
     """Write *recipe.snapshot.yaml* into *run_dir* and return its path.
 
     快照只落 run 目录；目标若落在受保护 recipes/ 下由守卫拒绝
-    （infra.recipe_guard，配方污染根修 TODO 增量②）。
+    （infra.recipe_guard，配方污染根修 待办清单 增量②）。
     """
     from rfauto.infra.recipe_guard import check_recipe_write_target
 

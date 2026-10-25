@@ -35,13 +35,13 @@ def _one_machine(monkeypatch, **kw):
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_project_root=kw.pop("project_root", WORK_ROOT),
         ads_hpeesof_dir=kw.pop("ads_dir", ADS_DIR),
         probe_ports={"rdp": 3389},
         **kw,
     )
-    monkeypatch.setattr(ras, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(ras, "load_remote_machines", lambda: {"sim_server": cfg})
     return cfg
 
 
@@ -160,7 +160,7 @@ def test_run_refuses_without_env_gate(monkeypatch):
         raise AssertionError("env 门未开时不得发起任何连接")
 
     monkeypatch.setattr(ras, "SshTransport", _boom)
-    out = remote_ads_run("whatever.sp", "sim_host")
+    out = remote_ads_run("whatever.sp", "sim_server")
     assert out["ok"] is False and out["skipped"] is True
     assert "RFAUTO_REMOTE_SMOKE" in out["reason"]
 
@@ -176,7 +176,7 @@ def test_resolve_machine_unknown_name_skip_envelope(monkeypatch):
     """F3 修复钉（ADS 通道同构）：机器名未登记 → fail-closed SKIP 信封
     （不再裸抛 RemoteConfigError；与 remote_oe_service 同批同构）。"""
     monkeypatch.setenv(REMOTE_ADS_ENV, "1")
-    _one_machine(monkeypatch)          # 注册表只有 sim_host
+    _one_machine(monkeypatch)          # 注册表只有 sim_server
 
     def _boom(*a, **kw):
         raise AssertionError("机器解析失败时不得发起 SSH")
@@ -198,7 +198,7 @@ def test_run_missing_ads_dir_skips(monkeypatch):
         raise AssertionError("配置缺失时不得发起 SSH")
 
     monkeypatch.setattr(ras, "SshTransport", _boom)
-    out = remote_ads_run("x.sp", "sim_host")
+    out = remote_ads_run("x.sp", "sim_server")
     assert out["skipped"] is True
     assert "ads.hpeesof_dir" in out["reason"]
 
@@ -209,7 +209,7 @@ def test_run_missing_project_root_skips(monkeypatch):
     _set_creds(monkeypatch)
     _mock_probe(monkeypatch)
     monkeypatch.setattr(ras, "SshTransport", FakeTransport)
-    out = remote_ads_run("x.sp", "sim_host")
+    out = remote_ads_run("x.sp", "sim_server")
     assert out["skipped"] is True
     assert "project_root" in out["reason"]
 
@@ -225,7 +225,7 @@ def test_run_missing_credentials_no_ssh(monkeypatch):
         raise AssertionError("凭据缺失时不得发起 SSH")
 
     monkeypatch.setattr(ras, "SshTransport", _boom)
-    out = remote_ads_run("x.sp", "sim_host")
+    out = remote_ads_run("x.sp", "sim_server")
     assert out["skipped"] is True
     assert out["steps"]["ssh"]["auth"] == "missing_credentials"
 
@@ -236,7 +236,7 @@ def test_run_local_netlist_missing(monkeypatch, tmp_path):
     _set_creds(monkeypatch)
     _mock_probe(monkeypatch)
     monkeypatch.setattr(ras, "SshTransport", FakeTransport)
-    out = remote_ads_run(tmp_path / "nope.sp", "sim_host")
+    out = remote_ads_run(tmp_path / "nope.sp", "sim_server")
     assert out["ok"] is False
     assert "不存在" in out["reason"]
 
@@ -343,7 +343,7 @@ def _run_happy(monkeypatch, tmp_path, transport=None, **kw):
     net = _write_netlist(tmp_path, _SIMPLE_NETLIST)
     out_dir = tmp_path / "pull"
     envelope = remote_ads_run(
-        net, "sim_host", out_dir=out_dir,
+        net, "sim_server", out_dir=out_dir,
         **kw,
     )
     return envelope, t, net, out_dir
@@ -413,7 +413,7 @@ def test_batch_name_invalid_rejected(monkeypatch, tmp_path):
     _mock_probe(monkeypatch)
     monkeypatch.setattr(ras, "SshTransport", FakeTransport)
     net = _write_netlist(tmp_path, _SIMPLE_NETLIST)
-    out = remote_ads_run(net, "sim_host", batch_name="a b/c")
+    out = remote_ads_run(net, "sim_server", batch_name="a b/c")
     assert out["ok"] is False
     assert "batch_name" in out["reason"]
 
@@ -433,7 +433,7 @@ def test_dependency_courier_uploaded(monkeypatch, tmp_path):
     _mock_probe(monkeypatch)
     t = FakeTransport(None)
     monkeypatch.setattr(ras, "SshTransport", lambda cfg: t)
-    envelope = remote_ads_run(net, "sim_host", out_dir=tmp_path / "pull")
+    envelope = remote_ads_run(net, "sim_server", out_dir=tmp_path / "pull")
     assert envelope["ok"] is True
     uploaded = {Path(local).name: remote for local, remote in t.uploads}
     assert uploaded["dep.s2p"].endswith("/dep.s2p")
@@ -455,7 +455,7 @@ def test_dependency_absolute_envelope_failclosed(monkeypatch, tmp_path):
         raise AssertionError("自包含化失败时不得发起 SSH")
 
     monkeypatch.setattr(ras, "SshTransport", _boom)
-    out = remote_ads_run(net, "sim_host")
+    out = remote_ads_run(net, "sim_server")
     assert out["ok"] is False
     assert "绝对路径" in out["reason"] and "#276" in out["reason"]
 
@@ -498,7 +498,7 @@ def test_fetch_empty_enumeration_failclosed(monkeypatch, tmp_path):
 
 
 def test_cleanup_failure_flips_verdict(monkeypatch, tmp_path):
-    """清理失败翻 FAIL（任务毕必须清理，项目规则 0b）——不静默放行。"""
+    """清理失败翻 FAIL（任务毕必须清理，内核立规注记 0b）——不静默放行。"""
     t = FakeTransport(None)
 
     real_run = t.run_command

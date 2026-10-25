@@ -1,7 +1,7 @@
 """EC-3 导体表面阻抗 CALC 注册面薄包装键（aurora_j W4-S12，2026-10-23）。
 
 一键：conductor_surface_impedance（趋肤深度 δ/表面电阻 Rs/复表面阻抗
-Zs=Rs(1+j)——A1 席位键；候选定稿 runs/aurora_j/w4_candidates.md §1.3，
+Zs=Rs(1+j)——A1 席位键；候选定稿 内部证据档 §1.3，
 EC-3 verified 缺口"surface_impedance 注册键面零"收口）。
 
 **薄注册纪律**（polarization_reg/helix_axial_reg 同款）：物理公式单源在

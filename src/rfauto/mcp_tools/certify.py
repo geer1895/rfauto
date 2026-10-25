@@ -82,7 +82,7 @@ def certify_design(
 ) -> dict[str, Any]:
     """公差盒 → 指标区间证书（三值门面：逐目标 PASS/FAIL/UNKNOWN + 总 verdict）。
 
-    确定性内核（AGENTS #7）：代理模型拟合样本集后按 Lipschitz 有限差分
+    确定性内核（内核立规注记 #7）：代理模型拟合样本集后按 Lipschitz 有限差分
     保守界外推中心点指标区间；UNKNOWN=证据不足，如实不证明。
     无副作用，可安全调用（只读样本集纯计算面）；只读无时序约束。
 

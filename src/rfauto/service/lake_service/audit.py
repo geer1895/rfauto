@@ -1,6 +1,6 @@
 """lake_service.audit —— 湖只读清点与陈旧审计（QW-13 sweep + XD-9 audit-stale）。
 
-自 lake_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原「lake sweep」「湖陈旧审计」两节逐字节搬迁（sweep 半产物标记面被 audit-stale unknown 口径复用，同域承载）。
+自 lake_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原「lake sweep」「湖陈旧审计」两节逐字节搬迁（sweep 半产物标记面被 audit-stale unknown 口径复用，同域承载）。
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
-"""奇偶模分解服务（DP-14 Y1；服务层 JSON 进出，AGENTS 硬限 4）。
+"""奇偶模分解服务（DP-14 Y1；服务层 JSON 进出，内核立规注记 硬限 4）。
 
 规格：docs/plan_deepdive_specs_20260924.md §14.3；判据书
-runs/df6_dp14y1/criteria.md。几何变换内核=core/even_odd_split.py（纯函数），
+内部证据档。几何变换内核=core/even_odd_split.py（纯函数），
 本模块是注册表驱动的模板接入层（每模板声明对称轴+几何映射函数+模阻抗
 来源+端口角色语义）——数值全部出自确定性内核（#7）：
 
@@ -93,7 +93,7 @@ def _cline_mode_impedances(params: dict[str, Any], freq_ghz: float) -> dict[str,
         "source": ("core.coupled_microstrip.coupled_microstrip_even_odd_ohm"
                    "（Kirschning-Jansen 1984 准静态闭式，零厚/无盖口径）"),
         "note": "半模型端口模阻抗：偶=Z0e、奇=Z0o（不是单线 50Ω；HFSS 双导体"
-                "端口换算链见 runs/df6_dp14y1/handoff.md #307）",
+                "端口换算链见 内部证据档 #307）",
     }
 
 

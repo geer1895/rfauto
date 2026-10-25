@@ -16,7 +16,7 @@ params:
   phi_v: 0.9
   bias_v: 3.6342
 status: ok
-script_sha256: 746ab82337762f4b1bf7c4138455afefc1387db2fa5b34d31bde2aa95aa2dab5
+script_sha256: 0456592561d946fb37f4c5568890d481a99dee1700e39dee3fcdacc52f137e88
 csx:
   n_primitives: 28
   props:

@@ -6,7 +6,7 @@
 
 # 内核文档卡：open_wire_line
 
-> 平衡开线族（架构批 W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
+> 平衡开线族（aurora_g W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 平衡开线两键：开架双线（双极坐标精确式）与单线对地（镜像定理精确式）的 Z0/C′/L′/延迟/趋肤衰减——rf_line 六型基板线之外唯一无基板开架平行线（模型域全域精确，非细线近似档）。
 
-模块自述（docstring 首行，机读）：平衡开线族（架构批 W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
+模块自述（docstring 首行，机读）：平衡开线族（aurora_g W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
 
 ## 公式与口径
 
@@ -117,7 +117,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w10s4_core_domains.py`——引文："平衡开线族（架构批 W10-S4 席，R3_domain_expansion 视角1 A2——rf_line"
+- `tests/unit/test_w10s4_core_domains.py`——引文："平衡开线族（aurora_g W10-S4 席，R3_domain_expansion 视角1 A2——rf_line"
 
 测试面（tests/unit 引用扫描，机读；合计 **73** 个 test 函数）：
 

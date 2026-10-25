@@ -293,9 +293,8 @@ class TestLeagueReport:
         assert r0["ok"] and r0["groups"] == []
 
 
-@pytest.mark.skipif(
-    not _REPO_RUNS.is_dir() or not any(_REPO_RUNS.iterdir()),
-    reason="真仓 runs/ 湖缺席（公开分发视图），回放判据如实 skip")
+@pytest.mark.skipif(not any((_REPO_RUNS / d).is_dir() for d in ("league", "capability_cards", "campaign")),
+                   reason="真仓 runs/ 判例证据湖缺席（公开树不带内部判例）")
 class TestRealRunsReplay:
     """真仓只读回放（判据②③④）；DB 落 tmp，runs/ 证据面零写。"""
 
@@ -303,9 +302,7 @@ class TestRealRunsReplay:
         collected = collect_league_rows(_REPO_RUNS)
         assert collected["ok"] is True
         rows = collected["rows"]
-        if len(rows) < 500:
-            # 公开分发视图：runs/ 湖缺席（公开仓不携带历史证据）——如实 skip
-            pytest.skip(f"runs/ 湖规模不足真湖量级（{len(rows)} 行 < 500），如实 skip")
+        assert len(rows) > 500
         db = tmp_path / "league_real.duckdb"
         b = rebuild_league(_REPO_RUNS, db)
         assert b["ok"] is True
@@ -363,9 +360,6 @@ class TestRealRunsReplay:
         assert rebuild_league(_REPO_RUNS, db)["ok"] is True
         rep = league_report(db)
         assert rep["ok"] is True
-        if not rep["groups"]:
-            # 公开分发视图：runs/ 湖缺席（公开仓不携带历史证据）——如实 skip
-            pytest.skip("runs/ 湖缺席（公开分发视图），分组如实为空")
         assert rep["groups"], "真仓应产出非空分组"
         # md 与 groups 同源：每个分组在 md 中有标题行
         for g in rep["groups"]:

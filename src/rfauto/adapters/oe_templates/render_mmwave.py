@@ -151,7 +151,7 @@ MMWAVE_SERIES_META: dict[str, Any] = {
                  "（#347）；全轴 1µm 近重合去重（#152）；端口面贴 PML_8 域边"
                  "（#154 前节）",
     "smoke_note": "未冒烟（离线审计过，#212，test_mmwave_series_array_"
-                  "template）；真机发射面=预算预声明 内部证据档"
+                  "template）；真机发射面=预算预声明 runs/df7_c10d/criteria."
                   "md §d（0.1mm 格 ~3.6e7 cells、dt~4.8e-14s、NrTS~2.5e4、"
                   "墙钟数小时～半天/点，发射前以 exec 实测为准），本批零发射",
 }
@@ -404,7 +404,7 @@ def mmwave_series_render(
 几何/端口/网格口径见 src/rfauto/adapters/openems_templates.py 文末
 MMWAVE_SERIES_ARRAY 段。行波串馈（βg·s 渐进相位递推，波束倾斜 u0=
 {lay["u0_pred"]:.4f} 闭式 core/array_synthesis）+ 链末匹配集总负载到地；
-真机预算预声明 内部证据档 §d（本批零发射）。
+真机预算预声明 runs/df7_c10d/criteria.md §d（本批零发射）。
 """
 import csv
 import json

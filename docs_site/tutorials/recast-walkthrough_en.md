@@ -83,7 +83,7 @@ crit = yaml.safe_load(
     Path("knowledge/criteria/v2/df5_c3fix_sentinel.yaml")
     .read_text(encoding="utf-8"))
 artifact = json.loads(
-    Path("runs/df5_c3fix/sentinel_verdict.json")
+    Path("runs/demo/sentinel_verdict.json")
     .read_text(encoding="utf-8"))
 
 result = replay_one(artifact, crit,
@@ -212,7 +212,7 @@ argument (when the default `verdict` lands on the top level you omit it;
 §3's "biggest time-saver" holds in the CLI too). Measured:
 
 ```console
-$ rfauto recast replay -a runs/df5_c3fix/sentinel_verdict.json \
+$ rfauto recast replay -a runs/demo/sentinel_verdict.json \
       --archived-verdict-path four_gates.verdict
 ✓ 重放完成 对数=3 判据=3（坏 0）
   same=1 flip=0 not_judged=2

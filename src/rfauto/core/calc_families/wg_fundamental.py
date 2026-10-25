@@ -1,4 +1,4 @@
-"""矩形波导 TE10 衰减与功率容量键（架构批 W1-K1，R2_core_tier5 §③ 2）。
+"""矩形波导 TE10 衰减与功率容量键（aurora_h W1-K1，R2_core_tier5 §③ 2）。
 
 同族不对称补口：circular_waveguide_mode_prop（圆波导全参数）与
 waveguide_lambda_g（矩形 TE10 λg/λc/β 面）已有，矩形 TE10 的**导体/介质

@@ -5,7 +5,7 @@
 报告 schema 完整性/主入口退出码与降级路径（monkeypatch run_pip_audit）。
 
 真跑入口：``.venv/Scripts/python.exe scripts/audit_deps.py``（需联网查
-PyPI 漏洞库；首跑留档 runs/qm4/，2026-10-02）。
+PyPI 漏洞库；首跑留档 内部证据档，2026-10-02）。
 """
 
 from __future__ import annotations

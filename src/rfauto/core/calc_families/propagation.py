@@ -15,7 +15,7 @@
 （同 link/exposure_limits 惯例）。五键：two_ray_loss（双径干涉+断点
 元数据）/ knife_edge_loss（刃形绕射 exact/approx/lee 三档）/
 hata_cost231（Hata+COST-231 统一域盒路损）/ walfisch_ikegami_los+
-walfisch_ikegami_nlos（COST-231 Walfisch-Ikegami 视距/非视距，架构批
+walfisch_ikegami_nlos（COST-231 Walfisch-Ikegami 视距/非视距，aurora_g
 W4-S4 追加尾位）。fresnel_zone_radius_m/clearance_ok 为纯辅助不注册
 （链路预算组合面，sat_link AP-9 消费）。
 """

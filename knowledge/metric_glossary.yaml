@@ -16,8 +16,11 @@
 # 消费链：service/metric_glossary_service.py（JSON 进出）→
 # GET /api/metric-glossary → 前端 kit.js metricBadgeHtml 悬浮说明
 # （run 详情页/结果卡指标名，着色=gate 判定 good 绿/bad 红/无 gate 中性）。
+#
+# 2026-10-23 aurora_k K2：增补 q_factor 判读语义条目（反馈 P14 吸收；非
+# 数据湖键——词典超集口径，38 键覆盖率钉只钉下界，不随之变动）。
 schema: metric-glossary/v1
-updated: "2026-10-19"
+updated: "2026-10-23"
 entries:
   # ── 带内统计量族（SpecEvaluator / 数据工厂收集器）───────────────────────
   - metric_id: s11_db_max_in_band
@@ -393,3 +396,15 @@ entries:
     pitfall_refs: ["#122"]
     related_terms: []
     computed_by: "dataset_edb_lane._judgment_metrics（gates 列表计数）"
+  # ── 判读语义增补（aurora_k K2 2026-10-23，反馈 P14 吸收）───────────────
+  # q_factor 非数据湖实测键——按头注"词典允许超集"口径增补的判读语义
+  # 条目：防把 Q 高当损耗低读（Q=|X|/R 口径下 C 变小 Q 也升）。
+  - metric_id: q_factor
+    plain_zh: "品质因数 Q：储能与每周期耗散之比的 2π 倍（串联形式 Q=|X|/R）——Q 高不代表损耗低：频率固定时电容变小、Q 也会升（|X|=1/(ωC) 变大）；看损耗要同时看 R（串联电阻）和 S21"
+    plain_en: "Quality factor Q: 2π times stored energy over dissipation per cycle (series form Q=|X|/R) — high Q does not mean low loss: at a fixed frequency a smaller capacitance raises Q (|X|=1/(ωC) grows); judge loss by reading R (series resistance) together with S21"
+    unit: "无量纲"
+    good_when: "Q 单值不判优劣——判损耗须并看 R（串联电阻）与 S21（插损）；无统一阈值（族与工作点敏感）"
+    gate_semantics: "不设门：Q 高≠损耗低，机读着色会误导判读（P14 语义）"
+    related_terms: ["Q", "Q_u", "Q_e", "Q_L"]
+    computed_by: "core/calc_families/cm_diag.py（q_factor_vf 矢量拟合 / q_factor_circle 圆拟合，从 S11 提取）"
+    notes: "判读语义条目（aurora_k K2 2026-10-23）：非数据湖 38 键清单成员，覆盖率钉下界不含本键"

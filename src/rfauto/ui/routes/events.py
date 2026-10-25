@@ -1,4 +1,4 @@
-"""统一实时事件流端点（架构批 UI-R3 席）——tune/campaign 接入 SSE。
+"""统一实时事件流端点（aurora_d UI-R3 席）——tune/campaign 接入 SSE。
 
 端点清单（route 表装配在 ui/server.py create_ui_app）：
 - GET /api/events/stream                    api_events_stream（统一流，全域）

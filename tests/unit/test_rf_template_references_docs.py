@@ -1,6 +1,6 @@
 """rf_template_references.md 三参考节增补钉（B3 批：介质测量/EMC/波导）。
 
-#1c 铁律面：文档串引用的代码路径/测试名必须真实存在（AGENTS 踩坑速查
+#1c 铁律面：文档串引用的代码路径/测试名必须真实存在（内核立规注记 踩坑速查
 "文档串引用的配置文件必须真实存在"）；三节内引注的内核导出名抽样实测
 （#97：引注与代码同 commit 校验）。
 """
@@ -27,6 +27,9 @@ class TestThreeNewSections:
             "## 16. 介质测量/材料参数提取（F-A P1，2026-09-28 增补）",
             "## 17. EMC 参考口径（ME-1..3，2026-09-28 增补）",
             "## 18. 波导族参考口径（ME-4..7，2026-09-28 增补）",
+            "## 19. GaAs IPD 集总无源件三模板："
+            "octagonal_spiral / mim_cap / interdigital_cap"
+            "（K11/K12，2026-10-24 增补）",
         ):
             assert heading in text, f"缺章节标题：{heading}"
         # 既有基线节未被增补破坏（首尾抽两节）
@@ -37,7 +40,7 @@ class TestThreeNewSections:
         nums = [int(m) for m in re.findall(r"^## (\d+)\.", _doc_text(),
                                            flags=re.MULTILINE)]
         assert nums == sorted(nums), f"章节号乱序：{nums}"
-        assert nums[-1] == 18
+        assert nums[-1] == 19  # 19=GaAs IPD 三模板（K11/K12 aurora_l）
 
 
 class TestCitedPathsExist:

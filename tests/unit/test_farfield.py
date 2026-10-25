@@ -199,7 +199,7 @@ class TestCutCsvRoundTrip:
 # ─── PEC 地镜像修正（W2⑥a，openEMS nf2ff 单镜像面 Prad 双计）───────────────
 
 class TestPecMirrorCorrection:
-    """判据锚：runs/patch_field_smoke 真机数（源码 nf2ff_calc.cpp AddPlane +
+    """判据锚：内部证据档 真机数（源码 nf2ff_calc.cpp AddPlane +
     真机 farfield_3d.h5 下/上半球比 1.0000 双证）。"""
 
     PATCH_META: ClassVar[dict] = {

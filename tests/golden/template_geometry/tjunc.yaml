@@ -10,7 +10,7 @@ params:
   through_len_mm: 25.0
   branch_len_mm: 20.0
 status: ok
-script_sha256: cd5a9354d2cb3cba455b24b771e1ac6b512c3dfbccf30a626b64045c8b1f33c2
+script_sha256: c7637c8924381660ef217c3a0b091b8d694be5facc97b5fcbf28db2ba1271a3d
 csx:
   n_primitives: 22
   props:

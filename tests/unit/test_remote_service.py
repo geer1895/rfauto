@@ -31,13 +31,13 @@ from rfauto.service.remote_service import (
 
 def _one_machine(monkeypatch, **kw):
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.get("project_root", "E:\\rfauto_remote"),
         probe_ports={"rdp": 3389},
         **{k: v for k, v in kw.items() if k != "project_root"},
     )
-    monkeypatch.setattr(rs, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rs, "load_remote_machines", lambda: {"sim_server": cfg})
     return cfg
 
 
@@ -57,9 +57,9 @@ def test_probe_envelope_structure(monkeypatch):
         "name": cfg.name, "host": cfg.host, "reachable": True,
         "ports": {}, "probe_s": 0.01,
     })
-    out = remote_probe("sim_host")
+    out = remote_probe("sim_server")
     assert out["ok"] is True
-    assert out["machines"][0]["name"] == "sim_host"
+    assert out["machines"][0]["name"] == "sim_server"
     assert out["machines"][0]["reachable"] is True
 
 
@@ -83,7 +83,7 @@ def test_status_missing_credentials_no_ssh(monkeypatch):
         raise AssertionError("凭据缺失时不得发起 SSH 连接")
 
     monkeypatch.setattr(rsvc, "SshTransport", _boom)
-    out = remote_status("sim_host")
+    out = remote_status("sim_server")
     m = out["machines"][0]
     assert m["ssh"]["auth"] == "missing_credentials"
     assert "RFAUTO_REMOTE_SSH_USER" in m["ssh"]["hint"]
@@ -110,7 +110,7 @@ def test_status_ssh_ok_via_mock_channel(monkeypatch):
             self.closed = True
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = remote_status("sim_host")
+    out = remote_status("sim_server")
     assert out["machines"][0]["ssh"] == {"auth": "ok", "rc": 0}
 
 
@@ -130,7 +130,7 @@ def test_status_ssh_failed_wrapped(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = remote_status("sim_host")
+    out = remote_status("sim_server")
     ssh = out["machines"][0]["ssh"]
     assert ssh["auth"] == "failed"
     # 凭据零泄漏：错误面只有异常类型名
@@ -149,9 +149,9 @@ def test_session_config_assembles_settings_delta(monkeypatch):
     cfg = _one_machine(monkeypatch)
     cfg.hfss_version = "2025.1"
     cfg.hfss_ansysedt_exe = "E:\\...\\ansysedt.exe"
-    out = hfss_remote_session_config("sim_host")
+    out = hfss_remote_session_config("sim_server")
     remote = out["remote"]
-    assert remote["remote_machine"] == "sim_host"
+    assert remote["remote_machine"] == "sim_server"
     assert remote["machine"] == "10.20.30.40"
     assert remote["port"] == 50051
     assert remote["project_root"] == "E:\\rfauto_remote"
@@ -161,7 +161,7 @@ def test_session_config_assembles_settings_delta(monkeypatch):
 def test_session_config_requires_project_root(monkeypatch):
     _one_machine(monkeypatch, project_root="")
     with pytest.raises(RemoteConfigError, match="project_root"):
-        hfss_remote_session_config("sim_host")
+        hfss_remote_session_config("sim_server")
 
 
 # ─── remote_hfss_smoke（真机 env 门） ─────────────────────────────────────
@@ -170,7 +170,7 @@ def test_session_config_requires_project_root(monkeypatch):
 def test_smoke_refuses_without_env_gate(monkeypatch):
     """真机冒烟必须显式 opt-in：unit 门内（env 未设）一律拒绝。"""
     monkeypatch.delenv(rs.REMOTE_SMOKE_ENV, raising=False)
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["ok"] is False and out["skipped"] is True
     assert "RFAUTO_REMOTE_SMOKE" in out["reason"]
 
@@ -192,7 +192,7 @@ def test_smoke_missing_credentials_unknown(monkeypatch):
         rs, "probe_machine",
         lambda cfg: {"name": cfg.name, "reachable": True, "ports": {}},
     )
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["skipped"] is True
     assert out["steps"]["ssh"]["auth"] == "missing_credentials"
 
@@ -204,7 +204,7 @@ def test_smoke_missing_ansysedt_exe(monkeypatch):
     monkeypatch.setenv(ENV_REMOTE_SSH_PASSWORD, "p")
     monkeypatch.setattr(rs, "probe_machine",
                         lambda cfg: {"name": cfg.name, "reachable": True})
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["skipped"] is True
     assert "ansysedt_exe" in out["reason"]
 
@@ -241,7 +241,7 @@ def test_smoke_midway_failure_runs_cleanup(monkeypatch):
         raise RuntimeError("mock: sftp 上传裸抛")
 
     monkeypatch.setattr(rs, "_launch_grpcsrv", _boom)
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["ok"] is False
     assert "L1 链路异常" in out["reason"] and "RuntimeError" in out["reason"]
     # cleanup 兜底被调且成功（无任务名→清扫路径；进程零匹配→0 杀）
@@ -255,7 +255,7 @@ def test_launch_grpcsrv_task_name_unique_and_recorded(monkeypatch):
     """P2-2：schtasks 任务名带唯一后缀（并发冒烟不互踩），launch 早期
     登记进 steps（部分失败路径也带名，cleanup 据此精确删）。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", hfss_grpc_port=50051,
+        name="sim_server", host="10.20.30.40", hfss_grpc_port=50051,
         hfss_project_root="E:\\rfauto_remote",
         hfss_ansysedt_exe="E:\\x\\ansysedt.exe",
     )
@@ -316,7 +316,7 @@ def test_cleanup_kills_only_grpcsrv_port_matched_pids(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    out = rs.remote_hfss_cleanup("sim_server", grpc_match=":50051:")
     assert out["ok"] is True
     steps = out["steps"]
     assert steps["ansysedt_grpcsrv_pids"] == ["111"]
@@ -352,7 +352,7 @@ def test_cleanup_zero_grpcsrv_match_honest_zero_kill(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    out = rs.remote_hfss_cleanup("sim_server", grpc_match=":50051:")
     assert out["ok"] is True
     assert out["steps"]["ansysedt_grpcsrv_pids"] == []
     assert not any(c.startswith("taskkill") for c in commands)
@@ -363,7 +363,7 @@ def test_cleanup_fingerprint_query_g5_zero_double_quotes(monkeypatch):
     """W7-B §1.5-1 回归钉：指纹查询命令全程零双引号（G5）且复用互斥
     单源形态。根因=SSH exec 通道 argv 层吃双引号→PS 分词拼裸 WQL
     ``Name=ansysedt.exe``（值失引号）→「无效查询」静默零杀——证据
-    runs/seat5_ssh/（exec qdemo_Name=x_end vs 交互 qdemo_Name='x'_end）。"""
+    内部证据档（exec qdemo_Name=x_end vs 交互 qdemo_Name='x'_end）。"""
     monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
     _one_machine(monkeypatch)
     commands: list[str] = []
@@ -385,7 +385,7 @@ def test_cleanup_fingerprint_query_g5_zero_double_quotes(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    out = rs.remote_hfss_cleanup("sim_server", grpc_match=":50051:")
     fp_cmds = [c for c in commands if "Win32_Process" in c]
     assert len(fp_cmds) == 1
     cmd = fp_cmds[0]
@@ -422,7 +422,7 @@ def test_cleanup_fingerprint_query_rc_failure_recorded_best_effort(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    out = rs.remote_hfss_cleanup("sim_server", grpc_match=":50051:")
     assert out["ok"] is True
     steps = out["steps"]
     assert steps["fingerprint_query_rc"] == 1
@@ -453,7 +453,7 @@ def test_cleanup_deletes_recorded_task_name_only(monkeypatch):
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
     name = "RFAuto\\grpcsrv_smoke_ab12cd34"
-    out = rs.remote_hfss_cleanup("sim_host", task_name=name,
+    out = rs.remote_hfss_cleanup("sim_server", task_name=name,
                                  grpc_match=":50051:")
     assert out["ok"] is True
     deletes = [c for c in commands if "schtasks /delete" in c]
@@ -492,7 +492,7 @@ def test_cleanup_sweep_single_quote_form_zero_double_quotes(monkeypatch):
             pass
 
     monkeypatch.setattr(rs, "SshTransport", FakeTransport)
-    out = rs.remote_hfss_cleanup("sim_host", grpc_match=":50051:")
+    out = rs.remote_hfss_cleanup("sim_server", grpc_match=":50051:")
     assert out["ok"] is True
     assert out["steps"]["deleted_tasks"] == [
         "RFAuto\\grpcsrv_smoke_aa11", "RFAuto\\grpcsrv_smoke_bb22"]
@@ -655,7 +655,7 @@ def test_smoke_mutex_busy_skips_launch_and_cleanup_yields(monkeypatch):
         raise AssertionError("互斥候跑时不得进入 launch 段")
 
     monkeypatch.setattr(rs, "_launch_grpcsrv", _boom)
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["ok"] is False and out["skipped"] is True
     assert "候跑" in out["reason"]
     assert out["steps"]["mutex"]["busy"] is True
@@ -682,7 +682,7 @@ def test_smoke_mutex_clear_proceeds_to_launch(monkeypatch):
     monkeypatch.setattr(rs, "_attach_and_verify",
                         lambda cfg, steps: {"ok": True, "reason": None,
                                             "steps": steps})
-    out = remote_hfss_smoke("sim_host")
+    out = remote_hfss_smoke("sim_server")
     assert out["ok"] is True
     assert out["steps"]["mutex"]["busy"] is False
     # launch 已打桩：无 bat 上传（stub 直通），清理兜底照常放行
@@ -706,7 +706,7 @@ def test_l2_mutex_busy_skips_launch(monkeypatch, tmp_path):
 
     monkeypatch.setattr(rs, "_launch_grpcsrv", _boom)
     monkeypatch.setattr(rs, "_l2_model_solve_export", _boom)
-    out = rs.remote_hfss_l2_smoke("sim_host", out_dir=str(tmp_path / "pull"))
+    out = rs.remote_hfss_l2_smoke("sim_server", out_dir=str(tmp_path / "pull"))
     assert out["ok"] is False and out["skipped"] is True
     assert "候跑" in out["reason"]
     assert out["steps"]["mutex"]["busy"] is True
@@ -739,7 +739,7 @@ def _synth_l2_net(eps_eff=2.8526, s11_mag=None, s21_db=-0.2, n_points=41):
 
 def test_l2_refuses_without_env_gate(monkeypatch):
     monkeypatch.delenv(rs.REMOTE_SMOKE_ENV, raising=False)
-    out = rs.remote_hfss_l2_smoke("sim_host")
+    out = rs.remote_hfss_l2_smoke("sim_server")
     assert out["ok"] is False and out["skipped"] is True
     assert "RFAUTO_REMOTE_SMOKE" in out["reason"]
 
@@ -757,7 +757,7 @@ def test_l2_missing_credentials_unknown(monkeypatch):
     monkeypatch.setattr(rs, "SshTransport", _boom)
     monkeypatch.setattr(rs, "probe_machine",
                         lambda cfg: {"name": cfg.name, "reachable": True})
-    out = rs.remote_hfss_l2_smoke("sim_host")
+    out = rs.remote_hfss_l2_smoke("sim_server")
     assert out["skipped"] is True
     assert out["steps"]["ssh"]["auth"] == "missing_credentials"
 
@@ -769,7 +769,7 @@ def test_l2_missing_ansysedt_exe(monkeypatch):
     monkeypatch.setenv(ENV_REMOTE_SSH_PASSWORD, "p")
     monkeypatch.setattr(rs, "probe_machine",
                         lambda cfg: {"name": cfg.name, "reachable": True})
-    out = rs.remote_hfss_l2_smoke("sim_host")
+    out = rs.remote_hfss_l2_smoke("sim_server")
     assert out["skipped"] is True
     assert "ansysedt_exe" in out["reason"]
 
@@ -781,7 +781,7 @@ def test_l2_missing_project_root(monkeypatch):
     monkeypatch.setenv(ENV_REMOTE_SSH_PASSWORD, "p")
     monkeypatch.setattr(rs, "probe_machine",
                         lambda cfg: {"name": cfg.name, "reachable": True})
-    out = rs.remote_hfss_l2_smoke("sim_host")
+    out = rs.remote_hfss_l2_smoke("sim_server")
     assert out["skipped"] is True
     assert "project_root" in out["reason"]
 
@@ -867,7 +867,7 @@ def test_l2_orchestration_mock_channel(monkeypatch, tmp_path):
         rs, "_l2_model_solve_export",
         lambda cfg, proj, s2p, steps: {"ok": True, "reason": None},
     )
-    out = rs.remote_hfss_l2_smoke("sim_host", out_dir=str(tmp_path / "pull"))
+    out = rs.remote_hfss_l2_smoke("sim_server", out_dir=str(tmp_path / "pull"))
     assert out["verdict"] == "PASS" and out["ok"] is True
     c = out["criteria"]
     assert c["c1_readback"] and c["c2_s11_min_db"]
@@ -914,7 +914,7 @@ def test_l2_build_failure_failclosed(monkeypatch, tmp_path):
         rs, "_l2_model_solve_export",
         lambda cfg, proj, s2p, steps: {"ok": False, "reason": "mock: solve boom"},
     )
-    out = rs.remote_hfss_l2_smoke("sim_host", out_dir=str(tmp_path / "pull"))
+    out = rs.remote_hfss_l2_smoke("sim_server", out_dir=str(tmp_path / "pull"))
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert "mock: solve boom" in out["reason"]
     assert out["criteria"] == {}
@@ -926,7 +926,7 @@ def test_l2_build_failure_failclosed(monkeypatch, tmp_path):
 
 def _preflight_machine(monkeypatch, probe_ports=None, **kw):
     kwargs = dict(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.pop("project_root", "E:\\rfauto_remote"),
         probe_ports=probe_ports if probe_ports is not None else {
@@ -934,7 +934,7 @@ def _preflight_machine(monkeypatch, probe_ports=None, **kw):
     )
     kwargs.update(kw)
     cfg = RemoteMachineConfig(**kwargs)
-    monkeypatch.setattr(rs, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rs, "load_remote_machines", lambda: {"sim_server": cfg})
     return cfg
 
 
@@ -943,9 +943,9 @@ def test_preflight_pass_all_license_ports_open(monkeypatch):
     _preflight_machine(monkeypatch)
     monkeypatch.setattr(rs, "probe_port",
                         lambda host, port, timeout_s=3.0: (True, 4.4))
-    out = rs.license_preflight("sim_host")
+    out = rs.license_preflight("sim_server")
     assert out["ok"] is True and out["verdict"] == "PASS"
-    assert out["machine"] == "sim_host" and out["reason"] is None
+    assert out["machine"] == "sim_server" and out["reason"] is None
     assert set(out["steps"]["probe"]) == {"ansys_license", "ads_license"}
     assert out["steps"]["probe"]["ansys_license"] == {
         "port": 1055, "open": True, "latency_ms": 4.4}
@@ -963,7 +963,7 @@ def test_preflight_fail_closed_when_port_down(monkeypatch):
         return (port != 1055, 1.0)   # ansys_license(1055) 不通
 
     monkeypatch.setattr(rs, "probe_port", _probe)
-    out = rs.license_preflight("sim_host")
+    out = rs.license_preflight("sim_server")
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert "1055" in out["reason"] and "ansys_license" in out["reason"]
     assert out["gate"]["closed"] == ["ansys_license"]
@@ -978,7 +978,7 @@ def test_preflight_fail_closed_without_license_ports(monkeypatch):
     _preflight_machine(monkeypatch, probe_ports={"rdp": 3389})
     monkeypatch.setattr(rs, "probe_port",
                         lambda host, port, timeout_s=3.0: (True, 1.0))
-    out = rs.license_preflight("sim_host")
+    out = rs.license_preflight("sim_server")
     assert out["verdict"] == "FAIL"
     assert "未登记 license" in out["reason"]
     assert out["gate"]["all_open"] is False
@@ -1002,7 +1002,7 @@ def test_preflight_deep_without_grpc_session_skips_attach(monkeypatch):
         return (port != 50051, 1.0)   # license 开、grpc 未开
 
     monkeypatch.setattr(rs, "probe_port", _probe)
-    out = rs.license_preflight("sim_host", deep=True)
+    out = rs.license_preflight("sim_server", deep=True)
     assert out["verdict"] == "PASS"   # 深检缺席不翻 license 门
     assert out["steps"]["attach_health"]["skipped"] is True
     assert "无在跑会话" in out["steps"]["attach_health"]["reason"]
@@ -1016,7 +1016,7 @@ def test_preflight_deep_attach_informational_only(monkeypatch):
                         lambda host, port, timeout_s=3.0: (True, 1.0))
     monkeypatch.setattr(rs, "_attach_and_verify",
                         lambda cfg, steps: {"ok": False, "reason": "attach 失败"})
-    out = rs.license_preflight("sim_host", deep=True)
+    out = rs.license_preflight("sim_server", deep=True)
     assert out["verdict"] == "PASS"   # 信息面不进门
     assert out["steps"]["attach_health"]["ok"] is False
     assert "不翻 license 门" in out["steps"]["attach_health"]["note"]
@@ -1033,7 +1033,7 @@ def test_preflight_deep_not_attempted_when_gate_fails(monkeypatch):
         raise AssertionError("门未过不得进入 attach 深检")
 
     monkeypatch.setattr(rs, "_attach_and_verify", _boom)
-    out = rs.license_preflight("sim_host", deep=True)
+    out = rs.license_preflight("sim_server", deep=True)
     assert out["verdict"] == "FAIL"
     assert "attach_health" not in out["steps"]
 

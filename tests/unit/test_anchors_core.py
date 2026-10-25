@@ -285,19 +285,19 @@ _B2A_POINTERS = {
 
 
 def _load_b2a_verdict(rel: str) -> dict:
-    return json.loads((_REPO_ROOT / rel).read_text(encoding="utf-8"))
+    f = _REPO_ROOT / rel
+    if not f.is_file():
+        pytest.skip(f"公开树无 runs/ 证据湖（{rel} 不在档）——双引擎窗证据随内部仓，锚值已随注册表发布")
+    return json.loads(f.read_text(encoding="utf-8"))
 
 
 def test_b2a_window_constants_bit_exact_vs_verdict() -> None:
-    _ev = Path(__file__).resolve().parents[2].joinpath("runs", "hfss_window_b2a", "wilkinson", "hfss_side", "verdict.json")
-    if not _ev.exists():
-        pytest.skip("runs/ 证据档缺席（公开分发视图）: " + str(_ev))
     """constant 锚值与 verdict 实测门值逐位一致（AGREE 席才可注册 constant）。"""
     anchor_set = _live_anchor_set()
     for aid, (rel, metric, params) in _B2A_CONSTANTS.items():
         verdict = _load_b2a_verdict(rel)
         assert verdict["verdict"] in ("AGREE_OPENEMS", "AGREE_JUDGE")
-        assert verdict["machine"] == "sim_host"
+        assert verdict["machine"] == "sim_server"
         row = next(m for m in verdict["per_metric"] if m["metric"] == metric)
         assert row["in_gate"] is True  # 门内才定锚（DISAGREE 席改 pointer）
         got = anchor_set.resolve_anchor(aid, params)
@@ -310,16 +310,13 @@ def test_b2a_window_constants_bit_exact_vs_verdict() -> None:
 
 
 def test_b2a_window_pointers_dual_values_bit_exact_vs_verdict() -> None:
-    _ev = Path(__file__).resolve().parents[2].joinpath("runs", "hfss_window_b2a", "gysel", "hfss_side", "verdict.json")
-    if not _ev.exists():
-        pytest.skip("runs/ 证据档缺席（公开分发视图）: " + str(_ev))
     """pointer 锚=双值分歧指针：不就地求值、双值逐位=verdict、消费面不接。"""
     anchor_set = _live_anchor_set()
     for aid, (seat, metric) in _B2A_POINTERS.items():
         verdict = _load_b2a_verdict(
             f"runs/hfss_window_b2a/{seat}/hfss_side/verdict.json")
         assert verdict["verdict"] == "DISAGREE"
-        assert verdict["machine"] == "sim_host"
+        assert verdict["machine"] == "sim_server"
         rec = anchor_set.get(aid)
         assert rec is not None, aid
         assert rec.kind == "pointer" and rec.status == "experimental"
@@ -415,8 +412,9 @@ def test_kj_even_domain_edge_notes_registered() -> None:
     assert "u=10/g=0.1" in note and "1.5" in note and "MARGINAL" in note
     # 注记 2：even u=10 对空气盒顶高敏感（10h 顶 +1.07%）
     assert "10h" in note and "1.07" in note
-    # 出处档位公开分发视图不随附（内部证据档，字段可缺省）
-    assert rec.provenance.get("referee_script") is None
+    # 域内基准出处可回溯（Elmer 复核摘要+J1 门）
+    assert rec.provenance.get("referee_script") == \
+        "runs/df7_kjeven/elmer_recheck/elmer_recheck.py"
     assert rec.uncertainty is not None and rec.uncertainty["value"] == 1.0
 
 

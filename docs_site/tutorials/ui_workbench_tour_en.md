@@ -197,7 +197,7 @@ calculators — the same kernel as CLI `rfauto calc` and the MCP
 **generated live from the registry** (the page is not hand-maintained;
 the key count grows automatically as the kernel gains keys, so this
 tutorial does not pin a number). The full shape, matured in the
-aurora72 batch:
+架构批 batch:
 
 - **Browse by group**: a dropdown groups keys by business domain
   (common groups first; experimental/other always last), each group

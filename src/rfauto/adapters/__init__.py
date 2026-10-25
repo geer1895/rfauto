@@ -1,6 +1,6 @@
 """adapters 包：内置 EM 求解器注册面入口。
 
-注册表模式（项目规则 硬限 3）：新增"可替换组件" = 基类 + 注册表。
+注册表模式（内核立规注记.md 硬限 3）：新增"可替换组件" = 基类 + 注册表。
 注册表本体 = em_solver_base.EMSolverRegistry（键 = EMSolverType；观测面
 get_global_registry()）。本包 __init__ 只导入第一类通道；引擎级 SDK
 （pyaedt/MPh/meep/ngsolve/openEMS 绑定）在各模块内部惰性 import，导入

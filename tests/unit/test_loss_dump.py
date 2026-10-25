@@ -4,7 +4,7 @@
 - **合成 fixture 门（CI 恒跑）**：tmp_path 手写 openEMS dump_type=29 布局
   （FieldData/FD/f0 + CellData + CellWidth + Mesh），裁判 = 闭式
   P = 0.5·σ·|E0|²·V（Jackson §6.9，#118 独立来源）与可分离求和闭式；
-- **实档锚门（归档在则跑，缺则 skip 不 fail）**：runs/nf2ff_smoke_sar_dipole/
+- **实档锚门（归档在则跑，缺则 skip 不 fail）**：内部证据档
   fdtd/SAR_raw.h5 逐 cell 积分 vs 同目录 openEMS 自算 SAR_1g.h5 的 power
   属性（独立实现裁判），rel ≤ 1e-3。runs/ 为 git-ignored，CI 无归档。
 

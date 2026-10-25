@@ -1,6 +1,6 @@
 """scripts/oe_chain_launch.py（H1-5 消费面收编）rc 判链离线回归钉。
 
-出处链：runs/ge8_followup/oe_chain_waiter.py（ge8b 档案）对战役 rc 只记
+出处链：内部证据档（ge8b 档案）对战役 rc 只记
 不判 + fd_oe_campaign 修复前恒 rc=0 → 全座 SKIP 被记成"OE 链完毕"
 （oe_chain.log 2026-10-03 K-7 实证）→ F6 修复席：本脚本按 rc 判链
 （rc 0 才串发下一项），runs/ 档案零改写。

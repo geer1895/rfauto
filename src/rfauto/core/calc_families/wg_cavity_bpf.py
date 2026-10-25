@@ -1,4 +1,4 @@
-"""波导膜片耦合腔带通滤波器综合链（架构批 W10-S4 席，R3_domain_expansion
+"""波导膜片耦合腔带通滤波器综合链（aurora_g W10-S4 席，R3_domain_expansion
 视角2 B1——滤波器实现族最后一块：微带耦合线侧 coupled_line_bpf 已有、波导
 腔体侧组装链零命中）。
 

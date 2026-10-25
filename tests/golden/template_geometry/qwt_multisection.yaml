@@ -17,7 +17,7 @@ params:
   feed_w_mm: 1.1134
   z_load_ohm: 100.0
 status: ok
-script_sha256: e1bad62cf9c946084ce7075dea37916fc88dc09973ac927e9f1b3ca7558cbc7e
+script_sha256: 86c5e37a2b1f806dd935a2612d310129e83fe1570e356551aed2fe7a1998087e
 csx:
   n_primitives: 13
   props:

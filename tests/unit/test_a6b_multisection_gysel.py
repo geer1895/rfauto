@@ -1,4 +1,4 @@
-"""架构批 A6-B 席锚树：multisection_coupler 两键（多节对称定向耦合器二项
+"""aurora72 A6-B 席锚树：multisection_coupler 两键（多节对称定向耦合器二项
 式综合/精确频响）+ gysel_core 两键（Gysel 功分器 core 电气综合/五线六节点
 精确频响）。
 

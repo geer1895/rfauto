@@ -119,7 +119,7 @@ M2 判读的 MFK 腿：低保真库存（150 行数据集）+ 高保真 HFSS 锚
 [mfk] 合成回收钉（Forrester 式仿射双保真族，#118）
 [mfk] 合成钉 pass=True gamma_max=0.00058 eps_max=0.0000%
   MFK fit：lo=150 hi=7 heads=43
-[mfk] verdict → D:\rf_workspace\runs\aurora_d\tut\mfk_verdict.json
+[mfk] verdict → D:\rf_workspace\runs\demo\tut\mfk_verdict.json
 
 ===== MFK 多保真判读摘要（overall=FAIL） =====
              smt_mfk: |ΔΓ|max=0.06291 εeff_max=1.0114% S21_max=0.0058dB

@@ -2,7 +2,8 @@
 
 照 test_edb_status_ui.py 先例（TestClient + create_ui_app，真仓资产只读
 无 tmp 树诉求——词典是仓内静态知识文件非 runs 产物）：
-- GET /api/metric-glossary          → 全量清单信封（38 键）
+- GET /api/metric-glossary          → 全量清单信封（39 键=38 数据湖键
+  + q_factor 判读语义增补，aurora_k K2 2026-10-23）
 单键查询走 service 层 get_metric（test_metric_glossary.TestMetricGlossary
 Service 同笔）——REST 面不设未消费路由（UI 契约门 C 向只收不放）。
 """
@@ -26,7 +27,7 @@ class TestMetricGlossaryEndpoints:
         assert r.status_code == 200
         body = r.json()
         assert body["ok"] is True
-        assert body["count"] == 38
+        assert body["count"] == 39  # 38 数据湖键 + q_factor 判读语义增补（aurora_k K2）
         assert body["schema"] == "metric-glossary/v1"
         assert "s11_db_max_in_band" in body["keys"]
         # 词条负载抽查：白话+判据+坑号三件在位（tooltip 数据契约）

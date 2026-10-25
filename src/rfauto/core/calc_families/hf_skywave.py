@@ -1,4 +1,4 @@
-"""HF 电离层天波族（架构批 W7-S3 席，R3_domain_expansion 视角3 D1
+"""HF 电离层天波族（aurora_g W7-S3 席，R3_domain_expansion 视角3 D1
 Top5——全频段维度唯一整段空白：HF 3-30MHz 电离层传播机理面三键）。
 
 三键：critical_frequency（等离子体频率/临界频率 f_p=8.98√N_e 恒等式）/

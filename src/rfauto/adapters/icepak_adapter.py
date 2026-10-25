@@ -26,7 +26,7 @@
   max|ΔT|/ΔT ≤ 2%。
 - **版本钉扎与整轮重试**：AEDT 2025.1（本机 v251，与 hfss 脚本同池；
   license 探测 2026-09-12 elec_solve_icepak=exists，见
-  runs/multiphysics_probe/capability_matrix.json）；2025.1 gRPC 通道级
+  内部证据档）；2025.1 gRPC 通道级
   不稳定（#191）由调用方（scripts/icepak_electrothermal_case.py）做
   整轮重试，本适配器不做单调用级重试。
 - **#244 五坑静态守卫（MP-B4 清偿）**：`audit_geometry_unit_literals`

@@ -134,9 +134,11 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 | anchor_id | quantity |
 |---|---|
+| `c3.k_of_g.openems-hfss-v1` | k_of_g |
 | `mline.z0_ohm.closedform-v1` | mline_z0_ohm |
 | `ratrace.r_ring_mm.closedform-v1` | ratrace_r_ring_mm |
 | `ratrace.ring_z_ohm.closedform-v1` | ratrace_ring_z_ohm |
+| `schiffman.delta_phase.closedform-v1` | schiffman_delta_phase_deg |
 
 测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
 

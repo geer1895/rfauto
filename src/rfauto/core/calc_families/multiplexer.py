@@ -83,7 +83,7 @@ g 闭式 §4.06，chapter 级转引）；带通→低通变换与最小阶闭式
 |S21|²+|S31|²≡1）；平铺几何/算术恒等式=本仓定义域内精确算术（实现前
 独立复算逐位，锚树 tests/unit/test_aurora_d_core6.py：几何中点/对称/
 带宽和恒等三锚）；阶数闭式 vs 整数扫描、cosh 闭式 vs T_n 递推、Ω 边缘
-恒等=本仓双路线复算（内部验证档：
+恒等=本仓双路线复算（runs/aurora_d/_core8_verify_derivation.py：
 rel≤3.4e-16，锚树 tests/unit/test_aurora_d_core8.py）。
 
 守卫：0<f_start_ghz<f_stop_ghz 有限（倒序/相等/非正显式拒绝）；
@@ -244,7 +244,7 @@ _SOURCES["proto"] = (
     "Jones, Artech 1980 §4.06（Butterworth g 闭式 2sin((2k−1)π/2N)，"
     "chapter 级转引）；Chebyshev g 值=仓内单源 core/matching."
     "chebyshev_g_values（Pozar 表 8.4 递推）复用；阶数闭式 vs 整数扫描/"
-    "cosh vs T_n 递推/Ω 边缘恒等=本仓双路线复算（内部验证档，"
+    "cosh vs T_n 递推/Ω 边缘恒等=本仓双路线复算（runs/aurora_d/"
     "_core8_verify_derivation.py rel≤3.4e-16）")
 
 #: 阶数上限（规格过紧显式拒绝指回放宽）

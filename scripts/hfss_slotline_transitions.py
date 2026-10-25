@@ -20,7 +20,7 @@
   powershell Start-Process .venv\\Scripts\\python.exe -ArgumentList
   "scripts/hfss_slotline_transitions.py" -RedirectStandardOutput ...
 产物：runs/slotline_transitions/hfss/{hfss_trans*.s2p, hfss_balun*.s2p,
-port_modes.json, run.log}、runs/slotline_transitions/hfss_result.json
+port_modes.json, run.log}、内部证据档
 """
 
 from __future__ import annotations

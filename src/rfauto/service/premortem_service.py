@@ -1,7 +1,7 @@
 """premortem_service：Pre-mortem 失败预演薄封装（XN-1，第十九轮 P1）。
 
 内核在 core/premortem.py（确定性规则引擎，LLM 不产失败模式——硬规则 7）；
-本模块只做 JSON 进出薄壳（AGENTS 硬规则 4：新功能先写 service 函数，
+本模块只做 JSON 进出薄壳（内核立规注记 硬规则 4：新功能先写 service 函数，
 CLI/MCP 是薄壳）——负例（未知 task_kind）转 ok=False+errors，不抛穿。
 
 消费挂点（round19 口径"战役/设计开工前自动生成"）：

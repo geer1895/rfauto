@@ -4,7 +4,7 @@
 注记 :167/:210/:453）；HFSS 波端口对端口截面解二维本征模，天然支持槽线——
 本脚本用真机数字钉死"波端口能不能做槽线仲裁基准"的答案。
 
-同几何口径（与路线 A runs/slotline_port_a 设计点逐键一致，三方可比）：
+同几何口径（与路线 A 内部证据档 设计点逐键一致，三方可比）：
 - W=1.0mm 槽宽、RO4350B 基板 er=3.66/tand=0.0037/h=1.524mm、f0=2.5GHz、
   线长 L=1λ'=93.4624mm（core/slotline 闭式：εeff=1.6462、β=67.227rad/m、
   Z0=110.92Ω）；
@@ -50,7 +50,7 @@
   powershell Start-Process .venv\\Scripts\\python.exe -ArgumentList
   "scripts/hfss_slotline_arbitration.py" -RedirectStandardOutput ...
 产物：runs/slotline_arbitration/hfss/{hfss_slotline_<档>.s2p, hfss_slotline_<档>
-  _gamma.s2p, port_modes.json, run.log}、runs/slotline_arbitration/hfss_arbitration.json
+  _gamma.s2p, port_modes.json, run.log}、内部证据档
 """
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ OUT = REPO / "runs" / "slotline_arbitration" / "hfss"
 RESULT = REPO / "runs" / "slotline_arbitration" / "hfss_arbitration.json"
 PROGRESS = REPO / "runs" / "slotline_arbitration" / "progress.log"
 
-# ── 设计点（与路线 A runs/slotline_port_a 逐键一致；全部字面预计算 #218）──
+# ── 设计点（与路线 A 内部证据档 逐键一致；全部字面预计算 #218）──
 W = 1.0                  # 槽宽 mm
 H = 1.524                # 基板厚 mm（RO4350B 60mil）
 ER, TAND = 3.66, 0.0037
@@ -592,7 +592,7 @@ def _finalize(analyses: dict) -> dict:
 def _plan() -> int:
     """离线预检（无 HFSS、零写入）：设计点/闭式锚/端口档/预声明判据/schema。
 
-    TODO 0df followUp③ 的 --plan 段：真机前一条命令核对全部锚与判据——
+    待办清单 0df followUp③ 的 --plan 段：真机前一条命令核对全部锚与判据——
     闭式锚由 core/slotline 现算（不沿用本文件历史数字）；判据预声明后真机
     判读不得改门（#122：预声明门错了也如实记 FAIL 不事后改门）。
     """

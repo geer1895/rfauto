@@ -1,6 +1,6 @@
 """DP-4 P2：阵列两档方向图服务层（快速档编排；互耦档接口预留）。
 
-职责（AGENTS 硬限 4：服务层 JSON 进出，CLI/MCP 薄壳；铁律 7：数值只在
+职责（内核立规注记 硬限 4：服务层 JSON 进出，CLI/MCP 薄壳；铁律 7：数值只在
 确定性内核——全部物理数字来自 core/array_synthesis.py（零改动复用）与
 core/array_scan.py 纯函数，本模块只做参数校验、布局/激励构建与结果装配）：
 
@@ -586,7 +586,7 @@ def array_pattern(request: dict, coupled_solver: Callable[[dict], dict] | None =
             if coupled_solver is None:
                 raise NotImplementedPhase(
                     "DP-4 互耦档（EEP+全 S 矩阵真机编排）属 P3：本批仅预定义"
-                    "接口，不发射真机（详见 runs/df6_dp4af/criteria.md P3 交接）")
+                    "接口，不发射真机（详见 内部证据档）")
             return ok_envelope(result=coupled_solver(request))
 
         # ── 快速档（秒级）：单元方向图 × AF 复域逐点乘 ──
@@ -802,7 +802,7 @@ EEP_TIER_GRIDS: dict[str, tuple[int, int]] = {
     "patch_eep_1x4": (4, 1),
 }
 
-#: J4a 装配无源门（runs/df6_dp4p3/criteria.md 预声明）：带内 max σmax ≤ 1.005。
+#: J4a 装配无源门（内部证据档 预声明）：带内 max σmax ≤ 1.005。
 #: EEP 模板为 LumpedPort 端口（参考=50Ω 集总元自身），raw 装配即 50Ω 基——
 #: #250 MSL 线基反演不适用（无三面探针）。
 EEP_SIGMA_MAX_LIMIT = 1.005
@@ -1084,7 +1084,7 @@ def coupled_tier_solve(request: dict) -> dict[str, Any]:
         include_s_matrix（缺省 False）：True 时带全频段 s_params（[re,im]）
 
     返回 {"ok", "result"| "error"}；J4a σmax 门与 J4b 报告门见
-    runs/df6_dp4p3/criteria.md。
+    内部证据档。
     """
     try:
         template = str(request.get("template", ""))

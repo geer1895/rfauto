@@ -1,7 +1,7 @@
 """W2-F（EC-20 PyPSSFSS 严格快通道）域面测试。
 
 纪律（#139）：引擎面全部 monkeypatch/mock——本文件缺省零网络零 Julia
-调用；真编译真跑只走 scripts/pssfss_ms_judge.py 与 runs/w2_phase2/w2f/
+调用；真编译真跑只走 scripts/pssfss_ms_judge.py 与 内部证据档
 冒烟脚本（opt-in）。唯一例外=TestEngineCrossGeometryAudit（W7-B
 cross_sheet_spec followUp 的端到端形状审计，双 skipif 门：pypssfss 缺装
 或 RFAUTO_PSSFSS_ENGINE_AUDIT≠1 即 skip，缺省 unit 门保持零 Julia）。
@@ -99,7 +99,7 @@ class TestCrossSheetSpec:
     def test_nominal_mapping_matches_archived_judge(self):
         """名义映射与归档裁判 judge_pssfss.jl :78 逐构造参数同源（P/L1/L2/
         B/w 零改），唯 A 按 W7-B followUp 改 **A=L2−ε** 哨兵——原归档
-        A=aw/2 是静默改形（面积 −38.2%，runs/seat4_cross 实测），语义
+        A=aw/2 是静默改形（面积 −38.2%，内部证据档 实测），语义
         分歧是修法本体而非漂移（锚钉语义重推归主代理，REPORT §1.4-3）。"""
         spec = cross_sheet_spec(nominal_params("ms_cross"))
         assert spec["P"] == 11.9917
@@ -108,7 +108,7 @@ class TestCrossSheetSpec:
         assert spec["B"] == spec["w"] == 0.982
         assert spec["clas"] == "J"
         assert spec["ntri"] == 1500
-        # A=L2−ε 哨兵（相对偏移 CROSS_A_REL_OFFSET；runs/seat4_cross 实测
+        # A=L2−ε 哨兵（相对偏移 CROSS_A_REL_OFFSET；内部证据档 实测
         # 几何代价 0.075% 面积、谷位 11.4265 ↔ HFSS Floquet 11.4199）
         assert spec["A"] == pytest.approx(
             0.982 * (1.0 - pa.CROSS_A_REL_OFFSET), rel=1e-12)
@@ -177,7 +177,7 @@ class TestAuditSheetGeometry:
         assert aud["extent_y_mm"] == pytest.approx(2.0)
 
     def test_degenerate_mesh_signature_detected(self):
-        """零面积面>0 = A==L2 族网格退化指纹（runs/seat4_cross 实测 504
+        """零面积面>0 = A==L2 族网格退化指纹（内部证据档 实测 504
         面零面积 → Infs/NaNs）——审计必须显式报出而非静默。"""
         sheet = _FakeSheetGeo()
         sheet.rho = [(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)]  # 共线三点
@@ -210,7 +210,7 @@ def _pypssfss_present() -> bool:
 class TestEngineCrossGeometryAudit:
     """端到端离线审计（W7-B followUp 步骤 4，opt-in 不进缺省 unit 门）：
     cross_sheet_spec → 真引擎渲染（秒级零仿真）→ 形状对模板真形偏差钉。
-    本席 2026-10-05 实跑 PASS（runs/seat4_cross/targeted.log 附段）。"""
+    本席 2026-10-05 实跑 PASS（内部证据档 附段）。"""
 
     def test_cross_sheet_true_geometry_end_to_end(self):
         pa.ensure_julia_depot_env()

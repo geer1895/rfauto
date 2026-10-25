@@ -1,4 +1,4 @@
-"""架构批 W1-K2 内核席锚树：调制/数字链路波形体制域五键 + LFM 脉冲压缩设计键。
+"""aurora_h W1-K2 内核席锚树：调制/数字链路波形体制域五键 + LFM 脉冲压缩设计键。
 
 六键：papr_ofdm_ccdf / cfr_evm_cost（PAPR/CFR 提升核，单源消费
 core/papr）/ ofdm_waveform_params / ofdm_cp_design（OFDM 参数/设计对）/

@@ -6,7 +6,7 @@
 
 # 内核文档卡：lange
 
-> Lange 电桥专属综合内核（架构批 W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
+> Lange 电桥专属综合内核（aurora_f W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 Lange 电桥专属综合内核：C(dB)→相邻对 (Z0e,Z0o) 四指设计式→四线等效 (Ze4,Zo4)→KJ 二维反解 (w,s)→指长 λ/4——render_c4 全链的提升式重构单一事实源（字节级对拍钉），附四线等效偶/奇模频响裁判。
 
-模块自述（docstring 首行，机读）：Lange 电桥专属综合内核（架构批 W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
+模块自述（docstring 首行，机读）：Lange 电桥专属综合内核（aurora_f W1-S3 席域，R2_core_tier3 §⑤ F1 设计案）。
 
 ## 公式与口径
 
@@ -99,7 +99,7 @@ docstring 逐字引文（防漂移钉）："偶/奇模各自 2 端口线 S 叠�
   - docstring 逐字引文："相邻对 KJ εeff_e/εeff_o 不是四线等效模相速（多导体模式，Ou 1975）——拿来"
 - KJ 有效域提示（g=s/h 下限 0.1）：3dB 设计于本叠层略出域，如实记录不拦截。
   - docstring 逐字引文："h=0.508 反解 s=0.0386mm → g=s/h=0.076 略低于 KJ 标称有效域下限 0.1"
-- 提升式重构单一事实源：adapters/render_c4 与 openems_templates 的同名入口=core 同一函数对象（字节级对拍钉，基线 内部证据目录）。
+- 提升式重构单一事实源：adapters/render_c4 与 openems_templates 的同名入口=core 同一函数对象（字节级对拍钉，基线 runs/aurora_f/）。
   - docstring 逐字引文："函数体自 render_c4 原样下沉（逐字节未动），render_c4 改为"
 
 ## 代码入口
@@ -126,7 +126,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w1s3_lange_stepped.py`——引文："内部证据目录"
+- `tests/unit/test_w1s3_lange_stepped.py`——引文："runs/aurora_f/w1s3_lange_parity_baseline.json"
 
 测试面（tests/unit 引用扫描，机读；合计 **60** 个 test 函数）：
 

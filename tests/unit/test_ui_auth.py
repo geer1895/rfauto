@@ -1,4 +1,4 @@
-"""架构批 W6-S2 定向门——UI auth 安全面（R2 审计 §面5.4 / Top10 #5）。
+"""aurora_g W6-S2 定向门——UI auth 安全面（R2 审计 §面5.4 / Top10 #5）。
 
 写端点 Bearer 鉴权（服务端）：
 - env ``RFAUTO_UI_TOKEN`` 未设=零行为变化（本机回环部署缺省安全——POST 面

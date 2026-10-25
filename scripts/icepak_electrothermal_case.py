@@ -1,4 +1,4 @@
-"""WP4.4a Icepak 电-热首案例真机脚本（延续计划 §4 WP4.4a）。
+"""WP4.4a Icepak 电-热首案例真机脚本（continuation-plan_20260907 §4 WP4.4a）。
 
 链路（方案行口径）：Wilkinson 隔离电阻损耗 → Icepak 温度场 → 材料温漂 →
 S 参数失谐。全部数值由确定性内核产出（#7 纪律：LLM/脚本不发明物理数字）：
@@ -174,7 +174,7 @@ def _run_case() -> dict:
 def _clean_project_artifacts() -> None:
     """清掉上次运行遗留的 AEDT 工程（陈旧设计会让 insert_design 重建出
     重名对象/边界，监控点读数退化为默认 20C——2026-09-13 二跑实证）。
-    只点名 AEDT 工程产物，不碰日志与 JSON 证据（白名单式清理，项目规则 硬规 3）。"""
+    只点名 AEDT 工程产物，不碰日志与 JSON 证据（白名单式清理，内核立规注记 硬规 3）。"""
     import shutil
 
     for name in ("wp44a_electrothermal.aedt",

@@ -23,7 +23,7 @@ env["PATH"] = ";".join([os.path.join(ADS, "bin"),
                         env.get("PATH", "")])
 
 SRC_S2P = rf"{ADS}\examples\DesignKit\DemoKit_MTM\circuit\data\demo_BP.s2p"
-BASE = r"D:\rf_workspace\scripts\spike_b_ads\p3_d2_out"
+BASE = r"D:/rf_workspace\scripts\spike_b_ads\p3_d2_out"
 shutil.rmtree(BASE, ignore_errors=True)
 os.makedirs(BASE, exist_ok=True)
 shutil.copy2(SRC_S2P, os.path.join(BASE, "demo_BP.s2p"))

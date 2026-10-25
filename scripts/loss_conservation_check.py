@@ -4,7 +4,7 @@ r"""D3-1 功率守恒闭合自检脚本（合成解析算例 + 可选实档模�
 
     .venv\Scripts\python.exe scripts/loss_conservation_check.py
     .venv\Scripts\python.exe scripts/loss_conservation_check.py \
-        --dump runs/nf2ff_smoke_sar_dipole/fdtd/SAR_raw.h5
+        --dump 内部证据档
 
 判据（方案 §10.21 D3-1 验收）：|integral q dV - P_in*(1 - sum|S_ij|^2)| / scale
 <= 3%。

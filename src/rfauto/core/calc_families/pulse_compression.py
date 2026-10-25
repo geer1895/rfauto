@@ -1,4 +1,4 @@
-"""LFM 脉冲压缩设计键（架构批 W1-K2 席批 2，R2_core_tier5 §③ 7 号设计案）。
+"""LFM 脉冲压缩设计键（aurora_h W1-K2 席批 2，R2_core_tier5 §③ 7 号设计案）。
 
 单键：pulse_compression_design（时宽带宽积/压缩增益/距离分辨率/距离-
 多普勒耦合/最小采样点数——波形**设计面**）。

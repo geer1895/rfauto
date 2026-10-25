@@ -1,8 +1,8 @@
-"""Weibull 概率纸作图回归一键（架构批 W3-K 池件批，R2_core_tier5
+"""Weibull 概率纸作图回归一键（aurora_h W3-K 池件批，R2_core_tier5
 §⑤-3 提升核——池件 XD-15 同笔清偿）。
 
 提升核：消费 core/probability_paper.py 三函数全套（benard_median_ranks/
-weibull_paper_xy/fit_weibull_paper；架构批 W8-S37 池件批 3 落地物，
+weibull_paper_xy/fit_weibull_paper；aurora_e W8-S37 池件批 3 落地物，
 纯坐标面零绘图）——该内核 docstring 自证作图回归/删失口径/出处链已
 钉死，本文件即其 CALC 注册面（唯一缺的键面）。
 

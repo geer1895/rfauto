@@ -2,10 +2,10 @@
 
 **场景**：你要改前端样式/布局/i18n/视图逻辑，但不想（或不能）起真后端——
 机器上没有 runs 数据、HFSS/求解器不可用、或者只想 5 秒内刷新看效果。
-本文讲 rfauto 的 UI 离线开发回路（aurora_i R1 采纳 #4，hfssq-ui-kit 思想）：
+本文讲 rfauto 的 UI 离线开发回路（采纳 #4 提案，hfssq-ui-kit 思想）：
 一个极简静态服务把前端与 mock 数据信封拼成无后端可跑的页面。
 
-本文所有命令与路径均实测（2026-10-19，W3.5-K3 席交付验证）。
+本文所有命令与路径均实测（2026-10-19 交付验证）。
 
 ## 1. 三十秒起一个离线页面
 
@@ -28,7 +28,7 @@
 
 ## 2. mock 数据从哪来、怎么换
 
-mock 信封在 `runs/aurora_i/ui_mock_data.json`（gitignored 证据区），
+mock 信封在 `runs/ui_dev_loop/ui_mock_data.json`（gitignored 证据区），
 结构三层：
 
 ```json
@@ -68,8 +68,8 @@ mock 信封在 `runs/aurora_i/ui_mock_data.json`（gitignored 证据区），
 
 ## 3. 前端 apiFetch 的 mock 开关（同源/跨源两用）
 
-`static/pages/api.js` 的 `apiFetch` 支持 **mock 基址改写**（aurora_i
-W3.5-K3 新增，opt-in，缺省零行为变化）：
+`static/pages/api.js` 的 `apiFetch` 支持 **mock 基址改写**（新增
+开关，opt-in，缺省零行为变化）：
 
 - **本回路的同源用法**：`http://127.0.0.1:8643/?mock=1` ——页面内全部
   `apiFetch("/api/...")` 改写到 `/mock/api/...`（与服务端直挂 `/api` 等
@@ -97,7 +97,7 @@ W3.5-K3 新增，opt-in，缺省零行为变化）：
 
 ## 4. 覆盖面与限制
 
-- **只覆盖 `apiFetch`**：视图层 27 个文件（aurora_f W4-S13 终态）已全走
+- **只覆盖 `apiFetch`**：视图层 27 个文件已全走
   apiFetch，离线回路覆盖全部视图数据面；`app.js` 的全局 `api`（chat 等
   少量直连面）不经本开关——起真后端调试这些面。
 - **只伺服 GET**：写端点（POST /api/run、/api/tune/start 等）在 mock
@@ -107,7 +107,7 @@ W3.5-K3 新增，opt-in，缺省零行为变化）：
 
 ## 5. 纪律（mock 数据不进 git 的哪些面）
 
-- mock 信封文件一律落 `runs/`（gitignored 证据区）：`runs/aurora_i/
+- mock 信封文件一律落 `runs/`（gitignored 证据区）：`runs/ui_dev_loop/
   ui_mock_data.json` 是**样例与个人调试数据**，`git status` 不应出现它；
   禁止把 mock 数据搬进 `src/`、`docs/`、`tests/` 任何提交面（测试要用
   合成信封就在测试内联构造，如 test_ui_r12_deepening 的桩 fetch）；

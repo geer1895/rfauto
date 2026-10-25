@@ -6,7 +6,7 @@
 
 # 内核文档卡：microstrip_disc
 
-> 微带不连续寄生闭式族（架构批 W6-S3 席，R3_domain_expansion 视角1 A1
+> 微带不连续寄生闭式族（aurora_g W6-S3 席，R3_domain_expansion 视角1 A1
 
 | 字段 | 值 |
 |---|---|
@@ -22,7 +22,7 @@
 
 微带全族闭式十键：不连续寄生七件——直角弯（未切角/50% 切角双档 Kirschning）、T 接头（Hammerstad-Bekkadal）、宽度阶跃（Garg-Bahl）、最优切角百分式（Douville-James）、串联间隙（Garg-Bahl π 网络，W11-S4）、开路端效应（HB/KJK 双档，W11-S4）与十字结四口网络（W15-S2）+损耗/接地过渡三件——线衰减率（Hammerstad-Jensen，W15-S2）、接地过孔（Goldfarb-Pucel，W15-S2）与开路端辐射电导（Balanis 两极限，W15-S2）——PCB layout 节点的寄生参数实体与损耗面（fake 裁判面「弯角寄生零」的对拍锚）。
 
-模块自述（docstring 首行，机读）：微带不连续寄生闭式族（架构批 W6-S3 席，R3_domain_expansion 视角1 A1
+模块自述（docstring 首行，机读）：微带不连续寄生闭式族（aurora_g W6-S3 席，R3_domain_expansion 视角1 A1
 
 ## 公式与口径
 
@@ -152,7 +152,7 @@ docstring 逐字引文（防漂移钉）："G_r = (1/90)·(W/λ0)²             
 
 | formula_id | symbol | kind | source_doi | refs |
 |---|---|---|---|---|
-| calc_families/microstrip_disc:<module>:01 | <module> | source | — | 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh；2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切；角档另有 qucsator msmbend.cpp 可执行同式）；Douville-James 1978 MTT-26(3；Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐；字）；Garg-Bahl 1978（阶跃，经 qucsator msstep.cpp 可执行逐字，Qucs 手册；内部证据目录 在案）；Kirschning-Jansen-Koster 1981 |
+| calc_families/microstrip_disc:<module>:01 | <module> | source | — | 出处：Kirschning-Jansen-Koster 1983 MTT-S（弯角两档，经 Poole-Darwazeh；2015 Lecture 3 式(20)-(23) 与 TU/e van Meeteren thesis 双源逐字；50% 切；角档另有 qucsator msmbend.cpp 可执行同式）；Douville-James 1978 MTT-26(3；Bekkadal 1975 ELAB STF44 A74169（T 接头，经 qucsator mstee.cpp 可执行逐；字）；Garg-Bahl 1978（阶跃，经 qucsator msstep.cpp 可执行逐字，Qucs 手册；内部证据档 在案）；Kirschning-Jansen-Koster 1981 |
 
 ## 精度域（XC-P 精度档案）
 
@@ -208,8 +208,8 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w6s3_core_domains.py`——引文："微带不连续寄生闭式族（架构批 W6-S3 席，R3_domain_expansion 视角1 A1"
-- `tests/unit/test_w15s2_core_domains.py`——引文："微带全族扩展四键（架构批 W15-S2 席，R3_domain_expansion §④ A1 余量"
+- `tests/unit/test_w6s3_core_domains.py`——引文："微带不连续寄生闭式族（aurora_g W6-S3 席，R3_domain_expansion 视角1 A1"
+- `tests/unit/test_w15s2_core_domains.py`——引文："微带全族扩展四键（aurora_g W15-S2 席，R3_domain_expansion §④ A1 余量"
 
 测试面（tests/unit 引用扫描，机读；合计 **138** 个 test 函数）：
 

@@ -1,4 +1,4 @@
-"""pyproject 依赖钉版健康度审计（架构批 R8 面 6 结论制度化；2026-10-11
+"""pyproject 依赖钉版健康度审计（aurora72 R8 面 6 结论制度化；2026-10-11
 A7-D 席）。
 
 R8 侦察结论："核心依赖全 floors + 有意 cap（skrf<3、optuna<6 带 ADR/OP

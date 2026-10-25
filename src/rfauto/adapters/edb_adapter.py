@@ -50,7 +50,17 @@ hfss_session 工具层口径），能力声明见 em_solver_base 尾部 "edb" �
   **不产生金属电阻体**（几何间隙保持开路，防短路）；``width_mm`` 仅作
   发射面几何声明存证，不进引擎几何（集总边界无宽度参数）；电阻若不与
   版图金属（trace/via 端点）重合，端子悬空属 spec 几何错误——由上游
-  edb_templates.validate_spec 端点附着审计负责，本层不重复仲裁。
+  edb_templates.validate_spec 端点附着审计负责，本层不重复仲裁；
+- wave_port 端口孔径（``pec_launch_width``=pyedb PEC launch pad 宽，
+  cfg_ports_sources.add_wave_port docstring 口径）**与走线宽联动**
+  （2026-10-23 R1 反馈 #7：原硬编码 "0.01mm" 与走线宽脱钩——孔径不含
+  导体=HFSS 13:05 病灶 EDB 版，等效短路假结果）：缺省=走线宽（恰好
+  覆盖导体）；显式 ``pec_launch_width_mm`` 给出时守卫
+  走线宽 ≤ 孔径 ≤ 走线宽+2×gap（spec 无 gap 键，上界按 gap=走线宽计，
+  诚实边界见下）越域 fail-fast。**已知双路径分歧**：发射器路径
+  （edb_templates/schema.py assemble_config，本席位禁改面）暂仍硬编码
+  "0.01mm"——契约测试对 pec_launch_width 单键豁免并钉适配器侧联动值，
+  待发射器侧同步后收口。
 
 3D Layout setup 自适应档写入通道（W8 仲裁建议 2，2026-10-09；#333 族旋钮
 效力；W10 定谳更名——原题「真收紧通道」的"真"字被 W10 真机证伪）
@@ -61,7 +71,7 @@ EDB/HFSS 3D Layout 工程的自适应档（``max_delta``/``max_passes``）的
 ``configuration.load(apply_file=True)`` 随建库一次性落 setup——发射器
 改档即随建库写入**请求档**。
 
-**W10 定谳（真机战役判读报告，2026-10-09）：EDB
+**W10 定谳（内部证据档，2026-10-09）：EDB
 3D Layout 路径 MaxDelta 写入不可达**。EDB 3D Layout schema（SimSetupID=19）
 无 MaxDelta 键——四互证维持（AEDT 2025.1 SolveSetups 模块无 EditSetup/
 InsertSetup 无任何 Delta 键名/configuration.load 的 AdaptiveSettings 子树
@@ -74,7 +84,7 @@ pyaedt props 通道同样写不进；spec 硬断言只能行使到**发射面**�
 有建模保真差（判读面校准项，非求解旋钮可及）。**判读纪律：本通道 EDB
 S31 读数不得按 max_delta 请求档归因**（W9 勘误先声，W10 定谳坐实）。
 
-W9 勘误存档（同日真机重查）："写入即生效"
+W9 勘误存档（同日真机重查，内部证据档）："写入即生效"
 此前只在单测面验证（请求值达 configuration.load 调用——假 pyedb 替身）；
 props 建库期写入 MaxDelta=0.005（会话内读回确认）批解仍按 0.02 准则停机
 （verdict=TIGHTENING_NOT_EFFECTIVE）——该形态后被 W10 定谳收编为"schema
@@ -84,8 +94,8 @@ props 建库期写入 MaxDelta=0.005（会话内读回确认）批解仍按 0.02
 工程重开会话后经 pyaedt ``setup.props`` 改档**不传播**——重载 props
 顶层无 ``AdaptiveSettings`` 子树（新建会话才有），子树重建写入+
 ``update()``+save 后批解仍**逐位回放缓存解**（S31 十位小数同值
--9.4569、批解 wall 26s vs 原档 ~52s；W8 仲裁档
-§2 V3 / §5-2）。因此任何"收紧判读档"需求一律改 spec
+-9.4569、批解 wall 26s vs 原档 ~52s；内部证据档（w8_cl_arb 批）
+ARBITRATION.md §2 V3 / §5-2）。因此任何"收紧判读档"需求一律改 spec
 重走 :meth:`EdbAdapter.build`（新 .aedb），禁止对已建工程做求解后改档。
 （W10 定谳边界：对 **EDB 路径的 max_delta**，重建也不落库——schema 无键，
 见上文定谳段；本段"改档须重建"是通用纪律——HFSS 3D 侧通道与一切求解后
@@ -155,7 +165,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              TOP,DE,BOTTOM 首项=顶层同口径；
                              docs/pyedb_distilled.md §3.1/§6-2 处方
                              「adapter 翻转一次」；真机冒烟
-                             以 GND=elevation0
+                             内部证据档 以 GND=elevation0
                              验证的物理序=信号层在上）
           {"name": str       必填，全表唯一，
            "type": str       必填，"signal" | "dielectric"，
@@ -210,8 +220,14 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              在 edb_templates.validate_spec，本层不重复仲裁），
          "impedance": number 可选，缺省 50；给出时必须=50（pyedb CfgEdgePort
                              通道硬编码 50Ω，非 50 fail-fast 不静默错配），
-         "horizontal_extent_factor": int 可选 ≥1，缺省 5（透传），
-         "vertical_extent_factor": int   可选 ≥1，缺省 3（透传）}
+         "horizontal_extent_factor": int 可选，合理域 [2,10]（越域 fail-fast：
+                             <2 孔径圈不住导体横向场域、>10 过宽圈入邻导体/
+                             介质边沿）；缺省 5（CfgEdgePort 官方缺省），
+         "vertical_extent_factor": int   可选，合理域 [2,10]；缺省 3（同上），
+         "pec_launch_width_mm": number 可选 >0（端口孔径=PEC launch pad 宽）；
+                             缺省=联动走线宽（R1 #7 覆盖导体判据）；显式给出
+                             时守卫 走线宽 ≤ 孔径 ≤ 走线宽+2×gap（spec 无 gap
+                             键，gap 缺省按走线宽计）越域 fail-fast}
         {"number": int       通用形态（circuit|coax，正负终端电路端口，原契约
          "start"/"end" 终端  不变）：端口号 ≥1 唯一；终端={"layer","point_mm",
          "layer"/"net"/"name" "net"} 或 [x,y] 简写（端口级 layer/net 作缺省）；
@@ -276,14 +292,14 @@ from typing import Any
 # 只登记带 __all__ 的模块，无 __all__ 文件记私有零快照变化（新模块出生
 # 不触发 --generate 评审动作）。
 
-#: AEDT 版本缺省钉（版本对齐纪律：本机 HFSS/AEDT 2025 R1（v251）为对齐
+#: AEDT 版本缺省钉（内核立规注记 规则 0：本机 HFSS/AEDT 2025 R1（v251）为对齐
 #: 基准；PyAEDT/pyedb 版本串口径 2025 R1 → "2025.1"）。env 可覆盖
-#: （远程/异版本机联调），换机部署须与服务器侧版本对齐纪律同步。
+#: （远程/异版本机联调），换机部署须与服务器侧版本对齐规则 0 同步。
 _DEFAULT_AEDT_VERSION = "2025.1"
 _AEDT_VERSION_ENV = "RFAUTO_EDB_AEDT_VERSION"
 
 #: pyedb DotNet 通道 Ansys OpenSSL **预载 feature-flag**（#373 回归实验，
-#: 2026-10-14；处方：import pyedb 前
+#: 2026-10-14；配方=内部证据档 R5：import pyedb 前
 #: ctypes.WinDLL 绝对路径预载 AnsysEM 的 libcrypto/libssl-3-x64.dll）。
 #: env ``RFAUTO_PYEDB_PRELOAD``（1/true/yes/on 大小写不敏感）或构造参数
 #: ``enable_preload`` 显式开启；**缺省关闭=零行为变化**（不触预载路径）。
@@ -302,6 +318,12 @@ _LAYER_TYPES = ("signal", "dielectric")
 
 #: 合法端口类型（CfgPort.CFG_PORT_TYPE 词表）
 _PORT_TYPES = ("circuit", "coax")
+
+#: wave_port extent 因子合理域（闭区间；R1 #7 守卫——extent_factor 是"线宽
+#: 倍数"口径（docs/pyedb_distilled.md §3.3）：下界 <2 孔径圈不住导体横向
+#: 场域、上界 >10 过宽把邻导体/介质边沿圈进端口；缺省 5/3 在域内）
+_EXTENT_FACTOR_MIN = 2
+_EXTENT_FACTOR_MAX = 10
 
 #: 合法 setup 类型（CfgSetups.create 分派词表）
 _SETUP_TYPES = ("hfss", "siwave_ac")
@@ -581,12 +603,17 @@ def _translate_stackup(
 
 def _translate_traces(
     spec: dict[str, Any], signal_layers: set[str],
-) -> list[dict[str, Any]]:
-    """翻译 traces 节 → pyedb modeler.traces 列表（路径点 mm→米）。"""
+) -> tuple[list[dict[str, Any]], dict[str, float]]:
+    """翻译 traces 节 → (pyedb modeler.traces 列表, 走线名→宽度 mm 映射)。
+
+    宽度映射供 wave_port 孔径联动消费（R1 #7：pec_launch_width 缺省=走线宽，
+    显式孔径守卫判据的"覆盖导体"基准），见 :func:`_translate_wave_port`。
+    """
     traces_spec = spec.get("traces") or []
     if not isinstance(traces_spec, list):
         raise _fail("traces", "须为 list")
     out: list[dict[str, Any]] = []
+    widths: dict[str, float] = {}
     seen: set[str] = set()
     for i, tr in enumerate(traces_spec):
         ctx = f"traces[{i}]"
@@ -624,7 +651,8 @@ def _translate_traces(
             "end_cap_style": "flat",
             "corner_style": "sharp",
         })
-    return out
+        widths[name] = width
+    return out, widths
 
 
 def _translate_vias(
@@ -829,19 +857,39 @@ def _translate_port_terminal(
 
 
 def _translate_wave_port(
-    p: dict[str, Any], ctx: str, trace_names: set[str],
+    p: dict[str, Any], ctx: str, trace_widths: dict[str, float],
     seen_numbers: set[int], seen_names: set[str],
 ) -> dict[str, Any]:
-    """发射族 wave_port 端口 → CfgEdgePort dict（extent 因子透传，坐标 mm→米）。
+    """发射族 wave_port 端口 → CfgEdgePort dict（坐标 mm→米，孔径联动走线宽）。
 
-    键白名单=make_wave_port 七键+type——未知键 fail-fast；阻抗语义见模块
-    docstring 诚实边界（pyedb CfgEdgePort 通道硬编码 50Ω，非 50 拒收）；
-    trace 引用存在性在此 fail-fast（CfgEdgePort.set_parameters_to_edb 按
-    名取图元，晚失败定位深）；端点附着几何审计在
+    键白名单=make_wave_port 七键+type+pec_launch_width_mm——未知键 fail-fast；
+    阻抗语义见模块 docstring 诚实边界（pyedb CfgEdgePort 通道硬编码 50Ω，
+    非 50 拒收）；trace 引用存在性在此 fail-fast（CfgEdgePort.
+    set_parameters_to_edb 按名取图元，晚失败定位深）；端点附着几何审计在
     edb_templates.validate_spec（本层不重复仲裁，同电阻口径）。
+
+    孔径联动守卫（R1 #7，2026-10-23）：``pec_launch_width`` 是 pyedb 端口的
+    PEC launch pad 宽（cfg_ports_sources.add_wave_port docstring "PEC launch
+    pad width"）即端口孔径——
+
+    - 缺省=**走线宽联动**（``trace_widths[trace]``）：孔径恰好覆盖导体
+      （反馈 #3 的 EDB 版判据；原硬编码 "0.01mm" 与走线宽脱钩，发射族
+      实跑样例走线宽 0.6–1.9mm，孔径只有导体的 ~1%——HFSS 13:05 病灶
+      EDB 版：孔径不含导体照样能建能解，解出等效短路假结果）；
+    - 显式 ``pec_launch_width_mm`` 给出时走守卫：孔径 < 走线宽 fail-fast
+      （同上病灶证据链）；孔径 > 走线宽+2×gap 同样 fail-fast（反馈 #4 的
+      EDB 版——过宽把走线外介质边沿/邻导体圈进端口）。**gap 语义诚实
+      边界**：本层 spec 无隙宽键，上界按 gap=走线宽计（宽裕上界，
+      与 pyedb 缺省 horizontal_extent_factor=5 同为"线宽倍数"量级口径）；
+    - extent 因子合理域 [2,10]（"线宽倍数"口径，越域 fail-fast）。
+
+    双路径分歧声明：发射器路径（edb_templates/schema.py assemble_config，
+    本席位禁改面）暂仍硬编码 "0.01mm"——契约测试对 pec_launch_width 单键
+    豁免并钉本函数联动值，待发射器侧同步后收口。
     """
     allowed = ("name", "port_nr", "type", "trace", "point_mm", "impedance",
-               "horizontal_extent_factor", "vertical_extent_factor")
+               "horizontal_extent_factor", "vertical_extent_factor",
+               "pec_launch_width_mm")
     for k in p:
         if k not in allowed:
             raise _fail(ctx, f"不接受键 {k!r}（wave_port 合法键：{list(allowed)}）")
@@ -854,9 +902,9 @@ def _translate_wave_port(
         raise _fail(ctx, f"端口号 {port_nr} 重复（全表唯一）")
     seen_numbers.add(port_nr)
     trace = _as_str(_req_key(p, "trace", ctx), ctx, "trace")
-    if trace not in trace_names:
+    if trace not in trace_widths:
         raise _fail(ctx, f"引用不存在走线 {trace!r}（已知走线："
-                         f"{sorted(trace_names)}——先建 trace 后建端口）")
+                         f"{sorted(trace_widths)}——先建 trace 后建端口）")
     x, y = _as_point_mm(_req_key(p, "point_mm", ctx), ctx, "point_mm")
     impedance = _as_num(p.get("impedance", 50.0), ctx, "impedance")
     if impedance != 50.0:
@@ -866,6 +914,33 @@ def _translate_wave_port(
                   "horizontal_extent_factor", 1)
     vef = _as_int(p.get("vertical_extent_factor", 3), ctx,
                   "vertical_extent_factor", 1)
+    for tag, factor in (("horizontal", hef), ("vertical", vef)):
+        if not (_EXTENT_FACTOR_MIN <= factor <= _EXTENT_FACTOR_MAX):
+            raise _fail(
+                ctx,
+                f"{tag}_extent_factor={factor} 出合理域 "
+                f"[{_EXTENT_FACTOR_MIN},{_EXTENT_FACTOR_MAX}]（\"线宽倍数\"口径："
+                "<2 孔径圈不住导体横向场域、>10 过宽把邻导体/介质边沿圈进端口）")
+    # 孔径联动（R1 #7）：缺省=走线宽（覆盖导体判据），显式值走守卫
+    trace_w = float(trace_widths[trace])
+    plw = p.get("pec_launch_width_mm")
+    aperture = trace_w if plw is None else _as_pos_num(plw, ctx, "pec_launch_width_mm")
+    if aperture < trace_w:
+        raise _fail(
+            ctx,
+            f"孔径 {aperture:.10g}mm < 走线宽 {trace_w:.10g}mm——aperture 不含导体，"
+            "等效短路假结果（HFSS 13:05 病灶 EDB 版：端口孔径没圈住导体，照样能建"
+            "能解能导出，解出的不是传输模）；pec_launch_width 必须 ≥ 走线宽"
+            f"（缺省即联动走线宽，或显式 pec_launch_width_mm ≥ {trace_w:.10g}）")
+    aperture_hi = 3.0 * trace_w  # 走线宽+2×gap，spec 无 gap 键按 gap=走线宽计
+    # 边界含入：浮点和噪声（0.3+2*0.3=0.8999...e0）不得把恰在上界的孔径误拒
+    # （#118 族数值守卫纪律；相对容差亚纳米级，远低于版图几何精度）
+    if aperture > aperture_hi * (1.0 + 1e-9):
+        raise _fail(
+            ctx,
+            f"孔径 {aperture:.10g}mm > 走线宽 {trace_w:.10g}mm + 2×gap="
+            f"{aperture_hi:.10g}mm（gap 缺省按走线宽计）——孔径过宽把走线外"
+            "介质边沿/邻导体圈进端口（反馈 #4 EDB 版：端口解含寄生并联分支）")
     # point_on_edge 单位按 EDB 数据库口径（米）换算（同 trace path 口径）
     return {
         "name": name,
@@ -874,17 +949,19 @@ def _translate_wave_port(
         "point_on_edge": [x * _MM_TO_M, y * _MM_TO_M],
         "horizontal_extent_factor": hef,
         "vertical_extent_factor": vef,
-        "pec_launch_width": "0.01mm",  # CfgEdgePort 官方缺省（显式写出便于存证）
+        "pec_launch_width": _fmt_mm(aperture),  # 缺省=走线宽联动（R1 #7，非硬编码缺省）
     }
 
 
 def _translate_ports(
-    spec: dict[str, Any], signal_layers: set[str], trace_names: set[str],
+    spec: dict[str, Any], signal_layers: set[str],
+    trace_widths: dict[str, float],
 ) -> list[dict[str, Any]]:
     """翻译 ports 节 → pyedb ports 列表。
 
-    两形态按条目 "type" 判别：wave_port（发射族，:func:`_translate_wave_port`）
-    与 circuit|coax（通用，端口号/起止 → 正负终端电路端口，原契约不变）。
+    两形态按条目 "type" 判别：wave_port（发射族，:func:`_translate_wave_port`，
+    孔径联动 ``trace_widths``）与 circuit|coax（通用，端口号/起止 → 正负终端
+    电路端口，原契约不变）。
     """
     ports_spec = spec.get("ports") or []
     if not isinstance(ports_spec, list):
@@ -897,7 +974,7 @@ def _translate_ports(
         p = _as_dict(p, ctx)
         ptype = p.get("type", "circuit")
         if ptype == "wave_port":
-            out.append(_translate_wave_port(p, ctx, trace_names,
+            out.append(_translate_wave_port(p, ctx, trace_widths,
                                             seen_numbers, seen_names))
             continue
         if ptype not in _PORT_TYPES:
@@ -1256,8 +1333,8 @@ def _verify_one_setup_adapt(
             f"收紧生效断言[{name}]：max_delta 不一致——请求 "
             f"{requested['max_delta']:.6g} vs 工程实测 {observed_delta:.6g}"
             f"（@{obs_freq}）。W8 实证 3D Layout 求解后改档不传播（回放"
-            "缓存解）——改档须重建工程；W10 定谳：EDB 3D Layout schema "
-            "无 MaxDelta 键（写入"
+            "缓存解）——改档须重建工程；W10 定谳（runs/edblane85/"
+            "w10_cl_recheck）：EDB 3D Layout schema 无 MaxDelta 键（写入"
             "不可达），EDB 路径重建亦不落库——收紧判读走判读面校准或 "
             "HFSS 仲裁（见模块 docstring「自适应档写入通道」节）"
         ]
@@ -1281,7 +1358,8 @@ def spec_to_config_json(spec: dict) -> dict:
     - ``modeler``: traces（路径点 mm→米，cap=flat/corner=sharp）+ planes
       （board 段 → "GND_plane" 整版矩形，与发射器 assemble_config 逐键同款）
     - ``padstacks``: definitions/instances（过孔，位置 mm→米）
-    - ``ports``: wave_port（发射族，extent 因子透传）与 circuit/coax
+    - ``ports``: wave_port（发射族，孔径联动走线宽+extent 因子合理域守卫，
+      R1 #7）与 circuit/coax
       （coordinates 正负终端）按条目 type 分派
     - ``setups``: hfss/siwave_ac setup + 频率 sweep（发射族 f0_ghz/sweep/
       adapt 与通用 shorthand/sweeps 两形态）
@@ -1310,7 +1388,7 @@ def spec_to_config_json(spec: dict) -> dict:
     config: dict[str, Any] = {
         "stackup": {"materials": materials + derived, "layers": layers}}
     modeler: dict[str, Any] = {}
-    traces = _translate_traces(spec, signal_layers)
+    traces, trace_widths = _translate_traces(spec, signal_layers)
     if traces:
         modeler["traces"] = traces
     # board → 整版矩形平面（发射族）；非空在函数尾同时触发 boundaries。
@@ -1328,7 +1406,7 @@ def spec_to_config_json(spec: dict) -> dict:
         config["padstacks"] = {"definitions": definitions, "instances": instances}
     # 电阻只校验不进 config（防金属短路间隙；落地在 build() 走 pyedb RLC）
     _translate_resistors(spec, signal_layers)
-    ports = _translate_ports(spec, signal_layers, {t["name"] for t in traces})
+    ports = _translate_ports(spec, signal_layers, trace_widths)
     if ports:
         config["ports"] = ports
     setups = _translate_sim_setup(spec)
@@ -1633,8 +1711,8 @@ class EdbAdapter:
         串返回（best-effort，#105：断言不抛异常、不阻塞判读主路径；不可
         证实如实告警不冒充通过，#122）。
 
-        断言语义边界（W9 勘误落口径，W10 定谳补全，真机复验档）：
-        本断言核的是**存储请求档=读回档**
+        断言语义边界（W9 勘误落口径，W10 定谳补全，内部证据档
+        w9_cl_recheck 与 w10_cl_recheck）：本断言核的是**存储请求档=读回档**
         （写入面一致），**不是**"求解按新档收敛"的行为效力——W9 重查实证
         props 建库期写入读回一致后批解仍按 0.02 准则停机
         （TIGHTENING_NOT_EFFECTIVE）；W10 进一步定谳 configuration.load 通道

@@ -3,7 +3,7 @@
 零仿真（exec 截断于 FDTD.Run 之前，秒级）：渲染→exec 几何段→CSXCAD 实测
 单连通/激励非零/最小间距，+ 闭式设计链往返（draft_recipe==NOMINAL 逐位）+
 f0/Q 自洽 + fake 派发（参数驱动）+ 注册四件套 + core 数值参考门（(a) ≤5%/
-(b) 机器钉与互易）。判据预声明 runs/df7_nfc/criteria.md（先声明后实测）。
+(b) 机器钉与互易）。判据预声明 内部证据档（先声明后实测）。
 """
 
 from __future__ import annotations

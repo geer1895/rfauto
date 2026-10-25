@@ -1,6 +1,6 @@
 # MCP 工具参考
 
-> `@mcp.tool` 注册工具共 **152** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
+> `@mcp.tool` 注册工具共 **157** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
 
 | 工具 | 模块 | 说明 |
 |---|---|---|
@@ -60,6 +60,11 @@
 | `edb_emit_spec` | edb | 发射声明式 EDB spec（平面族发射器）。 |
 | `edb_build_solve` | edb | EDB 建库（.aedb）+ 可选批处理求解与 Touchstone 导出一站式编排。 |
 | `edb_status` | edb | 扫描 EDB 快车道产物根目录的资产清单（只读，零求解零导入）。 |
+| `em_doctor_check` | em_family | EM 模型清单体检（em doctor）：清单文件 → 16 项几何/端口语义检查报告。 |
+| `runs_verify` | em_family | run 产物新鲜度校验（runs verify）：manifest 收官指纹 vs 盘上产物。 |
+| `em_diff_runs` | em_family | 两个 run 目录的四节对比（em diff）：替代手工 diff .aedt 文本。 |
+| `em_metrics_from_run` | em_family | run 目录器件指标提取+同族绑定（em metrics --run）：L/Q/SRF/C/R/S21。 |
+| `em_sweep_plan` | em_family | DOE/矩阵 sweep 只读展开（em sweep plan 面）：cases.yaml → 逐 case 计划。 |
 | `emc_cispr_band_params` | emc | CISPR 检波器参数表（emc 域）：Band A/B/C/D → 16-1-1 Table 1 四参数。 |
 | `emc_cispr_detect` | emc | CISPR 三检波器读数（emc 域）：时域波形 → Peak/QP/Avg dBµV。 |
 | `emc_ground_spacing_check` | emc | 接地间距判据（emc 域）：间距/频率 → λ/20 等电位判据（Ott/Paul）。 |
@@ -120,7 +125,7 @@
 | `goldset_regression` | report_bench | 金标回归门（report_bench 域）：轨迹 vs 金标集 → TSA/FCA 判定。 |
 | `agentbench_regression` | report_bench | AgentBench 回归门（report_bench 域）：两轴打分+公开/私有双集防污染。 |
 | `diagnose` | runs | run 规则诊断（runs 域）：run_id → 指标规则诊断（确定性零 LLM）。 |
-| `compare_runs` | runs | 双 run 对比（runs 域）：A/B run id → 逐指标 B-A 增量+cost 对照。 |
+| `compare_runs` | runs | 双 run 对比（runs 域）：A/B run id → 逐指标 B-A 增量+cost 对照， |
 | `run_monitor` | runs | run 体检（runs 域）：run 目录 → 四类时序判据 verdict（零 LLM）。 |
 | `get_run_artifacts` | runs | run 产物清单（runs 域）：run_id → 文件清单+metrics+S 参数摘要。 |
 | `get_model_3d` | runs | 配方 3D 几何 spec（runs 域）：配方路径 → 毫米 boxes 列表（核验面）。 |

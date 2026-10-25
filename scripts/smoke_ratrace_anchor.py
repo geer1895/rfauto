@@ -1,6 +1,6 @@
 """rat-race 冒烟 pt5（#208 理论核验轮后）：规范角位 + 进程隔离激励轮转全 S 矩阵。
 
-pt1（runs/ratrace_smoke/pt1）= 旧均匀 90° 端口布局的判废证据（全 ~-33dB）；
+pt1（内部证据档）= 旧均匀 90° 端口布局的判废证据（全 ~-33dB）；
 pt2/pt3/pt4 = 进程内轮转三连败证据链（wrapped-deleted/CSX is not set，
 Run(cleanup=True) 销毁绑定对象——#208）；
 pt5 = excite_port=1..4 渲染 4 份单激励脚本、进程隔离各跑一次（全库已
@@ -12,7 +12,7 @@ pt5 = excite_port=1..4 渲染 4 份单激励脚本、进程隔离各跑一次（
 3. 隔离：|S31|(Δ) ≤ -20dB（方案 §10.9 口径）；|S24|(out1↔out2) ≤ -15dB；
 4. 匹配：|S11|max ≤ -10dB；
 5. 互易：max ||Sij|-|Sji|| ≤ 0.02（线性幅值）。
-工作目录参数化（#198 教训）。证据链 runs/ratrace_smoke/pt5/。
+工作目录参数化（#198 教训）。证据链 内部证据档。
 """
 import argparse
 import csv

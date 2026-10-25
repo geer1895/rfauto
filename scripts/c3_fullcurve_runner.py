@@ -17,7 +17,7 @@ runs/smoke_c3_redesign/criteria_a.md，写死再跑；铁律 7 数值只出内�
     plan.json 预声明再执行**；EndCriteria 不传 = 引擎缺省 −60dB 不动；
     预算硬帽 = 1.5×wall_pred（超判 PARTIAL(超预算) 不删数据）；combline
     blocked 规则保留（4h 能量 >−10dB 杀树上报）。判读 G0-G4 =
-    runs/smoke_c3_refix/judge_refix.py 口径（band_center_3db 脚本内逐位拷贝，
+    内部证据档 口径（band_center_3db 脚本内逐位拷贝，
     runs/ 证据树零 import 依赖）+ G1 当轮 PRED_SHIFT
     （当轮频轴 c3_circuit_sparams 重算；cpass_verdict.json 存档值交叉记录）。
 
@@ -1211,7 +1211,7 @@ def _write_cap_result(template: str, work: Path, outcome: dict[str, Any],
 def band_center_3db(f: np.ndarray, s_db: np.ndarray) -> dict:
     """全局峰邻域连续 −3dB 带（含峰的最大连通段）→ 中心/边沿/带宽；另记包络口径。
 
-    （df5 杂项批 2②：原 runs/smoke_c3_refix/judge_refix.py:51 只读 import 改
+    （df5 杂项批 2②：原 内部证据档:51 只读 import 改
     本脚本内逐位拷贝——判读链脱 runs/ 证据树 import 依赖；判读数字须与归档
     口径逐位一致，本函数体任一侧改动须双侧同步并跑通 test_c3_fullcurve_runner
     的 G1 dev=0 端到端钉背书。）
@@ -1454,7 +1454,7 @@ def judge_fullcurve_stage1_as_full(template: str,
 #     <root>/<template>/<node_id> ——stage 节点工作目录即现状 stage_dir
 #     （证据面只新增 dag.artifact.json / dag.state.json / stageN_decl/，零改写）。
 # 已落接口缺口注记（P2 接口零改动消费，缺口如实报告）：
-#   ① P2 normalize_node 只保 inputs.files/params——handoff 字面
+#   ① P2 normalize_node 只保 inputs.files/params——开发接续说明 字面
 #     inputs.registration_commit_ts 会被剥除 ⇒ 注册 ts 走 decl params 成分
 #     （params_canonical_json 进 render 键，语义等价：变即键变）；
 #   ② P2 solve 键成分（render_artifact_sha256/engine_version/budget_tier）不含
@@ -1486,7 +1486,7 @@ def _dag_deps() -> tuple[Any, Any]:
 
 
 def openems_registration_ts() -> str:
-    """渲染源 openems_templates.py 末次 commit 时戳（handoff §二.1）。
+    """渲染源 openems_templates.py 末次 commit 时戳（开发接续说明 §二.1）。
 
     best-effort（#105）：非 git 环境/未跟踪 → 空串（键退化仍确定）。"""
     _dr, dc = _dag_deps()
@@ -1494,7 +1494,7 @@ def openems_registration_ts() -> str:
 
 
 def engine_version_tag() -> str:
-    """openEMS 引擎版本指纹（handoff §四：load_solver_versions，空串兜底）。"""
+    """openEMS 引擎版本指纹（开发接续说明 §四：load_solver_versions，空串兜底）。"""
     try:
         from rfauto.infra.run_store import load_solver_versions
         return str((load_solver_versions() or {}).get("openems", "") or "")

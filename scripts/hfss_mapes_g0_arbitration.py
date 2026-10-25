@@ -1,9 +1,9 @@
 """rm-hfss-mapes-g0：HFSS 真机跑 MAPES Z_ALL 参考结构，仲裁基准 g0（对齐基准口径）。
 
-背景（TODO 0-停止点（六轮）⑤ / followUps ②）：MAPES 装配
+背景（TODO 0-停止点（六轮）⑤ / 开发注记（二百零一）followUps ②）：MAPES 装配
 Z_ALL 的全局复规范 ``g(f) = g0·exp(j·2π·f·τ)``（core/mapes.gauge_factor）互易
 原理性不可辨识；openEMS 侧直接全波腿对拍标定 g0=1.005/τ=−0.25ps 因"直接腿与
-装配腿同类探针同源偏差"被否作裁判。HFSS 是对齐基准（项目规则 2026-09-08），
+装配腿同类探针同源偏差"被否作裁判。HFSS 是对齐基准（内核立规注记 2026-09-08），
 本脚本在 HFSS 独立重建 Z_ALL 参考结构，仲裁 openEMS 装配列的绝对幅度。
 
 结构定义（与 openEMS 参考轮逐位同源，几何全部经 core.mapes.pixel_board_geom
@@ -28,8 +28,8 @@ HFSS 只把 io 两口设为 port，其余负载=纯边界（无激励），2 端
   linspace(1,6,41) GHz；
 - d = median_f( ||S11,h(f)| − |S11,oe(f)|| / max(|S11,h(f)|, 0.05) )，
   |S11,h| < 0.05 的深谷频点剔除（若全带无剔除点则全带入样）；
-- 对照口径 primary = runs/mapes_s5_diag/z_all_s5.npz 的 s_cal_sym_proj
-  （消费口径，followUps ⑤）；s_cal_sym 与 s4 raw 作副证；
+- 对照口径 primary = 内部证据档 的 s_cal_sym_proj
+  （消费口径，开发注记（二百零一）followUps ⑤）；s_cal_sym 与 s4 raw 作副证；
 - d ≤ 5% → AGREE；5% < d ≤ 15% → PARTIAL；> 15% → DISAGREE（附方向：
   HFSS 高/低）。S21(io1→io2)≈2e-5 近零（重度加载阻尼格栅），只作绝对
   量级旁证 median|ΔS21|（线性），不进门。
@@ -206,7 +206,7 @@ def build_mapes_geometry(adapter) -> dict:
 def make_setup(adapter) -> str:
     """自适应 @3.5GHz（缺省 ΔS 0.02 / ≤12 passes）+ 1-6GHz 41 点插值扫频（同频轴）。
 
-    网格收敛自检（项目规则 1b）用环境变量收紧：RFAUTO_MAPES_G0_DELTA_S /
+    网格收敛自检（内核立规注记 1b）用环境变量收紧：RFAUTO_MAPES_G0_DELTA_S /
     RFAUTO_MAPES_G0_MAX_PASSES；产物名后缀 RFAUTO_MAPES_G0_TAG。
     """
     import os

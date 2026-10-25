@@ -1,6 +1,6 @@
 """WP4.3 real_edt: 场路协同回归锚真机验收（ADS 2027 hpeesofsim B 档）。
 
-验收口径（延续计划 §10.22 补强16）：branchline S 参数进 ADS 级联
+验收口径（continuation-plan §10.22 补强16）：branchline S 参数进 ADS 级联
 vs skrf 级联，FSV ≥VG。branchline .s4p 用 linkage/field_circuit_anchor 的
 闭式基准生成（离线回归同一数据形态；真机 EM 数据接入不改下游）。
 需 E:/ADS/ADS27（RFAUTO_HPEESOF_DIR / settings.hpeesof_dir）。

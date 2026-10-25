@@ -1,6 +1,6 @@
 """导出前置 sweep 完成断言测试（#191 家族 r2-r4，方案 §10.9）。
 
-全部 mock PyAEDT 通道（单测禁真打 HFSS，AGENTS 硬规则）；profile 文本用
+全部 mock PyAEDT 通道（单测禁真打 HFSS，内核立规注记 硬规则）；profile 文本用
 真机 r4（Engine Detected Error）与仲裁 r8（Normal Completion）的
 .profile 片段内嵌为常量，不读 runs/（不入 git）。
 """
@@ -137,7 +137,7 @@ class _FakeHfss:
 
 @pytest.fixture()
 def adapter(monkeypatch):
-    """隔离 HfssSession 单例 + 清环境变量（确定性，AGENTS 踩坑速查）。"""
+    """隔离 HfssSession 单例 + 清环境变量（确定性，内核立规注记 踩坑速查）。"""
     monkeypatch.delenv("RFAUTO_HFSS_SOLVE_TIMEOUT_S", raising=False)
     HfssSession.reset()
     a = HfssAdapter()

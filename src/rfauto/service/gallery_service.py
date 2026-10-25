@@ -1,7 +1,7 @@
 """PR-5 画廊交互化：模板卡 + 名义参数 + 闭式预览通道（数值只在确定性内核）。
 
 规格=docs/research_expansion_20261002_round16.md §四 PR-5："参数滑块→闭式
-响应即时预览（calculators 端点零后端计算）"。职责切分（AGENTS 坑族：前端
+响应即时预览（calculators 端点零后端计算）"。职责切分（内核立规注记 坑族：前端
 数据解释放服务层，前端只渲染）：
 
 - **服务层**：模板卡（TEMPLATE_META/TEMPLATE_NOMINAL 全量，只读）+ 预览
@@ -66,7 +66,7 @@ RECOMMEND_F0_TOL = 0.30
 #
 # 单一事实源在本模块：两个静态导出器（scripts/gallery_export.py QW-4 单页
 # 画廊、scripts/capability_cards_export.py QW-5 能力卡索引）渲染 data-*
-# 属性时消费，前端零分类逻辑（AGENTS 家法：数据解释放服务层，前端只渲染）。
+# 属性时消费，前端零分类逻辑（内核立规注记 家法：数据解释放服务层，前端只渲染）。
 # 归类依据=能力卡"适用场景"拓扑文本与模板库总表（docs/capability_cards/
 # <t>.md、docs_site/catalog/index.md）逐模板显式策展，非字段推断——
 # 未登记模板如实回退 "other"（不猜；注入 fixture 同样安全）。
@@ -129,6 +129,13 @@ TEMPLATE_FAMILIES: dict[str, str] = {
     "msl_cpw": "transition",
     "msl_siw_taper": "transition",
     "msl_slot_transition": "transition",
+    # octagonal_spiral（aurora_k K11，2026-10-23）：八角螺旋电感——集总无源
+    # 模板族首件，暂归 "other"（八族无集总无源类；族员增多时再立 "lumped"）
+    "octagonal_spiral": "other",
+    # mim_cap/interdigital_cap（aurora_k K12，2026-10-23）：MIM 叠层电容/
+    # 叉指电容——集总无源电容族，随 K11 口径暂归 "other"
+    "mim_cap": "other",
+    "interdigital_cap": "other",
     "nway_wilkinson": "coupler",
     "patch": "antenna",
     "patch_array_1x4": "antenna",

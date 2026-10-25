@@ -65,7 +65,7 @@ class TestRationaleMemory:
         assert not build_index(tmp_path / "empty_runs")["ok"]
 
     def test_collect_docs_cache_deepcopy_isolation(self, runs_dir):
-        """语料缓存出口 deepcopy 结构隔离（架构批 审查波 2 P3-2 收账）。
+        """语料缓存出口 deepcopy 结构隔离（aurora_f 审查波 2 P3-2 收账）。
 
         浅拷贝+约定只读在调用方写条目 dict 时跨请求污染缓存——改 deepcopy
         后（对齐 run_detail/_endpoint_snapshot 先例），命中路径返回的条目
@@ -99,7 +99,7 @@ class TestTypedExperienceEntry:
         entry = ExperienceEntry(
             lesson_id="#198",
             conclusion="带缘未入网 → 激励体积为零",
-            evidence_paths=(".md（#198）", "src/rfauto/adapters/openems_templates.py"),
+            evidence_paths=("开发注记.md（#198）", "src/rfauto/adapters/openems_templates.py"),
             applies_to=("ratrace", "带缘"),
             action="先离线审计后冒烟",
             checklist="网格伪象核对表",
@@ -108,7 +108,7 @@ class TestTypedExperienceEntry:
         assert ExperienceEntry.from_dict(entry.to_dict()) == entry
         assert entry.to_dict()["schema_version"] == 1
         assert entry.to_dict()["evidence_paths"] == [
-            ".md（#198）", "src/rfauto/adapters/openems_templates.py"]
+            "开发注记.md（#198）", "src/rfauto/adapters/openems_templates.py"]
 
     def test_payload_roundtrip_builtin(self):
         from rfauto.service.rationale_memory import (
@@ -128,14 +128,14 @@ class TestTypedExperienceEntry:
         entry = entry_from_lesson({
             "坑编号": "#219",
             "结论": "栅格化伪象：六门低端全过随 f 劣化",
-            "证据路径": [".md（廿九）"],
+            "证据路径": ["开发注记.md（廿九）"],
             "适用场景": ["环形", "栅格化"],
             "动作": "先离线审计：查等效 εeff 是否超闭式上限",
             "核对表": "网格伪象核对表",
             "先离线审计": True,
         })
         assert entry.lesson_id == "#219"
-        assert entry.evidence_paths == (".md（廿九）",)
+        assert entry.evidence_paths == ("开发注记.md（廿九）",)
         assert entry.applies_to == ("环形", "栅格化")
         assert entry.requires_offline_audit is True
 
@@ -215,12 +215,12 @@ class TestInjectedLessonsRecall:
 
         lessons = [
             {"坑编号": "#198", "结论": "带缘未入网 → 激励体积为零",
-             "证据路径": [".md（#198）"],
+             "证据路径": ["开发注记.md（#198）"],
              "适用场景": ["ratrace", "带缘", "环形"],
              "动作": "先离线审计：渲染→exec 几何段→CSXCAD 实测带宽/连通性",
              "核对表": "网格伪象核对表", "先离线审计": True},
             {"坑编号": "#219", "结论": "0.4mm 阶梯环栅格化伪象",
-             "证据路径": [".md（廿九）"],
+             "证据路径": ["开发注记.md（廿九）"],
              "适用场景": ["ratrace", "环形", "栅格化"],
              "动作": "先离线审计：查等效 εeff 是否超闭式上限",
              "核对表": "网格伪象核对表", "先离线审计": True},
@@ -241,7 +241,7 @@ class TestInjectedLessonsRecall:
         assert "网格伪象核对表" in text
         assert "先离线审计" in text
         assert "#198" in text or "#219" in text
-        assert "" in text
+        assert "内部证据档" in text
         assert render_checklist(recall_for("整理 会议纪要")) == ""
 
     def test_save_load_entries_file(self, tmp_path):

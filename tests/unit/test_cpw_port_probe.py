@@ -6,8 +6,7 @@
 （≤v0.37.0-rc1-11-gd3d2a49）把 exc_dir 当面法向/高度方向（'z'），新代当缝
 间横向（'x'）——同一渲染字面量跨代部署必有一侧构造即炸，探针在**脚本执行
 期**按部署侧绑定源码指纹自适应。单测以"指纹 dummy 类"双支钉两分支（纯
-Python、不依赖真绑定），另加真绑定自洽钉（探针选择随部署侧绑定代际
-指纹分类，代际无关）。
+Python、不依赖真绑定），另加真绑定现状钉与本机新代行为一致。
 """
 
 from __future__ import annotations
@@ -85,20 +84,14 @@ def test_probe_defaults_to_x_when_getsource_unavailable(monkeypatch):
     assert _exec_probe(_NewGenCPWPort) == "x"
 
 
-def test_probe_real_binding_matches_source_fingerprint():
-    """真绑定现状钉（代际无关自洽口径）：探针对真实 openEMS.ports.CPWPort
-    的选择必须与绑定源码指纹分类一致——新代指纹在场选 'x'、缺席选 'z'
-    （探针自适应语义本身，不钉部署侧具体代际：公开 checkout 的 venv 绑定
-    可旧可新，旧代装出 'x' 或新代装出 'z' 才是探针失灵）。"""
+def test_probe_real_binding_local_is_x():
+    """真绑定现状钉（本机 .venv=新代）：探针对真实 openEMS.ports.CPWPort
+    选 'x'（与 render_tl CFIX 版 render 钉同语义，钉在 helper 层）。"""
     pytest.importorskip("CSXCAD")
     pytest.importorskip("openEMS")
-    import inspect
-
     from openEMS.ports import CPWPort
 
-    src = inspect.getsource(CPWPort.__init__)
-    expected = "x" if NEW_GEN_FINGERPRINT in src else "z"
-    assert _exec_probe(CPWPort) == expected
+    assert _exec_probe(CPWPort) == "x"
 
 
 # ── 三发射点单源消费钉（防复制漂移 #116）────────────────────────────────────

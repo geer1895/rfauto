@@ -1,6 +1,6 @@
 """数据工厂 df5-MFK 拍板②：OE 低保真面 KOH 离散差异修正 + MFK 融合复判（纯离线）。
 
-判据（预声明，零改动）：runs/df5_mfk_lowfi_fix/criteria.md。
+判据（预声明，零改动）：内部证据档。
 背景（B2 终态 runs/factory_mf_anchors/mfk_verdict_full8.json）：held-out
 |ΔΓ|max 0.09788>0.04 / εeff 1.6524%>1% / 增值门 False；w=1.5119 处 HFSS
 带内 |Γ| 递增（0.055→0.107）而 OE 近平（≈0.141）——两引擎匹配谷位置横移

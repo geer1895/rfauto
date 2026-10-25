@@ -300,7 +300,7 @@ def monitor_cycle(
     其余目录忽略。previous 为上轮 ``monitor_cycle`` 返回的
     ``snapshots``（run_id → monitor 结果），透传给单 run 体检算增量。
 
-    S15（架构批 W4）枚举主源接线：一级目录名单优先走 lake index SQL
+    S15（aurora_f W4）枚举主源接线：一级目录名单优先走 lake index SQL
     （depth=1 全量行；产物判定列不在索引 schema，meta/fdtd/port_ut/et
     探测仍逐候选实盘执行——名单源换 SQL，判定语义零变化）；计数护栏
     判滞后或索引不可用即回退原目录扫（best-effort #105），信封

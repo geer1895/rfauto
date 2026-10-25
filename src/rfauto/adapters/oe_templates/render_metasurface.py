@@ -19,7 +19,7 @@ from .registry import _DEFAULT_SUB, MS_UNIT_TEMPLATES, TEMPLATE_META, TEMPLATE_N
 # 口径）：
 # - 域=单胞方形截面：x 对壁 PEC（E∥x 为法向场，兼容）、y 对壁 PMC
 #   （E∥x 为切向场，兼容）——TEM 平面波，E∥x 极化前提（y 极化互换 PEC/PMC）；
-# - 激励/读出（2026-10-01 ge5 修复，内部证据档 §E）：
+# - 激励/读出（2026-10-01 ge5 修复，runs/ge5_msjcross/audit.md §E）：
 #   三单元族同修：ms_patch/cross/jcross 全部=soft plane 激励（exc_type=0，
 #   官方 PPW 教程同源）+ 每侧双 E 探针对精确 F/B 分解（_wg_readout_block
 #   单源垫片；ms_patch 反射口径用 _WgProbePairRefl 对调 uf）——原全口径
@@ -63,7 +63,7 @@ class _WgProbePair(object):
 
     E 探针=全口径 x 向线积分（weight=-1，LumpedPort ut 同构造）；探针自由
     悬浮不扰动场。F/B 分解：E_a=F+B·e1、E_b=F·p+B/p（p=e^(-jβΔz)）——
-    判读口径 内部证据档；能量门=|S11|²+|S21|²∈[0.90,1.02]
+    判读口径 runs/ge5_msjcross/criteria.md；能量门=|S11|²+|S21|²∈[0.90,1.02]
     （单模子带 f≤0.95·c/(2b)，带顶多模污染区只报告）。
     """
 
@@ -113,7 +113,7 @@ class _WgProbePair(object):
 def _wg_readout_block(lay: dict[str, Any], reflection: bool = False) -> str:
     """波导模拟器读出段（soft plane 激励+4 E 线探针+垫片装配）单源。
 
-    ms_cross/ms_jcross 共享（ge5 修法，内部证据档 §E/I：
+    ms_cross/ms_jcross 共享（ge5 修法，runs/ge5_msjcross/audit.md §E/I：
     全口径 LumpedPort 电阻片=测量面并联 Z0 负载，能量预算破损）。lay 取
     z_src/z_1a/z_1b/z_2a/z_2b（米，ms_unit_layout 单源）。
 
@@ -228,7 +228,7 @@ def ms_unit_layout(template: str, params: dict[str, Any],
         gap_y = (period - py) / 2
         _gap_guard(min(gap_x, gap_y), "胞缘缝")
         # 读出探针面（2026-10-01 ge5 ms_patch 读出修复，jcross/cross 同族移植，
-        # 内部证据档 §0/§2）：soft plane 激励面 + 双 E 探针对
+        # runs/ge5_msfam/criteria.md §0/§2）：soft plane 激励面 + 双 E 探针对
         # ——反射口径 S11=Γ（入射=−z 照明波/反射=+z 回波，垫片子类对调 uf）。
         # 全部为自由悬浮无源面，域内零电阻片（_ms_refl_z 单源）。
         z = _ms_refl_z(h_m, lam0_m)
@@ -305,7 +305,7 @@ def ms_unit_layout(template: str, params: dict[str, Any],
         z_feed_hi = h_m + g_air      # 上游空气区参考面（几何/UI 口径保留）
         z_bot = z_feed_lo - lam0_m / 8
         z_top = z_feed_hi + lam0_m / 8
-        # 读出探针面（2026-10-01 ge5 同族修复，内部证据档
+        # 读出探针面（2026-10-01 ge5 同族修复，runs/ge5_msfam/criteria.md
         # §0；与 ms_jcross 修复批同式）：soft plane 激励面 + 每侧双 E 探针
         # 对（对内距 λ0/16）。全部为自由悬浮无源面，域内零电阻片。
         z_src = z_bot + lam0_m / 16          # 激励面距 z 底 MUR λ0/16（≥2·BASE）
@@ -346,7 +346,7 @@ def ms_unit_layout(template: str, params: dict[str, Any],
         z_feed_hi = h_m + g_air      # 屏上游空气区参考面（几何/UI 口径保留）
         z_bot = z_feed_lo - lam0_m / 8
         z_top = z_feed_hi + lam0_m / 8
-        # 读出探针面（2026-10-01 ge5 修复，内部证据档 §G）：
+        # 读出探针面（2026-10-01 ge5 修复，runs/ge5_msjcross/audit.md §G）：
         # soft plane 激励面 + 每侧双 E 探针对（对内距 λ0/16，方向求解条件数
         # 全带 |sin βΔz|≥0.29）。全部为自由悬浮无源面，域内零电阻片。
         z_src = z_bot + lam0_m / 16          # 激励面距 z 底 MUR λ0/16（≥2·BASE）
@@ -358,7 +358,7 @@ def ms_unit_layout(template: str, params: dict[str, Any],
         z_2b = z_feed_hi - lam0_m / 32       # 上对远端（屏上游侧空气区）
         z_2a = z_2b - lam0_m / 16            # 上对近端
         # 缝缘近场线（ge5 2026-10-01 方向修复：屏 90° 旋转——主缝沿 y、端枝
-        # 沿 x。F3 实验（内部证据档 §7）：x 缝+E∥x 是槽缝
+        # 沿 x。F3 实验（runs/ge5_msjcross/criteria.md §7）：x 缝+E∥x 是槽缝
         # FSS 非耦合极化（全带无峰）；y 缝+E∥x（缝垂直驱动）峰现形且与载板
         # PSSFSS 吻合。参数名义值旋转不变。近场线 x/y 轴互换同源。
         near_x = [-slot_w / 2, slot_w / 2,
@@ -424,7 +424,7 @@ def ms_unit_layout(template: str, params: dict[str, Any],
 def _ms_patch_lines(p: dict[str, Any]) -> str:
     """反射阵方贴片单元（DP-10）：接地基板+零厚方贴片，soft plane+探针对反射读出。
 
-    读出（2026-10-01 ge5 ms_patch 读出修复，内部证据档 §D/E
+    读出（2026-10-01 ge5 ms_patch 读出修复，runs/ge5_msjcross/audit.md §D/E
     定性：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载（能量预算破损），
     反射相位为片负载 Möbius 像（ 六百八十七：fine 弧 100.90° 去嵌后
     物理 133.98°、coarse 19/21 点反演负阻不可修复）——jcross/cross 修法
@@ -445,7 +445,7 @@ patch.AddBox((-PX / 2, -PY / 2, H_SUB), (PX / 2, PY / 2, H_SUB), priority=10)
 def _ms_cross_lines(p: dict[str, Any]) -> str:
     """FSS 带阻十字偶极子单元（DP-10）：正交双极化稳定，屏=基板顶零厚十字。
 
-    读出（2026-10-01 ge5 同族修复，内部证据档 §0）：soft plane
+    读出（2026-10-01 ge5 同族修复，runs/ge5_msfam/criteria.md §0）：soft plane
     激励 + 双 E 探针对方向求解——域内零电阻片（原全口径 LumpedPort 电阻片=
     测量面并联 Z0 负载，能量预算破损，同 ms_jcross 病灶，audit §E）。
     方向：金属偶极子臂谐振由 E∥臂驱动（与槽缝 FSS 的 E⊥缝长轴判据相反），
@@ -567,7 +567,7 @@ def ms_jcross_metal_boxes(period: float, slot_len: float, slot_w: float,
 def _ms_jcross_lines(p: dict[str, Any]) -> str:
     """FSS 带通 Jerusalem cross 缝单元（DP-10）：互联缝孔径，屏=孔洞补集盒。
 
-    方向（2026-10-01 ge5 方向修复，内部证据档 §7）：主缝
+    方向（2026-10-01 ge5 方向修复，runs/ge5_msjcross/criteria.md §7）：主缝
     沿 **y**、端枝沿 x——E∥x 波导模拟器 TEM 对缝垂直驱动（F3 实验：x 缝
     E∥x 非耦合极化全带无峰；y 缝峰现形且与载板 PSSFSS 吻合）。ms_jcross_
     metal_boxes 纯函数保持「函数 x=缝长轴」的分解语义不变，本层发射时做
@@ -609,7 +609,7 @@ class _WgProbePair(object):
 
     E 探针=全口径 x 向线积分（weight=-1，LumpedPort ut 同构造）；探针自由
     悬浮不扰动场。F/B 分解：E_a=F+B·e1、E_b=F·p+B/p（p=e^(-jβΔz)）——
-    判读口径 内部证据档；能量门=|S11|²+|S21|²∈[0.90,1.02]
+    判读口径 runs/ge5_msjcross/criteria.md；能量门=|S11|²+|S21|²∈[0.90,1.02]
     （单模子带 f≤0.95·c/(2b)，带顶多模污染区只报告）。
     """
 
@@ -683,7 +683,7 @@ def ms_array_layout(params: dict[str, Any],
         raise ValueError(
             f"ms_array_NxN: cell_map 覆盖不完备（需 {n_y} 行 × {n_x} 列）")
     lam0_m = 299792458.0 / ((freq_range_ghz[0] + freq_range_ghz[1]) / 2 * 1e9)
-    # ms_ring_patch 阵胞（ge5 段③，内部证据档）：环几何=core 闭式派生
+    # ms_ring_patch 阵胞（ge5 段③，runs/ge5_j2fb/）：环几何=core 闭式派生
     # （全阵同环，贴片逐胞变），导体 extent=ring_outer 非贴片边长
     from rfauto.core.metasurface_lut import ms_ring_patch_dims_mm
 
@@ -794,7 +794,7 @@ def ms_array_render(template: str, params: dict[str, Any],
     平面与阵之间置 nf2ff 盒（反射方向远场，J2 判读面）。
     无端口无 sparams.csv——产物=farfield_cut.csv/farfield3d.csv/
     farfield_meta.json/array_meta.json（观测链 best-effort #105）。
-    nf2ff 记录=直构六面闭合零镜像（ge7 ffrender 修复，内部证据档
+    nf2ff 记录=直构六面闭合零镜像（ge7 ffrender 修复，runs/ge6_ffdbg/
     replay_findings.md 定案：CreateNF2FFBox 的 BC 推导 PEC 镜像在悬空
     Box 底面错位 0.131λ0 → θ=0 宽瓣伪象抢峰；详见脚本内注记）。
     """
@@ -807,7 +807,7 @@ def ms_array_render(template: str, params: dict[str, Any],
     base_m = (3e8 / ((f0 + fc) * (er ** 0.5)) / 50 if not mesh_resolution_mm
               else float(mesh_resolution_mm) * 1e-3)
     _nrts = int(params.get("_nrts", 100000) or 100000)
-    # F-D NrTS/EndCriteria 缺省接线（）：本渲染器只经 render_script
+    # F-D NrTS/EndCriteria 缺省接线（wf:nrts-fix）：本渲染器只经 render_script
     # 早分发/直调到达，_fd_nrts_defaults 在此恰调一次（主路径已跳过 PORTLESS）
     _fd_max_time_ns = _fd_nrts_defaults(template, params)
     _fd_end_criteria_src = (
@@ -850,7 +850,7 @@ import os
 
 # CSXCAD/openEMS 扩展模块的依赖 DLL 不在 Python 3.8+ 的 PATH 搜索里，
 # 必须 add_dll_directory（2026-09-03 审计实测）。
-_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", "")
+_OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN", r"E:\\\\openEMS\\\\install\\\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)
@@ -925,12 +925,12 @@ _exc.AddBox((-DOM_X, -DOM_Y, Z_EXC), (DOM_X, DOM_Y, Z_EXC), priority=0)
 # 镜像 pos=盒 start 面）。本模板盒底面悬空在贴片上方（结构性避让基底/
 # 贴片穿面），自动镜像平面落在悬空底面 z=H_SUB+4·BASE 而非真实 PEC 地
 # z=0（偏 3.924mm=0.131λ0@10GHz）→ 错相位镜像 contribution 污染组合、
-# 注入 θ=0 宽瓣伪象抢峰（内部证据档 §0/§4 同参
+# 注入 θ=0 宽瓣伪象抢峰（runs/ge6_ffdbg/replay_findings.md §0/§4 同参
 # 重放实锤；镜像@z=0 口径 R4 实证束/镜面比坍缩不采用）。
 # 修法=直构 nf2ff 类记闭合 6 面 + 全零镜像（严格等效原理：闭合面零镜像，
 # 入射场贡献经 extinct 定理自消）。**ge8b 批起底面剔除（K-6 立项销账）**：
 # directions 底面（z start）=False——①K-6 五面口径 vs ge6 六面 cpp 重放
-# 逐点全对齐（rel_diff≈4e-6，k6_ff_forensic 交叉复核归档），
+# 逐点全对齐（rel_diff≈4e-6，runs/k6_ff_forensic/crosscheck_final.json），
 # 底面通量对上半球判读指标零贡献；②省底面记录 ~91GB/档（E 盘曾差 1.2GB
 # 零余量）；③ge8 踩坑10（nf2ff C++ 法向启发式 center 缺省出盒）的失真源
 # 头消除。面文件序随此为五面：E_1..E_4=侧+顶、无 E_5 底（判读消费 z 顶面
@@ -1155,7 +1155,7 @@ def ms_geometry_spec(template: str, params: dict[str, Any],
 # - ms_jcross：period=12.0；主缝=λg/4、端枝=λg/8、缝宽=λg/40
 #   （λg=λ0/√εeff；Marcuvitz 网格 EC 初值口径，带心真机修正归 P3）。
 # - ms_array_NxN：演示名义务 3×3（真机 15×15 战役走参数注入，预算见
-#   handoff.md）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
+#   开发接续说明）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
 def _ms_nominal() -> tuple[float, float, float]:
     """闭式 nominal 计算（core 单源导入收口在函数内，scipy 链惰性）。"""
     from rfauto.core.metasurface_lut import ms_cross_arm_len_mm, ms_jcross_slot_dims_mm, ms_patch_resonant_len_mm
@@ -1183,8 +1183,7 @@ MS_PATCH_META: dict[str, Any] = {
                   "波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出"
                   "判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 "
                   "LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 "
-                  "Möbius 像，内部证据档 §D/E "
-                  "七）",
+                  "Möbius 像，内部证据档 §D/E）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["px_mm", "py_mm", "period_mm", "h_mm"],
     "topology": "反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形"
@@ -1197,8 +1196,8 @@ MS_PATCH_META: dict[str, Any] = {
     "mesh_note": "0=自动 λ_sub/50@F_MAX；贴片缘精确入网+胞缘缝 3+ 中点入网（#311）；"
                  "NEAR≤最小胞缘缝/3 渲染期守卫（#266）；全轴 ≥10µm",
     "smoke_note": "离线审计先行（#212，test_metasurface_templates）；波导模拟器扫"
-                  "描战役（粗 21+细 41 点）发射面见 内部证据档；"
-                  "读出修复后重扫见 内部证据档（J2 fallback 战役段②）",
+                  "描战役（粗 21+细 41 点）发射面见 runs/df6_dp10ms/handoff.md；"
+                  "读出修复后重扫见 runs/ge5_j2fb/（J2 fallback 战役段②）",
 }
 _MS_PATCH_NOM_PERIOD = round(_MS_LAM0_MM / 2, 4)   # λ0/2（#252 闭式非手抄）
 MS_PATCH_NOMINAL: dict[str, Any] = {
@@ -1217,7 +1216,7 @@ MS_CROSS_META: dict[str, Any] = {
                   "轨判。能量门=|S11|²+|S21|²∈[0.90,1.02]（单模子带 "
                   "f≤0.95·c/(2b)；带顶多模污染区只报告不设门）。（2026-10-01 "
                   "ge5 同族修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，"
-                  "内部证据档 §E）",
+                  "runs/ge5_msjcross/audit.md §E）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["arm_len_mm", "arm_w_mm", "period_mm", "h_mm"],
     "topology": "FSS 带阻十字偶极子单元：基板顶零厚正交双十字臂（x 臂=受激臂，"
@@ -1231,7 +1230,7 @@ MS_CROSS_META: dict[str, Any] = {
                  "NEAR≤邻臂尖缝/3 渲染期守卫；全轴 ≥10µm",
     "smoke_note": "离线审计先行（#212）；带阻谐振闭式互证（λ0/2√εeff 口径）；"
                   "真机波导模拟器 smoke（空波导 EN 标定+真屏带阻谷+裁判对拍）"
-                  "判据 内部证据档 §2",
+                  "判据 runs/ge5_msfam/criteria.md §2",
 }
 MS_CROSS_NOMINAL: dict[str, Any] = {
     "arm_len_mm": _MS_CROSS_NOM_ARM,
@@ -1252,7 +1251,7 @@ MS_JCROSS_META: dict[str, Any] = {
                   "f≤0.95·c/(2b)；带顶多模污染区只报告不设门）。（2026-10-01 "
                   "ge5 修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，"
                   "空波导 EN 0.38 vs 解析 0.556，读出作废，"
-                  "内部证据档）",
+                  "runs/ge5_msjcross/audit.md）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["slot_len_mm", "slot_w_mm", "stub_len_mm", "period_mm", "h_mm"],
     "topology": "FSS 带通 Jerusalem cross 缝单元：零厚金属屏（胞面减互联孔径盒"
@@ -1308,7 +1307,7 @@ MS_ARRAY_META: dict[str, Any] = {
     "mesh_note": "0=自动 λ_sub/50@F_MAX；全部贴片缘精确入网；胞缘/邻胞缝 ≥2·NEAR"
                  " 渲染期守卫；1µm 近重合去重（#152）；全轴 ≥10µm；演示名义 3×3，"
                  "真机 15×15 预算（~4×10⁷ cells 小时级/轮，#328 CSXCAD exec 实测"
-                 "口径）见 内部证据档",
+                 "口径）见 runs/df6_dp10ms/handoff.md",
     "smoke_note": "离线审计先行（#212）；真机 solo 单飞（#246/#261）",
 }
 MS_ARRAY_NOMINAL: dict[str, Any] = {
@@ -1326,7 +1325,7 @@ TEMPLATE_META["ms_jcross"] = MS_JCROSS_META
 TEMPLATE_NOMINAL["ms_jcross"] = MS_JCROSS_NOMINAL
 
 # ── ms_ring_patch（双谐振方环+内贴片，DP-10 §1c 预登记 fallback；ge5 J2
-#    战役段③注册，内部证据档）：名义全部闭式精算（#1c/#252，core 单源），
+#    战役段③注册，runs/ge5_j2fb/）：名义全部闭式精算（#1c/#252，core 单源），
 #    环几何 ms_ring_patch_dims_mm（void=0.4λ0、ring_w=λg/40、ring_outer=
 #    void+2·ring_w——ms_cross/jcross 0.4λ0 屏周期与 JC 缝宽口径族内同源），
 #    内贴片=ms_patch_resonant_len_mm 不动点（复用不重复实现）。LUT 扫描变量
@@ -1339,7 +1338,7 @@ MS_RING_PATCH_META: dict[str, Any] = {
                   "β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明"
                   "波、反射=+z 回波，footer 契约/sparams.csv 5 列 schema 不变，"
                   "_port2=_port1 别名 S21 列≡S11；与 ms_patch 段①修复同族读"
-                  "出，空波导标定 EN≈1.0+闭式相位 0.19° 实证 内部证据档"
+                  "出，空波导标定 EN≈1.0+闭式相位 0.19° 实证 runs/ge5_j2fb/"
                   "stage2/smoke_report.json）。波导模拟器≡无限阵@θ=0，E∥x 极化"
                   "前提；|S11|≈1 的 argΓ 逐 patch_px 入反射相位 LUT；健康判据="
                   "|Γ| 线性域 ≈1",
@@ -1358,7 +1357,7 @@ MS_RING_PATCH_META: dict[str, Any] = {
                  "环-胞缝 3+ 中点入网（#311）；NEAR≤最小缝/3 渲染期守卫（#266）；"
                  "全轴 ≥10µm",
     "smoke_note": "离线审计先行（#212，test_metasurface_templates）；段④ J1c "
-                  "扫描（粗 21 点档+圆周覆盖门 ≥300°）发射面=内部证据档"
+                  "扫描（粗 21 点档+圆周覆盖门 ≥300°）发射面=runs/ge5_j2fb/"
                   "stage2/campaign_j2fb.py --template ms_ring_patch",
 }
 MS_RING_PATCH_NOMINAL: dict[str, Any] = {

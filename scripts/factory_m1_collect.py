@@ -1,6 +1,6 @@
 """数据工厂 M1 数据面采集管线（datafactory_phase1_plan §2/§5，M1 里程碑）。
 
-判据/口径全部预声明 runs/data_factory_m1/criteria.md（写死再跑，2026-09-19）。
+判据/口径全部预声明 内部证据档（写死再跑，2026-09-19）。
 链路：lhs_points 批量（+锚点预置）→ OpenEMSOptAdapter 逐点求解（e11 harness
 产物化通道，OE 串行 1）→ 标准 run 产物落盘（api.run_once 兼容布局）→
 materialize_dataset 成行（dataset_service ⑤ 分支，#251④ 先例）→ 三门判读。

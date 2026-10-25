@@ -143,7 +143,7 @@ def test_build_batch_command_logfile_project_last():
 
 
 def test_build_batch_command_design_qualifier_rejected():
-    # -designs 设计限定不受 v251 支持（2026-10-13 sim_host 真机核实
+    # -designs 设计限定不受 v251 支持（2026-10-13 sim_server 真机核实
     # verdict=FAIL：`-designs DesignB` 与 `-designs DesignA:setup1` 两形态
     # 旗标被静默吞、值按 "Unexpected command line argument ... ignored"
     # 丢弃、退化全设计求解 rc=0——runs/aurora_c/designs_verify/）。
@@ -173,7 +173,7 @@ def test_solve_success_command_artifacts_logfile(tmp_path, monkeypatch,
     assert res["project_kind"] == "aedt"
     assert res["ansysedt_exe"] == _EXE
     # 命令行钉字面（发射序 + Logfile 前置，工程恒末位——
-    # 真机实证 AEDT 2025 R1 拒收 -Logfile 收口形态，runs/edblane85/w1_smoke/；
+    # 真机实证 AEDT 2025 R1 拒收 -Logfile 收口形态，内部证据档；
     # 无 -designs 旗标=全设计求解（AEDT 缺省语义，真机对照臂实证）
     cmd = res["command"]
     assert cmd[:3] == [_EXE, "-ng", "-BatchSolve"]
@@ -711,7 +711,7 @@ def test_solve_export_skipped_when_solve_failed(tmp_path, monkeypatch,
 
 # ─── 导出分派：3D Layout 回退 / FATAL finally / sweep 透传 ────────────────────
 #
-# W5 真机实证（runs/edblane85/w5_batch_campaign/）：HFSS 3D Layout 设计无
+# W5 真机实证（内部证据档）：HFSS 3D Layout 设计无
 # 任何 Analysis 模块——GetModule("AnalysisSetup"/"Setup"/"Output"/
 # "Solutions") 四名全 FAIL，ExportNetworkData 挂 design 对象（pyaedt
 # analysis.py 先例：design_type "HFSS 3D Layout Design" → module=

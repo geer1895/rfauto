@@ -12,7 +12,7 @@ params:
   helix_w_mm: 0.6
   feed_gap_mm: 2.0
 status: ok
-script_sha256: 6cc5d899556bdcf4670c208389d1898d0ee5fa42a15f7ba8e9d4dba0ab4c2da1
+script_sha256: e6e8e56816a0de03be1987f81bdb4365c9db1fed440651258a1073cfe513db7e
 csx:
   n_primitives: 18
   props:

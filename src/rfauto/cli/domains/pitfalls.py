@@ -1,14 +1,17 @@
-"""pitfalls 子应用（坑账结构化检索面）.
+"""pitfalls 子应用（坑账结构化检索面；aurora_d KB-B 席，2026-10-14）.
 
 只读两叶：search（关键词/域/坑号检索）+ get（按 id 精确查坑）。
 索引加载/校验/id 精确查转发 service/pitfall_index_service（只读 loader，
 零写入，规则 4）；关键词计分是纯映射（确定性词面检索，铁律 7 对偶：
-映射表也是确定性数据）。
+映射表也是确定性数据）——service/** 在本席禁碰清单内，故该纯函数落
+本域模块并由 tests/unit/test_kb_b_pitfall_index.py 直钉。
 
-数据面：knowledge/pitfalls_index*.json 属内部账本衍生数据，公开分发
-视图不随附——索引缺席时两叶如实报 error 信封（loader 契约：缺数据
-ok=False+errors 显式，不静默回退空账）；--index 可指向任意同 schema
-（rfauto-pitfalls-index-v1）索引文件，同一 loader 零改动可加载。
+数据面：knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 从
+内核立规注记.md 踩坑速查+runs/ SESSION_PITFALLS 散档机器全量解析，条目数以
+构建报告实测为准；漂移重建：
+``python scripts/pitfall_index.py``）；--index 可切人工精选 v1
+（knowledge/pitfalls_index.json，66 条）——两索引同 schema 契约
+（rfauto-pitfalls-index-v1），同一 loader 零改动可加载。
 
 用法::
 

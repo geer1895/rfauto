@@ -1,0 +1,111 @@
+f0_ghz: 2.0
+n_ports: 1
+template: octagonal_spiral
+substrate:
+  er: 12.9
+  h_mm: 0.1
+  tan_d: 0.0006
+params:
+- n_turns
+- din_um
+- w_um
+- s_um
+- gap_um
+- h_mm
+- ground_plane
+nominal_params:
+  n_turns: 5
+  din_um: 80.0
+  w_um: 10.0
+  s_um: 5.0
+  gap_um: 10.0
+  h_mm: 0.1
+  ground_plane: 0
+  er: 12.9
+  tan_d: 0.0006
+max_time_ns: 30.0
+mesh_resolution_mm: 0.0
+n_segments: null
+extraction: >-
+  S11 @ LumpedPort 1（外端-焊盘水平桥隙，R=50Ω CalcPort 同参考；
+  Zin=50(1+S11)/(1−S11)→低频段 L=Im(Zin)/(2πf) 提取，Im(Zin) 过零/
+  |Zin| 峰=SRF 判读——串联绕组提取，绕组寄生并联谐振；L±25%/SRF>2×f0
+  质量判据由 CALC 键 octagonal_spiral_inductance 承载）
+topology: >-
+  GaAs IPD 八角螺旋电感：八角折线螺旋（across-flats 口径，d_out 闭式=
+  d_in+2nW+2(n−1)S，45° 切角阶梯化渲染）+ 内端过孔上引中跳线桥（lange
+  air-bridge 同法，把内端引出到外端端口同侧）+ 外端-焊盘水平桥隙
+  LumpedPort（端口串在绕组回路，Zin=R+jωL，SRF=寄生并联谐振峰）；可选
+  底地平面（ground_plane=1 时全域金属地板，镜像降 L/Q 属物理）；全域
+  MUR（电小器件近场主导）
+param_semantics: >-
+  n_turns=匝数 N（渲染取整），din_um=内径 D_in（μm，最内缘跨面宽），
+  w_um=线宽 W（μm），s_um=匝间距 S（μm），gap_um=外端-焊盘桥隙（μm，
+  端口 x 向跨距），h_mm=基板厚（仓内基板惯例 mm，GaAs 100μm 档），
+  ground_plane=底地平面开关（0/1，真值即开）；er/tan_d 走
+  substrate/nominal（GaAs 半绝缘）——W/S/N/Din 全 μm 为 IPD 工艺口径，
+  经 core.stackup.to_mm(v,'um') 单源换算（μm 帮手函数首个消费模板）
+mesh_note: >-
+  mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 max(w,s,gap)/4（μm
+  尺度几何驱动网格，禁 λ_sub/50 口径——2GHz λ_sub/50≈6mm 装不下
+  0.2mm 器件）；螺旋缘/切角阶梯盒缘/焊盘/过孔棱/端口盒边精确入网（#198）；
+  NEAR≤min(s,gap)/3 渲染期守卫（#266）；全轴 1µm 近重合去重（#152）；
+  45° 切角=步长 w 阶梯盒（相邻盒重叠保证导通）；端口盒三向 ≥NEAR 厚、
+  边全入网（#174/#283）
+smoke_note: >-
+  未冒烟（离线审计过，#212，test_octagonal_spiral_template）；真机发射
+  留登记（L/SRF/Q 三量 HFSS 对拍+Q 预算区间判据待真机批，本批零发射）
+nominal_derivation: |-
+  用户实测参考同量级档：n=5, din=80, w=10, s=5μm →
+  d_out=d_in+2nW+2(n−1)S=220μm（闭式导出，CALC 键同语义 #154）→
+  L=Mohan 电流片式（core/nfc_coil 单源）=4.1147nH，对 HFSS 实测
+  4.226nH（默认网格）/4.312nH（金属局部 5μm 网格后）偏差 +2.7%/+4.8%
+  （±25% 判据内）；C_par 匝间一阶估计 80.75fF → SRF=8.73GHz（对实测
+  6.32/7.18GHz 同量级、未标定如实）；基板 GaAs 半绝缘典型值
+  （er=12.9/tanδ=0.0006/h=100μm 薄膜 IPD 档）
+
+teaching:
+  schema: rfauto-teaching/v1
+  physics:
+    summary: 八角螺旋电感：Mohan 电流片式闭式给出 L（八角系数 Table II），几何决定 L 与匝间寄生电容、二者共同决定自谐振频率 SRF=1/(2π√(L·C_par))。典型用于
+      GaAs IPD/MMIC 集总匹配网络；常见误用=只看 L 不管 SRF——工作频率必须显著低于 SRF（rfauto 质量判据 SRF>2×f0），否则寄生电容使有效电感偏离闭式并引入损耗。
+    derivations:
+    - claim: Mohan 电流片式电感（八角系数）
+      formula: L = c1*mu0*n**2*d_avg/2*(ln(c2/rho)+c3*rho+c4*rho**2), octagon c=(1.07,2.29,0,0.19)
+      source: 本仓 core/nfc_coil（spiral_inductance 单源，IEEE JSSC 34(10) 1999 Table II 系数原文逐位核对；docs/templates/octagonal_spiral/meta.yaml
+        nominal_derivation（名义档 4.1147nH））
+    - claim: 几何闭式（外径由四 μm 参数导出）
+      formula: d_out = d_in + 2*n*W + 2*(n-1)*S
+      source: 本仓 core/nfc_coil.spiral_inductance（Mohan 电流片式，octagonal_spiral_inductance 键面同语义 #154；渲染匝梯同式）
+    - claim: 自谐振频率（匝间寄生一阶）
+      formula: SRF = 1/(2*pi*sqrt(L*C_par)); C_par = sum_k eps0*eps_eff*t*l_k/S
+      source: 本仓 core/nfc_coil.winding_parasitic_capacitance_f（一阶估计，未标定如实）
+  sensitivity_ranking:
+  - param: din_um
+    order: 1
+    basis: 内径（d_avg 主项，电流片式 ln(c2/ρ) 与 d_avg 双通道）
+  - param: n_turns
+    order: 2
+    basis: 匝数 n² 主项（d_out 随 n 同变稀释，复合通道）
+  - param: w_um
+    order: 3
+    basis: 线宽（d_avg/d_out 填充修正通道+C_par 极板面积通道）
+  - param: s_um
+    order: 4
+    basis: 匝间距（ρ 通道+C_par 极板间距通道）
+  - param: gap_um
+    order: 5
+    basis: 桥隙不进电感式（0）
+  - param: h_mm
+    order: 6
+    basis: 板厚不进电流片式（0——经衬底电容弱进入属全波维）
+  - param: ground_plane
+    order: 7
+    basis: 地平面开关不进闭式（0——镜像降 L 属全波维）
+  - param: er
+    order: 8
+    basis: 介电常数不进电流片式（0——经 C_par εeff 弱进入）
+  - param: tan_d
+    order: 9
+    basis: 损耗角不进闭式（0）
+  quiz_refs: []

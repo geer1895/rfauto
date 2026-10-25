@@ -2,7 +2,7 @@
 
 规格=docs/research_expansion_20261002_round16.md §四 PR-6："SSE+成本热图+
 trial 虚拟列表（1000 行 60fps）"。本模块承担**数据面**（前端只渲染，
-AGENTS 坑族口径）：
+内核立规注记 坑族口径）：
 
 - **成本热图**：trials 审计 → (x_param, y_param) 确定性等宽分箱
   （feasibility_heatmap 同款分箱算法，E10 姊妹面）——格内 {n, cost_mean,
@@ -89,7 +89,7 @@ def campaign_dashboard(
     # 回仓库 runs/，#295 族；cwd 无 runs 且不在仓内=tmp 面行为不变）。
     from rfauto.infra.runs_paths import resolve_runs_dir
 
-    # P2-2（架构批 W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
+    # P2-2（aurora_g W3-S2 审查，W4-S1 修复）：run_id 路径段守卫单源接入
     # （第 10 处拼接点，P9-13 同类漏网）——``..`` 直通 runs 根 is_dir 通过
     # → 进 trials 读取尝试（存在性 oracle+祖先目录 trials 被读）。
     run_id_clean = safe_run_id(run_id)

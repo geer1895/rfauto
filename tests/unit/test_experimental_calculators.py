@@ -6,9 +6,9 @@
 EXPERIMENTAL）放行；清单（list_calculators）始终列出但打 experimental 标签。
 
 数值断言口径（#175）：断言函数返回值，不匹配渲染文本。E13 三点核对锚 =
-记录的公式系数（0.0261448 + 75.1834/L + 0.0162789·L/W），
+开发注记（六十九）记录的公式系数（0.0261448 + 75.1834/L + 0.0162789·L/W），
 独立裁判 = symbolic_fit.patch_resonance_hj_ghz（Hammerstad/HJ，#118 不自证），
-阈值 =  记录的验收门 2%。
+阈值 = 开发注记 记录的验收门 2%。
 
 通道钉子（#139 同源纪律）：开关相关单测清掉 env、CWD 隔离到 tmp_path（repo
 configs/settings.yaml 与本机 settings.local.yaml 不参与），默认分支可复现。
@@ -39,7 +39,7 @@ from rfauto.service.calculator_service import list_calculators, run_calculator
 EXP_KEY = "patch_f0_symbolic_e13"
 ENV_KEY = "RFAUTO_CALCULATORS_ALLOW_EXPERIMENTAL"
 
-# 记录系数（渲染文本 6 位有效数字）——三点核对的独立锚
+# 开发注记（六十九）记录系数（渲染文本 6 位有效数字）——三点核对的独立锚
 __A, __B, __C = 0.0261448, 75.1834, 0.0162789
 # 三个已知点（拟合数据域内：L∈[35,45]、W∈[40,60]）
 _THREE_POINTS = ((35.0, 40.0), (40.0, 50.0), (45.0, 60.0))
@@ -197,7 +197,7 @@ def test_service_run_yaml_switch_allows(tmp_path, monkeypatch):
     out = run_calculator(EXP_KEY, {"l_mm": 40.0, "w_mm": 50.0})
     assert out["ok"] is True, out
     assert out["experimental"] is True
-    # 开=新路径生效键：公式真跑出数（ 系数锚）+出处/公式键在档
+    # 开=新路径生效键：公式真跑出数（开发注记 系数锚）+出处/公式键在档
     assert out["result"]["f0_ghz"] == pytest.approx(
         _devlog_f0(40.0, 50.0), abs=1e-4)
     assert "provenance" in out["result"] and "formula" in out["result"]
@@ -283,7 +283,7 @@ def test_repo_settings_yaml_declares_key_default_false():
 
 @pytest.mark.parametrize("l_mm,w_mm", _THREE_POINTS)
 def test_e13_three_points_match_devlog_coefficients(l_mm, w_mm):
-    """注册函数值 vs 记录系数：6 位有效数字截断 → |Δ|≲1e-5GHz。"""
+    """注册函数值 vs 开发注记（六十九）记录系数：6 位有效数字截断 → |Δ|≲1e-5GHz。"""
     spec = CALCULATOR_REGISTRY.get(EXP_KEY)
     value = spec.func(l_mm=l_mm, w_mm=w_mm)["f0_ghz"]
     assert value == pytest.approx(_devlog_f0(l_mm, w_mm), abs=1e-4)
@@ -293,16 +293,16 @@ def test_e13_three_points_match_devlog_coefficients(l_mm, w_mm):
 
 @pytest.mark.parametrize("l_mm,w_mm", _THREE_POINTS)
 def test_e13_within_2pct_of_hj_referee(l_mm, w_mm):
-    """独立裁判（Hammerstad/HJ 闭式，#118 不自证）： 记录验收门 2%。"""
+    """独立裁判（Hammerstad/HJ 闭式，#118 不自证）：开发注记 记录验收门 2%。"""
     value = CALCULATOR_REGISTRY.get(EXP_KEY).func(l_mm=l_mm, w_mm=w_mm)["f0_ghz"]
     hj = patch_resonance_hj_ghz(l_mm, w_mm, _ER, _H_MM)
     assert abs(value - hj) / hj < 0.02
-    #  记录归纳式系统性略低于 HJ（mean −0.699%）：符号方向一致
+    # 开发注记 记录归纳式系统性略低于 HJ（mean −0.699%）：符号方向一致
     assert value < hj
 
 
 def test_e13_formula_text_matches_devlog_form():
-    """公式渲染串含三项（1 / 1/L / L/W）——结构与  记录一致。"""
+    """公式渲染串含三项（1 / 1/L / L/W）——结构与 开发注记 记录一致。"""
     out = CALCULATOR_REGISTRY.get(EXP_KEY).func(l_mm=40.0, w_mm=50.0)
     assert out["formula"].startswith("f0_ghz = ")
     assert "1/L_mm" in out["formula"] and "L_mm/W_mm" in out["formula"]

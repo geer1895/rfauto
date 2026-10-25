@@ -16,7 +16,7 @@
   frac 切少样本集（seed 化可复现、n_repeat 次重复），每档比较
   {从头岭回归, L2-SP 微调} 在固定目标域测试集上的 MSE；
 - **真数据通道** :func:`rfic_tl_transfer_table`：接 core/rfic_tl_dataset
-  （数据在盘 runs/pb1_rfic_tl/upstream 时可跑，缺席诚实 skip——同
+  （数据在盘 内部证据档 时可跑，缺席诚实 skip——同
   test_rfic_tl_dataset 惯例）；"4× 降数据口径"的真数据复验超本席门
   （训练面），本函数只产表不裁结论。
 

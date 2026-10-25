@@ -6,7 +6,7 @@
 
 # 内核文档卡：stepped_impedance
 
-> 阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（架构批 W1-S3 席域，
+> 阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（aurora_f W1-S3 席域，
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 阶梯阻抗低通滤波器综合：原型 g_k 阶梯→感性高阻/容性低阻短线电长（fc 等电抗 arctan 设计式）→HJ 逐段线宽/εeff 精算——模板名义值手设留缺的补口，附 ABCD 级联频响与 fc−3dB 回收。
 
-模块自述（docstring 首行，机读）：阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（架构批 W1-S3 席域，
+模块自述（docstring 首行，机读）：阶梯阻抗低通滤波器（stepped-impedance LPF）综合内核（aurora_f W1-S3 席域，
 
 ## 公式与口径
 

@@ -73,10 +73,10 @@ RING_RESONATOR_META: dict[str, Any] = {
 }
 
 
-# 提升式重构单一事实源（架构批 W3-S11，R2_core_tier3 §⑤ F3）：函数体已
+# 提升式重构单一事实源（aurora_f W3-S11，R2_core_tier3 §⑤ F3）：函数体已
 # 逐字节下沉 core/calc_families/ring_resonator.py（顶部 import 再导出零改动，
 # #116 不留本地遮蔽副本；同参输出逐位一致由 tests/unit/test_w3s11_ring.py
-# 字节级对拍钉，重构前基线 内部证据目录）。
+# 字节级对拍钉，重构前基线 runs/aurora_f/w3s11_ring_parity_baseline.json）。
 # openems_templates 的同名再导出经本模块透传，仍为 core 同一函数对象。
 
 

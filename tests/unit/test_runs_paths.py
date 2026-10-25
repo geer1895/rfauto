@@ -1,4 +1,4 @@
-"""runs/ 面双根收敛单源钉（R3-9，runs/review_ge8e/f3_fix/REPORT.md）。
+"""runs/ 面双根收敛单源钉（R3-9，内部证据档）。
 
 infra/runs_paths.py 单源 + 三消费面（agent_sandbox/agent_runtime/
 agent_safety）语义唯一确定：cwd 根优先、仓内子目录 chdir 收敛回仓库

@@ -9,7 +9,7 @@
   第 3 层（已裁定保留项）：D1（#NNN 坑号）按保留实现，D8 厂商路径 WARN 豁免
     逐条记因。
 
-脱敏方案=SI 席（runs/research_seats_20261004/si_content/REPORT.md §2.2）：
+脱敏方案=SI 席（内部证据档 §2.2）：
   锚 YAML 键型策略 50 公开/10 映射/1 删（键路径级分类，未知键 fail-closed）；
   证据面=锚 arbitration_runs 引用的 sparams csv/Touchstone（原样）+判读
   JSON（剥离主机/路径键+runs 引用映射）；md 叙事面不入包（SI §2.3 分层）。
@@ -96,11 +96,11 @@ _SCAN_FAIL = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"hf_[A-Za-z0-9]{20,}"),
     re.compile(r"DEV" "LOG"),
-    re.compile(r"AGENTS" ".md|AGENT_" "HANDOFF"),
+    re.compile(r"AGENTS" r"\.md|AGENT_" r"HANDOFF"),
     re.compile(r"TODO\.md"),
     re.compile(r"handoff_" "prompt|HAND" "OFF_|continuation_" "plan"),
     re.compile(r"Plan_" "Extension|Plan_" "Final"),
-    re.compile(r"HFSS_" "Connect|C:\\\\?Users\\\\?PC"),
+    re.compile(r"HFSS_" r"Connect|C:\\\\?Users\\\\?PC"),
     re.compile("\uFFFD"),
 ]
 _SCAN_WARN = re.compile(r"E:\\\\?(openEMS|ADS|KiCad)|F:\\\\?")

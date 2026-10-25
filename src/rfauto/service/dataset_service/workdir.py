@@ -1,6 +1,6 @@
 """dataset_service.workdir —— 工作目录形态真机产物导入器。
 
-自 dataset_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原节「工作目录形态真机产物导入器」逐字节搬迁。
+自 dataset_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原节「工作目录形态真机产物导入器」逐字节搬迁。
 """
 
 from __future__ import annotations

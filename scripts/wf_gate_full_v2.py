@@ -158,7 +158,7 @@ def _collect_files() -> list[str]:
 
 
 def _slow_mode_args() -> list[str]:
-    """慢件分层三态（架构批 R3 #2，RFAUTO_GATE_SLOW_MODE）。
+    """慢件分层三态（aurora_h R3 #2，RFAUTO_GATE_SLOW_MODE）。
 
     缺省/未知值=空（无差别全量，终门口径与数字链零影响）；
     ``day``=-m "not slow"（日常轮跳过 slow 件）；``night``=-m slow

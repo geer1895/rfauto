@@ -36,15 +36,6 @@ from rfauto.adapters.edb_adapter import EdbAdapter
 
 _DLLS = ("libcrypto-3-x64.dll", "libssl-3-x64.dll")
 
-#: 预载链的"真跑面"是 Windows-only 特性（ctypes.WinDLL）；非 Windows 平台
-#: helper 入口 fail-soft 短路，断言 DLL 加载/OSError reason 的用例不可达
-#: ——非 Windows 诚实 skip（关闭态/显式 False/fail-soft 不抛面平台无关，
-#: 照常运行）。
-_win_preload = pytest.mark.skipif(
-    not sys.platform.startswith("win"),
-    reason="Windows-only behavior: preload helper gates on ctypes.WinDLL "
-           "and short-circuits on other platforms")
-
 _MIN_SPEC = {"stackup": {"layers": [
     {"name": "L", "type": "signal", "thickness_mm": 0.035}]}}
 
@@ -114,7 +105,6 @@ class TestThreeStates:
         assert pp.last_result is None  # 预载面整体未运行
         assert not pp._LOADED
 
-    @_win_preload
     def test_state_open_env_chain_loads_both_dlls(
             self, tmp_path, monkeypatch, dll_calls):
         root = _make_root(tmp_path, "flat")
@@ -134,7 +124,6 @@ class TestThreeStates:
         assert env["dlls"][0]["version"] == "3.0.14-teststub"
         assert set(pp._LOADED) == set(_DLLS)  # 幂等登记表已入账
 
-    @_win_preload
     def test_state_open_idempotent_across_adapter_instances(
             self, tmp_path, monkeypatch, dll_calls):
         root = _make_root(tmp_path, "flat")
@@ -161,7 +150,6 @@ class TestThreeStates:
         assert result.config_json_path.exists()  # 主链照常走通
         assert dll_calls == [] and pp.last_result is None
 
-    @_win_preload
     def test_state_open_via_configs_tier(
             self, tmp_path, monkeypatch, dll_calls):
         """configs 档：env 缺席时经 settings aedt_path 派生（缝=_configs_aedt_path）。"""
@@ -174,7 +162,6 @@ class TestThreeStates:
         assert pp.last_result["source"] == "configs"
         assert pp.last_result["root"] == str(root)  # AnsysEM 子目录布局变体
 
-    @_win_preload
     def test_env_parent_layout_variant_resolved(
             self, tmp_path, monkeypatch, dll_calls):
         """env 钉在父目录（安装器形态之一）：AnsysEM/Win64 子目录探测命中。"""
@@ -191,7 +178,6 @@ class TestThreeStates:
 
 
 class TestFailSoft:
-    @_win_preload
     def test_env_root_without_dlls_still_imports(
             self, tmp_path, monkeypatch, dll_calls):
         empty = tmp_path / "empty_root"
@@ -220,7 +206,6 @@ class TestFailSoft:
         assert pp.last_result["ok"] is False  # 失败如实落在信封
         assert dll_calls == []
 
-    @_win_preload
     def test_win_dll_oserror_fail_soft(
             self, tmp_path, monkeypatch, dll_calls):
         def _boom(p):
@@ -242,7 +227,6 @@ class TestFailSoft:
 
 
 class TestOrdering:
-    @_win_preload
     def test_preload_precedes_pyedb_import_real_chain(
             self, tmp_path, monkeypatch, dll_calls):
         """真预载链（非替身桩）：DLL 加载事件先于 import pyedb 事件。"""

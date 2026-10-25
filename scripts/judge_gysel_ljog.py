@@ -1,6 +1,6 @@
 """Gysel L-jog 等长折线拓扑重设计判读（W2⑥a-D，离线，不发起求解）。
 
-背景（TEMPLATE_META gysel / PARTIAL）：矩形旧版桥带继承
+背景（TEMPLATE_META gysel / 开发注记（一百七十九）PARTIAL）：矩形旧版桥带继承
 2·arm_len=36.324mm，对 50Ω λ/2=35.5mm 有 +2.32% 二阶偏差，P2⑪ 电路级归因
 认为该偏差把 @f0 的 S32/S11 封顶 −34.8dB；L-jog 变体把桥带跨度做成
 2·iso_len=35.5mm 精确。真机 pt2（矩形基线）/pt3（L-jog）已跑。

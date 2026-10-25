@@ -34,7 +34,7 @@
 - margin 比对面零迁移沿用原实现（emi_filter.margin_report /
   emc_radiated.radiated_margin 直收原 dict）——本模块不另起炉灶。
 
-普查清单：runs/em10/limits_survey_20261002.md。
+普查清单：内部证据档。
 """
 
 from __future__ import annotations

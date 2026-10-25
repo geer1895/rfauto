@@ -1,4 +1,4 @@
-"""架构批 W2-S9：鳍线-波导渐变过渡两键单测（K2 渐变过渡面）。
+"""aurora_e W2-S9：鳍线-波导渐变过渡两键单测（K2 渐变过渡面）。
 
 finline_taper_response / finline_taper_length（calc_families/finline.py）。
 

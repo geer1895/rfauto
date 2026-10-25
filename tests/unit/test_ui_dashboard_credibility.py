@@ -4,7 +4,7 @@
 i18n.js 词表追加段只读消费）+ pages/i18n.js 的 dashboard.cred_*/onboard_*
 键段（本席 append 面）。
 
-设计依据=runs/aurora_i/R3_credibility_design.md §2②（锚对照卡数据面）与
+设计依据=内部证据档 §2②（锚对照卡数据面）与
 M7 行（首页 KPI 徽章）；数据源零新端点=/api/anchors 摘要（engine_pair
 .referee=hfss 过滤，现役 17 条）+ /api/anchors/{id} 详情既有字段
 （verdict_state 只在详情——画廊 W2-S1 同款两段取数）。

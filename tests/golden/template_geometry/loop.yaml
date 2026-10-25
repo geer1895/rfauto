@@ -10,7 +10,7 @@ params:
   loop_w_mm: 1.0
   loop_gap_mm: 1.0
 status: ok
-script_sha256: 85c3367180c29730b0090ecadf716be02b7b990c8357d9a3d1c20d16aa673492
+script_sha256: fea2fdfce4fd4e3d12c86d952ab4d9b5d7abc50f5da6f51ffc1b80312d277391
 csx:
   n_primitives: 9
   props:

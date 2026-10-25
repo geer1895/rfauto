@@ -5,7 +5,7 @@
 （修复前 main() 恒 return 0，oe_chain_waiter 家族以 rc 串发）→ H1 席
 审查 H1-5/H1-7 → F6 修复席（2026-10-04）。退出码表见
 scripts/fd_oe_campaign.py 模块 docstring；总表见
-runs/review_ge8e/f6_scripts_fix/REPORT.md。
+内部证据档。
 
 钉面：
 ① campaign_exit_code 状态优先级三态+边界（FAIL>Skip>非PASS>全PASS>空）；

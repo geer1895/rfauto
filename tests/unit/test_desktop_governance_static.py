@@ -1,6 +1,6 @@
 """df5 桌面治理静态钉（汇总）：杀进程原语单点化 + 逐脚本委托存在性。
 
-不变量（runs/df5_desktop_governance/criteria.md §3）：
+不变量（内部证据档 §3）：
 - 16 个直接委托脚本的 **subprocess 调用参数里不得再出现 Stop-Process**
   （AST 级断言；杀进程原语单点存在于 src/rfauto/infra/desktop_guard.py）；
 - 2 个传递消费者（wp39_followup_run/slotline_transitions）经 provider

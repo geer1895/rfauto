@@ -19,7 +19,7 @@ write_td_vector_dump）。本脚本零源码改动：
    volume.domain="fd"、三轴切片非退化、engine 标签如实（无 PyVista 走
    numpy_contour）。
 
-产物 runs/patch_field_smoke/{simulation.py,engine.log,sparams.csv,
+产物 内部证据档{simulation.py,engine.log,sparams.csv,
 farfield_meta.json,fdtd/*.h5,_smoke_result.json}。
 """
 from __future__ import annotations

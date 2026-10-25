@@ -36,7 +36,7 @@ SAMPLER_SEED = 42
 
 # Y3 批次 BO（DP-13）：批内归一化最小距离门（[0,1]^d 欧氏）。低于该门视为
 # 扎堆点（constant_liar 未拉开），弃批重 ask 一次，再犯如实降级串行。
-# 门值预声明 runs/df6_dp13/criteria.md §Y3。
+# 门值预声明 内部证据档 §Y3。
 BATCH_MIN_DIST = 0.01
 
 # ME-13 多保真裁剪：pruner 三态。保真阶梯 fake→openEMS→HFSS 的 Phase1
@@ -894,6 +894,15 @@ def run_multi_optimization(
         "algorithm": "nsga2",
         "n_pareto": result["n_pareto"],
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": model_name,
@@ -1008,6 +1017,15 @@ def run_tolerance_analysis(
         "analysis": "tolerance",
         "metrics": {"yield_rate": result["yield_rate"]},
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": recipe_data.get("model", ""),
@@ -1041,6 +1059,83 @@ def _single_objective_cost(metrics: dict[str, float], obj: Objective) -> float:
         if val > high_v:
             return obj.weight * (val - high_v)
     return 0.0
+
+
+# ─── warm-start 溯源校验（R1 #13 旧数据冒充防线） ────────────────────────────
+
+def _warm_start_recipe_sha256(path: Path) -> str | None:
+    """当前 recipe 文件字节 sha256（mf_backend.recipe_sha256 同口径）。
+
+    文件在 run_optimization 入口已做过存在性校验，正常路径恒可得；
+    OSError 兜底返 None=无法校验（盖章样本按不匹配拒入，老格式照旧）。
+    """
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _filter_warm_start_provenance(
+    samples: list[dict[str, Any]],
+    current_sha: str | None,
+) -> dict[str, Any]:
+    """warm-start 样本溯源三态分拣（校验单源在本消费点，覆盖一切调用方）。
+
+    三态语义（R1 #13）：
+    - 样本带 provenance 且 ``recipe_sha256 == current_sha`` → matched，注入；
+    - 带 provenance 但 sha 不匹配（或当前 sha 不可得无法证同）→ mismatched，
+      **拒绝注入**——旧 recipe 的 cost 不再静默喂进新优化，note 带溯源对比；
+    - 无 provenance 段（老格式数据/纯数据面通道收集）或 provenance 无有效
+      sha → legacy，照旧注入 + note 声明"未校验"（增量兼容不废老数据）。
+
+    Returns:
+        ``{"inject": [matched+legacy 样本原序], "matched": [...],
+        "mismatched": [...], "legacy": [...], "notes": [str, ...]}``。
+        notes 非空时由调用方透传结果信封与日志（来源审计口径，#105 不阻塞）。
+    """
+    matched: list[dict[str, Any]] = []
+    mismatched: list[dict[str, Any]] = []
+    legacy: list[dict[str, Any]] = []
+    n_by_src_sha: dict[str, int] = {}
+    for sample in samples:
+        prov = sample.get("provenance") if isinstance(sample, dict) else None
+        src_sha = prov.get("recipe_sha256") if isinstance(prov, dict) else None
+        if isinstance(src_sha, str) and src_sha:
+            if current_sha is not None and src_sha == current_sha:
+                matched.append(sample)
+            else:
+                mismatched.append(sample)
+                key = src_sha[:8]
+                n_by_src_sha[key] = n_by_src_sha.get(key, 0) + 1
+        else:
+            legacy.append(sample)
+
+    notes: list[str] = []
+    if mismatched:
+        groups = sorted(n_by_src_sha.items())
+        shown = ", ".join(f"{k}×{n}" for k, n in groups[:3])
+        if len(groups) > 3:
+            shown += f" 等{len(groups) - 3}组"
+        cur8 = (current_sha or "?")[:8]
+        if matched or legacy:
+            notes.append(
+                f"warm-start 溯源不匹配，拒绝注入 {len(mismatched)} 个样本"
+                f"（旧 recipe sha 前 8 位 {shown} vs 当前 {cur8}），"
+                f"其余 {len(matched) + len(legacy)} 个照常注入")
+        else:
+            notes.append(
+                f"warm-start 数据来自旧 recipe（sha 前 8 位 {shown} vs 当前 "
+                f"{cur8}）——本次冷启动")
+    if legacy:
+        notes.append(
+            f"warm-start 老格式样本无溯源，注入未校验（{len(legacy)} 个）")
+    return {
+        "inject": [*matched, *legacy],
+        "matched": matched,
+        "mismatched": mismatched,
+        "legacy": legacy,
+        "notes": notes,
+    }
 
 
 # ─── 主入口 ───────────────────────────────────────────────────────────────────
@@ -1084,8 +1179,11 @@ def run_optimization(
 
     E11 warm-start：warm_start 为非空历史点列表（每点
     ``{"params": {...}, "cost": float}``，由调用方从 dataset_service 查得）
-    时，先过相似度门（warm_start.warm_start_points，负迁移防线）再 enqueue
-    ——WAITING trial 在 optimize 中先被弹出执行=先验起点，结果带
+    时，先过溯源校验（R1 #13：样本带 ``provenance.recipe_sha256`` 时须与
+    当前 recipe 文件哈希一致才注入，不匹配拒注入并回 ``warm_start_notes``
+    溯源对比；无 provenance 老格式照旧注入+note 未校验——增量兼容不废
+    老数据），再过相似度门（warm_start.warm_start_points，负迁移防线）后
+    enqueue——WAITING trial 在 optimize 中先被弹出执行=先验起点，结果带
     "warm_start_n"（实际注入数，门拒绝时为 0）。None=行为不变。
 
     Y3 批次 BO（DP-13）：``batch_size`` 缺省 1=旧路径逐字节等价
@@ -1308,13 +1406,27 @@ def run_optimization(
 
     # ─── E11 warm-start：历史先验点注入（相似度门=负迁移防线） ────────────
     # 数据获取与本环分离（分层契约）：历史点由调用方从 dataset_service 查得
-    # 后以 list[dict] 注入。门通过→enqueue（WAITING trial 先跑=先验起点）；
-    # 门拒绝→如实降级冷启动，不凑数注入。warm_start=None 时本段整体跳过。
+    # 后以 list[dict] 注入。溯源校验单源在本消费点（R1 #13）：带 provenance
+    # 的样本 recipe_sha 与当前 recipe 不一致→拒注入（旧 recipe 的 cost 不
+    # 静默喂进新优化），无 provenance 老格式→照旧注入+note 未校验；分拣后
+    # 可注入集再过相似度门（异族/落界门语义不变）。门通过→enqueue（WAITING
+    # trial 先跑=先验起点）；门拒绝→如实降级冷启动，不凑数注入。
+    # warm_start=None 时本段整体跳过。
     warm_start_n = 0
+    warm_start_notes: list[str] = []
     if warm_start:
         from rfauto.optimization.warm_start import enqueue_warm_start, warm_start_points
 
-        ws_gate = warm_start_points(warm_start, bounds=param_ranges)
+        ws_prov = _filter_warm_start_provenance(
+            warm_start, _warm_start_recipe_sha256(path))
+        warm_start_notes = ws_prov["notes"]
+        for note in warm_start_notes:
+            # 来源审计走日志（注入后可回查；note 同时透传结果信封）
+            if "拒绝" in note:
+                logger.warning(note)
+            else:
+                logger.info(note)
+        ws_gate = warm_start_points(ws_prov["inject"], bounds=param_ranges)
         if ws_gate.get("ok"):
             warm_start_n = len(enqueue_warm_start(study, ws_gate["points"]))
             logger.info(f"warm-start 注入 {warm_start_n} 个历史先验点")
@@ -1380,9 +1492,12 @@ def run_optimization(
         "best_metrics": {},
     }
 
-    # E11：显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）
+    # E11：显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）；
+    # R1 #13：溯源 note 非空时透传结果信封（旧 recipe 拒注入/老格式未校验）
     if warm_start is not None:
         result["warm_start_n"] = warm_start_n
+        if warm_start_notes:
+            result["warm_start_notes"] = warm_start_notes
 
     # ME-13：pruner 回显只进非缺省路径（缺省输出键集不变）
     if pruner != "none":
@@ -1437,6 +1552,15 @@ def run_optimization(
         "study_name": study_name,
         "metrics": meta_metrics,
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": model_name,

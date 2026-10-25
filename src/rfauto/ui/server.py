@@ -1,6 +1,6 @@
 """rfauto 人工核验 UI（本地 web 服务，starlette + uvicorn）——装配薄壳。
 
-设计红线（AGENTS）：路由是薄壳，全部业务在 service/ui_service.py（JSON 进出）；
+设计红线（内核立规注记）：路由是薄壳，全部业务在 service/ui_service.py（JSON 进出）；
 只读 endpoints 无副作用，POST /api/run 复用 service.run_once（单写锁在那层）。
 启动：rfauto ui（默认 127.0.0.1:8642，不对外网监听）。
 
@@ -84,7 +84,7 @@ async def index(request: Request) -> Any:
 # ── 写端点 Bearer 鉴权（aurora_g W6-S2，R2 审计 §面5.4 / Top10 #5）────────
 #
 # R2 审计定谳：前端 api.js setApiToken Bearer 通道建成零消费、服务端零鉴权
-# ——非回环绑定（AGENTS 规则 0b 远程部署方向）下写端点（POST /api/run、
+# ——非回环绑定（内核立规注记 规则 0b 远程部署方向）下写端点（POST /api/run、
 # /api/sandbox/promote、/api/chat 等）无凭据可调，是安全纵深唯一缺层。
 # 最小可行面（零新依赖，env+Bearer）：
 #   - env ``RFAUTO_UI_TOKEN`` **未设=零行为变化**（本机回环部署缺省安全，
@@ -360,7 +360,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
     # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
     # P8-1（aurora_f R1 审计 Top1）：全站 GZip 压缩——静态首载 2.61MB 线传
     # 压至 ~715KB（three.module.js 1.27MB→~350KB 级），远程/服务器部署
-    # 线传 ×3.6（AGENTS 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
+    # 线传 ×3.6（内核立规注记 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
     # （Starlette 列表首项为最外层）：响应出站先经内层 CSP 附加头、再经
     # GZip 压缩体——CSP 头与 Content-Encoding 并存（test_w1e_ui_csp 头值
     # 断言不破）。minimum_size=1024 小响应不压；starlette 1.6 缺省

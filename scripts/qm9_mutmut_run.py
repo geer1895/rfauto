@@ -58,7 +58,7 @@ EQUIVALENT_LEDGER = REPORT_DIR / "equivalent_ledger.jsonl"
 ROTATION_PLAN: dict[str, list[dict[str, str]]] = {
     # 2026-09 首批（round16 已完成）：rw_tables 84.8% / bias_tee 86.0%
     #   ——结果与"选择伪幸存"方法学发现见 round16 §五现状行（历史批次，
-    #   归档在 ，不在本表重复排班）。
+    #   归档在 开发注记，不在本表重复排班）。
     "2026-10": [
         {"module": "src/rfauto/core/quantity.py",
          "tests": "tests/unit/test_quantity.py",

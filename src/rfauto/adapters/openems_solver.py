@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import logging
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +28,8 @@ from rfauto.adapters.em_solver_base import (
     EMSolverType,
     get_global_registry,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OpenEMSSolver(EMSolverAdapter):
@@ -313,6 +316,27 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
                 (cache_dir / f"{self._cache_key(script_path)}.npz.tmp").unlink()
             # 缓存写入失败不影响仿真结果（best-effort）
 
+    def _write_sidecar(self, artifact: Path) -> None:
+        """曲线产物 sidecar（B4，aurora_l Wave-B）：落盘点旁归属指纹。
+
+        本 chokepoint 覆盖全部 oe_templates（Touchstone 主路与 CSV 降兼容
+        分支共用 ``_parse_output``）。best-effort（#105）：sidecar 失败只记
+        warning，不阻塞解析主路。
+        """
+        suffix = artifact.suffix.lower()
+        kind = ("touchstone" if suffix.startswith(".s") and suffix.endswith("p")
+                else "sparams_csv")
+        try:
+            from rfauto.service.runs_verify_service import write_artifact_sidecar
+
+            write_artifact_sidecar(
+                artifact,
+                run_id=self._working_dir.name if self._working_dir else "",
+                kind=kind)
+        except Exception:  # pragma: no cover - 观测面兜底（#105）
+            logger.warning("曲线 sidecar 写入失败（不影响产物）: %s",
+                           artifact.name, exc_info=True)
+
     def _parse_output(self) -> EMSolverResult:
         """解析 openEMS 输出。
 
@@ -324,6 +348,7 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
         # Touchstone 优先（N 端口全矩阵，skrf 天然支持）
         snp_files = sorted(self._working_dir.rglob("*.s?p"))
         if snp_files:
+            self._write_sidecar(snp_files[0])
             try:
                 import skrf
 
@@ -347,6 +372,7 @@ raise SystemExit("rfauto: 自定义几何模板尚未接入，请使用 template
             return EMSolverResult(success=False, message="未找到输出文件")
         sparams_files = [p for p in csv_files if p.name == "sparams.csv"]
         target = sparams_files[0] if sparams_files else csv_files[0]
+        self._write_sidecar(target)
 
         # 解析第一个 CSV 文件
         try:

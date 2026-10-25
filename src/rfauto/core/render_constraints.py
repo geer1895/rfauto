@@ -27,7 +27,7 @@ z3 对线性 Real 算术可判定，杜绝 unknown 进入业务路径；_Symbols
     if not verdict.ok and verdict.status == "unsat":
         # verdict.conflict_rule_ids = 全部互斥规则（迭代去核覆盖独立多冲突组）
 
-判据预声明：runs/df7_r4z3/criteria.md（C1–C7）。
+判据预声明：内部证据档（C1–C7）。
 """
 
 from __future__ import annotations

@@ -13,7 +13,7 @@
   均未设 → skipped（零网络零行为变化）；``RFAUTO_NOTIFY_TIMEOUT_S``
   缺省 10s（非法/≤0 回缺省）；``notify_digest(..., config=...)`` 显式
   配置优先于 env（部分覆盖，测试注入面）；
-- **零敏感铁律（AGENTS 规则 8）**：payload 文本由
+- **零敏感铁律（内核立规注记 规则 8）**：payload 文本由
   :func:`build_digest_payload` 从 digest 信封白名单字段重建（时间戳/
   战役数/终态计数/逐战役 name+model+verdict 词表+阶段进度）——root/
   plan 路径、失败原因自由文本等盘上原文**永不透传**；本地 txt 正文
@@ -25,7 +25,7 @@
   opener 形参）。
 
 数字出处：全部取自 campaign_digest 已产出的聚合字段，本模块零物理数字、
-零状态机重算（AGENTS #7）。
+零状态机重算（内核立规注记 #7）。
 """
 
 from __future__ import annotations
@@ -119,7 +119,7 @@ def build_digest_payload(digest: dict[str, Any],
     逐战役行的状态词只出 verdict 词表映射（VERDICT_ZH/VERDICT_MARK，
     未知 verdict 显示"未知"，不回显 plan 本体自由串）；root/plan 路径、
     失败原因（reason 自由文本）、summary_text/headline 等盘上原文一律
-    **不读入 payload**（AGENTS 规则 8）。``text``（本地 txt 正文）仅当
+    **不读入 payload**（内核立规注记 规则 8）。``text``（本地 txt 正文）仅当
     digest 缺聚合字段时以"长度"入提示语，内容永不透传。
 
     形态（风格对齐 digest txt 首行）::

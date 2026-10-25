@@ -1,6 +1,6 @@
 """数据工厂二期 A 批·mline 2D 扩展采集驱动（datafactory_phase1_plan §2/§5）。
 
-判据/口径全部预声明 runs/datafactory_m2d_20260921/criteria.md v2（写死再跑，
+判据/口径全部预声明 内部证据档 v2（写死再跑，
 2026-09-21）。骨架整体搬 factory_m3_valley（锁/互斥/探针/resume，只复制不改
 源）：共享锁 runs/.oe_collect.lock + #261 命令行互斥（fail-closed 不代杀）+
 QuotaGuard(120 trials, 3.0h) + 首点 ingest 探针（#251④）+ provenance 覆盖 +

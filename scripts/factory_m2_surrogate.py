@@ -1,6 +1,6 @@
 """datafactory M2 首版代理+LOO/held-out 判读驱动（纯离线，零引擎真跑）。
 
-判据预声明见 runs/datafactory_m2/criteria.md（plan §5 M2 行逐字门）：
+判据预声明见 内部证据档（plan §5 M2 行逐字门）：
 - held-out（24 点，w 排序每 5 取 1 分层）三门：
   带内(2.4-2.6GHz) max|ΔS21| ≤0.5dB、max|ΔS11| ≤1dB、|Δεeff|/εeff ≤1%；
 - LOO 全量 120 点同口径统计量作次级量并列（不设门）；
@@ -11,7 +11,7 @@
 用法：
     python scripts/factory_m2_surrogate.py --judge \
         [--dataset runs/datasets/datafactory_m1_mline_20260919] \
-        [--out runs/datafactory_m2/m2_verdict.json] [--freq-step 0.01]
+        [--out 内部证据档] [--freq-step 0.01]
 
 确定性：划分/栅格/种子写死，KRG theta0=1e-2（包装层默认），重跑 verdict
 除 generated_at 外逐位复现（幂等）。

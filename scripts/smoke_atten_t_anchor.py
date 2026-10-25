@@ -5,7 +5,7 @@
 2. 衰减平坦：|S21| @2.5GHz 对照目标 -10dB ±0.5dB（ABCD 电阻网络
    确定性裁判同源）；
 3. 匹配：|S11|max <-12dB（商用 lumped 模块回损规格地板）。
-工作目录参数化（#198 教训）。证据链 runs/atten_t_smoke/。
+工作目录参数化（#198 教训）。证据链 内部证据档。
 """
 import argparse
 import csv

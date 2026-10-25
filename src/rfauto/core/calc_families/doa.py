@@ -1,4 +1,4 @@
-"""DOA 子空间谱估计 + 自适应波束形成族（架构批 W5-A 席，R2 空白域 G2）。
+"""DOA 子空间谱估计 + 自适应波束形成族（aurora36 W5-A 席，R2 空白域 G2）。
 
 出处（子空间谱估计经典文献，正文公式口径节转录）：
 - doa_music_spectrum：MUSIC 伪谱（R. O. Schmidt, "Multiple emitter

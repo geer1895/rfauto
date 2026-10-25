@@ -1,18 +1,18 @@
 """Wheeler cap 效率对照门（ge7 followUp ④，确定性内核，规则 7）。
 
-ge6 预验缺陷（runs/ge6_oewin/wheeler/README §归因 3，如实记）：旧 G2 对照门
+ge6 预验缺陷（内部证据档 §归因 3，如实记）：旧 G2 对照门
 只设单侧下限（η ≥ 0.95），未设上限——attempt3 无损腔 DFT 截断污染致
 Re(Zcap)=-10.4Ω 噪声 → η_wh_pec=1.3380 **钻单侧门空瑕假 PASS**。本模块把
 效率对照门定为双侧带 [0.90, 1.05] 并对直接远场法（η_ff=Prad/P_acc）与
 Wheeler cap 法（η_wh=1−Re(Z_cap)/Re(Z_free)）统一判读。
 
-预声明（runs/ge7_wheeler/criteria.md §1，判据先行 #122，先于任何 ge7 仿真）：
+预声明（内部证据档 §1，判据先行 #122，先于任何 ge7 仿真）：
 - 下沿 0.90 = 1−0.10（与 10pp 主门同宽容度）；
 - 上沿 1.05 = 能量守恒级数值噪声上限（attempt3 η_ff_pec=1.0331 实测即此
   量级）；η>1.05 常为"cap 内损耗高估/Re(Zcap)<0 噪声"病理，必须拦。
 - ok=None 表示不可判读（η 缺失/非有限/分母守卫触发），不虚构（#105）。
 
-调用方：runs/ge7_wheeler/ 探针驱动（本目录产物）；不进计算器注册表、
+调用方：内部证据档 探针驱动（本目录产物）；不进计算器注册表、
 不动 facade（public_api 金快照零漂移为设计约束）。
 """
 from __future__ import annotations

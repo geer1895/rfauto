@@ -291,7 +291,9 @@ class TestCommandRegistryCount:
         #   聚合叶——零逻辑转发 service/campaign_digest_service，全叶带
         #   --json）
         #   = 274（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
-        assert total == 274
+        # +6（aurora_l C1 2026-10-24：em doctor/verify/diff/metrics/sweep-plan
+        #   + resource-janitor，em 族五只读薄壳+janitor，全叶带 --json）= 280
+        assert total == 280
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""
@@ -1536,7 +1538,7 @@ class TestME17aShellCommands:
         assert result.exit_code == 2
 
 
-# ─── E2-2 link --to-ads 真接线（runs/review_ge8e/f3_fix/REPORT.md）────────────
+# ─── E2-2 link --to-ads 真接线（内部证据档）────────────
 
 def test_link_to_ads_flag_wired(monkeypatch):
     """E2-2 回归钉：link 的 --to-ads 旗标真透传（缺省 False 不联动、

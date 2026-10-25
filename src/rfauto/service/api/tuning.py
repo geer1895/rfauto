@@ -1,6 +1,6 @@
 """api.tuning —— 调优作业链（start_tune·multi·async/run_once_async/poll_job）。
 
-自 api.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
+自 api.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
 """
 
 from __future__ import annotations

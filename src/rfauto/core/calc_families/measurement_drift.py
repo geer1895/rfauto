@@ -1,4 +1,4 @@
-"""测量系统漂移建模族（架构批 W2-S7，R2_core_tier3 §③ D6）：参考对
+"""测量系统漂移建模族（aurora_f W2-S7，R2_core_tier3 §③ D6）：参考对
 线性漂移率估计+置信带+漂移校正 GUM 预算 / 测量链漂移 SPC 监控。
 
 两键：measurement_drift_estimate（等间隔参考测量的 OLS 线性漂移率估计

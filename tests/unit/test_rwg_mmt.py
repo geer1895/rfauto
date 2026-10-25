@@ -1,6 +1,6 @@
 """DP-1 P1 core/rwg_mmt.py 单测：合成回收，裁判独立于实现（#118/#300）。
 
-判据书：runs/df6_dp1mmt/criteria.md（预声明 §0-§4，先写后跑 #122）。
+判据书：内部证据档（预声明 §0-§4，先写后跑 #122）。
 覆盖（规格书 §3 单测①-⑥ + criteria §2 回收锚 A1-A8）：
 ① 同波导无结构 |S11|<1e-12、S21=e^{−jβL}（β 对照 siw_beta_rad_m，G3/A1）；
 ② 阻抗台阶 Γ 闭式逐位（低层单模+全管线 εr 台阶两条路，A2）；
@@ -411,7 +411,7 @@ class TestRenormalize:
 
 
 class TestGuideValueSemantics:
-    """guide 表值语义单源（P1 缺陷根治钉， 四一零 DP-1 P2 交付笔转交）。
+    """guide 表值语义单源（P1 缺陷根治钉，开发注记 四一零 DP-1 P2 交付笔转交）。
 
     缺陷背景：_guide_list 按**值相等**去重 guide 表，而 solve_at_counts 曾按
     ``id()`` 反查——链中"值相等但实例不同"的 Waveguide（JSON 段表逐段新造、

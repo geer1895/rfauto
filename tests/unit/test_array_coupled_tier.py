@@ -1,7 +1,7 @@
 """DP-4 P3 互耦档编排离线判据（2026-09-24）：manifest 合成回归 + Γ_act 端到端
 合成例 + rotation far_field 透传（stub 子进程全链）+ σmax 装配门。
 
-判据对应 runs/df6_dp4p3/criteria.md：J9（rotation 透传）、J10（manifest 合成
+判据对应 内部证据档：J9（rotation 透传）、J10（manifest 合成
 回归，#320 显式引用/缺件如实 skipped）、J11（Γ_act 定义式逐位/合成 S→manifest→
 superposition→coupled_tier_solve(launch=False) 全链）、J12（两档路由注入）。
 J4 真机门（σmax≤1.005 硬门）在合成侧只钉判据逻辑（幺正 S→PASS；放大→FAIL），

@@ -3,7 +3,7 @@
 用法（必须显式 opt-in，unit 门零真机）::
 
     set RFAUTO_REMOTE_SMOKE=1
-    .venv\\Scripts\\python.exe scripts\\smoke_remote_l2.py [--machine sim_host]
+    .venv\\Scripts\\python.exe scripts\\smoke_remote_l2.py [--machine sim_server]
 
 职责：调 service 层 ``remote_hfss_l2_smoke``（全部编排逻辑在 service，
 本脚本只做 ①本机 ansysedt 计数旁证 ②verdict.json 落盘（UTF-8 显式

@@ -17,7 +17,7 @@
   N_PROBE 站沿线均布 [−L/4,+L/4]，逐频相位斜率 → β_probe(f)。
 
 网格：官方方法学基线（docs §0）base=λ_sub/50@F_MAX、近槽/近端口 NEAR=base/4、
-基板 z 6 层、#152 最小间距守卫；槽缘细化（TODO 0df④）：槽跨 linspace 精确
+基板 z 6 层、#152 最小间距守卫；槽缘细化（待办清单 0df④）：槽跨 linspace 精确
 均分，步长 min(NEAR, w/8)、地板 10µm（#349）——w/8 比 NEAR 细时引擎 dt 减半
 （#283 家族），同 NrTS 时窗减半，真跑前按 et 实测 dt 重排 NrTS。
 
@@ -42,7 +42,7 @@ PORT_BOX_INSET_BASE = 2.0     # 端口盒 y/z 各内移（×BASE）：出 MUR �
 # 零模 → 探针信号自 ~11ns 起纯线性 DC 漂移（15ns 内涨到信号 10 倍）。内缩
 # 2·BASE 后盒缘离开边界胞层（该处模场 ≈0，无激励损失；U/I 模式探针同步内缩
 # 保持与激励同一权重口径）。
-SLOT_NEAR_DIVISOR = 8.0       # 槽缘细化：槽跨步长 ≤ w/8（TODO 0df④）
+SLOT_NEAR_DIVISOR = 8.0       # 槽缘细化：槽跨步长 ≤ w/8（待办清单 0df④）
 SLOT_NEAR_FLOOR_M = 1e-5      # 细化地板 10µm（#349：nm 级线距塌缩 CFL 时间步）
 
 
@@ -72,7 +72,7 @@ class SlotlineLayout:
 
 
 def slot_edge_refinement(w_m: float, near_m: float) -> tuple[float, int]:
-    """槽缘细化步长/均分段数（纯函数，layout 单源消费；TODO 0df④）。
+    """槽缘细化步长/均分段数（纯函数，layout 单源消费；待办清单 0df④）。
 
     口径：槽跨有效步长 = min(NEAR, w/8)，地板 10µm（#349：线距 <10µm 有 CFL
     时间步塌缩风险，宁可拒渲染不静默降级）；自动档（NEAR=w/8 量级之上）步长

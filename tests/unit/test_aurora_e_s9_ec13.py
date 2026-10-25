@@ -1,4 +1,4 @@
-"""架构批 W2-S9：EC-1 skrf port-name 运算采纳 + EC-3 skrf 第三裁判单测。
+"""aurora_e W2-S9：EC-1 skrf port-name 运算采纳 + EC-3 skrf 第三裁判单测。
 
 EC-1（adapters/touchstone_interop.py 件 3）：attach_port_names /
 resolve_port_key / connect_by_name / reorder_ports_by_name——skrf v2.1

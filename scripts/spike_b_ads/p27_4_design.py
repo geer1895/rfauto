@@ -4,12 +4,12 @@ import os
 os.environ["HPEESOF_DIR"] = os.environ.get("RFAUTO_HPEESOF_DIR", r"E:\ADS\ADS27")
 import keysight.ads.de as de
 
-wrk = r"D:\rf_workspace\scripts\spike_b_ads\sample_wrk27\Datalink_Basics_wrk"
+wrk = r"D:/rf_workspace\scripts\spike_b_ads\sample_wrk27\Datalink_Basics_wrk"
 if de.workspace_is_open():
     de.close_workspace()
 ws = de.open_workspace(wrk)
 
-out = open(r"D:\rf_workspace\scripts\spike_b_ads\p27_design_report.txt", "w", encoding="utf-8")
+out = open(r"D:/rf_workspace\scripts\spike_b_ads\p27_design_report.txt", "w", encoding="utf-8")
 
 # DesignMode 位置探测
 candidates = []
@@ -33,7 +33,7 @@ for name, DM in candidates:
         out.write(f"ws.design OK via {name}\n")
         nl = d.generate_netlist()
         out.write("NETLIST OK\n" + str(nl)[:2000] + "\n")
-        with open(r"D:\rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt", "w", encoding="ascii", errors="ignore") as f:
+        with open(r"D:/rf_workspace\scripts\spike_b_ads\sample_netlist_2027.txt", "w", encoding="ascii", errors="ignore") as f:
             f.write(str(nl))
         done = True
         break

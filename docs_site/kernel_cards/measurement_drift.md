@@ -6,7 +6,7 @@
 
 # 内核文档卡：measurement_drift
 
-> 测量系统漂移建模族（架构批 W2-S7，R2_core_tier3 §③ D6）：参考对
+> 测量系统漂移建模族（aurora_f W2-S7，R2_core_tier3 §③ D6）：参考对
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 测量系统漂移建模：参考对 OLS 线性漂移率估计+置信带+去趋势校正 GUM 预算，与测量链 EWMA+CUSUM 控制图监控（复用 anchor_drift_spc 统计内核的同仓双源组合）。
 
-模块自述（docstring 首行，机读）：测量系统漂移建模族（架构批 W2-S7，R2_core_tier3 §③ D6）：参考对
+模块自述（docstring 首行，机读）：测量系统漂移建模族（aurora_f W2-S7，R2_core_tier3 §③ D6）：参考对
 
 ## 公式与口径
 

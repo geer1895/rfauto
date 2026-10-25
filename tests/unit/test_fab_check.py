@@ -1,6 +1,6 @@
 """DP-7 P1：fab 剖面 schema 钉 + 纯几何 DFM 门正反例分类（零仿真）。
 
-判据预声明：runs/df6_dp7fab/criteria.md C1/C2。
+判据预声明：内部证据档 C1/C2。
 - C1 字段一致性钉：两个剖面 YAML 必填字段 schema 校验 + 枚举值域 +
   逐字段来源注记必须带核对状态标记（verified-web 或
   registered-pending-review——不虚构核对状态）。

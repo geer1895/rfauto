@@ -9,7 +9,7 @@
 - ④ MDE 缺省拒绝：CI 不含 0 而未传 MDE → ValueError（宁可拒跑）。
 
 本文件为 W5-E 席自建测试（批纪律命名 test_w5_e_*；spec 原名
-test_paired_stats_guard.py 并档记录见 runs/w5_phase5/w5e/REPORT.md）。
+test_paired_stats_guard.py 并档记录见 内部证据档）。
 """
 
 from __future__ import annotations

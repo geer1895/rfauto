@@ -9,12 +9,13 @@ P0 阶段：桩实现，核心方法抛出 NotImplementedError 并给出实现�
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import logging
 import os
 import shutil
 import tempfile
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -41,6 +42,202 @@ _ENV_GRPC_CERTIFICATES = "ANSYS_GRPC_CERTIFICATES"
 # 配置名 = ``Desktop/ActiveDSOConfigurations/<product>``（pyaedt 1.4.0
 # desktop.change_active_dso_config_name 实测走 SetRegistryString 同键）。
 _DSO_REGISTRY_PREFIX = "Desktop/ActiveDSOConfigurations"
+
+
+# ─── P2/P5 用户实战反馈兜底（2026-10-23 aurora_j S-B 席）─────────────────────
+# 来源：pyaedt 1.4 × AEDT 2025.1 链路真实用户实测（三项全真机复现）——
+# P2 create_setup(**kwargs) 透传、P5 CJK 工程路径 analyze() 内 save macro error。
+
+#: P2 校验表——配方 setup 段（``configure_setup(setup_cfg)``）已知字段白名单。
+#: 病灶（2026-10 用户实测）：pyaedt 1.4 ``create_setup(**kwargs)`` 对未知
+#: kwarg 的透传在真机上触发 ``GrpcApiError: EditSetup``（求解直接失败），
+#: 而原生接口支持该字段（参考工程 .aedt 内 ``MinimumPasses: 1``）。本仓
+#: 策略：setup 段只收白名单键；AEDT 原生 setup 字段一律走 ``setup.props``
+#: 属性字典（与 Frequency/MaxDeltaS/MaximumPasses 既有写法同惯例）；
+#: 白名单外键一律 ValueError——宁可契约错误，不裸 gRPC、不静默丢键
+#: （历史上未知键被静默丢弃，用户以为字段生效实则没有，同属契约错误）。
+HFSS_SETUP_KNOWN_KEYS: frozenset[str] = frozenset({
+    # configure_setup 直消键（setup/sweep 命名与频段面）
+    "name", "sweep_name", "freq_range_ghz", "points",
+    # 收敛面（本表解析进 setup.props；AEDT 原生大小写作别名同收）
+    "convergence_delta", "max_passes", "minimum_passes",
+    "MaxDeltaS", "MaximumPasses", "MinimumPasses",
+    # 配方 setup 段既有键（configure_setup 不消费——模板/插件构建层消费；
+    # 收进白名单防历史配方被误伤）
+    "solver", "radiation_box",
+})
+
+#: recipe 键（snake_case 与 AEDT 原生大小写别名等价）→ setup.props 原生键。
+HFSS_SETUP_PROPS_ALIASES: dict[str, str] = {
+    "convergence_delta": "MaxDeltaS",
+    "MaxDeltaS": "MaxDeltaS",
+    "max_passes": "MaximumPasses",
+    "MaximumPasses": "MaximumPasses",
+    "minimum_passes": "MinimumPasses",
+    "MinimumPasses": "MinimumPasses",
+}
+
+#: 收敛面字段缺省（configure_setup 历史缺省原样保真——键缺省时回填，
+#: 既有调用行为逐字节不变）。
+HFSS_SETUP_PROPS_DEFAULTS: dict[str, Any] = {
+    "MaxDeltaS": 0.02,
+    "MaximumPasses": 12,
+}
+
+
+def validate_setup_config(setup_cfg: Mapping[str, Any]) -> dict[str, Any]:
+    """P2 白名单校验 + 收敛面 props 解析（hfss_adapter.configure_setup 消费）。
+
+    - 白名单外键 → ValueError（列未知键 + 合法键 + MinimumPasses 指引）；
+    - 收敛面三字段（MaxDeltaS/MaximumPasses/MinimumPasses）按别名解析：
+      snake_case 与 AEDT 原生大小写等价；同字段双形态同给且值不等 →
+      ValueError（歧义拒绝）；类型校验：整数面（MaximumPasses/
+      MinimumPasses）须可收敛为 ≥1 整数（bool 显式拒绝），MaxDeltaS 须
+      可收敛为 >0 数值——配置错误 fail-loud，绝不带病进 AEDT；
+    - 返回 ``{props键: 值}``：MaxDeltaS/MaximumPasses 缺省回填历史值
+      （键缺失时）；MinimumPasses 未给则不含该键（零行为变化）。
+    """
+    if not isinstance(setup_cfg, Mapping):
+        raise ValueError(
+            f"setup 配置须为 dict/Mapping，得到 {type(setup_cfg).__name__}")
+    unknown = sorted(k for k in setup_cfg if k not in HFSS_SETUP_KNOWN_KEYS)
+    if unknown:
+        raise ValueError(
+            f"setup 配置含未知字段: {unknown}——该字段在 pyaedt 1.4 × "
+            "AEDT 2025.1 链路不受支持（直传 create_setup(**kwargs) 会透传"
+            "成 EditSetup 的 GrpcApiError，求解直接失败；静默忽略又会丢配"
+            "置）。合法字段: " + ", ".join(sorted(HFSS_SETUP_KNOWN_KEYS))
+            + "。AEDT 原生 setup 字段（如 MinimumPasses）请写"
+              " minimum_passes/MinimumPasses，本仓自动走 setup.props 原生"
+              "属性字典。")
+    resolved: dict[str, Any] = {}
+    for props_key in ("MaxDeltaS", "MaximumPasses", "MinimumPasses"):
+        forms = [k for k, v in HFSS_SETUP_PROPS_ALIASES.items()
+                 if v == props_key and k in setup_cfg]
+        if not forms:
+            if props_key in HFSS_SETUP_PROPS_DEFAULTS:
+                resolved[props_key] = HFSS_SETUP_PROPS_DEFAULTS[props_key]
+            continue
+        raw_values = [setup_cfg[k] for k in forms]
+        if len(forms) > 1 and len({repr(v) for v in raw_values}) > 1:
+            raise ValueError(
+                f"setup 配置字段 {props_key} 双形态同给且值不等: "
+                f"{dict(zip(forms, raw_values, strict=True))}——歧义拒绝，请只写一种形态")
+        raw = raw_values[0]
+        if props_key == "MaxDeltaS":
+            try:
+                value = float(raw)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"setup 配置 MaxDeltaS 须为 >0 数值，得到 {raw!r}") from exc
+            if not value > 0:
+                raise ValueError(
+                    f"setup 配置 MaxDeltaS 须为 >0 数值，得到 {raw!r}")
+            resolved[props_key] = value
+            continue
+        # 整数面：MaximumPasses / MinimumPasses（bool 显式拒绝——bool 是
+        # int 子类，True 会静默变成 1）
+        if isinstance(raw, bool):
+            raise ValueError(
+                f"setup 配置 {props_key} 须为 ≥1 整数，得到布尔值 {raw!r}")
+        try:
+            fval = float(raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"setup 配置 {props_key} 须为 ≥1 整数，得到 {raw!r}") from exc
+        ival = int(fval)
+        if ival != fval or ival < 1:
+            raise ValueError(
+                f"setup 配置 {props_key} 须为 ≥1 整数，得到 {raw!r}")
+        resolved[props_key] = ival
+    return resolved
+
+
+def has_non_ascii(path: str | Path) -> bool:
+    """P5 守卫谓词：路径含任何非 ASCII 字符（CJK 工程路径检测）。
+
+    病灶（2026-10 用户实测）：CJK 工程路径（如 ``D:\\IPD调研\\...``）能建
+    能解，但 ``analyze()`` 内部 ``save_project`` 报 macro error——纯路径
+    问题（AEDT 脚本面对非 ASCII 路径字节），与建模正确性无关。
+    """
+    return any(ord(ch) > 127 for ch in str(path))
+
+
+def ascii_workdir_path(project_path: str | Path) -> Path:
+    """P5 重定向目标：``%TEMP%/rfauto_ascii_work/<原路径摘要12>/rfauto_work.aedt``。
+
+    目标按原路径 SHA-1 摘要确定——同一原工程跨会话重跑落到同一 ASCII
+    工作目录（AEDT reopen 语义成立）；文件名与各级目录恒 ASCII。
+    """
+    digest = hashlib.sha1(str(project_path).encode("utf-8")).hexdigest()[:12]
+    return (Path(tempfile.gettempdir()) / "rfauto_ascii_work" / digest
+            / "rfauto_work.aedt")
+
+
+def prepare_ascii_workdir(original: Path, work: Path) -> Path:
+    """原工程（若已存在）播到 ASCII 工作副本，返回工作副本路径。
+
+    - 原 .aedt 不存在（新建工程）→ 只建父目录，零拷贝；
+    - 工作副本缺失或比原工程旧 → ``shutil.copy2`` 刷新（保元数据）；
+    - 工作副本比原工程新（疑似上次会话崩溃未交付）→ **保留工作副本**
+      并告警（里面可能有未交付的新解，覆盖=丢数据——P1 同源教训）。
+    """
+    work.parent.mkdir(parents=True, exist_ok=True)
+    if not original.is_file():
+        return work
+    try:
+        if work.exists() and \
+                work.stat().st_mtime >= original.stat().st_mtime:
+            logger.warning(
+                "ascii_workdir: 工作副本比原工程新（疑似上次会话未交付），"
+                "保留工作副本继续: %s", work)
+            return work
+    except OSError:
+        pass  # mtime 探测失败按"刷新拷贝"走（copy2 失败会显式抛）
+    shutil.copy2(original, work)
+    return work
+
+
+def deliver_ascii_workdir(work: Path, original: Path) -> list[str]:
+    """P5 交付拷回：工作副本 .aedt + .aedtresults/ → 原目标；逐项入账不抛。
+
+    拷回面（与丢数据场景对齐）：<work>.aedt → <original>；工作副本旁
+    ``rfauto_work.aedtresults/``（存在才拷）→ 原 .aedt 旁同名目录（逐
+    文件拷贝，单文件失败只入账不中断）。返回错误清单（空=全量交付成功）；
+    工作副本**永不删除**（交付失败供人工兜底——如实报不静默）。工作副本
+    不存在=新建工程从未保存（无物可交付），告警后干净返回（原目标保持
+    原样，零数据面变化）。
+    """
+    errors: list[str] = []
+    if work.is_file():
+        try:
+            original.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(work, original)
+        except OSError as exc:
+            errors.append(f".aedt 拷回失败: {work} -> {original}（{exc}）")
+    else:
+        logger.warning(
+            "ascii_workdir 交付: 工作副本不存在（新建工程未保存/未求解），"
+            "无物可交付，原目标保持原样: %s", original)
+    results_src = work.parent / f"{work.stem}.aedtresults"
+    if results_src.is_dir():
+        try:
+            original.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            errors.append(f"原目标父目录不可创建: {original.parent}（{exc}）")
+            return errors
+        results_dst = original.parent / f"{original.stem}.aedtresults"
+        for src in sorted(results_src.rglob("*")):
+            if not src.is_file():
+                continue
+            dst = results_dst / src.relative_to(results_src)
+            try:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+            except OSError as exc:
+                errors.append(
+                    f".aedtresults 拷回失败: {src} -> {dst}（{exc}）")
+    return errors
 
 
 def _dso_active_config(desktop: Any, product: str = "HFSS") -> str | None:
@@ -261,7 +458,7 @@ def remote_session_switches(
     """远程 attach 四开关+一环境变量的作用域管理（共享单源，L1/L2/session 同款）。
 
     远程分支的 ``Desktop`` 构造必需（pyaedt 1.4.0 × AEDT 2025.1.0 无 SP
-    实证配方， 五百三十四；原实现见 remote_service
+    实证配方，内部证据档；原实现见 remote_service
     ``_attach_and_verify``，审查分片 1 P1-1 提升到本模块共享）：
 
     - ``grpc_local=False``：远程走 TCP 传输（缺省 WNUA 是 Windows 本机通道）；
@@ -480,7 +677,7 @@ class HfssSession:
         # 远程会话解析（多机协同 v0）：settings["remote_machine"]=注册表名
         # → infra/remote_machines 解析 host/grpc 端口透传 Desktop(machine=,
         # port=)。无该键=本地会话（零行为变化）。版本配对口径：远程 AEDT
-        # 必须与本机 pyaedt 配对版本一致（版本对齐纪律）。
+        # 必须与本机 pyaedt 配对版本一致（内核立规注记 规则 0）。
         remote_name = settings.get("remote_machine")
         remote_kwargs: dict[str, Any] = {}
         if remote_name:
@@ -490,7 +687,7 @@ class HfssSession:
             )
 
             cfg = resolve_machine(str(remote_name))
-            # 版本配对交叉断言（版本对齐纪律，审查附带项）：
+            # 版本配对交叉断言（内核立规注记 规则 0，审查分片 1 P1-1 附带项）：
             # pyaedt gRPC 客户端-服务端版本必须配对——settings 与注册表
             # 静默失配（如 settings 2024.1 + 注册表 2025.1）会让远程 attach
             # 走错客户端插件，显式拒绝并指引改配置。
@@ -501,7 +698,7 @@ class HfssSession:
                     f"HFSS 远程版本配对失配：settings.desktop_version="
                     f"{local_version!r} 与注册表 {cfg.name!r}.hfss_version="
                     f"{remote_version!r} 不一致——pyaedt gRPC 客户端-服务端"
-                    "版本必须配对（版本对齐纪律）；请对齐 settings 的 "
+                    "版本必须配对（AGENTS 规则 0）；请对齐 settings 的 "
                     "desktop_version 与 configs/remote_machines.yaml 的 "
                     "hfss.version。",
                     details={
@@ -1023,8 +1220,8 @@ class HfssSession:
         """本会话 ansysedt 进程 PID（#265 兜底武装；未连接/未捕获=None）。
 
         本地会话=本机 PID（可喂 desktop_guard 精确击杀/存活判定）；
-        远程会话=服务器侧 PID（只记档，服务器侧清场消费，任务毕清理
-        纪律）。
+        远程会话=服务器侧 PID（只记档，服务器侧清场消费，内核立规注记 规则
+        0b 任务毕清理）。
         """
         return self._desktop_pid
 

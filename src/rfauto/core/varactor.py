@@ -69,7 +69,7 @@
    声明）：精确比值=数值裁判/闭式 在 βL=π 处 →1（≤1e-6）、名义工作带
    βL∈[2.6,2.91] 内 −0.25%~−3.2%（实测逐档 0.970~0.997，review-slice10 P2-2
    勘误——初版 −0.8%~−1% 系目测带；深装载 βL=2.0 处 −24%）——prefactor 误差随装载
-   加深放大，精确 Q_e 留本族真机标定（runs/varactor_smoke/model_audit_verdict.md
+   加深放大，精确 Q_e 留本族真机标定（内部证据档
    P0 行）。**在臂守卫**（几何层）：τ ≤ l_arm/L=(L−b)/(2L)（抽头须落在装载臂
    内），由设计链/布局显式校验（_hairpin_layout y_tap≥y1 同款守卫）；kernel
    层守卫 τ∈(0, τ_node)（branch B 定义域）。tap_frac 语义**自 C 端计**
@@ -261,7 +261,7 @@ def resonator_qu_combined(q_line: float, qu_varactor: float) -> float:
 def varactor_tap_node_frac(beta_l: float) -> float:
     """装载臂电压节点位置（自 C 端计）：τ_node = 1 − π/(2βL)（βL∈(π/2,π)）。
 
-    独立锚（审计表 runs/varactor_smoke/model_audit_verdict.md）：βL=2.6112/
+    独立锚（审计表 内部证据档）：βL=2.6112/
     2.8050/2.9115 → 0.3984/0.4400/0.4605（节点随 C 递增向 C 端移动，恰扫过
     旧无载设计 τ=0.401892 = P0 根因）。
     """
@@ -331,7 +331,7 @@ def varactor_box_geo_capacitance_pf(wf_mm: float, h_sub_mm: float,
                                     er: float) -> float:
     """变容管装载盒几何寄生电容（平行板项，pF）：C_geo=ε0·εr·WF²/H_SUB。
 
-    口径（审计三 runs/varactor_smoke/model_audit_verdict.md）：LumpedElement
+    口径（审计三 内部证据档）：LumpedElement
     全隙盒 WF×WF×z 0→H_SUB（ny=2 z 向 shunt，caps=True 端板）——引擎 lumped
     更新与盒区背景位移电流**并联**，实感 C=C_literal+C_geo > 设计 C(V)（#252
     族语义稀释）；渲染链 C_literal=C(V)−C_geo 扣除后实感=设计 C(V)。本函数取

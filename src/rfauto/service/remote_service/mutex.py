@@ -3,7 +3,7 @@
 三通道（HFSS gRPC/ADS hpeesofsim/openEMS runner）同构复用的互斥探针
 命令构造与预检判定，指纹按通道语义词分（OE=python runner 家族 /
 ADS=hpeesofsim / HFSS=本机注册端口 grpcsrv）；X4 批自
-remote_oe_service._remote_mutex 提升泛化。架构批 W3-S3 自
+remote_oe_service._remote_mutex 提升泛化。aurora_h W3-S3 自
 service/remote_service 巨石逐字节迁入（AU-1 facade，函数体零改动）。
 """
 

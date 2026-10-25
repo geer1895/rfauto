@@ -6,7 +6,7 @@
 
 # 内核文档卡：modulation_ber
 
-> 数字调制理论 BER/Eb-N0 族（架构批 W4-A 席，R2 空白域 G3）。
+> 数字调制理论 BER/Eb-N0 族（aurora36 W4-A 席，R2 空白域 G3）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 数字调制理论误码率面：BPSK/QPSK 闭式与 square M-QAM 精确和式、目标 BER→所需 Eb/N0 单调二分反解、级联编码一阶粗估——通信链「调制→编码」数字面与 fec_codes 编码增益产生面互为消费。
 
-模块自述（docstring 首行，机读）：数字调制理论 BER/Eb-N0 族（架构批 W4-A 席，R2 空白域 G3）。
+模块自述（docstring 首行，机读）：数字调制理论 BER/Eb-N0 族（aurora36 W4-A 席，R2 空白域 G3）。
 
 ## 公式与口径
 

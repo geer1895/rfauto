@@ -108,7 +108,7 @@ Measured output:
   done         render
   done         solve
   done         judge
-  期刊: runs\aurora_d\tut\dag_demo_run\dag.state.json
+  期刊: runs\demo\tut\dag_demo_run\dag.state.json
 ```
 
 `--solve-lock` names the mutex lock path explicitly (default = the runs
@@ -278,7 +278,7 @@ soft) still fail as before.
 - solve nodes always pass the #261 mutex; concurrent solves on one machine
   are a performance trap, not a feature (#246);
 - long-running real-engine nodes: background separation + log polling +
-  generous watchdog timeouts (AGENTS #157).
+  generous watchdog timeouts (kernel pit-note #157).
 
 ## What next
 

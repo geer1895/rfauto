@@ -1,6 +1,6 @@
 """XA-1 L5 扫频差分批·纯核回归钉（拟合/判读/合成回收；#340 回收钉范式）。
 
-判据面 = runs/xa1_arbitration/l5_sweep/criteria.md（#122 判据先行，冻结）；
+判据面 = 内部证据档（#122 判据先行，冻结）；
 被测面 = scripts/xa1_l5_sweep_lib.py（纯 numpy 核，零引擎/零网络/零真机）。
 
 钉面：
@@ -34,7 +34,7 @@ for _p in (str(REPO / "src"), str(REPO / "scripts")):
 
 import xa1_l5_sweep_lib as lib
 
-# 前席证据面冻结字面（runs/xa1_arbitration/xa1_arbitration_evidence.json
+# 前席证据面冻结字面（内部证据档
 # criterion1 synthesize_patch_nominal 节，2026-10-02 实测；runs/ 不入库故
 # 字面钉在测试内，来源随注释）
 EVID_W_MM = 40.9168
@@ -69,8 +69,9 @@ def test_bands_disjoint_with_no_man_land():
 
 
 def test_criteria_file_present_with_frozen_tokens():
-    if not (Path(__file__).resolve().parents[2] / "runs" / "xa1_arbitration" / "l5_sweep" / "criteria.md").is_file():
-        pytest.skip("runs/xa1_arbitration 证据档缺席（公开分发视图）")
+    crit = Path(__file__).resolve().parents[2] / "runs" / "xa1_arbitration" / "l5_sweep" / "criteria.md"
+    if not crit.is_file():
+        pytest.skip("公开树无 runs/ 证据湖（xa1 判据书随内部仓）")
     # 驱动发射前强制 criteria.md 存在（#122）；冻结阈值词面在档
     text = (REPO / "runs" / "xa1_arbitration" / "l5_sweep" / "criteria.md"
             ).read_text(encoding="utf-8")

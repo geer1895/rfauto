@@ -1,6 +1,6 @@
-"""模板 meta.yaml 健康度审计门（架构批 R8 面 3 常驻化，2026-10-11 A8-C 席）。
+"""模板 meta.yaml 健康度审计门（aurora72 R8 面 3 常驻化，2026-10-11 A8-C 席）。
 
-R8 侦察（runs/架构批/R8_other_optimizations.md 面 3）：docs/templates 77 目录
+R8 侦察（内部证据档 面 3）：docs/templates 77 目录
 =注册 72 + edb_* 5 族独立通道，meta.yaml 全量解析 nominal/链接面健康，但当时
 teaching 仅 9/77——此后 teaching 已扩到 51 族。本脚本把 meta 健康度制度化
 （只读审计，零写面）：
@@ -18,7 +18,7 @@ teaching 仅 9/77——此后 teaching 已扩到 51 族。本脚本把 meta 健�
      *_frac∈(0,1]、count 类≥0、offset 类≥0；非数值叶仅 cell_id 豁免
      （ms_array_NxN cell_map 逐胞表）；bool 拒收、非有限值拒收；
   3. placeholder——全文扫占位符残留：TBD/FIXME/待填/待补/lorem/xxx 词与
-     裸 TODO（非台账引用——"TODO 0dk"类坑账编号引用是合法溯源记号）；
+     裸 TODO（非台账引用——"待办清单 0dk"类坑账编号引用是合法溯源记号）；
   4. teaching——在场则按 rfauto-teaching/v1 schema 校验（与 service/
      teaching_service.load_teaching 同规则：physics.summary、derivations
      三键、sensitivity_ranking 名次 1..N 连续；另钉 quiz_refs 形态与
@@ -92,7 +92,7 @@ EXEMPTIONS: tuple[tuple[str, str, str], ...] = ()
 
 # ─── 占位符残留（维度 3）─────────────────────────────────────────────────────
 
-#: "TODO 0dk"/"TODO 0df④"类坑账编号引用是合法溯源记号——负向前瞻放行
+#: "待办清单 0dk"/"待办清单 0df④"类坑账编号引用是合法溯源记号——负向前瞻放行
 #: "TODO+空白+字母数字"形态，裸 "TODO"/"TODO："才是残留。
 _PLACEHOLDER_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\bTBD\b"), "TBD"),

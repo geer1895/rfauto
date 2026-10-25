@@ -27,7 +27,7 @@ webhook 通道，推送面留 followUp 登记，本模块只做本地聚合落�
   文案（如实空，不假绿也不报错）。
 
 数字出处：全部来自已落盘 campaign.plan.json（n_done/n_dead/verdict 均
-状态机回写值），本模块零物理数字产生、零状态机重算（AGENTS #7）。
+状态机回写值），本模块零物理数字产生、零状态机重算（内核立规注记 #7）。
 """
 
 from __future__ import annotations

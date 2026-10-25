@@ -18,17 +18,17 @@
   的窄凹口。门控（span=20 ns）**谷位 0 Hz 不漂**，但凹口被门自身平滑削平
   （-9.35 → -2.48 dB），肩部纹波反而升（0.176 → 0.238 dB），门外能量比仅 9.5e-4
   ——即"纹波下降"来自削平凹口而非剔除寄生物。判：**不适合**作清洗验收对象。
-- runs/ratrace_smoke/pt8/ratrace.s4p：存在（401 点 2.25–2.75 GHz）。S11 从带边
+- 内部证据档：存在（401 点 2.25–2.75 GHz）。S11 从带边
   2.25 GHz 的 -25.63 dB 单调升到 2.75 GHz 的 -9.49 dB——**谷位贴在带边**，带内无谷；
   门控把谷位内移 18 个频点（22.5 MHz）。判：**不适合**（无带内谷）。
 
 可用的真实验收对象（同机实测前后值，见 parametrize 表）：
-- runs/ratrace_arbitration/hfss_ratrace.s4p（HFSS 仲裁，401 点 2.0–3.0 GHz，
+- 内部证据档（HFSS 仲裁，401 点 2.0–3.0 GHz，
   谷 2.410 GHz / -28.90 dB）：门 span=20 ns → 谷位漂移 0 Hz，带内纹波
   12.6796 → 10.3693 dB，肩部 11.9128 → 9.5344 dB。
-- runs/ratrace_smoke/pt9/ratrace.s4p（openEMS，401 点 2.25–2.75 GHz，
+- 内部证据档（openEMS，401 点 2.25–2.75 GHz，
   谷 2.355 GHz / -36.97 dB）：门 span=40 ns → 漂移 0 Hz，纹波 19.2780 → 17.6767 dB。
-- runs/audit_freq_scale/hfss_mline_repro/diag_flush_originfix/m.s2p（HFSS 匹配线复现，
+- 内部证据档（HFSS 匹配线复现，
   201 点 1.5–3.5 GHz，|S11|≈-40 dB 且带内 17.6 dB 条纹）：门 span=10 ns → 漂移
   0 Hz，纹波 17.6322 → 14.6559 dB。
 

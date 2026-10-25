@@ -12,7 +12,7 @@
   G4 极限保持（γ 空间框架自动保持）：εr=1 → εeff=1 精确（factor 恒 1）、
      h→∞ → (1+εr)/2 精确（a/h<1 hinge 自动关断）、定标域内 h↑ εeff 严格
      单调；h→0（a/h 越出修正定标域）显式 ValueError 不外推。
-在档全表回放（runs/w2f_rescale_batch/cps_bh_scan.json 160 点）不在树时 skip
+在档全表回放（内部证据档 160 点）不在树时 skip
 （runs/ 不入库口径，同 test_c9_smoke_judges）。
 """
 

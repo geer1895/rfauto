@@ -8,7 +8,7 @@
 - NOT_SUPPORTED 显式拒绝（非 mline 模板）；
 - mock exe 求解链（全 S 矩阵装配 + 产物落盘 + 重读）；
 - 注册面双树态（QUCSATOR 枚举缺失=跳过不污染；存在=注册枚举键）；
-- HJ 腿 vs openEMS 金锚（runs/benchmark/mline_mauto 冻结值，两腿 ≤2%）
+- HJ 腿 vs openEMS 金锚（内部证据档 冻结值，两腿 ≤2%）
   + 与 test_meep_adapter._OPENEMS_GOLDEN 互检防漂移。
 
 真机通道（qucsator_rf 本机已装 E:\\tools\\qucsatorRF）：skipif 钉住
@@ -58,7 +58,7 @@ _FIXTURE_DATASET = """<Qucs Dataset 1.0.7>
 
 _FREQS_HZ = [2.25e9, 2.5e9, 2.75e9]
 
-# 金锚源：runs/benchmark/mline_mauto/port_beta.csv（#162 β 金标准），与
+# 金锚源：内部证据档（#162 β 金标准），与
 # tests/unit/test_meep_adapter.py::_OPENEMS_GOLDEN 同一冻结值。
 _OPENEMS_GOLDEN = {2.25: 80.55376868947421, 2.5: 89.50940246779182,
                    2.75: 98.45637105318495}

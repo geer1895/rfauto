@@ -4,7 +4,7 @@ p0 A/B 实证"标量锚不改善排序"——因为 fake 与 openEMS 的差异�
 失配（discrepancy）而非参数错。KOH（Kennedy-O'Hagan, JRSS-B 2001）的
 正解是把差异建成高斯过程 δ(x)。
 
-三级能力（确定性内核、零新依赖，AGENTS 铁律 7）：
+三级能力（确定性内核、零新依赖，内核立规注记 铁律 7）：
 
 1. fit_discrepancy（首片，返回契约保持不变）：δ(x) ≈ GP 拟合的
    (openEMS metrics − fake metrics)(x)（real−fake，KOH 口径，与
@@ -243,7 +243,7 @@ class KOHCalibrator:
         """预测 z(x)：返回 {mean, lo95, hi95, sigma, eta, delta, rho}。
 
         eta 缺省用构造时注入的 eta_fn(params)；两者都没有则显式报错，
-        不静默降级（AGENTS 数值纪律）。
+        不静默降级（内核立规注记 数值纪律）。
         """
         if not self.fitted:
             raise RuntimeError("KOHCalibrator 未拟合，先调用 fit()")
@@ -408,7 +408,7 @@ def fit_discrepancy(
 
 
 # --------------------------------------------------------------------------- #
-# XD-12 全贝叶斯档：固定 seed MH 采样 (ρ, δ-GP 超参) 后验（架构批 W5-S22）
+# XD-12 全贝叶斯档：固定 seed MH 采样 (ρ, δ-GP 超参) 后验（aurora_e W5-S22）
 # --------------------------------------------------------------------------- #
 
 _MCMC_JITTER = 1e-10

@@ -1,4 +1,4 @@
-"""multiline TRL εr/tan_d 不确定度传播（EC-2，架构批 W2-S9，2026-10-18）。
+"""multiline TRL εr/tan_d 不确定度传播（EC-2，aurora_e W2-S9，2026-10-18）。
 
 出处（不确定度传播规范+多线 TRL 文献，正文方法面节转录）：
 - mtrl_er_tand_uncertainty：GUM 一阶线性传播（JCGM 100:2008）+

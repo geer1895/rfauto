@@ -1,6 +1,6 @@
 """fake_adapter.tl_family —— 传输线与基元族解析模型（WP2.1/2.2/2.5）。
 
-自 adapters/fake_adapter.py 单文件巨石按职责域拆分（架构批 W4-S2，T2 范式/
+自 adapters/fake_adapter.py 单文件巨石按职责域拆分（aurora_h W4-S2，T2 范式/
 AU-1 工艺）：均匀线锚（mline/cpw/cps/suspended_stripline/siw/msl_siw_taper）、
 基元级联（wstep/tjunc/bend/via/atten_pi/atten_t/ratrace/gysel）与过渡件
 （msl_cpw/sma_launcher）+ γ helper。代码体逐字节搬迁，零逻辑改动；族内
@@ -89,7 +89,7 @@ def _siw_sparams(
     均匀线（criteria.md §1/§2）：S11≈0（理想匹配端接口径）、
     S21=exp(−γL)，γ 由复数色散式给出：k=n·k0·√(1−j·tanδ)、
     γ=j·sign·k·√(1−(kc/k)²)（f>fc10 传播取 α+jβ、f<fc10 倏逝取 +α），
-    kc=π/w_eff（Cassivi 2002 等效宽度，双源出处 runs/siw_family/criteria.md
+    kc=π/w_eff（Cassivi 2002 等效宽度，双源出处 内部证据档
     §1）。⚠ 引擎原始 S=带载比值（LumpedPort 桥，#250 口径），fake 是匹配
     端接理想线——判读以 β/相位主口径对拍（slotline_lumped 同约定）。
     line_len_mm=None 时取 TEMPLATE_NOMINAL["siw"]["line_len_mm"] 单源缺省。
@@ -144,7 +144,7 @@ def _msl_siw_taper_sparams(
     器半波零点（单锥假模型 |S11|@f0 虚高 15dB，对称双锥为真实器件拓扑）。
     - 锥形段=线性宽度 W50→W_END 的 MSL 微分节等分级联（n_steps=16 确定性
       离散化，HJ Z0/εeff 逐节 forward_z0@f_mid 精算后按常数进 β(f)；线性锥
-      的一阶小反射闭式对照见 runs/df6_a2siwmsl/criteria.md §1.1）；
+      的一阶小反射闭式对照见 内部证据档 §1.1）；
     - 锥末-SIW 台阶理想透明（Deslandes 两段论第二段；其电抗=引擎-理想偏差
       主测对象，msl_cpw"渐变区不进理想级联"同约定）——SIW 节 Z0 取 Z_PV
       与锥末节连续，fake 无人工台阶；

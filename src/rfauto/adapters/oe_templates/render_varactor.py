@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     pass
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
-from .render_hairpin import _hairpin_layout
+from .render_hairpin import _hairpin_layout, _hairpin_port_guard
 
 # ── §M-5 varactor_bpf：变容二极管调谐 BPF（首个半有源模板，2026-09-27）──────
 # docs/research_expansion_20260926.md M-5：hairpin 族增量——谐振臂开路端对地
@@ -45,6 +45,9 @@ def _varactor_bpf_lines(p: dict[str, Any]) -> str:
     # 位移电流与 lumped 并联，#252 族扣除，core 单源 varactor_box_geo_
     # capacitance_pf）；抽头 τ 语义自 C 端计（loaded 廓线 branch B，P0 修复）。
     lay = _hairpin_layout(p)
+    # 端口语义五判据（Wave-E E2）：hairpin 同族 T 抽头双端口，发射器单源
+    # oe_port_semantics（抽头 y 随 loaded 廓线——y_taps 布局单源取值）
+    _hairpin_port_guard(p, lay, lay["y_taps"])
     from rfauto.core.varactor import (
         abrupt_junction_capacitance_pf,
         varactor_box_geo_capacitance_pf,

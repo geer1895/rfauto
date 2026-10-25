@@ -31,7 +31,7 @@ from rfauto.core.fet_noise import (
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: service schema 版本（recipe_version 与 schema_version 语义区分，#106）。
-#: 1.1（2026-10-14 AU-2 域升版，架构批 ENGH 席）：失败信封单数 ``error``
+#: 1.1（2026-10-14 AU-2 域升版，aurora_d ENGH 席）：失败信封单数 ``error``
 #: 键统一为 ``errors`` list[str]（error_envelope 单源）——契约 §1 判读规则 2
 #: 口径的破坏性形状变更，按 §2 规则升位；消费面（tests/unit/test_fet_noise.py）
 #: 同笔迁移，无 CLI/MCP/UI 消费者（grep 实测）。1.0=首批推广口径。

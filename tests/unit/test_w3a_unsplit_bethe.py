@@ -1,4 +1,4 @@
-"""架构批 W3-A 席锚树：unequal_split_wilkinson + bethe_hole_coupler 两键。
+"""aurora36 W3-A 席锚树：unequal_split_wilkinson + bethe_hole_coupler 两键。
 
 数值断言口径（#118 不自证）：
 - Wilkinson：①K=1 退化锚 = Pozar 等分 Wilkinson（√2·Z0 臂 / 2·Z0 隔离

@@ -1,11 +1,11 @@
-"""超导材料 Rs/能隙两键（架构批 W3-K 池件批，R2_core_tier5 §⑤-1/§③-14
+"""超导材料 Rs/能隙两键（aurora_h W3-K 池件批，R2_core_tier5 §⑤-1/§③-14
 提升核——池件 MP-7 同笔清偿）。
 
 提升核：消费 core/quantum_cryo.py 登记级全套闭式（round17 §六 MA-11 落地
 物；Gao 2008 工程近似口径名+Gittleman-Rosenblum 1966 t⁴ 口径名+Tinkham
 《Introduction to Superconductivity》2nd；#122 页码 UNVERIFIED 如实已在
 内核标注）——该内核 docstring 自证"纯闭式叶子，零 IO、不进 calculators"，
-本文件即其 CALC 注册面。与 qubit_readout 族（架构批 W7-A）的分工边界
+本文件即其 CALC 注册面。与 qubit_readout 族（aurora36 W7-A）的分工边界
 已在彼处写死：quantum_cryo=材料/器件面（本族），读出链数值面=彼族。
 
 公式（单源不复制，出处与互证路径见 core/quantum_cryo.py 模块 docstring）

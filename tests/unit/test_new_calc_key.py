@@ -1,4 +1,4 @@
-"""new_calc_key 脚手架生成器测试（R1 T6 配套 DX，架构批 W8-S3）。
+"""new_calc_key 脚手架生成器测试（R1 T6 配套 DX，aurora_g W8-S3）。
 
 覆盖：骨架可编译且形态正确（register_calculator 装饰器/required 元组
 尾逗号/experimental 口径/无参数形态）、五步清单完整性与口径分派

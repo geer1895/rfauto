@@ -1,8 +1,8 @@
-"""INTEG-B 席跨模块集成测试：坑账链全链一致（架构批 INTEG-B，2026-10-14）.
+"""INTEG-B 席跨模块集成测试：坑账链全链一致（aurora_d INTEG-B，2026-10-14）.
 
 链条（合成源料从生产者打到消费端，全程零网络零 LLM，#139）：
 
-    scripts/pitfall_index.py build_index（合成 项目规约.md+散档+消费指针）
+    scripts/pitfall_index.py build_index（合成 内核立规注记.md+散档+消费指针）
       → canonical JSON 落盘（dumps_canonical 确定性）
         → service/pitfall_index_service.load_pitfall_index（同 schema 契约
           零改动加载+validate 校验）
@@ -15,7 +15,7 @@
 usage 错误退出码 2）；边界（无坑号条目 A<行> 行锚 id、连号组展开进
 --number 召回、解析失败如实计数不静默丢、散档 id 与全局坑号隔离）。
 
-既有单测的分工：test_kb_b_pitfall_index 钉真 项目规约.md 产物与解析启发式、
+既有单测的分工：test_kb_b_pitfall_index 钉真 内核立规注记.md 产物与解析启发式、
 test_pitfall_index_service 钉 loader/检索纯函数——本文件补「同一份数据从
 解析器流到 CLI 消费端身份不变形」的跨模块合成链。
 """
@@ -30,10 +30,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
 
-from pathlib import Path as _PSource
-
 import pytest
-import pytest as _Pyt
 import yaml
 from typer.testing import CliRunner
 
@@ -48,12 +45,6 @@ from rfauto.service.pitfall_index_service import (
     pitfall_search,
     validate_pitfall_index,
 )
-
-_PITFALL_SOURCE_ABSENT = not (_PSource(__file__).resolve().parents[2]
-                              / "项目规约.md").is_file()
-_SOURCE_SKIP = _Pyt.mark.skipif(
-    _PITFALL_SOURCE_ABSENT,
-    reason="pitfall ledger source file not shipped in this checkout")
 
 # ── scripts/pitfall_index.py 按文件路径装载（test_kb_b 同款模式）──────────
 _SCRIPT = REPO / "scripts" / "pitfall_index.py"
@@ -117,7 +108,7 @@ rows:
 
 @pytest.fixture()
 def synthetic_tree(tmp_path: Path) -> dict:
-    """合成源料树：项目规约.md + runs 散档 + 消费指针 YAML（互不越界）。"""
+    """合成源料树：内核立规注记.md + runs 散档 + 消费指针 YAML（互不越界）。"""
     agents = tmp_path / "项目规约.md"
     agents.write_text(_AGENTS_HEAD + _AGENTS_PITFALLS, encoding="utf-8")
     (tmp_path / "runs").mkdir()
@@ -170,7 +161,6 @@ def _entry(built: dict, entry_id: str) -> dict:
 # ────────────────────────── 正向：全链身份一致 ──────────────────────────
 
 
-@_SOURCE_SKIP
 class TestChainConsistency:
     def test_built_passes_service_validator(self, built):
         errors, _warnings = validate_pitfall_index(built)
@@ -291,7 +281,7 @@ class TestChainConsistency:
         assert built["n_entries"] == 7
         assert built["scattered_docs"]["n_missing"] == 0
         assert built["skipped_lines"]["blockquote"] == 1
-        # 消费指针：#900 并入（AGENTS+散档两处）；A999 无匹配如实计
+        # 消费指针：#900 并入（内核立规注记+散档两处）；A999 无匹配如实计
         cons = built["consumption"]
         assert cons["n_rows"] == 2 and cons["n_matched_rows"] == 1
         assert cons["unmatched_ids"] == ["A999"]
@@ -398,7 +388,7 @@ class TestBoundaries:
             runs_root=synthetic_tree["root"])
         assert idx["scattered_docs"]["n_missing"] == 1
         assert idx["scattered_docs"]["n_entries"] == 0
-        assert idx["n_entries"] == 4  # 仅 AGENTS 面
+        assert idx["n_entries"] == 4  # 仅 内核立规注记 面
         errors, _ = validate_pitfall_index(idx)
         assert errors == []
 
@@ -428,4 +418,3 @@ class TestBoundaries:
         assert idx["n_entries"] == 4
         loaded_via_yaml_module = yaml.safe_load(_CONSUMPTION_YAML)
         assert loaded_via_yaml_module["rows"]  # 源料本身可解析（自证）
-

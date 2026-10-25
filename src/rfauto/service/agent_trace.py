@@ -1,4 +1,4 @@
-"""EC-23 agent 环结构化追踪（架构批 W2-S10 E1）——自记 JSONL，零新依赖。
+"""EC-23 agent 环结构化追踪（aurora_e W2-S10 E1）——自记 JSONL，零新依赖。
 
 三级 span（任务口径）：
 - session：会话首尾各一条（session_start/session_end）；
@@ -90,7 +90,7 @@ class AgentTracer:
         if not trace_enabled():
             return
         record = {"schema": TRACE_SCHEMA, "level": level, "event": event,
-                  # W5-P3-3（架构批 W1-S4）：补时区偏移（+HHMM 基本形，
+                  # W5-P3-3（aurora_f W1-S4）：补时区偏移（+HHMM 基本形，
                   # ISO 8601 合法）——旧 naive 本地时间跨机器/跨时区判读有歧义
                   "ts": datetime.now().astimezone().strftime(
                       "%Y-%m-%dT%H:%M:%S%z"),

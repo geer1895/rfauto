@@ -1,4 +1,4 @@
-"""C22 配方目录"工作副本"分组单测（TODO:417 followUp）。
+"""C22 配方目录"工作副本"分组单测（待办清单:417 followUp）。
 
 钉住：①list_recipes 三态分组（原件/工作副本/混存）——recipes 键保持只含
 recipes/ 原件（既有消费者零改动），工作副本单列 workcopies（source_recipe

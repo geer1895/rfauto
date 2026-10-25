@@ -6,7 +6,7 @@
 
 # 内核文档卡：wilkinson_unequal
 
-> Wilkinson 不等分功分器综合（架构批 W3-A 席，R2 空白域 G6）。
+> Wilkinson 不等分功分器综合（aurora36 W3-A 席，R2 空白域 G6）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 二路不等分 Wilkinson 综合（Pozar K 口径）：功分比 K → 两臂 λ/4 特性阻抗 + 隔离电阻（含臂端电阻分配）+ 几何均值输出变换段——闭式与节点导纳网络解算互为独立裁判（#118）。
 
-模块自述（docstring 首行，机读）：Wilkinson 不等分功分器综合（架构批 W3-A 席，R2 空白域 G6）。
+模块自述（docstring 首行，机读）：Wilkinson 不等分功分器综合（aurora36 W3-A 席，R2 空白域 G6）。
 
 ## 公式与口径
 

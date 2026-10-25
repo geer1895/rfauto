@@ -1,4 +1,4 @@
-"""平衡开线族（架构批 W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
+"""平衡开线族（aurora_g W10-S4 席，R3_domain_expansion 视角1 A2——rf_line
 第七种线型：唯一无基板的开架平行线，rf_line 六型（microstrip/cpw/cpwg/
 stripline/cps/suspended_stripline）全部是基板线，开架双线/单线对地零命中）。
 

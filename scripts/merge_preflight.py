@@ -4,11 +4,11 @@
 全量门**前移到席位并行消化**——W1/W2/W3 三批实证：这类失败占门失败
 相当比例，且全部可以在席位返回前自证自愈。
 
-时长口径：18 面时代预算 ~2 分钟；25 面（2026-10-19 架构批 W1-S4 扩面
+时长口径：18 面时代预算 ~2 分钟；25 面（2026-10-19 aurora_g W1-S4 扩面
 后）串行实测 507s（2026-10-20 W8-S2 基线；大头=pytest 漂移面 399.5s
-串行——架构批 扩面后已从历史 ~220s 涨至 400s 级 + pip-audit 网络审计
+串行——aurora_g 扩面后已从历史 ~220s 涨至 400s 级 + pip-audit 网络审计
 ~80s，两者均先于本扩面存在；扩面六组 pytest 已按 3 并发车道压墙钟）。
-2026-10-20 架构批 W8-S2 两项再压墙钟：
+2026-10-20 aurora_g W8-S2 两项再压墙钟：
   ①漂移面 xdist -n 2 loadfile 并行（公开仓 CI test job 家法直搬：
     OPENBLAS_NUM_THREADS=1 import 前钉死（#258 xdist×BLAS 线程超订实测
     慢 85×）+ 门判据=日志汇总而非退出码的「零 failed 零 error 却 exit 1」
@@ -50,40 +50,40 @@
       AST 扫 create_* 几何 API 的 origin/sizes/radius/height 实参，字面
       算术按 SI 米求值=违规；豁免走脚本 ALLOWLIST（带理由+背书注记），
       违例 rc=1 红）
-  14. 锚 freshness 审计（架构批 R8 #6 常驻化，2026-10-11 A7-D：
+  14. 锚 freshness 审计（aurora72 R8 #6 常驻化，2026-10-11 A7-D：
       scripts/audit_anchor_freshness.py 对 knowledge/anchors.yaml 做只读
       时效审计——非 retired/awaiting_data 锚缺 last_verified 超棘轮
       （现值 35 冻结，只收不放）=红，新增锚必须带验证回填；时效超龄
       （experimental>30d/active>90d）=报告面永不红，时间推移不打红
       无关席位；注册表不可读=rc2 SKIP 诚实降级）
-  15. 模板 meta 健康度审计（架构批 R8 面 3 常驻化，2026-10-11 A8-C：
+  15. 模板 meta 健康度审计（aurora72 R8 面 3 常驻化，2026-10-11 A8-C：
       scripts/audit_template_meta.py 对 docs/templates/*/meta.yaml 只读
       5 维审计——schema 必备键/标量 sane、nominal 数值语义粗守卫、
       占位符残留、teaching schema（rfauto-teaching/v1）、仓内链接存在性
       （runs/=证据面报告不打红，其余前缀断链=红）；修复=meta.yaml 最小
       修（不动物理值），误报合法形态走脚本 EXEMPTIONS 带理由（只收不放，
       挂面时清单为空）；rc2=templates 根不可读 SKIP 诚实降级）
-  16. runs 湖 registry 落后度审计（架构批 R8 #7 常驻化，2026-10-13
+  16. runs 湖 registry 落后度审计（aurora72 R8 #7 常驻化，2026-10-13
       R8-ENG1：scripts/registry_backfill.py --check 只读盘点 registry
       行数 vs 盘面 run 点数（meta 口径 #144 + 无 meta 真跑目录双层判真，
       helper/空壳豁免如实计数）——would_insert>0=落后 rc1 红（新落 run
       未入索引，回填一条命令自愈：``.venv/Scripts/python.exe
       scripts/registry_backfill.py``）；rc2=runs/ 树不可读 SKIP 诚实降级
       （CI/无湖环境）；幂等红线：回填重跑零增量行）
-  17. MCP 描述单源门（Z-10 常驻化，架构批 W2-S10 E2：
+  17. MCP 描述单源门（Z-10 常驻化，aurora_e W2-S10 E2：
       scripts/check_mcp_desc.py 五维硬门——工具描述非空/必填参数入
       docstring Args/schema 参数描述全覆盖/schema 描述与 docstring 逐字
       单源一致/幽灵参数；docstring Args=参数描述唯一真源，MCP-B 普查
       升级为门；零违例基线冻结 152 工具/514 参数，豁免走脚本 EXEMPTIONS
       带理由只收不放；rc2=fastmcp 缺席 SKIP 诚实降级）
-  18. UI 前后端契约棘轮门（架构批 R1 #6/P8-10 常驻化，2026-10-18
+  18. UI 前后端契约棘轮门（aurora_f R1 #6/P8-10 常驻化，2026-10-18
       W2-S5：scripts/check_ui_contracts.py 双向对账——前端 JS（vendor/
       除外）的 /api/ 字面调用（引号字面量+拼接链+模板串三形态，查询串
       截断/参数段归一）⊆ server.py Route 表（悬空调用），反向路由表
       ⊆ 前端调用 ∪ 无消费豁免表（死路由）；DANGLING_ALLOWLIST 基线为空
       只收不放，UNCONSUMED_ALLOWLIST 条目只可删不可加；rc2=输入不可读
       SKIP 诚实降级）
-  19. #231 注册表消费者四表一致（架构批 W1-S4 常驻化，2026-10-19，
+  19. #231 注册表消费者四表一致（aurora_g W1-S4 常驻化，2026-10-19，
       R3 面 3 缺口 1：test_calculators/test_physics_invariants/
       test_experimental_calculators/test_model_docs 四消费者与
       CALCULATOR_REGISTRY 键集逐位对账——C13 批全量门 4 红先例，新
@@ -348,7 +348,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("几何字面算术（#218 家族 SI 米陷阱）")
 
-    # 14) 锚 freshness 审计（架构批 R8 #6 常驻化，2026-10-11 A7-D）
+    # 14) 锚 freshness 审计（aurora72 R8 #6 常驻化，2026-10-11 A7-D）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "audit_anchor_freshness.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
@@ -364,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("锚 freshness（R8 #6：缺验证锚超棘轮）")
 
-    # 15) 模板 meta 健康度审计（架构批 R8 面 3 常驻化，2026-10-11 A8-C）
+    # 15) 模板 meta 健康度审计（aurora72 R8 面 3 常驻化，2026-10-11 A8-C）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "audit_template_meta.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
@@ -381,7 +381,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("模板 meta 健康度（R8 面 3：5 维审计违例）")
 
-    # 16) runs 湖 registry 落后度审计（架构批 R8 #7 常驻化，2026-10-13
+    # 16) runs 湖 registry 落后度审计（aurora72 R8 #7 常驻化，2026-10-13
     # R8-ENG1）——只读 --check，落后 rc1 / runs 树不可读 rc2 SKIP
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "registry_backfill.py"), "--check"],
@@ -400,7 +400,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("runs 湖 registry 落后度（R8 #7：新 run 未入索引）")
 
-    # 17) MCP 描述单源门（Z-10 常驻化，架构批 W2-S10 E2）
+    # 17) MCP 描述单源门（Z-10 常驻化，aurora_e W2-S10 E2）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "check_mcp_desc.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=120)
@@ -418,7 +418,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("MCP 描述单源门（Z-10：五维描述违例）")
 
-    # 18) UI 前后端契约棘轮门（架构批 R1 #6/P8-10 常驻化，2026-10-18 W2-S5）
+    # 18) UI 前后端契约棘轮门（aurora_f R1 #6/P8-10 常驻化，2026-10-18 W2-S5）
     r = subprocess.run(
         [PY, str(REPO_ROOT / "scripts" / "check_ui_contracts.py")],
         cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60)
@@ -434,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
         print((r.stdout + r.stderr)[-800:])
         failures.append("UI 前后端契约门（R1 #6：悬空调用/死路由）")
 
-    # 19-24) 扩面消费者 pytest 面（架构批 W1-S4 常驻化，2026-10-19；R3
+    # 19-24) 扩面消费者 pytest 面（aurora_g W1-S4 常驻化，2026-10-19；R3
     #        面 3 缺口 1-6）。六组文件面互斥，3 并发车道执行（上限写死
     #        不探顶，#247 槽位纪律；文件级进程隔离=xdist loadfile 同款
     #        安全先例）；结果按声明序判读——并发只省墙钟，不改逐面三态。
@@ -509,7 +509,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(((r.stdout or "") + (r.stderr or ""))[-800:])
                 failures.append(label)
 
-    # 25) U+FFFD 替换字符内容抽查（#89/#259 常驻化，架构批 W1-S4）
+    # 25) U+FFFD 替换字符内容抽查（#89/#259 常驻化，aurora_g W1-S4）
     _UFFFD_EXTS = {".py", ".md", ".txt", ".yaml", ".yml", ".toml", ".cfg",
                    ".ini", ".json", ".js", ".css", ".html"}
     ufffd_hits: list[str] = []

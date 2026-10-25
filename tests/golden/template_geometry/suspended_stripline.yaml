@@ -10,7 +10,7 @@ params:
   b_mm: 1.016
   line_len_mm: 40.0
 status: ok
-script_sha256: fe228a85f76645e012e1e8d16ba4680cba00658e837407a2b1f654e84b7d6fef
+script_sha256: cf0b130a2cbb88323d9d52f2ceb9ec39ba9a304e14215a2b3802988858b2ffa7
 csx:
   n_primitives: 22
   props:

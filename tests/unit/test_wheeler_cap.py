@@ -1,6 +1,6 @@
-"""Wheeler cap 效率对照门测试钉（ge7 followUp ④，runs/ge7_wheeler/criteria.md §1）。
+"""Wheeler cap 效率对照门测试钉（ge7 followUp ④，内部证据档 §1）。
 
-核心回归钉=attempt3 病理数字回放（runs/ge6_oewin/wheeler/verdict.json 实测值，
+核心回归钉=attempt3 病理数字回放（内部证据档 实测值，
 非推导 #118）：旧单侧门（≥0.95）对 η_wh_pec=1.3380 假 PASS；新双侧带
 [0.90,1.05] 必须判 FAIL 上沿——上限门的存在理由即此。
 """
@@ -21,7 +21,7 @@ from rfauto.core.wheeler_cap import (
     wheeler_eta,
 )
 
-# ── attempt3 实测数字（runs/ge6_oewin/wheeler/verdict.json，证据回放）─────
+# ── attempt3 实测数字（内部证据档，证据回放）─────
 ETA_WH_PEC_A3 = 1.337990944818487     # 病理值（Re(Zcap)=-10.43Ω 噪声）
 ETA_FF_PEC_A3 = 1.0331372049857295    # 能量守恒级（健康）
 ETA_FF_RL_A3 = 0.852521846976282

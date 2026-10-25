@@ -1,4 +1,4 @@
-"""微带环形谐振器综合内核（架构批 W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
+"""微带环形谐振器综合内核（aurora_f W3-S11 席域，R2_core_tier3 §⑤ F3 设计案）。
 
 两键：ring_resonator_synthesize（f1/w/gap → 环平均半径 r_mean + εeff + 50Ω
 馈线宽 + 间隙耦合 Qe 设计式）/ ring_resonator_response（模阶谱 + Q 分解
@@ -8,7 +8,7 @@ cards docstring 点名留缺）。本模块为**提升式重构**：``ring_reson
 design_params`` 函数体自 render_ring 原样下沉（逐字节未动），render_ring
 改为消费 core（再导出零改动，#116 不留本地遮蔽副本）；提升前后同参输出
 逐位一致（字节级对拍钉 tests/unit/test_w3s11_ring.py，重构前基线
-内部证据目录）。
+runs/aurora_f/w3s11_ring_parity_baseline.json）。
 
 物理口径（docstring 写死，#1c/#300 出处纪律）
 --------------------------------------------------------

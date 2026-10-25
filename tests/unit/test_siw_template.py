@@ -1,6 +1,6 @@
 """SIW 族首族=直 SIW 传输线段（2026-09-22 siw-family 立项）离线审计测试。
 
-权威口径：runs/siw_family/criteria.md（文献双源/闭式/激励方案利弊/预声明门）。
+权威口径：内部证据档（文献双源/闭式/激励方案利弊/预声明门）。
 覆盖（#212 制度化 + #118 合成回收钉 + #231 注册四件套）：
   1) 闭式内核基准：RWG 极限（d→0 ⇒ w_eff→w）、WR-90 空气波导 fc=6.5571GHz
      （Pozar 教科书值）、synthesis 回代自洽、单调性、设计规则守卫显式报错；
@@ -299,21 +299,19 @@ def test_siw_layout_rule_guard_rejects_rule_violation():
         siw_layout({**NOM, "s_mm": 2.5}, BAND, 0.4e-3, H * 1e-3)
 
 
-# ─── 2b) v2 端口方案离线审计（runs/siw_family/v2_criteria.md §1/§5；#212）────
+# ─── 2b) v2 端口方案离线审计（内部证据档 §1/§5；#212）────
 # v2=藩篱止于端口面+端面口径 LumpedPort（跨介质孔径 ±W/2，R=Z_PV 不变）——
 # 消除 §R2 归因的端面 fixture 汇（延拓支路 4/9 分光+探针中间抽头耗散），
 # 按**原 G3 门（≥−3dB）**重跑的 fixture 路线。opt-in 旋钮 `_port_mode="v2"`，
 # 缺省 v1 渲染逐字节不变（字节钉见下）。本节测试全部秒级零仿真。
 
 #: v1 缺省渲染字节钉（审计档 NOM×BAND×0.4mm 全文 sha256；任何缺省路径漂移
-#: 即红——改 v1 缺省行为必须显式换钉并在 runs/siw_family/ 留 unified diff 证据）
+#: 即红——改 v1 缺省行为必须显式换钉并在 内部证据档 留 unified diff 证据）
 # wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案 render_script 尾段追加
 # sparams.mask.json sidecar 写出块（csv 写出段逐字节零漂移，diff 证据
-# runs/w6_phase6/w6e/{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
+# 内部证据档{pre,post}_render_h01/ removed=0 实测）；整脚本 sha
 # 随尾段追加必移（旋钮语义断言：显式 v1==缺省 逐字节，保留不变）。
-# 公开仓同步批换钉（2026-10-18）：渲染器脱敏注释与 _OE_BIN 缺省值中性化
-# （机器路径改 env-only），脚本字节随 diff 移动——几何段 exec 审计逐键同值。
-_V1_RENDER_SHA256 = "ff60ee37dcf6b0ca6b31ae92da12ec29f5cdc394ce3e1d1efc633666ae672376"
+_V1_RENDER_SHA256 = "7b5bf92b2506cbefa6d39ea9bd9b9dbf4a41df2f1e168a569a0d1910a3989c0c"
 
 
 def test_siw_v1_default_render_byte_pin():

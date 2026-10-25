@@ -1,6 +1,6 @@
 """A3 PalaceSolver 官方 schema 对齐测试（v0.18.1 五分节配置 → mock 可执行 → CSV 解析）。
 
-官方口径出处（2026-09-22 实测取证，见 runs/palace_spike/schema_fix_plan.md）：
+官方口径出处（2026-09-22 实测取证，见 内部证据档）：
 - 配置顶层五分节 + 各键名：官方 scripts/schema/config-schema.json（tag v0.18.1）；
 - CLI 位置参数（无 -config 旗标）：官方 docs/src/run.md；
 - 结果文件 <Problem.Output>/port-S.csv（dB/deg 列、频率列 GHz）：
@@ -586,7 +586,7 @@ def test_no_legacy_config_flag_in_cmd(tmp_path, monkeypatch, flag):
     assert cmd[1].endswith("palace_config.json")
 
 
-# ── 多激励 S 矩阵（df5 消账 PENDING #3；判据 runs/palace_spike/
+# ── 多激励 S 矩阵（df5 消账 PENDING #3；判据 内部证据档
 #    df5_multiexcite_criteria.md，源码+真跑双取证）────────────────────────────
 class TestPalaceMultiExcitation:
     """官方单 run 多激励语义（每端口 Excitation: <自身 Index>）。
@@ -796,7 +796,7 @@ class TestPalaceWslBridgeIntegration:
 
     **opt-in 双门**：`RFAUTO_PALACE_ITEST=1` 意图门（见 skipif 理由）+
     机器状态探测（wrapper 在位/win32/发行版与 mesh 运行时探测缺席 skip）。
-    判据预声明 runs/palace_spike/bridge_criteria.md §4：dr_matched 案例
+    判据预声明 内部证据档 §4：dr_matched 案例
     （adapter build_geometry 产官方五分节 config，εr=2.08 同轴 + 50Ω
     LumpedPort×2 + PEC 壳，2–6GHz 21 点）。预声明物理带（loose）：
     形状 (21,2,2)、已测掩码 [(1,1),(2,1)]、频率轴 2–6GHz、4GHz 中点
@@ -871,7 +871,7 @@ class TestPalaceWslBridgeIntegration:
     def test_end_to_end_multi_excitation(self, tmp_path):
         """官方单 run 多激励（df5 PENDING #3 消账）：两端口 Excitation: 1/2。
 
-        判据预声明 runs/palace_spike/df5_multiexcite_criteria.md §2-§3：
+        判据预声明 内部证据档 §2-§3：
         同 dr_matched 几何（εr=2.08 同轴 + 50Ω LumpedPort×2 + PEC 壳），
         port1/port2 各自激励；断言面=全 (n,2,2) 已测掩码（get_measured_mask
         结构化口径）+ 未测条目零 + 互易对 |S12−S21|（线性幅值）≤ 0.05

@@ -5,7 +5,7 @@
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py slot \
         --override slot_l_mm=46.036   # 引擎拟合 k_slot 复核跑（→ slot_override/）
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py loop --tag v2
-        # 自由空间改造复跑（→ runs/antenna2_smoke/loop_v2/，旧产物不覆盖）
+        # 自由空间改造复跑（→ 内部证据档，旧产物不覆盖）
     .venv/Scripts/python.exe scripts/smoke_antenna2_anchor.py helix \
         --band 1.5,4.5 --tag wide   # 扩带定电抗过零 f_x（→ helix_wide/）
 
@@ -18,7 +18,7 @@
 - loop（2026-09-16 自由空间改造）：Zin=Z0(1+S11)/(1−S11) 电抗过零点位于
   f0±12% 窗且过零处 R ≥ 20Ω（对照旧贴地口径 R=0.56Ω 镜像抵消）；S11 ≤ −5dB
   只作次级（一周长环馈阻抗文献 ≈100-200Ω，对 50Ω 固有失配，谷深不是谐振
-  判据——AGENTS antenna2 坑②：判谐振看电抗过零/并联 R 峰）。
+  判据——内核立规注记 antenna2 坑②：判谐振看电抗过零/并联 R 峰）。
 - helix：电抗过零 f_x（容性→感性首个上穿）报告值；S11 深度门不适用（R≈2-6Ω
   电小失配）。f_x 落在扫频带内即 FOUND（供 HFSS 同几何仲裁
   scripts/hfss_helix_arbitration.py 对照，k_helix 不在本脚本进设计式）。
@@ -30,7 +30,7 @@
 Σ|S|²>1.02 的点；全局 FC 不动（f_max 进 base_m 网格预算，改激励带会漂全部
 模板网格锚）。
 
-证据链：runs/antenna2_smoke/<template>[_override|_<tag>]/（sparams.csv +
+证据链：内部证据档<template>[_override|_<tag>]/（sparams.csv +
 verdict.json）。
 """
 from __future__ import annotations

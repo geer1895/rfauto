@@ -257,7 +257,13 @@ rfauto runs verify 20261024_133154_a8b244f6
 **Detour** (README troubleshooting table): on-disk Touchstone doesn't
 match the run record — an old file was copied over the new run.
 `rfauto runs verify <run_id>` reports `stale` and exits 1 instead of
-passing silently.
+passing silently. The fingerprint covers more than Touchstone curves:
+the `recipe.snapshot.yaml` recipe snapshot and the report primary
+sources (`results/metrics.json`, `report.md`) are included too —
+replacing or losing any of them reports `stale`. `rfauto replay
+<run_id>` runs the same check before replaying — a `stale` source run
+is refused (a replay must use the run's real recipe); old runs without
+a manifest replay unchanged.
 
 ## 6. Open the workbench (2 minutes)
 

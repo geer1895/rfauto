@@ -28,7 +28,7 @@ def hfss_import_cmd(
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
     """HFSS 工程导入器：读变量/扫参范围/Setup-Sweep/端口 → 设计规格 + 配方草稿。"""
-    # T8 越级收口（架构批 W11-S2）：版本缺省单源本就在 service 侧
+    # T8 越级收口（aurora_g W11-S2）：版本缺省单源本就在 service 侧
     # （v3_services.hfss_import_recipe 缺省参数=edb_adapter._DEFAULT_AEDT_VERSION），
     # cli 不再直取 adapters 常量——未显式给 --version 时不传参走 service 缺省，
     # 行为逐字节等价（原 `version or _DEFAULT_AEDT_VERSION` 与"假值即缺省"同义）。

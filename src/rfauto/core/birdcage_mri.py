@@ -36,8 +36,8 @@ Design in MRI"（口径名，页码 UNVERIFIED，#122 如实）。互感/分布�
 状态（2026-10-08 快赢席 W1 落注）
 --------------------------------
 **②态登记留置=显式 archived 标注**（T1-A-03 处置）：全仓零功能
-消费者（复核口径 runs/pool_reaudit/REAUDIT_REPORT.md + 先前复核
-runs/review_ge8e/w7_orphan_kernels/ORPHAN_LEDGER.md §3 #6——
+消费者（复核口径 内部证据档 + 先前复核
+内部证据档 §3 #6——
 消费面=仅本模块单测，src/cli/service/mcp_tools/scripts 零命中）。
 撤除本标注的唯一途径=NX-8 真启动接 MRI 鸟笼 service 扩面
 （ORPHAN_LEDGER 同行触发条件原文）；本行即台账所要求"显式

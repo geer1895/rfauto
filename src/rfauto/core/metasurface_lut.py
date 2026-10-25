@@ -1,12 +1,12 @@
 """DP-10 超表面/FSS 离线内核（P1：纯函数零 IO，规格 docs/plan_deepdive_specs_20260924.md §DP-10）。
 
-四个子面（判据预声明 runs/df6_dp10ms/criteria.md，实现前冻结）：
+四个子面（判据预声明 内部证据档，实现前冻结）：
 
 1. LUT schema（MetasurfaceLUT）：单元波导模拟器扫频产物的统一载体，
    JSON（元数据+数组）+ CSV（长表）双载体互转；interp=pchip；
    run_dir provenance（#320 口径：真机行必须带产物目录指针，合成 LUT
    置空串并标 origin="synthetic"）。
-2. 布局综合闭式（确定性内核，AGENTS 硬规则 7——物理数字只出在这里）：
+2. 布局综合闭式（确定性内核，内核立规注记 硬规则 7——物理数字只出在这里）：
    - 反射阵（点馈）：φ_mn = k0·(R_mn − r_mn·û_beam) mod 2π
      （Huang-Encinar《Reflectarray Antennas》空间相位延迟式；
      R_mn=馈相心到单元距离）；
@@ -261,7 +261,7 @@ class MetasurfaceLUT:
         """f0（取最近频点）处扫描的真实圆周相位覆盖（度，分支切割免疫）。
 
         criteria §1c 冻结原文为「max−min，解缠域」——T13 实证
-        （runs/dp10_j2j3/launch_ready.md §1.1）该口径对 launch_sweep.load_lut
+        （内部证据档 §1.1）该口径对 launch_sweep.load_lut
         逐行频轴解缠的 px 轴 ±360° 分支切割跳变失真：fine 存储列 max−min
         358.09° 伪值 vs 真实圆周覆盖 100.90°（原始 sparams.csv 双路径独立
         复核一致）。周期量的正确度量=360°−最大圆周间隙（arc_coverage_deg
@@ -305,7 +305,7 @@ def unwrap_phase_deg(phases_deg: np.ndarray) -> np.ndarray:
 def unwrap_sweep_axis_deg(phases_deg: np.ndarray) -> np.ndarray:
     """沿扫描（px）轴的圆周连续化解缠：相邻差折回最短角差后累积。
 
-    T13 定案（runs/dp10_j2j3/launch_ready.md §1.1）：launch_sweep.load_lut
+    T13 定案（内部证据档 §1.1）：launch_sweep.load_lut
     的解缠发生在逐行频轴，px 轴 ±180° cut 穿越在存储列里留下 ±360° 级
     伪跳变（fine 实测 +358.09° @px 6.7988→6.8125）——本原语把每对相邻
     样本的差 wrap 到 [−180,180) 再累积，输出列与输入 mod 360 逐点相等、
@@ -324,7 +324,7 @@ def unwrap_sweep_axis_deg(phases_deg: np.ndarray) -> np.ndarray:
 def arc_coverage_deg(phases_deg: np.ndarray) -> float:
     """真实圆周相位覆盖（度）= 360°−最大圆周间隙（对分支切割免疫，单源）。
 
-    周期量的覆盖正确口径（T13/T26 单源，原实现 runs/dp10_j2j3/launch_j2.py
+    周期量的覆盖正确口径（T13/T26 单源，原实现 内部证据档
     驱动侧已迁入本内核）：样本 mod 360 排序后，覆盖=360°减去最大圆周间隙
     （含首尾 wrap 间隙）。max−min 口径（phase_span_deg）对含 ±360° 分支
     切割跳变的列失真（fine 存储列 358.09° 伪值 vs 真实圆周 100.90°，T13
@@ -426,7 +426,7 @@ def quantize_phase_deg(target_phase_deg: float, bits: int) -> float:
     return round(target_phase_deg / step) * step
 
 
-# ─── 布局综合闭式（确定性内核，AGENTS 硬规则 7）──────────────────────────────
+# ─── 布局综合闭式（确定性内核，内核立规注记 硬规则 7）──────────────────────────────
 
 
 def _k0_rad_m(f0_ghz: float) -> float:

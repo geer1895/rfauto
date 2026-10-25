@@ -1,6 +1,6 @@
 """run 健康度体检服务层（G11）——runs/<run_id>/ 产物读取 + core 内核组装。
 
-职责切分（AGENTS 规则 4）：run 产物发现/解析/JSON 编排在 service，确定性
+职责切分（内核立规注记 规则 4）：run 产物发现/解析/JSON 编排在 service，确定性
 判据全部在 core/solve_health.py。本模块 best-effort（#105）：run 目录不
 存在/全空 → ok=False + errors 说明，不抛异常；单类产物解析失败记入
 errors 后继续，缺失因子由内核标 UNKNOWN。
@@ -983,7 +983,7 @@ def health_check_batch(
       扫 ``runs_dir/<campaign>/`` 二级）；目录含 ``meta.json`` 才入选
       （G11 体检以 meta 为事实源，无 meta 的产物目录走 runs monitor 面）。
 
-    S15（架构批 W4）枚举主源接线：扫描态候选优先走 lake index SQL
+    S15（aurora_f W4）枚举主源接线：扫描态候选优先走 lake index SQL
     （``depth``+``campaign``+``has_meta``+``meta_source="meta.json"``
     精确对齐目录扫语义）；计数护栏判索引滞后（行数 vs 目录数差>阈值，
     best-effort #105）或索引不可用时**回退原目录扫**（行为不变），信封
@@ -1029,7 +1029,7 @@ def health_check_batch(
                 n_checked=0, verdicts={}, healthy=[], suspect=[], unhealthy=[],
                 failed={}, truncated=False,
                 errors=[f"扫描目录不存在: {root}"])
-        # S15（架构批 W4）：候选枚举 lake index 主源 + 计数护栏回退
+        # S15（aurora_f W4）：候选枚举 lake index 主源 + 计数护栏回退
         # （has_meta+meta_source 精确对齐目录扫"meta.json 存在"判据）
         probe = index_candidate_paths(
             scope_dir=root,

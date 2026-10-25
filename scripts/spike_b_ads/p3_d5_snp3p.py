@@ -11,7 +11,7 @@ env["PATH"] = ";".join([os.path.join(ADS, "bin"),
                         os.path.join(ADS, "tools", "python"),
                         env.get("PATH", "")])
 
-BASE = r"D:\rf_workspace\scripts\spike_b_ads\p3_d5_out"
+BASE = r"D:/rf_workspace\scripts\spike_b_ads\p3_d5_out"
 SRC = os.path.join(BASE, "wilkinson_like.s3p")
 d = os.path.join(BASE, "run3p")
 shutil.rmtree(d, ignore_errors=True)

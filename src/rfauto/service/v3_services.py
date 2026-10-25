@@ -109,6 +109,15 @@ def run_p0_experiment(recipe_path, *, seed=42, coarse_trials=40, fine_trials=15,
     write_meta(rd, {"run_id": rid, "model": "p0_experiment", "adapter": adapter_name,
                     "status": "done", "verdict": verdict, "gate": cross.get("gate"),
                     "metrics": result["correlation"]})
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(rd)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     return result
 
 
@@ -391,6 +400,15 @@ def run_multifidelity_sbo_tune(recipe_path, *, adapter_low="fake", adapter_high=
         "algorithm": "multifidelity_surrogate_loop",
         "metrics": meta_metrics,
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": recipe_data.get("model", ""),
@@ -673,7 +691,7 @@ def hfss_import_recipe(project_path, design_name=None, *,
     参数范围），供 UI 展示与 agent 提案-审批链路继续调优。
 
     缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
-    R1/v251 口径；架构批 A7-C 前此处误钉 "2026.1"——本机并无 2026.1，
+    R1/v251 口径；aurora72 A7-C 前此处误钉 "2026.1"——本机并无 2026.1，
     系"HFSS 2026"口径笔误年代的残留）。"""
     from rfauto.adapters.hfss_import import import_project_spec, spec_to_recipe_draft
     from rfauto.infra.recipe_guard import write_recipe_yaml

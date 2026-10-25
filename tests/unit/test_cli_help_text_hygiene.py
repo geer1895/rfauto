@@ -9,24 +9,29 @@
 
 2026-10-05 W1-D 批清偿历史残留 10 处后收紧为**全禁**断言 current == set()
 （原 _FROZEN_VIOLATIONS 冻结基线与 test_frozen_baseline_still_accurate 基线
-账实钉同步删除；清偿逐处对账表见 runs/w1_phase1/w1d/REPORT.md，规格=
-runs/research_seats_20261004/ra_criteria/SPECS.md §十）。形态裁决：typer/
+账实钉同步删除；清偿逐处对账表见 内部证据档，规格=
+内部证据档 §十）。形态裁决：typer/
 click 渲染面**禁 `%%`**（会字面双显，仅 argparse scripts/ 面合法）——本门
 按"剔除 %% 后仍数 % "判违例，全角％/全角【】/描述化为合规替代。
 参数级 help（--param 描述，另 21 处 `[` 残留）不在本门作用域（任务书口径=
-"命令 help 文本"），探针已留档（runs/research_seats_20261004/ra_criteria/
+"命令 help 文本"），探针已留档（内部证据档
 _probe_d06_help.py）供后续批清零（followUp 登记）。
 
-2026-10-11 架构批 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
+2026-10-11 aurora36 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
 profile_app×2，改写口径同上：全角【】/圆括号/描述化，语义不变），D-06
 参数级欠账闭合——新增 TestParamHelpTextHygiene 下探 cmd.params 逐
 click.Parameter.help（同一棵树同一判定面），裸 `[` 全禁棘轮（参数 help 无
 %-展开，% 面不进参数级门）。源码级归因工具=scripts/check_cli_help_bracket
 .py（AST 静态扫，merge_preflight 检查面）。
 
-E2 席一次性探针（runs/review_ge8e/e2_cli_mcp_ui/evidence/smoke_help_all.py，
+E2 席一次性探针（内部证据档，
 198 命令 subprocess 冒烟）转常驻的静态化版本：不逐命令起进程（秒级、零
 subprocess），同一棵树同一判定面。
+
+2026-10-24 aurora_l Wave-H H4：新增 TestHelpCopyBlacklist——
+docs/style/ui-copy-humanize.md（aurora_k K1 定稿）R2 套话黑名单+R3 空洞尾
+在 CLI help/docstring 面的全树零基线棘轮（文案词汇面，与上方字符卫生门
+同判定面；豁免与未入册面见该类 docstring）。
 """
 
 from __future__ import annotations
@@ -119,7 +124,7 @@ class TestCliHelpTextHygiene:
 
 
 class TestParamHelpTextHygiene:
-    """D-06 参数级清偿（2026-10-11 架构批 W5-C）：参数 help 同禁裸 [。
+    """D-06 参数级清偿（2026-10-11 aurora36 W5-C）：参数 help 同禁裸 [。
 
     命令级门（上方 TestCliHelpTextHygiene）只查 cmd.help/short_help；本类
     下探 cmd.params 逐 click.Parameter.help——typer.Option/Argument 的 help
@@ -171,6 +176,88 @@ class TestParamHelpTextHygiene:
         assert self._param_bracket_violations([("x y", cmd)]) == [
             ("x y", "p", '规范限 [metric,op,value] 格式')
         ]
+
+
+class TestHelpCopyBlacklist:
+    """aurora_l Wave-H H4（2026-10-24）：R2 套话黑名单+R3 空洞尾全树零基线棘轮。
+
+    docs/style/ui-copy-humanize.md（aurora_k K1 定稿）词汇层在 CLI help 面
+    （cmd.help/short_help + 参数 help，与上方字符卫生门同判定面）的移植：
+    零容忍逐词检索，命中即红，棘轮只收不放。与 i18n 扫描器分工相同——
+    本门=机械面（词面命中），守则=人工判据（误杀边界最终裁定）。
+
+    豁免与未入册面（2026-10-24 全树 355 节点盘点实证）：
+    - "智能体"（agent 术语）剥除后再匹配"智能"（营销义）——bench
+      agentbench 首行"智能体基准"为全树唯一近误报源，先剥后匹配零误报；
+    - "闭环"控制回路义（design close/campaign run/vna）按守则物理义
+      豁免条款留人工判据，不进机械门；
+    - "口径"（计量基准义：mm 口径/GUM 口径/METR 口径，全树 22 处）与
+      "一键"（单命令义，全树 5 处）存量另册未入本门——技术义非营销义，
+      清偿与否属全站专项，非本席裁；
+    - en 侧词表（R15）误报率高（robust/harness/unlock 在工程语境合法），
+      留 i18n 扫描器人工面，不进本门。
+    """
+
+    # R2 词汇层零容忍黑名单（zh；ui-copy-humanize.md §一 R2 逐词清单）
+    _R2_BLACKLIST = (
+        "值得注意的是", "标志着", "彰显", "凸显", "奠定了基础", "助力",
+        "赋能", "抓手", "一站式", "全方位", "多维度", "轻松", "强大",
+        "智能", "完美", "一目了然", "清晰直观", "深耕", "海量",
+        "丰富多彩", "保驾护航", "致力于", "旨在", "卓越", "极致", "无缝",
+    )
+    # R3 空洞尾同族（预测读者反应，删掉不缺信息）
+    _R3_TAILS = ("帮助你", "帮你", "让你轻松", "从此", "尽情")
+
+    @classmethod
+    def _copy_violations(cls, nodes) -> list[tuple[str, str, str]]:
+        """全树 help 面 R2+R3 黑名单命中清单（确定性，无渲染副作用）。"""
+        out: list[tuple[str, str, str]] = []
+        for path, cmd in nodes:
+            texts = [getattr(cmd, "help", None) or "",
+                     getattr(cmd, "short_help", None) or ""]
+            for p in getattr(cmd, "params", None) or []:
+                texts.append(getattr(p, "help", None) or "")
+            for text in texts:
+                # "智能体"（agent 术语）豁免：剥除后再匹配营销义"智能"
+                probe = text.replace("智能体", "")
+                for word in cls._R2_BLACKLIST + cls._R3_TAILS:
+                    if word in probe:
+                        out.append((path, word, text))
+        return out
+
+    def test_tree_copy_blacklist_zero(self, cli_nodes):
+        """全树 help/docstring 面 R2+R3 黑名单零命中（零基线棘轮）。"""
+        current = self._copy_violations(cli_nodes)
+        assert current == [], (
+            f"help 文案黑名单命中 {len(current)} 处"
+            f"（R2 套话/R3 空洞尾，守则=docs/style/ui-copy-humanize.md）："
+            f"{sorted(current)}。"
+            "改法=删词后句意不变就删；句意塌了塞 rfauto 专属事实"
+            "（命令/文件名/数值），不换同族空话。"
+        )
+
+    def test_detector_sensitivity_negative_control(self):
+        """探测器灵敏度：黑名单词必被抓；"智能体"豁免不误报。"""
+
+        class _Cmd:  # 最小鸭子样本（walk 消费 help/short_help/params 三属性）
+            help: str = ""
+            short_help: str = ""
+            commands: dict | None = None
+            params: list | None = None
+
+        def _nodes(help_text: str) -> list[tuple[str, Any]]:
+            cmd = _Cmd()
+            cmd.help = help_text
+            return [("x y", cmd)]
+
+        assert self._copy_violations(_nodes("一键轻松管理")) == [
+            ("x y", "轻松", "一键轻松管理")]
+        assert self._copy_violations(_nodes("一目了然地帮助你")) == [
+            ("x y", "一目了然", "一目了然地帮助你"),
+            ("x y", "帮助你", "一目了然地帮助你"),
+        ]
+        assert self._copy_violations(_nodes("智能体基准回归门")) == []
+        assert self._copy_violations(_nodes("内存闸与指纹对拍")) == []
 
 
 class _ParamStub:

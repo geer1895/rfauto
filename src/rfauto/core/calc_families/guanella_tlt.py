@@ -1,4 +1,4 @@
-"""Guanella 传输线变压器族（架构批 A7-B 席域 2，任务书候补"巴伦族
+"""Guanella 传输线变压器族（aurora72 A7-B 席域 2，任务书候补"巴伦族
 Guanella/5:1 传输线变压器"的 n² 拓扑半边；#222 triple-grep 证据
 2026-10-11 实测）。
 
@@ -26,7 +26,7 @@ Z0=√(R_hi·R_lo)、θ≤45° 线长上限 λ/8 准则）/ guanella_tlt_respons
   ——均非串/并复合传输线变压器，不并入。
 - 5:1 等非 n² 整数比（复合/自耦混合拓扑）**显式拒绝如实不做**；Ruthroff
   单磁芯延迟分量拓扑不在本族——**Ruthroff 等延迟族见
-  calc_families/ruthroff_balun.py**（架构批 W2-S7 补全，直通+延迟求
+  calc_families/ruthroff_balun.py**（aurora_f W2-S7 补全，直通+延迟求
   和口径，与本品等比族边界互斥）。
 
 物理口径（docstring 写死，#1c/#300 出处纪律；#118 锚树见

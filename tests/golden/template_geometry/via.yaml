@@ -10,7 +10,7 @@ params:
   antipad_mm: 0.8
   r_via_mm: 0.15
 status: ok
-script_sha256: df3b0b95f7ec9ecd7b5c7224731bb88891159383ed19da217cf91d36dbd76db4
+script_sha256: f19fba53a9b977f03fcd30b343e14179af70eb19c81e1f128adba9ea3c3277c2
 csx:
   n_primitives: 21
   props:

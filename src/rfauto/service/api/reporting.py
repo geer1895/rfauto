@@ -1,6 +1,6 @@
 """api.reporting —— 报告与运维面（replay_run/get_metrics/generate_report_for_run/run_tolerance/list_models/doctor/run_link）与配方迁移·可复现导出（recipe_migrate/repro_export）。
 
-自 api.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
+自 api.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁。
 """
 
 from __future__ import annotations
@@ -19,6 +19,16 @@ def replay_run(run_id: str) -> dict[str, Any]:
     """复现任一次 run：用其 recipe 快照重跑，并核对 plugin/schema 版本。
 
     P1 实现（验收项："rfauto replay 可复现任一次（含 plugin/schema 版本核对）"）。
+
+    K20 审查④ freshness gate（aurora_l Wave-B B2）：replay 的语义是"复现
+    **源 run** 的配方"，源 run 产物/快照被顶替时不设门就会拿被顶替后的
+    快照重跑却仍冠源 run 之名（错配归因，与 report 面同族病灶；replay 是
+    verify_run 消费口里最后一个未接线的 CLI 面）。与
+    ``generate_report_for_run`` 同款语义：stale（含 ``snapshot_replaced``/
+    ``snapshot_missing``）→ 拒重跑（stage="freshness_gate"）；legacy（老
+    run 无 manifest）→ 放行带 note（增量兼容红线：老 run 行为不变）；
+    fresh → 放行。校验面自身故障不阻断重跑主路径（#105 best-effort，
+    note 记账不伪装成门）。
     """
     run_dir = Path("runs") / run_id
     meta_path = run_dir / "meta.json"
@@ -30,6 +40,25 @@ def replay_run(run_id: str) -> dict[str, Any]:
         errors.append(f"缺少配方快照: {snapshot}")
     if errors:
         return error_envelope(errors)
+
+    # freshness gate：读快照重跑前先校验（generate_report_for_run 同款；
+    # stale→拒重跑，legacy→放行带 note，verify 面故障→note 记账不阻断）
+    freshness_status = "unknown"
+    freshness_note = ""
+    try:
+        from rfauto.service.runs_verify_service import verify_run  # 同层 service 直引
+
+        freshness = verify_run(run_dir)
+        freshness_status = str(freshness.get("status", "unknown"))
+        if freshness_status == "stale":
+            return error_envelope(
+                list(freshness.get("errors") or ["run 产物新鲜度校验未通过"]),
+                stage="freshness_gate",
+                run_id=str(freshness.get("run_id") or run_id), status="stale",
+                issues=freshness.get("issues") or [])
+        freshness_note = str(freshness.get("note") or "")
+    except Exception as exc:  # pragma: no cover - 观测面兜底（#105）
+        freshness_note = f"新鲜度校验不可用（非阻断）: {exc}"
 
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
 
@@ -74,6 +103,7 @@ def replay_run(run_id: str) -> dict[str, Any]:
         replay_run_id=result.get("run_id"),
         version_warnings=warnings,
         result=result,
+        freshness={"status": freshness_status, "note": freshness_note},
     )
     # ok 透传内层 run_once 结果（复现失败≠本调用崩，历史形状无顶层 errors）
     envelope["ok"] = bool(result.get("ok", False))
@@ -99,6 +129,14 @@ def generate_report_for_run(
 
     读取 runs/<run_id>/results/metrics.json 重新生成 report.md / report.html；
     output 指定输出文件时写入该路径。S 参数曲线图不重绘（结果文件已在）。
+
+    K4 freshness gate（aurora_l A3，R2 侦察 Top1：老 ``rfauto report``
+    命令是用户病灶第二入口）：读 Touchstone 重建曲线前先
+    ``runs_verify_service.verify_run`` 校验 run 收官指纹（与
+    report_render.render_run_report 同款语义）。stale=旧 sNp 顶替/漏拷/
+    sidecar 错配 → 错误信封拒绝出图（stage="freshness_gate" 标记报告面）；
+    legacy=老 run 无 manifest → 放行带 note（增量兼容红线：老 run 行为
+    不变）；校验面自身故障不阻塞报告主路径（#105 best-effort）。
     """
     run_dir = Path("runs") / run_id
     metrics_path = run_dir / "results" / "metrics.json"
@@ -106,6 +144,25 @@ def generate_report_for_run(
         return error_envelope([f"未找到 run 指标: {metrics_path}"])
 
     data = json.loads(metrics_path.read_text(encoding="utf-8"))
+
+    # freshness gate：读 s_files 前先校验（照 report_render.py 同款；
+    # stale→拒出图，legacy→放行带 note，verify 面故障→note 记账不阻断）
+    freshness_status = "unknown"
+    freshness_note = ""
+    try:
+        from rfauto.service.runs_verify_service import verify_run  # 同层 service 直引
+
+        freshness = verify_run(run_dir)
+        freshness_status = str(freshness.get("status", "unknown"))
+        if freshness_status == "stale":
+            return error_envelope(
+                list(freshness.get("errors") or ["run 产物新鲜度校验未通过"]),
+                stage="freshness_gate",
+                run_id=freshness.get("run_id"), status="stale",
+                issues=freshness.get("issues") or [])
+        freshness_note = str(freshness.get("note") or "")
+    except Exception as exc:  # pragma: no cover - 观测面兜底（#105）
+        freshness_note = f"新鲜度校验不可用（非阻断）: {exc}"
 
     # 尽量从结果目录的 Touchstone 重建 S 参数曲线（报告含图，不丢历史信息）
     freq_data = None
@@ -143,6 +200,7 @@ def generate_report_for_run(
         format=fmt,
         report=str(report_path),
         metrics=data.get("metrics", {}),
+        freshness={"status": freshness_status, "note": freshness_note},
     )
 
 
@@ -341,7 +399,7 @@ def recipe_migrate(recipe_path: str | Path) -> dict[str, Any]:
     # version 0 → 1: add recipe_version field
     # 写面守卫：`rfauto recipe migrate <path>` 是用户把目标路径作为命令本意的
     # 显式入口（explicit），允许原地升级 recipes/ 下的配方；其余库代码路径
-    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 todo.md
+    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 待办清单
     # 「fix-recipe-pollution」条）。
     from rfauto.infra.recipe_guard import write_recipe_text
 

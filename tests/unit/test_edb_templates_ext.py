@@ -397,9 +397,9 @@ def test_cl_thickness_bias_no_warning_nominal():
 def test_cl_default_adapt_max_delta_w10_reverted(cl):
     """缺省 adapt.max_delta=0.02（W10 定谳回退）：spec 与 config 存证同值。
 
-    判读档史：W8 仲裁（runs/edblane85/w8_cl_arb/ARBITRATION.md §3/§5-1）
+    判读档史：W8 仲裁（内部证据档 §3/§5-1）
     曾裁定本族加严 0.005（紧缝 s/h=0.161 下 0.02 档 S31 读数带 ~2dB 收敛
-    档伪象）；W10 真机定谳（runs/edblane85/w10_cl_recheck/REPORT.md）
+    档伪象）；W10 真机定谳（内部证据档）
     MaxDelta 在 EDB 路径写入不可达（EDB 3D Layout schema SimSetupID=19 无
     该键，configuration.load/props 两通道同样写不进），且 EDB 侧档位伪象
     实测仅 ~0.62dB（W8 ~2dB 系 HFSS 侧阶梯分解）、剩余 ~1.0dB=EDB-Layout

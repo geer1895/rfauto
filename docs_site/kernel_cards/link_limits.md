@@ -6,7 +6,7 @@
 
 # 内核文档卡：link_limits
 
-> 链路极限面（架构批 W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
+> 链路极限面（aurora_g W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 链路极限面：Shannon 容量与频谱效率恒等式、FSPL 真空基准闭式、Friis dB 形逐项可加链路账与余量——容量口径物理下界（极限 Eb/N0 面）的独立键位，环境统计路损模型显式端口化不并入本族。
 
-模块自述（docstring 首行，机读）：链路极限面（架构批 W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
+模块自述（docstring 首行，机读）：链路极限面（aurora_g W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
 
 ## 公式与口径
 

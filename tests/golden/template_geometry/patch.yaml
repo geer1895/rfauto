@@ -10,7 +10,7 @@ params:
   patch_w_mm: 50.0
   feed_offset_mm: 10.0
 status: ok
-script_sha256: 13e454cdf321bbaa4da7f496cb8241de395e3625396be0c2724ba003678b8d07
+script_sha256: 9bd50279c0a19f9197a6908215b83ebff0d560a66474e13be45ee303de855678
 csx:
   n_primitives: 6
   props:

@@ -1,6 +1,6 @@
 """DP-14 Y1 奇偶模分解单测：core/even_odd_split 内核 + service/even_odd_service。
 
-判据书 runs/df6_dp14y1/criteria.md（判据预声明）；口径权威
+判据书 内部证据档（判据预声明）；口径权威
 docs/rf_template_references.md §13.1/§13.2。裁判=独立来源（#206 纪律）：
 
 - 闭式回收（判据 a）：coupled_microstrip_even_odd_ohm（KJ 闭式，只读复用）造

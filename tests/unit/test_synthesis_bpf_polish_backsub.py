@@ -1,4 +1,4 @@
-"""W6-C 席（架构批 R3_followups §② 第 6/7 条）：C13 _cm_polish 兜底路径
+"""W6-C 席（aurora36 R3_followups §② 第 6/7 条）：C13 _cm_polish 兜底路径
 钉 + N≥13/14 边界冒烟 + BPF 综合返回前 raise 型回代硬门（R1-4）。
 
 定位（#222 实测口径，登记行只作线索）：

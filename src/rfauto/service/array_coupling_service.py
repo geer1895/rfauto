@@ -181,7 +181,7 @@ def _deviation_report(f_c, f_u, th, ph, floor_db: float = -40.0,
         "dev_db_p95": float(np.percentile(dev, 95)),
         "dev_db_max_abs": float(np.abs(dev).max()),
         "criteria": "报告门（互耦方向图偏离 1-3dB 级预期；如实报告不设硬阈，"
-                    "J4b 判据书归档同口径）",
+                    "J4b runs/df6_dp4p3/criteria.md 同口径）",
     }
 
 

@@ -1,7 +1,7 @@
 """DP-14 M1：PySR 锚公式自动发现（合成回收先行 → γ(εr) 8 档重发现对照）。
 
 规格书 docs/plan_deepdive_specs_20260924.md §14.1；判据预声明
-runs/df6_dp14m1/criteria.md（开工前落盘，不事后改门）。
+内部证据档（开工前落盘，不事后改门）。
 
 流程：
   1. 合成回收门：γ(εr)=1+c0·εr^(−c1)（c0/c1=仓内锚 calculators.
@@ -28,7 +28,7 @@ procs=1/parallelism=serial + deterministic=True + random_state 固定。
 
 用法：
   .venv/Scripts/python.exe scripts/pysr_anchor_fit.py \
-      --out-dir runs/df6_dp14m1 [--skip-synthetic] [--niterations 40]
+      --out-dir 内部证据档 [--skip-synthetic] [--niterations 40]
 
 QW-14（月计划 D 流，2026-09-28 批）：--guesses {off,on,ab}——PySR 2.x
 guesses 播种已知锚闭式族（build_anchor_guesses）；ab=缩减预算 A/B 对照
@@ -69,7 +69,7 @@ if str(REPO / "src") not in sys.path:
 
 from rfauto.core.calculators import CPS_H_EFF_GAMMA_C, CPS_H_EFF_GAMMA_P  # noqa: E402
 
-# ── 判据常数（预声明，与 runs/df6_dp14m1/criteria.md 一致，不事后改门）──────
+# ── 判据常数（预声明，与 内部证据档 一致，不事后改门）──────
 SYNTHETIC_SEED = 20260924
 N_SYNTHETIC = 64
 NOISE_REL = 0.002                     # 合成数据相对高斯噪声

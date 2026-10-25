@@ -246,7 +246,7 @@ def test_tuning_bias_plan_il_increases_as_bias_raises_c():
 
 # ── 抽头外耦 loaded 廓线（P0 修复 2026-09-29；独立锚=审计表）────────────────
 
-# 审计三档电长度与节点位（runs/varactor_smoke/model_audit_verdict.md 独立来源）
+# 审计三档电长度与节点位（内部证据档 独立来源）
 _AUDIT_BETA_L = (2.6112, 2.8050, 2.9115)
 _AUDIT_NODE = (0.3984, 0.4400, 0.4605)
 

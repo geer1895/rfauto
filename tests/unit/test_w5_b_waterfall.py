@@ -1,4 +1,4 @@
-"""W5-B DS-1 工具执行瀑布单测（宏图 v3.2 §十 DS-1；runs/w5_phase5/criteria.md W5-B）。
+"""W5-B DS-1 工具执行瀑布单测（宏图 v3.2 §十 DS-1；内部证据档 W5-B）。
 
 判据面：五段各有单测（deny/abstain/approval-deny-default/超时/post-block
 各一例）+ additionalContexts FIFO 顺序钉 + 缺省路径零变化。全 mock 零网络

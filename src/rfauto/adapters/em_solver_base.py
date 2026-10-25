@@ -418,7 +418,7 @@ class EMSolverRegistry(RegistryKit[type[EMSolverAdapter]]):
         registry.register(EMSolverType.OPENEMS, OpenEMSSolver)
         solver = registry.create(EMSolverType.OPENEMS, config)
 
-    T6 扩面四批（架构批 W2-S3，R1_arch_audit_v3 §5）：dict 样板由
+    T6 扩面四批（aurora_h W2-S3，R1_arch_audit_v3 §5）：dict 样板由
     core.registry_kit.RegistryKit 承载——历史语义逐项保真：
     重名静默覆盖（allow_overwrite=True）、缺名 ValueError 文案
     ``未注册的求解器: {getattr(key, 'value', key)}`` 逐字节同旧（自定义
@@ -555,7 +555,7 @@ def get_global_registry() -> EMSolverRegistry:
     return _global_registry
 
 
-# ── 外部适配器模板清单注册面（架构批 W2-S2 S6/pssfss2 注册倒置）─────────
+# ── 外部适配器模板清单注册面（aurora_h W2-S2 S6/pssfss2 注册倒置）─────────
 # 原形态：下方 PSSFSS 能力表经 _pssfss_template_names() 反向 import
 # pssfss_adapter 的 SUPPORTED_TEMPLATES，而后者 strict import 本模块的
 # EMSolverAdapter/EMSolverConfig/EMSolverResult——双向成环（R1 v3 SCC S6）。
@@ -591,7 +591,7 @@ def register_external_templates(engine: str, names: tuple[str, ...]) -> None:
 def _pssfss_template_names() -> tuple[str, ...]:
     """PSSFSS 支持的模板名（注册表实测，防手写清单漂移）。
 
-    S6 注册倒置（架构批 W2-S2）：清单由 pssfss_adapter import 本模块时
+    S6 注册倒置（aurora_h W2-S2）：清单由 pssfss_adapter import 本模块时
     register_external_templates 登记进来，本模块不再反向 import 适配器；
     未注册（适配器未导入）时如实空表，不臆造。
     """

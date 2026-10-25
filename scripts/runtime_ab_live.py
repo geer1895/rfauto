@@ -7,7 +7,7 @@
 
 外网 + API key 路径（#139 禁入测试，只在运行时批次调用）。逻辑全在服务层
 rfauto.service.runtime_ab.live_runtime_ab（JSON 进出），本脚本只是薄壳：跑批、
-打印逐次进度、把报告写到 runs/runtime_ab_live_out/evidence.json（含逐次
+打印逐次进度、把报告写到 内部证据档（含逐次
 token/出站字节/工具序列/收尾/耗时、两轨均值、公平性、recommend_default 裁决；
 不含 api_key）。裁决口径与回滚：runtime_ab.recommend_default 三条件；配置键
 configs/chat_settings.yaml ``runtime:`` 缺省 builtin，随时可改回。
@@ -24,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 # E-10（2026-10-04）：产物出代码树——scripts/runtime_ab_live_out（曾 tracked）
-# → runs/runtime_ab_live_out（gitignored；历史证据 blob 留在 git log）
+# → 内部证据档（gitignored；历史证据 blob 留在 git log）
 DEFAULT_OUT = ROOT / "runs" / "runtime_ab_live_out" / "evidence.json"
 
 

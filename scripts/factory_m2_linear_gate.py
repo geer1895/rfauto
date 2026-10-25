@@ -3,7 +3,7 @@
 背景：run1（scripts/factory_m2_surrogate.py --judge → m2_verdict.json）
 S11 dB 门 FAIL 如实；其 fail_diagnosis 实证深谷族 dB 域判据被深零点 dB
 放大主导（#370②），线性域 |Γ| 是消费面正确口径。判据预声明见
-runs/datafactory_m2/criteria_linear.md（先写后算）。
+内部证据档（先写后算）。
 
 与 run1 的关系（写死，不改 run1 任何既有函数行为）：
 - 只 import 复用 run1 加载/划分/训练链（band_freqs/load_dataset/
@@ -12,12 +12,12 @@ runs/datafactory_m2/criteria_linear.md（先写后算）。
 - S11 头改线性 |Γ|（与 fail_diagnosis.linear_head_hypothesis_test 同法），
   S21/εeff 头与 run1 完全同链；
 - run1 verdict（m2_verdict.json）只读零改写；新产物只落
-  runs/datafactory_m2/verdict_linear.json。
+  内部证据档。
 
 用法：
     python scripts/factory_m2_linear_gate.py --judge \
         [--dataset runs/datasets/datafactory_m1_mline_20260919] \
-        [--out runs/datafactory_m2/verdict_linear.json] [--freq-step 0.01]
+        [--out 内部证据档] [--freq-step 0.01]
 
 确定性：划分/栅格/种子写死（与 run1 同 seed 20260920），KRG 无随机成分，
 重跑 verdict 除 generated_at 外逐位复现（幂等）。

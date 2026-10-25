@@ -62,7 +62,7 @@ Theory and Microwave Applications", Wiley 2006, §3.1 一系；T 型单元）
    β<0 → 后向辐射（θ<0）、β>0 → 前向（θ>0）、β=0 → 边射；
    |Re β| ≥ k0 → 快波条件不满足 → 不辐射（显式 None，不外推）。
 
-锚值独立推导：runs/mm4/anchor_derivation.py（#118：不复用本模块代码的
+锚值独立推导：内部证据档（#118：不复用本模块代码的
 独立实现，闭式+skrf 级联现写一遍，产出值写死进 test_crlh.py）。
 """
 
@@ -664,7 +664,7 @@ def lh_rh_balance_frequency_hz(
     return w0 / (2.0 * math.pi)
 
 
-# ── 8) 平衡单元综合（架构批 W2-S2 席域 C5，R2_core_tier4 §③ Top8）──────
+# ── 8) 平衡单元综合（aurora_g W2-S2 席域 C5，R2_core_tier4 §③ Top8）──────
 #
 # 分析面（本模块 §1-6 + crlh_unit_cell_report）自 round17 起齐备，综合面
 # （(f0, Z0)→四元 LC）此前全仓零（R2 判据 `crlh.*synth|crlh.*design` 全

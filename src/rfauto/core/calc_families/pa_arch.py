@@ -1,4 +1,4 @@
-"""PA/控制件族（R2 空白域 G11；架构批 W7-A 席首批三键+批 B Wave3
+"""PA/控制件族（R2 空白域 G11；aurora36 W7-A 席首批三键+批 B Wave3
 W3-CORE3 席原位扩展四键，2026-10-13）。
 
 七键：balanced_pair_sparams（90° 混合器平衡放大器对 S 参数合成）/
@@ -1101,7 +1101,7 @@ def multiplier_chain_budget(
     return out
 
 
-# ─── 键 8/9：N-way Doherty（架构批 W4-S4，R2 边际池顺延件）─────────────────
+# ─── 键 8/9：N-way Doherty（aurora_g W4-S4，R2 边际池顺延件）─────────────────
 
 _SOURCE_DOHERTY_NWAY = (
     "理想 N-way Doherty 区域效率=第一性推导（理想 B 类电流簿记+顺序开通"

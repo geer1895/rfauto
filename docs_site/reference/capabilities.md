@@ -1,6 +1,6 @@
 # 能力目录（CLI × MCP 入口映射）
 
-> CLI 顶层 **118** 组 / **274** 条叶子命令，MCP 工具 **152** 个（分布在 39 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
+> CLI 顶层 **119** 组 / **280** 条叶子命令，MCP 工具 **157** 个（分布在 40 个模块）。同名行=同域双入口（CLI 给人、MCP 给 agent）；“—”表示该域暂无同名另一侧入口。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；CLI 树与 check_numbers 同源互证，条目明细见[CLI 参考](cli.md)与[MCP 参考](mcp.md)。
 
 ## 双入口域（CLI 组 ↔ MCP 同名模块）
 
@@ -38,6 +38,7 @@
 | `doctor` | 1 | — | 环境探测：AEDT/ADS 版本、license、路径、已测试版本组合核对。 |
 | `edb` | 3 | `edb`（3 个） | EDB 快车道（PyEDB 建库+hfss_batch 批解，平面族发射器） |
 | `electrothermal` | 1 | — | Wilkinson 隔离电阻损耗 → 温升 → 材料温漂 → S 参数失谐（+带内判据），纯闭式。 |
+| `em` | 5 | — | 自定义 EM 模型语义面：清单驱动的 pre-solve 体检、THRU 去嵌与指标提取（零 AEDT 依赖）、DOE/矩阵 sweep 编排（串行真机+资源闸）、run 目录级 diff 四面对比 |
 | `even-odd` | 1 | — | 奇偶模分解报告（对称性检查+半模型切割+端口改写表+守卫，只读）。 |
 | `explain-run` | 1 | — | 失败指纹解释（DP-17 W2：确定性指纹匹配→候选根因族+取证命令+坑号链，无 LLM）。 |
 | `export-report-pdf` | 1 | — | 把已完成 run 的指标导出为多页 PDF 报告（WP4.7）。 |
@@ -89,7 +90,7 @@
 | `repro-verify` | 1 | — | 校验复现清单（产物三态差异+环境 packages/lock 差异，如实报告）。 |
 | `rest` | 1 | — | REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读） |
 | `run` | 1 | — | 单次仿真（build → solve → post → 导出）。 |
-| `runs` | 9 | `runs`（7 个） | run 历史对比 |
+| `runs` | 10 | `runs`（7 个） | run 历史对比 |
 | `sandbox` | 3 | — | agent 配方沙箱治理（草稿列表/差异/三层 Gate 提案） |
 | `sar` | 1 | — | SAR 合规后处理（DP-18 C10c） |
 | `self-heal` | 1 | — | 自愈环只读诊断（F5：日志面→确定性 critique→根因/建议） |
@@ -136,6 +137,7 @@
 | `agent2` | 3 |
 | `basic` | 3 |
 | `datasets_ops` | 4 |
+| `em_family` | 5 |
 | `emc` | 4 |
 | `env_reliability` | 8 |
 | `explain` | 3 |
@@ -151,4 +153,4 @@
 | `specs_campaign` | 7 |
 | `synth` | 6 |
 
-共 **19** 个模块（facade 直定义工具也在此列，如实分标）。
+共 **20** 个模块（facade 直定义工具也在此列，如实分标）。

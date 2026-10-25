@@ -222,6 +222,20 @@ export const LOCALES = {
   "detail.recipe_title": { zh: "配方快照", en: "Recipe snapshot" },
   "detail.load_failed": { zh: "加载失败", en: "Load failed" },
   "detail.retry": { zh: "重试", en: "Retry" },
+  /* ── detail.freshness_*（C2 aurora_l，R1 #14/15：run 详情新鲜度条——
+     stale 红条/legacy 灰条，fresh 不出条；摘要拼 API 数据走 esc）──
+     键域注记：条渲染在详情页，按 test_ui_i18n 死键门"前缀→归属页"
+     纪律落 detail.*（runs.* 键须被 view_runs.js 引用，跨页借用即红），
+     任务书 runs.freshness_* 域名据此调整归属。 */
+  "detail.freshness_stale_banner": {
+    zh: "结果文件与 run 记录不符——数字可能来自旧产物，勿用于交付",
+    en: "Result files do not match the run record — numbers may come from stale artifacts; do not use for delivery",
+  },
+  "detail.freshness_issues_lead": { zh: "问题摘要：", en: "Issue summary: " },
+  "detail.freshness_legacy_banner": {
+    zh: "老 run：无新鲜度记录（run 收官指纹缺失，无法核对结果文件）",
+    en: "Legacy run: no freshness record (missing run-close fingerprint; result files cannot be checked)",
+  },
   /* ── sparams.*（扩面页 4：S 参数分析——空态=词表段+esc 警示段拼接，
      API 数据不进词表值；深链占位选项=前缀 id+后缀词表段）── */
   "sparams.title": { zh: "S 参数分析", en: "S-Parameter Analysis" },
@@ -396,7 +410,7 @@ export const LOCALES = {
     zh: "调参运行中…（详情见「优化调参」页）",
     en: "Tuning in progress… (see the Tuning page)",
   },
-  "dashboard.tune_error": { zh: "上次调参出错", en: "Last tuning errored" },
+  "dashboard.tune_error": { zh: "上次调参出错（去「优化调参」页查看诊断）", en: "Last tuning errored (open the Tuning page to see the diagnosis)" },
   "dashboard.tune_done": { zh: "上次调参已完成", en: "Last tuning completed" },
   "dashboard.tune_never": { zh: "尚未运行调参", en: "No tuning run yet" },
   "dashboard.adapter_count_tpl": { zh: "{n} 次 ({p}%)", en: "{n} runs ({p}%)" },
@@ -553,7 +567,7 @@ export const LOCALES = {
     en: "Any time, go back to Dashboard and click “＋ Add widgets” to customize your panels.",
   },
   "guide.title": { zh: "使用指南", en: "Guide" },
-  "guide.subtitle": { zh: "写给第一次接触 rfauto 的你", en: "For your first contact with rfauto" },
+  "guide.subtitle": { zh: "从零开始：跟着 rfauto 内置示例走通第一条链路", en: "From zero: follow the built-in rfauto examples through your first end-to-end workflow" },
   "guide.what_title": { zh: "rfauto 是做什么的", en: "What does rfauto do" },
   "guide.what_lead": {
     zh: "HFSS/ADS 这类电磁仿真很慢，直接在真机上反复试参数代价很高。rfauto 的思路是：",
@@ -1118,8 +1132,8 @@ export const LOCALES = {
   "tools.skipped_prefix": { zh: "跳过：", en: "skipped: " },
   "tools.no_metric": { zh: "无标量响应指标", en: "no scalar response metric" },
   "tools.sweep_no_curve": {
-    zh: "响应指标探测不到（或有效点 <2）——不出曲线只出表格",
-    en: "No response metric detected (or fewer than 2 valid points) — table only, no curve",
+    zh: "响应指标探测不到（或有效点 <2）——不出曲线只出表格；加点数或换输出数值的键再试",
+    en: "No response metric detected (or fewer than 2 valid points) — table only, no curve; add more points or switch to a key with numeric outputs and retry",
   },
   "tools.unknown_error": { zh: "未知错误", en: "unknown error" },
   "tools.computing": { zh: "计算中...", en: "Computing..." },
@@ -1286,8 +1300,8 @@ export const LOCALES = {
   "loopboard.idle_tail": { zh: " · 步骤空闲 · 更新于 ", en: " · step idle · updated " },
   "loopboard.no_milestones": { zh: "无里程碑", en: "No milestones" },
   "loopboard.best_mid": { zh: " · 参数 ", en: " · params " },
-  "loopboard.no_points": { zh: "尚无有效评估点", en: "No valid evaluation points yet" },
-  "loopboard.no_steps": { zh: "暂无完成步骤", en: "No completed steps yet" },
+  "loopboard.no_points": { zh: "尚无有效评估点（环完成一轮评估后出现）", en: "No valid evaluation points yet (they appear once the loop completes an evaluation round)" },
+  "loopboard.no_steps": { zh: "暂无完成步骤（环完成第一步后出现）", en: "No completed steps yet (they appear once the loop completes its first step)" },
   "loopboard.select_first": { zh: "先选择看板", en: "Pick a board first" },
   "loopboard.control_sent_tpl": {
     zh: "已发送 {a}，环会在当前步骤结束后响应",
@@ -1531,9 +1545,28 @@ export const LOCALES = {
     zh: "——指标与曲线不可直接比较，仅作形态参考。",
     en: " — metrics and curves are not directly comparable; shape reference only.",
   },
+  /* ── reports.freshness_*（C2 aurora_l，R1 #14/15：双 run 对比新鲜度
+     对照行——A/B 各自状态徽章；状态词=协议值透传，人话修饰走词表）── */
+  "reports.freshness_row_label": { zh: "结果新鲜度", en: "Result freshness" },
+  "reports.freshness_fresh_badge": {
+    zh: "fresh（与 run 记录相符）",
+    en: "fresh (matches run record)",
+  },
+  "reports.freshness_stale_badge": {
+    zh: "stale（与 run 记录不符，勿采信该侧数字）",
+    en: "stale (mismatch vs run record; do not trust this side)",
+  },
+  "reports.freshness_legacy_badge": {
+    zh: "legacy（无新鲜度记录）",
+    en: "legacy (no freshness record)",
+  },
+  "reports.freshness_unknown_badge": {
+    zh: "unknown（校验不可用）",
+    en: "unknown (verify unavailable)",
+  },
   "reports.th_delta_title": { zh: "指标 Δ（b − a）", en: "Metric Δ (b − a)" },
   "reports.col_metric": { zh: "指标", en: "Metric" },
-  "reports.no_metrics": { zh: "两侧均无指标", en: "No metrics on either side" },
+  "reports.no_metrics": { zh: "两侧均无指标——换选带指标的 run 再试", en: "No metrics on either side — pick runs with metrics and retry" },
   "reports.diff_count_lead": {
     zh: "配方快照递归 diff（",
     en: "Recipe snapshot recursive diff (",
@@ -1547,8 +1580,8 @@ export const LOCALES = {
     en: "S-parameter overlay (a: first 5 in blue / b: orange, dB)",
   },
   "reports.no_touchstone": {
-    zh: "两侧均无 Touchstone 产物（fake 通道无曲线可叠）",
-    en: "No Touchstone artifacts on either side (fake channel has no curves to overlay)",
+    zh: "两侧均无 Touchstone 产物（fake 通道无曲线可叠）——换 openEMS/HFSS 通道的 run 再试",
+    en: "No Touchstone artifacts on either side (fake channel has no curves to overlay) — switch to an openEMS/HFSS run and retry",
   },
   "reports.count_suffix": { zh: " 份", en: " reports" },
   "reports.kind_sim_ci": { zh: "夜间回归", en: "Nightly regression" },
@@ -1598,8 +1631,8 @@ export const LOCALES = {
   "recipe.f_conv": { zh: "收敛 Δ", en: "Convergence Δ" },
   "recipe.f_radbox": { zh: "辐射边界", en: "Radiation box" },
   "recipe.no_opt_params": {
-    zh: "配方未定义 optimization.params（搜索空间）",
-    en: "Recipe defines no optimization.params (search space)",
+    zh: "配方未定义 optimization.params（搜索空间）——先在配方 YAML 里补 params，每变量给 low/high，再调参",
+    en: "Recipe defines no optimization.params (search space) — add params in the recipe YAML first, low/high per variable, then tune",
   },
   "recipe.th_tune_var": { zh: "调参变量", en: "Variable" },
   "recipe.opt_low_aria": { zh: " 搜索下界 low", en: " search lower bound low" },
@@ -2017,6 +2050,18 @@ export const LOCALES = {
     zh: "N 路 Wilkinson 功分器：树形 T 叉把一路输入分成四路等幅输出。",
     en: "N-way Wilkinson divider: a tree of T junctions splitting one input into four equal outputs.",
   },
+  "gallery.desc_octagonal_spiral": {
+    zh: "八角螺旋电感：GaAs IPD 工艺八角折线螺旋集总电感（Mohan 闭式锚，自谐振须高于工作频率两倍）。",
+    en: "Octagonal spiral inductor: a GaAs IPD octagonal spiral lumped inductor (Mohan closed-form anchor; self-resonance must exceed twice the operating frequency).",
+  },
+  "gallery.desc_mim_cap": {
+    zh: "MIM 叠层电容：金属-绝缘体-金属平行板（ε0·εr·A/d 精确式），串联寄生决定自谐振上限。",
+    en: "MIM capacitor: metal-insulator-metal parallel plates (exact e0*er*A/d), with series parasitics setting the self-resonance ceiling.",
+  },
+  "gallery.desc_interdigital_cap": {
+    zh: "叉指电容：梳齿互锁集总电容（侧壁 sum-of-capacitances 一阶锚，±50% 精度类），按双端口串联提取。",
+    en: "Interdigital capacitor: comb-finger lumped capacitor (first-order sidewall sum-of-capacitances anchor, +/-50% class), extracted via a two-port series path.",
+  },
   "gallery.desc_patch": {
     zh: "矩形贴片天线：最常见的微带贴片，底部探针馈电在 λ/2 谐振上。",
     en: "Rectangular patch antenna: the standard microstrip patch, probe-fed from below at its half-wave resonance.",
@@ -2196,14 +2241,14 @@ export const LOCALES = {
     zh: "（已超期，待复验）",
     en: "(stale — re-verification due)",
   },
-  "gallery.anchor_no_date": { zh: "无验证日期记录", en: "no verification date on record" },
+  "gallery.anchor_no_date": { zh: "无验证日期记录（锚龄随验证日期计算）", en: "no verification date on record (anchor age is computed from the verification date)" },
   "gallery.anchor_none": {
     zh: "该模板暂无仲裁锚（可信度锚随真机战役积累）",
     en: "No arbitration anchors for this template yet — credibility anchors accumulate with real-machine campaigns",
   },
   "gallery.anchor_load_fail": {
-    zh: "锚清单加载失败，暂无法展示可信度锚",
-    en: "Anchor list failed to load — credibility anchors are unavailable right now",
+    zh: "锚清单加载失败，暂无法展示可信度锚——刷新页面重试；仍失败看服务端日志",
+    en: "Anchor list failed to load — credibility anchors are unavailable right now. Reload the page to retry; if it persists, check the server logs",
   },
   "gallery.engine_mmt": { zh: "闭式内核（mmt）", en: "closed-form kernel (mmt)" },
   "gallery.unit_dimensionless": { zh: "无量纲", en: "dimensionless" },
@@ -2272,8 +2317,8 @@ export const LOCALES = {
     en: "No HFSS arbitration anchors for this template yet — credibility anchors accumulate with real-machine campaigns",
   },
   "timeline.help_1": {
-    zh: "上图：每个 run 的目标成本按时间排列（按配方目标重算，越低越好）——调参/战役是否在进步一目了然，颜色按仿真通道（adapter）区分。",
-    en: "Top: per-run objective cost over time (recomputed from the recipe objectives; lower is better) — progress at a glance, colored by simulation channel (adapter).",
+    zh: "上图：每个 run 的目标成本按时间排列，按配方目标重算，越低越好。线走低=调参/战役在进步。颜色按仿真通道（adapter）区分。",
+    en: "Top: per-run objective cost over time, recomputed from the recipe objectives (lower is better). A downward line means tuning/campaigns are improving. Colored by simulation channel (adapter).",
   },
   "timeline.help_2": {
     zh: "下图：最近一次调参 run 的 trial 级 cost 收敛曲线（数据来自 trials 产物）。",
@@ -2321,8 +2366,8 @@ export const LOCALES = {
     en: "This run is a single-point simulation with no optimization trajectory — pick an optimization run with pareto_front.json in the dropdown (or a tuning run with trials; the front can be computed from trials).",
   },
   "optstack.empty_no_front": {
-    zh: "该 run 暂无可画的 Pareto 前沿。",
-    en: "This run has no drawable Pareto front yet.",
+    zh: "该 run 暂无可画的 Pareto 前沿——先跑一次 tune --multi（nsga2）或带 optimization.constraints 的 tune。",
+    en: "No drawable Pareto front for this run yet — run tune --multi (nsga2) or a tune with optimization.constraints first.",
   },
   "optstack.src_lead": { zh: "来源 ", en: "source " },
   "optstack.src_points_tpl": { zh: "{n} 点", en: "{n} points" },
@@ -2684,8 +2729,8 @@ export const LOCALES = {
   "calibration.series_cross": { zh: "fake↔HFSS 对照 ρ", en: "fake↔HFSS cross-check ρ" },
   "calibration.xlabel": { zh: "样本量", en: "samples" },
   "calibration.no_cross": {
-    zh: "暂无 fake↔HFSS 对照记录",
-    en: "No fake↔HFSS cross-check records",
+    zh: "暂无 fake↔HFSS 对照记录（跑一轮校准对照后出现）",
+    en: "No fake↔HFSS cross-check records yet (they appear after a calibration cross-check run)",
   },
   "calibration.series_points": { zh: "样本点", en: "sample points" },
   "calibration.val_fail": { zh: "验证点失败: ", en: "validation point failed: " },
@@ -2781,8 +2826,8 @@ export const LOCALES = {
      由视图 esc 外拼——词表值零 HTML 纪律不变）。 */
   "common.error_title": { zh: "操作失败", en: "Action failed" },
   "common.error_generic": {
-    zh: "操作未成功（服务未就绪或请求异常），可稍后重试",
-    en: "The operation did not succeed (service not ready or request error) — try again later",
+    zh: "请求失败——服务端没有返回原因；重试一次，仍失败看下方提示",
+    en: "The request failed — the server returned no reason. Retry once; if it fails again, see the hint below",
   },
   "common.error_hint": {
     zh: "若持续失败，请查看服务端日志，或刷新页面重试",
@@ -2916,8 +2961,8 @@ export const LOCALES = {
   "queue.tab_done": { zh: "已完成", en: "Done" },
   "queue.tab_failed": { zh: "失败/中止", en: "Failed/Aborted" },
   "queue.filter_empty": {
-    zh: "该筛选下暂无战役",
-    en: "No campaigns under this filter",
+    zh: "该筛选下暂无战役——切到其它状态页签再试",
+    en: "No campaigns under this filter — try another status tab",
   },
   /* ── queue.hedge.*（aurora_i W3-S3：长跑防卡死对冲告警；监测缺省关=
      无 queue_hedge 字段零渲染；code 词表渲染，stalled_s 为 API 数据照旧
@@ -2951,8 +2996,8 @@ export const LOCALES = {
     en: "Open the template gallery to view credibility anchor cards",
   },
   "dashboard.cred_load_fail": {
-    zh: "锚注册表加载失败，可信度数字暂不可用",
-    en: "Anchor registry failed to load — credibility figures unavailable",
+    zh: "锚注册表加载失败，可信度数字暂不可用——刷新页面重试；仍失败看服务端日志",
+    en: "Anchor registry failed to load — credibility figures unavailable. Reload the page to retry; if it persists, check the server logs",
   },
   "dashboard.onboard_title": { zh: "三步上手", en: "Get started in three steps" },
   "dashboard.onboard_s1_desc": {

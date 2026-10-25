@@ -14,8 +14,8 @@ Usage:
     python scripts/p0_experiment.py [--recipe RECIPE] [--seed SEED]
 
 Output:
-    runs/p0_experiment/p0_results.json
-    runs/p0_experiment/p0_report.md
+    内部证据档
+    内部证据档
 """
 
 from __future__ import annotations

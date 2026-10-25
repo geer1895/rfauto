@@ -5,7 +5,7 @@
 1. **缺省路径逐字节不变**（#329）：不带 ``loss_model``（=kappa_f0）的渲染
    输出与 kappa 档完全一致——无 CSPropDebyeMaterial 痕迹、kappa AddMaterial
    卡在位（71 模板全表对 HEAD 的逐字节比对见
-   runs/w2_phase2/w2e/default_diff_check.json，本文件钉抽样+机制）；
+   内部证据档，本文件钉抽样+机制）；
 2. **debye 档显式生效**：substrate 材料卡换装 CSPropDebyeMaterial（官方
    MSL_Debye_Substrate 例 API：order/epsilon/eps_delta/eps_relax，0 基
    order 索引），AddBox 几何保持，脚本可 compile；

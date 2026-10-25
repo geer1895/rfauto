@@ -136,7 +136,7 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # +1（aurora_e W3-S4 2026-10-19：campaign digest，战役终态 zh 摘要
     # 聚合叶——零逻辑转发 service/campaign_digest_service，JSON+文本产物
     # 落 runs/campaign_digest/，全叶带 --json）→ 274
-    assert check_numbers.count_cli() == 274
+    assert check_numbers.count_cli() == 280
 
 
 def test_cli_bench_subapp_breakdown():
@@ -203,11 +203,11 @@ def test_anchors_count_matches_core_single_source():
     # ring.design_dk.openems-hfss-v1（FA3 双引擎 DISAGREE 双值指针
     # {oe 3.5333, hfss 3.3425}，预备稿兑现）+ mmwave.design_dk.ro3003-
     # oe-v1（OE 单引擎封档 er_design=3.1434，C10d 离线复判 PASS
-    # runs/ge6_anchor/verdict.json，constant 待 78GHz HFSS 仲裁腿）；
+    # 内部证据档，constant 待 78GHz HFSS 仲裁腿）；
     # ge6 A22 批 wf:ge6-a22 2026-10-01 +1=20：ms_cross.wg_resonance.
     # openems-hfss-v1（ge6 席 2 HFSS 仲裁分支 A 收敛判读——同几何谷位
     # 互差 0.180GHz ≤ 预声明 0.30GHz 门，双值指针 {oe 11.675,
-    # hfss 11.4951}，runs/ge6_hfsswin/seat2_mscross/）。
+    # hfss 11.4951}，内部证据档）。
     from rfauto.core.anchors import EXPECTED_ANCHOR_COUNT
 
     assert check_numbers.count_anchors() == EXPECTED_ANCHOR_COUNT

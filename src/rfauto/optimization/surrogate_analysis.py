@@ -331,7 +331,7 @@ def analyze_run_surrogate(
         y_pred = gp.predict(X)
         prediction_error = float(np.sqrt(np.mean((y - y_pred) ** 2)))
 
-        # 参数重要性（D1-1 修复 2026-10-04，runs/review_ge8e/d1_opt_linkage/
+        # 参数重要性（D1-1 修复 2026-10-04，内部证据档
         # REPORT.md D1-1）：isotropic RBF（RBF(length_scale=1.0) 标量形态）
         # 拟合出的是单标量 length_scale，旧径把它复制到每参数再归一化 →
         # 重要性恒等 1/n 假排行，消费面 CLI 还渲染成排行条形图。ARD

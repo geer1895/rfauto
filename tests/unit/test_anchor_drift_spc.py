@@ -7,7 +7,7 @@
 2. **诚实语义钉**——短序列（锚现状 1-4 点）三线一律不算（insufficient，
    不硬算）；σ 未声明时 EWMA/CUSUM skipped 且 ESD 照常可判；
 3. **真库评估钉**——knowledge/anchors.yaml 全锚 n<8（2026-10-03 实测 34/34
-   insufficient），runs/qm8_anchor_spc/assessment.json 落档形态一致。
+   insufficient），内部证据档 落档形态一致。
 """
 from __future__ import annotations
 

@@ -43,7 +43,7 @@
 - 全 0 码（w≡1）方向图 = 均匀阵 2D sinc² 闭式的可分离积
   （array_synthesis.uniform_af_closed_form 逐格互证锚）。
 
-本模块纯 numpy、零求解器、零网络、零文件 IO（AGENTS 硬规则 7：
+本模块纯 numpy、零求解器、零网络、零文件 IO（内核立规注记 硬规则 7：
 物理数字只出在确定性内核）。不注册计算器（array_synthesis /
 metasurface_lut 同为纯函数面，无注册惯例，已 grep 核实）。
 """

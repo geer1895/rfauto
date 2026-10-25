@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import json
 import logging
 import time
@@ -186,8 +187,12 @@ def run_sweep(
     if not objectives:
         return {"ok": False, "errors": ["缺少 objectives 段"]}
 
-    # SN-11：断点源（先于新 run 目录创建读取——源损坏 fail-fast 不建脏目录）
+    # SN-11：断点源（先于新 run 目录创建读取——源损坏 fail-fast 不建脏目录）。
+    # aurora_l B3/T7：checkpoint 行级 sha256 校验——旧格式整文件拒收（宁契约
+    # 错误不 silently-wrong，老 sweep 重跑即可）；哈希不匹配/损坏行起丢弃并
+    # 如实 note（旧 checkpoint 顶替=旧结果静默进新 summary 的病灶封堵）。
     prior_results: list[dict[str, Any]] = []
+    resume_notes: list[str] = []
     if resume_run_id:
         src_cp = (Path("runs") / str(resume_run_id)
                   / "sweep_results" / "checkpoint.jsonl")
@@ -195,7 +200,13 @@ def run_sweep(
             return {"ok": False, "errors": [
                 f"resume 源无 checkpoint: {src_cp}"
                 "（仅 run_sweep 产出的 run（sweep_results/checkpoint.jsonl）可续）"]}
-        prior_results = load_sweep_checkpoint(src_cp.parent)
+        loaded = load_sweep_checkpoint(src_cp.parent)
+        if loaded["rejected"]:
+            return {"ok": False,
+                    "errors": [f"resume 源 checkpoint 拒收: {src_cp}",
+                               *loaded["notes"]]}
+        prior_results = loaded["rows"]
+        resume_notes = list(loaded["notes"])
 
     # 创建 run 目录
     run_id = generate_run_id()
@@ -206,13 +217,13 @@ def run_sweep(
 
     # SN-11：断点账本。resume 时先把源 checkpoint 结果写入新 run 的
     # checkpoint.jsonl（新 run 自包含全部历史，可继续续跑），命中键跳过
-    # 真跑；非 resume 时为空集零行为变化。
+    # 真跑；非 resume 时为空集零行为变化。写入走行级信封（B3/T7）。
     checkpoint_file = results_dir / "checkpoint.jsonl"
     done_keys = {_combo_key(r["params"]) for r in prior_results}
     if prior_results:
         with open(checkpoint_file, "a", encoding="utf-8") as cp0:
-            for r in prior_results:
-                cp0.write(json.dumps(r, ensure_ascii=False, default=str) + "\n")
+            for seq, r in enumerate(prior_results):
+                _write_checkpoint_row(cp0, seq, r)
 
     # SN-11：全局进度账（跨 phase 累计；tag=coarse/fine；回调异常已在
     # _run_combos 侧吞掉，这里不再包一层）
@@ -380,6 +391,7 @@ def run_sweep(
         "fine_combos": len(phase2_results),
         "resumed_combos": len(prior_results),
         "resume_source": str(resume_run_id or ""),
+        "resume_notes": resume_notes,
         "param_ranges": {k: list(v) for k, v in param_ranges.items()},
         "results": all_results,
     }
@@ -398,6 +410,15 @@ def run_sweep(
         "method": method,
         "metrics": all_results[0]["metrics"] if all_results else {},
     })
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id,
         "model": model_name,
@@ -417,6 +438,7 @@ def run_sweep(
         "coarse_combos": len(phase1_results),
         "fine_combos": len(phase2_results),
         "resumed_combos": len(prior_results),
+        "resume_notes": resume_notes,
         "results": all_results[:20],  # 返回前 20 个结果（避免过大）
         "best": all_results[0] if all_results else None,
     }
@@ -496,27 +518,103 @@ def _combo_key(combo: dict[str, float]) -> str:
     return json.dumps({k: combo[k] for k in sorted(combo)}, sort_keys=True)
 
 
-def load_sweep_checkpoint(results_dir: Path) -> list[dict[str, Any]]:
-    """读 sweep checkpoint（SN-11：逐组合 JSONL，逐行落盘即时断点）。
+# ─── checkpoint 行级完整性（aurora_l B3/T7）──────────────────────────────────
+#
+# 病灶：checkpoint.jsonl 是 resume 的信任源——旧实现逐行裸 JSON、读侧损坏行
+# 静默跳过，截断/篡改/旧文件顶替都会把残缺或陈旧结果静默带进新 summary。
+# 处方：写侧每行信封 ``{"seq", "sha256", "payload"}``（sha256=payload 规范化
+# JSON 哈希，行级粒度——截断/中间行损坏可定位）；读侧逐行验证，不匹配行起
+# 丢弃并如实 note；旧格式（无信封）整文件拒收（宁契约错误不 silently-wrong）。
 
-    损坏行跳过（单行损坏不丢整卷，与 trials/*.json 读取同纪律）；文件
-    缺失返回空表。行结构=_run_combos 单结果 dict（params/cost/metrics/...）。
+def _payload_sha256(payload_text: str) -> str:
+    """payload 规范化 JSON 文本 → sha256 hex（行级校验指纹）。"""
+    return hashlib.sha256(payload_text.encode("utf-8")).hexdigest()
+
+
+def _checkpoint_payload_text(result: dict[str, Any]) -> str:
+    """结果 dict → 规范化 JSON 文本（sort_keys；写读两侧共用同一规范化）。"""
+    return json.dumps(result, ensure_ascii=False, default=str, sort_keys=True)
+
+
+def _write_checkpoint_row(handle: Any, seq: int, result: dict[str, Any]) -> None:
+    """单行信封落盘并 flush（写侧唯一出口；先落盘再继续的断点纪律不变）。"""
+    payload_text = _checkpoint_payload_text(result)
+    row = {"seq": seq,
+           "sha256": _payload_sha256(payload_text),
+           "payload": json.loads(payload_text)}
+    handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    handle.flush()
+
+
+def _checkpoint_line_count(path: Path) -> int:
+    """盘面 checkpoint 非空行数（seq 跨 phase 续号用）；文件缺失记 0。"""
+    if not path.is_file():
+        return 0
+    return sum(1 for ln in path.read_text(encoding="utf-8").splitlines()
+               if ln.strip())
+
+
+def load_sweep_checkpoint(results_dir: Path) -> dict[str, Any]:
+    """读 sweep checkpoint（SN-11 逐组合 JSONL；aurora_l B3/T7 行级校验）。
+
+    返回 ``{"rows", "notes", "rejected"}``：
+
+    - 每行须为信封 ``{"seq": int, "sha256": hex, "payload": 结果dict}``，
+      sha256 为 payload 规范化 JSON（sort_keys）的哈希；
+    - 逐行验证：JSON 损坏/哈希不匹配/结构非法/seq 断号 → **自该行起丢弃**
+      （保留已验证前缀，note 如实带出行号与弃用行数）——resume 侧只采信
+      完整验证过的前缀；
+    - **旧格式整文件拒收**（rejected=True，rows 空）：无信封哈希行的
+      checkpoint 无法验证，采信即盲信（旧 sweep 重跑生成新格式后可再续）；
+    - 文件缺失/空文件 → 空表零行为（与 SN-11 原口径一致）。
     """
     cp = Path(results_dir) / "checkpoint.jsonl"
     if not cp.is_file():
-        return []
-    out: list[dict[str, Any]] = []
-    for line in cp.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
-            continue
+        return {"rows": [], "notes": [], "rejected": False}
+    raw_lines = [ln for ln in cp.read_text(encoding="utf-8").splitlines()
+                 if ln.strip()]
+    if not raw_lines:
+        return {"rows": [], "notes": [], "rejected": False}
+    rows: list[dict[str, Any]] = []
+    notes: list[str] = []
+    for i, line in enumerate(raw_lines):
+        reject_reason: str | None = None
+        data: Any = None
         try:
             data = json.loads(line)
         except ValueError:
-            continue
-        if isinstance(data, dict) and isinstance(data.get("params"), dict):
-            out.append(data)
-    return out
+            reject_reason = "JSON 解析失败"
+        if reject_reason is None and not (
+                isinstance(data, dict)
+                and isinstance(data.get("seq"), int)
+                and not isinstance(data.get("seq"), bool)
+                and isinstance(data.get("sha256"), str)
+                and isinstance(data.get("payload"), dict)):
+            if i == 0 and not (isinstance(data, dict) and "sha256" in data):
+                # 首行即裸结果 dict（aurora_l 前旧格式）——整文件拒收不采信
+                notes.append(
+                    "checkpoint 为旧格式（无行级 sha256 校验信封），整文件拒收"
+                    "不采信（宁契约错误不 silently-wrong；重跑该 sweep 生成"
+                    "新格式 checkpoint 后可再续）")
+                return {"rows": [], "notes": notes, "rejected": True}
+            reject_reason = "行结构非法（缺 seq/sha256/payload 信封）"
+        if reject_reason is None:
+            payload = data["payload"]
+            actual = _payload_sha256(
+                json.dumps(payload, ensure_ascii=False, sort_keys=True))
+            if actual != data["sha256"].lower():
+                reject_reason = "sha256 与 payload 不匹配（内容被篡改或损坏）"
+            elif data["seq"] != i:
+                reject_reason = f"seq 断号（期望 {i}，得 {data['seq']}）"
+            elif not isinstance(payload.get("params"), dict):
+                reject_reason = "payload 缺 params dict"
+        if reject_reason is not None:
+            notes.append(
+                f"第 {i} 行 {reject_reason}，自该行起丢弃"
+                f"（含余 {len(raw_lines) - i} 行不采信）")
+            break
+        rows.append(data["payload"])
+    return {"rows": rows, "notes": notes, "rejected": False}
 
 
 def _run_combos(
@@ -536,7 +634,8 @@ def _run_combos(
 
     SN-11（W6-A，2026-10-06）增量（全部可选，缺省零行为变化）：
     - ``checkpoint_file``：给定时每个组合结果**先落 JSONL 再继续**（逐行
-      append+flush，中途死只丢在跑组合，不丢已完成序列）；
+      append+flush，中途死只丢在跑组合，不丢已完成序列；aurora_l B3/T7
+      起每行为 ``{"seq","sha256","payload"}`` 信封行，读侧逐行验哈希）；
     - ``done_keys``：已键集合（``_combo_key``），命中组合跳过真跑、原样
       携带 checkpoint 结果返回（resume 的"数据不丢且不重跑"半边）；
     - ``on_done(done, total)``：逐组合进度回调（异常吞掉，#105）。
@@ -545,18 +644,20 @@ def _run_combos(
     done = 0
     total = len(combos)
     cp_handle = None
+    next_seq = 0
     if checkpoint_file is not None:
-        # 循环生命周期句柄（逐行 append+flush），finally 统一关闭
+        # 循环生命周期句柄（逐行 append+flush），finally 统一关闭；
+        # seq 按盘面已有行数续号（resume 预注入在前，跨 phase 连续）
+        next_seq = _checkpoint_line_count(checkpoint_file)
         cp_handle = open(checkpoint_file, "a", encoding="utf-8")  # noqa: SIM115
 
     def _register(result: dict[str, Any]) -> None:
         """记账闭合：计数+断点行+进度回调（本 phase 内三处出口共用）。"""
-        nonlocal done
+        nonlocal done, next_seq
         done += 1
         if cp_handle is not None:
-            cp_handle.write(json.dumps(
-                result, ensure_ascii=False, default=str) + "\n")
-            cp_handle.flush()
+            _write_checkpoint_row(cp_handle, next_seq, result)
+            next_seq += 1
         if on_done is not None:
             with contextlib.suppress(Exception):
                 on_done(done, total)

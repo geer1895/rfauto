@@ -1,21 +1,75 @@
-"""diagnose/compare_runs/get_run_artifacts/get_model_3d/list_calculators/run_calculator（run 判读与计算器注册表）（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动）。"""
+"""diagnose/compare_runs/get_run_artifacts/get_model_3d/list_calculators/run_calculator（run 判读与计算器注册表）（AU-1 自 mcp_server.py 机械拆分，2026-09-30；函数体逐字节未动）。
+
+aurora_l Wave-C C4（2026-10-23，R1 #17）：diagnose/compare_runs 接
+verify 四态——诊断/对比结论此前建立在未验产物上（用户病灶：交付图引用
+旧 sNp 而无机制发现）。diagnose 响应增 ``freshness`` 块（四态+issues
+摘要；stale 时结论头部加醒目 ``stale_warning`` 行）；compare_runs 增
+行级 freshness 列（照 aurora_l Wave-A A3 席 batch_ops 行级列先例）。
+校验走 ``runs_verify_service.verify_run`` 单源只读；观测面故障不阻塞
+主路径（#105）。本文件仍不产数值（铁律 7）：freshness 只是既有内核的
+只读校验结果透传。
+"""
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from rfauto.mcp_tools._core import _run_model_name as _run_model_name
 from rfauto.mcp_tools._core import mcp as mcp
 from rfauto.service.envelope import error_envelope, ok_envelope
 
+#: stale 时诊断结论头部的醒目提示行（agent 可读人话，R1 #17 验收原话）。
+_STALE_DIAG_WARNING = "结果文件与 run 记录不符，以下诊断可能基于旧产物"
+
+#: freshness 块 issues 摘要明细条数上限（防巨 issues 刷爆 agent 上下文；
+#: 全量计数走 n_issues，判读看 status 与 note 不看逐条）。
+_FRESHNESS_ISSUES_CAP = 8
+
+
+def _run_freshness(run_dir: Path) -> dict[str, Any]:
+    """run 目录 → freshness 摘要块（runs_verify_service.verify_run 单源只读）。
+
+    四态透传：fresh/stale/legacy/error（verify 信封 status 原样）+
+    unknown（校验面自身故障，#105 观测面不阻塞主路径）。形态对齐
+    aurora_l Wave-A A3 席 batch_ops_service._freshness_column 行级列
+    （stale 注记点名 kinds；legacy 放行带 note）；verify 的 issues 全量
+    摘成 kind+path 紧凑行（上限 _FRESHNESS_ISSUES_CAP 条，n_issues 记
+    全量）。
+    """
+    try:
+        from rfauto.service.runs_verify_service import verify_run
+
+        verdict = verify_run(run_dir)
+    except Exception as exc:  # 校验面故障如实 unknown 不阻塞（#105）
+        return {"status": "unknown",
+                "note": f"新鲜度校验不可用（非阻断）: {exc}",
+                "issues": [], "n_issues": 0}
+    status = str(verdict.get("status", "unknown"))
+    note = str(verdict.get("note") or "")
+    issues = [issue for issue in (verdict.get("issues") or [])
+              if isinstance(issue, dict)]
+    if status == "stale":
+        kinds = ",".join(sorted({str(issue.get("kind")) for issue in issues
+                                 if issue.get("kind")}))
+        note = f"stale（{kinds}）：盘上产物与 run 收官指纹不符，采信前先复核"
+    return {
+        "status": status,
+        "note": note,
+        "issues": [{"kind": str(issue.get("kind")),
+                    "path": str(issue.get("path", ""))}
+                   for issue in issues[:_FRESHNESS_ISSUES_CAP]],
+        "n_issues": len(issues),
+    }
+
 
 @mcp.tool
 def diagnose(run_id: str) -> dict[str, Any]:
     """run 规则诊断（runs 域）：run_id → 指标规则诊断（确定性零 LLM）。
 
-    读取 run 的指标（metrics.json）并重跑规则诊断；模型名 best-effort
-    取自 run 的 meta.json（决定规则适用域）。结果可复现，与 create_run
-    落盘的 metrics.json diagnosis 段同源同语义；不修改 run 状态。
+    重跑规则诊断并与 create_run 落盘 diagnosis 同源同语义；响应带
+    freshness 四态块（stale 时结论头部加 stale_warning 提示行——诊断
+    数字可能基于旧产物，采信前先复核，不硬拒）。
     无副作用，可安全调用。run 缺失/无指标 → ok=False errors 如实。
     只读无时序约束。
 
@@ -23,7 +77,12 @@ def diagnose(run_id: str) -> dict[str, Any]:
         run_id: 运行 ID
 
     Returns:
-        dict: {ok, data: {diagnoses, suggestions, initial_values, rules_applied}}
+        dict: {ok, data: {diagnoses, suggestions, initial_values,
+        rules_applied, freshness: {status: fresh/stale/legacy/error|
+        unknown, note, issues: [{kind, path}], n_issues}}}；stale 时
+        data 头部另有 stale_warning 提示行（freshness 语义细则：
+        verify_run 单源只读 K4，校验面故障如实 unknown——AD-5 载荷
+        守卫增量 ≤120，模型名 best-effort 取 meta.json）
     """
     from rfauto.service.api import get_metrics as _get_metrics
     fetched = _get_metrics(run_id)
@@ -35,27 +94,56 @@ def diagnose(run_id: str) -> dict[str, Any]:
         return error_envelope([f"run 无指标数据: {run_id}"])
     from rfauto.infra.diagnosis import diagnose_results
     result = diagnose_results(metrics, model_name=_run_model_name(run_id))
+    # freshness 校验（aurora_l Wave-C C4，R1 #17）：诊断读的就是
+    # runs/<run_id>/results/metrics.json——校验同一根的收官指纹，产物
+    # 被顶替/漏拷（stale）时结论头部醒目提示"可能基于旧产物"。
+    freshness = _run_freshness(Path("runs") / run_id)
+    if freshness["status"] == "stale":
+        result = {"stale_warning": _STALE_DIAG_WARNING, **result}
+    result["freshness"] = freshness
     return ok_envelope(data=result)
 
 # ─── 12. compare_runs ─────────────────────────────────────────────────────────
 
 @mcp.tool
 def compare_runs(run_id_a: str, run_id_b: str) -> dict[str, Any]:
-    """双 run 对比（runs 域）：A/B run id → 逐指标 B-A 增量+cost 对照。
-
-    无副作用，可安全调用；不用于单 run 判读（走 get_metrics/diagnose）。
-    任一 run 缺失 → ok=False 如实。只读无时序约束。
+    """双 run 对比（runs 域）：A/B run id → 逐指标 B-A 增量+cost 对照，
+    逐侧带四态 freshness 行级列（stale 标红不硬拒，notes 点名脏侧）。
+    无副作用；不用于单 run 判读（走 get_metrics/diagnose）。
+    任一 run 缺失 → ok=False 如实。
 
     Args:
         run_id_a: 基准 run ID
         run_id_b: 对比 run ID
 
     Returns:
-        dict: {ok, data: {metrics: {k: {a, b, delta}}, cost_a, cost_b}}；
+        dict: {ok, data: {metrics: {k: {a, b, delta}}, cost_a, cost_b,
+        freshness: [{side, run_id, freshness, freshness_note}], notes?}}；
         run 缺失 → ok=False
     """
     from rfauto.service.api import compare_runs as _compare_runs
-    return _compare_runs(run_id_a, run_id_b)
+    result = _compare_runs(run_id_a, run_id_b)
+    if not result.get("ok"):
+        return result
+    # freshness 列（aurora_l Wave-C C4，R1 #17）：对比结论此前建立在
+    # 未验产物上——逐侧 verify_run 出行级列；校验目录与 get_metrics
+    # 同根（runs/<run_id>），验证的就是刚读的产物。
+    rows: list[dict[str, Any]] = []
+    notes: list[str] = []
+    for side, rid in (("a", run_id_a), ("b", run_id_b)):
+        freshness = _run_freshness(Path("runs") / rid)
+        rows.append({"side": side, "run_id": rid,
+                     "freshness": freshness["status"],
+                     "freshness_note": freshness["note"]})
+        if freshness["status"] == "stale":
+            notes.append(
+                f"freshness: {rid} 标记 stale（盘上产物与 run 收官指纹"
+                "不符）——对比结论采信前先处理该侧数据")
+    data = result.setdefault("data", {})
+    data["freshness"] = rows
+    if notes:
+        data["notes"] = notes
+    return result
 
 
 # ─── run_monitor（SO-1 孤儿接线批 W1-A 单元 15a：run 周期体检面） ─────────────

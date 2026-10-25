@@ -1,7 +1,7 @@
 """AP-5 传播基础闭式包（plan_deepdive_specs_20261002.md §A-7，2026-10-02）。
 
 传播域主线首件：双径干涉/刃形绕射/菲涅尔区净空/Hata-COST231 路损四个
-传播基础闭式 + COST-231 Walfisch-Ikegami 视距/非视距两式（架构批 W4-S4
+传播基础闭式 + COST-231 Walfisch-Ikegami 视距/非视距两式（aurora_g W4-S4
 追加尾位），全部**纯函数零 IO**、单位口径显式（SI：m/Hz/MHz/km）、
 返回 JSON 可序列化值。零求解器依赖（§A 包跨件裁决）。
 

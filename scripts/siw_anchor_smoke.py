@@ -1,8 +1,8 @@
 """直 SIW 线段 OE 锚冒烟驱动（siw-family 首族；2026-09-22 备妥，df4f 真机锚已落判）。
 
 **df4f 已真跑落判**（G1 勘误 PASS/G2 PASS/G3 口径裁定/G4 PASS，
-runs/siw_family/；本驱动复跑即重走同链）。预声明门与预算：
-runs/siw_family/criteria.md §6（#122：判据先写
+内部证据档；本驱动复跑即重走同链）。预声明门与预算：
+内部证据档 §6（#122：判据先写
 后跑，真跑后不因结果改门；#350：AGREE 需幅度差 ≤ 门限且方向一致）。
 
 用法（真跑时）：
@@ -46,7 +46,7 @@ max|S11|>1 先查 NrTS 截断再疑物理，#262）；墙钟预估
 建、30s 轮询、stale 接管、finally 释放，factory_m4/gysel 家族同式）——
 命令行查→起跑之间的一次性 TOCTOU 窗由此收口；#261 查保留作双保险。
 
-端口方案 v2（2026-09-23 df5-SE 批，runs/siw_family/v2_criteria.md）：
+端口方案 v2（2026-09-23 df5-SE 批，内部证据档）：
   --port-mode v2 = 藩篱止于端口面+端面口径 LumpedPort（跨介质孔径 ±W/2，
   R=Z_PV 闭式不变）——消除 §R2 归因的端面 fixture 汇（延拓支路 4/9 分光+
   探针中间抽头耗散）后按**原 G3 门（≥−3dB）**重裁；缺省 v1（上列 df4f 口径）
@@ -64,7 +64,7 @@ msl_siw_taper）下该旋钮**语义废弃**——MSLPort 无 R_PORT 常数、�
 几何承担，Z_PV 只进锥末宽度设计式；触发条件仅对 siw v2 路线有效，历史档
 不删（#122 收档纪律）。
 
-msl_siw_taper 模板点（2026-09-24 df6 A2，runs/df6_a2siwmsl/criteria.md §4
+msl_siw_taper 模板点（2026-09-24 df6 A2，内部证据档 §4
 预声明）：--template msl_siw_taper。频带 (6,13)/0.4mm 审计档/NrTS=100000/
 #261 互斥与 siw 全同；四门：
   G1'（fc10 相位拟合）        ：带 [9,11] S21 解缠相位对 φ(f)=−β(f;fc)·L_siw
@@ -120,7 +120,7 @@ G1_PARTIAL_PCT = 5.0
 G2_ROLLOFF_DB = 15.0
 G3_S21_MIN_DB = -3.0
 G3_PASSIVITY_MAX = 1.05
-# msl_siw_taper G3' 门（runs/df6_a2siwmsl/criteria.md §4 预声明，#122）
+# msl_siw_taper G3' 门（内部证据档 §4 预声明，#122）
 G3M_S11_MAX_DB = -15.0        # RL>15dB 起步门
 G3M_S11_PARTIAL_DB = -12.0    # RL 臂单落 (−15,−12] 记 PARTIAL
 G3M_S21_MIN_DB = -1.5         # 传输连续门（预算预期 ≈−0.6dB）
@@ -383,7 +383,7 @@ def run_smoke(args: argparse.Namespace) -> int:
 
     --template siw（缺省）：df4f/v2 四门口径（本函数上半）零改动——仅 G3
     增加 s11_max_pow_in_band 仪表化字段（纯新增，门逻辑不变）。
-    --template msl_siw_taper：G1'/G2/G3'/G4'（runs/df6_a2siwmsl/criteria.md
+    --template msl_siw_taper：G1'/G2/G3'/G4'（内部证据档
     §4 预声明），判读共用本文件闭式与 db()。
     """
     is_msl = args.template == "msl_siw_taper"

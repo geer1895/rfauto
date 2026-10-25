@@ -2,7 +2,7 @@
 
 纯 openEMS 锚模板（WP2.1：校准件+引擎仲裁探针+数据工厂）——HFSS 无对应
 桌面插件，models.registry 此前的内置插件天然无此项。本包补齐注册
-（openems 优化通道接线，产物化自 runs/e11_warm_20260919/e11_openems_harness.py
+（openems 优化通道接线，产物化自 内部证据档
 战役层进程内补丁，）：
 
 - 几何单一事实源 = openems_templates.render_script("mline", ...)——本插件

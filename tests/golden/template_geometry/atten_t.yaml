@@ -10,7 +10,7 @@ params:
   w_mm: 1.1134
   shunt_off_mm: 0.75
 status: ok
-script_sha256: 841e92c2766f75ec9515f86cd3fa82dadb2fc3ae31abb5f055260830994b039b
+script_sha256: f513179fc825c847cd3e9f77a91332aa49e9988b69567d5f64d3f21994b01ef5
 csx:
   n_primitives: 20
   props:

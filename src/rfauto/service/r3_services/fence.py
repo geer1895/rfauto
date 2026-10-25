@@ -1,6 +1,6 @@
 """r3_services.fence —— 文件浏览栅栏（fs_read_fence/fs_list）与配方目录列举（list_recipes）。
 
-自 r3_services.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体自原「文件浏览与配方目录」节逐字节搬迁。
+自 r3_services.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体自原「文件浏览与配方目录」节逐字节搬迁。
 """
 
 from __future__ import annotations

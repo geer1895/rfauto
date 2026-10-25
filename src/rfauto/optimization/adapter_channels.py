@@ -6,7 +6,7 @@
 lazy import——新通道只能继续往该函数加分支（注册缝，F3 曾裁定缓办，
 AU-6 立项收拢）。
 
-设计要点（runs/au3_audit/au6_design.md 全文）：
+设计要点（内部证据档 全文）：
 - **注册时机**：本模块 import 时以「工厂函数引用」注册内置三通道——
   注册动作零副作用（不触发任何 adapter 模块 import），重复注册幂等
   覆盖（后注册者胜，同 EMSolverRegistry.register 语义）；
@@ -164,7 +164,8 @@ def _create_openems_channel(
     adapter_kwargs: dict[str, Any] | None,
     recipe_data: dict[str, Any],
 ) -> tuple[Any | None, str]:
-    """openEMS 真评估优化通道（产物化自 e11 战役层补丁，）：OpenEMSOptAdapter 逐评估整脚本重渲染 + OpenEMSSolver 子进程求
+    """openEMS 真评估优化通道（产物化自 e11 战役层补丁）：
+    OpenEMSOptAdapter 逐评估整脚本重渲染 + OpenEMSSolver 子进程求
     解，与 fake/hfss 分支同构消费优化回路。"""
     from rfauto.adapters.openems_optimizer_adapter import (
         OpenEMSOptAdapter,

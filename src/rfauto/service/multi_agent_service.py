@@ -6,7 +6,7 @@
 进程内桥）+ **A2A 协议**（a2a_protocol，Agent 间互操作）——评审（reviewer）/
 调优（tuner）/验证（verifier）三个角色 Agent 分工协作。
 
-分工（数值铁律 项目规则 规则 7：所有物理数字都出自确定性内核，角色只编排）：
+分工（数值铁律 内核立规注记 规则 7：所有物理数字都出自确定性内核，角色只编排）：
 - **调优 Agent（tuner）**：调内核 ``rf_propose_params``——初值=界中点；
   后续轮把 reviewer 的 typed fixes 落成候选参数（scale 修正 + 宽度组
   ±step 探测候选），本身不产生数字；

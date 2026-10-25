@@ -4,7 +4,7 @@ r"""§10.20 ② via β2 去嵌入案例——把 #205 常数 1.0491 变成可推
     .venv\Scripts\python.exe scripts\deembed_via_case.py
 
 输出（确定性、无网络、无真机）：
-1. 真实归档 runs/via_smoke/pt3/port_beta.csv → 乘性尺度 s=β2/β1、εeff1/εeff2、
+1. 真实归档 内部证据档 → 乘性尺度 s=β2/β1、εeff1/εeff2、
    去嵌后 εeff2'，以及"是否复现 #205 定版 1.0491±0.0011"。
 2. 两个端口 uf/if 探针坐标对比 → H 探针对与镜像参考的错位（#205 机制所在）。
 3. 诚实结论块。

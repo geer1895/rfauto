@@ -24,8 +24,10 @@ __all__ 的模块，新模块出生不触发 public_api 金快照重钉动作）
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -36,9 +38,18 @@ from rfauto.service.envelope import error_envelope, ok_envelope
 #: 批后导出 Touchstone 命名形态（``<stem>_export.s<N>p``）。W5 审查修正
 #: （2026-10-08）：hfss_batch 导出链按文件内容反推端口数后**改名 .sNp**
 #: （.s2p 只是 2 端口占位——4 端口真机产物实为 ``*_export.s4p``，
-#: runs/edblane85/w5_batch_campaign/ 五件实证），status 面原只认 ``.s2p``
+#: 内部证据档 五件实证），status 面原只认 ``.s2p``
 #: 恒 miss 真实产物；大小写不敏感，stem 捕获组含 ``.aedb`` 工程名形态。
 _EXPORT_TOUCHSTONE_RE = re.compile(r"^(.+)_export\.s\d+p$", re.IGNORECASE)
+
+#: Touchstone 指纹 sidecar 命名后缀与 schema 版本（第 8 判据
+#: result_freshness 的预期指纹落点，aurora_l Wave-F F2 接线）：构建链在
+#: Touchstone 写盘后落 ``<touchstone>.freshness.json``（K4 runs_verify
+#: sidecar 同惯例：文件级自描述、best-effort 不阻塞主链）；健康门调用方
+#: （edb_loop_launcher）经 :func:`freshness_sidecar_path` 单源派生同路径
+#: 读 expected——writer/reader 命名同源防漂移。
+FRESHNESS_SIDECAR_SUFFIX = ".freshness.json"
+FRESHNESS_SCHEMA_VERSION = 1
 
 #: Lange（edb_lange 预留键）EDB 发射"声明不支持"的拒绝原因单源（与
 #: adapters/edb_templates/lange.py docstring 裁定同口径；升格随
@@ -252,7 +263,7 @@ def edb_build(
             即被拒绝——适配器零触碰）。
         params: 设计参数 dict（同上）。
         workdir: 产物根目录（.aedb 与 *_config.json 落点；缺省
-            ``runs/edb_lane``，服务端部署按 AGENTS 规则 0 磁盘纪律显式给）。
+            ``runs/edb_lane``，服务端部署按 内核立规注记 规则 0 磁盘纪律显式给）。
         name: 产物文件名主干（缺省=template 键；禁路径分隔符与 ``..``，
             适配器 fail-fast）。
         dry_run: True=只发射+契约双检并回显适配器 config 预览，**零写盘
@@ -295,6 +306,87 @@ def edb_build(
     )
 
 
+def freshness_sidecar_path(touchstone_path: str | Path) -> Path:
+    """Touchstone 指纹 sidecar 落点命名单源：``<touchstone>.freshness.json``。
+
+    writer（:func:`edb_touchstone_freshness`）与 reader（健康门调用方
+    edb_loop_launcher 的 expected 读取）都经本函数派生路径——命名约定
+    单源，防两侧各写各的漂移。
+    """
+    return Path(str(touchstone_path) + FRESHNESS_SIDECAR_SUFFIX)
+
+
+def _sha256_hex(path: Path) -> str:
+    """文件字节流 sha256 hex（1MB 分块；IO 异常上抛由调用方 best-effort
+    兜住，#105——指纹失败不阻塞求解主链）。"""
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def edb_touchstone_freshness(
+    touchstone_path: str | Path,
+    n_ports: int | None = None,
+) -> dict[str, Any]:
+    """Touchstone 落盘后写指纹 sidecar（第 8 判据 result_freshness 预期块）。
+
+    aurora_l Wave-C C3 普查缺口闭合：健康门第 8 判据
+    ``result_freshness`` 的 ``expected_freshness`` 块此前"链路暂无指纹
+    落点"——本函数在 Touchstone 写盘后落
+    ``<touchstone>.freshness.json``（照 K4 runs_verify sidecar 惯例：
+    文件级自描述，产物被拷走时 sidecar 跟文件走、错配可查），内容=
+    ``sha256``/``size``/``mtime``/``generated_at``/``n_ports``/
+    ``written_at``。
+
+    ``generated_at`` 钉在 Touchstone 落盘时刻（即文件 mtime 的 epoch
+    值，同一 double 逐位相等）：健康门 PASS 语义=盘上 mtime ≥ 生成时刻
+    （恰等 PASS），钉落盘 mtime 使「同文件复验=PASS、旧文件顶替
+    （mtime 更早）=FAIL、内容顶替（sha 不符）=FAIL」三分成立；sidecar
+    自身落盘墙钟另记 ``written_at``（ISO-8601 UTC，自描述不参与比对）。
+
+    Args:
+        touchstone_path: 已落盘的 Touchstone 文件（.sNp）。
+        n_ports: 导出回执实测端口数（hfss_batch 按内容反推；非 int 如实
+            存 null，不臆造）。
+
+    Returns:
+        ``ok_envelope(path=sidecar 路径, sha256=..., generated_at=...)``；
+        产物不存在/IO 失败 → ``error_envelope``（不抛异常——调用方按
+        #105 best-effort 消费，不阻塞求解主链）。
+    """
+    path = Path(touchstone_path)  # #140：入参一律先 Path() 收敛
+    if not path.is_file():
+        return error_envelope(
+            f"Touchstone 不存在，freshness sidecar 无从落: {path}")
+    try:
+        stat = path.stat()
+        sha = _sha256_hex(path)
+        ports: int | None = None
+        if isinstance(n_ports, int) and not isinstance(n_ports, bool):
+            ports = int(n_ports)
+        sidecar: dict[str, Any] = {
+            "schema_version": FRESHNESS_SCHEMA_VERSION,
+            "generator": "rfauto.service.edb_lane_service",
+            "kind": "edb_touchstone_freshness",
+            "sha256": sha,
+            "size": int(stat.st_size),
+            "mtime": float(stat.st_mtime),
+            "generated_at": float(stat.st_mtime),
+            "n_ports": ports,
+            "written_at": datetime.now(timezone.utc).isoformat(),
+        }
+        dest = freshness_sidecar_path(path)
+        dest.write_text(
+            json.dumps(sidecar, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8")
+    except OSError as exc:
+        return error_envelope(f"freshness sidecar 落盘失败: {exc}")
+    return ok_envelope(path=str(dest), sha256=sha,
+                       generated_at=sidecar["generated_at"])
+
+
 def edb_solve(
     project: str | Path,
     timeout_s: float = 3600.0,
@@ -326,7 +418,9 @@ def edb_solve(
 
     Returns:
         成功信封：``{ok, project, solve:{ok,rc,timed_out,logfile,
-        artifacts,elapsed_s,...}, export:{...}|None, warnings}``；
+        artifacts,elapsed_s,...}, export:{...}|None, warnings}``（export
+        成功且产物在档时另带 ``freshness_sidecar`` 指纹 sidecar 路径——
+        第 8 判据 result_freshness 预期指纹落点）；
         失败信封：``{ok: False, errors, solve?}``（路径不存在/通道未
         落地/求解失败/超时）。
     """
@@ -378,6 +472,24 @@ def edb_solve(
             warnings.append(
                 "Touchstone 批后导出失败（不推翻求解 ok，#105 best-effort）: "
                 + "；".join(export_view["errors"] or ["未知原因"]))
+        else:
+            # 指纹存证（aurora_l Wave-F F2 接线）：导出成功且产物在档时落
+            # <touchstone>.freshness.json（第 8 判据 result_freshness 的
+            # expected 指纹落点，C3 普查缺口闭合）。best-effort：产物不在档
+            # （fake 回执/异常链）静默跳过——存在性缺陷由健康门 touchstone
+            # 判据负责，此处不添告警；落盘 IO 失败只并告警不推翻求解 ok
+            # （#105，与导出段同款语义）。
+            out_path = Path(str(export_view.get("out_file") or ""))
+            if str(out_path) and out_path.is_file():
+                fresh = edb_touchstone_freshness(
+                    out_path, n_ports=export_view.get("n_ports"))
+                if fresh.get("ok"):
+                    export_view["freshness_sidecar"] = fresh.get("path")
+                else:
+                    warnings.append(
+                        "freshness sidecar 落盘失败（不推翻求解 ok，#105 "
+                        "best-effort）: " + "；".join(
+                            str(e) for e in fresh.get("errors") or []))
     return ok_envelope(project=str(project_path), solve=solve_view,
                        export=export_view, warnings=warnings)
 

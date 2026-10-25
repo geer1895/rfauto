@@ -7,7 +7,7 @@
 2. 机器状态门：``spice_netlist.ngspice_available()``（RFAUTO_NGSPICE_BIN /
    PATH / tools/ngspice，缺席 skip 不红）。
 
-验收口径（方案冻结行 规划档 D13 验收列）：
+验收口径（方案冻结行 docs/continuation-plan_20260907.md D13 验收列）：
 "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。
 
 链路：闭式合成网络（原始 S 由闭式解析式给出，与拟合器/ngspice 无共享代码

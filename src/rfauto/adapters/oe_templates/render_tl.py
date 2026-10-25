@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     pass
+from ..oe_port_semantics import assert_msl_port_geometry
 from . import _nominal_width  # 50Ω 标称线宽单源（XC-W，惰性：取属性才算）
 from .cpw_port_probe import exc_dir_probe_lines  # CPWPort exc_dir 自适应探针单源
 from .registry import _DEFAULT_SUB
@@ -16,12 +17,66 @@ from .registry import _DEFAULT_SUB
 # 边界）；馈线段由 MSLPort 自画（同宽），端口面 = 板边 = 域边界；
 # FeedShift=10×NEAR、MeasPlaneShift=端口段长/3（官方口径）。
 
+
+def _tl_h_m(p: dict[str, Any]) -> float:
+    """H_SUB（米）——render_core 注入口径（_h_sub_mm），裸直调回退 registry 缺省。"""
+    return float(p.get("_h_sub_mm", _DEFAULT_SUB["h_mm"])) * 1e-3
+
+
+def _tl_board_m(p: dict[str, Any]) -> float:
+    """BOARD（米）——render_core 60mm 字面量 + _board_mm 旋钮随动（hairpin 守卫同式）。"""
+    return float(p["_board_mm"]) * 1e-3 if p.get("_board_mm") else 0.060
+
+
+def _tl_port_guard(p: dict[str, Any], template: str,
+                   ports: list[dict[str, Any]]) -> None:
+    """TL 族 MSLPort 端口语义五判据校验（aurora_l Wave-F F1 单源发射器接线）。
+
+    11 模板 28 口共用（mline/wstep/bend/atten_pi/atten_t/gysel/tjunc/wilk/
+    branchline/coupled/stepped）；via 豁免（见 _via_lines 头注：校验器 v1
+    c5 z 向口径假定导带贴盒 z=stop 底侧的镜像位，via port2 底层带激励导带
+    落盒 z 底=激励倒置，超 v1 范围——余量登记待校验器 exc 向参数化）。
+    ports 每项：nr/port_box（与发射 MSLPort start/stop 字面同值，米 2×3）/
+    feed_box（导带截面参照：端口面手画馈段盒；gysel/wilk p1 端口面只有
+    MSLPort 自画馈线、手画金属横向跨度大于端口盒，#340④ 判据以激励面导带
+    截面=端口线为准→端口线投影）/meas（MeasPlaneShift，米，与发射公式
+    同式）。FeedShift=10·NEAR、NEAR=base/_near_ratio（render_core 注入
+    _base_mm/_near_ratio 口径）、mesh_mm=None 降级（终网格线集渲染期不可知
+    ——oe_port_semantics 模块 docstring；逐位落位守卫留生成脚本网格段）。
+    裸 params 直调（test_pcell_dsl BODY_FNS 消费面）无 band 上下文可导
+    base/NEAR——守卫降级跳过（与 hairpin/c4 的 fail-loud 契约不同源，因
+    直调面冻结存在）；render_script 注入路径强制，违例 ValueError 建模期
+    炸（K7 哲学：直接报错而不是解出假结果——R1 #1）。
+    """
+    base_mm = p.get("_base_mm")
+    if base_mm is None:
+        return
+    near_m = float(base_mm) * 1e-3 / float(p.get("_near_ratio", 4) or 4)
+    feed_shift = 10.0 * near_m
+    for pt in ports:
+        assert_msl_port_geometry(
+            context=f"{template} port{pt['nr']}",
+            port_box=pt["port_box"], feed_box=pt["feed_box"],
+            meas_plane_shift=pt["meas"], feed_shift=feed_shift,
+            near=near_m, mesh_mm=None)
+
 def _mline_lines(p: dict[str, Any]) -> str:
     # 均匀微带线（WP2.1 锚模板）：一条直带，两端 MSLPort（端口自画馈线
     # 补齐到板边）。验收口径：S21 相位斜率→εeff 对照 skrf HJ ±1%（β 金
     # 标准 #162）；|S11| 显著非零=端口/网格判废信号（refs §3.2）。
     # 参数：w_mm=线宽（skrf HJ 综合，50Ω@rogers4350b=1.113mm），
     # line_len_mm=两端口间线长。
+    w = float(p.get("w_mm", _nominal_width.W50_MM_R3)) * 1e-3
+    ln = float(p.get("line_len_mm", 40.0)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    feed = ((-w / 2.0, -ln / 2.0, h_m), (w / 2.0, ln / 2.0, h_m))
+    _tl_port_guard(p, "mline", [
+        {"nr": 1, "port_box": ((w / 2.0, -board_m, h_m), (-w / 2.0, -ln / 2.0, 0.0)),
+         "feed_box": feed, "meas": (-ln / 2.0 + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-w / 2.0, board_m, h_m), (w / 2.0, ln / 2.0, 0.0)),
+         "feed_box": feed, "meas": (board_m - ln / 2.0) / 3.0},
+    ])
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM_R3)!r} * 1e-3
 L = {p.get("line_len_mm", 40.0)!r} * 1e-3
 Y0 = -L / 2
@@ -210,6 +265,19 @@ def _wstep_lines(p: dict[str, Any]) -> str:
     # 微带宽度阶跃（WP2.2 不连续性基元）：窄段/宽段各半长，单阶梯跃在
     # 中点；两端 MSLPort（手法同 mline）。锚判据=skrf 级联 HJ 闭式
     # （两段理想 TL 级联为确定性裁判，引擎-理想偏差即阶梯寄生贡献）。
+    w1 = float(p.get("w1_mm", _nominal_width.W50_MM)) * 1e-3
+    w2 = float(p.get("w2_mm", 1.897)) * 1e-3
+    ln = float(p.get("line_len_mm", 40.0)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    _tl_port_guard(p, "wstep", [
+        {"nr": 1, "port_box": ((w1 / 2.0, -board_m, h_m), (-w1 / 2.0, -ln / 2.0, 0.0)),
+         "feed_box": ((-w1 / 2.0, -ln / 2.0, h_m), (w1 / 2.0, 0.0, h_m)),
+         "meas": (-ln / 2.0 + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-w2 / 2.0, board_m, h_m), (w2 / 2.0, ln / 2.0, 0.0)),
+         "feed_box": ((-w2 / 2.0, 0.0, h_m), (w2 / 2.0, ln / 2.0, h_m)),
+         "meas": (board_m - ln / 2.0) / 3.0},
+    ])
     return f'''W1 = {p.get("w1_mm", _nominal_width.W50_MM)!r} * 1e-3
 W2 = {p.get("w2_mm", 1.897)!r} * 1e-3
 L = {p.get("line_len_mm", 40.0)!r} * 1e-3
@@ -239,6 +307,18 @@ def _bend_lines(p: dict[str, Any]) -> str:
     # 微带直角弯折（WP2.2 不连续性基元）：L 形两臂各 arm_len，未切角
     # 标准口径（mitered 为变体）。裁判=理想级联（同宽两段级联完全
     # 匹配，弯角寄生是引擎唯一反射源）→ |S11| 绝对门 -15dB。
+    w = float(p.get("w_mm", _nominal_width.W50_MM)) * 1e-3
+    a = float(p.get("arm_len_mm", 20.0)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    _tl_port_guard(p, "bend", [
+        {"nr": 1, "port_box": ((w / 2.0, -board_m, h_m), (-w / 2.0, -a, 0.0)),
+         "feed_box": ((-w / 2.0, -a, h_m), (w / 2.0, 0.0, h_m)),
+         "meas": (-a + board_m) / 3.0},
+        {"nr": 2, "port_box": ((board_m, w / 2.0, h_m), (a, -w / 2.0, 0.0)),
+         "feed_box": ((0.0, -w / 2.0, h_m), (a, w / 2.0, h_m)),
+         "meas": (board_m - a) / 3.0},
+    ])
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
 A = {p.get("arm_len_mm", 20.0)!r} * 1e-3
 bend = CSX.AddMetal("bend")
@@ -267,6 +347,11 @@ def _via_lines(p: dict[str, Any]) -> str:
     # 同轴口径 Z≈(60/√εr)·ln(r_pad/r_via)（标称 ≈52.5Ω 近 50Ω）。
     # 过孔柱=CSPrimCylinder（笛卡尔网格阶梯化，r≪cell 不加网格线）。
     # 无 PEC 边界（地=内层 sheet，z 双 MUR）——全站首例。
+    # via 端口豁免守卫（aurora_l Wave-F F1）：校验器 v1 c5 z 向口径假定
+    # 导带在盒 z 顶侧（MSLPort start 面 z=H_SUB、盒落地 0 的镜像位），
+    # 本模板 port2 底层带激励导带落盒 z 底（start z=0、盒向上延 H_MID）
+    # =激励倒置，超 v1 范围——余量登记待校验器 exc 向参数化后接入，不
+    # 硬塞翻转盒伪造判据（#116 同源：守卫输入必须与发射字面同源）。
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
 AP = {p.get("antipad_mm", 0.8)!r} * 1e-3
 RV = {p.get("r_via_mm", 0.15)!r} * 1e-3
@@ -309,7 +394,7 @@ def _atten_d_guard(d_mm: float) -> float:
 
     E4 闭式裁判假设集总 π/T（元件电共位，D=0）；渲染拓扑里 shunt/串臂
     隔开线段 D 后即成**分布式衰减器**，带内失配随 D 线性增大（θ=β·D）。
-    W7-A 残座批"寄生"定谳复判（内部证据档 模型级 A/B 诊断，2026-10-08）：
+    W7-A 残座批"寄生"定谳复判（runs/atten 模型级 A/B 诊断，2026-10-08）：
     D=6mm 名义座 |S11|max=0.272 与"理想分布 π"级联预测 0.226 同源同号
     （D=3/12mm 的 EM 0.153/0.526 对级联 0.105/0.499 同线）——mount 级
     单变量（εr 保持/窄盒/caps=False）全数 Δ<0.002，非集总盒缺陷。
@@ -337,6 +422,19 @@ def _atten_pi_lines(p: dict[str, Any]) -> str:
     # shunt 位置=断口缘齐贴（D=0.75mm，盒 [G, G+0.5]）：元件电共位是
     # E4 集总闭式裁判的前提（_atten_d_guard 内 W7-A 复判证据链）。
     d_mm = _atten_d_guard(float(p.get("shunt_off_mm", 0.75)))
+    w = float(p.get("w_mm", _nominal_width.W50_MM)) * 1e-3
+    d = d_mm * 1e-3
+    g = 0.5e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    _tl_port_guard(p, "atten_pi", [
+        {"nr": 1, "port_box": ((w / 2.0, -board_m, h_m), (-w / 2.0, -d, 0.0)),
+         "feed_box": ((-w / 2.0, -board_m, h_m), (w / 2.0, -g, h_m)),
+         "meas": (-d + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-w / 2.0, board_m, h_m), (w / 2.0, d, 0.0)),
+         "feed_box": ((-w / 2.0, g, h_m), (w / 2.0, board_m, h_m)),
+         "meas": (board_m - d) / 3.0},
+    ])
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
 D = {d_mm!r} * 1e-3
 G = 0.5 * 1e-3
@@ -377,6 +475,19 @@ def _atten_t_lines(p: dict[str, Any]) -> str:
     # （_atten_d_guard 内 W7-A 复判证据链；shunt 盒 y 边 ±G/2 入网见
     # grid._near_points atten_t 分支）。
     d_mm = _atten_d_guard(float(p.get("shunt_off_mm", 0.75)))
+    w = float(p.get("w_mm", _nominal_width.W50_MM)) * 1e-3
+    d = d_mm * 1e-3
+    g = 0.5e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    _tl_port_guard(p, "atten_t", [
+        {"nr": 1, "port_box": ((w / 2.0, -board_m, h_m), (-w / 2.0, -d, 0.0)),
+         "feed_box": ((-w / 2.0, -board_m, h_m), (w / 2.0, -d - g / 2.0, h_m)),
+         "meas": (-d + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-w / 2.0, board_m, h_m), (w / 2.0, d, 0.0)),
+         "feed_box": ((-w / 2.0, d + g / 2.0, h_m), (w / 2.0, board_m, h_m)),
+         "meas": (board_m - d) / 3.0},
+    ])
     return f'''W = {p.get("w_mm", _nominal_width.W50_MM)!r} * 1e-3
 D = {d_mm!r} * 1e-3
 G = 0.5 * 1e-3
@@ -445,7 +556,7 @@ def _gysel_layout(params: dict[str, Any]) -> dict[str, float]:
     # 台阶缺口（45° 切角的阶梯网格近似），几何恒等=金属并集减两缺口，竖直段/
     # 桥带/端口/电长度口径不动。守卫 0≤c<W_F（c≥W_F 缺口段降高非正；c<W_F
     # 亦蕴含缺口必落在 jog 段全长 |arm−iso|+W_F 内）。缺口语义见
-    # _gysel_jog_lines。真机对照轮（TODO 排空五轮 followUps）用它做 A/B。
+    # _gysel_jog_lines。真机对照轮（待办清单 排空五轮 followUps）用它做 A/B。
     _miter_raw = params.get("_jog_miter_mm")
     c_mit = float(_miter_raw) if _miter_raw is not None else 0.0
     if not (math.isfinite(c_mit) and 0.0 <= c_mit < wf):
@@ -528,6 +639,26 @@ def _gysel_lines(p: dict[str, Any]) -> str:
     # 门：β±2%、|S21|/|S31| -3±1dB 且差≤0.5dB、|S32|≤-15dB、|S11|≤-10dB。
     lay = _gysel_layout(p)
     jog_src = _gysel_jog_lines(lay)
+    w_f = lay["wf"] * 1e-3
+    xa = lay["xa"] * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+
+    def _gysel_feed(xc: float) -> tuple:
+        # 端口面手画金属只有 MSLPort 自画馈线（下臂/竖边横向跨度大于端口
+        # 盒，不在激励截面判据域内）——feed=端口线投影（_tl_port_guard 头注）
+        return ((xc + w_f / 2.0, -board_m, h_m), (xc - w_f / 2.0, 0.0, h_m))
+
+    _tl_port_guard(p, "gysel", [
+        {"nr": 1, "port_box": ((w_f / 2.0, -board_m, h_m), (-w_f / 2.0, 0.0, 0.0)),
+         "feed_box": _gysel_feed(0.0), "meas": board_m / 3.0},
+        {"nr": 2, "port_box": ((-xa + w_f / 2.0, -board_m, h_m),
+                               (-xa - w_f / 2.0, 0.0, 0.0)),
+         "feed_box": _gysel_feed(-xa), "meas": board_m / 3.0},
+        {"nr": 3, "port_box": ((xa + w_f / 2.0, -board_m, h_m),
+                               (xa - w_f / 2.0, 0.0, 0.0)),
+         "feed_box": _gysel_feed(xa), "meas": board_m / 3.0},
+    ])
     return f'''W_A = {lay["wa"]!r} * 1e-3
 W_F = {lay["wf"]!r} * 1e-3
 XA = {lay["xa"]!r} * 1e-3
@@ -581,6 +712,21 @@ def _tjunc_lines(p: dict[str, Any]) -> str:
     # mline 已验证手法），支臂沿 +x（端口 3 在 x 边界，prop_dir='x'）。
     # 全臂同宽 50Ω 对称均分口径。锚判据=skrf 理想三端口结点
     # （S=(1/3)[[-1,2,2],[2,-1,2],[2,2,-1]]）+ 三条 HJ 线级联裁判。
+    w_f = float(p.get("w_feed_mm", _nominal_width.W50_MM)) * 1e-3
+    tl_ = float(p.get("through_len_mm", 25.0)) * 1e-3
+    bl = float(p.get("branch_len_mm", 20.0)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    feed_main = ((-w_f / 2.0, -tl_, h_m), (w_f / 2.0, tl_, h_m))
+    _tl_port_guard(p, "tjunc", [
+        {"nr": 1, "port_box": ((w_f / 2.0, -board_m, h_m), (-w_f / 2.0, -tl_, 0.0)),
+         "feed_box": feed_main, "meas": (-tl_ + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-w_f / 2.0, board_m, h_m), (w_f / 2.0, tl_, 0.0)),
+         "feed_box": feed_main, "meas": (board_m - tl_) / 3.0},
+        {"nr": 3, "port_box": ((board_m, w_f / 2.0, h_m), (bl, -w_f / 2.0, 0.0)),
+         "feed_box": ((0.0, -w_f / 2.0, h_m), (bl, w_f / 2.0, h_m)),
+         "meas": (board_m - bl) / 3.0},
+    ])
     return f'''W_F = {p.get("w_feed_mm", _nominal_width.W50_MM)!r} * 1e-3
 TL = {p.get("through_len_mm", 25.0)!r} * 1e-3
 BL = {p.get("branch_len_mm", 20.0)!r} * 1e-3
@@ -613,6 +759,29 @@ def _wilk_lines(p: dict[str, Any]) -> str:
     # 输出；臂末端跨接 100Ω 隔离电阻（LumpedElement）。
     # 参数语义（2026-09-04 统一，对齐 recipe/HFSS/fake 三方口径）：
     # series_w_mm = 70.7Ω λ/4 臂宽（窄），shunt_w_mm = 50Ω 馈线宽（宽）。
+    w_in = float(p.get("shunt_w_mm", _nominal_width.W50_MM_R3)) * 1e-3
+    w_arm = float(p.get("series_w_mm", 0.604)) * 1e-3
+    l_arm = float(p.get("arm_len_mm", 18.1)) * 1e-3
+    xa = 8.0e-3 / 2.0 + w_arm / 2.0
+    y_t = -30e-3
+    y_end = y_t + l_arm
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    _tl_port_guard(p, "wilkinson", [
+        # port1 端口面只有自画馈线（T 分叉结点条横向跨度大于端口盒）——
+        # feed=端口线投影（_tl_port_guard 头注）；p2/p3 手画臂盒同源
+        {"nr": 1, "port_box": ((w_in / 2.0, -board_m, h_m), (-w_in / 2.0, y_t, 0.0)),
+         "feed_box": ((w_in / 2.0, -board_m, h_m), (-w_in / 2.0, y_t, h_m)),
+         "meas": (y_t + board_m) / 3.0},
+        {"nr": 2, "port_box": ((-xa + w_in / 2.0, board_m, h_m),
+                               (-xa - w_in / 2.0, y_end, 0.0)),
+         "feed_box": ((-xa - w_arm / 2.0, y_t, h_m), (-xa + w_arm / 2.0, y_end, h_m)),
+         "meas": (board_m - y_end) / 3.0},
+        {"nr": 3, "port_box": ((xa + w_in / 2.0, board_m, h_m),
+                               (xa - w_in / 2.0, y_end, 0.0)),
+         "feed_box": ((xa - w_arm / 2.0, y_t, h_m), (xa + w_arm / 2.0, y_end, h_m)),
+         "meas": (board_m - y_end) / 3.0},
+    ])
     return f'''W_IN = {p.get("shunt_w_mm", _nominal_width.W50_MM_R3)!r} * 1e-3
 W_ARM = {p.get("series_w_mm", 0.604)!r} * 1e-3
 L_ARM = {p.get("arm_len_mm", 18.1)!r} * 1e-3
@@ -695,6 +864,30 @@ def _branchline_lines(p: dict[str, Any]) -> str:
     # 串联臂 1-2 / 4-3（横臂 35.35Ω），并联臂 1-4 / 2-3（竖臂 50Ω）；
     # S21=直通、S31=耦合、S41=隔离。
     ep = int(p.get("_excite_port", 1) or 1)
+    arm_l = float(p.get("arm_len_mm", 20.5)) * 1e-3
+    shw = float(p.get("shunt_w_mm", 1.11)) * 1e-3
+    half = arm_l / 2.0
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    meas = (board_m - half) / 3.0
+    _tl_port_guard(p, "branchline", [
+        {"nr": 1, "port_box": ((-half + shw / 2.0, -board_m, h_m),
+                               (-half - shw / 2.0, -half, 0.0)),
+         "feed_box": ((-half - shw / 2.0, -board_m, h_m),
+                      (-half + shw / 2.0, -half, h_m)), "meas": meas},
+        {"nr": 2, "port_box": ((board_m, -half + shw / 2.0, h_m),
+                               (half, -half - shw / 2.0, 0.0)),
+         "feed_box": ((half, -half - shw / 2.0, h_m),
+                      (board_m, -half + shw / 2.0, h_m)), "meas": meas},
+        {"nr": 3, "port_box": ((half + shw / 2.0, board_m, h_m),
+                               (half - shw / 2.0, half, 0.0)),
+         "feed_box": ((half - shw / 2.0, half, h_m),
+                      (half + shw / 2.0, board_m, h_m)), "meas": meas},
+        {"nr": 4, "port_box": ((-board_m, half + shw / 2.0, h_m),
+                               (-half, half - shw / 2.0, 0.0)),
+         "feed_box": ((-board_m, half - shw / 2.0, h_m),
+                      (-half, half + shw / 2.0, h_m)), "meas": meas},
+    ])
     return f'''ARM_L = {p.get("arm_len_mm", 20.5)!r} * 1e-3
 SW = {p.get("series_w_mm", 1.87)!r} * 1e-3      # 横臂 35.35Ω（串联臂）
 SHW = {p.get("shunt_w_mm", 1.11)!r} * 1e-3      # 竖臂/馈线 50Ω
@@ -756,6 +949,26 @@ _port1 = FDTD.AddLumpedPort(1, 50.0, np.array([-GAP / 2, 0, 0]),
 
 
 def _coupled_lines(p: dict[str, Any]) -> str:
+    cl_len = float(p.get("coupled_len_mm", 20.0)) * 1e-3
+    cl_w = float(p.get("line_w_mm", 1.0)) * 1e-3
+    cl_gap = float(p.get("gap_mm", 0.5)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    meas = (board_m - cl_len / 2.0) / 3.0
+    _tl_port_guard(p, "coupled", [
+        {"nr": 1, "port_box": ((-cl_gap / 2.0, -board_m, h_m),
+                               (-cl_w - cl_gap / 2.0, -cl_len / 2.0, 0.0)),
+         "feed_box": ((-cl_w - cl_gap / 2.0, -board_m, h_m),
+                      (-cl_gap / 2.0, -cl_len / 2.0, h_m)), "meas": meas},
+        {"nr": 2, "port_box": ((-cl_gap / 2.0, board_m, h_m),
+                               (-cl_w - cl_gap / 2.0, cl_len / 2.0, 0.0)),
+         "feed_box": ((-cl_w - cl_gap / 2.0, cl_len / 2.0, h_m),
+                      (-cl_gap / 2.0, board_m, h_m)), "meas": meas},
+        {"nr": 3, "port_box": ((cl_gap / 2.0 + cl_w, -board_m, h_m),
+                               (cl_gap / 2.0, -cl_len / 2.0, 0.0)),
+         "feed_box": ((cl_gap / 2.0, -board_m, h_m),
+                      (cl_gap / 2.0 + cl_w, -cl_len / 2.0, h_m)), "meas": meas},
+    ])
     return f'''CL_LEN = {p.get("coupled_len_mm", 20.0)!r} * 1e-3
 CL_W = {p.get("line_w_mm", 1.0)!r} * 1e-3
 CL_GAP = {p.get("gap_mm", 0.5)!r} * 1e-3
@@ -795,6 +1008,19 @@ def _stepped_lines(p: dict[str, Any]) -> str:
     feed_w = p.get("feed_w_mm")
     if feed_w is None:  # None→z1 回退（与 fake_adapter 语义对齐，ge6 审查片3 P3-3）
         feed_w = p.get("z1_width_mm", 0.3)
+    fw = float(feed_w) * 1e-3
+    total = int(p.get("n_segments", 5)) * float(p.get("seg_len_mm", 5.0)) * 1e-3
+    h_m = _tl_h_m(p)
+    board_m = _tl_board_m(p)
+    meas = (board_m - total / 2.0) / 3.0
+    _tl_port_guard(p, "stepped", [
+        {"nr": 1, "port_box": ((fw / 2.0, -board_m, h_m), (-fw / 2.0, -total / 2.0, 0.0)),
+         "feed_box": ((-fw / 2.0, -board_m, h_m), (fw / 2.0, -total / 2.0, h_m)),
+         "meas": meas},
+        {"nr": 2, "port_box": ((fw / 2.0, board_m, h_m), (-fw / 2.0, total / 2.0, 0.0)),
+         "feed_box": ((-fw / 2.0, total / 2.0, h_m), (fw / 2.0, board_m, h_m)),
+         "meas": meas},
+    ])
     return f'''Z1_W = {p.get("z1_width_mm", 0.3)!r} * 1e-3
 Z2_W = {p.get("z2_width_mm", 3.0)!r} * 1e-3
 FEED_W = {feed_w!r} * 1e-3

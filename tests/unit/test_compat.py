@@ -1,6 +1,6 @@
 """DP-17 O2 单测——弃用助手 infra/compat.deprecated。
 
-判据（runs/df6_dp17/criteria.md §O2）：
+判据（内部证据档 §O2）：
 - 装饰函数/类触发 DeprecationWarning 且消息含三要素（release/removal/
   alternative）；
 - 运行时行为透传不变（返回值/副作用原样）；

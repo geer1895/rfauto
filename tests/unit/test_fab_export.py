@@ -781,7 +781,7 @@ def test_go_package_btp_flange_chars_and_dated_dir(tmp_path: Path):
     assert (pkg / "rfq_checklist.md").exists()
 
 
-# ─── R3-2 STEP 几何溯源（runs/review_ge8e/f3_fix/REPORT.md）───────────────────
+# ─── R3-2 STEP 几何溯源（内部证据档）───────────────────
 
 
 def test_go_from_vars_geometry_source_envelope_fallback(tmp_path: Path):

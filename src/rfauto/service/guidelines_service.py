@@ -1,14 +1,12 @@
-"""EC-6 guidelines 上下文检索服务：坑账/playbook/rules 三源确定性检索。
+"""EC-6 guidelines 上下文检索服务（W5-D）：坑账/playbook/rules 三源确定性检索。
 
-契约：
+规格（内部证据档 §2.2.3）：
 - 检索链全确定性（零 LLM 零网络，#139 语义）：topic→类别/别名映射→
   pitfalls_index（类别或 id/title/lesson_one_line 关键词）+ playbook rules
   （id/root_cause_family/notes/pit_refs 关键词）+ rules.yaml（id/category/
   description 关键词）；
 - 每条带 {source, ref, category, text, anchor} 可溯源——坑号 #NNN 为
-  数字出处标记（保留口径），A 系锚=速查人读面行号；
-- 数据面 knowledge/pitfalls_index.json 属内部账本衍生数据，公开分发
-  视图不随附——源缺失经入口归一 error 信封（不崩，如实报缺）；
+  出处标记（D1 裁决保留口径），A 系锚 内核立规注记.md 行号；
 - 未知名 topic → ok=False errors 非空（附已知词表，不凑）；
 - 同输入两次调用逐位一致（源文件序即输出序，零随机）。
 """
@@ -114,6 +112,7 @@ def get_guidelines_for(
                         f"{entry.get('title', '')}——{entry.get('lesson_one_line', '')}"
                     ),
                     "anchor": f"{src.get('file', '?')}:{src.get('line_start', '?')}",
+                    "devlog_ref": entry.get("devlog_ref"),
                 }
             )
 

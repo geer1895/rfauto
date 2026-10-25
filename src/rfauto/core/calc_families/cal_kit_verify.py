@@ -1,4 +1,4 @@
-"""校准件完整性验证（架构批 W3-S10 席域，R2_core_tier3 §③ D5 立项）。
+"""校准件完整性验证（aurora_f W3-S10 席域，R2_core_tier3 §③ D5 立项）。
 
 两键：cal_kit_standard_response（机械校准件 open/short/load/through 一阶
 模型响应闭式——offset 短路电抗/损耗、open 边缘电容、load 失配地板、

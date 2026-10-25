@@ -1,6 +1,6 @@
 """aurora_j W4-S12 波导+导体域三键锚树（2026-10-23）。
 
-候选定稿 runs/aurora_j/w4_candidates.md §1.3 A1-A3：
+候选定稿 内部证据档 §1.3 A1-A3：
 - conductor_surface_impedance（薄注册，公式单源 core/conductor_loss）
 - wg_evanescent_attenuation（wg_evanescent.py）
 - cavity_tm010_perturbation_shift（cavity.py 原位扩展）

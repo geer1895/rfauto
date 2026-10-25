@@ -78,7 +78,7 @@
 --------------------------------------------------------------------------------
 "reference"（缺省）=HJ 综合现状（输出逐字节不变）；"openems"=本仓 openEMS 逐档
 修正：Z0 目标经 engine_z0_correction（4 点直微带线标定 PCHIP@log10 w，数据
-runs/marchand_line_calibration）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
+内部证据档）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
 定点），节长按 β +2% 常数缩短。**标定基准=直微带单线，耦合段 Z0e/Z0o 适用性是
 外推**（修正模型/适用域/域外钳制详见 engine_z0_correction docstring）。
 
@@ -758,7 +758,7 @@ def _slot_balanced_option(f0: float, h_mm: float, er: float, tan_d: float,
 # ─── openEMS 逐引擎修正（2026-09-18 marchand_line_calibration 4 点标定，wf:marchand-correction）──
 
 #: openEMS 单线 Z0 引擎偏差标定表：(w_mm, Z0_engine/Z0_HJ − 1)，负=引擎偏低阻。
-#: 数据源 runs/marchand_line_calibration/calibration_table.json 的 dev_pct_primary
+#: 数据源 内部证据档 的 dev_pct_primary
 #: （Z0 主判据=四路由中位，spread ≤0.6%；p1_wbal/p2_w80/p3_wmain/p4_wfeed，2026-09-18）
 MARCHAND_OPENEMS_Z0_DEV_CAL: tuple[tuple[float, float], ...] = (
     (0.2981, -0.11559883283386052),

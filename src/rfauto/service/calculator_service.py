@@ -45,7 +45,7 @@ def list_calculators(include_experimental: bool = True) -> dict[str, Any]:
     实验键数量与名单（可见可审计）。
 
     每键条目带 ``group``（工具箱分组，注册表 CALC_GROUP_TABLE 单源解析，
-    架构批 A2-A）；信封 ``group_order`` 为 UI optgroup 建议序（含缺省组
+    aurora72 A2-A）；信封 ``group_order`` 为 UI optgroup 建议序（含缺省组
     "其他"殿后），与每键 group 同源。
     """
     calculators = CALCULATOR_REGISTRY.describe(

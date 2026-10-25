@@ -1,6 +1,6 @@
 """W1-E D-04 定向门——UI 响应头 Content-Security-Policy（script-src 'self'）。
 
-判据（runs/w1_phase1/criteria.md §W1-E）：
+判据（内部证据档 §W1-E）：
 - 头部断言：create_ui_app 全响应（HTML/静态 JS/API JSON）带 CSP 头，
   值含 ``script-src 'self'``；不出现 'unsafe-inline'/'unsafe-eval' 豁免；
 - 内联脚本兼容性自证：index.html 全部内联 <script>（现况 2 个=主题防闪 boot

@@ -1,7 +1,7 @@
 """ME-5 MMT 销钉/谐振窗 HFSS 仲裁锚（T14）——离线判读（零求解）。
 
-判据预声明：runs/mmt_anchor_20260930/criteria.md §2。消费
-runs/mmt_anchor_20260930/hfss/*.s2p（模态基）+ hfss_run.json（收敛/
+判据预声明：内部证据档 §2。消费
+内部证据档（模态基）+ hfss_run.json（收敛/
 会话/清理），产出 g_verdict.json + sparam_diff_table.csv。
 
 裁判先过已知基准（#340/#118）：--selftest 合成回收——电路正反演

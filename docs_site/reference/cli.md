@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **274** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **280** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -328,10 +328,11 @@ STL 实体导入：解析+分类+CSX 载荷（B3；一切失败 ok=False 不抛�
 
 run 历史对比
 
-共 9 条叶子命令。
+共 10 条叶子命令。
 
 - `rfauto runs compare` — 对比多次 run 的指标与 cost。--provenance 输出环境指纹复现块。
 - `rfauto runs health` — 对单次 run 做求解健康度体检（G11：历史踩坑教训内核化）。
+- `rfauto runs verify` — run 产物新鲜度校验：manifest 收官指纹 vs 盘上 Touchstone。
 - `rfauto runs diff` — 双 run 深度只读对比（配置递归 diff+指标 Δ+S 曲线+判读提示）。
 - `rfauto runs compare-batch` — 多 run 并排对账表（战役收官快速对账，W8-S4）。
 - `rfauto runs watch` — 跟踪 run 至终态（SN-19 --watch 泛化：CLI 轮询打点，零写入）。
@@ -971,3 +972,15 @@ REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读）
 共 1 条叶子命令。
 
 - `rfauto templates golden-diff` — 模板渲染产物 vs golden 快照逐族对比（脚本 sha256+CSX 几何摘要+网格）。
+
+## rfauto em
+
+自定义 EM 模型语义面：清单驱动的 pre-solve 体检、THRU 去嵌与指标提取（零 AEDT 依赖）、DOE/矩阵 sweep 编排（串行真机+资源闸）、run 目录级 diff 四面对比
+
+共 5 条叶子命令。
+
+- `rfauto em doctor` — EM 模型清单体检（16 项检查表中清单可判定的子集）。
+- `rfauto em deembed` — THRU 对称半拆双边去嵌 + 串联指标提取（参考面从引线外端移回 pad 边缘）。
+- `rfauto em metrics` — 串联/并联器件 C/R/Q 指标（强失配下拒绝简化式，用 Z12 传输阻抗）。
+- `rfauto em sweep` — DOE/矩阵编排（16 组=2 器件 × 2 版本 × 4 厚度一条命令跑完）。
+- `rfauto em diff` — run 目录级四面对比（替代手工 diff .aedt 文本）。

@@ -1,4 +1,4 @@
-"""EC-8 全模板 golden 几何回归仓（W2-S8，架构批）。
+"""EC-8 全模板 golden 几何回归仓（W2-S8，aurora_e）。
 
 对 openEMS 模板注册表（TEMPLATE_META）全部族：以标称参数（TEMPLATE_NOMINAL
 ——与 docs/templates/<族>/meta.yaml nominal_params 双侧严格相等，钉在
@@ -212,7 +212,7 @@ def _port_numbers(scope: dict[str, Any]) -> list[int]:
 
 # ── 摘要计算 ─────────────────────────────────────────────────────────────────
 
-#: W5-P3-6（架构批 W1-S4）：会话摘要缓存键补渲染源指纹——旧键
+#: W5-P3-6（aurora_f W1-S4）：会话摘要缓存键补渲染源指纹——旧键
 #: (template, DIGEST_VERSION, mesh) 无源成分，开发期改 openems_templates
 #: 渲染器或测试 monkeypatch render_script 后同键仍吃会话内旧 digest。
 #: _DIGEST_CACHE: dict[tuple[Any, ...], dict[str, Any]]
@@ -274,7 +274,7 @@ def compute_template_digest(
         _DIGEST_CACHE[key] = digest
         return copy.deepcopy(digest)
     except Exception as exc:
-        # W6-P3-7（架构批 W1-S4）：渲染期非守卫异常（KeyError/TypeError 等
+        # W6-P3-7（aurora_f W1-S4）：渲染期非守卫异常（KeyError/TypeError 等
         # 渲染器缺陷面）此前裸穿透让 build/diff 整批中断——与几何段 exec
         # 面同口径落 error 态如实登记，逐族循环不中断（不冒充守卫拒绝）。
         digest = {**common, "status": "error",

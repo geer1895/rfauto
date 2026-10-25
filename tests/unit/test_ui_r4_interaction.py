@@ -76,7 +76,7 @@ class TestKitApiErrorCardNode:
         """无 errors 信封：标题/正文/建议全走 common.* 词表缺省档（zh）。"""
         out = json.loads(_kit_call("kit.kitApiErrorHtml({ ok: false }, {})"))
         assert "<span class=\"badge err\">操作失败</span>" in out
-        assert "操作未成功（服务未就绪或请求异常），可稍后重试" in out
+        assert "请求失败——服务端没有返回原因；重试一次，仍失败看下方提示" in out
         assert "若持续失败，请查看服务端日志，或刷新页面重试" in out
 
     def test_hint_suppressible_and_error_text_escaped(self):

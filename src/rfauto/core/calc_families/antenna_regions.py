@@ -1,4 +1,4 @@
-"""天线近/远场区界键（架构批 W1-K1，R2_core_tier5 §③ 8 提升核）。
+"""天线近/远场区界键（aurora_h W1-K1，R2_core_tier5 §③ 8 提升核）。
 
 提升核：消费 core/near_field_regions.py 全套闭式（Balanis《Antenna
 Theory》3rd ed ch.2 p.34 引文实测核对在案；π/8 相位判据几何互证、区界

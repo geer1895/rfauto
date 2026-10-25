@@ -16,7 +16,7 @@ replay_verdict / replay_vv_status / direction 与快照 expect **逐位一致**�
 
 存量 3 件快照回补=首版补齐而非豁免清单（spec §3.2 存量回补条款）。
 本文件为 W5-E 席自建测试（批纪律命名；spec 原名
-test_criteria_replay_gate.py 并档记录见 runs/w5_phase5/w5e/REPORT.md）。
+test_criteria_replay_gate.py 并档记录见 内部证据档）。
 """
 
 from __future__ import annotations

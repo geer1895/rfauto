@@ -1,6 +1,6 @@
 """dataset_service.common —— schema 常量/校验/可选依赖导入/规范化助手。
 
-自 dataset_service.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；io/materialize/query/workdir 各域从这里单向导入，包内零环。
+自 dataset_service.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；io/materialize/query/workdir 各域从这里单向导入，包内零环。
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ DATASET_SCHEMA: list[tuple[str, str]] = [
 # ground truth 判别（WP2.4 待做列：ground truth 标注，6.3 神经算子前置）
 # ---------------------------------------------------------------------------
 
-# 真机引擎白名单词根：HFSS 为对齐基准（AGENTS 铁律），openEMS/COMSOL 为
+# 真机引擎白名单词根：HFSS 为对齐基准（内核立规注记 铁律），openEMS/COMSOL 为
 # 真跑全波引擎，"meas" 覆盖实测导入通道（calibration:* 前缀按词根命中）。
 # adapter 含 "fake" 一律不标（含 mf:fake+hfss 混合保真——行级 provenance
 # 混杂廉价模型，训练数据不认）；6.3 神经算子门槛=100+ GT 点/器件族。

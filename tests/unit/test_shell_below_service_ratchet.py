@@ -1,6 +1,6 @@
-"""壳层 below-service 禁入棘轮（架构批 W2-S1/T8，2026-10-19，立项#2）。
+"""壳层 below-service 禁入棘轮（aurora_h W2-S1/T8，2026-10-19，立项#2）。
 
-R1 架构审计（内部证据目录 §六/§三.1）：cli 直连
+R1 架构审计（runs/aurora_h/R1_arch_audit_v3.md §六/§三.1）：cli 直连
 service 以下 15 边、mcp_tools 13 边（含审计漏计的 diagnose→measurement
 2 边）。T8 收口 4 条（_core lifespan 两行删除走 service.api 覆盖面、
 diagnose 相关性改 service.api.correlate_files 单点）后余 24 条转入
@@ -39,7 +39,7 @@ _SRC = _REPO_ROOT / "src" / "rfauto"
 _IMPORTLINTER = _REPO_ROOT / ".importlinter"
 _CONTRACT_SECTION = "importlinter:contract:shell-below-service-no-direct-imports"
 
-#: service 以下八层（AGENTS 规则 3 分层序：cli/mcp_server → service →
+#: service 以下八层（内核立规注记 规则 3 分层序：cli/mcp_server → service →
 #: linkage/optimization/models → adapters → measurement → pipeline → infra → core）。
 BELOW_SERVICE_LAYERS = (
     "rfauto.linkage",
@@ -55,11 +55,15 @@ BELOW_SERVICE_LAYERS = (
 #: 棘轮冻结白名单（2026-10-19 T8 实测 24 条；只可删不可加，删除须同笔
 #: 同步 .importlinter 的 ignore_imports）。
 FROZEN_WHITELIST = frozenset({
-    # ── cli（15 条）──
+    # ── cli（16 条）──
     "rfauto.cli.domains._core -> rfauto.infra.logging",
     "rfauto.cli.domains.agent_kicad -> rfauto.adapters.kicad_pcell",
     "rfauto.cli.domains.agent_kicad -> rfauto.adapters.kicad_drc",
     "rfauto.cli.domains.calc_vna -> rfauto.core.closed_form_oracle",
+    # aurora_k K8 2026-10-23：THRU 去嵌/器件指标只读出口（A-11 同款裁定
+    # ——em deembed/metrics 零逻辑薄壳直连 core/deembed K8 扩展纯函数面，
+    # 读 Touchstone+装配即薄 I/O，无状态零写盘；反馈 F6/P14）
+    "rfauto.cli.domains.em -> rfauto.core.deembed",
     "rfauto.cli.domains.dag -> rfauto.core.compose.dag_schema",
     "rfauto.cli.domains.dag -> rfauto.pipeline.dag_runner",
     "rfauto.cli.domains.firmware -> rfauto.core.firmware_export",

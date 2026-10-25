@@ -6,7 +6,7 @@
 
 # 内核文档卡：combline
 
-> combline/同轴腔谐振器物理实现族（架构批 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
+> combline/同轴腔谐振器物理实现族（aurora36 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 combline 杆与同轴腔谐振器频率/Q 闭式：短路线加载电容串联谐振双向互解（给定频率解杆长/给定杆长解频率）、同轴腔 TEM 半波与四分之一波双向互解带高阶模截止筛查、无载 Q 导体/介质串联合成——滤波器实现族的谐振器级底座。
 
-模块自述（docstring 首行，机读）：combline/同轴腔谐振器物理实现族（架构批 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
+模块自述（docstring 首行，机读）：combline/同轴腔谐振器物理实现族（aurora36 W5-A 席，R2 空白域 G20 尺寸级闭环第一步）。
 
 ## 公式与口径
 
@@ -122,12 +122,13 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 - `tests/unit/test_w5a_doa_combline.py`——引文："数值锚（#118 独立来源；锚树 tests/unit/test_w5a_doa_combline.py）"
 
-测试面（tests/unit 引用扫描，机读；合计 **147** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **152** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
 | `tests/unit/test_a2c_coax_waveguide.py` | 38 |
 | `tests/unit/test_aurora_d_core7.py` | 22 |
+| `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_w5a_doa_combline.py` | 24 |
 | `tests/unit/test_w5k_upgrade_tiers.py` | 14 |

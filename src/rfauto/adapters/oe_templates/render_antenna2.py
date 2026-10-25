@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     pass
+from ..oe_port_semantics import assert_msl_port_geometry
 from . import _nominal_width  # 50Ω 标称线宽单源（XC-W，惰性：取属性才算）
 from .closedform import _ant2_eps_eff
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
@@ -137,7 +138,7 @@ def loop_side_mm(f0_ghz: float, w_mm: float = 1.0,
 #: λ0/4 总线长口径的真机电抗过零 f_x=3.2675GHz（HFSS，真实三维盒/unite/0.3mm）
 #: vs 3.3146GHz（openEMS，自动/0.35mm 网格、16.7/50mm 域三重稳健）偏差 1.44% ≤5%
 #: ⇒ AGREE；k_helix=f_x(HFSS)/f0=3.2675/2.4（openEMS 基 1.3811 同在门内）。总线长
-#: 设计式 = k_helix·λ0/4（谐振随线长一阶反比）。证据链 内部证据档。
+#: 设计式 = k_helix·λ0/4（谐振随线长一阶反比）。证据链 runs/helix_arbitration/。
 K_HELIX = 1.3615
 
 
@@ -546,12 +547,16 @@ def _ant2_layout(
                       "start_mm": (wf / 2, -60.0, h),
                       "stop_mm": (-wf / 2, -y1, 0.0),
                       "prop_dir": "y", "exc_dir": "z", "excite": 1,
-                      "meas_shift_mm": m / 3.0})
+                      # 测量面=段长之半（m/2）：m/3 在缺省档只离 FeedShift
+                      # 10·NEAR 约 3.5·NEAR，落 c1(#347) 近场守卫带内——
+                      # aurora_l 终门 slot 金漂移实证；m/2≈10·NEAR 间距
+                      # 出带且不动任何金属/激励几何。
+                      "meas_shift_mm": m / 2.0})
         ports.append({"kind": "msl", "nr": 2, "metal_prop": "slot_feed",
                       "start_mm": (-wf / 2, 60.0, h),
                       "stop_mm": (wf / 2, y1, 0.0),
                       "prop_dir": "y", "exc_dir": "z", "excite": 0,
-                      "meas_shift_mm": m / 3.0})
+                      "meas_shift_mm": m / 2.0})
         z_lines = [0.0, h]
         element_top = h
     else:
@@ -569,13 +574,53 @@ def _ant2_layout(
     }
 
 
+def _ant2_port_guard(template: str, p: dict[str, Any],
+                     lay: dict[str, Any]) -> None:
+    """antenna2 族 MSLPort 端口语义五判据校验（aurora_l Wave-F F1 单源发射器接线）。
+
+    六模板中仅 slot 发射 MSLPort（双口板边 y=∓60mm 字面端接），其余五模板
+    LumpedPort 不在校验面（循环空转零开销）。port_box=布局 port start/stop
+    字面同值（米）；feed_box=slot_feed 手画馈线盒（导带截面参照，布局单
+    源）；FeedShift=10·NEAR、NEAR=base/_near_ratio（render_core 注入
+    _base_mm/_near_ratio 口径）；mesh_mm=None 降级（终网格线集渲染期不可知
+    ——oe_port_semantics 模块 docstring）。裸 params 直调 _ant2_body 缺
+    render_script 注入键即 ValueError（hairpin/c4 同款 fail-loud 契约），
+    违例建模期炸（K7 哲学——R1 #1）。
+    """
+    msl_ports = [pt for pt in lay["ports"] if pt.get("kind") == "msl"]
+    if not msl_ports:
+        return
+    base_mm = p.get("_base_mm")
+    if base_mm is None:
+        raise ValueError(
+            f"{template} 端口语义校验需 render_script 注入 _base_mm"
+            "（裸 params 直调 _ant2_body 不在支持面）")
+    near_m = float(base_mm) * 1e-3 / float(p.get("_near_ratio", 4) or 4)
+    feed_shift = 10.0 * near_m
+    feeds = {b[0]: b for b in lay["boxes"]}
+    m = lambda v: float(v) * 1e-3   # noqa: E731  mm→米（_ant2_body m() 同式）
+    for pt in msl_ports:
+        s, t = pt["start_mm"], pt["stop_mm"]
+        fb = feeds[pt["metal_prop"]]
+        assert_msl_port_geometry(
+            context=f"{template} port{pt['nr']}",
+            port_box=((m(s[0]), m(s[1]), m(s[2])),
+                      (m(t[0]), m(t[1]), m(t[2]))),
+            feed_box=((m(fb[2]), m(fb[3]), m(fb[4])),
+                      (m(fb[5]), m(fb[6]), m(fb[7]))),
+            meas_plane_shift=float(pt["meas_shift_mm"]) * 1e-3,
+            feed_shift=feed_shift, near=near_m, mesh_mm=None)
+
+
 def _ant2_body(template: str, p: dict[str, Any]) -> str:
     """由 _ant2_layout 单源渲染几何段（金属盒 + 端口 + priority 收口）。
 
     坐标全部走布局字面量（米），渲染==布局==审计三方一致；单端口模板
-    _port2=_port1（patch 单端口 fallback 口径）。
+    _port2=_port1（patch 单端口 fallback 口径）。MSLPort 发射前跑
+    _ant2_port_guard 端口语义五判据（违例建模期 ValueError）。
     """
     lay = _ant2_layout(template, p)
+    _ant2_port_guard(template, p, lay)
     out: list[str] = []
     m = lambda v: repr(float(v) * 1e-3)   # noqa: E731  mm→m 字面量
     metal_names: list[str] = []

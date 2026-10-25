@@ -1,4 +1,4 @@
-"""隔离器/环行器理想 S 口径族两键（架构批 A8-B 席域 2，任务书候补"隔
+"""隔离器/环行器理想 S 口径族两键（aurora72 A8-B 席域 2，任务书候补"隔
 离器/环行器理想 S 口径"；#222 triple-grep 证据 2026-10-11 实测：
 isolator|circulator 注册键面零命中——core/circulator_synthesis.py 是铁氧
 体结**尺寸综合内核**（Bosma 全闭式，函数未注册计算器，见边界节）。
@@ -19,7 +19,7 @@ reciprocal=False**（铁氧体非互易件，registry.py QM-1 §D-7 豁免位设
   （γ/c/i 三参数+passivity 一致性守卫+sense 翻转恒等式，零全局相位口
   径），语义"综合内核 vs 规格口径"不同不并入。
 - magic_tee_s_matrix/waveguide_tee_s_matrix/hybrid_sum_difference
-  （架构批 A5-A）=**互易**三/四口结（S=Sᵀ，功率分配/合成语义）——
+  （aurora72 A5-A）=**互易**三/四口结（S=Sᵀ，功率分配/合成语义）——
   环行器=**非互易**铁氧体件（S≠Sᵀ 设计本体），物理语义相反不并入。
 - attenuator_*=互易衰减器、cascade_budget=有源链级联——非铁氧体控制
   件，不并入。

@@ -9,8 +9,8 @@
 ------------------------------------------------------------
 - **AEDT SP1 缺失=当前硬阻塞**：本机 2025.1（v251 无 SP）gRPC 桥矩阵导出
   族命令全部失败（export_matrix_data/裸 ExportMatrixData×6 参数/
-  ExportCircuit/AlphaNumericTable 逐一实证，runs/wp44b_q3d/probe_export*.log
-  + case_result.json；solve 本身成功，阻塞在工具桥）；服务器 sim_host
+  ExportCircuit/AlphaNumericTable 逐一实证，内部证据档*.log
+  + case_result.json；solve 本身成功，阻塞在工具桥）；服务器 sim_server
   同为无 SP1（ge9 定谳 VERIFIED-NEGATIVE，与 E-05 mTLS 同前置）。
 - **复进条件**：目标机（本机或服务器）AEDT 装 SP1+后，按本脚本原路径发射；
   SP 前发射将得到 solve 成功+导出失败 → INCONCLUSIVE（判读器如实落盘，
@@ -18,7 +18,7 @@
 - 发射姿势（届时）：Start-Process 分离进程+日志轮询（#157）；attempt 间
   委托 desktop_guard.kill_orphan_ansysedt_desktops（#265）；gRPC 整轮重试
   （#191 口径，MAX_ATTEMPTS=3）；临时产物全落 runs/q3d_package_chain/
-  （服务器侧执行则 E:\rfauto_remote 下同构目录，AGENTS 0b）。
+  （服务器侧执行则 E:\rfauto_remote 下同构目录，内核立规注记 0b）。
 
 案例协议（两案例，返回路径约定逐案声明）
 ------------------------------------------------------------

@@ -255,7 +255,7 @@ def autotune_loop(
 
     R3 opt-in（缺省关，零行为变化）：replan_plan_path 给出时，环结束即把
     本批（fake 批=stage1）cost 历史走 replan_service 退化判定+决策表，
-    决策落 checkpoint 一等对象（判据/决策表预声明于 runs/df7_r3aqe/
+    决策落 checkpoint 一等对象（判据/决策表预声明于 内部证据档
     criteria.md；#195/#207 常数陷阱拦在烧真机之前）。缺省 None 时结果
     契约逐键不变。
     """
@@ -388,6 +388,15 @@ def autotune_loop(
         "algorithm": "autotune_loop",
         "metrics": {"verdict": verdict, "rounds": len(history),
                     "best_cost": best["cost"] if best else None}})
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id, "model": str(recipe.get("model", "")),
         "adapter": "autotune:openems", "status": "done",
@@ -406,7 +415,7 @@ def autotune_to_sandbox(
 
     读取 runs/<run_id>/autotune.json 的 final_params，经 RecipeSandbox
     合并进草稿；promote 走既有三层 Gate（本函数不直接改真实配方——
-    agent 写面隔离，AGENTS #6）。
+    agent 写面隔离，内核立规注记 #6）。
     """
     from rfauto.service.agent_sandbox import RecipeSandbox
 
@@ -450,7 +459,7 @@ def orchestrate_tournament(
 
     每个变体以小预算跑一轮确定性自治环 → 按 best cost 排序出胜者。
     变体由调用方给定（LLM 只出假设参数起点——typed；数值裁决归自治环，
-    AGENTS #7）；全程无人在环，HFSS 仅终验。
+    内核立规注记 #7）；全程无人在环，HFSS 仅终验。
     """
     import yaml as _yaml
 
@@ -476,7 +485,7 @@ def orchestrate_tournament(
                 params_sec[name] = value
         patched["params"] = params_sec
         # 变体是临时工作文件：源配方在 recipes/ 下时经守卫重定向到
-        # runs/recipe_workcopy/（禁在 recipes/ 生成 *_variantN.yaml，TODO 增量②）
+        # runs/recipe_workcopy/（禁在 recipes/ 生成 *_variantN.yaml，待办清单 增量②）
         from rfauto.infra.recipe_guard import write_recipe_yaml
 
         variant_path = write_recipe_yaml(
@@ -966,6 +975,15 @@ def self_verify_loop(
         "metrics": {"verdict": verdict, "rounds": len(history),
                     "best_cost": best["cost"] if best else None,
                     "board_id": result["board_id"]}})
+    # K4（aurora_k，P11/F7）B1 收官接线：run 收官指纹落盘 manifest.json
+    # （best-effort #105——失败只记 warning 不阻塞收官）。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
     record_run(record={
         "run_id": run_id, "model": str(recipe.get("model", "")),
         "adapter": "autotune:self_verify", "status": "done",

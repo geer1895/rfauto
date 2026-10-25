@@ -15,7 +15,7 @@
   这些模态量的唯一直读来源。
 - :func:`attach_port_names` / :func:`resolve_port_key` /
   :func:`connect_by_name` / :func:`reorder_ports_by_name`：skrf v2.1
-  port-name 网络运算采纳（EC-1，2026-10-18 架构批 W2-S9）——按名
+  port-name 网络运算采纳（EC-1，2026-10-18 aurora_e W2-S9）——按名
   级联/装配/重排，校验式端口名设置（唯一性/换行注入防御），#314 掩码
   族的上游防线：端口身份按名锚定，单激励掩码不再依赖裸索引次序。
 
@@ -170,7 +170,7 @@ def read_hfss_touchstone_comments(path: str | Path) -> dict[str, Any]:
 
     - ``! Gamma   <re> <im> ×N``：逐模传播常数 **γ = α + jβ**（Np/m,
       rad/m）的实/虚部。**不是反射系数**——真实 corpus 数值互证（
-      runs/cps_hfss_arbitration 2025.1 导出）：β/f 跨频点恒定（β∝f），
+      内部证据档 2025.1 导出）：β/f 跨频点恒定（β∝f），
       而若按 mag/deg 反射解读则与同频 ``! Port Impedance`` 行相对 50 Ω
       的反射系数（0.427∠0.077°）矛盾。
     - ``! Port Impedance   <re> <im> ×N``：端口阻抗 **Zpi 口径**（功率-

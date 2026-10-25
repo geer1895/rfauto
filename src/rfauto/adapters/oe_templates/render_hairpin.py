@@ -31,6 +31,7 @@ from rfauto.core.synthesis import (
     hairpin_design_from_order as hairpin_design_from_order,
 )
 
+from ..oe_port_semantics import assert_msl_port_geometry
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -294,11 +295,62 @@ def _hairpin_layout(p: dict[str, Any], *,
             "y_taps": [y_tap, y_tap_out], "y_tap_out": y_tap_out}
 
 
+def _hairpin_port_guard(p: dict[str, Any], lay: dict[str, Any],
+                        y_taps: Any) -> None:
+    """双抽头端口 MSLPort 端口语义五判据校验（Wave-E E2 单源发射器接线）。
+
+    hairpin/_hairpin_alt/varactor_bpf 三渲染共用（同族 T 抽头双端口形态，
+    x 向传播、板边 x=∓BOARD 入）：MSLPort 构造前对 port1/port2 各跑
+    assert_msl_port_geometry，违例 ValueError 建模期炸（K7 哲学：直接报错
+    而不是解出 0.135nH 假结果——R1 #1 用户 P12 反馈 openEMS 侧同款病灶，
+    内核立规注记 #347 即 MSLPort 探针落激励盒近场 β 偏 10× 实录）。
+
+    取值口径与生成脚本字面量同源：base=_base_mm、NEAR=base/_near_ratio
+    （缺省 4=官方）、H_SUB=_h_sub_mm（缺省 _DEFAULT_SUB）、BOARD=60mm
+    字面量（render_core 注入口径）+ _board_mm 旋钮随动。mesh_mm=None：
+    终网格线集渲染期不可知（盒边=结构线由 grid._near_points #198 精确入网
+    保证、域缘由 AddLine 保证），c4 降级为登记态，逐位落位全量守卫留在
+    生成脚本网格段（render_siw #283 先例）。
+    """
+    base_mm = p.get("_base_mm")
+    if base_mm is None:
+        raise ValueError(
+            "hairpin 族端口语义校验需 render_script 注入 _base_mm"
+            "（裸 params 直调 _lines 不在支持面）")
+    near_m = float(base_mm) * 1e-3 / float(p.get("_near_ratio", 4) or 4)
+    h_m = float(p.get("_h_sub_mm", _DEFAULT_SUB["h_mm"])) * 1e-3
+    board_m = float(p["_board_mm"]) * 1e-3 if p.get("_board_mm") else 0.060
+    wf = lay["wf"]
+    x_in = lay["xs"][0]
+    x_out = lay["xs"][-1]
+    feed_shift = 10.0 * near_m
+    # port1：start=板边 x=−BOARD → stop=首谐振器外臂心（导带 y=±WF/2 跨越）；
+    # 抽头馈线手画段（hairpin.AddBox 板边→外臂心）=导带截面参照
+    assert_msl_port_geometry(
+        context="hairpin 族 port1",
+        port_box=((-board_m, y_taps[0] + wf / 2.0, h_m),
+                  (x_in, y_taps[0] - wf / 2.0, 0.0)),
+        feed_box=((-board_m, y_taps[0] - wf / 2.0, h_m),
+                  (x_in, y_taps[0] + wf / 2.0, h_m)),
+        meas_plane_shift=(x_in + board_m) - feed_shift - 4.0 * h_m,
+        feed_shift=feed_shift, near=near_m, mesh_mm=None)
+    # port2：镜像（start=+BOARD 板边，y 起 WF/2 反号——MSLPort 发射原文同形）
+    assert_msl_port_geometry(
+        context="hairpin 族 port2",
+        port_box=((board_m, y_taps[1] - wf / 2.0, h_m),
+                  (x_out, y_taps[1] + wf / 2.0, 0.0)),
+        feed_box=((x_out, y_taps[1] - wf / 2.0, h_m),
+                  (board_m, y_taps[1] + wf / 2.0, h_m)),
+        meas_plane_shift=(board_m - x_out) - feed_shift - 4.0 * h_m,
+        feed_shift=feed_shift, near=near_m, mesh_mm=None)
+
+
 def _hairpin_lines(p: dict[str, Any]) -> str:
     # 发夹线 BPF（WP2.3 Tier1 附加模板）：N 个 U 形 λg/2 谐振器沿 x 并排，
     # 相邻外臂平行耦合；50Ω 抽头馈线（T 形）自板边接首/末外臂。等缝口径
     # gap_mm；逐缝非等耦合走 gaps_mm 列表。口径见文末 WP2.3 hairpin 段。
     lay = _hairpin_layout(p)
+    _hairpin_port_guard(p, lay, lay["y_taps"])
     return f'''N = {lay["n"]}
 WF = {lay["wf"]!r}                       # 谐振器/馈线宽（50Ω，HJ）
 B = {lay["b"]!r}                         # U 内两臂中心距
@@ -348,8 +400,8 @@ for _prim in hairpin.GetAllPrimitives():
 '''
 
 
-# ── hairpin_alt：交替取向发夹线（2026-09-18 w2g，TODO 0dk 根修 / audit #11）──
-# 物理（/0dk 真机结论）：同向 U 并排时相邻臂开路端对齐，电耦合
+# ── hairpin_alt：交替取向发夹线（2026-09-18 w2g，待办清单 0dk 根修 / audit #11）──
+# 物理（0dk 真机结论）：同向 U 并排时相邻臂开路端对齐，电耦合
 # （开路端电压反节点对齐）与磁耦合（弯带电流反节点对齐、相邻臂电流反向）反号相消，
 # k_EM=c(gap)·k_KJ 非单调、极大 0.0155@0.65 ≪ KJ 名义 0.0515（比值上限 ≈0.30），
 # FBW5% 名义在同向参数空间内无自洽设计点。经典 hairpin 排布（Hong《Microstrip
@@ -448,6 +500,7 @@ def _hairpin_alt_lines(p: dict[str, Any]) -> str:
     # 逐腔弯带 y（YBEND[i]）与两抽头 y（YT[0]/YT[1]）；端口/去嵌/priority 口径照抄
     # hairpin（A1 去嵌 10·NEAR+4·H_SUB，均匀馈段三探针）。
     lay = _hairpin_alt_layout(p)
+    _hairpin_port_guard(p, lay, lay["y_taps"])
     return f'''N = {lay["n"]}
 ORIENTATION = {lay["orientation"]!r}     # alternating=奇数序腔翻转 / same=同向对照
 WF = {lay["wf"]!r}                       # 谐振器/馈线宽（50Ω，HJ）

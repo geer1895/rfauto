@@ -101,7 +101,7 @@ class TestLevel2ChainAnchors:
         f_dip 锚随 2026-09-23 fake 位置锚 3.54（乘法缩放 K=3.54/2.725）落
         配置同批重钉（2.4468→2.148，谷位 ×√(2.725/3.54)=0.8774 下移；谷深
         两锚不变——eps 不进失配深度公式）。与 tests/gold/
-        level2_design_public.yaml l2d001 同源，出处 runs/fake_anchor_354/。
+        level2_design_public.yaml l2d001 同源，出处 内部证据档。
         """
         from rfauto.service.level2_design import design_chain
 

@@ -1,4 +1,4 @@
-"""E11 "同族真跑次数再降 ≥30%" 验收战役（TODO 队列 e11-campaign，fake 通道验证面）。
+"""E11 "同族真跑次数再降 ≥30%" 验收战役（待办清单 队列 e11-campaign，fake 通道验证面）。
 
 对照设计：同族 recipe（默认仓内 recipes/wilkinson_pd_v1.yaml 的 fake 通道）
 在相同预算 budget 下跑 冷启动 vs warm-start（数据集源=runs/ 已注册数据集，

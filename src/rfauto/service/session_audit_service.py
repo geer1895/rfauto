@@ -23,7 +23,7 @@ autotune 面不设独立挂点的理由（ground 结论）：autotune_service �
 校验回执是 typed 判定结果而非 JSON 信封（无 errors 列表语义），不与
 envelope.py 构造器契约混淆（信封契约 §4 AST 守卫口径）。
 
-数字出处：本模块零物理数字（AGENTS 规则 7）——纯摘要比对与文本包含。
+数字出处：本模块零物理数字（内核立规注记 规则 7）——纯摘要比对与文本包含。
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """2D 准静态 FD Laplace 裁判内核（core/quasistatic_fd.py）验证锚（#118 独立来源）。
 
-裁判本身必须先过已知闭式基准才有资格裁判闭式（AGENTS 1b）：
+裁判本身必须先过已知闭式基准才有资格裁判闭式（内核立规注记 1b）：
 - 解析精确：平行板/串联双层板（场均匀 → FD 逐位精确，钉 ε 权重与能量法系数）；
 - 微带 vs Hammerstad–Jensen（skrf MLine，含 εr=9.8）；
 - CPS 半空间极限 (1+εr)/2、空气 CPS vs 共形映射闭式 Z0（MathWorks MoM 对拍口径）；

@@ -1,6 +1,6 @@
 """E6b 匹配网络与滤波器综合单元测试。
 
-验收标准（规划扩展 §E6b）：
+验收标准（规划扩展_v2 §E6b）：
 ① L-section 闭式解正确性
 ② Chebyshev g 值对拍
 ③ Commensurate line 结构完整性

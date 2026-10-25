@@ -11,6 +11,6 @@ for a in dir(de):
     obj = getattr(de, a)
     kind = type(obj).__name__
     out.append(f"{a} ({kind})")
-with open(r"D:\rf_workspace\scripts\spike_b_ads\de_api.txt", "w", encoding="utf-8") as f:
+with open(r"D:/rf_workspace\scripts\spike_b_ads\de_api.txt", "w", encoding="utf-8") as f:
     f.write("\n".join(out))
 print("written", len(out), "attrs")

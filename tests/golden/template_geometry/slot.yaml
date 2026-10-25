@@ -11,7 +11,7 @@ params:
   feed_w_mm: 1.1134
   feed_margin_mm: 12.0
 status: ok
-script_sha256: 5f1af44cc11abe9625366e52504f4a8456a17ea35ee1a85423e790962e98f490
+script_sha256: 3f729bec9454e79b816a83f507201874ca8e190ec02c22cb1ef8ca233c237c61
 csx:
   n_primitives: 19
   props:
@@ -85,7 +85,7 @@ csx:
     n: 1
     types:
       '1': 1
-  primitives_sha256: d2b6ce492508dc5d55e06f6777163a5ea7165fd45ec3a2281039d02bc64ba5e1
+  primitives_sha256: f47b9cf3811d749f1bc020c0409e374e29f8e11e17737c5a257f89ae24f09f5f
   bbox_m:
   - -0.06
   - -0.06

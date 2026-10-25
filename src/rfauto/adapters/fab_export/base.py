@@ -147,7 +147,7 @@ def get_registry() -> FabPortRegistry:
 
 
 def register_builtin_plugins(registry: FabPortRegistry | None = None) -> None:
-    """兼容薄壳：接线本体已外提 fab_export._wiring（架构批 W2-S2 S4/fab3
+    """兼容薄壳：接线本体已外提 fab_export._wiring（aurora_h W2-S2 S4/fab3
     解环）——插件注册副作用上提至包级接线模块，本模块（端口协议+注册表稳
     定层）对插件与接线模块零静态 import，经 importlib 字符串间接委托保持
     原公开名/调用路径可用（行为零变化：幂等、惰性可选依赖语义原样）。"""

@@ -1,6 +1,6 @@
 """rest_api.openapi —— 路由表单源、OpenAPI spec 与 ASGI 装配。
 
-自 rest_api.py 巨石按职责域拆分（架构批 W3-S2，AU-1 工艺）：
+自 rest_api.py 巨石按职责域拆分（aurora_h W3-S2，AU-1 工艺）：
 ``_ROUTE_TABLE``（声明式单源）→ ``openapi_spec()``/``validate_openapi_spec
 ()``/``endpoint_inventory()`` → ``create_rest_app()``/``serve()`` 整链与
 openapi.json 端点逐字节搬迁。**整链单模块承载是零漂移约束**：表项在

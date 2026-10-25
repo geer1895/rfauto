@@ -10,16 +10,16 @@ dict 形态 fcc_limits_part15()/cispr32_classb_radiated_limits() 可直接作其
 - band_params：CISPR 16-1-1 Table 1 四参数表（Band A-D，双源核对，见下）。
 - cispr_detect：单通道时域波形 → Peak/QP/Avg 三检波器读数（dBµV）+ qp_settling_ok。
 
-参数表出处（双源互证，本地归档 runs/ms4/）：
+参数表出处（双源互证，本地归档 内部证据档）：
 - 源 1：CISPR 16-1-1:2006+A1:2006 免费镜像（iTeh standards preview PDF，已下载
-  runs/ms4/CISPR-16-1-1-2006-preview.pdf）正文 Table 1 "Fundamental characteristics of
+  内部证据档）正文 Table 1 "Fundamental characteristics of
   quasi-peak receivers"（第 17 页）逐值提取：Band A 9–150 kHz / B6 0.20 kHz / 充 45 ms /
   放 500 ms / 表头 160 ms；Band B 0.15–30 MHz / 9 kHz / 1 ms / 160 ms / 160 ms；
   Bands C and D（30 MHz–1 GHz）120 kHz / 1 ms / 550 ms / 100 ms（C/D 合并行，表头同为
   100 ms——Band C 与 D 检波器常数完全一致，仅频率范围不同）；过载系数前置 24/30/43.5 dB、
   直流放大器 6/12/6 dB。
 - 源 2：Schwarzbeck Mess-Elektronik "The EMI-Receiver according to CISPR 16-1-1"
-  （runs/ms4/schwarzbeck_emircvr.pdf）末页总览表逐值一致（A 200 Hz/45/500/160、
+  （内部证据档）末页总览表逐值一致（A 200 Hz/45/500/160、
   B 9 kHz/1/160/160、C 120 kHz/1/550/100、D 120 kHz/1/550/100）。
 - 定义（源 1 §3.4–3.6）：TC=充至 63%（恒定正弦）；TD=降至 37%；TM=TM²α″+2TMα′+α=ki
   （临界阻尼二阶，TM=自由振荡周期/2π）。
@@ -49,7 +49,7 @@ emi-receiver 先例口径，PV-006：只对拍输出值不引代码不入运行�
 锚与诚实注记（MS-4 验收面，#122 学术诚信原则）：
 - Band B 脉冲响应 7 点表（任务书验收锚，±1.5 dB）：100/60/25 Hz 在容差内；10 Hz 以下
   内核偏深 3–7 dB。经对源核对，任务锚低频尾 {−18.4@5, −22.6@2, −25.6@1} 与其所引
-  官方曲线不一致：从源 1 预览正文 Figure 1b 扫描件（runs/ms4/p13_Im0.png）提取的
+  官方曲线不一致：从源 1 预览正文 Figure 1b 扫描件（内部证据档）提取的
   官方容差带为**相对输入**（恒定输出）1 Hz 22.5±2 / 2 Hz 20.5±2 / 10 Hz 10±1.5 /
   25 Hz 6.5±1 / 100 Hz 0 / 1 kHz −4.5±1 dB，镜像到恒定输入相对输出为 −22.5±2 /
   −20.5±2 / −10±1.5 / −6.5±1 dB；叠加 QP−PK@100 Hz 偏移（Schwarzbeck 实测 −6.1 dB、

@@ -1,6 +1,6 @@
 """OE 链式发射器（oe_chain_waiter 家族的版本化消费器，H1-5 收编）。
 
-出处链：runs/ge8_followup/oe_chain_waiter.py（ge8b 批，gitignored 档案）
+出处链：内部证据档（ge8b 批，gitignored 档案）
 把战役 rc 只记日志不判链，而 fd_oe_campaign 修复前主退出码恒 0——全座
 SKIP 被记成"OE 链完毕"（oe_chain.log 2026-10-03 K-7 实证，靠人工
 k7_retry/k7_msring6 补位）→ H1 席审查 H1-5 → F6 修复席：fd_oe_campaign
@@ -12,14 +12,14 @@ census 守望门消费 scripts/census_status.py（H1-4 收编单源，宽匹配�
 宁枉勿纵：探针异常/非 CLEAR 一律不发射）。窄指纹直查的权威互斥门在
 驱动与 remote_oe_service 内部，本脚本不重复实现。
 
-退出码（scripts 退出码总表见 runs/review_ge8e/f6_scripts_fix/REPORT.md）：
+退出码（scripts 退出码总表见 内部证据档）：
   0=链内全部步骤 rc==0；其他=首个非 0 步骤的 rc 透传（链中止，步骤自身
   语义按 fd_oe_campaign 退出码表判读）；4=父心跳超时自尽（df7 范式）；
   2=等待 census CLEAR 超时交还人；64=argparse 用法错。
 
 用法（--chain 传 JSON 步骤表，[{"tag","argv","log","env"}]，argv 相对
 仓根解析；log/env 可缺省）：
-  .venv/Scripts/python.exe scripts/oe_chain_launch.py --chain runs/xxx/chain.json
+  .venv/Scripts/python.exe scripts/oe_chain_launch.py --chain 内部证据档
 """
 from __future__ import annotations
 

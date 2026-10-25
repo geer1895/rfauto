@@ -6,7 +6,7 @@
 
 # 内核文档卡：fec_codes
 
-> FEC 块码族（架构批 W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
+> FEC 块码族（aurora_g W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 FEC 块码编码增益产生面：Hamming 完全码球填充界判定、RS MDS 纠错能力闭式与硬判 union bound 编码后 BER 反解的目标误码率净编码增益——coded_ber_estimate 输入参数（官方声明缺口）的产生面闭环。
 
-模块自述（docstring 首行，机读）：FEC 块码族（架构批 W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
+模块自述（docstring 首行，机读）：FEC 块码族（aurora_g W1-S2 席域 C2，R2_core_tier4 §③ Top3 设计案）。
 
 ## 公式与口径
 

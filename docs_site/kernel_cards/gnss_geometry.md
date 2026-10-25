@@ -6,7 +6,7 @@
 
 # 内核文档卡：gnss_geometry
 
-> GNSS 定位几何族（架构批 W9-S2 席，R3_domain_expansion 视角4 E1 Top6
+> GNSS 定位几何族（aurora_g W9-S2 席，R3_domain_expansion 视角4 E1 Top6
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 GNSS 定位几何三键：卫星视线几何→DOP 因子全族（GDOP/PDOP/HDOP/VDOP/TDOP）、方位角/仰角档同一 H 构建单源与 UERE→定位/授时误差恒等式+RSS 分解——导航接收机误差预算的几何底座（不做星历/轨道递推）。
 
-模块自述（docstring 首行，机读）：GNSS 定位几何族（架构批 W9-S2 席，R3_domain_expansion 视角4 E1 Top6
+模块自述（docstring 首行，机读）：GNSS 定位几何族（aurora_g W9-S2 席，R3_domain_expansion 视角4 E1 Top6
 
 ## 公式与口径
 

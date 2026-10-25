@@ -119,15 +119,8 @@ class TestCacheBeforeAdapter:
 
 class TestVersionAndProvenance:
     def test_version_single_source(self):
-        # 发布令批：版本随 pyproject 动态断言（原字面钉 "0.10.0" 随每次
-        # 发版必红——单源即 pyproject，测试只验 __init__ 回退与之一致）
-        import tomllib
-
         import rfauto
-        pyproj = (Path(__file__).resolve().parents[2] / "pyproject.toml")
-        expected = tomllib.loads(pyproj.read_text(encoding="utf-8"))[
-            "project"]["version"]
-        assert rfauto.__version__ == expected
+        assert rfauto.__version__ == "0.10.0"
 
     def test_meta_records_real_git_sha(self, tmp_path, monkeypatch):
         """run_once 的 meta.json 必须带非空 git_sha（原先被 "" 覆写）。"""
@@ -147,13 +140,7 @@ class TestVersionAndProvenance:
             (Path(result["run_dir"]) / "meta.json").read_text(encoding="utf-8")
         )
         assert meta["git_sha"] not in ("", None), "git_sha 不应为空"
-        # 版本同源断言（随 pyproject 动态；原字面钉 "0.10.0" 随发版必红）
-        import tomllib as _tomllib
-
-        pyproj = Path(__file__).resolve().parents[2] / "pyproject.toml"
-        expected_ver = _tomllib.loads(pyproj.read_text(encoding="utf-8"))[
-            "project"]["version"]
-        assert meta["package_version"] == expected_ver
+        assert meta["package_version"] == "0.10.0"
 
 
 class TestSanityCheckWiring:

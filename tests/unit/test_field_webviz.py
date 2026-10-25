@@ -504,10 +504,10 @@ class TestFieldService:
         assert ui_service.field_view("20260915_000003_empty")["ok"] is False
 
 
-# ─── 场页远场指标：PEC 镜像修正接线 + patch 族 η 门复议（#249；followUp ⑤）──
+# ─── 场页远场指标：PEC 镜像修正接线 + patch 族 η 门复议（#249；开发注记（二百零五）followUp ⑤）──
 #
 # 两份 meta 逐字段复刻真机 runs/ 产物（数字出自判读 json，测试不读 runs/）：
-# * 收敛轮 runs/patch_field_smoke_recheck/farfield_meta.json（盒底 z=0 贴 PEC 地）；
+# * 收敛轮 内部证据档（盒底 z=0 贴 PEC 地）；
 # * 全包盒 runs/nf2ff_smoke_ff_dipole/farfield_meta.json（z_start<0，不受镜像影响）。
 
 _RECHECK_META = {

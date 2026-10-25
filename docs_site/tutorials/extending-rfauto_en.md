@@ -45,7 +45,7 @@ scaffold_adapter("my_solver")        # never overwrites existing files; compiles
 
 Measured return (2026-10-19, redirected to a scratch directory via the
 `output_dir` argument so as not to touch the package tree):
-`{'ok': True, 'path': 'runs\\aurora_g\\toy_en_probe_adapter.py',
+`{'ok': True, 'path': 'runs\\架构批\\toy_en_probe_adapter.py',
 'class_name': 'ToyEnProbeAdapter', 'module': 'toy_en_probe_adapter',
 'register_fn': 'register_toy_en_probe', 'contract_methods':
 [connect, is_available, build_geometry, solve, get_sparams, close]}`

@@ -1,6 +1,6 @@
 r"""C10 GT 补族战役——branchline（34 点）/ wilkinson（18 点）openEMS ground-truth 采集。
 
-背景（TODO 0da followUp④，2026-09-16 登记）：wp34 patch HFSS GT 战役同法
+背景（待办清单 0da followUp④，2026-09-16 登记）：wp34 patch HFSS GT 战役同法
 补 branchline_coupler / wilkinson_power_divider 两族的 openEMS GT 点
 （wp34_registry_20260916 实测 branchline n_gt=34、wilkinson n_gt=18，
 threshold=100；本战役点数即 0da④ 预声明的 34/18，``--n-points`` 可调）。

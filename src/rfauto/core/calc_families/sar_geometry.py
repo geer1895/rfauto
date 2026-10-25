@@ -1,4 +1,4 @@
-"""SAR 合成孔径几何指标族（架构批 W7-S3 席，R3_domain_expansion 视角4
+"""SAR 合成孔径几何指标族（aurora_g W7-S3 席，R3_domain_expansion 视角4
 E6 Top10——遥感场景收官件）。
 
 两键：sar_azimuth_resolution（聚焦 SAR 方位分辨率 δ_az=D/2 恒等式+真实

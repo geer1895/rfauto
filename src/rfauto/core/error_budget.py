@@ -100,7 +100,7 @@ class BudgetRegistry(RegistryKit[type[BudgetItem]]):
     重名注册显式报错、未注册 create KeyError 并列可用名、lookup 不抛错
     返回 None——口径与 CalculatorRegistry/EMSolverRegistry 一致。
 
-    T6 扩面四批（架构批 W2-S3，R1_arch_audit_v3 §5）：dict 样板由
+    T6 扩面四批（aurora_h W2-S3，R1_arch_audit_v3 §5）：dict 样板由
     core.registry_kit.RegistryKit 承载（Kit 本体已下沉 core，分层合法）——
     历史语义逐项保真：重名/缺名 ValueError/KeyError 文案经
     dup_fmt/missing_fmt 逐字节同旧（"误差源条目重名注册: {key}" /

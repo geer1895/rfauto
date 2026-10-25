@@ -1,4 +1,4 @@
-"""架构批 W6-A 席锚树：trl_standards 两键 + emc_immunity 三键。
+"""aurora36 W6-A 席锚树：trl_standards 两键 + emc_immunity 三键。
 
 数值断言口径（#118 不自证——闭式/恒等独立回收，不用自身推导互证）：
 - TRL 设计面：①WR-90@10GHz λg/4=9.927mm（测试侧独立常量 C_MM_GHZ/a_mm

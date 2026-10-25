@@ -1,8 +1,8 @@
-"""recipes/ 原件写守卫回归（配方污染根修，TODO 增量②）。
+"""recipes/ 原件写守卫回归（配方污染根修，待办清单 增量②）。
 
 取证背景：2026-09-17 17:18 UI「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件重序列化（注释全丢/notes 引号丢/optimization 段被表单归一化整段替换，
-diff 85 行留 runs/pollution_evidence/），同刻触发 fake run_once。本文件钉住：
+diff 85 行留 内部证据档），同刻触发 fake run_once。本文件钉住：
 
 1. run_once（fake）本身不改配方原件字节（快照只落 runs/）；
 2. 复现污染链（recipe_view → recipe_save → run_once）——原件字节不变，
@@ -579,7 +579,7 @@ class TestDirectoryLevelWriteSurface:
        新增未接守卫的目录级写点即亮红（TestWriteBackInventory 目录级版）。"""
 
     SRC = REPO_ROOT / "src" / "rfauto"
-    # 架构批 UI-R1 拆分：UI 面含 routes/ 分域路由模块（写面守卫随面走）
+    # aurora_d UI-R1 拆分：UI 面含 routes/ 分域路由模块（写面守卫随面走）
     _UI_ROUTES = SRC / "ui" / "routes"
     UI_SURFACE_MODULES = (
         SRC / "ui" / "server.py",

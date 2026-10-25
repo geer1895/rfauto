@@ -52,7 +52,7 @@ N_LOO_FOLDS = 30
 SEED = 20260920  # 与 run1/criteria_linear 同源
 BUDGET_WALL_S = 2 * 3600
 PARTIAL_FACTOR = 1.5
-# 谷区带（M3 criteria / 口径，写死）
+# 谷区带（M3 criteria / 开发注记（三百零一）口径，写死）
 VALLEY_LO, VALLEY_HI = 0.70, 1.00
 CORE_LO, CORE_HI = 0.900, 0.920
 DEPTH_SPLIT_DB = -30.0  # 真值深度分桶（run1 fail_diagnosis 同）

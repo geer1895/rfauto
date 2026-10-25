@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tests 面 time.sleep(N>10) AST 常驻守卫（门口径 v2 ④ followUp 清偿，2026-10-11 W2-D）。
 
-门口径 v2 采纳批遗留 followUp："--durations top-20 分层
+开发注记（八百八十三）门口径 v2 采纳批遗留 followUp："--durations top-20 分层
 + sleep(N>10) AST 扫描常驻"——本脚本补齐后半（前半=wf_gate_full_v2.py
 durations 分层报告，同批清偿）。
 

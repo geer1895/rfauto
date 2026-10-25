@@ -4,7 +4,7 @@
 校验失败重试一次后如实失败（大小/sha256 两形态）、本地同名冲突跳过不覆盖、
 枚举 fail-closed（rc≠0/清单行解析失败/路径越界/单引号 G5）、凭据与登记
 前置守卫、transport 生命周期、resolve_pull_out_dir 双根收敛、清单构造器
-自动回填。服务器 sim_host 不可用期全程 mock/本地形态验证，禁止真连。
+自动回填。服务器 sim_server 不可用期全程 mock/本地形态验证，禁止真连。
 """
 
 import fnmatch
@@ -120,7 +120,7 @@ def test_pull_normal_flow(tmp_path):
         files={_F1: body1, _F2: body2},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is True and out["verdict"] == "PASS"
     assert out["counts"] == {"pulled": 2, "skipped_exists": 0,
@@ -146,7 +146,7 @@ def test_pull_normal_flow(tmp_path):
     manifest = json.loads(mpath.read_text(encoding="utf-8"))
     assert manifest["schema"] == rsp.MANIFEST_SCHEMA
     assert manifest["remote_dir"] == _REMOTE_ROOT
-    assert manifest["machine"] == "sim_host"
+    assert manifest["machine"] == "sim_server"
     assert len(manifest["files"]) == 2
     row = manifest["files"][0]
     assert row["remote"] == _F1 and row["status"] == "pulled"
@@ -159,16 +159,16 @@ def test_pull_lifecycle_self_built_transport(tmp_path, monkeypatch):
     fake = FakeSftpTransport(
         listing=_listing(("l2_smoke.s2p", len(body))), files={_F1: body})
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         ssh_user="member01", ssh_password="secret",
         hfss_project_root="E:\\rfauto_remote")
-    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_server": cfg})
     monkeypatch.setattr(rsp, "SshTransport", lambda c: fake)
     out = pull_artifacts(None, remote_dir=_REMOTE_ROOT,
                          out_dir=tmp_path / "pull")
     assert out["ok"] is True and out["verdict"] == "PASS"
     assert fake.connected is True and fake.closed is True
-    assert out["machine"] == "sim_host"
+    assert out["machine"] == "sim_server"
 
 
 # ─── 白名单过滤 ───────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ def test_whitelist_filters_non_matching(tmp_path):
         files={_F1: body},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", include_patterns=("*.s2p",),
         transport=t)
     assert out["ok"] is True and out["verdict"] == "PASS"
@@ -211,7 +211,7 @@ def test_missing_remote_skips_with_warning(tmp_path):
     """显式清单：远端缺文件=missing_remote 跳过+告警，零下载，verdict FAIL。"""
     t = FakeSftpTransport(test_path={_F1: False})
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", remote_files=[_F1], transport=t)
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert t.downloads == []
@@ -228,7 +228,7 @@ def test_explicit_list_pull_flat(tmp_path):
     body = b"explicit"
     t = FakeSftpTransport(test_path={_F1: True}, files={_F1: body})
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", remote_files=[_F1], transport=t)
     assert out["ok"] is True and out["verdict"] == "PASS"
     assert Path(out["files"][0]["local"]) == tmp_path / "pull" / "l2_smoke.s2p"
@@ -246,7 +246,7 @@ def test_size_mismatch_retry_once_then_fail(tmp_path):
         files={_F1: body},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert t._dl_counts[_F1] == 2          # 恰好重试一次
@@ -269,7 +269,7 @@ def test_retry_second_attempt_success(tmp_path):
         download_effects={_F1: [b"truncated", good]},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is True and out["verdict"] == "PASS"
     assert t._dl_counts[_F1] == 2
@@ -288,7 +288,7 @@ def test_sha256_mismatch_retry_once_then_fail(tmp_path):
         remote_hashes={_F1: bad_hash.upper()},   # Get-FileHash 大写口径
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", verify_sha256=True, transport=t)
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert t._dl_counts[_F1] == 2
@@ -307,7 +307,7 @@ def test_sha256_verify_pass(tmp_path):
         remote_hashes={_F1: _sha(body).upper()},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", verify_sha256=True, transport=t)
     assert out["ok"] is True and out["verdict"] == "PASS"
     assert out["files"][0]["sha256"] == _sha(body)
@@ -323,7 +323,7 @@ def test_sha256_unavailable_fail_closed(tmp_path):
         remote_hashes={},                      # 哈希查询走 rc=1 分支
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", verify_sha256=True, transport=t)
     assert out["ok"] is False and out["verdict"] == "FAIL"
     assert "remote_hash_unavailable" in out["files"][0]["error"]
@@ -341,7 +341,7 @@ def test_local_conflict_skips_without_overwrite(tmp_path):
     t = FakeSftpTransport(
         listing=_listing(("l2_smoke.s2p", len(body))), files={_F1: body})
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["verdict"] == "PASS" and out["ok"] is True
     assert out["counts"]["skipped_exists"] == 1
@@ -358,7 +358,7 @@ def test_enumeration_rc_nonzero_fail_closed(tmp_path):
     """枚举 rc≠0：显式报错不冒充空产物，不写清单。"""
     t = FakeSftpTransport(listing_rc=1)
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False
     assert any("枚举失败" in e for e in out["errors"])
@@ -369,7 +369,7 @@ def test_malformed_listing_line_fail_closed(tmp_path):
     """清单行非 path|size 形态：如实报解析失败（#331 观察面失真防线）。"""
     t = FakeSftpTransport(listing="garbage-line-without-protocol\n")
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False
     assert any("解析失败" in e for e in out["errors"])
@@ -382,7 +382,7 @@ def test_out_of_prefix_listing_rejected(tmp_path):
         listing=_listing(("l2_smoke.s2p", 5))
         + evil.replace("/", "\\") + "|5\n")
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False
     assert any("越出产物目录" in e for e in out["errors"])
@@ -396,7 +396,7 @@ def test_listing_dotdot_relative_segment_rejected(tmp_path):
         listing=_listing(("l2_smoke.s2p", 5)) + evil + "\n",
         files={f"{_REMOTE_ROOT}/../../escape.txt": b"evil"})
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False
     assert any(".." in e for e in out["errors"])
@@ -408,7 +408,7 @@ def test_remote_dir_single_quote_rejected(tmp_path):
     """G5：remote_dir 含单引号=验证期拒绝，零命令下发。"""
     t = FakeSftpTransport()
     out = pull_artifacts(
-        "sim_host", remote_dir="E:/rfauto'remote",
+        "sim_server", remote_dir="E:/rfauto'remote",
         out_dir=tmp_path / "pull", transport=t)
     assert out["ok"] is False
     assert t.commands == []
@@ -435,9 +435,9 @@ def test_no_registry_skipped(tmp_path, monkeypatch):
 def test_missing_credentials_skipped_no_connect(tmp_path, monkeypatch):
     """凭据缺失：如实 skipped，不构造通道不发起连接。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_project_root="E:\\rfauto_remote")
-    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_server": cfg})
     monkeypatch.delenv(rsp.ENV_REMOTE_SSH_USER, raising=False)
     monkeypatch.delenv(rsp.ENV_REMOTE_SSH_PASSWORD, raising=False)
 
@@ -454,9 +454,9 @@ def test_missing_credentials_skipped_no_connect(tmp_path, monkeypatch):
 def test_unknown_machine_error_envelope(tmp_path, monkeypatch):
     """未登记机器名：error 信封（resolve_machine 报错转信封，不裸抛）。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         ssh_user="u", ssh_password="p")
-    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_server": cfg})
     out = pull_artifacts("nope", remote_dir=_REMOTE_ROOT,
                          out_dir=tmp_path / "pull")
     assert out["ok"] is False
@@ -466,9 +466,9 @@ def test_unknown_machine_error_envelope(tmp_path, monkeypatch):
 def test_paramiko_missing_becomes_error_envelope(tmp_path, monkeypatch):
     """paramiko 缺装（SshTransport 构造抛 RemoteTransportError）→ error 信封。"""
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         ssh_user="u", ssh_password="p")
-    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rsp, "load_remote_machines", lambda: {"sim_server": cfg})
 
     def _boom(c):
         raise RemoteTransportError(
@@ -513,7 +513,7 @@ def test_record_pull_manifest_autofill(tmp_path):
     out = record_pull_manifest(
         tmp_path, files=[{
             "remote": _F1, "local": str(local), "status": "pulled",
-        }], machine="sim_host", remote_dir=_REMOTE_ROOT)
+        }], machine="sim_server", remote_dir=_REMOTE_ROOT)
     assert out["ok"] is True
     manifest = json.loads(Path(out["path"]).read_text(encoding="utf-8"))
     row = manifest["files"][0]
@@ -534,7 +534,7 @@ def test_pull_mixed_partial_verdict(tmp_path):
         test_path={_F1: True, f"{_REMOTE_ROOT}/gone.s2p": False},
     )
     out = pull_artifacts(
-        "sim_host", remote_dir=_REMOTE_ROOT,
+        "sim_server", remote_dir=_REMOTE_ROOT,
         out_dir=tmp_path / "pull",
         remote_files=[_F1, f"{_REMOTE_ROOT}/gone.s2p"], transport=t)
     assert out["ok"] is True and out["verdict"] == "PARTIAL"

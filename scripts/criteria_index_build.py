@@ -12,7 +12,7 @@ DP-12 criteria/v2，本工具不另立 schema——index 只是"历史判据清�
 （tests/unit/test_criteria_index_build.py）。输出确定性：同树重跑逐字节
 一致（无时间戳键）。
 
-门阈值行 regex（预声明 runs/df6_dp13/criteria.md §Z1）：行含比较符
+门阈值行 regex（预声明 内部证据档 §Z1）：行含比较符
 (≤|≥|<|>) 且含单位词（dB/GHz/%/mm/ns/µm/um/数字+s 秒）之一，或含
 ``±数值`` 门；逐行抽原文 raw + 比较符后首个数值 threshold（best-effort，
 行数如实，不凑全）。
@@ -37,8 +37,8 @@ EP-2 四向追溯矩阵（specs §C-7，--migrate-v2 模式）：
 
 冻结测试宇宙覆盖层（EP-2 扩面二批 2026-10，结构性幂等修复）：test_id 扫面
 输入 runs/ep2/test_universe.txt 是 gitignored 缓存、随各战役新增测试模块自然
-增长——shipped 矩阵一旦不随缓存刷新重出货，真树幂等锚必红（架构批 定谳、
-跨 架构批/g 持续）。修复=把"扫面宇宙"从 runs/ 缓存剥离为再生器所有的
+增长——shipped 矩阵一旦不随缓存刷新重出货，真树幂等锚必红（aurora_d 定谳、
+跨 aurora_e/g 持续）。修复=把"扫面宇宙"从 runs/ 缓存剥离为再生器所有的
 committed curated 层 knowledge/criteria/trace_test_universe.yaml（schema
 trace-test-universe/v1，整表 sorted 去重）；migrate_v2 的 test_modules 解析
 优先级（确定性，逐级回退）：
@@ -50,7 +50,7 @@ trace-test-universe/v1，整表 sorted 去重）；migrate_v2 的 test_modules �
 
 覆盖层在场即整表接管（替换语义，不与缓存合并——单一治理源）；缓存增长
 不进入再生，须显式 ``--refresh-test-universe`` 整表重写覆盖层（新增测试
-模块随刷新自然入扫，扫面增长不破坏幂等）。**刷新前置条件（架构批 实证
+模块随刷新自然入扫，扫面增长不破坏幂等）。**刷新前置条件（aurora_h 实证
 补充）**：新入扫模块须已有 criteria links（runs/ 判据面）——无 links 的
 纯新增测试模块入宇宙会稀释覆盖率击穿 batch 棘轮 floor（实测 41 模块无
 links 刷新 → gate 71.9%<85.31%/param 48.6%<76.86% 双红）；故刷新时点=
@@ -199,7 +199,7 @@ def extract_gate_lines(text: str) -> list[dict[str, Any]]:
 #   c3 → combline/interdigital/sir_bpf = knowledge/anchors.yaml c3.* 锚的
 #        template_family 注册值（注册表面，非臆测）；
 #   c4 → lange/cline_coupler/branchline = c4_z_substrate 门行 lange/
-#        cline_coupler 字面 + c4 批=耦合器网格收敛批（ 口径）；
+#        cline_coupler 字面 + c4 批=耦合器网格收敛批（开发注记 口径）；
 #   marchand → marchand_balun = 族名前缀（marchand_* 战役系列）。
 FAMILY_ALIAS: dict[str, tuple[str, ...]] = {
     "marchand": ("marchand_balun",),

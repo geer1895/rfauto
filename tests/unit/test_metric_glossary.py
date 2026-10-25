@@ -4,6 +4,8 @@
 数据单一事实源：knowledge/metric_glossary.yaml——数据湖 20 个 dataset
 parquet 的 metrics_json 实测 38 个不同指标键（R3 §3.1 口径；W2-S2 席
 2026-10-19 复测 38 键不变，键清单硬编码于 _DATA_LAKE_KEYS 作覆盖率钉）。
+2026-10-23 aurora_k K2 增补 q_factor 判读语义条目（反馈 P14；词典超集
+口径，现 39 条），键数钉与语义钉同笔更新。
 铁律 7 面一致：本文件只钉词典文本与判定逻辑，不产生物理数字。
 """
 
@@ -178,6 +180,18 @@ class TestMetricGlossaryYaml:
         for e in entries:
             assert e["plain_zh"].strip() and e["plain_en"].strip()
 
+    def test_q_factor_semantic_pin(self, entries):
+        """q_factor 判读语义条目（aurora_k K2 2026-10-23，反馈 P14 吸收）：
+        "Q 高≠损耗低"语义钉——串联口径 Q=|X|/R、电容变小 Q 也升、判损耗
+        并看 R（串联电阻）与 S21；无机读门（Q 单值着色会误导判读）。"""
+        e = next(x for x in entries if x.get("metric_id") == "q_factor")
+        assert "|X|/R" in e["plain_zh"]
+        assert "电容变小" in e["plain_zh"]
+        assert "串联电阻" in e["plain_zh"] and "S21" in e["plain_zh"]
+        assert "series resistance" in e["plain_en"] and "S21" in e["plain_en"]
+        assert "gate" not in e, "q_factor 不设机读门（Q 高≠损耗低）"
+        assert not e.get("pitfall_refs"), "无仓内坑号可引，如实不造"
+
 
 class TestMetricGlossaryService:
     """service 三函数正负例（ok 信封口径，同 terminology_service 模式）。"""
@@ -190,13 +204,14 @@ class TestMetricGlossaryService:
     def test_load_returns_schema_and_entries(self, svc):
         doc = svc.load_metric_glossary()
         assert doc.get("schema") == "metric-glossary/v1"
-        assert len(doc["entries"]) == 38
+        # 39 = 数据湖 38 键 + q_factor 判读语义增补（aurora_k K2 2026-10-23）
+        assert len(doc["entries"]) == 39
 
     def test_list_envelope(self, svc):
         r = svc.list_metric_glossary()
         assert r["ok"] is True
-        assert r["count"] == len(r["entries"]) == 38
-        assert len(r["keys"]) == 38
+        assert r["count"] == len(r["entries"]) == 39
+        assert len(r["keys"]) == 39
         assert set(r["gate_ops"]) == _ALLOWED_GATE_OPS
         assert r["schema"] == "metric-glossary/v1"
         json.dumps(r)  # 信封 JSON 可序列化

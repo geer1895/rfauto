@@ -114,7 +114,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 判据书/规格指针（docstring 逐字引文钉）：
 
 - `tests/unit/test_ap6_dr8_calculator_keys.py`——引文："Tables 1-4 系数已由 AP-8 批逐值录入，验证链见该模块 docstring 与"
-- `tests/unit/test_w4_c_p10_itu_p618.py`——引文："P.618-13 式面（W4-C P10 批 2026-10-05，已逐式对照官方 PDF 视觉核verify）"
+- `tests/unit/test_w4_c_p10_itu_p618.py`——引文："出处（ITU-R 建议书原文逐值转写，系数录入验证链见 core/itu_atmosphere.py"
 
 测试面（tests/unit 引用扫描，机读；合计 **184** 个 test 函数）：
 

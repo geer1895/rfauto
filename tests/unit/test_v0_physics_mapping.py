@@ -168,7 +168,7 @@ class TestWilkinsonPhysicsResponse:
         ——2026-09-04 决策注释记载的同一"谷在带下方肩部"现象），带内 S11
         的失配对比被肩部阻尼（thin/opt 带内仅 ~0.4dB），失配响应的主载体
         改在谷底深度通道断言（幅度门不变：实测对比 ~4dB）；带内保留方向
-        断言（肩部阻尼后排序仍须保序）。runs/fake_anchor_354/criteria.md。
+        断言（肩部阻尼后排序仍须保序）。内部证据档。
         """
         depth_thin = _dip_db(
             _solved_adapter("wilkinson", {**self.NOMINAL, "series_w_mm": 0.25}))

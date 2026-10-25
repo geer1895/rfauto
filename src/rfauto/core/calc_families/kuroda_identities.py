@@ -1,4 +1,4 @@
-"""Kuroda 恒等式族（架构批 W4-S14 席域 2，R2_core_tier3 边际池立项）。
+"""Kuroda 恒等式族（aurora_f W4-S14 席域 2，R2_core_tier3 边际池立项）。
 
 两键：kuroda_identity_abcd（Pozar Table 8.7 四恒等式——单位元/串联短路/
 并联开路/串联开路/并联短路线段在传输线滤波器实现间的精确等效变换，两侧

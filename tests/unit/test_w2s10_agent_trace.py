@@ -1,4 +1,4 @@
-"""EC-23 agent 环结构化追踪单测（架构批 W2-S10 E1）。
+"""EC-23 agent 环结构化追踪单测（aurora_e W2-S10 E1）。
 
 覆盖面：
 - AgentTracer 三级 span 的 JSONL 行结构与字段完整性（mock 环跑一轮）；

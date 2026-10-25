@@ -5,7 +5,7 @@ fab 能力剖面 YAML（knowledge/fab_profiles/{jlcpcb,huaqiu}.yaml）→ 渲染
 几何 DFM 门（本模块，**纯几何零仿真**：无网络、无求解器、无文件 I/O 依赖
 于校验调用点——唯一 I/O 是 load_profile 读剖面）。
 
-判据式（预声明 runs/df6_dp7fab/criteria.md C2）：
+判据式（预声明 内部证据档 C2）：
 - 线宽下限：``名义 × (1 − trace_tol_pct/100) ≥ min_trace_mm``（按铜厚档）；
 - 缝宽：``gap_mm ≥ min_gap_mm``（规格原文无容差折扣）；
 - 铜厚档存在：copper_oz ∈ 剖面 copper_rules；

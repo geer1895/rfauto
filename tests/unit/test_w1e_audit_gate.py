@@ -1,6 +1,6 @@
 """W1-E QM-4 定向门——pip-audit 常态化门包装（scripts/audit_gate.py）。
 
-判据（runs/w1_phase1/criteria.md §W1-E）：
+判据（内部证据档 §W1-E）：
 - 门脚本 dry 冒烟（--help 级 + mock 子进程，不真跑 pip-audit 全量）；
 - 日志路径断言：门日志+报告 JSON 落 --log-dir，日志含 cmd/rc 全量输出
   （#242 门命令落日志惯例）；

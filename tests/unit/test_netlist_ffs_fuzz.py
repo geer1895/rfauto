@@ -12,7 +12,7 @@ max_examples=20，控单元门预算）：
   文法（前缀计数=circuit 顺序、数值 .12g 往返、零归一 "0"）、V 源
   SIN TD 相位换算自洽（td·f0·360 = −(phase+90)）+ ngspice-45.2 实测
   独立锚（test_td_phase_conversion_ngspice_measured_anchor，证据
-  runs/spice_td_anchor_20260929/）、结构行
+  内部证据档）、结构行
   （.tran/.four/.meas/.end）、双次渲染逐字节幂等；
 - netlist 链输出行文法（spice_netlist.parse_ngspice_wrdata_ac）：策略生成
   wrdata 文本→解析**精确**回收（repr 全精度逐位）+ 结构负例（行列残缺/
@@ -337,7 +337,7 @@ class TestSpiceNetlistGrammarFuzz:
 
         自洽钉（td·f0·360=−(phase+90) 由实现公式恒等推出）之上补独立来源：
         一次性真跑对拍（2026-09-29，WSL ngspice-45.2 batch，证据存档
-        runs/spice_td_anchor_20260929/：网表+wrdata 波形+anchor_result.json）。
+        内部证据档：网表+wrdata 波形+anchor_result.json）。
         方法=按写端公式 TD=−((phase+90)/360)/f0 写 SIN(0 1 1e6 TD)→tran
         40µs→LS 投影回收 cos 参考相位（v≈a·cosθ+b·sinθ，φ=atan2(−b,a)，
         t≥4T 共 2305 点，幅值回收 1.0、rms 残差 ~3e-10）。实测：0/45/−90°

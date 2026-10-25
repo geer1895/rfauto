@@ -3,7 +3,7 @@
 三键：helix_axial_performance（Kraus 闭式性能）/ helix_axial_design（反设计，
 for_n_turns/optimal 双 route）/ helix_axial_bandwidth（轴向模工作带宽）。
 
-**薄注册纪律（规格包（内部档））**：
+**薄注册纪律（规格包 内部证据档）**：
 物理公式单源在 ``rfauto.core.helix_axial``（B2 器件族批交付的 Kraus 闭式
 内核，纯函数零 IO）——本模块**只注册不实现**，零公式复制（#116 死副本
 教训：本地副本遮蔽 re-export=死代码）。wrapper 是纯委托：参数单位换算

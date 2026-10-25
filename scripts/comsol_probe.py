@@ -1,4 +1,4 @@
-"""COMSOL RF 通道正式探针（WP4.4c；runs/comsol_probe/_probe_*.py 的正式版）。
+"""COMSOL RF 通道正式探针（WP4.4c；内部证据档 的正式版）。
 
 口径（#215/#217 实证，docs/comsol_references.md §2/§5）：
 - ``mph.start(version="6.3")`` 显式钉版本——MPh 自动探测选最新=6.4（license 过期）；

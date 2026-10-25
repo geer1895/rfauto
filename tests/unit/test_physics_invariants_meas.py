@@ -1,6 +1,6 @@
 """G15 物理不变量·预言机自证面（§4.5 四族负例注入 + 契约非空洞 + 有限 δ）。
 
-架构批 W2-S4 拆分批自 test_physics_invariants.py 迁出（R1 立项 #7）：
+aurora_h W2-S4 拆分批自 test_physics_invariants.py 迁出（R1 立项 #7）：
 本件是预言机自身可失败性的元测试（meta-oracle）——故意破坏的输入必须被
 检出，防止写成恒真断言：
 

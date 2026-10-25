@@ -1,5 +1,5 @@
-"""波导/腔体任意模式闭式谱族（架构批 A2-C 席域 2，R7 第二梯队 T2；
-架构批 W1-S2 续作收口任务书内"圆波导/矩形腔"两子项）。
+"""波导/腔体任意模式闭式谱族（aurora72 A2-C 席域 2，R7 第二梯队 T2；
+aurora_e W1-S2 续作收口任务书内"圆波导/矩形腔"两子项）。
 
 六键：circular_cavity_mode_spectrum（TE/TM_mnp 谐振谱：给半径/长度/频段
 → 模式频率列表+主模标识+TE11 波导截止参考） / circular_cavity_mode_chart
@@ -16,7 +16,7 @@ rectangular_cavity_mode_q（矩形腔任意模式无载 Q，W1-S2）。
   ridged_waveguide = 脊形波导；waveguide_iris/waveguide_lambda_g = 矩形
   TE10 膜片/传播参数面；bethe_hole 内部圆波导截止常数=孔耦合口径——
   本族做**任意模式闭式谱与传播解**（圆波导+圆柱腔+矩形腔；矩形腔为
-  R7 T2"留续作"子项，架构批 W1-S2 收口）。
+  R7 T2"留续作"子项，aurora_e W1-S2 收口）。
 - cavity.py/cavity_perturbation_shift = 腔体微扰**测量**面；
   material_characterization = 分裂腔/Courtney **材料提取**面——本族是
   它们的**上游模式谱供给**（先定模式再提取）；TE011 空腔频率与
@@ -694,7 +694,7 @@ def circular_cavity_mode_q(mode_type: str, m: int, n: int, p: int,
     }
 
 
-# ─── 键 4：圆波导 TE/TM_mn 传播解（架构批 W1-S2 补齐 R7 T2 圆波导子项）───
+# ─── 键 4：圆波导 TE/TM_mn 传播解（aurora_e W1-S2 补齐 R7 T2 圆波导子项）───
 # 口径（Pozar《Microwave Engineering》§3.4 圆波导/Collin；docstring 写死）：
 #   截止：TE_mn fc=x'_mn·c0/(2πa√(εrμr))（x'=J_m' 零点）、TM_mn fc=x_mn·…
 #   （TE11 主模 x'_11=1.8412 → fc=0.293·c0/a 经典口径）；工作频率须>fc
@@ -943,7 +943,7 @@ def circular_waveguide_mode_prop(mode_type: str, m: int, n: int,
     }
 
 
-# ─── 键 5/6：矩形腔 TE/TM_mnp 谱 + 任意模式 Q（架构批 W1-S2 补齐 R7 T2
+# ─── 键 5/6：矩形腔 TE/TM_mnp 谱 + 任意模式 Q（aurora_e W1-S2 补齐 R7 T2
 # ─── "矩形腔留续作"子项）────────────────────────────────────────────────────
 # 口径（Pozar《Microwave Engineering》§6.3 矩形腔；docstring 写死）：
 #   谐振频率（腔 a×b×d mm，均匀填充 εr/μr，分离变量闭式）：

@@ -139,8 +139,8 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `docs/plan_deepdive_specs_20260924.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书："
-- `runs/df6_dp5cascade/criteria.md`（仓内档，公开分发视图不随附，存在性不作测试断言）——引文："runs/df6_dp5cascade/criteria.md（回收钉锚值与来源）。"
+- `docs/plan_deepdive_specs_20260924.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："规格：docs/plan_deepdive_specs_20260924.md §DP-5；判据书："
+- `runs/df6_dp5cascade/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："内部证据档（回收钉锚值与来源）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **122** 个 test 函数）：
 

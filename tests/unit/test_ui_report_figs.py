@@ -251,7 +251,7 @@ class TestParetoRuns:
 class TestServerThinShellGuardStillHolds:
     def test_new_routes_add_no_parsing(self):
         """新增两路由不得把解析/计算带进 UI 层（沿用 test_ui_pages 守卫口径）。"""
-        # 架构批 UI-R1 拆分后扫描面=ui 包全 .py；归属钉按拆分后单源
+        # aurora_d UI-R1 拆分后扫描面=ui 包全 .py；归属钉按拆分后单源
         # （api_run_fig→routes/runs.py，api_pareto_runs→routes/insight.py，
         # route 表仍在 server.py 装配壳）。
         import rfauto.ui as ui_pkg

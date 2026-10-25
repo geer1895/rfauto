@@ -10,7 +10,7 @@ params:
   w_feed_mm: 1.1134
   r_ring_mm: 17.344
 status: ok
-script_sha256: 7c05c16eafdf0b17b18144e69074e162890a46aeba59db821bdfb1020cdf9272
+script_sha256: a63b64858594355526d002bc630011e5d0fc48eb20f0ad7b1072eb2dab90d205
 csx:
   n_primitives: 260
   props:

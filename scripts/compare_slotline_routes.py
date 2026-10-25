@@ -2,11 +2,11 @@
 
 输入（缺则标 pending，不臆造）：
 - 闭式：core/slotline.slotline_closed_form（设计点 w=1.0 h=1.524 er=3.66 f0=2.5）；
-- HFSS：runs/slotline_arbitration/hfss_arbitration.json（stage=done；基准档 wide，
+- HFSS：内部证据档（stage=done；基准档 wide，
   三档 mid/wide/xl 收敛与窄档倏逝模留证）；
-- 路线 A：runs/slotline_port_a/slotline_port_a_results.json（NGSolve 模场 →
+- 路线 A：内部证据档（NGSolve 模场 →
   openEMS WaveguidePort；另一子代理产物，只读）；
-- 路线 B：runs/slotline_port_b/result.json（LumpedPort 跨槽两档 R）。
+- 路线 B：内部证据档（LumpedPort 跨槽两档 R）。
 
 结论口径（验收，任务书）：路线 B β vs HFSS ≤3%；LumpedPort 适用性分级
 （β 可用 / S 参数可用与否）如实；哪条可作生产口径、误差量级、局限逐条写明。

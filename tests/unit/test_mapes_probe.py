@@ -654,10 +654,10 @@ def test_assemble_sref_recal_optin_matches_apply_and_default_unchanged():
 
 
 def test_refix150_sref_recal_regression_pin():
-    """150 轮真机档回归钉（runs/mapes_zall_refix；无档机器 skip 不算绿）。
+    """150 轮真机档回归钉（内部证据档；无档机器 skip 不算绿）。
 
-    钉死三组数（与 runs/mapes_sref_study/evidence.json 同源）：current/wave
-    基线与 runs/mapes_zall_refix/verdict.json 逐位一致；wav+colC 修正上限
+    钉死三组数（与 内部证据档 同源）：current/wave
+    基线与 内部证据档 逐位一致；wav+colC 修正上限
     0.0070774（≤5e-3 目标未达，钉 2.06× 改善与上限值本身；7.0892e-3 系被弃用
     一阶捷径值，断言实钉 SREF 全链复算值）；wave≡current
     恒等式（逐样本精确去 Δ）。
@@ -780,7 +780,7 @@ def test_caliber_gate_rejects_unknown_and_suspended_tau_caliber():
 
 def test_refix150_caliber_gate_regression_pin():
     """150 轮真机档三档口径钉（无档机器 skip，不算绿；与
-    runs/mapes_sref_study/evidence.json 同源）：raw 1.460e-2 / wave 8.965e-3
+    内部证据档 同源）：raw 1.460e-2 / wave 8.965e-3
     均超 ≤5e-3 目标，s2（wav+colC→互易势场）3.2722e-3 达标——S2 数值口径
     消费使互易判读可用达标档（0-用户口径 2026-09-19①）。"""
     from rfauto.core.mapes import z_all_gate_caliber

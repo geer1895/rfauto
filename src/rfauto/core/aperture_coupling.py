@@ -10,7 +10,7 @@
   C. Christopoulos, J.F. Dawson, M.D. Ganley, A.C. Marvin, S.J. Porter,
   D.W.P. Thomas, "Analytical formulation for the shielding effectiveness
   of enclosures with apertures", IEEE Trans. EMC 40(3):240-248, Aug. 1998。
-  文献：White Rose 免费后印本（
+  本机留档 runs/em2/robinson1998_postprint.pdf（White Rose 免费后印本，
   eprints.whiterose.ac.uk/id/eprint/90051），式(1)-(12) 于 2026-10-02
   PDF 渲染放大逐式抄录（原文式回收，非转引）。图锚=Fig.6/7（300×120×300
   mm 黄铜腔 t=1.5mm + 100×5mm 缝，p=150mm：谐振 ~700MHz 负屏蔽、
@@ -545,7 +545,7 @@ def robinson_enclosure_se(
         "loss_zeta": round(float(zeta), 12),
         "z0s_mode": str(z0s_mode),
         "note": "EM-2 Robinson 1998 全链（式(1)-(12)，White Rose 后印本"
-                "逐式回收，文献 White Rose 免费后印本留档）；"
+                "逐式回收，留档 runs/em2/robinson1998_postprint.pdf）；"
                 "单 TE10 模+电小孔近似，缝半波谐振邻域失效；n 孔按式(12)"
                 "串联（忽略互导纳）；ζ 损耗为式(9)(10) 印刷口径"
                 "（UNVERIFIED）；图锚 Fig.6/7 由单测钉住",

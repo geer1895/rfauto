@@ -6,7 +6,7 @@
 
 # 内核文档卡：directional_bridge
 
-> 定向电桥/反射计桥（架构批 W2-S6 席域，R2_core_tier3 §③ D4 立项）。
+> 定向电桥/反射计桥（aurora_f W2-S6 席域，R2_core_tier3 §③ D4 立项）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 Wheatstone 电阻反射计桥器件面：三参考臂节点分析精确 S 矩阵（理想对称档直通/反射耦合、三口全匹配、方向性无穷）与反射计响应闭式（方向性-源匹配残差→被测 Γ 误差双界与回损测量链地板恒等式）。
 
-模块自述（docstring 首行，机读）：定向电桥/反射计桥（架构批 W2-S6 席域，R2_core_tier3 §③ D4 立项）。
+模块自述（docstring 首行，机读）：定向电桥/反射计桥（aurora_f W2-S6 席域，R2_core_tier3 §③ D4 立项）。
 
 ## 公式与口径
 
@@ -107,7 +107,7 @@ analytic-anchor：knowledge/anchors.yaml 机读命中 **0 条**（XA-10「已双
 
 判据书/规格指针（docstring 逐字引文钉）：
 
-- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："定向电桥/反射计桥（架构批 W2-S6 席域，R2_core_tier3 §③ D4 立项）。"
+- `tests/unit/test_w2s6_mixer_bridge_switch.py`——引文："定向电桥/反射计桥（aurora_f W2-S6 席域，R2_core_tier3 §③ D4 立项）。"
 
 测试面（tests/unit 引用扫描，机读；合计 **98** 个 test 函数）：
 

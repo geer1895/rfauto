@@ -31,3 +31,6 @@ from . import render_ring  # noqa: F401  # 注册副作用
 from . import render_horn  # noqa: F401  # 注册副作用
 from . import render_coax_wg  # noqa: F401  # 注册副作用
 from . import render_varactor  # noqa: F401  # 注册副作用
+from . import render_octagonal_spiral  # noqa: F401  # 注册副作用（aurora_k K11 八角螺旋电感，coil_nfc 同款整脚本早分发，尾部追加 #247）
+from . import render_mim_cap  # noqa: F401  # 注册副作用（aurora_k K12 MIM 叠层电容，coil_nfc 同款整脚本早分发，尾部追加 #247）
+from . import render_interdigital_cap  # noqa: F401  # 注册副作用（aurora_k K12 叉指电容，coil_nfc 同款整脚本早分发，尾部追加 #247）

@@ -64,7 +64,7 @@ def _ok_view(**kw) -> dict:
     import time
 
     base = {
-        "machine": "sim-host", "reachable": True,
+        "machine": "sim_server", "reachable": True,
         "ssh": {"auth": "ok"},
         "openems": {"state": "ok", "busy": False, "n_procs": 0},
         "hfss": {"state": "ok", "busy": False, "n_procs": 0},
@@ -78,7 +78,7 @@ def _ok_view(**kw) -> dict:
 
 def test_recommend_eligible_idle_scores():
     rec = recommend_machine(_ok_view())
-    assert rec["machine"] == "sim-host"
+    assert rec["machine"] == "sim_server"
     assert rec["eligible"] is True
     assert rec["excluded_by"] == []
     # 打分 = 213.5/100 − 0×2 − 0×2 = 2.135 → round(...,2)（银行家舍入=2.13）
@@ -156,7 +156,7 @@ def test_resources_view_attaches_recommend_and_probed_at(monkeypatch):
     view = resources_view()
     assert view["ok"] is True
     assert isinstance(view["remote"].get("probed_at"), float)
-    assert view["recommend"]["machine"] == "sim-host"
+    assert view["recommend"]["machine"] == "sim_server"
     assert view["recommend"]["eligible"] is True
 
 

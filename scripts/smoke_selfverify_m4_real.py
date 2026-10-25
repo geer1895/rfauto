@@ -1,6 +1,6 @@
 """WP3.5 M4 自验证环真机联调薄驱动（openems-real-smoke-bundle ⑥）。
 
-等价 `rfauto autotune runs/kicad_b6_stage2/b6_autotune_recipe.yaml --self-verify
+等价 `rfauto autotune 内部证据档 --self-verify
 --budget 3 --mesh 1.0 --mesh-fine 0.5 --json`：直调
 service.autotune_service.self_verify_loop（缺省粗→细双采样器
 autotune_service.py:617-626，均为 openEMS 真机），零源码改动。0bq③ 自述此前
@@ -12,7 +12,7 @@ M4 status 对账；runs/loop_boards/<board_id>.json 与 runs/<run_id>/autotune.j
 落盘；M5 仅沙箱草稿（runs/recipe_sandbox/）不 promote——配方文件哈希前后不变
 （铁律 6）；活跑检测（采样器工作目录 pt_*/fdtd/），全为缓存回放则 PARTIAL。
 
-产物 runs/<run_id>/autotune.json（服务落盘）+ runs/selfverify_m4_real/_smoke_result.json。
+产物 runs/<run_id>/autotune.json（服务落盘）+ 内部证据档。
 """
 from __future__ import annotations
 

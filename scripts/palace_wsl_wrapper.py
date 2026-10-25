@@ -1,6 +1,6 @@
 """生成 Palace WSL2 Windows 侧 wrapper（tools/ 资产，不入 git 的唯一仓内事实源）。
 
-背景（runs/palace_spike/wsl_validation.md + bridge_criteria.md）：
+背景（内部证据档 + bridge_criteria.md）：
 Palace 官方只有 Linux 预编译二进制（palace-x86_64.bin，ELF），Windows 侧
 python subprocess 无法直启；本工作区的二进制装在 WSL2 发行版 rfauto-ubuntu
 内、产物回拷在 <repo>/tools/palace-install/bin/。adapter（palace_solver.py）
@@ -16,7 +16,7 @@ wrapper 把调用转进 WSL。
   python scripts/palace_wsl_wrapper.py            # 写出/刷新两个 wrapper
   python scripts/palace_wsl_wrapper.py --check    # 只校验在位内容一致（CI/门用）
 
-wrapper 契约（细节见 runs/palace_spike/bridge_criteria.md §2）：
+wrapper 契约（细节见 内部证据档 §2）：
   palace.cmd [OPTIONS] CONFIG_FILE
   - CONFIG_FILE 为 Windows 侧绝对路径，helper 内 wslpath -u 转 WSL 路径；
   - 工作目录由 wsl.exe 继承映射（/mnt/<盘>/...），Palace 相对 Output 落回

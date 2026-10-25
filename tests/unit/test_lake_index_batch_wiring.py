@@ -1,4 +1,4 @@
-"""S15（架构批 W4）lake index 批处理消费接线——一致性钉。
+"""S15（aurora_f W4）lake index 批处理消费接线——一致性钉。
 
 R3_perf_quality.md §性能面 Top5：B 类批处理面（health_check_batch /
 monitor_cycle / league 候选枚举）改走 lake_runs_index SQL 主源 + 计数
@@ -165,7 +165,7 @@ class TestCountAndProbe:
         assert n2 == manual
 
     def test_index_scope_dir_count_symlink_not_followed(self, wired):
-        """symlink 目录不入计数（架构批 审查波 2 P3-5 收账）。
+        """symlink 目录不入计数（aurora_f 审查波 2 P3-5 收账）。
 
         is_dir(follow_symlinks=False) 与 _runs_fingerprint 同口径——symlink
         目录计入会让目录侧/索引侧分叉 → 护栏误判滞后 → 无谓回退目录扫。
@@ -180,17 +180,15 @@ class TestCountAndProbe:
         except (OSError, NotImplementedError):
             pytest.skip("符号链接创建受限（Windows 无开发者模式/特权）")
         n1 = index_scope_dir_count(tree)
-        # Path.is_dir(follow_symlinks=) 系 py3.13+ 形参（CI 3.12 实证
-        # TypeError）——等价语义=目录且非 symlink（与 DirEntry 口径一致）
         manual = sum(1 for p in tree.iterdir()
-                     if p.is_dir() and not p.is_symlink())
+                     if p.is_dir(follow_symlinks=False))
         assert n1 == manual
         assert link.is_dir()  # 前提自证：symlink 确实指向目录（但未计数）
         n2 = index_scope_dir_count(tree, two_level=True)
         manual2 = manual + sum(
             1 for t in tree.iterdir()
-            if t.is_dir() and not t.is_symlink()
-            for c in t.iterdir() if c.is_dir() and not c.is_symlink())
+            if t.is_dir(follow_symlinks=False)
+            for c in t.iterdir() if c.is_dir(follow_symlinks=False))
         assert n2 == manual2
 
     def test_probe_usable_matches_dirscan(self, wired):

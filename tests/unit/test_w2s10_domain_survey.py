@@ -1,4 +1,4 @@
-"""域词表巡检引擎单测（UX-B13/Z-8 survey domains，架构批 W2-S10 U3）。
+"""域词表巡检引擎单测（UX-B13/Z-8 survey domains，aurora_e W2-S10 U3）。
 
 两层口径：
 - 探测器灵敏度：合成 repo_root（最小 registry.py/cli 树/toolsets.yaml/
@@ -203,7 +203,7 @@ class TestDetectorSensitivity:
 
 
 class TestMisreportSurfacesFixed:
-    """三误报面修复钉（架构批 W2-S8：W5-P3-4/W5-P3-5/W6-P3-5）。
+    """三误报面修复钉（aurora_f W2-S8：W5-P3-4/W5-P3-5/W6-P3-5）。
 
     修复前形态：① 非字面量条目 ``el.value``/``k.value`` 裸 AttributeError
     出轨迹（引擎死而非 error 信封）；② ``^@mcp\\.resource\\(`` 行首+强制

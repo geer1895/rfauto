@@ -1,4 +1,4 @@
-"""架构批 A3-B 席锚树：stub_tuner 两键（双/三支节并联调配）+
+"""aurora72 A3-B 席锚树：stub_tuner 两键（双/三支节并联调配）+
 linear_antenna_zin 三键（偶极/折合/小环输入阻抗）。
 
 数值断言口径（#118 不自证——恒等式/独立常数/独立路线/跨键互证，不用
@@ -444,7 +444,7 @@ def test_loop_electrically_small_guard():
 
 
 def test_new_keys_description_first_line_format():
-    """架构批 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
+    """aurora72 新规：description 首行 = 中文名（≤24 字符）+全角冒号。"""
     new_keys = ("stub_tuner_double", "stub_tuner_triple", "dipole_emf_zin",
                 "folded_dipole_zin", "small_loop_zin")
     for key in new_keys:

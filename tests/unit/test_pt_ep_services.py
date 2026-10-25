@@ -256,7 +256,7 @@ _SOP = {
         {"name": "清理", "commands": ["taskkill /PID 123"], "note": "危险令牌演示"},
     ],
     "verification": ["谷位落预声明窗", "谷深 ≤-10dB"],
-    "rollback": ["删除冒烟 run 目录", "记录 "],
+    "rollback": ["删除冒烟 run 目录", "记录 开发注记"],
 }
 
 

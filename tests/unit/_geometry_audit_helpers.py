@@ -84,7 +84,32 @@ TEMPLATE_MESH_MM: dict[str, float] = {
     # 缝_min/3=0.2885/3=0.0962 过 #266 守卫（0.4 缺省档 NEAR=0.1 > 0.0962
     # 越守卫即渲染期红——守卫是正确行为，C3 族同口径）
     "xcheb_bpf4": 0.35,
+    # octagonal_spiral（2026-10-23 aurora_k K11）：μm 尺度 μm 工艺档——
+    # 自动档（缺省 0.4mm）比器件（d_out=220µm）还粗，0.006mm 档 NEAR=
+    # 1.5µm ≤ min(s,gap)/3=1.667µm 过 #266 守卫（0.4 缺省档越守卫即渲染
+    # 期红——守卫是正确行为，coil_nfc 族同口径）
+    "octagonal_spiral": 0.006,
+    # mim_cap（2026-10-23 aurora_k K12）：μm 尺度 μm 工艺档——自动档
+    # （缺省 0.4mm）比器件（叠合区 20µm）还粗；0.002mm 档 NEAR=0.5µm ≤
+    # min(port,2d)/3=0.133µm？——d=0.2µm 薄介质 z 向三线显式入网不受
+    # NEAR 平滑影响（#283 端口 ≥2 格由显式中线保证）；x/y 特征 2µm
+    # 端口盒在 0.5µm NEAR 下 ≥4 格。0.4 缺省档越 NEAR 守卫即渲染期红
+    # （守卫是正确行为，K11 族同口径）
+    "mim_cap": 0.002,
+    # interdigital_cap（同批）：齿缝 sf=5µm 工艺档——0.005mm 档 NEAR=
+    # 1.25µm ≤ min(sf,gp)/3=1.667µm 过 #266 守卫（0.4 缺省档越守卫即
+    # 渲染期红——守卫是正确行为，K11 族同口径）
+    "interdigital_cap": 0.005,
 }
+# 各模板网格最小间距守卫阈值（m；#152 家族）：缺省 1µm（μm 尺度金属
+# 特征档）。mim_cap（2026-10-23 aurora_k K12）例外：介质薄层 z 向三线
+# （H、H+d/2、H+d，d=0.2µm 介质）间距 0.1µm——薄层模板的 #152 族适配
+# （#152 去重阈值在渲染端已同步降为 d/4，本表=审计侧同口径），阈值取
+# d/4=0.05µm；其余模板沿用缺省 1µm。
+MESH_MIN_GAP_M: dict[str, float] = {
+    "mim_cap": 5e-8,
+}
+
 # 各模板带宽（以 meta f0 为中心，±0.25GHz）——网格 BASE 由 mesh_resolution
 # 显式覆盖，故带宽只影响激励常量 F0/FC 与辐射器件空气隙。
 BAND_HALF_GHZ = 0.25
@@ -117,6 +142,11 @@ PORT_GROUPS: dict[str, tuple[frozenset[int], ...]] = {
     "ring_resonator": (frozenset({1}), frozenset({2})),
     "coupled_bpf": (frozenset({1}), frozenset({2})),
     "interdigital": (frozenset({1}), frozenset({2})),
+    # interdigital_cap（2026-10-23 aurora_k K12）：梳齿互锁定义性质——
+    # {1}=A 排（馈盘A+左汇流排+A 排指条）、{2}=B 排（馈盘B+右汇流排+
+    # B 排指条）；两组合流=齿缝塌缩短路红（hairpin/C3 同族判据相反面：
+    # 此处短路是红、隔离是定义性质）
+    "interdigital_cap": (frozenset({1}), frozenset({2})),
     "combline": (frozenset({1}), frozenset({2})),
     "sir_bpf": (frozenset({1}), frozenset({2})),
     "cline_coupler": (frozenset({1, 2}), frozenset({3, 4})),
@@ -217,6 +247,20 @@ RECT_DOMAIN_TEMPLATES: frozenset[str] = frozenset({"slotline", "slotline_lumped"
                                                    # §COIL_NFC（df7 C10b）：线圈
                                                    # 矩形域 + FR4 类模板参数基板
                                                    "coil_nfc",
+                                                   # §OCTAGONAL_SPIRAL（K11）：
+                                                   # 矩形域 DOM_X/DOM_Y +
+                                                   # 模板参数基板（nominal
+                                                   # h_mm=0.1 GaAs 档）
+                                                   "octagonal_spiral",
+                                                   # §MIM_CAP/
+                                                   # INTERDIGITAL_CAP
+                                                   # （K12）：矩形域
+                                                   # DOM_X/DOM_Y +
+                                                   # 模板参数基板
+                                                   # （nominal h_mm=0.1
+                                                   # GaAs 档）
+                                                   "mim_cap",
+                                                   "interdigital_cap",
                                                    # §MMWAVE_SERIES_ARRAY（df7
                                                    # C10d）：方域 + RO3003 类
                                                    # 模板参数基板（78GHz 毫米波板）
@@ -347,6 +391,16 @@ MATERIAL_VALUE_PARAMS: dict[str, frozenset[str]] = {
     # §COIL_NFC（df7 C10b）：er/tan_d 只进基板材料属性（slotline/siw 同口径）；
     # h_mm 是几何驱动参数经基板盒/金属面 z 消费，不需豁免
     "coil_nfc": frozenset({"er", "tan_d"}),
+    # §OCTAGONAL_SPIRAL（K11）：er/tan_d 只进基板材料属性（coil_nfc 同口径，
+    # GaAs 板材）；h_mm/几何键经基板盒/金属面 z 消费驱动导体，不需豁免；
+    # ground_plane=0→真值扰动加地板金属盒（几何驱动，不需豁免）
+    "octagonal_spiral": frozenset({"er", "tan_d"}),
+    # §MIM_CAP（K12）：er/tan_d 只进基板材料属性（coil_nfc 同口径，GaAs
+    # 板材）；er_diel/tand_diel 只进 MIM 介质材料属性（kappa 字面量接线由
+    # test_k12_ipc_caps 钉）——几何键全部驱动导体不需豁免
+    "mim_cap": frozenset({"er", "tan_d", "er_diel", "tand_diel"}),
+    # §INTERDIGITAL_CAP（K12）：er/tan_d 只进基板材料属性（coil_nfc 同口径）
+    "interdigital_cap": frozenset({"er", "tan_d"}),
     # §MMWAVE_SERIES_ARRAY（df7 C10d）：er/tan_d 只进基板材料属性（同 coil_nfc
     # 口径，RO3003 类毫米波板）；h_mm/几何键经基板盒/金属面 z 消费，不需豁免
     "mmwave_series_array": frozenset({"er", "tan_d"}),
@@ -424,6 +478,9 @@ DOMAIN_DRIVEN_PARAMS: dict[str, frozenset[str]] = {
 # 令 y<Y_E 无基板）。集合外出现第二块介质即红。
 EXTRA_DIELECTRICS: dict[str, frozenset[str]] = {
     "sma_launcher": frozenset({"ptfe", "sma_notch"}),
+    # mim_cap（2026-10-23 aurora_k K12）：MIM 介质薄层（SiNx 体块，
+    # 下/上极板之间的第二块介质原语——MIM 三明治定义性质）
+    "mim_cap": frozenset({"mim_diel"}),
 }
 
 # 亚 cell 柱体属性（2r < 网格 base，横向不要求网格线穿过）：msl_cpw 的接地过孔
@@ -473,7 +530,7 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     "combline": {"feed_len_mm": (0.9, 0.0)},
     "sir_bpf": {"feed_len_mm": (0.9, 0.0)},
     # siw：s_mm ×1.37 会越泄漏上界 s≤2d（1.383>2×0.6，设计规则守卫拒渲染
-    # ——守卫是正确行为，runs/siw_family/criteria.md §1）；×1.1 保域
+    # ——守卫是正确行为，内部证据档 §1）；×1.1 保域
     # （1.1≤1.2）且必变几何
     "siw": {"s_mm": (1.1, 0.0)},
     # msl_siw_taper（df6 A2）：s_mm 同 siw（设计规则 s≤2d 共用单源）；
@@ -502,7 +559,7 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     # 段长 a=8.7626（抽头位越左边段守卫拒渲染——守卫是正确行为）；×0.9
     # 保域（7.33 < 8.76）且必变几何
     "xcheb_bpf4": {"tap_t_mm": (0.9, 0.0)},
-    # atten_pi/atten_t（ 尾程项 10 前半，2026-10-08）：shunt_off_mm
+    # atten_pi/atten_t（wf:ge9-tail-srv 尾程项 10 前半，2026-10-08）：shunt_off_mm
     # 电共位守卫 θ=β·D≤0.1rad ⇒ ≤0.83mm（render_tl._atten_d_guard，W7-A 残座批
     # D=6mm 分布式失配定谳后立）——缺省 ×1.37+0.013=1.0405mm 越界（守卫拒渲染
     # =正确行为）；+0.05mm 保域（0.80≤0.83）且必变几何

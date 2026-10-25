@@ -4,7 +4,7 @@
 CALCULATOR_REGISTRY._specs 插入序与原单文件逐位一致）。
 公开入口 = rfauto.core.calculators（facade，逐名 re-export）。
 
-═══ 聚合面消费纪律（W11-S3/T7，2026-10-19；R1 架构审计 runs/aurora_g/
+═══ 聚合面消费纪律（W11-S3/T7，2026-10-19；R1 架构审计 内部证据档
 R1_arch_audit.md 面2/Top7）═══════════════════════════════════════════
 
 本 ``__init__`` 是**注册副作用聚合面**（106 条出边全库第一；包面反向
@@ -152,3 +152,11 @@ from . import probability_paper  # noqa: F401  # 注册副作用（aurora_h W3-K
 from . import conductor_reg  # noqa: F401  # 注册副作用（aurora_j W4-S12 良导体表面阻抗薄注册一键——EC-3 收口：δ/Rs/Zs 基准面，公式单源 core/conductor_loss 零复制（polarization_reg 同款薄注册），追加尾位）
 from . import wg_evanescent  # noqa: F401  # 注册副作用（aurora_j W4-S12 矩形波导 TE10 截止下倏逝传播解一键——截止侧全仓空白补口：α 精确式+倏逝波阻抗 ηc，coax 截止衰减器/行波衰减键边界互指，追加尾位）
 from . import antenna_aperture  # noqa: F401  # 注册副作用（aurora_j W4-S13 天线口径效率分解域三键——PLF §4.4.3 薄注册+反射面效率分量/最优角锥喇叭双提升核，公式单源 core/polarization·reflector_antenna·horn_synthesis 零复制，追加尾位）
+from . import deembed_metrics  # noqa: F401  # 注册副作用（aurora_k K8 THRU 去嵌+Z12 串联指标两键——反馈 F6/P14：2x-thru 对称半拆双边去嵌（参考面移回 pad 边缘）+Z12 传输阻抗主口径/−1/Y21 并联免疫副口径+简化式强失配拒绝，公式单源 core/deembed K8 扩展面零复制（conductor_reg 同款薄注册），追加尾位）
+from . import spiral_inductor  # noqa: F401  # 注册副作用（aurora_k K11 八角螺旋电感一键——反馈 F1：GaAs IPD 工艺 μm 参数→Mohan 三式 L+GMD+SRF/Q 一阶+L±25%/SRF>2×f0 质量门，公式单源 core/nfc_coil 四形状内核零复制（deembed_metrics 同款薄注册），追加尾位）
+from . import ipc_cap  # noqa: F401  # 注册副作用（aurora_k K12 两键——反馈 F1：MIM 平行板精确式+叉指 IDC 侧壁 sum-of-capacitances 一阶，C±25%/±50%+SRF>2×f0 质量门，公式单源 core/ipc_cap 零复制（deembed_metrics 同款薄注册），追加尾位）
+from . import terminated_line  # noqa: F401  # 注册副作用（aurora_l G1 端接线输入阻抗精确解一键——Pozar §2.3-2.4 sin/cos 形：微波网络最基本单线变换闭式，vswr_convert 标量面/stub_tuner 调配面不撞，追加尾位）
+from . import filter_prototype  # noqa: F401  # 注册副作用（aurora_l G1 最平坦低通原型一键——Pozar §8.2 g_k 生成式+RL/RS/ωs 阶数闭式+梯形 ABCD vs 多项式双路径自证，chebyshev_prototype 耦合矩阵级不撞，追加尾位）
+from . import network_convert  # noqa: F401  # 注册副作用（aurora_l G1 二端口 S/Z/Y/ABCD 全对全换算一键——Pozar §4.4 网络互换恒等式+串联/并联单元表示缺席如实 null，kuroda/deembed 面不撞，追加尾位）
+from . import oscillator_leeson  # noqa: F401  # 注册副作用（aurora_l G1 Leeson 振荡器相噪模型一键——Leeson 1966 谱形产生面，phase_noise_evm 消费面不撞，追加尾位）
+from . import branchline_coupler  # noqa: F401  # 注册副作用（aurora_l G1 分支线耦合器理想设计一键——Pozar §7 臂阻抗闭式+奇偶模解析 4×4 S 矩阵（匹配+隔离⟺(1/Z1)²−(1/Z2)²=(1/Z0)² 推导在案），synthesize_branchline 模板级不撞，追加尾位）

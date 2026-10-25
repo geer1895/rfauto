@@ -23,8 +23,8 @@
 - 合成 Z_ALL 互易误差 `max|Z - Z^T|` 实测 **8.95e-16**，
   `min eig Re(Z)` 实测 **+0.1336**（>0 → 无源）。
 
-公式来源：src/rfauto/core/mapes.py 模块 docstring（stage-0
-原文实读 + 借鉴节 + TODO 6b）。stage-1 的像素域编号约定是
+公式来源：src/rfauto/core/mapes.py 模块 docstring（开发注记（三十九）stage-0
+原文实读 + 开发注记（三十二）借鉴节 + 待办清单 6b）。stage-1 的像素域编号约定是
 本仓自定（原文 Fig. 端口格点未复刻，见 honest notes），故不编造原文数值。
 """
 

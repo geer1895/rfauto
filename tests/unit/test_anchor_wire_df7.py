@@ -1,6 +1,6 @@
 """df7 锚消费接线第二批——改道钉测试（纯改道，零行为变化）。
 
-逐项交付判据（runs/gate_df7anchorwire.log 定向门口径）：
+逐项交付判据（内部证据档 定向门口径）：
 1. c3.l_via_h：openems_templates 两处 l_via_h=None 消费点（_c3_via_resolved_h
    与 c3_circuit_sparams）改经锚注册表惰性解析（首次 resolve 模块级缓存；
    任何失败回退字面 C3_L_VIA_CAL_H）——锚值逐位 == 0.125e-9，消费点真走

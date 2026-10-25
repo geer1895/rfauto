@@ -446,7 +446,7 @@ from rfauto.cli.domains.hints import hints_list_cmd as hints_list_cmd
 # re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
 # `pitfalls` 命令（#df6① 冲突检查 2026-10-14：全 CLI 树零撞名，grep 实测）。
 # 数据面=knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 全量
-# 解析的坑账速查全量节）；索引加载/校验零逻辑转发
+# 解析 内核立规注记.md 踩坑速查）；索引加载/校验零逻辑转发
 # service/pitfall_index_service 只读面。
 
 from rfauto.cli.domains.pitfalls import pitfalls_app as pitfalls_app
@@ -571,6 +571,16 @@ from rfauto.cli.domains.rest import rest_schema_cmd as rest_schema_cmd
 
 from rfauto.cli.domains.templates import templates_app as templates_app
 from rfauto.cli.domains.templates import templates_golden_diff_cmd as templates_golden_diff_cmd
+
+
+# ─── em（自定义 EM 模型语义检查 CLI 出口，2026-10-23 aurora_k K5：
+# doctor 单叶（P12/F8：模型清单驱动的 pre-solve 几何/端口语义体检）；
+# templates 同款域内自注册 add_typer——此处只 re-export（二次 add_typer
+# 会双注册打红 zero-shadow 钉）；顶层无同名 `em` 域（零撞名自查
+# 2026-10-23：全 CLI 树唯一 em 前缀词是 empty 词面，无 em 命令/组）。
+
+from rfauto.cli.domains.em import em_app as em_app
+from rfauto.cli.domains.em import em_doctor_cmd as em_doctor_cmd
 
 
 if __name__ == "__main__":

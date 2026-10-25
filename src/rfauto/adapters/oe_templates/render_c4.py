@@ -1,11 +1,11 @@
 """c4 耦合器族（cline_coupler/branchline_2sect/lange）（AU-1 自 openems_templates.py 机械拆分，2026-09-30；函数体逐字节未动）。
 
-提升注记（架构批 W1-S3，2026-10-18）：lange 链四函数
+提升注记（aurora_f W1-S3，2026-10-18）：lange 链四函数
 （lange_pair_zee_zoo/lange_equivalent_zee_zoo/lange_design）已下沉
 core/calc_families/lange.py（R2_core_tier3 §⑤ F1 提升式重构；原样提升，
 函数体逐字节未动，提升前后同参输出逐位一致——字节级对拍钉
 tests/unit/test_w1s3_lange_stepped.py，基线
-内部证据目录）。本文件只留再导出
+runs/aurora_f/w1s3_lange_parity_baseline.json）。本文件只留再导出
 （#116 不留本地遮蔽副本），openems_templates/template_specs/fake/edb 等
 既有 import 面零改动。段首口径 1-5 与 §C4 文档段保持本文件口径单源。
 """
@@ -28,6 +28,7 @@ from rfauto.core.calc_families.lange import (
     lange_pair_zee_zoo as lange_pair_zee_zoo,
 )
 
+from ..oe_port_semantics import assert_msl_port_geometry
 from .closedform import _fmt_list, coupled_bpf_width_gap_from_zee_zoo
 from .registry import _DEFAULT_SUB, TEMPLATE_META, TEMPLATE_NOMINAL
 from .render_coupled_bpf import _coupled_section_s4
@@ -450,13 +451,13 @@ def _c4_layout(template: str, p: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("lange 几何须 >0")
         d = w + s
         xs = [(k - 1.5) * d for k in range(4)]    # 四指中心（外指承馈）
-        # c4-去桥单变量对照旋钮（，2026-09-19）：params["_bridge"]
+        # c4-去桥单变量对照旋钮（wf:c4-debridge，2026-09-19）：params["_bridge"]
         # =0 → 桥金属盒+立柱盒全部不渲染、z_lines 同步清空（桥面 z 网格线随之
         # 消失，_near_y 亦不再含桥 y 缘——单变量="无 air-bridge"）；缺省 1=逐
         # 字节不变（render_base_lange.py 快照自证）。关位 0 是合法值，禁用
         # `or` 缺省惯语（#117 falsy 陷阱）。去桥后指 2/3 无馈无桥=悬浮 PEC
         # （FDTD 良定：PEC 感应电流合法、无需 DC 通路）；连通性/网格逐条审计
-        # 归档 内部证据档。
+        # 归档 runs/c4_debridge/。
         _bridge_on = bool(p.get("_bridge", 1))
         gb = _C4_LANGE_BRIDGE_GAP_MM * 1e-3
         tb = _C4_LANGE_BRIDGE_T_MM * 1e-3
@@ -526,9 +527,49 @@ def _c4_gap_midlines(boxes: list[tuple[str, float, float, float,
     return [(a[4] + b[1]) / 2.0 for a, b in pairwise(cond) if b[1] > a[4]]
 
 
+def _c4_port_guard(template: str, p: dict[str, Any],
+                   lay: dict[str, Any]) -> None:
+    """§C4 四端口 MSLPort 端口语义五判据校验（Wave-E E2 单源发射器接线）。
+
+    三模板（cline_coupler/branchline_2sect/lange）共用：_c4_body_lines 在
+    发射 MSLPort 文本前逐端口跑 assert_msl_port_geometry，违例 ValueError
+    建模期炸（K7 哲学——R1 #1 用户 P12 反馈 openEMS 侧同款病灶单源化）。
+    端口盒 z 向口径与发射文本同源（start 贴金属面 zm=H_SUB、stop 落地 0，
+    布局 dict 的 stop z 占位 zm 不消费）；馈线盒=feed_p{nr}_feed（导带截面
+    参照）；base/NEAR 同 render_core 注入口径（_base_mm/_near_ratio），
+    BOARD=60mm 字面量与 _c4_layout 同源；mesh_mm=None 降级（终网格线集
+    渲染期不可知，逐位落位守卫留生成脚本网格段——见 oe_port_semantics）。
+    """
+    base_mm = p.get("_base_mm")
+    if base_mm is None:
+        raise ValueError(
+            f"{template} 端口语义校验需 render_script 注入 _base_mm"
+            "（裸 params 直调 _c4_body_lines 不在支持面）")
+    near_m = float(base_mm) * 1e-3 / float(p.get("_near_ratio", 4) or 4)
+    h_m = float(_DEFAULT_SUB["h_mm"]) * 1e-3   # 与 _c4_layout zm 同源
+    # 馈线盒命名两代并存：_c4_feed_boxes 段=feed_p{nr}_feed（cline/lange），
+    # branchline_2sect 段=feed_p{nr} 直名——两形态各取其一
+    feed_boxes = {b[0]: b for b in lay["boxes"]
+                  if b[0].startswith("feed_p")}
+    for pt in lay["ports"]:
+        nr = pt["nr"]
+        fb = feed_boxes.get(f"feed_p{nr}_feed") or feed_boxes.get(f"feed_p{nr}")
+        if fb is None:
+            raise ValueError(
+                f"{template}: feed_p{nr} 馈线盒缺失（端口/馈线清单失配）")
+        assert_msl_port_geometry(
+            context=f"{template} port{nr}",
+            port_box=((pt["start"][0], pt["start"][1], h_m),
+                      (pt["stop"][0], pt["stop"][1], 0.0)),
+            feed_box=((fb[1], fb[2], fb[3]), (fb[4], fb[5], fb[6])),
+            meas_plane_shift=float(pt["meas_shift"]),
+            feed_shift=10.0 * near_m, near=near_m, mesh_mm=None)
+
+
 def _c4_body_lines(template: str, p: dict[str, Any]) -> str:
     """§C4 三模板渲染几何段（布局字面量 + excite_port 轮转激励 + priority 收口）。"""
     lay = _c4_layout(template, p)
+    _c4_port_guard(template, p, lay)
     ep = max(1, min(4, int(p.get("_excite_port", 1) or 1)))
     out: list[str] = [f"EP = {ep}",
                       f'{template} = CSX.AddMetal("{template}")']
@@ -571,7 +612,7 @@ def _lange_lines(p: dict[str, Any]) -> str:
     # 展开型 Lange 电桥（§C4 口径 3）：四指交替并联（网络 A=指1/3、B=指2/4），
     # 桥=抬高薄金属+竖直立柱（同端 A/B 桥错位、两端分置——#212 bbox 审计
     # 判两组 DC 隔离）；外指承馈 P1/P2/P3/P4。params["_bridge"]=0 → 去桥
-    # 对照变体（单变量，判据 内部证据档）。
+    # 对照变体（单变量，判据 runs/c4_debridge/criteria.md）。
     return _c4_body_lines("lange", p)
 
 

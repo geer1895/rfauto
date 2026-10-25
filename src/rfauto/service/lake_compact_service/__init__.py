@@ -239,11 +239,11 @@ from .vf_summary import (
     sparams_summary as sparams_summary,
 )
 
-# ══ T2 巨石拆分 facade（架构批 W3-S1，2026-10-19）══════════════════
+# ══ T2 巨石拆分 facade（aurora_h W3-S1，2026-10-19）══════════════════
 # 本文件原为单文件巨石 service/lake_compact_service.py，实现按职责域迁入
 # 上方 re-export 的子模块（common/et_ht_dedup/retention/reversible/
 # vf_summary）；此处逐名显式 re-export 全部模块级名（公开面快照钉：拆分
-# 前后 dir() 逐名相等，内部证据目录 一次性证明；
+# 前后 dir() 逐名相等，runs/aurora_h/w3s1_ns_snapshot.py 一次性证明；
 # redundant-alias=PEP 484 显式 re-export 惯例）。原件无 __all__（DP-17
 # 公开 API 快照不入册，共享计数面零碰），门面同样保持无 __all__。
 #

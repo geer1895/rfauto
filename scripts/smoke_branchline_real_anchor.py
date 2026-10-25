@@ -21,7 +21,7 @@ _FOUR_PORT_ROTATION_TEMPLATES，#212 离线审计九判据先过），本脚本�
    macromodel_bridge(真 .s4p) RMS/等级/无源、run_field_circuit_anchor(snp_path=
    真 .s4p) 全链（ADS 段许可阻塞维持 skip-not-fail，0bn PARTIAL 同源）。
 
-产物 runs/branchline_real_anchor/{p1..p4/, branchline.s4p, anchor/anchor_report.json,
+产物 内部证据档{p1..p4/, branchline.s4p, anchor/anchor_report.json,
 _smoke_result.json}。
 """
 from __future__ import annotations

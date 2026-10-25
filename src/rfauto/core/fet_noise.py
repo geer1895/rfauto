@@ -47,7 +47,7 @@ noise_figure_db/noise_figure_circle/z_to_gamma/gamma_to_z）——本模块是
 单位口径：全部 SI（F/Ω/S/Hz/K），T0=290 K 缺省（IEEE 噪声口径），
 z0=50 Ω 缺省。数值 0.0 合法（td_k=0 拒收：Γopt 退化，见 validate）；
 判缺失一律 ``is not None``（#364④）；bool 显式拒收（df7+⑯）。
-纯函数零 IO；LLM 不参与任何数值（AGENTS 纪律 7）。
+纯函数零 IO；LLM 不参与任何数值（内核立规注记 纪律 7）。
 """
 
 from __future__ import annotations

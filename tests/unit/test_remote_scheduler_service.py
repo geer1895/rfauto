@@ -43,13 +43,13 @@ from rfauto.service.remote_scheduler_service import (
 
 def _one_machine(monkeypatch, **kw) -> RemoteMachineConfig:
     cfg = RemoteMachineConfig(
-        name="sim_host", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="10.20.30.40", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.pop("project_root", "E:\\rfauto_remote"),
         probe_ports=kw.pop("probe_ports", {"rdp": 3389}),
         **kw,
     )
-    monkeypatch.setattr(rss, "load_remote_machines", lambda: {"sim_host": cfg})
+    monkeypatch.setattr(rss, "load_remote_machines", lambda: {"sim_server": cfg})
     return cfg
 
 
@@ -175,8 +175,8 @@ def test_remote_full_paths(monkeypatch):
     monkeypatch.setattr(rss, "probe_machine", _probe_ok)
     monkeypatch.setattr(rss, "SshTransport", _FakeTransport)
     _FakeTransport.instances = []
-    view = remote_resources("sim_host")
-    assert view["machine"] == "sim_host"
+    view = remote_resources("sim_server")
+    assert view["machine"] == "sim_server"
     assert view["reachable"] is True
     assert view["ssh"] == {"auth": "ok"}
     assert view["openems"]["n_procs"] == 1 and view["openems"]["busy"] is True
@@ -222,7 +222,7 @@ def test_remote_unreachable_skips_ssh(monkeypatch):
             raise AssertionError("不可达不得发起 SSH")
 
     monkeypatch.setattr(rss, "SshTransport", _NoSsh)
-    view = remote_resources("sim_host")
+    view = remote_resources("sim_server")
     assert view["reachable"] is False and view["state"] == "unknown"
     assert view["openems"]["state"] == "unknown"
 
@@ -237,7 +237,7 @@ def test_remote_ssh_connect_failure_degrades(monkeypatch):
             raise RuntimeError("channel closed")
 
     monkeypatch.setattr(rss, "SshTransport", _DeadTransport)
-    view = remote_resources("sim_host")
+    view = remote_resources("sim_server")
     assert view["state"] == "unknown"
     assert view["ssh"] == {"auth": "failed", "error": "RuntimeError"}
     assert view["n_tasks"] is None
@@ -253,7 +253,7 @@ def test_remote_query_rc_nonzero_degrades(monkeypatch):
             return 1, "", "boom"
 
     monkeypatch.setattr(rss, "SshTransport", _Rc1)
-    view = remote_resources("sim_host")
+    view = remote_resources("sim_server")
     for face in (view["openems"], view["hfss"], view["disk"]):
         assert face["state"] == "unknown"
     assert view["n_tasks"] is None and view["state"] == "unknown"
@@ -267,7 +267,7 @@ def test_remote_probe_raises_degrades_reachable(monkeypatch):
         raise OSError("net down")
 
     monkeypatch.setattr(rss, "probe_machine", _boom)
-    view = remote_resources("sim_host")
+    view = remote_resources("sim_server")
     assert view["reachable"] is None
     assert view["openems"]["state"] == "unknown"
 
@@ -285,7 +285,7 @@ def test_remote_n_tasks_not_faked_when_partial(monkeypatch):
                  project_root="relative/no/drive")
     monkeypatch.setattr(rss, "probe_machine", _probe_ok)
     monkeypatch.setattr(rss, "SshTransport", _FakeTransport)
-    view = remote_resources("sim_host")
+    view = remote_resources("sim_server")
     assert view["openems"]["n_procs"] == 1
     assert view["disk"]["state"] == "unknown"  # 无盘符
     assert view["n_tasks"] == 2 and view["state"] == "partial"
@@ -379,7 +379,7 @@ def test_queue_view_remote_busy_passthrough(monkeypatch):
     _one_machine(monkeypatch, ssh_user="u", ssh_password="p")
     monkeypatch.setattr(rss, "probe_machine", _probe_ok)
     monkeypatch.setattr(rss, "SshTransport", _FakeTransport)
-    env = queue_view("sim_host")
+    env = queue_view("sim_server")
     assert env["remote"]["n_tasks"] == 2
     assert "10.20.30.40" not in json.dumps(env, default=str)
 

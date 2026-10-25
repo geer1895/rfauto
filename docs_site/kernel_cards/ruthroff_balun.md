@@ -6,7 +6,7 @@
 
 # 内核文档卡：ruthroff_balun
 
-> Ruthroff 传输线巴伦/不等阻抗变换器族（架构批 W2-S7 立项；架构批
+> Ruthroff 传输线巴伦/不等阻抗变换器族（aurora_f W2-S7 立项；aurora_f
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 Ruthroff 直通+延迟求和传输线巴伦：单磁芯 n²:1 阻抗比设计（每线最优 Z0=√(r_in·r_out) 一阶带宽定理、电短线设计口径=匹配带缘 |S11|≤0.1 判据）与 4 端子差分导纳精确解（W7-S25 P1-1 物理修正体）——guanella_tlt 拒绝注记指向的等延迟族缺口补全。
 
-模块自述（docstring 首行，机读）：Ruthroff 传输线巴伦/不等阻抗变换器族（架构批 W2-S7 立项；架构批
+模块自述（docstring 首行，机读）：Ruthroff 传输线巴伦/不等阻抗变换器族（aurora_f W2-S7 立项；aurora_f
 
 ## 公式与口径
 

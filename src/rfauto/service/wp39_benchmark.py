@@ -15,11 +15,11 @@
 基线两档：Pattern Search（Hooke-Jeeves 探索移动+模式移动，HFSS
 Optimetrics Pattern Search 口径的等价 scripted loop，经 PyAEDT 驱动
 变量更新+求解）= 达标线；optiSLang MOP = 超额线（本 MVP 未接，见
-TODO/followUps）。
+待办清单/followUps）。
 
 铁律：本模块全部为确定性纯函数或注入式 evaluator 环——零真机即可
 单测（预算/判据/搜索环逻辑），真机只发生在 scripts/wp39_benchmark_run.py
-的 HFSS evaluator 里。数值只在确定性内核（AGENTS 规则 7）。
+的 HFSS evaluator 里。数值只在确定性内核（内核立规注记 规则 7）。
 """
 
 from __future__ import annotations
@@ -330,10 +330,10 @@ def sbo_objectives(metric_name: str) -> list[Objective]:
                       value=-1e6, weight=1.0)]
 
 
-# ── FollowUp 内核（2026-09-13 队列项：TODO 队列2 followUps①-⑤）──────────────
+# ── FollowUp 内核（2026-09-13 队列项：待办清单 队列2 followUps①-⑤）──────────────
 #
 # ③ ratrace 深零点判据：单频 |S31|@f0（−40~−52dB）对网格自适应敏感，
-#    sbo 劣化 +11%（runs/wp39_mvp/summary.json）——给两个鲁棒替代判据：
+#    sbo 劣化 +11%（内部证据档）——给两个鲁棒替代判据：
 #    带宽积分（band_power_avg_db）与深零点邻域（deep_null_neighborhood_db）；
 # ④ patch 谷位标定：谐振常数 f_dip·L 按引擎漂移（HFSS 99.8 vs openEMS
 #    76.8 GHz·mm）——问题定义前先单点扫频定位谷位再定 f0/尺寸；
@@ -341,7 +341,7 @@ def sbo_objectives(metric_name: str) -> list[Objective]:
 
 # ── MVP 基准换代内核（2026-09-16 队列项 wp39-factory-verdict-next）────────────
 #
-# 归因（子项 A，runs/wp39_factory_verdict_next/attribution_mline_s11_pseudofloor.md）：
+# 归因（子项 A，内部证据档）：
 # mline openEMS 工厂地貌被 MSLPort 端口级 |S11| 伪底主导（加密网格不消、
 # β→εeff 地貌物理且随 w 单调）——工厂与基线换"引擎一致指标"：
 # openEMS 侧 β→εeff（CalcPort 金标准口径），HFSS 侧 S21 相位斜率→εeff；
@@ -671,7 +671,7 @@ H1_DOMINANCE_MIN_GAIN_DB = 6.0
 #: |Γ| dB 夹底（Z 精确等于参考时 20·log10(0)=−inf，JSON 不可序列化）。
 GAMMA_DB_FLOOR = -200.0
 #: openEMS 通道线阻抗经验偏差（引擎 ZL 对 HJ 闭式，%）——**经验修正常数**，
-#: 来源：本项 W3② mline 真机三宽度×网格（runs/mline_pseudofloor/）与 W2⑤ wstep
+#: 来源：本项 W3② mline 真机三宽度×网格（内部证据档）与 W2⑤ wstep
 #: pt3_s22_renorm（50Ω −4.7%/35Ω −3.7%，）拟合；适用范围
 #: rogers4350b_h0.508 微带、官方口径网格（λ_sub/50 base，NEAR=base/4）、
 #: 2–3GHz。**不进 core/synthesis HJ 内核**（铁律 7：常数来自真机拟合并可由
@@ -683,7 +683,7 @@ OPENEMS_MLINE_Z0_BIAS_PCT: float | None = None
 #: 网格收敛：1.2mm −11.80% → 0.2mm −4.21%，单调向 HJ 收敛、无常数平台——
 #: 0.25→0.2mm 实测 −4.67→−4.21% 与线性外推 −4.11% 吻合，细网格收敛性已判定
 #: 为"随网格收敛"而非"固定偏差"），单一常数只在声明网格档内有效——按档登记，
-#: 键=网格 base（mm）。来源：W3② 归档重放 10 档（runs/mline_pseudofloor/
+#: 键=网格 base（mm）。来源：W3② 归档重放 10 档（内部证据档
 #: h1_check_archive/meshconv.json）+ 真机 4 点（h1_check_real.json，新模板 ZL
 #: 列与重放逐位一致）；0.8/1.2 档为三宽度均值（w=0.85/1.113/1.4），其余为
 #: w=1.113 单宽度（auto 档 BASE=λ_sub/50@F_MAX 计算值）如实标注。

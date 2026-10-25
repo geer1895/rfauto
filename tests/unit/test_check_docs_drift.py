@@ -1,5 +1,5 @@
 """check_docs_drift 驱动 + build_docs_pages --check 漂移语义测试
-（架构批 A4-D，2026-10-11）。
+（aurora72 A4-D，2026-10-11）。
 
 钉四件事：
 1. build_docs_pages.py --check 退出码语义（与 build_kernel_cards --check

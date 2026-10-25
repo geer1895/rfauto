@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     env = os.environ.copy()
     env["OPENBLAS_NUM_THREADS"] = "1"
 
-    # 慢件分层三态（架构批 R3 #2，与 wf_gate_full_v2 同 env 口径）：
+    # 慢件分层三态（aurora_h R3 #2，与 wf_gate_full_v2 同 env 口径）：
     # RFAUTO_GATE_SLOW_MODE=day 日常轮再跳过 slow 件（终门仍无差别全量，
     # slow 件照常进收官终门——#122 语义不变）；缺省与 night 值不追加
     # 第二 marker（并行门缺省保持全量；night 只跑慢件用

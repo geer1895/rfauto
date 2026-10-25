@@ -1,6 +1,6 @@
 """df6 A1（R4 独立缺口）：2 棒对 k 全波标定锚 + 馈耦合 Qe/J01 语义（OE solo）。
 
-规格与预声明判据（先于一切真机写死）：runs/df6_a1_r4/criteria.md。
+规格与预声明判据（先于一切真机写死）：内部证据档。
 fixture 复用 interdigital 模板 order/gaps_mm 参数化（零模板改动）：
   k fixture = order=2，gaps=[s_f,s_g,s_f]，s_f=0.8 弱馈（KJ 预估 Qe≈127）；
   qe fixture = order=1，gaps=[s_1, 2.0]（弱第二 tap，加载 ≈1%）。
@@ -19,7 +19,7 @@ Qe = ω0·(τmax(S11)−2τ_line)/C_cfg：τ_line=馈线单程群时延（同一
   python -u scripts/df6_a1_r4_runner.py --queue              # 串行队列驱动（detached 可跑，断点续跑幂等）
   python -u scripts/df6_a1_r4_runner.py --table              # 曲线级判读：k(g) 单调门 + J01 对照表
 退出码：0=完成/门过；1=门未达/执行失败；2=参数错误。
-产物根 runs/df6_a1_r4/<pt>/（simulation.py/engine.log/sparams.csv/port_beta.csv/
+产物根 内部证据档<pt>/（simulation.py/engine.log/sparams.csv/port_beta.csv/
 run_meta.json/verdict.json）；曲线级 curve_verdict.json。
 """
 from __future__ import annotations

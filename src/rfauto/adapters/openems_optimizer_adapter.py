@@ -1,6 +1,6 @@
 """openEMS 优化回路适配器——optimizer._create_adapter "openems" 分支的构造体。
 
-产物化自 runs/e11_warm_20260919/e11_openems_harness.py 的战役层进程内补丁
+产物化自 内部证据档 的战役层进程内补丁
 （）：与 fake/hfss 分支同构接入 run_optimization 优化
 回路（消费面 = FakeAdapter/HfssAdapter 的 build_objective/self_heal 子集：
 set_variables / solve→SolveReport / get_sparams→skrf.Network / close /

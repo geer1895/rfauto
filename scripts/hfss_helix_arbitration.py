@@ -19,9 +19,9 @@
 - 导出走 HfssAdapter.export_touchstone（内含 assert_sweep_completed 前置
   断言，#218 家族——不绕过）。
 
-判定（写入 runs/helix_arbitration/hfss_arbitration.json）：
+判定（写入 内部证据档）：
 - f_x(HFSS) = S11→Zin 电抗首个容性→感性上穿（与 smoke 判读同式）；
-- openEMS 侧 f_x 读 runs/antenna2_smoke/helix_wide/sparams.csv 同式计算；
+- openEMS 侧 f_x 读 内部证据档 同式计算；
 - |f_x_oe − f_x_hfss| / f_x_hfss ≤ 5% ⇒ verdict=AGREE（引擎一致，
   k_helix=f_x(HFSS)/2.4 的进式改判由实现轮按 #190 流程另行落地/复核）；
 - >5% ⇒ verdict=DISAGREE；求解失败 ⇒ UNDECIDABLE——k_helix 均不进设计式。
@@ -222,7 +222,7 @@ def _build_and_solve() -> dict:
         # 显式面网格精化（2026-09-17 收尾批第 2 轮实证）：几何/边界审计逐盒正确
         # 而 70.6s 极速解得全带 X∈[−430,−45]Ω 无过零（openEMS −238→+163Ω 过零
         # 3.3146GHz）——0.6mm 带/2mm 馈柱在 ±110mm 开域空气盒里，HFSS 初始网格
-        # ~λ/3@3GHz 量级对细带欠分辨；AGENTS 1b 先审模型：加面长度网格 + 最少收敛
+        # ~λ/3@3GHz 量级对细带欠分辨；内核立规注记 1b 先审模型：加面长度网格 + 最少收敛
         # 2 趟。第 3 轮 0.15mm 与粗网格差 <3%（网格非主因）；第 7 轮真实三维块几何
         # 下 0.15mm 使 hf3d 5.8GB 爬行（10min 推进 26s CPU）→ 第 8 轮放宽 0.3mm
         # （0.6mm 带仍 2 格），自适应趟数补足。

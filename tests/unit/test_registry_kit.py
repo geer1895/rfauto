@@ -15,7 +15,7 @@
    文案+describe 保序）、瀑布三段注册表（静默覆盖+缺名历史文案+独立
    命名空间）、FabPortRegistry（二级 kind/name 组合 Kit：缺名 None 回退
    +create 缺名 KeyError+items 登记序迭代）；
-5. 扩面四批（架构批 W2-S3，R1_arch_audit_v3 §5）：Kit 本体下沉
+5. 扩面四批（aurora_h W2-S3，R1_arch_audit_v3 §5）：Kit 本体下沉
    core/registry_kit.py（infra re-export 同一对象）+键泛化
    （allow_non_str_keys）+登记序 keys（ordered）+{keys_list} 缺名占位符
    新能力自测；BudgetRegistry/EMSolverRegistry/CalculatorRegistry 三面
@@ -503,7 +503,7 @@ class TestFabPortRegistryParity:
         assert reg.names("k2") == ["b"]  # names() 仍字典序
 
 
-# ── 5. 扩面四批（架构批 W2-S3）：Kit 下沉 core+键泛化/ordered/keys_list ────
+# ── 5. 扩面四批（aurora_h W2-S3）：Kit 下沉 core+键泛化/ordered/keys_list ────
 
 
 class TestKitCoreHomeAndKeyGeneralization:

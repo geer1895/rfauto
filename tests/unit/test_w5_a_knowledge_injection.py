@@ -534,7 +534,7 @@ class TestRagMemoFreshness:
 class TestDefaultOffRegression:
     def test_tracked_settings_ships_disabled(self):
         """tracked settings.yaml enabled=true（2026-10-05 W5 合流笔翻开：
-        判分门已过，两步预声明第二步执行，记  八百八十五）。"""
+        判分门已过，两步预声明第二步执行，记 开发注记 八百八十五）。"""
 
         data = yaml.safe_load(
             (REPO / "configs" / "settings.yaml").read_text(encoding="utf-8"))

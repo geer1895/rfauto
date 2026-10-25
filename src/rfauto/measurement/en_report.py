@@ -83,7 +83,7 @@ def gum_combined_uncertainty(
 
     Welch–Satterthwaite 出处：B.L. Welch (1947)/F.E. Satterthwaite
     (1946) 原始文献；合并口径由 GUM（JCGM 100:2008）附件 G 承载
-    （架构批 W4-S4 边际池薄增量——既有函数扩展，非新族，R2 §② 方向 3
+    （aurora_g W4-S4 边际池薄增量——既有函数扩展，非新族，R2 §② 方向 3
     消费面先验结论）。
     """
     total = 0.0

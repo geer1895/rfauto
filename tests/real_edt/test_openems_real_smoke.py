@@ -19,7 +19,7 @@ OpenEMSSolver 全链 connect → build_geometry(template=mline, w=1.113mm
 50Ω HJ 锚标称, line_len=40mm) → solve（auto 网格 λ_sub/50 官方口径，
 子进程 FDTD）→ sparams.csv + port_beta.csv 判读。
 
-判据预声明（绿记录 runs/benchmark/mline_mesh_convergence.json auto 档：
+判据预声明（绿记录 内部证据档 auto 档：
 wall 46s、|S11|max=−23.93dB、εeff=2.91836 对 HJ 闭式 2.85264 偏 +2.30%）：
 - 健康门：全带 max|S11| < −10dB（50Ω 匹配线；显著非零=端口/网格判废信号，
   benchmark criteria.s11_max_db_lt）；

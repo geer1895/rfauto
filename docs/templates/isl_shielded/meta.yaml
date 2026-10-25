@@ -31,7 +31,7 @@ param_semantics: w_mm=条带宽（设计链 core/isl_line.isl_design_params：50
   走 substrate/nominal
 mesh_note: mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；条带缘/藩篱三线对 x 向 + 线两端/每孔三线 y 向精确入网（#198）；过孔直径
   ≥4·NEAR、孔间缝 ≥1 内部线（hmsiw 同守卫）、显式近场线 10µm 地板（#349）；基板 z 4 层+空气隙 2 层（z 网格字面与基板盒/条带同源）
-smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（round15
+smoke_note: 离线审计先行（#212，test_ta_wave_b_templates）；内核数字裁判=三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确），文献频变闭式不可达如实账（扩展轮
   IET 口径，core/isl_line docstring）；近似级别如实登记：准静态/零厚带/PEC 墙/无色散，双半腔非对称一阶误差 O(|h1−h2|/D)（模型 wide-limit 与逐径混合差异，h1=h2
   点恒等已钉）；真机冒烟与 HFSS 仲裁属后续批次（本批零发射）
 
@@ -43,7 +43,7 @@ teaching:
     derivations:
     - claim: 准静态裁判链三精确极限（对称退化≡_stripline_z0 逐位/εr=1→εeff=1/w→∞ 串联层精确）
       formula: Z0(w, g_air, h_sub, εr, h_top)（名义 2.4818mm → 49.999Ω, εeff=1.2854）
-      source: 本仓 core/isl_line（suspended_ms_qs 单源；docs/templates/isl_shielded/meta.yaml smoke_note（round15
+      source: 本仓 core/isl_line（suspended_ms_qs 单源；docs/templates/isl_shielded/meta.yaml smoke_note（扩展轮
         IET 口径：频变闭式不可达如实账））
   sensitivity_ranking:
   - param: w_mm

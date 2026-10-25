@@ -1,4 +1,4 @@
-"""B3 实体导入服务层：JSON 进出的导入/分类/缩放薄壳（AGENTS 规则 4）。
+"""B3 实体导入服务层：JSON 进出的导入/分类/缩放薄壳（内核立规注记 规则 4）。
 
 CLI/MCP 若要暴露实体导入，直接消费本模块函数（与 B2 layout_service 同构：
 内核在 core/solid_mesh + adapters/solid_import，本层只做编排与错误翻译，

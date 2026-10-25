@@ -1,6 +1,6 @@
 """openEMS 优化通道产物化（登记项④）——分支挂点/registry 键/参数传递钉。
 
-产物化面（战役层补丁 → src 正式路径）：
+产物化面（开发注记（二百六十一）战役层补丁 → src 正式路径）：
 - models.registry 注册 mline 最小插件（rfauto.models.mline.plugin）；
 - optimizer._create_adapter 增 "openems" 分支（与 fake/hfss 同构）；
 - 真评估链 = OpenEMSOptAdapter → OpenEMSSolver（render_script 整脚本重渲染）。

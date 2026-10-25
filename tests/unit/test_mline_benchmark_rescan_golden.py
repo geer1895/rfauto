@@ -1,6 +1,6 @@
 """WP1.2 mline 引擎基准 2026-09-13 复扫证据 golden 钉子（离线零真机）。
 
-背景：复扫真跑产物只落 runs/benchmark/（runs/ 不入库），可提交证据面为空。
+背景：复扫真跑产物只落 内部证据档（runs/ 不入库），可提交证据面为空。
 按 tests/golden/ 惯例（参照 wilkinson_fake_baseline.json）把复扫结果快照入库：
 tests/golden/mline_benchmark_rescan_20260913.json。本文件离线回放三件事：
 ① 快照结构自检（防证据文件本身被误改坏）；
@@ -12,7 +12,7 @@ tests/golden/mline_benchmark_rescan_20260913.json。本文件离线回放三件�
 
 证据源真跑命令（本测试不执行任何求解）：
   .venv/Scripts/python.exe scripts/engine_benchmark_mline.py
-  → runs/benchmark/mline_mesh_convergence.json
+  → 内部证据档
   日志尾：ENGINE_BENCHMARK_MLINE_PASS（runs/benchmark/rescan_20260913.log）
 """
 

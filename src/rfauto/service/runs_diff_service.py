@@ -14,6 +14,9 @@ ui 层）。只读：不写任何文件、不触发求解。
 - metrics_delta：指标并集逐键 {a, b, delta}（delta 仅数值键，b−a）
 - sparams_a / sparams_b：|S| dB 曲线（复用 ui_service.sparams_series，
   mode="db"，与 S 参数分析页同口径；无 Touchstone 时空曲线+警告）
+- freshness：K4 ``runs_verify_service.verify_run`` 两侧状态行交叉
+  （``{a, b}`` 各自 fresh/stale/legacy/unknown + stale_kinds 摘要，
+  C2 aurora_l——对比结论可读出"哪边是脏数据"）
 - verdict_hints：确定性判读提示串（模型/通道一致性、带内 S11 方向——
   「S11 越低越好」为仓内既有 UI 口径；其余指标只报差值不臆测方向）
 """
@@ -118,6 +121,33 @@ def _sparams_of(run_id: str) -> dict[str, Any]:
     return {"curves": r.get("curves") or [], "warning": r.get("warning")}
 
 
+def _freshness_side(run_dir: Path) -> dict[str, Any]:
+    """单侧 K4 verify_run 状态行（C2 aurora_l，R1 #14/15；只读 import）。
+
+    与 em_diff_service._freshness_side 同款消费口语义：异常如实 unknown
+    （新鲜度是观测面，不阻塞 diff 主路径 #105）；stale 附 issue 种类
+    摘要（``stale_kinds``）——对比结论可读出"哪边是脏数据"。
+    """
+    from rfauto.service.runs_verify_service import verify_run
+
+    try:
+        verdict = verify_run(run_dir)
+    except Exception as exc:  # 新鲜度观测面故障如实 unknown 不阻塞（#105）
+        return {"status": "unknown", "ok": None, "run_id": run_dir.name,
+                "issues_n": 0, "stale_kinds": "",
+                "note": f"verify_run 异常: {exc}"}
+    issues = [i for i in (verdict.get("issues") or []) if isinstance(i, dict)]
+    return {
+        "status": str(verdict.get("status", "unknown")),
+        "ok": verdict.get("ok"),
+        "run_id": str(verdict.get("run_id") or run_dir.name),
+        "issues_n": len(issues),
+        "stale_kinds": ",".join(sorted({
+            str(issue.get("kind")) for issue in issues if issue.get("kind")})),
+        "note": str(verdict.get("note") or ""),
+    }
+
+
 def _metrics_delta(ma: dict[str, Any], mb: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """指标并集逐键 Δ（b−a；非数值键 delta=None，不臆测）。"""
     out: dict[str, dict[str, Any]] = {}
@@ -210,6 +240,9 @@ def runs_diff(run_id_a: str, run_id_b: str) -> dict[str, Any]:
         metrics_delta=_plain(delta),
         sparams_a=_sparams_of(a),
         sparams_b=_sparams_of(b),
+        # freshness 对照节（C2 aurora_l，R1 #14/15）：A/B 各自 K4 状态行
+        # （fresh/stale/legacy/unknown），前端报告页出对照行。
+        freshness={"a": _freshness_side(dir_a), "b": _freshness_side(dir_b)},
         verdict_hints=_hints(meta_a, meta_b, same_model, same_adapter,
                              params_diff, delta),
     )

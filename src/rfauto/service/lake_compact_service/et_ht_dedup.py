@@ -1,6 +1,6 @@
 """lake_compact_service.et_ht_dedup —— ② et/ht 内容寻址去重的 service 包装。
 
-自 service/lake_compact_service.py 单文件巨石按职责域拆分（架构批 W3-S1，
+自 service/lake_compact_service.py 单文件巨石按职责域拆分（aurora_h W3-S1，
 T2 范式/AU-1 工艺）：代码体自原节「② et/ht 去重的 service 包装」逐字节
 搬迁（plan 纯读扫描 / apply 走 infra 原语，原语在 infra/lake_blob_store），
 零逻辑改动；保护面扫描自 retention 域单向导入。

@@ -214,13 +214,13 @@ def test_precision_section_real_wilkinson_constant():
     assert a["engine_pair"] == {"calibrated": "openems", "referee": "hfss"}
     assert a["value"] == pytest.approx(1.132503)
     assert a["verdict_state"] == "AGREE_OPENEMS"
-    # 公开分发视图不随附内部仲裁证据档：arbitration_runs 不上卡
-    assert "arbitration_runs" not in a
+    assert a["arbitration_runs"] == ["runs/hfss_window_b2a/wilkinson"]
     md = cce.render_card_md(card)
     assert "## 引擎精度卡（跨引擎仲裁锚）" in md
     assert "`wilkinson.f_match.openems-hfss-v1`" in md
     assert "引擎对 openems（hfss 仲裁）" in md
     assert "verdict AGREE_OPENEMS" in md
+    assert "证据：runs/hfss_window_b2a/wilkinson" in md
 
 
 def test_precision_kind_variants_render():
@@ -305,6 +305,7 @@ def test_sensitivity_absent_honest(monkeypatch):
     md = cce.render_card_md(card)
     assert "暂无已落档敏感度排序" in md
     assert "knowledge/sensitivity_rankings.yaml" in md
+    assert cce.SENSITIVITY_DESIGN_NOTE_REL in md
 
 
 def test_sensitivity_present_ranked_r9_order():

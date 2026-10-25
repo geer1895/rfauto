@@ -1,7 +1,7 @@
 r"""SB22-PK-1 封装互连链装配器 v1（确定性内核，铁律 7）。
 
-规格出处：runs/research_seats_20261004/sb_round22/REPORT.md §SB22-PK-1
-（登记原文 runs/pool_reaudit/REAUDIT_REPORT.md #76 行 P3 首件）："die 焊垫
+规格出处：内部证据档 §SB22-PK-1
+（登记原文 内部证据档 #76 行 P3 首件）："die 焊垫
 →microbump→RDL 段→TGV→基板球→PCB，每段是 L/C/lossy line 的 ABCD 级联，
 差分通道还叠加 mtl_modes 的 even/odd"；四内容件：①链装配（段表级联）
 ②差分对版（Z0e/Z0o 段级联→混合模）③金标准对照 ④串扰邻对（凸点阵互感

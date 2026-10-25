@@ -13,7 +13,7 @@ params:
   gap_mm: 1.1328
   tap_frac: 0.398159
 status: ok
-script_sha256: 027234aeaddcb257d9ceaac99ccea11b148d8ca29ab487eede08ee2950c15883
+script_sha256: ed7f270ab8b4969c9f0a9461ea1fae676f67db76897d0a4325224d0be579eb2a
 csx:
   n_primitives: 25
   props:

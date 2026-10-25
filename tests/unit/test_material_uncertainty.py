@@ -6,7 +6,7 @@
 S=p 锚（f=er^p → 数值敏感度回收 p，平方律前提的代数验证）、冻结 ΔL
 档闭式↔数值互证、全 HJ 档与冻结档的分裂量级（ΔL 修正项，区间钉）。
 MC 交叉门（线性一阶 vs 均匀 Monte Carlo，rel≤2%）与确定性（同种子逐
-位一致）。78GHz 案例钉 C10d 既档判读面（runs/ge6_anchor/verdict.json
+位一致）。78GHz 案例钉 C10d 既档判读面（内部证据档
 R1–R4 数字锚：er_design 全闭式 3.1664、R3 门宽 1%）与
 core/anchors.EXPECTED_ANCHORS 注册集一致性（跨面消费者钉）。
 IEEE-754 1-ulp 重排——逐位断言只放在运算次序相同的构造性恒等上
@@ -59,7 +59,7 @@ def _ref_dl(len_mm: float, w: float, er: float, h: float) -> float:
     return 0.824 * h * (ee + 0.3) * (w / h + 0.264) / ((ee - 0.258) * (w / h + 0.8))
 
 
-# C10d 语境几何（runs/ge6_anchor/criteria.md §1 旧名义 G_old）
+# C10d 语境几何（内部证据档 §1 旧名义 G_old）
 L_C10D, W_C10D, H_C10D, ER_C10D = 0.9271, 1.3589, 0.127, 3.0
 W_FEED = 0.3259  # 50Ω 馈线宽（同链）
 F0_78, F_DIP_762 = 78.0, 76.20

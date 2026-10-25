@@ -1,4 +1,4 @@
-r"""W4⑪b WP3.4 神经算子（E3 插件）× kriging A/B（延续计划 :245 验收脚本）。
+r"""W4⑪b WP3.4 神经算子（E3 插件）× kriging A/B（continuation-plan :245 验收脚本）。
 
 方案行（:245）：「数据集 ≥100 点后，FNO/DeepONet 同接口插入与 kriging A/B」；
 E3 验收口径（:482）：「既有锚数据集上 ρ 不劣于 poly_ridge」。

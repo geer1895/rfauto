@@ -41,25 +41,24 @@ class TestCredibilityCurvesService:
     """service 层（真实 runs/ 数据对 + 注册表面）。"""
 
     def test_overview_registry_surface(self):
-        """总览面：注册 9 族（R3 清单口径——注册表代码钉，不依赖证据在盘）；
-        配对/单引擎计数=逐族实时在盘探测面——公开分发视图不随附 runs/ 证据
-        档（CI 干净检出 n_paired=0 如实），证据在盘（内部工作机/随附证据）
-        才钉 5 配对+4 单引擎的全量口径。"""
+        """总览面：注册 9 族、5 配对、4 单引擎（R3 清单+本席在盘复核口径
+        ——此断言钉注册表代码，不依赖证据在盘）。"""
         from rfauto.service import credibility_curves_service as c
 
         ov = c.credibility_curves()
         assert ov["ok"] is True
         assert ov["count"] == 9
+        # 配对态=双引擎曲线证据对（runs/ 湖在盘才可判 paired）——公开树无
+        # 证据湖，paired 诚实归零；单引擎计数随配对态联动（9-0）。
+        runs_lake = Path(__file__).resolve().parents[2] / "runs"
+        has_lake = (runs_lake / "hairpin_calib").is_dir()
+        assert ov["n_paired"] == (5 if has_lake else 0)
+        assert ov["n_single_engine"] == (4 if has_lake else 9)
         templates = {f["template"] for f in ov["families"]}
         assert {"wilkinson", "branchline", "ratrace",
                 "slotline_transitions"} <= templates
         for f in ov["families"]:
             assert f["pairing_state"] in ("paired", "single_engine")
-        assert ov["n_paired"] + ov["n_single_engine"] == 9
-        if _E_WILKINSON.is_file():
-            # 在盘口径（本表全量证据在档时）：5 配对 + 4 单引擎
-            assert ov["n_paired"] == 5
-            assert ov["n_single_engine"] == 4
 
     def test_registered_families_listing(self):
         from rfauto.service import credibility_curves_service as c

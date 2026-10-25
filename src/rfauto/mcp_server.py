@@ -215,9 +215,19 @@ from rfauto.mcp_tools.edb import edb_status as edb_status
 from rfauto.mcp_tools.edb import edb_datasets_resource as edb_datasets_resource
 from rfauto.mcp_tools.edb import edb_status_resource as edb_status_resource
 
+# ─── em 族五只读薄壳（aurora_l Wave-C C1，2026-10-23：+5 工具；append-only ──
+# 金快照 diff 最小化惯例同 env_reliability/preflight/edb 组（facade 尾=注册
+# 序末尾）。零逻辑转发 em_doctor/runs_verify/em_diff/em_metrics/em_sweep
+# service 单源；sweep 执行面不上 MCP（v1 只读 plan 面，反馈 F5）。
+from rfauto.mcp_tools.em_family import em_diff_runs as em_diff_runs
+from rfauto.mcp_tools.em_family import em_doctor_check as em_doctor_check
+from rfauto.mcp_tools.em_family import em_metrics_from_run as em_metrics_from_run
+from rfauto.mcp_tools.em_family import em_sweep_plan as em_sweep_plan
+from rfauto.mcp_tools.em_family import runs_verify as runs_verify
 
 
-# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order/）═══
+
+# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 内部证据档）═══
 # 根因：@mcp.tool 注册是工具组模块**首次 import** 的装饰器副作用——注册序
 # =各工具组模块的首次执行序。金快照（tests/gold/mcp_registration_order.json）
 # 钉的是本文件 from-import 语句顺序（facade 序；isort: skip_file 保证源序
@@ -226,7 +236,7 @@ from rfauto.mcp_tools.edb import edb_status_resource as edb_status_resource
 # 测试收集期 test_mcp_longtask_wait.py 的模块级 ``from rfauto.mcp_tools
 # import jobs``（b74ec8cc 2026-10-03 落地；pytest 收集阶段 eager import
 # 全部测试模块，先于一切测试执行），症状即"组合跑红/单跑绿/同命令两轮
-# 不同结果"的顺序敏感偶发（ 八百二十二）。
+# 不同结果"的顺序敏感偶发。
 # 对策：facade import 收尾按本文件 from-import 语句序对工具做**稳定重排**
 # （注册幂等化）——任意 import 顺序收敛到同一 facade 注册序；组内工具相对
 # 序由稳定排序保持；非工具组件（resource/prompt/template）整块后置且相互

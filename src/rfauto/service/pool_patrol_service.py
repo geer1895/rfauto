@@ -1,10 +1,10 @@
 """池登记项新鲜度巡检器（Z-11 工具化）——确定性双判据引擎。
 
 Z-11（池二十轮「登记项新鲜度巡检」+二十三轮 commit-tag 判据修订+二十四轮
-终版设计）：把全池净表重审计（runs/pool_reaudit/，2026-10-07 第三份人工版）
+终版设计）：把全池净表重审计（内部证据档，2026-10-07 第三份人工版）
 的巡检流程做成确定性工具。判据来源（语境钉死）：
 
-- runs/rx_followup/SESSION_PITFALLS_RX.md 第 2/30 条：commit-tag 首判据 +
+- 内部证据档 第 2/30 条：commit-tag 首判据 +
   ID 撞号二次消歧 + **双判据缺一不可**（9% 闭合仅代码面取证、5% tag 命中
   为假阳）；
 - docs/plan_expansion_pool_20260924.md「Z-11 终版设计」：跨轮 ID 撞号=头号
@@ -13,7 +13,7 @@ Z-11（池二十轮「登记项新鲜度巡检」+二十三轮 commit-tag 判据
 - #222：登记快照过时是系统性现象——任何登记面都只是线索，本工具即其
   制度化清偿件。
 
-判定口径（对齐 runs/pool_reaudit/REAUDIT_REPORT.md 五栏）：
+判定口径（对齐 内部证据档 五栏）：
 - ``closed``   闭合——双判据齐：实现笔 commit（触碰 src/tests/scripts 面）
                message 含本 ID，**且** impl 面代码有本 ID 证据；
 - ``partial``  部分——单判据：只 tag 命中=待代码取证（tag_only_code_pending），
@@ -488,7 +488,7 @@ def scan_code_evidence(
                     break
             # ③ 强关键词子串（撞号且未消解项的纯英文字母词关键词不作代码
             # 证据——单词撞号误报：FE-6 单词 tool-result 撞 UI DOM id 实证
-            # 内部证据目录；中文长 run/带数字混写词区分力足够保留）
+            # runs/aurora_f；中文长 run/带数字混写词区分力足够保留）
             if not matched_lines:
                 kws = it.keywords_strong
                 if it.is_collision and not qual_hit:
@@ -603,16 +603,16 @@ def _load_impl_face(repo_root: Path) -> dict[str, str]:
     return files
 
 
-#: 金标（默认校准集）：runs/pool_reaudit/reaudit_ledger_20261007.json 已知态
+#: 金标（默认校准集）：内部证据档 已知态
 #: 抽样（闭合 16 + 开放 6）。金标判定不一致=工具判据缺陷，修工具不修金标
 #: （任务书口径）。落选说明（2026-10-08 实测，非随机剔除）：
 #: - XD-8：账面开放（10-07），但 2026-10-08 快赢席已落地分层声明
 #:   （core/anchors.py 自证「2026-10-08 快赢席 W1 落地」）——账后漂移，
 #:   金标口径是 10-07 快照，工具对活树的判定（partial）如实不参与校准；
 #: - RP-1：账面开放按件级交付判据（anchors.yaml 复现锚+规格卡产物缺），
-#:   工具双判据只见 commit()+test_rp1_* 文件 → 判 closed——
+#:   工具双判据只见 commit(wf:ge8-rp1)+test_rp1_* 文件 → 判 closed——
 #:   工具判据粒度粗于审计员判据的已知局限例（工具假阳清单承载人工复核）。
-#: 金标随池演进的正当迁移（架构批 战役 2026-10-18，非篡改校准）：
+#: 金标随池演进的正当迁移（aurora_e 战役 2026-10-18，非篡改校准）：
 #: - EC-16（HEBO input warping）→ closed：optimization/surrogate/
 #:   warped_kriging.py+saas_gp.py+gp_det.py 落地（W5-S22，战役账 九百七十七）；
 #: - EC-2（multiline TRL 不确定度传播）→ closed：core/calc_families/

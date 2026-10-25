@@ -1,6 +1,6 @@
 """DP-10 超表面/FSS 族离线审计（#212 制度：渲染→exec 几何段→实测，秒级零仿真）。
 
-判据源=runs/df6_dp10ms/criteria.md（开工前冻结）；规格=DP-10 节。
+判据源=内部证据档（开工前冻结）；规格=DP-10 节。
 本文件管 DP-10 族专项（周期一致/间隙守卫/cell_map 覆盖/地连续/NEAR 守卫/
 名义闭式互证/波导模拟器口径字面），通用审计（原语/端口/连通/域/网格）在
 test_template_geometry_audit.py 自动参数化覆盖。
@@ -561,4 +561,6 @@ def test_expected_templates_contains_ms_family():
     主代理回填 docs 数字以实测为准）。"""
     for t in METASURFACE_TEMPLATES:
         assert t in EXPECTED_TEMPLATES
-    assert len(TEMPLATE_META) == 72  # TA-13 +1（ms_mushroom，EBG/AMC 蘑菇单元）
+    # 71→72（TA-13 ms_mushroom，2026-10-08）→ 72→73（K11 八角螺旋）
+    # → 73→75（K12 mim_cap+interdigital_cap，2026-10-23）
+    assert len(TEMPLATE_META) == 75

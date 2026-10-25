@@ -1,7 +1,7 @@
 """COMSOL mline 锚「数值 TEM 边界模端口」三档网格收敛 harness（队列4 未尽 6i③）。
 
 物理裁判：COMSOL 通道 mline 锚真机对拍升级——集总端口 Uniform 准静态场形
-失配致 εeff +4.81% 如实 FAIL（run7/11，runs/comsol_tail/mline_summary.json），
+失配致 εeff +4.81% 如实 FAIL（run7/11，内部证据档），
 本 harness 用官方数值 TEM 链（Port PortType=TEM + numericTEM=1 + study
 [bma, freq] + 端口 StudyStep 解引用，官方例 cpw_numeric_tem_port/
 microstrip_line_tem_via 同构）+ 基板 tanδ（官方 RF 材料库 LossTangentDF 组）
@@ -36,7 +36,7 @@ core/anchor_verdict.mline_benchmark_verdict——
 h_bend_waveguide_3d 同构）；离线序列由
 tests/unit/test_comsol_tail.py::test_solve_tem_chain_supports_port_sweep 钉住。
 真跑走 solve() 端口扫描分支（_extract_sparams_full 全 2×2 实测装配 +
-COMSOL 原生 Touchstone 导出），产物落 runs/comsol_tail/mline_tem_parametric/，
+COMSOL 原生 Touchstone 导出），产物落 内部证据档，
 判据=双锚（金标准 ≤2%/HJ ≤3%）+ |S11|max < −10dB + 无源性 max|S| ≤ 1+1e-3
 + 互易 max|S12−S21| ≤ 1e-3 + Touchstone 原生导出核验。
 """

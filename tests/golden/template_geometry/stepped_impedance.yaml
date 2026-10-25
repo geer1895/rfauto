@@ -12,7 +12,7 @@ params:
   n_segments: 5
   feed_w_mm: 1.1133
 status: ok
-script_sha256: 2e6153c983fd617baa9c518af2ea88e5158f5c692e65b1852f00e91e20906bb0
+script_sha256: 76dbe64a63aa3e5a54a2677fc872ae071d0ba9f67e21eac8c2f68a4221e58b73
 csx:
   n_primitives: 21
   props:

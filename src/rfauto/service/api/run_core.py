@@ -1,6 +1,6 @@
 """api.run_core —— 运行核心（validate_recipe/dry_run/run_once 与 agent_propose/agent_apply 门面动作）。
 
-自 api.py 巨石按职责域拆分（架构批 W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；本域是包内依赖叶（tuning/reporting 从这里单向导入）。
+自 api.py 巨石按职责域拆分（aurora_g W7-S1 T2，AU-1 工艺）：代码体逐字节搬迁；本域是包内依赖叶（tuning/reporting 从这里单向导入）。
 """
 
 from __future__ import annotations
@@ -58,6 +58,23 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
             get(data["model"])
         except KeyError:
             errors.append(f"未知模型: {data['model']}")
+
+    # K9（aurora_k，P15）：顶层可选 units 字段——"mm"（缺省，现状零变化）|
+    # "um"（IPD 工艺 μm 配方）。此处只做装载侧 schema 校验；几何换算 helper
+    # 在 core.stackup.to_mm（渲染入口单源），各模板接线归模板族席逐步迁移。
+    if "units" in data:
+        try:
+            from rfauto.core.errors import ConfigError  # lazy: recipe-schema 面
+            from rfauto.core.stackup import normalize_units  # lazy: core 轻载
+            units = normalize_units(data["units"])
+        except ConfigError as e:
+            errors.append(f"'units' 字段非法: {e}")
+        else:
+            if units != "mm":
+                warnings.append(
+                    f"units={units!r} 已登记（P15 IPD 工艺口径）——换算 helper "
+                    "core.stackup.to_mm 已就绪，但各模板渲染接线尚未迁移"
+                    "（模板族席），当前模板参数单位语义不变")
 
     # 目标函数校验
     if "objectives" in data:
@@ -414,6 +431,21 @@ def run_once(
         sparams_path.parent.mkdir(parents=True, exist_ok=True)
         sparams_path = Path(adapter.export_touchstone(sparams_path, contract))
 
+        # K4（aurora_k，P11/F7）：Touchstone 落盘点旁写 sidecar 指纹
+        # （run_id+sha256+设计名+导出时间，best-effort #105——失败只记
+        # warning 不阻塞求解产物）。文件级自描述：交付拷贝错配（旧工程
+        # s1p 混进新 run 目录）在文件本体旁即有哈希证据可查。
+        try:
+            from rfauto.service.runs_verify_service import write_touchstone_sidecar  # lazy: run-path（执行面按需取用）
+            write_touchstone_sidecar(
+                sparams_path, run_id=run_id,
+                design_name=str(recipe_data.get("design_name", "RFADesign")),
+                setup=str(setup_name))
+        except Exception as sidecar_exc:  # pragma: no cover - 观测面兜底（#105）
+            import logging as _logging
+            _logging.getLogger(__name__).warning(
+                "Touchstone sidecar 写入失败（非阻断）: %s", sidecar_exc)
+
         # 计算指标（gain_db 目标时先取远场数据——远场指标进 DSL，清理项）
         network = adapter.get_sparams()
         if needs_far_field:
@@ -524,6 +556,18 @@ def run_once(
     })
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     record_run(record=meta)
+
+    # K4（aurora_k，P11/F7）：run 收官指纹落盘 manifest.json（best-effort
+    # #105——失败只记 warning 不阻塞收官）。聚合 recipe 快照哈希 + 全部
+    # Touchstone 清单（sha256/size/mtime）+ meta 关键字段引用；`rfauto runs
+    # verify` 与 report 新鲜度门消费——旧产物混入新 run 不能再静默通过。
+    try:
+        from rfauto.service.runs_verify_service import write_manifest  # lazy: run-path（执行面按需取用）
+        write_manifest(run_dir)
+    except Exception as manifest_exc:  # pragma: no cover - 观测面兜底（#105）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "run manifest 写入失败（非阻断）: %s", manifest_exc)
 
     # WP3.6 收尾钩子（best-effort，#105）：run 落盘后把日志面蒸馏成
     # runs/<id>/log_digest.json 供自愈环/MCP/UI 消费；异常只记 warning 不阻断

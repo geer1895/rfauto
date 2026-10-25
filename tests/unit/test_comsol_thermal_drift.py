@@ -6,7 +6,7 @@ B. adapter D14 stage-2 原子方法 Java 序列（add_structural_properties /
    add_thermal_expansion / add_point_displacement_constraint /
    build_thermal_drift_study / extract_eigenfrequency——全部官方
    cavity_filter_thermal_expansion.mph / biased_resonator_3d_basic.mph
-   dmodel actions 实录口径，runs/d14_stage2/_doc_probe/）；
+   dmodel actions 实录口径，内部证据档）；
 C. 脚本离线面（scripts/comsol_thermal_drift_3field.py：参数表/选择盒/
    build_drift_model Java 序列/evaluate_drift/compare_three_field 判定/
    offline_report/render_summary/CLI --offline/run_real 桩链）。
@@ -218,7 +218,7 @@ class TestStructuralProperties:
             mat, youngs_expr="3[GPa]", poisson_expr="0.3", cte_expr="cte")
         # 官方 MEMS 例：materialmodel 三参 (tag,type,label) 建 Enu 组——
         # label 是材料属性模型组元数据，两参建组真机实证 solid 消费不到
-        # E/nu（刚度退化、位移恒零，runs/d14_stage2/）
+        # E/nu（刚度退化、位移恒零，内部证据档）
         assert ("Enu", "Enu",
                 "Young's modulus and Poisson's ratio") in \
             _creates_under(calls, "propertyGroup.create")
@@ -573,7 +573,7 @@ class TestOfflineReportAndCli:
         report = td.offline_report(spec, temps)
         assert report["mode"] == "offline"
         assert report["stage1_within_20pct_all"] is True
-        # stage-1 hairpin 口径同值（CTE=14/TCDk=50/ΔT=−65/+60）
+        # 开发注记（六十一）stage-1 hairpin 口径同值（CTE=14/TCDk=50/ΔT=−65/+60）
         assert report["by_temp"]["-40"]["oneway_drift_ppm"] == pytest.approx(
             2541.284, rel=1e-4)
         assert report["by_temp"]["85"]["oneway_drift_ppm"] == pytest.approx(

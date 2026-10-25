@@ -306,7 +306,7 @@ def _patch_registry_transport(monkeypatch, sent: list, query_output: str = "",
 
     if cfg is None:
         cfg = types.SimpleNamespace(
-            name="sim_host", host="10.20.30.40",
+            name="sim_server", host="10.20.30.40",
             hfss_ansysedt_exe="E:/ANSYSINC/ansysedt.exe",
             hfss_project_root="E:/rfauto_remote")
     uploads: list[tuple[str, bytes]] = []
@@ -332,7 +332,7 @@ def _patch_registry_transport(monkeypatch, sent: list, query_output: str = "",
     base = "rfauto.infra.remote_machines"
     monkeypatch.setattr(f"{base}.SshTransport", _T)
     monkeypatch.setattr(f"{base}.load_remote_machines",
-                        lambda: {"sim_host": object()})
+                        lambda: {"sim_server": object()})
     monkeypatch.setattr(f"{base}.resolve_machine",
                         lambda name, table: cfg)
     return uploads

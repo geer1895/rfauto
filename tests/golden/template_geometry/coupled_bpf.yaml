@@ -21,7 +21,7 @@ params:
   res_len_mm: 35.5107
   feed_len_mm: 24.4893
 status: ok
-script_sha256: fa177aff5fa76a54ec6019da684609e1bf6c14f24cffa598dea545d8db993900
+script_sha256: 3aac88e04e2d4a5d9a5de25d21d9d23cfc490e2a819562ebe01f26c0698b4916
 csx:
   n_primitives: 24
   props:

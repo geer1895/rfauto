@@ -1,8 +1,8 @@
 """CPS εeff 之争 HFSS 全波仲裁（wf:hfss-cps-arbitration，登记队列第 1 项）。
 
-背景：c9 复跑——openEMS 引擎三通道互证 CPS εeff≈1.90 且
+背景：开发注记（二百四十四）c9 复跑——openEMS 引擎三通道互证 CPS εeff≈1.90 且
 Z·√εeff≈空气闭式 0.1%；FD 裁判（core/quasistatic_fd.py，#300 已过基准）给
-εeff≈1.667。判据=HFSS 全波 εeff 落谁家（±3% 预声明门，runs/cps_hfss_arbitration/
+εeff≈1.667。判据=HFSS 全波 εeff 落谁家（±3% 预声明门，内部证据档
 criteria.md 起跑前写死）。
 
 几何（对齐 c9 真机口径 runs/smoke_c9_refix/cps/pt2 同源）：
@@ -24,12 +24,12 @@ criteria.md 起跑前写死）。
 "! Port Impedance" 恒写 Zpi 禁作判据，Zvi=√(Zpi·Zpv) 记录）。
 
 运行（长任务分离+日志轮询 #157；stdout 落文件 #242；outdir 绝对路径 #243）：
-  powershell Start-Process D:\rf_workspace\\.venv\\Scripts\\python.exe
+  powershell Start-Process D:/rf_workspace\\.venv\\Scripts\\python.exe
     -ArgumentList "scripts/hfss_cps_arbitration.py" -WorkingDirectory
-    D:\rf_workspace -RedirectStandardOutput runs/cps_hfss_arbitration/hfss/run.log
-    -RedirectStandardError runs/cps_hfss_arbitration/hfss/run.err.log
-产物：runs/cps_hfss_arbitration/hfss/{hfss_cps_<档>.s2p, hfss_cps_<档>_gamma.s2p,
-  port_modes.json, project_<档>/}、runs/cps_hfss_arbitration/hfss_arbitration.json
+    D:/rf_workspace -RedirectStandardOutput 内部证据档
+    -RedirectStandardError 内部证据档
+产物：内部证据档{hfss_cps_<档>.s2p, hfss_cps_<档>_gamma.s2p,
+  port_modes.json, project_<档>/}、内部证据档
 """
 from __future__ import annotations
 

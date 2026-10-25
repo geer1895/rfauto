@@ -1,11 +1,11 @@
-"""scripts/rest_e2e_smoke.py + docs_site/rest_schema.json 定向钉子测试（架构批 E2E-REST 席）。
+"""scripts/rest_e2e_smoke.py + docs_site/rest_schema.json 定向钉子测试（aurora_d E2E-REST 席）。
 
 只钉离线确定性面（#139：单测禁网络）——脚本注册面（argparse 契约）、
 verdict 组装 rc 语义、就绪探针超时/进程早死路径（getter 注入 mock）、
 REST 传输面双形信封判据（正反两向）、路由反射对账/GET 探针分类纯函数、
 起服/杀树命令形态；REST schema 常驻产物漂移钉（docs_site/rest_schema.json
 再生产物逐字节一致 + live 枚举一致 + 溯源头在场）。真机起服巡检不在
-单测面（内部证据目录 留档口径）。
+单测面（runs/aurora_d/reste2e/ 留档口径）。
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def test_assemble_verdict_rc0_when_all_pass():
     checks = [smoke.check("a", "g", "t", True, "ok"),
               smoke.check("b", "g", "t", True, "ok", dur_ms=1.0)]
     v = smoke.assemble_verdict({"n_routes": 25}, checks)
-    assert v["schema"] == smoke.REPORT_SCHEMA == "架构批/rest_e2e_smoke/1"
+    assert v["schema"] == smoke.REPORT_SCHEMA == "aurora_d/rest_e2e_smoke/1"
     assert v["summary"] == {"total": 2, "pass": 2, "fail": 0, "rc": 0}
     assert v["checks"][1]["dur_ms"] == 1.0
     assert v["n_routes"] == 25

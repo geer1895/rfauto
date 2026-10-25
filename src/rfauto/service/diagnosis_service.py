@@ -294,7 +294,7 @@ def run_diagnosis(request: dict[str, Any]) -> dict[str, Any]:
             out: dict[str, Any] = _stamped({"ok": True, "result": {}})
             # 子诊断逐项兜底：单子项入参缺失（如 _data_ports 的 ValueError）
             # 不再穿透到外层 except 把整个 full 调用打死——聚合面需要每个
-            # 子结果在场（R3-1，runs/review_ge8e/f3_fix/REPORT.md）。
+            # 子结果在场（R3-1，内部证据档）。
             for name, fn, req in (
                     ("q", diagnose_q, request),
                     ("cm", diagnose_cm,

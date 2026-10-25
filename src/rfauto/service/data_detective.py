@@ -11,7 +11,7 @@
    （et/日志/verdict 工件路径，全程只读 runs/ 证据面）；
 4. **结论**（conclusion）：overall=candidates/no_hit 如实口径 + 叙述。
 
-数字纪律（AGENTS 铁律 7 + F9 report_narrative 全程复用）：叙述里的一切数字
+数字纪律（内核立规注记 铁律 7 + F9 report_narrative 全程复用）：叙述里的一切数字
 必须来自 :func:`report_narrative.build_whitelist` 对 explain 确定性数据的
 白名单；模板路径逐数字走 canonical 化；注入 ``llm_fn`` 时产出未授权数字按
 ``on_unauthorized`` reject/fallback 处置（#139：本模块不发起任何网络调用，

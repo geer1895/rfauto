@@ -1,4 +1,4 @@
-"""链路极限面（架构批 W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
+"""链路极限面（aurora_g W1-S2 席域 C1，R2_core_tier4 §③ Top1 设计案）。
 
 出处（教科书经典闭式二级转引，详见下节公式口径）：
 - shannon_capacity：Shannon 信道容量 C=B·log2(1+SNR)（Cover & Thomas,

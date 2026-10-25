@@ -1,4 +1,4 @@
-"""架构批 W3-CORE6：移相器补口+DOA CRB+多工器四键单测。
+"""aurora_d W3-CORE6：移相器补口+DOA CRB+多工器四键单测。
 
 loaded_line_phaser / switched_line_phaser（calc_families/phase_shifter.py）/
 doa_crb_ula（calc_families/doa_crb.py）/ multiplexer_channel_plan
@@ -6,7 +6,7 @@ doa_crb_ula（calc_families/doa_crb.py）/ multiplexer_channel_plan
 
 裁判口径（#118 双路径：实现路线=各键闭式；独立第二路线=本文件不同
 算法重算——numpy ABCD 矩阵级联/投影器 Fisher 信息/恒等式回代，实现前
-独立复算（内部证据目录 轨迹）后写死）：
+独立复算（runs/aurora_d/_core6_verify_derivation.py 轨迹）后写死）：
 
 - **loaded-line**：numpy ABCD 独立级联第二路线（[1,0;jb,1]·线·同左）；
   匹配设计 S11→0（<1e-12）、|S21|=1（机器精度）；差分相移恒等式

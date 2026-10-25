@@ -3,7 +3,7 @@
 背景（承接 w1b 两节 Marchand 综合 4436c60）：电路级综合
 （core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω
 差分、(Z0e,Z0o)=(95.21,36.49)Ω、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）
-缺全波锚点。HFSS 是对齐基准（项目规则 2026-09-08），本脚本三个锚点：
+缺全波锚点。HFSS 是对齐基准（内核立规注记 2026-09-08），本脚本三个锚点：
 
 (a) 耦合段锚：HFSS 四端口边耦合微带段（w,s,ℓ 同源导入，端口面=全截面
     **2 模大截面波端口**，#254 铁律；模 1/模 2=偶/奇模，模序按 Z0 幅值
@@ -19,7 +19,7 @@
     （marchand_two_section_sparams 同几何回代）逐量差值。
 (c) slotline β 锚（离线，零求解）：slotline_lumped 名义几何（w_slot=1.0mm
     @h=1.524）β 对 core/slotline 闭式与既有 HFSS 仲裁
-    （runs/slotline_port_b/result.json，HFSS-wide
+    （runs/slotline_port_b/result.json，开发注记（二百）HFSS-wide
     66.767 rad/m）差值复现。
 
 拓扑（(b) 物理布局 ↔ 电路级 marchand_two_section_sparams 端口约束，逐端
@@ -737,7 +737,7 @@ def analyze_anchor_c() -> dict:
                   and math.isfinite(rec_hfss))
     return {
         "anchor": "c",
-        "title": "slotline β 锚（离线）：名义几何三方 β 差值复现（ 二百）",
+        "title": "slotline β 锚（离线）：名义几何三方 β 差值复现（开发注记 二百）",
         "geometry": {"w_slot_mm": w_mm, "h_mm": h_mm, "er": er, "f0_ghz": f0,
                      "template": "slotline_lumped 名义（meta.yaml nominal）"},
         "beta_rad_m": {"closed_form": beta_cf, "hfss_wide_gamma": hfss_beta,
@@ -755,7 +755,7 @@ def analyze_anchor_c() -> dict:
                            "齐全 → AGREE；否则 PARTIAL（数据漂移如实）",
                  "source": str(src)},
         "declared_differences": [
-            "零新求解：消费 runs/slotline_port_b/result.json（"
+            "零新求解：消费 runs/slotline_port_b/result.json（开发注记（二百）"
             "HFSS-wide β=Gamma 口径）+ core/slotline 闭式重算",
         ],
     }
@@ -928,7 +928,7 @@ def write_summary() -> dict:
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "anchors": anchors,
         "overall": overall,
-        "note": "HFSS=对齐基准（项目规则 2026-09-08）；门写死于脚本常量（#122）",
+        "note": "HFSS=对齐基准（AGENTS 2026-09-08）；门写死于脚本常量（#122）",
     }
     (OUT / "verdict_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=1) + "\n",

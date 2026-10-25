@@ -26,6 +26,17 @@ layers =
     rfauto.pipeline
     rfauto.infra
     rfauto.core
+ignore_imports =
+    rfauto.adapters.openems_solver -> rfauto.service.runs_verify_service
+    rfauto.adapters.openems_rotation -> rfauto.service.runs_verify_service
+    rfauto.adapters.comsol_adapter -> rfauto.service.runs_verify_service
+    rfauto.adapters.ngsolve_adapter -> rfauto.service.runs_verify_service
+    rfauto.adapters.mmt_adapter -> rfauto.service.runs_verify_service
+    rfauto.adapters.pssfss_adapter -> rfauto.service.runs_verify_service
+    rfauto.adapters.qucsator_adapter -> rfauto.service.runs_verify_service
+    rfauto.optimization.optimizer -> rfauto.service.runs_verify_service
+    rfauto.optimization.mf_backend -> rfauto.service.runs_verify_service
+    rfauto.optimization.sweep_backend -> rfauto.service.runs_verify_service
 
 # calc_families 聚合面收缩契约（2026-10-19）：
 #   rfauto.core.calc_families 包 __init__ 是"注册副作用聚合面"（import 即完成
@@ -94,6 +105,8 @@ ignore_imports =
     rfauto.cli.domains.agent_kicad -> rfauto.adapters.kicad_drc
     # 待包 service：oracle 注册表只读视图+离线交叉核验展示
     rfauto.cli.domains.calc_vna -> rfauto.core.closed_form_oracle
+    # 显式豁免：去嵌指标直读 core 纯函数面（K8 反馈 P17 em diff CLI，aurora_l）
+    rfauto.cli.domains.em -> rfauto.core.deembed
     # 显式豁免：NODE_KINDS 纯常量
     rfauto.cli.domains.dag -> rfauto.core.compose.dag_schema
     # 显式豁免：cli v1 通用 DAG 执行器直用基座（自带 subprocess ExecutorFn；

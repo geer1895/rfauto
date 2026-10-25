@@ -1,7 +1,7 @@
 """wstep 阶跃基元真机锚 pt3（W2⑤ 定案 (a) 版）：双激励进程隔离 + 端接口径统一后按 50Ω 裁判重判。
 
 背景：
-- pt3_s22（①，commit 9cbb1b9）：两次激励进程隔离（#208），
+- pt3_s22（开发注记（一百八十四）①，commit 9cbb1b9）：两次激励进程隔离（#208），
   G1-G3 连续复现，新门 G4 幅度镜像 0.208 / G5 互易 0.072 失守 ⇒ FAIL；根因已
   闭式定位——openEMS 端口面贴 PML，非激励端的线由 PML 按线自身 Z0 端接，
   CalcPort(ref_impedance=50) 只是 50Ω 伪波分解，与 fake/skrf "50Ω 双端接"
@@ -72,7 +72,7 @@ H_SUB, ER, F_MID = 0.508, 3.66, 2.5
 MESH = 0.4  # 收敛档（pt2 同口径）
 FREQ_RANGE = (1.5, 3.5)
 BOARD_MM = 60.0  # 模板渲染 footer BOARD=60e-3（端口面=板边）
-MIRROR_TOL = 0.01  # G4/G5：followUp④ 口径（线基重判）
+MIRROR_TOL = 0.01  # G4/G5：开发注记（一百一十五）followUp④ 口径（线基重判）
 JUDGE_TOL = 0.05   # G6：定案 (a) 同定义后引擎 vs fake 逐点幅度偏差
 BAND_REL = 0.04    # β/ZL 中值窗 ±4%·F_MID（pt2 同法）
 

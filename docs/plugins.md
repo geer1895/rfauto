@@ -51,7 +51,7 @@ cookiecutter .   # 或 python -m tools.plugin_templates.render template_family
 pip install -e ./<你的包> --no-deps
 ```
 
-渲染类插件的自主修改一律走沙箱草稿→三层 Gate 晋级（AGENTS 铁律 6/7：
+渲染类插件的自主修改一律走沙箱草稿→三层 Gate 晋级（内核铁律 6/7：
 LLM 永不产物理数字；数值只在确定性内核）。
 
 ## metric/benchmark 插件（metric_benchmark 模板）

@@ -62,7 +62,7 @@ class TestRegistryDiscovery:
         assert runtime.name == "pydantic_ai"
 
     def test_builtin_and_pydantic_ai_coexist(self):
-        # create 未命中时按需导入插件，两实现同表可换（AGENTS 规则 6）
+        # create 未命中时按需导入插件，两实现同表可换（内核立规注记 规则 6）
         assert "builtin" in RuntimeRegistry.available()
         RuntimeRegistry.create("pydantic_ai")
         assert "pydantic_ai" in RuntimeRegistry.available()
@@ -588,7 +588,7 @@ class TestOfflineConstructionSmoke:
         from rfauto.service import pydantic_ai_runtime as mod
         # 缝随 T1 叶化迁移：runner 直读 chat_settings_io 叶（W16 消费侧
         # 迁移 fa9934b7），patch 必须钉叶本体才拦得住通道（#139 钉通道
-        # 纪律——本测曾因缝未随迁放真配置泄入，架构批 T1 席实证）
+        # 纪律——本测曾因缝未随迁放真配置泄入，aurora_h T1 席实证）
         monkeypatch.setattr(chat_settings_io, "get_chat_settings_raw",
                             lambda: {"base_url": "http://127.0.0.1:9", "model": "dummy-model",
                                      "api_key": "x"})

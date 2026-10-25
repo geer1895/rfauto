@@ -19,7 +19,7 @@ from tests.unit._dataset_service_helpers import runs_env
 __all__ = ["runs_env"]
 
 
-# ── W6-P3-8 护栏（架构批 W1-S4）：RFAUTO_REGEN_GOLDEN 残留吞回归 ──────────
+# ── W6-P3-8 护栏（aurora_f W1-S4）：RFAUTO_REGEN_GOLDEN 残留吞回归 ──────────
 #
 # RFAUTO_REGEN_GOLDEN=1 的语义是"有意重写 golden 基线"（文档口径=设 env 后
 # 显式跑对应测试文件）。残留 env（此前会话设了忘清）混进无关测试跑时会让

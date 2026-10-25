@@ -1,6 +1,6 @@
 """谐振频率温漂一阶闭式（TCDk/CTE 链）与谐振器 f(T) 换算（MT-8）。
 
-审查批条目来源（内部审查档）；条目
+ge8d 波·席D4（runs/ge8_followup/wave_d/seat_d_all.md §席D4）；条目
 docs/research_expansion_20261002_round17.md MT-8「滤波器温度补偿：材料
 TCf/CTE→耦合矩阵漂移+补偿耦合设计」——本件只落**谐振频率温漂一阶闭式**
 （席任务书收窄口径：耦合矩阵漂移/补偿耦合设计不在本席范围，如实不做）。

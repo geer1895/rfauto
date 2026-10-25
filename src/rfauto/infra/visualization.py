@@ -214,7 +214,7 @@ def generate_html_report(
 
 # ═══ G9 场可视化 3D：openEMS DumpHDF5 → 切片/等值面 web 化（§10.7 G9 余量）═══
 #
-# 设计（项目规则 铁律 7 + #105 best-effort）：
+# 设计（内核立规注记 铁律 7 + #105 best-effort）：
 # - 本节 = 确定性 numpy 内核：只做求解器产物的几何/代数变换（|E| 包络、
 #   轴对齐切片、等值面/等值线、dB 归一、Γ→阻抗），不发明任何物理数字；
 # - PyVista（VTK）只在 field_isosurface(engine="auto"|"pyvista") 内惰性
@@ -563,7 +563,7 @@ def farfield_pattern_from_h5(path: str | Path) -> dict[str, Any]:
     Frequency、Prad。返回 theta_deg[]、phi_deg[]、db[theta][phi]（与
     nf2ff_service.pattern3d 同向：theta 行 × phi 列）。
 
-    双格式（M-4① 审计 §3.4 A1，runs/m4_openems_v037_audit/report.md）：
+    双格式（M-4① 审计 §3.4 A1，内部证据档）：
     - legacy 拆分（本机 dev11 引擎实测写此格式）：nf2ff/E_theta|E_phi/FD/
       f0_real|f0_imag，各存 (n_phi, n_theta)；
     - v0.37 compound（上游 master 引擎）：同路径 f0 为 {r,i} compound，

@@ -1,6 +1,6 @@
 """DP-17 O1 单测——插件三件套：cookiecutter 模板渲染→注册→dry-run。
 
-判据（runs/df6_dp17/criteria.md §O1）：
+判据（内部证据档 §O1）：
 - 两模板（solver_adapter/template_family）渲染产物 compile 通过；
 - 适配器包 import 即注册（字符串类型键）+ check_adapter_contract 通过
   + EMSolverConfig dry-run（connect/build/solve/get_sparams/close）跑通；

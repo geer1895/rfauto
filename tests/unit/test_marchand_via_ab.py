@@ -84,7 +84,7 @@ def test_diff_rod_sheet_is_via_segment_only():
 
 # ─── ② rod 缺省=烟测口径（golden 语句 + 数值硬钉） ────────────────────────────
 
-#: golden 语句（runs/smoke_marchand_2sect/render_run.py @ 落档版，2026-09-21 钉；
+#: golden 语句（内部证据档 @ 落档版，2026-09-21 钉；
 #: 空白归一比对——模块级流缩进少 4 空格，语句内容逐词同文；csx→CSX 系模块级
 #: 变量名重命名，该行不在此列、由 exec 数值断言兜底）
 _SMOKE_GOLDEN = (

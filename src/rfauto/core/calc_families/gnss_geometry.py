@@ -1,4 +1,4 @@
-"""GNSS 定位几何族（架构批 W9-S2 席，R3_domain_expansion 视角4 E1 Top6
+"""GNSS 定位几何族（aurora_g W9-S2 席，R3_domain_expansion 视角4 E1 Top6
 ——导航场景空白收官）。
 
 三键：gdop_dop（卫星相对位置矢量→LOS 方向余弦几何矩阵 H→Q=(HᵀH)⁻¹→

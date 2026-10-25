@@ -71,11 +71,11 @@ is missing instead of forcing a verdict.
 
 ## 3. Reading unhealthy: mask semantics and the two FAIL families
 
-Now an unhealthy verdict from a real archive (the aurora_c campaign's
+Now an unhealthy verdict from a real archive (the demo_oe_campaign archive's
 branchline working directory):
 
 ```bash
-rfauto runs health aurora_c_oe/branchline
+rfauto runs health demo_oe_campaign/branchline
 ```
 
 Measured output (excerpt):

@@ -1,4 +1,4 @@
-"""building_penetration 族（架构批 W14-S3 席，R3_domain_expansion 视角4
+"""building_penetration 族（aurora_g W14-S3 席，R3_domain_expansion 视角4
 E4 穿媒质/穿墙空白——建筑媒质电性质+单层板穿透链）。
 
 两键：building_material_properties（ITU-R P.2040-4 Table 3 材料电性质
@@ -15,7 +15,7 @@ conductor_loss（金属）/sla_print（塑料 3D 打印）/itu_atmosphere（大�
 itu_link（雨/气体/云雾）——本族只做**建筑媒质与墙板穿透**。
 
 物理口径（#1c/#300 出处纪律；官方 PDF 逐式转写，证据
-内部证据目录 原文在档）
+内部证据档 原文在档）
 --------------------------------------------------------
 1. 材料电性质（P.2040-4 §3.1 式(57)/(58)+Table 3 逐行转写）：
 
