@@ -43,6 +43,7 @@ on:
 jobs:
   changes:
     name: change scope (docs-only fast path)
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     outputs:
       docs: ${{ steps.scope.outputs.docs }}
@@ -117,7 +118,9 @@ jobs:
   test:
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    name: pytest (unit + integration-fake, no EDA) shard${{ matrix.shard }}/2
+    # 名字静态化：job 级 if 未通过时 matrix 不展开，名字里带 matrix 变量会
+    # 显示成裸表达式；shard 号由 step 名与日志体现。
+    name: pytest (unit + integration-fake, no EDA)
     runs-on: ubuntu-latest
     # 双分片：套件扩到 27642 后单 job 连续两轮被 runner 外杀
     # （run 39936814053 在 82% 处 exit 143、run 39945200918 主 step 悬挂
