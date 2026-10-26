@@ -2,6 +2,33 @@
 
 All notable changes to rfauto will be documented in this file.
 
+## [0.12.1] - 2026-10-26
+
+### Added
+
+- **Docs-only CI fast path**: a `changes` job classifies each push
+  (`scripts/ci_change_scope.py`); documentation-only pushes now run just the
+  quality gates (numbers/encoding/sensitive) and the docs-site drift check
+  (~3–5 min) instead of the full matrix, while any change under
+  `src/tests/recipes/scripts/configs` keeps the full matrix. Escape hatches:
+  `[full-ci]` in the commit message, or the `full_ci` input on a manual dispatch;
+  an unresolvable baseline (new branch, force push) runs everything. Unknown
+  paths are treated as code (fail-safe).
+
+### Documentation
+
+- READMEs rebuilt as a nine-domain capability map plus an eight-step,
+  license-free quick start with measured outputs; four new bilingual reference
+  figures (capability map, engine ladder, quality gates, calculator distribution)
+  and refreshed bilingual workbench screenshots.
+- Stale counts refreshed (`152 → 157` MCP tools) and the calculator total stated
+  precisely: 341 = 340 regular + 1 experimental.
+
+### Fixed
+
+- Workbench: relative timestamps and the brand tagline are localized (English
+  mode no longer shows Chinese fragments).
+
 ## [0.12.0] - 2026-10-26
 
 ### Added

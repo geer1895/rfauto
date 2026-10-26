@@ -7,6 +7,14 @@
 #                       CI 上永远以 `-m "not real_edt"` 排除，只验证可收集不执行
 #
 # Linux runner 是唯一允许的非 Windows 环境（用户环境约束：本机不做 Linux 适配）。
+#
+# 变更面感知（2026-10-26）：`changes` job 先判定本次推送的变更面——
+#   文档-only（README/docs/docs_site/CHANGELOG 等）→ 只跑 quality（数字链/
+#   编码/敏感扫描）+ docs-drift，跳过 pytest 两分片/preflight/供应链/docker；
+#   任何代码面变更（src/tests/recipes/scripts/configs/…）→ 全矩阵照跑。
+#   逃生口：commit message 含 [full-ci]，或 workflow_dispatch 勾选 full_ci，
+#   或拿不到可比基线（新分支/force push）→ 一律全跑。未识别路径按代码面
+#   处理（fail-safe：宁可多跑，不可漏跑）。判定器=scripts/ci_change_scope.py。
 
 name: CI
 
@@ -14,6 +22,12 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      full_ci:
+        description: "Force the full matrix (ignore the docs-only fast path)"
+        type: boolean
+        default: true
   schedule:
     # 活规则周期重跑（K1）：每周一 03:00 UTC 复跑 rules.yaml verify
     # 验证测试，防综合引擎（skrf/scipy）或依赖版本漂移使定案值失真。
@@ -27,6 +41,38 @@ on:
     - cron: "30 2 * * *"
 
 jobs:
+  changes:
+    name: change scope (docs-only fast path)
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.scope.outputs.docs }}
+      code: ${{ steps.scope.outputs.code }}
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 需要推送前的 commit 才能算变更面（push 事件 before..HEAD）
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: scope
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_EVENT_BASE: ${{ github.event.pull_request.base.sha }}
+          GITHUB_EVENT_HEAD_MSG: ${{ github.event.head_commit.message }}
+          CI_FORCE_FULL: ${{ github.event.inputs.full_ci }}
+        # fail-safe：判定器自身出错时回落「全跑」——绝不让重 job 因判定失败
+        # 被静默跳过（跳过=真门不开，比慢 30 分钟危险得多）。
+        run: |
+          python scripts/ci_change_scope.py || {
+            echo "change-scope classifier failed; defaulting to FULL matrix"
+            {
+              echo "docs=true"
+              echo "code=true"
+              echo "full=true"
+            } >> "$GITHUB_OUTPUT"
+          }
+
   quality:
     name: lint + contracts + numbers + encoding + sensitive
     runs-on: ubuntu-latest
@@ -69,6 +115,8 @@ jobs:
         run: python scripts/scan_sensitive.py
 
   test:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     name: pytest (unit + integration-fake, no EDA) shard${{ matrix.shard }}/2
     runs-on: ubuntu-latest
     # 双分片：套件扩到 27642 后单 job 连续两轮被 runner 外杀
@@ -148,6 +196,8 @@ jobs:
           echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
 
   preflight:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     name: merge preflight (drift-face early gate)
     # timeout-minutes：job 级兜底闸（GitHub 缺省 360min 过宽）。上游口径
     # =check_numbers 900s 上限 + pytest 漂移面 600s 上限 + 3 个 AST/meta
@@ -194,6 +244,8 @@ jobs:
           OPENBLAS_NUM_THREADS: "1"
 
   licenses:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     name: license compliance gate (P-3 pip-licenses)
     runs-on: ubuntu-latest
     steps:
@@ -236,10 +288,14 @@ jobs:
           python -m pytest tests/unit/test_rules_verify.py -q -m "not real_edt"
 
   docs-drift:
-    name: docs_site regeneration drift (daily schedule)
+    name: docs_site regeneration drift (daily schedule or docs-only push)
+    needs: changes
     runs-on: ubuntu-latest
-    # 只在每日 02:30 UTC 触发跑（周一 03:00 weekly 触发归 rules-verify）
-    if: github.event.schedule == '30 2 * * *'
+    # 两路触发：①每日 02:30 UTC 定时（周一 03:00 weekly 归 rules-verify）；
+    # ②文档-only 推送（fast path 下 test 分片被跳过，站点再生由本 job 兜住）。
+    if: >-
+      github.event.schedule == '30 2 * * *' ||
+      (needs.changes.outputs.full == 'false' && needs.changes.outputs.docs == 'true')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -270,6 +326,8 @@ jobs:
   # 模块级导入零 extras，惰性 import 纪律由它背书）。构建与冒烟全用裸
   # docker 命令，除官方 checkout/buildx 外不引第三方 action。
   docker-build:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     name: Dockerfile build smoke (C14b)
     runs-on: ubuntu-latest
     steps:
@@ -305,6 +363,8 @@ jobs:
   # 后续依赖变更后仓主重跑 uv lock 并同笔提交即可。
   # ---------------------------------------------------------------------
   supply-chain:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     name: supply chain (pip-audit + CycloneDX SBOM + hashed requirements)
     runs-on: ubuntu-latest
     steps:
