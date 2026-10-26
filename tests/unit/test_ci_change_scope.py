@@ -36,6 +36,8 @@ class TestDocPath:
         "conftest.py", "Dockerfile", ".github/workflows/ci.yml",
         # knowledge/ 是测试与再生面的数据输入（判据骨架/锚），按代码面处理
         "knowledge/anchors.yaml",
+        # docs/templates 是模板元数据真源（测试/生成器输入）→ 代码面
+        "docs/templates/wilkinson/meta.yaml",
         # 未识别路径 → fail-safe 代码面
         "some_new_dir/file.xyz",
     ])

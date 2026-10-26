@@ -312,13 +312,29 @@ jobs:
           # 与 test job 同依赖面——再生成结果随依赖版本漂移正是本 job
           # 要抓的对象，审计面必须与真实安装集一致
           pip install -e ".[hfss,mcp,multiobj,dev]"
-      - name: Regenerate docs_site and kernel_cards, diff against committed
+      - name: Regenerate docs_site (and kernel_cards on code pushes), diff against committed
         run: |
           # 再生差异判据=仓内既有测试（与 merge_preflight 的 docs 面同
           # 判据同源，零新脚本）：重生成到临时目录 vs 已提交产物逐字节
           # 比对。红=站点/内核卡落后于代码面或源文档——修复=仓根重跑
           # 对应生成器并同笔提交产物，勿手改产物。
-          python -m pytest tests/unit/test_docs_site.py tests/unit/test_kernel_cards.py -q
+          #
+          # 快车道（docs-only）跳过 kernel_cards：其输入全是代码面
+          # （src docstring / knowledge/ / docs/templates 已归代码面），
+          # 文档推送改不动它；该测试约 7 分钟，占本 job 大头。
+          if [ "${{ needs.changes.outputs.code }}" = "true" ]; then
+            python -m pytest tests/unit/test_docs_site.py tests/unit/test_kernel_cards.py -q
+          else
+            python -m pytest tests/unit/test_docs_site.py -q
+          fi
+        env:
+          OPENBLAS_NUM_THREADS: "1"
+      - name: Docs content gates (README numbers, citations, generated cards)
+        run: |
+          # 文档改动会打到的内容门全集（实测 119 条 / 14 秒）：README 数字条、
+          # 文档 HTML/链接、引文、能力卡/画廊再生、待验证档、模板参考与元数据。
+          # 快车道与全矩阵都跑——文档推送的"真门"就是这一组。
+          python -m pytest             tests/unit/test_check_numbers.py             tests/unit/test_sync_readme_numbers.py             tests/unit/test_docs_and_html.py             tests/unit/test_check_citations.py             tests/unit/test_capability_cards_export.py             tests/unit/test_gallery_export.py             tests/unit/test_pending_verifications.py             tests/unit/test_rf_template_references_docs.py             tests/unit/test_audit_template_meta.py             -q
         env:
           OPENBLAS_NUM_THREADS: "1"
 

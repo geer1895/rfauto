@@ -43,6 +43,13 @@ DOC_PREFIXES: tuple[str, ...] = (
     "docs_site/",
 )
 
+#: 位于文档目录下、但被测试/生成器当输入消费的路径——按代码面处理。
+#: （docs/templates/*/meta.yaml 是模板元数据真源：test_template_meta_consistency
+#:  与 kernel_cards 都读它，改了必须跑全矩阵。）
+CODE_OVERRIDES: tuple[str, ...] = (
+    "docs/templates/",
+)
+
 #: 强制全矩阵的显式标记（写在 commit message 任意位置）
 FULL_CI_MARKER = "[full-ci]"
 
@@ -56,6 +63,8 @@ def is_doc_path(path: str) -> bool:
         return False
     if p in DOC_PATHS:
         return True
+    if any(p.startswith(prefix) for prefix in CODE_OVERRIDES):
+        return False
     return any(p.startswith(prefix) for prefix in DOC_PREFIXES)
 
 
