@@ -24,6 +24,8 @@
 resources），用 **87 个标定锚**和 **28000+ 条单元测试**兜底——这些测试不需要
 任何商业许可就能跑。
 
+本版实测计数（精确值，可用 `scripts/check_numbers.py` 复验）：
+
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
 `ANCHORS 87` · CLI 命令 280（叶子） · （157 个工具 + 10 个 resources）

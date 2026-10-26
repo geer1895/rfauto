@@ -21,6 +21,8 @@ provenance. AI assistants can drive all of it over MCP, under one iron rule:
 > **Every physical number (frequency, loss, geometry) is produced by the
 > deterministic kernel or by a solver — never invented by the language model.**
 
+Measured counts for this revision (exact; verifiable with `scripts/check_numbers.py`):
+
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` ·
 `EXPECTED_TEMPLATES 75` · `ANCHORS 87` · CLI commands 280 (leaves) ·
