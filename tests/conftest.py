@@ -82,6 +82,10 @@ _LINUX_NUMERIC_TEST_IDS = frozenset({
     "tests/unit/test_w1s3_lange_stepped.py::test_lange_promotion_byte_parity_and_single_object",
     "tests/unit/test_w4s4_core_margin.py::test_ctle_gain_at_phase_and_consistency",
     "tests/unit/test_w6s3_core_domains.py::test_mti_notch_peak_bit_exact_and_periodic",
+    # CI 第 2 轮增量（2026-10-26，上轮被同文件早失败/分布掩盖）：
+    "tests/unit/test_w4_a_sm_core.py::test_fd_default_path_zero_change_regression_pin",
+    "tests/unit/test_warped_kriging.py::TestWarpedKrigingBenchmark::test_warp_improves_steep_function_recovery",
+    "tests/unit/test_warped_kriging.py::TestWarpedKrigingBenchmark::test_deterministic_and_bounds_clipped",
 })
 
 
