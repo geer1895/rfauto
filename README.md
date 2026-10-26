@@ -111,8 +111,7 @@ FAIL with the gate name and the margin — never silently passed.**
 
 ### 1.5 Calibration and anchors
 
-**87 calibration anchors** cover the template library, layered by evidence
-strength: **18 are backed by an HFSS ↔ openEMS dual-engine comparison**, 2 by
+**87 calibration anchors** cover 68 device families (75 templates ship; families without an anchor say so). Layered by evidence strength: **18 are backed by an HFSS ↔ openEMS dual-engine comparison**, 2 by
 HFSS/MMT arbitration, and 59 are closed-form or quasi-static FD reference anchors
 (formula source and validity domain on file); the rest are honestly marked as
 unsettled evidence — a closed-form anchor is never dressed up as engine-backed.
