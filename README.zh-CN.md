@@ -101,9 +101,11 @@ rfauto campaign plan --config campaign.yaml   # 多阶段战役
 
 ### 1.5 校准与锚
 
-**87 个标定锚**，每个都在 HFSS（参考基准）与 openEMS（免费）之间做过交叉验证，
-覆盖整个模板库。产物新鲜度四态（fresh/stale/legacy/error）：旧文件顶替新 run 会
-被标红，`rfauto runs verify` 退出码 1。
+**87 个标定锚**覆盖整个模板库，来源按证据强度分层：**18 个由 HFSS 与 openEMS
+双引擎对照背书**，2 个经 HFSS/MMT 仲裁，59 个是闭式或准静态 FD 参考锚（公式出处
+与适用域逐条在档），其余如实标注证据未结——不把闭式锚说成引擎背书。
+产物新鲜度四态（fresh/stale/legacy/error）：旧文件顶替新 run 会被标红，
+`rfauto runs verify` 退出码 1。
 
 ```bash
 rfauto anchors list                    # 锚注册表：值 / 状态 / 来源

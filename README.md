@@ -111,10 +111,13 @@ FAIL with the gate name and the margin — never silently passed.**
 
 ### 1.5 Calibration and anchors
 
-**87 calibration anchors**, each cross-verified between HFSS (the reference) and
-openEMS (free), covering the template library. Artifact freshness has four states
-(fresh/stale/legacy/error): an old file replacing a new run is flagged, and
-`rfauto runs verify` exits 1.
+**87 calibration anchors** cover the template library, layered by evidence
+strength: **18 are backed by an HFSS ↔ openEMS dual-engine comparison**, 2 by
+HFSS/MMT arbitration, and 59 are closed-form or quasi-static FD reference anchors
+(formula source and validity domain on file); the rest are honestly marked as
+unsettled evidence — a closed-form anchor is never dressed up as engine-backed.
+Artifact freshness has four states (fresh/stale/legacy/error): an old file
+replacing a new run is flagged, and `rfauto runs verify` exits 1.
 
 ```bash
 rfauto anchors list                    # values / status / provenance
