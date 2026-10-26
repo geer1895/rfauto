@@ -83,6 +83,10 @@ export const LOCALES = {
   "nav.group.help": { zh: "帮助与系统", en: "Help & System" },
   /* ── common.*（skip 链接 + 壳 aria 标签）── */
   "common.skip_to_content": { zh: "跳到主内容", en: "Skip to content" },
+  "common.brand_tagline": {
+    zh: "HFSS · ADS 调优工作台",
+    en: "HFSS · ADS tuning workbench",
+  },
   "common.aside_aria": { zh: "侧边栏", en: "Sidebar" },
   "common.nav_aria": { zh: "主导航", en: "Main navigation" },
   "common.lightbox_aria": { zh: "图片灯箱预览", en: "Image lightbox preview" },

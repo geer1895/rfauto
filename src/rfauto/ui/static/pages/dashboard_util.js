@@ -4,6 +4,7 @@
    活动徽章共用单源）。node 行为钉可测（test_ui_dashboard_widgets）。 */
 
 import { esc, escAttr } from "./dom.js";
+import { getLocale } from "./i18n.js";
 
 /* ═══ aurora36 W4-C：dashboard 组件深化（R1 §1.3 活动日志/新鲜度环/甜甜圈）
    + palette act-export-chart 事件桥。纯函数三件 + 分桶一件（node 行为钉可测），
@@ -13,14 +14,22 @@ import { esc, escAttr } from "./dom.js";
    （run_store timestamp=UTC isoformat），now 缺省取当前时刻（node 钉显式传参）。
    阶梯：(<60s)刚刚 → N 分钟前 → N 小时前 → N 天前；>30 天回落绝对短日期
    （相对时长对月/年歧义太大，不如给确定时刻）。非法/缺失 → "-"。 */
+const _REL_TIME = {
+  zh: { now: "刚刚", min: (n) => `${n} 分钟前`,
+        hour: (n) => `${n} 小时前`, day: (n) => `${n} 天前` },
+  en: { now: "just now", min: (n) => `${n} min ago`,
+        hour: (n) => `${n} h ago`, day: (n) => `${n} d ago` },
+};
+
 export function relTime(ts, now) {
   const t = ts ? new Date(ts).getTime() : NaN;
   if (!Number.isFinite(t)) return "-";
   const d = Math.max(0, (now ?? Date.now()) - t);
-  if (d < 60e3) return "刚刚";
-  if (d < 3600e3) return `${Math.floor(d / 60e3)} 分钟前`;
-  if (d < 86400e3) return `${Math.floor(d / 3600e3)} 小时前`;
-  if (d < 30 * 86400e3) return `${Math.floor(d / 86400e3)} 天前`;
+  const L = _REL_TIME[getLocale()] || _REL_TIME.zh;
+  if (d < 60e3) return L.now;
+  if (d < 3600e3) return L.min(Math.floor(d / 60e3));
+  if (d < 86400e3) return L.hour(Math.floor(d / 3600e3));
+  if (d < 30 * 86400e3) return L.day(Math.floor(d / 86400e3));
   const dt = new Date(t);
   const p2 = (x) => String(x).padStart(2, "0");
   // 全部经 p2 包裹做纯拼接（不用模板插值直引 dt.getX()——XSS 反向扫描的
@@ -50,9 +59,12 @@ export function freshnessRingSvg(ts, now) {
   const R = 9, C = 2 * Math.PI * R;
   const frac = (tier === "ok" || tier === "warn")
     ? Math.max(0.06, 1 - Math.min(1, (hours || 0) / 24)) : 0.08;
+  const en = getLocale() === "en";
   const label = tier === "none"
-    ? "数据新鲜度：暂无 run"
-    : `数据新鲜度：${relTime(ts, now)}（${tier === "ok" ? "1 小时内" : tier === "warn" ? "24 小时内" : "超过 24 小时"}）`;
+    ? (en ? "Data freshness: no runs yet" : "数据新鲜度：暂无 run")
+    : (en
+      ? `Data freshness: ${relTime(ts, now)} (${tier === "ok" ? "within 1 h" : tier === "warn" ? "within 24 h" : "older than 24 h"})`
+      : `数据新鲜度：${relTime(ts, now)}（${tier === "ok" ? "1 小时内" : tier === "warn" ? "24 小时内" : "超过 24 小时"}）`);
   const dash = `${(C * frac).toFixed(2)} ${(C * (1 - frac)).toFixed(2)}`;
   return `<svg width="26" height="26" viewBox="0 0 26 26" role="img" ` +
     `aria-label="${escAttr(label)}" title="${escAttr(label)}" style="display:block">` +
