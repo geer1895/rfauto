@@ -2,6 +2,69 @@
 
 All notable changes to rfauto will be documented in this file.
 
+## [0.12.0] - 2026-10-26
+
+### Added
+
+**EM semantics layer (feedback-driven)**
+- `em doctor`: a 16-item pre-solve checklist (workdir hygiene, ASCII path
+  guards, unit sanity, mesh/window traps, janitor integration) that catches
+  the failure modes that silently waste solver hours; delivered as service,
+  CLI (`rfauto em doctor`) and MCP tool.
+- Run-artifact freshness verification: every solve point can now carry a
+  closing manifest (file hashes + sidecars); `rfauto runs verify` reports
+  four states (fresh/stale/legacy/error) instead of trusting directory
+  mtime, and stale artifacts are flagged — not silently consumed — by
+  metrics, diff, sweep and comparison paths.
+- `rfauto em diff`: four-section comparison of two runs (parameters,
+  manifests, S-parameters on a common frequency grid, freshness) rendered
+  in plain language.
+- DOE sweep planner (`rfauto em sweep`) with case-level freshness summary,
+  lock-owner awareness and resume support; resource janitor for orphan
+  solver processes and engineering locks.
+
+**New device families and calculators**
+- Three GaAs IPD lumped-element template families: octagonal spiral
+  inductors, MIM capacitors and interdigital capacitors, each with
+  synthesis, nominal-parameter anchors and offline geometry audits.
+- Six new closed-form CALC families (registry now 340 calculators):
+  terminated-line metrics, filter prototypes, network conversions,
+  Leeson-phase-noisy oscillators, branchline couplers, de-embed metrics —
+  each cross-checked against independent closed-form references.
+- Metric binding groups: series/shunt family detection with automatic
+  same-family Q reporting and convergence gates.
+
+**Port semantics guard**
+- `oe_port_semantics`: five geometric criteria for MSLPort launchers
+  (box spans the strip, strip fully inside the excitation cross-section,
+  measurement plane clear of the feed near-field, mesh landing, ladder
+  traps) enforced at model-build time — rendered scripts fail loudly
+  instead of producing quietly wrong S-parameters. Wired into all TL,
+  SIW, hairpin, C4, antenna2 and varactor renderers.
+
+**EDB freshness and docs**
+- EDB fast-lane artifacts now carry freshness sidecars end-to-end
+  (build → solve → extract → dataset), with an eighth gate criterion that
+  skips — not fails — unverifiable legacy runs.
+- Docs overhaul: 75 template reference cards, a per-design-flow calculator
+  usage guide (48 keys), refreshed architecture/workflow/trust-layer
+  figures, and an anchor-guide rebuild (87 anchors).
+
+### Changed
+
+- MCP surface now 157 tools (+10 resources); CLI 280 leaf commands.
+- Test suite grew to 28,352 unit tests (no commercial license required).
+- Anchors registry: 87 anchors across 69 template families.
+
+### Fixed
+
+- Wilkinson test corpus had series/shunt width semantics swapped; the new
+  port-semantics guard caught it at model-build time.
+- Slot template measurement plane moved out of the feed near-field band
+  (first real catch of criterion #347).
+- A leaked test fixture could make the runs-root convergence tests flip;
+  fixture removed and the convergence semantics documented.
+
 ## [0.11.0] - 2026-10-19
 
 ### Added

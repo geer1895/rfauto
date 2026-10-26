@@ -8,7 +8,7 @@ type: software
 repository-code: "https://github.com/geer1895/rfauto"
 authors:
   - name: rfauto developers
-version: 0.11.0
+version: 0.12.0
 license: GPL-3.0-only
 abstract: >-
   rfauto is an open framework that automates RF/microwave simulation

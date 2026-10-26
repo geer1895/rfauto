@@ -48,6 +48,13 @@ from rfauto.adapters.xyce_adapter import (
     xyce_version,
 )
 
+#: WSL 桥路径转换依赖 Windows 盘符段解析（POSIX Path 把反斜杠当普通
+#: 字符、无盘符段语义）——win32 主机专属，POSIX 如实 skip（诚实注记）。
+_WIN_DRIVE = pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="windows_to_wsl_path/run_xyce 依赖 Windows 盘符路径解析（POSIX 无盘符段语义）")
+
+
 # ── 真机 fixture（2026-09-29 Xyce 7.11 probe 实测文本，10 点缩样）───────────
 
 _AC_PRN_FIXTURE = """Index       FREQ            Re(V(3))          Im(V(3))
@@ -151,6 +158,7 @@ class TestVerifyReachable:
 # ── WSL 桥工具 ────────────────────────────────────────────────────────────────
 
 class TestBridgeUtils:
+    @_WIN_DRIVE
     def test_windows_to_wsl_path(self):
         assert windows_to_wsl_path("E:\\a\\b.cir") == "/mnt/e/a/b.cir"
         assert windows_to_wsl_path("E:/") == "/mnt/e"
@@ -173,6 +181,7 @@ class TestBridgeUtils:
 
 
 class TestRunXyce:
+    @_WIN_DRIVE
     def test_command_shape_and_quoting(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b"* t\n.end\n")
@@ -196,6 +205,7 @@ class TestRunXyce:
         with pytest.raises(XyceError, match="网表不存在"):
             run_xyce(tmp_path / "nope.cir", runner=lambda a, t: _proc(0))
 
+    @_WIN_DRIVE
     def test_timeout_returns_flagged_result(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")
@@ -206,6 +216,7 @@ class TestRunXyce:
         res = run_xyce(cir, runner=slow_runner)
         assert res.timed_out and res.rc == -1
 
+    @_WIN_DRIVE
     def test_utf16_output_decoded(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")

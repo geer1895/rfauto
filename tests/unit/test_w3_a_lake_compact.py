@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,10 @@ from rfauto.service.lake_compact_service import (
 from rfauto.service.sim_ci_service import BASELINE_SCHEMA
 
 runner = CliRunner()
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（test_ui.py 同款，跨平台等价）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 _OLD = 3 * 86400.0  # meta 落盘 3 天前（越 min_age_h=24 缺省线）
 
@@ -453,8 +458,11 @@ class TestCliCompact:
     def test_help_true_run(self):
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "--apply" in result.output
-        assert "dry-run" in result.output
+        # Linux rich 带 ANSI/窄端换行——去转义+去空白口径匹配
+        plain = _ANSI_CSI.sub("", result.output)
+        compact = re.sub(r"\s+", "", plain)
+        assert "--apply" in compact
+        assert "dry-run" in compact
 
     def test_dryrun_default_zero_write(self, mini_lake):
         before = _tree_hashes(mini_lake["runs"])

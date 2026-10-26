@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-27000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-28000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -22,8 +22,8 @@ whole pipeline through MCP, under one hard rule:
 
 It drives **16 EM/EDA engines** behind one interface, ships
 **75 parameterized device templates** with built-in physics checks, and
-exposes **274 CLI commands** and **152 MCP tools** (+10 resources) — kept
-honest by **27000+ unit tests** that run without any commercial license.
+exposes **280 CLI commands** and **157 MCP tools** (+10 resources) — kept honest by
+**28000+ unit tests** that run without any commercial license.
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` ·
@@ -39,9 +39,6 @@ honest by **27000+ unit tests** that run without any commercial license.
 <p align="center">
   <img src="docs/assets/architecture.png" alt="rfauto architecture: interfaces → service → domain → adapters → deterministic core, with the AI agent loop and the iron rule" width="100%">
 </p>
-
-> Note: numbers shown inside the diagrams above and below are historical
-> snapshots; for live counts run `rfauto doctor` or `scripts/check_numbers.py`.
 
 ## Why
 
@@ -64,10 +61,11 @@ and every reported number carries its provenance.
 
 - **One interface, many engines** — HFSS, ADS, openEMS, COMSOL, Elmer,
   NGSolve, Meep, Icepak, Q3D, Palace, KiCad, ngspice, FDTDX (JAX), MMT
-  (analytic modal), QucsatorRF and VNA behind a common adapter layer. Commercial engines stay opt-in extras; everything
-  core runs against a built-in fake solver, so you can try the whole framework
-  with zero licenses.
-- **Device template factory** — 72 parameterized families (couplers, power
+  (analytic modal), QucsatorRF and VNA behind a common adapter layer.
+  Commercial engines stay opt-in extras; everything core runs against a
+  built-in fake solver, so you can try the whole framework with zero
+  licenses.
+- **Device template factory** — 75 parameterized families (couplers, power
   dividers, filters, antennas, transitions…). Each template synthesizes
   starting dimensions from closed-form physics, and registers acceptance
   checks so you can tell "real result" from "mesh artifact".
@@ -76,34 +74,38 @@ and every reported number carries its provenance.
   the model instead of re-solving. Batch campaigns run unattended with budget
   admission, quotas and watchdogs.
 - **Quality gates everywhere** — energy and passivity checks, grid-artifact
-  diagnostics, cross-engine arbitration (compare the same geometry on a second
-  solver), and physics-invariant tests. A result that fails a gate is reported
-  as failed, never silently passed.
-- **AI that drives but doesn't invent** — a full MCP server so Claude Desktop,
-  Cursor or your own agent can operate the framework. Agent edits go through a
-  sandbox draft and validation gates before they touch your workspace.
-
-Newest additions: an **EDB layout fast lane** for planar devices — declarative
-emitters synthesize the layout spec from closed-form physics, every solve
-point runs as an independent short-lived `ansysedt -BatchSolve` process (no
-long-lived desktop session to poison), a second `-batchextract` pass exports
-Touchstone, and a seven-factor health gate judges each artifact before it can
-reach a dataset. Alongside it: a **TRL/SOLT calibration kernel** that
-recovers two-port error boxes from raw standards measurements, and the
-one-shot HFSS batch base that drives the whole chain from a single entry
-point.
+  diagnostics, cross-engine arbitration (compare the same geometry on a
+  second solver), and physics-invariant tests. A result that fails a gate is
+  reported as failed, never silently passed.
+- **AI that drives but doesn't invent** — a full MCP server so Claude
+  Desktop, Cursor or your own agent can operate the framework. Agent edits go
+  through a sandbox draft and validation gates before they touch your
+  workspace.
+- **EDB fast lane for planar families** — declarative emitters synthesize the
+  layout spec from closed-form physics, every solve point runs as an
+  independent short-lived `ansysedt -BatchSolve` process (no long-lived
+  desktop session to poison), a second `-batchextract` pass exports
+  Touchstone, and a seven-factor health gate judges each artifact before it
+  can reach a dataset. Alongside it: a **TRL/SOLT calibration kernel** that
+  recovers two-port error boxes from raw standards measurements.
+- **Deterministic calculator surface** — 340 closed-form calculators covering
+  the whole design chain: transmission-line and coupler synthesis, filter
+  prototypes, dividers and bridges, antennas and lumped IPD passives
+  (octagonal spiral inductors, MIM/IDC capacitors), waveguides and cavities,
+  extending to measurement calibration, link budget, radar equation, EMC
+  emissions and immunity, SI equalization and modulation BER. Every key
+  documents its formula source and validity range in a doc card, so a
+  handbook estimate can be cross-checked on the spot.
 
 ![workflow](docs/assets/workflow.png)
-
-(The counts rendered inside this diagram are a historical snapshot; see the
-note above the architecture figure.)
 
 ## The trust layer
 
 The part we care about most: how do you know a simulation result is
 *believable*? rfauto treats that as a first-class feature — health gates on
 every run, reference responses per template, deterministic kernels for every
-number, and a sandbox-plus-gates path for anything an AI agent wants to change.
+number, and a sandbox-plus-gates path for anything an AI agent wants to
+change.
 
 ![trust layer](docs/assets/trust_layer.png)
 
@@ -188,12 +190,12 @@ rfauto ui --port 8643        # default 8642; switch ports when an old instance h
 ```
 
 Then open http://127.0.0.1:8643 (local only). **Runs** — every
-simulation's metrics, curves and quality-gate verdicts. **Gallery** — 72
+simulation's metrics, curves and quality-gate verdicts. **Gallery** — 75
 device templates, each card opens a plain-language parameter table (what
 it is, what the numbers mean, where they come from). **Tune** — the same
 loop as step 3 from the browser: keep the adapter on **fake**, press
 **Start** — 10 trials on the Wilkinson divider finish in seconds and show
-the recommended dimensions in a result card. **Tools** — 323 closed-form
+the recommended dimensions in a result card. **Tools** — 340 closed-form
 calculators for instant cross-checks. Top-right **zh/EN** switches the
 whole workbench.
 
@@ -253,17 +255,7 @@ calculators), no commercial tools inside.
 | run directory has no Touchstone | the fake channel emits analytic metrics only | see `results/metrics.json`; Touchstone comes from real-solver channels |
 | on-disk Touchstone doesn't match the run record | an old file was copied over the new one | `rfauto runs verify <run_id>` — stale exits 1, never passes silently |
 
-### Why trust the results?
-
-Every simulation result carries its provenance: which solver produced it,
-which formulas derived the geometry, and which quality gates it passed.
-79 calibration anchors — each cross-validated between HFSS (reference) and
-openEMS (free) — cover the template library, and the gallery shows an
-arbitration badge on every template that has been dual-engine verified.
-When two engines agree on the same physics, you can trust the third (free)
-one for parameter sweeps.
-
-From there, the usual loop:
+The rest is the usual loop:
 
 ```bash
 rfauto sweep recipes/wilkinson_pd_v1.yaml --adapter fake   # parameter sweep
@@ -275,7 +267,7 @@ rfauto replay <run_id>                                     # reproduce a past ru
 
 ```bash
 pip install -e ".[mcp]"
-python -m rfauto.mcp_server        # stdio transport; 152 tools (+9 resources)
+python -m rfauto.mcp_server        # stdio transport; 157 tools (+10 resources)
 ```
 
 Then register it in your MCP client (Claude Desktop example):
@@ -323,6 +315,16 @@ rfauto ui          # http://127.0.0.1:8642 — local only
 
 Every page is deep-linkable (`#runs`, `#sparams`, `#tools`, …), so you can
 bookmark the view you care about.
+
+### Why trust the results?
+
+Every simulation result carries its provenance: which solver produced it,
+which formulas derived the geometry, and which quality gates it passed.
+87 calibration anchors — each cross-validated between HFSS (the reference)
+and openEMS (free) — cover the whole template library, and the gallery
+shows a certification badge on every template that has been through
+dual-engine arbitration. When both engines agree on the same physics, you
+can run parameter sweeps on the free one with confidence.
 
 ## Engines
 

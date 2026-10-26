@@ -273,7 +273,8 @@ def test_real_tree_regenerates_byte_identical(tmp_path):
     index_doc = yaml.safe_load(INDEX_PATH.read_text(encoding="utf-8"))
     import hashlib
 
-    sha = hashlib.sha256(index_bytes).hexdigest()
+    # 与生成器同口径：LF 归一内容指纹（跨平台稳定）
+    sha = hashlib.sha256(index_bytes.replace(b"\r\n", b"\n")).hexdigest()
     summary = migrate_v2(
         index_doc=index_doc, index_sha256=sha, runs_root=_REPO_ROOT / "runs",
         skeleton_dir=tmp_path / "skeleton", trace_out=tmp_path / "trace.yaml",

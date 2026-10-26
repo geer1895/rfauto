@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import pickle
+import re
 import sys
 import threading
 from pathlib import Path
@@ -634,7 +635,10 @@ class TestTuneCliFlag:
         runner = CliRunner()
         result = runner.invoke(app, ["tune", "--help"])
         assert result.exit_code == 0
-        flat = result.output.replace("\n", "").replace(" ", "")
+        # Linux rich 带 ANSI 色码——先去转义再折叠空白（test_ui.py 同款，
+        # Windows 无色输出等价通过）
+        plain = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", result.output)
+        flat = re.sub(r"\s+", "", plain)
         # rich 窄表把旗标名/help 按单元格截断（warm-start-regis…），格间有
         # 边框字符——按截断稳定的前缀+help 关键词钉（真跑不炸=#305 主判据）
         assert "代理模型注册表" in flat and "warm-start" in flat

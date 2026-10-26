@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -35,6 +36,10 @@ from rfauto.service.lake_compact_service import (
 from rfauto.service.sim_ci_service import BASELINE_SCHEMA
 
 runner = CliRunner()
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（test_ui.py 同款，跨平台等价）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 _OLD = 3 * 86400.0
 
@@ -398,5 +403,9 @@ class TestCliExemptCompact:
     def test_cli_help_carries_new_flags(self):
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        assert "--exempt-subtree" in result.output
-        assert "--reversible" in result.output
+        # Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标
+        # 断言统一"去 ANSI + 去空白折叠后匹配"（test_ui.py 同款）。
+        plain = _ANSI_CSI.sub("", result.output)
+        compact = re.sub(r"\s+", "", plain)
+        assert "--exempt-subtree" in compact
+        assert "--reversible" in compact

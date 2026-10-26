@@ -31,6 +31,7 @@ test_check_numbers（五钉清单批纪律），本文件只自证资源体接�
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import ClassVar
 
@@ -44,6 +45,17 @@ from rfauto.mcp_tools.edb import edb_status as mcp_edb_status
 from rfauto.service import edb_lane_service as lane
 
 runner = CliRunner()
+
+#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
+#: "去 ANSI 转义 + 去空白折叠后匹配"（test_ui.py 同款；本地 Windows 无色
+#: 也等价通过）。
+_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def _flag_in_help(output: str, *needles: str) -> bool:
+    plain = _ANSI_CSI.sub("", output)
+    compact = re.sub(r"\s+", "", plain)
+    return all(n in compact for n in needles)
 
 _PARAMS = {"f0_ghz": 2.4}
 
@@ -505,7 +517,10 @@ class TestCliHelpHygiene:
         r = runner.invoke(root_app, ["edb", leaf, "--help"])
         assert r.exit_code == 0, r.output
         assert "%" not in r.output
-        assert "--json" in r.output
+        # Linux rich 渲染 --help 带 ANSI 色码且窄端换行——旗标断言统一
+        # "去 ANSI 转义 + 去空白折叠后匹配"（test_ui.py 同款，本地
+        # Windows 无色也等价通过）。
+        assert _flag_in_help(r.output, "--json")
         # 自写 help 文本面（app 描述+该叶 docstring）零裸 % 零方括号
         info = edb_app.info.help or ""
         assert "%" not in info and "[" not in info

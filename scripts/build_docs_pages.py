@@ -515,7 +515,10 @@ def build_rest_schema_page() -> tuple[str, int]:
 # ─── 首页数字条（AUTO-NUMBERS 标记块回填）────────────────────────────────
 
 def numbers_strip(checknum) -> str:
-    tests_n, tests_src = checknum.count_tests()
+    # tests 行=README 徽章同款下限口径（28000+）：pytest --collect-only 的
+    # 精确计数随平台/环境漂移（Windows/Linux 实测差 ~100），烘进再生面会
+    # 让 docs_site 漂移检查跨平台必红——数字条只承载跨平台稳定的下限徽章，
+    # 精确计数以 `rfauto doctor`/check_numbers 实测为准。
     cli_n = checknum.count_cli()
     mcp_n = checknum.count_mcp()
     calc_n = checknum.count_calculators()
@@ -530,14 +533,15 @@ def numbers_strip(checknum) -> str:
         "",
         "| 维度 | 数量 |",
         "|---|---|",
-        f"| 全量门测试 | {tests_n} |",
+        "| 全量门测试 | 28000+ |",
         f"| CLI 叶子命令 | {cli_n} |",
         f"| MCP 工具 | {mcp_n} |",
         f"| 确定性计算器（含实验键） | {calc_n}（{calc_all}） |",
         f"| 器件模板 | {tmpl_n} |",
         f"| 标定锚注册表 | {anchors_n} |",
         "",
-        f"（tests 计数来源：{tests_src}）",
+        "（tests 计数来源：README 徽章下限口径（跨平台稳定；精确计数以 "
+        "rfauto doctor/check_numbers 实测为准））",
         "",
     ]
     return "\n".join(lines)

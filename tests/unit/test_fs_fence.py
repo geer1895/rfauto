@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -64,6 +65,10 @@ class TestFsListRootFence:
         assert str(tmp_path) in d["error"]  # 允许根
         assert "RFAUTO_FS_ROOT" in d["error"]  # 放行出口同信封
 
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="盘符逃逸（D:\\x）语义为 Windows 盘符布局专属——POSIX 下该"
+               "字符串是普通相对名，走的是目录不存在分支而非盘符围栏")
     def test_drive_escape_rejected(self, tmp_path: Path) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")

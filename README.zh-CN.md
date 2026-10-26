@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-27000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-28000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -19,12 +19,12 @@
 > 永远不由大语言模型编造。**
 
 它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **75 个参数化器件模板**和
-配套的物理验收判据，提供 **273 条 CLI 命令**和 **152 个 MCP 工具**（+9 个
-resources），并靠 **27000+ 条单元测试**兜底验证——这些测试不需要任何商业许可
+配套的物理验收判据，提供 **280 条 CLI 命令**和 **157 个 MCP 工具**（+10 个
+resources），并靠 **28000+ 条单元测试**兜底验证——这些测试不需要任何商业许可
 就能跑。
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
-`CALCULATOR_REGISTRY 340 (with experimental 330)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
+`CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
 `ANCHORS 87` · CLI 命令 280（叶子） · （157 个工具 + 10 个 resources）
 <!-- numbers-end -->
 
@@ -33,9 +33,6 @@ resources），并靠 **27000+ 条单元测试**兜底验证——这些测试�
 [引擎](#引擎) · [文档](#文档) · [路线图](#现状与路线图) · [参与贡献](#参与贡献)
 
 ![架构](docs/assets/zh/architecture.png)
-
-> 注：上下图示内嵌数字为历史快照，实时数字以 `rfauto doctor` 或
-> `scripts/check_numbers.py` 为准。
 
 ## 为什么做这个
 
@@ -57,7 +54,7 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
   QucsatorRF、VNA 接在同一个适配层后面。
   商业引擎按需安装（可选依赖），核心功能全部跑在内置 fake 求解器上——零许可
   就能体验完整框架。
-- **器件模板工厂** —— 72 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
+- **器件模板工厂** —— 75 个参数化器件族（耦合器、功分器、滤波器、天线、过渡
   结构……）。每个模板先用闭式物理公式综合出初始尺寸，并注册该器件族的验收
   判据，让你分得清"真结果"和"网格假象"。
 - **优化闭环** —— TPE、CMA-ES、NSGA-II 多目标；还有代理模型路线：先用一批
@@ -70,16 +67,18 @@ rfauto 把这个循环变成代码：模板负责建几何，适配层负责跟�
   你自己的 agent 都能操作框架。agent 的修改先进沙箱草稿、过验证门，才允许
   碰你的工作区。
 
-新增能力：面向平面器件族的 **EDB 快车道** —— 声明式发射器用闭式物理内核
-综合出版图 spec，每个求解点只起一个短命 `ansysedt -BatchSolve` 进程（不
-存在可被毒化的长驻桌面会话），第二段 `-batchextract` 导出 Touchstone，
-每件产物过七因子健康门才能进数据集。同期落地：从原始标准件测量反解二端
-口误差箱的 **TRL/SOLT 校准内核**，以及把整条链从单一入口驱动的 HFSS 一次
-性批处理基座。
+- **平面器件 EDB 快车道** —— 声明式发射器用闭式物理内核综合出版图 spec，
+  每个求解点只起一个短命 `ansysedt -BatchSolve` 进程（不存在可被毒化的
+  长驻桌面会话），第二段 `-batchextract` 导出 Touchstone，每件产物过七因
+  子健康门才能进数据集；配套从原始标准件测量反解二端口误差箱的
+  **TRL/SOLT 校准内核**。
+- **确定性计算器面** —— 340 个闭式计算器覆盖设计全链：传输线与耦合器综合、
+  滤波器原型、功分器/电桥、天线与集总 IPD 无源件（八角螺旋电感、MIM/IDC
+  电容）、波导与谐振腔，延伸到测量校准、链路预算、雷达方程、EMC 骚扰与
+  抗扰、SI 均衡与调制 BER。每个键在文档卡里写明公式出处与适用域，随手
+  交叉核对设计手册的估算。
 
 ![工作流](docs/assets/zh/workflow.png)
-
-（本图内嵌数字为历史快照，口径见上方架构图处的注记。）
 
 ## 信任层
 
@@ -156,10 +155,10 @@ rfauto ui --port 8643        # 缺省 8642；被旧实例占用时换端口
 ```
 
 浏览器打开 http://127.0.0.1:8643（仅本机）。**Runs** —— 每次 run 的指标、
-曲线与质量门判定。**模板画廊** —— 72 种器件模板，每张卡可点开白话参数表
+曲线与质量门判定。**模板画廊** —— 75 种器件模板，每张卡可点开白话参数表
 （是什么、数值什么含义、怎么算出来的）。**优化调参** —— 第 3 步同款循环
 搬进浏览器：通道保持 **fake**，点「启动」——Wilkinson 功分器 10 轮几秒跑
-完，出推荐尺寸结果卡。**Tools** —— 323 个闭式计算器，随手交叉核对。右上
+完，出推荐尺寸结果卡。**Tools** —— 340 个闭式计算器，随手交叉核对。右上
 角 **zh/EN** 整站切换。
 
 习惯终端的话，不开浏览器也行——闭式综合器随手一例：
@@ -223,7 +222,7 @@ rfauto replay <run_id>                                     # 复现历史 run
 
 ```bash
 pip install -e ".[mcp]"
-python -m rfauto.mcp_server        # stdio 传输；152 个工具
+python -m rfauto.mcp_server        # stdio 传输；157 个工具
 ```
 
 在 MCP 客户端里注册（Claude Desktop 示例）：
@@ -273,7 +272,7 @@ rfauto ui          # http://127.0.0.1:8642 — 仅本机
 ### 为什么可以信这些结果？
 
 每个仿真结果都带出处：哪个求解器跑的、几何怎么推导的、过了哪些质量门。
-79 个标定锚——每个都在 HFSS（参考基准）和 openEMS（免费）之间做了交叉
+87 个标定锚——每个都在 HFSS（参考基准）和 openEMS（免费）之间做了交叉
 验证——覆盖整个模板库。画廊里每个经过双引擎仲裁的模板都有认证徽章。
 两个引擎对同一物理结构给出一致预测时，你可以放心用免费的那个做扫参。
 

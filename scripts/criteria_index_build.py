@@ -727,7 +727,10 @@ def refresh_test_universe(path: str | Path = DEFAULT_TEST_UNIVERSE,
 
 
 def _sha256_of_index(index_path: str | Path) -> str:
-    return hashlib.sha256(Path(index_path).read_bytes()).hexdigest()
+    # 内容指纹按 LF 归一——Windows 工作副本 CRLF / Linux checkout LF 给出
+    # 同一 sha，跨平台再生锚（byte-identical）才可能成立（发布面修正）。
+    data = Path(index_path).read_bytes()
+    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
 
 
 def load_index_or_build(index_path: str | Path,

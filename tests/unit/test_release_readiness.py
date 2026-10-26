@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import ast
+import importlib.util
 import io
 import json
 import socket
@@ -376,6 +377,10 @@ def test_sdist_hygiene_missing_backend_reports_fail(monkeypatch, tmp_path, capsy
 
 # ─── F4 build 步骤可 mock（不真跑 build/twine）+ MCP 清单确定性 ───────────────
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("twine") is None
+    or importlib.util.find_spec("build") is None,
+    reason="build/twine 未安装（F4 就绪表含 build/twine 本地可用项，pip install build twine hatchling 后启用）")
 def test_f4_build_steps_mockable_and_manifest_deterministic(monkeypatch, tmp_path):
     pytest.importorskip("fastmcp")
     calls: list[list[str]] = []

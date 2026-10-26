@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -94,6 +95,9 @@ class TestKicadCliInfo:
         assert r["available"] is False
         assert r["env_hint"] == ENV_KICAD_CLI
 
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="版本探测桩是 .cmd 批处理文件（kicad-cli.cmd + @echo），POSIX 无法执行该形态")
     def test_version_probe_stub(self, tmp_path, monkeypatch):
         cli = tmp_path / "stub" / "kicad-cli.cmd"
         cli.parent.mkdir(parents=True)

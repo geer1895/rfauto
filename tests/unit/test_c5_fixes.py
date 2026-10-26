@@ -119,8 +119,16 @@ class TestCacheBeforeAdapter:
 
 class TestVersionAndProvenance:
     def test_version_single_source(self):
+        # 单源语义：__version__ 恒等于安装元数据（未安装场景=声明的
+        # 回退常量）；钉死具体版本串会随发版必腐（0.10.0→0.11.0 实证）。
+        import importlib.metadata
+
         import rfauto
-        assert rfauto.__version__ == "0.10.0"
+        try:
+            expected = importlib.metadata.version("rfauto")
+        except importlib.metadata.PackageNotFoundError:
+            expected = rfauto._FALLBACK_VERSION
+        assert rfauto.__version__ == expected
 
     def test_meta_records_real_git_sha(self, tmp_path, monkeypatch):
         """run_once 的 meta.json 必须带非空 git_sha（原先被 "" 覆写）。"""
@@ -140,7 +148,9 @@ class TestVersionAndProvenance:
             (Path(result["run_dir"]) / "meta.json").read_text(encoding="utf-8")
         )
         assert meta["git_sha"] not in ("", None), "git_sha 不应为空"
-        assert meta["package_version"] == "0.10.0"
+        import rfauto as _rfauto
+
+        assert meta["package_version"] == _rfauto.__version__
 
 
 class TestSanityCheckWiring:

@@ -8,6 +8,7 @@ stub（kicad_drc 测试同款隔离面），纯函数面（脚本生成/解析/C
 from __future__ import annotations
 
 import json
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -97,6 +98,10 @@ class TestSubprocessPath:
         r = assembly_payload(tmp_path / "nope.kicad_pcb", tmp_path)
         assert r["ok"] is False and "不存在" in r["errors"][0]
 
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="钉面含 KiCad Windows 装机路径与 PATH 前置盘符目录语义"
+               "——POSIX Path 无盘符段，路径拼接语义不同")
     def test_happy_path_uses_kicad_python_and_writes_artifacts(self, tmp_path, monkeypatch):
         pcb = tmp_path / "demo.kicad_pcb"
         pcb.write_text("(kicad_pcb)", encoding="utf-8")

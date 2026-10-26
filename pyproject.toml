@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rfauto"
-version = "0.11.0"
+version = "0.12.0"
 description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
 readme = "README.md"
 # PEP 639（0dd⑥）：license 用 SPDX 表达式 + license-files 列表；

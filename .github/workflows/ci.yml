@@ -361,6 +361,8 @@ jobs:
           # 不解析不可信图像文件。解锁条件=fdtdx/moviepy 放开 pillow<12
           # 上游升级后删除全部 --ignore-vuln 并回归。豁免清单须与本注释
           # 同步留痕（既定政策：不降级 continue-on-error）。
+          # pillow 11.3.0 第五批（2026-10-26）：CVE-2026-114501/112398，
+          # 修复版 13.0.0，同包同版本 advisory 库增量。
           pip-audit --strict --no-deps \
             --ignore-vuln PYSEC-2026-165 \
             --ignore-vuln PYSEC-2026-2249 \
@@ -414,6 +416,8 @@ jobs:
             --ignore-vuln CVE-2026-96644 \
             --ignore-vuln CVE-2026-96778 \
             --ignore-vuln GHSA-78g4-xqwv-q3g8 \
+            --ignore-vuln CVE-2026-114501 \
+            --ignore-vuln CVE-2026-112398 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
