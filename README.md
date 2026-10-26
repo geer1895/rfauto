@@ -183,6 +183,8 @@ boards, calibration, datasets, reports and a microwave toolbox. Command palette
 
 ![Template gallery (75 families, each card a plain-language parameter guide)](docs/assets/ui/gallery.png)
 
+![Microwave toolbox (341 calculators: pick a key, fill parameters, read the result — every key carries its formula source)](docs/assets/ui/tools.png)
+
 ---
 
 ## Quick start
