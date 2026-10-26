@@ -68,7 +68,7 @@ pytest --doctest-modules src/rfauto/core/cascade.py src/rfauto/core/wcd.py
 - 工具清单权威出口：MCP 服务器自注册表导出的 `mcp/manifest.json`
   （发布产物布局见 README「发布」节）；
 - 客户端接入（Claude Desktop/Cursor 配置示例、stdio 传输、与 CLI 共享
-  状态）：README「MCP Agent 接口」节；当前 **152 个工具 + 10 个
+  状态）：README「MCP Agent 接口」节；当前 **157 个工具 + 10 个
   resources**（`@mcp.tool`/`@mcp.resource` 实测计数，2026-10-19，
   与 `scripts/check_numbers.py` 同源）；
   发布产物布局见 README「发布就绪与手动发布步骤」节。

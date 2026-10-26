@@ -35,7 +35,7 @@ LLM 对"2.4 GHz 微带 50Ω 线宽在 FR-4 上大概 3mm"这类问题能流利�
 rfauto 的对策不是"提示词里叮嘱 LLM 算准点"，而是**让通道不存在**：
 agent 工具循环（`service/agent_runtime.py`）只消费 typed tool call，
 工具返回 JSON 信封；agent 想要数字，唯一的路是发起一次计算器/求解器
-调用。MCP 面 152 个工具（2026-10-18 实测，`scripts/check_numbers.py`
+调用。MCP 面 157 个工具（2026-10-18 实测，`scripts/check_numbers.py`
 同源）全是这种"参数进、数字出"的确定性端点。
 
 ### 2. 可复现面：模型相关的数字不可重放

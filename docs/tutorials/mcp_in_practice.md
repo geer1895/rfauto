@@ -4,7 +4,7 @@
 > 的入口名、启动行为、工具与资源数量、全部调用输出均为当前工作区实测
 > （`pyproject [project.scripts]`、`scripts/check_numbers.py`、stdio 钉
 > 测试与只读工具实调）；mutating 工具只讲不调。读完你将知道：怎么启动、
-> 客户端怎么配、152 个工具按域怎么找、典型调用长什么样、它和 CLI 是
+> 客户端怎么配、157 个工具按域怎么找、典型调用长什么样、它和 CLI 是
 > 什么关系。
 > 英文版（English version）：docs/tutorials/mcp_in_practice_en.md
 > （2026-10-19 全量复测同笔）。
@@ -87,7 +87,7 @@ schema 细节略有差异，上面只保证服务侧正确。
 → 再查客户端日志里 JSON-RPC 握手。**stdout 必须纯协议**：给入口包一层
 打印 banner 的 shim 必炸。
 
-## 3. 面览：152 个工具 + 10 个 resources
+## 3. 面览：157 个工具 + 10 个 resources
 
 数量口径：`scripts/check_numbers.py` 实测输出 `MCP=152+10res`（工具=
 facade + `mcp_tools/` 全部模块的 `@mcp.tool` 注册面正则计数；resources=

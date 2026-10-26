@@ -10,7 +10,7 @@
 > below is preserved verbatim (the server's own messages stay in
 > Chinese); only the narrative is translated. When you finish you will
 > know: how to start it, how to configure the client, how to find your
-> way among the 152 tools, what a typical call looks like, and how MCP
+> way among the 157 tools, what a typical call looks like, and how MCP
 > relates to the CLI.
 
 ## 0. Prerequisites
@@ -103,7 +103,7 @@ check the client log for the JSON-RPC handshake. **stdout must be pure
 protocol**: wrapping the entry point in a shim that prints a banner
 will break it every time.
 
-## 3. The surface: 152 tools + 10 resources
+## 3. The surface: 157 tools + 10 resources
 
 Where the number comes from: `scripts/check_numbers.py` measured output
 `MCP=152+10res` (tools = facade + the `@mcp.tool` registration surface
