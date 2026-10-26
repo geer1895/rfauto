@@ -111,10 +111,13 @@ FAIL with the gate name and the margin — never silently passed.**
 
 ### 1.5 Calibration and anchors
 
-**87 calibration anchors** cover 68 device families (75 templates ship; families without an anchor say so). Layered by evidence strength: **18 are backed by an HFSS ↔ openEMS dual-engine comparison**, 2 by
-HFSS/MMT arbitration, and 59 are closed-form or quasi-static FD reference anchors
-(formula source and validity domain on file); the rest are honestly marked as
-unsettled evidence — a closed-form anchor is never dressed up as engine-backed.
+**87 calibration anchors** cover 68 device families (75 templates ship; families
+without an anchor say so). Layered by evidence strength: **18 are backed by an
+HFSS ↔ openEMS dual-engine comparison**, 2 by HFSS/MMT arbitration, 1 by HFSS
+self-consistency; 62 are closed-form or quasi-static FD reference anchors (59
+closed-form + 3 FD, each with formula source and validity domain on file); the
+remaining 4 have no engine comparison and say so — a closed-form anchor is never
+dressed up as engine-backed.
 Artifact freshness has four states (fresh/stale/legacy/error): an old file
 replacing a new run is flagged, and `rfauto runs verify` exits 1.
 
@@ -177,7 +180,7 @@ python -m rfauto.mcp_server            # stdio transport
 ### 1.9 Workbench
 
 `rfauto ui` starts a local review workbench (your data never leaves the machine):
-34 views over run history, S-parameters, 3D fields, the template gallery, campaign
+24 views over run history, S-parameters, 3D fields, the template gallery, campaign
 boards, calibration, datasets, reports and a microwave toolbox. Command palette
 (Ctrl+K), deep links, whole-site zh/EN switch.
 
@@ -416,7 +419,7 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 src/rfauto/
 ├── cli/            # command line (280 leaf commands)
 ├── mcp_server/     # MCP server (157 tools + 10 resources)
-├── ui/             # browser workbench (34 views, zero-build native ESM)
+├── ui/             # browser workbench (24 views, zero-build native ESM)
 ├── service/        # business layer: JSON in, JSON out
 ├── linkage/        # HFSS ↔ circuit linkage
 ├── optimization/   # TPE / CMA-ES / NSGA-II / surrogates
@@ -439,7 +442,7 @@ src/rfauto/
 
 - [Getting started](docs/tutorials/getting-started_en.md) — the first loop in ten minutes
 - [Real simulation](docs/tutorials/real-simulation_en.md) — wiring up openEMS / HFSS
-- [Workbench tour](docs/tutorials/ui_workbench_tour_en.md) — what the 34 views are for
+- [Workbench tour](docs/tutorials/ui_workbench_tour_en.md) — what the 24 views are for
 - [First optimization loop](docs/tutorials/first_optimization_loop_en.md)
 - [Campaign walkthrough](docs/tutorials/campaign-walkthrough_en.md)
 

@@ -101,9 +101,10 @@ rfauto campaign plan --config campaign.yaml   # 多阶段战役
 
 ### 1.5 校准与锚
 
-**87 个标定锚覆盖 68 个器件族**（模板库共 75 族，其余如实标注无锚）。来源按证据强度分层：**18 个由 HFSS 与 openEMS
-双引擎对照背书**，2 个经 HFSS/MMT 仲裁，59 个是闭式或准静态 FD 参考锚（公式出处
-与适用域逐条在档），其余如实标注证据未结——不把闭式锚说成引擎背书。
+**87 个标定锚覆盖 68 个器件族**（模板库共 75 族，其余如实标注无锚）。按证据
+强度分层：**18 个由 HFSS ↔ openEMS 双引擎对照背书**，2 个经 HFSS/MMT 仲裁，
+1 个 HFSS 自校；62 个是闭式或准静态 FD 参考锚（59 个闭式 + 3 个 FD，公式出处与
+适用域逐条在档）；其余 4 个无引擎对照，如实标注——不把闭式锚说成引擎背书。
 产物新鲜度四态（fresh/stale/legacy/error）：旧文件顶替新 run 会被标红，
 `rfauto runs verify` 退出码 1。
 
@@ -160,7 +161,7 @@ python -m rfauto.mcp_server            # stdio 传输
 
 ### 1.9 工作台
 
-`rfauto ui` 起一个本地核验工作台（数据不出你的机器）：34 个视图覆盖 run 历史、
+`rfauto ui` 起一个本地核验工作台（数据不出你的机器）：24 个视图覆盖 run 历史、
 S 参数、3D 场、模板画廊、战役看板、校准工作台、数据集、报告中心、微波工具箱。
 命令面板（Ctrl+K）、深链、zh/EN 整站切换。
 
@@ -406,7 +407,7 @@ src/rfauto/
 
 - [快速开始](docs/tutorials/getting-started.md)——十分钟跑通第一条链路
 - [真机仿真](docs/tutorials/real-simulation.md)——接 openEMS / HFSS 的完整流程
-- [工作台导览](docs/tutorials/ui_workbench_tour.md)——34 个视图怎么用
+- [工作台导览](docs/tutorials/ui_workbench_tour.md)——24 个视图怎么用
 - [第一次优化循环](docs/tutorials/first_optimization_loop.md)
 - [战役全流程](docs/tutorials/campaign-walkthrough.md)
 
