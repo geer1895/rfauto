@@ -168,14 +168,14 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 deterministic):
 
 ```text
-✓ 仿真完成  run_id: 20261024_133154_a8b244f6
-  run 目录: <workspace>\runs\20261024_133154_a8b244f6
-  cost: 7.424965102246688
+✓ 仿真完成  run_id: 20261026_132409_ff7c0bde
+  run 目录: <workspace>\runs\20261026_132409_ff7c0bde
+  cost: 2.5674588717393334
   指标:
-    s11_db_max_in_band: -8.0835
-    s11_db_min_in_band: -10.2581
-    s21_db_mean_in_band: -4.1084
-    iso_s23_db_min_in_band: 25.4717
+    s11_db_max_in_band: -12.4325
+    s11_db_min_in_band: -16.2978
+    s21_db_mean_in_band: -3.5887
+    iso_s23_db_min_in_band: 27.3788
 ```
 
 The metric names carry their band suffix (`*_in_band`): return loss,
@@ -222,7 +222,7 @@ Every run lands in `runs/<run_id>/`:
 Read the run through the built-in health gate:
 
 ```bash
-rfauto runs health 20261024_133154_a8b244f6
+rfauto runs health 20261026_132409_ff7c0bde
 ```
 
 **What you see** (excerpt):
@@ -250,8 +250,8 @@ Freshness check — the manifest closing fingerprint vs the files on
 disk:
 
 ```bash
-rfauto runs verify 20261024_133154_a8b244f6
-# → run 产物新鲜度校验  20261024_133154_a8b244f6  status: fresh
+rfauto runs verify 20261026_132409_ff7c0bde
+# → run 产物新鲜度校验  20261026_132409_ff7c0bde  status: fresh
 ```
 
 **Detour** (README troubleshooting table): on-disk Touchstone doesn't

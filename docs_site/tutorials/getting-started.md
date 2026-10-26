@@ -145,14 +145,14 @@ rfauto run recipes/wilkinson_pd_v1.yaml --adapter fake
 **你会看到**（run_id 每次不同；指标确定性复现）：
 
 ```text
-✓ 仿真完成  run_id: 20261024_133154_a8b244f6
-  run 目录: <workspace>\runs\20261024_133154_a8b244f6
-  cost: 7.424965102246688
+✓ 仿真完成  run_id: 20261026_132409_ff7c0bde
+  run 目录: <workspace>\runs\20261026_132409_ff7c0bde
+  cost: 2.5674588717393334
   指标:
-    s11_db_max_in_band: -8.0835
-    s11_db_min_in_band: -10.2581
-    s21_db_mean_in_band: -4.1084
-    iso_s23_db_min_in_band: 25.4717
+    s11_db_max_in_band: -12.4325
+    s11_db_min_in_band: -16.2978
+    s21_db_mean_in_band: -3.5887
+    iso_s23_db_min_in_band: 27.3788
 ```
 
 指标名带频段后缀（`*_in_band`）：回损、插损、隔离度，都在配方声明的
@@ -191,7 +191,7 @@ run → 产物 → 指标 → cost」整条链路走通，不占 license。第 7
 用自带的健康门读这个 run：
 
 ```bash
-rfauto runs health 20261024_133154_a8b244f6
+rfauto runs health 20261026_132409_ff7c0bde
 ```
 
 **你会看到**（节选）：
@@ -215,8 +215,8 @@ docs/how-to/read-verdict-gates.md。
 新鲜度校验——manifest 收官指纹对盘上文件：
 
 ```bash
-rfauto runs verify 20261024_133154_a8b244f6
-# → run 产物新鲜度校验  20261024_133154_a8b244f6  status: fresh
+rfauto runs verify 20261026_132409_ff7c0bde
+# → run 产物新鲜度校验  20261026_132409_ff7c0bde  status: fresh
 ```
 
 **岔路**（README 排查表）：盘上 Touchstone 和 run 记录对不上——旧文

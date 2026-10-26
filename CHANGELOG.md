@@ -52,6 +52,13 @@ All notable changes to rfauto will be documented in this file.
 
 ### Changed
 
+- **Documentation overhaul**: both READMEs rebuilt around a nine-domain capability
+  map plus an eight-step, license-free quick start with measured outputs; four new
+  reference figures (capability map, engine ladder, quality gates, calculator
+  distribution by domain) and refreshed UI screenshots in both languages.
+- `recipes/wilkinson_pd_v1.yaml` now carries tuned nominal dimensions
+  (λ/4 arm 18.00 mm, arm width 0.448 mm, feed 1.151 mm) so the documented first
+  run reproduces −12.43 dB in-band S11.
 - MCP surface now 157 tools (+10 resources); CLI 280 leaf commands.
 - Test suite grew to 28,352 unit tests (no commercial license required).
 - Anchors registry: 87 anchors across 69 template families.

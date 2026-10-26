@@ -117,12 +117,12 @@ channel is deterministic, so the metrics reproduce exactly):
 ```
 ✓ 仿真完成  run_id: 20261019_215518_30ba6200
   run 目录: E:\rf_workspace\runs\20261019_215518_30ba6200
-  cost: 7.424965102246688
+  cost: 2.5674588717393334
   指标:
-    s11_db_max_in_band: -8.0835
-    s11_db_min_in_band: -10.2581
-    s21_db_mean_in_band: -4.1084
-    iso_s23_db_min_in_band: 25.4717
+    s11_db_max_in_band: -12.4325
+    s11_db_min_in_band: -16.2978
+    s21_db_mean_in_band: -3.5887
+    iso_s23_db_min_in_band: 27.3788
 ```
 
 The run lands in `runs/<run_id>/` (meta.json, metrics, artifacts).
