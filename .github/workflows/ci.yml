@@ -40,6 +40,23 @@ on:
     # 按调度串分轨，互不串扰）
     - cron: "30 2 * * *"
 
+# W3-7（2026-10-28）workflow 级并发控制：
+#   group —— push/PR 按 ref 分组（同分支/同 PR 天然同组）；schedule 事件按
+#   cron 串单独分轨（github.event.schedule 在 schedule 事件下=cron 表达式
+#   本身，其余事件为 null 走 || github.ref 回落）——每日 docs-drift 与每周
+#   rules-verify 各自成组，夜门/周门既不与 main push 抢组排队，也不会被
+#   任何同仓活动取消（无人值守门，取消即静默丢门）。
+#   cancel-in-progress —— 表达式直接产出原生布尔（GitHub 官方支持表达式
+#   取值，docs "cancel-in-progress … as an expression"）：仅 PR 事件为 true
+#   （同 PR 二次 push 取消同组旧 run），push/dispatch/schedule 均为 false
+#   （main push 排队不取消）。
+#   布尔化坑注记：切勿写三元拼字符串 'false' 的形态——表达式结果若是非空
+#   字符串则为 truthy，"不取消"会被反转成"取消"；必须保持 ${{ == }} 比较
+#   的原生布尔形态。
+concurrency:
+  group: "ci-${{ github.workflow }}-${{ github.event_name == 'schedule' && github.event.schedule || github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     name: change scope (docs-only fast path)
@@ -77,6 +94,11 @@ jobs:
   quality:
     name: lint + contracts + numbers + encoding + sensitive
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：GitHub 缺省 360min=挂起放大器。
+    # 实测近 20 次成功 run（runs/aurora_m/w3_2_7/job_durations.json）：
+    # median 0.76 / P99≈max 1.12min（n=20）→ P99×2≈2.2，与 PLAN 建议档
+    # 取大者=15。
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -251,6 +273,9 @@ jobs:
     if: needs.changes.outputs.full == 'true'
     name: license compliance gate (P-3 pip-licenses)
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：实测 median 0.85 / P99≈max 1.27min
+    # （n=15）→ P99×2≈2.5，与 PLAN 建议档取大者=15。证据同 quality。
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -269,6 +294,12 @@ jobs:
   rules-verify:
     name: live rules periodic re-verify (K1, weekly cron only)
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：实测仅 1 个成功样本 1.97min
+    # （weekly cron 窗口内只触发一次），P99×2≈4 样本过薄；PLAN 建议档无
+    # 本 job 条目。无人值守周门取保守 30min：与 preflight 同口径（含 pip
+    # 缓存未命中时重装 dev extras 的冷启动余量——本 job 职责恰是抓依赖
+    # 漂移，安装面本身就该留裕度）。
+    timeout-minutes: 30
     # 只在周一 03:00 UTC 的 weekly 触发跑（push/PR 由 test job 覆盖同一批
     # 测试；每日 02:30 触发归 docs-drift，按调度串分轨互不串扰）
     if: github.event.schedule == '0 3 * * 1'
@@ -294,6 +325,11 @@ jobs:
     name: docs_site regeneration drift (daily schedule or docs-only push)
     needs: changes
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：两触发面合并计（n=8）——docs-only
+    # push（n=7，median 8.73 / max 11.28，跳过 kernel_cards）+ 每日 schedule
+    # （n=1，13.62，含 kernel_cards 再生 ~7min）；族 P99≈max 13.62 → ×2≈27.2，
+    # 与 PLAN 建议档 20 取大者=27.2 → 取整 30。
+    timeout-minutes: 30
     # 两路触发：①每日 02:30 UTC 定时（周一 03:00 weekly 归 rules-verify）；
     # ②文档-only 推送（fast path 下 test 分片被跳过，站点再生由本 job 兜住）。
     if: >-
@@ -349,6 +385,10 @@ jobs:
     if: needs.changes.outputs.full == 'true'
     name: Dockerfile build smoke (C14b)
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：实测 median 0.82 / P99≈max 0.98min
+    # （n=15）→ P99×2≈2；镜像层缓存全冷时 build 才显著变长，与 PLAN 建议
+    # 档取大者=20。
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -386,6 +426,10 @@ jobs:
     if: needs.changes.outputs.full == 'true'
     name: supply chain (pip-audit + CycloneDX SBOM + hashed requirements)
     runs-on: ubuntu-latest
+    # timeout-minutes（W3-2，2026-10-28）：实测 median 2.13 / P99≈max 2.90min
+    # （n=15）→ P99×2≈5.8；pip-audit 查 PyPI 漏洞库的网络抖动属外因变量，
+    # 与 PLAN 建议档取大者=25。
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
