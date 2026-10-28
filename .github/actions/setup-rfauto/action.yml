@@ -1,0 +1,107 @@
+# setup-rfauto — 仓内自有 composite action（W3-1，2026-10-28）
+#
+# 收敛各 job 的「setup-python + pip 安装链」（原 `python -m pip install
+# --upgrade pip` + `pip install -e .[extras]`，实测 2-4min/处）为单次
+# composite 调用：官方 actions/setup-python@v5 → 钉版 uv → uv pip install
+# （uv 并行下载/解析，冷缓存显著快于 pip；每 job 安装步实测待 push 回填）。
+#
+# 纪律对齐：
+# - 仓内"除官方 checkout/buildx 外不引三方 action"——本 action 是仓内自有
+#   （uses: ./），内部只引官方 actions/setup-python@v5（ci.yml 既有面）；
+#   uv 经 pip 安装（不走 astral-sh/setup-uv 三方 action）。
+# - 工具钉版纪律：uv-version 缺省 0.12.17 与 uv.lock（format v1 revision 3）
+#   同管理版本（原 supply-chain job 的钉版口径），防上游漂移。
+# - install 目标=setup-python 解释器本体（--python "$(command -v python)"，
+#   无 venv），与原 `pip install -e .` 落点逐字节同语义。
+# - 原 `python -m pip install --upgrade pip` 前置步删除：pip 仅承担安装 uv
+#   本体（bundled pip 24.x 实测可直接装 uv 0.12.17 wheel），包安装面全部
+#   由 uv 承接，升级 pip 无消费方。
+# - 本 action 不自带 uv 下载缓存（actions/cache 超出本仓 action 白名单，
+#   待仓主裁定后再加）：setup-python 的 cache: pip 仅惠及 uv 本体这个小
+#   wheel，主加速来自 uv 冷缓存并行链路本身。
+#
+# step 命名纪律：任何 name 值不含 ": "（YAML 裸标量冒号+空格即 startup
+# failure 前科，W3-2 家法）。
+name: Setup rfauto (uv editable install)
+description: >-
+  Official setup-python + pinned uv + uv pip editable install of rfauto with
+  parameterized extras and optional extra package specs. In-repo composite
+  action (no third-party actions beyond the official setup-python).
+
+inputs:
+  python-version:
+    description: Python version passed to actions/setup-python
+    required: false
+    default: "3.12"
+  extras:
+    description: Comma-separated project extras for the editable install (empty means base install without brackets)
+    required: false
+    default: ""
+  extra-packages:
+    description: Comma-separated additional package specs installed in the same uv resolve (e.g. ruff==0.16.6,pyyaml)
+    required: false
+    default: ""
+  uv-version:
+    description: Pinned uv version (0.12.17 matches the uv.lock managing revision)
+    required: false
+    default: "0.12.17"
+  cache:
+    description: Enable the official setup-python pip cache (true/false)
+    required: false
+    default: "true"
+  cache-dependency-path:
+    description: Dependency file(s) hashed into the pip cache key
+    required: false
+    default: "pyproject.toml"
+  requirements:
+    description: Optional requirements file consumed via uv pip install -r after the editable install (empty skips it)
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        # cache 为空串时 setup-python 关闭缓存（表达式原生产出，避免三元
+        # 拼字符串的 truthy 陷阱——同 ci.yml W3-7 布尔化坑注记）。
+        cache: ${{ inputs.cache == 'true' && 'pip' || '' }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+
+    - name: Install pinned uv
+      shell: bash
+      env:
+        RFAUTO_ACTION_UV_VERSION: ${{ inputs.uv-version }}
+      run: |
+        python -m pip install --disable-pip-version-check --no-input "uv==${RFAUTO_ACTION_UV_VERSION}"
+
+    - name: Editable install with uv
+      shell: bash
+      env:
+        RFAUTO_ACTION_EXTRAS: ${{ inputs.extras }}
+        RFAUTO_ACTION_EXTRA_PKGS: ${{ inputs.extra-packages }}
+        RFAUTO_ACTION_REQUIREMENTS: ${{ inputs.requirements }}
+      run: |
+        set -euo pipefail
+        PYBIN="$(command -v python)"
+        echo "target interpreter: ${PYBIN}"
+        args=(install --python "${PYBIN}")
+        if [ -n "${RFAUTO_ACTION_EXTRAS}" ]; then
+          # 整体引号包裹，防 [extras] 被 bash 当字符类 glob
+          args+=(-e ".[${RFAUTO_ACTION_EXTRAS}]")
+        else
+          args+=(-e .)
+        fi
+        if [ -n "${RFAUTO_ACTION_EXTRA_PKGS}" ]; then
+          # 逗号分隔 → 逐 spec 入参（spec 内无空格，分词安全）
+          for spec in ${RFAUTO_ACTION_EXTRA_PKGS//,/ }; do
+            args+=("${spec}")
+          done
+        fi
+        echo "uv ${args[*]}"
+        uv "${args[@]}"
+        if [ -n "${RFAUTO_ACTION_REQUIREMENTS}" ]; then
+          uv pip install --python "${PYBIN}" -r "${RFAUTO_ACTION_REQUIREMENTS}"
+        fi

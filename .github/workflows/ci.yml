@@ -15,6 +15,11 @@
 #   逃生口：commit message 含 [full-ci]，或 workflow_dispatch 勾选 full_ci，
 #   或拿不到可比基线（新分支/force push）→ 一律全跑。未识别路径按代码面
 #   处理（fail-safe：宁可多跑，不可漏跑）。判定器=scripts/ci_change_scope.py。
+#
+# 安装链收敛（2026-10-28 W3-1）：各 job 的 setup-python+pip 安装步统一走
+# 仓内 composite action ./.github/actions/setup-rfauto（uv 钉版 0.12.17
+# 加速；原 `pip install -e .` 安装步实测 2-4min/处，PLAN §〇——push 后
+# 按各 job 安装步实测回填）。
 
 name: CI
 
@@ -101,24 +106,22 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛：原 setup-python+pip 两步走仓内
+      # composite action。check_numbers 会 import rfauto.cli 实测命令数——
+      # src 布局需要可安装态，且必须带核心依赖（typer 等被 import，
+      # --no-deps 会 ModuleNotFoundError），editable 安装由 action 承担。
+      - name: Install package and quality toolchain (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          # pip 依赖缓存：key 按依赖声明文件哈希（pyproject.toml 是 pip
-          # install -e . 的实际解析来源；uv.lock 有代际滞后不作 key）。
-          # 缓存只加速下载，wheel 内容寻址，陈旧无害（缺的 pip 会现下）。
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install dev tools
-        run: |
-          python -m pip install --upgrade pip
+          # 基础安装不带 extras（与原 `pip install -e .` 等价）
+          extras: ""
           # 质量门工具钉版=本地门实测（2026-09-22 立规：浮动 latest 版本漂移
           # 如 ruff 新增 I001 检查会 CI 红/本地绿；ruff 0.16.6 /
           # import-linter 2.15 为本地 venv 实测版本）。
-          pip install "ruff==0.16.6" "import-linter==2.15" pyyaml
-          # check_numbers 会 import rfauto.cli 实测命令数——src 布局需要可安装态，
-          # 且必须带核心依赖（typer 等被 import，--no-deps 会 ModuleNotFoundError）
-          pip install -e .
+          extra-packages: "ruff==0.16.6,import-linter==2.15,pyyaml"
+          # 依赖缓存 key 按依赖声明文件哈希（pyproject.toml 是安装解析的
+          # 实际来源；uv.lock 有代际滞后不作 key）。缓存只加速下载，陈旧无害。
+          cache-dependency-path: pyproject.toml
       - name: ruff (src/ tests/ scripts/)
         run: ruff check src/ tests/ scripts/
       - name: import-linter contracts
@@ -156,23 +159,21 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
+      - name: Install package with test-relevant extras (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          # 同 quality：pyproject.toml 哈希作缓存 key
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install package with test-relevant extras
-        run: |
-          python -m pip install --upgrade pip
           # dev 组含离线套件全部可选内核（smt/pyarrow/duckdb/gdstk/scikit-learn…），
           # 缺位时相应测试组 fail 而非 skip
-          pip install -e ".[hfss,mcp,multiobj,dev]"
+          extras: "hfss,mcp,multiobj,dev"
+      - name: Install CJK fonts for report_render PDF tests
+        run: |
           # CJK 字体：report_render PDF 测试（typst 嵌字+pypdf 抽取 CJK 段
           # 标题）。runner 缺省无 Noto CJK → typst 无 CJK 字形可嵌，抽取
           # 全为 \x00（2026-10-07 CI 首跑实证）——装系统字体供
           # report_render._font_paths 的 /usr/share/fonts 扫描面拾取
-          # （模板字体表第三顺位 "Noto Sans CJK SC"）。
+          # （模板字体表第三顺位 "Noto Sans CJK SC"）。apt 系统包非 pip
+          # 面，留独立步不进 composite action。
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
       - name: Run unit + integration-fake tests (real_edt deselected)
@@ -232,19 +233,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
+      - name: Install package with test-relevant extras (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          # 同 quality/test：pyproject.toml 哈希作缓存 key
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install package with test-relevant extras
-        run: |
-          python -m pip install --upgrade pip
           # 与 test job 同依赖面（dev extra 含 pytest）；工具钉版纪律由
           # quality job 承担（ruff==0.16.6 在每个 push/PR 都跑），本 job
           # 只跑 scripts/merge_preflight.py 自带的漂移面预检
-          pip install -e ".[hfss,mcp,multiobj,dev]"
+          extras: "hfss,mcp,multiobj,dev"
       - name: Run scripts/merge_preflight.py (numbers + goldens + regen diffs + AST/meta audits)
         run: |
           # 漂移类失败前移门：check_numbers 全链 + public_api 金快照 +
@@ -278,16 +274,18 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
+      # 注：本 job 原先 setup-python 未开 pip 缓存，收敛后随 action 缺省
+      # cache=true 获得缓存（仅加速下载，无害——口径偏差已对账）。
+      - name: Install package and license gate tool (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-      - name: Install package with test-relevant extras
-        run: |
-          python -m pip install --upgrade pip
           # pip-licenses 钉版：5.5.5 起读取 PEP 639 license SPDX 表达式（自包
           # rfauto GPL-3.0 才入扫）——浮动升级会静默改变扫描口径（run 38839481077
-          # 实证），与本地门版本保持一致（CI 工具钉版家法）。
-          pip install -e ".[hfss,mcp,multiobj]" pytest "pip-licenses==5.5.5"
+          # 实证），与本地门版本保持一致（CI 工具钉版家法）。本 job 不进
+          # dev extra（重依赖面），pytest 单独补齐。
+          extras: "hfss,mcp,multiobj"
+          extra-packages: "pytest,pip-licenses==5.5.5"
       - name: Run license compliance gate (scripts/license_gate.py, ALLOWED+EXEMPT 表)
         run: python scripts/license_gate.py
 
@@ -305,16 +303,11 @@ jobs:
     if: github.event.schedule == '0 3 * * 1'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
+      - name: Install package with test-relevant extras (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          # 同 quality：pyproject.toml 哈希作缓存 key
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install package with test-relevant extras
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[hfss,mcp,multiobj,dev]"
+          extras: "hfss,mcp,multiobj,dev"
       - name: Re-run live rules verify tests (rules.yaml verify subset)
         run: |
           # 单测试文件串行：xdist 分发无收益（loadfile 下单文件=单 worker），
@@ -337,17 +330,13 @@ jobs:
       (needs.changes.outputs.full == 'false' && needs.changes.outputs.docs == 'true')
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
+      - name: Install package with test-relevant extras (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install package with test-relevant extras
-        run: |
-          python -m pip install --upgrade pip
           # 与 test job 同依赖面——再生成结果随依赖版本漂移正是本 job
           # 要抓的对象，审计面必须与真实安装集一致
-          pip install -e ".[hfss,mcp,multiobj,dev]"
+          extras: "hfss,mcp,multiobj,dev"
       - name: Regenerate docs_site (and kernel_cards on code pushes), diff against committed
         run: |
           # 再生差异判据=仓内既有测试（与 merge_preflight 的 docs 面同
@@ -409,6 +398,8 @@ jobs:
   #   pip-audit    2.10.1   requires-python >=3.10（兼容 3.12，PyPI 实测）
   #   cyclonedx-bom 7.4.0   requires-python >=3.9,<4.0（兼容 3.12，PyPI 实测）
   #   uv           0.12.17  与 uv.lock（format v1 revision 3）同管理版本
+  #                         （W3-1 起由 setup-rfauto composite action 的
+  #                         uv-version 缺省钉住，随安装链统一安装）
   #
   # 审计形态=发现已知漏洞即 job 红（exit 非零）。2026-09-24 本地 dry-run：
   # base 锁集（50 pin）+ 工具集 0 已知漏洞（pip 升级到 26.x 后）；extras 面
@@ -432,21 +423,18 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      # W3-1（2026-10-28）安装链收敛（同 quality）：原"Install pinned
+      # supply-chain tools"+"Install package with test-relevant extras"
+      # 两步收敛为一个 composite 调用（同一 uv 解析面；uv 本体由 action
+      # 按 uv-version 缺省钉 0.12.17，本地干跑实证合并解析零冲突）。
+      - name: Install package and supply-chain tools (uv)
+        uses: ./.github/actions/setup-rfauto
         with:
-          python-version: "3.12"
-          # 同 quality：缓存只加速依赖下载，不改变审计面（pip-audit 审的
-          # 是安装后环境，与 wheel 来自缓存还是现下无关）
-          cache: "pip"
-          cache-dependency-path: pyproject.toml
-      - name: Install pinned supply-chain tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install "pip-audit==2.10.1" "cyclonedx-bom==7.4.0" "uv==0.12.17"
-      - name: Install package with test-relevant extras
-        run: |
-          # 与 test job 同依赖面——审计与 SBOM 覆盖 CI 真实安装集
-          pip install -e ".[hfss,mcp,multiobj,dev]"
+          # 与 test job 同依赖面——审计与 SBOM 覆盖 CI 真实安装集。
+          # 工具钉版（浮动 latest=CI 红前科，2026-09-22 立规）：
+          # pip-audit 2.10.1 / cyclonedx-bom 7.4.0。
+          extras: "hfss,mcp,multiobj,dev"
+          extra-packages: "pip-audit==2.10.1,cyclonedx-bom==7.4.0"
       - name: Export hash-pinned requirements from uv.lock
         run: |
           # 只读导出已提交的 uv.lock（--frozen 禁止改写锁文件）。
