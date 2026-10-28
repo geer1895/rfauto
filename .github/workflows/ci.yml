@@ -4,13 +4,14 @@
 #   unit             —— tests/unit，无 EDA 依赖即可跑（fake 通道覆盖全部核心逻辑）
 #   integration-fake —— fake 档集成（本仓当前归并在 tests/unit 内，同 job 覆盖）
 #   real_edt         —— 真机 AEDT/ADS 路径，pytest marker `real_edt` 标记；
-#                       CI 上永远以 `-m "not real_edt"` 排除，只验证可收集不执行
+#                       CI 上永远以 `-m "not real_edt"` 排除，配静态 marker
+#                       census 守卫（W3-4）保证标记面不漂移，不执行
 #
 # Linux runner 是唯一允许的非 Windows 环境（用户环境约束：本机不做 Linux 适配）。
 #
 # 变更面感知（2026-10-26）：`changes` job 先判定本次推送的变更面——
 #   文档-only（README/docs/docs_site/CHANGELOG 等）→ 只跑 quality（数字链/
-#   编码/敏感扫描）+ docs-drift，跳过 pytest 两分片/preflight/供应链/docker；
+#   编码/敏感扫描）+ docs-drift，跳过 pytest 四分片/preflight/供应链/docker；
 #   任何代码面变更（src/tests/recipes/scripts/configs/…）→ 全矩阵照跑。
 #   逃生口：commit message 含 [full-ci]，或 workflow_dispatch 勾选 full_ci，
 #   或拿不到可比基线（新分支/force push）→ 一律全跑。未识别路径按代码面
@@ -20,6 +21,20 @@
 # 仓内 composite action ./.github/actions/setup-rfauto（uv 钉版 0.12.17
 # 加速；原 `pip install -e .` 安装步实测 2-4min/处，PLAN §〇——push 后
 # 按各 job 安装步实测回填）。
+#
+# 分片与守卫四件（2026-10-28 W3-3~W3-6）：
+#   W3-3 preflight 瘦身——对账后只保留 8 个独有真树审计面（17 个重复面
+#     删除：check_numbers=quality 同脚本、public_api 金快照/pytest 漂移面/
+#     扩面六组=test 分片全量覆盖、pip-audit=supply-chain 更严口径、help
+#     括号 AST=test 分片真树同口径 pytest；对账清单
+#     runs/aurora_m/w3_3_6/w3_3_unique_faces_ledger.md）；
+#   W3-4 real_edt 全量 collect 步（25min 饥饿前科）改静态 marker census
+#     （秒级；盘面/标记计数互证 + 棘轮下限 + unit 面零标记三守卫）；
+#   W3-5 test 分片 2→4 + 重件静态锚定表（durations manifest 口径 dur>=15s
+#     共 55 件 LPT 四片，轻件字母序 NR%4 均分；sum 失衡 4.5% vs 字母序
+#     直推 24.1%，证据 runs/aurora_m/w3_3_6/w3_5_*.txt）；
+#   W3-6 分片失败 --lf 自动重跑一次：绿=job summary 标 RETRIED_GREEN
+#     （环境类嫌疑定性器），仍红=保持红——#122 红线：重试不凑绿，红即红。
 
 name: CI
 
@@ -147,15 +162,25 @@ jobs:
     # 显示成裸表达式；shard 号由 step 名与日志体现。
     name: pytest (unit + integration-fake, no EDA)
     runs-on: ubuntu-latest
-    # 双分片：套件扩到 27642 后单 job 连续两轮被 runner 外杀
-    # （run 39936814053 在 82% 处 exit 143、run 39945200918 主 step 悬挂
-    # 至 job 判死）——按内部仓"门口径 v2 分段"家法把单长跑拆成两片
-    # 并行短跑，单片时长/内存余量双恢复；fail-fast 关闭保证两片都跑完
-    # 一次拿全失败面。
+    # 四分片（W3-5，2026-10-28）：套件扩到 27642 后单 job 连续两轮被
+    # runner 外杀（run 39936814053 在 82% 处 exit 143、run 39945200918 主
+    # step 悬挂至 job 判死）——2026-10-13 拆两片后片间实测仍失衡 ~20-30%
+    # （(1) 33.35min vs (2) 27.87min、shard1/2 24.06 vs 31.27，
+    # per_job_distributions）。2→4 片把单片体量再对半，同时按内部仓
+    # durations manifest（junitxml per-testcase 时长聚合文件级，75.7min
+    # 口径）把 **dur>=15s 的 55 个重件文件 LPT 静态锚定到片（各片
+    # heavy_sum=827s 逐位相等）**、其余 1090 个轻件（各 <15s）字母序
+    # NR%4 均分——sum 失衡 4.5%（max/min=1.047），xdist -n2 墙钟模拟
+    # 失衡同为 4.5%；字母序直推 NR%4 失衡 24.1% 不达 20% 门口径故加
+    # 锚定层。证据=runs/aurora_m/w3_3_6/w3_5_shard_balance_analysis*.txt
+    # + w3_5_anchor_table_design.txt。维护纪律：新增文件本地实测 >=15s
+    # （或并入 tier C 重件层）必须重切锚定表（重切法同证据目录）；
+    # 锚定文件改名/删除由步内存在性守卫当场拦下。
+    # fail-fast 关闭保证四片都跑完一次拿全失败面。
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
@@ -176,16 +201,43 @@ jobs:
           # 面，留独立步不进 composite action。
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
-      - name: Run unit + integration-fake tests (real_edt deselected)
+      - name: Run unit + integration-fake tests (real_edt deselected, 4-shard balanced, --lf retry once)
         run: |
-          # 分片选择：文件名字典序交错取半（NR%2），两片体量近似均衡；
-          # 合计覆盖 tests/unit 全部测试文件（与原单 job 全集等价）。
-          if [ "${{ matrix.shard }}" = "1" ]; then
-            FILES=$(ls tests/unit/test_*.py | sort | awk 'NR % 2 == 1')
-          else
-            FILES=$(ls tests/unit/test_*.py | sort | awk 'NR % 2 == 0')
-          fi
-          echo "shard ${{ matrix.shard }}: $(echo "$FILES" | wc -l) files"
+          # ── W3-5 分片选择：重件锚定表 + 轻件字母序均分 ─────────────────
+          # 锚定表（55 件=manifest dur>=15s，LPT 四片各 827s；重切法与
+          # 均衡证据同 runs/aurora_m/w3_3_6/）。表内文件改名/删除/移出
+          # tests/unit 由下方存在性守卫当场红——重切或同步表后方可合流。
+          HEAVY_S1="test_synthesis_bpf_polish_backsub.py test_public_api.py test_factory_m2_rejudge_merged.py test_w3_e_quantized_milp.py test_factory_g2_judge_2d.py test_w5_a_knowledge_bus.py test_hfss_window_driver.py test_si_channel_service.py test_ta_wave_a_templates.py test_dataset_service_query.py test_w2_a_campaign.py test_check_docs_drift.py test_c3_fullcurve_runner.py test_w6_e_i04_split_pin.py"
+          HEAVY_S2="test_pool_patrol.py test_coil_nfc_template.py test_mf_surrogate_loop.py test_kernel_cards.py test_w2_c_json_coverage.py test_coupling_matrix.py test_dp11_vna_wiring.py test_sicl_line.py test_mapes_probe.py test_result_cache_wiring.py test_v1_calibration.py test_optimization.py test_p0_experiment.py"
+          HEAVY_S3="test_w2_d_xd9.py test_w3_c_registry_e2e.py test_sensitivity_rankings_registry.py test_wp34_neural_operator_ab.py test_r8_eng2_ui_registry.py test_trust_region.py test_w3_e_array_synth.py test_mf_backend_resume.py test_ta_wave_c_templates.py test_factory_mf_rejudge.py test_r3_extensions.py test_cli.py test_ui_auth.py test_sra.py"
+          HEAVY_S4="test_hierarchical_scheduler.py test_wp39_benchmark.py test_w4_a_sm_core.py test_c3_spurious_modes.py test_factory_m2_judge_2d.py test_surrogate_loop.py test_pydantic_ai_runtime.py test_league_service.py test_smt_kriging.py test_factory_mfk_lowfi_fix.py test_output_sm_service.py test_dataset_insights.py test_aurora_e_s9_mtrl_uc.py test_self_verify.py"
+          SHARD="${{ matrix.shard }}"
+          case "$SHARD" in
+            1) HEAVY="$HEAVY_S1" ;;
+            2) HEAVY="$HEAVY_S2" ;;
+            3) HEAVY="$HEAVY_S3" ;;
+            4) HEAVY="$HEAVY_S4" ;;
+          esac
+          # 轻件池排除面=四表合集（跨片一致）——四片并集恰为全树一次覆盖。
+          ANCHORED_ALL="$HEAVY_S1 $HEAVY_S2 $HEAVY_S3 $HEAVY_S4"
+          for bn in $HEAVY; do
+            [ -f "tests/unit/$bn" ] || { echo "::error ::W3-5 anchored heavy file missing - tests/unit/$bn (re-cut the anchor table)"; exit 1; }
+          done
+          FILES=""
+          for bn in $HEAVY; do FILES="$FILES tests/unit/$bn"; done
+          # 轻件：字母序 NR%4 均分（各轻件 <15s，计数均分误差可忽略；
+          # idx 对全体轻件计数保证四片选取互斥且并集完备）。
+          idx=0
+          for bn in $(cd tests/unit && ls test_*.py | sort); do
+            case " $ANCHORED_ALL " in *" $bn "*) continue ;; esac
+            idx=$((idx + 1))
+            if [ $(( (idx - 1) % 4 + 1 )) -eq "$SHARD" ]; then
+              FILES="$FILES tests/unit/$bn"
+            fi
+          done
+          n_heavy=$(printf '%s\n' $HEAVY | wc -w)
+          n_all=$(printf '%s\n' $FILES | wc -w)
+          echo "shard $SHARD - $n_all files (heavy $n_heavy + light $((n_all - n_heavy)))"
           # xdist loadfile 并行：内部仓 gate_parallel.py 先例直接搬
           # （8.55× 实测，2026-09-25 df6 批）；loadfile 按测试文件分组
           # 分发，不破坏文件内顺序依赖。真跑/重型 job 本 CI 不存在
@@ -197,72 +249,218 @@ jobs:
           # worker 被 kill 时 pytest 汇总零 failed 但退出码打穿为 1
           # （2026-10-13 run 37 实证），钉死并行度消除该变量。
           # 失败面经 ::error:: annotation 公开可读（诊断期；稳定后可收）。
-          set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/注解/summary 手工序列必须自管
+          set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/重试/注解/summary 手工序列必须自管（W3-6）
           python -m pytest $FILES -q -m "not real_edt" -n 2 --dist=loadfile 2>&1 | tee /tmp/unit.log
           rc=${PIPESTATUS[0]}
           grep -E "^FAILED" /tmp/unit.log | head -12 | while IFS= read -r line; do
             echo "::error ::$line"
           done
           tail -3 /tmp/unit.log > "${GITHUB_STEP_SUMMARY}"
+          # 失败面计数走日志汇总口径（非退出码——xdist 异常态家法见下）。
+          n_failed=$(grep -Eo "[0-9]+ failed" /tmp/unit.log | awk '{s+=$1} END {print s+0}')
+          n_errors=$(grep -Eo "[0-9]+ errors?" /tmp/unit.log | awk '{s+=$1} END {print s+0}')
+          sec_err=0; grep -q "= ERRORS =" /tmp/unit.log && sec_err=1
           # 门判据=日志汇总内容而非退出码：2026-10-13 run 37/38 实证
           # pytest-xdist「零 failed 零 error 却 exit 1」异常态（全绿汇总 +
           # 退出码打穿；-n auto/-n 2 皆现，本地 Linux 外无法复现）——
           # 零 failed 零 error 时响亮标注后放行，真实失败照常红。
-          if [ $rc -ne 0 ] && ! grep -qE "(^| )1 failed|[1-9][0-9]* failed|= ERRORS =" /tmp/unit.log; then
+          if [ "$rc" -ne 0 ] && [ "$n_failed" -eq 0 ] && [ "$n_errors" -eq 0 ] && [ "$sec_err" -eq 0 ]; then
             echo "::warning::pytest exit=$rc but summary shows zero failed/errors (xdist exit-code anomaly, runs 37/38) - gate reads the log summary; see numpy/scipy/sklearn versions below for drift forensics"
             .venv/bin/python -m pip list 2>/dev/null | grep -iE "^(numpy|scipy|scikit-learn|skrf|pydantic) " >> "${GITHUB_STEP_SUMMARY}" || true
             exit 0
           fi
-          exit $rc
+          # ── W3-6 失败重试标注（2026-10-28）────────────────────────────
+          # #122 红线（写死勿删）：--lf 重试只是环境类定性器——首跑红、
+          # 失败集重跑一次绿 = 环境类嫌疑（flaky/内存/调度噪声），在 job
+          # summary 标 RETRIED_GREEN 留痕供盘点；**重跑仍红=保持红，红即
+          # 红，重试永不改门判据、永不用重试凑绿**。重跑只跑失败集
+          # （pytest --lf 读首跑写入的 .pytest_cache/lastfailed，同工作
+          # 目录同 step 内生效）；失败集无法重选（no tests ran）=保持红。
+          if [ "$rc" -ne 0 ]; then
+            echo "first run red (rc=$rc, failed=$n_failed, errors=$n_errors) - retrying the failed set once with --lf (W3-6 env-class classifier, #122 - red is red)"
+            python -m pytest $FILES -q -m "not real_edt" -n 2 --dist=loadfile --lf 2>&1 | tee /tmp/unit_lf.log
+            rc2=${PIPESTATUS[0]}
+            nf2=$(grep -Eo "[0-9]+ failed" /tmp/unit_lf.log | awk '{s+=$1} END {print s+0}')
+            ne2=$(grep -Eo "[0-9]+ errors?" /tmp/unit_lf.log | awk '{s+=$1} END {print s+0}')
+            sec2=0; grep -q "= ERRORS =" /tmp/unit_lf.log && sec2=1
+            empty2=0; grep -q "no tests ran" /tmp/unit_lf.log && empty2=1
+            if [ "$nf2" -eq 0 ] && [ "$ne2" -eq 0 ] && [ "$sec2" -eq 0 ] && [ "$empty2" -eq 0 ]; then
+              # 失败集重跑绿（含 rc2≠0 的 xdist 异常态——失败集确已通过，
+              # 退出码不可信按家法放行，同样留 RETRIED_GREEN 标注）。
+              if [ "$rc2" -ne 0 ]; then
+                echo "::warning::pytest rerun exit=$rc2 but summary shows zero failed/errors (xdist exit-code anomaly, runs 37/38) - gate reads the log summary"
+              fi
+              echo "RETRIED_GREEN (env-class suspect): first run failed=$n_failed/errors=$n_errors, --lf rerun green. #122 - retry is an env-class classifier, not a gate-loosener." >> "${GITHUB_STEP_SUMMARY}"
+              tail -3 /tmp/unit_lf.log >> "${GITHUB_STEP_SUMMARY}"
+              echo "::warning::RETRIED_GREEN (env-class suspect) - first-run failures passed on the --lf rerun (W3-6/#122), see job summary"
+              exit 0
+            fi
+            # 仍红 = 保持红（#122：红即红）。
+            grep -E "^FAILED" /tmp/unit_lf.log | head -12 | while IFS= read -r line; do
+              echo "::error ::$line"
+            done
+            tail -3 /tmp/unit_lf.log >> "${GITHUB_STEP_SUMMARY}"
+            if [ "$nf2" -gt 0 ] || [ "$ne2" -gt 0 ] || [ "$sec2" -eq 1 ] || [ "$empty2" -eq 1 ]; then
+              exit 1
+            fi
+            exit "$rc2"
+          fi
+          exit "$rc"
         env:
           OPENBLAS_NUM_THREADS: "1"
-      - name: Verify real_edt tests are collectable and always deselected in CI
+      - name: Static real_edt marker census (W3-4, replaces the full-collect step)
         run: |
-          python -m pytest tests/unit -m "real_edt" --co -q | tail -1
-          echo "real_edt tests collected above; they are skipped by marker on CI (need real AEDT/ADS)."
+          # W3-4（2026-10-28）：原步 `pytest tests/unit -m "real_edt" --co -q`
+          # 是全量收集（1145 文件/2.2 万测试，2 核 runner 收集面有 25min 级
+          # 饥饿前科），且它断言的集合是空的——tests/unit 现状零 real_edt
+          # 标记使用（真机测试全部在 tests/real_edt/，12 个 test 文件
+          # pytestmark = pytest.mark.real_edt；CI test job 本就不跑该目录）。改静态
+          # marker census 守卫（秒级、零 pytest）：
+          #   ① 盘面互证——tests/real_edt 磁盘 test 文件数 == 带
+          #      mark.real_edt 的文件数：新文件漏标/笔误当场红（合法新增
+          #      两数同涨，无需改常量）；
+          #   ② 棘轮下限——标记文件数 >= EXPECTED_MIN（只收不放，防标记
+          #      面静默缩水；上调须注记）；
+          #   ③ unit 面零标记——tests/unit 出现 mark.real_edt 即红：unit
+          #      套件必须 EDA-free，真机标记测试混入会被 CI 的
+          #      `-m "not real_edt"` 静默 deselect = 覆盖黑洞；
+          #   ④ 常见笔误黑名单——realedt/real_edtt/real-edt/RealEdt 零
+          #      容忍（笔误标记不被 deselect，CI 会真跑真机测试）。
+          set +e
+          EXPECTED_MIN=12   # 锚定 2026-10-28 实测（tests/real_edt 12 个 test 文件全带标记；conftest.py 文档串提及 marker 不算）；只收不放
+          disk=$(ls tests/real_edt/test_*.py 2>/dev/null | wc -l)
+          marked=$(grep -lE "mark\.real_edt" tests/real_edt/test_*.py 2>/dev/null | wc -l)
+          unit_hits=$(grep -rlE "mark\.real_edt" tests/unit 2>/dev/null | wc -l)
+          typos=$(grep -rnE "mark\.(realedt|real_edtt|real-edt|RealEdt)" tests 2>/dev/null | wc -l)
+          echo "real_edt census - disk=$disk marked=$marked unit_hits=$unit_hits typos=$typos (ratchet floor=$EXPECTED_MIN)"
+          rc=0
+          if [ "$disk" -eq 0 ]; then
+            echo "::error ::tests/real_edt has no test files - real-machine marker suite missing?"; rc=1
+          fi
+          if [ "$disk" -ne "$marked" ]; then
+            echo "::error ::tests/real_edt marker census mismatch - $disk file(s) on disk vs $marked carrying mark.real_edt (missing/typo marker, W3-4)"; rc=1
+          fi
+          if [ "$marked" -lt "$EXPECTED_MIN" ]; then
+            echo "::error ::real_edt marker files $marked < ratchet floor $EXPECTED_MIN (只收不放，上调须注记)"; rc=1
+          fi
+          if [ "$unit_hits" -ne 0 ]; then
+            echo "::error ::tests/unit must stay EDA-free - $unit_hits file(s) use mark.real_edt (real-machine tests belong in tests/real_edt; a marked unit test is silently deselected by CI -m not real_edt)"; grep -rlE "mark\.real_edt" tests/unit; rc=1
+          fi
+          if [ "$typos" -ne 0 ]; then
+            echo "::error ::marker typo blacklist hit x$typos - a misspelled marker is NOT deselected and would run real-machine tests on CI"; grep -rnE "mark\.(realedt|real_edtt|real-edt|RealEdt)" tests; rc=1
+          fi
+          if [ "$rc" -eq 0 ]; then
+            echo "real_edt census OK - tests/real_edt (real AEDT/ADS suite) is marker-complete and never executed on CI (test job runs tests/unit only)."
+          fi
+          exit $rc
 
   preflight:
     needs: changes
     if: needs.changes.outputs.full == 'true'
-    name: merge preflight (drift-face early gate)
-    # timeout-minutes：job 级兜底闸（GitHub 缺省 360min 过宽）。上游口径
-    # =check_numbers 900s 上限 + pytest 漂移面 600s 上限 + 3 个 AST/meta
-    # 快审（各 ≤120s 上限）——30min 已含 2 核 runner 的 collect fallback
-    # 冷收集余量，超时=runner 异常态而非门红。
-    timeout-minutes: 30
+    name: preflight unique-face audits (AST/meta quick scans)
+    # W3-3（2026-10-28）瘦身：原形态裸跑 scripts/merge_preflight.py（25 面，
+    # CI 实测 median 11.97 / P99 15.67min，n=15）——对账后发现 17/25 面与
+    # quality / test / supply-chain 三 job 严格重复：pytest 漂移面 10 目标
+    # +扩面六组 13 文件全在 tests/unit（test 四分片本就全量跑）；check_
+    # numbers=quality 同脚本步；public_api 金快照 --check=test 分片
+    # test_public_api.py::test_real_tree_check_gold_passes 真树同判据；
+    # help 括号 AST=test 分片 test_cli_help_text_hygiene.py::
+    # TestParamHelpTextHygiene 真树同口径（脚本头注"双机制同口径"）；
+    # pip-audit 快审=supply-chain job pip-audit --strict 更严口径。重复面
+    # 只贡献"早失败"安慰收益，却独占一条安装链+11min 墙钟。瘦身后保留
+    # 8 个独有真树审计面（一条不少）：
+    #   11 sleep-AST 常驻守卫（audit_test_sleeps.py，tests 树零 sleep(N>10)）
+    #   13 几何 API 字面算术审计（audit_literal_arithmetic_geometry.py，#218）
+    #   14 锚 freshness 审计（audit_anchor_freshness.py，棘轮只收不放）
+    #   15 模板 meta 健康度 5 维审计（audit_template_meta.py）
+    #   16 runs 湖 registry 落后度（registry_backfill --check；CI 树无湖
+    #      =rc2 SKIP 诚实降级，保留语义成本 ~1s）
+    #   17 MCP 描述单源门（check_mcp_desc.py 五维；装 mcp extra 保其
+    #      常驻可执行，不退化成恒 SKIP）
+    #   18 UI 前后端契约棘轮门（check_ui_contracts.py 双向对账）
+    #   25 U+FFFD 替换字符抽查（quality 的 check_encoding 只盖 BOM/非
+    #      UTF-8 可解码，不盖合法 UTF-8 的 EF BF BD 序列——此面独有，
+    #      #89/#259）
+    # 本地实测 8 面合计 8.0s、提取步端到端 9s（runs/aurora_m/w3_3_6/
+    # audit_timing_dryrun.txt；2 核 CI x3 余量仍 <<1min），安装面从 dev
+    # 全家桶缩到 core+mcp+pyyaml——PLAN 验收口径 job ≤3min 达成路径。
+    # rc 语义对齐原脚本：0=绿 /
+    # 1=红 / 2=SKIP 诚实降级（warning 不红）；#122 三分法不变。
+    # 注：被删 pytest 条件面在内部仓 merge_preflight --scope 语义（commit
+    # 2827c7ac）本就属"条件面"，常驻脚本审计面（本步保留集）不参与变更面
+    # 跳过——本形态与 scope=auto 语义天然对齐；将来公开仓同步 tiered
+    # merge_preflight 后，本步直接调各审计脚本的接口不受影响。
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # W3-1（2026-10-28）安装链收敛（同 quality）：uv composite action。
-      - name: Install package with test-relevant extras (uv)
+      - name: Install package with mcp extra plus pyyaml (uv)
         uses: ./.github/actions/setup-rfauto
         with:
-          # 与 test job 同依赖面（dev extra 含 pytest）；工具钉版纪律由
-          # quality job 承担（ruff==0.16.6 在每个 push/PR 都跑），本 job
-          # 只跑 scripts/merge_preflight.py 自带的漂移面预检
-          extras: "hfss,mcp,multiobj,dev"
-      - name: Run scripts/merge_preflight.py (numbers + goldens + regen diffs + AST/meta audits)
+          # 瘦身后不再跑 pytest 面（dev/hfss/multiobj 全免）：core 可安装态
+          # 供 rfauto.infra / rfauto.mcp_server import（面 14/16/17）；
+          # pyyaml 供 audit_template_meta（core 依赖不带 yaml，与 quality
+          # 同款 extra-packages 显式补齐）。
+          extras: "mcp"
+          extra-packages: "pyyaml"
+      - name: Run unique-face audits (sleep-AST, geometry, anchors, template meta, registry, mcp-desc, ui-contracts, U+FFFD)
         run: |
-          # 漂移类失败前移门：check_numbers 全链 + public_api 金快照 +
-          # docs_site/kernel_cards 再生差异 + 注册序/信封契约/help 卫生
-          # + CLI/MCP 计数互证（10 个 pytest 目标）+ 3 个零依赖快审
-          # （sleep-AST 常驻守卫/几何字面算术审计/模板 meta 健康度，
-          # 详见脚本 docstring 的 16 面移植判定表——pip-audit 面由
-          # supply-chain job 承担，help-bracket 与锚 freshness 两面待
-          # cli/anchors 代际同步后接线，runs 湖面不移植）。
-          # OPENBLAS_NUM_THREADS=1：xdist/BLAS 线程超订前科，import 前生效。
-          # 失败面经 ::error:: 变 annotation（API 免登录可读）；tail 落
-          # step summary 双保险。
+          # rc 汇总：任一面 rc∉{0,2} → job 红；rc=2=SKIP 诚实降级（warning
+          # 不红，#122 环境类三分法）。
           set +e  # runner 默认 bash -e 会在首个非零命令处腰斩脚本，rc/注解/summary 手工序列必须自管
-          python scripts/merge_preflight.py 2>&1 | tee /tmp/preflight.log
-          rc=${PIPESTATUS[0]}
-          grep -E "^\[FAIL\]|^FAILED |== preflight" /tmp/preflight.log | head -12 | while IFS= read -r line; do
-            echo "::error ::$line"
-          done
-          tail -5 /tmp/preflight.log > "${GITHUB_STEP_SUMMARY}"
-          exit $rc
-        env:
-          OPENBLAS_NUM_THREADS: "1"
+          : > /tmp/preflight.log
+          rc_total=0
+          run_face() {
+            label="$1"; shift
+            echo "== face - $label"
+            python "$@" 2>&1 | tee -a /tmp/preflight.log
+            r=${PIPESTATUS[0]}
+            if [ "$r" -eq 2 ]; then
+              echo "::warning::[SKIP] $label (rc=2 honest degradation, #122 env-class)"
+            elif [ "$r" -ne 0 ]; then
+              echo "::error ::[FAIL] $label (rc=$r)"
+              rc_total=1
+            fi
+          }
+          run_face "sleep-AST guard (no sleep(N>10) in tests)" scripts/audit_test_sleeps.py
+          run_face "geometry literal-arithmetic audit" scripts/audit_literal_arithmetic_geometry.py
+          run_face "anchor freshness audit" scripts/audit_anchor_freshness.py
+          run_face "template meta health audit" scripts/audit_template_meta.py
+          run_face "runs-lake registry backfill --check" scripts/registry_backfill.py --check
+          run_face "MCP desc single-source gate" scripts/check_mcp_desc.py
+          run_face "UI frontend-backend contract gate" scripts/check_ui_contracts.py
+          # 面 25：U+FFFD 替换字符抽查（#89/#259 常驻化；扫描面/判定与
+          # merge_preflight 原面 25 同判据——文本扩展名白名单 rglob）。
+          python - <<'PYEOF' 2>&1 | tee -a /tmp/preflight.log
+          import sys
+          from pathlib import Path
+          exts = {".py", ".md", ".txt", ".yaml", ".yml", ".toml", ".cfg",
+                  ".ini", ".json", ".js", ".css", ".html"}
+          hits = []
+          for root in ("src", "scripts", "tests", "docs"):
+              for p in Path(root).rglob("*"):
+                  if p.suffix.lower() not in exts or not p.is_file():
+                      continue
+                  try:
+                      n = p.read_bytes().count(b"\xef\xbf\xbd")
+                  except OSError:
+                      continue
+                  if n:
+                      hits.append(f"{p.as_posix()} x{n}")
+          if hits:
+              print("[FAIL] U+FFFD content scan (#89/#259) - replacement chars in text face:")
+              for h in hits[:20]:
+                  print("  " + h)
+              sys.exit(1)
+          print("[PASS] U+FFFD content scan (src/scripts/tests/docs text face clean)")
+          PYEOF
+          r=${PIPESTATUS[0]}
+          if [ "$r" -ne 0 ]; then
+            echo "::error ::[FAIL] U+FFFD content scan (rc=$r)"
+            rc_total=1
+          fi
+          tail -10 /tmp/preflight.log > "${GITHUB_STEP_SUMMARY}"
+          exit $rc_total
 
   licenses:
     needs: changes

@@ -55,7 +55,7 @@ hfss = ["pyaedt>=1.4.0,<2"]  # 开发基线 1.4.0：API 参数名与旧版差异
 multiobj = ["pymoo>=0.6.0", "cmaes>=0.13.0"]
 # MCP Server —— P4 起按需
 mcp = [
-    "fastmcp>=3.0,<4",  # 4.x 严格 JSON 把 inf 序列化为 null（MCP 工具回执 NaN/Inf 面，实测 2026-10）
+    "fastmcp>=3.4.11,<4",  # 3.4.11=authlib/certifi 传递 CVE 修复下限（2026-10-29 内部 pip-audit 清零批同笔）；4.x 严格 JSON 把 inf 序列化为 null（MCP 工具回执 NaN/Inf 面，实测 2026-10）——守 <4
     # mcp<2：2.x 大版本对 server API 有破坏性变更（本仓 152 工具面实测
     # 7 failed+106 collection errors，2026-10-17）；1.30 为 CVE-2026-59951
     # 修复下限（pip-audit 门）。上迁 2.x 须先过全量 MCP 面回归。
@@ -220,7 +220,7 @@ dev = [
     "duckdb>=1.0",  # 数据集注册表直查
     "pyarrow>=14.0",  # 数据集 Parquet 物化
     "gdstk>=1.0",  # GDSII 版图通道（layout_interchange 惰性导入）
-    "pypdf>=4.0",  # PDF 报告导出测试读回校验（export_report_pdf）
+    "pypdf>=6.21.2",  # PDF 报告导出测试读回校验（export_report_pdf）；6.21.2=CVE 修复档（2026-10-29 内部 pip-audit 清零批同笔）
     "z3-solver>=4.13",  # tests：render_constraints 声明式几何约束（z3 extra 同内核）
     "pyvisa-sim>=0.5",  # tests：LibreVNA SCPI 离线应答（vna-sim extra 同内核）
     "pyvisa-py>=0.7",  # tests：VNA 离线后端
