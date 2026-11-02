@@ -204,11 +204,14 @@ jobs:
       - name: Run unit + integration-fake tests (real_edt deselected, 4-shard balanced, --lf retry once)
         run: |
           # ── W3-5 分片选择：重件锚定表 + 轻件字母序均分 ─────────────────
-          # 锚定表（55 件=manifest dur>=15s，LPT 四片各 827s；重切法与
+          # 锚定表（54 件=manifest dur>=15s 原 55 件减 test_pool_patrol.py——
+          # 2026-11-02 脱敏删除（c3cb5fa，内部湖快照夹具不出公开仓），S2 少
+          # 一重件未重切（单件 ≥15s 量级 vs 827s 片和，失衡增量个位数百分点，
+          # 仍在 20% 门内；下次重切随 durations manifest 刷新）；重切法与
           # 均衡证据同 runs/aurora_m/w3_3_6/）。表内文件改名/删除/移出
           # tests/unit 由下方存在性守卫当场红——重切或同步表后方可合流。
           HEAVY_S1="test_synthesis_bpf_polish_backsub.py test_public_api.py test_factory_m2_rejudge_merged.py test_w3_e_quantized_milp.py test_factory_g2_judge_2d.py test_w5_a_knowledge_bus.py test_hfss_window_driver.py test_si_channel_service.py test_ta_wave_a_templates.py test_dataset_service_query.py test_w2_a_campaign.py test_check_docs_drift.py test_c3_fullcurve_runner.py test_w6_e_i04_split_pin.py"
-          HEAVY_S2="test_pool_patrol.py test_coil_nfc_template.py test_mf_surrogate_loop.py test_kernel_cards.py test_w2_c_json_coverage.py test_coupling_matrix.py test_dp11_vna_wiring.py test_sicl_line.py test_mapes_probe.py test_result_cache_wiring.py test_v1_calibration.py test_optimization.py test_p0_experiment.py"
+          HEAVY_S2="test_coil_nfc_template.py test_mf_surrogate_loop.py test_kernel_cards.py test_w2_c_json_coverage.py test_coupling_matrix.py test_dp11_vna_wiring.py test_sicl_line.py test_mapes_probe.py test_result_cache_wiring.py test_v1_calibration.py test_optimization.py test_p0_experiment.py"
           HEAVY_S3="test_w2_d_xd9.py test_w3_c_registry_e2e.py test_sensitivity_rankings_registry.py test_wp34_neural_operator_ab.py test_r8_eng2_ui_registry.py test_trust_region.py test_w3_e_array_synth.py test_mf_backend_resume.py test_ta_wave_c_templates.py test_factory_mf_rejudge.py test_r3_extensions.py test_cli.py test_ui_auth.py test_sra.py"
           HEAVY_S4="test_hierarchical_scheduler.py test_wp39_benchmark.py test_w4_a_sm_core.py test_c3_spurious_modes.py test_factory_m2_judge_2d.py test_surrogate_loop.py test_pydantic_ai_runtime.py test_league_service.py test_smt_kriging.py test_factory_mfk_lowfi_fix.py test_output_sm_service.py test_dataset_insights.py test_aurora_e_s9_mtrl_uc.py test_self_verify.py"
           SHARD="${{ matrix.shard }}"
