@@ -513,7 +513,9 @@ class TestContributingNumbers:
     def test_count_matches_named_gate_log(self) -> None:
         text = (_REPO / "CONTRIBUTING.md").read_text(encoding="utf-8")
         m = re.search(
-            r"`(runs/[^`]+\.log)`: (\d+) passed \+ (\d+) failed", text)
+            # aurora_p H4：证据日志迁 docs/release/ 后路径泛化（钉的本意=
+            # "CONTRIBUTING 点名一条门日志+计数自洽"，非 runs/ 目录绑定）
+            r"`((?:runs|docs/release)/[^`]+\.log)`: (\d+) passed \+ (\d+) failed", text)
         assert m, "CONTRIBUTING 缺门日志计数注记"
         log_path = _REPO / m.group(1)
         assert log_path.exists(), f"点名的门日志不存在: {log_path}"
