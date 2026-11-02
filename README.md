@@ -546,6 +546,10 @@ Added:
 - Optimization: TuRBO multi-restart joins the competition leaderboard;
   SAAS posterior supports NUTS sampling; multi-objective optimization
   supports constraints (c-EHVI)
+- Architecture credit: event-driven execution and liveness-probe ideas
+  absorbed from DeepSeek Super-agent (MIT) land as speculative test
+  pre-runs and `rfauto watchdog`; orchestration notes in
+  `docs/explanation/agent-orchestration.md`
 
 Fixed and improved:
 
