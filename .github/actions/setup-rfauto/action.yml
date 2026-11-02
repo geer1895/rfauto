@@ -87,7 +87,10 @@ runs:
         set -euo pipefail
         PYBIN="$(command -v python)"
         echo "target interpreter: ${PYBIN}"
-        args=(install --python "${PYBIN}")
+        # aurora_p H4 CI 修复：钉版 uv 0.12.17 无 `uv install` 子命令
+        # （run #100 十二 job 全灭于此——W3 批从未 run-level 验证），
+        # 改 `uv pip install`（本 action 注释与 requirements 行的既有口径）。
+        args=(pip install --python "${PYBIN}")
         if [ -n "${RFAUTO_ACTION_EXTRAS}" ]; then
           # 整体引号包裹，防 [extras] 被 bash 当字符类 glob
           args+=(-e ".[${RFAUTO_ACTION_EXTRAS}]")
