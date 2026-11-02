@@ -210,7 +210,12 @@ def test_pcell_render_gdsii_roundtrip(tmp_path: Path) -> None:
         (sum(x for x, _ in p.points) / len(p.points),
          sum(y for _, y in p.points) / len(p.points))
         for p in polys)
-    assert centers == pytest.approx([(float(k), 0.0) for k in range(4)])
+    # 逐点 approx：pytest 9.2 起 approx 对"列表套元组"显式 TypeError（嵌套
+    # 结构不支持；9.1 及前按外层序列静默比较），断言语义不变（aurora_p H4 CI 实证）。
+    expected = [(float(k), 0.0) for k in range(4)]
+    assert len(centers) == len(expected)
+    for got, exp in zip(centers, expected, strict=True):
+        assert got == pytest.approx(exp)
 
 
 def test_pcell_render_bad_fmt_exits_2(tmp_path: Path) -> None:

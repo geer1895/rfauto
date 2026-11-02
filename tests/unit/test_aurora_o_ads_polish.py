@@ -562,7 +562,11 @@ class TestB1AnnotateRichEscape:
             "ads-circuit", "annotate", "--diagram", str(diagram),
             "--result", str(result), "--out", str(out)])
         assert r.exit_code == 0, r.output[:400]
-        assert "[demo]" in r.output, (
+        # 去空白折叠后匹配（test_ui.py 既有口径）：rich Console 按 80 列折行会把
+        # 长 tmp 路径在词中切断（Linux CI 实测 'annot[d\nemo].drawio'——xdist
+        # popen-gwN 段+pytest-of-runner 恰落折点），escape 语义本身不变：被 rich
+        # 当样式标签吞段时整段消失，折叠后同样匹配不到。
+        assert "[demo]" in "".join(r.output.split()), (
             "annotate out_path 被 rich 吞段（escape 缺失即此红）")
         assert out.is_file()
 
