@@ -404,7 +404,12 @@ def sec_f4_mcp(staging: Path, build: bool) -> Section:
 # 发布包禁入片段（与 pyproject [tool.hatch.build.targets.sdist].exclude 对应并更严）
 DIST_FORBIDDEN_FRAGMENTS = (
     "/.hypothesis/", "/.zcode/", "/ads_reference/", "/pyaedt_reference/", "/runs/",
-    "/.venv/", "chat_settings.yaml",  # 精化（aurora_p H4）：密钥配置面指 yaml 本体；chat_settings_io.py 是公开源码加载器（无密钥实证），名字前缀误伤 "/_tmp_", "/Devlog.md", "/TODO", "/AGENTS",
+    "/.venv/", "chat_settings.yaml",
+    # 精化（aurora_p H4）：密钥配置面指 chat_settings.yaml 本体——加载器
+    # chat_settings_io.py 是公开源码（无密钥实证），原 "chat_settings" 前缀
+    # 误伤。教训：改列表元素时行内注释吞并同行后续元素（/_tmp_ 等四项曾
+    # 被吞——注释必须自占一行，与 #146/#259 文档吞标题同族）。
+    "/_tmp_", "/Devlog.md", "/TODO", "/AGENTS",
     "/agent handoff", "/uv.lock", "/skills/",
 )
 
