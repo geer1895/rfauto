@@ -474,15 +474,26 @@ openEMS 官方源码自行编译。
 
 ## 更新日志
 
-**更新日志：本次更新了**电路图绘制三叶（引脚级原理图 `diagram schematic`、
-.drawio→SVG 渲染 `diagram to-svg`、评审标注多评审人合并）、PCB 叠层 3D
-预览、CISPR 25 测试连接场景与专业电气形状档、HB/有源 ADS 模板上图、
-S 参数曲线反标注、设计报告 Pareto 前沿节与版本对账节、TRL 校准件设计
-向导、服务器队列看板 `remote board`、性能画像自动化、约束 c-EHVI、
-TuRBO 多重启竞赛补榜、SAAS NUTS 采样器、ONNX numpy 导出层、以及液态
-神经网络（LNN/CfC）代理；**优化了**测试基建（串行终门 BLAS 线程钉、
-性能画像 diff 回归检测、信道四域策略单源）、事件驱动的投机测试执行
-（文件 watcher 自动预跑）；**以及对于**ADS 调参回路实现了更改——
-绘制好的电路图现在可经 Edit Data 改值→仿真→反标注→迭代完成闭环，
-优化器可直接以 ADS 电路前仿作为评估通道。**目前版本 v0.13.0**
-（上一版本 v0.12.1）。
+### v0.13.0（2026-11-02）
+
+新增：
+
+- 引脚级原理图：`rfauto diagram schematic` 从 ADS 网表生成带引脚、连线和网名的原理图
+- 图转 SVG：`rfauto diagram to-svg` 把 .drawio 转成 SVG，不装 draw.io 也能在服务器或报告里看图
+- 叠层 3D 预览：`rfauto diagram stackup --preview` 在横截面图之外另出 3D 预览 PNG
+- 评审标注：多人标注可合并成一份图，按评审人配色、署名和计数
+- 测试连接图：新增 CISPR 25 传导发射场景，可选专业电气元件形状
+- ADS 调参：有源链与 HB 负载牵引模板支持出图调参；反标注可嵌入 S 参数曲线图；优化器可直接调用 ADS 电路仿真作为目标函数
+- 设计报告：`rfauto design-report` 新增 Pareto 前沿、两次运行的参数与指标对比两节
+- 校准设计：`rfauto cal-wizard trl` 按频带给出 TRL 校准件尺寸、带宽覆盖核算和测试连接图
+- 运维：`rfauto remote board` 查看服务器与本地求解队列；性能画像一键生成；源码变更后自动预跑受影响测试（`devtest_speculative --watch`）
+- 代理模型：新增液态神经网络（CfC）、复数 stamp 族（ngo_stamp_rf）、多端口参数化 VF、SVGP、按参数导出 SPICE 网表、ONNX 导出
+- 优化算法：TuRBO 多重启进入竞赛引擎榜；SAAS 后验可选 NUTS 采样；多目标优化支持约束条件（c-EHVI）
+
+修复与改进：
+
+- 串行终门固定 BLAS 单线程，消除多线程环境下的偶发测试超时
+- 对拍门未通过时不再误报为“ADS 段失败”，两种失败分开提示
+- CLI 命令 297 条，MCP 工具 166 个，单元测试 30738 条（README 徽章同源）
+
+当前版本 v0.13.0，上一版本 v0.12.1。

@@ -515,18 +515,45 @@ the openEMS bindings — build them from the official openEMS sources.
 
 ## Changelog
 
-**v0.13.0** (vs v0.12.1): Added pin-level schematics (`diagram
-schematic`), a pure-Python .drawio→SVG renderer (`diagram to-svg`),
-multi-reviewer annotation merge, 3D stackup preview, CISPR 25 test-setup
-scenes with professional electrical shapes, HB/active ADS templates on
-circuit diagrams, S-parameter curve back-annotation, Pareto-front and
-design-diff report sections, a TRL calibration-design wizard, a server
-queue board (`remote board`), automated performance profiling,
-constrained c-EHVI, TuRBO-multi leaderboard, SAAS NUTS sampler, an ONNX
-numpy export layer, and a Liquid Neural Network (CfC) surrogate.
-Improved test infrastructure (serial-gate BLAS pin, profile diff
-regression detection, a four-domain channel-policy single source) and
-added event-driven speculative test execution (file-watcher auto
-pre-runs). The ADS tuning loop is now closed end-to-end: edit values in
-draw.io → simulate → back-annotate → iterate, with ADS circuit
-simulation available as an optimizer evaluation channel.
+### v0.13.0 (2026-11-02)
+
+Added:
+
+- Pin-level schematics: `rfauto diagram schematic` renders ADS netlists
+  as schematics with pins, wires and net names
+- SVG export: `rfauto diagram to-svg` converts .drawio to SVG so diagrams
+  can be viewed on servers and in reports without draw.io
+- 3D stackup preview: `rfauto diagram stackup --preview` renders a 3D
+  preview PNG alongside the cross-section view
+- Review annotations: annotations from multiple reviewers merge into one
+  file, with per-reviewer colors, attribution and counts
+- Test-setup diagrams: new CISPR 25 conducted-emission scene, with
+  optional professional electrical component shapes
+- ADS tuning: active-chain and HB load-pull templates now support
+  diagram-driven tuning; back-annotation can embed S-parameter curve
+  plots; the optimizer can call ADS circuit simulation as its objective
+- Design reports: `rfauto design-report` gains Pareto-front and
+  two-run parameter/metric comparison sections
+- Calibration design: `rfauto cal-wizard trl` proposes Thru/Reflect/Line
+  dimensions, bandwidth coverage checks and a test-setup diagram for a
+  given frequency band
+- Operations: `rfauto remote board` shows the server and local solve
+  queues; one-command performance profiling; affected tests pre-run
+  automatically when source files change (`devtest_speculative --watch`)
+- Surrogates: Liquid Neural Network (CfC), complex stamp family
+  (ngo_stamp_rf), multi-port parametric VF, SVGP, per-parameter SPICE
+  netlist export, ONNX export
+- Optimization: TuRBO multi-restart joins the competition leaderboard;
+  SAAS posterior supports NUTS sampling; multi-objective optimization
+  supports constraints (c-EHVI)
+
+Fixed and improved:
+
+- The serial test gate pins BLAS to a single thread, removing flaky
+  timeouts in multi-thread environments
+- A failed comparison gate no longer reports "ADS stage failed"; the two
+  failure kinds now have distinct messages
+- 297 CLI commands, 166 MCP tools, 30738 unit tests (same source as the
+  README badge)
+
+Current version: v0.13.0 (previous: v0.12.1).
