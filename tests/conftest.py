@@ -8,6 +8,19 @@ from pathlib import Path
 
 import pytest
 
+# ── CLI --help 渲染跨平台一致化（2026-11-02；Linux CI 11 红根修）─────────────
+# typer.rich_utils 在 **import 时**读 env 定模块常量：GITHUB_ACTIONS/FORCE_COLOR/
+# PY_COLORS 任一存在 → FORCE_TERMINAL=True（rich_utils.py L78-84），CliRunner
+# 捕获的 --help 夹带 ANSI 转义并按缺省 80 列折行——Linux CI 实证 '--warm-start-regis'
+# /'--json'/'--stackup' 等旗标断言被转义序列或折行切断（test_edb_cli_mcp/
+# test_stackup_diagram/test_w3_c_model_registry 等 11 件），本地 Windows 开发机无
+# 这些 env 故从不复现。两键均为 typer 官方开关：_TYPER_FORCE_DISABLE_TERMINAL 强制
+# FORCE_TERMINAL=False；TERMINAL_WIDTH→MAX_WIDTH。必须在任何 typer import 之前
+# 生效（conftest 是 pytest 加载链里最早可控点；pytest 自身及其插件不 import typer），
+# setdefault 保留显式外设。断言零放松：旗标文本本体仍逐字匹配。
+os.environ.setdefault("_TYPER_FORCE_DISABLE_TERMINAL", "1")
+os.environ.setdefault("TERMINAL_WIDTH", "200")
+
 # EC-12（2026-10-06）：openEMS 引擎重建至 E:\openEMS\install\bin——
 # 新 .pyd 的依赖 DLL（CSXCAD.dll/fparser.dll/hdf5 2.2 等）在该目录，
 # 子进程/测试进程需 PATH 含此目录才能加载（否则 CSXCAD import 即崩）。
