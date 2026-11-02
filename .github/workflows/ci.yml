@@ -675,6 +675,11 @@ jobs:
           # 同步留痕（既定政策：不降级 continue-on-error）。
           # pillow 11.3.0 第五批（2026-10-26）：CVE-2026-114501/112398，
           # 修复版 13.0.0，同包同版本 advisory 库增量。
+          # pillow 11.3.0 第六批（2026-11-02）：PYSEC-2026-4327/4332，修复版
+          # 13.0.0，同包同版本 advisory 库增量（本地 pip-audit 2.10.1 对
+          # uv export --frozen 锁集复现 "Found 2 known vulnerabilities, ignored 71
+          # in 1 package"，与 CI run 41443122420 逐字同）。解锁条件不变=fdtdx/
+          # moviepy 放开 pillow<12。
           pip-audit --strict --no-deps \
             --ignore-vuln PYSEC-2026-165 \
             --ignore-vuln PYSEC-2026-2249 \
@@ -730,6 +735,8 @@ jobs:
             --ignore-vuln GHSA-78g4-xqwv-q3g8 \
             --ignore-vuln CVE-2026-114501 \
             --ignore-vuln CVE-2026-112398 \
+            --ignore-vuln PYSEC-2026-4327 \
+            --ignore-vuln PYSEC-2026-4332 \
             -r requirements-lock.txt --progress-spinner off -f json -o pip-audit-report.json
       - name: Upload supply-chain artifacts
         if: always()
