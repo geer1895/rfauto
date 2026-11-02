@@ -18,7 +18,7 @@ ruff check src/ tests/ scripts/            # must stay at 0 findings
 On Windows, `uv sync --extra dev` creates `.venv\Scripts\python.exe`; use that
 interpreter for pytest if you have multiple Pythons around.
 
-Latest recorded unit gate: `runs/unit_gate_public.log`: 26836 passed + 4 failed
+Latest recorded unit gate: `docs/release/unit_gate_public.log`: 26836 passed + 4 failed
 (the 4 are the docs-drift regeneration comparison face, closed in the same
 commit by rebuilding docs_site and re-running the face green — see the log
 header; regenerate this record in the same commit whenever the suite changes).
