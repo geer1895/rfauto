@@ -207,7 +207,7 @@ modules: [tests/unit/test_a2c_coax_waveguide.py, tests/unit/test_a3b_stub_antenn
   tests/unit/test_pitfall_index_service.py, tests/unit/test_pk2_vertical_lit_and_wiring.py, tests/unit/test_plate_modal_service.py,
   tests/unit/test_platform_wiring.py, tests/unit/test_pll_budget.py, tests/unit/test_pll_loop_filter.py,
   tests/unit/test_plugin_templates.py, tests/unit/test_pod_rom.py, tests/unit/test_poke_predistortion.py,
-  tests/unit/test_polarization.py, tests/unit/test_polarization_reg.py, tests/unit/test_pool_7x.py, tests/unit/test_pool_patrol.py,
+  tests/unit/test_polarization.py, tests/unit/test_polarization_reg.py, tests/unit/test_pool_7x.py,
   tests/unit/test_port_gate_service.py, tests/unit/test_port_renormalize.py, tests/unit/test_power_calibration.py,
   tests/unit/test_power_calibration_v2.py, tests/unit/test_pre_commit_gitleaks.py, tests/unit/test_precision_profiles.py,
   tests/unit/test_preflight_service.py, tests/unit/test_premortem.py, tests/unit/test_print_materials_ext.py,
