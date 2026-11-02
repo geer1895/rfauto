@@ -172,7 +172,17 @@ class TestBridgeUtils:
         assert decode_wsl_bytes(b"") == ""
 
 
+#: WSL 桥的网表路径=Windows 宿主盘符路径（run_xyce 先 exists() 再
+#: windows_to_wsl_path）：tmp_path 在 POSIX 解释器下无盘符，三件真文件
+#: 用例只能在 Windows 宿主执行（aurora_p H4 Linux CI 实证，诚实环境 skip；
+#: 纯函数/缺文件/解码用例平台无关照常跑）。
+_WIN_HOST_ONLY = pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="Xyce WSL 桥：tmp_path 真文件需 Windows 宿主盘符路径（POSIX 无盘符）")
+
+
 class TestRunXyce:
+    @_WIN_HOST_ONLY
     def test_command_shape_and_quoting(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b"* t\n.end\n")
@@ -196,6 +206,7 @@ class TestRunXyce:
         with pytest.raises(XyceError, match="网表不存在"):
             run_xyce(tmp_path / "nope.cir", runner=lambda a, t: _proc(0))
 
+    @_WIN_HOST_ONLY
     def test_timeout_returns_flagged_result(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")
@@ -206,6 +217,7 @@ class TestRunXyce:
         res = run_xyce(cir, runner=slow_runner)
         assert res.timed_out and res.rc == -1
 
+    @_WIN_HOST_ONLY
     def test_utf16_output_decoded(self, tmp_path):
         cir = tmp_path / "x.cir"
         cir.write_bytes(b".end\n")

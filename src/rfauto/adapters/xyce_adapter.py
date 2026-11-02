@@ -55,7 +55,7 @@ import subprocess
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, ClassVar
 
 import numpy as np
@@ -196,8 +196,13 @@ def windows_to_wsl_path(path: str | Path) -> str:
 
     非盘符布局（POSIX 根/相对路径/UNC）显式 ValueError——历史教训 df5
     E-MED-6：静默提取出空串得 /mnt// 坏路径。
+
+    解析用 ``PureWindowsPath``（被解析对象是 Windows 宿主路径，与运行平台
+    无关）：Windows 上与 ``Path`` 逐位同解；非 Windows 解释器下 ``Path`` 不认
+    反斜杠分隔符会把 ``E:\\a\\b.cir`` 整段当单个 part 误拒（aurora_p H4
+    Linux CI 实证）。
     """
-    parts = Path(path).parts
+    parts = PureWindowsPath(path).parts
     if not parts or _DRIVE_SEG_RE.fullmatch(parts[0]) is None:
         raise ValueError(
             f"windows_to_wsl_path 仅支持 Windows 盘符绝对路径，收到 {str(path)!r}"
