@@ -107,7 +107,14 @@ def _read_text_bytes(path: Path) -> str | None:
 
 def normalize_league_rows(rows: list[dict[str, Any]], runs_root: Path) -> list[dict]:
     """行集归一：provenance 内绝对路径（meta_path/file）剥离 runs_root
-    前缀 → 跨根可比（活湖 vs 材料化树）。"""
+    前缀 → 跨根可比（活湖 vs 材料化树）。
+
+    剥前缀后残余分隔符统一正斜杠：meta_path/file 由 ``str(Path)`` 产出，
+    分隔符随运行平台（Windows ``\\`` / POSIX ``/``）——冻结帧在 Windows 采集，
+    CI Linux 材料化回放的行集分隔符不同即哈希漂移（aurora_p H4 CI 实证
+    test_league_service::TestRealRunsReplay 红）。归一发生在剥离之后，
+    与平台解耦，帧内存储值不动。
+    """
     prefix = str(runs_root)
     out: list[dict] = []
     for row in rows:
@@ -116,7 +123,7 @@ def normalize_league_rows(rows: list[dict[str, Any]], runs_root: Path) -> list[d
         for key in ("meta_path", "file"):
             v = prov.get(key)
             if isinstance(v, str) and v.startswith(prefix):
-                prov[key] = "<RUNS>" + v[len(prefix):]
+                prov[key] = "<RUNS>" + v[len(prefix):].replace("\\", "/")
         r["provenance_json"] = json.dumps(prov, sort_keys=True,
                                           ensure_ascii=True)
         out.append(r)
