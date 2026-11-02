@@ -51,6 +51,7 @@
   "export_report_pdf",
   "goldset_regression",
   "agentbench_regression",
+  "design_report",
   "rf_propose_params",
   "rf_run_sampler",
   "rf_critique_point",
@@ -156,7 +157,15 @@
   "runs_verify",
   "em_diff_runs",
   "em_metrics_from_run",
-  "em_sweep_plan"
+  "em_sweep_plan",
+  "mo_run",
+  "al_propose",
+  "competition_run",
+  "surrogate_export_onnx",
+  "surrogate_uq",
+  "ads_circuit_diagram",
+  "ads_circuit_run",
+  "ads_circuit_annotate"
  ],
  "resources": [
   "rfauto://calculators/index",

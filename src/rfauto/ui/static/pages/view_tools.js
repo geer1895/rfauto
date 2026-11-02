@@ -523,6 +523,7 @@ export async function pageTools() {
          <div class='toolbar'><b data-i18n='tools.calculators_label'>${t("tools.calculators_label")}</b>
            <select id='tool-name' style='flex:1' aria-label='${t("tools.select_aria")}'></select>
            <span id='tool-count' class='muted'></span></div>
+         <div class='muted' style='font-size:var(--text-xs);margin:var(--space-1) 0' data-i18n='tools.default_hint'>${t("tools.default_hint")}</div>
          <div id='tool-desc' class='muted' style='margin:var(--space-2) 0;padding:var(--space-2);border:1px solid var(--border);border-radius:var(--radius-xs)'></div>
          <div id='tool-params'></div>
          <div id='tool-sweep' style='margin:var(--space-2) 0'></div>
@@ -719,9 +720,15 @@ export async function pageTools() {
     }
     return params;
   };
-  /* 分组 optgroup 重绘：搜索词过滤 → 按组装配；选中项被滤掉时回落首个可见项 */
+  /* 分组 optgroup 重绘：搜索词过滤 → 按组装配；选中项被滤掉时回落首个可见项。
+     P3-2（aurora_n wave_ui_c）：注意 innerHTML 重建会把 select.value 静默
+     重置到首个 option——旧实现依赖"重建后 value 恰为可见首项"的副作用，
+     缺省选择分支从未真正生效。现先取重建前的用户选择 prev，装配后显式
+     三分支回写：空=新手缺省（microstrip_synthesis，缺席回落首项）；
+     仍在可见集=恢复用户选择；被滤掉=回落首个可见项（原语义）。 */
   const rebuildOptions = () => {
     const vis = cals.filter((c) => toolFilterMatch(c, search.value));
+    const prev = sel.value;
     sel.innerHTML = groupCalcList(vis)
       .map((g) => `<optgroup label="${escAttr(grpDisp(g.group))}（${g.items.length}）">` +
         g.items.map((c) =>
@@ -729,8 +736,20 @@ export async function pageTools() {
           .join("") + `</optgroup>`)
       .join("");
     T.$("tool-count").textContent = `${vis.length}/${cals.length}`;
-    if (vis.length && !vis.some((c) => c.name === sel.value))
-      sel.value = vis[0].name;
+    if (vis.length) {
+      if (!prev) {
+        // 首次装配（无用户选择）：新手缺省选中 microstrip_synthesis——
+        // 原缺省=注册表首键 circular_waveguide_mode_prop（冷门），审计建议
+        // 新手更可能先要 microstrip_synthesis；注册表缺席该键时回落首个可见
+        // 项。deep link/待选键优先级在其后不变。
+        const pref = vis.find((c) => c.name === "microstrip_synthesis");
+        sel.value = (pref || vis[0]).name;
+      } else if (vis.some((c) => c.name === prev)) {
+        sel.value = prev; // 仍在可见集：恢复用户选择（防 innerHTML 重置吞选区）
+      } else {
+        sel.value = vis[0].name; // 当前选择被滤掉：回落首个可见项（原语义）
+      }
+    }
     renderParams();
   };
   /* 选择器变化 → hash 同步（replaceState 不产生历史条目、不触 hashchange） */

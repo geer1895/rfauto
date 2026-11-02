@@ -9,12 +9,12 @@
 
 2026-10-05 W1-D 批清偿历史残留 10 处后收紧为**全禁**断言 current == set()
 （原 _FROZEN_VIOLATIONS 冻结基线与 test_frozen_baseline_still_accurate 基线
-账实钉同步删除；清偿逐处对账表见 内部证据档，规格=
-内部证据档 §十）。形态裁决：typer/
+账实钉同步删除；清偿逐处对账表见 runs/w1_phase1/w1d/REPORT.md，规格=
+runs/research_seats_20261004/ra_criteria/SPECS.md §十）。形态裁决：typer/
 click 渲染面**禁 `%%`**（会字面双显，仅 argparse scripts/ 面合法）——本门
 按"剔除 %% 后仍数 % "判违例，全角％/全角【】/描述化为合规替代。
 参数级 help（--param 描述，另 21 处 `[` 残留）不在本门作用域（任务书口径=
-"命令 help 文本"），探针已留档（内部证据档
+"命令 help 文本"），探针已留档（runs/research_seats_20261004/ra_criteria/
 _probe_d06_help.py）供后续批清零（followUp 登记）。
 
 2026-10-11 aurora36 W5-C：参数级 21 处残留清偿（bench_app×5/domains×14/
@@ -24,7 +24,7 @@ click.Parameter.help（同一棵树同一判定面），裸 `[` 全禁棘轮（�
 %-展开，% 面不进参数级门）。源码级归因工具=scripts/check_cli_help_bracket
 .py（AST 静态扫，merge_preflight 检查面）。
 
-E2 席一次性探针（内部证据档，
+E2 席一次性探针（runs/review_ge8e/e2_cli_mcp_ui/evidence/smoke_help_all.py，
 198 命令 subprocess 冒烟）转常驻的静态化版本：不逐命令起进程（秒级、零
 subprocess），同一棵树同一判定面。
 

@@ -12,7 +12,7 @@ from .registry import _DEFAULT_SUB, MS_UNIT_TEMPLATES, TEMPLATE_META, TEMPLATE_N
 
 # ─── §MS_METASURFACE 超表面/FSS 族（2026-09-24 df6 DP-10，文末注册块）─────────
 # 规格与判据：docs/plan_deepdive_specs_20260924.md §DP-10 +
-# 内部证据档（预声明冻结）。离线内核=core/metasurface_lut.py
+# runs/df6_dp10ms/criteria.md（预声明冻结）。离线内核=core/metasurface_lut.py
 # （名义尺寸闭式单源 #252/#1c：本段只消费不重复实现）。
 #
 # 波导模拟器技巧（法向入射≡无限阵@θ=0，官方 Parallel Plate Waveguide 教程
@@ -426,7 +426,7 @@ def _ms_patch_lines(p: dict[str, Any]) -> str:
 
     读出（2026-10-01 ge5 ms_patch 读出修复，runs/ge5_msjcross/audit.md §D/E
     定性：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载（能量预算破损），
-    反射相位为片负载 Möbius 像（ 六百八十七：fine 弧 100.90° 去嵌后
+    反射相位为片负载 Möbius 像（Devlog 六百八十七：fine 弧 100.90° 去嵌后
     物理 133.98°、coarse 19/21 点反演负阻不可修复）——jcross/cross 修法
     同族移植：soft plane 激励 + 双 E 探针对（_WgProbePairRefl 对调 uf）。
     """
@@ -1155,7 +1155,7 @@ def ms_geometry_spec(template: str, params: dict[str, Any],
 # - ms_jcross：period=12.0；主缝=λg/4、端枝=λg/8、缝宽=λg/40
 #   （λg=λ0/√εeff；Marcuvitz 网格 EC 初值口径，带心真机修正归 P3）。
 # - ms_array_NxN：演示名义务 3×3（真机 15×15 战役走参数注入，预算见
-#   开发接续说明）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
+#   handoff.md）；cell_map=三值 px 图样证明逐单元驱动（cell_id 显式）。
 def _ms_nominal() -> tuple[float, float, float]:
     """闭式 nominal 计算（core 单源导入收口在函数内，scipy 链惰性）。"""
     from rfauto.core.metasurface_lut import ms_cross_arm_len_mm, ms_jcross_slot_dims_mm, ms_patch_resonant_len_mm
@@ -1183,7 +1183,8 @@ MS_PATCH_META: dict[str, Any] = {
                   "波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出"
                   "判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 "
                   "LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 "
-                  "Möbius 像，内部证据档 §D/E）",
+                  "Möbius 像，runs/ge5_msjcross/audit.md §D/E + Devlog 六百八十"
+                  "七）",
     "max_time_ns": 30.0, "mesh_resolution_mm": 0.0, "n_segments": None,
     "params": ["px_mm", "py_mm", "period_mm", "h_mm"],
     "topology": "反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形"

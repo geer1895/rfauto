@@ -37,6 +37,8 @@ _EXEC_CSXCAD_MODULES = (
     "test_hairpin_alt_template.py",
     "test_hairpin_template.py",
     "test_interdigital_template.py",
+    "test_k11_octagonal_spiral.py",
+    "test_k12_ipc_caps.py",
     "test_kicad_board_render.py",
     "test_layout_sim_service.py",
     "test_marchand_via_ab.py",
@@ -76,7 +78,7 @@ _EXEC_CSXCAD_MODULES = (
 
 
 def test_exec_member_table_is_complete_union():
-    """成员表本身必须等于内部∩公开仓实测并集（29 条）——表残缺即守卫
+    """成员表本身必须等于内部∩公开仓实测并集（31 条）——表残缺即守卫
     面缩水（round6 E-M1 实证：表只有 1 条时 12 条漏登记抓不住）。"""
     public = REPO / "release" / "rfauto_public" / "tests" / "conftest.py"
     if not public.exists():

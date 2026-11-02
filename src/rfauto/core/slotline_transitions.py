@@ -35,7 +35,7 @@
   Δl = h·0.412·(εeff+0.3)·(w/h+0.264) / [(εeff−0.258)·(w/h+0.813)]
   （Hammerstad 1975 族闭式，CAD 工具通用口径；微带 w=3.344/h=1.524、
   εeff=2.853 @2.5GHz → Δl≈0.624mm，量级 0.4h，二阶但计入）。
-  **符号惯例（2026-09-21 C6 followUp 修正，观察项收口）**：
+  **符号惯例（2026-09-21 C6 followUp 修正，Devlog（二百零四）观察项收口）**：
   开路端边缘场使支节电长比物理长长 Δl（等效延长），故物理长=电长−Δl
   （Pozar《Microwave Engineering》eq.4.23 开路端口径；本仓
   adapters/openems_templates._open_end_delta_mm 消费者同口径：耦合段
@@ -78,7 +78,7 @@
 --------------------------------------------------------------------------------
 "reference"（缺省）=HJ 综合现状（输出逐字节不变）；"openems"=本仓 openEMS 逐档
 修正：Z0 目标经 engine_z0_correction（4 点直微带线标定 PCHIP@log10 w，数据
-内部证据档）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
+runs/marchand_line_calibration）预畸变反解设计宽（耦合段 + w_feed/w_bal 同曲线
 定点），节长按 β +2% 常数缩短。**标定基准=直微带单线，耦合段 Z0e/Z0o 适用性是
 外推**（修正模型/适用域/域外钳制详见 engine_z0_correction docstring）。
 
@@ -342,7 +342,7 @@ def balun_metrics(f_hz, s11, s21, s31, s23=None,
 
 # ═══════════════ 三、真 Marchand：两节对称耦合段电路级综合（2026-09-18 followUp ②）═══════════════
 #
-# 背景（）：双槽臂"单支节串接=最小 Marchand"猜想四门 FAIL 两引擎
+# 背景（Devlog（二百零四））：双槽臂"单支节串接=最小 Marchand"猜想四门 FAIL 两引擎
 # 互证→证伪（共享单支节使两跨越点激励不对称、拓扑无隔离机制）。真 Marchand 必须是
 # **两节 λ/4 耦合段、各臂独立端接**（Marchand 1944 原理；Cloete 1979 精确综合；
 # Ang & Robertson, IEEE MTT-49(2) 2001 阻抗变换型分析）。本段只做确定性电路级内核
@@ -758,7 +758,7 @@ def _slot_balanced_option(f0: float, h_mm: float, er: float, tan_d: float,
 # ─── openEMS 逐引擎修正（2026-09-18 marchand_line_calibration 4 点标定，wf:marchand-correction）──
 
 #: openEMS 单线 Z0 引擎偏差标定表：(w_mm, Z0_engine/Z0_HJ − 1)，负=引擎偏低阻。
-#: 数据源 内部证据档 的 dev_pct_primary
+#: 数据源 runs/marchand_line_calibration/calibration_table.json 的 dev_pct_primary
 #: （Z0 主判据=四路由中位，spread ≤0.6%；p1_wbal/p2_w80/p3_wmain/p4_wfeed，2026-09-18）
 MARCHAND_OPENEMS_Z0_DEV_CAL: tuple[tuple[float, float], ...] = (
     (0.2981, -0.11559883283386052),

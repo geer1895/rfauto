@@ -28,7 +28,7 @@ from typing import Any
 
 from rfauto.service.envelope import error_envelope
 
-#: 跨保真门阈值单一真源（R3-3，内部证据档）：
+#: 跨保真门阈值单一真源（R3-3，runs/review_ge8e/f3_fix/REPORT.md）：
 #: ui_service 跨保真演化视图对 p0_*result.json 的 verdict 重推与门判定
 #: 同源引用此常量，防"阈值改动后 UI 判读静默漂移"。
 THRESHOLD_RHO = 0.8

@@ -3,7 +3,7 @@
 零仿真（exec 截断于 FDTD.Run 之前，秒级）：Mohan 论文数表抽查（#55/#56
 值+页码来源标注）+ CALC 键面门行为 + 布局单源几何/守卫 + #212 exec 审计
 （单连通/地平面隔离/端口跨隙）+ fake 自洽（L 回收/SRF 对拍/参数驱动）+
-注册面同步。判据预声明 内部证据档（先声明后实测）。
+注册面同步。判据预声明 runs/aurora_k/k11/criteria.md（先声明后实测）。
 
 数字出处（#118 家法，#331 审计 dump 原文纪律）：
 - Mohan-Schneider-Chibante, "Simple Accurate Expressions for Planar

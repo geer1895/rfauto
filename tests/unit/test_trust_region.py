@@ -87,6 +87,22 @@ def _isolated_cwd(isolated_cache_off):
     yield
 
 
+# W1-6 语料降规模（aurora_m）：同 seed 确定性（r1==r2 逐位）与环契约
+# （n_attempts 账目恒等/best 不劣于起点/stop_reason 白名单）均与环规模无关
+# ——refine 两测 max_real 8→4、virtual_trials 120→60，断言零改动；旧语料
+# 对照档 runs/aurora_m/w1_6/old_corpus_test_deterministic_same_seed.log 与
+# old_corpus_test_local_mapping_variant_runs.log
+TR_REFINE_KW = dict(max_real=4, virtual_trials=60)
+
+# W1-6 语料降规模（aurora_m）：two_stage 接口契约（握手字段/账目恒等式/
+# stage2 不劣于 stage1）与虚拟采样规模无关——stage1 virtual_trials 150→60、
+# stage2 100→40（max_real 保留），断言零改动；旧语料对照档
+# runs/aurora_m/w1_6/old_corpus_test_run_two_stage_contract.log
+TR_CONTRACT_STAGE1 = dict(n_init=6, top_k=2, max_real=10, virtual_trials=60,
+                          seed=42)
+TR_CONTRACT_STAGE2 = dict(max_real=6, virtual_trials=40, seed=42)
+
+
 class TestTwoStageVsStage1:
     """§10.9 1b 验收裁判：合成解析面上 stage-2 vs stage-1 对照。"""
 
@@ -163,7 +179,7 @@ class TestRefineContract:
                 BOUNDS, OBJS, bowl_metrics, start_params=start,
                 warm_samples=[{"params": dict(p),
                                "metrics": bowl_metrics(p)} for p in init],
-                max_real=8, virtual_trials=120, seed=5)
+                **TR_REFINE_KW, seed=5)
 
         r1, r2 = run(), run()
         # elapsed_s 是墙钟，不入确定性比较
@@ -210,7 +226,7 @@ class TestRefineContract:
             BOUNDS, OBJS, bowl_metrics, start_params=start,
             warm_samples=[{"params": dict(p),
                            "metrics": bowl_metrics(p)} for p in init],
-            max_real=8, virtual_trials=120, seed=5, mapping_kind="local")
+            **TR_REFINE_KW, seed=5, mapping_kind="local")
         assert res["ok"]
         assert res["mapping_kind"] == "local"
         assert res["n_attempts"] <= 8
@@ -233,9 +249,8 @@ class TestTwoStageInterface:
     def test_run_two_stage_contract(self):
         res = run_two_stage(
             BOUNDS, OBJS, bowl_metrics,
-            stage1={"n_init": 6, "top_k": 2, "max_real": 10,
-                    "virtual_trials": 150, "seed": 42},
-            stage2={"max_real": 6, "virtual_trials": 100, "seed": 42})
+            stage1=dict(TR_CONTRACT_STAGE1),
+            stage2=dict(TR_CONTRACT_STAGE2))
         assert res["ok"]
         assert res["algorithm"] == "two_stage_sbo_trust_region"
         assert res["stage2"] is not None

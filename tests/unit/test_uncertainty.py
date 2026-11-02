@@ -3,7 +3,7 @@
 锚点（零回归纪律）：
 - tol=None（缺省）时 run_surrogate_loop 结果字典与不加参数逐字节一致——
   新代码路径零触发；
-- σ 序列同 seed 逐位一致（确定性内核，内核立规注记 规则 7）；
+- σ 序列同 seed 逐位一致（确定性内核，AGENTS 规则 7）；
 - uncertainty.py 分层 lint：optimization 禁 import service（import-linter
   layers 契约），内核是移植不是引用。
 """
@@ -118,6 +118,19 @@ def _isolated_cwd(isolated_cache_off):
     yield
 
 
+# W1-5 语料降规模（aurora_m）：显式 None ≡ 缺参为结构恒等、与环规模无关
+# ——virtual_trials 120→60、max_real 12→8，断言零改动；旧语料对照档
+# runs/aurora_m/w1_5/old_corpus_test_tol_none_result_byte_identical_to_default.log
+TOL_NONE_KW = dict(n_init=6, top_k=2, max_real=8, virtual_trials=60, seed=42)
+
+# W1-5 语料降规模（aurora_m）：同 seed σ 序列逐位一致与环规模无关
+# （tol=0.0 永不触发饱和，任何规模下 stop_reason 均非 uncertainty_saturated）
+# ——virtual_trials 120→60、max_real 14→8，断言零改动；旧语料对照档
+# runs/aurora_m/w1_5/old_corpus_test_sigma_sequence_bitwise_reproducible.log
+SIGMA_SEQ_KW = dict(n_init=6, top_k=2, max_real=8, virtual_trials=60, seed=7,
+                    uncertainty_tol=0.0, uncertainty_pool=64)
+
+
 class TestLoopUncertaintyTermination:
     @staticmethod
     def _strip_elapsed(res: dict) -> dict:
@@ -126,7 +139,7 @@ class TestLoopUncertaintyTermination:
     def test_tol_none_result_byte_identical_to_default(self):
         """tol=None 显式传入与不传参数：结果字典逐字节一致（elapsed_s 除外——
         墙钟计时固有不可复现），且任何 round 条目不带 sigma_cost_max 键。"""
-        kw = dict(n_init=6, top_k=2, max_real=12, virtual_trials=120, seed=42)
+        kw = dict(TOL_NONE_KW)
         res_default = run_surrogate_loop(BOUNDS_2D, OBJS_2D, bowl_metrics, **kw)
         res_none = run_surrogate_loop(BOUNDS_2D, OBJS_2D, bowl_metrics,
                                       uncertainty_tol=None, **kw)
@@ -161,8 +174,7 @@ class TestLoopUncertaintyTermination:
 
     def test_sigma_sequence_bitwise_reproducible(self):
         """同 seed 两跑：σ 序列逐位一致（tol=0.0 永不触发 → 全程记录）。"""
-        kw = dict(n_init=6, top_k=2, max_real=14, virtual_trials=120, seed=7,
-                  uncertainty_tol=0.0, uncertainty_pool=64)
+        kw = dict(SIGMA_SEQ_KW)
         res_a = run_surrogate_loop(BOUNDS_2D, OBJS_2D, bowl_metrics, **kw)
         res_b = run_surrogate_loop(BOUNDS_2D, OBJS_2D, bowl_metrics, **kw)
         assert res_a["stop_reason"] != "uncertainty_saturated"

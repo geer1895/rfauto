@@ -1,0 +1,127 @@
+{
+  "title": "CISPR 25 传导发射测试连接（电压法：EUT+人工网络+EMI 接收机）",
+  "shapes": "electrical",
+  "instruments": [
+    {
+      "id": "bat",
+      "kind": "battery",
+      "label": "蓄电池 12 V",
+      "role": "stim",
+      "ports": [
+        "DC+",
+        "DC-"
+      ]
+    },
+    {
+      "id": "lisn1",
+      "kind": "lisn",
+      "label": "人工网络 LISN",
+      "ports": [
+        "EUT",
+        "BAT",
+        "RF",
+        "GND"
+      ],
+      "note": "50 uH / 50 Ohm"
+    },
+    {
+      "id": "eut",
+      "kind": "dut",
+      "label": "EUT 被测件",
+      "ports": [
+        "B+",
+        "LOAD"
+      ],
+      "note": "距参考板 50 mm"
+    },
+    {
+      "id": "att1",
+      "kind": "attenuator",
+      "label": "瞬态限幅器",
+      "ports": [
+        "IN",
+        "OUT"
+      ],
+      "note": "10 dB"
+    },
+    {
+      "id": "recv",
+      "kind": "emi_receiver",
+      "label": "EMI 接收机",
+      "ports": [
+        "RF IN"
+      ],
+      "note": "峰值/准峰值检波"
+    },
+    {
+      "id": "loadsim",
+      "kind": "load_simulator",
+      "label": "负载模拟器",
+      "ports": [
+        "HARN"
+      ]
+    },
+    {
+      "id": "plane",
+      "kind": "anchor_plane",
+      "label": "参考接地板",
+      "ports": [],
+      "note": "2000 x 1000 mm"
+    }
+  ],
+  "connections": [
+    {
+      "from": "bat.DC+",
+      "to": "lisn1.BAT",
+      "cable": {
+        "label": "DC 馈线",
+        "length_m": 1.2
+      }
+    },
+    {
+      "from": "eut.B+",
+      "to": "lisn1.EUT",
+      "cable": {
+        "label": "电源线束",
+        "length_m": 5
+      }
+    },
+    {
+      "from": "lisn1.RF",
+      "to": "att1.IN",
+      "cable": {
+        "label": "RF1",
+        "loss_db": 9.5,
+        "length_m": 3.0
+      },
+      "cal_plane": true
+    },
+    {
+      "from": "att1.OUT",
+      "to": "recv.RF IN",
+      "cable": {
+        "label": "RF2",
+        "loss_db": 3.0,
+        "length_m": 1.0
+      }
+    },
+    {
+      "from": "eut.LOAD",
+      "to": "loadsim.HARN",
+      "cable": {
+        "label": "负载线束",
+        "length_m": 1.5
+      }
+    }
+  ],
+  "notes": [
+    {
+      "text": "校准面在 LISN RF 端口处，限幅器损耗已扣除",
+      "anchor": "conn2"
+    },
+    {
+      "text": "LISN/EUT 与参考板低阻抗搭接",
+      "anchor": "plane"
+    }
+  ]
+}

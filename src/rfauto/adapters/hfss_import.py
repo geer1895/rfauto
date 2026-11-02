@@ -20,7 +20,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-# AEDT 缺省版本单源（aurora72 A7-C）：真机口径 2025 R1/v251（内核立规注记 规则 0
+# AEDT 缺省版本单源（aurora72 A7-C）：真机口径 2025 R1/v251（AGENTS 规则 0
 # 勘误），与 EDB 快车道/remote_machines 注册表同源，禁再手写字面量漂移。
 # edb_adapter 模块级仅 stdlib 依赖，此处顶层 import 无重链代价。
 from rfauto.adapters.edb_adapter import _DEFAULT_AEDT_VERSION
@@ -32,9 +32,9 @@ def _remote_session_info(remote_machine: str | None,
                          version: str) -> dict[str, Any] | None:
     """remote_machine 注册表名 → 远程会话信息（hfss_session 同款口径）。
 
-    多机协同 v0 尾巴（B13/待办清单 followUp）：无该键=本地会话（零行为变化）。
+    多机协同 v0 尾巴（B13/TODOfollowUp）：无该键=本地会话（零行为变化）。
     带该键走 infra/remote_machines 注册表解析（未登记名 RemoteConfigError
-    fail-closed），并做版本配对交叉断言（内核立规注记 规则 0：pyaedt gRPC 客户端-
+    fail-closed），并做版本配对交叉断言（AGENTS 规则 0：pyaedt gRPC 客户端-
     服务端版本必须配对，静默失配会走错客户端插件——显式拒绝并指引对齐）。
 
     Returns
@@ -78,7 +78,7 @@ def _open_hfss(project_path: str, design_name: str | None, version: str,
     remote_info 给定时走远程分支（多机协同 v0）：Hfss 透传
     machine=/port=（hfss_session/hfss_adapter 同款），构造窗口包
     remote_session_switches 四开关（远程必须走 TCP，缺省 WNUA 是本机
-    通道）；remote_rpc_session 在 Hfss 构造前置 None（ 五百四十二
+    通道）；remote_rpc_session 在 Hfss 构造前置 None（Devlog 五百四十二
     坑 1 双语义）。project 路径按服务器侧文件系统解释（调用方负责不传
     本地临时路径）。
     """
@@ -254,7 +254,7 @@ def import_project_spec(
     """读取 HFSS 工程的设计规格（变量/扫参/Setup/端口）。
 
     缺省版本引用单源 ``edb_adapter._DEFAULT_AEDT_VERSION``（真机 2025
-    R1/v251 口径，内核立规注记 规则 0 勘误后统一；显式传参可覆盖）。历史注：
+    R1/v251 口径，AGENTS 规则 0 勘误后统一；显式传参可覆盖）。历史注：
     早期缺省曾钉 2023.1——彼时 PyAEDT 1.4.0 对 AEDT 2026.1 存在未修复
     兼容问题（issue #7410，WNUA 挂死/OpenProject 失败）；真机口径勘误
     （2025 R1=对齐基准）后三处缺省钉统一走单源。

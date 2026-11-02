@@ -28,7 +28,7 @@ one without waiting).
 ## 1. Generate the plan (deterministic stage queue)
 
 ```bash
-rfauto campaign plan recipes/my_bpf.yaml --out-dir runs/campaigns/
+rfauto campaign plan recipes/branchline_coupler_v1.yaml --out-dir runs/campaigns/
 ```
 
 Recipe → typed five-stage queue (calibrate → … → report →
@@ -99,7 +99,7 @@ All four verified present on the current CLI surface.
 - Single tuning runs (not campaigns): `rfauto tune` /
   `rfauto autotune --self-verify`
 - Deviation judgment chaining: docs/tutorials/measurement-alignment.md
-- Multi-machine coordination: `rfauto remote probe/status` (workspace
-  rule 0b and docs/服务器接入与仿真资源说明.md)
+- Multi-machine coordination: `rfauto remote probe` / `rfauto remote
+  status` (workspace rule 0b and docs/服务器接入与仿真资源说明.md)
 - First optimization loop (pre-campaign, single recipe):
   docs/tutorials/first_optimization_loop.md

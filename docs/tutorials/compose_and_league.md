@@ -6,6 +6,7 @@
 > 单一 simulation.py 的几何组合器，含组合前的端口兼容快审面）与
 > **league**（runs/ 证据面抽取的引擎联赛表）。文中输出全部为当前工作区
 > 只读实测；落盘/重建类命令给读法不代跑，守卫失败样例照录原文。
+> 英文版（English version）：docs/tutorials/compose_and_league_en.md。
 
 ## 0. 前置与三个名字
 
@@ -86,6 +87,7 @@ global_params: {excite_port: 1, nrts: 100000}
 ### 2.2 rfauto compose：三件套落盘
 
 ```bash
+# 先把 2.1 的 netlist 清单原文保存为 netlist.yaml，再落盘三件套：
 .venv/Scripts/rfauto.exe compose netlist.yaml --out-dir runs/compose_out
 ```
 
@@ -218,7 +220,7 @@ openems=48 / mf:fake+hfss=2 / p0_gate:asset_reuse=1，覆盖 5 个模板
 想绕过报告直接查表：league.duckdb 是普通 DuckDB 库，只读连接
 `SELECT … FROM engine_league`（12 列 schema 见
 `league_service.ENGINE_LEAGUE_COLUMNS`，主键 (run_id, engine,
-quantity)）。注册表另一面 `rfauto db status/query` 查的是
+quantity)）。注册表另一面 `rfauto db status` / `rfauto db query` 查的是
 registry.sqlite，与联赛库是两个文件——别混。
 
 ## 5. 守卫速查（P=连接，D=合并）

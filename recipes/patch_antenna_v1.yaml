@@ -1,14 +1,34 @@
 # Patch Antenna - 配方模板（P5 第三实例，C4 补齐 fake 链路）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一，也是“band×bounds 联合设计”的范本：
+# 判读带与搜索边界不是各写各的，而是按经验常数联合推导（见 optimization
+# 段注释）——这是谐振类器件配方最重要的一条纪律。
+# 配方 schema 权威出处：docs/reference.md「配方 schema」节；标准动线
+# validate → run --dry-run → 真跑。注释写法注意（#324 坑）：值面
+# “空格+#”会被 YAML 解析器截断——引注只写注释行。
 model: patch_antenna
+# model：目标模型（models 注册表键；必需键）。
 recipe_version: 1
+# recipe_version：配方 schema 版本（与插件契约 schema_version 语义不同，#106）。
 schema_version: 1
+# schema_version：模型插件参数 schema 版本。
 notes: "2.4GHz 矩形贴片天线（底馈探针，官方口径），Rogers 4350B 0.508mm"
+# notes：人类备注（自由文本）。
 params:
+  # params：设计参数段（必需键）。键名=模型 params_model 字段
+  # （查 `rfauto models list --schema patch_antenna`）。
+  # {value: …, unit: …} 显式带单位；裸标量按模板内部单位（mm）消费。
   f0_ghz:         {value: 2.4,  unit: GHz}
+  # f0_ghz：设计意图中心频率（GHz，HFSS 仲裁对象口径，见 objectives 注）。
   z0_ohm:         {value: 50,   unit: ohm}
+  # z0_ohm：馈电端口目标阻抗（ohm）。
   substrate:      rogers4350b_h0.508
+  # substrate：层叠档案键（configs/materials.yaml：Rogers 4350B，
+  # εr=3.66，tanδ=0.0037，h=0.508mm）。
   patch_len_mm:   {value: 40.0}
+  # patch_len_mm：贴片谐振边长度（mm，沿馈电方向）。
   patch_w_mm:     {value: 50.0}
+  # patch_w_mm：贴片宽度（mm，非谐振边；影响带宽与阻抗）。
   feed_offset_mm: {value: 7.8}   # 底馈探针沿谐振轴距中心偏置（mm）。
                                  # 2026-09-05 patch 模板按官方口径重构后三通道
                                  # 统一消费本参数（openEMS LumpedPort x=-off、
@@ -16,12 +36,21 @@ params:
                                  # 7.8 = HFSS 真机调参最优（patch_len 40.55 档），
                                  # 对 40mm 档 R_in≈cos²(π·12.2/40)·R_edge≈50Ω 口径。
                                  # 旧值 0.0（中心）是谐振模场节点，不耦合。
+  # feed_offset_mm：底馈探针偏置（mm）。物理含义=沿谐振轴离开场节点，
+  # 探针拾取电阻随偏置增大（中心恒为零耦合）。三通道同语义由模板
+  # physics_roles 单源保证。
 setup:
+  # setup：仿真设置段（可选；HFSS 链白名单键面见 docs/reference.md）。
   solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动）。
   freq_range_ghz: [1.5, 3.5]
+  # freq_range_ghz：扫频范围（GHz，[下限, 上限]），须把谐振谷全程罩住。
   points: 201
+  # points：扫频点数（201 点=2GHz 跨度约 10MHz 步进；深谷判读要够密）。
   convergence_delta: 0.02
+  # convergence_delta：HFSS 自适应收敛判据（相邻两遍 ΔS 最大变化）。
 objectives:
+  # objectives：优化目标列表（tune/sweep 的 cost 来源；plain run 可缺席）。
   # 带窗 [1.8,2.1]：0.1⑤ HFSS 仲裁 PASS_A（2026-09-08）裁决 openEMS
   # 谷位可信（HFSS 2.28 vs openEMS 2.20 @wilkinson 锚，残差 +3.64%），
   # 引擎经验常数 f_dip·L≈76.8 GHz·mm 可作为 band×bounds 设计依据
@@ -30,8 +59,13 @@ objectives:
   # metric=s11_db_min（#195 谷深语义）：带内 min|S11| dB ≤ -10 即谷深
   # 至少 10dB——裸 s11_db 在 MAX_BELOW 下恒取带内 max（≈0dB 常数陷阱，
   # v1/v2 两轮 47 点 cost 零区分度），谷深语义必须走显式统计量指标名。
+  # ↑上两段为配方既定注记；要点复述：谐振器件判读带必须按谷位写，
+  # 指标名必须用谷深语义（s11_db_min），不能用 worst-case 包络名。
   - {metric: s11_db_min, band: [1.8, 2.1], op: max_below, value: -10}
+  # s11_db_min=带内 |S11| 最小值（dB，谷深语义，#195 双变体口径）；
+  # max_below：谷深至少 10dB（min ≤ -10dB）。
 optimization:
+  # optimization：调参段（tune 消费）。params=搜索空间（low/high 闭区间）。
   params:
     # 2026-09-08 band×bounds 联合重设计（#190，FAIL 根因修正）：
     # 首版 [35,45]×[40,60] 下 23/23 点带内 |S11|≈0dB（谐振谷不在
@@ -42,5 +76,9 @@ optimization:
     #   每个采样点都有真谷，cost 恢复排序区分度；
     # - W≤45 避开 W>46 宽贴片异常簇（高阶模式谷淹没主模，#190）。
     patch_len_mm:   {low: 37.5, high: 42.5}
+    # 谐振边搜索域：按 f_dip·L≈76.8 反推谷位全部落判读带内。
     patch_w_mm:     {low: 40.0, high: 45.0}
+    # 宽度上限 45：避开宽贴片异常簇（高阶模式污染，#190）。
 limits: {max_trials: 30, max_wall_hours: 6}
+# limits：配额护栏（QuotaGuard 双闸）：最多 30 个 trial、墙钟 6 小时；
+# 超限优雅停，已完成 trial 结果保留。本文件无 export 段=用缺省导出口径。

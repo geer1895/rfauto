@@ -76,6 +76,16 @@ export async function pageTune() {
   if (skTb) skTb.innerHTML = kitSkeletonRows(5, 4);
   T.$("tune-go").onclick = startTune;
   T.$("tune-path").onchange = showRecipeInfo;
+  // P3-3（aurora_n wave_ui_c）：配方信息行随输入刷新——原先只挂 change
+  //（失焦才触发），连续打字时「已选配方：…」停留旧配方（审计实证）。
+  // input 事件 debounce 300ms 后走同一 showRecipeInfo（viewSignal 切页
+  // 收束在途请求，与 change 通路同源不双拉）。
+  const _tunePathEl = T.$("tune-path");
+  let _tuneInfoTimer = null;
+  _tunePathEl.oninput = () => {
+    clearTimeout(_tuneInfoTimer);
+    _tuneInfoTimer = setTimeout(showRecipeInfo, 300);
+  };
   T.$("tune-adapter").onchange = renderPrecheck; // R1：换通道即出/收预检卡
   _pollRegister("tune", "tune", pollTune, 3000); // P2-13：轮询托管（进页即拉/离页守卫/隐藏暂停）
   showRecipeInfo();
@@ -91,10 +101,23 @@ export async function pageTune() {
   }
   async function startTune() {
     const btn = T.$("tune-go");
-    kitBtnBusy(btn, true, t("tune.start_busy")); // R1：启动钮 busy 三态（restore 在 tuneRefresh 终态/本函数失败分支）
+    // P3-3（aurora_n wave_ui_c）：启动前本地校验配方路径存在——/api/fs/list
+    // 只读探测（服务端零新端点零语义变化）。#105 best-effort：探测失败/
+    // 超时=unknown 放行（说明层不得阻塞启动主路径）；仅「确认不存在」才
+    // 拦下并给自查卡（不再"已启动"假 toast 后等轮询才发现没跑起来）。
+    const _p = T.$("tune-path").value.trim();
+    kitBtnBusy(btn, true, t("tune.start_busy"));
+    const _exists = await recipeFileExists(_p);
+    if (_exists === false) {
+      kitBtnBusy(btn, false);
+      T.$("tune-result").style.display = "";
+      T.$("tune-result-body").innerHTML = tunePathMissingCard(_p);
+      T.msg(t("tune.path_missing_toast"), false);
+      return;
+    }
     const r = await apiFetch("/api/tune/start", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: T.$("tune-path").value.trim(),
+      body: JSON.stringify({ path: _p,
                              adapter: T.$("tune-adapter").value,
                              max_trials: parseInt(T.$("tune-trials").value) || 30,
                              sampler: T.$("tune-sampler").value }),
@@ -363,3 +386,39 @@ export const tuneCtx = {
   refresh: () => tuneRefresh(),
   leave: () => _pollStop("tune"),
 };
+
+/* ═══ P3-3（aurora_n wave_ui_c）：启动前本地校验三件 ═══════════════════
+   splitRecipePath（纯函数）/ recipeFileExists（只读探测，best-effort）/
+   tunePathMissingCard（自查卡文案）。导出=node 行为钉消费面（wave_ui_c
+   测试批桩 fetch 实测三分支）。 */
+export function splitRecipePath(p) {
+  const s = String(p || "").trim();
+  const i = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+  return {
+    dir: i >= 0 ? s.slice(0, i) : "",
+    name: i >= 0 ? s.slice(i + 1) : s,
+  };
+}
+/* 返回 true=确认在盘 / false=确认不存在 / null=探测不可用（放行，#105：
+   校验层故障不阻塞启动主路径）。空路径=null（交服务端报错，语义单源）。 */
+export async function recipeFileExists(p) {
+  const { dir, name } = splitRecipePath(p);
+  if (!name) return null;
+  try {
+    const d = await apiFetch("/api/fs/list?path=" + encodeURIComponent(dir),
+      { timeoutMs: 5000 });
+    if (!d || d.ok !== true || !Array.isArray(d.entries)) return null;
+    return d.entries.some((e) => e && e.kind !== "dir" && e.name === name);
+  } catch {
+    return null;
+  }
+}
+export function tunePathMissingCard(p) {
+  return `<div class="err-panel" role="status" style="align-items:flex-start">` +
+    `<span aria-hidden="true" style="font-size:20px">⚠️</span>` +
+    `<div style="flex:1;min-width:240px">` +
+    `<div><span class="badge warn">${t("tune.path_missing_title")}</span> ` +
+    `<code>${esc(String(p || ""))}</code></div>` +
+    `<div class="muted" style="margin-top:4px">${t("tune.path_missing_body")}</div>` +
+    `</div></div>`;
+}

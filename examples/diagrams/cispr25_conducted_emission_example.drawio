@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="rfauto" type="device" version="24.7.7">
+  <diagram id="testsetup-diagram" name="Test Setup">
+    <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="CISPR 25 传导发射测试连接（电压法：EUT+人工网络+EMI 接收机）" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="bat" value="蓄电池 12 V&#10;battery" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.miscellaneous.monocell_battery;fillColor=#f5f5f5;strokeColor=#666666;outlineConnect=0;" vertex="1" parent="1" kind="battery" role="stim" ports="DC+|DC-" placeholders="1">
+          <mxGeometry x="40" y="100" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="bat.DC+" value="DC+" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="bat">
+          <mxGeometry x="116" y="8" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="bat.DC-" value="DC-" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="bat">
+          <mxGeometry x="116" y="48" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="lisn1" value="人工网络 LISN&#10;lisn&#10;50 uH / 50 Ohm" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.abstract.filter;fillColor=#fff2cc;strokeColor=#d6b656;outlineConnect=0;" vertex="1" parent="1" kind="lisn" role="inline" ports="EUT|BAT|RF|GND" placeholders="1" note="50 uH / 50 Ohm">
+          <mxGeometry x="320" y="100" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="lisn1.EUT" value="EUT" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="lisn1">
+          <mxGeometry x="116" y="8" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="lisn1.BAT" value="BAT" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="lisn1">
+          <mxGeometry x="116" y="21" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="lisn1.RF" value="RF" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="lisn1">
+          <mxGeometry x="116" y="35" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="lisn1.GND" value="GND" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="lisn1">
+          <mxGeometry x="116" y="48" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="eut" value="EUT 被测件&#10;dut&#10;距参考板 50 mm" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.miscellaneous.generic_component;fillColor=#d5e8d4;strokeColor=#82b366;outlineConnect=0;" vertex="1" parent="1" kind="dut" role="dut" ports="B+|LOAD" placeholders="1" note="距参考板 50 mm">
+          <mxGeometry x="600" y="180" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="eut.B+" value="B+" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="eut">
+          <mxGeometry x="-4" y="28" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="eut.LOAD" value="LOAD" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="eut">
+          <mxGeometry x="116" y="28" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="att1" value="瞬态限幅器&#10;attenuator&#10;10 dB" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.resistors.attenuator;fillColor=#f8cecc;strokeColor=#b85450;outlineConnect=0;" vertex="1" parent="1" kind="attenuator" role="inline" ports="IN|OUT" placeholders="1" note="10 dB">
+          <mxGeometry x="320" y="260" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="att1.IN" value="IN" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="att1">
+          <mxGeometry x="116" y="8" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="att1.OUT" value="OUT" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="att1">
+          <mxGeometry x="116" y="48" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="recv" value="EMI 接收机&#10;emi_receiver&#10;峰值/准峰值检波" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1" kind="emi_receiver" role="anal" ports="RF IN" placeholders="1" note="峰值/准峰值检波">
+          <mxGeometry x="880" y="100" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="recv.RF IN" value="RF IN" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="recv">
+          <mxGeometry x="-4" y="28" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="loadsim" value="负载模拟器&#10;load_simulator" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1" kind="load_simulator" role="aux" ports="HARN" placeholders="1">
+          <mxGeometry x="1160" y="100" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="loadsim.HARN" value="HARN" style="ellipse;fillColor=#ffffff;strokeColor=#333333;html=1;fontSize=9;" vertex="1" parent="loadsim">
+          <mxGeometry x="-4" y="28" width="8" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="plane" value="参考接地板&#10;anchor_plane&#10;2000 x 1000 mm" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.signal_sources.signal_ground;fillColor=#f5f5f5;strokeColor=#666666;outlineConnect=0;" vertex="1" parent="1" kind="anchor_plane" role="aux" ports="" placeholders="1" note="2000 x 1000 mm">
+          <mxGeometry x="1160" y="260" width="120" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="conn0" value="DC 馈线  1.2 m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="bat.DC+" target="lisn1.BAT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" value="电源线束  5 m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="eut.B+" target="lisn1.EUT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" value="RF1  9.5 dB  3 m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="lisn1.RF" target="att1.IN">
+          <mxGeometry relative="1" as="geometry" />
+          <mxCell id="conn2.cal" value="▎CAL" style="text;html=1;fontStyle=1;fontColor=#b85450;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="conn2" connectable="0">
+            <mxGeometry x="0" y="-12" relative="1" as="geometry">
+              <mxPoint x="0" y="-12" as="offset" />
+            </mxGeometry>
+          </mxCell>
+        </mxCell>
+        <mxCell id="conn3" value="RF2  3 dB  1 m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="att1.OUT" target="recv.RF IN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" value="负载线束  1.5 m" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="eut.LOAD" target="loadsim.HARN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note0" value="N1. 校准面在 LISN RF 端口处，限幅器损耗已扣除" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="384" width="1240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="note0.anchor" value="" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=none;strokeColor=#999999;html=1;" edge="1" parent="1" source="note0" target="conn2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note1" value="N2. LISN/EUT 与参考板低阻抗搭接" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="422" width="1240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="note1.anchor" value="" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=none;strokeColor=#999999;html=1;" edge="1" parent="1" source="note1" target="plane">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -483,6 +483,17 @@
       "stepped_impedance_lpf_synthesize",
       "stepped_impedance_response"
     ],
+    "core/circuit_diagram.py": [
+      "ANNOT_LAYER_ID",
+      "CircuitDiagramError",
+      "build_annotated_diagram_xml",
+      "build_circuit_diagram_xml",
+      "family_param_keys",
+      "family_param_owner",
+      "parse_effective_params",
+      "read_circuit_params",
+      "write_circuit_xml"
+    ],
     "core/cispr25_limits.py": [
       "ALSE_1M_NOTE",
       "CISPR25_CEV_CLASS5",
@@ -745,6 +756,17 @@
       "check_probe_spacing",
       "review_testability"
     ],
+    "core/diagram_curve_image.py": [
+      "CURVE_CANVAS",
+      "CURVE_COLORS",
+      "DEFAULT_CURVE_KEYS",
+      "build_curve_plan",
+      "curve_image_data_uri",
+      "curve_image_style",
+      "curve_series_from_payload",
+      "payload_has_sparams",
+      "render_curves_png"
+    ],
     "core/dielectric_extract.py": [
       "BJResult",
       "C0",
@@ -823,6 +845,27 @@
       "DppVerificationRef",
       "dpp_from_mapping",
       "dpp_to_jsonld"
+    ],
+    "core/drawio_svg.py": [
+      "DEFAULT_FONT_FAMILY",
+      "DEFAULT_FONT_SIZE",
+      "DEFAULT_MARGIN",
+      "DrawioReadError",
+      "DrawioSvgError",
+      "SUPPORTED_STYLE_KEYS",
+      "UNSUPPORTED_FEATURE_TRIGGERS",
+      "render_diagram_svg",
+      "render_xml_text"
+    ],
+    "core/drawio_xml.py": [
+      "DEFAULT_PAGE_ATTRS",
+      "DrawioDocument",
+      "DrawioReadError",
+      "new_document",
+      "page_attrs",
+      "parse_diagram",
+      "read_diagram",
+      "write_document"
     ],
     "core/ebg_fss.py": [
       "fss_band_edges_hz",
@@ -1205,6 +1248,15 @@
       "regression_predict",
       "tensor_rbf_kernel"
     ],
+    "core/green_stamp.py": [
+      "AffineStampFamily",
+      "BlackBoxSolutionNet",
+      "SPECTRAL_RADIUS_WARN_DEFAULT",
+      "StampInversePredictor",
+      "default_lambda_grid",
+      "gmres_iteration_table",
+      "ood_error_table"
+    ],
     "core/gstc.py": [
       "gstc_crosscheck",
       "gstc_forward",
@@ -1408,6 +1460,12 @@
       "get_limit_table",
       "limits_query",
       "list_limit_tables"
+    ],
+    "core/link_diagram.py": [
+      "build_link_diagram_xml",
+      "compute_link_chain",
+      "format_db",
+      "normalize_chain"
     ],
     "core/loss_density.py": [
       "DEFAULT_CLOSURE_TOLERANCE",
@@ -1736,6 +1794,16 @@
       "oam_ring_excitation",
       "phase_mode_count"
     ],
+    "core/ngo_rf_stamp.py": [
+      "BlackBoxResponseNet",
+      "ComplexAffineStampFamily",
+      "RfStampPredictor",
+      "SPECTRAL_RADIUS_WARN_DEFAULT",
+      "default_lambda_grid",
+      "gmres_iteration_table",
+      "ns_step",
+      "ood_error_table"
+    ],
     "core/noise_correlation.py": [
       "K_B_J_PER_K",
       "MAX_ABS_GAIN_DB",
@@ -2051,6 +2119,18 @@
       "well_stirred_chi2_quantile",
       "weyl_mode_count"
     ],
+    "core/review_annotation.py": [
+      "ANNOT_LAYER_ID",
+      "CARD_ID_PREFIX",
+      "CIRCLE_ID_PREFIX",
+      "CROSS_EDGE_ID_PREFIX",
+      "PRIORITY_TABLE",
+      "REVIEWER_PALETTE",
+      "TARGET_EDGE_ID_PREFIX",
+      "build_annotation_plan",
+      "merge_annotation_plans",
+      "normalize_annotations"
+    ],
     "core/review_report.py": [
       "GRADES",
       "REVIEW_REPORT_SCHEMA",
@@ -2158,6 +2238,17 @@
       "blocking_budget",
       "iq_imbalance_irr",
       "phase_noise_evm"
+    ],
+    "core/schematic_diagram.py": [
+      "COL_STEP",
+      "COMP_H",
+      "COMP_W",
+      "CONTROL_KINDS",
+      "ELEMENT_KINDS",
+      "ROW_STEP",
+      "build_schematic_diagram_xml",
+      "build_schematic_plan",
+      "parse_netlist"
     ],
     "core/sensitivity_prior.py": [
       "PRIOR_SCHEMA",
@@ -2333,6 +2424,26 @@
       "plan_conformal_dielectric",
       "to_mm"
     ],
+    "core/stackup_diagram.py": [
+      "KIND_TABLE",
+      "PX_PER_MM",
+      "build_stackup_diagram_xml",
+      "build_stackup_plan",
+      "format_number",
+      "normalize_stackup"
+    ],
+    "core/stackup_preview.py": [
+      "BOARD_D_PX",
+      "BOARD_W_PX",
+      "KIND_COLORS",
+      "MAX_CANVAS_PX",
+      "PREVIEW_DPI",
+      "Z_PX_PER_UNIT",
+      "build_preview_plan",
+      "preview_spec_from_declarative",
+      "preview_spec_from_rfstackup",
+      "render_preview_png"
+    ],
     "core/stub_k_inverter.py": [
       "DEFAULT_THETA0",
       "SIR_STUB_SLOPE",
@@ -2370,6 +2481,12 @@
       "SyntheticFixture",
       "build_synthetic_fixture",
       "s_param_asymmetry"
+    ],
+    "core/testsetup_diagram.py": [
+      "build_testsetup_diagram_xml",
+      "build_testsetup_plan",
+      "format_quantity",
+      "normalize_scene"
     ],
     "core/thermal_iteration.py": [
       "C0_M_PER_S",
@@ -2484,6 +2601,21 @@
       "transfer_impedance_dc",
       "zt_solid_tube",
       "zt_solid_tube_hf_asymptote"
+    ],
+    "core/trl_design.py": [
+      "LINE_COVERAGE_RATIO",
+      "LINE_PHASE_TOL_DEG",
+      "LINE_THETA_MAX_DEG",
+      "LINE_THETA_MIN_DEG",
+      "MAX_LINES_DEFAULT",
+      "REFLECT_GAMMA_MIN",
+      "SINGLE_LINE_MAX_BAND_RATIO",
+      "design_trl_standards",
+      "line_coverage_band_ghz",
+      "line_length_mm",
+      "line_theta_deg",
+      "multiline_plan_centers",
+      "resolve_medium"
     ],
     "core/trl_solt.py": [
       "apply_calibration",
@@ -2624,6 +2756,12 @@
       "resolve_runs_dir",
       "runs_root"
     ],
+    "linkage/ads_optimizer_channel.py": [
+      "ADS_CIRCUIT_PARAM_MAP",
+      "ADS_OPT_METRIC_NAMES",
+      "AdsOptAdapter",
+      "register_ads_channel"
+    ],
     "models/template_specs.py": [
       "TEMPLATE_SPECS",
       "bootstrap_template_specs"
@@ -2633,11 +2771,40 @@
       "run_optimization",
       "run_refine"
     ],
+    "optimization/acq_sampler.py": [
+      "EipuSampler",
+      "TurboSampler"
+    ],
     "optimization/adapter_channels.py": [
       "ChannelFactory",
       "channel_names",
       "create_via_channel",
       "register_channel"
+    ],
+    "optimization/botorch_engine.py": [
+      "BOTORCH_ENGINE_NAME",
+      "ensure_botorch_engine_registered",
+      "is_botorch_available"
+    ],
+    "optimization/competition_scalar.py": [
+      "SCALAR_ENGINE_REGISTRY",
+      "ScalarProblem",
+      "format_report_markdown",
+      "list_scalar_engines",
+      "register_scalar_engine",
+      "run_competition_scalar"
+    ],
+    "optimization/mo_bo.py": [
+      "MultiObjectiveBO",
+      "bivariate_normal_cdf",
+      "constrained_expected_hv_improvement_2d",
+      "ehvi_monte_carlo",
+      "expected_box_moment",
+      "expected_hv_improvement_2d",
+      "hypervolume_improvement_2d",
+      "normalize_constraint_specs",
+      "probability_of_feasibility",
+      "staircase_2d"
     ],
     "optimization/model_registry.py": [
       "FINGERPRINT_LEN",
@@ -2651,6 +2818,7 @@
       "current_git_sha",
       "default_model_store_dir",
       "default_registry_path",
+      "extract_nn_warm_start",
       "feature_set_fingerprint",
       "heldout_linf",
       "key_sort_id",
@@ -2667,62 +2835,186 @@
     ],
     "optimization/storage_backends.py": [
       "build_journal_storage",
+      "default_journal_path",
       "journal_lock",
       "resolve_storage"
     ],
     "optimization/surrogate/__init__.py": [
+      "CfcNet",
+      "ConformalSurrogate",
+      "DEFAULT_LNN_SEED",
+      "DEFAULT_MT_SEED",
+      "DEFAULT_RFF_SEED",
+      "DEFAULT_SVGP_SEED",
+      "DeepEnsembleSurrogate",
       "DeepONetSurrogate",
+      "EnsembleSurrogate",
       "FNOLiteSurrogate",
       "FNOSurrogate",
       "GBDTSurrogate",
+      "GreenOperatorSurrogate",
       "HuberRidgeSurrogate",
+      "LnnCfcSurrogate",
       "MapesAnalyticSurrogate",
+      "MultiTaskGPSurrogate",
       "NNSurrogate",
+      "NgoStampRfSurrogate",
       "PHYSICS_AUGMENTERS",
       "PODROMSurrogate",
+      "ParamVFSurrogate",
+      "PoleResidueSurrogate",
       "PolyRidgeSurrogate",
       "ResponseSurfaceModel",
+      "RffGPSurrogate",
       "SMTKrigingSurrogate",
       "SMTMultiFidelitySurrogate",
       "SaasArdSurrogate",
+      "SirenFieldSurrogate",
       "SurrogateModel",
       "SurrogatePrescreener",
       "SurrogateRegistry",
+      "SvgpSurrogate",
+      "VIRTUAL_WEIGHT_KEY",
       "WarpedKrigingSurrogate",
+      "band_edge_verdict",
+      "cfc_time_gate",
+      "convex_hull_verdict",
+      "farthest_point_sample",
+      "fourier_features",
+      "generate_virtual_samples",
       "kumaraswamy_warp",
+      "local_linear_weights",
       "loocv_rho",
+      "param_conflict_verdict",
+      "passivity_verdict",
       "pod_basis",
-      "surrogate_registry"
+      "rc_cascade_step_response",
+      "sample_rff",
+      "second_order_step_response",
+      "superpose",
+      "superposition_residual",
+      "surrogate_registry",
+      "svgp_elbo_terms",
+      "svgp_inducing",
+      "validate_coregionalization_matrix"
     ],
     "optimization/surrogate/base.py": [
       "SurrogateModel",
       "SurrogateRegistry",
       "surrogate_registry"
     ],
+    "optimization/surrogate/conformal.py": [
+      "ConformalSurrogate"
+    ],
+    "optimization/surrogate/deep_ensemble.py": [
+      "DeepEnsembleSurrogate"
+    ],
+    "optimization/surrogate/ensemble.py": [
+      "EnsembleSurrogate"
+    ],
     "optimization/surrogate/gp_det.py": [
       "DetGaussianProcess",
       "KERNEL_KINDS",
+      "expected_improvement",
       "fit_map",
       "fit_mle",
       "gp_nll",
       "gp_posterior",
+      "kriging_believer_ei_batch",
       "matern52_ard_kernel",
       "se_ard_kernel"
+    ],
+    "optimization/surrogate/green_operator.py": [
+      "GreenOperatorSurrogate",
+      "RESPONSE_KEY",
+      "superpose",
+      "superposition_residual"
     ],
     "optimization/surrogate/huber_ridge.py": [
       "HuberRidgeSurrogate"
     ],
+    "optimization/surrogate/lnn_cfc.py": [
+      "CfcNet",
+      "DEFAULT_LNN_SEED",
+      "LnnCfcSurrogate",
+      "cfc_time_gate",
+      "rc_cascade_step_response",
+      "second_order_step_response"
+    ],
     "optimization/surrogate/mapes_analytic.py": [
       "MapesAnalyticSurrogate"
+    ],
+    "optimization/surrogate/multi_task_gp.py": [
+      "DEFAULT_MT_SEED",
+      "MultiTaskGPSurrogate",
+      "MultiTaskGaussianProcess",
+      "validate_coregionalization_matrix"
+    ],
+    "optimization/surrogate/ngo_stamp_rf.py": [
+      "NgoStampRfSurrogate"
+    ],
+    "optimization/surrogate/onnx_export.py": [
+      "DEFAULT_OPSET",
+      "PARITY_ATOL",
+      "PARITY_RTOL",
+      "SUPPORTED_KINDS",
+      "export_onnx"
+    ],
+    "optimization/surrogate/onnx_numpy_export.py": [
+      "NUMPY_EXPORTABLE_KINDS",
+      "NUMPY_PENDING_KINDS",
+      "NUMPY_UNSUPPORTED_KINDS",
+      "TORCH_UNCOVERED_KINDS",
+      "classify_kind",
+      "coverage_table",
+      "export_onnx_auto",
+      "export_onnx_numpy"
+    ],
+    "optimization/surrogate/param_vf.py": [
+      "ParamVFSurrogate",
+      "convex_hull_verdict",
+      "local_linear_weights"
     ],
     "optimization/surrogate/pod_rom.py": [
       "PODROMSurrogate",
       "pod_basis"
     ],
+    "optimization/surrogate/pole_residue.py": [
+      "PoleResidueSurrogate",
+      "band_edge_verdict",
+      "default_pole_basis",
+      "evaluate_pole_residue",
+      "fit_residues",
+      "param_conflict_verdict",
+      "passivity_verdict"
+    ],
+    "optimization/surrogate/rff_gp.py": [
+      "DEFAULT_RFF_SEED",
+      "RffGPSurrogate",
+      "fourier_features",
+      "sample_rff"
+    ],
     "optimization/surrogate/saas_gp.py": [
       "DEFAULT_ACTIVE_THRESHOLD",
+      "DEFAULT_POSTERIOR_SEED",
       "DEFAULT_TAU_SQ",
-      "SaasArdSurrogate"
+      "POSTERIOR_DEFAULTS",
+      "SaasArdSurrogate",
+      "sample_saas_posterior"
+    ],
+    "optimization/surrogate/siren.py": [
+      "SirenFieldSurrogate"
+    ],
+    "optimization/surrogate/svgp.py": [
+      "DEFAULT_SVGP_SEED",
+      "SvgpSurrogate",
+      "farthest_point_sample",
+      "svgp_elbo_terms",
+      "svgp_inducing"
+    ],
+    "optimization/surrogate/virtual_samples.py": [
+      "VIRTUAL_WEIGHT_KEY",
+      "generate_virtual_samples"
     ],
     "optimization/surrogate/warped_kriging.py": [
       "WarpedKrigingSurrogate",
@@ -2736,7 +3028,10 @@
     "optimization/turbo.py": [
       "DEFAULT_LENGTH_INIT",
       "DEFAULT_LENGTH_MIN",
-      "run_turbo"
+      "DEFAULT_N_REGIONS",
+      "REGION_STRATEGIES",
+      "run_turbo",
+      "run_turbo_multi"
     ],
     "optimization/uncertainty.py": [
       "gp_cost_sigma"
@@ -2789,6 +3084,10 @@
       "args_summary",
       "trace_enabled"
     ],
+    "service/al_service.py": [
+      "al_propose",
+      "load_al_samples"
+    ],
     "service/array_coupling_service.py": [
       "coupling_sweep",
       "fit_coupling_model_from_s_matrix",
@@ -2800,6 +3099,9 @@
       "array_scan_sweep",
       "collect_eep_manifest",
       "synthesize_array_weights"
+    ],
+    "service/cal_wizard_service.py": [
+      "trl_wizard"
     ],
     "service/campaign_dashboard_service.py": [
       "MAX_TABLE_ROWS",
@@ -2858,6 +3160,15 @@
       "resolve_stage_losses",
       "spur_search_report"
     ],
+    "service/circuit_sim_service.py": [
+      "ACTIVE_METRIC_NAMES",
+      "ACTIVE_PARAM_KEYS",
+      "METRIC_NAMES",
+      "PARAM_KEYS",
+      "annotate_circuit_diagram",
+      "circuit_sim_run",
+      "generate_circuit_diagram"
+    ],
     "service/cloud_sandbox_service.py": [
       "SANDBOX_SCHEMA",
       "build_binder_url",
@@ -2866,6 +3177,12 @@
       "build_notebook",
       "make_sandbox_bundle",
       "probe_bundle_urls"
+    ],
+    "service/competition_service.py": [
+      "BUILTIN_PROBLEM_FACTORIES",
+      "register_problem_factory",
+      "run_competition",
+      "strip_elapsed_s"
     ],
     "service/compose_service.py": [
       "GOLDEN_NETLISTS",
@@ -2909,9 +3226,60 @@
       "LintCheckRegistry",
       "design_lint"
     ],
+    "service/design_replay_report.py": [
+      "DESIGN_REPORT_SCHEMA",
+      "build_design_report_model",
+      "evaluate_objective_gates",
+      "generate_design_report",
+      "render_design_report_md",
+      "replay_trajectory"
+    ],
+    "service/devtest_speculative_service.py": [
+      "CACHE_ROOT_REL",
+      "DEFAULT_TIMEOUT_S",
+      "REAL_MACHINE_TOKENS",
+      "SPECULATIVE_CACHE_SCHEMA",
+      "SPECULATIVE_SUMMARY_SCHEMA",
+      "SpeculativeGuardError",
+      "WORKERS_CAP",
+      "classify_census_hits",
+      "compute_fingerprint",
+      "default_local_census",
+      "finish_run",
+      "guard_cache_path",
+      "local_census_command",
+      "map_fingerprint_digest",
+      "parse_pytest_summary",
+      "pid_alive",
+      "read_heartbeat",
+      "resolve_cache_root",
+      "run_speculative_child",
+      "speculative_run",
+      "speculative_status",
+      "strip_real_machine_tests",
+      "validate_cache_root",
+      "write_heartbeat"
+    ],
+    "service/diagram_annotation_service.py": [
+      "annotate_diagram",
+      "merge_annotate_diagram"
+    ],
+    "service/diagram_service.py": [
+      "generate_link_diagram"
+    ],
+    "service/diagram_stackup_service.py": [
+      "generate_stackup_diagram",
+      "synthesis_width_annotation"
+    ],
+    "service/diagram_testsetup_service.py": [
+      "generate_testsetup_diagram"
+    ],
     "service/domain_survey_service.py": [
       "SCHEMA",
       "domain_survey"
+    ],
+    "service/drawio_svg_service.py": [
+      "render_drawio_svg"
     ],
     "service/em_sweep_service.py": [
       "plan_sweep",
@@ -3092,6 +3460,13 @@
       "gate_meta_warm_start",
       "retrieve_meta_warm_start"
     ],
+    "service/mo_bo_service.py": [
+      "MO_PROBLEM_REGISTRY",
+      "MO_SURROGATE_KINDS",
+      "MultiObjectiveProblem",
+      "register_problem",
+      "run_mo_bo"
+    ],
     "service/netlist_goldset_service.py": [
       "DEFAULT_TOL",
       "load_netlist_goldset",
@@ -3204,6 +3579,10 @@
       "RemoteAdsError",
       "remote_ads_run"
     ],
+    "service/remote_board_service.py": [
+      "BOARD_SOURCES",
+      "board_snapshot"
+    ],
     "service/remote_oe_service.py": [
       "REMOTE_OE_ENV",
       "RemoteOeError",
@@ -3274,6 +3653,9 @@
       "monitor_cycle",
       "monitor_run_dir"
     ],
+    "service/schematic_diagram_service.py": [
+      "generate_schematic_diagram"
+    ],
     "service/session_audit_service.py": [
       "AuditVerdict",
       "MIN_TRACE_LEN",
@@ -3291,6 +3673,26 @@
       "render_sop_markdown",
       "sop_from_playbook_entry",
       "validate_sop"
+    ],
+    "service/speculative_watch_service.py": [
+      "DEFAULT_DEBOUNCE_S",
+      "DEFAULT_INTERVAL_S",
+      "DEFAULT_ROUNDS",
+      "MIN_INTERVAL_S",
+      "WATCH_STATE_SCHEMA",
+      "WatchConfig",
+      "changed_fingerprint",
+      "content_digest_of",
+      "evaluate_tick",
+      "resolve_watch_cache_root",
+      "wait_decision",
+      "watch_loop"
+    ],
+    "service/spice_param_export_service.py": [
+      "spice_param_export"
+    ],
+    "service/surrogate_export_service.py": [
+      "surrogate_export_onnx"
     ],
     "service/surrogate_registry_service.py": [
       "judge_registry_warm_start_benefit",
@@ -3399,6 +3801,19 @@
     "service/warm_start_data.py": [
       "collect_warm_start_samples",
       "run_optimization_warm_start_from_dataset"
+    ],
+    "service/watchdog_service.py": [
+      "DEFAULT_RUN_DIR_GLOBS",
+      "DEFAULT_STALL_WINDOW_S",
+      "WATCHDOG_ROOT_REL",
+      "campaign_liveness_summary",
+      "census_command",
+      "judge_artifact_only",
+      "judge_liveness",
+      "sample_cpu_seconds",
+      "seat_liveness_view",
+      "validate_watch_root",
+      "watch_loop"
     ],
     "service/zenodo_service.py": [
       "CFF_REQUIRED_FIELDS",

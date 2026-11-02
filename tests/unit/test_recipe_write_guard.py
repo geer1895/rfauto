@@ -1,8 +1,8 @@
-"""recipes/ 原件写守卫回归（配方污染根修，待办清单 增量②）。
+"""recipes/ 原件写守卫回归（配方污染根修，TODO 增量②）。
 
 取证背景：2026-09-17 17:18 UI「保存并运行」链把 recipes/branchline_coupler_v1.yaml
 整文件重序列化（注释全丢/notes 引号丢/optimization 段被表单归一化整段替换，
-diff 85 行留 内部证据档），同刻触发 fake run_once。本文件钉住：
+diff 85 行留 runs/pollution_evidence/），同刻触发 fake run_once。本文件钉住：
 
 1. run_once（fake）本身不改配方原件字节（快照只落 runs/）；
 2. 复现污染链（recipe_view → recipe_save → run_once）——原件字节不变，

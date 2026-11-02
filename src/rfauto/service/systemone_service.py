@@ -325,7 +325,7 @@ _REDACTED_FMT = "<redacted:{rule}>"
 _PATH_STOP = r"[^\s\"'<>|()\[\]{}，。；、（）【】《》「」]"
 
 _SANITIZE_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
-    # Windows 盘符绝对路径：E:\workspace\proj\runs\xxx、C:/Users/name/...
+    # Windows 盘符绝对路径：E:\rfauto-workspace\runs\xxx、C:/Users/pc/...
     ("win_drive_path",
      re.compile(r"(?i)\b[a-z]:[\\/]" + _PATH_STOP + r"{0,200}")),
     # POSIX 用户/系统绝对路径：/home/u、/Users/u、/root、/mnt、/srv、/opt

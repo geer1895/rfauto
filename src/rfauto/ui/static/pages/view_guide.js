@@ -21,6 +21,11 @@
 import { T } from "./context.js";
 import { help } from "./dom.js";
 import { t, applyI18nRoot } from "./i18n.js";
+// P2-1（aurora_n wave_ui_b）：五分钟上手步骤卡可点击化——kit 行可达三件套
+// （role/tabindex/aria + click 与 Enter/Space 同一激活）与 router 跳页单源
+// （dashboard wQuickLinks/首访导览卡同款形态；router 不 import 本模块，无环）。
+import { bindClickRows, kitClickRowAttrs } from "./kit.js";
+import { showPage } from "./router.js";
 
 /* 「↑ 目录」回跳锚（各节标题行右侧；跳转行为委托 _bindToc）。 */
 function _back() {
@@ -58,6 +63,8 @@ export function pageGuide() {
   v.innerHTML = help(`
     <li>${t("guide.help_1")}</li>
     <li>${t("guide.help_2")}</li>`) +
+    /* 页顶四步卡/五分钟上手=可点行（P2-1 aurora_n wave_ui_b：data-go 跳
+       对应页——aria 走 guide.step_open_tpl 整句键，{n}/{name} 词表插值）。*/
     `<h2 class='page'>${t("guide.title")} <small>${t("guide.subtitle")}</small></h2>
     <div class='panel' id='g-toc'><b class='title'>${t("guide.toc_title")}</b>
       <nav class='guide-toc' style='margin:var(--space-2) 0;font-size:var(--text-xs)'>
@@ -77,11 +84,11 @@ export function pageGuide() {
       <p>${t("guide.what_lead")}<b>${t("guide.what_core")}</b>${t("guide.what_tail")}</p></div>
     <div class='panel' id='g-steps'>${_back()}
       <b class='title'>${t("guide.steps_title")}</b>
-      <div class='guide-flow'>
-        <div class='guide-step'><span class='n'>1</span><b>${t("guide.step1_t")}</b><div>${t("guide.step1_d")}</div></div>
-        <div class='guide-step'><span class='n'>2</span><b>${t("guide.step2_t")}</b><div>${t("guide.step2_d")}</div></div>
-        <div class='guide-step'><span class='n'>3</span><b>${t("guide.step3_t")}</b><div>${t("guide.step3_d")}</div></div>
-        <div class='guide-step'><span class='n'>4</span><b>${t("guide.step4_t")}</b><div>${t("guide.step4_d")}</div></div>
+      <div class='guide-flow' id='g-steps-flow'>
+        <div class='guide-step clickable' data-go='import' ${kitClickRowAttrs({ label: t("guide.step_open_tpl", { n: 1, name: t("guide.step1_t") }) })}><span class='n'>1</span><b>${t("guide.step1_t")}</b><div>${t("guide.step1_d")}</div></div>
+        <div class='guide-step clickable' data-go='recipe' ${kitClickRowAttrs({ label: t("guide.step_open_tpl", { n: 2, name: t("guide.step2_t") }) })}><span class='n'>2</span><b>${t("guide.step2_t")}</b><div>${t("guide.step2_d")}</div></div>
+        <div class='guide-step clickable' data-go='tune' ${kitClickRowAttrs({ label: t("guide.step_open_tpl", { n: 3, name: t("guide.step3_t") }) })}><span class='n'>3</span><b>${t("guide.step3_t")}</b><div>${t("guide.step3_d")}</div></div>
+        <div class='guide-step clickable' data-go='runs' ${kitClickRowAttrs({ label: t("guide.step_open_tpl", { n: 4, name: t("guide.step4_t") }) })}><span class='n'>4</span><b>${t("guide.step4_t")}</b><div>${t("guide.step4_d")}</div></div>
       </div></div>
     <div class='panel' id='g-wf'>${_back()}
       <b class='title'>${t("guide.wf_title")}</b>
@@ -137,18 +144,27 @@ export function pageGuide() {
         <tr><td>${t("guide.gl_mf_t")}</td><td>${t("guide.gl_mf_d")}</td></tr>
         <tr><td>${t("guide.gl_p0_t")}</td><td>${t("guide.gl_p0_d")}</td></tr>
         <tr><td>${t("guide.gl_gate_t")}</td><td>${t("guide.gl_gate_d")}</td></tr>
+        <tr><td>verdict</td><td>${t("guide.gl_verdict_d")}</td></tr>
       </tbody></table></div>
     <div class='panel' id='g-faq'>${_back()}
       <b class='title'>${t("guide.faq_title")}</b>
+      <ul>
       <li><b>${t("guide.faq1_q")}</b>${t("guide.faq1_a")}</li>
       <li><b>${t("guide.faq2_q")}</b>${t("guide.faq2_a")}</li>
       <li><b>${t("guide.faq3_q")}</b>${t("guide.faq3_a")}</li>
       <li><b>${t("guide.faq4_q")}</b>${t("guide.faq4_a")}</li>
+      </ul>
       </div>
     <div class='panel' id='g-next'>${_back()}
       <b class='title'>${t("guide.next_title")}</b>
+      <ul>
       <li>${t("guide.next_1_lead")}<span class="muted">docs/rf_template_references.md</span>${t("guide.next_1_tail")}</li>
-      <li>${t("guide.next_2")}</li></div>`;
+      <li>${t("guide.next_2")}</li></ul></div>`;
   _bindToc(v);
+  // P2-1（aurora_n wave_ui_b）：五分钟步骤卡接线（幂等：容器缺席静默；
+  // data-go 选择器与 _bindToc 的 a[data-goto] 委托互不重叠——后者只认
+  // 锚链接元素，步骤卡是 div[data-go]，bindClickRows 直挂不冲突）。
+  const flow = v.querySelector("#g-steps-flow");
+  if (flow) bindClickRows(flow, (row) => showPage(row.dataset.go), "[data-go]");
   applyI18nRoot(v); // 壳首扫（本页全 t() 烘焙零 data-i18n；幂等空扫，接线口径与九页一致）
 }

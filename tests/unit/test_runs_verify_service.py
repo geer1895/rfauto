@@ -47,7 +47,7 @@ from rfauto.service.runs_verify_service import (
 
 _HFSS_HEADER = (
     "! Touchstone file exported from HFSS 2025.1.0\n"
-    "!        File:           D:/rf_workspace/runs/fake_run/hfss/design.aedt\n"
+    "!        File:           E:/rfauto-workspace/runs/fake_run/hfss/design.aedt\n"
     "!        Generated:      07:29:41 PM Oct 22, 2026\n"
     "!        Design:         RFADesign\n"
     "# Hz S RI R 50\n"
@@ -500,11 +500,12 @@ class TestReplayFreshnessGate:
         import yaml
 
         recipe = tmp_path / "recipe_patch.yaml"
+        # plain-run 配方：无 objectives 键（F-P1-1 后 objectives 在场不可为空；
+        # run_once 对缺席键取 []，语义与旧 "objectives: []" 逐字节一致）
         recipe.write_text(yaml.safe_dump({
             "model": "patch_antenna",
             "params": {"f0_ghz": {"value": 2.4, "unit": "GHz"}},
             "setup": {},
-            "objectives": [],
         }), encoding="utf-8")
         from rfauto.service.api import run_once
 
@@ -564,11 +565,12 @@ class TestRunOnceWiring:
         import yaml
 
         recipe = tmp_path / "recipe_patch.yaml"
+        # plain-run 配方：无 objectives 键（F-P1-1 后 objectives 在场不可为空；
+        # run_once 对缺席键取 []，语义与旧 "objectives: []" 逐字节一致）
         recipe.write_text(yaml.safe_dump({
             "model": "patch_antenna",
             "params": {"f0_ghz": {"value": 2.4, "unit": "GHz"}},
             "setup": {},
-            "objectives": [],
         }), encoding="utf-8")
         from rfauto.service.api import run_once
 

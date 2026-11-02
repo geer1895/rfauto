@@ -71,11 +71,11 @@ is missing instead of forcing a verdict.
 
 ## 3. Reading unhealthy: mask semantics and the two FAIL families
 
-Now an unhealthy verdict from a real archive (the demo_oe_campaign archive's
+Now an unhealthy verdict from a real archive (the aurora_c campaign's
 branchline working directory):
 
 ```bash
-rfauto runs health demo_oe_campaign/branchline
+rfauto runs health aurora_c_oe/branchline
 ```
 
 Measured output (excerpt):
@@ -131,7 +131,7 @@ command (four criterion classes: progress / truncation suspicion / NrTS
 ceiling / energy stagnation):
 
 ```bash
-rfauto runs monitor runs/demo_oe_campaign --cycle
+rfauto runs monitor runs/aurora_c_oe --cycle
 ```
 
 Measured output (excerpt):
@@ -146,7 +146,7 @@ Measured output (excerpt):
 For the one entry on the yellow list, query it alone:
 
 ```bash
-rfauto runs monitor runs/demo_oe_campaign/pifa
+rfauto runs monitor runs/aurora_c_oe/pifa
 ```
 
 ```
@@ -189,7 +189,7 @@ override > template registry > generic default; a registered None = this
 family explicitly has no gate (honestly UNKNOWN; the generic default is not
 forced onto it).)
 
-A real arbitration case (`真机判读报告（内部档）` §3.2): a
+A real arbitration case (`runs/edblane85/w1_smoke/REPORT.md` §3.2): a
 Wilkinson power divider smoke test measured |S21|@f0=-3.192dB and
 |S31|@f0=-3.261dB; the literal gate (≤-3.8dB) judged FAIL — the semantic
 arbitration pointed out that the ideal value of an equal-split assignment

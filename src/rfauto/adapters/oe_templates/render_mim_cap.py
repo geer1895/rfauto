@@ -22,12 +22,12 @@ GaAs 薄膜 IPD 工艺 MIM 电容（金属-绝缘体-金属三明治，W/L/D 全
 H+d/2、H+d 三线显式入网（端口激励体积 ≥2 格，#283）；#152 去重阈值
 **z 轴降为 d/4**（全局 1µm 阈值会吞掉介质线——薄层模板的 #152 族
 适配）；x/y 维持 1µm 档。CFL 代价如实声明：min z-cell=d/2=0.1μm →
-dt≈0.33fs（薄介质 FDTD 物理成本，真机预算留登记 内部证据档）。
+dt≈0.33fs（薄介质 FDTD 物理成本，真机预算留登记 runs/aurora_k/k12）。
 
 闭式锚：平行板 C=ε0·εr·A/d 单源 core/package_interconnect.mim_
 capacitance（复用零复制）；质量门 C±25%（精确几何档）/SRF>2×f0 由
 CALC 键 mim_capacitance 承载（meta 只登记判读口径，门函数零复制）。
-真机验证留登记（内部证据档）。
+真机验证留登记（runs/aurora_k/k12）。
 """
 
 from __future__ import annotations
@@ -287,7 +287,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         "D:/rf_workspace/vendor/openEMS/install/bin")
+                         r"E:\\\\rfauto-workspace\\\\vendor\\\\openEMS\\\\install\\\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

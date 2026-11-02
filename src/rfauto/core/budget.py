@@ -1,4 +1,4 @@
-"""E8c 链路预算引擎（规划扩展 §E8c）。
+"""E8c 链路预算引擎（plan-extension_v2 §E8c）。
 
 Friis 噪声级联自实现（<50行；skrf 无内置且其 NF 分析与 ADS 不符，issue #538）。
 对拍基准为 Friis 手算（可复现零 license），非 ADS GUI。
@@ -313,7 +313,7 @@ class LinkBudget:
 #   https://rfessentials.com/resources/rf-glossary/bode-fano-limit/）。
 #
 # 常数出处（V1 席 P0 裁决 2026-10-04 逐字核对；errata:
-# 内部证据档）：π/τ 与
+# runs/review_ge8e/v1_bode_fano/ERRATA_C1.md）：π/τ 与
 # Δf_max=1/(2τ·ln(1/Γmax)) 为并联 RC/串联 RL 行——Fano 1948 MIT RLE
 # TR-41 §1 Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω=rad/s 全带宽）
 # + p.16 "parallel RC ⇒ A₁=2/RC"（×π/2 积分恰=π/(RC)）；Kerr NRAO

@@ -493,18 +493,19 @@ entries:
   kind: source
   marker: 出处（
   claim_line: '出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:'
-  claim_block: "        出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:\n        内部证据档）：Fano 1948 MIT RLE TR-41\
-    \ §1\n        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及 p.16 \"parallel RC\
-    \ ⇒ A₁=2/RC\"（×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2 并联 RC 行（p.262, 3rd\
-    \ ed.\n        §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个\
-    \ 2 因子，\n        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington Q 界\n        Chu 1948（J.\
-    \ Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n\
-    \        Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界）。\n    Cohn 插损下限\n        Cohn 1959（Proc. IRE，多耦合谐振器滤波器的耗散损耗）；\n\
-    \        IL_dB ≥ 4.343·(f0/BW)·Σgᵢ/Qu（4.343 = 10/ln10 的教材常用舍入；\n        MYJ《Microstrip Filters...》/Pozar\
-    \ 同口径）。窄带（f0/BW≫1）近似。\n    方向性界\n        口径面 D ≤ 4πA/λ²（均匀口径达到，一般口径为上界，Harrington）；\n        球包络 D\
-    \ ≤ (ka)² + 2ka（Harrington 1960，J. Res. NBS）；\n        MIMO 自由度 ≤ min(Nt, Nr)（自由度口径）。"
+  claim_block: "        出处（V1 席 P0 裁决 2026-10-04 逐字核对，errata:\n        runs/review_ge8e/v1_bode_fano/）：Fano\
+    \ 1948 MIT RLE TR-41 §1\n        Eqs.(3)(4)（矩形带 ω·ln(1/|ρ|max) ≤ π/(RC)，ω 为 rad/s 全带宽）\n        及\
+    \ p.16 \"parallel RC ⇒ A₁=2/RC\"（×π/2 积分恰=π/(RC)）；Kerr\n        NRAO EDM-295 §II 同式；Pozar Table 5.2\
+    \ 并联 RC 行（p.262, 3rd ed.\n        §5.9）同口径。防再犯注记：并联 RC 行为 π/τ（τ=RC）；串联 RC/并联\n        RL（|Γ(∞)|≠1\
+    \ 的对偶拓扑）与 Hz 口径（Δω=2πΔf）各差一个 2 因子，\n        勿混——C1-1 \"π/(2RC)\" 即此类混读误报（P0 复核为不成立）。\n    Chu-Harrington\
+    \ Q 界\n        Chu 1948（J. Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为\n        McLean 1996（IEEE\
+    \ Trans. AP，电/磁偶极子单模严格式）；圆极化减半。\n        Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界）。\n    Cohn 插损下限\n\
+    \        Cohn 1959（Proc. IRE，多耦合谐振器滤波器的耗散损耗）；\n        IL_dB ≥ 4.343·(f0/BW)·Σgᵢ/Qu（4.343 = 10/ln10\
+    \ 的教材常用舍入；\n        MYJ《Microstrip Filters...》/Pozar 同口径）。窄带（f0/BW≫1）近似。\n    方向性界\n        口径面 D\
+    \ ≤ 4πA/λ²（均匀口径达到，一般口径为上界，Harrington）；\n        球包络 D ≤ (ka)² + 2ka（Harrington 1960，J. Res. NBS）；\n\
+    \        MIMO 自由度 ≤ min(Nt, Nr)（自由度口径）。"
   refs:
-  - 内部证据档）：Fano 1948 MIT RLE TR-41 §1
+  - runs/review_ge8e/v1_bode_fano/）：Fano 1948 MIT RLE TR-41 §1
   - Chu 1948（J. Appl. Phys.，场表达法）；Q_min = 1/(ka)³ + 1/(ka) 为
   - McLean 1996（IEEE Trans. AP，电/磁偶极子单模严格式）；圆极化减半
   - Yaghjian-Best 2005 含损修正口径仅注记、不实现（本模块只判无耗下界
@@ -3567,10 +3568,11 @@ entries:
   kind: source
   marker: 出处链（
   claim_line: 出处链（回归钉证据，runs 归档零改写只读）：
-  claim_block: "出处链（回归钉证据，runs 归档零改写只读）：\n- 换算式与识别规则：内部证据档 §路线 C（\"换算 Z0e=2·Zc、\n  Z0o=Zd/2；模序按 εeff 较高识别偶模\"\
-    ）；\n- 数值证据：runs/hairpin_hfss_anchor/hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
+  claim_block: "出处链（回归钉证据，runs 归档零改写只读）：\n- 换算式与识别规则：runs/df6_dp14y1/handoff.md §路线 C（\"换算 Z0e=2·Zc、\n\
+    \  Z0o=Zd/2；模序按 εeff 较高识别偶模\"）；\n- 数值证据：runs/hairpin_hfss_anchor/hairpin_anchor.json\n  verdict.points.<gap>.line_default_zpi（per_port\
     \ 每模 Zo 读数 + 换算后\n  z0e_ohm/z0o_ohm）与 runs/hairpin_hfss_anchor/criteria.md §表\n  （g0500: Z0e_HFSS=58.29/Z0o_HFSS=48.02；g2200:\
-    \ 54.31/52.70）；\n- 审查条目：内部证据档 R4-4（换算链此前只在\n  runs handoff 文档与战役脚本中，无 core/service 可复用实现）。"
+    \ 54.31/52.70）；\n- 审查条目：runs/review_ge8e/r4_adapters/REPORT.md R4-4（换算链此前只在\n  runs handoff 文档与战役脚本中，无\
+    \ core/service 可复用实现）。"
   refs: []
   source_doi: null
   eq_no: null
@@ -3667,7 +3669,7 @@ entries:
   claim_line: reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
   claim_block: 'reference=ref：星型 [(ref, e) for e ≠ ref]（HFSS 对齐基准惯例，
 
-    内核立规注记 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
+    AGENTS 规则"HFSS 结果为对齐基准"）。exclude 命中的引擎不参与配对。
 
     引擎名 < 2 个 → 空矩阵（合法，无对可差分）。'
   refs: []
@@ -6162,6 +6164,30 @@ entries:
   - 法源与口径（round1 原文 docs/research_expansion_20260926.md M-7 节
   source_doi: null
   eq_no: null
+  expr: null
+  access_status: null
+  verified_by: collect_formula_provenance.py（docstring 转录）
+  origin: docstring
+- formula_id: trl_design:<module>:01
+  kernel_file: src/rfauto/core/trl_design.py
+  module: rfauto.core.trl_design
+  symbol: <module>
+  kind: source
+  marker: 文献口径（
+  claim_line: '文献口径（"Thru-Reflect-Line": An Improved Technique for Network'
+  claim_block: "  文献口径（\"Thru-Reflect-Line\": An Improved Technique for Network\n  Analyzer Calibration,\
+    \ IEEE T-MTT MTT-27(12)）与微波工程教科书惯例\n  （Pozar, Microwave Engineering, VNA 校准 TRL 节）；\n- **电长度硬约束 θ\
+    \ ∈ (0°, 180°)**：仓内单源 core/trl_solt.py 模块\n  docstring\"line 选根\"节——θ 跨半波长时 arg λ 按 2π 卷绕选根错根，\n \
+    \ 无耗情形信息论不可辨，须由设计端排除（本模块覆盖核算即此排除的\n  设计端落地）；\n- **工程有效窗 20° ≤ θ ≤ 160°（单 Line 有效带宽 8:1）**：TRL 校准件\n\
+    \  设计惯例（Keysight AN 1287-9 \"Applying Error Correction to VNA\n  Measurements\" 与 Dunsmore, Simplified\
+    \ Handbook of VNA Measurement\n  的 TRL 设计节同口径）：θ<20° 时 Line 与 Thru 相位差过小、信噪退化\n  不可辨；θ>160° 逼近半波长硬约束且损耗/色散放大；\n\
+    - **Reflect 相位先验 ±90° 内、|Γ|≥0.3**：Keysight 口径（与\n  trl_solt 提取端判据同值——提取端常量 _REFLECT_MAG_LITERATURE=0.3\n\
+    \  私有不可导入，本模块按同一文献值显式声明 REFLECT_GAMMA_MIN）；\n- **同轴 TEM εeff=εr**：均匀介质填充传输线教科书闭式（相速\n  v=c/√εr）；\n\
+    - **微带 εeff**：仓内单源 :func:`rfauto.core.synthesis.forward_z0`\n  （skrf MLine Hammerstad-Jensen+Kirschning-Jansen\
+    \ 色散，禁手抄公式）；\n  线宽经 :func:`rfauto.core.synthesis.inverse_width`（50Ω 反解同源）。"
+  refs: []
+  source_doi: null
+  eq_no: "式（相速\n  v=c/√εr）"
   expr: null
   access_status: null
   verified_by: collect_formula_provenance.py（docstring 转录）

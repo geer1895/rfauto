@@ -74,8 +74,14 @@ export async function pageSparams() {
   if (runsResp.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
   const runs = runsResp.runs || [];
   const sel = T.$("sp-run");
-  sel.innerHTML = runs.map((r) =>
-    `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.model || "?")} · ${esc(r.adapter || "?")}）</option>`).join("");
+  // P1-1（aurora_n wave_ui_a）：目录不在盘的 run=索引残留行——下拉选项
+  // 附"归档缺失"后缀（选中后详情读面如实报错，不静默假装可用；#122）。
+  // 后缀先烘焙进局部变量再入模板（布尔分派两分支皆静态/esc 包裹——
+  // 零新裸插值面，test_ui_xss_escape 豁免账本不增）。
+  sel.innerHTML = runs.map((r) => {
+    const archived = r.on_disk === false ? esc(t("sparams.archived_suffix")) : "";
+    return `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.model || "?")} · ${esc(r.adapter || "?")}）${archived}</option>`;
+  }).join("");
   // 同走查 P2-1 后半：深链 run 不在选项集时 sel.value 赋值静默失败回退
   // 首项——缺项先注入占位选项再赋值，选中态恢复恒可达。
   // 深链二批（aurora_f W2-S5）：#/sparams/<run_id> 待选消费（读取并清零，
@@ -288,6 +294,8 @@ export async function pageSparams() {
     T.$("sp-compare").setAttribute("aria-pressed", String(!!_spCompare));
   };
   syncModePressed();
+  // P3-4（aurora_n wave_ui_c）：外部曲线浏览按场景过滤 Touchstone .sNp
+  //（s1p..s8p；目录仍可进入，徽章标注过滤语义）
   T.$("sp-add-ext").onclick = () => fileBrowser("", async (p) => {
     const smith = mode === "smith";
     const r = await apiFetch(smith ? "/api/smith/external" : "/api/sparams/external", {
@@ -306,7 +314,7 @@ export async function pageSparams() {
                       traces: r.traces, grid: r.grid, z0: r.z0 });
     T.msg(t("sparams.overlayed") + r.file, true);
     load();
-  });
+  }, [".s1p", ".s2p", ".s3p", ".s4p", ".s5p", ".s6p", ".s7p", ".s8p"]);
   T.$("sp-clear-ext").onclick = () => { _spOverlay = []; load(); };
   // 深链二批（aurora_f W2-S5）：选中回写 hash（replaceState 不触 hashchange，
   // campaign syncCampaignHash 同款纪律）

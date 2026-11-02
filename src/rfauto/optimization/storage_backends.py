@@ -27,9 +27,19 @@ from typing import Any
 
 __all__ = [
     "build_journal_storage",
+    "default_journal_path",
     "journal_lock",
     "resolve_storage",
 ]
+
+
+def default_journal_path() -> Path:
+    """缺省 journal 日志文件路径（runs/.optuna/optuna_journal.log）。
+
+    与 optimizer.get_storage_path 同目录约定（cwd 相对解析，#144 家法：
+    测试隔离靠 chdir + 显式 journal_path，不在真实 runs/ 落数据）。
+    """
+    return Path("runs") / ".optuna" / "optuna_journal.log"
 
 
 def journal_lock(journal_path: str | Path) -> Any:

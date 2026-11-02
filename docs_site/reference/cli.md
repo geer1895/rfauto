@@ -1,6 +1,6 @@
 # CLI 命令参考
 
-> 实注册叶子命令共 **280** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
+> 实注册叶子命令共 **297** 条（`typer.main.get_command` 后按 click 树 walk 展开，含各 `add_typer` 子应用；与 `scripts/check_numbers.py` 的 `count_cli()` 构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改。
 
 用法速查见[用户指南](../guide/cli-quickstart.md)；单命令细节以 `rfauto <命令> --help` 为准（本页摘 help 首行）。
 
@@ -224,13 +224,18 @@ STL 实体导入：解析+分类+CSX 载荷（B3；一切失败 ok=False 不抛�
 池登记项新鲜度巡检（Z-11）：commit-tag×代码面双判据+撞号二次消歧。
 
 
+## rfauto design-report
+
+生成设计回放与总结报告（六节+扩展节 md 单文件，全数字带 provenance）。
+
+
 ## rfauto models
 
-模型管理
+模型管理（EMSolver 可求解模型注册表；器件模板全目录见 template-spec list）
 
 共 2 条叶子命令。
 
-- `rfauto models list` — 列出已注册模板 + 可选导出参数 JSON Schema。
+- `rfauto models list` — 列出已注册模型 + 可选导出参数 JSON Schema。
 - `rfauto models docs` — 生成模型参数文档（Markdown，pydantic schema 自动推导）。
 
 ## rfauto jobs
@@ -319,10 +324,11 @@ STL 实体导入：解析+分类+CSX 载荷（B3；一切失败 ok=False 不抛�
 
 代理模型离线分析（E3）
 
-共 2 条叶子命令。
+共 3 条叶子命令。
 
 - `rfauto surrogate analyze` — 离线 GP 代理模型分析：参数重要度 + 拟合误差（不进在线调优路径）。
 - `rfauto surrogate uq` — 代理免费蒙特卡洛 UQ：良率 + 指标分布 + 敏感性排序（阶段 6.4）。
+- `rfauto surrogate export-onnx` — torch 系代理（fno/deep_ensemble/siren）现场重拟合并导出 ONNX。
 
 ## rfauto runs
 
@@ -493,7 +499,7 @@ AgentBench/goldset 回归门（WP3.7/F6）——离线、确定性、零网络
 
 ## rfauto template-spec
 
-模板库 TemplateSpec 注册表（E2：清单 + 综合草稿）
+模板库 TemplateSpec 注册表（E2：清单 + 综合草稿）。语义区别：此处=器件模板全目录（渲染/综合/fake/HFSS 组件齐备性台账）；rfauto models list=已接入求解通道的可求解模型（配方 model 键取值）。
 
 共 3 条叶子命令。
 
@@ -745,12 +751,13 @@ HFSS → 可机加交付包（STEP/x_t + DXF 图 + 审计门禁，T43）
 
 多机协同仿真资源（探活/状态；v0：HFSS gRPC 远程会话+SSH 通道）
 
-共 4 条叶子命令。
+共 5 条叶子命令。
 
 - `rfauto remote probe` — TCP 探活登记机器（SSH/许可/RDP 端口连通性+时延，零副作用零凭据）。
 - `rfauto remote status` — 探活 + SSH 认证可达性（凭据缺失如实 missing_credentials 不猜不试）。
 - `rfauto remote resources` — 并发求解面资源视图（本机 openEMS/HFSS 进程互斥态+服务器可达/在跑/磁盘）。
 - `rfauto remote queue` — 任务队列视图（job_registry 在途作业+单写锁排队+席位占用+服务器在跑态）。
+- `rfauto remote board` — 服务器队列看板：机器表+队列任务表+互斥状态+异常降级行单快照。
 
 ## rfauto stats
 
@@ -841,7 +848,7 @@ Zenodo 元数据导出与 CITATION.cff 校验（PR-11，零网络）
 
 ## rfauto pitfalls
 
-坑账检索面（结构化索引，只读；数据缺席如实报缺）
+坑账检索面（AGENTS 踩坑速查全量索引，只读）
 
 共 2 条叶子命令。
 
@@ -984,3 +991,66 @@ REST 面 schema 导出（端点清单与 OpenAPI spec 机读出口，只读）
 - `rfauto em metrics` — 串联/并联器件 C/R/Q 指标（强失配下拒绝简化式，用 Z12 传输阻抗）。
 - `rfauto em sweep` — DOE/矩阵编排（16 组=2 器件 × 2 版本 × 4 厚度一条命令跑完）。
 - `rfauto em diff` — run 目录级四面对比（替代手工 diff .aedt 文本）。
+
+## rfauto mo
+
+多目标寻优（MO-BO）：内置合成族环跑，EHVI 采集 + 超体积裁判，mt_gp 联合后验驱动
+
+共 1 条叶子命令。
+
+- `rfauto mo run` — 跑内置合成族多目标 BO 环：HV 曲线 + 帕累托前沿 + 采集轨迹。
+
+## rfauto competition
+
+单目标优化器族竞赛（T-N5 标量架）：多引擎同预算同 seed 组竞赛，最优值 AUC 两阶段排名 + 达标评估次数，报表落 md+json
+
+共 1 条叶子命令。
+
+- `rfauto competition run` — 跑单目标优化器族竞赛：三套排名 + 逐 run 明细，报表落 md+json。
+
+## rfauto al
+
+主动学习（AL）：小样本标注预算下提议下一批实验点（σ×距离双重准则或 T-N9 采集三族）
+
+共 1 条叶子命令。
+
+- `rfauto al propose` — 提议下一批实验点：读湖样本 → 不确定度×距离（或采集族）→ top-k。
+
+## rfauto diagram
+
+电路图绘制六叶（前五叶出原生可编辑 .drawio 工程图，算画同源；to-svg 出静态 SVG 看图件）：link=RF 链路框图（每级标增益/NF，Friis 级联内核单源）；testsetup=射频测试连接图（仪器卡+连线，标注=输入原值）；annotate=评审标注双层（底图锁定+三色意见栏）；stackup=PCB 叠层横截面（层带∝厚度，线宽可选综合单源）；schematic=引脚级原理图（ADS 网表，元件带引脚点+引脚到引脚连线+网名标注）；to-svg=.drawio→SVG 纯 Python 渲染（服务器/报告无 GUI 看图件，框+连线+文字坐标直映射，不支持样式降级占位+warnings）
+
+共 6 条叶子命令。
+
+- `rfauto diagram link` — 生成 RF 链路框图 .drawio：级表 → 原生可编辑工程图（每级标数字）。
+- `rfauto diagram testsetup` — 生成射频测试连接图 .drawio：声明式场景 → 原生可编辑工程图
+- `rfauto diagram annotate` — 生成评审标注双层 .drawio：底图+标注表 → 底图层锁定+标注层三件组。
+- `rfauto diagram stackup` — 生成 PCB 叠层横截面图 .drawio：声明式叠层 → 原生可编辑工程图
+- `rfauto diagram schematic` — 生成引脚级原理图 .drawio：ADS 网表 → 元件带引脚点+引脚到引脚
+- `rfauto diagram to-svg` — 渲染 .drawio 为静态 SVG：mxGraph XML → 纯 Python SVG（服务器/报告
+
+## rfauto ads-circuit
+
+ADS 前仿链：参数化电路图 .drawio 出图/运行/反标注回路（draw.io Edit Data 改值 → hpeesofsim 前仿 → 指标反标注上图）
+
+共 3 条叶子命令。
+
+- `rfauto ads-circuit diagram` — J1 出图：族+SnP → 参数化电路图 .drawio（UserObject 三件组）。
+- `rfauto ads-circuit run` — J3+J4 一条龙：读图→合参→渲染→hpeesofsim→解析→指标→对拍→反标注。
+- `rfauto ads-circuit annotate` — 离线反标注：原图+circuit_result.json → 指标上图（不重跑仿真）。
+
+## rfauto watchdog
+
+seat 粒度三证判活（watchdog 方法论 CLI 出口；service/watchdog_service 薄壳）：watch=单席判活一次性视图（缺省动作）或 --watch 常驻循环（显式开启；jsonl 落白名单 runs/watchdog/，Ctrl+C 优雅停）
+
+共 1 条叶子命令。
+
+- `rfauto watchdog watch` — 单席三证判活：pid / census 指纹 / 纯产物三形态 → alive·stalled·dead·
+
+## rfauto cal-wizard
+
+校准件设计向导（TRL 设计单+覆盖核算+测试连接图；service/cal_wizard_service 薄壳）：trl=频带+介质→Thru/Reflect/Line 设计单（Line λg/4、8:1 覆盖核算、多 Line 分带）
+
+共 1 条叶子命令。
+
+- `rfauto cal-wizard trl` — TRL 校准件设计单（频带+介质 → Thru/Reflect/Line 几何+覆盖核算）。

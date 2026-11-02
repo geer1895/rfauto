@@ -62,7 +62,7 @@ Theory and Microwave Applications", Wiley 2006, §3.1 一系；T 型单元）
    β<0 → 后向辐射（θ<0）、β>0 → 前向（θ>0）、β=0 → 边射；
    |Re β| ≥ k0 → 快波条件不满足 → 不辐射（显式 None，不外推）。
 
-锚值独立推导：内部证据档（#118：不复用本模块代码的
+锚值独立推导：runs/mm4/anchor_derivation.py（#118：不复用本模块代码的
 独立实现，闭式+skrf 级联现写一遍，产出值写死进 test_crlh.py）。
 """
 

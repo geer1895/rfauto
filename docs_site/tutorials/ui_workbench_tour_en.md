@@ -42,7 +42,7 @@ Note: `python -m rfauto` is not a valid entry point (the package has no
 
 A successful start prints:
 
-```
+```text
 rfauto UI → http://127.0.0.1:8765/（Ctrl+C 退出）
 ```
 
@@ -197,7 +197,7 @@ calculators — the same kernel as CLI `rfauto calc` and the MCP
 **generated live from the registry** (the page is not hand-maintained;
 the key count grows automatically as the kernel gains keys, so this
 tutorial does not pin a number). The full shape, matured in the
-架构批 batch:
+aurora72 batch:
 
 - **Browse by group**: a dropdown groups keys by business domain
   (common groups first; experimental/other always last), each group

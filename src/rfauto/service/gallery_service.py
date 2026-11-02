@@ -1,7 +1,7 @@
 """PR-5 画廊交互化：模板卡 + 名义参数 + 闭式预览通道（数值只在确定性内核）。
 
 规格=docs/research_expansion_20261002_round16.md §四 PR-5："参数滑块→闭式
-响应即时预览（calculators 端点零后端计算）"。职责切分（内核立规注记 坑族：前端
+响应即时预览（calculators 端点零后端计算）"。职责切分（AGENTS 坑族：前端
 数据解释放服务层，前端只渲染）：
 
 - **服务层**：模板卡（TEMPLATE_META/TEMPLATE_NOMINAL 全量，只读）+ 预览
@@ -66,7 +66,7 @@ RECOMMEND_F0_TOL = 0.30
 #
 # 单一事实源在本模块：两个静态导出器（scripts/gallery_export.py QW-4 单页
 # 画廊、scripts/capability_cards_export.py QW-5 能力卡索引）渲染 data-*
-# 属性时消费，前端零分类逻辑（内核立规注记 家法：数据解释放服务层，前端只渲染）。
+# 属性时消费，前端零分类逻辑（AGENTS 家法：数据解释放服务层，前端只渲染）。
 # 归类依据=能力卡"适用场景"拓扑文本与模板库总表（docs/capability_cards/
 # <t>.md、docs_site/catalog/index.md）逐模板显式策展，非字段推断——
 # 未登记模板如实回退 "other"（不猜；注入 fixture 同样安全）。

@@ -6,7 +6,7 @@
 
 # 内核文档卡：hairpin
 
-> E6a 微带线综合引擎（规划扩展 §E6a）。
+> E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 | 字段 | 值 |
 |---|---|
@@ -22,7 +22,7 @@
 
 Hairpin 滤波器综合：C13 耦合矩阵 → 逐缝 KJ 反解（可选 hairpin 结构经验修正 c(gap)，opt-in）+ 抽头 τ 闭式——矩阵综合与几何映射分层，闭式零经验常数、经验常数真机溯源。
 
-模块自述（docstring 首行，机读）：E6a 微带线综合引擎（规划扩展 §E6a）。
+模块自述（docstring 首行，机读）：E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 ## 公式与口径
 
@@ -113,6 +113,7 @@ src/rfauto/core/coupled_microstrip.py 公开符号 **11** 个（AST 机读）：
 消费面（service/adapters 引用扫描，机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
+- service：`src/rfauto/service/diagram_stackup_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -166,7 +167,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `src/rfauto/adapters/openems_templates.py`——引文："再经 KJ 反解得缝、经抽头闭式得 τ（口径见 adapters/openems_templates 文末"
 
-测试面（tests/unit 引用扫描，机读；合计 **1524** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1600** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -179,6 +180,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_atten_t_template.py` | 9 |
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_cal_wizard.py` | 37 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_coupled_bpf_template.py` | 34 |
 | `tests/unit/test_coupling_matrix.py` | 52 |
@@ -224,6 +226,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
+| `tests/unit/test_stackup_diagram.py` | 39 |
 | `tests/unit/test_stepped_coupled_line_specs.py` | 8 |
 | `tests/unit/test_stripline_template.py` | 12 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |

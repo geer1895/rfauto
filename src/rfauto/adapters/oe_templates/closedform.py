@@ -49,7 +49,7 @@ def _ant2_eps_eff(w_mm: float, freq_ghz: float, er: float, h_mm: float) -> float
 
 # ═══ §10.3 C2 阵列族（2026-09-15 注册）：patch_array_1x4 / patch_array_2x2 /
 # patch_array_series ═══
-# 方案行：延续计划 §10.3 器件族表 "C2 阵列族｜1×4/2×2 贴片阵、
+# 方案行：continuation-plan_20260907.md §10.3 器件族表 "C2 阵列族｜1×4/2×2 贴片阵、
 # 串馈阵｜阵列因子综合接口"（接 D5 综合内核 core/array_synthesis）。
 #
 # ── 理论核验轮（#206/铁律 1b：先理论后几何；antenna2 六模板同款制度）──
@@ -67,7 +67,7 @@ def _ant2_eps_eff(w_mm: float, freq_ghz: float, er: float, h_mm: float) -> float
 #    core/symbolic_fit.patch_resonance_hj_ghz（f0 = c/(2(L+2dl)√εeff)）为独立裁判；
 #    本段 array_elem_len_mm 为设计式，fake_adapter.array_resonance_ghz 为其精确逆。
 #    （XA-1/PV-016 仲裁 INCONCLUSIVE：总扣 4ΔL 口径零行为维持，翻转到 2ΔL 需
-#    联动 ARRAY_NOMINAL/docs meta/fake 逆/判决式，内部证据档 有全账。）
+#    联动 ARRAY_NOMINAL/docs meta/fake 逆/判决式，runs/xa1_arbitration/ 有全账。）
 #    双缝方向图闭式（等效磁面流同相、地面镜像、上半空间）见 array_synthesis.
 #    patch_element_field（E 面 ∝ cos((k0L/2)sinθ)、H 面 ∝ cosθ·sinc((k0W/2)sinθ)）。
 #    馈电阻抗一阶口径（fake 常数出处，未标定不进锚判据）：单缝辐射电导小缝近似

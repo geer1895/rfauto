@@ -1,4 +1,4 @@
-"""varactor_bpf 三档偏压冒烟驱动（M-5；内部证据档 §3 固化）。
+"""varactor_bpf 三档偏压冒烟驱动（M-5；runs/varactor_smoke/launch_ready.md §3 固化）。
 
 三档偏压（静态电容口径：FDTD 无时变 C——三档=三次静态 run，各档 C(V_i) 常数）：
   V = 0.5 / 3.6342（名义，精确回归 f0=2.5GHz）/ 10.0

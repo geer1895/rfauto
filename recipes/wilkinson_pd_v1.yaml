@@ -1,33 +1,91 @@
 # Wilkinson Power Divider - 配方模板（附录 A）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一（新用户写配方的模仿起点）。本文件逐节注释讲：
+# 顶层键语义、参数单位与物理含义、指标名与判据算子读法、优化预算含义。
+#
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节（顶层键白名单、
+#   ops 枚举、指标名清单与校验器同源，防漂移）。
+# · 标准动线：写/改完先 `rfauto validate <文件>`，再
+#   `rfauto run <文件> --dry-run` 看执行计划，最后真跑/调参。
+# · 注释写法注意（#324 坑）：YAML plain scalar 值内“空格+#”会被解析器
+#   截断成注释——引注只写在注释行里，值面禁止手写 #。
 model: wilkinson_power_divider
+# model：目标模型（models 注册表键，`rfauto models list` 列出全部；必需键，
+# 未注册模型 validate 直接报错）。各求解通道（fake/hfss/openems…）消费
+# 同一份 params 面（跨通道参数语义对齐由模板 physics_roles 单源保证）。
 recipe_version: 1
+# recipe_version：配方 schema 版本（配方结构自身升级时递增）；
+# 与下面 schema_version（插件参数契约版本）语义不同，勿混（#106）。
 schema_version: 1
-notes: "2.4GHz 等分 Wilkinson，Rogers 4350B 0.508mm；尺寸为 40 trial TPE 调优后名义值（λ/4 臂 18.0mm、70.7Ω 臂宽 0.448mm、50Ω 馈线 1.15mm）"
+# schema_version：模型插件参数 schema 版本（params_model 契约面）。
+notes: "2.4GHz 等分 Wilkinson，Rogers 4350B 0.508mm"
+# notes：人类备注，自由文本，不进校验也不进缓存键。
 params:
+  # params：设计参数段（必需键）。键名=该模型 params_model 字段
+  # （合法面查 `rfauto models list --schema wilkinson_power_divider`；
+  # 写错参数名 validate 报错并附“你是不是想写”提示）。
+  # {value: …, unit: …} 显式带单位；裸标量按模板内部单位（mm）消费。
+  # 名义值口径：涉及几何的参数一律走综合精算（HJ 单源），禁手抄旧值。
   f0_ghz:      {value: 2.4,  unit: GHz}
+  # f0_ghz：设计中心频率（GHz）。综合精算与 objectives 判读带的锚。
   z0_ohm:      {value: 50,   unit: ohm}
+  # z0_ohm：系统特性阻抗（ohm）。端口与馈线的综合目标阻抗。
   substrate:   rogers4350b_h0.508
+  # substrate：层叠档案键（单源 configs/materials.yaml：
+  # Rogers 4350B，εr=3.66，tanδ=0.0037，h=0.508mm）。
   division:    "1:1"
-  arm_len_mm:  {value: 18.0}
-  series_w_mm: {value: 0.448}
-  shunt_w_mm:  {value: 1.151}
+  # division：等分比（1:1=两输出臂等分功率）。
+  arm_len_mm:  {value: 20.5}
+  # arm_len_mm：四分之一波长变换臂长（mm）。按 f0 与层叠 εeff 综合精算的
+  # 名义值；换 f0/层叠后必须重新综合，不要沿用旧数。
+  series_w_mm: {value: 0.33}
+  # series_w_mm：串联臂（高阻段）线宽（mm）。
+  shunt_w_mm:  {value: 1.10}
+  # shunt_w_mm：并联臂（50Ω 段）线宽（mm）。
 setup:
+  # setup：仿真设置段（可选，缺席用默认值）。键面=HFSS 链白名单
+  # （docs/reference.md「setup / export 键」节），白名单外键显式报错。
   solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动，传输线/功分器族惯用）。
   freq_range_ghz: [1.5, 3.5]
+  # freq_range_ghz：扫频范围（GHz，[下限, 上限]），覆盖 f0 加谐振漂移余量。
   points: 401
+  # points：扫频点数（401 点=2GHz 跨度约 5MHz 步进；深谷判读要够密）。
   convergence_delta: 0.02
+  # convergence_delta：HFSS 自适应收敛判据（相邻两遍 ΔS 最大变化）。
   radiation_box: open
+  # radiation_box：辐射边界口径（open=开域辐射边界；闭腔会引入谐振伪象）。
 ops: []
+# ops：变异算子列表（可选键，optimization/mutation 消费；本配方不定制，留空）。
 objectives:
+  # objectives：优化目标列表（tune/sweep 的 cost 来源；plain run 可缺席）。
+  # 每条四元组=metric（指标名）+band（GHz 判读带）+op（判据算子）+value（阈值）。
+  # 指标名/算子拼错 validate 即报错并列合法值；指标名合法目录见
+  # docs/reference.md「objectives 的 ops / 指标名」两节。
   - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  # s11_db=带内 |S11| 最大值（dB，worst-case 包络口径）；
+  # max_below：带内最大值 ≤ -15dB，即回损至少 15dB。
   - {metric: s21_db, band: [2.3, 2.5], op: mean_within, value: [-3.6, -3.1]}
+  # s21_db=带内 |S21| 均值（dB，插损）；mean_within：均值须落在
+  # [-3.6, -3.1]dB（理论等分插损 3.01dB 两侧的工艺窗）。
   - {metric: iso_s23_db, band: [2.3, 2.5], op: min_above, value: 20}
+  # iso_s23_db=端口 2 到端口 3 的隔离度（dB，需 ≥3 端口网络）；
+  # min_above：带内最小值 ≥ 20dB，即隔离下限。
 optimization:
+  # optimization：调参段（tune 命令消费）。params=搜索空间（low/high 闭区间，
+  # Optuna TPE 在此采样）；未列入的参数锁死在上方 params 名义值。
   # P2 调优参数范围（Optuna TPE 搜索空间）
   params:
     arm_len_mm:  {low: 18.0, high: 23.0}
+    # 臂长名义 20.5mm 两侧约 ±12%（谐振长度的主敏感维）。
     series_w_mm: {low: 0.25, high: 0.45}
+    # 串联臂线宽 0.1mm 级邻域（阻抗精调维）。
     shunt_w_mm:  {low: 0.90, high: 1.30}
+    # 并联臂线宽 0.2mm 级邻域（阻抗精调维）。
 limits: {max_trials: 60, max_wall_hours: 12}
+# limits：配额护栏（QuotaGuard 双闸）。max_trials=最多 60 个 trial；
+# max_wall_hours=墙钟预算 12 小时；超限优雅停，已完成 trial 结果保留。
 export:
+  # export：导出选项（随配方快照留档；Touchstone 导出契约按插件端口数派生）。
   touchstone: {renorm_ohm: 50, deembed: false}
+  # renorm_ohm=50：S 参数重归一到 50Ω 口径；deembed=false：不做端口去嵌。

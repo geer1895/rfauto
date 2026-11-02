@@ -98,7 +98,15 @@ def _template_list(templates: list[str] | tuple[str, ...] | None) -> list[str]:
     out: list[str] = []
     for name in templates:
         if name not in TEMPLATE_META:
-            raise KeyError(f"未知模板 {name!r}（注册表 {len(TEMPLATE_META)} 族）")
+            # aurora_n 错误信息人性化二批：did-you-mean（TEMPLATE_META 近邻）
+            # + 注册表清单指针——原文案只报族数不列族名；异常类型 KeyError 与
+            # "未知模板 {name!r}（注册表 N 族）"前缀逐字节保留。
+            from rfauto.service.recipe_validation import did_you_mean
+            raise KeyError(
+                f"未知模板 {name!r}（注册表 {len(TEMPLATE_META)} 族）"
+                f"{did_you_mean(str(name), sorted(TEMPLATE_META))}"
+                "（全部注册族键见 adapters.openems_templates.TEMPLATE_META，"
+                "或 rfauto templates golden-diff 不带 -t 跑全族）")
         out.append(name)
     return sorted(out)
 

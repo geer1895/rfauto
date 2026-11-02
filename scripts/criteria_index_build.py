@@ -12,7 +12,7 @@ DP-12 criteria/v2，本工具不另立 schema——index 只是"历史判据清�
 （tests/unit/test_criteria_index_build.py）。输出确定性：同树重跑逐字节
 一致（无时间戳键）。
 
-门阈值行 regex（预声明 内部证据档 §Z1）：行含比较符
+门阈值行 regex（预声明 runs/df6_dp13/criteria.md §Z1）：行含比较符
 (≤|≥|<|>) 且含单位词（dB/GHz/%/mm/ns/µm/um/数字+s 秒）之一，或含
 ``±数值`` 门；逐行抽原文 raw + 比较符后首个数值 threshold（best-effort，
 行数如实，不凑全）。
@@ -199,7 +199,7 @@ def extract_gate_lines(text: str) -> list[dict[str, Any]]:
 #   c3 → combline/interdigital/sir_bpf = knowledge/anchors.yaml c3.* 锚的
 #        template_family 注册值（注册表面，非臆测）；
 #   c4 → lange/cline_coupler/branchline = c4_z_substrate 门行 lange/
-#        cline_coupler 字面 + c4 批=耦合器网格收敛批（开发注记 口径）；
+#        cline_coupler 字面 + c4 批=耦合器网格收敛批（Devlog 口径）；
 #   marchand → marchand_balun = 族名前缀（marchand_* 战役系列）。
 FAMILY_ALIAS: dict[str, tuple[str, ...]] = {
     "marchand": ("marchand_balun",),
@@ -727,10 +727,7 @@ def refresh_test_universe(path: str | Path = DEFAULT_TEST_UNIVERSE,
 
 
 def _sha256_of_index(index_path: str | Path) -> str:
-    # 内容指纹按 LF 归一——Windows 工作副本 CRLF / Linux checkout LF 给出
-    # 同一 sha，跨平台再生锚（byte-identical）才可能成立（发布面修正）。
-    data = Path(index_path).read_bytes()
-    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
+    return hashlib.sha256(Path(index_path).read_bytes()).hexdigest()
 
 
 def load_index_or_build(index_path: str | Path,

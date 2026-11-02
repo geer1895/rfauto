@@ -47,27 +47,15 @@ rfauto depends on the following open-source packages. Each package is subject to
 | docstring_parser | 0.18.0 | See package |
 | email-validator | 2.3.0 | See package |
 
-## Vendored Front-End Libraries
-
-Bundled verbatim under `src/rfauto/ui/static/vendor/` (license headers
-retained in each file):
-
-| Library | File | License | Upstream |
-|---------|------|---------|----------|
-| Apache ECharts | echarts.min.js | Apache-2.0 | https://echarts.apache.org |
-| three.js | three.module.js | MIT | https://threejs.org |
-| marked | marked.min.js | MIT | https://marked.js.org |
-| DOMPurify | purify.min.js | Apache-2.0 (MPL-2.0 dual) | https://github.com/cure53/DOMPurify |
-
 ## GPL Boundary Statement
 
-rfauto (GPL-3.0-only) drives GPL-licensed openEMS only through a separate subprocess; the openEMS bindings themselves are not included in this repository.
+rfauto (MIT) does NOT import or link GPL-licensed code at runtime.
 
 openEMS/CSXCAD Python bindings (GPL-3.0) are used ONLY within subprocess execution
 (`simulation.py` child process). The main rfauto process never imports these bindings.
 Users compile bindings separately from the openEMS source repository.
 
-This separation keeps the optional openEMS integration cleanly isolated; rfauto itself is distributed under GPL-3.0-only (see LICENSE).
+This separation ensures rfauto's MIT license is not affected by GPL copyleft obligations.
 
 ## Commercial Software
 

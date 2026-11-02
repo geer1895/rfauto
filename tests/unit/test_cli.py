@@ -223,7 +223,7 @@ class TestCommandRegistryCount:
         # 本断言=typer 注册面口径（同名顶层命令各自计入）；check_numbers.
         # count_cli()=click 解析去重口径（同名覆盖取一）。U1 report/report
         # 同名对已由 89852ba 改名 reports 闭合；df7 程序化裁定注册面=解析面
-        # =140 零 shadow（回归钉 test_zero_shadow_*，开发注记（三九八）"10 面"
+        # =140 零 shadow（回归钉 test_zero_shadow_*，Devlog（三九八）"10 面"
         # 系中间稿误计数，全 git 历史仅此一对同名冲突）。
         total = len(app.registered_commands)
         for info in app.registered_groups:
@@ -250,7 +250,7 @@ class TestCommandRegistryCount:
         # 合流实测口径）= 254
         # +2（E-06/PR-15 调度面 v1 2026-10-08：remote resources/queue，
         # 多机资源可见性+队列视图薄壳零逻辑转发 remote_scheduler_service）
-        # = 256（README/交接文档/docs_site 三处 docs 数字同步=合流收口项）
+        # = 256（README/agent handoff/docs_site 三处 docs 数字同步=合流收口项）
         # +1（Z-11 2026-10-08：pool-patrol，池登记项新鲜度巡检薄壳零逻辑
         # 转发 pool_patrol_service.pool_patrol）= 257
         # +3（P3 尾程项13 2026-10-08：oracle list/check/check-all，QM-2 闭式
@@ -263,7 +263,7 @@ class TestCommandRegistryCount:
         # +3（edb 快车道 2026-10-08：edb build/solve/status，零逻辑转发
         #   新建 edb_lane_service——域内自注册 add_typer，发射/建库/批解
         #   编排全在 service+adapters 确定性内核）= 264（README/
-        #   交接文档/docs_site 三处 docs 数字随本批同步）
+        #   agent handoff/docs_site 三处 docs 数字随本批同步）
         # +2（aurora36 W2-D 2026-10-11：recast status/replay，RECAST 判据
         #   重放两只读叶——教程 docs/tutorials/recast-walkthrough.md 的
         #   CLI 出口，零逻辑转发 service/recast_service→core/recast；R3
@@ -272,12 +272,12 @@ class TestCommandRegistryCount:
         # +1（aurora_d REST-B 2026-10-14：rest schema，REST 面 schema 导出
         #   只读叶——端点清单程序化枚举 rest_api._ROUTE_TABLE 单源+
         #   OpenAPI spec 落盘，零逻辑转发 service/rest_api）
-        #   = 267（README/交接文档/docs_site/CHANGELOG 数字同笔）
+        #   = 267（README/agent handoff/docs_site/CHANGELOG 数字同笔）
         # +2（aurora_d KB-B 2026-10-14：pitfalls search/get，坑账结构化
         #   检索面两叶——索引加载/校验/id 查零逻辑转发
         #   service/pitfall_index_service 只读面，词面计分纯函数域内直钉；
         #   数据面=knowledge/pitfalls_index_full.json）
-        #   = 269（README/交接文档/docs_site/CHANGELOG 数字同笔）
+        #   = 269（README/agent handoff/docs_site/CHANGELOG 数字同笔）
         # +1（aurora_e W2-S8 2026-10-18：templates golden-diff，EC-8 全模板
         #   golden 几何回归仓叶——零逻辑转发 service/template_golden_service）
         #   = 270（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
@@ -291,9 +291,140 @@ class TestCommandRegistryCount:
         #   聚合叶——零逻辑转发 service/campaign_digest_service，全叶带
         #   --json）
         #   = 274（docs 数字未随本席：合流批统一回填——登记于席位返回报告）
-        # +6（aurora_l C1 2026-10-24：em doctor/verify/diff/metrics/sweep-plan
-        #   + resource-janitor，em 族五只读薄壳+janitor，全叶带 --json）= 280
-        assert total == 280
+        # +1（aurora_k K4 2026-10-23：runs verify，run 产物新鲜度校验叶——
+        #   manifest 收官指纹 vs 盘上 Touchstone sha256（P11/F7 交付错配
+        #   防线），零逻辑转发 service/runs_verify_service，带 --json；
+        #   README/docs_site 数字带已随本席再生（sync_readme_numbers/
+        #   build_docs_pages））
+        #   = 275
+        # +1（aurora_k K5 2026-10-23：em doctor，自定义 EM 模型清单体检叶
+        #   ——P12/F8 清单驱动的 pre-solve 几何/端口语义检查器，零逻辑
+        #   转发新建 service/em_doctor_service，带 --json；README/docs_site
+        #   数字带已随本席再生（sync_readme_numbers/build_docs_pages））
+        #   = 276
+        # +2（aurora_k K8 2026-10-23：em deembed + em metrics，THRU 对称
+        #   半拆双边去嵌叶+串联/并联器件 Z12/Y11 指标提取叶——反馈
+        #   F6/P14，零逻辑薄壳直连 core/deembed K8 扩展纯函数面
+        #   （calc_vna oracle 叶 A-11 同款只读出口裁定），全叶带 --json；
+        #   docs_site 数字带已随本席再生（build_docs_pages）；README 数字
+        #   未随本席，合流批统一回填）
+        #   = 278
+        # +1（aurora_k K10 2026-10-23：em sweep，DOE/矩阵编排叶——P16/F9
+        #   cases.yaml 笛卡尔全积展开→逐 case 串行执行（内存闸+janitor
+        #   资源防线，v1 恒 max_aedt=1）→summary.csv/json 汇总，零逻辑转发
+        #   新建 service/em_sweep_service（执行核复用 api.run_once），带
+        #   --json；README/docs_site 数字未随本席，合流批统一回填）
+        #   = 279
+        # +1（aurora_k K18 2026-10-23：em diff，run 目录级四面对比叶——
+        #   P17/F13 替代手工 diff .aedt 文本（meta params 逐键/K5 模型清单
+        #   按 name 逐项/Touchstone S 参数同栅对拍/K4 新鲜度交叉），零逻辑
+        #   转发新建 service/em_diff_service，带 --json；docs 数字未随本席，
+        #   合流批统一回填）
+        #   = 280
+        # +1（aurora_n T-N20 2026-10-29：surrogate export-onnx，torch 系
+        #   代理（fno/deep_ensemble/siren）现场重拟合并导出 ONNX 叶，
+        #   零数值逻辑转发新建 service/surrogate_export_service，带
+        #   --json；docs 数字未随本席，合流批统一回填）
+        #   = 281
+        # +1（aurora_n O1 2026-10-31：mo run，多目标 BO 合成族环叶（T-N13
+        #   MultiObjectiveBO 运行时门——zero_wiring REGISTRY O1 欠账清偿），
+        #   零数值逻辑转发新建 service/mo_bo_service，带 --json；docs 数字
+        #   随本席同笔回填）
+        #   = 282
+        # +1（aurora_n O5 2026-10-31：competition run，单目标优化器族竞赛
+        #   持久门叶（T-N5 标量竞赛架运行时门——zero_wiring REGISTRY O5
+        #   欠账清偿），零数值逻辑转发新建 service/competition_service，
+        #   带 --json；docs 数字随本席同笔回填）
+        #   = 283
+        # +1（aurora_n O4 2026-10-31：al propose，主动学习采样提议叶（T-N9
+        #   宿主 propose_next_points 运行时门——zero_wiring REGISTRY O4 旧面
+        #   欠账清偿），零数值逻辑转发新建 service/al_service，带 --json；
+        #   docs 数字随本席同笔回填）
+        #   = 284
+        # +1（aurora_o T-O1 2026-10-31：diagram link，RF 链路框图 .drawio
+        #   生成叶（"算画同源"第一件——原生可编辑 mxGraph 工程图，每级标
+        #   增益/NF+级联累计（Friis），数字=内核单源 core/budget.py
+        #   LinkBudget），零数值逻辑转发新建 service/diagram_service，带
+        #   --json；docs 数字随本席同笔回填）
+        #   = 285
+        # +1（aurora_o T-O5 2026-11-01：design-report，设计回放与总结报告
+        #   叶（六节 md 单文件——优化族 run 此前无报告出口，本叶补主缺口；
+        #   门表单目标拆分调 core/objectives cost 语义单源、缺键 UNKNOWN
+        #   不凑 PASS；provenance=bare_number_fields 全模型判零），零数值
+        #   逻辑转发新建 service/design_replay_report，带 --json；docs
+        #   数字随本席同笔回填）
+        #   = 286
+        # +1（aurora_o T-O6 2026-11-01：diagram testsetup，射频测试连接图
+        #   .drawio 生成叶（与 T-O1 互补的纯声明式一极——仪器卡/端口点子
+        #   cell/正交连线/校准面标记/注记，图上损耗/长度=用户 JSON 原值
+        #   原样标注零换算（铁律 7）；XML 走 T-O2 core/drawio_xml 内核），
+        #   零数值逻辑转发新建 service/diagram_testsetup_service，带
+        #   --json；docs 数字随本席同笔回填）
+        #   = 287
+        # +1（aurora_o T-O8 2026-11-01：diagram annotate，评审标注双层
+        #   .drawio 生成叶（底图层锁定+标注层三件组：三色圈/编号/右侧
+        #   意见栏/虚线关联；底图两族=既有 .drawio 层级 locked / 外部
+        #   PNG-JPEG 位图 style 五旗标锁；意见文本/优先级/区域=标注 JSON
+        #   原值原样标注零换算（铁律 7），target 指错对象显式报错），
+        #   零数值逻辑转发新建 service/diagram_annotation_service，带
+        #   --json；docs 数字随本席同笔回填）
+        #   = 288
+        # +3（aurora_o T-O4 2026-11-01：ads-circuit diagram/run/annotate
+        #   三叶，ADS 前仿链人机回路（用户核心需求"画电路图→带入 ADS 仿真
+        #   →人工调参回路"：J1 出图 UserObject 三件组→J2 draw.io Edit Data
+        #   改值→J3 run 读图三态合参渲染求解解析指标对拍→J4 反标注
+        #   annot_sim 层上图→J5 迭代；annotate=离线重放只反标注不重跑），
+        #   零数值逻辑转发新建 service/circuit_sim_service，带 --json；
+        #   docs 数字随本席同笔回填（README/agent handoff/docs_site；
+        #   docs/reference.md 留合流批））
+        #   = 292
+        # +1（aurora_p A1 2026-11-01：diagram schematic，引脚级原理图
+        #   .drawio 生成叶（与既有框图级五叶互补：元件符号带引脚点子 cell、
+        #   连线引脚到引脚、网名标注在连线上；输入=ADS 网表——模板族渲染
+        #   或 .net 文件二选一；网表参数原值原样标注零换算（铁律 7）），
+        #   零数值逻辑转发新建 service/schematic_diagram_service，带
+        #   --json；docs 数字随本席同笔回填）
+        #   = 293
+        # +1（aurora_p C3 2026-11-01：diagram to-svg，.drawio→SVG 纯
+        #   Python 渲染叶（服务器/报告无 GUI 看图件：框+连线+文字坐标
+        #   直映射零重算；样式子集常量表 core/drawio_svg 单源；不支持
+        #   形态降级占位+warnings；压缩页显式报错），零数值逻辑转发新建
+        #   service/drawio_svg_service，带 --json；docs 数字随本席同笔
+        #   回填）
+        #   = 294
+        # +1（aurora_p F2 2026-11-02：watchdog watch，seat 粒度三证判活
+        #   CLI 出口叶（T-O12 service/watchdog_service 常驻形态接线：
+        #   单叶双形态——一次性视图=缺省动作零后台线程零文件写逐字节同
+        #   service 直调；--watch 常驻循环显式开启，jsonl 落白名单
+        #   runs/watchdog/，Ctrl+C 优雅停；target 三形态透传 pid/census
+        #   指纹/None 产物证；轮间隔下限复用
+        #   speculative_watch_service.MIN_INTERVAL_S 单源），零数值逻辑
+        #   转发既有 service/watchdog_service，带 --json；docs 数字随本席
+        #   同笔回填）
+        #   = 295
+        # +1（aurora_p G1 2026-11-02：cal-wizard trl，TRL 校准件设计向导
+        #   叶（方向 G"TRL/校准件设计的用户向导面（当前只有内核+CLI）"
+        #   闭合：频带+介质三口径 → Thru/Reflect/Line 设计单——λg/4
+        #   Line、8:1 覆盖三态核算、多 Line 等比分带、Reflect 短路/开路
+        #   建议；--out-dir 落盘设计单 JSON/calkit 定义 YAML/测试连接图
+        #   .drawio 三件固定名；设计数学=新建 core/trl_design（教科书锚
+        #   +εeff 走 synthesis 单源在内核），连接图=既有
+        #   diagram_testsetup_service 装配内核复用），零数值逻辑转发
+        #   新建 service/cal_wizard_service，带 --json；docs 数字随本席
+        #   同笔回填）
+        #   = 296
+        # +1（aurora_p G2 2026-11-02：remote board，服务器队列看板叶
+        #   （方向 G"服务器队列可视化（remote 面板增强为实时队列看板）"
+        #   闭合：四源 probe/status/queue/mutex 既有 service 读面纯聚合
+        #   ——单快照=机器表+队列任务表+互斥状态+异常降级行；单叶双形态
+        #   ——缺省一次性快照零循环零落盘逐字节同 service 直调，--refresh
+        #   N 显式循环 Ctrl+C 优雅停轮间隔下限复用
+        #   speculative_watch_service.MIN_INTERVAL_S 单源，--json-out 用户
+        #   显式路径快照导出；#105 单源失败降级行留痕不炸板，凭据/主机名
+        #   不落信封），零数值逻辑转发新建 service/remote_board_service，
+        #   带 --json；docs 数字随本席同笔回填）
+        #   = 297
+        assert total == 297
 
     def test_recast_commands_registered(self):
         """W2-D recast 子应用两命令注册面在位（RECAST 判据重放两只读叶）。"""
@@ -396,11 +527,11 @@ class TestCommandRegistryCount:
         from rfauto.infra.remote_machines import RemoteMachineConfig
 
         cfg = RemoteMachineConfig(
-            name="sim-host", host="198.51.100.10", ssh_port=22,
+            name="sim_server", host="198.51.100.20", ssh_port=22,
             probe_ports={"rdp": 3389},
         )
         monkeypatch.setattr(rsvc, "load_remote_machines",
-                            lambda: {"sim-host": cfg})
+                            lambda: {"sim_server": cfg})
         monkeypatch.setattr(
             rsvc, "probe_machine",
             lambda c: {"name": c.name, "host": c.host, "reachable": True,
@@ -409,11 +540,11 @@ class TestCommandRegistryCount:
                        "probe_s": 0.01},
         )
         runner = CliRunner()
-        result = runner.invoke(app, ["remote", "probe", "sim-host", "--json"])
+        result = runner.invoke(app, ["remote", "probe", "sim_server", "--json"])
         assert result.exit_code == 0, result.output
         payload = json.loads(result.output)
         m = payload["machines"][0]
-        assert m["name"] == "sim-host" and m["reachable"] is True
+        assert m["name"] == "sim_server" and m["reachable"] is True
         assert m["ports"]["ssh"]["open"] is True
 
     def test_afs_plan_json_smoke(self):
@@ -999,7 +1130,7 @@ _SLOT_SUB = ["--h-mm", "1.524", "--eps-r", "3.66", "--freq-ghz", "2.5"]
 class TestSlotlineTransitionsCommands:
     """rfauto slotline（2）/ transitions（3）薄壳（W2⑨）：零逻辑转发 slotline_service，
     --json 直出信封；越域红字 exit 1；synth 不可达=退 0+realizable=False（D5
-    语义，同文件 :578-588 钉）。数值锚同 开发注记（二百二十二）②③（数值只出
+    语义，同文件 :578-588 钉）。数值锚同 Devlog（二百二十二）②③（数值只出
     内核，壳层不复算）。"""
 
     def test_help_lists_commands(self):
@@ -1538,7 +1669,7 @@ class TestME17aShellCommands:
         assert result.exit_code == 2
 
 
-# ─── E2-2 link --to-ads 真接线（内部证据档）────────────
+# ─── E2-2 link --to-ads 真接线（runs/review_ge8e/f3_fix/REPORT.md）────────────
 
 def test_link_to_ads_flag_wired(monkeypatch):
     """E2-2 回归钉：link 的 --to-ads 旗标真透传（缺省 False 不联动、

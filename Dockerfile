@@ -1,16 +1,18 @@
-# rfauto 容器镜像
+# rfauto 容器镜像（G7，2026-09-18；2026-10-23 保鲜核对）
 #
-# 真构建通道：GitHub Actions "docker-build" job（.github/workflows/ci.yml）
-# 每次 push/PR 用本文件真构建镜像，并在容器内冒烟（import / __version__ /
-# 默认入口 rfauto --help，退出码 0 即通过）。
-# 本机复验（需本机有 docker）：
+# 如实口径：本机无 docker CLI/守护，本地只做过【静态校验】（指令合法性、
+# COPY 源存在性、JSON 数组形式 CMD 解析、基镜像与 requires-python 相容性
+# ——校验脚本 runs/dockerfile_static_check.py）。真构建由公开仓同款文件的
+# CI 通道背书：release/rfauto_public/.github/workflows/ci.yml "docker-build"
+# job 每次 push/PR 真构建+容器冒烟（import/版本/CLI --help）。
+# 本机拿到 docker 环境后复验：
 #   docker build -t rfauto:local .
 #   docker run --rm rfauto:local        # 入口冒烟：CMD 跑 rfauto --help
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="rfauto" \
-      org.opencontainers.image.description="Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more" \
-      org.opencontainers.image.licenses="GPL-3.0-only"
+      org.opencontainers.image.description="HFSS/ADS automated simulation tuning framework" \
+      org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 

@@ -1,10 +1,10 @@
-"""求解健康度体检内核（G11，延续计划 §10.17）。
+"""求解健康度体检内核（G11，continuation-plan §10.17）。
 
 把历史踩坑教训内核化为每 run 确定性体检——LLM/agent 永不产生物理数字
-（内核立规注记 规则 7），本模块全部判据为确定性数值规则，不健康 run 禁入
+（AGENTS 规则 7），本模块全部判据为确定性数值规则，不健康 run 禁入
 数据集注册表（护 E1/E11 数据质量）。
 
-内核化的教训（每条含  编号）：
+内核化的教训（每条含 Devlog 编号）：
 - #174 激励体积死：能量/传输曲线全零 = 激励体积死（零宽盒/盒边未进网格）
 - #195 cost 退化常数：窄带谐振器件带内 max 统计量恒定 → cost 无区分度
 - #152 CFL/网格塌缩：openEMS 时间步塌缩 6 个量级（近重合网格线）
@@ -73,11 +73,11 @@ VERDICT_HEALTHY = "healthy"
 VERDICT_UNHEALTHY = "unhealthy"
 VERDICT_SUSPECT = "suspect"
 
-# 教训编号（）——写进每条 factor，保证报告可回溯到踩坑原文
+# 教训编号（Devlog）——写进每条 factor，保证报告可回溯到踩坑原文
 LESSON_EXCITATION_DEAD = "#174"
 LESSON_COST_DEGENERATE = "#195"
 LESSON_TIMESTEP_COLLAPSE = "#152"
-LESSON_PROBE_SCALE = "1.0491 探针窗（ 多模态审计节）"
+LESSON_PROBE_SCALE = "1.0491 探针窗（Devlog 多模态审计节）"
 LESSON_PASSIVITY = "SpecEvaluator.check_passivity（§7.5）"
 LESSON_RECIPROCITY = "SpecEvaluator.check_reciprocity（§7.5）"
 LESSON_UNPHYSICAL_GAIN = "SpecEvaluator.sanity_check 插损口径（§7.5）"
@@ -88,7 +88,7 @@ LESSON_GRID_CONVERGENCE = (
     "ASME J. Fluids Eng. 2008）")
 
 # ---------------------------------------------------------------------------
-# 判据阈值（与踩坑原文数值一致，改动须先对 ）
+# 判据阈值（与踩坑原文数值一致，改动须先对 Devlog）
 # ---------------------------------------------------------------------------
 
 # #174：全带宽透射峰值线性幅值 < 1e-6 = 激励体积死（数值零，非弱耦合）
@@ -1048,7 +1048,7 @@ def port_load_invariant_factor(
 ) -> dict[str, Any]:
     """F2 不变量（K-8 判据 v2）：纯 R 负载面 u/i 应=R∠0°，否则探针口径失配。
 
-    依据 内部证据档 §2：u 探针=盒中心零宽线（场峰采样）
+    依据 runs/k8_half_anchor/REPORT.md §2：u 探针=盒中心零宽线（场峰采样）
     vs i 探针=全口径安培环（均值）——模态权重失配时 uf±R·i 分解退化，
     负载面读出负阻（κR≈1.35∠172° 实测病理）。此不变量入健康门族后，
     K-8 家族（siw 负载面端口化）在渲染/判读前即可拦截。

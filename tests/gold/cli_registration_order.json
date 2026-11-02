@@ -44,6 +44,7 @@
   "port-gate",
   "lint",
   "pool-patrol",
+  "design-report",
   "models",
   "jobs",
   "cache",
@@ -118,7 +119,14 @@
   "recast",
   "rest",
   "templates",
-  "em"
+  "em",
+  "mo",
+  "competition",
+  "al",
+  "diagram",
+  "ads-circuit",
+  "watchdog",
+  "cal-wizard"
  ],
  "leaf_paths": [
   "rfauto doctor",
@@ -165,6 +173,7 @@
   "rfauto port-gate",
   "rfauto lint",
   "rfauto pool-patrol",
+  "rfauto design-report",
   "rfauto models list",
   "rfauto models docs",
   "rfauto jobs status",
@@ -195,6 +204,7 @@
   "rfauto anchors drift",
   "rfauto surrogate analyze",
   "rfauto surrogate uq",
+  "rfauto surrogate export-onnx",
   "rfauto runs compare",
   "rfauto runs health",
   "rfauto runs verify",
@@ -343,6 +353,7 @@
   "rfauto remote status",
   "rfauto remote resources",
   "rfauto remote queue",
+  "rfauto remote board",
   "rfauto stats guardband",
   "rfauto stats cpk",
   "rfauto stats weibull",
@@ -400,8 +411,22 @@
   "rfauto em deembed",
   "rfauto em metrics",
   "rfauto em sweep",
-  "rfauto em diff"
+  "rfauto em diff",
+  "rfauto mo run",
+  "rfauto competition run",
+  "rfauto al propose",
+  "rfauto diagram link",
+  "rfauto diagram testsetup",
+  "rfauto diagram annotate",
+  "rfauto diagram stackup",
+  "rfauto diagram schematic",
+  "rfauto diagram to-svg",
+  "rfauto ads-circuit diagram",
+  "rfauto ads-circuit run",
+  "rfauto ads-circuit annotate",
+  "rfauto watchdog watch",
+  "rfauto cal-wizard trl"
  ],
- "n_leaves": 280,
- "n_top": 119
+ "n_leaves": 297,
+ "n_top": 127
 }

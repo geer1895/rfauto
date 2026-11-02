@@ -1,4 +1,4 @@
-"""W6-C AD-5 五段模板批 2+批 3 门（内部证据档 W6-C 节）。
+"""W6-C AD-5 五段模板批 2+批 3 门（runs/w6_phase6/criteria.md W6-C 节）。
 
 W5-A 批 1（test_w5_a_ad5_gates.py）同构三面，扩到余量 106 工具：
   - Z-10b 五段 regex 门（批 2=52 件 <120 chars 组 / 批 3=54 件 ≥120 chars
@@ -9,9 +9,9 @@ W5-A 批 1（test_w5_a_ad5_gates.py）同构三面，扩到余量 106 工具：
   - Z-10a 转发型只读工具 Returns 键集运行时对拍（批 2 7 件+批 3 6 件，
     全部本地确定性通道零 LLM 零网络，#139 纪律）。
 
-规格：内部证据档 §三（AD-5）；批 1
+规格：runs/research_seats_20261004/sk_specs5/SPECS.md §三（AD-5）；批 1
 先例 test_w5_a_ad5_gates.py。锚定快照=2026-10-05 批 2/3 改 docstring 前
-（内部证据档，106 件签名+description 前长度）。
+（runs/w6_phase6/w6c/baseline.json，106 件签名+description 前长度）。
 注记：并发席位（W6-B SN-16 optim.py 等）新增工具不在本席清单内（#228
 门作用域限本项文件）。
 """

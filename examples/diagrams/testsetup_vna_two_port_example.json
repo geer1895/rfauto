@@ -1,0 +1,19 @@
+{
+  "title": "VNA 双端口 S 参数测量连接图",
+  "instruments": [
+    {"id": "vna1", "kind": "vna", "label": "矢量网络分析仪",
+     "ports": ["P1", "P2"], "note": "端口面 SOLT 校准"},
+    {"id": "dut1", "kind": "dut", "label": "待测件 DUT", "ports": ["RF1", "RF2"]}
+  ],
+  "connections": [
+    {"from": "vna1.P1", "to": "dut1.RF1",
+     "cable": {"label": "C1", "loss_db": 0.5, "length_m": 1.0},
+     "cal_plane": true},
+    {"from": "vna1.P2", "to": "dut1.RF2",
+     "cable": {"label": "C2", "loss_db": 0.5, "length_m": 1.0},
+     "cal_plane": true}
+  ],
+  "notes": [
+    {"text": "校准面在线缆末端（DUT 侧接头），线缆损耗已被校准扣除", "anchor": "conn0"}
+  ]
+}

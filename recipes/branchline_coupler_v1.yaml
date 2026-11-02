@@ -1,27 +1,72 @@
 # Branchline Coupler - 配方模板（P5 第二实例，C4 补齐 fake 链路）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一。逐节注释讲：顶层键语义、参数单位与物理含义、
+# 指标名与判据算子读法、优化预算含义。调参实战版（G0 定案线宽+二维搜索）
+# 见同目录 branchline_tune_light.yaml。
+#
+# · 配方 schema 权威出处：docs/reference.md「配方 schema」节；标准动线
+#   validate → run --dry-run → 真跑。指标名/参数名拼错 validate 即报。
+# · 注释写法注意（#324 坑）：值面“空格+#”会被 YAML 解析器截断——
+#   引注只写注释行。
 model: branchline_coupler
+# model：目标模型（models 注册表键；`rfauto models list` 可列，必需键）。
 recipe_version: 1
+# recipe_version：配方 schema 版本（与插件契约的 schema_version 语义不同，#106）。
 schema_version: 1
+# schema_version：模型插件参数 schema 版本。
 notes: "2.4GHz 3dB 分支线耦合器，Rogers 4350B 0.508mm，4 端口"
+# notes：人类备注（自由文本，不进校验/缓存键）。
 params:
+  # params：设计参数段（必需键）。键名=模型 params_model 字段
+  # （查 `rfauto models list --schema branchline_coupler`）。
+  # {value: …, unit: …} 显式带单位；裸标量按模板内部单位（mm）消费。
   f0_ghz:      {value: 2.4,  unit: GHz}
+  # f0_ghz：设计中心频率（GHz）。
   z0_ohm:      {value: 50,   unit: ohm}
+  # z0_ohm：系统特性阻抗（ohm）。四角馈线与端口的综合目标。
   substrate:   rogers4350b_h0.508
+  # substrate：层叠档案键（configs/materials.yaml 单源：
+  # Rogers 4350B，εr=3.66，tanδ=0.0037，h=0.508mm）。
   arm_len_mm:  {value: 20.5}
+  # arm_len_mm：支线/主线电长四分之一波段的物理臂长（mm），
+  # 按 f0 与层叠 εeff 综合精算的名义值（换 f0/层叠须重新综合）。
   series_w_mm: {value: 1.87}   # 35.35Ω 横臂（串联臂）——G0 三源定案 1.87（2026-09 修正
                                # 2.20 旧值实测 31Ω）；2026-09-05 语义对齐：series=横臂
+  # series_w_mm：横臂（35.35Ω 特征阻抗段）线宽（mm）。1.87 为 G0 三源
+  # 定案值（旧值 2.20 实测仅 31Ω，是早期 -6dB 平台伪象的主因）。
   shunt_w_mm:  {value: 1.10}   # 50Ω 竖臂（并联臂）+ 四角馈线
+  # shunt_w_mm：竖臂（50Ω 段）线宽（mm），兼四角馈线同宽。
 setup:
+  # setup：仿真设置段（可选，缺席用默认值；HFSS 链白名单键面见
+  # docs/reference.md「setup / export 键」节）。
   solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动）。
   freq_range_ghz: [1.5, 3.5]
+  # freq_range_ghz：扫频范围（GHz，[下限, 上限]）。
   points: 201
+  # points：扫频点数（201 点=2GHz 跨度约 10MHz 步进）。
   convergence_delta: 0.02
+  # convergence_delta：HFSS 自适应收敛判据（相邻两遍 ΔS 最大变化）。
 objectives:
+  # objectives：优化目标列表（tune/sweep 的 cost 来源；plain run 可缺席）。
+  # metric+band（GHz）+op+value 四元组；合法指标名/算子目录见
+  # docs/reference.md「配方 schema」节（与校验器同源）。
   - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  # s11_db=带内 |S11| 最大值（dB，worst-case 包络）；max_below：
+  # 带内最大值 ≤ -15dB（各端口回损下限）。
   - {metric: s21_db, band: [2.3, 2.5], op: mean_within, value: [-4.0, -2.5]}
+  # s21_db=带内 |S21| 均值（dB，插损）；mean_within：均值落在
+  # [-4.0, -2.5]dB（3dB 理论插损的宽容工艺窗，4 端口损耗余量更宽）。
 optimization:
+  # optimization：调参段（tune 消费）。params=搜索空间（low/high 闭区间）；
+  # 未列入的参数锁死在 params 名义值。
   params:
     arm_len_mm:  {low: 18.0, high: 23.0}
+    # 臂长名义 20.5mm 两侧约 ±12%（谐振长度主敏感维）。
     series_w_mm: {low: 1.70, high: 2.05}
+    # 横臂线宽邻域（跨 G0 修正前后两代值，供阻抗再标定）。
     shunt_w_mm:  {low: 0.95, high: 1.25}
+    # 竖臂线宽邻域（50Ω 段精调）。
 limits: {max_trials: 30, max_wall_hours: 6}
+# limits：配额护栏（QuotaGuard 双闸）：最多 30 个 trial、墙钟 6 小时；
+# 超限优雅停，已完成 trial 结果保留。本文件无 export 段=用缺省导出口径。

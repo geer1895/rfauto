@@ -1,7 +1,8 @@
 """AU-6 optimizer 通道注册表钉——收拢后行为零变化 + 惰性导入面。
 
-钉面（对应 内部证据档）：
-- 注册表内容：内置三通道 fake/hfss/openems 注册在位；
+钉面（对应 runs/au3_audit/au6_design.md）：
+- 注册表内容：内置通道 fake/hfss/openems 注册在位；aurora_p B3 起
+  第四通道 "ads"（linkage.ads_optimizer_channel 导入即注册）同席在位；
 - 未知通道：``(None, "")`` fallthrough 逐位（原 optimizer._create_adapter
   尾部落点）；
 - 通道解析零行为：factory 直调 vs optimizer._create_adapter 分发对同一
@@ -28,6 +29,7 @@ src_dir = Path(__file__).parent.parent.parent / "src"
 if src_dir.exists() and str(src_dir) not in sys.path:
     sys.path.insert(0, str(src_dir))
 
+from rfauto.linkage import ads_optimizer_channel  # noqa: F401  # 注册 "ads" 通道
 from rfauto.optimization import adapter_channels
 from rfauto.optimization.adapter_channels import (
     channel_names,
@@ -71,7 +73,10 @@ def stub_openems(monkeypatch):
 
 class TestRegistryContent:
     def test_builtin_three_channels_registered(self):
-        assert channel_names() == ("fake", "hfss", "openems")
+        # aurora_p B3：第四通道 "ads" 由 linkage.ads_optimizer_channel 在其
+        # 模块导入时注册（linkage→optimization 合法向下 import；白名单枚举
+        # 钉按流程同笔补入，既有三通道工厂零变化）。
+        assert channel_names() == ("ads", "fake", "hfss", "openems")
 
     def test_dispatcher_still_module_level_function(self):
         # monkeypatch 兼容：test_review_fixes 等消费面按模块属性替换
@@ -145,13 +150,16 @@ class TestZeroBehaviorPins:
 
 class TestLazyImportSurface:
     def test_no_adapter_modules_on_import(self):
-        """import optimizer + 注册发生（adapter_channels）后无 adapters.*。"""
+        """import optimizer + 注册发生（adapter_channels + ads 注册模块）后
+        无 adapters.*（ads 通道注册面同样零 adapter import——其 adapter
+        import 全在 solve 时 lazy）。"""
         code = (
             "import sys\n"
             "import rfauto.optimization.optimizer\n"
+            "import rfauto.linkage.ads_optimizer_channel  # 注册 ads 通道\n"
             "import rfauto.optimization.adapter_channels as ac\n"
             "names = ac.channel_names()\n"
-            "assert names == ('fake', 'hfss', 'openems'), names\n"
+            "assert names == ('ads', 'fake', 'hfss', 'openems'), names\n"
             "bad = [m for m in sys.modules if m.startswith('rfauto.adapters')]\n"
             "assert not bad, bad\n"
         )

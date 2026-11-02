@@ -8,7 +8,7 @@ GPL）——与 openEMS/Meep（全波 FDTD）互补：微带传输线类结构�
 （ra3xdh/qucs_s release，sha256 80025a24…b3ef1c 实测对上）自带
 ``bin/qucsator_rf.exe``（版本串 Qucsator 1.0.7 fork；模拟器源码为
 qucs_s 的 git submodule ra3xdh/qucsator_rf）。安装位置 E 盘
-（内核立规注记.md 硬规则 1）：``E:\\tools\\qucsatorRF\\bin``。
+（AGENTS 硬规则 1）：``E:\\tools\\qucsatorRF\\bin``。
 
 可执行解析链（同 spice_netlist.resolve_ngspice_exe 口径）：显式参数 →
 env ``RFAUTO_QUCSATOR_BIN``（exe 或目录）→ configs/solvers.yaml
@@ -82,7 +82,7 @@ logger = logging.getLogger(__name__)
 
 _C0_M_S = 299792458.0
 
-#: 工作区随带 qucsatorRF 的缺省位置（内核立规注记.md 硬规则 1：工具链落 E 盘工作区）。
+#: 工作区随带 qucsatorRF 的缺省位置（AGENTS 硬规则 1：工具链落 E 盘工作区）。
 _WORKSPACE_QUCSATOR = Path(__file__).resolve().parents[3] / "tools" / "qucsatorRF" / "bin"
 
 #: N7 安装探测落点（任务书指定 E:\qucsatorRF 或 E:\tools\qucsatorRF；
@@ -103,7 +103,7 @@ NOT_SUPPORTED_ELEMENTS: tuple[str, ...] = (
     "MLAYV", "MVIA", "MLIN2", "SIR", "MCFOLD", "MSUBST",
 )
 
-#: mline 锚 openEMS 金锚 β（rad/m）——内部证据档
+#: mline 锚 openEMS 金锚 β（rad/m）——runs/benchmark/mline_mauto/port_beta.csv
 #: （W=1.113mm、auto 网格、2.25–2.75GHz、#162 β 金标准 schema）冻结值；
 #: 与 tests/unit/test_meep_adapter.py::_OPENEMS_GOLDEN 同源（测试互检防漂移）。
 _OPENEMS_GOLDEN_MLINE = {2.25: 80.55376868947421, 2.5: 89.50940246779182,

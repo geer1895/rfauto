@@ -37,7 +37,9 @@ export function fmtNum(v, d = 4) {
    列表（单数 error 键已废）；历史遗留形态（fs_list/playground 等单数
    error）与 api() 网络兜底形状（{ok, error, errors}）都经此链可达——
    裸读 d.error 在 errors 列表信封下渲染 "undefined"（filebrowser 实证）。 */
-export function errorText(d, fallback = "未知错误") {
+export function errorText(d, fallback = t("common.unknown_error")) {
+  // aurora_o i18n 分波席：缺省兜底文案迁词表（zh 与旧字面逐字节同）；缺省
+  // 参数每次调用时点求值=locale 感知（模块级 const 烘焙会冻结语言档）。
   const errs = d && d.errors;
   if (Array.isArray(errs) && errs.length)
     return errs.map((e) => String(e)).join("; ");
@@ -80,9 +82,18 @@ export function renderMarkdown(el, rawHtml) {
 /* 本页说明组件（每页顶部可折叠帮助，降低上手门槛）。
    W8-S32 i18n 批 3：summary 经 t() 烘焙（node 无 DOM 环境 getLocale→zh，
    既有行为钉字节不变）；text 形参=各页富 HTML 正文（调用方模板串，后续
-   波次按分段 t() 方案迁移）。 */
+   波次按分段 t() 方案迁移）。
+   P3-5（aurora_n wave_ui_c）：列表语义修正——各页 help 正文历史上直接
+   平铺 `<li>`（浏览器容错渲染无视觉问题，但读屏列表语义丢失）。此处
+   单点兜底：连续 `<li>…</li>` 游程自动包 `<ul>`（正文已含 `<ul>` 的
+   调用点原样透传不二次包裹）。26 个调用点零改动即获得正确语义。 */
+const _LI_RUN_RE = /((?:\s*<li>[\s\S]*?<\/li>)+)/g;
+export function helpWrapListItems(text) {
+  const s = String(text);
+  return s.includes("<ul") ? s : s.replace(_LI_RUN_RE, "<ul>$1</ul>");
+}
 export function help(text) {
-  return `<details class="help"><summary>${t("common.help_summary")}</summary>${text}</details>`;
+  return `<details class="help"><summary>${t("common.help_summary")}</summary>${helpWrapListItems(text)}</details>`;
 }
 /* 与 plotcard.js downloadFile 同构（彼处未导出；W2-C 接口诉求落地后删除）。 */
 export function downloadTextFile(name, content, mime) {

@@ -24,7 +24,11 @@ def ui_cmd(
         ),
     ),
 ) -> None:
-    """启动人工核验 UI（浏览器查看/修改配方、3D 模型、S 参数与中间产物）。"""
+    """启动人工核验 UI（浏览器查看/修改配方、3D 模型、S 参数与中间产物）。
+
+    交互式代理试验台（代理 Playground）在 #/playground 页：选已校准 run，
+    拖参数滑条实时看代理预测与单轴探索（预测非真值，页内诚实标注）。
+    """
     import threading
     import webbrowser
 

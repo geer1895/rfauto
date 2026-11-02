@@ -16,8 +16,8 @@ import 三页入扫描域（S1 席三页全清；view_fieldviz 承 farfield/fiel
 共壳，fieldviz.* 单域；import 域键名与 ES import 语句无字面冲突——键字面
 形如 "import.xxx" 仅 t()/data-i18n 注入口出现）。
 
-规格=内部证据档 §面2（W5-S23 决议"自研词表+t()"落地）
-+ 内部证据档 §面2（P9-5/P9-6）。
+规格=runs/aurora_f/R1_ui_v8_audit.md §面2（W5-S23 决议"自研词表+t()"落地）
++ runs/aurora_g/R1_ui_v9_audit.md §面2（P9-5/P9-6）。
 
 钉五层：
 1. 骨架行为（node 真执行，缺 node skip）：t() zh/en 真值表 + {name} 占位
@@ -28,8 +28,9 @@ import 三页入扫描域（S1 席三页全清；view_fieldviz 承 farfield/fiel
    词表值零 HTML。
 2. 键集互证（node 键集 × 源码引用，双向）：index.html + 十一视图视图
    data-i18n*/t() 引用 ⊆ LOCALES（悬空引用即红）；壳面键（nav./nav.group./
-   common./palette./foot.）全部在 index.html/dom.js/kit.js 有引用（死键即红；
-   共享模块消费与 index.html 引用同权）；nav.* 键集 == data-v 全集（26，
+   common./palette./foot.）全部在 index.html/dom.js/kit.js/palette.js 有引用
+   （死键即红；共享模块消费与 index.html 引用同权——aurora_o i18n 分波席
+   起 palette.js 命令目录文案入壳面引用集）；nav.* 键集 == data-v 全集（26，
    键名=data-v 单源对齐）；各页前缀键在对应视图文件有引用（死键即红；
    跨页复用键如 nav.*/runs.th_inband_s11 归属键域页，他页复用只增引用不减）。
 3. esc 共存纪律（源码钉，R1 规格写死）：i18n.js 零 innerHTML；纪律头注
@@ -98,6 +99,15 @@ _PAGES_JS = (_STATIC / "pages.js").read_text(encoding="utf-8")
 # 11 视图错误/空态单源）。
 _DOM_JS = (_STATIC / "pages" / "dom.js").read_text(encoding="utf-8")
 _KIT_JS = (_STATIC / "pages" / "kit.js").read_text(encoding="utf-8")
+# aurora_n EN 走查席：dashboard_util.js（相对时间/新鲜度环文案迁词表）——
+# 共享组件模块消费与 index.html 引用同权（kit.js 同款口径）；其键全部挂
+# dashboard. 页前缀，dead-key 互证并入 view_dashboard 引用集（见下）。
+_DASHBOARD_UTIL_JS = (_STATIC / "pages" / "dashboard_util.js").read_text(
+    encoding="utf-8")
+# aurora_o i18n 分波席：palette.js（命令目录/条目 chrome 文案迁词表）——
+# 共享模块消费与 index.html 引用同权（kit.js/app.js/plotcard.js 同款口径）；
+# palette.cmd.* / palette.item.* 等新键 dead-key 互证并入壳面引用集。
+_PALETTE_JS = (_STATIC / "palette.js").read_text(encoding="utf-8")
 
 _SHELL_PREFIXES = ("nav.", "common.", "palette.", "foot.")
 
@@ -131,6 +141,33 @@ _APP_JS = (_STATIC / "app.js").read_text(encoding="utf-8")
 # aurora_j W3-S9：plotcard.js 同款入集（common.data_table* 四键——图表数据表
 # 文本替代面钮/caption/空态，共享组件与 index.html 引用同权）。
 _PLOTCARD_JS = (_STATIC / "plotcard.js").read_text(encoding="utf-8")
+# aurora_o i18n 零散清偿席：九共享模块文案面迁词表（common.* 增量四键+
+# chart./model3d./api./theme./sortable. 新键域）——消费文件入壳面引用集
+# （common.* 死键互证）并入共享模块键域扫描（见 TestKeySetCrossValidation
+# 末 test_shared_module_domains_all_referenced）。
+_API_JS = (_STATIC / "pages" / "api.js").read_text(encoding="utf-8")
+_THEME_JS = (_STATIC / "theme.js").read_text(encoding="utf-8")
+_CHARTS_JS = (_STATIC / "pages" / "charts.js").read_text(encoding="utf-8")
+_CHART_EXPORT_JS = (_STATIC / "chart_export.js").read_text(encoding="utf-8")
+_SORTABLE_JS = (_STATIC / "pages" / "sortable.js").read_text(encoding="utf-8")
+
+# 共享模块键域→消费文件集（动态映射字面量/t() 双通道；死键互证与页前缀
+# 同款口径，aurora_o i18n 零散清偿席）。
+_SHARED_KEY_LIT = re.compile(
+    r"""['"]((?:chart|model3d|api|theme|sortable|common)\.[a-z0-9_]+)['"]""")
+_SHARED_DOMAIN_FILES = {
+    "chart.": (_CHARTS_JS, _CHART_EXPORT_JS, _PLOTCARD_JS, _APP_JS),
+    "model3d.": (_APP_JS,),
+    "api.": (_API_JS, _APP_JS),
+    "theme.": (_THEME_JS, _PAGES_JS),
+    "sortable.": (_SORTABLE_JS,),
+}
+
+
+def _module_refs(src: str) -> set[str]:
+    """共享模块 i18n 键引用全集：t() 字面 + 引号键字面（键映射表形态，
+    如 theme.js _LABEL_KEY / chart_export.js _BTN_META 值）。"""
+    return _t_refs(src) | set(_SHARED_KEY_LIT.findall(src))
 
 
 def _shell_refs() -> set[str]:
@@ -139,9 +176,16 @@ def _shell_refs() -> set[str]:
     与 index.html 引用同权，W2-S1 批 4）+ app.js t() 烘焙（common.offline/
     online 离线检测提示串——壳 toast 单源消费，与 kit.js 同款口径，
     W14-S2）+ plotcard.js t() 烘焙（common.data_table* 数据表文本替代面，
-    aurora_j W3-S9，共享组件同款口径）。"""
+    aurora_j W3-S9，共享组件同款口径）+ palette.js t() 烘焙（palette.cmd.*/
+    palette.item.* 命令目录与条目 chrome，aurora_o i18n 分波席，共享模块
+    同款口径）+ aurora_o i18n 零散清偿席九共享模块（api/theme/charts/
+    chart_export/sortable/pages.js 的 common.* 消费入集）。"""
     return (_attr_refs(_INDEX) | _t_refs(_DOM_JS) | _t_refs(_KIT_JS)
-            | _t_refs(_APP_JS) | _t_refs(_PLOTCARD_JS))
+            | _t_refs(_APP_JS) | _t_refs(_PLOTCARD_JS)
+            | _t_refs(_PALETTE_JS)
+            | _module_refs(_API_JS) | _module_refs(_THEME_JS)
+            | _module_refs(_CHARTS_JS) | _module_refs(_CHART_EXPORT_JS)
+            | _module_refs(_SORTABLE_JS) | _module_refs(_PAGES_JS))
 
 
 def _run_node_js(js: str) -> str:
@@ -235,6 +279,51 @@ class TestI18nSkeletonNode:
             "console.log('ok:locales:' + keys.length);\n")
         assert "ok:locales:" in out
 
+    def test_en_corpus_han_free(self):
+        """aurora_n EN 走查席：en 语料零 Han（键集条目级 zh/en 齐全钉的
+        增量——en 值存在但内容含中文 = 切 en 档仍显 zh 原文的隐性形态，
+        首例 dashboard.mix_gloss_hint en 值漏译"其他"）。刻意保留 CJK 词
+        的键走 _EN_HAN_ALLOWLIST 白名单登记。"""
+        assert _NODE is not None, "本机无 node"
+        out = _run_node_js(
+            "const m = await import('./pages/i18n.js');\n"
+            "const han = /[\\u3400-\\u4dbf\\u4e00-\\u9fff]/;\n"
+            "const hits = [];\n"
+            "for (const k of Object.keys(m.LOCALES))\n"
+            "  if (han.test(m.LOCALES[k].en)) hits.push(k);\n"
+            "console.log(JSON.stringify(hits));\n")
+        hits = set(json.loads(out.strip()))
+        assert not hits - _EN_HAN_ALLOWLIST, (
+            "en 语料含 Han（切 en 档仍显 zh 原文的隐性形态）: "
+            f"{sorted(hits - _EN_HAN_ALLOWLIST)}——修 en 语料或登记白名单")
+
+    def test_locale_key_symmetry_diff(self):
+        """aurora_n EN 走查席：zh/en 键集差集程序化断言（走查任务书口径
+        ——zh 有 en 无=切 en 显示 zh 原文；en 有 zh 无=死键）。词表单
+        dict 结构下差集只可能来自条目级缺字段，此处按差集语义显式出
+        数（missing_en/missing_zh 两列），与双语齐全钉互为口径双证。"""
+        assert _NODE is not None, "本机无 node"
+        out = _run_node_js(
+            "const m = await import('./pages/i18n.js');\n"
+            "const missEn = [], missZh = [];\n"
+            "for (const [k, e] of Object.entries(m.LOCALES)) {\n"
+            "  if (typeof e.en !== 'string' || !e.en) missEn.push(k);\n"
+            "  if (typeof e.zh !== 'string' || !e.zh) missZh.push(k);\n"
+            "}\n"
+            "console.log(JSON.stringify({total: Object.keys(m.LOCALES).length,\n"
+            "  missing_en: missEn, missing_zh: missZh}));\n")
+        d = json.loads(out.strip())
+        assert d["missing_en"] == [], f"zh 有 en 无（切 en 显示 zh 原文）: {d['missing_en']}"
+        assert d["missing_zh"] == [], f"en 有 zh 无（死键半边）: {d['missing_zh']}"
+
+
+# aurora_n EN 走查席：en 语料含 Han = "切 en 显示 zh 原文"的隐性形态
+# （键集条目级 zh/en 齐全钉抓不到——en 值存在但内容仍是中文）。首例实证
+# =dashboard.mix_gloss_hint en 值漏译"其他"（本席修复）。未来若某键 en
+# 值刻意保留 CJK 词（如引用中文术语原文），必须在此白名单登记并注明理由；
+# 白名单非空即走查席复核点。
+_EN_HAN_ALLOWLIST: set[str] = set()
+
 
 # ────────────────────────── 2. 键集互证（双向） ──────────────────────────
 
@@ -249,7 +338,7 @@ def _locale_keys() -> set[str]:
 class TestKeySetCrossValidation:
     def test_all_attr_refs_resolve(self):
         keys = _locale_keys()
-        refs = _shell_refs()
+        refs = _shell_refs() | _t_refs(_DASHBOARD_UTIL_JS)
         for src in _VIEWS.values():
             refs |= _view_refs(src)
         dangling = refs - keys
@@ -279,9 +368,25 @@ class TestKeySetCrossValidation:
             ("import", ("import.",)))
         for view, prefixes in page_prefixes:
             refs = _view_refs(_VIEWS[view])
+            # aurora_n EN 走查席：dashboard_util.js（view_dashboard 的文案
+            # 单源组件）消费与视图引用同权——dashboard.* 键 dead-key 互证并入。
+            if view == "dashboard":
+                refs = refs | _t_refs(_DASHBOARD_UTIL_JS)
             dead = {k for k in keys
                     if any(k.startswith(p) for p in prefixes)} - refs
             assert not dead, f"{view} 死键: {sorted(dead)}"
+
+    def test_shared_module_domains_all_referenced(self):
+        # aurora_o i18n 零散清偿席：共享模块新键域（chart./model3d./api./
+        # theme./sortable.）dead-key 互证——键域前缀→消费文件集，全部文件
+        # 零引用即死键（t() 字面 + 键映射表引号字面双通道，与页前缀同款）。
+        keys = _locale_keys()
+        for prefix, files in _SHARED_DOMAIN_FILES.items():
+            refs = set()
+            for src in files:
+                refs |= _module_refs(src)
+            dead = {k for k in keys if k.startswith(prefix)} - refs
+            assert not dead, f"{prefix} 键域死键（共享模块无引用）: {sorted(dead)}"
 
     def test_nav_keys_align_data_v_registry(self):
         nav_block = re.search(r'<nav id="nav".*?</nav>', _INDEX, re.S).group(0)
@@ -324,7 +429,9 @@ class TestEscCoexistenceDiscipline:
 
 class TestWiring:
     def test_pages_js_boot_scan(self):
-        assert 'import { applyI18nRoot, getLocale } from "./pages/i18n.js";' in _PAGES_JS
+        # aurora_o i18n 零散清偿席：import 形含 t()（懒加载失败提示/主题钮
+        # aria·title 词表单源消费）。
+        assert 'import { applyI18nRoot, getLocale, t } from "./pages/i18n.js";' in _PAGES_JS
         assert "applyI18nRoot(document);" in _PAGES_JS, "initPages 壳首扫装配缺失"
 
     def test_view_pages_shell_rescan(self):

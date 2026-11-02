@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-28000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-30000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -25,14 +25,14 @@ Measured counts for this revision (exact; verifiable with `scripts/check_numbers
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` ·
-`EXPECTED_TEMPLATES 75` · `ANCHORS 87` · CLI commands 280 (leaves) ·
-(157 MCP tools + 10 resources)
+`EXPECTED_TEMPLATES 75` · `ANCHORS 87` · CLI commands 297 (leaves) ·
+(166 MCP tools + 10 resources)
 <!-- numbers-end -->
 
 <!-- AUTO-NUMBERS:START（scripts/sync_readme_numbers.py 生成，勿手改） -->
 <!-- PR-13a：由 scripts/sync_readme_numbers.py 从 check_numbers 同源计数生成；漂移修复=仓根重跑 `python scripts/sync_readme_numbers.py --write` 并同笔提交（#97） -->
 
-**Scale numbers**: MCP tools 157 (+10 resources) | CLI commands 280 (leaves) | CALCULATOR_REGISTRY 340 [with experimental 341] | device templates 75 | anchors 87
+**Scale numbers**: MCP tools 166 (+10 resources) | CLI commands 297 (leaves) | CALCULATOR_REGISTRY 340 [with experimental 341] | device templates 75 | anchors 87
 <!-- AUTO-NUMBERS:END -->
 
 **Contents** · [Capability map](#1-capability-map-nine-domains) · [Quick start](#quick-start) ·
@@ -167,7 +167,7 @@ rfauto remote status
 
 ### 1.8 AI orchestration (MCP)
 
-**157 MCP tools** and 10 resources: Claude Desktop, Cursor or your own agent can
+**166 MCP tools** and 10 resources: Claude Desktop, Cursor or your own agent can
 operate the framework. Agent changes land in a sandbox draft and must pass
 validation gates before touching the workspace; the agent emits typed tool calls
 only, and the kernel fills in the physics.
@@ -417,8 +417,8 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 
 ```text
 src/rfauto/
-├── cli/            # command line (280 leaf commands)
-├── mcp_server/     # MCP server (157 tools + 10 resources)
+├── cli/            # command line (297 leaf commands)
+├── mcp_server/     # MCP server (166 tools + 10 resources)
 ├── ui/             # browser workbench (24 views, zero-build native ESM)
 ├── service/        # business layer: JSON in, JSON out
 ├── linkage/        # HFSS ↔ circuit linkage
@@ -512,3 +512,21 @@ rfauto is **GPL-3.0** (see [LICENSE](LICENSE)). Third-party dependency licenses 
 listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The optional openEMS
 adapter drives GPL openEMS in a separate process; this repository does not bundle
 the openEMS bindings — build them from the official openEMS sources.
+
+## Changelog
+
+**v0.13.0** (vs v0.12.1): Added pin-level schematics (`diagram
+schematic`), a pure-Python .drawio→SVG renderer (`diagram to-svg`),
+multi-reviewer annotation merge, 3D stackup preview, CISPR 25 test-setup
+scenes with professional electrical shapes, HB/active ADS templates on
+circuit diagrams, S-parameter curve back-annotation, Pareto-front and
+design-diff report sections, a TRL calibration-design wizard, a server
+queue board (`remote board`), automated performance profiling,
+constrained c-EHVI, TuRBO-multi leaderboard, SAAS NUTS sampler, an ONNX
+numpy export layer, and a Liquid Neural Network (CfC) surrogate.
+Improved test infrastructure (serial-gate BLAS pin, profile diff
+regression detection, a four-domain channel-policy single source) and
+added event-driven speculative test execution (file-watcher auto
+pre-runs). The ADS tuning loop is now closed end-to-end: edit values in
+draw.io → simulate → back-annotate → iterate, with ADS circuit
+simulation available as an optimizer evaluation channel.

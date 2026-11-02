@@ -38,7 +38,7 @@ OE 参考值单一事实源（发射前置已补齐，oe_nominal_README.md 2026-
 - wilkinson          → runs/hfss_window_b2a/wilkinson/oe_nominal/sparams.csv
 - coupled_line       → …/coupled_line/oe_nominal_wideband/sparams.csv（仲裁档）
 - stepped_impedance  → …/stepped_impedance/oe_nominal_wideband/sparams.csv（仲裁档）
-- branchline         → 内部证据档
+- branchline         → runs/branchline_real_anchor/branchline.s4p
 - gysel              → runs/gysel_miter_ab/verdict.json variants.off.judged
 - marchand_balun     → runs/smoke_marchand_2sect/verdict.json + sameport_arb（常量钉）
 - patch_array_1x4/2x2 → runs/ge_fd/<t>/（归档 CSV，常量钉，README 读档实测）
@@ -108,7 +108,7 @@ if str(REPO / "src") not in sys.path:
 
 OUT_ROOT = REPO / "runs" / "hfss_window_b2a"
 B2A_ROOT_ON_SERVER = "hfss_window_b2a"      # 服务器侧 project_root 下的相对段
-HFSS_VERSION = "2025.1"                     # 与 v251 配对（内核立规注记 规则 0）
+HFSS_VERSION = "2025.1"                     # 与 v251 配对（AGENTS 规则 0）
 SOLVE_TIMEOUT_S_DEFAULT = 3600.0            # watchdog（criteria §6 单结构 3600s）
 
 

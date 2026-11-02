@@ -1118,7 +1118,7 @@ def test_open_remote_hfss_switches_active_at_construction(monkeypatch):
     assert d["grpc_local"] is False and d["grpc_secure_mode"] is False
     assert d["remote_rpc_session"] is True           # 防 new_desktop 翻转坑
     assert d["pre_grpc_args"] == "True"
-    assert d["kw"]["machine"] == "10.20.30.40"
+    assert d["kw"]["machine"] == "198.51.100.20"
     assert d["kw"]["port"] == 50051 and d["kw"]["new_desktop"] is False
     assert calls["hfss"]["remote_rpc_session"] is None   # attach 后置 None
     assert calls["hfss"]["kw"]["project"].endswith("project.aedt")
@@ -1581,7 +1581,7 @@ def test_open_remote_hfss_grpc_port_override(monkeypatch):
         "machines": [{"ports": {"ansys_license": {"open": True}}}]})
     monkeypatch.setattr(rs, "hfss_remote_session_config", lambda m: {
         "ok": True,
-        "remote": {"remote_machine": m, "machine": "10.20.30.40",
+        "remote": {"remote_machine": m, "machine": "198.51.100.20",
                    "port": 50051, "project_root": "E:\\rfauto_remote",
                    "version": "2025.1"}})
     monkeypatch.setattr(aedt, "Desktop", _FakeDesktop)
@@ -1624,7 +1624,7 @@ def test_launch_remote_grpcsrv_per_port_vbs_and_task(monkeypatch):
     assert vbs_remote.endswith("launch_grpcsrv_50052.vbs")
     text = vbs_bytes.decode("ascii")
     assert '"E:\\ANSYSINC\\ansysedt.exe"' in text
-    assert "-ng -grpcsrv 10.20.30.40:50052:InsecureMode" in text
+    assert "-ng -grpcsrv 198.51.100.20:50052:InsecureMode" in text
     create = next(c for c in sent if "schtasks /create" in c)
     run = next(c for c in sent if "schtasks /run" in c)
     assert "wscript.exe" in create
@@ -1711,8 +1711,8 @@ def test_cleanup_remote_grpcsrv_fingerprint_no_mutual_kill(monkeypatch):
     """清理端口指纹钉：多实例（50051/50052）+他人 GUI 实例并存时，逐席清理
     只杀本席 ":<port>:" 指纹实例与只删本席任务——多实例天然不互杀。"""
     query_out = "\n".join([
-        "111|E:\\x\\ansysedt.exe -grpcsrv 10.20.30.40:50051:InsecureMode",
-        "222|E:\\x\\ansysedt.exe -grpcsrv 10.20.30.40:50052:InsecureMode",
+        "111|E:\\x\\ansysedt.exe -grpcsrv 198.51.100.20:50051:InsecureMode",
+        "222|E:\\x\\ansysedt.exe -grpcsrv 198.51.100.20:50052:InsecureMode",
         "333|E:\\x\\ansysedt.exe",                      # 他人 GUI 无 grpcsrv
         "444|E:\\x\\ansysedt.exe -grpcsrv host:60000:InsecureMode",
     ])

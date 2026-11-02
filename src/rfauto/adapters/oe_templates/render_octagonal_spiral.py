@@ -14,7 +14,7 @@ CALC 键 octagonal_spiral_inductance 同语义（#154 同名同语义）。
 
 闭式锚：Mohan 电流片式八角系数（core/nfc_coil 单源，Table IV 原文
 锚在案）；质量门 L±25%/SRF>2×f0 由 CALC 键面承载（本模板 meta 只
-登记判读口径，门函数零复制）。真机验证留登记（内部证据档）。
+登记判读口径，门函数零复制）。真机验证留登记（runs/aurora_k/k11）。
 """
 
 from __future__ import annotations
@@ -376,7 +376,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         "D:/rf_workspace/vendor/openEMS/install/bin")
+                         r"E:\\\\rfauto-workspace\\\\vendor\\\\openEMS\\\\install\\\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

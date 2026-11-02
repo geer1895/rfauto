@@ -446,7 +446,7 @@ from rfauto.cli.domains.hints import hints_list_cmd as hints_list_cmd
 # re-export（二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名
 # `pitfalls` 命令（#df6① 冲突检查 2026-10-14：全 CLI 树零撞名，grep 实测）。
 # 数据面=knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 全量
-# 解析 内核立规注记.md 踩坑速查）；索引加载/校验零逻辑转发
+# 解析 AGENTS 踩坑速查）；索引加载/校验零逻辑转发
 # service/pitfall_index_service 只读面。
 
 from rfauto.cli.domains.pitfalls import pitfalls_app as pitfalls_app
@@ -581,6 +581,123 @@ from rfauto.cli.domains.templates import templates_golden_diff_cmd as templates_
 
 from rfauto.cli.domains.em import em_app as em_app
 from rfauto.cli.domains.em import em_doctor_cmd as em_doctor_cmd
+
+
+# ─── mo（多目标寻优 MO-BO CLI 出口，2026-10-31 aurora_n O1：run 单叶 ────
+# （内置合成族 T-N13 EHVI 内核运行时门——zero_wiring REGISTRY O1 欠账
+# 清偿）。templates/em 同款域内自注册 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 mo 域（零撞名自查
+# 2026-10-31：全 CLI 树无 mo/mo_ 前缀命令或组）。append-only 注册序尾。
+
+from rfauto.cli.domains.mo import mo_app as mo_app
+from rfauto.cli.domains.mo import mo_run_cmd as mo_run_cmd
+
+
+# ─── competition（单目标优化器族竞赛持久门 CLI 出口，2026-10-31 aurora_n
+# O5：run 单叶（T-N5 标量竞赛架运行时门——zero_wiring REGISTRY O5 欠账
+# 清偿；同预算同 seed 组竞赛，AUC 两阶段+达标次数三套排名，内置合成 4 族
+# 与首榜同源，botorch_ei 显式点名 opt-in）。templates/em 同款域内自注册
+# add_typer——此处只 re-export（二次 add_typer 会双注册打红 zero-shadow
+# 钉）；顶层无同名 competition 域（零撞名自查 2026-10-31：全 CLI 树无
+# competition/comp_ 前缀命令或组）。append-only 注册序尾。
+
+from rfauto.cli.domains.competition import (
+    competition_app as competition_app,
+    competition_run_cmd as competition_run_cmd,
+)
+
+
+# ─── al（主动学习采样提议 CLI 出口，2026-10-31 aurora_n O4：propose 单叶 ──
+# （T-N9 宿主 propose_next_points 运行时门——zero_wiring REGISTRY O4 旧面
+# 欠账清偿）。templates/em 同款域内自注册 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 al 域（零撞名自查
+# 2026-10-31：全 CLI 树无 al/al_ 前缀命令或组）。append-only 注册序尾。
+
+from rfauto.cli.domains.al import al_app as al_app
+from rfauto.cli.domains.al import al_propose_cmd as al_propose_cmd
+
+
+# ─── diagram（电路图绘制 CLI 出口，2026-10-31 aurora_o T-O1：link 单叶）──
+# （"算画同源"第一件——RF 链路框图 .drawio 原生可编辑工程图，每级标
+# 增益/NF+级联累计（Friis），数字=内核单源 core/budget.py LinkBudget）。
+# templates/em 同款域内自注册 add_typer——此处只 re-export（二次 add_typer
+# 会双注册打红 zero-shadow 钉）；顶层无同名 diagram 域（零撞名自查
+# 2026-10-31：全 CLI 树无 diagram/diagram_ 前缀命令或组）。append-only
+# 注册序尾。
+
+from rfauto.cli.domains.diagram import diagram_app as diagram_app
+from rfauto.cli.domains.diagram import diagram_link_cmd as diagram_link_cmd
+
+
+# ─── design-report（设计回放与总结报告 CLI 出口，2026-11-01 aurora_o T-O5）──
+# （六节 md 单文件：目标摘要/轨迹回放/最终设计与门表/电路图/敏感性/复现
+# 命令——优化族 run 此前无报告出口，本叶补主缺口）。scattered 同款顶层
+# 连字叶（design 顶层名已被 level2 design 链占用——cli/domains/design.py
+# 实测；连字形态同 export-report-pdf 先例）；顶层无同名 design-report 域
+# （零撞名自查 2026-11-01：全 CLI 树无 design-report/design_report 前缀
+# 命令或组）。append-only 注册序尾。
+
+from rfauto.cli.domains.design_report import design_report_cmd as design_report_cmd
+
+
+# ─── ads-circuit（ADS 前仿链人机回路 CLI 出口，2026-11-01 aurora_o T-O4：──
+# diagram/run/annotate 三叶——用户核心需求"画电路图→带入 ADS 仿真→人工
+# 调参回路"（J1 出图 UserObject 三件组 → J2 draw.io Edit Data 改值 → J3
+# 读图→三态合参→渲染→hpeesofsim→解析→指标→对拍 → J4 反标注 annot_sim
+# 层上图 → J5 迭代）。diagram 同款域内自注册 add_typer——此处只 re-export
+# （二次 add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 ads-circuit
+# 域（零撞名自查 2026-11-01：全 CLI 树无 ads-circuit/ads_circuit 前缀命令
+# 或组，唯一近名 jobs link --to-ads 语义不同）。append-only 注册序尾。
+
+from rfauto.cli.domains.ads_circuit import ads_circuit_app as ads_circuit_app
+from rfauto.cli.domains.ads_circuit import ads_circuit_annotate_cmd as ads_circuit_annotate_cmd
+from rfauto.cli.domains.ads_circuit import ads_circuit_diagram_cmd as ads_circuit_diagram_cmd
+from rfauto.cli.domains.ads_circuit import ads_circuit_run_cmd as ads_circuit_run_cmd
+
+
+# ─── watchdog（seat 粒度三证判活 CLI 出口，2026-11-02 aurora_p F2）────
+# （T-O12 service/watchdog_service 的常驻形态接线：watch 单叶双形态——
+# 一次性视图=缺省动作（零后台线程零文件写，逐字节同 service 直调），
+# --watch 常驻循环显式开启（jsonl 落白名单 runs/watchdog/，Ctrl+C 优雅
+# 停；轮间隔下限复用 speculative_watch_service.MIN_INTERVAL_S 单源）。
+# templates/diagram 同款域内自注册 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 watchdog 域（零撞
+# 名自查 2026-11-02：全 CLI 树无 watchdog/watchdog_ 前缀命令或组，唯一
+# 近名 jobs watch/runs watch 为组内叶且语义=job 轮询非 seat 判活）。
+# append-only 注册序尾。
+
+from rfauto.cli.domains.watchdog import watchdog_app as watchdog_app
+from rfauto.cli.domains.watchdog import watchdog_watch_cmd as watchdog_watch_cmd
+
+
+# ─── cal-wizard（TRL 校准件设计向导 CLI 出口，2026-11-02 aurora_p G1）──
+# （方向 G 候选线索"TRL/校准件设计的用户向导面（当前只有内核+CLI）"的
+# 闭合：trl 单叶——频带+介质三口径 → Thru/Reflect/Line 设计单（λg/4
+# Line、8:1 覆盖三态核算、多 Line 分带、Reflect 短路/开路建议）；
+# --out-dir 给定时落盘设计单 JSON/calkit 定义 YAML/测试连接图 .drawio
+# 三件固定名。设计数学=新建 core/trl_design（教科书锚+εeff 走 synthesis
+# 单源在内核）；连接图=既有 diagram_testsetup_service 装配内核复用；
+# 零数值逻辑转发新建 service/cal_wizard_service，带 --json。
+# templates/diagram 同款域内自注册 add_typer——此处只 re-export（二次
+# add_typer 会双注册打红 zero-shadow 钉）；顶层无同名 cal-wizard 域
+# （零撞名自查 2026-11-02：全 CLI 树无 cal-wizard/cal_wizard 前缀命令
+# 或组，唯一近名 calc/vna calibrate 语义=执行校准非设计校准件）。
+# append-only 注册序尾。）
+
+from rfauto.cli.domains.cal_wizard import cal_wizard_app as cal_wizard_app
+from rfauto.cli.domains.cal_wizard import cal_wizard_trl_cmd as cal_wizard_trl_cmd
+
+
+# ─── help 按域分组（aurora_n wave_ui_c D1，审计 P2-4：--help 119 命令 ──
+# 平铺→8 域 rich 面板）。只对注册完的 CommandInfo/GroupInfo 补挂
+# rich_help_panel 渲染注记——注册面（顺序/计数/命名）零变化：注册序金
+# 快照/leaf 计数/zero-shadow 三钉不受影响；未入表新命令回落缺省 Commands
+# 面板（不炸不隐藏），覆盖完整性由 test_aurora_n_wave_ui_c 集合断言守。
+# 名字走下划线前缀（_help_groups/_n_panels）——本模块公开名面（AU-1
+# facade re-export 显式别名序）不因本席变化。
+import rfauto.cli.help_groups as _help_groups
+
+_n_panels = _help_groups.apply_help_panels(app)
 
 
 if __name__ == "__main__":

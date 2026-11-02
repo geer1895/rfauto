@@ -1,6 +1,6 @@
 """DP-13 U1 双输出报告链：run → 报告模型 → typst PDF ‖ plotly 自包含 HTML 同源双出。
 
-合规形态（内核立规注记 规则 7 + #105/#122）：
+合规形态（AGENTS 规则 7 + #105/#122）：
 
 1. **同源双出**：:func:`build_report_model` 产出唯一报告模型（schema
    ``rfauto-report/v1``，纯 dict、可直接 json.dumps）；:func:`render_typ` 与
@@ -133,7 +133,7 @@ class _ExternalRefScanner(HtmlParser):
 def external_resource_refs(html: str) -> list[str]:
     """列出 HTML 里可发起外部取回的资源引用（零外网判定式，与测试同源）。
 
-    判定面（内部证据档 §一.3）=HTML 解析层的资源标签属性
+    判定面（runs/df6_dp13u1/criteria.md §一.3）=HTML 解析层的资源标签属性
     （script/link/img/iframe/source/video/audio/embed/track/object 的
     src·href）与 style 层的 @import/url() 指向协议相对或 http(s) 地址。
     脚本源码内的 URL 字符串字面量不是取回引用，不算违规。
@@ -163,7 +163,7 @@ def _dict_directly_holds_numbers(node: dict) -> bool:
 def bare_number_fields(node: Any, path: str = "model") -> list[str]:
     """provenance 判定式：返回缺 source 键却持有数值叶的 dict 节点路径。
 
-    规则（内部证据档 §一.2）：凡 dict 节点直接或经 list
+    规则（runs/df6_dp13u1/criteria.md §一.2）：凡 dict 节点直接或经 list
     间接持有数值叶（int/float，bool 豁免），必须带非空字符串 source。
     """
     out: list[str] = []

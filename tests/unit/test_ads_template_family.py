@@ -1,9 +1,9 @@
-"""待办清单 0bn④：ADS 参数化模板族（wilkinson_snp / branchline_cascade）离线钉死。
+"""TODO 0bn④：ADS 参数化模板族（wilkinson_snp / branchline_cascade）离线钉死。
 
 覆盖：闭式 Wilkinson 教科书值、频扫解析、两族网表纯文本断言（每语句独占一行 /
 SnP 节点数 / 无 Term / 纯 ASCII 无 BOM / 确定性）、branchline 族与
 field_circuit_anchor 锚渲染器"同参数同文本"、对拍内核、service JSON 进出
-（ads_runner 注入，不依赖真机；真机数字见 内部证据档）。
+（ads_runner 注入，不依赖真机；真机数字见 runs/rm_ads_wp43/）。
 """
 
 from __future__ import annotations
@@ -388,3 +388,45 @@ class TestService:
         assert r_ref["reference_snp_path"] == str(pert_path)
         assert abs(r_ref["compare"]["max_abs_delta_s"] - 0.03) < 1e-6
         assert r_ref["compare"]["gate_ok"] is False and r_ref["ok"] is False
+
+
+# --------------------------------------------------------------------------- #
+# templates 包注册面钉（aurora_n 零覆盖治理席，2026-10-30）
+# --------------------------------------------------------------------------- #
+
+class TestTemplatesPackageRegistry:
+    """linkage/templates 与 linkage/templates/ads 两个 __init__ 是空包标记
+    （仅注释、零可执行语句；导入冒烟由 test_import_smoke 全量 walk 覆盖），
+    "零直接测试"不是真问题。真实资产=包下 .net 模板，经
+    ads_circuit._TPL_DIR 路径加载、本文件各渲染器测试消费。本钉把
+    "包可导入 + 资产与加载路径同址 + 清单集"显式化：新增/移除 .net =
+    有意扩缩面，须同笔更新 _EXPECTED_ADS_NET_TEMPLATES（清单钉只收不放）。"""
+
+    _EXPECTED_ADS_NET_TEMPLATES = (
+        "active_chain_sparam.net",
+        "branchline_cascade.net",
+        "loadpull_hb.net",
+        "wilkinson_snp.net",
+    )
+
+    def test_packages_importable_and_co_located_with_tpl_dir(self):
+        import rfauto.linkage.templates as templates_pkg
+        import rfauto.linkage.templates.ads as templates_ads_pkg
+        from rfauto.linkage import ads_circuit
+
+        # 包标记可导入（两个空 __init__ 的"覆盖"即导入执行本身）
+        assert Path(templates_pkg.__file__).name == "__init__.py"
+        assert Path(templates_ads_pkg.__file__).name == "__init__.py"
+        # ads_circuit 的模板加载路径与 ads 包目录同址（消费链钉）
+        assert Path(templates_ads_pkg.__file__).parent == ads_circuit._TPL_DIR
+
+    def test_net_template_inventory_pinned(self):
+        from rfauto.linkage import ads_circuit
+
+        found = tuple(sorted(p.name for p in ads_circuit._TPL_DIR.glob("*.net")))
+        assert found == self._EXPECTED_ADS_NET_TEMPLATES, (
+            "ADS .net 模板清单变动：有意扩面请同笔更新 "
+            "TestTemplatesPackageRegistry._EXPECTED_ADS_NET_TEMPLATES"
+        )
+        for name in self._EXPECTED_ADS_NET_TEMPLATES:
+            assert (ads_circuit._TPL_DIR / name).stat().st_size > 0, name

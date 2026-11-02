@@ -124,7 +124,7 @@ class SimulatorAdapter(ABC):
         return None
 
     def raw_escape(self, *args: Any, **kwargs: Any) -> Any:
-        """oEditor 等原生逃逸口（使用须记 ）。"""
+        """oEditor 等原生逃逸口（使用须记 Devlog）。"""
         raise NotImplementedError("raw_escape 未实现，请检查 capabilities")
 
     def get_far_field(self, setup_name: str, freq_ghz: float = 2.4) -> dict[str, Any] | None:

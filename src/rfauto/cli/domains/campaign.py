@@ -43,7 +43,8 @@ def campaign_plan_cmd(
     # ge9 审查 P1-2：公差剖面的 CLI 形态复用 _kv_floats 单源解析器
     # （k=参数名 v=σ，与 _exec_tolerance 消费的 stage_extra.tolerances 同形；
     # Windows 壳层 JSON 内联引号炼狱不引入——k=v 可多次即等价表达）。
-    tol = _kv_floats(tolerances, "--tolerances") if tolerances else None
+    tol = (_kv_floats(tolerances, "--tolerances", json_output=json_output)
+           if tolerances else None)
     plan = plan_campaign(recipe, high_adapter=high_adapter, mid_adapter=mid_adapter,
                          calibrate_samples=calibrate_samples, tune_budget=tune_budget,
                          tolerances=tol)

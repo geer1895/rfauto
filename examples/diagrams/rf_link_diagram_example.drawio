@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="rfauto" type="device" version="24.7.7">
+  <diagram id="link-diagram" name="RF Link">
+    <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="接收前端链路框图（rfauto diagram link 示例——数字=内核 Friis 单源）" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="420" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="stage0" value="LNA&#10;G=20.00 dB  NF=0.80 dB&#10;ΣG=20.00 dB  ΣNF=0.80 dB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="stage1" value="镜像抑制滤波器&#10;G=-2.00 dB  NF=2.00 dB&#10;ΣG=18.00 dB  ΣNF=0.82 dB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="60" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="stage2" value="混频器&#10;G=-7.00 dB  NF=7.00 dB&#10;ΣG=11.00 dB  ΣNF=1.04 dB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="60" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="stage3" value="中频放大器&#10;G=30.00 dB  NF=3.50 dB&#10;ΣG=41.00 dB  ΣNF=1.37 dB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="760" y="60" width="180" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="cascade" value="级联总计（Friis）&#10;ΣG=41.00 dB  ΣNF=1.37 dB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="60" width="220" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="stage0" target="stage1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="stage1" target="stage2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="stage2" target="stage3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="stage3" target="cascade">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

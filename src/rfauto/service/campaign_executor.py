@@ -269,7 +269,8 @@ def _exec_tune(node: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
         return _exec_result(
             False, message="节点缺 campaign_recipe 指针（plan 注入面缺失）")
     adapter = str(extra.get("adapter") or "fake")
-    channel = "hfss" if adapter == "hfss" else "fake"
+    # aurora_p B3：ads 通道进 campaign tune 面（注册经 start_tune 惰性引导）。
+    channel = "hfss" if adapter == "hfss" else ("ads" if adapter == "ads" else "fake")
     # S2-3/#364④ 端到端收口（审查 A3 P1-2）：plan 端已按 is not None
     # 尊显式 0（campaign_stage_budget={"stage_budget": 0}），执行端同批
     # is not None 判缺——旧 `or 30` 把显式 0 再顶回 30=修复 no-op。

@@ -1,11 +1,14 @@
 # MCP 工具参考
 
-> `@mcp.tool` 注册工具共 **157** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
+> `@mcp.tool` 注册工具共 **166** 个（ast 枚举与 `scripts/check_numbers.py` 的 `count_mcp()` 装饰器正则计数构建时逐位互证）。本页由 `scripts/build_docs_pages.py` 机读生成，勿手改；逐工具可调用性双检见 `tests/unit/test_mcp_tool_consistency.py`。
 
 | 工具 | 模块 | 说明 |
 |---|---|---|
 | `adc_interleave_spurs` | adc | ADC 交错杂散表（adc 域）：fs/fin/路数 → 失配杂散清单（折叠第一奈区）。 |
 | `jitter_budget_snr` | adc | 抖动预算 SNR（adc 域）：RJ/DJ/BER → TJ 与等效 SNR（UI 域闭式）。 |
+| `ads_circuit_diagram` | ads | ADS 前仿链出图（ads-circuit 域）：族+Touchstone → 参数化电路图 .drawio。 |
+| `ads_circuit_run` | ads | ADS 前仿链一条龙（ads-circuit 域）：读图→三态合参→渲染→求解→指标→对拍→反标注。 |
+| `ads_circuit_annotate` | ads | ADS 前仿链离线反标注（ads-circuit 域）：原图+结果 JSON → 指标上图，不重跑仿真。 |
 | `afs_plan` | afs_interop | AFS 频扫计划（afs 域）：频带 → 初始频点表+加密协议+验收判据。 |
 | `read_hfss_touchstone_comments` | afs_interop | HFSS Touchstone 注释直读（afs 域）：.sNp 路径 → Gamma/Zpi 注释块。 |
 | `rf_propose_params` | agent | 调优提议内核（agent 域）：bounds/fixes → 初值落参+探测候选展开。 |
@@ -20,6 +23,7 @@
 | `aging_simulate` | aging | 老化漂移仿真（aging 域）：任务剖面→εr 漂移轨迹→名义/EOL 两点 S 参数+失谐量。 |
 | `aging_verdict` | aging | EOL 失谐判据（aging 域）：\|detune_pct\| ≤ spec → PASS/FAIL（确定性）。 |
 | `aging_report` | aging | 老化报告（F-C P2）：mission_profile 表/漂移轨迹/EOL 判据/法源 provenance 四节。 |
+| `al_propose` | al | 提议下一批实验点：读湖样本 → 不确定度×距离（或采集族）→ top-k。 |
 | `anchors_list` | anchors | 列出物理标定锚注册表全部锚（DP-3，knowledge/anchors.yaml）。 |
 | `anchors_inspect` | anchors | 单锚全量记录查询（anchors 域）：锚 id → provenance/不确定度/消费面。 |
 | `bands_list` | bands | 频段清单查询（bands 域）：过滤词 → 标准频段注册表条目清单。 |
@@ -39,6 +43,7 @@
 | `import_solid_payload` | certify | STL 实体导入（certify 域）：STL 路径 → 解析+分类+CSX 载荷。 |
 | `certify_design` | certify | 公差盒 → 指标区间证书（三值门面：逐目标 PASS/FAIL/UNKNOWN + 总 verdict）。 |
 | `port_gate` | certify | 端口尺寸收敛前置门（DP-16 C4；JSON 进出合成回放面）。 |
+| `competition_run` | competition | 跑单目标优化器族竞赛（同预算同 seed 组，三套排名信封返回）。 |
 | `list_datasets` | datasets | 数据集清单查询（datasets 域）：过滤词 → 注册表总览（点数/GT/可见性）。 |
 | `query_dataset` | datasets | 数据集 DuckDB 直查（datasets 域）：SQL WHERE/列裁剪 → 行集（只读）。 |
 | `discover_workdir_runs` | datasets | 工作目录产物发现（datasets 域）：runs 扫描 → 可导入候选清单（只读）。 |
@@ -96,6 +101,7 @@
 | `metasurface_quant_loss_db` | metasurface | 量化损失双报（metasurface 域）：bits/阵规模 → 理论 sinc²+实测峰比（dB）。 |
 | `mmt_solve` | mmt | MMT 段表求解（mmt 域）：RWG/SIW 段表 → GSM 级联 S 参数（秒级）。 |
 | `compose_netlist` | mmt | 模板几何组合（mmt 域）：rfauto-netlist-v1 三段式 → simulation.py。 |
+| `mo_run` | mo | 运行内置合成族多目标 BO 环（EHVI 采集，同步返回全量信封）。 |
 | `electrothermal_chain` | multiphysics | 电-热-漂移链（multiphysics 域）：Wilkinson 损耗 → 温升 → S 失谐。 |
 | `parasitic_extract_rlc` | multiphysics | 寄生 RLC 提取链（multiphysics 域）：pcell 几何 → DRC 门 → 闭式锚。 |
 | `topology_propose` | multiphysics | 滤波器拓扑提议（multiphysics 域）：FilterSpec → typed 提议+初值。 |
@@ -124,6 +130,7 @@
 | `export_report_pdf` | report_bench | PDF 报告导出（report_bench 域）：run 指标 → 多页 PDF（WP4.7）。 |
 | `goldset_regression` | report_bench | 金标回归门（report_bench 域）：轨迹 vs 金标集 → TSA/FCA 判定。 |
 | `agentbench_regression` | report_bench | AgentBench 回归门（report_bench 域）：两轴打分+公开/私有双集防污染。 |
+| `design_report` | report_bench | 设计回放报告生成（design-report 域）：run 目录 → 六节+Pareto 扩展节 md 单文件，全数字带 provenance。 |
 | `diagnose` | runs | run 规则诊断（runs 域）：run_id → 指标规则诊断（确定性零 LLM）。 |
 | `compare_runs` | runs | 双 run 对比（runs 域）：A/B run id → 逐指标 B-A 增量+cost 对照， |
 | `run_monitor` | runs | run 体检（runs 域）：run 目录 → 四类时序判据 verdict（零 LLM）。 |
@@ -147,6 +154,8 @@
 | `save_campaign_plan` | specs_campaign | 战役计划落盘（specs 域）：plan dict → <out_dir>/campaign.plan.json。 |
 | `get_campaign_status` | specs_campaign | 战役状态读回（specs 域）：plan_path → 计划文件存储状态原样读回。 |
 | `run_campaign` | specs_campaign | 战役闭环执行（specs 域）：已落盘计划 → 逐阶段执行（VI-2 基座）。 |
+| `surrogate_export_onnx` | surrogate | torch 系代理现场重拟合并导出 ONNX（fno/deep_ensemble/siren 三键）。 |
+| `surrogate_uq` | surrogate | 代理蒙特卡洛 UQ 报表（良率/指标分布/敏感性排序，确定性 seed 复现）。 |
 | `synthesize` | synth | 微带线综合（synth 域）：目标阻抗+叠层 → 线宽（HJ 闭式反解）。 |
 | `synthesize_bpf` | synth | BPF 耦合矩阵综合（synth 域）：N/f0/fbw/rl → Cameron N+2 矩阵。 |
 | `budget_analysis` | synth | 链路预算分析（link 域）：级联器件链 → Friis 级联增益/噪声系数表。 |

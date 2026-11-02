@@ -57,14 +57,16 @@ def _split_floats(spec: str, name: str) -> list[float]:
         raise ValueError(f"{name} 含非数值 token: {spec!r}") from exc
 
 
-def _num_list(samples_opt: str, file_opt: str, key: str, name: str) -> list[float]:
+def _num_list(samples_opt: str, file_opt: str, key: str, name: str,
+              *, json_output: bool = False) -> list[float]:
     """--samples/--failures 逗号串 或 --file JSON（{key: [...]}）二选一。"""
     if samples_opt:
         return _split_floats(samples_opt, name)
     if file_opt:
         from rfauto.cli.domains._core import _load_json_file
 
-        data = _load_json_file(file_opt, f"{name} JSON 文件")
+        data = _load_json_file(file_opt, f"{name} JSON 文件",
+                               json_output=json_output)
         if key not in data:
             raise ValueError(f"{name} JSON 文件缺 {key!r} 键")
         return list(data[key])
@@ -121,7 +123,7 @@ def stats_cpk_cmd(
     from rfauto.core.manufacturing_stats import cpk_ci
 
     try:
-        xs = _num_list(samples, file, "samples", "samples")
+        xs = _num_list(samples, file, "samples", "samples", json_output=True)
         result = cpk_ci(xs, lsl, usl, confidence, ppk_method=ppk_method)
     except ValueError as exc:
         _emit_stats(error_envelope(
@@ -147,7 +149,7 @@ def stats_weibull_cmd(
         if file:
             from rfauto.cli.domains._core import _load_json_file
 
-            data = _load_json_file(file, "failures JSON 文件")
+            data = _load_json_file(file, "failures JSON 文件", json_output=True)
             if "failures" not in data:
                 raise ValueError("failures JSON 文件缺 'failures' 键")
             xf = list(data["failures"])

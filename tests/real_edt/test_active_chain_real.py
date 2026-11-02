@@ -7,7 +7,7 @@
 许可欠配时 skip 而非 fail——2026-09-13/14 实证: hpeesofsim 650.shp 于
 circuit set up 报 "Linear features are not licensed ... (0 tokens)"
 （EEsof 许可文件签名校验失败, 见 tests/real_edt conftest 记录与
-内部证据档 证据; 网表 parsing/flattening
+runs/c14_active_chain_ads_smoke_20260914/ 证据; 网表 parsing/flattening
 本身已通过）。许可修复后本测试自动恢复为真验收。
 """
 

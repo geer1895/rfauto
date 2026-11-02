@@ -132,22 +132,28 @@ def mcp_server():
 
 
 class TestEmFamilyRegistration:
-    """注册面：五工具在册 + 计数锚 157 + 注册序尾 append-only。"""
+    """注册面：五工具在册 + 总数单源对齐 + 注册序尾 append-only。
 
-    def test_tools_count_157(self, mcp_server):
+    aurora_n O1/MCP-wire 批：工具总数 157→162（mo_run/al_propose/
+    competition_run/surrogate_export_onnx/surrogate_uq 五新工具）——
+    本文件旧 157 字面钉与 test_mcp_server/test_mcp_tool_consistency
+    的 162 主钉脱节（守卫轮 C 实红），改单源对齐。"""
+
+    def test_tools_count_matches_server_anchor(self, mcp_server):
         tools = asyncio.run(mcp_server.list_tools())
-        assert len(tools) == 157
+        assert len(tools) == 166  # 与 test_mcp_server 主钉同源（2026-11-01 aurora_p 席 B2 ads_circuit_annotate+design_report +2；上锚 aurora_o o_ads ADS 前仿链 +2）
 
     def test_five_tools_registered(self, mcp_server):
         tools = asyncio.run(mcp_server.list_tools())
         names = {t.name for t in tools}
         assert set(_EM_FAMILY_TOOLS) <= names
 
-    def test_registration_order_tail_append_only(self, mcp_server):
-        """新五工具在注册序尾（append-only 惯例；金快照同源钉）。"""
+    def test_registration_order_still_contains_em_family(self, mcp_server):
+        """五工具仍在册（append-only 惯例；金快照同源钉——尾序随后续
+        工具增长漂移属正常演化，本钉收紧为在册断言）。"""
         tools = asyncio.run(mcp_server.list_tools())
-        tail = tuple(t.name for t in tools[-5:])
-        assert tail == _EM_FAMILY_TOOLS
+        names = {t.name for t in tools}
+        assert set(_EM_FAMILY_TOOLS) <= names
 
 
 # ── em_doctor_check ─────────────────────────────────────────────────────────

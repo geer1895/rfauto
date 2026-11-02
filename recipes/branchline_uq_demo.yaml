@@ -1,0 +1,79 @@
+# Branchline UQ 收口链演示配方（ensemble+conformal 用法示例）
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一：UQ 收口链（校准 → 代理收口）演示配方。校准链
+# （campaign calibrate 阶段或 calibration_service 直调）吃本配方产出
+# samples.json，之后 ensemble 集成建模、conformal 保形区间、surrogate uq
+# 良率与 tolerance 真跑 MC 对照全部免费收口。与 branchline_tune_light 的
+# 分工：那本是调参闭环（tune）演示；本文件=「校准一次、收口无限次」的
+# UQ 链起点。代理注册键（ensemble/conformal）不进配方 schema——用法走
+# Python 注册面，完整可跑序列见 docs/tutorials/uncertainty_and_surrogates.md
+# §7（深读 docs/tutorials/advanced_surrogates_bo.md §2-§3）。
+# 配方 schema 权威出处：docs/reference.md「配方 schema」节。
+# 注释写法注意（#324 坑）：YAML plain scalar 值内“空格+#”会被解析器
+# 截断成注释——引注只写在注释行里，值面禁止手写 #。
+model: branchline_coupler
+# model：目标模型（models 注册表键；必需键）。fake 通道零 license 可跑
+# 全链（校准采样/公差 MC 均按本模型 params 面消费）。
+recipe_version: 1
+# recipe_version：配方 schema 版本（与插件契约 schema_version 语义不同，#106）。
+schema_version: 1
+# schema_version：模型插件参数 schema 版本（params_model 契约面）。
+notes: "2.4GHz branchline coupler: UQ chain demo (calibrate -> ensemble/conformal/uq/tolerance)"
+# notes：人类备注（自由文本）。
+params:
+  # params：设计参数段（必需键）。名义值与 branchline_tune_light 同源
+  # （G0 定案线宽），校准采样从此起步点铺开。
+  f0_ghz:      {value: 2.4,  unit: GHz}
+  # f0_ghz：设计中心频率（GHz）。
+  z0_ohm:      {value: 50,   unit: ohm}
+  # z0_ohm：系统特性阻抗（ohm）。
+  substrate:   rogers4350b_h0.508
+  # substrate：层叠档案键（configs/materials.yaml：Rogers 4350B，
+  # εr=3.66，tanδ=0.0037，h=0.508mm）。
+  arm_len_mm:  {value: 20.5}
+  # arm_len_mm：四分之一波长臂长（mm，按 f0 与 εeff 综合精算的名义值）。
+  series_w_mm: {value: 1.87}
+  # series_w_mm：横臂（35.35Ω 段）线宽（mm），G0 三源定案值。
+  shunt_w_mm:  {value: 1.11}
+  # shunt_w_mm：竖臂（50Ω 段）线宽（mm），G0 复标定后微调值。
+setup:
+  # setup：仿真设置段（可选）。与 branchline_tune_light 同款窄带少点配置
+  # （fake 通道忽略，真机通道按此扫）。
+  solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动）。
+  freq_range_ghz: [2.3, 2.5]
+  # freq_range_ghz：扫频范围（GHz）——只扫判读带。
+  points: 11
+  # points：扫频点数（11 点=20MHz 步进）。
+  convergence_delta: 0.1
+  # convergence_delta：收敛判据放宽到 0.1（演示档粗收敛换速度）。
+  radiation_box: open
+  # radiation_box：辐射边界口径（open=开域）。
+objectives:
+  # objectives：优化目标列表（校准 samples.json 的 metrics 键来源；在此
+  # 即 s11_db——ensemble 的 rho_metric/conformal 的区间指标都按这个键走）。
+  - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  # 单目标：带内 |S11| 最大值（dB，worst-case 包络）≤ -15dB。
+optimization:
+  # optimization：调参段。params=搜索空间（low/high 闭区间）——校准链的
+  # bounds 单源（calibrate_surrogate 读本段铺采样设计），代理建模也在
+  # 这套 bounds 上归一。
+  params:
+    arm_len_mm:  {low: 17.0, high: 21.0}
+    # 臂长名义 20.5mm 两侧约 ±9%（谐振长度主敏感维）。
+    series_w_mm: {low: 1.5,  high: 2.5}
+    # 横臂线宽围绕 G0 定案值放宽（第二维）。
+    shunt_w_mm:  {low: 0.8,  high: 1.5}
+    # 竖臂线宽围绕 G0 定案值放宽（第三维）。
+limits: {max_trials: 15, max_wall_hours: 2}
+# limits：配额护栏（QuotaGuard 双闸）——演示档预算；校准采样数另由
+# campaign plan --calibrate-samples 或直调 n_samples 给。
+tolerance:
+  # tolerance：公差分析段（rfauto tolerance 消费；可选键）。tolerances 键
+  # =参数名 σ（与参数同单位），本段是 UQ 演示链的「真跑 MC 对照」入口
+  # （rfauto tolerance 本文件 --dry-run 先看计划面）——代理收口数字存疑
+  # 时用它小样本抽验；σ 口径与教程 §4.1 示例一致。
+  tolerances: {arm_len_mm: 0.3, series_w_mm: 0.05, shunt_w_mm: 0.05}
+  # 三维公差剖面：臂长 ±0.3mm、两线宽 ±0.05mm（工艺量级演示值）。
+  n_samples: 200
+  # n_samples：真跑 MC 样本数（rfauto tolerance --samples 旗标可覆盖）。

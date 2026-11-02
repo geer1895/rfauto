@@ -2,28 +2,65 @@
 # G0 gate: 35.35ohm -> 1.87mm, 50ohm -> 1.11mm (三源验证 max dev 0.45%)
 # 旧值 2.20mm 实测 ~31ohm 是 -6dB plateau 的主因
 # 目标：S11 带内最大 <= -15 dB
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一：轻量调参（tune）演示配方——窄判读带+少扫频点
+# +小 trial 预算，2 小时内跑完一轮闭环。与 branchline_coupler_v1 的分工：
+# v1=全带仿真+3 维搜索的完整版；本文件=G0 定案线宽起点的二维精调版。
+# 配方 schema 权威出处：docs/reference.md「配方 schema」节。
+# 注释写法注意（#324 坑）：值面“空格+#”会被 YAML 解析器截断——引注只写注释行。
 model: branchline_coupler
+# model：目标模型（models 注册表键；必需键）。
 recipe_version: 1
+# recipe_version：配方 schema 版本（与插件契约 schema_version 语义不同，#106）。
 schema_version: 1
+# schema_version：模型插件参数 schema 版本。
 notes: "2.4GHz branchline coupler: G0 verified linewidths + 2D tune (series_w + shunt_w)"
+# notes：人类备注（自由文本）。
 params:
+  # params：设计参数段（必需键）。本值为 tune 起步点；tune 真跑各 trial
+  # 参数由 Optuna 在 optimization.params 边界内采样（dry-run 信封
+  # params_semantics/optimization_ranges 三键即此语义——journeyB 实证：
+  # 展示位差，读 dry-run 时留意）。
   f0_ghz:      {value: 2.4,  unit: GHz}
+  # f0_ghz：设计中心频率（GHz）。
   z0_ohm:      {value: 50,   unit: ohm}
+  # z0_ohm：系统特性阻抗（ohm）。
   substrate:   rogers4350b_h0.508
+  # substrate：层叠档案键（configs/materials.yaml：Rogers 4350B，
+  # εr=3.66，tanδ=0.0037，h=0.508mm）。
   arm_len_mm:  {value: 20.5}
+  # arm_len_mm：四分之一波长臂长（mm，按 f0 与 εeff 综合精算的名义值）。
   series_w_mm: {value: 1.87}   # G0 verified: 35.35ohm (was 2.20 -> ~31ohm)
+  # series_w_mm：横臂（35.35Ω 段）线宽（mm），G0 三源定案值。
   shunt_w_mm:  {value: 1.11}   # G0 verified: 50ohm (was 1.10)
+  # shunt_w_mm：竖臂（50Ω 段）线宽（mm），G0 复标定后微调值。
 setup:
+  # setup：仿真设置段（可选）。调参版刻意收窄频带+降点数换速度。
   solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动）。
   freq_range_ghz: [2.3, 2.5]
+  # freq_range_ghz：扫频范围（GHz）——只扫判读带（v1 是 1.5 至 3.5 全带），
+  # 每 trial 仿真量大幅下降。
   points: 11
+  # points：扫频点数（11 点=20MHz 步进，够算带内 max/mean 统计量）。
   convergence_delta: 0.1
+  # convergence_delta：收敛判据放宽到 0.1（调参阶段粗收敛换速度）。
   radiation_box: open
+  # radiation_box：辐射边界口径（open=开域）。
 objectives:
+  # objectives：优化目标列表（tune 的 cost 来源）。
   - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -15}
+  # 单目标：带内 |S11| 最大值（dB，worst-case 包络）≤ -15dB。
+  # 调参闭环只钉回损一个门，插损由线宽综合精度兜底（v1 里才显式判）。
 optimization:
+  # optimization：调参段（tune 消费）。params=搜索空间（low/high 闭区间）。
   params:
     arm_len_mm:  {low: 17.0, high: 21.0}
+    # 臂长名义 20.5mm 两侧约 ±17%（覆盖精算残差与层叠批次差）。
     series_w_mm: {low: 1.5,  high: 2.5}   # 2D: widen around G0 verified value
+    # 横臂线宽围绕 G0 定案值放宽（二维搜索第一维）。
     shunt_w_mm:  {low: 0.8,  high: 1.5}   # 2D: widen around G0 verified value
+    # 竖臂线宽围绕 G0 定案值放宽（二维搜索第二维）。
 limits: {max_trials: 15, max_wall_hours: 2}
+# limits：配额护栏（QuotaGuard 双闸）：最多 15 个 trial、墙钟 2 小时
+# ——轻量预算定位，冒烟/演示用；真战役按 v1 的 30 次/6 小时口径放大。

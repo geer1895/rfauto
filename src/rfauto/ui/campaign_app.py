@@ -172,3 +172,27 @@ async def api_remote_resources(request: Request) -> JSONResponse:
     # 1-2 分钟阻塞不能停摆整个 UI 事件循环（W4-R3 P2，routes/agent 先例）
     return JSONResponse(await run_in_threadpool(
         resources_panel_view, machine=machine))
+
+
+async def api_remote_status(request: Request) -> JSONResponse:
+    """aurora_n 远程探测面板（只读）：remote_status 探活+SSH 认证可达性。
+
+    数据全部出自既有 ``remote_service.remote_status``（服务函数零复制，
+    规则 4 薄壳直渲染）；同步探测链（TCP 5 端口×3s+SSH echo 15s）下沉
+    线程池（``api_remote_resources`` 同款形态）。未知机器名
+    （RemoteConfigError）→ error 信封（ok=False + errors，
+    ``resources_panel_view`` 同口径）；信封**零凭据**——用户名/密码/key
+    恒不在内（凭据缺失只以 ``ssh.auth: missing_credentials`` 状态词出现，
+    service 层不猜不试契约原样透传）。
+    """
+    from starlette.concurrency import run_in_threadpool
+
+    from rfauto.infra.remote_machines import RemoteConfigError
+    from rfauto.service.envelope import error_envelope
+    from rfauto.service.remote_service import remote_status
+
+    machine = request.query_params.get("machine") or None
+    try:
+        return JSONResponse(await run_in_threadpool(remote_status, machine))
+    except RemoteConfigError as exc:
+        return JSONResponse(error_envelope([f"机器注册表解析失败: {exc}"]))

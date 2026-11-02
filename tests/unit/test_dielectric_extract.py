@@ -704,7 +704,7 @@ def _valid_entry() -> dict:
         "er_fit": {"model": "constant", "value": 4.4, "u95": 0.05},
         "tan_d_fit": {"model": "constant", "value": 0.02},
         "domain": {"f_ghz": [3.0, 8.0], "thickness_mm": [1.6]},
-        "provenance": {"commit": "abc1234", "devlog": "开发注记（三百零一）"},
+        "provenance": {"commit": "abc1234", "devlog": "Devlog（三百零一）"},
     }
 
 

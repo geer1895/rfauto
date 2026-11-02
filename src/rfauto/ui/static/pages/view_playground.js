@@ -1,5 +1,8 @@
 /* rfauto 代理 Playground 页（aurora_d UI-R2 自 pages.js 拆出，逐字节
    搬移）：滑条 → 代理实时预测（诚实呈现）+ 单轴探索（mean±σ 带）。
+   aurora_n wave_ui_pg 增量：探索器对比模式——第二 run 选择器（pg-ex-run2，
+   缺省空=单键模式既有路径逐位保留）+ 双代理预测曲线叠加（A 蓝/B 橙，
+   曲线名带各键；纯前端，服务端零语义变化）。
    i18n（发布前软编码批 S2 全清）：help 块分段 t()、标题/面板头/工具栏
    标签/表头/空态全迁词表（playground.* 键域，zh 与旧字面逐字节同、en
    新增）；run 清单选项/滑条标签/曲线名为 API 数据照旧 esc/直拼——数据
@@ -26,7 +29,8 @@ export async function pagePlayground() {
       <li>${t("playground.help_1")}</li>
       <li><b>${t("playground.help_2_core")}</b>${t("playground.help_2_mid")}<b>${t("playground.help_2_core2")}</b>${t("playground.help_2_tail")}</li>
       <li>${t("playground.help_3")}</li>
-      <li>${t("playground.help_4_lead")}<b>${t("playground.help_4_core")}</b>${t("playground.help_4_tail")}</li>`) +
+      <li>${t("playground.help_4_lead")}<b>${t("playground.help_4_core")}</b>${t("playground.help_4_tail")}</li>
+      <li>${t("playground.help_5")}</li>`) +
     `<h2 class='page'><span data-i18n='playground.title'>${t("playground.title")}</span></h2>
      <div class='panel'>
        <div class='toolbar'><b>Run</b><select id='pg-run' style='max-width:460px'></select>
@@ -40,6 +44,7 @@ export async function pagePlayground() {
        <div class='toolbar'><span data-i18n='playground.sweep_axis'>${t("playground.sweep_axis")}</span> <select id='pg-ex-axis'></select>
          <span data-i18n='playground.n_points'>${t("playground.n_points")}</span> <select id='pg-ex-n'><option value='11'>11</option><option value='21'>21</option><option value='41' selected>41</option></select>
          <span data-i18n='playground.metric'>${t("playground.metric")}</span> <select id='pg-ex-metric'></select>
+         <span data-i18n='playground.compare_b'>${t("playground.compare_b")}</span> <select id='pg-ex-run2'></select>
          <span id='pg-ex-status' class='muted'></span></div>
        <div id='pg-ex-chart'></div>
        <div id='pg-ex-note' class='muted' style='margin-top:var(--space-2)'></div></div>`;
@@ -51,6 +56,13 @@ export async function pagePlayground() {
   const sel = T.$("pg-run");
   sel.innerHTML = runs.map((r) =>
     `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.best_surrogate || "?")} · ρ=${r.rho == null ? "-" : (+r.rho).toFixed(3)} · ${esc(r.verdict || "-")}）</option>`).join("");
+  // 对比模式 B 选择器（aurora_n wave_ui_pg）：与主 run 清单同源；空选项=
+  // 单键模式（缺省，既有路径零回归）。选项名带各 run 校准最佳代理键——
+  // A/B 两键是什么在下拉里即可读（run/代理键=API 数据照旧 esc 不迁）。
+  T.$("pg-ex-run2").innerHTML =
+    `<option value=''>${esc(t("playground.compare_b_none"))}</option>` +
+    runs.map((r) =>
+      `<option value='${escAttr(r.run_id)}'>${esc(r.run_id)}（${esc(r.best_surrogate || "?")}）</option>`).join("");
   let debounce = null;
   let lastRun = null;
   const key = (name) => name.replace(/\W/g, "_");
@@ -113,6 +125,38 @@ export async function pagePlayground() {
         color: themePick(bodyIsLight(), THEME_COLORS.seriesBlue),
           lower: cur.mean.map((m, i) => m - cur.std[i]),
           upper: cur.mean.map((m, i) => m + cur.std[i]) });
+    // ── 对比模式（aurora_n wave_ui_pg，纯前端增强：服务端零语义变化）──
+    // 第二 run 选择器非空且 ≠ 当前 run 时，同滑条/同扫参轴对 B run 的校准
+    // 最佳代理再拉一次 explore，双曲线叠加（A=蓝既有、B=橙 seriesOrange），
+    // 曲线名带各键（A/B 两键图例可读——色分+图例=差异区可读）。B==A 同 run
+    // 不对比（曲线恒同无义）；B 拉取失败/轴不在 B bounds（服务 ok=false）/
+    // 指标缺失=状态行如实记因，主曲线不受阻（#105 家法：观测增强不拦主
+    // 路径）。单键模式（B=空，缺省）不走此分支——既有路径逐位保留。
+    let cmpNote = "";
+    const runB = T.$("pg-ex-run2").value;
+    if (runB && runB !== sel.value) {
+      const rb = await apiFetch("/api/playground/explore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          run_id: runB,
+          params: currentParams(),
+          sweep: { axis: T.$("pg-ex-axis").value, n: +T.$("pg-ex-n").value },
+        }),
+        timeoutMs: 0, // 长跑豁免（P9-11）：与 A 探索请求同口径
+      });
+      const cmp = compareExploreSeries(r, rb, key, axisName, bodyIsLight());
+      if (cmp && cmp.seriesB) {
+        series[0].name = cmp.nameA;
+        series.push(cmp.seriesB);
+        cmpNote = `${rb.kind}=${rb.has_variance ? "mean±1σ"
+          : t("playground.no_native_std")}`;
+      } else if (cmp) {
+        cmpNote = t("playground.compare_b_no_metric_tpl", { k: key });
+      } else {
+        cmpNote = errorText(rb);
+      }
+    }
     // PR-3 PlotCard 换壳：option 与迁移前等价（base 路径，含 band 系列）
     // W3-S9：数值读数类开十字线（xvalue 值轴 trigger=item，与 cred 卡同款组合）
     T.plotCard(T.$("pg-ex-chart"), {
@@ -121,10 +165,11 @@ export async function pagePlayground() {
       exportName: "explore-sweep", exportCsv: false,
     });
     st.textContent = `engine=${r.engine} · ${r.has_variance ? "mean±1σ" : t("playground.no_native_std")}`
-      + ` · fixed=${JSON.stringify(r.sweep.fixed)}`;
+      + ` · fixed=${JSON.stringify(r.sweep.fixed)}`
+      + (cmpNote ? ` · B: ${cmpNote}` : "");
     T.$("pg-ex-note").textContent = `${r.variance_note}；${r.honest_note}`;
   };
-  for (const id of ["pg-ex-axis", "pg-ex-n", "pg-ex-metric"])
+  for (const id of ["pg-ex-axis", "pg-ex-n", "pg-ex-metric", "pg-ex-run2"])
     T.$(id).onchange = runExplore;
   const predict = async (params) => {
     const r = await apiFetch("/api/playground/predict", {
@@ -183,6 +228,35 @@ export async function pagePlayground() {
   sel.onchange = () => { lastRun = null; predict({}); };
   if (runs.length) await predict({});
   else T.$("pg-result").textContent = t("playground.no_runs");
+}
+
+/* ═══ 对比模式系列组装（aurora_n wave_ui_pg 导出纯函数，node 行为钉面）═══
+   输入 A/B 两份 explore 信封 + 指标键 + 扫参轴 + 主题亮暗 → B 叠加系列
+   （橙 seriesOrange，曲线名带 B 代理键；A 名改带 A 键由调用方写回 series[0]）。
+   诚实跳过面：B 信封不 ok/畸形/缺同指标 → null / {skip:true}——调用方状态
+   行如实记因，不硬造第二曲线（#122 不凑绿纪律的前端同构）。本函数是纯
+   组装器不触 DOM/网络；单键模式不消费（既有路径逐位保留）。 */
+export function compareExploreSeries(rA, rb, metricKey, axisName, light) {
+  if (!rA || !rA.kind || !rb || rb.ok !== true || !rb.kind
+    || !rb.curves || typeof rb.curves !== "object")
+    return null;
+  if (!Object.prototype.hasOwnProperty.call(rb.curves, metricKey))
+    return { skip: true };
+  const vals = (rb.sweep && rb.sweep.axes_values
+    && rb.sweep.axes_values[axisName]) || null;
+  const mean = rb.curves[metricKey] && rb.curves[metricKey].mean;
+  if (!Array.isArray(vals) || !Array.isArray(mean)
+    || vals.length !== mean.length)
+    return null;
+  return {
+    nameA: `${metricKey} mean·${rA.kind}`,
+    seriesB: {
+      name: `${metricKey} mean·${rb.kind}`,
+      x: vals.map((v) => +(+v).toFixed(4)),
+      y: mean,
+      color: themePick(!!light, THEME_COLORS.seriesOrange),
+    },
+  };
 }
 
 /* ═══ R-1（aurora_e W4-S17）：PageContext 增量钩子 playgroundCtx ════════

@@ -2,13 +2,24 @@
 
 判据（runs/df6_dp17/criteria.md §W1）：
 - ① 幂等 rebuild：同面二次 rebuild 行数与内容哈希逐字节不变；
-- ② 真仓回放抽 10 行对拍 verdict 原文一致（≥1 条 FAIL 行；runs/ 缺席
-  环境如实 skip，不红）；
+- ② 真仓回放抽 10 行对拍 verdict 原文一致（≥1 条 FAIL 行）；
 - ③ HFSS 为 ref 的数值量行 delta_vs_ref=0 恒成立；
 - ④ runs/ 证据面零改写（rebuild 前后扫描面文件内容哈希不变）；
 - ⑤ #121 单位守卫：无单位 token 的 quantity 一律不成行；
 - verdict 四形态读取器归一白名单；未知形态 skip 如实计数；
 - league_report Pareto 前沿确定性 + 单轴缺失 on_front=NULL 不硬凑。
+
+真仓回放面（TestRealRunsReplay）自 aurora_m W1-2 起改读**冻结帧夹具**
+（tests/fixtures/league_runs_frame.json，由
+scripts/refresh_league_criteria_frames.py --face league 显式刷新）：活湖
+全扫（候选枚举+逐候选 meta/工件读取）实测单趟 ~4s、本类两测合计 ~24s
+（manifest 口径）且随湖增长膨胀，夹具化后秒级、成本与湖增长脱钩。帧内
+建等价门（材料化回放行集/统计与活湖逐键一致才落盘）；测试侧新鲜度钉=
+现引擎在冻结帧上的行集指纹须等于快照时点活帧指纹（norm_rows_sha256），
+漂移=引擎抽取行为变化或夹具过期（重跑刷新脚本再锚定）。性质钉不变
+（同一判例集经同一引擎代码路径回放，断言逐字保留）。opt-in 真仓活湖
+对照件在 tests/integration/test_league_criteria_live.py
+（RFAUTO_LEAGUE_CRITERIA_LIVE=1 门控；tests/unit 收集面外）。
 """
 
 from __future__ import annotations
@@ -21,7 +32,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
+from refresh_league_criteria_frames import (
+    LEAGUE_FRAME_SCHEMA,
+    norm_rows_sha256,
+)
 from rfauto.service.league_service import (
     DEFAULT_REF_ENGINE,
     GATE_VERDICT_QUANTITY,
@@ -34,7 +50,8 @@ from rfauto.service.league_service import (
     rebuild_league,
 )
 
-_REPO_RUNS = Path(__file__).resolve().parents[2] / "runs"
+LEAGUE_FRAME = (Path(__file__).resolve().parents[2]
+                / "tests" / "fixtures" / "league_runs_frame.json")
 
 
 def _write_meta(run_dir: Path, meta: dict) -> None:
@@ -293,22 +310,52 @@ class TestLeagueReport:
         assert r0["ok"] and r0["groups"] == []
 
 
-@pytest.mark.skipif(not any((_REPO_RUNS / d).is_dir() for d in ("league", "capability_cards", "campaign")),
-                   reason="真仓 runs/ 判例证据湖缺席（公开树不带内部判例）")
-class TestRealRunsReplay:
-    """真仓只读回放（判据②③④）；DB 落 tmp，runs/ 证据面零写。"""
+@pytest.fixture(scope="class")
+def _frozen_league_tree(tmp_path_factory):
+    """冻结帧 → 材料化 runs 树（类级一次；两真树测试共享）。"""
+    if not LEAGUE_FRAME.is_file():
+        pytest.fail(
+            f"冻结帧夹具缺失: {LEAGUE_FRAME}——运行 "
+            f"scripts/refresh_league_criteria_frames.py --face league "
+            f"再生成（显式刷新动作，活湖快照 ~8s）；不许 skip 凑绿")
+    frame = json.loads(LEAGUE_FRAME.read_text(encoding="utf-8"))
+    if frame.get("schema_version") != LEAGUE_FRAME_SCHEMA:
+        pytest.fail(
+            f"夹具 schema 漂移: {frame.get('schema_version')} != "
+            f"{LEAGUE_FRAME_SCHEMA}——重跑刷新脚本再锚定")
+    root = tmp_path_factory.mktemp("league_frozen") / "runs"
+    from refresh_league_criteria_frames import materialize_league_tree
+    materialize_league_tree(frame, root)
+    return frame, root
 
-    def test_rebuild_real_tree_and_spot_check_verdicts(self, tmp_path):
-        collected = collect_league_rows(_REPO_RUNS)
+
+class TestRealRunsReplay:
+    """真仓冻结帧回放（判据②③④；W1-2 夹具化，断言与活湖口径逐字同）。
+
+    DB 落 tmp，材料化树与 DB 均在 tmp——真仓 runs/ 面零写（夹具本身是
+    只读快照入库）。件名保留 "RealRunsReplay" 口径：钉的性质是"真仓帧
+    上 rebuild 幂等+抽对拍+delta=0"，夹具是该帧的等价快照（刷新脚本内
+    建等价门+活湖性质前置）。
+    """
+
+    def test_rebuild_real_tree_and_spot_check_verdicts(self,
+                                                       _frozen_league_tree,
+                                                       tmp_path):
+        frame, runs_tree = _frozen_league_tree
+        collected = collect_league_rows(runs_tree)
         assert collected["ok"] is True
+        # 新鲜度钉（W1-2）：现引擎在冻结帧上的行集指纹=快照时点活帧指纹；
+        # 漂移=引擎抽取行为变化或夹具过期（重跑刷新脚本再锚定）。
+        assert norm_rows_sha256(collected["rows"], runs_tree) == \
+            frame["norm_rows_sha256"]
         rows = collected["rows"]
         assert len(rows) > 500
         db = tmp_path / "league_real.duckdb"
-        b = rebuild_league(_REPO_RUNS, db)
+        b = rebuild_league(runs_tree, db)
         assert b["ok"] is True
         assert b["n_rows_total"] == len(rows)
         h1 = league_content_hash(db)
-        rebuild_league(_REPO_RUNS, db)
+        rebuild_league(runs_tree, db)
         assert league_content_hash(db)["content_sha256"] == \
             h1["content_sha256"]
 
@@ -351,13 +398,14 @@ class TestRealRunsReplay:
         assert hfss_metric, "真仓应含 hfss 数值量行"
         assert all(x["delta_vs_ref"] == 0.0 for x in hfss_metric)
 
-        # 判据④：rebuild 只写 tmp DB，真仓 runs/ 面新增文件=无
-        assert league_db_path(_REPO_RUNS).exists() is False or True  # 只读面
+        # 判据④：rebuild 只写 tmp DB，runs/ 面新增文件=无
+        assert league_db_path(runs_tree).exists() is False or True  # 只读面
         assert b["db_path"] == str(db)
 
-    def test_report_on_real_tree_runs(self, tmp_path):
+    def test_report_on_real_tree_runs(self, _frozen_league_tree, tmp_path):
+        _frame, runs_tree = _frozen_league_tree
         db = tmp_path / "league_real.duckdb"
-        assert rebuild_league(_REPO_RUNS, db)["ok"] is True
+        assert rebuild_league(runs_tree, db)["ok"] is True
         rep = league_report(db)
         assert rep["ok"] is True
         assert rep["groups"], "真仓应产出非空分组"

@@ -1,6 +1,6 @@
 """G1 REST API（§10.7）：service 层能力的 OpenAPI 化薄壳。
 
-设计红线（内核立规注记 硬限制 4）：路由是薄壳——参数校验 / HTTP 状态映射 /
+设计红线（AGENTS 硬限制 4）：路由是薄壳——参数校验 / HTTP 状态映射 /
 OpenAPI 文档在本模块，业务语义全部仍在 service 层（health / run 查询 /
 calculator 调用 / dataset 查询 / db·rag 只读查询 / slotline·transitions
 确定性计算）；本模块不含任何物理数值计算（铁律 7）。

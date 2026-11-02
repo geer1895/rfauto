@@ -66,6 +66,9 @@ def surrogate_optimize(
     uncertainty_tol: float | None = None,
     uncertainty_rounds: int = 1,
     uncertainty_pool: int = 128,
+    batch_acquisition: str | None = None,
+    robust_lambda: float | None = None,
+    op_chance: float | None = None,
     registry_write: bool | None = None,
 ) -> dict[str, Any]:
     """代理寻优环服务入口：`rfauto tune --sampler sbo` 的后端。
@@ -73,6 +76,12 @@ def surrogate_optimize(
     B5 不确定度终止判据透传（uncertainty_tol/rounds/pool 同名同义，见
     surrogate_loop.run_surrogate_loop）：仅服务层可编程入口暴露，
     CLI/MCP 不暴露；tol=None（缺省）时行为逐字节不变。
+
+    T-N7/T-N14 旋钮透传（aurora_n wiring 巡检补门，2026-10-30）：``batch_acquisition``
+    （GP 批量采集档）与 ``robust_lambda``/``op_chance``（鲁棒采集双档，
+    互斥）同名同义透传 run_surrogate_loop，缺省 None=行为逐字节不变；
+    同 B5 口径仅服务层可编程入口暴露，非法值由环入口校验返回 ok=False
+    信封（旋钮校验单源在环，服务层零复制）。
 
     RB-ML-1 训练写点（registry_write 三态，缺省 None=env/
     RFAUTO_SURROGATE_REGISTRY_WRITE 裁决）：开时环尾把最终代理 upsert 进
@@ -166,6 +175,9 @@ def surrogate_optimize(
             uncertainty_tol=uncertainty_tol,
             uncertainty_rounds=uncertainty_rounds,
             uncertainty_pool=uncertainty_pool,
+            batch_acquisition=batch_acquisition,
+            robust_lambda=robust_lambda,
+            op_chance=op_chance,
             registry_meta=registry_meta)
     finally:
         adapter.close()

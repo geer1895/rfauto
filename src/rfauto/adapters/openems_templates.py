@@ -6,7 +6,7 @@ Each template renders CSXCAD scripts for openEMS Python bindings.
 方向 2 参数化公约（Plan §3：防 6 个模板 6 种风格）。
 
 网格/边界方法学（2026-09-04 频率尺度根因实验后重写，对照官方 MSL_NotchFilter
-教程基线，证据链 内部证据档 E1-E4）：
+教程基线，证据链 runs/audit_freq_scale/ E1-E4）：
 - 网格 base = 基板内波长 λ_sub/50（官方口径），近走线区 base/4；
   旧版 λ/20@空气 ≈4.3mm 粗网格导致谷位系统性低 30-40% 且随网格漂移；
 - 地面 = z-min PEC 边界（官方口径），基板延伸到侧边界（旧版有限小板

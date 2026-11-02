@@ -31,7 +31,13 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except Exception as e:
-        return error_envelope([f"YAML 解析失败: {e}"], warnings=[])
+        # aurora_n 错误信息人性化二批：追加下一步指引（前缀逐字节保留——
+        # test_ui/test_recast_replay 等子串钉安全）。
+        return error_envelope(
+            [f"YAML 解析失败: {e}（→ 检查报错行附近的缩进/冒号/引号——"
+             "YAML 对 Tab 缩进与全角冒号'：'敏感；修正后先 rfauto validate "
+             "复核再 run）"],
+            warnings=[])
 
     if data is None:
         return error_envelope([f"配方文件为空: {path}"], warnings=[])
@@ -57,7 +63,24 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
             from rfauto.models.registry import get  # lazy: run-path（执行面按需取用）
             get(data["model"])
         except KeyError:
-            errors.append(f"未知模型: {data['model']}")
+            # aurora_n 错误信息人性化二批：did-you-mean（单源
+            # service.recipe_validation）+ models list 指引——原文案只有
+            # "是什么"；前缀逐字节保留（子串钉安全，见 SCAN.md 钉面预检）。
+            from rfauto.models.registry import list_models  # lazy: run-path
+            from rfauto.service.recipe_validation import did_you_mean  # lazy: run-path
+            errors.append(
+                f"未知模型: {data['model']}"
+                f"{did_you_mean(str(data['model']), list_models())}"
+                "（已注册模型清单: rfauto models list）")
+
+    # F-P1-1（aurora_n 旅程席 A）：键级白名单——对齐 UI recipe_save 严格度。
+    # ①未知顶层键 ②参数名不在模板参数面 ③指标名不在指标词典 ④objectives
+    # 在场但为空，全部 error + did-you-mean（单源 service.recipe_validation，
+    # docs/reference.md「配方 schema」节同源钉住）。此前三类拼写错误静默
+    # 放行（objectves→空目标优化 / arm_len_mm_typo→静默忽略 / s11_db_typo→
+    # 求解评估期才炸），CLI 比 UI 松的严格度倒挂就此修齐。
+    from rfauto.service.recipe_validation import recipe_schema_errors  # lazy: 校验面
+    errors.extend(recipe_schema_errors(data))
 
     # K9（aurora_k，P15）：顶层可选 units 字段——"mm"（缺省，现状零变化）|
     # "um"（IPD 工艺 μm 配方）。此处只做装载侧 schema 校验；几何换算 helper
@@ -76,8 +99,9 @@ def validate_recipe(recipe_path: str | Path) -> dict[str, Any]:
                     "core.stackup.to_mm 已就绪，但各模板渲染接线尚未迁移"
                     "（模板族席），当前模板参数单位语义不变")
 
-    # 目标函数校验
-    if "objectives" in data:
+    # 目标函数校验（值级；键级/指标名白名单已在上方 recipe_schema_errors）。
+    # objectives 非列表（含 null）在白名单面已报错——此处仅列表态进 pydantic。
+    if isinstance(data.get("objectives"), list):
         for i, obj_data in enumerate(data["objectives"]):
             try:
                 Objective(**obj_data)
@@ -131,7 +155,13 @@ def dry_run(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str,
         adapter_ok = adapter_ok and install is not None
         aedt_version = install["aedt_version"] if install else "unknown"
     elif adapter_name != "fake":
-        return error_envelope([f"未知适配器: {adapter_name}"], mode="dry-run")
+        # aurora_n 错误信息人性化二批：同 run_once 未知适配器指引。
+        from rfauto.service.recipe_validation import did_you_mean  # lazy: run-path
+        return error_envelope([
+            f"未知适配器: {adapter_name}"
+            f"{did_you_mean(adapter_name, ('fake', 'hfss'))}"
+            "（可用适配器: fake/hfss——fake 零真机依赖冒烟）"],
+            mode="dry-run")
 
     from rfauto.models.registry import get as get_plugin_cls  # lazy: run-path（执行面按需取用）
     plugin_cls = get_plugin_cls(model_name)
@@ -153,6 +183,23 @@ def dry_run(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str,
     cache_key = cache.compute_content_key(**cache_components)
     cache_lookup = cache.lookup(cache_key, components=cache_components)
 
+    # aurora_n journey-B（F-P1-2）：计划段参数语义标注。params=配方名义值；
+    # run 真跑按名义值直通执行（生效=名义）；tune 真跑各 trial 参数由优化器
+    # 在 optimization_ranges 内采样（名义值仅参考起点，非执行保证值）。此前
+    # 新用户按 params 段名义值理解 tune 执行参数，又被 why_miss 的历史条目
+    # 快照（如 wp34_patch_gt 某 HFSS trial 的 36.43）误读为"精算生效值"——
+    # 本批三键（params_semantics/optimization_ranges/why_miss_note）把名义/
+    # 生效/采样域一次说清。纯展示层：不碰键计算与执行语义（真跑零变化）。
+    from rfauto.optimization.optimizer import extract_param_ranges  # lazy: run-path（执行面按需取用）
+    optimization_ranges = extract_param_ranges(recipe_data)
+    params_semantics = (
+        "params=配方名义值；run 真跑按名义值直通执行（生效=名义）；"
+        "tune 真跑各 trial 参数由优化器在 optimization_ranges 内采样，"
+        "名义值仅参考起点（非执行保证值）"
+        if optimization_ranges
+        else "params=配方名义值；run 真跑按名义值直通执行（生效=名义）"
+    )
+
     return ok_envelope(
         mode="dry-run",
         message="仅验证未执行——确认计划后去掉 --dry-run 真实提交",
@@ -162,6 +209,8 @@ def dry_run(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str,
         adapter_ready=adapter_ok,
         aedt_version=aedt_version,
         params=resolved_params,
+        params_semantics=params_semantics,
+        optimization_ranges=optimization_ranges,
         objectives=recipe_data.get("objectives", []),
         setup=recipe_data.get("setup", {}),
         plugin_version=f"schema{plugin_cls.schema_version}",
@@ -171,6 +220,10 @@ def dry_run(recipe_path: str | Path, *, adapter_name: str = "fake") -> dict[str,
             "key": cache_key,
             "provenance": cache_lookup["provenance"],
             "why_miss": cache_lookup["why_miss"],
+            "why_miss_note": (
+                "why_miss 中 '旧值 -> 新值' 的旧值=缓存中最近历史条目的参数快照"
+                "（此前真实 run/trial 所存），非本次将执行的参数"
+            ),
             "components": cache_components,
         },
         validation=validation,
@@ -253,7 +306,14 @@ def run_once(
     try:
         plugin_cls = get_plugin_cls(model_name)
     except KeyError:
-        return error_envelope([f"未知模型: {model_name}"])
+        # aurora_n 错误信息人性化二批：did-you-mean + models list 指引
+        # （validate_recipe 同款；前缀逐字节保留）。
+        from rfauto.models.registry import list_models  # lazy: run-path
+        from rfauto.service.recipe_validation import did_you_mean  # lazy: run-path
+        return error_envelope([
+            f"未知模型: {model_name}"
+            f"{did_you_mean(str(model_name), list_models())}"
+            "（已注册模型清单: rfauto models list）"])
     plugin = plugin_cls()
 
     # 交换契约按插件端口数生成（3 端口时与历史默认完全一致）
@@ -272,7 +332,14 @@ def run_once(
     ps = ParameterSystem(param_values)
 
     if adapter_name not in ("fake", "hfss"):
-        return error_envelope([f"未知适配器: {adapter_name}"])
+        # aurora_n 错误信息人性化二批：did-you-mean + 可用适配器指引
+        # （原文案只有"是什么"；tests 全仓零断言钉此文案，SCAN.md 预检）。
+        from rfauto.service.recipe_validation import did_you_mean  # lazy: run-path
+        return error_envelope([
+            f"未知适配器: {adapter_name}"
+            f"{did_you_mean(adapter_name, ('fake', 'hfss'))}"
+            "（可用适配器: fake/hfss——fake 零真机依赖冒烟；HFSS 真机见 "
+            "docs/tutorials/getting-started.md）"])
 
     # ─── ResultCache：键计算与查询前移（C5 修复：原先发生在 AEDT 建会话与
     # build 之后——缓存命中仍付出完整建模成本）。aedt_version 仅由环境变量

@@ -1,6 +1,6 @@
 """数据工厂 EDB 道收集器测试（dataset_edb_lane）。
 
-覆盖面（对应 内部证据档 真机产物形态的合成等价物）：
+覆盖面（对应 runs/edblane85/w1_smoke 真机产物形态的合成等价物）：
 - TestEdbLaneDiscover：judgment 标志目录发现（只读、路径/族名/批次名）；
 - TestEdbLaneCollect：branchline+功分器两族收集 → 行 schema 逐键断言
   （DATASET_SCHEMA 对齐）、E1 指纹三键（model=spec.template /
@@ -48,7 +48,7 @@ from rfauto.service.dataset_service import query_dataset
 from tests.unit._dataset_service_helpers import _write_touchstone
 
 # ---------------------------------------------------------------------------
-# 合成产物工厂（真机 内部证据档<family>/ 形态的迷你等价物）
+# 合成产物工厂（真机 runs/edblane85/w1_smoke/<family>/ 形态的迷你等价物）
 # ---------------------------------------------------------------------------
 
 _BRANCHLINE_PARAMS: dict[str, Any] = {

@@ -239,7 +239,8 @@ def _print_janitor_report(
 
 # ─── models ───────────────────────────────────────────────────────────────────
 
-models_app = typer.Typer(help="模型管理")
+models_app = typer.Typer(
+    help="模型管理（EMSolver 可求解模型注册表；器件模板全目录见 template-spec list）")
 app.add_typer(models_app, name="models")
 
 
@@ -249,7 +250,12 @@ def models_list(
     json_output: bool = typer.Option(False, "--json",
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
-    """列出已注册模板 + 可选导出参数 JSON Schema。"""
+    """列出已注册模型 + 可选导出参数 JSON Schema。
+
+    本命令列出的是已接入 EMSolver 求解通道的可求解模型（配方 model 键的
+    合法取值域）；器件模板全目录（openEMS 模板库）见 `rfauto template-spec
+    list`——两个目录语义不同，勿混。
+    """
     from rfauto.service.api import list_models as _list_models
     result = _list_models()
 
@@ -263,7 +269,11 @@ def models_list(
             if json_output:
                 # VI-5 W6-B：未知模型也信封（--json 下失败路径不许非 JSON）
                 _emit(result_schema, "未知模型", json_output=True)
-            console.print(f"[red]未知模型: {schema}[/red]")
+            # aurora_n 错误信息人性化二批：渲染 service 信封原文（含
+            # did-you-mean + models list 指引）替代裸重打——文案单源
+            # service.export_model_schema，cli 不再自带第二份裸文案。
+            for _err in result_schema.get("errors") or [f"未知模型: {schema}"]:
+                console.print(f"[red]{_err}[/red]")
             raise typer.Exit(code=1) from None
         console.print_json(json.dumps(result_schema["schema"], indent=2, ensure_ascii=False))
         return
@@ -278,6 +288,15 @@ def models_list(
     for name in result.get("models", []):
         table.add_row(name)
     console.print(table)
+    # F-P2-2（aurora_n 旅程席 C）：models 与 template-spec 双模板面互指——
+    # 新用户看本命令只见到 4 个可求解模型，易误以为全仓器件面就此而已。
+    # 75=TEMPLATE_META 现量（2026-10-30 实测）；活目录以 template-spec
+    # list 为准（不 import 其服务面——冷加载约 2.5s，不值得为计数付出）。
+    console.print(
+        "[dim]另有 75 族 openEMS 器件模板可 fake 通道零 license 冒烟，"
+        "全目录见 `rfauto template-spec list`（UI Gallery 同源）；"
+        "本命令只列已接入求解通道的可求解模型。[/dim]"
+    )
 
 
 @models_app.command("docs")

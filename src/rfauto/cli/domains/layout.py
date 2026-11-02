@@ -98,7 +98,8 @@ def layout_build_cmd(
         if mode == "round-trip":
             if not workdir:
                 raise ValueError("--round-trip 模式需要 --workdir")
-            payload = _load_json_file(round_trip_file, "版图载荷 JSON 文件")
+            payload = _load_json_file(round_trip_file, "版图载荷 JSON 文件",
+                                      json_output=json_output)
             formats = ([f.strip() for f in fmt_list.split(",") if f.strip()]
                        if fmt_list else None)
             # layout_service 契约=裸载荷 JSON（非信封）——薄壳统一套 ok 信封
@@ -112,10 +113,12 @@ def layout_build_cmd(
         elif mode == "export":
             if not fmt or not output:
                 raise ValueError("--from-payload 模式需要 --fmt 与 --output")
-            payload = _load_json_file(from_payload, "版图载荷 JSON 文件")
+            payload = _load_json_file(from_payload, "版图载荷 JSON 文件",
+                                      json_output=json_output)
             result = ok_envelope(**export_layout_payload(payload, output, fmt))
         elif mode == "generate":
-            params = _kv_floats(list(param) if param else [], "--param")
+            params = _kv_floats(list(param) if param else [], "--param",
+                            json_output=json_output)
             result = ok_envelope(**generate_layout_payload(
                 kind, params, fmt=fmt or None, output_path=output or None))
         else:
@@ -183,8 +186,10 @@ def layout_diff_cmd(
     """两份版图载荷三面语义 diff：层、图元、端口（端口面 opt-in）。"""
     from rfauto.service.layout_diff_service import diff_layout_payload
 
-    a_payload = _load_json_file(a, "版图载荷 A JSON 文件")
-    b_payload = _load_json_file(b, "版图载荷 B JSON 文件")
+    a_payload = _load_json_file(a, "版图载荷 A JSON 文件",
+                                json_output=json_output)
+    b_payload = _load_json_file(b, "版图载荷 B JSON 文件",
+                                json_output=json_output)
     port_kwargs = {"marker_layer": marker_layer} if marker_layer else None
     kwargs = {"tol_nm": tol_nm} if tol_nm is not None else {}
     result = diff_layout_payload(
@@ -225,8 +230,10 @@ def layout_lvs_cmd(
         lvs_check,
     )
 
-    layout_payload = _load_json_file(layout_file, "版图载荷 JSON 文件")
-    netlist = _load_json_file(netlist_file, "netlist JSON 文件")
+    layout_payload = _load_json_file(layout_file, "版图载荷 JSON 文件",
+                                     json_output=json_output)
+    netlist = _load_json_file(netlist_file, "netlist JSON 文件",
+                              json_output=json_output)
     try:
         if netlist_fmt == "compose":
             expected = expected_from_compose_netlist(netlist)
@@ -240,7 +247,8 @@ def layout_lvs_cmd(
         return
     ports = None
     if ports_file:
-        ports = _load_json_file(ports_file, "端口记录 JSON 文件").get("ports")
+        ports = _load_json_file(ports_file, "端口记录 JSON 文件",
+                                json_output=json_output).get("ports")
     port_kwargs = {"marker_layer": marker_layer} if marker_layer else None
     result = lvs_check(
         layout_payload, expected,
@@ -330,7 +338,8 @@ def layout_simulate_cmd(
     """版图 openEMS 渲染脚本离线组装（零求解；产物=渲染脚本，--out-dir 落盘）。"""
     from rfauto.service.layout_sim_service import layout_sim_prepare
 
-    payload = _load_json_file(payload_file, "组装载荷 JSON 文件")
+    payload = _load_json_file(payload_file, "组装载荷 JSON 文件",
+                              json_output=json_output)
     result = layout_sim_prepare(payload)
     if result.get("ok") and out_dir:
         from pathlib import Path
@@ -370,7 +379,8 @@ def layout_stencil_cmd(
     """钢网开孔 IPC-7525 双判据批量评估：面积比与宽厚比逐孔加汇总。"""
     from rfauto.service.layout_stencil_service import evaluate_apertures
 
-    data = _load_json_file(apertures_file, "开孔清单 JSON 文件")
+    data = _load_json_file(apertures_file, "开孔清单 JSON 文件",
+                           json_output=json_output)
     apertures = data.get("apertures") if isinstance(data, dict) else None
     if apertures is None:
         _emit(_fail("开孔清单须为对象带 apertures 列表键"),

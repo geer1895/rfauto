@@ -361,7 +361,7 @@ TEMPLATE_NOMINAL: dict[str, dict[str, Any]] = {
     "patch": {"patch_len_mm": 34.9, "patch_w_mm": 50.0, "feed_offset_mm": 10.0},
     # branchline 名义臂注记（R2-1 审查批 2026-10-04）：arm_len_mm=20.5 为
     # 薄线极限捷径口径（HJ 精算正解 18.09mm，偏差 +11.8%，已裁定维持锚定
-    # 基线不改数值——锚历史，#252 定性）；出处 内部证据档
+    # 基线不改数值——锚历史，#252 定性）；出处 runs/review_ge8e/
     # r2_synthesis_templates_anchors/REPORT.md R2-1
     "branchline": {"arm_len_mm": 20.5, "series_w_mm": 1.87, "shunt_w_mm": 1.11},
     "dipole": {"dipole_len_mm": 58.0, "dipole_w_mm": 2.0, "gap_mm": 2.0},

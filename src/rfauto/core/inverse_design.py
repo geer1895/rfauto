@@ -1,6 +1,6 @@
 """E12 像素域生成式逆设计最小闭环（stage-1：提议器 × MAPES 闭式评判 × top-k）。
 
-方案口径（延续计划 §10.18 E12 行；
+方案口径（docs/continuation-plan_20260907.md §10.18 E12 行；Devlog（三十二）
 边界：与 B1 PCell DSL 参数化路线**正交**，作用于像素化设计域）：
 
     像素提议器 → 图案 P → A8/MAPES 闭式内核（占用→Z_L(P)→Schur 补→S，

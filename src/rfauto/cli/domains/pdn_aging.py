@@ -32,7 +32,7 @@ def pdn_analyze_cmd(
     """PDN 阻抗谱分析：Z 谱+逐频裕量+反谐振峰清单+腔模（JSON 进出薄壳）。"""
     from rfauto.service.pdn_service import pdn_analyze as _analyze
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _analyze(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -52,7 +52,7 @@ def pdn_select_cmd(
     """贪心 decap 选型：candidates+budget+target → 选中明细+逐频裕量（infeasible 如实透传）。"""
     from rfauto.service.pdn_service import pdn_select as _select
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _select(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -71,7 +71,7 @@ def pdn_gate_cmd(
     """KiCad AC-PI 门：平面腔模筛查+安装避让+（可选）Z 谱裕量门（verdict 三值）。"""
     from rfauto.service.pdn_service import pdn_gate as _gate
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _gate(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -100,7 +100,7 @@ def aging_simulate_cmd(
     """老化漂移仿真：任务剖面→εr 漂移轨迹→fake 名义/EOL 两点 S 参数+失谐量。"""
     from rfauto.service.aging_service import aging_simulate as _simulate
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _simulate(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -120,7 +120,7 @@ def aging_verdict_cmd(
     """EOL 失谐判据：|detune_pct| ≤ spec（恰等判 PASS）→ PASS/FAIL 纯确定性。"""
     from rfauto.service.aging_service import aging_eol_verdict as _verdict
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _verdict(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -139,7 +139,7 @@ def aging_report_cmd(
     """老化报告：mission_profile 表/漂移轨迹/EOL 判据/法源 provenance 四节。"""
     from rfauto.service.aging_service import aging_report as _report
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = _report(payload)
     except (KeyError, TypeError, ValueError) as exc:

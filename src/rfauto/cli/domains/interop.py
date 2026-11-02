@@ -158,7 +158,7 @@ def lint_cmd(
 
     payload: dict = {}
     if payload_path is not None:
-        payload = _load_json_file(payload_path, "payload")
+        payload = _load_json_file(payload_path, "payload", json_output=json_output)
     try:
         result = design_lint(payload)
     except (KeyError, TypeError, ValueError) as exc:

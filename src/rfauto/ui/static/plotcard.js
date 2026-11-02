@@ -42,6 +42,10 @@
      aria-label；默认收起零视觉回归）——读屏/复制数据的文本替代面。
      复用路径数据换代时若表展开则原样重渲染（toggle 状态保持）。 */
 import { esc, escAttr } from "./pages/dom.js"; // UI-R2：esc 单源直连（拆分前自 pages.js，与入口循环引用消除）
+// aurora_o i18n 分波席：band 标记文案迁词表（chart.band_label）——原
+// buildEChartOption 内局部 `const t = theme`（PR-3 语境惯例）遮蔽裸名 t，
+// 已就该局部改名 th（#116 家族 JS 侧同型：名字绑定遮蔽让新路径抛
+// TypeError/变死代码）；本文件 i18n 取值统一裸名 t。
 import { t } from "./pages/i18n.js"; // W3-S9：数据表钮/caption/空态文案（词表单源，零硬编码 CJK——i18n 棘轮）
 import { mkExportButtons } from "./chart_export.js"; // UI-R5：导出统一出口（CSV/PNG/SVG+时间戳命名）
 import { CHART_GRID } from "./theme.js"; // W3-S12（P-5）：grid 常量单源（值冻结，golden 不受扰）
@@ -51,8 +55,8 @@ import { CHART_GRID } from "./theme.js"; // W3-S12（P-5）：grid 常量单源�
 /* 迁移前 drawEChart 的 option 构造（含 PR-3 gated 增量）。
    theme={light:boolean, palette:string[]}——缺省深色档+空调色板（测试友好）。 */
 export function buildEChartOption(series, opts = {}, theme) {
-  const t = theme || { light: false, palette: [] };
-  const light = !!t.light;
+  const th = theme || { light: false, palette: [] };
+  const light = !!th.light;
   const fg = light ? "#1b2330" : "#dce3ee";
   // PR-1 对比度：轴线=理解图形所需（≥3:1），刻度文字=文本（≥4.5:1）；
   // 分隔线=装饰性网格（读数靠轴线+刻度），不参与硬门。
@@ -69,7 +73,7 @@ export function buildEChartOption(series, opts = {}, theme) {
     : yAxisSingle;
   const option = {
     backgroundColor: "transparent",
-    color: t.palette && t.palette.length ? t.palette : undefined,
+    color: th.palette && th.palette.length ? th.palette : undefined,
     tooltip: Object.assign(
       { trigger: opts.xvalue ? "item" : "axis",
         valueFormatter: (v) => (+v).toFixed(2) },
@@ -141,7 +145,7 @@ export function buildEChartOption(series, opts = {}, theme) {
         itemStyle: { color: s.color },
         markLine: opts.band ? {
           silent: true, symbol: "none", lineStyle: { type: "dashed", color: light ? "#8a5300" : "#ffb74d" },
-          label: { color: light ? "#8a5300" : "#ffb74d", formatter: "带内" },
+          label: { color: light ? "#8a5300" : "#ffb74d", formatter: t("chart.band_label") },
           data: [{ xAxis: opts.band[0] }, { xAxis: opts.band[1] }],
         } : undefined,
         ...(s.y2 ? { yAxisIndex: 1 } : {}),
@@ -516,11 +520,14 @@ export function plotCardShellEntries() {
   return out;
 }
 
-/* 图像语义 aria-label（首渲染与复用路径同构单源）。 */
+/* 图像语义 aria-label（首渲染与复用路径同构单源；aurora_o i18n 分波席：
+   文案迁词表 chart.*，与 app.js drawEChart 同键单源，zh 渲染逐字节同）。 */
 function _ariaLabel(props) {
   return props.ariaLabel ||
-    `图表：${(props.series || []).map((s) => s.name).filter(Boolean).join("、") || "数据系列"}` +
-    `${props.ylabel ? "，纵轴 " + props.ylabel : ""}${props.xlabel ? "，横轴 " + props.xlabel : ""}`;
+    t("chart.aria_prefix") +
+    ((props.series || []).map((s) => s.name).filter(Boolean).join("、") || t("common.series_default")) +
+    (props.ylabel ? t("chart.aria_ylabel") + props.ylabel : "") +
+    (props.xlabel ? t("chart.aria_xlabel") + props.xlabel : "");
 }
 
 /* W3-S9：数据表渲染（plotCard 工具条"数据表"切换钮消费）。展开时按传入

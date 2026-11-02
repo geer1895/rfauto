@@ -30,6 +30,10 @@ def start_tune(
     study_name: str = "",
     sampler: str = "tpe",
     seed: int | None = None,
+    storage: str = "sqlite",
+    eipu_strategy: str = "",
+    turbo_n_regions: int | None = None,
+    turbo_region_strategy: str = "",
 ) -> dict[str, Any]:
     """提交主优化任务（异步），立即返回 job_id。
 
@@ -44,10 +48,20 @@ def start_tune(
         adapter: 适配器名称，"fake"（默认）或 "hfss"
         max_trials: 最大试验次数（缺省 60）
         study_name: Optuna study 名（空串=由配方自动派生）
-        sampler: 采样器 "tpe"（缺省）
+        sampler: 采样器 "tpe"（缺省）| "cmaes" | "gp" | "eipu" | "turbo"
         seed: 随机种子（None=交由内核缺省 SAMPLER_SEED=42；显式 0=字面种子
             0，与 CLI ``--seed 0`` 同义——ge9 审查批 R4 P2-2 前被 falsy 哨兵
             折成缺省，MCP 面不可达）
+        storage: Optuna 存储后端（T-N8）："sqlite"（缺省）| "journal"——
+            追加式日志文件，多进程并发同 study 不抢 SQLite 文件锁，构建
+            失败自动回退 sqlite（回退原因随终态结果可见）
+        eipu_strategy: EI 采集策略档（T-N9，仅 sampler="eipu" 生效）：
+            "eipu" | "ei" | "eipu_cooled" | "rei"（空串=不设置，行为不变；
+            错配 sampler 由内核显式拒绝）
+        turbo_n_regions: TuRBO 多域信任域数（T-N10，仅 sampler="turbo" 生效，
+            ≥1 的整数；None=不设置，行为不变）
+        turbo_region_strategy: TuRBO 区域采样策略档（T-N10，仅
+            sampler="turbo" 生效）："ts" | "rei"（空串=不设置，行为不变）
 
     Returns:
         dict: {ok: bool, job_id: str, state: str, message: str}
@@ -61,6 +75,10 @@ def start_tune(
         study_name=study_name or None,
         sampler=sampler,
         seed=seed,
+        storage=storage,
+        eipu_strategy=eipu_strategy or None,
+        turbo_n_regions=turbo_n_regions,
+        turbo_region_strategy=turbo_region_strategy or None,
     )
 
 

@@ -136,7 +136,9 @@ def test_cli_registered_leaf_count_matches_round3_anchor():
     # +1（aurora_e W3-S4 2026-10-19：campaign digest，战役终态 zh 摘要
     # 聚合叶——零逻辑转发 service/campaign_digest_service，JSON+文本产物
     # 落 runs/campaign_digest/，全叶带 --json）→ 274
-    assert check_numbers.count_cli() == 280
+    # aurora_p 同步席（2026-11-02）：280→297（aurora_n/o/p 新 CLI 叶，
+    # 口径不变=check_numbers.count_cli()；README 数字带同笔 297）。
+    assert check_numbers.count_cli() == 297
 
 
 def test_cli_bench_subapp_breakdown():

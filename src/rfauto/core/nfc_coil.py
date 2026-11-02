@@ -12,7 +12,7 @@
 
 数字出处（2026-09-24 原文逐位核对，#118/#331 纪律）：
 - 原文 PDF（Boyd Stanford 主页公开版）存档
-  内部证据档；系数表经 600dpi 渲染逐位目检：
+  runs/df6_dp18c10/_ref_mohan1999.pdf；系数表经 600dpi 渲染逐位目检：
   * Table I 修正 Wheeler  L=K₁μ₀n²d_avg/(1+K₂ρ)：
     square(2.34,2.75) / hexagon(2.33,3.82) / octagon(2.25,3.55)；圆形无此式；
   * Table II 电流片  L=c₁μ₀n²d_avg/2·(ln(c₂/ρ)+c₃ρ+c₄ρ²)：
@@ -430,7 +430,7 @@ def polygon_loop_vertices(shape: str, half_size_m: float,
     half_size/cos(π/n) 外接圆上）——形状外缘宽度恒为 2·half_size，与
     d_out 的「形状总宽」语义一致（2026-09-26 实证：外接圆半径口径使
     octagon/hexagon 对 current_sheet 系统性 −9%/−13%，across-flats 口径
-    归位 ≤2%，内部证据档 §1）；
+    归位 ≤2%，runs/df7_nfc/criteria.md §1）；
     circle=CIRCLE_SIDES 边正多边形离散（半径=half_size）。
     """
     import numpy as np
@@ -594,7 +594,7 @@ def spiral_numeric_inductance(geom: CoilGeometry, gmd_m: float | None = None,
     """多匝平面螺旋电感数值参考（H，与 Mohan 拟合式零共享系数）。
 
     理想同心多边形环模型（未含渲染端阶梯过渡尾/中跳线，见
-    内部证据档 §附）：L=Σ匝自感 + Σ匝对互感（有序对求和，
+    runs/df7_nfc/criteria.md §附）：L=Σ匝自感 + Σ匝对互感（有序对求和，
     互易对计两次）。返回总量与逐匝分量（报告面）。"""
     geom.validate()
     g = float(gmd_m) if gmd_m is not None else strip_gmd(geom.w_m)

@@ -8,7 +8,8 @@
 > 均为当前工作区实测；执行类命令给读法不代跑，读完你可以在 fake 通道
 > 零 license 复制整条链。
 > 英文版（English version）：docs/tutorials/uncertainty_and_surrogates_en.md
-> （W9-S3 译，2026-10-19 全旗标复测同笔）。
+> （W9-S3 译，2026-10-19 全旗标复测同笔；2026-10-31 §5 注册表动态指路
+> 化+§7 ⑥⑦ 新步同笔同步）。
 
 ## 0. 前置
 
@@ -16,7 +17,7 @@
   （`runs/`、`recipes/` 相对 cwd 解析）。
 - 全文命令一律走 console script 入口 `.venv/Scripts/rfauto.exe`；
   `python -m rfauto` 不是有效 CLI 入口。
-- 有一条铁律贯穿全文（内核立规 7）：**物理数字只出自确定性内核**——
+- 有一条铁律贯穿全文（AGENTS 规则 7）：**物理数字只出自确定性内核**——
   采样执行、代理拟合、LOOCV、良率 MC 全部是确定性函数，LLM/agent 只编
   排不产生数值。
 
@@ -142,8 +143,8 @@ LOOCV → LHS 验证点实跑复核 → 产物落盘。三个关键读法：
 
 旗标实测：`--tol 参数名=σ` 可多次（σ 与参数同单位，**必给**——缺公差
 直接报"缺少 tolerances"）、`--n` MC 抽样数（缺省 10000）、`--seed`、
-`--kind`（帮助文本写 `poly_ridge|nn`，实现走注册表，实际收 §5 全部
-12 种已注册 kind）。语义三件：名义点 = 样本集中 **cost 最小者**（确定
+`--kind`（帮助文本写 `poly_ridge|nn`，实现走注册表，实际收 §5 注册表
+全部已注册 kind——键集随版本增长，以 available() 为准）。语义三件：名义点 = 样本集中 **cost 最小者**（确定
 性，不是手工指定）；良率 = 公差盒内 MC 抽样逐点代理预测、按 objectives
 判违约的比例；敏感性排序 = 逐参数 ±1σ 扰动的指标响应幅值求和。输出还
 带 `uncertainty_status`：代理能给不确定性估计且 σ-误差秩相关 ρ≥0.5 才
@@ -186,18 +187,14 @@ build_yield_context 实测：5 点玩具样本 + 手写 objective 正常出名�
 `tolerance.tolerances` 段）对适配器**真跑** MC——代理收口的数字可信度
 存疑时，用它小样本抽验代理结论；`--dry-run` 先看计划面零执行。
 
-## 5. 代理模型注册表：14 种内置 + 自定义接入
+## 5. 代理模型注册表：动态键集 + 自定义接入
 
-注册表实测清单（装饰器注册全集，2026-10-19 W9-S3 复核；`available()`
-反映已 import 模块——裸 `available()` 为 13 种，`gnn_geom` 经模块
-import 触发注册后 14 种全貌；saas_gp/warped_kriging 为 2026-10-18
-架构批 W5-S22 新入）：
-
-```
-['deeponet', 'fno', 'fno_lite', 'gbdt', 'gnn_geom', 'huber_ridge',
- 'mapes_pixel_analytic', 'nn', 'pod_rom', 'poly_ridge', 'saas_gp',
- 'smt_kriging', 'smt_mfk', 'warped_kriging']
-```
+注册表是开放扩展点，键集随版本持续增长——本教程**不穷举清单防漂移**
+（旧版"14 种"定数清单一出即过时：注册键无独立 CLI 叶、`available()`
+又随模块 import 面变化）。完整键集以两处单源为准：**Python 面
+`surrogate_registry.available()`** 与 **`--kind` 消费通道的无效键报错**
+（`surrogate uq … --kind 拼错` 回显全部可用键）。2026-10-31 实测
+available() 21 键——数字只是读文时点的快照，别当契约引用。
 
 - **poly_ridge** 是校准链缺省（二阶多项式 + ridge，样本需求最小、
   LOOCV 门就是为它定的口径）；**nn** 是小 MLP（`--kind nn` 切换）。
@@ -206,6 +203,24 @@ import 触发注册后 14 种全貌；saas_gp/warped_kriging 为 2026-10-18
   saas_gp、HEBO 式输入 warping warped_kriging 等），实现见
   `optimization/surrogate/` 子包，
   每个模块头自带适用域说明。
+- **aurora_n 一役六新键一句话定位**（深读：
+  docs/tutorials/advanced_surrogates_bo.md——conformal/ensemble/
+  mt_gp/rff_gp 四件有逐节实测；pole_residue/vf_parametric/
+  deep_ensemble 以各自模块 docstring 为权威）：
+  - **conformal**：split-conformal 包装器——给任意无 σ 代理补"边际
+    覆盖有保证"的对称区间（半宽=校准残差分位数，不伪造高斯 σ）。
+  - **ensemble**：LOOCV ρ softmax 加权集成——成员间预测离散度=免费
+    epistemic σ。
+  - **mt_gp**：ICM 多输出 GP——跨指标联合后验 `predict_joint`，
+    mo run 多目标采集的缺省底座。
+  - **rff_gp**：随机傅里叶特征 + 岭读出——样本量上万时精确 GP 的
+    规模化近似档。
+  - **pole_residue / vf_parametric**：极点-留数头 + 参数化 VF 宏模型
+    邻域插值——"参数→S 曲线"物理先验代理（附无源性判据与样本凸包
+    外推判据）。
+  - **deep_ensemble**：同构 torch 深度集成（fno 底座，bootstrap+
+    异 seed 成员）——成员间分歧作 epistemic σ（上面 ensemble 的
+    torch 对应物）。
 - **第三方代理接入** = 实现三方法 + 装饰器注册（base.py 契约原文）：
 
 ```python
@@ -294,7 +309,8 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
   -m morris -n 30 --adapter fake --json
 
 # ② 校准链（fake；产物 runs/<新rid>/calibration/samples.json）
-#    服务直调见 §3 代码块；或走战役：
+#    服务直调见 §3 代码块；或走战役（配方也可换 UQ 收口链演示版
+#    recipes/branchline_uq_demo.yaml——带 tolerance 段，⑥ 用它更顺）：
 .venv/Scripts/rfauto.exe campaign plan recipes/branchline_tune_light.yaml \
   --calibrate-samples 9 --out-dir runs/my_uq_campaign
 .venv/Scripts/rfauto.exe campaign run runs/my_uq_campaign
@@ -311,6 +327,34 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
 .venv/Scripts/rfauto.exe tune recipes/branchline_tune_light.yaml \
   --adapter fake --sampler sbo --max-trials 30
 .venv/Scripts/rfauto.exe surrogate analyze <tune_run_id> --json
+
+# ⑥（可选）ensemble+conformal：模型族分歧 σ + 保形区间（Python 注册面，
+#    消费 ② 的 samples.json；完整用法深读 advanced_surrogates_bo.md §2-§3，
+#    可跑数据源配方=recipes/branchline_uq_demo.yaml——含 tolerance 段的
+#    UQ 收口链演示配方，validate RC=0）
+.venv/Scripts/python.exe -c "
+import json
+from rfauto.optimization.surrogate import surrogate_registry
+doc = json.load(open('runs/<rid>/calibration/samples.json', encoding='utf-8'))
+samples, bounds = doc['samples'], doc['bounds']
+# ensemble：LOOCV rho softmax 加权；数值指标键多于一个时 rho_metric 必填
+# （键名=samples.json metrics 里的数值键，如 s11_db_max_in_band）
+e = surrogate_registry.create('ensemble', config={
+    'bounds': bounds, 'members': ['poly_ridge', 'gbdt', 'smt_kriging'],
+    'rho_metric': '<metrics 里的数值键, 如 s11_db_max_in_band>'})
+info = e.fit(samples)          # info['weights']=成员权重；uncertainty()=离散度 σ
+# conformal：包任意代理补保形区间；小校准集会诚实上溢（q=+inf 区间无界）
+c = surrogate_registry.create('conformal', config={
+    'base_kind': 'poly_ridge',
+    'base_config': {'bounds': bounds, 'order': 2},
+    'alpha': 0.1, 'seed': 7})
+c.fit(samples)                 # fit_info['n_cal'] 撑不起 alpha 时报 coverage_warning
+print(c.predict_interval({'arm_len_mm': 20.5, 'series_w_mm': 1.87,
+                          'shunt_w_mm': 1.11}))
+"
+# ⑦（可选）多目标 BO 环（内置合成族 CLI 直跑，不依赖配方——ZDT1 缩配
+#    合成族，EHVI 采集+超体积裁判；深读 advanced_surrogates_bo.md §6）
+.venv/Scripts/rfauto.exe mo run --kind zdt1 --n-eval 20 --json
 ```
 
 判读顺序建议：② 的 verdict=FAIL 先修（ρ<0.8 → `augment_calibration`
@@ -321,6 +365,8 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
 ## 8. 下一步
 
 - tune→refine→replay 优化闭环主线：docs/tutorials/first_optimization_loop.md
+- 代理建模进阶六件（conformal/ensemble/mt_gp/rff_gp 深读 + mo run/
+  al propose 消费入口）：docs/tutorials/advanced_surrogates_bo.md
 - 校准产物行级入册与健康门：docs/tutorials/datasets_and_health_gates.md
 - MCP 里同源工具（uq_yield_at/robustness_report 等）：
   docs/tutorials/mcp_in_practice.md
@@ -333,7 +379,7 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
 |---|---|---|
 | `rfauto sensitivity --help`（sobol/morris/seed/adapter 旗标） | 实跑 | 过 |
 | Sobol 总求值 = N×(d+2)、Morris 轨迹 max(5,N//d)、#234 居中 | `optimization/sensitivity.py` 模块头+docstring 实读 | 过 |
-| `rfauto surrogate --help`（analyze/uq 两子命令） | 实跑 | 过 |
+| `rfauto surrogate --help`（analyze/uq/export-onnx 三子命令） | 实跑 | 过 |
 | `rfauto surrogate uq --help`（--tol/--n/--kind/--seed） | 实跑 | 过 |
 | 名义点=min cost 样本、±1σ 排序、缺 tolerances 报错、R1 spread-skill 门 | `service/uq_service.py` surrogate_yield/build_yield_context 实读 | 过 |
 | `rfauto uq --help`（yield-at/design-center/temp-zone/robustness） | 实跑（四子命令旗标逐条对） | 过 |
@@ -342,7 +388,7 @@ robustness 服务的 worst-case 面消费；**无独立 CLI 叶**。模块头自
 | 校准链六步/design_kind 三态/lhs 需 n_samples≥5/LOOCV ρ≥0.8/FAIL=正常返回 | `service/calibration_service.py` 模块头+calibrate_surrogate 实读 | 过 |
 | 校准产物四件套与 meta 登记（algorithm=surrogate_calibration） | calibration_service 落盘段实读 | 过 |
 | 真实 FAIL 工件（ρ=0.3833/9 折/L9/taguchi） | `runs/20260903_235147_cb982df7/calibration/{gate,samples}.json` 实读 | 过 |
-| 注册表 14 种 kind 清单（裸 available()=13，gnn_geom 模块 import 后 14） | `surrogate_registry.available()` 实调+装饰器注册面 grep | 过 |
+| 注册表清单动态指路不穷举（available() 2026-10-31 实测 21 键，数字非契约） | `surrogate_registry.available()` 实调 | 过 |
 | 第三方注册三方法契约 | `optimization/surrogate/base.py` docstring 实读 | 过 |
 | uq --kind 收全注册表（帮助文本仅写 poly_ridge\|nn） | `calibration_service._make_model` 经 uq_service 调用链实读 | 过 |
 | 注册表服务面 v1 零 CLI/MCP 接线（tune 三态开关除外） | `surrogate_registry_service.py` 模块头实读 + cli/mcp_tools grep | 过 |

@@ -1,6 +1,6 @@
 """W2-B 席（VI-3 模板推荐器 + TEMPLATE_SPECS 49→71 + UX-A7 深链）单测。
 
-规格=内部证据档 §VI-3 + 批判据
+规格=runs/research_seats_20261004/sp_specs6/SPECS.md §VI-3 + 批判据
 runs/w2_phase2/criteria.md W2-B 节。判据（预声明门值）：
 ① TEMPLATE_SPECS names()=71（bootstrap 后真跑计数）；
 ② recommend 三组预声明查询 top-1 golden 稳定；

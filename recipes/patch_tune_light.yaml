@@ -1,27 +1,70 @@
 # Patch 天线调谐闭环配方（G0 定案后 + 二维调参版）
 # 目标：S11 带内最大 <= -10 dB
+# ─────────────────────────────────────────────────────────────────────────────
+# recipes/ 实例库 6 份之一：宽域调参（tune）演示配方——三维搜索+窄判读带
+# +小 trial 预算，2 小时内跑完一轮闭环。与 patch_antenna_v1 的分工：
+# v1=band×bounds 联合重设计的实战版；本文件=宽域搜索演示版（含教育性
+# 反例，见 optimization 段注）。配方 schema 权威出处：
+# docs/reference.md「配方 schema」节。注释写法注意（#324 坑）：值面
+# “空格+#”会被 YAML 解析器截断——引注只写注释行。
 model: patch_antenna
+# model：目标模型（models 注册表键；必需键）。
 recipe_version: 1
+# recipe_version：配方 schema 版本（与插件契约 schema_version 语义不同，#106）。
 schema_version: 1
+# schema_version：模型插件参数 schema 版本。
 notes: "2.4GHz patch antenna: expanded tuning (patch_len + feed_offset + patch_w)"
+# notes：人类备注（自由文本）。
 params:
+  # params：设计参数段（必需键）。tune 真跑各 trial 参数由 Optuna 在
+  # optimization.params 边界内采样（dry-run 信封 params_semantics 三键
+  # 即此语义——journeyB 实证，run 真跑按名义值直通）。
   f0_ghz:         {value: 2.4,  unit: GHz}
+  # f0_ghz：设计意图中心频率（GHz）。
   z0_ohm:         {value: 50,   unit: ohm}
+  # z0_ohm：馈电端口目标阻抗（ohm）。
   substrate:      rogers4350b_h0.508
+  # substrate：层叠档案键（configs/materials.yaml：Rogers 4350B，
+  # εr=3.66，tanδ=0.0037，h=0.508mm）。
   patch_len_mm:   {value: 40.0}
+  # patch_len_mm：贴片谐振边长度（mm，沿馈电方向）。
   patch_w_mm:     {value: 50.0}
+  # patch_w_mm：贴片宽度（mm，非谐振边）。
   feed_offset_mm: {value: 10.0}
+  # feed_offset_mm：底馈探针沿谐振轴偏置（mm）。离中心场节点越远馈电阻
+  # 越大（中心不耦合）；10mm 为宽域搜索演示起点，非真机标定值。
 setup:
+  # setup：仿真设置段（可选）。调参版窄带+少点+粗收敛换速度。
   solver: DrivenModal
+  # solver：HFSS 求解类型（DrivenModal=模式驱动）。
   freq_range_ghz: [2.3, 2.5]
+  # freq_range_ghz：扫频范围（GHz，[下限, 上限]）——只扫判读带。
   points: 11
+  # points：扫频点数（11 点=20MHz 步进，够带内统计量）。
   convergence_delta: 0.1
+  # convergence_delta：收敛判据放宽到 0.1（调参阶段粗收敛换速度）。
   radiation_box: open
+  # radiation_box：辐射边界口径（open=开域）。
 objectives:
+  # objectives：优化目标列表（tune 的 cost 来源）。
   - {metric: s11_db, band: [2.3, 2.5], op: max_below, value: -10}
+  # s11_db=带内 |S11| 最大值（dB，worst-case 包络）≤ -10dB。
+  # 注意指标名口径：谐振类器件的谷深判读应仿 patch_antenna_v1 用
+  # s11_db_min（#195 常数陷阱：包络名在深谷不在带内时恒 ≈0dB、
+  # cost 零区分度）；本配方保留裸名作演示对照。
 optimization:
+  # optimization：调参段（tune 消费）。params=搜索空间（low/high 闭区间）。
   params:
     patch_len_mm:   {low: 35.0, high: 45.0}
     feed_offset_mm: {low: 3.0,  high: 20.0}
     patch_w_mm:     {low: 40.0, high: 60.0}
+    # 教育性反例注记（宽域搜索的代价）：按经验常数 f_dip·L≈76.8 GHz·mm
+    # （openEMS 口径，HFSS 仲裁背书见 patch_antenna_v1 注），本搜索域的
+    # 谐振谷位约在 1.71 至 2.19GHz，整体落在判读带 [2.3,2.5] 下方，
+    # 且 W 上限 60 已进入 #190 记录的宽贴片异常簇——直接用本配方对
+    # openEMS 通道做真优化大概率 cost 零区分度。真优化请用
+    # patch_antenna_v1 的 band×bounds 联合重设计口径；本文件的定位是
+    # 宽域 tune 机制演示（fake 通道冒烟/闭环流程验证）。
 limits: {max_trials: 15, max_wall_hours: 2}
+# limits：配额护栏（QuotaGuard 双闸）：最多 15 个 trial、墙钟 2 小时
+# ——轻量预算定位；真战役按 patch_antenna_v1 的 30 次/6 小时口径放大。

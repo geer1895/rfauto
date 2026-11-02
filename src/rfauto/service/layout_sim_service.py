@@ -88,7 +88,7 @@ from rfauto.adapters.layout_substrate import (
 # F-13 批 2（W6-E）：载荷守卫单源化（#116 删净）。文案分歧件已声明统一：
 # 原「payload 必须为映射: X」→ 单源「payload 必须是 JSON 对象，实际 X」
 # （try/except ValueError 捕获进 errors 的 ok=False 语义逐位不变，文案
-# 变更见 W6-E 报告/）。
+# 变更见 W6-E 报告/Devlog）。
 from rfauto.service._helpers import require_payload_dict as _require_payload_dict
 from rfauto.service.envelope import error_envelope, ok_envelope
 from rfauto.service.layout_service import layout_from_payload

@@ -2,7 +2,7 @@
 
 基于 NN bagging 集成的预测 std（不确定度）在搜索空间内提议下一批
 真机采样点：候选网格上预测不确定度最大、且与既有样本保持最小距离。
-纯确定性内核（内核立规注记 #7）——agent/UI 只消费提议结果。
+纯确定性内核（AGENTS #7）——agent/UI 只消费提议结果。
 
 §10.20 ⑦ 加性增肉（2026-09-12）：
 - 不确定性来源扩到三种，统一 JSON 契约（estimate_uncertainty）：
@@ -16,6 +16,22 @@
   合成带噪耦合碗上 active_learning 引导 vs i.i.d. 随机搜索的收敛加速；
   用合成函数而非 fake 原生模型（后者病态不可用），多固定种子取中位数
   防种子彩票。
+
+T-N9（aurora_n W2，EI/UCB/σ 采集族 + 注册代理消费面 AL-2）：
+- 采集函数旋钮（acquisition=...）从"仅 LCB 池"扩为四档三族：
+    * "lcb"   —— 缺省，μ−βσ 取 argmin（极小化 GP-LCB 乐观臂）；
+      **缺省路径与 T-N9 前实现逐位等价**（同 LHS 池/同 σ 通道/同选点序）；
+    * "ucb"   —— μ+βσ 取 argmax（置信界族悲观臂：均值高且不确定的
+      上界区域探索，与 lcb 互补）；
+    * "ei"    —— 期望改进 argmax（Jones 1998 极小化式），**公式单源**
+      gp_det.expected_improvement（T-N7 落点，本模块不复制数学）；
+    * "sigma" —— 纯不确定度 argmax σ（max-variance 空间填充）。
+  统一打分面见 acquisition_scores（"分数越大越该采样"口径）。
+- 不确定度来源新增 "registry"（source="registry" + kind=<注册键>）：
+  消费 surrogate_registry **任意注册模型**的 predict/uncertainty——
+  原生 σ 缺席（uncertainty() 返回 None，如 poly_ridge/gbdt）时按
+  T-N1 共形区间包装回退（conformal_fallback，缺省 True；保形半宽
+  非高斯 σ，sigma_source="conformal_interval" 如实标注）。
 
 契约（estimate_uncertainty 返回值）::
 
@@ -44,10 +60,16 @@ from typing import Any
 
 import numpy as np
 
+from rfauto.optimization.surrogate.gp_det import expected_improvement
 from rfauto.service.envelope import error_envelope, ok_envelope
 
 #: 支持的不确定度来源（estimate_uncertainty(source=...)）。
-UNCERTAINTY_SOURCES = ("nn", "bootstrap", "gp")
+UNCERTAINTY_SOURCES = ("nn", "bootstrap", "gp", "registry")
+
+#: 采集函数档位（active_learning_search(acquisition=...)；T-N9 三族+缺省）。
+#: "lcb"/"ucb"=置信界族（极小化口径的乐观/悲观两臂）、"ei"=期望改进、
+#: "sigma"=纯不确定度（max-variance 空间填充）。
+ACQUISITION_KINDS = ("lcb", "ucb", "ei", "sigma")
 
 #: 主动学习裁判用的单一合成指标键。
 COST_KEY = "cost"
@@ -61,13 +83,19 @@ def propose_next_points(
     n_candidates: int = 500,
     min_dist: float = 0.12,
     seed: int = 42,
+    conformal_fallback: bool = False,
 ) -> dict[str, Any]:
     """提议下一批采样点：不确定度 × 距离双重准则。
 
-    1. 从 samples.json 训练代理（需 kind 支持 uncertainty，如 nn bagging）；
+    1. 从 samples.json 训练代理（需 kind 支持 uncertainty，如 nn bagging；
+       T-N9 起任意注册键可入——原生 σ 缺席的 kind 传
+       conformal_fallback=True 走 T-N1 共形区间半宽作分数）；
     2. LHS 撒 n_candidates 候选点；
     3. 过滤与既有样本归一化距离 < min_dist 者；
     4. 按预测 std 之和降序取前 k 个。
+
+    conformal_fallback 缺省 False=旧路径逐字节等价（None-σ kind 的候选
+    全部跳过、proposed 空的历史行为不变）。
     """
 
     from rfauto.optimization.sample_design import lhs_points, np_rel
@@ -94,6 +122,10 @@ def propose_next_points(
     include = [np_rel(s["params"], names, lower, span) for s in samples]
 
     cand = lhs_points(bounds, n_candidates, seed=seed)["points"]
+    if conformal_fallback and cand:
+        model, _ = _fit_registry_model(
+            samples, bounds, kind=kind, order=2, ridge_lambda=0.1,
+            conformal_fallback=True, seed=seed, probe_point=cand[0])
     scored = []
     for pt in cand:
         pn = np_rel(pt, names, lower, span)
@@ -306,6 +338,111 @@ def _surrogate_uncertainty_predictions(
     return np.array(means, dtype=float), np.array(sigmas, dtype=float)
 
 
+# ─── 不确定度来源 ④：surrogate_registry 任意注册代理（T-N9 AL-2） ────────────
+
+
+def _fit_registry_model(
+    samples: list[dict[str, Any]],
+    bounds: dict[str, tuple[float, float]],
+    *,
+    kind: str | None,
+    order: int,
+    ridge_lambda: float,
+    conformal_fallback: bool,
+    seed: int,
+    probe_point: dict[str, float] | None,
+) -> tuple[Any, str]:
+    """按注册键构造并拟合代理；原生 σ 缺席时按需走 T-N1 共形包装。
+
+    返回 (fitted_model, sigma_source)，sigma_source ∈
+    {"native", "conformal_interval"}——共形半宽是残差分位数**非高斯 σ**，
+    消费方按此键如实标注（#122 不冒充）。
+
+    负例契约（显式报错，不静默）：kind 缺失/非字符串、kind 未注册、
+    原生 σ 缺席且 conformal_fallback=False、conformal 包装样本 <4
+    （其 fit 的显式 ValueError 原样上抛）。
+
+    探针语义：uncertainty(probe_point) 抛异常按"无原生 σ"处理（与
+    propose_next_points 逐点 try/except 同宽严度）；probe_point=None
+    （无候选可探）按原生档返回。
+    """
+    from rfauto.optimization.surrogate import surrogate_registry
+    from rfauto.service.calibration_service import _make_model
+
+    if not kind or not isinstance(kind, str):
+        raise ValueError(
+            "registry 通道需要显式字符串 kind=（surrogate_registry 注册键，"
+            f"可用: {surrogate_registry.available()}）")
+    if kind not in surrogate_registry.available():
+        raise ValueError(
+            f"未注册的代理类型: {kind}（可用: {surrogate_registry.available()}）")
+    model = _make_model(kind, bounds, order=order, ridge_lambda=ridge_lambda)
+    model.fit(samples)
+    probe = None
+    if probe_point is not None:
+        try:
+            probe = model.uncertainty(probe_point)
+        except Exception:
+            probe = None
+    if probe is not None:
+        return model, "native"
+    if not conformal_fallback:
+        raise ValueError(
+            f"代理 {kind} 无原生不确定度（uncertainty() 返回 None 或不可用）"
+            "——传 conformal_fallback=True 走 T-N1 共形区间包装，"
+            "或改用支持 σ 的代理")
+    base_config: dict[str, Any] = {"bounds": bounds}
+    if kind == "poly_ridge":
+        base_config.update({"order": order, "ridge_lambda": ridge_lambda})
+    wrapped = surrogate_registry.create("conformal", config={
+        "base_kind": kind, "base_config": base_config, "seed": int(seed)})
+    wrapped.fit(samples)
+    return wrapped, "conformal_interval"
+
+
+def _registry_predictions(
+    samples: list[dict[str, Any]],
+    bounds: dict[str, tuple[float, float]],
+    points: list[dict[str, float]],
+    *,
+    kind: str | None,
+    order: int,
+    ridge_lambda: float,
+    conformal_fallback: bool,
+    seed: int,
+    metric_keys: list[str],
+) -> tuple[np.ndarray, np.ndarray, str]:
+    """任意注册代理在候选点上的 (mean, σ) 预测（T-N9 registry 来源）。
+
+    metric_keys 缺项（代理未预测/未校准该指标）显式 ValueError——
+    键名错配是契约破坏，不静默补 0（#316 多报不放过）。
+    """
+    model, sigma_source = _fit_registry_model(
+        samples, bounds, kind=kind, order=order, ridge_lambda=ridge_lambda,
+        conformal_fallback=conformal_fallback, seed=seed,
+        probe_point=points[0] if points else None)
+    means: list[list[float]] = []
+    sigmas: list[list[float]] = []
+    for pt in points:
+        pred = model.predict(pt)
+        unc = model.uncertainty(pt) or {}
+        row_m, row_s = [], []
+        for k in metric_keys:
+            if k not in pred:
+                raise ValueError(
+                    f"代理 {kind} 未预测指标 {k}（predict 键: {sorted(pred)}）")
+            if k not in unc:
+                raise ValueError(
+                    f"代理 {kind} 的 uncertainty() 缺指标 {k}"
+                    f"（uncertainty 键: {sorted(unc)}）")
+            row_m.append(float(pred[k]))
+            row_s.append(float(unc[k]))
+        means.append(row_m)
+        sigmas.append(row_s)
+    return (np.array(means, dtype=float), np.array(sigmas, dtype=float),
+            sigma_source)
+
+
 def _predict_mean_sigma(
     samples: list[dict[str, Any]],
     bounds: dict[str, tuple[float, float]],
@@ -320,21 +457,35 @@ def _predict_mean_sigma(
     ridge_lambda: float = 0.1,
     length_scale: float = 0.3,
     noise: float = 1e-6,
-) -> tuple[np.ndarray, np.ndarray]:
-    """统一分派：source → (means, sigmas)。"""
+    conformal_fallback: bool = True,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    """统一分派：source → (means, sigmas, meta)。
+
+    meta 目前只含 registry 来源的 "sigma_source"（"native"|"conformal_interval"），
+    其余来源为 {}——信封层按有无该键决定是否透出（旧来源信封零改动）。
+    """
     if source == "gp":
-        return _gp_posterior_predictions(
+        means, sigmas = _gp_posterior_predictions(
             samples, bounds, points, length_scale=length_scale, noise=noise,
             metric_keys=metric_keys)
+        return means, sigmas, {}
     if source == "bootstrap":
-        return _bootstrap_ensemble_predictions(
+        means, sigmas = _bootstrap_ensemble_predictions(
             samples, bounds, points, kind=kind or "poly_ridge",
             n_ensemble=n_ensemble, seed=seed, order=order,
             ridge_lambda=ridge_lambda, metric_keys=metric_keys)
+        return means, sigmas, {}
     if source == "nn":
-        return _surrogate_uncertainty_predictions(
+        means, sigmas = _surrogate_uncertainty_predictions(
             samples, bounds, points, kind=kind or "nn", order=order,
             ridge_lambda=ridge_lambda)
+        return means, sigmas, {}
+    if source == "registry":
+        means, sigmas, sigma_source = _registry_predictions(
+            samples, bounds, points, kind=kind, order=order,
+            ridge_lambda=ridge_lambda, conformal_fallback=conformal_fallback,
+            seed=seed, metric_keys=metric_keys)
+        return means, sigmas, {"sigma_source": sigma_source}
     raise ValueError(f"未知不确定度来源: {source}（可用: {list(UNCERTAINTY_SOURCES)}）")
 
 
@@ -355,8 +506,14 @@ def estimate_uncertainty(
     ridge_lambda: float = 0.1,
     length_scale: float = 0.3,
     noise: float = 1e-6,
+    conformal_fallback: bool = True,
 ) -> dict[str, Any]:
     """统一不确定性契约：任意来源 → 同构 JSON（mean/sigma/score）。
+
+    source="registry"（T-N9）需显式 kind=<surrogate_registry 注册键>：
+    任意注册模型入环，原生 σ 缺席时 conformal_fallback（缺省 True）
+    走 T-N1 共形区间半宽，信封附 "sigma_source"（"native"|
+    "conformal_interval"）如实标注；其余来源信封零改动。
 
     非法输入：source 未注册 / 点参数非数值 → raise ValueError；
     退化输入（空 bounds / 空样本 / 空候选点）→ ok=False 或空列表，不崩。
@@ -364,6 +521,11 @@ def estimate_uncertainty(
     if source not in UNCERTAINTY_SOURCES:
         raise ValueError(
             f"未知不确定度来源: {source}（可用: {list(UNCERTAINTY_SOURCES)}）")
+    if source == "registry" and not kind:
+        from rfauto.optimization.surrogate import surrogate_registry
+        raise ValueError(
+            "source='registry' 需要显式 kind=（surrogate_registry 注册键，"
+            f"可用: {surrogate_registry.available()}）")
     if not bounds:
         return {"ok": False, "source": source,
                 "errors": ["搜索空间为空（bounds 缺失）"]}
@@ -379,10 +541,11 @@ def estimate_uncertainty(
     if not points:
         return ok_envelope(source=source, kind=kind, n_samples=len(samples), metric_keys=keys, points=[], note="候选点为空")
 
-    means, sigmas = _predict_mean_sigma(
+    means, sigmas, meta = _predict_mean_sigma(
         samples, bounds, points, source=source, metric_keys=keys, seed=seed,
         n_ensemble=n_ensemble, kind=kind, order=order,
-        ridge_lambda=ridge_lambda, length_scale=length_scale, noise=noise)
+        ridge_lambda=ridge_lambda, length_scale=length_scale, noise=noise,
+        conformal_fallback=conformal_fallback)
 
     out = []
     for i, pt in enumerate(points):
@@ -391,13 +554,19 @@ def estimate_uncertainty(
                    for j, k in enumerate(keys)}
         out.append({"params": dict(pt), "mean": mean_d, "sigma": sigma_d,
                     "score": float(sum(sigma_d.values()))})
+    fields: dict[str, Any] = {}
+    if meta.get("sigma_source"):
+        fields["sigma_source"] = meta["sigma_source"]
     return ok_envelope(
         source=source,
         kind=kind,
         n_samples=len(samples),
         metric_keys=keys,
         points=out,
-        note="σ 仅由确定性内核产出（#7），agent/UI 只消费",
+        **fields,
+        note="σ 仅由确定性内核产出（#7），agent/UI 只消费"
+             + ("；registry 来源的 sigma_source 如实标注（conformal_interval"
+                "为保形半宽，非高斯 σ）" if fields else ""),
     )
 
 
@@ -508,6 +677,47 @@ def maximin_exploration_point(
 # ─── 采集驱动（不确定性引导的下一采样点，供加速裁判/环复用） ─────────────────
 
 
+# ─── 采集函数族（T-N9：EI/UCB/σ 三族 + LCB 缺省，统一打分面） ────────────────
+
+
+def acquisition_scores(
+    means: np.ndarray,
+    sigmas: np.ndarray,
+    *,
+    acquisition: str,
+    beta: float = 2.0,
+    xi: float = 0.0,
+    y_best: float = 0.0,
+) -> np.ndarray:
+    """采集族统一打分（"分数越大越该采样"口径，返回逐点分数向量）。
+
+    - "lcb"   ：βσ−μ 取 argmax ≡ 旧路径 argmin(μ−βσ)——IEEE 减法关于
+      取负恒等（fl(b−a) ≡ −fl(a−b)），argmax/argmin 并列取首下标同规，
+      缺省路径选点逐位不变；
+    - "ucb"   ：μ+βσ 取 argmax（置信界族悲观臂：均值高且不确定的
+      上界区域，探索性强于 EI）；
+    - "ei"    ：期望改进 argmax——公式单源
+      ``gp_det.expected_improvement``（T-N7 落点，本模块不复制数学）；
+      y_best 为当前最优 cost（极小化），xi 为探索参数（Jones 1998 缺省 0）；
+    - "sigma" ：σ 取 argmax（max-variance 空间填充，不消费 μ）。
+
+    负例：acquisition 未注册 → ValueError（可用档位见 ACQUISITION_KINDS）。
+    确定性：纯函数，同输入逐位同输出。
+    """
+    mu = np.asarray(means, dtype=float)
+    sigma = np.asarray(sigmas, dtype=float)
+    if acquisition == "lcb":
+        return float(beta) * sigma - mu
+    if acquisition == "ucb":
+        return mu + float(beta) * sigma
+    if acquisition == "ei":
+        return expected_improvement(mu, sigma, float(y_best), xi=float(xi))
+    if acquisition == "sigma":
+        return sigma
+    raise ValueError(
+        f"未知采集函数: {acquisition}（可用: {list(ACQUISITION_KINDS)}）")
+
+
 def active_learning_search(
     evaluate_fn: Callable[[dict[str, float]], float],
     bounds: dict[str, tuple[float, float]],
@@ -521,12 +731,21 @@ def active_learning_search(
     length_scale: float = 0.3,
     noise: float = 1e-6,
     n_ensemble: int = 8,
+    acquisition: str = "lcb",
+    kind: str | None = None,
+    xi: float = 0.0,
+    conformal_fallback: bool = True,
 ) -> dict[str, Any]:
-    """不确定性引导采样：LCB α(x)=μ(x) − β·σ(x) 取最小（确定性）。
+    """采集函数驱动的下一采样点搜索（确定性；T-N9 起采集族可旋）。
 
     evaluate_fn: params → 标量 cost（合成函数或真机包装，纯确定性）。
-    初始 n_init 点 LHS，随后每轮按 LCB 从 LHS 候选池选 1 点评估，
+    初始 n_init 点 LHS，随后每轮按采集函数从 LHS 候选池选 1 点评估，
     至 budget 次评估用完。返回 JSON 契约（best_cost/best_params/history）。
+
+    acquisition（缺省 "lcb"=旧路径逐字节等价）与 kind/xi/conformal_fallback
+    语义见 ``acquisition_scores`` 与 ``estimate_uncertainty``（registry
+    来源需 kind=<注册键>）。负例：未知采集名/未知来源/registry 缺 kind
+    显式 ValueError。
     """
     from rfauto.optimization.sample_design import lhs_points
 
@@ -538,6 +757,14 @@ def active_learning_search(
         raise ValueError("budget 必须 ≥1")
     if source not in UNCERTAINTY_SOURCES and source != "nn":
         raise ValueError(f"未知不确定度来源: {source}")
+    if acquisition not in ACQUISITION_KINDS:
+        raise ValueError(
+            f"未知采集函数: {acquisition}（可用: {list(ACQUISITION_KINDS)}）")
+    if source == "registry" and not kind:
+        from rfauto.optimization.surrogate import surrogate_registry
+        raise ValueError(
+            "source='registry' 需要显式 kind=（surrogate_registry 注册键，"
+            f"可用: {surrogate_registry.available()}）")
 
     budget = int(budget)
     n_init = max(1, min(int(n_init), budget))
@@ -560,20 +787,29 @@ def active_learning_search(
                           seed=seed * 1000 + rnd)["points"]
         if not pool:
             break
-        means, sigmas = _predict_mean_sigma(
+        means, sigmas, _meta = _predict_mean_sigma(
             samples, bounds, pool, source=source, metric_keys=[COST_KEY],
-            seed=seed + rnd, n_ensemble=n_ensemble,
-            length_scale=length_scale, noise=noise)
-        lcb = means[:, 0] - float(beta) * sigmas[:, 0]
-        pick = int(np.argmin(lcb))
+            seed=seed + rnd, n_ensemble=n_ensemble, kind=kind,
+            length_scale=length_scale, noise=noise,
+            conformal_fallback=conformal_fallback)
+        scores = acquisition_scores(
+            means[:, 0], sigmas[:, 0], acquisition=acquisition, beta=beta,
+            xi=xi,
+            y_best=min(s["metrics"][COST_KEY] for s in samples))
+        pick = int(np.argmax(scores))
         _eval(pool[pick])
         history.append({"round": rnd, "n_evals": len(samples),
                         "best_cost": min(s["metrics"][COST_KEY]
                                          for s in samples)})
     best = min(samples, key=lambda s: s["metrics"][COST_KEY])
+    note = ("LCB 采集（μ−βσ）确定性；σ 来自 estimate_uncertainty 通道"
+            if acquisition == "lcb" else
+            f"{acquisition} 采集（T-N9 采集族）确定性；σ 来自"
+            " estimate_uncertainty 通道")
     return ok_envelope(
         source=source,
         beta=float(beta),
+        acquisition=acquisition,
         seed=seed,
         budget=budget,
         n_evals=len(samples),
@@ -581,7 +817,7 @@ def active_learning_search(
         best_params=dict(best["params"]),
         samples=samples,
         history=history,
-        note="LCB 采集（μ−βσ）确定性；σ 来自 estimate_uncertainty 通道",
+        note=note,
     )
 
 
@@ -652,17 +888,29 @@ def convergence_speedup_benchmark(
     n_pool: int = 256,
     length_scale: float = 0.3,
     target_fraction: float = 0.02,
+    acquisition: str = "lcb",
+    kind: str | None = None,
+    xi: float = 0.0,
+    conformal_fallback: bool = True,
 ) -> dict[str, Any]:
     """§10.20 ⑦ 验收：同预算下 active_learning 引导 vs 随机搜索的收敛加速。
 
     合成函数（带噪耦合碗，定义域已知）上等预算比"首次达到目标阈值的
     评估次数"；目标阈值 = f_min + fraction·(f_max−f_min)，**高于极值下限**
-    （#207：阈值不可低于极值，否则随机搜索有种子彩票）。未达标按预算截尾
-    （对 active_learning 保守）。多固定种子各跑一对（配对同种子），
-    取加速比中位数（防种子彩票）。speedup = 随机评估次数 / AL 评估次数。
+    （#207：阈值不可低于极值，否则随机搜索有种子彩票；常数退化目标
+    f_min==f_max 时 target==f_min 同点显式拒绝——#195 族防常数陷阱）。
+    未达标按预算截尾（对 active_learning 保守）。多固定种子各跑一对
+    （配对同种子），取加速比中位数（防种子彩票）。
+    speedup = 随机评估次数 / AL 评估次数。
+
+    T-N9 透传：acquisition/kind/xi/conformal_fallback 直送
+    active_learning_search（缺省 "lcb"=旧路径逐位等价）。
     """
     if source not in UNCERTAINTY_SOURCES:
         raise ValueError(f"未知不确定度来源: {source}")
+    if acquisition not in ACQUISITION_KINDS:
+        raise ValueError(
+            f"未知采集函数: {acquisition}（可用: {list(ACQUISITION_KINDS)}）")
     budget = int(budget)
     if budget < 2:
         raise ValueError("budget 必须 ≥2")
@@ -682,7 +930,8 @@ def convergence_speedup_benchmark(
         al = active_learning_search(
             synthetic_noisy_bowl, BOWL_BOUNDS, budget=budget, n_init=n_init,
             seed=seed, source=source, beta=beta, n_pool=n_pool,
-            length_scale=length_scale)
+            length_scale=length_scale, acquisition=acquisition, kind=kind,
+            xi=xi, conformal_fallback=conformal_fallback)
         rd_costs = _random_search_costs(
             synthetic_noisy_bowl, BOWL_BOUNDS, budget, seed + 7919)
         al_costs = [x["metrics"][COST_KEY] for x in al["samples"]]
@@ -707,6 +956,7 @@ def convergence_speedup_benchmark(
         n_seeds=n_seeds,
         source=source,
         beta=float(beta),
+        acquisition=acquisition,
         speedup_median=median_speedup,
         speedup_min=float(np.min(speedups)),
         speedup_max=float(np.max(speedups)),

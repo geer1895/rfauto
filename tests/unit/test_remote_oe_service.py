@@ -42,7 +42,7 @@ def _one_machine(monkeypatch, **kw):
     from rfauto.infra.remote_machines import RemoteMachineConfig
 
     cfg = RemoteMachineConfig(
-        name="sim_server", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="198.51.100.20", ssh_port=22,
         hfss_project_root=kw.pop("project_root", WORK_ROOT),
         probe_ports={"ansys_license": 1055},
         **kw,
@@ -428,7 +428,7 @@ def test_fetch_empty_enumeration_failclosed(monkeypatch, tmp_path):
 
 
 def test_cleanup_failure_flips_verdict(monkeypatch, tmp_path):
-    """清理失败翻 FAIL（任务毕必须清理，内核立规注记 0b）——不静默放行。"""
+    """清理失败翻 FAIL（任务毕必须清理，AGENTS 0b）——不静默放行。"""
     t = FakeTransport(None)
 
     real_run = t.run_command

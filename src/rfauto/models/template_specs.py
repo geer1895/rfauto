@@ -5,7 +5,7 @@ AU-1 b4 同构注册收缩：22 个「直引综合内核 + 直引 fake 模型 + 
 单点注册循环驱动（新同构模板 = 表加一行 + bootstrap plan 加一个名字）；
 定制注册（本地综合闭包/族循环）保留独立函数。行为零变化：注册序、
 TemplateSpec 六件套字段、组件对象身份与收缩前逐位一致（快照钉
-内部证据档{before,after}.json）。
+runs/au1_b4/ts_surface_{before,after}.json）。
 
 组件引用全部在注册时 import——保持插件 entry-point 发现的启动轻量
 （models 层允许 import adapters/core，见 .importlinter 分层）。
@@ -121,7 +121,7 @@ _SIMPLE_SPECS: tuple[_SimpleSpecEntry, ...] = (
     # #154 角色映射只收语义确定键：w_mm=两过孔列心距（line_width_mm 词表
     # 口径）、line_len_mm=两端口面间距；d_mm/s_mm 无词表条目按名直读同义
     # （suspended_stripline b_mm 先例）。f0=10GHz 设计点（2.5GHz 下 SIW
-    # 物理上装不下 60mm 板，内部证据档 §2）
+    # 物理上装不下 60mm 板，runs/siw_family/criteria.md §2）
     ("siw", "synthesize_siw_model", "siw_sparams", None,
      {"w_mm": "line_width_mm",
       "line_len_mm": "line_length_mm"}),
@@ -129,7 +129,7 @@ _SIMPLE_SPECS: tuple[_SimpleSpecEntry, ...] = (
     # MSLPort 线基（CalcPort ref=50 主口径，line_z0=engine 反演旋钮留判读
     # 侧）。#154：w_mm=两过孔列心距、siw_len_mm=线段长；d_mm/s_mm/
     # taper_len_mm 无词表条目按名直读同义。预声明门
-    # 内部证据档 §4
+    # runs/df6_a2siwmsl/criteria.md §4
     ("msl_siw_taper", "synthesize_msl_siw_taper_model",
      "msl_siw_taper_sparams", None,
      {"w_mm": "line_width_mm",
@@ -163,7 +163,7 @@ def _register_simple_spec(entry: _SimpleSpecEntry) -> None:
 
 
 def _register_hairpin_alt() -> None:
-    # 交替取向 hairpin（2026-09-18 w2g，待办清单 0dk 根修）：综合入口 = core 的
+    # 交替取向 hairpin（2026-09-18 w2g，TODO 0dk 根修）：综合入口 = core 的
     # synthesize_hairpin_model 纯 KJ 链（几何与 hairpin 同链同值，唯一变量=取向），
     # 本处只改模型标签/注记并保持 ModelSynthesisResult 合同（零数值，coupled_bpf
     # 本地组装同款）；fake 派发按 model_type="hairpin_alt" 走纯 KJ（不乘同向 c(gap)）。
@@ -2200,7 +2200,7 @@ def _register_slotline_family() -> None:
             recipe_draft=_slotline_recipe_draft("marchand_balun", params,
                                                 f0_ghz, objectives),
             notes=[
-                "**单支节最小族已被两引擎互证证伪**（四门 FAIL）——"
+                "**单支节最小族已被两引擎互证证伪**（Devlog（二百零四）四门 FAIL）——"
                 "本 spec 的 fake/判据面为两节对称耦合段电路级模型（"
                 "synthesize_marchand_two_section），与模板双槽臂几何不同源（如实）",
                 f"真 Marchand 名义点：50Ω→280Ω 差分、C={m2.coupling_db:.2f}dB、"
@@ -2237,7 +2237,7 @@ def _register_coil_nfc() -> None:
     synthesize_coil 反解 d_out（确定性内核，4 位舍入与 COIL_NFC_NOMINAL
     再生口径一致），本处只组装零数值（#154 角色映射只收语义确定键：
     gap_mm=馈隙长/h_mm=板厚/er/tan_d 无词表条目按名直读同义）。
-    hfss_plugin=None；真机 13.56MHz FDTD 预算见 内部证据档
+    hfss_plugin=None；真机 13.56MHz FDTD 预算见 runs/df7_nfc/criteria.md
     §e（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _coil_nfc_sparams
     from rfauto.adapters.openems_templates import (
@@ -2336,7 +2336,7 @@ def _register_octagonal_spiral() -> None:
     （octagon 形状，d_out 单调二分反解）→ d_in=d_out−2nW−2(n−1)S 闭式回
     演与 OCTAGONAL_SPIRAL_NOMINAL 再生口径一致，本处只组装零数值（#154
     角色映射：μm 键无词表条目按名直读同义）。hfss_plugin=None；真机对拍
-    留登记 内部证据档（本批零发射）。"""
+    留登记 runs/aurora_k/k11（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _octagonal_spiral_sparams
     from rfauto.adapters.openems_templates import (
         OCTAGONAL_SPIRAL_NOMINAL,
@@ -2435,7 +2435,7 @@ def _register_mim_cap() -> None:
     bracket=[0.02,2.0]μm 档；w/l 固定名义档）→ 回代相对差与
     MIM_CAP_NOMINAL 再生口径一致，本处只组装零数值（#154 角色映射：
     μm 键无词表条目按名直读同义）。hfss_plugin=None；真机对拍留登记
-    内部证据档（本批零发射）。"""
+    runs/aurora_k/k12（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _mim_cap_sparams
     from rfauto.adapters.openems_templates import (
         MIM_CAP_NOMINAL,
@@ -2533,7 +2533,7 @@ def _register_interdigital_cap() -> None:
     c_target_ff → lf_um 单调二分反解（侧壁主项 C∝l_c∝lf）→ 回代相对差
     与 INTERDIGITAL_CAP_NOMINAL 再生口径一致，本处只组装零数值（#154
     角色映射：μm 键无词表条目按名直读同义）。hfss_plugin=None；真机
-    对拍留登记 内部证据档（本批零发射）。"""
+    对拍留登记 runs/aurora_k/k12（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _interdigital_cap_sparams
     from rfauto.adapters.openems_templates import (
         INTERDIGITAL_CAP_NOMINAL,
@@ -2646,7 +2646,7 @@ def _register_mmwave_series_array() -> None:
     MMWAVE_SERIES_NOMINAL 再生口径一致），本处只组装零数值（#154 角色映射
     只收语义确定键：h_mm=板厚/er/tan_d/n_elem/feed_margin_mm/load_r_ohm
     无词表条目按名直读同义）。hfss_plugin=None；真机预算预声明
-    内部证据档 §d（本批零发射）。"""
+    runs/df7_c10d/criteria.md §d（本批零发射）。"""
     from rfauto.adapters.fake_adapter import _mmwave_series_sparams
     from rfauto.adapters.openems_templates import (
         MMWAVE_SERIES_NOMINAL,

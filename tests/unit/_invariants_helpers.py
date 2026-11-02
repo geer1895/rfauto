@@ -355,7 +355,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "z0_ohm": 110.92, "h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5},
         # ─── SIW（2026-09-22 siw-family 立项，#231 三表同步）───────────────────
         # 名义设计点：w=12.1317/d=0.6/s=1.0@εr=3.66 → fc10=6.6667GHz、
-        # β@10GHz=298.856 rad/m（内部证据档 §2 闭式精算）
+        # β@10GHz=298.856 rad/m（runs/siw_family/criteria.md §2 闭式精算）
         "siw_analysis": {
             "w_mm": 12.1317, "d_mm": 0.6, "s_mm": 1.0, "epsilon_r": 3.66,
             "freq_ghz": 10.0},
@@ -414,7 +414,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "sample_box_mm": [14.0, 4.0, 19.0, 16.0, 6.0, 21.0],
             "sample_eps_r": 2.1},
         # ─── DP-5 系统级预算引擎 + spur search（2026-09-24 df6_dp5cascade）─────
-        # 回收钉与公式口径见 内部证据档
+        # 回收钉与公式口径见 runs/df6_dp5cascade/criteria.md
         "cascade_budget": {
             "stages": [
                 {"type": "amp", "gain_db": 20.0, "nf_db": 2.0,
@@ -455,7 +455,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "homotopy_steps": 4, "n_starts": 2},
         # ─── DP-15 C2 Klopfenstein 渐变段（2026-09-24 df6_dp15c2，四表同步）──
         # n_sections=25 控 G15 运行时长（锚表缓存后 ~0.02s/次）；判据预声明
-        # 内部证据档 §3
+        # runs/df6_dp15c2/criteria.md §3
         "klopfenstein_taper": {
             "z1_ohm": 30.0, "z2_ohm": 90.0, "length_mm": 40.0,
             "epsilon_r": 3.66, "h_mm": 0.508, "freq_ghz": 2.5,
@@ -1721,7 +1721,7 @@ def _calculator_inputs() -> dict[str, dict[str, Any]]:
             "reference_c_ff": 173.5,
         },
         # ─── aurora_l G1 六键（2026-10-23；教科书覆盖缺口侦察+闭式推导
-        # 数值验证 内部证据档。名义点：端接线=
+        # 数值验证 runs/aurora_l_g1/derive_check.py。名义点：端接线=
         # 100+j30Ω@50Ω/θ=33.7°（λ/4 锚在锚树）；单支节=z_L=100Ω（r=2
         # 经典 Smith 图档 d=0.152λ/开路支节 0.402λ）；最平坦=显式 n=3
         # （g=[1,1,2,1,1] 表值锚）；分支线=缺省 3dB（Z1=Z0/√2、Z2=Z0
@@ -1821,7 +1821,7 @@ DOMAIN_ERROR_CASES = [
     ("suspended_stripline_analysis", {
         "w_mm": 0.731, "b_mm": 1.016, "h_mm": 1.2, "epsilon_r": 3.66}),
     # 槽线（2026-09-18 w1b）：仓库缺省叠层 h=0.508@2.5GHz 因 d/λ0=0.0042<0.006
-    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（开发注记（一百九十八））；
+    # 落 Janaswamy–Schaubert 有效域外 → 显式拒绝不外推（Devlog（一百九十八））；
     # 综合目标 30Ω 低于窄槽段可达下限（≈80Ω@1.524mm）→ 括号越界显式报错；
     # εr=12 高介电段（Garg–Gupta 1976）未实现 → 显式拒绝
     ("slotline_analysis", {

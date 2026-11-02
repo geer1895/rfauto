@@ -73,6 +73,12 @@ def _count_solves(monkeypatch):
 # 缓存命中测试用的固定评估点（单优化参数配方）
 _FIXED_PARAMS = {"arm_len_mm": 20.0}
 
+# W1-6 语料降规模（aurora_m）：study 名稳定派生（同配方两次构造逐位一致/
+# 异配方异名/user_attrs 哈希输入审计）与 phase 规模无关——n_phase1 4→2、
+# n_phase2 2→1，断言零改动；旧语料对照档
+# runs/aurora_m/w1_6/old_corpus_test_backend_two_constructions_same_study_names.log
+MF_NAME_KW = dict(n_phase1=2, n_phase2=1, seed=42)
+
 
 class TestStudyNaming:
     """任务①：study 名去 run_id 化——同配方同 seed 跨进程同名。"""
@@ -110,14 +116,14 @@ class TestStudyNaming:
         from rfauto.optimization.mf_backend import run_multifidelity
 
         recipe = _make_recipe(tmp_path)
-        r1 = run_multifidelity(recipe, n_phase1=4, n_phase2=2, seed=42)
-        r2 = run_multifidelity(recipe, n_phase1=4, n_phase2=2, seed=42)
+        r1 = run_multifidelity(recipe, **MF_NAME_KW)
+        r2 = run_multifidelity(recipe, **MF_NAME_KW)
         assert r1["ok"], r1.get("errors")
         assert r2["ok"], r2.get("errors")
         assert r2["study_names"] == r1["study_names"]
         # 不同配方 → 不同 study 名
         r3 = run_multifidelity(_make_recipe(tmp_path, "other.yaml", f0=2.8),
-                               n_phase1=4, n_phase2=2, seed=42)
+                               **MF_NAME_KW)
         assert r3["ok"], r3.get("errors")
         assert r3["study_names"]["phase1"] != r1["study_names"]["phase1"]
         # study 身份审计：哈希输入落 study user_attrs

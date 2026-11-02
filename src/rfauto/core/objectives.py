@@ -51,6 +51,22 @@ class QuotaLimits(BaseModel):
     max_wall_hours: float = Field(default=12.0, gt=0.0)
 
 
+#: 配方 objective/constraint 合法指标名单源（aurora_n 旅程席 A，F-P1-1）。
+#: compute_metrics 逐分支消费；``tests/unit/test_recipe_schema_doc.py``
+#: 双向钉（本集合 ↔ compute_metrics 分支字面量，新增分支漏登记即门红）。
+#: compute_metrics 末尾的 else 兜底分支（未知指标静默按 S11 max 取数）是
+#: 历史兼容陷阱——校验面（validate_recipe）已按本清单拦截未知指标名，
+#: 运行期兜底分支保留只为不炸存量内存态调用方，不再对新配方放行。
+OBJECTIVE_METRIC_NAMES: frozenset[str] = frozenset({
+    "s11_db", "s11_db_min", "s11_db_max",   # 带内包络(max)/谷深(min)/峰值(max)（#195 双变体）
+    "s21_db",                               # 插损（带内均值）
+    "iso_s23_db",                           # 隔离度（≥3 端口）
+    "bw_ghz_s11_lt_-10",                    # S11<-10dB 带宽
+    "eps_eff",                              # 均匀线有效介电常数（需 length_mm）
+    "gain_db",                              # 远场增益（需 far_field 数据）
+})
+
+
 # 裸指标名 → compute_metrics 默认产物键（tolerance/uq 等规格推导共用）。
 # s11_db 双变体并存：裸名取 max（worst-case 惯例），显式 _min/_max 后缀
 # 取对应变体（#195 谷深语义）。新增指标分支时同步维护本表。

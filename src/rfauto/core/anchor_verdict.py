@@ -2,15 +2,15 @@
 
 背景（#218 归因收口后唯一未过门）：HFSS mline 探针 εeff 对 HJ 准静态
 闭式 +2.36%/+2.53% 超旧 ±2% 单门——跨引擎同向偏移（openEMS 自身对 HJ
-+1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿（）。
++1.18%），旧 HJ ±2% 单门对该锚偏严，如实 PARTIAL 不凑绿（Devlog（廿八））。
 双锚口径 2026-09-12 定稿（廿八未尽①，队列3-A 探针侧先行、本内核收口
 engine harness 与 sweep_assert 旧单门）：
 
   主锚（金标准）：εeff 对 openEMS β 金标准 ``EPS_EFF_MLINE_GOLD``（2.886
                 @2.5GHz），|Δ|≤2%。金标准为同几何全波真跑收敛值族
-                （#189：2.8813~2.8884，内部证据档
+                （#189：2.8813~2.8884，runs/benchmark/
                 mline_mesh_convergence.json 最细档；归因档
-                内部证据档 §二采 2.886）。
+                runs/mline_repro_attribution_20260911.md §二采 2.886）。
   副锚（解析哨兵）：εeff 对 HJ 准静态闭式（core/synthesis.forward_z0，
                 w=1.113 rogers4350b → 2.8526），|Δ|≤3%（放宽口径）。
                 HJ 是独立来源解析锚（#118 纪律），完全降级为信息量会
@@ -23,7 +23,7 @@ engine harness 与 sweep_assert 旧单门）：
 
 判据改动=显式重标定决策（改动须附真机证据）。纯函数零真机，单测钉死于
 tests/unit/test_mline_probe_dual_anchor.py。LLM/agent 永不产生物理数字
-（内核立规注记 规则 7）：锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
+（AGENTS 规则 7）：锚值与实测 εeff 全部来自确定性链路（openEMS CalcPort
 β 推导 / HFSS S21 相位斜率推导 / core/synthesis HJ 闭式）。
 
 消费方：

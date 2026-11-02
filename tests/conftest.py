@@ -1,6 +1,7 @@
 """Pytest 全局 fixtures。"""
 
 import importlib.util
+import json
 import os
 import sys
 from pathlib import Path
@@ -54,6 +55,7 @@ _NGSPICE_TEST_MODULES = frozenset({
     "test_macromodel.py", "test_macromodel_xval.py", "test_spice_netlist.py",
 })
 
+
 # ── linux_numeric：BLAS/浮点逐位轨迹跨平台漂移的诚实 skip 清单（§C3）──────
 # 清单内用例的数值基线钉在 Windows 开发机（逐位/极窄容差断言），Linux CI
 # 上同版本 numpy/scipy 也漂（优化器迭代数/模型选型边界/残差末位）——处置
@@ -89,6 +91,7 @@ _LINUX_NUMERIC_TEST_IDS = frozenset({
 })
 
 
+
 def _ngspice_available() -> bool:
     import shutil
 
@@ -112,6 +115,40 @@ def pytest_configure(config):
     #  exc_dir 重映射+GetLines 排序适配，无在钉测试——登记见 COMPAT_REGISTRY）
 
 
+# ── aurora_m s17：pypssfss/Julia 会话启动期主线程预热（单进程串行门冻结根治）──
+# 症状：单进程串行跑 tests/unit（含 -m 'not tier_c' 日常门口径）在 ~4-9min 处
+# 死锁，冻结点漂移到随机序里**第一个真实 GET /api/solvers 请求**（W1-8 两轮
+# runs/aurora_m/w1_8/serial_hang_evidence.json + s17 seed12345 复现第三例：
+# test_ui_auth.py:66，py-spy 实锤主线程卡 TestClient portal.call、anyio
+# worker 卡 pypssfss 模块导入的 Julia 侧 seval）。
+# 机理：/api/solvers → list_registered_solvers 的适配器可用性探测在
+# run_in_threadpool 的 worker 线程内惰性 ``import pypssfss``（juliacall 进程
+# 内嵌 Julia；rfauto.adapters 包 __init__ 无条件注册 PSSFSS，故该探测恒在
+# 链上）。干净进程该嵌入 ~3-8s 完成（s17 minrepro/julia_thread_probe 实测）；
+# 被此前测试交互污染的进程里同一嵌入挂死（同 200 前置文件字母序绿 vs
+# seed12345 随机序冻，s17 E1 对照）。W1-8 原归因"TestClient return 无 with
+# 线程泄漏"被 s17 证伪：with/return 两形态线程曲线逐位一致、34 文件簇单独
+# 跑 827 条 116s 全绿——portal 线程是受害者不是泄漏源。
+# 根治：会话启动期（进程最干净态，collection 之前）主线程预热一次 → 之后
+# 请求内 ``import pypssfss`` 恒命中 sys.modules 缓存，任何污染态都不再触发
+# Julia 嵌入。缺装环境（公开仓默认）find_spec 零开销直通；预热失败不阻塞
+# 会话（#105 best-effort 纪律）。成本：+~4s/+~700MB RSS/进程（Julia 常驻）。
+# RFAUTO_TEST_NO_JULIA_PREWARM=1 可关（诊断 A/B 用）。
+
+
+def pytest_sessionstart(session):
+    if os.environ.get("RFAUTO_TEST_NO_JULIA_PREWARM") == "1":
+        return
+    try:
+        if importlib.util.find_spec("pypssfss") is None:
+            return
+        from rfauto.adapters.pssfss_adapter import load_pypssfss
+
+        load_pypssfss()
+    except Exception:
+        pass  # 预热 best-effort：缺 depot/坏环境时放行原路径（is_available 面）
+
+
 #: Z-6 flaky 隔离（ENV_FLAKY 分级）参数：known_flaky 用例的最大重跑次数。
 _FLAKY_RERUNS = 2
 #: 重跑隔离总开关（显式意图门，opt-in 口径）：仅 RFAUTO_FLAKY_RERUN=1 时
@@ -120,7 +157,74 @@ _FLAKY_RERUNS = 2
 _FLAKY_RERUN_ENV = "RFAUTO_FLAKY_RERUN"
 
 
+# ── aurora_m W1-8：tier 分层 marker（纯元数据，不改任何门缺省行为）─────────
+# 名单 = tests/fixtures/test_tiers.yaml（committed，scripts/generate_tier_marks.py
+# 生成，只存 B+C；A 层不加标记=缺省不在名单即 A）。tier_b/tier_c 仅供调度面
+# （scripts/gate_daily.py 的 -m 过滤）消费——终门永远全量（v2 口径零改动），
+# 夜门口径不变。名单文件缺席（CI/公开仓干净环境）→ 不加标记=全量语义
+# （诚实降级：行为==终门口径，不 skip 不报错——tests/unit/test_tier_marks.py 钉）。
+_TIERS_FIXTURE = Path(__file__).parent / "fixtures" / "test_tiers.yaml"
+
+
+def load_tier_sets(path=None):
+    """读 test_tiers.yaml → (tier_b, tier_c) nodeid 集合。
+
+    诚实降级：文件缺席/损坏（CI/公开仓干净环境）→ (∅, ∅)=不加标记=全量
+    语义（行为==终门口径，不 skip 不报错）。
+    """
+    import yaml  # 惰性：conftest 启动路径零新增硬依赖
+
+    p = Path(path) if path is not None else _TIERS_FIXTURE
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        tier_b = set((data.get("tier_b") or {}).get("nodeids") or [])
+        tier_c = set((data.get("tier_c") or {}).get("nodeids") or [])
+    except (OSError, yaml.YAMLError, AttributeError, TypeError):
+        return set(), set()
+    return tier_b, tier_c
+
+
+def apply_tier_markers(items, path=None):
+    """给收集项施加 tier_b/tier_c marker（A 层不加=缺省）；返回 (b, c) 计数。
+
+    marker 纯元数据：不加 deselect、不加 skip——任何不带 -m 过滤的运行
+    （终门/夜门/CI）收集集与行为零变化。
+    """
+    tier_b, tier_c = load_tier_sets(path)
+    n_b = n_c = 0
+    for item in items:
+        nid = item.nodeid
+        if nid in tier_c:
+            item.add_marker(pytest.mark.tier_c)
+            n_c += 1
+        elif nid in tier_b:
+            item.add_marker(pytest.mark.tier_b)
+            n_b += 1
+    # 观测性（#105 best-effort，env 门控）：调度面（gate_daily）按段聚合
+    # 真实施加计数——pytest -q 终端不吐 "N deselected" 行，汇总行此路取数。
+    out = os.environ.get("RFAUTO_TIER_COUNTS_OUT")
+    if out:
+        try:
+            with open(out, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"applied_b": n_b, "applied_c": n_c,
+                                    "n_items": len(items),
+                                    "pid": os.getpid()}) + "\n")
+        except OSError:
+            pass
+    return n_b, n_c
+
+
 def pytest_collection_modifyitems(config, items):
+    # aurora_m W1-8：tier 分层标记先行（观测性同律 #105——分层是调度增强，
+    # 绝不阻塞测试主路径；失败降级为告警+全量语义）
+    try:
+        apply_tier_markers(items)
+    except Exception:
+        import warnings
+
+        warnings.warn("tier marker 施加失败（按全量语义继续）", stacklevel=1)
+
     has_csxcad = importlib.util.find_spec("CSXCAD") is not None
     has_ngspice = _ngspice_available()
     if not (has_csxcad and has_ngspice):
@@ -145,6 +249,7 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if item.nodeid in _LINUX_NUMERIC_TEST_IDS:
                 item.add_marker(skip_numeric)
+
 
     # ── Z-6：known_flaky 消费（ENV_FLAKY 分级，2026-10-05 W1-E）──
     # 诚实分级铁律——**物理红永不隔离**：

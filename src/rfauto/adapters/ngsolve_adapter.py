@@ -1,6 +1,6 @@
 """NGSolve 开源 FEM 频域适配器（§10.19 A9 最小实现）。
 
-事实基线（真机确证，非假设）：NGSolve 6.2.2607 Windows
+事实基线（Devlog（六十八）真机确证，非假设）：NGSolve 6.2.2607 Windows
 cp312 wheel 可装可用，HCurl 时谐 Maxwell 可建可解（PEC 立方腔特征模
 o2 闭式 rel_err 0.31%）；**端口激励与 S 参数无现成 API**（dir() 236 名
 零命中）——本适配器的端口/S 参数链路为自研，覆盖面如实声明：

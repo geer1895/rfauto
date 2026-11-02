@@ -7,6 +7,10 @@ tests/unit/_dataset_service_helpers.py，此处 re-export 供 pytest 常规发�
 （模块级导入会与测试参数同名遮蔽触发 ruff F401/F811；conftest 命名空间里的
 fixture 对象可被正常解析）。同名模块级 fixture 定义（如 test_dataset_insights、
 test_dataset_parallel）按 pytest 就近优先原则覆盖本文件，行为不变。
+
+aurora_m W1-4 起追加 docs 再生器共享构建夹具 re-export
+（docs_site_fresh / kernel_cards_fresh，单源 tests/unit/_docs_regen_shared.py）：
+session 级惰性构建（仅被请求的测试文件触发，对全树其余测试零影响）。
 """
 
 import os
@@ -15,8 +19,9 @@ import sys
 import pytest
 
 from tests.unit._dataset_service_helpers import runs_env
+from tests.unit._docs_regen_shared import docs_site_fresh, kernel_cards_fresh
 
-__all__ = ["runs_env"]
+__all__ = ["docs_site_fresh", "kernel_cards_fresh", "runs_env"]
 
 
 # ── W6-P3-8 护栏（aurora_f W1-S4）：RFAUTO_REGEN_GOLDEN 残留吞回归 ──────────

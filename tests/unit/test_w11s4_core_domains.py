@@ -4,7 +4,7 @@
 数值断言口径（#118 锚先独立实测再写死，锚值=开工日独立算术预算——测试
 内表达式路径独立于键内实现（原始 SI 常数内联/独立 skrf media 构造，不消
 费模块系数常量）；#122 三态/UNVERIFIED 如实不凑绿；网源逐字在
-内部证据档）：
+runs/aurora_g/_w11s4_msgap.cpp/_w11s4_msopen.cpp）：
 
 - FMCW chirp 设计（fmcw_chirp_design）：①IF 带限档 B=c/(2ΔR)（0.15m→
   999.31MHz）与 S=c·BW_IF/(2R_max) 独立算术+量程处拍频==BW_IF 饱和恒等

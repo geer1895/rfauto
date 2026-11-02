@@ -6,7 +6,7 @@ verdict.json——本批该文件不存在，三座真实通道状态在 envelop
 campaign_* 全 null、三座 status=OK，判据 §4"任一座位 PARTIAL→该座如实
 记"缺账。
 
-fixture 三态（数据形态对照 内部证据档 复算
+fixture 三态（数据形态对照 runs/review_ge8e/r6_runs/r6_scripts_k3.py 复算
 批与三座真实 envelope.json 键面）：
 1. verdict.json 存在 → 原口径消费（status/nrts/g5）；
 2. verdict.json 缺失 + envelope.json PARTIAL/exec_rc=1 → 通道级 PARTIAL、

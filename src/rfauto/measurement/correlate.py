@@ -1,4 +1,4 @@
-"""E9c 相关性报告（规划扩展 §E9c）。
+"""E9c 相关性报告（plan-extension_v2 §E9c）。
 
 仿真 vs 测量相关性分析：
 - 计算 S 参数偏差（幅度/相位）
@@ -40,7 +40,7 @@ def pearson_interval(r: float, n: int, *, k: float = DEFAULT_K) -> dict[str, Any
     区间构造与 en_report.gum_combined_uncertainty 同一口径（估计量 ±
     k·标准不确定度，k 缺省共用 en_report.DEFAULT_K=2.0 单源）；u_r 取
     双变量正态大样近似的标准误差 se(r)=(1-ρ²)/√(N-1)。**预声明**（判据
-    书 内部证据档 §W1-E）：非高斯/小样本下真实覆盖率会
+    书 runs/w1_phase1/criteria.md §W1-E）：非高斯/小样本下真实覆盖率会
     偏离名义，判据只锁"区间宽随 N 收缩单调"，不锁覆盖率数字。
 
     Returns:
@@ -214,13 +214,13 @@ def compute_correlation(
     """计算仿真 vs 测量相关性。
 
     threshold_db 缺省 3.0 的出处（S-1 C-06② 2026-10-04 注记）：
-    **E9c 工程缺省值**（commit 775101d6，2026-08-31，规划扩展
+    **E9c 工程缺省值**（commit 775101d6，2026-08-31，plan-extension_v2
     §E9c 首版引入），非文献推导阈值——docs/plan_deepdive_specs_20260924.md
     §"1. 目标与定位"原文即如实标注"从拍脑袋阈值（现 threshold_db=3.0）
     升级为计量学口径"（En 判据项，方向已立、口径待定）；调用方需要
     严格门径请显式传参，勿把 3.0 当有出处的物理常数引用。
 
-    频轴对齐走**真交集口径**（E1-1 修复 2026-10-04，内部证据档
+    频轴对齐走**真交集口径**（E1-1 修复 2026-10-04，runs/review_ge8e/
     e1_pipeline/REPORT.md；#287/#294 同族先例=en_report.align_frequency_axes）：
     argmin 最近邻 + 相对 1e-9 ulp 容差逐点配对（禁 searchsorted，#294 实证
     ulp 级频移越位一格）——旧实现"同点数前缀截断"在异频段/异栅输入下把

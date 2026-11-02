@@ -86,6 +86,31 @@ _HINT_RULES: tuple[dict[str, str], ...] = (
     {"pattern": "Excitation inside Mur", "match": "substring",
      "hint": "同 Excitation inside——激励盒内缩 ≥2·BASE",
      "refs": "#253", "severity": "error"},
+    {"pattern": "配方文件不存在", "match": "substring",
+     "hint": "配方路径不存在——内置配方在 recipes/ 目录（如 rfauto run "
+             "recipes/wilkinson_pd_v1.yaml --adapter fake 可零 license "
+             "冒烟）；或先 rfauto validate <路径> 核对，无配方时用模板"
+             "画廊选型后从配方编辑页生成",
+     "refs": "docs/tutorials/getting-started.md", "severity": "info"},
+    # ── aurora_n 错误信息人性化 sweep 二批三条（与一段「配方文件不存在」
+    #    子串互不重叠；hintValue 面=CLI --json hints 键 + human "→ 建议"
+    #    行，单点覆盖多调用面，见 runs/aurora_n/err_sweep2/SCAN.md #8-#10）
+    {"pattern": "配方不存在", "match": "substring",
+     "hint": "配方路径不存在（tune/campaign/adapter 面）——内置配方在 "
+             "recipes/ 目录（如 rfauto run recipes/wilkinson_pd_v1.yaml "
+             "--adapter fake 零 license 冒烟）；或先 rfauto validate <路径> "
+             "核对路径拼写",
+     "refs": "docs/tutorials/getting-started.md", "severity": "info"},
+    {"pattern": "run( 目录)? ?不存在", "match": "regex",
+     "hint": "run_id 或 runs 根不存在——ls runs/ 或 rfauto ui 的 runs 页"
+             "核对 run_id 拼写；run 在跑等终态 rfauto runs watch <run_id>；"
+             "产物完整性 rfauto runs verify <run_id>",
+     "refs": "runs watch/verify/health", "severity": "info"},
+    {"pattern": "样本集不存在", "match": "substring",
+     "hint": "样本集是上游采集产物（JSON：samples/bounds/objectives）——"
+             "核对 --samples 路径拼写，或改用样本来源 --dataset/--run "
+             "（al 面三选一）由既有 run/study 直读",
+     "refs": "al/certify/koh 样本面", "severity": "info"},
 )
 
 

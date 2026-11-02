@@ -49,8 +49,10 @@ export async function pageImport() {
       <div id='imp-spec'></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（S1 全清；幂等，动态容器走 t() 烘焙）
   T.$("imp-read").onclick = readProject;
+  // P3-4（aurora_n wave_ui_c）：工程导入浏览按场景过滤 .aedt（审计实证：
+  // mkdocs.yml 等无关文件混排；目录仍可进入，徽章标注过滤语义）
   T.$("imp-browse").onclick = () =>
-    fileBrowser("", (p) => { T.$("imp-project").value = p; });
+    fileBrowser("", (p) => { T.$("imp-project").value = p; }, [".aedt"]);
   T.$("imp-version").onchange = () => { // 自定义版本输入框随下拉显隐
     T.$("imp-version-custom").style.display =
       T.$("imp-version").value === "__custom__" ? "" : "none";

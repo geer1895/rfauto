@@ -1,6 +1,6 @@
 """RegistryKit：name→object 注册表轻量基类（R1 T6 统一脚手架试点）。
 
-背景（内部证据档 §面5/T6）：全仓 35+ 注册面、
+背景（runs/aurora_g/R1_arch_audit.md §面5/T6）：全仓 35+ 注册面、
 20 个 Registry 类里 ``_registry dict + register()/get()/keys()`` 同构
 手写 11 处。本模块把该同构收敛为一个百行级 Generic 基类——注册表
 新增面直接继承/组合本 Kit，不再各写一遍 dict+装饰器样板。

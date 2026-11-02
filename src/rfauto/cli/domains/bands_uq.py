@@ -204,7 +204,10 @@ app.add_typer(campaign_app, name="campaign")
 
 # ─── template-spec（E2 模板库注册表；WP3.3 CLI 半边） ─────────────────────────
 
-template_spec_app = typer.Typer(help="模板库 TemplateSpec 注册表（E2：清单 + 综合草稿）")
+template_spec_app = typer.Typer(
+    help="模板库 TemplateSpec 注册表（E2：清单 + 综合草稿）。语义区别：此处="
+         "器件模板全目录（渲染/综合/fake/HFSS 组件齐备性台账）；"
+         "rfauto models list=已接入求解通道的可求解模型（配方 model 键取值）。")
 app.add_typer(template_spec_app, name="template-spec")
 
 
@@ -212,7 +215,11 @@ app.add_typer(template_spec_app, name="template-spec")
 def template_spec_list_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="JSON 输出"),
 ) -> None:
-    """列出全部模板 spec（组件齐备性 render_script/synthesizer/fake_model/hfss_plugin）。"""
+    """列出全部模板 spec（组件齐备性 render_script/synthesizer/fake_model/hfss_plugin）。
+
+    已接入求解通道的可求解模型（配方 model 键的合法取值域）另见
+    `rfauto models list`——那是 EMSolver 注册表，与本模板库是两个目录面。
+    """
     from rfauto.service.template_spec_service import (
         list_template_specs,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
@@ -366,7 +373,8 @@ def uq_yield_at_cmd(
     )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
-    _emit(surrogate_yield_at(samples, _kv_floats(tol, "--tol"), _kv_floats(at, "--at"),
+    _emit(surrogate_yield_at(samples, _kv_floats(tol, "--tol", json_output=True),
+                       _kv_floats(at, "--at", json_output=True),
                              n=n, seed=seed, kind=kind), "良率求值失败", json_output=True)
 
 
@@ -394,7 +402,8 @@ def uq_design_center_cmd(
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("yield_design_center", yield_design_center(
-        samples, _kv_floats(tol, "--tol"), k_sigma=k_sigma, n_levels=n_levels,
+        samples, _kv_floats(tol, "--tol", json_output=True), k_sigma=k_sigma,
+        n_levels=n_levels,
         max_iter=max_iter, n_mc=n_mc, seed=seed, kind=kind)), "设计中心化失败",
         json_output=True)
 
@@ -423,7 +432,8 @@ def uq_temp_zone_cmd(
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("temperature_zone_yield", temperature_zone_yield(
-        samples, _kv_floats(tol, "--tol"), env_key, t_ref_c=t_ref_c, k_sigma=k_sigma,
+        samples, _kv_floats(tol, "--tol", json_output=True), env_key,
+        t_ref_c=t_ref_c, k_sigma=k_sigma,
         n=n, seed=seed, kind=kind)), "温区良率失败", json_output=True)
 
 
@@ -470,7 +480,8 @@ def uq_robustness_cmd(
             prof = profile  # YAML/路径原样交给 service
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
     _emit(annotate_contract("robustness_report", robustness_report(
-        source, specs, profile=prof, tolerances=_kv_floats(tol, "--tol"),
+        source, specs, profile=prof,
+        tolerances=_kv_floats(tol, "--tol", json_output=True),
         n_mc=n_mc, seed=seed, kind=kind, form_engine=form_engine,
         persist=persist, store_name=store_name)), "稳健性报告失败", json_output=True)
 

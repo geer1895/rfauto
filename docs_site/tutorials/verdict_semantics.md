@@ -55,10 +55,10 @@ UNKNOWN 上：证据不在，就写明缺什么，不硬判。
 
 ## 3. unhealthy 怎么读：掩码语义与 FAIL 的两族分解
 
-再看一个真实档案里的 unhealthy（demo_oe_campaign 示例档案的 branchline 工作目录）：
+再看一个真实档案里的 unhealthy（aurora_c 战役 branchline 工作目录）：
 
 ```bash
-rfauto runs health demo_oe_campaign/branchline
+rfauto runs health aurora_c_oe/branchline
 ```
 
 实测输出（节选）：
@@ -99,7 +99,7 @@ rfauto runs health demo_oe_campaign/branchline
 命令扫全战役目录（四类判据：进度/截断嫌疑/NrTS 触顶/能量停滞）：
 
 ```bash
-rfauto runs monitor runs/demo_oe_campaign --cycle
+rfauto runs monitor runs/aurora_c_oe --cycle
 ```
 
 实测输出（节选）：
@@ -114,7 +114,7 @@ rfauto runs monitor runs/demo_oe_campaign --cycle
 黄名单那一个，单查它：
 
 ```bash
-rfauto runs monitor runs/demo_oe_campaign/pifa
+rfauto runs monitor runs/aurora_c_oe/pifa
 ```
 
 ```
@@ -147,7 +147,7 @@ rfauto runs monitor runs/demo_oe_campaign/pifa
 登记值 None = 该族显式不设门（如实 UNKNOWN，不硬套通用缺省）。
 ```
 
-一个真实仲裁案例（`真机判读报告（内部档）` §3.2）：Wilkinson
+一个真实仲裁案例（`runs/edblane85/w1_smoke/REPORT.md` §3.2）：Wilkinson
 功分器冒烟实测 |S21|@f0=-3.192dB、|S31|@f0=-3.261dB，字面门（≤-3.8dB）
 判 FAIL——语义仲裁指出等分分配的理想值是 -3.01dB，"分配损耗显著小于
 3dB"反而是提取/接线伪象。裁定后的模板作用域窗：

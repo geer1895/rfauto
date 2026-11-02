@@ -95,6 +95,49 @@ export function chatCmdSummaryHtml(dump) {
 }
 
 /* ═══ Agent 助手（设置 + 收件箱 diff + 浮动可拖拽对话卡片）═══ */
+
+/* P1-2（aurora_n wave_ui_a）：浮窗自动唤出闸（纯函数，node 行为钉）——
+   用户 ×关闭过浮窗（rfauto-chat-closed=1，localStorage 持久）后，进 agent
+   页的自动唤出不再发生（浮窗挂 document.body 跨页存活，修复前关闭后每次
+   再进 agent 页都被重新弹出、遮挡他页内容）；显式「打开对话浮窗」钮清除
+   关闭意愿后强制唤出。store 形参注入（localStorage 不可用环境如实放行）。 */
+export function chatAutoOpenBlocked(store) {
+  try {
+    return String((store && store.getItem) ? store.getItem("rfauto-chat-closed") : "") === "1";
+  } catch {
+    return false; // 存储面故障不拦对话可用性
+  }
+}
+
+/* ═══ P2（aurora_n wave_ui_a）：审批收件箱忽略控件 ═════════════════════
+   测试残留提案（#144 家族 UI 面）此前永久占位且无移除手段。忽略=前端
+   localStorage 记账（rfauto-inbox-dismissed，token_hash 数组；服务端零新
+   写路径/零新表——红线），被忽略项经「已忽略」折叠清单可查看并恢复。
+   两个纯助手导出（node 行为钉；store/localStorage 在 DOM 侧注入）。 */
+export function parseInboxDismissed(raw) {
+  try {
+    const v = JSON.parse(String(raw == null ? "[]" : raw));
+    if (!Array.isArray(v)) return new Set();
+    return new Set(v.map((x) => String(x)).filter(Boolean));
+  } catch {
+    return new Set(); // 损坏账本视同空（忽略面故障不拦收件箱主路径）
+  }
+}
+
+/* 提案清单按忽略账本分流：visible=照常渲染，hidden=进已忽略折叠清单。
+   匹配键=token_hash 精确串（approve 接口同键）。 */
+export function splitPendingByDismissed(pending, dismissed) {
+  const list = Array.isArray(pending) ? pending : [];
+  const set = dismissed instanceof Set ? dismissed : new Set();
+  const visible = [];
+  const hidden = [];
+  for (const p of list) {
+    const th = String((p && p.token_hash) || "");
+    (th && set.has(th) ? hidden : visible).push(p);
+  }
+  return { visible, hidden };
+}
+
 export async function pageAgent() {
   const v = T.$("view-agent");
   if (!v.innerHTML)
@@ -121,7 +164,11 @@ export async function pageAgent() {
       <div class='panel'><button class='act' id='chat-open' data-i18n='agent.open_chat'>${t("agent.open_chat")}</button>
         <span class="muted" data-i18n='agent.float_hint'>${t("agent.float_hint")}</span></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W6-S21 扩面）
-  T.$("chat-open").onclick = () => openChatFloat(true);
+  T.$("chat-open").onclick = () => {
+    // P1-2：显式打开=用户推翻此前的关闭意愿（清除记忆后强制唤出）
+    localStorage.removeItem("rfauto-chat-closed");
+    openChatFloat(true);
+  };
   // W6-S2（R1 P9-8）：清空对话=破坏性动作（POST reset+清 DOM+清本地记录，
   // 零撤销）——kitConfirm 确认闸（危险档，缺省焦点落取消钮）。
   T.$("chat-clear").onclick = () => kitConfirm({
@@ -159,15 +206,19 @@ export async function pageAgent() {
   await loadInbox();
   await loadSandbox();
   _chatLog = JSON.parse(localStorage.getItem("rfauto-chat") || "[]");
-  openChatFloat(false);
+  // P1-2：auto=true——只在用户未表达过关闭意愿时自动唤出（chatAutoOpenBlocked 闸）
+  openChatFloat(false, true);
   for (const m of _chatLog) appendHistoryEntry(m);
   await updateStats();
   // 快捷提问 chips（点选即发送）：文案迁词表（W8-S32 i18n 批 3），点击时
-  // 按当前语言档烘焙为输入种子（循环变量 k 不遮蔽 i18n t——P3-7 同款纪律）
+  // 按当前语言档烘焙为输入种子（循环变量 k 不遮蔽 i18n t——P3-7 同款纪律）。
+  // P1-2 同笔：容器先清空再重建——浮窗跨页存活（win 命中早退不重建 DOM），
+  // 不清空则每次再进 agent 页追加一套 chips（实测每 chip 重复 ×2）。
   const QUICK = ["agent.sug_analyze", "agent.sug_list", "agent.sug_validate",
                  "agent.sug_propose"];
   const q = document.getElementById("chat-suggest");
   if (q) {
+    q.innerHTML = "";
     q.style.display = "flex";
     for (const k of QUICK) {
       const b = document.createElement("button");
@@ -242,8 +293,12 @@ export async function pageAgent() {
       + t("agent.stats_tokens_tpl", { i: stats.prompt_tokens, o: stats.completion_tokens })
       + hit;
   }
-  /* 浮动对话卡片：拖拽 + 缩放 + 最小化，几何记忆 */
-  function openChatFloat(focus = true) {
+  /* 浮动对话卡片：拖拽 + 缩放 + 最小化，几何记忆。
+     P1-2：auto=true（进页自动唤出）受 chatAutoOpenBlocked 闸——用户 ×关闭
+     过（rfauto-chat-closed=1）则不再自动弹；显式钮（chat-open）走 auto=false
+     恒可唤出。 */
+  function openChatFloat(focus = true, auto = false) {
+    if (auto && chatAutoOpenBlocked(localStorage)) return;
     let win = document.getElementById("chat-float");
     if (win) { win.style.display = "flex"; if (focus) document.getElementById("chat-in")?.focus(); return; }
     const geo = Object.assign({ x: Math.max(0, window.innerWidth - 620), y: 90, w: 560, h: 560, min: false },
@@ -316,7 +371,11 @@ export async function pageAgent() {
     };
     win.querySelector("#cf-min").onclick = () => { geo.min = !geo.min; apply();
       localStorage.setItem("rfauto-chat-geo", JSON.stringify(geo)); };
-    win.querySelector("#cf-close").onclick = () => { win.style.display = "none"; };
+    // P1-2：×关闭=关闭意愿落 localStorage（会话间持久，自动唤出闸消费）
+    win.querySelector("#cf-close").onclick = () => {
+      win.style.display = "none";
+      localStorage.setItem("rfauto-chat-closed", "1");
+    };
     win.querySelector("#chat-send").onclick = sendChat;
     win.querySelector("#chat-in").onkeydown = (e) => { if (e.key === "Enter") sendChat(); };
     if (focus) document.getElementById("chat-in")?.focus();
@@ -361,6 +420,7 @@ export async function pageAgent() {
     div.innerHTML = `<b>${escAttr(recipePath)}</b> ${T.badge(t("agent.badge_proposal"), "warn")}
       ${kitTable({ columns: [t("agent.th_param"), t("agent.th_current"), t("agent.th_proposed")], rowsHtml: rows, empty: "" })}
       <div class="toolbar" style="margin-top:var(--space-2)"><button class='act'>${t("agent.approve_run")}</button>
+      <button class='minor' data-act='dismiss' title='${escAttr(t("agent.dismiss_tip"))}'>${t("agent.dismiss")}</button>
       <span class="muted">token: ${escAttr(p.token_hash || "")}</span></div>`;
     div.querySelector("button").onclick = async () => {
       // W7-C（加载态统一）：审批 POST 期间禁用防双击重复批准；失败恢复可重试
@@ -376,6 +436,49 @@ export async function pageAgent() {
             !!r.ok);
       loadInbox();
     };
+    // P2（aurora_n wave_ui_a）：忽略=localStorage 记账出列（不物理删——
+    // 服务端零新写路径；已忽略清单可恢复）。
+    const dismissBtn = div.querySelector("[data-act='dismiss']");
+    if (dismissBtn) dismissBtn.onclick = () => {
+      const s = parseInboxDismissed(localStorage.getItem("rfauto-inbox-dismissed"));
+      s.add(String(p.token_hash || ""));
+      localStorage.setItem("rfauto-inbox-dismissed", JSON.stringify([...s]));
+      T.msg(t("agent.dismissed_ok"), true);
+      loadInbox();
+    };
+    return div;
+  }
+
+  /* 已忽略清单折叠面板（P2）：可查看 + 逐条恢复（数据走 textContent 单点，
+     恢复=从 localStorage 账本删除后重拉收件箱）。 */
+  function renderDismissedBox(hidden) {
+    const div = document.createElement("div");
+    div.className = "panel";
+    div.style.marginBottom = "10px";
+    div.innerHTML = `<details><summary class="muted" style="cursor:pointer">${t("agent.dismissed_summary_tpl", { n: hidden.length })}</summary>
+      <div data-role='dismissed-items' style="margin-top:var(--space-2)"></div></details>`;
+    const box = div.querySelector("[data-role='dismissed-items']");
+    for (const p of hidden) {
+      const th = String(p.token_hash || "");
+      const row = document.createElement("div");
+      row.className = "toolbar";
+      row.style.margin = "var(--space-1) 0";
+      const lbl = document.createElement("span");
+      lbl.className = "muted";
+      lbl.textContent = (p.recipe || "") + " · " + th.slice(0, 12) + "…";
+      const btn = document.createElement("button");
+      btn.className = "minor";
+      btn.textContent = t("agent.dismiss_restore");
+      btn.onclick = () => {
+        const s = parseInboxDismissed(localStorage.getItem("rfauto-inbox-dismissed"));
+        s.delete(th);
+        localStorage.setItem("rfauto-inbox-dismissed", JSON.stringify([...s]));
+        loadInbox();
+      };
+      row.appendChild(lbl);
+      row.appendChild(btn);
+      box.appendChild(row);
+    }
     return div;
   }
 
@@ -383,10 +486,20 @@ export async function pageAgent() {
     const d = await apiFetch("/api/inbox", { signal: viewSignal("agent") });
     if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
     const el = T.$("inbox-list");
-    if (!(d.pending || []).length) { el.innerHTML = "<span class='muted'>" + t("agent.no_pending") + "</span>"; return; }
+    const all = d.pending || [];
+    if (!all.length) { el.innerHTML = "<span class='muted'>" + t("agent.no_pending") + "</span>"; return; }
+    // P2（aurora_n wave_ui_a）：忽略账本分流——被忽略提案不进主列表（本地
+    // localStorage 记账，服务端 pending 原样保留），折叠清单可查看/恢复。
+    const dismissed = parseInboxDismissed(localStorage.getItem("rfauto-inbox-dismissed"));
+    const { visible, hidden } = splitPendingByDismissed(all, dismissed);
     el.innerHTML = "";
-    for (const p of d.pending)
+    if (!visible.length) {
+      el.insertAdjacentHTML("beforeend",
+        "<span class='muted'>" + t("agent.inbox_all_dismissed") + "</span>");
+    }
+    for (const p of visible)
       el.appendChild(await renderProposal(p));
+    if (hidden.length) el.appendChild(renderDismissedBox(hidden));
   }
 
   /* Agent 沙箱草稿：列表 + 参数差异 + unified diff + 送审批 */

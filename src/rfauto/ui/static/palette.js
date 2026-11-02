@@ -13,12 +13,18 @@
    实现——不抽共享模块：app.js 顶层跑 DOM 初始化（three 已改 3D 调用点
    动态 import，W3-S9），本文件若 import 它仍会连带炸掉 node 行为测试
    （无 DOM 环境）的 import 链。两处改动须成对审视，语义保持一致
-   （开=存焦点+焦点入层、Tab=回绕、关=Esc/点遮罩+还焦）。 */
+   （开=存焦点+焦点入层、Tab=回绕、关=Esc/点遮罩+还焦）。
+   aurora_o i18n 分波席：字面量中文全量迁 pages/i18n.js 词表
+   （palette.cmd.* / palette.item.* / palette.* 三组，zh 逐字节同笔，
+   en 新增；硬编码棘轮本文件清零）。 */
 import { showPage, openRun, openCampaign, setThemeMode, getThemeMode, pageContextFor } from "./pages.js";
 // i18n（aurora_f W2-S5，S2 偏差申报收账）：语言切换命令接线——t()/setLocale
 // 单源在 pages/i18n.js（零依赖，无 import 环）；读档走 getLocale（与主题
 // cur 同款"参数注入"口径：commandCatalog 保持纯函数零 DOM）。
-import { getLocale, setLocale } from "./pages/i18n.js";
+// aurora_o i18n 分波席：命令目录/条目 chrome 全量迁词表（374 Han 清账）
+// ——zh 值逐字节同笔（node zh 行为钉不受扰），en 档渲染英文；t() 随模块
+// 语言档取值，loc 形参仍保留（语言切换命令提示按当前档选键）。
+import { getLocale, setLocale, t } from "./pages/i18n.js";
 // P8-9（aurora_f W3-S9，R1 §面4）：第三形态裸 fetch 收敛——apiFetch 单源
 // （统一错误信封/token 透传/超时与 abort 组合，缺省参数与旧裸 fetch 等价
 // 路径）。失败语义保持：loadDynamic 检出错误信封显式 throw → open() 既有
@@ -73,7 +79,7 @@ function showEnvelopeToast(text) {
   try {
     const el = document.getElementById("msg");
     if (!el) return;
-    el.textContent = String(text || "命令面板数据源失败");
+    el.textContent = String(text || t("palette.ds_fail"));
     el.className = "msg err";
     setTimeout(() => { el.className = "msg"; }, 6000);
   } catch { /* 提示面缺席不阻主路径 */ }
@@ -86,8 +92,8 @@ async function loadDynamic(force) {
     apiFetch("/api/runs?limit=200"), apiFetch("/api/recipes")]);
   if (runs.ok === false || recipes.ok === false) {
     const bad = runs.ok === false ? runs : recipes;
-    showEnvelopeToast(errorText(bad, "命令面板数据源失败"));
-    throw new Error(errorText(bad, "命令面板数据源失败"));
+    showEnvelopeToast(errorText(bad, t("palette.ds_fail")));
+    throw new Error(errorText(bad, t("palette.ds_fail")));
   }
   _dynCache = { runs, recipes };
   _dynCacheAt = Date.now();
@@ -131,6 +137,11 @@ export function iconForView(v) {
    零 DOM。命令总数 20（主题 4 + 跳转 7 + 动作 9；aurora_f W5-S17 动作扩充
    同笔 15→20）——总数钉在 tests/unit/test_ui_palette_cmds.py 与
    test_ui_perf_loading.py，增删命令须同笔同步。
+   aurora_o i18n 分波席：title/kw/subtitle/hint 全量走 pages/i18n.js 词表
+   （palette.cmd.* 与 palette.item.* 域）——t() 随模块语言档取值（node 缺省
+   zh 档=zh 值逐字节同笔，行为钉不受扰；en 档渲染英文标题与英文关键词）；
+   loc 形参保留专用于 act-locale 提示选键（locale_hint_to_en/to_zh——
+   提示语义=指向切换目标语言，与渲染档解耦）。
    W5-S17（R1 §面3 palette 补全 watch 激活）动作扩充 5 件：
    - act-run-search：`#` run 检索的显式入口（面板转 run 模式——`#` 前缀
      此前只藏在帮助文案里，发现性差）；
@@ -142,7 +153,7 @@ export function iconForView(v) {
 export function commandCatalog(cur, act, loc) {
   const locale = loc || "zh";
   const mk = (id, title, kw, hint, icon, fn) => ({
-    id, mode: "cmd", title, subtitle: "命令",
+    id, mode: "cmd", title, subtitle: t("palette.item.subtitle_cmd"),
     haystack: `${title} ${kw}`,
     hint: hint || "",
     icon: icon || "",
@@ -150,65 +161,78 @@ export function commandCatalog(cur, act, loc) {
   });
   return [
     /* 主题四态（PR-1 的外部入口演示面，沿用原名原关键词） */
-    mk("theme-midnight", "主题：Midnight 深蓝", "theme midnight 深蓝 午夜 夜间 dark",
-      cur === "midnight" ? "当前" : "", "", () => act.setTheme("midnight")),
-    mk("theme-ocean", "主题：Ocean 青绿", "theme ocean 青绿 海洋",
-      cur === "ocean" ? "当前" : "", "", () => act.setTheme("ocean")),
-    mk("theme-light", "主题：浅色", "theme light 浅色 亮色 日间",
-      cur === "light" ? "当前" : "", "", () => act.setTheme("light")),
-    mk("theme-system", "主题：跟随系统", "theme system 跟随 自动 auto",
-      cur === "system" ? "当前" : "", "", () => act.setTheme("system")),
+    mk("theme-midnight", t("palette.cmd.theme_midnight.title"),
+      t("palette.cmd.theme_midnight.kw"),
+      cur === "midnight" ? t("palette.item.hint_current") : "", "",
+      () => act.setTheme("midnight")),
+    mk("theme-ocean", t("palette.cmd.theme_ocean.title"),
+      t("palette.cmd.theme_ocean.kw"),
+      cur === "ocean" ? t("palette.item.hint_current") : "", "",
+      () => act.setTheme("ocean")),
+    mk("theme-light", t("palette.cmd.theme_light.title"),
+      t("palette.cmd.theme_light.kw"),
+      cur === "light" ? t("palette.item.hint_current") : "", "",
+      () => act.setTheme("light")),
+    mk("theme-system", t("palette.cmd.theme_system.title"),
+      t("palette.cmd.theme_system.kw"),
+      cur === "system" ? t("palette.item.hint_current") : "", "",
+      () => act.setTheme("system")),
     /* 页面跳转命令组（W3-D）：目标与 showPage 的 data-v 对齐（对齐钉
        test_ui_palette_cmds 跨文件核对 nav data-v 全集，防死命令）。 */
-    mk("go-runs", "跳转：Run 历史", "go runs run 历史 跳转", "跳转",
-      iconForView("runs"), () => act.showPage("runs")),
-    mk("go-campaign", "跳转：战役仪表盘", "go campaign 战役 仪表盘 跳转", "跳转",
+    mk("go-runs", t("palette.cmd.go_runs.title"), t("palette.cmd.go_runs.kw"),
+      t("palette.item.hint_jump"), iconForView("runs"), () => act.showPage("runs")),
+    mk("go-campaign", t("palette.cmd.go_campaign.title"),
+      t("palette.cmd.go_campaign.kw"), t("palette.item.hint_jump"),
       iconForView("campaign"), () => act.showPage("campaign")),
-    mk("go-tune", "跳转：优化调参", "go tune 调参 优化 跳转", "跳转",
-      iconForView("tune"), () => act.showPage("tune")),
-    mk("go-recipe", "跳转：配方编辑", "go recipe 配方 编辑 跳转", "跳转",
-      iconForView("recipe"), () => act.showPage("recipe")),
-    mk("go-tools", "跳转：微波工具箱", "go tools 工具箱 计算器 跳转", "跳转",
-      iconForView("tools"), () => act.showPage("tools")),
-    mk("go-gallery", "跳转：模板画廊", "go gallery 画廊 模板 跳转", "跳转",
-      iconForView("gallery"), () => act.showPage("gallery")),
-    mk("go-profile", "跳转：剖析", "go profile 剖析 性能 py-spy 跳转", "跳转",
-      iconForView("profile"), () => act.showPage("profile")),
+    mk("go-tune", t("palette.cmd.go_tune.title"), t("palette.cmd.go_tune.kw"),
+      t("palette.item.hint_jump"), iconForView("tune"), () => act.showPage("tune")),
+    mk("go-recipe", t("palette.cmd.go_recipe.title"), t("palette.cmd.go_recipe.kw"),
+      t("palette.item.hint_jump"), iconForView("recipe"), () => act.showPage("recipe")),
+    mk("go-tools", t("palette.cmd.go_tools.title"), t("palette.cmd.go_tools.kw"),
+      t("palette.item.hint_jump"), iconForView("tools"), () => act.showPage("tools")),
+    mk("go-gallery", t("palette.cmd.go_gallery.title"), t("palette.cmd.go_gallery.kw"),
+      t("palette.item.hint_jump"), iconForView("gallery"), () => act.showPage("gallery")),
+    mk("go-profile", t("palette.cmd.go_profile.title"), t("palette.cmd.go_profile.kw"),
+      t("palette.item.hint_jump"), iconForView("profile"), () => act.showPage("profile")),
     /* 动作命令（W3-D；导出图表=W4-D） */
-    mk("act-refresh", "刷新当前页数据", "refresh 刷新 当前页 reload", "动作",
+    mk("act-refresh", t("palette.cmd.act_refresh.title"),
+      t("palette.cmd.act_refresh.kw"), t("palette.item.hint_action"),
       "refresh", () => act.refresh()),
     /* 导出当前页图表（W4-D）：事件桥发射端——监听端在 pages.js 侧消费
        （并行席在制），契约=事件名恒 rfauto:export-chart、无 payload。 */
-    mk("act-export-chart", "导出当前页图表", "export chart 导出 图表 下载", "动作",
+    mk("act-export-chart", t("palette.cmd.act_export_chart.title"),
+      t("palette.cmd.act_export_chart.kw"), t("palette.item.hint_action"),
       "", () => act.exportChart()),
-    mk("act-palette-help", "帮助：命令面板用法", "help palette 帮助 提示 用法 快捷键",
-      "帮助", "", () => act.help()),
+    mk("act-palette-help", t("palette.cmd.act_palette_help.title"),
+      t("palette.cmd.act_palette_help.kw"), t("palette.item.hint_help"),
+      "", () => act.help()),
     /* 语言切换（aurora_f W2-S5，S2 偏差申报收账）：词表 t()/setLocale 已
        随 W1-S2 落地，此处只接命令出口——zh↔en 翻面切换（setLocale 写档+
        全壳重扫，i18n.js 单源）；提示随档翻转（当前档→目标档）。 */
-    mk("act-locale", "语言 / Language", "language locale i18n 语言 英文 中文 english 切换",
-      locale === "en" ? "切换到中文" : "切换到 English", "",
+    mk("act-locale", t("palette.cmd.act_locale.title"), t("palette.cmd.act_locale.kw"),
+      locale === "en" ? t("palette.cmd.locale_hint_to_zh")
+        : t("palette.cmd.locale_hint_to_en"), "",
       () => act.setLocale(locale === "en" ? "zh" : "en")),
     /* 动作扩充（W5-S17，R1 §面3）：run 直达三连——run id 经 act.recentRunAt
        现取（生产=_dynCache 快照；node 旧 spy 无此方法=空串降级，hint 回落
-       "直达"）。id 进 haystack → 命令模式下可直接按 run id 检索直达。 */
-    mk("act-run-search", "打开 run 详情（输入 id）",
-      "open run 打开 run 详情 输入 id 检索 #", "转 # 检索",
+       "直达"词表值）。id 进 haystack → 命令模式下可直接按 run id 检索直达。 */
+    mk("act-run-search", t("palette.cmd.act_run_search.title"),
+      t("palette.cmd.act_run_search.kw"), t("palette.item.hint_search_runs"),
       iconForView("runs"), () => act.enterRunSearch()),
-    mk("act-run-latest", "打开最近 run ①",
-      "latest recent 最近 run 新 直达 打开 " + _recentId(act, 1),
-      _recentId(act, 1) || "直达", iconForView("runs"),
+    mk("act-run-latest", t("palette.cmd.act_run_latest.title"),
+      t("palette.cmd.act_run_latest.kw") + " " + _recentId(act, 1),
+      _recentId(act, 1) || t("palette.item.hint_direct"), iconForView("runs"),
       () => act.openRecentRun(1)),
-    mk("act-run-2nd", "打开最近 run ②",
-      "second 次新 最近 run 直达 打开 " + _recentId(act, 2),
-      _recentId(act, 2) || "直达", iconForView("runs"),
+    mk("act-run-2nd", t("palette.cmd.act_run_2nd.title"),
+      t("palette.cmd.act_run_2nd.kw") + " " + _recentId(act, 2),
+      _recentId(act, 2) || t("palette.item.hint_direct"), iconForView("runs"),
       () => act.openRecentRun(2)),
-    mk("act-run-3rd", "打开最近 run ③",
-      "third 第三新 最近 run 直达 打开 " + _recentId(act, 3),
-      _recentId(act, 3) || "直达", iconForView("runs"),
+    mk("act-run-3rd", t("palette.cmd.act_run_3rd.title"),
+      t("palette.cmd.act_run_3rd.kw") + " " + _recentId(act, 3),
+      _recentId(act, 3) || t("palette.item.hint_direct"), iconForView("runs"),
       () => act.openRecentRun(3)),
-    mk("act-latest-campaign", "打开最近战役",
-      "campaign 战役 最优 调参 优化 最近 直达 trials", "直达",
+    mk("act-latest-campaign", t("palette.cmd.act_latest_campaign.title"),
+      t("palette.cmd.act_latest_campaign.kw"), t("palette.item.hint_direct"),
       iconForView("campaign"), () => act.openLatestCampaign()),
   ];
 }
@@ -264,7 +288,7 @@ function showPaletteHelp() {
   try {
     const el = document.getElementById("msg");
     if (!el) return;
-    el.textContent = "命令面板：Ctrl/Cmd+K 开关 · 直接输入搜页面与配方 · # 搜 run · > 命令 · ↑↓ 选择 · Enter 执行 · Esc 关闭";
+    el.textContent = t("palette.help_text");
     el.className = "msg ok";
     setTimeout(() => { el.className = "msg"; }, 6000);
   } catch { /* 提示面缺席不阻主路径 */ }
@@ -329,9 +353,10 @@ function pageItems() {
   return [...document.querySelectorAll("#nav button[data-v]")].map((b) => {
     const title = b.textContent.trim().replace(/\s+/g, " ");
     return {
-      id: `page-${b.dataset.v}`, mode: "nav", title, subtitle: "页面",
+      id: `page-${b.dataset.v}`, mode: "nav", title,
+      subtitle: t("palette.item.subtitle_page"),
       haystack: `${title} ${b.dataset.v}`,
-      hint: "跳转",
+      hint: t("palette.item.hint_jump"),
       run: () => showPage(b.dataset.v),
     };
   });
@@ -345,9 +370,10 @@ function runItems(runs) {
       typeof m11 === "number" ? `S11 ${m11.toFixed(2)}dB` : ""]
       .filter(Boolean).join(" · ");
     return {
-      id: `run-${r.run_id}`, mode: "run", title: r.run_id || "(无 id)",
+      id: `run-${r.run_id}`, mode: "run",
+      title: r.run_id || t("palette.item.no_id"),
       subtitle: sub, haystack: `${r.run_id} ${r.adapter ?? ""} ${r.model ?? ""}`,
-      hint: "打开详情",
+      hint: t("palette.item.hint_open_detail"),
       run: () => openRun(r.run_id),
     };
   });
@@ -359,9 +385,10 @@ function recipeItems(recipes) {
     const name = String(r.path || "").split(/[\\/]/).pop();
     return {
       id: `recipe-${r.path}`, mode: "nav", title: name,
-      subtitle: `配方 · ${r.model ?? "?"}${r.is_workcopy ? " · 工作副本" : ""}`,
-      haystack: `${name} ${r.path ?? ""} ${r.model ?? ""} 配方 recipe`,
-      hint: "加载",
+      subtitle: `${t("palette.item.recipe_lead")}${r.model ?? "?"}` +
+        (r.is_workcopy ? t("palette.item.workcopy_tail") : ""),
+      haystack: `${name} ${r.path ?? ""} ${r.model ?? ""} ${t("palette.item.recipe_kw")}`,
+      hint: t("palette.item.hint_load"),
       run: () => openRecipe(r.path),
     };
   });
@@ -405,7 +432,8 @@ export function initPalette(doc = document) {
     if (!view.length) {
       const li = doc.createElement("li");
       li.className = "muted";
-      li.textContent = input.value.trim() ? "无匹配结果" : "输入以搜索；# 搜 run，> 命令";
+      li.textContent = input.value.trim()
+        ? t("palette.empty_no_match") : t("palette.empty_input_hint");
       list.appendChild(li);
       input.removeAttribute("aria-activedescendant");
       return;

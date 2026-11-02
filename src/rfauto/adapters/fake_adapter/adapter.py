@@ -480,7 +480,7 @@ class FakeAdapter(SimulatorAdapter):
                 tan_d=stackup.loss_tangent)
         elif self.model_type == "siw":
             # 直 SIW 线段（siw-family 首族）：w/d/s → w_eff（Cassivi 2002
-            # 等效宽度闭式，内部证据档 §1）→ 等效 RWG TE10
+            # 等效宽度闭式，runs/siw_family/criteria.md §1）→ 等效 RWG TE10
             # 色散 γ（复数支含 tanδ）；#154 同名参数逐参对语义：w_mm=两过孔
             # 列心距、d_mm=过孔直径、s_mm=过孔心距、line_len_mm=两端口面间距
             # ——与 openEMS _siw_lines 同口径

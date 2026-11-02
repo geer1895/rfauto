@@ -31,7 +31,7 @@ from rfauto.service.remote_service import (
 
 def _one_machine(monkeypatch, **kw):
     cfg = RemoteMachineConfig(
-        name="sim_server", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="198.51.100.20", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.get("project_root", "E:\\rfauto_remote"),
         probe_ports={"rdp": 3389},
@@ -152,7 +152,7 @@ def test_session_config_assembles_settings_delta(monkeypatch):
     out = hfss_remote_session_config("sim_server")
     remote = out["remote"]
     assert remote["remote_machine"] == "sim_server"
-    assert remote["machine"] == "10.20.30.40"
+    assert remote["machine"] == "198.51.100.20"
     assert remote["port"] == 50051
     assert remote["project_root"] == "E:\\rfauto_remote"
     assert remote["version"] == "2025.1"
@@ -255,7 +255,7 @@ def test_launch_grpcsrv_task_name_unique_and_recorded(monkeypatch):
     """P2-2：schtasks 任务名带唯一后缀（并发冒烟不互踩），launch 早期
     登记进 steps（部分失败路径也带名，cleanup 据此精确删）。"""
     cfg = RemoteMachineConfig(
-        name="sim_server", host="10.20.30.40", hfss_grpc_port=50051,
+        name="sim_server", host="198.51.100.20", hfss_grpc_port=50051,
         hfss_project_root="E:\\rfauto_remote",
         hfss_ansysedt_exe="E:\\x\\ansysedt.exe",
     )
@@ -305,10 +305,10 @@ def test_cleanup_kills_only_grpcsrv_port_matched_pids(monkeypatch):
             if "Win32_Process" in cmd:
                 return 0, (
                     '111|"E:\\x\\ansysedt.exe" -grpcsrv '
-                    '10.20.30.40:50051:InsecureMode\n'
+                    '198.51.100.20:50051:InsecureMode\n'
                     '222|"E:\\x\\ansysedt.exe" \n'          # 他人 GUI 实例
                     '333|"E:\\x\\ansysedt.exe" -grpcsrv '
-                    '10.20.30.40:50052:InsecureMode\n'  # 其他端口
+                    '198.51.100.20:50052:InsecureMode\n'  # 其他端口
                 ), ""
             return 0, "2\n", ""
 
@@ -363,7 +363,7 @@ def test_cleanup_fingerprint_query_g5_zero_double_quotes(monkeypatch):
     """W7-B §1.5-1 回归钉：指纹查询命令全程零双引号（G5）且复用互斥
     单源形态。根因=SSH exec 通道 argv 层吃双引号→PS 分词拼裸 WQL
     ``Name=ansysedt.exe``（值失引号）→「无效查询」静默零杀——证据
-    内部证据档（exec qdemo_Name=x_end vs 交互 qdemo_Name='x'_end）。"""
+    runs/seat5_ssh/（exec qdemo_Name=x_end vs 交互 qdemo_Name='x'_end）。"""
     monkeypatch.setenv(rs.REMOTE_SMOKE_ENV, "1")
     _one_machine(monkeypatch)
     commands: list[str] = []
@@ -565,7 +565,7 @@ def test_mutex_precheck_strict_pid_lines_no_false_hit():
 
 def test_mutex_precheck_hit_is_busy_no_kill():
     t = _MutexFakeTransport(
-        hits=['4242|"E:\\x\\ansysedt.exe" -grpcsrv 10.20.30.40:50051:InsecureMode'])
+        hits=['4242|"E:\\x\\ansysedt.exe" -grpcsrv 198.51.100.20:50051:InsecureMode'])
     out = rs.remote_mutex_precheck(
         t, "E:\\rfauto_remote",
         process_name="ansysedt.exe", fingerprint=r"grpcsrv.*:50051:")
@@ -625,7 +625,7 @@ class _SmokeMutexFakeTransport:
         if "-eq 'ansysedt.exe'" in cmd:
             if self.busy:
                 hit = ('111|"E:\\x\\ansysedt.exe" -grpcsrv '
-                       "10.20.30.40:50051:InsecureMode")
+                       "198.51.100.20:50051:InsecureMode")
                 return 0, f"{hit}\n", ""
             return 0, "", ""
         if "run_server_probe.ps1" in cmd:
@@ -926,7 +926,7 @@ def test_l2_build_failure_failclosed(monkeypatch, tmp_path):
 
 def _preflight_machine(monkeypatch, probe_ports=None, **kw):
     kwargs = dict(
-        name="sim_server", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="198.51.100.20", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.pop("project_root", "E:\\rfauto_remote"),
         probe_ports=probe_ports if probe_ports is not None else {

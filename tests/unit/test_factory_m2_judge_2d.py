@@ -1,6 +1,6 @@
 """datafactory 二期 A 批 2D 双口径复判驱动单测（纯函数面 + 合成回收 + 划分确定性）。
 
-判据：内部证据档 §2（先写后算）。
+判据：runs/datafactory_m2d_20260921/criteria.md §2（先写后算）。
 #118 合成回收钉：2D 解析无耗线真值（Z0/εeff 随 w、L 逐点参数化）注入同一
 条判读管线，GP 回收须在门内，证明判读管线（联合分层划分/双参逐频头/门内核
 接线）自身无偏。GP-LOO 慢路径由驱动脚本（--judge）在真实判读前全跑并落
@@ -175,17 +175,25 @@ def test_synthetic_recovery_gp_heldout_2d_within_gates():
     assert 0.5 <= tri["w_mm"] <= 2.0 and 20.0 <= tri["line_len_mm"] <= 60.0
 
 
-@pytest.mark.slow  # 终门 DURATIONS top-20 慢件（30.1s，GP 确定性双跑逐位对账）
+# W1-5 语料降规模（aurora_m）：双跑逐位性质与语料规模无关——合成语料
+# 8×6=48 → 4×3=12 行（-75%）、频栅 0.025GHz×9 点 → 0.05GHz×5 点（-44%，
+# 同 band 生成语义），断言零改动；旧语料对照档
+# runs/aurora_m/w1_5/old_corpus_test_determinism_double_run_bit_identical.log
+DET_NW, DET_NL = 4, 3
+DET_FREQS = m2.band_freqs(0.05)
+
+
+@pytest.mark.slow  # 终门慢件（GP 确定性双跑逐位对账；W1-5 降规模 48→12 行）
 def test_determinism_double_run_bit_identical():
     # G4-回归锚：同数据集同划分判读链双跑逐位一致（bit-identical）
-    rows = m2d.synthetic_line_rows_2d(SMALL_FREQS)
+    rows = m2d.synthetic_line_rows_2d(DET_FREQS, n_w=DET_NW, n_l=DET_NL)
     lin_rows = m2d.to_linear_rows_2d(rows)
     ws = np.array([r["w"] for r in rows])
     ls = np.array([r["l"] for r in rows])
     split = m2d.stratified_split_2d(ws, ls)
-    h1 = m2d.heldout_eval_2d(m2d.gp_factory_2d, rows, lin_rows, SMALL_FREQS,
+    h1 = m2d.heldout_eval_2d(m2d.gp_factory_2d, rows, lin_rows, DET_FREQS,
                              split)
-    h2 = m2d.heldout_eval_2d(m2d.gp_factory_2d, rows, lin_rows, SMALL_FREQS,
+    h2 = m2d.heldout_eval_2d(m2d.gp_factory_2d, rows, lin_rows, DET_FREQS,
                              split)
     det = m2d.determinism_check(h1, h2)
     assert det["bit_identical"] is True

@@ -217,7 +217,7 @@ class TestSpecTranslation:
         dotnet/database/stackup.py:97-130 源码实证；__update_stackup 同口径
         layers.pop(0) 走 add_layer_top）；官方示例 TOP,DE,BOTTOM 首项=顶层；
         docs/pyedb_distilled.md §3.1/§6-2（「adapter 翻转一次」处方）；
-        真机冒烟（内部证据档）以 GND=elevation0
+        真机冒烟（runs/edblane85/w1_smoke/build_pyaedt.py）以 GND=elevation0
         验证的正确物理序=信号层在上。未翻转时发射族叠层整体上下颠倒
         （GND 落物理顶层=倒置微带，综合 λ/4 几何全错且无报错）。
         """
@@ -400,7 +400,7 @@ class TestBuild:
         kw = calls[0][1]
         assert kw["edbpath"] == str(result.aedb_path)
         assert kw["isreadonly"] is False
-        assert kw["version"] == "2025.1"  # 内核立规注记 规则 0：本机 AEDT 2025 R1 对齐基准
+        assert kw["version"] == "2025.1"  # AGENTS 规则 0：本机 AEDT 2025 R1 对齐基准
         # configuration.load 收到与落盘 JSON 逐字节同构的 dict + apply_file=True
         loads = [c for c in calls if c[0] == "load"]
         assert len(loads) == 1
@@ -1179,7 +1179,7 @@ class TestEmitterBuildChain:
 
 # ─── 3D Layout setup 自适应档写入通道（W8 仲裁建议 2，2026-10-09）────────────
 #
-# W8 实证（内部证据档 §2 V3/§5-2）：对已解
+# W8 实证（runs/edblane85/w8_cl_arb/ARBITRATION.md §2 V3/§5-2）：对已解
 # 3D Layout 工程重载改档不传播——pyaedt props 无 AdaptiveSettings 子树，
 # 子树重建写入+update+save 后批解仍逐位回放缓存解（S31 十位小数同值
 # -9.4569、wall 26s vs 原档 ~52s）。因此改档走建模期写入
@@ -1187,7 +1187,7 @@ class TestEmitterBuildChain:
 # 配套写入一致断言 verify_adapt_tightening（批解后重开工程读回 setup
 # max_delta 与存证请求档核对，不一致/不可核对=告警，best-effort 不抛异常）。
 #
-# W9 勘误 + W10 定谳（内部证据档 与 w10_cl_recheck）：
+# W9 勘误 + W10 定谳（runs/edblane85/w9_cl_recheck 与 w10_cl_recheck）：
 # 本节单测验证的是**请求值达 configuration.load 的写入面**，非"求解按
 # 新档收敛"的行为效力——W9 真机 props 建库期写入 0.005 读回确认后批解
 # 仍按 0.02 准则停机（TIGHTENING_NOT_EFFECTIVE）；W10 定谳：EDB 3D

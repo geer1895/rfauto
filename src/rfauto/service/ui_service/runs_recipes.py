@@ -27,10 +27,22 @@ _LOG = logging.getLogger(__name__)
 
 
 def list_runs(limit: int = 50) -> dict[str, Any]:
-    """run 列表（UI 首页；缺省注册表路径，同 run_store 缺省解析链）。"""
+    """run 列表（UI 首页；缺省注册表路径，同 run_store 缺省解析链）。
+
+    P1-1（aurora_n wave_ui_a）：SQLite 索引行可能先于产物目录消亡（目录
+    被清理/残留行——实测 limit=200 中 27 条无目录，且缺失的恰是霸占首屏
+    的最新记录），而 run_detail 查物理目录——双源漂移让总览"最近活动"
+    第一条即"run 不存在"死路。此处对**已列出的 ≤limit 行**逐行补
+    ``on_disk`` 在盘标注（每行一次 stat，非 runs/ 全扫——list 面禁物理
+    全扫的红线不碰，SQLite 索引性能面保持），前端据此把无目录 run 呈现
+    为"归档缺失"态而非可点击假入口（#122 诚实语义）。
+    """
     from rfauto.infra.run_store import list_runs as _list_runs
 
     runs = _list_runs(limit=limit)
+    for row in runs:
+        rid = safe_run_id(str(row.get("run_id") or ""))
+        row["on_disk"] = bool(rid) and (RUNS_DIR / rid).is_dir()
     return ok_envelope(runs=runs)
 
 
@@ -251,7 +263,28 @@ def run_detail(run_id: str) -> dict[str, Any]:
         return error_envelope([f"非法 run_id: {run_id!r}"])
     run_dir = RUNS_DIR / run_id_clean
     if not run_dir.is_dir():
-        return error_envelope([f"run 不存在: {run_id}"])
+        # P1-1（aurora_n wave_ui_a）：目录不在盘按索引可查性分口径给可行动
+        # 文案（索引残留记录 ≠ 完全不存在），并带 ``missing_dir`` 机器可读
+        # 旗标——前端据此禁用「重试」钮（目录不在盘，重试恒失败，不再骗
+        # 点击）。索引查证 best-effort（#105）：查证失败按普通不存在文案，
+        # 不阻塞错误信封主路径。
+        indexed = False
+        try:
+            from rfauto.infra.db import RegistryDB, default_registry_db_path
+
+            db = RegistryDB(path=default_registry_db_path())
+            try:
+                indexed = db.get_run(run_id_clean) is not None
+            finally:
+                db.close()
+        except Exception:
+            indexed = False
+        if indexed:
+            return error_envelope(
+                [f"run {run_id} 的产物目录已不在 runs/ 下（索引残留记录）"
+                 f"——重试无效，可在 Run 历史查看其他 run"],
+                missing_dir=True)
+        return error_envelope([f"run 不存在: {run_id}"], missing_dir=True)
 
     def _produce() -> dict[str, Any]:
         detail: dict[str, Any] = ok_envelope(run_id=run_id, run_dir=str(run_dir))
@@ -465,7 +498,7 @@ def recipe_save(
     updates 允许的键：params（{name: value} 平铺，逐项带 bounds 校验）、
     setup、objectives、optimization（整段替换）。
 
-    写面守卫（配方污染根修，处置账 待办清单「fix-recipe-pollution」条）：
+    写面守卫（配方污染根修，处置账 TODO「fix-recipe-pollution」条）：
     整文档 ``yaml.safe_dump`` 会丢注释/
     引号并把表单归一化的 optimization 段整段写回——2026-09-17 17:18 正是此链把
     recipes/branchline_coupler_v1.yaml 重序列化（diff 85 行）。recipes/ 原件

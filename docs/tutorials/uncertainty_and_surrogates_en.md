@@ -16,7 +16,8 @@
 > Chinese original: docs/tutorials/uncertainty_and_surrogates.md. CLI
 > help text and console output are preserved verbatim from the measured
 > runs (the CLI's own messages stay in Chinese); only the narrative is
-> translated.
+> translated. 2026-10-31: §5 switched to dynamic registry pointers and
+> §7 steps ⑥⑦ added — synced in the same stroke as the original.
 
 ## 0. Prerequisites
 
@@ -26,7 +27,7 @@
 - All commands go through the console-script entry
   `.venv/Scripts/rfauto.exe`; `python -m rfauto` is not a valid CLI
   entry.
-- One iron rule runs through the whole article (kernel rule 7):
+- One iron rule runs through the whole article (AGENTS rule 7):
   **physical numbers come only from the deterministic kernel** —
   sampling, surrogate fitting, LOOCV, and yield MC are all deterministic
   functions; LLM/agents orchestrate but never produce numbers.
@@ -179,7 +180,8 @@ Measured flags: `--tol name=σ`, repeatable (σ in the parameter's own
 unit, **required** — omitting tolerances errors out with "missing
 tolerances"); `--n` MC sample count (default 10000); `--seed`; `--kind`
 (help text says `poly_ridge|nn`, the implementation goes through the
-registry and actually accepts all 14 registered kinds, §5). Three
+registry and actually accepts every registered kind of §5 — the key
+set grows with versions, see `available()`). Three
 outputs: the nominal point = the **lowest-cost sample** in the sample
 set (deterministic, never hand-picked); yield = MC sampling inside the
 tolerance box, each point predicted by the surrogate, judged against
@@ -236,19 +238,17 @@ the adapter — when the surrogate closure's numbers are in doubt, use it
 for a small-sample spot check; `--dry-run` previews the plan with zero
 execution.
 
-## 5. The surrogate registry: 14 built-ins + custom entry
+## 5. The surrogate registry: a dynamic key set + custom entry
 
-Registry measured list (decorator-registration full set, 2026-10-19
-re-verified; `available()` reflects imported modules — a bare
-`available()` returns 13 kinds, importing the `gnn_geom` module triggers
-its registration and completes the 14; saas_gp/warped_kriging joined
-2026-10-18, 架构批 W5-S22):
-
-```
-['deeponet', 'fno', 'fno_lite', 'gbdt', 'gnn_geom', 'huber_ridge',
- 'mapes_pixel_analytic', 'nn', 'pod_rom', 'poly_ridge', 'saas_gp',
- 'smt_kriging', 'smt_mfk', 'warped_kriging']
-```
+The registry is an open extension point and its key set keeps growing —
+this tutorial **deliberately does not enumerate the list (drift-proof)**
+(the old "14 kinds" frozen list was stale the moment it shipped:
+registry keys have no standalone CLI leaf, and `available()` shifts with
+the imported-module surface). The full key set lives in two single
+sources: **the Python face `surrogate_registry.available()`** and **the
+invalid-kind error of the `--kind` consumption channel** (a misspelled
+`surrogate uq … --kind` echoes every available key). Measured 21 keys on
+2026-10-31 — that number is a reading-time snapshot, not a contract.
 
 - **poly_ridge** is the calibration chain's default (second-order
   polynomial + ridge; smallest sample requirement — the LOOCV gate was
@@ -259,6 +259,27 @@ its registration and completes the 14; saas_gp/warped_kriging joined
   warping warped_kriging, …); implementations live in the
   `optimization/surrogate/` subpackage, each module header documenting
   its applicable domain.
+- **Six aurora_n additions, one line each** (deep read:
+  docs/tutorials/advanced_surrogates_bo.md — conformal/ensemble/
+  mt_gp/rff_gp have fully measured sections; pole_residue /
+  vf_parametric / deep_ensemble defer to their module docstrings):
+  - **conformal**: split-conformal wrapper — adds a symmetric interval
+    with a marginal-coverage guarantee to any σ-less surrogate
+    (half-width = calibration residual quantile, no faked Gaussian σ).
+  - **ensemble**: LOOCV ρ softmax-weighted ensemble — member
+    prediction disagreement = free epistemic σ.
+  - **mt_gp**: ICM multi-output GP — cross-metric joint posterior
+    `predict_joint`, the default base of the mo run multi-objective
+    acquisition loop.
+  - **rff_gp**: random Fourier features + ridge readout — the
+    scalable tier when sample counts outgrow the exact GP.
+  - **pole_residue / vf_parametric**: pole-residue head + parametric
+    VF macromodel neighborhood interpolation — a "params → S-curve"
+    physics-prior surrogate (with passivity verdict and sample-hull
+    extrapolation guard).
+  - **deep_ensemble**: homogeneous torch deep ensemble (fno base,
+    bootstrap + per-member seeds) — member disagreement as epistemic
+    σ (the torch counterpart of ensemble above).
 - **Third-party surrogate entry** = implement three methods + register
   with the decorator (base.py contract, verbatim):
 
@@ -365,7 +386,9 @@ sampling-based Sobol.
   -m morris -n 30 --adapter fake --json
 
 # ② calibration chain (fake; artifacts at runs/<new_rid>/calibration/samples.json)
-#    service direct call in §3's code block; or via the campaign:
+#    service direct call in §3's code block; or via the campaign (the
+#    recipe can also be the UQ-chain demo recipes/branchline_uq_demo.yaml
+#    — it carries the tolerance section, which ⑥ consumes more smoothly):
 .venv/Scripts/rfauto.exe campaign plan recipes/branchline_tune_light.yaml \
   --calibrate-samples 9 --out-dir runs/my_uq_campaign
 .venv/Scripts/rfauto.exe campaign run runs/my_uq_campaign
@@ -382,6 +405,39 @@ sampling-based Sobol.
 .venv/Scripts/rfauto.exe tune recipes/branchline_tune_light.yaml \
   --adapter fake --sampler sbo --max-trials 30
 .venv/Scripts/rfauto.exe surrogate analyze <tune_run_id> --json
+
+# ⑥ (optional) ensemble+conformal: model-family disagreement σ +
+#    conformal interval (Python registry face, consumes ②'s samples.json;
+#    full usage in advanced_surrogates_bo.md §2-§3; runnable data-source
+#    recipe = recipes/branchline_uq_demo.yaml — the UQ-chain demo recipe
+#    with a tolerance section, validate RC=0)
+.venv/Scripts/python.exe -c "
+import json
+from rfauto.optimization.surrogate import surrogate_registry
+doc = json.load(open('runs/<rid>/calibration/samples.json', encoding='utf-8'))
+samples, bounds = doc['samples'], doc['bounds']
+# ensemble: LOOCV-rho softmax weighting; with more than one numeric
+# metric key, rho_metric is mandatory (key = a numeric key of the
+# samples.json metrics, e.g. s11_db_max_in_band)
+e = surrogate_registry.create('ensemble', config={
+    'bounds': bounds, 'members': ['poly_ridge', 'gbdt', 'smt_kriging'],
+    'rho_metric': '<numeric metrics key, e.g. s11_db_max_in_band>'})
+info = e.fit(samples)          # info['weights'] = member weights; uncertainty() = dispersion sigma
+# conformal: wraps any surrogate with a conformal interval; a small
+# calibration set honestly overflows (q=+inf, unbounded interval)
+c = surrogate_registry.create('conformal', config={
+    'base_kind': 'poly_ridge',
+    'base_config': {'bounds': bounds, 'order': 2},
+    'alpha': 0.1, 'seed': 7})
+c.fit(samples)                 # fit_info warns coverage_warning when n_cal cannot support alpha
+print(c.predict_interval({'arm_len_mm': 20.5, 'series_w_mm': 1.87,
+                          'shunt_w_mm': 1.11}))
+"
+# ⑦ (optional) multi-objective BO loop (built-in synthetic family,
+#    directly runnable from the CLI, no recipe needed — the scaled-down
+#    ZDT1 synthetic family, EHVI acquisition + hypervolume referee;
+#    deep read advanced_surrogates_bo.md §6)
+.venv/Scripts/rfauto.exe mo run --kind zdt1 --n-eval 20 --json
 ```
 
 Suggested reading order: fix ② first if verdict=FAIL (ρ<0.8 →
@@ -395,6 +451,9 @@ parameter does not matter.
 
 - The tune→refine→replay optimization main loop:
   docs/tutorials/first_optimization_loop_en.md
+- Six advanced surrogate tools (deep read of conformal/ensemble/
+  mt_gp/rff_gp + the mo run / al propose consumption entries):
+  docs/tutorials/advanced_surrogates_bo_en.md
 - Row-level ingestion of calibration artifacts and health gates:
   docs/tutorials/datasets_and_health_gates_en.md
 - The same tools inside MCP (uq_yield_at/robustness_report etc.):
@@ -408,7 +467,7 @@ parameter does not matter.
 |---|---|---|
 | `rfauto sensitivity --help` (sobol/morris/seed/adapter flags) | measured run | pass |
 | Sobol total evaluations = N×(d+2), Morris trajectories max(5,N//d), #234 centering | `optimization/sensitivity.py` module header + docstring read | pass |
-| `rfauto surrogate --help` (analyze/uq subcommands) | measured run | pass |
+| `rfauto surrogate --help` (analyze/uq/export-onnx subcommands) | measured run | pass |
 | `rfauto surrogate uq --help` (--tol/--n/--kind/--seed) | measured run | pass |
 | nominal point = min-cost sample, ±1σ ranking, missing-tolerances error, R1 spread-skill gate | `service/uq_service.py` surrogate_yield/build_yield_context read | pass |
 | `rfauto uq --help` (yield-at/design-center/temp-zone/robustness) | measured run (all four subcommand flags cross-checked) | pass |
@@ -417,7 +476,7 @@ parameter does not matter.
 | calibration six steps / design_kind three states / lhs needs n_samples≥5 / LOOCV ρ≥0.8 / FAIL = normal return | `service/calibration_service.py` module header + calibrate_surrogate read | pass |
 | calibration four artifacts and meta registration (algorithm=surrogate_calibration) | calibration_service persistence section read | pass |
 | real FAIL artifact (ρ=0.3833/9 folds/L9/taguchi) | `runs/20260903_235147_cb982df7/calibration/{gate,samples}.json` read | pass |
-| registry 14-kind list (bare available()=13; 14 after importing gnn_geom) | `surrogate_registry.available()` call + decorator-registration grep | pass |
+| registry list via dynamic pointers, not enumerated (available() measured 21 keys 2026-10-31, number is not a contract) | `surrogate_registry.available()` call | pass |
 | third-party registration three-method contract | `optimization/surrogate/base.py` docstring read | pass |
 | uq --kind accepts the whole registry (help text only says poly_ridge\|nn) | `calibration_service._make_model` via the uq_service call chain read | pass |
 | registry service face v1 zero CLI/MCP wiring (except the tune tri-state) | `surrogate_registry_service.py` module header read + cli/mcp_tools grep | pass |

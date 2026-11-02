@@ -46,12 +46,18 @@ def export_model_schema(model: str) -> dict[str, Any]:
     ``service.envelope.error_envelope`` 同构；AU-2 收敛语义），
     cli/MCP 壳零逻辑直渲染。
     """
-    from rfauto.models.registry import export_schema
+    from rfauto.models.registry import export_schema, list_models
 
     try:
         schema = export_schema(model)
     except KeyError:
-        return error_envelope(f"未知模型: {model}")
+        # aurora_n 错误信息人性化二批：did-you-mean + models list 指引
+        # （run_core validate_recipe 同款；前缀逐字节保留）。
+        from rfauto.service.recipe_validation import did_you_mean
+        return error_envelope(
+            f"未知模型: {model}"
+            f"{did_you_mean(str(model), list_models())}"
+            "（已注册模型清单: rfauto models list）")
     return ok_envelope(schema=schema)
 
 

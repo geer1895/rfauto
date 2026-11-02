@@ -15,7 +15,7 @@ interdigital_capacitance 同语义。
 
 渲染零厚金属口径如实声明：openEMS 模板族惯例零厚金属面——缝电容以
 槽平面场主导（侧壁项缺位），对 CALC 侧壁主项（t_um 参数）属跨口径
-（真机批对拍留登记 内部证据档；C±50% 门在 CALC 面承载）。
+（真机批对拍留登记 runs/aurora_k/k12；C±50% 门在 CALC 面承载）。
 
 闭式锚：sum-of-capacitances 侧壁平行板主项，单源 core/ipc_cap
 （推导式非文献转写，±50% 精度类如实声明——K11 教训不凭记忆写
@@ -298,7 +298,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         "D:/rf_workspace/vendor/openEMS/install/bin")
+                         r"E:\\\\rfauto-workspace\\\\vendor\\\\openEMS\\\\install\\\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

@@ -1,6 +1,6 @@
 """B3 实体网格内核：纯 numpy STL 解析与闭合网格度量（零新依赖）。
 
-方案行 B3（延续计划:396「STEP/STL 导入」）的内核层。
+方案行 B3（docs/continuation-plan_20260907.md:396「STEP/STL 导入」）的内核层。
 依赖对账（2026-09-15 实测）：venv 里的 trimesh 5.1.0 仅是 fdtdx 的传递依赖
 （pyproject/uv.lock 均未声明），本内核**禁止消费它**——STL 解析用纯 numpy
 自写（binary + ASCII 两种格式），零新依赖、零网络。

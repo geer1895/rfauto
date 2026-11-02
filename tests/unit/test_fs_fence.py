@@ -20,7 +20,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
 from pathlib import Path
 
 import pytest
@@ -33,7 +32,7 @@ from rfauto.service.ui_service import recipe_view
 @pytest.fixture(autouse=True)
 def _isolated(tmp_path, monkeypatch, isolated):
     # 围栏根只认 cwd + 显式 RFAUTO_FS_ROOT——防本机 set 的该 env 串味
-    #（确定性测试要清空同名前缀的整个环境变量集合，内核立规注记 踩坑速查）
+    #（确定性测试要清空同名前缀的整个环境变量集合，AGENTS 踩坑速查）
     monkeypatch.delenv("RFAUTO_FS_ROOT", raising=False)
     (tmp_path / "runs").mkdir(exist_ok=True)
     yield
@@ -65,10 +64,6 @@ class TestFsListRootFence:
         assert str(tmp_path) in d["error"]  # 允许根
         assert "RFAUTO_FS_ROOT" in d["error"]  # 放行出口同信封
 
-    @pytest.mark.skipif(
-        sys.platform != "win32",
-        reason="盘符逃逸（D:\\x）语义为 Windows 盘符布局专属——POSIX 下该"
-               "字符串是普通相对名，走的是目录不存在分支而非盘符围栏")
     def test_drive_escape_rejected(self, tmp_path: Path) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")

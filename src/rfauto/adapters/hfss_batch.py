@@ -32,7 +32,7 @@ L2 先例）。脚本为模块内字符串资产按字面量烘焙（IronPython 
 ASCII 无 f-string、不读 argv/env）；导出失败只向 errors 追加告警项，
 绝不推翻求解 ok（#105）。
 
-导出分派（2026-10-08 W5 真机实证，内部证据档）：
+导出分派（2026-10-08 W5 真机实证，runs/edblane85/w5_batch_campaign/）：
 HFSS 3D Layout 设计（EDB 快车道产物形态）**无任何 Analysis 模块**——
 GetModule("AnalysisSetup"/"Setup"/"Output"/"Solutions") 四名全 FAIL，
 ``ExportNetworkData`` 直接挂在 design 对象上（pyaedt analysis.py 源码
@@ -177,7 +177,7 @@ def build_batch_command(
     -Logfile 收 AEDT 自身输出（进程 console 输出另由 Popen 重定向追加进
     同一文件）。
 
-    参数顺序纪律（真机实证 2026-10-08，内部证据档）：
+    参数顺序纪律（真机实证 2026-10-08，runs/edblane85/w1_smoke/）：
     AEDT 2025 R1 拒收"-Logfile 置于工程之后"（requires a filename
     ... last parameter，rc=1）——**工程路径必须恒为末位**。
 
@@ -274,7 +274,7 @@ def collect_solve_artifacts(project_path: str | Path,
     会把同父目录下兄弟工程/他 run 的同名白名单产物混进本工程清单——父目录
     常为共享工作目录；②results 目录名原为 ``<p.name>.aedtresults``（对
     demo.aedt 拼出 demo.aedt.aedtresults，恒不存在——真机布局是
-    ``<stem>.aedtresults``，内部证据档 实证），其失
+    ``<stem>.aedtresults``，runs/edblane85/w1_smoke/branchline 实证），其失
     效一直被①的父目录递归扫描掩盖；两处同修后工程旁浅层+工程专属目录递归）：
     - .aedt 工程 → ``<stem>.aedtresults/``（递归）+ 工程旁浅层（批后导出
       ``<stem>_export.sNp`` 落工程旁，浅层即覆盖）；

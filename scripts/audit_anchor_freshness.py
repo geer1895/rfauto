@@ -1,6 +1,6 @@
 """锚 freshness 审计门（aurora72 R8 可立项 #6 落地；2026-10-11 A7-D 席）。
 
-R8 侦察（内部证据档 面 7）：60 锚中 35 锚无
+R8 侦察（runs/aurora72/R8_other_optimizations.md 面 7）：60 锚中 35 锚无
 last_verified、陈旧锚无审计面——本脚本把"锚时效健康度"制度化：
 
 - 结构性缺验证=硬门（棘轮）：非 retired 且非 awaiting_data 的锚缺
@@ -9,7 +9,7 @@ last_verified、陈旧锚无审计面——本脚本把"锚时效健康度"制�
   同日 ANCH-D 批 +5 顺移 50；2026-10-18 aurora_e W3-S15 批 +4 顺移 54
   （ms_lattice v2/tjunc×2/mline，新锚真机首判前 last_verified 如实空）；
   2026-10-19 aurora_g W3-S4 批活体代码验证回填 53 锚后人工下调 54→0
-  （内部证据档 驱动+报告在档；closure 层闭式恒等
+  （runs/aurora_g/w3s4_lv_verify.py 驱动+报告在档；closure 层闭式恒等
   口径，EM 首判窗未结如实注记）→ rc=1。
   判定面是静态的：只随 anchors.yaml 增删而变，时间推移不触发——挂
   merge_preflight 常驻面不会因时间流逝打红无关席位。棘轮只收不放：
@@ -59,7 +59,7 @@ REPORT_SCHEMA = "r8/anchor_freshness/1"
 #: 如实空，验证随首判回填后人工下调；只收不放，见模块 docstring）。
 #: 2026-10-18 aurora_e W3-S15 批 +4 顺移=54（ms_lattice v2/tjunc×2/mline）。
 #: 2026-10-19 aurora_g W3-S4 批人工下调 54→0：全仓 53 锚缺验证经活体代码
-#: 验证驱动（内部证据档+报告 JSON 在档）逐锚 PASS 回填
+#: 验证驱动（runs/aurora_g/w3s4_lv_verify.py+报告 JSON 在档）逐锚 PASS 回填
 #: last_verified（closure 层闭式/公式恒等口径，EM 真机首判窗未结如实注记、
 #: experimental status 零改动）——missing 实测=0，棘轮随计数下调归零；此后
 #: 新锚不带 last_verified 入库即红（"新锚必须带 last_verified"全强度生效）。

@@ -165,11 +165,16 @@ class TestG4MonteCarloGate:
         for ratio_val in mc["gum_over_mc_ratio_er"]:
             assert ratio_val >= 1.0
 
+    # W1-5 语料降规模（aurora_m）：同 seed 双跑逐位性质与 MC 样本数无关
+    # ——n_mc 20→8（-60%，守卫带 2..2000 内），断言零改动；旧语料对照档
+    # runs/aurora_m/w1_5/old_corpus_test_determinism_fixed_seed.log
+    DET_MC_N = 8
+
     def test_determinism_fixed_seed(self) -> None:
         """同 seed 逐位一致（确定性核 G15 口径）。"""
         kw = dict(freq_ghz=FREQS, w_mm=W_MM, h_mm=H_MM, er=ER, tan_d=TAND,
                   line_lengths_m=LENGTHS, u_lengths_m=5e-5, sigma_s=1e-3,
-                  n_mc=20, seed=7)
+                  n_mc=self.DET_MC_N, seed=7)
         import json
         r1 = json.dumps(mtrl_er_tand_uncertainty(**kw), sort_keys=True)
         r2 = json.dumps(mtrl_er_tand_uncertainty(**kw), sort_keys=True)

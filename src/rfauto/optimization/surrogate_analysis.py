@@ -1,4 +1,4 @@
-"""E3 代理模型（规划扩展 §E3）。
+"""E3 代理模型（plan-extension_v2 §E3）。
 
 sklearn GP 离线分析先行（不进 tune 在线路径）。
 设计决策：
@@ -6,7 +6,7 @@ sklearn GP 离线分析先行（不进 tune 在线路径）。
 - 不进 tune 在线路径——直到一次真机对照实验证明有效
 - sklearn 降回廉价预筛角色符合其单保真本性
 
-B-33（延续计划 §10.23 补强第三批）：新增代理质量内核
+B-33（continuation-plan §10.23 补强第三批）：新增代理质量内核
 surrogate_fit_quality（ρ/残差/RMS/MAE/R²），analyze_run_surrogate 默认
 给 K 折交叉验证 out-of-fold 质量——环报告据此携带真实质量字段，而非占位。
 质量数值全部来自确定性纯 numpy/GP 计算（random_state 固定），无墙钟/无网络。
@@ -331,7 +331,7 @@ def analyze_run_surrogate(
         y_pred = gp.predict(X)
         prediction_error = float(np.sqrt(np.mean((y - y_pred) ** 2)))
 
-        # 参数重要性（D1-1 修复 2026-10-04，内部证据档
+        # 参数重要性（D1-1 修复 2026-10-04，runs/review_ge8e/d1_opt_linkage/
         # REPORT.md D1-1）：isotropic RBF（RBF(length_scale=1.0) 标量形态）
         # 拟合出的是单标量 length_scale，旧径把它复制到每参数再归一化 →
         # 重要性恒等 1/n 假排行，消费面 CLI 还渲染成排行条形图。ARD

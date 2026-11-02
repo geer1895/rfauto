@@ -8,6 +8,7 @@ import typer
 from rich.table import Table
 
 from rfauto.cli.domains._core import _emit as _emit
+from rfauto.cli.domains._core import _print_next_steps_stderr as _print_next_steps_stderr
 from rfauto.cli.domains._core import app as app
 from rfauto.cli.domains._core import console as console
 from rfauto.service.envelope import error_envelope
@@ -63,6 +64,9 @@ def run(
             console.print("[red]✗ dry-run 校验失败[/red]")
             for err in result.get("errors", []):
                 console.print(f"  [red]- {err}[/red]")
+            # P2-5（aurora_n wave_ui_b）：报错后附"下一步"指针（hints 规则
+            # 表命中，stderr 输出——stdout 消费面零污染）
+            _print_next_steps_stderr(result.get("errors"))
             raise typer.Exit(code=1)
         console.print("[cyan]dry-run 执行计划（未实际执行）：[/cyan]")
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False, default=str))
@@ -101,6 +105,9 @@ def run(
         console.print("[red]✗ 仿真失败[/red]")
         for err in result.get("errors", []):
             console.print(f"  [red]- {err}[/red]")
+        # P2-5（aurora_n wave_ui_b）：报错后附"下一步"指针（hints 规则表
+        # 命中，stderr 输出——既有红字主路径与 explain 摘要零改动）
+        _print_next_steps_stderr(result.get("errors"))
         _print_explain_summary(result.get("run_dir"))
         raise typer.Exit(code=1)
 
@@ -205,16 +212,26 @@ def tune(
     multi: bool = typer.Option(False, "--multi", help="多目标模式（NSGA-II 出 Pareto 前沿）"),
     n_gen: int = typer.Option(20, "--n-gen", help="多目标模式：迭代代数"),
     pop_size: int = typer.Option(12, "--pop-size", help="多目标模式：种群大小"),
-    sampler: str = typer.Option("tpe", "--sampler", help="单目标采样器: tpe | cmaes | sbo（代理寻优环 WP3.2）"),
+    sampler: str = typer.Option("tpe", "--sampler", help="单目标采样器: tpe | cmaes | gp | eipu | turbo（T-N4 自研采集档）| sbo（代理寻优环 WP3.2）"),
     dry_run: bool = typer.Option(False, "--dry-run", help="只验证不执行（输出优化计划）"),
     fidelity: str = typer.Option("single", "--fidelity", help="single (default) | auto (multi-fidelity)"),
     adapter_low: str = typer.Option("fake", "--adapter-low", help="multi-fidelity low-fidelity adapter"),
     adapter_high: str = typer.Option("fake", "--adapter-high", help="multi-fidelity high-fidelity adapter"),
     seed: int = typer.Option(None, "--seed", help="采样器随机种子（P2⑦；缺省沿用 optimizer.SAMPLER_SEED=42）"),
     pruner: str = typer.Option("none", "--pruner", help="多保真裁剪器（ME-13）: none | asha | hyperband——Phase1 低保真差配方早停"),
+    storage: str = typer.Option("sqlite", "--storage", help="Optuna 存储后端（T-N8）: sqlite（缺省）| journal——追加式日志文件，多进程并发同 study 不抢 SQLite 文件锁，构建失败自动回退 sqlite"),
     warm_start_registry: bool | None = typer.Option(
         None, "--warm-start-registry/--no-warm-start-registry",
         help="代理模型注册表 warm-start（RB-ML-1）: 缺省读环境与配置，显式开关优先"),
+    eipu_strategy: str = typer.Option(
+        None, "--eipu-strategy",
+        help="EI 采集策略档（T-N9，仅 --sampler eipu 生效）: eipu | ei | eipu_cooled | rei"),
+    turbo_n_regions: int = typer.Option(
+        None, "--turbo-n-regions",
+        help="TuRBO 多域信任域数（T-N10，仅 --sampler turbo 生效），≥1 的整数"),
+    turbo_region_strategy: str = typer.Option(
+        None, "--turbo-region-strategy",
+        help="TuRBO 区域采样策略档（T-N10，仅 --sampler turbo 生效）: ts | rei"),
     json_output: bool = typer.Option(False, "--json",
                                      help="JSON 信封输出（成功+失败同构）"),
 ) -> None:
@@ -269,6 +286,22 @@ def tune(
         else:
             console.print(f"[yellow]! {note}[/yellow]")
 
+    # O2（aurora_n）：eipu/turbo 顶旋钮只挂单目标路径；显式给出且走其他
+    # 路径（多保真/多目标/代理寻优）时如实提示，不静默丢弃（#122，
+    # warm_start_registry 同款；单目标内 sampler 错配由 service/内核显式拒绝）。
+    _knob_flags = [name for name, val in (
+        ("--eipu-strategy", eipu_strategy),
+        ("--turbo-n-regions", turbo_n_regions),
+        ("--turbo-region-strategy", turbo_region_strategy)) if val is not None]
+    if _knob_flags and not single_objective:
+        note = f"{'、'.join(_knob_flags)} 仅单目标路径生效，本次按未设置处理"
+        if json_output:
+            import sys as _sys
+
+            print(note, file=_sys.stderr)
+        else:
+            console.print(f"[yellow]! {note}[/yellow]")
+
     if detach:
         if not single_objective:
             if json_output:
@@ -286,7 +319,10 @@ def tune(
         result = start_tune_async(
             recipe, adapter_name=adapter, max_trials=max_trials,
             study_name=study_name, max_wall_s=max_wall_s,
-            sampler=sampler, seed=seed, pruner=pruner)
+            sampler=sampler, seed=seed, pruner=pruner, storage=storage,
+            eipu_strategy=eipu_strategy,
+            turbo_n_regions=turbo_n_regions,
+            turbo_region_strategy=turbo_region_strategy)
         if json_output:
             _emit(result, "后台启动失败", json_output=True)
             return
@@ -404,7 +440,11 @@ def tune(
         sampler=sampler,
         seed=seed,
         pruner=pruner,
+        storage=storage,
         warm_start_registry=warm_start_registry,
+        eipu_strategy=eipu_strategy,
+        turbo_n_regions=turbo_n_regions,
+        turbo_region_strategy=turbo_region_strategy,
     )
     # SN-9：watch 播报经 on_trial 逐 trial 回调（None=行为不变）
     if watch_reporter is not None:
@@ -469,6 +509,9 @@ def sweep(
     SN-11（W6-A）：逐组合 checkpoint（sweep_results/checkpoint.jsonl 逐行
     落盘，中途死只丢在跑组合）+ --resume 续扫 + 逐组合进度打点；
     SN-18：--dry-run 计划预览。
+    产物落点：该 sweep run 目录下 runs/<run_id>/sweep_results/
+    （checkpoint.jsonl 断点账本 + 逐组合结果与汇总），完成后按输出的
+    run_id 查找；--resume 也指向该目录的 checkpoint。
     """
     if dry_run:
         from rfauto.optimization.sweep_backend import (

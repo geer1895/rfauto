@@ -1,6 +1,6 @@
 """W6-G 湖压缩豁免执行单测（合成小湖 fixture，全离线零网络）。
 
-判据映射（内部证据档 W6-G 节，用户裁决：部分批准两子树、
+判据映射（runs/w6_phase6/criteria.md W6-G 节，用户裁决：部分批准两子树、
 可逆 apply 禁裸删）：
 - 豁免白名单口径：仅点名子树解除 no_meta_inflight 保护，其余无 meta 子树
   维持保护不进删除清单；指针/名字启发保护优先于豁免；min_age 新近保留；
@@ -9,7 +9,7 @@
 - 恢复面：restore dry-run 逐条 sha 回放零写；target_root 模拟重建字节
   读回一致；purge 逐条清退 blob（run 树零触碰）；
 - 30 天观察窗注记进 manifest（purge_after/回填路径/恢复与清退命令一行）。
-真实湖面零触碰（真湖 apply 走 内部证据档 驱动与日志，非测试面）。
+真实湖面零触碰（真湖 apply 走 runs/w6_phase6/w6g/ 驱动与日志，非测试面）。
 """
 
 from __future__ import annotations
@@ -17,7 +17,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 from pathlib import Path
 
 import pytest
@@ -36,10 +35,6 @@ from rfauto.service.lake_compact_service import (
 from rfauto.service.sim_ci_service import BASELINE_SCHEMA
 
 runner = CliRunner()
-
-#: Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标断言统一
-#: "去 ANSI 转义 + 去空白折叠后匹配"（test_ui.py 同款，跨平台等价）。
-_ANSI_CSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 _OLD = 3 * 86400.0
 
@@ -403,9 +398,5 @@ class TestCliExemptCompact:
     def test_cli_help_carries_new_flags(self):
         result = runner.invoke(app, ["lake", "compact", "--help"])
         assert result.exit_code == 0, result.output
-        # Linux rich 渲染 --help 带 ANSI 色码且窄端会在词中断行——旗标
-        # 断言统一"去 ANSI + 去空白折叠后匹配"（test_ui.py 同款）。
-        plain = _ANSI_CSI.sub("", result.output)
-        compact = re.sub(r"\s+", "", plain)
-        assert "--exempt-subtree" in compact
-        assert "--reversible" in compact
+        assert "--exempt-subtree" in result.output
+        assert "--reversible" in result.output

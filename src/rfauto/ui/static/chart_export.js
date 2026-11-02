@@ -12,13 +12,16 @@
      出口剥 <script> 段=uir8 P2-8 纵深防御）。
    - mkExportButton(s)：工具条钮装配（.plotcard-tools 同款 UI/类名，
      data-export-kind 标记供复用路径重绑/主题联动定位）。
-   依赖纪律：只 import dom.js/theme.js——**不 import plotcard.js/charts.js**
-   （plotcard.js 与 charts.js 双向消费本模块，入边成环风险归零；CSV 文本
-   由调用方用各自持有的 toCsv 折好传入）。模块顶层零 DOM 执行（node 行为
-   钉可裸 import；下载动作只在点击时触达 document）。 */
+   依赖纪律：只 import dom.js/theme.js/pages/i18n.js——**不 import
+   plotcard.js/charts.js**（plotcard.js 与 charts.js 双向消费本模块，入边
+   成环风险归零；CSV 文本由调用方用各自持有的 toCsv 折好传入；i18n.js 为
+   L0 零依赖词表——aurora_o i18n 分波席迁导出钮 title/aria 文案，node 裸
+   import 同安全）。模块顶层零 DOM 执行（node 行为钉可裸 import；下载动作
+   只在点击时触达 document）。 */
 
 import { downloadTextFile } from "./pages/dom.js";
 import { THEME_COLORS, bodyIsLight, themePick } from "./theme.js";
+import { t } from "./pages/i18n.js";
 
 /* 文件名规范：`视图_指标_YYYYMMDD_HHMMSS.<ext>`（本地时间；base 非法字符
    折叠 "-" 并去首尾，空/缺省兜底 "plotcard"）。 */
@@ -101,11 +104,14 @@ export function exportChartFile(kind, h) {
   }
 }
 
-/* 钮元数据（title/aria 与既有 plotCard 工具条逐字一致；SVG 为新增档）。 */
+/* 钮元数据（title/aria 与既有 plotCard 工具条逐字一致；SVG 为新增档）。
+   aurora_o i18n 分波席：title/aria 值=词表键（chart.export_*，与
+   charts.js chartExportTools 同键单源，zh 渲染逐字节同）——翻译在
+   mkExportButton 装配时点取值（模块级烘焙 t() 会冻结语言档）。 */
 const _BTN_META = {
-  csv: { label: "CSV", title: "导出数据（CSV 平铺）", aria: "导出图表数据 CSV" },
-  png: { label: "PNG", title: "导出图片（PNG，2x）", aria: "导出图表图片 PNG" },
-  svg: { label: "SVG", title: "导出图片（SVG，矢量）", aria: "导出图表图片 SVG" },
+  csv: { label: "CSV", title: "chart.export_csv_title", aria: "chart.export_csv_aria" },
+  png: { label: "PNG", title: "chart.export_png_title", aria: "chart.export_png_aria" },
+  svg: { label: "SVG", title: "chart.export_svg_title", aria: "chart.export_svg_aria" },
 };
 
 /* 单钮装配（.plotcard-tools 同款 minor.plotcard-btn；data-export-kind 供
@@ -115,8 +121,8 @@ export function mkExportButton(kind, handlers) {
   const b = document.createElement("button");
   b.className = "minor plotcard-btn";
   b.textContent = meta.label;
-  b.title = meta.title;
-  b.setAttribute("aria-label", meta.aria);
+  b.title = t(meta.title);
+  b.setAttribute("aria-label", t(meta.aria));
   b.dataset.exportKind = kind;
   b.onclick = () => exportChartFile(kind, handlers);
   return b;

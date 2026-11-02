@@ -30,6 +30,9 @@ import {
 } from "../theme.js";
 import { exportChartFile, exportCsvText } from "../chart_export.js";
 import { T } from "./context.js";
+// aurora_o i18n 分波席：S 参数轴标签/导出钮 title·aria 文案迁词表（chart.*
+// 键域，与 chart_export.js _BTN_META 同键单源；zh 与旧字面逐字节同）。
+import { t } from "./i18n.js";
 
 /* 阈值/算法面 re-export：降采样单源在 plotcard.js，此处并入 charts 层
    统一出口（调用方只认 charts.js 一层）。 */
@@ -144,7 +147,17 @@ export function _bindThemeRefresh() {
    预设收敛本层单源；消费面渐进迁移（view_detail 已接，view_sparams 因
    并行席位在制缓接——工厂语义与其现拼逐键同形）。 */
 export const SPARAM_MODES = ["db", "deg", "linear"];
-export const SPARAM_YLABEL = { db: "dB", deg: "相位（deg）", linear: "线性" };
+/* aurora_o i18n 分波席：值=词表键（原中文标签迁 chart.sparam_ylabel_*，zh
+   逐字节同）；展示统一经 sparamYlabel() locale 感知取值（直接烘焙 t() 在
+   模块级 const 会冻结语言档）——直接消费本表取值的调用面仅本文件
+   sparamChartProps 一处，键值形态不外泄。 */
+export const SPARAM_YLABEL = {
+  db: "chart.sparam_ylabel_db", deg: "chart.sparam_ylabel_deg",
+  linear: "chart.sparam_ylabel_linear",
+};
+export function sparamYlabel(mode) {
+  return t(SPARAM_YLABEL[mode] || SPARAM_YLABEL.db);
+}
 
 /* 服务层曲线形态（{name, freq_ghz, y}）→ plotCard series 条目单源映射。 */
 export function sparamSeries(curves) {
@@ -159,7 +172,7 @@ export function sparamChartProps(
   return {
     series: sparamSeries(curves),
     xlabel: "GHz",
-    ylabel: SPARAM_YLABEL[mode] || SPARAM_YLABEL.db,
+    ylabel: sparamYlabel(mode),
     height, zoom: true, crosshair: true, exportName,
     ...(maxPoints != null ? { maxPoints } : {}),
   };
@@ -208,13 +221,13 @@ export function chartExportTools(host, refEl, opts) {
     tools.appendChild(b);
     return b;
   };
-  const csvBtn = mk("CSV", "导出数据（CSV 平铺）", "导出图表数据 CSV", () =>
+  const csvBtn = mk("CSV", t("chart.export_csv_title"), t("chart.export_csv_aria"), () =>
     exportCsvText("\ufeff" + toCsv(getCsvSeries()), name));
   csvBtn.dataset.exportKind = "csv";
-  const pngBtn = mk("PNG", "导出图片（PNG，2x）", "导出图表图片 PNG", () =>
+  const pngBtn = mk("PNG", t("chart.export_png_title"), t("chart.export_png_aria"), () =>
     exportChartFile("png", { base: name, getChart }));
   pngBtn.dataset.exportKind = "png";
-  const svgBtn = mk("SVG", "导出图片（SVG，矢量）", "导出图表图片 SVG", () =>
+  const svgBtn = mk("SVG", t("chart.export_svg_title"), t("chart.export_svg_aria"), () =>
     exportChartFile("svg", { base: name, getChart }));
   svgBtn.dataset.exportKind = "svg";
   registerRecentChartExport(pngBtn); // W4-S17：登记面迁 plotCard 壳（同一注册表）

@@ -119,6 +119,11 @@ class TestTurbo:
         """零破坏：trust_region 既有公开面原样可用（平行模块不寄生）。"""
         for name in ("refine_trust_region", "run_two_stage"):
             assert hasattr(trust_region, name)
-        # turbo 未注册任何 surrogate kind（注册表键面只增不改）
+        # turbo 未注册任何 surrogate kind（注册表键面只增不改）；
+        # __all__ 表面 T-N10 增量重钉（多域形态+档名键，aurora_n W2）
         assert turbo_mod.__all__ == ["DEFAULT_LENGTH_INIT",
-                                     "DEFAULT_LENGTH_MIN", "run_turbo"]
+                                     "DEFAULT_LENGTH_MIN",
+                                     "DEFAULT_N_REGIONS",
+                                     "REGION_STRATEGIES",
+                                     "run_turbo",
+                                     "run_turbo_multi"]

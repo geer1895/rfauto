@@ -82,6 +82,7 @@ from rfauto.mcp_tools.bands import bands_get as bands_get
 from rfauto.mcp_tools.bands import bands_list as bands_list
 from rfauto.mcp_tools.bands import bands_spec_bounds as bands_spec_bounds
 from rfauto.mcp_tools.report_bench import agentbench_regression as agentbench_regression
+from rfauto.mcp_tools.report_bench import design_report as design_report
 from rfauto.mcp_tools.report_bench import export_report_pdf as export_report_pdf
 from rfauto.mcp_tools.report_bench import goldset_regression as goldset_regression
 from rfauto.mcp_tools.report_bench import warm_start_optimize as warm_start_optimize
@@ -225,9 +226,37 @@ from rfauto.mcp_tools.em_family import em_metrics_from_run as em_metrics_from_ru
 from rfauto.mcp_tools.em_family import em_sweep_plan as em_sweep_plan
 from rfauto.mcp_tools.em_family import runs_verify as runs_verify
 
+# ─── mo_run 多目标 BO 合成族环（aurora_n O1 接线席，2026-10-31：+1 工具；
+# append-only 金快照 diff 最小化惯例同 env_reliability/preflight/edb/em 组
+# （facade 尾=注册序末尾）。零数值逻辑转发 service/mo_bo_service（T-N13
+# MultiObjectiveBO 运行时门——zero_wiring REGISTRY O1 欠账清偿）。
+from rfauto.mcp_tools.mo import mo_run as mo_run
+
+# ─── aurora_n MCP 接线补齐席（2026-10-31：+4 工具；append-only 金快照 ──
+# diff 最小化惯例同 mo 组（facade 尾=注册序末尾）。zero_wiring 登记欠账
+# 清偿：T-N20 ONNX 导出+代理 MC UQ（CLI surrogate 域同源，双入口组）+
+# al_propose（O4 T-N9 采集三族运行时门）+ competition_run（O5 T-N5 标量
+# 竞赛架运行时门；持久落盘面留 CLI 叶，MCP 零写盘）。零逻辑转发 service
+# 单源：surrogate_export_service/uq_service/al_service/competition_service。
+from rfauto.mcp_tools.al import al_propose as al_propose
+from rfauto.mcp_tools.competition import competition_run as competition_run
+from rfauto.mcp_tools.surrogate import (
+    surrogate_export_onnx as surrogate_export_onnx)
+from rfauto.mcp_tools.surrogate import surrogate_uq as surrogate_uq
+
+# ─── ADS 前仿链 MCP 三工具（aurora_o 开放池席 o_ads 件4，2026-11-01： ──
+# +2 工具 diagram/run；aurora_p 席 B2 2026-11-01 补 annotate 反标注面
+# （§5.1 v2 扩展位落位）=3 工具；append-only 金快照 diff 最小化惯例同
+# mo/aurora_n 组（facade 尾=注册序末尾）。T-O4_ADS_UX_SPEC §5.1——CLI
+# ads-circuit 域同源三入口（diagram/run/annotate）。零逻辑转发 service/
+# circuit_sim_service（信封同构；annotate 离线重放面）。
+from rfauto.mcp_tools.ads import ads_circuit_diagram as ads_circuit_diagram
+from rfauto.mcp_tools.ads import ads_circuit_run as ads_circuit_run
+from rfauto.mcp_tools.ads import ads_circuit_annotate as ads_circuit_annotate
 
 
-# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 内部证据档）═══
+
+# ══ ge8d-D6 注册幂等化（2026-10-03，定位报告 runs/ge8d_mcp_order/）═══
 # 根因：@mcp.tool 注册是工具组模块**首次 import** 的装饰器副作用——注册序
 # =各工具组模块的首次执行序。金快照（tests/gold/mcp_registration_order.json）
 # 钉的是本文件 from-import 语句顺序（facade 序；isort: skip_file 保证源序
@@ -236,7 +265,7 @@ from rfauto.mcp_tools.em_family import runs_verify as runs_verify
 # 测试收集期 test_mcp_longtask_wait.py 的模块级 ``from rfauto.mcp_tools
 # import jobs``（b74ec8cc 2026-10-03 落地；pytest 收集阶段 eager import
 # 全部测试模块，先于一切测试执行），症状即"组合跑红/单跑绿/同命令两轮
-# 不同结果"的顺序敏感偶发。
+# 不同结果"的顺序敏感偶发（Devlog 八百二十二）。
 # 对策：facade import 收尾按本文件 from-import 语句序对工具做**稳定重排**
 # （注册幂等化）——任意 import 顺序收敛到同一 facade 注册序；组内工具相对
 # 序由稳定排序保持；非工具组件（resource/prompt/template）整块后置且相互

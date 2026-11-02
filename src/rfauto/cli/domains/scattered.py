@@ -29,7 +29,8 @@ def electrothermal_cmd(
     )
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
-    _emit(run_wilkinson_electrothermal(_load_json_file(payload, "payload")),
+    _emit(run_wilkinson_electrothermal(
+        _load_json_file(payload, "payload", json_output=True)),
           "电-热链失败", json_output=True)
 
 
@@ -45,7 +46,8 @@ def parasitic_cmd(
         extract_interconnect_rlc,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
-    result = extract_interconnect_rlc(_load_json_file(payload, "payload"))
+    result = extract_interconnect_rlc(
+        _load_json_file(payload, "payload", json_output=True))
     if not result.get("ok") and result.get("stage") == "drc":
         console.print("[red]✗ RF-DRC 门不过（不进提取）[/red]")
         console.print_json(json.dumps(result, indent=2, ensure_ascii=False, default=str))
@@ -76,7 +78,8 @@ def tolerance_allocate_cmd(
         tolerance_allocate,  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
     )
 
-    result = tolerance_allocate(_load_json_file(payload, "payload"))
+    result = tolerance_allocate(_load_json_file(
+        payload, "payload", json_output=json_output))
     _emit(result, "公差分配失败", json_output=json_output)
     if json_output:
         return
@@ -552,7 +555,8 @@ app.add_typer(pcell_app, name="pcell")
 
 
 def _pcell_eval_or_exit(name: str, param: list[str] | None,
-                        context: list[str] | None):
+                        context: list[str] | None,
+                        *, json_output: bool = False):
     """求值薄壳共用体：未知单元/参数错 → 红字+退出码 2（不抛裸 traceback）。"""
     from rfauto.core.pcell_dsl import (  # lazy: startup-cost（cli 注册根轻载，见 docs/explanation/lazy-import-conventions.md）
         evaluate_pcell,
@@ -561,8 +565,9 @@ def _pcell_eval_or_exit(name: str, param: list[str] | None,
 
     try:
         return evaluate_pcell(
-            get_pcell(name), _kv_floats(param, "--param"),
-            _kv_floats(context, "--context"))
+            get_pcell(name),
+            _kv_floats(param, "--param", json_output=json_output),
+            _kv_floats(context, "--context", json_output=json_output))
     except (KeyError, ValueError) as exc:
         console.print(f"[red]✗ PCell 求值失败: {exc}[/red]")
         raise typer.Exit(code=2) from None
@@ -637,7 +642,7 @@ def pcell_eval_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="输出完整 JSON"),
 ) -> None:
     """求值 PCell：参数点 → 原语几何（JSON 进出；数值全出确定性内核）。"""
-    geo = _pcell_eval_or_exit(name, param, context)
+    geo = _pcell_eval_or_exit(name, param, context, json_output=json_output)
     payload = ok_envelope(
         data={"pcell": geo.pcell, "params": geo.params,
               "n_primitives": len(geo.to_dicts()),
@@ -662,7 +667,7 @@ def pcell_render_cmd(
     json_output: bool = typer.Option(False, "--json", "-j", help="输出完整 JSON"),
 ) -> None:
     """渲染 PCell → Layout（求值产物直产）→ 可选 GDSII/DXF/IPC-2581/ODB++ 导出。"""
-    geo = _pcell_eval_or_exit(name, param, context)
+    geo = _pcell_eval_or_exit(name, param, context, json_output=json_output)
     layout = _pcell_geometry_to_layout(geo)
     out_path = None
     if out is not None:

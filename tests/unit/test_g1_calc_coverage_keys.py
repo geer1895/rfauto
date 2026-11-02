@@ -9,7 +9,7 @@ branchline_coupler_design / leeson_phase_noise / twoport_matrix_convert。
 - 双路径互证锚（Γ_in 相位旋转 vs (Zin−Z0)/(Zin+Z0)、梯形 ABCD vs
   10lg(1+ω^{2n}) 多项式、λ/4 线正反往返）——构造级恒等式；
 - 合成回收钉（随机负载 ABCD 回代 |Γ_in|→0、随机互易网络表示往返）；
-- 闭式推导链 内部证据档（一次性探针，账面留痕）。
+- 闭式推导链 runs/aurora_l_g1/derive_check.py（一次性探针，账面留痕）。
 
 三禁遵守：不 commit、不写账本、不跑全量门（定向文件清单见交付报告）。
 """

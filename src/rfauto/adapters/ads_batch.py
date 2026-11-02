@@ -9,7 +9,7 @@ hpeesofsim 通道的 one-shot 批处理执行面：每求解一个独立短命�
   （HPEESOF_DIR + PATH 前置 bin / adsptolemy\\lib.win32_64 / tools\\python，
   0xC0000135 缺 DLL 同根因）；ads_python_api 该逻辑是方法内联不可导入，
   且其 PATH 顺序为"bin 前置、adsptolemy/tools 后置"，而 ads_netlist 三者
-  全前置是 hpeesofsim 真机实证口径（真跑 exit 0），
+  全前置是 hpeesofsim 真机实证口径（Devlog（二百一十）真跑 exit 0），
   故复用后者。目录解析链=显式参数 > RFAUTO_HPEESOF_DIR env >
   configs/settings.local.yaml 的 hpeesof_dir > 兜底默认（_resolve_ads_dir
   既有链，含存在性校验）。

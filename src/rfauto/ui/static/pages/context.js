@@ -42,11 +42,13 @@
    │ _cpRunId    │ view_campaign.js   │ 会话级（当前战役 run 记录）  │
    └─────────────┴───────────────────┴─────────────────────────────┘
 
-   localStorage 持久键登记（6 键，实测 grep 计数；全部 try/catch 守卫、
+   localStorage 持久键登记（8 键，实测 grep 计数；全部 try/catch 守卫、
    无敏感数据）：rfauto-theme（theme.js/pages.js）、rfauto-locale
-   （pages/i18n.js）、rfauto-chat+rfauto-chat-geo（view_agent 对话历史与
-   浮窗几何）、rfauto-widgets+rfauto-widget-span（view_dashboard 组件集与
-   宽度记忆）。
+   （pages/i18n.js）、rfauto-chat+rfauto-chat-geo+rfauto-chat-closed
+   （view_agent 对话历史/浮窗几何/浮窗关闭意愿记忆——P1-2 aurora_n
+   wave_ui_a）、rfauto-widgets+rfauto-widget-span（view_dashboard 组件集
+   与宽度记忆）、rfauto-inbox-dismissed（view_agent 审批收件箱忽略账本
+   ——P2 同笔）。
    （跨页事件桥 window CustomEvent "rfauto:export-chart"：palette→charts，
    固定契约零 payload，登记在两模块头注。） */
 

@@ -4,7 +4,7 @@
 ③surrogate_loop ④autotune ⑤api.run_once 之后的第⑥类产物通道；W3 席 6
 立项）。既有收集器（dataset_service）只认 meta.json 形态 run 与工作目录
 曲线形态，EDB 快车道（adapters/hfss_batch + edb_adapter）的产物目录两者
-都不是——真机形态见 内部证据档<family>/：
+都不是——真机形态见 runs/edblane85/w1_smoke/<family>/：
 
 - ``<stem>_spec.json``：模板发射面 spec（``template``=edb 族名、
   ``params``=设计参数 dict）——参数唯一来源（铁律 7：导入器不产生任何

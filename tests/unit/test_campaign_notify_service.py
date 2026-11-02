@@ -67,25 +67,25 @@ def _digest() -> dict:
     """合成 digest 信封（含敏感字段假输入：盘符路径/凭据——payload 必不含）。"""
     return {
         "ok": True,
-        "root": "E:\\rf_local_work\\runs",
+        "root": "E:\\rfauto-workspace\\runs",
         "generated_at": "2026-10-23 10:00:00",
         "n_campaigns": 3,
         "counts": {"COMPLETE": 2, "PARTIAL": 0, "ABORTED": 1},
         "campaigns": [
             {"name": "camp_a", "model": "wilkinson", "verdict": "COMPLETE",
              "verdict_zh": "完成", "mark": "✓", "n_done": 6, "n_stages": 6,
-             "path": "E:\\rf_local_work\\runs\\camp_a\\campaign.plan.json",
+             "path": "E:\\rfauto-workspace\\runs\\camp_a\\campaign.plan.json",
              "reason": ""},
             {"name": "camp_b", "model": "vivaldi", "verdict": "COMPLETE",
              "verdict_zh": "完成", "mark": "✓", "n_done": 5, "n_stages": 6,
-             "path": "E:\\rf_local_work\\runs\\camp_b\\campaign.plan.json",
+             "path": "E:\\rfauto-workspace\\runs\\camp_b\\campaign.plan.json",
              "reason": ""},
             {"name": "camp_c", "model": "patch", "verdict": "ABORTED",
              "verdict_zh": "已中止", "mark": "✗", "n_done": 2, "n_stages": 6,
-             "path": "E:\\rf_local_work\\runs\\camp_c\\campaign.plan.json",
+             "path": "E:\\rfauto-workspace\\runs\\camp_c\\campaign.plan.json",
              "reason": "failed: password=hunter2 token=abc123 at E:\\tmp"},
         ],
-        "summary_text": "本地文本含 E:\\rf_local_work 绝对路径与失败原因",
+        "summary_text": "本地文本含 E:\\rfauto-workspace 绝对路径与失败原因",
         "headline": "本地文本含 C:\\Users\\pc\\secret",
     }
 
@@ -171,7 +171,7 @@ class TestBuildDigestPayload:
 
     def test_sensitive_fields_never_leak(self):
         p = build_digest_payload(_digest())
-        for bad in ("E:", "rf_local_work", "C:\\Users", "hunter2",
+        for bad in ("E:", "rfauto-workspace", "C:\\Users", "hunter2",
                     "token=abc123", "campaign.plan.json", "本地文本",
                     "secret"):
             assert bad not in p, f"payload 泄漏敏感面: {bad!r}"

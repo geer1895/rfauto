@@ -193,3 +193,37 @@ def agentbench_regression(
         require_private=require_private,
         require_full_coverage=require_full_coverage,
     )
+
+
+@mcp.tool
+def design_report(
+    run_id: str,
+    out: str | None = None,
+    with_diagrams: bool = True,
+) -> dict[str, Any]:
+    """设计回放报告生成（design-report 域）：run 目录 → 六节+Pareto 扩展节 md 单文件，全数字带 provenance。
+
+    CLI design-report 叶同源（零 LLM 零网络，同输入逐字节同输出）。六节=
+    设计目标/轨迹回放/verdict 门表/电路图/敏感性/复现附录；⑤b Pareto=
+    多目标扩展节。freshness gate：stale run 拒出（stage=
+    freshness_gate），legacy 放行带注记；缺键目标 UNKNOWN 不凑 PASS。
+    写盘面=报告 md（缺省 runs/<run_id>/design_report.md）与 diagrams/
+    附件（数据在时）。run 不存在 → ok=False 信封。
+
+    Args:
+        run_id: run_id（runs/ 下目录名）或 run 目录路径
+        out: 输出 md 路径（缺省 run 目录内 design_report.md）
+        with_diagrams: 是否生成 diagrams/ 图附件（数据在场时；缺省开启）
+
+    Returns:
+        dict: {ok, run_id, schema, report, diagrams, design_verdict,
+        n_gates_pass, n_gates_fail, freshness}（generate_design_report 契约）
+    """
+    from rfauto.service.design_replay_report import generate_design_report
+    from rfauto.service.envelope import error_envelope
+
+    try:
+        return generate_design_report(run_id, output=out,
+                                      with_diagrams=with_diagrams)
+    except Exception as e:
+        return error_envelope(f"{type(e).__name__}: {e}")

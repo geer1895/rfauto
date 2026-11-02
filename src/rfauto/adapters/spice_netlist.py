@@ -59,7 +59,7 @@ from rfauto.core.circuit_hb import (
 )
 from rfauto.core.macromodel import compare_s_matrices, spice_subcircuit_port_info
 
-#: 工作区随带 ngspice 的缺省位置（tools/ngspice，内核立规注记.md 环境 rule 1：
+#: 工作区随带 ngspice 的缺省位置（tools/ngspice，AGENTS 环境 rule 1：
 #: 工具链一律落 E 盘工作区；不存在时回落 PATH 探测）。
 _WORKSPACE_NGSPICE = Path(__file__).resolve().parents[3] / "tools" / "ngspice" / (
     "Spice64/bin"
@@ -722,7 +722,7 @@ def xval_macromodel_spice(
 ) -> dict[str, Any]:
     """第三方 SPICE 对拍（ngspice .AC）→ D12 FSV 评级（best-effort，不抛异常）。
 
-    验收口径（方案冻结行 延续计划 D13 验收列）：
+    验收口径（方案冻结行 docs/continuation-plan_20260907.md D13 验收列）：
     "ngspice/Xyce 回放 vs 原 S 参数 FSV（D12）评级 ≥Good"。``s_reference``
     为原始 S 矩阵（复数 ndarray ``[nf, n, n]``）；对拍 S 由
     :func:`run_ngspice_ac_sparam` 真跑重建；FSV/误差摘要用

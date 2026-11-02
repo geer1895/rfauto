@@ -8,7 +8,7 @@
 索引构建 best-effort（#105）：坏产物跳过不阻塞。
 
 F11 增量（自进化经验记忆，§10.6 F11 / §10.18 第 8 条，与 F2/F3 并轨）：
-在上面的"理由语料检索"之外，把  踩坑/战役判读沉淀为 typed 经验条目
+在上面的"理由语料检索"之外，把 Devlog 踩坑/战役判读沉淀为 typed 经验条目
 （坑编号/结论/证据路径/适用场景/动作/核对表），并提供确定性检索
 （recall_for / checklist_for，关键词与标签子串匹配，无 embedding、无网络、
 无 LLM）。新模板冒烟 / critique 生成前调用，命中相关经验即要求先离线审计。
@@ -202,7 +202,7 @@ def search_rationale(query: str, index: dict[str, Any], *,
 # （§10.6 F11 / §10.18 第 8 条，与 F2 理由检索 / F3 技能库并轨）
 # ---------------------------------------------------------------------------
 # 与上面的 TF-IDF 理由检索并存而非替换：上面回答"为什么这么做"（runs/ 产物
-# 语料），本段回答"这个坑踩过没有"（ 踩坑/战役判读的 typed 记忆）。
+# 语料），本段回答"这个坑踩过没有"（Devlog 踩坑/战役判读的 typed 记忆）。
 # 检索是确定性关键词/标签子串匹配——无 embedding、无网络、无 LLM（硬约束 6/7），
 # 同一输入两次结果逐字节一致。
 
@@ -236,9 +236,9 @@ def _as_str_tuple(value: Any) -> tuple[str, ...]:
 class ExperienceEntry:
     """typed 经验条目（坑编号 + 结论 + 证据链 + 适用场景 + 动作）。
 
-    - lesson_id：坑编号（如 "#198"），与  / 内核 lesson_ref 同源
+    - lesson_id：坑编号（如 "#198"），与 Devlog / 内核 lesson_ref 同源
     - conclusion：一句话结论（战役判读，不含未经核验的新数值）
-    - evidence_paths：证据链（ 节 / 测试 / 产物路径），承载可回溯性
+    - evidence_paths：证据链（Devlog 节 / 测试 / 产物路径），承载可回溯性
     - applies_to：适用场景关键词/标签（确定性匹配用，中英文均可）
     - action：命中后的动作（如"先离线审计……"）
     - checklist：核对表名（如"网格伪象核对表"），同类坑归并到同一张表
@@ -282,7 +282,7 @@ class ExperienceEntry:
         )
 
 
-#  式松散条目的键别名（中文键可直接喂给 entry_from_lesson）
+# Devlog 式松散条目的键别名（中文键可直接喂给 entry_from_lesson）
 _LESSON_KEYS: dict[str, tuple[str, ...]] = {
     "lesson_id": ("lesson_id", "坑编号", "编号", "id"),
     "conclusion": ("conclusion", "结论", "判读", "detail"),
@@ -295,7 +295,7 @@ _LESSON_KEYS: dict[str, tuple[str, ...]] = {
 
 
 def entry_from_lesson(lesson: Mapping[str, Any]) -> ExperienceEntry:
-    """ 式松散 dict（中英文键均可）→ typed 经验条目。"""
+    """Devlog 式松散 dict（中英文键均可）→ typed 经验条目。"""
     flat: dict[str, Any] = {}
     for name, aliases in _LESSON_KEYS.items():
         for alias in aliases:
@@ -308,7 +308,7 @@ def entry_from_lesson(lesson: Mapping[str, Any]) -> ExperienceEntry:
 def entries_from_lessons(
     lessons: Sequence[Mapping[str, Any]],
 ) -> list[ExperienceEntry]:
-    """批量沉淀： 式教训列表 → typed 经验条目列表（保序）。"""
+    """批量沉淀：Devlog 式教训列表 → typed 经验条目列表（保序）。"""
     return [entry_from_lesson(lesson) for lesson in lessons]
 
 
@@ -319,7 +319,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="带缘/断口/端口面未精确入网会让激励体积为零或结构对却激励"
                    "不起来（几何画法对 ≠ 入网对）",
         evidence_paths=(
-            "内部证据档（#198 激励体积教训）",
+            "Devlog.md（#198 激励体积教训）",
             "src/rfauto/adapters/openems_templates.py（带缘精确入网注释）",
             "tests/unit/test_ratrace_template.py（#212 离线几何审计）",
         ),
@@ -334,7 +334,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="0.4mm 阶梯环慢波/容性栅格化伪象：六门在带内低端几乎全过、随 f "
                    "单调劣化；等效 εeff 超微带闭式物理上限",
         evidence_paths=(
-            "内部证据档（廿九 / （三十九）rat-race pt8 判读）",
+            "Devlog.md（廿九 / （三十九）rat-race pt8 判读）",
             "src/rfauto/core/mesh_artifact.py（D11 网格病诊断链）",
         ),
         applies_to=("ratrace", "环形", "环带", "栅格化", "阶梯化", "网格伪象"),
@@ -348,7 +348,7 @@ BUILTIN_ENTRIES: tuple[ExperienceEntry, ...] = (
         conclusion="AddEdges2Grid/SmoothMesh 留下 nm 级近重合网格线 → CFL 时间步"
                    "塌缩 6 个量级，症状是 CalcPort IndexError 而非网格报错",
         evidence_paths=(
-            "内部证据档（#152 最小间距守卫）",
+            "Devlog.md（#152 最小间距守卫）",
             "src/rfauto/core/mesh_artifact.py（timestep_collapse 检查）",
         ),
         applies_to=("网格", "网格线", "网格间距", "timestep", "CFL", "CalcPort", "openems"),

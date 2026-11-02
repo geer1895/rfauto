@@ -36,13 +36,20 @@ SAMPLER_SEED = 42
 
 # Y3 批次 BO（DP-13）：批内归一化最小距离门（[0,1]^d 欧氏）。低于该门视为
 # 扎堆点（constant_liar 未拉开），弃批重 ask 一次，再犯如实降级串行。
-# 门值预声明 内部证据档 §Y3。
+# 门值预声明 runs/df6_dp13/criteria.md §Y3。
 BATCH_MIN_DIST = 0.01
 
 # ME-13 多保真裁剪：pruner 三态。保真阶梯 fake→openEMS→HFSS 的 Phase1
 # （低保真粗筛）里，差配方早停省真机预算——与本仓 mf_backend 两阶段
 # 语义天然同构（Phase2 只消费 COMPLETE trial，被裁点不再进精算候选）。
 PRUNER_CHOICES = ("none", "asha", "hyperband", "sprt")
+
+# T-N8（aurora_n W1-A）：storage 旋钮可选档（缺省 sqlite=旧路径逐字节等价）
+STORAGE_CHOICES = ("sqlite", "journal")
+
+# T-N4（aurora_n W1-D）：sampler 可选档（缺省 tpe=旧路径逐字节等价；
+# eipu/turbo=自研采集挂 study 通道，optimization/acq_sampler.py）
+SAMPLER_CHOICES = ("tpe", "cmaes", "gp", "eipu", "turbo")
 
 
 def _build_pruner(
@@ -1157,9 +1164,15 @@ def run_optimization(
     batch_size: int = 1,
     pruner: str = "none",
     pruner_kwargs: dict[str, Any] | None = None,
+    storage: str = "sqlite",
+    journal_path: str | Path | None = None,
     callbacks: list[Any] | None = None,
+    eipu_strategy: str | None = None,
+    turbo_n_regions: int | None = None,
+    turbo_region_strategy: str | None = None,
 ) -> dict[str, Any]:
-    """运行 Optuna 优化外环（sampler: "tpe" | "cmaes" | "gp"，ME-12 起 GPSampler 转正）。
+    """运行 Optuna 优化外环（sampler: "tpe" | "cmaes" | "gp" | "eipu" | "turbo"，
+    ME-12 起 GPSampler 转正；T-N4 起自研采集 eipu/turbo 挂 study）。
 
     seed（P2⑦ 参数化）：采样器随机种子，缺省沿用模块常量 SAMPLER_SEED=42
     （行为不变）；显式给不同 seed 即换搜索轨迹（配对实验/新轨迹 #158，
@@ -1214,6 +1227,41 @@ def run_optimization(
     仅缺省单 trial 路径（batch_size=1）消费；批 ask/tell 循环与缺省 None
     行为不变。服务层 start_tune(on_trial=...) 单回调经此透传（条件传参
     #df6③：None 不加键，旧 stub/调用方零感知）。
+
+    T-N8（aurora_n W1-A）``storage``：Optuna storage 后端旋钮，缺省
+    ``"sqlite"``=旧路径逐字节等价（``get_storage_path()`` 原样，不走
+    resolve_storage）；``"journal"``=JournalStorage（追加式日志文件，
+    多进程并发同 study 不再抢 SQLite 文件锁；构建/探测失败按
+    storage_backends.resolve_storage 契约回退 SQLite 并在日志+结果里
+    如实记 fallback_reason，不静默 #122）。``journal_path`` 仅 journal
+    档有效（None → runs/.optuna/optuna_journal.log 缺省，cwd 相对同源
+    get_storage_path 口径；显式给路径供测试/多战役隔离）。结果回显：
+    非 sqlite 档加 ``result["storage_backend"]``（实际生效档）与
+    ``result["storage"]``（恒为字符串描述——journal 档 ``journal://``
+    URL，信封 JSON 可序列化；实际 storage 对象只进 create_study），
+    发生回退时另有 ``storage_fallback_reason``；缺省 sqlite 档输出键集
+    与旧路径逐字节一致。
+
+    T-N10（aurora_n W2）自研采集档旋钮（缺省 None=不传=既有路径逐字节
+    不变，错配 sampler 显式拒绝不静默吞参数）：``eipu_strategy``（仅
+    sampler="eipu"）透传 eipu 采集档（"eipu"|"ei"|"eipu_cooled"|"rei"；
+    "rei"=区域平均 EI，REI-inspired 移植档，cost-blind 无 cost 观测要求
+    ——REI 语义核对结论见 eipu.py 模块 docstring）；``turbo_n_regions``
+    （仅 sampler="turbo"，≥1）与 ``turbo_region_strategy``（"ts"|"rei"，
+    "rei"=qREI 域放置、REI 论文原义落点）透传 TuRBO 多域形态。生效旋钮
+    回显 result["eipu_strategy"]/["turbo_n_regions"]/["turbo_region_strategy"]
+    （None 不加键）。
+
+    T-N4（aurora_n W1-D）``sampler="eipu"|"turbo"``：自研采集挂 study
+    通道（optimization/acq_sampler.py，Optuna 5.0.0 BaseSampler 实读
+    接线）。eipu=EI/c cost-aware（cost 通道=逐 trial user_attr ``cost``，
+    build_objective 本就写）；turbo=TuRBO-1 信任域+Thompson。两通道
+    对观测历史 storage 派生确定性提议（同 seed 同建议序列，与独立循环
+    run_eipu_loop/run_turbo 等价——tests/unit/test_acq_sampler.py 严
+    口径等价钉），JournalStorage resume 同轨迹；前置校验（软失败面）：
+    batch_size>1 / log·step 参数分布 / constraints 非空均显式拒绝
+    （自研采集不消费批量/约束通道，并发 ask 门见 acq_sampler
+    docstring）。缺省 "tpe" 与既有 tpe/cmaes/gp 三通道零改动。
     """
     from rfauto.core.state import generate_run_id
     from rfauto.infra.run_store import create_run_dir, record_run, snapshot_recipe, write_meta
@@ -1248,6 +1296,66 @@ def run_optimization(
         return {"ok": False, "errors": [
             f"未知 pruner: {pruner}（可选 {' | '.join(PRUNER_CHOICES)}）"]}
 
+    # T-N8：storage 旋钮校验（未知值显式拒绝不静默；在适配器创建前拦截，
+    # 与 pruner 同款软失败面）。journal_path 只在 journal 档有意义，错配
+    # 显式报错不静默吞参数。
+    if storage not in STORAGE_CHOICES:
+        return {"ok": False, "errors": [
+            f"未知 storage: {storage}（可选 {' | '.join(STORAGE_CHOICES)}）"]}
+    if journal_path is not None and storage != "journal":
+        return {"ok": False, "errors": [
+            f"journal_path 仅在 storage='journal' 时有效（当前 storage={storage!r}）"]}
+
+    # T-N4：eipu/turbo 自研采集通道前置校验（软失败面同 pruner/storage 家族，
+    # 在适配器创建前拦截）。两通道对观测历史确定性提议（候选池/GP/信任域
+    # 全 storage 派生），并发 ask 会重复同一建议——采样器侧 before_trial
+    # 门显式拒绝，本层同 cmaes 先例对 batch_size>1 预先显式拒绝；盒内核
+    # 在原始线性空间工作，log/step 参数分布显式拒绝不静默错配。
+    if sampler in ("eipu", "turbo"):
+        if batch_size > 1:
+            return {"ok": False, "errors": [
+                f"sampler={sampler!r} 不支持 batch_size>1（自研采集对观测"
+                "历史确定性提议，未 tell 前再 ask 会重复同一建议；采样器侧"
+                "并发门亦会显式拒绝）。请改用 batch_size=1。"]}
+        bad_dist = [n for n, spec in param_ranges.items()
+                    if spec.get("log") or spec.get("step")]
+        if bad_dist:
+            return {"ok": False, "errors": [
+                f"sampler={sampler!r} 参数盒内核在原始线性空间工作，不支持 "
+                f"log/step 参数分布: {bad_dist}。请移除相应 log/step 设置或"
+                "改用 sampler='tpe'。"]}
+
+    # T-N10（aurora_n W2）：自研采集档旋钮（缺省 None=不传=既有路径逐
+    # 字节不变）。错配显式拒绝不静默吞参数（journal_path 同款守卫）；
+    # 旋钮值域与 acq_sampler/turbo 构造校验同源。
+    _turbo_strategies = ("ts", "rei")
+    _eipu_strategies = ("eipu", "ei", "eipu_cooled", "rei")
+    if eipu_strategy is not None:
+        if sampler != "eipu":
+            return {"ok": False, "errors": [
+                f"eipu_strategy 仅在 sampler='eipu' 时有效（当前 "
+                f"sampler={sampler!r}）"]}
+        if eipu_strategy not in _eipu_strategies:
+            return {"ok": False, "errors": [
+                f"未知 eipu_strategy: {eipu_strategy!r}"
+                f"（可选 {' | '.join(_eipu_strategies)}）"]}
+    if turbo_n_regions is not None or turbo_region_strategy is not None:
+        if sampler != "turbo":
+            return {"ok": False, "errors": [
+                f"turbo_n_regions/turbo_region_strategy 仅在 "
+                f"sampler='turbo' 时有效（当前 sampler={sampler!r}）"]}
+        if turbo_n_regions is not None and (
+                not isinstance(turbo_n_regions, int)
+                or isinstance(turbo_n_regions, bool)
+                or int(turbo_n_regions) < 1):
+            return {"ok": False, "errors": [
+                f"turbo_n_regions 须为 ≥1 的整数，得到 {turbo_n_regions!r}"]}
+        if turbo_region_strategy is not None and (
+                turbo_region_strategy not in _turbo_strategies):
+            return {"ok": False, "errors": [
+                f"未知 turbo_region_strategy: {turbo_region_strategy!r}"
+                f"（可选 {' | '.join(_turbo_strategies)}）"]}
+
     # ─── E10 约束段：optimization.constraints（元素结构同 objectives） ────
     # 缺省=无约束，全流程行为不变。约束走 Optuna 软约束通道（≤0=可行），
     # 不并入 cost。CmaEsSampler 无约束支持：显式报错，不静默降级。
@@ -1262,6 +1370,12 @@ def run_optimization(
         return {"ok": False, "errors": [
             "sampler='cmaes' 不支持约束优化（optimization.constraints 非空）；"
             "请改用 sampler='tpe'（TPE 软约束语义，≤0=可行）或移除约束段。"
+        ]}
+    if constraints and sampler in ("eipu", "turbo"):
+        # T-N4：自研采集不消费约束通道（EI/c 与 TuRBO-1 内核无约束建模面）
+        return {"ok": False, "errors": [
+            f"sampler={sampler!r} 不支持约束优化（自研采集内核不消费约束"
+            "通道）；请改用 sampler='tpe'（软约束语义）或移除约束段。"
         ]}
 
     # ─── quota_guard：recipe.limits 配额强制（P2-D4） ─────────────────────
@@ -1299,7 +1413,39 @@ def run_optimization(
 
     if study_name is None:
         study_name = make_study_name(recipe_path)
-    storage = get_storage_path()
+    # T-N8：storage 解析（缺省 sqlite=旧路径原样；journal 档经
+    # resolve_storage 构建并探测，失败回退 SQLite 如实记账）。
+    # storage_desc=结果回显字符串（journal:// URL 或 sqlite URL，信封可
+    # JSON 序列化）；storage_obj=create_study 消费面（URL 字符串或
+    # JournalStorage 实例）。缺省档两者都等于旧 get_storage_path() 字符串。
+    storage_desc: str
+    storage_backend = "sqlite"
+    storage_fallback_reason: str | None = None
+    if storage == "sqlite":
+        storage_obj: Any = get_storage_path()
+        storage_desc = storage_obj
+    else:
+        from rfauto.optimization.storage_backends import (
+            default_journal_path,
+            resolve_storage,
+        )
+
+        _jp = journal_path if journal_path is not None else default_journal_path()
+        _res = resolve_storage("journal", journal_path=_jp)
+        if not _res.get("ok"):
+            # ok=False 仅配置错误档（journal 缺路径等）——显性暴露不回退
+            adapter.close()
+            return {"ok": False, "errors": list(_res.get("errors") or [])}
+        if _res.get("fallback"):
+            storage_fallback_reason = _res.get("fallback_reason")
+            logger.warning(storage_fallback_reason)
+            storage_obj = _res["storage"]
+            storage_desc = storage_obj
+            storage_backend = "sqlite"
+        else:
+            storage_obj = _res["storage"]
+            storage_desc = f"journal://{Path(_jp).as_posix()}"
+            storage_backend = "journal"
 
     if sampler == "cmaes":
         if batch_size > 1:
@@ -1339,9 +1485,39 @@ def run_optimization(
             lambda: optuna.samplers.GPSampler(
                 seed=seed,
                 constraints_func=trial_constraint_values if constraints else None))
+    elif sampler == "eipu":
+        # T-N4（aurora_n W1-D）：自研 EI/c 采集挂 study（acq_sampler.
+        # EipuSampler，storage 派生无状态重放；cost 通道=trial user_attr
+        # "cost"，build_objective 本就逐 trial 写该 attr）。
+        from rfauto.optimization.acq_sampler import EipuSampler
+
+        opt_sampler = EipuSampler(
+            bounds={n: (float(spec["low"]), float(spec["high"]))
+                    for n, spec in param_ranges.items()},
+            seed=seed,
+            **({"strategy": eipu_strategy}
+               if eipu_strategy is not None else {}))
+    elif sampler == "turbo":
+        # T-N4：TuRBO-1 信任域采集挂 study（TurboSampler 对观测历史重放
+        # 折叠信任域状态机，LHS 启动段与 run_turbo 同源同 seed）。
+        # T-N10：turbo_n_regions/turbo_region_strategy 透传多域形态与
+        # qREI 域放置档（None=不传=既有路径逐字节不变）。
+        from rfauto.optimization.acq_sampler import TurboSampler
+
+        _turbo_extra: dict[str, Any] = {}
+        if turbo_n_regions is not None:
+            _turbo_extra["n_regions"] = int(turbo_n_regions)
+        if turbo_region_strategy is not None:
+            _turbo_extra["region_strategy"] = str(turbo_region_strategy)
+        opt_sampler = TurboSampler(
+            bounds={n: (float(spec["low"]), float(spec["high"]))
+                    for n, spec in param_ranges.items()},
+            seed=seed,
+            **_turbo_extra)
     else:
         adapter.close()
-        return {"ok": False, "errors": [f"未知 sampler: {sampler}（可选 tpe | cmaes | gp）"]}
+        return {"ok": False, "errors": [
+            f"未知 sampler: {sampler}（可选 {' | '.join(SAMPLER_CHOICES)}）"]}
     # ME-13：pruner 实例（"none" → None，create_study(pruner=None) 与不传
     # 该参等价——既有路径行为逐字节不变）。OP-8：sprt 档缺必填 kwargs 时
     # 按同款 {"ok": False} 软失败面返回（与"未知 sampler/pruner"一致，不裸抛）。
@@ -1352,7 +1528,7 @@ def run_optimization(
         return {"ok": False, "errors": [str(exc)]}
     study = optuna.create_study(
         study_name=study_name,
-        storage=storage,
+        storage=storage_obj,
         sampler=opt_sampler,
         pruner=opt_pruner,
         direction="minimize",
@@ -1477,7 +1653,7 @@ def run_optimization(
         "run_dir": str(run_dir),
         "study_name": study_name,
         "sampler": sampler,
-        "storage": storage,
+        "storage": storage_desc,
         "cache_enabled": result_cache is not None,
         "elapsed_s": round(elapsed, 1),
         "max_trials": max_trials,
@@ -1491,6 +1667,13 @@ def run_optimization(
         "best_cost": None,
         "best_metrics": {},
     }
+    # T-N10：自研采集档旋钮回显（None=不加键，缺省路径输出键集不变）
+    if eipu_strategy is not None:
+        result["eipu_strategy"] = eipu_strategy
+    if turbo_n_regions is not None:
+        result["turbo_n_regions"] = int(turbo_n_regions)
+    if turbo_region_strategy is not None:
+        result["turbo_region_strategy"] = turbo_region_strategy
 
     # E11：显式传入 warm_start 参数时回显实际注入数（None=不加键，行为不变）；
     # R1 #13：溯源 note 非空时透传结果信封（旧 recipe 拒注入/老格式未校验）
@@ -1502,6 +1685,12 @@ def run_optimization(
     # ME-13：pruner 回显只进非缺省路径（缺省输出键集不变）
     if pruner != "none":
         result["pruner"] = pruner
+
+    # T-N8：storage 回显只进非 sqlite 缺省路径（缺省输出键集不变）
+    if storage != "sqlite":
+        result["storage_backend"] = storage_backend
+        if storage_fallback_reason:
+            result["storage_fallback_reason"] = storage_fallback_reason
 
     # Y3：批记账只进 batch_size>1（缺省路径输出键集不变）
     if batch_size > 1 and batch_notes is not None:

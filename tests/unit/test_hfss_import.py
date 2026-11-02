@@ -421,7 +421,7 @@ class _RemoteCfg:
     """infra.remote_machines.RemoteMachineConfig 的 duck（免真实注册表）。"""
 
     name = "sim_server"
-    host = "10.20.30.40"
+    host = "198.51.100.20"
     hfss_grpc_port = 15555
     hfss_project_root = "E:/rfauto_remote"
     hfss_version = "2025.1"
@@ -460,7 +460,7 @@ def remote_open_spy(monkeypatch):
         def __init__(self, **kwargs):
             seen["ctor"] = kwargs
             # 构造窗内：远程四开关生效（grpc_local=False）+ Hfss 前置
-            # remote_rpc_session=None（开发注记 五百四十二坑 1）。
+            # remote_rpc_session=None（Devlog 五百四十二坑 1）。
             seen["grpc_local_in_window"] = aedt_settings.grpc_local
             seen["rpc_in_window"] = aedt_settings.remote_rpc_session
 
@@ -489,7 +489,7 @@ def test_import_spec_remote_machine_passthrough(tmp_path, remote_registry,
                                            remote_machine="sim_server")
 
     assert spec["ok"], spec.get("error")
-    assert remote_open_spy["ctor"]["machine"] == "10.20.30.40"
+    assert remote_open_spy["ctor"]["machine"] == "198.51.100.20"
     assert remote_open_spy["ctor"]["port"] == 15555
     # 服务器侧路径语义：本地不存在不被拒（本地存在性检查跳过）
     assert spec["project"] == remote_path
@@ -506,7 +506,7 @@ def test_import_spec_remote_machine_passthrough(tmp_path, remote_registry,
 
 def test_import_spec_remote_version_mismatch_fails_closed(monkeypatch, tmp_path,
                                                           remote_registry):
-    """版本配对断言（内核立规注记 规则 0）：settings 与注册表失配显式拒绝，不打开。"""
+    """版本配对断言（AGENTS 规则 0）：settings 与注册表失配显式拒绝，不打开。"""
     opened: list = []
     monkeypatch.setattr(hfss_import, "_open_hfss",
                         lambda *a, **kw: opened.append(1) or _FakeHfss())
@@ -559,9 +559,9 @@ def test_readonly_remote_skips_local_copy(tmp_path, remote_registry,
     assert spec["project"] == str(Path(remote_path))
     assert spec["read_only_copy"] is False  # 无本地副本（服务器侧路径语义）
     assert spec["source_locked"] is False   # 本地 .lock 检查跳过
-    assert spec["remote"]["machine"] == "10.20.30.40"
+    assert spec["remote"]["machine"] == "198.51.100.20"
     # 打开的是原路径直通（不是本地 temp 副本）
-    assert remote_open_spy["ctor"]["machine"] == "10.20.30.40"
+    assert remote_open_spy["ctor"]["machine"] == "198.51.100.20"
     assert str(remote_open_spy["ctor"].get("project")) == str(Path(remote_path))
     assert "rfauto_hfss_import_" not in str(remote_open_spy["ctor"]["project"])
 
@@ -605,7 +605,7 @@ def test_open_hfss_local_window_has_no_remote_kwargs(monkeypatch):
 
 
 # ─── aurora72 A7-C：AEDT 缺省版本钉单源统一（edb_adapter._DEFAULT_AEDT_VERSION）─
-# 真机口径 2025 R1/v251（内核立规注记 规则 0 勘误）；改前 hfss_import 缺省误钉
+# 真机口径 2025 R1/v251（AGENTS 规则 0 勘误）；改前 hfss_import 缺省误钉
 # "2023.1"、v3_services.hfss_import_recipe 误钉 "2026.1"——统一引用单源后
 # 此处钉"缺省值==单源常量==2025.1"同值断言，防四处字面量再漂移。
 

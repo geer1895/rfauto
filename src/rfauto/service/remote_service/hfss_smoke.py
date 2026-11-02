@@ -280,7 +280,7 @@ def remote_hfss_cleanup(
       schtasks 任务名无空白，双/单引号形态语义等价、实为一致性收敛，
       证据链见 W7-B §1.5-1）。
 
-    W7-B §1.5-1 复诊（2026-10-07，复现证据 ``内部证据档``）：旧实现
+    W7-B §1.5-1 复诊（2026-10-07，复现证据 ``runs/seat5_ssh/``）：旧实现
     用 ``Get-CimInstance -Filter "Name='ansysedt.exe'"`` 查指纹，经 SSH
     exec 通道**静默失效**（killed=[] 而进程活着）。根因（字节级实证）：
     Win32-OpenSSH 把命令串拼进 CreateProcess 命令行 → 双引号被

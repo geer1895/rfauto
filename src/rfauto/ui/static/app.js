@@ -49,7 +49,7 @@ export const api = async (url, opts) => {
     const r = await fetch(url, apiRequestInit(opts)); // UI-R12：init 归一单源（token 透传；缺省零变化）
     return await r.json(); // await 留在 try 内：json 解析失败同样入 catch
   } catch {
-    const m = "请求失败（网络或服务器异常）";
+    const m = t("common.request_failed"); // aurora_o i18n 分波席：词表单源（api.js 同键）
     try { msg(m, false); } catch { /* msg 载体缺席（异常部署）时静默 */ }
     return { ok: false, error: m, errors: [m] };
   }
@@ -193,7 +193,8 @@ export function drawLineChart(canvas, series, labels) {
   // PR-1 a11y：canvas 图像语义
   canvas.setAttribute("role", "img");
   canvas.setAttribute("aria-label",
-    `折线图：${series.map((s) => s.name).filter(Boolean).join("、") || "数据系列"}`);
+    t("chart.line_aria_prefix") +
+    (series.map((s) => s.name).filter(Boolean).join("、") || t("common.series_default")));
   // W3-S12（P-5）：边距/字号常量收 theme.js 单源（值冻结 46/14/14/26，渲染不变）
   const { left: L, right: R, top: T, bottom: B } = CANVAS_LINE_LAYOUT;
   const W = canvas.width, H = canvas.height;
@@ -243,8 +244,10 @@ export function drawEChart(el, series, opts = {}) {
     // PR-1 a11y：图表容器图像语义（系列名+轴标签进 aria-label；opts.ariaLabel 显式覆盖）
     el.setAttribute("role", "img");
     el.setAttribute("aria-label", opts.ariaLabel ||
-      `图表：${series.map((s) => s.name).filter(Boolean).join("、") || "数据系列"}` +
-      `${opts.ylabel ? "，纵轴 " + opts.ylabel : ""}${opts.xlabel ? "，横轴 " + opts.xlabel : ""}`);
+      t("chart.aria_prefix") +
+      (series.map((s) => s.name).filter(Boolean).join("、") || t("common.series_default")) +
+      (opts.ylabel ? t("chart.aria_ylabel") + opts.ylabel : "") +
+      (opts.xlabel ? t("chart.aria_xlabel") + opts.xlabel : ""));
     el.innerHTML = "";
     el.style.height = opts.height || "280px";
     const chart = window.echarts.init(el);
@@ -378,7 +381,7 @@ export async function drawBoxes(container, spec) {
   }
   container.innerHTML = "";
   if (!spec || !spec.ok) {
-    container.innerHTML = `<span class="muted">${spec ? esc(spec.errors.join("; ")) : "无几何"}</span>`;
+    container.innerHTML = `<span class="muted">${spec ? esc(spec.errors.join("; ")) : t("model3d.no_geometry")}</span>`;
     return null;
   }
   const w = container.clientWidth || 600, h = 420;
@@ -454,16 +457,18 @@ export async function drawBoxes(container, spec) {
     })
     .join("、");
   legend.innerHTML =
-    chip(0xc0c8d0, "金属") + chip(0x556070, "地面") + chip(0x2e7d32, "基板") +
-    chip(0xffb74d, "端口") +
-    (portNotes.length ? `<span class="muted">　端口: ${esc(portNotes.join("、"))}</span>` : "") +
-    `<div class="muted" style="margin-top:var(--space-1)">器件: ${esc(deviceList)}</div>` +
-    `<div class="muted">拖动旋转 / 滚轮缩放</div>`;
+    chip(0xc0c8d0, t("model3d.legend_metal")) + chip(0x556070, t("model3d.legend_ground")) +
+    chip(0x2e7d32, t("model3d.legend_substrate")) +
+    chip(0xffb74d, t("model3d.legend_port")) +
+    (portNotes.length ? `<span class="muted">${t("model3d.legend_ports")}${esc(portNotes.join("、"))}</span>` : "") +
+    `<div class="muted" style="margin-top:var(--space-1)">${t("model3d.legend_devices")}${esc(deviceList)}</div>` +
+    `<div class="muted">${t("model3d.interact_hint")}</div>`;
   container.appendChild(legend);
   // PR-1 a11y：3D 视图图像语义（器件清单可闻；交互提示留在图例文字里）
   container.setAttribute("role", "img");
   container.setAttribute("aria-label",
-    `3D 模型预览：${deviceList}${portNotes.length ? "，端口 " + portNotes.join("、") : ""}`);
+    t("model3d.aria_prefix") + deviceList +
+    (portNotes.length ? t("model3d.aria_ports") + portNotes.join("、") : ""));
   _boxRenderers.set(container, renderer);
   return renderer;
 }

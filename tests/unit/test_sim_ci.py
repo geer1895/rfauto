@@ -30,10 +30,13 @@ def _isolated(tmp_path, monkeypatch, isolated):
 
 
 def _recipe(model: str, arm: float) -> dict:
+    # params 按模型给合法键（F-P1-1 键级白名单：跨模型混写会被参数面校验
+    # 拦截——历史稿 wilkinson 带 patch_len_mm/patch 带 arm_len_mm 均属
+    # 被静默忽略的非法键，2026-10-30 随白名单落地改为按模型选择）
+    param = "patch_len_mm" if model == "patch_antenna" else "arm_len_mm"
     return {
         "model": model,
-        "params": {"arm_len_mm": {"value": arm},
-                   "patch_len_mm": {"value": arm}},
+        "params": {param: {"value": arm}},
         "setup": {"freq_range_ghz": [2.3, 2.5], "points": 41},
         "objectives": [{"metric": "s11_db", "band": [2.3, 2.5],
                         "op": "max_below", "value": -15}],

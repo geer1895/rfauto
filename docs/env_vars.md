@@ -65,7 +65,7 @@
 | `RFAUTO_MAPES_G0_TAG` / `RFAUTO_MAPES_G0_DELTA_S` / `RFAUTO_MAPES_G0_MAX_PASSES` | hfss_mapes_g0_arbitration.py | MAPES G0 仲裁战役旋钮 |
 | `RFAUTO_MAPES_M_TAG` / `RFAUTO_MAPES_M_DELTA_S` / `RFAUTO_MAPES_M_MAX_PASSES` | hfss_mapes_m_arbitration.py | MAPES M 仲裁战役旋钮 |
 
-## 四b、远程多机面（infra/remote_machines，E3-4 审查批补登）
+## 四b、远程多机面（infra/remote_machines，E3-4 ge8e 审查批补登）
 
 | 变量 | 消费者 | 用途 |
 |---|---|---|
@@ -73,13 +73,13 @@
 | `RFAUTO_REMOTE_SSH_PASSWORD` | infra/remote_machines（SshTransport 凭据解析） | SSH 密码（凭据面=local yaml 覆盖优先，env 为无 yaml 场景回退；doctor `--env` 值不回显） |
 | `RFAUTO_SSH_STRICT` | infra/remote_machines（SshTransport.connect 主机钥策略） | SSH 主机钥严格模式（E3-3 TOFU 折中：缺省 AutoAdd+首连指纹落档告警、变更 error 告警仍放行；设 1=无落档指纹/不匹配即拒连。指纹账本=`<仓根>/runs/ssh_host_fingerprints.json`） |
 
-## 四c、UI 工作台面（架构批 W6-S2，R2 审计 §面5.4 写端点鉴权）
+## 四c、UI 工作台面（aurora_g W6-S2，R2 审计 §面5.4 写端点鉴权）
 
 | 变量 | 消费者 | 用途 |
 |---|---|---|
 | `RFAUTO_UI_TOKEN` | ui/server（BearerAuthMiddleware + index meta 注入）、static/pages/api.js（装配期读 meta → setApiToken） | UI 写端点 Bearer 令牌：设置即启用（写端点 POST/PUT/DELETE 要求 `Authorization: Bearer`、读端点豁免）；未设=零鉴权零行为变化（本机回环缺省安全）；doctor `--env` 值不回显 |
 
-**威胁模型边界（2026-10-20 架构批 补，W16 审计 P2-4 清偿）**：本令牌
+**威胁模型边界（2026-10-20 aurora_h 补，W16 审计 P2-4 清偿）**：本令牌
 只防"非本机来源的意外写"（LAN 内误触/扫描器/其他用户会话），**不构成
 完整 Web 安全边界**——①无 CSRF 防（写端点认 Authorization 头不认
 Origin，浏览器内已持页面的跨站请求若能读到 token 仍可伪造，token 经

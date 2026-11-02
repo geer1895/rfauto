@@ -2,8 +2,13 @@
    的唯一出处。此前 pages.js 22 处 body.light 判定 + 30 处 `light ? … : …`
    双档三元、app.js CHART_COLORS 表与 pages.js timeline 整档镜像、热图色带
    三份字面量各自为政——镜像纪律是"本层不可 import"的被迫产物（旧注释
-   自认），本模块**零依赖、零顶层 DOM 执行**（node 行为钉可裸 import，
-   palette.js 先例），app.js/pages.js 同源 import 后镜像注释全拆。
+   自认），本模块零顶层 DOM 执行（node 行为钉可裸 import，palette.js 先例），
+   app.js/pages.js 同源 import 后镜像注释全拆。
+   aurora_o i18n 分波席：依赖面从"零依赖"放开到 +pages/i18n.js（L0 零依赖
+   词表，同零环风险）——THEME_LABEL 的 light/system 中文标签迁词表
+   theme.label_*（zh 与旧字面逐字节同），展示统一经 themeLabel() locale
+   感知取值（pages.js paintBtn 消费；模块级 const 直接烘焙 t() 会冻结
+   语言档，函数形态保证切语言后钮面跟随）。
    API 面：
    - themeIsLight(mode, systemPrefersLight)——mode→浅色纯判定真值表
      （pages.js 兼容 re-export；node 行为钉 test_ui_a11y_theme/lifecycle）；
@@ -16,7 +21,10 @@
      两暗主题共用 dark 档的已固化结论钉在 tests/unit/test_ui_nav_focus.py）；
    - themePick(light, pair) + THEME_COLORS——散置双档色三元逐对收编表；
    - HEAT_BAND——场切片/远场 3D/工具页热图色带单源（旧三份镜像收编）；
-   - THEME_KEY / THEME_MODES / THEME_LABEL——主题常量单源。 */
+   - THEME_KEY / THEME_MODES / THEME_LABEL / themeLabel——主题常量与
+     locale 感知标签单源。 */
+
+import { t } from "./pages/i18n.js";
 
 /* 主题持久化键（index.html head 防闪 boot 同键读档——键名不得改；
    test_ui_theme_boot 钉 boot 与本单源一致）。 */
@@ -25,13 +33,25 @@ export const THEME_KEY = "rfauto-theme";
 /* v5.0 Aurora 四态；"dark" 为旧存量别名（=midnight，读档/set 时映射）。 */
 export const THEME_MODES = ["midnight", "ocean", "light", "system"];
 
-/* 主题切换按钮四态标签（pages.js paintBtn 消费）。 */
+/* 主题切换按钮四态标签（pages.js paintBtn 经 themeLabel 消费）：midnight/
+   ocean 双语同形保留字面（test_ui_theme_single_source 单源钉）；light/
+   system 全标签在词表 theme.label_*，本表只存图标前缀兜底。 */
 export const THEME_LABEL = {
   midnight: "🌌 Midnight",
   ocean: "🌊 Ocean",
-  light: "☀ 浅色",
-  system: "🖥 跟随系统",
+  light: "☀",
+  system: "🖥",
 };
+/* 四态标签词表键映射（themeLabel 唯一消费口）。 */
+const _LABEL_KEY = {
+  midnight: "theme.label_midnight", ocean: "theme.label_ocean",
+  light: "theme.label_light", system: "theme.label_system",
+};
+/* locale 感知标签：切语言后钮面跟随（渲染时点取值，非模块载入时点）。 */
+export function themeLabel(mode) {
+  const k = _LABEL_KEY[mode];
+  return k ? t(k) : THEME_LABEL[mode];
+}
 
 /* 纯函数（node 行为钉可测）：mode → body 是否应为浅色。
    "dark" 为旧存量别名（=midnight，深色）。 */

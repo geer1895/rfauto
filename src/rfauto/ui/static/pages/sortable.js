@@ -1,10 +1,13 @@
 /* rfauto 工作台可排序表格（aurora_d UI-R2 自 pages.js 拆出，aurora36
    W3-B 块逐字节搬移）：纯函数三件（columnIsNumeric/sortCellKey/
-   sortCellCompare）+ DOM 胶水 makeSortable/mountSortableTables。 */
+   sortCellCompare）+ DOM 胶水 makeSortable/mountSortableTables。
+   aurora_o i18n 分波席：表头排序 aria/title 文案迁词表 sortable.th_aria
+   （zh 与旧字面逐字节同；i18n.js L0 零依赖 node 裸 import 同安全）。 */
 
 /* R1 P1-7（guide §12.3 核心交互，全站表格零排序）：通用可排序表格。
    纯函数三件（node 行为钉可测）+ DOM 胶水 makeSortable（对约定标
    data-sortable 的 table 装表头点击排序）。 */
+import { t } from "./i18n.js";
 
 /* 列数值性判别：全部非空单元格均可解析为有限数值且至少一个非空才按数值
    序；混合列回退字典序（不臆测——"3/5" 复合列、"done" 状态列均走字符串）。 */
@@ -54,7 +57,7 @@ export function makeSortable(table) {
   const ths = Array.from(table.tHead.rows[0] ? table.tHead.rows[0].cells : []);
   for (const th of ths) {
     th.style.cursor = "pointer";
-    th.title = "排序（升 → 降 → 还原；Enter 或空格）";
+    th.title = t("sortable.th_aria");
     // W5-S23 键盘可达（深审 a 面）：th 只绑 click 时键盘用户无法排序——
     // 补 tabindex=0 + Enter/Space 触发同一 onThClick（与 kit bindClickRows
     // 同一激活语义）；焦点环走全局 :focus-visible（零新 CSS）。aria-sort

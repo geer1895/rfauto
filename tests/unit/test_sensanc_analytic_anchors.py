@@ -13,7 +13,7 @@ ms_mushroom/ms_jcross/ms_patch 十族闭式恒等锚（verdict 语义=闭式推�
    calibrated="closedform"（与引擎档可区分，#122）。
 
 候选裁决策（dipole/pifa/helix/mline/ms_ring_patch/wstep/tjunc/bend/
-slotline_lumped 不立锚的理由）见 内部证据档 第三节。
+slotline_lumped 不立锚的理由）见 runs/aurora_d_sensanc/REPORT.md 第三节。
 """
 
 from __future__ import annotations

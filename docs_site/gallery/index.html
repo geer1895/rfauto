@@ -349,11 +349,11 @@ button:focus-visible,input:focus-visible{outline:2px solid #b60;outline-offset:1
 <p class="note">网格：辐射器件：上方/侧向/下方空气隙 λ0/4；环带缘/断口缘精确入网</p>
 <p class="anchors">锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1，cps.gamma_er.fdref-v1，loop.loop_side_mm.closedform-v1，mmt.inductive_post_b.hfss-v1，mmt.resonant_window_fres.hfss-v1</p>
 </section>
-<section class="card" id="tpl-marchand_balun" data-tpl="marchand_balun" data-family="coupler" data-anchors="5" data-coverage="covered" data-search="marchand_balun 功分/耦合/移相/巴伦 Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：**设计级结论=单支节串接已被两引擎互证证伪**（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，）——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦">
+<section class="card" id="tpl-marchand_balun" data-tpl="marchand_balun" data-family="coupler" data-anchors="5" data-coverage="covered" data-search="marchand_balun 功分/耦合/移相/巴伦 Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：**设计级结论=单支节串接已被两引擎互证证伪**（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，Devlog（二百零四））——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦">
 <h3>marchand_balun</h3>
 <p class="meta">f0 2.5 GHz · 端口 3 · 时长 ≤30.0 ns</p>
 <p class="meta">提取：excite_port∈{1,2,3} 轮转（#208 进程隔离单激励）：P1 MSLPort 线基、P2/P3 LumpedPort 跨槽（抽头基线 RX/SRC 因子修正口径）；S23（隔离）需第二激励；巴伦判据门=BALUN_GATES（不平衡 ≤1dB、RL ≤−10、隔离 ≤−15、|S21| ≥−3.5）+ 相位极性约定如实报告</p>
-<p class="desc">Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：**设计级结论=单支节串接已被两引擎互证证伪**（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，）——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦</p>
+<p class="desc">Marchand 双槽臂最小族（底层五盒：外地 M1/M2、中条 M3、封口桥 M4/M5 与中条精确共边；顶层微带穿两槽+共享开路支节）：**设计级结论=单支节串接已被两引擎互证证伪**（四门 FAIL、两跨越点激励不对称、拓扑无隔离机制，Devlog（二百零四））——真 Marchand=两节对称耦合段（电路级综合 core/slotline_transitions.synthesize_marchand_two_section，名义点 50Ω→280Ω 差分、C=−7.02dB、(w,s,ℓ)=(1.7616,0.1016,18.4670)mm@h=1.524）；本模板保留作对照口径与判据载体，不作生产巴伦</p>
 <div class="chips"><span class="chip">w_slot_mm</span><span class="chip">x_port_mm</span><span class="chip">h_mm</span></div>
 <table><tbody><tr><th>er</th><td>3.66</td></tr><tr><th>f0_ghz</th><td>2.5</td></tr><tr><th>h_mm</th><td>1.524</td></tr><tr><th>tan_d</th><td>0.0037</td></tr><tr><th>w_slot_mm</th><td>1.0</td></tr><tr><th>x_port_mm</th><td>40.0</td></tr></tbody></table>
 <p class="sem">参数语义：w_slot_mm=槽宽，x_port_mm=P2/P3 距跨越区中心，h_mm=基板厚（模板参数，理由同 slotline）；f0 取自仿真频带中心</p>
@@ -451,7 +451,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #b60;outline-offset:1
 <section class="card" id="tpl-ms_patch" data-tpl="ms_patch" data-family="fss" data-anchors="6" data-coverage="covered" data-search="ms_patch FSS/反射阵（EMC 面） 反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波）；贴片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 soft plane 激励面，域内零电阻片">
 <h3>ms_patch</h3>
 <p class="meta">f0 10.0 GHz · 端口 1 · 时长 ≤30.0 ns</p>
-<p class="meta">提取：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/sparams.csv 5 列 schema 不变，_port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提；|S11|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）；健康判据=|Γ| 线性域 ≈1（空波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像，内部证据档 §D/E）</p>
+<p class="meta">提取：S11 @ 双 E 探针对反射分解（soft plane 激励 exc_type=0；探针对=贴片上方空气区 2 只全口径 E 线探针，对内距 λ0/16，精确 β=2πf/c 分解 F/B 后 _WgProbePairRefl 对调 uf——入射=−z 照明波、反射=+z 回波，footer 契约/sparams.csv 5 列 schema 不变，_port2=_port1 别名 S21 列≡S11）。波导模拟器≡无限阵@θ=0，E∥x 极化前提；|S11|≈1 的 argΓ 逐 px 入反射相位 LUT（探针面去嵌相位常数项不进扫 px 差分）；健康判据=|Γ| 线性域 ≈1（空波导标定 EN=|Γ|²≈1.0 平坦）。无耗接地结构幅度读出 «1 = 读出判废信号。（2026-10-01 ge5 ms_patch 读出修复：原全口径 LumpedPort 电阻片=测量面并联 Z0 负载，反射相位为片负载 Möbius 像，runs/ge5_msjcross/audit.md §D/E + Devlog 六百八十七）</p>
 <p class="desc">反射阵方贴片单元：接地基板（z 底 PEC 边界）+ 零厚方贴片；单胞方形域 x 对壁 PEC / y 对壁 PMC（TEM 平面波）；贴片上方 λ0/4 空气区置双 E 探针对（自由悬浮无源）+ 探针对上方 soft plane 激励面，域内零电阻片</p>
 <div class="chips"><span class="chip">px_mm</span><span class="chip">py_mm</span><span class="chip">period_mm</span><span class="chip">h_mm</span></div>
 <table><tbody><tr><th>er</th><td>3.66</td></tr><tr><th>h_mm</th><td>1.524</td></tr><tr><th>period_mm</th><td>14.9896</td></tr><tr><th>px_mm</th><td>8.5406</td></tr><tr><th>py_mm</th><td>8.5406</td></tr><tr><th>tan_d</th><td>0.0037</td></tr></tbody></table>
@@ -715,12 +715,12 @@ button:focus-visible,input:focus-visible{outline:2px solid #b60;outline-offset:1
 <section class="card" id="tpl-slotline" data-tpl="slotline" data-family="line" data-anchors="5" data-coverage="covered" data-search="slotline 传输线与均匀段 均匀槽线段（路线 A，单面金属开缝、无地开放结构）：槽 |y|≤w/2 贯通至两端边界，两端 WaveguidePort（E/H 模式文件），激励面内移 16·BASE 出 PML_8；基板 z∈[0,h]，上下/侧向 MUR、端口轴 PML_8；槽跨压探针 9 站">
 <h3>slotline</h3>
 <p class="meta">f0 2.5 GHz · 端口 2 · 时长 ≤30.0 ns</p>
-<p class="meta">提取：WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，）；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率</p>
+<p class="meta">提取：WaveguidePort 文件模式（NGSolve 2D 本征模 E/H 喂入，exc_dir=x）：模式文件必需 SetPropagationDir；CalcPort 参考阻抗=交叉取对面端口视入阻抗（文件模式 U/I 度量常数 γ≈2.71，坑 B，Devlog（一百九十八））；S21=port2.uf_inc/SREF（实证口径）；β 独立提取=槽跨压探针 N 站自实现工程 DFT 相位斜率</p>
 <p class="desc">均匀槽线段（路线 A，单面金属开缝、无地开放结构）：槽 |y|≤w/2 贯通至两端边界，两端 WaveguidePort（E/H 模式文件），激励面内移 16·BASE 出 PML_8；基板 z∈[0,h]，上下/侧向 MUR、端口轴 PML_8；槽跨压探针 9 站</p>
 <div class="chips"><span class="chip">w_mm</span><span class="chip">line_len_mm</span><span class="chip">h_mm</span></div>
 <table><tbody><tr><th>er</th><td>3.66</td></tr><tr><th>h_mm</th><td>1.524</td></tr><tr><th>line_len_mm</th><td>93.4624</td></tr><tr><th>tan_d</th><td>0.0037</td></tr><tr><th>w_mm</th><td>1.0</td></tr></tbody></table>
 <p class="sem">参数语义：w_mm=槽宽，line_len_mm=两测量面间距（设计 ≈1λ&#x27; 槽波长，闭式精算），h_mm=基板厚（模板参数：JS 闭式域 d/λ0≥0.006，缺省叠层 0.508@2.5GHz 落域外，设计点 RO4350B 60mil=1.524）</p>
-<p class="note">网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫；槽缘细化步长 min(NEAR, w/8)、地板 10µm（#349，待办清单 0df④——自动档恰为 w/8 且引擎 dt 相应减半，真跑前按 et 实测 dt 重排 NrTS，#283）</p>
+<p class="note">网格：mesh_resolution_mm=网格 base 覆盖（mm）；0=自动 λ_sub/50；近槽/近端口 NEAR=base/4、基板 z 6 层、#152 最小间距守卫；槽缘细化步长 min(NEAR, w/8)、地板 10µm（#349，TODO 0df④——自动档恰为 w/8 且引擎 dt 相应减半，真跑前按 et 实测 dt 重排 NrTS，#283）</p>
 <p class="anchors">锚覆盖 5：coupled_microstrip.kj_even_domain.lit-v1，cps.gamma_er.fdref-v1，mmt.inductive_post_b.hfss-v1，mmt.resonant_window_fres.hfss-v1，slotline.z0_ohm.closedform-v1</p>
 </section>
 <section class="card" id="tpl-slotline_lumped" data-tpl="slotline_lumped" data-family="line" data-anchors="5" data-coverage="covered" data-search="slotline_lumped 传输线与均匀段 均匀槽线段（路线 B，官方 AddLumpedPort 范式）：金属/基板/槽贯通全域直入 PML（匹配端接），两端 LumpedPort 跨槽桥接（盒三向边全部入网，#198/#174）；槽跨压探针 9 站 [−L/4,+L/4]">

@@ -88,9 +88,15 @@ class TestClickRowSourcePins:
 
     def test_eleven_sites_wired_count_and_needles(self):
         # 11 行站 + 详情可点图 = 12 站接线（bindClickRows 定义 1 + 站点 12 = 13）
-        assert _PAGES.count("bindClickRows(") == 15, "行点击站点数漂移——迁移台账见本文件 docstring"
-        # 属性串面：定义 1 + 模板站点 11（filebrowser ×2 形态）= 12
-        assert _PAGES.count("kitClickRowAttrs(") == 16
+        # + aurora_n wave_ui_b P2-1 两站（总览快速开始四步卡/指南五分钟四步卡）
+        # + aurora_n wave_ui_c P3-1 一站（总览状态环 verdict 词条注记行）
+        # + aurora_n wave_ui_wizard 一站（校准三步向导步卡 #cal-wiz-flow）
+        assert _PAGES.count("bindClickRows(") == 19, "行点击站点数漂移——迁移台账见本文件 docstring"
+        # 属性串面：定义 1 + 模板站点 11（filebrowser ×2 形态）
+        #   + aurora_n wave_ui_b P2-1 五处（guide ×4 + dashboard map 模板 ×1）= 21
+        #   + aurora_n wave_ui_c P3-1 一处（状态环注记行 span）= 22
+        #   + aurora_n wave_ui_wizard 三处（校准向导步卡 ×3）= 25
+        assert _PAGES.count("kitClickRowAttrs(") == 25
         # DOM 面：定义 1 + runs 表 createElement 行 + 详情可点图 = 3
         assert _PAGES.count("kitApplyClickRowAttrs(") == 3
         for needle, why in (
@@ -128,8 +134,12 @@ class TestClickRowSourcePins:
         # 结构——可达性走 tabindex+aria-label+键盘激活，不覆写行语义）
         assert _PAGES.count("kitClickRowAttrs({ role: null") == 6  # wRecentRuns/datasets/anchors/uq/calibration/reports
         assert _PAGES.count("kitApplyClickRowAttrs(tr, { role: null") == 1  # runs 表
-        # div/锚/图行走缺省 role=button（活动流/配方目录/filebrowser×2/queue 锚/详情图）
-        assert _PAGES.count("kitClickRowAttrs({ label:") == 9
+        # div/锚/图行走缺省 role=button（活动流/配方目录/filebrowser×2/queue 锚/详情图
+        # + aurora_n wave_ui_b P2-1：总览快速开始四步卡（单条 map 模板 1 处）
+        # + 指南五分钟四步卡（4 处）——新站点全部收编 kit 单源，棘轮只收不放）
+        # + aurora_n wave_ui_c P3-1：状态环 verdict 注记行（span 缺省 role=button）
+        # + aurora_n wave_ui_wizard：校准向导步卡 ×3（整句 aria 模板键）
+        assert _PAGES.count("kitClickRowAttrs({ label:") == 18
         assert _PAGES.count('kitApplyClickRowAttrs(img, { label:') == 1  # 详情可点图
 
     def test_row_aria_labels_present(self):
@@ -148,8 +158,8 @@ class TestClickRowSourcePins:
             't("calibration.open_detail_aria") + (r.run_id || "")',  # S1 发布令批：校准行同款迁词表
             't("reports.row_open_aria") + (r.run_id || "")',  # S3 发布令批：报告清单行同款迁词表
             't("queue.open_log_aria_tpl", { n: dl.length })',  # S2 发布令批：队列行同款迁词表
-            '"返回上级目录"',
-            '"打开目录 " + e.name',
+            'kitClickRowAttrs({ label: t("fs.parent_label") })',  # aurora_o i18n 分波席：上级行标签迁词表（zh 值同笔）
+            't("fs.open_dir_lbl") + e.name',  # aurora_o i18n 分波席：目录行标签迁词表（zh 值同笔）
             't("detail.fig_zoom_lead") + f.split("/").pop()',  # 详情可点图（灯箱动作）——S2 批迁词表 lead
         ):
             assert needle in _PAGES, needle
@@ -190,7 +200,7 @@ class TestClickRowSourcePins:
             'aria-label="${t("recipe.param_aria_lead")}${escAttr(p.name)}${t("recipe.param_aria_tail")}"',  # 配方参数值
             'aria-label="${escAttr(n)}${t("recipe.opt_low_aria")}"',  # opt-b low
             'aria-label="${escAttr(n)}${t("recipe.opt_high_aria")}"',  # opt-b high
-            'aria-label="路径"',  # fs-path
+            'aria-label="${escAttr(t("fs.path_aria"))}"',  # fs-path——aurora_o i18n 分波席迁词表（zh 值同笔）
         ):
             assert needle in _PAGES, needle
 

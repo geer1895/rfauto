@@ -4,7 +4,7 @@
 数值断言口径（#118 锚先独立实测再写死，锚值=开工日独立算术预算——测试
 内表达式路径独立于键内实现（原始 SI 常数内联+独立 skrf media 构造+独立
 公式转录，不消费模块系数常量）；#122 三态/约定档如实不凑绿；网源逐字在
-内部证据档
+runs/aurora_g/_w15s2_mscross.cpp/_w15s2_msline.cpp/_w15s2_msvia.cpp/
 _w15s2_constants.h/_w15s2_sdsmt_patch.pdf/_w15s2_msant.pdf）：
 
 - 微带十字结（microstrip_cross_parasitics）：①系数转录锚=测试内独立算术

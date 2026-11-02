@@ -246,7 +246,8 @@ def lake_audit_stale_cmd(
 
     diff_payload = None
     if config_diff:
-        diff_payload = _load_json_file(config_diff, "config-diff")
+        diff_payload = _load_json_file(config_diff, "config-diff",
+                                   json_output=json_output)
     result = audit_stale_runs(
         runs_root, render_commit=render_commit,
         engine_version=engine_version, config_diff=diff_payload,
@@ -617,7 +618,7 @@ def certify_cmd(
     from rfauto.service.certify_design import certify_design
 
     # VI-5 W6-B：缺省即 _emit 信封直出，旗标为归一兼容位（两形态同输出）。
-    _emit(certify_design(samples_path, _kv_floats(param, "--param"),
+    _emit(certify_design(samples_path, _kv_floats(param, "--param", json_output=True),
                          tolerance_pct=tolerance_pct, n_grid=n_grid, kind=kind),
           "证书生成失败", json_output=True)
 
@@ -647,7 +648,7 @@ def port_gate_cmd(
     """端口尺寸收敛前置门（合成回放 JSON 面；防 #191/#254 浪费求解席位）。"""
     from rfauto.service.port_gate_service import port_gate_from_json
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=True)
     try:
         result = port_gate_from_json(payload)
     except (KeyError, TypeError, ValueError) as exc:

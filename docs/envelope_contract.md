@@ -48,7 +48,7 @@
 1. **单数 `error` 键**（约 30 处）：`mcp_server.py` 异常壳（MCP 线上契约，
    `test_mcp_server.py` 多处断言钉住）、`ui_service.sandbox_diff/promote`
    （镜像 RecipeSandbox 惯例）、`diagnosis_service`（`test_dp2_diagnosis.py`
-   断言 `r["error"]`）。**2026-10-15 架构批 收敛批**：`anchors_service`
+   断言 `r["error"]`）。**2026-10-15 aurora_d 收敛批**：`anchors_service`
    部分入口已迁 `error_envelope`（schema 1.1，消费回退链同笔）；
    `luneburg_lens/topology/terminology/parasitic` 四域补戳升 1.1 同批；
    `firmware/stats` CLI 失败面同批迁移（棘轮帽 18→9）。
@@ -66,8 +66,8 @@
    "ok": True}`）：透传合并语义，保留。
 
 > 现值冻结账（I-07，对齐 R5-05 建议）：单数 `error` 冻结 200、裸 ok 随批
-> 收敛 565→563→552（2026-10-04 审查批 W2 后现值）、本节遗留族地板 522——
-> 架构批 收敛批（2026-10-15）：裸 ok 518→516、单数 error 171→165
+> 收敛 565→563→552（2026-10-04 ge8e W2 后现值）、本节遗留族地板 522——
+> aurora_d 收敛批（2026-10-15）：裸 ok 518→516、单数 error 171→165
 > （anchors/firmware/stats/luneburg/topology/terminology/parasitic 七域），
 > 沿革链 200→195→173→171→167→165——
 > 逐批数字与构成见 `tests/unit/test_envelope_contract.py`
@@ -92,8 +92,8 @@
 
 新代码规约：service 返回信封一律走 `envelope.py` 构造器；PR 里出现新的
 裸 `{"ok": ...}` 字面量即契约违约（`test_envelope_contract.py` 对已改域
-抽形状，见该文件 docstring 的抽查范围）。守卫正则已多行感知（审查批
-P2-1 修复：`return \{\s*"ok"` 跨行匹配）。**AST 级全量守卫（后续执行波 followUp
+抽形状，见该文件 docstring 的抽查范围）。守卫正则已多行感知（ge5 审查
+P2-1 修复：`return \{\s*"ok"` 跨行匹配）。**AST 级全量守卫（ge6 followUp
 P2-1 残余清偿）**：`TestAstBareEnvelopeFaceGuards` 以 AST 扫全
 `service/*.py` + `mcp_server.py` + `mcp_tools/**/*.py`——裸 ok 信封
 （return 字面量 + 一跳变量中转 `r = {...}; return r`）存量冻结

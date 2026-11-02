@@ -9,7 +9,7 @@
 
 ## 一条铁律
 
-rfauto 从立项起就立了一条硬规则（内核立规 7，2026-09-05 LLM×EDA
+rfauto 从立项起就立了一条硬规则（AGENTS 规则 7，2026-09-05 LLM×EDA
 调研批采纳）：**LLM/agent 永远不产生物理数字**。频率、损耗、几何尺寸、
 S 参数——一切会进仿真、进报告、进器件图纸的数值，只允许出自四类
 "确定性产地"：
@@ -35,7 +35,7 @@ LLM 对"2.4 GHz 微带 50Ω 线宽在 FR-4 上大概 3mm"这类问题能流利�
 rfauto 的对策不是"提示词里叮嘱 LLM 算准点"，而是**让通道不存在**：
 agent 工具循环（`service/agent_runtime.py`）只消费 typed tool call，
 工具返回 JSON 信封；agent 想要数字，唯一的路是发起一次计算器/求解器
-调用。MCP 面 157 个工具（2026-10-18 实测，`scripts/check_numbers.py`
+调用。MCP 面 152 个工具（2026-10-18 实测，`scripts/check_numbers.py`
 同源）全是这种"参数进、数字出"的确定性端点。
 
 ### 2. 可复现面：模型相关的数字不可重放
@@ -122,7 +122,7 @@ docs/explanation/anchor-and-verdict.md。
 | 分层约束 | import-linter 契约 | 数值代码进不了壳层——cli/mcp/ui 里出现公式即架构违例 |
 | 纯函数纪律 | `core/` 全域 | 零 IO 零随机，doctest 把示例数值钉进测试门 |
 | 回收钉 | core/单测 | 解析恒等式 ≤1e-12；合成已知量回收换算系数（#340 教训） |
-| Agent 写面隔离 | 内核立规 6 | agent 改配方只能走沙箱草稿 → 三层 Gate promote，无直接写工具 |
+| Agent 写面隔离 | AGENTS 规则 6 | agent 改配方只能走沙箱草稿 → 三层 Gate promote，无直接写工具 |
 | 计算器注册表 | `core/calc_families/registry.py` | 未注册函数不可达；实验键默认拒跑 |
 | 公式出处注册表 | `knowledge/formula_provenance.yaml` | 卡内/文档数字必须能对回 builder 与来源 |
 | 合流预检 | `scripts/merge_preflight.py` | 计数锚/再生差异漂移在合流前拦截 |

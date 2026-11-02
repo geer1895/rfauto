@@ -45,6 +45,22 @@ arXiv:2003.10870 一族 cost-aware BO 的退火处方）：strategy="eipu_cooled
 :func:`cost_cooling_beta` 按 cooling_progress∈[0,1] 产出（线性/指数
 两档日程，缺省线性）；run_eipu_loop 在 eipu_cooled 档逐迭代以
 dataclasses.replace 注入 progress=已用迭代/总迭代（纯函数无状态）。
+
+T-N10（aurora_n W2）strategy="rei"（区域平均 EI 采集档）——**REI 语义
+核对结论（#122 实读 arXiv:2412.11456 / AAAI 2025 原文）**：论文 REI =
+**Regional** Expected Improvement（区域期望改进，Namura & Takemori），
+**非**任务书口径的"Relative（对当前最优的相对改进）"；REI(x) =
+(1/V_TR)∫_TR EI(x̂)dx̂（论文式(3)），用途是**选信任域中心**（turbo.py
+run_turbo_multi 的 region_strategy="rei" 档按论文原义落地）。本模块的
+"rei"档是**启发式移植**（REI-inspired）：把候选点打分换成"以该点为中心、
+半径 rei_length 的单元超立方内 N=rei_samples 个均匀样本的 EI 均值"
+（区域平均算子，论文定理 5.1 的 𝒮f(x)=E_u~Unif(TR)[f(x+u)] 动机面）——
+**论文未做点级采集用途，不冒充论文原义**；与标准 EI 的差异=空间平均
+把窄针尖高 EI 峰稀释、偏好宽平台改进区（针尖-vs-平台合成对照钉）。
+实现细节：区域样本 rng 独立流（default_rng(seed+1)，不消费候选池流位
+——缺省路径逐字节不变）；rei_length=0 时区域样本退化为候选点本身、
+区域均值=点值（幂次样本数下逐位），该极限下 "rei" 与 "ei" 建议逐位
+一致（极限钉）；"rei" 为 cost-blind 档（cost 观测忽略，同 "ei"）。
 """
 
 from __future__ import annotations
@@ -95,6 +111,12 @@ class EIPUConfig:
     cooling_beta_end: float = 0.0
     #: 日程模式："linear" | "exponential"（见 COOLING_MODES）
     cooling_mode: str = "linear"
+    #: T-N10 strategy="rei"：区域平均 EI 的区域半边长（单元空间；0=退化
+    #: 为点级 EI，与 "ei" 档逐位一致——极限钉）
+    rei_length: float = 0.1
+    #: T-N10 strategy="rei"：每候选的区域 Monte Carlo 样本数（缺省 16=2^4，
+    #: rei_length=0 极限下均值逐位无损）
+    rei_samples: int = 16
 
 
 def cost_cooling_beta(
@@ -212,10 +234,67 @@ def _row_to_params(names: list[str], row: np.ndarray) -> dict[str, float]:
 
 def _strategy_cost_aware(strategy: str) -> bool:
     """strategy 是否消费 cost 观测（eipu / eipu_cooled）。"""
-    if strategy not in ("eipu", "ei", "eipu_cooled"):
+    if strategy not in ("eipu", "ei", "eipu_cooled", "rei"):
         raise ValueError(
-            f"未知 strategy: {strategy}（可选 eipu | ei | eipu_cooled）")
+            f"未知 strategy: {strategy}"
+            f"（可选 eipu | ei | eipu_cooled | rei）")
     return strategy in ("eipu", "eipu_cooled")
+
+
+def regional_mean_ei(
+    mu: np.ndarray, sigma: np.ndarray, y_best: float, xi: float = 0.01,
+) -> np.ndarray:
+    """区域平均 EI（T-N10 "rei" 档纯函数内核；逐候选对区域样本取均值）。
+
+    Args:
+        mu/sigma: (n_cand, n_samples)——每候选的 n_samples 个区域样本点的
+            GP 后验 (μ, σ̂)（由调用方在区域样本上预测；本函数零 rng 零 GP）。
+        y_best: 当前最优（最小化）。
+        xi: EI 探索参数（与 :func:`expected_improvement_min` 同参）。
+
+    Returns:
+        (n_cand,) 逐候选的区域平均 EI。
+
+    诚实边界：这是 REI（Regional EI，AAAI 2025）的**启发式移植**——论文
+    用 REI 选信任域中心（式(3) 区域 EI 积分），未做点级采集打分用途；
+    本仓按论文区域平均算子（定理 5.1 𝒮f）作点级打分，模块 docstring
+    已声明差异（turbo 通道的 region_strategy="rei" 才是论文原义落点）。
+    """
+    mu = np.asarray(mu, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    if mu.ndim != 2 or mu.shape != sigma.shape:
+        raise ValueError(
+            f"mu/sigma 须为同形 (n_cand, n_samples)：{mu.shape} vs {sigma.shape}")
+    if mu.shape[1] < 1:
+        raise ValueError("区域样本数须 ≥1")
+    # expected_improvement_min 对入参 ravel（1-D 语义）——先算再回整形
+    ei = expected_improvement_min(mu, sigma, y_best, xi).reshape(mu.shape)
+    return ei.mean(axis=1)
+
+
+def _regional_ei_scores(
+    Xn: np.ndarray, y: np.ndarray, candn: np.ndarray, cfg: EIPUConfig,
+    y_best: float,
+) -> np.ndarray:
+    """候选点区域平均 EI 打分（"rei" 档内部路径；区域样本 rng 独立流）。
+
+    区域样本流 = default_rng(cfg.seed+1)——不消费候选池 rng 流位，
+    缺省/既有策略路径逐字节不变。rei_length=0 时区域样本=候选点本身，
+    区域均值=点级 EI（幂次样本数下逐位，极限钉的机制基础）。
+    """
+    d = Xn.shape[1]
+    n_cand = candn.shape[0]
+    n_samp = int(cfg.rei_samples)
+    rng_rei = np.random.default_rng(int(cfg.seed) + 1)
+    offs = rng_rei.random((n_cand, n_samp, d))
+    samp = np.clip(
+        candn[:, None, :] + float(cfg.rei_length) * (2.0 * offs - 1.0),
+        0.0, 1.0)
+    smu, ssigma = _fit_predict_gp(
+        Xn, y, samp.reshape(-1, d), cfg.gp_restarts, cfg.seed)
+    return regional_mean_ei(
+        smu.reshape(n_cand, n_samp), ssigma.reshape(n_cand, n_samp),
+        y_best, cfg.xi)
 
 
 def score_candidates(
@@ -233,6 +312,10 @@ def score_candidates(
     strategy="eipu_cooled"（OP-3）时 score = EI/(ĉ+ε)^β_t，β_t 由
     config.cooling_progress 经 :func:`cost_cooling_beta` 产出，并在
     逐点记录里附 ``beta``。
+    strategy="rei"（T-N10）时 score = 区域平均 EI（:func:`regional_mean_ei`
+    经 :func:`_regional_ei_scores`，区域样本独立 rng 流），逐点记录的
+    ``ei`` 仍为中心点 EI、``score`` 为区域均值（二者差异即区域平均的
+    空间平滑效应）。
     """
     cfg = config or EIPUConfig()
     cost_aware = _strategy_cost_aware(strategy)
@@ -271,6 +354,8 @@ def score_candidates(
             mode=cfg.cooling_mode,
         ) if strategy == "eipu_cooled" else 1.0)
         score = ei / (c_hat + float(cfg.cost_epsilon)) ** beta
+    elif strategy == "rei":
+        score = _regional_ei_scores(Xn, y, rowsn, cfg, float(np.min(y)))
     else:
         score = ei  # 旧路径逐字节不变（ei 不除 (1+ε)）
     return [
@@ -297,8 +382,11 @@ def suggest_next_point(
         bounds: {参数名: (lo, hi)} 参数盒
         strategy: "eipu"（EI/(ĉ+ε)，cost-aware）| "ei"（纯 EI，cost-blind）
             | "eipu_cooled"（OP-3：EI/(ĉ+ε)^β_t，β_t 随预算消耗退火）
+            | "rei"（T-N10：区域平均 EI，REI-inspired 移植档，cost-blind；
+            论文原义=Regional EI 选信任域中心，见模块 docstring 语义核对）
         config: EIPUConfig（None=缺省；eipu_cooled 档消费
-            cooling_progress/cooling_beta_start/cooling_beta_end/cooling_mode）
+            cooling_progress/cooling_beta_start/cooling_beta_end/cooling_mode，
+            rei 档消费 rei_length/rei_samples）
 
     Returns:
         (params dict, diagnostics)；diagnostics 含候选池上的
@@ -352,6 +440,10 @@ def suggest_next_point(
             mode=cfg.cooling_mode,
         ) if strategy == "eipu_cooled" else 1.0)
         score = ei / (c_hat + float(cfg.cost_epsilon)) ** beta
+    elif strategy == "rei":
+        # T-N10 区域平均 EI（REI-inspired；区域样本走独立 rng 流，
+        # 不消费候选池流位——既有策略路径逐字节不变）
+        score = _regional_ei_scores(Xn, y, candn, cfg, float(np.min(y)))
     else:
         score = ei  # 旧路径逐字节不变
     # 去重守卫：与已观测点归一化距离过近的候选不重复建议（零信息）

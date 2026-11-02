@@ -39,7 +39,7 @@ _SRC = _REPO_ROOT / "src" / "rfauto"
 _IMPORTLINTER = _REPO_ROOT / ".importlinter"
 _CONTRACT_SECTION = "importlinter:contract:shell-below-service-no-direct-imports"
 
-#: service 以下八层（内核立规注记 规则 3 分层序：cli/mcp_server → service →
+#: service 以下八层（AGENTS 规则 3 分层序：cli/mcp_server → service →
 #: linkage/optimization/models → adapters → measurement → pipeline → infra → core）。
 BELOW_SERVICE_LAYERS = (
     "rfauto.linkage",

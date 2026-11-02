@@ -261,7 +261,7 @@ class Quantity:
     三类量纲（dimension）：length（规范存储 mm）、angle（规范存储 rad）、
     dimensionless（比值/系数，规范存储纯比值）。
 
-    #218 三类字符串语义（内部证据档 §二），
+    #218 三类字符串语义（runs/mline_repro_attribution_20260911.md §二），
     本类一律拒绝、只接受显式单位数值：
 
     - 纯数字串（"1.113"）：HFSS 按**模型单位**补全，量纲随模型 units 漂移；

@@ -6,7 +6,7 @@ series_feed_*：C2 极限锚/AF 峰位/衰减不变性/方向图积抽查/既有
 等价）+ 设计链往返（draft_recipe==NOMINAL 逐位）+ fake 派发（谷位=设计式
 精确逆，未标定如实）+ 注册四件套 + 引擎预算预声明复核（#328 口径，
 cells/dt/NrTS 以 exec 实测终网格复核预声明值——零发射）。判据预声明
-内部证据档（先声明后实测）。
+runs/df7_c10d/criteria.md（先声明后实测）。
 """
 
 from __future__ import annotations

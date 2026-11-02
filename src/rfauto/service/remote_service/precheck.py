@@ -208,7 +208,7 @@ def hfss_remote_session_config(machine: str | None = None) -> dict[str, Any]:
     状态——调用方（v1 调度面）负责把 ``remote`` 值合并进
     ``HfssSession.connect(settings)`` 的 settings（session 消费的是
     ``settings["remote_machine"]`` 键）；生产链当前无注入点（v1 接线，
-    已如实声明）。
+    Devlog 五百三十三已如实声明）。
 
     Returns
     -------

@@ -15,14 +15,14 @@ import numpy as np
 
 # hairpin 抽头外部 Q 的真机修正 c(τ)=Q_e_EM/Q_e_closed（线性 c0+c1·τ）：WP2.3 收口 B1
 # 单谐振器双抽头 τ 扫描标定产物（scripts/hairpin_q_extract.py --analyze →
-# 内部证据档），数值只在内核（铁律 7）、不得手改。
-# 2026-09-16 B1 实测（内部证据档）：过质量门（0.3/0.5dB
+# runs/hairpin_q_extract/summary.json），数值只在内核（铁律 7）、不得手改。
+# 2026-09-16 B1 实测（runs/hairpin_q_extract/tau030/036/040/043）：过质量门（0.3/0.5dB
 # 两窗曲率一致 + FWHM≤窗半）τ=0.40（Q_e_EM=17.659 vs 闭式 16.450，c=1.0735）与 τ=0.43
 # （34.691 vs 33.009，c=1.0509）两点线性；τ=0.30/0.36 强过耦合（直通背景平台、FWHM>窗半，
 # 非窄带单极点）如实排除。标定域 τ∈[0.40,0.43]，域外为线性外推。
 _HAIRPIN_QE_CORR: tuple[float, float] = (1.37437, -0.75218)
 # hairpin 谐振频率真机修正 c_f0=f0_EM/f0_closed（同一 arm_len）：WP2.3 收口 B2 N=3
-# 复跑（内部证据档：通带中心 2.5925GHz vs 闭式
+# 复跑（runs/hairpin_calib/pt4_ag30_plane3mm/calib.json：通带中心 2.5925GHz vs 闭式
 # λg/2 设计 2.5 → 1.0370；U 弯+开路端等效缩短，pt0-pt3 四轮同值 +3.7%）。名义 arm_len
 # 按 L·f0_act/f0（f∝1/L）定版后，fake 与 EM 在名义处同 f0；数值只在内核、不得手改。
 _HAIRPIN_F0_CORR: float = 1.0370
@@ -135,7 +135,7 @@ def _coupled_bpf_sparams(
     - w_feed_mm 只进几何（50Ω 线宽由 HJ 综合定），不进电气模型——同
       atten_pi/atten_t 的 w_mm 口径，如实标注。
     已知口径限制同裁判：宽度台阶不连续性、开路端边缘导纳残差、KJ 色散
-    不进模型（EM 冒烟实测其总量， 平行耦合 BPF 段）。
+    不进模型（EM 冒烟实测其总量，Devlog 平行耦合 BPF 段）。
     """
     from rfauto.adapters.openems_templates import (
         _coupled_bpf_section_lengths_mm,

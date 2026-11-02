@@ -105,8 +105,8 @@ deterministic-kernel discipline, not a defect.
 ## 4. Parameter proposals (three-layer Gate; propose only, no apply)
 
 ```bash
-rfauto agent propose recipes/my_bpf.yaml --params '{"gap_mm": 0.45}'
-rfauto agent apply recipes/my_bpf.yaml --token <token> --params '{"gap_mm": 0.45}'
+rfauto agent propose recipes/branchline_coupler_v1.yaml --params '{"arm_len_mm": 20.6}'
+rfauto agent apply recipes/branchline_coupler_v1.yaml --token <token> --params '{"arm_len_mm": 20.6}'
 ```
 
 - The values in `--params` come from you (or from the previous step's
@@ -127,7 +127,7 @@ rfauto agent apply recipes/my_bpf.yaml --token <token> --params '{"gap_mm": 0.45
 ## 5. Re-simulation and replay
 
 ```bash
-rfauto run recipes/my_bpf.yaml -a openems
+rfauto run recipes/branchline_coupler_v1.yaml -a openems
 rfauto vna-replay meas.s2p --sim new_sim.s2p     # 离线回放全链
 rfauto warm-start <dataset> <recipe>              # 历史数据先验注入
 ```

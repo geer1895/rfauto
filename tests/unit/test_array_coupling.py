@@ -5,7 +5,7 @@
   （互易对称）、一阶多重散射嵌入方向图（零耦极限≡孤立元×AF 恒等）、
   指数模型拟合（合成已知量回收钉——#118：裁判=回收残差，非自证）；
 - service.array_coupling_service：JSON 进出信封（ok/error）、扫 d×角表；
-- 2x2 回放（fixture=内部证据档 实测产物提取，provenance 在
+- 2x2 回放（fixture=runs/df6_dp4p3/eep_2x2 实测产物提取，provenance 在
   fixture 内）：拟合→重建矩阵→Γ_act/嵌入方向图传播链对拍（同单元基，
   无口径风险）；绝对 model-vs-measured 面报告参考（theta=180 读出口径
   注记，不进硬门——J4b 报告门同口径）。
@@ -277,7 +277,7 @@ def test_service_coupling_sweep_healthy_rows_stay_finite() -> None:
     assert "gamma_note" not in row
 
 
-# ── 2x2 回放（fixture=内部证据档 实测产物提取）─────────────────────────
+# ── 2x2 回放（fixture=runs/df6_dp4p3 实测产物提取）─────────────────────────
 
 @pytest.fixture(scope="module")
 def replay():

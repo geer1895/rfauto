@@ -4,7 +4,7 @@
 
 # rfauto
 
-[![tests](https://img.shields.io/badge/tests-28000%2B-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-30000%2B-brightgreen)]()
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)]()
 [![License](https://img.shields.io/badge/license-GPLv3-blue)]()
 [![code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230)]()
@@ -20,15 +20,15 @@
 > 永远不由大语言模型编造。**
 
 它把 **16 个电磁/EDA 引擎**接到同一个接口后面，内置 **75 个参数化器件模板**和
-**341 个闭式计算器**（340 常规 + 1 实验键），提供 **280 条 CLI 命令**和 **157 个 MCP 工具**（+10 个
-resources），用 **87 个标定锚**和 **28000+ 条单元测试**兜底——这些测试不需要
+**341 个闭式计算器**（340 常规 + 1 实验键），提供 **297 条 CLI 命令**和 **166 个 MCP 工具**（+10 个
+resources），用 **87 个标定锚**和 **30000+ 条单元测试**兜底——这些测试不需要
 任何商业许可就能跑。
 
 本版实测计数（精确值，可用 `scripts/check_numbers.py` 复验）：
 
 <!-- numbers-start（check_numbers 门控锚；实测注入，勿手改数字） -->
 `CALCULATOR_REGISTRY 340 (with experimental 341)` · `TEMPLATE_META 75` · `EXPECTED_TEMPLATES 75` ·
-`ANCHORS 87` · CLI 命令 280（叶子） · （157 个工具 + 10 个 resources）
+`ANCHORS 87` · CLI 命令 297（叶子） · （166 个工具 + 10 个 resources）
 <!-- numbers-end -->
 
 **目录** · [功能全景](#一功能全景九个域) · [快速上手](#二快速上手八步跑通) ·
@@ -150,7 +150,7 @@ rfauto remote status
 
 ### 1.8 AI 编排（MCP）
 
-**157 个 MCP 工具 + 10 个 resources**：Claude Desktop、Cursor 或你自己的 agent
+**166 个 MCP 工具 + 10 个 resources**：Claude Desktop、Cursor 或你自己的 agent
 都能操作整个框架。agent 的修改先落沙箱草稿、过验证门，才允许碰工作区；它只产出
 类型化工具调用，物理数字由内核填写。
 
@@ -382,8 +382,8 @@ cli / mcp_server / ui  →  service  →  linkage / optimization / models
 
 ```text
 src/rfauto/
-├── cli/            # 命令行（280 条叶子命令）
-├── mcp_server/     # MCP 服务（157 工具 + 10 resources）
+├── cli/            # 命令行（297 条叶子命令）
+├── mcp_server/     # MCP 服务（166 工具 + 10 resources）
 ├── ui/             # 浏览器工作台（34 视图，零构建原生 ESM）
 ├── service/        # 业务层：JSON 进、JSON 出
 ├── linkage/        # HFSS ↔ 电路联动
@@ -471,3 +471,18 @@ rfauto 采用 **GPL-3.0**（见 [LICENSE](LICENSE)）。第三方依赖许可证
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。可选的 openEMS 适配器通过
 独立子进程驱动 GPL 的 openEMS；本仓库不包含 openEMS 绑定本体，由用户从
 openEMS 官方源码自行编译。
+
+## 更新日志
+
+**更新日志：本次更新了**电路图绘制三叶（引脚级原理图 `diagram schematic`、
+.drawio→SVG 渲染 `diagram to-svg`、评审标注多评审人合并）、PCB 叠层 3D
+预览、CISPR 25 测试连接场景与专业电气形状档、HB/有源 ADS 模板上图、
+S 参数曲线反标注、设计报告 Pareto 前沿节与版本对账节、TRL 校准件设计
+向导、服务器队列看板 `remote board`、性能画像自动化、约束 c-EHVI、
+TuRBO 多重启竞赛补榜、SAAS NUTS 采样器、ONNX numpy 导出层、以及液态
+神经网络（LNN/CfC）代理；**优化了**测试基建（串行终门 BLAS 线程钉、
+性能画像 diff 回归检测、信道四域策略单源）、事件驱动的投机测试执行
+（文件 watcher 自动预跑）；**以及对于**ADS 调参回路实现了更改——
+绘制好的电路图现在可经 Edit Data 改值→仿真→反标注→迭代完成闭环，
+优化器可直接以 ADS 电路前仿作为评估通道。**目前版本 v0.13.0**
+（上一版本 v0.12.1）。

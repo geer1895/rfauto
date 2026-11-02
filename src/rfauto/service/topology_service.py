@@ -344,7 +344,7 @@ class LLMTopologyProposer(TopologyProposer):
 
     llm_call 必须由调用方注入（prompt → 文本）；本类**不内置任何网络通道**
     ——「存在配置则走外部服务」的分支在单测中一律 monkeypatch 注入
-    （内核立规注记 #139），构造时无 llm_call 即显式报错，杜绝意外真连。
+    （AGENTS #139），构造时无 llm_call 即显式报错，杜绝意外真连。
     LLM 输出走与规则提议器同一个 parse_topology_proposal 严格校验：
     结构对→typed 提议；走私数字/未注册字段→TopologyProposalError（不静默回退）。
     """
@@ -684,7 +684,7 @@ def run_fine_campaign(proposal: TopologyProposal, spec: FilterSpec, *,
 
 def stage_design_to_sandbox(recipe_params: dict[str, Any], name: str, *,
                             root: Any = None) -> dict[str, Any]:
-    """把精算后的配方参数落成沙箱草稿（写面隔离，内核立规注记 规则 6）。
+    """把精算后的配方参数落成沙箱草稿（写面隔离，AGENTS 规则 6）。
 
     仅写 runs/recipe_sandbox（或显式 root）内以 name 派生的草稿文件，
     生效必须走既有三层 Gate——本函数不做任何 promote。

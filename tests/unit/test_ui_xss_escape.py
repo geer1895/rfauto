@@ -205,7 +205,7 @@ class TestEscSourcePins:
         r"""修后余量复查的机器可执行版（双向钉）：全文件扫裸 API 根变量插值
         `${var.field}`（var=API 响应对象命名惯例），命中必须逐一登记在豁免
         清单；豁免条目也必须仍能在源码命中（防清单腐烂）。豁免逐条理由见
-        内部证据档 §余量：数字/布尔格式化、textContent/canvas/
+        runs/au4_xss/xss_audit.md §余量：数字/布尔格式化、textContent/canvas/
         echarts 语境、badge 内部转义、esc 已包裹的分派三元、id 查找对。
 
         ge5 审查 P2-2 修复：扫描口径从"22 个白名单根名"改为**反向**——
@@ -387,6 +387,13 @@ class TestEscSourcePins:
             "${nums.length", "${r.error",
             "${r.y", "${sub.title", "${vis.length",
         }
+        #    aurora_n wave_ui_pg（2026-10-31）playground 对比模式三处，逐条
+        #    归因：${rA.kind}/${rb.kind}=explore 信封 kind（代理注册表键，
+        #    服务端受控枚举非自由输入）进 chart series 名（echarts 文本语境
+        #    非 DOM）与状态行 textContent 拼接；${rb.has_variance}=布尔条件
+        #    字面量选择（"mean±1σ"/t() 键）。cmpNote 唯一 DOM 出口=
+        #    pg-ex-status textContent（不解析 HTML），同 7b 族口径。
+        exempt |= {"${rA.kind", "${rb.has_variance", "${rb.kind"}
         unregistered = hits - exempt
         stale = exempt - hits
         assert not unregistered, f"发现未登记的裸 API 插值: {sorted(unregistered)}"

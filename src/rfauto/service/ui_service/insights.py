@@ -106,15 +106,15 @@ def _viz3d_available() -> bool:
     return viz3d_available()
 
 
-# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，followUp ⑤）──
+# ─── patch 族修正后 η 物理合理门（2026-09-17 门复议，Devlog（二百零五）followUp ⑤）──
 #
 # 数字依据链（坑 #118：裁判 = 收敛真跑实测 + 独立来源解析式，不是自己的推导）：
 # * 解析式（Balanis 单腔损耗分解，PEC 导体 Q_c→∞）：η = Q_d/(Q_d+Q_rad)，
 #   Q_d = 1/tanδ；RO4350B tanδ=0.0037 → Q_d = 270.27。
-# * 实测锚 内部证据档（真收敛：能量
+# * 实测锚 runs/patch_field_smoke_recheck/_smoke_result.json（真收敛：能量
 #   −60.3dB、nf2ff 盒顶余量 40.5mm ≥ λ/4 33.9mm、两口径 Dmax 差 0.015dB）：
 #   η_corr = 0.5711 → Q_rad = Q_d·(1−η)/η = 203（≈200）。
-# * 伪象幅度 内部证据档（同几何、仅 AIR_TOP 26.79→45mm 差异的
+# * 伪象幅度 runs/patch_field_smoke（同几何、仅 AIR_TOP 26.79→45mm 差异的
 #   紧贴盒轮）：η_corr 0.6215 = 较锚值 Prad 虚高 +8.82% → 守卫带取该观测值。
 # * 下沿 = Q_d/(Q_d + 203×1.0882) = 270.27/491.13 = 0.5503 ≈ 0.55（旧门 0.62
 #   出自 W2⑥a "Q_rad~60–80" 估计，被实测 2.5× 否定）；上沿保留 0.79（对应
@@ -395,7 +395,7 @@ def _run_dir_or_error(run_id: str) -> tuple[Path | None, dict[str, Any] | None]:
 def pareto_view(run_id: str) -> dict[str, Any]:
     """E9 Pareto 前沿视图（优化洞察页，只读）。
 
-    双源（登记的"optimizer 有 pareto_points 但未接 UI"）：
+    双源（Devlog（六十四）登记的"optimizer 有 pareto_points 但未接 UI"）：
     - results/pareto_front.json 存在（nsga2 run，E9 起落盘）→ 直读；
     - 缺产物（旧 run / TPE run）→ 从 trials/*.json 现算约束 Pareto：
       目标向量 = 逐 objective 违约量（与 run_multi_optimization 同口径，

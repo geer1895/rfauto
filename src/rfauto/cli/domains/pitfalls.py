@@ -7,7 +7,7 @@
 本域模块并由 tests/unit/test_kb_b_pitfall_index.py 直钉。
 
 数据面：knowledge/pitfalls_index_full.json（scripts/pitfall_index.py 从
-内核立规注记.md 踩坑速查+runs/ SESSION_PITFALLS 散档机器全量解析，条目数以
+AGENTS 踩坑速查+runs/ SESSION_PITFALLS 散档机器全量解析，条目数以
 构建报告实测为准；漂移重建：
 ``python scripts/pitfall_index.py``）；--index 可切人工精选 v1
 （knowledge/pitfalls_index.json，66 条）——两索引同 schema 契约
@@ -32,7 +32,7 @@ from rfauto.cli.domains._core import _emit as _emit
 from rfauto.cli.domains._core import _emit_usage_error as _emit_usage_error
 from rfauto.cli.domains._core import app as app
 
-pitfalls_app = typer.Typer(help="坑账检索面（结构化索引，只读；数据缺席如实报缺）")
+pitfalls_app = typer.Typer(help="坑账检索面（AGENTS 踩坑速查全量索引，只读）")
 app.add_typer(pitfalls_app, name="pitfalls")
 
 #: 缺省索引（与 knowledge/pitfalls_index.json 同目录的全量机器解析产物；

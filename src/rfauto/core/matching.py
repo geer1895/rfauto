@@ -1,4 +1,4 @@
-"""E6b 匹配网络与滤波器综合（规划扩展 §E6b）。
+"""E6b 匹配网络与滤波器综合（plan-extension_v2 §E6b）。
 
 匹配网络综合（L/π/T，L-section 闭式）
 滤波器综合（commensurate-line，Richard 变换）

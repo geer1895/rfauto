@@ -1,0 +1,17 @@
+{
+  "summary": "接收前端链路评审：噪声预算与增益分配",
+  "annotations": [
+    {"id": "r1", "region": {"x": 510, "y": 50, "w": 200, "h": 92},
+     "priority": "high", "label": "混频器噪声",
+     "comment": "混频器是级联 NF 增量最大的一级：评估提高前级 LNA 增益或换低 NF 混频器",
+     "target": "stage2"},
+    {"id": "r2", "region": {"x": 30, "y": 50, "w": 200, "h": 92},
+     "priority": "medium", "label": "LNA 余量",
+     "comment": "核对 LNA 增益对后级噪声的压制余量是否满足规格书",
+     "target": "stage0"},
+    {"id": "r3", "region": {"x": 750, "y": 50, "w": 200, "h": 92},
+     "priority": "low", "label": "中频增益",
+     "comment": "下一版评估中频放大器增益与线性度的折中",
+     "target": "stage3"}
+  ]
+}

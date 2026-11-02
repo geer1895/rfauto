@@ -285,8 +285,8 @@ class TestUiLayerStaticGuard:
         assert [t for t in _FORBIDDEN_UI_TOKENS if t in bad]
 
     def test_static_pages_no_internal_absolute_path_placeholder(self):
-        # UI-R9 P2-5（uir8 审查；上传零敏感口径 内核立规注记 8）：static 面 js
-        # 不出现盘符绝对路径（filebrowser 占位符曾是 D:/rf_workspace；
+        # UI-R9 P2-5（uir8 审查；上传零敏感口径 AGENTS 8）：static 面 js
+        # 不出现盘符绝对路径（filebrowser 占位符曾是 E:\\rfauto-workspace；
         # vendor/ 排除——echarts.min.js 压缩体有 N:+ 类良性误命中）。
         import rfauto.ui as ui_pkg
 
@@ -299,11 +299,12 @@ class TestUiLayerStaticGuard:
         hits = {k: v for k, v in hits.items() if v}
         assert hits == {}, f"static 面出现盘符绝对路径: {hits}"
         # 守卫非空转：坏样本必命中（防正则笔误退化成永真）
-        assert pat.findall(r'placeholder="C:\\rfauto_test 或其子目录"')
-        # 修复本体钉：filebrowser 占位符为中性文案
+        assert pat.findall(r'placeholder="E:\\rfauto-workspace 或其子目录"')
+        # 修复本体钉：filebrowser 占位符为中性文案（aurora_o i18n 分波席迁
+        # 词表 fs.path_ph——zh 值同笔，中性语义经词表 en 值延续）
         fb = (static_dir / "pages" / "filebrowser.js").read_text(
             encoding="utf-8")
-        assert 'placeholder="工作区目录或其子目录"' in fb
+        assert 'placeholder="${escAttr(t("fs.path_ph"))}"' in fb
 
     def test_filebrowser_failure_branch_reads_error_envelope_compat(self):
         # UI-R11（A6 P2-3）：filebrowser 失败分支走 errorText 兼容读法
@@ -318,6 +319,30 @@ class TestUiLayerStaticGuard:
         assert "import { errorText, esc, escAttr } from \"./dom.js\";" in fb
         assert "el.textContent = errorText(d);" in fb
         assert "d.error" not in fb  # 裸读零残留（注释也不提裸形态）
+
+    def test_filebrowser_parent_row_carries_dir_kind(self):
+        """「..（上级）」行必须带 data-k="dir"（2026-10-29 用户实测"上级点
+        不了"修复钉）：bindClickRows 按 dataset.k 分派（dir→load 导航 /
+        其余→onPick 选中并关弹层）——上级行曾漏 data-k，点上级被当文件
+        选中提交（目录路径进导入链=无反应假死）。守卫非空转：无 data-k
+        的历史病灶形态不得匹配新断言。"""
+        import re as _re
+
+        import rfauto.ui as ui_pkg
+
+        static_dir = Path(ui_pkg.__file__).parent / "static"
+        fb = (static_dir / "pages" / "filebrowser.js").read_text(
+            encoding="utf-8")
+        m = _re.search(r'let html = d\.parent \? `([^`]+)`', fb)
+        assert m, "parent 行模板未找到"
+        row_html = m.group(1)
+        assert 'data-k="dir"' in row_html, (
+            "「..（上级）」行缺 data-k=\"dir\"——点上级会被当文件选中"
+            "（bindClickRows 分派契约见 test_ui_modules_behavior）")
+        # 守卫非空转：历史病灶形态（data-p 后直接 kitClickRowAttrs、无 data-k）
+        assert not _re.search(
+            r'data-p="\$\{escAttr\(d\.parent\)\}"\s+\$\{kitClickRowAttrs', fb)
+
         # 守卫非空转：dom.js 单源在位（行为钉在 test_ui_modules_behavior）
         dom = (static_dir / "pages" / "dom.js").read_text(encoding="utf-8")
         assert "export function errorText(" in dom

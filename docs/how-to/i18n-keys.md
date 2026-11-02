@@ -4,7 +4,7 @@
 i18n。词表是零依赖自研方案（无构建步、无第三方库），单源在
 `src/rfauto/ui/static/pages/i18n.js`——本文讲词表结构、三个注入口、
 与 esc 转义体系的共存纪律、新页面接线五步。全部命令实测（2026-10-19，
-词表 1032 键（发布令批全量软编码后，node 实测；660 系 架构批 W4-S1 时点），`test_ui_i18n.py` + `test_ui_perf_loading.py` 合跑 17 passed）。
+词表 1032 键（发布令批全量软编码后，node 实测；660 系 aurora_h W4-S1 时点），`test_ui_i18n.py` + `test_ui_perf_loading.py` 合跑 17 passed）。
 
 ## 1. 词表结构（单源 LOCALES）
 

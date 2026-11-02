@@ -71,7 +71,7 @@ EDB/HFSS 3D Layout 工程的自适应档（``max_delta``/``max_passes``）的
 ``configuration.load(apply_file=True)`` 随建库一次性落 setup——发射器
 改档即随建库写入**请求档**。
 
-**W10 定谳（内部证据档，2026-10-09）：EDB
+**W10 定谳（runs/edblane85/w10_cl_recheck/REPORT.md，2026-10-09）：EDB
 3D Layout 路径 MaxDelta 写入不可达**。EDB 3D Layout schema（SimSetupID=19）
 无 MaxDelta 键——四互证维持（AEDT 2025.1 SolveSetups 模块无 EditSetup/
 InsertSetup 无任何 Delta 键名/configuration.load 的 AdaptiveSettings 子树
@@ -84,7 +84,7 @@ pyaedt props 通道同样写不进；spec 硬断言只能行使到**发射面**�
 有建模保真差（判读面校准项，非求解旋钮可及）。**判读纪律：本通道 EDB
 S31 读数不得按 max_delta 请求档归因**（W9 勘误先声，W10 定谳坐实）。
 
-W9 勘误存档（同日真机重查，内部证据档）："写入即生效"
+W9 勘误存档（同日真机重查，runs/edblane85/w9_cl_recheck）："写入即生效"
 此前只在单测面验证（请求值达 configuration.load 调用——假 pyedb 替身）；
 props 建库期写入 MaxDelta=0.005（会话内读回确认）批解仍按 0.02 准则停机
 （verdict=TIGHTENING_NOT_EFFECTIVE）——该形态后被 W10 定谳收编为"schema
@@ -94,7 +94,7 @@ props 建库期写入 MaxDelta=0.005（会话内读回确认）批解仍按 0.02
 工程重开会话后经 pyaedt ``setup.props`` 改档**不传播**——重载 props
 顶层无 ``AdaptiveSettings`` 子树（新建会话才有），子树重建写入+
 ``update()``+save 后批解仍**逐位回放缓存解**（S31 十位小数同值
--9.4569、批解 wall 26s vs 原档 ~52s；内部证据档（w8_cl_arb 批）
+-9.4569、批解 wall 26s vs 原档 ~52s；runs/edblane85/w8_cl_arb/
 ARBITRATION.md §2 V3 / §5-2）。因此任何"收紧判读档"需求一律改 spec
 重走 :meth:`EdbAdapter.build`（新 .aedb），禁止对已建工程做求解后改档。
 （W10 定谳边界：对 **EDB 路径的 max_delta**，重建也不落库——schema 无键，
@@ -165,7 +165,7 @@ tests/unit/test_edb_adapter.py::TestEmitterSpecContract 钉「发射样例 →
                              TOP,DE,BOTTOM 首项=顶层同口径；
                              docs/pyedb_distilled.md §3.1/§6-2 处方
                              「adapter 翻转一次」；真机冒烟
-                             内部证据档 以 GND=elevation0
+                             runs/edblane85/w1_smoke 以 GND=elevation0
                              验证的物理序=信号层在上）
           {"name": str       必填，全表唯一，
            "type": str       必填，"signal" | "dielectric"，
@@ -292,14 +292,14 @@ from typing import Any
 # 只登记带 __all__ 的模块，无 __all__ 文件记私有零快照变化（新模块出生
 # 不触发 --generate 评审动作）。
 
-#: AEDT 版本缺省钉（内核立规注记 规则 0：本机 HFSS/AEDT 2025 R1（v251）为对齐
+#: AEDT 版本缺省钉（AGENTS 规则 0：本机 HFSS/AEDT 2025 R1（v251）为对齐
 #: 基准；PyAEDT/pyedb 版本串口径 2025 R1 → "2025.1"）。env 可覆盖
 #: （远程/异版本机联调），换机部署须与服务器侧版本对齐规则 0 同步。
 _DEFAULT_AEDT_VERSION = "2025.1"
 _AEDT_VERSION_ENV = "RFAUTO_EDB_AEDT_VERSION"
 
 #: pyedb DotNet 通道 Ansys OpenSSL **预载 feature-flag**（#373 回归实验，
-#: 2026-10-14；配方=内部证据档 R5：import pyedb 前
+#: 2026-10-14；配方=runs/pyedb_pr2599_test/REPORT.md R5：import pyedb 前
 #: ctypes.WinDLL 绝对路径预载 AnsysEM 的 libcrypto/libssl-3-x64.dll）。
 #: env ``RFAUTO_PYEDB_PRELOAD``（1/true/yes/on 大小写不敏感）或构造参数
 #: ``enable_preload`` 显式开启；**缺省关闭=零行为变化**（不触预载路径）。
@@ -1711,7 +1711,7 @@ class EdbAdapter:
         串返回（best-effort，#105：断言不抛异常、不阻塞判读主路径；不可
         证实如实告警不冒充通过，#122）。
 
-        断言语义边界（W9 勘误落口径，W10 定谳补全，内部证据档
+        断言语义边界（W9 勘误落口径，W10 定谳补全，runs/edblane85/
         w9_cl_recheck 与 w10_cl_recheck）：本断言核的是**存储请求档=读回档**
         （写入面一致），**不是**"求解按新档收敛"的行为效力——W9 重查实证
         props 建库期写入读回一致后批解仍按 0.02 准则停机

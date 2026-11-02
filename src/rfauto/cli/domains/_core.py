@@ -21,7 +21,9 @@ app = typer.Typer(
         "  2. rfauto syn mline       闭式综合（参数→几何）\n"
         "  3. rfauto calc …          计算器交叉核对\n"
         "  4. rfauto run … --adapter fake   零 license 冒烟运行\n"
-        "  5. rfauto runs health     运行健康体检"
+        "  5. rfauto runs health     运行健康体检\n\n"
+        "交互式代理试验台（滑条实时看代理预测）见 UI #/playground 页"
+        "（rfauto ui 启动后浏览器打开）。"
     ),
     no_args_is_help=True,
 )
@@ -113,6 +115,35 @@ def _print_error_hints_text(errs: list) -> None:
         return
 
 
+def _print_next_steps_stderr(errs: list) -> None:
+    """错误信息后附"下一步"指针（aurora_n wave_ui_b P2-5 最小形态）。
+
+    与 ``_print_error_hints_text`` 同一规则表（error_hints_service 单源），
+    两个差异：①输出走 **stderr**——stdout 面是既有红字/JSON 信封的消费面
+    （管道/Agent 解析），hints 是给人看的补充指针，分离不污染主通道（
+    tune warm-start 注记 stderr 先例同口径）；②行首"下一步: "（审计条目
+    原文措辞）。best-effort（#105）：hint 生成失败静默返回，绝不遮蔽原
+    错误；未命中零输出（不编造提示）。逐条纯 print（hints 纯文本零
+    markup，stderr 无 rich Console——_force_utf8_stdio 已重配编码）。
+    """
+    try:
+        from rfauto.service.error_hints_service import hint_for_message
+
+        text = "\n".join(str(e) for e in (errs or []))
+        hits = hint_for_message(text).get("hits") or []
+        for hit in hits:
+            hint = str(hit.get("hint") or "").strip()
+            if not hint:
+                continue
+            refs = str(hit.get("refs") or "").strip()
+            line = f"  下一步: {hint}"
+            if refs:
+                line += f"（{refs}）"
+            print(line, file=sys.stderr)
+    except Exception:  # #105：观测面失败不阻塞错误输出主路径
+        return
+
+
 def _emit(result: dict, fail_msg: str, *, json_output: bool = True) -> None:
     """薄壳共用出口：ok=False → 失败信封（--json）或红字 errors/error + 退出码 1；否则 JSON 直出。"""
     if not result.get("ok"):
@@ -151,36 +182,46 @@ def _emit_usage_error(msg: str, *, json_output: bool = False) -> None:
     raise typer.Exit(code=2)
 
 
-def _load_json_file(path: str, what: str) -> dict:
-    """读 JSON 对象文件（payload 型命令共用；不存在/非对象 → 退出码 2）。"""
+def _load_json_file(path: str, what: str, *, json_output: bool = False) -> dict:
+    """读 JSON 对象文件（payload 型命令共用；不存在/非对象 → 退出码 2）。
+
+    ``json_output``（I-2 清偿，aurora_p F3L1 2026-11-02）：缺省即 JSON 的
+    payload 叶透传旗标，参数错在 JSON 信道走 ``_emit_usage_error`` 信封
+    （#ge1㉙：usage 错在 --json 下禁止红字裸文本）；缺省 False=人读信道
+    红字原样（逐字节不变面）。
+    """
     p = Path(path)
     if not p.exists():
-        console.print(f"[red]✗ {what}不存在: {p}[/red]")
-        raise typer.Exit(code=2)
+        _emit_usage_error(f"{what}不存在: {p}", json_output=json_output)
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        console.print(f"[red]✗ {what}不可读: {exc}[/red]")
-        raise typer.Exit(code=2) from None
+        _emit_usage_error(f"{what}不可读: {exc}", json_output=json_output)
     if not isinstance(data, dict):
-        console.print(f"[red]✗ {what}必须是 JSON 对象[/red]")
-        raise typer.Exit(code=2)
+        _emit_usage_error(f"{what}必须是 JSON 对象", json_output=json_output)
     return data
 
 
-def _kv_floats(items: list[str] | None, flag: str) -> dict[str, float]:
-    """--flag 名=值（可多次）→ {名: float}。"""
+def _kv_floats(
+    items: list[str] | None, flag: str, *, json_output: bool = False
+) -> dict[str, float]:
+    """--flag 名=值（可多次）→ {名: float}。
+
+    ``json_output``（I-2 清偿，aurora_p F3L1 2026-11-02）：同
+    ``_load_json_file``——JSON 信道参数错走 ``_emit_usage_error`` 信封，
+    人读信道红字原样。
+    """
     out: dict[str, float] = {}
     for item in items or []:
         if "=" not in item:
-            console.print(f"[red]✗ {flag} 格式应为 参数名=值：{item}[/red]")
-            raise typer.Exit(code=2)
+            _emit_usage_error(f"{flag} 格式应为 参数名=值：{item}",
+                              json_output=json_output)
         name, _, val = item.partition("=")
         try:
             out[name.strip()] = float(val)
         except ValueError:
-            console.print(f"[red]✗ {flag} 值不是数字：{item}[/red]")
-            raise typer.Exit(code=2) from None
+            _emit_usage_error(f"{flag} 值不是数字：{item}",
+                              json_output=json_output)
     return out
 
 
@@ -230,8 +271,15 @@ def _watch_poll(
         if state in _TERMINAL_STATES:
             break
         if time.monotonic() >= deadline:
-            console.print(
-                f"[red]✗ watch 超时（{timeout_s}s，末态 state={state}）[/red]")
+            # I-1 清偿（aurora_p F3L1，2026-11-02；VI-5 W6-B 家法）：--json
+            # 下失败路径也是信封——JSONL 流内禁夹非 JSON 行（逐行解析的
+            # 管道/agent 消费方会砸）；人读分支红字原样（零变化面）。
+            timeout_msg = f"watch 超时（{timeout_s}s，末态 state={state}）"
+            if json_output:
+                console.print_json(json.dumps(
+                    error_envelope(timeout_msg), ensure_ascii=False, default=str))
+            else:
+                console.print(f"[red]✗ {timeout_msg}[/red]")
             raise typer.Exit(code=1)
         time.sleep(max(0.1, float(interval_s)))
 

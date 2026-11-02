@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rfauto"
-version = "0.12.1"
+version = "0.13.0"
 description = "Automated RF/microwave simulation and tuning across HFSS, ADS, openEMS and more"
 readme = "README.md"
 # PEP 639（0dd⑥）：license 用 SPDX 表达式 + license-files 列表；
@@ -80,6 +80,22 @@ smt = ["smt>=2.9"]
 gbdt = ["scikit-learn>=1.3,<3"]
 # torch（CPU 版）—— fno_lite 曲线算子原型（阶段 6.3）；GPU 化待硬件
 torch = ["torch>=2.0"]
+# BoTorch EI 对照臂 —— 竞赛架 "botorch_ei" 引擎（SingleTaskGP +
+# LogExpectedImprovement 单点 qEI + optimize_acqf 最小 API）；仅
+# optimization/botorch_engine.py 惰性 import（顶层零 torch/botorch），
+# 未安装时注册面缺席（opt-in 注册：ensure_botorch_engine_registered
+# 显式报缺指路本 extra，未装=竞赛架少一臂）。安装：pip install rfauto[botorch]；
+# torch 由 botorch 传递依赖或 [torch] 提供。
+botorch = ["botorch>=0.18"]
+# 代理产物 ONNX 标准化导出 —— optimization/surrogate/onnx_export.py 惰性
+# import（顶层零 torch/onnx），未安装时导出面缺席（export-onnx 显式报缺
+# 指路本 extra，代理 fit/predict 路径零影响）。消费面：
+# rfauto surrogate export-onnx + service/surrogate_export_service。
+# 安装：pip install rfauto[onnx]；torch 由 [torch] 提供（导出对象是已拟合
+# torch 代理）；onnxruntime 可选（仅导出-回代对拍消费，缺席=对拍跳过
+# 注记）。fno 谱层 rfft 仅 dynamo 导出器可导（legacy 全 opset 不支持）——
+# dynamo 通道运行时依赖 onnxscript，故入本 extra。
+onnx = ["onnx>=1.16", "onnxscript>=0.7", "onnxruntime>=1.20"]
 # VNA 硬件通道（方向 3）—— pyvisa 底座；无硬件环境不需要安装
 vna = ["pyvisa>=1.13"]
 # VNA 离线 CI（DP-11 P1）—— pyvisa-sim YAML 声明仪器应答（#139 零网络零硬件）
@@ -332,4 +348,7 @@ markers = [
     "real_edt: 需要真实 AEDT/ADS 环境（deselect with -m not real_edt）",
     "slow: 终门 DURATIONS 慢件分层（>60s 全覆盖=top-20：2026-10-20 标 8 件 +2026-10-23 补 top-20 余量 13 件，共 21 件；夜档三态 RFAUTO_GATE_SLOW_MODE=day/night——加标不改任何门缺省 deselect 行为）",
     "solo: 计时敏感/资源敏感测试，仅串行全量门与 CI 执行（并行门与 xdist 对照臂 deselect）",
+    "tier_a: 分层钉子层（<1s；不物理打标——不在 B/C 名单即 A，注册仅供 -m tier_a 显式查询语义完整）",
+    "tier_b: 分层：数值不变量层（[1,5)s；名单=tests/fixtures/test_tiers.yaml 由 tests/conftest.py 施加；日常门缺省跑）",
+    "tier_c: 分层：重件层（>=5s；名单同 tier_b；日常门 -m \"not tier_c\" 显式排除，终门/夜门口径零改动）",
 ]

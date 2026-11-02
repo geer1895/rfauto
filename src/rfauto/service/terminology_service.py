@@ -1,4 +1,4 @@
-"""术语卡服务（QW-6；服务层 JSON 进出，内核立规注记 硬限 4）。
+"""术语卡服务（QW-6；服务层 JSON 进出，AGENTS 硬限 4）。
 
 数据单一事实源：knowledge/terminology.yaml（首版 50 条，schema 见该文件
 头注：term/definition 必填，unit/scope/see_also 可选）。三条主入口全部

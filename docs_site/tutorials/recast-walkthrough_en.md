@@ -8,10 +8,11 @@
 > from the criteria format all the way to a hands-on replay; everything
 > was measured against the working tree (2026-10-19). Prerequisite:
 > docs/how-to/read-verdict-gates.md (the basic reading of criteria and
-> gates). The CLI surface is closed: since 架构批 W2-D (2026-10-11)
-> there are two read-only thin shells, `rfauto recast status/replay`
-> (no MCP surface yet — see §5); §1–4 cover the Python API's semantics,
-> and the CLI shares the same deterministic kernel.
+> gates). The CLI surface is closed: since aurora36 W2-D (2026-10-11)
+> there are two read-only thin shells, `rfauto recast status` /
+> `rfauto recast replay` (no MCP surface yet — see §5); §1–4 cover the
+> Python API's semantics, and the CLI shares the same deterministic
+> kernel.
 >
 > Chinese original: docs/tutorials/recast-walkthrough.md. CLI help text
 > and console output below are preserved verbatim from the measured
@@ -83,7 +84,7 @@ crit = yaml.safe_load(
     Path("knowledge/criteria/v2/df5_c3fix_sentinel.yaml")
     .read_text(encoding="utf-8"))
 artifact = json.loads(
-    Path("runs/demo/sentinel_verdict.json")
+    Path("runs/df5_c3fix/sentinel_verdict.json")
     .read_text(encoding="utf-8"))
 
 result = replay_one(artifact, crit,
@@ -212,7 +213,7 @@ argument (when the default `verdict` lands on the top level you omit it;
 §3's "biggest time-saver" holds in the CLI too). Measured:
 
 ```console
-$ rfauto recast replay -a runs/demo/sentinel_verdict.json \
+$ rfauto recast replay -a runs/df5_c3fix/sentinel_verdict.json \
       --archived-verdict-path four_gates.verdict
 ✓ 重放完成 对数=3 判据=3（坏 0）
   same=1 flip=0 not_judged=2

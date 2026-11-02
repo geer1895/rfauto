@@ -458,7 +458,7 @@ def remote_session_switches(
     """远程 attach 四开关+一环境变量的作用域管理（共享单源，L1/L2/session 同款）。
 
     远程分支的 ``Desktop`` 构造必需（pyaedt 1.4.0 × AEDT 2025.1.0 无 SP
-    实证配方，内部证据档；原实现见 remote_service
+    实证配方，Devlog 五百三十四；原实现见 remote_service
     ``_attach_and_verify``，审查分片 1 P1-1 提升到本模块共享）：
 
     - ``grpc_local=False``：远程走 TCP 传输（缺省 WNUA 是 Windows 本机通道）；
@@ -677,7 +677,7 @@ class HfssSession:
         # 远程会话解析（多机协同 v0）：settings["remote_machine"]=注册表名
         # → infra/remote_machines 解析 host/grpc 端口透传 Desktop(machine=,
         # port=)。无该键=本地会话（零行为变化）。版本配对口径：远程 AEDT
-        # 必须与本机 pyaedt 配对版本一致（内核立规注记 规则 0）。
+        # 必须与本机 pyaedt 配对版本一致（AGENTS 规则 0）。
         remote_name = settings.get("remote_machine")
         remote_kwargs: dict[str, Any] = {}
         if remote_name:
@@ -687,7 +687,7 @@ class HfssSession:
             )
 
             cfg = resolve_machine(str(remote_name))
-            # 版本配对交叉断言（内核立规注记 规则 0，审查分片 1 P1-1 附带项）：
+            # 版本配对交叉断言（AGENTS 规则 0，审查分片 1 P1-1 附带项）：
             # pyaedt gRPC 客户端-服务端版本必须配对——settings 与注册表
             # 静默失配（如 settings 2024.1 + 注册表 2025.1）会让远程 attach
             # 走错客户端插件，显式拒绝并指引改配置。
@@ -1220,7 +1220,7 @@ class HfssSession:
         """本会话 ansysedt 进程 PID（#265 兜底武装；未连接/未捕获=None）。
 
         本地会话=本机 PID（可喂 desktop_guard 精确击杀/存活判定）；
-        远程会话=服务器侧 PID（只记档，服务器侧清场消费，内核立规注记 规则
+        远程会话=服务器侧 PID（只记档，服务器侧清场消费，AGENTS 规则
         0b 任务毕清理）。
         """
         return self._desktop_pid

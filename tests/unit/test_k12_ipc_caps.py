@@ -6,7 +6,7 @@ K11 教训：不凭记忆写文献系数，IDC 侧壁式为**推导式**非文�
 声明 core/ipc_cap 模块头）+ CALC 键面门行为 + 布局单源几何/守卫 +
 #212 exec 审计（MIM 三明治叠层/端口跨介质；IDC 双排 DC 隔离）+
 fake 自洽（C 回收/SRF 对拍/参数驱动）+ 注册面同步。判据预声明
-内部证据档（先声明后实测）。
+runs/aurora_k/k12/criteria.md（先声明后实测）。
 
 数字出处（#118 家法，#331 审计 dump 原文纪律）：
 - MIM 平行板：C=ε0·εr·A/d 教科书精确式（单源 core/package_interconnect

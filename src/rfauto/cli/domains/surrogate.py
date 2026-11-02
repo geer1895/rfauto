@@ -112,6 +112,72 @@ def surrogate_uq(
     console.print(f"  敏感性排序: {' > '.join(result['sensitivity_ranking'])}")
 
 
+# ─── surrogate export-onnx（T-N20 ONNX 导出面，aurora_n W3）──────────────────
+
+@surrogate_app.command("export-onnx")
+def surrogate_export_onnx_cmd(
+    kind: str = typer.Argument(..., help="代理注册键：fno | deep_ensemble | siren"),
+    samples: str = typer.Argument(..., help="样本 JSON 路径（元素含 params 与 metrics 两键，同校准样本集形态）"),
+    out_path: str = typer.Argument(..., help="ONNX 输出路径（.onnx）"),
+    config: str = typer.Option(None, "--config", help="代理 config JSON 路径（bounds/freq_grid/coord_keys 等）"),
+    opset: int = typer.Option(18, "--opset", help="ONNX opset 版本（缺省 18）"),
+    no_verify: bool = typer.Option(False, "--no-verify",
+                                   help="跳过导出-回代对拍（对拍消费 onnxruntime）"),
+    json_output: bool = typer.Option(False, "--json",
+                                     help="JSON 信封输出（成功+失败同构）"),
+) -> None:
+    """torch 系代理（fno/deep_ensemble/siren）现场重拟合并导出 ONNX。
+
+    模型来源=现场重拟合（playground 同款口径——torch 拟合网络含局部类
+    不可 pickle），确定性由 config 固定 seed 保证；导出图归一化进图，
+    输入=原始单位参数/坐标向量，输出与代理 predict 语义同构
+    （deep_ensemble 输出=(2,T) 均值与成员间 σ）；落盘字节经 protobuf
+    deterministic 规范化，同权重两跑 sha256 一致。其余代理键不支持导出
+    （显式报错列支持面）。
+    """
+    from rfauto.service.surrogate_export_service import surrogate_export_onnx
+
+    cfg: dict = {}
+    result: dict | None = None
+    if config:
+        try:
+            loaded = json.loads(Path(config).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            result = error_envelope(f"config JSON 不可读: {exc}")
+        else:
+            if not isinstance(loaded, dict):
+                result = error_envelope("config JSON 根节点须为映射")
+            else:
+                cfg = loaded
+    if result is None:
+        result = surrogate_export_onnx({
+            "kind": kind, "config": cfg, "samples_path": samples,
+            "out_path": out_path, "opset": opset,
+            "verify": not no_verify,
+        })
+    if json_output:
+        _emit(result, "ONNX 导出失败", json_output=True)
+        return
+    if not result.get("ok"):
+        console.print("[red]✗ ONNX 导出失败[/red]")
+        for err in result.get("errors", []):
+            console.print(f"  [red]- {err}[/red]")
+        raise typer.Exit(code=1)
+    console.print(f"[green]✓ ONNX 导出完成[/green]（kind={result['kind']}，"
+                  f"opset={result['opset']}，样本 {result.get('n_samples')}）")
+    console.print(f"  文件: {result['path']}")
+    console.print(f"  sha256: {result['sha256']}")
+    io_in, io_out = result.get("input") or {}, result.get("output") or {}
+    console.print(f"  输入: {io_in.get('name')} float32 {io_in.get('shape')}"
+                  f" → 输出: {io_out.get('name')}")
+    if result.get("verified"):
+        console.print(f"  导出-回代对拍: PASS（max_abs_diff="
+                      f"{result.get('max_abs_diff'):.3g}，"
+                      f"rtol={result.get('rtol')}/atol={result.get('atol')}）")
+    elif result.get("verify_note"):
+        console.print(f"  [yellow]{result['verify_note']}[/yellow]")
+
+
 # ─── runs (对比) ─────────────────────────────────────────────────────────────
 
 runs_app = typer.Typer(help="run 历史对比")

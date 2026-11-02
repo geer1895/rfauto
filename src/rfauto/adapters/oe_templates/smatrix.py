@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 # ─── 端接口径统一后处理 helper（W2⑤ 定案 (a)，2026-09-16）────────────────────
-# 机理（followUps①）：openEMS 端口面贴 PML，非激励端的
+# 机理（Devlog（一百八十四）followUps①）：openEMS 端口面贴 PML，非激励端的
 # 线由 PML 按**线自身 Z0** 匹配端接，CalcPort(ref_impedance=50) 的 uf_ref/
 # uf_inc 只是 50Ω 伪波分解 → 凡端口线 ≠50Ω 的模板（wstep/via/msl_cpw/
 # atten/sma_launcher），引擎单激励 'S11' 与 50Ω 双端接裁判（fake Pozar

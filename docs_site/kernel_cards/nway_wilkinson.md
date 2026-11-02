@@ -6,7 +6,7 @@
 
 # 内核文档卡：nway_wilkinson
 
-> E6a 微带线综合引擎（规划扩展 §E6a）。
+> E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 N-way Wilkinson 功分器阻抗级综合：star（Pon 1961 星形，臂 √N·Z0）与 tree（2^k 树形，每级经典 2-way 单元）双拓扑闭式——端口口径等价而臂/隔离电阻不同，N≥3 星形隔离近似级别如实声明。
 
-模块自述（docstring 首行，机读）：E6a 微带线综合引擎（规划扩展 §E6a）。
+模块自述（docstring 首行，机读）：E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 ## 公式与口径
 
@@ -104,6 +104,7 @@ src/rfauto/core/synthesis.py 公开符号 **43** 个（AST 机读）：
 消费面（service/adapters 引用扫描，机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
+- service：`src/rfauto/service/diagram_stackup_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -146,7 +147,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `ratrace.ring_z_ohm.closedform-v1` | ratrace_ring_z_ohm |
 | `schiffman.delta_phase.closedform-v1` | schiffman_delta_phase_deg |
 
-测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1589** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -159,6 +160,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_atten_t_template.py` | 9 |
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_cal_wizard.py` | 37 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_coupled_bpf_template.py` | 34 |
 | `tests/unit/test_coupling_matrix.py` | 52 |
@@ -204,6 +206,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
+| `tests/unit/test_stackup_diagram.py` | 39 |
 | `tests/unit/test_stepped_coupled_line_specs.py` | 8 |
 | `tests/unit/test_stripline_template.py` | 12 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |

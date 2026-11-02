@@ -6,7 +6,7 @@
 
 # 内核文档卡：cpw
 
-> E6a 微带线综合引擎（规划扩展 §E6a）。
+> E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 共面波导综合（底接地 CPWG 口径）：共形映射闭式 εeff/Z0 + brentq 反解线宽——合成参照系必须与真实结构同口径（#193 参照系错位教训）。
 
-模块自述（docstring 首行，机读）：E6a 微带线综合引擎（规划扩展 §E6a）。
+模块自述（docstring 首行，机读）：E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 ## 公式与口径
 
@@ -86,6 +86,7 @@ src/rfauto/core/synthesis.py 公开符号 **43** 个（AST 机读）：
 消费面（service/adapters 引用扫描，机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
+- service：`src/rfauto/service/diagram_stackup_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -132,7 +133,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `src/rfauto/core/calculators.py`——引文："在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见"
 
-测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1589** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -145,6 +146,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_atten_t_template.py` | 9 |
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_cal_wizard.py` | 37 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_coupled_bpf_template.py` | 34 |
 | `tests/unit/test_coupling_matrix.py` | 52 |
@@ -190,6 +192,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
+| `tests/unit/test_stackup_diagram.py` | 39 |
 | `tests/unit/test_stepped_coupled_line_specs.py` | 8 |
 | `tests/unit/test_stripline_template.py` | 12 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |

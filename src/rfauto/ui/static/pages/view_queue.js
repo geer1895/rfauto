@@ -18,14 +18,21 @@
    零重拉）+ 阶段进度 mini-bar（stages done/n_stages 有进度字段才接）。
    纯函数四件（resFreshInfo/queueBucketOf/queueTabCounts/miniBarHtml）导出
    供 node 行为钉；面板渲染为浏览器路径（T.badge 依赖，与 pageQueue 同责）。
-   资源面错误态走 kitErrorPanel（✗ 豁免点不新增——跨席计数钉恒 1）。 */
+   资源面错误态走 kitErrorPanel（✗ 豁免点不新增——跨席计数钉恒 1）。
+   ═══ aurora_n 远程探测面板（本席增量，2026-10-31）═══
+   /api/remote/status 只读探测块（容器 #q-remote-probe，资源卡下方）：
+   probe 结果表（五端口/host 可达性，kitTable+纯函数行）+SSH 认证态+
+   失败态诚实（不可达=红字+指路 CLI `rfauto remote probe`）。零自动轮询：
+   页载一次+显式刷新钮（kitBtnBusy 三态防双击并发）。纯函数三件
+   （probePortBadge/probePortRowHtml/probeIssueKind）导出供 node 行为钉；
+   OPEN/CLOSED 协议字面豁免登记（同 model/verdict 先例）。 */
 
 import { T } from "./context.js";
 import { esc, escAttr, help } from "./dom.js";
 // i18n（aurora_f W1-S2 试点页 3）：壳标签 data-i18n+首扫；表头/空态随 load()
 // 重建，文案一律 t() 渲染期烘焙（i18n.js 头注纪律）。
 import { t, applyI18nRoot } from "./i18n.js";
-import { bindClickRows, bindEmptyStates, kitBadgeCls, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitSkeleton, kitTable } from "./kit.js";
+import { bindClickRows, bindEmptyStates, kitBadgeCls, kitBtnBusy, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitSkeleton, kitTable } from "./kit.js";
 import { mountSortableTables } from "./sortable.js";
 // P8-9（aurora_f W4-S13，R1 §面4）：T.api→apiFetch 统一请求层（本页 1 点）——
 // 数据面全页（队列清单 load()，刷新钮与 ctx.refresh 共用）接
@@ -286,6 +293,204 @@ async function loadResources() {
   renderResPanel();
 }
 
+/* ═══ aurora_n 远程探测面板（/api/remote/status 只读探测块）══════════
+   probe 结果表（五端口/host 可达性）+SSH 认证态 + 失败态诚实（不可达=
+   红字+指路 CLI `rfauto remote probe`）。与 W2-S4 资源面板互补：资源面
+   看占用/推荐/日历，探测面看端口连通性与认证——数据源不同端点
+   （resources 无 host/probe_s/ssh.hint 字段，探测面缺 n_tasks/disk），
+   各自独立拉取互不阻塞。**零自动轮询**（probe 是网络调用，轮询卡 UI 与
+   服务器）：页载拉一次 + 显式"刷新探测"钮（kitBtnBusy 三态防双击并发）。
+   纯函数三件（probePortBadge/probePortRowHtml/probeIssueKind）导出供
+   node 行为钉；OPEN/CLOSED 为协议字面与 CLI probe 输出同形（豁免登记，
+   同 model/verdict 先例）。信封零凭据（service 契约），ssh.hint 只含
+   环境变量名与配置文件路径。 */
+let _probeData = null; // 末次 /api/remote/status 信封（原样）
+let _probeBusy = false; // 在飞守卫（探测最坏 45s 级，防双击并发重复打服务器）
+
+/* 端口状态徽章（open 三态：true/false/非布尔=未知——API 未给该口探测
+   结果时不冒充 OPEN 也不冒充 CLOSED，#122 不凑数同族）。 */
+export function probePortBadge(open) {
+  if (open === true) return "<span class='badge ok'>OPEN</span>";
+  if (open === false) return "<span class='badge err'>CLOSED</span>";
+  return "<span class='badge muted'>—</span>";
+}
+
+/* 单端口行 <tr>（纯函数，node 行为钉）：label/port 为 API 数据 esc 单点
+   转义；latency 只在 OPEN 且数值时显示——CLOSED 的耗时是超时面不是传输
+   时延，显示会冒充时延语义（诚实边界）。 */
+export function probePortRowHtml(label, port, open, latencyMs) {
+  const lat = (open === true && typeof latencyMs === "number")
+    ? Number(latencyMs).toFixed(1) + "ms" : "—";
+  return "<tr><td>" + esc(String(label == null ? "" : label)) + "</td>" +
+    "<td>" + esc(String(port == null ? "" : port)) + "</td>" +
+    "<td>" + probePortBadge(open) + "</td>" +
+    "<td>" + lat + "</td></tr>";
+}
+
+/* 探测问题分型（失败态单源，渲染层按 kind 取词表/着色）：
+   no_machine（本地模式，muted）> unreachable（红字+CLI 指路）>
+   ssh_missing（凭据指路，warn）> ssh_failed（链路失败，warn）>
+   ok（无行）/ unknown（可达性未知，muted）。 */
+export function probeIssueKind(hasMachine, reachable, sshAuth) {
+  if (!hasMachine) return "no_machine";
+  if (reachable === false) return "unreachable";
+  const a = String(sshAuth == null ? "" : sshAuth);
+  if (a === "missing_credentials") return "ssh_missing";
+  if (a === "failed") return "ssh_failed";
+  return reachable === true ? "ok" : "unknown";
+}
+
+/* SSH 认证徽章（auth 为 API 状态词：ok/registered/missing_credentials/
+   failed/其他未知值——未知值原样 esc 展示不猜，#122 同族）。 */
+function _sshAuthBadge(auth) {
+  const a = String(auth == null ? "" : auth);
+  const label = a === "ok" ? t("queue.probe_ssh_ok")
+    : a === "registered" ? t("queue.probe_ssh_registered")
+    : a === "missing_credentials" ? t("queue.probe_ssh_missing")
+    : a === "failed" ? t("queue.probe_ssh_failed")
+    : a;
+  const cls = a === "ok" ? "ok" : a === "failed" ? "err"
+    : a === "registered" ? "muted" : "warn";
+  return `<span class='badge ${cls}'>${esc(label)}</span>`;
+}
+
+/* 问题行渲染（kind → 人读行；unreachable 红字为任务书口径，CLI 指路
+   随行——✗ 字面不入本行（跨席 ✗ 计数钉恒 1，资源面板独占）。 */
+function _probeIssueHtml(kind, ssh) {
+  if (kind === "ok") return "";
+  if (kind === "no_machine")
+    return `<div class='muted' style='margin:var(--space-2) 0px'>` +
+      esc(t("queue.res_no_machine")) + `</div>`;
+  if (kind === "unreachable")
+    return `<div style='margin:var(--space-2) 0px;color:var(--err)'>` +
+      esc(t("queue.probe_unreachable")) + `</div>` +
+      `<div class='muted' style='font-size:12px'>` +
+      esc(t("queue.probe_cli_hint")) + `</div>`;
+  if (kind === "ssh_missing")
+    return `<div class='muted' style='margin:var(--space-2) 0px'>` +
+      esc(t("queue.probe_ssh_missing")) +
+      (ssh && ssh.hint ? "：" + esc(String(ssh.hint)) : "") + `</div>`;
+  if (kind === "ssh_failed")
+    return `<div style='margin:var(--space-2) 0px;color:var(--warn)'>` +
+      esc(t("queue.probe_ssh_failed")) +
+      (ssh && ssh.error ? "（" + esc(String(ssh.error)) + "）" : "") +
+      `</div>`;
+  return `<div class='muted' style='margin:var(--space-2) 0px'>` +
+    esc(t("queue.res_reach_unknown")) + `</div>`;
+}
+
+/* 探测面板渲染（_probeData → 卡片；浏览器路径）。 */
+function renderProbePanel() {
+  const el = T.$("q-remote-probe");
+  if (!el) return;
+  const head = `<b class='title'>${t("queue.probe_title")}</b>`;
+  const refresh = `<button class='minor' id='q-probe-refresh' ` +
+    `aria-label='${escAttr(t("queue.probe_refresh_aria"))}' ` +
+    `title='${escAttr(t("queue.probe_refresh_aria"))}' ` +
+    `style='margin-left:8px'><span aria-hidden='true'>⟳</span> ` +
+    `${esc(t("queue.probe_refresh"))}</button>`;
+  const wireRefresh = () => {
+    const btn = T.$("q-probe-refresh");
+    if (btn) btn.onclick = () => loadProbe();
+  };
+  if (!_probeData) {
+    // 首拉在途：骨架占位（队列首拉 A8-A 同款形态，数据到后整卡替换）
+    el.innerHTML = `<div class='panel'>${head}${refresh}` +
+      `<div class='skeleton-wrap' role='status' aria-label='` +
+      `${escAttr(t("queue.probe_loading_aria"))}' ` +
+      `style='margin-top:var(--space-2)'>${kitSkeleton(3)}</div></div>`;
+    wireRefresh();
+    return;
+  }
+  if (_probeData.ok === false) {
+    // 错误态动作化（kitErrorPanel 单源；✗ 豁免点计数钉不新增）
+    el.innerHTML = `<div class='panel'>${head}${refresh}` +
+      `<div style='margin-top:var(--space-2)'>` +
+      kitErrorPanel((_probeData.errors || []).join("; "), "q-probe-retry") +
+      `</div></div>`;
+    wireRefresh();
+    const retry = T.$("q-probe-retry");
+    if (retry) retry.onclick = () => loadProbe();
+    return;
+  }
+  const m = (_probeData.machines || [])[0] || null;
+  const kind = probeIssueKind(!!m, m ? m.reachable : null,
+    m && m.ssh ? m.ssh.auth : null);
+  // 机器行：注册表名 + host + 可达徽章 + 探测用时（name/host 为 API 数据 esc）
+  let machineRow = "";
+  if (m) {
+    const reach = m.reachable;
+    const reachBadge = reach === true
+      ? `<span class='badge ok'>✓ ${esc(t("queue.res_reach_ok"))}</span>`
+      : reach === false
+        ? `<span class='badge err'>✗ ${esc(t("queue.res_reach_bad"))}</span>`
+        : `<span class='badge muted'>${esc(t("queue.res_reach_unknown"))}</span>`;
+    machineRow = `<div style='margin:var(--space-2) 0px;display:flex;` +
+      `align-items:center;gap:8px;flex-wrap:wrap'>` +
+      `<b>${esc(String(m.name))}</b>` +
+      `<span class='muted'>${esc(String(m.host))}</span>${reachBadge}` +
+      (m.probe_s != null
+        ? `<span class='muted'>${esc(t("queue.probe_probe_s_tpl",
+          { n: m.probe_s }))}</span>`
+        : "") +
+      `</div>`;
+  }
+  // 端口表（kitTable 单源表壳+sr-only caption；行=纯函数 probePortRowHtml）
+  const ports = (m && m.ports) || {};
+  const portRows = Object.keys(ports).map((label) => {
+    const row = ports[label] || {};
+    return probePortRowHtml(label, row.port, row.open, row.latency_ms);
+  }).join("");
+  const portsTable = m
+    ? kitTable({
+      columns: [t("queue.probe_th_port"), t("queue.probe_th_num"),
+        t("queue.probe_th_state"), t("queue.probe_th_latency")],
+      rowsHtml: portRows,
+      caption: t("queue.probe_table_caption"),
+      empty: `<tr><td colspan='4' class='muted'>` +
+        esc(t("queue.probe_no_ports")) + `</td></tr>`,
+    })
+    : "";
+  // SSH 认证行（auth 状态词徽章；hint 为 service 文案 API 数据照旧 esc）
+  const ssh = (m && m.ssh) || null;
+  const sshRow = m
+    ? `<div style='margin:var(--space-2) 0px;display:flex;` +
+      `align-items:center;gap:8px;flex-wrap:wrap'>` +
+      `<span class='muted'>${esc(t("queue.probe_ssh_lead"))}</span>` +
+      _sshAuthBadge(ssh ? ssh.auth : null) + `</div>`
+    : "";
+  el.innerHTML = `<div class='panel'>${head}${refresh}` +
+    `<div style='margin-top:var(--space-2)'>` +
+    machineRow + portsTable + sshRow + _probeIssueHtml(kind, ssh) +
+    `</div></div>`;
+  wireRefresh();
+}
+
+/* 探测拉取（页载一次 + 显式刷新钮；零自动轮询——probe 是网络调用，
+   轮询卡 UI 与服务器；显式刷新=用户控制）。在飞守卫防双击并发重复打
+   服务器；调用形态照 resources 先例（字面量含 "?"，局部名 qprobe 与
+   qres/q 在 check_ui_contracts 按名 varmap 里分离）。 */
+async function loadProbe() {
+  if (_probeBusy) return;
+  _probeBusy = true;
+  if (_probeData == null) renderProbePanel(); // 首拉骨架占位先行（探测最坏 45s 级，零反馈=页面像坏了）
+  kitBtnBusy(T.$("q-probe-refresh"), true, t("queue.probe_refreshing"));
+  try {
+    const qprobe = new URLSearchParams();
+    const machine = (T.$("q-machine").value || "").trim();
+    if (machine) qprobe.set("machine", machine);
+    const d = await apiFetch("/api/remote/status?" + qprobe,
+      { signal: viewSignal("queue"), timeoutMs: 120000 });
+    if (d.aborted) return; // UI-R12：切页取消——用户已离开，不写隐藏区
+    _probeData = d;
+    renderProbePanel();
+  } finally {
+    _probeBusy = false;
+    const b2 = T.$("q-probe-refresh");
+    if (b2 && b2.disabled) kitBtnBusy(b2, false);
+  }
+}
+
 /* ═══ PR-9 调度队列页（ge8b Wave B 席B3）：战役队列 + G13 决策日志 ═══ */
 
 /* W2-S3（aurora_i 采纳 #2）：queue-daemon 阻塞账人读渲染——code 走词表
@@ -353,6 +558,7 @@ export async function pageQueue() {
        <div id='q-table' style='margin-top:var(--space-2)'></div>
      </div>
      <div id='q-resources' style='margin-top:var(--space-3)'></div>
+     <div id='q-remote-probe' style='margin-top:var(--space-3)'></div>
      <div id='q-detail' style='margin-top:var(--space-3)'></div>`;
   applyI18nRoot(v); // 壳静态标签首扫（W1-S2）
   // R3 人性化三批：队列首拉骨架屏——campaign_queue 数据到后 load()→
@@ -473,6 +679,7 @@ export async function pageQueue() {
     _lastQueue = d;
     renderQueue();
     loadResources(); // W2-S4：资源面板并行拉取（独立 aborted 守卫，不 await）
+    loadProbe(); // aurora_n：探测面板并行拉取（独立 aborted 守卫，不 await）
   }
   function renderDetail(c) {
     const dl = (c.scheduling && c.scheduling.decision_log) || [];

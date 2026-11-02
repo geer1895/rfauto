@@ -20,8 +20,10 @@
      **契约变更登记**：本条之前"未传 opts 的调用与旧 T.api 行为逐字节
      等价（fetch init 原样缺席）"——缺省超时后无 opts 请求也带超时
      signal（唯一差异；其余快照路径 timeoutMs:0 仍 init 缺席）。
-   层次：本模块零依赖 pages/ 其他模块（node 裸 import 可测——桩 fetch 即
-   真跑）；app.js 的全局 api（T.api 载体）保形消费 apiRequestInit 单源
+   层次：本模块零依赖 pages/ 业务模块（node 裸 import 可测——桩 fetch 即
+   真跑；aurora_o i18n 分波席起 +pages/i18n.js 唯一豁免——L0 零依赖词表，
+   兜错/超时文案 common.request_failed·api.timeout_tpl，zh 与旧字面逐字节
+   同）；app.js 的全局 api（T.api 载体）保形消费 apiRequestInit 单源
    （其兜错信封与 msg 呈现被 test_ui_nav_focus 源码钉逐字钉住，留 app.js
    本体不动）；迁移终态（aurora_f W4-S13，R1 §面4 P8-9 收口）：全部视图
    （dashboard/runs/detail/calibration/data 五页=aurora_d UI-R12；palette+
@@ -30,6 +32,10 @@
    profile/queue/timeline 视图族+filebrowser 模态，37 点 T.api+1 点裸
    fetch=aurora_f W4-S13）均走本层，pages/ 面 T.api 计数 65→58→37→0
    （终态防回潮钉 test_ui_r12_deepening）。 */
+
+// i18n（aurora_o i18n 分波席，唯一 pages/ 豁免见层次注）：t() 零依赖，
+// document/localStorage 全守卫（node 裸 import 同安全，i18n.js 头注纪律）。
+import { t } from "./i18n.js";
 
 /* ── token 传递（默认关闭：未设置不加任何头）───────────────────────── */
 let _token = null;
@@ -109,8 +115,12 @@ export function setApiErrorPresenter(fn) {
   _errorPresenter = typeof fn === "function" ? fn : null;
 }
 
-/* 失败文案（与 app.js api 兜底同串：两管道呈现语义一致）。 */
-const _ERR_TEXT = "请求失败（网络或服务器异常）";
+/* 失败文案（与 app.js api 兜底同串：两管道呈现语义一致）→ 词表单源
+   （aurora_o i18n 分波席：common.request_failed，zh 与旧字面逐字节同）——
+   函数形态保 locale 感知（模块级 const 烘焙 t() 会冻结语言档）。 */
+function _errText() {
+  return t("common.request_failed");
+}
 
 /* 缺省超时（P9-11，aurora_g W1-S1）：30s 量级覆盖全部只读/快端点；
    长跑触发端点由调用点显式 `timeoutMs: 0` 豁免（见头注④清单）。 */
@@ -118,7 +128,7 @@ const _DEFAULT_TIMEOUT_MS = 30000;
 
 /* 超时文案（回显超时值——调用方可辨识是缺省 30s 还是显式值触发）。 */
 function _timeoutErrText(ms) {
-  return `请求超时（${ms}ms 无响应，已中止）`;
+  return t("api.timeout_tpl", { ms });
 }
 
 /* AbortSignal 组合：AbortSignal.any 在场直接用；缺席引擎（旧 Safari 等，
@@ -197,10 +207,12 @@ export async function apiFetch(url, opts = null) {
         const msg = _timeoutErrText(timedOutMs);
         return { ok: false, error: msg, errors: [msg], aborted: true };
       }
-      return { ok: false, error: _ERR_TEXT, errors: [_ERR_TEXT], aborted: true };
+      const m = _errText();
+      return { ok: false, error: m, errors: [m], aborted: true };
     }
-    if (_notifier) try { _notifier(_ERR_TEXT, false); } catch { /* 静默 */ }
-    return { ok: false, error: _ERR_TEXT, errors: [_ERR_TEXT] };
+    if (_notifier) try { _notifier(_errText(), false); } catch { /* 静默 */ }
+    const m = _errText();
+    return { ok: false, error: m, errors: [m] };
   } finally {
     cancelTimeout();
   }

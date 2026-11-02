@@ -1,6 +1,6 @@
 """坑账消费 SLA 检查函数（T15-B12；SPECS3 §3.3——终结 66 条死库）。
 
-定位：坑账（knowledge/pitfalls_index.json 结构化子集 + 内核立规注记 踩坑速查
+定位：坑账（knowledge/pitfalls_index.json 结构化子集 + AGENTS 踩坑速查
 人读面）的**消费 SLA 面**——solver 四类（openems/hfss/comsol/elmer）的
 每条 pitfall 必须在二消费面之一有指针，且"新会话/新席位的最低消费点"
 （pitfall_index_service 检索 / premortem 注入 / hint_for_message 错误
@@ -70,7 +70,7 @@ SURFACES = frozenset({
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PLAYBOOK_PATH = _REPO_ROOT / "knowledge" / "diagnostics" / "playbook.yaml"
 DEFAULT_CONSUMPTION_PATH = _REPO_ROOT / "knowledge" / "pitfall_consumption.yaml"
-DEFAULT_AGENTS_PATH = _REPO_ROOT / "内核立规注记.md"
+DEFAULT_AGENTS_PATH = _REPO_ROOT / "AGENTS"
 
 #: 坑号 token（#NNN / A_xyz 形；compound id 按同样 token 拆开比对）。
 _TOKEN_RE = re.compile(r"#\d+|A\d+")
@@ -90,9 +90,9 @@ def id_tokens(text: Any) -> list[str]:
 def _load_ledger_tokens(entries: list[dict[str, Any]],
                         agents_path: str | Path | None,
                         violations: list[dict[str, Any]]) -> set[str]:
-    """坑账全集体 token 集（index 结构化子集 ∪ 内核立规注记 踩坑速查人读面）。
+    """坑账全集体 token 集（index 结构化子集 ∪ AGENTS 踩坑速查人读面）。
 
-    内核立规注记 缺席/不可读 → 如实降级为仅 index 集（violation 不加——速查面
+    AGENTS 缺席/不可读 → 如实降级为仅 index 集（violation 不加——速查面
     是助记人读面，缺席不构成消费 SLA 红旗；但此时 index 外 ref 会按
     dangling 多报，#316 方向=多报不放过）。
     """
@@ -121,11 +121,11 @@ def check_pitfall_consumption_sla(
       hint 规则表非空）——挂点被拆即红（seat 指令"最低消费点检查"）；
     - surface=error_hint 的行做**逐行指针实证**：行 id token 必须真在
       hint 规则 refs 中命中（登记必须真，#122）；
-    - 反查全集=**坑账全集体**（index 结构化子集 ∪ 内核立规注记 踩坑速查人读面
-      的坑号 token，seat 口径"坑账=index+内核立规注记 速查"）——pit_ref 指向
+    - 反查全集=**坑账全集体**（index 结构化子集 ∪ AGENTS 踩坑速查人读面
+      的坑号 token，seat 口径"坑账=index+AGENTS 速查"）——pit_ref 指向
       未入结构化子集的真坑（如 #262/#84）合法，指向两边都不存在的号
       （typo/虚构）才红（W5-E 实证：playbook 19 个 index 外 ref 全部
-      内核立规注记/内部证据档 在案）。
+      AGENTS/Devlog 在案）。
     """
     violations: list[dict[str, Any]] = []
 

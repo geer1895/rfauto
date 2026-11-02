@@ -7,7 +7,7 @@
     refit → 收敛判据（连续 tol_rounds 轮最优改善 < tol_abs 或达真跑预算）。
 
 铁律落地：
-- 数值只在确定性内核（内核立规注记 规则 7）：代理预测与 cost 计算全部出自
+- 数值只在确定性内核（AGENTS 规则 7）：代理预测与 cost 计算全部出自
   surrogate_registry + SpecEvaluator 确定性闭式，LLM 不入环；
 - 谷深语义（#195/#197）：目标评估走 SpecEvaluator.evaluate_objectives，
   metric_key_candidates 的 op 序映射保证 s11_db_min 类目标不退化成
@@ -19,11 +19,17 @@
 
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable
 from typing import Any
 
-from rfauto.core.objectives import Objective, SpecEvaluator
+from rfauto.core.objectives import MetricOp, Objective, SpecEvaluator
+from rfauto.optimization.rdo import (
+    chance_constraint_bound,
+    gaussian_quantile,
+    robust_objective,
+)
 from rfauto.optimization.surrogate_analysis import (
     analyze_run_surrogate,
     surrogate_fit_quality,
@@ -38,6 +44,83 @@ DEFAULT_VIRTUAL_TRIALS = 2000
 # 差异（词典序可行性语义，与 optimizer.py E10 的 Optuna constraints_func
 # 软约束通道"≤0=可行"同向）。预测失败的 1e12 大罚值仍保持支配地位。
 CONSTRAINT_PENALTY_WEIGHT = 1e3
+
+#: GP 批量采集档（T-N7，aurora_n W1-C；batch_acquisition 旋钮取值面）：
+#: None/"diversity"=旧路径（预测 cost 升序 + 最小距离贪心，缺省，行为
+#: 逐字节不变）；"kriging_believer"=gp_det 内核的批量 EI 采集（逐点
+#: 条件化，Ginsbourger 2010），与最小距离筛选并档可组合。
+BATCH_ACQUISITION_MODES = ("diversity", "kriging_believer")
+
+#: T-N14 鲁棒采集档（aurora_n W2；robust_lambda/op_chance 旋钮，两档互斥）：
+#: None（双缺省）=旧路径（均值预测 cost，行为逐字节不变）。风险数学单源
+#: rdo.py 零复制——robust_lambda=λ≥0 走 robust_objective 的 μ+λσ 组合；
+#: op_chance=p∈(0,1) 走 chance_constraint_bound(μ,σ,1−p)=μ+Φ⁻¹(p)σ 机会
+#: 约束闭式（分位数单源 gaussian_quantile）。σ 供给=SurrogateModel.
+#: predict_with_std 契约面（base.py DP-16 U3；smt_kriging=高斯后验 σ、
+#: ensemble=T-N6 成员离散度、conformal=T-N1 保形半宽——来源语义由提供方
+#: 声明，环按契约面消费不改写）。
+ROBUST_SIGMA_STOP_REASON = "robust_sigma_unavailable"
+
+
+class RobustSigmaUnavailableError(RuntimeError):
+    """robust 档消费 predict_with_std 时 σ 缺席/非有限/负值。
+
+    显式硬停信号（虚拟寻优 trial 内穿透泛 catch 上抛，环级转
+    stop_reason=ROBUST_SIGMA_STOP_REASON）——提案负例契约："σ 缺席（None）
+    时显式拒绝鲁棒档不静默降级"：既不按均值档假装继续，也不按 1e12 罚值
+    伪造排序。
+    """
+
+
+def _robust_objective_cost(
+    pw: dict[str, tuple[float, float | None]],
+    objectives: list[Objective],
+    *,
+    robust_fn: Callable[[float, float, float], float],
+    param: float,
+) -> float:
+    """逐目标 worst-case 风险口径 cost（T-N14；hinge 数学单源 SpecEvaluator）。
+
+    robust_fn 契约：robust_fn(μ, σ, param) = μ + z(param)·σ
+    （robust_objective: z=λ；chance_constraint_bound: z=Φ⁻¹(1−param)）。
+
+    逐 op 风险侧映射（按 hinge 对指标的单调方向取预测指标的风险侧分位值）：
+    - MAX_BELOW（cost 随指标递增）→ μ+zσ（上界式，robust_fn 正号直出）；
+    - MIN_ABOVE / BANDWIDTH（cost 随指标递减）→ μ−zσ（下界式/LCB，经
+      −robust_fn(−μ, σ, param) 实现——负号不另写下界公式，复用同一闭式）；
+    - MEAN_WITHIN（凸分段线性 hinge，两侧都可能违约）→ 两端点 μ±zσ 的
+      cost 最大者（凸函数在区间上的最大值在端点——精确 worst-case）。
+
+    σ 契约：被消费指标的 σ 必须为有限非负数，None/NaN/inf/负值抛
+    RobustSigmaUnavailableError（不静默降级，#122）；指标键缺席按
+    evaluate_objectives 既有"缺键跳过"口径贡献 0（与旧路径一致）。
+    """
+    total = 0.0
+    for obj in objectives:
+        key = next(
+            (k for k in SpecEvaluator.metric_key_candidates(obj.metric, obj.op)
+             if k in pw), None)
+        if key is None:
+            continue
+        mu, sd = pw[key]
+        if sd is None or isinstance(sd, bool) \
+                or not math.isfinite(float(sd)) or float(sd) < 0.0:
+            raise RobustSigmaUnavailableError(
+                f"robust 档要求指标 {key!r} 的有限非负 σ，实得 {sd!r}"
+                f"（SurrogateModel.predict_with_std 契约面；σ 缺席不静默"
+                f"降级，按 CRITERIA N4 硬停）")
+        sd_f = float(sd)
+        val_up = robust_fn(mu, sd_f, param)
+        val_lo = -robust_fn(-mu, sd_f, param)
+        if obj.op == MetricOp.MAX_BELOW:
+            total += SpecEvaluator.evaluate_objectives({key: val_up}, [obj])
+        elif obj.op in (MetricOp.MIN_ABOVE, MetricOp.BANDWIDTH):
+            total += SpecEvaluator.evaluate_objectives({key: val_lo}, [obj])
+        else:  # MEAN_WITHIN：两端点取 max（凸 hinge 精确 worst-case）
+            total += max(
+                SpecEvaluator.evaluate_objectives({key: val_up}, [obj]),
+                SpecEvaluator.evaluate_objectives({key: val_lo}, [obj]))
+    return total
 
 
 def _normalize(
@@ -103,6 +186,7 @@ def _virtual_search(
     n_trials: int,
     seed: int,
     constraints: list[Objective] | None = None,
+    robust_spec: dict[str, Any] | None = None,
 ) -> list[tuple[float, dict[str, float]]]:
     """代理目标上的 TPE 大规模虚拟寻优（零真跑成本）。
 
@@ -112,6 +196,12 @@ def _virtual_search(
     constraints（P2⑥）非空时，虚拟目标 = 预测 cost +
     CONSTRAINT_PENALTY_WEIGHT × Σ 预测违约量（soft penalty）——候选排序
     先可行后 cost；无约束时目标逐字节不变。
+
+    robust_spec（T-N14，缺省 None=均值路径逐字节不变）：非 None 时虚拟
+    目标升级为逐目标 worst-case 风险口径（_robust_objective_cost，风险
+    数学单源 rdo.py）；约束罚项仍吃均值预测（范围边界见
+    run_surrogate_loop docstring）。σ 缺席经 RobustSigmaUnavailableError
+    穿透泛 catch 上抛（trial 内不按 1e12 伪造排序，环级硬停）。
     """
     import optuna
 
@@ -122,13 +212,26 @@ def _virtual_search(
             n: vt.suggest_float(n, float(bounds[n][0]), float(bounds[n][1]))
             for n in names
         }
+        predicted: dict[str, float] | None = None
         try:
-            predicted = model.predict(params)
-            value = SpecEvaluator.evaluate_objectives(predicted, objectives)
+            if robust_spec is None:
+                predicted = model.predict(params)
+                value = SpecEvaluator.evaluate_objectives(predicted, objectives)
+            else:
+                pw = model.predict_with_std(params)
+                value = _robust_objective_cost(
+                    pw, objectives, robust_fn=robust_spec["fn"],
+                    param=robust_spec["param"])
             if constraints:
+                if predicted is None:
+                    predicted = {k: v[0] for k, v in pw.items()}
                 value += CONSTRAINT_PENALTY_WEIGHT * sum(
                     constraint_violations(predicted, constraints))
             return value
+        except RobustSigmaUnavailableError:
+            # T-N14：σ 缺席是配置级错误——穿透泛 catch 让环级硬停，
+            # 不落 1e12 罚值（静默伪造排序=降级的隐秘形态）
+            raise
         except Exception:
             # 代理预测失败按大罚值处理——不让单点异常炸掉整轮虚拟寻优
             # （审查 P2-9：evaluate_fn 的"失败不入环"承诺延伸到虚拟侧）
@@ -179,6 +282,66 @@ def _exploration_point(
     return best_pt if best_d > 1e-9 else None
 
 
+def _gp_batch_order(
+    samples: list[dict[str, Any]],
+    candidates: list[tuple[float, dict[str, float]]],
+    bounds: dict[str, tuple[float, float]],
+    *,
+    k: int,
+    gp_kind: str = "se",
+) -> tuple[list[tuple[float, dict[str, float]]], dict[str, Any]]:
+    """KB-EI 批量采集序（T-N7）：已评样本 cost 上拟合 gp_det GP，在候选池
+    上做 Kriging-believer 批量 EI（gp_det.kriging_believer_ei_batch 内核）。
+
+    返回 (按 EI 采集序排列的 (ei, params) 候选, 诊断 dict)。退化/GP 不可
+    用时不伪造采集序——首元素返回 []，诊断带 fallback 原因（调用方显式
+    回退旧路径并标注，#122 不静默）。
+
+    数据面：cost 用逐样本已评 cost（与代理拟合同源；多保真模式下低/细
+    混评样本同池——与既有虚拟寻优对混拟代理的口径一致）。约束模式下 EI
+    只消费原始 cost，可行性靠候选池生成端的软罚偏置兜底（TPE 虚拟目标
+    已含 CONSTRAINT_PENALTY_WEIGHT 罚项），best 语义仍由 evaluate_real
+    的可行门裁决。
+    """
+    import numpy as np
+
+    from rfauto.optimization.surrogate import gp_det
+
+    diag: dict[str, Any] = {"fallback": None, "sigma_max": None,
+                            "n_selected": 0}
+    names = sorted(bounds)
+    x_rows = [_normalize(s["params"], names, bounds) for s in samples]
+    y = np.array([float(s["cost"]) for s in samples], dtype=float)
+    mask = np.isfinite(y)
+    if int(mask.sum()) < 2:
+        diag["fallback"] = "insufficient_samples"
+        return [], diag
+    xm = np.asarray(x_rows, dtype=float)[mask]
+    ym = y[mask]
+    try:
+        params = gp_det.fit_mle(xm, ym, kind=gp_kind)
+    except Exception as exc:
+        diag["fallback"] = "gp_fit_failed"
+        diag["detail"] = f"{type(exc).__name__}: {exc}"
+        return [], diag
+    if not candidates:
+        diag["fallback"] = "empty_candidate_pool"
+        return [], diag
+    pool = np.asarray(
+        [_normalize(c[1], names, bounds) for c in candidates], dtype=float)
+    res = gp_det.kriging_believer_ei_batch(
+        xm, ym, pool, ell=params["ell"], amp=params["amp"],
+        nugget=params["nugget"], kind=gp_kind, k=k)
+    diag["sigma_max"] = res["sigma_max"]
+    if res["degenerate"] or not res["order"]:
+        diag["fallback"] = "sigma_degenerate"
+        return [], diag
+    diag["n_selected"] = len(res["order"])
+    ordered = [(res["ei"][i], candidates[j][1])
+               for i, j in enumerate(res["order"])]
+    return ordered, diag
+
+
 def run_surrogate_loop(
     bounds: dict[str, tuple[float, float]],
     objectives: list[Objective],
@@ -202,6 +365,9 @@ def run_surrogate_loop(
     uncertainty_tol: float | None = None,
     uncertainty_rounds: int = 1,
     uncertainty_pool: int = 128,
+    batch_acquisition: str | None = None,
+    robust_lambda: float | None = None,
+    op_chance: float | None = None,
     registry_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """代理寻优主环：返回 JSON 契约（服务层直接透传）。
@@ -263,6 +429,43 @@ def run_surrogate_loop(
     uncertainty_rounds 轮 → stop_reason="uncertainty_saturated"，与既有
     budget/stagnation 并列（谁先触发谁停），早停省下的真跑批即预算收益；
     σ 只作停止判据不影响采样。
+
+    T-N7 GP 批量采集档（opt-in；batch_acquisition 缺省 None=旧路径
+    逐字节不变）：None/"diversity"=旧路径（预测 cost 升序贪心 + 最小
+    距离筛选 + 探索补点）；"kriging_believer"=已评样本 cost 上拟合
+    gp_det 确定性 GP，候选池上做 Kriging-believer 批量 EI（逐点条件化，
+    top-(K−1) 名额，探索补点名额保留），采集序再过既有的最小距离贪心
+    筛选（并档可组合——KB 条件化自带分散性，min_dist 作下限兜底）。
+    退化契约：GP 拟合失败/样本不足/候选池空/全体池点 σ≡0 时**显式回退
+    旧路径**并在 round_entry["batch_acquisition"]["fallback"] 记原因
+    （不静默；结果体带顶层 "batch_acquisition" 键——仅旋钮开启时加键）。
+    无随机源：同 seed 同数据的采集序列确定性逐位复现。
+
+    T-N14 鲁棒采集档（aurora_n W2；opt-in，robust_lambda/op_chance 双
+    缺省 None=旧路径逐字节不变，改前金样 golden_default.json 逐字节
+    比对为证）：虚拟寻优目标从"点预测最优"升级为"μ+λσ 风险口径"——
+    风险数学**单源复用 rdo.py 既有判据**（零复制零新造）：
+    - robust_lambda=λ（≥0）：逐目标取 μ+λσ 组合（rdo.robust_objective）；
+    - op_chance=p（开区间 (0,1)）：机会约束闭式 μ+Φ⁻¹(p)σ
+      （rdo.chance_constraint_bound(μ,σ,1−p)，分位数单源
+      rdo.gaussian_quantile）；p<0.5 → Φ⁻¹(p)<0 为"语义如式"的放宽方向
+      （rdo 既有口径，不隐含单调截断）；
+    - 逐 op 风险侧映射：MAX_BELOW 取 μ+zσ 上界式；MIN_ABOVE/BANDWIDTH
+      取 μ−zσ 下界式（worst-case LCB，经 −robust_fn(−μ,σ,param) 复用
+      同一闭式）；MEAN_WITHIN 取两端点 cost 最大者（凸 hinge 端点最大=
+      精确 worst-case）。hinge 一律经 SpecEvaluator 单源，零重写。
+    - σ 供给=SurrogateModel.predict_with_std 契约面；被消费指标 σ 为
+      None/非有限/负值时**显式硬停** stop_reason="robust_sigma_unavailable"
+      （结果体 robust.error 带原因；不静默降级均值档、不按 1e12 伪造
+      排序——提案负例契约）。σ 缺席检测发生在首个采集轮（首次 fit 后），
+      LHS 初始批与模式无关（同 seed 与旧路径逐位一致）。
+    - 范围边界（预声明）：robust 口径只作用于采集判据（虚拟寻优目标）；
+      best 语义/接受判据（真实评估为 ground truth，无 σ）与软约束罚项
+      （constraint_violations 仍吃均值预测）不变。
+    - 两旋钮互斥（同给入口拒绝 {"ok": False, "errors":[...]}，零真跑）；
+      λ<0 / p 出 (0,1) / 非有限数同样入口拒绝。
+    - 无随机源（rdo 闭式 + 代理确定性预测）：同 seed 轨迹逐位复现；
+      结果体带顶层 "robust" 键（仅旋钮开启时加键，缺省键面不变）。
     """
     from rfauto.optimization.sample_design import lhs_points
     from rfauto.optimization.surrogate import surrogate_registry
@@ -285,6 +488,39 @@ def run_surrogate_loop(
         return {"ok": False, "errors": ["搜索空间为空（bounds 缺失）"]}
     if not objectives:
         return {"ok": False, "errors": ["objectives 为空，无从评估 cost"]}
+    if batch_acquisition is not None \
+            and batch_acquisition not in BATCH_ACQUISITION_MODES:
+        return {"ok": False, "errors": [
+            f"未知 batch_acquisition 档: {batch_acquisition!r}，"
+            f"可用: None/{', '.join(BATCH_ACQUISITION_MODES)}"]}
+    # T-N14 robust 旋钮入口校验（零真跑侧效应；负例显式拒绝不静默降级）
+    robust_spec: dict[str, Any] | None = None
+    if robust_lambda is not None and op_chance is not None:
+        return {"ok": False, "errors": [
+            "robust_lambda 与 op_chance 互斥（μ+λσ 档与机会约束档二选一）"]}
+    if robust_lambda is not None:
+        if isinstance(robust_lambda, bool) \
+                or not math.isfinite(float(robust_lambda)):
+            return {"ok": False, "errors": [
+                f"robust_lambda 必须为有限数，实得 {robust_lambda!r}"]}
+        lam = float(robust_lambda)
+        if lam < 0.0:
+            return {"ok": False, "errors": [
+                f"robust_lambda 必须 ≥0（负 λ 偏好方差无意义），实得 {lam}"]}
+        robust_spec = {"mode": "robust_lambda", "fn": robust_objective,
+                       "param": lam, "z": lam, "lam": lam}
+    elif op_chance is not None:
+        if isinstance(op_chance, bool) \
+                or not math.isfinite(float(op_chance)):
+            return {"ok": False, "errors": [
+                f"op_chance 必须为有限数，实得 {op_chance!r}"]}
+        p = float(op_chance)
+        if not 0.0 < p < 1.0:
+            return {"ok": False, "errors": [
+                f"op_chance 必须在开区间 (0,1)（机会约束合规概率），"
+                f"实得 {p}"]}
+        robust_spec = {"mode": "op_chance", "fn": chance_constraint_bound,
+                       "param": 1.0 - p, "z": gaussian_quantile(p), "p": p}
     # 预算契约：初始批不得突破真跑预算（审查 P1-4）
     n_init = max(1, min(int(n_init), int(max_real)))
     constraints = list(constraints) if constraints else None
@@ -381,6 +617,8 @@ def run_surrogate_loop(
     uncertainty_streak = 0  # B5：σ_max ≤ tol 的连续轮计数
     stop_reason = ""
     rnd = 0
+    robust_error: str | None = None  # T-N14：σ 缺席硬停时带原因原文
+    n_robust_rounds = 0  # T-N14：robust 采集实际生效的轮数
     while attempts < max_real:
         rnd += 1
         # E7：smt_mfk 由环注入低保真样本（评估策略归环，非注册表契约）；
@@ -449,20 +687,40 @@ def run_surrogate_loop(
             else:
                 uncertainty_streak = 0
 
-        candidates = _virtual_search(model, objectives, bounds,
-                                     virtual_trials, seed + rnd,
-                                     constraints=constraints)
+        try:
+            candidates = _virtual_search(model, objectives, bounds,
+                                         virtual_trials, seed + rnd,
+                                         constraints=constraints,
+                                         robust_spec=robust_spec)
+        except RobustSigmaUnavailableError as exc:
+            # T-N14 负例契约：σ 缺席/非有限显式硬停——首个采集轮即触发
+            # （首次 fit 后、任何 robust 影响的选点发生前），LHS 初始批
+            # 与模式无关。不静默降级均值档，不伪造排序。
+            stop_reason = ROBUST_SIGMA_STOP_REASON
+            robust_error = str(exc)
+            break
+        if robust_spec is not None:
+            n_robust_rounds += 1
         # top-(K-1) 按预测 cost 贪心（最小归一化距离约束），最后 1 个
         # 名额留给探索补点（maxi-min）——代理偏差时防聚类采错。
         # 排除集含**失败点**（审查 P1-3）：系统性失败区若不排除，代理
         # 会持续预测其为优、每轮重选烧真跑预算
         evaluated = [s["params"] for s in samples]
         evaluated.extend(f["params"] for f in failures)
-        picked = select_topk(candidates, max(top_k - 1, 1), bounds,
+        # T-N7 GP 批量采集档（opt-in）：KB-EI 采集序替换候选排序源，
+        # 最小距离筛选与探索补点名额原样保留（并档可组合）；退化/GP
+        # 不可用时 kb_order=[] → 显式回退旧路径并记 fallback 原因
+        kb_order: list[tuple[float, dict[str, float]]] | None = None
+        kb_diag: dict[str, Any] | None = None
+        if batch_acquisition == "kriging_believer":
+            kb_order, kb_diag = _gp_batch_order(
+                samples, candidates, bounds, k=max(top_k - 1, 1))
+        order_src = kb_order if kb_order else candidates
+        picked = select_topk(order_src, max(top_k - 1, 1), bounds,
                              evaluated, min_dist)
         relaxed = False
         if not picked:
-            picked = select_topk(candidates, max(top_k - 1, 1), bounds,
+            picked = select_topk(order_src, max(top_k - 1, 1), bounds,
                                  evaluated, min_dist / 2)
             relaxed = True
         explore = _exploration_point(
@@ -515,6 +773,16 @@ def run_surrogate_loop(
         if uncertainty_tol is not None:
             # B5：σ_max 恒记录（含失败记 None）——观测性不许成为故障点（#105）
             round_entry["sigma_cost_max"] = sigma_rnd
+        if batch_acquisition == "kriging_believer":
+            # T-N7：仅旋钮开启时加键（缺省路径 round entry 键面不变）；
+            # fallback 非空=已显式回退旧路径的轮次（原因如实标注）
+            round_entry["batch_acquisition"] = {
+                "mode": "kriging_believer",
+                "fallback": kb_diag.get("fallback") if kb_diag else None,
+                "sigma_max": kb_diag.get("sigma_max") if kb_diag else None,
+                "n_selected": (kb_diag.get("n_selected", 0)
+                               if kb_diag else 0),
+            }
         if mf_mode:
             round_entry["n_fine"] = n_fine_round
             round_entry["n_high_total"] = len(high_samples)
@@ -608,6 +876,20 @@ def run_surrogate_loop(
     if registry_upsert_info is not None:
         # RB-ML-1：仅写点门开时加键（缺省路径输出键集不变）
         result["registry_upsert"] = registry_upsert_info
+    if batch_acquisition is not None:
+        # T-N7：仅旋钮开启时加键（缺省路径输出键集不变）
+        result["batch_acquisition"] = batch_acquisition
+    if robust_spec is not None:
+        # T-N14：仅旋钮开启时加键（缺省路径输出键集不变）；z=Φ⁻¹ 闭式
+        # 值随行输出（确定性钉消费）；error 非空=σ 缺席硬停轮（如实标注）
+        result["robust"] = {
+            "mode": robust_spec["mode"],
+            "robust_lambda": robust_spec.get("lam"),
+            "op_chance": robust_spec.get("p"),
+            "z": robust_spec["z"],
+            "n_robust_rounds": n_robust_rounds,
+            "error": robust_error,
+        }
     if mf_mode:
         # E7 多保真返回体（单保真模式不加键，行为逐字节不变）
         result["fidelity"] = "multi"

@@ -1,6 +1,6 @@
 """rfauto 人工核验 UI（本地 web 服务，starlette + uvicorn）——装配薄壳。
 
-设计红线（内核立规注记）：路由是薄壳，全部业务在 service/ui_service.py（JSON 进出）；
+设计红线（AGENTS）：路由是薄壳，全部业务在 service/ui_service.py（JSON 进出）；
 只读 endpoints 无副作用，POST /api/run 复用 service.run_once（单写锁在那层）。
 启动：rfauto ui（默认 127.0.0.1:8642，不对外网监听）。
 
@@ -41,6 +41,7 @@ from rfauto.ui import csp as csp_routes
 from rfauto.ui.campaign_app import api_campaign_dashboard as api_campaign_dashboard
 from rfauto.ui.campaign_app import api_campaign_queue as api_campaign_queue
 from rfauto.ui.campaign_app import api_remote_resources as api_remote_resources
+from rfauto.ui.campaign_app import api_remote_status as api_remote_status
 
 # W2-S4 远程机器面板（只读）——import 与注释分行（合流预检参数降级清偿）
 # D-04 哈希钉既有消费面保持（test_w1e_ui_csp/test_ui_theme_boot 直 import）。
@@ -84,7 +85,7 @@ async def index(request: Request) -> Any:
 # ── 写端点 Bearer 鉴权（aurora_g W6-S2，R2 审计 §面5.4 / Top10 #5）────────
 #
 # R2 审计定谳：前端 api.js setApiToken Bearer 通道建成零消费、服务端零鉴权
-# ——非回环绑定（内核立规注记 规则 0b 远程部署方向）下写端点（POST /api/run、
+# ——非回环绑定（AGENTS 规则 0b 远程部署方向）下写端点（POST /api/run、
 # /api/sandbox/promote、/api/chat 等）无凭据可调，是安全纵深唯一缺层。
 # 最小可行面（零新依赖，env+Bearer）：
 #   - env ``RFAUTO_UI_TOKEN`` **未设=零行为变化**（本机回环部署缺省安全，
@@ -172,15 +173,20 @@ def _index_html_response() -> Any:
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]", "0:0:0:0:0:0:0:1"}
 
 
-# ── Cache-Control 分域（aurora_g W1-S1，R1 审计 P9-1 v9 Top3）────────────
+# ── Cache-Control 分域（aurora_g W1-S1，R1 审计 P9-1 v9 Top3；
+#    aurora_n cache_gov 扩 pages 灵活档）─────────────────────────────────
 #
 # R1 实证：真机 curl /static/vendor/echarts.min.js 有 etag/last-modified
 # 但 cache-control 缺席——W7 走查首屏 26 请求每次导航全量条件重验证
 # （RTT 串行排队），远程部署面放大。分域（按 scope.path 前缀，挂载拓扑
 # 单源在本装配壳）：
-#   /static/*（vendor/js/css 等 UI 自有资产）→ public, max-age=86400
-#     （一日窗：无内容哈希不取 immutable/长窗，模块有版本演进，ETag 兜
-#     过期后重验证）；
+#   /static/pages/*（view_*/i18n 等 UI 演进 JS）→ no-cache（aurora_n
+#     cache_gov，waveUI-A 遗留痛点：max-age=86400 下修复部署后已开旧页
+#     一天看不到新 JS，组 A 验证必须硬刷新；no-cache 保留协商缓存——
+#     StaticFiles ETag/Last-Modified 锚不缺，未变 304 便宜、已变即时拿
+#     新，加载器/视图模块版本混搭面一并消除）；
+#   /static/*（vendor 等不变资产）→ public, max-age=86400
+#     （一日窗：无内容哈希不取 immutable/长窗，ETag 兜过期后重验证）；
 #   /runs/*（run 产物静态服务）→ public, max-age=300（审计口径短窗：
 #     run 结束后产物不变，但实验中同名 fig 会改写——防陈旧误缓存）；
 #   其余（/ 与 /api/*）→ no-cache 显式化（HTML 是 import 图入口必须每
@@ -188,6 +194,13 @@ _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]", "0:0:0:0:0:0:0:1"}
 #   **SSE 端点（路径含 /events/stream）零缓存头**（审计钉面：流式响应
 #     不得挂任何缓存语义）。
 _CACHE_STATIC_PREFIX_VALUE = "public, max-age=86400"
+_CACHE_PAGES_PREFIX = "/static/pages/"
+# 根级演进 JS（app.js=应用引导+加载器 60 天改 25 次/theme.js）——与 pages/
+# 同属版本混搭风险面（旧 app.js 加载器配新 view 模块），一并 no-cache
+# （aurora_n cache_gov 遗留裁定：主代理扩面，W1-S1 的 app.js max-age 钉
+# 迁移为 no-cache——断言迁移非放松，协商缓存语义不变）。
+_CACHE_EVOLVED_ROOT_JS = ("/static/app.js", "/static/theme.js")
+_CACHE_PAGES_VALUE = "no-cache"
 _CACHE_RUNS_PREFIX_VALUE = "public, max-age=300"
 _CACHE_DEFAULT_VALUE = "no-cache"
 _SSE_PATH_MARK = "/events/stream"
@@ -214,6 +227,9 @@ class CacheControlMiddleware:
             return
         if path.startswith("/runs"):
             value = _CACHE_RUNS_PREFIX_VALUE
+        elif path.startswith(_CACHE_PAGES_PREFIX) or path in _CACHE_EVOLVED_ROOT_JS:
+            # pages/ 前缀+根级演进 JS 判定必须先于通用 /static（aurora_n cache_gov）
+            value = _CACHE_PAGES_VALUE
         elif path.startswith("/static"):
             value = _CACHE_STATIC_PREFIX_VALUE
         else:
@@ -332,6 +348,9 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
         # W2-S4 远程机器面板：resources_view（recommend 推荐+probed_at）
         #   + 在途战役占用面（只读，照 campaign_queue 先例）
         Route("/api/remote/resources", api_remote_resources),
+        # aurora_n 远程探测面板：remote_status（探活端口表+SSH 认证态，
+        #   只读薄壳直渲染，照 resources 先例）
+        Route("/api/remote/status", api_remote_status),
         # EDB 快车道状态页：产物清单+模板能力面（只读，照 campaign_app 先例）
         Route("/api/edb_status", api_edb_status),
         Route("/api/profile", tools_routes.api_profile, methods=["GET", "POST"]),
@@ -360,7 +379,7 @@ def create_ui_app(include_runs_mount: bool = True) -> Starlette:
     # D-04：CSP 头全响应附加（HTML 面为主；JSON/静态资源带同名头无害）
     # P8-1（aurora_f R1 审计 Top1）：全站 GZip 压缩——静态首载 2.61MB 线传
     # 压至 ~715KB（three.module.js 1.27MB→~350KB 级），远程/服务器部署
-    # 线传 ×3.6（内核立规注记 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
+    # 线传 ×3.6（AGENTS 规则 0b 远程优先方向的前置件）。装配序=GZip 在前
     # （Starlette 列表首项为最外层）：响应出站先经内层 CSP 附加头、再经
     # GZip 压缩体——CSP 头与 Content-Encoding 并存（test_w1e_ui_csp 头值
     # 断言不破）。minimum_size=1024 小响应不压；starlette 1.6 缺省

@@ -1,6 +1,6 @@
 """Icepak 热通道适配器 —— WP4.4a（Icepak 电-热首案例，AEDT/pyaedt）。
 
-定位（延续计划 §4 WP4.4a）：
+定位（docs/continuation-plan_20260907.md §4 WP4.4a）：
 - **AEDT 热通道**：Wilkinson 隔离电阻损耗 → Icepak 温度场 →（经
   core/electrothermal + core/thermal_iteration）材料温漂 → S 参数失谐；
 - 首轮落地**最小传导首案例**（发热块 + 基板 1-D 传导锚 ≤2%）；本轮
@@ -26,7 +26,7 @@
   max|ΔT|/ΔT ≤ 2%。
 - **版本钉扎与整轮重试**：AEDT 2025.1（本机 v251，与 hfss 脚本同池；
   license 探测 2026-09-12 elec_solve_icepak=exists，见
-  内部证据档）；2025.1 gRPC 通道级
+  runs/multiphysics_probe/capability_matrix.json）；2025.1 gRPC 通道级
   不稳定（#191）由调用方（scripts/icepak_electrothermal_case.py）做
   整轮重试，本适配器不做单调用级重试。
 - **#244 五坑静态守卫（MP-B4 清偿）**：`audit_geometry_unit_literals`

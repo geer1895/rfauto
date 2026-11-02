@@ -6,7 +6,7 @@
 
 # 内核文档卡：patch
 
-> E6a 微带线综合引擎（规划扩展 §E6a）。
+> E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 | 字段 | 值 |
 |---|---|
@@ -21,7 +21,7 @@
 
 矩形贴片天线综合（Hammerstad 模型）：宽/长闭式 + 边缘馈电阻抗的 sin² 腔体驻波变换定馈点，附带 Balanis 腔模读数面板（Q 分解/分数带宽/方向性/辐射效率）——ΔL 与 Rin_edge 全仓单源。
 
-模块自述（docstring 首行，机读）：E6a 微带线综合引擎（规划扩展 §E6a）。
+模块自述（docstring 首行，机读）：E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 ## 公式与口径
 
@@ -119,6 +119,7 @@ src/rfauto/core/synthesis.py 公开符号 **43** 个（AST 机读）：
 消费面（service/adapters 引用扫描，机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
+- service：`src/rfauto/service/diagram_stackup_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -165,7 +166,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 
 - `runs/xa1_arbitration/l5_sweep/criteria.md`（runs/ 证据面，gitignored，存在性不作测试断言）——引文："在真实结构里是 18Ω，|S11| 卡 −6.5dB）。共形映射闭式见"
 
-测试面（tests/unit 引用扫描，机读；合计 **1513** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1589** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -178,6 +179,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_atten_t_template.py` | 9 |
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_cal_wizard.py` | 37 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_coupled_bpf_template.py` | 34 |
 | `tests/unit/test_coupling_matrix.py` | 52 |
@@ -223,6 +225,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
+| `tests/unit/test_stackup_diagram.py` | 39 |
 | `tests/unit/test_stepped_coupled_line_specs.py` | 8 |
 | `tests/unit/test_stripline_template.py` | 12 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |

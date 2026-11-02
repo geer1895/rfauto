@@ -2,7 +2,7 @@
 
 全部零网络（#139：LLM/外部通道一律 monkeypatch 钉住）；真机通道零触碰；
 chdir 隔离（#144：优化循环类测试不污染真实 runs/）。逐件对应 SN 席报告
-§二行级规格（内部证据档）。
+§二行级规格（runs/research_seats_20261004/sn_platform_deepen/REPORT.md）。
 """
 
 from __future__ import annotations
@@ -40,10 +40,15 @@ def _write_json(path: Path, data: dict) -> Path:
 
 
 def _mline_recipe(path: Path) -> str:
-    """最小合法 mline 配方（validate/propose/tolerance 计划面共用）。"""
+    """最小合法 mline 配方（validate/propose/tolerance 计划面共用）。
+
+    params 键=mline params_model 合法参数面（F-P1-1 键级白名单后 promote/
+    dry-run 链会校验）——历史稿的 L_mm/f0_ghz 不在参数面（曾被静默忽略），
+    2026-10-30 随白名单落地改为 line_len_mm（f0 无对应参数，删除）。
+    """
     recipe = {
         "model": "mline",
-        "params": {"w_mm": {"value": 0.7}, "L_mm": 20.0, "f0_ghz": 10.0},
+        "params": {"w_mm": {"value": 0.7}, "line_len_mm": 20.0},
         "setup": {"freq_range_ghz": [8.0, 12.0], "points": 21},
         "objectives": [
             {"metric": "s11_db", "band": [9.5, 10.5], "op": "max_below",

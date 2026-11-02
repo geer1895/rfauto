@@ -15,6 +15,18 @@ from rfauto.service.envelope import ok_envelope
 from .run_core import run_once
 
 
+def _ensure_ads_channel() -> None:
+    """ADS 优化通道惰性注册（aurora_p B3 接线合流笔，2026-11-01）。
+
+    分层约束：optimization 不得静态 import linkage（import-linter），
+    ads 通道工厂住 linkage/ads_optimizer_channel（linkage→optimization
+    向下注册合法），故在 service 调优入口引导注册；模块级注册幂等
+    （register_ads_channel 语义，tests/unit/test_ads_optimizer_channel.py
+    注册面钉同源）。
+    """
+    import rfauto.linkage.ads_optimizer_channel  # noqa: F401  # lazy: ads 通道注册
+
+
 def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
                max_trials: int = 60, study_name: str | None = None,
                max_wall_s: float | None = None,
@@ -22,8 +34,12 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
                sampler: str = "tpe",
                seed: int | None = None,
                pruner: str = "none",
+               storage: str = "sqlite",
                on_trial: Any = None,
-               warm_start_registry: bool | None = None) -> dict[str, Any]:
+               warm_start_registry: bool | None = None,
+               eipu_strategy: str | None = None,
+               turbo_n_regions: int | None = None,
+               turbo_region_strategy: str | None = None) -> dict[str, Any]:
     """启动优化外环（Optuna，SQLite 持久化，断点续跑）。
 
     同步运行优化循环，返回最佳结果。
@@ -31,22 +47,35 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
 
     Args:
         recipe_path: 配方文件路径
-        adapter_name: "fake" | "hfss"
+        adapter_name: "fake" | "hfss" | "ads"（aurora_p B3：ADS 电路前仿
+            评估通道，linkage/ads_optimizer_channel 惰性注册）
         max_trials: 最大试验次数
         study_name: 自定义 study 名称（默认从配方生成）
         max_wall_s: 总超时（秒）
         adapter_kwargs: 额外适配器构造参数（如 n_ports=3）
         sampler: "tpe"（默认）| "cmaes" | "gp"（ME-12 起 GPSampler 转正，Optuna 5.0）
+            | "eipu" | "turbo"（T-N4 自研采集挂 study，acq_sampler）
         seed: 采样器随机种子（P2⑦；None=沿用 optimizer.SAMPLER_SEED 缺省）
         pruner: 多保真裁剪器（ME-13）："none"（默认，行为不变）| "asha" |
             "hyperband"——Phase1 低保真差配方早停，语义见 optimizer.run_optimization
+        storage: Optuna storage 后端（T-N8）："sqlite"（默认，行为不变）|
+            "journal"——多进程并发同 study 不抢 SQLite 文件锁；构建失败自动
+            回退 sqlite 并在结果 storage_fallback_reason 如实记录
         on_trial: 逐 trial 完成回调 ``f(study, trial)``（SN-9，--watch 播报挂点；
             None=不加键行为不变，条件透传 #df6③）
         warm_start_registry: 代理模型注册表 warm-start 三态开关（RB-ML-1，
             #277 bool|None 形态；None=env/配置裁决，缺省关=行为不变）。开时
             经 surrogate_registry_champion_points 解析 champion 近优点并入
             warm_start 通道（零内核侵入）；结果带 registry_warm_start 键。
+        eipu_strategy: EI 采集策略档（T-N9，仅 sampler="eipu" 有效）：
+            "eipu" | "ei" | "eipu_cooled" | "rei"；None=不加键行为不变，
+            错配 sampler 由 run_optimization 显式拒绝（不静默吞参）。
+        turbo_n_regions: TuRBO 多域信任域数（T-N10，仅 sampler="turbo" 有
+            效，≥1 的整数）；None=不加键行为不变。
+        turbo_region_strategy: TuRBO 区域采样策略档（T-N10，仅
+            sampler="turbo" 有效）："ts" | "rei"；None=不加键行为不变。
     """
+    _ensure_ads_channel()
     from rfauto.optimization.optimizer import run_optimization
     from rfauto.service.surrogate_registry_service import (
         resolve_warm_start_registry_flag,
@@ -54,6 +83,15 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
 
     seed_kw: dict[str, Any] = {} if seed is None else {"seed": int(seed)}
     cb_kw: dict[str, Any] = {"callbacks": [on_trial]} if on_trial else {}
+    # O2（aurora_n）：eipu/turbo 顶旋钮条件透传（#df6③；None=不加键，
+    # 缺省调用与旧路径逐字节等价；枚举/错配校验在 run_optimization）。
+    knob_kw: dict[str, Any] = {}
+    if eipu_strategy is not None:
+        knob_kw["eipu_strategy"] = eipu_strategy
+    if turbo_n_regions is not None:
+        knob_kw["turbo_n_regions"] = int(turbo_n_regions)
+    if turbo_region_strategy is not None:
+        knob_kw["turbo_region_strategy"] = turbo_region_strategy
     reg_on = resolve_warm_start_registry_flag(warm_start_registry)
     if reg_on:
         # RB-ML-1 消费面①：champion 近优点在战役启动期解析并入 warm_start
@@ -74,7 +112,9 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
             seed=seed,
             warm_start_registry=True,
             pruner=pruner,
+            storage=storage,
             callbacks=on_trial,
+            **knob_kw,
         )
     else:
         result = run_optimization(
@@ -86,8 +126,10 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
             adapter_kwargs=adapter_kwargs,
             sampler=sampler,
             pruner=pruner,
+            storage=storage,
             **seed_kw,
             **cb_kw,
+            **knob_kw,
         )
     if not result.get("ok"):
         return result
@@ -108,6 +150,11 @@ def start_tune(recipe_path: str | Path, *, adapter_name: str = "fake",
         # RB-ML-1：注册表 warm-start 解析回执透出（开关开时才有键，
         # 缺省信封键集不变）
         envelope["registry_warm_start"] = result["registry_warm_start"]
+    for _k in ("eipu_strategy", "turbo_n_regions", "turbo_region_strategy"):
+        # O2（aurora_n）：顶旋钮回显透出（旋钮给出时才有键，缺省信封
+        # 键集不变；registry_warm_start 同款条件键——e2e 钉抓出的缺口）
+        if result.get(_k) is not None:
+            envelope[_k] = result[_k]
     return envelope
 
 
@@ -211,7 +258,11 @@ def start_tune_async(recipe_path: str | Path, *, adapter_name: str = "fake",
                      max_trials: int = 60, study_name: str | None = None,
                      max_wall_s: float | None = None,
                      sampler: str = "tpe", seed: int | None = None,
-                     pruner: str = "none") -> dict[str, Any]:
+                     pruner: str = "none",
+                     storage: str = "sqlite",
+                     eipu_strategy: str | None = None,
+                     turbo_n_regions: int | None = None,
+                     turbo_region_strategy: str | None = None) -> dict[str, Any]:
     """异步优化外环（SN-9，2026-10-05 W1-D）——立即返回 job_id，后台执行 start_tune。
 
     与 run_once_async 同一进程内 JobRegistry + 单写锁范式（run_once_async:931
@@ -223,6 +274,8 @@ def start_tune_async(recipe_path: str | Path, *, adapter_name: str = "fake",
 
     线程为非 daemon：进程退出前等待当前优化结束（同 run_once_async 语义）。
     仅单目标路径（start_tune）；多目标/多保真/代理寻优后台化另立。
+    eipu_strategy/turbo_n_regions/turbo_region_strategy：O2 顶旋钮透传
+    （语义同 start_tune；None=不加键行为不变）。
     """
     import threading
 
@@ -258,7 +311,11 @@ def start_tune_async(recipe_path: str | Path, *, adapter_name: str = "fake",
                     recipe_path, adapter_name=adapter_name,
                     max_trials=max_trials, study_name=study_name,
                     max_wall_s=max_wall_s, sampler=sampler,
-                    seed=seed, pruner=pruner, on_trial=_tune_progress)
+                    seed=seed, pruner=pruner, storage=storage,
+                    eipu_strategy=eipu_strategy,
+                    turbo_n_regions=turbo_n_regions,
+                    turbo_region_strategy=turbo_region_strategy,
+                    on_trial=_tune_progress)
             finally:
                 write_lock.release(job_id)
             run_id = result.get("run_id", "")

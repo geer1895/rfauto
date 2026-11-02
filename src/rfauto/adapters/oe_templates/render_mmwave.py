@@ -37,7 +37,7 @@ from .registry import (
 # 线宽=skrf HJ inverse_width 50Ω、βg=k0·√εeff(HJ @feed_w)、s=倾斜式反解。
 # 基板 RO3003 类（er=3.0/h=0.127/tan_d=0.001，模板参数基板——ms 族「er/tan_d
 # 走 substrate/nominal」同口径；0.508 缺省板在 78GHz 非物理厚）。
-# 真机面：预算预声明 内部证据档 §d（~3.6e7 cells/dt~4.8e-14s/
+# 真机面：预算预声明 runs/df7_c10d/criteria.md §d（~3.6e7 cells/dt~4.8e-14s/
 # NrTS~2.5e4/墙钟数小时～半天每点），本批零发射。
 MMWAVE_SERIES_TEMPLATES: frozenset[str] = frozenset({"mmwave_series_array"})
 _MMWAVE_DOM_MM = 20.0            # 方域半宽（40×40mm 板，criteria §d 域）
@@ -411,7 +411,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         "D:/rf_workspace/vendor/openEMS/install/bin")
+                         "E:/rfauto-workspace/vendor/openEMS/install/bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

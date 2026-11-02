@@ -24,18 +24,22 @@ GP 实现——闭式后验 + 超参沿负对数边际似然（MLE）或 MAP（�
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
 from scipy.optimize import minimize
+from scipy.special import erf
 
 __all__ = [
     "KERNEL_KINDS",
     "DetGaussianProcess",
+    "expected_improvement",
     "fit_map",
     "fit_mle",
     "gp_nll",
     "gp_posterior",
+    "kriging_believer_ei_batch",
     "matern52_ard_kernel",
     "se_ard_kernel",
 ]
@@ -223,3 +227,91 @@ class DetGaussianProcess:
         return gp_posterior(
             self.x_train, self.y_train, np.atleast_2d(x_test),
             ell=self.ell, amp=self.amp, nugget=self.nugget, kind=self.kind)
+
+
+# ─── GP 批量采集内核（T-N7，aurora_n W1-C；surrogate_loop 消费） ─────────
+
+def expected_improvement(
+    mu: np.ndarray, sigma: np.ndarray, y_best: float, xi: float = 0.0,
+) -> np.ndarray:
+    """极小化 EI（Jones 1998 式）：(y_best−μ−ξ)Φ(z)+σφ(z)，z=(y_best−μ−ξ)/σ。
+
+    σ=0 约定（确定性边界）：EI = max(y_best−μ−ξ, 0)——无探索项，退化
+    判定（全体 σ≡0 → 无采集信号）由 ``kriging_believer_ei_batch`` 的
+    degenerate 档显式上报，不在此静默。
+    """
+    mu = np.asarray(mu, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    improve = float(y_best) - mu - float(xi)
+    safe = np.maximum(sigma, 1e-300)
+    z = improve / safe
+    phi = np.exp(-0.5 * z * z) / math.sqrt(2.0 * math.pi)
+    cdf = 0.5 * (1.0 + erf(z / math.sqrt(2.0)))
+    ei = improve * cdf + sigma * phi
+    return np.where(sigma > 0.0, ei, np.maximum(improve, 0.0))
+
+
+def kriging_believer_ei_batch(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_pool: np.ndarray,
+    *,
+    ell: np.ndarray,
+    amp: float,
+    nugget: float,
+    kind: str = "se",
+    k: int = 1,
+    xi: float = 0.0,
+) -> dict[str, Any]:
+    """Kriging-believer 批量 EI 选点（Ginsbourger et al. 2010 惯例，确定性）。
+
+    逐点条件化：每步在候选池上取 EI 最大者，把该点的 GP **预测均值当
+    伪观测**并入训练集（超参不重估，只增广 K 矩阵）再选下一个——后续
+    选点自动避开已选邻域（伪观测处 σ→0，EI 探索项被压掉），批量内天然
+    带多样性，与调用方的最小距离筛选并档可组合。
+
+    返回（minimization 口径）::
+        {"order": [池下标（EI 降序）], "ei": [逐席 EI 值],
+         "sigma_max": 首步池上最大 σ, "degenerate": bool}
+
+    degenerate=True（order 为空）＝全体池点 σ≡0（如 amp=0 的退化 GP）——
+    EI 无探索信号，调用方应显式回退逐点路径并标注（T-N7 负例契约），
+    本函数不伪造采集序。
+
+    确定性：无随机源——同 (x_train, y_train, x_pool, params) 逐位复现
+    同一采集序。规模边界：每步重解一次线性系统（gp_posterior O(n³)，
+    n=训练+已选伪观测数），K≤8 时小样本（n≲200、池≲5000）毫秒-秒级；
+    K 或 n 显著放大时应改块式条件化（不在本模块）。
+    """
+    x_train = np.atleast_2d(np.asarray(x_train, dtype=float))
+    y_train = np.atleast_1d(np.asarray(y_train, dtype=float))
+    x_pool = np.atleast_2d(np.asarray(x_pool, dtype=float))
+    n_pool = int(x_pool.shape[0])
+    k = max(1, int(k))
+    x_aug: list[np.ndarray] = [row for row in x_train]
+    y_aug: list[float] = [float(v) for v in y_train]
+    order: list[int] = []
+    ei_seq: list[float] = []
+    sigma_max = 0.0
+    for _step in range(min(k, n_pool) if n_pool else 0):
+        mu, var = gp_posterior(
+            np.asarray(x_aug), np.asarray(y_aug), x_pool,
+            ell=ell, amp=amp, nugget=nugget, kind=kind)
+        sigma = np.sqrt(np.maximum(var, 0.0))
+        if not order:
+            sigma_max = (float(sigma.max()) if n_pool and sigma.size
+                         else 0.0)
+            if not math.isfinite(sigma_max) or sigma_max <= 0.0:
+                return {"order": [], "ei": [], "sigma_max": sigma_max,
+                        "degenerate": True}
+        y_best = min(y_aug)
+        ei = expected_improvement(mu, sigma, y_best, xi=xi)
+        for j in order:
+            ei[j] = -np.inf  # 已选池点屏蔽（同点不重采）
+        j = int(np.argmax(ei))
+        order.append(j)
+        ei_seq.append(float(ei[j]))
+        x_aug.append(x_pool[j])
+        y_aug.append(float(mu[j]))  # KB：预测均值充当伪观测
+    return {"order": order, "ei": ei_seq, "sigma_max": sigma_max,
+            "degenerate": False}

@@ -202,7 +202,7 @@ class EdbLoopLauncher:
             edb_coupled_line / edb_ratrace；lange 预留键在建库段即被拒）。
         params: 固定设计参数底座（stackup/sweep 等不参与寻优的键）；
             evaluate 的 params 同键覆盖（环参数窗内的设计参数逐点注入）。
-        workdir: 产物根目录（.aedb/Touchstone 落点；真机按 内核立规注记 规则 0
+        workdir: 产物根目录（.aedb/Touchstone 落点；真机按 AGENTS 规则 0
             磁盘纪律显式给，勿落系统盘）。
         name: 账本溯源名（缺省 ``edb:<template>``；LoopLauncher 协议
             name 属性约定）。

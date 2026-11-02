@@ -6,7 +6,7 @@
 
 # 内核文档卡：atten_t
 
-> E6a 微带线综合引擎（规划扩展 §E6a）。
+> E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 | 字段 | 值 |
 |---|---|
@@ -22,7 +22,7 @@
 
 T 型电阻衰减器综合：π 型的横向变体——两臂串阻+中点对地并阻，同一 E4 电压比闭式族（3dB 经典锚在档），判据与布局口径与 π 型同源共享。
 
-模块自述（docstring 首行，机读）：E6a 微带线综合引擎（规划扩展 §E6a）。
+模块自述（docstring 首行，机读）：E6a 微带线综合引擎（plan-extension_v2 §E6a）。
 
 ## 公式与口径
 
@@ -94,6 +94,7 @@ src/rfauto/core/calc_families/rf_match.py 公开符号 **6** 个（AST 机读）
 消费面（service/adapters 引用扫描，机读）：
 
 - service：`src/rfauto/service/anchor_family_service.py`
+- service：`src/rfauto/service/diagram_stackup_service.py`
 - service：`src/rfauto/service/even_odd_service.py`
 - service：`src/rfauto/service/kicad_em_service.py`
 - service：`src/rfauto/service/level2_design.py`
@@ -138,7 +139,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `atten_pi.r_series_mid_ohm.closedform-v1` | atten_pi_r_series_mid_ohm |
 | `atten_t.r_series_arm_ohm.closedform-v1` | atten_t_r_series_arm_ohm |
 
-测试面（tests/unit 引用扫描，机读；合计 **1571** 个 test 函数）：
+测试面（tests/unit 引用扫描，机读；合计 **1647** 个 test 函数）：
 
 | 测试文件 | test 函数数 |
 |---|---|
@@ -152,6 +153,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_audit_fix_core_visibility.py` | 15 |
 | `tests/unit/test_b_wave3_pa_ctrl.py` | 35 |
 | `tests/unit/test_bend_template.py` | 7 |
+| `tests/unit/test_cal_wizard.py` | 37 |
 | `tests/unit/test_calc_cross_validation.py` | 5 |
 | `tests/unit/test_calculators.py` | 49 |
 | `tests/unit/test_closed_form_oracle.py` | 18 |
@@ -199,6 +201,7 @@ analytic-anchor（knowledge/anchors.yaml 机读命中）：
 | `tests/unit/test_sicl_nway_templates.py` | 26 |
 | `tests/unit/test_siw_template.py` | 26 |
 | `tests/unit/test_sma_launcher_template.py` | 22 |
+| `tests/unit/test_stackup_diagram.py` | 39 |
 | `tests/unit/test_stepped_coupled_line_specs.py` | 8 |
 | `tests/unit/test_stripline_template.py` | 12 |
 | `tests/unit/test_suspended_stripline_template.py` | 19 |

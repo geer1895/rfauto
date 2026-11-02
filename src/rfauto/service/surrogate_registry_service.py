@@ -511,7 +511,11 @@ def run_optimization_with_registry_warm_start(
     warm_start: list[dict[str, Any]] | None = None,
     warm_start_registry: bool | None = None,
     pruner: str = "none",
+    storage: str = "sqlite",
     callbacks: Any = None,
+    eipu_strategy: str | None = None,
+    turbo_n_regions: int | None = None,
+    turbo_region_strategy: str | None = None,
 ) -> dict[str, Any]:
     """战役启动包装：registry champion 近优点并入 warm_start 通道（①）。
 
@@ -519,8 +523,11 @@ def run_optimization_with_registry_warm_start(
     与 run_optimization 原样一致，零退化）。解析失败/stale/blob 损坏一律
     best-effort 降级冷启动并在 ``result["registry_warm_start"]`` 如实透出
     （#105 不阻塞战役；#122 不静默——reason 随结果可见）。
-    pruner/callbacks 原样透传 run_optimization（start_tune 接线用，
-    None=不加键条件透传 #df6③）。
+    pruner/storage/callbacks 原样透传 run_optimization（start_tune 接线用，
+    None=不加键条件透传 #df6③；storage=T-N8 旋钮，缺省 sqlite 行为不变）。
+    eipu_strategy/turbo_n_regions/turbo_region_strategy：O2 顶旋钮同款条件
+    透传（aurora_n；与 start_tune 冷启动分支语义一致——warm-start 开启时
+    旋钮不静默丢失 #122）。
     """
     enabled = resolve_warm_start_registry_flag(warm_start_registry)
     info: dict[str, Any] = {"enabled": enabled, "channel": str(adapter_name)}
@@ -549,6 +556,14 @@ def run_optimization_with_registry_warm_start(
         kw["warm_start"] = merged
     if callbacks:
         kw["callbacks"] = [callbacks]
+    # O2（aurora_n）：eipu/turbo 顶旋钮条件透传（None=不加键，缺省调用
+    # 与旧路径逐字节等价；枚举/错配校验在 run_optimization）。
+    if eipu_strategy is not None:
+        kw["eipu_strategy"] = eipu_strategy
+    if turbo_n_regions is not None:
+        kw["turbo_n_regions"] = int(turbo_n_regions)
+    if turbo_region_strategy is not None:
+        kw["turbo_region_strategy"] = turbo_region_strategy
     result = run_optimization(
         recipe_path,
         adapter_name=adapter_name,
@@ -558,6 +573,7 @@ def run_optimization_with_registry_warm_start(
         adapter_kwargs=adapter_kwargs,
         sampler=sampler,
         pruner=pruner,
+        storage=storage,
         **kw,
     )
     if isinstance(result, dict) and enabled:

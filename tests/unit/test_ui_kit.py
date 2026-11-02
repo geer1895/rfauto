@@ -415,7 +415,9 @@ class TestKitSourcePins:
         # （tools.th_response/th_status 新键，zh 值同笔）
         # aurora_h W4-S1：agent 提案表列头 参数/当前值/提案值 迁词表 t()
         # （agent.th_param/th_current/th_proposed 新键，zh 值同笔）
-        assert src.count("kitTable({") == 10
+        # aurora_n 远程探测面板：探活端口表 kitTable 消费（queue.probe_th_*
+        # 词表列头+sr-only caption，#q-remote-probe 块）——11=10+1 正当增量
+        assert src.count("kitTable({") == 11
         for needle in (
             'columns: ["run_id", "adapter", t("runs.th_inband_s11")], rows: list, empty: ""',
             # S2 发布令批：solvers 注册表列头迁词表（solvers.th_* 新键，zh 值同笔）

@@ -530,7 +530,7 @@ PERTURB_OVERRIDES: dict[str, dict[str, tuple[float, float]]] = {
     "combline": {"feed_len_mm": (0.9, 0.0)},
     "sir_bpf": {"feed_len_mm": (0.9, 0.0)},
     # siw：s_mm ×1.37 会越泄漏上界 s≤2d（1.383>2×0.6，设计规则守卫拒渲染
-    # ——守卫是正确行为，内部证据档 §1）；×1.1 保域
+    # ——守卫是正确行为，runs/siw_family/criteria.md §1）；×1.1 保域
     # （1.1≤1.2）且必变几何
     "siw": {"s_mm": (1.1, 0.0)},
     # msl_siw_taper（df6 A2）：s_mm 同 siw（设计规则 s≤2d 共用单源）；

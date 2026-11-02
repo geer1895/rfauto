@@ -261,10 +261,13 @@ class TestFreshnessFrontendSourcePins:
         assert "esc(fr.stale_kinds)" in _DETAIL
 
     def test_detail_banner_at_top_of_metrics_area(self):
-        """指标区顶部：frBanner 拼在指标徽章前。"""
+        """指标区顶部：frBanner 拼在指标区块总装前（wave_ui_b P2-2 后
+        总装单源=detailMetricsHtml——banner 实参串接仍在总装调用之前，
+        运行时顺序不变：banner → 指标/params/checks/诊断区块）。"""
         anchor = _DETAIL.index('T.$("detail-head").innerHTML = frBanner +')
-        badges = _DETAIL.index("metricBadgeHtml(k, v2, glossary[k], loc)")
-        assert anchor < badges
+        assemble = _DETAIL.index("frBanner + detailMetricsHtml(m, glossary, loc)")
+        assert anchor < assemble
+        assert "detailMetricsHtml(m, glossary, loc)" in _DETAIL
 
     def test_reports_diff_freshness_row(self):
         """双 run 对比页 freshness 对照行：A/B 各自状态 + kinds esc。"""

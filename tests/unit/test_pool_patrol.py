@@ -3,11 +3,20 @@
 覆盖：双判据（commit-tag×代码面）四态裁决、纯 docs commit 排除、撞号二次
 消歧（qualified 别名/关键词选举/最早轮胜出/零候选 ambiguous）、五栏分级
 （closed/open/partial/stale/ambiguous/merged_alias）、信封契约、CLI 注册面
-与 --json 双形态；金标校准对 内部证据档
-默认集 rate=1.0（真仓集成，账本/池文档缺席时诚实 skip——公开仓无此帧）。
+与 --json 双形态；金标校准对 runs/pool_reaudit/reaudit_ledger_20261007.json
+默认集 rate=1.0。
+
+金标校准件（TestGoldCalibrationRealRepo）自 aurora_m W1-1 起改读**冻结帧
+夹具**（tests/fixtures/pool_patrol_frame.json，由
+scripts/refresh_pool_patrol_fixture.py 显式刷新）：真仓活扫（git 全史+
+impl 面全树）实测 207s 且随仓库增长膨胀，夹具化后单元门秒级、成本与
+仓库增长脱钩；性质钉不变（同一金标集 rate=1.0 经同一引擎代码路径回放，
+夹具内建等价门保证夹具帧与活帧 gold 键证据逐键一致）。opt-in 真仓活扫
+对照件在 tests/integration/test_pool_patrol_live.py（RFAUTO_POOL_PATROL_
+LIVE=1 门控；tests/unit 收集面外，skip 清单不扩大）。
 
 测试零 git 依赖：commit/代码面经端口注入（CommitRec/files 替身，#144 无
-chdir）；真仓校准是唯一触 git 的用例，缺席即 skip。
+chdir）；活扫对照件是唯一触 git 的用例，env 门缺席即 skip。
 """
 
 from __future__ import annotations
@@ -170,7 +179,7 @@ class TestDualCriteria:
     def test_docs_only_commit_rejected_and_watched(self):
         res = _run(
             POOL_DOC_MIN,
-            [_commit("c" * 40, "纯调研批提及 Z-42 巡检", ("docs/note.md", "待办清单"))],
+            [_commit("c" * 40, "纯调研批提及 Z-42 巡检", ("docs/note.md", "TODO"))],
             {"src/other.py": "pass\n"},
         )
         v = _verdict_of(res, "Z-42")
@@ -402,18 +411,40 @@ class TestScriptEntry:
             sys.path.remove(str(scripts_dir))
 
 
-# ── 真仓金标校准（集成；帧缺席诚实 skip） ────────────────────────────────────
+# ── 金标校准（冻结帧回放；活扫对照件在 tests/integration） ─────────────────
 
-REPO = Path(__file__).parent.parent.parent
-POOL_DOC_REAL = REPO / "docs" / "plan_expansion_pool_20260924.md"
+FIXTURE_FRAME = Path(__file__).parent.parent / "fixtures" / "pool_patrol_frame.json"
+
+
+def _patrol_on_frame(frame: dict, tmp_path) -> dict:
+    """冻结帧 → 引擎输入（pool_doc 落 tmp 文件，commits/files 端口注入）。"""
+    doc = tmp_path / "pool_doc_frozen.md"
+    doc.write_text(frame["pool_doc_text"], encoding="utf-8")
+    commits = [CommitRec(sha=c["sha"], date=c["date"], subject=c["subject"],
+                         body=c["body"], files=tuple(c["files"]))
+               for c in frame["commits"]]
+    return pool_patrol({"pool_doc": str(doc), "commits": commits,
+                        "files": dict(frame["files"]), "gold": True})
 
 
 class TestGoldCalibrationRealRepo:
-    @pytest.mark.slow  # 终门 DURATIONS >60s 慢件（206s，真仓金标校准）
-    def test_default_gold_rate_is_one(self):
-        if not POOL_DOC_REAL.exists():
-            pytest.skip("池登记文档不在帧内（公开仓无此文件）——真仓校准 skip")
-        res = pool_patrol({"pool_doc": str(POOL_DOC_REAL), "gold": True})
+    # 真仓帧冻结回放（快照时点=夹具 source_head；刷新=显式动作）——件名
+    # 保留 "RealRepo" 口径：钉的性质是"真仓帧上金标 rate=1.0"，夹具是该帧
+    # 的等价快照（刷新脚本内建等价门）。
+    def test_default_gold_rate_is_one(self, tmp_path):
+        if not FIXTURE_FRAME.is_file():
+            pytest.fail(
+                f"冻结帧夹具缺失: {FIXTURE_FRAME}——运行 "
+                f"scripts/refresh_pool_patrol_fixture.py 再生成（显式刷新动作，"
+                f"活扫 ~4min）；不许 skip 凑绿")
+        frame = json.loads(FIXTURE_FRAME.read_text(encoding="utf-8"))
+        # 夹具新鲜度钉：金标集与引擎现行缺省不一致=夹具过期，必须刷新
+        # （金标集变更须与刷新同笔，否则帧与判据错位）。
+        from rfauto.service import pool_patrol_service as svc
+
+        assert sorted(frame.get("gold_closed", ())) == sorted(svc.DEFAULT_GOLD_CLOSED)
+        assert sorted(frame.get("gold_open", ())) == sorted(svc.DEFAULT_GOLD_OPEN)
+        res = _patrol_on_frame(frame, tmp_path)
         assert res["ok"] is True
         cal = res["calibration"]
         assert cal["rated"] >= 15, f"金标样本不足: {cal['rated']}"

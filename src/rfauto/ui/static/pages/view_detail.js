@@ -7,7 +7,7 @@ import { releaseWebGLIn, sparamChartProps } from "./charts.js"; // UI-R5：S 参
 import { S, T } from "./context.js";
 // UI-R12 任务2：统一 API 层（apiFetch + 视图作用域取消 signal）
 import { apiFetch, viewSignal } from "./api.js";
-import { esc, escAttr } from "./dom.js";
+import { esc, escAttr, help } from "./dom.js";
 // i18n（aurora_f W6-S21 扩面页 3；W8-S32 批 3 补骨架 aria/fake 曲线引导/
 // 3D 空态/快照缺省四点；发布前软编码批 S2 残量清零=壳兜底文本 t() 烘焙+
 // 曲线图 aria 前缀词表化）：壳静态标签 data-i18n+首扫（h2 内动态
@@ -60,6 +60,121 @@ async function loadFailureContext(id) {
   };
 }
 
+/* ═══ P2-2（aurora_n wave_ui_b）：metrics.json 全量载荷→可读区块 ═══════
+   /api/runs/<id> 的 metrics 字段=metrics.json 全文（run_core 落盘形态：
+   run_id/plugin_version/schema_version/params/metrics/cost/checks/
+   diagnosis 嵌套包）。此前整包 Object.entries 直进 metricBadgeHtml——
+   params/checks/diagnosis 被单行 JSON 平铺（诊断规则 R002+hint 埋在其
+   中=对新手不存在），且词典查顶层键（run_id/params…）恒未命中——内层
+   真实指标键（s11_db_max_in_band 等 38 键词典）的 tooltip 从未挂上。
+   三件纯函数（node 行为钉可测导出面，零顶层执行零 DOM）：
+
+   - splitMetricPayload(m)：形态判别——嵌套形态（现行落盘）拆内层指标/
+     cost/params/checks/diagnosis；平铺形态（无嵌套 metrics 键的旧档）
+     原样当指标面（防御性不猜，params/checks/diagnosis 如实缺席）。
+   - diagCardsHtml(diagnosis)：诊断卡——每条命中规则=徽章（rule_id·
+     severity，error→err/warning→warn/其余 muted）+现象 description+
+     关联指标与门限+建议 hint（diagnosis 引擎 R002-R004 输出形态）；
+     diagnoses 空/缺席=空串如实不出卡（不硬凑）。API 数据 esc 单点
+     转义后进 t() 占位（数据非文案不迁纪律），词表只承担纯文案段。
+   - checksBadgesHtml(checks)：物理校验行——布尔键徽章（已知键走词表
+     标签，未知键 esc 原样键名不猜）+ sanity_notes 摘要尾行。 */
+
+export function splitMetricPayload(m) {
+  const src = m && typeof m === "object" && !Array.isArray(m) ? m : {};
+  const nested = src.metrics && typeof src.metrics === "object" &&
+    !Array.isArray(src.metrics);
+  const isObj = (x) => x != null && typeof x === "object" && !Array.isArray(x);
+  return {
+    metrics: nested ? src.metrics : src,
+    cost: nested && src.cost != null ? src.cost : null,
+    params: isObj(src.params) ? src.params : null,
+    checks: isObj(src.checks) ? src.checks : null,
+    diagnosis: isObj(src.diagnosis) ? src.diagnosis : null,
+  };
+}
+
+/* 值展示格式化（数值 toFixed(4) 整数原样，其余 esc 字符串化——转义
+   责任单点，调用方拿到的串可直接进 t() 占位/模板插值）。 */
+function _fmtDataVal(v) {
+  if (typeof v === "number") {
+    return Number.isInteger(v) ? String(v) : v.toFixed(4);
+  }
+  return esc(String(v));
+}
+
+export function diagCardsHtml(diagnosis) {
+  if (!diagnosis || !Array.isArray(diagnosis.diagnoses)) return "";
+  return diagnosis.diagnoses.map((d0) => {
+    if (!d0 || typeof d0 !== "object") return "";
+    const sevCls = d0.severity === "error" ? "err"
+      : d0.severity === "warning" ? "warn" : "muted";
+    const parts = [`<span class="badge ${sevCls}">` +
+      `${esc(d0.rule_id || "?")} · ${esc(String(d0.severity || ""))}</span> ` +
+      `<b>${esc(d0.description || "")}</b>`];
+    if (d0.metric) {
+      const kv = { k: esc(d0.metric), v: _fmtDataVal(d0.value) };
+      parts.push(`<div class="muted" style="font-size:var(--text-xs);margin-top:var(--space-1)">` +
+        (d0.threshold != null
+          ? t("detail.diag_metric_tpl", { ...kv, thr: _fmtDataVal(d0.threshold) })
+          : t("detail.diag_metric_plain_tpl", kv)) + `</div>`);
+    }
+    if (d0.hint)
+      parts.push(`<div style="margin-top:var(--space-1)">` +
+        t("detail.diag_advice_lead") + esc(d0.hint) + `</div>`);
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);margin-top:var(--space-2)">` +
+      parts.join("") + `</div>`;
+  }).join("");
+}
+
+/* 已知校验键→词表标签（键面进了 _PAGE_KEY_LIT 扫描域——引号字面单源）。 */
+const _CHECK_LABEL_KEYS = {
+  passivity_ok: "detail.check_passivity",
+  reciprocity_ok: "detail.check_reciprocity",
+  sanity_all_ok: "detail.check_sanity",
+};
+
+export function checksBadgesHtml(checks) {
+  if (!checks || typeof checks !== "object") return "";
+  const out = [];
+  for (const [k, v] of Object.entries(checks)) {
+    if (k === "sanity_notes") continue; // 摘要行尾段单独出（数组/长文非徽章面）
+    const labelKey = _CHECK_LABEL_KEYS[k];
+    const label = labelKey ? t(labelKey) : esc(k);
+    if (typeof v === "boolean")
+      out.push(`<span class="badge ${v ? "ok" : "err"}">${label} ${v ? "✓" : "✗"}</span>`);
+    else
+      out.push(`<span class="badge muted">${label}: ${_fmtDataVal(v)}</span>`);
+  }
+  const notes = checks.sanity_notes;
+  if (Array.isArray(notes) && notes.length)
+    out.push(`<span class="muted" style="font-size:var(--text-xs)">` +
+      esc(notes.map(String).join("; ")) + `</span>`);
+  else if (typeof notes === "string" && notes)
+    out.push(`<span class="muted" style="font-size:var(--text-xs)">${esc(notes)}</span>`);
+  return out.join(" ");
+}
+
+/* 详情头总装（嵌套形态拆区展示；平铺旧档退化为指标徽章行=原行为面）。
+   区块小标题走词表（sec_*）；glossary=metricGlossaryMap() 会话缓存映射
+   （内层指标键命中即挂 data-tip tooltip——38 键词典基建本席接线到位）。 */
+export function detailMetricsHtml(m, glossary, loc) {
+  const p = splitMetricPayload(m);
+  const sec = (key) => `<div class="muted" style="font-size:var(--text-xs);margin-top:var(--space-2)">${t(key)}</div>`;
+  let html = sec("detail.sec_metrics") +
+    Object.entries(p.metrics).map(([k, v2]) =>
+      metricBadgeHtml(k, v2, glossary[k], loc)).join("");
+  if (p.cost != null) html += metricBadgeHtml("cost", p.cost, glossary["cost"], loc);
+  if (p.params) html += sec("detail.sec_params") +
+    Object.entries(p.params).map(([k, v2]) =>
+      metricBadgeHtml(k, v2, null, loc)).join("");
+  if (p.checks) html += sec("detail.sec_checks") + checksBadgesHtml(p.checks);
+  const cards = diagCardsHtml(p.diagnosis);
+  if (cards) html += sec("detail.sec_diagnosis") + cards;
+  return html;
+}
+/* ═══ P2-2 metrics 载荷区块化块结束 ═══ */
+
 /* ═══ Run 详情（ECharts 交互曲线，图例切换分量）═══ */
 export async function showRun(runId) {
   const id = runId || S.currentRunId;
@@ -83,7 +198,12 @@ export async function showRun(runId) {
   }
   noteCurrentRunId(id); // W6-S2：run 态写面唯一=router.js（原 S 直写第二写点收口）
   if (!v.innerHTML)
-    v.innerHTML = `<h2 class='page'><span data-i18n='detail.title'>${t("detail.title")}</span> <small id='detail-id'></small></h2>
+    v.innerHTML = help(`
+      <li>${t("detail.help_1")}</li>
+      <li>${t("detail.help_2")}</li>
+      <li>${t("detail.help_3")}</li>
+      <li>${t("detail.help_4")}</li>`) +
+      `<h2 class='page'><span data-i18n='detail.title'>${t("detail.title")}</span> <small id='detail-id'></small></h2>
       <div class='panel' id='detail-head'></div>
       <div class='panel' id='detail-failure' style='display:none'></div>
       <div class='grid2'>
@@ -114,12 +234,18 @@ export async function showRun(runId) {
     T.msg((d.errors || []).join("; "), false);
     const idEl = T.$("detail-id");
     if (idEl) idEl.textContent = t("detail.load_failed");
+    // P1-1（aurora_n wave_ui_a）：missing_dir 旗标（目录不在盘——索引
+    // 残留记录或深度链失效）= 重试恒失败——重试钮禁用+tooltip 说明，
+    // 不再骗点击；其余错误照旧保留重试。
+    const missingDir = !!d.missing_dir;
     T.$("detail-head").innerHTML =
       kitApiErrorHtml(d, { title: t("detail.load_failed"), hint: "" }) +
       ` <code>${esc(id)}</code>` +
-      ` <button class="minor" id="detail-retry">${t("detail.retry")}</button>`;
+      (missingDir
+        ? ` <button class="minor" id="detail-retry" disabled title="${escAttr(t("detail.retry_futile"))}" aria-disabled="true">${t("detail.retry")}</button>`
+        : ` <button class="minor" id="detail-retry">${t("detail.retry")}</button>`);
     const retry = T.$("detail-retry");
-    if (retry) retry.onclick = () => showRun(id);
+    if (retry && !missingDir) retry.onclick = () => showRun(id);
     return;
   }
   T.$("detail-id").textContent = d.run_id;
@@ -150,11 +276,12 @@ export async function showRun(runId) {
   // W2-S2（aurora_i，R3 M2）指标词典悬浮说明：词条在场→data-tip 白话+
   // 健康判据+坑号 & 判据着色（达标 var(--ok)/未达标 var(--err)）；词典
   // 加载失败=空映射→逐键降级原徽章形态（metricBadgeHtml 单源，#105）。
+  // P2-2（aurora_n wave_ui_b）：metrics.json 全量载荷区块化总装单源
+  // （detailMetricsHtml——内层指标键接词典 tooltip + params/checks 可读
+  // 徽章 + 诊断卡），平铺旧档退化为原指标徽章行（行为面不回退）。
   const glossary = await metricGlossaryMap();
   const loc = getLocale();
-  T.$("detail-head").innerHTML = frBanner +
-    Object.entries(m).map(([k, v2]) =>
-      metricBadgeHtml(k, v2, glossary[k], loc)).join("");
+  T.$("detail-head").innerHTML = frBanner + detailMetricsHtml(m, glossary, loc);
   const ftb = T.$("files-table").tBodies[0];
   ftb.innerHTML = "";
   for (const f of d.files || []) {

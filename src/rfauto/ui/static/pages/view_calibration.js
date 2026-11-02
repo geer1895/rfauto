@@ -5,7 +5,19 @@
    en 新增）——拼接数据段（run_id/verdict/误差串）照旧 esc 后拼模板，词表
    值零 HTML；壳静态标签 data-i18n+applyI18nRoot 首扫；行 aria 标签走
    t() 前缀+数据拼接（kit escAttr 出口单点转义，runs.open_detail_aria
-   同款先例）。run_id/ρ/mesh 等协议列名保留原文。 */
+   同款先例）。run_id/ρ/mesh 等协议列名保留原文。
+
+   aurora_n wave_ui_wizard：校准三步向导（P2 引导面）。#cal-wizard 新增
+   引导层块（h2 后、产物面板前）——**既有表单/按钮/表格零改动**，向导
+   只做三件事：①stepper 三步卡（组 B 快速开始四步卡 data-go 家法：
+   guide-flow/guide-step clickable + kitClickRowAttrs 三件套 + bindClickRows
+   click 与 Enter/Space 同一激活 → showPage 跳对应页）；②每步守卫行
+   （role="status"，异步填充：/api/recipes 目录在档数 + /api/fs/list 只读
+   探测 recipes/ 在盘配方数（journeyB recipeFileExists 家法）+ 本页已拉
+   校准产物数（同步零新请求）；#105 best-effort——探测失败=unknown 放行
+   文案，永不拦主路径）；③产物预告一行。面板头右侧 guide 锚形态
+   （a[data-goto] 委托 + 文档绝对坐标直设 scrollTop，不写 location.hash
+   ——hash 是两级路由信道）直跳下方产物清单。 */
 
 import { THEME_COLORS, bodyIsLight, themePick } from "../theme.js";
 import { T } from "./context.js";
@@ -18,7 +30,8 @@ import { t, applyI18nRoot } from "./i18n.js";
 import { bindClickRows, kitClickRowAttrs, kitEmptyState, kitErrorPanel, kitVerdictBadge } from "./kit.js";
 import { makeSortable } from "./sortable.js";
 // 深链二批（aurora_f W2-S5）：#/calibration/<run_id> 待选消费 + 详情 hash 回写
-import { _syncRouteHash, consumeCalibrationPendingId } from "./router.js";
+// wave_ui_wizard：showPage=向导步卡跳页单源（dashboard wQuickLinks 同款）。
+import { _syncRouteHash, consumeCalibrationPendingId, showPage } from "./router.js";
 
 /* ═══ 校准工作台（阶段 3.2）+ 跨保真演化（3.3 数据源同页）═══ */
 export async function pageCalibration() {
@@ -29,6 +42,14 @@ export async function pageCalibration() {
       <li>${t("calibration.help_2")}</li>
       <li>${t("calibration.help_3")}</li>`) +
     `<h2 class='page' data-i18n='calibration.title'>${t("calibration.title")}</h2>
+     <div class='panel' id='cal-wizard'><a class='muted' style='float:right;font-size:12px' href='#cal-table' data-goto='cal-table'><span aria-hidden='true'>↓</span> <span data-i18n='calibration.wiz_jump_table'>${t("calibration.wiz_jump_table")}</span></a>
+       <b class='title' data-i18n='calibration.wiz_title'>${t("calibration.wiz_title")}</b>
+       <div class='muted' style='font-size:12px;margin:var(--space-1) 0 var(--space-2)' data-i18n='calibration.wiz_lead'>${t("calibration.wiz_lead")}</div>
+       <div class='guide-flow' id='cal-wiz-flow'>
+         <div class='guide-step clickable' data-go='recipe' ${kitClickRowAttrs({ label: t("calibration.wiz_step_aria_tpl", { n: 1, name: t("calibration.wiz_s1_t") }) })}><span class='n'>1</span><b data-i18n='calibration.wiz_s1_t'>${t("calibration.wiz_s1_t")}</b><div data-i18n='calibration.wiz_s1_d'>${t("calibration.wiz_s1_d")}</div><div id='cal-wiz-g1' role='status' class='muted' style='margin-top:6px'></div><div style='font-size:12px' data-i18n='calibration.wiz_s1_out'>${t("calibration.wiz_s1_out")}</div></div>
+         <div class='guide-step clickable' data-go='solvers' ${kitClickRowAttrs({ label: t("calibration.wiz_step_aria_tpl", { n: 2, name: t("calibration.wiz_s2_t") }) })}><span class='n'>2</span><b data-i18n='calibration.wiz_s2_t'>${t("calibration.wiz_s2_t")}</b><div data-i18n='calibration.wiz_s2_d'>${t("calibration.wiz_s2_d")}</div><div id='cal-wiz-g2' role='status' class='muted' style='margin-top:6px'></div><div style='font-size:12px' data-i18n='calibration.wiz_s2_out'>${t("calibration.wiz_s2_out")}</div></div>
+         <div class='guide-step clickable' data-go='guide' ${kitClickRowAttrs({ label: t("calibration.wiz_step_aria_tpl", { n: 3, name: t("calibration.wiz_s3_t") }) })}><span class='n'>3</span><b data-i18n='calibration.wiz_s3_t'>${t("calibration.wiz_s3_t")}</b><div data-i18n='calibration.wiz_s3_d'>${t("calibration.wiz_s3_d")}</div><div id='cal-wiz-g3' role='status' class='muted' style='margin-top:6px'></div><div style='font-size:12px' data-i18n='calibration.wiz_s3_out'>${t("calibration.wiz_s3_out")}</div></div>
+       </div></div>
      <div style='display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap'>
        <div class='panel' style='flex:1;min-width:340px'><div class='toolbar'><b>${t("calibration.run_label")}</b>
          <span id='cal-count' class='muted'></span></div>
@@ -70,6 +91,11 @@ export async function pageCalibration() {
   const scal = makeSortable(T.$("cal-table"));
   if (scal) scal.refresh();
 
+  // aurora_n wave_ui_wizard：校准三步向导接线（引导层增量——步卡跳页 +
+  // 锚跳转委托 + 守卫行填充；刷新幂等：bindClickRows 覆盖式重绑、锚委托
+  // dataset 去重、守卫行重填）。list=本页已拉校准产物（步 3 守卫零新请求）。
+  mountCalWizard(v, list);
+
   // 深链二批（aurora_f W2-S5）：#/calibration/<run_id> 待选消费——清单命中
   // 才打开详情，未命中回落表头（campaign 深链同款待选纪律）；消费即清
   // （router.js 单源写）；hash 回写在 loadCalibration 落地点（点行同一口径）。
@@ -96,6 +122,112 @@ export async function pageCalibration() {
   T.$("cal-gates").textContent = cro.length
     ? cro.map((e) => `${e.run_id}: ρ=${e.rho == null ? "-" : (+e.rho).toFixed(3)} ${e.verdict || ""}`).join(" · ")
     : t("calibration.no_cross");
+}
+
+/* ═══ aurora_n wave_ui_wizard：校准三步向导（引导层）══════════════════
+   三件（全部纯串/纯探测，零顶层 DOM——node 行为钉可测）：
+   ①countYamlEntries——在盘配方文件计数纯函数（kind!=="dir" 且 .yaml/.yml
+     后缀，大小写不敏感；恶输入返 0 不炸）；
+   ②probeRecipesCatalog/probeRecipesDir——只读探测（/api/recipes 目录
+     在档数；/api/fs/list?path=recipes 在盘 .yaml 数——journeyB
+     recipeFileExists 家法：同一只读探测面 + #105 best-effort，探测失败/
+     超时/切页取消=unknown，守卫行永不拦主路径）；timeoutMs 5000 与
+     tune.recipeFileExists 同款；viewSignal("calibration") 切页收束。
+   ③wizGuardText——守卫行三态文本（ok/empty/unknown × 三步键域）；
+   mountCalWizard——DOM 接线（步卡 bindClickRows 跳页 + a[data-goto]
+   锚委托绝对坐标滚动 + 守卫行填充；幂等：重绑覆盖式、锚委托 dataset
+   去重、守卫行重填）。 */
+export function countYamlEntries(entries) {
+  if (!Array.isArray(entries)) return 0;
+  let n = 0;
+  for (const e of entries) {
+    if (!e || e.kind === "dir") continue;
+    const nm = String(e.name || "").toLowerCase();
+    if (nm.endsWith(".yaml") || nm.endsWith(".yml")) n++;
+  }
+  return n;
+}
+
+export async function probeRecipesCatalog() {
+  try {
+    const d = await apiFetch("/api/recipes",
+      { signal: viewSignal("calibration"), timeoutMs: 5000 });
+    if (d && d.aborted) return { state: "unknown", n: 0, aborted: true };
+    const list = d && d.ok === true && Array.isArray(d.recipes) ? d.recipes : null;
+    if (list == null) return { state: "unknown", n: 0 };
+    return { state: list.length ? "ok" : "empty", n: list.length };
+  } catch { return { state: "unknown", n: 0 }; }
+}
+
+export async function probeRecipesDir() {
+  try {
+    const d = await apiFetch("/api/fs/list?path=" + encodeURIComponent("recipes"),
+      { signal: viewSignal("calibration"), timeoutMs: 5000 });
+    if (d && d.aborted) return { state: "unknown", n: 0, aborted: true };
+    if (!d || d.ok !== true || !Array.isArray(d.entries))
+      return { state: "unknown", n: 0 };
+    const n = countYamlEntries(d.entries);
+    return { state: n ? "ok" : "empty", n };
+  } catch { return { state: "unknown", n: 0 }; }
+}
+
+/* 守卫行三态文本（kind→整字面键域单源——i18n 悬空/死键双向棘轮只认
+   整键字面量，动态拼键面会被 _t_refs 摘成假悬空；probe 缺席/畸形=
+   unknown 中性）。 */
+const _WIZ_GUARD_KEYS = {
+  catalog: { ok: "calibration.wiz_g1_ok_tpl", empty: "calibration.wiz_g1_empty" },
+  disk: { ok: "calibration.wiz_g2_ok_tpl", empty: "calibration.wiz_g2_empty" },
+  runs: { ok: "calibration.wiz_g3_ok_tpl", empty: "calibration.wiz_g3_empty" },
+};
+export function wizGuardText(kind, probe) {
+  const p = probe && probe.state ? probe : { state: "unknown", n: 0 };
+  const keys = _WIZ_GUARD_KEYS[kind];
+  if (!keys || p.state === "unknown") return t("calibration.wiz_g_unknown");
+  return t(p.state === "ok" ? keys.ok : keys.empty,
+    { n: p.n == null ? 0 : p.n });
+}
+
+function fillCalWizardGuards(runsList) {
+  // 步 3 守卫零新请求：消费本页已拉清单（空=empty 如实，不 unknown）。
+  const g3 = T.$("cal-wiz-g3");
+  if (g3) g3.textContent = wizGuardText("runs",
+    { state: runsList && runsList.length ? "ok" : "empty",
+      n: runsList ? runsList.length : 0 });
+  Promise.all([probeRecipesCatalog(), probeRecipesDir()])
+    .then(([cat, dir]) => {
+      if (cat.aborted || dir.aborted) return; // 切页取消——不写隐藏区
+      const g1 = T.$("cal-wiz-g1");
+      const g2 = T.$("cal-wiz-g2");
+      if (g1) g1.textContent = wizGuardText("catalog", cat);
+      if (g2) g2.textContent = wizGuardText("disk", dir);
+    })
+    .catch(() => { /* #105：守卫探测故障静默——行保持原状，不阻主路径 */ });
+}
+
+function mountCalWizard(v, runsList) {
+  // 步卡跳页（组 B 家法：data-go + bindClickRows click/Enter/Space 同一激活）
+  const flow = v.querySelector("#cal-wiz-flow");
+  if (flow) bindClickRows(flow, (row) => showPage(row.dataset.go), "[data-go]");
+  // 面板头锚（guide _bindToc 同款）：a[data-goto] 委托 + 文档绝对坐标直设
+  // scrollTop（scrollIntoView smooth 不可靠先例）；不写 location.hash——
+  // hash 是两级路由信道；dataset 去重防重渲叠加（容器跨渲染复用）。
+  const wiz = T.$("cal-wizard");
+  if (wiz && !wiz.dataset.wizBound) {
+    wiz.dataset.wizBound = "1";
+    wiz.addEventListener("click", (ev) => {
+      const tgt = ev.target;
+      const a = tgt && tgt.closest ? tgt.closest("a[data-goto]") : null;
+      if (!a) return;
+      const el = document.getElementById(a.getAttribute("data-goto"));
+      if (!el) return;
+      ev.preventDefault();
+      const top = el.getBoundingClientRect().top +
+        (window.scrollY || window.pageYOffset || 0) - 12; // 12px 顶部留白
+      try { window.scrollTo({ top, left: 0, behavior: "instant" }); }
+      catch { window.scrollTo(0, top); }
+    });
+  }
+  fillCalWizardGuards(runsList);
 }
 
 async function loadCalibration(runId) {

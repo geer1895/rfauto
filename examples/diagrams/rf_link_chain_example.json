@@ -1,0 +1,6 @@
+[
+  {"name": "LNA", "gain_db": 20, "nf_db": 0.8},
+  {"name": "镜像抑制滤波器", "gain_db": -2, "nf_db": 2},
+  {"name": "混频器", "gain_db": -7, "nf_db": 7},
+  {"name": "中频放大器", "gain_db": 30, "nf_db": 3.5}
+]

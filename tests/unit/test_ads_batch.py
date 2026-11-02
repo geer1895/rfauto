@@ -246,10 +246,10 @@ class TestSshLaunch:
         """ssh argv 钉字面：BatchMode 缺省 / -p 端口 / host / 末位命令串
         （单个 argv 元素=一整条远端命令）。"""
         argv = build_ssh_command(
-            "ssh", "user@10.20.30.40", _EXPECTED_REMOTE_CMD, port=2222)
+            "ssh", "user@198.51.100.20", _EXPECTED_REMOTE_CMD, port=2222)
         assert argv == [
             "ssh", "-o", "BatchMode=yes", "-p", "2222",
-            "user@10.20.30.40", _EXPECTED_REMOTE_CMD,
+            "user@198.51.100.20", _EXPECTED_REMOTE_CMD,
         ]
         assert argv[-1] == _EXPECTED_REMOTE_CMD  # 命令串恒为末位单元素
 
@@ -269,14 +269,14 @@ class TestSshLaunch:
         monkeypatch.setattr(ab.subprocess, "Popen", recorder)
         nl = _write_netlist(tmp_path)
         res = ads_batch_solve(
-            nl, launcher="ssh", ssh_host="user@10.20.30.40",
+            nl, launcher="ssh", ssh_host="user@198.51.100.20",
             remote_hpeesof_dir="E:\\ADS\\ADS27",
             remote_work_dir="E:\\rfauto_remote\\ads_abcd1234",
             ssh_port=2222, timeout_s=120)
         assert res["ok"] and res["rc"] == 0, res
         assert recorder.calls[0]["cmd"] == [
             "ssh", "-o", "BatchMode=yes", "-p", "2222",
-            "user@10.20.30.40", _EXPECTED_REMOTE_CMD.replace(
+            "user@198.51.100.20", _EXPECTED_REMOTE_CMD.replace(
                 "'demo.net'", f"'{nl.name}'"),
         ]
         assert res["launcher"] == "ssh"

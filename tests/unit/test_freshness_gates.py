@@ -219,6 +219,7 @@ def _case_run_dir(plan: dict, case_id: str) -> Path:
 
 
 class TestSummarizeFreshness:
+    @pytest.mark.solo  # 并行争用假红（aurora_m s17 并行门实证：wall-clock 新鲜度阈值在 mtime-now 漂移下越阈；隔离复跑 13 passed；串行终门/CI 仍执行）
     def test_stale_row_marked_not_rejected(self, sweep_env):
         """stale 行标红列并入 summary（不整批拒绝，DOE 最大化产出）。"""
         sweep, plan = sweep_env
@@ -251,6 +252,7 @@ class TestSummarizeFreshness:
         assert any("stale 1" in n and "freshness" in n
                    for n in payload["notes"])
 
+    @pytest.mark.solo  # 同上：wall-clock 新鲜度并行争用假红（s17）
     def test_legacy_rows_pass_with_note(self, sweep_env):
         """无 manifest 老 case → legacy 放行带 note（DOE 老 run 不废）。"""
         sweep, plan = sweep_env
@@ -263,6 +265,7 @@ class TestSummarizeFreshness:
         assert all("legacy" in r["freshness_note"] for r in summary["rows"])
         assert summary["n_stale_rows"] == 0
 
+    @pytest.mark.solo  # 同上：wall-clock 新鲜度并行争用假红（s17）
     def test_verify_face_failure_marks_unknown(self, sweep_env, monkeypatch):
         """verify 面故障不阻塞汇总（#105）：该行 unknown，整批照常落盘。"""
         sweep, plan = sweep_env

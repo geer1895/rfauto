@@ -46,7 +46,7 @@ C_MM_GHZ = 299.792458
 #: 漂移即红，换钉须留 diff 证据——msl_siw_taper/compose 三钉同纪律）
 #: wf:w6e-h01 换钉（2026-10-06）：H-01 掩码自描述 B 案（ra_criteria SPECS
 #: §六）——render_script 尾段追加 sparams.mask.json sidecar 写出块
-#: （csv 写出段逐字节零漂移，diff 证据 内部证据档{pre,post}_
+#: （csv 写出段逐字节零漂移，diff 证据 runs/w6_phase6/w6e/{pre,post}_
 #: render_h01/ removed=0 实测）；本钉=整脚本 sha，随尾段追加必移，
 #: 语义断言（nf2ff 面注入/缺省不含）保留不变。
 #: wf:nrts-fix 换钉（2026-09-28）：patch_eep_1x4 系四 F-D 模板之一，缺省

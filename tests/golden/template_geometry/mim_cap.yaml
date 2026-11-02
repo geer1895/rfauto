@@ -17,7 +17,7 @@ params:
   er: 12.9
   tan_d: 0.0006
 status: ok
-script_sha256: b9a5bf1af563429bef3feaa55772ed60d82c9dbc8c61129b9e4450ad46bcca9a
+script_sha256: 69869bc434880574599c312e7a3c21fb44bb36f9c18d2a28a151586c5f7beda2
 csx:
   n_primitives: 8
   props:

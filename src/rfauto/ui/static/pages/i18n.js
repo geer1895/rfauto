@@ -83,13 +83,12 @@ export const LOCALES = {
   "nav.group.help": { zh: "帮助与系统", en: "Help & System" },
   /* ── common.*（skip 链接 + 壳 aria 标签）── */
   "common.skip_to_content": { zh: "跳到主内容", en: "Skip to content" },
-  "common.brand_tagline": {
-    zh: "HFSS · ADS 调优工作台",
-    en: "HFSS · ADS tuning workbench",
-  },
   "common.aside_aria": { zh: "侧边栏", en: "Sidebar" },
   "common.nav_aria": { zh: "主导航", en: "Main navigation" },
   "common.lightbox_aria": { zh: "图片灯箱预览", en: "Image lightbox preview" },
+  // aurora_n EN 走查席：侧栏品牌副标（index.html h1.logo small 此前无注入口，
+  // en 档恒显 zh——真渲染走查发现）。
+  "common.brand_tagline": { zh: "HFSS · ADS 调优工作台", en: "HFSS · ADS Tuning Workbench" },
   /* ── palette.*（命令面板占位/提示/aria；hint 三段夹 <code> 芯片排版）── */
   "palette.placeholder": {
     zh: "跳转页面、# 搜 run、> 命令…",
@@ -105,6 +104,84 @@ export const LOCALES = {
   },
   "palette.hint.run": { zh: " run · ", en: " runs · " },
   "palette.hint.cmd": { zh: " 命令 · Ctrl+K 开关", en: " commands · Ctrl+K toggle" },
+  // aurora_n EN 走查席：结果 listbox aria（index.html 此前裸 aria-label 恒 zh）。
+  "palette.list_aria": { zh: "结果列表", en: "Results" },
+  /* ── aurora_o i18n 分波席：palette.js 命令目录/条目 chrome 全量迁入
+     （374 Han 清账）。zh 值=既有字面同笔迁入（node zh 行为钉
+     test_ui_palette_cmds/test_ui_perf_loading 逐字节复现），en 值新增。
+     消费面=palette.js（共享模块，test_ui_i18n 壳面引用集同权收录——
+     kit.js/app.js/plotcard.js 先例）。kw 键=命令检索关键词串（haystack
+     数据，zh 档逐字节保检索行为；en 档换英文关键词）。 ── */
+  "palette.ds_fail": { zh: "命令面板数据源失败", en: "Command palette data source failed" },
+  "palette.help_text": {
+    zh: "命令面板：Ctrl/Cmd+K 开关 · 直接输入搜页面与配方 · # 搜 run · > 命令 · ↑↓ 选择 · Enter 执行 · Esc 关闭",
+    en: "Command palette: Ctrl/Cmd+K toggle · type to search pages & recipes · # for runs · > for commands · ↑↓ select · Enter run · Esc close",
+  },
+  "palette.empty_no_match": { zh: "无匹配结果", en: "No matches" },
+  "palette.empty_input_hint": {
+    zh: "输入以搜索；# 搜 run，> 命令",
+    en: "Type to search; # for runs, > for commands",
+  },
+  /* 条目 chrome（页面/命令/run/配方条共用副标与提示词） */
+  "palette.item.subtitle_cmd": { zh: "命令", en: "Command" },
+  "palette.item.subtitle_page": { zh: "页面", en: "Page" },
+  "palette.item.hint_current": { zh: "当前", en: "current" },
+  "palette.item.hint_jump": { zh: "跳转", en: "Go" },
+  "palette.item.hint_action": { zh: "动作", en: "Action" },
+  "palette.item.hint_help": { zh: "帮助", en: "Help" },
+  "palette.item.hint_direct": { zh: "直达", en: "Open" },
+  "palette.item.hint_search_runs": { zh: "转 # 检索", en: "Switch to # search" },
+  "palette.item.hint_open_detail": { zh: "打开详情", en: "Open detail" },
+  "palette.item.hint_load": { zh: "加载", en: "Load" },
+  "palette.item.no_id": { zh: "(无 id)", en: "(no id)" },
+  "palette.item.workcopy_tail": { zh: " · 工作副本", en: " · working copy" },
+  "palette.item.recipe_lead": { zh: "配方 · ", en: "Recipe · " },
+  "palette.item.recipe_kw": { zh: "配方 recipe", en: "recipe" },
+  /* 语言切换命令提示：按当前档选键（zh 档提示切英文、en 档提示切中文）——
+     en 档值=英文（零 Han，不入 en 语料白名单）。 */
+  "palette.cmd.locale_hint_to_en": { zh: "切换到 English", en: "Switch to English" },
+  "palette.cmd.locale_hint_to_zh": { zh: "切换到中文", en: "Switch to Chinese" },
+  /* 命令目录 20 条（title 显示面 + kw 检索面） */
+  "palette.cmd.theme_midnight.title": { zh: "主题：Midnight 深蓝", en: "Theme: Midnight (deep blue)" },
+  "palette.cmd.theme_midnight.kw": { zh: "theme midnight 深蓝 午夜 夜间 dark", en: "theme midnight dark night" },
+  "palette.cmd.theme_ocean.title": { zh: "主题：Ocean 青绿", en: "Theme: Ocean (teal)" },
+  "palette.cmd.theme_ocean.kw": { zh: "theme ocean 青绿 海洋", en: "theme ocean teal" },
+  "palette.cmd.theme_light.title": { zh: "主题：浅色", en: "Theme: Light" },
+  "palette.cmd.theme_light.kw": { zh: "theme light 浅色 亮色 日间", en: "theme light bright day" },
+  "palette.cmd.theme_system.title": { zh: "主题：跟随系统", en: "Theme: Follow system" },
+  "palette.cmd.theme_system.kw": { zh: "theme system 跟随 自动 auto", en: "theme system follow auto" },
+  "palette.cmd.go_runs.title": { zh: "跳转：Run 历史", en: "Go: Run History" },
+  "palette.cmd.go_runs.kw": { zh: "go runs run 历史 跳转", en: "go runs run history" },
+  "palette.cmd.go_campaign.title": { zh: "跳转：战役仪表盘", en: "Go: Campaigns" },
+  "palette.cmd.go_campaign.kw": { zh: "go campaign 战役 仪表盘 跳转", en: "go campaign dashboard" },
+  "palette.cmd.go_tune.title": { zh: "跳转：优化调参", en: "Go: Tuning" },
+  "palette.cmd.go_tune.kw": { zh: "go tune 调参 优化 跳转", en: "go tune optimization" },
+  "palette.cmd.go_recipe.title": { zh: "跳转：配方编辑", en: "Go: Recipes" },
+  "palette.cmd.go_recipe.kw": { zh: "go recipe 配方 编辑 跳转", en: "go recipe editor" },
+  "palette.cmd.go_tools.title": { zh: "跳转：微波工具箱", en: "Go: Microwave Tools" },
+  "palette.cmd.go_tools.kw": { zh: "go tools 工具箱 计算器 跳转", en: "go tools calculators" },
+  "palette.cmd.go_gallery.title": { zh: "跳转：模板画廊", en: "Go: Template Gallery" },
+  "palette.cmd.go_gallery.kw": { zh: "go gallery 画廊 模板 跳转", en: "go gallery templates" },
+  "palette.cmd.go_profile.title": { zh: "跳转：剖析", en: "Go: Profiler" },
+  "palette.cmd.go_profile.kw": { zh: "go profile 剖析 性能 py-spy 跳转", en: "go profile profiler py-spy" },
+  "palette.cmd.act_refresh.title": { zh: "刷新当前页数据", en: "Refresh current page data" },
+  "palette.cmd.act_refresh.kw": { zh: "refresh 刷新 当前页 reload", en: "refresh reload current page" },
+  "palette.cmd.act_export_chart.title": { zh: "导出当前页图表", en: "Export current page chart" },
+  "palette.cmd.act_export_chart.kw": { zh: "export chart 导出 图表 下载", en: "export chart download" },
+  "palette.cmd.act_palette_help.title": { zh: "帮助：命令面板用法", en: "Help: command palette usage" },
+  "palette.cmd.act_palette_help.kw": { zh: "help palette 帮助 提示 用法 快捷键", en: "help palette usage shortcuts" },
+  "palette.cmd.act_locale.title": { zh: "语言 / Language", en: "Language" },
+  "palette.cmd.act_locale.kw": { zh: "language locale i18n 语言 英文 中文 english 切换", en: "language locale i18n switch english chinese" },
+  "palette.cmd.act_run_search.title": { zh: "打开 run 详情（输入 id）", en: "Open run detail (enter id)" },
+  "palette.cmd.act_run_search.kw": { zh: "open run 打开 run 详情 输入 id 检索 #", en: "open run detail search id #" },
+  "palette.cmd.act_run_latest.title": { zh: "打开最近 run ①", en: "Open latest run ①" },
+  "palette.cmd.act_run_latest.kw": { zh: "latest recent 最近 run 新 直达 打开", en: "latest recent newest run open" },
+  "palette.cmd.act_run_2nd.title": { zh: "打开最近 run ②", en: "Open 2nd latest run ②" },
+  "palette.cmd.act_run_2nd.kw": { zh: "second 次新 最近 run 直达 打开", en: "second run open" },
+  "palette.cmd.act_run_3rd.title": { zh: "打开最近 run ③", en: "Open 3rd latest run ③" },
+  "palette.cmd.act_run_3rd.kw": { zh: "third 第三新 最近 run 直达 打开", en: "third run open" },
+  "palette.cmd.act_latest_campaign.title": { zh: "打开最近战役", en: "Open latest campaign" },
+  "palette.cmd.act_latest_campaign.kw": { zh: "campaign 战役 最优 调参 优化 最近 直达 trials", en: "campaign best tuning optimization latest trials" },
   /* ── foot.*（侧栏版本注记，A6-D 中性化口径的 en 对照）── */
   "foot.version_note": {
     zh: "HFSS/ADS 取决于实际安装的版本（开发机为 2025 R1 / v251）",
@@ -120,6 +197,11 @@ export const LOCALES = {
     en: "Search calculators (key, name, purpose)",
   },
   "tools.calculators_label": { zh: "计算器", en: "Calculators" },
+  // P3-2（aurora_n wave_ui_c）：新手缺省选中说明（缺省=microstrip_synthesis）
+  "tools.default_hint": {
+    zh: "缺省选中 microstrip_synthesis（新手常用）；也可搜索或从组下拉选择其他计算器。",
+    en: "microstrip_synthesis is preselected (a common first pick); search or use the group dropdown for others.",
+  },
   "tools.run": { zh: "计算", en: "Compute" },
   "tools.result_title": { zh: "结果", en: "Results" },
   "tools.result_hint": {
@@ -226,6 +308,12 @@ export const LOCALES = {
   "detail.recipe_title": { zh: "配方快照", en: "Recipe snapshot" },
   "detail.load_failed": { zh: "加载失败", en: "Load failed" },
   "detail.retry": { zh: "重试", en: "Retry" },
+  /* ── P1-1（aurora_n wave_ui_a）：目录不在盘（索引残留/深链失效）=重试
+     恒失败——重试钮禁用+tooltip（#122 诚实语义）── */
+  "detail.retry_futile": {
+    zh: "该 run 的产物目录已不在 runs/ 下，重试无效",
+    en: "This run's artifact directory is no longer under runs/ — retrying cannot succeed",
+  },
   /* ── detail.freshness_*（C2 aurora_l，R1 #14/15：run 详情新鲜度条——
      stale 红条/legacy 灰条，fresh 不出条；摘要拼 API 数据走 esc）──
      键域注记：条渲染在详情页，按 test_ui_i18n 死键门"前缀→归属页"
@@ -249,6 +337,11 @@ export const LOCALES = {
   "sparams.deeplink_suffix": {
     zh: "（深链 run，不在最近清单内）",
     en: " (deep-linked run, not in recent list)",
+  },
+  /* ── P1-1（aurora_n wave_ui_a）：run 下拉选项的归档缺失后缀 ── */
+  "sparams.archived_suffix": {
+    zh: "（归档缺失）",
+    en: " (archived missing)",
   },
   "sparams.empty_lead": {
     zh: "该 run 无 Touchstone 产物",
@@ -309,6 +402,23 @@ export const LOCALES = {
   "agent.open_chat": { zh: "💬 打开对话浮窗", en: "💬 Open chat window" },
   "agent.loading": { zh: "加载中...", en: "Loading..." },
   "agent.no_pending": { zh: "无待审批提案", en: "No pending proposals" },
+  /* ── P2（aurora_n wave_ui_a）：审批收件箱忽略控件（localStorage 记账，
+     服务端零新写路径；被忽略项折叠清单可查看/恢复）── */
+  "agent.dismiss": { zh: "忽略", en: "Dismiss" },
+  "agent.dismiss_tip": {
+    zh: "从收件箱隐藏这条提案（可随时在下方已忽略清单恢复）",
+    en: "Hide this proposal from the inbox (restore anytime from the dismissed list below)",
+  },
+  "agent.dismissed_ok": { zh: "已忽略（可在已忽略清单恢复）", en: "Dismissed (restore from the dismissed list)" },
+  "agent.dismissed_summary_tpl": {
+    zh: "已忽略 {n} 条提案",
+    en: "{n} dismissed proposal(s)",
+  },
+  "agent.dismiss_restore": { zh: "恢复", en: "Restore" },
+  "agent.inbox_all_dismissed": {
+    zh: "收件箱提案已全部忽略（下方可恢复）",
+    en: "All inbox proposals dismissed (restore below)",
+  },
   "agent.cfg_ok": { zh: "已配置真实 LLM", en: "Real LLM configured" },
   "agent.cfg_none": { zh: "未配置（指令模式）", en: "Not configured (command mode)" },
 
@@ -319,6 +429,29 @@ export const LOCALES = {
 
   /* ── common.help_summary（dom.js help() 壳，26 个调用点一次收口）── */
   "common.help_summary": { zh: "❓ 本页说明（点开查看）", en: "❓ Page guide (click to open)" },
+  /* ── fs.*（filebrowser 弹层，aurora_n wave_ui_c P3-4：场景化扩展名过滤
+     的可感知提示——徽章+全滤空态；共享模块非页面前缀，不入页键域互证）── */
+  "fs.filter_badge_tpl": { zh: "仅显示 {list}", en: "Showing {list} only" },
+  "fs.filter_empty": {
+    zh: "本目录没有匹配文件（目录仍可进入）",
+    en: "No matching files in this directory (directories still browsable)",
+  },
+  /* ── aurora_o i18n 分波席：filebrowser.js 弹层 chrome 全量迁入（49 Han
+     清账）。zh 值=既有字面同笔迁入（node 行为钉 test_aurora_n_ui_e2e_smoke
+     上级 aria-label/空态说明逐字节复现），en 值新增；共享模块非页面前缀，
+     不入页键域互证（fs.filter_* 同口径）。 ── */
+  "fs.aria_dialog": { zh: "选择文件或目录", en: "Choose a file or directory" },
+  "fs.title": { zh: "选择文件 / 目录", en: "Choose file / directory" },
+  "fs.path_ph": { zh: "工作区目录或其子目录", en: "workspace directory or a subdirectory" },
+  "fs.path_aria": { zh: "路径", en: "Path" },
+  "fs.go": { zh: "跳转", en: "Go" },
+  "fs.close": { zh: "关闭", en: "Close" },
+  "fs.loading": { zh: "加载中...", en: "Loading..." },
+  "fs.parent_label": { zh: "返回上级目录", en: "Go to parent directory" },
+  "fs.parent_row": { zh: "📁 ..（上级）", en: "📁 .. (up)" },
+  "fs.open_dir_lbl": { zh: "打开目录 ", en: "Open folder " },
+  "fs.pick_lbl": { zh: "选择 ", en: "Pick " },
+  "fs.empty_dir": { zh: "空目录", en: "Empty directory" },
   /* ── dashboard.*（W8-S32 批 3：help 块分段 16 + 控件钮/aria 6 + KPI 3 +
      activity 5 + 分布图 4 + S11 趋势 8 + solvers 4 + tune 4 + adapter 1 +
      快速开始 4；quick links 标题复用 nav.* 键不重立）── */
@@ -376,13 +509,46 @@ export const LOCALES = {
   "dashboard.activity_done": { zh: "完成", en: "done" },
   "dashboard.activity_fail": { zh: "失败", en: "failed" },
   "dashboard.activity_unknown": { zh: "未知", en: "unknown" },
+  // P3-1（aurora_n wave_ui_c）：状态词统一——other 桶徽章改中文词，
+  // 原始英文状态串进 title 悬停（中文主导+英文对照 tooltip）。
+  "dashboard.activity_other": { zh: "其他", en: "other" },
+  "dashboard.activity_raw_tip_tpl": {
+    zh: "原始状态：{status}",
+    en: "raw status: {status}",
+  },
   "dashboard.mix_empty": {
     zh: "暂无 run——分布图待第一个 run 落盘后出现",
     en: "No runs yet — the donut appears after the first run lands",
   },
   "dashboard.mix_other": { zh: "其他", en: "Other" },
+  // P3-1（aurora_n wave_ui_c）：verdict 术语解释入口（词条单源在
+  // 使用指南·概念速查 gl_verdict 行；此为环图旁可点跳转注记）。
+  "dashboard.mix_gloss_hint": {
+    zh: "PASS=完成的 run，FAIL=失败的 run，其他=进行中/导入等状态。",
+    // aurora_n EN 走查席：en 值曾漏译"其他"（en 语料含 Han=切 en 显示 zh
+    // 原文的隐性形态，test_ui_i18n en 零 Han 钉的启源条目）。
+    en: "PASS = done runs, FAIL = failed runs, others = running/imported states.",
+  },
+  "dashboard.mix_gloss_link": { zh: "verdict 词表见使用指南·概念速查", en: "verdict glossary in Guide·Concepts" },
+  "dashboard.mix_gloss_link_aria": {
+    zh: "打开使用指南概念速查（verdict 词表）",
+    en: "Open Guide concepts (verdict glossary)",
+  },
   "dashboard.mix_aria_prefix": { zh: "图表：run 状态分布甜甜圈（", en: "Chart: run status donut (" },
   "dashboard.mix_csv_name": { zh: "run 状态分布", en: "run status mix" },
+  /* ── aurora_n EN 走查席：dashboard_util.js 相对时间/新鲜度环迁词表 ──
+     zh 值与原硬编码逐字节一致（zh 显示零变化；en 补齐）。消费点
+     pages/dashboard_util.js（relTime 活动流三档 + freshnessRingSvg
+     悬浮标签——真渲染走查发现 EN 档活动流/悬浮仍显 zh 的高频面）。 */
+  "dashboard.time_now": { zh: "刚刚", en: "just now" },
+  "dashboard.time_min_ago_tpl": { zh: "{n} 分钟前", en: "{n} min ago" },
+  "dashboard.time_hour_ago_tpl": { zh: "{n} 小时前", en: "{n} h ago" },
+  "dashboard.time_day_ago_tpl": { zh: "{n} 天前", en: "{n} d ago" },
+  "dashboard.fresh_none": { zh: "数据新鲜度：暂无 run", en: "Data freshness: no runs yet" },
+  "dashboard.fresh_tpl": { zh: "数据新鲜度：{t}（{tier}）", en: "Data freshness: {t} ({tier})" },
+  "dashboard.fresh_ok": { zh: "1 小时内", en: "within 1 h" },
+  "dashboard.fresh_warn": { zh: "24 小时内", en: "within 24 h" },
+  "dashboard.fresh_stale": { zh: "超过 24 小时", en: "over 24 h" },
   "dashboard.trend_empty": {
     zh: "数据不足（至少 2 个带指标的 run）",
     en: "Not enough data (need at least 2 runs with metrics)",
@@ -425,6 +591,13 @@ export const LOCALES = {
   "dashboard.ql_recipe_d": { zh: "设定目标（什么算好）", en: "Set objectives (what counts as good)" },
   "dashboard.ql_tune_d": { zh: "fake 粗筛 → 精算", en: "fake screening → high-fidelity runs" },
   "dashboard.ql_runs_d": { zh: "查看每次仿真结果", en: "Inspect each simulation result" },
+  /* ── P2-1（aurora_n wave_ui_b）：快速开始四步卡可点击化——行动 aria
+     （{n}=步序号 {name}=步骤名（nav.* 词表值）；label 经 escAttr 属性
+     语境出口，数据面零动态拼值）── */
+  "dashboard.ql_step_aria_tpl": {
+    zh: "打开第 {n} 步「{name}」页",
+    en: "Open step {n}: {name}",
+  },
   /* ── detail.*（W8-S32 批 3 补 4：骨架 aria + fake 曲线引导 + 3D 空态 +
      配方快照缺省）── */
   "detail.loading_aria": { zh: "run 数据加载中", en: "Loading run data" },
@@ -437,6 +610,42 @@ export const LOCALES = {
     en: "No renderable 3D template for this run",
   },
   "detail.recipe_none": { zh: "(无快照)", en: "(no snapshot)" },
+  /* ── P2-2（aurora_n wave_ui_b）：本页说明（26 页收尾）+ metrics.json
+     载荷区块化（sec_* 区块小标题 / check_* 已知校验键标签 / diag_*
+     诊断卡文案段——rule_id/description/hint/指标值是 API 数据 esc 注入，
+     数据非文案不迁）── */
+  "detail.help_1": {
+    zh: "本页展示一次 run 的全部产物：顶部指标区每个徽章可悬浮/键盘聚焦看白话解释与健康判据（绿=达标、红=未达标）；出现红色「结果文件与 run 记录不符」条时，数字可能来自旧产物，勿用于交付。",
+    en: "This page shows one run's artifacts: hover or keyboard-focus any metric badge for a plain-language explanation and health gate (green=pass, red=fail); if a red \"result files do not match the run record\" banner appears, the numbers may be stale — do not use for delivery.",
+  },
+  "detail.help_2": {
+    zh: "「诊断建议」卡按命中规则给出现象与下一步（如 R002 S11 谐振频率偏高→检查馈电位置）；失败 run 另有「一键查看诊断」按钮展开完整诊断包。",
+    en: "\"Diagnosis suggestions\" cards give the symptom and next step per rule hit (e.g. R002 S11 resonance too high → check the feed position); failed runs also have a \"View diagnostics\" button for the full diagnostics bundle.",
+  },
+  "detail.help_3": {
+    zh: "S 参数图：图例点击切换分量、滚轮缩放、悬停读数；fake 通道无 Touchstone 时展示 PNG 曲线（点击放大）。",
+    en: "S-parameter chart: click the legend to toggle traces, wheel to zoom, hover to read values; for fake runs without Touchstone, PNG curves are shown (click to zoom).",
+  },
+  "detail.help_4": {
+    zh: "底部「产物清单」列出 run 目录全部文件，「配方快照」是该 run 所用配方的存档；从 Run 历史或总览点任意 run 行即回到本页。",
+    en: "\"Artifacts\" at the bottom lists every file in the run directory; \"Recipe snapshot\" archives the recipe used. Click any run row in Run History or the Dashboard to return here.",
+  },
+  "detail.sec_metrics": { zh: "指标", en: "Metrics" },
+  "detail.sec_params": { zh: "设计参数", en: "Design parameters" },
+  "detail.sec_checks": { zh: "物理校验", en: "Physics checks" },
+  "detail.sec_diagnosis": { zh: "诊断建议", en: "Diagnosis suggestions" },
+  "detail.check_passivity": { zh: "无源性", en: "Passivity" },
+  "detail.check_reciprocity": { zh: "互易性", en: "Reciprocity" },
+  "detail.check_sanity": { zh: "物理合理性", en: "Sanity" },
+  "detail.diag_metric_tpl": {
+    zh: "指标 {k} = {v}（门限 {thr}）",
+    en: "metric {k} = {v} (gate {thr})",
+  },
+  "detail.diag_metric_plain_tpl": {
+    zh: "指标 {k} = {v}",
+    en: "metric {k} = {v}",
+  },
+  "detail.diag_advice_lead": { zh: "建议：", en: "Suggested fix: " },
   /* ── timeline.*（W8-S32 批 3：本页接入壳扫描=第 9 页；壳 3 + 状态行 3 +
      图表 props 3 + 空态 1）── */
   "timeline.title": { zh: "成本时间线", en: "Cost Timeline" },
@@ -586,6 +795,12 @@ export const LOCALES = {
     en: " — then a credibility gate keeps it honest: the screen's rankings must match high fidelity (hit rate ≥80%).",
   },
   "guide.steps_title": { zh: "5 分钟上手路线", en: "5-minute quick start" },
+  /* ── P2-1（aurora_n wave_ui_b）：五分钟步骤卡可点击化——行动 aria
+     （{n}=步序号 {name}=步骤标题；点击/Enter/Space 跳对应页）── */
+  "guide.step_open_tpl": {
+    zh: "打开第 {n} 步「{name}」页",
+    en: "Open step {n}: {name}",
+  },
   "guide.step1_t": { zh: "工程导入", en: "Import Project" },
   "guide.step1_d": {
     zh: "读入你的 HFSS 工程（.aedt），勾选要调的变量。",
@@ -638,6 +853,12 @@ export const LOCALES = {
   "guide.gl_gate_d": {
     zh: "LLM 提参数 → 自动校验 → 你在收件箱批准 → 才真正执行。",
     en: "The LLM proposes parameters → automatic checks run → you approve in the inbox → only then does it execute.",
+  },
+  // P3-1（aurora_n wave_ui_c）：概念速查补 verdict 行（PASS/PARTIAL/FAIL/
+  // UNKNOWN 四值含义单源；dashboard 状态环注记行跳转至此）。
+  "guide.gl_verdict_d": {
+    zh: "判定词表：PASS=达标（门通过）；PARTIAL=部分达标（个别门未过或证据不全）；FAIL=未达标；UNKNOWN=证据不足，如实不下结论。run 状态 done/failed 只说执行结果，与门判定分开看。",
+    en: "Verdict glossary: PASS = within spec (gate passed); PARTIAL = mostly there (some gates open or evidence incomplete); FAIL = out of spec; UNKNOWN = insufficient evidence, honestly no conclusion. Run states done/failed describe execution only — read them separately from gate verdicts.",
   },
   "guide.faq_title": { zh: "常见问题", en: "FAQ" },
   "guide.faq1_q": { zh: "为什么第一次都建议跑 fake？", en: "Why is fake recommended first?" },
@@ -1672,7 +1893,17 @@ export const LOCALES = {
     zh: "配方路径未在目录中找到，加载后仍可运行。",
     en: "Recipe path not found in the catalog; you can still run after loading.",
   },
-  "tune.started": { zh: "调参已启动，状态轮询中...", en: "Tuning started; polling status..." },
+  "tune.started": { zh: "已提交，正在校验…", en: "Submitted; validating..." },
+  // P3-3（aurora_n wave_ui_c）：启动前本地校验（路径确认不存在才拦）。
+  "tune.path_missing_title": { zh: "配方文件不存在", en: "Recipe file not found" },
+  "tune.path_missing_body": {
+    zh: "可以先自查：路径是否拼对（内置配方在 recipes/ 目录，配方编辑页可直接打开）；或用 rfauto validate 核对既有配方；也可以先在微波工具箱选模板生成。",
+    en: "Self-checks: is the path correct (built-in recipes live in recipes/, open one from the Recipe editor); or verify an existing recipe with rfauto validate; or generate one from a template in Microwave Tools.",
+  },
+  "tune.path_missing_toast": {
+    zh: "未启动：配方路径不存在，请按提示自查",
+    en: "Not started: recipe path not found — see the checklist",
+  },
   "tune.running": { zh: " 运行中", en: " Running" },
   "tune.announce_error": { zh: "调参已结束：出错", en: "Tuning ended: error" },
   "tune.announce_done": { zh: "调参已完成", en: "Tuning completed" },
@@ -1787,6 +2018,13 @@ export const LOCALES = {
     en: "Run History: click a row for detail, click a header to sort, toolbar filters apply instantly",
   },
   "runs.open_detail_aria": { zh: "打开 run 详情：", en: "Open run detail: " },
+  /* ── P1-1（aurora_n wave_ui_a）：目录不在盘的索引残留行（#122 诚实
+     语义——runs 列表归属页；dashboard 跨页复用只增引用）── */
+  "runs.archived_missing": { zh: "归档缺失", en: "archived missing" },
+  "runs.archived_missing_tip": {
+    zh: "该 run 的产物目录已不在 runs/ 下（索引残留记录），详情不可用",
+    en: "This run's artifact directory is no longer under runs/ (residual index row); detail is unavailable",
+  },
   "sparams.help_1": {
     zh: "选一个 run，交互查看全部 S 参数曲线：图例点选隐藏/显示、滚轮+滑块缩放、悬停读数。",
     en: "Pick a run to explore all S-parameter curves interactively: click legend to hide/show, wheel+slider zoom, hover readout.",
@@ -2504,6 +2742,19 @@ export const LOCALES = {
     zh: "暂无有校准产物的 run（先跑校准战役）",
     en: "No runs with calibration artifacts (run a calibration campaign first)",
   },
+  /* aurora_n wave_ui_pg 对比模式（纯前端增强）：第二 run 选择器 + 双代理
+     曲线叠加——工具栏标签/空态选项/B 缺指标提示三键 + help_5 引导句
+     （zh/en 同笔；曲线名带代理键=API 数据照旧 esc 直拼不迁）。 */
+  "playground.compare_b": { zh: "对比 Run B", en: "Compare run B" },
+  "playground.compare_b_none": { zh: "无（单代理）", en: "None (single)" },
+  "playground.compare_b_no_metric_tpl": {
+    zh: "B 无指标 {k}，未叠加",
+    en: "B lacks metric {k}, overlay skipped",
+  },
+  "playground.help_5": {
+    zh: "对比模式：探索器里再选一个对比 Run B，同一滑条与扫参轴下叠加第二个代理的预测曲线（图例带代理键，A 蓝 B 橙）；B 与当前 run 相同或缺同指标时如实提示、不叠加。",
+    en: "Comparison mode: pick a second run (B) in the explorer to overlay another surrogate's predicted curve under the same sliders and sweep axis (legend shows the surrogate key, A blue / B orange); if B equals the current run or lacks the metric, an honest note is shown and nothing is overlaid.",
+  },
 
   /* ── queue.* 残量清（发布前置 i18n 软编码批 S2：help 块/详情面板/状态段；
      表头 model/verdict/remote=协议标识符豁免；战役名/决策日志条目=API 数据
@@ -2757,6 +3008,74 @@ export const LOCALES = {
   "calibration.none": { zh: "无", en: "none" },
   "calibration.report_summary": { zh: "校准报告全文", en: "Full calibration report" },
 
+  /* ── calibration.wiz_*（aurora_n wave_ui_wizard：校准三步向导引导层，
+     view_calibration #cal-wizard）── */
+  "calibration.wiz_title": { zh: "校准三步向导", en: "Calibration 3-step wizard" },
+  "calibration.wiz_lead": {
+    zh: "第一次校准照三步走：点步卡直达对应页，各卡状态行是自动前置检查（探测失败只如实显示，永不拦主路径）。",
+    en: "Follow three steps for your first calibration: click a card to jump to its page; each status line is an automatic precheck (probe failure is shown honestly and never blocks).",
+  },
+  "calibration.wiz_jump_table": { zh: "查看下方产物清单", en: "See the artifacts below" },
+  "calibration.wiz_step_aria_tpl": {
+    zh: "打开向导第 {n} 步「{name}」（跳转对应页）",
+    en: "Open wizard step {n} \"{name}\" (jump to its page)",
+  },
+  "calibration.wiz_s1_t": { zh: "选模板/配目标", en: "Pick a template & set objectives" },
+  "calibration.wiz_s1_d": {
+    zh: "挑一个带 objectives 阈值的配方（或新建）——参数 bounds 与目标频段决定校准的采样范围。",
+    en: "Pick a recipe whose objectives carry threshold values (or create one) — parameter bounds and target bands define the calibration sampling range.",
+  },
+  "calibration.wiz_s1_out": {
+    zh: "产物预告：配方就位（校准阶段的唯一输入）。",
+    en: "Preview: a ready recipe (the single input of the calibrate stage).",
+  },
+  "calibration.wiz_g1_ok_tpl": {
+    zh: "配方目录在档 {n} 个——挑一个带 objectives 阈值的。",
+    en: "{n} recipes in the catalog — pick one with objective thresholds.",
+  },
+  "calibration.wiz_g1_empty": {
+    zh: "未检测到配方——到「配方编辑」新建，或先到「工程导入」导入工程。",
+    en: "No recipes detected — create one in the Recipe Editor, or import a project first.",
+  },
+  "calibration.wiz_s2_t": { zh: "选数据源", en: "Pick the data source" },
+  "calibration.wiz_s2_d": {
+    zh: "选采样通道：fake=零依赖演示秒回，openems=本地引擎真跑，hfss=仲裁基准（需已连接）——引擎可用性到「求解器」页核对。",
+    en: "Pick the sampling channel: fake = instant demo with zero dependencies, openems = real runs on the local engine, hfss = arbitration baseline (must be connected); check engine availability on the Solvers page.",
+  },
+  "calibration.wiz_s2_out": {
+    zh: "产物预告：逐点 metrics（采样执行与设计分离，gate FAIL 是正常返回不是异常）。",
+    en: "Preview: per-point metrics (sampling execution is separated from design; a FAIL gate is a normal result, not an error).",
+  },
+  "calibration.wiz_g2_ok_tpl": {
+    zh: "recipes/ 目录在盘 {n} 个配方文件——校准按配方逐点采样。",
+    en: "{n} recipe files found in recipes/ — calibration samples point-by-point from the recipe.",
+  },
+  "calibration.wiz_g2_empty": {
+    zh: "recipes/ 目录暂无配方文件——先完成第 1 步。",
+    en: "No recipe files in recipes/ yet — finish step 1 first.",
+  },
+  "calibration.wiz_s3_t": { zh: "跑与判读", en: "Run & interpret" },
+  "calibration.wiz_s3_d": {
+    zh: "跑法：rfauto campaign plan → run（或 goal 一键闭环）执行 calibrate 阶段；判读看判定徽章与 ρ（≥0.8 为 PASS 门），点行看详情。",
+    en: "Run: rfauto campaign plan → run (or goal, one shot) executes the calibrate stage; read the verdict badge and ρ (≥0.8 = PASS gate), click a row for detail.",
+  },
+  "calibration.wiz_s3_out": {
+    zh: "产物预告：校准产物（样本 + LOOCV ρ 门 + 报告）落 runs 下 calibration 目录，自动进下方清单。",
+    en: "Preview: calibration artifacts (samples + LOOCV ρ gate + report) land in the calibration folder under runs/, listed below automatically.",
+  },
+  "calibration.wiz_g3_ok_tpl": {
+    zh: "工作台已有 {n} 次校准产物——点下方行看详情。",
+    en: "The workbench already has {n} calibration runs — click a row below for detail.",
+  },
+  "calibration.wiz_g3_empty": {
+    zh: "还没有校准产物——按前两步备好后跑校准阶段，产物自动进下方清单。",
+    en: "No calibration artifacts yet — finish the first two steps, run the calibrate stage, and artifacts appear below.",
+  },
+  "calibration.wiz_g_unknown": {
+    zh: "前置条件暂无法检测（不影响使用）。",
+    en: "Precheck unavailable right now (never blocks).",
+  },
+
   /* ── import.*（工程导入，view_import；__custom__ 协议哨兵值与示例路径
      placeholder 等 ASCII 协议面不迁）── */
   "import.help_1_core": { zh: "工程文件", en: "Project file" },
@@ -2959,6 +3278,47 @@ export const LOCALES = {
   "queue.res_tasks_tpl": { zh: "在跑进程 {n}", en: "running procs {n}" },
   "queue.res_disk_tpl": { zh: "磁盘余量 {n} GB", en: "disk free {n} GB" },
   "queue.res_local_label": { zh: "本机", en: "Local" },
+  /* ── queue.probe.*（aurora_n 远程探测面板：/api/remote/status 探活端口
+     表+SSH 认证态+失败态 CLI 指路；{n} 为数字占位；OPEN/CLOSED 状态词
+     为协议字面豁免登记与 CLI 输出同形；ssh.hint 为 service 文案 API
+     数据照旧 esc——数据非文案不迁）── */
+  "queue.probe_title": { zh: "远程探测", en: "Remote probe" },
+  "queue.probe_refresh": { zh: "刷新探测", en: "Refresh probe" },
+  "queue.probe_refreshing": { zh: "探测中…", en: "Probing…" },
+  "queue.probe_refresh_aria": {
+    zh: "重新探测远程机器端口连通性（网络调用，手动触发，无自动轮询）",
+    en: "Re-probe remote machine port connectivity (network call, manual, no auto-polling)",
+  },
+  "queue.probe_loading_aria": {
+    zh: "远程探测进行中",
+    en: "Remote probe in progress",
+  },
+  "queue.probe_th_port": { zh: "端口", en: "Port" },
+  "queue.probe_th_num": { zh: "端口号", en: "Number" },
+  "queue.probe_th_state": { zh: "状态", en: "State" },
+  "queue.probe_th_latency": { zh: "时延", en: "Latency" },
+  "queue.probe_probe_s_tpl": { zh: "探测用时 {n}s", en: "probe took {n}s" },
+  "queue.probe_ssh_lead": { zh: "SSH 认证", en: "SSH auth" },
+  "queue.probe_ssh_ok": { zh: "正常", en: "ok" },
+  "queue.probe_ssh_registered": { zh: "已登记", en: "registered" },
+  "queue.probe_ssh_missing": { zh: "凭据缺失", en: "missing credentials" },
+  "queue.probe_ssh_failed": { zh: "通道失败", en: "failed" },
+  "queue.probe_unreachable": {
+    zh: "服务器不可达——资源面数据可能过时，选机推荐会排除该机",
+    en: "Server unreachable — resource data may be stale; scheduling recommendations exclude this machine",
+  },
+  "queue.probe_cli_hint": {
+    zh: "CLI 复核：rfauto remote probe（--json 看端口明细）",
+    en: "CLI check: rfauto remote probe (--json for port details)",
+  },
+  "queue.probe_table_caption": {
+    zh: "远程机器探活端口表",
+    en: "Remote machine probe ports",
+  },
+  "queue.probe_no_ports": {
+    zh: "无探活端口记录",
+    en: "No probe port records",
+  },
   "queue.tab_all": { zh: "全部", en: "All" },
   "queue.loading_aria": { zh: "队列数据加载中", en: "Loading queue data" },
   "queue.tab_running": { zh: "进行中", en: "Running" },
@@ -3031,6 +3391,74 @@ export const LOCALES = {
   "fieldviz.iso_kb_hint": {
     zh: "3D 视角：方向键旋转，+/- 缩放（画布可 Tab 聚焦）",
     en: "3D view: arrow keys rotate, +/- zoom (canvas is Tab-focusable)",
+  },
+
+  /* ── aurora_o i18n 零散清偿席（棘轮 303→88 终批；app.js/plotcard.js/
+     charts.js/chart_export.js/pages.js/api.js/sortable.js/theme.js/dom.js
+     九文件文案面全迁，view_tools 88=组协议标识符刻意保留）──
+     chart.*：图表 aria 与导出钮（app.js drawLineChart/drawEChart 与
+     plotcard.js _ariaLabel 同键单源；chart_export.js _BTN_META 与
+     charts.js chartExportTools 同键单源）；model3d.*：app.js drawBoxes
+     3D 图例/aria；api.*：api.js 超时文案；theme.*：主题钮四态标签
+     （theme.js themeLabel() locale 感知取值——模块级 const 烘焙 t() 会
+     冻结语言档）；sortable.*：表头排序 aria；common.* 增量：api 兜错/
+     系列缺省名/懒加载失败/未知错误（zh 与旧字面逐字节同，en 新增）。 */
+  "common.request_failed": {
+    zh: "请求失败（网络或服务器异常）",
+    en: "Request failed (network or server error)",
+  },
+  "common.series_default": { zh: "数据系列", en: "Data series" },
+  "common.page_load_failed": {
+    zh: "页面模块加载失败：",
+    en: "Failed to load page module: ",
+  },
+  "common.unknown_error": { zh: "未知错误", en: "Unknown error" },
+  "chart.line_aria_prefix": { zh: "折线图：", en: "Line chart: " },
+  "chart.aria_prefix": { zh: "图表：", en: "Chart: " },
+  "chart.aria_ylabel": { zh: "，纵轴 ", en: ", Y-axis " },
+  "chart.aria_xlabel": { zh: "，横轴 ", en: ", X-axis " },
+  "chart.band_label": { zh: "带内", en: "In-band" },
+  "chart.sparam_ylabel_db": { zh: "dB", en: "dB" },
+  "chart.sparam_ylabel_deg": { zh: "相位（deg）", en: "Phase (deg)" },
+  "chart.sparam_ylabel_linear": { zh: "线性", en: "Linear" },
+  "chart.export_csv_title": { zh: "导出数据（CSV 平铺）", en: "Export data (CSV flat)" },
+  "chart.export_csv_aria": { zh: "导出图表数据 CSV", en: "Export chart data as CSV" },
+  "chart.export_png_title": { zh: "导出图片（PNG，2x）", en: "Export image (PNG, 2x)" },
+  "chart.export_png_aria": { zh: "导出图表图片 PNG", en: "Export chart image as PNG" },
+  "chart.export_svg_title": { zh: "导出图片（SVG，矢量）", en: "Export image (SVG, vector)" },
+  "chart.export_svg_aria": { zh: "导出图表图片 SVG", en: "Export chart image as SVG" },
+  "model3d.no_geometry": { zh: "无几何", en: "No geometry" },
+  "model3d.legend_metal": { zh: "金属", en: "Metal" },
+  "model3d.legend_ground": { zh: "地面", en: "Ground" },
+  "model3d.legend_substrate": { zh: "基板", en: "Substrate" },
+  "model3d.legend_port": { zh: "端口", en: "Port" },
+  "model3d.legend_ports": { zh: "　端口: ", en: " Ports: " },
+  "model3d.legend_devices": { zh: "器件: ", en: "Devices: " },
+  "model3d.interact_hint": {
+    zh: "拖动旋转 / 滚轮缩放",
+    en: "Drag to rotate / scroll to zoom",
+  },
+  "model3d.aria_prefix": { zh: "3D 模型预览：", en: "3D model preview: " },
+  "model3d.aria_ports": { zh: "，端口 ", en: ", ports " },
+  "api.timeout_tpl": {
+    zh: "请求超时（{ms}ms 无响应，已中止）",
+    en: "Request timed out (no response within {ms} ms, aborted)",
+  },
+  "theme.label_midnight": { zh: "🌌 Midnight", en: "🌌 Midnight" },
+  "theme.label_ocean": { zh: "🌊 Ocean", en: "🌊 Ocean" },
+  "theme.label_light": { zh: "☀ 浅色", en: "☀ Light" },
+  "theme.label_system": { zh: "🖥 跟随系统", en: "🖥 Follow system" },
+  "theme.aria_tpl": {
+    zh: "主题：{label}（点击切换 Midnight→Ocean→浅色→跟随系统）",
+    en: "Theme: {label} (click to cycle Midnight→Ocean→Light→Follow system)",
+  },
+  "theme.switch_title": {
+    zh: "点击切换主题：Midnight → Ocean → 浅色 → 跟随系统",
+    en: "Click to switch theme: Midnight → Ocean → Light → Follow system",
+  },
+  "sortable.th_aria": {
+    zh: "排序（升 → 降 → 还原；Enter 或空格）",
+    en: "Sort (ascending → descending → reset; Enter or Space)",
   },
 };
 

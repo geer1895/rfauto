@@ -1,4 +1,4 @@
-"""recipe-loop 远跑执行面（开发接续说明尾程项 11 末件）。
+"""recipe-loop 远跑执行面（交接书尾程项 11 末件）。
 
 recipe 驱动的优化环（optimization/surrogate_loop 的 SBO 环）的远程批次
 发射面。既有环的求解执行与环逻辑本就分离——``run_surrogate_loop`` 的
@@ -148,7 +148,7 @@ class RemoteLoopLauncher:
     """远端 launcher——本期接口占位（诚实占位不硬编：evaluate 一律抛
     NotImplementedError，绝不伪造远端评估结果）。
 
-    服务器修复后的补齐路标（按 内核立规注记 规则 0/0b/0b-2 与 remote_service
+    服务器修复后的补齐路标（按 AGENTS 规则 0/0b/0b-2 与 remote_service
     既有通道，接线时逐条落地）：
 
     1. ``infra/remote_machines.resolve_machine(machine)`` 取登记（凭据在
@@ -157,14 +157,14 @@ class RemoteLoopLauncher:
        侧一切临时目录/中间文件一律 E 盘（E:\\rfauto_remote 为唯一中间
        文件根），禁写生产云盘 D:\\CloudDrive（服务器说明 §10）；
     3. 发射形态=console 可见 bat 直指（禁 schtasks 隐藏标志/wscript 静默
-       ——内核立规注记 0b-2），发射后存活复核（console log 公告+CPU/ws 增长
+       ——AGENTS 0b-2），发射后存活复核（console log 公告+CPU/ws 增长
        探针）；
     4. 求解通道按 adapter 分派：HFSS=gRPC attach（remote_service.
        hfss_remote_session_config 组装 remote_machine 键，服务器
        ``ansysedt -grpcsrv``，版本必须=本机——规则 0）；openEMS=runner
        家族（remote_oe_service 互斥预检，#261 每机互斥）；
     5. 结果（Touchstone/metrics 原料）SFTP 回拉后走本地 SpecEvaluator
-       统一指标口径——数值只在确定性内核（内核立规注记 规则 7），远端不回传
+       统一指标口径——数值只在确定性内核（AGENTS 规则 7），远端不回传
        "算好的 cost"；
     6. 任务毕清理（remote_hfss_cleanup：杀 ansysedt/删 schtasks/删临时
        目录）。

@@ -83,6 +83,23 @@ _OUR_PREFIX_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
              "afs_plan", "cm_")),
 )
 _OUR_OVERRIDES: dict[str, str] = {
+    # aurora_n 四新工具域映射（MCP-wire 席落位，守卫轮 C 实红补钉：
+    # al_propose/competition_run/surrogate_export_onnx/surrogate_uq 未映射）
+    "al_propose": "优化",              # 主动学习采集建议=优化域（下一批实验点）
+    "mo_run": "优化",                  # 模型驱动多目标 BO=优化域（EHVI 采集环）
+    # aurora_o T-O4 三叶（ads-circuit diagram/run/annotate）+ o_ads MCP 面域映射
+    # （gate8w 席实测 ads_circuit_diagram 未映射红——/cli 叶与 MCP 工具同名同域）
+    "ads_circuit_diagram": "建模",     # 可调电路图出图=建模域
+    "ads_circuit_run": "求解",         # hpeesofsim 前仿=求解域
+    "ads_circuit_annotate": "后处理",  # 指标反标注=后处理域
+    "ads_circuit_run_mcp": "求解",     # MCP 面同域镜像
+    "ads_circuit_diagram_mcp": "建模",
+    # aurora_p 席 B2（2026-11-01）：design_report 设计回放报告生成=后处理域
+    # （CLI design-report 叶同源；报告/门表/freshness 判读面）
+    "design_report": "后处理",
+    "competition_run": "优化",         # 引擎竞赛=优化基准面
+    "surrogate_export_onnx": "后处理",  # 代理产物导出=后处理面
+    "surrogate_uq": "后处理",          # 不确定度量化=后处理面
     # 显式覆盖：与前缀规则域判定不同的个案（人工判读）
     "slotline_analysis": "建模",      # 槽线族分析=设计域（合成对拍面）
     "marchand_balun_design": "建模",  # balun 综合=设计域

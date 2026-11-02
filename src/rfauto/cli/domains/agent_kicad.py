@@ -197,7 +197,8 @@ def kicad_design_from_run_cmd(
     from rfauto.cli.domains._core import _kv_floats
     from rfauto.service.design_bridge_service import run_to_design_json
 
-    overrides = _kv_floats(list(param) if param else [], "--param")
+    overrides = _kv_floats(list(param) if param else [], "--param",
+                           json_output=json_output)
     result = run_to_design_json(
         run_dir, kind=kind or None, output=output or None,
         param_overrides=overrides)

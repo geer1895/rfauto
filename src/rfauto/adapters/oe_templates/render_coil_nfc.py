@@ -17,7 +17,7 @@ from .registry import TEMPLATE_META, TEMPLATE_NOMINAL
 # L_target = 1/((2π·f0)²·C_tune)（f0=13.56MHz、C_tune=47pF 标准 NP0 档）→
 # core/nfc_coil.synthesize_coil 二分反解 d_out（导入期计算非手抄）。
 # 真机面：13.56MHz 全波 FDTD 预算 ~小时-天/点（MQS 频段无 MQS 求解器，
-# 见 内部证据档 §e），本批仅离线审计不发射。
+# 见 runs/df7_nfc/criteria.md §e），本批仅离线审计不发射。
 def _coil_nfc_nominal_dout() -> float:
     """名义外径闭式合成（mm，导入期；core 单源，零手抄毫米数）。"""
 
@@ -266,7 +266,7 @@ import json
 import os
 
 _OE_BIN = os.environ.get("RFAUTO_OPENEMS_BIN",
-                         "D:/rf_workspace/vendor/openEMS/install/bin")
+                         r"E:\\\\rfauto-workspace\\\\vendor\\\\openEMS\\\\install\\\\bin")
 if os.path.isdir(_OE_BIN):
     os.environ["PATH"] = _OE_BIN + os.pathsep + os.environ.get("PATH", "")
     os.add_dll_directory(_OE_BIN)

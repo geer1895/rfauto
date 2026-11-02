@@ -13,7 +13,7 @@ params:
   tan_d: 0.0037
   f0_ghz: 2.5
 status: ok
-script_sha256: ca754e3c51e7f9cc73d28b23c75951ba4f7f920de5430efa4fb01adfe83fd187
+script_sha256: bdbd91edf209f3eed696c2480211c5404ea2b8e3093d20dd08715f6b99654f43
 csx:
   n_primitives: 34
   props:

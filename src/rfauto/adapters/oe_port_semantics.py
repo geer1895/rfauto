@@ -2,13 +2,13 @@
 
 用户 P12 反馈（HFSS 侧"aperture 不含金属→0.135nH 假结果"）在 openEMS 侧的
 同款病灶：MSLPort/CPWPort 裸调（如 render_hairpin.py 的 MSLPort 构造）无
-aperture/落格/积分线断言——内核立规注记 坑账 #347 原文记录过同一病灶（MSLPort 的
+aperture/落格/积分线断言——AGENTS 坑账 #347 原文记录过同一病灶（MSLPort 的
 MeasPlaneShift 与 FeedShift 接近时探针落激励盒近场：β 偏 10×、Z_ref≈9Ω、
 |Γ|>1）。本模块把五判据收敛为**单源纯几何校验器**，渲染器在 MSLPort 构造
 前调用（违例 ValueError 建模期炸——K7 哲学：建模期直接报错而不是解出
 0.135nH 假结果）。
 
-五判据（每条带病灶人话，编号=内核立规注记 坑账出处）：
+五判据（每条带病灶人话，编号=AGENTS 坑账出处）：
   c1  |MeasPlaneShift−FeedShift| ≥ 4·NEAR
       （#347：u/i 探针落激励盒近场→β 偏 10×、Z_ref≈9Ω、|Γ|>1）
   c2  端口盒横向跨度 > 0 且 ≥ 导带（馈线盒）横向跨度

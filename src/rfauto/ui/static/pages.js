@@ -23,7 +23,7 @@ import { T } from "./pages/context.js";
 // pages.js 的历史口径不变）。
 import {
   THEME_KEY, THEME_MODES, THEME_LABEL,
-  themeIsLight, applyThemeDom,
+  themeIsLight, applyThemeDom, themeLabel,
 } from "./theme.js";
 // initPages 四监听装配面（各自单源模块）
 import { _bindVisibilityPolling } from "./pages/polling.js";
@@ -39,7 +39,9 @@ import { pageDashboard, dashboardCtx } from "./pages/view_dashboard.js";
 // 路由分发（VIEWS 注册表 + showPage 单源）+ R-1 PageContext 注册表
 import { PAGE_CTX, VIEWS } from "./pages/router.js";
 // i18n 骨架（aurora_f W1-S2，R1 审计面2 规格）：静态壳首扫 + html lang 同步
-import { applyI18nRoot, getLocale } from "./pages/i18n.js";
+// aurora_o i18n 分波席：t() 补绑定（懒加载失败提示 common.page_load_failed/
+// 主题钮 aria·title theme.*——zh 与旧字面逐字节同）。
+import { applyI18nRoot, getLocale, t } from "./pages/i18n.js";
 // esc 本模块内直接消费（懒加载失败面板转义）；dom.js 本就随门面 re-export
 // 在静态依赖图内，此处补具名绑定（re-export 语法不产生本地绑定）。
 import { esc } from "./pages/dom.js";
@@ -71,7 +73,7 @@ function _lazyView(key, file, name) {
       // 不可恢复；动态化后失败面收敛到单页——错误面板 + 全局 toast，
       // 不留未处理 rejection。
       if (T._lazyFocus) T._lazyFocus.pending = null;
-      const m = "页面模块加载失败：" + (e && e.message ? e.message : e);
+      const m = t("common.page_load_failed") + (e && e.message ? e.message : e);
       try {
         const el = document.getElementById("view-" + key);
         if (el) el.innerHTML =
@@ -259,9 +261,11 @@ export function initPages(toolkit) {
   const btn = T.$("theme-toggle");
   const paintBtn = () => {
     if (!btn) return;
-    btn.textContent = THEME_LABEL[mode];
-    btn.setAttribute("aria-label", `主题：${THEME_LABEL[mode]}（点击切换 Midnight→Ocean→浅色→跟随系统）`);
-    btn.title = "点击切换主题：Midnight → Ocean → 浅色 → 跟随系统";
+    // aurora_o i18n 分波席：标签/aria/title 文案迁词表 theme.*（themeLabel
+    // locale 感知取值，zh 渲染逐字节同；THEME_LABEL 保留=四态单源兜底）。
+    btn.textContent = themeLabel(mode);
+    btn.setAttribute("aria-label", t("theme.aria_tpl", { label: themeLabel(mode) }));
+    btn.title = t("theme.switch_title");
   };
   apply();
   paintBtn();

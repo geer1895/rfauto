@@ -164,3 +164,69 @@ class TestRegression:
         assert result["ok"], result.get("errors")
         assert result["n_real_used"] <= 10
         assert isinstance(result["best"]["cost"], float)
+
+
+class TestLoopKnobPassThrough:
+    """T-N7/T-N14 环旋钮服务面透传（aurora_n wiring 巡检补门，2026-10-30）。
+
+    batch_acquisition / robust_lambda / op_chance 此前只有环级参数、
+    服务层无门=孤儿旋钮；本席补服务面透传后钉住同名同义转发 +
+    缺省 None（缺省路径行为逐字节不变）。旋钮值合法性校验单源在环
+    （surrogate_loop 入口校验），此处不重复。
+    """
+
+    def test_knobs_forwarded_to_loop(self, tmp_path, monkeypatch):
+        import rfauto.optimization.surrogate_loop as sl
+        from rfauto.service.surrogate_optimize_service import surrogate_optimize
+
+        captured: dict = {}
+
+        def fake_loop(bounds, objectives, evaluate_fn, **kwargs):
+            captured.update(kwargs)
+            return {"ok": True,
+                    "best": {"cost": 1.0,
+                             "params": {"series_w_mm": 0.5, "shunt_w_mm": 1.0}},
+                    "n_real_used": kwargs["max_real"],
+                    "n_failures": 0, "stop_reason": "budget"}
+
+        monkeypatch.setattr(sl, "run_surrogate_loop", fake_loop)
+        recipe = _sbo_recipe(tmp_path)
+        result = surrogate_optimize(
+            str(recipe), adapter_name="fake",
+            batch_acquisition="kriging_believer", robust_lambda=1.5)
+        assert result["ok"], result.get("errors")
+        assert captured["batch_acquisition"] == "kriging_believer"
+        assert captured["robust_lambda"] == 1.5
+        assert captured["op_chance"] is None
+
+    def test_chance_knob_forwarded(self, tmp_path, monkeypatch):
+        import rfauto.optimization.surrogate_loop as sl
+        from rfauto.service.surrogate_optimize_service import surrogate_optimize
+
+        captured: dict = {}
+
+        def fake_loop(bounds, objectives, evaluate_fn, **kwargs):
+            captured.update(kwargs)
+            return {"ok": True, "best": None, "n_real_used": kwargs["max_real"],
+                    "n_failures": 0, "stop_reason": "budget"}
+
+        monkeypatch.setattr(sl, "run_surrogate_loop", fake_loop)
+        recipe = _sbo_recipe(tmp_path)
+        result = surrogate_optimize(str(recipe), adapter_name="fake",
+                                    op_chance=0.9)
+        assert result["ok"], result.get("errors")
+        assert captured["op_chance"] == 0.9
+        assert captured["robust_lambda"] is None
+
+    def test_default_none_loop_contract_unchanged(self, tmp_path):
+        # 缺省（不传三旋钮）走环本体：ok=True 且结果体无旋钮回显键
+        # （环仅旋钮开启时加 batch_acquisition/robust 相关键——缺省键集不变）
+        from rfauto.service.surrogate_optimize_service import surrogate_optimize
+
+        recipe = _sbo_recipe(tmp_path)
+        result = surrogate_optimize(
+            str(recipe), adapter_name="fake",
+            n_init=4, top_k=2, max_real=6, virtual_trials=120, seed=42)
+        assert result["ok"], result.get("errors")
+        assert "batch_acquisition" not in result
+

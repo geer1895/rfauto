@@ -51,7 +51,7 @@ def test_load_parses_full_entry(tmp_path):
         yaml.safe_dump({
             "machines": {
                 "sim_server": {
-                    "host": "10.20.30.40",
+                    "host": "198.51.100.20",
                     "ssh_port": 22,
                     "probe_ports": {"rdp": 3389, "ansys_license": 1055},
                     "hfss": {
@@ -69,7 +69,7 @@ def test_load_parses_full_entry(tmp_path):
     machines = load_remote_machines(cfg_path)
     assert set(machines) == {"sim_server"}
     cfg = machines["sim_server"]
-    assert cfg.host == "10.20.30.40"
+    assert cfg.host == "198.51.100.20"
     assert cfg.ssh_port == 22
     assert cfg.hfss_version == "2025.1"
     assert cfg.hfss_grpc_port == 50051
@@ -346,7 +346,7 @@ def test_load_parses_hfss_mtls_keys(tmp_path):
         yaml.safe_dump({
             "machines": {
                 "sim_server": {
-                    "host": "10.20.30.40",
+                    "host": "198.51.100.20",
                     "hfss": {
                         "version": "2025.1",
                         "grpc_port": 50051,

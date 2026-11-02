@@ -68,9 +68,12 @@ class TestSingleSourceRatchet:
         assert 'export const THEME_KEY = "rfauto-theme"' in src
         assert "export const THEME_MODES" in src
         assert "export const THEME_LABEL" in src
-        # 零依赖：theme.js 不得 import 任何模块（node 裸 import 的前提）
-        assert not re.search(r'(^|\n)\s*import[\s{(]', src), "theme.js 必须零 import"
-        assert 'from "' not in src
+        # 零依赖：theme.js 仅允许唯一豁免 import pages/i18n.js（L0 零依赖
+        # 词表，node 裸 import 前提保持——aurora_o i18n 零散清偿席：
+        # themeLabel() locale 感知标签消费词表）；其余模块一律不得 import。
+        imports = re.findall(r'import\s[^;]*?from\s+"([^"]+)"', src)
+        assert imports == ["./pages/i18n.js"], (
+            f"theme.js 依赖面漂移（唯一豁免=i18n L0 词表）: {imports}")
 
     def test_body_light_judgments_collapsed(self):
         # pages.js 判定归零（22→0）；app.js 仅剩 SCENE3D 豁免位（3→1）；

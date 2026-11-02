@@ -1,4 +1,4 @@
-"""G0 线宽定案验证（规划扩展_v2.md §3 G0 gate）。
+"""G0 线宽定案验证（plan-extension_v2.md §3 G0 gate）。
 
 三个独立来源确认 rogers4350b_h0.508 上 35.35Ω 和 50Ω 的真实线宽：
 1. HJ 模型（skrf MLine, Hammerstad-Jensen）
@@ -115,7 +115,7 @@ def main():
 
     out = {"gate":"G0","substrate":"rogers4350b_h0.508","freq_ghz":FREQ_GHZ,
            "results":results,"gate_passed":gate_ok}
-    Path("D:/rf_workspace/scripts/g0_results.json").write_text(
+    Path("E:/rfauto-workspace/scripts/g0_results.json").write_text(
         json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
     print("\nResults saved to scripts/g0_results.json")
     return out

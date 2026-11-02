@@ -116,7 +116,7 @@ class TestLazyRoutingSource:
 
     def test_lazy_failure_visible_not_silent(self):
         # 加载失败可见化（#105）：单页错误面板 + 全局 toast，不抛未处理 rejection
-        assert "页面模块加载失败" in _PAGES
+        assert 't("common.page_load_failed")' in _PAGES
         assert 'document.getElementById("view-" + key)' in _PAGES
         assert "T.msg" in _PAGES
 
@@ -168,7 +168,8 @@ class TestLazyRoutingBehavioral:
             "const ctx = await import('./pages/context.js');\n"
             "const captured = [];\n"
             "ctx.T.$ = (id) => { const el = { id, innerHTML: '',\n"
-            "  dataset: {}, addEventListener() {} };\n"
+            "  dataset: {}, addEventListener() {},\n"
+            "  querySelector: () => null }; // wave_ui_b P2-1：guide 步卡接线查容器（桩面缺席=静默）\n"
             "  captured.push(el); return el; };\n"
             "await import('./pages.js'); // 侧写：组装 VIEWS\n"
             "const r = await import('./pages/router.js');\n"
@@ -249,7 +250,7 @@ class TestUnifiedApiSource:
             "export async function apiFetch(",
             "export function viewSignal(",
             "export function abortViewSignals(",
-            '"请求失败（网络或服务器异常）"',  # 与 app.js api 兜底同文案
+            't("common.request_failed")',  # aurora_o i18n 分波席：与 app.js api 兜底同键单源
         ):
             assert needle in _API, needle
 
@@ -501,18 +502,28 @@ class TestCssAuditSource:
         # aurora_l Wave-C C2（2026-10-23）：--radius-sm 1→3 + padding
         # space-2×space-3 2→4（freshness 红条/灰条两处告警条——与
         # view_reports 口径警示条同款令牌形态，view_detail.js）。
-        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 9
+        # aurora_n wave_ui_a（2026-10-29）：--text-xs 9→10 + padding
+        # space-1 2→3 + gap space-2 5→6（总览最近活动"归档缺失"行分支
+        # ——与同组件在盘行同款令牌形态，view_dashboard.js wActivity）。
+        # aurora_n wave_ui_b P2-2：--text-xs 10→14（detail 诊断卡指标行
+        # + sanity_notes 两分支 + 区块小标题 sec()）
+        # aurora_n wave_ui_c P3-2/P3-1：--text-xs 14→16（tools 缺省说明行
+        # + dashboard 状态环 verdict 注记行——同款令牌形态）
+        assert len(re.findall(r'font-size:var\(--text-xs\)(?=["\';}])', _UNION)) == 16
         assert len(re.findall(r'font-size:var\(--text-sm\)(?=["\';}])', _UNION)) == 1
         assert len(re.findall(r'border-radius:var\(--radius-xs\)(?=["\';}])', _UNION)) == 4
         assert len(re.findall(r'border-radius:var\(--radius-sm\)(?=["\';}])', _UNION)) == 3
-        assert len(re.findall(r'border-radius:var\(--radius-md\)(?=["\';}])', _UNION)) == 1
+        # aurora_n wave_ui_b P2-2：+1（detail 诊断卡边框）
+        assert len(re.findall(r'border-radius:var\(--radius-md\)(?=["\';}])', _UNION)) == 2
         assert len(re.findall(r'margin:var\(--space-2\) 0 2px', _UNION)) == 2
         assert len(re.findall(r'margin:var\(--space-2\) 0(?=["\';}])', _UNION)) == 5
-        assert len(re.findall(r'padding:var\(--space-1\) 0(?=["\';}])', _UNION)) == 2
-        assert len(re.findall(r'margin:var\(--space-1\) 0(?=["\';}])', _UNION)) == 1
+        assert len(re.findall(r'padding:var\(--space-1\) 0(?=["\';}])', _UNION)) == 3
+        # aurora_n wave_ui_c P3-2：+1（tools 缺省说明行 margin——同款令牌形态）
+        assert len(re.findall(r'margin:var\(--space-1\) 0(?=["\';}])', _UNION)) == 2
         assert len(re.findall(r'margin-bottom:var\(--space-3\)(?=["\';}])', _UNION)) == 3
-        assert len(re.findall(r'padding:var\(--space-2\) var\(--space-3\)', _UNION)) == 4
-        assert len(re.findall(r'gap:var\(--space-2\)(?=["\';}])', _UNION)) == 5
+        # aurora_n wave_ui_b P2-2：+1（detail 诊断卡 padding——同款令牌形态）
+        assert len(re.findall(r'padding:var\(--space-2\) var\(--space-3\)', _UNION)) == 5
+        assert len(re.findall(r'gap:var\(--space-2\)(?=["\';}])', _UNION)) == 6
         # 旧字面归零（被替换的 (属性,值) 组合不得回潮）
         for stale in ("font-size:11px", "font-size:13px", "border-radius:6px",
                       "border-radius:8px", "border-radius:12px",
@@ -577,7 +588,11 @@ class TestCrossSeatPinsHold:
         assert len(re.findall(r"\bT\.api\(", _UNION)) == 0
         assert _UNION.count("setInterval(") == 2
         assert _UNION.count('window.addEventListener("hashchange"') == 1
-        assert _UNION.count("bindClickRows(") == 15
+        # aurora_n wave_ui_b P2-1：+2 站（总览快速开始四步卡/指南五分钟四步卡）
+        # aurora_n wave_ui_c P3-1：+1 站（总览状态环 verdict 词条注记行
+        # data-go='guide' 可点跳转——quick links 四步卡同款单源形态）
+        # aurora_n wave_ui_wizard：+1 站（校准三步向导步卡 #cal-wiz-flow）
+        assert _UNION.count("bindClickRows(") == 19
         assert _UNION.count("color: HEAT_BAND") == 3
 
     def test_index_inline_scripts_untouched(self):

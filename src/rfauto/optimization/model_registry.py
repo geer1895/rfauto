@@ -24,6 +24,10 @@ best-effort 边界（#105）：本内核的调用方（service 面/surrogate_loo
 钩子）负责 try 包裹——注册失败不阻塞战役；内核自身对可预期坏输入返回
 ``{"ok": False, "reason": ...}`` 而不抛（blob 损坏/缺失/键缺失类）。
 
+预热消费口（T-N16）：``extract_nn_warm_start``——champion blob（nn 资产
+天然含 _MLP 权重）→ warm-start 权重状态+元信息，喂 NNSurrogate
+``warm_start`` 旋钮（负迁移门在消费端 fit 内核）。
+
 数值纪律（铁律 7）：本件不产生物理数字——heldout 误差由确定性代理模型
 （surrogate_registry 既有内核）对留出样本预测后与实测 cost 差值得出；
 champion 预测点同理（service 面消费）。
@@ -56,6 +60,7 @@ __all__ = [
     "current_git_sha",
     "default_model_store_dir",
     "default_registry_path",
+    "extract_nn_warm_start",
     "feature_set_fingerprint",
     "heldout_linf",
     "key_sort_id",
@@ -716,3 +721,106 @@ def upsert_from_surrogate_loop(
     except Exception as exc:  # 注册失败不阻塞战役（#105）
         return {"ok": False, "reason": "registry_upsert_failed",
                 "detail": f"{exc}"}
+
+
+# ─── champion → nn warm-start 预热消费口（T-N16，aurora_n W2）────────────────
+
+
+def extract_nn_warm_start(
+    registry: ModelRegistry,
+    key: dict[str, Any],
+    *,
+    expected_hidden: int | None = None,
+    expected_n_ensemble: int | None = None,
+    expected_augmenter: str | None = None,
+) -> dict[str, Any]:
+    """champion 资产 → nn warm-start 权重状态（T-N16 迁移学习预热消费口）。
+
+    资产形态结论（T-N16 勘察）：注册表 blob=整个拟合代理的 pickle——
+    kind="nn" 时天然含 ``NNSurrogate._models``（_MLP 六参数 numpy 权重），
+    **无需扩展资产形态**；本口只做 champion 查找→sha256 复核反序列化→
+    权重抽取（快照带 format_version 兼容键）→架构/增广早校验。形状级
+    架构终校验在消费端 ``nn_model.mlp_load_state``（n_in/n_out 依赖目标
+    样本特征面）。
+
+    负例契约（本模块惯例：可预期坏输入返回 ``{"ok": False, "reason": ...}``
+    不抛）：``no_champion``/``stale``/``blob_missing``/``blob_sha256_mismatch``/
+    ``unpickle_failed``（blob 面透传）＋ ``asset_has_no_weights``（非 nn
+    资产或权重面缺失）/``architecture_mismatch``/``augmenter_mismatch``
+    （本口早校验）。
+
+    Args:
+        registry: ModelRegistry 实例（路径已注入）。
+        key: 注册键（canonical_key 三字段）。
+        expected_hidden: 目标网络隐藏层宽（None=不校验）。
+        expected_n_ensemble: 目标集成成员数（None=不校验）。
+        expected_augmenter: 目标增广器名（None=不校验；名字级早校验，
+            特征面级终校验走 NNSurrogate warm_start.meta 通道）。
+
+    Returns:
+        ok=True：``{"ok", "weights": [state × n_ensemble], "meta": {...}}``
+        ——meta 含 augmenter_name/feature_names/hidden/n_ensemble/metric_keys/
+        version/heldout，喂给 NNSurrogate ``warm_start.meta`` 做语义一致性
+        终校验（fit 期）。
+        ok=False：``{"ok", "reason", "detail"?}``。
+    """
+    champ = registry.champion(key)
+    if not champ.get("ok"):
+        out: dict[str, Any] = {
+            "ok": False, "reason": str(champ.get("reason") or "no_champion")}
+        for k in ("detail", "stale_reason"):
+            if champ.get(k) is not None:
+                out[k] = champ[k]
+        return out
+    entry = champ["entry"]
+    loaded = registry.load_entry_model(entry)
+    if not loaded.get("ok"):
+        return {"ok": False,
+                "reason": str(loaded.get("reason") or "blob_missing"),
+                "detail": loaded.get("detail")}
+    model = loaded.get("model")
+    members = getattr(model, "_models", None)
+    if not isinstance(members, list) or not members:
+        return {"ok": False, "reason": "asset_has_no_weights",
+                "detail": ("champion blob 无 _MLP 权重成员（kind="
+                           f"{getattr(model, 'KIND', type(model).__name__)}）"
+                           "——权重迁移只支持 nn 资产")}
+    from rfauto.optimization.surrogate.nn_model import mlp_state
+
+    states: list[dict[str, Any]] = []
+    for i, member in enumerate(members):
+        if not all(hasattr(member, k) for k in
+                   ("w1", "b1", "w2", "b2", "w3", "b3")):
+            return {"ok": False, "reason": "asset_has_no_weights",
+                    "detail": f"权重成员 {i} 缺 _MLP 参数面"}
+        states.append(mlp_state(member))
+    hidden = getattr(model, "hidden", None)
+    if expected_hidden is not None and hidden is not None \
+            and int(hidden) != int(expected_hidden):
+        return {"ok": False, "reason": "architecture_mismatch",
+                "detail": f"资产 hidden={hidden} vs 目标 {expected_hidden}"}
+    if expected_n_ensemble is not None \
+            and len(states) != int(expected_n_ensemble):
+        return {"ok": False, "reason": "architecture_mismatch",
+                "detail": f"资产集成成员数 {len(states)} vs 目标 "
+                          f"{expected_n_ensemble}"}
+    augmenter_name = getattr(model, "augmenter_name", None)
+    if expected_augmenter is not None and augmenter_name is not None \
+            and str(augmenter_name) != str(expected_augmenter):
+        return {"ok": False, "reason": "augmenter_mismatch",
+                "detail": f"资产增广器 {augmenter_name!r} vs 目标 "
+                          f"{expected_augmenter!r}"}
+    x_names = getattr(model, "_x_names", None)
+    meta = {
+        "augmenter_name": (None if augmenter_name is None
+                           else str(augmenter_name)),
+        "feature_names": (None if x_names is None
+                          else [str(n) for n in x_names]),
+        "hidden": (None if hidden is None else int(hidden)),
+        "n_ensemble": len(states),
+        "metric_keys": [str(k) for k in
+                        (getattr(model, "metric_keys", None) or [])],
+        "version": entry.get("version"),
+        "heldout": dict(entry.get("heldout") or {}),
+    }
+    return {"ok": True, "weights": states, "meta": meta}

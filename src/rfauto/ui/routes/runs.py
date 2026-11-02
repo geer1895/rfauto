@@ -121,8 +121,14 @@ async def api_run_events_stream(request: Request) -> Any:
         while True:
             snap = ui_service.read_run_events(run_id, offset)
             if not snap.get("ok"):
+                # I-3 清偿（aurora_p F3L1，2026-11-02）：流内 error 帧 data
+                # 收编 error_envelope 单源（裸 {errors:[…]} → ok=False 信封）。
+                # 前端 sse.js error 监听只判 ``typeof e.data === "string"``
+                # 不解析内容（回退轮询+既有数据路径可见化），消费零改动。
+                from rfauto.service.envelope import error_envelope
+
                 yield {"event": "error",
-                       "data": json.dumps({"errors": snap.get("errors", [])},
+                       "data": json.dumps(error_envelope(snap.get("errors", [])),
                                           ensure_ascii=False)}
                 return
             if not snap.get("exists"):

@@ -149,7 +149,24 @@ class TestMCPToolsRegistered:
         #   runs_verify/em_diff_runs/em_metrics_from_run/em_sweep_plan（零逻辑
         #   转发 em_doctor/runs_verify/em_diff/em_metrics/em_sweep service
         #   单源；sweep 执行面不上 MCP，反馈 F5）= 157
-        assert len(tools) == 157
+        # mo_run 多目标 BO 合成族环 +1（2026-10-31，aurora_n O1 接线席）：
+        #   T-N13 MultiObjectiveBO 运行时门（zero_wiring REGISTRY O1 欠账
+        #   清偿），零数值逻辑转发新建 service/mo_bo_service（内置合成族
+        #   zdt1/dtlz2 → HV 曲线+帕累托前沿+采集轨迹信封）= 158
+        # aurora_n MCP 接线补齐席 +4（2026-10-31）：surrogate_export_onnx
+        #   （T-N20 ONNX 导出，CLI surrogate export-onnx 同源）+
+        #   surrogate_uq（代理 MC UQ，uq_service.surrogate_yield 同形——
+        #   uq_yield_at=点值/robustness_report=specs 形态均非同形）+
+        #   al_propose（O4 T-N9 采集三族运行时门）+ competition_run
+        #   （O5 T-N5 标量竞赛架运行时门；持久落盘面留 CLI 叶）= 162
+        # aurora_o 开放池席 o_ads +2（2026-11-01）：ads_circuit_diagram/
+        #   ads_circuit_run（T-O4 ADS 前仿链 MCP 两面，T-O4_ADS_UX_SPEC
+        #   §5.1 v1 列项，CLI ads-circuit 域同源；零逻辑转发
+        #   service/circuit_sim_service；annotate 叶留 v2 最小面）= 164
+        # aurora_p 席 B2 +2（2026-11-01）：ads_circuit_annotate（annotate 叶
+        #   v2 扩展位落位，离线反标注）+ design_report（CLI design-report 叶
+        #   同源设计回放报告，零逻辑转发 design_replay_report）= 166
+        assert len(tools) == 166
 
     def test_tool_names(self, mcp_server):
         import asyncio
@@ -273,6 +290,20 @@ class TestMCPToolsRegistered:
             # sweep 执行面不上 MCP（v1 只读 plan 面，反馈 F5）
             "em_doctor_check", "runs_verify", "em_diff_runs",
             "em_metrics_from_run", "em_sweep_plan",
+            # mo_run 多目标 BO 合成族环（aurora_n O1，2026-10-31）——零逻辑
+            # 转发新建 service/mo_bo_service（T-N13 EHVI 内核运行时门）
+            "mo_run",
+            # aurora_n MCP 接线补齐席四工具（2026-10-31）——T-N20 ONNX
+            # 导出+代理 MC UQ（surrogate 服务单源）+al_propose（O4 T-N9）
+            # +competition_run（O5 T-N5；持久落盘面留 CLI 叶）
+            "al_propose", "competition_run",
+            "surrogate_export_onnx", "surrogate_uq",
+            # ADS 前仿链两工具（aurora_o o_ads，2026-11-01）——T-O4 MCP
+            # 两面（diagram/run），CLI ads-circuit 域同源，annotate 留 v2
+            "ads_circuit_diagram", "ads_circuit_run",
+            # aurora_p 席 B2 两工具（2026-11-01）——annotate v2 扩展位落位
+            # +design_report（CLI design-report 叶同源回放报告）
+            "ads_circuit_annotate", "design_report",
         }
         assert names == expected
 
@@ -628,7 +659,7 @@ _EXPERIMENTAL_KEY = "patch_f0_symbolic_e13"
 
 class TestCalculatorExperimentalPassthrough:
     """list_calculators/run_calculator 的 experimental 标签与 allow_experimental
-    三态透传（开发注记（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
+    三态透传（Devlog（一百九十）followUp ①；默认不参与、显式开关才启用）。"""
 
     def test_list_default_includes_experimental_with_label(self, mcp_server):
         data = _call(mcp_server, "list_calculators", {})
@@ -665,7 +696,7 @@ class TestCalculatorExperimentalPassthrough:
             "allow_experimental": True})
         assert data["ok"] is True
         assert data["experimental"] is True
-        # 开发注记（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
+        # Devlog（一百九十）三点核对之一：(40,50)=1.918754 GHz（内核数值，非壳层产出）
         assert data["result"]["f0_ghz"] == pytest.approx(1.918754, abs=2e-6)
 
     def test_run_explicit_false_beats_env(self, mcp_server, monkeypatch):
@@ -914,7 +945,7 @@ _SLOT_SUB = {"h_mm": 1.524, "epsilon_r": 3.66, "freq_ghz": 2.5}
 
 class TestSlotlineTransitionTools:
     """W2⑨ 槽线/过渡五工具 call_tool 烟测：零逻辑转发 slotline_service，数值只出
-    确定性内核（锚 开发注记（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
+    确定性内核（锚 Devlog（二百二十二）②③：w=1.0/h=1.524/εr=3.66@2.5GHz →
     Z0=110.92Ω、εeff=1.6462、λ'=93.462mm；名义两节 Marchand (w,s,ℓ)=
     (1.7616,0.1016,18.467)mm）；越域/不可达如实进信封不抛出。"""
 

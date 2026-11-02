@@ -149,6 +149,9 @@ DEFAULT_ORDER_LADDER: tuple[tuple[int, int], ...] = ((1, 2), (2, 4), (4, 8))
 DEFAULT_ENFORCE_SAMPLES = 1000
 #: 带内无源直判容差（SVD 最大奇异值 <= 1 + tol 判无源）。
 _PASSIVITY_TOL = 1e-6
+#: 同上容差的公开别名（单源复用：optimization/surrogate 极点-留数头的
+#: 无源性后验判据与本模块带内直判共用同一容差，防双源漂移）。
+PASSIVITY_TOL = _PASSIVITY_TOL
 #: 带内无源直判默认采样数。
 _DENSE_PASSIVITY_SAMPLES = 401
 #: dB 下限（|S|=0 时的保护，避免 -inf 参与 JSON）。

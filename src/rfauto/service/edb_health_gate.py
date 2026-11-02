@@ -11,7 +11,7 @@ G11 目录体检会"无可识别体检产物"全空 suspect。本模块消费批
 dict + Touchstone 文件（skrf 读，health_service._load_touchstone 同款
 懒加载惯例），产出独立三态质量门。
 
-数值门边界纪律（内核立规注记 #376 家法，2026-10-08/09 W5 回取复核席实证）：
+数值门边界纪律（AGENTS #376 家法，2026-10-08/09 W5 回取复核席实证）：
 本门全部闭边界 verdict 判据一律留 1e-9 家法余量（与
 core/trl_solt._LINE_PASSIVE_MARGIN 同源）——健康门闭区间语义（实测
 ≤ 门 / σmax ≤ 1+容差 / 窗双边闭）在恰等边界读数上字面比较会被量化
@@ -94,7 +94,7 @@ rtol=1e-6 容差的 ``np.isclose``（f0 落格兜底）。
   ``S_WINDOW_DB_BY_TEMPLATE`` 登记表；**无通用缺省窗**——等分分配窗是
   功分器族专属物理语义，未登记且无显式窗的族不设本判据（criteria 键
   缺席=不判，不硬套他族门，也不冒充 PASS）。登记出处=W1 冒烟门语义
-  仲裁（2026-10-09，内部证据档 REPORT §3.2）：理想等分
+  仲裁（2026-10-09，runs/edblane85/w1_smoke REPORT §3.2）：理想等分
   分配损耗 -3.01dB，健康实测 -3.19/-3.26；冒烟任务书字面门"各
   ≤-3.8dB"是单边下界语义错位，会误杀任何健康功分器——裁定物理窗
   [-3.8, -2.5]dB（下界=3dB 分配+0.8dB 实现容差，上界排除异常增益/
@@ -191,7 +191,7 @@ FACTOR_RECIPROCITY = "reciprocity"
 FACTOR_F0_OFFSET = "f0_offset"
 FACTOR_RESULT_FRESHNESS = "result_freshness"
 
-# 教训编号——写进每条判据，保证报告可回溯到踩坑原文
+# 教训编号（Devlog）——写进每条判据，保证报告可回溯到踩坑原文
 LESSON_SOLVE_STATUS = "#157（watchdog 整树击杀，击杀后残留产物不可信）"
 LESSON_TOUCHSTONE = "#316（证据损坏多报方向）+ 2026-10-08 -BatchSolve 不产网络参数断链"
 LESSON_PORT_COUNT = "#248/#309（Touchstone 端口数契约：skrf 按扩展名推 rank/多模改名）"
@@ -263,14 +263,14 @@ _PASSIVITY_LINEAR_EPS = 1e-9
 DEFAULT_S11_DIP_DB = -10.0
 
 #: 模板作用域门登记表（#274 家法：键=spec.template 名；值=S11@f0 谷深门
-#: dB 或 None）。登记须带出处（坑号/官方口径）；值 None=该族显式
+#: dB 或 None）。登记须带出处（Devlog 坑号/官方口径）；值 None=该族显式
 #: 不设谷深门（如实 UNKNOWN，不硬套通用缺省门）。未登记的模板名回退
 #: :data:`DEFAULT_S11_DIP_DB`。
 S11_DIP_DB_BY_TEMPLATE: dict[str, float | None] = {}
 
 #: Wilkinson 功分器族 |S21|/|S31|@f0 等分分配窗（dB，双边界闭区间，
 #: 两腿各自落窗内才算过）＝W1 冒烟门语义仲裁裁定值（2026-10-09，
-#: 内部证据档 REPORT §3.2）：理想等分分配损耗 -3.01dB，
+#: runs/edblane85/w1_smoke REPORT §3.2）：理想等分分配损耗 -3.01dB，
 #: 下界 -3.8 = 3dB 分配 + 0.8dB 实现容差（健康实测 -3.19/-3.26 有余量），
 #: 上界 -2.5 排除异常增益（分配损耗显著小于 3dB = 提取/接线伪象）。
 #: 禁止臆造物理数字（铁律 7）：改动此窗须带真机/仲裁出处。

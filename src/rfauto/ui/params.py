@@ -9,7 +9,7 @@ review_aurora_next 审查，2026-10-13）实证 campaign_app 自 server.py 机�
 依赖，反向 lazy import 成环难读）；server.py 薄 re-export 保持既有引用路径
 ``rfauto.ui.server.ParamError`` 不变。
 
-规则红线（内核立规注记 #90/#92）：守卫只做"参数形状合法性"判定（传输壳职责），
+规则红线（AGENTS #90/#92）：守卫只做"参数形状合法性"判定（传输壳职责），
 不碰业务解释——业务语义仍在 service 层。
 """
 

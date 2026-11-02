@@ -35,7 +35,12 @@ def replay_run(run_id: str) -> dict[str, Any]:
     snapshot = run_dir / "recipe.snapshot.yaml"
     errors: list[str] = []
     if not meta_path.exists():
-        errors.append(f"未找到 run: {run_id}（缺少 {meta_path}）")
+        # aurora_n 错误信息人性化二批：追加下一步指引（前缀逐字节保留——
+        # test_full_run.py 子串钉安全）。
+        errors.append(
+            f"未找到 run: {run_id}（缺少 {meta_path}）"
+            "（→ ls runs/ 或 rfauto ui 的 runs 页核对 run_id 拼写；"
+            "产物完整性可用 rfauto runs verify <run_id>）")
     if not snapshot.exists():
         errors.append(f"缺少配方快照: {snapshot}")
     if errors:
@@ -114,7 +119,11 @@ def get_metrics(run_id: str) -> dict[str, Any]:
     """读取某次 run 的指标。"""
     metrics_path = Path("runs") / run_id / "results" / "metrics.json"
     if not metrics_path.exists():
-        return error_envelope([f"未找到 run: {run_id}"])
+        # aurora_n 错误信息人性化二批：追加下一步指引（前缀逐字节保留）。
+        return error_envelope([
+            f"未找到 run: {run_id}"
+            "（→ ls runs/ 或 rfauto ui 的 runs 页核对 run_id 拼写；"
+            "run 在跑可用 rfauto runs watch <run_id> 等终态）"])
     data = json.loads(metrics_path.read_text(encoding="utf-8"))
     return ok_envelope(data=data)
 
@@ -141,7 +150,12 @@ def generate_report_for_run(
     run_dir = Path("runs") / run_id
     metrics_path = run_dir / "results" / "metrics.json"
     if not metrics_path.exists():
-        return error_envelope([f"未找到 run 指标: {metrics_path}"])
+        # aurora_n 错误信息人性化二批：追加下一步指引（前缀逐字节保留）。
+        return error_envelope([
+            f"未找到 run 指标: {metrics_path}"
+            "（→ run 目录在但缺 results/metrics.json——确认该 run 已跑完"
+            "（rfauto runs watch <run_id> / rfauto runs health <run_id>），"
+            "或换一次已完成的 run）"])
 
     data = json.loads(metrics_path.read_text(encoding="utf-8"))
 
@@ -399,7 +413,7 @@ def recipe_migrate(recipe_path: str | Path) -> dict[str, Any]:
     # version 0 → 1: add recipe_version field
     # 写面守卫：`rfauto recipe migrate <path>` 是用户把目标路径作为命令本意的
     # 显式入口（explicit），允许原地升级 recipes/ 下的配方；其余库代码路径
-    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 待办清单
+    # 一律不得改写 recipes/ 原件（infra.recipe_guard，处置账见 TODO
     # 「fix-recipe-pollution」条）。
     from rfauto.infra.recipe_guard import write_recipe_text
 

@@ -1,0 +1,48 @@
+# 资源日历（UX-B8 机读化，E62 席 2026-10-08）：把文档硬编码的发射窗约束
+# 转机读——备份窗/维护窗/许可席位峰谷/单机资源帽。
+#
+# 消费面：service/remote_scheduler_service.calendar_launch_view（三态判定）
+# + calendar_view + resources_view 的 calendar 子面；campaign_executor 的
+# stage 级 remote 发射路由（plan stage "remote" 声明）发射前查此日历。
+#
+# 语义（先 blocked 后 risk，维护窗优先）：
+# - maintenance_windows：维护窗内=blocked 不可发射（fail-closed 门，不硬打）；
+# - backup_windows：备份窗内=risk 可发但风险如实落账（remote_oe_service
+#   backup_window_risk 同口径——overnight 队列合法用例，操作方自负）；
+# - license_seats：许可席位峰谷为标注面不进门（G6 教训：时段/端口 OPEN
+#   ≠席位可用；席位级查询仍 UNVERIFIED，见 remote_service.license_preflight）；
+# - machine_caps：单机资源帽（服务器接入说明 §10），发射器可消费。
+#
+# 时钟归属假设：now 取本机 localtime，语义归属服务器侧时钟（同 lab 同 TZ
+# 假设；remote_oe_service._in_backup_window 同款注记，跨 TZ 部署时调用方
+# 应改喂服务器侧时间）。
+#
+# 缺省本文件缺失/不可读=恒可发不阻塞（#105 fail-open 观测面，绝不成为
+# 业务主路径故障点）。
+schema: rfauto-resource-calendar-v1
+
+# 服务器备份窗（docs/rfauto_openEMS_服务器安装与调用说明.md §六.3；
+# remote_oe_service._BACKUP_WINDOW_MIN 同源数值——机读化单源自此文件起，
+# 引擎侧硬编码保留为回退）。start>end 形态=跨午夜环绕窗。
+backup_windows:
+  - start: "02:50"
+    end: "05:35"
+
+# 维护窗（blocked）：缺省空（无登记维护窗=只受备份窗约束）。
+# 形态示例：- {start: "Sat 22:00", end: "Sun 04:00"}（v1 判定只支持每日
+# HH:MM 环绕窗——带星期前缀的条目解析失败会被跳过并记 warning）。
+maintenance_windows: []
+
+# 许可席位峰谷（标注面，不作门）。
+license_seats:
+  hfss:
+    peak: "10:00-12:00"
+    note: "课题组日间共用高峰（anis 联证席）"
+  ads:
+    peak: "14:00-18:00"
+    note: "ADS 日后段共用高峰"
+
+# 单机资源帽（§10：单任务内存 ≤80GB；键=注册表机器名）。
+machine_caps:
+  sim_server:
+    memory_gb: 80

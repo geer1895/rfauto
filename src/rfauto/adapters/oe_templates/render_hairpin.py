@@ -188,7 +188,7 @@ HAIRPIN_NOMINAL: dict[str, Any] = {
     # C13 N=3/RL=20dB/FBW=0.05 → k=0.051514 → KJ 反解 s=1.132829mm
     "gap_mm": 1.1328,
     # Q_e=17.0689（=g0·g1/FBW 同源）；B1 真机标定 c(τ)=1.37437−0.75218·τ（τ=0.40/0.43
-    # 两点，内部证据档）→ τ*=0.398159 重解（0.401892 闭式；
+    # 两点，runs/hairpin_q_extract/summary.json）→ τ*=0.398159 重解（0.401892 闭式；
     # B3 终验轮 pt5 用单点解 0.398227，Δτ=6.8e-5≈2.5µm≪0.4mm 网格），消费端
     # hairpin_qe_from_tap_frac(τ)×c(τ) 见 fake_adapter._HAIRPIN_QE_CORR
     "tap_frac": 0.398159,
@@ -303,7 +303,7 @@ def _hairpin_port_guard(p: dict[str, Any], lay: dict[str, Any],
     x 向传播、板边 x=∓BOARD 入）：MSLPort 构造前对 port1/port2 各跑
     assert_msl_port_geometry，违例 ValueError 建模期炸（K7 哲学：直接报错
     而不是解出 0.135nH 假结果——R1 #1 用户 P12 反馈 openEMS 侧同款病灶，
-    内核立规注记 #347 即 MSLPort 探针落激励盒近场 β 偏 10× 实录）。
+    AGENTS #347 即 MSLPort 探针落激励盒近场 β 偏 10× 实录）。
 
     取值口径与生成脚本字面量同源：base=_base_mm、NEAR=base/_near_ratio
     （缺省 4=官方）、H_SUB=_h_sub_mm（缺省 _DEFAULT_SUB）、BOARD=60mm
@@ -400,8 +400,8 @@ for _prim in hairpin.GetAllPrimitives():
 '''
 
 
-# ── hairpin_alt：交替取向发夹线（2026-09-18 w2g，待办清单 0dk 根修 / audit #11）──
-# 物理（0dk 真机结论）：同向 U 并排时相邻臂开路端对齐，电耦合
+# ── hairpin_alt：交替取向发夹线（2026-09-18 w2g，TODO 0dk 根修 / audit #11）──
+# 物理（Devlog（二百零三）/0dk 真机结论）：同向 U 并排时相邻臂开路端对齐，电耦合
 # （开路端电压反节点对齐）与磁耦合（弯带电流反节点对齐、相邻臂电流反向）反号相消，
 # k_EM=c(gap)·k_KJ 非单调、极大 0.0155@0.65 ≪ KJ 名义 0.0515（比值上限 ≈0.30），
 # FBW5% 名义在同向参数空间内无自洽设计点。经典 hairpin 排布（Hong《Microstrip

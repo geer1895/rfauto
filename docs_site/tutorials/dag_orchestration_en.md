@@ -44,7 +44,7 @@ docs/plan_deepdive_specs_20260924.md §DP-9.
 Nodes have only four `kind` values: `render | solve | postprocess | judge`
 (the execution base enforces the #261 machine mutex on solve-kind nodes).
 The minimal plan is three file-writing nodes (for demo purposes, zero real
-engine) — save as `runs/demo/dag_tutorial/plan.json`:
+engine) — save as `runs/aurora_d/tut/dag_demo_plan.json`:
 
 ```json
 {
@@ -96,9 +96,9 @@ downstream reads files) — the base does not move data.
 ## 3. Hands-on: execution, the journal, and resume
 
 ```bash
-rfauto dag run runs/demo/dag_tutorial/plan.json \
-    --run-dir runs/demo/dag_tutorial/run \
-    --solve-lock runs/demo/dag_tutorial/run/.solve.lock
+rfauto dag run runs/aurora_d/tut/dag_demo_plan.json \
+    --run-dir runs/aurora_d/tut/dag_demo_run \
+    --solve-lock runs/aurora_d/tut/dag_demo_run/.solve.lock
 ```
 
 Measured output:
@@ -108,7 +108,7 @@ Measured output:
   done         render
   done         solve
   done         judge
-  期刊: runs\demo\tut\dag_demo_run\dag.state.json
+  期刊: runs\aurora_d\tut\dag_demo_run\dag.state.json
 ```
 
 `--solve-lock` names the mutex lock path explicitly (default = the runs
@@ -128,13 +128,13 @@ outright) — the cost of restart-after-kill is only "the nodes that had not
 finished". The journal is the single source of truth; read it any time:
 
 ```bash
-rfauto dag status runs/demo/dag_tutorial/run
+rfauto dag status runs/aurora_d/tut/dag_demo_run
 ```
 
 Measured output:
 
 ```
-runs/demo/dag_tutorial/run  verdict=COMPLETE  hit=3  recompute=3
+runs/aurora_d/tut/dag_demo_run  verdict=COMPLETE  hit=3  recompute=3
              DAG 节点态摘要（dag.state.json）
 ┌─────────┬────────┬──────────────┬─────────────┬────────┐
 │ node_id │ status │ key          │ outputs     │ source │
@@ -257,9 +257,9 @@ soft) still fail as before.
   queue → calendar windows → license pre-check → launches item by item
   without waiting) — how overnight campaign queues are hung;
 - remote routing (which machine runs solve): the multi-machine channel
-  surface is in docs/tutorials/remote_server.md (`rfauto remote
-  probe/status`, the three remote-run channels, post-task cleanup); not
-  expanded here;
+  surface is in docs/tutorials/remote_server.md (`rfauto remote probe` /
+  `rfauto remote status`, the three remote-run channels, post-task
+  cleanup); not expanded here;
 - MCP/agent orchestration: the two DAG leaves are deliberately not exposed
   via MCP (CLI first) — agents orchestrate through `run_campaign`; zero
   numeric surface is an iron rule of the base (numbers come only from the
@@ -278,7 +278,7 @@ soft) still fail as before.
 - solve nodes always pass the #261 mutex; concurrent solves on one machine
   are a performance trap, not a feature (#246);
 - long-running real-engine nodes: background separation + log polling +
-  generous watchdog timeouts (kernel pit-note #157).
+  generous watchdog timeouts (AGENTS #157).
 
 ## What next
 

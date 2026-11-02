@@ -3,7 +3,7 @@ a2a_protocol / multi_agent_service）。
 
 口径（continuation-plan §4 WP3.8）：LangGraph 式状态机 + MCP 工具层 +
 A2A 协议，评审/调优/验证分工端到端 1 例。全部离线确定性（注入闭式解析
-采样器，零真机、零 LLM、零网络）；数值只出自确定性内核（内核立规注记 规则 7）。
+采样器，零真机、零 LLM、零网络）；数值只出自确定性内核（AGENTS 规则 7）。
 """
 
 from __future__ import annotations

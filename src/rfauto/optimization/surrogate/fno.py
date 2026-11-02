@@ -1,4 +1,4 @@
-r"""FNO（谱卷积版）神经算子代理（阶段 6.3 E3 插件，延续计划 :245/:482）。
+r"""FNO（谱卷积版）神经算子代理（阶段 6.3 E3 插件，continuation-plan :245/:482）。
 
 学习「几何参数 + 频率 → S11(dB) 全频段曲线」的算子：参数经 lifting MLP 升到
 通道维后，叠 N 个 1D Fourier 层——rfft（频率维）→ 可学习复权重 × 截断模数
@@ -7,13 +7,33 @@ r"""FNO（谱卷积版）神经算子代理（阶段 6.3 E3 插件，延续计�
 位置/形状泛化是 FNO 的设计目标。E3 验收口径（方案 :482）：既有锚数据集上
 标量 ρ 不劣于 poly_ridge（A/B 见 scripts/wp34_neural_operator_ab.py）。
 
+标准 FNO 形态出处（T-N18 升格补引）：Li et al., "Fourier Neural Operator
+for Parametric Partial Differential Equations", arXiv:2010.08895 (ICLR 2021)
+——Fourier 层=rFFT 谱域线性变换×模数截断→iRFFT+逐点线性旁路+激活，即本件
+_FourierLayer 实现的形态。电磁域主力化佐证（aurora_n 调研席
+runs/aurora_n/recon/surrogate_recon.md §5.1）：自由form电磁散射神经算子
+（https://pubs.acs.org/apchd5/article/10/5/1547/336043/ ）、超表面波前优化
+FNO+伴随（https://www.sciencedirect.com/science/article/pii/S258900422402772X ）、
+电机电磁仿真 FNO（https://par.nsf.gov/biblio/10634656 ）、DA-FNO
+（https://arxiv.org/html/2508.17238v1 ）。
+
+GPU 升级位（T-N18 注记）：本件当前全程 CPU 张量（缺省档 width=32/
+n_modes=8/n_layers=3/epochs=600，CPU 秒-分级）。上 GPU 时改三处即可、
+接口不变：①`fit`/`predict_curve` 里 `xt/yt` 与 `net` 同 `.to(device)`；
+②训练档放大（width/epochs/curve_samples 随显存上调）；③大批量数据可换
+DataLoader minibatch（此时确定性钉=固定种子+关 shuffle 或显式排序，跨
+设备/线程数浮点非逐位，如实声明）。真实档标定见
+runs/aurora_n/w3_tn18/（probe_output_r1.txt）。
+
 torch 为可选 extra（`pip install rfauto[torch]`），未安装显式报错（不走静默
 降级）。确定性：固定种子 + 全批训练（无 DataLoader 洗牌），CPU 秒-分级；
-predict 纯函数语义（同参数同输出，base 契约 C4）。
+训练期 loss 逐 epoch 检测 NaN/Inf（发散立即停止报错，不产出坏模型，
+T-N18 验收④）；predict 纯函数语义（同参数同输出，base 契约 C4）。
 """
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -156,16 +176,33 @@ class FNOSurrogate(SurrogateModel):
         net = self._build_net(torch, nn, x.shape[2])
         xt = torch.tensor(x, dtype=torch.float32)
         yt = torch.tensor(curves, dtype=torch.float32)
-        opt = torch.optim.Adam(net.parameters(),
-                               lr=float(self.config.get("lr", 5e-3)))
-        loss_fn = nn.MSELoss()
         epochs = int(self.config.get("epochs", 600))
+        lr = float(self.config.get("lr", 5e-3))
+        opt = torch.optim.Adam(net.parameters(), lr=lr)
+        loss_fn = nn.MSELoss()
         loss = None
-        for _ in range(epochs):
+        for epoch in range(epochs):
             opt.zero_grad()
             loss = loss_fn(net(xt), yt)
             loss.backward()
             opt.step()
+            loss_val = float(loss.detach())
+            if not math.isfinite(loss_val):
+                # 训练发散检测停（T-N18 验收④）：NaN/Inf 立即停止，不静默
+                # 返回输出 NaN 的坏模型（#122 诚实纪律——显式报错+fit_info）。
+                self.fit_info = {
+                    "kind": self.KIND, "diverged": True,
+                    "diverged_at_epoch": epoch + 1,
+                    "epochs_requested": epochs,
+                    "final_loss": loss_val,
+                    "n_curves": len(curves),
+                    "lr": lr,
+                }
+                raise RuntimeError(
+                    f"fno fit 训练发散：epoch {epoch + 1} loss={loss_val} "
+                    f"（NaN/Inf）——已停止训练，不产出模型；常见原因=样本曲线"
+                    f"含 NaN/Inf 或学习率过大（lr={lr}）。fit_info 见 "
+                    "model.fit_info")
         self._net = net
         self._mark_fitted(len(curves))
         return {"kind": self.KIND, "n_curves": len(curves),

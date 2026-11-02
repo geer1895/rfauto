@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
 
-_FALLBACK_VERSION = "0.11.0"
+_FALLBACK_VERSION = "0.13.0"
 
 try:
     __version__ = version("rfauto")

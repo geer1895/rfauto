@@ -58,12 +58,16 @@ def _write_text(path: str, text: str, what: str) -> str | None:
     return path
 
 
-def _load_payload(path: str, what: str) -> dict:
-    """--file JSON 读取（_core._load_json_file 薄转发，独立错误信封）。"""
+def _load_payload(path: str, what: str, *, json_output: bool = False) -> dict:
+    """--file JSON 读取（_core._load_json_file 薄转发，独立错误信封）。
+
+    ``json_output`` 透传（I-2 清偿，aurora_p F3L1）：JSON 信道参数错走
+    ``_emit_usage_error`` 信封；缺省 False=人读红字原样。
+    """
     from rfauto.cli.domains._core import _load_json_file
 
     try:
-        return _load_json_file(path, what)
+        return _load_json_file(path, what, json_output=json_output)
     except typer.Exit:
         raise
 
@@ -86,7 +90,7 @@ def firmware_beam_cmd(
     """波束码字表：目标相位→b-bit 码字，CSV+C 头双出+回代判据审计."""
     from rfauto.core.firmware_export import beam_backsub_audit, beam_codeword_table, beam_table_c_header, beam_table_csv
 
-    data = _load_payload(file, "单元表 JSON")
+    data = _load_payload(file, "单元表 JSON", json_output=json_output)
     try:
         table = beam_codeword_table(
             data["element_ids"], data["x_mm"], data["y_mm"],
@@ -128,7 +132,7 @@ def firmware_varactor_cmd(
     """变容管 DAC 偏置表：f→C→V→码，单调性审计+饱和计数."""
     from rfauto.core.firmware_export import varactor_dac_table, varactor_table_csv
 
-    data = _load_payload(file, "varactor 载荷 JSON")
+    data = _load_payload(file, "varactor 载荷 JSON", json_output=json_output)
     try:
         table = varactor_dac_table(
             data["f_targets_ghz"],
@@ -191,7 +195,7 @@ def firmware_dpd_cmd(
     """DPD 定点表：Q 格式定标+舍入回代预检（NMSE ≤0.5dB 劣化门）+溢出告警."""
     from rfauto.core.firmware_export import dpd_fixed_point_table, dpd_table_csv
 
-    data = _load_payload(file, "dpd 载荷 JSON")
+    data = _load_payload(file, "dpd 载荷 JSON", json_output=json_output)
     try:
         coeffs = _complex_matrix(data["coeffs"], "coeffs")
         x = _complex_list(data["x"], "x")

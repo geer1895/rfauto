@@ -170,7 +170,7 @@ def read_hfss_touchstone_comments(path: str | Path) -> dict[str, Any]:
 
     - ``! Gamma   <re> <im> ×N``：逐模传播常数 **γ = α + jβ**（Np/m,
       rad/m）的实/虚部。**不是反射系数**——真实 corpus 数值互证（
-      内部证据档 2025.1 导出）：β/f 跨频点恒定（β∝f），
+      runs/cps_hfss_arbitration 2025.1 导出）：β/f 跨频点恒定（β∝f），
       而若按 mag/deg 反射解读则与同频 ``! Port Impedance`` 行相对 50 Ω
       的反射系数（0.427∠0.077°）矛盾。
     - ``! Port Impedance   <re> <im> ×N``：端口阻抗 **Zpi 口径**（功率-

@@ -18,7 +18,7 @@
   （含零厚面）、端口盒邻接导体、连通性（环断口/缝隔离/螺旋单路径）、
   z 网格覆盖立体器件、slot 地面留槽 + 底 MUR、loop 自由空间（无板无地、
   底 MUR、域 z 向下延 λ0/4、nf2ff 六面全包）。
-- 真机冒烟判读（内部证据档，2026-09-14/16）见 openems_templates
+- 真机冒烟判读（runs/antenna2_smoke，2026-09-14/16）见 openems_templates
   ANTENNA2_META 段注与 docs/templates/<t>/meta.yaml smoke_note：monopole/
   ifa/slot PASS，pifa 旧通式标称 FAIL → L 路径式定版（override 17.08 PASS）、
   loop 贴地 FAIL → 自由空间 v2、helix FAIL（口径，扩带/HFSS 仲裁），不凑绿。

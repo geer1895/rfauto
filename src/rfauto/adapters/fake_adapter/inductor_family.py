@@ -21,7 +21,7 @@ def _octagonal_spiral_sparams(freq_ghz: Any, n_turns: int = 5,
     **未标定注记（如实）**：本模型为「几何 → core/nfc_coil Mohan
     current_sheet 闭式 L → core/calc_families.spiral_inductor 匝间寄生
     C_par 一阶估计 → 并联寄生谐振」的电路级一阶裁判，未对标任何真机/
-    全波引擎（octagonal_spiral 真机对拍留登记 内部证据档）。
+    全波引擎（octagonal_spiral 真机对拍留登记 runs/aurora_k/k11）。
     仅作优化环闭环裁判面，不作为引擎偏差裁判；趋肤/邻近损耗为一阶
     R_dc 档（未标定），衬底涡流/地平面镜像不在模型内（如实声明）。
 

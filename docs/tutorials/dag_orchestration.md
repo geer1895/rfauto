@@ -32,7 +32,7 @@ schema（`rfauto-dag-v1`）的权威定义在 `core/compose/dag_schema.py`，规
 
 节点只有四种 `kind`：`render | solve | postprocess | judge`（执行基座对
 solve 类节点强制 #261 机器互斥）。最小计划=三个文件写入节点（演示用，
-零真机）——存为 `runs/demo/dag_tutorial/plan.json`：
+零真机）——存为 `runs/aurora_d/tut/dag_demo_plan.json`：
 
 ```json
 {
@@ -80,9 +80,9 @@ Windows 反斜杠路径安全，#142 家法）；`outputs` 是产物契约（相
 ## 3. 动手：执行、期刊与断点续跑
 
 ```bash
-rfauto dag run runs/demo/dag_tutorial/plan.json \
-    --run-dir runs/demo/dag_tutorial/run \
-    --solve-lock runs/demo/dag_tutorial/run/.solve.lock
+rfauto dag run runs/aurora_d/tut/dag_demo_plan.json \
+    --run-dir runs/aurora_d/tut/dag_demo_run \
+    --solve-lock runs/aurora_d/tut/dag_demo_run/.solve.lock
 ```
 
 实测输出：
@@ -92,7 +92,7 @@ rfauto dag run runs/demo/dag_tutorial/plan.json \
   done         render
   done         solve
   done         judge
-  期刊: runs\demo\tut\dag_demo_run\dag.state.json
+  期刊: runs\aurora_d\tut\dag_demo_run\dag.state.json
 ```
 
 `--solve-lock` 显式指定互斥锁路径（缺省=runs 家族锁 `runs/.oe_collect.lock`
@@ -109,13 +109,13 @@ rfauto dag run runs/demo/dag_tutorial/plan.json \
 代价只是"还没跑完的节点"。期刊是唯一事实源，随时读：
 
 ```bash
-rfauto dag status runs/demo/dag_tutorial/run
+rfauto dag status runs/aurora_d/tut/dag_demo_run
 ```
 
 实测输出：
 
 ```
-runs/demo/dag_tutorial/run  verdict=COMPLETE  hit=3  recompute=3
+runs/aurora_d/tut/dag_demo_run  verdict=COMPLETE  hit=3  recompute=3
              DAG 节点态摘要（dag.state.json）
 ┌─────────┬────────┬──────────────┬─────────────┬────────┐
 │ node_id │ status │ key          │ outputs     │ source │
@@ -215,8 +215,8 @@ inconclusive（跑完但证据不可判；产物留盘不写 manifest/不入索�
 - `rfauto campaign queue-daemon`：排队常驻执行体（轮询队列→日历窗→
   license 预检→逐项发射，发射后不等）——overnight 战役队列的挂法；
 - 远程路由（哪台机器跑 solve）：多机通道面见
-  docs/tutorials/remote_server.md（`rfauto remote probe/status`、远跑
-  三通道、任务毕清理），本篇不展开；
+  docs/tutorials/remote_server.md（`rfauto remote probe` /
+  `rfauto remote status`、远跑三通道、任务毕清理），本篇不展开；
 - MCP/agent 编排：DAG 两叶刻意未加进 MCP（CLI 先行）——agent 侧编排
   走 `run_campaign` 即可，零数值面是基座铁律（数值只出确定性内核）。
 
@@ -228,7 +228,7 @@ inconclusive（跑完但证据不可判；产物留盘不写 manifest/不入索�
 - 失败（执行族）≠ inconclusive（判定族）≠ skipped（策略族）：三态分别
   记录，verdict 消费面不引入新态；
 - solve 节点必过 #261 互斥；同机并发求解是性能坑不是功能（#246）；
-- 长跑真机节点：后台分离+日志轮询+watchdog 超时给足（内核坑条 #157）。
+- 长跑真机节点：后台分离+日志轮询+watchdog 超时给足（AGENTS #157）。
 
 ## 下一步
 

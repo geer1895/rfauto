@@ -41,7 +41,7 @@ async def api_hfss_import(request: Request) -> JSONResponse:
         project,
         body.get("design") or None,
         # A6-D（aurora72 R6 F-3，2026-10-12）：缺省版本钉对齐仓库真机口径
-        # "2025.1"（内核立规注记 规则 0 勘误：AEDT 2025 R1/v251；同口径先例
+        # "2025.1"（AGENTS 规则 0 勘误：AEDT 2025 R1/v251；同口径先例
         # adapters/edb_adapter.py _DEFAULT_AEDT_VERSION 与
         # configs/remote_machines.yaml hfss.version）——旧钉停留"已验证
         # 通道"旧口径，与 service 层另一缺省钉（v3_services 的受阻版本）

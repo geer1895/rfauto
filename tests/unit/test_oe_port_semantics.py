@@ -2,7 +2,7 @@
 
 覆盖面（aurora_l R1 #1，用户 P12 反馈 openEMS 侧同款病灶单源化）：
 ① 好参数全绿（显式 mesh 格点口径 + mesh_mm=None 降级口径）；
-② 五判据逐条违反各一钉（内核立规注记 坑账原值：#347 探针近场 0.056mm=0.2 格、
+② 五判据逐条违反各一钉（AGENTS 坑账原值：#347 探针近场 0.056mm=0.2 格、
    #340④ 零宽盒、#253 激励截面缺导带、#283 离格盒边/导带落地）；
 ③ 三接线点（render_hairpin 的 hairpin/hairpin_alt、render_varactor 的
    varactor_bpf、render_c4 的 lange/cline_coupler/branchline_2sect）冒烟

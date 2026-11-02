@@ -1,6 +1,6 @@
 """aurora_g W1-S1 UI 远程部署安全硬化包定向门（R1 审计 v9 Top1-3 + Top4 钉索引）。
 
-审计依据：内部证据档 §面6（P9-13/P9-14）+ §面1（P9-1）
+审计依据：runs/aurora_g/R1_ui_v9_audit.md §面6（P9-13/P9-14）+ §面1（P9-1）
 + §面5（P9-11，行为钉在 test_ui_r12_deepening 同笔）。
 
 四件：
@@ -16,12 +16,16 @@
 3. P9-1 Cache-Control 分域：/static → public, max-age=86400；
    /runs → public, max-age=300（run 产物短窗防实验中误缓存，审计口径）；
    其余（/ 与 /api/*）→ no-cache；SSE（/events/stream）零缓存头直通。
+   aurora_n cache_gov 追加：/static/pages/* 演进 JS → no-cache（waveUI-A
+   遗留痛点：max-age 窗内部署修复旧页不可见；协商缓存 ETag/Last-Modified
+   锚不缺——未变 304 便宜、mtime 变更即时失效拿新）。
 4. P9-11 apiFetch 缺省 30s 超时：node 行为钉在 test_ui_r12_deepening
    （TestUnifiedApiBehavioral 三新钉），本文件不重复。
 """
 
 from __future__ import annotations
 
+import os
 from typing import ClassVar
 
 import pytest
@@ -29,7 +33,11 @@ import pytest
 from rfauto.service import ui_service
 from rfauto.service._helpers import safe_run_id
 from rfauto.service.nf2ff_service import farfield_view
-from rfauto.ui.server import CacheControlMiddleware, create_ui_app
+from rfauto.ui.server import (
+    _STATIC_DIR,
+    CacheControlMiddleware,
+    create_ui_app,
+)
 
 # ────────────────────────── 1. P9-13 守卫单源 ──────────────────────────
 
@@ -177,7 +185,7 @@ class TestSecurityHeaders:
         assert "'unsafe-inline'" not in CSP_VALUE
         assert "'unsafe-eval'" not in CSP_VALUE
 
-    @pytest.mark.parametrize("path", ["/", "/static/app.js", "/api/solvers"])
+    @pytest.mark.parametrize("path", ["/", "/api/solvers"])
     def test_nosniff_and_referrer_policy_on_all_faces(self, client, path):
         r = client.get(path)
         assert r.status_code == 200, path
@@ -203,8 +211,52 @@ class TestCacheControlDomains:
 
     def test_static_assets_one_day(self, client):
         r = client.get("/static/app.js")
+        # aurora_n cache_gov 扩面：根级演进 JS 迁入 no-cache（断言迁移非放松）
+        assert r.headers["Cache-Control"] == "no-cache"
+        r2 = client.get("/static/vendor/echarts.min.js")
+        assert r2.status_code == 200
+        assert r2.headers["Cache-Control"] == "public, max-age=86400"
+
+    @pytest.mark.parametrize("path", [
+        "/static/pages/view_agent.js",
+        "/static/pages/i18n.js",
+        "/static/pages/view_dashboard.js",
+    ])
+    def test_pages_evolving_js_no_cache(self, client, path):
+        # aurora_n cache_gov（waveUI-A 遗留）：pages/ 演进 JS no-cache——
+        # 部署后旧页不吃 24h 陈旧窗；ETag/Last-Modified 协商锚仍须在
+        # （304 重验证便宜是本档语义的一半，缺锚=每次导航全量回源）。
+        r = client.get(path)
+        assert r.status_code == 200, path
+        assert r.headers["Cache-Control"] == "no-cache", path
+        assert r.headers["ETag"], path
+        assert r.headers["Last-Modified"], path
+
+    def test_vendor_true_static_still_long_cache(self, client):
+        r = client.get("/static/vendor/echarts.min.js")
         assert r.status_code == 200
         assert r.headers["Cache-Control"] == "public, max-age=86400"
+
+    def test_pages_negotiation_304_then_invalidate_on_change(self, client):
+        # 协商缓存语义双钉：①未变文件带 If-None-Match → 304（重验证便宜，
+        # 且 304 响应同样挂 no-cache——下次导航继续协商）；②mtime 变更
+        # （模拟部署改写 pages JS）→ 旧 ETag 失配 → 200 新 ETag 新内容
+        # （用户视角闭环：旧开的页面下次导航即拿到新 JS，无需硬刷新）。
+        path = "/static/pages/i18n.js"
+        etag = client.get(path).headers["ETag"]
+        r304 = client.get(path, headers={"If-None-Match": etag})
+        assert r304.status_code == 304
+        assert r304.headers["Cache-Control"] == "no-cache"
+        fp = _STATIC_DIR / "pages" / "i18n.js"
+        st = fp.stat()
+        os.utime(fp, (st.st_atime, st.st_mtime + 2))
+        try:
+            r200 = client.get(path, headers={"If-None-Match": etag})
+            assert r200.status_code == 200
+            assert r200.headers["ETag"] != etag
+            assert r200.headers["Cache-Control"] == "no-cache"
+        finally:
+            os.utime(fp, (st.st_atime, st.st_mtime))  # 零留痕还原
 
     @pytest.mark.parametrize("path", ["/", "/api/solvers"])
     def test_html_and_api_no_cache(self, client, path):
@@ -272,4 +324,12 @@ class TestCacheControlSseExemption:
         assert self._run_middleware("/api/solvers")[
             "cache-control"] == "no-cache"
         assert self._run_middleware("/static/app.js")[
+            "cache-control"] == "no-cache"  # aurora_n cache_gov 扩面（迁移非放松）
+        assert self._run_middleware("/static/vendor/echarts.min.js")[
+            "cache-control"] == "public, max-age=86400"
+        # aurora_n cache_gov：pages 档判定先于通用 /static 前缀（中间件
+        # 单元面直钉——装配面同语义由 TestCacheControlDomains 覆盖）
+        assert self._run_middleware("/static/pages/i18n.js")[
+            "cache-control"] == "no-cache"
+        assert self._run_middleware("/static/vendor/echarts.min.js")[
             "cache-control"] == "public, max-age=86400"

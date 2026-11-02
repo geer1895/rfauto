@@ -207,7 +207,7 @@ def humidity_uptake_cmd(
         moisture_uptake_estimate as _fn,
     )
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=json_output)
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -229,7 +229,7 @@ def humidity_msl_cmd(
         msl_floor_life_query as _fn,
     )
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=json_output)
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -279,7 +279,7 @@ def weave_estimate_cmd(
         weave_skew_estimate as _fn,
     )
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=json_output)
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:
@@ -308,7 +308,7 @@ def cryo_surface_cmd(
         cryo_surface_estimate as _fn,
     )
 
-    payload = _load_json_file(payload_path, "payload")
+    payload = _load_json_file(payload_path, "payload", json_output=json_output)
     try:
         result = _fn(payload)
     except (KeyError, TypeError, ValueError) as exc:

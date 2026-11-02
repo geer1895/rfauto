@@ -14,7 +14,7 @@
    同构产物落盘（sparams.csv 5 列掩码契约 + mmt.s2p + mmt_meta.json）；
 3. 注册进全局 EMSolverRegistry（EMSolverType.MMT，导入即注册）。
 
-诚实边界（P1 判据 内部证据档 §0 全额继承）：
+诚实边界（P1 判据 runs/df6_dp1mmt/criteria.md §0 全额继承）：
 - 膜片/阶梯的绝对 S 值 UNDECIDABLE 待 G1 HFSS 仲裁（P3）——meta 携带
   absolute_s_note，不冒充已认证；
 - undetermined 频点（近截止 ±5%·fc10 / 端口过传）S=NaN 如实不外推，
@@ -279,7 +279,7 @@ def _normalized_sections_echo(chain: list[Any]) -> list[dict[str, Any]]:
     return out
 
 
-# canonicalize_chain 已删除（P1 core 根治后清理， 四一零 followUp 闭合）：
+# canonicalize_chain 已删除（P1 core 根治后清理，Devlog 四一零 followUp 闭合）：
 # 曾为 solve_chain ``id()`` 反查 guide 表的适配器侧权宜（iris 预展开 + 值相等
 # Waveguide 归一实例）。core/rwg_mmt 现按值语义去重+按值反查（frozen dataclass
 # 值哈希，_guide_list 契约），JSON 段表逐段新造实例直连可解；iris 展开本就由

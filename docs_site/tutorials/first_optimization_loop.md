@@ -237,5 +237,5 @@ schema 版本）。输出包含：
 | `rfauto tune --help` | 实跑 | 过（§4 旗标表逐项对） |
 | `rfauto refine --help` | 实跑 | 过（--max-trials/--adapter/--json） |
 | `rfauto replay --help` | 实跑 | 过 |
-| `rfauto runs stats/health/compare --help` | 实跑 | 过 |
+| `rfauto runs stats --help` / `rfauto runs health --help` / `rfauto runs compare --help` | 实跑 | 过 |
 | `rfauto jobs status`（--detach 轮询用） | `rfauto jobs --help` 实跑 | 过 |

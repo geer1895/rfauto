@@ -1,0 +1,8 @@
+{
+  "title": "50 欧姆微带叠层（RO4350B 0.508 mm）",
+  "layers": [
+    {"name": "TOP", "kind": "signal", "thickness_mm": 0.035, "material": "Cu"},
+    {"name": "SUB", "kind": "dielectric", "thickness_mm": 0.508, "material": "RO4350B", "er": 3.66},
+    {"name": "GND", "kind": "plane", "thickness_mm": 0.035, "material": "Cu"}
+  ]
+}

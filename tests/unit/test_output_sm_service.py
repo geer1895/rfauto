@@ -1,6 +1,6 @@
 """output_sm_service 单测：DP-14 N8 三钉（合成回收/信任域/确定性）+ 契约。
 
-判据预声明见 内部证据档（钉 a：affine 回收 ≤1e-6；
+判据预声明见 runs/df6_dp14n8/criteria.md（钉 a：affine 回收 ≤1e-6；
 插值 ≤1e-7；钉 c：超 τ 回退+告警；钉 d：双跑逐位一致）。全部离线合成，
 零网络零真机。
 """
@@ -29,10 +29,11 @@ W_HELD = [0.9946, 1.5119]
 AFF = {"gamma_lin": (0.01, 0.3), "s21_db": (0.02, -0.1), "eps_eff": (0.05, 0.02)}
 
 
-def _base_heads(w: float) -> tuple[np.ndarray, np.ndarray, float]:
-    """合成低保真三头基面（确定性、u 逐频可分）。"""
-    g = 0.05 + 0.03 * np.arange(len(FREQS)) + 0.04 * np.sin(2.0 * w)
-    s21 = -(0.2 + 0.05 * np.arange(len(FREQS)) + 0.1 * (w - 0.5))
+def _base_heads(w: float, n_f: int | None = None) -> tuple[np.ndarray, np.ndarray, float]:
+    """合成低保真三头基面（确定性、u 逐频可分）；n_f=None 用全局 FREQS 长度。"""
+    nf = len(FREQS) if n_f is None else n_f
+    g = 0.05 + 0.03 * np.arange(nf) + 0.04 * np.sin(2.0 * w)
+    s21 = -(0.2 + 0.05 * np.arange(nf) + 0.1 * (w - 0.5))
     eps = 2.5 + 0.4 * (w - 0.5)
     return g, s21, float(eps)
 
@@ -44,16 +45,17 @@ def _high_delta(head: str, u: np.ndarray | float) -> np.ndarray | float:
     return a + b * float(u)
 
 
-def _mk_low_row(w: float) -> dict:
-    g, s21, eps = _base_heads(w)
+def _mk_low_row(w: float, n_f: int | None = None) -> dict:
+    g, s21, eps = _base_heads(w, n_f)
     return {"w": float(w), "s11_db": 20.0 * np.log10(g), "s21_db": s21,
             "eps_eff": eps, "run_id": f"lo_w{w:.4f}", "point_id": None,
             "group": None}
 
 
-def _mk_high_row(w: float, *, sine_resid: float = 0.0) -> dict:
+def _mk_high_row(w: float, *, sine_resid: float = 0.0,
+                 n_f: int | None = None) -> dict:
     """高保真行：δ = affine(u)（+ 可选 u 的正弦非 affine 残差）。"""
-    g, s21, eps = _base_heads(w)
+    g, s21, eps = _base_heads(w, n_f)
     d11 = _high_delta("gamma_lin", g)
     if sine_resid:
         d11 = d11 + sine_resid * np.sin(3.0 * g)
@@ -212,16 +214,25 @@ def test_missing_exact_low_row_rejected_and_counted():
     assert res["per_point"][0]["gamma_lin_max"] is None
 
 
+# W1-5 语料降规模（aurora_m）：LOO 双跑一致/聚合恒等两性质与锚数·频点数
+# 无关——锚 7→4（-43%）、频 3→2（-33%），折×头×频拟合面 63→24 支（-62%）；
+# 断言零改动。旧语料对照档
+# runs/aurora_m/w1_5/old_corpus_test_leave_one_anchor_out_runs_and_deterministic.log
+LOO_ANCHOR_WS = (0.5, 0.9946, 1.113, 1.4833)
+LOO_FREQS = np.array([2.4, 2.6])
+
+
 def test_leave_one_anchor_out_runs_and_deterministic():
     """LOO 面契约：逐折全新拟合，聚合=fold-max 的 max/mean，双跑一致。"""
-    low = [_mk_low_row(w) for w in sorted(W_TRAIN + W_HELD)]
-    anchors = [_mk_high_row(w, sine_resid=0.05)
-               for w in sorted(W_TRAIN + W_HELD)]
+    n_f = len(LOO_FREQS)
+    low = [_mk_low_row(w, n_f) for w in sorted(W_TRAIN + W_HELD)]
+    anchors = [_mk_high_row(w, sine_resid=0.05, n_f=n_f)
+               for w in sorted(LOO_ANCHOR_WS)]
     mapper = OutputSpaceMapper()
-    loo1 = mapper.leave_one_anchor_out(anchors, low, FREQS)
+    loo1 = mapper.leave_one_anchor_out(anchors, low, LOO_FREQS)
     assert loo1["n_folds"] == len(anchors)
     assert all(f["n_fit_failures"] == 0 for f in loo1["folds"])
-    loo2 = OutputSpaceMapper().leave_one_anchor_out(anchors, low, FREQS)
+    loo2 = OutputSpaceMapper().leave_one_anchor_out(anchors, low, LOO_FREQS)
     assert np.array_equal(
         [f["gamma_lin_max"] for f in loo1["folds"]],
         [f["gamma_lin_max"] for f in loo2["folds"]])

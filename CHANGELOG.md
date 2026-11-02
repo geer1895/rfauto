@@ -2,6 +2,69 @@
 
 All notable changes to rfauto will be documented in this file.
 
+## [0.13.0] - 2026-11-02
+
+### Added
+
+**Optimization pool (aurora_n)**
+- Acquisition families in SBO (EI single-source reuse; legacy LCB path
+  pinned bitwise-equivalent), GP batch acquisition, BaseSampler wiring
+  (strict bitwise equivalence)
+- TuRBO multi-region + REI tier; SAAS full-posterior tier (MH sampler +
+  posterior-mean acquisition); multi-output GP (ICM/LCM
+  coregionalization) and champion transfer chain (weight warm-start +
+  negative-transfer auto-gate)
+- Model-driven MO-BO: analytic EHVI with triple independent
+  cross-checks; hypervolume beats NSGA-II across seeds; robust BO tiers
+  (mu + lambda*sigma, chance constraint); BoTorch comparison arm and a
+  scalar competition frame with a persistent leaderboard
+- Surrogates: conformal UQ, ensemble surrogate, virtual-sample
+  weighting, parametric VF macromodel, SIREN field surrogate, RFF GP,
+  deep-ensemble sigma, full fno surface, ONNX export face (torch dynamo
+  channel + deterministic sha256-stable serialization)
+- Recipe validation hardening (did-you-mean for three typo classes,
+  schema single-reference, dry-run semantics annotations); journal
+  storage wired as persistent study storage tier
+
+**Circuit diagram deepening (aurora_p)**
+- Pin-level schematics from ADS netlists (`rfauto diagram schematic`)
+- Pure-Python .drawio-to-SVG renderer (`rfauto diagram to-svg`; server
+  and report no-GUI viewing); multi-reviewer annotation merge
+- PCB stackup 3D preview; CISPR 25 test-setup scenes with opt-in
+  mxgraph.electrical shapes
+- HB/active ADS template diagrams; S-parameter curve back-annotation
+
+**ADS tuning loop closed end-to-end**
+- Drawn schematics are now editable: Edit Data value change -> simulate
+  -> back-annotate -> iterate; the optimizer can use ADS circuit
+  simulation directly as its evaluation channel
+
+**Design reports**
+- Pareto-front section; design-diff reconciliation section; SVG
+  attachments
+
+**Surrogates and optimization (aurora_p)**
+- ngo_stamp_rf complex-stamp family; multi-port parametric VF; SVGP;
+  SPICE export per parameters; ONNX numpy export layer; Liquid Neural
+  Network (CfC) surrogate; turbo_multi competition engine; SAAS NUTS;
+  constrained c-EHVI
+
+**Tooling**
+- TRL calibration-design wizard; remote queue board (`rfauto remote
+  board`); automated performance profiling; event-driven speculative
+  devtest watcher; watchdog CLI; channel-policy single source
+- Single-process serial gate revived (root cause: lazy in-request
+  pypssfss/Julia embedding; session-start preheat with kill-switch);
+  parallel-vs-serial gate diff comparator normalization landed (two
+  full re-runs both EMPTY)
+
+### Stats
+- 30738 unit tests (full-gate protocol; latest completed full gate
+  30738 passed / 0 failed / 23 skipped), 297 CLI leaf commands
+- MCP 166 tools + 10 resources, CALCULATOR_REGISTRY 340 (incl. 341
+  experimental)
+- Device templates 75, calibration anchors 87
+
 ## [0.12.1] - 2026-10-26
 
 ### Added

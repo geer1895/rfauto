@@ -43,7 +43,7 @@ from rfauto.service.remote_scheduler_service import (
 
 def _one_machine(monkeypatch, **kw) -> RemoteMachineConfig:
     cfg = RemoteMachineConfig(
-        name="sim_server", host="10.20.30.40", ssh_port=22,
+        name="sim_server", host="198.51.100.20", ssh_port=22,
         hfss_grpc_port=50051,
         hfss_project_root=kw.pop("project_root", "E:\\rfauto_remote"),
         probe_ports=kw.pop("probe_ports", {"rdp": 3389}),
@@ -157,7 +157,7 @@ class _FakeTransport:
         if "'python.exe'" in cmd:
             return 0, "101|python.exe -u _rfauto_runner.py\nno-protocol\n", ""
         if "'ansysedt.exe'" in cmd:
-            return 0, "55|ansysedt.exe -grpcsrv 10.20.30.40:50051:InsecureMode\n", ""
+            return 0, "55|ansysedt.exe -grpcsrv 198.51.100.20:50051:InsecureMode\n", ""
         return 0, "", ""
 
     def close(self) -> None:
@@ -187,7 +187,7 @@ def test_remote_full_paths(monkeypatch):
     assert view["state"] == "ok"
     # 凭据/主机名不落信封（任务书铁律；transport 桩已收尾）
     blob = json.dumps(view, ensure_ascii=False, default=str)
-    assert "10.20.30.40" not in blob
+    assert "198.51.100.20" not in blob
     assert "sekret-pw" not in blob
     assert _FakeTransport.instances and _FakeTransport.instances[0].closed
 
@@ -381,7 +381,7 @@ def test_queue_view_remote_busy_passthrough(monkeypatch):
     monkeypatch.setattr(rss, "SshTransport", _FakeTransport)
     env = queue_view("sim_server")
     assert env["remote"]["n_tasks"] == 2
-    assert "10.20.30.40" not in json.dumps(env, default=str)
+    assert "198.51.100.20" not in json.dumps(env, default=str)
 
 
 # ─── CLI 两叶接线（--json 信封 + human 表格；服务注入 #139） ─────────────────

@@ -3,8 +3,9 @@
 > RECAST（判据重放）回答一个问题："当年那个判读，用今天登记的机器
 > 判据再算一遍，结论还一样吗？"本文从判据格式讲到动手重放，全部代码
 > 实测过。前置：docs/how-to/read-verdict-gates.md（判据与门的基本
-> 读法）。CLI 出口已闭合：架构批 W2-D（2026-10-11）起有 `rfauto
-> recast status/replay` 两只读薄壳（MCP 面仍无，见第 5 节）；本文
+> 读法）。CLI 出口已闭合：aurora36 W2-D（2026-10-11）起有
+> `rfauto recast status` / `rfauto recast replay` 两只读薄壳（MCP 面
+> 仍无，见第 5 节）；本文
 > 1-4 节讲 Python API 的语义细节，CLI 与 Python 共用同一确定性内核。
 > 英文版（English version）：docs/tutorials/recast-walkthrough_en.md
 > （W9-S3 译，2026-10-19 全命令复测同笔）。
@@ -63,7 +64,7 @@ crit = yaml.safe_load(
     Path("knowledge/criteria/v2/df5_c3fix_sentinel.yaml")
     .read_text(encoding="utf-8"))
 artifact = json.loads(
-    Path("runs/demo/sentinel_verdict.json")
+    Path("runs/df5_c3fix/sentinel_verdict.json")
     .read_text(encoding="utf-8"))
 
 result = replay_one(artifact, crit,
@@ -180,7 +181,7 @@ four_gates.verdict` 正对应 Python 例的第三个参数（缺省 `verdict`
 落在顶层时不用传，第 3 节"最省时间的一课"在 CLI 下同样成立）：
 
 ```console
-$ rfauto recast replay -a runs/demo/sentinel_verdict.json \
+$ rfauto recast replay -a runs/df5_c3fix/sentinel_verdict.json \
       --archived-verdict-path four_gates.verdict
 ✓ 重放完成 对数=3 判据=3（坏 0）
   same=1 flip=0 not_judged=2

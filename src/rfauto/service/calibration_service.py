@@ -435,6 +435,7 @@ def calibrate_surrogate(
     design_kind: str = "taguchi",
     n_samples: int | None = None,
     derived_from: list[str] | None = None,
+    virtual_augment_n: int = 0,
 ) -> dict[str, Any]:
     """校准代理并自动验收；返回 JSON 友好 dict（service 层契约）。
 
@@ -447,6 +448,14 @@ def calibrate_surrogate(
     derived_from（XD-1 W3-B，可选）：上游 run id 列表（边来源=调用方
     上下文，不做目录名猜测），落 meta.json derived_from 边，
     edge_kind=calib；None=零改动现状。
+
+    virtual_augment_n（T-N2，aurora_n W1-B，opt-in；缺省 0=旧路径逐字节
+    等价）：>0 时对真实锚点样本生成 n_blend 条虚拟样本（置信度加权，
+    virtual_samples.generate_virtual_samples，seed 复用 seed），拟合走
+    sample_weight_key=VIRTUAL_WEIGHT_KEY 加权通道（虚拟样本不与真样本
+    平权——design doc §7.2），LOOCV 折面只在真实锚点上（eval_indices，
+    虚拟点不进裁判）。虚拟样本本体不落 samples.json（#144 家法：绝不
+    混入校准数据集落盘链路），只记生成配置（同 seed 可确定性再生）。
     """
     import yaml
 
@@ -537,19 +546,49 @@ def calibrate_surrogate(
             except Exception as exc:  # 单点失败不阻塞校准（如发散/网格失败）
                 failures.append({"point": pt, "error": str(exc)})
 
+    # ①.5 虚拟样本增强（T-N2，opt-in）：缺省 0=零改动。虚拟样本只进内存
+    # 拟合面（fit_samples），不落 samples.json（#144 家法）。
+    virtual_meta: dict[str, Any] | None = None
+    fit_samples = samples
+    if virtual_augment_n > 0:
+        from rfauto.optimization.surrogate import (
+            VIRTUAL_WEIGHT_KEY,  # lazy: run-path
+            generate_virtual_samples,
+        )
+
+        if len(samples) < 2:
+            raise ValueError(
+                f"virtual_augment_n={virtual_augment_n} 需 ≥2 个有效真实"
+                f"锚点样本，实得 {len(samples)}（虚拟样本生成器下限）")
+        virts = generate_virtual_samples(samples, bounds=bounds,
+                                         n_blend=int(virtual_augment_n),
+                                         seed=seed)
+        fit_samples = samples + virts
+        virtual_meta = {"n_blend": int(virtual_augment_n), "seed": seed,
+                        "n_generated": len(virts),
+                        "weight_key": VIRTUAL_WEIGHT_KEY}
+
     # ② 拟合 + LOOCV 验收
     def make_model() -> PolyRidgeSurrogate:
         # 注意：metrics 键留空 = 从样本自动取数值键并集（SpecEvaluator 的
         # 派生键如 s11_db_max_in_band，而非 objectives 的 s11_db 原名）
-        return PolyRidgeSurrogate(config={
-            "bounds": bounds, "order": order,
-            "ridge_lambda": ridge_lambda})
+        cfg: dict[str, Any] = {
+            "bounds": bounds, "order": order, "ridge_lambda": ridge_lambda}
+        if virtual_meta is not None:
+            cfg["sample_weight_key"] = virtual_meta["weight_key"]
+        return PolyRidgeSurrogate(config=cfg)
 
     def cost_of(sample: dict[str, Any]) -> float:
         return SpecEvaluator.evaluate_objectives(sample["metrics"], objectives)
 
-    loocv = loocv_rho(samples, cost_of, make_model) if samples else {
-        "ok": False, "error": "无有效采样点"}
+    if virtual_meta is not None:
+        # 折面只在真实锚点上（虚拟样本进训练集不进裁判折——T-N2）
+        loocv = loocv_rho(fit_samples, cost_of, make_model,
+                          eval_indices=list(range(len(samples)))) if samples \
+            else {"ok": False, "error": "无有效采样点"}
+    else:
+        loocv = loocv_rho(samples, cost_of, make_model) if samples else {
+            "ok": False, "error": "无有效采样点"}
 
     # ③ LHS 验证点实跑复核
     validation = []
@@ -558,7 +597,7 @@ def calibrate_surrogate(
                                 include=[s["params"] for s in samples],
                                 min_dist=0.15)
         model = make_model()
-        model.fit(samples)
+        model.fit(fit_samples)
         for pt in val_design["points"]:
             try:
                 actual = run_fn(pt)
@@ -604,16 +643,23 @@ def calibrate_surrogate(
     }
     if failures:
         result["failures"] = failures
+    if virtual_meta is not None:
+        # T-N2：虚拟样本只透出计数与生成配置（本体不落盘，同 seed 可再生）
+        result["virtual_augment"] = virtual_meta
 
     # ⑤ 产物落盘（校准数据是资产：v2 换 NN 代理时同一样本可复用）
+    samples_doc: dict[str, Any] = {
+        "bounds": {k: list(v) for k, v in bounds.items()},
+        "objectives": recipe.get("objectives", []),
+        "samples": samples,
+        "validation": validation,
+        "design": design["design"],
+        "mesh_resolution_mm": mesh_resolution_mm}
+    if virtual_meta is not None:
+        samples_doc["virtual_augment"] = virtual_meta
     (calib_dir / "samples.json").write_text(
-        json.dumps({"bounds": {k: list(v) for k, v in bounds.items()},
-                    "objectives": recipe.get("objectives", []),
-                    "samples": samples,
-                    "validation": validation,
-                    "design": design["design"],
-                    "mesh_resolution_mm": mesh_resolution_mm},
-                   ensure_ascii=False, indent=1), encoding="utf-8")
+        json.dumps(samples_doc, ensure_ascii=False, indent=1),
+        encoding="utf-8")
     (calib_dir / "gate.json").write_text(
         json.dumps({k: result[k] for k in
                     ("verdict", "loocv", "rho_threshold", "validation_max_delta",
@@ -622,7 +668,7 @@ def calibrate_surrogate(
                    ensure_ascii=False, indent=1), encoding="utf-8")
     model = make_model()
     if samples:
-        model.fit(samples)
+        model.fit(fit_samples)
     (calib_dir / "surrogate.json").write_text(
         json.dumps({"kind": model.KIND, "config": model.config,
                     "metric_keys": sorted(getattr(model, "metric_keys", []))},

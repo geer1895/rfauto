@@ -421,18 +421,37 @@ async function renderDashboardGrid() {
       return;
     }
     const now = Date.now();
+    // P1-1（aurora_n wave_ui_a）：目录不在盘的 run=索引残留行——徽章换
+    // "归档缺失"（muted）且无 data-id（bindClickRows 的 [data-id] 选择器
+    // 天然跳过），不再是点击即"run 不存在"的假入口（#122 诚实语义）。
     el.innerHTML = "<div>" + list.map((r) => {
       const b = statusBucket(r.status);
       const cls = kitBadgeCls(b); // A7-A ui-kit：状态→类单源（pass/fail/other→ok/err/muted）
-      // W8-S32 i18n 批 3：状态徽章文案 t() 烘焙（兜底状态值仍走 API 数据直显）
+      // W8-S32 i18n 批 3：状态徽章文案 t() 烘焙。
+      // P3-1（aurora_n wave_ui_c）：状态词统一（中文主导+英文对照 tooltip）
+      // ——other 桶此前把英文原始状态串（running/imported/unknown…）直接
+      // 当徽章词（"完成/unknown" 混排实证），现改词表词「其他」，原始状态
+      // 串进 title 悬停可见（#122 诚实语义：原始值不丢，只是不占徽章面）。
+      const rawStatus = String(r.status || "");
       const label = b === "pass" ? t("dashboard.activity_done")
         : b === "fail" ? t("dashboard.activity_fail")
-        : String(r.status || t("dashboard.activity_unknown"));
+        : (rawStatus ? t("dashboard.activity_other")
+          : t("dashboard.activity_unknown"));
+      const badgeHtml = (b === "other" && rawStatus)
+        ? `<span title="${escAttr(t("dashboard.activity_raw_tip_tpl", { status: rawStatus }))}">${T.badge(label, cls)}</span>`
+        : T.badge(label, cls);
+      if (r.on_disk === false) {
+        return `<div title="${escAttr(t("runs.archived_missing_tip"))}" ` +
+          `style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) 0">` +
+          `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.run_id || "")}</span>` +
+          T.badge(t("runs.archived_missing"), "muted") +
+          `<span class="muted" style="font-size:var(--text-xs)">${esc(relTime(r.timestamp, now))}</span></div>`;
+      }
       return `<div class="clickable" data-id="${escAttr(r.run_id)}" ` +
         kitClickRowAttrs({ label: t("runs.open_detail_aria") + (r.run_id || "") }) + " " +
         `style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) 0">` +
         `<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.run_id || "")}</span>` +
-        T.badge(label, cls) +
+        badgeHtml +
         `<span class="muted" style="font-size:var(--text-xs)">${esc(relTime(r.timestamp, now))}</span></div>`;
     }).join("") + "</div>";
     // UI-R4：click 与 Enter/Space 同一激活（bindClickRows 单源；aria-label
@@ -491,6 +510,17 @@ async function renderDashboardGrid() {
       getCsvSeries: () =>
         [{ name: t("dashboard.mix_csv_name"), x: ["PASS", "FAIL", t("dashboard.mix_other")], y: [n.pass, n.fail, n.other] }],
     });
+    // P3-1（aurora_n wave_ui_c）：verdict 术语解释入口——PASS/FAIL 是仓内
+    // 判定词表（战役/门槛/锚共用），新用户首见即此环图。词条解释单源在
+    // 使用指南·概念速查（gl_verdict 行），此处给一行可点跳转（data-go+
+    // bindClickRows 单源形态，quick links 四步卡同款）。
+    const gloss = document.createElement("div");
+    gloss.className = "muted";
+    gloss.style.cssText = "font-size:var(--text-xs);margin-top:var(--space-1)";
+    gloss.innerHTML = t("dashboard.mix_gloss_hint") +
+      ` <span class='clickable' data-go='guide' ${kitClickRowAttrs({ label: t("dashboard.mix_gloss_link_aria") })} style='cursor:pointer;text-decoration:underline'>${t("dashboard.mix_gloss_link")}</span>`;
+    el.appendChild(gloss);
+    bindClickRows(gloss, (row) => showPage(row.dataset.go), "[data-go]");
   }
   async function wRecentRuns(el) {
     const list = _dashData.runs.slice(0, 8);
@@ -506,6 +536,12 @@ async function renderDashboardGrid() {
       caption: t("dashboard.recent_caption"),
       rowHtml: (r) => {
         const m11 = r.metrics?.s11_db_max_in_band;
+        // P1-1（aurora_n wave_ui_a）：目录不在盘=索引残留行——非可点入口
+        //（无 clickable 类，bindClickRows 的 tr.clickable 选择器天然跳过），
+        // S11 列附"归档缺失"徽章（#122 诚实语义）。
+        if (r.on_disk === false) {
+          return `<tr class="st-muted" title="${escAttr(t("runs.archived_missing_tip"))}"><td>${esc(r.run_id || "")}</td><td>${esc(r.adapter || "")}</td><td>${esc(typeof m11 === "number" ? m11.toFixed(2) + " dB" : "-")} <span class="badge muted">${esc(t("runs.archived_missing"))}</span></td></tr>`;
+        }
         return `<tr class="clickable" data-id="${escAttr(r.run_id)}" ${kitClickRowAttrs({ role: null, label: t("runs.open_detail_aria") + (r.run_id || "") })}><td>${esc(r.run_id || "")}</td><td>${esc(r.adapter || "")}</td><td>${esc(typeof m11 === "number" ? m11.toFixed(2) + " dB" : "-")}</td></tr>`;
       },
     });
@@ -576,16 +612,22 @@ async function renderDashboardGrid() {
   async function wQuickLinks(el) {
     // W8-S32 i18n 批 3：步骤标题复用 nav.* 既有键（单源不重立），说明文案
     // 走词表（quick links 四步）。
+    // P2-1（aurora_n wave_ui_b）：四步卡可点击化——新手第一屏的行动入口
+    // 一键直达对应页（首访导览三步卡同款单源形态：data-go + kitClickRowAttrs
+    // 三件套 + bindClickRows，click 与 Enter/Space 同一激活；hover 手势=
+    // 既有 div.clickable 光标态，零新 CSS——index.html 本席禁改）。
     const steps = [
-      [t("nav.import"), t("dashboard.ql_import_d")],
-      [t("nav.recipe"), t("dashboard.ql_recipe_d")],
-      [t("nav.tune"), t("dashboard.ql_tune_d")],
-      [t("nav.runs"), t("dashboard.ql_runs_d")],
+      ["import", t("nav.import"), t("dashboard.ql_import_d")],
+      ["recipe", t("nav.recipe"), t("dashboard.ql_recipe_d")],
+      ["tune", t("nav.tune"), t("dashboard.ql_tune_d")],
+      ["runs", t("nav.runs"), t("dashboard.ql_runs_d")],
     ];
-    // 解构名 label/desc：不遮蔽外层 i18n t()（审查波 2 P3-7 纯风格收账
+    // 解构名 go/label/desc：不遮蔽外层 i18n t()（审查波 2 P3-7 纯风格收账
     // ——未来 steps 行内一旦要用 t()，遮蔽名会静默取到步骤文本）。
-    el.innerHTML = "<div class='guide-flow'>" + steps.map(([label, desc], i) =>
-      `<div class='guide-step'><span class='n'>${i + 1}</span><b>${label}</b><div>${desc}</div></div>`).join("") + "</div>";
+    el.innerHTML = "<div class='guide-flow'>" + steps.map(([go, label, desc], i) =>
+      `<div class='guide-step clickable' data-go='${go}' ${kitClickRowAttrs({ label: t("dashboard.ql_step_aria_tpl", { n: i + 1, name: label }) })}>` +
+      `<span class='n'>${i + 1}</span><b>${label}</b><div>${desc}</div></div>`).join("") + "</div>";
+    bindClickRows(el, (row) => showPage(row.dataset.go), "[data-go]");
   }
   /* ═══ 可信度 KPI widget（aurora_i W3.5-K1，R3 设计 M7 前端半）═══════
      三数：HFSS 仲裁锚数 / AGREE 判定占比（分数形态） / 覆盖模板族数。

@@ -88,7 +88,12 @@ export async function pageRuns() {
     tb.classList.toggle("vrows", rows.length > VROWS_THRESHOLD);
     for (const r of rows) {
       const tr = document.createElement("tr");
-      tr.className = "clickable";
+      // P1-1（aurora_n wave_ui_a）：目录不在盘的 run=索引残留行——呈现
+      // "归档缺失"态（状态列旁徽章+行悬停说明），不再是可点假入口
+      // （无 clickable 类/无行动作三件套，bindClickRows 的 tr.clickable
+      // 选择器天然跳过；#122 诚实语义）。
+      const missing = r.on_disk === false;
+      if (!missing) tr.className = "clickable";
       // R3 人性化三批：行左缘 3px 状态竖线（绿=done/pass 红=fail 灰=运行中
       // /未知；kitBadgeCls 单源映射，tr class 属性面零 DOM 结构变化——状态
       // 徽章仍恒 muted 淡显，行色条是独立视觉面不翻既有"状态列次要信息"账）
@@ -101,11 +106,16 @@ export async function pageRuns() {
       // →中性原文本；fmt=2 位小数+dB 同原口径）
       const m11Cell = metricValueHtml(gEntry, m11,
         (x) => x.toFixed(2) + " dB", gLocale);
-      tr.innerHTML = `<td>${esc(r.run_id || "")}</td><td>${esc(r.timestamp || r.ts || "")}</td><td>${esc(r.adapter || "")}</td><td>${m11Cell}</td><td>${T.badge(r.status || "done", "muted")}</td><td class="muted">${metrics}</td>`;
+      tr.innerHTML = `<td>${esc(r.run_id || "")}</td><td>${esc(r.timestamp || r.ts || "")}</td><td>${esc(r.adapter || "")}</td><td>${m11Cell}</td><td>${T.badge(r.status || "done", "muted")}${missing ? " " + T.badge(t("runs.archived_missing"), "muted") : ""}</td><td class="muted">${metrics}</td>`;
       tr.dataset.id = r.run_id || ""; // UI-R4：激活回调按行取 id（bindClickRows 单入口）
       // UI-R4：键盘可达三件套（tr 行 role:null 保 row/cell 语义；
       // aria-label 行动作读屏可闻——run_id 经 setAttribute 字面量语境）
-      kitApplyClickRowAttrs(tr, { role: null, label: t("runs.open_detail_aria") + (r.run_id || "") });
+      // P1-1 同笔：归档缺失行非入口，不挂行动作三件套。
+      if (!missing) {
+        kitApplyClickRowAttrs(tr, { role: null, label: t("runs.open_detail_aria") + (r.run_id || "") });
+      } else {
+        tr.title = t("runs.archived_missing_tip");
+      }
       if (tr.children[0]) tr.children[0].title = r.run_id || ""; // W7-C：截断列悬停见全名
       tb.appendChild(tr);
     }

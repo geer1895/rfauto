@@ -503,8 +503,9 @@ class TestRecipeUnitsField:
         """units: um 登记+如实 interim 警告（模板接线归模板族席）。"""
         from rfauto.service.api import validate_recipe
 
+        # params 用合法键（F-P1-1 键级白名单后，params 键须在模型参数面内）
         p = self._write(tmp_path, {"model": "wilkinson_power_divider",
-                                   "params": {"w_mm": 1.0}, "setup": {},
+                                   "params": {"arm_len_mm": 1.0}, "setup": {},
                                    "units": "um"})
         r = validate_recipe(p)
         assert r["ok"] is True
