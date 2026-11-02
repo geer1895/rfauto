@@ -65,6 +65,11 @@ def _isolate(monkeypatch: pytest.MonkeyPatch, dll_calls: list[str]):
     monkeypatch.setattr(pp, "_win_dll",
                         lambda p: dll_calls.append(str(p)))
     monkeypatch.setattr(pp, "_file_version", lambda p: "3.0.14-teststub")
+    # 非 Windows 解释器（Linux CI）：ctypes 无 WinDLL → 平台闸门先于 _win_dll 替身
+    # 短路，三态/fail-soft/次序全链失测（aurora_p H4 实证 7 红）。同
+    # test_pyedb_preload._isolate 口径：仅缺席时注入同名占位（Windows 零变化）。
+    if not hasattr(pp.ctypes, "WinDLL"):
+        monkeypatch.setattr(pp.ctypes, "WinDLL", lambda p: object(), raising=False)
     pp.reset_loaded_registry()
     yield
     pp.reset_loaded_registry()

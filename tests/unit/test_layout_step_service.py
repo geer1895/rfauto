@@ -95,9 +95,18 @@ class TestKicadCliInfo:
         assert r["env_hint"] == ENV_KICAD_CLI
 
     def test_version_probe_stub(self, tmp_path, monkeypatch):
+        # 可执行桩按平台落形态：Windows 批处理 .cmd / POSIX 带 shebang 的 sh
+        # 脚本（_run_cli 直调 subprocess.run([cli, "version"]) 无 shell，
+        # 内核按 shebang 执行与扩展名无关）——aurora_p H4 Linux CI 实证
+        # .cmd 桩在 POSIX 不可执行致 version=None 误红；桩文件名保持 .cmd
+        # 以维持 resolve 面口径不变。
         cli = tmp_path / "stub" / "kicad-cli.cmd"
         cli.parent.mkdir(parents=True)
-        cli.write_text("@echo 10.0.6\r\n", encoding="utf-8")
+        if os.name == "nt":
+            cli.write_text("@echo 10.0.6\r\n", encoding="utf-8")
+        else:
+            cli.write_text("#!/bin/sh\necho 10.0.6\n", encoding="utf-8")
+            cli.chmod(0o755)
         monkeypatch.setattr(svc, "DEFAULT_KICAD_CLI", str(cli))
         r = kicad_cli_info()
         assert r["ok"] is True and r["available"] is True

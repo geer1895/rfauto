@@ -64,6 +64,10 @@ class TestFsListRootFence:
         assert str(tmp_path) in d["error"]  # 允许根
         assert "RFAUTO_FS_ROOT" in d["error"]  # 放行出口同信封
 
+    @pytest.mark.skipif(
+        os.name != "nt",
+        reason="盘符逃逸语义仅 Windows：POSIX 下 'D:\\x' 是合法相对目录名，"
+               "围栏按根内不存在处理（aurora_p H4 Linux CI 实证，诚实环境 skip）")
     def test_drive_escape_rejected(self, tmp_path: Path) -> None:
         # 盘符逃逸（围栏先于存在性判定：无论 D:\x 是否存在都拒，不外探磁盘）
         d = fs_list("D:\\x")
