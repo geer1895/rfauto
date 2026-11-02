@@ -161,6 +161,19 @@ def pytest_configure(config):
 
 
 def pytest_sessionstart(session):
+    # ── CLI 注册序规范化（2026-11-02；docs 漂移 1 红根修，先于 Julia 预热）──
+    # rfauto.cli.domains._core.app 是全进程共享的根 Typer 应用，域模块在
+    # **模块 import 时**把各自子应用 add_typer 上去——注册序=import 序。
+    # tests/unit 有 6 个文件在模块级直接 import 域模块（如 test_w2_a_campaign
+    # 的 `from rfauto.cli.domains.bands_uq import campaign_app`）：xdist worker
+    # 里若它们先于 rfauto.cli.main 被收集导入，共享根 app 的注册序即被永久
+    # 扰乱 → 进程内 docs_site/reference/cli.md 重生成顺序漂移（CI run
+    # 41463250971 shard1 实证 test_check_green_on_committed_docs_site 红：
+    # sparams-compare/calc 块易位）。conftest 在收集前 canonical 导入
+    # rfauto.cli.main（其内部按 main.py 固定序导入全部域模块），此后测试模块
+    # 的域导入全是 sys.modules 缓存命中，注册序恒定；独立脚本/CI docs-drift
+    # job（全新解释器）天然同序。
+    importlib.import_module("rfauto.cli.main")
     if os.environ.get("RFAUTO_TEST_NO_JULIA_PREWARM") == "1":
         return
     try:
