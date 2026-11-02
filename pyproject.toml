@@ -243,7 +243,7 @@ dev = [
     "loky>=3.4",  # tests：par_exec 复用池（loky extra 同内核）
     "zstandard>=0.24",  # tests：lake pack/verify（zstandard extra 同内核）
     "pytest-randomly==5.0.0",  # 顺序依赖持续审计，seed 每次随机打印可复现
-    "pytest-benchmark==5.3.0",  # 三热点基准（tests/unit/test_qm5_benchmarks.py）
+    "pytest-benchmark==5.3.1",  # 三热点基准（tests/unit/test_qm5_benchmarks.py）；5.3.1 起避开 pytest 9.2 移除的私有 node._nodeid（CI 3 setup ERROR）
     "pip-licenses==5.5.5",  # 许可合规门（scripts/license_gate.py 消费）
     "pip-audit>=2.7",  # 依赖漏洞门（scripts/audit_deps.py 消费，OSV/PyPI）
     "mutmut==2.5.1",  # 突变测试试点（scripts/qm9_mutmut_run.py；3.x 无原生 Windows 支持，钉 2.5.1）
