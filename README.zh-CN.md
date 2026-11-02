@@ -489,7 +489,7 @@ openEMS 官方源码自行编译。
 - 运维：`rfauto remote board` 查看服务器与本地求解队列；性能画像一键生成；源码变更后自动预跑受影响测试（`devtest_speculative --watch`）
 - 代理模型：新增液态神经网络（CfC）、复数 stamp 族（ngo_stamp_rf）、多端口参数化 VF、SVGP、按参数导出 SPICE 网表、ONNX 导出
 - 优化算法：TuRBO 多重启进入竞赛引擎榜；SAAS 后验可选 NUTS 采样；多目标优化支持约束条件（c-EHVI）
-- 架构借鉴：吸收 DeepSeek Super-agent（MIT）的事件驱动执行与探活思路，落地为投机测试预跑和 `rfauto watchdog`，编排笔记见 `docs/explanation/agent-orchestration.md`
+- 架构借鉴：吸收 DeepSeek Super-agent（MIT）的事件驱动执行、探活与信道分域思路，落地为投机测试预跑、`rfauto watchdog` 和 CLI/JSON 输出的统一规范；另有编排、信道两篇设计笔记（`docs/explanation/agent-orchestration.md`、`docs/explanation/cli-json-channel.md`）
 
 修复与改进：
 

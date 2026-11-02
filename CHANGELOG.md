@@ -29,8 +29,10 @@ All notable changes to rfauto will be documented in this file.
 **Circuit diagram deepening (aurora_p)**
 
 - Architecture ideas absorbed from DeepSeek Super-agent (MIT):
-  event-driven speculative execution and service watchdog; orchestration
-  notes in docs/explanation/agent-orchestration.md
+  event-driven speculative execution, service watchdog and
+  channel-separation rules; design notes in
+  docs/explanation/agent-orchestration.md and
+  docs/explanation/cli-json-channel.md
 - Pin-level schematics from ADS netlists (`rfauto diagram schematic`)
 - Pure-Python .drawio-to-SVG renderer (`rfauto diagram to-svg`; server
   and report no-GUI viewing); multi-reviewer annotation merge
