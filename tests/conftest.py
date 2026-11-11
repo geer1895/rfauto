@@ -120,9 +120,11 @@ _LINUX_NUMERIC_TEST_IDS = frozenset({
     # （2026-11-11 CI run 43056862348 分片 3 实测 0.0646 vs 门 0.0616/0.1796 vs 0.15）
     "tests/unit/test_turbo.py::TestTurbo::test_beats_random_search_same_budget",
     "tests/unit/test_turbo.py::TestTurbo::test_converges_to_known_argmin_and_region_shrinks",
-    # 闭式恒等逐位钉（== 0.0）——Linux BLAS 残差 -1.78e-15（run 43062972504）
+    # 闭式恒等逐位钉（== 0.0）——Linux BLAS 残差 -1.78e-15（run 43062972504；
+    # 同款在 test_em_bench ssl_anchor 锚记录链二次复现，run 43081163706）
     "tests/unit/test_suspended_stripline_fd_judge.py::"
     "test_exact_limit_anchors_full_fill_and_air_identity",
+    "tests/unit/test_em_bench.py::test_ssl_anchor_detail_records_qualification_anchors",
     "tests/unit/test_synthesis_bpf_polish_backsub.py::test_bpf_n15_two_tz_unconverged_gate_two_sided",
     "tests/unit/test_tma_array.py::test_kernel_sll_metrics_descending_grid_equals_ascending",
     "tests/unit/test_w1s3_lange_stepped.py::test_lange_promotion_byte_parity_and_single_object",
