@@ -199,20 +199,36 @@ jobs:
           # report_render._font_paths 的 /usr/share/fonts 扫描面拾取
           # （模板字体表第三顺位 "Noto Sans CJK SC"）。apt 系统包非 pip
           # 面，留独立步不进 composite action。
-          # apt 源（security.ubuntu.com）DNS 解析瞬断在 run 43043071700 两
-          # 次连续复现（exit 100，"Temporary failure resolving"）——三试退避
-          # 重试 + dpkg 在位终验（不静默降级，缺字体让测试面自己红）。
+          # apt 源（security.ubuntu.com）DNS 解析在 runner 上持续失败
+          # （run 43043514281 三试全败，"Temporary failure resolving"
+          # =非瞬态）——主路换 GitHub 直拉单字体 OTF（notofonts/noto-cjk
+          # Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf，16.4MB，
+          # 族名 "Noto Sans CJK SC"=模板字体表第三顺位；checkout 同域已证
+          # 可达），apt 三试留作 fallback；装后强终验（两通道全空即红）。
+          mkdir -p ~/.fonts-fallback
+          curl -fsSL --retry 3 --retry-delay 10 -o ~/.fonts-fallback/NotoSansCJKsc-Regular.otf \
+            https://github.com/notofonts/noto-cjk/raw/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf \
+            || echo "github font fetch failed, fall back to apt"
           ok=""
-          for i in 1 2 3; do
-            if sudo apt-get update -qq && sudo apt-get install -y -qq \
-                --no-install-recommends fonts-noto-cjk; then
-              ok=1; break
-            fi
-            echo "apt attempt $i failed (transient mirror/DNS), retry in 20s"
-            sleep 20
-          done
-          dpkg -l fonts-noto-cjk | grep -q '^ii' \
-            || { echo "fonts-noto-cjk not installed after retries"; exit 1; }
+          if [ -s ~/.fonts-fallback/NotoSansCJKsc-Regular.otf ]; then
+            sudo mkdir -p /usr/share/fonts/opentype/noto-cjk-gh
+            sudo mv ~/.fonts-fallback/NotoSansCJKsc-Regular.otf \
+              /usr/share/fonts/opentype/noto-cjk-gh/
+            ok=1
+          else
+            for i in 1 2 3; do
+              if sudo apt-get update -qq && sudo apt-get install -y -qq \
+                  --no-install-recommends fonts-noto-cjk; then
+                ok=1; break
+              fi
+              echo "apt attempt $i failed (mirror/DNS), retry in 20s"
+              sleep 20
+            done
+          fi
+          if [ "$ok" != "1" ]; then
+            echo "no font channel succeeded (github fetch + apt retries)"
+            exit 1
+          fi
       - name: Run unit + integration-fake tests (real_edt deselected, 4-shard balanced, --lf retry once)
         run: |
           # ── W3-5 分片选择：重件锚定表 + 轻件字母序均分 ─────────────────
